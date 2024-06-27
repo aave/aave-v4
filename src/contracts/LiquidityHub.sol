@@ -3,8 +3,9 @@ pragma solidity ^0.8.0;
 
 import {SafeERC20} from '../dependencies/openzeppelin/SafeERC20.sol';
 import {IERC20} from '../dependencies/openzeppelin/IERC20.sol';
+import {AccessManaged} from '@openzeppelin/contracts/access/manager/AccessManaged.sol';
 
-contract LiquidityHub {
+contract LiquidityHub is AccessManaged {
   using SafeERC20 for IERC20;
 
   struct Reserve {
@@ -48,7 +49,7 @@ contract LiquidityHub {
   // asset id => user address => user data
   mapping(uint256 => mapping(address => UserConfig)) public users;
 
-  constructor() {}
+  constructor(address amc) AccessManaged(amc){}
 
   // /////
   // Governance

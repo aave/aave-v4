@@ -19,7 +19,7 @@ abstract contract BaseTest is Test {
   LiquidityHub hub;
 
   function setUp() public virtual {
-    hub = new LiquidityHub();
+    hub = new LiquidityHub(address(0));
     usdc = new ERC20Mock();
     dai = new ERC20Mock();
     usdt = new ERC20Mock();
