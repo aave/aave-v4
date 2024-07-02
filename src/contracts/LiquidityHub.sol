@@ -7,6 +7,15 @@ import {IERC20} from '../dependencies/openzeppelin/IERC20.sol';
 contract LiquidityHub {
   using SafeERC20 for IERC20;
 
+  event Supply(
+    uint256 indexed reserve,
+    address user,
+    address indexed onBehalfOf,
+    uint256 amount,
+    uint16 indexed referralCode
+  );
+  event Withdraw(uint256 indexed reserve, address indexed user, address indexed to, uint256 amount);
+
   struct Reserve {
     uint256 id;
     uint256 supplyIndex;
@@ -43,12 +52,20 @@ contract LiquidityHub {
   // asset id => reserve data
   mapping(uint256 => Reserve) public reserves;
   address[] public reservesList; // TODO: Check if Enumerable or Set makes more sense
-  uint256 reserveCount;
+  uint256 public reserveCount;
 
   // asset id => user address => user data
   mapping(uint256 => mapping(address => UserConfig)) public users;
 
   constructor() {}
+
+  function getReserve(uint256 assetId) external view returns (Reserve memory) {
+    return reserves[assetId];
+  }
+
+  function getUser(uint256 assetId, address user) external view returns (UserConfig memory) {
+    return users[assetId][user];
+  }
 
   // /////
   // Governance
@@ -84,10 +101,15 @@ contract LiquidityHub {
   // Users
   // /////
 
-  function supply(uint256 assetId, uint256 amount) external {
+  function supply(
+    uint256 assetId,
+    uint256 amount,
+    address onBehalfOf,
+    uint16 referralCode
+  ) external {
     // TODO: onBehalf
     Reserve storage reserve = reserves[assetId];
-    UserConfig storage user = users[assetId][msg.sender];
+    UserConfig storage user = users[assetId][onBehalfOf];
 
     _validateSupply(reserve, amount);
 
@@ -100,6 +122,7 @@ contract LiquidityHub {
 
     // updates user accounting
     // user.onSupply( assetData, amount);
+    // TODO Burn some amount if first supply
     reserve.virtualBalance += amount;
     // TODO reserve.supplyIndex
     reserve.lastUpdateTimestamp = block.timestamp;
@@ -110,9 +133,11 @@ contract LiquidityHub {
 
     // transferFrom
     IERC20(reservesList[assetId]).safeTransferFrom(msg.sender, address(this), amount); // TODO: fee-on-transfer
+
+    emit Supply(assetId, msg.sender, onBehalfOf, amount, referralCode);
   }
 
-  function withdraw(uint256 assetId, uint256 amount) external {
+  function withdraw(uint256 assetId, uint256 amount, address to) external {
     // TODO: onBehalf
     Reserve storage reserve = reserves[assetId];
     UserConfig storage user = users[assetId][msg.sender];
@@ -138,7 +163,9 @@ contract LiquidityHub {
     user.lastUpdateTimestamp = block.timestamp;
 
     // transfer
-    IERC20(reservesList[assetId]).safeTransfer(msg.sender, amount); // TODO: fee-on-transfer
+    IERC20(reservesList[assetId]).safeTransfer(to, amount); // TODO: fee-on-transfer
+
+    emit Withdraw(assetId, msg.sender, to, amount);
   }
 
   function borrow(uint256 assetId, uint256 amount) external {
@@ -172,14 +199,14 @@ contract LiquidityHub {
     // asset is listed
     require(reservesList[reserve.id] != address(0), 'ASSET_NOT_LISTED');
     // asset can be supplied
-    require(reserve.config.active, 'NOT_ACTIVE');
+    require(reserve.config.active, 'RESERVE_NOT_ACTIVE');
     // supply cap not reached
     require(reserve.config.supplyCap > reserve.virtualBalance + amount, 'CAP_EXCEEDED');
   }
 
   function _validateWithdraw(Reserve storage reserve, uint256 amount) internal view {
     // asset can be withdrawn
-    require(reserve.config.active, 'NOT_ACTIVE');
+    require(reserve.config.active, 'RESERVE_NOT_ACTIVE');
     // reserve with available liquidity
     require(reserve.virtualBalance >= amount, 'NOT_AVAILABLE_LIQUIDITY');
   }

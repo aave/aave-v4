@@ -5,18 +5,44 @@ import 'forge-std/Test.sol';
 import 'forge-std/console2.sol';
 // import 'forge-std/StdCheats.sol';
 
-import {LiquidityHub} from 'src/contracts/LiquidityHub.sol';
-import {IERC20} from 'src/dependencies/openzeppelin/IERC20.sol';
-import {ERC20Mock} from './mocks/ERC20Mock.sol';
+import 'src/contracts/LiquidityHub.sol';
+import 'src/dependencies/openzeppelin/IERC20.sol';
+import './mocks/ERC20Mock.sol';
 
-abstract contract BaseTest is Test {
-  address internal USER1 = makeAddr('USER1');
+import './Utils.t.sol';
 
+// library Constants {}
+
+contract Events {
+  // OpenZeppelin
+  event Transfer(address indexed from, address indexed to, uint256 value);
+
+  // Aave
+  event Supply(
+    uint256 indexed reserve,
+    address user,
+    address indexed onBehalfOf,
+    uint256 amount,
+    uint16 indexed referralCode
+  );
+  event Withdraw(uint256 indexed reserve, address indexed user, address indexed to, uint256 amount);
+}
+
+library Errors {
+  // Aave
+  bytes constant NOT_AVAILABLE_LIQUIDITY = 'NOT_AVAILABLE_LIQUIDITY';
+  bytes constant RESERVE_NOT_ACTIVE = 'RESERVE_NOT_ACTIVE';
+  bytes constant ASSET_NOT_LISTED = 'ASSET_NOT_LISTED';
+}
+
+abstract contract BaseTest is Test, Events {
   IERC20 internal usdc;
   IERC20 internal dai;
   IERC20 internal usdt;
 
   LiquidityHub hub;
+
+  address internal USER1 = makeAddr('USER1');
 
   function setUp() public virtual {
     hub = new LiquidityHub();
