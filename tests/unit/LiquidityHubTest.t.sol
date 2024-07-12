@@ -133,4 +133,22 @@ contract LiquidityHubTest is BaseTest {
     vm.prank(USER2);
     hub.changeInterestRate();
   }
+
+  function testRoleAdmin() public {
+    // Set INTEREST_RATE_CONTROLLER_ADMIN as USER1
+    vm.startPrank(ADMIN);
+    hub.setRoleAdmin(hub.INTEREST_RATE_CONTROLLER(), hub.INTEREST_RATE_CONTROLLER_ADMIN());
+    hub.grantRole(hub.INTEREST_RATE_CONTROLLER_ADMIN(), USER1);
+    vm.stopPrank();
+
+    // USER1 can grant INTEREST_RATE_CONTROLLER role
+    vm.startPrank(USER1);
+    hub.grantRole(hub.INTEREST_RATE_CONTROLLER(), USER2);
+
+    // USER1 CANNOT grant RISK_CONTROLLER role
+    bytes32 RISK_CONTROLLER = hub.RISK_CONTROLLER();
+    vm.expectRevert();
+    hub.grantRole(RISK_CONTROLLER, USER2);
+    vm.stopPrank();
+  }
 }

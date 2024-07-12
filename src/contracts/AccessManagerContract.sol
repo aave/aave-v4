@@ -8,7 +8,13 @@ contract AccessManagerContract is AccessControl {
     bytes32 public constant INTEREST_RATE_CONTROLLER = keccak256("INTEREST_RATE_CONTROLLER");
     bytes32 public constant RISK_CONTROLLER = keccak256("RISK_CONTROLLER");
 
+    bytes32 public constant INTEREST_RATE_CONTROLLER_ADMIN = keccak256("INTEREST_RATE_CONTROLLER_ADMIN");
+
     constructor() {
         _grantRole(DEFAULT_ADMIN_ROLE, msg.sender);
+    }
+
+    function setRoleAdmin(bytes32 role, bytes32 adminRole) external onlyRole(DEFAULT_ADMIN_ROLE) {
+        _setRoleAdmin(role, adminRole);
     }
 }
