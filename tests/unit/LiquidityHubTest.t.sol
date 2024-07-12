@@ -6,6 +6,7 @@ import '../BaseTest.t.sol';
 contract LiquidityHubTest is BaseTest {
   bytes32 constant DEFAULT_ADMIN_ROLE = 0x0000000000000000000000000000000000000000000000000000000000000000;
   address UNALLOWED = makeAddr('UNALLOWED');
+  address USER2 = makeAddr('USER2');
 
   function setUp() public override {
     super.setUp();
@@ -104,6 +105,32 @@ contract LiquidityHubTest is BaseTest {
     hub.grantRole(hub.INTEREST_RATE_CONTROLLER(), USER1);
     vm.stopPrank();
     vm.prank(USER1);
+    hub.changeInterestRate();
+  }
+
+  function testRevokeRole() public {
+    vm.startPrank(ADMIN);
+    hub.grantRole(hub.INTEREST_RATE_CONTROLLER(), USER1);
+    vm.stopPrank();
+   
+    vm.prank(USER1);
+    hub.changeInterestRate();
+
+    vm.startPrank(ADMIN);
+    hub.revokeRole(hub.INTEREST_RATE_CONTROLLER(), USER1);
+    vm.stopPrank();
+
+    vm.prank(USER1);
+    vm.expectRevert();
+    hub.changeInterestRate();
+  }
+
+  function testAddNewAddressToRole() public {
+    vm.startPrank(ADMIN);
+    hub.grantRole(hub.INTEREST_RATE_CONTROLLER(), USER2);
+    vm.stopPrank();
+
+    vm.prank(USER2);
     hub.changeInterestRate();
   }
 }
