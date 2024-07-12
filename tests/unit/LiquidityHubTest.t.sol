@@ -7,6 +7,7 @@ contract LiquidityHubTest is BaseTest {
   bytes32 constant DEFAULT_ADMIN_ROLE = 0x0000000000000000000000000000000000000000000000000000000000000000;
   address UNALLOWED = makeAddr('UNALLOWED');
   address USER2 = makeAddr('USER2');
+  address USER3 = makeAddr('USER3');
 
   function setUp() public override {
     super.setUp();
@@ -152,5 +153,29 @@ contract LiquidityHubTest is BaseTest {
     vm.expectRevert();
     hub.grantRole(RISK_CONTROLLER, USER2);
     vm.stopPrank();
+  }
+
+  function testRevokeRoleAdmin() public {
+    // Set INTEREST_RATE_CONTROLLER_ADMIN as USER1
+    vm.startPrank(ADMIN);
+    hub.setRoleAdmin(hub.INTEREST_RATE_CONTROLLER(), hub.INTEREST_RATE_CONTROLLER_ADMIN());
+    hub.grantRole(hub.INTEREST_RATE_CONTROLLER_ADMIN(), USER1);
+    vm.stopPrank();
+
+    // USER1 can grant INTEREST_RATE_CONTROLLER role
+    vm.startPrank(USER1);
+    hub.grantRole(hub.INTEREST_RATE_CONTROLLER(), USER2);
+    vm.stopPrank();
+
+    // Revoke INTEREST_RATE_CONTROLLER_ADMIN role from USER1
+    vm.startPrank(ADMIN);
+    hub.revokeRole(hub.INTEREST_RATE_CONTROLLER_ADMIN(), USER1);
+    vm.stopPrank();
+
+    // Now USER1 cannot grant INTEREST_RATE_CONTROLLER role
+    bytes32 INTEREST_RATE_CONTROLLER = hub.INTEREST_RATE_CONTROLLER();
+    vm.prank(USER1);
+    vm.expectRevert();
+    hub.grantRole(INTEREST_RATE_CONTROLLER, USER3);
   }
 }
