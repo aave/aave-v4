@@ -113,6 +113,7 @@ contract LiquidityHubTest is BaseTest {
     hub.grantRole(hub.INTEREST_RATE_CONTROLLER(), USER1);
     vm.stopPrank();
    
+    // After granted role, USER1 can change interest rate
     vm.prank(USER1);
     hub.changeInterestRate();
 
@@ -120,6 +121,7 @@ contract LiquidityHubTest is BaseTest {
     hub.revokeRole(hub.INTEREST_RATE_CONTROLLER(), USER1);
     vm.stopPrank();
 
+    // After revoked role, USER1 cannot change interest rate
     vm.prank(USER1);
     vm.expectRevert();
     hub.changeInterestRate();
