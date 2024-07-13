@@ -115,4 +115,42 @@ contract LiquidityHubTest is BaseTest {
       address(usdc)
     );
   }
+
+  function testChangeRiskUnauthorized() public {
+    vm.prank(USER1);
+    vm.expectRevert();
+    hub.changeRisk();
+  }
+
+  function testChangeRiskGrantAccess() public {
+    vm.startPrank(ADMIN);
+    // Get function signature of changeRisk
+    bytes4 sig = bytes4(keccak256(bytes('changeRisk()')));
+    hub.setRoleCapability(hub.RISK_CONTROLLER(), address(hub), sig, true);
+    // Grant role to USER1
+    hub.setUserRole(USER1, hub.RISK_CONTROLLER(), true);
+    vm.stopPrank();
+
+    vm.prank(USER1);
+    hub.changeRisk();
+  }
+
+  function testChangeInterestRateUnauthorized() public {
+    vm.prank(USER1);
+    vm.expectRevert();
+    hub.changeInterestRate();
+  }
+
+  function testChangeInterestRateGrantAccess() public {
+    vm.startPrank(ADMIN);
+    // Get function signature of changeInterestRate
+    bytes4 sig = bytes4(keccak256(bytes('changeInterestRate()')));
+    hub.setRoleCapability(hub.INTEREST_RATE_CONTROLLER(), address(hub), sig, true);
+    // Grant role to USER1
+    hub.setUserRole(USER1, hub.INTEREST_RATE_CONTROLLER(), true);
+    vm.stopPrank();
+
+    vm.prank(USER1);
+    hub.changeInterestRate();
+  }
 }
