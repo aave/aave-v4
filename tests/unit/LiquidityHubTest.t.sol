@@ -153,4 +153,48 @@ contract LiquidityHubTest is BaseTest {
     vm.prank(USER1);
     hub.changeInterestRate();
   }
+
+  function testRevokeRole() public {
+    vm.startPrank(ADMIN);
+    // Get function signature of changeRisk
+    bytes4 sig = bytes4(keccak256(bytes('changeRisk()')));
+    hub.setRoleCapability(hub.RISK_CONTROLLER(), address(hub), sig, true);
+    // Grant role to USER1
+    hub.setUserRole(USER1, hub.RISK_CONTROLLER(), true);
+    vm.stopPrank();
+
+    vm.prank(USER1);
+    hub.changeRisk();
+
+    vm.startPrank(ADMIN);
+    // Revoke role from USER1
+    hub.setUserRole(USER1, hub.RISK_CONTROLLER(), false);
+    vm.stopPrank();
+
+    vm.prank(USER1);
+    vm.expectRevert();
+    hub.changeRisk();
+  }
+
+  function testChangeRoleCapability() public {
+    vm.startPrank(ADMIN);
+    // Get function signature of changeRisk
+    bytes4 sig = bytes4(keccak256(bytes('changeRisk()')));
+    hub.setRoleCapability(hub.RISK_CONTROLLER(), address(hub), sig, true);
+    // Grant role to USER1
+    hub.setUserRole(USER1, hub.RISK_CONTROLLER(), true);
+    vm.stopPrank();
+
+    vm.prank(USER1);
+    hub.changeRisk();
+
+    vm.startPrank(ADMIN);
+    // Revoke function permission from role
+    hub.setRoleCapability(hub.RISK_CONTROLLER(), address(hub), sig, false);
+    vm.stopPrank();
+
+    vm.prank(USER1);
+    vm.expectRevert();
+    hub.changeRisk();
+  }
 }
