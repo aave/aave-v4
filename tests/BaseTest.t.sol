@@ -11,6 +11,8 @@ import {ERC20Mock} from './mocks/ERC20Mock.sol';
 
 abstract contract BaseTest is Test {
   address internal USER1 = makeAddr('USER1');
+  address internal USER2 = makeAddr('USER2');
+  address internal USER3 = makeAddr('USER3');
   address internal ADMIN = makeAddr('ADMIN');
 
   IERC20 internal usdc;

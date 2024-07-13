@@ -197,4 +197,22 @@ contract LiquidityHubTest is BaseTest {
     vm.expectRevert();
     hub.changeRisk();
   }
+
+  function testAddNewAddressToRole() public {
+    vm.startPrank(ADMIN);
+    // Get function signature of changeRisk
+    bytes4 sig = bytes4(keccak256(bytes('changeRisk()')));
+    hub.setRoleCapability(hub.RISK_CONTROLLER(), address(hub), sig, true);
+    // Grant role to USER1
+    hub.setUserRole(USER1, hub.RISK_CONTROLLER(), true);
+    // Grant role to USER2
+    hub.setUserRole(USER2, hub.RISK_CONTROLLER(), true);
+    vm.stopPrank();
+
+    // Both USER1 and USER2 can call changeRisk
+    vm.prank(USER1);
+    hub.changeRisk();
+    vm.prank(USER2);
+    hub.changeRisk();
+  }
 }
