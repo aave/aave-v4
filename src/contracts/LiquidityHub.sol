@@ -3,9 +3,15 @@ pragma solidity ^0.8.0;
 
 import {SafeERC20} from '../dependencies/openzeppelin/SafeERC20.sol';
 import {IERC20} from '../dependencies/openzeppelin/IERC20.sol';
+import {WadRayMath} from './WadRayMath.sol';
+import {MathUtils} from './MathUtils.sol';
+import {IBorrowModule} from './IBorrowModule.sol';
+
+import 'forge-std/console2.sol';
 
 contract LiquidityHub {
   using SafeERC20 for IERC20;
+  using WadRayMath for uint256;
 
   event Supply(
     uint256 indexed reserve,
@@ -64,7 +70,20 @@ contract LiquidityHub {
   }
 
   function getUser(uint256 assetId, address user) external view returns (UserConfig memory) {
-    return users[assetId][user];
+    UserConfig memory u = users[assetId][user];
+
+    // Refresh user position
+    uint256 userElapsed = block.timestamp - u.lastUpdateTimestamp;
+    if (userElapsed > 0) {
+      console2.log('getUser.userElapsed');
+      u.principalBalance += u.interestBalance;
+      console2.log('mul %e %e %e', reserves[assetId].supplyIndex , u.lastUpdateIndex, u.principalBalance);
+      u.interestBalance = (reserves[assetId].supplyIndex - u.lastUpdateIndex).rayMul(
+        u.principalBalance
+      ); // rounding up?
+    }
+
+    return u;
   }
 
   // /////
@@ -76,9 +95,9 @@ contract LiquidityHub {
     reservesList.push(asset);
     reserves[reserveCount] = Reserve({
       id: reserveCount,
-      supplyIndex: 0,
+      supplyIndex: WadRayMath.RAY,
       supplyRate: 0,
-      borrowIndex: 0,
+      borrowIndex: WadRayMath.RAY,
       borrowRate: 0,
       lastUpdateTimestamp: block.timestamp,
       virtualBalance: 0,
@@ -107,7 +126,6 @@ contract LiquidityHub {
     address onBehalfOf,
     uint16 referralCode
   ) external {
-    // TODO: onBehalf
     Reserve storage reserve = reserves[assetId];
     UserConfig storage user = users[assetId][onBehalfOf];
 
@@ -115,6 +133,9 @@ contract LiquidityHub {
 
     // update indexes and IRs
     _updateState(reserve); // TODO
+    // TODO: init user lastUpdateIndex
+    // TODO Set as collateral if first supply?
+    _accrueUserInterest(reserves[assetId], user);
 
     // invokes borrow modules in case accounting update is needed
     // (eg, update premium for users borrowing using the asset as collateral)
@@ -122,14 +143,10 @@ contract LiquidityHub {
 
     // updates user accounting
     // user.onSupply( assetData, amount);
-    // TODO Burn some amount if first supply
+    // TODO Mitigate inflation attack (burn some amount if first supply)
+
     reserve.virtualBalance += amount;
-    // TODO reserve.supplyIndex
-    reserve.lastUpdateTimestamp = block.timestamp;
     user.principalBalance += amount;
-    // TODO user.lastUpdateIndex
-    // TODO accumulate user.interestBalance into user.principalBalance
-    user.lastUpdateTimestamp = block.timestamp;
 
     // transferFrom
     IERC20(reservesList[assetId]).safeTransferFrom(msg.sender, address(this), amount); // TODO: fee-on-transfer
@@ -155,12 +172,8 @@ contract LiquidityHub {
     // updates user accounting
     // user.onWithdraw( assetData, amount);
     reserve.virtualBalance -= amount;
-    // TODO reserve.supplyIndex
-    reserve.lastUpdateTimestamp = block.timestamp;
     user.principalBalance -= amount; // TODO clearer error msg
-    // TODO user.lastUpdateIndex
-    // TODO accumulate user.interestBalance into user.principalBalance
-    user.lastUpdateTimestamp = block.timestamp;
+    _accrueUserInterest(reserves[assetId], user);
 
     // transfer
     IERC20(reservesList[assetId]).safeTransfer(to, amount); // TODO: fee-on-transfer
@@ -214,7 +227,44 @@ contract LiquidityHub {
   function _validateBorrow() internal {}
 
   function _updateState(Reserve storage reserve) internal {
-    // Update indexes
     // Update interest rates
+    (reserve.supplyRate, reserve.borrowRate) = IBorrowModule(reserve.config.borrowModule)
+      .calculateInterestRates();
+    // TODO: only borrowRate? supplyRate can be calculated using borrowRate and RF
+    // borrow module and liquidity hub coupling
+
+    // Update indexes
+    _accrueReserveInterest(reserve);
+    // TODO borrowIndex
+    // _accrueReserveInterest(reserve.borrowIndex, reserve.borrowRate, elapsed);
+    // Accrue RF?
+
+    reserve.lastUpdateTimestamp = block.timestamp;
+  }
+
+  function _accrueReserveInterest(Reserve storage r) internal {
+    uint256 elapsed = block.timestamp - r.lastUpdateTimestamp;
+    if (elapsed > 0) {
+      console2.log('_accrueReserveInterest');
+      // linear interest
+      uint256 cumulated = MathUtils.calculateLinearInterest(r.supplyRate, uint40(r.lastUpdateTimestamp));
+      console2.log('cumulated %e', cumulated);
+      r.supplyIndex = r.supplyIndex.rayMul(cumulated);
+      console2.log('supplyIndex %e', r.supplyIndex);
+      // TODO: update reserve.virtualBalance ?
+      r.lastUpdateTimestamp = block.timestamp;
+    }
+  }
+
+  function _accrueUserInterest(Reserve storage r, UserConfig storage u) internal {
+    uint256 userElapsed = block.timestamp - u.lastUpdateTimestamp;
+    if (userElapsed > 0) {
+      console2.log('_accrueUserInterest');
+      u.principalBalance += u.interestBalance; // TODO: event?
+      u.interestBalance = (r.supplyIndex - u.lastUpdateIndex).rayMul(u.principalBalance);
+
+      u.lastUpdateIndex = r.supplyIndex;
+      u.lastUpdateTimestamp = block.timestamp;
+    }
   }
 }

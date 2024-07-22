@@ -6,6 +6,10 @@ import 'forge-std/console2.sol';
 // import 'forge-std/StdCheats.sol';
 
 import 'src/contracts/LiquidityHub.sol';
+import 'src/contracts/BorrowModule.sol';
+import 'src/contracts/IBorrowModule.sol';
+import 'src/contracts/WadRayMath.sol';
+import 'src/contracts/MathUtils.sol';
 import 'src/dependencies/openzeppelin/IERC20.sol';
 import './mocks/ERC20Mock.sol';
 
@@ -36,16 +40,21 @@ library Errors {
 }
 
 abstract contract BaseTest is Test, Events {
+  using WadRayMath for uint256;
+
   IERC20 internal usdc;
   IERC20 internal dai;
   IERC20 internal usdt;
 
   LiquidityHub hub;
+  BorrowModule bm;
 
   address internal USER1 = makeAddr('USER1');
+  address internal USER2 = makeAddr('USER2');
 
   function setUp() public virtual {
     hub = new LiquidityHub();
+    bm = new BorrowModule();
     usdc = new ERC20Mock();
     dai = new ERC20Mock();
     usdt = new ERC20Mock();
