@@ -75,9 +75,7 @@ contract LiquidityHub {
     // Refresh user position
     uint256 userElapsed = block.timestamp - u.lastUpdateTimestamp;
     if (userElapsed > 0) {
-      console2.log('getUser.userElapsed');
       u.principalBalance += u.interestBalance;
-      console2.log('mul %e %e %e', reserves[assetId].supplyIndex , u.lastUpdateIndex, u.principalBalance);
       u.interestBalance = (reserves[assetId].supplyIndex - u.lastUpdateIndex).rayMul(
         u.principalBalance
       ); // rounding up?
@@ -245,12 +243,9 @@ contract LiquidityHub {
   function _accrueReserveInterest(Reserve storage r) internal {
     uint256 elapsed = block.timestamp - r.lastUpdateTimestamp;
     if (elapsed > 0) {
-      console2.log('_accrueReserveInterest');
       // linear interest
       uint256 cumulated = MathUtils.calculateLinearInterest(r.supplyRate, uint40(r.lastUpdateTimestamp));
-      console2.log('cumulated %e', cumulated);
       r.supplyIndex = r.supplyIndex.rayMul(cumulated);
-      console2.log('supplyIndex %e', r.supplyIndex);
       // TODO: update reserve.virtualBalance ?
       r.lastUpdateTimestamp = block.timestamp;
     }
@@ -259,7 +254,6 @@ contract LiquidityHub {
   function _accrueUserInterest(Reserve storage r, UserConfig storage u) internal {
     uint256 userElapsed = block.timestamp - u.lastUpdateTimestamp;
     if (userElapsed > 0) {
-      console2.log('_accrueUserInterest');
       u.principalBalance += u.interestBalance; // TODO: event?
       u.interestBalance = (r.supplyIndex - u.lastUpdateIndex).rayMul(u.principalBalance);
 

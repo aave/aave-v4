@@ -34,7 +34,21 @@ contract LiquidityHubInvariant is InvariantTest, Test {
       asset = hub.reservesList(i);
       assertEq(
         reserveData.virtualBalance,
-        IERC20(asset).balanceOf(address(hub)) - hubHandler.getAssetDonated(asset)
+        IERC20(asset).balanceOf(address(hub)) - hubHandler.getAssetDonated(asset),
+        'wrong virtual balance'
+      );
+    }
+  }
+
+  /// @dev Supply index must be monotonically increasing
+  function invariant_supplyIndexMonotonicallyIncreasing() public {
+    // TODO this can be improved with borrows OR changes in borrowRate
+    LiquidityHub.Reserve memory reserveData;
+    for (uint256 id = 0; id < hub.reserveCount(); id++) {
+      reserveData = hub.getReserve(id);
+      assertTrue(
+        hubHandler.getLastSupplyIndex(id) <= reserveData.supplyIndex,
+        'supply index decrease'
       );
     }
   }

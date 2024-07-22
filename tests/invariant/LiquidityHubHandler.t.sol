@@ -4,6 +4,7 @@ pragma solidity ^0.8.0;
 import 'forge-std/Test.sol';
 
 import 'src/contracts/LiquidityHub.sol';
+import 'src/contracts/BorrowModule.sol';
 import 'src/dependencies/openzeppelin/IERC20.sol';
 import '../mocks/ERC20Mock.sol';
 import '../Utils.t.sol';
@@ -14,17 +15,20 @@ contract LiquidityHubHandler is Test {
   IERC20 public usdt;
 
   LiquidityHub public hub;
+  BorrowModule public bm;
 
   struct State {
     mapping(uint256 => uint256) reserveSupplied; // asset => supply
     mapping(uint256 => mapping(address => uint256)) userSupplied; // asset => user => supply
     mapping(address => uint256) assetDonated; // asset => donation
+    mapping(uint256 => uint256) lastSupplyIndex; // asset => supplyIndex
   }
 
   State internal s;
 
   constructor() {
     hub = new LiquidityHub();
+    bm = new BorrowModule();
     usdc = new ERC20Mock();
     dai = new ERC20Mock();
     usdt = new ERC20Mock();
@@ -32,7 +36,7 @@ contract LiquidityHubHandler is Test {
     // Add dai
     hub.addReserve(
       LiquidityHub.ReserveConfig({
-        borrowModule: address(0),
+        borrowModule: address(bm),
         lt: 0,
         lb: 0,
         rf: 0,
@@ -58,6 +62,10 @@ contract LiquidityHubHandler is Test {
     return s.assetDonated[asset];
   }
 
+  function getLastSupplyIndex(uint256 assetId) public view returns (uint256) {
+    return s.lastSupplyIndex[assetId];
+  }
+
   function supply(uint256 assetId, uint256 userInt, uint256 amount, uint256 onBehalfOfInt) public {
     assetId = bound(assetId, 0, hub.reserveCount() - 1);
     userInt = bound(userInt, 1, type(uint160).max);
@@ -68,11 +76,12 @@ contract LiquidityHubHandler is Test {
     address onBehalfOf = address(uint160(onBehalfOfInt));
     address asset = hub.reservesList(assetId);
 
-    if (amount > 0) {
+    if (user != address(hub) && amount > 0) {
       deal(asset, user, amount);
 
       Utils.supply(vm, hub, assetId, user, amount, onBehalfOf);
 
+      _updateState(assetId);
       s.reserveSupplied[assetId] += amount;
       s.userSupplied[assetId][onBehalfOf] += amount;
     }
@@ -91,6 +100,7 @@ contract LiquidityHubHandler is Test {
     if (amount > 0) {
       Utils.withdraw(vm, hub, assetId, user, amount, to);
 
+      _updateState(assetId);
       s.reserveSupplied[assetId] -= amount;
       s.userSupplied[assetId][user] -= amount;
     }
@@ -112,5 +122,10 @@ contract LiquidityHubHandler is Test {
     s.assetDonated[asset] += amount;
 
     vm.stopPrank();
+  }
+
+  function _updateState(uint256 assetId) internal {
+    LiquidityHub.Reserve memory reserveData = hub.getReserve(assetId);
+    s.lastSupplyIndex[assetId] = reserveData.supplyIndex;
   }
 }

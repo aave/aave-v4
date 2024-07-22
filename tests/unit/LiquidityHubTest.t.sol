@@ -182,17 +182,17 @@ contract LiquidityHubTest is BaseTest {
     amount = bound(amount, 0, type(uint128).max);
 
     address user = address(uint160(userInt));
-    address asset = hub.reservesList(assetId);
 
     // initial supply
-    deal(asset, user, amount);
+    deal(hub.reservesList(assetId), user, amount);
     Utils.supply(vm, hub, assetId, user, amount, user);
 
+    uint256 elapsedTimeChange = bound(userInt, 0, 30 days); // [0, 30 days] range
+    uint256 supplyRateChange = bound(userInt, 0, 1e27); // [0.00%, 100.00%] range;
     uint256 newSupplyRate = 0;
     uint256 newSupplyIndex = WadRayMath.RAY;
     uint256 newAmount = amount;
     uint256 newInterestBalance;
-    uint256 elapsedTime;
     LiquidityHub.Reserve memory reserveData;
     LiquidityHub.UserConfig memory userData;
 
@@ -208,7 +208,8 @@ contract LiquidityHubTest is BaseTest {
       assertEq(reserveData.supplyRate, newSupplyRate, 'supply rate');
 
       // rate increases
-      newSupplyRate = 0.1e27; // TODO
+      newSupplyRate = (supplyRateChange * i) % 2e27; // randomize, 200.00% max
+      console2.log('newSupplyRate %e', newSupplyRate);
       vm.mockCall(
         address(bm),
         abi.encodeWithSelector(IBorrowModule.calculateInterestRates.selector),
@@ -216,17 +217,22 @@ contract LiquidityHubTest is BaseTest {
       );
 
       // time flies
-      elapsedTime = 1e4; // TODO
-      vm.warp(block.timestamp + elapsedTime);
+      {
+        uint256 elapsedTime = (i % 2 == 0 ? elapsedTimeChange : elapsedTimeChange * 2) % 30 days; // randomize, 30 days max
+        vm.warp(block.timestamp + elapsedTime);
+        console2.log('time', block.timestamp);
+      }
 
       // calculate new index
       newSupplyIndex = reserveData.supplyIndex.rayMul(
         MathUtils.calculateLinearInterest(newSupplyRate, uint40(reserveData.lastUpdateTimestamp))
       );
       newInterestBalance = (newSupplyIndex - WadRayMath.RAY).rayMul(userData.principalBalance);
+      console2.log('newSupplyIndex %e', newSupplyIndex);
+      console2.log('newInterestBalance %e', newInterestBalance);
 
       // update reserve state
-      deal(address(asset), USER1, 1);
+      deal(hub.reservesList(assetId), USER1, 1);
       Utils.supply(vm, hub, assetId, USER1, 1, USER1);
     }
   }
