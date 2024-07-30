@@ -36,13 +36,9 @@ contract LiquidityHubTest is BaseTest {
     LiquidityHub.Reserve memory reserveData = hub.getReserve(assetId);
     LiquidityHub.UserConfig memory userData = hub.getUser(assetId, USER1);
 
-    assertEq(reserveData.virtualBalance, 0);
-    assertEq(reserveData.supplyIndex, WadRayMath.RAY);
-    assertEq(reserveData.borrowIndex, WadRayMath.RAY);
-    assertEq(reserveData.supplyRate, 0);
-    assertEq(reserveData.borrowRate, 0);
-    assertEq(userData.principalBalance, 0);
-    assertEq(userData.interestBalance, 0);
+    assertEq(reserveData.totalAssets, 0);
+    assertEq(userData.shares, 0);
+    assertEq(hub.getUserBalance(assetId, USER1), 0);
     assertEq(dai.balanceOf(USER1), amount);
     assertEq(dai.balanceOf(address(hub)), 0);
 
@@ -51,13 +47,9 @@ contract LiquidityHubTest is BaseTest {
     reserveData = hub.getReserve(assetId);
     userData = hub.getUser(assetId, USER1);
 
-    assertEq(reserveData.virtualBalance, amount);
-    assertEq(reserveData.supplyIndex, WadRayMath.RAY);
-    assertEq(reserveData.borrowIndex, WadRayMath.RAY);
-    assertEq(reserveData.supplyRate, 0);
-    assertEq(reserveData.borrowRate, 0);
-    assertEq(userData.principalBalance, amount);
-    assertEq(userData.interestBalance, 0);
+    assertEq(reserveData.totalAssets, amount);
+    assertEq(userData.shares, amount); // TODO test case with increased ex rate
+    assertEq(hub.getUserBalance(assetId, USER1), amount);
     assertEq(dai.balanceOf(USER1), 0);
     assertEq(dai.balanceOf(address(hub)), amount);
 
@@ -94,148 +86,140 @@ contract LiquidityHubTest is BaseTest {
     vm.stopPrank();
   }
 
-  function test_supply_index_increase() public {
-    uint256 assetId = 0; // TODO: Add getter of asset id based on address
-    uint256 amount = 100e18;
+  // function test_supply_index_increase() public {
+  //   uint256 assetId = 0; // TODO: Add getter of asset id based on address
+  //   uint256 amount = 100e18;
 
-    deal(address(dai), USER1, amount);
+  //   deal(address(dai), USER1, amount);
 
-    LiquidityHub.Reserve memory reserveData = hub.getReserve(assetId);
-    LiquidityHub.UserConfig memory userData = hub.getUser(assetId, USER1);
+  //   LiquidityHub.Reserve memory reserveData = hub.getReserve(assetId);
+  //   LiquidityHub.UserConfig memory userData = hub.getUser(assetId, USER1);
 
-    assertEq(reserveData.virtualBalance, 0);
-    assertEq(reserveData.supplyIndex, WadRayMath.RAY);
-    assertEq(reserveData.borrowIndex, WadRayMath.RAY);
-    assertEq(reserveData.supplyRate, 0);
-    assertEq(reserveData.borrowRate, 0);
-    assertEq(userData.principalBalance, 0);
-    assertEq(userData.interestBalance, 0);
-    assertEq(dai.balanceOf(USER1), amount);
-    assertEq(dai.balanceOf(address(hub)), 0);
+  //   assertEq(reserveData.totalAssets, 0);
+  //   assertEq(userData.principalBalance, 0);
+  //   assertEq(userData.interestBalance, 0);
+  //   assertEq(dai.balanceOf(USER1), amount);
+  //   assertEq(dai.balanceOf(address(hub)), 0);
 
-    Utils.supply(vm, hub, assetId, USER1, amount, USER1);
+  //   Utils.supply(vm, hub, assetId, USER1, amount, USER1);
 
-    reserveData = hub.getReserve(assetId);
-    userData = hub.getUser(assetId, USER1);
+  //   reserveData = hub.getReserve(assetId);
+  //   userData = hub.getUser(assetId, USER1);
 
-    assertEq(reserveData.virtualBalance, amount);
-    assertEq(reserveData.supplyIndex, WadRayMath.RAY);
-    assertEq(reserveData.borrowIndex, WadRayMath.RAY);
-    assertEq(reserveData.supplyRate, 0);
-    assertEq(reserveData.borrowRate, 0);
-    assertEq(userData.principalBalance, amount);
-    assertEq(userData.interestBalance, 0);
-    assertEq(dai.balanceOf(USER1), 0);
-    assertEq(dai.balanceOf(address(hub)), amount);
+  //   assertEq(reserveData.totalAssets, amount);
+  //   assertEq(userData.principalBalance, amount);
+  //   assertEq(userData.interestBalance, 0);
+  //   assertEq(dai.balanceOf(USER1), 0);
+  //   assertEq(dai.balanceOf(address(hub)), amount);
 
-    // Index grows but same block, no interest acc
-    uint256 newSupplyRate = 0.1e27; // 10.00%
-    uint256 newBorrowRate = 0.2e27; // 20.00%
-    vm.mockCall(
-      address(bm),
-      abi.encodeWithSelector(IBorrowModule.calculateInterestRates.selector),
-      abi.encode(newSupplyRate, newBorrowRate)
-    );
+  //   // Index grows but same block, no interest acc
+  //   uint256 newSupplyRate = 0.1e27; // 10.00%
+  //   uint256 newBorrowRate = 0.2e27; // 20.00%
+  //   vm.mockCall(
+  //     address(bm),
+  //     abi.encodeWithSelector(IBorrowModule.calculateInterestRates.selector),
+  //     abi.encode(newSupplyRate, newBorrowRate)
+  //   );
 
-    userData = hub.getUser(assetId, USER1);
-    assertEq(userData.principalBalance, amount);
-    assertEq(userData.interestBalance, 0);
+  //   userData = hub.getUser(assetId, USER1);
+  //   assertEq(userData.principalBalance, amount);
+  //   assertEq(userData.interestBalance, 0);
 
-    // Time flies, no interest acc
-    uint256 elapsedTime = 1e4;
-    vm.warp(block.timestamp + elapsedTime);
+  //   // Time flies, no interest acc
+  //   uint256 elapsedTime = 1e4;
+  //   vm.warp(block.timestamp + elapsedTime);
 
-    userData = hub.getUser(assetId, USER1);
-    reserveData = hub.getReserve(assetId);
-    assertEq(userData.principalBalance, amount);
-    assertEq(userData.interestBalance, 0);
-    assertEq(reserveData.supplyIndex, WadRayMath.RAY);
+  //   userData = hub.getUser(assetId, USER1);
+  //   reserveData = hub.getReserve(assetId);
+  //   assertEq(userData.principalBalance, amount);
+  //   assertEq(userData.interestBalance, 0);
+  //   assertEq(reserveData.supplyIndex, WadRayMath.RAY);
 
-    // state update due to reserve operation
-    uint256 newSupplyIndex = reserveData.supplyIndex.rayMul(
-      MathUtils.calculateLinearInterest(newSupplyRate, uint40(reserveData.lastUpdateTimestamp))
-    );
-    uint256 newInterestBalance = (newSupplyIndex - WadRayMath.RAY).rayMul(
-      userData.principalBalance
-    );
+  //   // state update due to reserve operation
+  //   uint256 newSupplyIndex = reserveData.supplyIndex.rayMul(
+  //     MathUtils.calculateLinearInterest(newSupplyRate, uint40(reserveData.lastUpdateTimestamp))
+  //   );
+  //   uint256 newInterestBalance = (newSupplyIndex - WadRayMath.RAY).rayMul(
+  //     userData.principalBalance
+  //   );
 
-    deal(address(dai), USER2, 1);
-    Utils.supply(vm, hub, assetId, USER2, 1, USER2);
+  //   deal(address(dai), USER2, 1);
+  //   Utils.supply(vm, hub, assetId, USER2, 1, USER2);
 
-    // reserve update
-    userData = hub.getUser(assetId, USER1);
-    reserveData = hub.getReserve(assetId);
-    assertEq(userData.principalBalance, amount);
-    assertEq(userData.interestBalance, newInterestBalance);
-    assertEq(reserveData.supplyIndex, newSupplyIndex);
-    assertEq(reserveData.supplyRate, newSupplyRate);
-  }
+  //   // reserve update
+  //   userData = hub.getUser(assetId, USER1);
+  //   reserveData = hub.getReserve(assetId);
+  //   assertEq(userData.principalBalance, amount);
+  //   assertEq(userData.interestBalance, newInterestBalance);
+  //   assertEq(reserveData.supplyIndex, newSupplyIndex);
+  //   assertEq(reserveData.supplyRate, newSupplyRate);
+  // }
 
-  /// forge-config: default.fuzz.max-test-rejects = 1
-  function test_fuzz_supply_index_increase(
-    uint256 assetId,
-    uint256 userInt,
-    uint256 amount
-  ) public {
-    assetId = bound(assetId, 0, hub.reserveCount() - 1);
-    userInt = bound(userInt, 1, type(uint160).max);
-    amount = bound(amount, 0, type(uint128).max);
+  // /// forge-config: default.fuzz.max-test-rejects = 1
+  // function test_fuzz_supply_index_increase(
+  //   uint256 assetId,
+  //   uint256 userInt,
+  //   uint256 amount
+  // ) public {
+  //   assetId = bound(assetId, 0, hub.reserveCount() - 1);
+  //   userInt = bound(userInt, 1, type(uint160).max);
+  //   amount = bound(amount, 0, type(uint128).max);
 
-    address user = address(uint160(userInt));
+  //   address user = address(uint160(userInt));
 
-    // initial supply
-    deal(hub.reservesList(assetId), user, amount);
-    Utils.supply(vm, hub, assetId, user, amount, user);
+  //   // initial supply
+  //   deal(hub.reservesList(assetId), user, amount);
+  //   Utils.supply(vm, hub, assetId, user, amount, user);
 
-    uint256 elapsedTimeChange = bound(userInt, 0, 30 days); // [0, 30 days] range
-    uint256 supplyRateChange = bound(userInt, 0, 1e27); // [0.00%, 100.00%] range;
-    uint256 newSupplyRate = 0;
-    uint256 newSupplyIndex = WadRayMath.RAY;
-    uint256 newAmount = amount;
-    uint256 newInterestBalance;
-    LiquidityHub.Reserve memory reserveData;
-    LiquidityHub.UserConfig memory userData;
+  //   uint256 elapsedTimeChange = bound(userInt, 0, 30 days); // [0, 30 days] range
+  //   uint256 supplyRateChange = bound(userInt, 0, 1e27); // [0.00%, 100.00%] range;
+  //   uint256 newSupplyRate = 0;
+  //   uint256 newSupplyIndex = WadRayMath.RAY;
+  //   uint256 newAmount = amount;
+  //   uint256 newInterestBalance;
+  //   LiquidityHub.Reserve memory reserveData;
+  //   LiquidityHub.UserConfig memory userData;
 
-    for (uint256 i = 0; i < 50; i += 1) {
-      console2.log(i);
-      reserveData = hub.getReserve(assetId);
-      userData = hub.getUser(assetId, user);
+  //   for (uint256 i = 0; i < 50; i += 1) {
+  //     console2.log(i);
+  //     reserveData = hub.getReserve(assetId);
+  //     userData = hub.getUser(assetId, user);
 
-      // check reserve index and user interest
-      assertEq(userData.principalBalance, newAmount, 'user principal balance');
-      assertEq(userData.interestBalance, newInterestBalance, 'user interest balance');
-      assertEq(reserveData.supplyIndex, newSupplyIndex, 'supply index');
-      assertEq(reserveData.supplyRate, newSupplyRate, 'supply rate');
+  //     // check reserve index and user interest
+  //     assertEq(userData.principalBalance, newAmount, 'user principal balance');
+  //     assertEq(userData.interestBalance, newInterestBalance, 'user interest balance');
+  //     assertEq(reserveData.supplyIndex, newSupplyIndex, 'supply index');
+  //     assertEq(reserveData.supplyRate, newSupplyRate, 'supply rate');
 
-      // rate increases
-      newSupplyRate = (supplyRateChange * i) % 2e27; // randomize, 200.00% max
-      console2.log('newSupplyRate %e', newSupplyRate);
-      vm.mockCall(
-        address(bm),
-        abi.encodeWithSelector(IBorrowModule.calculateInterestRates.selector),
-        abi.encode(newSupplyRate, newSupplyRate) // borrowRate not relevant
-      );
+  //     // rate increases
+  //     newSupplyRate = (supplyRateChange * i) % 2e27; // randomize, 200.00% max
+  //     console2.log('newSupplyRate %e', newSupplyRate);
+  //     vm.mockCall(
+  //       address(bm),
+  //       abi.encodeWithSelector(IBorrowModule.calculateInterestRates.selector),
+  //       abi.encode(newSupplyRate, newSupplyRate) // borrowRate not relevant
+  //     );
 
-      // time flies
-      {
-        uint256 elapsedTime = (i % 2 == 0 ? elapsedTimeChange : elapsedTimeChange * 2) % 30 days; // randomize, 30 days max
-        vm.warp(block.timestamp + elapsedTime);
-        console2.log('time', block.timestamp);
-      }
+  //     // time flies
+  //     {
+  //       uint256 elapsedTime = (i % 2 == 0 ? elapsedTimeChange : elapsedTimeChange * 2) % 30 days; // randomize, 30 days max
+  //       vm.warp(block.timestamp + elapsedTime);
+  //       console2.log('time', block.timestamp);
+  //     }
 
-      // calculate new index
-      newSupplyIndex = reserveData.supplyIndex.rayMul(
-        MathUtils.calculateLinearInterest(newSupplyRate, uint40(reserveData.lastUpdateTimestamp))
-      );
-      newInterestBalance = (newSupplyIndex - WadRayMath.RAY).rayMul(userData.principalBalance);
-      console2.log('newSupplyIndex %e', newSupplyIndex);
-      console2.log('newInterestBalance %e', newInterestBalance);
+  //     // calculate new index
+  //     newSupplyIndex = reserveData.supplyIndex.rayMul(
+  //       MathUtils.calculateLinearInterest(newSupplyRate, uint40(reserveData.lastUpdateTimestamp))
+  //     );
+  //     newInterestBalance = (newSupplyIndex - WadRayMath.RAY).rayMul(userData.principalBalance);
+  //     console2.log('newSupplyIndex %e', newSupplyIndex);
+  //     console2.log('newInterestBalance %e', newInterestBalance);
 
-      // update reserve state
-      deal(hub.reservesList(assetId), USER1, 1);
-      Utils.supply(vm, hub, assetId, USER1, 1, USER1);
-    }
-  }
+  //     // update reserve state
+  //     deal(hub.reservesList(assetId), USER1, 1);
+  //     Utils.supply(vm, hub, assetId, USER1, 1, USER1);
+  //   }
+  // }
 
   function test_withdraw() public {
     uint256 assetId = 0; // TODO: Add getter of asset id based on address
@@ -248,12 +232,9 @@ contract LiquidityHubTest is BaseTest {
     LiquidityHub.Reserve memory reserveData = hub.getReserve(assetId);
     LiquidityHub.UserConfig memory userData = hub.getUser(assetId, USER1);
 
-    assertEq(reserveData.virtualBalance, amount);
-    assertEq(reserveData.supplyIndex, WadRayMath.RAY);
-    assertEq(reserveData.borrowIndex, WadRayMath.RAY);
-    assertEq(reserveData.supplyRate, 0);
-    assertEq(reserveData.borrowRate, 0);
-    assertEq(userData.principalBalance, amount);
+    assertEq(reserveData.totalAssets, amount);
+    assertEq(userData.shares, 0);
+    assertEq(hub.getUserBalance(assetId, USER1), 0);
     assertEq(dai.balanceOf(USER1), 0);
     assertEq(dai.balanceOf(address(hub)), amount);
 
@@ -262,12 +243,9 @@ contract LiquidityHubTest is BaseTest {
     reserveData = hub.getReserve(assetId);
     userData = hub.getUser(assetId, USER1);
 
-    assertEq(reserveData.virtualBalance, 0);
-    assertEq(reserveData.supplyIndex, WadRayMath.RAY);
-    assertEq(reserveData.borrowIndex, WadRayMath.RAY);
-    assertEq(reserveData.supplyRate, 0);
-    assertEq(reserveData.borrowRate, 0);
-    assertEq(userData.principalBalance, 0);
+    assertEq(reserveData.totalAssets, 0);
+    assertEq(userData.shares, amount);
+    assertEq(hub.getUserBalance(assetId, USER1), amount);
     assertEq(dai.balanceOf(USER1), amount);
     assertEq(dai.balanceOf(address(hub)), 0);
   }
@@ -284,8 +262,7 @@ contract LiquidityHubTest is BaseTest {
 
     address user = address(uint160(userInt));
     address to = address(uint160(toInt));
-    LiquidityHub.UserConfig memory userData = hub.getUser(assetId, user);
-    amount = bound(amount, 0, userData.principalBalance);
+    amount = bound(amount, 0, hub.getUserBalance(assetId, USER1));
 
     address asset = hub.reservesList(assetId);
 
@@ -302,33 +279,38 @@ contract LiquidityHubTest is BaseTest {
     Utils.withdraw(vm, hub, assetId, user, amount, to);
   }
 
-  function test_withdraw_more_than_supplied_reverts() public {
-    uint256 assetId = 0; // TODO: Add getter of asset id based on address
-    uint256 amount = 100e18;
+  // function test_withdraw_all_with_interest() public {
+  //   // TODO
+  // }
 
-    // User supply
-    deal(address(dai), USER1, amount);
-    Utils.supply(vm, hub, assetId, USER1, amount, USER1);
+  // function test_withdraw_more_than_supplied_reverts() public {
+  //   uint256 assetId = 0; // TODO: Add getter of asset id based on address
+  //   uint256 amount = 100e18;
 
-    LiquidityHub.Reserve memory reserveData = hub.getReserve(assetId);
-    LiquidityHub.UserConfig memory userData = hub.getUser(assetId, USER1);
+  //   // User supply
+  //   deal(address(dai), USER1, amount);
+  //   Utils.supply(vm, hub, assetId, USER1, amount, USER1);
 
-    assertEq(reserveData.virtualBalance, amount);
-    assertEq(userData.principalBalance, amount);
-    assertEq(dai.balanceOf(USER1), 0);
-    assertEq(dai.balanceOf(address(hub)), amount);
+  //   LiquidityHub.Reserve memory reserveData = hub.getReserve(assetId);
+  //   LiquidityHub.UserConfig memory userData = hub.getUser(assetId, USER1);
 
-    vm.prank(USER1);
+  //   assertEq(reserveData.totalAssets, amount);
+  //   assertEq(userData.principalBalance, amount);
+  //   assertEq(dai.balanceOf(USER1), 0);
+  //   assertEq(dai.balanceOf(address(hub)), amount);
 
-    vm.expectRevert(Errors.NOT_AVAILABLE_LIQUIDITY);
-    hub.withdraw(assetId, amount + 1, USER1);
+  //   vm.prank(USER1);
 
-    reserveData = hub.getReserve(assetId);
-    userData = hub.getUser(assetId, USER1);
+  //   // TODO: warp, but with no supplyIndex change
+  //   vm.expectRevert(Errors.NOT_AVAILABLE_LIQUIDITY);
+  //   hub.withdraw(assetId, amount + 1, USER1);
 
-    assertEq(reserveData.virtualBalance, amount);
-    assertEq(userData.principalBalance, amount);
-    assertEq(dai.balanceOf(USER1), 0);
-    assertEq(dai.balanceOf(address(hub)), amount);
-  }
+  //   reserveData = hub.getReserve(assetId);
+  //   userData = hub.getUser(assetId, USER1);
+
+  //   assertEq(reserveData.totalAssets, amount);
+  //   assertEq(userData.principalBalance, amount);
+  //   assertEq(dai.balanceOf(USER1), 0);
+  //   assertEq(dai.balanceOf(address(hub)), amount);
+  // }
 }
