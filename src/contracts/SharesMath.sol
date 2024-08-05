@@ -12,6 +12,7 @@ library SharesMath {
     uint256 totalAssets,
     uint256 totalShares
   ) internal pure returns (uint256) {
+    if (totalShares == 0) return assets;
     return assets.mulDiv(totalShares, totalAssets, Math.Rounding.Floor);
   }
 
@@ -20,6 +21,7 @@ library SharesMath {
     uint256 totalAssets,
     uint256 totalShares
   ) internal pure returns (uint256) {
+    if (totalShares == 0) return shares;
     return shares.mulDiv(totalAssets, totalShares, Math.Rounding.Floor);
   }
 
@@ -28,6 +30,7 @@ library SharesMath {
     uint256 totalAssets,
     uint256 totalShares
   ) internal pure returns (uint256) {
+    if (totalShares == 0) return assets;
     return assets.mulDiv(totalShares, totalAssets, Math.Rounding.Ceil);
   }
 
@@ -36,6 +39,7 @@ library SharesMath {
     uint256 totalAssets,
     uint256 totalShares
   ) internal pure returns (uint256) {
+    if (totalShares == 0) return shares;
     return shares.mulDiv(totalAssets, totalShares, Math.Rounding.Ceil);
   }
 }

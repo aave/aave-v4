@@ -137,6 +137,7 @@ contract LiquidityHub {
     // TODO Mitigate inflation attack (burn some amount if first supply)
 
     uint256 sharesAmount = amount.toSharesDown(reserve.totalAssets, reserve.totalShares);
+    require(sharesAmount > 0, 'INVALID_AMOUNT');
     user.shares += sharesAmount;
     reserve.totalShares += sharesAmount;
     reserve.totalAssets += amount;
@@ -257,7 +258,7 @@ contract LiquidityHub {
       uint256 cumulated = MathUtils.calculateLinearInterest(
         borrowRate,
         uint40(r.lastUpdateTimestamp)
-      );
+      ).rayMul(r.totalAssets); // TODO rounding
       console2.log('cumulated %e', cumulated);
       r.totalAssets += cumulated;
 
