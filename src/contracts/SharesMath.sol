@@ -3,7 +3,6 @@ pragma solidity ^0.8.0;
 
 import {Math} from '../dependencies/openzeppelin/Math.sol';
 
-/// inspired by Morpho https://github.com/morpho-org/morpho-blue/blob/main/src/libraries/SharesMathLib.sol
 library SharesMath {
   using Math for uint256;
 

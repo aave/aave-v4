@@ -1,21 +1,12 @@
 {
-  "name": "bgd-forge-template",
+  "name": "aave-v4",
   "version": "1.0.0",
   "scripts": {
     "lint": "prettier ./",
     "lint:fix": "npm run lint -- --write"
   },
-  "repository": {
-    "type": "git",
-    "url": "git+https://github.com/bgd-labs/bgd-forge-template.git"
-  },
   "keywords": [],
-  "author": "BGD labs",
-  "license": "MIT",
-  "bugs": {
-    "url": "https://github.com/bgd-labs/bgd-forge-template/issues"
-  },
-  "homepage": "https://github.com/bgd-labs/bgd-forge-template#readme",
+  "author": "Aave Labs",
   "devDependencies": {
     "prettier": "2.8.7",
     "prettier-plugin-solidity": "1.1.3"
