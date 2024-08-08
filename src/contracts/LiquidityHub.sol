@@ -217,7 +217,10 @@ contract LiquidityHub {
     // asset can be supplied
     require(reserve.config.active, 'RESERVE_NOT_ACTIVE');
     // supply cap not reached
-    require(reserve.config.supplyCap > reserve.totalAssets + amount, 'CAP_EXCEEDED');
+    require(
+      reserve.config.supplyCap == 0 || reserve.config.supplyCap > reserve.totalAssets + amount,
+      'CAP_EXCEEDED'
+    );
   }
 
   function _validateWithdraw(Reserve storage reserve, uint256 amount) internal view {
@@ -232,7 +235,10 @@ contract LiquidityHub {
     require(reserve.config.active, 'RESERVE_NOT_ACTIVE');
     require(reserve.config.borrowable, 'RESERVE_NOT_BORROWABLE');
     // borrow cap not reached
-    require(reserve.config.borrowCap > totalBorrows + amount, 'CAP_EXCEEDED'); // TODO probably better in borrow module
+    require(
+      reserve.config.borrowCap == 0 || reserve.config.borrowCap > totalBorrows + amount,
+      'CAP_EXCEEDED'
+    ); // TODO probably better in borrow module
     // msg.sender needs to be a valid module
     // TODO
   }
