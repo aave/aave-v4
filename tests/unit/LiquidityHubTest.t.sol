@@ -3,7 +3,7 @@ pragma solidity ^0.8.0;
 
 import '../BaseTest.t.sol';
 
-contract LiquidityHubTest is BaseTest {  
+contract LiquidityHubTest is BaseTest {
   function setUp() public override {
     super.setUp();
 
@@ -114,105 +114,5 @@ contract LiquidityHubTest is BaseTest {
       }),
       address(usdc)
     );
-  }
-
-  function testChangeRiskUnauthorized() public {
-    vm.prank(USER1);
-    vm.expectRevert();
-    hub.changeRisk();
-  }
-
-  function testChangeRiskGrantAccess() public {
-    vm.startPrank(ADMIN);
-    // Get function signature of changeRisk
-    bytes4 sig = bytes4(keccak256(bytes('changeRisk()')));
-    hub.setRoleCapability(hub.RISK_CONTROLLER(), address(hub), sig, true);
-    // Grant role to USER1
-    hub.setUserRole(USER1, hub.RISK_CONTROLLER(), true);
-    vm.stopPrank();
-
-    vm.prank(USER1);
-    hub.changeRisk();
-  }
-
-  function testChangeInterestRateUnauthorized() public {
-    vm.prank(USER1);
-    vm.expectRevert();
-    hub.changeInterestRate();
-  }
-
-  function testChangeInterestRateGrantAccess() public {
-    vm.startPrank(ADMIN);
-    // Get function signature of changeInterestRate
-    bytes4 sig = bytes4(keccak256(bytes('changeInterestRate()')));
-    hub.setRoleCapability(hub.INTEREST_RATE_CONTROLLER(), address(hub), sig, true);
-    // Grant role to USER1
-    hub.setUserRole(USER1, hub.INTEREST_RATE_CONTROLLER(), true);
-    vm.stopPrank();
-
-    vm.prank(USER1);
-    hub.changeInterestRate();
-  }
-
-  function testRevokeRole() public {
-    vm.startPrank(ADMIN);
-    // Get function signature of changeRisk
-    bytes4 sig = bytes4(keccak256(bytes('changeRisk()')));
-    hub.setRoleCapability(hub.RISK_CONTROLLER(), address(hub), sig, true);
-    // Grant role to USER1
-    hub.setUserRole(USER1, hub.RISK_CONTROLLER(), true);
-    vm.stopPrank();
-
-    vm.prank(USER1);
-    hub.changeRisk();
-
-    vm.startPrank(ADMIN);
-    // Revoke role from USER1
-    hub.setUserRole(USER1, hub.RISK_CONTROLLER(), false);
-    vm.stopPrank();
-
-    vm.prank(USER1);
-    vm.expectRevert();
-    hub.changeRisk();
-  }
-
-  function testChangeRoleCapability() public {
-    vm.startPrank(ADMIN);
-    // Get function signature of changeRisk
-    bytes4 sig = bytes4(keccak256(bytes('changeRisk()')));
-    hub.setRoleCapability(hub.RISK_CONTROLLER(), address(hub), sig, true);
-    // Grant role to USER1
-    hub.setUserRole(USER1, hub.RISK_CONTROLLER(), true);
-    vm.stopPrank();
-
-    vm.prank(USER1);
-    hub.changeRisk();
-
-    vm.startPrank(ADMIN);
-    // Revoke function permission from role
-    hub.setRoleCapability(hub.RISK_CONTROLLER(), address(hub), sig, false);
-    vm.stopPrank();
-
-    vm.prank(USER1);
-    vm.expectRevert();
-    hub.changeRisk();
-  }
-
-  function testAddNewAddressToRole() public {
-    vm.startPrank(ADMIN);
-    // Get function signature of changeRisk
-    bytes4 sig = bytes4(keccak256(bytes('changeRisk()')));
-    hub.setRoleCapability(hub.RISK_CONTROLLER(), address(hub), sig, true);
-    // Grant role to USER1
-    hub.setUserRole(USER1, hub.RISK_CONTROLLER(), true);
-    // Grant role to USER2
-    hub.setUserRole(USER2, hub.RISK_CONTROLLER(), true);
-    vm.stopPrank();
-
-    // Both USER1 and USER2 can call changeRisk
-    vm.prank(USER1);
-    hub.changeRisk();
-    vm.prank(USER2);
-    hub.changeRisk();
   }
 }

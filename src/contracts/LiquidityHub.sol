@@ -49,24 +49,13 @@ contract LiquidityHub is AccessManagerContract {
   // asset id => user address => user data
   mapping(uint256 => mapping(address => UserConfig)) public users;
 
-  constructor() AccessManagerContract(){}
+  constructor() AccessManagerContract() {}
 
   // /////
   // Governance
   // /////
 
-  // Dummy function to demo access
-  function changeRisk() external requiresAuth() {
-
-  }
-
-  // Dummy function to demo access
-  function changeInterestRate() external requiresAuth() {
-    
-  }
-
-  function addReserve(ReserveConfig memory params, address asset) external requiresAuth() {
-    // TODO: AccessControl
+  function addReserve(ReserveConfig memory params, address asset) external requiresAuth {
     reservesList.push(asset);
     reserves[reserveCount] = Reserve({
       id: reserveCount,
