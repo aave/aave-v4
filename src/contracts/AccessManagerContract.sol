@@ -16,12 +16,7 @@ import {AccessControl} from '@openzeppelin/contracts/access/AccessControl.sol';
  */
 contract AccessManagerContract is AccessControl {
   bytes32 public constant RESERVE_CONTROLLER = keccak256('RESERVE_CONTROLLER');
-  bytes32 public constant INTEREST_RATE_CONTROLLER = keccak256('INTEREST_RATE_CONTROLLER');
-  bytes32 public constant RISK_CONTROLLER = keccak256('RISK_CONTROLLER');
-
-  bytes32 public constant INTEREST_RATE_CONTROLLER_ADMIN =
-    keccak256('INTEREST_RATE_CONTROLLER_ADMIN');
-
+  bytes32 public constant RESERVE_CONTROLLER_ADMIN = keccak256('RESERVE_CONTROLLER_ADMIN');
   bytes32 public constant POOL_MANAGER = keccak256('POOL_MANAGER');
   bytes32 public constant POOL_MANAGER_ADMIN = keccak256('POOL_MANAGER_ADMIN');
   bytes32 public constant EMERGENCY_MANAGER = keccak256('EMERGENCY_MANAGER');

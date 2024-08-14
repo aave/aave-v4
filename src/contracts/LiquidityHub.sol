@@ -55,18 +55,10 @@ contract LiquidityHub is AccessManagerContract {
   // Governance
   // /////
 
-  // Dummy function to demo access
-  function changeRisk() external onlyRole(RISK_CONTROLLER) {
-
-  }
-
-  // Dummy function to demo access
-  function changeInterestRate() external onlyRole(INTEREST_RATE_CONTROLLER) {
-    
-  }
-
-  function addReserve(ReserveConfig memory params, address asset) external onlyRole(RESERVE_CONTROLLER) {
-    // TODO: AccessControl
+  function addReserve(
+    ReserveConfig memory params,
+    address asset
+  ) external onlyRole(RESERVE_CONTROLLER) {
     reservesList.push(asset);
     reserves[reserveCount] = Reserve({
       id: reserveCount,

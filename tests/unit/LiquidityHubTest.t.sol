@@ -4,7 +4,8 @@ pragma solidity ^0.8.0;
 import '../BaseTest.t.sol';
 
 contract LiquidityHubTest is BaseTest {
-  bytes32 constant DEFAULT_ADMIN_ROLE = 0x0000000000000000000000000000000000000000000000000000000000000000;
+  bytes32 constant DEFAULT_ADMIN_ROLE =
+    0x0000000000000000000000000000000000000000000000000000000000000000;
   address UNALLOWED = makeAddr('UNALLOWED');
   address USER2 = makeAddr('USER2');
   address USER3 = makeAddr('USER3');
@@ -81,101 +82,45 @@ contract LiquidityHubTest is BaseTest {
     );
   }
 
-  function testChangeRiskAccessRevert() public {
-    vm.prank(UNALLOWED);
-    vm.expectRevert();
-    hub.changeRisk();
-  }
-
-  function testChangeRiskAccess() public {
-    vm.startPrank(ADMIN);
-    hub.grantRole(hub.RISK_CONTROLLER(), USER1);
-    vm.stopPrank();
-    vm.prank(USER1);
-    hub.changeRisk();
-  }
-
-  function testChangeInterestRateAccessRevert() public {
-    vm.prank(UNALLOWED);
-    vm.expectRevert();
-    hub.changeInterestRate();
-  }
-
-  function testChangeInterestRateAccess() public {
-    vm.startPrank(ADMIN);
-    hub.grantRole(hub.INTEREST_RATE_CONTROLLER(), USER1);
-    vm.stopPrank();
-    vm.prank(USER1);
-    hub.changeInterestRate();
-  }
-
-  function testRevokeRole() public {
-    vm.startPrank(ADMIN);
-    hub.grantRole(hub.INTEREST_RATE_CONTROLLER(), USER1);
-    vm.stopPrank();
-   
-    // After granted role, USER1 can change interest rate
-    vm.prank(USER1);
-    hub.changeInterestRate();
-
-    vm.startPrank(ADMIN);
-    hub.revokeRole(hub.INTEREST_RATE_CONTROLLER(), USER1);
-    vm.stopPrank();
-
-    // After revoked role, USER1 cannot change interest rate
-    vm.prank(USER1);
-    vm.expectRevert();
-    hub.changeInterestRate();
-  }
-
-  function testAddNewAddressToRole() public {
-    vm.startPrank(ADMIN);
-    hub.grantRole(hub.INTEREST_RATE_CONTROLLER(), USER2);
-    vm.stopPrank();
-
-    vm.prank(USER2);
-    hub.changeInterestRate();
-  }
-
   function testRoleAdmin() public {
-    // Set INTEREST_RATE_CONTROLLER_ADMIN as USER1
+    // Set RESERVE_CONTROLLER_ADMIN as USER1
     vm.startPrank(ADMIN);
-    hub.setRoleAdmin(hub.INTEREST_RATE_CONTROLLER(), hub.INTEREST_RATE_CONTROLLER_ADMIN());
-    hub.grantRole(hub.INTEREST_RATE_CONTROLLER_ADMIN(), USER1);
+    hub.setRoleAdmin(hub.RESERVE_CONTROLLER(), hub.RESERVE_CONTROLLER_ADMIN());
+    hub.grantRole(hub.RESERVE_CONTROLLER_ADMIN(), USER1);
     vm.stopPrank();
 
-    // USER1 can grant INTEREST_RATE_CONTROLLER role
+    // USER1 can grant RESERVE_CONTROLLER role
     vm.startPrank(USER1);
-    hub.grantRole(hub.INTEREST_RATE_CONTROLLER(), USER2);
+    hub.grantRole(hub.RESERVE_CONTROLLER(), USER2);
 
-    // USER1 CANNOT grant RISK_CONTROLLER role
-    bytes32 RISK_CONTROLLER = hub.RISK_CONTROLLER();
+    // USER1 CANNOT grant POOL_MANAGER role
+    bytes32 POOL_MANAGER = hub.POOL_MANAGER();
     vm.expectRevert();
-    hub.grantRole(RISK_CONTROLLER, USER2);
+    hub.grantRole(POOL_MANAGER, USER2);
     vm.stopPrank();
   }
 
   function testRevokeRoleAdmin() public {
-    // Set INTEREST_RATE_CONTROLLER_ADMIN as USER1
+    // Set RESERVE_CONTROLLER_ADMIN as USER1
     vm.startPrank(ADMIN);
-    hub.setRoleAdmin(hub.INTEREST_RATE_CONTROLLER(), hub.INTEREST_RATE_CONTROLLER_ADMIN());
-    hub.grantRole(hub.INTEREST_RATE_CONTROLLER_ADMIN(), USER1);
+    hub.setRoleAdmin(hub.RESERVE_CONTROLLER(), hub.RESERVE_CONTROLLER_ADMIN());
+    hub.grantRole(hub.RESERVE_CONTROLLER_ADMIN(), USER1);
     vm.stopPrank();
 
-    // USER1 can grant INTEREST_RATE_CONTROLLER role
+    // USER1 can grant RESERVE_CONTROLLER role
     vm.startPrank(USER1);
-    hub.grantRole(hub.INTEREST_RATE_CONTROLLER(), USER2);
+    hub.grantRole(hub.RESERVE_CONTROLLER(), USER2);
     vm.stopPrank();
 
-    // Revoke INTEREST_RATE_CONTROLLER_ADMIN role from USER1
+    // Revoke RESERVE_CONTROLLER_ADMIN role from USER1
     vm.startPrank(ADMIN);
-    hub.revokeRole(hub.INTEREST_RATE_CONTROLLER_ADMIN(), USER1);
+    hub.revokeRole(hub.RESERVE_CONTROLLER_ADMIN(), USER1);
     vm.stopPrank();
 
-    // Now USER1 cannot grant INTEREST_RATE_CONTROLLER role
-    bytes32 INTEREST_RATE_CONTROLLER = hub.INTEREST_RATE_CONTROLLER();
+    // Now USER1 cannot grant RESERVE_CONTROLLER role
+    bytes32 RESERVE_CONTROLLER = hub.RESERVE_CONTROLLER();
     vm.prank(USER1);
     vm.expectRevert();
-    hub.grantRole(INTEREST_RATE_CONTROLLER, USER3);
+    hub.grantRole(RESERVE_CONTROLLER, USER3);
   }
 }
