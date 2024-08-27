@@ -94,6 +94,22 @@ contract LiquidityHub {
     return u.shares.toAssetsDown(reserves[assetId].totalAssets, reserves[assetId].totalShares);
   }
 
+  function getReserve(uint256 assetId) external view returns (Reserve memory) {
+    return reserves[assetId];
+  }
+
+  function getUser(uint256 assetId, address user) external view returns (UserConfig memory) {
+    UserConfig memory u = users[assetId][user];
+
+    return u;
+  }
+
+  function getUserBalance(uint256 assetId, address user) external view returns (uint256) {
+    UserConfig memory u = users[assetId][user];
+
+    return u.shares.toAssetsDown(reserves[assetId].totalAssets, reserves[assetId].totalShares);
+  }
+
   // /////
   // Governance
   // /////
