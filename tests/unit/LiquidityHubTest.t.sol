@@ -21,10 +21,31 @@ contract LiquidityHubTest is BaseTest {
         active: true,
         borrowable: false,
         supplyCap: type(uint256).max,
-        borrowCap: type(uint256).max
+        borrowCap: type(uint256).max,
+        liquidityPremium: 10_00
       }),
       address(dai)
     );
+    MockPriceOracle(address(oracle)).setAssetPrice(0, 1e8);
+
+    // Add eth
+    hub.addReserve(
+      LiquidityHub.ReserveConfig({
+        borrowModule: address(bm),
+        lt: 0,
+        lb: 0,
+        rf: 0,
+        decimals: 18,
+        active: true,
+        borrowable: false,
+        supplyCap: type(uint256).max,
+        borrowCap: type(uint256).max,
+        liquidityPremium: 0
+      }),
+      address(eth)
+    );
+    MockPriceOracle(address(oracle)).setAssetPrice(1, 2000e8);
+
     vm.warp(block.timestamp + 20);
   }
 
@@ -348,5 +369,75 @@ contract LiquidityHubTest is BaseTest {
     assertEq(hub.getUserBalance(assetId, USER1), amount);
     assertEq(dai.balanceOf(USER1), 0);
     assertEq(dai.balanceOf(address(hub)), amount);
+  }
+
+  function test_user_riskPremium() public {
+    uint256 amount = 100e18;
+    uint256 ethAssetId = 1;
+    uint256 daiAssetId = 0;
+
+    deal(address(eth), USER1, amount);
+    Utils.supply(vm, hub, ethAssetId, USER1, amount, USER1);
+    hub.getUserBalance(ethAssetId, USER1);
+    hub.getUserBalance(ethAssetId, USER2);
+    hub.getUserBalance(daiAssetId, USER1);
+    hub.getUserBalance(daiAssetId, USER2);
+    assertEq(hub.getUserRiskPremium(USER1), 0);
+    assertEq(hub.getUserRiskPremium(USER2), 0);
+
+    deal(address(dai), USER1, amount);
+    Utils.supply(vm, hub, daiAssetId, USER1, amount, USER2);
+    hub.getUserBalance(ethAssetId, USER1);
+    hub.getUserBalance(ethAssetId, USER2);
+    hub.getUserBalance(daiAssetId, USER1);
+    hub.getUserBalance(daiAssetId, USER2);
+    assertEq(hub.getUserRiskPremium(USER1), 0);
+    assertEq(hub.getUserRiskPremium(USER2), 10_00);
+  }
+
+  function test_user_riskPremium_update_affects_positions() public {
+    uint256 assetId = 1;
+    uint256 amount = 100e18;
+
+    uint256 calcRiskPremium;
+
+    // 100 collateral of ETH - 0 liquidityPremium
+    _updateLiquidityPremium(assetId, 0);
+    assertEq(hub.getUserRiskPremium(USER1), 0);
+    deal(address(eth), USER1, amount);
+    Utils.supply(vm, hub, assetId, USER1, amount, USER1);
+    calcRiskPremium = 0;
+    assertEq(hub.getUserRiskPremium(USER1), calcRiskPremium);
+
+    // ETH liquidityPremium changes to 100_00
+    _updateLiquidityPremium(assetId, 100_00);
+    assertEq(hub.getUserRiskPremium(USER1), 0);
+    hub.refreshUserRiskPremium(USER1);
+    calcRiskPremium = 100_00;
+    assertEq(hub.getUserRiskPremium(USER1), calcRiskPremium);
+  }
+
+  function test_user_riskPremium_weighted() public {
+    uint256 ethAssetId = 1;
+    uint256 daiAssetId = 0;
+    uint256 ethAmount = 1e18;
+    uint256 daiAmount = 2000e18;
+    // ETH liquidityPremium to 0, DAI liquidityPremium to 50% liquidityPremium
+    _updateLiquidityPremium(daiAssetId, 50_00);
+    _updateLiquidityPremium(ethAssetId, 0);
+
+    deal(address(dai), USER1, daiAmount);
+    Utils.supply(vm, hub, daiAssetId, USER1, daiAmount, USER1);
+    deal(address(eth), USER1, ethAmount);
+    Utils.supply(vm, hub, ethAssetId, USER1, ethAmount, USER1);
+
+    uint256 calcRiskPremium = 25_00;
+    assertEq(hub.getUserRiskPremium(USER1), calcRiskPremium);
+  }
+
+  function _updateLiquidityPremium(uint256 assetId, uint256 newLiquidityPremium) internal {
+    LiquidityHub.ReserveConfig memory reserveConfig = hub.getReserve(assetId).config;
+    reserveConfig.liquidityPremium = newLiquidityPremium;
+    hub.updateReserve(assetId, reserveConfig);
   }
 }

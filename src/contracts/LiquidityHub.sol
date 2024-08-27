@@ -3,6 +3,7 @@ pragma solidity ^0.8.0;
 
 import {SafeERC20} from '../dependencies/openzeppelin/SafeERC20.sol';
 import {IERC20} from '../dependencies/openzeppelin/IERC20.sol';
+import {IPriceOracle} from './IPriceOracle.sol';
 import {WadRayMath} from './WadRayMath.sol';
 import {SharesMath} from './SharesMath.sol';
 import {MathUtils} from './MathUtils.sol';
@@ -38,13 +39,13 @@ contract LiquidityHub {
     address borrowModule;
     uint256 lt;
     uint256 lb; // TODO: liquidationProtocolFee
-    // uint256 liquidityPremium; // TODO
     uint256 rf;
     uint256 decimals;
     bool active; // TODO: frozen, paused
     bool borrowable;
     uint256 supplyCap;
     uint256 borrowCap;
+    uint256 liquidityPremium; // in bps, so 10000 is 100.00%
     // uint256 eModeCategory; // TODO eMode
     // uint256 debtCeiling; // TODO isolation mode
   }
@@ -61,7 +62,13 @@ contract LiquidityHub {
   // asset id => user address => user data
   mapping(uint256 => mapping(address => UserConfig)) public users;
 
-  constructor() {}
+  mapping(address => uint256) userRiskPremium; // in base currency terms
+
+  address public oracle;
+
+  constructor(address oracleAddress) {
+    oracle = oracleAddress;
+  }
 
   function getReserve(uint256 assetId) external view returns (Reserve memory) {
     return reserves[assetId];
@@ -74,6 +81,14 @@ contract LiquidityHub {
   }
 
   function getUserBalance(uint256 assetId, address user) external view returns (uint256) {
+    return _getUserAssets(assetId, user);
+  }
+
+  function getUserRiskPremium(address user) external view returns (uint256) {
+    return userRiskPremium[user];
+  }
+
+  function _getUserAssets(uint256 assetId, address user) internal view returns (uint256) {
     UserConfig memory u = users[assetId][user];
 
     return u.shares.toAssetsDown(reserves[assetId].totalAssets, reserves[assetId].totalShares);
@@ -100,10 +115,28 @@ contract LiquidityHub {
         active: params.active,
         borrowable: params.borrowable,
         supplyCap: params.supplyCap,
-        borrowCap: params.borrowCap
+        borrowCap: params.borrowCap,
+        liquidityPremium: params.liquidityPremium
       })
     });
     reserveCount++;
+  }
+
+  function updateReserve(uint256 assetId, ReserveConfig memory params) external {
+    // TODO: More sophisticated
+    // TODO: AccessControl
+    reserves[assetId].config = ReserveConfig({
+      borrowModule: params.borrowModule,
+      lt: params.lt,
+      lb: params.lb,
+      rf: params.rf,
+      decimals: params.decimals,
+      active: params.active,
+      borrowable: params.borrowable,
+      supplyCap: params.supplyCap,
+      borrowCap: params.borrowCap,
+      liquidityPremium: params.liquidityPremium
+    });
   }
 
   // /////
@@ -142,6 +175,9 @@ contract LiquidityHub {
     reserve.totalShares += sharesAmount;
     reserve.totalAssets += amount;
 
+    // TODO: update avgRiskPremium if collateral
+    _updateRiskPremium(onBehalfOf);
+
     // transferFrom
     IERC20(reservesList[assetId]).safeTransferFrom(msg.sender, address(this), amount); // TODO: fee-on-transfer
 
@@ -173,10 +209,17 @@ contract LiquidityHub {
     reserve.totalShares -= sharesAmount;
     reserve.totalAssets -= amount;
 
+    // TODO: update avgRiskPremium if collateral
+    _updateRiskPremium(msg.sender);
+
     // transfer
     IERC20(reservesList[assetId]).safeTransfer(to, amount);
 
     emit Withdraw(assetId, msg.sender, to, amount);
+  }
+
+  function refreshUserRiskPremium(address user) external {
+    _updateRiskPremium(user);
   }
 
   function borrow(uint256 assetId, uint256 amount) external {
@@ -272,5 +315,25 @@ contract LiquidityHub {
 
       r.lastUpdateTimestamp = block.timestamp;
     }
+  }
+
+  function _updateRiskPremium(address user) internal {
+    uint256 wAvg;
+    uint256 sumW;
+
+    uint256 wData; // data weight * data value
+    // data weight = price * amount
+    // data value = liquidityPremium
+    for (uint256 assetId = 0; assetId < reservesList.length; assetId++) {
+      // TODO: if collateral enabled
+      wData = _getUserAssets(assetId, user) * IPriceOracle(oracle).getAssetPrice(assetId);
+      sumW += wData;
+
+      wData = wData * reserves[assetId].config.liquidityPremium; // bps
+      wAvg += wData;
+    }
+    if (sumW != 0) wAvg /= sumW;
+
+    userRiskPremium[user] = wAvg;
   }
 }
