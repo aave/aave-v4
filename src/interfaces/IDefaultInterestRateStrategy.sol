@@ -1,5 +1,5 @@
-// SPDX-License-Identifier: MIT
-pragma solidity ^0.8.0;
+// SPDX-License-Identifier: BUSL-1.1
+pragma solidity ^0.8.10;
 
 import {IReserveInterestRateStrategy} from './IReserveInterestRateStrategy.sol';
 
@@ -22,10 +22,11 @@ interface IDefaultInterestRateStrategy is IReserveInterestRateStrategy {
   /**
    * @notice Holds the interest rate data for a given reserve
    *
-   * @dev Since values are in bps, they are multiplied by 1e23 in order to become rays with 27 decimals. This
-   * in turn means that the maximum supported interest rate is 4294967295 (2**32-1) bps or 42949672.95%.
+   * @dev All values are in basis points (bps), where 1 bps = 0.01%.
+   * This means that 10000 bps = 100%.
+   * The maximum supported interest rate is 4294967295 bps (2**32-1) or 42949672.95%.
    *
-   * @param optimalUsageRatio The optimal usage ratio, in bps
+   * @param optimalUsageRatio The optimal usage ratio, in bps (0-10000)
    * @param baseVariableBorrowRate The base variable borrow rate, in bps
    * @param variableRateSlope1 The slope of the variable interest curve, before hitting the optimal ratio, in bps
    * @param variableRateSlope2 The slope of the variable interest curve, after hitting the optimal ratio, in bps
@@ -35,22 +36,6 @@ interface IDefaultInterestRateStrategy is IReserveInterestRateStrategy {
     uint32 baseVariableBorrowRate;
     uint32 variableRateSlope1;
     uint32 variableRateSlope2;
-  }
-
-  /**
-   * @notice The interest rate data, where all values are in ray (fixed-point 27 decimal numbers) for a given reserve,
-   * used in in-memory calculations.
-   *
-   * @param optimalUsageRatio The optimal usage ratio
-   * @param baseVariableBorrowRate The base variable borrow rate
-   * @param variableRateSlope1 The slope of the variable interest curve, before hitting the optimal ratio
-   * @param variableRateSlope2 The slope of the variable interest curve, after hitting the optimal ratio
-   */
-  struct InterestRateDataRay {
-    uint256 optimalUsageRatio;
-    uint256 baseVariableBorrowRate;
-    uint256 variableRateSlope1;
-    uint256 variableRateSlope2;
   }
 
   /**
@@ -96,16 +81,7 @@ interface IDefaultInterestRateStrategy is IReserveInterestRateStrategy {
   function MAX_OPTIMAL_POINT() external view returns (uint256);
 
   /**
-   * notice Returns the full InterestRateData object for the given reserve, in ray
-   *
-   * @param reserve The reserve to get the data of
-   *
-   * @return The InterestRateDataRay object for the given reserve
-   */
-  function getInterestRateData(address reserve) external view returns (InterestRateDataRay memory);
-
-  /**
-   * notice Returns the full InterestRateDataRay object for the given reserve, in bps
+   * notice Returns the full InterestRateData object for the given reserve, in bps
    *
    * @param reserve The reserve to get the data of
    *
@@ -114,7 +90,7 @@ interface IDefaultInterestRateStrategy is IReserveInterestRateStrategy {
   function getInterestRateDataBps(address reserve) external view returns (InterestRateData memory);
 
   /**
-   * @notice Returns the optimal usage rate for the given reserve in ray
+   * @notice Returns the optimal usage rate for the given reserve in bps
    *
    * @param reserve The reserve to get the optimal usage rate of
    *
@@ -123,7 +99,7 @@ interface IDefaultInterestRateStrategy is IReserveInterestRateStrategy {
   function getOptimalUsageRatio(address reserve) external view returns (uint256);
 
   /**
-   * @notice Returns the variable rate slope below optimal usage ratio in ray
+   * @notice Returns the variable rate slope below optimal usage ratio in bps
    * @dev It's the variable rate when usage ratio > 0 and <= OPTIMAL_USAGE_RATIO
    *
    * @param reserve The reserve to get the variable rate slope 1 of
@@ -133,7 +109,7 @@ interface IDefaultInterestRateStrategy is IReserveInterestRateStrategy {
   function getVariableRateSlope1(address reserve) external view returns (uint256);
 
   /**
-   * @notice Returns the variable rate slope above optimal usage ratio in ray
+   * @notice Returns the variable rate slope above optimal usage ratio in bps
    * @dev It's the variable rate when usage ratio > OPTIMAL_USAGE_RATIO
    *
    * @param reserve The reserve to get the variable rate slope 2 of
@@ -143,7 +119,7 @@ interface IDefaultInterestRateStrategy is IReserveInterestRateStrategy {
   function getVariableRateSlope2(address reserve) external view returns (uint256);
 
   /**
-   * @notice Returns the base variable borrow rate, in ray
+   * @notice Returns the base variable borrow rate, in bps
    *
    * @param reserve The reserve to get the base variable borrow rate of
    *
@@ -152,7 +128,7 @@ interface IDefaultInterestRateStrategy is IReserveInterestRateStrategy {
   function getBaseVariableBorrowRate(address reserve) external view returns (uint256);
 
   /**
-   * @notice Returns the maximum variable borrow rate, in ray
+   * @notice Returns the maximum variable borrow rate, in bps
    *
    * @param reserve The reserve to get the maximum variable borrow rate of
    *

@@ -1,15 +1,11 @@
-// SPDX-License-Identifier: MIT
-pragma solidity ^0.8.0;
+// SPDX-License-Identifier: BUSL-1.1
+pragma solidity ^0.8.10;
 
 import {IERC20} from '../dependencies/openzeppelin/IERC20.sol';
-import {WadRayMath} from '../libraries/WadRayMath.sol';
-import {PercentageMath} from '../libraries/PercentageMath.sol';
 import {DataTypes} from '../libraries/types/DataTypes.sol';
 import {Errors} from '../libraries/helpers/Errors.sol';
 import {IDefaultInterestRateStrategy} from '../interfaces/IDefaultInterestRateStrategy.sol';
 import {IReserveInterestRateStrategy} from '../interfaces/IReserveInterestRateStrategy.sol';
-
-// import {IPoolAddressesProvider} from '../../interfaces/IPoolAddressesProvider.sol';
 
 /**
  * @title DefaultReserveInterestRateStrategy contract
@@ -20,28 +16,20 @@ import {IReserveInterestRateStrategy} from '../interfaces/IReserveInterestRateSt
  *   index of the _interestRateData
  */
 contract DefaultReserveInterestRateStrategy is IDefaultInterestRateStrategy {
-  using WadRayMath for uint256;
-  using PercentageMath for uint256;
-
   /// @inheritdoc IDefaultInterestRateStrategy
   address public immutable ADDRESSES_PROVIDER;
 
   /// @inheritdoc IDefaultInterestRateStrategy
-  uint256 public constant MAX_BORROW_RATE = 1000_00;
+  uint256 public constant MAX_BORROW_RATE = 100_00; // 100% in BPS
 
   /// @inheritdoc IDefaultInterestRateStrategy
-  uint256 public constant MIN_OPTIMAL_POINT = 1_00;
+  uint256 public constant MIN_OPTIMAL_POINT = 1_00; // 1% in BPS
 
   /// @inheritdoc IDefaultInterestRateStrategy
-  uint256 public constant MAX_OPTIMAL_POINT = 99_00;
+  uint256 public constant MAX_OPTIMAL_POINT = 99_00; // 99% in BPS
 
   /// @dev Map of reserves address and their interest rate data (reserveAddress => interestRateData)
   mapping(address => InterestRateData) internal _interestRateData;
-
-  modifier onlyPoolConfigurator() {
-    require(msg.sender == ADDRESSES_PROVIDER, 'CALLER_NOT_POOL_CONFIGURATOR');
-    _;
-  }
 
   /**
    * @dev Constructor.
@@ -63,62 +51,53 @@ contract DefaultReserveInterestRateStrategy is IDefaultInterestRateStrategy {
   }
 
   /// @inheritdoc IDefaultInterestRateStrategy
-  function getInterestRateData(address reserve) external view returns (InterestRateDataRay memory) {
-    return _rayifyRateData(_interestRateData[reserve]);
-  }
-
-  /// @inheritdoc IDefaultInterestRateStrategy
   function getInterestRateDataBps(address reserve) external view returns (InterestRateData memory) {
     return _interestRateData[reserve];
   }
 
   /// @inheritdoc IDefaultInterestRateStrategy
   function getOptimalUsageRatio(address reserve) external view returns (uint256) {
-    return _bpsToRay(uint256(_interestRateData[reserve].optimalUsageRatio));
+    return _interestRateData[reserve].optimalUsageRatio;
   }
 
   /// @inheritdoc IDefaultInterestRateStrategy
   function getVariableRateSlope1(address reserve) external view returns (uint256) {
-    return _bpsToRay(uint256(_interestRateData[reserve].variableRateSlope1));
+    return _interestRateData[reserve].variableRateSlope1;
   }
 
   /// @inheritdoc IDefaultInterestRateStrategy
   function getVariableRateSlope2(address reserve) external view returns (uint256) {
-    return _bpsToRay(uint256(_interestRateData[reserve].variableRateSlope2));
+    return _interestRateData[reserve].variableRateSlope2;
   }
 
   /// @inheritdoc IDefaultInterestRateStrategy
   function getBaseVariableBorrowRate(address reserve) external view override returns (uint256) {
-    return _bpsToRay(uint256(_interestRateData[reserve].baseVariableBorrowRate));
+    return _interestRateData[reserve].baseVariableBorrowRate;
   }
 
   /// @inheritdoc IDefaultInterestRateStrategy
   function getMaxVariableBorrowRate(address reserve) external view override returns (uint256) {
     return
-      _bpsToRay(
-        uint256(
-          _interestRateData[reserve].baseVariableBorrowRate +
-            _interestRateData[reserve].variableRateSlope1 +
-            _interestRateData[reserve].variableRateSlope2
-        )
-      );
+      _interestRateData[reserve].baseVariableBorrowRate +
+      _interestRateData[reserve].variableRateSlope1 +
+      _interestRateData[reserve].variableRateSlope2;
   }
 
   /// @inheritdoc IReserveInterestRateStrategy
   function calculateInterestRates(
     DataTypes.CalculateInterestRatesParams memory params
-  ) external view virtual override returns (uint256, uint256) {
-    InterestRateDataRay memory rateData = _rayifyRateData(_interestRateData[params.reserve]);
+  ) external view virtual override returns (uint256) {
+    InterestRateData memory rateData = _interestRateData[params.reserve];
 
     // @note This is a short circuit to allow mintable assets (ex. GHO), which by definition cannot be supplied
     // and thus do not use virtual underlying balances.
     if (!params.usingVirtualBalance) {
-      return (0, rateData.baseVariableBorrowRate);
+      return (rateData.baseVariableBorrowRate);
     }
 
     CalcInterestRatesLocalVars memory vars;
 
-    vars.totalDebt = params.totalVariableDebt;
+    vars.totalDebt = params.totalDebt;
 
     vars.currentLiquidityRate = 0;
     vars.currentVariableBorrowRate = rateData.baseVariableBorrowRate;
@@ -130,72 +109,42 @@ contract DefaultReserveInterestRateStrategy is IDefaultInterestRateStrategy {
         params.liquidityTaken;
 
       vars.availableLiquidityPlusDebt = vars.availableLiquidity + vars.totalDebt;
-      vars.borrowUsageRatio = vars.totalDebt.rayDiv(vars.availableLiquidityPlusDebt);
-      vars.supplyUsageRatio = vars.totalDebt.rayDiv(vars.availableLiquidityPlusDebt);
+      // calculates borrowRate and supplyRate
+      // total debt / (available liquidity + total debt)
+      // This is a measure of how much of the total available liquidity in a reserve is currently being used (borrowed).
+      // scaling up for bps
+
+      // utilization rate for borrow and supply
+      // usage ratio for borrows is
+      // always multiply first and then decide. In terms of rounding we are truncating the value
+      // multipling to get percentage
+      // TODO: evaluate the rounding
+
+      vars.borrowUsageRatio = (vars.totalDebt * 10000) / vars.availableLiquidityPlusDebt;
+      vars.supplyUsageRatio = (vars.totalDebt * 10000) / vars.availableLiquidityPlusDebt;
     } else {
-      return (0, vars.currentVariableBorrowRate);
+      return (vars.currentVariableBorrowRate);
     }
 
     if (vars.borrowUsageRatio > rateData.optimalUsageRatio) {
-      uint256 excessBorrowUsageRatio = (vars.borrowUsageRatio - rateData.optimalUsageRatio).rayDiv(
-        WadRayMath.RAY - rateData.optimalUsageRatio
-      );
+      uint256 excessBorrowUsageRatio = ((vars.borrowUsageRatio - rateData.optimalUsageRatio) *
+        10000) / rateData.optimalUsageRatio;
 
       vars.currentVariableBorrowRate +=
-        rateData.variableRateSlope1 +
-        rateData.variableRateSlope2.rayMul(excessBorrowUsageRatio);
+        ((rateData.variableRateSlope1 + rateData.variableRateSlope2) * excessBorrowUsageRatio) /
+        10000;
+
+      return vars.currentVariableBorrowRate;
     } else {
-      vars.currentVariableBorrowRate += rateData
-        .variableRateSlope1
-        .rayMul(vars.borrowUsageRatio)
-        .rayDiv(rateData.optimalUsageRatio);
+      //  base + (current / optimal ) * slope1
+      //  2%+( 80% / 60% )×5%
+      // base borrow rate + (utilization rate * slope1) / optimal utilization rate
+      // All in BPS --> so will receive BPS
+      vars.currentVariableBorrowRate +=
+        (vars.borrowUsageRatio * rateData.variableRateSlope1) /
+        rateData.optimalUsageRatio;
+      return (vars.currentVariableBorrowRate);
     }
-
-    vars.currentLiquidityRate = _getOverallBorrowRate(
-      params.totalVariableDebt,
-      vars.currentVariableBorrowRate
-      //   params.averageStableBorrowRate
-    ).rayMul(vars.supplyUsageRatio).percentMul(
-        PercentageMath.PERCENTAGE_FACTOR - params.reserveFactor
-      );
-
-    return (vars.currentLiquidityRate, vars.currentVariableBorrowRate);
-
-    // return (vars.currentLiquidityRate, 0, vars.currentVariableBorrowRate);
-  }
-
-  //    * @param currentAverageStableBorrowRate The current weighted average of all the stable rate loans
-
-  /**
-   * @dev Calculates the overall borrow rate as the weighted average between the total variable debt and total stable
-   * debt
-   * @param totalVariableDebt The total borrowed from the reserve at a variable rate
-   * @param currentVariableBorrowRate The current variable borrow rate of the reserve
-   * @return The weighted averaged borrow rate
-   */
-  function _getOverallBorrowRate(
-    uint256 totalVariableDebt,
-    uint256 currentVariableBorrowRate
-  )
-    internal
-    pure
-    returns (
-      // uint256 currentAverageStableBorrowRate
-      uint256
-    )
-  {
-    uint256 totalDebt = totalVariableDebt;
-
-    uint256 weightedVariableRate = totalVariableDebt.wadToRay().rayMul(currentVariableBorrowRate);
-
-    // uint256 weightedStableRate = totalStableDebt.wadToRay().rayMul(currentAverageStableBorrowRate);
-    //     uint256 overallBorrowRate = (weightedVariableRate + weightedStableRate).rayDiv(
-    //   totalDebt.wadToRay()
-    // );
-
-    uint256 overallBorrowRate = (weightedVariableRate).rayDiv(totalDebt.wadToRay());
-
-    return overallBorrowRate;
   }
 
   /**
@@ -234,30 +183,5 @@ contract DefaultReserveInterestRateStrategy is IDefaultInterestRateStrategy {
       rateData.variableRateSlope1,
       rateData.variableRateSlope2
     );
-  }
-
-  /**
-   * @dev Transforms an InterestRateData struct to an InterestRateDataRay struct by multiplying all values
-   * by 1e23, turning them into ray values
-   *
-   * @param data The InterestRateData struct to transform
-   *
-   * @return The resulting InterestRateDataRay struct
-   */
-  function _rayifyRateData(
-    InterestRateData memory data
-  ) internal pure returns (InterestRateDataRay memory) {
-    return
-      InterestRateDataRay({
-        optimalUsageRatio: _bpsToRay(uint256(data.optimalUsageRatio)),
-        baseVariableBorrowRate: _bpsToRay(uint256(data.baseVariableBorrowRate)),
-        variableRateSlope1: _bpsToRay(uint256(data.variableRateSlope1)),
-        variableRateSlope2: _bpsToRay(uint256(data.variableRateSlope2))
-      });
-  }
-
-  // @dev helper function added here, as generally the protocol doesn't use bps
-  function _bpsToRay(uint256 n) internal pure returns (uint256) {
-    return n * 1e23;
   }
 }
