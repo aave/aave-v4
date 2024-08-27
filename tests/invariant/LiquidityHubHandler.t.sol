@@ -21,7 +21,7 @@ contract LiquidityHubHandler is Test {
     mapping(uint256 => uint256) reserveSupplied; // asset => supply
     mapping(uint256 => mapping(address => uint256)) userSupplied; // asset => user => supply
     mapping(address => uint256) assetDonated; // asset => donation
-    mapping(uint256 => uint256) lastSupplyIndex; // asset => supplyIndex
+    mapping(uint256 => uint256) lastExchangeRate; // asset => supplyIndex
   }
 
   State internal s;
@@ -62,70 +62,54 @@ contract LiquidityHubHandler is Test {
     return s.assetDonated[asset];
   }
 
-  function getLastSupplyIndex(uint256 assetId) public view returns (uint256) {
-    return s.lastSupplyIndex[assetId];
+  function getLastExchangeRate(uint256 assetId) public view returns (uint256) {
+    return s.lastExchangeRate[assetId];
   }
 
-  function supply(uint256 assetId, uint256 userInt, uint256 amount, uint256 onBehalfOfInt) public {
+  function supply(uint256 assetId, address user, uint256 amount, address onBehalfOf) public {
+    if (user == address(hub) || user == address(0)) return;
+    if (onBehalfOf == address(0)) return;
     assetId = bound(assetId, 0, hub.reserveCount() - 1);
-    userInt = bound(userInt, 1, type(uint160).max);
-    onBehalfOfInt = bound(onBehalfOfInt, 1, type(uint160).max);
-    amount = bound(amount, 0, type(uint128).max);
+    amount = bound(amount, 1, type(uint128).max);
 
-    address user = address(uint160(userInt));
-    address onBehalfOf = address(uint160(onBehalfOfInt));
     address asset = hub.reservesList(assetId);
+    deal(asset, user, amount);
+    Utils.supply(vm, hub, assetId, user, amount, onBehalfOf);
 
-    if (user != address(hub) && amount > 0) {
-      deal(asset, user, amount);
-
-      Utils.supply(vm, hub, assetId, user, amount, onBehalfOf);
-
-      _updateState(assetId);
-      s.reserveSupplied[assetId] += amount;
-      s.userSupplied[assetId][onBehalfOf] += amount;
-    }
+    _updateState(assetId);
+    s.reserveSupplied[assetId] += amount;
+    s.userSupplied[assetId][onBehalfOf] += amount;
   }
 
-  function withdraw(uint256 assetId, uint256 userInt, uint256 amount, uint256 toInt) public {
+  function withdraw(uint256 assetId, address user, uint256 amount, address to) public {
     assetId = bound(assetId, 0, hub.reserveCount() - 1);
-    userInt = bound(userInt, 1, type(uint160).max);
-    toInt = bound(toInt, 1, type(uint160).max);
+    amount = bound(amount, 1, hub.getUserBalance(assetId, user));
 
-    address user = address(uint160(userInt));
-    address to = address(uint160(toInt));
-    LiquidityHub.UserConfig memory userData = hub.getUser(assetId, user);
-    amount = bound(amount, 0, userData.principalBalance);
+    Utils.withdraw(vm, hub, assetId, user, amount, to);
 
-    if (amount > 0) {
-      Utils.withdraw(vm, hub, assetId, user, amount, to);
-
-      _updateState(assetId);
-      s.reserveSupplied[assetId] -= amount;
-      s.userSupplied[assetId][user] -= amount;
-    }
+    _updateState(assetId);
+    s.reserveSupplied[assetId] -= amount;
+    s.userSupplied[assetId][user] -= amount;
   }
 
-  function donate(uint256 assetId, uint256 userInt, uint256 amount) public {
+  function donate(uint256 assetId, address user, uint256 amount) public {
+    if (user == address(hub) || user == address(0)) return;
     assetId = bound(assetId, 0, hub.reserveCount() - 1);
-    userInt = bound(userInt, 1, type(uint160).max);
-    amount = bound(amount, 0, type(uint128).max);
+    amount = bound(amount, 1, type(uint128).max);
 
-    address user = address(uint160(userInt));
     address asset = hub.reservesList(assetId);
 
     deal(asset, user, amount);
-    vm.startPrank(user);
-
+    vm.prank(user);
     IERC20(asset).transfer(address(hub), amount);
 
     s.assetDonated[asset] += amount;
-
-    vm.stopPrank();
   }
 
   function _updateState(uint256 assetId) internal {
     LiquidityHub.Reserve memory reserveData = hub.getReserve(assetId);
-    s.lastSupplyIndex[assetId] = reserveData.supplyIndex;
+    s.lastExchangeRate[assetId] = reserveData.totalShares == 0
+      ? 0
+      : reserveData.totalAssets / reserveData.totalShares;
   }
 }

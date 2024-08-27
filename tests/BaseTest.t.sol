@@ -9,6 +9,7 @@ import 'src/contracts/LiquidityHub.sol';
 import 'src/contracts/BorrowModule.sol';
 import 'src/contracts/IBorrowModule.sol';
 import 'src/contracts/WadRayMath.sol';
+import 'src/contracts/SharesMath.sol';
 import 'src/contracts/MathUtils.sol';
 import 'src/dependencies/openzeppelin/IERC20.sol';
 import './mocks/ERC20Mock.sol';
@@ -41,6 +42,7 @@ library Errors {
 
 abstract contract BaseTest is Test, Events {
   using WadRayMath for uint256;
+  using SharesMath for uint256;
 
   IERC20 internal usdc;
   IERC20 internal dai;
