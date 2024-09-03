@@ -38,6 +38,7 @@ contract LiquidityHub {
     uint256 interestBalance;
     uint256 lastUpdateIndex;
     uint256 lastUpdateTimestamp;
+    mapping(uint256 => ReserveConfig[]) reserveConfigurations; // TODO: Most efficient way to store config at time of interaction(s)
   }
 
   // asset id => reserve data
