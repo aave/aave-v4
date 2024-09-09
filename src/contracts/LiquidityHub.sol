@@ -51,7 +51,6 @@ contract LiquidityHub {
 
   struct UserConfig {
     uint256 shares;
-    //mapping(uint256 => ReserveConfig[]) reserveConfigurations; // TODO: Most efficient way to store config at time of interaction(s)
   }
 
   // asset id => reserve data
@@ -61,8 +60,9 @@ contract LiquidityHub {
 
   // asset id => user address => user data
   mapping(uint256 => mapping(address => UserConfig)) public users;
-
-  constructor() {}
+  
+  // asset id => user address => user's reserve config
+  mapping(uint256 => mapping(address => ReserveConfig)) public userReserveConfigs;
 
   function getReserve(uint256 assetId) external view returns (Reserve memory) {
     return reserves[assetId];
@@ -72,6 +72,12 @@ contract LiquidityHub {
     UserConfig memory u = users[assetId][user];
 
     return u;
+  }
+
+  function getUserReserveConfig(uint256 assetId, address user) external view returns (ReserveConfig memory) {
+    ReserveConfig memory c = userReserveConfigs[assetId][user];
+
+    return c;
   }
 
   function getUserBalance(uint256 assetId, address user) external view returns (uint256) {
