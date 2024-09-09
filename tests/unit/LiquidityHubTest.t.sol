@@ -1,7 +1,9 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.0;
 
-import '../BaseTest.t.sol';
+import { BaseTest } from '../BaseTest.t.sol';
+import {LiquidityHub} from '../../src/contracts/LiquidityHub.sol';
+import { Roles } from '../../src/libraries/Roles.sol';
 
 contract LiquidityHubTest is BaseTest {
   function setUp() public override {
@@ -93,9 +95,9 @@ contract LiquidityHubTest is BaseTest {
     vm.startPrank(ADMIN);
     // Get function signature of addReserve
     bytes4 sig = bytes4(0xe71fa26c);
-    hub.setRoleCapability(hub.RESERVE_CONTROLLER(), address(hub), sig, true);
+    hub.setRoleCapability(Roles.RESERVE_CONTROLLER, address(hub), sig, true);
     // Grant role to USER1
-    hub.setUserRole(USER1, hub.RESERVE_CONTROLLER(), true);
+    hub.setUserRole(USER1, Roles.RESERVE_CONTROLLER, true);
     vm.stopPrank();
 
     // Succeeds after access grant
