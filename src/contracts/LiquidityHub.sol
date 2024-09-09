@@ -1,21 +1,37 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.0;
 
-import {SafeERC20} from '../dependencies/openzeppelin/SafeERC20.sol';
-import {IERC20} from '../dependencies/openzeppelin/IERC20.sol';
-import {AccessManagerContract} from './AccessManagerContract.sol';
+import { SafeERC20 } from '../dependencies/openzeppelin/SafeERC20.sol';
+import { IERC20 } from '../dependencies/openzeppelin/IERC20.sol';
+import { AccessManagerContract } from './AccessManagerContract.sol';
+import { WadRayMath } from './WadRayMath.sol';
+import { SharesMath } from './SharesMath.sol';
+import { MathUtils } from './MathUtils.sol';
+import { IBorrowModule } from './IBorrowModule.sol';
+
+import 'forge-std/console2.sol';
 
 contract LiquidityHub is AccessManagerContract {
   using SafeERC20 for IERC20;
+  using WadRayMath for uint256;
+  using SharesMath for uint256;
+
+  event Supply(
+    uint256 indexed reserve,
+    address user,
+    address indexed onBehalfOf,
+    uint256 amount,
+    uint16 indexed referralCode
+  );
+  event Withdraw(uint256 indexed reserve, address indexed user, address indexed to, uint256 amount);
+
+  event Borrow(uint256 indexed reserve, address indexed user, uint256 amount);
 
   struct Reserve {
     uint256 id;
-    uint256 supplyIndex;
-    uint256 supplyRate;
-    uint256 borrowIndex;
-    uint256 borrowRate;
+    uint256 totalShares;
+    uint256 totalAssets;
     uint256 lastUpdateTimestamp;
-    uint256 virtualBalance;
     ReserveConfig config;
   }
 
@@ -35,21 +51,34 @@ contract LiquidityHub is AccessManagerContract {
   }
 
   struct UserConfig {
-    uint256 principalBalance;
-    uint256 interestBalance;
-    uint256 lastUpdateIndex;
-    uint256 lastUpdateTimestamp;
+    uint256 shares;
   }
 
   // asset id => reserve data
   mapping(uint256 => Reserve) public reserves;
   address[] public reservesList; // TODO: Check if Enumerable or Set makes more sense
-  uint256 reserveCount;
+  uint256 public reserveCount;
 
   // asset id => user address => user data
   mapping(uint256 => mapping(address => UserConfig)) public users;
 
   constructor() AccessManagerContract() {}
+
+  function getReserve(uint256 assetId) external view returns (Reserve memory) {
+    return reserves[assetId];
+  }
+
+  function getUser(uint256 assetId, address user) external view returns (UserConfig memory) {
+    UserConfig memory u = users[assetId][user];
+
+    return u;
+  }
+
+  function getUserBalance(uint256 assetId, address user) external view returns (uint256) {
+    UserConfig memory u = users[assetId][user];
+
+    return u.shares.toAssetsDown(reserves[assetId].totalAssets, reserves[assetId].totalShares);
+  }
 
   // /////
   // Governance
@@ -59,12 +88,9 @@ contract LiquidityHub is AccessManagerContract {
     reservesList.push(asset);
     reserves[reserveCount] = Reserve({
       id: reserveCount,
-      supplyIndex: 0,
-      supplyRate: 0,
-      borrowIndex: 0,
-      borrowRate: 0,
+      totalShares: 0,
+      totalAssets: 0,
       lastUpdateTimestamp: block.timestamp,
-      virtualBalance: 0,
       config: ReserveConfig({
         borrowModule: params.borrowModule,
         lt: params.lt,
@@ -84,15 +110,23 @@ contract LiquidityHub is AccessManagerContract {
   // Users
   // /////
 
-  function supply(uint256 assetId, uint256 amount) external {
-    // TODO: onBehalf
+  function supply(
+    uint256 assetId,
+    uint256 amount,
+    address onBehalfOf,
+    uint16 referralCode
+  ) external {
+    console2.log('- supply', msg.sender);
+    console2.log('  params:', assetId, amount, onBehalfOf);
     Reserve storage reserve = reserves[assetId];
-    UserConfig storage user = users[assetId][msg.sender];
+    UserConfig storage user = users[assetId][onBehalfOf];
 
     _validateSupply(reserve, amount);
 
     // update indexes and IRs
     _updateState(reserve); // TODO
+    // TODO: init user lastUpdateIndex
+    // TODO Set as collateral if first supply?
 
     // invokes borrow modules in case accounting update is needed
     // (eg, update premium for users borrowing using the asset as collateral)
@@ -100,19 +134,21 @@ contract LiquidityHub is AccessManagerContract {
 
     // updates user accounting
     // user.onSupply( assetData, amount);
-    reserve.virtualBalance += amount;
-    // TODO reserve.supplyIndex
-    reserve.lastUpdateTimestamp = block.timestamp;
-    user.principalBalance += amount;
-    // TODO user.lastUpdateIndex
-    // TODO accumulate user.interestBalance into user.principalBalance
-    user.lastUpdateTimestamp = block.timestamp;
+    // TODO Mitigate inflation attack (burn some amount if first supply)
+
+    uint256 sharesAmount = amount.toSharesDown(reserve.totalAssets, reserve.totalShares);
+    require(sharesAmount > 0, 'INVALID_AMOUNT');
+    user.shares += sharesAmount;
+    reserve.totalShares += sharesAmount;
+    reserve.totalAssets += amount;
 
     // transferFrom
     IERC20(reservesList[assetId]).safeTransferFrom(msg.sender, address(this), amount); // TODO: fee-on-transfer
+
+    emit Supply(assetId, msg.sender, onBehalfOf, amount, referralCode);
   }
 
-  function withdraw(uint256 assetId, uint256 amount) external {
+  function withdraw(uint256 assetId, uint256 amount, address to) external {
     // TODO: onBehalf
     Reserve storage reserve = reserves[assetId];
     UserConfig storage user = users[assetId][msg.sender];
@@ -120,6 +156,8 @@ contract LiquidityHub is AccessManagerContract {
     // asset can be withdrawn
     _validateWithdraw(reserve, amount);
 
+    // TODO HF check
+
     // update indexes and IRs
     _updateState(reserve);
 
@@ -129,16 +167,16 @@ contract LiquidityHub is AccessManagerContract {
 
     // updates user accounting
     // user.onWithdraw( assetData, amount);
-    reserve.virtualBalance -= amount;
-    // TODO reserve.supplyIndex
-    reserve.lastUpdateTimestamp = block.timestamp;
-    user.principalBalance -= amount; // TODO clearer error msg
-    // TODO user.lastUpdateIndex
-    // TODO accumulate user.interestBalance into user.principalBalance
-    user.lastUpdateTimestamp = block.timestamp;
+
+    uint256 sharesAmount = amount.toSharesUp(reserve.totalAssets, reserve.totalShares);
+    user.shares -= sharesAmount;
+    reserve.totalShares -= sharesAmount;
+    reserve.totalAssets -= amount;
 
     // transfer
-    IERC20(reservesList[assetId]).safeTransfer(msg.sender, amount); // TODO: fee-on-transfer
+    IERC20(reservesList[assetId]).safeTransfer(to, amount);
+
+    emit Withdraw(assetId, msg.sender, to, amount);
   }
 
   function borrow(uint256 assetId, uint256 amount) external {
@@ -146,11 +184,10 @@ contract LiquidityHub is AccessManagerContract {
     Reserve storage reserve = reserves[assetId];
     UserConfig storage user = users[assetId][msg.sender];
 
-    // asset can be borrowed
-    // borrow cap not reached
-    // msg.sender needs to be a valid module
+    uint256 totalBorrows; // TODO
+    _validateBorrow(reserve, totalBorrows, amount);
 
-    _validateBorrow();
+    // TODO HF check
 
     // update indexes and IRs
     _updateState(reserve);
@@ -158,12 +195,18 @@ contract LiquidityHub is AccessManagerContract {
     // invokes borrow modules in case accounting update is needed
     // (eg, update premium for users borrowing using the asset as collateral)
     // TODO
+    //IBorrowModule(reserve.config.borrowModule).onBorrow(assetId, msg.sender, amount);
 
     // updates user accounting
-    // user.onWithdraw( assetData, amount);
+    // TODO: increase totalBorrows
 
     // transfer
+    IERC20(reservesList[assetId]).safeTransfer(msg.sender, amount);
+
+    emit Borrow(assetId, msg.sender, amount);
   }
+
+  function repay(uint256 assetId, uint256 amount, address onBehalfOf) external {}
 
   //
   // Internal
@@ -172,22 +215,62 @@ contract LiquidityHub is AccessManagerContract {
     // asset is listed
     require(reservesList[reserve.id] != address(0), 'ASSET_NOT_LISTED');
     // asset can be supplied
-    require(reserve.config.active, 'NOT_ACTIVE');
+    require(reserve.config.active, 'RESERVE_NOT_ACTIVE');
     // supply cap not reached
-    require(reserve.config.supplyCap > reserve.virtualBalance + amount, 'CAP_EXCEEDED');
+    require(
+      reserve.config.supplyCap == 0 || reserve.config.supplyCap > reserve.totalAssets + amount,
+      'CAP_EXCEEDED'
+    );
   }
 
   function _validateWithdraw(Reserve storage reserve, uint256 amount) internal view {
     // asset can be withdrawn
-    require(reserve.config.active, 'NOT_ACTIVE');
+    require(reserve.config.active, 'RESERVE_NOT_ACTIVE');
     // reserve with available liquidity
-    require(reserve.virtualBalance >= amount, 'NOT_AVAILABLE_LIQUIDITY');
+    require(reserve.totalAssets >= amount, 'NOT_AVAILABLE_LIQUIDITY');
   }
 
-  function _validateBorrow() internal {}
+  function _validateBorrow(Reserve storage reserve, uint256 totalBorrows, uint256 amount) internal {
+    // asset can be borrowed
+    require(reserve.config.active, 'RESERVE_NOT_ACTIVE');
+    require(reserve.config.borrowable, 'RESERVE_NOT_BORROWABLE');
+    // borrow cap not reached
+    require(
+      reserve.config.borrowCap == 0 || reserve.config.borrowCap > totalBorrows + amount,
+      'CAP_EXCEEDED'
+    ); // TODO probably better in borrow module
+    // msg.sender needs to be a valid module
+    // TODO
+  }
 
   function _updateState(Reserve storage reserve) internal {
-    // Update indexes
     // Update interest rates
+    uint256 borrowRate = IBorrowModule(reserve.config.borrowModule).calculateInterestRates(); // TODO: coupling here, must be more abstract?
+    // TODO: only borrowRate? supplyRate can be calculated using borrowRate and RF
+    // borrow module and liquidity hub coupling
+
+    // Update indexes
+    _accrueReserveInterest(reserve, borrowRate);
+    // TODO borrowIndex
+    // _accrueReserveInterest(reserve.borrowIndex, reserve.borrowRate, elapsed);
+    // Accrue RF?
+  }
+
+  function _accrueReserveInterest(Reserve storage r, uint256 borrowRate) internal {
+    uint256 elapsed = block.timestamp - r.lastUpdateTimestamp;
+    if (elapsed > 0) {
+      console2.log('_accrueReserveInterest');
+      // linear interest
+      uint256 cumulated = MathUtils.calculateLinearInterest(
+        borrowRate,
+        uint40(r.lastUpdateTimestamp)
+      ).rayMul(r.totalAssets); // TODO rounding
+      console2.log('cumulated %e', cumulated);
+      r.totalAssets += cumulated;
+
+      // TODO: fee shares
+
+      r.lastUpdateTimestamp = block.timestamp;
+    }
   }
 }
