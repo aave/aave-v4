@@ -27,9 +27,9 @@ contract LiquidityHub {
   event Borrow(uint256 indexed reserve, address indexed user, uint256 amount);
 
   modifier UpdatesUserConfig(address user, uint256 reserve) {
-        _;
-        userReserveConfigs[reserve][user] = reserves[reserve].config;
-    }
+    _;
+    userReserveConfigs[reserve][user] = reserves[reserve].config;
+  }
 
   struct Reserve {
     uint256 id;
@@ -65,7 +65,7 @@ contract LiquidityHub {
 
   // asset id => user address => user data
   mapping(uint256 => mapping(address => UserConfig)) public users;
-  
+
   // asset id => user address => user's reserve config
   mapping(uint256 => mapping(address => ReserveConfig)) public userReserveConfigs;
 
@@ -79,7 +79,10 @@ contract LiquidityHub {
     return u;
   }
 
-  function getUserReserveConfig(uint256 assetId, address user) external view returns (ReserveConfig memory) {
+  function getUserReserveConfig(
+    uint256 assetId,
+    address user
+  ) external view returns (ReserveConfig memory) {
     ReserveConfig memory c = userReserveConfigs[assetId][user];
 
     return c;
@@ -160,7 +163,12 @@ contract LiquidityHub {
     emit Supply(assetId, msg.sender, onBehalfOf, amount, referralCode);
   }
 
-  function withdraw(uint256 assetId, uint256 amount, address to) external UpdatesUserConfig(msg.sender, assetId) { // TODO: onBehalf
+  function withdraw(
+    uint256 assetId,
+    uint256 amount,
+    address to
+  ) external UpdatesUserConfig(msg.sender, assetId) {
+    // TODO: onBehalf
     // TODO: onBehalf
     Reserve storage reserve = reserves[assetId];
     UserConfig storage user = users[assetId][msg.sender];
@@ -191,7 +199,8 @@ contract LiquidityHub {
     emit Withdraw(assetId, msg.sender, to, amount);
   }
 
-  function borrow(uint256 assetId, uint256 amount) external UpdatesUserConfig(msg.sender, assetId) { // TODO: onBehalf
+  function borrow(uint256 assetId, uint256 amount) external UpdatesUserConfig(msg.sender, assetId) {
+    // TODO: onBehalf
     // TODO: onBehalf
     Reserve storage reserve = reserves[assetId];
     UserConfig storage user = users[assetId][msg.sender];
@@ -218,7 +227,11 @@ contract LiquidityHub {
     emit Borrow(assetId, msg.sender, amount);
   }
 
-  function repay(uint256 assetId, uint256 amount, address onBehalfOf) external UpdatesUserConfig(onBehalfOf, assetId) {}
+  function repay(
+    uint256 assetId,
+    uint256 amount,
+    address onBehalfOf
+  ) external UpdatesUserConfig(onBehalfOf, assetId) {}
 
   //
   // Internal
@@ -273,10 +286,9 @@ contract LiquidityHub {
     if (elapsed > 0) {
       console2.log('_accrueReserveInterest');
       // linear interest
-      uint256 cumulated = MathUtils.calculateLinearInterest(
-        borrowRate,
-        uint40(r.lastUpdateTimestamp)
-      ).rayMul(r.totalAssets); // TODO rounding
+      uint256 cumulated = MathUtils
+        .calculateLinearInterest(borrowRate, uint40(r.lastUpdateTimestamp))
+        .rayMul(r.totalAssets); // TODO rounding
       console2.log('cumulated %e', cumulated);
       r.totalAssets += cumulated;
 
