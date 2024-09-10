@@ -26,11 +26,6 @@ contract LiquidityHub {
 
   event Borrow(uint256 indexed reserve, address indexed user, uint256 amount);
 
-  modifier UpdatesUserConfig(address user, uint256 reserve) {
-    _;
-    userReserveConfigs[reserve][user] = reserves[reserve].config;
-  }
-
   struct Reserve {
     uint256 id;
     uint256 totalShares;
@@ -130,7 +125,7 @@ contract LiquidityHub {
     uint256 amount,
     address onBehalfOf,
     uint16 referralCode
-  ) external UpdatesUserConfig(onBehalfOf, assetId) {
+  ) external {
     console2.log('- supply', msg.sender);
     console2.log('  params:', assetId, amount, onBehalfOf);
     Reserve storage reserve = reserves[assetId];
@@ -140,6 +135,10 @@ contract LiquidityHub {
 
     // update indexes and IRs
     _updateState(reserve); // TODO
+
+    // Update user reserve config
+    _updateUserReserveConfig(onBehalfOf, assetId);
+
     // TODO: init user lastUpdateIndex
     // TODO Set as collateral if first supply?
 
@@ -163,11 +162,7 @@ contract LiquidityHub {
     emit Supply(assetId, msg.sender, onBehalfOf, amount, referralCode);
   }
 
-  function withdraw(
-    uint256 assetId,
-    uint256 amount,
-    address to
-  ) external UpdatesUserConfig(msg.sender, assetId) {
+  function withdraw(uint256 assetId, uint256 amount, address to) external {
     // TODO: onBehalf
     // TODO: onBehalf
     Reserve storage reserve = reserves[assetId];
@@ -180,6 +175,9 @@ contract LiquidityHub {
 
     // update indexes and IRs
     _updateState(reserve);
+
+    // Update user reserve config
+    _updateUserReserveConfig(msg.sender, assetId);
 
     // invokes borrow modules in case accounting update is needed
     // (eg, update premium for users borrowing using the asset as collateral)
@@ -199,7 +197,7 @@ contract LiquidityHub {
     emit Withdraw(assetId, msg.sender, to, amount);
   }
 
-  function borrow(uint256 assetId, uint256 amount) external UpdatesUserConfig(msg.sender, assetId) {
+  function borrow(uint256 assetId, uint256 amount) external {
     // TODO: onBehalf
     // TODO: onBehalf
     Reserve storage reserve = reserves[assetId];
@@ -212,6 +210,9 @@ contract LiquidityHub {
 
     // update indexes and IRs
     _updateState(reserve);
+
+    // Update user reserve config
+    _updateUserReserveConfig(msg.sender, assetId);
 
     // invokes borrow modules in case accounting update is needed
     // (eg, update premium for users borrowing using the asset as collateral)
@@ -227,11 +228,9 @@ contract LiquidityHub {
     emit Borrow(assetId, msg.sender, amount);
   }
 
-  function repay(
-    uint256 assetId,
-    uint256 amount,
-    address onBehalfOf
-  ) external UpdatesUserConfig(onBehalfOf, assetId) {}
+  function repay(uint256 assetId, uint256 amount, address onBehalfOf) external {
+    _updateUserReserveConfig(onBehalfOf, assetId);
+  }
 
   //
   // Internal
@@ -296,5 +295,9 @@ contract LiquidityHub {
 
       r.lastUpdateTimestamp = block.timestamp;
     }
+  }
+
+  function _updateUserReserveConfig(address user, uint256 reserve) internal {
+    userReserveConfigs[reserve][user] = reserves[reserve].config;
   }
 }
