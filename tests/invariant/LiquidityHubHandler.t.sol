@@ -6,6 +6,7 @@ import 'forge-std/Test.sol';
 import 'src/contracts/LiquidityHub.sol';
 import 'src/contracts/BorrowModule.sol';
 import 'src/dependencies/openzeppelin/IERC20.sol';
+import 'src/contracts/types/DataTypes.sol';
 import '../mocks/ERC20Mock.sol';
 import '../Utils.t.sol';
 
@@ -35,16 +36,17 @@ contract LiquidityHubHandler is Test {
 
     // Add dai
     hub.addReserve(
-      LiquidityHub.ReserveConfig({
+      DataTypes.ReserveConfiguration({
         borrowModule: address(bm),
         lt: 0,
         lb: 0,
         rf: 0,
-        decimals: 18,
         active: true,
         borrowable: false,
-        supplyCap: type(uint256).max,
-        borrowCap: type(uint256).max
+        frozen: false,
+        paused: false,
+        supplyCap: 0,
+        borrowCap: 0
       }),
       address(dai)
     );

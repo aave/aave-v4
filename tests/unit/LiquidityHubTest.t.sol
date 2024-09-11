@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.0;
 
+import 'src/contracts/types/DataTypes.sol';
 import '../BaseTest.t.sol';
 
 contract LiquidityHubTest is BaseTest {
@@ -12,16 +13,17 @@ contract LiquidityHubTest is BaseTest {
 
     // Add dai
     hub.addReserve(
-      LiquidityHub.ReserveConfig({
+      DataTypes.ReserveConfiguration({
         borrowModule: address(bm),
         lt: 0,
         lb: 0,
         rf: 0,
-        decimals: 18,
         active: true,
         borrowable: false,
-        supplyCap: type(uint256).max,
-        borrowCap: type(uint256).max
+        frozen: false,
+        paused: false,
+        supplyCap: 0,
+        borrowCap: 0
       }),
       address(dai)
     );

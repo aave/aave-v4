@@ -7,6 +7,8 @@ import {WadRayMath} from './WadRayMath.sol';
 import {SharesMath} from './SharesMath.sol';
 import {MathUtils} from './MathUtils.sol';
 import {IBorrowModule} from './IBorrowModule.sol';
+import {DataTypes} from './types/DataTypes.sol';
+import {ReserveConfiguration} from './ReserveConfiguration.sol';
 
 import 'forge-std/console2.sol';
 
@@ -14,6 +16,7 @@ contract LiquidityHub {
   using SafeERC20 for IERC20;
   using WadRayMath for uint256;
   using SharesMath for uint256;
+  using ReserveConfiguration for DataTypes.ReserveConfig;
 
   event Supply(
     uint256 indexed reserve,
@@ -31,22 +34,7 @@ contract LiquidityHub {
     uint256 totalShares;
     uint256 totalAssets;
     uint256 lastUpdateTimestamp;
-    ReserveConfig config;
-  }
-
-  struct ReserveConfig {
-    address borrowModule;
-    uint256 lt;
-    uint256 lb; // TODO: liquidationProtocolFee
-    // uint256 liquidityPremium; // TODO
-    uint256 rf;
-    uint256 decimals;
-    bool active; // TODO: frozen, paused
-    bool borrowable;
-    uint256 supplyCap;
-    uint256 borrowCap;
-    // uint256 eModeCategory; // TODO eMode
-    // uint256 debtCeiling; // TODO isolation mode
+    DataTypes.ReserveConfig config;
   }
 
   struct UserConfig {
@@ -62,7 +50,7 @@ contract LiquidityHub {
   mapping(uint256 => mapping(address => UserConfig)) public users;
 
   // asset id => user address => user's reserve config
-  mapping(uint256 => mapping(address => ReserveConfig)) public userReserveConfigs;
+  mapping(uint256 => mapping(address => DataTypes.ReserveConfig)) public userReserveConfigs;
 
   function getReserve(uint256 assetId) external view returns (Reserve memory) {
     return reserves[assetId];
@@ -77,8 +65,8 @@ contract LiquidityHub {
   function getUserReserveConfig(
     uint256 assetId,
     address user
-  ) external view returns (ReserveConfig memory) {
-    ReserveConfig memory c = userReserveConfigs[assetId][user];
+  ) external view returns (DataTypes.ReserveConfig memory) {
+    DataTypes.ReserveConfig memory c = userReserveConfigs[assetId][user];
 
     return c;
   }
@@ -93,25 +81,21 @@ contract LiquidityHub {
   // Governance
   // /////
 
-  function addReserve(ReserveConfig memory params, address asset) external {
+  function addReserve(DataTypes.ReserveConfiguration memory params, address asset) external {
     // TODO: AccessControl
+    DataTypes.ReserveConfig memory config = DataTypes.ReserveConfig({
+      borrowModule: params.borrowModule,
+      data: 0
+    });
+    config.setConfigFromParams(params);
+
     reservesList.push(asset);
     reserves[reserveCount] = Reserve({
       id: reserveCount,
       totalShares: 0,
       totalAssets: 0,
       lastUpdateTimestamp: block.timestamp,
-      config: ReserveConfig({
-        borrowModule: params.borrowModule,
-        lt: params.lt,
-        lb: params.lb,
-        rf: params.rf,
-        decimals: params.decimals,
-        active: params.active,
-        borrowable: params.borrowable,
-        supplyCap: params.supplyCap,
-        borrowCap: params.borrowCap
-      })
+      config: config
     });
     reserveCount++;
   }
@@ -239,28 +223,29 @@ contract LiquidityHub {
     // asset is listed
     require(reservesList[reserve.id] != address(0), 'ASSET_NOT_LISTED');
     // asset can be supplied
-    require(reserve.config.active, 'RESERVE_NOT_ACTIVE');
+    require(reserve.config.getActive(), 'RESERVE_NOT_ACTIVE');
     // supply cap not reached
     require(
-      reserve.config.supplyCap == 0 || reserve.config.supplyCap > reserve.totalAssets + amount,
+      reserve.config.getSupplyCap() == 0 ||
+        reserve.config.getSupplyCap() > reserve.totalAssets + amount,
       'CAP_EXCEEDED'
     );
   }
 
   function _validateWithdraw(Reserve storage reserve, uint256 amount) internal view {
     // asset can be withdrawn
-    require(reserve.config.active, 'RESERVE_NOT_ACTIVE');
+    require(reserve.config.getActive(), 'RESERVE_NOT_ACTIVE');
     // reserve with available liquidity
     require(reserve.totalAssets >= amount, 'NOT_AVAILABLE_LIQUIDITY');
   }
 
   function _validateBorrow(Reserve storage reserve, uint256 totalBorrows, uint256 amount) internal {
     // asset can be borrowed
-    require(reserve.config.active, 'RESERVE_NOT_ACTIVE');
-    require(reserve.config.borrowable, 'RESERVE_NOT_BORROWABLE');
+    require(reserve.config.getActive(), 'RESERVE_NOT_ACTIVE');
+    require(reserve.config.getBorrowingEnabled(), 'RESERVE_NOT_BORROWABLE');
     // borrow cap not reached
     require(
-      reserve.config.borrowCap == 0 || reserve.config.borrowCap > totalBorrows + amount,
+      reserve.config.getBorrowCap() == 0 || reserve.config.getBorrowCap() > totalBorrows + amount,
       'CAP_EXCEEDED'
     ); // TODO probably better in borrow module
     // msg.sender needs to be a valid module

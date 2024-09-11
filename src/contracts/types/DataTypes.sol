@@ -76,6 +76,39 @@ library DataTypes {
     uint128 virtualUnderlyingBalance;
   }
 
+  struct ReserveConfiguration {
+    address borrowModule;
+    uint256 lt;
+    uint256 lb; // TODO: liquidationProtocolFee
+    // uint256 liquidityPremium; // TODO
+    uint256 rf;
+    // uint256 decimals; // No decimals for now, we'll get from the token, but revisit later if needed
+    bool active;
+    bool borrowable;
+    bool frozen;
+    bool paused;
+    uint256 supplyCap;
+    uint256 borrowCap;
+    // uint256 eModeCategory; // TODO eMode
+    // uint256 debtCeiling; // TODO isolation mode
+  }
+
+  struct ReserveConfig {
+    // data is a packed uint256 containing all the configuration parameters
+    // bit 0-15: lt
+    // bit 16-31: lb
+    // bit 32-47: rf
+    // bit 48: reserve is active
+    // bit 49: borrowing is enabled
+    // bit 50: reserve is frozen
+    // bit 51: asset is paused
+    // bit 52-87: supplyCap in whole tokens, supplyCap == 0 => no cap
+    // bit 88-123: borrowCap in whole tokens, borrowCap == 0 => no cap
+
+    address borrowModule;
+    uint256 data;
+  }
+
   struct ReserveConfigurationMap {
     //bit 0-15: LTV
     //bit 16-31: Liq. threshold
