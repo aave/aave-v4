@@ -36,8 +36,9 @@ contract LiquidityHubHandler is Test {
 
     // Add dai
     hub.addReserve(
-      DataTypes.ReserveConfiguration({
+      DataTypes.ReserveConfigurationParams({
         borrowModule: address(bm),
+        supplyModule: address(0),
         lt: 0,
         lb: 0,
         rf: 0,

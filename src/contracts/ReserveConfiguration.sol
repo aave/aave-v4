@@ -290,7 +290,7 @@ library ReserveConfiguration {
 
   function setConfigFromParams(
     DataTypes.ReserveConfig memory self,
-    DataTypes.ReserveConfiguration memory params
+    DataTypes.ReserveConfigurationParams memory params
   ) internal pure {
     setLiquidationThreshold(self, params.lt);
     setLiquidationBonus(self, params.lb);

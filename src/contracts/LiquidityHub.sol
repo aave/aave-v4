@@ -34,6 +34,8 @@ contract LiquidityHub {
     uint256 totalShares;
     uint256 totalAssets;
     uint256 lastUpdateTimestamp;
+    address borrowModule;
+    address supplyModule;
     DataTypes.ReserveConfig config;
   }
 
@@ -81,12 +83,9 @@ contract LiquidityHub {
   // Governance
   // /////
 
-  function addReserve(DataTypes.ReserveConfiguration memory params, address asset) external {
+  function addReserve(DataTypes.ReserveConfigurationParams memory params, address asset) external {
     // TODO: AccessControl
-    DataTypes.ReserveConfig memory config = DataTypes.ReserveConfig({
-      borrowModule: params.borrowModule,
-      data: 0
-    });
+    DataTypes.ReserveConfig memory config = DataTypes.ReserveConfig({data: 0});
     config.setConfigFromParams(params);
 
     reservesList.push(asset);
@@ -95,6 +94,8 @@ contract LiquidityHub {
       totalShares: 0,
       totalAssets: 0,
       lastUpdateTimestamp: block.timestamp,
+      borrowModule: params.borrowModule,
+      supplyModule: params.supplyModule,
       config: config
     });
     reserveCount++;
@@ -254,7 +255,7 @@ contract LiquidityHub {
 
   function _updateState(Reserve storage reserve) internal {
     // Update interest rates
-    uint256 borrowRate = IBorrowModule(reserve.config.borrowModule).calculateInterestRates(); // TODO: coupling here, must be more abstract?
+    uint256 borrowRate = IBorrowModule(reserve.borrowModule).calculateInterestRates(); // TODO: coupling here, must be more abstract?
     // TODO: only borrowRate? supplyRate can be calculated using borrowRate and RF
     // borrow module and liquidity hub coupling
 

@@ -7,8 +7,6 @@ library DataTypes {
    * `ReserveData` struct includes the reserve's `virtualUnderlyingBalance`.
    */
   struct ReserveDataLegacy {
-    //stores the reserve configuration
-    ReserveConfigurationMap configuration;
     //the liquidity index. Expressed in ray
     uint128 liquidityIndex;
     //the current supply rate. Expressed in ray
@@ -40,8 +38,6 @@ library DataTypes {
   }
 
   struct ReserveData {
-    //stores the reserve configuration
-    ReserveConfigurationMap configuration;
     //the liquidity index. Expressed in ray
     uint128 liquidityIndex;
     //the current supply rate. Expressed in ray
@@ -76,8 +72,9 @@ library DataTypes {
     uint128 virtualUnderlyingBalance;
   }
 
-  struct ReserveConfiguration {
+  struct ReserveConfigurationParams {
     address borrowModule;
+    address supplyModule;
     uint256 lt;
     uint256 lb; // TODO: liquidationProtocolFee
     // uint256 liquidityPremium; // TODO
@@ -94,7 +91,6 @@ library DataTypes {
   }
 
   struct ReserveConfig {
-    // data is a packed uint256 containing all the configuration parameters
     // bit 0-15: lt
     // bit 16-31: lb
     // bit 32-47: rf
@@ -104,33 +100,6 @@ library DataTypes {
     // bit 51: asset is paused
     // bit 52-87: supplyCap in whole tokens, supplyCap == 0 => no cap
     // bit 88-123: borrowCap in whole tokens, borrowCap == 0 => no cap
-
-    address borrowModule;
-    uint256 data;
-  }
-
-  struct ReserveConfigurationMap {
-    //bit 0-15: LTV
-    //bit 16-31: Liq. threshold
-    //bit 32-47: Liq. bonus
-    //bit 48-55: Decimals
-    //bit 56: reserve is active
-    //bit 57: reserve is frozen
-    //bit 58: borrowing is enabled
-    //bit 59: stable rate borrowing enabled
-    //bit 60: asset is paused
-    //bit 61: borrowing in isolation mode is enabled
-    //bit 62: siloed borrowing enabled
-    //bit 63: flashloaning enabled
-    //bit 64-79: reserve factor
-    //bit 80-115: borrow cap in whole tokens, borrowCap == 0 => no cap
-    //bit 116-151: supply cap in whole tokens, supplyCap == 0 => no cap
-    //bit 152-167: liquidation protocol fee
-    //bit 168-175: eMode category
-    //bit 176-211: unbacked mint cap in whole tokens, unbackedMintCap == 0 => minting disabled
-    //bit 212-251: debt ceiling for isolation mode with (ReserveConfiguration::DEBT_CEILING_DECIMALS) decimals
-    //bit 252: virtual accounting is enabled for the reserve
-    //bit 253-255 unused
 
     uint256 data;
   }
@@ -175,7 +144,6 @@ library DataTypes {
     uint256 currLiquidityRate;
     uint256 currVariableBorrowRate;
     uint256 reserveFactor;
-    ReserveConfigurationMap reserveConfiguration;
     address aTokenAddress;
     address stableDebtTokenAddress;
     address variableDebtTokenAddress;
