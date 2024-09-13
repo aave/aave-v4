@@ -1,8 +1,8 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.0;
 
-import { Authority, Auth } from '@solmate/auth/Auth.sol';
-import { RolesAuthority } from '@solmate/auth/authorities/RolesAuthority.sol';
+import {Authority} from '../dependencies/solmate/Auth.sol';
+import {RolesAuthority} from '../dependencies/solmate/RolesAuthority.sol';
 
 /**
  * @title AccessManagerContract
