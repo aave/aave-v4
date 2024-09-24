@@ -1,7 +1,6 @@
 // SPDX-License-Identifier: BUSL-1.1
 pragma solidity ^0.8.10;
 
-import {IERC20} from '../dependencies/openzeppelin/IERC20.sol';
 import {DataTypes} from '../libraries/types/DataTypes.sol';
 import {Errors} from '../libraries/helpers/Errors.sol';
 import {IDefaultInterestRateStrategy} from '../interfaces/IDefaultInterestRateStrategy.sol';
@@ -20,7 +19,7 @@ contract DefaultReserveInterestRateStrategy is IDefaultInterestRateStrategy {
   address public immutable ADDRESSES_PROVIDER;
 
   /// @inheritdoc IDefaultInterestRateStrategy
-  uint256 public constant MAX_BORROW_RATE = 100_00; // 100% in BPS
+  uint256 public constant MAX_BORROW_RATE = 1000_00; // 100% in BPS
 
   /// @inheritdoc IDefaultInterestRateStrategy
   uint256 public constant MIN_OPTIMAL_POINT = 1_00; // 1% in BPS
@@ -28,8 +27,8 @@ contract DefaultReserveInterestRateStrategy is IDefaultInterestRateStrategy {
   /// @inheritdoc IDefaultInterestRateStrategy
   uint256 public constant MAX_OPTIMAL_POINT = 99_00; // 99% in BPS
 
-  /// @dev Map of reserves address and their interest rate data (reserveAddress => interestRateData)
-  mapping(address => InterestRateData) internal _interestRateData;
+  /// @dev Map of assetId and their interest rate data (reserveAddress => interestRateData)
+  mapping(uint256 assetId => InterestRateData) internal _interestRateData;
 
   /**
    * @dev Constructor.
@@ -40,54 +39,49 @@ contract DefaultReserveInterestRateStrategy is IDefaultInterestRateStrategy {
     ADDRESSES_PROVIDER = provider;
   }
 
-  /// @inheritdoc IReserveInterestRateStrategy
-  function setInterestRateParams(address reserve, bytes calldata rateData) external {
-    _setInterestRateParams(reserve, abi.decode(rateData, (InterestRateData)));
+  /// @inheritdoc IDefaultInterestRateStrategy
+  function setInterestRateParams(uint256 assetId, InterestRateData calldata rateData) external {
+    _setInterestRateParams(assetId, rateData);
   }
 
   /// @inheritdoc IDefaultInterestRateStrategy
-  function setInterestRateParams(address reserve, InterestRateData calldata rateData) external {
-    _setInterestRateParams(reserve, rateData);
+  function getInterestRateDataBps(uint256 assetId) external view returns (InterestRateData memory) {
+    return _interestRateData[assetId];
   }
 
   /// @inheritdoc IDefaultInterestRateStrategy
-  function getInterestRateDataBps(address reserve) external view returns (InterestRateData memory) {
-    return _interestRateData[reserve];
+  function getOptimalUsageRatio(uint256 assetId) external view returns (uint256) {
+    return _interestRateData[assetId].optimalUsageRatio;
   }
 
   /// @inheritdoc IDefaultInterestRateStrategy
-  function getOptimalUsageRatio(address reserve) external view returns (uint256) {
-    return _interestRateData[reserve].optimalUsageRatio;
+  function getVariableRateSlope1(uint256 assetId) external view returns (uint256) {
+    return _interestRateData[assetId].variableRateSlope1;
   }
 
   /// @inheritdoc IDefaultInterestRateStrategy
-  function getVariableRateSlope1(address reserve) external view returns (uint256) {
-    return _interestRateData[reserve].variableRateSlope1;
+  function getVariableRateSlope2(uint256 assetId) external view returns (uint256) {
+    return _interestRateData[assetId].variableRateSlope2;
   }
 
   /// @inheritdoc IDefaultInterestRateStrategy
-  function getVariableRateSlope2(address reserve) external view returns (uint256) {
-    return _interestRateData[reserve].variableRateSlope2;
+  function getBaseVariableBorrowRate(uint256 assetId) external view override returns (uint256) {
+    return _interestRateData[assetId].baseVariableBorrowRate;
   }
 
   /// @inheritdoc IDefaultInterestRateStrategy
-  function getBaseVariableBorrowRate(address reserve) external view override returns (uint256) {
-    return _interestRateData[reserve].baseVariableBorrowRate;
-  }
-
-  /// @inheritdoc IDefaultInterestRateStrategy
-  function getMaxVariableBorrowRate(address reserve) external view override returns (uint256) {
+  function getMaxVariableBorrowRate(uint256 assetId) external view override returns (uint256) {
     return
-      _interestRateData[reserve].baseVariableBorrowRate +
-      _interestRateData[reserve].variableRateSlope1 +
-      _interestRateData[reserve].variableRateSlope2;
+      _interestRateData[assetId].baseVariableBorrowRate +
+      _interestRateData[assetId].variableRateSlope1 +
+      _interestRateData[assetId].variableRateSlope2;
   }
 
   /// @inheritdoc IReserveInterestRateStrategy
   function calculateInterestRates(
     DataTypes.CalculateInterestRatesParams memory params
   ) external view virtual override returns (uint256) {
-    InterestRateData memory rateData = _interestRateData[params.reserve];
+    InterestRateData memory rateData = _interestRateData[params.assetId];
 
     // @note This is a short circuit to allow mintable assets (ex. GHO), which by definition cannot be supplied
     // and thus do not use virtual underlying balances.
@@ -149,11 +143,11 @@ contract DefaultReserveInterestRateStrategy is IDefaultInterestRateStrategy {
 
   /**
    * @dev Doing validations and data update for an asset
-   * @param reserve address of the underlying asset of the reserve
+   * @param assetId assetId of the underlying asset of the reserve
    * @param rateData Encoded reserve interest rate data to apply
    */
-  function _setInterestRateParams(address reserve, InterestRateData memory rateData) internal {
-    require(reserve != address(0), Errors.ZERO_ADDRESS_NOT_VALID);
+  function _setInterestRateParams(uint256 assetId, InterestRateData memory rateData) internal {
+    require(assetId != 0, Errors.INVALID_ASSET_ID);
 
     require(
       rateData.optimalUsageRatio <= MAX_OPTIMAL_POINT &&
@@ -175,9 +169,9 @@ contract DefaultReserveInterestRateStrategy is IDefaultInterestRateStrategy {
       Errors.INVALID_MAX_RATE
     );
 
-    _interestRateData[reserve] = rateData;
+    _interestRateData[assetId] = rateData;
     emit RateDataUpdate(
-      reserve,
+      assetId,
       rateData.optimalUsageRatio,
       rateData.baseVariableBorrowRate,
       rateData.variableRateSlope1,

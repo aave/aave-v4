@@ -7,7 +7,7 @@ library DataTypes {
     uint256 liquidityTaken;
     uint256 totalDebt;
     uint256 reserveFactor; // likely not required
-    address reserve;
+    uint256 assetId;
     uint256 virtualUnderlyingBalance;
     bool usingVirtualBalance;
   }

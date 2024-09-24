@@ -41,14 +41,14 @@ interface IDefaultInterestRateStrategy is IReserveInterestRateStrategy {
   /**
    * @notice emitted when new interest rate data is set in a reserve
    *
-   * @param reserve address of the reserve that has new interest rate data set
+   * @param assetId address of the reserve that has new interest rate data set
    * @param optimalUsageRatio The optimal usage ratio, in bps
    * @param baseVariableBorrowRate The base variable borrow rate, in bps
    * @param variableRateSlope1 The slope of the variable interest curve, before hitting the optimal ratio, in bps
    * @param variableRateSlope2 The slope of the variable interest curve, after hitting the optimal ratio, in bps
    */
   event RateDataUpdate(
-    address indexed reserve,
+    uint256 indexed assetId,
     uint256 optimalUsageRatio,
     uint256 baseVariableBorrowRate,
     uint256 variableRateSlope1,
@@ -83,65 +83,65 @@ interface IDefaultInterestRateStrategy is IReserveInterestRateStrategy {
   /**
    * notice Returns the full InterestRateData object for the given reserve, in bps
    *
-   * @param reserve The reserve to get the data of
+   * @param assetId The assetId to get the data of
    *
    * @return The InterestRateData object for the given reserve
    */
-  function getInterestRateDataBps(address reserve) external view returns (InterestRateData memory);
+  function getInterestRateDataBps(uint256 assetId) external view returns (InterestRateData memory);
 
   /**
    * @notice Returns the optimal usage rate for the given reserve in bps
    *
-   * @param reserve The reserve to get the optimal usage rate of
+   * @param assetId The assetId to get the optimal usage rate of
    *
    * @return The optimal usage rate is the level of borrow / collateral at which the borrow rate
    */
-  function getOptimalUsageRatio(address reserve) external view returns (uint256);
+  function getOptimalUsageRatio(uint256 assetId) external view returns (uint256);
 
   /**
    * @notice Returns the variable rate slope below optimal usage ratio in bps
    * @dev It's the variable rate when usage ratio > 0 and <= OPTIMAL_USAGE_RATIO
    *
-   * @param reserve The reserve to get the variable rate slope 1 of
+   * @param assetId The assetId to get the variable rate slope 1 of
    *
    * @return The variable rate slope
    */
-  function getVariableRateSlope1(address reserve) external view returns (uint256);
+  function getVariableRateSlope1(uint256 assetId) external view returns (uint256);
 
   /**
    * @notice Returns the variable rate slope above optimal usage ratio in bps
    * @dev It's the variable rate when usage ratio > OPTIMAL_USAGE_RATIO
    *
-   * @param reserve The reserve to get the variable rate slope 2 of
+   * @param assetId The assetId to get the variable rate slope 2 of
    *
    * @return The variable rate slope
    */
-  function getVariableRateSlope2(address reserve) external view returns (uint256);
+  function getVariableRateSlope2(uint256 assetId) external view returns (uint256);
 
   /**
    * @notice Returns the base variable borrow rate, in bps
    *
-   * @param reserve The reserve to get the base variable borrow rate of
+   * @param assetId The assetId to get the base variable borrow rate of
    *
    * @return The base variable borrow rate
    */
-  function getBaseVariableBorrowRate(address reserve) external view returns (uint256);
+  function getBaseVariableBorrowRate(uint256 assetId) external view returns (uint256);
 
   /**
    * @notice Returns the maximum variable borrow rate, in bps
    *
-   * @param reserve The reserve to get the maximum variable borrow rate of
+   * @param assetId The assetId to get the maximum variable borrow rate of
    *
    * @return The maximum variable borrow rate
    */
-  function getMaxVariableBorrowRate(address reserve) external view returns (uint256);
+  function getMaxVariableBorrowRate(uint256 assetId) external view returns (uint256);
 
   /**
    * @notice Sets interest rate data for an Aave rate strategy
-   * @param reserve The reserve to update
+   * @param assetId The assetId to update
    * @param rateData The reserve interest rate data to apply to the given reserve
    *   Being specific to this custom implementation, with custom struct type,
    *   overloading the function on the generic interface
    */
-  function setInterestRateParams(address reserve, InterestRateData calldata rateData) external;
+  function setInterestRateParams(uint256 assetId, InterestRateData calldata rateData) external;
 }
