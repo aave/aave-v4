@@ -52,6 +52,7 @@ contract LiquidityHub {
     uint256 rf;
     uint256 decimals;
     bool active; // TODO: frozen, paused
+    bool paused;
     bool borrowable;
     uint256 supplyCap;
     uint256 borrowCap;
@@ -123,6 +124,7 @@ contract LiquidityHub {
         rf: params.rf,
         decimals: params.decimals,
         active: params.active,
+        paused: params.paused,
         borrowable: params.borrowable,
         supplyCap: params.supplyCap,
         borrowCap: params.borrowCap,
@@ -142,6 +144,7 @@ contract LiquidityHub {
       rf: params.rf,
       decimals: params.decimals,
       active: params.active,
+      paused: params.paused,
       borrowable: params.borrowable,
       supplyCap: params.supplyCap,
       borrowCap: params.borrowCap,
@@ -289,7 +292,6 @@ contract LiquidityHub {
     UserConfig memory userConfig = users[debtAssetId][user];
 
     // TODO: check if user is undercollateralized. Get HF
-
     _validateLiquidationCall(userConfig, collateralReserve, debtReserve, debtToCover);
 
     emit LiquidationCall(
@@ -393,5 +395,8 @@ contract LiquidityHub {
     Reserve memory collateralReserve,
     Reserve memory debtReserve,
     uint256 debtToCover
-  ) internal view {}
+  ) internal view {
+    require(debtReserve.config.active && collateralReserve.config.active, 'RESERVE_NOT_ACTIVE');
+    require(debtReserve.config.paused && collateralReserve.config.paused, 'RESERVE_PAUSED');
+  }
 }

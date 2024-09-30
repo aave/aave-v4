@@ -45,6 +45,7 @@ contract LiquidityHubHandler is Test {
         rf: 0,
         decimals: 18,
         active: true,
+        paused: false,
         borrowable: false,
         supplyCap: type(uint256).max,
         borrowCap: type(uint256).max,

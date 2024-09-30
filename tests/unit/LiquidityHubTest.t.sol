@@ -19,6 +19,7 @@ contract LiquidityHubTest is BaseTest {
         rf: 0,
         decimals: 18,
         active: true,
+        paused: false,
         borrowable: false,
         supplyCap: type(uint256).max,
         borrowCap: type(uint256).max,
@@ -37,6 +38,7 @@ contract LiquidityHubTest is BaseTest {
         rf: 0,
         decimals: 18,
         active: true,
+        paused: false,
         borrowable: false,
         supplyCap: type(uint256).max,
         borrowCap: type(uint256).max,
@@ -224,7 +226,11 @@ contract LiquidityHubTest is BaseTest {
   /// forge-config: default.fuzz.max-test-rejects = 1
   /// User makes a first supply, which increases overtime as yield accrues
   // TODO: to be fixed, there is precision loss
-  function skip_test_fuzz_supply_index_increase(uint256 assetId, address user, uint256 amount) public {
+  function skip_test_fuzz_supply_index_increase(
+    uint256 assetId,
+    address user,
+    uint256 amount
+  ) public {
     if (user == address(hub) || user == address(0)) return;
     assetId = bound(assetId, 0, hub.reserveCount() - 1);
     amount = bound(amount, 1, type(uint128).max);
