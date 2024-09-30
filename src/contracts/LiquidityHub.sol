@@ -290,6 +290,8 @@ contract LiquidityHub {
 
     // TODO: check if user is undercollateralized. Get HF
 
+    _validateLiquidationCall(userConfig, collateralReserve, debtReserve, debtToCover);
+
     emit LiquidationCall(
       collateralAssetId,
       debtAssetId,
@@ -385,4 +387,11 @@ contract LiquidityHub {
 
     userRiskPremium[user] = wAvg;
   }
+
+  function _validateLiquidationCall(
+    UserConfig memory userConfig,
+    Reserve memory collateralReserve,
+    Reserve memory debtReserve,
+    uint256 debtToCover
+  ) internal view {}
 }
