@@ -292,6 +292,8 @@ contract LiquidityHub {
     UserConfig memory userConfig = users[debtAssetId][user];
 
     // TODO: check if user is undercollateralized. Get HF
+    uint256 healthFactor = _calculateUserAccountData(userConfig, user);
+
     _validateLiquidationCall(userConfig, collateralReserve, debtReserve, debtToCover);
 
     emit LiquidationCall(
@@ -398,5 +400,16 @@ contract LiquidityHub {
   ) internal view {
     require(debtReserve.config.active && collateralReserve.config.active, 'RESERVE_NOT_ACTIVE');
     require(!debtReserve.config.paused && !collateralReserve.config.paused, 'RESERVE_IS_PAUSED');
+  }
+
+  function _calculateUserAccountData(
+    UserConfig memory userConfig,
+    address user
+  ) internal view returns (uint256) {
+    if (userConfig.shares == 0) {
+      return (type(uint256).max);
+    }
+    // TODO impl logic
+    return (1);
   }
 }
