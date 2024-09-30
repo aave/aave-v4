@@ -464,12 +464,23 @@ contract LiquidityHubTest is BaseTest {
     assertEq(hub.getUserRiskPremium(USER1), calcRiskPremium);
   }
 
-  function test_revertInactiveDebtReserve_user_liquidationCall() public {
-    uint256 ethAssetId = 1;
-    uint256 daiAssetId = 0;
+  function test_revertInactiveCollateralReserve_user_liquidationCall() public {
+    uint256 ethAssetId = 1; // collateral asset
+    uint256 daiAssetId = 0; // debt asset
 
     // ETH reserve is inactive
     _updateActive(ethAssetId, false);
+    vm.expectRevert(Errors.RESERVE_NOT_ACTIVE);
+    vm.prank(LIQUIDATOR);
+    hub.liquidationCall(ethAssetId, daiAssetId, USER1, 0, false);
+  }
+
+  function test_revertInactiveDebtReserve_user_liquidationCall() public {
+    uint256 ethAssetId = 1; // collateral asset
+    uint256 daiAssetId = 0; // debt asset
+
+    // ETH reserve is inactive
+    _updateActive(daiAssetId, false);
     vm.expectRevert(Errors.RESERVE_NOT_ACTIVE);
     vm.prank(LIQUIDATOR);
     hub.liquidationCall(ethAssetId, daiAssetId, USER1, 0, false);
