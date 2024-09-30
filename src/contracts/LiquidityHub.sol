@@ -252,8 +252,8 @@ contract LiquidityHub {
   function repay(uint256 assetId, uint256 amount, address onBehalfOf) external {}
 
   function liquidationCall(
-    address collateralAsset,
-    address debtAsset,
+    uint256 collateralAssetId,
+    uint256 debtAssetId,
     address user,
     uint256 debtToCover,
     bool receiveAToken
