@@ -27,6 +27,16 @@ contract LiquidityHub {
 
   event Borrow(uint256 indexed reserve, address indexed user, uint256 amount);
 
+  event LiquidationCall(
+    uint256 indexed collateralAssetId,
+    uint256 indexed debtAssetId,
+    address indexed user,
+    uint256 debtToCover,
+    uint256 liquidatedCollateralAmount,
+    address liquidator,
+    bool receiveAToken
+  );
+
   struct Reserve {
     uint256 id;
     uint256 totalShares;
@@ -254,13 +264,13 @@ contract LiquidityHub {
   /**
    * @notice Function to liquidate a non-healthy position collateral-wise, with Health Factor below 1
    * - The caller (liquidator) covers `debtToCover` amount of debt of the user getting liquidated, and receives
-   *   a proportionally amount of the `collateralAsset` plus a bonus to cover market risk
-   * @param collateralAssetId The address of the underlying asset used as collateral, to receive as result of the liquidation
-   * @param debtAssetId The address of the underlying borrowed asset to be repaid with the liquidation
-   * @param user The address of the borrower getting liquidated
-   * @param debtToCover The debt amount of borrowed `asset` the liquidator wants to cover
+   *   a proportionally amount of the `collateralAsset` plus a bonus to cover market risk.
+   * @param collateralAssetId The address of the underlying asset used as collateral, to receive as result of the liquidation.
+   * @param debtAssetId The address of the underlying borrowed asset to be repaid with the liquidation.
+   * @param user The address of the borrower getting liquidated.
+   * @param debtToCover The debt amount of borrowed `asset` the liquidator wants to cover.
    * @param receiveAToken True if the liquidators wants to receive the collateral aTokens, `false` if he wants
-   * to receive the underlying collateral asset directly
+   * to receive the underlying collateral asset directly.
    */
   function liquidationCall(
     uint256 collateralAssetId,
@@ -279,6 +289,16 @@ contract LiquidityHub {
     UserConfig memory userConfig = users[debtAssetId][user];
 
     // TODO: check if user is undercollateralized. Get HF
+
+    emit LiquidationCall(
+      collateralAssetId,
+      debtAssetId,
+      user,
+      debtToCover,
+      0, // liquidatedCollateralAmount
+      msg.sender,
+      receiveAToken
+    );
   }
 
   //
