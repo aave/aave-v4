@@ -251,6 +251,17 @@ contract LiquidityHub {
 
   function repay(uint256 assetId, uint256 amount, address onBehalfOf) external {}
 
+  /**
+   * @notice Function to liquidate a non-healthy position collateral-wise, with Health Factor below 1
+   * - The caller (liquidator) covers `debtToCover` amount of debt of the user getting liquidated, and receives
+   *   a proportionally amount of the `collateralAsset` plus a bonus to cover market risk
+   * @param collateralAssetId The address of the underlying asset used as collateral, to receive as result of the liquidation
+   * @param debtAssetId The address of the underlying borrowed asset to be repaid with the liquidation
+   * @param user The address of the borrower getting liquidated
+   * @param debtToCover The debt amount of borrowed `asset` the liquidator wants to cover
+   * @param receiveAToken True if the liquidators wants to receive the collateral aTokens, `false` if he wants
+   * to receive the underlying collateral asset directly
+   */
   function liquidationCall(
     uint256 collateralAssetId,
     uint256 debtAssetId,
@@ -262,6 +273,12 @@ contract LiquidityHub {
     // V3 implementation to liquidate undercollateralized positions to start out with.
     // In addition, instead of allowing the liquidator to liquidate up to 50% if HF goes below certain threshold
     // we want allow the liquidator to liquidate enough assets so the HF goes back to 1 (or slightly higher).
+
+    Reserve memory collateralReserve = reserves[collateralAssetId];
+    Reserve memory debtReserve = reserves[debtAssetId];
+    UserConfig memory userConfig = users[debtAssetId][user];
+
+    // TODO: check if user is undercollateralized. Get HF
   }
 
   //
