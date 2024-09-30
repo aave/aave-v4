@@ -8,6 +8,7 @@ import {WadRayMath} from './WadRayMath.sol';
 import {SharesMath} from './SharesMath.sol';
 import {MathUtils} from './MathUtils.sol';
 import {IBorrowModule} from './IBorrowModule.sol';
+import {LiquidationLogic} from './libraries/LiquidationLogic.sol';
 
 import 'forge-std/console2.sol';
 
@@ -26,16 +27,6 @@ contract LiquidityHub {
   event Withdraw(uint256 indexed reserve, address indexed user, address indexed to, uint256 amount);
 
   event Borrow(uint256 indexed reserve, address indexed user, uint256 amount);
-
-  event LiquidationCall(
-    uint256 indexed collateralAssetId,
-    uint256 indexed debtAssetId,
-    address indexed user,
-    uint256 debtToCover,
-    uint256 liquidatedCollateralAmount,
-    address liquidator,
-    bool receiveAToken
-  );
 
   struct Reserve {
     uint256 id;
@@ -282,21 +273,9 @@ contract LiquidityHub {
     uint256 debtToCover,
     bool receiveAToken
   ) external {
-    // TODO
-    // V3 implementation to liquidate undercollateralized positions to start out with.
-    // In addition, instead of allowing the liquidator to liquidate up to 50% if HF goes below certain threshold
-    // we want allow the liquidator to liquidate enough assets so the HF goes back to 1 (or slightly higher).
-
-    Reserve memory collateralReserve = reserves[collateralAssetId];
-    Reserve memory debtReserve = reserves[debtAssetId];
-    UserConfig memory userConfig = users[debtAssetId][user];
-
-    // TODO: check if user is undercollateralized. Get HF
-    uint256 healthFactor = _calculateUserAccountData(userConfig, user);
-
-    _validateLiquidationCall(userConfig, collateralReserve, debtReserve, debtToCover);
-
-    emit LiquidationCall(
+    LiquidationLogic.executeLiquidationCall(
+      reserves,
+      users,
       collateralAssetId,
       debtAssetId,
       user,
@@ -390,26 +369,5 @@ contract LiquidityHub {
     if (sumW != 0) wAvg /= sumW;
 
     userRiskPremium[user] = wAvg;
-  }
-
-  function _validateLiquidationCall(
-    UserConfig memory userConfig,
-    Reserve memory collateralReserve,
-    Reserve memory debtReserve,
-    uint256 debtToCover
-  ) internal view {
-    require(debtReserve.config.active && collateralReserve.config.active, 'RESERVE_NOT_ACTIVE');
-    require(!debtReserve.config.paused && !collateralReserve.config.paused, 'RESERVE_IS_PAUSED');
-  }
-
-  function _calculateUserAccountData(
-    UserConfig memory userConfig,
-    address user
-  ) internal view returns (uint256) {
-    if (userConfig.shares == 0) {
-      return (type(uint256).max);
-    }
-    // TODO impl logic
-    return (1);
   }
 }
