@@ -251,6 +251,19 @@ contract LiquidityHub {
 
   function repay(uint256 assetId, uint256 amount, address onBehalfOf) external {}
 
+  function liquidationCall(
+    address collateralAsset,
+    address debtAsset,
+    address user,
+    uint256 debtToCover,
+    bool receiveAToken
+  ) external {
+    // TODO
+    // V3 implementation to liquidate undercollateralized positions to start out with.
+    // In addition, instead of allowing the liquidator to liquidate up to 50% if HF goes below certain threshold
+    // we want allow the liquidator to liquidate enough assets so the HF goes back to 1 (or slightly higher).
+  }
+
   //
   // Internal
   //
@@ -304,10 +317,9 @@ contract LiquidityHub {
     if (elapsed > 0) {
       console2.log('_accrueReserveInterest');
       // linear interest
-      uint256 cumulated = MathUtils.calculateLinearInterest(
-        borrowRate,
-        uint40(r.lastUpdateTimestamp)
-      ).rayMul(r.totalAssets); // TODO rounding
+      uint256 cumulated = MathUtils
+        .calculateLinearInterest(borrowRate, uint40(r.lastUpdateTimestamp))
+        .rayMul(r.totalAssets); // TODO rounding
       console2.log('cumulated %e', cumulated);
       r.totalAssets += cumulated;
 
