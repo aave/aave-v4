@@ -467,45 +467,53 @@ contract LiquidityHubTest is BaseTest {
   function testRevertInactiveCollateralReserveLiquidationCall() public {
     uint256 ethAssetId = 1; // collateral asset
     uint256 daiAssetId = 0; // debt asset
+    uint256 debtToCover = 0;
+    bool receiveAToken = false;
 
     // ETH reserve is inactive
     _updateActive(ethAssetId, false);
     vm.expectRevert(Errors.RESERVE_NOT_ACTIVE);
     vm.prank(LIQUIDATOR);
-    hub.liquidationCall(ethAssetId, daiAssetId, USER1, 0, false);
+    hub.liquidationCall(ethAssetId, daiAssetId, USER1, debtToCover, receiveAToken);
   }
 
   function testRevertInactiveDebtReserveLiquidationCall() public {
     uint256 ethAssetId = 1; // collateral asset
     uint256 daiAssetId = 0; // debt asset
+    uint256 debtToCover = 0;
+    bool receiveAToken = false;
 
     // ETH reserve is inactive
     _updateActive(daiAssetId, false);
     vm.expectRevert(Errors.RESERVE_NOT_ACTIVE);
     vm.prank(LIQUIDATOR);
-    hub.liquidationCall(ethAssetId, daiAssetId, USER1, 0, false);
+    hub.liquidationCall(ethAssetId, daiAssetId, USER1, debtToCover, receiveAToken);
   }
 
   function testRevertPausedCollateralReserveLiquidationCall() public {
     uint256 ethAssetId = 1; // collateral asset
     uint256 daiAssetId = 0; // debt asset
+    uint256 debtToCover = 0;
+    bool receiveAToken = false;
 
     // ETH reserve is inactive
     _updatePaused(ethAssetId, false);
     vm.expectRevert(Errors.RESERVE_NOT_ACTIVE);
     vm.prank(LIQUIDATOR);
-    hub.liquidationCall(ethAssetId, daiAssetId, USER1, 0, false);
+    hub.liquidationCall(ethAssetId, daiAssetId, USER1, debtToCover, receiveAToken);
   }
 
   function testRevertPausedDebtReserveLiquidationCall() public {
     uint256 ethAssetId = 1; // collateral asset
     uint256 daiAssetId = 0; // debt asset
+    uint256 debtToCover = 0;
+    bool receiveAToken = false;
 
     // ETH reserve is inactive
     _updatePaused(daiAssetId, false);
     vm.expectRevert(Errors.RESERVE_NOT_ACTIVE);
     vm.prank(LIQUIDATOR);
-    hub.liquidationCall(ethAssetId, daiAssetId, USER1, 0, false);
+    hub.liquidationCall(ethAssetId, daiAssetId, USER1, debtToCover, receiveAToken);
   }
 
   function testLiquidationCall() public {
