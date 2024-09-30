@@ -464,7 +464,7 @@ contract LiquidityHubTest is BaseTest {
     assertEq(hub.getUserRiskPremium(USER1), calcRiskPremium);
   }
 
-  function test_revertInactiveCollateralReserve_user_liquidationCall() public {
+  function testRevertInactiveCollateralReserveLiquidationCall() public {
     uint256 ethAssetId = 1; // collateral asset
     uint256 daiAssetId = 0; // debt asset
 
@@ -475,12 +475,34 @@ contract LiquidityHubTest is BaseTest {
     hub.liquidationCall(ethAssetId, daiAssetId, USER1, 0, false);
   }
 
-  function test_revertInactiveDebtReserve_user_liquidationCall() public {
+  function testRevertInactiveDebtReserveLiquidationCall() public {
     uint256 ethAssetId = 1; // collateral asset
     uint256 daiAssetId = 0; // debt asset
 
     // ETH reserve is inactive
     _updateActive(daiAssetId, false);
+    vm.expectRevert(Errors.RESERVE_NOT_ACTIVE);
+    vm.prank(LIQUIDATOR);
+    hub.liquidationCall(ethAssetId, daiAssetId, USER1, 0, false);
+  }
+
+  function testRevertPausedCollateralReserveLiquidationCall() public {
+    uint256 ethAssetId = 1; // collateral asset
+    uint256 daiAssetId = 0; // debt asset
+
+    // ETH reserve is inactive
+    _updatePaused(ethAssetId, false);
+    vm.expectRevert(Errors.RESERVE_NOT_ACTIVE);
+    vm.prank(LIQUIDATOR);
+    hub.liquidationCall(ethAssetId, daiAssetId, USER1, 0, false);
+  }
+
+  function testRevertPausedDebtReserveLiquidationCall() public {
+    uint256 ethAssetId = 1; // collateral asset
+    uint256 daiAssetId = 0; // debt asset
+
+    // ETH reserve is inactive
+    _updatePaused(daiAssetId, false);
     vm.expectRevert(Errors.RESERVE_NOT_ACTIVE);
     vm.prank(LIQUIDATOR);
     hub.liquidationCall(ethAssetId, daiAssetId, USER1, 0, false);
