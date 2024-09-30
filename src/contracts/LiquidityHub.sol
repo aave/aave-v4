@@ -397,6 +397,6 @@ contract LiquidityHub {
     uint256 debtToCover
   ) internal view {
     require(debtReserve.config.active && collateralReserve.config.active, 'RESERVE_NOT_ACTIVE');
-    require(debtReserve.config.paused && collateralReserve.config.paused, 'RESERVE_IS_PAUSED');
+    require(!debtReserve.config.paused && !collateralReserve.config.paused, 'RESERVE_IS_PAUSED');
   }
 }
