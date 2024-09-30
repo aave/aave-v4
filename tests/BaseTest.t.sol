@@ -32,6 +32,15 @@ contract Events {
     uint16 indexed referralCode
   );
   event Withdraw(uint256 indexed reserve, address indexed user, address indexed to, uint256 amount);
+  event LiquidationCall(
+    uint256 indexed collateralAssetId,
+    uint256 indexed debtAssetId,
+    address indexed user,
+    uint256 debtToCover,
+    uint256 liquidatedCollateralAmount,
+    address liquidator,
+    bool receiveAToken
+  );
 }
 
 library Errors {
