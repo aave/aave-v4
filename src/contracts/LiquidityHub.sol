@@ -275,6 +275,7 @@ contract LiquidityHub {
   ) external {
     LiquidationLogic.executeLiquidationCall(
       reserves,
+      reservesList,
       users,
       collateralAssetId,
       debtAssetId,
