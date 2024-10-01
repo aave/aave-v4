@@ -1,7 +1,8 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.0;
 
-import {LiquidityHub} from '../LiquidityHub.sol';
+import {LiquidityHub} from './LiquidityHub.sol';
+import {IPriceOracle} from './IPriceOracle.sol';
 
 library LiquidationLogic {
   event LiquidationCall(
@@ -19,13 +20,13 @@ library LiquidationLogic {
     mapping(uint256 => LiquidityHub.Reserve) storage reserves,
     address[] storage reservesList,
     mapping(uint256 => mapping(address => LiquidityHub.UserConfig)) storage users,
+    uint256 reserveCount,
+    uint256 debtToCover,
     uint256 collateralAssetId,
     uint256 debtAssetId,
     address user,
-    uint256 debtToCover,
-    uint256 liquidatedCollateralAmount,
-    address liquidator,
-    bool receiveAToken
+    bool receiveAToken,
+    address oracle
   ) external {
     // TODO
     // V3 implementation to liquidate undercollateralized positions to start out with.
@@ -37,7 +38,14 @@ library LiquidationLogic {
     LiquidityHub.UserConfig storage userConfig = users[debtAssetId][user];
 
     // TODO: check if user is undercollateralized. Get HF
-    uint256 healthFactor = _calculateUserAccountData(reserves, reservesList, userConfig, user);
+    uint256 healthFactor = _calculateUserAccountData(
+      reserves,
+      reservesList,
+      userConfig,
+      reserveCount,
+      user,
+      oracle
+    );
 
     _validateLiquidationCall(userConfig, collateralReserve, debtReserve, debtToCover);
     // TODO: _calculateDebt();
@@ -46,8 +54,8 @@ library LiquidationLogic {
       collateralAssetId,
       debtAssetId,
       user,
-      debtToCover,
-      0, // liquidatedCollateralAmount
+      0, // TODO: actualDebtToLiquidate
+      0, // TODO: liquidatedCollateralAmount
       msg.sender,
       receiveAToken
     );
@@ -67,11 +75,24 @@ library LiquidationLogic {
     mapping(uint256 => LiquidityHub.Reserve) storage reserves,
     address[] storage reservesList,
     LiquidityHub.UserConfig memory userConfig,
-    address user
+    uint256 reserveCount,
+    address user,
+    address oracle
   ) internal view returns (uint256) {
     // TODO: calculate user account data, including health factor
     // if no debt, then health factor is type(uint256).max
     // TODO: emode config logic
+
+    // TODO: loop over reserves
+    uint256 assetId;
+    while (assetId < reserveCount) {
+      // TODO: if this reserve is not used for collateral/borrowing, skip
+
+      LiquidityHub.Reserve storage currentReserve = reserves[assetId];
+      address currentReserveAddress = reservesList[assetId];
+      uint256 assetPrice = IPriceOracle(oracle).getAssetPrice(assetId);
+      ++assetId;
+    }
 
     // TODO: hf: (collateralValue * avg liquidation threshold) / debt
     // use base currencies

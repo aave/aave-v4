@@ -8,7 +8,7 @@ import {WadRayMath} from './WadRayMath.sol';
 import {SharesMath} from './SharesMath.sol';
 import {MathUtils} from './MathUtils.sol';
 import {IBorrowModule} from './IBorrowModule.sol';
-import {LiquidationLogic} from './libraries/LiquidationLogic.sol';
+import {LiquidationLogic} from './LiquidationLogic.sol';
 
 import 'forge-std/console2.sol';
 
@@ -277,13 +277,13 @@ contract LiquidityHub {
       reserves,
       reservesList,
       users,
+      reserveCount,
+      debtToCover,
       collateralAssetId,
       debtAssetId,
       user,
-      debtToCover,
-      0, // liquidatedCollateralAmount
-      msg.sender,
-      receiveAToken
+      receiveAToken,
+      oracle
     );
   }
 
