@@ -516,6 +516,62 @@ contract LiquidityHubTest is BaseTest {
     hub.liquidationCall(ethAssetId, daiAssetId, USER1, debtToCover, receiveAToken);
   }
 
+  function testFuzzRevertPausedDebtReserveLiquidationCall(
+    uint256 debtToCover,
+    bool receiveAToken
+  ) public {
+    uint256 ethAssetId = 1; // collateral asset
+    uint256 daiAssetId = 0; // debt asset
+
+    // ETH reserve is inactive
+    _updatePaused(daiAssetId, false);
+    vm.expectRevert(Errors.RESERVE_NOT_ACTIVE);
+    vm.prank(LIQUIDATOR);
+    hub.liquidationCall(ethAssetId, daiAssetId, USER1, debtToCover, receiveAToken);
+  }
+
+  function testFuzzRevertPausedCollateralReserveLiquidationCall(
+    uint256 debtToCover,
+    bool receiveAToken
+  ) public {
+    uint256 ethAssetId = 1; // collateral asset
+    uint256 daiAssetId = 0; // debt asset
+
+    // ETH reserve is inactive
+    _updatePaused(ethAssetId, false);
+    vm.expectRevert(Errors.RESERVE_NOT_ACTIVE);
+    vm.prank(LIQUIDATOR);
+    hub.liquidationCall(ethAssetId, daiAssetId, USER1, debtToCover, receiveAToken);
+  }
+
+  function testFuzzRevertInactiveCollateralReserveLiquidationCall(
+    uint256 debtToCover,
+    bool receiveAToken
+  ) public {
+    uint256 ethAssetId = 1; // collateral asset
+    uint256 daiAssetId = 0; // debt asset
+
+    // ETH reserve is inactive
+    _updateActive(ethAssetId, false);
+    vm.expectRevert(Errors.RESERVE_NOT_ACTIVE);
+    vm.prank(LIQUIDATOR);
+    hub.liquidationCall(ethAssetId, daiAssetId, USER1, debtToCover, receiveAToken);
+  }
+
+  function testFuzzRevertInactiveDebtReserveLiquidationCall(
+    uint256 debtToCover,
+    bool receiveAToken
+  ) public {
+    uint256 ethAssetId = 1; // collateral asset
+    uint256 daiAssetId = 0; // debt asset
+
+    // ETH reserve is inactive
+    _updateActive(daiAssetId, false);
+    vm.expectRevert(Errors.RESERVE_NOT_ACTIVE);
+    vm.prank(LIQUIDATOR);
+    hub.liquidationCall(ethAssetId, daiAssetId, USER1, debtToCover, receiveAToken);
+  }
+
   function testLiquidationCall() public {
     uint256 ethAssetId = 1; // collateral asset
     uint256 daiAssetId = 0; // debt asset
