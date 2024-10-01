@@ -34,18 +34,11 @@ library LiquidationLogic {
 
     LiquidityHub.Reserve storage collateralReserve = reserves[collateralAssetId];
     LiquidityHub.Reserve storage debtReserve = reserves[debtAssetId];
-    LiquidityHub.UserConfig storage userConfig = users[debtAssetId][user];
 
     // TODO: check if user is undercollateralized. Get HF
-    uint256 healthFactor = _calculateUserAccountData(
-      reserves,
-      reservesList,
-      userConfig,
-      user,
-      oracle
-    );
+    uint256 healthFactor = _calculateUserAccountData(reserves, reservesList, users, user, oracle);
 
-    _validateLiquidationCall(userConfig, collateralReserve, debtReserve, debtToCover);
+    _validateLiquidationCall(collateralReserve, debtReserve);
     // TODO: _calculateDebt();
 
     emit LiquidationCall(
@@ -60,10 +53,8 @@ library LiquidationLogic {
   }
 
   function _validateLiquidationCall(
-    LiquidityHub.UserConfig memory userConfig,
     LiquidityHub.Reserve memory collateralReserve,
-    LiquidityHub.Reserve memory debtReserve,
-    uint256 debtToCover
+    LiquidityHub.Reserve memory debtReserve
   ) internal view {
     require(debtReserve.config.active && collateralReserve.config.active, 'RESERVE_NOT_ACTIVE');
     require(!debtReserve.config.paused && !collateralReserve.config.paused, 'RESERVE_IS_PAUSED');
@@ -72,7 +63,7 @@ library LiquidationLogic {
   function _calculateUserAccountData(
     mapping(uint256 => LiquidityHub.Reserve) storage reserves,
     address[] storage reservesList,
-    LiquidityHub.UserConfig memory userConfig,
+    mapping(uint256 => mapping(address => LiquidityHub.UserConfig)) storage users,
     address user,
     address oracle
   ) internal view returns (uint256) {
@@ -87,8 +78,15 @@ library LiquidationLogic {
       // TODO: if this reserve is not used for collateral/borrowing, skip
 
       LiquidityHub.Reserve storage currentReserve = reserves[assetId];
+      uint256 lt = currentReserve.config.lt;
+      uint256 decimals = currentReserve.config.decimals;
+
       address currentReserveAddress = reservesList[assetId];
       uint256 assetPrice = IPriceOracle(oracle).getAssetPrice(assetId);
+
+      // if user is supplying, shares > 0
+      bool isBorrowing = users[assetId][user].shares > 0;
+
       ++assetId;
     }
 
