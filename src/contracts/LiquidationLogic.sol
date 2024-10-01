@@ -45,7 +45,7 @@ library LiquidationLogic {
       collateralAssetId,
       debtAssetId,
       user,
-      0, // TODO: actualDebtToLiquidate
+      debtToCover, // TODO: actualDebtToLiquidate
       0, // TODO: liquidatedCollateralAmount
       msg.sender,
       receiveAToken
