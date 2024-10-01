@@ -277,7 +277,6 @@ contract LiquidityHub {
       reserves,
       reservesList,
       users,
-      reserveCount,
       debtToCover,
       collateralAssetId,
       debtAssetId,

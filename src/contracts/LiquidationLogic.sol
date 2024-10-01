@@ -20,7 +20,6 @@ library LiquidationLogic {
     mapping(uint256 => LiquidityHub.Reserve) storage reserves,
     address[] storage reservesList,
     mapping(uint256 => mapping(address => LiquidityHub.UserConfig)) storage users,
-    uint256 reserveCount,
     uint256 debtToCover,
     uint256 collateralAssetId,
     uint256 debtAssetId,
@@ -42,7 +41,6 @@ library LiquidationLogic {
       reserves,
       reservesList,
       userConfig,
-      reserveCount,
       user,
       oracle
     );
@@ -75,7 +73,6 @@ library LiquidationLogic {
     mapping(uint256 => LiquidityHub.Reserve) storage reserves,
     address[] storage reservesList,
     LiquidityHub.UserConfig memory userConfig,
-    uint256 reserveCount,
     address user,
     address oracle
   ) internal view returns (uint256) {
@@ -84,6 +81,7 @@ library LiquidationLogic {
     // TODO: emode config logic
 
     // TODO: loop over reserves
+    uint256 reserveCount = reservesList.length;
     uint256 assetId;
     while (assetId < reserveCount) {
       // TODO: if this reserve is not used for collateral/borrowing, skip
