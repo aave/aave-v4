@@ -83,9 +83,10 @@ library LiquidationLogic {
 
       address currentReserveAddress = reservesList[assetId];
       uint256 assetPrice = IPriceOracle(oracle).getAssetPrice(assetId);
-
       // if user is supplying, shares > 0
-      bool isBorrowing = users[assetId][user].shares > 0;
+      bool isSupplying = users[assetId][user].shares > 0;
+
+      // TODO: find if user is borrowing, or using as collateral
 
       ++assetId;
     }
