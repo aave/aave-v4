@@ -96,12 +96,8 @@ library LiquidationLogic {
 
     CalculateUserAccountDataVars memory vars;
 
-    vars.totalCollateralInBaseCurrency;
-    vars.totalDebtInBaseCurrency;
     vars.reserveCount = reservesList.length;
-    vars.assetId;
     // loop thru all reserves
-    //
     while (vars.assetId < vars.reserveCount) {
       if (!_isUsingAsCollateralOrBorrowing(vars.assetId)) {
         ++vars.assetId;
