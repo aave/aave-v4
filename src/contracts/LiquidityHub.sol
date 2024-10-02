@@ -3,6 +3,7 @@ pragma solidity ^0.8.0;
 
 import {SafeERC20} from '../dependencies/openzeppelin/SafeERC20.sol';
 import {IERC20} from '../dependencies/openzeppelin/IERC20.sol';
+import {IPriceOracle} from './IPriceOracle.sol';
 import {WadRayMath} from './WadRayMath.sol';
 import {SharesMath} from './SharesMath.sol';
 import {MathUtils} from './MathUtils.sol';
@@ -53,6 +54,13 @@ contract LiquidityHub {
 
   // asset id => user address => user's reserve config
   mapping(uint256 => mapping(address => DataTypes.ReserveConfig)) public userReserveConfigs;
+  mapping(address => uint256) userRiskPremium; // in base currency terms
+
+  address public oracle;
+
+  constructor(address oracleAddress) {
+    oracle = oracleAddress;
+  }
 
   function getReserve(uint256 assetId) external view returns (Reserve memory) {
     return reserves[assetId];
@@ -74,6 +82,14 @@ contract LiquidityHub {
   }
 
   function getUserBalance(uint256 assetId, address user) external view returns (uint256) {
+    return _getUserAssets(assetId, user);
+  }
+
+  function getUserRiskPremium(address user) external view returns (uint256) {
+    return userRiskPremium[user];
+  }
+
+  function _getUserAssets(uint256 assetId, address user) internal view returns (uint256) {
     UserConfig memory u = users[assetId][user];
 
     return u.shares.toAssetsDown(reserves[assetId].totalAssets, reserves[assetId].totalShares);
@@ -99,6 +115,22 @@ contract LiquidityHub {
       config: config
     });
     reserveCount++;
+  }
+
+  function updateReserve(
+    uint256 assetId,
+    DataTypes.ReserveConfigurationParams memory params
+  ) external {
+    // TODO: More sophisticated
+    // TODO: AccessControl
+    DataTypes.ReserveConfig memory config = DataTypes.ReserveConfig({data: 0});
+    config.setConfigFromParams(params);
+    reserves[assetId].config = config;
+  }
+
+  function updateReserve(uint256 assetId, DataTypes.ReserveConfig calldata config) external {
+    // TODO: AccessControl
+    reserves[assetId].config = config;
   }
 
   // /////
@@ -141,6 +173,9 @@ contract LiquidityHub {
     reserve.totalShares += sharesAmount;
     reserve.totalAssets += amount;
 
+    // TODO: update avgRiskPremium if collateral
+    _updateRiskPremium(onBehalfOf);
+
     // transferFrom
     IERC20(reservesList[assetId]).safeTransferFrom(msg.sender, address(this), amount); // TODO: fee-on-transfer
 
@@ -176,10 +211,17 @@ contract LiquidityHub {
     reserve.totalShares -= sharesAmount;
     reserve.totalAssets -= amount;
 
+    // TODO: update avgRiskPremium if collateral
+    _updateRiskPremium(msg.sender);
+
     // transfer
     IERC20(reservesList[assetId]).safeTransfer(to, amount);
 
     emit Withdraw(assetId, msg.sender, to, amount);
+  }
+
+  function refreshUserRiskPremium(address user) external {
+    _updateRiskPremium(user);
   }
 
   function borrow(uint256 assetId, uint256 amount) external {
@@ -202,7 +244,7 @@ contract LiquidityHub {
     // invokes borrow modules in case accounting update is needed
     // (eg, update premium for users borrowing using the asset as collateral)
     // TODO
-    //IBorrowModule(reserve.config.borrowModule).onBorrow(assetId, msg.sender, amount);
+    // IBorrowModule(reserve.config.borrowModule).onBorrow(assetId, msg.sender, amount);
 
     // updates user accounting
     // TODO: increase totalBorrows
@@ -285,5 +327,25 @@ contract LiquidityHub {
 
   function _updateUserReserveConfig(address user, uint256 reserve) internal {
     userReserveConfigs[reserve][user] = reserves[reserve].config;
+  }
+
+  function _updateRiskPremium(address user) internal {
+    uint256 wAvg;
+    uint256 sumW;
+
+    uint256 wData; // data weight * data value
+    // data weight = price * amount
+    // data value = liquidityPremium
+    for (uint256 assetId = 0; assetId < reservesList.length; assetId++) {
+      // TODO: if collateral enabled
+      wData = _getUserAssets(assetId, user) * IPriceOracle(oracle).getAssetPrice(assetId);
+      sumW += wData;
+
+      wData = wData * reserves[assetId].config.getLiquidityPremium(); // bps
+      wAvg += wData;
+    }
+    if (sumW != 0) wAvg /= sumW;
+
+    userRiskPremium[user] = wAvg;
   }
 }

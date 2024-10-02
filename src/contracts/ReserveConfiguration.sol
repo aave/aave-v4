@@ -19,6 +19,7 @@ library ReserveConfiguration {
   uint256 internal constant PAUSED_MASK =                    0xFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF7FFFFFFFFFFFF; // prettier-ignore
   uint256 internal constant BORROW_CAP_MASK =                0xFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF000000000FFFFFFFFFFFFF; // prettier-ignore
   uint256 internal constant SUPPLY_CAP_MASK =                0xFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF000000000FFFFFFFFFFFFFFFFFFFFFF; // prettier-ignore
+  uint256 internal constant LIQUIDITY_PREMIUM_MASK =         0xFFFFFFFFFFFFFFFFFFFFFFFFFFFFF0000FFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF; // prettier-ignore
 
   /// @dev For the Liquidation Threshold, the start bit is 0 (up to 15), hence no bitshifting is needed
   uint256 internal constant LIQUIDATION_BONUS_START_BIT_POSITION = 16;
@@ -30,10 +31,12 @@ library ReserveConfiguration {
   uint256 internal constant IS_PAUSED_START_BIT_POSITION = 51;
   uint256 internal constant BORROW_CAP_START_BIT_POSITION = 52;
   uint256 internal constant SUPPLY_CAP_START_BIT_POSITION = 88;
+  uint256 internal constant LIQUIDITY_PREMIUM_START_BIT_POSITION = 124;
 
   uint256 internal constant MAX_VALID_LIQUIDATION_THRESHOLD = 65535;
   uint256 internal constant MAX_VALID_LIQUIDATION_BONUS = 65535;
   uint256 internal constant MAX_VALID_RESERVE_FACTOR = 65535;
+  uint256 internal constant MAX_VALID_LIQUIDITY_PREMIUM = 10000;
   uint256 internal constant MAX_VALID_BORROW_CAP = 68719476735;
   uint256 internal constant MAX_VALID_SUPPLY_CAP = 68719476735;
 
@@ -234,6 +237,33 @@ library ReserveConfiguration {
   }
 
   /**
+   * @notice Sets the liquidity premium of the reserve
+   * @param self The reserve configuration
+   * @param liquidityPremium The liquidity premium
+   */
+  function setLiquidityPremium(
+    DataTypes.ReserveConfig memory self,
+    uint256 liquidityPremium
+  ) internal pure {
+    require(liquidityPremium <= MAX_VALID_LIQUIDITY_PREMIUM, Errors.INVALID_LIQ_PREMIUM);
+
+    self.data =
+      (self.data & LIQUIDITY_PREMIUM_MASK) |
+      (liquidityPremium << LIQUIDITY_PREMIUM_START_BIT_POSITION);
+  }
+
+  /**
+   * @notice Gets the liquidity premium of the reserve
+   * @param self The reserve configuration
+   * @return The liquidity premium
+   */
+  function getLiquidityPremium(
+    DataTypes.ReserveConfig memory self
+  ) internal pure returns (uint256) {
+    return (self.data & ~LIQUIDITY_PREMIUM_MASK) >> LIQUIDITY_PREMIUM_START_BIT_POSITION;
+  }
+
+  /**
    * @notice Gets the configuration flags of the reserve
    * @param self The reserve configuration
    * @return The state flag representing active
@@ -301,5 +331,6 @@ library ReserveConfiguration {
     setPaused(self, params.paused);
     setBorrowCap(self, params.borrowCap);
     setSupplyCap(self, params.supplyCap);
+    setLiquidityPremium(self, params.liquidityPremium);
   }
 }

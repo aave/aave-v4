@@ -7,7 +7,8 @@ import 'src/contracts/LiquidityHub.sol';
 import 'src/contracts/BorrowModule.sol';
 import 'src/dependencies/openzeppelin/IERC20.sol';
 import 'src/contracts/types/DataTypes.sol';
-import '../mocks/ERC20Mock.sol';
+import '../mocks/MockPriceOracle.sol';
+import '../mocks/MockERC20.sol';
 import '../Utils.t.sol';
 
 contract LiquidityHubHandler is Test {
@@ -15,6 +16,7 @@ contract LiquidityHubHandler is Test {
   IERC20 public dai;
   IERC20 public usdt;
 
+  IPriceOracle public oracle;
   LiquidityHub public hub;
   BorrowModule public bm;
 
@@ -28,11 +30,12 @@ contract LiquidityHubHandler is Test {
   State internal s;
 
   constructor() {
-    hub = new LiquidityHub();
+    oracle = new MockPriceOracle();
+    hub = new LiquidityHub(address(oracle));
     bm = new BorrowModule();
-    usdc = new ERC20Mock();
-    dai = new ERC20Mock();
-    usdt = new ERC20Mock();
+    usdc = new MockERC20();
+    dai = new MockERC20();
+    usdt = new MockERC20();
 
     // Add dai
     hub.addReserve(
@@ -47,7 +50,8 @@ contract LiquidityHubHandler is Test {
         frozen: false,
         paused: false,
         supplyCap: 0,
-        borrowCap: 0
+        borrowCap: 0,
+        liquidityPremium: 0
       }),
       address(dai)
     );

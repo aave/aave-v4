@@ -12,7 +12,8 @@ import 'src/contracts/WadRayMath.sol';
 import 'src/contracts/SharesMath.sol';
 import 'src/contracts/MathUtils.sol';
 import 'src/dependencies/openzeppelin/IERC20.sol';
-import './mocks/ERC20Mock.sol';
+import './mocks/MockERC20.sol';
+import './mocks/MockPriceOracle.sol';
 
 import './Utils.t.sol';
 
@@ -47,7 +48,9 @@ abstract contract BaseTest is Test, Events {
   IERC20 internal usdc;
   IERC20 internal dai;
   IERC20 internal usdt;
+  IERC20 internal eth;
 
+  IPriceOracle oracle;
   LiquidityHub hub;
   BorrowModule bm;
 
@@ -55,10 +58,12 @@ abstract contract BaseTest is Test, Events {
   address internal USER2 = makeAddr('USER2');
 
   function setUp() public virtual {
-    hub = new LiquidityHub();
+    oracle = new MockPriceOracle();
+    hub = new LiquidityHub(address(oracle));
     bm = new BorrowModule();
-    usdc = new ERC20Mock();
-    dai = new ERC20Mock();
-    usdt = new ERC20Mock();
+    dai = new MockERC20();
+    eth = new MockERC20();
+    usdc = new MockERC20();
+    usdt = new MockERC20();
   }
 }

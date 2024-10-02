@@ -77,7 +77,7 @@ library DataTypes {
     address supplyModule;
     uint256 lt;
     uint256 lb; // TODO: liquidationProtocolFee
-    // uint256 liquidityPremium; // TODO
+    uint256 liquidityPremium;
     uint256 rf;
     // uint256 decimals; // No decimals for now, we'll get from the token, but revisit later if needed
     bool active;
@@ -100,6 +100,7 @@ library DataTypes {
     // bit 51: asset is paused
     // bit 52-87: supplyCap in whole tokens, supplyCap == 0 => no cap
     // bit 88-123: borrowCap in whole tokens, borrowCap == 0 => no cap
+    // TODO: Liquidity Premium
 
     uint256 data;
   }
