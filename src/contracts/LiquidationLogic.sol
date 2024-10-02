@@ -88,10 +88,27 @@ library LiquidationLogic {
       LiquidityHub.Reserve storage currentReserve = reserves[assetId];
       uint256 lt = currentReserve.config.lt;
       uint256 decimals = currentReserve.config.decimals;
+      uint256 assetUnit = 10 ** decimals;
 
       address currentReserveAddress = reservesList[assetId];
       uint256 assetPrice = IPriceOracle(oracle).getAssetPrice(assetId);
-      bool isSupplying = users[assetId][user].shares > 0;
+      uint256 userBalanceInBaseCurrency = _getUserBalanceInBaseCurrency(
+        user,
+        currentReserve,
+        assetPrice,
+        assetUnit
+      );
+      totalCollateralInBaseCurrency += userBalanceInBaseCurrency;
+
+      if (_isBorrowing(assetId)) {
+        //TODO
+        // uint256 totalDebtInBaseCurrency += _getUserDebtInBaseCurrency(
+        //   params.user,
+        //   currentReserve,
+        //   vars.assetPrice,
+        //   vars.assetUnit
+        // );
+      }
 
       ++assetId;
     }
@@ -105,10 +122,12 @@ library LiquidationLogic {
     return (1); // dummy response for now
   }
 
+  // TODO
   function _isUsingAsCollateral(uint256 assetId) internal {
     return true;
   }
 
+  // TODO
   function _isBorrowing(uint256 assetId) internal {
     return true;
   }
@@ -118,6 +137,19 @@ library LiquidationLogic {
     return _isUsingAsCollateral(assetId) || _isBorrowing(assetId);
   }
 
+  // TODO
+  function _getUserBalanceInBaseCurrency(
+    address user,
+    LiquidityHub.Reserve storage reserve,
+    uint256 assetPrice,
+    uint256 assetUnit
+  ) internal pure {
+    uint256 shareRatio = user.shares.rayDiv(reserve.totalShares);
+    uint256 userAssets = shareRatio.rayMul(reserve.totalAssets) * assetPrice;
+    return balance / assetUnit;
+  }
+
+  // TODO
   function _calculateDebt(
     LiquidityHub.UserConfig memory userConfig,
     uint256 debtToCover
