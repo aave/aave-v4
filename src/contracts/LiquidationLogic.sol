@@ -3,13 +3,22 @@ pragma solidity ^0.8.0;
 
 import {LiquidityHub} from './LiquidityHub.sol';
 import {IPriceOracle} from './IPriceOracle.sol';
+import {WadRayMath} from './WadRayMath.sol';
+import {SharesMath} from './SharesMath.sol';
+
+import 'forge-std/console2.sol';
 
 library LiquidationLogic {
+  using WadRayMath for uint256;
+  using SharesMath for uint256;
+
   struct CalculateUserAccountDataVars {
     uint256 totalCollateralInBaseCurrency;
     uint256 totalDebtInBaseCurrency;
     uint256 reserveCount;
     uint256 assetId;
+    uint256 avgLiquidationThreshold;
+    uint256 userBalanceInBaseCurrency;
   }
 
   /**
@@ -52,6 +61,8 @@ library LiquidationLogic {
 
     _validateLiquidationCall(collateralReserve, debtReserve);
     // TODO: _calculateDebt();
+
+    //TODO: calculate how much to liquidate to get health factor back to HF_LIQUIDATION_THRESHOLD
 
     emit LiquidationCall(
       collateralAssetId,
@@ -104,13 +115,13 @@ library LiquidationLogic {
 
       address currentReserveAddress = reservesList[vars.assetId];
       uint256 assetPrice = IPriceOracle(oracle).getAssetPrice(vars.assetId);
-      uint256 userBalanceInBaseCurrency = _getUserBalanceInBaseCurrency(
+      vars.userBalanceInBaseCurrency = _getUserBalanceInBaseCurrency(
         users[vars.assetId][user],
         currentReserve,
         assetPrice,
         assetUnit
       );
-      vars.totalCollateralInBaseCurrency += userBalanceInBaseCurrency;
+      vars.totalCollateralInBaseCurrency += vars.userBalanceInBaseCurrency;
 
       if (_isBorrowing(vars.assetId)) {
         //TODO
@@ -122,16 +133,24 @@ library LiquidationLogic {
         );
       }
 
+      vars.avgLiquidationThreshold += vars.userBalanceInBaseCurrency * lt;
+
       ++vars.assetId;
     }
 
+    vars.avgLiquidationThreshold = vars.totalCollateralInBaseCurrency != 0
+      ? vars.avgLiquidationThreshold / vars.totalCollateralInBaseCurrency
+      : 0;
+
     // TODO: hf: (collateralValue * avg liquidation threshold) / debt
     // use base currencies
-    // uint256 healthFactor =
+    uint256 healthFactor = (vars.totalDebtInBaseCurrency == 0)
+      ? type(uint256).max
+      : (vars.totalCollateralInBaseCurrency * vars.avgLiquidationThreshold) /
+        (vars.totalDebtInBaseCurrency);
+    console2.log('HF calcs, totalDebtInBaseCurrency:', vars.totalDebtInBaseCurrency);
 
-    // get collateral value, get debt
-    // IPriceOracle(oracle).getAssetPrice(assetId);
-    return (1); // dummy response for now
+    return healthFactor; // dummy response for now
   }
 
   // TODO
@@ -168,7 +187,7 @@ library LiquidationLogic {
     uint256 assetUnit
   ) internal view returns (uint256) {
     uint256 userAssets = reserve.totalShares != 0
-      ? (user.shares * reserve.totalAssets * assetPrice) / (reserve.totalShares)
+      ? (user.shares.toAssetsDown(reserve.totalAssets, reserve.totalShares) * assetPrice)
       : 0;
     return userAssets / assetUnit;
   }
