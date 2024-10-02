@@ -5,6 +5,11 @@ import {LiquidityHub} from './LiquidityHub.sol';
 import {IPriceOracle} from './IPriceOracle.sol';
 
 library LiquidationLogic {
+  /**
+   * @dev allow the liquidator to liquidate enough assets so the HF goes back to this value
+   */
+  uint256 public constant HF_LIQUIDATION_THRESHOLD = 1e18;
+
   event LiquidationCall(
     uint256 indexed collateralAssetId,
     uint256 indexed debtAssetId,
@@ -71,11 +76,14 @@ library LiquidationLogic {
     // if no debt, then health factor is type(uint256).max
     // TODO: emode config logic
 
-    // TODO: loop over reserves
+    uint256 totalCollateralInBaseCurrency;
     uint256 reserveCount = reservesList.length;
     uint256 assetId;
     while (assetId < reserveCount) {
-      // TODO: if this reserve is not used for collateral/borrowing, skip
+      if (!_isUsingAsCollateralOrBorrowing(assetId)) {
+        ++assetId;
+        continue;
+      }
 
       LiquidityHub.Reserve storage currentReserve = reserves[assetId];
       uint256 lt = currentReserve.config.lt;
@@ -83,10 +91,7 @@ library LiquidationLogic {
 
       address currentReserveAddress = reservesList[assetId];
       uint256 assetPrice = IPriceOracle(oracle).getAssetPrice(assetId);
-      // if user is supplying, shares > 0
       bool isSupplying = users[assetId][user].shares > 0;
-
-      // TODO: find if user is borrowing, or using as collateral
 
       ++assetId;
     }
@@ -98,6 +103,19 @@ library LiquidationLogic {
     // get collateral value, get debt
     // IPriceOracle(oracle).getAssetPrice(assetId);
     return (1); // dummy response for now
+  }
+
+  function _isUsingAsCollateral(uint256 assetId) internal {
+    return true;
+  }
+
+  function _isBorrowing(uint256 assetId) internal {
+    return true;
+  }
+
+  // TODO is a given asset being used as collateral or being borrowed?
+  function _isUsingAsCollateralOrBorrowing(uint256 assetId) internal {
+    return _isUsingAsCollateral(assetId) || _isBorrowing(assetId);
   }
 
   function _calculateDebt(
