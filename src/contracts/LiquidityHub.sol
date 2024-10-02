@@ -9,7 +9,7 @@ import {SharesMath} from './SharesMath.sol';
 import {MathUtils} from './MathUtils.sol';
 import {IBorrowModule} from './IBorrowModule.sol';
 import {DataTypes} from './types/DataTypes.sol';
-import {ReserveConfiguration} from './ReserveConfiguration.sol';
+import {SupplyReserveConfiguration} from './SupplyReserveConfiguration.sol';
 
 import 'forge-std/console2.sol';
 
@@ -17,7 +17,7 @@ contract LiquidityHub {
   using SafeERC20 for IERC20;
   using WadRayMath for uint256;
   using SharesMath for uint256;
-  using ReserveConfiguration for DataTypes.ReserveConfig;
+  using SupplyReserveConfiguration for DataTypes.SupplyReserveConfig;
 
   event Supply(
     uint256 indexed reserve,
@@ -37,7 +37,7 @@ contract LiquidityHub {
     uint256 lastUpdateTimestamp;
     address borrowModule;
     address supplyModule;
-    DataTypes.ReserveConfig config;
+    DataTypes.SupplyReserveConfig config;
   }
 
   struct UserConfig {
@@ -53,7 +53,7 @@ contract LiquidityHub {
   mapping(uint256 => mapping(address => UserConfig)) public users;
 
   // asset id => user address => user's reserve config
-  mapping(uint256 => mapping(address => DataTypes.ReserveConfig)) public userReserveConfigs;
+  mapping(uint256 => mapping(address => DataTypes.SupplyReserveConfig)) public userReserveConfigs;
   mapping(address => uint256) userRiskPremium; // in base currency terms
 
   address public oracle;
@@ -75,8 +75,8 @@ contract LiquidityHub {
   function getUserReserveConfig(
     uint256 assetId,
     address user
-  ) external view returns (DataTypes.ReserveConfig memory) {
-    DataTypes.ReserveConfig memory c = userReserveConfigs[assetId][user];
+  ) external view returns (DataTypes.SupplyReserveConfig memory) {
+    DataTypes.SupplyReserveConfig memory c = userReserveConfigs[assetId][user];
 
     return c;
   }
@@ -99,9 +99,12 @@ contract LiquidityHub {
   // Governance
   // /////
 
-  function addReserve(DataTypes.ReserveConfigurationParams memory params, address asset) external {
+  function addReserve(
+    DataTypes.SupplyReserveConfigurationParams memory params,
+    address asset
+  ) external {
     // TODO: AccessControl
-    DataTypes.ReserveConfig memory config = DataTypes.ReserveConfig({data: 0});
+    DataTypes.SupplyReserveConfig memory config = DataTypes.SupplyReserveConfig({data: 0});
     config.setConfigFromParams(params);
 
     reservesList.push(asset);
@@ -119,16 +122,16 @@ contract LiquidityHub {
 
   function updateReserve(
     uint256 assetId,
-    DataTypes.ReserveConfigurationParams memory params
+    DataTypes.SupplyReserveConfigurationParams memory params
   ) external {
     // TODO: More sophisticated
     // TODO: AccessControl
-    DataTypes.ReserveConfig memory config = DataTypes.ReserveConfig({data: 0});
+    DataTypes.SupplyReserveConfig memory config = DataTypes.SupplyReserveConfig({data: 0});
     config.setConfigFromParams(params);
     reserves[assetId].config = config;
   }
 
-  function updateReserve(uint256 assetId, DataTypes.ReserveConfig calldata config) external {
+  function updateReserve(uint256 assetId, DataTypes.SupplyReserveConfig calldata config) external {
     // TODO: AccessControl
     reserves[assetId].config = config;
   }

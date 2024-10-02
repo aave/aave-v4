@@ -7,14 +7,14 @@ import '../BaseTest.t.sol';
 contract LiquidityHubTest is BaseTest {
   using SharesMath for uint256;
   using WadRayMath for uint256;
-  using ReserveConfiguration for DataTypes.ReserveConfig;
+  using SupplyReserveConfiguration for DataTypes.SupplyReserveConfig;
 
   function setUp() public override {
     super.setUp();
 
     // Add dai
     hub.addReserve(
-      DataTypes.ReserveConfigurationParams({
+      DataTypes.SupplyReserveConfigurationParams({
         borrowModule: address(bm),
         supplyModule: address(0),
         lt: 0,
@@ -34,7 +34,7 @@ contract LiquidityHubTest is BaseTest {
 
     // Add eth
     hub.addReserve(
-      DataTypes.ReserveConfigurationParams({
+      DataTypes.SupplyReserveConfigurationParams({
         borrowModule: address(bm),
         supplyModule: address(0),
         lt: 0,
@@ -469,7 +469,7 @@ contract LiquidityHubTest is BaseTest {
   }
 
   function _updateLiquidityPremium(uint256 assetId, uint256 newLiquidityPremium) internal {
-    DataTypes.ReserveConfig memory reserveConfig = hub.getReserve(assetId).config;
+    DataTypes.SupplyReserveConfig memory reserveConfig = hub.getReserve(assetId).config;
     reserveConfig.setLiquidityPremium(newLiquidityPremium);
     hub.updateReserve(assetId, reserveConfig);
   }

@@ -5,11 +5,11 @@ import {Errors} from './helpers/Errors.sol';
 import {DataTypes} from './types/DataTypes.sol';
 
 /**
- * @title ReserveConfiguration library
+ * @title SupplyReserveConfiguration library
  * @author Aave Labs
- * @notice Implements the bitmap logic to handle the reserve configuration
+ * @notice Implements the bitmap logic to handle the supply reserve configuration
  */
-library ReserveConfiguration {
+library SupplyReserveConfiguration {
   uint256 internal constant LIQUIDATION_THRESHOLD_MASK =     0xFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF0000; // prettier-ignore
   uint256 internal constant LIQUIDATION_BONUS_MASK =         0xFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF0000FFFF; // prettier-ignore
   uint256 internal constant RESERVE_FACTOR_MASK =            0xFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF0000FFFFFFFF; // prettier-ignore
@@ -48,7 +48,7 @@ library ReserveConfiguration {
    * @param threshold The new liquidation threshold
    */
   function setLiquidationThreshold(
-    DataTypes.ReserveConfig memory self,
+    DataTypes.SupplyReserveConfig memory self,
     uint256 threshold
   ) internal pure {
     require(threshold <= MAX_VALID_LIQUIDATION_THRESHOLD, Errors.INVALID_LIQ_THRESHOLD);
@@ -62,7 +62,7 @@ library ReserveConfiguration {
    * @return The liquidation threshold
    */
   function getLiquidationThreshold(
-    DataTypes.ReserveConfig memory self
+    DataTypes.SupplyReserveConfig memory self
   ) internal pure returns (uint256) {
     return self.data & ~LIQUIDATION_THRESHOLD_MASK;
   }
@@ -72,7 +72,10 @@ library ReserveConfiguration {
    * @param self The reserve configuration
    * @param bonus The new liquidation bonus
    */
-  function setLiquidationBonus(DataTypes.ReserveConfig memory self, uint256 bonus) internal pure {
+  function setLiquidationBonus(
+    DataTypes.SupplyReserveConfig memory self,
+    uint256 bonus
+  ) internal pure {
     require(bonus <= MAX_VALID_LIQUIDATION_BONUS, Errors.INVALID_LIQ_BONUS);
 
     self.data =
@@ -86,7 +89,7 @@ library ReserveConfiguration {
    * @return The liquidation bonus
    */
   function getLiquidationBonus(
-    DataTypes.ReserveConfig memory self
+    DataTypes.SupplyReserveConfig memory self
   ) internal pure returns (uint256) {
     return (self.data & ~LIQUIDATION_BONUS_MASK) >> LIQUIDATION_BONUS_START_BIT_POSITION;
   }
@@ -96,7 +99,7 @@ library ReserveConfiguration {
    * @param self The reserve configuration
    * @param active The active state
    */
-  function setActive(DataTypes.ReserveConfig memory self, bool active) internal pure {
+  function setActive(DataTypes.SupplyReserveConfig memory self, bool active) internal pure {
     self.data =
       (self.data & ACTIVE_MASK) |
       (uint256(active ? 1 : 0) << IS_ACTIVE_START_BIT_POSITION);
@@ -107,7 +110,7 @@ library ReserveConfiguration {
    * @param self The reserve configuration
    * @return The active state
    */
-  function getActive(DataTypes.ReserveConfig memory self) internal pure returns (bool) {
+  function getActive(DataTypes.SupplyReserveConfig memory self) internal pure returns (bool) {
     return (self.data & ~ACTIVE_MASK) != 0;
   }
 
@@ -116,7 +119,7 @@ library ReserveConfiguration {
    * @param self The reserve configuration
    * @param frozen The frozen state
    */
-  function setFrozen(DataTypes.ReserveConfig memory self, bool frozen) internal pure {
+  function setFrozen(DataTypes.SupplyReserveConfig memory self, bool frozen) internal pure {
     self.data =
       (self.data & FROZEN_MASK) |
       (uint256(frozen ? 1 : 0) << IS_FROZEN_START_BIT_POSITION);
@@ -127,7 +130,7 @@ library ReserveConfiguration {
    * @param self The reserve configuration
    * @return The frozen state
    */
-  function getFrozen(DataTypes.ReserveConfig memory self) internal pure returns (bool) {
+  function getFrozen(DataTypes.SupplyReserveConfig memory self) internal pure returns (bool) {
     return (self.data & ~FROZEN_MASK) != 0;
   }
 
@@ -136,7 +139,7 @@ library ReserveConfiguration {
    * @param self The reserve configuration
    * @param paused The paused state
    */
-  function setPaused(DataTypes.ReserveConfig memory self, bool paused) internal pure {
+  function setPaused(DataTypes.SupplyReserveConfig memory self, bool paused) internal pure {
     self.data =
       (self.data & PAUSED_MASK) |
       (uint256(paused ? 1 : 0) << IS_PAUSED_START_BIT_POSITION);
@@ -147,7 +150,7 @@ library ReserveConfiguration {
    * @param self The reserve configuration
    * @return The paused state
    */
-  function getPaused(DataTypes.ReserveConfig memory self) internal pure returns (bool) {
+  function getPaused(DataTypes.SupplyReserveConfig memory self) internal pure returns (bool) {
     return (self.data & ~PAUSED_MASK) != 0;
   }
 
@@ -156,7 +159,10 @@ library ReserveConfiguration {
    * @param self The reserve configuration
    * @param enabled True if the borrowing needs to be enabled, false otherwise
    */
-  function setBorrowingEnabled(DataTypes.ReserveConfig memory self, bool enabled) internal pure {
+  function setBorrowingEnabled(
+    DataTypes.SupplyReserveConfig memory self,
+    bool enabled
+  ) internal pure {
     self.data =
       (self.data & BORROWABLE_MASK) |
       (uint256(enabled ? 1 : 0) << IS_BORROWABLE_START_BIT_POSITION);
@@ -167,7 +173,9 @@ library ReserveConfiguration {
    * @param self The reserve configuration
    * @return The borrowing state
    */
-  function getBorrowingEnabled(DataTypes.ReserveConfig memory self) internal pure returns (bool) {
+  function getBorrowingEnabled(
+    DataTypes.SupplyReserveConfig memory self
+  ) internal pure returns (bool) {
     return (self.data & ~BORROWABLE_MASK) != 0;
   }
 
@@ -177,7 +185,7 @@ library ReserveConfiguration {
    * @param reserveFactor The reserve factor
    */
   function setReserveFactor(
-    DataTypes.ReserveConfig memory self,
+    DataTypes.SupplyReserveConfig memory self,
     uint256 reserveFactor
   ) internal pure {
     require(reserveFactor <= MAX_VALID_RESERVE_FACTOR, Errors.INVALID_RESERVE_FACTOR);
@@ -192,7 +200,9 @@ library ReserveConfiguration {
    * @param self The reserve configuration
    * @return The reserve factor
    */
-  function getReserveFactor(DataTypes.ReserveConfig memory self) internal pure returns (uint256) {
+  function getReserveFactor(
+    DataTypes.SupplyReserveConfig memory self
+  ) internal pure returns (uint256) {
     return (self.data & ~RESERVE_FACTOR_MASK) >> RESERVE_FACTOR_START_BIT_POSITION;
   }
 
@@ -201,7 +211,10 @@ library ReserveConfiguration {
    * @param self The reserve configuration
    * @param borrowCap The borrow cap
    */
-  function setBorrowCap(DataTypes.ReserveConfig memory self, uint256 borrowCap) internal pure {
+  function setBorrowCap(
+    DataTypes.SupplyReserveConfig memory self,
+    uint256 borrowCap
+  ) internal pure {
     require(borrowCap <= MAX_VALID_BORROW_CAP, Errors.INVALID_BORROW_CAP);
 
     self.data = (self.data & BORROW_CAP_MASK) | (borrowCap << BORROW_CAP_START_BIT_POSITION);
@@ -212,7 +225,7 @@ library ReserveConfiguration {
    * @param self The reserve configuration
    * @return The borrow cap
    */
-  function getBorrowCap(DataTypes.ReserveConfig memory self) internal pure returns (uint256) {
+  function getBorrowCap(DataTypes.SupplyReserveConfig memory self) internal pure returns (uint256) {
     return (self.data & ~BORROW_CAP_MASK) >> BORROW_CAP_START_BIT_POSITION;
   }
 
@@ -221,7 +234,10 @@ library ReserveConfiguration {
    * @param self The reserve configuration
    * @param supplyCap The supply cap
    */
-  function setSupplyCap(DataTypes.ReserveConfig memory self, uint256 supplyCap) internal pure {
+  function setSupplyCap(
+    DataTypes.SupplyReserveConfig memory self,
+    uint256 supplyCap
+  ) internal pure {
     require(supplyCap <= MAX_VALID_SUPPLY_CAP, Errors.INVALID_SUPPLY_CAP);
 
     self.data = (self.data & SUPPLY_CAP_MASK) | (supplyCap << SUPPLY_CAP_START_BIT_POSITION);
@@ -232,7 +248,7 @@ library ReserveConfiguration {
    * @param self The reserve configuration
    * @return The supply cap
    */
-  function getSupplyCap(DataTypes.ReserveConfig memory self) internal pure returns (uint256) {
+  function getSupplyCap(DataTypes.SupplyReserveConfig memory self) internal pure returns (uint256) {
     return (self.data & ~SUPPLY_CAP_MASK) >> SUPPLY_CAP_START_BIT_POSITION;
   }
 
@@ -242,7 +258,7 @@ library ReserveConfiguration {
    * @param liquidityPremium The liquidity premium
    */
   function setLiquidityPremium(
-    DataTypes.ReserveConfig memory self,
+    DataTypes.SupplyReserveConfig memory self,
     uint256 liquidityPremium
   ) internal pure {
     require(liquidityPremium <= MAX_VALID_LIQUIDITY_PREMIUM, Errors.INVALID_LIQ_PREMIUM);
@@ -258,7 +274,7 @@ library ReserveConfiguration {
    * @return The liquidity premium
    */
   function getLiquidityPremium(
-    DataTypes.ReserveConfig memory self
+    DataTypes.SupplyReserveConfig memory self
   ) internal pure returns (uint256) {
     return (self.data & ~LIQUIDITY_PREMIUM_MASK) >> LIQUIDITY_PREMIUM_START_BIT_POSITION;
   }
@@ -272,7 +288,7 @@ library ReserveConfiguration {
    * @return The state flag representing paused
    */
   function getFlags(
-    DataTypes.ReserveConfig memory self
+    DataTypes.SupplyReserveConfig memory self
   ) internal pure returns (bool, bool, bool, bool) {
     uint256 dataLocal = self.data;
 
@@ -292,7 +308,7 @@ library ReserveConfiguration {
    * @return The state param representing reserve factor
    */
   function getParams(
-    DataTypes.ReserveConfig memory self
+    DataTypes.SupplyReserveConfig memory self
   ) internal pure returns (uint256, uint256, uint256) {
     uint256 dataLocal = self.data;
 
@@ -309,7 +325,9 @@ library ReserveConfiguration {
    * @return The state param representing borrow cap
    * @return The state param representing supply cap.
    */
-  function getCaps(DataTypes.ReserveConfig memory self) internal pure returns (uint256, uint256) {
+  function getCaps(
+    DataTypes.SupplyReserveConfig memory self
+  ) internal pure returns (uint256, uint256) {
     uint256 dataLocal = self.data;
 
     return (
@@ -319,8 +337,8 @@ library ReserveConfiguration {
   }
 
   function setConfigFromParams(
-    DataTypes.ReserveConfig memory self,
-    DataTypes.ReserveConfigurationParams memory params
+    DataTypes.SupplyReserveConfig memory self,
+    DataTypes.SupplyReserveConfigurationParams memory params
   ) internal pure {
     setLiquidationThreshold(self, params.lt);
     setLiquidationBonus(self, params.lb);
