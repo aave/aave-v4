@@ -5,6 +5,13 @@ import {LiquidityHub} from './LiquidityHub.sol';
 import {IPriceOracle} from './IPriceOracle.sol';
 
 library LiquidationLogic {
+  struct CalculateUserAccountDataVars {
+    uint256 totalCollateralInBaseCurrency;
+    uint256 totalDebtInBaseCurrency;
+    uint256 reserveCount;
+    uint256 assetId;
+  }
+
   /**
    * @dev allow the liquidator to liquidate enough assets so the HF goes back to this value
    */
@@ -76,36 +83,38 @@ library LiquidationLogic {
     // if no debt, then health factor is type(uint256).max
     // TODO: emode config logic
 
-    uint256 totalCollateralInBaseCurrency;
-    uint256 totalDebtInBaseCurrency;
-    uint256 reserveCount = reservesList.length;
-    uint256 assetId;
+    CalculateUserAccountDataVars memory vars;
+
+    vars.totalCollateralInBaseCurrency;
+    vars.totalDebtInBaseCurrency;
+    vars.reserveCount = reservesList.length;
+    vars.assetId;
     // loop thru all reserves
     //
-    while (assetId < reserveCount) {
-      if (!_isUsingAsCollateralOrBorrowing(assetId)) {
-        ++assetId;
+    while (vars.assetId < vars.reserveCount) {
+      if (!_isUsingAsCollateralOrBorrowing(vars.assetId)) {
+        ++vars.assetId;
         continue;
       }
 
-      LiquidityHub.Reserve storage currentReserve = reserves[assetId];
+      LiquidityHub.Reserve storage currentReserve = reserves[vars.assetId];
       uint256 lt = currentReserve.config.lt;
       uint256 decimals = currentReserve.config.decimals;
       uint256 assetUnit = 10 ** decimals;
 
-      address currentReserveAddress = reservesList[assetId];
-      uint256 assetPrice = IPriceOracle(oracle).getAssetPrice(assetId);
+      address currentReserveAddress = reservesList[vars.assetId];
+      uint256 assetPrice = IPriceOracle(oracle).getAssetPrice(vars.assetId);
       uint256 userBalanceInBaseCurrency = _getUserBalanceInBaseCurrency(
-        users[assetId][user],
+        users[vars.assetId][user],
         currentReserve,
         assetPrice,
         assetUnit
       );
-      totalCollateralInBaseCurrency += userBalanceInBaseCurrency;
+      vars.totalCollateralInBaseCurrency += userBalanceInBaseCurrency;
 
-      if (_isBorrowing(assetId)) {
+      if (_isBorrowing(vars.assetId)) {
         //TODO
-        totalDebtInBaseCurrency += _getUserDebtInBaseCurrency(
+        vars.totalDebtInBaseCurrency += _getUserDebtInBaseCurrency(
           user,
           currentReserve,
           assetPrice,
@@ -113,7 +122,7 @@ library LiquidationLogic {
         );
       }
 
-      ++assetId;
+      ++vars.assetId;
     }
 
     // TODO: hf: (collateralValue * avg liquidation threshold) / debt
@@ -158,7 +167,9 @@ library LiquidationLogic {
     uint256 assetPrice,
     uint256 assetUnit
   ) internal view returns (uint256) {
-    uint256 userAssets = (user.shares * reserve.totalAssets * assetPrice) / (reserve.totalShares);
+    uint256 userAssets = reserve.totalShares != 0
+      ? (user.shares * reserve.totalAssets * assetPrice) / (reserve.totalShares)
+      : 0;
     return userAssets / assetUnit;
   }
 
