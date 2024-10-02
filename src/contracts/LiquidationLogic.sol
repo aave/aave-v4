@@ -77,8 +77,11 @@ library LiquidationLogic {
     // TODO: emode config logic
 
     uint256 totalCollateralInBaseCurrency;
+    uint256 totalDebtInBaseCurrency;
     uint256 reserveCount = reservesList.length;
     uint256 assetId;
+    // loop thru all reserves
+    //
     while (assetId < reserveCount) {
       if (!_isUsingAsCollateralOrBorrowing(assetId)) {
         ++assetId;
@@ -93,7 +96,7 @@ library LiquidationLogic {
       address currentReserveAddress = reservesList[assetId];
       uint256 assetPrice = IPriceOracle(oracle).getAssetPrice(assetId);
       uint256 userBalanceInBaseCurrency = _getUserBalanceInBaseCurrency(
-        user,
+        users[assetId][user],
         currentReserve,
         assetPrice,
         assetUnit
@@ -102,12 +105,12 @@ library LiquidationLogic {
 
       if (_isBorrowing(assetId)) {
         //TODO
-        // uint256 totalDebtInBaseCurrency += _getUserDebtInBaseCurrency(
-        //   params.user,
-        //   currentReserve,
-        //   vars.assetPrice,
-        //   vars.assetUnit
-        // );
+        totalDebtInBaseCurrency += _getUserDebtInBaseCurrency(
+          user,
+          currentReserve,
+          assetPrice,
+          assetUnit
+        );
       }
 
       ++assetId;
@@ -123,30 +126,40 @@ library LiquidationLogic {
   }
 
   // TODO
-  function _isUsingAsCollateral(uint256 assetId) internal {
+  function _isUsingAsCollateral(uint256 assetId) internal view returns (bool) {
     return true;
   }
 
   // TODO
-  function _isBorrowing(uint256 assetId) internal {
+  function _isBorrowing(uint256 assetId) internal view returns (bool) {
     return true;
   }
 
   // TODO is a given asset being used as collateral or being borrowed?
-  function _isUsingAsCollateralOrBorrowing(uint256 assetId) internal {
+  function _isUsingAsCollateralOrBorrowing(uint256 assetId) internal view returns (bool) {
     return _isUsingAsCollateral(assetId) || _isBorrowing(assetId);
   }
 
-  // TODO
-  function _getUserBalanceInBaseCurrency(
+  function _getUserDebtInBaseCurrency(
     address user,
     LiquidityHub.Reserve storage reserve,
     uint256 assetPrice,
     uint256 assetUnit
-  ) internal pure {
-    uint256 shareRatio = user.shares.rayDiv(reserve.totalShares);
-    uint256 userAssets = shareRatio.rayMul(reserve.totalAssets) * assetPrice;
-    return balance / assetUnit;
+  ) internal view returns (uint256) {
+    uint256 userTotalDebt; // TODO
+    userTotalDebt *= assetPrice;
+    return userTotalDebt / assetUnit;
+  }
+
+  // TODO
+  function _getUserBalanceInBaseCurrency(
+    LiquidityHub.UserConfig storage user,
+    LiquidityHub.Reserve storage reserve,
+    uint256 assetPrice,
+    uint256 assetUnit
+  ) internal view returns (uint256) {
+    uint256 userAssets = (user.shares * reserve.totalAssets * assetPrice) / (reserve.totalShares);
+    return userAssets / assetUnit;
   }
 
   // TODO
