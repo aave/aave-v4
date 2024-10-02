@@ -8,10 +8,14 @@ import 'forge-std/console2.sol';
 import 'src/contracts/LiquidityHub.sol';
 import 'src/contracts/BorrowModule.sol';
 import 'src/contracts/IBorrowModule.sol';
+import 'src/contracts/AaveAuthority.sol';
 import 'src/contracts/WadRayMath.sol';
 import 'src/contracts/SharesMath.sol';
 import 'src/contracts/MathUtils.sol';
 import 'src/dependencies/openzeppelin/IERC20.sol';
+import 'src/dependencies/solmate/Auth.sol';
+import 'src/dependencies/solmate/RolesAuthority.sol';
+import 'src/libraries/Roles.sol';
 import './mocks/ERC20Mock.sol';
 import './Utils.t.sol';
 
@@ -49,6 +53,7 @@ abstract contract BaseTest is Test, Events {
 
   LiquidityHub hub;
   BorrowModule bm;
+  AaveAuthority authority;
 
   address internal ADMIN = makeAddr('ADMIN');
   address internal USER1 = makeAddr('USER1');
@@ -56,7 +61,21 @@ abstract contract BaseTest is Test, Events {
 
   function setUp() public virtual {
     vm.startPrank(ADMIN);
-    hub = new LiquidityHub();
+
+    authority = new AaveAuthority(ADMIN);
+    bytes4 sig = bytes4(0xe71fa26c);
+    RolesAuthority(address(authority)).setRoleCapability(
+      Roles.RESERVE_CONTROLLER,
+      address(hub),
+      sig,
+      true
+    );
+    // Grant role to ADMIN
+    authority.setUserRole(ADMIN, Roles.RESERVE_CONTROLLER, true);
+
+    assertEq(true, authority.canCall(msg.sender, address(hub), sig));
+
+    hub = new LiquidityHub(address(authority));
     bm = new BorrowModule();
     usdc = new ERC20Mock();
     dai = new ERC20Mock();

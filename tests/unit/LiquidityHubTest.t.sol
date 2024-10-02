@@ -14,7 +14,7 @@ contract LiquidityHubTest is BaseTest {
   function setUp() public override {
     super.setUp();
 
-    vm.prank(ADMIN);
+    vm.startPrank(ADMIN);
     // Add dai
     hub.addReserve(
       LiquidityHub.ReserveConfig({
@@ -31,6 +31,7 @@ contract LiquidityHubTest is BaseTest {
       address(dai)
     );
     vm.warp(block.timestamp + 20);
+    vm.stopPrank();
   }
 
   function test_first_supply() public {
@@ -414,9 +415,9 @@ contract LiquidityHubTest is BaseTest {
     vm.startPrank(ADMIN);
     // Get function signature of addReserve
     bytes4 sig = bytes4(0xe71fa26c);
-    hub.setRoleCapability(Roles.RESERVE_CONTROLLER, address(hub), sig, true);
+    authority.setRoleCapability(Roles.RESERVE_CONTROLLER, address(hub), sig, true);
     // Grant role to USER1
-    hub.setUserRole(USER1, Roles.RESERVE_CONTROLLER, true);
+    authority.setUserRole(USER1, Roles.RESERVE_CONTROLLER, true);
     vm.stopPrank();
 
     // Succeeds after access grant

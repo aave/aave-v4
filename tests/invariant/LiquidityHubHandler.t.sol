@@ -6,6 +6,9 @@ import 'forge-std/Test.sol';
 import 'src/contracts/LiquidityHub.sol';
 import 'src/contracts/BorrowModule.sol';
 import 'src/dependencies/openzeppelin/IERC20.sol';
+import 'src/dependencies/solmate/Auth.sol';
+import 'src/dependencies/solmate/RolesAuthority.sol';
+import 'src/contracts/AaveAuthority.sol';
 import '../mocks/ERC20Mock.sol';
 import '../Utils.t.sol';
 
@@ -16,6 +19,9 @@ contract LiquidityHubHandler is Test {
 
   LiquidityHub public hub;
   BorrowModule public bm;
+  AaveAuthority public authority;
+
+  address internal ADMIN = makeAddr('ADMIN');
 
   struct State {
     mapping(uint256 => uint256) reserveSupplied; // asset => supply
@@ -27,7 +33,8 @@ contract LiquidityHubHandler is Test {
   State internal s;
 
   constructor() {
-    hub = new LiquidityHub();
+    authority = new AaveAuthority(ADMIN);
+    hub = new LiquidityHub(address(authority));
     bm = new BorrowModule();
     usdc = new ERC20Mock();
     dai = new ERC20Mock();
