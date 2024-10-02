@@ -146,8 +146,9 @@ library LiquidationLogic {
     // use base currencies
     uint256 healthFactor = (vars.totalDebtInBaseCurrency == 0)
       ? type(uint256).max
-      : (vars.totalCollateralInBaseCurrency * vars.avgLiquidationThreshold) /
-        (vars.totalDebtInBaseCurrency);
+      : (vars.totalCollateralInBaseCurrency * vars.avgLiquidationThreshold).wadDiv(
+        vars.totalDebtInBaseCurrency
+      );
     console2.log('HF calcs, totalDebtInBaseCurrency:', vars.totalDebtInBaseCurrency);
 
     return healthFactor; // dummy response for now
