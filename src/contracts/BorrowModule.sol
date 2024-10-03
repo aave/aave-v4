@@ -1,14 +1,146 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.0;
 
+import {SafeERC20} from '../dependencies/openzeppelin/SafeERC20.sol';
+import {IERC20} from '../dependencies/openzeppelin/IERC20.sol';
 import {WadRayMath} from './WadRayMath.sol';
 import {IBorrowModule} from './IBorrowModule.sol';
+import {MathUtils} from './MathUtils.sol';
 
 contract BorrowModule is IBorrowModule {
   using WadRayMath for uint256;
+  using SafeERC20 for IERC20;
 
-  function calculateInterestRates() external pure returns (uint256) {
+  // debt balances, fetches indexes from liquidity layer
+
+  // keep collateral configuration
+  // By using BorrowModule, LPs can choose which collaterals are used to borrow their assets
+
+  // keep hooks to be executed by LiquidityHub when there is supply/withdraw actions
+
+  // fetch liquidity from liquidityHub
+
+  struct Reserve {
+    uint256 id;
+    address asset;
+    uint256 totalDebt;
+    uint256 lastUpdateIndex;
+    uint256 lastUpdateTimestamp;
+    ReserveConfig config;
+  }
+
+  struct ReserveConfig {
+    uint256 lt;
+    uint256 lb; // TODO: liquidationProtocolFee
+    uint256 rf;
+    bool borrowable;
+  }
+
+  struct UserConfig {
+    uint256 principalBalance;
+    uint256 interestBalance;
+    uint256 lastUpdateIndex;
+    uint256 lastUpdateTimestamp;
+  }
+
+  // asset id => user address => user data
+  mapping(uint256 => mapping(address => UserConfig)) public users;
+  // assetId => reserveData
+  mapping(uint256 => Reserve) public reserves;
+
+  // /////
+  // Governance
+  // /////
+
+  function addReserve(uint256 assetId, ReserveConfig memory params, address asset) external {
+    // TODO: AccessControl
+    reserves[assetId].id = assetId;
+    reserves[assetId].asset = asset;
+    reserves[assetId].config = ReserveConfig({
+      lt: params.lt,
+      lb: params.lb,
+      rf: params.rf,
+      borrowable: params.borrowable
+    });
+  }
+
+  function updateReserve(uint256 assetId, ReserveConfig memory params) external {
+    // TODO: More sophisticated
+    require(reserves[assetId].id != 0, 'INVALID_RESERVE');
+    // TODO: AccessControl
+    reserves[assetId].config = ReserveConfig({
+      lt: params.lt,
+      lb: params.lb,
+      rf: params.rf,
+      borrowable: params.borrowable
+    });
+  }
+
+  function calculateInterestRates() public pure returns (uint256) {
     // borrowRate
     return 0;
+  }
+
+  function onBorrow(
+    uint256 assetId,
+    address user,
+    uint256 userRiskPremium,
+    uint256 amount
+  ) external {
+    Reserve storage r = reserves[assetId];
+    _validateBorrow(r, amount);
+
+    // accrue
+    _updateState(r);
+
+    // TODO HF check
+
+    // update user debt balance
+    UserConfig storage u = users[assetId][user];
+    // accrue interest
+    // TODO: Risk premium for user and reserve
+    u.principalBalance +=
+      u.principalBalance.rayMul(
+        MathUtils.calculateCompoundedInterest(
+          u.lastUpdateIndex,
+          uint40(u.lastUpdateTimestamp),
+          block.timestamp
+        )
+      ) +
+      amount;
+    u.lastUpdateTimestamp = block.timestamp;
+
+    // update reserve debt balance
+    r.totalDebt +=
+      r.totalDebt.rayMul(
+        MathUtils.calculateCompoundedInterest(
+          r.lastUpdateIndex,
+          uint40(r.lastUpdateTimestamp),
+          block.timestamp
+        )
+      ) +
+      amount;
+
+    // compatible collaterals assets?
+
+    // TODO reference of liqHub instead of msg.sender
+    IERC20(reserves[assetId].asset).safeTransferFrom(msg.sender, user, amount);
+  }
+
+  function _validateBorrow(Reserve storage reserve, uint256 amount) internal view {
+    require(reserve.config.borrowable, 'RESERVE_NOT_BORROWABLE');
+  }
+
+  function _updateState(Reserve storage reserve) internal {
+    // TODO: Move this call to IR
+    uint256 borrowRate = calculateInterestRates(); // TODO: coupling here, must be more abstract?
+    uint256 cumulatedInterest = MathUtils.calculateCompoundedInterest(
+      borrowRate,
+      uint40(reserve.lastUpdateTimestamp),
+      block.timestamp
+    );
+
+    reserve.lastUpdateIndex = reserve.totalDebt.rayMul(cumulatedInterest);
+    reserve.lastUpdateTimestamp = block.timestamp;
   }
 }

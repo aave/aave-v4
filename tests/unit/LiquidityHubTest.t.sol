@@ -14,15 +14,21 @@ contract LiquidityHubTest is BaseTest {
     hub.addReserve(
       LiquidityHub.ReserveConfig({
         borrowModule: address(bm),
+        decimals: 18,
+        active: true,
+        supplyCap: type(uint256).max,
+        drawCap: type(uint256).max,
+        liquidityPremium: 10_00
+      }),
+      address(dai)
+    );
+    bm.addReserve(
+      0,
+      BorrowModule.ReserveConfig({
         lt: 0,
         lb: 0,
         rf: 0,
-        decimals: 18,
-        active: true,
-        borrowable: false,
-        supplyCap: type(uint256).max,
-        borrowCap: type(uint256).max,
-        liquidityPremium: 10_00
+        borrowable: true
       }),
       address(dai)
     );
@@ -32,15 +38,21 @@ contract LiquidityHubTest is BaseTest {
     hub.addReserve(
       LiquidityHub.ReserveConfig({
         borrowModule: address(bm),
+        decimals: 18,
+        active: true,
+        supplyCap: type(uint256).max,
+        drawCap: type(uint256).max,
+        liquidityPremium: 0
+      }),
+      address(eth)
+    );
+    bm.addReserve(
+      1,
+      BorrowModule.ReserveConfig({
         lt: 0,
         lb: 0,
         rf: 0,
-        decimals: 18,
-        active: true,
-        borrowable: false,
-        supplyCap: type(uint256).max,
-        borrowCap: type(uint256).max,
-        liquidityPremium: 0
+        borrowable: true
       }),
       address(eth)
     );
@@ -224,7 +236,11 @@ contract LiquidityHubTest is BaseTest {
   /// forge-config: default.fuzz.max-test-rejects = 1
   /// User makes a first supply, which increases overtime as yield accrues
   // TODO: to be fixed, there is precision loss
-  function skip_test_fuzz_supply_index_increase(uint256 assetId, address user, uint256 amount) public {
+  function skip_test_fuzz_supply_index_increase(
+    uint256 assetId,
+    address user,
+    uint256 amount
+  ) public {
     if (user == address(hub) || user == address(0)) return;
     assetId = bound(assetId, 0, hub.reserveCount() - 1);
     amount = bound(amount, 1, type(uint128).max);
