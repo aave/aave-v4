@@ -23,8 +23,16 @@ library LiquidationLogic {
 
   /**
    * @dev allow the liquidator to liquidate enough assets so the HF goes back to this value
+   * TODO: decide is this a constant, or adjustable (via governance)
    */
   uint256 public constant HF_LIQUIDATION_THRESHOLD = 1e18;
+  // TODO: Minimum health factor allowed under any circumstance
+  uint256 public constant MINIMUM_HEALTH_FACTOR_LIQUIDATION_THRESHOLD = 0.95e18;
+  /**
+   * @dev Minimum health factor to consider a user position healthy
+   * A value of 1e18 results in 1
+   */
+  uint256 public constant HEALTH_FACTOR_LIQUIDATION_THRESHOLD = 1e18;
 
   event LiquidationCall(
     uint256 indexed collateralAssetId,
@@ -48,10 +56,10 @@ library LiquidationLogic {
     bool receiveAToken,
     address oracle
   ) external {
-    // TODO
     // V3 implementation to liquidate undercollateralized positions to start out with.
     // In addition, instead of allowing the liquidator to liquidate up to 50% if HF goes below certain threshold
     // we want allow the liquidator to liquidate enough assets so the HF goes back to 1 (or slightly higher).
+    // make sure to account for liquidation bonus in calculating the amount liquidatable
 
     LiquidityHub.Reserve storage collateralReserve = reserves[collateralAssetId];
     LiquidityHub.Reserve storage debtReserve = reserves[debtAssetId];
@@ -59,17 +67,18 @@ library LiquidationLogic {
     // TODO: check if user is undercollateralized. Get HF
     uint256 healthFactor = _calculateUserAccountData(reserves, reservesList, users, user, oracle);
 
-    _validateLiquidationCall(collateralReserve, debtReserve);
+    _validateLiquidationCall(collateralReserve, debtReserve, 0); // TODO: healthFactor
     // TODO: _calculateDebt();
 
     //TODO: calculate how much to liquidate to get health factor back to HF_LIQUIDATION_THRESHOLD
+    uint256 actualCollateralToLiquidate; // TODO
 
     emit LiquidationCall(
       collateralAssetId,
       debtAssetId,
       user,
       debtToCover, // TODO: actualDebtToLiquidate
-      0, // TODO: liquidatedCollateralAmount
+      actualCollateralToLiquidate, // TODO: liquidatedCollateralAmount
       msg.sender,
       receiveAToken
     );
@@ -77,10 +86,15 @@ library LiquidationLogic {
 
   function _validateLiquidationCall(
     LiquidityHub.Reserve memory collateralReserve,
-    LiquidityHub.Reserve memory debtReserve
+    LiquidityHub.Reserve memory debtReserve,
+    uint256 healthFactor
   ) internal view {
     require(debtReserve.config.active && collateralReserve.config.active, 'RESERVE_NOT_ACTIVE');
-    require(!debtReserve.config.paused && !collateralReserve.config.paused, 'RESERVE_IS_PAUSED');
+    require(!debtReserve.config.paused && !collateralReserve.config.paused, 'RESERVE_PAUSED');
+    require(
+      healthFactor < HEALTH_FACTOR_LIQUIDATION_THRESHOLD,
+      'HEALTH_FACTOR_NOT_BELOW_THRESHOLD'
+    );
   }
 
   function _calculateUserAccountData(
@@ -120,7 +134,6 @@ library LiquidationLogic {
       vars.totalCollateralInBaseCurrency += vars.userBalanceInBaseCurrency;
 
       if (_isBorrowing(vars.assetId)) {
-        //TODO
         vars.totalDebtInBaseCurrency += _getUserDebtInBaseCurrency(
           user,
           currentReserve,
@@ -165,6 +178,7 @@ library LiquidationLogic {
     return _isUsingAsCollateral(assetId) || _isBorrowing(assetId);
   }
 
+  // TODO
   function _getUserDebtInBaseCurrency(
     address user,
     LiquidityHub.Reserve storage reserve,
