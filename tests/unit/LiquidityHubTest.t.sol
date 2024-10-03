@@ -14,17 +14,18 @@ contract LiquidityHubTest is BaseTest {
     hub.addReserve(
       LiquidityHub.ReserveConfig({
         borrowModule: address(bm),
-        lt: 0,
-        lb: 0,
-        rf: 0,
         decimals: 18,
         active: true,
         paused: false,
-        borrowable: false,
         supplyCap: type(uint256).max,
-        borrowCap: type(uint256).max,
+        drawCap: type(uint256).max,
         liquidityPremium: 10_00
       }),
+      address(dai)
+    );
+    bm.addReserve(
+      0,
+      BorrowModule.ReserveConfig({lt: 0, lb: 0, rf: 0, borrowable: true}),
       address(dai)
     );
     MockPriceOracle(address(oracle)).setAssetPrice(0, 1e8);
@@ -33,17 +34,18 @@ contract LiquidityHubTest is BaseTest {
     hub.addReserve(
       LiquidityHub.ReserveConfig({
         borrowModule: address(bm),
-        lt: 0,
-        lb: 0,
-        rf: 0,
         decimals: 18,
         active: true,
         paused: false,
-        borrowable: false,
         supplyCap: type(uint256).max,
-        borrowCap: type(uint256).max,
+        drawCap: type(uint256).max,
         liquidityPremium: 0
       }),
+      address(eth)
+    );
+    bm.addReserve(
+      1,
+      BorrowModule.ReserveConfig({lt: 0, lb: 0, rf: 0, borrowable: true}),
       address(eth)
     );
     MockPriceOracle(address(oracle)).setAssetPrice(1, 2000e8);

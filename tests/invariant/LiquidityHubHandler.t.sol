@@ -40,17 +40,18 @@ contract LiquidityHubHandler is Test {
     hub.addReserve(
       LiquidityHub.ReserveConfig({
         borrowModule: address(bm),
-        lt: 0,
-        lb: 0,
-        rf: 0,
         decimals: 18,
         active: true,
         paused: false,
-        borrowable: false,
         supplyCap: type(uint256).max,
-        borrowCap: type(uint256).max,
+        drawCap: type(uint256).max,
         liquidityPremium: 0
       }),
+      address(dai)
+    );
+    bm.addReserve(
+      0,
+      BorrowModule.ReserveConfig({lt: 0, lb: 0, rf: 0, borrowable: false}),
       address(dai)
     );
   }
