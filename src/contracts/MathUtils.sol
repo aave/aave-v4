@@ -96,49 +96,4 @@ library MathUtils {
   ) internal view returns (uint256) {
     return calculateCompoundedInterest(rate, lastUpdateTimestamp, block.timestamp);
   }
-
-  function calculateNewAverage(
-    uint256 currentAvg,
-    uint256 currentAvgSize,
-    uint256 newValue,
-    bool toAdd
-  ) internal pure returns (uint256, uint256) {
-    if (toAdd) {
-      if (currentAvgSize == 0) return (newValue, 1);
-      return ((currentAvgSize * currentAvg + newValue) / (currentAvgSize + 1), currentAvgSize + 1);
-    } else {
-      if (currentAvgSize < 2) return (0, 0);
-      return ((currentAvgSize * currentAvg - newValue) / (currentAvgSize - 1), currentAvgSize - 1);
-    }
-  }
-
-  function calculateNewWeightedAverage(
-    uint256 currentWeightedAvg,
-    uint256 currentSumWeights,
-    uint256 newValue,
-    uint256 newValueWeight,
-    bool toAdd
-  ) internal view returns (uint256, uint256) {
-    // newWeightedAvg, newSumWeights
-    if (toAdd) {
-      if (currentSumWeights == 0) return (newValue, newValueWeight);
-      return (
-        (currentSumWeights * currentWeightedAvg + newValue * newValueWeight) /
-          (currentSumWeights + newValueWeight),
-        currentSumWeights + newValueWeight
-      );
-    } else {
-      if (currentSumWeights < newValueWeight) return (0, 0);
-      // TODO: Fails for big differences (e.g. value to remove cannot be higher than weighted)
-      if (currentSumWeights * currentWeightedAvg < newValue * newValueWeight) return (0, 0);
-      console2.log((currentSumWeights * currentWeightedAvg));
-      console2.log((currentSumWeights * currentWeightedAvg - newValue * newValueWeight));
-      console2.log((currentSumWeights - newValueWeight));
-      return (
-        (currentSumWeights * currentWeightedAvg - newValue * newValueWeight) /
-          (currentSumWeights - newValueWeight),
-        currentSumWeights - newValueWeight
-      );
-    }
-  }
 }

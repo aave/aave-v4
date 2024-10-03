@@ -9,6 +9,25 @@ import {IReserveInterestRateStrategy} from './IReserveInterestRateStrategy.sol';
  * @notice Interface of the default interest rate strategy used by the Aave protocol
  */
 interface IDefaultInterestRateStrategy is IReserveInterestRateStrategy {
+
+  /**
+   * @notice emitted when new interest rate data is set in a reserve
+   *
+   * @param assetId address of the reserve that has new interest rate data set
+   * @param optimalUsageRatio The optimal usage ratio, in bps
+   * @param baseVariableBorrowRate The base variable borrow rate, in bps
+   * @param variableRateSlope1 The slope of the variable interest curve, before hitting the optimal ratio, in bps
+   * @param variableRateSlope2 The slope of the variable interest curve, after hitting the optimal ratio, in bps
+   */
+  event RateDataUpdate(
+    uint256 indexed assetId,
+    uint256 optimalUsageRatio,
+    uint256 baseVariableBorrowRate,
+    uint256 variableRateSlope1,
+    uint256 variableRateSlope2
+  );
+
+
   struct CalcInterestRatesLocalVars {
     uint256 availableLiquidity;
     uint256 totalDebt;
@@ -39,21 +58,13 @@ interface IDefaultInterestRateStrategy is IReserveInterestRateStrategy {
   }
 
   /**
-   * @notice emitted when new interest rate data is set in a reserve
-   *
-   * @param assetId address of the reserve that has new interest rate data set
-   * @param optimalUsageRatio The optimal usage ratio, in bps
-   * @param baseVariableBorrowRate The base variable borrow rate, in bps
-   * @param variableRateSlope1 The slope of the variable interest curve, before hitting the optimal ratio, in bps
-   * @param variableRateSlope2 The slope of the variable interest curve, after hitting the optimal ratio, in bps
+   * @notice Sets interest rate data for an Aave rate strategy
+   * @param assetId The assetId to update
+   * @param rateData The reserve interest rate data to apply to the given reserve
+   *   Being specific to this custom implementation, with custom struct type,
+   *   overloading the function on the generic interface
    */
-  event RateDataUpdate(
-    uint256 indexed assetId,
-    uint256 optimalUsageRatio,
-    uint256 baseVariableBorrowRate,
-    uint256 variableRateSlope1,
-    uint256 variableRateSlope2
-  );
+  function setInterestRateParams(uint256 assetId, InterestRateData calldata rateData) external;
 
   /**
    * @notice Returns the address of the PoolAddressesProvider
@@ -136,12 +147,4 @@ interface IDefaultInterestRateStrategy is IReserveInterestRateStrategy {
    */
   function getMaxVariableBorrowRate(uint256 assetId) external view returns (uint256);
 
-  /**
-   * @notice Sets interest rate data for an Aave rate strategy
-   * @param assetId The assetId to update
-   * @param rateData The reserve interest rate data to apply to the given reserve
-   *   Being specific to this custom implementation, with custom struct type,
-   *   overloading the function on the generic interface
-   */
-  function setInterestRateParams(uint256 assetId, InterestRateData calldata rateData) external;
 }

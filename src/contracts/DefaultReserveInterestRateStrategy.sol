@@ -28,14 +28,14 @@ contract DefaultReserveInterestRateStrategy is IDefaultInterestRateStrategy {
   uint256 public constant MAX_OPTIMAL_POINT = 99_00; // 99.00% in BPS
 
   /// @dev Map of assetId and their interest rate data (reserveAddress => interestRateData)
-  mapping(uint256 assetId => InterestRateData) internal _interestRateData;
+  mapping(uint256 => InterestRateData) internal _interestRateData;
 
   /**
    * @dev Constructor.
    * @param provider The address of the PoolAddressesProvider of the associated Aave pool
    */
   constructor(address provider) {
-    // require(provider != address(0), Errors.INVALID_ADDRESSES_PROVIDER);
+    // TODO: require(provider != address(0), Errors.INVALID_ADDRESSES_PROVIDER);
     ADDRESSES_PROVIDER = provider;
   }
 

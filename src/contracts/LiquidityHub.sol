@@ -5,7 +5,6 @@ import {SafeERC20} from '../dependencies/openzeppelin/SafeERC20.sol';
 import {IERC20} from '../dependencies/openzeppelin/IERC20.sol';
 import {IPriceOracle} from './IPriceOracle.sol';
 import {WadRayMath} from './WadRayMath.sol';
-import {PercentageMath} from './PercentageMath.sol';
 import {SharesMath} from './SharesMath.sol';
 import {MathUtils} from './MathUtils.sol';
 import {IBorrowModule} from './IBorrowModule.sol';
@@ -15,7 +14,6 @@ import 'forge-std/console2.sol';
 contract LiquidityHub {
   using SafeERC20 for IERC20;
   using WadRayMath for uint256;
-  using PercentageMath for uint256;
   using SharesMath for uint256;
 
   event Supply(
