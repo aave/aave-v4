@@ -19,13 +19,13 @@ contract DefaultReserveInterestRateStrategy is IDefaultInterestRateStrategy {
   address public immutable ADDRESSES_PROVIDER;
 
   /// @inheritdoc IDefaultInterestRateStrategy
-  uint256 public constant MAX_BORROW_RATE = 1000_00; // 1000% in BPS
+  uint256 public constant MAX_BORROW_RATE = 1000_00; // 1000.00% in BPS
 
   /// @inheritdoc IDefaultInterestRateStrategy
-  uint256 public constant MIN_OPTIMAL_POINT = 1_00; // 1% in BPS
+  uint256 public constant MIN_OPTIMAL_POINT = 1_00; // 1.00% in BPS
 
   /// @inheritdoc IDefaultInterestRateStrategy
-  uint256 public constant MAX_OPTIMAL_POINT = 99_00; // 99% in BPS
+  uint256 public constant MAX_OPTIMAL_POINT = 99_00; // 99.00% in BPS
 
   /// @dev Map of assetId and their interest rate data (reserveAddress => interestRateData)
   mapping(uint256 assetId => InterestRateData) internal _interestRateData;
@@ -41,6 +41,7 @@ contract DefaultReserveInterestRateStrategy is IDefaultInterestRateStrategy {
 
   /// @inheritdoc IDefaultInterestRateStrategy
   function setInterestRateParams(uint256 assetId, InterestRateData calldata rateData) external {
+    // TODO: Auth
     require(assetId != 0, Errors.INVALID_ASSET_ID);
 
     require(
@@ -74,7 +75,7 @@ contract DefaultReserveInterestRateStrategy is IDefaultInterestRateStrategy {
   }
 
   /// @inheritdoc IDefaultInterestRateStrategy
-  function getInterestRateDataBps(uint256 assetId) external view returns (InterestRateData memory) {
+  function getInterestRateData(uint256 assetId) external view returns (InterestRateData memory) {
     return _interestRateData[assetId];
   }
 

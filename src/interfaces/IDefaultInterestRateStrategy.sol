@@ -81,13 +81,13 @@ interface IDefaultInterestRateStrategy is IReserveInterestRateStrategy {
   function MAX_OPTIMAL_POINT() external view returns (uint256);
 
   /**
-   * notice Returns the full InterestRateData object for the given reserve, in bps
+   * notice Returns the full InterestRateData object for the given reserve
    *
    * @param assetId The assetId to get the data of
    *
    * @return The InterestRateData object for the given reserve
    */
-  function getInterestRateDataBps(uint256 assetId) external view returns (InterestRateData memory);
+  function getInterestRateData(uint256 assetId) external view returns (InterestRateData memory);
 
   /**
    * @notice Returns the optimal usage rate for the given reserve in bps
