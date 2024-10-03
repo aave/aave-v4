@@ -485,7 +485,7 @@ contract LiquidityHubTest is BaseTest {
     uint256 debtToCover = 0;
     bool receiveAToken = false;
 
-    // ETH reserve is inactive
+    // DAI reserve is inactive
     _updateActive(daiAssetId, false);
     vm.expectRevert(Errors.RESERVE_NOT_ACTIVE);
     vm.prank(LIQUIDATOR);
@@ -511,7 +511,7 @@ contract LiquidityHubTest is BaseTest {
     uint256 debtToCover = 0;
     bool receiveAToken = false;
 
-    // ETH reserve is inactive
+    // DAI reserve is inactive
     _updatePaused(daiAssetId, false);
     vm.expectRevert(Errors.RESERVE_NOT_ACTIVE);
     vm.prank(LIQUIDATOR);
@@ -525,7 +525,7 @@ contract LiquidityHubTest is BaseTest {
     uint256 ethAssetId = 1; // collateral asset
     uint256 daiAssetId = 0; // debt asset
 
-    // ETH reserve is inactive
+    // DAI reserve is inactive
     _updatePaused(daiAssetId, false);
     vm.expectRevert(Errors.RESERVE_NOT_ACTIVE);
     vm.prank(LIQUIDATOR);
@@ -567,7 +567,7 @@ contract LiquidityHubTest is BaseTest {
     uint256 ethAssetId = 1; // collateral asset
     uint256 daiAssetId = 0; // debt asset
 
-    // ETH reserve is inactive
+    // DAI reserve is inactive
     _updateActive(daiAssetId, false);
     vm.expectRevert(Errors.RESERVE_NOT_ACTIVE);
     vm.prank(LIQUIDATOR);
@@ -580,7 +580,6 @@ contract LiquidityHubTest is BaseTest {
     uint256 debtToCover = 0;
     bool receiveAToken = false;
 
-    // liquidation call
     vm.prank(LIQUIDATOR);
     vm.expectEmit(true, true, true, true, address(hub));
     emit LiquidationCall(ethAssetId, daiAssetId, USER1, debtToCover, 0, LIQUIDATOR, receiveAToken);
@@ -591,7 +590,6 @@ contract LiquidityHubTest is BaseTest {
     uint256 ethAssetId = 1; // collateral asset
     uint256 daiAssetId = 0; // debt asset
 
-    // liquidation call
     vm.prank(LIQUIDATOR);
     vm.expectEmit(true, true, true, true, address(hub));
     emit LiquidationCall(ethAssetId, daiAssetId, USER1, debtToCover, 0, LIQUIDATOR, receiveAToken);

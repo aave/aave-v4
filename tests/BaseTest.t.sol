@@ -47,7 +47,7 @@ library Errors {
   // Aave
   bytes constant NOT_AVAILABLE_LIQUIDITY = 'NOT_AVAILABLE_LIQUIDITY';
   bytes constant RESERVE_NOT_ACTIVE = 'RESERVE_NOT_ACTIVE';
-  bytes constant BORROWING_IS_PAUSED = 'RESERVE_IS_PAUSED';
+  bytes constant BORROWING_IS_PAUSED = 'RESERVE_PAUSED';
   bytes constant ASSET_NOT_LISTED = 'ASSET_NOT_LISTED';
 }
 
