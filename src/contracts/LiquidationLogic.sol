@@ -5,6 +5,7 @@ import {LiquidityHub} from './LiquidityHub.sol';
 import {IPriceOracle} from './IPriceOracle.sol';
 import {WadRayMath} from './WadRayMath.sol';
 import {SharesMath} from './SharesMath.sol';
+import {BorrowModule} from './BorrowModule.sol';
 
 import 'forge-std/console2.sol';
 
@@ -119,7 +120,9 @@ library LiquidationLogic {
       }
 
       LiquidityHub.Reserve storage currentReserve = reserves[vars.assetId];
-      uint256 lt = 1; // TOOD: liquidation threshold
+      (, , , , , BorrowModule.ReserveConfig memory reserveConfig) = BorrowModule(
+        currentReserve.config.borrowModule
+      ).reserves(vars.assetId); // TOOD: liquidation threshold, get it from proper reserve
       uint256 decimals = currentReserve.config.decimals;
       uint256 assetUnit = 10 ** decimals;
 
@@ -142,7 +145,7 @@ library LiquidationLogic {
         );
       }
 
-      vars.avgLiquidationThreshold += vars.userBalanceInBaseCurrency * lt;
+      vars.avgLiquidationThreshold += vars.userBalanceInBaseCurrency * reserveConfig.lt;
 
       ++vars.assetId;
     }
