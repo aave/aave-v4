@@ -141,7 +141,7 @@ contract LiquidityHub {
     reserveCount++;
   }
 
-  function updateSupplyReserve(
+  function updateSupplyReserveParams(
     uint256 assetId,
     DataTypes.SupplyReserveConfigurationParams memory params
   ) external {
@@ -160,7 +160,7 @@ contract LiquidityHub {
     reserves[assetId].supplyConfig = config;
   }
 
-  function updateBorrowReserve(
+  function updateBorrowReserveParams(
     uint256 assetId,
     DataTypes.BorrowReserveConfigurationParams memory params
   ) external {
