@@ -105,7 +105,7 @@ library LiquidationLogic {
       }
 
       LiquidityHub.Reserve storage currentReserve = reserves[vars.assetId];
-      uint256 lt = currentReserve.config.lt;
+      uint256 lt = 1; // TOOD: liquidation threshold
       uint256 decimals = currentReserve.config.decimals;
       uint256 assetUnit = 10 ** decimals;
 
