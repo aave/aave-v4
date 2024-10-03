@@ -25,7 +25,7 @@ contract DefaultReserveInterestRateStrategyTest is Test {
     rateStrategy = new DefaultReserveInterestRateStrategy(mockAddressesProvider);
   }
 
-  function getMockInterestRateData()
+  function _getMockInterestRateData()
     private
     pure
     returns (IDefaultInterestRateStrategy.InterestRateData memory)
@@ -49,8 +49,8 @@ contract DefaultReserveInterestRateStrategyTest is Test {
     return (totalDebt * 10000) / (availableLiquidity + totalDebt);
   }
 
-  function test_new_SetReserveInterestRateParams() public {
-    IDefaultInterestRateStrategy.InterestRateData memory rateData = getMockInterestRateData();
+  function test_SetReserveInterestRateParams() public {
+    IDefaultInterestRateStrategy.InterestRateData memory rateData = _getMockInterestRateData();
 
     vm.prank(mockAddressesProvider);
     vm.expectEmit(true, false, false, true);
@@ -79,7 +79,7 @@ contract DefaultReserveInterestRateStrategyTest is Test {
   }
 
   function test_calculate_interestRates_reserve_empty() public {
-    IDefaultInterestRateStrategy.InterestRateData memory rateData = getMockInterestRateData();
+    IDefaultInterestRateStrategy.InterestRateData memory rateData = _getMockInterestRateData();
 
     rateStrategy.setInterestRateParams(mockReserveAddress, rateData);
 
@@ -99,7 +99,7 @@ contract DefaultReserveInterestRateStrategyTest is Test {
   }
 
   function test_calculate_interestRates_reserve_debt_80() public {
-    IDefaultInterestRateStrategy.InterestRateData memory rateData = getMockInterestRateData();
+    IDefaultInterestRateStrategy.InterestRateData memory rateData = _getMockInterestRateData();
 
     rateStrategy.setInterestRateParams(mockReserveAddress, rateData);
 
@@ -125,7 +125,7 @@ contract DefaultReserveInterestRateStrategyTest is Test {
   }
 
   function test_calculate_interest_rate_100_usage_ratio() public {
-    IDefaultInterestRateStrategy.InterestRateData memory rateData = getMockInterestRateData();
+    IDefaultInterestRateStrategy.InterestRateData memory rateData = _getMockInterestRateData();
     rateStrategy.setInterestRateParams(mockReserveAddress, rateData);
 
     uint256 totalDebt = 1e18;
@@ -157,7 +157,7 @@ contract DefaultReserveInterestRateStrategyTest is Test {
   }
 
   function test_calculate_interest_rate_below_optimal_usage() public {
-    IDefaultInterestRateStrategy.InterestRateData memory rateData = getMockInterestRateData();
+    IDefaultInterestRateStrategy.InterestRateData memory rateData = _getMockInterestRateData();
     rateStrategy.setInterestRateParams(mockReserveAddress, rateData);
     uint256 totalDebt = 4e17;
     uint256 virtualUnderlyingBalance = 6e17;
@@ -183,7 +183,7 @@ contract DefaultReserveInterestRateStrategyTest is Test {
   }
 
   function test_calculate_interest_rate_zero_debt() public {
-    IDefaultInterestRateStrategy.InterestRateData memory rateData = getMockInterestRateData();
+    IDefaultInterestRateStrategy.InterestRateData memory rateData = _getMockInterestRateData();
     rateStrategy.setInterestRateParams(mockReserveAddress, rateData);
 
     uint256 variableBorrowRate = rateStrategy.calculateInterestRates(

@@ -19,7 +19,7 @@ contract DefaultReserveInterestRateStrategy is IDefaultInterestRateStrategy {
   address public immutable ADDRESSES_PROVIDER;
 
   /// @inheritdoc IDefaultInterestRateStrategy
-  uint256 public constant MAX_BORROW_RATE = 1000_00; // 100% in BPS
+  uint256 public constant MAX_BORROW_RATE = 1000_00; // 1000% in BPS
 
   /// @inheritdoc IDefaultInterestRateStrategy
   uint256 public constant MIN_OPTIMAL_POINT = 1_00; // 1% in BPS
@@ -41,7 +41,36 @@ contract DefaultReserveInterestRateStrategy is IDefaultInterestRateStrategy {
 
   /// @inheritdoc IDefaultInterestRateStrategy
   function setInterestRateParams(uint256 assetId, InterestRateData calldata rateData) external {
-    _setInterestRateParams(assetId, rateData);
+    require(assetId != 0, Errors.INVALID_ASSET_ID);
+
+    require(
+      rateData.optimalUsageRatio <= MAX_OPTIMAL_POINT &&
+        rateData.optimalUsageRatio >= MIN_OPTIMAL_POINT,
+      Errors.INVALID_OPTIMAL_USAGE_RATIO
+    );
+
+    require(
+      rateData.variableRateSlope1 <= rateData.variableRateSlope2,
+      Errors.SLOPE_2_MUST_BE_GTE_SLOPE_1
+    );
+
+    // The maximum rate should not be above certain threshold
+    require(
+      uint256(rateData.baseVariableBorrowRate) +
+        uint256(rateData.variableRateSlope1) +
+        uint256(rateData.variableRateSlope2) <=
+        MAX_BORROW_RATE,
+      Errors.INVALID_MAX_RATE
+    );
+
+    _interestRateData[assetId] = rateData;
+    emit RateDataUpdate(
+      assetId,
+      rateData.optimalUsageRatio,
+      rateData.baseVariableBorrowRate,
+      rateData.variableRateSlope1,
+      rateData.variableRateSlope2
+    );
   }
 
   /// @inheritdoc IDefaultInterestRateStrategy
@@ -103,19 +132,7 @@ contract DefaultReserveInterestRateStrategy is IDefaultInterestRateStrategy {
         params.liquidityTaken;
 
       vars.availableLiquidityPlusDebt = vars.availableLiquidity + vars.totalDebt;
-      // calculates borrowRate and supplyRate
-      // total debt / (available liquidity + total debt)
-      // This is a measure of how much of the total available liquidity in a reserve is currently being used (borrowed).
-      // scaling up for bps
-
-      // utilization rate for borrow and supply
-      // usage ratio for borrows is
-      // always multiply first and then decide. In terms of rounding we are truncating the value
-      // multipling to get percentage
-      // TODO: evaluate the rounding
-
       vars.borrowUsageRatio = (vars.totalDebt * 10000) / vars.availableLiquidityPlusDebt;
-      vars.supplyUsageRatio = (vars.totalDebt * 10000) / vars.availableLiquidityPlusDebt;
     } else {
       return (vars.currentVariableBorrowRate);
     }
@@ -130,52 +147,10 @@ contract DefaultReserveInterestRateStrategy is IDefaultInterestRateStrategy {
 
       return vars.currentVariableBorrowRate;
     } else {
-      //  base + (current / optimal ) * slope1
-      //  2%+( 80% / 60% )×5%
-      // base borrow rate + (utilization rate * slope1) / optimal utilization rate
-      // All in BPS --> so will receive BPS
       vars.currentVariableBorrowRate +=
         (vars.borrowUsageRatio * rateData.variableRateSlope1) /
         rateData.optimalUsageRatio;
       return (vars.currentVariableBorrowRate);
     }
-  }
-
-  /**
-   * @dev Doing validations and data update for an asset
-   * @param assetId assetId of the underlying asset of the reserve
-   * @param rateData Encoded reserve interest rate data to apply
-   */
-  function _setInterestRateParams(uint256 assetId, InterestRateData memory rateData) internal {
-    require(assetId != 0, Errors.INVALID_ASSET_ID);
-
-    require(
-      rateData.optimalUsageRatio <= MAX_OPTIMAL_POINT &&
-        rateData.optimalUsageRatio >= MIN_OPTIMAL_POINT,
-      Errors.INVALID_OPTIMAL_USAGE_RATIO
-    );
-
-    require(
-      rateData.variableRateSlope1 <= rateData.variableRateSlope2,
-      Errors.SLOPE_2_MUST_BE_GTE_SLOPE_1
-    );
-
-    // The maximum rate should not be above certain threshold
-    require(
-      uint256(rateData.baseVariableBorrowRate) +
-        uint256(rateData.variableRateSlope1) +
-        uint256(rateData.variableRateSlope2) <=
-        MAX_BORROW_RATE,
-      Errors.INVALID_MAX_RATE
-    );
-
-    _interestRateData[assetId] = rateData;
-    emit RateDataUpdate(
-      assetId,
-      rateData.optimalUsageRatio,
-      rateData.baseVariableBorrowRate,
-      rateData.variableRateSlope1,
-      rateData.variableRateSlope2
-    );
   }
 }
