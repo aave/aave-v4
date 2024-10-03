@@ -161,9 +161,9 @@ library LiquidationLogic {
       : (vars.totalCollateralInBaseCurrency * vars.avgLiquidationThreshold).wadDiv(
         vars.totalDebtInBaseCurrency
       );
-    console2.log('HF calcs, totalDebtInBaseCurrency:', vars.totalDebtInBaseCurrency);
+    // console2.log('HF calcs, totalDebtInBaseCurrency:', vars.totalDebtInBaseCurrency);
 
-    return healthFactor; // dummy response for now
+    return healthFactor;
   }
 
   // TODO
