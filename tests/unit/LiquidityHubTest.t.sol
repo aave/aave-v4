@@ -28,6 +28,20 @@ contract LiquidityHubTest is BaseTest {
         borrowCap: 0,
         liquidityPremium: 10_00
       }),
+      DataTypes.BorrowReserveConfigurationParams({
+        borrowModule: address(bm),
+        supplyModule: address(0),
+        lt: 0,
+        lb: 0,
+        rf: 0,
+        active: true,
+        borrowable: false,
+        frozen: false,
+        paused: false,
+        supplyCap: 0,
+        borrowCap: 0,
+        liquidityPremium: 10_00
+      }),
       address(dai)
     );
     MockPriceOracle(address(oracle)).setAssetPrice(0, 1e8);
@@ -35,6 +49,20 @@ contract LiquidityHubTest is BaseTest {
     // Add eth
     hub.addReserve(
       DataTypes.SupplyReserveConfigurationParams({
+        borrowModule: address(bm),
+        supplyModule: address(0),
+        lt: 0,
+        lb: 0,
+        rf: 0,
+        active: true,
+        borrowable: false,
+        frozen: false,
+        paused: false,
+        supplyCap: 0,
+        borrowCap: 0,
+        liquidityPremium: 0
+      }),
+      DataTypes.BorrowReserveConfigurationParams({
         borrowModule: address(bm),
         supplyModule: address(0),
         lt: 0,
@@ -469,8 +497,8 @@ contract LiquidityHubTest is BaseTest {
   }
 
   function _updateLiquidityPremium(uint256 assetId, uint256 newLiquidityPremium) internal {
-    DataTypes.SupplyReserveConfig memory reserveConfig = hub.getReserve(assetId).config;
+    DataTypes.SupplyReserveConfig memory reserveConfig = hub.getReserve(assetId).supplyConfig;
     reserveConfig.setLiquidityPremium(newLiquidityPremium);
-    hub.updateReserve(assetId, reserveConfig);
+    hub.updateSupplyReserve(assetId, reserveConfig);
   }
 }

@@ -10,6 +10,7 @@ import {MathUtils} from './MathUtils.sol';
 import {IBorrowModule} from './IBorrowModule.sol';
 import {DataTypes} from './types/DataTypes.sol';
 import {SupplyReserveConfiguration} from './SupplyReserveConfiguration.sol';
+import {BorrowReserveConfiguration} from './BorrowReserveConfiguration.sol';
 
 import 'forge-std/console2.sol';
 
@@ -18,6 +19,7 @@ contract LiquidityHub {
   using WadRayMath for uint256;
   using SharesMath for uint256;
   using SupplyReserveConfiguration for DataTypes.SupplyReserveConfig;
+  using BorrowReserveConfiguration for DataTypes.BorrowReserveConfig;
 
   event Supply(
     uint256 indexed reserve,
@@ -37,7 +39,8 @@ contract LiquidityHub {
     uint256 lastUpdateTimestamp;
     address borrowModule;
     address supplyModule;
-    DataTypes.SupplyReserveConfig config;
+    DataTypes.SupplyReserveConfig supplyConfig;
+    DataTypes.BorrowReserveConfig borrowConfig;
   }
 
   struct UserConfig {
@@ -52,8 +55,13 @@ contract LiquidityHub {
   // asset id => user address => user data
   mapping(uint256 => mapping(address => UserConfig)) public users;
 
-  // asset id => user address => user's reserve config
-  mapping(uint256 => mapping(address => DataTypes.SupplyReserveConfig)) public userReserveConfigs;
+  // asset id => user address => user's supply reserve config
+  mapping(uint256 => mapping(address => DataTypes.SupplyReserveConfig))
+    public userSupplyReserveConfigs;
+
+  // asset id => user address => user's borrow reserve config
+  mapping(uint256 => mapping(address => DataTypes.BorrowReserveConfig))
+    public userBorrowReserveConfigs;
   mapping(address => uint256) userRiskPremium; // in base currency terms
 
   address public oracle;
@@ -72,11 +80,20 @@ contract LiquidityHub {
     return u;
   }
 
-  function getUserReserveConfig(
+  function getUserSupplyReserveConfig(
     uint256 assetId,
     address user
   ) external view returns (DataTypes.SupplyReserveConfig memory) {
-    DataTypes.SupplyReserveConfig memory c = userReserveConfigs[assetId][user];
+    DataTypes.SupplyReserveConfig memory c = userSupplyReserveConfigs[assetId][user];
+
+    return c;
+  }
+
+  function getUserBorrowReserveConfig(
+    uint256 assetId,
+    address user
+  ) external view returns (DataTypes.BorrowReserveConfig memory) {
+    DataTypes.BorrowReserveConfig memory c = userBorrowReserveConfigs[assetId][user];
 
     return c;
   }
@@ -100,12 +117,15 @@ contract LiquidityHub {
   // /////
 
   function addReserve(
-    DataTypes.SupplyReserveConfigurationParams memory params,
+    DataTypes.SupplyReserveConfigurationParams memory supplyParams,
+    DataTypes.BorrowReserveConfigurationParams memory borrowParams,
     address asset
   ) external {
     // TODO: AccessControl
-    DataTypes.SupplyReserveConfig memory config = DataTypes.SupplyReserveConfig({data: 0});
-    config.setConfigFromParams(params);
+    DataTypes.SupplyReserveConfig memory supplyConfig = DataTypes.SupplyReserveConfig({data: 0});
+    supplyConfig.setConfigFromParams(supplyParams);
+    DataTypes.BorrowReserveConfig memory borrowConfig = DataTypes.BorrowReserveConfig({data: 0});
+    borrowConfig.setConfigFromParams(borrowParams);
 
     reservesList.push(asset);
     reserves[reserveCount] = Reserve({
@@ -113,14 +133,15 @@ contract LiquidityHub {
       totalShares: 0,
       totalAssets: 0,
       lastUpdateTimestamp: block.timestamp,
-      borrowModule: params.borrowModule,
-      supplyModule: params.supplyModule,
-      config: config
+      borrowModule: supplyParams.borrowModule,
+      supplyModule: supplyParams.supplyModule,
+      supplyConfig: supplyConfig,
+      borrowConfig: borrowConfig
     });
     reserveCount++;
   }
 
-  function updateReserve(
+  function updateSupplyReserve(
     uint256 assetId,
     DataTypes.SupplyReserveConfigurationParams memory params
   ) external {
@@ -128,12 +149,33 @@ contract LiquidityHub {
     // TODO: AccessControl
     DataTypes.SupplyReserveConfig memory config = DataTypes.SupplyReserveConfig({data: 0});
     config.setConfigFromParams(params);
-    reserves[assetId].config = config;
+    reserves[assetId].supplyConfig = config;
   }
 
-  function updateReserve(uint256 assetId, DataTypes.SupplyReserveConfig calldata config) external {
+  function updateSupplyReserve(
+    uint256 assetId,
+    DataTypes.SupplyReserveConfig calldata config
+  ) external {
     // TODO: AccessControl
-    reserves[assetId].config = config;
+    reserves[assetId].supplyConfig = config;
+  }
+
+  function updateBorrowReserve(
+    uint256 assetId,
+    DataTypes.BorrowReserveConfigurationParams memory params
+  ) external {
+    // TODO: AccessControl
+    DataTypes.BorrowReserveConfig memory config = DataTypes.BorrowReserveConfig({data: 0});
+    config.setConfigFromParams(params);
+    reserves[assetId].borrowConfig = config;
+  }
+
+  function updateBorrowReserve(
+    uint256 assetId,
+    DataTypes.BorrowReserveConfig calldata config
+  ) external {
+    // TODO: AccessControl
+    reserves[assetId].borrowConfig = config;
   }
 
   // /////
@@ -156,8 +198,8 @@ contract LiquidityHub {
     // update indexes and IRs
     _updateState(reserve); // TODO
 
-    // Update user reserve config
-    _updateUserReserveConfig(onBehalfOf, assetId);
+    // Update user supply reserve config
+    _updateUserSupplyReserveConfig(onBehalfOf, assetId);
 
     // TODO: init user lastUpdateIndex
     // TODO Set as collateral if first supply?
@@ -199,8 +241,8 @@ contract LiquidityHub {
     // update indexes and IRs
     _updateState(reserve);
 
-    // Update user reserve config
-    _updateUserReserveConfig(msg.sender, assetId);
+    // Update user supply reserve config
+    _updateUserSupplyReserveConfig(msg.sender, assetId);
 
     // invokes borrow modules in case accounting update is needed
     // (eg, update premium for users borrowing using the asset as collateral)
@@ -241,8 +283,8 @@ contract LiquidityHub {
     // update indexes and IRs
     _updateState(reserve);
 
-    // Update user reserve config
-    _updateUserReserveConfig(msg.sender, assetId);
+    // Update user borrow reserve config
+    _updateUserBorrowReserveConfig(msg.sender, assetId);
 
     // invokes borrow modules in case accounting update is needed
     // (eg, update premium for users borrowing using the asset as collateral)
@@ -259,7 +301,7 @@ contract LiquidityHub {
   }
 
   function repay(uint256 assetId, uint256 amount, address onBehalfOf) external {
-    _updateUserReserveConfig(onBehalfOf, assetId);
+    _updateUserBorrowReserveConfig(onBehalfOf, assetId);
   }
 
   //
@@ -269,29 +311,30 @@ contract LiquidityHub {
     // asset is listed
     require(reservesList[reserve.id] != address(0), 'ASSET_NOT_LISTED');
     // asset can be supplied
-    require(reserve.config.getActive(), 'RESERVE_NOT_ACTIVE');
+    require(reserve.supplyConfig.getActive(), 'RESERVE_NOT_ACTIVE');
     // supply cap not reached
     require(
-      reserve.config.getSupplyCap() == 0 ||
-        reserve.config.getSupplyCap() > reserve.totalAssets + amount,
+      reserve.supplyConfig.getSupplyCap() == 0 ||
+        reserve.supplyConfig.getSupplyCap() > reserve.totalAssets + amount,
       'CAP_EXCEEDED'
     );
   }
 
   function _validateWithdraw(Reserve storage reserve, uint256 amount) internal view {
     // asset can be withdrawn
-    require(reserve.config.getActive(), 'RESERVE_NOT_ACTIVE');
+    require(reserve.supplyConfig.getActive(), 'RESERVE_NOT_ACTIVE');
     // reserve with available liquidity
     require(reserve.totalAssets >= amount, 'NOT_AVAILABLE_LIQUIDITY');
   }
 
   function _validateBorrow(Reserve storage reserve, uint256 totalBorrows, uint256 amount) internal {
     // asset can be borrowed
-    require(reserve.config.getActive(), 'RESERVE_NOT_ACTIVE');
-    require(reserve.config.getBorrowingEnabled(), 'RESERVE_NOT_BORROWABLE');
+    require(reserve.borrowConfig.getActive(), 'RESERVE_NOT_ACTIVE');
+    require(reserve.borrowConfig.getBorrowingEnabled(), 'RESERVE_NOT_BORROWABLE');
     // borrow cap not reached
     require(
-      reserve.config.getBorrowCap() == 0 || reserve.config.getBorrowCap() > totalBorrows + amount,
+      reserve.borrowConfig.getBorrowCap() == 0 ||
+        reserve.borrowConfig.getBorrowCap() > totalBorrows + amount,
       'CAP_EXCEEDED'
     ); // TODO probably better in borrow module
     // msg.sender needs to be a valid module
@@ -328,8 +371,12 @@ contract LiquidityHub {
     }
   }
 
-  function _updateUserReserveConfig(address user, uint256 reserve) internal {
-    userReserveConfigs[reserve][user] = reserves[reserve].config;
+  function _updateUserSupplyReserveConfig(address user, uint256 reserve) internal {
+    userSupplyReserveConfigs[reserve][user] = reserves[reserve].supplyConfig;
+  }
+
+  function _updateUserBorrowReserveConfig(address user, uint256 reserve) internal {
+    userBorrowReserveConfigs[reserve][user] = reserves[reserve].borrowConfig;
   }
 
   function _updateRiskPremium(address user) internal {
@@ -344,7 +391,7 @@ contract LiquidityHub {
       wData = _getUserAssets(assetId, user) * IPriceOracle(oracle).getAssetPrice(assetId);
       sumW += wData;
 
-      wData = wData * reserves[assetId].config.getLiquidityPremium(); // bps
+      wData = wData * reserves[assetId].supplyConfig.getLiquidityPremium(); // bps
       wAvg += wData;
     }
     if (sumW != 0) wAvg /= sumW;

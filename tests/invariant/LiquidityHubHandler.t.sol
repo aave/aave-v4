@@ -53,6 +53,20 @@ contract LiquidityHubHandler is Test {
         borrowCap: 0,
         liquidityPremium: 0
       }),
+      DataTypes.BorrowReserveConfigurationParams({
+        borrowModule: address(bm),
+        supplyModule: address(0),
+        lt: 0,
+        lb: 0,
+        rf: 0,
+        active: true,
+        borrowable: false,
+        frozen: false,
+        paused: false,
+        supplyCap: 0,
+        borrowCap: 0,
+        liquidityPremium: 0
+      }),
       address(dai)
     );
   }
