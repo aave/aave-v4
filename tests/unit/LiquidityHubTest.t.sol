@@ -8,6 +8,7 @@ contract LiquidityHubTest is BaseTest {
   using SharesMath for uint256;
   using WadRayMath for uint256;
   using SupplyReserveConfiguration for DataTypes.SupplyReserveConfig;
+  using BorrowReserveConfiguration for DataTypes.BorrowReserveConfig;
 
   function setUp() public override {
     super.setUp();
@@ -494,6 +495,159 @@ contract LiquidityHubTest is BaseTest {
 
     uint256 calcRiskPremium = 25_00;
     assertEq(hub.getUserRiskPremium(USER1), calcRiskPremium);
+  }
+
+  function testReserveConfiguration() public {
+    LiquidityHub.Reserve memory reserveData = hub.getReserve(0);
+    DataTypes.BorrowReserveConfig memory borrowConfig = reserveData.borrowConfig;
+    DataTypes.SupplyReserveConfig memory supplyConfig = reserveData.supplyConfig;
+
+    // Test Getters
+    assertEq(borrowConfig.getLiquidationThreshold(), 0);
+    assertEq(supplyConfig.getLiquidationThreshold(), 0);
+    assertEq(borrowConfig.getLiquidationBonus(), 0);
+    assertEq(supplyConfig.getLiquidationBonus(), 0);
+    assertEq(borrowConfig.getActive(), true);
+    assertEq(supplyConfig.getActive(), true);
+    assertEq(borrowConfig.getFrozen(), false);
+    assertEq(supplyConfig.getFrozen(), false);
+    assertEq(borrowConfig.getPaused(), false);
+    assertEq(supplyConfig.getPaused(), false);
+    assertEq(borrowConfig.getBorrowingEnabled(), false);
+    assertEq(supplyConfig.getBorrowingEnabled(), false);
+    assertEq(borrowConfig.getReserveFactor(), 0);
+    assertEq(supplyConfig.getReserveFactor(), 0);
+    assertEq(borrowConfig.getBorrowCap(), 0);
+    assertEq(supplyConfig.getBorrowCap(), 0);
+    assertEq(borrowConfig.getSupplyCap(), 0);
+    assertEq(supplyConfig.getSupplyCap(), 0);
+    assertEq(borrowConfig.getLiquidityPremium(), 10_00);
+    assertEq(supplyConfig.getLiquidityPremium(), 10_00);
+
+    (bool active, bool borrowable, bool frozen, bool paused) = borrowConfig.getFlags();
+    bool[4] memory expected = [true, false, false, false];
+    bool[4] memory actual = [active, borrowable, frozen, paused];
+    for (uint8 i = 0; i < 4; i += 1) {
+      assertEq(expected[i], actual[i]);
+    }
+
+    (active, borrowable, frozen, paused) = supplyConfig.getFlags();
+    for (uint8 i = 0; i < 4; i += 1) {
+      assertEq(expected[i], actual[i]);
+    }
+
+    (uint256 lt, uint256 lb, uint256 rf) = borrowConfig.getParams();
+    assertEq(lt, 0);
+    assertEq(lb, 0);
+    assertEq(rf, 0);
+    (lt, lb, rf) = supplyConfig.getParams();
+    assertEq(lt, 0);
+    assertEq(lb, 0);
+    assertEq(rf, 0);
+
+    (uint256 borrowCap, uint256 supplyCap) = borrowConfig.getCaps();
+    assertEq(borrowCap, 0);
+    assertEq(supplyCap, 0);
+    (borrowCap, supplyCap) = supplyConfig.getCaps();
+    assertEq(borrowCap, 0);
+    assertEq(supplyCap, 0);
+
+    // Test Setters
+    borrowConfig.setLiquidationThreshold(1);
+    assertEq(borrowConfig.getLiquidationThreshold(), 1);
+    supplyConfig.setLiquidationThreshold(1);
+    assertEq(supplyConfig.getLiquidationThreshold(), 1);
+    borrowConfig.setLiquidationBonus(1);
+    assertEq(borrowConfig.getLiquidationBonus(), 1);
+    supplyConfig.setLiquidationBonus(1);
+    assertEq(supplyConfig.getLiquidationBonus(), 1);
+    borrowConfig.setActive(false);
+    assertEq(borrowConfig.getActive(), false);
+    supplyConfig.setActive(false);
+    assertEq(supplyConfig.getActive(), false);
+    borrowConfig.setFrozen(true);
+    assertEq(borrowConfig.getFrozen(), true);
+    supplyConfig.setFrozen(true);
+    assertEq(supplyConfig.getFrozen(), true);
+    borrowConfig.setPaused(true);
+    assertEq(borrowConfig.getPaused(), true);
+    supplyConfig.setPaused(true);
+    assertEq(supplyConfig.getPaused(), true);
+    borrowConfig.setBorrowingEnabled(true);
+    assertEq(borrowConfig.getBorrowingEnabled(), true);
+    supplyConfig.setBorrowingEnabled(true);
+    assertEq(supplyConfig.getBorrowingEnabled(), true);
+    borrowConfig.setReserveFactor(1);
+    assertEq(borrowConfig.getReserveFactor(), 1);
+    supplyConfig.setReserveFactor(1);
+    assertEq(supplyConfig.getReserveFactor(), 1);
+    borrowConfig.setBorrowCap(1);
+    assertEq(borrowConfig.getBorrowCap(), 1);
+    supplyConfig.setBorrowCap(1);
+    assertEq(supplyConfig.getBorrowCap(), 1);
+    borrowConfig.setSupplyCap(1);
+    assertEq(borrowConfig.getSupplyCap(), 1);
+    supplyConfig.setSupplyCap(1);
+    assertEq(supplyConfig.getSupplyCap(), 1);
+    borrowConfig.setLiquidityPremium(1);
+    assertEq(borrowConfig.getLiquidityPremium(), 1);
+    supplyConfig.setLiquidityPremium(1);
+    assertEq(supplyConfig.getLiquidityPremium(), 1);
+
+    // Test setConfigFromParams
+    DataTypes.BorrowReserveConfigurationParams memory newBorrowParams = DataTypes
+      .BorrowReserveConfigurationParams({
+        borrowModule: address(bm),
+        supplyModule: address(0),
+        lt: 3,
+        lb: 3,
+        rf: 3,
+        active: true,
+        borrowable: false,
+        frozen: false,
+        paused: false,
+        supplyCap: 3,
+        borrowCap: 3,
+        liquidityPremium: 20_00
+      });
+    borrowConfig.setConfigFromParams(newBorrowParams);
+    assertEq(borrowConfig.getLiquidationThreshold(), newBorrowParams.lt);
+    assertEq(borrowConfig.getLiquidationBonus(), newBorrowParams.lb);
+    assertEq(borrowConfig.getReserveFactor(), newBorrowParams.rf);
+    assertEq(borrowConfig.getActive(), newBorrowParams.active);
+    assertEq(borrowConfig.getBorrowingEnabled(), newBorrowParams.borrowable);
+    assertEq(borrowConfig.getFrozen(), newBorrowParams.frozen);
+    assertEq(borrowConfig.getPaused(), newBorrowParams.paused);
+    assertEq(borrowConfig.getBorrowCap(), newBorrowParams.borrowCap);
+    assertEq(borrowConfig.getSupplyCap(), newBorrowParams.supplyCap);
+    assertEq(borrowConfig.getLiquidityPremium(), newBorrowParams.liquidityPremium);
+
+    DataTypes.SupplyReserveConfigurationParams memory newSupplyParams = DataTypes
+      .SupplyReserveConfigurationParams({
+        borrowModule: address(bm),
+        supplyModule: address(0),
+        lt: 3,
+        lb: 3,
+        rf: 3,
+        active: true,
+        borrowable: false,
+        frozen: false,
+        paused: false,
+        supplyCap: 3,
+        borrowCap: 3,
+        liquidityPremium: 20_00
+      });
+    supplyConfig.setConfigFromParams(newSupplyParams);
+    assertEq(supplyConfig.getLiquidationThreshold(), newSupplyParams.lt);
+    assertEq(supplyConfig.getLiquidationBonus(), newSupplyParams.lb);
+    assertEq(supplyConfig.getReserveFactor(), newSupplyParams.rf);
+    assertEq(supplyConfig.getActive(), newSupplyParams.active);
+    assertEq(supplyConfig.getBorrowingEnabled(), newSupplyParams.borrowable);
+    assertEq(supplyConfig.getFrozen(), newSupplyParams.frozen);
+    assertEq(supplyConfig.getPaused(), newSupplyParams.paused);
+    assertEq(supplyConfig.getBorrowCap(), newSupplyParams.borrowCap);
+    assertEq(supplyConfig.getSupplyCap(), newSupplyParams.supplyCap);
+    assertEq(supplyConfig.getLiquidityPremium(), newSupplyParams.liquidityPremium);
   }
 
   function _updateLiquidityPremium(uint256 assetId, uint256 newLiquidityPremium) internal {
