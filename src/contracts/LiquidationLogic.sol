@@ -88,14 +88,18 @@ library LiquidationLogic {
     // TODO: calculate how much of a specific collateral can be liquidated, given a certain amount of debt asset
     // TODO: account for liquidation bonus, protocol liquidation fee
 
-    // TODO: transfer collateral to liquidator
     // TODO: pay off debt to debtReserve in liq hub, where debt asset is stored
     IERC20(reservesList[debtAssetId]).safeTransferFrom(
       msg.sender,
-      address(this),
+      address(this), // liq hub
       vars.actualDebtToCover
     );
     // TODO: update user's debt balance
+    // TODO: transfer collateral to liquidator
+    IERC20(reservesList[collateralAssetId]).safeTransfer(
+      msg.sender,
+      vars.actualCollateralToLiquidate
+    );
 
     emit LiquidationCall(
       collateralAssetId,
