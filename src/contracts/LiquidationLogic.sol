@@ -49,8 +49,7 @@ library LiquidationLogic {
     address indexed user,
     uint256 debtToCover,
     uint256 liquidatedCollateralAmount,
-    address liquidator,
-    bool receiveAToken
+    address liquidator
   );
 
   // TODO: refactor input params to use a struct
@@ -62,7 +61,6 @@ library LiquidationLogic {
     uint256 collateralAssetId,
     uint256 debtAssetId,
     address user,
-    bool receiveAToken,
     address oracle
   ) external {
     // V3 implementation to liquidate undercollateralized positions to start out with.
@@ -102,8 +100,7 @@ library LiquidationLogic {
       user,
       vars.actualDebtToCover, // TODO: actualDebtToLiquidate
       vars.actualCollateralToLiquidate, // TODO: liquidatedCollateralAmount
-      msg.sender,
-      receiveAToken
+      msg.sender
     );
   }
 

@@ -261,15 +261,13 @@ contract LiquidityHub {
    * @param debtAssetId The address of the underlying borrowed asset to be repaid with the liquidation.
    * @param user The address of the borrower getting liquidated.
    * @param debtToCover The debt amount of borrowed `asset` the liquidator wants to cover.
-   * @param receiveAToken True if the liquidators wants to receive the collateral aTokens, `false` if he wants
    * to receive the underlying collateral asset directly.
    */
   function liquidationCall(
     uint256 collateralAssetId,
     uint256 debtAssetId,
     address user,
-    uint256 debtToCover,
-    bool receiveAToken
+    uint256 debtToCover
   ) external {
     LiquidationLogic.executeLiquidationCall(
       reserves,
@@ -279,7 +277,6 @@ contract LiquidityHub {
       collateralAssetId,
       debtAssetId,
       user,
-      receiveAToken,
       oracle
     );
   }

@@ -470,58 +470,51 @@ contract LiquidityHubTest is BaseTest {
     uint256 ethAssetId = 1; // collateral asset
     uint256 daiAssetId = 0; // debt asset
     uint256 debtToCover = 0;
-    bool receiveAToken = false;
 
     // ETH reserve is inactive
     _updateActive(ethAssetId, false);
     vm.expectRevert(Errors.RESERVE_NOT_ACTIVE);
     vm.prank(LIQUIDATOR);
-    hub.liquidationCall(ethAssetId, daiAssetId, USER1, debtToCover, receiveAToken);
+    hub.liquidationCall(ethAssetId, daiAssetId, USER1, debtToCover);
   }
 
   function testRevertInactiveDebtReserveLiquidationCall() public {
     uint256 ethAssetId = 1; // collateral asset
     uint256 daiAssetId = 0; // debt asset
     uint256 debtToCover = 0;
-    bool receiveAToken = false;
 
     // DAI reserve is inactive
     _updateActive(daiAssetId, false);
     vm.expectRevert(Errors.RESERVE_NOT_ACTIVE);
     vm.prank(LIQUIDATOR);
-    hub.liquidationCall(ethAssetId, daiAssetId, USER1, debtToCover, receiveAToken);
+    hub.liquidationCall(ethAssetId, daiAssetId, USER1, debtToCover);
   }
 
   function testRevertPausedCollateralReserveLiquidationCall() public {
     uint256 ethAssetId = 1; // collateral asset
     uint256 daiAssetId = 0; // debt asset
     uint256 debtToCover = 0;
-    bool receiveAToken = false;
 
     // ETH reserve is inactive
     _updatePaused(ethAssetId, false);
     vm.expectRevert(Errors.RESERVE_NOT_ACTIVE);
     vm.prank(LIQUIDATOR);
-    hub.liquidationCall(ethAssetId, daiAssetId, USER1, debtToCover, receiveAToken);
+    hub.liquidationCall(ethAssetId, daiAssetId, USER1, debtToCover);
   }
 
   function testRevertPausedDebtReserveLiquidationCall() public {
     uint256 ethAssetId = 1; // collateral asset
     uint256 daiAssetId = 0; // debt asset
     uint256 debtToCover = 0;
-    bool receiveAToken = false;
 
     // DAI reserve is inactive
     _updatePaused(daiAssetId, false);
     vm.expectRevert(Errors.RESERVE_NOT_ACTIVE);
     vm.prank(LIQUIDATOR);
-    hub.liquidationCall(ethAssetId, daiAssetId, USER1, debtToCover, receiveAToken);
+    hub.liquidationCall(ethAssetId, daiAssetId, USER1, debtToCover);
   }
 
-  function testFuzzRevertPausedDebtReserveLiquidationCall(
-    uint256 debtToCover,
-    bool receiveAToken
-  ) public {
+  function testFuzzRevertPausedDebtReserveLiquidationCall(uint256 debtToCover) public {
     uint256 ethAssetId = 1; // collateral asset
     uint256 daiAssetId = 0; // debt asset
 
@@ -529,13 +522,10 @@ contract LiquidityHubTest is BaseTest {
     _updatePaused(daiAssetId, false);
     vm.expectRevert(Errors.RESERVE_NOT_ACTIVE);
     vm.prank(LIQUIDATOR);
-    hub.liquidationCall(ethAssetId, daiAssetId, USER1, debtToCover, receiveAToken);
+    hub.liquidationCall(ethAssetId, daiAssetId, USER1, debtToCover);
   }
 
-  function testFuzzRevertPausedCollateralReserveLiquidationCall(
-    uint256 debtToCover,
-    bool receiveAToken
-  ) public {
+  function testFuzzRevertPausedCollateralReserveLiquidationCall(uint256 debtToCover) public {
     uint256 ethAssetId = 1; // collateral asset
     uint256 daiAssetId = 0; // debt asset
 
@@ -543,13 +533,10 @@ contract LiquidityHubTest is BaseTest {
     _updatePaused(ethAssetId, false);
     vm.expectRevert(Errors.RESERVE_NOT_ACTIVE);
     vm.prank(LIQUIDATOR);
-    hub.liquidationCall(ethAssetId, daiAssetId, USER1, debtToCover, receiveAToken);
+    hub.liquidationCall(ethAssetId, daiAssetId, USER1, debtToCover);
   }
 
-  function testFuzzRevertInactiveCollateralReserveLiquidationCall(
-    uint256 debtToCover,
-    bool receiveAToken
-  ) public {
+  function testFuzzRevertInactiveCollateralReserveLiquidationCall(uint256 debtToCover) public {
     uint256 ethAssetId = 1; // collateral asset
     uint256 daiAssetId = 0; // debt asset
 
@@ -557,13 +544,10 @@ contract LiquidityHubTest is BaseTest {
     _updateActive(ethAssetId, false);
     vm.expectRevert(Errors.RESERVE_NOT_ACTIVE);
     vm.prank(LIQUIDATOR);
-    hub.liquidationCall(ethAssetId, daiAssetId, USER1, debtToCover, receiveAToken);
+    hub.liquidationCall(ethAssetId, daiAssetId, USER1, debtToCover);
   }
 
-  function testFuzzRevertInactiveDebtReserveLiquidationCall(
-    uint256 debtToCover,
-    bool receiveAToken
-  ) public {
+  function testFuzzRevertInactiveDebtReserveLiquidationCall(uint256 debtToCover) public {
     uint256 ethAssetId = 1; // collateral asset
     uint256 daiAssetId = 0; // debt asset
 
@@ -571,19 +555,18 @@ contract LiquidityHubTest is BaseTest {
     _updateActive(daiAssetId, false);
     vm.expectRevert(Errors.RESERVE_NOT_ACTIVE);
     vm.prank(LIQUIDATOR);
-    hub.liquidationCall(ethAssetId, daiAssetId, USER1, debtToCover, receiveAToken);
+    hub.liquidationCall(ethAssetId, daiAssetId, USER1, debtToCover);
   }
 
   function testLiquidationCall() public {
     uint256 ethAssetId = 1; // collateral asset
     uint256 daiAssetId = 0; // debt asset
     uint256 debtToCover = 0;
-    bool receiveAToken = false;
 
     vm.prank(LIQUIDATOR);
     vm.expectEmit(true, true, true, true, address(hub));
-    emit LiquidationCall(ethAssetId, daiAssetId, USER1, debtToCover, 0, LIQUIDATOR, receiveAToken);
-    hub.liquidationCall(ethAssetId, daiAssetId, USER1, debtToCover, receiveAToken);
+    emit LiquidationCall(ethAssetId, daiAssetId, USER1, debtToCover, 0, LIQUIDATOR);
+    hub.liquidationCall(ethAssetId, daiAssetId, USER1, debtToCover);
   }
 
   function _updateLiquidityPremium(uint256 assetId, uint256 newLiquidityPremium) internal {

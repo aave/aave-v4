@@ -38,8 +38,7 @@ contract Events {
     address indexed user,
     uint256 debtToCover,
     uint256 liquidatedCollateralAmount,
-    address liquidator,
-    bool receiveAToken
+    address liquidator
   );
 }
 
