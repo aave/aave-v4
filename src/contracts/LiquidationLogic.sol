@@ -76,23 +76,26 @@ library LiquidationLogic {
     // TODO: check if user is undercollateralized. Get HF
     uint256 healthFactor = _calculateUserAccountData(reserves, reservesList, users, user, oracle);
 
-    _validateLiquidationCall(collateralReserve, debtReserve, 0); // TODO: healthFactor
-    // TODO: _calculateDebt();
+    _validateLiquidationCall(collateralReserve, debtReserve, 0); // TODO: involve healthFactor, hardcode 0 for now
+    // TODO: calculate the total debt of the user and the actual amount to liquidate depending on the health factor
+    _calculateDebt();
 
     //TODO: calculate how much debt to liquidate to get health factor back to HEALTH_FACTOR_LIQUIDATABLE_THRESHOLD
     vars.actualDebtToCover = debtToCover; // TODO: actualDebtToLiquidate
     // vars.actualDebtToCover = debtToCover > vars.actualDebtToCover
     //   ? vars.actualDebtToCover
     //   : debtToCover;
-    // TODO: calc how much collateral gets liquidated given the actualDebtToCover, vars.actualCollateralToLiquidate
+    // TODO: calculate how much of a specific collateral can be liquidated, given a certain amount of debt asset
+    // TODO: account for liquidation bonus, protocol liquidation fee
 
     // TODO: transfer collateral to liquidator
-    // TODO: pay off debt to debtReserve in liq hub
+    // TODO: pay off debt to debtReserve in liq hub, where debt asset is stored
     IERC20(reservesList[debtAssetId]).safeTransferFrom(
       msg.sender,
       address(this),
       vars.actualDebtToCover
     );
+    // TODO: update user's debt balance
 
     emit LiquidationCall(
       collateralAssetId,
@@ -230,8 +233,5 @@ library LiquidationLogic {
   }
 
   // TODO
-  function _calculateDebt(
-    LiquidityHub.UserConfig memory userConfig,
-    uint256 debtToCover
-  ) internal pure returns (uint256) {}
+  function _calculateDebt() internal pure returns (uint256) {}
 }
