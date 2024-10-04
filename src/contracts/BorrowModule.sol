@@ -48,6 +48,47 @@ contract BorrowModule is IBorrowModule {
   // assetId => reserveData
   mapping(uint256 => Reserve) public reserves;
 
+  function getReserve(uint256 assetId) external view returns (Reserve memory) {
+    return reserves[assetId];
+  }
+
+  function getUser(uint256 assetId, address user) external view returns (UserConfig memory) {
+    UserConfig memory u = users[assetId][user];
+
+    return u;
+  }
+
+  function getUserDebt(uint256 assetId, address user) external view returns (uint256) {
+    return _getUserDebt(assetId, user);
+  }
+
+  function _getUserDebt(uint256 assetId, address user) internal view returns (uint256) {
+    UserConfig memory u = users[assetId][user];
+
+    return
+      u.principalBalance +
+      u.principalBalance.rayMul(
+        MathUtils.calculateCompoundedInterest(
+          u.lastUpdateIndex,
+          uint40(u.lastUpdateTimestamp),
+          block.timestamp
+        )
+      );
+  }
+
+  function getReserveDebt(uint256 assetId) external view returns (uint256) {
+    Reserve storage r = reserves[assetId];
+    return
+      r.totalDebt +
+      r.totalDebt.rayMul(
+        MathUtils.calculateCompoundedInterest(
+          r.lastUpdateIndex,
+          uint40(r.lastUpdateTimestamp),
+          block.timestamp
+        )
+      );
+  }
+
   // /////
   // Governance
   // /////

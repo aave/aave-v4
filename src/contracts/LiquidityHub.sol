@@ -212,6 +212,7 @@ contract LiquidityHub {
     _updateRiskPremium(user);
   }
 
+  // TODO borrow name
   function borrow(uint256 assetId, uint256 amount) external {
     // TODO: onBehalf
     Reserve storage reserve = reserves[assetId];
@@ -276,7 +277,7 @@ contract LiquidityHub {
     require(reserve.config.active, 'RESERVE_NOT_ACTIVE');
     // TODO valid borrowModule
     // Check enough liquidity (liquidity > amount)
-    require(reserve.totalAssets >= amount, 'INVALID_AMOUNT');
+    require(reserve.totalAssets - reserve.totalDrawn >= amount, 'INVALID_AMOUNT');
     // draw cap not reached
     require(
       reserve.config.drawCap == 0 || reserve.config.drawCap > reserve.totalDrawn + amount,
