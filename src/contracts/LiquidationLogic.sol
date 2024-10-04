@@ -81,7 +81,7 @@ library LiquidationLogic {
     _calculateDebt();
 
     //TODO: calculate how much debt to liquidate to get health factor back to HEALTH_FACTOR_LIQUIDATABLE_THRESHOLD
-    vars.actualDebtToCover = debtToCover; // TODO: actualDebtToLiquidate
+    vars.actualDebtToCover = debtToCover;
     // vars.actualDebtToCover = debtToCover > vars.actualDebtToCover
     //   ? vars.actualDebtToCover
     //   : debtToCover;
@@ -95,11 +95,11 @@ library LiquidationLogic {
       vars.actualDebtToCover
     );
     // TODO: update user's debt balance
-    // TODO: transfer collateral to liquidator
     IERC20(reservesList[collateralAssetId]).safeTransfer(
       msg.sender,
       vars.actualCollateralToLiquidate
     );
+    // TODO: update user's collateral balance
 
     emit LiquidationCall(
       collateralAssetId,
