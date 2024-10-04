@@ -1,6 +1,8 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.0;
 
+import {IERC20} from '../dependencies/openzeppelin/IERC20.sol';
+import {SafeERC20} from '../dependencies/openzeppelin/SafeERC20.sol';
 import {LiquidityHub} from './LiquidityHub.sol';
 import {IPriceOracle} from './IPriceOracle.sol';
 import {WadRayMath} from './WadRayMath.sol';
@@ -12,6 +14,12 @@ import 'forge-std/console2.sol';
 library LiquidationLogic {
   using WadRayMath for uint256;
   using SharesMath for uint256;
+  using SafeERC20 for IERC20;
+
+  struct LiquidationCallLocalVars {
+    uint256 actualDebtToCover;
+    uint256 actualCollateralToLiquidate;
+  }
 
   struct CalculateUserAccountDataVars {
     uint256 totalCollateralInBaseCurrency;
@@ -26,7 +34,7 @@ library LiquidationLogic {
    * @dev allow the liquidator to liquidate enough assets so the HF goes back to this value
    * TODO: decide is this a constant, or adjustable (via governance)
    */
-  uint256 public constant HF_LIQUIDATION_THRESHOLD = 1e18;
+  uint256 public constant HEALTH_FACTOR_LIQUIDATABLE_THRESHOLD = 1e18;
   // TODO: Minimum health factor allowed under any circumstance
   uint256 public constant MINIMUM_HEALTH_FACTOR_LIQUIDATION_THRESHOLD = 0.95e18;
   /**
@@ -62,6 +70,8 @@ library LiquidationLogic {
     // we want allow the liquidator to liquidate enough assets so the HF goes back to 1 (or slightly higher).
     // make sure to account for liquidation bonus in calculating the amount liquidatable
 
+    LiquidationCallLocalVars memory vars;
+
     LiquidityHub.Reserve storage collateralReserve = reserves[collateralAssetId];
     LiquidityHub.Reserve storage debtReserve = reserves[debtAssetId];
 
@@ -71,15 +81,27 @@ library LiquidationLogic {
     _validateLiquidationCall(collateralReserve, debtReserve, 0); // TODO: healthFactor
     // TODO: _calculateDebt();
 
-    //TODO: calculate how much to liquidate to get health factor back to HF_LIQUIDATION_THRESHOLD
-    uint256 actualCollateralToLiquidate; // TODO
+    //TODO: calculate how much debt to liquidate to get health factor back to HEALTH_FACTOR_LIQUIDATABLE_THRESHOLD
+    vars.actualDebtToCover = debtToCover; // TODO: actualDebtToLiquidate
+    // vars.actualDebtToCover = debtToCover > vars.actualDebtToCover
+    //   ? vars.actualDebtToCover
+    //   : debtToCover;
+    // TODO: calc how much collateral gets liquidated given the actualDebtToCover, vars.actualCollateralToLiquidate
+
+    // TODO: transfer collateral to liquidator
+    // TODO: pay off debt to debtReserve in liq hub
+    IERC20(reservesList[debtAssetId]).safeTransferFrom(
+      msg.sender,
+      address(this),
+      vars.actualDebtToCover
+    );
 
     emit LiquidationCall(
       collateralAssetId,
       debtAssetId,
       user,
-      debtToCover, // TODO: actualDebtToLiquidate
-      actualCollateralToLiquidate, // TODO: liquidatedCollateralAmount
+      vars.actualDebtToCover, // TODO: actualDebtToLiquidate
+      vars.actualCollateralToLiquidate, // TODO: liquidatedCollateralAmount
       msg.sender,
       receiveAToken
     );
@@ -147,7 +169,6 @@ library LiquidationLogic {
       }
 
       vars.avgLiquidationThreshold += vars.userBalanceInBaseCurrency * reserveConfig.lt;
-
       ++vars.assetId;
     }
 
@@ -155,7 +176,7 @@ library LiquidationLogic {
       ? vars.avgLiquidationThreshold / vars.totalCollateralInBaseCurrency
       : 0;
 
-    // TODO: hf: (collateralValue * avg liquidation threshold) / debt
+    // TODO: hf calc: (collateralValue * avg liquidation threshold) / debt
     // use base currencies
     uint256 healthFactor = (vars.totalDebtInBaseCurrency == 0)
       ? type(uint256).max
