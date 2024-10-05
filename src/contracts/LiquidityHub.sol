@@ -30,12 +30,13 @@ contract LiquidityHub {
   );
   event Withdraw(uint256 indexed reserve, address indexed user, address indexed to, uint256 amount);
 
-  event Borrow(uint256 indexed reserve, address indexed user, uint256 amount);
+  event Draw(uint256 indexed reserve, address indexed borrowModule, uint256 amount);
 
   struct Reserve {
     uint256 id;
     uint256 totalShares;
     uint256 totalAssets;
+    uint256 totalDrawn;
     uint256 lastUpdateTimestamp;
     address borrowModule;
     address supplyModule;
@@ -132,6 +133,7 @@ contract LiquidityHub {
       id: reserveCount,
       totalShares: 0,
       totalAssets: 0,
+      totalDrawn: 0,
       lastUpdateTimestamp: block.timestamp,
       borrowModule: supplyParams.borrowModule,
       supplyModule: supplyParams.supplyModule,
@@ -269,16 +271,14 @@ contract LiquidityHub {
     _updateRiskPremium(user);
   }
 
+  // TODO borrow name
   function borrow(uint256 assetId, uint256 amount) external {
     // TODO: onBehalf
     // TODO: onBehalf
     Reserve storage reserve = reserves[assetId];
     UserConfig storage user = users[assetId][msg.sender];
 
-    uint256 totalBorrows; // TODO
-    _validateBorrow(reserve, totalBorrows, amount);
-
-    // TODO HF check
+    _validateBorrow(reserve, amount);
 
     // update indexes and IRs
     _updateState(reserve);
@@ -286,18 +286,29 @@ contract LiquidityHub {
     // Update user borrow reserve config
     _updateUserBorrowReserveConfig(msg.sender, assetId);
 
+    // TODO: update avgRiskPremium if collateral
+    // if collateral
+    _updateRiskPremium(msg.sender);
+
+    // updates accounting
+    reserve.totalDrawn += amount;
+
     // invokes borrow modules in case accounting update is needed
     // (eg, update premium for users borrowing using the asset as collateral)
     // TODO
-    // IBorrowModule(reserve.config.borrowModule).onBorrow(assetId, msg.sender, amount);
+    // Allow transfer of funds for borrow module
+    IERC20(reservesList[assetId]).forceApprove(reserve.borrowModule, amount);
+    // TODO: transfer instead? the module can take less than approved
+    IBorrowModule(reserve.borrowModule).onBorrow(
+      assetId,
+      msg.sender,
+      userRiskPremium[msg.sender],
+      amount
+    );
+    // reset allowance
+    IERC20(reservesList[assetId]).forceApprove(reserve.borrowModule, 0);
 
-    // updates user accounting
-    // TODO: increase totalBorrows
-
-    // transfer
-    IERC20(reservesList[assetId]).safeTransfer(msg.sender, amount);
-
-    emit Borrow(assetId, msg.sender, amount);
+    emit Draw(assetId, reserve.borrowModule, amount);
   }
 
   function repay(uint256 assetId, uint256 amount, address onBehalfOf) external {
@@ -327,18 +338,19 @@ contract LiquidityHub {
     require(reserve.totalAssets >= amount, 'NOT_AVAILABLE_LIQUIDITY');
   }
 
-  function _validateBorrow(Reserve storage reserve, uint256 totalBorrows, uint256 amount) internal {
+  function _validateBorrow(Reserve storage reserve, uint256 amount) internal view {
     // asset can be borrowed
     require(reserve.borrowConfig.getActive(), 'RESERVE_NOT_ACTIVE');
+    // TODO valid borrowModule
+    // Check enough liquidity (liquidity > amount)
+    require(reserve.totalAssets - reserve.totalDrawn >= amount, 'INVALID_AMOUNT');
     require(reserve.borrowConfig.getBorrowingEnabled(), 'RESERVE_NOT_BORROWABLE');
-    // borrow cap not reached
+    // draw cap not reached
     require(
-      reserve.borrowConfig.getBorrowCap() == 0 ||
-        reserve.borrowConfig.getBorrowCap() > totalBorrows + amount,
+      reserve.borrowConfig.getDrawCap() == 0 ||
+        reserve.borrowConfig.getDrawCap() > reserve.totalDrawn + amount,
       'CAP_EXCEEDED'
-    ); // TODO probably better in borrow module
-    // msg.sender needs to be a valid module
-    // TODO
+    );
   }
 
   function _updateState(Reserve storage reserve) internal {
@@ -348,7 +360,7 @@ contract LiquidityHub {
     // borrow module and liquidity hub coupling
 
     // Update indexes
-    _accrueReserveInterest(reserve, borrowRate);
+    _accrueReserveInterest(reserve, borrowRate); // TODO rate accruing is actually less than borrowRate
     // TODO borrowIndex
     // _accrueReserveInterest(reserve.borrowIndex, reserve.borrowRate, elapsed);
     // Accrue RF?

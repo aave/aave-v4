@@ -17,7 +17,7 @@ library SupplyReserveConfiguration {
   uint256 internal constant BORROWABLE_MASK =                0xFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFDFFFFFFFFFFFF; // prettier-ignore
   uint256 internal constant FROZEN_MASK =                    0xFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFBFFFFFFFFFFFF; // prettier-ignore
   uint256 internal constant PAUSED_MASK =                    0xFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF7FFFFFFFFFFFF; // prettier-ignore
-  uint256 internal constant BORROW_CAP_MASK =                0xFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF000000000FFFFFFFFFFFFF; // prettier-ignore
+  uint256 internal constant DRAW_CAP_MASK =                0xFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF000000000FFFFFFFFFFFFF; // prettier-ignore
   uint256 internal constant SUPPLY_CAP_MASK =                0xFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF000000000FFFFFFFFFFFFFFFFFFFFFF; // prettier-ignore
   uint256 internal constant LIQUIDITY_PREMIUM_MASK =         0xFFFFFFFFFFFFFFFFFFFFFFFFFFFFF0000FFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF; // prettier-ignore
 
@@ -29,7 +29,7 @@ library SupplyReserveConfiguration {
   uint256 internal constant IS_BORROWABLE_START_BIT_POSITION = 49;
   uint256 internal constant IS_FROZEN_START_BIT_POSITION = 50;
   uint256 internal constant IS_PAUSED_START_BIT_POSITION = 51;
-  uint256 internal constant BORROW_CAP_START_BIT_POSITION = 52;
+  uint256 internal constant DRAW_CAP_START_BIT_POSITION = 52;
   uint256 internal constant SUPPLY_CAP_START_BIT_POSITION = 88;
   uint256 internal constant LIQUIDITY_PREMIUM_START_BIT_POSITION = 124;
 
@@ -37,7 +37,7 @@ library SupplyReserveConfiguration {
   uint256 internal constant MAX_VALID_LIQUIDATION_BONUS = 65535;
   uint256 internal constant MAX_VALID_RESERVE_FACTOR = 65535;
   uint256 internal constant MAX_VALID_LIQUIDITY_PREMIUM = 10000;
-  uint256 internal constant MAX_VALID_BORROW_CAP = 68719476735;
+  uint256 internal constant MAX_VALID_DRAW_CAP = 68719476735;
   uint256 internal constant MAX_VALID_SUPPLY_CAP = 68719476735;
 
   uint16 public constant MAX_RESERVES_COUNT = 128;
@@ -207,26 +207,23 @@ library SupplyReserveConfiguration {
   }
 
   /**
-   * @notice Sets the borrow cap of the reserve
+   * @notice Sets the draw cap of the reserve
    * @param self The reserve configuration
-   * @param borrowCap The borrow cap
+   * @param drawCap The draw cap
    */
-  function setBorrowCap(
-    DataTypes.SupplyReserveConfig memory self,
-    uint256 borrowCap
-  ) internal pure {
-    require(borrowCap <= MAX_VALID_BORROW_CAP, Errors.INVALID_BORROW_CAP);
+  function setDrawCap(DataTypes.SupplyReserveConfig memory self, uint256 drawCap) internal pure {
+    require(drawCap <= MAX_VALID_DRAW_CAP, Errors.INVALID_DRAW_CAP);
 
-    self.data = (self.data & BORROW_CAP_MASK) | (borrowCap << BORROW_CAP_START_BIT_POSITION);
+    self.data = (self.data & DRAW_CAP_MASK) | (drawCap << DRAW_CAP_START_BIT_POSITION);
   }
 
   /**
-   * @notice Gets the borrow cap of the reserve
+   * @notice Gets the draw cap of the reserve
    * @param self The reserve configuration
-   * @return The borrow cap
+   * @return The draw cap
    */
-  function getBorrowCap(DataTypes.SupplyReserveConfig memory self) internal pure returns (uint256) {
-    return (self.data & ~BORROW_CAP_MASK) >> BORROW_CAP_START_BIT_POSITION;
+  function getDrawCap(DataTypes.SupplyReserveConfig memory self) internal pure returns (uint256) {
+    return (self.data & ~DRAW_CAP_MASK) >> DRAW_CAP_START_BIT_POSITION;
   }
 
   /**
@@ -322,7 +319,7 @@ library SupplyReserveConfiguration {
   /**
    * @notice Gets the caps parameters of the reserve from storage
    * @param self The reserve configuration
-   * @return The state param representing borrow cap
+   * @return The state param representing draw cap
    * @return The state param representing supply cap.
    */
   function getCaps(
@@ -331,7 +328,7 @@ library SupplyReserveConfiguration {
     uint256 dataLocal = self.data;
 
     return (
-      (dataLocal & ~BORROW_CAP_MASK) >> BORROW_CAP_START_BIT_POSITION,
+      (dataLocal & ~DRAW_CAP_MASK) >> DRAW_CAP_START_BIT_POSITION,
       (dataLocal & ~SUPPLY_CAP_MASK) >> SUPPLY_CAP_START_BIT_POSITION
     );
   }
@@ -347,7 +344,7 @@ library SupplyReserveConfiguration {
     setBorrowingEnabled(self, params.borrowable);
     setFrozen(self, params.frozen);
     setPaused(self, params.paused);
-    setBorrowCap(self, params.borrowCap);
+    setDrawCap(self, params.drawCap);
     setSupplyCap(self, params.supplyCap);
     setLiquidityPremium(self, params.liquidityPremium);
   }

@@ -85,7 +85,7 @@ library DataTypes {
     bool frozen;
     bool paused;
     uint256 supplyCap;
-    uint256 borrowCap;
+    uint256 drawCap;
     // uint256 eModeCategory; // TODO eMode
     // uint256 debtCeiling; // TODO isolation mode
   }
@@ -118,7 +118,7 @@ library DataTypes {
     bool frozen;
     bool paused;
     uint256 supplyCap;
-    uint256 borrowCap;
+    uint256 drawCap;
     // uint256 eModeCategory; // TODO eMode
     // uint256 debtCeiling; // TODO isolation mode
   }

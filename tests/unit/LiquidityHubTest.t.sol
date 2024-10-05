@@ -26,7 +26,7 @@ contract LiquidityHubTest is BaseTest {
         frozen: false,
         paused: false,
         supplyCap: 0,
-        borrowCap: 0,
+        drawCap: 0,
         liquidityPremium: 10_00
       }),
       DataTypes.BorrowReserveConfigurationParams({
@@ -40,9 +40,14 @@ contract LiquidityHubTest is BaseTest {
         frozen: false,
         paused: false,
         supplyCap: 0,
-        borrowCap: 0,
+        drawCap: 0,
         liquidityPremium: 10_00
       }),
+      address(dai)
+    );
+    bm.addReserve(
+      0,
+      BorrowModule.ReserveConfig({lt: 0, lb: 0, rf: 0, borrowable: true}),
       address(dai)
     );
     MockPriceOracle(address(oracle)).setAssetPrice(0, 1e8);
@@ -60,7 +65,7 @@ contract LiquidityHubTest is BaseTest {
         frozen: false,
         paused: false,
         supplyCap: 0,
-        borrowCap: 0,
+        drawCap: 0,
         liquidityPremium: 0
       }),
       DataTypes.BorrowReserveConfigurationParams({
@@ -74,9 +79,14 @@ contract LiquidityHubTest is BaseTest {
         frozen: false,
         paused: false,
         supplyCap: 0,
-        borrowCap: 0,
+        drawCap: 0,
         liquidityPremium: 0
       }),
+      address(eth)
+    );
+    bm.addReserve(
+      1,
+      BorrowModule.ReserveConfig({lt: 0, lb: 0, rf: 0, borrowable: true}),
       address(eth)
     );
     MockPriceOracle(address(oracle)).setAssetPrice(1, 2000e8);
@@ -517,8 +527,8 @@ contract LiquidityHubTest is BaseTest {
     assertEq(supplyConfig.getBorrowingEnabled(), false);
     assertEq(borrowConfig.getReserveFactor(), 0);
     assertEq(supplyConfig.getReserveFactor(), 0);
-    assertEq(borrowConfig.getBorrowCap(), 0);
-    assertEq(supplyConfig.getBorrowCap(), 0);
+    assertEq(borrowConfig.getDrawCap(), 0);
+    assertEq(supplyConfig.getDrawCap(), 0);
     assertEq(borrowConfig.getSupplyCap(), 0);
     assertEq(supplyConfig.getSupplyCap(), 0);
     assertEq(borrowConfig.getLiquidityPremium(), 10_00);
@@ -545,11 +555,11 @@ contract LiquidityHubTest is BaseTest {
     assertEq(lb, 0);
     assertEq(rf, 0);
 
-    (uint256 borrowCap, uint256 supplyCap) = borrowConfig.getCaps();
-    assertEq(borrowCap, 0);
+    (uint256 drawCap, uint256 supplyCap) = borrowConfig.getCaps();
+    assertEq(drawCap, 0);
     assertEq(supplyCap, 0);
-    (borrowCap, supplyCap) = supplyConfig.getCaps();
-    assertEq(borrowCap, 0);
+    (drawCap, supplyCap) = supplyConfig.getCaps();
+    assertEq(drawCap, 0);
     assertEq(supplyCap, 0);
 
     // Test Setters
@@ -581,10 +591,10 @@ contract LiquidityHubTest is BaseTest {
     assertEq(borrowConfig.getReserveFactor(), 1);
     supplyConfig.setReserveFactor(1);
     assertEq(supplyConfig.getReserveFactor(), 1);
-    borrowConfig.setBorrowCap(1);
-    assertEq(borrowConfig.getBorrowCap(), 1);
-    supplyConfig.setBorrowCap(1);
-    assertEq(supplyConfig.getBorrowCap(), 1);
+    borrowConfig.setDrawCap(1);
+    assertEq(borrowConfig.getDrawCap(), 1);
+    supplyConfig.setDrawCap(1);
+    assertEq(supplyConfig.getDrawCap(), 1);
     borrowConfig.setSupplyCap(1);
     assertEq(borrowConfig.getSupplyCap(), 1);
     supplyConfig.setSupplyCap(1);
@@ -607,7 +617,7 @@ contract LiquidityHubTest is BaseTest {
         frozen: false,
         paused: false,
         supplyCap: 3,
-        borrowCap: 3,
+        drawCap: 3,
         liquidityPremium: 20_00
       });
     borrowConfig.setConfigFromParams(newBorrowParams);
@@ -618,7 +628,7 @@ contract LiquidityHubTest is BaseTest {
     assertEq(borrowConfig.getBorrowingEnabled(), newBorrowParams.borrowable);
     assertEq(borrowConfig.getFrozen(), newBorrowParams.frozen);
     assertEq(borrowConfig.getPaused(), newBorrowParams.paused);
-    assertEq(borrowConfig.getBorrowCap(), newBorrowParams.borrowCap);
+    assertEq(borrowConfig.getDrawCap(), newBorrowParams.drawCap);
     assertEq(borrowConfig.getSupplyCap(), newBorrowParams.supplyCap);
     assertEq(borrowConfig.getLiquidityPremium(), newBorrowParams.liquidityPremium);
 
@@ -634,7 +644,7 @@ contract LiquidityHubTest is BaseTest {
         frozen: false,
         paused: false,
         supplyCap: 3,
-        borrowCap: 3,
+        drawCap: 3,
         liquidityPremium: 20_00
       });
     supplyConfig.setConfigFromParams(newSupplyParams);
@@ -645,9 +655,84 @@ contract LiquidityHubTest is BaseTest {
     assertEq(supplyConfig.getBorrowingEnabled(), newSupplyParams.borrowable);
     assertEq(supplyConfig.getFrozen(), newSupplyParams.frozen);
     assertEq(supplyConfig.getPaused(), newSupplyParams.paused);
-    assertEq(supplyConfig.getBorrowCap(), newSupplyParams.borrowCap);
+    assertEq(supplyConfig.getDrawCap(), newSupplyParams.drawCap);
     assertEq(supplyConfig.getSupplyCap(), newSupplyParams.supplyCap);
     assertEq(supplyConfig.getLiquidityPremium(), newSupplyParams.liquidityPremium);
+  }
+
+  function test_first_borrow() public {
+    uint256 daiId = 0;
+    uint256 ethId = 1;
+    uint256 daiAmount = 100e18;
+    uint256 ethAmount = 10e18;
+
+    // User1 supply eth
+    deal(address(eth), USER1, ethAmount);
+    Utils.supply(vm, hub, ethId, USER1, ethAmount, USER1);
+
+    // User2 supply dai
+    deal(address(dai), USER2, daiAmount);
+    Utils.supply(vm, hub, daiId, USER2, daiAmount, USER2);
+
+    LiquidityHub.Reserve memory daiData = hub.getReserve(daiId);
+    LiquidityHub.Reserve memory ethData = hub.getReserve(ethId);
+    LiquidityHub.UserConfig memory userDaiData1 = hub.getUser(daiId, USER1);
+    LiquidityHub.UserConfig memory userEthData1 = hub.getUser(ethId, USER1);
+    LiquidityHub.UserConfig memory userDaiData2 = hub.getUser(daiId, USER2);
+    LiquidityHub.UserConfig memory userEthData2 = hub.getUser(ethId, USER2);
+
+    assertEq(daiData.totalShares, daiAmount);
+    assertEq(daiData.totalAssets, daiAmount);
+    assertEq(daiData.totalDrawn, 0);
+    assertEq(ethData.totalShares, ethAmount);
+    assertEq(ethData.totalAssets, ethAmount);
+    assertEq(ethData.totalDrawn, 0);
+
+    assertEq(userDaiData1.shares, 0);
+    assertEq(hub.getUserBalance(daiId, USER1), 0);
+    assertEq(userEthData1.shares, ethAmount);
+    assertEq(hub.getUserBalance(ethId, USER1), ethAmount);
+
+    assertEq(userDaiData2.shares, daiAmount);
+    assertEq(hub.getUserBalance(daiId, USER2), daiAmount);
+    assertEq(userEthData2.shares, 0);
+    assertEq(hub.getUserBalance(ethId, USER2), 0);
+
+    assertEq(dai.balanceOf(USER1), 0);
+
+    // Enable Dai for borrowing
+    daiData.borrowConfig.setBorrowingEnabled(true);
+    hub.updateBorrowReserve(daiId, daiData.borrowConfig);
+
+    // User1 borrow half of dai reserve
+    vm.prank(USER1);
+    hub.borrow(daiId, daiAmount / 2);
+
+    daiData = hub.getReserve(daiId);
+    ethData = hub.getReserve(ethId);
+    userDaiData1 = hub.getUser(daiId, USER1);
+    userEthData1 = hub.getUser(ethId, USER1);
+    userDaiData2 = hub.getUser(daiId, USER2);
+    userEthData2 = hub.getUser(ethId, USER2);
+
+    assertEq(daiData.totalShares, daiAmount);
+    assertEq(daiData.totalAssets, daiAmount);
+    assertEq(daiData.totalDrawn, daiAmount / 2);
+    assertEq(ethData.totalShares, ethAmount);
+    assertEq(ethData.totalAssets, ethAmount);
+    assertEq(ethData.totalDrawn, 0);
+
+    assertEq(userDaiData1.shares, 0);
+    assertEq(hub.getUserBalance(daiId, USER1), 0);
+    assertEq(userEthData1.shares, ethAmount);
+    assertEq(hub.getUserBalance(ethId, USER1), ethAmount);
+
+    assertEq(userDaiData2.shares, daiAmount);
+    assertEq(hub.getUserBalance(daiId, USER2), daiAmount);
+    assertEq(userEthData2.shares, 0);
+    assertEq(hub.getUserBalance(ethId, USER2), 0);
+
+    assertEq(dai.balanceOf(USER1), daiAmount / 2);
   }
 
   function _updateLiquidityPremium(uint256 assetId, uint256 newLiquidityPremium) internal {

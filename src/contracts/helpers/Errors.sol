@@ -73,7 +73,7 @@ library Errors {
   string public constant INVALID_LIQ_BONUS = '65'; // 'Invalid liquidity bonus parameter for the reserve'
   string public constant INVALID_DECIMALS = '66'; // 'Invalid decimals parameter of the underlying asset of the reserve'
   string public constant INVALID_RESERVE_FACTOR = '67'; // 'Invalid reserve factor parameter for the reserve'
-  string public constant INVALID_BORROW_CAP = '68'; // 'Invalid borrow cap for the reserve'
+  string public constant INVALID_DRAW_CAP = '68'; // 'Invalid draw cap for the reserve'
   string public constant INVALID_SUPPLY_CAP = '69'; // 'Invalid supply cap for the reserve'
   string public constant INVALID_LIQUIDATION_PROTOCOL_FEE = '70'; // 'Invalid liquidation protocol fee for the reserve'
   string public constant INVALID_EMODE_CATEGORY = '71'; // 'Invalid eMode category for the reserve'

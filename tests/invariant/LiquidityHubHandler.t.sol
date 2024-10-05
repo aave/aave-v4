@@ -50,7 +50,7 @@ contract LiquidityHubHandler is Test {
         frozen: false,
         paused: false,
         supplyCap: 0,
-        borrowCap: 0,
+        drawCap: 0,
         liquidityPremium: 0
       }),
       DataTypes.BorrowReserveConfigurationParams({
@@ -64,9 +64,14 @@ contract LiquidityHubHandler is Test {
         frozen: false,
         paused: false,
         supplyCap: 0,
-        borrowCap: 0,
+        drawCap: 0,
         liquidityPremium: 0
       }),
+      address(dai)
+    );
+    bm.addReserve(
+      0,
+      BorrowModule.ReserveConfig({lt: 0, lb: 0, rf: 0, borrowable: false}),
       address(dai)
     );
   }
