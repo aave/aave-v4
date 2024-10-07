@@ -653,31 +653,35 @@ contract LiquidityHubTest is BaseTest {
     hub.liquidationCall(ethAssetId, daiAssetId, USER1, debtToCover);
   }
 
-  // function testLiquidationCall() public {
-  //   uint256 ethAssetId = 1; // collateral asset
-  //   uint256 daiAssetId = 0; // debt asset
-  //   uint256 daiAmount = 100e18;
-  //   uint256 ethAmount = 10e18;
+  function testLiquidationCall() public {
+    uint256 ethAssetId = 1; // collateral asset
+    uint256 daiAssetId = 0; // debt asset
+    uint256 daiAmount = 100e18;
+    uint256 ethAmount = 10e18;
 
-  //   // User1 supply eth
-  //   deal(address(eth), USER1, ethAmount);
-  //   Utils.supply(vm, hub, ethAssetId, USER1, ethAmount, USER1);
+    // User1 supply eth
+    deal(address(eth), USER1, ethAmount);
+    Utils.supply(vm, hub, ethAssetId, USER1, ethAmount, USER1);
 
-  //   // User2 supply dai
-  //   deal(address(dai), USER2, daiAmount);
-  //   Utils.supply(vm, hub, daiAssetId, USER2, daiAmount, USER2);
+    // User2 supply dai
+    deal(address(dai), USER2, daiAmount);
+    Utils.supply(vm, hub, daiAssetId, USER2, daiAmount, USER2);
 
-  //   // User1 borrow half of dai reserve
-  //   vm.prank(USER1);
-  //   hub.borrow(daiAssetId, daiAmount / 2);
+    // User1 borrow half of dai reserve, ie debt
+    vm.prank(USER1);
+    hub.borrow(daiAssetId, daiAmount / 2);
 
-  //   uint256 debtToCover = 1;
+    uint256 debtToCover = 1;
 
-  //   vm.prank(LIQUIDATOR);
-  //   vm.expectEmit(true, true, true, true, address(hub));
-  //   emit LiquidationCall(ethAssetId, daiAssetId, USER1, debtToCover, 0, LIQUIDATOR);
-  //   hub.liquidationCall(ethAssetId, daiAssetId, USER1, debtToCover);
-  // }
+    deal(address(dai), LIQUIDATOR, debtToCover);
+    vm.startPrank(LIQUIDATOR);
+    dai.approve(address(hub), debtToCover);
+
+    vm.expectEmit(true, true, true, true, address(hub));
+    emit LiquidationCall(ethAssetId, daiAssetId, USER1, debtToCover, 0, LIQUIDATOR);
+    hub.liquidationCall(ethAssetId, daiAssetId, USER1, debtToCover);
+    vm.stopPrank();
+  }
 
   function _updateLiquidityPremium(uint256 assetId, uint256 newLiquidityPremium) internal {
     LiquidityHub.ReserveConfig memory reserveConfig = hub.getReserve(assetId).config;
