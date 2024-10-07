@@ -9,7 +9,6 @@ import {IReserveInterestRateStrategy} from './IReserveInterestRateStrategy.sol';
  * @notice Interface of the default interest rate strategy used by the Aave protocol
  */
 interface IDefaultInterestRateStrategy is IReserveInterestRateStrategy {
-
   /**
    * @notice emitted when new interest rate data is set in a reserve
    *
@@ -26,7 +25,6 @@ interface IDefaultInterestRateStrategy is IReserveInterestRateStrategy {
     uint256 variableRateSlope1,
     uint256 variableRateSlope2
   );
-
 
   struct CalcInterestRatesLocalVars {
     uint256 availableLiquidity;
@@ -146,5 +144,4 @@ interface IDefaultInterestRateStrategy is IReserveInterestRateStrategy {
    * @return The maximum variable borrow rate
    */
   function getMaxVariableBorrowRate(uint256 assetId) external view returns (uint256);
-
 }
