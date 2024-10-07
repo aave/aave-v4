@@ -681,6 +681,8 @@ contract LiquidityHubTest is BaseTest {
     emit LiquidationCall(ethAssetId, daiAssetId, USER1, debtToCover, 0, LIQUIDATOR);
     hub.liquidationCall(ethAssetId, daiAssetId, USER1, debtToCover);
     vm.stopPrank();
+
+    assertEq(dai.balanceOf(LIQUIDATOR), 0, 'Liquidator should have 0 dai remaining');
   }
 
   function _updateLiquidityPremium(uint256 assetId, uint256 newLiquidityPremium) internal {
