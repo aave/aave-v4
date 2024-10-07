@@ -50,6 +50,7 @@ library Errors {
   bytes constant ASSET_NOT_LISTED = 'ASSET_NOT_LISTED';
   bytes constant SPECIFIED_CURRENCY_NOT_BORROWED_BY_USER =
     'SPECIFIED_CURRENCY_NOT_BORROWED_BY_USER';
+  bytes constant INVALID_DEBT_TO_COVER = 'INVALID_DEBT_TO_COVER';
 }
 
 abstract contract BaseTest is Test, Events {

@@ -540,7 +540,7 @@ contract LiquidityHubTest is BaseTest {
   function testRevertInactiveCollateralReserveLiquidationCall() public {
     uint256 ethAssetId = 1; // collateral asset
     uint256 daiAssetId = 0; // debt asset
-    uint256 debtToCover = 0;
+    uint256 debtToCover = 1;
 
     // ETH reserve is inactive
     _updateActive(ethAssetId, false);
@@ -552,7 +552,7 @@ contract LiquidityHubTest is BaseTest {
   function testRevertInactiveDebtReserveLiquidationCall() public {
     uint256 ethAssetId = 1; // collateral asset
     uint256 daiAssetId = 0; // debt asset
-    uint256 debtToCover = 0;
+    uint256 debtToCover = 1;
 
     // DAI reserve is inactive
     _updateActive(daiAssetId, false);
@@ -564,7 +564,7 @@ contract LiquidityHubTest is BaseTest {
   function testRevertPausedCollateralReserveLiquidationCall() public {
     uint256 ethAssetId = 1; // collateral asset
     uint256 daiAssetId = 0; // debt asset
-    uint256 debtToCover = 0;
+    uint256 debtToCover = 1;
 
     // ETH reserve is inactive
     _updatePaused(ethAssetId, false);
@@ -576,7 +576,7 @@ contract LiquidityHubTest is BaseTest {
   function testRevertPausedDebtReserveLiquidationCall() public {
     uint256 ethAssetId = 1; // collateral asset
     uint256 daiAssetId = 0; // debt asset
-    uint256 debtToCover = 0;
+    uint256 debtToCover = 1;
 
     // DAI reserve is inactive
     _updatePaused(daiAssetId, false);
@@ -586,6 +586,7 @@ contract LiquidityHubTest is BaseTest {
   }
 
   function testFuzzRevertPausedDebtReserveLiquidationCall(uint256 debtToCover) public {
+    vm.assume(debtToCover > 0);
     uint256 ethAssetId = 1; // collateral asset
     uint256 daiAssetId = 0; // debt asset
 
@@ -597,6 +598,7 @@ contract LiquidityHubTest is BaseTest {
   }
 
   function testFuzzRevertPausedCollateralReserveLiquidationCall(uint256 debtToCover) public {
+    vm.assume(debtToCover > 0);
     uint256 ethAssetId = 1; // collateral asset
     uint256 daiAssetId = 0; // debt asset
 
@@ -608,6 +610,7 @@ contract LiquidityHubTest is BaseTest {
   }
 
   function testFuzzRevertInactiveCollateralReserveLiquidationCall(uint256 debtToCover) public {
+    vm.assume(debtToCover > 0);
     uint256 ethAssetId = 1; // collateral asset
     uint256 daiAssetId = 0; // debt asset
 
@@ -619,6 +622,7 @@ contract LiquidityHubTest is BaseTest {
   }
 
   function testFuzzRevertInactiveDebtReserveLiquidationCall(uint256 debtToCover) public {
+    vm.assume(debtToCover > 0);
     uint256 ethAssetId = 1; // collateral asset
     uint256 daiAssetId = 0; // debt asset
 
@@ -632,17 +636,42 @@ contract LiquidityHubTest is BaseTest {
   function testRevertLiquidationCallCurrencyNotBorrowed() public {
     uint256 ethAssetId = 1; // collateral asset
     uint256 daiAssetId = 0; // debt asset
-    uint256 debtToCover = 0;
+    uint256 debtToCover = 1;
 
     vm.prank(LIQUIDATOR);
     vm.expectRevert(Errors.SPECIFIED_CURRENCY_NOT_BORROWED_BY_USER);
     hub.liquidationCall(ethAssetId, daiAssetId, USER1, debtToCover);
   }
 
+  function testRevertLiquidationCallInvalidDebtToCover() public {
+    uint256 ethAssetId = 1; // collateral asset
+    uint256 daiAssetId = 0; // debt asset
+    uint256 debtToCover = 0;
+
+    vm.prank(LIQUIDATOR);
+    vm.expectRevert(Errors.INVALID_DEBT_TO_COVER);
+    hub.liquidationCall(ethAssetId, daiAssetId, USER1, debtToCover);
+  }
+
   // function testLiquidationCall() public {
   //   uint256 ethAssetId = 1; // collateral asset
   //   uint256 daiAssetId = 0; // debt asset
-  //   uint256 debtToCover = 0;
+  //   uint256 daiAmount = 100e18;
+  //   uint256 ethAmount = 10e18;
+
+  //   // User1 supply eth
+  //   deal(address(eth), USER1, ethAmount);
+  //   Utils.supply(vm, hub, ethAssetId, USER1, ethAmount, USER1);
+
+  //   // User2 supply dai
+  //   deal(address(dai), USER2, daiAmount);
+  //   Utils.supply(vm, hub, daiAssetId, USER2, daiAmount, USER2);
+
+  //   // User1 borrow half of dai reserve
+  //   vm.prank(USER1);
+  //   hub.borrow(daiAssetId, daiAmount / 2);
+
+  //   uint256 debtToCover = 1;
 
   //   vm.prank(LIQUIDATOR);
   //   vm.expectEmit(true, true, true, true, address(hub));

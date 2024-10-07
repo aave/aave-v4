@@ -68,6 +68,8 @@ library LiquidationLogic {
     // we want allow the liquidator to liquidate enough assets so the HF goes back to 1 (or slightly higher).
     // make sure to account for liquidation bonus in calculating the amount liquidatable
 
+    require(debtToCover > 0, 'INVALID_DEBT_TO_COVER');
+
     LiquidationCallLocalVars memory vars;
 
     LiquidityHub.Reserve storage collateralReserve = reserves[collateralAssetId];
