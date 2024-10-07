@@ -48,6 +48,8 @@ library Errors {
   bytes constant RESERVE_NOT_ACTIVE = 'RESERVE_NOT_ACTIVE';
   bytes constant BORROWING_IS_PAUSED = 'RESERVE_PAUSED';
   bytes constant ASSET_NOT_LISTED = 'ASSET_NOT_LISTED';
+  bytes constant SPECIFIED_CURRENCY_NOT_BORROWED_BY_USER =
+    'SPECIFIED_CURRENCY_NOT_BORROWED_BY_USER';
 }
 
 abstract contract BaseTest is Test, Events {

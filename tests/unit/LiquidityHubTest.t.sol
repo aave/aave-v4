@@ -558,16 +558,26 @@ contract LiquidityHubTest is BaseTest {
     hub.liquidationCall(ethAssetId, daiAssetId, USER1, debtToCover);
   }
 
-  function testLiquidationCall() public {
+  function testRevertLiquidationCallCurrencyNotBorrowed() public {
     uint256 ethAssetId = 1; // collateral asset
     uint256 daiAssetId = 0; // debt asset
     uint256 debtToCover = 0;
 
     vm.prank(LIQUIDATOR);
-    vm.expectEmit(true, true, true, true, address(hub));
-    emit LiquidationCall(ethAssetId, daiAssetId, USER1, debtToCover, 0, LIQUIDATOR);
+    vm.expectRevert(Errors.SPECIFIED_CURRENCY_NOT_BORROWED_BY_USER);
     hub.liquidationCall(ethAssetId, daiAssetId, USER1, debtToCover);
   }
+
+  // function testLiquidationCall() public {
+  //   uint256 ethAssetId = 1; // collateral asset
+  //   uint256 daiAssetId = 0; // debt asset
+  //   uint256 debtToCover = 0;
+
+  //   vm.prank(LIQUIDATOR);
+  //   vm.expectEmit(true, true, true, true, address(hub));
+  //   emit LiquidationCall(ethAssetId, daiAssetId, USER1, debtToCover, 0, LIQUIDATOR);
+  //   hub.liquidationCall(ethAssetId, daiAssetId, USER1, debtToCover);
+  // }
 
   function _updateLiquidityPremium(uint256 assetId, uint256 newLiquidityPremium) internal {
     LiquidityHub.ReserveConfig memory reserveConfig = hub.getReserve(assetId).config;

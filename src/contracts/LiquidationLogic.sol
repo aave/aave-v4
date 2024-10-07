@@ -76,7 +76,7 @@ library LiquidationLogic {
     // TODO: check if user is undercollateralized. Get HF
     uint256 healthFactor = _calculateUserAccountData(reserves, reservesList, users, user, oracle);
 
-    _validateLiquidationCall(collateralReserve, debtReserve, 0); // TODO: involve healthFactor, hardcode 0 for now
+    _validateLiquidationCall(collateralReserve, debtReserve, user, 0); // TODO: involve healthFactor, hardcode 0 for now
     // TODO: calculate the total debt of the user and the actual amount to liquidate depending on the health factor
     _calculateDebt();
 
@@ -114,6 +114,7 @@ library LiquidationLogic {
   function _validateLiquidationCall(
     LiquidityHub.Reserve memory collateralReserve,
     LiquidityHub.Reserve memory debtReserve,
+    address user,
     uint256 healthFactor
   ) internal view {
     require(debtReserve.config.active && collateralReserve.config.active, 'RESERVE_NOT_ACTIVE');
@@ -122,6 +123,11 @@ library LiquidationLogic {
       healthFactor < HEALTH_FACTOR_LIQUIDATION_THRESHOLD,
       'HEALTH_FACTOR_NOT_BELOW_THRESHOLD'
     );
+    (uint256 principalBalance, , , ) = BorrowModule(debtReserve.config.borrowModule).users(
+      debtReserve.id,
+      user
+    );
+    require(principalBalance > 0, 'SPECIFIED_CURRENCY_NOT_BORROWED_BY_USER');
   }
 
   function _calculateUserAccountData(
