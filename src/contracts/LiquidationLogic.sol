@@ -22,6 +22,8 @@ library LiquidationLogic {
     uint256 principalBalance;
     uint256 interestBalance;
     uint256 totalUserDebt;
+    uint256 healthFactor;
+    uint256 maxDebtToCover;
   }
 
   struct CalculateUserAccountDataVars {
@@ -79,7 +81,13 @@ library LiquidationLogic {
     LiquidityHub.Reserve storage debtReserve = reserves[debtAssetId];
 
     // TODO: check if user is undercollateralized. Get HF
-    uint256 healthFactor = _calculateUserAccountData(reserves, reservesList, users, user, oracle);
+    (uint256 healthFactor, uint256 maxDebtToCover) = _calculateUserAccountData(
+      reserves,
+      reservesList,
+      users,
+      user,
+      oracle
+    );
 
     _validateLiquidationCall(collateralReserve, debtReserve, user, 0); // TODO: involve healthFactor, hardcode 0 for now
     // TODO: calculate the total debt of the user and the actual amount to liquidate depending on the health factor
@@ -147,7 +155,7 @@ library LiquidationLogic {
     mapping(uint256 => mapping(address => LiquidityHub.UserConfig)) storage users,
     address user,
     address oracle
-  ) internal view returns (uint256) {
+  ) internal view returns (uint256, uint256) {
     // TODO: calculate user account data, including health factor
     // if no debt, then health factor is type(uint256).max
     // TODO: emode config logic
@@ -157,7 +165,7 @@ library LiquidationLogic {
     vars.reserveCount = reservesList.length;
     // loop thru all reserves
     while (vars.assetId < vars.reserveCount) {
-      if (!_isUsingAsCollateralOrBorrowing(vars.assetId)) {
+      if (!_isUsingAsCollateralOrBorrowing(user, vars.assetId)) {
         ++vars.assetId;
         continue;
       }
@@ -166,21 +174,22 @@ library LiquidationLogic {
       (, , , , , BorrowModule.ReserveConfig memory reserveConfig) = BorrowModule(
         currentReserve.config.borrowModule
       ).reserves(vars.assetId); // TODO: liquidation threshold, get it from proper reserve
-
       uint256 decimals = currentReserve.config.decimals;
       uint256 assetUnit = 10 ** decimals;
-
-      address currentReserveAddress = reservesList[vars.assetId];
       uint256 assetPrice = IPriceOracle(oracle).getAssetPrice(vars.assetId);
-      vars.userBalanceInBaseCurrency = _getUserBalanceInBaseCurrency(
-        users[vars.assetId][user],
-        currentReserve,
-        assetPrice,
-        assetUnit
-      );
-      vars.totalCollateralInBaseCurrency += vars.userBalanceInBaseCurrency;
 
-      if (_isBorrowing(vars.assetId)) {
+      if (reserveConfig.lt != 0 && _isUsingAsCollateral(user, vars.assetId)) {
+        vars.userBalanceInBaseCurrency = _getUserBalanceInBaseCurrency(
+          users[vars.assetId][user],
+          currentReserve,
+          assetPrice,
+          assetUnit
+        );
+        vars.totalCollateralInBaseCurrency += vars.userBalanceInBaseCurrency;
+        vars.avgLiquidationThreshold += vars.userBalanceInBaseCurrency * reserveConfig.lt;
+      }
+
+      if (_isBorrowing(user, vars.assetId)) {
         vars.totalDebtInBaseCurrency += _getUserDebtInBaseCurrency(
           user,
           currentReserve,
@@ -189,7 +198,6 @@ library LiquidationLogic {
         );
       }
 
-      vars.avgLiquidationThreshold += vars.userBalanceInBaseCurrency * reserveConfig.lt;
       ++vars.assetId;
     }
 
@@ -197,31 +205,37 @@ library LiquidationLogic {
       ? vars.avgLiquidationThreshold / vars.totalCollateralInBaseCurrency
       : 0;
 
-    // TODO: hf calc: (collateralValue * avg liquidation threshold) / debt
+    // TODO: hf calc: hf = (collateralValue * avg liquidation threshold) / debt
+    // maxDebtToCover = (collateralValue * avg liquidation threshold) / HEALTH_FACTOR_LIQUIDATABLE_THRESHOLD
     // use base currencies
     uint256 healthFactor = (vars.totalDebtInBaseCurrency == 0)
       ? type(uint256).max
       : (vars.totalCollateralInBaseCurrency * vars.avgLiquidationThreshold).wadDiv(
         vars.totalDebtInBaseCurrency
       );
+    uint256 maxDebtToCover = (vars.totalCollateralInBaseCurrency * vars.avgLiquidationThreshold)
+      .wadDiv(HEALTH_FACTOR_LIQUIDATABLE_THRESHOLD);
     // console2.log('HF calcs, totalDebtInBaseCurrency:', vars.totalDebtInBaseCurrency);
 
-    return healthFactor;
+    return (healthFactor, maxDebtToCover);
   }
 
   // TODO
-  function _isUsingAsCollateral(uint256 assetId) internal view returns (bool) {
+  function _isUsingAsCollateral(address user, uint256 assetId) internal view returns (bool) {
     return true;
   }
 
   // TODO
-  function _isBorrowing(uint256 assetId) internal view returns (bool) {
+  function _isBorrowing(address user, uint256 assetId) internal view returns (bool) {
     return true;
   }
 
   // TODO is a given asset being used as collateral or being borrowed?
-  function _isUsingAsCollateralOrBorrowing(uint256 assetId) internal view returns (bool) {
-    return _isUsingAsCollateral(assetId) || _isBorrowing(assetId);
+  function _isUsingAsCollateralOrBorrowing(
+    address user,
+    uint256 assetId
+  ) internal view returns (bool) {
+    return _isUsingAsCollateral(user, assetId) || _isBorrowing(user, assetId);
   }
 
   // TODO
