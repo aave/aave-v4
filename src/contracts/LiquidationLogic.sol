@@ -94,6 +94,7 @@ library LiquidationLogic {
     vars.actualDebtToCover = debtToCover > vars.totalUserDebt ? vars.totalUserDebt : debtToCover;
     // TODO: calculate how much of a specific collateral can be liquidated, given a certain amount of debt asset
     // TODO: account for liquidation bonus, protocol liquidation fee
+    vars.actualCollateralToLiquidate = users[collateralAssetId][user].shares;
 
     // TODO: pay off debt to debtReserve in liq hub, where debt asset is stored
     IERC20(reservesList[debtAssetId]).safeTransferFrom(
