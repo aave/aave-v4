@@ -678,7 +678,7 @@ contract LiquidityHubTest is BaseTest {
     dai.approve(address(hub), debtToCover);
 
     vm.expectEmit(true, true, true, true, address(hub));
-    emit LiquidationCall(ethAssetId, daiAssetId, USER1, debtToCover, 0, LIQUIDATOR);
+    emit LiquidationCall(ethAssetId, daiAssetId, USER1, debtToCover, ethAmount, LIQUIDATOR);
     hub.liquidationCall(ethAssetId, daiAssetId, USER1, debtToCover);
     vm.stopPrank();
 
