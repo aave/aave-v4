@@ -19,6 +19,9 @@ library LiquidationLogic {
   struct LiquidationCallLocalVars {
     uint256 actualDebtToCover;
     uint256 actualCollateralToLiquidate;
+    uint256 principalBalance;
+    uint256 interestBalance;
+    uint256 totalUserDebt;
   }
 
   struct CalculateUserAccountDataVars {
@@ -83,10 +86,12 @@ library LiquidationLogic {
     _calculateDebt();
 
     //TODO: calculate how much debt to liquidate to get health factor back to HEALTH_FACTOR_LIQUIDATABLE_THRESHOLD
-    vars.actualDebtToCover = debtToCover;
-    // vars.actualDebtToCover = debtToCover > vars.actualDebtToCover
-    //   ? vars.actualDebtToCover
-    //   : debtToCover;
+    (vars.principalBalance, vars.interestBalance, , ) = BorrowModule(
+      debtReserve.config.borrowModule
+    ).users(debtReserve.id, user);
+    vars.totalUserDebt = vars.principalBalance + vars.interestBalance;
+
+    vars.actualDebtToCover = debtToCover > vars.totalUserDebt ? vars.totalUserDebt : debtToCover;
     // TODO: calculate how much of a specific collateral can be liquidated, given a certain amount of debt asset
     // TODO: account for liquidation bonus, protocol liquidation fee
 
