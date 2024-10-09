@@ -51,6 +51,7 @@ contract BorrowModule is IBorrowModule {
   // assetId => reserveData
   mapping(uint256 => Reserve) public reserves;
 
+  // TODO: can delete later when reserve config is completed
   function getLiquidationBonus(uint256 assetId) external view returns (uint256) {
     return reserves[assetId].config.lb;
   }
