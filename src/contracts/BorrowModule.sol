@@ -33,6 +33,7 @@ contract BorrowModule is IBorrowModule {
     uint256 lt;
     uint256 lb; // TODO: liquidationProtocolFee
     uint256 rf;
+    // TODO: liquidation bonus
     bool borrowable;
   }
 
