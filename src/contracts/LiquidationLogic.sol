@@ -91,7 +91,6 @@ library LiquidationLogic {
 
     _validateLiquidationCall(collateralReserve, debtReserve, user, 0); // TODO: involve healthFactor, hardcode 0 for now
     // TODO: calculate the total debt of the user and the actual amount to liquidate depending on the health factor
-    _calculateDebt();
 
     //TODO: calculate how much debt to liquidate to get health factor back to HEALTH_FACTOR_LIQUIDATABLE_THRESHOLD
     (vars.principalBalance, vars.interestBalance, , ) = BorrowModule(
@@ -266,7 +265,4 @@ library LiquidationLogic {
       : 0;
     return userAssets / assetUnit;
   }
-
-  // TODO
-  function _calculateDebt() internal pure returns (uint256) {}
 }
