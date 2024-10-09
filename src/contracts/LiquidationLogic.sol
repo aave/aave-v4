@@ -7,18 +7,21 @@ import {LiquidityHub} from './LiquidityHub.sol';
 import {IPriceOracle} from './IPriceOracle.sol';
 import {WadRayMath} from './WadRayMath.sol';
 import {SharesMath} from './SharesMath.sol';
+import {PercentageMath} from './PercentageMath.sol';
 import {BorrowModule} from './BorrowModule.sol';
 
 import 'forge-std/console2.sol';
 
 library LiquidationLogic {
   using WadRayMath for uint256;
+  using PercentageMath for uint256;
   using SharesMath for uint256;
   using SafeERC20 for IERC20;
 
   struct LiquidationCallLocalVars {
     uint256 actualDebtToCover;
     uint256 actualCollateralToLiquidate;
+    uint256 userCollateralBalance;
     uint256 principalBalance;
     uint256 interestBalance;
     uint256 totalUserDebt;
@@ -33,6 +36,16 @@ library LiquidationLogic {
     uint256 assetId;
     uint256 avgLiquidationThreshold;
     uint256 userBalanceInBaseCurrency;
+  }
+
+  struct AvailableCollateralToLiquidateLocalVars {
+    uint256 collateralPrice;
+    uint256 debtPrice;
+    uint256 collateralAssetUnit;
+    uint256 debtAssetUnit;
+    uint256 liquidationProtocolFeePercentage;
+    uint256 baseCollateral;
+    uint256 maxCollateralToLiquidate;
   }
 
   /**
@@ -101,9 +114,17 @@ library LiquidationLogic {
     vars.actualDebtToCover = debtToCover > vars.totalUserDebt ? vars.totalUserDebt : debtToCover;
     // TODO: calculate how much of a specific collateral can be liquidated, given a certain amount of debt asset
     // TODO: account for liquidation bonus, protocol liquidation fee
-    vars.actualCollateralToLiquidate = users[collateralAssetId][user].shares.toAssetsDown(
-      collateralReserve.totalAssets,
-      collateralReserve.totalShares
+    vars.userCollateralBalance = LiquidityHub(address(this)).getUserBalance(
+      collateralAssetId,
+      user
+    );
+    vars.actualCollateralToLiquidate = _calculateAvailableCollateralToLiquidate(
+      collateralReserve,
+      debtReserve,
+      oracle,
+      vars.actualDebtToCover,
+      vars.userCollateralBalance,
+      0 // TODO: liquidation bonus
     );
 
     IERC20(reservesList[debtAssetId]).safeTransferFrom(
@@ -128,6 +149,35 @@ library LiquidationLogic {
     );
   }
 
+  function _calculateAvailableCollateralToLiquidate(
+    LiquidityHub.Reserve memory collateralReserve,
+    LiquidityHub.Reserve memory debtReserve,
+    address oracle,
+    uint256 debtToCover,
+    uint256 userCollateralBalance,
+    uint256 liquidationBonus
+  ) internal view returns (uint256) {
+    AvailableCollateralToLiquidateLocalVars memory vars;
+
+    vars.collateralPrice = IPriceOracle(oracle).getAssetPrice(collateralReserve.id);
+    vars.debtPrice = IPriceOracle(oracle).getAssetPrice(debtReserve.id);
+
+    vars.collateralAssetUnit = 10 ** collateralReserve.config.decimals;
+    vars.debtAssetUnit = 10 ** debtReserve.config.decimals;
+
+    vars.liquidationProtocolFeePercentage = (
+      BorrowModule(collateralReserve.config.borrowModule).getReserve(collateralReserve.id)
+    ).config.lb;
+
+    vars.baseCollateral =
+      ((vars.debtPrice * debtToCover * vars.collateralAssetUnit)) /
+      (vars.collateralPrice * vars.debtAssetUnit);
+
+    vars.maxCollateralToLiquidate = vars.baseCollateral.percentMul(liquidationBonus);
+
+    console2.log('vars.maxCollateralToLiquidate', vars.maxCollateralToLiquidate);
+  }
+
   function _validateLiquidationCall(
     LiquidityHub.Reserve memory collateralReserve,
     LiquidityHub.Reserve memory debtReserve,
@@ -140,11 +190,10 @@ library LiquidationLogic {
       healthFactor < HEALTH_FACTOR_LIQUIDATION_THRESHOLD,
       'HEALTH_FACTOR_NOT_BELOW_THRESHOLD'
     );
-    (uint256 principalBalance, , , ) = BorrowModule(debtReserve.config.borrowModule).users(
-      debtReserve.id,
-      user
+    require(
+      BorrowModule(debtReserve.config.borrowModule).getUserDebt(debtReserve.id, user) > 0,
+      'SPECIFIED_CURRENCY_NOT_BORROWED_BY_USER'
     );
-    require(principalBalance > 0, 'SPECIFIED_CURRENCY_NOT_BORROWED_BY_USER');
   }
 
   function _calculateUserAccountData(
