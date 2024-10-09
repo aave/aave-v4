@@ -26,7 +26,7 @@ contract LiquidityHubTest is BaseTest {
     );
     bm.addReserve(
       0,
-      BorrowModule.ReserveConfig({lt: 0, lb: 0, rf: 0, borrowable: true}),
+      BorrowModule.ReserveConfig({lt: 0, lb: 10_000, rf: 0, borrowable: true}),
       address(dai)
     );
     MockPriceOracle(address(oracle)).setAssetPrice(0, 1e8);
@@ -46,7 +46,7 @@ contract LiquidityHubTest is BaseTest {
     );
     bm.addReserve(
       1,
-      BorrowModule.ReserveConfig({lt: 0, lb: 0, rf: 0, borrowable: true}),
+      BorrowModule.ReserveConfig({lt: 0, lb: 10_000, rf: 0, borrowable: true}),
       address(eth)
     );
     MockPriceOracle(address(oracle)).setAssetPrice(1, 2000e8);
@@ -768,7 +768,7 @@ contract LiquidityHubTest is BaseTest {
     uint256 debtAssetId,
     uint256 collateralAmount
   ) internal returns (uint256) {
-    uint256 liquidationBonus = 10_000;
+    uint256 liquidationBonus = bm.getLiquidationBonus(collateralAssetId);
     return
       ((oracle.getAssetPrice(collateralAssetId) * collateralAmount) /
         (oracle.getAssetPrice(debtAssetId))).percentDiv(liquidationBonus);
@@ -779,7 +779,7 @@ contract LiquidityHubTest is BaseTest {
     uint256 debtAssetId,
     uint256 debtAmount
   ) internal returns (uint256) {
-    uint256 liquidationBonus = 10_000;
+    uint256 liquidationBonus = bm.getLiquidationBonus(collateralAssetId);
     return
       (((oracle.getAssetPrice(debtAssetId) * debtAmount)) /
         (oracle.getAssetPrice(collateralAssetId))).percentMul(liquidationBonus);

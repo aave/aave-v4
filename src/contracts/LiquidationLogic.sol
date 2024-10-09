@@ -179,9 +179,8 @@ library LiquidationLogic {
     vars.collateralAssetUnit = 10 ** collateralReserve.config.decimals;
     vars.debtAssetUnit = 10 ** debtReserve.config.decimals;
 
-    vars.liquidationProtocolFeePercentage = (
-      BorrowModule(collateralReserve.config.borrowModule).getReserve(collateralReserve.id)
-    ).config.lb;
+    vars.liquidationProtocolFeePercentage = BorrowModule(collateralReserve.config.borrowModule)
+      .getLiquidationBonus(collateralReserve.id);
 
     vars.baseCollateral =
       (vars.debtAssetPrice * debtToCover * vars.collateralAssetUnit) /
