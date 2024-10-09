@@ -95,15 +95,9 @@ library LiquidationLogic {
     LiquidityHub.Reserve storage collateralReserve = reserves[collateralAssetId];
     LiquidityHub.Reserve storage debtReserve = reserves[debtAssetId];
 
-    // TODO: check if user has HF below threshold
-    (uint256 healthFactor, uint256 maxDebtToCover) = _calculateUserAccountData(
-      reserves,
-      reservesList,
-      users,
-      user,
-      oracle
-    );
+    uint256 healthFactor = _calculateUserAccountData(reserves, reservesList, users, user, oracle);
 
+    // TODO: check if user has HF below threshold
     _validateLiquidationCall(collateralReserve, debtReserve, user, 0); // TODO: involve healthFactor, hardcode 0 for now
     vars.userDebtBalance = BorrowModule(debtReserve.config.borrowModule).getUserDebt(
       debtReserve.id,
@@ -152,12 +146,12 @@ library LiquidationLogic {
     // TODO: update interest rates, etc. for the reserves
     // TODO: update user's collateral balance
 
-    console2.log(
-      'vars.actualDebtToLiquidate',
-      vars.actualDebtToLiquidate,
-      'vars.actualCollateralToLiquidate',
-      vars.actualCollateralToLiquidate
-    );
+    // console2.log(
+    //   'vars.actualDebtToLiquidate',
+    //   vars.actualDebtToLiquidate,
+    //   'vars.actualCollateralToLiquidate',
+    //   vars.actualCollateralToLiquidate
+    // );
 
     emit LiquidationCall(
       collateralAssetId,
@@ -247,7 +241,7 @@ library LiquidationLogic {
     mapping(uint256 => mapping(address => LiquidityHub.UserConfig)) storage users,
     address user,
     address oracle
-  ) internal view returns (uint256, uint256) {
+  ) internal view returns (uint256) {
     // TODO: calculate user account data, including health factor
     // if no debt, then health factor is type(uint256).max
     // TODO: emode config logic
@@ -299,7 +293,7 @@ library LiquidationLogic {
 
     // TODO: hf calc: hf = (collateralValue * avg liquidation threshold) / debt
     // maxDebtToCover = (collateralValue * avg liquidation threshold) / HEALTH_FACTOR_LIQUIDATABLE_THRESHOLD
-    // use base currencies
+    // use base currencies. Max debt to pay to result in HF above threshold
     uint256 healthFactor = (vars.totalDebtInBaseCurrency == 0)
       ? type(uint256).max
       : (vars.totalCollateralInBaseCurrency * vars.avgLiquidationThreshold).wadDiv(
@@ -309,7 +303,7 @@ library LiquidationLogic {
       .wadDiv(HEALTH_FACTOR_LIQUIDATABLE_THRESHOLD);
     // console2.log('HF calcs, totalDebtInBaseCurrency:', vars.totalDebtInBaseCurrency);
 
-    return (healthFactor, maxDebtToCover);
+    return (healthFactor);
   }
 
   // TODO
