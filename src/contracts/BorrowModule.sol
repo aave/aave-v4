@@ -3,6 +3,8 @@ pragma solidity ^0.8.0;
 
 import {SafeERC20} from '../dependencies/openzeppelin/SafeERC20.sol';
 import {IERC20} from '../dependencies/openzeppelin/IERC20.sol';
+import {DataTypes} from './types/DataTypes.sol';
+import {ReserveBorrowModuleConfiguration} from './ReserveBorrowModuleConfiguration.sol';
 import {WadRayMath} from './WadRayMath.sol';
 import {IBorrowModule} from './IBorrowModule.sol';
 import {MathUtils} from './MathUtils.sol';
@@ -10,6 +12,7 @@ import {MathUtils} from './MathUtils.sol';
 contract BorrowModule is IBorrowModule {
   using WadRayMath for uint256;
   using SafeERC20 for IERC20;
+  using ReserveBorrowModuleConfiguration for DataTypes.ReserveBorrowModuleConfig;
 
   // debt balances, fetches indexes from liquidity layer
 
@@ -20,21 +23,13 @@ contract BorrowModule is IBorrowModule {
 
   // fetch liquidity from liquidityHub
 
-  // TODO: Change reserve config
   struct Reserve {
     uint256 id;
     address asset;
     uint256 totalDebt;
     uint256 lastUpdateIndex;
     uint256 lastUpdateTimestamp;
-    ReserveConfig config;
-  }
-
-  struct ReserveConfig {
-    uint256 lt;
-    uint256 lb; // TODO: liquidationProtocolFee
-    uint256 rf;
-    bool borrowable;
+    DataTypes.ReserveBorrowModuleConfig config;
   }
 
   struct UserConfig {
@@ -94,28 +89,33 @@ contract BorrowModule is IBorrowModule {
   // Governance
   // /////
 
-  function addReserve(uint256 assetId, ReserveConfig memory params, address asset) external {
+  function addReserve(
+    uint256 assetId,
+    DataTypes.ReserveBorrowModuleConfigurationParams memory params,
+    address asset
+  ) external {
     // TODO: AccessControl
+    DataTypes.ReserveBorrowModuleConfig memory config = DataTypes.ReserveBorrowModuleConfig({
+      data: 0
+    });
+    config.setConfigFromParams(params);
     reserves[assetId].id = assetId;
     reserves[assetId].asset = asset;
-    reserves[assetId].config = ReserveConfig({
-      lt: params.lt,
-      lb: params.lb,
-      rf: params.rf,
-      borrowable: params.borrowable
-    });
+    reserves[assetId].config = config;
   }
 
-  function updateReserve(uint256 assetId, ReserveConfig memory params) external {
+  function updateReserve(
+    uint256 assetId,
+    DataTypes.ReserveBorrowModuleConfigurationParams memory params
+  ) external {
     // TODO: More sophisticated
     require(reserves[assetId].id != 0, 'INVALID_RESERVE');
     // TODO: AccessControl
-    reserves[assetId].config = ReserveConfig({
-      lt: params.lt,
-      lb: params.lb,
-      rf: params.rf,
-      borrowable: params.borrowable
+    DataTypes.ReserveBorrowModuleConfig memory config = DataTypes.ReserveBorrowModuleConfig({
+      data: 0
     });
+    config.setConfigFromParams(params);
+    reserves[assetId].config = config;
   }
 
   function calculateInterestRates() public pure returns (uint256) {
@@ -170,7 +170,7 @@ contract BorrowModule is IBorrowModule {
   }
 
   function _validateBorrow(Reserve storage reserve, uint256 amount) internal view {
-    require(reserve.config.borrowable, 'RESERVE_NOT_BORROWABLE');
+    require(reserve.config.getBorrowingEnabled(), 'RESERVE_NOT_BORROWABLE');
   }
 
   function _updateState(Reserve storage reserve) internal {

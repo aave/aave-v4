@@ -71,7 +71,7 @@ contract LiquidityHubHandler is Test {
     );
     bm.addReserve(
       0,
-      BorrowModule.ReserveConfig({lt: 0, lb: 0, rf: 0, borrowable: false}),
+      DataTypes.ReserveBorrowModuleConfigurationParams({lt: 0, lb: 0, rf: 0, borrowable: false}),
       address(dai)
     );
   }

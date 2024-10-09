@@ -24,7 +24,6 @@ library BorrowReserveConfiguration {
   /// @dev For the Liquidation Threshold, the start bit is 0 (up to 15), hence no bitshifting is needed
   uint256 internal constant LIQUIDATION_BONUS_START_BIT_POSITION = 16;
   uint256 internal constant RESERVE_FACTOR_START_BIT_POSITION = 32;
-  uint256 internal constant RESERVE_DECIMALS_START_BIT_POSITION = 48;
   uint256 internal constant IS_ACTIVE_START_BIT_POSITION = 48;
   uint256 internal constant IS_BORROWABLE_START_BIT_POSITION = 49;
   uint256 internal constant IS_FROZEN_START_BIT_POSITION = 50;

@@ -147,6 +147,22 @@ library DataTypes {
     uint256 data;
   }
 
+  struct ReserveBorrowModuleConfigurationParams {
+    uint256 lt;
+    uint256 lb; // TODO: liquidationProtocolFee
+    uint256 rf;
+    bool borrowable;
+  }
+
+  struct ReserveBorrowModuleConfig {
+    // bit 0-15: lt
+    // bit 16-31: lb
+    // bit 32-47: rf
+    // bit 48: borrowing is enabled
+
+    uint256 data;
+  }
+
   struct EModeCategory {
     // each eMode category has a custom ltv and liquidation threshold
     uint16 ltv;
