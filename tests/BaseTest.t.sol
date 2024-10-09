@@ -11,6 +11,7 @@ import 'src/contracts/IBorrowModule.sol';
 import 'src/contracts/WadRayMath.sol';
 import 'src/contracts/SharesMath.sol';
 import 'src/contracts/MathUtils.sol';
+import 'src/contracts/PercentageMath.sol';
 import 'src/dependencies/openzeppelin/IERC20.sol';
 import './mocks/MockERC20.sol';
 import './mocks/MockPriceOracle.sol';

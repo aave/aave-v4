@@ -7,6 +7,8 @@ import {WadRayMath} from './WadRayMath.sol';
 import {IBorrowModule} from './IBorrowModule.sol';
 import {MathUtils} from './MathUtils.sol';
 
+import 'forge-std/console2.sol';
+
 contract BorrowModule is IBorrowModule {
   using WadRayMath for uint256;
   using SafeERC20 for IERC20;

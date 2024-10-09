@@ -21,10 +21,10 @@ library LiquidationLogic {
   struct LiquidationCallLocalVars {
     uint256 actualDebtToCover;
     uint256 actualCollateralToLiquidate;
+    uint256 actualDebtToLiquidate;
+    uint256 liquidationProtocolFeeAmount;
     uint256 userCollateralBalance;
-    uint256 principalBalance;
-    uint256 interestBalance;
-    uint256 totalUserDebt;
+    uint256 userDebtBalance;
     uint256 healthFactor;
     uint256 maxDebtToCover;
   }
@@ -39,13 +39,15 @@ library LiquidationLogic {
   }
 
   struct AvailableCollateralToLiquidateLocalVars {
-    uint256 collateralPrice;
-    uint256 debtPrice;
+    uint256 collateralAssetPrice;
+    uint256 debtAssetPrice;
     uint256 collateralAssetUnit;
     uint256 debtAssetUnit;
     uint256 liquidationProtocolFeePercentage;
     uint256 baseCollateral;
     uint256 maxCollateralToLiquidate;
+    uint256 collateralAmount;
+    uint256 debtAmountNeeded;
   }
 
   /**
@@ -103,34 +105,45 @@ library LiquidationLogic {
     );
 
     _validateLiquidationCall(collateralReserve, debtReserve, user, 0); // TODO: involve healthFactor, hardcode 0 for now
-    // TODO: calculate the total debt of the user and the actual amount to liquidate depending on the health factor
-
-    //TODO: calculate how much debt to liquidate to get health factor back to HEALTH_FACTOR_LIQUIDATABLE_THRESHOLD
-    vars.totalUserDebt = BorrowModule(debtReserve.config.borrowModule).getUserDebt(
+    vars.userDebtBalance = BorrowModule(debtReserve.config.borrowModule).getUserDebt(
       debtReserve.id,
       user
     );
-
-    vars.actualDebtToCover = debtToCover > vars.totalUserDebt ? vars.totalUserDebt : debtToCover;
-    // TODO: calculate how much of a specific collateral can be liquidated, given a certain amount of debt asset
-    // TODO: account for liquidation bonus, protocol liquidation fee
     vars.userCollateralBalance = LiquidityHub(address(this)).getUserBalance(
       collateralAssetId,
       user
     );
-    vars.actualCollateralToLiquidate = _calculateAvailableCollateralToLiquidate(
+
+    vars.actualDebtToCover = debtToCover > vars.userDebtBalance
+      ? vars.userDebtBalance
+      : debtToCover;
+
+    // TODO: calculate how much of a specific collateral can be liquidated, given a certain amount of debt asset
+    // TODO: account for liquidation bonus, protocol liquidation fee
+
+    console2.log(
+      'vars.userCollateralBalance',
+      vars.userCollateralBalance,
+      'vars.actualDebtToCover',
+      vars.actualDebtToCover
+    );
+    (
+      vars.actualCollateralToLiquidate,
+      vars.actualDebtToLiquidate,
+      vars.liquidationProtocolFeeAmount
+    ) = _calculateAvailableCollateralToLiquidate(
       collateralReserve,
       debtReserve,
       oracle,
       vars.actualDebtToCover,
       vars.userCollateralBalance,
-      0 // TODO: liquidation bonus
+      10_000 // TODO: liquidation bonus
     );
 
     IERC20(reservesList[debtAssetId]).safeTransferFrom(
       msg.sender,
       address(this), // liq hub
-      vars.actualDebtToCover
+      vars.actualDebtToLiquidate
     );
     IERC20(reservesList[collateralAssetId]).safeTransfer(
       msg.sender,
@@ -139,11 +152,18 @@ library LiquidationLogic {
     // TODO: update interest rates, etc. for the reserves
     // TODO: update user's collateral balance
 
+    console2.log(
+      'vars.actualDebtToLiquidate',
+      vars.actualDebtToLiquidate,
+      'vars.actualCollateralToLiquidate',
+      vars.actualCollateralToLiquidate
+    );
+
     emit LiquidationCall(
       collateralAssetId,
       debtAssetId,
       user,
-      vars.actualDebtToCover, // TODO: actualDebtToLiquidate
+      vars.actualDebtToLiquidate, // TODO: actualDebtToLiquidate
       vars.actualCollateralToLiquidate, // TODO: liquidatedCollateralAmount
       msg.sender
     );
@@ -156,11 +176,11 @@ library LiquidationLogic {
     uint256 debtToCover,
     uint256 userCollateralBalance,
     uint256 liquidationBonus
-  ) internal view returns (uint256) {
+  ) internal view returns (uint256, uint256, uint256) {
     AvailableCollateralToLiquidateLocalVars memory vars;
 
-    vars.collateralPrice = IPriceOracle(oracle).getAssetPrice(collateralReserve.id);
-    vars.debtPrice = IPriceOracle(oracle).getAssetPrice(debtReserve.id);
+    vars.collateralAssetPrice = IPriceOracle(oracle).getAssetPrice(collateralReserve.id);
+    vars.debtAssetPrice = IPriceOracle(oracle).getAssetPrice(debtReserve.id);
 
     vars.collateralAssetUnit = 10 ** collateralReserve.config.decimals;
     vars.debtAssetUnit = 10 ** debtReserve.config.decimals;
@@ -170,12 +190,37 @@ library LiquidationLogic {
     ).config.lb;
 
     vars.baseCollateral =
-      ((vars.debtPrice * debtToCover * vars.collateralAssetUnit)) /
-      (vars.collateralPrice * vars.debtAssetUnit);
+      (vars.debtAssetPrice * debtToCover * vars.collateralAssetUnit) /
+      (vars.collateralAssetPrice * vars.debtAssetUnit);
 
     vars.maxCollateralToLiquidate = vars.baseCollateral.percentMul(liquidationBonus);
 
-    console2.log('vars.maxCollateralToLiquidate', vars.maxCollateralToLiquidate);
+    // console2.log('vars.baseCollateral:', vars.baseCollateral);
+    // console2.log(
+    //   'vars.maxCollateralToLiquidate:',
+    //   vars.maxCollateralToLiquidate,
+    //   'userCollateralBalance',
+    //   userCollateralBalance
+    // );
+
+    // if the calculated maxCollateralToLiquidate (based on debt) is higher than the user's collateral balance,
+    // liquidate the max possible - userCollateralBalance
+    if (vars.maxCollateralToLiquidate > userCollateralBalance) {
+      console2.log('maxCollateralToLiquidate > userCollateralBalance');
+      vars.collateralAmount = userCollateralBalance;
+      vars.debtAmountNeeded = ((vars.collateralAssetPrice *
+        vars.collateralAmount *
+        vars.debtAssetUnit) / (vars.debtAssetPrice * vars.collateralAssetUnit)).percentDiv(
+          liquidationBonus
+        );
+    } else {
+      console2.log('maxCollateralToLiquidate <= userCollateralBalance');
+      vars.collateralAmount = vars.maxCollateralToLiquidate;
+      vars.debtAmountNeeded = debtToCover;
+    }
+
+    // TODO: logic for liquidationProtocolFeePercentage
+    return (vars.collateralAmount, vars.debtAmountNeeded, 0);
   }
 
   function _validateLiquidationCall(

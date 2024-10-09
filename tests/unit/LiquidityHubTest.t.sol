@@ -6,6 +6,7 @@ import '../BaseTest.t.sol';
 contract LiquidityHubTest is BaseTest {
   using SharesMath for uint256;
   using WadRayMath for uint256;
+  using PercentageMath for uint256;
 
   function setUp() public override {
     super.setUp();
@@ -653,11 +654,13 @@ contract LiquidityHubTest is BaseTest {
     hub.liquidationCall(ethAssetId, daiAssetId, USER1, debtToCover);
   }
 
-  function testLiquidationCall() public {
+  function testLiquidationCallMaxCollateralToLiquidate() public {
     uint256 ethAssetId = 1; // collateral asset
     uint256 daiAssetId = 0; // debt asset
-    uint256 daiAmount = 100e18;
-    uint256 ethAmount = 10e18;
+    // borrowed value > supplied value to simulate liquidation scenario
+    // maxCollateralToLiquidate > userCollateralBalance
+    uint256 daiAmount = 400e6;
+    uint256 ethAmount = 10e4;
 
     // User1 supply eth
     deal(address(eth), USER1, ethAmount);
@@ -667,35 +670,52 @@ contract LiquidityHubTest is BaseTest {
     deal(address(dai), USER2, daiAmount);
     Utils.supply(vm, hub, daiAssetId, USER2, daiAmount, USER2);
 
+    uint256 portionBorrowed = 2;
+
     // User1 borrow half of dai reserve, ie debt
     vm.prank(USER1);
-    hub.borrow(daiAssetId, daiAmount / 2);
+    hub.borrow(daiAssetId, daiAmount / portionBorrowed);
 
-    uint256 debtToCover = 1;
+    uint256 debtToCover = bm.getUserDebt(daiAssetId, USER1);
 
-    deal(address(dai), LIQUIDATOR, debtToCover);
+    uint256 expectedCollateralLiquidated = hub.getUserBalance(ethAssetId, USER1);
+    uint256 expectedDebtCovered = _getExpectedDebtCovered(
+      ethAssetId,
+      daiAssetId,
+      expectedCollateralLiquidated
+    );
+
+    deal(address(dai), LIQUIDATOR, expectedDebtCovered);
     vm.startPrank(LIQUIDATOR);
-    dai.approve(address(hub), debtToCover);
+    dai.approve(address(hub), expectedDebtCovered);
 
     vm.expectEmit(true, true, true, true, address(hub));
-    emit LiquidationCall(ethAssetId, daiAssetId, USER1, debtToCover, ethAmount, LIQUIDATOR);
+    emit LiquidationCall(
+      ethAssetId,
+      daiAssetId,
+      USER1,
+      expectedDebtCovered,
+      expectedCollateralLiquidated,
+      LIQUIDATOR
+    );
     hub.liquidationCall(ethAssetId, daiAssetId, USER1, debtToCover);
     vm.stopPrank();
 
     assertEq(dai.balanceOf(LIQUIDATOR), 0, 'Unexpected liquidator debt asset balance');
     assertEq(
       eth.balanceOf(LIQUIDATOR),
-      ethAmount,
+      expectedCollateralLiquidated,
       'Unexpected liquidator collateral asset balance'
     );
   }
 
-  // if trying to cover more debt than exists, set to max available debt
-  function testLiquidationCallMaxDebtToCover() public {
+  function testLiquidationCallA() public {
     uint256 ethAssetId = 1; // collateral asset
     uint256 daiAssetId = 0; // debt asset
-    uint256 daiAmount = 100e18;
-    uint256 ethAmount = 10e18;
+    // borrowed value > supplied value to simulate liquidation scenario
+    // maxCollateralToLiquidate > userCollateralBalance
+    uint256 daiAmount = 40e4;
+    uint256 ethAmount = 10e4;
 
     // User1 supply eth
     deal(address(eth), USER1, ethAmount);
@@ -705,33 +725,64 @@ contract LiquidityHubTest is BaseTest {
     deal(address(dai), USER2, daiAmount);
     Utils.supply(vm, hub, daiAssetId, USER2, daiAmount, USER2);
 
+    uint256 portionBorrowed = 2;
+
     // User1 borrow half of dai reserve, ie debt
     vm.prank(USER1);
-    uint256 borrowedAmount = daiAmount / 2;
-    hub.borrow(daiAssetId, borrowedAmount);
-    uint256 userTotalDebt = bm.getUserDebt(daiAssetId, USER1);
+    hub.borrow(daiAssetId, daiAmount / portionBorrowed);
 
-    uint256 debtToCover = userTotalDebt + 1;
+    uint256 debtToCover = bm.getUserDebt(daiAssetId, USER1);
+    uint256 expectedDebtCovered = debtToCover;
+    uint256 expectedCollateralLiquidated = _getExpectedCollateralLiquidated(
+      ethAssetId,
+      daiAssetId,
+      debtToCover
+    );
 
-    deal(address(dai), LIQUIDATOR, debtToCover);
+    deal(address(dai), LIQUIDATOR, expectedDebtCovered);
     vm.startPrank(LIQUIDATOR);
-    dai.approve(address(hub), debtToCover);
+    dai.approve(address(hub), expectedDebtCovered);
 
     vm.expectEmit(true, true, true, true, address(hub));
-    emit LiquidationCall(ethAssetId, daiAssetId, USER1, userTotalDebt, ethAmount, LIQUIDATOR);
+    emit LiquidationCall(
+      ethAssetId,
+      daiAssetId,
+      USER1,
+      expectedDebtCovered,
+      expectedCollateralLiquidated,
+      LIQUIDATOR
+    );
     hub.liquidationCall(ethAssetId, daiAssetId, USER1, debtToCover);
     vm.stopPrank();
 
-    assertEq(
-      dai.balanceOf(LIQUIDATOR),
-      debtToCover - userTotalDebt,
-      'Unexpected liquidator debt asset balance'
-    );
+    assertEq(dai.balanceOf(LIQUIDATOR), 0, 'Unexpected liquidator debt asset balance');
     assertEq(
       eth.balanceOf(LIQUIDATOR),
-      ethAmount,
+      expectedCollateralLiquidated,
       'Unexpected liquidator collateral asset balance'
     );
+  }
+
+  function _getExpectedDebtCovered(
+    uint256 collateralAssetId,
+    uint256 debtAssetId,
+    uint256 collateralAmount
+  ) internal returns (uint256) {
+    uint256 liquidationBonus = 10_000;
+    return
+      ((oracle.getAssetPrice(collateralAssetId) * collateralAmount) /
+        (oracle.getAssetPrice(debtAssetId))).percentDiv(liquidationBonus);
+  }
+
+  function _getExpectedCollateralLiquidated(
+    uint256 collateralAssetId,
+    uint256 debtAssetId,
+    uint256 debtAmount
+  ) internal returns (uint256) {
+    uint256 liquidationBonus = 10_000;
+    return
+      (((oracle.getAssetPrice(debtAssetId) * debtAmount)) /
+        (oracle.getAssetPrice(collateralAssetId))).percentMul(liquidationBonus);
   }
 
   function _updateLiquidityPremium(uint256 assetId, uint256 newLiquidityPremium) internal {
