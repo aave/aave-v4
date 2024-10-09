@@ -709,21 +709,22 @@ contract LiquidityHubTest is BaseTest {
     vm.prank(USER1);
     uint256 borrowedAmount = daiAmount / 2;
     hub.borrow(daiAssetId, borrowedAmount);
+    uint256 userTotalDebt = bm.getUserDebt(daiAssetId, USER1);
 
-    uint256 debtToCover = borrowedAmount + 1;
+    uint256 debtToCover = userTotalDebt + 1;
 
     deal(address(dai), LIQUIDATOR, debtToCover);
     vm.startPrank(LIQUIDATOR);
     dai.approve(address(hub), debtToCover);
 
     vm.expectEmit(true, true, true, true, address(hub));
-    emit LiquidationCall(ethAssetId, daiAssetId, USER1, borrowedAmount, ethAmount, LIQUIDATOR);
+    emit LiquidationCall(ethAssetId, daiAssetId, USER1, userTotalDebt, ethAmount, LIQUIDATOR);
     hub.liquidationCall(ethAssetId, daiAssetId, USER1, debtToCover);
     vm.stopPrank();
 
     assertEq(
       dai.balanceOf(LIQUIDATOR),
-      debtToCover - borrowedAmount,
+      debtToCover - userTotalDebt,
       'Unexpected liquidator debt asset balance'
     );
     assertEq(

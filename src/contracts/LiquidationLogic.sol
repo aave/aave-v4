@@ -80,7 +80,7 @@ library LiquidationLogic {
     LiquidityHub.Reserve storage collateralReserve = reserves[collateralAssetId];
     LiquidityHub.Reserve storage debtReserve = reserves[debtAssetId];
 
-    // TODO: check if user is undercollateralized. Get HF
+    // TODO: check if user has HF below threshold
     (uint256 healthFactor, uint256 maxDebtToCover) = _calculateUserAccountData(
       reserves,
       reservesList,
@@ -93,10 +93,10 @@ library LiquidationLogic {
     // TODO: calculate the total debt of the user and the actual amount to liquidate depending on the health factor
 
     //TODO: calculate how much debt to liquidate to get health factor back to HEALTH_FACTOR_LIQUIDATABLE_THRESHOLD
-    (vars.principalBalance, vars.interestBalance, , ) = BorrowModule(
-      debtReserve.config.borrowModule
-    ).users(debtReserve.id, user);
-    vars.totalUserDebt = vars.principalBalance + vars.interestBalance;
+    vars.totalUserDebt = BorrowModule(debtReserve.config.borrowModule).getUserDebt(
+      debtReserve.id,
+      user
+    );
 
     vars.actualDebtToCover = debtToCover > vars.totalUserDebt ? vars.totalUserDebt : debtToCover;
     // TODO: calculate how much of a specific collateral can be liquidated, given a certain amount of debt asset
@@ -106,17 +106,16 @@ library LiquidationLogic {
       collateralReserve.totalShares
     );
 
-    // TODO: pay off debt to debtReserve in liq hub, where debt asset is stored
     IERC20(reservesList[debtAssetId]).safeTransferFrom(
       msg.sender,
       address(this), // liq hub
       vars.actualDebtToCover
     );
-    // TODO: update user's debt balance
     IERC20(reservesList[collateralAssetId]).safeTransfer(
       msg.sender,
       vars.actualCollateralToLiquidate
     );
+    // TODO: update interest rates, etc. for the reserves
     // TODO: update user's collateral balance
 
     emit LiquidationCall(
