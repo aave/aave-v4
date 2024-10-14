@@ -31,7 +31,7 @@ contract LiquidityHubHandler is Test {
   constructor() {
     oracle = new MockPriceOracle();
     hub = new LiquidityHub(address(oracle));
-    bm = new BorrowModule();
+    bm = new BorrowModule(address(hub));
     usdc = new MockERC20();
     dai = new MockERC20();
     usdt = new MockERC20();
@@ -50,12 +50,7 @@ contract LiquidityHubHandler is Test {
     );
     bm.addReserve(
       0,
-      BorrowModule.ReserveConfig({
-        lt: 0,
-        lb: 0,
-        rf: 0,
-        borrowable: false
-      }),
+      BorrowModule.ReserveConfig({lt: 0, lb: 0, rf: 0, borrowable: false}),
       address(dai)
     );
   }

@@ -60,7 +60,7 @@ abstract contract BaseTest is Test, Events {
   function setUp() public virtual {
     oracle = new MockPriceOracle();
     hub = new LiquidityHub(address(oracle));
-    bm = new BorrowModule();
+    bm = new BorrowModule(address(hub));
     dai = new MockERC20();
     eth = new MockERC20();
     usdc = new MockERC20();

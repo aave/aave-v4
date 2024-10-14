@@ -48,6 +48,12 @@ contract BorrowModule is IBorrowModule {
   // assetId => reserveData
   mapping(uint256 => Reserve) public reserves;
 
+  address public liquidityHub;
+
+  constructor(address liquidityHubAddress) {
+    liquidityHub = liquidityHubAddress;
+  }
+
   function getReserve(uint256 assetId) external view returns (Reserve memory) {
     return reserves[assetId];
   }
