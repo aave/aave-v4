@@ -212,8 +212,8 @@ contract LiquidityHub {
     _updateRiskPremium(user);
   }
 
-  // TODO borrow name
-  function borrow(uint256 assetId, uint256 amount) external {
+  // TODO: authorization - only borrow module
+  function draw(uint256 assetId, uint256 amount) external {
     // TODO: onBehalf
     Reserve storage reserve = reserves[assetId];
     UserConfig storage user = users[assetId][msg.sender];
@@ -248,7 +248,7 @@ contract LiquidityHub {
     emit Draw(assetId, reserve.config.borrowModule, amount);
   }
 
-  function repay(uint256 assetId, uint256 amount, address onBehalfOf) external {}
+  function restore(uint256 assetId, uint256 amount, address onBehalfOf) external {}
 
   //
   // Internal
@@ -303,10 +303,9 @@ contract LiquidityHub {
     if (elapsed > 0) {
       console2.log('_accrueReserveInterest');
       // linear interest
-      uint256 cumulated = MathUtils.calculateLinearInterest(
-        borrowRate,
-        uint40(r.lastUpdateTimestamp)
-      ).rayMul(r.totalAssets); // TODO rounding
+      uint256 cumulated = MathUtils
+        .calculateLinearInterest(borrowRate, uint40(r.lastUpdateTimestamp))
+        .rayMul(r.totalAssets); // TODO rounding
       console2.log('cumulated %e', cumulated);
       r.totalAssets += cumulated;
 

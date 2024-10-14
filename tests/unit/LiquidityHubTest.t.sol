@@ -504,10 +504,9 @@ contract LiquidityHubTest is BaseTest {
 
     assertEq(dai.balanceOf(USER1), 0);
 
-    // User1 borrow half of dai reserve
+    // User1 draw half of dai reserve liquidity
     vm.prank(USER1);
-    hub.borrow(daiId, daiAmount / 2);
-
+    hub.draw(daiId, daiAmount / 2);
 
     daiData = hub.getReserve(daiId);
     ethData = hub.getReserve(ethId);
