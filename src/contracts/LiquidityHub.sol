@@ -216,7 +216,6 @@ contract LiquidityHub {
   function draw(uint256 assetId, uint256 amount) external {
     // TODO: onBehalf
     Reserve storage reserve = reserves[assetId];
-    UserConfig storage user = users[assetId][msg.sender];
 
     _validateBorrow(reserve, amount);
 
@@ -229,17 +228,6 @@ contract LiquidityHub {
 
     // updates accounting
     reserve.totalDrawn += amount;
-
-    // invokes borrow modules in case accounting update is needed
-    // (eg, update premium for users borrowing using the asset as collateral)
-    // TODO
-    // Allow transfer of funds for borrow module
-    IBorrowModule(reserve.config.borrowModule).onBorrow(
-      assetId,
-      msg.sender,
-      userRiskPremium[msg.sender],
-      amount
-    );
 
     // directly transfer funds to bm so that allowance doesn't need to be reset
     IERC20(reservesList[assetId]).safeTransfer(reserve.config.borrowModule, amount);

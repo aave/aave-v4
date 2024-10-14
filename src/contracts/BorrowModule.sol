@@ -99,36 +99,9 @@ contract BorrowModule is IBorrowModule {
   // TODO: Implement drawLiquidity, calls liquidity hub draw method
   function drawLiquidity(uint256 assetId, uint256 amount) external {
     ILiquidityHub(liquidityHub).draw(assetId, amount);
-
+    onBorrow(assetId, msg.sender, 0, amount);
     // transfer liquidity to msg.sender
     IERC20(reserves[assetId].asset).safeTransfer(msg.sender, amount);
-
-    // // TODO: onBehalf
-    // Reserve storage reserve = reserves[assetId];
-    // UserConfig storage user = users[assetId][msg.sender];
-    // _validateBorrow(reserve, amount);
-    // // update indexes and IRs
-    // _updateState(reserve);
-    // // TODO: update avgRiskPremium if collateral
-    // // if collateral
-    // _updateRiskPremium(msg.sender);
-    // // updates accounting
-    // reserve.totalDrawn += amount;
-    // // invokes borrow modules in case accounting update is needed
-    // // (eg, update premium for users borrowing using the asset as collateral)
-    // // TODO
-    // // Allow transfer of funds for borrow module
-    // IERC20(reservesList[assetId]).forceApprove(reserve.config.borrowModule, amount);
-    // // TODO: transfer instead? the module can take less than approved
-    // IBorrowModule(reserve.config.borrowModule).onBorrow(
-    //   assetId,
-    //   msg.sender,
-    //   userRiskPremium[msg.sender],
-    //   amount
-    // );
-    // // reset allowance
-    // IERC20(reservesList[assetId]).forceApprove(reserve.config.borrowModule, 0);
-    // emit Draw(assetId, reserve.config.borrowModule, amount);
   }
 
   // TODO: Implement restoreLiquidity, calls liquidity hub restore method
@@ -174,7 +147,7 @@ contract BorrowModule is IBorrowModule {
     address user,
     uint256 userRiskPremium,
     uint256 amount
-  ) external {
+  ) internal {
     Reserve storage r = reserves[assetId];
     _validateBorrow(r, amount);
 
