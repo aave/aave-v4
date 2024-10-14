@@ -6,6 +6,7 @@ import {IERC20} from '../dependencies/openzeppelin/IERC20.sol';
 import {WadRayMath} from './WadRayMath.sol';
 import {IBorrowModule} from './IBorrowModule.sol';
 import {MathUtils} from './MathUtils.sol';
+import {ILiquidityHub} from '../interfaces/ILiquidityHub.sol';
 
 contract BorrowModule is IBorrowModule {
   using WadRayMath for uint256;
@@ -97,6 +98,11 @@ contract BorrowModule is IBorrowModule {
 
   // TODO: Implement drawLiquidity, calls liquidity hub draw method
   function drawLiquidity(uint256 assetId, uint256 amount) external {
+    ILiquidityHub(liquidityHub).draw(assetId, amount);
+
+    // transfer liquidity to msg.sender
+    IERC20(reserves[assetId].asset).transfer(msg.sender, amount);
+
     // // TODO: onBehalf
     // Reserve storage reserve = reserves[assetId];
     // UserConfig storage user = users[assetId][msg.sender];
@@ -126,7 +132,9 @@ contract BorrowModule is IBorrowModule {
   }
 
   // TODO: Implement restoreLiquidity, calls liquidity hub restore method
-  function restoreLiquidity() external {}
+  function restoreLiquidity(uint256 assetId, uint256 amount) external {
+    ILiquidityHub(liquidityHub).restore(assetId, amount);
+  }
 
   // /////
   // Governance
