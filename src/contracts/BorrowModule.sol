@@ -101,7 +101,7 @@ contract BorrowModule is IBorrowModule {
     ILiquidityHub(liquidityHub).draw(assetId, amount);
 
     // transfer liquidity to msg.sender
-    IERC20(reserves[assetId].asset).transfer(msg.sender, amount);
+    IERC20(reserves[assetId].asset).safeTransfer(msg.sender, amount);
 
     // // TODO: onBehalf
     // Reserve storage reserve = reserves[assetId];
@@ -210,9 +210,6 @@ contract BorrowModule is IBorrowModule {
       amount;
 
     // compatible collaterals assets?
-
-    // TODO reference of liqHub instead of msg.sender
-    IERC20(reserves[assetId].asset).safeTransferFrom(msg.sender, user, amount);
   }
 
   function _validateBorrow(Reserve storage reserve, uint256 amount) internal view {

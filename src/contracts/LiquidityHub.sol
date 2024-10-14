@@ -234,16 +234,15 @@ contract LiquidityHub {
     // (eg, update premium for users borrowing using the asset as collateral)
     // TODO
     // Allow transfer of funds for borrow module
-    IERC20(reservesList[assetId]).forceApprove(reserve.config.borrowModule, amount);
-    // TODO: transfer instead? the module can take less than approved
     IBorrowModule(reserve.config.borrowModule).onBorrow(
       assetId,
       msg.sender,
       userRiskPremium[msg.sender],
       amount
     );
-    // reset allowance
-    IERC20(reservesList[assetId]).forceApprove(reserve.config.borrowModule, 0);
+
+    // directly transfer funds to bm so that allowance doesn't need to be reset
+    IERC20(reservesList[assetId]).safeTransfer(reserve.config.borrowModule, amount);
 
     emit Draw(assetId, reserve.config.borrowModule, amount);
   }
