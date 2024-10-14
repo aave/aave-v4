@@ -170,7 +170,7 @@ contract LiquidityHubTest is BaseTest {
     uint256 newBorrowRate = 0.1e27; // 10.00%
     vm.mockCall(
       address(bm),
-      abi.encodeWithSelector(IBorrowModule.calculateInterestRates.selector),
+      abi.encodeWithSelector(IBorrowModule.getInterestRate.selector),
       abi.encode(newBorrowRate)
     );
 
@@ -267,7 +267,7 @@ contract LiquidityHubTest is BaseTest {
       uint256 newBorrowRate = (borrowRateChange * i) % 2e27; // randomize, 200.00% max
       vm.mockCall(
         address(bm),
-        abi.encodeWithSelector(IBorrowModule.calculateInterestRates.selector),
+        abi.encodeWithSelector(IBorrowModule.getInterestRate.selector),
         abi.encode(newBorrowRate)
       );
 

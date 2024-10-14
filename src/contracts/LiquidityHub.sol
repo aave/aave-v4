@@ -274,7 +274,7 @@ contract LiquidityHub {
 
   function _updateState(Reserve storage reserve) internal {
     // Update interest rates
-    uint256 borrowRate = IBorrowModule(reserve.config.borrowModule).calculateInterestRates(); // TODO: coupling here, must be more abstract?
+    uint256 borrowRate = IBorrowModule(reserve.config.borrowModule).getInterestRate(); // TODO: coupling here, must be more abstract?
     // TODO: only borrowRate? supplyRate can be calculated using borrowRate and RF
     // borrow module and liquidity hub coupling
 
