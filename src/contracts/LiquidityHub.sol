@@ -295,7 +295,7 @@ contract LiquidityHub is ILiquidityHub {
         .calculateLinearInterest(borrowRate, uint40(r.lastUpdateTimestamp))
         .rayMul(r.totalAssets); // TODO rounding
       console2.log('cumulated %e', cumulated);
-      r.totalAssets += cumulated;
+      r.totalAssets = cumulated;
 
       // TODO: fee shares
 
