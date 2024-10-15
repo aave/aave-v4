@@ -7,7 +7,7 @@ import {IPriceOracle} from './IPriceOracle.sol';
 import {WadRayMath} from './WadRayMath.sol';
 import {SharesMath} from './SharesMath.sol';
 import {MathUtils} from './MathUtils.sol';
-import {IBorrowModule} from './IBorrowModule.sol';
+import {IBorrowModule} from '../interfaces/IBorrowModule.sol';
 import {ILiquidityHub} from '../interfaces/ILiquidityHub.sol';
 
 import 'forge-std/console2.sol';

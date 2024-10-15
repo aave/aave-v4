@@ -4,9 +4,9 @@ pragma solidity ^0.8.0;
 import {SafeERC20} from '../dependencies/openzeppelin/SafeERC20.sol';
 import {IERC20} from '../dependencies/openzeppelin/IERC20.sol';
 import {WadRayMath} from './WadRayMath.sol';
-import {IBorrowModule} from './IBorrowModule.sol';
 import {MathUtils} from './MathUtils.sol';
 import {ILiquidityHub} from '../interfaces/ILiquidityHub.sol';
+import {IBorrowModule} from '../interfaces/IBorrowModule.sol';
 
 contract BorrowModule is IBorrowModule {
   using WadRayMath for uint256;
@@ -103,7 +103,6 @@ contract BorrowModule is IBorrowModule {
 
     ILiquidityHub(liquidityHub).draw(assetId, amount);
 
-    // accrue
     _updateState(r);
 
     // TODO HF check
