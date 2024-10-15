@@ -7,7 +7,7 @@ import {WadRayMath} from '../../src/contracts/WadRayMath.sol';
 import {IBorrowModule} from '../../src/interfaces/IBorrowModule.sol';
 import {ILiquidityHub} from '../../src/interfaces/ILiquidityHub.sol';
 
-contract BorrowModule is IBorrowModule {
+contract MockBorrowModuleCreditLine is IBorrowModule {
   using WadRayMath for uint256;
   using SafeERC20 for IERC20;
 
@@ -26,7 +26,7 @@ contract BorrowModule is IBorrowModule {
   function repay(uint256 assetId, uint256 amount, address onBehalfOf) external {}
 
   function getInterestRate() public pure returns (uint256) {
-    return 0.1e27; // 10%
+    return 0.05e27; // 5% IR
   }
 
   function calculateInterestRates() public pure returns (uint256) {
