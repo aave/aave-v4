@@ -99,14 +99,48 @@ contract BorrowModule is IBorrowModule {
   // TODO: Implement drawLiquidity, calls liquidity hub draw method
   function drawLiquidity(uint256 assetId, uint256 amount) external {
     ILiquidityHub(liquidityHub).draw(assetId, amount);
-    onBorrow(assetId, msg.sender, 0, amount);
+
+    Reserve storage r = reserves[assetId];
+    _validateBorrow(r, amount);
+
+    // accrue
+    _updateState(r);
+
+    // TODO HF check
+
+    // update user debt balance
+    UserConfig storage u = users[assetId][msg.sender];
+    // accrue interest
+    // TODO: Risk premium for user and reserve
+    u.principalBalance +=
+      u.principalBalance.rayMul(
+        MathUtils.calculateCompoundedInterest(
+          u.lastUpdateIndex,
+          uint40(u.lastUpdateTimestamp),
+          block.timestamp
+        )
+      ) +
+      amount;
+    u.lastUpdateTimestamp = block.timestamp;
+
+    // update reserve debt balance
+    r.totalDebt +=
+      r.totalDebt.rayMul(
+        MathUtils.calculateCompoundedInterest(
+          r.lastUpdateIndex,
+          uint40(r.lastUpdateTimestamp),
+          block.timestamp
+        )
+      ) +
+      amount;
+
     // transfer liquidity to msg.sender
     IERC20(reserves[assetId].asset).safeTransfer(msg.sender, amount);
   }
 
   // TODO: Implement restoreLiquidity, calls liquidity hub restore method
-  function restoreLiquidity(uint256 assetId, uint256 amount) external {
-    ILiquidityHub(liquidityHub).restore(assetId, amount);
+  function restoreLiquidity(uint256 assetId, uint256 amount, address onBehalfOf) external {
+    ILiquidityHub(liquidityHub).restore(assetId, amount, onBehalfOf);
   }
 
   // /////
@@ -145,49 +179,6 @@ contract BorrowModule is IBorrowModule {
   function calculateInterestRates() public pure returns (uint256) {
     // borrowRate
     return 0;
-  }
-
-  function onBorrow(
-    uint256 assetId,
-    address user,
-    uint256 userRiskPremium,
-    uint256 amount
-  ) internal {
-    Reserve storage r = reserves[assetId];
-    _validateBorrow(r, amount);
-
-    // accrue
-    _updateState(r);
-
-    // TODO HF check
-
-    // update user debt balance
-    UserConfig storage u = users[assetId][user];
-    // accrue interest
-    // TODO: Risk premium for user and reserve
-    u.principalBalance +=
-      u.principalBalance.rayMul(
-        MathUtils.calculateCompoundedInterest(
-          u.lastUpdateIndex,
-          uint40(u.lastUpdateTimestamp),
-          block.timestamp
-        )
-      ) +
-      amount;
-    u.lastUpdateTimestamp = block.timestamp;
-
-    // update reserve debt balance
-    r.totalDebt +=
-      r.totalDebt.rayMul(
-        MathUtils.calculateCompoundedInterest(
-          r.lastUpdateIndex,
-          uint40(r.lastUpdateTimestamp),
-          block.timestamp
-        )
-      ) +
-      amount;
-
-    // compatible collaterals assets?
   }
 
   function _validateBorrow(Reserve storage reserve, uint256 amount) internal view {
