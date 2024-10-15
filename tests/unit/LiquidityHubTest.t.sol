@@ -579,45 +579,31 @@ contract LiquidityHubTest is BaseTest {
     IBorrowModule(daiData.config.borrowModule).borrow(daiId, drawnAmount1);
 
     assertEq(dai.balanceOf(daiData.config.borrowModule), drawnAmount1);
-
-    daiData = hub.getReserve(daiId);
-    console2.log('daiData.totalAssets', daiData.totalAssets);
-
+    
     vm.warp(block.timestamp + 365 days); // accumulate interest over the year
 
+    // User1 draw quarter of dai reserve liquidity for borrow module
     vm.prank(USER1);
     IBorrowModule(daiData.config.borrowModule).borrow(daiId, drawnAmount2);
 
+    uint256 cumulated = MathUtils
+      .calculateLinearInterest(
+        IBorrowModule(daiData.config.borrowModule).getInterestRate(),
+        uint40(daiData.lastUpdateTimestamp)
+      )
+      .rayMul(daiData.totalAssets);
+
     daiData = hub.getReserve(daiId);
-    // LiquidityHub.Reserve memory ethData = hub.getReserve(ethId);
-    // LiquidityHub.UserConfig memory userDaiData1 = hub.getUser(daiId, USER1);
-    // LiquidityHub.UserConfig memory userEthData1 = hub.getUser(ethId, USER1);
-    // LiquidityHub.UserConfig memory userDaiData2 = hub.getUser(daiId, USER2);
-    // LiquidityHub.UserConfig memory userEthData2 = hub.getUser(ethId, USER2);
+    LiquidityHub.Reserve memory ethData = hub.getReserve(ethId);
+    LiquidityHub.UserConfig memory userDaiData1 = hub.getUser(daiId, USER1);
+    LiquidityHub.UserConfig memory userEthData1 = hub.getUser(ethId, USER1);
+    LiquidityHub.UserConfig memory userDaiData2 = hub.getUser(daiId, USER2);
+    LiquidityHub.UserConfig memory userEthData2 = hub.getUser(ethId, USER2);
 
-    // // User2 supply dai
-    // deal(address(dai), USER2, 1e6);
-    // Utils.supply(vm, hub, daiId, USER2, 1e6, USER2);
-
-    console2.log('daiData.totalAssets', daiData.totalAssets);
-    console2.log('daiData.totalDrawn', daiData.totalDrawn);
-
-    // assertEq(daiData.totalShares, daiAmount);
-    // assertEq(daiData.totalAssets, daiAmount);
-    // assertEq(daiData.totalDrawn, daiAmount / 2);
-    // assertEq(ethData.totalShares, ethAmount);
-    // assertEq(ethData.totalAssets, ethAmount);
-    // assertEq(ethData.totalDrawn, 0);
-
-    // assertEq(userDaiData1.shares, 0);
-    // assertEq(hub.getUserBalance(daiId, USER1), 0);
-    // assertEq(userEthData1.shares, ethAmount);
-    // assertEq(hub.getUserBalance(ethId, USER1), ethAmount);
-
-    // assertEq(userDaiData2.shares, daiAmount);
-    // assertEq(hub.getUserBalance(daiId, USER2), daiAmount);
-    // assertEq(userEthData2.shares, 0);
-    // assertEq(hub.getUserBalance(ethId, USER2), 0);
+    assertEq(daiData.totalShares, daiAmount);
+    assertEq(daiData.totalAssets, cumulated);
+    assertEq(daiData.totalDrawn, drawnAmount1 + drawnAmount2);
+    assertEq(dai.balanceOf(daiData.config.borrowModule), drawnAmount1 + drawnAmount2);
   }
 
   function _updateLiquidityPremium(uint256 assetId, uint256 newLiquidityPremium) internal {
