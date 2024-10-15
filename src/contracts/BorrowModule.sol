@@ -136,11 +136,15 @@ contract BorrowModule is IBorrowModule {
 
     // transfer liquidity to msg.sender
     IERC20(reserves[assetId].asset).safeTransfer(msg.sender, amount);
+
+    emit Borrowed(assetId, msg.sender, amount);
   }
 
   // TODO: Implement repay, calls liquidity hub restore method
   function repay(uint256 assetId, uint256 amount, address onBehalfOf) external {
     ILiquidityHub(liquidityHub).restore(assetId, amount, onBehalfOf);
+
+    emit Repaid(assetId, onBehalfOf, amount);
   }
 
   // /////

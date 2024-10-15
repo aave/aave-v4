@@ -2,6 +2,9 @@
 pragma solidity ^0.8.0;
 
 interface IBorrowModule {
+  event Borrowed(uint256 assetId, address user, uint256 amount);
+  event Repaid(uint256 assetId, address user, uint256 amount);
+
   function calculateInterestRates() external pure returns (uint256);
   function getInterestRate() external view returns (uint256);
 
