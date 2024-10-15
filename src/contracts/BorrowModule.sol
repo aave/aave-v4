@@ -99,7 +99,7 @@ contract BorrowModule is IBorrowModule {
   // TODO: Implement borrow, calls liquidity hub draw method
   function borrow(uint256 assetId, uint256 amount) external {
     Reserve storage r = reserves[assetId];
-    _validateDrawLiquidity(r, amount);
+    _validateBorrow(r, amount);
 
     ILiquidityHub(liquidityHub).draw(assetId, amount);
 
@@ -185,7 +185,7 @@ contract BorrowModule is IBorrowModule {
     return 0;
   }
 
-  function _validateDrawLiquidity(Reserve storage reserve, uint256 amount) internal view {
+  function _validateBorrow(Reserve storage reserve, uint256 amount) internal view {
     require(reserve.config.borrowable, 'RESERVE_NOT_BORROWABLE');
   }
 
