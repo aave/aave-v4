@@ -8,10 +8,11 @@ import {WadRayMath} from './WadRayMath.sol';
 import {SharesMath} from './SharesMath.sol';
 import {MathUtils} from './MathUtils.sol';
 import {IBorrowModule} from './IBorrowModule.sol';
+import {ILiquidityHub} from '../interfaces/ILiquidityHub.sol';
 
 import 'forge-std/console2.sol';
 
-contract LiquidityHub {
+contract LiquidityHub is ILiquidityHub {
   using SafeERC20 for IERC20;
   using WadRayMath for uint256;
   using SharesMath for uint256;
