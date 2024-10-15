@@ -14,6 +14,7 @@ import 'src/dependencies/openzeppelin/IERC20.sol';
 import 'src/interfaces/IBorrowModule.sol';
 import './mocks/MockERC20.sol';
 import './mocks/MockPriceOracle.sol';
+import './mocks/MockBorrowModuleCreditLine.sol';
 
 import './Utils.t.sol';
 
@@ -53,6 +54,7 @@ abstract contract BaseTest is Test, Events {
   IPriceOracle oracle;
   LiquidityHub hub;
   BorrowModule bm;
+  MockBorrowModuleCreditLine bmcl;
 
   address internal USER1 = makeAddr('USER1');
   address internal USER2 = makeAddr('USER2');
@@ -61,6 +63,7 @@ abstract contract BaseTest is Test, Events {
     oracle = new MockPriceOracle();
     hub = new LiquidityHub(address(oracle));
     bm = new BorrowModule(address(hub));
+    bmcl = new MockBorrowModuleCreditLine(address(hub));
     dai = new MockERC20();
     eth = new MockERC20();
     usdc = new MockERC20();
