@@ -506,7 +506,7 @@ contract LiquidityHubTest is BaseTest {
 
     // User1 draw half of dai reserve liquidity
     vm.prank(USER1);
-    IBorrowModule(daiData.config.borrowModule).drawLiquidity(daiId, daiAmount / 2);
+    IBorrowModule(daiData.config.borrowModule).borrow(daiId, daiAmount / 2);
 
     daiData = hub.getReserve(daiId);
     ethData = hub.getReserve(ethId);

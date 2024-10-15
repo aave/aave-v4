@@ -96,12 +96,12 @@ contract BorrowModule is IBorrowModule {
       );
   }
 
-  // TODO: Implement drawLiquidity, calls liquidity hub draw method
-  function drawLiquidity(uint256 assetId, uint256 amount) external {
-    ILiquidityHub(liquidityHub).draw(assetId, amount);
-
+  // TODO: Implement borrow, calls liquidity hub draw method
+  function borrow(uint256 assetId, uint256 amount) external {
     Reserve storage r = reserves[assetId];
-    _validateBorrow(r, amount);
+    _validateDrawLiquidity(r, amount);
+
+    ILiquidityHub(liquidityHub).draw(assetId, amount);
 
     // accrue
     _updateState(r);
@@ -138,8 +138,8 @@ contract BorrowModule is IBorrowModule {
     IERC20(reserves[assetId].asset).safeTransfer(msg.sender, amount);
   }
 
-  // TODO: Implement restoreLiquidity, calls liquidity hub restore method
-  function restoreLiquidity(uint256 assetId, uint256 amount, address onBehalfOf) external {
+  // TODO: Implement repay, calls liquidity hub restore method
+  function repay(uint256 assetId, uint256 amount, address onBehalfOf) external {
     ILiquidityHub(liquidityHub).restore(assetId, amount, onBehalfOf);
   }
 
@@ -181,7 +181,7 @@ contract BorrowModule is IBorrowModule {
     return 0;
   }
 
-  function _validateBorrow(Reserve storage reserve, uint256 amount) internal view {
+  function _validateDrawLiquidity(Reserve storage reserve, uint256 amount) internal view {
     require(reserve.config.borrowable, 'RESERVE_NOT_BORROWABLE');
   }
 

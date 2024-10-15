@@ -218,7 +218,7 @@ contract LiquidityHub is ILiquidityHub {
     // TODO: onBehalf
     Reserve storage reserve = reserves[assetId];
 
-    _validateBorrow(reserve, amount);
+    _validateDrawLiquidity(reserve, amount);
 
     // update indexes and IRs
     _updateState(reserve);
@@ -260,7 +260,7 @@ contract LiquidityHub is ILiquidityHub {
     require(reserve.totalAssets >= amount, 'NOT_AVAILABLE_LIQUIDITY');
   }
 
-  function _validateBorrow(Reserve storage reserve, uint256 amount) internal view {
+  function _validateDrawLiquidity(Reserve storage reserve, uint256 amount) internal view {
     // asset can be borrowed
     require(reserve.config.active, 'RESERVE_NOT_ACTIVE');
     // TODO valid borrowModule
