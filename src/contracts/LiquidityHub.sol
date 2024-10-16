@@ -161,6 +161,12 @@ contract LiquidityHub is ILiquidityHub {
     // TODO Mitigate inflation attack (burn some amount if first supply)
 
     uint256 sharesAmount = amount.toSharesDown(reserve.totalAssets, reserve.totalShares);
+    // console2.log(
+    //   'supply sharesAmount %e, %e, %e',
+    //   sharesAmount,
+    //   reserve.totalAssets,
+    //   reserve.totalShares
+    // );
     require(sharesAmount > 0, 'INVALID_AMOUNT');
     user.shares += sharesAmount;
     reserve.totalShares += sharesAmount;
@@ -293,12 +299,12 @@ contract LiquidityHub is ILiquidityHub {
       // linear interest
       uint256 cumulated = MathUtils
         .calculateLinearInterest(borrowRate, uint40(r.lastUpdateTimestamp))
-        .rayMul(r.totalAssets); // TODO rounding
-      console2.log('cumulated %e', cumulated);
-      r.totalAssets = cumulated;
+        .rayMul(r.totalDrawn); // TODO rounding
+      console2.log('cumulated %e', cumulated, r.totalDrawn);
+      r.totalAssets += (cumulated - r.totalDrawn); // add delta from interest to totalAssets
+      r.totalDrawn = cumulated;
 
       // TODO: fee shares
-
       r.lastUpdateTimestamp = block.timestamp;
     }
   }

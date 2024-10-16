@@ -202,10 +202,8 @@ contract LiquidityHubTest is BaseTest {
 
     // state update due to reserve operation
     // TODO helper for reserve state update
-    uint256 cumulated = MathUtils
-      .calculateLinearInterest(newBorrowRate, uint40(reserveData.lastUpdateTimestamp))
-      .rayMul(reserveData.totalAssets);
-    uint256 newTotalAssets = cumulated;
+    // total assets do not change because no interest acc yet
+    uint256 newTotalAssets = reserveData.totalAssets;
 
     uint256 user2SupplyShares = 1; // minimum for 1 share
     uint256 user2SupplyAssets = user2SupplyShares.toAssetsUp(
@@ -224,8 +222,10 @@ contract LiquidityHubTest is BaseTest {
     // reserve update
     userData = hub.getUser(assetId, USER1);
     reserveData = hub.getReserve(assetId);
+
     assertEq(reserveData.totalShares, amount + user2SupplyShares, 'wrong total shares');
     assertEq(reserveData.totalAssets, newTotalAssets + user2SupplyAssets, 'wrong total assets');
+    assertEq(reserveData.totalDrawn, 0, 'wrong total drawn');
     assertEq(userData.shares, amount);
     assertEq(hub.getUserBalance(assetId, USER1), newUserAssets, 'wrong user assets');
   }
@@ -579,7 +579,7 @@ contract LiquidityHubTest is BaseTest {
     IBorrowModule(daiData.config.borrowModule).borrow(daiId, drawnAmount1);
 
     assertEq(dai.balanceOf(daiData.config.borrowModule), drawnAmount1);
-    
+
     vm.warp(block.timestamp + 365 days); // accumulate interest over the year
 
     // User1 draw quarter of dai reserve liquidity for borrow module
