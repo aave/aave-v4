@@ -621,19 +621,6 @@ contract LiquidityHubTest is BaseTest {
     );
   }
 
-  function _pseudoRandomNumber(
-    uint256 entropy,
-    uint256 min,
-    uint256 max
-  ) internal view returns (uint256) {
-    return
-      bound(
-        uint256(keccak256(abi.encodePacked(block.timestamp, block.prevrandao, entropy))),
-        min,
-        max
-      );
-  }
-
   function test_fuzz_multiple_draws_credit_line(uint256 numDrawings, uint256 entropy) public {
     numDrawings = bound(numDrawings, 1, 10);
 
@@ -650,7 +637,7 @@ contract LiquidityHubTest is BaseTest {
 
     uint256 totalDrawn;
     for (uint256 i = 0; i < numDrawings; i++) {
-      drawnAmounts[i] = daiAmount / _pseudoRandomNumber(entropy, numDrawings, numDrawings + 5); // divide by some amount > number of drawings, ensuring total drawn < total assets
+      drawnAmounts[i] = daiAmount / _pseudoRandomNumber(entropy, numDrawings, numDrawings + 5); // divide by some amount > number of drawings, ensuring total drawn < total supplied assets
       totalDrawn += drawnAmounts[i];
 
       vm.mockCall(
@@ -691,10 +678,11 @@ contract LiquidityHubTest is BaseTest {
         'wrong final dai balance'
       );
 
-      skip(_pseudoRandomNumber(entropy, numDrawings, 500) * 1 days); // skip forward randomly some amount of days
+      skip(_pseudoRandomNumber(entropy, numDrawings, 500) * 1 days); // skip forward randomly some amount of days to let interest accrue
     }
   }
 
+  // TODO: move to a helper
   function _calculateLinearInterest(
     LiquidityHub.Reserve memory reserveData
   ) internal view returns (uint256 totalCumulated, uint256 cumulatedInterest) {
@@ -709,6 +697,20 @@ contract LiquidityHubTest is BaseTest {
     cumulatedInterest = totalCumulated - reserveData.totalDrawn;
 
     return (totalCumulated, cumulatedInterest);
+  }
+
+  // TODO: move to a general helper
+  function _pseudoRandomNumber(
+    uint256 entropy,
+    uint256 min,
+    uint256 max
+  ) internal view returns (uint256) {
+    return
+      bound(
+        uint256(keccak256(abi.encodePacked(block.timestamp, block.prevrandao, entropy))),
+        min,
+        max
+      );
   }
 
   function _updateLiquidityPremium(uint256 assetId, uint256 newLiquidityPremium) internal {
