@@ -621,6 +621,120 @@ contract LiquidityHubTest is BaseTest {
     );
   }
 
+  function test_fuzz_first_borrow_credit_line(uint256 numDrawings) public {
+    numDrawings = bound(numDrawings, 1, 10);
+
+    // DAI with basic credit line borrow module
+    uint256 daiId = 2;
+    uint256 daiAmount = 100e18;
+
+    uint256[] memory drawnAmounts = new uint256[](numDrawings);
+    LiquidityHub.Reserve[] memory daiData = new LiquidityHub.Reserve[](numDrawings);
+
+    // User2 supply dai
+    deal(address(dai), USER2, daiAmount);
+    Utils.supply(vm, hub, daiId, USER2, daiAmount, USER2);
+
+    uint256 totalDrawn;
+    for (uint256 i = 0; i < numDrawings; i += 1) {
+      drawnAmounts[i] = daiAmount / numDrawings;
+      totalDrawn += drawnAmounts[i];
+
+      // User2 draw quarter of dai reserve liquidity for borrow module
+      vm.prank(USER2);
+      IBorrowModule(hub.getReserve(daiId).config.borrowModule).borrow(daiId, drawnAmounts[i]);
+
+      daiData[i] = hub.getReserve(daiId);
+      (uint256 totalCumulated, uint256 cumulatedInterest) = _calculateLinearInterest(daiData[i]);
+      console2.log('totalCumulated', totalCumulated);
+
+      assertEq(daiData[i].totalShares, daiAmount, 'wrong total shares');
+      assertEq(
+        daiData[i].totalAssets,
+        daiData[0].totalAssets + cumulatedInterest,
+        'wrong total assets'
+      );
+      assertEq(
+        daiData[i].totalDrawn,
+        totalCumulated,
+        string(abi.encodePacked('wrong total drawn: i=', vm.toString(i)))
+      );
+      assertEq(
+        dai.balanceOf(daiData[i].config.borrowModule),
+        totalDrawn,
+        'wrong final dai balance'
+      );
+    }
+
+    // LiquidityHub.Reserve memory daiData0 = hub.getReserve(daiId);
+
+    // assertEq(dai.balanceOf(USER1), 0);
+    // assertEq(dai.balanceOf(daiData0.config.borrowModule), 0);
+
+    // drawnAmounts[0] = daiAmount / 2;
+    // drawnAmounts[1] = daiAmount / 4;
+
+    // // User1 draw half of dai reserve liquidity for borrow module
+    // vm.prank(USER1);
+    // IBorrowModule(daiData0.config.borrowModule).borrow(daiId, drawnAmounts[0]);
+
+    // LiquidityHub.Reserve memory daiData1 = hub.getReserve(daiId);
+
+    // assertEq(daiData1.totalShares, daiAmount, 'wrong total shares after first drawing');
+    // assertEq(daiData1.totalAssets, daiData0.totalAssets, 'wrong total assets after first drawing');
+    // assertEq(daiData1.totalDrawn, drawnAmounts[0], 'wrong total drawn after first drawing');
+    // assertEq(
+    //   dai.balanceOf(daiData1.config.borrowModule),
+    //   drawnAmounts[0],
+    //   'wrong dai balance after first drawing'
+    // );
+
+    // // accumulate interest over the year
+    // vm.warp(block.timestamp + 365 days);
+    // uint256 cumulated = MathUtils
+    //   .calculateLinearInterest(
+    //     IBorrowModule(daiData1.config.borrowModule).getInterestRate(),
+    //     uint40(daiData1.lastUpdateTimestamp)
+    //   )
+    //   .rayMul(daiData1.totalDrawn);
+
+    // // User1 draw quarter of dai reserve liquidity for borrow module
+    // // to trigger interest accrual
+    // vm.prank(USER1);
+    // IBorrowModule(daiData1.config.borrowModule).borrow(daiId, drawnAmounts[1]);
+
+    // LiquidityHub.Reserve memory daiData2 = hub.getReserve(daiId);
+
+    // assertEq(daiData2.totalShares, daiAmount, 'wrong total shares');
+    // assertEq(
+    //   daiData2.totalAssets,
+    //   daiData0.totalAssets + (cumulated - daiData1.totalDrawn),
+    //   'wrong total assets'
+    // );
+    // assertEq(daiData2.totalDrawn, cumulated + drawnAmounts[1], 'wrong total drawn');
+    // assertEq(
+    //   dai.balanceOf(daiData2.config.borrowModule),
+    //   drawnAmounts[0] + drawnAmounts[1],
+    //   'wrong final dai balance'
+    // );
+  }
+
+  function _calculateLinearInterest(
+    LiquidityHub.Reserve memory reserveData
+  ) internal returns (uint256 totalCumulated, uint256 cumulatedInterest) {
+    // accumulate interest over the year
+    totalCumulated = MathUtils
+      .calculateLinearInterest(
+        IBorrowModule(reserveData.config.borrowModule).getInterestRate(),
+        uint40(reserveData.lastUpdateTimestamp)
+      )
+      .rayMul(reserveData.totalDrawn);
+
+    cumulatedInterest = totalCumulated - reserveData.totalDrawn;
+
+    return (totalCumulated, cumulatedInterest);
+  }
+
   function _updateLiquidityPremium(uint256 assetId, uint256 newLiquidityPremium) internal {
     LiquidityHub.ReserveConfig memory reserveConfig = hub.getReserve(assetId).config;
     reserveConfig.liquidityPremium = newLiquidityPremium;
