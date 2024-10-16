@@ -558,6 +558,8 @@ contract LiquidityHubTest is BaseTest {
     uint256 daiAmount = 100e18;
     uint256 ethAmount = 10e18;
 
+    uint256[] memory drawnAmounts = new uint256[](2);
+
     // User1 supply eth
     deal(address(eth), USER1, ethAmount);
     Utils.supply(vm, hub, ethId, USER1, ethAmount, USER1);
@@ -566,44 +568,57 @@ contract LiquidityHubTest is BaseTest {
     deal(address(dai), USER2, daiAmount);
     Utils.supply(vm, hub, daiId, USER2, daiAmount, USER2);
 
-    LiquidityHub.Reserve memory daiData = hub.getReserve(daiId);
+    LiquidityHub.Reserve memory daiData0 = hub.getReserve(daiId);
 
     assertEq(dai.balanceOf(USER1), 0);
-    assertEq(dai.balanceOf(daiData.config.borrowModule), 0);
+    assertEq(dai.balanceOf(daiData0.config.borrowModule), 0);
 
-    uint256 drawnAmount1 = daiAmount / 2;
-    uint256 drawnAmount2 = daiAmount / 4;
+    drawnAmounts[0] = daiAmount / 2;
+    drawnAmounts[1] = daiAmount / 4;
 
     // User1 draw half of dai reserve liquidity for borrow module
     vm.prank(USER1);
-    IBorrowModule(daiData.config.borrowModule).borrow(daiId, drawnAmount1);
+    IBorrowModule(daiData0.config.borrowModule).borrow(daiId, drawnAmounts[0]);
 
-    assertEq(dai.balanceOf(daiData.config.borrowModule), drawnAmount1);
+    LiquidityHub.Reserve memory daiData1 = hub.getReserve(daiId);
 
-    vm.warp(block.timestamp + 365 days); // accumulate interest over the year
+    assertEq(daiData1.totalShares, daiAmount, 'wrong total shares after first drawing');
+    assertEq(daiData1.totalAssets, daiData0.totalAssets, 'wrong total assets after first drawing');
+    assertEq(daiData1.totalDrawn, drawnAmounts[0], 'wrong total drawn after first drawing');
+    assertEq(
+      dai.balanceOf(daiData1.config.borrowModule),
+      drawnAmounts[0],
+      'wrong dai balance after first drawing'
+    );
 
-    // User1 draw quarter of dai reserve liquidity for borrow module
-    vm.prank(USER1);
-    IBorrowModule(daiData.config.borrowModule).borrow(daiId, drawnAmount2);
-
+    // accumulate interest over the year
+    vm.warp(block.timestamp + 365 days);
     uint256 cumulated = MathUtils
       .calculateLinearInterest(
-        IBorrowModule(daiData.config.borrowModule).getInterestRate(),
-        uint40(daiData.lastUpdateTimestamp)
+        IBorrowModule(daiData1.config.borrowModule).getInterestRate(),
+        uint40(daiData1.lastUpdateTimestamp)
       )
-      .rayMul(daiData.totalAssets);
+      .rayMul(daiData1.totalDrawn);
 
-    daiData = hub.getReserve(daiId);
-    LiquidityHub.Reserve memory ethData = hub.getReserve(ethId);
-    LiquidityHub.UserConfig memory userDaiData1 = hub.getUser(daiId, USER1);
-    LiquidityHub.UserConfig memory userEthData1 = hub.getUser(ethId, USER1);
-    LiquidityHub.UserConfig memory userDaiData2 = hub.getUser(daiId, USER2);
-    LiquidityHub.UserConfig memory userEthData2 = hub.getUser(ethId, USER2);
+    // User1 draw quarter of dai reserve liquidity for borrow module
+    // to trigger interest accrual
+    vm.prank(USER1);
+    IBorrowModule(daiData1.config.borrowModule).borrow(daiId, drawnAmounts[1]);
 
-    assertEq(daiData.totalShares, daiAmount);
-    assertEq(daiData.totalAssets, cumulated);
-    assertEq(daiData.totalDrawn, drawnAmount1 + drawnAmount2);
-    assertEq(dai.balanceOf(daiData.config.borrowModule), drawnAmount1 + drawnAmount2);
+    LiquidityHub.Reserve memory daiData2 = hub.getReserve(daiId);
+
+    assertEq(daiData2.totalShares, daiAmount, 'wrong total shares');
+    assertEq(
+      daiData2.totalAssets,
+      daiData0.totalAssets + (cumulated - daiData1.totalDrawn),
+      'wrong total assets'
+    );
+    assertEq(daiData2.totalDrawn, cumulated + drawnAmounts[1], 'wrong total drawn');
+    assertEq(
+      dai.balanceOf(daiData2.config.borrowModule),
+      drawnAmounts[0] + drawnAmounts[1],
+      'wrong final dai balance'
+    );
   }
 
   function _updateLiquidityPremium(uint256 assetId, uint256 newLiquidityPremium) internal {
