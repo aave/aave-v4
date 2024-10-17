@@ -62,6 +62,9 @@ contract LiquidityHubTest is BaseTest {
     );
     MockPriceOracle(address(oracle)).setAssetPrice(2, 1e8);
 
+    // set IR for basic credit line borrow module
+    bmcl.setInterestRate(0.05e27);
+
     vm.warp(block.timestamp + 20);
   }
 
