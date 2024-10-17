@@ -97,7 +97,6 @@ contract BorrowModule is IBorrowModule {
       );
   }
 
-  // TODO: Implement borrow, calls liquidity hub draw method
   function borrow(uint256 assetId, uint256 amount) external {
     Reserve storage r = reserves[assetId];
     _validateBorrow(r, amount);
@@ -112,7 +111,7 @@ contract BorrowModule is IBorrowModule {
     UserConfig storage u = users[assetId][msg.sender];
     // accrue interest
     // TODO: Risk premium for user and reserve
-    u.principalBalance +=
+    u.principalBalance =
       u.principalBalance.rayMul(
         MathUtils.calculateCompoundedInterest(
           u.lastUpdateIndex,
@@ -124,7 +123,7 @@ contract BorrowModule is IBorrowModule {
     u.lastUpdateTimestamp = block.timestamp;
 
     // update reserve debt balance
-    r.totalDebt +=
+    r.totalDebt =
       r.totalDebt.rayMul(
         MathUtils.calculateCompoundedInterest(
           r.lastUpdateIndex,
