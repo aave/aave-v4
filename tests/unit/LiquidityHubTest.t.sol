@@ -568,15 +568,9 @@ contract LiquidityHubTest is BaseTest {
   function test_first_borrow_credit_line() public {
     // DAI with basic credit line borrow module
     uint256 daiId = 2;
-    uint256 ethId = 1;
     uint256 daiAmount = 100e18;
-    uint256 ethAmount = 10e18;
 
     uint256[] memory drawnAmounts = new uint256[](2);
-
-    // User1 supply eth
-    deal(address(eth), USER1, ethAmount);
-    Utils.supply(vm, hub, ethId, USER1, ethAmount, USER1);
 
     // User2 supply dai
     deal(address(dai), USER2, daiAmount);
@@ -695,6 +689,8 @@ contract LiquidityHubTest is BaseTest {
       skip(_pseudoRandomNumber(entropy, numDrawings, 500) * 1 days); // skip forward randomly some amount of days to let interest accrue
     }
   }
+
+  function test_first_borrow_credit_line_interest_accruals() public {}
 
   // TODO: move to a helper
   function _calculateLinearInterest(
