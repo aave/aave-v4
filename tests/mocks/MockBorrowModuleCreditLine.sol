@@ -14,9 +14,11 @@ contract MockBorrowModuleCreditLine is IBorrowModule {
   // fetch liquidity from liquidityHub
   address public liquidityHub;
   uint256 public interestRate;
+  address public interestRateStrategy;
 
-  constructor(address liquidityHubAddress) {
+  constructor(address liquidityHubAddress, address interestRateStrategyAddress) {
     liquidityHub = liquidityHubAddress;
+    interestRateStrategy = interestRateStrategyAddress;
   }
 
   function setInterestRate(uint256 rate) external {

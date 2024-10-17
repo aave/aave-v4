@@ -63,7 +63,7 @@ contract LiquidityHubTest is BaseTest {
     MockPriceOracle(address(oracle)).setAssetPrice(2, 1e8);
 
     // set IR for basic credit line borrow module
-    bmcl.setInterestRate(0.05e27);
+    bmcl.setInterestRate(0.05e27); // 5.00%
 
     vm.warp(block.timestamp + 20);
   }
@@ -398,12 +398,12 @@ contract LiquidityHubTest is BaseTest {
 
     vm.prank(USER1);
 
-    vm.expectRevert(Errors.NOT_AVAILABLE_LIQUIDITY);
+    vm.expectRevert(TestErrors.NOT_AVAILABLE_LIQUIDITY);
     hub.withdraw(assetId, amount + 1, USER1);
 
     // advance time, but no accumulation
     vm.warp(block.timestamp + 1e18);
-    vm.expectRevert(Errors.NOT_AVAILABLE_LIQUIDITY);
+    vm.expectRevert(TestErrors.NOT_AVAILABLE_LIQUIDITY);
     hub.withdraw(assetId, amount + 1, USER1);
 
     reserveData = hub.getReserve(assetId);
