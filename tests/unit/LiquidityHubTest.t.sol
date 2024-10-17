@@ -49,6 +49,7 @@ contract LiquidityHubTest is BaseTest {
     MockPriceOracle(address(oracle)).setAssetPrice(1, 2000e8);
 
     // Add dai again but with basic credit line borrow module
+    uint256 daiCreditLineAssetId = 2;
     hub.addReserve(
       LiquidityHub.ReserveConfig({
         borrowModule: address(bmcl),
@@ -60,10 +61,20 @@ contract LiquidityHubTest is BaseTest {
       }),
       address(dai)
     );
-    MockPriceOracle(address(oracle)).setAssetPrice(2, 1e8);
+    MockPriceOracle(address(oracle)).setAssetPrice(daiCreditLineAssetId, 1e8);
 
     // set IR for basic credit line borrow module
     bmcl.setInterestRate(0.05e27); // 5.00%
+    // flat 5% interest rate
+    creditLineIRStrategy.setInterestRateParams(
+      daiCreditLineAssetId,
+      IDefaultInterestRateStrategy.InterestRateData({
+        optimalUsageRatio: 5000, // 50.00%
+        baseVariableBorrowRate: 500, // 5.00%
+        variableRateSlope1: 500, // 5.00%
+        variableRateSlope2: 500 // 5.00%
+      })
+    );
 
     vm.warp(block.timestamp + 20);
   }

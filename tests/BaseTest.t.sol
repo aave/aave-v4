@@ -58,9 +58,9 @@ abstract contract BaseTest is Test, Events {
   MockBorrowModuleCreditLine bmcl;
   DefaultReserveInterestRateStrategy creditLineIRStrategy;
 
+  address internal mockAddressesProvider = makeAddr('mockAddressesProvider');
   address internal USER1 = makeAddr('USER1');
   address internal USER2 = makeAddr('USER2');
-  address internal mockAddressesProvider = makeAddr('mockAddressesProvider');
 
   function setUp() public virtual {
     oracle = new MockPriceOracle();

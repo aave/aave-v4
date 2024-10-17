@@ -7,6 +7,7 @@ import {WadRayMath} from './WadRayMath.sol';
 import {MathUtils} from './MathUtils.sol';
 import {ILiquidityHub} from '../interfaces/ILiquidityHub.sol';
 import {IBorrowModule} from '../interfaces/IBorrowModule.sol';
+import {DataTypes} from '../libraries/types/DataTypes.sol';
 
 contract BorrowModule is IBorrowModule {
   using WadRayMath for uint256;
@@ -179,7 +180,9 @@ contract BorrowModule is IBorrowModule {
     return 0;
   }
 
-  function calculateInterestRates() public pure returns (uint256) {
+  function calculateInterestRates(
+    DataTypes.CalculateInterestRatesParams memory params
+  ) public pure returns (uint256) {
     // borrowRate
     return 0;
   }
@@ -190,7 +193,17 @@ contract BorrowModule is IBorrowModule {
 
   function _updateState(Reserve storage reserve) internal {
     // TODO: Move this call to IR
-    uint256 borrowRate = calculateInterestRates(); // TODO: coupling here, must be more abstract?
+    uint256 borrowRate = calculateInterestRates(
+      DataTypes.CalculateInterestRatesParams({
+        liquidityAdded: 0,
+        liquidityTaken: 0,
+        totalDebt: 0,
+        reserveFactor: 0,
+        assetId: reserve.id,
+        virtualUnderlyingBalance: 0,
+        usingVirtualBalance: false
+      })
+    ); // TODO: coupling here, must be more abstract?
     uint256 cumulatedInterest = MathUtils.calculateCompoundedInterest(
       borrowRate,
       uint40(reserve.lastUpdateTimestamp),

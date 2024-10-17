@@ -6,6 +6,8 @@ import {IERC20} from '../../src/dependencies/openzeppelin/IERC20.sol';
 import {WadRayMath} from '../../src/contracts/WadRayMath.sol';
 import {IBorrowModule} from '../../src/interfaces/IBorrowModule.sol';
 import {ILiquidityHub} from '../../src/interfaces/ILiquidityHub.sol';
+import {IReserveInterestRateStrategy} from '../../src/interfaces/IReserveInterestRateStrategy.sol';
+import {DataTypes} from '../../src/libraries/types/DataTypes.sol';
 
 contract MockBorrowModuleCreditLine is IBorrowModule {
   using WadRayMath for uint256;
@@ -35,8 +37,9 @@ contract MockBorrowModuleCreditLine is IBorrowModule {
     return interestRate;
   }
 
-  function calculateInterestRates() public pure returns (uint256) {
-    // borrowRate
-    return 0;
+  function calculateInterestRates(
+    DataTypes.CalculateInterestRatesParams memory params
+  ) public view returns (uint256) {
+    return IReserveInterestRateStrategy(interestRateStrategy).calculateInterestRates(params);
   }
 }
