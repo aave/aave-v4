@@ -647,13 +647,13 @@ contract LiquidityHubTest is BaseTest {
       totalDrawn += drawnAmounts[i];
 
       vm.mockCall(
-        hub.getReserve(daiId).config.borrowModule,
+        address(bmcl),
         abi.encodeWithSelector(IBorrowModule.getInterestRate.selector),
         abi.encode(_pseudoRandomNumber(entropy, 0, 100) * .01e27) // random interest rate 0-100%
       );
 
       // User1 draws some of dai reserve liquidity for borrow module
-      IBorrowModule(hub.getReserve(daiId).config.borrowModule).borrow(daiId, drawnAmounts[i]);
+      IBorrowModule(address(bmcl)).borrow(daiId, drawnAmounts[i]);
 
       daiData[i] = hub.getReserve(daiId);
       (uint256 totalCumulated, uint256 cumulatedInterest) = _calculateLinearInterest(
@@ -702,14 +702,14 @@ contract LiquidityHubTest is BaseTest {
     LiquidityHub.Reserve memory daiData0 = hub.getReserve(daiId);
 
     assertEq(dai.balanceOf(USER1), 0);
-    assertEq(dai.balanceOf(daiData0.config.borrowModule), 0);
+    assertEq(dai.balanceOf(address(bmcl)), 0);
 
     drawnAmounts[0] = daiAmount / 2;
     drawnAmounts[1] = daiAmount / 4;
 
     // User1 draw half of dai reserve liquidity for borrow module
     vm.prank(USER1);
-    IBorrowModule(daiData0.config.borrowModule).borrow(daiId, drawnAmounts[0]);
+    IBorrowModule(address(bmcl)).borrow(daiId, drawnAmounts[0]);
 
     LiquidityHub.Reserve memory daiData1 = hub.getReserve(daiId);
 
@@ -722,30 +722,26 @@ contract LiquidityHubTest is BaseTest {
     skip(365 days);
     uint256 cumulated = MathUtils
       .calculateLinearInterest(
-        IBorrowModule(daiData1.config.borrowModule).getInterestRate(),
+        IBorrowModule(address(bmcl)).getInterestRate(),
         uint40(daiData1.lastUpdateTimestamp)
       )
       .rayMul(daiData1.totalDrawn);
 
-    // // User1 draw quarter of dai reserve liquidity for borrow module
-    // // to trigger interest accrual
-    // vm.prank(USER1);
-    // IBorrowModule(daiData1.config.borrowModule).borrow(daiId, drawnAmounts[1]);
+    // User1 draw quarter of dai reserve liquidity for borrow module
+    // to trigger interest accrual
+    vm.prank(USER1);
+    IBorrowModule(address(bmcl)).borrow(daiId, drawnAmounts[1]);
 
-    // LiquidityHub.Reserve memory daiData2 = hub.getReserve(daiId);
+    LiquidityHub.Reserve memory daiData2 = hub.getReserve(daiId);
 
-    // assertEq(daiData2.totalShares, daiAmount, 'wrong total shares');
-    // assertEq(
-    //   daiData2.totalAssets,
-    //   daiData0.totalAssets + (cumulated - daiData1.totalDrawn),
-    //   'wrong total assets'
-    // );
-    // assertEq(daiData2.totalDrawn, cumulated + drawnAmounts[1], 'wrong total drawn');
-    // assertEq(
-    //   dai.balanceOf(daiData2.config.borrowModule),
-    //   drawnAmounts[0] + drawnAmounts[1],
-    //   'wrong final dai balance'
-    // );
+    assertEq(daiData2.totalShares, daiAmount, 'wrong total shares');
+    assertEq(
+      daiData2.totalAssets,
+      daiData0.totalAssets + (cumulated - daiData1.totalDrawn),
+      'wrong total assets'
+    );
+    assertEq(daiData2.totalDrawn, cumulated + drawnAmounts[1], 'wrong total drawn');
+    assertEq(dai.balanceOf(USER1), drawnAmounts[0] + drawnAmounts[1], 'wrong final dai balance');
   }
 
   // TODO: move to a helper
