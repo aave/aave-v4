@@ -278,6 +278,11 @@ contract LiquidityHub is ILiquidityHub {
       reserve.config.drawCap == 0 || reserve.config.drawCap > reserve.totalDrawn + amount,
       'CAP_EXCEEDED'
     );
+    // TODO: check if LH has enough liquidity across all reserves for a given asset
+    require(
+      IERC20(reservesList[reserve.id]).balanceOf(address(this)) >= amount,
+      'INSUFFICIENT_LIQUIDITY'
+    );
   }
 
   function _updateState(Reserve storage reserve) internal {
