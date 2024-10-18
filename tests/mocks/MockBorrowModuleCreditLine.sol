@@ -39,8 +39,7 @@ contract MockBorrowModuleCreditLine is IBorrowModule {
   }
 
   struct UserConfig {
-    uint256 principalBalance;
-    uint256 interestBalance;
+    uint256 balance;
     uint256 lastUpdateIndex;
     uint256 lastUpdateTimestamp;
   }
@@ -72,7 +71,7 @@ contract MockBorrowModuleCreditLine is IBorrowModule {
     UserConfig memory u = users[assetId][user];
 
     return
-      u.principalBalance.rayMul(
+      u.balance.rayMul(
         MathUtils.calculateLinearInterest(getInterestRate(assetId), uint40(u.lastUpdateTimestamp))
       );
   }
@@ -167,10 +166,10 @@ contract MockBorrowModuleCreditLine is IBorrowModule {
     uint256 assetId,
     uint256 amount
   ) internal {
-    user.principalBalance =
+    user.balance =
       MathUtils
         .calculateLinearInterest(getInterestRate(assetId), uint40(user.lastUpdateTimestamp))
-        .rayMul(user.principalBalance) +
+        .rayMul(user.balance) +
       amount;
     user.lastUpdateTimestamp = block.timestamp;
 
