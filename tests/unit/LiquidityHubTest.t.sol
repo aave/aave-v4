@@ -595,8 +595,8 @@ contract LiquidityHubTest is BaseTest {
 
     assertEq(daiData1.totalShares, daiAmount, '1) wrong total shares');
     assertEq(daiData1.totalAssets, daiData0.totalAssets, '1) wrong total assets');
-    assertEq(daiData1.totalDrawn, drawnAmounts[0], '1) wrong total drawn after');
-    assertEq(dai.balanceOf(USER1), drawnAmounts[0], '1) wrong dai balance after');
+    assertEq(daiData1.totalDrawn, drawnAmounts[0], '1) wrong total drawn');
+    assertEq(dai.balanceOf(USER1), drawnAmounts[0], '1) wrong dai balance');
 
     assertEq(bmcl.getReserveDebt(daiId), drawnAmounts[0], '1) wrong reserve debt');
     assertEq(bmcl.getUserDebt(daiId, USER1), drawnAmounts[0], '1) wrong user debt');
@@ -604,9 +604,9 @@ contract LiquidityHubTest is BaseTest {
 
     MockBorrowModuleCreditLine.UserConfig memory user = bmcl.getUser(daiId, USER1);
 
-    assertEq(user.balance, drawnAmounts[0]);
-    assertEq(user.lastUpdateIndex, 0);
-    assertEq(user.lastUpdateTimestamp, block.timestamp);
+    assertEq(user.balance, drawnAmounts[0], '1) wrong user balance');
+    assertEq(user.lastUpdateIndex, 0, '1) wrong last update index');
+    assertEq(user.lastUpdateTimestamp, block.timestamp, '1) wrong last update timestamp');
 
     // accumulate interest over the year
     skip(365 days);
@@ -682,20 +682,7 @@ contract LiquidityHubTest is BaseTest {
 
     LiquidityHub.Reserve memory daiData1 = hub.getReserve(daiId);
 
-    assertEq(daiData1.totalShares, daiAmount, '1) wrong total shares');
-    assertEq(daiData1.totalAssets, daiData0.totalAssets, '1) wrong total assets');
-    assertEq(daiData1.totalDrawn, drawnAmounts[0], '1) wrong total drawn after');
-    assertEq(dai.balanceOf(USER1), drawnAmounts[0], '1) wrong dai balance after');
-
-    assertEq(bmcl.getReserveDebt(daiId), drawnAmounts[0], '1) wrong reserve debt');
-    assertEq(bmcl.getUserDebt(daiId, USER1), drawnAmounts[0], '1) wrong user debt');
-    assertEq(bmcl.getInterestRate(daiId), 0.05e27, '1) wrong IR'); // should be flat and constant
-
     MockBorrowModuleCreditLine.UserConfig memory user1 = bmcl.getUser(daiId, USER1);
-
-    assertEq(user1.balance, drawnAmounts[0]);
-    assertEq(user1.lastUpdateIndex, 0);
-    assertEq(user1.lastUpdateTimestamp, block.timestamp);
 
     // accumulate interest over the year
     skip(365 days);
