@@ -88,13 +88,9 @@ contract MockBorrowModuleCreditLine is IBorrowModule {
   function borrow(uint256 assetId, uint256 amount) external {
     Reserve storage r = reserves[assetId];
     _validateBorrow(r, amount);
-
-    _updateState(r);
+    _updateState(r, assetId, amount, msg.sender);
 
     ILiquidityHub(liquidityHub).draw(assetId, amount);
-
-    UserConfig storage u = users[assetId][msg.sender];
-    _accrueInterest(u, r, assetId, amount);
 
     // keep liquidity in borrow module
     IERC20(reserves[assetId].asset).safeTransfer(msg.sender, amount);
@@ -105,7 +101,7 @@ contract MockBorrowModuleCreditLine is IBorrowModule {
   // TODO: Implement repay, calls liquidity hub restore method
   function repay(uint256 assetId, uint256 amount, address onBehalfOf) external {
     Reserve storage r = reserves[assetId];
-    _updateState(r);
+    _updateState(r, assetId, amount, onBehalfOf);
     ILiquidityHub(liquidityHub).restore(assetId, amount, onBehalfOf);
 
     emit Repaid(assetId, onBehalfOf, amount);
@@ -118,7 +114,7 @@ contract MockBorrowModuleCreditLine is IBorrowModule {
   function calculateInterestRates(
     DataTypes.CalculateInterestRatesParams memory params
   ) public view returns (uint256) {
-    return IReserveInterestRateStrategy(interestRateStrategy).calculateInterestRates(params) * 1e23; // convert to ray
+    return IReserveInterestRateStrategy(interestRateStrategy).calculateInterestRates(params) * 1e23; // BIPs convert to ray
   }
 
   function addReserve(uint256 assetId, ReserveConfig memory params, address asset) external {
@@ -147,18 +143,22 @@ contract MockBorrowModuleCreditLine is IBorrowModule {
     require(reserve.config.borrowable, 'RESERVE_NOT_BORROWABLE');
   }
 
-  function _updateState(Reserve memory reserve) internal {
-    borrowRates[reserve.id] = calculateInterestRates(
+  function _updateState(Reserve storage r, uint256 assetId, uint256 amount, address user) internal {
+    UserConfig storage u = users[assetId][user];
+
+    borrowRates[r.id] = calculateInterestRates(
       DataTypes.CalculateInterestRatesParams({
         liquidityAdded: 0,
         liquidityTaken: 0,
-        totalDebt: reserve.totalDebt,
+        totalDebt: r.totalDebt,
         reserveFactor: 0,
-        assetId: reserve.id,
+        assetId: r.id,
         virtualUnderlyingBalance: 0,
         usingVirtualBalance: false
       })
     );
+
+    _accrueInterest(u, r, assetId, amount);
   }
 
   function _accrueInterest(
