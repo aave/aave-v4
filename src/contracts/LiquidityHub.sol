@@ -72,6 +72,7 @@ contract LiquidityHub is ILiquidityHub {
     return reserves[assetId];
   }
 
+  // TODO: convert all user-related functions to draw modules
   function getUser(uint256 assetId, address user) external view returns (UserConfig memory) {
     UserConfig memory u = users[assetId][user];
 
