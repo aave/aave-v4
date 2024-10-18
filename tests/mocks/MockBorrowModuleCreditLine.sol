@@ -59,7 +59,6 @@ contract MockBorrowModuleCreditLine is IBorrowModule {
 
   function getUser(uint256 assetId, address user) external view returns (UserConfig memory) {
     UserConfig memory u = users[assetId][user];
-
     return u;
   }
 
@@ -69,7 +68,6 @@ contract MockBorrowModuleCreditLine is IBorrowModule {
 
   function _getUserDebt(uint256 assetId, address user) internal view returns (uint256) {
     UserConfig memory u = users[assetId][user];
-
     return
       u.balance.rayMul(
         MathUtils.calculateLinearInterest(getInterestRate(assetId), uint40(u.lastUpdateTimestamp))

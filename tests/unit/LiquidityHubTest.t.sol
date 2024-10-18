@@ -612,7 +612,7 @@ contract LiquidityHubTest is BaseTest {
     skip(365 days);
     uint256 cumulated = MathUtils
       .calculateLinearInterest(
-        IBorrowModule(daiData1.config.borrowModule).getInterestRate(daiId),
+        IBorrowModule(address(bmcl)).getInterestRate(daiId),
         uint40(daiData1.lastUpdateTimestamp)
       )
       .rayMul(daiData1.totalDrawn);
@@ -620,7 +620,7 @@ contract LiquidityHubTest is BaseTest {
     // User1 draw quarter of dai reserve liquidity for borrow module
     // to trigger interest accrual
     vm.prank(USER1);
-    IBorrowModule(daiData1.config.borrowModule).borrow(daiId, drawnAmounts[1]);
+    IBorrowModule(address(bmcl)).borrow(daiId, drawnAmounts[1]);
     user = bmcl.getUser(daiId, USER1);
 
     // hub assertions
@@ -649,7 +649,7 @@ contract LiquidityHubTest is BaseTest {
 
     uint256 userBalance = MathUtils
       .calculateLinearInterest(
-        IBorrowModule(daiData1.config.borrowModule).getInterestRate(daiId),
+        IBorrowModule(address(bmcl)).getInterestRate(daiId),
         uint40(user.lastUpdateTimestamp)
       )
       .rayMul(user.balance);
@@ -688,17 +688,17 @@ contract LiquidityHubTest is BaseTest {
     skip(365 days);
     uint256 cumulated = MathUtils
       .calculateLinearInterest(
-        IBorrowModule(daiData1.config.borrowModule).getInterestRate(daiId),
+        IBorrowModule(address(bmcl)).getInterestRate(daiId),
         uint40(daiData1.lastUpdateTimestamp)
       )
       .rayMul(daiData1.totalDrawn);
 
     // User1 draw 25% of dai reserve liquidity for borrow module
     vm.prank(USER1);
-    IBorrowModule(daiData1.config.borrowModule).borrow(daiId, drawnAmounts[1]);
+    IBorrowModule(address(bmcl)).borrow(daiId, drawnAmounts[1]);
     // User1 draw 20% of dai reserve liquidity for borrow module
     vm.prank(USER2);
-    IBorrowModule(daiData1.config.borrowModule).borrow(daiId, drawnAmounts[2]);
+    IBorrowModule(address(bmcl)).borrow(daiId, drawnAmounts[2]);
 
     user1 = bmcl.getUser(daiId, USER1);
     MockBorrowModuleCreditLine.UserConfig memory user2 = bmcl.getUser(daiId, USER2);
@@ -737,7 +737,7 @@ contract LiquidityHubTest is BaseTest {
 
     uint256 user1Balance = MathUtils
       .calculateLinearInterest(
-        IBorrowModule(daiData1.config.borrowModule).getInterestRate(daiId),
+        IBorrowModule(address(bmcl)).getInterestRate(daiId),
         uint40(user1.lastUpdateTimestamp)
       )
       .rayMul(user1.balance);
@@ -745,11 +745,14 @@ contract LiquidityHubTest is BaseTest {
 
     uint256 user2Balance = MathUtils
       .calculateLinearInterest(
-        IBorrowModule(daiData1.config.borrowModule).getInterestRate(daiId),
+        IBorrowModule(address(bmcl)).getInterestRate(daiId),
         uint40(user2.lastUpdateTimestamp)
       )
       .rayMul(user2.balance);
     assertEq(user2Balance, bmcl.getUserDebt(daiId, USER2), '3) wrong final user2 debt');
+
+    console2.log('bmcl.getReserveDebt(daiId)', bmcl.getReserveDebt(daiId));
+    // assertEq(bmcl.getReserveDebt(daiId), );
   }
 
   function test_fuzz_multiple_draws_credit_line(uint256 numDrawings, uint256 entropy) public {
