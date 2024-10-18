@@ -82,6 +82,20 @@ contract BorrowModuleCreditLineTest is BaseTest {
     vm.warp(block.timestamp + 20);
   }
 
+  function test_credit_line_config() public {
+    uint256 daiId = 2;
+    assertEq(bmcl.getInterestRate(daiId), 0.05e27);
+
+    MockBorrowModuleCreditLine.UserConfig memory user = bmcl.getUser(daiId, USER1);
+
+    assertEq(user.balance, 0);
+    assertEq(user.lastUpdateIndex, 0);
+    assertEq(user.lastUpdateTimestamp, 0);
+
+    assertEq(bmcl.getUserDebt(daiId, USER1), 0);
+    assertEq(bmcl.getReserveDebt(daiId), 0);
+  }
+
   // test with basic borrow module
   // credit line with fixed interest rate
   function test_first_borrow_credit_line() public {
@@ -250,7 +264,6 @@ contract BorrowModuleCreditLineTest is BaseTest {
     assertEq(bmcl.getUserDebt(daiId, USER2), drawnAmounts[2], '2) wrong user2 debt'); // user2 debt1 has no interest yet
 
     skip(365 days);
-    daiData0 = hub.getReserve(daiId);
 
     uint256 user1Balance = MathUtils
       .calculateLinearInterest(
@@ -272,26 +285,6 @@ contract BorrowModuleCreditLineTest is BaseTest {
       user1Balance + user2Balance,
       '3) wrong final reserve debt'
     );
-
-    console2.log('daiData0.totalDrawn', daiData0.totalDrawn);
-    // assertEq();
-
-    //     assertEq(daiData1.totalShares, daiAmount, '2) wrong total shares');
-    // assertEq(
-    //   daiData1.totalAssets,
-    //   daiData1.totalAssets + (cumulated - daiData1.totalDrawn),
-    //   '2) wrong total assets'
-    // );
-    assertEq(
-      daiData0.totalDrawn,
-      cumulated + drawnAmounts[1] + drawnAmounts[2],
-      '2) wrong total drawn'
-    );
-    // assertEq(
-    //   dai.balanceOf(USER1),
-    //   drawnAmounts[0] + drawnAmounts[1],
-    //   '2) wrong final user1 dai balance'
-    // );
   }
 
   function test_fuzz_multiple_draws_credit_line(uint256 numDrawings, uint256 entropy) public {
@@ -354,20 +347,6 @@ contract BorrowModuleCreditLineTest is BaseTest {
       skip(_pseudoRandomNumber(entropy, numDrawings, 500) * 1 days); // skip forward randomly some amount of days to let interest accrue
     }
     vm.stopPrank();
-  }
-
-  function test_credit_line_config() public {
-    uint256 daiId = 2;
-    assertEq(bmcl.getInterestRate(daiId), 0.05e27);
-
-    MockBorrowModuleCreditLine.UserConfig memory user = bmcl.getUser(daiId, USER1);
-
-    assertEq(user.balance, 0);
-    assertEq(user.lastUpdateIndex, 0);
-    assertEq(user.lastUpdateTimestamp, 0);
-
-    assertEq(bmcl.getUserDebt(daiId, USER1), 0);
-    assertEq(bmcl.getReserveDebt(daiId), 0);
   }
 
   // TODO: move to a helper
