@@ -111,7 +111,7 @@ contract MockBorrowModuleCreditLine is IBorrowModule {
     Reserve storage r = reserves[assetId];
     _validateBorrow(r, amount);
 
-    _updateState(assetId);
+    _updateState(r);
 
     ILiquidityHub(liquidityHub).draw(assetId, amount);
 
@@ -126,7 +126,8 @@ contract MockBorrowModuleCreditLine is IBorrowModule {
 
   // TODO: Implement repay, calls liquidity hub restore method
   function repay(uint256 assetId, uint256 amount, address onBehalfOf) external {
-    _updateState(assetId);
+    Reserve storage r = reserves[assetId];
+    _updateState(r);
     ILiquidityHub(liquidityHub).restore(assetId, amount, onBehalfOf);
 
     emit Repaid(assetId, onBehalfOf, amount);
@@ -156,15 +157,14 @@ contract MockBorrowModuleCreditLine is IBorrowModule {
     require(reserve.config.borrowable, 'RESERVE_NOT_BORROWABLE');
   }
 
-  function _updateState(uint256 assetId) internal {
-    Reserve memory reserve = reserves[assetId];
-    borrowRates[assetId] = calculateInterestRates(
+  function _updateState(Reserve memory reserve) internal {
+    borrowRates[reserve.id] = calculateInterestRates(
       DataTypes.CalculateInterestRatesParams({
         liquidityAdded: 0,
         liquidityTaken: 0,
         totalDebt: reserve.totalDebt,
         reserveFactor: 0,
-        assetId: assetId,
+        assetId: reserve.id,
         virtualUnderlyingBalance: 0,
         usingVirtualBalance: false
       })
