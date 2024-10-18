@@ -67,7 +67,6 @@ abstract contract BaseTest is Test, Events {
     creditLineIRStrategy = new DefaultReserveInterestRateStrategy(mockAddressesProvider);
     hub = new LiquidityHub(address(oracle));
     bm = new BorrowModule(address(hub));
-    bmcl = new MockBorrowModuleCreditLine(address(hub), address(creditLineIRStrategy));
     dai = new MockERC20();
     eth = new MockERC20();
     usdc = new MockERC20();

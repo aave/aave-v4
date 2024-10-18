@@ -8,7 +8,7 @@ interface IBorrowModule {
   function calculateInterestRates(
     DataTypes.CalculateInterestRatesParams memory params
   ) external view returns (uint256);
-  function getInterestRate() external view returns (uint256);
+  function getInterestRate(uint256 assetId) external view returns (uint256);
 
   function borrow(uint256 assetId, uint256 amount) external;
   function repay(uint256 assetId, uint256 amount, address onBehalfOf) external;

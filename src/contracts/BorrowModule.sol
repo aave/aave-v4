@@ -174,7 +174,7 @@ contract BorrowModule is IBorrowModule {
     });
   }
 
-  function getInterestRate() public pure returns (uint256) {
+  function getInterestRate(uint256 assetId) public pure returns (uint256) {
     // TODO: call from interest rate strategy
     return 0;
   }

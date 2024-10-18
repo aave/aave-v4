@@ -50,6 +50,19 @@ contract LiquidityHubTest is BaseTest {
 
     // Add dai again but with basic credit line borrow module
     uint256 daiCreditLineAssetId = 2;
+    // flat 5% interest rate
+    creditLineIRStrategy.setInterestRateParams(
+      daiCreditLineAssetId,
+      IDefaultInterestRateStrategy.InterestRateData({
+        optimalUsageRatio: 5000, // 50.00%
+        baseVariableBorrowRate: 500, // 5.00%
+        variableRateSlope1: 500, // 5.00%
+        variableRateSlope2: 500 // 5.00%
+      })
+    );
+    uint256[] memory assetIds = new uint256[](1);
+    assetIds[0] = daiCreditLineAssetId;
+    bmcl = new MockBorrowModuleCreditLine(address(hub), address(creditLineIRStrategy), assetIds);
     hub.addReserve(
       LiquidityHub.ReserveConfig({
         borrowModule: address(bmcl),
@@ -67,19 +80,6 @@ contract LiquidityHubTest is BaseTest {
       address(dai)
     );
     MockPriceOracle(address(oracle)).setAssetPrice(daiCreditLineAssetId, 1e8);
-
-    // set IR for basic credit line borrow module
-    bmcl.setInterestRate(0.05e27); // 5.00%
-    // flat 5% interest rate
-    creditLineIRStrategy.setInterestRateParams(
-      daiCreditLineAssetId,
-      IDefaultInterestRateStrategy.InterestRateData({
-        optimalUsageRatio: 5000, // 50.00%
-        baseVariableBorrowRate: 500, // 5.00%
-        variableRateSlope1: 500, // 5.00%
-        variableRateSlope2: 500 // 5.00%
-      })
-    );
 
     vm.warp(block.timestamp + 20);
   }
@@ -604,7 +604,7 @@ contract LiquidityHubTest is BaseTest {
     skip(365 days);
     uint256 cumulated = MathUtils
       .calculateLinearInterest(
-        IBorrowModule(daiData1.config.borrowModule).getInterestRate(),
+        IBorrowModule(daiData1.config.borrowModule).getInterestRate(daiId),
         uint40(daiData1.lastUpdateTimestamp)
       )
       .rayMul(daiData1.totalDrawn);
@@ -722,7 +722,7 @@ contract LiquidityHubTest is BaseTest {
     skip(365 days);
     uint256 cumulated = MathUtils
       .calculateLinearInterest(
-        IBorrowModule(address(bmcl)).getInterestRate(),
+        IBorrowModule(address(bmcl)).getInterestRate(daiId),
         uint40(daiData1.lastUpdateTimestamp)
       )
       .rayMul(daiData1.totalDrawn);
@@ -751,7 +751,7 @@ contract LiquidityHubTest is BaseTest {
     // accumulate interest over the year
     totalCumulated = MathUtils
       .calculateLinearInterest(
-        IBorrowModule(reserveData.config.borrowModule).getInterestRate(),
+        IBorrowModule(reserveData.config.borrowModule).getInterestRate(reserveData.id),
         uint40(reserveData.lastUpdateTimestamp)
       )
       .rayMul(reserveData.totalDrawn);
