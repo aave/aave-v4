@@ -72,13 +72,8 @@ contract MockBorrowModuleCreditLine is IBorrowModule {
     UserConfig memory u = users[assetId][user];
 
     return
-      u.principalBalance +
       u.principalBalance.rayMul(
-        MathUtils.calculateCompoundedInterest(
-          u.lastUpdateIndex,
-          uint40(u.lastUpdateTimestamp),
-          block.timestamp
-        )
+        MathUtils.calculateLinearInterest(getInterestRate(assetId), uint40(u.lastUpdateTimestamp))
       );
   }
 
