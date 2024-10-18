@@ -155,10 +155,10 @@ contract MockBorrowModuleCreditLine is IBorrowModule {
       })
     );
 
-    _accrueInterest(u, r, assetId, amount);
+    _accrueUserInterest(u, r, assetId, amount);
   }
 
-  function _accrueInterest(
+  function _accrueUserInterest(
     UserConfig storage user,
     Reserve storage reserve,
     uint256 assetId,

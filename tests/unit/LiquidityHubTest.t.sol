@@ -750,9 +750,11 @@ contract LiquidityHubTest is BaseTest {
       )
       .rayMul(user2.balance);
     assertEq(user2Balance, bmcl.getUserDebt(daiId, USER2), '3) wrong final user2 debt');
-
-    console2.log('bmcl.getReserveDebt(daiId)', bmcl.getReserveDebt(daiId));
-    // assertEq(bmcl.getReserveDebt(daiId), );
+    assertEq(
+      bmcl.getReserveDebt(daiId),
+      user1Balance + user2Balance,
+      '3) wrong final reserve debt'
+    );
   }
 
   function test_fuzz_multiple_draws_credit_line(uint256 numDrawings, uint256 entropy) public {
