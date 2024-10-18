@@ -60,9 +60,7 @@ contract LiquidityHubTest is BaseTest {
         variableRateSlope2: 500 // 5.00%
       })
     );
-    uint256[] memory assetIds = new uint256[](1);
-    assetIds[0] = daiCreditLineAssetId;
-    bmcl = new MockBorrowModuleCreditLine(address(hub), address(creditLineIRStrategy), assetIds);
+    bmcl = new MockBorrowModuleCreditLine(address(hub), address(creditLineIRStrategy));
     hub.addReserve(
       LiquidityHub.ReserveConfig({
         borrowModule: address(bmcl),

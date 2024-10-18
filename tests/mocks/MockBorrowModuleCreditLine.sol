@@ -49,26 +49,9 @@ contract MockBorrowModuleCreditLine is IBorrowModule {
   mapping(uint256 => Reserve) public reserves;
   mapping(uint256 => uint256) public borrowRates; // assetId => borrowRate
 
-  constructor(
-    address liquidityHubAddress,
-    address interestRateStrategyAddress,
-    uint256[] memory assetIds
-  ) {
+  constructor(address liquidityHubAddress, address interestRateStrategyAddress) {
     liquidityHub = liquidityHubAddress;
     interestRateStrategy = interestRateStrategyAddress;
-    for (uint256 i; i < assetIds.length; i++) {
-      borrowRates[assetIds[i]] = calculateInterestRates(
-        DataTypes.CalculateInterestRatesParams({
-          liquidityAdded: 0,
-          liquidityTaken: 0,
-          totalDebt: 0,
-          reserveFactor: 0,
-          assetId: assetIds[i],
-          virtualUnderlyingBalance: 0,
-          usingVirtualBalance: false
-        })
-      );
-    }
   }
 
   function getReserve(uint256 assetId) external view returns (Reserve memory) {
@@ -140,7 +123,7 @@ contract MockBorrowModuleCreditLine is IBorrowModule {
   function calculateInterestRates(
     DataTypes.CalculateInterestRatesParams memory params
   ) public view returns (uint256) {
-    return IReserveInterestRateStrategy(interestRateStrategy).calculateInterestRates(params) * 1e24; // convert to ray
+    return IReserveInterestRateStrategy(interestRateStrategy).calculateInterestRates(params) * 1e23; // convert to ray
   }
 
   function addReserve(uint256 assetId, ReserveConfig memory params, address asset) external {
@@ -152,6 +135,18 @@ contract MockBorrowModuleCreditLine is IBorrowModule {
       rf: params.rf,
       borrowable: params.borrowable
     });
+
+    borrowRates[assetId] = calculateInterestRates(
+      DataTypes.CalculateInterestRatesParams({
+        liquidityAdded: 0,
+        liquidityTaken: 0,
+        totalDebt: 0,
+        reserveFactor: 0,
+        assetId: assetId,
+        virtualUnderlyingBalance: 0,
+        usingVirtualBalance: false
+      })
+    );
   }
   function _validateBorrow(Reserve storage reserve, uint256 amount) internal view {
     require(reserve.config.borrowable, 'RESERVE_NOT_BORROWABLE');
