@@ -146,6 +146,11 @@ contract BorrowModule is IBorrowModule {
     });
   }
 
+  // TODO: access control
+  function updateInterestRateStrategy(address newInterestRateStrategy) external {
+    interestRateStrategy = newInterestRateStrategy;
+  }
+
   function getInterestRate(uint256 assetId) public view returns (uint256) {
     // read from state
     return borrowRates[assetId];

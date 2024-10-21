@@ -152,6 +152,11 @@ contract MockBorrowModuleCreditLine is IBorrowModule {
     });
   }
 
+  // TODO: access control
+  function updateInterestRateStrategy(address newInterestRateStrategy) external {
+    interestRateStrategy = newInterestRateStrategy;
+  }
+
   function _validateBorrow(Reserve storage reserve, uint256 amount) internal view {
     require(reserve.config.borrowable, 'RESERVE_NOT_BORROWABLE');
   }
