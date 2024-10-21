@@ -100,35 +100,7 @@ contract BorrowModule is IBorrowModule {
 
     ILiquidityHub(liquidityHub).draw(assetId, amount);
 
-    _updateState(r);
-
-    // TODO HF check
-
-    // update user debt balance
-    UserConfig storage u = users[assetId][msg.sender];
-    // accrue interest
-    // TODO: Risk premium for user and reserve
-    u.balance =
-      u.balance.rayMul(
-        MathUtils.calculateCompoundedInterest(
-          u.lastUpdateIndex,
-          uint40(u.lastUpdateTimestamp),
-          block.timestamp
-        )
-      ) +
-      amount;
-    u.lastUpdateTimestamp = block.timestamp;
-
-    // update reserve debt balance
-    r.totalDebt =
-      r.totalDebt.rayMul(
-        MathUtils.calculateCompoundedInterest(
-          r.lastUpdateIndex,
-          uint40(r.lastUpdateTimestamp),
-          block.timestamp
-        )
-      ) +
-      amount;
+    _updateState(r, assetId, amount, msg.sender);
 
     // transfer liquidity to msg.sender
     IERC20(reserves[assetId].asset).safeTransfer(msg.sender, amount);
@@ -187,7 +159,12 @@ contract BorrowModule is IBorrowModule {
     require(reserve.config.borrowable, 'RESERVE_NOT_BORROWABLE');
   }
 
-  function _updateState(Reserve storage reserve) internal {
+  function _updateState(
+    Reserve storage reserve,
+    uint256 assetId,
+    uint256 amount,
+    address user
+  ) internal {
     // TODO: Move this call to IR
     uint256 borrowRate = calculateInterestRates(
       DataTypes.CalculateInterestRatesParams({
@@ -205,8 +182,36 @@ contract BorrowModule is IBorrowModule {
       uint40(reserve.lastUpdateTimestamp),
       block.timestamp
     );
+    reserve.lastUpdateIndex = reserve.totalDebt.rayMul(cumulatedInterest); // TODO: update index
 
-    reserve.lastUpdateIndex = reserve.totalDebt.rayMul(cumulatedInterest);
+    UserConfig storage userConfig = users[assetId][user];
+    _accrueUserInterest(userConfig, reserve, assetId, amount);
+  }
+
+  function _accrueUserInterest(
+    UserConfig storage user,
+    Reserve storage reserve,
+    uint256 assetId,
+    uint256 amount
+  ) internal {
+    // TODO HF check
+
+    // update user debt balance
+    // accrue interest
+    // TODO: Risk premium for user and reserve
+    user.balance =
+      MathUtils
+        .calculateCompoundedInterest(getInterestRate(assetId), uint40(user.lastUpdateTimestamp))
+        .rayMul(user.balance) +
+      amount;
+    user.lastUpdateTimestamp = block.timestamp;
+
+    reserve.totalDebt =
+      MathUtils
+        .calculateCompoundedInterest(getInterestRate(assetId), uint40(reserve.lastUpdateTimestamp))
+        .rayMul(reserve.totalDebt) +
+      amount;
+
     reserve.lastUpdateTimestamp = block.timestamp;
   }
 }
