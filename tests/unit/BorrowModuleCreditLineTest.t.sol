@@ -363,6 +363,21 @@ contract BorrowModuleCreditLineTest is BaseTest {
     vm.stopPrank();
   }
 
+  function test_revert_update_reserve() public {
+    uint256 invalidReserveId = 3;
+
+    MockBorrowModuleCreditLine.ReserveConfig memory reserveConfig;
+    vm.expectRevert(TestErrors.INVALID_RESERVE);
+    bmcl.updateReserve(invalidReserveId, reserveConfig);
+  }
+
+  function test_update_reserve() public {
+    uint256 daiId = 2;
+
+    MockBorrowModuleCreditLine.ReserveConfig memory reserveConfig;
+    bmcl.updateReserve(daiId, reserveConfig);
+  }
+
   // TODO: move to a helper
   function _calculateLinearInterest(
     LiquidityHub.Reserve memory reserveData

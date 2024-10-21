@@ -142,6 +142,7 @@ contract MockBorrowModuleCreditLine is IBorrowModule {
 
   function updateReserve(uint256 assetId, ReserveConfig memory params) external {
     // TODO: More sophisticated
+    require(reserves[assetId].id != 0, 'INVALID_RESERVE');
     // TODO: AccessControl
     reserves[assetId].config = ReserveConfig({
       lt: params.lt,
@@ -150,6 +151,7 @@ contract MockBorrowModuleCreditLine is IBorrowModule {
       borrowable: params.borrowable
     });
   }
+
   function _validateBorrow(Reserve storage reserve, uint256 amount) internal view {
     require(reserve.config.borrowable, 'RESERVE_NOT_BORROWABLE');
   }

@@ -47,6 +47,7 @@ library TestErrors {
   bytes constant CAP_EXCEEDED = 'CAP_EXCEEDED';
   bytes constant INSUFFICIENT_LIQUIDITY = 'INSUFFICIENT_LIQUIDITY';
   bytes constant RESERVE_NOT_BORROWABLE = 'RESERVE_NOT_BORROWABLE';
+  bytes constant INVALID_RESERVE = 'INVALID_RESERVE';
 }
 
 abstract contract BaseTest is Test, Events {
