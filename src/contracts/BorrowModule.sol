@@ -159,6 +159,7 @@ contract BorrowModule is IBorrowModule {
   function calculateInterestRates(
     DataTypes.CalculateInterestRatesParams memory params
   ) public view returns (uint256) {
+    // TODO: update output from IReserveInterestRateStrategy to ray?
     return IReserveInterestRateStrategy(interestRateStrategy).calculateInterestRates(params) * 1e23; // BIPs convert to ray
   }
 
