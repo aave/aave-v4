@@ -116,6 +116,7 @@ contract MockBorrowModuleCreditLine is IBorrowModule {
     return IReserveInterestRateStrategy(interestRateStrategy).calculateInterestRates(params) * 1e23; // BIPs convert to ray
   }
 
+  /// governance
   function addReserve(uint256 assetId, ReserveConfig memory params, address asset) external {
     reserves[assetId].id = assetId;
     reserves[assetId].asset = asset;
@@ -137,6 +138,17 @@ contract MockBorrowModuleCreditLine is IBorrowModule {
         usingVirtualBalance: false
       })
     );
+  }
+
+  function updateReserve(uint256 assetId, ReserveConfig memory params) external {
+    // TODO: More sophisticated
+    // TODO: AccessControl
+    reserves[assetId].config = ReserveConfig({
+      lt: params.lt,
+      lb: params.lb,
+      rf: params.rf,
+      borrowable: params.borrowable
+    });
   }
   function _validateBorrow(Reserve storage reserve, uint256 amount) internal view {
     require(reserve.config.borrowable, 'RESERVE_NOT_BORROWABLE');

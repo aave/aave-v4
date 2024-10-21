@@ -2,8 +2,8 @@
 pragma solidity ^0.8.0;
 import {DataTypes} from '../libraries/types/DataTypes.sol';
 interface IBorrowModule {
-  event Borrowed(uint256 assetId, address user, uint256 amount);
-  event Repaid(uint256 assetId, address user, uint256 amount);
+  event Borrowed(uint256 indexed assetId, address user, uint256 amount);
+  event Repaid(uint256 indexed assetId, address user, uint256 amount);
 
   function calculateInterestRates(
     DataTypes.CalculateInterestRatesParams memory params

@@ -34,6 +34,8 @@ contract Events {
     uint16 indexed referralCode
   );
   event Withdraw(uint256 indexed reserve, address indexed user, address indexed to, uint256 amount);
+  event Borrowed(uint256 indexed assetId, address user, uint256 amount);
+  event Repaid(uint256 indexed assetId, address user, uint256 amount);
 }
 
 library TestErrors {
@@ -44,6 +46,7 @@ library TestErrors {
   bytes constant INVALID_AMOUNT = 'INVALID_AMOUNT';
   bytes constant CAP_EXCEEDED = 'CAP_EXCEEDED';
   bytes constant INSUFFICIENT_LIQUIDITY = 'INSUFFICIENT_LIQUIDITY';
+  bytes constant RESERVE_NOT_BORROWABLE = 'RESERVE_NOT_BORROWABLE';
 }
 
 abstract contract BaseTest is Test, Events {

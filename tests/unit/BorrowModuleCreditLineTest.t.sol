@@ -112,14 +112,16 @@ contract BorrowModuleCreditLineTest is BaseTest {
     LiquidityHub.Reserve memory daiData0 = hub.getReserve(daiId);
 
     assertEq(dai.balanceOf(USER1), 0);
-    assertEq(dai.balanceOf(daiData0.config.borrowModule), 0);
+    assertEq(dai.balanceOf(address(bmcl)), 0);
 
     drawnAmounts[0] = daiAmount / 2; // 50%
     drawnAmounts[1] = daiAmount / 4; // 25%
 
     // User1 draw half of dai reserve liquidity for borrow module
     vm.prank(USER1);
-    IBorrowModule(daiData0.config.borrowModule).borrow(daiId, drawnAmounts[0]);
+    vm.expectEmit(true, false, false, true, address(bmcl));
+    emit Borrowed(daiId, USER1, drawnAmounts[0]);
+    IBorrowModule(address(bmcl)).borrow(daiId, drawnAmounts[0]);
 
     LiquidityHub.Reserve memory daiData1 = hub.getReserve(daiId);
 
@@ -150,6 +152,8 @@ contract BorrowModuleCreditLineTest is BaseTest {
     // User1 draw quarter of dai reserve liquidity for borrow module
     // to trigger interest accrual
     vm.prank(USER1);
+    vm.expectEmit(true, false, false, true, address(bmcl));
+    emit Borrowed(daiId, USER1, drawnAmounts[1]);
     IBorrowModule(address(bmcl)).borrow(daiId, drawnAmounts[1]);
     user = bmcl.getUser(daiId, USER1);
 
@@ -184,6 +188,16 @@ contract BorrowModuleCreditLineTest is BaseTest {
       )
       .rayMul(user.balance);
     assertEq(userBalance, bmcl.getUserDebt(daiId, USER1), '3) wrong final user1 debt');
+  }
+
+  function test_revert_borrow_reserve_not_borrowable() public {
+    uint256 daiId = 2;
+    uint256 drawnAmount = 1;
+    _updateBorrowable(daiId, false);
+
+    vm.prank(USER1);
+    vm.expectRevert(TestErrors.RESERVE_NOT_BORROWABLE);
+    IBorrowModule(address(bmcl)).borrow(daiId, drawnAmount);
   }
 
   function test_multi_borrow_credit_line() public {
@@ -378,5 +392,11 @@ contract BorrowModuleCreditLineTest is BaseTest {
         min,
         max
       );
+  }
+
+  function _updateBorrowable(uint256 assetId, bool newBorrowable) internal {
+    MockBorrowModuleCreditLine.ReserveConfig memory reserveConfig = bmcl.getReserve(assetId).config;
+    reserveConfig.borrowable = newBorrowable;
+    bmcl.updateReserve(assetId, reserveConfig);
   }
 }
