@@ -7,6 +7,7 @@ import {WadRayMath} from './WadRayMath.sol';
 import {MathUtils} from './MathUtils.sol';
 import {ILiquidityHub} from '../interfaces/ILiquidityHub.sol';
 import {IBorrowModule} from '../interfaces/IBorrowModule.sol';
+import {IReserveInterestRateStrategy} from '../../src/interfaces/IReserveInterestRateStrategy.sol';
 import {DataTypes} from '../libraries/types/DataTypes.sol';
 
 contract BorrowModule is IBorrowModule {
@@ -21,6 +22,8 @@ contract BorrowModule is IBorrowModule {
   // keep hooks to be executed by LiquidityHub when there is supply/withdraw actions
 
   // fetch liquidity from liquidityHub
+  address public liquidityHub;
+  address public interestRateStrategy;
 
   struct Reserve {
     uint256 id;
@@ -48,11 +51,11 @@ contract BorrowModule is IBorrowModule {
   mapping(uint256 => mapping(address => UserConfig)) public users;
   // assetId => reserveData
   mapping(uint256 => Reserve) public reserves;
+  mapping(uint256 => uint256) public borrowRates; // assetId => borrowRate
 
-  address public liquidityHub;
-
-  constructor(address liquidityHubAddress) {
+  constructor(address liquidityHubAddress, address interestRateStrategyAddress) {
     liquidityHub = liquidityHubAddress;
+    interestRateStrategy = interestRateStrategyAddress;
   }
 
   function getReserve(uint256 assetId) external view returns (Reserve memory) {
@@ -143,15 +146,15 @@ contract BorrowModule is IBorrowModule {
     });
   }
 
-  function getInterestRate(uint256 assetId) public pure returns (uint256) {
-    return 0;
+  function getInterestRate(uint256 assetId) public view returns (uint256) {
+    // read from state
+    return borrowRates[assetId];
   }
 
   function calculateInterestRates(
     DataTypes.CalculateInterestRatesParams memory params
-  ) public pure returns (uint256) {
-    // borrowRate
-    return 0;
+  ) public view returns (uint256) {
+    return IReserveInterestRateStrategy(interestRateStrategy).calculateInterestRates(params) * 1e23; // BIPs convert to ray
   }
 
   function _validateBorrow(Reserve storage reserve, uint256 amount) internal view {
