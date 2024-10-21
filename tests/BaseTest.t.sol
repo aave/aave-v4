@@ -41,6 +41,9 @@ library TestErrors {
   bytes constant NOT_AVAILABLE_LIQUIDITY = 'NOT_AVAILABLE_LIQUIDITY';
   bytes constant RESERVE_NOT_ACTIVE = 'RESERVE_NOT_ACTIVE';
   bytes constant ASSET_NOT_LISTED = 'ASSET_NOT_LISTED';
+  bytes constant INVALID_AMOUNT = 'INVALID_AMOUNT';
+  bytes constant CAP_EXCEEDED = 'CAP_EXCEEDED';
+  bytes constant INSUFFICIENT_LIQUIDITY = 'INSUFFICIENT_LIQUIDITY';
 }
 
 abstract contract BaseTest is Test, Events {
