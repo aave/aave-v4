@@ -109,6 +109,7 @@ contract MockBorrowModuleCreditLine is IBorrowModule {
   function calculateInterestRates(
     DataTypes.CalculateInterestRatesParams memory params
   ) public view returns (uint256) {
+    // In credit line case, calculateInterestRates will return a fixed value regardless of params
     return IReserveInterestRateStrategy(interestRateStrategy).calculateInterestRates(params) * 1e23; // BIPs convert to ray
   }
 
