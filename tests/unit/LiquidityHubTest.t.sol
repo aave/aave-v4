@@ -566,9 +566,55 @@ contract LiquidityHubTest is BaseTest {
     assertEq(dai.balanceOf(USER1), daiAmount / 2);
   }
 
+  function test_revert_draw_reserve_not_active() public {
+    uint256 daiId = 2;
+    uint256 drawnAmount = 1;
+    _updateActive(daiId, false);
+    vm.prank(USER1);
+    vm.expectRevert(TestErrors.RESERVE_NOT_ACTIVE);
+    IBorrowModule(address(bmcl)).borrow(daiId, drawnAmount);
+  }
+
+  function test_revert_draw_invalid_amount() public {
+    uint256 daiId = 2;
+    uint256 drawnAmount = 1;
+    vm.prank(USER1);
+    vm.expectRevert(TestErrors.INVALID_AMOUNT);
+    IBorrowModule(address(bmcl)).borrow(daiId, drawnAmount);
+  }
+
+  function test_revert_draw_cap_exceeded() public {
+    uint256 daiId = 2;
+    uint256 daiAmount = 100e18;
+    uint256 drawCap = 1;
+    uint256 drawnAmount = drawCap + 1;
+
+    _updateDrawCap(daiId, drawCap);
+
+    // User2 supply dai
+    deal(address(dai), USER2, daiAmount);
+    Utils.supply(vm, hub, daiId, USER2, daiAmount, USER2);
+
+    vm.prank(USER1);
+    vm.expectRevert(TestErrors.CAP_EXCEEDED);
+    IBorrowModule(address(bmcl)).borrow(daiId, drawnAmount);
+  }
+
   function _updateLiquidityPremium(uint256 assetId, uint256 newLiquidityPremium) internal {
     LiquidityHub.ReserveConfig memory reserveConfig = hub.getReserve(assetId).config;
     reserveConfig.liquidityPremium = newLiquidityPremium;
+    hub.updateReserve(assetId, reserveConfig);
+  }
+
+  function _updateActive(uint256 assetId, bool newActive) internal {
+    LiquidityHub.ReserveConfig memory reserveConfig = hub.getReserve(assetId).config;
+    reserveConfig.active = newActive;
+    hub.updateReserve(assetId, reserveConfig);
+  }
+
+  function _updateDrawCap(uint256 assetId, uint256 newDrawCap) internal {
+    LiquidityHub.ReserveConfig memory reserveConfig = hub.getReserve(assetId).config;
+    reserveConfig.drawCap = newDrawCap;
     hub.updateReserve(assetId, reserveConfig);
   }
 }

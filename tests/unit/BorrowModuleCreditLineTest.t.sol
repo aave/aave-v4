@@ -287,40 +287,6 @@ contract BorrowModuleCreditLineTest is BaseTest {
     );
   }
 
-  function test_revert_borrow_credit_line_reserve_not_active() public {
-    uint256 daiId = 2;
-    uint256 drawnAmount = 1;
-    _updateActive(daiId, false);
-    vm.prank(USER1);
-    vm.expectRevert(TestErrors.RESERVE_NOT_ACTIVE);
-    IBorrowModule(address(bmcl)).borrow(daiId, drawnAmount);
-  }
-
-  function test_revert_borrow_credit_line_invalid_amount() public {
-    uint256 daiId = 2;
-    uint256 drawnAmount = 1;
-    vm.prank(USER1);
-    vm.expectRevert(TestErrors.INVALID_AMOUNT);
-    IBorrowModule(address(bmcl)).borrow(daiId, drawnAmount);
-  }
-
-  function test_revert_borrow_credit_line_cap_exceeded() public {
-    uint256 daiId = 2;
-    uint256 daiAmount = 100e18;
-    uint256 drawCap = 1;
-    uint256 drawnAmount = drawCap + 1;
-
-    _updateDrawCap(daiId, drawCap);
-
-    // User2 supply dai
-    deal(address(dai), USER2, daiAmount);
-    Utils.supply(vm, hub, daiId, USER2, daiAmount, USER2);
-
-    vm.prank(USER1);
-    vm.expectRevert(TestErrors.CAP_EXCEEDED);
-    IBorrowModule(address(bmcl)).borrow(daiId, drawnAmount);
-  }
-
   function test_fuzz_multiple_draws_credit_line(uint256 numDrawings, uint256 entropy) public {
     numDrawings = bound(numDrawings, 1, 10);
 
@@ -412,17 +378,5 @@ contract BorrowModuleCreditLineTest is BaseTest {
         min,
         max
       );
-  }
-
-  function _updateActive(uint256 assetId, bool newActive) internal {
-    LiquidityHub.ReserveConfig memory reserveConfig = hub.getReserve(assetId).config;
-    reserveConfig.active = newActive;
-    hub.updateReserve(assetId, reserveConfig);
-  }
-
-  function _updateDrawCap(uint256 assetId, uint256 newDrawCap) internal {
-    LiquidityHub.ReserveConfig memory reserveConfig = hub.getReserve(assetId).config;
-    reserveConfig.drawCap = newDrawCap;
-    hub.updateReserve(assetId, reserveConfig);
   }
 }
