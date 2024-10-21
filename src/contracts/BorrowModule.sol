@@ -39,8 +39,7 @@ contract BorrowModule is IBorrowModule {
   }
 
   struct UserConfig {
-    uint256 principalBalance;
-    uint256 interestBalance;
+    uint256 balance;
     uint256 lastUpdateIndex;
     uint256 lastUpdateTimestamp;
   }
@@ -74,10 +73,9 @@ contract BorrowModule is IBorrowModule {
     UserConfig memory u = users[assetId][user];
 
     return
-      u.principalBalance +
-      u.principalBalance.rayMul(
+      u.balance.rayMul(
         MathUtils.calculateCompoundedInterest(
-          u.lastUpdateIndex,
+          getInterestRate(assetId),
           uint40(u.lastUpdateTimestamp),
           block.timestamp
         )
@@ -87,10 +85,9 @@ contract BorrowModule is IBorrowModule {
   function getReserveDebt(uint256 assetId) external view returns (uint256) {
     Reserve storage r = reserves[assetId];
     return
-      r.totalDebt +
       r.totalDebt.rayMul(
         MathUtils.calculateCompoundedInterest(
-          r.lastUpdateIndex,
+          getInterestRate(assetId),
           uint40(r.lastUpdateTimestamp),
           block.timestamp
         )
@@ -111,8 +108,8 @@ contract BorrowModule is IBorrowModule {
     UserConfig storage u = users[assetId][msg.sender];
     // accrue interest
     // TODO: Risk premium for user and reserve
-    u.principalBalance =
-      u.principalBalance.rayMul(
+    u.balance =
+      u.balance.rayMul(
         MathUtils.calculateCompoundedInterest(
           u.lastUpdateIndex,
           uint40(u.lastUpdateTimestamp),
