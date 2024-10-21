@@ -106,14 +106,14 @@ contract MockBorrowModuleCreditLine is IBorrowModule {
     emit Repaid(assetId, onBehalfOf, amount);
   }
 
-  function getInterestRate(uint256 assetId) public view returns (uint256) {
-    return borrowRates[assetId];
-  }
-
   function calculateInterestRates(
     DataTypes.CalculateInterestRatesParams memory params
   ) public view returns (uint256) {
     return IReserveInterestRateStrategy(interestRateStrategy).calculateInterestRates(params) * 1e23; // BIPs convert to ray
+  }
+
+  function getInterestRate(uint256 assetId) public view returns (uint256) {
+    return borrowRates[assetId];
   }
 
   /// governance
