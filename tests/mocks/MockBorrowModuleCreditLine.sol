@@ -156,22 +156,27 @@ contract MockBorrowModuleCreditLine is IBorrowModule {
     require(reserve.config.borrowable, 'RESERVE_NOT_BORROWABLE');
   }
 
-  function _updateState(Reserve storage r, uint256 assetId, uint256 amount, address user) internal {
-    UserConfig storage u = users[assetId][user];
+  function _updateState(
+    Reserve storage reserve,
+    uint256 assetId,
+    uint256 amount,
+    address user
+  ) internal {
+    UserConfig storage userConfig = users[assetId][user];
 
-    borrowRates[r.id] = calculateInterestRates(
+    borrowRates[reserve.id] = calculateInterestRates(
       DataTypes.CalculateInterestRatesParams({
         liquidityAdded: 0,
         liquidityTaken: 0,
-        totalDebt: r.totalDebt,
+        totalDebt: reserve.totalDebt,
         reserveFactor: 0,
-        assetId: r.id,
+        assetId: reserve.id,
         virtualUnderlyingBalance: 0,
         usingVirtualBalance: false
       })
     );
 
-    _accrueUserInterest(u, r, assetId, amount);
+    _accrueUserInterest(userConfig, reserve, assetId, amount);
   }
 
   function _accrueUserInterest(
