@@ -171,6 +171,8 @@ contract MockBorrowModuleCreditLine is IBorrowModule {
   ) internal {
     UserConfig storage userConfig = users[assetId][user];
 
+    _accrueUserInterest(userConfig, reserve, assetId, amount);
+
     borrowRates[reserve.id] = calculateInterestRates(
       DataTypes.CalculateInterestRatesParams({
         liquidityAdded: 0,
@@ -182,8 +184,6 @@ contract MockBorrowModuleCreditLine is IBorrowModule {
         usingVirtualBalance: false
       })
     );
-
-    _accrueUserInterest(userConfig, reserve, assetId, amount);
   }
 
   function _accrueUserInterest(

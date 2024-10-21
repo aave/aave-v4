@@ -173,12 +173,14 @@ contract BorrowModule is IBorrowModule {
     uint256 amount,
     address user
   ) internal {
-    // TODO: Move this call to IR
+    UserConfig storage userConfig = users[assetId][user];
+    _accrueUserInterest(userConfig, reserve, assetId, amount);
+
     uint256 borrowRate = calculateInterestRates(
       DataTypes.CalculateInterestRatesParams({
         liquidityAdded: 0,
         liquidityTaken: 0,
-        totalDebt: 0,
+        totalDebt: reserve.totalDebt,
         reserveFactor: 0,
         assetId: reserve.id,
         virtualUnderlyingBalance: 0,
@@ -191,9 +193,6 @@ contract BorrowModule is IBorrowModule {
       block.timestamp
     );
     reserve.lastUpdateIndex = reserve.totalDebt.rayMul(cumulatedInterest); // TODO: update index
-
-    UserConfig storage userConfig = users[assetId][user];
-    _accrueUserInterest(userConfig, reserve, assetId, amount);
   }
 
   function _accrueUserInterest(
