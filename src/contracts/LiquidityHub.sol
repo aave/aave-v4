@@ -255,7 +255,7 @@ contract LiquidityHub is ILiquidityHub {
     require(reserve.config.active, 'RESERVE_NOT_ACTIVE');
     // supply cap not reached
     require(
-      reserve.config.supplyCap == 0 || reserve.config.drawCap > reserve.totalAssets + amount,
+      reserve.config.supplyCap == 0 || reserve.config.supplyCap > reserve.totalAssets + amount,
       'CAP_EXCEEDED'
     );
   }
