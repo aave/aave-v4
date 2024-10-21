@@ -39,7 +39,7 @@ contract MockBorrowModuleCreditLine is IBorrowModule {
   }
 
   struct UserConfig {
-    uint256 balance;
+    uint256 balance; // TODO: name to principal balance?
     uint256 lastUpdateIndex; // TODO? What is this supposed to index on
     uint256 lastUpdateTimestamp;
   }
