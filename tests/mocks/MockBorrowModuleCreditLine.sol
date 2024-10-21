@@ -85,6 +85,8 @@ contract MockBorrowModuleCreditLine is IBorrowModule {
   function borrow(uint256 assetId, uint256 amount) external {
     Reserve storage r = reserves[assetId];
     _validateBorrow(r, amount);
+    // TODO: decide if state should be updated before or after liquidity hub call
+    // update state will update the IR based on total debt
     _updateState(r, assetId, amount, msg.sender);
 
     ILiquidityHub(liquidityHub).draw(assetId, amount);
