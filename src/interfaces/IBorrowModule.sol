@@ -6,9 +6,6 @@ interface IBorrowModule {
   event Repaid(uint256 indexed assetId, address user, uint256 amount);
 
   /// @dev working with bps units 10_000 = 100%
-  function calculateInterestRates(
-    DataTypes.CalculateInterestRatesParams memory params
-  ) external view returns (uint256);
   function getInterestRate(uint256 assetId) external view returns (uint256);
 
   function borrow(uint256 assetId, uint256 amount) external;

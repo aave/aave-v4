@@ -107,16 +107,8 @@ contract MockBorrowModuleCreditLine is IBorrowModule {
     emit Repaid(assetId, msg.sender, amount);
   }
 
-  function calculateInterestRates(
-    DataTypes.CalculateInterestRatesParams memory params
-  ) public view returns (uint256) {
-    // In credit line case, calculateInterestRates will return a fixed value regardless of params
-    // TODO: update output from IReserveInterestRateStrategy to ray?
-    return IReserveInterestRateStrategy(interestRateStrategy).calculateInterestRates(params) * 1e23; // BIPs convert to ray
-  }
-
   function getInterestRate(uint256 assetId) public view returns (uint256) {
-    return borrowRates[assetId];
+    return borrowRates[assetId] * 1e23;
   }
 
   /// governance
@@ -130,17 +122,18 @@ contract MockBorrowModuleCreditLine is IBorrowModule {
       borrowable: params.borrowable
     });
 
-    borrowRates[assetId] = calculateInterestRates(
-      DataTypes.CalculateInterestRatesParams({
-        liquidityAdded: 0,
-        liquidityTaken: 0,
-        totalDebt: 0,
-        reserveFactor: 0,
-        assetId: assetId,
-        virtualUnderlyingBalance: 0,
-        usingVirtualBalance: false
-      })
-    );
+    borrowRates[assetId] = IReserveInterestRateStrategy(interestRateStrategy)
+      .calculateInterestRates(
+        DataTypes.CalculateInterestRatesParams({
+          liquidityAdded: 0,
+          liquidityTaken: 0,
+          totalDebt: 0,
+          reserveFactor: 0,
+          assetId: assetId,
+          virtualUnderlyingBalance: 0,
+          usingVirtualBalance: false
+        })
+      );
   }
 
   function updateReserve(uint256 assetId, ReserveConfig memory params) external {
@@ -174,17 +167,18 @@ contract MockBorrowModuleCreditLine is IBorrowModule {
 
     _accrueUserInterest(userConfig, reserve, assetId, amount);
 
-    borrowRates[reserve.id] = calculateInterestRates(
-      DataTypes.CalculateInterestRatesParams({
-        liquidityAdded: 0,
-        liquidityTaken: 0,
-        totalDebt: reserve.totalDebt,
-        reserveFactor: 0,
-        assetId: reserve.id,
-        virtualUnderlyingBalance: 0,
-        usingVirtualBalance: false
-      })
-    );
+    borrowRates[reserve.id] = IReserveInterestRateStrategy(interestRateStrategy)
+      .calculateInterestRates(
+        DataTypes.CalculateInterestRatesParams({
+          liquidityAdded: 0,
+          liquidityTaken: 0,
+          totalDebt: reserve.totalDebt,
+          reserveFactor: 0,
+          assetId: reserve.id,
+          virtualUnderlyingBalance: 0,
+          usingVirtualBalance: false
+        })
+      );
   }
 
   function _accrueUserInterest(

@@ -138,6 +138,18 @@ contract BorrowModule is IBorrowModule {
       rf: params.rf,
       borrowable: params.borrowable
     });
+
+    IReserveInterestRateStrategy(interestRateStrategy).calculateInterestRates(
+      DataTypes.CalculateInterestRatesParams({
+        liquidityAdded: 0,
+        liquidityTaken: 0,
+        totalDebt: reserves[assetId].totalDebt,
+        reserveFactor: 0,
+        assetId: reserves[assetId].id,
+        virtualUnderlyingBalance: 0,
+        usingVirtualBalance: false
+      })
+    );
   }
 
   function updateReserve(uint256 assetId, ReserveConfig memory params) external {
@@ -157,13 +169,6 @@ contract BorrowModule is IBorrowModule {
     interestRateStrategy = newInterestRateStrategy;
   }
 
-  function calculateInterestRates(
-    DataTypes.CalculateInterestRatesParams memory params
-  ) public view returns (uint256) {
-    // TODO: update output from IReserveInterestRateStrategy to ray?
-    return IReserveInterestRateStrategy(interestRateStrategy).calculateInterestRates(params) * 1e23; // BIPs convert to ray
-  }
-
   function _validateBorrow(Reserve storage reserve, uint256 amount) internal view {
     require(reserve.config.borrowable, 'RESERVE_NOT_BORROWABLE');
   }
@@ -177,7 +182,8 @@ contract BorrowModule is IBorrowModule {
     UserConfig storage userConfig = users[assetId][user];
     _accrueUserInterest(userConfig, reserve, assetId, amount);
 
-    uint256 borrowRate = calculateInterestRates(
+    // BIPs convert to ray
+    uint256 borrowRate = IReserveInterestRateStrategy(interestRateStrategy).calculateInterestRates(
       DataTypes.CalculateInterestRatesParams({
         liquidityAdded: 0,
         liquidityTaken: 0,
@@ -187,7 +193,7 @@ contract BorrowModule is IBorrowModule {
         virtualUnderlyingBalance: 0,
         usingVirtualBalance: false
       })
-    ); // TODO: coupling here, must be more abstract?
+    ) * 1e23; // TODO: coupling here, must be more abstract?
     uint256 cumulatedInterest = MathUtils.calculateCompoundedInterest(
       borrowRate,
       uint40(reserve.lastUpdateTimestamp),
