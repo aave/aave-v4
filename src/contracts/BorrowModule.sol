@@ -100,6 +100,7 @@ contract BorrowModule is IBorrowModule {
   function borrow(uint256 assetId, uint256 amount) external {
     Reserve storage r = reserves[assetId];
     _validateBorrow(r, amount);
+    // TODO HF check
 
     ILiquidityHub(liquidityHub).draw(assetId, amount);
 
@@ -144,8 +145,8 @@ contract BorrowModule is IBorrowModule {
         DataTypes.CalculateInterestRatesParams({
           liquidityAdded: 0,
           liquidityTaken: 0,
-          totalDebt: reserves[assetId].totalDebt,
-          reserveFactor: 0,
+          totalDebt: 0,
+          reserveFactor: params.rf,
           assetId: reserves[assetId].id,
           virtualUnderlyingBalance: 0,
           usingVirtualBalance: false
@@ -174,6 +175,7 @@ contract BorrowModule is IBorrowModule {
     require(reserve.config.borrowable, 'RESERVE_NOT_BORROWABLE');
   }
 
+  /// @dev does 2 things - update borrow rate for this asset; update user and reserve debt balances
   function _updateState(
     Reserve storage reserve,
     uint256 assetId,
@@ -186,13 +188,13 @@ contract BorrowModule is IBorrowModule {
     reserves[assetId].borrowRate = IReserveInterestRateStrategy(interestRateStrategy)
       .calculateInterestRates(
         DataTypes.CalculateInterestRatesParams({
-          liquidityAdded: 0,
-          liquidityTaken: 0,
+          liquidityAdded: 0, // TODO
+          liquidityTaken: 0, // TODO
           totalDebt: reserve.totalDebt,
-          reserveFactor: 0,
+          reserveFactor: reserve.config.rf,
           assetId: reserve.id,
-          virtualUnderlyingBalance: 0,
-          usingVirtualBalance: false
+          virtualUnderlyingBalance: 0, // TODO
+          usingVirtualBalance: false // TODO
         })
       );
 
@@ -210,8 +212,6 @@ contract BorrowModule is IBorrowModule {
     uint256 assetId,
     uint256 amount
   ) internal {
-    // TODO HF check
-
     // update user debt balance
     // accrue interest
     // TODO: Risk premium for user and reserve

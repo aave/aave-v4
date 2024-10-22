@@ -168,18 +168,7 @@ contract MockBorrowModuleCreditLine is IBorrowModule {
 
     _accrueUserInterest(userConfig, reserve, assetId, amount);
 
-    reserves[assetId].borrowRate = IReserveInterestRateStrategy(interestRateStrategy)
-      .calculateInterestRates(
-        DataTypes.CalculateInterestRatesParams({
-          liquidityAdded: 0,
-          liquidityTaken: 0,
-          totalDebt: reserve.totalDebt,
-          reserveFactor: 0,
-          assetId: reserve.id,
-          virtualUnderlyingBalance: 0,
-          usingVirtualBalance: false
-        })
-      );
+    // not needed to update borrow rate for credit line bc IR is fixed
   }
 
   function _accrueUserInterest(
