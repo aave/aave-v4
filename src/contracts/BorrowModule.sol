@@ -183,20 +183,21 @@ contract BorrowModule is IBorrowModule {
     UserConfig storage userConfig = users[assetId][user];
     _accrueUserInterest(userConfig, reserve, assetId, amount);
 
-    // BIPs convert to ray
-    uint256 borrowRate = IReserveInterestRateStrategy(interestRateStrategy).calculateInterestRates(
-      DataTypes.CalculateInterestRatesParams({
-        liquidityAdded: 0,
-        liquidityTaken: 0,
-        totalDebt: reserve.totalDebt,
-        reserveFactor: 0,
-        assetId: reserve.id,
-        virtualUnderlyingBalance: 0,
-        usingVirtualBalance: false
-      })
-    ) * 1e23; // TODO: coupling here, must be more abstract?
+    reserves[assetId].borrowRate = IReserveInterestRateStrategy(interestRateStrategy)
+      .calculateInterestRates(
+        DataTypes.CalculateInterestRatesParams({
+          liquidityAdded: 0,
+          liquidityTaken: 0,
+          totalDebt: reserve.totalDebt,
+          reserveFactor: 0,
+          assetId: reserve.id,
+          virtualUnderlyingBalance: 0,
+          usingVirtualBalance: false
+        })
+      );
+
     uint256 cumulatedInterest = MathUtils.calculateCompoundedInterest(
-      borrowRate,
+      getInterestRate(assetId),
       uint40(reserve.lastUpdateTimestamp),
       block.timestamp
     );
@@ -236,5 +237,7 @@ contract BorrowModule is IBorrowModule {
       amount;
 
     reserve.lastUpdateTimestamp = block.timestamp;
+
+    // TODO: update index
   }
 }
