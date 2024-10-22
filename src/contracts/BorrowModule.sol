@@ -31,6 +31,7 @@ contract BorrowModule is IBorrowModule {
     uint256 totalDebt;
     uint256 lastUpdateIndex;
     uint256 lastUpdateTimestamp;
+    uint256 borrowRate;
     ReserveConfig config;
   }
 
@@ -51,7 +52,6 @@ contract BorrowModule is IBorrowModule {
   mapping(uint256 => mapping(address => UserConfig)) public users;
   // assetId => reserveData
   mapping(uint256 => Reserve) public reserves;
-  mapping(uint256 => uint256) public borrowRates; // assetId => borrowRate
 
   constructor(address liquidityHubAddress, address interestRateStrategyAddress) {
     liquidityHub = liquidityHubAddress;
@@ -120,8 +120,8 @@ contract BorrowModule is IBorrowModule {
   }
 
   function getInterestRate(uint256 assetId) public view returns (uint256) {
-    // read from state
-    return borrowRates[assetId];
+    // read from state, convert to ray
+    return reserves[assetId].borrowRate * 1e23;
   }
 
   // /////
@@ -139,17 +139,18 @@ contract BorrowModule is IBorrowModule {
       borrowable: params.borrowable
     });
 
-    IReserveInterestRateStrategy(interestRateStrategy).calculateInterestRates(
-      DataTypes.CalculateInterestRatesParams({
-        liquidityAdded: 0,
-        liquidityTaken: 0,
-        totalDebt: reserves[assetId].totalDebt,
-        reserveFactor: 0,
-        assetId: reserves[assetId].id,
-        virtualUnderlyingBalance: 0,
-        usingVirtualBalance: false
-      })
-    );
+    reserves[assetId].borrowRate = IReserveInterestRateStrategy(interestRateStrategy)
+      .calculateInterestRates(
+        DataTypes.CalculateInterestRatesParams({
+          liquidityAdded: 0,
+          liquidityTaken: 0,
+          totalDebt: reserves[assetId].totalDebt,
+          reserveFactor: 0,
+          assetId: reserves[assetId].id,
+          virtualUnderlyingBalance: 0,
+          usingVirtualBalance: false
+        })
+      );
   }
 
   function updateReserve(uint256 assetId, ReserveConfig memory params) external {

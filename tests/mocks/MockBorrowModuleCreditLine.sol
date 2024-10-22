@@ -28,6 +28,7 @@ contract MockBorrowModuleCreditLine is IBorrowModule {
     uint256 totalDebt;
     uint256 lastUpdateIndex; // TODO? What is this supposed to index on
     uint256 lastUpdateTimestamp;
+    uint256 borrowRate;
     ReserveConfig config;
   }
 
@@ -46,7 +47,6 @@ contract MockBorrowModuleCreditLine is IBorrowModule {
   // asset id => user address => user data
   mapping(uint256 => mapping(address => UserConfig)) public users;
   mapping(uint256 => Reserve) public reserves;
-  mapping(uint256 => uint256) public borrowRates; // assetId => borrowRate
 
   constructor(address liquidityHubAddress, address interestRateStrategyAddress) {
     liquidityHub = liquidityHubAddress;
@@ -108,7 +108,8 @@ contract MockBorrowModuleCreditLine is IBorrowModule {
   }
 
   function getInterestRate(uint256 assetId) public view returns (uint256) {
-    return borrowRates[assetId] * 1e23;
+    // read from state, convert to ray
+    return reserves[assetId].borrowRate * 1e23;
   }
 
   /// governance
@@ -122,13 +123,13 @@ contract MockBorrowModuleCreditLine is IBorrowModule {
       borrowable: params.borrowable
     });
 
-    borrowRates[assetId] = IReserveInterestRateStrategy(interestRateStrategy)
+    reserves[assetId].borrowRate = IReserveInterestRateStrategy(interestRateStrategy)
       .calculateInterestRates(
         DataTypes.CalculateInterestRatesParams({
           liquidityAdded: 0,
           liquidityTaken: 0,
           totalDebt: 0,
-          reserveFactor: 0,
+          reserveFactor: params.rf,
           assetId: assetId,
           virtualUnderlyingBalance: 0,
           usingVirtualBalance: false
@@ -167,7 +168,7 @@ contract MockBorrowModuleCreditLine is IBorrowModule {
 
     _accrueUserInterest(userConfig, reserve, assetId, amount);
 
-    borrowRates[reserve.id] = IReserveInterestRateStrategy(interestRateStrategy)
+    reserves[assetId].borrowRate = IReserveInterestRateStrategy(interestRateStrategy)
       .calculateInterestRates(
         DataTypes.CalculateInterestRatesParams({
           liquidityAdded: 0,
