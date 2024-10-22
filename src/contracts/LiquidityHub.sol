@@ -243,7 +243,7 @@ contract LiquidityHub is ILiquidityHub {
     emit Draw(assetId, reserve.config.borrowModule, amount);
   }
 
-  function restore(uint256 assetId, uint256 amount, address onBehalfOf) external {}
+  function restore(uint256 assetId, uint256 amount) external {}
 
   //
   // Internal

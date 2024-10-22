@@ -112,10 +112,11 @@ contract BorrowModule is IBorrowModule {
   }
 
   // TODO: Implement repay, calls liquidity hub restore method
-  function repay(uint256 assetId, uint256 amount, address onBehalfOf) external {
-    ILiquidityHub(liquidityHub).restore(assetId, amount, onBehalfOf);
+  // TODO: onBehalfOf
+  function repay(uint256 assetId, uint256 amount) external {
+    ILiquidityHub(liquidityHub).restore(assetId, amount);
 
-    emit Repaid(assetId, onBehalfOf, amount);
+    emit Repaid(assetId, msg.sender, amount);
   }
 
   function getInterestRate(uint256 assetId) public view returns (uint256) {

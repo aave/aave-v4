@@ -98,12 +98,13 @@ contract MockBorrowModuleCreditLine is IBorrowModule {
   }
 
   // TODO: Implement repay, calls liquidity hub restore method
-  function repay(uint256 assetId, uint256 amount, address onBehalfOf) external {
+  // TODO: onBehalfOf
+  function repay(uint256 assetId, uint256 amount) external {
     Reserve storage r = reserves[assetId];
-    _updateState(r, assetId, amount, onBehalfOf);
-    ILiquidityHub(liquidityHub).restore(assetId, amount, onBehalfOf);
+    _updateState(r, assetId, amount, msg.sender);
+    ILiquidityHub(liquidityHub).restore(assetId, amount);
 
-    emit Repaid(assetId, onBehalfOf, amount);
+    emit Repaid(assetId, msg.sender, amount);
   }
 
   function calculateInterestRates(

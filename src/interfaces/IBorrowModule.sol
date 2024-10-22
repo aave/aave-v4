@@ -11,5 +11,5 @@ interface IBorrowModule {
   function getInterestRate(uint256 assetId) external view returns (uint256);
 
   function borrow(uint256 assetId, uint256 amount) external;
-  function repay(uint256 assetId, uint256 amount, address onBehalfOf) external;
+  function repay(uint256 assetId, uint256 amount) external;
 }
