@@ -9,6 +9,7 @@ import 'src/dependencies/openzeppelin/IERC20.sol';
 import '../mocks/MockPriceOracle.sol';
 import '../mocks/MockERC20.sol';
 import '../Utils.t.sol';
+import 'src/contracts/DefaultReserveInterestRateStrategy.sol';
 
 contract LiquidityHubHandler is Test {
   IERC20 public usdc;
@@ -18,6 +19,9 @@ contract LiquidityHubHandler is Test {
   IPriceOracle public oracle;
   LiquidityHub public hub;
   BorrowModule public bm;
+  DefaultReserveInterestRateStrategy creditLineIRStrategy;
+
+  address internal mockAddressesProvider = makeAddr('mockAddressesProvider');
 
   struct State {
     mapping(uint256 => uint256) reserveSupplied; // asset => supply
@@ -29,9 +33,10 @@ contract LiquidityHubHandler is Test {
   State internal s;
 
   constructor() {
+    creditLineIRStrategy = new DefaultReserveInterestRateStrategy(mockAddressesProvider);
     oracle = new MockPriceOracle();
     hub = new LiquidityHub(address(oracle));
-    bm = new BorrowModule(address(hub));
+    bm = new BorrowModule(address(hub), address(creditLineIRStrategy));
     usdc = new MockERC20();
     dai = new MockERC20();
     usdt = new MockERC20();

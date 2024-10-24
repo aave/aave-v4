@@ -7,6 +7,8 @@ import {WadRayMath} from './WadRayMath.sol';
 import {MathUtils} from './MathUtils.sol';
 import {ILiquidityHub} from '../interfaces/ILiquidityHub.sol';
 import {IBorrowModule} from '../interfaces/IBorrowModule.sol';
+import {IReserveInterestRateStrategy} from '../../src/interfaces/IReserveInterestRateStrategy.sol';
+import {DataTypes} from '../libraries/types/DataTypes.sol';
 
 contract BorrowModule is IBorrowModule {
   using WadRayMath for uint256;
@@ -20,6 +22,8 @@ contract BorrowModule is IBorrowModule {
   // keep hooks to be executed by LiquidityHub when there is supply/withdraw actions
 
   // fetch liquidity from liquidityHub
+  address public liquidityHub;
+  address public interestRateStrategy;
 
   struct Reserve {
     uint256 id;
@@ -27,6 +31,7 @@ contract BorrowModule is IBorrowModule {
     uint256 totalDebt;
     uint256 lastUpdateIndex;
     uint256 lastUpdateTimestamp;
+    uint256 borrowRate;
     ReserveConfig config;
   }
 
@@ -38,8 +43,7 @@ contract BorrowModule is IBorrowModule {
   }
 
   struct UserConfig {
-    uint256 principalBalance;
-    uint256 interestBalance;
+    uint256 balance;
     uint256 lastUpdateIndex;
     uint256 lastUpdateTimestamp;
   }
@@ -49,10 +53,9 @@ contract BorrowModule is IBorrowModule {
   // assetId => reserveData
   mapping(uint256 => Reserve) public reserves;
 
-  address public liquidityHub;
-
-  constructor(address liquidityHubAddress) {
+  constructor(address liquidityHubAddress, address interestRateStrategyAddress) {
     liquidityHub = liquidityHubAddress;
+    interestRateStrategy = interestRateStrategyAddress;
   }
 
   function getReserve(uint256 assetId) external view returns (Reserve memory) {
@@ -73,10 +76,9 @@ contract BorrowModule is IBorrowModule {
     UserConfig memory u = users[assetId][user];
 
     return
-      u.principalBalance +
-      u.principalBalance.rayMul(
+      u.balance.rayMul(
         MathUtils.calculateCompoundedInterest(
-          u.lastUpdateIndex,
+          getInterestRate(assetId),
           uint40(u.lastUpdateTimestamp),
           block.timestamp
         )
@@ -86,52 +88,23 @@ contract BorrowModule is IBorrowModule {
   function getReserveDebt(uint256 assetId) external view returns (uint256) {
     Reserve storage r = reserves[assetId];
     return
-      r.totalDebt +
       r.totalDebt.rayMul(
         MathUtils.calculateCompoundedInterest(
-          r.lastUpdateIndex,
+          getInterestRate(assetId),
           uint40(r.lastUpdateTimestamp),
           block.timestamp
         )
       );
   }
 
-  // TODO: Implement borrow, calls liquidity hub draw method
   function borrow(uint256 assetId, uint256 amount) external {
     Reserve storage r = reserves[assetId];
     _validateBorrow(r, amount);
+    // TODO HF check
 
     ILiquidityHub(liquidityHub).draw(assetId, amount);
 
-    _updateState(r);
-
-    // TODO HF check
-
-    // update user debt balance
-    UserConfig storage u = users[assetId][msg.sender];
-    // accrue interest
-    // TODO: Risk premium for user and reserve
-    u.principalBalance +=
-      u.principalBalance.rayMul(
-        MathUtils.calculateCompoundedInterest(
-          u.lastUpdateIndex,
-          uint40(u.lastUpdateTimestamp),
-          block.timestamp
-        )
-      ) +
-      amount;
-    u.lastUpdateTimestamp = block.timestamp;
-
-    // update reserve debt balance
-    r.totalDebt +=
-      r.totalDebt.rayMul(
-        MathUtils.calculateCompoundedInterest(
-          r.lastUpdateIndex,
-          uint40(r.lastUpdateTimestamp),
-          block.timestamp
-        )
-      ) +
-      amount;
+    _updateState(r, assetId, amount, msg.sender);
 
     // transfer liquidity to msg.sender
     IERC20(reserves[assetId].asset).safeTransfer(msg.sender, amount);
@@ -140,10 +113,16 @@ contract BorrowModule is IBorrowModule {
   }
 
   // TODO: Implement repay, calls liquidity hub restore method
-  function repay(uint256 assetId, uint256 amount, address onBehalfOf) external {
-    ILiquidityHub(liquidityHub).restore(assetId, amount, onBehalfOf);
+  // TODO: onBehalfOf
+  function repay(uint256 assetId, uint256 amount) external {
+    ILiquidityHub(liquidityHub).restore(assetId, amount);
 
-    emit Repaid(assetId, onBehalfOf, amount);
+    emit Repaid(assetId, msg.sender, amount);
+  }
+
+  function getInterestRate(uint256 assetId) public view returns (uint256) {
+    // read from state, convert to ray
+    return reserves[assetId].borrowRate * 1e23;
   }
 
   // /////
@@ -160,6 +139,19 @@ contract BorrowModule is IBorrowModule {
       rf: params.rf,
       borrowable: params.borrowable
     });
+
+    reserves[assetId].borrowRate = IReserveInterestRateStrategy(interestRateStrategy)
+      .calculateInterestRates(
+        DataTypes.CalculateInterestRatesParams({
+          liquidityAdded: 0,
+          liquidityTaken: 0,
+          totalDebt: 0,
+          reserveFactor: params.rf,
+          assetId: reserves[assetId].id,
+          virtualUnderlyingBalance: 0,
+          usingVirtualBalance: false
+        })
+      );
   }
 
   function updateReserve(uint256 assetId, ReserveConfig memory params) external {
@@ -174,30 +166,78 @@ contract BorrowModule is IBorrowModule {
     });
   }
 
-  function getInterestRate() public pure returns (uint256) {
-    // TODO: call from interest rate strategy
-    return 0;
-  }
-
-  function calculateInterestRates() public pure returns (uint256) {
-    // borrowRate
-    return 0;
+  // TODO: access control
+  function updateInterestRateStrategy(address newInterestRateStrategy) external {
+    interestRateStrategy = newInterestRateStrategy;
   }
 
   function _validateBorrow(Reserve storage reserve, uint256 amount) internal view {
     require(reserve.config.borrowable, 'RESERVE_NOT_BORROWABLE');
   }
 
-  function _updateState(Reserve storage reserve) internal {
-    // TODO: Move this call to IR
-    uint256 borrowRate = calculateInterestRates(); // TODO: coupling here, must be more abstract?
+  /// @dev does 2 things - update borrow rate for this asset; update user and reserve debt balances
+  function _updateState(
+    Reserve storage reserve,
+    uint256 assetId,
+    uint256 amount,
+    address user
+  ) internal {
+    UserConfig storage userConfig = users[assetId][user];
+    _accrueUserInterest(userConfig, reserve, assetId, amount);
+
+    reserves[assetId].borrowRate = IReserveInterestRateStrategy(interestRateStrategy)
+      .calculateInterestRates(
+        DataTypes.CalculateInterestRatesParams({
+          liquidityAdded: 0, // TODO
+          liquidityTaken: 0, // TODO
+          totalDebt: reserve.totalDebt,
+          reserveFactor: reserve.config.rf,
+          assetId: reserve.id,
+          virtualUnderlyingBalance: 0, // TODO
+          usingVirtualBalance: false // TODO
+        })
+      );
+
     uint256 cumulatedInterest = MathUtils.calculateCompoundedInterest(
-      borrowRate,
+      getInterestRate(assetId),
       uint40(reserve.lastUpdateTimestamp),
       block.timestamp
     );
+    reserve.lastUpdateIndex = reserve.totalDebt.rayMul(cumulatedInterest); // TODO: update index
+  }
 
-    reserve.lastUpdateIndex = reserve.totalDebt.rayMul(cumulatedInterest);
+  function _accrueUserInterest(
+    UserConfig storage user,
+    Reserve storage reserve,
+    uint256 assetId,
+    uint256 amount
+  ) internal {
+    // update user debt balance
+    // accrue interest
+    // TODO: Risk premium for user and reserve
+    user.balance =
+      MathUtils
+        .calculateCompoundedInterest(
+          getInterestRate(assetId),
+          uint40(user.lastUpdateTimestamp),
+          block.timestamp
+        )
+        .rayMul(user.balance) +
+      amount;
+    user.lastUpdateTimestamp = block.timestamp;
+
+    reserve.totalDebt =
+      MathUtils
+        .calculateCompoundedInterest(
+          getInterestRate(assetId),
+          uint40(reserve.lastUpdateTimestamp),
+          block.timestamp
+        )
+        .rayMul(reserve.totalDebt) +
+      amount;
+
     reserve.lastUpdateTimestamp = block.timestamp;
+
+    // TODO: update index
   }
 }

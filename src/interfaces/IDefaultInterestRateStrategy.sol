@@ -15,8 +15,8 @@ interface IDefaultInterestRateStrategy is IReserveInterestRateStrategy {
    * @param assetId address of the reserve that has new interest rate data set
    * @param optimalUsageRatio The optimal usage ratio, in bps
    * @param baseVariableBorrowRate The base variable borrow rate, in bps
-   * @param variableRateSlope1 The slope of the variable interest curve, before hitting the optimal ratio, in bps
-   * @param variableRateSlope2 The slope of the variable interest curve, after hitting the optimal ratio, in bps
+   * @param variableRateSlope1 The slope of the variable interest curve, before hitting the optimal ratio, in bps interest rate per bps usage ratio
+   * @param variableRateSlope2 The slope of the variable interest curve, after hitting the optimal ratio, in bps interest rate per bps usage ratio
    */
   event RateDataUpdate(
     uint256 indexed assetId,
@@ -45,8 +45,8 @@ interface IDefaultInterestRateStrategy is IReserveInterestRateStrategy {
    *
    * @param optimalUsageRatio The optimal usage ratio, in bps (0-10000)
    * @param baseVariableBorrowRate The base variable borrow rate, in bps
-   * @param variableRateSlope1 The slope of the variable interest curve, before hitting the optimal ratio, in bps
-   * @param variableRateSlope2 The slope of the variable interest curve, after hitting the optimal ratio, in bps
+   * @param variableRateSlope1 The slope of the variable interest curve, before hitting the optimal ratio, in bps interest rate per bps usage ratio
+   * @param variableRateSlope2 The slope of the variable interest curve, after hitting the optimal ratio, in bps interest rate per bps usage ratio
    */
   struct InterestRateData {
     uint16 optimalUsageRatio;

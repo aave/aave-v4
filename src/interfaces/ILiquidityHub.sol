@@ -8,5 +8,5 @@ pragma solidity ^0.8.0;
  */
 interface ILiquidityHub {
   function draw(uint256 assetId, uint256 amount) external;
-  function restore(uint256 assetId, uint256 amount, address onBehalfOf) external;
+  function restore(uint256 assetId, uint256 amount) external;
 }

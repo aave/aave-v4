@@ -15,6 +15,7 @@ import 'src/interfaces/IBorrowModule.sol';
 import './mocks/MockERC20.sol';
 import './mocks/MockPriceOracle.sol';
 import './mocks/MockBorrowModuleCreditLine.sol';
+import '../src/contracts/DefaultReserveInterestRateStrategy.sol';
 
 import './Utils.t.sol';
 
@@ -33,13 +34,20 @@ contract Events {
     uint16 indexed referralCode
   );
   event Withdraw(uint256 indexed reserve, address indexed user, address indexed to, uint256 amount);
+  event Borrowed(uint256 indexed assetId, address user, uint256 amount);
+  event Repaid(uint256 indexed assetId, address user, uint256 amount);
 }
 
-library Errors {
+library TestErrors {
   // Aave
   bytes constant NOT_AVAILABLE_LIQUIDITY = 'NOT_AVAILABLE_LIQUIDITY';
   bytes constant RESERVE_NOT_ACTIVE = 'RESERVE_NOT_ACTIVE';
   bytes constant ASSET_NOT_LISTED = 'ASSET_NOT_LISTED';
+  bytes constant INVALID_AMOUNT = 'INVALID_AMOUNT';
+  bytes constant CAP_EXCEEDED = 'CAP_EXCEEDED';
+  bytes constant INSUFFICIENT_LIQUIDITY = 'INSUFFICIENT_LIQUIDITY';
+  bytes constant RESERVE_NOT_BORROWABLE = 'RESERVE_NOT_BORROWABLE';
+  bytes constant INVALID_RESERVE = 'INVALID_RESERVE';
 }
 
 abstract contract BaseTest is Test, Events {
@@ -55,15 +63,17 @@ abstract contract BaseTest is Test, Events {
   LiquidityHub hub;
   BorrowModule bm;
   MockBorrowModuleCreditLine bmcl;
+  DefaultReserveInterestRateStrategy creditLineIRStrategy;
 
+  address internal mockAddressesProvider = makeAddr('mockAddressesProvider');
   address internal USER1 = makeAddr('USER1');
   address internal USER2 = makeAddr('USER2');
 
   function setUp() public virtual {
     oracle = new MockPriceOracle();
+    creditLineIRStrategy = new DefaultReserveInterestRateStrategy(mockAddressesProvider);
     hub = new LiquidityHub(address(oracle));
-    bm = new BorrowModule(address(hub));
-    bmcl = new MockBorrowModuleCreditLine(address(hub));
+    bm = new BorrowModule(address(hub), address(creditLineIRStrategy));
     dai = new MockERC20();
     eth = new MockERC20();
     usdc = new MockERC20();

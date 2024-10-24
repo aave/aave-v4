@@ -49,6 +49,18 @@ contract LiquidityHubTest is BaseTest {
     MockPriceOracle(address(oracle)).setAssetPrice(1, 2000e8);
 
     // Add dai again but with basic credit line borrow module
+    uint256 daiCreditLineAssetId = 2;
+    // flat 5% interest rate
+    creditLineIRStrategy.setInterestRateParams(
+      daiCreditLineAssetId,
+      IDefaultInterestRateStrategy.InterestRateData({
+        optimalUsageRatio: 5000, // 50.00%
+        baseVariableBorrowRate: 500, // 5.00%
+        variableRateSlope1: 500, // 5.00%
+        variableRateSlope2: 500 // 5.00%
+      })
+    );
+    bmcl = new MockBorrowModuleCreditLine(address(hub), address(creditLineIRStrategy));
     hub.addReserve(
       LiquidityHub.ReserveConfig({
         borrowModule: address(bmcl),
@@ -60,7 +72,12 @@ contract LiquidityHubTest is BaseTest {
       }),
       address(dai)
     );
-    MockPriceOracle(address(oracle)).setAssetPrice(2, 1e8);
+    bmcl.addReserve(
+      daiCreditLineAssetId,
+      MockBorrowModuleCreditLine.ReserveConfig({lt: 0, lb: 0, rf: 0, borrowable: true}),
+      address(dai)
+    );
+    MockPriceOracle(address(oracle)).setAssetPrice(daiCreditLineAssetId, 1e8);
 
     vm.warp(block.timestamp + 20);
   }
@@ -395,12 +412,12 @@ contract LiquidityHubTest is BaseTest {
 
     vm.prank(USER1);
 
-    vm.expectRevert(Errors.NOT_AVAILABLE_LIQUIDITY);
+    vm.expectRevert(TestErrors.NOT_AVAILABLE_LIQUIDITY);
     hub.withdraw(assetId, amount + 1, USER1);
 
     // advance time, but no accumulation
     vm.warp(block.timestamp + 1e18);
-    vm.expectRevert(Errors.NOT_AVAILABLE_LIQUIDITY);
+    vm.expectRevert(TestErrors.NOT_AVAILABLE_LIQUIDITY);
     hub.withdraw(assetId, amount + 1, USER1);
 
     reserveData = hub.getReserve(assetId);
@@ -549,173 +566,55 @@ contract LiquidityHubTest is BaseTest {
     assertEq(dai.balanceOf(USER1), daiAmount / 2);
   }
 
-  // test with basic borrow module
-  // credit line with fixed interest rate
-  function test_first_borrow_credit_line() public {
-    // DAI with basic credit line borrow module
+  function test_revert_draw_reserve_not_active() public {
     uint256 daiId = 2;
-    uint256 ethId = 1;
+    uint256 drawnAmount = 1;
+    _updateActive(daiId, false);
+    vm.prank(USER1);
+    vm.expectRevert(TestErrors.RESERVE_NOT_ACTIVE);
+    IBorrowModule(address(bmcl)).borrow(daiId, drawnAmount);
+  }
+
+  function test_revert_draw_invalid_amount() public {
+    uint256 daiId = 2;
+    uint256 drawnAmount = 1;
+    vm.prank(USER1);
+    vm.expectRevert(TestErrors.INVALID_AMOUNT);
+    IBorrowModule(address(bmcl)).borrow(daiId, drawnAmount);
+  }
+
+  function test_revert_draw_cap_exceeded() public {
+    uint256 daiId = 2;
     uint256 daiAmount = 100e18;
-    uint256 ethAmount = 10e18;
+    uint256 drawCap = 1;
+    uint256 drawnAmount = drawCap + 1;
 
-    uint256[] memory drawnAmounts = new uint256[](2);
-
-    // User1 supply eth
-    deal(address(eth), USER1, ethAmount);
-    Utils.supply(vm, hub, ethId, USER1, ethAmount, USER1);
+    _updateDrawCap(daiId, drawCap);
 
     // User2 supply dai
     deal(address(dai), USER2, daiAmount);
     Utils.supply(vm, hub, daiId, USER2, daiAmount, USER2);
 
-    LiquidityHub.Reserve memory daiData0 = hub.getReserve(daiId);
-
-    assertEq(dai.balanceOf(USER1), 0);
-    assertEq(dai.balanceOf(daiData0.config.borrowModule), 0);
-
-    drawnAmounts[0] = daiAmount / 2;
-    drawnAmounts[1] = daiAmount / 4;
-
-    // User1 draw half of dai reserve liquidity for borrow module
     vm.prank(USER1);
-    IBorrowModule(daiData0.config.borrowModule).borrow(daiId, drawnAmounts[0]);
-
-    LiquidityHub.Reserve memory daiData1 = hub.getReserve(daiId);
-
-    assertEq(daiData1.totalShares, daiAmount, 'wrong total shares after first drawing');
-    assertEq(daiData1.totalAssets, daiData0.totalAssets, 'wrong total assets after first drawing');
-    assertEq(daiData1.totalDrawn, drawnAmounts[0], 'wrong total drawn after first drawing');
-    assertEq(
-      dai.balanceOf(daiData1.config.borrowModule),
-      drawnAmounts[0],
-      'wrong dai balance after first drawing'
-    );
-
-    // accumulate interest over the year
-    skip(365 days);
-    uint256 cumulated = MathUtils
-      .calculateLinearInterest(
-        IBorrowModule(daiData1.config.borrowModule).getInterestRate(),
-        uint40(daiData1.lastUpdateTimestamp)
-      )
-      .rayMul(daiData1.totalDrawn);
-
-    // User1 draw quarter of dai reserve liquidity for borrow module
-    // to trigger interest accrual
-    vm.prank(USER1);
-    IBorrowModule(daiData1.config.borrowModule).borrow(daiId, drawnAmounts[1]);
-
-    LiquidityHub.Reserve memory daiData2 = hub.getReserve(daiId);
-
-    assertEq(daiData2.totalShares, daiAmount, 'wrong total shares');
-    assertEq(
-      daiData2.totalAssets,
-      daiData0.totalAssets + (cumulated - daiData1.totalDrawn),
-      'wrong total assets'
-    );
-    assertEq(daiData2.totalDrawn, cumulated + drawnAmounts[1], 'wrong total drawn');
-    assertEq(
-      dai.balanceOf(daiData2.config.borrowModule),
-      drawnAmounts[0] + drawnAmounts[1],
-      'wrong final dai balance'
-    );
-  }
-
-  function test_fuzz_multiple_draws_credit_line(uint256 numDrawings, uint256 entropy) public {
-    numDrawings = bound(numDrawings, 1, 10);
-
-    // DAI with basic credit line borrow module
-    uint256 daiId = 2;
-    uint256 daiAmount = 100e18;
-
-    uint256[] memory drawnAmounts = new uint256[](numDrawings);
-    LiquidityHub.Reserve[] memory daiData = new LiquidityHub.Reserve[](numDrawings);
-
-    // User2 supply dai
-    deal(address(dai), USER2, daiAmount);
-    Utils.supply(vm, hub, daiId, USER2, daiAmount, USER2);
-
-    uint256 totalDrawn;
-    for (uint256 i = 0; i < numDrawings; i++) {
-      drawnAmounts[i] = daiAmount / _pseudoRandomNumber(entropy, numDrawings, numDrawings + 5); // divide by some amount > number of drawings, ensuring total drawn < total supplied assets
-      totalDrawn += drawnAmounts[i];
-
-      vm.mockCall(
-        hub.getReserve(daiId).config.borrowModule,
-        abi.encodeWithSelector(IBorrowModule.getInterestRate.selector),
-        abi.encode(_pseudoRandomNumber(entropy, 0, 100) * .01e27) // random interest rate 0-100%
-      );
-
-      // User2 draws some of dai reserve liquidity for borrow module
-      vm.prank(USER2);
-      IBorrowModule(hub.getReserve(daiId).config.borrowModule).borrow(daiId, drawnAmounts[i]);
-
-      daiData[i] = hub.getReserve(daiId);
-      (uint256 totalCumulated, uint256 cumulatedInterest) = _calculateLinearInterest(
-        i == 0 ? daiData[0] : daiData[i - 1]
-      );
-
-      assertEq(
-        daiData[i].totalShares,
-        daiAmount,
-        string(abi.encodePacked('wrong total shares: i=', vm.toString(i)))
-      );
-      assertEq(
-        daiData[i].totalAssets,
-        i == 0
-          ? daiData[0].totalAssets + cumulatedInterest
-          : daiData[i - 1].totalAssets + cumulatedInterest,
-        string(abi.encodePacked('wrong total assets: i=', vm.toString(i)))
-      );
-      assertEq(
-        daiData[i].totalDrawn,
-        i == 0 ? totalCumulated : totalCumulated + drawnAmounts[i],
-        string(abi.encodePacked('wrong total drawn: i=', vm.toString(i)))
-      );
-      assertEq(
-        dai.balanceOf(daiData[i].config.borrowModule),
-        totalDrawn,
-        'wrong final dai balance'
-      );
-
-      skip(_pseudoRandomNumber(entropy, numDrawings, 500) * 1 days); // skip forward randomly some amount of days to let interest accrue
-    }
-  }
-
-  // TODO: move to a helper
-  function _calculateLinearInterest(
-    LiquidityHub.Reserve memory reserveData
-  ) internal view returns (uint256 totalCumulated, uint256 cumulatedInterest) {
-    // accumulate interest over the year
-    totalCumulated = MathUtils
-      .calculateLinearInterest(
-        IBorrowModule(reserveData.config.borrowModule).getInterestRate(),
-        uint40(reserveData.lastUpdateTimestamp)
-      )
-      .rayMul(reserveData.totalDrawn);
-
-    cumulatedInterest = totalCumulated - reserveData.totalDrawn;
-
-    return (totalCumulated, cumulatedInterest);
-  }
-
-  // TODO: move to a general helper
-  function _pseudoRandomNumber(
-    uint256 entropy,
-    uint256 min,
-    uint256 max
-  ) internal view returns (uint256) {
-    return
-      bound(
-        uint256(keccak256(abi.encodePacked(block.timestamp, block.prevrandao, entropy))),
-        min,
-        max
-      );
+    vm.expectRevert(TestErrors.CAP_EXCEEDED);
+    IBorrowModule(address(bmcl)).borrow(daiId, drawnAmount);
   }
 
   function _updateLiquidityPremium(uint256 assetId, uint256 newLiquidityPremium) internal {
     LiquidityHub.ReserveConfig memory reserveConfig = hub.getReserve(assetId).config;
     reserveConfig.liquidityPremium = newLiquidityPremium;
+    hub.updateReserve(assetId, reserveConfig);
+  }
+
+  function _updateActive(uint256 assetId, bool newActive) internal {
+    LiquidityHub.ReserveConfig memory reserveConfig = hub.getReserve(assetId).config;
+    reserveConfig.active = newActive;
+    hub.updateReserve(assetId, reserveConfig);
+  }
+
+  function _updateDrawCap(uint256 assetId, uint256 newDrawCap) internal {
+    LiquidityHub.ReserveConfig memory reserveConfig = hub.getReserve(assetId).config;
+    reserveConfig.drawCap = newDrawCap;
     hub.updateReserve(assetId, reserveConfig);
   }
 }

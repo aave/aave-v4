@@ -72,6 +72,7 @@ contract LiquidityHub is ILiquidityHub {
     return reserves[assetId];
   }
 
+  // TODO: convert all user-related functions to draw modules
   function getUser(uint256 assetId, address user) external view returns (UserConfig memory) {
     UserConfig memory u = users[assetId][user];
 
@@ -242,7 +243,7 @@ contract LiquidityHub is ILiquidityHub {
     emit Draw(assetId, reserve.config.borrowModule, amount);
   }
 
-  function restore(uint256 assetId, uint256 amount, address onBehalfOf) external {}
+  function restore(uint256 assetId, uint256 amount) external {}
 
   //
   // Internal
@@ -254,7 +255,7 @@ contract LiquidityHub is ILiquidityHub {
     require(reserve.config.active, 'RESERVE_NOT_ACTIVE');
     // supply cap not reached
     require(
-      reserve.config.supplyCap == 0 || reserve.config.drawCap > reserve.totalAssets + amount,
+      reserve.config.supplyCap == 0 || reserve.config.supplyCap > reserve.totalAssets + amount,
       'CAP_EXCEEDED'
     );
   }
@@ -281,7 +282,7 @@ contract LiquidityHub is ILiquidityHub {
 
   function _updateState(Reserve storage reserve) internal {
     // Update interest rates
-    uint256 borrowRate = IBorrowModule(reserve.config.borrowModule).getInterestRate(); // TODO: coupling here, must be more abstract?
+    uint256 borrowRate = IBorrowModule(reserve.config.borrowModule).getInterestRate(reserve.id); // TODO: coupling here, must be more abstract?
     // TODO: only borrowRate? supplyRate can be calculated using borrowRate and RF
     // borrow module and liquidity hub coupling
 
