@@ -216,24 +216,24 @@ contract BorrowModule is IBorrowModule {
     // accrue interest
     // TODO: Risk premium for user and reserve
     user.balance =
-      MathUtils
-        .calculateCompoundedInterest(
+      user.balance.rayMul(
+        MathUtils.calculateCompoundedInterest(
           getInterestRate(assetId),
           uint40(user.lastUpdateTimestamp),
           block.timestamp
         )
-        .rayMul(user.balance) +
+      ) +
       amount;
     user.lastUpdateTimestamp = block.timestamp;
 
     reserve.totalDebt =
-      MathUtils
-        .calculateCompoundedInterest(
+      reserve.totalDebt.rayMul(
+        MathUtils.calculateCompoundedInterest(
           getInterestRate(assetId),
           uint40(reserve.lastUpdateTimestamp),
           block.timestamp
         )
-        .rayMul(reserve.totalDebt) +
+      ) +
       amount;
 
     reserve.lastUpdateTimestamp = block.timestamp;

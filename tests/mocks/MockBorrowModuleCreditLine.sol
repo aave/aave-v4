@@ -178,16 +178,22 @@ contract MockBorrowModuleCreditLine is IBorrowModule {
     uint256 amount
   ) internal {
     user.balance =
-      MathUtils
-        .calculateLinearInterest(getInterestRate(assetId), uint40(user.lastUpdateTimestamp))
-        .rayMul(user.balance) +
+      user.balance.rayMul(
+        MathUtils.calculateLinearInterest(
+          getInterestRate(assetId),
+          uint40(user.lastUpdateTimestamp)
+        )
+      ) +
       amount;
     user.lastUpdateTimestamp = block.timestamp;
 
     reserve.totalDebt =
-      MathUtils
-        .calculateLinearInterest(getInterestRate(assetId), uint40(reserve.lastUpdateTimestamp))
-        .rayMul(reserve.totalDebt) +
+      reserve.totalDebt.rayMul(
+        MathUtils.calculateLinearInterest(
+          getInterestRate(assetId),
+          uint40(reserve.lastUpdateTimestamp)
+        )
+      ) +
       amount;
 
     reserve.lastUpdateTimestamp = block.timestamp;

@@ -298,9 +298,9 @@ contract LiquidityHub is ILiquidityHub {
     if (elapsed > 0) {
       console2.log('_accrueReserveInterest');
       // linear interest
-      uint256 cumulated = MathUtils
-        .calculateLinearInterest(borrowRate, uint40(r.lastUpdateTimestamp))
-        .rayMul(r.totalDrawn); // TODO rounding
+      uint256 cumulated = r.totalDrawn.rayMul(
+        MathUtils.calculateLinearInterest(borrowRate, uint40(r.lastUpdateTimestamp))
+      ); // TODO rounding
       console2.log(
         'cumulated: %e, drawn: %e, cumulatedInterest: %e',
         cumulated,
