@@ -12,10 +12,10 @@ import 'src/contracts/SharesMath.sol';
 import 'src/contracts/MathUtils.sol';
 import 'src/dependencies/openzeppelin/IERC20.sol';
 import 'src/interfaces/IBorrowModule.sol';
+import 'src/contracts/DefaultReserveInterestRateStrategy.sol';
 import './mocks/MockERC20.sol';
 import './mocks/MockPriceOracle.sol';
 import './mocks/MockBorrowModuleCreditLine.sol';
-import '../src/contracts/DefaultReserveInterestRateStrategy.sol';
 
 import './Utils.t.sol';
 
