@@ -240,7 +240,7 @@ contract BorrowModuleCreditLineTest is BaseTest {
     // User1 draw 25% of dai reserve liquidity for borrow module
     vm.prank(USER1);
     IBorrowModule(address(bmcl)).borrow(daiId, drawnAmounts[1]);
-    // User1 draw 20% of dai reserve liquidity for borrow module
+    // User2 draw 20% of dai reserve liquidity for borrow module
     vm.prank(USER2);
     IBorrowModule(address(bmcl)).borrow(daiId, drawnAmounts[2]);
 
