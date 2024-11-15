@@ -59,7 +59,6 @@ contract LiquidityHub is ILiquidityHub {
     return assets[assetId];
   }
 
-  // TODO: convert all user-related functions to draw modules
   function getSpokeAssetConfig(
     uint256 assetId,
     address spoke
@@ -80,6 +79,7 @@ contract LiquidityHub is ILiquidityHub {
       totalAssets: 0,
       totalDrawn: 0,
       lastUpdateTimestamp: block.timestamp,
+      currentBorrowRate: 0,
       config: AssetConfig({
         decimals: params.decimals,
         active: params.active,
@@ -109,14 +109,14 @@ contract LiquidityHub is ILiquidityHub {
   // Users
   // /////
 
-  /// @dev risk premium is calculated from the borrow module and passed upon every action
+  /// @dev risk premium is calculated from the spoke and passed upon every action
   function supply(uint256 assetId, uint256 amount, uint256 riskPremium) external {
     Asset storage asset = assets[assetId];
     SpokeConfig memory spoke = spokeAssetConfigs[assetId][msg.sender];
 
     _validateSupply(asset, amount);
 
-    // update indexes and IRs
+    // Update indexes and IRs
     _updateState(asset, spoke.drawnLiquidity, riskPremium, amount, 0);
 
     // TODO Mitigate inflation attack (burn some amount if first supply)
@@ -150,12 +150,12 @@ contract LiquidityHub is ILiquidityHub {
     emit Withdraw(assetId, msg.sender, to, amount);
   }
 
-  // TODO: authorization - only borrow module
+  // TODO: authorization - only spokes
   function draw(uint256 assetId, address to, uint256 amount, uint256 riskPremium) external {
     Asset storage asset = assets[assetId];
     SpokeConfig memory spoke = spokeAssetConfigs[assetId][msg.sender];
 
-    _validateDrawLiquidity(asset, amount);
+    _validateDrawLiquidity(asset, amount, spoke.drawCap);
 
     _updateState(asset, spoke.drawnLiquidity, riskPremium, 0, amount);
 
@@ -184,6 +184,7 @@ contract LiquidityHub is ILiquidityHub {
   //
   // Internal
   //
+
   function _validateSupply(Asset storage asset, uint256 amount) internal view {
     require(assetsList[asset.id] != address(0), 'ASSET_NOT_LISTED');
     // TODO: Different states e.g. frozen, paused
@@ -199,17 +200,20 @@ contract LiquidityHub is ILiquidityHub {
     // TODO: Other cases of status (frozen, paused)
     require(asset.config.active, 'ASSET_NOT_ACTIVE');
 
-    // TODO: Check draw module is not withdrawing more than supplied
+    // TODO: Check spoke is not withdrawing more than supplied
 
     require(amount <= asset.totalAssets - asset.totalDrawn, 'NOT_AVAILABLE_LIQUIDITY');
   }
 
-  function _validateDrawLiquidity(Asset storage asset, uint256 amount) internal view {
+  function _validateDrawLiquidity(
+    Asset storage asset,
+    uint256 amount,
+    uint256 drawCap
+  ) internal view {
     // TODO: Other cases of status (frozen, paused)
     require(asset.config.active, 'ASSET_NOT_ACTIVE');
     require(
-      asset.config.drawCap == type(uint256).max ||
-        amount + asset.totalDrawn <= asset.config.drawCap,
+      drawCap == type(uint256).max || amount + asset.totalDrawn <= drawCap,
       'DRAW_CAP_EXCEEDED'
     );
     require(amount <= asset.totalAssets - asset.totalDrawn, 'NOT_AVAILABLE_LIQUIDITY');
@@ -223,7 +227,7 @@ contract LiquidityHub is ILiquidityHub {
     // TODO: Other cases of status (frozen, paused)
     require(asset.config.active, 'ASSET_NOT_ACTIVE');
 
-    // Esnure draw module is not restoring more than supplied
+    // Esnure spoke is not restoring more than supplied
     require(amount <= drawnLiquidity, 'INVALID_AMOUNT');
   }
 
@@ -245,7 +249,7 @@ contract LiquidityHub is ILiquidityHub {
           liquidityAdded: liquidityAdded,
           liquidityTaken: liquidityTaken,
           totalDebt: asset.totalDrawn,
-          assetFactor: 0, // TODO
+          reserveFactor: 0, // TODO
           assetId: asset.id,
           virtualUnderlyingBalance: asset.totalAssets,
           usingVirtualBalance: true
@@ -279,8 +283,12 @@ contract LiquidityHub is ILiquidityHub {
     }
   }
 
-  function _calculateWeightedInterestRate(uint256 borrowRate, uint256 newRiskPremium) internal {
+  function _calculateWeightedInterestRate(
+    uint256 borrowRate,
+    uint256 newRiskPremium,
+    uint256 spokeDrawnLiquidity
+  ) internal returns (uint256) {
     // TODO: Add new value risk premium to weighted average
-    // TODO: Calculate final rate based on borrow rate and weighted average risk premium across borrow modules
+    // TODO: Calculate final rate based on borrow rate and weighted average risk premium across spokes
   }
 }
