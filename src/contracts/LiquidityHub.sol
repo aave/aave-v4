@@ -17,16 +17,23 @@ contract LiquidityHub is ILiquidityHub {
   using WadRayMath for uint256;
   using SharesMath for uint256;
 
-  event Supply(
-    uint256 indexed reserve,
-    address user,
-    address indexed onBehalfOf,
-    uint256 amount,
-    uint16 indexed referralCode
-  );
-  event Withdraw(uint256 indexed reserve, address indexed user, address indexed to, uint256 amount);
+  event Supply(uint256 indexed reserve, address indexed spoke, uint256 amount);
 
-  event Draw(uint256 indexed reserve, address indexed borrowModule, uint256 amount);
+  event Withdraw(
+    uint256 indexed reserve,
+    address indexed spoke,
+    address indexed to,
+    uint256 amount
+  );
+
+  event Draw(uint256 indexed reserve, address indexed to, uint256 amount);
+
+  event Restore(uint256 indexed reserve, address indexed spoke, uint256 amount);
+
+  struct SpokeConfig {
+    uint256 drawCap;
+    uint256 drawnLiquidity;
+  }
 
   struct Reserve {
     uint256 id;
@@ -38,18 +45,10 @@ contract LiquidityHub is ILiquidityHub {
   }
 
   struct ReserveConfig {
-    address borrowModule;
     uint256 decimals;
     bool active; // TODO: frozen, paused
     uint256 supplyCap;
-    uint256 drawCap;
-    uint256 liquidityPremium; // in bps, so 10000 is 100.00%
-    // uint256 eModeCategory; // TODO eMode
-    // uint256 debtCeiling; // TODO isolation mode
-  }
-
-  struct UserConfig {
-    uint256 shares;
+    address irStrategy;
   }
 
   // asset id => reserve data
@@ -57,40 +56,28 @@ contract LiquidityHub is ILiquidityHub {
   address[] public reservesList; // TODO: Check if Enumerable or Set makes more sense
   uint256 public reserveCount;
 
-  // asset id => user address => user data
-  mapping(uint256 => mapping(address => UserConfig)) public users;
+  // asset id => spoke address => spoke config
+  mapping(uint256 => mapping(address => SpokeConfig)) public spokeReserveConfigs;
 
-  mapping(address => uint256) userRiskPremium; // in base currency terms
-
-  address public oracle;
-
-  constructor(address oracleAddress) {
-    oracle = oracleAddress;
-  }
+  // asset id => weighted average risk premium of asset
+  mapping(uint256 => uint256) public weightedAverageRiskPremium;
 
   function getReserve(uint256 assetId) external view returns (Reserve memory) {
     return reserves[assetId];
   }
 
   // TODO: convert all user-related functions to draw modules
-  function getUser(uint256 assetId, address user) external view returns (UserConfig memory) {
-    UserConfig memory u = users[assetId][user];
-
-    return u;
+  function getSpokeReserveConfig(
+    uint256 assetId,
+    address spoke
+  ) external view returns (SpokeConfig memory) {
+    return spokeReserveConfigs[assetId][spoke];
   }
 
-  function getUserBalance(uint256 assetId, address user) external view returns (uint256) {
-    return _getUserAssets(assetId, user);
-  }
+  function getSpokeBalance(uint256 assetId, address spoke) external view returns (uint256) {
+    SpokeConfig memory s = spokeReserveConfigs[assetId][spoke];
 
-  function getUserRiskPremium(address user) external view returns (uint256) {
-    return userRiskPremium[user];
-  }
-
-  function _getUserAssets(uint256 assetId, address user) internal view returns (uint256) {
-    UserConfig memory u = users[assetId][user];
-
-    return u.shares.toAssetsDown(reserves[assetId].totalAssets, reserves[assetId].totalShares);
+    return s.shares.toAssetsDown(reserves[assetId].totalAssets, reserves[assetId].totalShares);
   }
 
   // /////
@@ -107,12 +94,9 @@ contract LiquidityHub is ILiquidityHub {
       totalDrawn: 0,
       lastUpdateTimestamp: block.timestamp,
       config: ReserveConfig({
-        borrowModule: params.borrowModule,
         decimals: params.decimals,
         active: params.active,
-        supplyCap: params.supplyCap,
-        drawCap: params.drawCap,
-        liquidityPremium: params.liquidityPremium
+        supplyCap: params.supplyCap
       })
     });
     reserveCount++;
@@ -122,34 +106,29 @@ contract LiquidityHub is ILiquidityHub {
     // TODO: More sophisticated
     // TODO: AccessControl
     reserves[assetId].config = ReserveConfig({
-      borrowModule: params.borrowModule,
       decimals: params.decimals,
       active: params.active,
-      supplyCap: params.supplyCap,
-      drawCap: params.drawCap,
-      liquidityPremium: params.liquidityPremium
+      supplyCap: params.supplyCap
     });
+  }
+
+  function updateSpokeConfig(uint256 assetId, address spoke, uint256 drawCap) external {
+    // TODO: AccessControl
+    spokeReserveConfigs[assetId][spoke].drawCap = drawCap;
   }
 
   // /////
   // Users
   // /////
 
-  function supply(
-    uint256 assetId,
-    uint256 amount,
-    address onBehalfOf,
-    uint16 referralCode
-  ) external {
-    console2.log('- supply', msg.sender);
-    console2.log('  params:', assetId, amount, onBehalfOf);
+  function supply(uint256 assetId, uint256 amount, uint256 riskPremium) external {
     Reserve storage reserve = reserves[assetId];
-    UserConfig storage user = users[assetId][onBehalfOf];
+    SpokeConfig storage spoke = spokeReserveConfigs[assetId][msg.sender];
 
     _validateSupply(reserve, amount);
 
     // update indexes and IRs
-    _updateState(reserve); // TODO
+    _updateState(reserve, riskPremium); // TODO
     // TODO: init user lastUpdateIndex
     // TODO Set as collateral if first supply?
 
@@ -169,23 +148,21 @@ contract LiquidityHub is ILiquidityHub {
     //   reserve.totalShares
     // );
     require(sharesAmount > 0, 'INVALID_AMOUNT');
-    user.shares += sharesAmount;
     reserve.totalShares += sharesAmount;
     reserve.totalAssets += amount;
 
     // TODO: update avgRiskPremium if collateral
-    _updateRiskPremium(onBehalfOf);
+    _updateRiskPremium();
 
     // transferFrom
     IERC20(reservesList[assetId]).safeTransferFrom(msg.sender, address(this), amount); // TODO: fee-on-transfer
 
-    emit Supply(assetId, msg.sender, onBehalfOf, amount, referralCode);
+    emit Supply(assetId, msg.sender, amount);
   }
 
-  function withdraw(uint256 assetId, uint256 amount, address to) external {
-    // TODO: onBehalf
+  function withdraw(uint256 assetId, address to, uint256 amount, uint256 riskPremium) external {
     Reserve storage reserve = reserves[assetId];
-    UserConfig storage user = users[assetId][msg.sender];
+    SpokeConfig storage spoke = spokeReserveConfigs[assetId][msg.sender];
 
     // asset can be withdrawn
     _validateWithdraw(reserve, amount);
@@ -193,7 +170,7 @@ contract LiquidityHub is ILiquidityHub {
     // TODO HF check
 
     // update indexes and IRs
-    _updateState(reserve);
+    _updateState(reserve, riskPremium);
 
     // invokes borrow modules in case accounting update is needed
     // (eg, update premium for users borrowing using the asset as collateral)
@@ -203,12 +180,11 @@ contract LiquidityHub is ILiquidityHub {
     // user.onWithdraw( assetData, amount);
 
     uint256 sharesAmount = amount.toSharesUp(reserve.totalAssets, reserve.totalShares);
-    user.shares -= sharesAmount;
     reserve.totalShares -= sharesAmount;
     reserve.totalAssets -= amount;
 
     // TODO: update avgRiskPremium if collateral
-    _updateRiskPremium(msg.sender);
+    _updateRiskPremium();
 
     // transfer
     IERC20(reservesList[assetId]).safeTransfer(to, amount);
@@ -216,34 +192,42 @@ contract LiquidityHub is ILiquidityHub {
     emit Withdraw(assetId, msg.sender, to, amount);
   }
 
-  function refreshUserRiskPremium(address user) external {
-    _updateRiskPremium(user);
-  }
-
   // TODO: authorization - only borrow module
-  function draw(uint256 assetId, uint256 amount) external {
-    // TODO: onBehalf
+  function draw(uint256 assetId, address to, uint256 amount, uint256 riskPremium) external {
     Reserve storage reserve = reserves[assetId];
 
     _validateDrawLiquidity(reserve, amount);
 
     // update indexes and IRs
-    _updateState(reserve);
+    _updateState(reserve, riskPremium);
 
     // TODO: update avgRiskPremium if collateral
-    // if collateral
-    _updateRiskPremium(msg.sender);
+    _updateRiskPremium();
 
     // updates accounting
     reserve.totalDrawn += amount;
 
     // directly transfer funds to bm so that allowance doesn't need to be reset
-    IERC20(reservesList[assetId]).safeTransfer(reserve.config.borrowModule, amount);
+    IERC20(reservesList[assetId]).safeTransfer(to, amount);
 
-    emit Draw(assetId, reserve.config.borrowModule, amount);
+    emit Draw(assetId, to, amount);
   }
 
-  function restore(uint256 assetId, uint256 amount) external {}
+  function restore(uint256 assetId, uint256 amount, uint256 riskPremium) external {
+    Reserve storage reserve = reserves[assetId];
+
+    _validateRestore(reserve, amount);
+
+    _updateState(reserve, riskPremium);
+
+    _updateRiskPremium();
+
+    reserve.totalDrawn -= amount;
+
+    IERC20(reservesList[assetId]).safeTransferFrom(msg.sender, address(this), amount);
+
+    emit Restore(assetId, msg.sender, amount);
+  }
 
   //
   // Internal
@@ -255,32 +239,44 @@ contract LiquidityHub is ILiquidityHub {
     require(reserve.config.active, 'RESERVE_NOT_ACTIVE');
     // supply cap not reached
     require(
-      reserve.config.supplyCap == 0 || reserve.config.supplyCap > reserve.totalAssets + amount,
+      reserve.config.supplyCap == type(uint256).max ||
+        reserve.totalAssets + amount <= reserve.config.supplyCap,
       'CAP_EXCEEDED'
     );
   }
 
   function _validateWithdraw(Reserve storage reserve, uint256 amount) internal view {
+    // TODO: Other cases of status (frozen, paused)
     // asset can be withdrawn
     require(reserve.config.active, 'RESERVE_NOT_ACTIVE');
     // reserve with available liquidity
-    require(reserve.totalAssets >= amount, 'NOT_AVAILABLE_LIQUIDITY');
+    require(amount <= reserve.totalAssets - reserve.totalDrawn, 'NOT_AVAILABLE_LIQUIDITY');
   }
 
   function _validateDrawLiquidity(Reserve storage reserve, uint256 amount) internal view {
+    // TODO: Other cases of status (frozen, paused)
     // asset can be borrowed
     require(reserve.config.active, 'RESERVE_NOT_ACTIVE');
-    // TODO valid borrowModule
-    // Check enough liquidity (liquidity > amount)
-    require(reserve.totalAssets - reserve.totalDrawn >= amount, 'INVALID_AMOUNT');
     // draw cap not reached
     require(
-      reserve.config.drawCap == 0 || reserve.config.drawCap > reserve.totalDrawn + amount,
+      reserve.config.drawCap == type(uint256).max ||
+        amount + reserve.totalDrawn <= reserve.config.drawCap,
       'CAP_EXCEEDED'
     );
+    // Check enough liquidity (amount < liquidity)
+    require(amount <= reserve.totalAssets - reserve.totalDrawn, 'INVALID_AMOUNT');
   }
 
-  function _updateState(Reserve storage reserve) internal {
+  function _validateRestore(Reserve storage reserve, uint256 amount) internal view {
+    // TODO: Other cases of status (frozen, paused)
+    // asset can be borrowed
+    require(reserve.config.active, 'RESERVE_NOT_ACTIVE');
+
+    // Sanity check, already checked in spoke
+    require(amount <= reserve.totalDrawn, 'INVALID_AMOUNT');
+  }
+
+  function _updateState(Reserve storage reserve, uint256 riskPremium) internal {
     // Update interest rates
     uint256 borrowRate = IBorrowModule(reserve.config.borrowModule).getInterestRate(reserve.id); // TODO: coupling here, must be more abstract?
     // TODO: only borrowRate? supplyRate can be calculated using borrowRate and RF
