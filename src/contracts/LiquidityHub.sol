@@ -25,6 +25,8 @@ contract LiquidityHub is ILiquidityHub {
   struct SpokeConfig {
     uint256 drawCap; // asset denominated
     uint256 drawnShares;
+    uint256 supplyCap; // asset denominated
+    uint256 shares;
   }
 
   struct Asset {
@@ -128,12 +130,12 @@ contract LiquidityHub is ILiquidityHub {
   /// @dev risk premium is calculated from the spoke and passed upon every action
   function supply(uint256 assetId, uint256 amount, uint256 riskPremium) external returns (uint256) {
     Asset storage asset = assets[assetId];
-    SpokeConfig memory spoke = spokeAssetConfigs[assetId][msg.sender];
+    SpokeConfig storage spoke = spokeAssetConfigs[assetId][msg.sender];
 
     // Update indexes and IRs
     _updateState(asset, spoke.drawnShares, riskPremium, amount, 0);
 
-    _validateSupply(asset, amount);
+    _validateSupply(asset, spoke, amount);
 
     // TODO Mitigate inflation attack (burn some amount if first supply)
     uint256 sharesAmount = amount.toSharesDown(asset.totalAssets, asset.totalShares);
@@ -141,6 +143,7 @@ contract LiquidityHub is ILiquidityHub {
 
     asset.totalShares += sharesAmount;
     asset.totalAssets += amount;
+    spoke.shares += sharesAmount;
 
     // TODO: fee-on-transfer
     IERC20(assetsList[assetId]).safeTransferFrom(msg.sender, address(this), amount);
@@ -157,15 +160,16 @@ contract LiquidityHub is ILiquidityHub {
     uint256 riskPremium
   ) external returns (uint256) {
     Asset storage asset = assets[assetId];
-    SpokeConfig memory spoke = spokeAssetConfigs[assetId][msg.sender];
+    SpokeConfig storage spoke = spokeAssetConfigs[assetId][msg.sender];
 
     _updateState(asset, spoke.drawnShares, riskPremium, 0, amount);
 
-    _validateWithdraw(asset, amount);
+    _validateWithdraw(asset, spoke, amount);
 
     uint256 sharesAmount = amount.toSharesDown(asset.totalAssets, asset.totalShares);
     asset.totalShares -= sharesAmount;
     asset.totalAssets -= amount;
+    spoke.shares -= sharesAmount;
 
     IERC20(assetsList[assetId]).safeTransfer(to, amount);
 
@@ -186,7 +190,7 @@ contract LiquidityHub is ILiquidityHub {
 
     _updateState(asset, spoke.drawnShares, riskPremium, 0, amount);
 
-    _validateDrawLiquidity(asset, amount, spoke.drawCap);
+    _validateDraw(asset, amount, spoke.drawCap);
 
     uint256 sharesAmount = amount.toSharesUp(asset.totalAssets, asset.totalShares);
     asset.totalDrawnShares += sharesAmount;
@@ -230,22 +234,33 @@ contract LiquidityHub is ILiquidityHub {
   // Internal
   //
 
-  function _validateSupply(Asset storage asset, uint256 amount) internal view {
+  function _validateSupply(
+    Asset storage asset,
+    SpokeConfig storage spokeConfig,
+    uint256 amount
+  ) internal view {
     require(assetsList[asset.id] != address(0), 'ASSET_NOT_LISTED');
     // TODO: Different states e.g. frozen, paused
     require(asset.config.active, 'ASSET_NOT_ACTIVE');
     require(
-      asset.config.supplyCap == type(uint256).max ||
-        asset.totalAssets + amount <= asset.config.supplyCap,
+      spokeConfig.supplyCap == type(uint256).max ||
+        asset.totalAssets + amount <= spokeConfig.supplyCap,
       'SUPPLY_CAP_EXCEEDED'
     );
   }
 
-  function _validateWithdraw(Asset storage asset, uint256 amount) internal view {
+  function _validateWithdraw(
+    Asset storage asset,
+    SpokeConfig storage spoke,
+    uint256 amount
+  ) internal view {
     // TODO: Other cases of status (frozen, paused)
     require(asset.config.active, 'ASSET_NOT_ACTIVE');
 
-    // TODO: Check spoke is not withdrawing more than supplied
+    require(
+      amount.toSharesDown(asset.totalAssets, asset.totalShares) <= spoke.drawnShares,
+      'INVALID_AMOUNT'
+    );
 
     require(
       amount <=
@@ -254,11 +269,7 @@ contract LiquidityHub is ILiquidityHub {
     );
   }
 
-  function _validateDrawLiquidity(
-    Asset storage asset,
-    uint256 amount,
-    uint256 drawCap
-  ) internal view {
+  function _validateDraw(Asset storage asset, uint256 amount, uint256 drawCap) internal view {
     // TODO: Other cases of status (frozen, paused)
     require(asset.config.active, 'ASSET_NOT_ACTIVE');
     require(
