@@ -19,25 +19,25 @@ contract BorrowModule is IBorrowModule {
   struct Reserve {
     uint256 id;
     address asset;
-    uint256 totalDebt;
-    uint256 lastUpdateIndex;
-    uint256 lastUpdateTimestamp;
-    uint256 borrowRate;
+    // uint256 totalDebt;
+    // uint256 lastUpdateIndex;
+    // uint256 lastUpdateTimestamp;
     ReserveConfig config;
   }
 
   struct ReserveConfig {
     uint256 lt;
     uint256 lb; // TODO: liquidationProtocolFee
-    uint256 supplyCap;
     bool borrowable;
     bool collateral;
   }
 
   struct UserConfig {
-    uint256 balance;
-    uint256 lastUpdateIndex;
-    uint256 lastUpdateTimestamp;
+    uint256 supplyShares;
+    uint256 debtShares;
+    // uint256 balance;
+    // uint256 lastUpdateIndex;
+    // uint256 lastUpdateTimestamp;
   }
 
   // reserve id => user address => user data
@@ -62,6 +62,7 @@ contract BorrowModule is IBorrowModule {
   function getUserDebt(uint256 assetId, address user) external view returns (uint256) {
     UserConfig memory u = users[assetId][user];
 
+    // TODO: Instead use a getter from liquidity hub to get up-to-date user debt (with accrued debt)
     return
       u.balance.rayMul(
         MathUtils.calculateCompoundedInterest(
@@ -74,6 +75,8 @@ contract BorrowModule is IBorrowModule {
 
   function getReserveDebt(uint256 assetId) external view returns (uint256) {
     Reserve storage r = reserves[assetId];
+
+    // TODO: Instead use a getter from liquidity hub to get up-to-date reserve debt (with accrued debt)
     return
       r.totalDebt.rayMul(
         MathUtils.calculateCompoundedInterest(
@@ -86,7 +89,30 @@ contract BorrowModule is IBorrowModule {
 
   function supply(uint256 assetId, uint256 amount) external {
     Reserve storage r = reserves[assetId];
+
     _validateSupply(r, amount);
+
+    // TODO: Refresh risk premium of user, and pass into following function
+    uint256 newRiskPremium = 0;
+    uint256 userShares = ILiquidityHub(liquidityHub).supply(assetId, amount, newRiskPremium);
+
+    users[assetId][msg.sender].supplyShares += userShares;
+
+    emit Supplied(assetId, msg.sender, amount);
+  }
+
+  function withdraw(uint256 assetId, address to, uint256 amount) external {
+    Reserve storage r = reserves[assetId];
+
+    _validateWithdraw(r, amount);
+
+    // TODO: Refresh risk premium of user, and pass into following function
+    uint256 newRiskPremium = 0;
+    uint256 userShares = ILiquidityHub(liquidityHub).withdraw(assetId, to, amount, newRiskPremium);
+
+    users[assetId][msg.sender].supplyShares -= userShares;
+
+    emit Withdraw(assetId, msg.sender, amount);
   }
 
   function borrow(uint256 assetId, uint256 amount) external {
@@ -96,8 +122,6 @@ contract BorrowModule is IBorrowModule {
     // TODO HF check
 
     ILiquidityHub(liquidityHub).draw(assetId, amount);
-
-    _updateState(r, assetId, amount, msg.sender);
 
     // transfer liquidity to msg.sender
     IERC20(reserves[assetId].asset).safeTransfer(msg.sender, amount);
@@ -113,6 +137,7 @@ contract BorrowModule is IBorrowModule {
     emit Repaid(assetId, msg.sender, amount);
   }
 
+  // TODO: Needed?
   function getInterestRate(uint256 assetId) public view returns (uint256) {
     return ILiquidityHub(liquidityHub).getInterestRate(assetId);
   }
@@ -129,21 +154,9 @@ contract BorrowModule is IBorrowModule {
       lt: params.lt,
       lb: params.lb,
       rf: params.rf,
-      borrowable: params.borrowable
+      borrowable: params.borrowable,
+      collateral: params.collateral
     });
-
-    reserves[assetId].borrowRate = IReserveInterestRateStrategy(interestRateStrategy)
-      .calculateInterestRates(
-        DataTypes.CalculateInterestRatesParams({
-          liquidityAdded: 0,
-          liquidityTaken: 0,
-          totalDebt: 0,
-          reserveFactor: params.rf,
-          assetId: reserves[assetId].id,
-          virtualUnderlyingBalance: 0,
-          usingVirtualBalance: false
-        })
-      );
   }
 
   function updateReserve(uint256 assetId, ReserveConfig memory params) external {
@@ -154,82 +167,25 @@ contract BorrowModule is IBorrowModule {
       lt: params.lt,
       lb: params.lb,
       rf: params.rf,
-      borrowable: params.borrowable
+      borrowable: params.borrowable,
+      collateral: params.collateral
     });
   }
 
-  // TODO: access control
-  function updateInterestRateStrategy(address newInterestRateStrategy) external {
-    interestRateStrategy = newInterestRateStrategy;
+  function _validateSupply(Reserve storage reserve, uint256 amount) internal view {
+    // TODO: Decide where supply cap is checked
+    require(reserves[reserve.id] != address(0), 'RESERVE_NOT_LISTED');
+  }
+
+  function _validateWithdraw(Reserve storage reserve, uint256 amount) internal view {
+    // TODO: Call liqudity hub to get the conversion rate for assets to shares
+    /*require(
+      users[reserve.id][msg.sender].supplyShares >= amount.toSharesDown(),
+      'INSUFFICIENT_BALANCE'
+    );*/
   }
 
   function _validateBorrow(Reserve storage reserve, uint256 amount) internal view {
     require(reserve.config.borrowable, 'RESERVE_NOT_BORROWABLE');
-  }
-
-  /// @dev does 2 things - update borrow rate for this asset; update user and reserve debt balances
-  function _updateState(
-    Reserve storage reserve,
-    uint256 assetId,
-    uint256 amount,
-    address user
-  ) internal {
-    UserConfig storage userConfig = users[assetId][user];
-    _accrueUserInterest(userConfig, reserve, assetId, amount);
-
-    reserves[assetId].borrowRate = IReserveInterestRateStrategy(interestRateStrategy)
-      .calculateInterestRates(
-        DataTypes.CalculateInterestRatesParams({
-          liquidityAdded: 0, // TODO
-          liquidityTaken: 0, // TODO
-          totalDebt: reserve.totalDebt,
-          reserveFactor: reserve.config.rf,
-          assetId: reserve.id,
-          virtualUnderlyingBalance: 0, // TODO
-          usingVirtualBalance: false // TODO
-        })
-      );
-
-    uint256 cumulatedInterest = MathUtils.calculateCompoundedInterest(
-      getInterestRate(assetId),
-      uint40(reserve.lastUpdateTimestamp),
-      block.timestamp
-    );
-    reserve.lastUpdateIndex = reserve.totalDebt.rayMul(cumulatedInterest); // TODO: update index
-  }
-
-  function _accrueUserInterest(
-    UserConfig storage user,
-    Reserve storage reserve,
-    uint256 assetId,
-    uint256 amount
-  ) internal {
-    // update user debt balance
-    // accrue interest
-    // TODO: Risk premium for user and reserve
-    user.balance =
-      user.balance.rayMul(
-        MathUtils.calculateCompoundedInterest(
-          getInterestRate(assetId),
-          uint40(user.lastUpdateTimestamp),
-          block.timestamp
-        )
-      ) +
-      amount;
-    user.lastUpdateTimestamp = block.timestamp;
-
-    reserve.totalDebt =
-      reserve.totalDebt.rayMul(
-        MathUtils.calculateCompoundedInterest(
-          getInterestRate(assetId),
-          uint40(reserve.lastUpdateTimestamp),
-          block.timestamp
-        )
-      ) +
-      amount;
-
-    reserve.lastUpdateTimestamp = block.timestamp;
-
-    // TODO: update index
   }
 }
