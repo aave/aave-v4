@@ -181,6 +181,10 @@ contract LiquidityHub is ILiquidityHub {
     emit Restore(assetId, msg.sender, amount);
   }
 
+  function getInterestRate(uint256 assetId) public view returns (uint256) {
+    return assets[assetId].currentBorrowRate;
+  }
+
   //
   // Internal
   //

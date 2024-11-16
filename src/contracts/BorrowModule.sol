@@ -14,16 +14,7 @@ contract BorrowModule is IBorrowModule {
   using WadRayMath for uint256;
   using SafeERC20 for IERC20;
 
-  // debt balances, fetches indexes from liquidity layer
-
-  // keep collateral configuration
-  // By using BorrowModule, LPs can choose which collaterals are used to borrow their assets
-
-  // keep hooks to be executed by LiquidityHub when there is supply/withdraw actions
-
-  // fetch liquidity from liquidityHub
   address public liquidityHub;
-  address public interestRateStrategy;
 
   struct Reserve {
     uint256 id;
@@ -38,8 +29,9 @@ contract BorrowModule is IBorrowModule {
   struct ReserveConfig {
     uint256 lt;
     uint256 lb; // TODO: liquidationProtocolFee
-    uint256 rf;
+    uint256 supplyCap;
     bool borrowable;
+    bool collateral;
   }
 
   struct UserConfig {
@@ -48,14 +40,13 @@ contract BorrowModule is IBorrowModule {
     uint256 lastUpdateTimestamp;
   }
 
-  // asset id => user address => user data
+  // reserve id => user address => user data
   mapping(uint256 => mapping(address => UserConfig)) public users;
-  // assetId => reserveData
+  // reserve id => reserveData
   mapping(uint256 => Reserve) public reserves;
 
-  constructor(address liquidityHubAddress, address interestRateStrategyAddress) {
+  constructor(address liquidityHubAddress) {
     liquidityHub = liquidityHubAddress;
-    interestRateStrategy = interestRateStrategyAddress;
   }
 
   function getReserve(uint256 assetId) external view returns (Reserve memory) {
@@ -69,10 +60,6 @@ contract BorrowModule is IBorrowModule {
   }
 
   function getUserDebt(uint256 assetId, address user) external view returns (uint256) {
-    return _getUserDebt(assetId, user);
-  }
-
-  function _getUserDebt(uint256 assetId, address user) internal view returns (uint256) {
     UserConfig memory u = users[assetId][user];
 
     return
@@ -97,7 +84,13 @@ contract BorrowModule is IBorrowModule {
       );
   }
 
+  function supply(uint256 assetId, uint256 amount) external {
+    Reserve storage r = reserves[assetId];
+    _validateSupply(r, amount);
+  }
+
   function borrow(uint256 assetId, uint256 amount) external {
+    // TODO: On behalf of and referral code
     Reserve storage r = reserves[assetId];
     _validateBorrow(r, amount);
     // TODO HF check
@@ -121,8 +114,7 @@ contract BorrowModule is IBorrowModule {
   }
 
   function getInterestRate(uint256 assetId) public view returns (uint256) {
-    // read from state, convert to ray
-    return reserves[assetId].borrowRate * 1e23;
+    return ILiquidityHub(liquidityHub).getInterestRate(assetId);
   }
 
   // /////
