@@ -1,25 +1,22 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.0;
 
-import {SafeERC20} from '../dependencies/openzeppelin/SafeERC20.sol';
-import {IERC20} from '../dependencies/openzeppelin/IERC20.sol';
-import {WadRayMath} from './WadRayMath.sol';
-import {MathUtils} from './MathUtils.sol';
-import {ILiquidityHub} from '../interfaces/ILiquidityHub.sol';
-import {IBorrowModule} from '../interfaces/IBorrowModule.sol';
+import {SafeERC20} from '../../src/dependencies/openzeppelin/SafeERC20.sol';
+import {IERC20} from '../../src/dependencies/openzeppelin/IERC20.sol';
+import {WadRayMath} from '../../src/contracts/WadRayMath.sol';
+import {MathUtils} from '../../src/contracts/MathUtils.sol';
+import {IBorrowModule} from '../../src/interfaces/IBorrowModule.sol';
+import {ILiquidityHub} from '../../src/interfaces/ILiquidityHub.sol';
 import {IReserveInterestRateStrategy} from '../../src/interfaces/IReserveInterestRateStrategy.sol';
-import {DataTypes} from '../libraries/types/DataTypes.sol';
+import {DataTypes} from '../../src/libraries/types/DataTypes.sol';
+import {IDefaultInterestRateStrategy} from '../../src/interfaces/IDefaultInterestRateStrategy.sol';
 
-contract BorrowModule is IBorrowModule {
+import 'forge-std/console2.sol';
+
+// Multi asset borrow module with credit line, ie fixed IR for all users
+contract MockBorrowModuleCreditLine is IBorrowModule {
   using WadRayMath for uint256;
   using SafeERC20 for IERC20;
-
-  // debt balances, fetches indexes from liquidity layer
-
-  // keep collateral configuration
-  // By using BorrowModule, LPs can choose which collaterals are used to borrow their assets
-
-  // keep hooks to be executed by LiquidityHub when there is supply/withdraw actions
 
   // fetch liquidity from liquidityHub
   address public liquidityHub;
@@ -29,7 +26,7 @@ contract BorrowModule is IBorrowModule {
     uint256 id;
     address asset;
     uint256 totalDebt;
-    uint256 lastUpdateIndex;
+    uint256 lastUpdateIndex; // TODO? What is this supposed to index on
     uint256 lastUpdateTimestamp;
     uint256 borrowRate;
     ReserveConfig config;
@@ -43,14 +40,12 @@ contract BorrowModule is IBorrowModule {
   }
 
   struct UserConfig {
-    uint256 balance;
-    uint256 lastUpdateIndex;
+    uint256 balance; // TODO: name to principal balance?
+    uint256 lastUpdateIndex; // TODO? What is this supposed to index on
     uint256 lastUpdateTimestamp;
   }
-
   // asset id => user address => user data
   mapping(uint256 => mapping(address => UserConfig)) public users;
-  // assetId => reserveData
   mapping(uint256 => Reserve) public reserves;
 
   constructor(address liquidityHubAddress, address interestRateStrategyAddress) {
@@ -64,7 +59,6 @@ contract BorrowModule is IBorrowModule {
 
   function getUser(uint256 assetId, address user) external view returns (UserConfig memory) {
     UserConfig memory u = users[assetId][user];
-
     return u;
   }
 
@@ -74,14 +68,9 @@ contract BorrowModule is IBorrowModule {
 
   function _getUserDebt(uint256 assetId, address user) internal view returns (uint256) {
     UserConfig memory u = users[assetId][user];
-
     return
       u.balance.rayMul(
-        MathUtils.calculateCompoundedInterest(
-          getInterestRate(assetId),
-          uint40(u.lastUpdateTimestamp),
-          block.timestamp
-        )
+        MathUtils.calculateLinearInterest(getInterestRate(assetId), uint40(u.lastUpdateTimestamp))
       );
   }
 
@@ -89,24 +78,20 @@ contract BorrowModule is IBorrowModule {
     Reserve storage r = reserves[assetId];
     return
       r.totalDebt.rayMul(
-        MathUtils.calculateCompoundedInterest(
-          getInterestRate(assetId),
-          uint40(r.lastUpdateTimestamp),
-          block.timestamp
-        )
+        MathUtils.calculateLinearInterest(getInterestRate(assetId), uint40(r.lastUpdateTimestamp))
       );
   }
 
   function borrow(uint256 assetId, uint256 amount) external {
     Reserve storage r = reserves[assetId];
     _validateBorrow(r, amount);
-    // TODO HF check
+    // TODO: decide if state should be updated before or after liquidity hub call
+    // update state will update the IR based on total debt
+    _updateState(r, assetId, amount, msg.sender);
 
     ILiquidityHub(liquidityHub).draw(assetId, amount);
 
-    _updateState(r, assetId, amount, msg.sender);
-
-    // transfer liquidity to msg.sender
+    // keep liquidity in borrow module
     IERC20(reserves[assetId].asset).safeTransfer(msg.sender, amount);
 
     emit Borrowed(assetId, msg.sender, amount);
@@ -115,6 +100,8 @@ contract BorrowModule is IBorrowModule {
   // TODO: Implement repay, calls liquidity hub restore method
   // TODO: onBehalfOf
   function repay(uint256 assetId, uint256 amount) external {
+    Reserve storage r = reserves[assetId];
+    _updateState(r, assetId, amount, msg.sender);
     ILiquidityHub(liquidityHub).restore(assetId, amount);
 
     emit Repaid(assetId, msg.sender, amount);
@@ -125,12 +112,8 @@ contract BorrowModule is IBorrowModule {
     return reserves[assetId].borrowRate * 1e23;
   }
 
-  // /////
-  // Governance
-  // /////
-
+  /// governance
   function addReserve(uint256 assetId, ReserveConfig memory params, address asset) external {
-    // TODO: AccessControl
     reserves[assetId].id = assetId;
     reserves[assetId].asset = asset;
     reserves[assetId].config = ReserveConfig({
@@ -147,7 +130,7 @@ contract BorrowModule is IBorrowModule {
           liquidityTaken: 0,
           totalDebt: 0,
           reserveFactor: params.rf,
-          assetId: reserves[assetId].id,
+          assetId: assetId,
           virtualUnderlyingBalance: 0,
           usingVirtualBalance: false
         })
@@ -175,7 +158,6 @@ contract BorrowModule is IBorrowModule {
     require(reserve.config.borrowable, 'RESERVE_NOT_BORROWABLE');
   }
 
-  /// @dev does 2 things - update borrow rate for this asset; update user and reserve debt balances
   function _updateState(
     Reserve storage reserve,
     uint256 assetId,
@@ -183,27 +165,10 @@ contract BorrowModule is IBorrowModule {
     address user
   ) internal {
     UserConfig storage userConfig = users[assetId][user];
+
     _accrueUserInterest(userConfig, reserve, assetId, amount);
 
-    reserves[assetId].borrowRate = IReserveInterestRateStrategy(interestRateStrategy)
-      .calculateInterestRates(
-        DataTypes.CalculateInterestRatesParams({
-          liquidityAdded: 0, // TODO
-          liquidityTaken: 0, // TODO
-          totalDebt: reserve.totalDebt,
-          reserveFactor: reserve.config.rf,
-          assetId: reserve.id,
-          virtualUnderlyingBalance: 0, // TODO
-          usingVirtualBalance: false // TODO
-        })
-      );
-
-    uint256 cumulatedInterest = MathUtils.calculateCompoundedInterest(
-      getInterestRate(assetId),
-      uint40(reserve.lastUpdateTimestamp),
-      block.timestamp
-    );
-    reserve.lastUpdateIndex = reserve.totalDebt.rayMul(cumulatedInterest); // TODO: update index
+    // not needed to update borrow rate for credit line bc IR is fixed
   }
 
   function _accrueUserInterest(
@@ -212,15 +177,11 @@ contract BorrowModule is IBorrowModule {
     uint256 assetId,
     uint256 amount
   ) internal {
-    // update user debt balance
-    // accrue interest
-    // TODO: Risk premium for user and reserve
     user.balance =
       user.balance.rayMul(
-        MathUtils.calculateCompoundedInterest(
+        MathUtils.calculateLinearInterest(
           getInterestRate(assetId),
-          uint40(user.lastUpdateTimestamp),
-          block.timestamp
+          uint40(user.lastUpdateTimestamp)
         )
       ) +
       amount;
@@ -228,16 +189,13 @@ contract BorrowModule is IBorrowModule {
 
     reserve.totalDebt =
       reserve.totalDebt.rayMul(
-        MathUtils.calculateCompoundedInterest(
+        MathUtils.calculateLinearInterest(
           getInterestRate(assetId),
-          uint40(reserve.lastUpdateTimestamp),
-          block.timestamp
+          uint40(reserve.lastUpdateTimestamp)
         )
       ) +
       amount;
 
     reserve.lastUpdateTimestamp = block.timestamp;
-
-    // TODO: update index
   }
 }
