@@ -11,39 +11,35 @@ contract BorrowModuleCreditLineTest is BaseTest {
     super.setUp();
 
     // Add dai
-    hub.addReserve(
-      LiquidityHub.ReserveConfig({
-        borrowModule: address(bm),
+    hub.addAsset(
+      LiquidityHub.AssetConfig({
         decimals: 18,
         active: true,
         supplyCap: type(uint256).max,
-        drawCap: type(uint256).max,
-        liquidityPremium: 10_00
+        irStrategy: address(0)
       }),
       address(dai)
     );
     bm.addReserve(
       0,
-      BorrowModule.ReserveConfig({lt: 0, lb: 0, rf: 0, borrowable: true}),
+      BorrowModule.ReserveConfig({lt: 0, lb: 0, rf: 0, borrowable: true, collateral: false}),
       address(dai)
     );
     MockPriceOracle(address(oracle)).setAssetPrice(0, 1e8);
 
     // Add eth
-    hub.addReserve(
-      LiquidityHub.ReserveConfig({
-        borrowModule: address(bm),
+    hub.addAsset(
+      LiquidityHub.AssetConfig({
         decimals: 18,
         active: true,
         supplyCap: type(uint256).max,
-        drawCap: type(uint256).max,
-        liquidityPremium: 0
+        irStrategy: address(0)
       }),
       address(eth)
     );
     bm.addReserve(
       1,
-      BorrowModule.ReserveConfig({lt: 0, lb: 0, rf: 0, borrowable: true}),
+      BorrowModule.ReserveConfig({lt: 0, lb: 0, rf: 0, borrowable: true, collateral: false}),
       address(eth)
     );
     MockPriceOracle(address(oracle)).setAssetPrice(1, 2000e8);
@@ -61,14 +57,12 @@ contract BorrowModuleCreditLineTest is BaseTest {
       })
     );
     bmcl = new MockBorrowModuleCreditLine(address(hub), address(creditLineIRStrategy));
-    hub.addReserve(
-      LiquidityHub.ReserveConfig({
-        borrowModule: address(bmcl),
+    hub.addAsset(
+      LiquidityHub.AssetConfig({
         decimals: 18,
         active: true,
         supplyCap: type(uint256).max,
-        drawCap: type(uint256).max,
-        liquidityPremium: 10_00
+        irStrategy: address(0)
       }),
       address(dai)
     );
@@ -109,7 +103,7 @@ contract BorrowModuleCreditLineTest is BaseTest {
     deal(address(dai), USER2, daiAmount);
     Utils.supply(vm, hub, daiId, USER2, daiAmount, USER2);
 
-    LiquidityHub.Reserve memory daiData0 = hub.getReserve(daiId);
+    LiquidityHub.Asset memory daiData0 = hub.getAsset(daiId);
 
     assertEq(dai.balanceOf(USER1), 0);
     assertEq(dai.balanceOf(address(bmcl)), 0);
@@ -123,11 +117,11 @@ contract BorrowModuleCreditLineTest is BaseTest {
     emit Borrowed(daiId, USER1, drawnAmounts[0]);
     IBorrowModule(address(bmcl)).borrow(daiId, drawnAmounts[0]);
 
-    LiquidityHub.Reserve memory daiData1 = hub.getReserve(daiId);
+    LiquidityHub.Asset memory daiData1 = hub.getAsset(daiId);
 
     assertEq(daiData1.totalShares, daiAmount, '1) wrong total shares');
     assertEq(daiData1.totalAssets, daiData0.totalAssets, '1) wrong total assets');
-    assertEq(daiData1.totalDrawn, drawnAmounts[0], '1) wrong total drawn');
+    assertEq(daiData1.totalDrawnShares, drawnAmounts[0], '1) wrong total drawn');
     assertEq(dai.balanceOf(USER1), drawnAmounts[0], '1) wrong dai balance');
 
     assertEq(bmcl.getReserveDebt(daiId), drawnAmounts[0], '1) wrong reserve debt');
@@ -147,7 +141,7 @@ contract BorrowModuleCreditLineTest is BaseTest {
         IBorrowModule(address(bmcl)).getInterestRate(daiId),
         uint40(daiData1.lastUpdateTimestamp)
       )
-      .rayMul(daiData1.totalDrawn);
+      .rayMul(daiData1.totalDrawnShares);
 
     // User1 draw quarter of dai reserve liquidity for borrow module
     // to trigger interest accrual
@@ -158,15 +152,15 @@ contract BorrowModuleCreditLineTest is BaseTest {
     user = bmcl.getUser(daiId, USER1);
 
     // hub assertions
-    LiquidityHub.Reserve memory daiData2 = hub.getReserve(daiId);
+    LiquidityHub.Asset memory daiData2 = hub.getAsset(daiId);
 
     assertEq(daiData2.totalShares, daiAmount, '2) wrong total shares');
     assertEq(
       daiData2.totalAssets,
-      daiData0.totalAssets + (cumulated - daiData1.totalDrawn),
+      daiData0.totalAssets + (cumulated - daiData1.totalDrawnShares),
       '2) wrong total assets'
     );
-    assertEq(daiData2.totalDrawn, cumulated + drawnAmounts[1], '2) wrong total drawn');
+    assertEq(daiData2.totalDrawnShares, cumulated + drawnAmounts[1], '2) wrong total drawn');
     assertEq(
       dai.balanceOf(USER1),
       drawnAmounts[0] + drawnAmounts[1],
@@ -211,10 +205,10 @@ contract BorrowModuleCreditLineTest is BaseTest {
     deal(address(dai), USER2, daiAmount);
     Utils.supply(vm, hub, daiId, USER2, daiAmount, USER2);
 
-    LiquidityHub.Reserve memory daiData0 = hub.getReserve(daiId);
+    LiquidityHub.Asset memory daiData0 = hub.getAsset(daiId);
 
     assertEq(dai.balanceOf(USER1), 0);
-    assertEq(dai.balanceOf(daiData0.config.borrowModule), 0);
+    assertEq(dai.balanceOf(address(bm)), 0);
 
     drawnAmounts[0] = daiAmount / 2; // 50%
     drawnAmounts[1] = daiAmount / 4; // 25%
@@ -222,9 +216,9 @@ contract BorrowModuleCreditLineTest is BaseTest {
 
     // User1 draw half of dai reserve liquidity for borrow module
     vm.prank(USER1);
-    IBorrowModule(daiData0.config.borrowModule).borrow(daiId, drawnAmounts[0]);
+    IBorrowModule(address(bm)).borrow(daiId, drawnAmounts[0]);
 
-    LiquidityHub.Reserve memory daiData1 = hub.getReserve(daiId);
+    LiquidityHub.Asset memory daiData1 = hub.getAsset(daiId);
 
     MockBorrowModuleCreditLine.UserConfig memory user1 = bmcl.getUser(daiId, USER1);
 
@@ -235,7 +229,7 @@ contract BorrowModuleCreditLineTest is BaseTest {
         IBorrowModule(address(bmcl)).getInterestRate(daiId),
         uint40(daiData1.lastUpdateTimestamp)
       )
-      .rayMul(daiData1.totalDrawn);
+      .rayMul(daiData1.totalDrawnShares);
 
     // User1 draw 25% of dai reserve liquidity for borrow module
     vm.prank(USER1);
@@ -248,17 +242,17 @@ contract BorrowModuleCreditLineTest is BaseTest {
     MockBorrowModuleCreditLine.UserConfig memory user2 = bmcl.getUser(daiId, USER2);
 
     // hub assertions
-    LiquidityHub.Reserve memory daiData2 = hub.getReserve(daiId);
+    LiquidityHub.Asset memory daiData2 = hub.getAsset(daiId);
 
     assertEq(bmcl.getInterestRate(daiId), 0.05e27, '2) wrong IR'); // should be flat and constant
     assertEq(daiData2.totalShares, daiAmount, '2) wrong total shares');
     assertEq(
       daiData2.totalAssets,
-      daiData0.totalAssets + (cumulated - daiData1.totalDrawn),
+      daiData0.totalAssets + (cumulated - daiData1.totalDrawnShares),
       '2) wrong total assets'
     );
     assertEq(
-      daiData2.totalDrawn,
+      daiData2.totalDrawnShares,
       cumulated + drawnAmounts[1] + drawnAmounts[2],
       '2) wrong total drawn'
     );
@@ -309,17 +303,17 @@ contract BorrowModuleCreditLineTest is BaseTest {
     uint256 daiAmount = 100e18;
 
     uint256[] memory drawnAmounts = new uint256[](numDrawings);
-    LiquidityHub.Reserve[] memory daiData = new LiquidityHub.Reserve[](numDrawings);
+    LiquidityHub.Asset[] memory daiData = new LiquidityHub.Asset[](numDrawings);
 
     // User2 supply dai
     deal(address(dai), USER2, daiAmount);
     Utils.supply(vm, hub, daiId, USER2, daiAmount, USER2);
 
     vm.startPrank(USER1);
-    uint256 totalDrawn;
+    uint256 totalDrawnShares;
     for (uint256 i = 0; i < numDrawings; i++) {
       drawnAmounts[i] = daiAmount / _pseudoRandomNumber(entropy, numDrawings, numDrawings + 5); // divide by some amount > number of drawings, ensuring total drawn < total supplied assets
-      totalDrawn += drawnAmounts[i];
+      totalDrawnShares += drawnAmounts[i];
 
       vm.mockCall(
         address(bmcl),
@@ -330,7 +324,7 @@ contract BorrowModuleCreditLineTest is BaseTest {
       // User1 draws some of dai reserve liquidity for borrow module
       IBorrowModule(address(bmcl)).borrow(daiId, drawnAmounts[i]);
 
-      daiData[i] = hub.getReserve(daiId);
+      daiData[i] = hub.getAsset(daiId);
       (uint256 totalCumulated, uint256 cumulatedInterest) = _calculateLinearInterest(
         i == 0 ? daiData[0] : daiData[i - 1]
       );
@@ -348,13 +342,13 @@ contract BorrowModuleCreditLineTest is BaseTest {
         string(abi.encodePacked('wrong total assets: i=', vm.toString(i)))
       );
       assertEq(
-        daiData[i].totalDrawn,
+        daiData[i].totalDrawnShares,
         i == 0 ? totalCumulated : totalCumulated + drawnAmounts[i],
         string(abi.encodePacked('wrong total drawn: i=', vm.toString(i)))
       );
       assertEq(
         dai.balanceOf(USER1),
-        totalDrawn,
+        totalDrawnShares,
         string(abi.encodePacked('wrong final dai balance: i=', vm.toString(i)))
       );
 
@@ -380,17 +374,17 @@ contract BorrowModuleCreditLineTest is BaseTest {
 
   // TODO: move to a helper
   function _calculateLinearInterest(
-    LiquidityHub.Reserve memory reserveData
+    LiquidityHub.Asset memory reserveData
   ) internal view returns (uint256 totalCumulated, uint256 cumulatedInterest) {
     // accumulate interest over the year
     totalCumulated = MathUtils
       .calculateLinearInterest(
-        IBorrowModule(reserveData.config.borrowModule).getInterestRate(reserveData.id),
+        IBorrowModule(address(bm)).getInterestRate(reserveData.id),
         uint40(reserveData.lastUpdateTimestamp)
       )
-      .rayMul(reserveData.totalDrawn);
+      .rayMul(reserveData.totalDrawnShares);
 
-    cumulatedInterest = totalCumulated - reserveData.totalDrawn;
+    cumulatedInterest = totalCumulated - reserveData.totalDrawnShares;
 
     return (totalCumulated, cumulatedInterest);
   }
