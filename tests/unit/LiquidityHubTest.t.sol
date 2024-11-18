@@ -795,9 +795,10 @@ contract LiquidityHubTest is BaseTest {
 
     // User1 borrow half of dai reserve, ie debt
     vm.prank(USER1);
-    hub.draw(daiAssetId, daiAmount / portionBorrowed);
+    bm.borrow(daiAssetId, daiAmount / portionBorrowed);
 
     uint256 debtToCover = bm.getUserDebt(daiAssetId, USER1);
+
     uint256 expectedDebtCovered = debtToCover;
     uint256 expectedCollateralLiquidated = _getExpectedCollateralLiquidated(
       ethAssetId,
