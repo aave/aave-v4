@@ -256,7 +256,7 @@ library LiquidationLogic {
       }
 
       LiquidityHub.Reserve storage currentReserve = reserves[vars.assetId];
-      (, , , , , BorrowModule.ReserveConfig memory reserveConfig) = BorrowModule(
+      (, , , , , , BorrowModule.ReserveConfig memory reserveConfig) = BorrowModule(
         currentReserve.config.borrowModule
       ).reserves(vars.assetId); // TODO: liquidation threshold, get it from proper reserve
       uint256 decimals = currentReserve.config.decimals;
@@ -330,10 +330,7 @@ library LiquidationLogic {
     uint256 assetPrice,
     uint256 assetUnit
   ) internal view returns (uint256) {
-    (uint256 principalBalance, uint256 interestBalance, , ) = BorrowModule(
-      reserve.config.borrowModule
-    ).users(reserve.id, user);
-    uint256 userTotalDebt = principalBalance + interestBalance;
+    (uint256 userTotalDebt, , ) = BorrowModule(reserve.config.borrowModule).users(reserve.id, user);
     userTotalDebt *= assetPrice;
     // console2.log('userTotalDebt:', userTotalDebt);
     return userTotalDebt / assetUnit;

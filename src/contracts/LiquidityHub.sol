@@ -7,12 +7,13 @@ import {IPriceOracle} from './IPriceOracle.sol';
 import {WadRayMath} from './WadRayMath.sol';
 import {SharesMath} from './SharesMath.sol';
 import {MathUtils} from './MathUtils.sol';
-import {IBorrowModule} from './IBorrowModule.sol';
+import {IBorrowModule} from '../interfaces/IBorrowModule.sol';
+import {ILiquidityHub} from '../interfaces/ILiquidityHub.sol';
 import {LiquidationLogic} from './LiquidationLogic.sol';
 
 import 'forge-std/console2.sol';
 
-contract LiquidityHub {
+contract LiquidityHub is ILiquidityHub {
   using SafeERC20 for IERC20;
   using WadRayMath for uint256;
   using SharesMath for uint256;
@@ -73,6 +74,7 @@ contract LiquidityHub {
     return reserves[assetId];
   }
 
+  // TODO: convert all user-related functions to draw modules
   function getUser(uint256 assetId, address user) external view returns (UserConfig memory) {
     UserConfig memory u = users[assetId][user];
 
@@ -164,6 +166,12 @@ contract LiquidityHub {
     // TODO Mitigate inflation attack (burn some amount if first supply)
 
     uint256 sharesAmount = amount.toSharesDown(reserve.totalAssets, reserve.totalShares);
+    // console2.log(
+    //   'supply sharesAmount %e, %e, %e',
+    //   sharesAmount,
+    //   reserve.totalAssets,
+    //   reserve.totalShares
+    // );
     require(sharesAmount > 0, 'INVALID_AMOUNT');
     user.shares += sharesAmount;
     reserve.totalShares += sharesAmount;
@@ -216,13 +224,12 @@ contract LiquidityHub {
     _updateRiskPremium(user);
   }
 
-  // TODO borrow name
-  function borrow(uint256 assetId, uint256 amount) external {
+  // TODO: authorization - only borrow module
+  function draw(uint256 assetId, uint256 amount) external {
     // TODO: onBehalf
     Reserve storage reserve = reserves[assetId];
-    UserConfig storage user = users[assetId][msg.sender];
 
-    _validateBorrow(reserve, amount);
+    _validateDrawLiquidity(reserve, amount);
 
     // update indexes and IRs
     _updateState(reserve);
@@ -234,25 +241,20 @@ contract LiquidityHub {
     // updates accounting
     reserve.totalDrawn += amount;
 
-    // invokes borrow modules in case accounting update is needed
-    // (eg, update premium for users borrowing using the asset as collateral)
-    // TODO
-    // Allow transfer of funds for borrow module
-    IERC20(reservesList[assetId]).forceApprove(reserve.config.borrowModule, amount);
-    // TODO: transfer instead? the module can take less than approved
-    IBorrowModule(reserve.config.borrowModule).onBorrow(
-      assetId,
-      msg.sender,
-      userRiskPremium[msg.sender],
-      amount
-    );
-    // reset allowance
-    IERC20(reservesList[assetId]).forceApprove(reserve.config.borrowModule, 0);
+    // TODO: update avgRiskPremium if collateral
+    // if collateral
+    _updateRiskPremium(msg.sender);
+
+    // updates accounting
+    reserve.totalDrawn += amount;
+
+    // directly transfer funds to bm so that allowance doesn't need to be reset
+    IERC20(reservesList[assetId]).safeTransfer(reserve.config.borrowModule, amount);
 
     emit Draw(assetId, reserve.config.borrowModule, amount);
   }
 
-  function repay(uint256 assetId, uint256 amount, address onBehalfOf) external {}
+  function restore(uint256 assetId, uint256 amount) external {}
 
   /**
    * @notice Function to liquidate a non-healthy position collateral-wise, with Health Factor below 1
@@ -304,7 +306,7 @@ contract LiquidityHub {
     require(reserve.totalAssets >= amount, 'NOT_AVAILABLE_LIQUIDITY');
   }
 
-  function _validateBorrow(Reserve storage reserve, uint256 amount) internal view {
+  function _validateDrawLiquidity(Reserve storage reserve, uint256 amount) internal view {
     // asset can be borrowed
     require(reserve.config.active, 'RESERVE_NOT_ACTIVE');
     // TODO valid borrowModule
@@ -319,7 +321,7 @@ contract LiquidityHub {
 
   function _updateState(Reserve storage reserve) internal {
     // Update interest rates
-    uint256 borrowRate = IBorrowModule(reserve.config.borrowModule).calculateInterestRates(); // TODO: coupling here, must be more abstract?
+    uint256 borrowRate = IBorrowModule(reserve.config.borrowModule).getInterestRate(reserve.id); // TODO: coupling here, must be more abstract?
     // TODO: only borrowRate? supplyRate can be calculated using borrowRate and RF
     // borrow module and liquidity hub coupling
 
@@ -335,14 +337,19 @@ contract LiquidityHub {
     if (elapsed > 0) {
       console2.log('_accrueReserveInterest');
       // linear interest
-      uint256 cumulated = MathUtils
-        .calculateLinearInterest(borrowRate, uint40(r.lastUpdateTimestamp))
-        .rayMul(r.totalAssets); // TODO rounding
-      console2.log('cumulated %e', cumulated);
-      r.totalAssets += cumulated;
+      uint256 cumulated = r.totalDrawn.rayMul(
+        MathUtils.calculateLinearInterest(borrowRate, uint40(r.lastUpdateTimestamp))
+      ); // TODO rounding
+      console2.log(
+        'cumulated: %e, drawn: %e, cumulatedInterest: %e',
+        cumulated,
+        r.totalDrawn,
+        (cumulated - r.totalDrawn)
+      );
+      r.totalAssets += (cumulated - r.totalDrawn); // add delta, ie cumulated interest to totalAssets
+      r.totalDrawn = cumulated;
 
       // TODO: fee shares
-
       r.lastUpdateTimestamp = block.timestamp;
     }
   }
