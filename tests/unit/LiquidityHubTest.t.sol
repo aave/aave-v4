@@ -574,17 +574,21 @@ contract LiquidityHubTest is BaseTest {
     uint256 daiId = 2;
     uint256 drawnAmount = 1;
     _updateActive(daiId, false);
+
+    // TODO: update to borrow module when access control is implemented
     vm.prank(USER1);
     vm.expectRevert(TestErrors.RESERVE_NOT_ACTIVE);
-    IBorrowModule(address(bmcl)).borrow(daiId, drawnAmount);
+    ILiquidityHub(hub).draw(daiId, drawnAmount);
   }
 
   function test_revert_draw_invalid_amount() public {
     uint256 daiId = 2;
     uint256 drawnAmount = 1;
+
+    // TODO: update to borrow module when access control is implemented
     vm.prank(USER1);
     vm.expectRevert(TestErrors.INVALID_AMOUNT);
-    IBorrowModule(address(bmcl)).borrow(daiId, drawnAmount);
+    ILiquidityHub(hub).draw(daiId, drawnAmount);
   }
 
   function test_revert_draw_cap_exceeded() public {
@@ -599,257 +603,10 @@ contract LiquidityHubTest is BaseTest {
     deal(address(dai), USER2, daiAmount);
     Utils.supply(vm, hub, daiId, USER2, daiAmount, USER2);
 
+    // TODO: update to borrow module when access control is implemented
     vm.prank(USER1);
     vm.expectRevert(TestErrors.CAP_EXCEEDED);
-    IBorrowModule(address(bmcl)).borrow(daiId, drawnAmount);
-  }
-
-  function testRevertInactiveCollateralReserveLiquidationCall() public {
-    uint256 ethAssetId = 1; // collateral asset
-    uint256 daiAssetId = 0; // debt asset
-    uint256 debtToCover = 1;
-
-    // ETH reserve is inactive
-    _updateActive(ethAssetId, false);
-    vm.expectRevert(TestErrors.RESERVE_NOT_ACTIVE);
-    vm.prank(LIQUIDATOR);
-    hub.liquidationCall(ethAssetId, daiAssetId, USER1, debtToCover);
-  }
-
-  function testRevertInactiveDebtReserveLiquidationCall() public {
-    uint256 ethAssetId = 1; // collateral asset
-    uint256 daiAssetId = 0; // debt asset
-    uint256 debtToCover = 1;
-
-    // DAI reserve is inactive
-    _updateActive(daiAssetId, false);
-    vm.expectRevert(TestErrors.RESERVE_NOT_ACTIVE);
-    vm.prank(LIQUIDATOR);
-    hub.liquidationCall(ethAssetId, daiAssetId, USER1, debtToCover);
-  }
-
-  function testRevertPausedCollateralReserveLiquidationCall() public {
-    uint256 ethAssetId = 1; // collateral asset
-    uint256 daiAssetId = 0; // debt asset
-    uint256 debtToCover = 1;
-
-    // ETH reserve is inactive
-    _updatePaused(ethAssetId, false);
-    vm.expectRevert(TestErrors.RESERVE_NOT_ACTIVE);
-    vm.prank(LIQUIDATOR);
-    hub.liquidationCall(ethAssetId, daiAssetId, USER1, debtToCover);
-  }
-
-  function testRevertPausedDebtReserveLiquidationCall() public {
-    uint256 ethAssetId = 1; // collateral asset
-    uint256 daiAssetId = 0; // debt asset
-    uint256 debtToCover = 1;
-
-    // DAI reserve is inactive
-    _updatePaused(daiAssetId, false);
-    vm.expectRevert(TestErrors.RESERVE_NOT_ACTIVE);
-    vm.prank(LIQUIDATOR);
-    hub.liquidationCall(ethAssetId, daiAssetId, USER1, debtToCover);
-  }
-
-  function testFuzzRevertPausedDebtReserveLiquidationCall(uint256 debtToCover) public {
-    vm.assume(debtToCover > 0);
-    uint256 ethAssetId = 1; // collateral asset
-    uint256 daiAssetId = 0; // debt asset
-
-    // DAI reserve is inactive
-    _updatePaused(daiAssetId, false);
-    vm.expectRevert(TestErrors.RESERVE_NOT_ACTIVE);
-    vm.prank(LIQUIDATOR);
-    hub.liquidationCall(ethAssetId, daiAssetId, USER1, debtToCover);
-  }
-
-  function testFuzzRevertPausedCollateralReserveLiquidationCall(uint256 debtToCover) public {
-    vm.assume(debtToCover > 0);
-    uint256 ethAssetId = 1; // collateral asset
-    uint256 daiAssetId = 0; // debt asset
-
-    // ETH reserve is inactive
-    _updatePaused(ethAssetId, false);
-    vm.expectRevert(TestErrors.RESERVE_NOT_ACTIVE);
-    vm.prank(LIQUIDATOR);
-    hub.liquidationCall(ethAssetId, daiAssetId, USER1, debtToCover);
-  }
-
-  function testFuzzRevertInactiveCollateralReserveLiquidationCall(uint256 debtToCover) public {
-    vm.assume(debtToCover > 0);
-    uint256 ethAssetId = 1; // collateral asset
-    uint256 daiAssetId = 0; // debt asset
-
-    // ETH reserve is inactive
-    _updateActive(ethAssetId, false);
-    vm.expectRevert(TestErrors.RESERVE_NOT_ACTIVE);
-    vm.prank(LIQUIDATOR);
-    hub.liquidationCall(ethAssetId, daiAssetId, USER1, debtToCover);
-  }
-
-  function testFuzzRevertInactiveDebtReserveLiquidationCall(uint256 debtToCover) public {
-    vm.assume(debtToCover > 0);
-    uint256 ethAssetId = 1; // collateral asset
-    uint256 daiAssetId = 0; // debt asset
-
-    // DAI reserve is inactive
-    _updateActive(daiAssetId, false);
-    vm.expectRevert(TestErrors.RESERVE_NOT_ACTIVE);
-    vm.prank(LIQUIDATOR);
-    hub.liquidationCall(ethAssetId, daiAssetId, USER1, debtToCover);
-  }
-
-  function testRevertLiquidationCallCurrencyNotBorrowed() public {
-    uint256 ethAssetId = 1; // collateral asset
-    uint256 daiAssetId = 0; // debt asset
-    uint256 debtToCover = 1;
-
-    vm.prank(LIQUIDATOR);
-    vm.expectRevert(TestErrors.SPECIFIED_CURRENCY_NOT_BORROWED_BY_USER);
-    hub.liquidationCall(ethAssetId, daiAssetId, USER1, debtToCover);
-  }
-
-  function testRevertLiquidationCallInvalidDebtToCover() public {
-    uint256 ethAssetId = 1; // collateral asset
-    uint256 daiAssetId = 0; // debt asset
-    uint256 debtToCover = 0;
-
-    vm.prank(LIQUIDATOR);
-    vm.expectRevert(TestErrors.INVALID_DEBT_TO_COVER);
-    hub.liquidationCall(ethAssetId, daiAssetId, USER1, debtToCover);
-  }
-
-  function testLiquidationCallMaxCollateralToLiquidate() public {
-    uint256 ethAssetId = 1; // collateral asset
-    uint256 daiAssetId = 0; // debt asset
-    // borrowed value > supplied value to simulate liquidation scenario
-    // maxCollateralToLiquidate > userCollateralBalance
-    uint256 daiAmount = 400e6;
-    uint256 ethAmount = 10e4;
-
-    // User1 supply eth
-    deal(address(eth), USER1, ethAmount);
-    Utils.supply(vm, hub, ethAssetId, USER1, ethAmount, USER1);
-
-    // User2 supply dai
-    deal(address(dai), USER2, daiAmount);
-    Utils.supply(vm, hub, daiAssetId, USER2, daiAmount, USER2);
-
-    uint256 portionBorrowed = 2;
-
-    // User1 borrow half of dai reserve, ie debt
-    vm.prank(USER1);
-    bm.borrow(daiAssetId, daiAmount / portionBorrowed);
-
-    uint256 debtToCover = bm.getUserDebt(daiAssetId, USER1);
-
-    uint256 expectedCollateralLiquidated = hub.getUserBalance(ethAssetId, USER1);
-    uint256 expectedDebtCovered = _getExpectedDebtCovered(
-      ethAssetId,
-      daiAssetId,
-      expectedCollateralLiquidated
-    );
-
-    deal(address(dai), LIQUIDATOR, expectedDebtCovered);
-    vm.startPrank(LIQUIDATOR);
-    dai.approve(address(hub), expectedDebtCovered);
-
-    vm.expectEmit(true, true, true, true, address(hub));
-    emit LiquidationCall(
-      ethAssetId,
-      daiAssetId,
-      USER1,
-      expectedDebtCovered,
-      expectedCollateralLiquidated,
-      LIQUIDATOR
-    );
-    hub.liquidationCall(ethAssetId, daiAssetId, USER1, debtToCover);
-    vm.stopPrank();
-
-    assertEq(dai.balanceOf(LIQUIDATOR), 0, 'Unexpected liquidator debt asset balance');
-    assertEq(
-      eth.balanceOf(LIQUIDATOR),
-      expectedCollateralLiquidated,
-      'Unexpected liquidator collateral asset balance'
-    );
-  }
-
-  function testLiquidationCallA() public {
-    uint256 ethAssetId = 1; // collateral asset
-    uint256 daiAssetId = 0; // debt asset
-    // borrowed value > supplied value to simulate liquidation scenario
-    // maxCollateralToLiquidate > userCollateralBalance
-    uint256 daiAmount = 40e4;
-    uint256 ethAmount = 10e4;
-
-    // User1 supply eth
-    deal(address(eth), USER1, ethAmount);
-    Utils.supply(vm, hub, ethAssetId, USER1, ethAmount, USER1);
-
-    // User2 supply dai
-    deal(address(dai), USER2, daiAmount);
-    Utils.supply(vm, hub, daiAssetId, USER2, daiAmount, USER2);
-
-    uint256 portionBorrowed = 2;
-
-    // User1 borrow half of dai reserve, ie debt
-    vm.prank(USER1);
-    bm.borrow(daiAssetId, daiAmount / portionBorrowed);
-
-    uint256 debtToCover = bm.getUserDebt(daiAssetId, USER1);
-
-    uint256 expectedDebtCovered = debtToCover;
-    uint256 expectedCollateralLiquidated = _getExpectedCollateralLiquidated(
-      ethAssetId,
-      daiAssetId,
-      debtToCover
-    );
-
-    deal(address(dai), LIQUIDATOR, expectedDebtCovered);
-    vm.startPrank(LIQUIDATOR);
-    dai.approve(address(hub), expectedDebtCovered);
-
-    vm.expectEmit(true, true, true, true, address(hub));
-    emit LiquidationCall(
-      ethAssetId,
-      daiAssetId,
-      USER1,
-      expectedDebtCovered,
-      expectedCollateralLiquidated,
-      LIQUIDATOR
-    );
-    hub.liquidationCall(ethAssetId, daiAssetId, USER1, debtToCover);
-    vm.stopPrank();
-
-    assertEq(dai.balanceOf(LIQUIDATOR), 0, 'Unexpected liquidator debt asset balance');
-    assertEq(
-      eth.balanceOf(LIQUIDATOR),
-      expectedCollateralLiquidated,
-      'Unexpected liquidator collateral asset balance'
-    );
-  }
-
-  function _getExpectedDebtCovered(
-    uint256 collateralAssetId,
-    uint256 debtAssetId,
-    uint256 collateralAmount
-  ) internal returns (uint256) {
-    uint256 liquidationBonus = bm.getLiquidationBonus(collateralAssetId);
-    return
-      ((oracle.getAssetPrice(collateralAssetId) * collateralAmount) /
-        (oracle.getAssetPrice(debtAssetId))).percentDiv(liquidationBonus);
-  }
-
-  function _getExpectedCollateralLiquidated(
-    uint256 collateralAssetId,
-    uint256 debtAssetId,
-    uint256 debtAmount
-  ) internal returns (uint256) {
-    uint256 liquidationBonus = bm.getLiquidationBonus(collateralAssetId);
-    return
-      (((oracle.getAssetPrice(debtAssetId) * debtAmount)) /
-        (oracle.getAssetPrice(collateralAssetId))).percentMul(liquidationBonus);
+    ILiquidityHub(hub).draw(daiId, drawnAmount);
   }
 
   function _updateLiquidityPremium(uint256 assetId, uint256 newLiquidityPremium) internal {
@@ -867,12 +624,6 @@ contract LiquidityHubTest is BaseTest {
   function _updateDrawCap(uint256 assetId, uint256 newDrawCap) internal {
     LiquidityHub.ReserveConfig memory reserveConfig = hub.getReserve(assetId).config;
     reserveConfig.drawCap = newDrawCap;
-    hub.updateReserve(assetId, reserveConfig);
-  }
-
-  function _updatePaused(uint256 assetId, bool newPaused) internal {
-    LiquidityHub.ReserveConfig memory reserveConfig = hub.getReserve(assetId).config;
-    reserveConfig.active = newPaused;
     hub.updateReserve(assetId, reserveConfig);
   }
 }
