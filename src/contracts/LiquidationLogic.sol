@@ -52,7 +52,7 @@ library LiquidationLogic {
 
   /**
    * @dev allow the liquidator to liquidate enough assets so the HF goes back to this value
-   * TODO: decide is this a constant, or adjustable (via governance)
+   * TODO: should be an adjustable param via governance
    */
   uint256 public constant HEALTH_FACTOR_LIQUIDATABLE_THRESHOLD = 1e18;
   // TODO: Minimum health factor allowed under any circumstance
