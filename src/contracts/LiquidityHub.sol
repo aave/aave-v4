@@ -241,13 +241,6 @@ contract LiquidityHub is ILiquidityHub {
     // updates accounting
     reserve.totalDrawn += amount;
 
-    // TODO: update avgRiskPremium if collateral
-    // if collateral
-    _updateRiskPremium(msg.sender);
-
-    // updates accounting
-    reserve.totalDrawn += amount;
-
     // directly transfer funds to bm so that allowance doesn't need to be reset
     IERC20(reservesList[assetId]).safeTransfer(reserve.config.borrowModule, amount);
 
