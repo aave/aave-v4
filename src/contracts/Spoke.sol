@@ -75,15 +75,12 @@ contract Spoke is ISpoke {
     Reserve storage r = reserves[assetId];
 
     _validateSupply(r, amount);
-    _updateState();
 
     // TODO: Refresh risk premium of user, and pass into following function
-    uint256 newRiskPremium = 0;
+    (uint256 newRiskPremium, ) = _updateState();
     uint256 userShares = ILiquidityHub(liquidityHub).supply(assetId, amount, newRiskPremium);
 
     users[assetId][msg.sender].supplyShares += userShares;
-
-    _updateAccounting();
 
     emit Supplied(assetId, msg.sender, amount);
   }
@@ -92,14 +89,11 @@ contract Spoke is ISpoke {
     Reserve storage r = reserves[assetId];
 
     _validateWithdraw(r, amount);
-    _updateState();
 
     // TODO: Refresh risk premium of user, and pass into following function
-    uint256 newRiskPremium = 0;
+    (uint256 newRiskPremium, ) = _updateState();
     uint256 userShares = ILiquidityHub(liquidityHub).withdraw(assetId, to, amount, newRiskPremium);
     users[assetId][msg.sender].supplyShares -= userShares;
-
-    _updateAccounting();
 
     emit Withdrawn(assetId, msg.sender, amount);
   }
@@ -108,16 +102,14 @@ contract Spoke is ISpoke {
   function borrow(uint256 assetId, uint256 amount) external {
     Reserve storage r = reserves[assetId];
     _validateBorrow(r, amount);
-    _updateState();
 
     // TODO HF check
     // TODO: risk premium; to
-    ILiquidityHub(liquidityHub).draw(assetId, msg.sender, amount, 0);
+    (uint256 newRiskPremium, ) = _updateState();
+    ILiquidityHub(liquidityHub).draw(assetId, msg.sender, amount, newRiskPremium);
 
     // transfer liquidity to msg.sender
     IERC20(reserves[assetId].asset).safeTransfer(msg.sender, amount);
-
-    _updateAccounting();
 
     emit Borrowed(assetId, msg.sender, amount);
   }
@@ -126,12 +118,10 @@ contract Spoke is ISpoke {
   // TODO: onBehalfOf
   function repay(uint256 assetId, uint256 amount) external {
     _validateRepay();
-    _updateState();
 
+    (uint256 newRiskPremium, ) = _updateState();
     // TODO calculate risk premium and pass to LH
-    ILiquidityHub(liquidityHub).restore(assetId, amount, 0);
-
-    _updateAccounting();
+    ILiquidityHub(liquidityHub).restore(assetId, amount, newRiskPremium);
 
     emit Repaid(assetId, msg.sender, amount);
   }
@@ -191,11 +181,14 @@ contract Spoke is ISpoke {
     //TODO: validate repay, ie there is outstanding debt
   }
 
-  function _updateState() internal {
+  /**
+  @return uint256 new risk premium
+  @return uint256 new aggregated risk premium
+  */
+  function _updateState() internal returns (uint256, uint256) {
     // TODO: refresh risk premium of user; aggregated risk premium
-  }
-
-  function _updateAccounting() internal {
-    // TODO: update accounting using resulting shares from LH
+    uint256 newRiskPremium = 0;
+    uint256 newAggregatedRiskPremium = 0;
+    return (newRiskPremium, newAggregatedRiskPremium);
   }
 }
