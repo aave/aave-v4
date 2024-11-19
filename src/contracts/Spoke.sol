@@ -75,12 +75,15 @@ contract Spoke is ISpoke {
     Reserve storage r = reserves[assetId];
 
     _validateSupply(r, amount);
+    _updateState();
 
     // TODO: Refresh risk premium of user, and pass into following function
     uint256 newRiskPremium = 0;
     uint256 userShares = ILiquidityHub(liquidityHub).supply(assetId, amount, newRiskPremium);
 
     users[assetId][msg.sender].supplyShares += userShares;
+
+    _updateAccounting();
 
     emit Supplied(assetId, msg.sender, amount);
   }
@@ -89,12 +92,14 @@ contract Spoke is ISpoke {
     Reserve storage r = reserves[assetId];
 
     _validateWithdraw(r, amount);
+    _updateState();
 
     // TODO: Refresh risk premium of user, and pass into following function
     uint256 newRiskPremium = 0;
     uint256 userShares = ILiquidityHub(liquidityHub).withdraw(assetId, to, amount, newRiskPremium);
-
     users[assetId][msg.sender].supplyShares -= userShares;
+
+    _updateAccounting();
 
     emit Withdraw(assetId, msg.sender, amount);
   }
@@ -103,13 +108,16 @@ contract Spoke is ISpoke {
   function borrow(uint256 assetId, uint256 amount) external {
     Reserve storage r = reserves[assetId];
     _validateBorrow(r, amount);
-    // TODO HF check
+    _updateState();
 
+    // TODO HF check
     // TODO: risk premium; to
     ILiquidityHub(liquidityHub).draw(assetId, msg.sender, amount, 0);
 
     // transfer liquidity to msg.sender
     IERC20(reserves[assetId].asset).safeTransfer(msg.sender, amount);
+
+    _updateAccounting();
 
     emit Borrowed(assetId, msg.sender, amount);
   }
@@ -117,8 +125,13 @@ contract Spoke is ISpoke {
   // TODO: Implement repay, calls liquidity hub restore method
   // TODO: onBehalfOf
   function repay(uint256 assetId, uint256 amount) external {
+    _validateRepay();
+    _updateState();
+
     // TODO calculate risk premium and pass to LH
     ILiquidityHub(liquidityHub).restore(assetId, amount, 0);
+
+    _updateAccounting();
 
     emit Repaid(assetId, msg.sender, amount);
   }
@@ -172,5 +185,17 @@ contract Spoke is ISpoke {
 
   function _validateBorrow(Reserve storage reserve, uint256 amount) internal view {
     require(reserve.config.borrowable, 'RESERVE_NOT_BORROWABLE');
+  }
+
+  function _validateRepay() internal view {
+    //TODO: validate repay, ie there is outstanding debt
+  }
+
+  function _updateState() internal {
+    // TODO: refresh risk premium of user; aggregated risk premium
+  }
+
+  function _updateAccounting() internal {
+    // TODO: update accounting using resulting shares from LH
   }
 }
