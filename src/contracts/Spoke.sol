@@ -101,7 +101,7 @@ contract Spoke is ISpoke {
 
     _updateAccounting();
 
-    emit Withdraw(assetId, msg.sender, amount);
+    emit Withdrawn(assetId, msg.sender, amount);
   }
 
   // TODO: On behalf of and referral code

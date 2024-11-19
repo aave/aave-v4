@@ -5,7 +5,7 @@ interface ISpoke {
   event Borrowed(uint256 indexed assetId, address user, uint256 amount);
   event Repaid(uint256 indexed assetId, address user, uint256 amount);
   event Supplied(uint256 indexed assetId, address user, uint256 amount);
-  event Withdraw(uint256 indexed assetId, address user, uint256 amount);
+  event Withdrawn(uint256 indexed assetId, address user, uint256 amount);
 
   /// @dev working with bps units 10_000 = 100%
   function getInterestRate(uint256 assetId) external view returns (uint256);
