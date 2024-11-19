@@ -108,8 +108,6 @@ contract BorrowModule is IBorrowModule {
     // TODO: risk premium; to
     ILiquidityHub(liquidityHub).draw(assetId, msg.sender, amount, 0);
 
-    _updateState(r, assetId, amount, msg.sender);
-
     // transfer liquidity to msg.sender
     IERC20(reserves[assetId].asset).safeTransfer(msg.sender, amount);
 
@@ -174,22 +172,5 @@ contract BorrowModule is IBorrowModule {
 
   function _validateBorrow(Reserve storage reserve, uint256 amount) internal view {
     require(reserve.config.borrowable, 'RESERVE_NOT_BORROWABLE');
-  }
-
-  // TODO: update state
-  function _updateState(
-    Reserve storage reserve,
-    uint256 assetId,
-    uint256 amount,
-    address user
-  ) internal {
-    UserConfig storage userConfig = users[assetId][user];
-
-    // TODO: calc cumulated interest
-    uint256 cumulatedInterest = MathUtils.calculateCompoundedInterest(
-      getInterestRate(assetId),
-      0,
-      block.timestamp
-    );
   }
 }
