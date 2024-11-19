@@ -6,11 +6,11 @@ import {IERC20} from '../dependencies/openzeppelin/IERC20.sol';
 import {WadRayMath} from './WadRayMath.sol';
 import {MathUtils} from './MathUtils.sol';
 import {ILiquidityHub} from '../interfaces/ILiquidityHub.sol';
-import {IBorrowModule} from '../interfaces/IBorrowModule.sol';
+import {ISpoke} from '../interfaces/ISpoke.sol';
 import {IReserveInterestRateStrategy} from '../../src/interfaces/IReserveInterestRateStrategy.sol';
 import {DataTypes} from '../libraries/types/DataTypes.sol';
 
-contract BorrowModule is IBorrowModule {
+contract Spoke is ISpoke {
   using WadRayMath for uint256;
   using SafeERC20 for IERC20;
 

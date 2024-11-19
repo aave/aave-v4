@@ -5,7 +5,7 @@ import {SafeERC20} from '../../src/dependencies/openzeppelin/SafeERC20.sol';
 import {IERC20} from '../../src/dependencies/openzeppelin/IERC20.sol';
 import {WadRayMath} from '../../src/contracts/WadRayMath.sol';
 import {MathUtils} from '../../src/contracts/MathUtils.sol';
-import {IBorrowModule} from '../../src/interfaces/IBorrowModule.sol';
+import {ISpoke} from '../../src/interfaces/ISpoke.sol';
 import {ILiquidityHub} from '../../src/interfaces/ILiquidityHub.sol';
 import {IReserveInterestRateStrategy} from '../../src/interfaces/IReserveInterestRateStrategy.sol';
 import {DataTypes} from '../../src/libraries/types/DataTypes.sol';
@@ -14,7 +14,7 @@ import {IDefaultInterestRateStrategy} from '../../src/interfaces/IDefaultInteres
 import 'forge-std/console2.sol';
 
 // Multi asset borrow module with credit line, ie fixed IR for all users
-contract MockBorrowModuleCreditLine is IBorrowModule {
+contract MockSpokeCreditLine is ISpoke {
   using WadRayMath for uint256;
   using SafeERC20 for IERC20;
 

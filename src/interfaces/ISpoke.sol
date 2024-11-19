@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.0;
 import {DataTypes} from '../libraries/types/DataTypes.sol';
-interface IBorrowModule {
+interface ISpoke {
   event Borrowed(uint256 indexed assetId, address user, uint256 amount);
   event Repaid(uint256 indexed assetId, address user, uint256 amount);
   event Supplied(uint256 indexed assetId, address user, uint256 amount);
