@@ -176,7 +176,7 @@ contract BorrowModule is IBorrowModule {
     require(reserve.config.borrowable, 'RESERVE_NOT_BORROWABLE');
   }
 
-  /// @dev does 2 things - update borrow rate for this asset; update user and reserve debt balances
+  // TODO: update state
   function _updateState(
     Reserve storage reserve,
     uint256 assetId,
@@ -184,7 +184,6 @@ contract BorrowModule is IBorrowModule {
     address user
   ) internal {
     UserConfig storage userConfig = users[assetId][user];
-    _accrueUserInterest(userConfig, reserve, assetId, amount);
 
     // TODO: calc cumulated interest
     uint256 cumulatedInterest = MathUtils.calculateCompoundedInterest(
@@ -192,16 +191,5 @@ contract BorrowModule is IBorrowModule {
       0,
       block.timestamp
     );
-  }
-
-  function _accrueUserInterest(
-    UserConfig storage user,
-    Reserve storage reserve,
-    uint256 assetId,
-    uint256 amount
-  ) internal {
-    // update user debt balance
-    // accrue interest
-    // TODO: Risk premium for user and reserve
   }
 }

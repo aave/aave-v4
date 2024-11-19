@@ -9,7 +9,6 @@ import {MathUtils} from './MathUtils.sol';
 import {ILiquidityHub} from '../interfaces/ILiquidityHub.sol';
 import {IReserveInterestRateStrategy} from '../interfaces/IReserveInterestRateStrategy.sol';
 import {DataTypes} from '../libraries/types/DataTypes.sol';
-import {IBorrowModule} from '../interfaces/IBorrowModule.sol';
 
 import 'forge-std/console2.sol';
 
