@@ -117,8 +117,8 @@ contract Spoke is ISpoke {
     emit Withdrawn(assetId, msg.sender, amount);
   }
 
-  // TODO: referral code
   function borrow(uint256 assetId, address onBehalfOf, uint256 amount) external {
+    // TODO: referral code
     Reserve storage r = reserves[assetId];
     _validateBorrow(r, amount);
 
@@ -136,9 +136,10 @@ contract Spoke is ISpoke {
     emit Borrowed(assetId, onBehalfOf, amount);
   }
 
-  // TODO: Implement repay, calls liquidity hub restore method
-  // TODO: onBehalfOf
   function repay(uint256 assetId, uint256 amount) external {
+    // TODO: Implement repay, calls liquidity hub restore method
+    // TODO: onBehalfOf
+
     UserConfig storage u = users[assetId][msg.sender];
     _validateRepay(assetId, u, amount);
 
