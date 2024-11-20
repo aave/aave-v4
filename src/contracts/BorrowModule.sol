@@ -60,9 +60,10 @@ contract BorrowModule is IBorrowModule {
   }
 
   function getUserDebt(uint256 assetId, address user) external view returns (uint256) {
+    UserConfig memory u = users[assetId][user];
     // TODO: Instead use a getter from liquidity hub to get up-to-date user debt (with accrued debt)
     return
-      u.balance.rayMul(
+      u.debtShares.rayMul(
         MathUtils.calculateCompoundedInterest(getInterestRate(assetId), uint40(0), block.timestamp)
       );
   }
@@ -71,10 +72,11 @@ contract BorrowModule is IBorrowModule {
     Reserve storage r = reserves[assetId];
 
     // TODO: Instead use a getter from liquidity hub to get up-to-date reserve debt (with accrued debt)
-    return
-      r.totalDebt.rayMul(
-        MathUtils.calculateCompoundedInterest(getInterestRate(assetId), uint40(0), block.timestamp)
-      );
+    // return
+    //   r.totalDebt.rayMul(
+    //     MathUtils.calculateCompoundedInterest(getInterestRate(assetId), uint40(0), block.timestamp)
+    //   );
+    return 0;
   }
 
   function supply(uint256 assetId, uint256 amount) external {
