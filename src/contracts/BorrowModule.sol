@@ -111,8 +111,8 @@ contract BorrowModule is IBorrowModule {
     emit Withdraw(assetId, msg.sender, amount);
   }
 
-  // TODO: On behalf of and referral code
   function borrow(uint256 assetId, uint256 amount) external {
+    // TODO: On behalf of and referral code
     Reserve storage r = reserves[assetId];
     _validateBorrow(r, amount);
     // TODO HF check
