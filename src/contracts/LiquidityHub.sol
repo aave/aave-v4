@@ -32,7 +32,7 @@ contract LiquidityHub is ILiquidityHub {
   struct Asset {
     uint256 id;
     uint256 totalShares;
-    uint256 totalAssets;
+    uint256 totalAssets; // TODO: does totalAssets include drawn liquidity?
     uint256 totalDrawnShares;
     uint256 lastUpdateTimestamp;
     uint256 currentBorrowRate;
@@ -82,6 +82,10 @@ contract LiquidityHub is ILiquidityHub {
     address spoke
   ) external view returns (SpokeConfig memory) {
     return spokeAssetConfigs[assetId][spoke];
+  }
+
+  function getInterestRate(uint256 assetId) public view returns (uint256) {
+    return assets[assetId].currentBorrowRate;
   }
 
   function convertAssetsToShares(
@@ -247,10 +251,6 @@ contract LiquidityHub is ILiquidityHub {
     emit Restore(assetId, msg.sender, amount);
 
     return sharesAmount;
-  }
-
-  function getInterestRate(uint256 assetId) public view returns (uint256) {
-    return assets[assetId].currentBorrowRate;
   }
 
   //
