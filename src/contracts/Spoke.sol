@@ -221,6 +221,8 @@ contract Spoke is ISpoke {
   @return uint256 new aggregated risk premium
   */
   function _updateState() internal returns (uint256, uint256) {
+    // TODO: update state - debt shares
+
     // TODO: refresh risk premium of user, specific assets user has supplied
     uint256 newUserRiskPremium = 0;
     // TODO: aggregated risk premium, ie loop over all assets and sum up risk premium
