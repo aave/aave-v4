@@ -99,25 +99,20 @@ contract Spoke is ISpoke {
   }
 
   // TODO: On behalf of and referral code
-  function borrow(uint256 assetId, uint256 amount) external {
+  function borrow(uint256 assetId, address to, uint256 amount) external {
     Reserve storage r = reserves[assetId];
     _validateBorrow(r, amount);
 
     // TODO HF check
-    // TODO: risk premium; to
+    // TODO: risk premium implementation
     (uint256 newRiskPremium, ) = _updateState();
-    uint256 userDebtShares = ILiquidityHub(liquidityHub).draw(
-      assetId,
-      msg.sender,
-      amount,
-      newRiskPremium
-    );
+    uint256 userDebtShares = ILiquidityHub(liquidityHub).draw(assetId, to, amount, newRiskPremium);
     users[assetId][msg.sender].debtShares += userDebtShares;
 
     // transfer liquidity to msg.sender
-    IERC20(reserves[assetId].asset).safeTransfer(msg.sender, amount);
+    IERC20(reserves[assetId].asset).safeTransfer(to, amount);
 
-    emit Borrowed(assetId, msg.sender, amount);
+    emit Borrowed(assetId, to, amount);
   }
 
   // TODO: Implement repay, calls liquidity hub restore method
