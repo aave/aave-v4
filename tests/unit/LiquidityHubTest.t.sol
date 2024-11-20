@@ -236,7 +236,7 @@ contract LiquidityHubTest is BaseTest {
 
     assertEq(reserveData.totalShares, amount + user2SupplyShares, 'wrong total shares');
     assertEq(reserveData.totalAssets, newTotalAssets + user2SupplyAssets, 'wrong total assets');
-    assertEq(reserveData.totalDrawnShares, 0, 'wrong total drawn');
+    assertEq(reserveData.drawnShares, 0, 'wrong total drawn');
     assertEq(userData.supplyShares, amount);
     assertEq(bm.getUserDebt(assetId, USER1), newUserAssets, 'wrong user assets');
   }
@@ -512,10 +512,10 @@ contract LiquidityHubTest is BaseTest {
 
     assertEq(daiData.totalShares, daiAmount);
     assertEq(daiData.totalAssets, daiAmount);
-    assertEq(daiData.totalDrawnShares, 0);
+    assertEq(daiData.drawnShares, 0);
     assertEq(ethData.totalShares, ethAmount);
     assertEq(ethData.totalAssets, ethAmount);
-    assertEq(ethData.totalDrawnShares, 0);
+    assertEq(ethData.drawnShares, 0);
 
     assertEq(userDaiData1.supplyShares, 0);
     assertEq(bm.getUserDebt(daiId, USER1), 0);
@@ -542,10 +542,10 @@ contract LiquidityHubTest is BaseTest {
 
     assertEq(daiData.totalShares, daiAmount);
     assertEq(daiData.totalAssets, daiAmount);
-    assertEq(daiData.totalDrawnShares, daiAmount / 2);
+    assertEq(daiData.drawnShares, daiAmount / 2);
     assertEq(ethData.totalShares, ethAmount);
     assertEq(ethData.totalAssets, ethAmount);
-    assertEq(ethData.totalDrawnShares, 0);
+    assertEq(ethData.drawnShares, 0);
 
     assertEq(userDaiData1.supplyShares, 0);
     assertEq(bm.getUserDebt(daiId, USER1), 0);

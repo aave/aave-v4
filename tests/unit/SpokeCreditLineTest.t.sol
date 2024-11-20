@@ -121,7 +121,7 @@ contract SpokeCreditLineTest is BaseTest {
 
     assertEq(daiData1.totalShares, daiAmount, '1) wrong total shares');
     assertEq(daiData1.totalAssets, daiData0.totalAssets, '1) wrong total assets');
-    assertEq(daiData1.totalDrawnShares, drawnAmounts[0], '1) wrong total drawn');
+    assertEq(daiData1.drawnShares, drawnAmounts[0], '1) wrong total drawn');
     assertEq(dai.balanceOf(USER1), drawnAmounts[0], '1) wrong dai balance');
 
     assertEq(bmcl.getReserveDebt(daiId), drawnAmounts[0], '1) wrong reserve debt');
@@ -141,7 +141,7 @@ contract SpokeCreditLineTest is BaseTest {
         ISpoke(address(bmcl)).getInterestRate(daiId),
         uint40(daiData1.lastUpdateTimestamp)
       )
-      .rayMul(daiData1.totalDrawnShares);
+      .rayMul(daiData1.drawnShares);
 
     // User1 draw quarter of dai reserve liquidity for borrow module
     // to trigger interest accrual
@@ -157,10 +157,10 @@ contract SpokeCreditLineTest is BaseTest {
     assertEq(daiData2.totalShares, daiAmount, '2) wrong total shares');
     assertEq(
       daiData2.totalAssets,
-      daiData0.totalAssets + (cumulated - daiData1.totalDrawnShares),
+      daiData0.totalAssets + (cumulated - daiData1.drawnShares),
       '2) wrong total assets'
     );
-    assertEq(daiData2.totalDrawnShares, cumulated + drawnAmounts[1], '2) wrong total drawn');
+    assertEq(daiData2.drawnShares, cumulated + drawnAmounts[1], '2) wrong total drawn');
     assertEq(
       dai.balanceOf(USER1),
       drawnAmounts[0] + drawnAmounts[1],
@@ -229,7 +229,7 @@ contract SpokeCreditLineTest is BaseTest {
         ISpoke(address(bmcl)).getInterestRate(daiId),
         uint40(daiData1.lastUpdateTimestamp)
       )
-      .rayMul(daiData1.totalDrawnShares);
+      .rayMul(daiData1.drawnShares);
 
     // User1 draw 25% of dai reserve liquidity for borrow module
     vm.prank(USER1);
@@ -248,11 +248,11 @@ contract SpokeCreditLineTest is BaseTest {
     assertEq(daiData2.totalShares, daiAmount, '2) wrong total shares');
     assertEq(
       daiData2.totalAssets,
-      daiData0.totalAssets + (cumulated - daiData1.totalDrawnShares),
+      daiData0.totalAssets + (cumulated - daiData1.drawnShares),
       '2) wrong total assets'
     );
     assertEq(
-      daiData2.totalDrawnShares,
+      daiData2.drawnShares,
       cumulated + drawnAmounts[1] + drawnAmounts[2],
       '2) wrong total drawn'
     );
@@ -310,10 +310,10 @@ contract SpokeCreditLineTest is BaseTest {
     Utils.supply(vm, hub, daiId, USER2, daiAmount, USER2);
 
     vm.startPrank(USER1);
-    uint256 totalDrawnShares;
+    uint256 drawnShares;
     for (uint256 i = 0; i < numDrawings; i++) {
       drawnAmounts[i] = daiAmount / _pseudoRandomNumber(entropy, numDrawings, numDrawings + 5); // divide by some amount > number of drawings, ensuring total drawn < total supplied assets
-      totalDrawnShares += drawnAmounts[i];
+      drawnShares += drawnAmounts[i];
 
       vm.mockCall(
         address(bmcl),
@@ -342,13 +342,13 @@ contract SpokeCreditLineTest is BaseTest {
         string(abi.encodePacked('wrong total assets: i=', vm.toString(i)))
       );
       assertEq(
-        daiData[i].totalDrawnShares,
+        daiData[i].drawnShares,
         i == 0 ? totalCumulated : totalCumulated + drawnAmounts[i],
         string(abi.encodePacked('wrong total drawn: i=', vm.toString(i)))
       );
       assertEq(
         dai.balanceOf(USER1),
-        totalDrawnShares,
+        drawnShares,
         string(abi.encodePacked('wrong final dai balance: i=', vm.toString(i)))
       );
 
@@ -382,9 +382,9 @@ contract SpokeCreditLineTest is BaseTest {
         ISpoke(address(bm)).getInterestRate(reserveData.id),
         uint40(reserveData.lastUpdateTimestamp)
       )
-      .rayMul(reserveData.totalDrawnShares);
+      .rayMul(reserveData.drawnShares);
 
-    cumulatedInterest = totalCumulated - reserveData.totalDrawnShares;
+    cumulatedInterest = totalCumulated - reserveData.drawnShares;
 
     return (totalCumulated, cumulatedInterest);
   }
