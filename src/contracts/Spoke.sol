@@ -88,9 +88,12 @@ contract Spoke is ISpoke {
 
     _validateSupply(r, amount);
 
-    // TODO: Refresh risk premium of user, and pass into following function
-    (uint256 newRiskPremium, ) = _updateState();
-    uint256 userShares = ILiquidityHub(liquidityHub).supply(assetId, amount, newRiskPremium);
+    (, uint256 newAggregatedRiskPremium) = _updateState();
+    uint256 userShares = ILiquidityHub(liquidityHub).supply(
+      assetId,
+      amount,
+      newAggregatedRiskPremium
+    );
 
     users[assetId][msg.sender].supplyShares += userShares;
 
@@ -99,12 +102,16 @@ contract Spoke is ISpoke {
 
   function withdraw(uint256 assetId, address to, uint256 amount) external {
     Reserve storage r = reserves[assetId];
+    UserConfig storage u = users[assetId][msg.sender];
+    _validateWithdraw(assetId, r, u, amount);
 
-    _validateWithdraw(r, amount);
-
-    // TODO: Refresh risk premium of user, and pass into following function
-    (uint256 newRiskPremium, ) = _updateState();
-    uint256 userShares = ILiquidityHub(liquidityHub).withdraw(assetId, to, amount, newRiskPremium);
+    (, uint256 newAggregatedRiskPremium) = _updateState();
+    uint256 userShares = ILiquidityHub(liquidityHub).withdraw(
+      assetId,
+      to,
+      amount,
+      newAggregatedRiskPremium
+    );
     users[assetId][msg.sender].supplyShares -= userShares;
 
     emit Withdrawn(assetId, msg.sender, amount);
@@ -116,8 +123,12 @@ contract Spoke is ISpoke {
     _validateBorrow(r, amount);
 
     // TODO HF check
-    (uint256 newRiskPremium, ) = _updateState();
-    uint256 userShares = ILiquidityHub(liquidityHub).draw(assetId, amount, newRiskPremium);
+    (, uint256 newAggregatedRiskPremium) = _updateState();
+    uint256 userShares = ILiquidityHub(liquidityHub).draw(
+      assetId,
+      amount,
+      newAggregatedRiskPremium
+    );
     // debt still goes to original msg.sender
     users[assetId][msg.sender].debtShares += userShares;
 
@@ -133,9 +144,12 @@ contract Spoke is ISpoke {
     UserConfig storage u = users[assetId][msg.sender];
     _validateRepay(assetId, u, amount);
 
-    (uint256 newRiskPremium, ) = _updateState();
-    // TODO calculate risk premium and pass to LH
-    uint256 userShares = ILiquidityHub(liquidityHub).restore(assetId, amount, newRiskPremium);
+    (, uint256 newAggregatedRiskPremium) = _updateState();
+    uint256 userShares = ILiquidityHub(liquidityHub).restore(
+      assetId,
+      amount,
+      newAggregatedRiskPremium
+    );
     users[assetId][msg.sender].debtShares -= userShares;
 
     emit Repaid(assetId, msg.sender, amount);
@@ -180,12 +194,17 @@ contract Spoke is ISpoke {
     require(reserve.asset != address(0), 'RESERVE_NOT_LISTED');
   }
 
-  function _validateWithdraw(Reserve storage reserve, uint256 amount) internal view {
-    // TODO: Call liqudity hub to get the conversion rate for assets to shares
-    /*require(
-      users[reserve.id][msg.sender].supplyShares >= amount.toSharesDown(),
-      'INSUFFICIENT_BALANCE'
-    );*/
+  function _validateWithdraw(
+    uint256 assetId,
+    Reserve storage reserve,
+    UserConfig storage user,
+    uint256 amount
+  ) internal view {
+    require(
+      ILiquidityHub(liquidityHub).convertSharesToAssets(assetId, user.supplyShares, false) >=
+        amount,
+      'INSUFFICIENT_SUPPLY'
+    );
   }
 
   function _validateBorrow(Reserve storage reserve, uint256 amount) internal view {
@@ -193,9 +212,8 @@ contract Spoke is ISpoke {
   }
 
   function _validateRepay(uint256 assetId, UserConfig storage user, uint256 amount) internal view {
-    //TODO: validate repay, ie there is outstanding debt
     require(
-      ILiquidityHub(liquidityHub).convertSharesToAssets(assetId, user.debtShares, false) >= amount,
+      ILiquidityHub(liquidityHub).convertSharesToAssets(assetId, user.debtShares, true) >= amount,
       'INSUFFICIENT_BALANCE'
     );
   }
@@ -205,9 +223,10 @@ contract Spoke is ISpoke {
   @return uint256 new aggregated risk premium
   */
   function _updateState() internal returns (uint256, uint256) {
-    // TODO: refresh risk premium of user; aggregated risk premium
-    uint256 newRiskPremium = 0;
+    // TODO: refresh risk premium of user, specific assets user has supplied
+    uint256 newUserRiskPremium = 0;
+    // TODO: aggregated risk premium, ie loop over all assets and sum up risk premium
     uint256 newAggregatedRiskPremium = 0;
-    return (newRiskPremium, newAggregatedRiskPremium);
+    return (newUserRiskPremium, newAggregatedRiskPremium);
   }
 }
