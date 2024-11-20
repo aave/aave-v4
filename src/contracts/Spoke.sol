@@ -106,7 +106,13 @@ contract Spoke is ISpoke {
     // TODO HF check
     // TODO: risk premium; to
     (uint256 newRiskPremium, ) = _updateState();
-    ILiquidityHub(liquidityHub).draw(assetId, msg.sender, amount, newRiskPremium);
+    uint256 userDebtShares = ILiquidityHub(liquidityHub).draw(
+      assetId,
+      msg.sender,
+      amount,
+      newRiskPremium
+    );
+    users[assetId][msg.sender].debtShares += userDebtShares;
 
     // transfer liquidity to msg.sender
     IERC20(reserves[assetId].asset).safeTransfer(msg.sender, amount);
@@ -121,7 +127,8 @@ contract Spoke is ISpoke {
 
     (uint256 newRiskPremium, ) = _updateState();
     // TODO calculate risk premium and pass to LH
-    ILiquidityHub(liquidityHub).restore(assetId, amount, newRiskPremium);
+    uint256 userDebtShares = ILiquidityHub(liquidityHub).restore(assetId, amount, newRiskPremium);
+    users[assetId][msg.sender].debtShares -= userDebtShares;
 
     emit Repaid(assetId, msg.sender, amount);
   }
