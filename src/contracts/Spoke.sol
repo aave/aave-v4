@@ -130,7 +130,8 @@ contract Spoke is ISpoke {
   // TODO: Implement repay, calls liquidity hub restore method
   // TODO: onBehalfOf
   function repay(uint256 assetId, uint256 amount) external {
-    _validateRepay();
+    UserConfig storage u = users[assetId][msg.sender];
+    _validateRepay(assetId, u, amount);
 
     (uint256 newRiskPremium, ) = _updateState();
     // TODO calculate risk premium and pass to LH
@@ -191,8 +192,12 @@ contract Spoke is ISpoke {
     require(reserve.config.borrowable, 'RESERVE_NOT_BORROWABLE');
   }
 
-  function _validateRepay() internal view {
+  function _validateRepay(uint256 assetId, UserConfig storage user, uint256 amount) internal view {
     //TODO: validate repay, ie there is outstanding debt
+    require(
+      ILiquidityHub(liquidityHub).convertSharesToAssets(assetId, user.debtShares, false) >= amount,
+      'INSUFFICIENT_BALANCE'
+    );
   }
 
   /**

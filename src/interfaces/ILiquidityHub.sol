@@ -17,4 +17,16 @@ interface ILiquidityHub {
     uint256 amount,
     uint256 riskPremium
   ) external returns (uint256);
+
+  function convertSharesToAssets(
+    uint256 assetId,
+    uint256 amount,
+    bool roundUp
+  ) external view returns (uint256);
+
+  function convertAssetsToShares(
+    uint256 assetId,
+    uint256 amount,
+    bool roundUp
+  ) external view returns (uint256);
 }
