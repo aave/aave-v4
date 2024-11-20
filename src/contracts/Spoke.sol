@@ -79,13 +79,14 @@ contract Spoke is ISpoke {
     return 0;
   }
 
+  // /////
+  // Users
+  // /////
+
   function supply(uint256 assetId, uint256 amount) external {
     Reserve storage r = reserves[assetId];
 
     _validateSupply(r, amount);
-
-    IERC20(r.asset).safeTransferFrom(msg.sender, address(this), amount);
-    IERC20(r.asset).approve(liquidityHub, amount);
 
     // TODO: Refresh risk premium of user, and pass into following function
     (uint256 newRiskPremium, ) = _updateState();
@@ -109,21 +110,21 @@ contract Spoke is ISpoke {
     emit Withdrawn(assetId, msg.sender, amount);
   }
 
-  // TODO: On behalf of and referral code
-  function borrow(uint256 assetId, address to, uint256 amount) external {
+  // TODO: referral code
+  function borrow(uint256 assetId, address onBehalfOf, uint256 amount) external {
     Reserve storage r = reserves[assetId];
     _validateBorrow(r, amount);
 
     // TODO HF check
-    // TODO: risk premium implementation
     (uint256 newRiskPremium, ) = _updateState();
-    uint256 userDebtShares = ILiquidityHub(liquidityHub).draw(assetId, to, amount, newRiskPremium);
-    users[assetId][msg.sender].debtShares += userDebtShares;
+    uint256 userShares = ILiquidityHub(liquidityHub).draw(assetId, amount, newRiskPremium);
+    // debt still goes to original msg.sender
+    users[assetId][msg.sender].debtShares += userShares;
 
-    // transfer liquidity to msg.sender
-    IERC20(reserves[assetId].asset).safeTransfer(to, amount);
+    // transfer liquidity to onBehalfOf
+    IERC20(reserves[assetId].asset).safeTransfer(onBehalfOf, amount);
 
-    emit Borrowed(assetId, to, amount);
+    emit Borrowed(assetId, onBehalfOf, amount);
   }
 
   // TODO: Implement repay, calls liquidity hub restore method
@@ -133,8 +134,8 @@ contract Spoke is ISpoke {
 
     (uint256 newRiskPremium, ) = _updateState();
     // TODO calculate risk premium and pass to LH
-    uint256 userDebtShares = ILiquidityHub(liquidityHub).restore(assetId, amount, newRiskPremium);
-    users[assetId][msg.sender].debtShares -= userDebtShares;
+    uint256 userShares = ILiquidityHub(liquidityHub).restore(assetId, amount, newRiskPremium);
+    users[assetId][msg.sender].debtShares -= userShares;
 
     emit Repaid(assetId, msg.sender, amount);
   }
