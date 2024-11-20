@@ -33,7 +33,7 @@ contract LiquidityHub is ILiquidityHub {
   struct Asset {
     uint256 id;
     uint256 totalShares;
-    uint256 totalAssets; // TODO: does totalAssets include drawn liquidity?
+    uint256 totalAssets;
     uint256 totalDrawnShares;
     uint256 lastUpdateTimestamp;
     uint256 currentBorrowRate;
@@ -114,7 +114,7 @@ contract LiquidityHub is ILiquidityHub {
     uint256 assetId,
     uint256 amount,
     bool roundUp
-  ) external view returns (uint256) {
+  ) public view returns (uint256) {
     return
       roundUp
         ? amount.toAssetsUp(assets[assetId].totalAssets, assets[assetId].totalShares)
@@ -292,15 +292,9 @@ contract LiquidityHub is ILiquidityHub {
   ) internal view {
     // TODO: Other cases of status (frozen, paused)
     require(asset.config.active, 'ASSET_NOT_ACTIVE');
-
+    require(convertAssetsToShares(asset.id, amount, false) <= spoke.drawnShares, 'INVALID_AMOUNT');
     require(
-      amount.toSharesDown(asset.totalAssets, asset.totalShares) <= spoke.drawnShares,
-      'INVALID_AMOUNT'
-    );
-
-    require(
-      amount <=
-        asset.totalAssets - asset.totalDrawnShares.toAssetsUp(asset.totalAssets, asset.totalShares),
+      amount <= asset.totalAssets - convertSharesToAssets(asset.id, asset.totalDrawnShares, true),
       'NOT_AVAILABLE_LIQUIDITY'
     );
   }
@@ -308,16 +302,9 @@ contract LiquidityHub is ILiquidityHub {
   function _validateDraw(Asset storage asset, uint256 amount, uint256 drawCap) internal view {
     // TODO: Other cases of status (frozen, paused)
     require(asset.config.active, 'ASSET_NOT_ACTIVE');
-    require(
-      drawCap == type(uint256).max ||
-        amount + asset.totalDrawnShares.toAssetsUp(asset.totalAssets, asset.totalShares) <= drawCap,
-      'DRAW_CAP_EXCEEDED'
-    );
-    require(
-      amount <=
-        asset.totalAssets - asset.totalDrawnShares.toAssetsUp(asset.totalAssets, asset.totalShares),
-      'NOT_AVAILABLE_LIQUIDITY'
-    );
+    uint256 drawnAssets = convertSharesToAssets(asset.id, asset.totalDrawnShares, true);
+    require(drawCap == type(uint256).max || amount + drawnAssets <= drawCap, 'DRAW_CAP_EXCEEDED');
+    require(amount <= asset.totalAssets - drawnAssets, 'NOT_AVAILABLE_LIQUIDITY');
   }
 
   function _validateRestore(
@@ -349,7 +336,7 @@ contract LiquidityHub is ILiquidityHub {
         DataTypes.CalculateInterestRatesParams({
           liquidityAdded: liquidityAdded,
           liquidityTaken: liquidityTaken,
-          totalDebt: asset.totalDrawnShares.toAssetsUp(asset.totalAssets, asset.totalShares),
+          totalDebt: convertSharesToAssets(asset.id, asset.totalDrawnShares, true),
           reserveFactor: 0, // TODO
           assetId: asset.id,
           virtualUnderlyingBalance: asset.totalAssets,
@@ -363,13 +350,13 @@ contract LiquidityHub is ILiquidityHub {
     asset.currentBorrowRate = borrowRate;
   }
 
-  function _accrueAssetInterest(Asset storage r, uint256 borrowRate) internal {
-    uint256 elapsed = block.timestamp - r.lastUpdateTimestamp;
+  function _accrueAssetInterest(Asset storage asset, uint256 borrowRate) internal {
+    uint256 elapsed = block.timestamp - asset.lastUpdateTimestamp;
     if (elapsed > 0) {
       // linear interest
-      uint256 totalDrawn = r.totalDrawnShares.toAssetsDown(r.totalAssets, r.totalShares);
+      uint256 totalDrawn = convertSharesToAssets(asset.id, asset.totalDrawnShares, false);
       uint256 cumulated = totalDrawn.rayMul(
-        MathUtils.calculateLinearInterest(borrowRate, uint40(r.lastUpdateTimestamp))
+        MathUtils.calculateLinearInterest(borrowRate, uint40(asset.lastUpdateTimestamp))
       ); // TODO rounding
       console2.log(
         'cumulated: %e, drawn: %e, cumulatedInterest: %e',
@@ -377,11 +364,11 @@ contract LiquidityHub is ILiquidityHub {
         totalDrawn,
         (cumulated - totalDrawn)
       );
-      r.totalAssets += (cumulated - totalDrawn); // add delta, ie cumulated interest to totalAssets
-      r.totalDrawnShares = cumulated.toSharesDown(r.totalAssets, r.totalShares);
+      asset.totalAssets += (cumulated - totalDrawn); // add delta, ie cumulated interest to totalAssets
+      asset.totalDrawnShares = cumulated.toSharesDown(asset.totalAssets, asset.totalShares);
 
       // TODO: RF in terms of fee shares
-      r.lastUpdateTimestamp = block.timestamp;
+      asset.lastUpdateTimestamp = block.timestamp;
     }
   }
 
