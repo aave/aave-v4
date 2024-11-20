@@ -531,7 +531,7 @@ contract LiquidityHubTest is BaseTest {
 
     // User1 draw half of dai reserve liquidity
     vm.prank(USER1);
-    ISpoke(address(bm)).borrow(daiId, daiAmount / 2);
+    ISpoke(address(bm)).borrow(daiId, USER1, daiAmount / 2);
 
     daiData = hub.getAsset(daiId);
     ethData = hub.getAsset(ethId);
@@ -566,7 +566,7 @@ contract LiquidityHubTest is BaseTest {
     _updateActive(daiId, false);
     vm.prank(USER1);
     vm.expectRevert(TestErrors.RESERVE_NOT_ACTIVE);
-    ISpoke(address(bmcl)).borrow(daiId, drawnAmount);
+    ISpoke(address(bmcl)).borrow(daiId, USER1, drawnAmount);
   }
 
   function test_revert_draw_invalid_amount() public {
@@ -574,7 +574,7 @@ contract LiquidityHubTest is BaseTest {
     uint256 drawnAmount = 1;
     vm.prank(USER1);
     vm.expectRevert(TestErrors.INVALID_AMOUNT);
-    ISpoke(address(bmcl)).borrow(daiId, drawnAmount);
+    ISpoke(address(bmcl)).borrow(daiId, USER1, drawnAmount);
   }
 
   function test_revert_draw_cap_exceeded() public {
@@ -591,7 +591,7 @@ contract LiquidityHubTest is BaseTest {
 
     vm.prank(USER1);
     vm.expectRevert(TestErrors.CAP_EXCEEDED);
-    ISpoke(address(bmcl)).borrow(daiId, drawnAmount);
+    ISpoke(address(bmcl)).borrow(daiId, USER1, drawnAmount);
   }
 
   // function _updateLiquidityPremium(uint256 assetId, uint256 newLiquidityPremium) internal {

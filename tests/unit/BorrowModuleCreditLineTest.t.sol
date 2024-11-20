@@ -115,7 +115,7 @@ contract SpokeCreditLineTest is BaseTest {
     vm.prank(USER1);
     vm.expectEmit(true, false, false, true, address(bmcl));
     emit Borrowed(daiId, USER1, drawnAmounts[0]);
-    ISpoke(address(bmcl)).borrow(daiId, drawnAmounts[0]);
+    ISpoke(address(bmcl)).borrow(daiId, USER1, drawnAmounts[0]);
 
     LiquidityHub.Asset memory daiData1 = hub.getAsset(daiId);
 
@@ -148,7 +148,7 @@ contract SpokeCreditLineTest is BaseTest {
     vm.prank(USER1);
     vm.expectEmit(true, false, false, true, address(bmcl));
     emit Borrowed(daiId, USER1, drawnAmounts[1]);
-    ISpoke(address(bmcl)).borrow(daiId, drawnAmounts[1]);
+    ISpoke(address(bmcl)).borrow(daiId, USER1, drawnAmounts[1]);
     user = bmcl.getUser(daiId, USER1);
 
     // hub assertions
@@ -191,7 +191,7 @@ contract SpokeCreditLineTest is BaseTest {
 
     vm.prank(USER1);
     vm.expectRevert(TestErrors.RESERVE_NOT_BORROWABLE);
-    ISpoke(address(bmcl)).borrow(daiId, drawnAmount);
+    ISpoke(address(bmcl)).borrow(daiId, USER1, drawnAmount);
   }
 
   function test_multi_borrow_credit_line() public {
@@ -216,7 +216,7 @@ contract SpokeCreditLineTest is BaseTest {
 
     // User1 draw half of dai reserve liquidity for borrow module
     vm.prank(USER1);
-    ISpoke(address(bm)).borrow(daiId, drawnAmounts[0]);
+    ISpoke(address(bm)).borrow(daiId, USER1, drawnAmounts[0]);
 
     LiquidityHub.Asset memory daiData1 = hub.getAsset(daiId);
 
@@ -233,10 +233,10 @@ contract SpokeCreditLineTest is BaseTest {
 
     // User1 draw 25% of dai reserve liquidity for borrow module
     vm.prank(USER1);
-    ISpoke(address(bmcl)).borrow(daiId, drawnAmounts[1]);
+    ISpoke(address(bmcl)).borrow(daiId, USER1, drawnAmounts[1]);
     // User2 draw 20% of dai reserve liquidity for borrow module
     vm.prank(USER2);
-    ISpoke(address(bmcl)).borrow(daiId, drawnAmounts[2]);
+    ISpoke(address(bmcl)).borrow(daiId, USER1, drawnAmounts[2]);
 
     user1 = bmcl.getUser(daiId, USER1);
     MockSpokeCreditLine.UserConfig memory user2 = bmcl.getUser(daiId, USER2);
@@ -322,7 +322,7 @@ contract SpokeCreditLineTest is BaseTest {
       );
 
       // User1 draws some of dai reserve liquidity for borrow module
-      ISpoke(address(bmcl)).borrow(daiId, drawnAmounts[i]);
+      ISpoke(address(bmcl)).borrow(daiId, USER1, drawnAmounts[i]);
 
       daiData[i] = hub.getAsset(daiId);
       (uint256 totalCumulated, uint256 cumulatedInterest) = _calculateLinearInterest(
