@@ -60,14 +60,22 @@ contract Spoke is ISpoke {
   }
 
   function getUserDebt(uint256 assetId, address user) external view returns (uint256) {
+    UserConfig memory u = users[assetId][user];
     // TODO: Instead use a getter from liquidity hub to get up-to-date user debt (with accrued debt)
-    return 0;
+    return
+      u.debtShares.rayMul(
+        MathUtils.calculateCompoundedInterest(getInterestRate(assetId), uint40(0), block.timestamp)
+      );
   }
 
   function getReserveDebt(uint256 assetId) external view returns (uint256) {
     Reserve storage r = reserves[assetId];
 
     // TODO: Instead use a getter from liquidity hub to get up-to-date reserve debt (with accrued debt)
+    // return
+    //   r.totalDebt.rayMul(
+    //     MathUtils.calculateCompoundedInterest(getInterestRate(assetId), uint40(0), block.timestamp)
+    //   );
     return 0;
   }
 
