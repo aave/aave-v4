@@ -91,12 +91,12 @@ contract LiquidityHub is ILiquidityHub {
 
   /**
    * @param assetId The asset id
-   * @return The total balance of a given asset
+   * @return The total balance of a given asset, either in shares or in assets
    */
-  function getUpdatedAssetBalance(uint256 assetId) external returns (uint256) {
+  function getUpdatedAssetBalance(uint256 assetId, bool inShares) external returns (uint256) {
     Asset storage asset = assets[assetId];
     _accrueAssetInterest(asset, asset.currentBorrowRate);
-    return asset.totalAssets;
+    return inShares ? asset.totalShares : asset.totalAssets;
   }
 
   function convertAssetsToShares(
