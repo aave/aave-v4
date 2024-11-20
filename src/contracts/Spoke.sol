@@ -84,6 +84,9 @@ contract Spoke is ISpoke {
 
     _validateSupply(r, amount);
 
+    IERC20(r.asset).safeTransferFrom(msg.sender, address(this), amount);
+    IERC20(r.asset).approve(liquidityHub, amount);
+
     // TODO: Refresh risk premium of user, and pass into following function
     (uint256 newRiskPremium, ) = _updateState();
     uint256 userShares = ILiquidityHub(liquidityHub).supply(assetId, amount, newRiskPremium);

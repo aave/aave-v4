@@ -158,7 +158,6 @@ contract LiquidityHub is ILiquidityHub {
 
     // Update indexes and IRs
     _updateState(asset, spoke.drawnShares, riskPremium, amount, 0);
-
     _validateSupply(asset, spoke, amount);
 
     // TODO Mitigate inflation attack (burn some amount if first supply)
