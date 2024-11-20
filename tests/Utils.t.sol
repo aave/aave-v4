@@ -14,10 +14,10 @@ library Utils {
     uint256 amount,
     address onBehalfOf
   ) internal {
-    address asset = hub.reservesList(assetId);
+    address asset = hub.assetsList(assetId);
     vm.startPrank(user);
     IERC20(asset).approve(address(hub), amount);
-    hub.supply(assetId, amount, onBehalfOf, 0);
+    hub.supply(assetId, amount, 0);
     vm.stopPrank();
   }
 
@@ -30,7 +30,8 @@ library Utils {
     address to
   ) internal {
     vm.startPrank(user);
-    hub.withdraw(assetId, amount, to);
+    // TODO: risk premium
+    hub.withdraw(assetId, to, amount, 0);
     vm.stopPrank();
   }
 }

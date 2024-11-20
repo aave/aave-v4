@@ -60,14 +60,11 @@ contract BorrowModule is IBorrowModule {
   }
 
   function getUserDebt(uint256 assetId, address user) external view returns (uint256) {
-    UserConfig memory u = users[assetId][user];
-
     // TODO: Instead use a getter from liquidity hub to get up-to-date user debt (with accrued debt)
-    return
-      u.balance.rayMul(
+    return u.balance.rayMul(
         MathUtils.calculateCompoundedInterest(
           getInterestRate(assetId),
-          uint40(u.lastUpdateTimestamp),
+          uint40(0),
           block.timestamp
         )
       );
@@ -77,11 +74,10 @@ contract BorrowModule is IBorrowModule {
     Reserve storage r = reserves[assetId];
 
     // TODO: Instead use a getter from liquidity hub to get up-to-date reserve debt (with accrued debt)
-    return
-      r.totalDebt.rayMul(
+    return r.totalDebt.rayMul(
         MathUtils.calculateCompoundedInterest(
           getInterestRate(assetId),
-          uint40(r.lastUpdateTimestamp),
+          uint40(0),
           block.timestamp
         )
       );
@@ -121,7 +117,8 @@ contract BorrowModule is IBorrowModule {
     _validateBorrow(r, amount);
     // TODO HF check
 
-    ILiquidityHub(liquidityHub).draw(assetId, amount);
+    // TODO: risk premium; to
+    ILiquidityHub(liquidityHub).draw(assetId, msg.sender, amount, 0);
 
     // transfer liquidity to msg.sender
     IERC20(reserves[assetId].asset).safeTransfer(msg.sender, amount);
@@ -132,13 +129,15 @@ contract BorrowModule is IBorrowModule {
   // TODO: Implement repay, calls liquidity hub restore method
   // TODO: onBehalfOf
   function repay(uint256 assetId, uint256 amount) external {
-    ILiquidityHub(liquidityHub).restore(assetId, amount);
+    // TODO calculate risk premium and pass to LH
+    ILiquidityHub(liquidityHub).restore(assetId, amount, 0);
 
     emit Repaid(assetId, msg.sender, amount);
   }
 
   // TODO: Needed?
   function getInterestRate(uint256 assetId) public view returns (uint256) {
+    // read from state, convert to ray
     return ILiquidityHub(liquidityHub).getInterestRate(assetId);
   }
 
@@ -151,9 +150,8 @@ contract BorrowModule is IBorrowModule {
     reserves[assetId].id = assetId;
     reserves[assetId].asset = asset;
     reserves[assetId].config = ReserveConfig({
-      lt: params.lt,
+      lt: params.lt,©
       lb: params.lb,
-      rf: params.rf,
       borrowable: params.borrowable,
       collateral: params.collateral
     });
@@ -166,7 +164,6 @@ contract BorrowModule is IBorrowModule {
     reserves[assetId].config = ReserveConfig({
       lt: params.lt,
       lb: params.lb,
-      rf: params.rf,
       borrowable: params.borrowable,
       collateral: params.collateral
     });
@@ -174,7 +171,7 @@ contract BorrowModule is IBorrowModule {
 
   function _validateSupply(Reserve storage reserve, uint256 amount) internal view {
     // TODO: Decide where supply cap is checked
-    require(reserves[reserve.id] != address(0), 'RESERVE_NOT_LISTED');
+    require(reserve.asset != address(0), 'RESERVE_NOT_LISTED');
   }
 
   function _validateWithdraw(Reserve storage reserve, uint256 amount) internal view {

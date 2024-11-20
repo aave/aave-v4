@@ -89,7 +89,8 @@ contract MockBorrowModuleCreditLine is IBorrowModule {
     // update state will update the IR based on total debt
     _updateState(r, assetId, amount, msg.sender);
 
-    ILiquidityHub(liquidityHub).draw(assetId, amount);
+    // TODO: risk premium; to
+    ILiquidityHub(liquidityHub).draw(assetId, msg.sender, amount, 0);
 
     // keep liquidity in borrow module
     IERC20(reserves[assetId].asset).safeTransfer(msg.sender, amount);
@@ -102,7 +103,7 @@ contract MockBorrowModuleCreditLine is IBorrowModule {
   function repay(uint256 assetId, uint256 amount) external {
     Reserve storage r = reserves[assetId];
     _updateState(r, assetId, amount, msg.sender);
-    ILiquidityHub(liquidityHub).restore(assetId, amount);
+    ILiquidityHub(liquidityHub).restore(assetId, amount, 0);
 
     emit Repaid(assetId, msg.sender, amount);
   }
