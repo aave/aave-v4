@@ -20,6 +20,7 @@ contract LiquidityHub is ILiquidityHub {
   struct Spoke {
     uint256 totalShares;
     uint256 drawnShares;
+    // TODO: lastUpdateTimestamp?
     SpokeConfig config;
   }
 
