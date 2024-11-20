@@ -84,6 +84,28 @@ contract LiquidityHub is ILiquidityHub {
     return spokeAssetConfigs[assetId][spoke];
   }
 
+  function convertAssetsToShares(
+    uint256 assetId,
+    uint256 amount,
+    bool roundUp
+  ) external view returns (uint256) {
+    return
+      roundUp
+        ? amount.toSharesUp(assets[assetId].totalAssets, assets[assetId].totalShares)
+        : amount.toSharesDown(assets[assetId].totalAssets, assets[assetId].totalShares);
+  }
+
+  function convertSharesToAssets(
+    uint256 assetId,
+    uint256 amount,
+    bool roundUp
+  ) external view returns (uint256) {
+    return
+      roundUp
+        ? amount.toAssetsUp(assets[assetId].totalAssets, assets[assetId].totalShares)
+        : amount.toAssetsDown(assets[assetId].totalAssets, assets[assetId].totalShares);
+  }
+
   // /////
   // Governance
   // /////
