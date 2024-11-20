@@ -126,14 +126,12 @@ contract Spoke is ISpoke {
     (, uint256 newAggregatedRiskPremium) = _updateState();
     uint256 userShares = ILiquidityHub(liquidityHub).draw(
       assetId,
+      onBehalfOf,
       amount,
       newAggregatedRiskPremium
     );
     // debt still goes to original msg.sender
     users[assetId][msg.sender].debtShares += userShares;
-
-    // transfer liquidity to onBehalfOf
-    IERC20(reserves[assetId].asset).safeTransfer(onBehalfOf, amount);
 
     emit Borrowed(assetId, onBehalfOf, amount);
   }

@@ -7,7 +7,12 @@ pragma solidity ^0.8.0;
  * @notice Basic interface for LiquidityHub
  */
 interface ILiquidityHub {
-  function draw(uint256 assetId, uint256 amount, uint256 riskPremium) external returns (uint256);
+  function draw(
+    uint256 assetId,
+    address onBehalfOf,
+    uint256 amount,
+    uint256 riskPremium
+  ) external returns (uint256);
   function restore(uint256 assetId, uint256 amount, uint256 riskPremium) external returns (uint256);
   function supply(uint256 assetId, uint256 amount, uint256 riskPremium) external returns (uint256);
   function withdraw(
