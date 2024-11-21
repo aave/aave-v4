@@ -161,27 +161,34 @@ contract LiquidityHubTest is BaseTest {
 
   function test_fuzz_supply_events(
     uint256 assetId,
-    address user,
+    address spoke,
     uint256 amount,
     address onBehalfOf
   ) public {
-    if (user == address(hub) || user == address(0)) return;
+    if (spoke == address(hub) || spoke == address(0)) return;
     if (onBehalfOf == address(0)) return;
+
     assetId = bound(assetId, 0, hub.assetCount() - 1);
     amount = bound(amount, 1, type(uint128).max);
 
+    hub.addSpoke(
+      assetId,
+      LiquidityHub.SpokeConfig({supplyCap: type(uint256).max, drawCap: type(uint256).max}),
+      spoke
+    );
+
     address asset = hub.assetsList(assetId);
 
-    deal(asset, user, amount);
+    deal(asset, spoke, amount);
 
-    vm.startPrank(user);
+    vm.startPrank(spoke);
     IERC20(asset).approve(address(hub), amount);
 
     vm.expectEmit(true, true, true, true, asset);
-    emit Transfer(user, address(hub), amount);
+    emit Transfer(spoke, address(hub), amount);
 
     vm.expectEmit(true, true, true, true, address(hub));
-    emit Supply(assetId, user, amount);
+    emit Supply(assetId, spoke, amount);
 
     hub.supply(assetId, amount, 0);
     vm.stopPrank();
