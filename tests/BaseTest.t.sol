@@ -61,8 +61,8 @@ abstract contract BaseTest is Test, Events {
 
   IPriceOracle oracle;
   LiquidityHub hub;
-  Spoke bm;
-  MockSpokeCreditLine bmcl;
+  Spoke spoke;
+  MockSpokeCreditLine spokeCreditLine;
   DefaultReserveInterestRateStrategy creditLineIRStrategy;
 
   address internal mockAddressesProvider = makeAddr('mockAddressesProvider');
@@ -73,7 +73,7 @@ abstract contract BaseTest is Test, Events {
     oracle = new MockPriceOracle();
     creditLineIRStrategy = new DefaultReserveInterestRateStrategy(mockAddressesProvider);
     hub = new LiquidityHub();
-    bm = new Spoke(address(hub));
+    spoke = new Spoke(address(hub));
     dai = new MockERC20();
     eth = new MockERC20();
     usdc = new MockERC20();

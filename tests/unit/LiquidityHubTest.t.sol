@@ -20,7 +20,7 @@ contract LiquidityHubTest is BaseTest {
       }),
       address(dai)
     );
-    bm.addReserve(
+    spoke.addReserve(
       0,
       Spoke.ReserveConfig({lt: 0, lb: 0, borrowable: true, collateral: false}),
       address(dai)
@@ -37,7 +37,7 @@ contract LiquidityHubTest is BaseTest {
       }),
       address(eth)
     );
-    bm.addReserve(
+    spoke.addReserve(
       1,
       Spoke.ReserveConfig({lt: 0, lb: 0, borrowable: true, collateral: false}),
       address(eth)
@@ -56,7 +56,7 @@ contract LiquidityHubTest is BaseTest {
         variableRateSlope2: 500 // 5.00%
       })
     );
-    bmcl = new MockSpokeCreditLine(address(hub), address(creditLineIRStrategy));
+    spokeCreditLine = new MockSpokeCreditLine(address(hub), address(creditLineIRStrategy));
     hub.addAsset(
       LiquidityHub.AssetConfig({
         decimals: 18,
@@ -66,7 +66,7 @@ contract LiquidityHubTest is BaseTest {
       }),
       address(dai)
     );
-    bmcl.addReserve(
+    spokeCreditLine.addReserve(
       daiCreditLineAssetId,
       MockSpokeCreditLine.ReserveConfig({lt: 0, lb: 0, rf: 0, borrowable: true}),
       address(dai)
@@ -83,24 +83,24 @@ contract LiquidityHubTest is BaseTest {
     deal(address(dai), USER1, amount);
 
     LiquidityHub.Asset memory reserveData = hub.getAsset(assetId);
-    Spoke.UserConfig memory userData = bm.getUser(assetId, USER1);
+    Spoke.UserConfig memory userData = spoke.getUser(assetId, USER1);
 
     assertEq(reserveData.totalShares, 0);
     assertEq(reserveData.totalAssets, 0);
     assertEq(userData.supplyShares, 0);
-    assertEq(bm.getUserDebt(assetId, USER1), 0);
+    assertEq(spoke.getUserDebt(assetId, USER1), 0);
     assertEq(dai.balanceOf(USER1), amount);
     assertEq(dai.balanceOf(address(hub)), 0);
 
     Utils.supply(vm, hub, assetId, USER1, amount, USER1);
 
     reserveData = hub.getAsset(assetId);
-    userData = bm.getUser(assetId, USER1);
+    userData = spoke.getUser(assetId, USER1);
 
     assertEq(reserveData.totalShares, amount);
     assertEq(reserveData.totalAssets, amount);
     assertEq(userData.supplyShares, amount);
-    assertEq(bm.getUserDebt(assetId, USER1), amount);
+    assertEq(spoke.getUserDebt(assetId, USER1), amount);
     assertEq(dai.balanceOf(USER1), 0);
     assertEq(dai.balanceOf(address(hub)), amount);
   }
@@ -118,13 +118,13 @@ contract LiquidityHubTest is BaseTest {
     Utils.supply(vm, hub, assetId, user, amount, user);
 
     LiquidityHub.Asset memory reserveData = hub.getAsset(assetId);
-    Spoke.UserConfig memory userData = bm.getUser(assetId, user);
+    Spoke.UserConfig memory userData = spoke.getUser(assetId, user);
 
     // check reserve index and user interest
     assertEq(reserveData.totalShares, amount, 'wrong reserve shares');
     assertEq(reserveData.totalAssets, amount, 'wrong reserve assets');
     assertEq(userData.supplyShares, amount, 'wrong user shares');
-    assertEq(bm.getUserDebt(assetId, user), amount, 'wrong user assets');
+    assertEq(spoke.getUserDebt(assetId, user), amount, 'wrong user assets');
   }
 
   function test_fuzz_supply_events(
@@ -170,46 +170,46 @@ contract LiquidityHubTest is BaseTest {
     deal(address(dai), USER1, amount);
 
     LiquidityHub.Asset memory reserveData = hub.getAsset(assetId);
-    Spoke.UserConfig memory userData = bm.getUser(assetId, USER1);
+    Spoke.UserConfig memory userData = spoke.getUser(assetId, USER1);
 
     assertEq(reserveData.totalShares, 0);
     assertEq(reserveData.totalAssets, 0);
     assertEq(userData.supplyShares, 0);
-    assertEq(bm.getUserDebt(assetId, USER1), 0);
+    assertEq(spoke.getUserDebt(assetId, USER1), 0);
     assertEq(dai.balanceOf(USER1), amount);
     assertEq(dai.balanceOf(address(hub)), 0);
 
     Utils.supply(vm, hub, assetId, USER1, amount, USER1);
 
     reserveData = hub.getAsset(assetId);
-    userData = bm.getUser(assetId, USER1);
+    userData = spoke.getUser(assetId, USER1);
 
     assertEq(reserveData.totalShares, amount);
     assertEq(reserveData.totalAssets, amount);
     assertEq(userData.supplyShares, amount);
-    assertEq(bm.getUserDebt(assetId, USER1), amount);
+    assertEq(spoke.getUserDebt(assetId, USER1), amount);
     assertEq(dai.balanceOf(USER1), 0);
     assertEq(dai.balanceOf(address(hub)), amount);
 
     // Index grows but same block, no interest acc
     uint256 newBorrowRate = 0.1e27; // 10.00%
     vm.mockCall(
-      address(bm),
+      address(spoke),
       abi.encodeWithSelector(ISpoke.getInterestRate.selector),
       abi.encode(newBorrowRate)
     );
 
-    userData = bm.getUser(assetId, USER1);
-    assertEq(bm.getUserDebt(assetId, USER1), amount);
+    userData = spoke.getUser(assetId, USER1);
+    assertEq(spoke.getUserDebt(assetId, USER1), amount);
 
     // Time flies, no interest acc
     vm.warp(block.timestamp + 1e4);
 
-    userData = bm.getUser(assetId, USER1);
+    userData = spoke.getUser(assetId, USER1);
     reserveData = hub.getAsset(assetId);
     assertEq(reserveData.totalShares, amount);
     assertEq(reserveData.totalAssets, amount);
-    assertEq(bm.getUserDebt(assetId, USER1), amount);
+    assertEq(spoke.getUserDebt(assetId, USER1), amount);
 
     // state update due to reserve operation
     // TODO helper for reserve state update
@@ -231,14 +231,14 @@ contract LiquidityHubTest is BaseTest {
     Utils.supply(vm, hub, assetId, USER2, user2SupplyAssets, USER2);
 
     // reserve update
-    userData = bm.getUser(assetId, USER1);
+    userData = spoke.getUser(assetId, USER1);
     reserveData = hub.getAsset(assetId);
 
     assertEq(reserveData.totalShares, amount + user2SupplyShares, 'wrong total shares');
     assertEq(reserveData.totalAssets, newTotalAssets + user2SupplyAssets, 'wrong total assets');
     assertEq(reserveData.drawnShares, 0, 'wrong total drawn');
     assertEq(userData.supplyShares, amount);
-    assertEq(bm.getUserDebt(assetId, USER1), newUserAssets, 'wrong user assets');
+    assertEq(spoke.getUserDebt(assetId, USER1), newUserAssets, 'wrong user assets');
   }
 
   struct TestSupplyUserParams {
@@ -280,18 +280,18 @@ contract LiquidityHubTest is BaseTest {
 
     for (uint256 i = 0; i < 2; i += 1) {
       reserveData = hub.getAsset(assetId);
-      userData = bm.getUser(assetId, user);
+      userData = spoke.getUser(assetId, user);
 
       // check reserve index and user interest
       assertEq(reserveData.totalShares, p.totalShares, 'wrong reserve shares');
       assertEq(reserveData.totalAssets, p.totalAssets, 'wrong reserve assets');
       assertEq(userData.supplyShares, amount, 'wrong user shares');
-      assertEq(bm.getUserDebt(assetId, user), p.userAssets, 'wrong user assets');
+      assertEq(spoke.getUserDebt(assetId, user), p.userAssets, 'wrong user assets');
 
       // rate increases
       uint256 newBorrowRate = (borrowRateChange * i) % 2e27; // randomize, 200.00% max
       vm.mockCall(
-        address(bm),
+        address(spoke),
         abi.encodeWithSelector(ISpoke.getInterestRate.selector),
         abi.encode(newBorrowRate)
       );
@@ -330,24 +330,24 @@ contract LiquidityHubTest is BaseTest {
     Utils.supply(vm, hub, assetId, USER1, amount, USER1);
 
     LiquidityHub.Asset memory reserveData = hub.getAsset(assetId);
-    Spoke.UserConfig memory userData = bm.getUser(assetId, USER1);
+    Spoke.UserConfig memory userData = spoke.getUser(assetId, USER1);
 
     assertEq(reserveData.totalShares, amount);
     assertEq(reserveData.totalAssets, amount);
     assertEq(userData.supplyShares, amount);
-    assertEq(bm.getUserDebt(assetId, USER1), amount);
+    assertEq(spoke.getUserDebt(assetId, USER1), amount);
     assertEq(dai.balanceOf(USER1), 0);
     assertEq(dai.balanceOf(address(hub)), amount);
 
     Utils.withdraw(vm, hub, assetId, USER1, amount, USER1);
 
     reserveData = hub.getAsset(assetId);
-    userData = bm.getUser(assetId, USER1);
+    userData = spoke.getUser(assetId, USER1);
 
     assertEq(reserveData.totalShares, 0);
     assertEq(reserveData.totalAssets, 0);
     assertEq(userData.supplyShares, 0);
-    assertEq(bm.getUserDebt(assetId, USER1), 0);
+    assertEq(spoke.getUserDebt(assetId, USER1), 0);
     assertEq(dai.balanceOf(USER1), amount);
     assertEq(dai.balanceOf(address(hub)), 0);
   }
@@ -395,12 +395,12 @@ contract LiquidityHubTest is BaseTest {
     Utils.supply(vm, hub, assetId, USER1, amount, USER1);
 
     LiquidityHub.Asset memory reserveData = hub.getAsset(assetId);
-    Spoke.UserConfig memory userData = bm.getUser(assetId, USER1);
+    Spoke.UserConfig memory userData = spoke.getUser(assetId, USER1);
 
     assertEq(reserveData.totalShares, amount);
     assertEq(reserveData.totalAssets, amount);
     assertEq(userData.supplyShares, amount);
-    assertEq(bm.getUserDebt(assetId, USER1), amount);
+    assertEq(spoke.getUserDebt(assetId, USER1), amount);
     assertEq(dai.balanceOf(USER1), 0);
     assertEq(dai.balanceOf(address(hub)), amount);
 
@@ -415,12 +415,12 @@ contract LiquidityHubTest is BaseTest {
     hub.withdraw(assetId, USER1, amount + 1, 0);
 
     reserveData = hub.getAsset(assetId);
-    userData = bm.getUser(assetId, USER1);
+    userData = spoke.getUser(assetId, USER1);
 
     assertEq(reserveData.totalShares, amount);
     assertEq(reserveData.totalAssets, amount);
     assertEq(userData.supplyShares, amount);
-    assertEq(bm.getUserDebt(assetId, USER1), amount);
+    assertEq(spoke.getUserDebt(assetId, USER1), amount);
     assertEq(dai.balanceOf(USER1), 0);
     assertEq(dai.balanceOf(address(hub)), amount);
   }
@@ -432,19 +432,19 @@ contract LiquidityHubTest is BaseTest {
 
     deal(address(eth), USER1, amount);
     Utils.supply(vm, hub, ethAssetId, USER1, amount, USER1);
-    bm.getUserDebt(ethAssetId, USER1);
-    bm.getUserDebt(ethAssetId, USER2);
-    bm.getUserDebt(daiAssetId, USER1);
-    bm.getUserDebt(daiAssetId, USER2);
+    spoke.getUserDebt(ethAssetId, USER1);
+    spoke.getUserDebt(ethAssetId, USER2);
+    spoke.getUserDebt(daiAssetId, USER1);
+    spoke.getUserDebt(daiAssetId, USER2);
     // assertEq(hub.getUserRiskPremium(USER1), 0);
     // assertEq(hub.getUserRiskPremium(USER2), 0);
 
     deal(address(dai), USER1, amount);
     Utils.supply(vm, hub, daiAssetId, USER1, amount, USER2);
-    bm.getUserDebt(ethAssetId, USER1);
-    bm.getUserDebt(ethAssetId, USER2);
-    bm.getUserDebt(daiAssetId, USER1);
-    bm.getUserDebt(daiAssetId, USER2);
+    spoke.getUserDebt(ethAssetId, USER1);
+    spoke.getUserDebt(ethAssetId, USER2);
+    spoke.getUserDebt(daiAssetId, USER1);
+    spoke.getUserDebt(daiAssetId, USER2);
     // assertEq(hub.getUserRiskPremium(USER1), 0);
     // assertEq(hub.getUserRiskPremium(USER2), 10_00);
   }
@@ -505,10 +505,10 @@ contract LiquidityHubTest is BaseTest {
 
     LiquidityHub.Asset memory daiData = hub.getAsset(daiId);
     LiquidityHub.Asset memory ethData = hub.getAsset(ethId);
-    Spoke.UserConfig memory userDaiData1 = bm.getUser(daiId, USER1);
-    Spoke.UserConfig memory userEthData1 = bm.getUser(ethId, USER1);
-    Spoke.UserConfig memory userDaiData2 = bm.getUser(daiId, USER2);
-    Spoke.UserConfig memory userEthData2 = bm.getUser(ethId, USER2);
+    Spoke.UserConfig memory userDaiData1 = spoke.getUser(daiId, USER1);
+    Spoke.UserConfig memory userEthData1 = spoke.getUser(ethId, USER1);
+    Spoke.UserConfig memory userDaiData2 = spoke.getUser(daiId, USER2);
+    Spoke.UserConfig memory userEthData2 = spoke.getUser(ethId, USER2);
 
     assertEq(daiData.totalShares, daiAmount);
     assertEq(daiData.totalAssets, daiAmount);
@@ -518,27 +518,27 @@ contract LiquidityHubTest is BaseTest {
     assertEq(ethData.drawnShares, 0);
 
     assertEq(userDaiData1.supplyShares, 0);
-    assertEq(bm.getUserDebt(daiId, USER1), 0);
+    assertEq(spoke.getUserDebt(daiId, USER1), 0);
     assertEq(userEthData1.supplyShares, ethAmount);
-    assertEq(bm.getUserDebt(ethId, USER1), ethAmount);
+    assertEq(spoke.getUserDebt(ethId, USER1), ethAmount);
 
     assertEq(userDaiData2.supplyShares, daiAmount);
-    assertEq(bm.getUserDebt(daiId, USER2), daiAmount);
+    assertEq(spoke.getUserDebt(daiId, USER2), daiAmount);
     assertEq(userEthData2.supplyShares, 0);
-    assertEq(bm.getUserDebt(ethId, USER2), 0);
+    assertEq(spoke.getUserDebt(ethId, USER2), 0);
 
     assertEq(dai.balanceOf(USER1), 0);
 
     // User1 draw half of dai reserve liquidity
     vm.prank(USER1);
-    ISpoke(address(bm)).borrow(daiId, USER1, daiAmount / 2);
+    ISpoke(address(spoke)).borrow(daiId, USER1, daiAmount / 2);
 
     daiData = hub.getAsset(daiId);
     ethData = hub.getAsset(ethId);
-    userDaiData1 = bm.getUser(daiId, USER1);
-    userEthData1 = bm.getUser(ethId, USER1);
-    userDaiData2 = bm.getUser(daiId, USER2);
-    userEthData2 = bm.getUser(ethId, USER2);
+    userDaiData1 = spoke.getUser(daiId, USER1);
+    userEthData1 = spoke.getUser(ethId, USER1);
+    userDaiData2 = spoke.getUser(daiId, USER2);
+    userEthData2 = spoke.getUser(ethId, USER2);
 
     assertEq(daiData.totalShares, daiAmount);
     assertEq(daiData.totalAssets, daiAmount);
@@ -548,14 +548,14 @@ contract LiquidityHubTest is BaseTest {
     assertEq(ethData.drawnShares, 0);
 
     assertEq(userDaiData1.supplyShares, 0);
-    assertEq(bm.getUserDebt(daiId, USER1), 0);
+    assertEq(spoke.getUserDebt(daiId, USER1), 0);
     assertEq(userEthData1.supplyShares, ethAmount);
-    assertEq(bm.getUserDebt(ethId, USER1), ethAmount);
+    assertEq(spoke.getUserDebt(ethId, USER1), ethAmount);
 
     assertEq(userDaiData2.supplyShares, daiAmount);
-    assertEq(bm.getUserDebt(daiId, USER2), daiAmount);
+    assertEq(spoke.getUserDebt(daiId, USER2), daiAmount);
     assertEq(userEthData2.supplyShares, 0);
-    assertEq(bm.getUserDebt(ethId, USER2), 0);
+    assertEq(spoke.getUserDebt(ethId, USER2), 0);
 
     assertEq(dai.balanceOf(USER1), daiAmount / 2);
   }
@@ -566,7 +566,7 @@ contract LiquidityHubTest is BaseTest {
     _updateActive(daiId, false);
     vm.prank(USER1);
     vm.expectRevert(TestErrors.RESERVE_NOT_ACTIVE);
-    ISpoke(address(bmcl)).borrow(daiId, USER1, drawnAmount);
+    ISpoke(address(spokeCreditLine)).borrow(daiId, USER1, drawnAmount);
   }
 
   function test_revert_draw_invalid_amount() public {
@@ -574,7 +574,7 @@ contract LiquidityHubTest is BaseTest {
     uint256 drawnAmount = 1;
     vm.prank(USER1);
     vm.expectRevert(TestErrors.INVALID_AMOUNT);
-    ISpoke(address(bmcl)).borrow(daiId, USER1, drawnAmount);
+    ISpoke(address(spokeCreditLine)).borrow(daiId, USER1, drawnAmount);
   }
 
   function test_revert_draw_cap_exceeded() public {
@@ -591,7 +591,7 @@ contract LiquidityHubTest is BaseTest {
 
     vm.prank(USER1);
     vm.expectRevert(TestErrors.CAP_EXCEEDED);
-    ISpoke(address(bmcl)).borrow(daiId, USER1, drawnAmount);
+    ISpoke(address(spokeCreditLine)).borrow(daiId, USER1, drawnAmount);
   }
 
   // function _updateLiquidityPremium(uint256 assetId, uint256 newLiquidityPremium) internal {

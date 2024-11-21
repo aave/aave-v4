@@ -20,7 +20,7 @@ contract SpokeCreditLineTest is BaseTest {
       }),
       address(dai)
     );
-    bm.addReserve(
+    spoke.addReserve(
       0,
       Spoke.ReserveConfig({lt: 0, lb: 0, borrowable: true, collateral: false}),
       address(dai)
@@ -37,7 +37,7 @@ contract SpokeCreditLineTest is BaseTest {
       }),
       address(eth)
     );
-    bm.addReserve(
+    spoke.addReserve(
       1,
       Spoke.ReserveConfig({lt: 0, lb: 0, borrowable: true, collateral: false}),
       address(eth)
@@ -56,7 +56,7 @@ contract SpokeCreditLineTest is BaseTest {
         variableRateSlope2: 500 // 5.00%
       })
     );
-    bmcl = new MockSpokeCreditLine(address(hub), address(creditLineIRStrategy));
+    spokeCreditLine = new MockSpokeCreditLine(address(hub), address(creditLineIRStrategy));
     hub.addAsset(
       LiquidityHub.AssetConfig({
         decimals: 18,
@@ -66,7 +66,7 @@ contract SpokeCreditLineTest is BaseTest {
       }),
       address(dai)
     );
-    bmcl.addReserve(
+    spokeCreditLine.addReserve(
       daiCreditLineAssetId,
       MockSpokeCreditLine.ReserveConfig({lt: 0, lb: 0, rf: 0, borrowable: true}),
       address(dai)
@@ -78,16 +78,16 @@ contract SpokeCreditLineTest is BaseTest {
 
   function test_credit_line_config() public {
     uint256 daiId = 2;
-    assertEq(bmcl.getInterestRate(daiId), 0.05e27);
+    assertEq(spokeCreditLine.getInterestRate(daiId), 0.05e27);
 
-    MockSpokeCreditLine.UserConfig memory user = bmcl.getUser(daiId, USER1);
+    MockSpokeCreditLine.UserConfig memory user = spokeCreditLine.getUser(daiId, USER1);
 
     assertEq(user.balance, 0);
     assertEq(user.lastUpdateIndex, 0);
     assertEq(user.lastUpdateTimestamp, 0);
 
-    assertEq(bmcl.getUserDebt(daiId, USER1), 0);
-    assertEq(bmcl.getReserveDebt(daiId), 0);
+    assertEq(spokeCreditLine.getUserDebt(daiId, USER1), 0);
+    assertEq(spokeCreditLine.getReserveDebt(daiId), 0);
   }
 
   // test with basic borrow module
@@ -106,16 +106,16 @@ contract SpokeCreditLineTest is BaseTest {
     LiquidityHub.Asset memory daiData0 = hub.getAsset(daiId);
 
     assertEq(dai.balanceOf(USER1), 0);
-    assertEq(dai.balanceOf(address(bmcl)), 0);
+    assertEq(dai.balanceOf(address(spokeCreditLine)), 0);
 
     drawnAmounts[0] = daiAmount / 2; // 50%
     drawnAmounts[1] = daiAmount / 4; // 25%
 
     // User1 draw half of dai reserve liquidity for borrow module
     vm.prank(USER1);
-    vm.expectEmit(true, false, false, true, address(bmcl));
+    vm.expectEmit(true, false, false, true, address(spokeCreditLine));
     emit Borrowed(daiId, USER1, drawnAmounts[0]);
-    ISpoke(address(bmcl)).borrow(daiId, USER1, drawnAmounts[0]);
+    ISpoke(address(spokeCreditLine)).borrow(daiId, USER1, drawnAmounts[0]);
 
     LiquidityHub.Asset memory daiData1 = hub.getAsset(daiId);
 
@@ -124,11 +124,11 @@ contract SpokeCreditLineTest is BaseTest {
     assertEq(daiData1.drawnShares, drawnAmounts[0], '1) wrong total drawn');
     assertEq(dai.balanceOf(USER1), drawnAmounts[0], '1) wrong dai balance');
 
-    assertEq(bmcl.getReserveDebt(daiId), drawnAmounts[0], '1) wrong reserve debt');
-    assertEq(bmcl.getUserDebt(daiId, USER1), drawnAmounts[0], '1) wrong user debt');
-    assertEq(bmcl.getInterestRate(daiId), 0.05e27, '1) wrong IR'); // should be flat and constant
+    assertEq(spokeCreditLine.getReserveDebt(daiId), drawnAmounts[0], '1) wrong reserve debt');
+    assertEq(spokeCreditLine.getUserDebt(daiId, USER1), drawnAmounts[0], '1) wrong user debt');
+    assertEq(spokeCreditLine.getInterestRate(daiId), 0.05e27, '1) wrong IR'); // should be flat and constant
 
-    MockSpokeCreditLine.UserConfig memory user = bmcl.getUser(daiId, USER1);
+    MockSpokeCreditLine.UserConfig memory user = spokeCreditLine.getUser(daiId, USER1);
 
     assertEq(user.balance, drawnAmounts[0], '1) wrong user balance');
     assertEq(user.lastUpdateIndex, 0, '1) wrong last update index');
@@ -138,7 +138,7 @@ contract SpokeCreditLineTest is BaseTest {
     skip(365 days);
     uint256 cumulated = MathUtils
       .calculateLinearInterest(
-        ISpoke(address(bmcl)).getInterestRate(daiId),
+        ISpoke(address(spokeCreditLine)).getInterestRate(daiId),
         uint40(daiData1.lastUpdateTimestamp)
       )
       .rayMul(daiData1.drawnShares);
@@ -146,10 +146,10 @@ contract SpokeCreditLineTest is BaseTest {
     // User1 draw quarter of dai reserve liquidity for borrow module
     // to trigger interest accrual
     vm.prank(USER1);
-    vm.expectEmit(true, false, false, true, address(bmcl));
+    vm.expectEmit(true, false, false, true, address(spokeCreditLine));
     emit Borrowed(daiId, USER1, drawnAmounts[1]);
-    ISpoke(address(bmcl)).borrow(daiId, USER1, drawnAmounts[1]);
-    user = bmcl.getUser(daiId, USER1);
+    ISpoke(address(spokeCreditLine)).borrow(daiId, USER1, drawnAmounts[1]);
+    user = spokeCreditLine.getUser(daiId, USER1);
 
     // hub assertions
     LiquidityHub.Asset memory daiData2 = hub.getAsset(daiId);
@@ -168,20 +168,28 @@ contract SpokeCreditLineTest is BaseTest {
     );
 
     // borrow module assertions
-    assertEq(bmcl.getReserveDebt(daiId), cumulated + drawnAmounts[1], '2) wrong reserve debt');
-    assertEq(bmcl.getUserDebt(daiId, USER1), cumulated + drawnAmounts[1], '2) wrong user1 debt');
-    assertEq(bmcl.getInterestRate(daiId), 0.05e27, '2) wrong IR'); // should be flat and constant
+    assertEq(
+      spokeCreditLine.getReserveDebt(daiId),
+      cumulated + drawnAmounts[1],
+      '2) wrong reserve debt'
+    );
+    assertEq(
+      spokeCreditLine.getUserDebt(daiId, USER1),
+      cumulated + drawnAmounts[1],
+      '2) wrong user1 debt'
+    );
+    assertEq(spokeCreditLine.getInterestRate(daiId), 0.05e27, '2) wrong IR'); // should be flat and constant
 
     // skip another year just for testing getUserDebt
     skip(365 days);
 
     uint256 userBalance = MathUtils
       .calculateLinearInterest(
-        ISpoke(address(bmcl)).getInterestRate(daiId),
+        ISpoke(address(spokeCreditLine)).getInterestRate(daiId),
         uint40(user.lastUpdateTimestamp)
       )
       .rayMul(user.balance);
-    assertEq(userBalance, bmcl.getUserDebt(daiId, USER1), '3) wrong final user1 debt');
+    assertEq(userBalance, spokeCreditLine.getUserDebt(daiId, USER1), '3) wrong final user1 debt');
   }
 
   function test_revert_borrow_reserve_not_borrowable() public {
@@ -191,7 +199,7 @@ contract SpokeCreditLineTest is BaseTest {
 
     vm.prank(USER1);
     vm.expectRevert(TestErrors.RESERVE_NOT_BORROWABLE);
-    ISpoke(address(bmcl)).borrow(daiId, USER1, drawnAmount);
+    ISpoke(address(spokeCreditLine)).borrow(daiId, USER1, drawnAmount);
   }
 
   function test_multi_borrow_credit_line() public {
@@ -208,7 +216,7 @@ contract SpokeCreditLineTest is BaseTest {
     LiquidityHub.Asset memory daiData0 = hub.getAsset(daiId);
 
     assertEq(dai.balanceOf(USER1), 0);
-    assertEq(dai.balanceOf(address(bm)), 0);
+    assertEq(dai.balanceOf(address(spoke)), 0);
 
     drawnAmounts[0] = daiAmount / 2; // 50%
     drawnAmounts[1] = daiAmount / 4; // 25%
@@ -216,35 +224,35 @@ contract SpokeCreditLineTest is BaseTest {
 
     // User1 draw half of dai reserve liquidity for borrow module
     vm.prank(USER1);
-    ISpoke(address(bm)).borrow(daiId, USER1, drawnAmounts[0]);
+    ISpoke(address(spoke)).borrow(daiId, USER1, drawnAmounts[0]);
 
     LiquidityHub.Asset memory daiData1 = hub.getAsset(daiId);
 
-    MockSpokeCreditLine.UserConfig memory user1 = bmcl.getUser(daiId, USER1);
+    MockSpokeCreditLine.UserConfig memory user1 = spokeCreditLine.getUser(daiId, USER1);
 
     // accumulate interest over the year
     skip(365 days);
     uint256 cumulated = MathUtils
       .calculateLinearInterest(
-        ISpoke(address(bmcl)).getInterestRate(daiId),
+        ISpoke(address(spokeCreditLine)).getInterestRate(daiId),
         uint40(daiData1.lastUpdateTimestamp)
       )
       .rayMul(daiData1.drawnShares);
 
     // User1 draw 25% of dai reserve liquidity for borrow module
     vm.prank(USER1);
-    ISpoke(address(bmcl)).borrow(daiId, USER1, drawnAmounts[1]);
+    ISpoke(address(spokeCreditLine)).borrow(daiId, USER1, drawnAmounts[1]);
     // User2 draw 20% of dai reserve liquidity for borrow module
     vm.prank(USER2);
-    ISpoke(address(bmcl)).borrow(daiId, USER1, drawnAmounts[2]);
+    ISpoke(address(spokeCreditLine)).borrow(daiId, USER1, drawnAmounts[2]);
 
-    user1 = bmcl.getUser(daiId, USER1);
-    MockSpokeCreditLine.UserConfig memory user2 = bmcl.getUser(daiId, USER2);
+    user1 = spokeCreditLine.getUser(daiId, USER1);
+    MockSpokeCreditLine.UserConfig memory user2 = spokeCreditLine.getUser(daiId, USER2);
 
     // hub assertions
     LiquidityHub.Asset memory daiData2 = hub.getAsset(daiId);
 
-    assertEq(bmcl.getInterestRate(daiId), 0.05e27, '2) wrong IR'); // should be flat and constant
+    assertEq(spokeCreditLine.getInterestRate(daiId), 0.05e27, '2) wrong IR'); // should be flat and constant
     assertEq(daiData2.totalShares, daiAmount, '2) wrong total shares');
     assertEq(
       daiData2.totalAssets,
@@ -264,32 +272,36 @@ contract SpokeCreditLineTest is BaseTest {
 
     // borrow module assertions
     assertEq(
-      bmcl.getReserveDebt(daiId),
+      spokeCreditLine.getReserveDebt(daiId),
       cumulated + drawnAmounts[1] + drawnAmounts[2],
       '2) wrong reserve debt'
     );
-    assertEq(bmcl.getUserDebt(daiId, USER1), cumulated + drawnAmounts[1], '2) wrong user1 debt'); // only debt1 has accumulated interest
-    assertEq(bmcl.getUserDebt(daiId, USER2), drawnAmounts[2], '2) wrong user2 debt'); // user2 debt1 has no interest yet
+    assertEq(
+      spokeCreditLine.getUserDebt(daiId, USER1),
+      cumulated + drawnAmounts[1],
+      '2) wrong user1 debt'
+    ); // only debt1 has accumulated interest
+    assertEq(spokeCreditLine.getUserDebt(daiId, USER2), drawnAmounts[2], '2) wrong user2 debt'); // user2 debt1 has no interest yet
 
     skip(365 days);
 
     uint256 user1Balance = MathUtils
       .calculateLinearInterest(
-        ISpoke(address(bmcl)).getInterestRate(daiId),
+        ISpoke(address(spokeCreditLine)).getInterestRate(daiId),
         uint40(user1.lastUpdateTimestamp)
       )
       .rayMul(user1.balance);
-    assertEq(user1Balance, bmcl.getUserDebt(daiId, USER1), '3) wrong final user1 debt');
+    assertEq(user1Balance, spokeCreditLine.getUserDebt(daiId, USER1), '3) wrong final user1 debt');
 
     uint256 user2Balance = MathUtils
       .calculateLinearInterest(
-        ISpoke(address(bmcl)).getInterestRate(daiId),
+        ISpoke(address(spokeCreditLine)).getInterestRate(daiId),
         uint40(user2.lastUpdateTimestamp)
       )
       .rayMul(user2.balance);
-    assertEq(user2Balance, bmcl.getUserDebt(daiId, USER2), '3) wrong final user2 debt');
+    assertEq(user2Balance, spokeCreditLine.getUserDebt(daiId, USER2), '3) wrong final user2 debt');
     assertEq(
-      bmcl.getReserveDebt(daiId),
+      spokeCreditLine.getReserveDebt(daiId),
       user1Balance + user2Balance,
       '3) wrong final reserve debt'
     );
@@ -316,13 +328,13 @@ contract SpokeCreditLineTest is BaseTest {
       drawnShares += drawnAmounts[i];
 
       vm.mockCall(
-        address(bmcl),
+        address(spokeCreditLine),
         abi.encodeWithSelector(ISpoke.getInterestRate.selector),
         abi.encode(_pseudoRandomNumber(entropy, 0, 100) * .01e27) // random interest rate 0-100%
       );
 
       // User1 draws some of dai reserve liquidity for borrow module
-      ISpoke(address(bmcl)).borrow(daiId, USER1, drawnAmounts[i]);
+      ISpoke(address(spokeCreditLine)).borrow(daiId, USER1, drawnAmounts[i]);
 
       daiData[i] = hub.getAsset(daiId);
       (uint256 totalCumulated, uint256 cumulatedInterest) = _calculateLinearInterest(
@@ -362,14 +374,14 @@ contract SpokeCreditLineTest is BaseTest {
 
     MockSpokeCreditLine.ReserveConfig memory reserveConfig;
     vm.expectRevert(TestErrors.INVALID_RESERVE);
-    bmcl.updateReserve(invalidReserveId, reserveConfig);
+    spokeCreditLine.updateReserve(invalidReserveId, reserveConfig);
   }
 
   function test_update_reserve() public {
     uint256 daiId = 2;
 
     MockSpokeCreditLine.ReserveConfig memory reserveConfig;
-    bmcl.updateReserve(daiId, reserveConfig);
+    spokeCreditLine.updateReserve(daiId, reserveConfig);
   }
 
   // TODO: move to a helper
@@ -379,7 +391,7 @@ contract SpokeCreditLineTest is BaseTest {
     // accumulate interest over the year
     totalCumulated = MathUtils
       .calculateLinearInterest(
-        ISpoke(address(bm)).getInterestRate(reserveData.id),
+        ISpoke(address(spoke)).getInterestRate(reserveData.id),
         uint40(reserveData.lastUpdateTimestamp)
       )
       .rayMul(reserveData.drawnShares);
@@ -404,8 +416,10 @@ contract SpokeCreditLineTest is BaseTest {
   }
 
   function _updateBorrowable(uint256 assetId, bool newBorrowable) internal {
-    MockSpokeCreditLine.ReserveConfig memory reserveConfig = bmcl.getReserve(assetId).config;
+    MockSpokeCreditLine.ReserveConfig memory reserveConfig = spokeCreditLine
+      .getReserve(assetId)
+      .config;
     reserveConfig.borrowable = newBorrowable;
-    bmcl.updateReserve(assetId, reserveConfig);
+    spokeCreditLine.updateReserve(assetId, reserveConfig);
   }
 }
