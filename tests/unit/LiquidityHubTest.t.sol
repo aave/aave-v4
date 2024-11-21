@@ -11,38 +11,50 @@ contract LiquidityHubTest is BaseTest {
     super.setUp();
 
     // Add dai
+    uint256 daiAssetId = 0;
     hub.addAsset(
       LiquidityHub.AssetConfig({
         decimals: 18,
         active: true,
         supplyCap: type(uint256).max,
-        irStrategy: address(0)
+        irStrategy: address(irStrategy)
       }),
       address(dai)
     );
     spoke.addReserve(
-      0,
+      daiAssetId,
       Spoke.ReserveConfig({lt: 0, lb: 0, borrowable: true, collateral: false}),
       address(dai)
     );
-    MockPriceOracle(address(oracle)).setAssetPrice(0, 1e8);
+    hub.addSpoke(
+      daiAssetId,
+      LiquidityHub.SpokeConfig({supplyCap: type(uint256).max, drawCap: 0}),
+      address(spoke)
+    );
+    MockPriceOracle(address(oracle)).setAssetPrice(daiAssetId, 1e8);
 
     // Add eth
+    uint256 ethAssetId = 1;
     hub.addAsset(
       LiquidityHub.AssetConfig({
         decimals: 18,
         active: true,
         supplyCap: type(uint256).max,
-        irStrategy: address(0)
+        irStrategy: address(irStrategy)
       }),
       address(eth)
     );
     spoke.addReserve(
-      1,
+      ethAssetId,
       Spoke.ReserveConfig({lt: 0, lb: 0, borrowable: true, collateral: false}),
       address(eth)
     );
-    MockPriceOracle(address(oracle)).setAssetPrice(1, 2000e8);
+    hub.addSpoke(
+      ethAssetId,
+      LiquidityHub.SpokeConfig({supplyCap: type(uint256).max, drawCap: 0}),
+      address(spoke)
+    );
+    MockPriceOracle(address(oracle)).setAssetPrice(ethAssetId, 2000e8);
 
     // Add dai again but with basic credit line borrow module
     uint256 daiCreditLineAssetId = 2;
@@ -62,7 +74,7 @@ contract LiquidityHubTest is BaseTest {
         decimals: 18,
         active: true,
         supplyCap: type(uint256).max,
-        irStrategy: address(0)
+        irStrategy: address(creditLineIRStrategy)
       }),
       address(dai)
     );
@@ -80,28 +92,26 @@ contract LiquidityHubTest is BaseTest {
     uint256 assetId = 0; // TODO: Add getter of asset id based on address
     uint256 amount = 100e18;
 
-    deal(address(dai), USER1, amount);
+    deal(address(dai), address(spoke), amount);
 
     LiquidityHub.Asset memory reserveData = hub.getAsset(assetId);
-    Spoke.UserConfig memory userData = spoke.getUser(assetId, USER1);
 
-    assertEq(reserveData.totalShares, 0);
-    assertEq(reserveData.totalAssets, 0);
-    assertEq(userData.supplyShares, 0);
-    assertEq(spoke.getUserDebt(assetId, USER1), 0);
-    assertEq(dai.balanceOf(USER1), amount);
-    assertEq(dai.balanceOf(address(hub)), 0);
+    assertEq(reserveData.totalShares, 0, 'wrong reserve shares pre-supply');
+    assertEq(reserveData.totalAssets, 0, 'wrong reserve assets pre-supply');
+    assertEq(dai.balanceOf(address(spoke)), amount, 'wrong user token balance pre-supply');
+    assertEq(dai.balanceOf(address(hub)), 0, 'wrong hub token balance pre-supply');
 
-    Utils.supply(vm, hub, assetId, USER1, amount, USER1);
+    Utils.supply(vm, hub, assetId, address(spoke), amount, address(spoke));
 
     reserveData = hub.getAsset(assetId);
-    userData = spoke.getUser(assetId, USER1);
 
-    assertEq(reserveData.totalShares, amount);
-    assertEq(reserveData.totalAssets, amount);
-    assertEq(userData.supplyShares, amount);
-    assertEq(spoke.getUserDebt(assetId, USER1), amount);
-    assertEq(dai.balanceOf(USER1), 0);
+    assertEq(
+      reserveData.totalShares,
+      hub.convertAssetsToShares(assetId, amount, true),
+      'wrong reserve shares post-supply'
+    );
+    assertEq(reserveData.totalAssets, amount, 'wrong reserve assets post-supply');
+    assertEq(dai.balanceOf(address(spoke)), 0);
     assertEq(dai.balanceOf(address(hub)), amount);
   }
 

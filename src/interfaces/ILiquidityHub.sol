@@ -24,6 +24,9 @@ interface ILiquidityHub {
 
   function getBaseInterestRate(uint256 assetId) external view returns (uint256);
 
+  // TODO: addAsset?
+  // TODO: addSpoke?
+
   function convertSharesToAssets(
     uint256 assetId,
     uint256 amount,

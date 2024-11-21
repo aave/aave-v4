@@ -123,6 +123,15 @@ contract LiquidityHub is ILiquidityHub {
     });
   }
 
+  function addSpoke(uint256 assetId, SpokeConfig memory params, address spoke) external {
+    // TODO: AccessControl
+    spokes[assetId][spoke] = Spoke({
+      totalShares: 0,
+      drawnShares: 0,
+      config: SpokeConfig({supplyCap: params.supplyCap, drawCap: params.drawCap})
+    });
+  }
+
   function updateSpokeConfig(uint256 assetId, address spoke, uint256 drawCap) external {
     // TODO: AccessControl
     spokes[assetId][spoke].config.drawCap = drawCap;
@@ -291,10 +300,16 @@ contract LiquidityHub is ILiquidityHub {
     // TODO: Different states e.g. frozen, paused
     require(asset.config.active, 'ASSET_NOT_ACTIVE');
     require(
-      spoke.config.supplyCap == type(uint256).max ||
+      asset.config.supplyCap == type(uint256).max ||
         asset.totalAssets + amount <= spoke.config.supplyCap,
-      'SUPPLY_CAP_EXCEEDED'
+      'ASSET_SUPPLY_CAP_EXCEEDED'
     );
+    // TODO: spoke-specific supply cap?
+    // require(
+    //   spoke.config.supplyCap == type(uint256).max ||
+    //     asset.totalAssets + amount <= spoke.config.supplyCap,
+    //   'SPOKE_SUPPLY_CAP_EXCEEDED'
+    // );
   }
 
   function _validateWithdraw(
