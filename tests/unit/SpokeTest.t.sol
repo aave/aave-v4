@@ -52,7 +52,7 @@ contract SpokeTest is BaseTest {
     hub.addSpoke(
       ethAssetId,
       LiquidityHub.SpokeConfig({supplyCap: type(uint256).max, drawCap: 0}),
-      USER1
+      address(spoke1)
     );
     spoke2.addReserve(
       ethAssetId,
@@ -73,13 +73,13 @@ contract SpokeTest is BaseTest {
 
     deal(address(dai), USER1, amount);
 
-    LiquidityHub.Asset memory reserveData = hub.getAsset(assetId);
-    LiquidityHub.Spoke memory spokeData = hub.getSpoke(assetId, address(spoke1));
+    Spoke.UserConfig memory userData = spoke1.getUser(assetId, USER1);
 
-    assertEq(reserveData.totalShares, 0, 'wrong reserve shares pre-supply');
-    assertEq(reserveData.totalAssets, 0, 'wrong reserve assets pre-supply');
     assertEq(dai.balanceOf(USER1), amount, 'wrong user token balance pre-supply');
     assertEq(dai.balanceOf(address(hub)), 0, 'wrong hub token balance pre-supply');
+    assertEq(dai.balanceOf(address(spoke1)), 0, 'wrong spoke token balance pre-supply');
+    assertEq(userData.supplyShares, 0, 'wrong user shares pre-supply');
+    assertEq(userData.debtShares, 0, 'wrong user shares pre-supply');
 
     vm.startPrank(USER1);
     IERC20(dai).approve(address(spoke1), amount);
@@ -88,24 +88,11 @@ contract SpokeTest is BaseTest {
     spoke1.supply(assetId, amount);
     vm.stopPrank();
 
-    reserveData = hub.getAsset(assetId);
-    spokeData = hub.getSpoke(assetId, address(spoke1));
-    Spoke.UserConfig memory userData = spoke1.getUser(assetId, USER1);
+    userData = spoke1.getUser(assetId, USER1);
 
-    assertEq(
-      reserveData.totalShares,
-      hub.convertAssetsToShares(assetId, amount, true),
-      'wrong reserve total shares post-supply'
-    );
-    assertEq(reserveData.totalAssets, amount, 'wrong reserve total assets post-supply');
-    assertEq(
-      spokeData.totalShares,
-      hub.convertAssetsToShares(assetId, amount, true),
-      'wrong spoke total shares post-supply'
-    );
-    assertEq(spokeData.drawnShares, 0, 'wrong spoke shares post-supply');
     assertEq(dai.balanceOf(USER1), 0);
     assertEq(dai.balanceOf(address(hub)), amount);
+    assertEq(dai.balanceOf(address(spoke1)), 0, 'wrong spoke token balance post-supply');
     assertEq(
       userData.supplyShares,
       hub.convertAssetsToShares(assetId, amount, true),
@@ -114,7 +101,66 @@ contract SpokeTest is BaseTest {
     assertEq(userData.debtShares, 0, 'wrong user debt shares');
   }
 
-  function test_first_borrow() public {}
+  function test_first_borrow() public {
+    uint256 daiId = 0;
+    uint256 ethId = 1;
+    uint256 daiAmount = 100e18;
+    uint256 ethAmount = 10e18;
+
+    // USER1 supply eth
+    deal(address(eth), USER1, ethAmount);
+    Utils.spokeSupply(vm, hub, spoke1, ethId, USER1, ethAmount, USER1);
+
+    // USER2 supply dai
+    deal(address(dai), USER2, daiAmount);
+    Utils.spokeSupply(vm, hub, spoke1, daiId, USER2, daiAmount, USER2);
+
+    Spoke.UserConfig memory user1Data = spoke1.getUser(ethId, USER1);
+    Spoke.UserConfig memory user2Data = spoke1.getUser(daiId, USER2);
+
+    assertEq(
+      user1Data.supplyShares,
+      ILiquidityHub(address(hub)).convertAssetsToShares(ethId, ethAmount, true),
+      'wrong user1 supply shares pre-draw'
+    );
+    assertEq(user1Data.debtShares, 0, 'wrong user1 debt shares pre-draw');
+    assertEq(
+      user2Data.supplyShares,
+      ILiquidityHub(address(hub)).convertAssetsToShares(daiId, daiAmount, true),
+      'wrong user2 supply shares pre-draw'
+    );
+    assertEq(user2Data.debtShares, 0, 'wrong user2 debt shares pre-draw');
+    assertEq(dai.balanceOf(address(spoke1)), 0, 'wrong spoke1 dai balance pre-draw');
+    assertEq(eth.balanceOf(address(spoke2)), 0, 'wrong spoke2 eth balance pre-draw');
+    assertEq(dai.balanceOf(USER1), 0, 'wrong spoke1 dai balance pre-draw');
+    assertEq(eth.balanceOf(USER2), 0, 'wrong spoke2 eth balance pre-draw');
+
+    // USER1 draw half of dai reserve liquidity
+    vm.prank(USER1);
+    vm.expectEmit(true, true, true, true, address(spoke1));
+    emit Borrowed(daiId, USER1, daiAmount / 2);
+    ISpoke(spoke1).borrow(daiId, USER1, daiAmount / 2);
+
+    user1Data = spoke1.getUser(ethId, USER1);
+    user2Data = spoke1.getUser(daiId, USER2);
+
+    assertEq(
+      user1Data.supplyShares,
+      ILiquidityHub(address(hub)).convertAssetsToShares(ethId, ethAmount, true),
+      'wrong user1 supply shares final balance'
+    );
+    assertEq(user1Data.debtShares, 0, 'wrong user1 debt shares final balance');
+    assertEq(
+      user2Data.supplyShares,
+      ILiquidityHub(address(hub)).convertAssetsToShares(daiId, daiAmount, true),
+      'wrong user2 supply shares final balance'
+    );
+    assertEq(user2Data.debtShares, 0, 'wrong user2 debt shares final');
+    assertEq(dai.balanceOf(USER1), daiAmount / 2, 'wrong USER1 dai final balance');
+    assertEq(eth.balanceOf(USER2), 0, 'wrong USER2 eth final balance');
+    assertEq(dai.balanceOf(address(spoke1)), 0, 'wrong spoke1 dai final balance');
+    assertEq(eth.balanceOf(address(spoke2)), 0, 'wrong spoke2 eth final balance');
+  }
 
   function test_withdraw() public {}
 

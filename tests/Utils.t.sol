@@ -3,6 +3,7 @@ pragma solidity ^0.8.0;
 
 import 'forge-std/Test.sol';
 import 'src/contracts/LiquidityHub.sol';
+import 'src/contracts/Spoke.sol';
 import 'src/dependencies/openzeppelin/IERC20.sol';
 
 library Utils {
@@ -18,6 +19,22 @@ library Utils {
     vm.startPrank(user);
     IERC20(asset).approve(address(hub), amount);
     hub.supply(assetId, amount, 0);
+    vm.stopPrank();
+  }
+
+  function spokeSupply(
+    Vm vm,
+    LiquidityHub hub,
+    Spoke spoke,
+    uint256 assetId,
+    address user,
+    uint256 amount,
+    address onBehalfOf
+  ) internal {
+    address asset = hub.assetsList(assetId);
+    vm.startPrank(user);
+    IERC20(asset).approve(address(spoke), amount);
+    spoke.supply(assetId, amount);
     vm.stopPrank();
   }
 

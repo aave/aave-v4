@@ -34,10 +34,10 @@ contract Events {
   event Restore(uint256 indexed asset, address indexed spoke, uint256 amount);
 
   // ISpoke
-  event Borrowed(uint256 indexed assetId, address user, uint256 amount);
-  event Repaid(uint256 indexed assetId, address user, uint256 amount);
-  event Supplied(uint256 indexed assetId, address user, uint256 amount);
-  event Withdrawn(uint256 indexed assetId, address user, uint256 amount);
+  event Borrowed(uint256 indexed assetId, address indexed user, uint256 amount);
+  event Repaid(uint256 indexed assetId, address indexed user, uint256 amount);
+  event Supplied(uint256 indexed assetId, address indexed user, uint256 amount);
+  event Withdrawn(uint256 indexed assetId, address indexed user, uint256 amount);
 }
 
 library TestErrors {
