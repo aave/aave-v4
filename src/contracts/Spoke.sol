@@ -6,11 +6,11 @@ import {IERC20} from '../dependencies/openzeppelin/IERC20.sol';
 import {WadRayMath} from './WadRayMath.sol';
 import {MathUtils} from './MathUtils.sol';
 import {ILiquidityHub} from '../interfaces/ILiquidityHub.sol';
-import {IBorrowModule} from '../interfaces/IBorrowModule.sol';
+import {ISpoke} from '../interfaces/ISpoke.sol';
 import {IReserveInterestRateStrategy} from '../../src/interfaces/IReserveInterestRateStrategy.sol';
 import {DataTypes} from '../libraries/types/DataTypes.sol';
 
-contract BorrowModule is IBorrowModule {
+contract Spoke is ISpoke {
   using WadRayMath for uint256;
   using SafeERC20 for IERC20;
 
@@ -79,14 +79,21 @@ contract BorrowModule is IBorrowModule {
     return 0;
   }
 
+  // /////
+  // Users
+  // /////
+
   function supply(uint256 assetId, uint256 amount) external {
     Reserve storage r = reserves[assetId];
 
     _validateSupply(r, amount);
 
-    // TODO: Refresh risk premium of user, and pass into following function
-    uint256 newRiskPremium = 0;
-    uint256 userShares = ILiquidityHub(liquidityHub).supply(assetId, amount, newRiskPremium);
+    (, uint256 newAggregatedRiskPremium) = _refreshRiskPremium();
+    uint256 userShares = ILiquidityHub(liquidityHub).supply(
+      assetId,
+      amount,
+      newAggregatedRiskPremium
+    );
 
     users[assetId][msg.sender].supplyShares += userShares;
 
@@ -95,38 +102,55 @@ contract BorrowModule is IBorrowModule {
 
   function withdraw(uint256 assetId, address to, uint256 amount) external {
     Reserve storage r = reserves[assetId];
+    UserConfig storage u = users[assetId][msg.sender];
+    _validateWithdraw(assetId, r, u, amount);
 
-    _validateWithdraw(r, amount);
-
-    // TODO: Refresh risk premium of user, and pass into following function
-    uint256 newRiskPremium = 0;
-    uint256 userShares = ILiquidityHub(liquidityHub).withdraw(assetId, to, amount, newRiskPremium);
-
+    (, uint256 newAggregatedRiskPremium) = _refreshRiskPremium();
+    uint256 userShares = ILiquidityHub(liquidityHub).withdraw(
+      assetId,
+      to,
+      amount,
+      newAggregatedRiskPremium
+    );
     users[assetId][msg.sender].supplyShares -= userShares;
 
-    emit Withdraw(assetId, msg.sender, amount);
+    emit Withdrawn(assetId, msg.sender, amount);
   }
 
-  function borrow(uint256 assetId, uint256 amount) external {
-    // TODO: On behalf of and referral code
+  function borrow(uint256 assetId, address to, uint256 amount) external {
+    // TODO: referral code
+    // TODO: onBehalfOf with credit delegation
     Reserve storage r = reserves[assetId];
     _validateBorrow(r, amount);
+
     // TODO HF check
+    (, uint256 newAggregatedRiskPremium) = _refreshRiskPremium();
+    uint256 userShares = ILiquidityHub(liquidityHub).draw(
+      assetId,
+      to,
+      amount,
+      newAggregatedRiskPremium
+    );
+    // debt still goes to original msg.sender
+    users[assetId][msg.sender].debtShares += userShares;
 
-    // TODO: risk premium; to
-    ILiquidityHub(liquidityHub).draw(assetId, msg.sender, amount, 0);
-
-    // transfer liquidity to msg.sender
-    IERC20(reserves[assetId].asset).safeTransfer(msg.sender, amount);
-
-    emit Borrowed(assetId, msg.sender, amount);
+    emit Borrowed(assetId, to, amount);
   }
 
-  // TODO: Implement repay, calls liquidity hub restore method
-  // TODO: onBehalfOf
   function repay(uint256 assetId, uint256 amount) external {
-    // TODO calculate risk premium and pass to LH
-    ILiquidityHub(liquidityHub).restore(assetId, amount, 0);
+    // TODO: Implement repay, calls liquidity hub restore method
+    // TODO: onBehalfOf
+
+    UserConfig storage u = users[assetId][msg.sender];
+    _validateRepay(assetId, u, amount);
+
+    (, uint256 newAggregatedRiskPremium) = _refreshRiskPremium();
+    uint256 userShares = ILiquidityHub(liquidityHub).restore(
+      assetId,
+      amount,
+      newAggregatedRiskPremium
+    );
+    users[assetId][msg.sender].debtShares -= userShares;
 
     emit Repaid(assetId, msg.sender, amount);
   }
@@ -134,7 +158,8 @@ contract BorrowModule is IBorrowModule {
   // TODO: Needed?
   function getInterestRate(uint256 assetId) public view returns (uint256) {
     // read from state, convert to ray
-    return ILiquidityHub(liquidityHub).getInterestRate(assetId);
+    // TODO: should be final IR rather than base?
+    return ILiquidityHub(liquidityHub).getBaseInterestRate(assetId);
   }
 
   // /////
@@ -170,15 +195,41 @@ contract BorrowModule is IBorrowModule {
     require(reserve.asset != address(0), 'RESERVE_NOT_LISTED');
   }
 
-  function _validateWithdraw(Reserve storage reserve, uint256 amount) internal view {
-    // TODO: Call liqudity hub to get the conversion rate for assets to shares
-    /*require(
-      users[reserve.id][msg.sender].supplyShares >= amount.toSharesDown(),
-      'INSUFFICIENT_BALANCE'
-    );*/
+  function _validateWithdraw(
+    uint256 assetId,
+    Reserve storage reserve,
+    UserConfig storage user,
+    uint256 amount
+  ) internal view {
+    require(
+      ILiquidityHub(liquidityHub).convertSharesToAssets(assetId, user.supplyShares, false) >=
+        amount,
+      'INSUFFICIENT_SUPPLY'
+    );
   }
 
   function _validateBorrow(Reserve storage reserve, uint256 amount) internal view {
     require(reserve.config.borrowable, 'RESERVE_NOT_BORROWABLE');
+  }
+
+  function _validateRepay(uint256 assetId, UserConfig storage user, uint256 amount) internal view {
+    require(
+      ILiquidityHub(liquidityHub).convertSharesToAssets(assetId, user.debtShares, true) >= amount,
+      'REPAY_EXCEEDS_DEBT'
+    );
+  }
+
+  /**
+  @return uint256 new risk premium
+  @return uint256 new aggregated risk premium
+  */
+  function _refreshRiskPremium() internal returns (uint256, uint256) {
+    // TODO: update state - debt shares
+
+    // TODO: refresh risk premium of user, specific assets user has supplied
+    uint256 newUserRiskPremium = 0;
+    // TODO: aggregated risk premium, ie loop over all assets and sum up risk premium
+    uint256 newAggregatedRiskPremium = 0;
+    return (newUserRiskPremium, newAggregatedRiskPremium);
   }
 }

@@ -4,7 +4,7 @@ pragma solidity ^0.8.0;
 import 'forge-std/Test.sol';
 
 import 'src/contracts/LiquidityHub.sol';
-import 'src/contracts/BorrowModule.sol';
+import 'src/contracts/Spoke.sol';
 import 'src/dependencies/openzeppelin/IERC20.sol';
 import '../mocks/MockPriceOracle.sol';
 import '../mocks/MockERC20.sol';
@@ -18,7 +18,7 @@ contract LiquidityHubHandler is Test {
 
   IPriceOracle public oracle;
   LiquidityHub public hub;
-  BorrowModule public bm;
+  Spoke public bm;
   DefaultReserveInterestRateStrategy creditLineIRStrategy;
 
   address internal mockAddressesProvider = makeAddr('mockAddressesProvider');
@@ -36,7 +36,7 @@ contract LiquidityHubHandler is Test {
     creditLineIRStrategy = new DefaultReserveInterestRateStrategy(mockAddressesProvider);
     oracle = new MockPriceOracle();
     hub = new LiquidityHub();
-    bm = new BorrowModule(address(hub));
+    bm = new Spoke(address(hub));
     usdc = new MockERC20();
     dai = new MockERC20();
     usdt = new MockERC20();
@@ -53,7 +53,7 @@ contract LiquidityHubHandler is Test {
     );
     bm.addReserve(
       0,
-      BorrowModule.ReserveConfig({lt: 0, lb: 0, borrowable: false, collateral: false}),
+      Spoke.ReserveConfig({lt: 0, lb: 0, borrowable: false, collateral: false}),
       address(dai)
     );
   }

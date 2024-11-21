@@ -6,16 +6,16 @@ import 'forge-std/console2.sol';
 // import 'forge-std/StdCheats.sol';
 
 import 'src/contracts/LiquidityHub.sol';
-import 'src/contracts/BorrowModule.sol';
+import 'src/contracts/Spoke.sol';
 import 'src/contracts/WadRayMath.sol';
 import 'src/contracts/SharesMath.sol';
 import 'src/contracts/MathUtils.sol';
 import 'src/dependencies/openzeppelin/IERC20.sol';
-import 'src/interfaces/IBorrowModule.sol';
+import 'src/interfaces/ISpoke.sol';
 import 'src/contracts/DefaultReserveInterestRateStrategy.sol';
 import './mocks/MockERC20.sol';
 import './mocks/MockPriceOracle.sol';
-import './mocks/MockBorrowModuleCreditLine.sol';
+import './mocks/MockSpokeCreditLine.sol';
 
 import './Utils.t.sol';
 
@@ -61,8 +61,8 @@ abstract contract BaseTest is Test, Events {
 
   IPriceOracle oracle;
   LiquidityHub hub;
-  BorrowModule bm;
-  MockBorrowModuleCreditLine bmcl;
+  Spoke bm;
+  MockSpokeCreditLine bmcl;
   DefaultReserveInterestRateStrategy creditLineIRStrategy;
 
   address internal mockAddressesProvider = makeAddr('mockAddressesProvider');
@@ -73,7 +73,7 @@ abstract contract BaseTest is Test, Events {
     oracle = new MockPriceOracle();
     creditLineIRStrategy = new DefaultReserveInterestRateStrategy(mockAddressesProvider);
     hub = new LiquidityHub();
-    bm = new BorrowModule(address(hub));
+    bm = new Spoke(address(hub));
     dai = new MockERC20();
     eth = new MockERC20();
     usdc = new MockERC20();
