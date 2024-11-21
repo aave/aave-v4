@@ -58,24 +58,12 @@ contract LiquidityHub is ILiquidityHub {
   // asset id => weighted average risk premium of asset
   mapping(uint256 => uint256) public weightedAverageRiskPremium;
 
+  //
+  // External
+  //
+
   function getAsset(uint256 assetId) external view returns (Asset memory) {
     return assets[assetId];
-  }
-
-  function getSpokeDrawnLiquidity(uint256 assetId, address spoke) public view returns (uint256) {
-    return
-      spokes[assetId][spoke].drawnShares.toAssetsUp(
-        assets[assetId].totalAssets,
-        assets[assetId].totalShares
-      );
-  }
-
-  function getTotalDrawnLiquidity(uint256 assetId) public view returns (uint256) {
-    return
-      assets[assetId].drawnShares.toAssetsUp(
-        assets[assetId].totalAssets,
-        assets[assetId].totalShares
-      );
   }
 
   function getSpokeAssetConfig(
@@ -83,10 +71,6 @@ contract LiquidityHub is ILiquidityHub {
     address spoke
   ) external view returns (SpokeConfig memory) {
     return spokes[assetId][spoke].config;
-  }
-
-  function getInterestRate(uint256 assetId) public view returns (uint256) {
-    return assets[assetId].currentBorrowRate;
   }
 
   /**
@@ -97,28 +81,6 @@ contract LiquidityHub is ILiquidityHub {
     Asset storage asset = assets[assetId];
     _accrueAssetInterest(asset, asset.currentBorrowRate);
     return inShares ? asset.totalShares : asset.totalAssets;
-  }
-
-  function convertAssetsToShares(
-    uint256 assetId,
-    uint256 amount,
-    bool roundUp
-  ) public view returns (uint256) {
-    return
-      roundUp
-        ? amount.toSharesUp(assets[assetId].totalAssets, assets[assetId].totalShares)
-        : amount.toSharesDown(assets[assetId].totalAssets, assets[assetId].totalShares);
-  }
-
-  function convertSharesToAssets(
-    uint256 assetId,
-    uint256 amount,
-    bool roundUp
-  ) public view returns (uint256) {
-    return
-      roundUp
-        ? amount.toAssetsUp(assets[assetId].totalAssets, assets[assetId].totalShares)
-        : amount.toAssetsDown(assets[assetId].totalAssets, assets[assetId].totalShares);
   }
 
   // /////
@@ -264,6 +226,52 @@ contract LiquidityHub is ILiquidityHub {
     emit Restore(assetId, msg.sender, amount);
 
     return sharesAmount;
+  }
+
+  //
+  // public
+  //
+
+  function convertAssetsToShares(
+    uint256 assetId,
+    uint256 amount,
+    bool roundUp
+  ) public view returns (uint256) {
+    return
+      roundUp
+        ? amount.toSharesUp(assets[assetId].totalAssets, assets[assetId].totalShares)
+        : amount.toSharesDown(assets[assetId].totalAssets, assets[assetId].totalShares);
+  }
+
+  function convertSharesToAssets(
+    uint256 assetId,
+    uint256 amount,
+    bool roundUp
+  ) public view returns (uint256) {
+    return
+      roundUp
+        ? amount.toAssetsUp(assets[assetId].totalAssets, assets[assetId].totalShares)
+        : amount.toAssetsDown(assets[assetId].totalAssets, assets[assetId].totalShares);
+  }
+
+  function getInterestRate(uint256 assetId) public view returns (uint256) {
+    return assets[assetId].currentBorrowRate;
+  }
+
+  function getSpokeDrawnLiquidity(uint256 assetId, address spoke) public view returns (uint256) {
+    return
+      spokes[assetId][spoke].drawnShares.toAssetsUp(
+        assets[assetId].totalAssets,
+        assets[assetId].totalShares
+      );
+  }
+
+  function getTotalDrawnLiquidity(uint256 assetId) public view returns (uint256) {
+    return
+      assets[assetId].drawnShares.toAssetsUp(
+        assets[assetId].totalAssets,
+        assets[assetId].totalShares
+      );
   }
 
   //
