@@ -66,6 +66,10 @@ contract LiquidityHub is ILiquidityHub {
     return assets[assetId];
   }
 
+  function getSpoke(uint256 assetId, address spoke) external view returns (Spoke memory) {
+    return spokes[assetId][spoke];
+  }
+
   function getSpokeAssetConfig(
     uint256 assetId,
     address spoke

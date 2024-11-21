@@ -95,6 +95,7 @@ contract LiquidityHubTest is BaseTest {
     deal(address(dai), address(spoke), amount);
 
     LiquidityHub.Asset memory reserveData = hub.getAsset(assetId);
+    LiquidityHub.Spoke memory spokeData = hub.getSpoke(assetId, address(spoke));
 
     assertEq(reserveData.totalShares, 0, 'wrong reserve shares pre-supply');
     assertEq(reserveData.totalAssets, 0, 'wrong reserve assets pre-supply');
@@ -109,13 +110,20 @@ contract LiquidityHubTest is BaseTest {
     vm.stopPrank();
 
     reserveData = hub.getAsset(assetId);
+    spokeData = hub.getSpoke(assetId, address(spoke));
 
     assertEq(
       reserveData.totalShares,
       hub.convertAssetsToShares(assetId, amount, true),
-      'wrong reserve shares post-supply'
+      'wrong reserve total shares post-supply'
     );
-    assertEq(reserveData.totalAssets, amount, 'wrong reserve assets post-supply');
+    assertEq(reserveData.totalAssets, amount, 'wrong reserve total assets post-supply');
+    assertEq(
+      spokeData.totalShares,
+      hub.convertAssetsToShares(assetId, amount, true),
+      'wrong spoke stotal hares post-supply'
+    );
+    assertEq(spokeData.drawnShares, 0, 'wrong spoke shares post-supply');
     assertEq(dai.balanceOf(address(spoke)), 0);
     assertEq(dai.balanceOf(address(hub)), amount);
   }
