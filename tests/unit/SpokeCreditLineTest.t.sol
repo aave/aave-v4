@@ -12,12 +12,7 @@ contract SpokeCreditLineTest is BaseTest {
 
     // Add dai
     hub.addAsset(
-      LiquidityHub.AssetConfig({
-        decimals: 18,
-        active: true,
-        supplyCap: type(uint256).max,
-        irStrategy: address(0)
-      }),
+      LiquidityHub.AssetConfig({decimals: 18, active: true, irStrategy: address(0)}),
       address(dai)
     );
     spoke.addReserve(
@@ -29,12 +24,7 @@ contract SpokeCreditLineTest is BaseTest {
 
     // Add eth
     hub.addAsset(
-      LiquidityHub.AssetConfig({
-        decimals: 18,
-        active: true,
-        supplyCap: type(uint256).max,
-        irStrategy: address(0)
-      }),
+      LiquidityHub.AssetConfig({decimals: 18, active: true, irStrategy: address(0)}),
       address(eth)
     );
     spoke.addReserve(
@@ -58,12 +48,7 @@ contract SpokeCreditLineTest is BaseTest {
     );
     spokeCreditLine = new MockSpokeCreditLine(address(hub), address(creditLineIRStrategy));
     hub.addAsset(
-      LiquidityHub.AssetConfig({
-        decimals: 18,
-        active: true,
-        supplyCap: type(uint256).max,
-        irStrategy: address(0)
-      }),
+      LiquidityHub.AssetConfig({decimals: 18, active: true, irStrategy: address(0)}),
       address(dai)
     );
     spokeCreditLine.addReserve(

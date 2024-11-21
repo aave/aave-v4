@@ -13,12 +13,7 @@ contract LiquidityHubTest is BaseTest {
     // Add dai
     uint256 daiAssetId = 0;
     hub.addAsset(
-      LiquidityHub.AssetConfig({
-        decimals: 18,
-        active: true,
-        supplyCap: type(uint256).max,
-        irStrategy: address(irStrategy)
-      }),
+      LiquidityHub.AssetConfig({decimals: 18, active: true, irStrategy: address(irStrategy)}),
       address(dai)
     );
     spoke.addReserve(
@@ -36,12 +31,7 @@ contract LiquidityHubTest is BaseTest {
     // Add eth
     uint256 ethAssetId = 1;
     hub.addAsset(
-      LiquidityHub.AssetConfig({
-        decimals: 18,
-        active: true,
-        supplyCap: type(uint256).max,
-        irStrategy: address(irStrategy)
-      }),
+      LiquidityHub.AssetConfig({decimals: 18, active: true, irStrategy: address(irStrategy)}),
       address(eth)
     );
     spoke.addReserve(
@@ -73,7 +63,6 @@ contract LiquidityHubTest is BaseTest {
       LiquidityHub.AssetConfig({
         decimals: 18,
         active: true,
-        supplyCap: type(uint256).max,
         irStrategy: address(creditLineIRStrategy)
       }),
       address(dai)

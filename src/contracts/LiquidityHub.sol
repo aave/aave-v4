@@ -43,7 +43,6 @@ contract LiquidityHub is ILiquidityHub {
   struct AssetConfig {
     uint256 decimals;
     bool active; // TODO: frozen, paused
-    uint256 supplyCap;
     address irStrategy;
   }
 
@@ -110,7 +109,6 @@ contract LiquidityHub is ILiquidityHub {
       config: AssetConfig({
         decimals: params.decimals,
         active: params.active,
-        supplyCap: params.supplyCap,
         irStrategy: params.irStrategy
       })
     });
@@ -122,7 +120,6 @@ contract LiquidityHub is ILiquidityHub {
     assets[assetId].config = AssetConfig({
       decimals: params.decimals,
       active: params.active,
-      supplyCap: params.supplyCap,
       irStrategy: params.irStrategy
     });
   }
@@ -304,16 +301,11 @@ contract LiquidityHub is ILiquidityHub {
     // TODO: Different states e.g. frozen, paused
     require(asset.config.active, 'ASSET_NOT_ACTIVE');
     require(
-      asset.config.supplyCap == type(uint256).max ||
-        asset.totalAssets + amount <= spoke.config.supplyCap,
-      'ASSET_SUPPLY_CAP_EXCEEDED'
+      spoke.config.supplyCap == type(uint256).max ||
+        convertAssetsToShares(asset.id, spoke.totalShares, false) + amount <=
+        spoke.config.supplyCap,
+      'SUPPLY_CAP_EXCEEDED'
     );
-    // TODO: spoke-specific supply cap?
-    // require(
-    //   spoke.config.supplyCap == type(uint256).max ||
-    //     asset.totalAssets + amount <= spoke.config.supplyCap,
-    //   'SPOKE_SUPPLY_CAP_EXCEEDED'
-    // );
   }
 
   function _validateWithdraw(
