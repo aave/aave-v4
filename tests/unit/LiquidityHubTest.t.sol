@@ -199,78 +199,105 @@ contract LiquidityHubTest is BaseTest {
     uint256 assetId = 0; // TODO: Add getter of asset id based on address
     uint256 amount = 100e18;
 
-    deal(address(dai), USER1, amount);
+    deal(address(dai), address(spoke1), amount);
 
-    LiquidityHub.Asset memory reserveData = hub.getAsset(assetId);
-    Spoke.UserConfig memory userData = spoke1.getUser(assetId, USER1);
+    LiquidityHub.Asset memory assetData = hub.getAsset(assetId);
+    LiquidityHub.Spoke memory spokeData = hub.getSpoke(assetId, address(spoke1));
 
-    assertEq(reserveData.totalShares, 0);
-    assertEq(reserveData.totalAssets, 0);
-    assertEq(userData.supplyShares, 0);
-    assertEq(spoke1.getUserDebt(assetId, USER1), 0);
-    assertEq(dai.balanceOf(USER1), amount);
-    assertEq(dai.balanceOf(address(hub)), 0);
+    assertEq(assetData.totalShares, 0, 'wrong hub total shares pre-supply');
+    assertEq(assetData.totalAssets, 0, 'wrong hub total assets pre-supply');
+    assertEq(spokeData.totalShares, 0, 'wrong hub total shares pre-supply');
+    assertEq(spokeData.drawnShares, 0, 'wrong hub drawn shares pre-supply');
 
-    Utils.supply(vm, hub, assetId, USER1, amount, USER1);
+    assertEq(dai.balanceOf(address(spoke1)), amount, 'wrong spoke token balance pre-supply');
+    assertEq(dai.balanceOf(address(hub)), 0, 'wrong hub token balance pre-supply');
 
-    reserveData = hub.getAsset(assetId);
-    userData = spoke1.getUser(assetId, USER1);
+    Utils.supply(vm, hub, assetId, address(spoke1), amount, address(spoke1));
 
-    assertEq(reserveData.totalShares, amount);
-    assertEq(reserveData.totalAssets, amount);
-    assertEq(userData.supplyShares, amount);
-    assertEq(spoke1.getUserDebt(assetId, USER1), amount);
-    assertEq(dai.balanceOf(USER1), 0);
-    assertEq(dai.balanceOf(address(hub)), amount);
+    assetData = hub.getAsset(assetId);
+    spokeData = hub.getSpoke(assetId, address(spoke1));
+
+    assertEq(
+      assetData.totalShares,
+      ILiquidityHub(address(hub)).convertAssetsToShares(assetId, amount, true),
+      'wrong total shares post-supply'
+    );
+    assertEq(assetData.totalAssets, amount, 'wrong total assets post-supply');
+    assertEq(
+      spokeData.totalShares,
+      ILiquidityHub(address(hub)).convertAssetsToShares(assetId, amount, false),
+      'wrong hub total shares post-supply'
+    );
+    assertEq(spokeData.drawnShares, 0, 'wrong hub drawn shares post-supply');
+    assertEq(dai.balanceOf(address(spoke1)), 0, 'wrong spoke token balance post-supply');
+    assertEq(dai.balanceOf(address(hub)), amount, 'wrong hub token balance post-supply');
 
     // Index grows but same block, no interest acc
     uint256 newBorrowRate = 0.1e27; // 10.00%
     vm.mockCall(
-      address(spoke1),
-      abi.encodeWithSelector(ISpoke.getInterestRate.selector),
+      address(hub),
+      abi.encodeWithSelector(ILiquidityHub.getBaseInterestRate.selector),
       abi.encode(newBorrowRate)
     );
-
-    userData = spoke1.getUser(assetId, USER1);
-    assertEq(spoke1.getUserDebt(assetId, USER1), amount);
 
     // Time flies, no interest acc
     vm.warp(block.timestamp + 1e4);
 
-    userData = spoke1.getUser(assetId, USER1);
-    reserveData = hub.getAsset(assetId);
-    assertEq(reserveData.totalShares, amount);
-    assertEq(reserveData.totalAssets, amount);
-    assertEq(spoke1.getUserDebt(assetId, USER1), amount);
+    assetData = hub.getAsset(assetId);
+    spokeData = hub.getSpoke(assetId, address(spoke1));
+
+    assertEq(
+      assetData.totalShares,
+      ILiquidityHub(address(hub)).convertAssetsToShares(assetId, amount, true),
+      'wrong total shares post time warp'
+    );
+    assertEq(assetData.totalAssets, amount, 'wrong total assets post time warp');
+    assertEq(
+      spokeData.totalShares,
+      ILiquidityHub(address(hub)).convertAssetsToShares(assetId, amount, false),
+      'wrong spoke total shares post time warp'
+    );
+    assertEq(spokeData.drawnShares, 0, 'wrong spoke drawn shares post time warp');
 
     // state update due to reserve operation
     // TODO helper for reserve state update
     // total assets do not change because no interest acc yet
-    uint256 newTotalAssets = reserveData.totalAssets;
+    uint256 prevTotalAssets = assetData.totalAssets;
 
-    uint256 user2SupplyShares = 1; // minimum for 1 share
-    uint256 user2SupplyAssets = user2SupplyShares.toAssetsUp(
-      newTotalAssets,
-      reserveData.totalShares
+    uint256 spoke2SupplyShares = 1; // minimum for 1 share
+    uint256 spoke2SupplyAssets = ILiquidityHub(address(hub)).convertSharesToAssets(
+      assetId,
+      spoke2SupplyShares,
+      true
     );
 
-    uint256 newUserAssets = amount.toAssetsDown(
-      newTotalAssets + user2SupplyAssets,
-      reserveData.totalShares + user2SupplyShares
+    uint256 newSpoke1Assets = amount.toAssetsDown(
+      assetData.totalAssets + spoke2SupplyAssets,
+      assetData.totalShares + spoke2SupplyShares
     );
 
-    deal(address(dai), USER2, user2SupplyAssets);
-    Utils.supply(vm, hub, assetId, USER2, user2SupplyAssets, USER2);
+    deal(address(dai), address(spoke2), spoke2SupplyAssets);
+    Utils.supply(vm, hub, assetId, address(spoke2), spoke2SupplyAssets, address(spoke2));
 
-    // reserve update
-    userData = spoke1.getUser(assetId, USER1);
-    reserveData = hub.getAsset(assetId);
+    assetData = hub.getAsset(assetId);
+    spokeData = hub.getSpoke(assetId, address(spoke1));
+    LiquidityHub.Spoke memory spoke2Data = hub.getSpoke(assetId, address(spoke2));
 
-    assertEq(reserveData.totalShares, amount + user2SupplyShares, 'wrong total shares');
-    assertEq(reserveData.totalAssets, newTotalAssets + user2SupplyAssets, 'wrong total assets');
-    assertEq(reserveData.drawnShares, 0, 'wrong total drawn');
-    assertEq(userData.supplyShares, amount);
-    assertEq(spoke1.getUserDebt(assetId, USER1), newUserAssets, 'wrong user assets');
+    assertEq(assetData.totalShares, amount + spoke2SupplyShares, 'wrong final total shares');
+    assertEq(
+      assetData.totalAssets,
+      prevTotalAssets + spoke2SupplyAssets,
+      'wrong final total assets'
+    );
+    assertEq(assetData.drawnShares, 0, 'wrong final total drawn');
+    assertEq(
+      spokeData.totalShares,
+      ILiquidityHub(address(hub)).convertAssetsToShares(assetId, amount, false),
+      'wrong final spoke total shares'
+    );
+    assertEq(spokeData.drawnShares, 0, 'wrong final spoke drawn shares');
+    assertEq(spoke2Data.totalShares, spoke2SupplyShares, 'wrong final spoke2 total shares');
+    assertEq(spoke2Data.drawnShares, 0, 'wrong final spoke2 drawn shares');
   }
 
   struct TestSupplyUserParams {
