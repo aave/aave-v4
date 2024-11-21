@@ -302,7 +302,6 @@ contract LiquidityHub is ILiquidityHub {
     require(assetsList[asset.id] != address(0), 'ASSET_NOT_LISTED');
     // TODO: Different states e.g. frozen, paused
     require(asset.config.active, 'ASSET_NOT_ACTIVE');
-    console2.log('supplyCap: %e', spoke.config.supplyCap);
     require(
       spoke.config.supplyCap == type(uint256).max ||
         convertAssetsToShares(asset.id, spoke.totalShares, false) + amount <=
@@ -319,8 +318,8 @@ contract LiquidityHub is ILiquidityHub {
     // TODO: Other cases of status (frozen, paused)
     require(asset.config.active, 'ASSET_NOT_ACTIVE');
     require(
-      convertAssetsToShares(asset.id, amount, false) <= (spoke.totalShares - spoke.drawnShares),
-      'INVALID_AMOUNT'
+      amount <= convertSharesToAssets(asset.id, (spoke.totalShares - spoke.drawnShares), false),
+      'SUPPLIED_AMOUNT_EXCEEDED'
     );
     require(
       amount <= asset.totalAssets - convertSharesToAssets(asset.id, asset.drawnShares, true),

@@ -421,37 +421,33 @@ contract LiquidityHubTest is BaseTest {
     uint256 amount = 100e18;
 
     // User supply
-    deal(address(dai), USER1, amount);
-    Utils.supply(vm, hub, assetId, USER1, amount, USER1);
+    deal(address(dai), address(spoke1), amount);
+    Utils.supply(vm, hub, assetId, address(spoke1), amount, address(spoke1));
 
     LiquidityHub.Asset memory reserveData = hub.getAsset(assetId);
-    Spoke.UserConfig memory userData = spoke1.getUser(assetId, USER1);
 
     assertEq(reserveData.totalShares, amount);
     assertEq(reserveData.totalAssets, amount);
-    assertEq(userData.supplyShares, amount);
-    assertEq(spoke1.getUserDebt(assetId, USER1), amount);
-    assertEq(dai.balanceOf(USER1), 0);
+    assertEq(dai.balanceOf(address(spoke1)), 0);
     assertEq(dai.balanceOf(address(hub)), amount);
 
-    vm.prank(USER1);
-
-    vm.expectRevert(TestErrors.NOT_AVAILABLE_LIQUIDITY);
-    hub.withdraw(assetId, USER1, amount + 1, 0);
+    vm.prank(address(spoke1));
+    vm.expectRevert(TestErrors.SUPPLIED_AMOUNT_EXCEEDED);
+    hub.withdraw(assetId, address(spoke1), amount + 1, 0);
 
     // advance time, but no accumulation
     vm.warp(block.timestamp + 1e18);
-    vm.expectRevert(TestErrors.NOT_AVAILABLE_LIQUIDITY);
-    hub.withdraw(assetId, USER1, amount + 1, 0);
+    vm.expectRevert(TestErrors.SUPPLIED_AMOUNT_EXCEEDED);
+    hub.withdraw(assetId, address(spoke1), amount + 1, 0);
 
     reserveData = hub.getAsset(assetId);
-    userData = spoke1.getUser(assetId, USER1);
 
-    assertEq(reserveData.totalShares, amount);
+    assertEq(
+      reserveData.totalShares,
+      ILiquidityHub(address(hub)).convertAssetsToShares(assetId, amount, true)
+    );
     assertEq(reserveData.totalAssets, amount);
-    assertEq(userData.supplyShares, amount);
-    assertEq(spoke1.getUserDebt(assetId, USER1), amount);
-    assertEq(dai.balanceOf(USER1), 0);
+    assertEq(dai.balanceOf(address(spoke1)), 0);
     assertEq(dai.balanceOf(address(hub)), amount);
   }
 
