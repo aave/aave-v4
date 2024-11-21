@@ -67,7 +67,7 @@ contract SpokeTest is BaseTest {
     MockPriceOracle(address(oracle)).setAssetPrice(ethAssetId, 2000e8);
   }
 
-  function test_first_supply() public {
+  function test_supply() public {
     uint256 assetId = 0; // TODO: Add getter of asset id based on address
     uint256 amount = 100e18;
 
@@ -101,7 +101,7 @@ contract SpokeTest is BaseTest {
     assertEq(userData.debtShares, 0, 'wrong user debt shares');
   }
 
-  function test_first_borrow() public {
+  function test_borrow() public {
     uint256 daiId = 0;
     uint256 ethId = 1;
     uint256 daiAmount = 100e18;
@@ -196,8 +196,5 @@ contract SpokeTest is BaseTest {
     assertEq(user1Data.supplyShares, 0, 'wrong user supply shares post-withdraw');
     assertEq(user1Data.debtShares, 0, 'wrong user debt shares post-withdraw');
   }
-
-  function test_borrow() public {}
-
   function test_repay() public {}
 }
