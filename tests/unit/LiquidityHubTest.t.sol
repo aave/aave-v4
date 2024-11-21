@@ -358,30 +358,28 @@ contract LiquidityHubTest is BaseTest {
     uint256 amount = 100e18;
 
     // User supply
-    deal(address(dai), USER1, amount);
-    Utils.supply(vm, hub, assetId, USER1, amount, USER1);
+    deal(address(dai), address(spoke1), amount);
+    Utils.supply(vm, hub, assetId, address(spoke1), amount, address(spoke1));
 
-    LiquidityHub.Asset memory reserveData = hub.getAsset(assetId);
-    Spoke.UserConfig memory userData = spoke1.getUser(assetId, USER1);
+    LiquidityHub.Asset memory assetData = hub.getAsset(assetId);
 
-    assertEq(reserveData.totalShares, amount);
-    assertEq(reserveData.totalAssets, amount);
-    assertEq(userData.supplyShares, amount);
-    assertEq(spoke1.getUserDebt(assetId, USER1), amount);
-    assertEq(dai.balanceOf(USER1), 0);
-    assertEq(dai.balanceOf(address(hub)), amount);
+    assertEq(
+      assetData.totalShares,
+      ILiquidityHub(address(hub)).convertAssetsToShares(assetId, amount, true),
+      'wrong total shares pre-withdraw'
+    );
+    assertEq(assetData.totalAssets, amount, 'wrong total assets pre-withdraw');
+    assertEq(dai.balanceOf(address(spoke1)), 0, 'wrong spoke token balance pre-withdraw');
+    assertEq(dai.balanceOf(address(hub)), amount, 'wrong hub token balance pre-withdraw');
 
-    Utils.withdraw(vm, hub, assetId, USER1, amount, USER1);
+    Utils.withdraw(vm, hub, assetId, address(spoke1), amount, address(spoke1));
 
-    reserveData = hub.getAsset(assetId);
-    userData = spoke1.getUser(assetId, USER1);
+    assetData = hub.getAsset(assetId);
 
-    assertEq(reserveData.totalShares, 0);
-    assertEq(reserveData.totalAssets, 0);
-    assertEq(userData.supplyShares, 0);
-    assertEq(spoke1.getUserDebt(assetId, USER1), 0);
-    assertEq(dai.balanceOf(USER1), amount);
-    assertEq(dai.balanceOf(address(hub)), 0);
+    assertEq(assetData.totalShares, 0);
+    assertEq(assetData.totalAssets, 0);
+    assertEq(dai.balanceOf(address(spoke1)), amount, 'wrong spoke token balance post-withdraw');
+    assertEq(dai.balanceOf(address(hub)), 0, 'wrong hub token balance post-withdraw');
   }
 
   function skip_test_fuzz_withdraw_events(

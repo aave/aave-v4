@@ -318,7 +318,10 @@ contract LiquidityHub is ILiquidityHub {
   ) internal view {
     // TODO: Other cases of status (frozen, paused)
     require(asset.config.active, 'ASSET_NOT_ACTIVE');
-    require(convertAssetsToShares(asset.id, amount, false) <= spoke.drawnShares, 'INVALID_AMOUNT');
+    require(
+      convertAssetsToShares(asset.id, amount, false) <= (spoke.totalShares - spoke.drawnShares),
+      'INVALID_AMOUNT'
+    );
     require(
       amount <= asset.totalAssets - convertSharesToAssets(asset.id, asset.drawnShares, true),
       'NOT_AVAILABLE_LIQUIDITY'
