@@ -101,7 +101,12 @@ contract LiquidityHubTest is BaseTest {
     assertEq(dai.balanceOf(address(spoke)), amount, 'wrong user token balance pre-supply');
     assertEq(dai.balanceOf(address(hub)), 0, 'wrong hub token balance pre-supply');
 
-    Utils.supply(vm, hub, assetId, address(spoke), amount, address(spoke));
+    vm.startPrank(address(spoke));
+    IERC20(dai).approve(address(hub), amount);
+    vm.expectEmit(true, true, true, false, address(hub));
+    emit Supply(assetId, address(spoke), amount);
+    hub.supply(assetId, amount, 0);
+    vm.stopPrank();
 
     reserveData = hub.getAsset(assetId);
 
@@ -159,7 +164,7 @@ contract LiquidityHubTest is BaseTest {
     emit Transfer(user, address(hub), amount);
 
     vm.expectEmit(true, true, true, true, address(hub));
-    emit Supply(assetId, user, onBehalfOf, amount, 0);
+    emit Supply(assetId, user, amount);
 
     hub.supply(assetId, amount, 0);
     vm.stopPrank();

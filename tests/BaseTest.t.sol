@@ -26,13 +26,9 @@ contract Events {
   event Transfer(address indexed from, address indexed to, uint256 value);
 
   // Aave
-  event Supply(
-    uint256 indexed reserve,
-    address user,
-    address indexed onBehalfOf,
-    uint256 amount,
-    uint16 indexed referralCode
-  );
+
+  // ILiquidityHub
+  event Supply(uint256 indexed asset, address indexed spoke, uint256 amount);
   event Withdraw(uint256 indexed reserve, address indexed user, address indexed to, uint256 amount);
   event Borrowed(uint256 indexed assetId, address user, uint256 amount);
   event Repaid(uint256 indexed assetId, address user, uint256 amount);
