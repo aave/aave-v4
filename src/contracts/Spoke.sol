@@ -147,9 +147,12 @@ contract Spoke is ISpoke {
     // TODO: onBehalfOf
 
     UserConfig storage u = users[assetId][msg.sender];
+    Reserve storage r = reserves[assetId];
     _validateRepay(assetId, u, amount);
 
     (, uint256 newAggregatedRiskPremium) = _refreshRiskPremium();
+    IERC20(r.asset).safeTransferFrom(msg.sender, address(this), amount);
+    IERC20(r.asset).approve(liquidityHub, amount);
     uint256 userShares = ILiquidityHub(liquidityHub).restore(
       assetId,
       amount,

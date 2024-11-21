@@ -66,4 +66,17 @@ library Utils {
     spoke.supply(assetId, amount);
     vm.stopPrank();
   }
+
+  function borrow(
+    Vm vm,
+    Spoke spoke,
+    uint256 assetId,
+    address user,
+    uint256 amount,
+    address onBehalfOf
+  ) internal {
+    vm.startPrank(user);
+    spoke.borrow(assetId, user, amount);
+    vm.stopPrank();
+  }
 }

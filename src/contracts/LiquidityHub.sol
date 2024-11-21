@@ -164,6 +164,7 @@ contract LiquidityHub is ILiquidityHub {
     spoke.totalShares += sharesAmount;
 
     // TODO: fee-on-transfer
+    // TODO: should this be transferred from the originating user instead of the spoke?
     IERC20(assetsList[assetId]).safeTransferFrom(msg.sender, address(this), amount);
 
     emit Supply(assetId, msg.sender, amount);
@@ -239,6 +240,7 @@ contract LiquidityHub is ILiquidityHub {
     asset.drawnShares -= sharesAmount;
     spoke.drawnShares -= sharesAmount;
 
+    // TODO: should this be transferred from the originating user instead of the spoke?
     IERC20(assetsList[assetId]).safeTransferFrom(msg.sender, address(this), amount);
 
     emit Restore(assetId, msg.sender, amount);
