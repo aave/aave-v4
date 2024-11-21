@@ -117,7 +117,7 @@ contract Spoke is ISpoke {
     emit Withdrawn(assetId, msg.sender, amount);
   }
 
-  function borrow(uint256 assetId, address onBehalfOf, uint256 amount) external {
+  function borrow(uint256 assetId, address to, uint256 amount) external {
     // TODO: referral code
     // TODO: onBehalfOf with credit delegation
     Reserve storage r = reserves[assetId];
@@ -127,14 +127,14 @@ contract Spoke is ISpoke {
     (, uint256 newAggregatedRiskPremium) = _refreshRiskPremium();
     uint256 userShares = ILiquidityHub(liquidityHub).draw(
       assetId,
-      onBehalfOf,
+      to,
       amount,
       newAggregatedRiskPremium
     );
     // debt still goes to original msg.sender
     users[assetId][msg.sender].debtShares += userShares;
 
-    emit Borrowed(assetId, onBehalfOf, amount);
+    emit Borrowed(assetId, to, amount);
   }
 
   function repay(uint256 assetId, uint256 amount) external {
