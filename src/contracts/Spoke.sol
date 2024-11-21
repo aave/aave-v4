@@ -91,11 +91,14 @@ contract Spoke is ISpoke {
     _validateSupply(r, amount);
 
     (, uint256 newAggregatedRiskPremium) = _refreshRiskPremium();
+    IERC20(r.asset).safeTransferFrom(msg.sender, address(this), amount);
+    IERC20(r.asset).approve(liquidityHub, amount);
     uint256 userShares = ILiquidityHub(liquidityHub).supply(
       assetId,
       amount,
       newAggregatedRiskPremium
     );
+    IERC20(r.asset).approve(liquidityHub, 0);
 
     users[assetId][msg.sender].supplyShares += userShares;
 

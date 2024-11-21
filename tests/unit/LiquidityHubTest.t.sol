@@ -130,7 +130,7 @@ contract LiquidityHubTest is BaseTest {
     assertEq(
       spokeData.totalShares,
       hub.convertAssetsToShares(assetId, amount, true),
-      'wrong spoke stotal hares post-supply'
+      'wrong spoke total shares post-supply'
     );
     assertEq(spokeData.drawnShares, 0, 'wrong spoke shares post-supply');
     assertEq(dai.balanceOf(address(spoke1)), 0);
