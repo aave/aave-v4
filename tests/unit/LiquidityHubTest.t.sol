@@ -559,7 +559,7 @@ contract LiquidityHubTest is BaseTest {
     // assertEq(hub.getUserRiskPremium(USER1), calcRiskPremium);
   }
 
-  function test_first_borrow() public {
+  function test_first_draw() public {
     uint256 daiId = 0;
     uint256 ethId = 1;
     uint256 daiAmount = 100e18;
@@ -609,6 +609,8 @@ contract LiquidityHubTest is BaseTest {
 
     // spoke1 draw half of dai reserve liquidity
     vm.prank(address(spoke1));
+    vm.expectEmit(true, true, true, false, address(hub));
+    emit Draw(daiId, address(spoke1), address(spoke1), daiAmount / 2);
     ILiquidityHub(address(hub)).draw(daiId, address(spoke1), daiAmount / 2, 0);
 
     daiData = hub.getAsset(daiId);

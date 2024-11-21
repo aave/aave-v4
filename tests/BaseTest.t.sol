@@ -29,9 +29,9 @@ contract Events {
 
   // ILiquidityHub
   event Supply(uint256 indexed asset, address indexed spoke, uint256 amount);
-  event Withdraw(uint256 indexed reserve, address indexed user, address indexed to, uint256 amount);
-  event Borrowed(uint256 indexed assetId, address user, uint256 amount);
-  event Repaid(uint256 indexed assetId, address user, uint256 amount);
+  event Withdraw(uint256 indexed asset, address indexed spoke, address indexed to, uint256 amount);
+  event Draw(uint256 indexed asset, address indexed spoke, address indexed to, uint256 amount);
+  event Restore(uint256 indexed asset, address indexed spoke, uint256 amount);
 }
 
 library TestErrors {
