@@ -119,6 +119,7 @@ contract Spoke is ISpoke {
 
   function borrow(uint256 assetId, address onBehalfOf, uint256 amount) external {
     // TODO: referral code
+    // TODO: onBehalfOf with credit delegation
     Reserve storage r = reserves[assetId];
     _validateBorrow(r, amount);
 
