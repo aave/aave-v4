@@ -139,9 +139,9 @@ contract LiquidityHub is ILiquidityHub {
     Asset storage asset = assets[assetId];
     Spoke storage spoke = spokes[assetId][msg.sender];
 
-    _validateSupply(asset, spoke, amount);
     // Update indexes and IRs
     _updateState(asset, spoke.drawnShares, riskPremium, amount, 0);
+    _validateSupply(asset, spoke, amount);
 
     // TODO Mitigate inflation attack (burn some amount if first supply)
     uint256 sharesAmount = convertAssetsToShares(assetId, amount, false);
@@ -170,8 +170,8 @@ contract LiquidityHub is ILiquidityHub {
     Asset storage asset = assets[assetId];
     Spoke storage spoke = spokes[assetId][msg.sender];
 
-    _validateWithdraw(asset, spoke, amount);
     _updateState(asset, spoke.drawnShares, riskPremium, 0, amount);
+    _validateWithdraw(asset, spoke, amount);
 
     uint256 sharesAmount = convertAssetsToShares(assetId, amount, false);
     asset.totalShares -= sharesAmount;
@@ -196,8 +196,8 @@ contract LiquidityHub is ILiquidityHub {
     Asset storage asset = assets[assetId];
     Spoke storage spoke = spokes[assetId][msg.sender];
 
-    _validateDraw(asset, amount, spoke.config.drawCap);
     _updateState(asset, spoke.drawnShares, riskPremium, 0, amount);
+    _validateDraw(asset, amount, spoke.config.drawCap);
 
     uint256 sharesAmount = convertAssetsToShares(assetId, amount, true);
     asset.drawnShares += sharesAmount;
@@ -220,9 +220,9 @@ contract LiquidityHub is ILiquidityHub {
     Asset storage asset = assets[assetId];
     Spoke storage spoke = spokes[assetId][msg.sender];
 
+    _updateState(asset, spoke.drawnShares, riskPremium, amount, 0);
     uint256 sharesAmount = convertAssetsToShares(assetId, amount, false);
     _validateRestore(asset, sharesAmount, spoke.drawnShares);
-    _updateState(asset, spoke.drawnShares, riskPremium, amount, 0);
 
     asset.drawnShares -= sharesAmount;
     spoke.drawnShares -= sharesAmount;
