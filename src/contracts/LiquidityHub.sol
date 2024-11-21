@@ -254,9 +254,11 @@ contract LiquidityHub is ILiquidityHub {
         : amount.toAssetsDown(assets[assetId].totalAssets, assets[assetId].totalShares);
   }
 
-  function getInterestRate(uint256 assetId) public view returns (uint256) {
+  function getBaseInterestRate(uint256 assetId) public view returns (uint256) {
     return assets[assetId].currentBorrowRate;
   }
+
+  // TODO: separate getter method for final IR that incorporates risk premium
 
   function getSpokeDrawnLiquidity(uint256 assetId, address spoke) public view returns (uint256) {
     return
