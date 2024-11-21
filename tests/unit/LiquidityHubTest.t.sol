@@ -590,17 +590,17 @@ contract LiquidityHubTest is BaseTest {
     uint256 daiId = 2;
     uint256 drawnAmount = 1;
     _updateActive(daiId, false);
-    vm.prank(USER1);
+    vm.prank(address(spoke1));
     vm.expectRevert(TestErrors.RESERVE_NOT_ACTIVE);
-    ISpoke(address(spokeCreditLine)).borrow(daiId, USER1, drawnAmount);
+    ILiquidityHub(address(hub)).draw(daiId, address(spoke1), drawnAmount, 0);
   }
 
-  function test_revert_draw_invalid_amount() public {
-    uint256 daiId = 2;
+  function test_revert_draw_not_available_liquidity() public {
+    uint256 daiId = 0;
     uint256 drawnAmount = 1;
-    vm.prank(USER1);
-    vm.expectRevert(TestErrors.INVALID_AMOUNT);
-    ISpoke(address(spokeCreditLine)).borrow(daiId, USER1, drawnAmount);
+    vm.prank(address(spoke1));
+    vm.expectRevert(TestErrors.NOT_AVAILABLE_LIQUIDITY);
+    ILiquidityHub(address(hub)).draw(daiId, address(spoke1), drawnAmount, 0);
   }
 
   function test_revert_draw_cap_exceeded() public {
