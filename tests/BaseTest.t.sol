@@ -37,7 +37,7 @@ contract Events {
 library TestErrors {
   // Aave
   bytes constant NOT_AVAILABLE_LIQUIDITY = 'NOT_AVAILABLE_LIQUIDITY';
-  bytes constant RESERVE_NOT_ACTIVE = 'RESERVE_NOT_ACTIVE';
+  bytes constant ASSET_NOT_ACTIVE = 'ASSET_NOT_ACTIVE';
   bytes constant ASSET_NOT_LISTED = 'ASSET_NOT_LISTED';
   bytes constant INVALID_AMOUNT = 'INVALID_AMOUNT';
   bytes constant SUPPLY_CAP_EXCEEDED = 'SUPPLY_CAP_EXCEEDED';

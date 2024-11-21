@@ -586,12 +586,12 @@ contract LiquidityHubTest is BaseTest {
     assertEq(dai.balanceOf(address(spoke1)), daiAmount / 2);
   }
 
-  function test_revert_draw_reserve_not_active() public {
+  function test_revert_draw_asset_not_active() public {
     uint256 daiId = 2;
     uint256 drawnAmount = 1;
     _updateActive(daiId, false);
     vm.prank(address(spoke1));
-    vm.expectRevert(TestErrors.RESERVE_NOT_ACTIVE);
+    vm.expectRevert(TestErrors.ASSET_NOT_ACTIVE);
     ILiquidityHub(address(hub)).draw(daiId, address(spoke1), drawnAmount, 0);
   }
 
