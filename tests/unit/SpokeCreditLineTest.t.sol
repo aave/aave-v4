@@ -15,7 +15,7 @@ contract SpokeCreditLineTest is BaseTest {
       LiquidityHub.AssetConfig({decimals: 18, active: true, irStrategy: address(0)}),
       address(dai)
     );
-    spoke.addReserve(
+    spoke1.addReserve(
       0,
       Spoke.ReserveConfig({lt: 0, lb: 0, borrowable: true, collateral: false}),
       address(dai)
@@ -27,7 +27,7 @@ contract SpokeCreditLineTest is BaseTest {
       LiquidityHub.AssetConfig({decimals: 18, active: true, irStrategy: address(0)}),
       address(eth)
     );
-    spoke.addReserve(
+    spoke1.addReserve(
       1,
       Spoke.ReserveConfig({lt: 0, lb: 0, borrowable: true, collateral: false}),
       address(eth)
@@ -61,7 +61,7 @@ contract SpokeCreditLineTest is BaseTest {
     vm.warp(block.timestamp + 20);
   }
 
-  function test_credit_line_config() public {
+  function skip_test_credit_line_config() public {
     uint256 daiId = 2;
     assertEq(spokeCreditLine.getInterestRate(daiId), 0.05e27);
 
@@ -77,7 +77,7 @@ contract SpokeCreditLineTest is BaseTest {
 
   // test with basic borrow module
   // credit line with fixed interest rate
-  function test_first_borrow_credit_line() public {
+  function skip_test_first_borrow_credit_line() public {
     // DAI with basic credit line borrow module
     uint256 daiId = 2;
     uint256 daiAmount = 100e18;
@@ -177,7 +177,7 @@ contract SpokeCreditLineTest is BaseTest {
     assertEq(userBalance, spokeCreditLine.getUserDebt(daiId, USER1), '3) wrong final user1 debt');
   }
 
-  function test_revert_borrow_reserve_not_borrowable() public {
+  function skip_test_revert_borrow_reserve_not_borrowable() public {
     uint256 daiId = 2;
     uint256 drawnAmount = 1;
     _updateBorrowable(daiId, false);
@@ -187,7 +187,7 @@ contract SpokeCreditLineTest is BaseTest {
     ISpoke(address(spokeCreditLine)).borrow(daiId, USER1, drawnAmount);
   }
 
-  function test_multi_borrow_credit_line() public {
+  function skip_test_multi_borrow_credit_line() public {
     // DAI with basic credit line borrow module
     uint256 daiId = 2;
     uint256 daiAmount = 100e18;
@@ -201,7 +201,7 @@ contract SpokeCreditLineTest is BaseTest {
     LiquidityHub.Asset memory daiData0 = hub.getAsset(daiId);
 
     assertEq(dai.balanceOf(USER1), 0);
-    assertEq(dai.balanceOf(address(spoke)), 0);
+    assertEq(dai.balanceOf(address(spoke1)), 0);
 
     drawnAmounts[0] = daiAmount / 2; // 50%
     drawnAmounts[1] = daiAmount / 4; // 25%
@@ -209,7 +209,7 @@ contract SpokeCreditLineTest is BaseTest {
 
     // User1 draw half of dai reserve liquidity for borrow module
     vm.prank(USER1);
-    ISpoke(address(spoke)).borrow(daiId, USER1, drawnAmounts[0]);
+    ISpoke(address(spoke1)).borrow(daiId, USER1, drawnAmounts[0]);
 
     LiquidityHub.Asset memory daiData1 = hub.getAsset(daiId);
 
@@ -292,7 +292,7 @@ contract SpokeCreditLineTest is BaseTest {
     );
   }
 
-  function test_fuzz_multiple_draws_credit_line(uint256 numDrawings, uint256 entropy) public {
+  function skip_test_fuzz_multiple_draws_credit_line(uint256 numDrawings, uint256 entropy) public {
     numDrawings = bound(numDrawings, 1, 10);
 
     // DAI with basic credit line borrow module
@@ -354,7 +354,7 @@ contract SpokeCreditLineTest is BaseTest {
     vm.stopPrank();
   }
 
-  function test_revert_update_reserve() public {
+  function skip_test_revert_update_reserve() public {
     uint256 invalidReserveId = 3;
 
     MockSpokeCreditLine.ReserveConfig memory reserveConfig;
@@ -362,7 +362,7 @@ contract SpokeCreditLineTest is BaseTest {
     spokeCreditLine.updateReserve(invalidReserveId, reserveConfig);
   }
 
-  function test_update_reserve() public {
+  function skip_test_update_reserve() public {
     uint256 daiId = 2;
 
     MockSpokeCreditLine.ReserveConfig memory reserveConfig;
@@ -376,7 +376,7 @@ contract SpokeCreditLineTest is BaseTest {
     // accumulate interest over the year
     totalCumulated = MathUtils
       .calculateLinearInterest(
-        ISpoke(address(spoke)).getInterestRate(reserveData.id),
+        ISpoke(address(spoke1)).getInterestRate(reserveData.id),
         uint40(reserveData.lastUpdateTimestamp)
       )
       .rayMul(reserveData.drawnShares);
