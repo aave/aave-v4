@@ -389,6 +389,7 @@ contract LiquidityHubTest is BaseTest {
     Utils.supply(vm, hub, assetId, address(spoke1), amount, address(spoke1));
 
     LiquidityHub.Asset memory assetData = hub.getAsset(assetId);
+    LiquidityHub.Spoke memory spokeData = hub.getSpoke(assetId, address(spoke1));
 
     assertEq(
       assetData.totalShares,
@@ -396,6 +397,12 @@ contract LiquidityHubTest is BaseTest {
       'wrong total shares pre-withdraw'
     );
     assertEq(assetData.totalAssets, amount, 'wrong total assets pre-withdraw');
+    assertEq(
+      spokeData.totalShares,
+      ILiquidityHub(address(hub)).convertAssetsToShares(assetId, amount, false),
+      'wrong spoke total shares pre-withdraw'
+    );
+    assertEq(spokeData.drawnShares, 0, 'wrong spoke drawn shares pre-withdraw');
     assertEq(dai.balanceOf(address(spoke1)), 0, 'wrong spoke token balance pre-withdraw');
     assertEq(dai.balanceOf(address(hub)), amount, 'wrong hub token balance pre-withdraw');
 
