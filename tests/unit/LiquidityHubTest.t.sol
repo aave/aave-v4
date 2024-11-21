@@ -37,6 +37,15 @@ contract LiquidityHubTest is BaseTest {
       address(spoke2)
     );
     MockPriceOracle(address(oracle)).setAssetPrice(daiAssetId, 1e8);
+    irStrategy.setInterestRateParams(
+      daiAssetId,
+      IDefaultInterestRateStrategy.InterestRateData({
+        optimalUsageRatio: 9000, // 90.00%
+        baseVariableBorrowRate: 500, // 5.00%
+        variableRateSlope1: 500, // 5.00%
+        variableRateSlope2: 500 // 5.00%
+      })
+    );
 
     // Add eth
     uint256 ethAssetId = 1;
@@ -65,6 +74,15 @@ contract LiquidityHubTest is BaseTest {
       address(spoke2)
     );
     MockPriceOracle(address(oracle)).setAssetPrice(ethAssetId, 2000e8);
+    irStrategy.setInterestRateParams(
+      ethAssetId,
+      IDefaultInterestRateStrategy.InterestRateData({
+        optimalUsageRatio: 9000, // 90.00%
+        baseVariableBorrowRate: 500, // 5.00%
+        variableRateSlope1: 500, // 5.00%
+        variableRateSlope2: 500 // 5.00%
+      })
+    );
 
     // Add dai again but with basic credit line borrow module
     uint256 daiCreditLineAssetId = 2;
@@ -672,6 +690,76 @@ contract LiquidityHubTest is BaseTest {
     vm.prank(address(spoke1));
     vm.expectRevert(TestErrors.DRAW_CAP_EXCEEDED);
     ILiquidityHub(address(hub)).draw(daiId, address(spoke1), drawnAmount, 0);
+  }
+
+  function test_restore() public {
+    uint256 daiId = 0;
+    uint256 ethId = 1;
+    uint256 daiAmount = 100e18;
+    uint256 ethAmount = 10e18;
+
+    uint256 drawAmount = daiAmount / 2;
+    uint256 restoreAmount = daiAmount / 4;
+
+    // spoke1 supply eth
+    deal(address(eth), address(spoke1), ethAmount);
+    Utils.supply(vm, hub, ethId, address(spoke1), ethAmount, address(spoke1));
+
+    // spoke2 supply dai
+    deal(address(dai), address(spoke2), daiAmount);
+    Utils.supply(vm, hub, daiId, address(spoke2), daiAmount, address(spoke2));
+
+    // spoke1 draw half of dai reserve liquidity
+    Utils.draw(vm, hub, daiId, address(spoke1), drawAmount, address(spoke1));
+
+    // spoke1 restore half of drawn dai liquidity
+    vm.startPrank(address(spoke1));
+    IERC20(address(dai)).approve(address(hub), restoreAmount);
+    vm.expectEmit(true, true, true, true, address(hub));
+    emit Restore(daiId, address(spoke1), restoreAmount);
+    ILiquidityHub(address(hub)).restore(daiId, restoreAmount, 0);
+    vm.stopPrank();
+
+    LiquidityHub.Asset memory daiData = hub.getAsset(daiId);
+    LiquidityHub.Asset memory ethData = hub.getAsset(ethId);
+    LiquidityHub.Spoke memory spoke1EthData = hub.getSpoke(ethId, address(spoke1));
+    LiquidityHub.Spoke memory spoke1DaiData = hub.getSpoke(daiId, address(spoke1));
+    LiquidityHub.Spoke memory spoke2EthData = hub.getSpoke(ethId, address(spoke2));
+    LiquidityHub.Spoke memory spoke2DaiData = hub.getSpoke(daiId, address(spoke2));
+
+    assertEq(
+      daiData.totalShares,
+      ILiquidityHub(address(hub)).convertAssetsToShares(daiId, daiAmount, true),
+      'wrong hub dai total shares post-restore'
+    );
+    assertEq(daiData.totalAssets, daiAmount, 'wrong hub dai total assets post-restore');
+    assertEq(ethData.totalAssets, ethAmount, 'wrong hub eth total assets post-restore');
+    assertEq(
+      ethData.totalShares,
+      ILiquidityHub(address(hub)).convertAssetsToShares(ethId, ethAmount, true),
+      'wrong hub eth total shares post-restore'
+    );
+    assertEq(ethData.drawnShares, 0, 'wrong hub eth drawn shares post-restore');
+    assertEq(
+      spoke1EthData.totalShares,
+      ILiquidityHub(address(hub)).convertAssetsToShares(ethId, ethAmount, true),
+      'wrong spoke1 total eth shares post-restore'
+    );
+    assertEq(spoke1EthData.drawnShares, 0, 'wrong spoke1 drawn eth shares post-restore');
+    assertEq(spoke1DaiData.totalShares, 0, 'wrong spoke1 total dai shares post-restore');
+    assertEq(
+      spoke1DaiData.drawnShares,
+      ILiquidityHub(address(hub)).convertAssetsToShares(daiId, drawAmount - restoreAmount, false),
+      'wrong spoke1 drawn dai shares post-restore'
+    );
+
+    assertEq(dai.balanceOf(address(hub)), daiAmount - restoreAmount, 'wrong hub dai final balance');
+    assertEq(
+      dai.balanceOf(address(spoke1)),
+      drawAmount - restoreAmount,
+      'wrong spoke1 dai final balance'
+    );
+    assertEq(eth.balanceOf(address(spoke2)), 0, 'wrong spoke2 eth final balance');
   }
 
   // function _updateLiquidityPremium(uint256 assetId, uint256 newLiquidityPremium) internal {

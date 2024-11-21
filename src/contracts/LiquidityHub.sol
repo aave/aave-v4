@@ -344,7 +344,7 @@ contract LiquidityHub is ILiquidityHub {
     require(asset.config.active, 'ASSET_NOT_ACTIVE');
 
     // Esnure spoke is not restoring more than supplied
-    require(sharesAmount <= drawnShares, 'INVALID_AMOUNT');
+    require(sharesAmount <= drawnShares, 'INVALID_RESTORE_AMOUNT');
   }
 
   function _updateState(

@@ -6,6 +6,8 @@ import {Errors} from '../libraries/helpers/Errors.sol';
 import {IDefaultInterestRateStrategy} from '../interfaces/IDefaultInterestRateStrategy.sol';
 import {IReserveInterestRateStrategy} from '../interfaces/IReserveInterestRateStrategy.sol';
 
+import 'forge-std/console2.sol';
+
 /**
  * @title DefaultReserveInterestRateStrategy contract
  * @author Aave Labs
@@ -42,7 +44,8 @@ contract DefaultReserveInterestRateStrategy is IDefaultInterestRateStrategy {
   /// @inheritdoc IDefaultInterestRateStrategy
   function setInterestRateParams(uint256 assetId, InterestRateData calldata rateData) external {
     // TODO: Auth
-    require(assetId != 0, Errors.INVALID_ASSET_ID);
+    // TODO: resolve assetId, can be equal 0 in LH
+    // require(assetId != 0, Errors.INVALID_ASSET_ID);
 
     require(
       rateData.optimalUsageRatio <= MAX_OPTIMAL_POINT &&
@@ -112,6 +115,8 @@ contract DefaultReserveInterestRateStrategy is IDefaultInterestRateStrategy {
     DataTypes.CalculateInterestRatesParams memory params
   ) external view virtual override returns (uint256) {
     InterestRateData memory rateData = _interestRateData[params.assetId];
+
+    // TODO: require(rateData.optimalUsageRatio != 0, Errors.INVALID_OPTIMAL_USAGE_RATIO);
 
     // @note This is a short circuit to allow mintable assets (ex. GHO), which by definition cannot be supplied
     // and thus do not use virtual underlying balances.

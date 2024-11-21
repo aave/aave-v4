@@ -65,6 +65,25 @@ contract SpokeTest is BaseTest {
       address(spoke2)
     );
     MockPriceOracle(address(oracle)).setAssetPrice(ethAssetId, 2000e8);
+
+    irStrategy.setInterestRateParams(
+      daiAssetId,
+      IDefaultInterestRateStrategy.InterestRateData({
+        optimalUsageRatio: 9000, // 90.00%
+        baseVariableBorrowRate: 500, // 5.00%
+        variableRateSlope1: 500, // 5.00%
+        variableRateSlope2: 500 // 5.00%
+      })
+    );
+    irStrategy.setInterestRateParams(
+      ethAssetId,
+      IDefaultInterestRateStrategy.InterestRateData({
+        optimalUsageRatio: 9000, // 90.00%
+        baseVariableBorrowRate: 500, // 5.00%
+        variableRateSlope1: 500, // 5.00%
+        variableRateSlope2: 500 // 5.00%
+      })
+    );
   }
 
   function test_supply() public {
