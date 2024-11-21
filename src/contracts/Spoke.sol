@@ -88,7 +88,7 @@ contract Spoke is ISpoke {
 
     _validateSupply(r, amount);
 
-    (, uint256 newAggregatedRiskPremium) = _updateState();
+    (, uint256 newAggregatedRiskPremium) = _refreshRiskPremium();
     uint256 userShares = ILiquidityHub(liquidityHub).supply(
       assetId,
       amount,
@@ -105,7 +105,7 @@ contract Spoke is ISpoke {
     UserConfig storage u = users[assetId][msg.sender];
     _validateWithdraw(assetId, r, u, amount);
 
-    (, uint256 newAggregatedRiskPremium) = _updateState();
+    (, uint256 newAggregatedRiskPremium) = _refreshRiskPremium();
     uint256 userShares = ILiquidityHub(liquidityHub).withdraw(
       assetId,
       to,
@@ -123,7 +123,7 @@ contract Spoke is ISpoke {
     _validateBorrow(r, amount);
 
     // TODO HF check
-    (, uint256 newAggregatedRiskPremium) = _updateState();
+    (, uint256 newAggregatedRiskPremium) = _refreshRiskPremium();
     uint256 userShares = ILiquidityHub(liquidityHub).draw(
       assetId,
       onBehalfOf,
@@ -143,7 +143,7 @@ contract Spoke is ISpoke {
     UserConfig storage u = users[assetId][msg.sender];
     _validateRepay(assetId, u, amount);
 
-    (, uint256 newAggregatedRiskPremium) = _updateState();
+    (, uint256 newAggregatedRiskPremium) = _refreshRiskPremium();
     uint256 userShares = ILiquidityHub(liquidityHub).restore(
       assetId,
       amount,
@@ -157,7 +157,8 @@ contract Spoke is ISpoke {
   // TODO: Needed?
   function getInterestRate(uint256 assetId) public view returns (uint256) {
     // read from state, convert to ray
-    return ILiquidityHub(liquidityHub).getInterestRate(assetId);
+    // TODO: should be final IR rather than base?
+    return ILiquidityHub(liquidityHub).getBaseInterestRate(assetId);
   }
 
   // /////
@@ -221,7 +222,7 @@ contract Spoke is ISpoke {
   @return uint256 new risk premium
   @return uint256 new aggregated risk premium
   */
-  function _updateState() internal returns (uint256, uint256) {
+  function _refreshRiskPremium() internal returns (uint256, uint256) {
     // TODO: update state - debt shares
 
     // TODO: refresh risk premium of user, specific assets user has supplied

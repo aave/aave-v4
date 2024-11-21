@@ -22,7 +22,7 @@ interface ILiquidityHub {
     uint256 riskPremium
   ) external returns (uint256);
 
-  function getInterestRate(uint256 assetId) external view returns (uint256);
+  function getBaseInterestRate(uint256 assetId) external view returns (uint256);
 
   function convertSharesToAssets(
     uint256 assetId,
