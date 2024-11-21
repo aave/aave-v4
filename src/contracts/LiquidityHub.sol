@@ -187,7 +187,7 @@ contract LiquidityHub is ILiquidityHub {
 
   function draw(
     uint256 assetId,
-    address onBehalfOf,
+    address to,
     uint256 amount,
     uint256 riskPremium
   ) external returns (uint256) {
@@ -203,9 +203,9 @@ contract LiquidityHub is ILiquidityHub {
     asset.drawnShares += sharesAmount;
     spoke.drawnShares += sharesAmount;
 
-    IERC20(assetsList[assetId]).safeTransfer(onBehalfOf, amount);
+    IERC20(assetsList[assetId]).safeTransfer(to, amount);
 
-    emit Draw(assetId, msg.sender, onBehalfOf, amount);
+    emit Draw(assetId, msg.sender, to, amount);
 
     return sharesAmount;
   }

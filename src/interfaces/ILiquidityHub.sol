@@ -38,11 +38,6 @@ interface ILiquidityHub {
 
   event Supply(uint256 indexed asset, address indexed spoke, uint256 amount);
   event Withdraw(uint256 indexed asset, address indexed spoke, address indexed to, uint256 amount);
-  event Draw(
-    uint256 indexed asset,
-    address indexed spoke,
-    address indexed onBehalfOf,
-    uint256 amount
-  );
+  event Draw(uint256 indexed asset, address indexed spoke, address indexed to, uint256 amount);
   event Restore(uint256 indexed asset, address indexed spoke, uint256 amount);
 }
