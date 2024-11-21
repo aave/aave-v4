@@ -215,7 +215,7 @@ contract Spoke is ISpoke {
   function _validateRepay(uint256 assetId, UserConfig storage user, uint256 amount) internal view {
     require(
       ILiquidityHub(liquidityHub).convertSharesToAssets(assetId, user.debtShares, true) >= amount,
-      'INSUFFICIENT_BALANCE'
+      'REPAY_EXCEEDS_DEBT'
     );
   }
 
