@@ -23,8 +23,18 @@ contract LiquidityHubTest is BaseTest {
     );
     hub.addSpoke(
       daiAssetId,
-      LiquidityHub.SpokeConfig({supplyCap: type(uint256).max, drawCap: 0}),
+      LiquidityHub.SpokeConfig({supplyCap: type(uint256).max, drawCap: type(uint256).max}),
       address(spoke1)
+    );
+    spoke2.addReserve(
+      daiAssetId,
+      Spoke.ReserveConfig({lt: 0, lb: 0, borrowable: true, collateral: false}),
+      address(dai)
+    );
+    hub.addSpoke(
+      daiAssetId,
+      LiquidityHub.SpokeConfig({supplyCap: type(uint256).max, drawCap: type(uint256).max}),
+      address(spoke2)
     );
     MockPriceOracle(address(oracle)).setAssetPrice(daiAssetId, 1e8);
 
@@ -43,6 +53,16 @@ contract LiquidityHubTest is BaseTest {
       ethAssetId,
       LiquidityHub.SpokeConfig({supplyCap: type(uint256).max, drawCap: 0}),
       address(spoke1)
+    );
+    spoke2.addReserve(
+      ethAssetId,
+      Spoke.ReserveConfig({lt: 0, lb: 0, borrowable: true, collateral: false}),
+      address(eth)
+    );
+    hub.addSpoke(
+      ethAssetId,
+      LiquidityHub.SpokeConfig({supplyCap: type(uint256).max, drawCap: 0}),
+      address(spoke2)
     );
     MockPriceOracle(address(oracle)).setAssetPrice(ethAssetId, 2000e8);
 
@@ -507,69 +527,60 @@ contract LiquidityHubTest is BaseTest {
     uint256 daiAmount = 100e18;
     uint256 ethAmount = 10e18;
 
-    // User1 supply eth
-    deal(address(eth), USER1, ethAmount);
-    Utils.supply(vm, hub, ethId, USER1, ethAmount, USER1);
+    // spoke1 supply eth
+    deal(address(eth), address(spoke1), ethAmount);
+    Utils.supply(vm, hub, ethId, address(spoke1), ethAmount, address(spoke1));
 
-    // User2 supply dai
-    deal(address(dai), USER2, daiAmount);
-    Utils.supply(vm, hub, daiId, USER2, daiAmount, USER2);
+    // spoke2 supply dai
+    deal(address(dai), address(spoke2), daiAmount);
+    Utils.supply(vm, hub, daiId, address(spoke2), daiAmount, address(spoke2));
 
     LiquidityHub.Asset memory daiData = hub.getAsset(daiId);
     LiquidityHub.Asset memory ethData = hub.getAsset(ethId);
-    Spoke.UserConfig memory userDaiData1 = spoke1.getUser(daiId, USER1);
-    Spoke.UserConfig memory userEthData1 = spoke1.getUser(ethId, USER1);
-    Spoke.UserConfig memory userDaiData2 = spoke1.getUser(daiId, USER2);
-    Spoke.UserConfig memory userEthData2 = spoke1.getUser(ethId, USER2);
 
-    assertEq(daiData.totalShares, daiAmount);
+    assertEq(
+      daiData.totalShares,
+      ILiquidityHub(address(hub)).convertAssetsToShares(daiId, daiAmount, true)
+    );
     assertEq(daiData.totalAssets, daiAmount);
     assertEq(daiData.drawnShares, 0);
-    assertEq(ethData.totalShares, ethAmount);
+    assertEq(
+      ethData.totalShares,
+      ILiquidityHub(address(hub)).convertAssetsToShares(ethId, ethAmount, true)
+    );
     assertEq(ethData.totalAssets, ethAmount);
     assertEq(ethData.drawnShares, 0);
 
-    assertEq(userDaiData1.supplyShares, 0);
-    assertEq(spoke1.getUserDebt(daiId, USER1), 0);
-    assertEq(userEthData1.supplyShares, ethAmount);
-    assertEq(spoke1.getUserDebt(ethId, USER1), ethAmount);
+    assertEq(dai.balanceOf(address(spoke1)), 0);
 
-    assertEq(userDaiData2.supplyShares, daiAmount);
-    assertEq(spoke1.getUserDebt(daiId, USER2), daiAmount);
-    assertEq(userEthData2.supplyShares, 0);
-    assertEq(spoke1.getUserDebt(ethId, USER2), 0);
-
-    assertEq(dai.balanceOf(USER1), 0);
-
-    // User1 draw half of dai reserve liquidity
-    vm.prank(USER1);
-    ISpoke(address(spoke1)).borrow(daiId, USER1, daiAmount / 2);
+    // spoke1 draw half of dai reserve liquidity
+    vm.prank(address(spoke1));
+    ILiquidityHub(address(hub)).draw(daiId, address(spoke1), daiAmount / 2, 0);
 
     daiData = hub.getAsset(daiId);
     ethData = hub.getAsset(ethId);
-    userDaiData1 = spoke1.getUser(daiId, USER1);
-    userEthData1 = spoke1.getUser(ethId, USER1);
-    userDaiData2 = spoke1.getUser(daiId, USER2);
-    userEthData2 = spoke1.getUser(ethId, USER2);
 
-    assertEq(daiData.totalShares, daiAmount);
+    assertEq(
+      daiData.totalShares,
+      ILiquidityHub(address(hub)).convertAssetsToShares(daiId, daiAmount, true)
+    );
     assertEq(daiData.totalAssets, daiAmount);
-    assertEq(daiData.drawnShares, daiAmount / 2);
-    assertEq(ethData.totalShares, ethAmount);
+    assertEq(
+      daiData.totalShares,
+      ILiquidityHub(address(hub)).convertAssetsToShares(daiId, daiAmount, true)
+    );
+    assertEq(
+      daiData.drawnShares,
+      ILiquidityHub(address(hub)).convertAssetsToShares(daiId, daiAmount / 2, false)
+    );
     assertEq(ethData.totalAssets, ethAmount);
+    assertEq(
+      ethData.totalShares,
+      ILiquidityHub(address(hub)).convertAssetsToShares(ethId, ethAmount, true)
+    );
     assertEq(ethData.drawnShares, 0);
 
-    assertEq(userDaiData1.supplyShares, 0);
-    assertEq(spoke1.getUserDebt(daiId, USER1), 0);
-    assertEq(userEthData1.supplyShares, ethAmount);
-    assertEq(spoke1.getUserDebt(ethId, USER1), ethAmount);
-
-    assertEq(userDaiData2.supplyShares, daiAmount);
-    assertEq(spoke1.getUserDebt(daiId, USER2), daiAmount);
-    assertEq(userEthData2.supplyShares, 0);
-    assertEq(spoke1.getUserDebt(ethId, USER2), 0);
-
-    assertEq(dai.balanceOf(USER1), daiAmount / 2);
+    assertEq(dai.balanceOf(address(spoke1)), daiAmount / 2);
   }
 
   function test_revert_draw_reserve_not_active() public {
