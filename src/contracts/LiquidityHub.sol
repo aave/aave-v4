@@ -69,7 +69,7 @@ contract LiquidityHub is ILiquidityHub {
     return spokes[assetId][spoke];
   }
 
-  function getSpokeAssetConfig(
+  function getSpokeConfig(
     uint256 assetId,
     address spoke
   ) external view returns (SpokeConfig memory) {
@@ -115,7 +115,7 @@ contract LiquidityHub is ILiquidityHub {
     assetCount++;
   }
 
-  function updateAsset(uint256 assetId, AssetConfig memory params) external {
+  function updateAssetConfig(uint256 assetId, AssetConfig memory params) external {
     // TODO: AccessControl
     assets[assetId].config = AssetConfig({
       decimals: params.decimals,
@@ -132,10 +132,12 @@ contract LiquidityHub is ILiquidityHub {
       config: SpokeConfig({supplyCap: params.supplyCap, drawCap: params.drawCap})
     });
   }
-
-  function updateSpokeConfig(uint256 assetId, address spoke, uint256 drawCap) external {
+  function updateSpokeConfig(uint256 assetId, address spoke, SpokeConfig memory params) external {
     // TODO: AccessControl
-    spokes[assetId][spoke].config.drawCap = drawCap;
+    spokes[assetId][spoke].config = SpokeConfig({
+      drawCap: params.drawCap,
+      supplyCap: params.supplyCap
+    });
   }
 
   // /////
@@ -300,6 +302,7 @@ contract LiquidityHub is ILiquidityHub {
     require(assetsList[asset.id] != address(0), 'ASSET_NOT_LISTED');
     // TODO: Different states e.g. frozen, paused
     require(asset.config.active, 'ASSET_NOT_ACTIVE');
+    console2.log('supplyCap: %e', spoke.config.supplyCap);
     require(
       spoke.config.supplyCap == type(uint256).max ||
         convertAssetsToShares(asset.id, spoke.totalShares, false) + amount <=

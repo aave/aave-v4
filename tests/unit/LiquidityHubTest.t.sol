@@ -457,7 +457,8 @@ contract LiquidityHubTest is BaseTest {
     assertEq(dai.balanceOf(address(hub)), amount);
   }
 
-  function test_user_riskPremium() public {
+  // TODO after RP logic is implemented
+  function skip_test_user_riskPremium() public {
     uint256 amount = 100e18;
     uint256 ethAssetId = 1;
     uint256 daiAssetId = 0;
@@ -481,7 +482,8 @@ contract LiquidityHubTest is BaseTest {
     // assertEq(hub.getUserRiskPremium(USER2), 10_00);
   }
 
-  function test_user_riskPremium_update_affects_positions() public {
+  // TODO after RP logic is implemented
+  function skip_test_user_riskPremium_update_affects_positions() public {
     uint256 assetId = 1;
     uint256 amount = 100e18;
 
@@ -503,7 +505,8 @@ contract LiquidityHubTest is BaseTest {
     // assertEq(hub.getUserRiskPremium(USER1), calcRiskPremium);
   }
 
-  function test_user_riskPremium_weighted() public {
+  // TODO after RP logic is implemented
+  function skip_test_user_riskPremium_weighted() public {
     uint256 ethAssetId = 1;
     uint256 daiAssetId = 0;
     uint256 ethAmount = 1e18;
@@ -601,20 +604,20 @@ contract LiquidityHubTest is BaseTest {
   }
 
   function test_revert_draw_cap_exceeded() public {
-    uint256 daiId = 2;
+    uint256 daiId = 0;
     uint256 daiAmount = 100e18;
     uint256 drawCap = 1;
     uint256 drawnAmount = drawCap + 1;
 
-    // _updateDrawCap(daiId, drawCap);
+    _updateDrawCap(daiId, address(spoke1), drawCap);
 
     // User2 supply dai
-    deal(address(dai), USER2, daiAmount);
-    Utils.supply(vm, hub, daiId, USER2, daiAmount, USER2);
+    deal(address(dai), address(spoke2), daiAmount);
+    Utils.supply(vm, hub, daiId, address(spoke2), daiAmount, address(spoke2));
 
-    vm.prank(USER1);
-    vm.expectRevert(TestErrors.CAP_EXCEEDED);
-    ISpoke(address(spokeCreditLine)).borrow(daiId, USER1, drawnAmount);
+    vm.prank(address(spoke1));
+    vm.expectRevert(TestErrors.DRAW_CAP_EXCEEDED);
+    ILiquidityHub(address(hub)).draw(daiId, address(spoke1), drawnAmount, 0);
   }
 
   // function _updateLiquidityPremium(uint256 assetId, uint256 newLiquidityPremium) internal {
@@ -626,12 +629,12 @@ contract LiquidityHubTest is BaseTest {
   function _updateActive(uint256 assetId, bool newActive) internal {
     LiquidityHub.AssetConfig memory reserveConfig = hub.getAsset(assetId).config;
     reserveConfig.active = newActive;
-    hub.updateAsset(assetId, reserveConfig);
+    hub.updateAssetConfig(assetId, reserveConfig);
   }
 
-  // function _updateDrawCap(uint256 assetId, uint256 newDrawCap) internal {
-  //   LiquidityHub.AssetConfig memory reserveConfig = hub.getAsset(assetId).config;
-  //   reserveConfig.drawCap = newDrawCap;
-  //   hub.updateAsset(assetId, reserveConfig);
-  // }
+  function _updateDrawCap(uint256 assetId, address spoke, uint256 newDrawCap) internal {
+    LiquidityHub.SpokeConfig memory spokeConfig = hub.getSpokeConfig(assetId, spoke);
+    spokeConfig.drawCap = newDrawCap;
+    hub.updateSpokeConfig(assetId, spoke, spokeConfig);
+  }
 }
