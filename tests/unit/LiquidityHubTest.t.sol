@@ -413,7 +413,11 @@ contract LiquidityHubTest is BaseTest {
     assertEq(dai.balanceOf(address(spoke1)), 0, 'wrong spoke token balance pre-withdraw');
     assertEq(dai.balanceOf(address(hub)), amount, 'wrong hub token balance pre-withdraw');
 
-    Utils.withdraw(vm, hub, assetId, address(spoke1), amount, address(spoke1));
+    vm.startPrank(address(spoke1));
+    vm.expectEmit(true, true, true, true, address(hub));
+    emit Withdraw(assetId, address(spoke1), address(spoke1), amount);
+    hub.withdraw(assetId, address(spoke1), amount, 0);
+    vm.stopPrank();
 
     assetData = hub.getAsset(assetId);
 
@@ -609,7 +613,7 @@ contract LiquidityHubTest is BaseTest {
 
     // spoke1 draw half of dai reserve liquidity
     vm.prank(address(spoke1));
-    vm.expectEmit(true, true, true, false, address(hub));
+    vm.expectEmit(true, true, true, true, address(hub));
     emit Draw(daiId, address(spoke1), address(spoke1), daiAmount / 2);
     ILiquidityHub(address(hub)).draw(daiId, address(spoke1), daiAmount / 2, 0);
 
