@@ -102,6 +102,8 @@ contract LiquidityHub is ILiquidityHub {
       })
     });
     assetCount++;
+
+    // TODO: emit event
   }
 
   function updateAssetConfig(uint256 assetId, DataTypes.AssetConfig memory params) external {
@@ -111,6 +113,8 @@ contract LiquidityHub is ILiquidityHub {
       active: params.active,
       irStrategy: params.irStrategy
     });
+
+    // TODO: emit event
   }
 
   function addSpoke(uint256 assetId, DataTypes.SpokeConfig memory params, address spoke) external {
@@ -141,6 +145,8 @@ contract LiquidityHub is ILiquidityHub {
       drawCap: params.drawCap,
       supplyCap: params.supplyCap
     });
+
+    // TODO: emit event
   }
 
   // /////
