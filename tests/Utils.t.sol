@@ -12,12 +12,12 @@ library Utils {
     Vm vm,
     LiquidityHub hub,
     uint256 assetId,
-    address user,
+    address spoke,
     uint256 amount,
     address onBehalfOf
   ) internal {
     address asset = hub.assetsList(assetId);
-    vm.startPrank(user);
+    vm.startPrank(spoke);
     IERC20(asset).approve(address(hub), amount);
     hub.supply(assetId, amount, 0);
     vm.stopPrank();
@@ -27,12 +27,12 @@ library Utils {
     Vm vm,
     LiquidityHub hub,
     uint256 assetId,
-    address user,
+    address spoke,
     uint256 amount,
     address onBehalfOf
   ) internal {
-    vm.startPrank(user);
-    hub.draw(assetId, user, amount, 0);
+    vm.startPrank(spoke);
+    hub.draw(assetId, spoke, amount, 0);
     vm.stopPrank();
   }
 
@@ -40,11 +40,11 @@ library Utils {
     Vm vm,
     LiquidityHub hub,
     uint256 assetId,
-    address user,
+    address spoke,
     uint256 amount,
     address to
   ) internal {
-    vm.startPrank(user);
+    vm.startPrank(spoke);
     // TODO: risk premium
     hub.withdraw(assetId, to, amount, 0);
     vm.stopPrank();
