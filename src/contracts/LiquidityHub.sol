@@ -17,6 +17,7 @@ contract LiquidityHub is ILiquidityHub {
   using WadRayMath for uint256;
   using SharesMath for uint256;
 
+  // TODO: update name of this struct to reference the asset/reserve?
   struct Spoke {
     uint256 totalShares;
     uint256 drawnShares;
