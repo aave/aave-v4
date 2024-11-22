@@ -131,7 +131,7 @@ contract LiquidityHubTest is BaseTest {
 
     vm.startPrank(address(spoke1));
     IERC20(dai).approve(address(hub), amount);
-    vm.expectEmit(address(hub));
+    vm.expectEmit(true, true, true, true, address(hub));
     emit Supply(assetId, address(spoke1), amount);
     hub.supply(assetId, amount, 0);
     vm.stopPrank();
@@ -202,10 +202,10 @@ contract LiquidityHubTest is BaseTest {
     vm.startPrank(spoke);
     IERC20(asset).approve(address(hub), amount);
 
-    vm.expectEmit(asset);
+    vm.expectEmit(true, true, true, true, asset);
     emit Transfer(spoke, address(hub), amount);
 
-    vm.expectEmit(address(hub));
+    vm.expectEmit(true, true, true, true, address(hub));
     emit Supply(assetId, spoke, amount);
 
     hub.supply(assetId, amount, 0);
@@ -431,7 +431,7 @@ contract LiquidityHubTest is BaseTest {
     assertEq(dai.balanceOf(address(hub)), amount, 'wrong hub token balance pre-withdraw');
 
     vm.startPrank(address(spoke1));
-    vm.expectEmit(address(hub));
+    vm.expectEmit(true, true, true, true, address(hub));
     emit Withdraw(assetId, address(spoke1), address(spoke1), amount);
     hub.withdraw(assetId, address(spoke1), amount, 0);
     vm.stopPrank();
@@ -461,10 +461,10 @@ contract LiquidityHubTest is BaseTest {
     deal(asset, user, amount);
     Utils.supply(vm, hub, assetId, user, amount, user);
 
-    vm.expectEmit(asset);
+    vm.expectEmit(true, true, true, true, asset);
     emit Transfer(address(hub), to, amount);
 
-    vm.expectEmit(address(hub));
+    vm.expectEmit(true, true, true, true, address(hub));
     emit Withdraw(assetId, user, to, amount);
 
     Utils.withdraw(vm, hub, assetId, user, amount, to);
@@ -630,7 +630,7 @@ contract LiquidityHubTest is BaseTest {
 
     // spoke1 draw half of dai reserve liquidity
     vm.prank(address(spoke1));
-    vm.expectEmit(address(hub));
+    vm.expectEmit(true, true, true, true, address(hub));
     emit Draw(daiId, address(spoke1), address(spoke1), daiAmount / 2);
     ILiquidityHub(address(hub)).draw(daiId, address(spoke1), daiAmount / 2, 0);
 
@@ -714,7 +714,7 @@ contract LiquidityHubTest is BaseTest {
     // spoke1 restore half of drawn dai liquidity
     vm.startPrank(address(spoke1));
     IERC20(address(dai)).approve(address(hub), restoreAmount);
-    vm.expectEmit(address(hub));
+    vm.expectEmit(true, true, true, true, address(hub));
     emit Restore(daiId, address(spoke1), restoreAmount);
     ILiquidityHub(address(hub)).restore(daiId, restoreAmount, 0);
     vm.stopPrank();

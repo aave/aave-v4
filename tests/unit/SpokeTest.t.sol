@@ -102,7 +102,7 @@ contract SpokeTest is BaseTest {
 
     vm.startPrank(USER1);
     IERC20(dai).approve(address(spoke1), amount);
-    vm.expectEmit(address(spoke1));
+    vm.expectEmit(true, true, true, true, address(spoke1));
     emit Supplied(assetId, USER1, amount);
     spoke1.supply(assetId, amount);
     vm.stopPrank();
@@ -156,7 +156,7 @@ contract SpokeTest is BaseTest {
 
     // USER1 draw half of dai reserve liquidity
     vm.prank(USER1);
-    vm.expectEmit(address(spoke1));
+    vm.expectEmit(true, true, true, true, address(spoke1));
     emit Borrowed(daiId, USER1, daiAmount / 2);
     ISpoke(spoke1).borrow(daiId, USER1, daiAmount / 2);
 
@@ -202,7 +202,7 @@ contract SpokeTest is BaseTest {
     assertEq(user1Data.debtShares, 0, 'wrong user debt shares post-withdraw');
 
     vm.startPrank(USER1);
-    vm.expectEmit(address(spoke1));
+    vm.expectEmit(true, true, true, true, address(spoke1));
     emit Withdrawn(assetId, USER1, amount);
     spoke1.withdraw(assetId, USER1, amount);
     vm.stopPrank();
@@ -238,7 +238,7 @@ contract SpokeTest is BaseTest {
     // spoke1 restore half of drawn dai liquidity
     vm.startPrank(USER1);
     IERC20(address(dai)).approve(address(spoke1), restoreAmount);
-    vm.expectEmit(address(spoke1));
+    vm.expectEmit(true, true, true, true, address(spoke1));
     emit Repaid(daiId, USER1, restoreAmount);
     ISpoke(address(spoke1)).repay(daiId, restoreAmount);
     vm.stopPrank();
