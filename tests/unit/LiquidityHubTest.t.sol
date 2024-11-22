@@ -141,13 +141,13 @@ contract LiquidityHubTest is BaseTest {
 
     assertEq(
       reserveData.totalShares,
-      hub.convertAssetsToShares(assetId, amount, true),
+      hub.convertAssetsToSharesUp(assetId, amount),
       'wrong reserve total shares post-supply'
     );
     assertEq(reserveData.totalAssets, amount, 'wrong reserve total assets post-supply');
     assertEq(
       spokeData.totalShares,
-      hub.convertAssetsToShares(assetId, amount, true),
+      hub.convertAssetsToSharesUp(assetId, amount),
       'wrong spoke total shares post-supply'
     );
     assertEq(spokeData.drawnShares, 0, 'wrong spoke shares post-supply');
@@ -244,13 +244,13 @@ contract LiquidityHubTest is BaseTest {
 
     assertEq(
       assetData.totalShares,
-      ILiquidityHub(address(hub)).convertAssetsToShares(assetId, amount, true),
+      ILiquidityHub(address(hub)).convertAssetsToSharesUp(assetId, amount),
       'wrong total shares post-supply'
     );
     assertEq(assetData.totalAssets, amount, 'wrong total assets post-supply');
     assertEq(
       spokeData.totalShares,
-      ILiquidityHub(address(hub)).convertAssetsToShares(assetId, amount, false),
+      ILiquidityHub(address(hub)).convertAssetsToSharesDown(assetId, amount),
       'wrong hub total shares post-supply'
     );
     assertEq(spokeData.drawnShares, 0, 'wrong hub drawn shares post-supply');
@@ -273,13 +273,13 @@ contract LiquidityHubTest is BaseTest {
 
     assertEq(
       assetData.totalShares,
-      ILiquidityHub(address(hub)).convertAssetsToShares(assetId, amount, true),
+      ILiquidityHub(address(hub)).convertAssetsToSharesUp(assetId, amount),
       'wrong total shares post time warp'
     );
     assertEq(assetData.totalAssets, amount, 'wrong total assets post time warp');
     assertEq(
       spokeData.totalShares,
-      ILiquidityHub(address(hub)).convertAssetsToShares(assetId, amount, false),
+      ILiquidityHub(address(hub)).convertAssetsToSharesDown(assetId, amount),
       'wrong spoke total shares post time warp'
     );
     assertEq(spokeData.drawnShares, 0, 'wrong spoke drawn shares post time warp');
@@ -290,10 +290,9 @@ contract LiquidityHubTest is BaseTest {
     uint256 prevTotalAssets = assetData.totalAssets;
 
     uint256 spoke2SupplyShares = 1; // minimum for 1 share
-    uint256 spoke2SupplyAssets = ILiquidityHub(address(hub)).convertSharesToAssets(
+    uint256 spoke2SupplyAssets = ILiquidityHub(address(hub)).convertSharesToAssetsDown(
       assetId,
-      spoke2SupplyShares,
-      true
+      spoke2SupplyShares
     );
 
     uint256 newSpoke1Assets = amount.toAssetsDown(
@@ -317,7 +316,7 @@ contract LiquidityHubTest is BaseTest {
     assertEq(assetData.drawnShares, 0, 'wrong final total drawn');
     assertEq(
       spokeData.totalShares,
-      ILiquidityHub(address(hub)).convertAssetsToShares(assetId, amount, false),
+      ILiquidityHub(address(hub)).convertAssetsToSharesDown(assetId, amount),
       'wrong final spoke total shares'
     );
     assertEq(spokeData.drawnShares, 0, 'wrong final spoke drawn shares');
@@ -418,13 +417,13 @@ contract LiquidityHubTest is BaseTest {
 
     assertEq(
       assetData.totalShares,
-      ILiquidityHub(address(hub)).convertAssetsToShares(assetId, amount, true),
+      ILiquidityHub(address(hub)).convertAssetsToSharesUp(assetId, amount),
       'wrong total shares pre-withdraw'
     );
     assertEq(assetData.totalAssets, amount, 'wrong total assets pre-withdraw');
     assertEq(
       spokeData.totalShares,
-      ILiquidityHub(address(hub)).convertAssetsToShares(assetId, amount, false),
+      ILiquidityHub(address(hub)).convertAssetsToSharesDown(assetId, amount),
       'wrong spoke total shares pre-withdraw'
     );
     assertEq(spokeData.drawnShares, 0, 'wrong spoke drawn shares pre-withdraw');
@@ -507,7 +506,7 @@ contract LiquidityHubTest is BaseTest {
 
     assertEq(
       reserveData.totalShares,
-      ILiquidityHub(address(hub)).convertAssetsToShares(assetId, amount, true)
+      ILiquidityHub(address(hub)).convertAssetsToSharesUp(assetId, amount)
     );
     assertEq(reserveData.totalAssets, amount);
     assertEq(dai.balanceOf(address(spoke1)), 0);
@@ -602,27 +601,27 @@ contract LiquidityHubTest is BaseTest {
 
     assertEq(
       daiData.totalShares,
-      ILiquidityHub(address(hub)).convertAssetsToShares(daiId, daiAmount, true),
+      ILiquidityHub(address(hub)).convertAssetsToSharesUp(daiId, daiAmount),
       'wrong hub dai total shares pre-draw'
     );
     assertEq(daiData.totalAssets, daiAmount, 'wrong hub dai total assets pre-draw');
     assertEq(daiData.drawnShares, 0, 'wrong hub dai total assets pre-draw');
     assertEq(
       ethData.totalShares,
-      ILiquidityHub(address(hub)).convertAssetsToShares(ethId, ethAmount, true),
+      ILiquidityHub(address(hub)).convertAssetsToSharesUp(ethId, ethAmount),
       'wrong hub eth total shares pre-draw'
     );
     assertEq(ethData.totalAssets, ethAmount, 'wrong hub eth total assets pre-draw');
     assertEq(ethData.drawnShares, 0, 'wrong hub eth drawn assets pre-draw');
     assertEq(
       spoke1Data.totalShares,
-      ILiquidityHub(address(hub)).convertAssetsToShares(ethId, ethAmount, false),
+      ILiquidityHub(address(hub)).convertAssetsToSharesDown(ethId, ethAmount),
       'wrong spoke1 total shares pre-draw'
     );
     assertEq(spoke1Data.drawnShares, 0, 'wrong spoke1 drawn shares pre-draw');
     assertEq(
       spoke2Data.totalShares,
-      ILiquidityHub(address(hub)).convertAssetsToShares(daiId, daiAmount, false),
+      ILiquidityHub(address(hub)).convertAssetsToSharesDown(daiId, daiAmount),
       'wrong spoke2 total shares pre-draw'
     );
     assertEq(spoke2Data.drawnShares, 0, 'wrong spoke2 drawn shares pre-draw');
@@ -642,14 +641,14 @@ contract LiquidityHubTest is BaseTest {
 
     assertEq(
       daiData.totalShares,
-      ILiquidityHub(address(hub)).convertAssetsToShares(daiId, daiAmount, true),
+      ILiquidityHub(address(hub)).convertAssetsToSharesUp(daiId, daiAmount),
       'wrong hub dai total shares post-draw'
     );
     assertEq(daiData.totalAssets, daiAmount, 'wrong hub dai total assets post-draw');
     assertEq(ethData.totalAssets, ethAmount, 'wrong hub eth total assets post-draw');
     assertEq(
       ethData.totalShares,
-      ILiquidityHub(address(hub)).convertAssetsToShares(ethId, ethAmount, true),
+      ILiquidityHub(address(hub)).convertAssetsToSharesUp(ethId, ethAmount),
       'wrong hub eth total shares post-draw'
     );
     assertEq(ethData.drawnShares, 0, 'wrong hub eth drawn shares post-draw');
@@ -729,34 +728,34 @@ contract LiquidityHubTest is BaseTest {
 
     assertEq(
       daiData.totalShares,
-      ILiquidityHub(address(hub)).convertAssetsToShares(daiId, daiAmount, true),
+      ILiquidityHub(address(hub)).convertAssetsToSharesUp(daiId, daiAmount),
       'wrong hub dai total shares post-restore'
     );
     assertEq(daiData.totalAssets, daiAmount, 'wrong hub dai total assets post-restore');
     assertEq(ethData.totalAssets, ethAmount, 'wrong hub eth total assets post-restore');
     assertEq(
       ethData.totalShares,
-      ILiquidityHub(address(hub)).convertAssetsToShares(ethId, ethAmount, true),
+      ILiquidityHub(address(hub)).convertAssetsToSharesUp(ethId, ethAmount),
       'wrong hub eth total shares post-restore'
     );
     assertEq(ethData.drawnShares, 0, 'wrong hub eth drawn shares post-restore');
     assertEq(
       spoke1EthData.totalShares,
-      ILiquidityHub(address(hub)).convertAssetsToShares(ethId, ethAmount, true),
+      ILiquidityHub(address(hub)).convertAssetsToSharesUp(ethId, ethAmount),
       'wrong spoke1 total eth shares post-restore'
     );
     assertEq(spoke1EthData.drawnShares, 0, 'wrong spoke1 drawn eth shares post-restore');
     assertEq(spoke1DaiData.totalShares, 0, 'wrong spoke1 total dai shares post-restore');
     assertEq(
       spoke1DaiData.drawnShares,
-      ILiquidityHub(address(hub)).convertAssetsToShares(daiId, drawAmount - restoreAmount, false),
+      ILiquidityHub(address(hub)).convertAssetsToSharesUp(daiId, drawAmount - restoreAmount),
       'wrong spoke1 drawn dai shares post-restore'
     );
     assertEq(spoke2EthData.totalShares, 0, 'wrong spoke2 total eth shares post-restore');
     assertEq(spoke2EthData.drawnShares, 0, 'wrong spoke2 drawn eth shares post-restore');
     assertEq(
       spoke2DaiData.totalShares,
-      ILiquidityHub(address(hub)).convertAssetsToShares(daiId, daiAmount, false),
+      ILiquidityHub(address(hub)).convertAssetsToSharesDown(daiId, daiAmount),
       'wrong spoke2 total dai shares post-restore'
     );
     assertEq(spoke2DaiData.drawnShares, 0, 'wrong spoke2 drawn dai shares post-restore');

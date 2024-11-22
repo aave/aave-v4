@@ -149,7 +149,7 @@ contract LiquidityHub is ILiquidityHub {
     _validateSupply(asset, spoke, amount);
 
     // TODO Mitigate inflation attack (burn some amount if first supply)
-    uint256 sharesAmount = convertAssetsToShares(assetId, amount, false);
+    uint256 sharesAmount = convertAssetsToSharesDown(assetId, amount);
     require(sharesAmount > 0, 'INVALID_AMOUNT');
 
     asset.totalShares += sharesAmount;
@@ -179,7 +179,7 @@ contract LiquidityHub is ILiquidityHub {
     _updateState(asset, spoke.drawnShares, riskPremium, 0, amount);
     _validateWithdraw(asset, spoke, amount);
 
-    uint256 sharesAmount = convertAssetsToShares(assetId, amount, false);
+    uint256 sharesAmount = convertAssetsToSharesDown(assetId, amount);
     asset.totalShares -= sharesAmount;
     asset.totalAssets -= amount;
     spoke.totalShares -= sharesAmount;
@@ -205,7 +205,7 @@ contract LiquidityHub is ILiquidityHub {
     _updateState(asset, spoke.drawnShares, riskPremium, 0, amount);
     _validateDraw(asset, amount, spoke.config.drawCap);
 
-    uint256 sharesAmount = convertAssetsToShares(assetId, amount, true);
+    uint256 sharesAmount = convertAssetsToSharesUp(assetId, amount);
     asset.drawnShares += sharesAmount;
     spoke.drawnShares += sharesAmount;
 
@@ -227,7 +227,7 @@ contract LiquidityHub is ILiquidityHub {
     Spoke storage spoke = spokes[assetId][msg.sender];
 
     _updateState(asset, spoke.drawnShares, riskPremium, amount, 0);
-    uint256 sharesAmount = convertAssetsToShares(assetId, amount, false);
+    uint256 sharesAmount = convertAssetsToSharesDown(assetId, amount);
     _validateRestore(asset, sharesAmount, spoke.drawnShares);
 
     asset.drawnShares -= sharesAmount;
@@ -245,26 +245,26 @@ contract LiquidityHub is ILiquidityHub {
   // public
   //
 
-  function convertAssetsToShares(
-    uint256 assetId,
-    uint256 amount,
-    bool roundUp
-  ) public view returns (uint256) {
-    return
-      roundUp
-        ? amount.toSharesUp(assets[assetId].totalAssets, assets[assetId].totalShares)
-        : amount.toSharesDown(assets[assetId].totalAssets, assets[assetId].totalShares);
+  function convertAssetsToSharesUp(uint256 assetId, uint256 amount) public view returns (uint256) {
+    return amount.toSharesUp(assets[assetId].totalAssets, assets[assetId].totalShares);
   }
 
-  function convertSharesToAssets(
+  function convertAssetsToSharesDown(
     uint256 assetId,
-    uint256 amount,
-    bool roundUp
+    uint256 amount
   ) public view returns (uint256) {
-    return
-      roundUp
-        ? amount.toAssetsUp(assets[assetId].totalAssets, assets[assetId].totalShares)
-        : amount.toAssetsDown(assets[assetId].totalAssets, assets[assetId].totalShares);
+    return amount.toSharesDown(assets[assetId].totalAssets, assets[assetId].totalShares);
+  }
+
+  function convertSharesToAssetsUp(uint256 assetId, uint256 amount) public view returns (uint256) {
+    return amount.toAssetsUp(assets[assetId].totalAssets, assets[assetId].totalShares);
+  }
+
+  function convertSharesToAssetsDown(
+    uint256 assetId,
+    uint256 amount
+  ) public view returns (uint256) {
+    return amount.toAssetsDown(assets[assetId].totalAssets, assets[assetId].totalShares);
   }
 
   function getBaseInterestRate(uint256 assetId) public view returns (uint256) {
@@ -299,8 +299,7 @@ contract LiquidityHub is ILiquidityHub {
     require(asset.config.active, 'ASSET_NOT_ACTIVE');
     require(
       spoke.config.supplyCap == type(uint256).max ||
-        convertAssetsToShares(asset.id, spoke.totalShares, false) + amount <=
-        spoke.config.supplyCap,
+        convertAssetsToSharesDown(asset.id, spoke.totalShares) + amount <= spoke.config.supplyCap,
       'SUPPLY_CAP_EXCEEDED'
     );
   }
@@ -313,11 +312,11 @@ contract LiquidityHub is ILiquidityHub {
     // TODO: Other cases of status (frozen, paused)
     require(asset.config.active, 'ASSET_NOT_ACTIVE');
     require(
-      amount <= convertSharesToAssets(asset.id, (spoke.totalShares - spoke.drawnShares), false),
+      amount <= convertSharesToAssetsDown(asset.id, (spoke.totalShares - spoke.drawnShares)),
       'SUPPLIED_AMOUNT_EXCEEDED'
     );
     require(
-      amount <= asset.totalAssets - convertSharesToAssets(asset.id, asset.drawnShares, true),
+      amount <= asset.totalAssets - convertSharesToAssetsUp(asset.id, asset.drawnShares),
       'NOT_AVAILABLE_LIQUIDITY'
     );
   }
@@ -325,7 +324,7 @@ contract LiquidityHub is ILiquidityHub {
   function _validateDraw(Asset storage asset, uint256 amount, uint256 drawCap) internal view {
     // TODO: Other cases of status (frozen, paused)
     require(asset.config.active, 'ASSET_NOT_ACTIVE');
-    uint256 drawnAssets = convertSharesToAssets(asset.id, asset.drawnShares, true);
+    uint256 drawnAssets = convertSharesToAssetsUp(asset.id, asset.drawnShares);
     require(drawCap == type(uint256).max || amount + drawnAssets <= drawCap, 'DRAW_CAP_EXCEEDED');
     require(amount <= asset.totalAssets - drawnAssets, 'NOT_AVAILABLE_LIQUIDITY');
   }
@@ -359,7 +358,7 @@ contract LiquidityHub is ILiquidityHub {
         DataTypes.CalculateInterestRatesParams({
           liquidityAdded: liquidityAdded,
           liquidityTaken: liquidityTaken,
-          totalDebt: convertSharesToAssets(asset.id, asset.drawnShares, true),
+          totalDebt: convertSharesToAssetsUp(asset.id, asset.drawnShares),
           reserveFactor: 0, // TODO
           assetId: asset.id,
           virtualUnderlyingBalance: asset.totalAssets,
@@ -377,7 +376,7 @@ contract LiquidityHub is ILiquidityHub {
     uint256 elapsed = block.timestamp - asset.lastUpdateTimestamp;
     if (elapsed > 0) {
       // linear interest
-      uint256 totalDrawn = convertSharesToAssets(asset.id, asset.drawnShares, false);
+      uint256 totalDrawn = convertSharesToAssetsUp(asset.id, asset.drawnShares);
       uint256 cumulated = totalDrawn.rayMul(
         MathUtils.calculateLinearInterest(borrowRate, uint40(asset.lastUpdateTimestamp))
       ); // TODO rounding

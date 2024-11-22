@@ -210,8 +210,7 @@ contract Spoke is ISpoke {
     uint256 amount
   ) internal view {
     require(
-      ILiquidityHub(liquidityHub).convertSharesToAssets(assetId, user.supplyShares, false) >=
-        amount,
+      ILiquidityHub(liquidityHub).convertSharesToAssetsDown(assetId, user.supplyShares) >= amount,
       'INSUFFICIENT_SUPPLY'
     );
   }
@@ -222,7 +221,7 @@ contract Spoke is ISpoke {
 
   function _validateRepay(uint256 assetId, UserConfig storage user, uint256 amount) internal view {
     require(
-      ILiquidityHub(liquidityHub).convertSharesToAssets(assetId, user.debtShares, true) >= amount,
+      ILiquidityHub(liquidityHub).convertSharesToAssetsUp(assetId, user.debtShares) >= amount,
       'REPAY_EXCEEDS_DEBT'
     );
   }

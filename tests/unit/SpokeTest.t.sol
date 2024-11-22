@@ -114,7 +114,7 @@ contract SpokeTest is BaseTest {
     assertEq(dai.balanceOf(address(spoke1)), 0, 'wrong spoke token balance post-supply');
     assertEq(
       userData.supplyShares,
-      hub.convertAssetsToShares(assetId, amount, true),
+      hub.convertAssetsToSharesDown(assetId, amount),
       'wrong user supply shares'
     );
     assertEq(userData.debtShares, 0, 'wrong user debt shares');
@@ -139,13 +139,13 @@ contract SpokeTest is BaseTest {
 
     assertEq(
       user1Data.supplyShares,
-      ILiquidityHub(address(hub)).convertAssetsToShares(ethId, ethAmount, true),
+      ILiquidityHub(address(hub)).convertAssetsToSharesDown(ethId, ethAmount),
       'wrong user1 supply shares pre-draw'
     );
     assertEq(user1Data.debtShares, 0, 'wrong user1 debt shares pre-draw');
     assertEq(
       user2Data.supplyShares,
-      ILiquidityHub(address(hub)).convertAssetsToShares(daiId, daiAmount, true),
+      ILiquidityHub(address(hub)).convertAssetsToSharesDown(daiId, daiAmount),
       'wrong user2 supply shares pre-draw'
     );
     assertEq(user2Data.debtShares, 0, 'wrong user2 debt shares pre-draw');
@@ -165,13 +165,13 @@ contract SpokeTest is BaseTest {
 
     assertEq(
       user1Data.supplyShares,
-      ILiquidityHub(address(hub)).convertAssetsToShares(ethId, ethAmount, true),
+      ILiquidityHub(address(hub)).convertAssetsToSharesDown(ethId, ethAmount),
       'wrong user1 supply shares final balance'
     );
     assertEq(user1Data.debtShares, 0, 'wrong user1 debt shares final balance');
     assertEq(
       user2Data.supplyShares,
-      ILiquidityHub(address(hub)).convertAssetsToShares(daiId, daiAmount, true),
+      ILiquidityHub(address(hub)).convertAssetsToSharesDown(daiId, daiAmount),
       'wrong user2 supply shares final balance'
     );
     assertEq(user2Data.debtShares, 0, 'wrong user2 debt shares final');
@@ -196,7 +196,7 @@ contract SpokeTest is BaseTest {
     assertEq(dai.balanceOf(USER1), 0, 'wrong user token balance pre-withdraw');
     assertEq(
       user1Data.supplyShares,
-      ILiquidityHub(hub).convertAssetsToShares(assetId, amount, false),
+      ILiquidityHub(hub).convertAssetsToSharesDown(assetId, amount),
       'wrong user supply shares post-withdraw'
     );
     assertEq(user1Data.debtShares, 0, 'wrong user debt shares post-withdraw');
@@ -250,7 +250,7 @@ contract SpokeTest is BaseTest {
 
     assertEq(
       user1EthData.supplyShares,
-      ILiquidityHub(address(hub)).convertAssetsToShares(ethId, ethAmount, true),
+      ILiquidityHub(address(hub)).convertAssetsToSharesDown(ethId, ethAmount),
       'wrong user1 eth supply shares final balance'
     );
     assertEq(user1EthData.debtShares, 0, 'wrong user1 eth debt shares final balance');
@@ -260,12 +260,12 @@ contract SpokeTest is BaseTest {
     assertEq(user1DaiData.supplyShares, 0, 'wrong user1 dai supply shares final balance');
     assertEq(
       user1DaiData.debtShares,
-      ILiquidityHub(address(hub)).convertAssetsToShares(ethId, drawAmount - restoreAmount, false),
+      ILiquidityHub(address(hub)).convertAssetsToSharesDown(ethId, drawAmount - restoreAmount),
       'wrong user1 dai debt shares final balance'
     );
     assertEq(
       user2DaiData.supplyShares,
-      ILiquidityHub(address(hub)).convertAssetsToShares(daiId, daiAmount, false),
+      ILiquidityHub(address(hub)).convertAssetsToSharesDown(daiId, daiAmount),
       'wrong user2 dai supply shares final balance'
     );
     assertEq(user2DaiData.debtShares, 0, 'wrong user2 dai debt shares final balance');
