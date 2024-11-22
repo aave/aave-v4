@@ -10,6 +10,7 @@ contract LiquidityHubTest is BaseTest {
   function setUp() public override {
     super.setUp();
 
+    // TODO: optimize these hub/spoke configs into helper functions
     // Add dai
     uint256 daiAssetId = 0;
     hub.addAsset(
