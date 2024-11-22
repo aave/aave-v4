@@ -28,10 +28,16 @@ contract Events {
   // Aave
 
   // ILiquidityHub
-  event Supply(uint256 indexed asset, address indexed spoke, uint256 amount);
-  event Withdraw(uint256 indexed asset, address indexed spoke, address indexed to, uint256 amount);
-  event Draw(uint256 indexed asset, address indexed spoke, address indexed to, uint256 amount);
-  event Restore(uint256 indexed asset, address indexed spoke, uint256 amount);
+  event Supply(uint256 indexed assetId, address indexed spoke, uint256 amount);
+  event Withdraw(
+    uint256 indexed assetId,
+    address indexed spoke,
+    address indexed to,
+    uint256 amount
+  );
+  event Draw(uint256 indexed assetId, address indexed spoke, address indexed to, uint256 amount);
+  event Restore(uint256 indexed assetId, address indexed spoke, uint256 amount);
+  event SpokeAdded(uint256 indexed assetId, address indexed spoke);
 
   // ISpoke
   event Borrowed(uint256 indexed assetId, address indexed user, uint256 amount);
@@ -52,6 +58,7 @@ library TestErrors {
   bytes constant INSUFFICIENT_LIQUIDITY = 'INSUFFICIENT_LIQUIDITY';
   bytes constant RESERVE_NOT_BORROWABLE = 'RESERVE_NOT_BORROWABLE';
   bytes constant INVALID_RESERVE = 'INVALID_RESERVE';
+  bytes constant INVALID_SPOKE = 'INVALID_SPOKE';
 }
 
 abstract contract BaseTest is Test, Events {

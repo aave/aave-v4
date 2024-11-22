@@ -414,6 +414,7 @@ contract LiquidityHub is ILiquidityHub {
   }
 
   function _addSpoke(uint256 assetId, DataTypes.SpokeConfig memory params, address spoke) internal {
+    require(spoke != address(0), 'INVALID_SPOKE');
     spokes[assetId][spoke] = Spoke({
       totalShares: 0,
       drawnShares: 0,

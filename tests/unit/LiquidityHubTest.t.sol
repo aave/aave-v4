@@ -774,6 +774,67 @@ contract LiquidityHubTest is BaseTest {
     assertEq(eth.balanceOf(address(spoke2)), 0, 'wrong spoke2 eth final balance');
   }
 
+  function test_add_spoke() public {
+    uint256 daiId = 0;
+
+    vm.expectEmit(address(hub));
+    emit SpokeAdded(daiId, address(spoke1));
+    hub.addSpoke(daiId, DataTypes.SpokeConfig({supplyCap: 1, drawCap: 1}), address(spoke1));
+
+    DataTypes.SpokeConfig memory spokeData = hub.getSpokeConfig(daiId, address(spoke1));
+    assertEq(spokeData.supplyCap, 1, 'wrong spoke supply cap');
+    assertEq(spokeData.drawCap, 1, 'wrong spoke draw cap');
+  }
+
+  function test_revert_add_spoke_invalid_spoke() public {
+    uint256 daiId = 0;
+    vm.expectRevert(TestErrors.INVALID_SPOKE);
+    hub.addSpoke(daiId, DataTypes.SpokeConfig({supplyCap: 1, drawCap: 1}), address(0));
+  }
+
+  function test_add_spokes() public {
+    uint256 daiId = 0;
+    uint256 ethId = 1;
+
+    uint256[] memory assetIds = new uint256[](2);
+    assetIds[0] = 0;
+    assetIds[1] = 1;
+
+    DataTypes.SpokeConfig[] memory spokeConfigs = new DataTypes.SpokeConfig[](2);
+    spokeConfigs[0] = DataTypes.SpokeConfig({supplyCap: 1, drawCap: 2});
+    spokeConfigs[1] = DataTypes.SpokeConfig({supplyCap: 3, drawCap: 4});
+
+    vm.expectEmit(address(hub));
+    emit SpokeAdded(daiId, address(spoke1));
+    emit SpokeAdded(ethId, address(spoke1));
+    hub.addSpokes(assetIds, spokeConfigs, address(spoke1));
+
+    DataTypes.SpokeConfig memory daiSpokeData = hub.getSpokeConfig(daiId, address(spoke1));
+    DataTypes.SpokeConfig memory ethSpokeData = hub.getSpokeConfig(ethId, address(spoke1));
+
+    assertEq(daiSpokeData.supplyCap, 1, 'wrong dai spoke supply cap');
+    assertEq(daiSpokeData.drawCap, 2, 'wrong dai spoke draw cap');
+
+    assertEq(ethSpokeData.supplyCap, 3, 'wrong eth spoke supply cap');
+    assertEq(ethSpokeData.drawCap, 4, 'wrong eth spoke draw cap');
+  }
+
+  function test_revert_add_spokes_invalid_spoke() public {
+    uint256 daiId = 0;
+    uint256 ethId = 1;
+
+    uint256[] memory assetIds = new uint256[](2);
+    assetIds[0] = 0;
+    assetIds[1] = 1;
+
+    DataTypes.SpokeConfig[] memory spokeConfigs = new DataTypes.SpokeConfig[](2);
+    spokeConfigs[0] = DataTypes.SpokeConfig({supplyCap: 1, drawCap: 2});
+    spokeConfigs[1] = DataTypes.SpokeConfig({supplyCap: 3, drawCap: 4});
+
+    vm.expectRevert(TestErrors.INVALID_SPOKE);
+    hub.addSpokes(assetIds, spokeConfigs, address(0));
+  }
+
   // function _updateLiquidityPremium(uint256 assetId, uint256 newLiquidityPremium) internal {
   //   DataTypes.AssetConfig memory reserveConfig = hub.getAsset(assetId).config;
   //   reserveConfig.liquidityPremium = newLiquidityPremium;
