@@ -98,7 +98,7 @@ contract SpokeCreditLineTest is BaseTest {
 
   //   // User1 draw half of dai reserve liquidity for borrow module
   //   vm.prank(USER1);
-  //   vm.expectEmit(true, false, false, true, address(spokeCreditLine));
+  //   vm.expectEmit(address(spokeCreditLine));
   //   emit Draw(daiId, USER1, USER1, drawnAmounts[0]);
   //   ISpoke(address(spokeCreditLine)).borrow(daiId, USER1, drawnAmounts[0]);
 
@@ -131,7 +131,7 @@ contract SpokeCreditLineTest is BaseTest {
   //   // User1 draw quarter of dai reserve liquidity for borrow module
   //   // to trigger interest accrual
   //   vm.prank(USER1);
-  //   vm.expectEmit(true, false, false, true, address(spokeCreditLine));
+  //   vm.expectEmit(address(spokeCreditLine));
   //   emit Draw(daiId, USER1, USER1, drawnAmounts[1]);
   //   ISpoke(address(spokeCreditLine)).borrow(daiId, USER1, drawnAmounts[1]);
   //   user = spokeCreditLine.getUser(daiId, USER1);
