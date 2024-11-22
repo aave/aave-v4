@@ -17,17 +17,12 @@ contract LiquidityHub is ILiquidityHub {
   using WadRayMath for uint256;
   using SharesMath for uint256;
 
+  // TODO: update name of this struct to reference the asset/reserve?
   struct Spoke {
     uint256 totalShares;
     uint256 drawnShares;
     // TODO: lastUpdateTimestamp?
-    SpokeConfig config;
-  }
-
-  // TODO: borrow cap per spoke
-  struct SpokeConfig {
-    uint256 drawCap; // asset denominated
-    uint256 supplyCap; // asset denominated
+    DataTypes.SpokeConfig config;
   }
 
   struct Asset {
@@ -37,14 +32,7 @@ contract LiquidityHub is ILiquidityHub {
     uint256 drawnShares;
     uint256 lastUpdateTimestamp;
     uint256 currentBorrowRate;
-    AssetConfig config;
-  }
-
-  struct AssetConfig {
-    uint256 decimals;
-    bool active; // TODO: frozen, paused
-    uint256 supplyCap;
-    address irStrategy;
+    DataTypes.AssetConfig config;
   }
 
   // asset id => asset data
@@ -66,10 +54,14 @@ contract LiquidityHub is ILiquidityHub {
     return assets[assetId];
   }
 
-  function getSpokeAssetConfig(
+  function getSpoke(uint256 assetId, address spoke) external view returns (Spoke memory) {
+    return spokes[assetId][spoke];
+  }
+
+  function getSpokeConfig(
     uint256 assetId,
     address spoke
-  ) external view returns (SpokeConfig memory) {
+  ) external view returns (DataTypes.SpokeConfig memory) {
     return spokes[assetId][spoke].config;
   }
 
@@ -93,7 +85,7 @@ contract LiquidityHub is ILiquidityHub {
   // Governance
   // /////
 
-  function addAsset(AssetConfig memory params, address asset) external {
+  function addAsset(DataTypes.AssetConfig memory params, address asset) external {
     // TODO: AccessControl
     assetsList.push(asset);
     assets[assetCount] = Asset({
@@ -103,29 +95,58 @@ contract LiquidityHub is ILiquidityHub {
       drawnShares: 0,
       lastUpdateTimestamp: block.timestamp,
       currentBorrowRate: 0,
-      config: AssetConfig({
+      config: DataTypes.AssetConfig({
         decimals: params.decimals,
         active: params.active,
-        supplyCap: params.supplyCap,
         irStrategy: params.irStrategy
       })
     });
     assetCount++;
+
+    // TODO: emit event
   }
 
-  function updateAsset(uint256 assetId, AssetConfig memory params) external {
+  function updateAssetConfig(uint256 assetId, DataTypes.AssetConfig memory params) external {
     // TODO: AccessControl
-    assets[assetId].config = AssetConfig({
+    assets[assetId].config = DataTypes.AssetConfig({
       decimals: params.decimals,
       active: params.active,
-      supplyCap: params.supplyCap,
       irStrategy: params.irStrategy
     });
+
+    // TODO: emit event
   }
 
-  function updateSpokeConfig(uint256 assetId, address spoke, uint256 drawCap) external {
+  function addSpoke(uint256 assetId, DataTypes.SpokeConfig memory params, address spoke) external {
     // TODO: AccessControl
-    spokes[assetId][spoke].config.drawCap = drawCap;
+    _addSpoke(assetId, params, spoke);
+  }
+
+  function addSpokes(
+    uint256[] calldata assetIds,
+    DataTypes.SpokeConfig[] memory configs,
+    address spoke
+  ) external {
+    // TODO: AccessControl
+
+    require(assetIds.length == configs.length, 'MISMATCHED_CONFIGS');
+    for (uint256 i; i < assetIds.length; i++) {
+      _addSpoke(assetIds[i], configs[i], spoke);
+    }
+  }
+
+  function updateSpokeConfig(
+    uint256 assetId,
+    address spoke,
+    DataTypes.SpokeConfig memory params
+  ) external {
+    // TODO: AccessControl
+    spokes[assetId][spoke].config = DataTypes.SpokeConfig({
+      drawCap: params.drawCap,
+      supplyCap: params.supplyCap
+    });
+
+    // TODO: emit event
   }
 
   // /////
@@ -144,7 +165,7 @@ contract LiquidityHub is ILiquidityHub {
     _validateSupply(asset, spoke, amount);
 
     // TODO Mitigate inflation attack (burn some amount if first supply)
-    uint256 sharesAmount = convertAssetsToShares(assetId, amount, false);
+    uint256 sharesAmount = convertAssetsToSharesDown(assetId, amount);
     require(sharesAmount > 0, 'INVALID_AMOUNT');
 
     asset.totalShares += sharesAmount;
@@ -152,7 +173,8 @@ contract LiquidityHub is ILiquidityHub {
     spoke.totalShares += sharesAmount;
 
     // TODO: fee-on-transfer
-    IERC20(assetsList[assetId]).safeTransferFrom(msg.sender, address(this), amount);
+    // instead transferred by spoke from user to LH
+    // IERC20(assetsList[assetId]).safeTransferFrom(msg.sender, address(this), amount);
 
     emit Supply(assetId, msg.sender, amount);
 
@@ -173,7 +195,7 @@ contract LiquidityHub is ILiquidityHub {
     _updateState(asset, spoke.drawnShares, riskPremium, 0, amount);
     _validateWithdraw(asset, spoke, amount);
 
-    uint256 sharesAmount = convertAssetsToShares(assetId, amount, false);
+    uint256 sharesAmount = convertAssetsToSharesDown(assetId, amount);
     asset.totalShares -= sharesAmount;
     asset.totalAssets -= amount;
     spoke.totalShares -= sharesAmount;
@@ -199,7 +221,7 @@ contract LiquidityHub is ILiquidityHub {
     _updateState(asset, spoke.drawnShares, riskPremium, 0, amount);
     _validateDraw(asset, amount, spoke.config.drawCap);
 
-    uint256 sharesAmount = convertAssetsToShares(assetId, amount, true);
+    uint256 sharesAmount = convertAssetsToSharesUp(assetId, amount);
     asset.drawnShares += sharesAmount;
     spoke.drawnShares += sharesAmount;
 
@@ -221,13 +243,11 @@ contract LiquidityHub is ILiquidityHub {
     Spoke storage spoke = spokes[assetId][msg.sender];
 
     _updateState(asset, spoke.drawnShares, riskPremium, amount, 0);
-    uint256 sharesAmount = convertAssetsToShares(assetId, amount, false);
+    uint256 sharesAmount = convertAssetsToSharesDown(assetId, amount);
     _validateRestore(asset, sharesAmount, spoke.drawnShares);
 
     asset.drawnShares -= sharesAmount;
     spoke.drawnShares -= sharesAmount;
-
-    IERC20(assetsList[assetId]).safeTransferFrom(msg.sender, address(this), amount);
 
     emit Restore(assetId, msg.sender, amount);
 
@@ -238,26 +258,26 @@ contract LiquidityHub is ILiquidityHub {
   // public
   //
 
-  function convertAssetsToShares(
-    uint256 assetId,
-    uint256 amount,
-    bool roundUp
-  ) public view returns (uint256) {
-    return
-      roundUp
-        ? amount.toSharesUp(assets[assetId].totalAssets, assets[assetId].totalShares)
-        : amount.toSharesDown(assets[assetId].totalAssets, assets[assetId].totalShares);
+  function convertAssetsToSharesUp(uint256 assetId, uint256 amount) public view returns (uint256) {
+    return amount.toSharesUp(assets[assetId].totalAssets, assets[assetId].totalShares);
   }
 
-  function convertSharesToAssets(
+  function convertAssetsToSharesDown(
     uint256 assetId,
-    uint256 amount,
-    bool roundUp
+    uint256 amount
   ) public view returns (uint256) {
-    return
-      roundUp
-        ? amount.toAssetsUp(assets[assetId].totalAssets, assets[assetId].totalShares)
-        : amount.toAssetsDown(assets[assetId].totalAssets, assets[assetId].totalShares);
+    return amount.toSharesDown(assets[assetId].totalAssets, assets[assetId].totalShares);
+  }
+
+  function convertSharesToAssetsUp(uint256 assetId, uint256 amount) public view returns (uint256) {
+    return amount.toAssetsUp(assets[assetId].totalAssets, assets[assetId].totalShares);
+  }
+
+  function convertSharesToAssetsDown(
+    uint256 assetId,
+    uint256 amount
+  ) public view returns (uint256) {
+    return amount.toAssetsDown(assets[assetId].totalAssets, assets[assetId].totalShares);
   }
 
   function getBaseInterestRate(uint256 assetId) public view returns (uint256) {
@@ -292,7 +312,7 @@ contract LiquidityHub is ILiquidityHub {
     require(asset.config.active, 'ASSET_NOT_ACTIVE');
     require(
       spoke.config.supplyCap == type(uint256).max ||
-        asset.totalAssets + amount <= spoke.config.supplyCap,
+        convertAssetsToSharesDown(asset.id, spoke.totalShares) + amount <= spoke.config.supplyCap,
       'SUPPLY_CAP_EXCEEDED'
     );
   }
@@ -304,9 +324,12 @@ contract LiquidityHub is ILiquidityHub {
   ) internal view {
     // TODO: Other cases of status (frozen, paused)
     require(asset.config.active, 'ASSET_NOT_ACTIVE');
-    require(convertAssetsToShares(asset.id, amount, false) <= spoke.drawnShares, 'INVALID_AMOUNT');
     require(
-      amount <= asset.totalAssets - convertSharesToAssets(asset.id, asset.drawnShares, true),
+      amount <= convertSharesToAssetsDown(asset.id, (spoke.totalShares - spoke.drawnShares)),
+      'SUPPLIED_AMOUNT_EXCEEDED'
+    );
+    require(
+      amount <= asset.totalAssets - convertSharesToAssetsUp(asset.id, asset.drawnShares),
       'NOT_AVAILABLE_LIQUIDITY'
     );
   }
@@ -314,7 +337,7 @@ contract LiquidityHub is ILiquidityHub {
   function _validateDraw(Asset storage asset, uint256 amount, uint256 drawCap) internal view {
     // TODO: Other cases of status (frozen, paused)
     require(asset.config.active, 'ASSET_NOT_ACTIVE');
-    uint256 drawnAssets = convertSharesToAssets(asset.id, asset.drawnShares, true);
+    uint256 drawnAssets = convertSharesToAssetsUp(asset.id, asset.drawnShares);
     require(drawCap == type(uint256).max || amount + drawnAssets <= drawCap, 'DRAW_CAP_EXCEEDED');
     require(amount <= asset.totalAssets - drawnAssets, 'NOT_AVAILABLE_LIQUIDITY');
   }
@@ -328,7 +351,7 @@ contract LiquidityHub is ILiquidityHub {
     require(asset.config.active, 'ASSET_NOT_ACTIVE');
 
     // Esnure spoke is not restoring more than supplied
-    require(sharesAmount <= drawnShares, 'INVALID_AMOUNT');
+    require(sharesAmount <= drawnShares, 'INVALID_RESTORE_AMOUNT');
   }
 
   function _updateState(
@@ -348,7 +371,7 @@ contract LiquidityHub is ILiquidityHub {
         DataTypes.CalculateInterestRatesParams({
           liquidityAdded: liquidityAdded,
           liquidityTaken: liquidityTaken,
-          totalDebt: convertSharesToAssets(asset.id, asset.drawnShares, true),
+          totalDebt: convertSharesToAssetsUp(asset.id, asset.drawnShares),
           reserveFactor: 0, // TODO
           assetId: asset.id,
           virtualUnderlyingBalance: asset.totalAssets,
@@ -366,7 +389,7 @@ contract LiquidityHub is ILiquidityHub {
     uint256 elapsed = block.timestamp - asset.lastUpdateTimestamp;
     if (elapsed > 0) {
       // linear interest
-      uint256 totalDrawn = convertSharesToAssets(asset.id, asset.drawnShares, false);
+      uint256 totalDrawn = convertSharesToAssetsUp(asset.id, asset.drawnShares);
       uint256 cumulated = totalDrawn.rayMul(
         MathUtils.calculateLinearInterest(borrowRate, uint40(asset.lastUpdateTimestamp))
       ); // TODO rounding
@@ -391,5 +414,16 @@ contract LiquidityHub is ILiquidityHub {
   ) internal returns (uint256) {
     // TODO: Add new value risk premium to weighted average
     // TODO: Calculate final rate based on borrow rate and weighted average risk premium across spokes
+  }
+
+  function _addSpoke(uint256 assetId, DataTypes.SpokeConfig memory params, address spoke) internal {
+    require(spoke != address(0), 'INVALID_SPOKE');
+    spokes[assetId][spoke] = Spoke({
+      totalShares: 0,
+      drawnShares: 0,
+      config: DataTypes.SpokeConfig({supplyCap: params.supplyCap, drawCap: params.drawCap})
+    });
+
+    emit SpokeAdded(assetId, spoke);
   }
 }

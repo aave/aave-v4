@@ -10,13 +10,13 @@ import 'src/contracts/Spoke.sol';
 import 'src/contracts/WadRayMath.sol';
 import 'src/contracts/SharesMath.sol';
 import 'src/contracts/MathUtils.sol';
+import 'src/contracts/DefaultReserveInterestRateStrategy.sol';
 import 'src/dependencies/openzeppelin/IERC20.sol';
 import 'src/interfaces/ISpoke.sol';
-import 'src/contracts/DefaultReserveInterestRateStrategy.sol';
+import 'src/libraries/types/DataTypes.sol';
 import './mocks/MockERC20.sol';
 import './mocks/MockPriceOracle.sol';
 import './mocks/MockSpokeCreditLine.sol';
-
 import './Utils.t.sol';
 
 // library Constants {}
@@ -26,28 +26,39 @@ contract Events {
   event Transfer(address indexed from, address indexed to, uint256 value);
 
   // Aave
-  event Supply(
-    uint256 indexed reserve,
-    address user,
-    address indexed onBehalfOf,
-    uint256 amount,
-    uint16 indexed referralCode
+
+  // ILiquidityHub
+  event Supply(uint256 indexed assetId, address indexed spoke, uint256 amount);
+  event Withdraw(
+    uint256 indexed assetId,
+    address indexed spoke,
+    address indexed to,
+    uint256 amount
   );
-  event Withdraw(uint256 indexed reserve, address indexed user, address indexed to, uint256 amount);
-  event Borrowed(uint256 indexed assetId, address user, uint256 amount);
-  event Repaid(uint256 indexed assetId, address user, uint256 amount);
+  event Draw(uint256 indexed assetId, address indexed spoke, address indexed to, uint256 amount);
+  event Restore(uint256 indexed assetId, address indexed spoke, uint256 amount);
+  event SpokeAdded(uint256 indexed assetId, address indexed spoke);
+
+  // ISpoke
+  event Borrowed(uint256 indexed assetId, address indexed user, uint256 amount);
+  event Repaid(uint256 indexed assetId, address indexed user, uint256 amount);
+  event Supplied(uint256 indexed assetId, address indexed user, uint256 amount);
+  event Withdrawn(uint256 indexed assetId, address indexed user, uint256 amount);
 }
 
 library TestErrors {
   // Aave
   bytes constant NOT_AVAILABLE_LIQUIDITY = 'NOT_AVAILABLE_LIQUIDITY';
-  bytes constant RESERVE_NOT_ACTIVE = 'RESERVE_NOT_ACTIVE';
+  bytes constant ASSET_NOT_ACTIVE = 'ASSET_NOT_ACTIVE';
   bytes constant ASSET_NOT_LISTED = 'ASSET_NOT_LISTED';
   bytes constant INVALID_AMOUNT = 'INVALID_AMOUNT';
-  bytes constant CAP_EXCEEDED = 'CAP_EXCEEDED';
+  bytes constant SUPPLY_CAP_EXCEEDED = 'SUPPLY_CAP_EXCEEDED';
+  bytes constant DRAW_CAP_EXCEEDED = 'DRAW_CAP_EXCEEDED';
+  bytes constant SUPPLIED_AMOUNT_EXCEEDED = 'SUPPLIED_AMOUNT_EXCEEDED';
   bytes constant INSUFFICIENT_LIQUIDITY = 'INSUFFICIENT_LIQUIDITY';
   bytes constant RESERVE_NOT_BORROWABLE = 'RESERVE_NOT_BORROWABLE';
   bytes constant INVALID_RESERVE = 'INVALID_RESERVE';
+  bytes constant INVALID_SPOKE = 'INVALID_SPOKE';
 }
 
 abstract contract BaseTest is Test, Events {
@@ -61,8 +72,10 @@ abstract contract BaseTest is Test, Events {
 
   IPriceOracle oracle;
   LiquidityHub hub;
-  Spoke bm;
-  MockSpokeCreditLine bmcl;
+  Spoke spoke1;
+  Spoke spoke2;
+  MockSpokeCreditLine spokeCreditLine;
+  DefaultReserveInterestRateStrategy irStrategy;
   DefaultReserveInterestRateStrategy creditLineIRStrategy;
 
   address internal mockAddressesProvider = makeAddr('mockAddressesProvider');
@@ -72,8 +85,10 @@ abstract contract BaseTest is Test, Events {
   function setUp() public virtual {
     oracle = new MockPriceOracle();
     creditLineIRStrategy = new DefaultReserveInterestRateStrategy(mockAddressesProvider);
+    irStrategy = new DefaultReserveInterestRateStrategy(mockAddressesProvider);
     hub = new LiquidityHub();
-    bm = new Spoke(address(hub));
+    spoke1 = new Spoke(address(hub));
+    spoke2 = new Spoke(address(hub));
     dai = new MockERC20();
     eth = new MockERC20();
     usdc = new MockERC20();

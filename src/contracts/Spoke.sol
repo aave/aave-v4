@@ -89,6 +89,7 @@ contract Spoke is ISpoke {
     _validateSupply(r, amount);
 
     (, uint256 newAggregatedRiskPremium) = _refreshRiskPremium();
+    IERC20(r.asset).safeTransferFrom(msg.sender, liquidityHub, amount);
     uint256 userShares = ILiquidityHub(liquidityHub).supply(
       assetId,
       amount,
@@ -142,9 +143,11 @@ contract Spoke is ISpoke {
     // TODO: onBehalfOf
 
     UserConfig storage u = users[assetId][msg.sender];
+    Reserve storage r = reserves[assetId];
     _validateRepay(assetId, u, amount);
 
     (, uint256 newAggregatedRiskPremium) = _refreshRiskPremium();
+    IERC20(r.asset).safeTransferFrom(msg.sender, liquidityHub, amount);
     uint256 userShares = ILiquidityHub(liquidityHub).restore(
       assetId,
       amount,
@@ -202,8 +205,7 @@ contract Spoke is ISpoke {
     uint256 amount
   ) internal view {
     require(
-      ILiquidityHub(liquidityHub).convertSharesToAssets(assetId, user.supplyShares, false) >=
-        amount,
+      ILiquidityHub(liquidityHub).convertSharesToAssetsDown(assetId, user.supplyShares) >= amount,
       'INSUFFICIENT_SUPPLY'
     );
   }
@@ -214,7 +216,7 @@ contract Spoke is ISpoke {
 
   function _validateRepay(uint256 assetId, UserConfig storage user, uint256 amount) internal view {
     require(
-      ILiquidityHub(liquidityHub).convertSharesToAssets(assetId, user.debtShares, true) >= amount,
+      ILiquidityHub(liquidityHub).convertSharesToAssetsUp(assetId, user.debtShares) >= amount,
       'REPAY_EXCEEDS_DEBT'
     );
   }

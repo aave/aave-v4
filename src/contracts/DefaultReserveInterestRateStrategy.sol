@@ -42,7 +42,8 @@ contract DefaultReserveInterestRateStrategy is IDefaultInterestRateStrategy {
   /// @inheritdoc IDefaultInterestRateStrategy
   function setInterestRateParams(uint256 assetId, InterestRateData calldata rateData) external {
     // TODO: Auth
-    require(assetId != 0, Errors.INVALID_ASSET_ID);
+    // TODO: resolve assetId, currently preventing it from being 0, but it can be equal 0 in LH
+    // require(assetId != 0, Errors.INVALID_ASSET_ID);
 
     require(
       rateData.optimalUsageRatio <= MAX_OPTIMAL_POINT &&
@@ -112,6 +113,9 @@ contract DefaultReserveInterestRateStrategy is IDefaultInterestRateStrategy {
     DataTypes.CalculateInterestRatesParams memory params
   ) external view virtual override returns (uint256) {
     InterestRateData memory rateData = _interestRateData[params.assetId];
+
+    // TODO need to ensure require(rateData.optimalUsageRatio != 0, Errors.INVALID_OPTIMAL_USAGE_RATIO);
+    // because division by 0 occurs in the following code potentially
 
     // @note This is a short circuit to allow mintable assets (ex. GHO), which by definition cannot be supplied
     // and thus do not use virtual underlying balances.
