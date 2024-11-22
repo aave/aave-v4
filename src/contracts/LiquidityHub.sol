@@ -115,12 +115,22 @@ contract LiquidityHub is ILiquidityHub {
 
   function addSpoke(uint256 assetId, DataTypes.SpokeConfig memory params, address spoke) external {
     // TODO: AccessControl
-    spokes[assetId][spoke] = Spoke({
-      totalShares: 0,
-      drawnShares: 0,
-      config: DataTypes.SpokeConfig({supplyCap: params.supplyCap, drawCap: params.drawCap})
-    });
+    _addSpoke(assetId, params, spoke);
   }
+
+  function addSpokes(
+    uint256[] calldata assetIds,
+    DataTypes.SpokeConfig[] memory configs,
+    address spoke
+  ) external {
+    // TODO: AccessControl
+
+    require(assetIds.length == configs.length, 'MISMATCHED_CONFIGS');
+    for (uint256 i; i < assetIds.length; i++) {
+      _addSpoke(assetIds[i], configs[i], spoke);
+    }
+  }
+
   function updateSpokeConfig(
     uint256 assetId,
     address spoke,
@@ -401,5 +411,15 @@ contract LiquidityHub is ILiquidityHub {
   ) internal returns (uint256) {
     // TODO: Add new value risk premium to weighted average
     // TODO: Calculate final rate based on borrow rate and weighted average risk premium across spokes
+  }
+
+  function _addSpoke(uint256 assetId, DataTypes.SpokeConfig memory params, address spoke) internal {
+    spokes[assetId][spoke] = Spoke({
+      totalShares: 0,
+      drawnShares: 0,
+      config: DataTypes.SpokeConfig({supplyCap: params.supplyCap, drawCap: params.drawCap})
+    });
+
+    emit SpokeAdded(assetId, spoke);
   }
 }
