@@ -1,6 +1,8 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.0;
 
+import '../libraries/types/DataTypes.sol';
+
 /**
  * @title ILiquidityHub
  * @author Aave Labs
@@ -24,8 +26,8 @@ interface ILiquidityHub {
 
   function getBaseInterestRate(uint256 assetId) external view returns (uint256);
 
-  // TODO: addAsset?
-  // TODO: addSpoke?
+  function addAsset(DataTypes.AssetConfig memory params, address asset) external;
+  function addSpoke(uint256 assetId, DataTypes.SpokeConfig memory params, address spoke) external;
 
   function convertSharesToAssets(
     uint256 assetId,

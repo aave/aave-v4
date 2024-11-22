@@ -13,7 +13,7 @@ contract LiquidityHubTest is BaseTest {
     // Add dai
     uint256 daiAssetId = 0;
     hub.addAsset(
-      LiquidityHub.AssetConfig({decimals: 18, active: true, irStrategy: address(irStrategy)}),
+      DataTypes.AssetConfig({decimals: 18, active: true, irStrategy: address(irStrategy)}),
       address(dai)
     );
     spoke1.addReserve(
@@ -23,7 +23,7 @@ contract LiquidityHubTest is BaseTest {
     );
     hub.addSpoke(
       daiAssetId,
-      LiquidityHub.SpokeConfig({supplyCap: type(uint256).max, drawCap: type(uint256).max}),
+      DataTypes.SpokeConfig({supplyCap: type(uint256).max, drawCap: type(uint256).max}),
       address(spoke1)
     );
     spoke2.addReserve(
@@ -33,7 +33,7 @@ contract LiquidityHubTest is BaseTest {
     );
     hub.addSpoke(
       daiAssetId,
-      LiquidityHub.SpokeConfig({supplyCap: type(uint256).max, drawCap: type(uint256).max}),
+      DataTypes.SpokeConfig({supplyCap: type(uint256).max, drawCap: type(uint256).max}),
       address(spoke2)
     );
     MockPriceOracle(address(oracle)).setAssetPrice(daiAssetId, 1e8);
@@ -50,7 +50,7 @@ contract LiquidityHubTest is BaseTest {
     // Add eth
     uint256 ethAssetId = 1;
     hub.addAsset(
-      LiquidityHub.AssetConfig({decimals: 18, active: true, irStrategy: address(irStrategy)}),
+      DataTypes.AssetConfig({decimals: 18, active: true, irStrategy: address(irStrategy)}),
       address(eth)
     );
     spoke1.addReserve(
@@ -60,7 +60,7 @@ contract LiquidityHubTest is BaseTest {
     );
     hub.addSpoke(
       ethAssetId,
-      LiquidityHub.SpokeConfig({supplyCap: type(uint256).max, drawCap: 0}),
+      DataTypes.SpokeConfig({supplyCap: type(uint256).max, drawCap: 0}),
       address(spoke1)
     );
     spoke2.addReserve(
@@ -70,7 +70,7 @@ contract LiquidityHubTest is BaseTest {
     );
     hub.addSpoke(
       ethAssetId,
-      LiquidityHub.SpokeConfig({supplyCap: type(uint256).max, drawCap: 0}),
+      DataTypes.SpokeConfig({supplyCap: type(uint256).max, drawCap: 0}),
       address(spoke2)
     );
     MockPriceOracle(address(oracle)).setAssetPrice(ethAssetId, 2000e8);
@@ -98,7 +98,7 @@ contract LiquidityHubTest is BaseTest {
     );
     spokeCreditLine = new MockSpokeCreditLine(address(hub), address(creditLineIRStrategy));
     hub.addAsset(
-      LiquidityHub.AssetConfig({
+      DataTypes.AssetConfig({
         decimals: 18,
         active: true,
         irStrategy: address(creditLineIRStrategy)
@@ -191,7 +191,7 @@ contract LiquidityHubTest is BaseTest {
 
     hub.addSpoke(
       assetId,
-      LiquidityHub.SpokeConfig({supplyCap: type(uint256).max, drawCap: type(uint256).max}),
+      DataTypes.SpokeConfig({supplyCap: type(uint256).max, drawCap: type(uint256).max}),
       spoke
     );
 
@@ -775,19 +775,19 @@ contract LiquidityHubTest is BaseTest {
   }
 
   // function _updateLiquidityPremium(uint256 assetId, uint256 newLiquidityPremium) internal {
-  //   LiquidityHub.AssetConfig memory reserveConfig = hub.getAsset(assetId).config;
+  //   DataTypes.AssetConfig memory reserveConfig = hub.getAsset(assetId).config;
   //   reserveConfig.liquidityPremium = newLiquidityPremium;
   //   hub.updateAsset(assetId, reserveConfig);
   // }
 
   function _updateActive(uint256 assetId, bool newActive) internal {
-    LiquidityHub.AssetConfig memory reserveConfig = hub.getAsset(assetId).config;
+    DataTypes.AssetConfig memory reserveConfig = hub.getAsset(assetId).config;
     reserveConfig.active = newActive;
     hub.updateAssetConfig(assetId, reserveConfig);
   }
 
   function _updateDrawCap(uint256 assetId, address spoke, uint256 newDrawCap) internal {
-    LiquidityHub.SpokeConfig memory spokeConfig = hub.getSpokeConfig(assetId, spoke);
+    DataTypes.SpokeConfig memory spokeConfig = hub.getSpokeConfig(assetId, spoke);
     spokeConfig.drawCap = newDrawCap;
     hub.updateSpokeConfig(assetId, spoke, spokeConfig);
   }

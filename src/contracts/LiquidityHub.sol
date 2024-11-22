@@ -21,13 +21,7 @@ contract LiquidityHub is ILiquidityHub {
     uint256 totalShares;
     uint256 drawnShares;
     // TODO: lastUpdateTimestamp?
-    SpokeConfig config;
-  }
-
-  // TODO: borrow cap per spoke
-  struct SpokeConfig {
-    uint256 drawCap; // asset denominated
-    uint256 supplyCap; // asset denominated
+    DataTypes.SpokeConfig config;
   }
 
   struct Asset {
@@ -37,13 +31,7 @@ contract LiquidityHub is ILiquidityHub {
     uint256 drawnShares;
     uint256 lastUpdateTimestamp;
     uint256 currentBorrowRate;
-    AssetConfig config;
-  }
-
-  struct AssetConfig {
-    uint256 decimals;
-    bool active; // TODO: frozen, paused
-    address irStrategy;
+    DataTypes.AssetConfig config;
   }
 
   // asset id => asset data
@@ -72,7 +60,7 @@ contract LiquidityHub is ILiquidityHub {
   function getSpokeConfig(
     uint256 assetId,
     address spoke
-  ) external view returns (SpokeConfig memory) {
+  ) external view returns (DataTypes.SpokeConfig memory) {
     return spokes[assetId][spoke].config;
   }
 
@@ -96,7 +84,7 @@ contract LiquidityHub is ILiquidityHub {
   // Governance
   // /////
 
-  function addAsset(AssetConfig memory params, address asset) external {
+  function addAsset(DataTypes.AssetConfig memory params, address asset) external {
     // TODO: AccessControl
     assetsList.push(asset);
     assets[assetCount] = Asset({
@@ -106,7 +94,7 @@ contract LiquidityHub is ILiquidityHub {
       drawnShares: 0,
       lastUpdateTimestamp: block.timestamp,
       currentBorrowRate: 0,
-      config: AssetConfig({
+      config: DataTypes.AssetConfig({
         decimals: params.decimals,
         active: params.active,
         irStrategy: params.irStrategy
@@ -115,26 +103,30 @@ contract LiquidityHub is ILiquidityHub {
     assetCount++;
   }
 
-  function updateAssetConfig(uint256 assetId, AssetConfig memory params) external {
+  function updateAssetConfig(uint256 assetId, DataTypes.AssetConfig memory params) external {
     // TODO: AccessControl
-    assets[assetId].config = AssetConfig({
+    assets[assetId].config = DataTypes.AssetConfig({
       decimals: params.decimals,
       active: params.active,
       irStrategy: params.irStrategy
     });
   }
 
-  function addSpoke(uint256 assetId, SpokeConfig memory params, address spoke) external {
+  function addSpoke(uint256 assetId, DataTypes.SpokeConfig memory params, address spoke) external {
     // TODO: AccessControl
     spokes[assetId][spoke] = Spoke({
       totalShares: 0,
       drawnShares: 0,
-      config: SpokeConfig({supplyCap: params.supplyCap, drawCap: params.drawCap})
+      config: DataTypes.SpokeConfig({supplyCap: params.supplyCap, drawCap: params.drawCap})
     });
   }
-  function updateSpokeConfig(uint256 assetId, address spoke, SpokeConfig memory params) external {
+  function updateSpokeConfig(
+    uint256 assetId,
+    address spoke,
+    DataTypes.SpokeConfig memory params
+  ) external {
     // TODO: AccessControl
-    spokes[assetId][spoke].config = SpokeConfig({
+    spokes[assetId][spoke].config = DataTypes.SpokeConfig({
       drawCap: params.drawCap,
       supplyCap: params.supplyCap
     });

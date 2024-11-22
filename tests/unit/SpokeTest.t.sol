@@ -13,7 +13,7 @@ contract SpokeTest is BaseTest {
     // Add dai
     uint256 daiAssetId = 0;
     hub.addAsset(
-      LiquidityHub.AssetConfig({decimals: 18, active: true, irStrategy: address(irStrategy)}),
+      DataTypes.AssetConfig({decimals: 18, active: true, irStrategy: address(irStrategy)}),
       address(dai)
     );
     spoke1.addReserve(
@@ -23,7 +23,7 @@ contract SpokeTest is BaseTest {
     );
     hub.addSpoke(
       daiAssetId,
-      LiquidityHub.SpokeConfig({supplyCap: type(uint256).max, drawCap: type(uint256).max}),
+      DataTypes.SpokeConfig({supplyCap: type(uint256).max, drawCap: type(uint256).max}),
       address(spoke1)
     );
     spoke2.addReserve(
@@ -33,7 +33,7 @@ contract SpokeTest is BaseTest {
     );
     hub.addSpoke(
       daiAssetId,
-      LiquidityHub.SpokeConfig({supplyCap: type(uint256).max, drawCap: type(uint256).max}),
+      DataTypes.SpokeConfig({supplyCap: type(uint256).max, drawCap: type(uint256).max}),
       address(spoke2)
     );
     MockPriceOracle(address(oracle)).setAssetPrice(daiAssetId, 1e8);
@@ -41,7 +41,7 @@ contract SpokeTest is BaseTest {
     // Add eth
     uint256 ethAssetId = 1;
     hub.addAsset(
-      LiquidityHub.AssetConfig({decimals: 18, active: true, irStrategy: address(irStrategy)}),
+      DataTypes.AssetConfig({decimals: 18, active: true, irStrategy: address(irStrategy)}),
       address(eth)
     );
     spoke1.addReserve(
@@ -51,7 +51,7 @@ contract SpokeTest is BaseTest {
     );
     hub.addSpoke(
       ethAssetId,
-      LiquidityHub.SpokeConfig({supplyCap: type(uint256).max, drawCap: 0}),
+      DataTypes.SpokeConfig({supplyCap: type(uint256).max, drawCap: 0}),
       address(spoke1)
     );
     spoke2.addReserve(
@@ -61,7 +61,7 @@ contract SpokeTest is BaseTest {
     );
     hub.addSpoke(
       ethAssetId,
-      LiquidityHub.SpokeConfig({supplyCap: type(uint256).max, drawCap: 0}),
+      DataTypes.SpokeConfig({supplyCap: type(uint256).max, drawCap: 0}),
       address(spoke2)
     );
     MockPriceOracle(address(oracle)).setAssetPrice(ethAssetId, 2000e8);

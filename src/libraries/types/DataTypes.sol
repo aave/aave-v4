@@ -11,4 +11,16 @@ library DataTypes {
     uint256 virtualUnderlyingBalance;
     bool usingVirtualBalance;
   }
+
+  // TODO: borrow cap per spoke
+  struct SpokeConfig {
+    uint256 drawCap; // asset denominated
+    uint256 supplyCap; // asset denominated
+  }
+
+  struct AssetConfig {
+    uint256 decimals;
+    bool active; // TODO: frozen, paused
+    address irStrategy;
+  }
 }
