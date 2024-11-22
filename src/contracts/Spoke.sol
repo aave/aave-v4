@@ -149,8 +149,7 @@ contract Spoke is ISpoke {
     _validateRepay(assetId, u, amount);
 
     (, uint256 newAggregatedRiskPremium) = _refreshRiskPremium();
-    IERC20(r.asset).safeTransferFrom(msg.sender, address(this), amount);
-    IERC20(r.asset).approve(liquidityHub, amount);
+    IERC20(r.asset).safeTransferFrom(msg.sender, liquidityHub, amount);
     uint256 userShares = ILiquidityHub(liquidityHub).restore(
       assetId,
       amount,

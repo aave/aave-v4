@@ -716,7 +716,7 @@ contract LiquidityHubTest is BaseTest {
 
     // spoke1 restore half of drawn dai liquidity
     vm.startPrank(address(spoke1));
-    IERC20(address(dai)).approve(address(hub), restoreAmount);
+    IERC20(address(dai)).transfer(address(hub), restoreAmount);
     vm.expectEmit(address(hub));
     emit Restore(daiId, address(spoke1), restoreAmount);
     ILiquidityHub(address(hub)).restore(daiId, restoreAmount, 0);
