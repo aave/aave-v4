@@ -10,7 +10,6 @@ contract LiquidityHubTest is BaseTest {
   function setUp() public override {
     super.setUp();
 
-    // Add dai
     address[] memory spokes = new address[](2);
     spokes[0] = address(spoke1);
     spokes[1] = address(spoke2);
@@ -23,45 +22,31 @@ contract LiquidityHubTest is BaseTest {
       supplyCap: type(uint256).max,
       drawCap: type(uint256).max
     });
+    Spoke.ReserveConfig[] memory reserveConfigs = new Spoke.ReserveConfig[](2);
+    reserveConfigs[0] = Spoke.ReserveConfig({lt: 0, lb: 0, borrowable: true, collateral: false});
+    reserveConfigs[1] = Spoke.ReserveConfig({lt: 0, lb: 0, borrowable: true, collateral: false});
+
+    // Add dai
+    uint256 daiAssetId = 0;
     Utils.addAssetAndSpokes(
       hub,
       address(dai),
       DataTypes.AssetConfig({decimals: 18, active: true, irStrategy: address(irStrategy)}),
       spokes,
-      spokeConfigs
-    );
-
-    uint256 daiAssetId = 0;
-    spoke1.addReserve(
-      daiAssetId,
-      Spoke.ReserveConfig({lt: 0, lb: 0, borrowable: true, collateral: false}),
-      address(dai)
-    );
-    spoke2.addReserve(
-      daiAssetId,
-      Spoke.ReserveConfig({lt: 0, lb: 0, borrowable: true, collateral: false}),
-      address(dai)
+      spokeConfigs,
+      reserveConfigs
     );
     MockPriceOracle(address(oracle)).setAssetPrice(daiAssetId, 1e8);
 
     // Add eth
+    uint256 ethAssetId = 1;
     Utils.addAssetAndSpokes(
       hub,
       address(eth),
       DataTypes.AssetConfig({decimals: 18, active: true, irStrategy: address(irStrategy)}),
       spokes,
-      spokeConfigs
-    );
-    uint256 ethAssetId = 1;
-    spoke1.addReserve(
-      ethAssetId,
-      Spoke.ReserveConfig({lt: 0, lb: 0, borrowable: true, collateral: false}),
-      address(eth)
-    );
-    spoke2.addReserve(
-      ethAssetId,
-      Spoke.ReserveConfig({lt: 0, lb: 0, borrowable: true, collateral: false}),
-      address(eth)
+      spokeConfigs,
+      reserveConfigs
     );
     MockPriceOracle(address(oracle)).setAssetPrice(ethAssetId, 2000e8);
 
