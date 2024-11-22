@@ -3,6 +3,7 @@ pragma solidity ^0.8.0;
 
 import '../BaseTest.t.sol';
 
+// TODO: optimize all expectEmits with just expectEmit(address(emitter))? this was failing previously although it should work
 contract SpokeTest is BaseTest {
   using SharesMath for uint256;
   using WadRayMath for uint256;
