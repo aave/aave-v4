@@ -131,7 +131,7 @@ contract LiquidityHubTest is BaseTest {
     assertEq(dai.balanceOf(address(hub)), 0, 'wrong hub token balance pre-supply');
 
     vm.startPrank(address(spoke1));
-    IERC20(dai).approve(address(hub), amount);
+    IERC20(dai).transfer(address(hub), amount);
     vm.expectEmit(address(hub));
     emit Supply(assetId, address(spoke1), amount);
     hub.supply(assetId, amount, 0);
@@ -152,8 +152,8 @@ contract LiquidityHubTest is BaseTest {
       'wrong spoke total shares post-supply'
     );
     assertEq(spokeData.drawnShares, 0, 'wrong spoke shares post-supply');
-    assertEq(dai.balanceOf(address(spoke1)), 0);
-    assertEq(dai.balanceOf(address(hub)), amount);
+    assertEq(dai.balanceOf(address(spoke1)), 0, 'wrong spoke token balance post-supply');
+    assertEq(dai.balanceOf(address(hub)), amount, 'wrong hub token balance post-supply');
   }
 
   /// User makes a first supply, shares and assets amounts are correct, no precision loss
@@ -201,10 +201,12 @@ contract LiquidityHubTest is BaseTest {
     deal(asset, spoke, amount);
 
     vm.startPrank(spoke);
-    IERC20(asset).approve(address(hub), amount);
 
-    vm.expectEmit(asset);
-    emit Transfer(spoke, address(hub), amount);
+    /// @dev Transfer is done by Spoke to Hub prior to supply logic
+    /// therefore token transfer event won't be part of this flow
+    // IERC20(asset).approve(address(hub), amount);
+    // vm.expectEmit(asset);
+    // emit Transfer(spoke, address(hub), amount);
 
     vm.expectEmit(address(hub));
     emit Supply(assetId, spoke, amount);

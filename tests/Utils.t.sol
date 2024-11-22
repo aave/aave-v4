@@ -18,7 +18,7 @@ library Utils {
   ) internal {
     address asset = hub.assetsList(assetId);
     vm.startPrank(spoke);
-    IERC20(asset).approve(address(hub), amount);
+    IERC20(asset).transfer(address(hub), amount);
     hub.supply(assetId, amount, 0);
     vm.stopPrank();
   }
