@@ -8,6 +8,19 @@ import 'src/dependencies/openzeppelin/IERC20.sol';
 
 library Utils {
   // hub
+  function addAssetAndSpokes(
+    LiquidityHub hub,
+    address asset,
+    DataTypes.AssetConfig memory assetConfig,
+    address[] memory spokes,
+    DataTypes.SpokeConfig[] memory spokeConfigs
+  ) internal {
+    hub.addAsset(assetConfig, asset);
+    uint256 assetId = hub.assetCount() - 1;
+    for (uint256 i = 0; i < spokes.length; i++) {
+      hub.addSpoke(assetId, spokeConfigs[i], spokes[i]);
+    }
+  }
   function supply(
     Vm vm,
     LiquidityHub hub,
