@@ -2,13 +2,13 @@
 pragma solidity ^0.8.0;
 
 import 'forge-std/Test.sol';
-import 'forge-std/InvariantTest.sol';
+import 'forge-std/StdInvariant.sol';
 import 'forge-std/StdCheats.sol';
 import './LiquidityHubHandler.t.sol';
 
 import 'src/contracts/LiquidityHub.sol';
 
-contract LiquidityHubInvariant is InvariantTest, Test {
+contract LiquidityHubInvariant is StdInvariant, Test {
   LiquidityHubHandler hubHandler;
   LiquidityHub hub;
 
