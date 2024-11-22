@@ -6,8 +6,6 @@ import {Errors} from '../libraries/helpers/Errors.sol';
 import {IDefaultInterestRateStrategy} from '../interfaces/IDefaultInterestRateStrategy.sol';
 import {IReserveInterestRateStrategy} from '../interfaces/IReserveInterestRateStrategy.sol';
 
-import 'forge-std/console2.sol';
-
 /**
  * @title DefaultReserveInterestRateStrategy contract
  * @author Aave Labs

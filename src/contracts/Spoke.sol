@@ -10,8 +10,6 @@ import {ISpoke} from '../interfaces/ISpoke.sol';
 import {IReserveInterestRateStrategy} from '../../src/interfaces/IReserveInterestRateStrategy.sol';
 import {DataTypes} from '../libraries/types/DataTypes.sol';
 
-import 'forge-std/console2.sol';
-
 contract Spoke is ISpoke {
   using WadRayMath for uint256;
   using SafeERC20 for IERC20;
