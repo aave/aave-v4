@@ -9,7 +9,7 @@ pragma solidity ^0.8.0;
 interface ILiquidityHub {
   function draw(
     uint256 assetId,
-    address onBehalfOf,
+    address to,
     uint256 amount,
     uint256 riskPremium
   ) external returns (uint256);
