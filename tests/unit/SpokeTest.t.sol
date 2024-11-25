@@ -377,7 +377,7 @@ contract SpokeTest is BaseTest {
   }
 
   function test_getHealthFactor_noSupplied() public {
-    (, , , uint256 healthFactor) = ISpoke(spoke1).getHealthFactor(USER1);
+    uint256 healthFactor = ISpoke(spoke1).getHealthFactor(USER1);
     assertEq(healthFactor, 0, 'wrong health factor');
   }
 
@@ -395,7 +395,7 @@ contract SpokeTest is BaseTest {
     Utils.spokeSupply(vm, hub, spoke1, daiId, USER1, daiAmount, USER1);
     _setUsingAsCollateral(USER1, daiId, true);
 
-    (, , , uint256 healthFactor) = ISpoke(spoke1).getHealthFactor(USER1);
+    uint256 healthFactor = ISpoke(spoke1).getHealthFactor(USER1);
     assertEq(healthFactor, 0, 'wrong health factor');
   }
 
@@ -432,7 +432,7 @@ contract SpokeTest is BaseTest {
     // console2.log('price %e, %e', oracle.getAssetPrice(daiId), oracle.getAssetPrice(ethId));
     // console2.log('expectedTotalCollateral: %e', daiAmount + ethAmount);
 
-    (, , , uint256 healthFactor) = ISpoke(spoke1).getHealthFactor(USER1);
+    uint256 healthFactor = ISpoke(spoke1).getHealthFactor(USER1);
     // assertEq(healthFactor, 0, 'wrong health factor');
   }
 

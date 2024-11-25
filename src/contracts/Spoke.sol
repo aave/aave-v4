@@ -184,65 +184,9 @@ contract Spoke is ISpoke {
     emit Repaid(assetId, msg.sender, amount);
   }
 
-  function getHealthFactor(
-    address user
-  ) external view returns (uint256, uint256, uint256, uint256) {
-    // HF logic:
-    // - iterate through a user's positions, calculate HF per user per spoke
-    uint256 totalCollateralInBaseCurrency;
-    uint256 totalDebtInBaseCurrency;
-    uint256 avgLiquidationThreshold;
-    uint256 i;
-    while (i < reservesList.length) {
-      uint256 reserveId = reservesList[i];
-      if (!_usingAsCollateralOrBorrowing(reserveId, user)) {
-        i++;
-        continue;
-      }
-
-      UserConfig memory u = users[reserveId][user];
-      Reserve memory r = reserves[reserveId];
-
-      uint256 userCollateralInBaseCurrency = IPriceOracle(oracle).getAssetPrice(reserveId) *
-        WadRayMath.wadMul(
-          ILiquidityHub(liquidityHub).convertSharesToAssetsDown(reserveId, u.supplyShares),
-          r.config.lt
-        );
-
-      totalCollateralInBaseCurrency += userCollateralInBaseCurrency;
-      avgLiquidationThreshold += userCollateralInBaseCurrency * r.config.lt;
-
-      // console2.log(
-      //   'borrowing %d, %e, %e',
-      //   reserveId,
-      //   u.debtShares,
-      //   IPriceOracle(oracle).getAssetPrice(reserveId)
-      // );
-      totalDebtInBaseCurrency += u.debtShares > 0
-        ? IPriceOracle(oracle).getAssetPrice(reserveId) *
-          ILiquidityHub(liquidityHub).convertSharesToAssetsUp(reserveId, u.debtShares)
-        : 0;
-      i++;
-    }
-
-    avgLiquidationThreshold = totalCollateralInBaseCurrency != 0
-      ? avgLiquidationThreshold / totalCollateralInBaseCurrency
-      : 0;
-
-    console2.log('totalCollateralInBaseCurrency %e', totalCollateralInBaseCurrency);
-    console2.log('totalDebtInBaseCurrency %e', totalDebtInBaseCurrency);
-    console2.log('avgLiquidationThreshold %e', avgLiquidationThreshold);
-
-    uint256 healthFactor = totalDebtInBaseCurrency == 0
-      ? type(uint256).max
-      : totalCollateralInBaseCurrency / totalDebtInBaseCurrency;
-
-    return (
-      totalCollateralInBaseCurrency,
-      totalDebtInBaseCurrency,
-      avgLiquidationThreshold,
-      healthFactor
-    );
+  function getHealthFactor(address user) external view returns (uint256) {
+    (, , , uint256 healthFactor) = _calculateUserAccountData(user);
+    return healthFactor;
   }
 
   function setUsingAsCollateral(uint256 reserveId, bool usingAsCollateral) external {
@@ -348,5 +292,66 @@ contract Spoke is ISpoke {
 
   function _usingAsCollateral(uint256 reserveId, address user) internal view returns (bool) {
     return users[reserveId][user].usingAsCollateral;
+  }
+
+  function _calculateUserAccountData(
+    address user
+  ) internal view returns (uint256, uint256, uint256, uint256) {
+    // HF logic:
+    // - iterate through a user's positions, calculate HF per user per spoke
+    uint256 totalCollateralInBaseCurrency;
+    uint256 totalDebtInBaseCurrency;
+    uint256 avgLiquidationThreshold;
+    uint256 i;
+    while (i < reservesList.length) {
+      uint256 reserveId = reservesList[i];
+      if (!_usingAsCollateralOrBorrowing(reserveId, user)) {
+        i++;
+        continue;
+      }
+
+      UserConfig memory u = users[reserveId][user];
+      Reserve memory r = reserves[reserveId];
+
+      uint256 userCollateralInBaseCurrency = IPriceOracle(oracle).getAssetPrice(reserveId) *
+        WadRayMath.wadMul(
+          ILiquidityHub(liquidityHub).convertSharesToAssetsDown(reserveId, u.supplyShares),
+          r.config.lt
+        );
+
+      totalCollateralInBaseCurrency += userCollateralInBaseCurrency;
+      avgLiquidationThreshold += userCollateralInBaseCurrency * r.config.lt;
+
+      // console2.log(
+      //   'borrowing %d, %e, %e',
+      //   reserveId,
+      //   u.debtShares,
+      //   IPriceOracle(oracle).getAssetPrice(reserveId)
+      // );
+      totalDebtInBaseCurrency += u.debtShares > 0
+        ? IPriceOracle(oracle).getAssetPrice(reserveId) *
+          ILiquidityHub(liquidityHub).convertSharesToAssetsUp(reserveId, u.debtShares)
+        : 0;
+      i++;
+    }
+
+    avgLiquidationThreshold = totalCollateralInBaseCurrency != 0
+      ? avgLiquidationThreshold / totalCollateralInBaseCurrency
+      : 0;
+
+    console2.log('totalCollateralInBaseCurrency %e', totalCollateralInBaseCurrency);
+    console2.log('totalDebtInBaseCurrency %e', totalDebtInBaseCurrency);
+    console2.log('avgLiquidationThreshold %e', avgLiquidationThreshold);
+
+    uint256 healthFactor = totalDebtInBaseCurrency == 0
+      ? type(uint256).max
+      : totalCollateralInBaseCurrency / totalDebtInBaseCurrency;
+
+    return (
+      totalCollateralInBaseCurrency,
+      totalDebtInBaseCurrency,
+      avgLiquidationThreshold,
+      healthFactor
+    );
   }
 }
