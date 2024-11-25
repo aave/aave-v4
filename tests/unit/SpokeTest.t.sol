@@ -294,13 +294,24 @@ contract SpokeTest is BaseTest {
 
   function test_revert_ReserveNotCollateral_setUsingAsCollateral() public {
     uint256 reserveId = 0; // DAI
-    bool newCollateral = false;
-
+    bool newCollateral = false; // set DAI as non-collateral
+    bool usingAsCollateral = true;
     _updateCollateral(reserveId, newCollateral);
 
     vm.prank(USER1);
     vm.expectRevert(TestErrors.RESERVE_NOT_COLLATERAL);
-    ISpoke(spoke1).setUsingAsCollateral(reserveId, newCollateral);
+    ISpoke(spoke1).setUsingAsCollateral(reserveId, usingAsCollateral);
+  }
+
+  function test_revert_NoSupply_setUsingAsCollateral() public {
+    uint256 reserveId = 0; // DAI
+    bool newCollateral = true; // ensure DAI is set as collateral
+    bool usingAsCollateral = true;
+    _updateCollateral(reserveId, newCollateral);
+
+    vm.prank(USER1);
+    vm.expectRevert(TestErrors.NO_SUPPLY);
+    ISpoke(spoke1).setUsingAsCollateral(reserveId, usingAsCollateral);
   }
 
   function _updateCollateral(uint256 reserveId, bool newCollateral) internal {

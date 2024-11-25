@@ -67,6 +67,7 @@ library TestErrors {
   bytes constant INVALID_RESERVE = 'INVALID_RESERVE';
   bytes constant INVALID_SPOKE = 'INVALID_SPOKE';
   bytes constant RESERVE_NOT_COLLATERAL = 'RESERVE_NOT_COLLATERAL';
+  bytes constant NO_SUPPLY = 'NO_SUPPLY';
 }
 
 abstract contract BaseTest is Test, Events {
