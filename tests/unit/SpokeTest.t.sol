@@ -262,4 +262,33 @@ contract SpokeTest is BaseTest {
     assertEq(eth.balanceOf(USER1), 0, 'wrong USER1 eth final balance');
     assertEq(eth.balanceOf(USER2), 0, 'wrong USER2 eth final balance');
   }
+
+  function test_updateReserveConfig() public {
+    uint256 reserveId = 0;
+
+    (, , Spoke.ReserveConfig memory reserveConfigData) = spoke1.reserves(reserveId);
+
+    Spoke.ReserveConfig memory newReserveConfig = Spoke.ReserveConfig({
+      lt: reserveConfigData.lt + 1,
+      lb: reserveConfigData.lb + 1,
+      borrowable: !reserveConfigData.borrowable,
+      collateral: !reserveConfigData.collateral
+    });
+    spoke1.updateReserveConfig(reserveId, newReserveConfig);
+
+    (, , reserveConfigData) = spoke1.reserves(reserveId);
+
+    assertEq(reserveConfigData.lt, newReserveConfig.lt, 'wrong lt');
+    assertEq(reserveConfigData.lb, newReserveConfig.lb, 'wrong lb');
+    assertEq(reserveConfigData.borrowable, newReserveConfig.borrowable, 'wrong borrowable');
+    assertEq(reserveConfigData.collateral, newReserveConfig.collateral, 'wrong collateral');
+  }
+
+  function test_revert_setUsingAsCollateral() public {}
+
+  function _updateCollateral(uint256 reserveId, bool newCollateral) internal {
+    (, , Spoke.ReserveConfig memory reserveConfig) = spoke1.reserves(reserveId);
+    reserveConfig.collateral = newCollateral;
+    spoke1.updateReserveConfig(reserveId, reserveConfig);
+  }
 }

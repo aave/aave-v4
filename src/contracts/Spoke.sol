@@ -80,6 +80,17 @@ contract Spoke is ISpoke {
     return 0;
   }
 
+  /// governance
+  function updateReserveConfig(uint256 reserveId, ReserveConfig calldata params) external {
+    // TODO: AccessControl
+    reserves[reserveId].config = ReserveConfig({
+      lt: params.lt,
+      lb: params.lb,
+      borrowable: params.borrowable,
+      collateral: params.collateral
+    });
+  }
+
   // /////
   // Users
   // /////
