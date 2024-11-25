@@ -89,6 +89,14 @@ contract Spoke is ISpoke {
       borrowable: params.borrowable,
       collateral: params.collateral
     });
+
+    emit ReserveConfigUpdated(
+      reserveId,
+      params.lt,
+      params.lb,
+      params.borrowable,
+      params.collateral
+    );
   }
 
   // /////

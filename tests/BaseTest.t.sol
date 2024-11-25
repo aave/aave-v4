@@ -44,6 +44,13 @@ contract Events {
   event Repaid(uint256 indexed assetId, address indexed user, uint256 amount);
   event Supplied(uint256 indexed assetId, address indexed user, uint256 amount);
   event Withdrawn(uint256 indexed assetId, address indexed user, uint256 amount);
+  event ReserveConfigUpdated(
+    uint256 indexed reserveId,
+    uint256 lt,
+    uint256 lb,
+    bool borrowable,
+    bool collateral
+  );
 }
 
 library TestErrors {

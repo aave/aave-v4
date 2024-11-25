@@ -274,6 +274,14 @@ contract SpokeTest is BaseTest {
       borrowable: !reserveConfigData.borrowable,
       collateral: !reserveConfigData.collateral
     });
+    vm.expectEmit(address(spoke1));
+    emit ReserveConfigUpdated(
+      reserveId,
+      newReserveConfig.lt,
+      newReserveConfig.lb,
+      newReserveConfig.borrowable,
+      newReserveConfig.collateral
+    );
     spoke1.updateReserveConfig(reserveId, newReserveConfig);
 
     (, , reserveConfigData) = spoke1.reserves(reserveId);
@@ -284,7 +292,16 @@ contract SpokeTest is BaseTest {
     assertEq(reserveConfigData.collateral, newReserveConfig.collateral, 'wrong collateral');
   }
 
-  function test_revert_setUsingAsCollateral() public {}
+  // function test_revert_setUsingAsCollateral() public {
+  //   uint256 reserveId = 0; // DAI
+  //   bool newCollateral = false;
+
+  //   (, , Spoke.ReserveConfig memory reserveConfig) = spoke1.reserves(reserveId);
+  //   reserveConfig.collateral = newCollateral;
+  //   _updateCollateral(reserveId, reserveConfig);
+
+  //   vm.prank(USER1);
+  // }
 
   function _updateCollateral(uint256 reserveId, bool newCollateral) internal {
     (, , Spoke.ReserveConfig memory reserveConfig) = spoke1.reserves(reserveId);

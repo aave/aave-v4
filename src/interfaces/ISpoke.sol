@@ -7,6 +7,13 @@ interface ISpoke {
   event Supplied(uint256 indexed assetId, address indexed user, uint256 amount);
   event Withdrawn(uint256 indexed assetId, address indexed user, uint256 amount);
   event UsingAsCollateral(uint256 indexed reserveId, address indexed user, bool usingAsCollateral);
+  event ReserveConfigUpdated(
+    uint256 indexed reserveId,
+    uint256 lt,
+    uint256 lb,
+    bool borrowable,
+    bool collateral
+  );
 
   /// @dev working with bps units 10_000 = 100%
   function getInterestRate(uint256 assetId) external view returns (uint256);
