@@ -5,6 +5,7 @@ import {SafeERC20} from 'src/dependencies/openzeppelin/SafeERC20.sol';
 import {IERC20} from 'src/dependencies/openzeppelin/IERC20.sol';
 import {WadRayMath} from 'src/contracts/WadRayMath.sol';
 import {MathUtils} from 'src/contracts/MathUtils.sol';
+import {PercentageMath} from 'src/contracts/PercentageMath.sol';
 import {ILiquidityHub} from 'src/interfaces/ILiquidityHub.sol';
 import {ISpoke} from 'src/interfaces/ISpoke.sol';
 import {IReserveInterestRateStrategy} from 'src/interfaces/IReserveInterestRateStrategy.sol';
@@ -15,6 +16,7 @@ import 'forge-std/console2.sol';
 
 contract Spoke is ISpoke {
   using WadRayMath for uint256;
+  using PercentageMath for uint256;
   using SafeERC20 for IERC20;
 
   address public liquidityHub;
@@ -314,14 +316,12 @@ contract Spoke is ISpoke {
       Reserve memory r = reserves[reserveId];
 
       uint256 userCollateralInBaseCurrency = IPriceOracle(oracle).getAssetPrice(reserveId) *
-        WadRayMath.wadMul(
-          ILiquidityHub(liquidityHub).convertSharesToAssetsDown(reserveId, u.supplyShares),
-          r.config.lt
-        );
+        ILiquidityHub(liquidityHub).convertSharesToAssetsDown(reserveId, u.supplyShares);
 
       totalCollateralInBaseCurrency += userCollateralInBaseCurrency;
       avgLiquidationThreshold += userCollateralInBaseCurrency * r.config.lt;
 
+      console2.log('reserveId: %d, lt: %e', reserveId, r.config.lt);
       // console2.log(
       //   'borrowing %d, %e, %e',
       //   reserveId,
@@ -345,7 +345,9 @@ contract Spoke is ISpoke {
 
     uint256 healthFactor = totalDebtInBaseCurrency == 0
       ? type(uint256).max
-      : totalCollateralInBaseCurrency / totalDebtInBaseCurrency;
+      : (totalCollateralInBaseCurrency.percentMul(avgLiquidationThreshold)).wadDiv(
+        totalDebtInBaseCurrency
+      );
 
     return (
       totalCollateralInBaseCurrency,
