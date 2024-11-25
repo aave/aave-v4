@@ -108,6 +108,18 @@ contract MockSpokeCreditLine is ISpoke {
     emit Repaid(assetId, msg.sender, amount);
   }
 
+  function setUsingAsCollateral(uint256 reserveId, bool usingAsCollateral) external {
+    // intentionally left blank
+  }
+
+  function supply(uint256 assetId, uint256 amount) external {
+    // intentionally left blank
+  }
+
+  function withdraw(uint256 assetId, address to, uint256 amount) external {
+    // intentionally left blank
+  }
+
   function getInterestRate(uint256 assetId) public view returns (uint256) {
     // read from state, convert to ray
     return reserves[assetId].borrowRate * 1e23;

@@ -66,6 +66,7 @@ library TestErrors {
   bytes constant RESERVE_NOT_BORROWABLE = 'RESERVE_NOT_BORROWABLE';
   bytes constant INVALID_RESERVE = 'INVALID_RESERVE';
   bytes constant INVALID_SPOKE = 'INVALID_SPOKE';
+  bytes constant RESERVE_NOT_COLLATERAL = 'RESERVE_NOT_COLLATERAL';
 }
 
 abstract contract BaseTest is Test, Events {

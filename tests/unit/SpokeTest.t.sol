@@ -292,16 +292,16 @@ contract SpokeTest is BaseTest {
     assertEq(reserveConfigData.collateral, newReserveConfig.collateral, 'wrong collateral');
   }
 
-  // function test_revert_setUsingAsCollateral() public {
-  //   uint256 reserveId = 0; // DAI
-  //   bool newCollateral = false;
+  function test_revert_ReserveNotCollateral_setUsingAsCollateral() public {
+    uint256 reserveId = 0; // DAI
+    bool newCollateral = false;
 
-  //   (, , Spoke.ReserveConfig memory reserveConfig) = spoke1.reserves(reserveId);
-  //   reserveConfig.collateral = newCollateral;
-  //   _updateCollateral(reserveId, reserveConfig);
+    _updateCollateral(reserveId, newCollateral);
 
-  //   vm.prank(USER1);
-  // }
+    vm.prank(USER1);
+    vm.expectRevert(TestErrors.RESERVE_NOT_COLLATERAL);
+    ISpoke(spoke1).setUsingAsCollateral(reserveId, newCollateral);
+  }
 
   function _updateCollateral(uint256 reserveId, bool newCollateral) internal {
     (, , Spoke.ReserveConfig memory reserveConfig) = spoke1.reserves(reserveId);
