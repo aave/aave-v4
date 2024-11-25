@@ -35,6 +35,7 @@ contract Spoke is ISpoke {
   struct UserConfig {
     uint256 supplyShares;
     uint256 debtShares;
+    bool usingAsCollateral;
     // uint256 balance;
     // uint256 lastUpdateIndex;
     // uint256 lastUpdateTimestamp;
@@ -163,6 +164,13 @@ contract Spoke is ISpoke {
     // - iterate through a user's positions, calculate HF per user per spoke
   }
 
+  function setUsingAsCollateral(uint256 reserveId, bool usingAsCollateral) external {
+    _validateSetUsingAsCollateral(reserveId, msg.sender);
+    users[reserveId][msg.sender].usingAsCollateral = usingAsCollateral;
+
+    emit UsingAsCollateral(reserveId, msg.sender, usingAsCollateral);
+  }
+
   // TODO: Needed?
   function getInterestRate(uint256 assetId) public view returns (uint256) {
     // read from state, convert to ray
@@ -238,5 +246,10 @@ contract Spoke is ISpoke {
     // TODO: aggregated risk premium, ie loop over all assets and sum up risk premium
     uint256 newAggregatedRiskPremium = 0;
     return (newUserRiskPremium, newAggregatedRiskPremium);
+  }
+
+  function _validateSetUsingAsCollateral(uint256 reserveId, address user) internal view {
+    require(reserves[reserveId].config.collateral, 'RESERVE_NOT_COLLATERAL');
+    require(users[reserveId][user].supplyShares > 0, 'NO_SUPPLY');
   }
 }
