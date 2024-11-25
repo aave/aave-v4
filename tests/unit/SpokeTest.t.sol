@@ -23,8 +23,18 @@ contract SpokeTest is BaseTest {
       drawCap: type(uint256).max
     });
     Spoke.ReserveConfig[] memory reserveConfigs = new Spoke.ReserveConfig[](2);
-    reserveConfigs[0] = Spoke.ReserveConfig({lt: 0, lb: 0, borrowable: true, collateral: false});
-    reserveConfigs[1] = Spoke.ReserveConfig({lt: 0, lb: 0, borrowable: true, collateral: false});
+    reserveConfigs[0] = Spoke.ReserveConfig({
+      lt: 0.75e18,
+      lb: 0,
+      borrowable: true,
+      collateral: false
+    });
+    reserveConfigs[1] = Spoke.ReserveConfig({
+      lt: 0.8e18,
+      lb: 0,
+      borrowable: true,
+      collateral: false
+    });
 
     // Add dai
     uint256 daiAssetId = 0;
@@ -360,6 +370,7 @@ contract SpokeTest is BaseTest {
     Utils.spokeSupply(vm, hub, spoke1, ethId, USER1, ethAmount, USER1);
     _setUsingAsCollateral(USER1, ethId, true);
 
+    console2.log('price %e, %e', oracle.getAssetPrice(daiId), oracle.getAssetPrice(ethId));
     console2.log('expectedTotalCollateral: %e', daiAmount + ethAmount);
 
     ISpoke(spoke1).getHealthFactor(USER1);

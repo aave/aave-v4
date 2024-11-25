@@ -1,14 +1,15 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.0;
 
-import {SafeERC20} from '../dependencies/openzeppelin/SafeERC20.sol';
-import {IERC20} from '../dependencies/openzeppelin/IERC20.sol';
-import {WadRayMath} from './WadRayMath.sol';
-import {MathUtils} from './MathUtils.sol';
-import {ILiquidityHub} from '../interfaces/ILiquidityHub.sol';
-import {ISpoke} from '../interfaces/ISpoke.sol';
-import {IReserveInterestRateStrategy} from '../../src/interfaces/IReserveInterestRateStrategy.sol';
-import {DataTypes} from '../libraries/types/DataTypes.sol';
+import {SafeERC20} from 'src/dependencies/openzeppelin/SafeERC20.sol';
+import {IERC20} from 'src/dependencies/openzeppelin/IERC20.sol';
+import {WadRayMath} from 'src/contracts/WadRayMath.sol';
+import {MathUtils} from 'src/contracts/MathUtils.sol';
+import {ILiquidityHub} from 'src/interfaces/ILiquidityHub.sol';
+import {ISpoke} from 'src/interfaces/ISpoke.sol';
+import {IReserveInterestRateStrategy} from 'src/interfaces/IReserveInterestRateStrategy.sol';
+import {IPriceOracle} from 'src/interfaces/IPriceOracle.sol';
+import {DataTypes} from 'src/libraries/types/DataTypes.sol';
 
 import 'forge-std/console2.sol';
 
@@ -28,7 +29,7 @@ contract Spoke is ISpoke {
   }
 
   struct ReserveConfig {
-    uint256 lt;
+    uint256 lt; // 1e18 == 100%
     uint256 lb; // TODO: liquidationProtocolFee
     bool borrowable;
     bool collateral;
@@ -187,20 +188,33 @@ contract Spoke is ISpoke {
     // HF logic:
     // - iterate through a user's positions, calculate HF per user per spoke
     uint256 totalCollateralValue;
+    uint256 totalBorrowedValue;
     uint256 i;
     while (i < reservesList.length) {
       uint256 reserveId = reservesList[i];
-      UserConfig memory u = users[reserveId][user];
-
-      if (u.usingAsCollateral) {
-        totalCollateralValue += ILiquidityHub(liquidityHub).convertSharesToAssetsDown(
-          reserveId,
-          u.supplyShares
-        );
+      if (!_usingAsCollateralOrBorrowing(reserveId, user)) {
+        i++;
+        continue;
       }
+
+      UserConfig memory u = users[reserveId][user];
+      Reserve memory r = reserves[reserveId];
+
+      totalCollateralValue +=
+        IPriceOracle(oracle).getAssetPrice(reserveId) *
+        WadRayMath.wadMul(
+          ILiquidityHub(liquidityHub).convertSharesToAssetsDown(reserveId, u.supplyShares),
+          r.config.lt
+        );
+
+      totalBorrowedValue += u.debtShares > 0
+        ? IPriceOracle(oracle).getAssetPrice(reserveId) *
+          ILiquidityHub(liquidityHub).convertSharesToAssetsUp(reserveId, u.supplyShares)
+        : 0;
       i++;
     }
     console2.log('totalCollateralValue %e', totalCollateralValue);
+    console2.log('totalBorrowedValue %e', totalBorrowedValue);
   }
 
   function setUsingAsCollateral(uint256 reserveId, bool usingAsCollateral) external {
@@ -295,5 +309,16 @@ contract Spoke is ISpoke {
   function _validateSetUsingAsCollateral(uint256 reserveId, address user) internal view {
     require(reserves[reserveId].config.collateral, 'RESERVE_NOT_COLLATERAL');
     require(users[reserveId][user].supplyShares > 0, 'NO_SUPPLY');
+  }
+
+  function _usingAsCollateralOrBorrowing(
+    uint256 reserveId,
+    address user
+  ) internal view returns (bool) {
+    return _usingAsCollateral(reserveId, user) || users[reserveId][user].debtShares > 0;
+  }
+
+  function _usingAsCollateral(uint256 reserveId, address user) internal view returns (bool) {
+    return users[reserveId][user].usingAsCollateral;
   }
 }
