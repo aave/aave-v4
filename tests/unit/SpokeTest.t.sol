@@ -22,18 +22,25 @@ contract SpokeTest is BaseTest {
       supplyCap: type(uint256).max,
       drawCap: type(uint256).max
     });
-    Spoke.ReserveConfig[] memory reserveConfigs = new Spoke.ReserveConfig[](2);
+
+    Spoke.ReserveConfig[] memory reserveConfigs = new Spoke.ReserveConfig[](3);
     reserveConfigs[0] = Spoke.ReserveConfig({
       lt: 0.75e18,
       lb: 0,
       borrowable: true,
-      collateral: false
+      collateral: true
     });
     reserveConfigs[1] = Spoke.ReserveConfig({
       lt: 0.8e18,
       lb: 0,
       borrowable: true,
-      collateral: false
+      collateral: true
+    });
+    reserveConfigs[2] = Spoke.ReserveConfig({
+      lt: 0.78e18,
+      lb: 0,
+      borrowable: true,
+      collateral: true
     });
 
     // Add dai
@@ -60,6 +67,18 @@ contract SpokeTest is BaseTest {
     );
     MockPriceOracle(address(oracle)).setAssetPrice(ethAssetId, 2000e8);
 
+    // Add USDC
+    uint256 usdcAssetId = 2;
+    Utils.addAssetAndSpokes(
+      hub,
+      address(usdc),
+      DataTypes.AssetConfig({decimals: 18, active: true, irStrategy: address(irStrategy)}),
+      spokes,
+      spokeConfigs,
+      reserveConfigs
+    );
+    MockPriceOracle(address(oracle)).setAssetPrice(usdcAssetId, 1e8);
+
     irStrategy.setInterestRateParams(
       daiAssetId,
       IDefaultInterestRateStrategy.InterestRateData({
@@ -71,6 +90,15 @@ contract SpokeTest is BaseTest {
     );
     irStrategy.setInterestRateParams(
       ethAssetId,
+      IDefaultInterestRateStrategy.InterestRateData({
+        optimalUsageRatio: 9000, // 90.00%
+        baseVariableBorrowRate: 500, // 5.00%
+        variableRateSlope1: 500, // 5.00%
+        variableRateSlope2: 500 // 5.00%
+      })
+    );
+    irStrategy.setInterestRateParams(
+      usdcAssetId,
       IDefaultInterestRateStrategy.InterestRateData({
         optimalUsageRatio: 9000, // 90.00%
         baseVariableBorrowRate: 500, // 5.00%
@@ -348,11 +376,36 @@ contract SpokeTest is BaseTest {
     assertEq(userData.usingAsCollateral, usingAsCollateral, 'wrong usingAsCollateral');
   }
 
-  function test_getHealthFactor() public {
+  function test_getHealthFactor_noSupplied() public {
+    (, , , uint256 healthFactor) = ISpoke(spoke1).getHealthFactor(USER1);
+    assertEq(healthFactor, 0, 'wrong health factor');
+  }
+
+  function test_getHealthFactor_noBorrowed() public {
+    uint256 daiId = 0;
+    uint256 daiAmount = 100e18;
+    bool newCollateral = true;
+    bool usingAsCollateral = true;
+
+    // ensure DAI allowed as collateral
+    _updateCollateral(daiId, newCollateral);
+
+    // USER1 supply dai into spoke1
+    deal(address(dai), USER1, daiAmount);
+    Utils.spokeSupply(vm, hub, spoke1, daiId, USER1, daiAmount, USER1);
+    _setUsingAsCollateral(USER1, daiId, true);
+
+    (, , , uint256 healthFactor) = ISpoke(spoke1).getHealthFactor(USER1);
+    assertEq(healthFactor, 0, 'wrong health factor');
+  }
+
+  function test_getHealthFactorF() public {
     uint256 daiId = 0;
     uint256 ethId = 1;
+    uint256 usdcAssetId = 2;
     uint256 daiAmount = 100e18;
     uint256 ethAmount = 10e18;
+    uint256 usdcBorrowAmount = 150e18;
     bool newCollateral = true;
     bool usingAsCollateral = true;
 
@@ -370,10 +423,17 @@ contract SpokeTest is BaseTest {
     Utils.spokeSupply(vm, hub, spoke1, ethId, USER1, ethAmount, USER1);
     _setUsingAsCollateral(USER1, ethId, true);
 
-    console2.log('price %e, %e', oracle.getAssetPrice(daiId), oracle.getAssetPrice(ethId));
-    console2.log('expectedTotalCollateral: %e', daiAmount + ethAmount);
+    // USER2 supply usdc into spoke1
+    deal(address(usdc), USER2, usdcBorrowAmount);
+    Utils.spokeSupply(vm, hub, spoke1, usdcAssetId, USER2, usdcBorrowAmount, USER2);
 
-    ISpoke(spoke1).getHealthFactor(USER1);
+    Utils.borrow(vm, spoke1, usdcAssetId, USER1, usdcBorrowAmount, USER1);
+
+    // console2.log('price %e, %e', oracle.getAssetPrice(daiId), oracle.getAssetPrice(ethId));
+    // console2.log('expectedTotalCollateral: %e', daiAmount + ethAmount);
+
+    (, , , uint256 healthFactor) = ISpoke(spoke1).getHealthFactor(USER1);
+    // assertEq(healthFactor, 0, 'wrong health factor');
   }
 
   function _setUsingAsCollateral(address user, uint256 reserveId, bool usingAsCollateral) internal {

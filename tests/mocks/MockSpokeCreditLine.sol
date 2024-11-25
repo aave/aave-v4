@@ -120,7 +120,9 @@ contract MockSpokeCreditLine is ISpoke {
     // intentionally left blank
   }
 
-  function getHealthFactor(address user) external view returns (uint256) {
+  function getHealthFactor(
+    address user
+  ) external view returns (uint256, uint256, uint256, uint256) {
     // intentionally left blank
   }
 
