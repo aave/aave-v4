@@ -51,6 +51,7 @@ contract Events {
     bool borrowable,
     bool collateral
   );
+  event UsingAsCollateral(uint256 indexed reserveId, address indexed user, bool usingAsCollateral);
 }
 
 library TestErrors {

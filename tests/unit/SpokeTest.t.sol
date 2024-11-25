@@ -264,59 +264,83 @@ contract SpokeTest is BaseTest {
   }
 
   function test_updateReserveConfig() public {
-    uint256 reserveId = 0;
+    uint256 daiId = 0;
 
-    (, , Spoke.ReserveConfig memory reserveConfigData) = spoke1.reserves(reserveId);
+    Spoke.Reserve memory reserveData = spoke1.getReserve(daiId);
 
     Spoke.ReserveConfig memory newReserveConfig = Spoke.ReserveConfig({
-      lt: reserveConfigData.lt + 1,
-      lb: reserveConfigData.lb + 1,
-      borrowable: !reserveConfigData.borrowable,
-      collateral: !reserveConfigData.collateral
+      lt: reserveData.config.lt + 1,
+      lb: reserveData.config.lb + 1,
+      borrowable: !reserveData.config.borrowable,
+      collateral: !reserveData.config.collateral
     });
     vm.expectEmit(address(spoke1));
     emit ReserveConfigUpdated(
-      reserveId,
+      daiId,
       newReserveConfig.lt,
       newReserveConfig.lb,
       newReserveConfig.borrowable,
       newReserveConfig.collateral
     );
-    spoke1.updateReserveConfig(reserveId, newReserveConfig);
+    spoke1.updateReserveConfig(daiId, newReserveConfig);
 
-    (, , reserveConfigData) = spoke1.reserves(reserveId);
+    reserveData = spoke1.getReserve(daiId);
 
-    assertEq(reserveConfigData.lt, newReserveConfig.lt, 'wrong lt');
-    assertEq(reserveConfigData.lb, newReserveConfig.lb, 'wrong lb');
-    assertEq(reserveConfigData.borrowable, newReserveConfig.borrowable, 'wrong borrowable');
-    assertEq(reserveConfigData.collateral, newReserveConfig.collateral, 'wrong collateral');
+    assertEq(reserveData.config.lt, newReserveConfig.lt, 'wrong lt');
+    assertEq(reserveData.config.lb, newReserveConfig.lb, 'wrong lb');
+    assertEq(reserveData.config.borrowable, newReserveConfig.borrowable, 'wrong borrowable');
+    assertEq(reserveData.config.collateral, newReserveConfig.collateral, 'wrong collateral');
   }
 
   function test_revert_ReserveNotCollateral_setUsingAsCollateral() public {
-    uint256 reserveId = 0; // DAI
-    bool newCollateral = false; // set DAI as non-collateral
+    uint256 daiId = 0;
+    bool newCollateral = false;
     bool usingAsCollateral = true;
-    _updateCollateral(reserveId, newCollateral);
+    _updateCollateral(daiId, newCollateral);
 
     vm.prank(USER1);
     vm.expectRevert(TestErrors.RESERVE_NOT_COLLATERAL);
-    ISpoke(spoke1).setUsingAsCollateral(reserveId, usingAsCollateral);
+    ISpoke(spoke1).setUsingAsCollateral(daiId, usingAsCollateral);
   }
 
   function test_revert_NoSupply_setUsingAsCollateral() public {
-    uint256 reserveId = 0; // DAI
-    bool newCollateral = true; // ensure DAI is set as collateral
+    uint256 daiId = 0;
+    bool newCollateral = true;
     bool usingAsCollateral = true;
-    _updateCollateral(reserveId, newCollateral);
+    _updateCollateral(daiId, newCollateral);
 
     vm.prank(USER1);
     vm.expectRevert(TestErrors.NO_SUPPLY);
-    ISpoke(spoke1).setUsingAsCollateral(reserveId, usingAsCollateral);
+    ISpoke(spoke1).setUsingAsCollateral(daiId, usingAsCollateral);
+
+    Spoke.Reserve memory reserveData = spoke1.getReserve(daiId);
+  }
+
+  function test_setUsingAsCollateral() public {
+    uint256 daiId = 0;
+    bool newCollateral = true;
+    bool usingAsCollateral = true;
+    uint256 daiAmount = 100e18;
+
+    // ensure DAI is allowed as collateral
+    _updateCollateral(daiId, newCollateral);
+
+    // USER1 supply dai into spoke1
+    deal(address(dai), USER1, daiAmount);
+    Utils.spokeSupply(vm, hub, spoke1, daiId, USER1, daiAmount, USER1);
+
+    vm.prank(USER1);
+    vm.expectEmit(address(spoke1));
+    emit UsingAsCollateral(daiId, USER1, usingAsCollateral);
+    ISpoke(spoke1).setUsingAsCollateral(daiId, usingAsCollateral);
+
+    Spoke.UserConfig memory userData = spoke1.getUser(daiId, USER1);
+    assertEq(userData.usingAsCollateral, usingAsCollateral, 'wrong usingAsCollateral');
   }
 
   function _updateCollateral(uint256 reserveId, bool newCollateral) internal {
-    (, , Spoke.ReserveConfig memory reserveConfig) = spoke1.reserves(reserveId);
-    reserveConfig.collateral = newCollateral;
-    spoke1.updateReserveConfig(reserveId, reserveConfig);
+    Spoke.Reserve memory reserveData = spoke1.getReserve(reserveId);
+    reserveData.config.collateral = newCollateral;
+    spoke1.updateReserveConfig(reserveId, reserveData.config);
   }
 }
