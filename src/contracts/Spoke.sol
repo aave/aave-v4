@@ -10,6 +10,8 @@ import {ISpoke} from '../interfaces/ISpoke.sol';
 import {IReserveInterestRateStrategy} from '../../src/interfaces/IReserveInterestRateStrategy.sol';
 import {DataTypes} from '../libraries/types/DataTypes.sol';
 
+import 'forge-std/console2.sol';
+
 contract Spoke is ISpoke {
   using WadRayMath for uint256;
   using SafeERC20 for IERC20;
@@ -45,9 +47,12 @@ contract Spoke is ISpoke {
   mapping(uint256 => mapping(address => UserConfig)) public users;
   // reserve id => reserveData
   mapping(uint256 => Reserve) public reserves;
+  uint256[] public reservesList; // assetIds
+  address public oracle;
 
-  constructor(address liquidityHubAddress) {
+  constructor(address liquidityHubAddress, address oracleAddress) {
     liquidityHub = liquidityHubAddress;
+    oracle = oracleAddress;
   }
 
   function getReserve(uint256 assetId) external view returns (Reserve memory) {
@@ -181,6 +186,21 @@ contract Spoke is ISpoke {
   function getHealthFactor(address user) external view returns (uint256) {
     // HF logic:
     // - iterate through a user's positions, calculate HF per user per spoke
+    uint256 totalCollateralValue;
+    uint256 i;
+    while (i < reservesList.length) {
+      uint256 reserveId = reservesList[i];
+      UserConfig memory u = users[reserveId][user];
+
+      if (u.usingAsCollateral) {
+        totalCollateralValue += ILiquidityHub(liquidityHub).convertSharesToAssetsDown(
+          reserveId,
+          u.supplyShares
+        );
+      }
+      i++;
+    }
+    console2.log('totalCollateralValue %e', totalCollateralValue);
   }
 
   function setUsingAsCollateral(uint256 reserveId, bool usingAsCollateral) external {
@@ -201,11 +221,16 @@ contract Spoke is ISpoke {
   // Governance
   // /////
 
-  function addReserve(uint256 assetId, ReserveConfig memory params, address asset) external {
+  function addReserve(uint256 reserveId, ReserveConfig memory params, address asset) external {
+    // TODO: validate assetId does not exist already
+    // require(reserves[reserveId].id == 0, 'RESERVE_ID_ALREADY_EXISTS');
+
     // TODO: AccessControl
-    reserves[assetId].id = assetId;
-    reserves[assetId].asset = asset;
-    reserves[assetId].config = ReserveConfig({
+    reservesList.push(reserveId);
+
+    reserves[reserveId].id = reserveId;
+    reserves[reserveId].asset = asset;
+    reserves[reserveId].config = ReserveConfig({
       lt: params.lt,
       lb: params.lb,
       borrowable: params.borrowable,

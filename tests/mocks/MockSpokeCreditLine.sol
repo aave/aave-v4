@@ -120,6 +120,10 @@ contract MockSpokeCreditLine is ISpoke {
     // intentionally left blank
   }
 
+  function getHealthFactor(address user) external view returns (uint256) {
+    // intentionally left blank
+  }
+
   function getInterestRate(uint256 assetId) public view returns (uint256) {
     // read from state, convert to ray
     return reserves[assetId].borrowRate * 1e23;

@@ -36,7 +36,7 @@ contract LiquidityHubHandler is Test {
     creditLineIRStrategy = new DefaultReserveInterestRateStrategy(mockAddressesProvider);
     oracle = new MockPriceOracle();
     hub = new LiquidityHub();
-    bm = new Spoke(address(hub));
+    bm = new Spoke(address(hub), address(oracle));
     usdc = new MockERC20();
     dai = new MockERC20();
     usdt = new MockERC20();

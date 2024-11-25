@@ -97,8 +97,8 @@ abstract contract BaseTest is Test, Events {
     creditLineIRStrategy = new DefaultReserveInterestRateStrategy(mockAddressesProvider);
     irStrategy = new DefaultReserveInterestRateStrategy(mockAddressesProvider);
     hub = new LiquidityHub();
-    spoke1 = new Spoke(address(hub));
-    spoke2 = new Spoke(address(hub));
+    spoke1 = new Spoke(address(hub), address(oracle));
+    spoke2 = new Spoke(address(hub), address(oracle));
     dai = new MockERC20();
     eth = new MockERC20();
     usdc = new MockERC20();

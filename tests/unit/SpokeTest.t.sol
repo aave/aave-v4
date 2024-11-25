@@ -338,6 +338,38 @@ contract SpokeTest is BaseTest {
     assertEq(userData.usingAsCollateral, usingAsCollateral, 'wrong usingAsCollateral');
   }
 
+  function test_getHealthFactor() public {
+    uint256 daiId = 0;
+    uint256 ethId = 1;
+    uint256 daiAmount = 100e18;
+    uint256 ethAmount = 10e18;
+    bool newCollateral = true;
+    bool usingAsCollateral = true;
+
+    // ensure DAI/ETH allowed as collateral
+    _updateCollateral(daiId, newCollateral);
+    _updateCollateral(ethId, newCollateral);
+
+    // USER1 supply dai into spoke1
+    deal(address(dai), USER1, daiAmount);
+    Utils.spokeSupply(vm, hub, spoke1, daiId, USER1, daiAmount, USER1);
+    _setUsingAsCollateral(USER1, daiId, true);
+
+    // USER1 supply eth into spoke1
+    deal(address(eth), USER1, ethAmount);
+    Utils.spokeSupply(vm, hub, spoke1, ethId, USER1, ethAmount, USER1);
+    _setUsingAsCollateral(USER1, ethId, true);
+
+    console2.log('expectedTotalCollateral: %e', daiAmount + ethAmount);
+
+    ISpoke(spoke1).getHealthFactor(USER1);
+  }
+
+  function _setUsingAsCollateral(address user, uint256 reserveId, bool usingAsCollateral) internal {
+    vm.prank(user);
+    ISpoke(spoke1).setUsingAsCollateral(reserveId, usingAsCollateral);
+  }
+
   function _updateCollateral(uint256 reserveId, bool newCollateral) internal {
     Spoke.Reserve memory reserveData = spoke1.getReserve(reserveId);
     reserveData.config.collateral = newCollateral;

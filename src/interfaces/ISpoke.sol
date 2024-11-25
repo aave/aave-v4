@@ -22,4 +22,5 @@ interface ISpoke {
   function withdraw(uint256 assetId, address to, uint256 amount) external;
   function supply(uint256 assetId, uint256 amount) external;
   function setUsingAsCollateral(uint256 reserveId, bool usingAsCollateral) external;
+  function getHealthFactor(address user) external view returns (uint256);
 }
