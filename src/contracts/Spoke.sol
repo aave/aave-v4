@@ -158,6 +158,11 @@ contract Spoke is ISpoke {
     emit Repaid(assetId, msg.sender, amount);
   }
 
+  function getHealthFactor(address user) external view returns (uint256) {
+    // HF logic:
+    // - iterate through a user's positions, calculate HF per user per spoke
+  }
+
   // TODO: Needed?
   function getInterestRate(uint256 assetId) public view returns (uint256) {
     // read from state, convert to ray
