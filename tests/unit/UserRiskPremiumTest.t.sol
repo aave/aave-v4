@@ -3,7 +3,7 @@ pragma solidity ^0.8.0;
 
 import '../BaseTest.t.sol';
 
-contract HealthFactorTest is BaseTest {
+contract UserRiskPremiumTest is BaseTest {
   using SharesMath for uint256;
   using WadRayMath for uint256;
   using PercentageMath for uint256;
@@ -141,13 +141,12 @@ contract HealthFactorTest is BaseTest {
     );
   }
 
-  function test_getHealthFactor_no_supplied() public view {
-    // without any supply/borrow, health factor should be max
-    uint256 healthFactor = ISpoke(spoke1).getHealthFactor(USER1);
-    assertEq(healthFactor, type(uint256).max, 'wrong health factor');
+  function test_getUserRiskPremium_no_supplied() public view {
+    uint256 userRiskPremium = ISpoke(spoke1).getUserRiskPremium(USER1);
+    assertEq(userRiskPremium, type(uint256).max, 'wrong user risk premium');
   }
 
-  function test_getHealthFactor_no_borrowed() public {
+  function test_getUserRiskPremium_single_asset_supplied() public {
     uint256 daiId = 0;
     uint256 daiAmount = 100e18;
     bool newCollateral = true;
@@ -161,28 +160,23 @@ contract HealthFactorTest is BaseTest {
     Utils.spokeSupply(vm, hub, spoke1, daiId, USER1, daiAmount, USER1);
     Utils.setUsingAsCollateral(vm, spoke1, USER1, daiId, usingAsCollateral);
 
-    uint256 healthFactor = ISpoke(spoke1).getHealthFactor(USER1);
-    assertEq(healthFactor, type(uint256).max, 'wrong health factor');
+    uint256 userRiskPremium = ISpoke(spoke1).getUserRiskPremium(USER1);
+    assertEq(userRiskPremium, 1, 'wrong user risk premium'); // TODO: fix when LP is implemented
   }
 
-  function test_getHealthFactor() public {
+  function test_getUserRiskPremium_multi_asset_supplied() public {
     uint256 daiId = 0;
     uint256 ethId = 1;
-    uint256 usdcId = 2;
-    uint256 daiAmount = 10_000e18; // 10k dai -> $10k
-    uint256 ethAmount = 10e18; // 10 eth -> $20k
-    // total collateral -> $30k
-    uint256 usdcBorrowAmount = 15_000e18; // 15k usdc -> $15k
+
+    uint256 daiAmount = 100e18;
+    uint256 ethAmount = 10e18;
+
     bool newCollateral = true;
     bool usingAsCollateral = true;
 
-    // ensure DAI/ETH allowed as collateral
+    // ensure DAI allowed as collateral
     Utils.updateCollateral(spoke1, daiId, newCollateral);
     Utils.updateCollateral(spoke1, ethId, newCollateral);
-
-    // set Lt to 100% for both assets
-    Utils.updateLiquidationThreshold(spoke1, daiId, 1e4);
-    Utils.updateLiquidationThreshold(spoke1, ethId, 1e4);
 
     // USER1 supply dai into spoke1
     deal(address(dai), USER1, daiAmount);
@@ -194,18 +188,11 @@ contract HealthFactorTest is BaseTest {
     Utils.spokeSupply(vm, hub, spoke1, ethId, USER1, ethAmount, USER1);
     Utils.setUsingAsCollateral(vm, spoke1, USER1, ethId, usingAsCollateral);
 
-    // USER2 supply usdc into spoke1
-    deal(address(usdc), USER2, usdcBorrowAmount);
-    Utils.spokeSupply(vm, hub, spoke1, usdcId, USER2, usdcBorrowAmount, USER2);
-
-    // USER1 borrow usdc
-    Utils.borrow(vm, spoke1, usdcId, USER1, usdcBorrowAmount, USER1);
-
-    uint256 healthFactor = ISpoke(spoke1).getHealthFactor(USER1);
-    assertEq(healthFactor, 2e18, 'wrong health factor');
+    uint256 userRiskPremium = ISpoke(spoke1).getUserRiskPremium(USER1);
+    assertEq(userRiskPremium, 1, 'wrong user risk premium'); // TODO: fix when LP is implemented
   }
 
-  function test_getHealthFactor_asset_price_changes() public {
+  function test_getUserRiskPremium_asset_price_changes() public {
     uint256 daiId = 0;
     uint256 ethId = 1;
     uint256 usdcId = 2;
@@ -214,9 +201,6 @@ contract HealthFactorTest is BaseTest {
     uint256 daiAmount = 10_000e18; // 10k dai -> $10k
     uint256 ethAmount = 10e18; // 10 eth -> $20k
     // total collateral -> $30k
-    uint256 usdcBorrowAmount = 15_000e18; // 15k usdc -> $15k
-    uint256 wbtcBorrowAmount = 0.5e18; // 0.5 wbtc -> $25k
-    // total borrowed -> $40k
     bool newCollateral = true;
     bool usingAsCollateral = true;
 
@@ -234,46 +218,28 @@ contract HealthFactorTest is BaseTest {
     Utils.spokeSupply(vm, hub, spoke1, ethId, USER1, ethAmount, USER1);
     Utils.setUsingAsCollateral(vm, spoke1, USER1, ethId, usingAsCollateral);
 
-    // USER2 supply usdc into spoke1
-    deal(address(usdc), USER2, usdcBorrowAmount);
-    Utils.spokeSupply(vm, hub, spoke1, usdcId, USER2, usdcBorrowAmount, USER2);
-
-    // USER2 supply wbtc into spoke1
-    deal(address(wbtc), USER2, wbtcBorrowAmount);
-    Utils.spokeSupply(vm, hub, spoke1, wbtcId, USER2, wbtcBorrowAmount, USER2);
-
-    // USER1 borrow usdc
-    Utils.borrow(vm, spoke1, usdcId, USER1, usdcBorrowAmount, USER1);
-
-    // USER1 borrow wbtc
-    Utils.borrow(vm, spoke1, wbtcId, USER1, wbtcBorrowAmount, USER1);
-
     uint256[] memory assetIds = new uint256[](4);
     assetIds[0] = daiId;
     assetIds[1] = ethId;
-    assetIds[2] = usdcId;
-    assetIds[3] = wbtcId;
 
-    // initial health factor
-    uint256 healthFactor = ISpoke(spoke1).getHealthFactor(USER1);
-    uint256 expectedHealthFactor = _calculateHealthFactor(assetIds);
-    assertEq(healthFactor, expectedHealthFactor, 'wrong initial health factor');
+    // initial user risk premium
+    uint256 userRiskPremium = ISpoke(spoke1).getUserRiskPremium(USER1);
+    uint256 expectedUserRiskPremium = _calculateUserRiskPremium(assetIds);
+    assertEq(userRiskPremium, expectedUserRiskPremium, 'wrong expected user risk premium');
 
     // prices change for supplied eth
+    MockPriceOracle(address(oracle)).setAssetPrice(daiId, 2e8);
     MockPriceOracle(address(oracle)).setAssetPrice(ethId, 4000e8);
-    // prices change for borrowed wbtc
-    MockPriceOracle(address(oracle)).setAssetPrice(wbtcId, 70_000e8);
 
-    // updated health factor
-    healthFactor = ISpoke(spoke1).getHealthFactor(USER1);
-    expectedHealthFactor = _calculateHealthFactor(assetIds);
-    assertEq(healthFactor, expectedHealthFactor, 'wrong final health factor');
+    // initial user risk premium
+    userRiskPremium = ISpoke(spoke1).getUserRiskPremium(USER1);
+    expectedUserRiskPremium = _calculateUserRiskPremium(assetIds);
+    assertEq(userRiskPremium, expectedUserRiskPremium, 'wrong expected user risk premium');
   }
 
-  function _calculateHealthFactor(uint256[] memory assetIds) internal view returns (uint256) {
+  function _calculateUserRiskPremium(uint256[] memory assetIds) internal view returns (uint256) {
     uint256 totalCollateral = 0;
-    uint256 totalDebt = 0;
-    uint256 avgLiquidationThreshold = 0;
+    uint256 userRiskPremium = 0;
     for (uint256 i = 0; i < assetIds.length; i++) {
       uint256 assetId = assetIds[i];
       Spoke.Reserve memory reserve = spoke1.getReserve(assetId);
@@ -282,15 +248,10 @@ contract HealthFactorTest is BaseTest {
       uint256 assetPrice = MockPriceOracle(address(oracle)).getAssetPrice(assetId);
       uint256 userCollateral = hub.convertSharesToAssetsDown(assetId, userConfig.supplyShares) *
         assetPrice;
+      uint256 liquidityPremium = 1; // TODO: get LP from LH
+      userRiskPremium += userCollateral * liquidityPremium;
       totalCollateral += userCollateral;
-      totalDebt += hub.convertSharesToAssetsDown(assetId, userConfig.debtShares) * assetPrice;
-
-      avgLiquidationThreshold += userCollateral * reserve.config.lt;
     }
-    avgLiquidationThreshold = totalCollateral != 0 ? avgLiquidationThreshold / totalCollateral : 0;
-    return
-      totalDebt == 0
-        ? type(uint256).max
-        : (totalCollateral.percentMul(avgLiquidationThreshold)).wadDiv(totalDebt);
+    return totalCollateral != 0 ? userRiskPremium / totalCollateral : 0;
   }
 }

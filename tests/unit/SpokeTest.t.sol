@@ -447,6 +447,4 @@ contract SpokeTest is BaseTest {
     Spoke.UserConfig memory userData = spoke1.getUser(daiId, USER1);
     assertEq(userData.usingAsCollateral, usingAsCollateral, 'wrong usingAsCollateral');
   }
-
-  // TODO: tests for getUserRiskPremium
 }
