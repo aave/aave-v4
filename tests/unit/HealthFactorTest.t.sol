@@ -165,7 +165,7 @@ contract HealthFactorTest is BaseTest {
     assertEq(healthFactor, type(uint256).max, 'wrong health factor');
   }
 
-  function test_getHealthFactor() public {
+  function test_getHealthFactor_single_borrowed_asset() public {
     uint256 daiId = 0;
     uint256 ethId = 1;
     uint256 usdcId = 2;
@@ -205,7 +205,7 @@ contract HealthFactorTest is BaseTest {
     assertEq(healthFactor, 2e18, 'wrong health factor');
   }
 
-  function test_getHealthFactor_asset_price_changes() public {
+  function test_getHealthFactor_multi_asset_price_changes() public {
     uint256 daiId = 0;
     uint256 ethId = 1;
     uint256 usdcId = 2;
@@ -259,9 +259,11 @@ contract HealthFactorTest is BaseTest {
     uint256 expectedHealthFactor = _calculateHealthFactor(assetIds);
     assertEq(healthFactor, expectedHealthFactor, 'wrong initial health factor');
 
-    // prices change for supplied eth
+    // prices change for supplied assets
+    MockPriceOracle(address(oracle)).setAssetPrice(daiId, 2e8);
     MockPriceOracle(address(oracle)).setAssetPrice(ethId, 4000e8);
-    // prices change for borrowed wbtc
+    // prices change for borrowed assets
+    MockPriceOracle(address(oracle)).setAssetPrice(usdcId, 3e8);
     MockPriceOracle(address(oracle)).setAssetPrice(wbtcId, 70_000e8);
 
     // updated health factor
