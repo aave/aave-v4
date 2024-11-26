@@ -141,7 +141,7 @@ contract HealthFactorTest is BaseTest {
     );
   }
 
-  function test_getHealthFactor() public {
+  function test_getHealthFactor_price_changes() public {
     uint256 daiId = 0;
     uint256 ethId = 1;
     uint256 usdcId = 2;
@@ -184,15 +184,15 @@ contract HealthFactorTest is BaseTest {
     // USER1 borrow wbtc
     Utils.borrow(vm, spoke1, wbtcId, USER1, wbtcBorrowAmount, USER1);
 
-    uint256 healthFactor = ISpoke(spoke1).getHealthFactor(USER1);
-
     uint256[] memory assetIds = new uint256[](4);
     assetIds[0] = daiId;
     assetIds[1] = ethId;
     assetIds[2] = usdcId;
     assetIds[3] = wbtcId;
-    uint256 expectedHealthFactor = _calculateHealthFactor(assetIds);
 
+    // initial health factor
+    uint256 healthFactor = ISpoke(spoke1).getHealthFactor(USER1);
+    uint256 expectedHealthFactor = _calculateHealthFactor(assetIds);
     assertEq(healthFactor, expectedHealthFactor);
 
     // prices change for supplied eth
@@ -200,6 +200,7 @@ contract HealthFactorTest is BaseTest {
     // prices change for borrowed wbtc
     MockPriceOracle(address(oracle)).setAssetPrice(wbtcId, 70_000e8);
 
+    // updated health factor
     healthFactor = ISpoke(spoke1).getHealthFactor(USER1);
     expectedHealthFactor = _calculateHealthFactor(assetIds);
     assertEq(healthFactor, expectedHealthFactor);
