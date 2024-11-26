@@ -163,12 +163,12 @@ contract HealthFactorTest is BaseTest {
     // USER1 supply dai into spoke1
     deal(address(dai), USER1, daiAmount);
     Utils.spokeSupply(vm, hub, spoke1, daiId, USER1, daiAmount, USER1);
-    Utils.setUsingAsCollateral(vm, spoke1, USER1, daiId, true);
+    Utils.setUsingAsCollateral(vm, spoke1, USER1, daiId, usingAsCollateral);
 
     // USER1 supply eth into spoke1
     deal(address(eth), USER1, ethAmount);
     Utils.spokeSupply(vm, hub, spoke1, ethId, USER1, ethAmount, USER1);
-    Utils.setUsingAsCollateral(vm, spoke1, USER1, ethId, true);
+    Utils.setUsingAsCollateral(vm, spoke1, USER1, ethId, usingAsCollateral);
 
     // USER2 supply usdc into spoke1
     deal(address(usdc), USER2, usdcBorrowAmount);
