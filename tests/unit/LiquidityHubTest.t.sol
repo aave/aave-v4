@@ -747,11 +747,38 @@ contract LiquidityHubTest is BaseTest {
 
     _updateActive(daiId, false);
 
-    // spoke1 restore half of drawn dai liquidity
+    // spoke1 restore all of drawn dai liquidity
     vm.startPrank(address(spoke1));
     IERC20(address(dai)).transfer(address(hub), drawAmount);
     vm.expectRevert(TestErrors.ASSET_NOT_ACTIVE);
     ILiquidityHub(address(hub)).restore(daiId, drawAmount, 0);
+    vm.stopPrank();
+  }
+
+  function test_revert_restore_invalid_restore_amount() public {
+    uint256 daiId = 0;
+    uint256 ethId = 1;
+    uint256 daiAmount = 100e18;
+    uint256 ethAmount = 10e18;
+
+    uint256 drawAmount = daiAmount / 2;
+
+    // spoke1 supply eth
+    deal(address(eth), address(spoke1), ethAmount);
+    Utils.supply(vm, hub, ethId, address(spoke1), ethAmount, address(spoke1));
+
+    // spoke2 supply dai
+    deal(address(dai), address(spoke2), daiAmount);
+    Utils.supply(vm, hub, daiId, address(spoke2), daiAmount, address(spoke2));
+
+    // spoke1 draw half of dai reserve liquidity
+    Utils.draw(vm, hub, daiId, address(spoke1), drawAmount, address(spoke1));
+
+    // spoke1 restore invalid amount > drawn amount
+    vm.startPrank(address(spoke1));
+    IERC20(address(dai)).transfer(address(hub), drawAmount);
+    vm.expectRevert(TestErrors.INVALID_RESTORE_AMOUNT);
+    ILiquidityHub(address(hub)).restore(daiId, drawAmount + 1, 0);
     vm.stopPrank();
   }
 
