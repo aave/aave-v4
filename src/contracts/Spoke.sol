@@ -338,12 +338,10 @@ contract Spoke is ISpoke {
         vars.userRiskPremium += vars.userCollateralInBaseCurrency * vars.liquidityPremium;
       }
 
-      if (_borrowing(vars.assetId, user)) {
-        vars.totalDebtInBaseCurrency += u.debtShares > 0
-          ? vars.assetPrice *
-            ILiquidityHub(liquidityHub).convertSharesToAssetsUp(vars.assetId, u.debtShares)
-          : 0;
-      }
+      vars.totalDebtInBaseCurrency += u.debtShares > 0
+        ? vars.assetPrice *
+          ILiquidityHub(liquidityHub).convertSharesToAssetsUp(vars.assetId, u.debtShares)
+        : 0;
 
       vars.i++;
     }
