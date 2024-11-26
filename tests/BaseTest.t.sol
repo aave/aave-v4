@@ -70,6 +70,7 @@ library TestErrors {
   bytes constant RESERVE_NOT_COLLATERAL = 'RESERVE_NOT_COLLATERAL';
   bytes constant NO_SUPPLY = 'NO_SUPPLY';
   bytes constant REPAY_EXCEEDS_DEBT = 'REPAY_EXCEEDS_DEBT';
+  bytes constant RESERVE_NOT_LISTED = 'RESERVE_NOT_LISTED';
 }
 
 abstract contract BaseTest is Test, Events {

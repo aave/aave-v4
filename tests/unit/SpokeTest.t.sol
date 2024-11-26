@@ -122,6 +122,15 @@ contract SpokeTest is BaseTest {
     );
   }
 
+  function test_revert_ReserveNotListed_supply() public {
+    uint256 assetId = 5; // invalid assetId
+    uint256 amount = 100e18;
+
+    vm.prank(USER1);
+    vm.expectRevert(TestErrors.RESERVE_NOT_LISTED);
+    spoke1.supply(assetId, amount);
+  }
+
   function test_supply() public {
     uint256 assetId = 0; // TODO: Add getter of asset id based on address
     uint256 amount = 100e18;
