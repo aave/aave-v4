@@ -23,6 +23,7 @@ library Utils {
       Spoke(spokes[i]).addReserve(assetId, reserveConfigs[i], asset);
     }
   }
+
   function supply(
     Vm vm,
     LiquidityHub hub,
@@ -65,6 +66,19 @@ library Utils {
     vm.stopPrank();
   }
 
+  function borrow(
+    Vm vm,
+    Spoke spoke,
+    uint256 assetId,
+    address user,
+    uint256 amount,
+    address onBehalfOf
+  ) internal {
+    vm.startPrank(user);
+    spoke.borrow(assetId, user, amount);
+    vm.stopPrank();
+  }
+
   // spoke
   function spokeSupply(
     Vm vm,
@@ -81,21 +95,6 @@ library Utils {
     spoke.supply(assetId, amount);
     vm.stopPrank();
   }
-
-  function borrow(
-    Vm vm,
-    Spoke spoke,
-    uint256 assetId,
-    address user,
-    uint256 amount,
-    address onBehalfOf
-  ) internal {
-    vm.startPrank(user);
-    spoke.borrow(assetId, user, amount);
-    vm.stopPrank();
-  }
-
-  // spoke
   function setUsingAsCollateral(
     Vm vm,
     Spoke spoke,

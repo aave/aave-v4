@@ -100,6 +100,27 @@ contract LiquidityHubTest is BaseTest {
     vm.warp(block.timestamp + 20);
   }
 
+  function test_revert_supply_asset_not_active() public {
+    uint256 daiId = 0;
+    uint256 amount = 100e18;
+
+    _updateActive(daiId, false);
+
+    vm.prank(address(spoke1));
+    vm.expectRevert(TestErrors.ASSET_NOT_ACTIVE);
+    hub.supply(daiId, amount, 0);
+  }
+
+  function test_revert_supply_supply_cap_exceeded() public {
+    uint256 daiId = 0;
+    uint256 amount = 100e18;
+    _updateSupplyCap(daiId, address(spoke1), amount - 1);
+
+    vm.prank(address(spoke1));
+    vm.expectRevert(TestErrors.SUPPLY_CAP_EXCEEDED);
+    hub.supply(daiId, amount, 0);
+  }
+
   function test_first_supply() public {
     uint256 assetId = 0; // TODO: Add getter of asset id based on address
     uint256 amount = 100e18;
@@ -836,6 +857,12 @@ contract LiquidityHubTest is BaseTest {
   function _updateDrawCap(uint256 assetId, address spoke, uint256 newDrawCap) internal {
     DataTypes.SpokeConfig memory spokeConfig = hub.getSpokeConfig(assetId, spoke);
     spokeConfig.drawCap = newDrawCap;
+    hub.updateSpokeConfig(assetId, spoke, spokeConfig);
+  }
+
+  function _updateSupplyCap(uint256 assetId, address spoke, uint256 newSupplyCap) internal {
+    DataTypes.SpokeConfig memory spokeConfig = hub.getSpokeConfig(assetId, spoke);
+    spokeConfig.supplyCap = newSupplyCap;
     hub.updateSpokeConfig(assetId, spoke, spokeConfig);
   }
 }

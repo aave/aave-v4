@@ -56,6 +56,7 @@ contract Events {
 
 library TestErrors {
   // Aave
+  // LiquidityHub
   bytes constant NOT_AVAILABLE_LIQUIDITY = 'NOT_AVAILABLE_LIQUIDITY';
   bytes constant ASSET_NOT_ACTIVE = 'ASSET_NOT_ACTIVE';
   bytes constant ASSET_NOT_LISTED = 'ASSET_NOT_LISTED';
@@ -68,6 +69,7 @@ library TestErrors {
   bytes constant INVALID_RESERVE = 'INVALID_RESERVE';
   bytes constant INVALID_SPOKE = 'INVALID_SPOKE';
   bytes constant RESERVE_NOT_COLLATERAL = 'RESERVE_NOT_COLLATERAL';
+  // Spoke
   bytes constant NO_SUPPLY = 'NO_SUPPLY';
   bytes constant REPAY_EXCEEDS_DEBT = 'REPAY_EXCEEDS_DEBT';
   bytes constant RESERVE_NOT_LISTED = 'RESERVE_NOT_LISTED';

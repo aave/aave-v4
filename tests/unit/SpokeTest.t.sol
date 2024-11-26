@@ -122,7 +122,7 @@ contract SpokeTest is BaseTest {
     );
   }
 
-  function test_revert_ReserveNotListed_supply() public {
+  function test_revert_supply_reserve_not_listed() public {
     uint256 assetId = 5; // invalid assetId
     uint256 amount = 100e18;
 
@@ -165,7 +165,7 @@ contract SpokeTest is BaseTest {
     assertEq(userData.debtShares, 0, 'wrong user debt shares');
   }
 
-  function test_revert_ReserveNotBorrowable_borrow() public {
+  function test_revert_borrow_reserve_not_borrowable() public {
     uint256 daiId = 0;
     uint256 ethId = 1;
     uint256 daiAmount = 100e18;
@@ -284,7 +284,7 @@ contract SpokeTest is BaseTest {
     assertEq(user1Data.debtShares, 0, 'wrong user debt shares post-withdraw');
   }
 
-  function test_revert_RepayExceedsDebt_repay() public {
+  function test_revert_repay_repay_exceeds_debt() public {
     uint256 daiId = 0;
     uint256 ethId = 1;
     uint256 daiAmount = 100e18;
@@ -404,7 +404,7 @@ contract SpokeTest is BaseTest {
     assertEq(reserveData.config.collateral, newReserveConfig.collateral, 'wrong collateral');
   }
 
-  function test_revert_ReserveNotCollateral_setUsingAsCollateral() public {
+  function test_revert_setUsingAsCollateral_reserve_not_collateral() public {
     uint256 daiId = 0;
     bool newCollateral = false;
     bool usingAsCollateral = true;
@@ -415,7 +415,7 @@ contract SpokeTest is BaseTest {
     ISpoke(spoke1).setUsingAsCollateral(daiId, usingAsCollateral);
   }
 
-  function test_revert_NoSupply_setUsingAsCollateral() public {
+  function test_revert_setUsingAsCollateral_no_supply() public {
     uint256 daiId = 0;
     bool newCollateral = true;
     bool usingAsCollateral = true;
@@ -450,12 +450,12 @@ contract SpokeTest is BaseTest {
     assertEq(userData.usingAsCollateral, usingAsCollateral, 'wrong usingAsCollateral');
   }
 
-  function test_getHealthFactor_noSupplied() public {
+  function test_getHealthFactor_no_supplied() public {
     uint256 healthFactor = ISpoke(spoke1).getHealthFactor(USER1);
     assertEq(healthFactor, type(uint256).max, 'wrong health factor');
   }
 
-  function test_getHealthFactor_noBorrowed() public {
+  function test_getHealthFactor_no_borrowed() public {
     uint256 daiId = 0;
     uint256 daiAmount = 100e18;
     bool newCollateral = true;
@@ -473,7 +473,7 @@ contract SpokeTest is BaseTest {
     assertEq(healthFactor, type(uint256).max, 'wrong health factor');
   }
 
-  function test_getHealthFactorGt1() public {
+  function test_getHealthFactor_gt1() public {
     uint256 daiId = 0;
     uint256 ethId = 1;
     uint256 usdcId = 2;
@@ -508,7 +508,7 @@ contract SpokeTest is BaseTest {
     assertGt(healthFactor, 1e18, 'wrong health factor');
   }
 
-  function test_getHealthFactorExact() public {
+  function test_getHealthFactor_exact() public {
     uint256 daiId = 0;
     uint256 ethId = 1;
     uint256 usdcId = 2;
