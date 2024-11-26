@@ -6,9 +6,9 @@ interface ISpoke {
   event Repaid(uint256 indexed assetId, address indexed user, uint256 amount);
   event Supplied(uint256 indexed assetId, address indexed user, uint256 amount);
   event Withdrawn(uint256 indexed assetId, address indexed user, uint256 amount);
-  event UsingAsCollateral(uint256 indexed reserveId, address indexed user, bool usingAsCollateral);
+  event UsingAsCollateral(uint256 indexed assetId, address indexed user, bool usingAsCollateral);
   event ReserveConfigUpdated(
-    uint256 indexed reserveId,
+    uint256 indexed assetId,
     uint256 lt,
     uint256 lb,
     bool borrowable,
@@ -21,7 +21,7 @@ interface ISpoke {
   function repay(uint256 assetId, uint256 amount) external;
   function withdraw(uint256 assetId, address to, uint256 amount) external;
   function supply(uint256 assetId, uint256 amount) external;
-  function setUsingAsCollateral(uint256 reserveId, bool usingAsCollateral) external;
+  function setUsingAsCollateral(uint256 assetId, bool usingAsCollateral) external;
   function getHealthFactor(address user) external view returns (uint256);
   function getUserRiskPremium(address user) external view returns (uint256);
 }

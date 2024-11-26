@@ -16,7 +16,7 @@ contract DefaultReserveInterestRateStrategyTest is Test {
   );
 
   address mockAddressesProvider = makeAddr('mockAddressesProvider');
-  uint256 mockReserveAddress = uint256(keccak256('mockReserveId'));
+  uint256 mockReserveAddress = uint256(keccak256('mockassetId'));
 
   uint256 testNumber;
   DefaultReserveInterestRateStrategy public rateStrategy;

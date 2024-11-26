@@ -108,7 +108,7 @@ contract MockSpokeCreditLine is ISpoke {
     emit Repaid(assetId, msg.sender, amount);
   }
 
-  function setUsingAsCollateral(uint256 reserveId, bool usingAsCollateral) external {
+  function setUsingAsCollateral(uint256 assetId, bool usingAsCollateral) external {
     // intentionally left blank
   }
 

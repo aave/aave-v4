@@ -100,27 +100,22 @@ library Utils {
     Vm vm,
     Spoke spoke,
     address user,
-    uint256 reserveId,
+    uint256 assetId,
     bool usingAsCollateral
   ) internal {
     vm.prank(user);
-    ISpoke(spoke).setUsingAsCollateral(reserveId, usingAsCollateral);
+    ISpoke(spoke).setUsingAsCollateral(assetId, usingAsCollateral);
   }
 
-  function updateLiquidationThreshold(
-    Vm vm,
-    Spoke spoke,
-    uint256 reserveId,
-    uint256 newLt
-  ) internal {
-    Spoke.Reserve memory reserveData = spoke.getReserve(reserveId);
+  function updateLiquidationThreshold(Vm vm, Spoke spoke, uint256 assetId, uint256 newLt) internal {
+    Spoke.Reserve memory reserveData = spoke.getReserve(assetId);
     reserveData.config.lt = newLt;
-    Spoke(spoke).updateReserveConfig(reserveId, reserveData.config);
+    Spoke(spoke).updateReserveConfig(assetId, reserveData.config);
   }
 
-  function updateCollateral(Vm vm, Spoke spoke, uint256 reserveId, bool newCollateral) internal {
-    Spoke.Reserve memory reserveData = spoke.getReserve(reserveId);
+  function updateCollateral(Vm vm, Spoke spoke, uint256 assetId, bool newCollateral) internal {
+    Spoke.Reserve memory reserveData = spoke.getReserve(assetId);
     reserveData.config.collateral = newCollateral;
-    Spoke(spoke).updateReserveConfig(reserveId, reserveData.config);
+    Spoke(spoke).updateReserveConfig(assetId, reserveData.config);
   }
 }

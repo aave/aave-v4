@@ -58,16 +58,6 @@ contract Spoke is ISpoke {
     oracle = oracleAddress;
   }
 
-  function getReserve(uint256 assetId) external view returns (Reserve memory) {
-    return reserves[assetId];
-  }
-
-  function getUser(uint256 assetId, address user) external view returns (UserConfig memory) {
-    UserConfig memory u = users[assetId][user];
-
-    return u;
-  }
-
   function getUserDebt(uint256 assetId, address user) external view returns (uint256) {
     UserConfig memory u = users[assetId][user];
     // TODO: Instead use a getter from liquidity hub to get up-to-date user debt (with accrued debt)
@@ -89,22 +79,16 @@ contract Spoke is ISpoke {
   }
 
   /// governance
-  function updateReserveConfig(uint256 reserveId, ReserveConfig calldata params) external {
+  function updateReserveConfig(uint256 assetId, ReserveConfig calldata params) external {
     // TODO: AccessControl
-    reserves[reserveId].config = ReserveConfig({
+    reserves[assetId].config = ReserveConfig({
       lt: params.lt,
       lb: params.lb,
       borrowable: params.borrowable,
       collateral: params.collateral
     });
 
-    emit ReserveConfigUpdated(
-      reserveId,
-      params.lt,
-      params.lb,
-      params.borrowable,
-      params.collateral
-    );
+    emit ReserveConfigUpdated(assetId, params.lt, params.lb, params.borrowable, params.collateral);
   }
 
   // /////
@@ -196,11 +180,11 @@ contract Spoke is ISpoke {
     return healthFactor;
   }
 
-  function setUsingAsCollateral(uint256 reserveId, bool usingAsCollateral) external {
-    _validateSetUsingAsCollateral(reserveId, msg.sender);
-    users[reserveId][msg.sender].usingAsCollateral = usingAsCollateral;
+  function setUsingAsCollateral(uint256 assetId, bool usingAsCollateral) external {
+    _validateSetUsingAsCollateral(assetId, msg.sender);
+    users[assetId][msg.sender].usingAsCollateral = usingAsCollateral;
 
-    emit UsingAsCollateral(reserveId, msg.sender, usingAsCollateral);
+    emit UsingAsCollateral(assetId, msg.sender, usingAsCollateral);
   }
 
   // TODO: Needed?
@@ -214,16 +198,16 @@ contract Spoke is ISpoke {
   // Governance
   // /////
 
-  function addReserve(uint256 reserveId, ReserveConfig memory params, address asset) external {
+  function addReserve(uint256 assetId, ReserveConfig memory params, address asset) external {
     // TODO: validate assetId does not exist already
-    // require(reserves[reserveId].id == 0, 'RESERVE_ID_ALREADY_EXISTS');
+    // require(reserves[assetId].id == 0, 'RESERVE_ID_ALREADY_EXISTS');
 
     // TODO: AccessControl
-    reservesList.push(reserveId);
+    reservesList.push(assetId);
 
-    reserves[reserveId].id = reserveId;
-    reserves[reserveId].asset = asset;
-    reserves[reserveId].config = ReserveConfig({
+    reserves[assetId].id = assetId;
+    reserves[assetId].asset = asset;
+    reserves[assetId].config = ReserveConfig({
       lt: params.lt,
       lb: params.lb,
       borrowable: params.borrowable,
@@ -243,6 +227,17 @@ contract Spoke is ISpoke {
     });
   }
 
+  // public
+  function getReserve(uint256 assetId) public view returns (Reserve memory) {
+    return reserves[assetId];
+  }
+
+  function getUser(uint256 assetId, address user) public view returns (UserConfig memory) {
+    UserConfig memory u = users[assetId][user];
+    return u;
+  }
+
+  // internal
   function _validateSupply(Reserve storage reserve, uint256 amount) internal view {
     // TODO: Decide where supply cap is checked
     require(reserve.asset != address(0), 'RESERVE_NOT_LISTED');
@@ -262,6 +257,7 @@ contract Spoke is ISpoke {
 
   function _validateBorrow(Reserve storage reserve, uint256 amount) internal view {
     require(reserve.config.borrowable, 'RESERVE_NOT_BORROWABLE');
+    // TODO: validation on HF to allow borrowing amount
   }
 
   function _validateRepay(uint256 assetId, UserConfig storage user, uint256 amount) internal view {
@@ -285,20 +281,20 @@ contract Spoke is ISpoke {
     return (newUserRiskPremium, newAggregatedRiskPremium);
   }
 
-  function _validateSetUsingAsCollateral(uint256 reserveId, address user) internal view {
-    require(reserves[reserveId].config.collateral, 'RESERVE_NOT_COLLATERAL');
-    require(users[reserveId][user].supplyShares > 0, 'NO_SUPPLY');
+  function _validateSetUsingAsCollateral(uint256 assetId, address user) internal view {
+    require(reserves[assetId].config.collateral, 'RESERVE_NOT_COLLATERAL');
+    require(users[assetId][user].supplyShares > 0, 'NO_SUPPLY');
   }
 
   function _usingAsCollateralOrBorrowing(
-    uint256 reserveId,
+    uint256 assetId,
     address user
   ) internal view returns (bool) {
-    return _usingAsCollateral(reserveId, user) || users[reserveId][user].debtShares > 0;
+    return _usingAsCollateral(assetId, user) || users[assetId][user].debtShares > 0;
   }
 
-  function _usingAsCollateral(uint256 reserveId, address user) internal view returns (bool) {
-    return users[reserveId][user].usingAsCollateral;
+  function _usingAsCollateral(uint256 assetId, address user) internal view returns (bool) {
+    return users[assetId][user].usingAsCollateral;
   }
 
   function _calculateUserAccountData(
@@ -311,31 +307,32 @@ contract Spoke is ISpoke {
     uint256 avgLiquidationThreshold;
     uint256 i;
     while (i < reservesList.length) {
-      uint256 reserveId = reservesList[i];
-      if (!_usingAsCollateralOrBorrowing(reserveId, user)) {
+      uint256 assetId = reservesList[i];
+      if (!_usingAsCollateralOrBorrowing(assetId, user)) {
         i++;
         continue;
       }
 
-      UserConfig memory u = users[reserveId][user];
-      Reserve memory r = reserves[reserveId];
+      UserConfig memory u = getUser(assetId, user);
+      Reserve memory r = getReserve(assetId);
 
-      uint256 userCollateralInBaseCurrency = IPriceOracle(oracle).getAssetPrice(reserveId) *
-        ILiquidityHub(liquidityHub).convertSharesToAssetsDown(reserveId, u.supplyShares);
+      uint256 assetPrice = IPriceOracle(oracle).getAssetPrice(assetId);
+
+      uint256 userCollateralInBaseCurrency = assetPrice *
+        ILiquidityHub(liquidityHub).convertSharesToAssetsDown(assetId, u.supplyShares);
 
       totalCollateralInBaseCurrency += userCollateralInBaseCurrency;
       avgLiquidationThreshold += userCollateralInBaseCurrency * r.config.lt;
 
-      // console2.log('reserveId: %d, lt: %e', reserveId, r.config.lt);
+      // console2.log('assetId: %d, lt: %e', assetId, r.config.lt);
       // console2.log(
       //   'borrowing %d, %e, %e',
-      //   reserveId,
+      //   assetId,
       //   u.debtShares,
-      //   IPriceOracle(oracle).getAssetPrice(reserveId)
+      //   IPriceOracle(oracle).getAssetPrice(assetId)
       // );
       totalDebtInBaseCurrency += u.debtShares > 0
-        ? IPriceOracle(oracle).getAssetPrice(reserveId) *
-          ILiquidityHub(liquidityHub).convertSharesToAssetsUp(reserveId, u.debtShares)
+        ? assetPrice * ILiquidityHub(liquidityHub).convertSharesToAssetsUp(assetId, u.debtShares)
         : 0;
       i++;
     }

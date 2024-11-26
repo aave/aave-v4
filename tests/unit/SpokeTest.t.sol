@@ -68,7 +68,7 @@ contract SpokeTest is BaseTest {
     MockPriceOracle(address(oracle)).setAssetPrice(ethAssetId, 2000e8);
 
     // Add USDC
-    uint256 usdcAssetId = 2;
+    uint256 usdcId = 2;
 
     reserveConfigs[0] = Spoke.ReserveConfig({
       lt: 0.78e4,
@@ -91,7 +91,7 @@ contract SpokeTest is BaseTest {
       spokeConfigs,
       reserveConfigs
     );
-    MockPriceOracle(address(oracle)).setAssetPrice(usdcAssetId, 1e8);
+    MockPriceOracle(address(oracle)).setAssetPrice(usdcId, 1e8);
 
     irStrategy.setInterestRateParams(
       daiAssetId,
@@ -112,7 +112,7 @@ contract SpokeTest is BaseTest {
       })
     );
     irStrategy.setInterestRateParams(
-      usdcAssetId,
+      usdcId,
       IDefaultInterestRateStrategy.InterestRateData({
         optimalUsageRatio: 9000, // 90.00%
         baseVariableBorrowRate: 500, // 5.00%
@@ -416,7 +416,7 @@ contract SpokeTest is BaseTest {
   function test_getHealthFactorGt1() public {
     uint256 daiId = 0;
     uint256 ethId = 1;
-    uint256 usdcAssetId = 2;
+    uint256 usdcId = 2;
     uint256 daiAmount = 100e18;
     uint256 ethAmount = 10e18;
     uint256 usdcBorrowAmount = 150e18; // guaranteed HF > 1
@@ -439,10 +439,10 @@ contract SpokeTest is BaseTest {
 
     // USER2 supply usdc into spoke1
     deal(address(usdc), USER2, usdcBorrowAmount);
-    Utils.spokeSupply(vm, hub, spoke1, usdcAssetId, USER2, usdcBorrowAmount, USER2);
+    Utils.spokeSupply(vm, hub, spoke1, usdcId, USER2, usdcBorrowAmount, USER2);
 
     // USER1 borrow usdc
-    Utils.borrow(vm, spoke1, usdcAssetId, USER1, usdcBorrowAmount, USER1);
+    Utils.borrow(vm, spoke1, usdcId, USER1, usdcBorrowAmount, USER1);
 
     uint256 healthFactor = ISpoke(spoke1).getHealthFactor(USER1);
     assertGt(healthFactor, 1e18, 'wrong health factor');
@@ -451,7 +451,7 @@ contract SpokeTest is BaseTest {
   function test_getHealthFactorExact() public {
     uint256 daiId = 0;
     uint256 ethId = 1;
-    uint256 usdcAssetId = 2;
+    uint256 usdcId = 2;
     uint256 daiAmount = 10_000e18; // 10k dai -> $10k
     uint256 ethAmount = 10e18; // 10 eth -> $20k
     // total collateral -> $30k
@@ -479,10 +479,10 @@ contract SpokeTest is BaseTest {
 
     // USER2 supply usdc into spoke1
     deal(address(usdc), USER2, usdcBorrowAmount);
-    Utils.spokeSupply(vm, hub, spoke1, usdcAssetId, USER2, usdcBorrowAmount, USER2);
+    Utils.spokeSupply(vm, hub, spoke1, usdcId, USER2, usdcBorrowAmount, USER2);
 
     // USER1 borrow usdc
-    Utils.borrow(vm, spoke1, usdcAssetId, USER1, usdcBorrowAmount, USER1);
+    Utils.borrow(vm, spoke1, usdcId, USER1, usdcBorrowAmount, USER1);
 
     uint256 healthFactor = ISpoke(spoke1).getHealthFactor(USER1);
     assertEq(healthFactor, 2e18, 'wrong health factor');

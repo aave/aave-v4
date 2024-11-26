@@ -5,6 +5,7 @@ import {IPriceOracle} from 'src/interfaces/IPriceOracle.sol';
 
 contract MockPriceOracle is IPriceOracle {
   // Map of asset prices (assetId => price)
+  // TODO: update to assetId when assetId/assetId mapping is implemented
   mapping(uint256 => uint256) internal prices;
 
   uint256 internal ethPriceUsd;

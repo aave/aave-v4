@@ -6,6 +6,7 @@ import '../BaseTest.t.sol';
 contract HealthFactorTest is BaseTest {
   using SharesMath for uint256;
   using WadRayMath for uint256;
+  using PercentageMath for uint256;
 
   function setUp() public override {
     super.setUp();
@@ -64,7 +65,7 @@ contract HealthFactorTest is BaseTest {
     MockPriceOracle(address(oracle)).setAssetPrice(ethAssetId, 2000e8);
 
     // Add USDC
-    uint256 usdcAssetId = 2;
+    uint256 usdcId = 2;
     reserveConfigs[0] = Spoke.ReserveConfig({
       lt: 0.78e4,
       lb: 0,
@@ -85,18 +86,18 @@ contract HealthFactorTest is BaseTest {
       spokeConfigs,
       reserveConfigs
     );
-    MockPriceOracle(address(oracle)).setAssetPrice(usdcAssetId, 1e8);
+    MockPriceOracle(address(oracle)).setAssetPrice(usdcId, 1e8);
 
     // Add WBTC
     uint256 wbtcAssetId = 3;
     reserveConfigs[0] = Spoke.ReserveConfig({
-      lt: 0.78e4,
+      lt: 0.85e4,
       lb: 0,
       borrowable: true,
       collateral: true
     });
     reserveConfigs[1] = Spoke.ReserveConfig({
-      lt: 0.72e4,
+      lt: 0.84e4,
       lb: 0,
       borrowable: true,
       collateral: true
@@ -130,7 +131,7 @@ contract HealthFactorTest is BaseTest {
       })
     );
     irStrategy.setInterestRateParams(
-      usdcAssetId,
+      usdcId,
       IDefaultInterestRateStrategy.InterestRateData({
         optimalUsageRatio: 9000, // 90.00%
         baseVariableBorrowRate: 500, // 5.00%
@@ -140,5 +141,77 @@ contract HealthFactorTest is BaseTest {
     );
   }
 
+  function test_getHealthFactorExact() public {
+    uint256 daiId = 0;
+    uint256 ethId = 1;
+    uint256 usdcId = 2;
+    uint256 wbtcId = 3;
+
+    uint256 daiAmount = 10_000e18; // 10k dai -> $10k
+    uint256 ethAmount = 10e18; // 10 eth -> $20k
+    // total collateral -> $30k
+    uint256 usdcBorrowAmount = 15_000e18; // 15k usdc -> $15k
+    uint256 wbtcBorrowAmount = 0.5e18; // 0.5 wbtc -> $25k
+    // total borrowed -> $40k
+    bool newCollateral = true;
+    bool usingAsCollateral = true;
+
+    // ensure DAI/ETH allowed as collateral
+    Utils.updateCollateral(vm, spoke1, daiId, newCollateral);
+    Utils.updateCollateral(vm, spoke1, ethId, newCollateral);
+
+    // USER1 supply dai into spoke1
+    deal(address(dai), USER1, daiAmount);
+    Utils.spokeSupply(vm, hub, spoke1, daiId, USER1, daiAmount, USER1);
+    Utils.setUsingAsCollateral(vm, spoke1, USER1, daiId, true);
+
+    // USER1 supply eth into spoke1
+    deal(address(eth), USER1, ethAmount);
+    Utils.spokeSupply(vm, hub, spoke1, ethId, USER1, ethAmount, USER1);
+    Utils.setUsingAsCollateral(vm, spoke1, USER1, ethId, true);
+
+    // USER2 supply usdc into spoke1
+    deal(address(usdc), USER2, usdcBorrowAmount);
+    Utils.spokeSupply(vm, hub, spoke1, usdcId, USER2, usdcBorrowAmount, USER2);
+
+    // USER2 supply wbtc into spoke1
+    deal(address(wbtc), USER2, wbtcBorrowAmount);
+    Utils.spokeSupply(vm, hub, spoke1, wbtcId, USER2, wbtcBorrowAmount, USER2);
+
+    // USER1 borrow usdc
+    Utils.borrow(vm, spoke1, usdcId, USER1, usdcBorrowAmount, USER1);
+
+    // USER1 borrow wbtc
+    Utils.borrow(vm, spoke1, wbtcId, USER1, wbtcBorrowAmount, USER1);
+
+    uint256 healthFactor = ISpoke(spoke1).getHealthFactor(USER1);
+
+    console2.log('healthFactor %e', healthFactor);
+    // assertEq(healthFactor, 2e18, 'wrong health factor');
+  }
+
   // TODO: helper to calculate exact HF to check values
+  function _calculateHealthFactor(uint256[] calldata assetIds) internal view returns (uint256) {
+    uint256 totalCollateral = 0;
+    uint256 totalDebt = 0;
+    uint256 avgLiquidationThreshold = 0;
+    for (uint256 i = 0; i < assetIds.length; i++) {
+      uint256 assetId = assetIds[i];
+      Spoke.Reserve memory reserve = spoke1.getReserve(assetId);
+      Spoke.UserConfig memory userConfig = spoke1.getUser(assetId, USER1);
+
+      uint256 assetPrice = MockPriceOracle(address(oracle)).getAssetPrice(assetId);
+      uint256 userCollateral = hub.convertSharesToAssetsDown(assetId, userConfig.supplyShares) *
+        assetPrice;
+      totalCollateral += userCollateral;
+      totalDebt += hub.convertSharesToAssetsDown(assetId, userConfig.debtShares) * assetPrice;
+
+      avgLiquidationThreshold += userCollateral * reserve.config.lt;
+    }
+    avgLiquidationThreshold = totalCollateral != 0 ? avgLiquidationThreshold / totalCollateral : 0;
+    return
+      totalDebt == 0
+        ? type(uint256).max
+        : (totalCollateral.percentMul(avgLiquidationThreshold)).wadDiv(totalDebt);
+  }
 }
