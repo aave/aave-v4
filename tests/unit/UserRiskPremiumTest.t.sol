@@ -161,7 +161,7 @@ contract UserRiskPremiumTest is BaseTest {
     Utils.setUsingAsCollateral(vm, spoke1, USER1, daiId, usingAsCollateral);
 
     uint256 userRiskPremium = ISpoke(spoke1).getUserRiskPremium(USER1);
-    assertEq(userRiskPremium, 1, 'wrong user risk premium'); // TODO: fix when LP is implemented
+    assertEq(userRiskPremium, 1e18, 'wrong user risk premium'); // TODO: fix when LP is implemented
   }
 
   function test_getUserRiskPremium_multi_asset_supplied() public {
@@ -189,7 +189,7 @@ contract UserRiskPremiumTest is BaseTest {
     Utils.setUsingAsCollateral(vm, spoke1, USER1, ethId, usingAsCollateral);
 
     uint256 userRiskPremium = ISpoke(spoke1).getUserRiskPremium(USER1);
-    assertEq(userRiskPremium, 1, 'wrong user risk premium'); // TODO: fix when LP is implemented
+    assertEq(userRiskPremium, 1e18, 'wrong user risk premium'); // TODO: fix when LP is implemented
   }
 
   function test_getUserRiskPremium_asset_price_changes() public {
@@ -252,6 +252,6 @@ contract UserRiskPremiumTest is BaseTest {
       userRiskPremium += userCollateral * liquidityPremium;
       totalCollateral += userCollateral;
     }
-    return totalCollateral != 0 ? userRiskPremium / totalCollateral : 0;
+    return totalCollateral != 0 ? userRiskPremium.wadDiv(totalCollateral) : 0;
   }
 }
