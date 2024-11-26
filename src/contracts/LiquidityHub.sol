@@ -393,12 +393,12 @@ contract LiquidityHub is ILiquidityHub {
       uint256 cumulated = totalDrawn.rayMul(
         MathUtils.calculateLinearInterest(borrowRate, uint40(asset.lastUpdateTimestamp))
       ); // TODO rounding
-      console2.log(
-        'cumulated: %e, drawn: %e, cumulatedInterest: %e',
-        cumulated,
-        totalDrawn,
-        (cumulated - totalDrawn)
-      );
+      // console2.log(
+      //   'cumulated: %e, drawn: %e, cumulatedInterest: %e',
+      //   cumulated,
+      //   totalDrawn,
+      //   (cumulated - totalDrawn)
+      // );
       asset.totalAssets += (cumulated - totalDrawn); // add delta, ie cumulated interest to totalAssets
       asset.drawnShares = cumulated.toSharesDown(asset.totalAssets, asset.totalShares);
 

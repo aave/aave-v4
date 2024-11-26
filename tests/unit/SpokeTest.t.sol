@@ -274,6 +274,34 @@ contract SpokeTest is BaseTest {
     assertEq(user1Data.supplyShares, 0, 'wrong user supply shares post-withdraw');
     assertEq(user1Data.debtShares, 0, 'wrong user debt shares post-withdraw');
   }
+
+  function test_revert_RepayExceedsDebt_repay() public {
+    uint256 daiId = 0;
+    uint256 ethId = 1;
+    uint256 daiAmount = 100e18;
+    uint256 ethAmount = 10e18;
+
+    uint256 drawAmount = daiAmount / 2;
+    uint256 restoreAmount = drawAmount + 1;
+
+    // USER1 supply eth
+    deal(address(eth), USER1, ethAmount);
+    Utils.spokeSupply(vm, hub, spoke1, ethId, USER1, ethAmount, USER1);
+
+    // USER2 supply dai
+    deal(address(dai), USER2, daiAmount);
+    Utils.spokeSupply(vm, hub, spoke1, daiId, USER2, daiAmount, USER2);
+
+    // USER1 borrow half of dai reserve liquidity
+    Utils.borrow(vm, spoke1, daiId, USER1, drawAmount, USER1);
+
+    // spoke1 restore half of drawn dai liquidity
+    vm.startPrank(USER1);
+    IERC20(address(dai)).approve(address(spoke1), restoreAmount);
+    vm.expectRevert(TestErrors.REPAY_EXCEEDS_DEBT);
+    ISpoke(address(spoke1)).repay(daiId, restoreAmount);
+    vm.stopPrank();
+  }
   function test_repay() public {
     uint256 daiId = 0;
     uint256 ethId = 1;
