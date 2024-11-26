@@ -350,7 +350,7 @@ contract LiquidityHub is ILiquidityHub {
     // TODO: Other cases of status (frozen, paused)
     require(asset.config.active, 'ASSET_NOT_ACTIVE');
 
-    // Esnure spoke is not restoring more than supplied
+    // Ensure spoke is not restoring more than supplied
     require(sharesAmount <= drawnShares, 'INVALID_RESTORE_AMOUNT');
   }
 
