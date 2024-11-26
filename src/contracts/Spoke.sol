@@ -321,7 +321,7 @@ contract Spoke is ISpoke {
       totalCollateralInBaseCurrency += userCollateralInBaseCurrency;
       avgLiquidationThreshold += userCollateralInBaseCurrency * r.config.lt;
 
-      console2.log('reserveId: %d, lt: %e', reserveId, r.config.lt);
+      // console2.log('reserveId: %d, lt: %e', reserveId, r.config.lt);
       // console2.log(
       //   'borrowing %d, %e, %e',
       //   reserveId,
@@ -339,15 +339,16 @@ contract Spoke is ISpoke {
       ? avgLiquidationThreshold / totalCollateralInBaseCurrency
       : 0;
 
-    console2.log('totalCollateralInBaseCurrency %e', totalCollateralInBaseCurrency);
-    console2.log('totalDebtInBaseCurrency %e', totalDebtInBaseCurrency);
-    console2.log('avgLiquidationThreshold %e', avgLiquidationThreshold);
-
     uint256 healthFactor = totalDebtInBaseCurrency == 0
       ? type(uint256).max
       : (totalCollateralInBaseCurrency.percentMul(avgLiquidationThreshold)).wadDiv(
         totalDebtInBaseCurrency
       );
+
+    console2.log('totalCollateralInBaseCurrency %e', totalCollateralInBaseCurrency);
+    console2.log('totalDebtInBaseCurrency %e', totalDebtInBaseCurrency);
+    console2.log('avgLiquidationThreshold %e', avgLiquidationThreshold);
+    console2.log('healthFactor %e', healthFactor);
 
     return (
       totalCollateralInBaseCurrency,

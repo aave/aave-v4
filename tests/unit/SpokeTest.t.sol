@@ -448,19 +448,24 @@ contract SpokeTest is BaseTest {
     assertGt(healthFactor, 1e18, 'wrong health factor');
   }
 
-  function test_getHealthFactorLt1() public {
+  function test_getHealthFactorExact() public {
     uint256 daiId = 0;
     uint256 ethId = 1;
     uint256 usdcAssetId = 2;
-    uint256 daiAmount = 100e18;
-    uint256 ethAmount = 10e18;
-    uint256 usdcBorrowAmount = 250e21; // guaranteed HF < 1
+    uint256 daiAmount = 10_000e18; // 10k dai -> $10k
+    uint256 ethAmount = 10e18; // 10 eth -> $20k
+    // total collateral -> $30k
+    uint256 usdcBorrowAmount = 15_000e18; // 15k usdc -> $15k
     bool newCollateral = true;
     bool usingAsCollateral = true;
 
     // ensure DAI/ETH allowed as collateral
     _updateCollateral(daiId, newCollateral);
     _updateCollateral(ethId, newCollateral);
+
+    // set Lt to 100% for both assets
+    _updateLiquidationThreshold(daiId, 1e4);
+    _updateLiquidationThreshold(ethId, 1e4);
 
     // USER1 supply dai into spoke1
     deal(address(dai), USER1, daiAmount);
@@ -480,7 +485,7 @@ contract SpokeTest is BaseTest {
     Utils.borrow(vm, spoke1, usdcAssetId, USER1, usdcBorrowAmount, USER1);
 
     uint256 healthFactor = ISpoke(spoke1).getHealthFactor(USER1);
-    assertLt(healthFactor, 1e18, 'wrong health factor');
+    assertEq(healthFactor, 2e18, 'wrong health factor');
   }
 
   // TODO: helper to calculate exact HF to check values
@@ -488,6 +493,12 @@ contract SpokeTest is BaseTest {
   function _setUsingAsCollateral(address user, uint256 reserveId, bool usingAsCollateral) internal {
     vm.prank(user);
     ISpoke(spoke1).setUsingAsCollateral(reserveId, usingAsCollateral);
+  }
+
+  function _updateLiquidationThreshold(uint256 reserveId, uint256 newLt) internal {
+    Spoke.Reserve memory reserveData = spoke1.getReserve(reserveId);
+    reserveData.config.lt = newLt;
+    spoke1.updateReserveConfig(reserveId, reserveData.config);
   }
 
   function _updateCollateral(uint256 reserveId, bool newCollateral) internal {
