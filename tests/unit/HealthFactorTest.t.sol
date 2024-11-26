@@ -141,7 +141,71 @@ contract HealthFactorTest is BaseTest {
     );
   }
 
-  function test_getHealthFactor_price_changes() public {
+  function test_getHealthFactor_no_supplied() public view {
+    // without any supply/borrow, health factor should be max
+    uint256 healthFactor = ISpoke(spoke1).getHealthFactor(USER1);
+    assertEq(healthFactor, type(uint256).max, 'wrong health factor');
+  }
+
+  function test_getHealthFactor_no_borrowed() public {
+    uint256 daiId = 0;
+    uint256 daiAmount = 100e18;
+    bool newCollateral = true;
+    bool usingAsCollateral = true;
+
+    // ensure DAI allowed as collateral
+    Utils.updateCollateral(spoke1, daiId, newCollateral);
+
+    // USER1 supply dai into spoke1
+    deal(address(dai), USER1, daiAmount);
+    Utils.spokeSupply(vm, hub, spoke1, daiId, USER1, daiAmount, USER1);
+    Utils.setUsingAsCollateral(vm, spoke1, USER1, daiId, usingAsCollateral);
+
+    uint256 healthFactor = ISpoke(spoke1).getHealthFactor(USER1);
+    assertEq(healthFactor, type(uint256).max, 'wrong health factor');
+  }
+
+  function test_getHealthFactor() public {
+    uint256 daiId = 0;
+    uint256 ethId = 1;
+    uint256 usdcId = 2;
+    uint256 daiAmount = 10_000e18; // 10k dai -> $10k
+    uint256 ethAmount = 10e18; // 10 eth -> $20k
+    // total collateral -> $30k
+    uint256 usdcBorrowAmount = 15_000e18; // 15k usdc -> $15k
+    bool newCollateral = true;
+    bool usingAsCollateral = true;
+
+    // ensure DAI/ETH allowed as collateral
+    Utils.updateCollateral(spoke1, daiId, newCollateral);
+    Utils.updateCollateral(spoke1, ethId, newCollateral);
+
+    // set Lt to 100% for both assets
+    Utils.updateLiquidationThreshold(spoke1, daiId, 1e4);
+    Utils.updateLiquidationThreshold(spoke1, ethId, 1e4);
+
+    // USER1 supply dai into spoke1
+    deal(address(dai), USER1, daiAmount);
+    Utils.spokeSupply(vm, hub, spoke1, daiId, USER1, daiAmount, USER1);
+    Utils.setUsingAsCollateral(vm, spoke1, USER1, daiId, usingAsCollateral);
+
+    // USER1 supply eth into spoke1
+    deal(address(eth), USER1, ethAmount);
+    Utils.spokeSupply(vm, hub, spoke1, ethId, USER1, ethAmount, USER1);
+    Utils.setUsingAsCollateral(vm, spoke1, USER1, ethId, usingAsCollateral);
+
+    // USER2 supply usdc into spoke1
+    deal(address(usdc), USER2, usdcBorrowAmount);
+    Utils.spokeSupply(vm, hub, spoke1, usdcId, USER2, usdcBorrowAmount, USER2);
+
+    // USER1 borrow usdc
+    Utils.borrow(vm, spoke1, usdcId, USER1, usdcBorrowAmount, USER1);
+
+    uint256 healthFactor = ISpoke(spoke1).getHealthFactor(USER1);
+    assertEq(healthFactor, 2e18, 'wrong health factor');
+  }
+
+  function test_getHealthFactor_asset_price_changes() public {
     uint256 daiId = 0;
     uint256 ethId = 1;
     uint256 usdcId = 2;
