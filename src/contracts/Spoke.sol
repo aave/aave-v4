@@ -171,12 +171,12 @@ contract Spoke is ISpoke {
   }
 
   function getUserRiskPremium(address user) external view returns (uint256) {
-    uint256 userRiskPremium;
+    (, , , uint256 userRiskPremium, ) = _calculateUserAccountData(user);
     return userRiskPremium;
   }
 
   function getHealthFactor(address user) external view returns (uint256) {
-    (, , , uint256 healthFactor) = _calculateUserAccountData(user);
+    (, , , , uint256 healthFactor) = _calculateUserAccountData(user);
     return healthFactor;
   }
 
@@ -290,19 +290,24 @@ contract Spoke is ISpoke {
     uint256 assetId,
     address user
   ) internal view returns (bool) {
-    return _usingAsCollateral(assetId, user) || users[assetId][user].debtShares > 0;
+    return _usingAsCollateral(assetId, user) || _borrowing(assetId, user);
   }
 
   function _usingAsCollateral(uint256 assetId, address user) internal view returns (bool) {
     return users[assetId][user].usingAsCollateral;
   }
 
+  function _borrowing(uint256 assetId, address user) internal view returns (bool) {
+    return users[assetId][user].debtShares > 0;
+  }
+
   function _calculateUserAccountData(
     address user
-  ) internal view returns (uint256, uint256, uint256, uint256) {
+  ) internal view returns (uint256, uint256, uint256, uint256, uint256) {
     uint256 totalCollateralInBaseCurrency;
     uint256 totalDebtInBaseCurrency;
     uint256 avgLiquidationThreshold;
+    uint256 userRiskPremium;
     uint256 i;
     while (i < reservesList.length) {
       uint256 assetId = reservesList[i];
@@ -316,20 +321,30 @@ contract Spoke is ISpoke {
 
       uint256 assetPrice = IPriceOracle(oracle).getAssetPrice(assetId);
 
-      uint256 userCollateralInBaseCurrency = assetPrice *
-        ILiquidityHub(liquidityHub).convertSharesToAssetsDown(assetId, u.supplyShares);
+      if (_usingAsCollateral(assetId, user)) {
+        uint256 userCollateralInBaseCurrency = assetPrice *
+          ILiquidityHub(liquidityHub).convertSharesToAssetsDown(assetId, u.supplyShares);
+        uint256 liquidityPremium = 1; // TODO: get LP from LH
+        totalCollateralInBaseCurrency += userCollateralInBaseCurrency;
+        avgLiquidationThreshold += userCollateralInBaseCurrency * r.config.lt;
+        userRiskPremium += userCollateralInBaseCurrency * liquidityPremium;
+      }
 
-      totalCollateralInBaseCurrency += userCollateralInBaseCurrency;
-      avgLiquidationThreshold += userCollateralInBaseCurrency * r.config.lt;
+      if (_borrowing(assetId, user)) {
+        totalDebtInBaseCurrency += u.debtShares > 0
+          ? assetPrice * ILiquidityHub(liquidityHub).convertSharesToAssetsUp(assetId, u.debtShares)
+          : 0;
+      }
 
-      totalDebtInBaseCurrency += u.debtShares > 0
-        ? assetPrice * ILiquidityHub(liquidityHub).convertSharesToAssetsUp(assetId, u.debtShares)
-        : 0;
       i++;
     }
 
     avgLiquidationThreshold = totalCollateralInBaseCurrency != 0
       ? avgLiquidationThreshold / totalCollateralInBaseCurrency
+      : 0;
+
+    userRiskPremium = totalCollateralInBaseCurrency != 0
+      ? userRiskPremium / totalCollateralInBaseCurrency
       : 0;
 
     uint256 healthFactor = totalDebtInBaseCurrency == 0
@@ -347,6 +362,7 @@ contract Spoke is ISpoke {
       totalCollateralInBaseCurrency,
       totalDebtInBaseCurrency,
       avgLiquidationThreshold,
+      userRiskPremium,
       healthFactor
     );
   }
