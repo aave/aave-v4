@@ -482,16 +482,7 @@ contract LiquidityHubTest is BaseTest {
     // TODO User supplies X and withdraws more than X because there is some yield
   }
 
-  function test_revert_withdraw_zero_assets() public {
-    uint256 assetId = 0; // TODO: Add getter of asset id based on address
-    uint256 amount = 100e18;
-
-    vm.prank(address(spoke1));
-    vm.expectRevert(TestErrors.SUPPLIED_AMOUNT_EXCEEDED);
-    hub.withdraw(assetId, address(spoke1), amount, 0);
-  }
-
-  function test_withdraw_more_than_supplied_reverts() public {
+  function test_revert_withdraw_supplied_amount_exceeded() public {
     uint256 assetId = 0; // TODO: Add getter of asset id based on address
     uint256 amount = 100e18;
 
@@ -524,6 +515,22 @@ contract LiquidityHubTest is BaseTest {
     assertEq(reserveData.totalAssets, amount);
     assertEq(dai.balanceOf(address(spoke1)), 0);
     assertEq(dai.balanceOf(address(hub)), amount);
+  }
+
+  function test_revert_withdraw_not_available_liquidity() public {
+    uint256 daiId = 0; // TODO: Add getter of asset id based on address
+    uint256 amount = 100e18;
+
+    // User supply
+    deal(address(dai), address(spoke1), amount);
+    Utils.supply(vm, hub, daiId, address(spoke1), amount, address(spoke1));
+
+    // spoke1 draw all of dai reserve liquidity
+    Utils.draw(vm, hub, daiId, address(spoke1), amount, address(spoke1));
+
+    vm.prank(address(spoke1));
+    vm.expectRevert(TestErrors.SUPPLIED_AMOUNT_EXCEEDED);
+    hub.withdraw(daiId, address(spoke1), amount, 0);
   }
 
   // TODO after RP logic is implemented
