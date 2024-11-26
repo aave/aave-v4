@@ -46,6 +46,19 @@ contract Spoke is ISpoke {
     // uint256 lastUpdateTimestamp;
   }
 
+  struct CalculateUserAccountDataVars {
+    uint256 i;
+    uint256 assetId;
+    uint256 assetPrice;
+    uint256 liquidityPremium;
+    uint256 userCollateralInBaseCurrency;
+    uint256 totalCollateralInBaseCurrency;
+    uint256 totalDebtInBaseCurrency;
+    uint256 avgLiquidationThreshold;
+    uint256 userRiskPremium;
+    uint256 healthFactor;
+  }
+
   // reserve id => user address => user data
   mapping(uint256 => mapping(address => UserConfig)) public users;
   // reserve id => reserveData
@@ -304,53 +317,51 @@ contract Spoke is ISpoke {
   function _calculateUserAccountData(
     address user
   ) internal view returns (uint256, uint256, uint256, uint256, uint256) {
-    uint256 totalCollateralInBaseCurrency;
-    uint256 totalDebtInBaseCurrency;
-    uint256 avgLiquidationThreshold;
-    uint256 userRiskPremium;
-    uint256 i;
-    while (i < reservesList.length) {
-      uint256 assetId = reservesList[i];
-      if (!_usingAsCollateralOrBorrowing(assetId, user)) {
-        i++;
+    CalculateUserAccountDataVars memory vars;
+    while (vars.i < reservesList.length) {
+      vars.assetId = reservesList[vars.i];
+      if (!_usingAsCollateralOrBorrowing(vars.assetId, user)) {
+        vars.i++;
         continue;
       }
 
-      UserConfig memory u = getUser(assetId, user);
-      Reserve memory r = getReserve(assetId);
+      UserConfig memory u = getUser(vars.assetId, user);
+      Reserve memory r = getReserve(vars.assetId);
 
-      uint256 assetPrice = IPriceOracle(oracle).getAssetPrice(assetId);
+      vars.assetPrice = IPriceOracle(oracle).getAssetPrice(vars.assetId);
 
-      if (_usingAsCollateral(assetId, user)) {
-        uint256 userCollateralInBaseCurrency = assetPrice *
-          ILiquidityHub(liquidityHub).convertSharesToAssetsDown(assetId, u.supplyShares);
-        uint256 liquidityPremium = 1; // TODO: get LP from LH
-        totalCollateralInBaseCurrency += userCollateralInBaseCurrency;
-        avgLiquidationThreshold += userCollateralInBaseCurrency * r.config.lt;
-        userRiskPremium += userCollateralInBaseCurrency * liquidityPremium;
+      if (_usingAsCollateral(vars.assetId, user)) {
+        vars.userCollateralInBaseCurrency =
+          vars.assetPrice *
+          ILiquidityHub(liquidityHub).convertSharesToAssetsDown(vars.assetId, u.supplyShares);
+        vars.liquidityPremium = 1; // TODO: get LP from LH
+        vars.totalCollateralInBaseCurrency += vars.userCollateralInBaseCurrency;
+        vars.avgLiquidationThreshold += vars.userCollateralInBaseCurrency * r.config.lt;
+        vars.userRiskPremium += vars.userCollateralInBaseCurrency * vars.liquidityPremium;
       }
 
-      if (_borrowing(assetId, user)) {
-        totalDebtInBaseCurrency += u.debtShares > 0
-          ? assetPrice * ILiquidityHub(liquidityHub).convertSharesToAssetsUp(assetId, u.debtShares)
+      if (_borrowing(vars.assetId, user)) {
+        vars.totalDebtInBaseCurrency += u.debtShares > 0
+          ? vars.assetPrice *
+            ILiquidityHub(liquidityHub).convertSharesToAssetsUp(vars.assetId, u.debtShares)
           : 0;
       }
 
-      i++;
+      vars.i++;
     }
 
-    avgLiquidationThreshold = totalCollateralInBaseCurrency != 0
-      ? avgLiquidationThreshold / totalCollateralInBaseCurrency
+    vars.avgLiquidationThreshold = vars.totalCollateralInBaseCurrency != 0
+      ? vars.avgLiquidationThreshold / vars.totalCollateralInBaseCurrency
       : 0;
 
-    userRiskPremium = totalCollateralInBaseCurrency != 0
-      ? userRiskPremium / totalCollateralInBaseCurrency
+    vars.userRiskPremium = vars.totalCollateralInBaseCurrency != 0
+      ? vars.userRiskPremium / vars.totalCollateralInBaseCurrency
       : 0;
 
-    uint256 healthFactor = totalDebtInBaseCurrency == 0
+    vars.healthFactor = vars.totalDebtInBaseCurrency == 0
       ? type(uint256).max
-      : (totalCollateralInBaseCurrency.percentMul(avgLiquidationThreshold)).wadDiv(
-        totalDebtInBaseCurrency
+      : (vars.totalCollateralInBaseCurrency.percentMul(vars.avgLiquidationThreshold)).wadDiv(
+        vars.totalDebtInBaseCurrency
       ); // HF of 1 -> 1e18
 
     // console2.log('totalCollateralInBaseCurrency %e', totalCollateralInBaseCurrency);
@@ -359,11 +370,11 @@ contract Spoke is ISpoke {
     // console2.log('healthFactor %e', healthFactor);
 
     return (
-      totalCollateralInBaseCurrency,
-      totalDebtInBaseCurrency,
-      avgLiquidationThreshold,
-      userRiskPremium,
-      healthFactor
+      vars.totalCollateralInBaseCurrency,
+      vars.totalDebtInBaseCurrency,
+      vars.avgLiquidationThreshold,
+      vars.userRiskPremium,
+      vars.healthFactor
     );
   }
 }
