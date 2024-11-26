@@ -186,12 +186,27 @@ contract HealthFactorTest is BaseTest {
 
     uint256 healthFactor = ISpoke(spoke1).getHealthFactor(USER1);
 
-    console2.log('healthFactor %e', healthFactor);
-    // assertEq(healthFactor, 2e18, 'wrong health factor');
+    uint256[] memory assetIds = new uint256[](4);
+    assetIds[0] = daiId;
+    assetIds[1] = ethId;
+    assetIds[2] = usdcId;
+    assetIds[3] = wbtcId;
+    uint256 expectedHealthFactor = _calculateHealthFactor(assetIds);
+
+    assertEq(healthFactor, expectedHealthFactor);
+
+    // prices change for supplied eth
+    MockPriceOracle(address(oracle)).setAssetPrice(ethId, 4000e8);
+    // prices change for borrowed wbtc
+    MockPriceOracle(address(oracle)).setAssetPrice(wbtcId, 70_000e8);
+
+    healthFactor = ISpoke(spoke1).getHealthFactor(USER1);
+    expectedHealthFactor = _calculateHealthFactor(assetIds);
+    assertEq(healthFactor, expectedHealthFactor);
   }
 
   // TODO: helper to calculate exact HF to check values
-  function _calculateHealthFactor(uint256[] calldata assetIds) internal view returns (uint256) {
+  function _calculateHealthFactor(uint256[] memory assetIds) internal view returns (uint256) {
     uint256 totalCollateral = 0;
     uint256 totalDebt = 0;
     uint256 avgLiquidationThreshold = 0;

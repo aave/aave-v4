@@ -31,7 +31,7 @@ contract Spoke is ISpoke {
   }
 
   struct ReserveConfig {
-    uint256 lt; // 1e18 == 100%
+    uint256 lt; // 1e4 == 100%, BPS
     uint256 lb; // TODO: liquidationProtocolFee
     bool borrowable;
     bool collateral;
@@ -300,8 +300,6 @@ contract Spoke is ISpoke {
   function _calculateUserAccountData(
     address user
   ) internal view returns (uint256, uint256, uint256, uint256) {
-    // HF logic:
-    // - iterate through a user's positions, calculate HF per user per spoke
     uint256 totalCollateralInBaseCurrency;
     uint256 totalDebtInBaseCurrency;
     uint256 avgLiquidationThreshold;
@@ -324,13 +322,6 @@ contract Spoke is ISpoke {
       totalCollateralInBaseCurrency += userCollateralInBaseCurrency;
       avgLiquidationThreshold += userCollateralInBaseCurrency * r.config.lt;
 
-      // console2.log('assetId: %d, lt: %e', assetId, r.config.lt);
-      // console2.log(
-      //   'borrowing %d, %e, %e',
-      //   assetId,
-      //   u.debtShares,
-      //   IPriceOracle(oracle).getAssetPrice(assetId)
-      // );
       totalDebtInBaseCurrency += u.debtShares > 0
         ? assetPrice * ILiquidityHub(liquidityHub).convertSharesToAssetsUp(assetId, u.debtShares)
         : 0;
@@ -345,12 +336,12 @@ contract Spoke is ISpoke {
       ? type(uint256).max
       : (totalCollateralInBaseCurrency.percentMul(avgLiquidationThreshold)).wadDiv(
         totalDebtInBaseCurrency
-      );
+      ); // HF of 1 -> 1e18
 
-    console2.log('totalCollateralInBaseCurrency %e', totalCollateralInBaseCurrency);
-    console2.log('totalDebtInBaseCurrency %e', totalDebtInBaseCurrency);
-    console2.log('avgLiquidationThreshold %e', avgLiquidationThreshold);
-    console2.log('healthFactor %e', healthFactor);
+    // console2.log('totalCollateralInBaseCurrency %e', totalCollateralInBaseCurrency);
+    // console2.log('totalDebtInBaseCurrency %e', totalDebtInBaseCurrency);
+    // console2.log('avgLiquidationThreshold %e', avgLiquidationThreshold);
+    // console2.log('healthFactor %e', healthFactor);
 
     return (
       totalCollateralInBaseCurrency,
