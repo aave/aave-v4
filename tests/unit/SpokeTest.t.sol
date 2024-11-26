@@ -156,6 +156,29 @@ contract SpokeTest is BaseTest {
     assertEq(userData.debtShares, 0, 'wrong user debt shares');
   }
 
+  function test_revert_ReserveNotBorrowable_borrow() public {
+    uint256 daiId = 0;
+    uint256 ethId = 1;
+    uint256 daiAmount = 100e18;
+    uint256 ethAmount = 10e18;
+
+    // USER1 supply eth
+    deal(address(eth), USER1, ethAmount);
+    Utils.spokeSupply(vm, hub, spoke1, ethId, USER1, ethAmount, USER1);
+
+    // USER2 supply dai
+    deal(address(dai), USER2, daiAmount);
+    Utils.spokeSupply(vm, hub, spoke1, daiId, USER2, daiAmount, USER2);
+
+    // set reserve not borrowable
+    Utils.updateBorrowable(vm, spoke1, daiId, false);
+
+    // USER1 draw half of dai reserve liquidity
+    vm.prank(USER1);
+    vm.expectRevert(TestErrors.RESERVE_NOT_BORROWABLE);
+    ISpoke(spoke1).borrow(daiId, USER1, daiAmount / 2);
+  }
+
   function test_borrow() public {
     uint256 daiId = 0;
     uint256 ethId = 1;

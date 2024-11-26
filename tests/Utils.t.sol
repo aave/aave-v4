@@ -118,4 +118,10 @@ library Utils {
     reserveData.config.collateral = newCollateral;
     Spoke(spoke).updateReserveConfig(assetId, reserveData.config);
   }
+
+  function updateBorrowable(Vm vm, Spoke spoke, uint256 assetId, bool newBorrowable) internal {
+    Spoke.Reserve memory reserveData = spoke.getReserve(assetId);
+    reserveData.config.borrowable = newBorrowable;
+    Spoke(spoke).updateReserveConfig(assetId, reserveData.config);
+  }
 }

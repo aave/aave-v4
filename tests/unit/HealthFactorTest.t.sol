@@ -141,7 +141,7 @@ contract HealthFactorTest is BaseTest {
     );
   }
 
-  function test_getHealthFactorExact() public {
+  function test_getHealthFactor() public {
     uint256 daiId = 0;
     uint256 ethId = 1;
     uint256 usdcId = 2;
