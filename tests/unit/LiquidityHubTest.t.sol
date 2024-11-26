@@ -482,8 +482,13 @@ contract LiquidityHubTest is BaseTest {
     // TODO User supplies X and withdraws more than X because there is some yield
   }
 
-  function test_withdraw_zero_reverts() public {
-    // TODO User cannot withdraw 0 assets
+  function test_revert_withdraw_zero_assets() public {
+    uint256 assetId = 0; // TODO: Add getter of asset id based on address
+    uint256 amount = 100e18;
+
+    vm.prank(address(spoke1));
+    vm.expectRevert(TestErrors.SUPPLIED_AMOUNT_EXCEEDED);
+    hub.withdraw(assetId, address(spoke1), amount, 0);
   }
 
   function test_withdraw_more_than_supplied_reverts() public {
