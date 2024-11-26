@@ -79,6 +79,7 @@ abstract contract BaseTest is Test, Events {
   IERC20 internal dai;
   IERC20 internal usdt;
   IERC20 internal eth;
+  IERC20 internal wbtc;
 
   IPriceOracle oracle;
   LiquidityHub hub;
@@ -103,5 +104,6 @@ abstract contract BaseTest is Test, Events {
     eth = new MockERC20();
     usdc = new MockERC20();
     usdt = new MockERC20();
+    wbtc = new MockERC20();
   }
 }

@@ -487,6 +487,4 @@ contract SpokeTest is BaseTest {
     uint256 healthFactor = ISpoke(spoke1).getHealthFactor(USER1);
     assertEq(healthFactor, 2e18, 'wrong health factor');
   }
-
-  // TODO: helper to calculate exact HF to check values
 }

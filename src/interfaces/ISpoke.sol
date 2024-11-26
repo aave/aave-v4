@@ -23,4 +23,5 @@ interface ISpoke {
   function supply(uint256 assetId, uint256 amount) external;
   function setUsingAsCollateral(uint256 reserveId, bool usingAsCollateral) external;
   function getHealthFactor(address user) external view returns (uint256);
+  function getUserRiskPremium(address user) external view returns (uint256);
 }

@@ -186,6 +186,11 @@ contract Spoke is ISpoke {
     emit Repaid(assetId, msg.sender, amount);
   }
 
+  function getUserRiskPremium(address user) external view returns (uint256) {
+    uint256 userRiskPremium;
+    return userRiskPremium;
+  }
+
   function getHealthFactor(address user) external view returns (uint256) {
     (, , , uint256 healthFactor) = _calculateUserAccountData(user);
     return healthFactor;

@@ -129,6 +129,10 @@ contract MockSpokeCreditLine is ISpoke {
     return reserves[assetId].borrowRate * 1e23;
   }
 
+  function getUserRiskPremium(address user) external view returns (uint256) {
+    // intentionally left blank
+  }
+
   /// governance
   function addReserve(uint256 assetId, ReserveConfig memory params, address asset) external {
     reserves[assetId].id = assetId;
