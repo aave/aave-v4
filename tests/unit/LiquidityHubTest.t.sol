@@ -533,6 +533,21 @@ contract LiquidityHubTest is BaseTest {
     hub.withdraw(daiId, address(spoke1), amount, 0);
   }
 
+  function test_revert_withdraw_asset_not_active() public {
+    uint256 daiId = 0; // TODO: Add getter of asset id based on address
+    uint256 amount = 100e18;
+
+    // User supply
+    deal(address(dai), address(spoke1), amount);
+    Utils.supply(vm, hub, daiId, address(spoke1), amount, address(spoke1));
+
+    _updateActive(daiId, false);
+
+    vm.prank(address(spoke1));
+    vm.expectRevert(TestErrors.ASSET_NOT_ACTIVE);
+    hub.withdraw(daiId, address(spoke1), amount, 0);
+  }
+
   // TODO after RP logic is implemented
   function skip_test_user_riskPremium() public {
     uint256 amount = 100e18;
@@ -793,7 +808,7 @@ contract LiquidityHubTest is BaseTest {
     assertEq(eth.balanceOf(address(spoke2)), 0, 'wrong spoke2 eth final balance');
   }
 
-  function test_add_spoke() public {
+  function test_addSpoke() public {
     uint256 daiId = 0;
 
     vm.expectEmit(address(hub));
