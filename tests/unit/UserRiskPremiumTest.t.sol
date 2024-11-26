@@ -195,8 +195,6 @@ contract UserRiskPremiumTest is BaseTest {
   function test_getUserRiskPremium_asset_price_changes() public {
     uint256 daiId = 0;
     uint256 ethId = 1;
-    uint256 usdcId = 2;
-    uint256 wbtcId = 3;
 
     uint256 daiAmount = 10_000e18; // 10k dai -> $10k
     uint256 ethAmount = 10e18; // 10 eth -> $20k
@@ -242,7 +240,6 @@ contract UserRiskPremiumTest is BaseTest {
     uint256 userRiskPremium = 0;
     for (uint256 i = 0; i < assetIds.length; i++) {
       uint256 assetId = assetIds[i];
-      Spoke.Reserve memory reserve = spoke1.getReserve(assetId);
       Spoke.UserConfig memory userConfig = spoke1.getUser(assetId, USER1);
 
       uint256 assetPrice = MockPriceOracle(address(oracle)).getAssetPrice(assetId);
