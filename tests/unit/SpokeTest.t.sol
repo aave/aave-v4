@@ -348,7 +348,7 @@ contract SpokeTest is BaseTest {
     uint256 daiId = 0;
     bool newCollateral = false;
     bool usingAsCollateral = true;
-    _updateCollateral(daiId, newCollateral);
+    Utils.updateCollateral(vm, spoke1, daiId, newCollateral);
 
     vm.prank(USER1);
     vm.expectRevert(TestErrors.RESERVE_NOT_COLLATERAL);
@@ -359,7 +359,7 @@ contract SpokeTest is BaseTest {
     uint256 daiId = 0;
     bool newCollateral = true;
     bool usingAsCollateral = true;
-    _updateCollateral(daiId, newCollateral);
+    Utils.updateCollateral(vm, spoke1, daiId, newCollateral);
 
     vm.prank(USER1);
     vm.expectRevert(TestErrors.NO_SUPPLY);
@@ -375,7 +375,7 @@ contract SpokeTest is BaseTest {
     uint256 daiAmount = 100e18;
 
     // ensure DAI is allowed as collateral
-    _updateCollateral(daiId, newCollateral);
+    Utils.updateCollateral(vm, spoke1, daiId, newCollateral);
 
     // USER1 supply dai into spoke1
     deal(address(dai), USER1, daiAmount);
@@ -402,12 +402,12 @@ contract SpokeTest is BaseTest {
     bool usingAsCollateral = true;
 
     // ensure DAI allowed as collateral
-    _updateCollateral(daiId, newCollateral);
+    Utils.updateCollateral(vm, spoke1, daiId, newCollateral);
 
     // USER1 supply dai into spoke1
     deal(address(dai), USER1, daiAmount);
     Utils.spokeSupply(vm, hub, spoke1, daiId, USER1, daiAmount, USER1);
-    _setUsingAsCollateral(USER1, daiId, true);
+    Utils.setUsingAsCollateral(vm, spoke1, USER1, daiId, true);
 
     uint256 healthFactor = ISpoke(spoke1).getHealthFactor(USER1);
     assertEq(healthFactor, type(uint256).max, 'wrong health factor');
@@ -424,18 +424,18 @@ contract SpokeTest is BaseTest {
     bool usingAsCollateral = true;
 
     // ensure DAI/ETH allowed as collateral
-    _updateCollateral(daiId, newCollateral);
-    _updateCollateral(ethId, newCollateral);
+    Utils.updateCollateral(vm, spoke1, daiId, newCollateral);
+    Utils.updateCollateral(vm, spoke1, ethId, newCollateral);
 
     // USER1 supply dai into spoke1
     deal(address(dai), USER1, daiAmount);
     Utils.spokeSupply(vm, hub, spoke1, daiId, USER1, daiAmount, USER1);
-    _setUsingAsCollateral(USER1, daiId, true);
+    Utils.setUsingAsCollateral(vm, spoke1, USER1, daiId, true);
 
     // USER1 supply eth into spoke1
     deal(address(eth), USER1, ethAmount);
     Utils.spokeSupply(vm, hub, spoke1, ethId, USER1, ethAmount, USER1);
-    _setUsingAsCollateral(USER1, ethId, true);
+    Utils.setUsingAsCollateral(vm, spoke1, USER1, ethId, true);
 
     // USER2 supply usdc into spoke1
     deal(address(usdc), USER2, usdcBorrowAmount);
@@ -460,22 +460,22 @@ contract SpokeTest is BaseTest {
     bool usingAsCollateral = true;
 
     // ensure DAI/ETH allowed as collateral
-    _updateCollateral(daiId, newCollateral);
-    _updateCollateral(ethId, newCollateral);
+    Utils.updateCollateral(vm, spoke1, daiId, newCollateral);
+    Utils.updateCollateral(vm, spoke1, ethId, newCollateral);
 
     // set Lt to 100% for both assets
-    _updateLiquidationThreshold(daiId, 1e4);
-    _updateLiquidationThreshold(ethId, 1e4);
+    Utils.updateLiquidationThreshold(vm, spoke1, daiId, 1e4);
+    Utils.updateLiquidationThreshold(vm, spoke1, ethId, 1e4);
 
     // USER1 supply dai into spoke1
     deal(address(dai), USER1, daiAmount);
     Utils.spokeSupply(vm, hub, spoke1, daiId, USER1, daiAmount, USER1);
-    _setUsingAsCollateral(USER1, daiId, true);
+    Utils.setUsingAsCollateral(vm, spoke1, USER1, daiId, true);
 
     // USER1 supply eth into spoke1
     deal(address(eth), USER1, ethAmount);
     Utils.spokeSupply(vm, hub, spoke1, ethId, USER1, ethAmount, USER1);
-    _setUsingAsCollateral(USER1, ethId, true);
+    Utils.setUsingAsCollateral(vm, spoke1, USER1, ethId, true);
 
     // USER2 supply usdc into spoke1
     deal(address(usdc), USER2, usdcBorrowAmount);
@@ -489,21 +489,4 @@ contract SpokeTest is BaseTest {
   }
 
   // TODO: helper to calculate exact HF to check values
-
-  function _setUsingAsCollateral(address user, uint256 reserveId, bool usingAsCollateral) internal {
-    vm.prank(user);
-    ISpoke(spoke1).setUsingAsCollateral(reserveId, usingAsCollateral);
-  }
-
-  function _updateLiquidationThreshold(uint256 reserveId, uint256 newLt) internal {
-    Spoke.Reserve memory reserveData = spoke1.getReserve(reserveId);
-    reserveData.config.lt = newLt;
-    spoke1.updateReserveConfig(reserveId, reserveData.config);
-  }
-
-  function _updateCollateral(uint256 reserveId, bool newCollateral) internal {
-    Spoke.Reserve memory reserveData = spoke1.getReserve(reserveId);
-    reserveData.config.collateral = newCollateral;
-    spoke1.updateReserveConfig(reserveId, reserveData.config);
-  }
 }

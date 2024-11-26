@@ -94,4 +94,33 @@ library Utils {
     spoke.borrow(assetId, user, amount);
     vm.stopPrank();
   }
+
+  // spoke
+  function setUsingAsCollateral(
+    Vm vm,
+    Spoke spoke,
+    address user,
+    uint256 reserveId,
+    bool usingAsCollateral
+  ) internal {
+    vm.prank(user);
+    ISpoke(spoke).setUsingAsCollateral(reserveId, usingAsCollateral);
+  }
+
+  function updateLiquidationThreshold(
+    Vm vm,
+    Spoke spoke,
+    uint256 reserveId,
+    uint256 newLt
+  ) internal {
+    Spoke.Reserve memory reserveData = spoke.getReserve(reserveId);
+    reserveData.config.lt = newLt;
+    Spoke(spoke).updateReserveConfig(reserveId, reserveData.config);
+  }
+
+  function updateCollateral(Vm vm, Spoke spoke, uint256 reserveId, bool newCollateral) internal {
+    Spoke.Reserve memory reserveData = spoke.getReserve(reserveId);
+    reserveData.config.collateral = newCollateral;
+    Spoke(spoke).updateReserveConfig(reserveId, reserveData.config);
+  }
 }
