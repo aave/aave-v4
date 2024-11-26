@@ -209,8 +209,9 @@ contract Spoke is ISpoke {
   // /////
 
   function addReserve(uint256 assetId, ReserveConfig memory params, address asset) external {
-    // TODO: validate assetId does not exist already
-    // require(reserves[assetId].id == 0, 'RESERVE_ID_ALREADY_EXISTS');
+    // TODO: validate assetId does not exist already, valid asset
+    // require(asset != address(0), 'INVALID_ASSET');
+    // require(reserves[assetId].asset == address(0), 'RESERVE_ID_ALREADY_EXISTS');
 
     // TODO: AccessControl
     reservesList.push(assetId);
