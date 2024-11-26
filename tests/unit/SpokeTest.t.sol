@@ -180,7 +180,7 @@ contract SpokeTest is BaseTest {
     Utils.spokeSupply(vm, hub, spoke1, daiId, USER2, daiAmount, USER2);
 
     // set reserve not borrowable
-    Utils.updateBorrowable(vm, spoke1, daiId, false);
+    Utils.updateBorrowable(spoke1, daiId, false);
 
     // USER1 draw half of dai reserve liquidity
     vm.prank(USER1);
@@ -408,7 +408,7 @@ contract SpokeTest is BaseTest {
     uint256 daiId = 0;
     bool newCollateral = false;
     bool usingAsCollateral = true;
-    Utils.updateCollateral(vm, spoke1, daiId, newCollateral);
+    Utils.updateCollateral(spoke1, daiId, newCollateral);
 
     vm.prank(USER1);
     vm.expectRevert(TestErrors.RESERVE_NOT_COLLATERAL);
@@ -419,13 +419,11 @@ contract SpokeTest is BaseTest {
     uint256 daiId = 0;
     bool newCollateral = true;
     bool usingAsCollateral = true;
-    Utils.updateCollateral(vm, spoke1, daiId, newCollateral);
+    Utils.updateCollateral(spoke1, daiId, newCollateral);
 
     vm.prank(USER1);
     vm.expectRevert(TestErrors.NO_SUPPLY);
     ISpoke(spoke1).setUsingAsCollateral(daiId, usingAsCollateral);
-
-    Spoke.Reserve memory reserveData = spoke1.getReserve(daiId);
   }
 
   function test_setUsingAsCollateral() public {
@@ -435,7 +433,7 @@ contract SpokeTest is BaseTest {
     uint256 daiAmount = 100e18;
 
     // ensure DAI is allowed as collateral
-    Utils.updateCollateral(vm, spoke1, daiId, newCollateral);
+    Utils.updateCollateral(spoke1, daiId, newCollateral);
 
     // USER1 supply dai into spoke1
     deal(address(dai), USER1, daiAmount);
@@ -450,7 +448,8 @@ contract SpokeTest is BaseTest {
     assertEq(userData.usingAsCollateral, usingAsCollateral, 'wrong usingAsCollateral');
   }
 
-  function test_getHealthFactor_no_supplied() public {
+  function test_getHealthFactor_no_supplied() public view {
+    // without any supply/borrow, health factor should be max
     uint256 healthFactor = ISpoke(spoke1).getHealthFactor(USER1);
     assertEq(healthFactor, type(uint256).max, 'wrong health factor');
   }
@@ -462,12 +461,12 @@ contract SpokeTest is BaseTest {
     bool usingAsCollateral = true;
 
     // ensure DAI allowed as collateral
-    Utils.updateCollateral(vm, spoke1, daiId, newCollateral);
+    Utils.updateCollateral(spoke1, daiId, newCollateral);
 
     // USER1 supply dai into spoke1
     deal(address(dai), USER1, daiAmount);
     Utils.spokeSupply(vm, hub, spoke1, daiId, USER1, daiAmount, USER1);
-    Utils.setUsingAsCollateral(vm, spoke1, USER1, daiId, true);
+    Utils.setUsingAsCollateral(vm, spoke1, USER1, daiId, usingAsCollateral);
 
     uint256 healthFactor = ISpoke(spoke1).getHealthFactor(USER1);
     assertEq(healthFactor, type(uint256).max, 'wrong health factor');
@@ -484,18 +483,18 @@ contract SpokeTest is BaseTest {
     bool usingAsCollateral = true;
 
     // ensure DAI/ETH allowed as collateral
-    Utils.updateCollateral(vm, spoke1, daiId, newCollateral);
-    Utils.updateCollateral(vm, spoke1, ethId, newCollateral);
+    Utils.updateCollateral(spoke1, daiId, newCollateral);
+    Utils.updateCollateral(spoke1, ethId, newCollateral);
 
     // USER1 supply dai into spoke1
     deal(address(dai), USER1, daiAmount);
     Utils.spokeSupply(vm, hub, spoke1, daiId, USER1, daiAmount, USER1);
-    Utils.setUsingAsCollateral(vm, spoke1, USER1, daiId, true);
+    Utils.setUsingAsCollateral(vm, spoke1, USER1, daiId, usingAsCollateral);
 
     // USER1 supply eth into spoke1
     deal(address(eth), USER1, ethAmount);
     Utils.spokeSupply(vm, hub, spoke1, ethId, USER1, ethAmount, USER1);
-    Utils.setUsingAsCollateral(vm, spoke1, USER1, ethId, true);
+    Utils.setUsingAsCollateral(vm, spoke1, USER1, ethId, usingAsCollateral);
 
     // USER2 supply usdc into spoke1
     deal(address(usdc), USER2, usdcBorrowAmount);
@@ -520,22 +519,22 @@ contract SpokeTest is BaseTest {
     bool usingAsCollateral = true;
 
     // ensure DAI/ETH allowed as collateral
-    Utils.updateCollateral(vm, spoke1, daiId, newCollateral);
-    Utils.updateCollateral(vm, spoke1, ethId, newCollateral);
+    Utils.updateCollateral(spoke1, daiId, newCollateral);
+    Utils.updateCollateral(spoke1, ethId, newCollateral);
 
     // set Lt to 100% for both assets
-    Utils.updateLiquidationThreshold(vm, spoke1, daiId, 1e4);
-    Utils.updateLiquidationThreshold(vm, spoke1, ethId, 1e4);
+    Utils.updateLiquidationThreshold(spoke1, daiId, 1e4);
+    Utils.updateLiquidationThreshold(spoke1, ethId, 1e4);
 
     // USER1 supply dai into spoke1
     deal(address(dai), USER1, daiAmount);
     Utils.spokeSupply(vm, hub, spoke1, daiId, USER1, daiAmount, USER1);
-    Utils.setUsingAsCollateral(vm, spoke1, USER1, daiId, true);
+    Utils.setUsingAsCollateral(vm, spoke1, USER1, daiId, usingAsCollateral);
 
     // USER1 supply eth into spoke1
     deal(address(eth), USER1, ethAmount);
     Utils.spokeSupply(vm, hub, spoke1, ethId, USER1, ethAmount, USER1);
-    Utils.setUsingAsCollateral(vm, spoke1, USER1, ethId, true);
+    Utils.setUsingAsCollateral(vm, spoke1, USER1, ethId, usingAsCollateral);
 
     // USER2 supply usdc into spoke1
     deal(address(usdc), USER2, usdcBorrowAmount);

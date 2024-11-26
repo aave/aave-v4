@@ -106,19 +106,19 @@ library Utils {
     ISpoke(spoke).setUsingAsCollateral(assetId, usingAsCollateral);
   }
 
-  function updateLiquidationThreshold(Vm vm, Spoke spoke, uint256 assetId, uint256 newLt) internal {
+  function updateLiquidationThreshold(Spoke spoke, uint256 assetId, uint256 newLt) internal {
     Spoke.Reserve memory reserveData = spoke.getReserve(assetId);
     reserveData.config.lt = newLt;
     Spoke(spoke).updateReserveConfig(assetId, reserveData.config);
   }
 
-  function updateCollateral(Vm vm, Spoke spoke, uint256 assetId, bool newCollateral) internal {
+  function updateCollateral(Spoke spoke, uint256 assetId, bool newCollateral) internal {
     Spoke.Reserve memory reserveData = spoke.getReserve(assetId);
     reserveData.config.collateral = newCollateral;
     Spoke(spoke).updateReserveConfig(assetId, reserveData.config);
   }
 
-  function updateBorrowable(Vm vm, Spoke spoke, uint256 assetId, bool newBorrowable) internal {
+  function updateBorrowable(Spoke spoke, uint256 assetId, bool newBorrowable) internal {
     Spoke.Reserve memory reserveData = spoke.getReserve(assetId);
     reserveData.config.borrowable = newBorrowable;
     Spoke(spoke).updateReserveConfig(assetId, reserveData.config);

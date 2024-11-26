@@ -157,8 +157,8 @@ contract HealthFactorTest is BaseTest {
     bool usingAsCollateral = true;
 
     // ensure DAI/ETH allowed as collateral
-    Utils.updateCollateral(vm, spoke1, daiId, newCollateral);
-    Utils.updateCollateral(vm, spoke1, ethId, newCollateral);
+    Utils.updateCollateral(spoke1, daiId, newCollateral);
+    Utils.updateCollateral(spoke1, ethId, newCollateral);
 
     // USER1 supply dai into spoke1
     deal(address(dai), USER1, daiAmount);
