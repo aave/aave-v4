@@ -270,7 +270,6 @@ contract HealthFactorTest is BaseTest {
     assertEq(healthFactor, expectedHealthFactor);
   }
 
-  // TODO: helper to calculate exact HF to check values
   function _calculateHealthFactor(uint256[] memory assetIds) internal view returns (uint256) {
     uint256 totalCollateral = 0;
     uint256 totalDebt = 0;
