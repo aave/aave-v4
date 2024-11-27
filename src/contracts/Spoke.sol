@@ -300,13 +300,6 @@ contract Spoke is ISpoke {
   }
 
   // public
-  function getInterestRate(uint256 assetId) public view returns (uint256) {
-    // read from state, convert to ray
-    // TODO: should be final IR rather than base?
-    return ILiquidityHub(liquidityHub).getBaseInterestRate(assetId);
-  }
-
-  // public
   function getReserve(uint256 assetId) public view returns (Reserve memory) {
     return reserves[assetId];
   }
