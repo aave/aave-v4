@@ -80,6 +80,7 @@ abstract contract BaseTest is Test, Events {
   using WadRayMath for uint256;
   using SharesMath for uint256;
 
+  // TODO: update these mocked tokens with decimals as in the real contracts, ie USDC = 6, wbtc = 8, etc.?
   IERC20 internal usdc;
   IERC20 internal dai;
   IERC20 internal usdt;
