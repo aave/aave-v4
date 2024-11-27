@@ -217,6 +217,7 @@ contract Spoke is ISpoke {
     // require(reserves[assetId].asset == address(0), 'RESERVE_ID_ALREADY_EXISTS');
 
     // TODO: AccessControl
+    // TODO: assigning reserveId as the latest reserveCount
     reservesList.push(assetId);
     reserves[assetId].id = assetId;
     reserves[assetId].asset = asset;
