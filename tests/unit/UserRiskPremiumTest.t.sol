@@ -141,12 +141,12 @@ contract UserRiskPremiumTest is BaseTest {
     );
   }
 
-  function test_getUserRiskPremium_no_supplied() public view {
+  function test_getUserRiskPremium_no_collateral() public view {
     uint256 userRiskPremium = ISpoke(spoke1).getUserRiskPremium(USER1);
-    assertEq(userRiskPremium, type(uint256).max, 'wrong user risk premium');
+    assertEq(userRiskPremium, 0, 'wrong user risk premium');
   }
 
-  function test_getUserRiskPremium_single_asset_supplied() public {
+  function test_getUserRiskPremium_single_asset_collateral() public {
     uint256 daiId = 0;
     uint256 daiAmount = 100e18;
     bool newCollateral = true;
@@ -164,7 +164,7 @@ contract UserRiskPremiumTest is BaseTest {
     assertEq(userRiskPremium, 1e18, 'wrong user risk premium'); // TODO: fix when LP is implemented
   }
 
-  function test_getUserRiskPremium_multi_asset_supplied() public {
+  function test_getUserRiskPremium_multi_asset_collateral() public {
     uint256 daiId = 0;
     uint256 ethId = 1;
 
