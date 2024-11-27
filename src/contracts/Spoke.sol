@@ -410,7 +410,6 @@ contract Spoke is ISpoke {
     );
   }
 
-  // TODO: refactor input params to use a struct
   function _executeLiquidationCall(
     uint256 debtToCover,
     uint256 collateralAssetId,
@@ -418,9 +417,7 @@ contract Spoke is ISpoke {
     address user
   ) internal {
     // V3 implementation to liquidate undercollateralized positions to start out with.
-    // In addition, instead of allowing the liquidator to liquidate up to 50% if HF goes below certain threshold
-    // we want allow the liquidator to liquidate enough assets so the HF goes back to 1 (or slightly higher).
-    // make sure to account for liquidation bonus in calculating the amount liquidatable
+    // v1 - allow the liquidator to liquidate up to 50% if HF goes below certain threshold
 
     require(debtToCover > 0, 'INVALID_DEBT_TO_COVER');
 
@@ -433,64 +430,65 @@ contract Spoke is ISpoke {
 
     // TODO: check if user has HF below threshold
     _validateLiquidationCall(collateralReserve, debtReserve, user, 0); // TODO: involve healthFactor, hardcode 0 for now
-    vars.userDebtBalance = getUserDebt(debtReserve.id, user);
-    vars.userCollateralBalance = LiquidityHub(address(this)).getUserBalance(
-      collateralAssetId,
-      user
-    );
 
-    vars.actualDebtToCover = debtToCover > vars.userDebtBalance
-      ? vars.userDebtBalance
-      : debtToCover;
-
-    // TODO: calculate how much of a specific collateral can be liquidated, given a certain amount of debt asset
-    // TODO: account for liquidation bonus, protocol liquidation fee
-
-    console2.log(
-      'vars.userCollateralBalance',
-      vars.userCollateralBalance,
-      'vars.actualDebtToCover',
-      vars.actualDebtToCover
-    );
-    (
-      vars.actualCollateralToLiquidate,
-      vars.actualDebtToLiquidate,
-      vars.liquidationProtocolFeeAmount
-    ) = _calculateAvailableCollateralToLiquidate(
-      collateralReserve,
-      debtReserve,
-      vars.actualDebtToCover,
-      vars.userCollateralBalance,
-      10_000 // TODO: liquidation bonus
-    );
-
-    IERC20(reservesList[debtAssetId]).safeTransferFrom(
-      msg.sender,
-      address(this), // liq hub
-      vars.actualDebtToLiquidate
-    );
-    IERC20(reservesList[collateralAssetId]).safeTransfer(
-      msg.sender,
-      vars.actualCollateralToLiquidate
-    );
-    // TODO: update interest rates, etc. for the reserves
-    // TODO: update user's collateral balance
-
-    // console2.log(
-    //   'vars.actualDebtToLiquidate',
-    //   vars.actualDebtToLiquidate,
-    //   'vars.actualCollateralToLiquidate',
-    //   vars.actualCollateralToLiquidate
+    // vars.userDebtBalance = getUserDebt(debtReserve.id, user);
+    // vars.userCollateralBalance = LiquidityHub(address(this)).getUserBalance(
+    //   collateralAssetId,
+    //   user
     // );
 
-    emit LiquidationCall(
-      collateralAssetId,
-      debtAssetId,
-      user,
-      vars.actualDebtToLiquidate, // TODO: actualDebtToLiquidate
-      vars.actualCollateralToLiquidate, // TODO: liquidatedCollateralAmount
-      msg.sender
-    );
+    // vars.actualDebtToCover = debtToCover > vars.userDebtBalance
+    //   ? vars.userDebtBalance
+    //   : debtToCover;
+
+    // // TODO: calculate how much of a specific collateral can be liquidated, given a certain amount of debt asset
+    // // TODO: account for liquidation bonus, protocol liquidation fee
+
+    // console2.log(
+    //   'vars.userCollateralBalance',
+    //   vars.userCollateralBalance,
+    //   'vars.actualDebtToCover',
+    //   vars.actualDebtToCover
+    // );
+    // (
+    //   vars.actualCollateralToLiquidate,
+    //   vars.actualDebtToLiquidate,
+    //   vars.liquidationProtocolFeeAmount
+    // ) = _calculateAvailableCollateralToLiquidate(
+    //   collateralReserve,
+    //   debtReserve,
+    //   vars.actualDebtToCover,
+    //   vars.userCollateralBalance,
+    //   10_000 // TODO: liquidation bonus
+    // );
+
+    // IERC20(reservesList[debtAssetId]).safeTransferFrom(
+    //   msg.sender,
+    //   address(this), // liq hub
+    //   vars.actualDebtToLiquidate
+    // );
+    // IERC20(reservesList[collateralAssetId]).safeTransfer(
+    //   msg.sender,
+    //   vars.actualCollateralToLiquidate
+    // );
+    // // TODO: update interest rates, etc. for the reserves
+    // // TODO: update user's collateral balance
+
+    // // console2.log(
+    // //   'vars.actualDebtToLiquidate',
+    // //   vars.actualDebtToLiquidate,
+    // //   'vars.actualCollateralToLiquidate',
+    // //   vars.actualCollateralToLiquidate
+    // // );
+
+    // emit LiquidationCall(
+    //   collateralAssetId,
+    //   debtAssetId,
+    //   user,
+    //   vars.actualDebtToLiquidate, // TODO: actualDebtToLiquidate
+    //   vars.actualCollateralToLiquidate, // TODO: liquidatedCollateralAmount
+    //   msg.sender
+    // );
   }
 
   function _calculateAvailableCollateralToLiquidate(
@@ -508,7 +506,7 @@ contract Spoke is ISpoke {
     vars.collateralAssetUnit = 10 ** collateralReserve.config.decimals;
     vars.debtAssetUnit = 10 ** debtReserve.config.decimals;
 
-    vars.liquidationProtocolFeePercentage = getLiquidationBonus(collateralReserve.id);
+    vars.liquidationProtocolFeePercentage = collateralReserve.lb;
 
     vars.baseCollateral =
       (vars.debtAssetPrice * debtToCover * vars.collateralAssetUnit) /
