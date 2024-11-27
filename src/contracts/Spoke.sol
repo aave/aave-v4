@@ -341,7 +341,7 @@ contract Spoke is ISpoke {
             vars.assetId,
             u.supplyShares.rayMul(
               MathUtils.calculateCompoundedInterest(
-                getInterestRate(assetId),
+                getInterestRate(vars.assetId),
                 uint40(0),
                 block.timestamp
               )
@@ -359,7 +359,7 @@ contract Spoke is ISpoke {
             vars.assetId,
             u.debtShares.rayMul(
               MathUtils.calculateCompoundedInterest(
-                getInterestRate(assetId),
+                getInterestRate(vars.assetId),
                 uint40(0),
                 block.timestamp
               )
