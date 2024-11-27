@@ -337,7 +337,16 @@ contract Spoke is ISpoke {
       if (_usingAsCollateral(vars.assetId, user)) {
         vars.userCollateralInBaseCurrency =
           vars.assetPrice *
-          ILiquidityHub(liquidityHub).convertSharesToAssetsDown(vars.assetId, u.supplyShares);
+          ILiquidityHub(liquidityHub).convertSharesToAssetsDown(
+            vars.assetId,
+            u.supplyShares.rayMul(
+              MathUtils.calculateCompoundedInterest(
+                getInterestRate(assetId),
+                uint40(0),
+                block.timestamp
+              )
+            )
+          ); // TODO: use lastUpdatedTimestamp in interest math, make sure collateral includes accrued supply interest
         vars.liquidityPremium = 1; // TODO: get LP from LH
         vars.totalCollateralInBaseCurrency += vars.userCollateralInBaseCurrency;
         vars.avgLiquidationThreshold += vars.userCollateralInBaseCurrency * r.config.lt;
@@ -346,7 +355,16 @@ contract Spoke is ISpoke {
 
       vars.totalDebtInBaseCurrency += u.debtShares > 0
         ? vars.assetPrice *
-          ILiquidityHub(liquidityHub).convertSharesToAssetsUp(vars.assetId, u.debtShares)
+          ILiquidityHub(liquidityHub).convertSharesToAssetsUp(
+            vars.assetId,
+            u.debtShares.rayMul(
+              MathUtils.calculateCompoundedInterest(
+                getInterestRate(assetId),
+                uint40(0),
+                block.timestamp
+              )
+            ) // TODO: use lastUpdatedTimestamp in interest math, make sure total debt includes accrued debt interest
+          )
         : 0;
 
       vars.i++;
