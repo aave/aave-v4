@@ -12,7 +12,6 @@ import {IReserveInterestRateStrategy} from 'src/interfaces/IReserveInterestRateS
 import {IPriceOracle} from 'src/interfaces/IPriceOracle.sol';
 import {DataTypes} from 'src/libraries/types/DataTypes.sol';
 
-import 'forge-std/console2.sol';
 contract Spoke is ISpoke {
   using WadRayMath for uint256;
   using PercentageMath for uint256;
@@ -366,8 +365,6 @@ contract Spoke is ISpoke {
       : (vars.totalCollateralInBaseCurrency.percentMul(vars.avgLiquidationThreshold)).wadDiv(
         vars.totalDebtInBaseCurrency
       ); // HF of 1 -> 1e18
-
-    // console2.log('avgLiquidationThreshold %e', vars.avgLiquidationThreshold);
 
     return (
       vars.totalCollateralInBaseCurrency,
