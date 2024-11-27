@@ -51,6 +51,15 @@ contract HealthFactorTest is BaseTest {
       reserveConfigs
     );
     MockPriceOracle(address(oracle)).setAssetPrice(daiAssetId, 1e8);
+    irStrategy.setInterestRateParams(
+      daiAssetId,
+      IDefaultInterestRateStrategy.InterestRateData({
+        optimalUsageRatio: 9000, // 90.00%
+        baseVariableBorrowRate: 500, // 5.00%
+        variableRateSlope1: 500, // 5.00%
+        variableRateSlope2: 500 // 5.00%
+      })
+    );
 
     // Add eth
     uint256 ethAssetId = 1;
@@ -77,6 +86,15 @@ contract HealthFactorTest is BaseTest {
       reserveConfigs
     );
     MockPriceOracle(address(oracle)).setAssetPrice(ethAssetId, 2000e8);
+    irStrategy.setInterestRateParams(
+      ethAssetId,
+      IDefaultInterestRateStrategy.InterestRateData({
+        optimalUsageRatio: 9000, // 90.00%
+        baseVariableBorrowRate: 500, // 5.00%
+        variableRateSlope1: 500, // 5.00%
+        variableRateSlope2: 500 // 5.00%
+      })
+    );
 
     // Add USDC
     uint256 usdcId = 2;
@@ -103,6 +121,15 @@ contract HealthFactorTest is BaseTest {
       reserveConfigs
     );
     MockPriceOracle(address(oracle)).setAssetPrice(usdcId, 1e8);
+    irStrategy.setInterestRateParams(
+      usdcId,
+      IDefaultInterestRateStrategy.InterestRateData({
+        optimalUsageRatio: 9000, // 90.00%
+        baseVariableBorrowRate: 500, // 5.00%
+        variableRateSlope1: 500, // 5.00%
+        variableRateSlope2: 500 // 5.00%
+      })
+    );
 
     // Add WBTC
     uint256 wbtcAssetId = 3;
@@ -129,27 +156,8 @@ contract HealthFactorTest is BaseTest {
       reserveConfigs
     );
     MockPriceOracle(address(oracle)).setAssetPrice(wbtcAssetId, 50_000e8);
-
     irStrategy.setInterestRateParams(
-      daiAssetId,
-      IDefaultInterestRateStrategy.InterestRateData({
-        optimalUsageRatio: 9000, // 90.00%
-        baseVariableBorrowRate: 500, // 5.00%
-        variableRateSlope1: 500, // 5.00%
-        variableRateSlope2: 500 // 5.00%
-      })
-    );
-    irStrategy.setInterestRateParams(
-      ethAssetId,
-      IDefaultInterestRateStrategy.InterestRateData({
-        optimalUsageRatio: 9000, // 90.00%
-        baseVariableBorrowRate: 500, // 5.00%
-        variableRateSlope1: 500, // 5.00%
-        variableRateSlope2: 500 // 5.00%
-      })
-    );
-    irStrategy.setInterestRateParams(
-      usdcId,
+      wbtcAssetId,
       IDefaultInterestRateStrategy.InterestRateData({
         optimalUsageRatio: 9000, // 90.00%
         baseVariableBorrowRate: 500, // 5.00%
