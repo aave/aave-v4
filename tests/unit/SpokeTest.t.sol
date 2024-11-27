@@ -122,7 +122,7 @@ contract SpokeTest is BaseTest {
     );
   }
 
-  function test_revert_supply_reserve_not_listed() public {
+  function test_supply_revertsWith_reserve_not_listed() public {
     uint256 assetId = 5; // invalid assetId
     uint256 amount = 100e18;
 
@@ -165,7 +165,7 @@ contract SpokeTest is BaseTest {
     assertEq(userData.debtShares, 0, 'wrong user debt shares');
   }
 
-  function test_revert_borrow_reserve_not_borrowable() public {
+  function test_borrow_revertsWith_reserve_not_borrowable() public {
     uint256 daiId = 0;
     uint256 ethId = 1;
     uint256 daiAmount = 100e18;
@@ -284,7 +284,7 @@ contract SpokeTest is BaseTest {
     assertEq(user1Data.debtShares, 0, 'wrong user debt shares post-withdraw');
   }
 
-  function test_revert_repay_repay_exceeds_debt() public {
+  function test_repay_revertsWith_repay_exceeds_debt() public {
     uint256 daiId = 0;
     uint256 ethId = 1;
     uint256 daiAmount = 100e18;
@@ -404,7 +404,7 @@ contract SpokeTest is BaseTest {
     assertEq(reserveData.config.collateral, newReserveConfig.collateral, 'wrong collateral');
   }
 
-  function test_revert_setUsingAsCollateral_reserve_not_collateral() public {
+  function test_setUsingAsCollateral_revertsWith_reserve_not_collateral() public {
     uint256 daiId = 0;
     bool newCollateral = false;
     bool usingAsCollateral = true;
@@ -415,7 +415,7 @@ contract SpokeTest is BaseTest {
     ISpoke(spoke1).setUsingAsCollateral(daiId, usingAsCollateral);
   }
 
-  function test_revert_setUsingAsCollateral_no_supply() public {
+  function test_setUsingAsCollateral_revertsWith_no_supply() public {
     uint256 daiId = 0;
     bool newCollateral = true;
     bool usingAsCollateral = true;

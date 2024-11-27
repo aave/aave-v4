@@ -100,7 +100,7 @@ contract LiquidityHubTest is BaseTest {
     vm.warp(block.timestamp + 20);
   }
 
-  function test_revert_supply_asset_not_active() public {
+  function test_supply_revertsWith_asset_not_active() public {
     uint256 daiId = 0;
     uint256 amount = 100e18;
 
@@ -111,7 +111,7 @@ contract LiquidityHubTest is BaseTest {
     hub.supply(daiId, amount, 0);
   }
 
-  function test_revert_supply_supply_cap_exceeded() public {
+  function test_supply_revertsWith_supply_cap_exceeded() public {
     uint256 daiId = 0;
     uint256 amount = 100e18;
     _updateSupplyCap(daiId, address(spoke1), amount - 1);
@@ -482,7 +482,7 @@ contract LiquidityHubTest is BaseTest {
     // TODO User supplies X and withdraws more than X because there is some yield
   }
 
-  function test_revert_withdraw_zero_supplied() public {
+  function test_withdraw_revertsWith_zero_supplied() public {
     uint256 assetId = 0; // TODO: Add getter of asset id based on address
     uint256 amount = 1;
 
@@ -491,7 +491,7 @@ contract LiquidityHubTest is BaseTest {
     hub.withdraw(assetId, address(spoke1), amount, 0);
   }
 
-  function test_revert_withdraw_supplied_amount_exceeded() public {
+  function test_withdraw_revertsWith_supplied_amount_exceeded() public {
     uint256 assetId = 0; // TODO: Add getter of asset id based on address
     uint256 amount = 100e18;
 
@@ -526,7 +526,7 @@ contract LiquidityHubTest is BaseTest {
     assertEq(dai.balanceOf(address(hub)), amount);
   }
 
-  function test_revert_withdraw_not_available_liquidity() public {
+  function test_withdraw_revertsWith_not_available_liquidity() public {
     uint256 daiId = 0; // TODO: Add getter of asset id based on address
     uint256 amount = 100e18;
 
@@ -542,7 +542,7 @@ contract LiquidityHubTest is BaseTest {
     hub.withdraw(daiId, address(spoke1), amount, 0);
   }
 
-  function test_revert_withdraw_asset_not_active() public {
+  function test_withdraw_revertsWith_asset_not_active() public {
     uint256 daiId = 0; // TODO: Add getter of asset id based on address
     uint256 amount = 100e18;
 
@@ -701,7 +701,7 @@ contract LiquidityHubTest is BaseTest {
     assertEq(eth.balanceOf(address(spoke2)), 0, 'wrong spoke2 eth final balance');
   }
 
-  function test_revert_draw_asset_not_active() public {
+  function test_draw_revertsWith_asset_not_active() public {
     uint256 daiId = 2;
     uint256 drawnAmount = 1;
     _updateActive(daiId, false);
@@ -710,7 +710,7 @@ contract LiquidityHubTest is BaseTest {
     ILiquidityHub(address(hub)).draw(daiId, address(spoke1), drawnAmount, 0);
   }
 
-  function test_revert_draw_not_available_liquidity() public {
+  function test_draw_revertsWith_not_available_liquidity() public {
     uint256 daiId = 0;
     uint256 drawnAmount = 1;
     vm.prank(address(spoke1));
@@ -718,7 +718,7 @@ contract LiquidityHubTest is BaseTest {
     ILiquidityHub(address(hub)).draw(daiId, address(spoke1), drawnAmount, 0);
   }
 
-  function test_revert_draw_cap_exceeded() public {
+  function test_draw_revertsWith_cap_exceeded() public {
     uint256 daiId = 0;
     uint256 daiAmount = 100e18;
     uint256 drawCap = 1;
@@ -735,7 +735,7 @@ contract LiquidityHubTest is BaseTest {
     ILiquidityHub(address(hub)).draw(daiId, address(spoke1), drawnAmount, 0);
   }
 
-  function test_revert_restore_asset_not_active() public {
+  function test_restore_revertsWith_asset_not_active() public {
     uint256 daiId = 0;
     uint256 ethId = 1;
     uint256 daiAmount = 100e18;
@@ -764,7 +764,7 @@ contract LiquidityHubTest is BaseTest {
     vm.stopPrank();
   }
 
-  function test_revert_restore_invalid_restore_amount() public {
+  function test_restore_revertsWith_invalid_restore_amount() public {
     uint256 daiId = 0;
     uint256 ethId = 1;
     uint256 daiAmount = 100e18;
@@ -885,13 +885,13 @@ contract LiquidityHubTest is BaseTest {
     assertEq(spokeData.drawCap, 1, 'wrong spoke draw cap');
   }
 
-  function test_revert_add_spoke_invalid_spoke() public {
+  function test_addSpoke_revertsWith_invalid_spoke() public {
     uint256 daiId = 0;
     vm.expectRevert(TestErrors.INVALID_SPOKE);
     hub.addSpoke(daiId, DataTypes.SpokeConfig({supplyCap: 1, drawCap: 1}), address(0));
   }
 
-  function test_add_spokes() public {
+  function test_addSpokes() public {
     uint256 daiId = 0;
     uint256 ethId = 1;
 
@@ -918,7 +918,7 @@ contract LiquidityHubTest is BaseTest {
     assertEq(ethSpokeData.drawCap, 4, 'wrong eth spoke draw cap');
   }
 
-  function test_revert_add_spokes_invalid_spoke() public {
+  function test_addSpokes_revertsWith_invalid_spoke() public {
     uint256 daiId = 0;
     uint256 ethId = 1;
 

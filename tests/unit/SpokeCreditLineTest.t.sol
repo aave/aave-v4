@@ -177,7 +177,7 @@ contract SpokeCreditLineTest is BaseTest {
   //   assertEq(userBalance, spokeCreditLine.getUserDebt(daiId, USER1), '3) wrong final user1 debt');
   // }
 
-  // function skip_test_revert_borrow_reserve_not_borrowable() public {
+  // function skip_test_borrow_revertsWith_reserve_not_borrowable() public {
   //   uint256 daiId = 2;
   //   uint256 drawnAmount = 1;
   //   _updateBorrowable(daiId, false);
@@ -354,7 +354,7 @@ contract SpokeCreditLineTest is BaseTest {
   //   vm.stopPrank();
   // }
 
-  // function skip_test_revert_update_reserve() public {
+  // function skip_test_updateReserve_revertsWith_invalid_reserve() public {
   //   uint256 invalidReserveId = 3;
 
   //   MockSpokeCreditLine.ReserveConfig memory reserveConfig;
