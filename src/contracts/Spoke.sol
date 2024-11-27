@@ -534,24 +534,16 @@ contract Spoke is ISpoke {
     vars.collateralAssetUnit = 10 ** collateralReserve.decimals;
     vars.debtAssetUnit = 10 ** debtReserve.decimals;
 
-    // vars.baseCollateral =
-    //   (vars.debtAssetPrice * debtToCover * vars.collateralAssetUnit) /
-    //   (vars.collateralAssetPrice * vars.debtAssetUnit);
+    vars.liquidationProtocolFeePercentage = collateralReserve.config.lb; // TODO: helper getLiquidationProtocolFee()?
 
-    // vars.maxCollateralToLiquidate = vars.baseCollateral.percentMul(liquidationBonus);
+    vars.baseCollateral =
+      (vars.debtAssetPrice * debtToCover * vars.collateralAssetUnit) /
+      (vars.collateralAssetPrice * vars.debtAssetUnit);
 
-    // console2.log('vars.baseCollateral:', vars.baseCollateral);
-    // console2.log(
-    //   'vars.maxCollateralToLiquidate:',
-    //   vars.maxCollateralToLiquidate,
-    //   'userCollateralBalance',
-    //   userCollateralBalance
-    // );
+    vars.maxCollateralToLiquidate = vars.baseCollateral.percentMul(liquidationBonus);
 
-    // if the calculated maxCollateralToLiquidate (based on debt) is higher than the user's collateral balance,
-    // liquidate the max possible - userCollateralBalance
     if (vars.maxCollateralToLiquidate > userCollateralBalance) {
-      console2.log('maxCollateralToLiquidate > userCollateralBalance');
+      // back calculate debt amount needed to cover the max allowed collateral
       vars.collateralAmount = userCollateralBalance;
       vars.debtAmountNeeded = ((vars.collateralAssetPrice *
         vars.collateralAmount *
@@ -559,12 +551,26 @@ contract Spoke is ISpoke {
           liquidationBonus
         );
     } else {
-      console2.log('maxCollateralToLiquidate <= userCollateralBalance');
       vars.collateralAmount = vars.maxCollateralToLiquidate;
       vars.debtAmountNeeded = debtToCover;
     }
 
-    // TODO: logic for liquidationProtocolFeePercentage
-    return (vars.collateralAmount, vars.debtAmountNeeded, vars.liquidationProtocolFeeAmount);
+    if (vars.liquidationProtocolFeePercentage != 0) {
+      vars.bonusCollateral =
+        vars.collateralAmount -
+        vars.collateralAmount.percentDiv(liquidationBonus);
+
+      vars.liquidationProtocolFeeAmount = vars.bonusCollateral.percentMul(
+        vars.liquidationProtocolFeePercentage
+      );
+
+      return (
+        vars.collateralAmount - vars.liquidationProtocolFeeAmount,
+        vars.debtAmountNeeded,
+        vars.liquidationProtocolFeeAmount
+      );
+    } else {
+      return (vars.collateralAmount, vars.debtAmountNeeded, 0);
+    }
   }
 }
