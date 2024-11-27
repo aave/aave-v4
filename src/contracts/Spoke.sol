@@ -32,7 +32,6 @@ contract Spoke is ISpoke {
     ReserveConfig config;
   }
 
-  // TODO: liquidation bonus
   struct ReserveConfig {
     uint256 lt; // 1e4 == 100%, BPS
     uint256 lb; // 1e4 == 100%, BPS
@@ -499,6 +498,9 @@ contract Spoke is ISpoke {
     ) {
       setUsingAsCollateral(collateralReserve.id, false);
     }
+
+    console2.log('vars.actualCollateralToLiquidate %e', vars.actualCollateralToLiquidate);
+    console2.log('vars.actualDebtToLiquidate %e', vars.actualDebtToLiquidate);
 
     // IERC20(reservesList[debtAssetId]).safeTransferFrom(
     //   msg.sender,

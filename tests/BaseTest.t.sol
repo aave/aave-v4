@@ -74,6 +74,7 @@ library TestErrors {
   bytes constant NO_SUPPLY = 'NO_SUPPLY';
   bytes constant REPAY_EXCEEDS_DEBT = 'REPAY_EXCEEDS_DEBT';
   bytes constant RESERVE_NOT_LISTED = 'RESERVE_NOT_LISTED';
+  bytes constant INVALID_DEBT_TO_COVER = 'INVALID_DEBT_TO_COVER';
 }
 
 abstract contract BaseTest is Test, Events {
@@ -98,6 +99,7 @@ abstract contract BaseTest is Test, Events {
   address internal mockAddressesProvider = makeAddr('mockAddressesProvider');
   address internal USER1 = makeAddr('USER1');
   address internal USER2 = makeAddr('USER2');
+  address internal LIQUIDATOR = makeAddr('LIQUIDATOR');
 
   function setUp() public virtual {
     oracle = new MockPriceOracle();

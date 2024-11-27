@@ -10,19 +10,172 @@ contract LiquidationTest is BaseTest {
 
   function setUp() public override {
     super.setUp();
+
+    address[] memory spokes = new address[](2);
+    spokes[0] = address(spoke1);
+    spokes[1] = address(spoke2);
+    DataTypes.SpokeConfig[] memory spokeConfigs = new DataTypes.SpokeConfig[](2);
+    spokeConfigs[0] = DataTypes.SpokeConfig({
+      supplyCap: type(uint256).max,
+      drawCap: type(uint256).max
+    });
+    spokeConfigs[1] = DataTypes.SpokeConfig({
+      supplyCap: type(uint256).max,
+      drawCap: type(uint256).max
+    });
+
+    Spoke.ReserveConfig[] memory reserveConfigs = new Spoke.ReserveConfig[](2);
+
+    // Add dai
+    uint256 daiAssetId = 0;
+    reserveConfigs[0] = Spoke.ReserveConfig({
+      lt: 0.75e4,
+      lb: 0,
+      lpfp: 0,
+      borrowable: true,
+      collateral: true
+    });
+    reserveConfigs[1] = Spoke.ReserveConfig({
+      lt: 0.8e4,
+      lb: 0,
+      lpfp: 0,
+      borrowable: true,
+      collateral: true
+    });
+    Utils.addAssetAndSpokes(
+      hub,
+      address(dai),
+      DataTypes.AssetConfig({decimals: 18, active: true, irStrategy: address(irStrategy)}),
+      spokes,
+      spokeConfigs,
+      reserveConfigs
+    );
+    MockPriceOracle(address(oracle)).setAssetPrice(daiAssetId, 1e8);
+    irStrategy.setInterestRateParams(
+      daiAssetId,
+      IDefaultInterestRateStrategy.InterestRateData({
+        optimalUsageRatio: 9000, // 90.00%
+        baseVariableBorrowRate: 500, // 5.00%
+        variableRateSlope1: 500, // 5.00%
+        variableRateSlope2: 500 // 5.00%
+      })
+    );
+
+    // Add eth
+    uint256 ethAssetId = 1;
+    reserveConfigs[0] = Spoke.ReserveConfig({
+      lt: 0.8e4,
+      lb: 0,
+      lpfp: 0,
+      borrowable: true,
+      collateral: true
+    });
+    reserveConfigs[1] = Spoke.ReserveConfig({
+      lt: 0.76e4,
+      lb: 0,
+      lpfp: 0,
+      borrowable: true,
+      collateral: true
+    });
+    Utils.addAssetAndSpokes(
+      hub,
+      address(eth),
+      DataTypes.AssetConfig({decimals: 18, active: true, irStrategy: address(irStrategy)}),
+      spokes,
+      spokeConfigs,
+      reserveConfigs
+    );
+    MockPriceOracle(address(oracle)).setAssetPrice(ethAssetId, 2000e8);
+    irStrategy.setInterestRateParams(
+      ethAssetId,
+      IDefaultInterestRateStrategy.InterestRateData({
+        optimalUsageRatio: 9000, // 90.00%
+        baseVariableBorrowRate: 500, // 5.00%
+        variableRateSlope1: 500, // 5.00%
+        variableRateSlope2: 500 // 5.00%
+      })
+    );
+
+    // Add USDC
+    uint256 usdcId = 2;
+    reserveConfigs[0] = Spoke.ReserveConfig({
+      lt: 0.78e4,
+      lb: 0,
+      lpfp: 0,
+      borrowable: true,
+      collateral: true
+    });
+    reserveConfigs[1] = Spoke.ReserveConfig({
+      lt: 0.72e4,
+      lb: 0,
+      lpfp: 0,
+      borrowable: true,
+      collateral: true
+    });
+    Utils.addAssetAndSpokes(
+      hub,
+      address(usdc),
+      DataTypes.AssetConfig({decimals: 18, active: true, irStrategy: address(irStrategy)}),
+      spokes,
+      spokeConfigs,
+      reserveConfigs
+    );
+    MockPriceOracle(address(oracle)).setAssetPrice(usdcId, 1e8);
+    irStrategy.setInterestRateParams(
+      usdcId,
+      IDefaultInterestRateStrategy.InterestRateData({
+        optimalUsageRatio: 9000, // 90.00%
+        baseVariableBorrowRate: 500, // 5.00%
+        variableRateSlope1: 500, // 5.00%
+        variableRateSlope2: 500 // 5.00%
+      })
+    );
+
+    // Add WBTC
+    uint256 wbtcAssetId = 3;
+    reserveConfigs[0] = Spoke.ReserveConfig({
+      lt: 0.85e4,
+      lb: 0,
+      lpfp: 0,
+      borrowable: true,
+      collateral: true
+    });
+    reserveConfigs[1] = Spoke.ReserveConfig({
+      lt: 0.84e4,
+      lb: 0,
+      lpfp: 0,
+      borrowable: true,
+      collateral: true
+    });
+    Utils.addAssetAndSpokes(
+      hub,
+      address(wbtc),
+      DataTypes.AssetConfig({decimals: 18, active: true, irStrategy: address(irStrategy)}),
+      spokes,
+      spokeConfigs,
+      reserveConfigs
+    );
+    MockPriceOracle(address(oracle)).setAssetPrice(wbtcAssetId, 50_000e8);
+    irStrategy.setInterestRateParams(
+      wbtcAssetId,
+      IDefaultInterestRateStrategy.InterestRateData({
+        optimalUsageRatio: 9000, // 90.00%
+        baseVariableBorrowRate: 500, // 5.00%
+        variableRateSlope1: 500, // 5.00%
+        variableRateSlope2: 500 // 5.00%
+      })
+    );
   }
 
-  // function testRevertInactiveCollateralReserveLiquidationCall() public {
-  //   uint256 ethAssetId = 1; // collateral asset
-  //   uint256 daiAssetId = 0; // debt asset
-  //   uint256 debtToCover = 1;
+  function test_liquidationCall_revertsWith_invalid_debt_to_cover() public {
+    uint256 ethAssetId = 1; // collateral asset
+    uint256 daiAssetId = 0; // debt asset
+    uint256 debtToCover = 0;
 
-  //   // ETH reserve is inactive
-  //   _updateActive(ethAssetId, false);
-  //   vm.expectRevert(TestErrors.RESERVE_NOT_ACTIVE);
-  //   vm.prank(LIQUIDATOR);
-  //   hub.liquidationCall(ethAssetId, daiAssetId, USER1, debtToCover);
-  // }
+    vm.prank(LIQUIDATOR);
+    vm.expectRevert(TestErrors.INVALID_DEBT_TO_COVER);
+    spoke1.liquidationCall(ethAssetId, daiAssetId, USER1, debtToCover);
+  }
 
   // function testRevertInactiveDebtReserveLiquidationCall() public {
   //   uint256 ethAssetId = 1; // collateral asset
