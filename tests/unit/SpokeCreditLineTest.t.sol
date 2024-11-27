@@ -355,11 +355,11 @@ contract SpokeCreditLineTest is BaseTest {
   // }
 
   // function skip_test_revert_update_reserve() public {
-  //   uint256 invalidassetId = 3;
+  //   uint256 invalidReserveId = 3;
 
   //   MockSpokeCreditLine.ReserveConfig memory reserveConfig;
   //   vm.expectRevert(TestErrors.INVALID_RESERVE);
-  //   spokeCreditLine.updateReserve(invalidassetId, reserveConfig);
+  //   spokeCreditLine.updateReserve(invalidReserveId, reserveConfig);
   // }
 
   // function skip_test_update_reserve() public {
