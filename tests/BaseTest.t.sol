@@ -75,6 +75,8 @@ library TestErrors {
   bytes constant REPAY_EXCEEDS_DEBT = 'REPAY_EXCEEDS_DEBT';
   bytes constant RESERVE_NOT_LISTED = 'RESERVE_NOT_LISTED';
   bytes constant INVALID_DEBT_TO_COVER = 'INVALID_DEBT_TO_COVER';
+  bytes constant SPECIFIED_CURRENCY_NOT_BORROWED_BY_USER =
+    'SPECIFIED_CURRENCY_NOT_BORROWED_BY_USER';
 }
 
 abstract contract BaseTest is Test, Events {

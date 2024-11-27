@@ -177,17 +177,15 @@ contract LiquidationTest is BaseTest {
     spoke1.liquidationCall(ethAssetId, daiAssetId, USER1, debtToCover);
   }
 
-  // function testRevertInactiveDebtReserveLiquidationCall() public {
-  //   uint256 ethAssetId = 1; // collateral asset
-  //   uint256 daiAssetId = 0; // debt asset
-  //   uint256 debtToCover = 1;
+  function test_liquidationCall_revertsWith_specified_currency_not_borrowed_by_user() public {
+    uint256 ethAssetId = 1; // collateral asset
+    uint256 daiAssetId = 0; // debt asset
+    uint256 debtToCover = 1;
 
-  //   // DAI reserve is inactive
-  //   _updateActive(daiAssetId, false);
-  //   vm.expectRevert(TestErrors.RESERVE_NOT_ACTIVE);
-  //   vm.prank(LIQUIDATOR);
-  //   hub.liquidationCall(ethAssetId, daiAssetId, USER1, debtToCover);
-  // }
+    vm.expectRevert(TestErrors.SPECIFIED_CURRENCY_NOT_BORROWED_BY_USER);
+    vm.prank(LIQUIDATOR);
+    spoke1.liquidationCall(ethAssetId, daiAssetId, USER1, debtToCover);
+  }
 
   // function testRevertPausedCollateralReserveLiquidationCall() public {
   //   uint256 ethAssetId = 1; // collateral asset
