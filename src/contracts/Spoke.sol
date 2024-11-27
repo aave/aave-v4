@@ -241,7 +241,6 @@ contract Spoke is ISpoke {
 
   function updateReserveConfig(uint256 assetId, ReserveConfig calldata params) external {
     // TODO: AccessControl
-    require(reserves[assetId].id != 0, 'INVALID_RESERVE');
     // TODO: validation on lb >= 1e4?
     reserves[assetId].config = ReserveConfig({
       lt: params.lt,
