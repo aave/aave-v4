@@ -3,6 +3,7 @@ pragma solidity ^0.8.0;
 
 import {SafeERC20} from 'src/dependencies/openzeppelin/SafeERC20.sol';
 import {IERC20} from 'src/dependencies/openzeppelin/IERC20.sol';
+import {ERC20} from 'src/dependencies/openzeppelin/ERC20.sol';
 import {WadRayMath} from 'src/contracts/WadRayMath.sol';
 import {MathUtils} from 'src/contracts/MathUtils.sol';
 import {PercentageMath} from 'src/contracts/PercentageMath.sol';
@@ -24,15 +25,18 @@ contract Spoke is ISpoke {
   struct Reserve {
     uint256 id;
     address asset;
+    uint8 decimals;
     // uint256 totalDebt;
     // uint256 lastUpdateIndex;
     // uint256 lastUpdateTimestamp;
     ReserveConfig config;
   }
 
+  // TODO: liquidation bonus
   struct ReserveConfig {
     uint256 lt; // 1e4 == 100%, BPS
-    uint256 lb; // TODO: liquidationProtocolFee
+    uint256 lb; // 1e4 == 100%, BPS
+    // TODO: liquidationProtocolFee
     bool borrowable;
     bool collateral;
   }
@@ -73,13 +77,17 @@ contract Spoke is ISpoke {
   struct AvailableCollateralToLiquidateLocalVars {
     uint256 collateralAssetPrice;
     uint256 debtAssetPrice;
+    uint256 maxCollateralToLiquidate;
+    uint256 baseCollateral;
+    uint256 bonusCollateral;
+    uint256 debtAssetDecimals;
+    uint256 collateralDecimals;
     uint256 collateralAssetUnit;
     uint256 debtAssetUnit;
-    uint256 liquidationProtocolFeePercentage;
-    uint256 baseCollateral;
-    uint256 maxCollateralToLiquidate;
     uint256 collateralAmount;
     uint256 debtAmountNeeded;
+    uint256 liquidationProtocolFeePercentage;
+    uint256 liquidationProtocolFeeAmount;
   }
 
   // reserve id => user address => user data
@@ -239,6 +247,7 @@ contract Spoke is ISpoke {
     reservesList.push(assetId);
     reserves[assetId].id = assetId;
     reserves[assetId].asset = asset;
+    reserves[assetId].decimals = ERC20(asset).decimals();
     reserves[assetId].config = ReserveConfig({
       lt: params.lt,
       lb: params.lb,
@@ -352,6 +361,13 @@ contract Spoke is ISpoke {
     return users[assetId][user].debtShares > 0;
   }
 
+  /**
+  @return totalCollateralInBaseCurrency
+  @return totalDebtInBaseCurrency
+  @return avgLiquidationThreshold
+  @return userRiskPremium
+  @return healthFactor
+  */
   function _calculateUserAccountData(
     address user
   ) internal view returns (uint256, uint256, uint256, uint256, uint256) {
@@ -443,60 +459,42 @@ contract Spoke is ISpoke {
     Reserve storage collateralReserve = reserves[collateralAssetId];
     Reserve storage debtReserve = reserves[debtAssetId];
 
-    (, , , , uint256 healthFactor) = _calculateUserAccountData(user);
+    // TODO: accrue interest first?
 
-    // TODO: check if user has HF below threshold
-    _validateLiquidationCall(collateralReserve, debtReserve, user, 0); // TODO: involve healthFactor, hardcode 0 for now
+    (
+      vars.userCollateralBalance,
+      vars.userDebtBalance,
+      ,
+      ,
+      vars.healthFactor
+    ) = _calculateUserAccountData(user);
+    _validateLiquidationCall(collateralReserve, user, vars.userDebtBalance, vars.healthFactor); // TODO: involve healthFactor, hardcode 0 for now
 
-    // vars.userDebtBalance = getUserDebt(debtReserve.id, user);
-    // vars.userCollateralBalance = LiquidityHub(address(this)).getUserBalance(
-    //   collateralAssetId,
-    //   user
-    // );
+    vars.actualDebtToCover = debtToCover > vars.userDebtBalance
+      ? vars.userDebtBalance
+      : debtToCover;
 
-    // vars.actualDebtToCover = debtToCover > vars.userDebtBalance
-    //   ? vars.userDebtBalance
-    //   : debtToCover;
+    (
+      vars.actualCollateralToLiquidate,
+      vars.actualDebtToLiquidate,
+      vars.liquidationProtocolFeeAmount
+    ) = _calculateAvailableCollateralToLiquidate(
+      collateralReserve,
+      debtReserve,
+      vars.actualDebtToCover,
+      vars.userCollateralBalance,
+      collateralReserve.config.lb
+    );
 
-    // // TODO: calculate how much of a specific collateral can be liquidated, given a certain amount of debt asset
-    // // TODO: account for liquidation bonus, protocol liquidation fee
-
-    // console2.log(
-    //   'vars.userCollateralBalance',
-    //   vars.userCollateralBalance,
-    //   'vars.actualDebtToCover',
-    //   vars.actualDebtToCover
-    // );
-    // (
-    //   vars.actualCollateralToLiquidate,
-    //   vars.actualDebtToLiquidate,
-    //   vars.liquidationProtocolFeeAmount
-    // ) = _calculateAvailableCollateralToLiquidate(
-    //   collateralReserve,
-    //   debtReserve,
-    //   vars.actualDebtToCover,
-    //   vars.userCollateralBalance,
-    //   10_000 // TODO: liquidation bonus
-    // );
+    // TODO: call LH to liquidate
+    // - withdraw collateral from user
+    // - accounting here to update shares
 
     // IERC20(reservesList[debtAssetId]).safeTransferFrom(
     //   msg.sender,
     //   address(this), // liq hub
     //   vars.actualDebtToLiquidate
     // );
-    // IERC20(reservesList[collateralAssetId]).safeTransfer(
-    //   msg.sender,
-    //   vars.actualCollateralToLiquidate
-    // );
-    // // TODO: update interest rates, etc. for the reserves
-    // // TODO: update user's collateral balance
-
-    // // console2.log(
-    // //   'vars.actualDebtToLiquidate',
-    // //   vars.actualDebtToLiquidate,
-    // //   'vars.actualCollateralToLiquidate',
-    // //   vars.actualCollateralToLiquidate
-    // // );
 
     // emit LiquidationCall(
     //   collateralAssetId,
@@ -506,6 +504,19 @@ contract Spoke is ISpoke {
     //   vars.actualCollateralToLiquidate, // TODO: liquidatedCollateralAmount
     //   msg.sender
     // );
+  }
+
+  function _validateLiquidationCall(
+    Reserve memory collateralReserve,
+    address user,
+    uint256 userDebt,
+    uint256 healthFactor
+  ) internal view {
+    require(userDebt > 0, 'SPECIFIED_CURRENCY_NOT_BORROWED_BY_USER');
+    require(
+      healthFactor < HEALTH_FACTOR_LIQUIDATION_THRESHOLD,
+      'HEALTH_FACTOR_NOT_BELOW_THRESHOLD'
+    );
   }
 
   function _calculateAvailableCollateralToLiquidate(
@@ -520,10 +531,8 @@ contract Spoke is ISpoke {
     vars.collateralAssetPrice = IPriceOracle(oracle).getAssetPrice(collateralReserve.id);
     vars.debtAssetPrice = IPriceOracle(oracle).getAssetPrice(debtReserve.id);
 
-    // vars.collateralAssetUnit = 10 ** collateralReserve.config.decimals();
-    // vars.debtAssetUnit = 10 ** debtReserve.config.decimals;
-
-    // vars.liquidationProtocolFeePercentage = collateralReserve.lb;
+    vars.collateralAssetUnit = 10 ** collateralReserve.decimals;
+    vars.debtAssetUnit = 10 ** debtReserve.decimals;
 
     // vars.baseCollateral =
     //   (vars.debtAssetPrice * debtToCover * vars.collateralAssetUnit) /
@@ -556,19 +565,6 @@ contract Spoke is ISpoke {
     }
 
     // TODO: logic for liquidationProtocolFeePercentage
-    return (vars.collateralAmount, vars.debtAmountNeeded, 0);
-  }
-
-  function _validateLiquidationCall(
-    Reserve memory collateralReserve,
-    Reserve memory debtReserve,
-    address user,
-    uint256 healthFactor
-  ) internal view {
-    require(
-      healthFactor < HEALTH_FACTOR_LIQUIDATION_THRESHOLD,
-      'HEALTH_FACTOR_NOT_BELOW_THRESHOLD'
-    );
-    require(getUserDebt(debtReserve.id, user) > 0, 'SPECIFIED_CURRENCY_NOT_BORROWED_BY_USER');
+    return (vars.collateralAmount, vars.debtAmountNeeded, vars.liquidationProtocolFeeAmount);
   }
 }

@@ -252,6 +252,11 @@ contract LiquidityHub is ILiquidityHub {
     return sharesAmount;
   }
 
+  // TODO: is this needed? can we just use withdraw?
+  function liquidationCall(uint256 assetId, address liquidator, uint256 amount) external {
+    // TODO: update
+  }
+
   //
   // public
   //
