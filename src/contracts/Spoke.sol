@@ -47,7 +47,6 @@ contract Spoke is ISpoke {
 
   struct CalculateUserAccountDataVars {
     uint256 i;
-    uint256 reservesListLength;
     uint256 assetId;
     uint256 assetPrice;
     uint256 liquidityPremium;
@@ -319,8 +318,8 @@ contract Spoke is ISpoke {
     address user
   ) internal view returns (uint256, uint256, uint256, uint256, uint256) {
     CalculateUserAccountDataVars memory vars;
-    vars.reservesListLength = reservesList.length;
-    while (vars.i < vars.reservesListLength) {
+    uint256 reservesListLength = reservesList.length;
+    while (vars.i < reservesListLength) {
       vars.assetId = reservesList[vars.i];
       if (!_usingAsCollateralOrBorrowing(vars.assetId, user)) {
         vars.i++;
