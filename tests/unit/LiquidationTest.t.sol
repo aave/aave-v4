@@ -97,7 +97,7 @@ contract LiquidationTest is BaseTest {
     );
 
     // Add USDC
-    uint256 usdcId = 2;
+    uint256 usdcAssetId = 2;
     reserveConfigs[0] = Spoke.ReserveConfig({
       lt: 0.78e4,
       lb: 0,
@@ -120,9 +120,9 @@ contract LiquidationTest is BaseTest {
       spokeConfigs,
       reserveConfigs
     );
-    MockPriceOracle(address(oracle)).setAssetPrice(usdcId, 1e8);
+    MockPriceOracle(address(oracle)).setAssetPrice(usdcAssetId, 1e8);
     irStrategy.setInterestRateParams(
-      usdcId,
+      usdcAssetId,
       IDefaultInterestRateStrategy.InterestRateData({
         optimalUsageRatio: 9000, // 90.00%
         baseVariableBorrowRate: 500, // 5.00%
@@ -187,41 +187,37 @@ contract LiquidationTest is BaseTest {
     spoke1.liquidationCall(ethAssetId, daiAssetId, USER1, debtToCover);
   }
 
-  // function testRevertPausedCollateralReserveLiquidationCall() public {
-  //   uint256 ethAssetId = 1; // collateral asset
-  //   uint256 daiAssetId = 0; // debt asset
-  //   uint256 debtToCover = 1;
+  function test_liquidationCall_revertsWith_health_factor_not_below_threshold() public {
+    uint256 debtToCover = 1;
+    uint256 daiAssetId = 0;
+    uint256 ethAssetId = 1;
+    uint256 usdcAssetId = 2;
+    uint256 daiAmount = 10_000e18; // 10k dai -> $10k
+    uint256 ethAmount = 10e18; // 10 eth -> $20k
+    uint256 usdcBorrowAmount = 15_000e18; // 15k usdc -> $15k
+    bool usingAsCollateral = true;
 
-  //   // ETH reserve is inactive
-  //   _updatePaused(ethAssetId, false);
-  //   vm.expectRevert(TestErrors.RESERVE_NOT_ACTIVE);
-  //   vm.prank(LIQUIDATOR);
-  //   hub.liquidationCall(ethAssetId, daiAssetId, USER1, debtToCover);
-  // }
+    // USER1 supply dai into spoke1
+    deal(address(dai), USER1, daiAmount);
+    Utils.spokeSupply(vm, hub, spoke1, daiAssetId, USER1, daiAmount, USER1);
+    Utils.setUsingAsCollateral(vm, spoke1, USER1, daiAssetId, usingAsCollateral);
 
-  // function testRevertPausedDebtReserveLiquidationCall() public {
-  //   uint256 ethAssetId = 1; // collateral asset
-  //   uint256 daiAssetId = 0; // debt asset
-  //   uint256 debtToCover = 1;
+    // USER1 supply eth into spoke1
+    deal(address(eth), USER1, ethAmount);
+    Utils.spokeSupply(vm, hub, spoke1, ethAssetId, USER1, ethAmount, USER1);
+    Utils.setUsingAsCollateral(vm, spoke1, USER1, ethAssetId, usingAsCollateral);
 
-  //   // DAI reserve is inactive
-  //   _updatePaused(daiAssetId, false);
-  //   vm.expectRevert(TestErrors.RESERVE_NOT_ACTIVE);
-  //   vm.prank(LIQUIDATOR);
-  //   hub.liquidationCall(ethAssetId, daiAssetId, USER1, debtToCover);
-  // }
+    // USER2 supply usdc into spoke1
+    deal(address(usdc), USER2, usdcBorrowAmount);
+    Utils.spokeSupply(vm, hub, spoke1, usdcAssetId, USER2, usdcBorrowAmount, USER2);
 
-  // function testFuzzRevertPausedDebtReserveLiquidationCall(uint256 debtToCover) public {
-  //   vm.assume(debtToCover > 0);
-  //   uint256 ethAssetId = 1; // collateral asset
-  //   uint256 daiAssetId = 0; // debt asset
+    // USER1 borrow usdc
+    Utils.borrow(vm, spoke1, usdcAssetId, USER1, usdcBorrowAmount, USER1);
 
-  //   // DAI reserve is inactive
-  //   _updatePaused(daiAssetId, false);
-  //   vm.expectRevert(TestErrors.RESERVE_NOT_ACTIVE);
-  //   vm.prank(LIQUIDATOR);
-  //   hub.liquidationCall(ethAssetId, daiAssetId, USER1, debtToCover);
-  // }
+    vm.prank(LIQUIDATOR);
+    vm.expectRevert(TestErrors.HEALTH_FACTOR_NOT_BELOW_THRESHOLD);
+    spoke1.liquidationCall(ethAssetId, daiAssetId, USER1, debtToCover);
+  }
 
   // function testFuzzRevertPausedCollateralReserveLiquidationCall(uint256 debtToCover) public {
   //   vm.assume(debtToCover > 0);
