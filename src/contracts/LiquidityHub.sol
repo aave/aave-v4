@@ -323,6 +323,7 @@ contract LiquidityHub is ILiquidityHub {
     uint256 amount
   ) internal view {
     // TODO: Other cases of status (frozen, paused)
+    // TODO: still allow withdrawal even if asset is not active, only prevent for frozen/paused?
     require(asset.config.active, 'ASSET_NOT_ACTIVE');
     require(
       amount <= convertSharesToAssetsDown(asset.id, (spoke.totalShares - spoke.drawnShares)),
