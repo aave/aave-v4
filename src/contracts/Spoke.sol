@@ -339,14 +339,8 @@ contract Spoke is ISpoke {
           vars.assetPrice *
           ILiquidityHub(liquidityHub).convertSharesToAssetsDown(
             vars.assetId,
-            u.supplyShares.rayMul(
-              MathUtils.calculateCompoundedInterest(
-                getInterestRate(vars.assetId),
-                uint40(0),
-                block.timestamp
-              )
-            )
-          ); // TODO: use lastUpdatedTimestamp in interest math, make sure collateral includes accrued supply interest
+            _calculateAccruedInterest(vars.assetId, u.supplyShares)
+          );
         vars.liquidityPremium = 1; // TODO: get LP from LH
         vars.totalCollateralInBaseCurrency += vars.userCollateralInBaseCurrency;
         vars.avgLiquidationThreshold += vars.userCollateralInBaseCurrency * r.config.lt;
@@ -357,13 +351,7 @@ contract Spoke is ISpoke {
         ? vars.assetPrice *
           ILiquidityHub(liquidityHub).convertSharesToAssetsUp(
             vars.assetId,
-            u.debtShares.rayMul(
-              MathUtils.calculateCompoundedInterest(
-                getInterestRate(vars.assetId),
-                uint40(0),
-                block.timestamp
-              )
-            ) // TODO: use lastUpdatedTimestamp in interest math, make sure total debt includes accrued debt interest
+            _calculateAccruedInterest(vars.assetId, u.debtShares)
           )
         : 0;
 
@@ -391,5 +379,16 @@ contract Spoke is ISpoke {
       vars.userRiskPremium,
       vars.healthFactor
     );
+  }
+
+  function _calculateAccruedInterest(
+    uint256 assetId,
+    uint256 shares
+  ) internal view returns (uint256) {
+    // TODO: use lastUpdatedTimestamp in interest math, make sure total shares includes accrued interest
+    return
+      shares.rayMul(
+        MathUtils.calculateCompoundedInterest(getInterestRate(assetId), uint40(0), block.timestamp)
+      );
   }
 }
