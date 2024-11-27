@@ -10,47 +10,6 @@ contract LiquidationTest is BaseTest {
 
   function setUp() public override {
     super.setUp();
-
-    // Add dai
-    hub.addReserve(
-      LiquidityHub.ReserveConfig({
-        borrowModule: address(bm),
-        decimals: 18,
-        active: true,
-        paused: false,
-        supplyCap: type(uint256).max,
-        drawCap: type(uint256).max,
-        liquidityPremium: 10_00
-      }),
-      address(dai)
-    );
-    bm.addReserve(
-      0,
-      BorrowModule.ReserveConfig({lt: 0, lb: 10_000, rf: 0, borrowable: true}),
-      address(dai)
-    );
-    MockPriceOracle(address(oracle)).setAssetPrice(0, 1e8);
-
-    // Add eth
-    hub.addReserve(
-      LiquidityHub.ReserveConfig({
-        borrowModule: address(bm),
-        decimals: 18,
-        active: true,
-        paused: false,
-        supplyCap: type(uint256).max,
-        drawCap: type(uint256).max,
-        liquidityPremium: 0
-      }),
-      address(eth)
-    );
-    bm.addReserve(
-      1,
-      BorrowModule.ReserveConfig({lt: 0, lb: 10_000, rf: 0, borrowable: true}),
-      address(eth)
-    );
-    MockPriceOracle(address(oracle)).setAssetPrice(1, 2000e8);
-    vm.warp(block.timestamp + 20);
   }
 
   // function testRevertInactiveCollateralReserveLiquidationCall() public {

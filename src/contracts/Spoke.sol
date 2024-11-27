@@ -12,6 +12,8 @@ import {IReserveInterestRateStrategy} from 'src/interfaces/IReserveInterestRateS
 import {IPriceOracle} from 'src/interfaces/IPriceOracle.sol';
 import {DataTypes} from 'src/libraries/types/DataTypes.sol';
 
+import 'forge-std/console2.sol';
+
 contract Spoke is ISpoke {
   using WadRayMath for uint256;
   using PercentageMath for uint256;
@@ -42,19 +44,6 @@ contract Spoke is ISpoke {
     // uint256 balance;
     // uint256 lastUpdateIndex;
     // uint256 lastUpdateTimestamp;
-  }
-
-  struct CalculateUserAccountDataVars {
-    uint256 i;
-    uint256 assetId;
-    uint256 assetPrice;
-    uint256 liquidityPremium;
-    uint256 userCollateralInBaseCurrency;
-    uint256 totalCollateralInBaseCurrency;
-    uint256 totalDebtInBaseCurrency;
-    uint256 avgLiquidationThreshold;
-    uint256 userRiskPremium;
-    uint256 healthFactor;
   }
 
   struct CalculateUserAccountDataVars {
@@ -105,15 +94,6 @@ contract Spoke is ISpoke {
   constructor(address liquidityHubAddress, address oracleAddress) {
     liquidityHub = liquidityHubAddress;
     oracle = oracleAddress;
-  }
-
-  function getUserDebt(uint256 assetId, address user) external view returns (uint256) {
-    UserConfig memory u = users[assetId][user];
-    // TODO: Instead use a getter from liquidity hub to get up-to-date user debt (with accrued debt)
-    return
-      u.debtShares.rayMul(
-        MathUtils.calculateCompoundedInterest(getInterestRate(assetId), uint40(0), block.timestamp)
-      );
   }
 
   function getReserveDebt(uint256 assetId) external view returns (uint256) {
@@ -217,23 +197,6 @@ contract Spoke is ISpoke {
     users[assetId][msg.sender].debtShares -= userShares;
 
     emit Repaid(assetId, msg.sender, amount);
-  }
-
-  function getUserRiskPremium(address user) external view returns (uint256) {
-    (, , , uint256 userRiskPremium, ) = _calculateUserAccountData(user);
-    return userRiskPremium;
-  }
-
-  function getHealthFactor(address user) external view returns (uint256) {
-    (, , , , uint256 healthFactor) = _calculateUserAccountData(user);
-    return healthFactor;
-  }
-
-  function setUsingAsCollateral(uint256 assetId, bool usingAsCollateral) external {
-    _validateSetUsingAsCollateral(assetId, msg.sender);
-    users[assetId][msg.sender].usingAsCollateral = usingAsCollateral;
-
-    emit UsingAsCollateral(assetId, msg.sender, usingAsCollateral);
   }
 
   function liquidationCall(
@@ -411,7 +374,7 @@ contract Spoke is ISpoke {
           vars.assetPrice *
           ILiquidityHub(liquidityHub).convertSharesToAssetsDown(
             vars.assetId,
-            _calculateAccruedInterest(vars.assetId, u.supplyShares)
+            _calculateAccruedInterest(vars.assetId, u.supplyShares) // TODO: create getUserSupply instead?
           );
         vars.liquidityPremium = 1; // TODO: get LP from LH
         vars.totalCollateralInBaseCurrency += vars.userCollateralInBaseCurrency;
@@ -423,7 +386,7 @@ contract Spoke is ISpoke {
         ? vars.assetPrice *
           ILiquidityHub(liquidityHub).convertSharesToAssetsUp(
             vars.assetId,
-            _calculateAccruedInterest(vars.assetId, u.debtShares)
+            _calculateAccruedInterest(vars.assetId, u.debtShares) // TODO: call getUserDebt instead?
           )
         : 0;
 
@@ -462,5 +425,150 @@ contract Spoke is ISpoke {
       shares.rayMul(
         MathUtils.calculateCompoundedInterest(getInterestRate(assetId), uint40(0), block.timestamp)
       );
+  }
+
+  function _executeLiquidationCall(
+    uint256 debtToCover,
+    uint256 collateralAssetId,
+    uint256 debtAssetId,
+    address user
+  ) internal {
+    // V3 implementation to liquidate undercollateralized positions to start out with.
+    // v1 - allow the liquidator to liquidate up to 50% if HF goes below certain threshold
+
+    require(debtToCover > 0, 'INVALID_DEBT_TO_COVER');
+
+    LiquidationCallLocalVars memory vars;
+
+    Reserve storage collateralReserve = reserves[collateralAssetId];
+    Reserve storage debtReserve = reserves[debtAssetId];
+
+    (, , , , uint256 healthFactor) = _calculateUserAccountData(user);
+
+    // TODO: check if user has HF below threshold
+    _validateLiquidationCall(collateralReserve, debtReserve, user, 0); // TODO: involve healthFactor, hardcode 0 for now
+
+    // vars.userDebtBalance = getUserDebt(debtReserve.id, user);
+    // vars.userCollateralBalance = LiquidityHub(address(this)).getUserBalance(
+    //   collateralAssetId,
+    //   user
+    // );
+
+    // vars.actualDebtToCover = debtToCover > vars.userDebtBalance
+    //   ? vars.userDebtBalance
+    //   : debtToCover;
+
+    // // TODO: calculate how much of a specific collateral can be liquidated, given a certain amount of debt asset
+    // // TODO: account for liquidation bonus, protocol liquidation fee
+
+    // console2.log(
+    //   'vars.userCollateralBalance',
+    //   vars.userCollateralBalance,
+    //   'vars.actualDebtToCover',
+    //   vars.actualDebtToCover
+    // );
+    // (
+    //   vars.actualCollateralToLiquidate,
+    //   vars.actualDebtToLiquidate,
+    //   vars.liquidationProtocolFeeAmount
+    // ) = _calculateAvailableCollateralToLiquidate(
+    //   collateralReserve,
+    //   debtReserve,
+    //   vars.actualDebtToCover,
+    //   vars.userCollateralBalance,
+    //   10_000 // TODO: liquidation bonus
+    // );
+
+    // IERC20(reservesList[debtAssetId]).safeTransferFrom(
+    //   msg.sender,
+    //   address(this), // liq hub
+    //   vars.actualDebtToLiquidate
+    // );
+    // IERC20(reservesList[collateralAssetId]).safeTransfer(
+    //   msg.sender,
+    //   vars.actualCollateralToLiquidate
+    // );
+    // // TODO: update interest rates, etc. for the reserves
+    // // TODO: update user's collateral balance
+
+    // // console2.log(
+    // //   'vars.actualDebtToLiquidate',
+    // //   vars.actualDebtToLiquidate,
+    // //   'vars.actualCollateralToLiquidate',
+    // //   vars.actualCollateralToLiquidate
+    // // );
+
+    // emit LiquidationCall(
+    //   collateralAssetId,
+    //   debtAssetId,
+    //   user,
+    //   vars.actualDebtToLiquidate, // TODO: actualDebtToLiquidate
+    //   vars.actualCollateralToLiquidate, // TODO: liquidatedCollateralAmount
+    //   msg.sender
+    // );
+  }
+
+  function _calculateAvailableCollateralToLiquidate(
+    Reserve memory collateralReserve,
+    Reserve memory debtReserve,
+    uint256 debtToCover,
+    uint256 userCollateralBalance,
+    uint256 liquidationBonus
+  ) internal view returns (uint256, uint256, uint256) {
+    AvailableCollateralToLiquidateLocalVars memory vars;
+
+    vars.collateralAssetPrice = IPriceOracle(oracle).getAssetPrice(collateralReserve.id);
+    vars.debtAssetPrice = IPriceOracle(oracle).getAssetPrice(debtReserve.id);
+
+    // vars.collateralAssetUnit = 10 ** collateralReserve.config.decimals();
+    // vars.debtAssetUnit = 10 ** debtReserve.config.decimals;
+
+    // vars.liquidationProtocolFeePercentage = collateralReserve.lb;
+
+    // vars.baseCollateral =
+    //   (vars.debtAssetPrice * debtToCover * vars.collateralAssetUnit) /
+    //   (vars.collateralAssetPrice * vars.debtAssetUnit);
+
+    // vars.maxCollateralToLiquidate = vars.baseCollateral.percentMul(liquidationBonus);
+
+    // console2.log('vars.baseCollateral:', vars.baseCollateral);
+    // console2.log(
+    //   'vars.maxCollateralToLiquidate:',
+    //   vars.maxCollateralToLiquidate,
+    //   'userCollateralBalance',
+    //   userCollateralBalance
+    // );
+
+    // if the calculated maxCollateralToLiquidate (based on debt) is higher than the user's collateral balance,
+    // liquidate the max possible - userCollateralBalance
+    if (vars.maxCollateralToLiquidate > userCollateralBalance) {
+      console2.log('maxCollateralToLiquidate > userCollateralBalance');
+      vars.collateralAmount = userCollateralBalance;
+      vars.debtAmountNeeded = ((vars.collateralAssetPrice *
+        vars.collateralAmount *
+        vars.debtAssetUnit) / (vars.debtAssetPrice * vars.collateralAssetUnit)).percentDiv(
+          liquidationBonus
+        );
+    } else {
+      console2.log('maxCollateralToLiquidate <= userCollateralBalance');
+      vars.collateralAmount = vars.maxCollateralToLiquidate;
+      vars.debtAmountNeeded = debtToCover;
+    }
+
+    // TODO: logic for liquidationProtocolFeePercentage
+    return (vars.collateralAmount, vars.debtAmountNeeded, 0);
+  }
+
+  function _validateLiquidationCall(
+    Reserve memory collateralReserve,
+    Reserve memory debtReserve,
+    address user,
+    uint256 healthFactor
+  ) internal view {
+    require(
+      healthFactor < HEALTH_FACTOR_LIQUIDATION_THRESHOLD,
+      'HEALTH_FACTOR_NOT_BELOW_THRESHOLD'
+    );
+    require(getUserDebt(debtReserve.id, user) > 0, 'SPECIFIED_CURRENCY_NOT_BORROWED_BY_USER');
   }
 }
