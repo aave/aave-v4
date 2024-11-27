@@ -63,6 +63,7 @@ contract Spoke is ISpoke {
   // reserve id => reserveData
   mapping(uint256 => Reserve) public reserves;
   uint256[] public reservesList; // assetIds
+  uint256 public reserveCount;
   address public oracle;
 
   constructor(address liquidityHubAddress, address oracleAddress) {
@@ -217,7 +218,6 @@ contract Spoke is ISpoke {
 
     // TODO: AccessControl
     reservesList.push(assetId);
-
     reserves[assetId].id = assetId;
     reserves[assetId].asset = asset;
     reserves[assetId].config = ReserveConfig({
@@ -226,6 +226,9 @@ contract Spoke is ISpoke {
       borrowable: params.borrowable,
       collateral: params.collateral
     });
+    reserveCount++;
+
+    // emit event
   }
 
   function updateReserve(uint256 assetId, ReserveConfig memory params) external {
