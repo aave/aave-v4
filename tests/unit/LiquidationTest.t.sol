@@ -30,14 +30,14 @@ contract LiquidationTest is BaseTest {
     uint256 daiAssetId = 0;
     reserveConfigs[0] = Spoke.ReserveConfig({
       lt: 0.75e4,
-      lb: 0,
+      lb: 1.05e4,
       lpfp: 0,
       borrowable: true,
       collateral: true
     });
     reserveConfigs[1] = Spoke.ReserveConfig({
       lt: 0.8e4,
-      lb: 0,
+      lb: 1.03e4,
       lpfp: 0,
       borrowable: true,
       collateral: true
@@ -65,14 +65,14 @@ contract LiquidationTest is BaseTest {
     uint256 ethAssetId = 1;
     reserveConfigs[0] = Spoke.ReserveConfig({
       lt: 0.8e4,
-      lb: 0,
+      lb: 1.02e4,
       lpfp: 0,
       borrowable: true,
       collateral: true
     });
     reserveConfigs[1] = Spoke.ReserveConfig({
       lt: 0.76e4,
-      lb: 0,
+      lb: 1.01e4,
       lpfp: 0,
       borrowable: true,
       collateral: true
@@ -100,14 +100,14 @@ contract LiquidationTest is BaseTest {
     uint256 usdcAssetId = 2;
     reserveConfigs[0] = Spoke.ReserveConfig({
       lt: 0.78e4,
-      lb: 0,
+      lb: 1.06e4,
       lpfp: 0,
       borrowable: true,
       collateral: true
     });
     reserveConfigs[1] = Spoke.ReserveConfig({
       lt: 0.72e4,
-      lb: 0,
+      lb: 1.08e4,
       lpfp: 0,
       borrowable: true,
       collateral: true
@@ -135,14 +135,14 @@ contract LiquidationTest is BaseTest {
     uint256 wbtcAssetId = 3;
     reserveConfigs[0] = Spoke.ReserveConfig({
       lt: 0.85e4,
-      lb: 0,
+      lb: 1.05e4,
       lpfp: 0,
       borrowable: true,
       collateral: true
     });
     reserveConfigs[1] = Spoke.ReserveConfig({
       lt: 0.84e4,
-      lb: 0,
+      lb: 1.025e4,
       lpfp: 0,
       borrowable: true,
       collateral: true
@@ -219,116 +219,75 @@ contract LiquidationTest is BaseTest {
     spoke1.liquidationCall(ethAssetId, daiAssetId, USER1, debtToCover);
   }
 
-  // function testFuzzRevertPausedCollateralReserveLiquidationCall(uint256 debtToCover) public {
-  //   vm.assume(debtToCover > 0);
-  //   uint256 ethAssetId = 1; // collateral asset
-  //   uint256 daiAssetId = 0; // debt asset
+  function test_liquidationCallA() public {
+    uint256 debtToCover = 10_000e18;
+    uint256 daiAssetId = 0;
+    uint256 ethAssetId = 1;
+    uint256 usdcAssetId = 2;
 
-  //   // ETH reserve is inactive
-  //   _updatePaused(ethAssetId, false);
-  //   vm.expectRevert(TestErrors.RESERVE_NOT_ACTIVE);
-  //   vm.prank(LIQUIDATOR);
-  //   hub.liquidationCall(ethAssetId, daiAssetId, USER1, debtToCover);
-  // }
+    // total collateral: $30k
+    uint256 daiAmount = 10_000e18; // 10k dai -> $10k
+    uint256 ethAmount = 10e18; // 10 eth -> $20k
 
-  // function testFuzzRevertInactiveCollateralReserveLiquidationCall(uint256 debtToCover) public {
-  //   vm.assume(debtToCover > 0);
-  //   uint256 ethAssetId = 1; // collateral asset
-  //   uint256 daiAssetId = 0; // debt asset
+    // total borrowed: $15k
+    uint256 usdcBorrowAmount = 15_000e18; // 15k usdc -> $15k
+    bool usingAsCollateral = true;
 
-  //   // ETH reserve is inactive
-  //   _updateActive(ethAssetId, false);
-  //   vm.expectRevert(TestErrors.RESERVE_NOT_ACTIVE);
-  //   vm.prank(LIQUIDATOR);
-  //   hub.liquidationCall(ethAssetId, daiAssetId, USER1, debtToCover);
-  // }
+    // USER1 supply dai into spoke1
+    deal(address(dai), USER1, daiAmount);
+    Utils.spokeSupply(vm, hub, spoke1, daiAssetId, USER1, daiAmount, USER1);
+    Utils.setUsingAsCollateral(vm, spoke1, USER1, daiAssetId, usingAsCollateral);
 
-  // function testFuzzRevertInactiveDebtReserveLiquidationCall(uint256 debtToCover) public {
-  //   vm.assume(debtToCover > 0);
-  //   uint256 ethAssetId = 1; // collateral asset
-  //   uint256 daiAssetId = 0; // debt asset
+    // USER1 supply eth into spoke1
+    deal(address(eth), USER1, ethAmount);
+    Utils.spokeSupply(vm, hub, spoke1, ethAssetId, USER1, ethAmount, USER1);
+    Utils.setUsingAsCollateral(vm, spoke1, USER1, ethAssetId, usingAsCollateral);
 
-  //   // DAI reserve is inactive
-  //   _updateActive(daiAssetId, false);
-  //   vm.expectRevert(TestErrors.RESERVE_NOT_ACTIVE);
-  //   vm.prank(LIQUIDATOR);
-  //   hub.liquidationCall(ethAssetId, daiAssetId, USER1, debtToCover);
-  // }
+    // USER2 supply usdc into spoke1
+    deal(address(usdc), USER2, usdcBorrowAmount);
+    Utils.spokeSupply(vm, hub, spoke1, usdcAssetId, USER2, usdcBorrowAmount, USER2);
 
-  // function testRevertLiquidationCallCurrencyNotBorrowed() public {
-  //   uint256 ethAssetId = 1; // collateral asset
-  //   uint256 daiAssetId = 0; // debt asset
-  //   uint256 debtToCover = 1;
+    // USER1 borrow usdc
+    Utils.borrow(vm, spoke1, usdcAssetId, USER1, usdcBorrowAmount, USER1);
 
-  //   vm.prank(LIQUIDATOR);
-  //   vm.expectRevert(TestErrors.SPECIFIED_CURRENCY_NOT_BORROWED_BY_USER);
-  //   hub.liquidationCall(ethAssetId, daiAssetId, USER1, debtToCover);
-  // }
+    uint256 expectedCollateralLiquidated = _getExpectedCollateralLiquidated(
+      ethAssetId,
+      daiAssetId,
+      debtToCover
+    );
 
-  // function testRevertLiquidationCallInvalidDebtToCover() public {
-  //   uint256 ethAssetId = 1; // collateral asset
-  //   uint256 daiAssetId = 0; // debt asset
-  //   uint256 debtToCover = 0;
+    uint256 expectedDebtCovered = _getExpectedDebtCovered(
+      ethAssetId,
+      daiAssetId,
+      expectedCollateralLiquidated
+    );
 
-  //   vm.prank(LIQUIDATOR);
-  //   vm.expectRevert(TestErrors.INVALID_DEBT_TO_COVER);
-  //   hub.liquidationCall(ethAssetId, daiAssetId, USER1, debtToCover);
-  // }
+    console2.log('expectedCollateralLiquidated %e', expectedCollateralLiquidated);
+    console2.log('expectedDebtCovered %e', expectedDebtCovered);
 
-  // function testLiquidationCallMaxCollateralToLiquidate() public {
-  //   uint256 ethAssetId = 1; // collateral asset
-  //   uint256 daiAssetId = 0; // debt asset
-  //   // borrowed value > supplied value to simulate liquidation scenario
-  //   // maxCollateralToLiquidate > userCollateralBalance
-  //   uint256 daiAmount = 400e6;
-  //   uint256 ethAmount = 10e4;
+    // deal(address(dai), LIQUIDATOR, expectedDebtCovered);
+    // vm.startPrank(LIQUIDATOR);
+    // dai.approve(address(hub), expectedDebtCovered);
 
-  //   // User1 supply eth
-  //   deal(address(eth), USER1, ethAmount);
-  //   Utils.supply(vm, hub, ethAssetId, USER1, ethAmount, USER1);
+    // vm.expectEmit(true, true, true, true, address(hub));
+    // emit LiquidationCall(
+    //   ethAssetId,
+    //   daiAssetId,
+    //   USER1,
+    //   expectedDebtCovered,
+    //   expectedCollateralLiquidated,
+    //   LIQUIDATOR
+    // );
+    // hub.liquidationCall(ethAssetId, daiAssetId, USER1, debtToCover);
+    // vm.stopPrank();
 
-  //   // User2 supply dai
-  //   deal(address(dai), USER2, daiAmount);
-  //   Utils.supply(vm, hub, daiAssetId, USER2, daiAmount, USER2);
-
-  //   uint256 portionBorrowed = 2;
-
-  //   // User1 borrow half of dai reserve, ie debt
-  //   vm.prank(USER1);
-  //   bm.borrow(daiAssetId, daiAmount / portionBorrowed);
-
-  //   uint256 debtToCover = bm.getUserDebt(daiAssetId, USER1);
-
-  //   uint256 expectedCollateralLiquidated = hub.getUserBalance(ethAssetId, USER1);
-  //   uint256 expectedDebtCovered = _getExpectedDebtCovered(
-  //     ethAssetId,
-  //     daiAssetId,
-  //     expectedCollateralLiquidated
-  //   );
-
-  //   deal(address(dai), LIQUIDATOR, expectedDebtCovered);
-  //   vm.startPrank(LIQUIDATOR);
-  //   dai.approve(address(hub), expectedDebtCovered);
-
-  //   vm.expectEmit(true, true, true, true, address(hub));
-  //   emit LiquidationCall(
-  //     ethAssetId,
-  //     daiAssetId,
-  //     USER1,
-  //     expectedDebtCovered,
-  //     expectedCollateralLiquidated,
-  //     LIQUIDATOR
-  //   );
-  //   hub.liquidationCall(ethAssetId, daiAssetId, USER1, debtToCover);
-  //   vm.stopPrank();
-
-  //   assertEq(dai.balanceOf(LIQUIDATOR), 0, 'Unexpected liquidator debt asset balance');
-  //   assertEq(
-  //     eth.balanceOf(LIQUIDATOR),
-  //     expectedCollateralLiquidated,
-  //     'Unexpected liquidator collateral asset balance'
-  //   );
-  // }
+    // assertEq(dai.balanceOf(LIQUIDATOR), 0, 'Unexpected liquidator debt asset balance');
+    // assertEq(
+    //   eth.balanceOf(LIQUIDATOR),
+    //   expectedCollateralLiquidated,
+    //   'Unexpected liquidator collateral asset balance'
+    // );
+  }
 
   // function testLiquidationCallA() public {
   //   uint256 ethAssetId = 1; // collateral asset
@@ -385,37 +344,25 @@ contract LiquidationTest is BaseTest {
   //   );
   // }
 
-  // function _getExpectedDebtCovered(
-  //   uint256 collateralAssetId,
-  //   uint256 debtAssetId,
-  //   uint256 collateralAmount
-  // ) internal returns (uint256) {
-  //   uint256 liquidationBonus = bm.getLiquidationBonus(collateralAssetId);
-  //   return
-  //     ((oracle.getAssetPrice(collateralAssetId) * collateralAmount) /
-  //       (oracle.getAssetPrice(debtAssetId))).percentDiv(liquidationBonus);
-  // }
+  function _getExpectedDebtCovered(
+    uint256 collateralAssetId,
+    uint256 debtAssetId,
+    uint256 collateralAmount
+  ) internal returns (uint256) {
+    Spoke.Reserve memory reserve = spoke1.getReserve(collateralAssetId);
+    return
+      ((oracle.getAssetPrice(collateralAssetId) * collateralAmount) /
+        (oracle.getAssetPrice(debtAssetId))).percentDiv(reserve.config.lb);
+  }
 
-  // function _getExpectedCollateralLiquidated(
-  //   uint256 collateralAssetId,
-  //   uint256 debtAssetId,
-  //   uint256 debtAmount
-  // ) internal returns (uint256) {
-  //   uint256 liquidationBonus = bm.getLiquidationBonus(collateralAssetId);
-  //   return
-  //     (((oracle.getAssetPrice(debtAssetId) * debtAmount)) /
-  //       (oracle.getAssetPrice(collateralAssetId))).percentMul(liquidationBonus);
-  // }
-
-  // function _updateActive(uint256 assetId, bool newActive) internal {
-  //   LiquidityHub.ReserveConfig memory reserveConfig = hub.getReserve(assetId).config;
-  //   reserveConfig.active = newActive;
-  //   hub.updateReserve(assetId, reserveConfig);
-  // }
-
-  // function _updatePaused(uint256 assetId, bool newPaused) internal {
-  //   LiquidityHub.ReserveConfig memory reserveConfig = hub.getReserve(assetId).config;
-  //   reserveConfig.active = newPaused;
-  //   hub.updateReserve(assetId, reserveConfig);
-  // }
+  function _getExpectedCollateralLiquidated(
+    uint256 collateralAssetId,
+    uint256 debtAssetId,
+    uint256 debtAmount
+  ) internal returns (uint256) {
+    Spoke.Reserve memory reserve = spoke1.getReserve(collateralAssetId);
+    return
+      (((oracle.getAssetPrice(debtAssetId) * debtAmount)) /
+        (oracle.getAssetPrice(collateralAssetId))).percentMul(reserve.config.lb);
+  }
 }

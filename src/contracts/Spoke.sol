@@ -34,8 +34,8 @@ contract Spoke is ISpoke {
 
   struct ReserveConfig {
     uint256 lt; // 1e4 == 100%, BPS
-    uint256 lb; // 1e4 == 100%, BPS
-    uint256 lpfp; // liquidation protocol fee percentage, BPS
+    uint256 lb; // BPS, 1e4 is 0% bonus, 1.1e4 is 10% bonus
+    uint256 lpfp; // liquidation protocol fee percentage, BPS.
     bool borrowable;
     bool collateral;
   }
@@ -112,20 +112,6 @@ contract Spoke is ISpoke {
     //     MathUtils.calculateCompoundedInterest(getInterestRate(assetId), uint40(0), block.timestamp)
     //   );
     return 0;
-  }
-
-  /// governance
-  function updateReserveConfig(uint256 assetId, ReserveConfig calldata params) external {
-    // TODO: AccessControl
-    reserves[assetId].config = ReserveConfig({
-      lt: params.lt,
-      lb: params.lb,
-      lpfp: params.lpfp,
-      borrowable: params.borrowable,
-      collateral: params.collateral
-    });
-
-    emit ReserveConfigUpdated(assetId, params.lt, params.lb, params.borrowable, params.collateral);
   }
 
   // /////
@@ -253,10 +239,10 @@ contract Spoke is ISpoke {
     // emit event
   }
 
-  function updateReserve(uint256 assetId, ReserveConfig memory params) external {
-    // TODO: More sophisticated
-    require(reserves[assetId].id != 0, 'INVALID_RESERVE');
+  function updateReserveConfig(uint256 assetId, ReserveConfig calldata params) external {
     // TODO: AccessControl
+    require(reserves[assetId].id != 0, 'INVALID_RESERVE');
+    // TODO: validation on lb >= 1e4?
     reserves[assetId].config = ReserveConfig({
       lt: params.lt,
       lb: params.lb,
@@ -264,6 +250,8 @@ contract Spoke is ISpoke {
       borrowable: params.borrowable,
       collateral: params.collateral
     });
+
+    emit ReserveConfigUpdated(assetId, params.lt, params.lb, params.borrowable, params.collateral);
   }
 
   // public
@@ -446,7 +434,7 @@ contract Spoke is ISpoke {
   }
 
   function _executeLiquidationCall(
-    uint256 debtToCover,
+    uint256 debtToCover, // TODO: units of debt? should be 1e18 is $1?
     uint256 collateralAssetId,
     uint256 debtAssetId,
     address user
