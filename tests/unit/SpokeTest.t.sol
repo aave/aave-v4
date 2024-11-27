@@ -31,10 +31,17 @@ contract SpokeTest is BaseTest {
     reserveConfigs[0] = Spoke.ReserveConfig({
       lt: 0.75e4,
       lb: 0,
+      lpfp: 0,
       borrowable: true,
       collateral: true
     });
-    reserveConfigs[1] = Spoke.ReserveConfig({lt: 0.8e4, lb: 0, borrowable: true, collateral: true});
+    reserveConfigs[1] = Spoke.ReserveConfig({
+      lt: 0.8e4,
+      lb: 0,
+      lpfp: 0,
+      borrowable: true,
+      collateral: true
+    });
 
     Utils.addAssetAndSpokes(
       hub,
@@ -49,10 +56,17 @@ contract SpokeTest is BaseTest {
     // Add eth
     uint256 ethAssetId = 1;
 
-    reserveConfigs[0] = Spoke.ReserveConfig({lt: 0.8e4, lb: 0, borrowable: true, collateral: true});
+    reserveConfigs[0] = Spoke.ReserveConfig({
+      lt: 0.8e4,
+      lb: 0,
+      lpfp: 0,
+      borrowable: true,
+      collateral: true
+    });
     reserveConfigs[1] = Spoke.ReserveConfig({
       lt: 0.76e4,
       lb: 0,
+      lpfp: 0,
       borrowable: true,
       collateral: true
     });
@@ -73,12 +87,14 @@ contract SpokeTest is BaseTest {
     reserveConfigs[0] = Spoke.ReserveConfig({
       lt: 0.78e4,
       lb: 0,
+      lpfp: 0,
       borrowable: true,
       collateral: true
     });
     reserveConfigs[1] = Spoke.ReserveConfig({
       lt: 0.72e4,
       lb: 0,
+      lpfp: 0,
       borrowable: true,
       collateral: true
     });
@@ -383,6 +399,7 @@ contract SpokeTest is BaseTest {
     Spoke.ReserveConfig memory newReserveConfig = Spoke.ReserveConfig({
       lt: reserveData.config.lt + 1,
       lb: reserveData.config.lb + 1,
+      lpfp: reserveData.config.lpfp + 1,
       borrowable: !reserveData.config.borrowable,
       collateral: !reserveData.config.collateral
     });
@@ -400,6 +417,7 @@ contract SpokeTest is BaseTest {
 
     assertEq(reserveData.config.lt, newReserveConfig.lt, 'wrong lt');
     assertEq(reserveData.config.lb, newReserveConfig.lb, 'wrong lb');
+    assertEq(reserveData.config.lpfp, newReserveConfig.lpfp, 'wrong lpfp');
     assertEq(reserveData.config.borrowable, newReserveConfig.borrowable, 'wrong borrowable');
     assertEq(reserveData.config.collateral, newReserveConfig.collateral, 'wrong collateral');
   }

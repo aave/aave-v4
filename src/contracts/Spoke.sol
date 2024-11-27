@@ -36,7 +36,7 @@ contract Spoke is ISpoke {
   struct ReserveConfig {
     uint256 lt; // 1e4 == 100%, BPS
     uint256 lb; // 1e4 == 100%, BPS
-    // TODO: liquidationProtocolFee
+    uint256 lpfp; // liquidation protocol fee percentage, BPS
     bool borrowable;
     bool collateral;
   }
@@ -121,6 +121,7 @@ contract Spoke is ISpoke {
     reserves[assetId].config = ReserveConfig({
       lt: params.lt,
       lb: params.lb,
+      lpfp: params.lpfp,
       borrowable: params.borrowable,
       collateral: params.collateral
     });
@@ -226,13 +227,6 @@ contract Spoke is ISpoke {
     return healthFactor;
   }
 
-  function setUsingAsCollateral(uint256 assetId, bool usingAsCollateral) external {
-    _validateSetUsingAsCollateral(assetId, msg.sender);
-    users[assetId][msg.sender].usingAsCollateral = usingAsCollateral;
-
-    emit UsingAsCollateral(assetId, msg.sender, usingAsCollateral);
-  }
-
   // /////
   // Governance
   // /////
@@ -251,6 +245,7 @@ contract Spoke is ISpoke {
     reserves[assetId].config = ReserveConfig({
       lt: params.lt,
       lb: params.lb,
+      lpfp: params.lpfp,
       borrowable: params.borrowable,
       collateral: params.collateral
     });
@@ -266,6 +261,7 @@ contract Spoke is ISpoke {
     reserves[assetId].config = ReserveConfig({
       lt: params.lt,
       lb: params.lb,
+      lpfp: params.lpfp,
       borrowable: params.borrowable,
       collateral: params.collateral
     });
@@ -295,6 +291,13 @@ contract Spoke is ISpoke {
       u.debtShares.rayMul(
         MathUtils.calculateCompoundedInterest(getInterestRate(assetId), uint40(0), block.timestamp)
       );
+  }
+
+  function setUsingAsCollateral(uint256 assetId, bool usingAsCollateral) public {
+    _validateSetUsingAsCollateral(assetId, msg.sender);
+    users[assetId][msg.sender].usingAsCollateral = usingAsCollateral;
+
+    emit UsingAsCollateral(assetId, msg.sender, usingAsCollateral);
   }
 
   // internal
@@ -487,8 +490,15 @@ contract Spoke is ISpoke {
     );
 
     // TODO: call LH to liquidate
-    // - withdraw collateral from user
+    // - withdraw collateral for user
     // - accounting here to update shares
+
+    if (
+      vars.actualCollateralToLiquidate + vars.liquidationProtocolFeeAmount ==
+      vars.userCollateralBalance
+    ) {
+      setUsingAsCollateral(collateralReserve.id, false);
+    }
 
     // IERC20(reservesList[debtAssetId]).safeTransferFrom(
     //   msg.sender,
@@ -534,7 +544,7 @@ contract Spoke is ISpoke {
     vars.collateralAssetUnit = 10 ** collateralReserve.decimals;
     vars.debtAssetUnit = 10 ** debtReserve.decimals;
 
-    vars.liquidationProtocolFeePercentage = collateralReserve.config.lb; // TODO: helper getLiquidationProtocolFee()?
+    vars.liquidationProtocolFeePercentage = collateralReserve.config.lpfp; // TODO: helper getLiquidationProtocolFee()?
 
     vars.baseCollateral =
       (vars.debtAssetPrice * debtToCover * vars.collateralAssetUnit) /

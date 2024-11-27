@@ -48,7 +48,7 @@ contract LiquidityHubHandler is Test {
     );
     bm.addReserve(
       0,
-      Spoke.ReserveConfig({lt: 0, lb: 0, borrowable: false, collateral: false}),
+      Spoke.ReserveConfig({lt: 0, lb: 0, lpfp: 0, borrowable: false, collateral: false}),
       address(dai)
     );
   }

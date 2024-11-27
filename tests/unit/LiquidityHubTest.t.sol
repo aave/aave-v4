@@ -23,8 +23,20 @@ contract LiquidityHubTest is BaseTest {
       drawCap: type(uint256).max
     });
     Spoke.ReserveConfig[] memory reserveConfigs = new Spoke.ReserveConfig[](2);
-    reserveConfigs[0] = Spoke.ReserveConfig({lt: 0, lb: 0, borrowable: true, collateral: false});
-    reserveConfigs[1] = Spoke.ReserveConfig({lt: 0, lb: 0, borrowable: true, collateral: false});
+    reserveConfigs[0] = Spoke.ReserveConfig({
+      lt: 0,
+      lb: 0,
+      lpfp: 0,
+      borrowable: true,
+      collateral: false
+    });
+    reserveConfigs[1] = Spoke.ReserveConfig({
+      lt: 0,
+      lb: 0,
+      lpfp: 0,
+      borrowable: true,
+      collateral: false
+    });
 
     // Add dai
     uint256 daiAssetId = 0;
