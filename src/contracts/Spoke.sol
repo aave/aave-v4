@@ -89,6 +89,7 @@ contract Spoke is ISpoke {
   uint256[] public reservesList; // assetIds
   uint256 public reserveCount;
   address public oracle;
+  uint256 public constant HEALTH_FACTOR_LIQUIDATION_THRESHOLD = 1e18;
 
   constructor(address liquidityHubAddress, address oracleAddress) {
     liquidityHub = liquidityHubAddress;
@@ -507,8 +508,7 @@ contract Spoke is ISpoke {
     vars.collateralAssetUnit = 10 ** collateralReserve.config.decimals;
     vars.debtAssetUnit = 10 ** debtReserve.config.decimals;
 
-    vars.liquidationProtocolFeePercentage = BorrowModule(collateralReserve.config.borrowModule)
-      .getLiquidationBonus(collateralReserve.id);
+    vars.liquidationProtocolFeePercentage = getLiquidationBonus(collateralReserve.id);
 
     vars.baseCollateral =
       (vars.debtAssetPrice * debtToCover * vars.collateralAssetUnit) /

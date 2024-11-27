@@ -14,6 +14,14 @@ interface ISpoke {
     bool borrowable,
     bool collateral
   );
+  event LiquidationCall(
+    uint256 indexed collateralAssetId,
+    uint256 indexed debtAssetId,
+    address indexed user,
+    uint256 actualDebtToLiquidate,
+    uint256 actualCollateralToLiquidate,
+    address liquidator
+  );
 
   /// @dev working with bps units 10_000 = 100%
   function getInterestRate(uint256 assetId) external view returns (uint256);
