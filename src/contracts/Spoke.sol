@@ -433,8 +433,11 @@ contract Spoke is ISpoke {
       );
   }
 
+  /**
+  @param debtToCover amount of debt to cover in base currency, in WAD. 1e18 == $1
+  */
   function _executeLiquidationCall(
-    uint256 debtToCover, // TODO: units of debt? should be 1e18 is $1?
+    uint256 debtToCover,
     uint256 collateralAssetId,
     uint256 debtAssetId,
     address user
