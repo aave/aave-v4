@@ -536,7 +536,7 @@ contract Spoke is ISpoke {
     vars.collateralAssetUnit = 10 ** collateralReserve.decimals;
     vars.debtAssetUnit = 10 ** debtReserve.decimals;
 
-    vars.liquidationProtocolFeePercentage = collateralReserve.config.lpfp; // TODO: helper getLiquidationProtocolFee()?
+    vars.liquidationProtocolFeePercentage = collateralReserve.config.lpfp;
 
     vars.baseCollateral =
       (vars.debtAssetPrice * debtToCover * vars.collateralAssetUnit) /
