@@ -247,6 +247,8 @@ contract LiquidityHub is ILiquidityHub {
     asset.drawnShares -= sharesAmount;
     spoke.drawnShares -= sharesAmount;
 
+    // TODO: transfer tokens to spoke or end user directly?
+
     emit Restore(assetId, msg.sender, amount);
 
     return sharesAmount;

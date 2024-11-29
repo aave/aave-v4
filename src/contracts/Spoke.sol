@@ -460,7 +460,7 @@ contract Spoke is ISpoke {
       ,
       vars.healthFactor
     ) = _calculateUserAccountData(user);
-    _validateLiquidationCall(collateralReserve, user, vars.userDebtBalance, vars.healthFactor); // TODO: involve healthFactor, hardcode 0 for now
+    _validateLiquidationCall(collateralReserve, user, vars.userDebtBalance, vars.healthFactor);
 
     vars.actualDebtToCover = debtToCover > vars.userDebtBalance
       ? vars.userDebtBalance
