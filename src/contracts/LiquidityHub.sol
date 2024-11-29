@@ -232,6 +232,7 @@ contract LiquidityHub is ILiquidityHub {
 
   function restore(
     uint256 assetId,
+    address from,
     uint256 amount,
     uint256 riskPremium
   ) external returns (uint256) {
@@ -247,7 +248,7 @@ contract LiquidityHub is ILiquidityHub {
     asset.drawnShares -= sharesAmount;
     spoke.drawnShares -= sharesAmount;
 
-    // TODO: transfer tokens to spoke or end user directly?
+    IERC20(assetsList[assetId]).safeTransferFrom(from, address(this), amount);
 
     emit Restore(assetId, msg.sender, amount);
 

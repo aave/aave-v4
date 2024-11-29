@@ -538,12 +538,15 @@ contract Spoke is ISpoke {
 
     vars.liquidationProtocolFeePercentage = collateralReserve.config.lpfp;
 
+    // find collateral amount that corresponds to the debt to cover
     vars.baseCollateral =
       (vars.debtAssetPrice * debtToCover * vars.collateralAssetUnit) /
       (vars.collateralAssetPrice * vars.debtAssetUnit);
 
     vars.maxCollateralToLiquidate = vars.baseCollateral.percentMul(liquidationBonus);
 
+    // TODO: enhancement, calculate critical threshold value of collateral to liquidate to end up with HF == 1
+    // instead of userCollateralBalance being max collateral to liquidate, it should be the critical threshold value
     if (vars.maxCollateralToLiquidate > userCollateralBalance) {
       // back calculate debt amount needed to cover the max allowed collateral
       vars.collateralAmount = userCollateralBalance;
