@@ -286,6 +286,10 @@ contract Spoke is ISpoke {
     emit UsingAsCollateral(assetId, msg.sender, usingAsCollateral);
   }
 
+  function getLiquidationThreshold(uint256 assetId) public view returns (uint256) {
+    return reserves[assetId].config.lt;
+  }
+
   // internal
   function _validateSupply(Reserve storage reserve, uint256 amount) internal view {
     // TODO: Decide where supply cap is checked
@@ -447,8 +451,8 @@ contract Spoke is ISpoke {
     require(debtToCover > 0, 'INVALID_DEBT_TO_COVER');
 
     LiquidationCallLocalVars memory vars;
-    Reserve storage collateralReserve = reserves[collateralAssetId];
-    Reserve storage debtReserve = reserves[debtAssetId];
+    Reserve memory collateralReserve = reserves[collateralAssetId];
+    Reserve memory debtReserve = reserves[debtAssetId];
 
     // TODO: accrue interest first? / updateState
     (
@@ -470,31 +474,31 @@ contract Spoke is ISpoke {
     //   ? vars.userDebtBalance
     //   : debtToCover;
 
-    (
-      vars.actualCollateralToLiquidate,
-      vars.actualDebtToLiquidate,
-      vars.liquidationProtocolFeeAmount
-    ) = _calculateAvailableCollateralToLiquidate(
-      collateralReserve,
-      debtReserve,
-      vars.actualDebtToCover,
-      vars.userCollateralBalance,
-      collateralReserve.config.lb
-    );
+    // (
+    //   vars.actualCollateralToLiquidate,
+    //   vars.actualDebtToLiquidate,
+    //   vars.liquidationProtocolFeeAmount
+    // ) = _calculateAvailableCollateralToLiquidate(
+    //   collateralReserve,
+    //   debtReserve,
+    //   vars.actualDebtToCover,
+    //   vars.userCollateralBalance,
+    //   collateralReserve.config.lb
+    // );
 
-    // TODO: call LH to liquidate
-    // - withdraw collateral for user
-    // - accounting here to update shares
+    // // TODO: call LH to liquidate
+    // // - withdraw collateral for user
+    // // - accounting here to update shares
 
-    if (
-      vars.actualCollateralToLiquidate + vars.liquidationProtocolFeeAmount ==
-      vars.userCollateralBalance
-    ) {
-      setUsingAsCollateral(collateralReserve.id, false);
-    }
+    // if (
+    //   vars.actualCollateralToLiquidate + vars.liquidationProtocolFeeAmount ==
+    //   vars.userCollateralBalance
+    // ) {
+    //   setUsingAsCollateral(collateralReserve.id, false);
+    // }
 
-    console2.log('vars.actualCollateralToLiquidate %e', vars.actualCollateralToLiquidate);
-    console2.log('vars.actualDebtToLiquidate %e', vars.actualDebtToLiquidate);
+    // console2.log('vars.actualCollateralToLiquidate %e', vars.actualCollateralToLiquidate);
+    // console2.log('vars.actualDebtToLiquidate %e', vars.actualDebtToLiquidate);
 
     // IERC20(reservesList[debtAssetId]).safeTransferFrom(
     //   msg.sender,
@@ -526,11 +530,18 @@ contract Spoke is ISpoke {
     address user,
     uint256 healthFactor
   ) internal view {
+    // TODO: checks on reserve inactive, paused?
+    // TODO: isLiquidationAllowed?
+    // TODO: grace period?
+
+    bool isCollateralEnabled = _usingAsCollateral(collateralAssetId, user) &&
+      getLiquidationThreshold(collateralAssetId) != 0;
+
     require(
       healthFactor < HEALTH_FACTOR_LIQUIDATION_THRESHOLD,
       'HEALTH_FACTOR_NOT_BELOW_THRESHOLD'
     );
-    require(_usingAsCollateral(collateralAssetId, user), 'COLLATERAL_CANNOT_BE_LIQUIDATED');
+    require(isCollateralEnabled, 'COLLATERAL_CANNOT_BE_LIQUIDATED');
     require(getUserDebt(debtAssetId, user) > 0, 'SPECIFIED_CURRENCY_NOT_BORROWED_BY_USER');
   }
 
