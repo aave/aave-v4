@@ -177,12 +177,12 @@ contract LiquidationTest is BaseTest {
     spoke1.liquidationCall(ethAssetId, daiAssetId, USER1, debtToCover);
   }
 
-  function test_liquidationCall_revertsWith_specified_currency_not_borrowed_by_user() public {
+  function test_liquidationCall_no_supply_revertsWith_health_factor_not_below_threshold() public {
     uint256 ethAssetId = 1; // collateral asset
     uint256 daiAssetId = 0; // debt asset
     uint256 debtToCover = 1;
 
-    vm.expectRevert(TestErrors.SPECIFIED_CURRENCY_NOT_BORROWED_BY_USER);
+    vm.expectRevert(TestErrors.HEALTH_FACTOR_NOT_BELOW_THRESHOLD);
     vm.prank(LIQUIDATOR);
     spoke1.liquidationCall(ethAssetId, daiAssetId, USER1, debtToCover);
   }

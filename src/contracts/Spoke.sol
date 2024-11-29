@@ -441,18 +441,16 @@ contract Spoke is ISpoke {
     uint256 debtAssetId,
     address user
   ) internal {
-    // V3 implementation to liquidate undercollateralized positions to start out with.
-    // v1 - allow the liquidator to liquidate up to 50% if HF goes below certain threshold
+    // v1 - allow the liquidator to liquidate full position if HF goes below certain threshold
+    // v2 enhancement - allow liquidator to liquidate only the amount needed to bring HF to 1
 
     require(debtToCover > 0, 'INVALID_DEBT_TO_COVER');
 
     LiquidationCallLocalVars memory vars;
-
     Reserve storage collateralReserve = reserves[collateralAssetId];
     Reserve storage debtReserve = reserves[debtAssetId];
 
-    // TODO: accrue interest first?
-
+    // TODO: accrue interest first? / updateState
     (
       vars.userCollateralBalance,
       vars.userDebtBalance,
@@ -460,11 +458,17 @@ contract Spoke is ISpoke {
       ,
       vars.healthFactor
     ) = _calculateUserAccountData(user);
-    _validateLiquidationCall(collateralReserve, user, vars.userDebtBalance, vars.healthFactor);
 
-    vars.actualDebtToCover = debtToCover > vars.userDebtBalance
-      ? vars.userDebtBalance
-      : debtToCover;
+    // (vars.userTotalDebt, vars.actualDebtToLiquidate) = _calculateDebt(
+    //   vars.userDebtBalance,
+    //   vars.healthFactor
+    // );
+
+    _validateLiquidationCall(collateralAssetId, debtAssetId, user, vars.healthFactor);
+
+    // vars.actualDebtToCover = debtToCover > vars.userDebtBalance
+    //   ? vars.userDebtBalance
+    //   : debtToCover;
 
     (
       vars.actualCollateralToLiquidate,
@@ -494,8 +498,16 @@ contract Spoke is ISpoke {
 
     // IERC20(reservesList[debtAssetId]).safeTransferFrom(
     //   msg.sender,
-    //   address(this), // liq hub
+    //   liquidityHub,
     //   vars.actualDebtToLiquidate
+    // );
+
+    // risk premium needs to be updated bc collateral/debt has been updated
+    // (, uint256 newAggregatedRiskPremium) = _refreshRiskPremium();
+    // uint256 userShares = ILiquidityHub(liquidityHub).restore(
+    //   assetId,
+    //   amount,
+    //   newAggregatedRiskPremium
     // );
 
     // emit LiquidationCall(
@@ -509,17 +521,35 @@ contract Spoke is ISpoke {
   }
 
   function _validateLiquidationCall(
-    Reserve memory collateralReserve,
+    uint256 collateralAssetId,
+    uint256 debtAssetId,
     address user,
-    uint256 userDebt,
     uint256 healthFactor
   ) internal view {
-    require(userDebt > 0, 'SPECIFIED_CURRENCY_NOT_BORROWED_BY_USER');
     require(
       healthFactor < HEALTH_FACTOR_LIQUIDATION_THRESHOLD,
       'HEALTH_FACTOR_NOT_BELOW_THRESHOLD'
     );
+    require(getUserDebt(debtAssetId, user) > 0, 'SPECIFIED_CURRENCY_NOT_BORROWED_BY_USER');
   }
+
+  /**
+   * @notice Calculates the total debt of the user and the actual amount to liquidate depending on the health factor.
+   * @return The actual debt that can be liquidated
+   */
+  // function _calculateDebt(
+  //   uint256 userDebtBalance,
+  //   uint256 healthFactor
+  // ) internal view returns (uint256, uint256) {
+  //   // TODO: calculate maxLiquidatableDebt, find amount needed to restore HF to 1
+  //   // uint256 maxLiquidatableDebt = userVariableDebt.percentMul(closeFactor);
+
+  //   uint256 actualDebtToLiquidate = params.debtToCover > maxLiquidatableDebt
+  //     ? maxLiquidatableDebt
+  //     : params.debtToCover;
+
+  //   return (actualDebtToLiquidate);
+  // }
 
   function _calculateAvailableCollateralToLiquidate(
     Reserve memory collateralReserve,
