@@ -342,35 +342,43 @@ contract LiquidationTest is BaseTest {
     // USER1 borrow usdc
     Utils.borrow(vm, spoke1, usdcAssetId, USER1, usdcBorrowAmount, USER1);
 
-    uint256 expectedCollateralLiquidated = _getExpectedCollateralLiquidated(
-      ethAssetId,
-      daiAssetId,
-      debtToCover
-    );
+    // HF drops below threshold, eth -> $0.10
+    MockPriceOracle(address(oracle)).setAssetPrice(ethAssetId, 0.1e8);
 
-    uint256 expectedDebtCovered = _getExpectedDebtCovered(
-      ethAssetId,
-      daiAssetId,
-      expectedCollateralLiquidated
-    );
+    // console2.log('%e', MockPriceOracle(address(oracle)).getAssetPrice(ethAssetId));
 
-    console2.log('expectedCollateralLiquidated %e', expectedCollateralLiquidated);
-    console2.log('expectedDebtCovered %e', expectedDebtCovered);
+    uint256 hf = spoke1.getHealthFactor(USER1);
+    console2.log('hf %e', hf);
+
+    // uint256 expectedCollateralLiquidated = _getExpectedCollateralLiquidated(
+    //   ethAssetId,
+    //   daiAssetId,
+    //   debtToCover
+    // );
+
+    // uint256 expectedDebtCovered = _getExpectedDebtCovered(
+    //   ethAssetId,
+    //   daiAssetId,
+    //   expectedCollateralLiquidated
+    // );
+
+    // // console2.log('expectedCollateralLiquidated %e', expectedCollateralLiquidated);
+    // // console2.log('expectedDebtCovered %e', expectedDebtCovered);
 
     // deal(address(dai), LIQUIDATOR, expectedDebtCovered);
     // vm.startPrank(LIQUIDATOR);
     // dai.approve(address(hub), expectedDebtCovered);
 
-    // vm.expectEmit(true, true, true, true, address(hub));
-    // emit LiquidationCall(
-    //   ethAssetId,
-    //   daiAssetId,
-    //   USER1,
-    //   expectedDebtCovered,
-    //   expectedCollateralLiquidated,
-    //   LIQUIDATOR
-    // );
-    // hub.liquidationCall(ethAssetId, daiAssetId, USER1, debtToCover);
+    // // // vm.expectEmit(true, true, true, true, address(hub));
+    // // // emit LiquidationCall(
+    // // //   ethAssetId,
+    // // //   daiAssetId,
+    // // //   USER1,
+    // // //   expectedDebtCovered,
+    // // //   expectedCollateralLiquidated,
+    // // //   LIQUIDATOR
+    // // // );
+    // spoke1.liquidationCall(ethAssetId, daiAssetId, USER1, debtToCover);
     // vm.stopPrank();
 
     // assertEq(dai.balanceOf(LIQUIDATOR), 0, 'Unexpected liquidator debt asset balance');
@@ -441,10 +449,11 @@ contract LiquidationTest is BaseTest {
     uint256 debtAssetId,
     uint256 collateralAmount
   ) internal returns (uint256) {
-    Spoke.Reserve memory reserve = spoke1.getReserve(collateralAssetId);
     return
       ((oracle.getAssetPrice(collateralAssetId) * collateralAmount) /
-        (oracle.getAssetPrice(debtAssetId))).percentDiv(reserve.config.lb);
+        (oracle.getAssetPrice(debtAssetId))).percentDiv(
+          spoke1.getLiquidationBonus(collateralAssetId)
+        );
   }
 
   function _getExpectedCollateralLiquidated(
@@ -452,9 +461,10 @@ contract LiquidationTest is BaseTest {
     uint256 debtAssetId,
     uint256 debtAmount
   ) internal returns (uint256) {
-    Spoke.Reserve memory reserve = spoke1.getReserve(collateralAssetId);
     return
       (((oracle.getAssetPrice(debtAssetId) * debtAmount)) /
-        (oracle.getAssetPrice(collateralAssetId))).percentMul(reserve.config.lb);
+        (oracle.getAssetPrice(collateralAssetId))).percentMul(
+          spoke1.getLiquidationBonus(collateralAssetId)
+        );
   }
 }

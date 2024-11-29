@@ -279,6 +279,7 @@ contract Spoke is ISpoke {
       );
   }
 
+  // TODO: Update when user config is finalized
   function setUsingAsCollateral(uint256 assetId, bool usingAsCollateral) public {
     _validateSetUsingAsCollateral(assetId, msg.sender);
     users[assetId][msg.sender].usingAsCollateral = usingAsCollateral;
@@ -286,8 +287,19 @@ contract Spoke is ISpoke {
     emit UsingAsCollateral(assetId, msg.sender, usingAsCollateral);
   }
 
+  // TODO: Update when reserve config is finalized
   function getLiquidationThreshold(uint256 assetId) public view returns (uint256) {
     return reserves[assetId].config.lt;
+  }
+
+  // TODO: Update when reserve config is finalized
+  function getLiquidationProtocolFeePercentage(uint256 assetId) public view returns (uint256) {
+    return reserves[assetId].config.lpfp;
+  }
+
+  // TODO: Update when reserve config is finalized
+  function getLiquidationBonus(uint256 assetId) public view returns (uint256) {
+    return reserves[assetId].config.lb;
   }
 
   // internal
@@ -416,6 +428,11 @@ contract Spoke is ISpoke {
         vars.totalDebtInBaseCurrency
       ); // HF of 1 -> 1e18
 
+    console2.log('vars.totalCollateralInBaseCurrency %e', vars.totalCollateralInBaseCurrency);
+    console2.log('vars.totalDebtInBaseCurrency %e', vars.totalDebtInBaseCurrency);
+    console2.log('vars.avgLiquidationThreshold %e', vars.avgLiquidationThreshold);
+    console2.log('vars.userRiskPremium %e', vars.userRiskPremium);
+
     return (
       vars.totalCollateralInBaseCurrency,
       vars.totalDebtInBaseCurrency,
@@ -463,28 +480,31 @@ contract Spoke is ISpoke {
       vars.healthFactor
     ) = _calculateUserAccountData(user);
 
-    // (vars.userTotalDebt, vars.actualDebtToLiquidate) = _calculateDebt(
-    //   vars.userDebtBalance,
-    //   vars.healthFactor
-    // );
+    console2.log('vars.healthFactor %e', vars.healthFactor);
+
+    vars.actualDebtToLiquidate = _calculateDebt(
+      debtToCover,
+      vars.userDebtBalance,
+      vars.healthFactor
+    );
 
     _validateLiquidationCall(collateralAssetId, debtAssetId, user, vars.healthFactor);
 
-    // vars.actualDebtToCover = debtToCover > vars.userDebtBalance
-    //   ? vars.userDebtBalance
-    //   : debtToCover;
+    (
+      vars.actualCollateralToLiquidate,
+      vars.actualDebtToLiquidate,
+      vars.liquidationProtocolFeeAmount
+    ) = _calculateAvailableCollateralToLiquidate(
+      collateralReserve,
+      debtReserve,
+      vars.actualDebtToLiquidate,
+      vars.userCollateralBalance,
+      collateralReserve.config.lb
+    );
 
-    // (
-    //   vars.actualCollateralToLiquidate,
-    //   vars.actualDebtToLiquidate,
-    //   vars.liquidationProtocolFeeAmount
-    // ) = _calculateAvailableCollateralToLiquidate(
-    //   collateralReserve,
-    //   debtReserve,
-    //   vars.actualDebtToCover,
-    //   vars.userCollateralBalance,
-    //   collateralReserve.config.lb
-    // );
+    console2.log('vars.actualCollateralToLiquidate %e', vars.actualCollateralToLiquidate);
+    console2.log('vars.actualDebtToLiquidate %e', vars.actualDebtToLiquidate);
+    console2.log('vars.liquidationProtocolFeeAmount %e', vars.liquidationProtocolFeeAmount);
 
     // // TODO: call LH to liquidate
     // // - withdraw collateral for user
@@ -547,22 +567,32 @@ contract Spoke is ISpoke {
 
   /**
    * @notice Calculates the total debt of the user and the actual amount to liquidate depending on the health factor.
+   * @param debtToCover The desired amount of debt to cover in base currency
+   * @param userDebtBalance The total debt of the user in base currency
+   * @param healthFactor The health factor of the user
    * @return The actual debt that can be liquidated
    */
-  // function _calculateDebt(
-  //   uint256 userDebtBalance,
-  //   uint256 healthFactor
-  // ) internal view returns (uint256, uint256) {
-  //   // TODO: calculate maxLiquidatableDebt, find amount needed to restore HF to 1
-  //   // uint256 maxLiquidatableDebt = userVariableDebt.percentMul(closeFactor);
+  function _calculateDebt(
+    uint256 debtToCover,
+    uint256 userDebtBalance,
+    uint256 healthFactor
+  ) internal view returns (uint256) {
+    // TODO: calculate maxLiquidatableDebt, find amount needed to restore HF to 1
+    // for now, it is equal to the total debt of the liquidated user
+    uint256 maxLiquidatableDebt = userDebtBalance;
 
-  //   uint256 actualDebtToLiquidate = params.debtToCover > maxLiquidatableDebt
-  //     ? maxLiquidatableDebt
-  //     : params.debtToCover;
+    uint256 actualDebtToLiquidate = debtToCover > maxLiquidatableDebt
+      ? maxLiquidatableDebt
+      : debtToCover;
 
-  //   return (actualDebtToLiquidate);
-  // }
+    return actualDebtToLiquidate;
+  }
 
+  /**
+   * @return The maximum collateral amount that is possible to liquidate given all the liquidation constraints (liquidation bonus, liquidationProtocolFeePercentage)
+   * @return The amount to repay with the liquidation
+   * @return The fee taken from the liquidation bonus amount to be paid to the protocol
+   */
   function _calculateAvailableCollateralToLiquidate(
     Reserve memory collateralReserve,
     Reserve memory debtReserve,
@@ -578,7 +608,9 @@ contract Spoke is ISpoke {
     vars.collateralAssetUnit = 10 ** collateralReserve.decimals;
     vars.debtAssetUnit = 10 ** debtReserve.decimals;
 
-    vars.liquidationProtocolFeePercentage = collateralReserve.config.lpfp;
+    vars.liquidationProtocolFeePercentage = getLiquidationProtocolFeePercentage(
+      collateralReserve.id
+    );
 
     // find collateral amount that corresponds to the debt to cover
     vars.baseCollateral =
