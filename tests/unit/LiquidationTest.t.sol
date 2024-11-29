@@ -219,6 +219,49 @@ contract LiquidationTest is BaseTest {
     spoke1.liquidationCall(ethAssetId, daiAssetId, USER1, debtToCover);
   }
 
+  function test_liquidationCall_revertsWith_collateral_cannot_be_liquidated() public {
+    uint256 debtToCover = 1;
+
+    uint256 daiAssetId = 0;
+    uint256 ethAssetId = 1;
+    uint256 usdcAssetId = 2;
+    uint256 wbtcAssetId = 3;
+
+    uint256 daiAmount = 10_000e18; // 10k dai -> $10k
+    uint256 ethAmount = 10e18; // 10 eth -> $20k
+    uint256 wbtcAmount = 1e18; // 1 wbtc -> $50k
+    uint256 usdcBorrowAmount = 15_000e18; // 15k usdc -> $15k
+    bool usingAsCollateral = true;
+
+    // USER1 supply dai into spoke1
+    deal(address(dai), USER1, daiAmount);
+    Utils.spokeSupply(vm, hub, spoke1, daiAssetId, USER1, daiAmount, USER1);
+    Utils.setUsingAsCollateral(vm, spoke1, USER1, daiAssetId, usingAsCollateral);
+
+    // USER1 supply eth into spoke1
+    deal(address(eth), USER1, ethAmount);
+    Utils.spokeSupply(vm, hub, spoke1, ethAssetId, USER1, ethAmount, USER1);
+    Utils.setUsingAsCollateral(vm, spoke1, USER1, ethAssetId, usingAsCollateral);
+
+    // USER1 supply wbtc into spoke1, NOT as collateral
+    deal(address(wbtc), USER1, ethAmount);
+    Utils.spokeSupply(vm, hub, spoke1, wbtcAssetId, USER1, ethAmount, USER1);
+
+    // USER2 supply usdc into spoke1
+    deal(address(usdc), USER2, usdcBorrowAmount);
+    Utils.spokeSupply(vm, hub, spoke1, usdcAssetId, USER2, usdcBorrowAmount, USER2);
+
+    // USER1 borrow usdc
+    Utils.borrow(vm, spoke1, usdcAssetId, USER1, usdcBorrowAmount, USER1);
+
+    // HF drops below threshold, eth -> 0
+    MockPriceOracle(address(oracle)).setAssetPrice(ethAssetId, 0);
+
+    vm.prank(LIQUIDATOR);
+    vm.expectRevert(TestErrors.COLLATERAL_CANNOT_BE_LIQUIDATED);
+    spoke1.liquidationCall(wbtcAssetId, daiAssetId, USER1, debtToCover);
+  }
+
   function test_liquidationCallA() public {
     uint256 debtToCover = 10_000e18;
     uint256 daiAssetId = 0;

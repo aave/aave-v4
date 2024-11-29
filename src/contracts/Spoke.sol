@@ -530,6 +530,7 @@ contract Spoke is ISpoke {
       healthFactor < HEALTH_FACTOR_LIQUIDATION_THRESHOLD,
       'HEALTH_FACTOR_NOT_BELOW_THRESHOLD'
     );
+    require(_usingAsCollateral(collateralAssetId, user), 'COLLATERAL_CANNOT_BE_LIQUIDATED');
     require(getUserDebt(debtAssetId, user) > 0, 'SPECIFIED_CURRENCY_NOT_BORROWED_BY_USER');
   }
 
