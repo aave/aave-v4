@@ -377,7 +377,7 @@ contract LiquidationTest is BaseTest {
     // //   expectedCollateralLiquidated,
     // //   LIQUIDATOR
     // // );
-    spoke1.liquidationCall(ethAssetId, usdcAssetId, USER1, debtToCover);
+    spoke1.liquidationCall(daiAssetId, usdcAssetId, USER1, debtToCover);
     vm.stopPrank();
 
     // assertEq(dai.balanceOf(LIQUIDATOR), 0, 'Unexpected liquidator debt asset balance');
