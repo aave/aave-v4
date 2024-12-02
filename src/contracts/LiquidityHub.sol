@@ -10,6 +10,8 @@ import {ILiquidityHub} from '../interfaces/ILiquidityHub.sol';
 import {IReserveInterestRateStrategy} from '../interfaces/IReserveInterestRateStrategy.sol';
 import {DataTypes} from '../libraries/types/DataTypes.sol';
 
+import 'forge-std/console2.sol';
+
 contract LiquidityHub is ILiquidityHub {
   using SafeERC20 for IERC20;
   using WadRayMath for uint256;
@@ -200,6 +202,10 @@ contract LiquidityHub is ILiquidityHub {
     asset.totalAssets -= amount;
     spoke.totalShares -= sharesAmount;
 
+    console2.log('withdraw');
+    console2.log('sharesAmount %e', sharesAmount);
+    console2.log('spoke.totalShares %e', spoke.totalShares);
+
     IERC20(assetsList[assetId]).safeTransfer(to, amount);
 
     emit Withdraw(assetId, msg.sender, to, amount);
@@ -218,12 +224,16 @@ contract LiquidityHub is ILiquidityHub {
     Asset storage asset = assets[assetId];
     Spoke storage spoke = spokes[assetId][msg.sender];
 
+    console2.log('draw %d %s %e', assetId, to, amount);
+
     _updateState(asset, spoke.drawnShares, riskPremium, 0, amount);
     _validateDraw(asset, amount, spoke.config.drawCap);
 
     uint256 sharesAmount = convertAssetsToSharesUp(assetId, amount);
     asset.drawnShares += sharesAmount;
     spoke.drawnShares += sharesAmount;
+
+    console2.log('sharesAmount %e', sharesAmount);
 
     IERC20(assetsList[assetId]).safeTransfer(to, amount);
 
@@ -242,12 +252,19 @@ contract LiquidityHub is ILiquidityHub {
     Asset storage asset = assets[assetId];
     Spoke storage spoke = spokes[assetId][msg.sender];
 
+    console2.log('asset.drawnShares %e', asset.drawnShares);
+    console2.log('spoke.drawnShares %e', spoke.drawnShares);
+
     _updateState(asset, spoke.drawnShares, riskPremium, amount, 0);
     uint256 sharesAmount = convertAssetsToSharesDown(assetId, amount);
     _validateRestore(asset, sharesAmount, spoke.drawnShares);
 
     asset.drawnShares -= sharesAmount;
     spoke.drawnShares -= sharesAmount;
+
+    console2.log('sharesAmount %e', sharesAmount);
+    console2.log('asset.drawnShares %e', asset.drawnShares);
+    console2.log('spoke.drawnShares %e', spoke.drawnShares);
 
     // TODO: transfer from
     // IERC20(assetsList[assetId]).safeTransferFrom(from, address(this), amount);

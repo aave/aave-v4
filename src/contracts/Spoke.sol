@@ -515,7 +515,12 @@ contract Spoke is ISpoke {
       collateralReserve.config.lb
     );
 
-    console2.log('vars.actualCollateralToLiquidate %e', vars.actualCollateralToLiquidate);
+    console2.log('vars.userCollateralBalance %e', vars.userCollateralBalance);
+    console2.log(
+      'vars.actualCollateralToLiquidate %e %e shares',
+      vars.actualCollateralToLiquidate,
+      getUserSupplyInShares(collateralAssetId, user)
+    );
     console2.log('vars.actualDebtToLiquidate %e', vars.actualDebtToLiquidate);
     console2.log('vars.liquidationProtocolFeeAmount %e', vars.liquidationProtocolFeeAmount);
 
@@ -542,12 +547,31 @@ contract Spoke is ISpoke {
     // );
 
     // risk premium needs to be updated bc collateral/debt has been updated
-    // (, uint256 newAggregatedRiskPremium) = _refreshRiskPremium();
-    // uint256 userShares = ILiquidityHub(liquidityHub).restore(
-    //   assetId,
-    //   amount,
-    //   newAggregatedRiskPremium
-    // );
+    (, uint256 newAggregatedRiskPremium) = _refreshRiskPremium();
+    // repay debt
+    IERC20(debtReserve.asset).safeTransferFrom(
+      msg.sender,
+      liquidityHub,
+      vars.actualDebtToLiquidate
+    );
+    uint256 userDebtShares = ILiquidityHub(liquidityHub).restore(
+      debtAssetId,
+      vars.actualDebtToLiquidate,
+      newAggregatedRiskPremium
+    );
+
+    // risk premium needs to be updated bc collateral/debt has been updated
+    (, newAggregatedRiskPremium) = _refreshRiskPremium();
+    // liquidate collateral
+    uint256 userCollateralShares = ILiquidityHub(liquidityHub).withdraw(
+      collateralAssetId,
+      address(this),
+      vars.actualCollateralToLiquidate,
+      newAggregatedRiskPremium
+    );
+
+    console2.log('userDebtShares %e', userDebtShares);
+    console2.log('userCollateralShares %e', userCollateralShares);
 
     emit LiquidationCall(
       collateralAssetId,
