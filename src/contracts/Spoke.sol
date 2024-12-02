@@ -306,10 +306,7 @@ contract Spoke is ISpoke {
 
   // TODO: Update when user config is finalized
   function setUsingAsCollateral(uint256 assetId, bool usingAsCollateral) public {
-    _validateSetUsingAsCollateral(assetId, msg.sender);
-    users[assetId][msg.sender].usingAsCollateral = usingAsCollateral;
-
-    emit UsingAsCollateral(assetId, msg.sender, usingAsCollateral);
+    _setUsingAsCollateral(msg.sender, assetId, usingAsCollateral);
   }
 
   // TODO: Update when reserve config is finalized
@@ -524,16 +521,16 @@ contract Spoke is ISpoke {
 
     console2.log('total debt %e', vars.userDebtBalance);
 
-    // // TODO: call LH to liquidate
-    // // - withdraw collateral for user
-    // // - accounting here to update shares
+    // TODO: call LH to liquidate
+    // - withdraw collateral for user
+    // - accounting here to update shares
 
-    // if (
-    //   vars.actualCollateralToLiquidate + vars.liquidationProtocolFeeAmount ==
-    //   vars.userCollateralBalance
-    // ) {
-    //   setUsingAsCollateral(collateralReserve.id, false);
-    // }
+    if (
+      vars.actualCollateralToLiquidate + vars.liquidationProtocolFeeAmount ==
+      vars.userCollateralBalance
+    ) {
+      _setUsingAsCollateral(user, collateralReserve.id, false);
+    }
 
     // console2.log('vars.actualCollateralToLiquidate %e', vars.actualCollateralToLiquidate);
     // console2.log('vars.actualDebtToLiquidate %e', vars.actualDebtToLiquidate);
@@ -552,14 +549,14 @@ contract Spoke is ISpoke {
     //   newAggregatedRiskPremium
     // );
 
-    // emit LiquidationCall(
-    //   collateralAssetId,
-    //   debtAssetId,
-    //   user,
-    //   vars.actualDebtToLiquidate, // TODO: actualDebtToLiquidate
-    //   vars.actualCollateralToLiquidate, // TODO: liquidatedCollateralAmount
-    //   msg.sender
-    // );
+    emit LiquidationCall(
+      collateralAssetId,
+      debtAssetId,
+      user,
+      vars.actualDebtToLiquidate,
+      vars.actualCollateralToLiquidate,
+      msg.sender
+    );
   }
 
   function _validateLiquidationCall(
@@ -628,7 +625,7 @@ contract Spoke is ISpoke {
 
     // console2.log('vars.collateralAssetPrice %e', vars.collateralAssetPrice);
     // console2.log('vars.debtAssetPrice %e', vars.debtAssetPrice);
-    console2.log('userCollateralBalance %e', userCollateralBalance);
+    // console2.log('userCollateralBalance %e', userCollateralBalance);
 
     vars.liquidationProtocolFeePercentage = getLiquidationProtocolFeePercentage(
       collateralReserve.id
@@ -644,6 +641,7 @@ contract Spoke is ISpoke {
     // TODO: enhancement, calculate critical threshold value of collateral to liquidate to end up with HF == 1
     // instead of userCollateralBalance being max collateral to liquidate, it should be the critical threshold value
     if (vars.maxCollateralToLiquidate > userCollateralBalance) {
+      console2.log('maxCollateralToLiquidate > userCollateralBalance');
       // back calculate debt amount needed to cover the max allowed collateral
       vars.collateralAmount = userCollateralBalance;
       vars.debtAmountNeeded = ((vars.collateralAssetPrice *
@@ -652,6 +650,7 @@ contract Spoke is ISpoke {
           liquidationBonus
         );
     } else {
+      console2.log('maxCollateralToLiquidate <= userCollateralBalance');
       vars.collateralAmount = vars.maxCollateralToLiquidate;
       vars.debtAmountNeeded = debtToCover;
     }
@@ -673,5 +672,12 @@ contract Spoke is ISpoke {
     } else {
       return (vars.collateralAmount, vars.debtAmountNeeded, 0);
     }
+  }
+
+  function _setUsingAsCollateral(address user, uint256 assetId, bool usingAsCollateral) internal {
+    _validateSetUsingAsCollateral(assetId, user);
+    users[assetId][user].usingAsCollateral = usingAsCollateral;
+
+    emit UsingAsCollateral(assetId, user, usingAsCollateral);
   }
 }

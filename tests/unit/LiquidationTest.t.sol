@@ -311,7 +311,8 @@ contract LiquidationTest is BaseTest {
     spoke1.liquidationCall(wbtcAssetId, daiAssetId, USER1, debtToCover);
   }
 
-  function test_liquidationCallA() public {
+  /// @dev Test liquidation call with liquidated amount lt user collateral balance
+  function test_liquidationCall_fullUserCollateralBalance() public {
     uint256 debtToCover = 15_000e18;
     uint256 daiAssetId = 0;
     uint256 ethAssetId = 1;
@@ -322,7 +323,7 @@ contract LiquidationTest is BaseTest {
     uint256 ethAmount = 10e18; // 10 eth -> $20k
 
     // total borrowed: $15k
-    uint256 usdcBorrowAmount = 15_000e18; // 15k usdc -> $15k
+    uint256 usdcBorrowAmount = debtToCover; // 15k usdc -> $15k
     bool usingAsCollateral = true;
 
     // USER1 supply dai into spoke1
@@ -361,24 +362,28 @@ contract LiquidationTest is BaseTest {
     //   expectedCollateralLiquidated
     // );
 
-    console2.log('expectedCollateralLiquidated %e', expectedCollateralLiquidated);
-    console2.log('expectedDebtCovered %e', expectedDebtCovered);
+    // console2.log('expectedCollateralLiquidated %e', expectedCollateralLiquidated);
+    // console2.log('expectedDebtCovered %e', expectedDebtCovered);
 
     deal(address(usdc), LIQUIDATOR, debtToCover);
     vm.startPrank(LIQUIDATOR);
     usdc.approve(address(hub), debtToCover);
 
-    // // vm.expectEmit(true, true, true, true, address(hub));
-    // // emit LiquidationCall(
-    // //   ethAssetId,
-    // //   daiAssetId,
-    // //   USER1,
-    // //   expectedDebtCovered,
-    // //   expectedCollateralLiquidated,
-    // //   LIQUIDATOR
-    // // );
+    // vm.expectEmit(address(spoke1));
+    // emit LiquidationCall(
+    //   ethAssetId,
+    //   daiAssetId,
+    //   USER1,
+    //   expectedDebtCovered,
+    //   expectedCollateralLiquidated,
+    //   LIQUIDATOR
+    // );
     spoke1.liquidationCall(daiAssetId, usdcAssetId, USER1, debtToCover);
     vm.stopPrank();
+
+    Spoke.UserConfig memory userData = spoke1.getUser(daiAssetId, USER1);
+
+    assertEq(userData.usingAsCollateral, false, 'Unexpected usingAsCollateral');
 
     // assertEq(dai.balanceOf(LIQUIDATOR), 0, 'Unexpected liquidator debt asset balance');
     // assertEq(
