@@ -446,10 +446,10 @@ contract Spoke is ISpoke {
         vars.totalDebtInBaseCurrency
       ); // HF of 1 -> 1e18
 
-    console2.log('vars.totalCollateralInBaseCurrency %e', vars.totalCollateralInBaseCurrency);
-    console2.log('vars.totalDebtInBaseCurrency %e', vars.totalDebtInBaseCurrency);
-    console2.log('vars.avgLiquidationThreshold %e', vars.avgLiquidationThreshold);
-    console2.log('vars.userRiskPremium %e', vars.userRiskPremium);
+    // console2.log('vars.totalCollateralInBaseCurrency %e', vars.totalCollateralInBaseCurrency);
+    // console2.log('vars.totalDebtInBaseCurrency %e', vars.totalDebtInBaseCurrency);
+    // console2.log('vars.avgLiquidationThreshold %e', vars.avgLiquidationThreshold);
+    // console2.log('vars.userRiskPremium %e', vars.userRiskPremium);
 
     return (
       vars.totalCollateralInBaseCurrency,
@@ -492,7 +492,7 @@ contract Spoke is ISpoke {
     // TODO: accrue interest first? / updateState
     (, vars.userDebtBalanceInBaseCurrency, , , vars.healthFactor) = _calculateUserAccountData(user);
 
-    console2.log('vars.healthFactor %e', vars.healthFactor);
+    // console2.log('vars.healthFactor %e', vars.healthFactor);
 
     vars.actualDebtToLiquidate = _calculateDebt(
       debtToCover,
@@ -626,8 +626,8 @@ contract Spoke is ISpoke {
     vars.collateralAssetUnit = 10 ** collateralReserve.decimals;
     vars.debtAssetUnit = 10 ** debtReserve.decimals;
 
-    console2.log('vars.collateralAssetPrice %e', vars.collateralAssetPrice);
-    console2.log('vars.debtAssetPrice %e', vars.debtAssetPrice);
+    // console2.log('vars.collateralAssetPrice %e', vars.collateralAssetPrice);
+    // console2.log('vars.debtAssetPrice %e', vars.debtAssetPrice);
     console2.log('userCollateralBalance %e', userCollateralBalance);
 
     vars.liquidationProtocolFeePercentage = getLiquidationProtocolFeePercentage(

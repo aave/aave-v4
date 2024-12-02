@@ -343,30 +343,30 @@ contract LiquidationTest is BaseTest {
     Utils.borrow(vm, spoke1, usdcAssetId, USER1, usdcBorrowAmount, USER1);
 
     // HF drops below threshold, eth -> $0.10
-    MockPriceOracle(address(oracle)).setAssetPrice(ethAssetId, 0.1e8);
+    MockPriceOracle(address(oracle)).setAssetPrice(ethAssetId, 0e8);
     // if eth -> 0, total collateral: $10k. LT is 0.75
     // total borrowed is $15k, total collateral is $10k
     // HF = collateral * LT / borrowed = 0.75 * $10k / $15k = 0.5
     // if paying back $10k in debt, collateral to liquidate = $10k
 
-    uint256 expectedCollateralLiquidated = _getExpectedCollateralLiquidated(
-      ethAssetId,
-      daiAssetId,
-      debtToCover
-    );
+    // uint256 expectedCollateralLiquidated = _getExpectedCollateralLiquidated(
+    //   daiAssetId,
+    //   usdcAssetId,
+    //   debtToCover
+    // );
 
-    uint256 expectedDebtCovered = _getExpectedDebtCovered(
-      ethAssetId,
-      daiAssetId,
-      expectedCollateralLiquidated
-    );
+    // uint256 expectedDebtCovered = _getExpectedDebtCovered(
+    //   daiAssetId,
+    //   usdcAssetId,
+    //   expectedCollateralLiquidated
+    // );
 
-    // console2.log('expectedCollateralLiquidated %e', expectedCollateralLiquidated);
-    // console2.log('expectedDebtCovered %e', expectedDebtCovered);
+    console2.log('expectedCollateralLiquidated %e', expectedCollateralLiquidated);
+    console2.log('expectedDebtCovered %e', expectedDebtCovered);
 
-    deal(address(dai), LIQUIDATOR, debtToCover);
+    deal(address(usdc), LIQUIDATOR, debtToCover);
     vm.startPrank(LIQUIDATOR);
-    dai.approve(address(hub), debtToCover);
+    usdc.approve(address(hub), debtToCover);
 
     // // vm.expectEmit(true, true, true, true, address(hub));
     // // emit LiquidationCall(
@@ -448,11 +448,13 @@ contract LiquidationTest is BaseTest {
     uint256 debtAssetId,
     uint256 collateralAmount
   ) internal returns (uint256) {
+    uint256 debtAssetPrice = oracle.getAssetPrice(debtAssetId);
+
     return
-      ((oracle.getAssetPrice(collateralAssetId) * collateralAmount) /
-        (oracle.getAssetPrice(debtAssetId))).percentDiv(
-          spoke1.getLiquidationBonus(collateralAssetId)
-        );
+      debtAssetPrice == 0
+        ? 0
+        : ((oracle.getAssetPrice(collateralAssetId) * collateralAmount) / (debtAssetPrice))
+          .percentDiv(spoke1.getLiquidationBonus(collateralAssetId));
   }
 
   function _getExpectedCollateralLiquidated(
@@ -460,10 +462,12 @@ contract LiquidationTest is BaseTest {
     uint256 debtAssetId,
     uint256 debtAmount
   ) internal returns (uint256) {
+    uint256 collateralAssetPrice = oracle.getAssetPrice(collateralAssetId);
     return
-      (((oracle.getAssetPrice(debtAssetId) * debtAmount)) /
-        (oracle.getAssetPrice(collateralAssetId))).percentMul(
+      collateralAssetPrice == 0
+        ? 0
+        : (oracle.getAssetPrice(debtAssetId) * debtAmount).percentMul(
           spoke1.getLiquidationBonus(collateralAssetId)
-        );
+        ) / collateralAssetPrice;
   }
 }
