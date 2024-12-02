@@ -192,7 +192,7 @@ contract LiquidityHubTest is BaseTest {
     assertEq(reserveData.totalShares, amount, 'wrong reserve shares');
     assertEq(reserveData.totalAssets, amount, 'wrong reserve assets');
     assertEq(userData.supplyShares, amount, 'wrong user shares');
-    assertEq(spoke1.getUserDebt(assetId, user), amount, 'wrong user assets');
+    assertEq(spoke1.getUserDebtInAssets(assetId, user), amount, 'wrong user assets');
   }
 
   function test_fuzz_supply_events(
@@ -389,7 +389,7 @@ contract LiquidityHubTest is BaseTest {
       assertEq(reserveData.totalShares, p.totalShares, 'wrong reserve shares');
       assertEq(reserveData.totalAssets, p.totalAssets, 'wrong reserve assets');
       assertEq(userData.supplyShares, amount, 'wrong user shares');
-      assertEq(spoke1.getUserDebt(assetId, user), p.userAssets, 'wrong user assets');
+      assertEq(spoke1.getUserDebtInAssets(assetId, user), p.userAssets, 'wrong user assets');
 
       // rate increases
       uint256 newBorrowRate = (borrowRateChange * i) % 2e27; // randomize, 200.00% max
@@ -577,19 +577,19 @@ contract LiquidityHubTest is BaseTest {
 
     deal(address(eth), USER1, amount);
     Utils.supply(vm, hub, ethAssetId, USER1, amount, USER1);
-    spoke1.getUserDebt(ethAssetId, USER1);
-    spoke1.getUserDebt(ethAssetId, USER2);
-    spoke1.getUserDebt(daiAssetId, USER1);
-    spoke1.getUserDebt(daiAssetId, USER2);
+    spoke1.getUserDebtInShares(ethAssetId, USER1);
+    spoke1.getUserDebtInShares(ethAssetId, USER2);
+    spoke1.getUserDebtInShares(daiAssetId, USER1);
+    spoke1.getUserDebtInShares(daiAssetId, USER2);
     // assertEq(hub.getUserRiskPremium(USER1), 0);
     // assertEq(hub.getUserRiskPremium(USER2), 0);
 
     deal(address(dai), USER1, amount);
     Utils.supply(vm, hub, daiAssetId, USER1, amount, USER2);
-    spoke1.getUserDebt(ethAssetId, USER1);
-    spoke1.getUserDebt(ethAssetId, USER2);
-    spoke1.getUserDebt(daiAssetId, USER1);
-    spoke1.getUserDebt(daiAssetId, USER2);
+    spoke1.getUserDebtInShares(ethAssetId, USER1);
+    spoke1.getUserDebtInShares(ethAssetId, USER2);
+    spoke1.getUserDebtInShares(daiAssetId, USER1);
+    spoke1.getUserDebtInShares(daiAssetId, USER2);
     // assertEq(hub.getUserRiskPremium(USER1), 0);
     // assertEq(hub.getUserRiskPremium(USER2), 10_00);
   }
