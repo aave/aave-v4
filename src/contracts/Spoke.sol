@@ -270,6 +270,7 @@ contract Spoke is ISpoke {
     return ILiquidityHub(liquidityHub).getBaseInterestRate(assetId);
   }
 
+  // TODO: Needed?
   function getUserDebtInAssets(uint256 assetId, address user) public view returns (uint256) {
     return
       ILiquidityHub(liquidityHub).convertSharesToAssetsUp(
@@ -278,12 +279,14 @@ contract Spoke is ISpoke {
       );
   }
 
+  // TODO: Needed?
   function getUserDebtInShares(uint256 assetId, address user) public view returns (uint256) {
     UserConfig memory u = users[assetId][user];
     // TODO: Instead use a getter from liquidity hub to get up-to-date user debt (with accrued debt)
     return _calculateAccruedInterest(assetId, u.debtShares);
   }
 
+  // TODO: Needed?
   function getUserSupplyInAssets(uint256 assetId, address user) public view returns (uint256) {
     return
       ILiquidityHub(liquidityHub).convertSharesToAssetsDown(
@@ -292,6 +295,7 @@ contract Spoke is ISpoke {
       );
   }
 
+  // TODO: Needed?
   function getUserSupplyInShares(uint256 assetId, address user) public view returns (uint256) {
     UserConfig memory u = users[assetId][user];
     return _calculateAccruedInterest(assetId, u.supplyShares);
