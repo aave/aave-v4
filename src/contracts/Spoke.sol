@@ -536,15 +536,6 @@ contract Spoke is ISpoke {
       _setUsingAsCollateral(user, collateralReserve.id, false);
     }
 
-    // console2.log('vars.actualCollateralToLiquidate %e', vars.actualCollateralToLiquidate);
-    // console2.log('vars.actualDebtToLiquidate %e', vars.actualDebtToLiquidate);
-
-    // IERC20(reservesList[debtAssetId]).safeTransferFrom(
-    //   msg.sender,
-    //   liquidityHub,
-    //   vars.actualDebtToLiquidate
-    // );
-
     // risk premium needs to be updated bc collateral/debt has been updated
     (, uint256 newAggregatedRiskPremium) = _refreshRiskPremium();
     // repay debt
@@ -573,7 +564,7 @@ contract Spoke is ISpoke {
     users[collateralAssetId][user].supplyShares -= userCollateralShares;
     users[debtAssetId][user].debtShares -= userDebtShares;
 
-    // transfer assets
+    // transfer assets to liquidator / reserve
     IERC20(collateralReserve.asset).safeTransfer(msg.sender, vars.actualCollateralToLiquidate);
     if (vars.liquidationProtocolFeeAmount > 0) {
       IERC20(collateralReserve.asset).safeTransfer(

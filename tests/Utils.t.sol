@@ -123,4 +123,15 @@ library Utils {
     reserveData.config.borrowable = newBorrowable;
     Spoke(spoke).updateReserveConfig(assetId, reserveData.config);
   }
+
+  /// @dev working with bps units 10_000 = 100%
+  function updateLiquidationProtocolFeePercentage(
+    Spoke spoke,
+    uint256 assetId,
+    uint256 newLpfp
+  ) internal {
+    Spoke.Reserve memory reserveData = spoke.getReserve(assetId);
+    reserveData.config.lpfp = newLpfp;
+    Spoke(spoke).updateReserveConfig(assetId, reserveData.config);
+  }
 }
