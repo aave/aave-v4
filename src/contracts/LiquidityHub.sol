@@ -174,6 +174,7 @@ contract LiquidityHub is ILiquidityHub {
     spoke.totalShares += sharesAmount;
 
     console2.log('------ supply -----');
+    console2.log('assetId %s', assetId);
     console2.log('sharesAmount %e', sharesAmount);
     console2.log('asset.totalAssets %e', asset.totalAssets);
     console2.log('asset.totalShares %e', asset.totalShares);

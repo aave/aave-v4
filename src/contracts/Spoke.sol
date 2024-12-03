@@ -481,6 +481,8 @@ contract Spoke is ISpoke {
     // v1 - allow the liquidator to liquidate full position if HF goes below certain threshold
     // v2 enhancement - allow liquidator to liquidate only the amount needed to bring HF to 1
 
+    console2.log('----- liq -----');
+
     require(debtToCover > 0, 'INVALID_DEBT_TO_COVER');
 
     LiquidationCallLocalVars memory vars;
@@ -567,6 +569,11 @@ contract Spoke is ISpoke {
       newAggregatedRiskPremium
     );
 
+    // accounting
+    users[collateralAssetId][user].supplyShares -= userCollateralShares;
+    users[debtAssetId][user].debtShares -= userDebtShares;
+
+    // transfer assets
     IERC20(collateralReserve.asset).safeTransfer(msg.sender, vars.actualCollateralToLiquidate);
     if (vars.liquidationProtocolFeeAmount > 0) {
       IERC20(collateralReserve.asset).safeTransfer(
@@ -574,13 +581,6 @@ contract Spoke is ISpoke {
         vars.liquidationProtocolFeeAmount
       );
     }
-
-    // TODO: transfer collateral to liquidator
-    // TODO: transfer debt to liquidator
-
-    // TODO: accounting here to update shares
-    console2.log('userDebtShares %e', userDebtShares);
-    console2.log('userCollateralShares %e', userCollateralShares);
 
     emit LiquidationCall(
       collateralAssetId,
