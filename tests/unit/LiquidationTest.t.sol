@@ -819,6 +819,8 @@ contract LiquidationTest is BaseTest {
     );
   }
 
+  // TODO: basic test with multiple borrowed assets, just liquidating one of them
+
   // function testLiquidationCallA() public {
   //   uint256 ethAssetId = 1; // collateral asset
   //   uint256 daiAssetId = 0; // debt asset

@@ -471,6 +471,7 @@ contract Spoke is ISpoke {
 
   /**
   @param debtToCover amount of debt to cover in base currency, in WAD. 1e18 == $1
+  // TODO: debtToCover should just be amount of debt, NOT in base currency
   */
   function _executeLiquidationCall(
     uint256 collateralAssetId,
@@ -494,6 +495,7 @@ contract Spoke is ISpoke {
 
     // console2.log('vars.healthFactor %e', vars.healthFactor);
 
+    // TODO: optimize this calculation
     vars.actualDebtToLiquidate = _calculateDebt(
       debtToCover,
       vars.userDebtBalanceInBaseCurrency,
