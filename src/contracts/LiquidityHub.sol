@@ -44,6 +44,11 @@ contract LiquidityHub is ILiquidityHub {
   // asset id => weighted average risk premium of asset
   mapping(uint256 => uint256) public weightedAverageRiskPremium;
 
+  // incremental weighted avg risk premium across spokes
+  uint256 public warp;
+  // the number of terms in the weighted average
+  uint256 public numWarp;
+
   //
   // External
   //
@@ -377,6 +382,7 @@ contract LiquidityHub is ILiquidityHub {
           usingVirtualBalance: true
         })
       );
+    _updateIncrementalWeightedAvgRiskPremium(newRiskPremium);
     // TODO: This function should take into account the new risk premium - probably done already by borrow module
     borrowRate = _calculateWeightedInterestRate(borrowRate, newRiskPremium, spokeDrawnLiquidity);
 
@@ -397,6 +403,17 @@ contract LiquidityHub is ILiquidityHub {
 
       // TODO: RF in terms of fee shares
       asset.lastUpdateTimestamp = block.timestamp;
+    }
+  }
+
+  /// @dev newRiskPremium from spoke is already a weighted average, so incremental avg calc here
+  /// @dev Does not increment numWarp past 1 while risk premium is 0
+  function _updateIncrementalWeightedAvgRiskPremium(uint256 newRiskPremium) internal {
+    if (warp == 0) {
+      warp = newRiskPremium;
+      numWarp = 1;
+    } else {
+      warp = (warp * numWarp + newRiskPremium) / ++numWarp;
     }
   }
 
