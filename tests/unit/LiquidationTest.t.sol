@@ -318,6 +318,7 @@ contract LiquidationTest is BaseTest {
     LiquidityHub.Spoke spoke1EthData;
     Spoke.UserConfig userUsdcData;
     LiquidityHub.Spoke spoke1UsdcData;
+    uint256 actualDebtCovered;
   }
 
   /// @dev Test liquidation call with liquidated amount lt user collateral balance
@@ -494,6 +495,8 @@ contract LiquidationTest is BaseTest {
       'Unexpected spoke1 eth drawnShares'
     );
 
+    testLiquidationCallLocalParams.actualDebtCovered = debtToCover - usdc.balanceOf(LIQUIDATOR);
+
     // usdc
     testLiquidationCallLocalParams.userUsdcData = spoke1.getUser(usdcAssetId, USER1);
     testLiquidationCallLocalParams.spoke1UsdcData = hub.getSpoke(usdcAssetId, address(spoke1));
@@ -508,14 +511,17 @@ contract LiquidationTest is BaseTest {
       hub.convertAssetsToSharesDown(usdcAssetId, usdcBorrowAmount),
       'Unexpected spoke1 usdc totalShares'
     );
-    // TODO: assertion on drawn shares
-    // assertEq(
-    //   testLiquidationCallLocalParams.spoke1UsdcData.drawnShares,
-    //   hub.convertAssetsToSharesDown(usdcAssetId, usdcBorrowAmount - debtToCover),
-    //   'Unexpected spoke1 usdc drawnShares'
-    // );
+    assertEq(
+      testLiquidationCallLocalParams.spoke1UsdcData.drawnShares,
+      testLiquidationCallLocalParams.spoke1UsdcData.totalShares -
+        hub.convertAssetsToSharesDown(
+          usdcAssetId,
+          testLiquidationCallLocalParams.actualDebtCovered
+        ),
+      'Unexpected spoke1 usdc drawnShares'
+    );
 
-    // assertEq(dai.balanceOf(LIQUIDATOR), 0, 'Unexpected liquidator debt asset balance');
+    console2.log('liq dai %e', dai.balanceOf(LIQUIDATOR));
     // assertEq(
     //   eth.balanceOf(LIQUIDATOR),
     //   expectedCollateralLiquidated,

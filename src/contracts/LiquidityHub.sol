@@ -173,6 +173,12 @@ contract LiquidityHub is ILiquidityHub {
     asset.totalAssets += amount;
     spoke.totalShares += sharesAmount;
 
+    console2.log('------ supply -----');
+    console2.log('sharesAmount %e', sharesAmount);
+    console2.log('asset.totalAssets %e', asset.totalAssets);
+    console2.log('asset.totalShares %e', asset.totalShares);
+    console2.log('spoke.totalShares %e', spoke.totalShares);
+
     // TODO: fee-on-transfer
     // TODO: uncomment next line, add from param to pull tokens
     // don't assume Spoke has already transferred tokens here to LH
@@ -202,7 +208,7 @@ contract LiquidityHub is ILiquidityHub {
     asset.totalAssets -= amount;
     spoke.totalShares -= sharesAmount;
 
-    console2.log('withdraw');
+    console2.log('------ withdraw -----');
     console2.log('sharesAmount %e', sharesAmount);
     console2.log('spoke.totalShares %e', spoke.totalShares);
 
@@ -252,6 +258,7 @@ contract LiquidityHub is ILiquidityHub {
     Asset storage asset = assets[assetId];
     Spoke storage spoke = spokes[assetId][msg.sender];
 
+    console2.log('------ restore -----');
     console2.log('asset.drawnShares %e', asset.drawnShares);
     console2.log('spoke.drawnShares %e', spoke.drawnShares);
 

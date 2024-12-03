@@ -100,6 +100,7 @@ contract Spoke is ISpoke {
   uint256 public reserveCount;
   address public oracle;
   uint256 public constant HEALTH_FACTOR_LIQUIDATION_THRESHOLD = 1e18;
+  address public RESERVE_TREASURY_ADDRESS = address(1); // TODO: implement this properly
 
   constructor(address liquidityHubAddress, address oracleAddress) {
     liquidityHub = liquidityHubAddress;
@@ -526,10 +527,6 @@ contract Spoke is ISpoke {
 
     console2.log('total debt %e', vars.userDebtBalance);
 
-    // TODO: call LH to liquidate
-    // - withdraw collateral for user
-    // - accounting here to update shares
-
     if (
       vars.actualCollateralToLiquidate + vars.liquidationProtocolFeeAmount ==
       vars.userCollateralBalance
@@ -566,10 +563,22 @@ contract Spoke is ISpoke {
     uint256 userCollateralShares = ILiquidityHub(liquidityHub).withdraw(
       collateralAssetId,
       address(this),
-      vars.actualCollateralToLiquidate,
+      vars.actualCollateralToLiquidate + vars.liquidationProtocolFeeAmount,
       newAggregatedRiskPremium
     );
 
+    IERC20(collateralReserve.asset).safeTransfer(msg.sender, vars.actualCollateralToLiquidate);
+    if (vars.liquidationProtocolFeeAmount > 0) {
+      IERC20(collateralReserve.asset).safeTransfer(
+        RESERVE_TREASURY_ADDRESS,
+        vars.liquidationProtocolFeeAmount
+      );
+    }
+
+    // TODO: transfer collateral to liquidator
+    // TODO: transfer debt to liquidator
+
+    // TODO: accounting here to update shares
     console2.log('userDebtShares %e', userDebtShares);
     console2.log('userCollateralShares %e', userCollateralShares);
 
