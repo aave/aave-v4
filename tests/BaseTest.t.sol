@@ -52,6 +52,14 @@ contract Events {
     bool collateral
   );
   event UsingAsCollateral(uint256 indexed assetId, address indexed user, bool usingAsCollateral);
+  event LiquidationCall(
+    uint256 indexed collateralAssetId,
+    uint256 indexed debtAssetId,
+    address indexed user,
+    uint256 actualDebtToLiquidate,
+    uint256 actualCollateralToLiquidate,
+    address liquidator
+  );
 }
 
 library TestErrors {

@@ -100,7 +100,7 @@ contract Spoke is ISpoke {
   uint256 public reserveCount;
   address public oracle;
   uint256 public constant HEALTH_FACTOR_LIQUIDATION_THRESHOLD = 1e18;
-  address public RESERVE_TREASURY_ADDRESS = address(1); // TODO: implement this properly
+  address public RESERVE_TREASURY_ADDRESS = address(1); // TODO: implement reserve treasury address, probably in constructor
 
   constructor(address liquidityHubAddress, address oracleAddress) {
     liquidityHub = liquidityHubAddress;
