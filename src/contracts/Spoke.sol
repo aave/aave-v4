@@ -72,6 +72,9 @@ contract Spoke is ISpoke {
     uint256 userDebtBalance;
     uint256 healthFactor;
     uint256 maxDebtToCover;
+    uint256 totalCollateralInBaseCurrency;
+    uint256 totalDebtInBaseCurrency;
+    uint256 avgLiquidationThreshold;
   }
 
   struct AvailableCollateralToLiquidateLocalVars {
@@ -98,6 +101,7 @@ contract Spoke is ISpoke {
   uint256 public reserveCount;
   address public oracle;
   uint256 public constant HEALTH_FACTOR_LIQUIDATION_THRESHOLD = 1e18;
+  uint256 public HEALTH_FACTOR_LIQUIDATION_RECOVERY_THRESHOLD = 0.9e18; // TODO: adjustable by governance?
   address public RESERVE_TREASURY_ADDRESS = address(1); // TODO: implement reserve treasury address, probably in constructor
 
   constructor(address liquidityHubAddress, address oracleAddress) {
@@ -442,6 +446,13 @@ contract Spoke is ISpoke {
         vars.totalDebtInBaseCurrency
       ); // HF of 1 -> 1e18
 
+    // console2.log(
+    //   'mathcheck %e',
+    //   (vars.totalCollateralInBaseCurrency.percentMul(vars.avgLiquidationThreshold)).wadDiv(
+    //     vars.totalDebtInBaseCurrency - 6.666666666666666666666e21 * 1e8
+    //   )
+    // );
+
     // console2.log('vars.totalCollateralInBaseCurrency %e', vars.totalCollateralInBaseCurrency);
     // console2.log('vars.totalDebtInBaseCurrency %e', vars.totalDebtInBaseCurrency);
     // console2.log('vars.avgLiquidationThreshold %e', vars.avgLiquidationThreshold);
@@ -489,12 +500,25 @@ contract Spoke is ISpoke {
     Reserve memory debtReserve = reserves[debtAssetId];
 
     // TODO: accrue interest first? / updateState
-    (, , , , vars.healthFactor) = _calculateUserAccountData(user);
+    (
+      vars.totalCollateralInBaseCurrency,
+      vars.totalDebtInBaseCurrency,
+      vars.avgLiquidationThreshold,
+      ,
+      vars.healthFactor
+    ) = _calculateUserAccountData(user);
 
     // console2.log('vars.healthFactor %e', vars.healthFactor);
 
     // TODO: optimize this calculation
-    vars.actualDebtToLiquidate = _calculateDebt(debtToCover, user, debtAssetId, vars.healthFactor);
+    vars.actualDebtToLiquidate = _calculateActualDebtToLiquidate(
+      debtToCover,
+      user,
+      debtAssetId,
+      vars.totalCollateralInBaseCurrency,
+      vars.totalDebtInBaseCurrency,
+      vars.avgLiquidationThreshold
+    );
 
     _validateLiquidationCall(collateralAssetId, debtAssetId, user, vars.healthFactor);
 
@@ -604,22 +628,38 @@ contract Spoke is ISpoke {
    * @notice Calculates the total debt of the user and the actual amount to liquidate depending on the health factor.
    * @param debtToCover The desired amount of debt to cover in base currency
    * @param debtAssetId The asset id of the debt asset
-   * @param healthFactor The health factor of the user
+   * @param totalCollateralInBaseCurrency The user's total collateral in base currency
+   * @param totalDebtInBaseCurrency The user's total debt in base currency
+   * @param avgLiquidationThreshold The average liquidation threshold of the user's collateral
    * @return The actual amount of debt asset that can be liquidated
    */
-  function _calculateDebt(
+  function _calculateActualDebtToLiquidate(
     uint256 debtToCover,
     address user,
     uint256 debtAssetId,
-    uint256 healthFactor
+    uint256 totalCollateralInBaseCurrency,
+    uint256 totalDebtInBaseCurrency,
+    uint256 avgLiquidationThreshold
   ) internal view returns (uint256) {
-    // TODO: calculate maxLiquidatableDebt, find amount needed to restore HF to 1
-    // for now, it is equal to the total debt of the liquidated user
     UserConfig memory u = users[debtAssetId][user];
-    uint256 maxLiquidatableDebt = ILiquidityHub(liquidityHub).convertAssetsToSharesUp(
+    uint256 maxLiquidatableDebt = ILiquidityHub(liquidityHub).convertSharesToAssetsUp(
       debtAssetId,
       u.debtShares
     );
+
+    // how much debt can be liquidated to bring HF to HEALTH_FACTOR_LIQUIDATION_RECOVERY_THRESHOLD
+    uint256 thresholdLiquidatableDebt = (totalDebtInBaseCurrency -
+      totalCollateralInBaseCurrency.percentMul(avgLiquidationThreshold).wadDiv(
+        HEALTH_FACTOR_LIQUIDATION_RECOVERY_THRESHOLD
+      )) / IPriceOracle(oracle).getAssetPrice(debtAssetId);
+
+    maxLiquidatableDebt = maxLiquidatableDebt > thresholdLiquidatableDebt
+      ? thresholdLiquidatableDebt
+      : maxLiquidatableDebt;
+
+    // console2.log('----- _calculateDebt -----');
+    // console2.log('maxLiquidatableDebt %e', maxLiquidatableDebt);
+    // console2.log('thresholdLiquidatableDebt %e', thresholdLiquidatableDebt);
 
     uint256 actualDebtToLiquidate = debtToCover > maxLiquidatableDebt
       ? maxLiquidatableDebt
