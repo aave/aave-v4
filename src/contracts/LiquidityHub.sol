@@ -155,7 +155,7 @@ contract LiquidityHub is ILiquidityHub {
 
   /// @dev risk premium is calculated from the spoke and passed upon every action
   function supply(uint256 assetId, uint256 amount, uint256 riskPremium) external returns (uint256) {
-    // TODO: add "from" param to args
+    // TODO: add "from" param to args, so LH can pull tokens directly from user
     // TODO: authorization - only spokes
 
     Asset storage asset = assets[assetId];
@@ -181,8 +181,8 @@ contract LiquidityHub is ILiquidityHub {
     console2.log('spoke.totalShares %e', spoke.totalShares);
 
     // TODO: fee-on-transfer
-    // TODO: uncomment next line, add from param to pull tokens
-    // don't assume Spoke has already transferred tokens here to LH
+    // TODO: uncomment next line, add 'from' param to pull tokens
+    // don't assume Spoke has already transferred tokens to LH prior to this method invocation
     // IERC20(assetsList[assetId]).safeTransferFrom(from, address(this), amount);
 
     emit Supply(assetId, msg.sender, amount);
