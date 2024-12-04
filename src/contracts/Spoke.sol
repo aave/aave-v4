@@ -70,8 +70,6 @@ contract Spoke is ISpoke {
     uint256 liquidationProtocolFeeAmount;
     uint256 userCollateralBalance;
     uint256 userDebtBalance;
-    uint256 userCollateralBalanceInBaseCurrency;
-    uint256 userDebtBalanceInBaseCurrency;
     uint256 healthFactor;
     uint256 maxDebtToCover;
   }
@@ -491,16 +489,12 @@ contract Spoke is ISpoke {
     Reserve memory debtReserve = reserves[debtAssetId];
 
     // TODO: accrue interest first? / updateState
-    (, vars.userDebtBalanceInBaseCurrency, , , vars.healthFactor) = _calculateUserAccountData(user);
+    (, , , , vars.healthFactor) = _calculateUserAccountData(user);
 
     // console2.log('vars.healthFactor %e', vars.healthFactor);
 
     // TODO: optimize this calculation
-    vars.actualDebtToLiquidate = _calculateDebt(
-      debtToCover,
-      vars.userDebtBalanceInBaseCurrency,
-      vars.healthFactor
-    );
+    vars.actualDebtToLiquidate = _calculateDebt(debtToCover, user, debtAssetId, vars.healthFactor);
 
     _validateLiquidationCall(collateralAssetId, debtAssetId, user, vars.healthFactor);
 
@@ -609,24 +603,29 @@ contract Spoke is ISpoke {
   /**
    * @notice Calculates the total debt of the user and the actual amount to liquidate depending on the health factor.
    * @param debtToCover The desired amount of debt to cover in base currency
-   * @param userDebtBalanceInBaseCurrency The total debt of the user in base currency
+   * @param debtAssetId The asset id of the debt asset
    * @param healthFactor The health factor of the user
-   * @return The actual debt that can be liquidated in base currency
+   * @return The actual amount of debt asset that can be liquidated
    */
   function _calculateDebt(
     uint256 debtToCover,
-    uint256 userDebtBalanceInBaseCurrency,
+    address user,
+    uint256 debtAssetId,
     uint256 healthFactor
   ) internal view returns (uint256) {
     // TODO: calculate maxLiquidatableDebt, find amount needed to restore HF to 1
     // for now, it is equal to the total debt of the liquidated user
-    uint256 maxLiquidatableDebtInBaseCurrency = userDebtBalanceInBaseCurrency;
+    UserConfig memory u = users[debtAssetId][user];
+    uint256 maxLiquidatableDebt = ILiquidityHub(liquidityHub).convertAssetsToSharesUp(
+      debtAssetId,
+      u.debtShares
+    );
 
-    uint256 actualDebtToLiquidateInBaseCurrency = debtToCover > maxLiquidatableDebtInBaseCurrency
-      ? maxLiquidatableDebtInBaseCurrency
+    uint256 actualDebtToLiquidate = debtToCover > maxLiquidatableDebt
+      ? maxLiquidatableDebt
       : debtToCover;
 
-    return actualDebtToLiquidateInBaseCurrency;
+    return actualDebtToLiquidate;
   }
 
   /**
