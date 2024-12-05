@@ -510,7 +510,7 @@ contract Spoke is ISpoke {
 
     // console2.log('vars.healthFactor %e', vars.healthFactor);
 
-    // TODO: optimize this calculation
+    // TODO: optimize this calculation / input params
     vars.actualDebtToLiquidate = _calculateActualDebtToLiquidate(
       debtToCover,
       user,
