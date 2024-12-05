@@ -101,7 +101,7 @@ contract Spoke is ISpoke {
   uint256 public reserveCount;
   address public oracle;
   uint256 public constant HEALTH_FACTOR_LIQUIDATION_THRESHOLD = 1e18;
-  uint256 public HEALTH_FACTOR_LIQUIDATION_RECOVERY_THRESHOLD = 0.9e18; // TODO: adjustable by governance?
+  uint256 public HEALTH_FACTOR_LIQUIDATION_RECOVERY_THRESHOLD = 1e18; // TODO: adjustable by governance?
   address public RESERVE_TREASURY_ADDRESS = address(1); // TODO: implement reserve treasury address, probably in constructor
 
   constructor(address liquidityHubAddress, address oracleAddress) {
@@ -641,11 +641,7 @@ contract Spoke is ISpoke {
     uint256 totalDebtInBaseCurrency,
     uint256 avgLiquidationThreshold
   ) internal view returns (uint256) {
-    UserConfig memory u = users[debtAssetId][user];
-    uint256 maxLiquidatableDebt = ILiquidityHub(liquidityHub).convertSharesToAssetsUp(
-      debtAssetId,
-      u.debtShares
-    );
+    uint256 maxLiquidatableDebt = getUserDebtInAssets(debtAssetId, user);
 
     // how much debt can be liquidated to bring HF to HEALTH_FACTOR_LIQUIDATION_RECOVERY_THRESHOLD
     uint256 thresholdLiquidatableDebt = (totalDebtInBaseCurrency -
@@ -653,13 +649,13 @@ contract Spoke is ISpoke {
         HEALTH_FACTOR_LIQUIDATION_RECOVERY_THRESHOLD
       )) / IPriceOracle(oracle).getAssetPrice(debtAssetId);
 
+    console2.log('----- _calculateDebt -----');
+    console2.log('maxLiquidatableDebt %e', maxLiquidatableDebt);
+    console2.log('thresholdLiquidatableDebt %e', thresholdLiquidatableDebt);
+
     maxLiquidatableDebt = maxLiquidatableDebt > thresholdLiquidatableDebt
       ? thresholdLiquidatableDebt
       : maxLiquidatableDebt;
-
-    // console2.log('----- _calculateDebt -----');
-    // console2.log('maxLiquidatableDebt %e', maxLiquidatableDebt);
-    // console2.log('thresholdLiquidatableDebt %e', thresholdLiquidatableDebt);
 
     uint256 actualDebtToLiquidate = debtToCover > maxLiquidatableDebt
       ? maxLiquidatableDebt
