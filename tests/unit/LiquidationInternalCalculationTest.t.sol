@@ -4,7 +4,7 @@ pragma solidity ^0.8.0;
 import '../BaseTest.t.sol';
 import '../mocks/MockSpokeExposedMethods.sol';
 
-contract LiquidationTest is BaseTest {
+contract LiquidationInternalCalculationTest is BaseTest {
   using SharesMath for uint256;
   using WadRayMath for uint256;
   using PercentageMath for uint256;
@@ -202,8 +202,8 @@ contract LiquidationTest is BaseTest {
     uint256 daiAmount,
     uint256 ethAmount
   ) public {
-    vm.assume(daiAmount > 1e2 && daiAmount < 1e28); // less than 1e10 dai
-    vm.assume(ethAmount > 1e2 && ethAmount < 1e28); // less than 1e10 eth
+    daiAmount = bound(daiAmount, 1e2, 1e28);
+    ethAmount = bound(ethAmount, 1e2, 1e28);
 
     uint256 daiAssetId = 0;
     uint256 ethAssetId = 1;
@@ -229,6 +229,73 @@ contract LiquidationTest is BaseTest {
       totalCollateralInBaseCurrency,
       expectedTotalCollateralInBaseCurrency,
       'Unexpected totalCollateralInBaseCurrency'
+    );
+  }
+
+  /// forge-config: default.fuzz.runs = 1000
+  function test_fuzz_calculateUserAccountData_totalDebtInBaseCurrency(
+    uint256 daiAmount,
+    uint256 ethAmount
+  ) public {
+    daiAmount = bound(daiAmount, 1e2, 1e28);
+    ethAmount = bound(ethAmount, 1e2, 1e28);
+
+    uint256 daiAssetId = 0;
+    uint256 ethAssetId = 1;
+    bool usingAsCollateral = true;
+
+    // USER1 supply dai into mockSpoke1
+    deal(address(dai), USER1, daiAmount);
+    Utils.spokeSupply(vm, hub, mockSpoke1, daiAssetId, USER1, daiAmount, USER1);
+
+    // USER1 supply eth into mockSpoke1
+    deal(address(eth), USER1, ethAmount);
+    Utils.spokeSupply(vm, hub, mockSpoke1, ethAssetId, USER1, ethAmount, USER1);
+
+    (, uint256 totalDebtInBaseCurrency, , , ) = mockSpoke1.calculateUserAccountData(USER1);
+    assertEq(totalDebtInBaseCurrency, 0, 'Unexpected totalDebtInBaseCurrency');
+  }
+
+  /// forge-config: default.fuzz.runs = 1000
+  function test_fuzz_calculateUserAccountData_totalDebtInBaseCurrency(
+    uint256 daiAmount,
+    uint256 ethAmount,
+    uint256 usdcBorrowAmount
+  ) public {
+    daiAmount = bound(daiAmount, 1e2, 1e28);
+    ethAmount = bound(ethAmount, 1e2, 1e28);
+    usdcBorrowAmount = bound(usdcBorrowAmount, 1e2, 1e27);
+
+    uint256 daiAssetId = 0;
+    uint256 ethAssetId = 1;
+    uint256 usdcAssetId = 2;
+    bool usingAsCollateral = true;
+
+    // USER1 supply dai into mockSpoke1
+    deal(address(dai), USER1, daiAmount);
+    Utils.spokeSupply(vm, hub, mockSpoke1, daiAssetId, USER1, daiAmount, USER1);
+    Utils.setUsingAsCollateral(vm, mockSpoke1, USER1, daiAssetId, usingAsCollateral);
+
+    // USER1 supply eth into mockSpoke1
+    deal(address(eth), USER1, ethAmount);
+    Utils.spokeSupply(vm, hub, mockSpoke1, ethAssetId, USER1, ethAmount, USER1);
+    Utils.setUsingAsCollateral(vm, mockSpoke1, USER1, ethAssetId, usingAsCollateral);
+
+    // USER2 supply usdc into mockSpoke1
+    deal(address(usdc), USER2, usdcBorrowAmount);
+    Utils.spokeSupply(vm, hub, mockSpoke1, usdcAssetId, USER2, usdcBorrowAmount, USER2);
+
+    // USER1 borrow usdc
+    Utils.borrow(vm, mockSpoke1, usdcAssetId, USER1, usdcBorrowAmount, USER1);
+
+    uint256 expectedTotalCollateralInBaseCurrency = usdcBorrowAmount *
+      MockPriceOracle(address(oracle)).getAssetPrice(usdcAssetId);
+
+    (, uint256 totalDebtInBaseCurrency, , , ) = mockSpoke1.calculateUserAccountData(USER1);
+    assertEq(
+      totalDebtInBaseCurrency,
+      expectedTotalCollateralInBaseCurrency,
+      'Unexpected totalDebtInBaseCurrency'
     );
   }
 }
