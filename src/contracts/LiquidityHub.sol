@@ -33,6 +33,11 @@ contract LiquidityHub is ILiquidityHub {
     DataTypes.AssetConfig config;
   }
 
+  struct WeightedAvg {
+    uint256 avg;
+    uint256 sumWeights;
+  }
+
   // asset id => asset data
   mapping(uint256 => Asset) public assets;
   address[] public assetsList; // TODO: Check if Enumerable or Set makes more sense
@@ -41,13 +46,10 @@ contract LiquidityHub is ILiquidityHub {
   // asset id => spoke address => spoke
   mapping(uint256 => mapping(address => Spoke)) public spokes;
 
-  // asset id => weighted average risk premium of asset
-  mapping(uint256 => uint256) public weightedAverageRiskPremium;
-
-  // incremental weighted avg risk premium across spokes
-  uint256 public warp;
-  // the number of terms in the weighted average
-  uint256 public numWarp;
+  // asset id => weighted average liquidity premium of asset across all spokes
+  mapping(uint256 => WeightedAvg) public weightedAverageLiquidityPremium;
+  // address of spokes => asset id -> last received spoke liquidity premium
+  mapping(address => mapping(uint256 => WeightedAvg)) public lastSpokeLiquidityPremium;
 
   //
   // External
@@ -157,14 +159,19 @@ contract LiquidityHub is ILiquidityHub {
   // /////
 
   /// @dev risk premium is calculated from the spoke and passed upon every action
-  function supply(uint256 assetId, uint256 amount, uint256 riskPremium) external returns (uint256) {
+  function supply(
+    uint256 assetId,
+    uint256 amount,
+    uint256 riskPremium,
+    uint256 riskPremiumWeight
+  ) external returns (uint256) {
     // TODO: authorization - only spokes
 
     Asset storage asset = assets[assetId];
     Spoke storage spoke = spokes[assetId][msg.sender];
 
     // Update indexes and IRs
-    _updateState(asset, spoke.drawnShares, riskPremium, amount, 0);
+    _updateState(asset, spoke.drawnShares, riskPremium, riskPremiumWeight, amount, 0);
     _validateSupply(asset, spoke, amount);
 
     // TODO Mitigate inflation attack (burn some amount if first supply)
@@ -188,14 +195,15 @@ contract LiquidityHub is ILiquidityHub {
     uint256 assetId,
     address to,
     uint256 amount,
-    uint256 riskPremium
+    uint256 riskPremium,
+    uint256 riskPremiumWeight
   ) external returns (uint256) {
     // TODO: authorization - only spokes
 
     Asset storage asset = assets[assetId];
     Spoke storage spoke = spokes[assetId][msg.sender];
 
-    _updateState(asset, spoke.drawnShares, riskPremium, 0, amount);
+    _updateState(asset, spoke.drawnShares, riskPremium, riskPremiumWeight, 0, amount);
     _validateWithdraw(asset, spoke, amount);
 
     uint256 sharesAmount = convertAssetsToSharesDown(assetId, amount);
@@ -214,14 +222,15 @@ contract LiquidityHub is ILiquidityHub {
     uint256 assetId,
     address to,
     uint256 amount,
-    uint256 riskPremium
+    uint256 riskPremium,
+    uint256 riskPremiumWeight
   ) external returns (uint256) {
     // TODO: authorization - only spokes
 
     Asset storage asset = assets[assetId];
     Spoke storage spoke = spokes[assetId][msg.sender];
 
-    _updateState(asset, spoke.drawnShares, riskPremium, 0, amount);
+    _updateState(asset, spoke.drawnShares, riskPremium, riskPremiumWeight, 0, amount);
     _validateDraw(asset, amount, spoke.config.drawCap);
 
     uint256 sharesAmount = convertAssetsToSharesUp(assetId, amount);
@@ -238,14 +247,15 @@ contract LiquidityHub is ILiquidityHub {
   function restore(
     uint256 assetId,
     uint256 amount,
-    uint256 riskPremium
+    uint256 riskPremium,
+    uint256 riskPremiumWeight
   ) external returns (uint256) {
     // TODO: authorization - only spokes
 
     Asset storage asset = assets[assetId];
     Spoke storage spoke = spokes[assetId][msg.sender];
 
-    _updateState(asset, spoke.drawnShares, riskPremium, amount, 0);
+    _updateState(asset, spoke.drawnShares, riskPremium, riskPremiumWeight, amount, 0);
     uint256 sharesAmount = convertAssetsToSharesDown(assetId, amount);
     _validateRestore(asset, sharesAmount, spoke.drawnShares);
 
@@ -362,6 +372,7 @@ contract LiquidityHub is ILiquidityHub {
     Asset storage asset,
     uint256 spokeDrawnLiquidity,
     uint256 newRiskPremium,
+    uint256 newRiskPremiumWeight,
     uint256 liquidityAdded,
     uint256 liquidityTaken
   ) internal {
@@ -382,7 +393,7 @@ contract LiquidityHub is ILiquidityHub {
           usingVirtualBalance: true
         })
       );
-    _updateIncrementalWeightedAvgRiskPremium(newRiskPremium);
+    _updateIncrementalWeightedAvgRiskPremium(asset.id, newRiskPremium, newRiskPremiumWeight);
     // TODO: This function should take into account the new risk premium - probably done already by borrow module
     borrowRate = _calculateWeightedInterestRate(borrowRate, newRiskPremium, spokeDrawnLiquidity);
 
@@ -406,15 +417,45 @@ contract LiquidityHub is ILiquidityHub {
     }
   }
 
-  /// @dev newRiskPremium from spoke is already a weighted average, so incremental avg calc here
-  /// @dev Does not increment numWarp past 1 while risk premium is 0
-  function _updateIncrementalWeightedAvgRiskPremium(uint256 newRiskPremium) internal {
-    if (warp == 0) {
-      warp = newRiskPremium;
-      numWarp = 1;
-    } else {
-      warp = (warp * numWarp + newRiskPremium) / ++numWarp;
+  /// @dev Weights will be total collateral value of each spoke
+  function _updateIncrementalWeightedAvgRiskPremium(
+    uint256 assetId,
+    uint256 newRiskPremium,
+    uint256 newRiskPremiumWeight
+  ) internal {
+    // Check our saved risk premiums from this spoke to see if there is a change, if not, skip
+    if (newRiskPremium == lastSpokeLiquidityPremium[msg.sender][assetId].avg) {
+      return;
     }
+
+    // If first update, assign the new value
+    if (weightedAverageLiquidityPremium[assetId].avg == 0 && newRiskPremium != 0) {
+      weightedAverageLiquidityPremium[assetId].avg = newRiskPremium;
+      weightedAverageLiquidityPremium[assetId].sumWeights = newRiskPremiumWeight;
+    } else {
+      // Remove the old value from spoke from the weighted average
+      (uint256 newWeightedAvg, uint256 newSumWeights) = MathUtils.subtractFromWeightedAverage(
+        weightedAverageLiquidityPremium[assetId].avg,
+        weightedAverageLiquidityPremium[assetId].sumWeights,
+        lastSpokeLiquidityPremium[msg.sender][assetId].avg,
+        lastSpokeLiquidityPremium[msg.sender][assetId].sumWeights
+      );
+
+      // Add new value to weighted average
+      (
+        weightedAverageLiquidityPremium[assetId].avg,
+        weightedAverageLiquidityPremium[assetId].sumWeights
+      ) = MathUtils.addToWeightedAverage(
+        newWeightedAvg,
+        newSumWeights,
+        newRiskPremium,
+        newRiskPremiumWeight
+      );
+    }
+
+    // Update the last received values
+    lastSpokeLiquidityPremium[msg.sender][assetId].avg = newRiskPremium;
+    lastSpokeLiquidityPremium[msg.sender][assetId].sumWeights = newRiskPremiumWeight;
   }
 
   function _calculateWeightedInterestRate(

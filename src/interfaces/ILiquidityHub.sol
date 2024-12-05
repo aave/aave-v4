@@ -13,15 +13,27 @@ interface ILiquidityHub {
     uint256 assetId,
     address to,
     uint256 amount,
-    uint256 riskPremium
+    uint256 riskPremium,
+    uint256 riskPremiumWeights
   ) external returns (uint256);
-  function restore(uint256 assetId, uint256 amount, uint256 riskPremium) external returns (uint256);
-  function supply(uint256 assetId, uint256 amount, uint256 riskPremium) external returns (uint256);
+  function restore(
+    uint256 assetId,
+    uint256 amount,
+    uint256 riskPremium,
+    uint256 riskPremiumWeights
+  ) external returns (uint256);
+  function supply(
+    uint256 assetId,
+    uint256 amount,
+    uint256 riskPremium,
+    uint256 riskPremiumWeights
+  ) external returns (uint256);
   function withdraw(
     uint256 assetId,
     address to,
     uint256 amount,
-    uint256 riskPremium
+    uint256 riskPremium,
+    uint256 riskPremiumWeights
   ) external returns (uint256);
 
   function getBaseInterestRate(uint256 assetId) external view returns (uint256);
