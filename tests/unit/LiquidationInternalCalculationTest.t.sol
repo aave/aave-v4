@@ -174,11 +174,12 @@ contract LiquidationTest is BaseTest {
     );
   }
 
-  function test_fuzz_calculateUserAccountData_totalCollateralInBaseCurrency(
+  /// forge-config: default.fuzz.runs = 1000
+  function test_fuzz_calculateUserAccountData_totalCollateralInBaseCurrency_notUsingAsCollateral(
     uint256 daiAmount,
     uint256 ethAmount
   ) public {
-    vm.assume(daiAmount > 1e12 && ethAmount > 1e12); // ensure some amount leading to shares > 0
+    vm.assume(daiAmount > 1e2 && ethAmount > 1e2); // ensure some amount leading to shares > 0
 
     uint256 daiAssetId = 0;
     uint256 ethAssetId = 1;
@@ -194,5 +195,40 @@ contract LiquidationTest is BaseTest {
     // Nothing set as collateral, therefore -> 0
     (uint256 totalCollateralInBaseCurrency, , , , ) = mockSpoke1.calculateUserAccountData(USER1);
     assertEq(totalCollateralInBaseCurrency, 0, 'Unexpected totalCollateralInBaseCurrency');
+  }
+
+  /// forge-config: default.fuzz.runs = 1000
+  function test_fuzz_calculateUserAccountData_totalCollateralInBaseCurrency(
+    uint256 daiAmount,
+    uint256 ethAmount
+  ) public {
+    vm.assume(daiAmount > 1e2 && daiAmount < 1e28); // less than 1e10 dai
+    vm.assume(ethAmount > 1e2 && ethAmount < 1e28); // less than 1e10 eth
+
+    uint256 daiAssetId = 0;
+    uint256 ethAssetId = 1;
+    bool usingAsCollateral = true;
+
+    // USER1 supply dai into mockSpoke1
+    deal(address(dai), USER1, daiAmount);
+    Utils.spokeSupply(vm, hub, mockSpoke1, daiAssetId, USER1, daiAmount, USER1);
+    Utils.setUsingAsCollateral(vm, mockSpoke1, USER1, daiAssetId, usingAsCollateral);
+
+    // USER1 supply eth into mockSpoke1
+    deal(address(eth), USER1, ethAmount);
+    Utils.spokeSupply(vm, hub, mockSpoke1, ethAssetId, USER1, ethAmount, USER1);
+    Utils.setUsingAsCollateral(vm, mockSpoke1, USER1, ethAssetId, usingAsCollateral);
+
+    uint256 expectedTotalCollateralInBaseCurrency = daiAmount *
+      MockPriceOracle(address(oracle)).getAssetPrice(daiAssetId) +
+      ethAmount *
+      MockPriceOracle(address(oracle)).getAssetPrice(ethAssetId);
+
+    (uint256 totalCollateralInBaseCurrency, , , , ) = mockSpoke1.calculateUserAccountData(USER1);
+    assertEq(
+      totalCollateralInBaseCurrency,
+      expectedTotalCollateralInBaseCurrency,
+      'Unexpected totalCollateralInBaseCurrency'
+    );
   }
 }
