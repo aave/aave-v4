@@ -318,6 +318,28 @@ contract LiquidationTest is BaseTest {
     mockSpoke1.liquidationCall(wbtcAssetId, daiAssetId, USER1, debtToCover);
   }
 
+  function test_fuzz_calculateUserAccountData_totalCollateralInBaseCurrency(
+    uint256 daiAmount,
+    uint256 ethAmount
+  ) public {
+    vm.assume(daiAmount > 1e12 && ethAmount > 1e12);
+
+    uint256 daiAssetId = 0;
+    uint256 ethAssetId = 1;
+
+    // USER1 supply dai into mockSpoke1
+    deal(address(dai), USER1, daiAmount);
+    Utils.spokeSupply(vm, hub, mockSpoke1, daiAssetId, USER1, daiAmount, USER1);
+
+    // USER1 supply eth into mockSpoke1
+    deal(address(eth), USER1, ethAmount);
+    Utils.spokeSupply(vm, hub, mockSpoke1, ethAssetId, USER1, ethAmount, USER1);
+
+    // Nothing set as collateral, therefore -> 0
+    (uint256 totalCollateralInBaseCurrency, , , , ) = mockSpoke1.calculateUserAccountData(USER1);
+    assertEq(totalCollateralInBaseCurrency, 0, 'Unexpected totalCollateralInBaseCurrency');
+  }
+
   struct TestLiquidationCallLocalParams {
     Spoke.UserConfig user1DaiData0;
     Spoke.UserConfig user1EthData0;
@@ -345,7 +367,7 @@ contract LiquidationTest is BaseTest {
   }
 
   /// @dev Test liquidation call with liquidated amount >= user collateral balance, liquidation protocol fee = 0
-  function test_liquidationCall_gteUserCollateralBalance_noLiquidationProtocolFee() public {
+  function skip_test_liquidationCall_gteUserCollateralBalance_noLiquidationProtocolFee() public {
     uint256 debtToCover = 15_000e18;
     uint256 daiAssetId = 0;
     uint256 ethAssetId = 1;

@@ -24,4 +24,29 @@ contract MockSpokeExposedMethods is Spoke {
         liquidationBonus
       );
   }
+
+  function calculateUserAccountData(
+    address user
+  ) public view returns (uint256, uint256, uint256, uint256, uint256) {
+    return _calculateUserAccountData(user);
+  }
+
+  function calculateActualDebtToLiquidate(
+    uint256 debtToCover,
+    address user,
+    uint256 debtAssetId,
+    uint256 totalCollateralInBaseCurrency,
+    uint256 totalDebtInBaseCurrency,
+    uint256 avgLiquidationThreshold
+  ) public view returns (uint256) {
+    return
+      _calculateActualDebtToLiquidate(
+        debtToCover,
+        user,
+        debtAssetId,
+        totalCollateralInBaseCurrency,
+        totalDebtInBaseCurrency,
+        avgLiquidationThreshold
+      );
+  }
 }
