@@ -653,11 +653,13 @@ contract Spoke is ISpoke {
       )
     );
 
+    uint256 debtToReduce = totalCollateralInBaseCurrency.percentMul(avgLiquidationThreshold).wadDiv(
+      HEALTH_FACTOR_LIQUIDATION_RECOVERY_THRESHOLD
+    );
     // how much debt can be liquidated to bring HF to HEALTH_FACTOR_LIQUIDATION_RECOVERY_THRESHOLD
-    uint256 thresholdLiquidatableDebt = (totalDebtInBaseCurrency -
-      totalCollateralInBaseCurrency.percentMul(avgLiquidationThreshold).wadDiv(
-        HEALTH_FACTOR_LIQUIDATION_RECOVERY_THRESHOLD
-      )) / IPriceOracle(oracle).getAssetPrice(debtAssetId);
+    uint256 thresholdLiquidatableDebt = totalDebtInBaseCurrency > debtToReduce
+      ? (totalDebtInBaseCurrency - debtToReduce) / IPriceOracle(oracle).getAssetPrice(debtAssetId)
+      : 0;
 
     console2.log('----- _calculateDebt -----');
     console2.log('maxLiquidatableDebt %e', maxLiquidatableDebt);

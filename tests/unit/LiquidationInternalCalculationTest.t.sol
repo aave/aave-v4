@@ -433,6 +433,120 @@ contract LiquidationInternalCalculationTest is BaseTest {
     assertEq(healthFactor, expectedHF, 'Unexpected healthFactor');
   }
 
+  struct TestCalculateActualDebtToLiquidateLocalParams {
+    uint256[] collateralAssetIds;
+    uint256[] debtAssetIds;
+    uint256 thresholdLiquidatableDebt;
+    uint256 maxLiquidatableDebt;
+    uint256 expectedActualDebtToLiquidate;
+    uint256 totalCollateralInBaseCurrency;
+    uint256 totalDebtInBaseCurrency;
+    uint256 avgLiquidationThreshold;
+    uint256 healthFactor;
+  }
+  function test_fuzz_calculateActualDebtToLiquidate() public // uint256 daiAmount,
+  // uint256 ethAmount,
+  // uint256 usdcBorrowAmount,
+  // uint256 wbtcBorrowAmount,
+  // uint256 debtToCover
+  {
+    uint256 daiAmount = 6737;
+    uint256 ethAmount = 30054195691041320494910095140345337677825794430350144634228548064856139801711;
+    uint256 usdcBorrowAmount = 939;
+    uint256 wbtcBorrowAmount = 14394;
+    uint256 debtToCover = 13818;
+
+    daiAmount = bound(daiAmount, 1e2, 1e28);
+    ethAmount = bound(ethAmount, 1e2, 1e28);
+    usdcBorrowAmount = bound(usdcBorrowAmount, 1e2, 1e27);
+    wbtcBorrowAmount = bound(wbtcBorrowAmount, 1e2, 1e25);
+    debtToCover = bound(debtToCover, 1e2, 1e30);
+
+    uint256 daiAssetId = 0;
+    uint256 ethAssetId = 1;
+    uint256 usdcAssetId = 2;
+    uint256 wbtcAssetId = 3;
+
+    // USER1 supply dai into mockSpoke1
+    deal(address(dai), USER1, daiAmount);
+    Utils.spokeSupply(vm, hub, mockSpoke1, daiAssetId, USER1, daiAmount, USER1);
+    Utils.setUsingAsCollateral(vm, mockSpoke1, USER1, daiAssetId, true);
+
+    // USER1 supply eth into mockSpoke1
+    deal(address(eth), USER1, ethAmount);
+    Utils.spokeSupply(vm, hub, mockSpoke1, ethAssetId, USER1, ethAmount, USER1);
+    Utils.setUsingAsCollateral(vm, mockSpoke1, USER1, ethAssetId, true);
+
+    // USER2 supply usdc into mockSpoke1
+    deal(address(usdc), USER2, usdcBorrowAmount);
+    Utils.spokeSupply(vm, hub, mockSpoke1, usdcAssetId, USER2, usdcBorrowAmount, USER2);
+
+    // USER2 supply wbtc into mockSpoke1
+    deal(address(wbtc), USER2, wbtcBorrowAmount);
+    Utils.spokeSupply(vm, hub, mockSpoke1, wbtcAssetId, USER2, wbtcBorrowAmount, USER2);
+
+    // USER1 borrow usdc
+    Utils.borrow(vm, mockSpoke1, usdcAssetId, USER1, usdcBorrowAmount, USER1);
+
+    // USER1 borrow usdc
+    Utils.borrow(vm, mockSpoke1, wbtcAssetId, USER1, wbtcBorrowAmount, USER1);
+
+    TestCalculateActualDebtToLiquidateLocalParams memory localParams;
+
+    (
+      localParams.totalCollateralInBaseCurrency,
+      localParams.totalDebtInBaseCurrency,
+      localParams.avgLiquidationThreshold,
+      ,
+      localParams.healthFactor
+    ) = mockSpoke1.calculateUserAccountData(USER1);
+
+    localParams.collateralAssetIds = new uint256[](2);
+    localParams.collateralAssetIds[0] = daiAssetId;
+    localParams.collateralAssetIds[1] = ethAssetId;
+
+    localParams.debtAssetIds = new uint256[](2);
+    localParams.debtAssetIds[0] = usdcAssetId;
+    localParams.debtAssetIds[1] = wbtcAssetId;
+
+    (
+      localParams.thresholdLiquidatableDebt,
+      localParams.maxLiquidatableDebt
+    ) = _calculateActualDebtToLiquidate(
+      USER1,
+      usdcAssetId,
+      localParams.debtAssetIds,
+      localParams.collateralAssetIds
+    );
+
+    console2.log('-----TEST-----');
+    console2.log('thresholdLiquidatableDebt %e', localParams.thresholdLiquidatableDebt);
+    console2.log('maxLiquidatableDebt %e', localParams.maxLiquidatableDebt);
+
+    localParams.maxLiquidatableDebt = localParams.maxLiquidatableDebt >
+      localParams.thresholdLiquidatableDebt
+      ? localParams.thresholdLiquidatableDebt
+      : localParams.maxLiquidatableDebt;
+    localParams.expectedActualDebtToLiquidate = debtToCover > localParams.maxLiquidatableDebt
+      ? localParams.maxLiquidatableDebt
+      : debtToCover;
+
+    uint256 actualDebtToLiquidate = mockSpoke1.calculateActualDebtToLiquidate(
+      debtToCover,
+      USER1,
+      usdcAssetId,
+      localParams.totalCollateralInBaseCurrency,
+      localParams.totalDebtInBaseCurrency,
+      localParams.avgLiquidationThreshold
+    );
+
+    assertEq(
+      actualDebtToLiquidate,
+      localParams.thresholdLiquidatableDebt,
+      'Unexpected actualDebtToLiquidate'
+    );
+  }
+
   /// @return totalCollateralInBaseCurrency total collateral in base currency
   /// @return avgLiquidationThreshold average liquidation threshold
   function _calculateTotalCollateralInBaseCurrencyAndAvgLT(
@@ -467,5 +581,35 @@ contract LiquidationInternalCalculationTest is BaseTest {
         oracle.getAssetPrice(debtAssetIds[i]);
     }
     return totalDebtInBaseCurrency;
+  }
+
+  /// @return thresholdLiquidatableDebt liquidatable debt to restore HF to HEALTH_FACTOR_LIQUIDATION_RECOVERY_THRESHOLD
+  /// @return maxLiquidatableDebt max liquidatable debt based on user's total debt
+  function _calculateActualDebtToLiquidate(
+    address user,
+    uint256 debtAssetId,
+    uint256[] memory debtAssetIds,
+    uint256[] memory collateralAssetIds
+  ) internal returns (uint256, uint256) {
+    console2.log('------- test calculateActualDebtToLiquidate -------');
+
+    uint256 totalDebtInBaseCurrency = _calculateTotalDebtInBaseCurrency(debtAssetIds, user);
+    (
+      uint256 totalCollateralInBaseCurrency,
+      uint256 avgLiquidationThreshold
+    ) = _calculateTotalCollateralInBaseCurrencyAndAvgLT(collateralAssetIds, user);
+
+    uint256 debtToReduce = totalCollateralInBaseCurrency.percentMul(avgLiquidationThreshold).wadDiv(
+      mockSpoke1.HEALTH_FACTOR_LIQUIDATION_RECOVERY_THRESHOLD()
+    );
+
+    uint256 thresholdLiquidatableDebt = totalDebtInBaseCurrency > debtToReduce
+      ? (totalDebtInBaseCurrency - debtToReduce) /
+        MockPriceOracle(address(oracle)).getAssetPrice(debtAssetId)
+      : 0;
+
+    uint256 maxLiquidatableDebt = mockSpoke1.getUserDebtInAssets(debtAssetId, user);
+
+    return (thresholdLiquidatableDebt, maxLiquidatableDebt);
   }
 }
