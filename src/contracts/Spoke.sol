@@ -510,6 +510,8 @@ contract Spoke is ISpoke {
 
     // console2.log('vars.healthFactor %e', vars.healthFactor);
 
+    _validateLiquidationCall(collateralAssetId, debtAssetId, user, vars.healthFactor);
+
     // TODO: optimize this calculation / input params
     vars.actualDebtToLiquidate = _calculateActualDebtToLiquidate(
       debtToCover,
@@ -519,8 +521,6 @@ contract Spoke is ISpoke {
       vars.totalDebtInBaseCurrency,
       vars.avgLiquidationThreshold
     );
-
-    _validateLiquidationCall(collateralAssetId, debtAssetId, user, vars.healthFactor);
 
     // console2.log('collateral amt: %e', getUserSupplyInAsset(collateralAssetId, user));
 
@@ -641,7 +641,17 @@ contract Spoke is ISpoke {
     uint256 totalDebtInBaseCurrency,
     uint256 avgLiquidationThreshold
   ) internal view returns (uint256) {
+    console2.log('----- _calculateActualDebtToLiquidate -----');
+
     uint256 maxLiquidatableDebt = getUserDebtInAssets(debtAssetId, user);
+
+    console2.log('totalDebtInBaseCurrency %e', totalDebtInBaseCurrency);
+    console2.log(
+      'to sub %e',
+      totalCollateralInBaseCurrency.percentMul(avgLiquidationThreshold).wadDiv(
+        HEALTH_FACTOR_LIQUIDATION_RECOVERY_THRESHOLD
+      )
+    );
 
     // how much debt can be liquidated to bring HF to HEALTH_FACTOR_LIQUIDATION_RECOVERY_THRESHOLD
     uint256 thresholdLiquidatableDebt = (totalDebtInBaseCurrency -
