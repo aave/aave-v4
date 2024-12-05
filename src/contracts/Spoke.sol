@@ -419,7 +419,7 @@ contract Spoke is ISpoke {
         vars.userCollateralInBaseCurrency =
           vars.assetPrice *
           getUserSupplyInAssets(vars.assetId, user);
-        vars.liquidityPremium = 1; // TODO: get LP from LH
+        vars.liquidityPremium = 0; // TODO: get LP from LH
         vars.totalCollateralInBaseCurrency += vars.userCollateralInBaseCurrency;
         vars.avgLiquidationThreshold += vars.userCollateralInBaseCurrency * r.config.lt;
         vars.userRiskPremium += vars.userCollateralInBaseCurrency * vars.liquidityPremium;

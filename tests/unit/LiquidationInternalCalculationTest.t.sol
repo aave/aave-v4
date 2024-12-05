@@ -175,7 +175,7 @@ contract LiquidationInternalCalculationTest is BaseTest {
   }
 
   /// forge-config: default.fuzz.runs = 1000
-  function test_fuzz_calculateUserAccountData_totalCollateralInBaseCurrency_notUsingAsCollateral(
+  function test_fuzz_calculateUserAccountData_noCollateral(
     uint256 daiAmount,
     uint256 ethAmount
   ) public {
@@ -192,13 +192,23 @@ contract LiquidationInternalCalculationTest is BaseTest {
     deal(address(eth), USER1, ethAmount);
     Utils.spokeSupply(vm, hub, mockSpoke1, ethAssetId, USER1, ethAmount, USER1);
 
-    // Nothing set as collateral, therefore -> 0
-    (uint256 totalCollateralInBaseCurrency, , , , ) = mockSpoke1.calculateUserAccountData(USER1);
+    (
+      uint256 totalCollateralInBaseCurrency,
+      uint256 totalDebtInBaseCurrency,
+      uint256 avgLiquidationThreshold,
+      uint256 userRiskPremium,
+      uint256 healthFactor
+    ) = mockSpoke1.calculateUserAccountData(USER1);
+
     assertEq(totalCollateralInBaseCurrency, 0, 'Unexpected totalCollateralInBaseCurrency');
+    assertEq(totalDebtInBaseCurrency, 0, 'Unexpected totalDebtInBaseCurrency');
+    assertEq(avgLiquidationThreshold, 0, 'Unexpected avgLiquidationThreshold');
+    assertEq(userRiskPremium, 0, 'Unexpected userRiskPremium');
+    assertEq(healthFactor, type(uint256).max, 'Unexpected healthFactor');
   }
 
   /// forge-config: default.fuzz.runs = 1000
-  function test_fuzz_calculateUserAccountData_totalCollateralInBaseCurrency(
+  function test_fuzz_calculateUserAccountData_noBorrow(
     uint256 daiAmount,
     uint256 ethAmount
   ) public {
@@ -219,45 +229,40 @@ contract LiquidationInternalCalculationTest is BaseTest {
     Utils.spokeSupply(vm, hub, mockSpoke1, ethAssetId, USER1, ethAmount, USER1);
     Utils.setUsingAsCollateral(vm, mockSpoke1, USER1, ethAssetId, usingAsCollateral);
 
-    uint256 expectedTotalCollateralInBaseCurrency = daiAmount *
-      MockPriceOracle(address(oracle)).getAssetPrice(daiAssetId) +
-      ethAmount *
-      MockPriceOracle(address(oracle)).getAssetPrice(ethAssetId);
+    uint256[] memory collateralAssetIds = new uint256[](2);
+    collateralAssetIds[0] = daiAssetId;
+    collateralAssetIds[1] = ethAssetId;
 
-    (uint256 totalCollateralInBaseCurrency, , , , ) = mockSpoke1.calculateUserAccountData(USER1);
+    (
+      uint256 expectedTotalCollateralInBaseCurrency,
+      uint256 expectedAvgLiquidationThreshold
+    ) = _calculateTotalCollateralInBaseCurrencyAndAvgLT(collateralAssetIds, USER1);
+
+    (
+      uint256 totalCollateralInBaseCurrency,
+      uint256 totalDebtInBaseCurrency,
+      uint256 avgLiquidationThreshold,
+      uint256 userRiskPremium,
+      uint256 healthFactor
+    ) = mockSpoke1.calculateUserAccountData(USER1);
+
     assertEq(
       totalCollateralInBaseCurrency,
       expectedTotalCollateralInBaseCurrency,
       'Unexpected totalCollateralInBaseCurrency'
     );
-  }
-
-  /// forge-config: default.fuzz.runs = 1000
-  function test_fuzz_calculateUserAccountData_totalDebtInBaseCurrency(
-    uint256 daiAmount,
-    uint256 ethAmount
-  ) public {
-    daiAmount = bound(daiAmount, 1e2, 1e28);
-    ethAmount = bound(ethAmount, 1e2, 1e28);
-
-    uint256 daiAssetId = 0;
-    uint256 ethAssetId = 1;
-    bool usingAsCollateral = true;
-
-    // USER1 supply dai into mockSpoke1
-    deal(address(dai), USER1, daiAmount);
-    Utils.spokeSupply(vm, hub, mockSpoke1, daiAssetId, USER1, daiAmount, USER1);
-
-    // USER1 supply eth into mockSpoke1
-    deal(address(eth), USER1, ethAmount);
-    Utils.spokeSupply(vm, hub, mockSpoke1, ethAssetId, USER1, ethAmount, USER1);
-
-    (, uint256 totalDebtInBaseCurrency, , , ) = mockSpoke1.calculateUserAccountData(USER1);
     assertEq(totalDebtInBaseCurrency, 0, 'Unexpected totalDebtInBaseCurrency');
+    assertEq(
+      avgLiquidationThreshold,
+      expectedAvgLiquidationThreshold,
+      'Unexpected avgLiquidationThreshold'
+    );
+    assertEq(userRiskPremium, 0, 'Unexpected userRiskPremium');
+    assertEq(healthFactor, type(uint256).max, 'Unexpected healthFactor');
   }
 
   /// forge-config: default.fuzz.runs = 1000
-  function test_fuzz_calculateUserAccountData_totalDebtInBaseCurrency(
+  function test_fuzz_calculateUserAccountData(
     uint256 daiAmount,
     uint256 ethAmount,
     uint256 usdcBorrowAmount
@@ -288,14 +293,179 @@ contract LiquidationInternalCalculationTest is BaseTest {
     // USER1 borrow usdc
     Utils.borrow(vm, mockSpoke1, usdcAssetId, USER1, usdcBorrowAmount, USER1);
 
-    uint256 expectedTotalCollateralInBaseCurrency = usdcBorrowAmount *
-      MockPriceOracle(address(oracle)).getAssetPrice(usdcAssetId);
+    uint256[] memory collateralAssetIds = new uint256[](2);
+    collateralAssetIds[0] = daiAssetId;
+    collateralAssetIds[1] = ethAssetId;
 
-    (, uint256 totalDebtInBaseCurrency, , , ) = mockSpoke1.calculateUserAccountData(USER1);
+    (
+      uint256 expectedTotalCollateralInBaseCurrency,
+      uint256 expectedAvgLiquidationThreshold
+    ) = _calculateTotalCollateralInBaseCurrencyAndAvgLT(collateralAssetIds, USER1);
+
+    uint256[] memory debtAssetIds = new uint256[](1);
+    debtAssetIds[0] = usdcAssetId;
+    uint256 expectedTotalDebtInBaseCurrency = _calculateTotalDebtInBaseCurrency(
+      debtAssetIds,
+      USER1
+    );
+
+    uint256 expectedHF = expectedTotalDebtInBaseCurrency == 0
+      ? type(uint256).max
+      : (expectedTotalCollateralInBaseCurrency.percentMul(expectedAvgLiquidationThreshold)).wadDiv(
+        expectedTotalDebtInBaseCurrency
+      );
+
+    (
+      uint256 totalCollateralInBaseCurrency,
+      uint256 totalDebtInBaseCurrency,
+      uint256 avgLiquidationThreshold,
+      uint256 userRiskPremium,
+      uint256 healthFactor
+    ) = mockSpoke1.calculateUserAccountData(USER1);
+
+    assertEq(
+      totalCollateralInBaseCurrency,
+      expectedTotalCollateralInBaseCurrency,
+      'Unexpected totalCollateralInBaseCurrency'
+    );
     assertEq(
       totalDebtInBaseCurrency,
-      expectedTotalCollateralInBaseCurrency,
+      expectedTotalDebtInBaseCurrency,
       'Unexpected totalDebtInBaseCurrency'
     );
+    assertEq(
+      avgLiquidationThreshold,
+      expectedAvgLiquidationThreshold,
+      'Unexpected avgLiquidationThreshold'
+    );
+    assertEq(userRiskPremium, 0, 'Unexpected userRiskPremium');
+    assertEq(healthFactor, expectedHF, 'Unexpected healthFactor');
+  }
+
+  /// forge-config: default.fuzz.runs = 1000
+  function test_fuzz_calculateUserAccountData_multiple_borrows(
+    uint256 daiAmount,
+    uint256 ethAmount,
+    uint256 usdcBorrowAmount,
+    uint256 wbtcBorrowAmount
+  ) public {
+    daiAmount = bound(daiAmount, 1e2, 1e28);
+    ethAmount = bound(ethAmount, 1e2, 1e28);
+    usdcBorrowAmount = bound(usdcBorrowAmount, 1e2, 1e27);
+    wbtcBorrowAmount = bound(wbtcBorrowAmount, 1e2, 1e25);
+
+    uint256 daiAssetId = 0;
+    uint256 ethAssetId = 1;
+    uint256 usdcAssetId = 2;
+    uint256 wbtcAssetId = 3;
+    bool usingAsCollateral = true;
+
+    // USER1 supply dai into mockSpoke1
+    deal(address(dai), USER1, daiAmount);
+    Utils.spokeSupply(vm, hub, mockSpoke1, daiAssetId, USER1, daiAmount, USER1);
+    Utils.setUsingAsCollateral(vm, mockSpoke1, USER1, daiAssetId, usingAsCollateral);
+
+    // USER1 supply eth into mockSpoke1
+    deal(address(eth), USER1, ethAmount);
+    Utils.spokeSupply(vm, hub, mockSpoke1, ethAssetId, USER1, ethAmount, USER1);
+    Utils.setUsingAsCollateral(vm, mockSpoke1, USER1, ethAssetId, usingAsCollateral);
+
+    // USER2 supply usdc into mockSpoke1
+    deal(address(usdc), USER2, usdcBorrowAmount);
+    Utils.spokeSupply(vm, hub, mockSpoke1, usdcAssetId, USER2, usdcBorrowAmount, USER2);
+
+    // USER2 supply wbtc into mockSpoke1
+    deal(address(wbtc), USER2, wbtcBorrowAmount);
+    Utils.spokeSupply(vm, hub, mockSpoke1, wbtcAssetId, USER2, wbtcBorrowAmount, USER2);
+
+    // USER1 borrow usdc
+    Utils.borrow(vm, mockSpoke1, usdcAssetId, USER1, usdcBorrowAmount, USER1);
+
+    // USER1 borrow usdc
+    Utils.borrow(vm, mockSpoke1, wbtcAssetId, USER1, wbtcBorrowAmount, USER1);
+
+    uint256[] memory collateralAssetIds = new uint256[](2);
+    collateralAssetIds[0] = daiAssetId;
+    collateralAssetIds[1] = ethAssetId;
+    (
+      uint256 expectedTotalCollateralInBaseCurrency,
+      uint256 expectedAvgLiquidationThreshold
+    ) = _calculateTotalCollateralInBaseCurrencyAndAvgLT(collateralAssetIds, USER1);
+
+    uint256[] memory debtAssetIds = new uint256[](2);
+    debtAssetIds[0] = usdcAssetId;
+    debtAssetIds[1] = wbtcAssetId;
+    uint256 expectedTotalDebtInBaseCurrency = _calculateTotalDebtInBaseCurrency(
+      debtAssetIds,
+      USER1
+    );
+
+    uint256 expectedHF = expectedTotalDebtInBaseCurrency == 0
+      ? type(uint256).max
+      : (expectedTotalCollateralInBaseCurrency.percentMul(expectedAvgLiquidationThreshold)).wadDiv(
+        expectedTotalDebtInBaseCurrency
+      );
+
+    (
+      uint256 totalCollateralInBaseCurrency,
+      uint256 totalDebtInBaseCurrency,
+      uint256 avgLiquidationThreshold,
+      uint256 userRiskPremium,
+      uint256 healthFactor
+    ) = mockSpoke1.calculateUserAccountData(USER1);
+
+    assertEq(
+      totalCollateralInBaseCurrency,
+      expectedTotalCollateralInBaseCurrency,
+      'Unexpected totalCollateralInBaseCurrency'
+    );
+    assertEq(
+      totalDebtInBaseCurrency,
+      expectedTotalDebtInBaseCurrency,
+      'Unexpected totalDebtInBaseCurrency'
+    );
+    assertEq(
+      avgLiquidationThreshold,
+      expectedAvgLiquidationThreshold,
+      'Unexpected avgLiquidationThreshold'
+    );
+    assertEq(userRiskPremium, 0, 'Unexpected userRiskPremium');
+    assertEq(healthFactor, expectedHF, 'Unexpected healthFactor');
+  }
+
+  /// @return totalCollateralInBaseCurrency total collateral in base currency
+  /// @return avgLiquidationThreshold average liquidation threshold
+  function _calculateTotalCollateralInBaseCurrencyAndAvgLT(
+    uint256[] memory collateralAssetIds,
+    address user
+  ) internal returns (uint256, uint256) {
+    uint256 totalCollateralInBaseCurrency;
+    uint256 avgLiquidationThreshold;
+    for (uint256 i; i < collateralAssetIds.length; i++) {
+      Spoke.Reserve memory r = mockSpoke1.getReserve(collateralAssetIds[i]);
+      uint256 collateralInBaseCurrency = mockSpoke1.getUserSupplyInAssets(
+        collateralAssetIds[i],
+        user
+      ) * oracle.getAssetPrice(collateralAssetIds[i]);
+      totalCollateralInBaseCurrency += collateralInBaseCurrency;
+      avgLiquidationThreshold += collateralInBaseCurrency * r.config.lt;
+    }
+    avgLiquidationThreshold = totalCollateralInBaseCurrency == 0
+      ? 0
+      : avgLiquidationThreshold / totalCollateralInBaseCurrency;
+    return (totalCollateralInBaseCurrency, avgLiquidationThreshold);
+  }
+
+  function _calculateTotalDebtInBaseCurrency(
+    uint256[] memory debtAssetIds,
+    address user
+  ) internal returns (uint256) {
+    uint256 totalDebtInBaseCurrency;
+    for (uint256 i; i < debtAssetIds.length; i++) {
+      totalDebtInBaseCurrency +=
+        mockSpoke1.getUserDebtInAssets(debtAssetIds[i], user) *
+        oracle.getAssetPrice(debtAssetIds[i]);
+    }
+    return totalDebtInBaseCurrency;
   }
 }
