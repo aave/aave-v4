@@ -436,8 +436,6 @@ contract LiquidationInternalCalculationTest is BaseTest {
   struct TestCalculateActualDebtToLiquidateLocalParams {
     uint256[] collateralAssetIds;
     uint256[] debtAssetIds;
-    uint256 recoveryThresholdLiquidatableDebt;
-    uint256 maxLiquidatableDebt;
     uint256 expectedActualDebtToLiquidate;
     uint256 totalCollateralInBaseCurrency;
     uint256 totalDebtInBaseCurrency;
@@ -512,30 +510,13 @@ contract LiquidationInternalCalculationTest is BaseTest {
     localParams.debtAssetIds[0] = usdcAssetId;
     localParams.debtAssetIds[1] = wbtcAssetId;
 
-    (
-      localParams.recoveryThresholdLiquidatableDebt,
-      localParams.maxLiquidatableDebt
-    ) = _calculateActualDebtToLiquidate(
+    (, , localParams.expectedActualDebtToLiquidate) = _calculateActualDebtToLiquidate(
+      debtToCover,
       USER1,
       usdcAssetId,
       localParams.debtAssetIds,
       localParams.collateralAssetIds
     );
-
-    console2.log('-----TEST-----');
-    console2.log(
-      'recoveryThresholdLiquidatableDebt %e',
-      localParams.recoveryThresholdLiquidatableDebt
-    );
-    console2.log('maxLiquidatableDebt %e', localParams.maxLiquidatableDebt);
-
-    localParams.maxLiquidatableDebt = localParams.maxLiquidatableDebt >
-      localParams.recoveryThresholdLiquidatableDebt
-      ? localParams.recoveryThresholdLiquidatableDebt
-      : localParams.maxLiquidatableDebt;
-    localParams.expectedActualDebtToLiquidate = debtToCover > localParams.maxLiquidatableDebt
-      ? localParams.maxLiquidatableDebt
-      : debtToCover;
 
     uint256 actualDebtToLiquidate = mockSpoke1.calculateActualDebtToLiquidate(
       debtToCover,
@@ -592,11 +573,19 @@ contract LiquidationInternalCalculationTest is BaseTest {
   /// @return recoveryThresholdLiquidatableDebt liquidatable debt to restore HF to HEALTH_FACTOR_LIQUIDATION_RECOVERY_THRESHOLD
   /// @return maxLiquidatableDebt max liquidatable debt based on user's total debt
   function _calculateActualDebtToLiquidate(
+    uint256 debtToCover,
     address user,
     uint256 debtAssetId,
     uint256[] memory debtAssetIds,
     uint256[] memory collateralAssetIds
-  ) internal returns (uint256, uint256) {
+  )
+    internal
+    returns (
+      uint256 recoveryThresholdLiquidatableDebt,
+      uint256 maxLiquidatableDebt,
+      uint256 actualDebtToLiquidate
+    )
+  {
     console2.log('------- test calculateActualDebtToLiquidate -------');
 
     uint256 totalDebtInBaseCurrency = _calculateTotalDebtInBaseCurrency(debtAssetIds, user);
@@ -609,13 +598,16 @@ contract LiquidationInternalCalculationTest is BaseTest {
       .percentMul(avgLiquidationThreshold)
       .wadDiv(mockSpoke1.HEALTH_FACTOR_LIQUIDATION_RECOVERY_THRESHOLD());
 
-    uint256 recoveryThresholdLiquidatableDebt = totalDebtInBaseCurrency > liquidationRecoveryDebt
+    recoveryThresholdLiquidatableDebt = totalDebtInBaseCurrency > liquidationRecoveryDebt
       ? (totalDebtInBaseCurrency - liquidationRecoveryDebt) /
         MockPriceOracle(address(oracle)).getAssetPrice(debtAssetId)
       : 0;
 
-    uint256 maxLiquidatableDebt = mockSpoke1.getUserDebtInAssets(debtAssetId, user);
+    maxLiquidatableDebt = mockSpoke1.getUserDebtInAssets(debtAssetId, user);
 
-    return (recoveryThresholdLiquidatableDebt, maxLiquidatableDebt);
+    maxLiquidatableDebt = maxLiquidatableDebt > recoveryThresholdLiquidatableDebt
+      ? recoveryThresholdLiquidatableDebt
+      : maxLiquidatableDebt;
+    actualDebtToLiquidate = debtToCover > maxLiquidatableDebt ? maxLiquidatableDebt : debtToCover;
   }
 }
