@@ -730,6 +730,7 @@ contract Spoke is ISpoke {
     }
 
     if (vars.liquidationProtocolFeePercentage != 0) {
+      console2.log('vars.liquidationProtocolFeePercentage != 0');
       vars.bonusCollateral =
         vars.collateralAmount -
         vars.collateralAmount.percentDiv(liquidationBonus);
@@ -738,12 +739,18 @@ contract Spoke is ISpoke {
         vars.liquidationProtocolFeePercentage
       );
 
+      console2.log('vars.collateralAmount %e', vars.collateralAmount);
+      console2.log('liquidationBonust %e', liquidationBonus);
+      console2.log('vars.bonusCollateral %e', vars.bonusCollateral);
+      console2.log('liquidationProtocolFeeAmount %e', vars.liquidationProtocolFeeAmount);
+
       return (
         vars.collateralAmount - vars.liquidationProtocolFeeAmount,
         vars.debtAmountNeeded,
         vars.liquidationProtocolFeeAmount
       );
     } else {
+      console2.log('vars.liquidationProtocolFeePercentage == 0');
       return (vars.collateralAmount, vars.debtAmountNeeded, 0);
     }
   }

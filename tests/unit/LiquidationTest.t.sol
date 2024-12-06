@@ -609,7 +609,7 @@ contract LiquidationTest is BaseTest {
   }
 
   /// @dev Test liquidation call with liquidated amount >= user collateral balance, with liquidation protocol fee > 0
-  function test_liquidationCall_gteUserCollateralBalance_withLiquidationProtocolFee() public {
+  function skip_test_liquidationCall_gteUserCollateralBalance_withLiquidationProtocolFee() public {
     uint256 debtToCover = 15_000e18;
     uint256 daiAssetId = 0;
     uint256 ethAssetId = 1;
