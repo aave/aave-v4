@@ -315,7 +315,48 @@ contract LiquidationTest is BaseTest {
     // wbtc is not set usingAsCollateral
     vm.prank(LIQUIDATOR);
     vm.expectRevert(TestErrors.COLLATERAL_CANNOT_BE_LIQUIDATED);
-    mockSpoke1.liquidationCall(wbtcAssetId, daiAssetId, USER1, debtToCover);
+    mockSpoke1.liquidationCall(usdcAssetId, daiAssetId, USER1, debtToCover);
+  }
+
+  function test_liquidationCall_revertsWith_specified_currency_not_borrowed_by_user() public {
+    uint256 debtToCover = 1;
+
+    uint256 daiAssetId = 0;
+    uint256 ethAssetId = 1;
+    uint256 usdcAssetId = 2;
+    uint256 wbtcAssetId = 3;
+
+    uint256 daiAmount = 10_000e18; // 10k dai -> $10k
+    uint256 ethAmount = 10e18; // 10 eth -> $20k
+    uint256 usdcBorrowAmount = 15_000e18; // 15k usdc -> $15k
+    bool usingAsCollateral = true;
+
+    // USER1 supply dai into mockSpoke1
+    deal(address(dai), USER1, daiAmount);
+    Utils.spokeSupply(vm, hub, mockSpoke1, daiAssetId, USER1, daiAmount, USER1);
+    Utils.setUsingAsCollateral(vm, mockSpoke1, USER1, daiAssetId, usingAsCollateral);
+
+    // USER1 supply eth into mockSpoke1
+    deal(address(eth), USER1, ethAmount);
+    Utils.spokeSupply(vm, hub, mockSpoke1, ethAssetId, USER1, ethAmount, USER1);
+    Utils.setUsingAsCollateral(vm, mockSpoke1, USER1, ethAssetId, usingAsCollateral);
+
+    // USER2 supply usdc into mockSpoke1
+    deal(address(usdc), USER2, usdcBorrowAmount);
+    Utils.spokeSupply(vm, hub, mockSpoke1, usdcAssetId, USER2, usdcBorrowAmount, USER2);
+
+    // USER1 borrow usdc
+    Utils.borrow(vm, mockSpoke1, usdcAssetId, USER1, usdcBorrowAmount, USER1);
+
+    // HF drops below threshold, eth -> 0
+    MockPriceOracle(address(oracle)).setAssetPrice(ethAssetId, 0);
+
+    console2.log('hf %e', mockSpoke1.getHealthFactor(USER1));
+
+    // wbtc is not set usingAsCollateral
+    vm.prank(LIQUIDATOR);
+    vm.expectRevert(TestErrors.SPECIFIED_CURRENCY_NOT_BORROWED_BY_USER);
+    mockSpoke1.liquidationCall(daiAssetId, wbtcAssetId, USER1, debtToCover);
   }
 
   struct TestLiquidationCallLocalParams {
