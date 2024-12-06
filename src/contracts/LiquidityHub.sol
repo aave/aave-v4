@@ -34,8 +34,8 @@ contract LiquidityHub is ILiquidityHub {
   }
 
   struct WeightedAvg {
-    uint256 avg;
-    uint256 sumWeights;
+    uint256 spokeBorrowRate;
+    uint256 amtDrawn; // TODO: I think this is just drawnShares on spoke
   }
 
   // asset id => asset data
@@ -417,45 +417,59 @@ contract LiquidityHub is ILiquidityHub {
     }
   }
 
-  /// @dev Weights will be total collateral value of each spoke
+  // TODO: We can fetch D_s,i, but perhaps better to just have spoke pass the updated value?
+  /**
+   * @notice Updates the borrow rate of the asset based on the new risk premium
+   * @param assetId The asset id
+   * @param newRiskPremium The new risk premium
+   * @param newRiskPremiumWeight The new risk premium weight
+   * @dev The new risk premium is spoke's calculation of R_s,i
+   * @dev The new risk premium weight should be D_s,i
+   * @dev R_s,i * D_s,i goes in numerator of running avg, D_s,i goes in denominator
+   */
   function _updateIncrementalWeightedAvgRiskPremium(
     uint256 assetId,
     uint256 newRiskPremium,
     uint256 newRiskPremiumWeight
   ) internal {
     // Check our saved risk premiums from this spoke to see if there is a change, if not, skip
-    if (newRiskPremium == lastSpokeLiquidityPremium[msg.sender][assetId].avg) {
+    if (
+      newRiskPremium == lastSpokeLiquidityPremium[msg.sender][assetId].spokeBorrowRate &&
+      newRiskPremiumWeight == lastSpokeLiquidityPremium[msg.sender][assetId].amtDrawn
+    ) {
       return;
     }
 
     // If first update, assign the new value
-    if (weightedAverageLiquidityPremium[assetId].avg == 0 && newRiskPremium != 0) {
-      weightedAverageLiquidityPremium[assetId].avg = newRiskPremium;
-      weightedAverageLiquidityPremium[assetId].sumWeights = newRiskPremiumWeight;
+    // Note: Just a change in weight matters, also can't divide by 0
+    if (weightedAverageLiquidityPremium[assetId].amtDrawn == 0 && newRiskPremiumWeight != 0) {
+      weightedAverageLiquidityPremium[assetId].spokeBorrowRate = newRiskPremium;
+      weightedAverageLiquidityPremium[assetId].amtDrawn = newRiskPremiumWeight;
     } else {
       // Remove the old value from spoke from the weighted average
       (uint256 newWeightedAvg, uint256 newSumWeights) = MathUtils.subtractFromWeightedAverage(
-        weightedAverageLiquidityPremium[assetId].avg,
-        weightedAverageLiquidityPremium[assetId].sumWeights,
-        lastSpokeLiquidityPremium[msg.sender][assetId].avg,
-        lastSpokeLiquidityPremium[msg.sender][assetId].sumWeights
+        weightedAverageLiquidityPremium[assetId].spokeBorrowRate,
+        weightedAverageLiquidityPremium[assetId].amtDrawn,
+        lastSpokeLiquidityPremium[msg.sender][assetId].spokeBorrowRate *
+          lastSpokeLiquidityPremium[msg.sender][assetId].amtDrawn,
+        lastSpokeLiquidityPremium[msg.sender][assetId].amtDrawn
       );
 
       // Add new value to weighted average
       (
-        weightedAverageLiquidityPremium[assetId].avg,
-        weightedAverageLiquidityPremium[assetId].sumWeights
+        weightedAverageLiquidityPremium[assetId].spokeBorrowRate,
+        weightedAverageLiquidityPremium[assetId].amtDrawn
       ) = MathUtils.addToWeightedAverage(
         newWeightedAvg,
         newSumWeights,
-        newRiskPremium,
+        newRiskPremium * newRiskPremiumWeight,
         newRiskPremiumWeight
       );
     }
 
     // Update the last received values
-    lastSpokeLiquidityPremium[msg.sender][assetId].avg = newRiskPremium;
-    lastSpokeLiquidityPremium[msg.sender][assetId].sumWeights = newRiskPremiumWeight;
+    lastSpokeLiquidityPremium[msg.sender][assetId].spokeBorrowRate = newRiskPremium;
+    lastSpokeLiquidityPremium[msg.sender][assetId].amtDrawn = newRiskPremiumWeight;
   }
 
   function _calculateWeightedInterestRate(
