@@ -46,10 +46,10 @@ contract LiquidityHub is ILiquidityHub {
   // asset id => spoke address => spoke
   mapping(uint256 => mapping(address => Spoke)) public spokes;
 
-  // asset id => weighted average liquidity premium of asset across all spokes
-  mapping(uint256 => WeightedAvg) public weightedAverageLiquidityPremium;
-  // address of spokes => asset id -> last received spoke liquidity premium
-  mapping(address => mapping(uint256 => WeightedAvg)) public lastSpokeLiquidityPremium;
+  // asset id => weighted average of spokes' borrow rates for asset
+  mapping(uint256 => WeightedAvg) public weightedAverageBorrowRate;
+  // address of spoke => asset id -> last received borrow rate from spoke for asset
+  mapping(address => mapping(uint256 => WeightedAvg)) public lastSpokeBorrowRate;
 
   //
   // External
@@ -434,31 +434,31 @@ contract LiquidityHub is ILiquidityHub {
   ) internal {
     // Check our saved risk premiums from this spoke to see if there is a change, if not, skip
     if (
-      newRiskPremium == lastSpokeLiquidityPremium[msg.sender][assetId].spokeBorrowRate &&
-      newRiskPremiumWeight == lastSpokeLiquidityPremium[msg.sender][assetId].amtDrawn
+      newRiskPremium == lastSpokeBorrowRate[msg.sender][assetId].spokeBorrowRate &&
+      newRiskPremiumWeight == lastSpokeBorrowRate[msg.sender][assetId].amtDrawn
     ) {
       return;
     }
 
     // If first update, assign the new value
     // Note: Just a change in weight matters, also can't divide by 0
-    if (weightedAverageLiquidityPremium[assetId].amtDrawn == 0 && newRiskPremiumWeight != 0) {
-      weightedAverageLiquidityPremium[assetId].spokeBorrowRate = newRiskPremium;
-      weightedAverageLiquidityPremium[assetId].amtDrawn = newRiskPremiumWeight;
+    if (weightedAverageBorrowRate[assetId].amtDrawn == 0 && newRiskPremiumWeight != 0) {
+      weightedAverageBorrowRate[assetId].spokeBorrowRate = newRiskPremium;
+      weightedAverageBorrowRate[assetId].amtDrawn = newRiskPremiumWeight;
     } else {
       // Remove the old value from spoke from the weighted average
       (uint256 newWeightedAvg, uint256 newSumWeights) = MathUtils.subtractFromWeightedAverage(
-        weightedAverageLiquidityPremium[assetId].spokeBorrowRate,
-        weightedAverageLiquidityPremium[assetId].amtDrawn,
-        lastSpokeLiquidityPremium[msg.sender][assetId].spokeBorrowRate *
-          lastSpokeLiquidityPremium[msg.sender][assetId].amtDrawn,
-        lastSpokeLiquidityPremium[msg.sender][assetId].amtDrawn
+        weightedAverageBorrowRate[assetId].spokeBorrowRate,
+        weightedAverageBorrowRate[assetId].amtDrawn,
+        lastSpokeBorrowRate[msg.sender][assetId].spokeBorrowRate *
+          lastSpokeBorrowRate[msg.sender][assetId].amtDrawn,
+        lastSpokeBorrowRate[msg.sender][assetId].amtDrawn
       );
 
       // Add new value to weighted average
       (
-        weightedAverageLiquidityPremium[assetId].spokeBorrowRate,
-        weightedAverageLiquidityPremium[assetId].amtDrawn
+        weightedAverageBorrowRate[assetId].spokeBorrowRate,
+        weightedAverageBorrowRate[assetId].amtDrawn
       ) = MathUtils.addToWeightedAverage(
         newWeightedAvg,
         newSumWeights,
@@ -468,8 +468,8 @@ contract LiquidityHub is ILiquidityHub {
     }
 
     // Update the last received values
-    lastSpokeLiquidityPremium[msg.sender][assetId].spokeBorrowRate = newRiskPremium;
-    lastSpokeLiquidityPremium[msg.sender][assetId].amtDrawn = newRiskPremiumWeight;
+    lastSpokeBorrowRate[msg.sender][assetId].spokeBorrowRate = newRiskPremium;
+    lastSpokeBorrowRate[msg.sender][assetId].amtDrawn = newRiskPremiumWeight;
   }
 
   function _calculateWeightedInterestRate(
