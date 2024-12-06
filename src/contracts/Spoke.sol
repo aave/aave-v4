@@ -653,20 +653,22 @@ contract Spoke is ISpoke {
       )
     );
 
-    uint256 debtToReduce = totalCollateralInBaseCurrency.percentMul(avgLiquidationThreshold).wadDiv(
-      HEALTH_FACTOR_LIQUIDATION_RECOVERY_THRESHOLD
-    );
-    // how much debt can be liquidated to bring HF to HEALTH_FACTOR_LIQUIDATION_RECOVERY_THRESHOLD
-    uint256 thresholdLiquidatableDebt = totalDebtInBaseCurrency > debtToReduce
-      ? (totalDebtInBaseCurrency - debtToReduce) / IPriceOracle(oracle).getAssetPrice(debtAssetId)
+    // amount of user debt that corresponds to HEALTH_FACTOR_LIQUIDATION_RECOVERY_THRESHOLD
+    uint256 liquidationRecoveryDebt = totalCollateralInBaseCurrency
+      .percentMul(avgLiquidationThreshold)
+      .wadDiv(HEALTH_FACTOR_LIQUIDATION_RECOVERY_THRESHOLD);
+    // amount of debt that can be liquidated to bring HF to HEALTH_FACTOR_LIQUIDATION_RECOVERY_THRESHOLD
+    uint256 recoveryThresholdLiquidatableDebt = totalDebtInBaseCurrency > liquidationRecoveryDebt
+      ? (totalDebtInBaseCurrency - liquidationRecoveryDebt) /
+        IPriceOracle(oracle).getAssetPrice(debtAssetId)
       : 0;
 
     console2.log('----- _calculateDebt -----');
     console2.log('maxLiquidatableDebt %e', maxLiquidatableDebt);
-    console2.log('thresholdLiquidatableDebt %e', thresholdLiquidatableDebt);
+    console2.log('recoveryThresholdLiquidatableDebt %e', recoveryThresholdLiquidatableDebt);
 
-    maxLiquidatableDebt = maxLiquidatableDebt > thresholdLiquidatableDebt
-      ? thresholdLiquidatableDebt
+    maxLiquidatableDebt = maxLiquidatableDebt > recoveryThresholdLiquidatableDebt
+      ? recoveryThresholdLiquidatableDebt
       : maxLiquidatableDebt;
 
     uint256 actualDebtToLiquidate = debtToCover > maxLiquidatableDebt

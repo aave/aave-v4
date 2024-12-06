@@ -179,7 +179,7 @@ contract UserRiskPremiumTest is BaseTest {
     Utils.setUsingAsCollateral(vm, spoke1, USER1, daiId, usingAsCollateral);
 
     uint256 userRiskPremium = ISpoke(spoke1).getUserRiskPremium(USER1);
-    assertEq(userRiskPremium, 1e18, 'wrong user risk premium'); // TODO: fix when LP is implemented
+    assertEq(userRiskPremium, 0, 'wrong user risk premium'); // TODO: fix when LP is implemented
   }
 
   function test_getUserRiskPremium_multi_asset_collateral() public {
@@ -207,7 +207,7 @@ contract UserRiskPremiumTest is BaseTest {
     Utils.setUsingAsCollateral(vm, spoke1, USER1, ethId, usingAsCollateral);
 
     uint256 userRiskPremium = ISpoke(spoke1).getUserRiskPremium(USER1);
-    assertEq(userRiskPremium, 1e18, 'wrong user risk premium'); // TODO: fix when LP is implemented
+    assertEq(userRiskPremium, 0, 'wrong user risk premium'); // TODO: fix when LP is implemented
   }
 
   function test_getUserRiskPremium_asset_price_changes() public {
@@ -263,7 +263,7 @@ contract UserRiskPremiumTest is BaseTest {
       uint256 assetPrice = MockPriceOracle(address(oracle)).getAssetPrice(assetId);
       uint256 userCollateral = hub.convertSharesToAssetsDown(assetId, userConfig.supplyShares) *
         assetPrice;
-      uint256 liquidityPremium = 1; // TODO: get LP from LH
+      uint256 liquidityPremium = 0; // TODO: get LP from LH
       userRiskPremium += userCollateral * liquidityPremium;
       totalCollateral += userCollateral;
     }

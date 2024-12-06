@@ -340,7 +340,7 @@ contract LiquidationTest is BaseTest {
     uint256 actualDebtCovered;
     uint256[] debtAssetIds;
     uint256[] collateralAssetIds;
-    uint256 thresholdLiquidatableDebt;
+    uint256 recoveryThresholdLiquidatableDebt;
     uint256 maxLiquidatableDebt;
   }
 
@@ -504,7 +504,7 @@ contract LiquidationTest is BaseTest {
     testLiquidationCallLocalParams.collateralAssetIds[0] = daiAssetId;
     testLiquidationCallLocalParams.collateralAssetIds[1] = ethAssetId;
     (
-      testLiquidationCallLocalParams.thresholdLiquidatableDebt,
+      testLiquidationCallLocalParams.recoveryThresholdLiquidatableDebt,
       testLiquidationCallLocalParams.maxLiquidatableDebt
     ) = _calculateActualDebtToLiquidate(
       USER1,
@@ -514,8 +514,8 @@ contract LiquidationTest is BaseTest {
     );
 
     console2.log(
-      'thresholdLiquidatableDebt %e',
-      testLiquidationCallLocalParams.thresholdLiquidatableDebt
+      'recoveryThresholdLiquidatableDebt %e',
+      testLiquidationCallLocalParams.recoveryThresholdLiquidatableDebt
     );
     console2.log('maxLiquidatableDebt %e', testLiquidationCallLocalParams.maxLiquidatableDebt);
 
@@ -934,7 +934,7 @@ contract LiquidationTest is BaseTest {
   //   );
   // }
 
-  /// @return thresholdLiquidatableDebt liquidatable debt to restore HF to HEALTH_FACTOR_LIQUIDATION_RECOVERY_THRESHOLD
+  /// @return recoveryThresholdLiquidatableDebt liquidatable debt to restore HF to HEALTH_FACTOR_LIQUIDATION_RECOVERY_THRESHOLD
   /// @return maxLiquidatableDebt max liquidatable debt based on user's total debt
   function _calculateActualDebtToLiquidate(
     address user,
@@ -950,14 +950,14 @@ contract LiquidationTest is BaseTest {
       uint256 avgLiquidationThreshold
     ) = _getTotalCollateralInBaseCurrencyAndAvgLT(collateralAssetIds, user);
 
-    uint256 thresholdLiquidatableDebt = (totalDebtInBaseCurrency -
+    uint256 recoveryThresholdLiquidatableDebt = (totalDebtInBaseCurrency -
       totalCollateralInBaseCurrency.percentMul(avgLiquidationThreshold).wadDiv(
         mockSpoke1.HEALTH_FACTOR_LIQUIDATION_RECOVERY_THRESHOLD()
       )) / MockPriceOracle(address(oracle)).getAssetPrice(debtAssetId);
 
     uint256 maxLiquidatableDebt = mockSpoke1.getUserDebtInAssets(debtAssetId, user);
 
-    return (thresholdLiquidatableDebt, maxLiquidatableDebt);
+    return (recoveryThresholdLiquidatableDebt, maxLiquidatableDebt);
   }
 
   function _getTotalDebtInBaseCurrency(
