@@ -451,12 +451,6 @@ contract LiquidationInternalCalculationTest is BaseTest {
     uint256 wbtcBorrowAmount,
     uint256 debtToCover
   ) public {
-    // uint256 daiAmount = 6737;
-    // uint256 ethAmount = 30054195691041320494910095140345337677825794430350144634228548064856139801711;
-    // uint256 usdcBorrowAmount = 939;
-    // uint256 wbtcBorrowAmount = 14394;
-    // uint256 debtToCover = 13818;
-
     daiAmount = bound(daiAmount, 1e2, 1e28);
     ethAmount = bound(ethAmount, 1e2, 1e28);
     usdcBorrowAmount = bound(usdcBorrowAmount, 1e2, 1e27);
@@ -532,6 +526,94 @@ contract LiquidationInternalCalculationTest is BaseTest {
       localParams.expectedActualDebtToLiquidate,
       'Unexpected actualDebtToLiquidate'
     );
+  }
+
+  /// forge-config: default.fuzz.runs = 1000
+  function test_fuzz_calculateActualDebtToLiquidate_noDebt(
+    uint256 daiAmount,
+    uint256 ethAmount,
+    uint256 usdcBorrowAmount,
+    uint256 wbtcBorrowAmount,
+    uint256 debtToCover
+  ) public {
+    daiAmount = bound(daiAmount, 1e2, 1e28);
+    ethAmount = bound(ethAmount, 1e2, 1e28);
+    usdcBorrowAmount = bound(usdcBorrowAmount, 1e2, 1e27);
+    wbtcBorrowAmount = bound(wbtcBorrowAmount, 1e2, 1e25);
+    debtToCover = bound(debtToCover, 1e2, 1e30);
+
+    uint256 daiAssetId = 0;
+    uint256 ethAssetId = 1;
+    uint256 usdcAssetId = 2;
+    uint256 wbtcAssetId = 3;
+
+    // USER1 supply dai into mockSpoke1
+    deal(address(dai), USER1, daiAmount);
+    Utils.spokeSupply(vm, hub, mockSpoke1, daiAssetId, USER1, daiAmount, USER1);
+    Utils.setUsingAsCollateral(vm, mockSpoke1, USER1, daiAssetId, true);
+
+    // USER1 supply eth into mockSpoke1
+    deal(address(eth), USER1, ethAmount);
+    Utils.spokeSupply(vm, hub, mockSpoke1, ethAssetId, USER1, ethAmount, USER1);
+    Utils.setUsingAsCollateral(vm, mockSpoke1, USER1, ethAssetId, true);
+
+    // USER2 supply usdc into mockSpoke1
+    deal(address(usdc), USER2, usdcBorrowAmount);
+    Utils.spokeSupply(vm, hub, mockSpoke1, usdcAssetId, USER2, usdcBorrowAmount, USER2);
+
+    // USER2 supply wbtc into mockSpoke1
+    deal(address(wbtc), USER2, wbtcBorrowAmount);
+    Utils.spokeSupply(vm, hub, mockSpoke1, wbtcAssetId, USER2, wbtcBorrowAmount, USER2);
+
+    TestCalculateActualDebtToLiquidateLocalParams memory localParams;
+
+    (
+      localParams.totalCollateralInBaseCurrency,
+      localParams.totalDebtInBaseCurrency,
+      localParams.avgLiquidationThreshold,
+      ,
+      localParams.healthFactor
+    ) = mockSpoke1.calculateUserAccountData(USER1);
+
+    uint256 actualDebtToLiquidate = mockSpoke1.calculateActualDebtToLiquidate(
+      debtToCover,
+      USER1,
+      usdcAssetId,
+      localParams.totalCollateralInBaseCurrency,
+      localParams.totalDebtInBaseCurrency,
+      localParams.avgLiquidationThreshold
+    );
+
+    assertEq(actualDebtToLiquidate, 0, 'Unexpected actualDebtToLiquidate');
+  }
+
+  /// forge-config: default.fuzz.runs = 1000
+  function test_fuzz_calculateActualDebtToLiquidate_noCollateral(
+    uint256 debtToCover,
+    uint256 debtAssetId
+  ) public {
+    vm.assume(debtAssetId <= 3);
+
+    TestCalculateActualDebtToLiquidateLocalParams memory localParams;
+
+    (
+      localParams.totalCollateralInBaseCurrency,
+      localParams.totalDebtInBaseCurrency,
+      localParams.avgLiquidationThreshold,
+      ,
+      localParams.healthFactor
+    ) = mockSpoke1.calculateUserAccountData(USER1);
+
+    uint256 actualDebtToLiquidate = mockSpoke1.calculateActualDebtToLiquidate(
+      debtToCover,
+      USER1,
+      debtAssetId,
+      localParams.totalCollateralInBaseCurrency,
+      localParams.totalDebtInBaseCurrency,
+      localParams.avgLiquidationThreshold
+    );
+
+    assertEq(actualDebtToLiquidate, 0, 'Unexpected actualDebtToLiquidate');
   }
 
   /// @return totalCollateralInBaseCurrency total collateral in base currency
