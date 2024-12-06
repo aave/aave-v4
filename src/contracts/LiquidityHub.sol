@@ -393,9 +393,9 @@ contract LiquidityHub is ILiquidityHub {
           usingVirtualBalance: true
         })
       );
+    // TODO: Ensure newRiskPremium weight here includes accrued debt from spoke
     _updateIncrementalWeightedAvgRiskPremium(asset.id, newRiskPremium, newRiskPremiumWeight);
-    // TODO: This function should take into account the new risk premium - probably done already by borrow module
-    borrowRate = _calculateWeightedInterestRate(borrowRate, newRiskPremium, spokeDrawnLiquidity);
+    borrowRate = weightedAverageBorrowRate[asset.id].spokeBorrowRate;
 
     // Caching borrow rate for next accrual on action
     asset.currentBorrowRate = borrowRate;
@@ -470,15 +470,6 @@ contract LiquidityHub is ILiquidityHub {
     // Update the last received values
     lastSpokeBorrowRate[msg.sender][assetId].spokeBorrowRate = newRiskPremium;
     lastSpokeBorrowRate[msg.sender][assetId].amtDrawn = newRiskPremiumWeight;
-  }
-
-  function _calculateWeightedInterestRate(
-    uint256 borrowRate,
-    uint256 newRiskPremium,
-    uint256 spokeDrawnLiquidity
-  ) internal returns (uint256) {
-    // TODO: Add new value risk premium to weighted average
-    // TODO: Calculate final rate based on borrow rate and weighted average risk premium across spokes
   }
 
   function _addSpoke(uint256 assetId, DataTypes.SpokeConfig memory params, address spoke) internal {
