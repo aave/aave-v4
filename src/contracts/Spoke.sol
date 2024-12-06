@@ -535,7 +535,7 @@ contract Spoke is ISpoke {
       debtReserve,
       vars.actualDebtToLiquidate,
       vars.userCollateralBalance,
-      collateralReserve.config.lb
+      collateralReserve.config.lb // TODO: fetch from a getter?
     );
 
     console2.log('vars.userCollateralBalance %e', vars.userCollateralBalance);
@@ -686,7 +686,7 @@ contract Spoke is ISpoke {
   function _calculateAvailableCollateralToLiquidate(
     Reserve memory collateralReserve,
     Reserve memory debtReserve,
-    uint256 debtToCover,
+    uint256 actualDebtToLiquidate,
     uint256 userCollateralBalance,
     uint256 liquidationBonus
   ) internal view returns (uint256, uint256, uint256) {
@@ -698,9 +698,10 @@ contract Spoke is ISpoke {
     vars.collateralAssetUnit = 10 ** collateralReserve.decimals;
     vars.debtAssetUnit = 10 ** debtReserve.decimals;
 
-    // console2.log('vars.collateralAssetPrice %e', vars.collateralAssetPrice);
-    // console2.log('vars.debtAssetPrice %e', vars.debtAssetPrice);
-    // console2.log('userCollateralBalance %e', userCollateralBalance);
+    console2.log('--- _calculateAvailableCollateralToLiquidate---- ');
+    console2.log('vars.collateralAssetPrice %e', vars.collateralAssetPrice);
+    console2.log('vars.debtAssetPrice %e', vars.debtAssetPrice);
+    console2.log('userCollateralBalance %e', userCollateralBalance);
 
     vars.liquidationProtocolFeePercentage = getLiquidationProtocolFeePercentage(
       collateralReserve.id
@@ -708,13 +709,11 @@ contract Spoke is ISpoke {
 
     // find collateral amount that corresponds to the debt to cover
     vars.baseCollateral =
-      (vars.debtAssetPrice * debtToCover * vars.collateralAssetUnit) /
+      (vars.debtAssetPrice * actualDebtToLiquidate * vars.collateralAssetUnit) /
       (vars.collateralAssetPrice * vars.debtAssetUnit);
 
     vars.maxCollateralToLiquidate = vars.baseCollateral.percentMul(liquidationBonus);
 
-    // TODO: enhancement, calculate critical threshold value of collateral to liquidate to end up with HF == 1
-    // instead of userCollateralBalance being max collateral to liquidate, it should be the critical threshold value
     if (vars.maxCollateralToLiquidate > userCollateralBalance) {
       console2.log('maxCollateralToLiquidate > userCollateralBalance');
       // back calculate debt amount needed to cover the max allowed collateral
@@ -727,7 +726,7 @@ contract Spoke is ISpoke {
     } else {
       console2.log('maxCollateralToLiquidate <= userCollateralBalance');
       vars.collateralAmount = vars.maxCollateralToLiquidate;
-      vars.debtAmountNeeded = debtToCover;
+      vars.debtAmountNeeded = actualDebtToLiquidate;
     }
 
     if (vars.liquidationProtocolFeePercentage != 0) {
