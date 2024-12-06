@@ -444,17 +444,20 @@ contract LiquidationInternalCalculationTest is BaseTest {
     uint256 avgLiquidationThreshold;
     uint256 healthFactor;
   }
-  function test_fuzz_calculateActualDebtToLiquidate() public // uint256 daiAmount,
-  // uint256 ethAmount,
-  // uint256 usdcBorrowAmount,
-  // uint256 wbtcBorrowAmount,
-  // uint256 debtToCover
-  {
-    uint256 daiAmount = 6737;
-    uint256 ethAmount = 30054195691041320494910095140345337677825794430350144634228548064856139801711;
-    uint256 usdcBorrowAmount = 939;
-    uint256 wbtcBorrowAmount = 14394;
-    uint256 debtToCover = 13818;
+
+  /// forge-config: default.fuzz.runs = 1000
+  function test_fuzz_calculateActualDebtToLiquidate(
+    uint256 daiAmount,
+    uint256 ethAmount,
+    uint256 usdcBorrowAmount,
+    uint256 wbtcBorrowAmount,
+    uint256 debtToCover
+  ) public {
+    // uint256 daiAmount = 6737;
+    // uint256 ethAmount = 30054195691041320494910095140345337677825794430350144634228548064856139801711;
+    // uint256 usdcBorrowAmount = 939;
+    // uint256 wbtcBorrowAmount = 14394;
+    // uint256 debtToCover = 13818;
 
     daiAmount = bound(daiAmount, 1e2, 1e28);
     ethAmount = bound(ethAmount, 1e2, 1e28);
@@ -545,7 +548,7 @@ contract LiquidationInternalCalculationTest is BaseTest {
 
     assertEq(
       actualDebtToLiquidate,
-      localParams.recoveryThresholdLiquidatableDebt,
+      localParams.expectedActualDebtToLiquidate,
       'Unexpected actualDebtToLiquidate'
     );
   }
