@@ -4,6 +4,7 @@ pragma solidity ^0.8.0;
 import {Spoke} from 'src/contracts/Spoke.sol';
 
 import 'forge-std/console2.sol';
+/// @dev mock Spoke to expose internal methods for testing
 
 contract MockSpokeExposedMethods is Spoke {
   constructor(address _hub, address _oracle) Spoke(_hub, _oracle) {}
