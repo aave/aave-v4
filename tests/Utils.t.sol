@@ -35,7 +35,7 @@ library Utils {
     address asset = hub.assetsList(assetId);
     vm.startPrank(spoke);
     IERC20(asset).transfer(address(hub), amount);
-    hub.supply(assetId, amount, 0, 0);
+    hub.supply(assetId, amount, 0);
     vm.stopPrank();
   }
 
@@ -48,7 +48,7 @@ library Utils {
     address onBehalfOf
   ) internal {
     vm.startPrank(spoke);
-    hub.draw(assetId, spoke, amount, 0, 0);
+    hub.draw(assetId, spoke, amount, 0);
     vm.stopPrank();
   }
 
@@ -62,7 +62,7 @@ library Utils {
   ) internal {
     vm.startPrank(spoke);
     // TODO: risk premium
-    hub.withdraw(assetId, to, amount, 0, 0);
+    hub.withdraw(assetId, to, amount, 0);
     vm.stopPrank();
   }
 

@@ -112,13 +112,12 @@ contract Spoke is ISpoke {
 
     _validateSupply(r, amount);
 
-    (, uint256 newAggregatedRiskPremium, uint256 newWeights) = _refreshRiskPremium();
+    (, uint256 newAggregatedRiskPremium) = _refreshRiskPremium();
     IERC20(r.asset).safeTransferFrom(msg.sender, liquidityHub, amount);
     uint256 userShares = ILiquidityHub(liquidityHub).supply(
       assetId,
       amount,
-      newAggregatedRiskPremium,
-      newWeights
+      newAggregatedRiskPremium
     );
 
     users[assetId][msg.sender].supplyShares += userShares;
@@ -131,13 +130,12 @@ contract Spoke is ISpoke {
     UserConfig storage u = users[assetId][msg.sender];
     _validateWithdraw(assetId, r, u, amount);
 
-    (, uint256 newAggregatedRiskPremium, uint256 newWeights) = _refreshRiskPremium();
+    (, uint256 newAggregatedRiskPremium) = _refreshRiskPremium();
     uint256 userShares = ILiquidityHub(liquidityHub).withdraw(
       assetId,
       to,
       amount,
-      newAggregatedRiskPremium,
-      newWeights
+      newAggregatedRiskPremium
     );
     users[assetId][msg.sender].supplyShares -= userShares;
 
@@ -151,13 +149,12 @@ contract Spoke is ISpoke {
     _validateBorrow(r, amount);
 
     // TODO HF check
-    (, uint256 newAggregatedRiskPremium, uint256 newWeights) = _refreshRiskPremium();
+    (, uint256 newAggregatedRiskPremium) = _refreshRiskPremium();
     uint256 userShares = ILiquidityHub(liquidityHub).draw(
       assetId,
       to,
       amount,
-      newAggregatedRiskPremium,
-      newWeights
+      newAggregatedRiskPremium
     );
     // debt still goes to original msg.sender
     users[assetId][msg.sender].debtShares += userShares;
@@ -173,13 +170,12 @@ contract Spoke is ISpoke {
     Reserve storage r = reserves[assetId];
     _validateRepay(assetId, u, amount);
 
-    (, uint256 newAggregatedRiskPremium, uint256 newWeights) = _refreshRiskPremium();
+    (, uint256 newAggregatedRiskPremium) = _refreshRiskPremium();
     IERC20(r.asset).safeTransferFrom(msg.sender, liquidityHub, amount);
     uint256 userShares = ILiquidityHub(liquidityHub).restore(
       assetId,
       amount,
-      newAggregatedRiskPremium,
-      newWeights
+      newAggregatedRiskPremium
     );
     users[assetId][msg.sender].debtShares -= userShares;
 
@@ -290,18 +286,15 @@ contract Spoke is ISpoke {
   /**
   @return uint256 new risk premium
   @return uint256 new aggregated risk premium
-  @return uin256 new weights for aggregated risk premium
   */
-  function _refreshRiskPremium() internal returns (uint256, uint256, uint256) {
+  function _refreshRiskPremium() internal returns (uint256, uint256) {
     // TODO: update state - debt shares
 
     // TODO: refresh risk premium of user, specific assets user has supplied
     uint256 newUserRiskPremium = 0;
     // TODO: aggregated risk premium, ie loop over all assets and sum up risk premium
     uint256 newAggregatedRiskPremium = 0;
-    // TODO: Weights from aggregated risk premium
-    uint256 newWeights = 0;
-    return (newUserRiskPremium, newAggregatedRiskPremium, newWeights);
+    return (newUserRiskPremium, newAggregatedRiskPremium);
   }
 
   function _validateSetUsingAsCollateral(uint256 assetId, address user) internal view {
