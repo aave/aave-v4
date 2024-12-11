@@ -151,19 +151,19 @@ contract UserRiskPremiumTest is BaseTest {
     );
   }
 
-  function test_LHBorrowRateNoActionTaken() public {
+  function test_LHBorrowRate_NoActionTaken() public {
     uint256 borrowRate = _getBorrowRate(daiAssetId);
     assertEq(borrowRate, 0);
   }
 
-  function test_LHBorrowRateSupply() public {
+  function test_LHBorrowRate_Supply() public {
     vm.prank(address(spoke1));
     hub.supply(daiAssetId, 1000e18, 0);
     uint256 borrowRate = _getBorrowRate(daiAssetId);
     assertEq(borrowRate, 0);
   }
 
-  function test_LHBorrowRateBorrow() public {
+  function test_LHBorrowRate_Borrow() public {
     // Spoke 1's first borrow should set the overall borrow rate
     deal(address(dai), address(hub), 1000e18);
     vm.startPrank(address(spoke1));
@@ -174,7 +174,20 @@ contract UserRiskPremiumTest is BaseTest {
     assertEq(borrowRate, 1e18);
   }
 
-  // TODO: Show that if weights or RP do not change, then the borrow rate does not change
+  function test_LHBorrowRate_BorrowAndSupply() public {
+    deal(address(dai), address(hub), 1000e18);
+    vm.startPrank(address(spoke1));
+    hub.supply(daiAssetId, 1000e18, 0);
+    hub.draw(daiAssetId, address(spoke1), 100e18, 1e18);
+    uint256 borrowRate = _getBorrowRate(daiAssetId);
+    assertEq(borrowRate, 1e18);
+
+    // Now if we supply again, passing same risk premium, no update to borrow rate
+    hub.supply(daiAssetId, 1000e18, 1e18);
+    borrowRate = _getBorrowRate(daiAssetId);
+    assertEq(borrowRate, 1e18);
+    vm.stopPrank();
+  }
 
   function _getBorrowRate(uint256 assetId) internal view returns (uint256) {
     (, , , , , uint256 borrowRate, ) = hub.assets(assetId);
