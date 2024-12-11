@@ -34,7 +34,7 @@ contract LiquidityHub is ILiquidityHub {
   }
 
   struct WeightedAvg {
-    uint256 spokeBorrowRate;
+    uint256 spokeBR;
     uint256 amtDrawn;
   }
 
@@ -47,9 +47,9 @@ contract LiquidityHub is ILiquidityHub {
   mapping(uint256 => mapping(address => Spoke)) public spokes;
 
   // asset id => weighted average of spokes' borrow rates for asset
-  mapping(uint256 => WeightedAvg) public wAvgBorrowRate;
+  mapping(uint256 => WeightedAvg) public wAvgBR;
   // address of spoke => asset id -> last received borrow rate from spoke for asset
-  mapping(address => mapping(uint256 => WeightedAvg)) public lastSpokeBorrowRate;
+  mapping(address => mapping(uint256 => WeightedAvg)) public lastSpokeBR;
 
   //
   // External
@@ -393,6 +393,7 @@ contract LiquidityHub is ILiquidityHub {
     uint256 liquidityAdded,
     uint256 liquidityTaken
   ) internal {
+    // TODO: This assignment unnecessary because it gets set below?
     // Update interest rates
     uint256 borrowRate = IReserveInterestRateStrategy(asset.config.irStrategy)
       .calculateInterestRates(
@@ -409,7 +410,7 @@ contract LiquidityHub is ILiquidityHub {
 
     // Weight is spoke.drawnShares
     _updateLHBorrowRate(asset.id, newRiskPremium, spokes[asset.id][msg.sender].drawnShares);
-    borrowRate = wAvgBorrowRate[asset.id].spokeBorrowRate;
+    borrowRate = wAvgBR[asset.id].spokeBR;
 
     // Caching borrow rate for next accrual on action
     asset.currentBorrowRate = borrowRate;
@@ -431,40 +432,38 @@ contract LiquidityHub is ILiquidityHub {
   ) internal {
     // Check our saved risk premiums from this spoke to see if there is a change, if not, skip
     if (
-      newRiskPremium == lastSpokeBorrowRate[msg.sender][assetId].spokeBorrowRate &&
-      newRiskPremiumWeight == lastSpokeBorrowRate[msg.sender][assetId].amtDrawn
+      newRiskPremium == lastSpokeBR[msg.sender][assetId].spokeBR &&
+      newRiskPremiumWeight == lastSpokeBR[msg.sender][assetId].amtDrawn
     ) {
       return;
     }
 
     // If first update, assign the new value
     // Note: Just a change in weight matters, also can't divide by 0
-    if (wAvgBorrowRate[assetId].amtDrawn == 0 && newRiskPremiumWeight != 0) {
-      wAvgBorrowRate[assetId].spokeBorrowRate = newRiskPremium;
-      wAvgBorrowRate[assetId].amtDrawn = newRiskPremiumWeight;
+    if (wAvgBR[assetId].amtDrawn == 0 && newRiskPremiumWeight != 0) {
+      wAvgBR[assetId].spokeBR = newRiskPremium;
+      wAvgBR[assetId].amtDrawn = newRiskPremiumWeight;
     } else {
       // Remove the old value from spoke from the weighted average
       (uint256 newWeightedAvg, uint256 newSumWeights) = MathUtils.subtractFromWeightedAverage(
-        wAvgBorrowRate[assetId].spokeBorrowRate,
-        wAvgBorrowRate[assetId].amtDrawn,
-        lastSpokeBorrowRate[msg.sender][assetId].spokeBorrowRate *
-          lastSpokeBorrowRate[msg.sender][assetId].amtDrawn,
-        lastSpokeBorrowRate[msg.sender][assetId].amtDrawn
+        wAvgBR[assetId].spokeBR,
+        wAvgBR[assetId].amtDrawn,
+        lastSpokeBR[msg.sender][assetId].spokeBR * lastSpokeBR[msg.sender][assetId].amtDrawn,
+        lastSpokeBR[msg.sender][assetId].amtDrawn
       );
 
       // Add new value to weighted average
-      (wAvgBorrowRate[assetId].spokeBorrowRate, wAvgBorrowRate[assetId].amtDrawn) = MathUtils
-        .addToWeightedAverage(
-          newWeightedAvg,
-          newSumWeights,
-          newRiskPremium * newRiskPremiumWeight,
-          newRiskPremiumWeight
-        );
+      (wAvgBR[assetId].spokeBR, wAvgBR[assetId].amtDrawn) = MathUtils.addToWeightedAverage(
+        newWeightedAvg,
+        newSumWeights,
+        newRiskPremium * newRiskPremiumWeight,
+        newRiskPremiumWeight
+      );
     }
 
     // Update the last received values
-    lastSpokeBorrowRate[msg.sender][assetId].spokeBorrowRate = newRiskPremium;
-    lastSpokeBorrowRate[msg.sender][assetId].amtDrawn = newRiskPremiumWeight;
+    lastSpokeBR[msg.sender][assetId].spokeBR = newRiskPremium;
+    lastSpokeBR[msg.sender][assetId].amtDrawn = newRiskPremiumWeight;
   }
 
   function _addSpoke(uint256 assetId, DataTypes.SpokeConfig memory params, address spoke) internal {
