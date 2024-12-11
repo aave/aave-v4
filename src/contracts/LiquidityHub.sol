@@ -170,8 +170,8 @@ contract LiquidityHub is ILiquidityHub {
     Asset storage asset = assets[assetId];
     Spoke storage spoke = spokes[assetId][msg.sender];
 
-    // Update indexes and IRs
-    _updateState(asset, spoke.drawnShares, riskPremium, riskPremiumWeight, amount, 0);
+    // Accrue interest before validating action
+    _accrueAssetInterest(asset, asset.currentBorrowRate);
     _validateSupply(asset, spoke, amount);
 
     // TODO Mitigate inflation attack (burn some amount if first supply)
@@ -181,6 +181,8 @@ contract LiquidityHub is ILiquidityHub {
     asset.totalShares += sharesAmount;
     asset.totalAssets += amount;
     spoke.totalShares += sharesAmount;
+
+    _updateBorrowRate(asset, riskPremium, riskPremiumWeight, amount, 0);
 
     // TODO: fee-on-transfer
     // instead transferred by spoke from user to LH
@@ -203,13 +205,16 @@ contract LiquidityHub is ILiquidityHub {
     Asset storage asset = assets[assetId];
     Spoke storage spoke = spokes[assetId][msg.sender];
 
-    _updateState(asset, spoke.drawnShares, riskPremium, riskPremiumWeight, 0, amount);
+    // Accrue interest before validating action
+    _accrueAssetInterest(asset, asset.currentBorrowRate);
     _validateWithdraw(asset, spoke, amount);
 
     uint256 sharesAmount = convertAssetsToSharesDown(assetId, amount);
     asset.totalShares -= sharesAmount;
     asset.totalAssets -= amount;
     spoke.totalShares -= sharesAmount;
+
+    _updateBorrowRate(asset, riskPremium, riskPremiumWeight, 0, amount);
 
     IERC20(assetsList[assetId]).safeTransfer(to, amount);
 
@@ -230,12 +235,15 @@ contract LiquidityHub is ILiquidityHub {
     Asset storage asset = assets[assetId];
     Spoke storage spoke = spokes[assetId][msg.sender];
 
-    _updateState(asset, spoke.drawnShares, riskPremium, riskPremiumWeight, 0, amount);
+    // Accrue interest before validating action
+    _accrueAssetInterest(asset, asset.currentBorrowRate);
     _validateDraw(asset, amount, spoke.config.drawCap);
 
     uint256 sharesAmount = convertAssetsToSharesUp(assetId, amount);
     asset.drawnShares += sharesAmount;
     spoke.drawnShares += sharesAmount;
+
+    _updateBorrowRate(asset, riskPremium, riskPremiumWeight, 0, amount);
 
     IERC20(assetsList[assetId]).safeTransfer(to, amount);
 
@@ -255,12 +263,15 @@ contract LiquidityHub is ILiquidityHub {
     Asset storage asset = assets[assetId];
     Spoke storage spoke = spokes[assetId][msg.sender];
 
-    _updateState(asset, spoke.drawnShares, riskPremium, riskPremiumWeight, amount, 0);
+    // Accrue interest before validating action
+    _accrueAssetInterest(asset, asset.currentBorrowRate);
     uint256 sharesAmount = convertAssetsToSharesDown(assetId, amount);
     _validateRestore(asset, sharesAmount, spoke.drawnShares);
 
     asset.drawnShares -= sharesAmount;
     spoke.drawnShares -= sharesAmount;
+
+    _updateBorrowRate(asset, riskPremium, riskPremiumWeight, amount, 0);
 
     emit Restore(assetId, msg.sender, amount);
 
@@ -368,39 +379,6 @@ contract LiquidityHub is ILiquidityHub {
     require(sharesAmount <= drawnShares, 'INVALID_RESTORE_AMOUNT');
   }
 
-  function _updateState(
-    Asset storage asset,
-    uint256 spokeDrawnLiquidity,
-    uint256 newRiskPremium,
-    uint256 newRiskPremiumWeight,
-    uint256 liquidityAdded,
-    uint256 liquidityTaken
-  ) internal {
-    // Accrue interest with current borrow rate
-    // TODO: Include RF calculation
-    _accrueAssetInterest(asset, asset.currentBorrowRate);
-
-    // Update interest rates
-    uint256 borrowRate = IReserveInterestRateStrategy(asset.config.irStrategy)
-      .calculateInterestRates(
-        DataTypes.CalculateInterestRatesParams({
-          liquidityAdded: liquidityAdded,
-          liquidityTaken: liquidityTaken,
-          totalDebt: convertSharesToAssetsUp(asset.id, asset.drawnShares),
-          reserveFactor: 0, // TODO
-          assetId: asset.id,
-          virtualUnderlyingBalance: asset.totalAssets,
-          usingVirtualBalance: true
-        })
-      );
-    // TODO: Ensure newRiskPremium weight here includes accrued debt from spoke
-    _updateIncrementalWeightedAvgRiskPremium(asset.id, newRiskPremium, newRiskPremiumWeight);
-    borrowRate = weightedAverageBorrowRate[asset.id].spokeBorrowRate;
-
-    // Caching borrow rate for next accrual on action
-    asset.currentBorrowRate = borrowRate;
-  }
-
   function _accrueAssetInterest(Asset storage asset, uint256 borrowRate) internal {
     uint256 elapsed = block.timestamp - asset.lastUpdateTimestamp;
     if (elapsed > 0) {
@@ -417,6 +395,34 @@ contract LiquidityHub is ILiquidityHub {
     }
   }
 
+  // TODO: Use spoke drawn liquidity instead of newRiskPremiumWeight
+  function _updateBorrowRate(
+    Asset storage asset,
+    uint256 newRiskPremium,
+    uint256 newRiskPremiumWeight,
+    uint256 liquidityAdded,
+    uint256 liquidityTaken
+  ) internal {
+    // Update interest rates
+    uint256 borrowRate = IReserveInterestRateStrategy(asset.config.irStrategy)
+      .calculateInterestRates(
+        DataTypes.CalculateInterestRatesParams({
+          liquidityAdded: liquidityAdded,
+          liquidityTaken: liquidityTaken,
+          totalDebt: convertSharesToAssetsUp(asset.id, asset.drawnShares),
+          reserveFactor: 0, // TODO
+          assetId: asset.id,
+          virtualUnderlyingBalance: asset.totalAssets,
+          usingVirtualBalance: true
+        })
+      );
+    _updateIncrementalWeightedAvgRiskPremium(asset.id, newRiskPremium, newRiskPremiumWeight);
+    borrowRate = weightedAverageBorrowRate[asset.id].spokeBorrowRate;
+
+    // Caching borrow rate for next accrual on action
+    asset.currentBorrowRate = borrowRate;
+  }
+
   // TODO: We can fetch D_s,i, but perhaps better to just have spoke pass the updated value?
   /**
    * @notice Updates the borrow rate of the asset based on the new risk premium
@@ -427,6 +433,7 @@ contract LiquidityHub is ILiquidityHub {
    * @dev The new risk premium weight should be D_s,i
    * @dev R_s,i * D_s,i goes in numerator of running avg, D_s,i goes in denominator
    */
+  // TODO: Rename to liquidity hub borrow rate
   function _updateIncrementalWeightedAvgRiskPremium(
     uint256 assetId,
     uint256 newRiskPremium,

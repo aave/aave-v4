@@ -139,6 +139,15 @@ contract HealthFactorTest is BaseTest {
         variableRateSlope2: 500 // 5.00%
       })
     );
+    irStrategy.setInterestRateParams(
+      wbtcAssetId,
+      IDefaultInterestRateStrategy.InterestRateData({
+        optimalUsageRatio: 9000, // 90.00%
+        baseVariableBorrowRate: 500, // 5.00%
+        variableRateSlope1: 500, // 5.00%
+        variableRateSlope2: 500 // 5.00%
+      })
+    );
   }
 
   function test_getHealthFactor_no_supplied() public view {
