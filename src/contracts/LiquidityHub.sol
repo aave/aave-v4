@@ -177,7 +177,7 @@ contract LiquidityHub is ILiquidityHub {
     asset.totalAssets += amount;
     spoke.totalShares += sharesAmount;
 
-    _updateBorrowRate(asset, riskPremium, amount, 0);
+    _updateBorrowRate(asset, riskPremium);
 
     // TODO: fee-on-transfer
     // instead transferred by spoke from user to LH
@@ -208,7 +208,7 @@ contract LiquidityHub is ILiquidityHub {
     asset.totalAssets -= amount;
     spoke.totalShares -= sharesAmount;
 
-    _updateBorrowRate(asset, riskPremium, 0, amount);
+    _updateBorrowRate(asset, riskPremium);
 
     IERC20(assetsList[assetId]).safeTransfer(to, amount);
 
@@ -236,7 +236,7 @@ contract LiquidityHub is ILiquidityHub {
     asset.drawnShares += sharesAmount;
     spoke.drawnShares += sharesAmount;
 
-    _updateBorrowRate(asset, riskPremium, 0, amount);
+    _updateBorrowRate(asset, riskPremium);
 
     IERC20(assetsList[assetId]).safeTransfer(to, amount);
 
@@ -263,7 +263,7 @@ contract LiquidityHub is ILiquidityHub {
     asset.drawnShares -= sharesAmount;
     spoke.drawnShares -= sharesAmount;
 
-    _updateBorrowRate(asset, riskPremium, amount, 0);
+    _updateBorrowRate(asset, riskPremium);
 
     emit Restore(assetId, msg.sender, amount);
 
@@ -387,33 +387,12 @@ contract LiquidityHub is ILiquidityHub {
     }
   }
 
-  function _updateBorrowRate(
-    Asset storage asset,
-    uint256 newRiskPremium,
-    uint256 liquidityAdded,
-    uint256 liquidityTaken
-  ) internal {
-    // TODO: This assignment unnecessary because it gets set below?
-    // Update interest rates
-    uint256 borrowRate = IReserveInterestRateStrategy(asset.config.irStrategy)
-      .calculateInterestRates(
-        DataTypes.CalculateInterestRatesParams({
-          liquidityAdded: liquidityAdded,
-          liquidityTaken: liquidityTaken,
-          totalDebt: convertSharesToAssetsUp(asset.id, asset.drawnShares),
-          reserveFactor: 0, // TODO
-          assetId: asset.id,
-          virtualUnderlyingBalance: asset.totalAssets,
-          usingVirtualBalance: true
-        })
-      );
-
+  function _updateBorrowRate(Asset storage asset, uint256 newRiskPremium) internal {
     // Weight is spoke.drawnShares
     _updateLHBorrowRate(asset.id, newRiskPremium, spokes[asset.id][msg.sender].drawnShares);
-    borrowRate = wAvgBR[asset.id].spokeBR;
 
     // Caching borrow rate for next accrual on action
-    asset.currentBorrowRate = borrowRate;
+    asset.currentBorrowRate = wAvgBR[asset.id].spokeBR;
   }
 
   /**
