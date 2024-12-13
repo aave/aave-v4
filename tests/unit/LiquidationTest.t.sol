@@ -375,6 +375,8 @@ contract LiquidationTest is BaseTest {
     LiquidityHub.Spoke mockSpoke1DaiData1;
     LiquidityHub.Spoke mockSpoke1EthData1;
     LiquidityHub.Spoke mockSpoke1UsdcData1;
+    Spoke.Reserve collateralReserve;
+    Spoke.Reserve debtReserve;
     uint256 expectedCollateralLiquidated;
     uint256 expectedDebtCovered;
     uint256 expectedProtocolFee;
@@ -382,11 +384,20 @@ contract LiquidationTest is BaseTest {
     uint256[] debtAssetIds;
     uint256[] collateralAssetIds;
     uint256 recoveryThresholdLiquidatableDebt;
-    uint256 maxLiquidatableDebt;
+    uint256 totalCollateralInBaseCurrency;
+    uint256 totalDebtInBaseCurrency;
+    uint256 avgLiquidationThreshold;
+    uint256 userCollateralBalance;
+    uint256 actualCollateralToLiquidate;
+    uint256 actualDebtToLiquidate;
+    uint256 liquidationProtocolFeeAmount;
+    uint256 expectedDaiTotalSharesRemaining;
+    uint256 expectedUsdcDrawnSharesRemaining;
+    uint256 hf1;
   }
 
   /// @dev Test liquidation call with liquidated amount >= user collateral balance, liquidation protocol fee = 0
-  function skip_test_liquidationCall_gteUserCollateralBalance_noLiquidationProtocolFee() public {
+  function test_liquidationCall_gteUserCollateralBalance_noLiquidationProtocolFee() public {
     uint256 debtToCover = 15_000e18;
     uint256 daiAssetId = 0;
     uint256 ethAssetId = 1;
@@ -417,119 +428,88 @@ contract LiquidationTest is BaseTest {
     // USER1 borrow usdc
     Utils.borrow(vm, mockSpoke1, usdcAssetId, USER1, usdcBorrowAmount, USER1);
 
+    console2.log('initial hf', mockSpoke1.getHealthFactor(USER1));
+
     // HF drops below threshold, eth -> $0.0
     MockPriceOracle(address(oracle)).setAssetPrice(ethAssetId, 0e8);
     // if eth -> 0, total collateral: $10k. LT is 0.75
     // total borrowed is $15k, total collateral is $10k
     // current HF = collateral * LT / borrowed = 0.75 * $10k / $15k = 0.5
 
-    TestLiquidationCallLocalParams memory testLiquidationCallLocalParams;
+    TestLiquidationCallLocalParams memory vars;
 
     // pre-liquidation
-    testLiquidationCallLocalParams.user1DaiData0 = mockSpoke1.getUser(daiAssetId, USER1);
-    testLiquidationCallLocalParams.mockSpoke1DaiData0 = hub.getSpoke(
+    vars.user1DaiData0 = mockSpoke1.getUser(daiAssetId, USER1);
+    vars.mockSpoke1DaiData0 = hub.getSpoke(daiAssetId, address(mockSpoke1));
+
+    vars.user1EthData0 = mockSpoke1.getUser(ethAssetId, USER1);
+    vars.mockSpoke1EthData0 = hub.getSpoke(ethAssetId, address(mockSpoke1));
+
+    vars.user1UsdcData0 = mockSpoke1.getUser(usdcAssetId, USER1);
+    vars.user2UsdcData0 = mockSpoke1.getUser(usdcAssetId, USER2);
+    vars.mockSpoke1UsdcData0 = hub.getSpoke(usdcAssetId, address(mockSpoke1));
+
+    vars.expectedCollateralLiquidated = hub.convertSharesToAssetsDown(
       daiAssetId,
-      address(mockSpoke1)
+      vars.mockSpoke1DaiData0.totalShares
     );
-
-    testLiquidationCallLocalParams.user1EthData0 = mockSpoke1.getUser(ethAssetId, USER1);
-    testLiquidationCallLocalParams.mockSpoke1EthData0 = hub.getSpoke(
-      ethAssetId,
-      address(mockSpoke1)
-    );
-
-    testLiquidationCallLocalParams.user1UsdcData0 = mockSpoke1.getUser(usdcAssetId, USER1);
-    testLiquidationCallLocalParams.user2UsdcData0 = mockSpoke1.getUser(usdcAssetId, USER2);
-    testLiquidationCallLocalParams.mockSpoke1UsdcData0 = hub.getSpoke(
-      usdcAssetId,
-      address(mockSpoke1)
-    );
-
-    testLiquidationCallLocalParams.expectedCollateralLiquidated = hub.convertSharesToAssetsDown(
-      daiAssetId,
-      testLiquidationCallLocalParams.mockSpoke1DaiData0.totalShares
-    );
-    testLiquidationCallLocalParams.expectedDebtCovered = _getExpectedDebtCovered(
+    vars.expectedDebtCovered = _getExpectedDebtCovered(
       daiAssetId,
       usdcAssetId,
-      testLiquidationCallLocalParams.expectedCollateralLiquidated
+      vars.expectedCollateralLiquidated
     );
 
     // dai
+    assertEq(vars.user1DaiData0.usingAsCollateral, true, 'Unexpected user1 dai usingAsCollateral');
     assertEq(
-      testLiquidationCallLocalParams.user1DaiData0.usingAsCollateral,
-      true,
-      'Unexpected user1 dai usingAsCollateral'
-    );
-    assertEq(
-      testLiquidationCallLocalParams.user1DaiData0.supplyShares,
-      testLiquidationCallLocalParams.mockSpoke1DaiData0.totalShares,
+      vars.user1DaiData0.supplyShares,
+      vars.mockSpoke1DaiData0.totalShares,
       'Unexpected user1 dai supplyShares'
     );
+    assertEq(vars.user1DaiData0.debtShares, 0, 'Unexpected user1 dai debtShares');
     assertEq(
-      testLiquidationCallLocalParams.user1DaiData0.debtShares,
-      0,
-      'Unexpected user1 dai debtShares'
-    );
-    assertEq(
-      testLiquidationCallLocalParams.mockSpoke1DaiData0.totalShares,
+      vars.mockSpoke1DaiData0.totalShares,
       hub.convertAssetsToSharesDown(daiAssetId, daiAmount),
       'Unexpected mockSpoke1 dai totalShares'
     );
-    assertEq(
-      testLiquidationCallLocalParams.mockSpoke1DaiData0.drawnShares,
-      0,
-      'Unexpected mockSpoke1 dai drawnShares'
-    );
+    assertEq(vars.mockSpoke1DaiData0.drawnShares, 0, 'Unexpected mockSpoke1 dai drawnShares');
     // eth
+    assertEq(vars.user1EthData0.usingAsCollateral, true, 'Unexpected user1 eth usingAsCollateral');
     assertEq(
-      testLiquidationCallLocalParams.user1EthData0.usingAsCollateral,
-      true,
-      'Unexpected user1 eth usingAsCollateral'
-    );
-    assertEq(
-      testLiquidationCallLocalParams.user1EthData0.supplyShares,
-      testLiquidationCallLocalParams.mockSpoke1EthData0.totalShares,
+      vars.user1EthData0.supplyShares,
+      vars.mockSpoke1EthData0.totalShares,
       'Unexpected user1 eth supplyShares'
     );
+    assertEq(vars.user1EthData0.debtShares, 0, 'Unexpected user1 eth debtShares');
     assertEq(
-      testLiquidationCallLocalParams.user1EthData0.debtShares,
-      0,
-      'Unexpected user1 eth debtShares'
-    );
-    assertEq(
-      testLiquidationCallLocalParams.mockSpoke1EthData0.totalShares,
+      vars.mockSpoke1EthData0.totalShares,
       hub.convertAssetsToSharesDown(ethAssetId, ethAmount),
       'Unexpected mockSpoke1 eth totalShares'
     );
-    assertEq(
-      testLiquidationCallLocalParams.mockSpoke1EthData0.drawnShares,
-      0,
-      'Unexpected mockSpoke1 eth drawnShares'
-    );
+    assertEq(vars.mockSpoke1EthData0.drawnShares, 0, 'Unexpected mockSpoke1 eth drawnShares');
     // usdc
     assertEq(
-      testLiquidationCallLocalParams.user1UsdcData0.usingAsCollateral,
+      vars.user1UsdcData0.usingAsCollateral,
       false,
       'Unexpected user1 usdc usingAsCollateral'
     );
     assertEq(
-      testLiquidationCallLocalParams.user2UsdcData0.supplyShares,
-      testLiquidationCallLocalParams.mockSpoke1UsdcData0.totalShares,
+      vars.user2UsdcData0.supplyShares,
+      vars.mockSpoke1UsdcData0.totalShares,
       'Unexpected user2 usdc supplyShares'
     );
     assertEq(
-      testLiquidationCallLocalParams.user1UsdcData0.debtShares,
-      testLiquidationCallLocalParams.user2UsdcData0.supplyShares,
+      vars.user1UsdcData0.debtShares,
+      vars.user2UsdcData0.supplyShares,
       'Unexpected user1 usdc debtShares'
     );
     assertEq(
-      testLiquidationCallLocalParams.mockSpoke1UsdcData0.totalShares,
+      vars.mockSpoke1UsdcData0.totalShares,
       hub.convertAssetsToSharesDown(usdcAssetId, usdcBorrowAmount),
       'Unexpected mockSpoke1 usdc totalShares'
     );
     assertEq(
-      testLiquidationCallLocalParams.mockSpoke1UsdcData0.drawnShares,
+      vars.mockSpoke1UsdcData0.drawnShares,
       hub.convertAssetsToSharesDown(usdcAssetId, usdcBorrowAmount),
       'Unexpected mockSpoke1 usdc drawnShares'
     );
@@ -539,107 +519,114 @@ contract LiquidationTest is BaseTest {
     vm.startPrank(LIQUIDATOR);
     usdc.approve(address(mockSpoke1), debtToCover);
 
-    testLiquidationCallLocalParams.debtAssetIds = new uint256[](1);
-    testLiquidationCallLocalParams.debtAssetIds[0] = usdcAssetId;
-    testLiquidationCallLocalParams.collateralAssetIds = new uint256[](2);
-    testLiquidationCallLocalParams.collateralAssetIds[0] = daiAssetId;
-    testLiquidationCallLocalParams.collateralAssetIds[1] = ethAssetId;
+    vars.debtAssetIds = new uint256[](1);
+    vars.debtAssetIds[0] = usdcAssetId;
+    vars.collateralAssetIds = new uint256[](2);
+    vars.collateralAssetIds[0] = daiAssetId;
+    vars.collateralAssetIds[1] = ethAssetId;
+
     (
-      testLiquidationCallLocalParams.recoveryThresholdLiquidatableDebt,
-      testLiquidationCallLocalParams.maxLiquidatableDebt
-    ) = _calculateActualDebtToLiquidate(
+      vars.totalCollateralInBaseCurrency,
+      vars.totalDebtInBaseCurrency,
+      vars.avgLiquidationThreshold,
+      ,
+
+    ) = mockSpoke1.calculateUserAccountData(USER1);
+
+    vars.actualDebtToLiquidate = mockSpoke1.calculateActualDebtToLiquidate(
+      debtToCover,
       USER1,
       usdcAssetId,
-      testLiquidationCallLocalParams.debtAssetIds,
-      testLiquidationCallLocalParams.collateralAssetIds
+      vars.totalCollateralInBaseCurrency,
+      vars.totalDebtInBaseCurrency,
+      vars.avgLiquidationThreshold
     );
 
-    console2.log(
-      'recoveryThresholdLiquidatableDebt %e',
-      testLiquidationCallLocalParams.recoveryThresholdLiquidatableDebt
-    );
-    console2.log('maxLiquidatableDebt %e', testLiquidationCallLocalParams.maxLiquidatableDebt);
+    // console2.log(
+    //   'recoveryThresholdLiquidatableDebt %e',
+    //   vars.recoveryThresholdLiquidatableDebt
+    // );
+    // console2.log('actualDebtToLiquidate %e', vars.actualDebtToLiquidate);
 
-    // vm.expectEmit(address(mockSpoke1));
-    // emit LiquidationCall({
-    //   collateralAssetId: daiAssetId,
-    //   debtAssetId: usdcAssetId,
-    //   user: USER1,
-    //   actualDebtToLiquidate: testLiquidationCallLocalParams.expectedDebtCovered,
-    //   actualCollateralToLiquidate: testLiquidationCallLocalParams.expectedCollateralLiquidated,
-    //   liquidator: LIQUIDATOR
-    // });
+    vars.collateralReserve = mockSpoke1.getReserve(daiAssetId);
+    vars.debtReserve = mockSpoke1.getReserve(usdcAssetId);
+    vars.userCollateralBalance = mockSpoke1.getUserSupplyInAssets(daiAssetId, USER1);
+
+    (
+      vars.actualCollateralToLiquidate,
+      vars.actualDebtToLiquidate,
+      vars.liquidationProtocolFeeAmount
+    ) = mockSpoke1.calculateAvailableCollateralToLiquidate(
+      vars.collateralReserve,
+      vars.debtReserve,
+      vars.actualDebtToLiquidate,
+      vars.userCollateralBalance,
+      vars.collateralReserve.config.lb // TODO: fetch from a getter?
+    );
+
+    vm.expectEmit(address(mockSpoke1));
+    emit LiquidationCall({
+      collateralAssetId: daiAssetId,
+      debtAssetId: usdcAssetId,
+      user: USER1,
+      actualDebtToLiquidate: vars.actualDebtToLiquidate,
+      actualCollateralToLiquidate: vars.actualCollateralToLiquidate,
+      liquidator: LIQUIDATOR
+    });
     mockSpoke1.liquidationCall(daiAssetId, usdcAssetId, USER1, debtToCover);
     vm.stopPrank();
 
-    // // post-liquidation
-    // testLiquidationCallLocalParams.user1DaiData1 = mockSpoke1.getUser(daiAssetId, USER1);
-    // testLiquidationCallLocalParams.mockSpoke1DaiData1 = hub.getSpoke(daiAssetId, address(mockSpoke1));
-    // testLiquidationCallLocalParams.user1EthData1 = mockSpoke1.getUser(ethAssetId, USER1);
-    // testLiquidationCallLocalParams.mockSpoke1EthData1 = hub.getSpoke(ethAssetId, address(mockSpoke1));
-    // testLiquidationCallLocalParams.user1UsdcData1 = mockSpoke1.getUser(usdcAssetId, USER1);
-    // testLiquidationCallLocalParams.mockSpoke1UsdcData1 = hub.getSpoke(usdcAssetId, address(mockSpoke1));
-    // testLiquidationCallLocalParams.actualDebtCovered = debtToCover - usdc.balanceOf(LIQUIDATOR);
+    // post-liquidation
+    vars.user1DaiData1 = mockSpoke1.getUser(daiAssetId, USER1);
+    vars.mockSpoke1DaiData1 = hub.getSpoke(daiAssetId, address(mockSpoke1));
+    vars.user1EthData1 = mockSpoke1.getUser(ethAssetId, USER1);
+    vars.mockSpoke1EthData1 = hub.getSpoke(ethAssetId, address(mockSpoke1));
+    vars.user1UsdcData1 = mockSpoke1.getUser(usdcAssetId, USER1);
+    vars.mockSpoke1UsdcData1 = hub.getSpoke(usdcAssetId, address(mockSpoke1));
+    vars.actualDebtCovered = debtToCover - usdc.balanceOf(LIQUIDATOR);
+    vars.expectedDaiTotalSharesRemaining =
+      vars.mockSpoke1DaiData0.totalShares -
+      hub.convertAssetsToSharesDown(daiAssetId, vars.actualCollateralToLiquidate);
+    vars.expectedUsdcDrawnSharesRemaining =
+      vars.mockSpoke1UsdcData0.drawnShares -
+      hub.convertAssetsToSharesDown(usdcAssetId, vars.actualDebtCovered);
+    vars.hf1 = mockSpoke1.getHealthFactor(USER1);
 
-    // // dai
-    // // TODO: update after enhanced liq, no longer zero collateral remaining
-    // assertEq(
-    //   testLiquidationCallLocalParams.user1DaiData1.usingAsCollateral,
-    //   false,
-    //   'Unexpected user1 dai usingAsCollateral'
-    // );
-    // assertEq(
-    //   testLiquidationCallLocalParams.mockSpoke1DaiData1.totalShares,
-    //   0,
-    //   'Unexpected mockSpoke1 dai totalShares'
-    // );
-    // assertEq(
-    //   testLiquidationCallLocalParams.mockSpoke1DaiData1.drawnShares,
-    //   0,
-    //   'Unexpected mockSpoke1 dai drawnShares'
-    // );
-    // // eth
-    // assertEq(
-    //   testLiquidationCallLocalParams.user1EthData1.usingAsCollateral,
-    //   true,
-    //   'Unexpected eth usingAsCollateral'
-    // );
-    // assertEq(
-    //   testLiquidationCallLocalParams.mockSpoke1EthData1.totalShares,
-    //   hub.convertAssetsToSharesDown(ethAssetId, ethAmount),
-    //   'Unexpected mockSpoke1 eth totalShares'
-    // );
-    // assertEq(
-    //   testLiquidationCallLocalParams.mockSpoke1EthData1.drawnShares,
-    //   0,
-    //   'Unexpected mockSpoke1 eth drawnShares'
-    // );
-    // // usdc
-    // assertEq(
-    //   testLiquidationCallLocalParams.user1UsdcData1.usingAsCollateral,
-    //   false,
-    //   'Unexpected usdc usingAsCollateral'
-    // );
-    // assertEq(
-    //   testLiquidationCallLocalParams.mockSpoke1UsdcData1.totalShares,
-    //   hub.convertAssetsToSharesDown(usdcAssetId, usdcBorrowAmount),
-    //   'Unexpected mockSpoke1 usdc totalShares'
-    // );
-    // assertEq(
-    //   testLiquidationCallLocalParams.mockSpoke1UsdcData1.drawnShares,
-    //   testLiquidationCallLocalParams.mockSpoke1UsdcData1.totalShares -
-    //     hub.convertAssetsToSharesDown(
-    //       usdcAssetId,
-    //       testLiquidationCallLocalParams.actualDebtCovered
-    //     ),
-    //   'Unexpected mockSpoke1 usdc drawnShares'
-    // );
-    // // TODO: assertion on health factor, should be 1e18 after enhanced liq
+    // dai
+    assertEq(vars.user1DaiData1.usingAsCollateral, true, 'Unexpected user1 dai usingAsCollateral');
+    assertEq(
+      vars.mockSpoke1DaiData1.totalShares,
+      vars.expectedDaiTotalSharesRemaining,
+      'Unexpected mockSpoke1 dai totalShares'
+    );
+    assertEq(vars.mockSpoke1DaiData1.drawnShares, 0, 'Unexpected mockSpoke1 dai drawnShares');
+    // eth
+    assertEq(vars.user1EthData1.usingAsCollateral, true, 'Unexpected eth usingAsCollateral');
+    assertEq(
+      vars.mockSpoke1EthData1.totalShares,
+      hub.convertAssetsToSharesDown(ethAssetId, ethAmount),
+      'Unexpected mockSpoke1 eth totalShares'
+    );
+    assertEq(vars.mockSpoke1EthData1.drawnShares, 0, 'Unexpected mockSpoke1 eth drawnShares');
+    // usdc
+    assertEq(vars.user1UsdcData1.usingAsCollateral, false, 'Unexpected usdc usingAsCollateral');
+    assertEq(
+      vars.mockSpoke1UsdcData1.totalShares,
+      hub.convertAssetsToSharesDown(usdcAssetId, usdcBorrowAmount),
+      'Unexpected mockSpoke1 usdc totalShares'
+    );
+    assertEq(
+      vars.mockSpoke1UsdcData1.drawnShares,
+      vars.mockSpoke1UsdcData1.totalShares -
+        hub.convertAssetsToSharesDown(usdcAssetId, vars.actualDebtCovered),
+      'Unexpected mockSpoke1 usdc drawnShares'
+    );
+    assertEq(vars.hf1, 1e18, 'Unexpected user1 final health factor');
 
     // // liquidator
     // assertEq(
     //   dai.balanceOf(LIQUIDATOR),
-    //   testLiquidationCallLocalParams.expectedCollateralLiquidated,
+    //   vars.expectedCollateralLiquidated,
     //   'Unexpected liquidator collateral asset balance'
     // );
     // assertEq(
@@ -690,125 +677,92 @@ contract LiquidationTest is BaseTest {
     // HF = collateral * LT / borrowed = 0.75 * $10k / $15k = 0.5
     // if paying back $10k in debt, collateral to liquidate = $10k
 
-    TestLiquidationCallLocalParams memory testLiquidationCallLocalParams;
+    TestLiquidationCallLocalParams memory vars;
 
     // pre-liquidation
-    testLiquidationCallLocalParams.user1DaiData0 = mockSpoke1.getUser(daiAssetId, USER1);
-    testLiquidationCallLocalParams.mockSpoke1DaiData0 = hub.getSpoke(
+    vars.user1DaiData0 = mockSpoke1.getUser(daiAssetId, USER1);
+    vars.mockSpoke1DaiData0 = hub.getSpoke(daiAssetId, address(mockSpoke1));
+    vars.reserveDaiData0 = mockSpoke1.getReserve(daiAssetId);
+
+    vars.user1EthData0 = mockSpoke1.getUser(ethAssetId, USER1);
+    vars.mockSpoke1EthData0 = hub.getSpoke(ethAssetId, address(mockSpoke1));
+
+    vars.user1UsdcData0 = mockSpoke1.getUser(usdcAssetId, USER1);
+    vars.user2UsdcData0 = mockSpoke1.getUser(usdcAssetId, USER2);
+    vars.mockSpoke1UsdcData0 = hub.getSpoke(usdcAssetId, address(mockSpoke1));
+
+    vars.expectedCollateralLiquidated = hub.convertSharesToAssetsDown(
       daiAssetId,
-      address(mockSpoke1)
+      vars.mockSpoke1DaiData0.totalShares
     );
-    testLiquidationCallLocalParams.reserveDaiData0 = mockSpoke1.getReserve(daiAssetId);
-
-    testLiquidationCallLocalParams.user1EthData0 = mockSpoke1.getUser(ethAssetId, USER1);
-    testLiquidationCallLocalParams.mockSpoke1EthData0 = hub.getSpoke(
-      ethAssetId,
-      address(mockSpoke1)
-    );
-
-    testLiquidationCallLocalParams.user1UsdcData0 = mockSpoke1.getUser(usdcAssetId, USER1);
-    testLiquidationCallLocalParams.user2UsdcData0 = mockSpoke1.getUser(usdcAssetId, USER2);
-    testLiquidationCallLocalParams.mockSpoke1UsdcData0 = hub.getSpoke(
-      usdcAssetId,
-      address(mockSpoke1)
-    );
-
-    testLiquidationCallLocalParams.expectedCollateralLiquidated = hub.convertSharesToAssetsDown(
-      daiAssetId,
-      testLiquidationCallLocalParams.mockSpoke1DaiData0.totalShares
-    );
-    testLiquidationCallLocalParams.expectedDebtCovered = _getExpectedDebtCovered(
+    vars.expectedDebtCovered = _getExpectedDebtCovered(
       daiAssetId,
       usdcAssetId,
-      testLiquidationCallLocalParams.expectedCollateralLiquidated
+      vars.expectedCollateralLiquidated
     );
-    (, , testLiquidationCallLocalParams.expectedProtocolFee) = _getExpectedCollateralLiquidated(
+    (, , vars.expectedProtocolFee) = _getExpectedCollateralLiquidated(
       daiAssetId,
       usdcAssetId,
-      testLiquidationCallLocalParams.expectedDebtCovered
+      vars.expectedDebtCovered
     );
 
     assertEq(
-      testLiquidationCallLocalParams.reserveDaiData0.config.lpfp,
+      vars.reserveDaiData0.config.lpfp,
       newLpfp,
       'Unexpected mockSpoke1 dai liquidation protocol fee percentage'
     );
 
     // dai
+    assertEq(vars.user1DaiData0.usingAsCollateral, true, 'Unexpected user1 dai usingAsCollateral');
     assertEq(
-      testLiquidationCallLocalParams.user1DaiData0.usingAsCollateral,
-      true,
-      'Unexpected user1 dai usingAsCollateral'
-    );
-    assertEq(
-      testLiquidationCallLocalParams.user1DaiData0.supplyShares,
-      testLiquidationCallLocalParams.mockSpoke1DaiData0.totalShares,
+      vars.user1DaiData0.supplyShares,
+      vars.mockSpoke1DaiData0.totalShares,
       'Unexpected user1 dai supplyShares'
     );
+    assertEq(vars.user1DaiData0.debtShares, 0, 'Unexpected user1 dai debtShares');
     assertEq(
-      testLiquidationCallLocalParams.user1DaiData0.debtShares,
-      0,
-      'Unexpected user1 dai debtShares'
-    );
-    assertEq(
-      testLiquidationCallLocalParams.mockSpoke1DaiData0.totalShares,
+      vars.mockSpoke1DaiData0.totalShares,
       hub.convertAssetsToSharesDown(daiAssetId, daiAmount),
       'Unexpected mockSpoke1 dai totalShares'
     );
-    assertEq(
-      testLiquidationCallLocalParams.mockSpoke1DaiData0.drawnShares,
-      0,
-      'Unexpected mockSpoke1 dai drawnShares'
-    );
+    assertEq(vars.mockSpoke1DaiData0.drawnShares, 0, 'Unexpected mockSpoke1 dai drawnShares');
     // eth
+    assertEq(vars.user1EthData0.usingAsCollateral, true, 'Unexpected user1 eth usingAsCollateral');
     assertEq(
-      testLiquidationCallLocalParams.user1EthData0.usingAsCollateral,
-      true,
-      'Unexpected user1 eth usingAsCollateral'
-    );
-    assertEq(
-      testLiquidationCallLocalParams.user1EthData0.supplyShares,
-      testLiquidationCallLocalParams.mockSpoke1EthData0.totalShares,
+      vars.user1EthData0.supplyShares,
+      vars.mockSpoke1EthData0.totalShares,
       'Unexpected user1 eth supplyShares'
     );
+    assertEq(vars.user1EthData0.debtShares, 0, 'Unexpected user1 eth debtShares');
     assertEq(
-      testLiquidationCallLocalParams.user1EthData0.debtShares,
-      0,
-      'Unexpected user1 eth debtShares'
-    );
-    assertEq(
-      testLiquidationCallLocalParams.mockSpoke1EthData0.totalShares,
+      vars.mockSpoke1EthData0.totalShares,
       hub.convertAssetsToSharesDown(ethAssetId, ethAmount),
       'Unexpected mockSpoke1 eth totalShares'
     );
-    assertEq(
-      testLiquidationCallLocalParams.mockSpoke1EthData0.drawnShares,
-      0,
-      'Unexpected mockSpoke1 eth drawnShares'
-    );
+    assertEq(vars.mockSpoke1EthData0.drawnShares, 0, 'Unexpected mockSpoke1 eth drawnShares');
     // usdc
     assertEq(
-      testLiquidationCallLocalParams.user1UsdcData0.usingAsCollateral,
+      vars.user1UsdcData0.usingAsCollateral,
       false,
       'Unexpected user1 usdc usingAsCollateral'
     );
     assertEq(
-      testLiquidationCallLocalParams.user2UsdcData0.supplyShares,
-      testLiquidationCallLocalParams.mockSpoke1UsdcData0.totalShares,
+      vars.user2UsdcData0.supplyShares,
+      vars.mockSpoke1UsdcData0.totalShares,
       'Unexpected user2 usdc supplyShares'
     );
     assertEq(
-      testLiquidationCallLocalParams.user1UsdcData0.debtShares,
-      testLiquidationCallLocalParams.user2UsdcData0.supplyShares,
+      vars.user1UsdcData0.debtShares,
+      vars.user2UsdcData0.supplyShares,
       'Unexpected user1 usdc debtShares'
     );
     assertEq(
-      testLiquidationCallLocalParams.mockSpoke1UsdcData0.totalShares,
+      vars.mockSpoke1UsdcData0.totalShares,
       hub.convertAssetsToSharesDown(usdcAssetId, usdcBorrowAmount),
       'Unexpected mockSpoke1 usdc totalShares'
     );
     assertEq(
-      testLiquidationCallLocalParams.mockSpoke1UsdcData0.drawnShares,
+      vars.mockSpoke1UsdcData0.drawnShares,
       hub.convertAssetsToSharesDown(usdcAssetId, usdcBorrowAmount),
       'Unexpected mockSpoke1 usdc drawnShares'
     );
@@ -823,83 +777,46 @@ contract LiquidationTest is BaseTest {
       collateralAssetId: daiAssetId,
       debtAssetId: usdcAssetId,
       user: USER1,
-      actualDebtToLiquidate: testLiquidationCallLocalParams.expectedDebtCovered,
-      actualCollateralToLiquidate: testLiquidationCallLocalParams.expectedCollateralLiquidated -
-        testLiquidationCallLocalParams.expectedProtocolFee,
+      actualDebtToLiquidate: vars.expectedDebtCovered,
+      actualCollateralToLiquidate: vars.expectedCollateralLiquidated - vars.expectedProtocolFee,
       liquidator: LIQUIDATOR
     });
     mockSpoke1.liquidationCall(daiAssetId, usdcAssetId, USER1, debtToCover);
     vm.stopPrank();
 
     // post-liquidation
-    testLiquidationCallLocalParams.user1DaiData1 = mockSpoke1.getUser(daiAssetId, USER1);
-    testLiquidationCallLocalParams.mockSpoke1DaiData1 = hub.getSpoke(
-      daiAssetId,
-      address(mockSpoke1)
-    );
-    testLiquidationCallLocalParams.user1EthData1 = mockSpoke1.getUser(ethAssetId, USER1);
-    testLiquidationCallLocalParams.mockSpoke1EthData1 = hub.getSpoke(
-      ethAssetId,
-      address(mockSpoke1)
-    );
-    testLiquidationCallLocalParams.user1UsdcData1 = mockSpoke1.getUser(usdcAssetId, USER1);
-    testLiquidationCallLocalParams.mockSpoke1UsdcData1 = hub.getSpoke(
-      usdcAssetId,
-      address(mockSpoke1)
-    );
-    testLiquidationCallLocalParams.actualDebtCovered = debtToCover - usdc.balanceOf(LIQUIDATOR);
+    vars.user1DaiData1 = mockSpoke1.getUser(daiAssetId, USER1);
+    vars.mockSpoke1DaiData1 = hub.getSpoke(daiAssetId, address(mockSpoke1));
+    vars.user1EthData1 = mockSpoke1.getUser(ethAssetId, USER1);
+    vars.mockSpoke1EthData1 = hub.getSpoke(ethAssetId, address(mockSpoke1));
+    vars.user1UsdcData1 = mockSpoke1.getUser(usdcAssetId, USER1);
+    vars.mockSpoke1UsdcData1 = hub.getSpoke(usdcAssetId, address(mockSpoke1));
+    vars.actualDebtCovered = debtToCover - usdc.balanceOf(LIQUIDATOR);
 
     // dai
     // TODO: update after enhanced liq, no longer zero collateral remaining
-    assertEq(
-      testLiquidationCallLocalParams.user1DaiData1.usingAsCollateral,
-      false,
-      'Unexpected user1 dai usingAsCollateral'
-    );
-    assertEq(
-      testLiquidationCallLocalParams.mockSpoke1DaiData1.totalShares,
-      0,
-      'Unexpected mockSpoke1 dai totalShares'
-    );
-    assertEq(
-      testLiquidationCallLocalParams.mockSpoke1DaiData1.drawnShares,
-      0,
-      'Unexpected mockSpoke1 dai drawnShares'
-    );
+    assertEq(vars.user1DaiData1.usingAsCollateral, false, 'Unexpected user1 dai usingAsCollateral');
+    assertEq(vars.mockSpoke1DaiData1.totalShares, 0, 'Unexpected mockSpoke1 dai totalShares');
+    assertEq(vars.mockSpoke1DaiData1.drawnShares, 0, 'Unexpected mockSpoke1 dai drawnShares');
     // eth
+    assertEq(vars.user1EthData1.usingAsCollateral, true, 'Unexpected eth usingAsCollateral');
     assertEq(
-      testLiquidationCallLocalParams.user1EthData1.usingAsCollateral,
-      true,
-      'Unexpected eth usingAsCollateral'
-    );
-    assertEq(
-      testLiquidationCallLocalParams.mockSpoke1EthData1.totalShares,
+      vars.mockSpoke1EthData1.totalShares,
       hub.convertAssetsToSharesDown(ethAssetId, ethAmount),
       'Unexpected mockSpoke1 eth totalShares'
     );
-    assertEq(
-      testLiquidationCallLocalParams.mockSpoke1EthData1.drawnShares,
-      0,
-      'Unexpected mockSpoke1 eth drawnShares'
-    );
+    assertEq(vars.mockSpoke1EthData1.drawnShares, 0, 'Unexpected mockSpoke1 eth drawnShares');
     // usdc
+    assertEq(vars.user1UsdcData1.usingAsCollateral, false, 'Unexpected usdc usingAsCollateral');
     assertEq(
-      testLiquidationCallLocalParams.user1UsdcData1.usingAsCollateral,
-      false,
-      'Unexpected usdc usingAsCollateral'
-    );
-    assertEq(
-      testLiquidationCallLocalParams.mockSpoke1UsdcData1.totalShares,
+      vars.mockSpoke1UsdcData1.totalShares,
       hub.convertAssetsToSharesDown(usdcAssetId, usdcBorrowAmount),
       'Unexpected mockSpoke1 usdc totalShares'
     );
     assertEq(
-      testLiquidationCallLocalParams.mockSpoke1UsdcData1.drawnShares,
-      testLiquidationCallLocalParams.mockSpoke1UsdcData1.totalShares -
-        hub.convertAssetsToSharesDown(
-          usdcAssetId,
-          testLiquidationCallLocalParams.actualDebtCovered
-        ),
+      vars.mockSpoke1UsdcData1.drawnShares,
+      vars.mockSpoke1UsdcData1.totalShares -
+        hub.convertAssetsToSharesDown(usdcAssetId, vars.actualDebtCovered),
       'Unexpected mockSpoke1 usdc drawnShares'
     );
     // TODO: assertion on health factor, should be 1e18 after enhanced liq
@@ -907,13 +824,12 @@ contract LiquidationTest is BaseTest {
     // liquidator
     assertEq(
       dai.balanceOf(LIQUIDATOR),
-      testLiquidationCallLocalParams.expectedCollateralLiquidated -
-        testLiquidationCallLocalParams.expectedProtocolFee,
+      vars.expectedCollateralLiquidated - vars.expectedProtocolFee,
       'Unexpected liquidator collateral asset balance'
     );
     assertEq(
       dai.balanceOf(mockSpoke1.RESERVE_TREASURY_ADDRESS()),
-      testLiquidationCallLocalParams.expectedProtocolFee,
+      vars.expectedProtocolFee,
       'Unexpected RESERVE_TREASURY_ADDRESS collateral asset balance (protocol fee)'
     );
   }

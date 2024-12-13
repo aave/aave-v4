@@ -34,6 +34,11 @@ contract MockSpokeExposedMethods is Spoke {
       );
   }
 
+  /**
+   * @return The maximum collateral amount that is possible to liquidate given all the liquidation constraints (liquidation bonus, liquidationProtocolFeePercentage)
+   * @return The amount to repay with the liquidation
+   * @return The fee taken from the liquidation bonus amount to be paid to the protocol
+   */
   function calculateAvailableCollateralToLiquidate(
     Reserve memory collateralReserve,
     Reserve memory debtReserve,

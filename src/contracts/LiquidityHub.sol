@@ -259,7 +259,7 @@ contract LiquidityHub is ILiquidityHub {
     Asset storage asset = assets[assetId];
     Spoke storage spoke = spokes[assetId][msg.sender];
 
-    console2.log('------ restore -----');
+    console2.log('------ restore -----', assetId);
     console2.log('asset.drawnShares %e', asset.drawnShares);
     console2.log('spoke.drawnShares %e', spoke.drawnShares);
 
