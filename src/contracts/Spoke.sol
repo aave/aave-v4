@@ -205,7 +205,120 @@ contract Spoke is ISpoke {
     address user,
     uint256 debtToCover
   ) external {
-    _executeLiquidationCall(collateralAssetId, debtAssetId, user, debtToCover);
+    // v1 - allow the liquidator to liquidate full position if HF goes below certain threshold
+    // v2 enhancement - allow liquidator to liquidate only the amount needed to bring HF to 1
+
+    console2.log('----- liq -----');
+
+    require(debtToCover > 0, 'INVALID_DEBT_TO_COVER');
+
+    LiquidationCallLocalVars memory vars;
+    Reserve memory collateralReserve = reserves[collateralAssetId];
+    Reserve memory debtReserve = reserves[debtAssetId];
+
+    // TODO: accrue interest first? / updateState
+    (
+      vars.totalCollateralInBaseCurrency,
+      vars.totalDebtInBaseCurrency,
+      vars.avgLiquidationThreshold,
+      ,
+      vars.healthFactor
+    ) = _calculateUserAccountData(user);
+
+    // console2.log('vars.healthFactor %e', vars.healthFactor);
+
+    _validateLiquidationCall(collateralAssetId, debtAssetId, user, vars.healthFactor);
+
+    // TODO: optimize this calculation / input params
+    vars.actualDebtToLiquidate = _calculateActualDebtToLiquidate(
+      debtToCover,
+      user,
+      debtAssetId,
+      vars.totalCollateralInBaseCurrency,
+      vars.totalDebtInBaseCurrency,
+      vars.avgLiquidationThreshold
+    );
+
+    // console2.log('collateral amt: %e', getUserSupplyInAsset(collateralAssetId, user));
+
+    vars.userCollateralBalance = getUserSupplyInAssets(collateralAssetId, user);
+
+    (
+      vars.actualCollateralToLiquidate,
+      vars.actualDebtToLiquidate,
+      vars.liquidationProtocolFeeAmount
+    ) = _calculateAvailableCollateralToLiquidate(
+      collateralReserve,
+      debtReserve,
+      vars.actualDebtToLiquidate,
+      vars.userCollateralBalance,
+      collateralReserve.config.lb // TODO: fetch from a getter?
+    );
+
+    console2.log('vars.userCollateralBalance %e', vars.userCollateralBalance);
+    console2.log(
+      'vars.actualCollateralToLiquidate %e %e shares',
+      vars.actualCollateralToLiquidate,
+      getUserSupplyInShares(collateralAssetId, user)
+    );
+    console2.log('vars.actualDebtToLiquidate %e', vars.actualDebtToLiquidate);
+    console2.log('vars.liquidationProtocolFeeAmount %e', vars.liquidationProtocolFeeAmount);
+
+    console2.log('total debt %e', vars.userDebtBalance);
+
+    if (
+      vars.actualCollateralToLiquidate + vars.liquidationProtocolFeeAmount ==
+      vars.userCollateralBalance
+    ) {
+      _setUsingAsCollateral(user, collateralReserve.id, false);
+    }
+
+    // risk premium needs to be updated bc collateral/debt has been updated
+    (, uint256 newAggregatedRiskPremium) = _refreshRiskPremium();
+
+    // TODO: update when restore is changed to directly call transferFrom from LH
+    IERC20(debtReserve.asset).safeTransferFrom(
+      msg.sender,
+      liquidityHub,
+      vars.actualDebtToLiquidate
+    );
+    // repay debt
+    uint256 userDebtShares = ILiquidityHub(liquidityHub).restore(
+      debtAssetId,
+      vars.actualDebtToLiquidate,
+      newAggregatedRiskPremium
+    );
+    // liquidate collateral
+    uint256 userCollateralShares = ILiquidityHub(liquidityHub).withdraw(
+      collateralAssetId,
+      address(this),
+      vars.actualCollateralToLiquidate + vars.liquidationProtocolFeeAmount,
+      newAggregatedRiskPremium
+    );
+    // risk premium needs to be updated bc collateral/debt has been updated
+    (, newAggregatedRiskPremium) = _refreshRiskPremium();
+
+    // accounting
+    users[collateralAssetId][user].supplyShares -= userCollateralShares;
+    users[debtAssetId][user].debtShares -= userDebtShares;
+
+    // transfer assets to liquidator / reserve
+    IERC20(collateralReserve.asset).safeTransfer(msg.sender, vars.actualCollateralToLiquidate);
+    if (vars.liquidationProtocolFeeAmount > 0) {
+      IERC20(collateralReserve.asset).safeTransfer(
+        RESERVE_TREASURY_ADDRESS,
+        vars.liquidationProtocolFeeAmount
+      );
+    }
+
+    emit LiquidationCall(
+      collateralAssetId,
+      debtAssetId,
+      user,
+      vars.actualDebtToLiquidate,
+      vars.actualCollateralToLiquidate,
+      msg.sender
+    );
   }
 
   function getUserRiskPremium(address user) external view returns (uint256) {
@@ -446,17 +559,18 @@ contract Spoke is ISpoke {
         vars.totalDebtInBaseCurrency
       ); // HF of 1 -> 1e18
 
-    // console2.log(
-    //   'mathcheck %e',
-    //   (vars.totalCollateralInBaseCurrency.percentMul(vars.avgLiquidationThreshold)).wadDiv(
-    //     vars.totalDebtInBaseCurrency - 6.666666666666666666666e21 * 1e8
-    //   )
-    // );
+    console2.log(
+      'mathcheck %e',
+      (vars.totalCollateralInBaseCurrency.percentMul(vars.avgLiquidationThreshold)).wadDiv(
+        vars.totalDebtInBaseCurrency - 7.5e21 * 1e8
+      )
+    );
 
-    // console2.log('vars.totalCollateralInBaseCurrency %e', vars.totalCollateralInBaseCurrency);
-    // console2.log('vars.totalDebtInBaseCurrency %e', vars.totalDebtInBaseCurrency);
-    // console2.log('vars.avgLiquidationThreshold %e', vars.avgLiquidationThreshold);
-    // console2.log('vars.userRiskPremium %e', vars.userRiskPremium);
+    console2.log('vars.totalCollateralInBaseCurrency %e', vars.totalCollateralInBaseCurrency);
+    console2.log('vars.totalDebtInBaseCurrency %e', vars.totalDebtInBaseCurrency);
+    console2.log('vars.avgLiquidationThreshold %e', vars.avgLiquidationThreshold);
+    console2.log('vars.userRiskPremium %e', vars.userRiskPremium);
+    console2.log('vars.healthFactor %e', vars.healthFactor);
 
     return (
       vars.totalCollateralInBaseCurrency,
@@ -476,131 +590,6 @@ contract Spoke is ISpoke {
       shares.rayMul(
         MathUtils.calculateCompoundedInterest(getInterestRate(assetId), uint40(0), block.timestamp)
       );
-  }
-
-  /**
-  @param debtToCover amount of debt to cover in base currency, in WAD. 1e18 == $1
-  // TODO: debtToCover should just be amount of debt, NOT in base currency
-  */
-  function _executeLiquidationCall(
-    uint256 collateralAssetId,
-    uint256 debtAssetId,
-    address user,
-    uint256 debtToCover
-  ) internal {
-    // v1 - allow the liquidator to liquidate full position if HF goes below certain threshold
-    // v2 enhancement - allow liquidator to liquidate only the amount needed to bring HF to 1
-
-    console2.log('----- liq -----');
-
-    require(debtToCover > 0, 'INVALID_DEBT_TO_COVER');
-
-    LiquidationCallLocalVars memory vars;
-    Reserve memory collateralReserve = reserves[collateralAssetId];
-    Reserve memory debtReserve = reserves[debtAssetId];
-
-    // TODO: accrue interest first? / updateState
-    (
-      vars.totalCollateralInBaseCurrency,
-      vars.totalDebtInBaseCurrency,
-      vars.avgLiquidationThreshold,
-      ,
-      vars.healthFactor
-    ) = _calculateUserAccountData(user);
-
-    // console2.log('vars.healthFactor %e', vars.healthFactor);
-
-    _validateLiquidationCall(collateralAssetId, debtAssetId, user, vars.healthFactor);
-
-    // TODO: optimize this calculation / input params
-    vars.actualDebtToLiquidate = _calculateActualDebtToLiquidate(
-      debtToCover,
-      user,
-      debtAssetId,
-      vars.totalCollateralInBaseCurrency,
-      vars.totalDebtInBaseCurrency,
-      vars.avgLiquidationThreshold
-    );
-
-    // console2.log('collateral amt: %e', getUserSupplyInAsset(collateralAssetId, user));
-
-    vars.userCollateralBalance = getUserSupplyInAssets(collateralAssetId, user);
-
-    (
-      vars.actualCollateralToLiquidate,
-      vars.actualDebtToLiquidate,
-      vars.liquidationProtocolFeeAmount
-    ) = _calculateAvailableCollateralToLiquidate(
-      collateralReserve,
-      debtReserve,
-      vars.actualDebtToLiquidate,
-      vars.userCollateralBalance,
-      collateralReserve.config.lb // TODO: fetch from a getter?
-    );
-
-    console2.log('vars.userCollateralBalance %e', vars.userCollateralBalance);
-    console2.log(
-      'vars.actualCollateralToLiquidate %e %e shares',
-      vars.actualCollateralToLiquidate,
-      getUserSupplyInShares(collateralAssetId, user)
-    );
-    console2.log('vars.actualDebtToLiquidate %e', vars.actualDebtToLiquidate);
-    console2.log('vars.liquidationProtocolFeeAmount %e', vars.liquidationProtocolFeeAmount);
-
-    console2.log('total debt %e', vars.userDebtBalance);
-
-    if (
-      vars.actualCollateralToLiquidate + vars.liquidationProtocolFeeAmount ==
-      vars.userCollateralBalance
-    ) {
-      _setUsingAsCollateral(user, collateralReserve.id, false);
-    }
-
-    // risk premium needs to be updated bc collateral/debt has been updated
-    (, uint256 newAggregatedRiskPremium) = _refreshRiskPremium();
-    // repay debt
-    IERC20(debtReserve.asset).safeTransferFrom(
-      msg.sender,
-      liquidityHub,
-      vars.actualDebtToLiquidate
-    );
-    uint256 userDebtShares = ILiquidityHub(liquidityHub).restore(
-      debtAssetId,
-      vars.actualDebtToLiquidate,
-      newAggregatedRiskPremium
-    );
-
-    // risk premium needs to be updated bc collateral/debt has been updated
-    (, newAggregatedRiskPremium) = _refreshRiskPremium();
-    // liquidate collateral
-    uint256 userCollateralShares = ILiquidityHub(liquidityHub).withdraw(
-      collateralAssetId,
-      address(this),
-      vars.actualCollateralToLiquidate + vars.liquidationProtocolFeeAmount,
-      newAggregatedRiskPremium
-    );
-
-    // accounting
-    users[collateralAssetId][user].supplyShares -= userCollateralShares;
-    users[debtAssetId][user].debtShares -= userDebtShares;
-
-    // transfer assets to liquidator / reserve
-    IERC20(collateralReserve.asset).safeTransfer(msg.sender, vars.actualCollateralToLiquidate);
-    if (vars.liquidationProtocolFeeAmount > 0) {
-      IERC20(collateralReserve.asset).safeTransfer(
-        RESERVE_TREASURY_ADDRESS,
-        vars.liquidationProtocolFeeAmount
-      );
-    }
-
-    emit LiquidationCall(
-      collateralAssetId,
-      debtAssetId,
-      user,
-      vars.actualDebtToLiquidate,
-      vars.actualCollateralToLiquidate,
-      msg.sender
-    );
   }
 
   function _validateLiquidationCall(
@@ -631,7 +620,7 @@ contract Spoke is ISpoke {
    * @param totalCollateralInBaseCurrency The user's total collateral in base currency
    * @param totalDebtInBaseCurrency The user's total debt in base currency
    * @param avgLiquidationThreshold The average liquidation threshold of the user's collateral
-   * @return The actual amount of debt asset that can be liquidated
+   * @return actualDebtToLiquidate The actual amount of debt asset that can be liquidated
    */
   function _calculateActualDebtToLiquidate(
     uint256 debtToCover,
