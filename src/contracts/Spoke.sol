@@ -236,7 +236,8 @@ contract Spoke is ISpoke {
       debtAssetId,
       vars.totalCollateralInBaseCurrency,
       vars.totalDebtInBaseCurrency,
-      vars.avgLiquidationThreshold
+      vars.avgLiquidationThreshold,
+      collateralReserve
     );
 
     // console2.log('collateral amt: %e', getUserSupplyInAsset(collateralAssetId, user));
@@ -620,6 +621,7 @@ contract Spoke is ISpoke {
    * @param totalCollateralInBaseCurrency The user's total collateral in base currency
    * @param totalDebtInBaseCurrency The user's total debt in base currency
    * @param avgLiquidationThreshold The average liquidation threshold of the user's collateral
+   * @param collateralReserve The reserve configuration of the collateral asset
    * @return actualDebtToLiquidate The actual amount of debt asset that can be liquidated
    */
   function _calculateActualDebtToLiquidate(
@@ -628,7 +630,8 @@ contract Spoke is ISpoke {
     uint256 debtAssetId,
     uint256 totalCollateralInBaseCurrency,
     uint256 totalDebtInBaseCurrency,
-    uint256 avgLiquidationThreshold
+    uint256 avgLiquidationThreshold,
+    Reserve memory collateralReserve
   ) internal view returns (uint256) {
     console2.log('----- _calculateActualDebtToLiquidate -----');
 
@@ -643,9 +646,17 @@ contract Spoke is ISpoke {
     );
 
     // amount of user debt that corresponds to HEALTH_FACTOR_LIQUIDATION_RECOVERY_THRESHOLD
-    uint256 liquidationRecoveryDebt = totalCollateralInBaseCurrency
-      .percentMul(avgLiquidationThreshold)
-      .wadDiv(HEALTH_FACTOR_LIQUIDATION_RECOVERY_THRESHOLD);
+    uint256 liquidationRecoveryDebt = (HEALTH_FACTOR_LIQUIDATION_RECOVERY_THRESHOLD *
+      totalDebtInBaseCurrency -
+      totalCollateralInBaseCurrency.percentMul(avgLiquidationThreshold) *
+      1e18).wadDiv(
+        HEALTH_FACTOR_LIQUIDATION_RECOVERY_THRESHOLD -
+          (collateralReserve.config.lb * collateralReserve.config.lt) *
+          1e10 // convert multiplied BPS to WAD
+      );
+
+    console2.log('liquidationRecoveryDebt %e', liquidationRecoveryDebt);
+
     // amount of debt that can be liquidated to bring HF to HEALTH_FACTOR_LIQUIDATION_RECOVERY_THRESHOLD
     uint256 recoveryThresholdLiquidatableDebt = totalDebtInBaseCurrency > liquidationRecoveryDebt
       ? (totalDebtInBaseCurrency - liquidationRecoveryDebt) /

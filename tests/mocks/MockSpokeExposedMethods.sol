@@ -21,7 +21,8 @@ contract MockSpokeExposedMethods is Spoke {
     uint256 debtAssetId,
     uint256 totalCollateralInBaseCurrency,
     uint256 totalDebtInBaseCurrency,
-    uint256 avgLiquidationThreshold
+    uint256 avgLiquidationThreshold,
+    Reserve memory collateralReserve
   ) public view returns (uint256) {
     return
       _calculateActualDebtToLiquidate(
@@ -30,7 +31,8 @@ contract MockSpokeExposedMethods is Spoke {
         debtAssetId,
         totalCollateralInBaseCurrency,
         totalDebtInBaseCurrency,
-        avgLiquidationThreshold
+        avgLiquidationThreshold,
+        collateralReserve
       );
   }
 

@@ -525,6 +525,8 @@ contract LiquidationTest is BaseTest {
     vars.collateralAssetIds[0] = daiAssetId;
     vars.collateralAssetIds[1] = ethAssetId;
 
+    vars.collateralReserve = mockSpoke1.getReserve(daiAssetId);
+
     (
       vars.totalCollateralInBaseCurrency,
       vars.totalDebtInBaseCurrency,
@@ -539,7 +541,8 @@ contract LiquidationTest is BaseTest {
       usdcAssetId,
       vars.totalCollateralInBaseCurrency,
       vars.totalDebtInBaseCurrency,
-      vars.avgLiquidationThreshold
+      vars.avgLiquidationThreshold,
+      vars.collateralReserve
     );
 
     // console2.log(

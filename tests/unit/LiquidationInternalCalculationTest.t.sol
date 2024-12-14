@@ -436,6 +436,7 @@ contract LiquidationInternalCalculationTest is BaseTest {
   struct TestCalculateActualDebtToLiquidateLocalParams {
     uint256[] collateralAssetIds;
     uint256[] debtAssetIds;
+    Spoke.Reserve collateralReserve;
     uint256 totalCollateralInBaseCurrency;
     uint256 totalDebtInBaseCurrency;
     uint256 avgLiquidationThreshold;
@@ -493,6 +494,8 @@ contract LiquidationInternalCalculationTest is BaseTest {
 
     TestCalculateActualDebtToLiquidateLocalParams memory localParams;
 
+    localParams.collateralReserve = mockSpoke1.getReserve(daiAssetId);
+
     (
       localParams.totalCollateralInBaseCurrency,
       localParams.totalDebtInBaseCurrency,
@@ -523,7 +526,8 @@ contract LiquidationInternalCalculationTest is BaseTest {
       usdcAssetId,
       localParams.totalCollateralInBaseCurrency,
       localParams.totalDebtInBaseCurrency,
-      localParams.avgLiquidationThreshold
+      localParams.avgLiquidationThreshold,
+      localParams.collateralReserve
     );
 
     assertEq(
@@ -572,6 +576,8 @@ contract LiquidationInternalCalculationTest is BaseTest {
 
     TestCalculateActualDebtToLiquidateLocalParams memory localParams;
 
+    localParams.collateralReserve = mockSpoke1.getReserve(daiAssetId);
+
     (
       localParams.totalCollateralInBaseCurrency,
       localParams.totalDebtInBaseCurrency,
@@ -586,7 +592,8 @@ contract LiquidationInternalCalculationTest is BaseTest {
       usdcAssetId,
       localParams.totalCollateralInBaseCurrency,
       localParams.totalDebtInBaseCurrency,
-      localParams.avgLiquidationThreshold
+      localParams.avgLiquidationThreshold,
+      localParams.collateralReserve
     );
 
     assertEq(actualDebtToLiquidate, 0, 'Unexpected actualDebtToLiquidate');
@@ -600,6 +607,8 @@ contract LiquidationInternalCalculationTest is BaseTest {
     debtAssetId = bound(debtAssetId, 0, 3); // only 4 assets defined
 
     TestCalculateActualDebtToLiquidateLocalParams memory localParams;
+
+    localParams.collateralReserve = mockSpoke1.getReserve(debtAssetId);
 
     (
       localParams.totalCollateralInBaseCurrency,
@@ -615,7 +624,8 @@ contract LiquidationInternalCalculationTest is BaseTest {
       debtAssetId,
       localParams.totalCollateralInBaseCurrency,
       localParams.totalDebtInBaseCurrency,
-      localParams.avgLiquidationThreshold
+      localParams.avgLiquidationThreshold,
+      localParams.collateralReserve
     );
 
     assertEq(actualDebtToLiquidate, 0, 'Unexpected actualDebtToLiquidate');
@@ -680,7 +690,8 @@ contract LiquidationInternalCalculationTest is BaseTest {
       usdcAssetId,
       localParams.totalCollateralInBaseCurrency,
       localParams.totalDebtInBaseCurrency,
-      localParams.avgLiquidationThreshold
+      localParams.avgLiquidationThreshold,
+      localParams.collateralReserve
     );
 
     (
@@ -788,6 +799,8 @@ contract LiquidationInternalCalculationTest is BaseTest {
 
     TestCalculateActualDebtToLiquidateLocalParams memory localParams;
 
+    localParams.collateralReserve = mockSpoke1.getReserve(daiAssetId);
+
     (
       localParams.totalCollateralInBaseCurrency,
       localParams.totalDebtInBaseCurrency,
@@ -802,7 +815,8 @@ contract LiquidationInternalCalculationTest is BaseTest {
       usdcAssetId,
       localParams.totalCollateralInBaseCurrency,
       localParams.totalDebtInBaseCurrency,
-      localParams.avgLiquidationThreshold
+      localParams.avgLiquidationThreshold,
+      localParams.collateralReserve
     );
 
     (
