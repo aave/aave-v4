@@ -112,6 +112,12 @@ library Utils {
     Spoke(spoke).updateReserveConfig(assetId, reserveData.config);
   }
 
+  function updateLiquidationBonus(Spoke spoke, uint256 assetId, uint256 newLb) internal {
+    Spoke.Reserve memory reserveData = spoke.getReserve(assetId);
+    reserveData.config.lb = newLb;
+    Spoke(spoke).updateReserveConfig(assetId, reserveData.config);
+  }
+
   function updateCollateral(Spoke spoke, uint256 assetId, bool newCollateral) internal {
     Spoke.Reserve memory reserveData = spoke.getReserve(assetId);
     reserveData.config.collateral = newCollateral;

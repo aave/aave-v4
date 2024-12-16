@@ -548,7 +548,7 @@ contract Spoke is ISpoke {
 
     vars.avgLiquidationThreshold = vars.totalCollateralInBaseCurrency == 0
       ? 0
-      : vars.avgLiquidationThreshold / vars.totalCollateralInBaseCurrency;
+      : vars.avgLiquidationThreshold.wadDiv(vars.totalCollateralInBaseCurrency);
 
     vars.userRiskPremium = vars.totalCollateralInBaseCurrency == 0
       ? 0
@@ -556,15 +556,15 @@ contract Spoke is ISpoke {
 
     vars.healthFactor = vars.totalDebtInBaseCurrency == 0
       ? type(uint256).max
-      : (vars.totalCollateralInBaseCurrency.percentMul(vars.avgLiquidationThreshold)).wadDiv(
+      : (vars.totalCollateralInBaseCurrency.wadMul(vars.avgLiquidationThreshold)).wadDiv(
         vars.totalDebtInBaseCurrency
-      ); // HF of 1 -> 1e18
+      ) / 1e4; // HF of 1 -> 1e18
 
     console2.log(
-      'mathcheck %e',
-      (vars.totalCollateralInBaseCurrency.percentMul(vars.avgLiquidationThreshold)).wadDiv(
-        vars.totalDebtInBaseCurrency - 7.5e21 * 1e8
-      )
+      'pre divide vars.avgLiquidationThreshold %e',
+      (vars.totalCollateralInBaseCurrency.wadMul(vars.avgLiquidationThreshold)).wadDiv(
+        vars.totalDebtInBaseCurrency
+      ) / 1e4
     );
 
     console2.log('vars.totalCollateralInBaseCurrency %e', vars.totalCollateralInBaseCurrency);
@@ -637,30 +637,31 @@ contract Spoke is ISpoke {
 
     uint256 maxLiquidatableDebt = getUserDebtInAssets(debtAssetId, user);
 
-    console2.log('totalDebtInBaseCurrency %e', totalDebtInBaseCurrency);
     console2.log(
-      'to sub %e',
-      totalCollateralInBaseCurrency.percentMul(avgLiquidationThreshold).wadDiv(
-        HEALTH_FACTOR_LIQUIDATION_RECOVERY_THRESHOLD
-      )
+      'HEALTH_FACTOR_LIQUIDATION_RECOVERY_THRESHOLD * totalDebtInBaseCurrency %e',
+      HEALTH_FACTOR_LIQUIDATION_RECOVERY_THRESHOLD.wadMul(totalDebtInBaseCurrency)
+    );
+    console2.log('to sub %e', totalCollateralInBaseCurrency.wadMul(avgLiquidationThreshold));
+    console2.log(
+      'to div %e',
+      HEALTH_FACTOR_LIQUIDATION_RECOVERY_THRESHOLD -
+        collateralReserve.config.lb.percentMul(collateralReserve.config.lt) *
+        1e14
     );
 
     // amount of user debt that corresponds to HEALTH_FACTOR_LIQUIDATION_RECOVERY_THRESHOLD
-    uint256 liquidationRecoveryDebt = (HEALTH_FACTOR_LIQUIDATION_RECOVERY_THRESHOLD *
-      totalDebtInBaseCurrency -
-      totalCollateralInBaseCurrency.percentMul(avgLiquidationThreshold) *
-      1e18).wadDiv(
+    uint256 liquidationRecoveryDebt = (HEALTH_FACTOR_LIQUIDATION_RECOVERY_THRESHOLD.wadMul(
+      totalDebtInBaseCurrency
+    ) - totalCollateralInBaseCurrency.wadMul(avgLiquidationThreshold) / 1e4).wadDiv(
         HEALTH_FACTOR_LIQUIDATION_RECOVERY_THRESHOLD -
-          (collateralReserve.config.lb * collateralReserve.config.lt) *
-          1e10 // convert multiplied BPS to WAD
-      );
+          (collateralReserve.config.lb * 1e14).percentMul(collateralReserve.config.lt) // convert BPS to WAD
+      ) / IPriceOracle(oracle).getAssetPrice(debtAssetId);
 
     console2.log('liquidationRecoveryDebt %e', liquidationRecoveryDebt);
 
     // amount of debt that can be liquidated to bring HF to HEALTH_FACTOR_LIQUIDATION_RECOVERY_THRESHOLD
     uint256 recoveryThresholdLiquidatableDebt = totalDebtInBaseCurrency > liquidationRecoveryDebt
-      ? (totalDebtInBaseCurrency - liquidationRecoveryDebt) /
-        IPriceOracle(oracle).getAssetPrice(debtAssetId)
+      ? liquidationRecoveryDebt
       : 0;
 
     console2.log('----- _calculateDebt -----');
@@ -671,10 +672,12 @@ contract Spoke is ISpoke {
       ? recoveryThresholdLiquidatableDebt
       : maxLiquidatableDebt;
 
+    console2.log('maxLiquidatableDebt %e', maxLiquidatableDebt);
+
     uint256 actualDebtToLiquidate = debtToCover > maxLiquidatableDebt
       ? maxLiquidatableDebt
       : debtToCover;
-
+    console2.log('actualDebtToLiquidate %e', recoveryThresholdLiquidatableDebt);
     return actualDebtToLiquidate;
   }
 
