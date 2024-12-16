@@ -560,13 +560,6 @@ contract Spoke is ISpoke {
         vars.totalDebtInBaseCurrency
       ) / 1e4; // HF of 1 -> 1e18
 
-    console2.log(
-      'pre divide vars.avgLiquidationThreshold %e',
-      (vars.totalCollateralInBaseCurrency.wadMul(vars.avgLiquidationThreshold)).wadDiv(
-        vars.totalDebtInBaseCurrency
-      ) / 1e4
-    );
-
     console2.log('vars.totalCollateralInBaseCurrency %e', vars.totalCollateralInBaseCurrency);
     console2.log('vars.totalDebtInBaseCurrency %e', vars.totalDebtInBaseCurrency);
     console2.log('vars.avgLiquidationThreshold %e', vars.avgLiquidationThreshold);

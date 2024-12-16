@@ -455,16 +455,6 @@ contract LiquidationTest is BaseTest {
     vars.user2UsdcData0 = mockSpoke1.getUser(usdcAssetId, USER2);
     vars.mockSpoke1UsdcData0 = hub.getSpoke(usdcAssetId, address(mockSpoke1));
 
-    vars.expectedCollateralLiquidated = hub.convertSharesToAssetsDown(
-      daiAssetId,
-      vars.mockSpoke1DaiData0.totalShares
-    );
-    vars.expectedDebtCovered = _getExpectedDebtCovered(
-      daiAssetId,
-      usdcAssetId,
-      vars.expectedCollateralLiquidated
-    );
-
     // dai
     assertEq(
       vars.user1DaiData0.usingAsCollateral,
@@ -559,12 +549,6 @@ contract LiquidationTest is BaseTest {
       vars.collateralReserve
     );
 
-    // // console2.log(
-    // //   'recoveryThresholdLiquidatableDebt %e',
-    // //   vars.recoveryThresholdLiquidatableDebt
-    // // );
-    // // console2.log('actualDebtToLiquidate %e', vars.actualDebtToLiquidate);
-
     vars.collateralReserve = mockSpoke1.getReserve(daiAssetId);
     vars.debtReserve = mockSpoke1.getReserve(usdcAssetId);
     vars.userCollateralBalance = mockSpoke1.getUserSupplyInAssets(daiAssetId, USER1);
@@ -580,9 +564,6 @@ contract LiquidationTest is BaseTest {
       vars.userCollateralBalance,
       vars.collateralReserve.config.lb // TODO: fetch from a getter?
     );
-
-    // console2.log('test vars.actualDebtToLiquidate %e', vars.actualDebtToLiquidate);
-    // console2.log('test vars.actualCollateralToLiquidate %e', vars.actualCollateralToLiquidate);
 
     vm.expectEmit(address(mockSpoke1));
     emit LiquidationCall({
@@ -646,16 +627,16 @@ contract LiquidationTest is BaseTest {
     assertEq(vars.hf1, 1e18, 'Unexpected user1 final health factor');
 
     // liquidator
-    // assertEq(
-    //   dai.balanceOf(LIQUIDATOR),
-    //   vars.expectedCollateralLiquidated,
-    //   'Unexpected liquidator collateral asset balance'
-    // );
-    // assertEq(
-    //   dai.balanceOf(mockSpoke1.RESERVE_TREASURY_ADDRESS()),
-    //   0,
-    //   'Unexpected RESERVE_TREASURY_ADDRESS collateral asset balance (protocol fee)'
-    // );
+    assertEq(
+      dai.balanceOf(LIQUIDATOR),
+      vars.actualCollateralToLiquidate,
+      'Unexpected liquidator collateral asset balance'
+    );
+    assertEq(
+      dai.balanceOf(mockSpoke1.RESERVE_TREASURY_ADDRESS()),
+      0,
+      'Unexpected RESERVE_TREASURY_ADDRESS collateral asset balance (protocol fee)'
+    );
   }
 
   /// @dev Test liquidation call with liquidated amount >= user collateral balance, with liquidation protocol fee > 0
