@@ -3,12 +3,12 @@ pragma solidity ^0.8.0;
 
 import {SafeERC20} from '../dependencies/openzeppelin/SafeERC20.sol';
 import {IERC20} from '../dependencies/openzeppelin/IERC20.sol';
-import {WadRayMath} from './WadRayMath.sol';
-import {SharesMath} from './SharesMath.sol';
-import {MathUtils} from './MathUtils.sol';
 import {ILiquidityHub} from '../interfaces/ILiquidityHub.sol';
 import {IReserveInterestRateStrategy} from '../interfaces/IReserveInterestRateStrategy.sol';
 import {DataTypes} from '../libraries/types/DataTypes.sol';
+import {WadRayMath} from './WadRayMath.sol';
+import {SharesMath} from './SharesMath.sol';
+import {MathUtils} from './MathUtils.sol';
 
 contract LiquidityHub is ILiquidityHub {
   using SafeERC20 for IERC20;
@@ -29,7 +29,8 @@ contract LiquidityHub is ILiquidityHub {
     uint256 totalAssets;
     uint256 drawnShares;
     uint256 lastUpdateTimestamp;
-    uint256 currentBorrowRate;
+    uint256 baseBorrowRate;
+    uint256 RPAdjustedBorrowRate;
     DataTypes.AssetConfig config;
   }
 
@@ -76,13 +77,13 @@ contract LiquidityHub is ILiquidityHub {
    */
   function updateAndGetAssetBalance(uint256 assetId) external returns (uint256) {
     Asset storage asset = assets[assetId];
-    _accrueAssetInterest(asset, asset.currentBorrowRate);
+    _accrueAssetInterest(asset, asset.RPAdjustedBorrowRate);
     return asset.totalAssets;
   }
 
   function updateAndGetShareBalance(uint256 assetId) external returns (uint256) {
     Asset storage asset = assets[assetId];
-    _accrueAssetInterest(asset, asset.currentBorrowRate);
+    _accrueAssetInterest(asset, asset.RPAdjustedBorrowRate);
     return asset.totalShares;
   }
 
@@ -99,7 +100,8 @@ contract LiquidityHub is ILiquidityHub {
       totalAssets: 0,
       drawnShares: 0,
       lastUpdateTimestamp: block.timestamp,
-      currentBorrowRate: 0,
+      baseBorrowRate: 0,
+      RPAdjustedBorrowRate: 0,
       config: DataTypes.AssetConfig({
         decimals: params.decimals,
         active: params.active,
@@ -166,7 +168,7 @@ contract LiquidityHub is ILiquidityHub {
     Spoke storage spoke = spokes[assetId][msg.sender];
 
     // Accrue interest before validating action
-    _accrueAssetInterest(asset, asset.currentBorrowRate);
+    _accrueAssetInterest(asset, asset.RPAdjustedBorrowRate);
     _validateSupply(asset, spoke, amount);
 
     // TODO Mitigate inflation attack (burn some amount if first supply)
@@ -177,7 +179,7 @@ contract LiquidityHub is ILiquidityHub {
     asset.totalAssets += amount;
     spoke.totalShares += sharesAmount;
 
-    _updateBorrowRate(asset, riskPremium);
+    _updateBorrowRate(asset, riskPremium, amount, 0);
 
     // TODO: fee-on-transfer
     // instead transferred by spoke from user to LH
@@ -200,7 +202,7 @@ contract LiquidityHub is ILiquidityHub {
     Spoke storage spoke = spokes[assetId][msg.sender];
 
     // Accrue interest before validating action
-    _accrueAssetInterest(asset, asset.currentBorrowRate);
+    _accrueAssetInterest(asset, asset.RPAdjustedBorrowRate);
     _validateWithdraw(asset, spoke, amount);
 
     uint256 sharesAmount = convertAssetsToSharesDown(assetId, amount);
@@ -208,7 +210,7 @@ contract LiquidityHub is ILiquidityHub {
     asset.totalAssets -= amount;
     spoke.totalShares -= sharesAmount;
 
-    _updateBorrowRate(asset, riskPremium);
+    _updateBorrowRate(asset, riskPremium, 0, amount);
 
     IERC20(assetsList[assetId]).safeTransfer(to, amount);
 
@@ -229,14 +231,14 @@ contract LiquidityHub is ILiquidityHub {
     Spoke storage spoke = spokes[assetId][msg.sender];
 
     // Accrue interest before validating action
-    _accrueAssetInterest(asset, asset.currentBorrowRate);
+    _accrueAssetInterest(asset, asset.RPAdjustedBorrowRate);
     _validateDraw(asset, amount, spoke.config.drawCap);
 
     uint256 sharesAmount = convertAssetsToSharesUp(assetId, amount);
     asset.drawnShares += sharesAmount;
     spoke.drawnShares += sharesAmount;
 
-    _updateBorrowRate(asset, riskPremium);
+    _updateBorrowRate(asset, riskPremium, 0, amount);
 
     IERC20(assetsList[assetId]).safeTransfer(to, amount);
 
@@ -256,14 +258,14 @@ contract LiquidityHub is ILiquidityHub {
     Spoke storage spoke = spokes[assetId][msg.sender];
 
     // Accrue interest before validating action
-    _accrueAssetInterest(asset, asset.currentBorrowRate);
+    _accrueAssetInterest(asset, asset.RPAdjustedBorrowRate);
     uint256 sharesAmount = convertAssetsToSharesDown(assetId, amount);
     _validateRestore(asset, sharesAmount, spoke.drawnShares);
 
     asset.drawnShares -= sharesAmount;
     spoke.drawnShares -= sharesAmount;
 
-    _updateBorrowRate(asset, riskPremium);
+    _updateBorrowRate(asset, riskPremium, amount, 0);
 
     emit Restore(assetId, msg.sender, amount);
 
@@ -297,10 +299,12 @@ contract LiquidityHub is ILiquidityHub {
   }
 
   function getBaseInterestRate(uint256 assetId) public view returns (uint256) {
-    return assets[assetId].currentBorrowRate;
+    return assets[assetId].baseBorrowRate;
   }
 
-  // TODO: separate getter method for final IR that incorporates risk premium
+  function getInterestRate(uint256 assetId) public view returns (uint256) {
+    return assets[assetId].RPAdjustedBorrowRate;
+  }
 
   function getSpokeDrawnLiquidity(uint256 assetId, address spoke) public view returns (uint256) {
     return
@@ -387,24 +391,41 @@ contract LiquidityHub is ILiquidityHub {
     }
   }
 
-  function _updateBorrowRate(Asset storage asset, uint256 newRiskPremium) internal {
+  function _updateBorrowRate(
+    Asset storage asset,
+    uint256 newRiskPremium,
+    uint256 liquidityAdded,
+    uint256 liquidityTaken
+  ) internal {
+    // Fetch base borrow rate
+    uint256 baseBorrowRate = IReserveInterestRateStrategy(asset.config.irStrategy)
+      .calculateInterestRates(
+        DataTypes.CalculateInterestRatesParams({
+          liquidityAdded: liquidityAdded,
+          liquidityTaken: liquidityTaken,
+          totalDebt: convertSharesToAssetsUp(asset.id, asset.drawnShares),
+          reserveFactor: 0, // TODO
+          assetId: asset.id,
+          virtualUnderlyingBalance: asset.totalAssets,
+          usingVirtualBalance: true
+        })
+      );
+
     // Weight is spoke.drawnShares
-    _updateLHBorrowRate(asset.id, newRiskPremium, spokes[asset.id][msg.sender].drawnShares);
+    _calculateWAvgRP(asset.id, newRiskPremium, spokes[asset.id][msg.sender].drawnShares);
 
     // Caching borrow rate for next accrual on action
-    asset.currentBorrowRate = wAvgBR[asset.id].spokeBR;
+    asset.baseBorrowRate = baseBorrowRate;
+    asset.RPAdjustedBorrowRate = baseBorrowRate + (baseBorrowRate * wAvgBR[asset.id].spokeBR);
   }
 
   /**
-   * @notice Updates the borrow rate of the asset based on the new risk premium
+   * @notice Calculates the weighted average risk premium across spokes, given new risk premium and weight from spoke
    * @param assetId The asset id
    * @param newRiskPremium The new risk premium
    * @param newRiskPremiumWeight The new risk premium weight
-   * @dev The new risk premium is spoke's calculation of R_s,i
-   * @dev The new risk premium weight is D_s,i, the spoke's drawn shares
-   * @dev R_s,i * D_s,i goes in numerator of running avg, D_s,i goes in denominator
    */
-  function _updateLHBorrowRate(
+  function _calculateWAvgRP(
     uint256 assetId,
     uint256 newRiskPremium,
     uint256 newRiskPremiumWeight

@@ -159,38 +159,52 @@ contract UserRiskPremiumTest is BaseTest {
   function test_LHBorrowRate_Supply() public {
     vm.prank(address(spoke1));
     hub.supply(daiAssetId, 1000e18, 0);
-    uint256 borrowRate = _getBorrowRate(daiAssetId);
-    assertEq(borrowRate, 0);
+    // No change to risk premium, so borrow rate is just the base rate
+    assertEq(_getBaseBorrowRate(daiAssetId), _getBorrowRate(daiAssetId));
   }
 
   function test_LHBorrowRate_Borrow() public {
     // Spoke 1's first borrow should set the overall borrow rate
+    uint256 newRiskPremium = 1e3;
     deal(address(dai), address(hub), 1000e18);
     vm.startPrank(address(spoke1));
     hub.supply(daiAssetId, 1000e18, 0);
-    hub.draw(daiAssetId, address(spoke1), 100e18, 1e18);
+    hub.draw(daiAssetId, address(spoke1), 100e18, newRiskPremium);
     vm.stopPrank();
     uint256 borrowRate = _getBorrowRate(daiAssetId);
-    assertEq(borrowRate, 1e18);
+    uint256 baseBorrowRate = _getBaseBorrowRate(daiAssetId);
+    assertEq(borrowRate, baseBorrowRate + (newRiskPremium * baseBorrowRate));
   }
 
   function test_LHBorrowRate_BorrowAndSupply() public {
+    uint256 newRiskPremium = 1e3;
     deal(address(dai), address(hub), 1000e18);
     vm.startPrank(address(spoke1));
     hub.supply(daiAssetId, 1000e18, 0);
-    hub.draw(daiAssetId, address(spoke1), 100e18, 1e18);
+    hub.draw(daiAssetId, address(spoke1), 100e18, newRiskPremium);
     uint256 borrowRate = _getBorrowRate(daiAssetId);
-    assertEq(borrowRate, 1e18);
+    uint256 baseBorrowRate = _getBaseBorrowRate(daiAssetId);
+    assertEq(borrowRate, baseBorrowRate + (newRiskPremium * baseBorrowRate));
 
-    // Now if we supply again, passing same risk premium, no update to borrow rate
-    hub.supply(daiAssetId, 1000e18, 1e18);
+    // Now if we supply again, passing same risk premium, RP doesn't update
+    hub.supply(daiAssetId, 1000e18, newRiskPremium);
     borrowRate = _getBorrowRate(daiAssetId);
-    assertEq(borrowRate, 1e18);
+    baseBorrowRate = _getBaseBorrowRate(daiAssetId);
+    assertEq(borrowRate, baseBorrowRate + (newRiskPremium * baseBorrowRate));
     vm.stopPrank();
   }
 
+  // TODO: Draw again from same spoke - show borrow rate calc uses avg of the drawn amounts / risk premiums
+
+  // TODO: Draw from 2 different spokes - show borrow rate calc uses weighted avg
+
+  function _getBaseBorrowRate(uint256 assetId) internal view returns (uint256) {
+    (, , , , , uint256 borrowRate, , ) = hub.assets(assetId);
+    return borrowRate;
+  }
+
   function _getBorrowRate(uint256 assetId) internal view returns (uint256) {
-    (, , , , , uint256 borrowRate, ) = hub.assets(assetId);
+    (, , , , , , uint256 borrowRate, ) = hub.assets(assetId);
     return borrowRate;
   }
 }
