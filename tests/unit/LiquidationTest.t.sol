@@ -539,25 +539,25 @@ contract LiquidationTest is BaseTest {
     // vars.collateralAssetIds[0] = daiAssetId;
     // vars.collateralAssetIds[1] = ethAssetId;
 
-    // vars.collateralReserve = mockSpoke1.getReserve(daiAssetId);
+    vars.collateralReserve = mockSpoke1.getReserve(daiAssetId);
 
-    // (
-    //   vars.totalCollateralInBaseCurrency,
-    //   vars.totalDebtInBaseCurrency,
-    //   vars.avgLiquidationThreshold,
-    //   ,
+    (
+      vars.totalCollateralInBaseCurrency,
+      vars.totalDebtInBaseCurrency,
+      vars.avgLiquidationThreshold,
+      ,
 
-    // ) = mockSpoke1.calculateUserAccountData(USER1);
+    ) = mockSpoke1.calculateUserAccountData(USER1);
 
-    // vars.actualDebtToLiquidate = mockSpoke1.calculateActualDebtToLiquidate(
-    //   debtToCover,
-    //   USER1,
-    //   usdcAssetId,
-    //   vars.totalCollateralInBaseCurrency,
-    //   vars.totalDebtInBaseCurrency,
-    //   vars.avgLiquidationThreshold,
-    //   vars.collateralReserve
-    // );
+    vars.actualDebtToLiquidate = mockSpoke1.calculateActualDebtToLiquidate(
+      debtToCover,
+      USER1,
+      usdcAssetId,
+      vars.totalCollateralInBaseCurrency,
+      vars.totalDebtInBaseCurrency,
+      vars.avgLiquidationThreshold,
+      vars.collateralReserve
+    );
 
     // // console2.log(
     // //   'recoveryThresholdLiquidatableDebt %e',
@@ -565,31 +565,34 @@ contract LiquidationTest is BaseTest {
     // // );
     // // console2.log('actualDebtToLiquidate %e', vars.actualDebtToLiquidate);
 
-    // vars.collateralReserve = mockSpoke1.getReserve(daiAssetId);
-    // vars.debtReserve = mockSpoke1.getReserve(usdcAssetId);
-    // vars.userCollateralBalance = mockSpoke1.getUserSupplyInAssets(daiAssetId, USER1);
+    vars.collateralReserve = mockSpoke1.getReserve(daiAssetId);
+    vars.debtReserve = mockSpoke1.getReserve(usdcAssetId);
+    vars.userCollateralBalance = mockSpoke1.getUserSupplyInAssets(daiAssetId, USER1);
 
-    // (
-    //   vars.actualCollateralToLiquidate,
-    //   vars.actualDebtToLiquidate,
-    //   vars.liquidationProtocolFeeAmount
-    // ) = mockSpoke1.calculateAvailableCollateralToLiquidate(
-    //   vars.collateralReserve,
-    //   vars.debtReserve,
-    //   vars.actualDebtToLiquidate,
-    //   vars.userCollateralBalance,
-    //   vars.collateralReserve.config.lb // TODO: fetch from a getter?
-    // );
+    (
+      vars.actualCollateralToLiquidate,
+      vars.actualDebtToLiquidate,
+      vars.liquidationProtocolFeeAmount
+    ) = mockSpoke1.calculateAvailableCollateralToLiquidate(
+      vars.collateralReserve,
+      vars.debtReserve,
+      vars.actualDebtToLiquidate,
+      vars.userCollateralBalance,
+      vars.collateralReserve.config.lb // TODO: fetch from a getter?
+    );
 
-    // vm.expectEmit(address(mockSpoke1));
-    // emit LiquidationCall({
-    //   collateralAssetId: daiAssetId,
-    //   debtAssetId: usdcAssetId,
-    //   user: USER1,
-    //   actualDebtToLiquidate: vars.actualDebtToLiquidate,
-    //   actualCollateralToLiquidate: vars.actualCollateralToLiquidate,
-    //   liquidator: LIQUIDATOR
-    // });
+    // console2.log('test vars.actualDebtToLiquidate %e', vars.actualDebtToLiquidate);
+    // console2.log('test vars.actualCollateralToLiquidate %e', vars.actualCollateralToLiquidate);
+
+    vm.expectEmit(address(mockSpoke1));
+    emit LiquidationCall({
+      collateralAssetId: daiAssetId,
+      debtAssetId: usdcAssetId,
+      user: USER1,
+      actualDebtToLiquidate: vars.actualDebtToLiquidate,
+      actualCollateralToLiquidate: vars.actualCollateralToLiquidate,
+      liquidator: LIQUIDATOR
+    });
     mockSpoke1.liquidationCall(daiAssetId, usdcAssetId, USER1, debtToCover);
     vm.stopPrank();
 
@@ -613,11 +616,11 @@ contract LiquidationTest is BaseTest {
 
     // dai
     assertEq(vars.user1DaiData1.usingAsCollateral, true, 'Unexpected user1 dai usingAsCollateral');
-    // assertEq(
-    //   vars.mockSpoke1DaiData1.totalShares,
-    //   vars.expectedDaiTotalSharesRemaining,
-    //   'Unexpected mockSpoke1 dai totalShares'
-    // );
+    assertEq(
+      vars.mockSpoke1DaiData1.totalShares,
+      vars.expectedDaiTotalSharesRemaining,
+      'Unexpected mockSpoke1 dai totalShares'
+    );
     assertEq(vars.mockSpoke1DaiData1.drawnShares, 0, 'Unexpected mockSpoke1 dai drawnShares');
     // eth
     assertEq(vars.user1EthData1.usingAsCollateral, true, 'Unexpected eth usingAsCollateral');
