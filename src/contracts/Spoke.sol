@@ -642,27 +642,35 @@ contract Spoke is ISpoke {
         1e14
     );
 
-    // amount of user debt that corresponds to HEALTH_FACTOR_LIQUIDATION_RECOVERY_THRESHOLD
-    uint256 liquidationRecoveryDebt = (HEALTH_FACTOR_LIQUIDATION_RECOVERY_THRESHOLD.wadMul(
+    uint256 hfScaledDebt = HEALTH_FACTOR_LIQUIDATION_RECOVERY_THRESHOLD.wadMul(
       totalDebtInBaseCurrency
-    ) - totalCollateralInBaseCurrency.wadMul(avgLiquidationThreshold) / 1e4).wadDiv(
+    );
+    uint256 weightedCollateral = totalCollateralInBaseCurrency.wadMul(avgLiquidationThreshold) /
+      1e4;
+    uint256 debtAssetPrice = IPriceOracle(oracle).getAssetPrice(debtAssetId);
+
+    // amount of user debt that corresponds to HEALTH_FACTOR_LIQUIDATION_RECOVERY_THRESHOLD
+    uint256 liquidationRecoveryDebt = hfScaledDebt > weightedCollateral
+      ? (hfScaledDebt - weightedCollateral).wadDiv(
         HEALTH_FACTOR_LIQUIDATION_RECOVERY_THRESHOLD -
           (collateralReserve.config.lb * 1e14).percentMul(collateralReserve.config.lt) // convert BPS to WAD
-      ) / IPriceOracle(oracle).getAssetPrice(debtAssetId);
+      )
+      : 0;
+
+    liquidationRecoveryDebt = debtAssetPrice == 0 ? 0 : liquidationRecoveryDebt / debtAssetPrice;
 
     console2.log('liquidationRecoveryDebt %e', liquidationRecoveryDebt);
 
     // amount of debt that can be liquidated to bring HF to HEALTH_FACTOR_LIQUIDATION_RECOVERY_THRESHOLD
-    uint256 recoveryThresholdLiquidatableDebt = totalDebtInBaseCurrency > liquidationRecoveryDebt
+    liquidationRecoveryDebt = totalDebtInBaseCurrency > liquidationRecoveryDebt
       ? liquidationRecoveryDebt
       : 0;
 
     console2.log('----- _calculateDebt -----');
     console2.log('maxLiquidatableDebt %e', maxLiquidatableDebt);
-    console2.log('recoveryThresholdLiquidatableDebt %e', recoveryThresholdLiquidatableDebt);
 
-    maxLiquidatableDebt = maxLiquidatableDebt > recoveryThresholdLiquidatableDebt
-      ? recoveryThresholdLiquidatableDebt
+    maxLiquidatableDebt = maxLiquidatableDebt > liquidationRecoveryDebt
+      ? liquidationRecoveryDebt
       : maxLiquidatableDebt;
 
     console2.log('maxLiquidatableDebt %e', maxLiquidatableDebt);
@@ -670,7 +678,7 @@ contract Spoke is ISpoke {
     uint256 actualDebtToLiquidate = debtToCover > maxLiquidatableDebt
       ? maxLiquidatableDebt
       : debtToCover;
-    console2.log('actualDebtToLiquidate %e', recoveryThresholdLiquidatableDebt);
+    console2.log('actualDebtToLiquidate %e', actualDebtToLiquidate);
     return actualDebtToLiquidate;
   }
 
