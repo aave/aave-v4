@@ -872,7 +872,7 @@ contract LiquidationTest is BaseTest {
     );
     assertEq(
       dai.balanceOf(mockSpoke1.RESERVE_TREASURY_ADDRESS()),
-      0,
+      vars.liquidationProtocolFeeAmount,
       'Unexpected RESERVE_TREASURY_ADDRESS collateral asset balance (protocol fee)'
     );
   }
@@ -1414,56 +1414,4 @@ contract LiquidationTest is BaseTest {
   //     'Unexpected liquidator collateral asset balance'
   //   );
   // }
-
-  function _getExpectedDebtCovered(
-    uint256 collateralAssetId,
-    uint256 debtAssetId,
-    uint256 collateralAmount
-  ) internal returns (uint256) {
-    uint256 debtAssetPrice = oracle.getAssetPrice(debtAssetId);
-
-    return
-      debtAssetPrice == 0
-        ? 0
-        : ((oracle.getAssetPrice(collateralAssetId) * collateralAmount) / (debtAssetPrice))
-          .percentDiv(mockSpoke1.getLiquidationBonus(collateralAssetId));
-  }
-
-  /// @return expectedCollateralLiquidated expected collateral to liquidate (includes lb and lpfp)
-  /// @return expectedLiquidationBonus expected liquidation bonus
-  /// @return expectedProtocolFee protocol fee
-  function _getExpectedCollateralLiquidated(
-    uint256 collateralAssetId,
-    uint256 debtAssetId,
-    uint256 debtAmount
-  )
-    internal
-    returns (
-      uint256 expectedCollateralLiquidated,
-      uint256 expectedLiquidationBonus,
-      uint256 expectedProtocolFee
-    )
-  {
-    uint256 collateralAssetPrice = oracle.getAssetPrice(collateralAssetId);
-
-    expectedCollateralLiquidated = collateralAssetPrice == 0
-      ? 0
-      : (oracle.getAssetPrice(debtAssetId) * debtAmount).percentMul(
-        mockSpoke1.getLiquidationBonus(collateralAssetId)
-      ) / collateralAssetPrice;
-    expectedLiquidationBonus =
-      expectedCollateralLiquidated -
-      expectedCollateralLiquidated.percentDiv(mockSpoke1.getLiquidationBonus(collateralAssetId));
-    expectedProtocolFee = expectedLiquidationBonus.percentMul(
-      mockSpoke1.getLiquidationProtocolFeePercentage(collateralAssetId)
-    );
-    expectedLiquidationBonus -= expectedProtocolFee;
-
-    // console2.log(
-    //   '_getExpectedCollateralLiquidated %e %e %e',
-    //   expectedCollateralLiquidated,
-    //   expectedLiquidationBonus,
-    //   expectedProtocolFee
-    // );
-  }
 }
