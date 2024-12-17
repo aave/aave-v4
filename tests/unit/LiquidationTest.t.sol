@@ -822,7 +822,6 @@ contract LiquidationTest is BaseTest {
     vars.expectedUsdcDrawnSharesRemaining =
       vars.mockSpoke1UsdcData0.drawnShares -
       hub.convertAssetsToSharesDown(usdcAssetId, vars.actualDebtCovered);
-    vars.hf1 = mockSpoke1.getHealthFactor(USER1);
 
     // dai
     assertEq(vars.user1DaiData1.usingAsCollateral, true, 'Unexpected user1 dai usingAsCollateral');
@@ -853,7 +852,11 @@ contract LiquidationTest is BaseTest {
         hub.convertAssetsToSharesDown(usdcAssetId, vars.actualDebtCovered),
       'Unexpected mockSpoke1 usdc drawnShares'
     );
-    assertEq(vars.hf1, 1e18, 'Unexpected user1 final health factor');
+    assertEq(
+      mockSpoke1.getHealthFactor(USER1),
+      mockSpoke1.HEALTH_FACTOR_LIQUIDATION_RECOVERY_THRESHOLD(),
+      'Unexpected user1 final health factor'
+    );
 
     // liquidator
     assertEq(
@@ -869,7 +872,7 @@ contract LiquidationTest is BaseTest {
   }
 
   /// @dev Test liquidation call with liquidated amount >= user collateral balance, with liquidation protocol fee > 0
-  function skip_test_liquidationCall_gteUserCollateralBalance_withLiquidationProtocolFee() public {
+  function test_liquidationCall_gteUserCollateralBalance_nonZeroLiquidationProtocolFee() public {
     uint256 debtToCover = 15_000e18;
     uint256 daiAssetId = 0;
     uint256 ethAssetId = 1;
@@ -1050,7 +1053,7 @@ contract LiquidationTest is BaseTest {
         hub.convertAssetsToSharesDown(usdcAssetId, vars.actualDebtCovered),
       'Unexpected mockSpoke1 usdc drawnShares'
     );
-    // TODO: assertion on health factor, should be 1e18 after enhanced liq
+    assertEq(mockSpoke1.getHealthFactor(USER1), 0, 'Unexpected user1 final health factor'); // only bad debt remains
 
     // liquidator
     assertEq(

@@ -265,7 +265,7 @@ contract Spoke is ISpoke {
     console2.log('vars.actualDebtToLiquidate %e', vars.actualDebtToLiquidate);
     console2.log('vars.liquidationProtocolFeeAmount %e', vars.liquidationProtocolFeeAmount);
 
-    console2.log('total debt %e', vars.userDebtBalance);
+    // console2.log('total debt %e', vars.userDebtBalance);
 
     if (
       vars.actualCollateralToLiquidate + vars.liquidationProtocolFeeAmount ==
