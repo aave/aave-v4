@@ -7,6 +7,10 @@ import 'forge-std/console2.sol';
 /// @dev mock Spoke to expose internal methods for testing
 
 contract MockSpokeExposedMethods is Spoke {
+  function test_coverage_ignore() public virtual {
+    // Intentionally left blank.
+    // Excludes contract from coverage.
+  }
   constructor(address _hub, address _oracle) Spoke(_hub, _oracle) {}
 
   function calculateUserAccountData(
