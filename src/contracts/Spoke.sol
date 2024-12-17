@@ -505,12 +505,12 @@ contract Spoke is ISpoke {
   }
 
   /**
-  @return totalCollateralInBaseCurrency
-  @return totalDebtInBaseCurrency
-  @return avgLiquidationThreshold
-  @return userRiskPremium
-  @return healthFactor
-  */
+   * @return totalCollateralInBaseCurrency
+   * @return totalDebtInBaseCurrency
+   * @return avgLiquidationThreshold
+   * @return userRiskPremium
+   * @return healthFactor
+   */
   function _calculateUserAccountData(
     address user
   ) internal view returns (uint256, uint256, uint256, uint256, uint256) {
