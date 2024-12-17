@@ -669,14 +669,13 @@ contract Spoke is ISpoke {
       : vars.liquidationRecoveryDebt / debtAssetPrice;
 
     console2.log('liquidationRecoveryDebt %e', vars.liquidationRecoveryDebt);
-
-    // amount of debt that can be liquidated to bring HF to HEALTH_FACTOR_LIQUIDATION_RECOVERY_THRESHOLD
-    vars.liquidationRecoveryDebt = totalDebtInBaseCurrency > vars.liquidationRecoveryDebt
-      ? vars.liquidationRecoveryDebt
-      : 0;
-
     console2.log('----- _calculateDebt -----');
     console2.log('maxLiquidatableDebt %e', vars.maxLiquidatableDebt);
+
+    console2.log(
+      'vars.maxLiquidatableDebt > vars.liquidationRecoveryDebt',
+      vars.maxLiquidatableDebt > vars.liquidationRecoveryDebt
+    );
 
     vars.maxLiquidatableDebt = vars.maxLiquidatableDebt > vars.liquidationRecoveryDebt
       ? vars.liquidationRecoveryDebt
