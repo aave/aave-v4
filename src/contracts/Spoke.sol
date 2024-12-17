@@ -252,8 +252,7 @@ contract Spoke is ISpoke {
       collateralReserve,
       debtReserve,
       vars.actualDebtToLiquidate,
-      vars.userCollateralBalance,
-      getLiquidationBonus(collateralAssetId)
+      vars.userCollateralBalance
     );
 
     console2.log('vars.userCollateralBalance %e', vars.userCollateralBalance);
@@ -692,8 +691,7 @@ contract Spoke is ISpoke {
     Reserve memory collateralReserve,
     Reserve memory debtReserve,
     uint256 actualDebtToLiquidate,
-    uint256 userCollateralBalance,
-    uint256 liquidationBonus
+    uint256 userCollateralBalance
   ) internal view returns (uint256, uint256, uint256) {
     AvailableCollateralToLiquidateLocalVars memory vars;
 
@@ -717,7 +715,7 @@ contract Spoke is ISpoke {
       (vars.debtAssetPrice * actualDebtToLiquidate * vars.collateralAssetUnit) /
       (vars.collateralAssetPrice * vars.debtAssetUnit);
 
-    vars.maxCollateralToLiquidate = vars.baseCollateral.percentMul(liquidationBonus);
+    vars.maxCollateralToLiquidate = vars.baseCollateral.percentMul(collateralReserve.config.lb);
 
     if (vars.maxCollateralToLiquidate > userCollateralBalance) {
       console2.log('maxCollateralToLiquidate > userCollateralBalance');
@@ -726,7 +724,7 @@ contract Spoke is ISpoke {
       vars.debtAmountNeeded = ((vars.collateralAssetPrice *
         vars.collateralAmount *
         vars.debtAssetUnit) / (vars.debtAssetPrice * vars.collateralAssetUnit)).percentDiv(
-          liquidationBonus
+          collateralReserve.config.lb
         );
     } else {
       console2.log('maxCollateralToLiquidate <= userCollateralBalance');
@@ -738,14 +736,14 @@ contract Spoke is ISpoke {
       console2.log('vars.liquidationProtocolFeePercentage != 0');
       vars.bonusCollateral =
         vars.collateralAmount -
-        vars.collateralAmount.percentDiv(liquidationBonus);
+        vars.collateralAmount.percentDiv(collateralReserve.config.lb);
 
       vars.liquidationProtocolFeeAmount = vars.bonusCollateral.percentMul(
         vars.liquidationProtocolFeePercentage
       );
 
       console2.log('vars.collateralAmount %e', vars.collateralAmount);
-      console2.log('liquidationBonust %e', liquidationBonus);
+      console2.log('liquidationBonust %e', collateralReserve.config.lb);
       console2.log('vars.bonusCollateral %e', vars.bonusCollateral);
       console2.log('liquidationProtocolFeeAmount %e', vars.liquidationProtocolFeeAmount);
       console2.log('vars.debtAmountNeeded %e', vars.debtAmountNeeded);

@@ -711,8 +711,7 @@ contract LiquidationInternalCalculationTest is BaseTest {
       mockSpoke1.getReserve(daiAssetId),
       mockSpoke1.getReserve(usdcAssetId),
       localParams.actualDebtToLiquidate,
-      mockSpoke1.getUserSupplyInAssets(daiAssetId, USER1),
-      mockSpoke1.getLiquidationBonus(daiAssetId)
+      mockSpoke1.getUserSupplyInAssets(daiAssetId, USER1)
     );
 
     (
@@ -723,8 +722,7 @@ contract LiquidationInternalCalculationTest is BaseTest {
       mockSpoke1.getReserve(daiAssetId),
       mockSpoke1.getReserve(usdcAssetId),
       localParams.actualDebtToLiquidate,
-      mockSpoke1.getUserSupplyInAssets(daiAssetId, USER1),
-      mockSpoke1.getLiquidationBonus(daiAssetId)
+      mockSpoke1.getUserSupplyInAssets(daiAssetId, USER1)
     );
 
     assertEq(
@@ -842,8 +840,7 @@ contract LiquidationInternalCalculationTest is BaseTest {
       mockSpoke1.getReserve(daiAssetId),
       mockSpoke1.getReserve(usdcAssetId),
       localParams.actualDebtToLiquidate,
-      mockSpoke1.getUserSupplyInAssets(daiAssetId, USER1),
-      mockSpoke1.getLiquidationBonus(daiAssetId)
+      mockSpoke1.getUserSupplyInAssets(daiAssetId, USER1)
     );
 
     (
@@ -854,8 +851,7 @@ contract LiquidationInternalCalculationTest is BaseTest {
       mockSpoke1.getReserve(daiAssetId),
       mockSpoke1.getReserve(usdcAssetId),
       localParams.actualDebtToLiquidate,
-      mockSpoke1.getUserSupplyInAssets(daiAssetId, USER1),
-      mockSpoke1.getLiquidationBonus(daiAssetId)
+      mockSpoke1.getUserSupplyInAssets(daiAssetId, USER1)
     );
 
     console2.log('localParams.healthFactor %e', localParams.healthFactor);
@@ -1032,8 +1028,7 @@ contract LiquidationInternalCalculationTest is BaseTest {
     Spoke.Reserve memory collateralReserve,
     Spoke.Reserve memory debtReserve,
     uint256 actualDebtToLiquidate,
-    uint256 userCollateralBalance,
-    uint256 liquidationBonus
+    uint256 userCollateralBalance
   ) internal returns (uint256, uint256, uint256) {
     Spoke.AvailableCollateralToLiquidateLocalVars memory vars;
 
@@ -1054,14 +1049,14 @@ contract LiquidationInternalCalculationTest is BaseTest {
       (vars.debtAssetPrice * actualDebtToLiquidate * vars.collateralAssetUnit) /
       (vars.collateralAssetPrice * vars.debtAssetUnit);
 
-    vars.maxCollateralToLiquidate = vars.baseCollateral.percentMul(liquidationBonus);
+    vars.maxCollateralToLiquidate = vars.baseCollateral.percentMul(collateralReserve.config.lb);
 
     if (vars.maxCollateralToLiquidate > userCollateralBalance) {
       vars.collateralAmount = userCollateralBalance;
       vars.debtAmountNeeded = ((vars.collateralAssetPrice *
         vars.collateralAmount *
         vars.debtAssetUnit) / (vars.debtAssetPrice * vars.collateralAssetUnit)).percentDiv(
-          liquidationBonus
+          collateralReserve.config.lb
         );
     } else {
       vars.collateralAmount = vars.maxCollateralToLiquidate;
@@ -1071,7 +1066,7 @@ contract LiquidationInternalCalculationTest is BaseTest {
     if (vars.liquidationProtocolFeePercentage != 0) {
       vars.bonusCollateral =
         vars.collateralAmount -
-        vars.collateralAmount.percentDiv(liquidationBonus);
+        vars.collateralAmount.percentDiv(collateralReserve.config.lb);
 
       vars.liquidationProtocolFeeAmount = vars.bonusCollateral.percentMul(
         vars.liquidationProtocolFeePercentage

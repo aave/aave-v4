@@ -45,16 +45,14 @@ contract MockSpokeExposedMethods is Spoke {
     Reserve memory collateralReserve,
     Reserve memory debtReserve,
     uint256 debtToCover,
-    uint256 userCollateralBalance,
-    uint256 liquidationBonus
+    uint256 userCollateralBalance
   ) public view returns (uint256, uint256, uint256) {
     return
       _calculateAvailableCollateralToLiquidate(
         collateralReserve,
         debtReserve,
         debtToCover,
-        userCollateralBalance,
-        liquidationBonus
+        userCollateralBalance
       );
   }
 }
