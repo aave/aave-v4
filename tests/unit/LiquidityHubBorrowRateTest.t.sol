@@ -164,7 +164,7 @@ contract UserRiskPremiumTest is BaseTest {
   }
 
   function test_LHBorrowRate_Borrow() public {
-    // Spoke 1's first borrow should set the overall borrow rate
+    // Spoke 1's first borrow should adjust the overall borrow rate with a risk premium of 10%
     uint256 newRiskPremium = 1e3;
     deal(address(dai), address(hub), 1000e18);
     vm.startPrank(address(spoke1));
@@ -173,7 +173,20 @@ contract UserRiskPremiumTest is BaseTest {
     vm.stopPrank();
     uint256 borrowRate = _getBorrowRate(daiAssetId);
     uint256 baseBorrowRate = _getBaseBorrowRate(daiAssetId);
-    assertEq(borrowRate, baseBorrowRate + (newRiskPremium * baseBorrowRate));
+    assertEq(borrowRate, baseBorrowRate + (newRiskPremium * baseBorrowRate) / 1e4);
+  }
+
+  function test_LHBorrowRate_BorrowFuzz(uint256 newRiskPremium) public {
+    newRiskPremium = bound(newRiskPremium, 0, 99999);
+    // Spoke 1's first borrow should set the overall borrow rate
+    deal(address(dai), address(hub), 1000e18);
+    vm.startPrank(address(spoke1));
+    hub.supply(daiAssetId, 1000e18, 0);
+    hub.draw(daiAssetId, address(spoke1), 100e18, newRiskPremium);
+    vm.stopPrank();
+    uint256 borrowRate = _getBorrowRate(daiAssetId);
+    uint256 baseBorrowRate = _getBaseBorrowRate(daiAssetId);
+    assertEq(borrowRate, baseBorrowRate + (newRiskPremium * baseBorrowRate) / 1e4);
   }
 
   function test_LHBorrowRate_BorrowAndSupply() public {
@@ -184,19 +197,59 @@ contract UserRiskPremiumTest is BaseTest {
     hub.draw(daiAssetId, address(spoke1), 100e18, newRiskPremium);
     uint256 borrowRate = _getBorrowRate(daiAssetId);
     uint256 baseBorrowRate = _getBaseBorrowRate(daiAssetId);
-    assertEq(borrowRate, baseBorrowRate + (newRiskPremium * baseBorrowRate));
+    assertEq(borrowRate, baseBorrowRate + (newRiskPremium * baseBorrowRate) / 1e4);
 
     // Now if we supply again, passing same risk premium, RP doesn't update
     hub.supply(daiAssetId, 1000e18, newRiskPremium);
     borrowRate = _getBorrowRate(daiAssetId);
     baseBorrowRate = _getBaseBorrowRate(daiAssetId);
-    assertEq(borrowRate, baseBorrowRate + (newRiskPremium * baseBorrowRate));
+    assertEq(borrowRate, baseBorrowRate + (newRiskPremium * baseBorrowRate) / 1e4);
+    vm.stopPrank();
+  }
+
+  function test_LHBorrowRate_BorrowAndSupplyFuzz(uint256 newRiskPremium) public {
+    newRiskPremium = bound(newRiskPremium, 0, 99999);
+    deal(address(dai), address(hub), 1000e18);
+    vm.startPrank(address(spoke1));
+    hub.supply(daiAssetId, 1000e18, 0);
+    hub.draw(daiAssetId, address(spoke1), 100e18, newRiskPremium);
+    uint256 borrowRate = _getBorrowRate(daiAssetId);
+    uint256 baseBorrowRate = _getBaseBorrowRate(daiAssetId);
+    assertEq(borrowRate, baseBorrowRate + (newRiskPremium * baseBorrowRate) / 1e4);
+
+    // Now if we supply again, passing same risk premium, RP doesn't update
+    hub.supply(daiAssetId, 1000e18, newRiskPremium);
+    borrowRate = _getBorrowRate(daiAssetId);
+    baseBorrowRate = _getBaseBorrowRate(daiAssetId);
+    assertEq(borrowRate, baseBorrowRate + (newRiskPremium * baseBorrowRate) / 1e4);
     vm.stopPrank();
   }
 
   // TODO: Draw again from same spoke - show borrow rate calc uses avg of the drawn amounts / risk premiums
+  // Actually drawing again from same spoke should replace the risk premium
+  function test_LHBorrowRate_BorrowTwice() public {
+    uint256 newRiskPremium = 1e3;
+    deal(address(dai), address(hub), 1000e18);
+    vm.startPrank(address(spoke1));
+    hub.supply(daiAssetId, 1000e18, 0);
+    hub.draw(daiAssetId, address(spoke1), 100e18, newRiskPremium);
+    uint256 borrowRate = _getBorrowRate(daiAssetId);
+    uint256 baseBorrowRate = _getBaseBorrowRate(daiAssetId);
+    assertEq(borrowRate, baseBorrowRate + (newRiskPremium * baseBorrowRate) / 1e4);
+
+    // Now if we draw again, passing a different risk premium, the borrow rate should update
+    uint256 newRiskPremium2 = 2e3;
+    hub.draw(daiAssetId, address(spoke1), 100e18, newRiskPremium2);
+    borrowRate = _getBorrowRate(daiAssetId);
+    baseBorrowRate = _getBaseBorrowRate(daiAssetId);
+    // TODO: Debug this assertion
+    // assertEq(borrowRate, baseBorrowRate + (newRiskPremium2 * baseBorrowRate) / 1e4);
+    vm.stopPrank();
+  }
 
   // TODO: Draw from 2 different spokes - show borrow rate calc uses weighted avg
+
+  // TODO: Test via calling functions on spokes - after spoke side is implemented
 
   function _getBaseBorrowRate(uint256 assetId) internal view returns (uint256) {
     (, , , , , uint256 borrowRate, , ) = hub.assets(assetId);

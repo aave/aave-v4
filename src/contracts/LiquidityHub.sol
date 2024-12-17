@@ -416,7 +416,10 @@ contract LiquidityHub is ILiquidityHub {
 
     // Caching borrow rate for next accrual on action
     asset.baseBorrowRate = baseBorrowRate;
-    asset.RPAdjustedBorrowRate = baseBorrowRate + (baseBorrowRate * wAvgBR[asset.id].spokeBR);
+    asset.RPAdjustedBorrowRate =
+      baseBorrowRate +
+      (baseBorrowRate * (wAvgBR[asset.id].spokeBR / 1e28)) /
+      1e4;
   }
 
   /**
@@ -441,8 +444,14 @@ contract LiquidityHub is ILiquidityHub {
     // If first update, assign the new value
     // Note: Just a change in weight matters, also can't divide by 0
     if (wAvgBR[assetId].amtDrawn == 0 && newRiskPremiumWeight != 0) {
-      wAvgBR[assetId].spokeBR = newRiskPremium;
-      wAvgBR[assetId].amtDrawn = newRiskPremiumWeight;
+      (uint256 newWAvg, uint256 newSumWeights) = MathUtils.addToWeightedAverage(
+        0,
+        0,
+        newRiskPremium * newRiskPremiumWeight,
+        newRiskPremiumWeight
+      );
+      wAvgBR[assetId].spokeBR = newWAvg;
+      wAvgBR[assetId].amtDrawn = newSumWeights;
     } else {
       // Remove the old value from spoke from the weighted average
       (uint256 newWeightedAvg, uint256 newSumWeights) = MathUtils.subtractFromWeightedAverage(
