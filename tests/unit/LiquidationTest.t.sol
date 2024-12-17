@@ -871,7 +871,6 @@ contract LiquidationTest is BaseTest {
     );
   }
 
-  /// @dev Test liquidation call with liquidated amount >= user collateral balance, with liquidation protocol fee > 0
   function test_liquidationCall_gteUserCollateralBalance_nonZeroLiquidationProtocolFee() public {
     uint256 debtToCover = 15_000e18;
     uint256 daiAssetId = 0;
@@ -910,7 +909,6 @@ contract LiquidationTest is BaseTest {
     // if eth -> 0, total collateral: $10k. LT is 0.75
     // total borrowed is $15k, total collateral is $10k
     // HF = collateral * LT / borrowed = 0.75 * $10k / $15k = 0.5
-    // if paying back $10k in debt, collateral to liquidate = $10k
 
     TestLiquidationCallLocalParams memory vars;
 
@@ -1016,6 +1014,199 @@ contract LiquidationTest is BaseTest {
       actualCollateralToLiquidate: vars.expectedCollateralLiquidated - vars.expectedProtocolFee,
       liquidator: LIQUIDATOR
     });
+    mockSpoke1.liquidationCall(daiAssetId, usdcAssetId, USER1, debtToCover);
+    vm.stopPrank();
+
+    // post-liquidation
+    vars.user1DaiData1 = mockSpoke1.getUser(daiAssetId, USER1);
+    vars.mockSpoke1DaiData1 = hub.getSpoke(daiAssetId, address(mockSpoke1));
+    vars.user1EthData1 = mockSpoke1.getUser(ethAssetId, USER1);
+    vars.mockSpoke1EthData1 = hub.getSpoke(ethAssetId, address(mockSpoke1));
+    vars.user1UsdcData1 = mockSpoke1.getUser(usdcAssetId, USER1);
+    vars.mockSpoke1UsdcData1 = hub.getSpoke(usdcAssetId, address(mockSpoke1));
+    vars.actualDebtCovered = debtToCover - usdc.balanceOf(LIQUIDATOR);
+
+    // dai
+    assertEq(vars.user1DaiData1.usingAsCollateral, false, 'Unexpected user1 dai usingAsCollateral');
+    assertEq(vars.mockSpoke1DaiData1.totalShares, 0, 'Unexpected mockSpoke1 dai totalShares');
+    assertEq(vars.mockSpoke1DaiData1.drawnShares, 0, 'Unexpected mockSpoke1 dai drawnShares');
+    // eth
+    assertEq(vars.user1EthData1.usingAsCollateral, true, 'Unexpected eth usingAsCollateral');
+    assertEq(
+      vars.mockSpoke1EthData1.totalShares,
+      hub.convertAssetsToSharesDown(ethAssetId, ethAmount),
+      'Unexpected mockSpoke1 eth totalShares'
+    );
+    assertEq(vars.mockSpoke1EthData1.drawnShares, 0, 'Unexpected mockSpoke1 eth drawnShares');
+    // usdc
+    assertEq(vars.user1UsdcData1.usingAsCollateral, false, 'Unexpected usdc usingAsCollateral');
+    assertEq(
+      vars.mockSpoke1UsdcData1.totalShares,
+      hub.convertAssetsToSharesDown(usdcAssetId, usdcBorrowAmount),
+      'Unexpected mockSpoke1 usdc totalShares'
+    );
+    assertEq(
+      vars.mockSpoke1UsdcData1.drawnShares,
+      vars.mockSpoke1UsdcData1.totalShares -
+        hub.convertAssetsToSharesDown(usdcAssetId, vars.actualDebtCovered),
+      'Unexpected mockSpoke1 usdc drawnShares'
+    );
+    assertEq(mockSpoke1.getHealthFactor(USER1), 0, 'Unexpected user1 final health factor'); // only bad debt remains
+
+    // liquidator
+    assertEq(
+      dai.balanceOf(LIQUIDATOR),
+      vars.expectedCollateralLiquidated - vars.expectedProtocolFee,
+      'Unexpected liquidator collateral asset balance'
+    );
+    assertEq(
+      dai.balanceOf(mockSpoke1.RESERVE_TREASURY_ADDRESS()),
+      vars.expectedProtocolFee,
+      'Unexpected RESERVE_TREASURY_ADDRESS collateral asset balance (protocol fee)'
+    );
+  }
+
+  function skip_test_liquidationCall_gteUserCollateralBalance_ltCollateralBalance() public {
+    uint256 debtToCover = 5_000e18;
+    uint256 daiAssetId = 0;
+    uint256 ethAssetId = 1;
+    uint256 usdcAssetId = 2;
+    uint256 newLpfp = 200; // in BPS, ie 2%
+
+    // total collateral: $30k
+    uint256 daiAmount = 10_000e18; // 10k dai -> $10k
+    uint256 ethAmount = 10e18; // 10 eth -> $20k
+
+    // total borrowed: $15k
+    uint256 usdcBorrowAmount = 15_000e18; // 15k usdc -> $15k
+    bool usingAsCollateral = true;
+
+    // USER1 supply dai into mockSpoke1
+    deal(address(dai), USER1, daiAmount);
+    Utils.spokeSupply(vm, hub, mockSpoke1, daiAssetId, USER1, daiAmount, USER1);
+    Utils.setUsingAsCollateral(vm, mockSpoke1, USER1, daiAssetId, usingAsCollateral);
+    Utils.updateLiquidationProtocolFeePercentage(mockSpoke1, daiAssetId, newLpfp);
+
+    // USER1 supply eth into mockSpoke1
+    deal(address(eth), USER1, ethAmount);
+    Utils.spokeSupply(vm, hub, mockSpoke1, ethAssetId, USER1, ethAmount, USER1);
+    Utils.setUsingAsCollateral(vm, mockSpoke1, USER1, ethAssetId, usingAsCollateral);
+
+    // USER2 supply usdc into mockSpoke1
+    deal(address(usdc), USER2, usdcBorrowAmount);
+    Utils.spokeSupply(vm, hub, mockSpoke1, usdcAssetId, USER2, usdcBorrowAmount, USER2);
+
+    // USER1 borrow usdc
+    Utils.borrow(vm, mockSpoke1, usdcAssetId, USER1, usdcBorrowAmount, USER1);
+
+    // HF drops below threshold, eth -> $0.10
+    MockPriceOracle(address(oracle)).setAssetPrice(ethAssetId, 0e8);
+    // if eth -> 0, total collateral: $10k. LT is 0.75
+    // total borrowed is $15k, total collateral is $10k
+    // HF = collateral * LT / borrowed = 0.75 * $10k / $15k = 0.5
+    // if paying back $10k in debt, collateral to liquidate = $10k
+
+    TestLiquidationCallLocalParams memory vars;
+
+    // pre-liquidation
+    vars.user1DaiData0 = mockSpoke1.getUser(daiAssetId, USER1);
+    vars.mockSpoke1DaiData0 = hub.getSpoke(daiAssetId, address(mockSpoke1));
+    vars.reserveDaiData0 = mockSpoke1.getReserve(daiAssetId);
+
+    vars.user1EthData0 = mockSpoke1.getUser(ethAssetId, USER1);
+    vars.mockSpoke1EthData0 = hub.getSpoke(ethAssetId, address(mockSpoke1));
+
+    vars.user1UsdcData0 = mockSpoke1.getUser(usdcAssetId, USER1);
+    vars.user2UsdcData0 = mockSpoke1.getUser(usdcAssetId, USER2);
+    vars.mockSpoke1UsdcData0 = hub.getSpoke(usdcAssetId, address(mockSpoke1));
+
+    vars.expectedCollateralLiquidated = debtToCover;
+    vars.expectedDebtCovered = _getExpectedDebtCovered(
+      daiAssetId,
+      usdcAssetId,
+      vars.expectedCollateralLiquidated
+    );
+    (, , vars.expectedProtocolFee) = _getExpectedCollateralLiquidated(
+      daiAssetId,
+      usdcAssetId,
+      vars.expectedDebtCovered
+    );
+
+    assertEq(
+      vars.reserveDaiData0.config.lpfp,
+      newLpfp,
+      'Unexpected mockSpoke1 dai liquidation protocol fee percentage'
+    );
+
+    // dai
+    assertEq(vars.user1DaiData0.usingAsCollateral, true, 'Unexpected user1 dai usingAsCollateral');
+    assertEq(
+      vars.user1DaiData0.supplyShares,
+      vars.mockSpoke1DaiData0.totalShares,
+      'Unexpected user1 dai supplyShares'
+    );
+    assertEq(vars.user1DaiData0.debtShares, 0, 'Unexpected user1 dai debtShares');
+    assertEq(
+      vars.mockSpoke1DaiData0.totalShares,
+      hub.convertAssetsToSharesDown(daiAssetId, daiAmount),
+      'Unexpected mockSpoke1 dai totalShares'
+    );
+    assertEq(vars.mockSpoke1DaiData0.drawnShares, 0, 'Unexpected mockSpoke1 dai drawnShares');
+    // eth
+    assertEq(vars.user1EthData0.usingAsCollateral, true, 'Unexpected user1 eth usingAsCollateral');
+    assertEq(
+      vars.user1EthData0.supplyShares,
+      vars.mockSpoke1EthData0.totalShares,
+      'Unexpected user1 eth supplyShares'
+    );
+    assertEq(vars.user1EthData0.debtShares, 0, 'Unexpected user1 eth debtShares');
+    assertEq(
+      vars.mockSpoke1EthData0.totalShares,
+      hub.convertAssetsToSharesDown(ethAssetId, ethAmount),
+      'Unexpected mockSpoke1 eth totalShares'
+    );
+    assertEq(vars.mockSpoke1EthData0.drawnShares, 0, 'Unexpected mockSpoke1 eth drawnShares');
+    // usdc
+    assertEq(
+      vars.user1UsdcData0.usingAsCollateral,
+      false,
+      'Unexpected user1 usdc usingAsCollateral'
+    );
+    assertEq(
+      vars.user2UsdcData0.supplyShares,
+      vars.mockSpoke1UsdcData0.totalShares,
+      'Unexpected user2 usdc supplyShares'
+    );
+    assertEq(
+      vars.user1UsdcData0.debtShares,
+      vars.user2UsdcData0.supplyShares,
+      'Unexpected user1 usdc debtShares'
+    );
+    assertEq(
+      vars.mockSpoke1UsdcData0.totalShares,
+      hub.convertAssetsToSharesDown(usdcAssetId, usdcBorrowAmount),
+      'Unexpected mockSpoke1 usdc totalShares'
+    );
+    assertEq(
+      vars.mockSpoke1UsdcData0.drawnShares,
+      hub.convertAssetsToSharesDown(usdcAssetId, usdcBorrowAmount),
+      'Unexpected mockSpoke1 usdc drawnShares'
+    );
+
+    // action: liquidation
+    deal(address(usdc), LIQUIDATOR, debtToCover);
+    vm.startPrank(LIQUIDATOR);
+    usdc.approve(address(mockSpoke1), debtToCover);
+
+    // vm.expectEmit(address(mockSpoke1));
+    // emit LiquidationCall({
+    //   collateralAssetId: daiAssetId,
+    //   debtAssetId: usdcAssetId,
+    //   user: USER1,
+    //   actualDebtToLiquidate: vars.expectedDebtCovered,
+    //   actualCollateralToLiquidate: vars.expectedCollateralLiquidated - vars.expectedProtocolFee,
+    //   liquidator: LIQUIDATOR
+    // });
     mockSpoke1.liquidationCall(daiAssetId, usdcAssetId, USER1, debtToCover);
     vm.stopPrank();
 
