@@ -657,7 +657,9 @@ contract Spoke is ISpoke {
       )
       : 0;
 
-    liquidationRecoveryDebt = debtAssetPrice == 0 ? 0 : liquidationRecoveryDebt / debtAssetPrice;
+    liquidationRecoveryDebt = debtAssetPrice == 0
+      ? type(uint256).max
+      : liquidationRecoveryDebt / debtAssetPrice;
 
     console2.log('liquidationRecoveryDebt %e', liquidationRecoveryDebt);
 

@@ -745,7 +745,7 @@ contract LiquidationInternalCalculationTest is BaseTest {
     assertEq(
       localParams.liquidationProtocolFeeAmount,
       0,
-      'Unexpected liquidationProtocolFeeAmount > 0'
+      'Unexpected liquidationProtocolFeeAmount'
     );
     assertEq(
       (localParams.actualCollateralToLiquidate + localParams.expectedLiquidationProtocolFeeAmount)
