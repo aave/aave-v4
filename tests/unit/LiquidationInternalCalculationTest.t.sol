@@ -729,7 +729,8 @@ contract LiquidationInternalCalculationTest is BaseTest {
       mockSpoke1.getReserve(daiAssetId),
       mockSpoke1.getReserve(usdcAssetId),
       vars.actualDebtToLiquidate,
-      mockSpoke1.getUserSupplyInAssets(daiAssetId, USER1)
+      mockSpoke1.getUserSupplyInAssets(daiAssetId, USER1),
+      vars.debtAssetPrice
     );
 
     assertEq(
@@ -857,7 +858,8 @@ contract LiquidationInternalCalculationTest is BaseTest {
       mockSpoke1.getReserve(daiAssetId),
       mockSpoke1.getReserve(usdcAssetId),
       vars.actualDebtToLiquidate,
-      mockSpoke1.getUserSupplyInAssets(daiAssetId, USER1)
+      mockSpoke1.getUserSupplyInAssets(daiAssetId, USER1),
+      vars.debtAssetPrice
     );
 
     console2.log('vars.healthFactor %e', vars.healthFactor);

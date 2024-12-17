@@ -563,7 +563,8 @@ contract LiquidationTest is BaseTest {
       vars.collateralReserve,
       vars.debtReserve,
       vars.actualDebtToLiquidate,
-      vars.userCollateralBalance
+      vars.userCollateralBalance,
+      vars.debtAssetPrice
     );
 
     vm.expectEmit(address(mockSpoke1));
@@ -803,7 +804,8 @@ contract LiquidationTest is BaseTest {
       vars.collateralReserve,
       vars.debtReserve,
       vars.actualDebtToLiquidate,
-      vars.userCollateralBalance
+      vars.userCollateralBalance,
+      vars.debtAssetPrice
     );
 
     vm.expectEmit(address(mockSpoke1));
@@ -1049,7 +1051,8 @@ contract LiquidationTest is BaseTest {
       vars.collateralReserve,
       vars.debtReserve,
       vars.actualDebtToLiquidate,
-      vars.userCollateralBalance
+      vars.userCollateralBalance,
+      vars.debtAssetPrice
     );
 
     vm.expectEmit(address(mockSpoke1));
@@ -1288,7 +1291,8 @@ contract LiquidationTest is BaseTest {
       vars.collateralReserve,
       vars.debtReserve,
       vars.actualDebtToLiquidate,
-      vars.userCollateralBalance
+      vars.userCollateralBalance,
+      vars.debtAssetPrice
     );
 
     vm.expectEmit(address(mockSpoke1));
@@ -1533,7 +1537,8 @@ contract LiquidationTest is BaseTest {
       vars.collateralReserve,
       vars.debtReserve,
       vars.actualDebtToLiquidate,
-      vars.userCollateralBalance
+      vars.userCollateralBalance,
+      vars.debtAssetPrice
     );
 
     vm.expectEmit(address(mockSpoke1));

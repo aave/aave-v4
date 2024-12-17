@@ -256,7 +256,8 @@ contract Spoke is ISpoke {
       collateralReserve,
       debtReserve,
       vars.actualDebtToLiquidate,
-      vars.userCollateralBalance
+      vars.userCollateralBalance,
+      vars.debtAssetPrice
     );
 
     console2.log('vars.userCollateralBalance %e', vars.userCollateralBalance);
@@ -689,26 +690,27 @@ contract Spoke is ISpoke {
 
   /**
    * @return The maximum collateral amount that is possible to liquidate given all the liquidation constraints (liquidation bonus, liquidationProtocolFeePercentage)
-   * @return The amount to repay with the liquidation
+   * @return The debt amount to repay with the liquidation
    * @return The fee taken from the liquidation bonus amount to be paid to the protocol
    */
   function _calculateAvailableCollateralToLiquidate(
     Reserve memory collateralReserve,
     Reserve memory debtReserve,
     uint256 actualDebtToLiquidate,
-    uint256 userCollateralBalance
+    uint256 userCollateralBalance,
+    uint256 debtAssetPrice
   ) internal view returns (uint256, uint256, uint256) {
     AvailableCollateralToLiquidateLocalVars memory vars;
 
     vars.collateralAssetPrice = IPriceOracle(oracle).getAssetPrice(collateralReserve.id);
-    vars.debtAssetPrice = IPriceOracle(oracle).getAssetPrice(debtReserve.id);
+    // vars.debtAssetPrice = IPriceOracle(oracle).getAssetPrice(debtReserve.id);
 
     vars.collateralAssetUnit = 10 ** collateralReserve.decimals;
     vars.debtAssetUnit = 10 ** debtReserve.decimals;
 
     console2.log('--- _calculateAvailableCollateralToLiquidate---- ');
     console2.log('vars.collateralAssetPrice %e', vars.collateralAssetPrice);
-    console2.log('vars.debtAssetPrice %e', vars.debtAssetPrice);
+    console2.log('debtAssetPrice %e', debtAssetPrice);
     console2.log('userCollateralBalance %e', userCollateralBalance);
 
     vars.liquidationProtocolFeePercentage = getLiquidationProtocolFeePercentage(
@@ -717,7 +719,7 @@ contract Spoke is ISpoke {
 
     // find collateral amount that corresponds to the debt to cover
     vars.baseCollateral =
-      (vars.debtAssetPrice * actualDebtToLiquidate * vars.collateralAssetUnit) /
+      (debtAssetPrice * actualDebtToLiquidate * vars.collateralAssetUnit) /
       (vars.collateralAssetPrice * vars.debtAssetUnit);
 
     vars.maxCollateralToLiquidate = vars.baseCollateral.percentMul(collateralReserve.config.lb);
@@ -728,7 +730,7 @@ contract Spoke is ISpoke {
       vars.collateralAmount = userCollateralBalance;
       vars.debtAmountNeeded = ((vars.collateralAssetPrice *
         vars.collateralAmount *
-        vars.debtAssetUnit) / (vars.debtAssetPrice * vars.collateralAssetUnit)).percentDiv(
+        vars.debtAssetUnit) / (debtAssetPrice * vars.collateralAssetUnit)).percentDiv(
           collateralReserve.config.lb
         );
     } else {
