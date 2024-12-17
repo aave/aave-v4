@@ -62,16 +62,12 @@ contract Spoke is ISpoke {
     uint256 healthFactor;
   }
 
-  // TODO: removed unneeded fields
   struct LiquidationCallLocalVars {
-    uint256 actualDebtToCover;
     uint256 actualCollateralToLiquidate;
     uint256 actualDebtToLiquidate;
     uint256 liquidationProtocolFeeAmount;
     uint256 userCollateralBalance;
-    uint256 userDebtBalance;
     uint256 healthFactor;
-    uint256 maxDebtToCover;
     uint256 totalCollateralInBaseCurrency;
     uint256 totalDebtInBaseCurrency;
     uint256 avgLiquidationThreshold;
@@ -84,8 +80,6 @@ contract Spoke is ISpoke {
     uint256 maxCollateralToLiquidate;
     uint256 baseCollateral;
     uint256 bonusCollateral;
-    uint256 debtAssetDecimals;
-    uint256 collateralDecimals;
     uint256 collateralAssetUnit;
     uint256 debtAssetUnit;
     uint256 collateralAmount;
