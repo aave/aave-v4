@@ -75,6 +75,7 @@ contract Spoke is ISpoke {
     uint256 totalCollateralInBaseCurrency;
     uint256 totalDebtInBaseCurrency;
     uint256 avgLiquidationThreshold;
+    uint256 debtAssetPrice;
   }
 
   struct AvailableCollateralToLiquidateLocalVars {
@@ -216,6 +217,8 @@ contract Spoke is ISpoke {
     Reserve memory collateralReserve = reserves[collateralAssetId];
     Reserve memory debtReserve = reserves[debtAssetId];
 
+    vars.debtAssetPrice = IPriceOracle(oracle).getAssetPrice(debtAssetId);
+
     // TODO: accrue interest first? / updateState
     (
       vars.totalCollateralInBaseCurrency,
@@ -231,13 +234,14 @@ contract Spoke is ISpoke {
 
     // TODO: optimize this calculation / input params
     vars.actualDebtToLiquidate = _calculateActualDebtToLiquidate(
+      collateralReserve,
       debtToCover,
       user,
       debtAssetId,
       vars.totalCollateralInBaseCurrency,
       vars.totalDebtInBaseCurrency,
       vars.avgLiquidationThreshold,
-      collateralReserve
+      vars.debtAssetPrice
     );
 
     // console2.log('collateral amt: %e', getUserSupplyInAsset(collateralAssetId, user));
@@ -616,13 +620,14 @@ contract Spoke is ISpoke {
    * @return actualDebtToLiquidate The actual amount of debt asset that can be liquidated
    */
   function _calculateActualDebtToLiquidate(
+    Reserve memory collateralReserve,
     uint256 debtToCover,
     address user,
     uint256 debtAssetId,
     uint256 totalCollateralInBaseCurrency,
     uint256 totalDebtInBaseCurrency,
     uint256 avgLiquidationThreshold,
-    Reserve memory collateralReserve
+    uint256 debtAssetPrice
   ) internal view returns (uint256) {
     console2.log('----- _calculateActualDebtToLiquidate -----');
 
@@ -645,7 +650,7 @@ contract Spoke is ISpoke {
     );
     uint256 weightedCollateral = totalCollateralInBaseCurrency.wadMul(avgLiquidationThreshold) /
       1e4;
-    uint256 debtAssetPrice = IPriceOracle(oracle).getAssetPrice(debtAssetId);
+    // uint256 debtAssetPrice = IPriceOracle(oracle).getAssetPrice(debtAssetId);
 
     // amount of user debt that corresponds to HEALTH_FACTOR_LIQUIDATION_RECOVERY_THRESHOLD
     uint256 liquidationRecoveryDebt = hfScaledDebt > weightedCollateral

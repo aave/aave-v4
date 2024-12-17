@@ -449,6 +449,7 @@ contract LiquidationInternalCalculationTest is BaseTest {
     uint256 expectedLiquidationProtocolFeeAmount;
     uint256 collateralAmount;
     uint256 bonusCollateral;
+    uint256 debtAssetPrice;
   }
 
   /// forge-config: default.fuzz.runs = 1000
@@ -500,48 +501,48 @@ contract LiquidationInternalCalculationTest is BaseTest {
     // USER1 borrow wbtc
     Utils.borrow(vm, mockSpoke1, wbtcAssetId, USER1, wbtcBorrowAmount, USER1);
 
-    TestCalculateActualDebtToLiquidateLocalParams memory localParams;
+    TestCalculateActualDebtToLiquidateLocalParams memory vars;
 
-    localParams.collateralReserve = mockSpoke1.getReserve(daiAssetId);
+    vars.collateralReserve = mockSpoke1.getReserve(daiAssetId);
 
     (
-      localParams.totalCollateralInBaseCurrency,
-      localParams.totalDebtInBaseCurrency,
-      localParams.avgLiquidationThreshold,
+      vars.totalCollateralInBaseCurrency,
+      vars.totalDebtInBaseCurrency,
+      vars.avgLiquidationThreshold,
       ,
-      localParams.healthFactor
+      vars.healthFactor
     ) = mockSpoke1.calculateUserAccountData(USER1);
 
-    localParams.collateralAssetIds = new uint256[](2);
-    localParams.collateralAssetIds[0] = daiAssetId;
-    localParams.collateralAssetIds[1] = ethAssetId;
+    vars.collateralAssetIds = new uint256[](2);
+    vars.collateralAssetIds[0] = daiAssetId;
+    vars.collateralAssetIds[1] = ethAssetId;
 
-    localParams.debtAssetIds = new uint256[](2);
-    localParams.debtAssetIds[0] = usdcAssetId;
-    localParams.debtAssetIds[1] = wbtcAssetId;
+    vars.debtAssetIds = new uint256[](2);
+    vars.debtAssetIds[0] = usdcAssetId;
+    vars.debtAssetIds[1] = wbtcAssetId;
 
-    (, , localParams.expectedActualDebtToLiquidate) = _calculateActualDebtToLiquidate(
+    (, , vars.expectedActualDebtToLiquidate) = _calculateActualDebtToLiquidate(
       debtToCover,
       USER1,
       usdcAssetId,
       daiAssetId,
-      localParams.debtAssetIds,
-      localParams.collateralAssetIds
+      vars.debtAssetIds,
+      vars.collateralAssetIds
     );
 
     // uint256 actualDebtToLiquidate = mockSpoke1.calculateActualDebtToLiquidate(
     //   debtToCover,
     //   USER1,
     //   usdcAssetId,
-    //   localParams.totalCollateralInBaseCurrency,
-    //   localParams.totalDebtInBaseCurrency,
-    //   localParams.avgLiquidationThreshold,
-    //   localParams.collateralReserve
+    //   vars.totalCollateralInBaseCurrency,
+    //   vars.totalDebtInBaseCurrency,
+    //   vars.avgLiquidationThreshold,
+    //   vars.collateralReserve
     // );
 
     // assertEq(
     //   actualDebtToLiquidate,
-    //   localParams.expectedActualDebtToLiquidate,
+    //   vars.expectedActualDebtToLiquidate,
     //   'Unexpected actualDebtToLiquidate'
     // );
   }
@@ -583,26 +584,28 @@ contract LiquidationInternalCalculationTest is BaseTest {
     deal(address(wbtc), USER2, wbtcBorrowAmount);
     Utils.spokeSupply(vm, hub, mockSpoke1, wbtcAssetId, USER2, wbtcBorrowAmount, USER2);
 
-    TestCalculateActualDebtToLiquidateLocalParams memory localParams;
+    TestCalculateActualDebtToLiquidateLocalParams memory vars;
 
-    localParams.collateralReserve = mockSpoke1.getReserve(daiAssetId);
+    vars.collateralReserve = mockSpoke1.getReserve(daiAssetId);
+    vars.debtAssetPrice = oracle.getAssetPrice(usdcAssetId);
 
     (
-      localParams.totalCollateralInBaseCurrency,
-      localParams.totalDebtInBaseCurrency,
-      localParams.avgLiquidationThreshold,
+      vars.totalCollateralInBaseCurrency,
+      vars.totalDebtInBaseCurrency,
+      vars.avgLiquidationThreshold,
       ,
-      localParams.healthFactor
+      vars.healthFactor
     ) = mockSpoke1.calculateUserAccountData(USER1);
 
     uint256 actualDebtToLiquidate = mockSpoke1.calculateActualDebtToLiquidate(
+      vars.collateralReserve,
       debtToCover,
       USER1,
       usdcAssetId,
-      localParams.totalCollateralInBaseCurrency,
-      localParams.totalDebtInBaseCurrency,
-      localParams.avgLiquidationThreshold,
-      localParams.collateralReserve
+      vars.totalCollateralInBaseCurrency,
+      vars.totalDebtInBaseCurrency,
+      vars.avgLiquidationThreshold,
+      vars.debtAssetPrice
     );
 
     assertEq(actualDebtToLiquidate, 0, 'Unexpected actualDebtToLiquidate');
@@ -615,26 +618,28 @@ contract LiquidationInternalCalculationTest is BaseTest {
   ) public {
     debtAssetId = bound(debtAssetId, 0, 3); // only 4 assets defined
 
-    TestCalculateActualDebtToLiquidateLocalParams memory localParams;
+    TestCalculateActualDebtToLiquidateLocalParams memory vars;
 
-    localParams.collateralReserve = mockSpoke1.getReserve(debtAssetId);
+    vars.collateralReserve = mockSpoke1.getReserve(debtAssetId);
+    vars.debtAssetPrice = oracle.getAssetPrice(debtAssetId);
 
     (
-      localParams.totalCollateralInBaseCurrency,
-      localParams.totalDebtInBaseCurrency,
-      localParams.avgLiquidationThreshold,
+      vars.totalCollateralInBaseCurrency,
+      vars.totalDebtInBaseCurrency,
+      vars.avgLiquidationThreshold,
       ,
-      localParams.healthFactor
+      vars.healthFactor
     ) = mockSpoke1.calculateUserAccountData(USER1);
 
     uint256 actualDebtToLiquidate = mockSpoke1.calculateActualDebtToLiquidate(
+      vars.collateralReserve,
       debtToCover,
       USER1,
       debtAssetId,
-      localParams.totalCollateralInBaseCurrency,
-      localParams.totalDebtInBaseCurrency,
-      localParams.avgLiquidationThreshold,
-      localParams.collateralReserve
+      vars.totalCollateralInBaseCurrency,
+      vars.totalDebtInBaseCurrency,
+      vars.avgLiquidationThreshold,
+      vars.debtAssetPrice
     );
 
     assertEq(actualDebtToLiquidate, 0, 'Unexpected actualDebtToLiquidate');
@@ -683,72 +688,71 @@ contract LiquidationInternalCalculationTest is BaseTest {
     // USER1 borrow wbtc
     Utils.borrow(vm, mockSpoke1, wbtcAssetId, USER1, wbtcBorrowAmount, USER1);
 
-    TestCalculateActualDebtToLiquidateLocalParams memory localParams;
+    TestCalculateActualDebtToLiquidateLocalParams memory vars;
+    vars.debtAssetPrice = oracle.getAssetPrice(usdcAssetId);
 
     (
-      localParams.totalCollateralInBaseCurrency,
-      localParams.totalDebtInBaseCurrency,
-      localParams.avgLiquidationThreshold,
+      vars.totalCollateralInBaseCurrency,
+      vars.totalDebtInBaseCurrency,
+      vars.avgLiquidationThreshold,
       ,
-      localParams.healthFactor
+      vars.healthFactor
     ) = mockSpoke1.calculateUserAccountData(USER1);
 
-    localParams.actualDebtToLiquidate = mockSpoke1.calculateActualDebtToLiquidate(
+    vars.actualDebtToLiquidate = mockSpoke1.calculateActualDebtToLiquidate(
+      vars.collateralReserve,
       debtToCover,
       USER1,
       usdcAssetId,
-      localParams.totalCollateralInBaseCurrency,
-      localParams.totalDebtInBaseCurrency,
-      localParams.avgLiquidationThreshold,
-      localParams.collateralReserve
+      vars.totalCollateralInBaseCurrency,
+      vars.totalDebtInBaseCurrency,
+      vars.avgLiquidationThreshold,
+      vars.debtAssetPrice
     );
 
     (
-      localParams.expectedActualCollateralToLiquidate,
-      localParams.expectedActualDebtToLiquidate,
-      localParams.expectedLiquidationProtocolFeeAmount
+      vars.expectedActualCollateralToLiquidate,
+      vars.expectedActualDebtToLiquidate,
+      vars.expectedLiquidationProtocolFeeAmount
     ) = _calculateAvailableCollateralToLiquidate(
       mockSpoke1.getReserve(daiAssetId),
       mockSpoke1.getReserve(usdcAssetId),
-      localParams.actualDebtToLiquidate,
+      vars.actualDebtToLiquidate,
       mockSpoke1.getUserSupplyInAssets(daiAssetId, USER1)
     );
 
     (
-      localParams.actualCollateralToLiquidate,
-      localParams.actualDebtToLiquidate,
-      localParams.liquidationProtocolFeeAmount
+      vars.actualCollateralToLiquidate,
+      vars.actualDebtToLiquidate,
+      vars.liquidationProtocolFeeAmount
     ) = mockSpoke1.calculateAvailableCollateralToLiquidate(
       mockSpoke1.getReserve(daiAssetId),
       mockSpoke1.getReserve(usdcAssetId),
-      localParams.actualDebtToLiquidate,
+      vars.actualDebtToLiquidate,
       mockSpoke1.getUserSupplyInAssets(daiAssetId, USER1)
     );
 
     assertEq(
-      localParams.actualCollateralToLiquidate,
-      localParams.expectedActualCollateralToLiquidate,
+      vars.actualCollateralToLiquidate,
+      vars.expectedActualCollateralToLiquidate,
       'Unexpected actualCollateralToLiquidate'
     );
     assertEq(
-      localParams.actualDebtToLiquidate,
-      localParams.expectedActualDebtToLiquidate,
+      vars.actualDebtToLiquidate,
+      vars.expectedActualDebtToLiquidate,
       'Unexpected actualDebtToLiquidate'
     );
     assertEq(
-      localParams.liquidationProtocolFeeAmount,
-      localParams.expectedLiquidationProtocolFeeAmount,
+      vars.liquidationProtocolFeeAmount,
+      vars.expectedLiquidationProtocolFeeAmount,
       'Unexpected liquidationProtocolFeeAmount'
     );
+    assertEq(vars.liquidationProtocolFeeAmount, 0, 'Unexpected liquidationProtocolFeeAmount');
     assertEq(
-      localParams.liquidationProtocolFeeAmount,
-      0,
-      'Unexpected liquidationProtocolFeeAmount'
-    );
-    assertEq(
-      (localParams.actualCollateralToLiquidate + localParams.expectedLiquidationProtocolFeeAmount)
-        .percentDiv(mockSpoke1.getLiquidationBonus(daiAssetId)),
-      localParams.actualDebtToLiquidate,
+      (vars.actualCollateralToLiquidate + vars.expectedLiquidationProtocolFeeAmount).percentDiv(
+        mockSpoke1.getLiquidationBonus(daiAssetId)
+      ),
+      vars.actualDebtToLiquidate,
       'Unexpected ratio of collateral to debt'
     );
   }
@@ -810,99 +814,94 @@ contract LiquidationInternalCalculationTest is BaseTest {
       mockSpoke1.getLiquidationProtocolFeePercentage(daiAssetId)
     );
 
-    TestCalculateActualDebtToLiquidateLocalParams memory localParams;
+    TestCalculateActualDebtToLiquidateLocalParams memory vars;
 
-    localParams.collateralReserve = mockSpoke1.getReserve(daiAssetId);
+    vars.collateralReserve = mockSpoke1.getReserve(daiAssetId);
+    vars.debtAssetPrice = oracle.getAssetPrice(usdcAssetId);
 
     (
-      localParams.totalCollateralInBaseCurrency,
-      localParams.totalDebtInBaseCurrency,
-      localParams.avgLiquidationThreshold,
+      vars.totalCollateralInBaseCurrency,
+      vars.totalDebtInBaseCurrency,
+      vars.avgLiquidationThreshold,
       ,
-      localParams.healthFactor
+      vars.healthFactor
     ) = mockSpoke1.calculateUserAccountData(USER1);
 
-    localParams.actualDebtToLiquidate = mockSpoke1.calculateActualDebtToLiquidate(
+    vars.actualDebtToLiquidate = mockSpoke1.calculateActualDebtToLiquidate(
+      vars.collateralReserve,
       debtToCover,
       USER1,
       usdcAssetId,
-      localParams.totalCollateralInBaseCurrency,
-      localParams.totalDebtInBaseCurrency,
-      localParams.avgLiquidationThreshold,
-      localParams.collateralReserve
+      vars.totalCollateralInBaseCurrency,
+      vars.totalDebtInBaseCurrency,
+      vars.avgLiquidationThreshold,
+      vars.debtAssetPrice
     );
 
     (
-      localParams.expectedActualCollateralToLiquidate,
-      localParams.expectedActualDebtToLiquidate,
-      localParams.expectedLiquidationProtocolFeeAmount
+      vars.expectedActualCollateralToLiquidate,
+      vars.expectedActualDebtToLiquidate,
+      vars.expectedLiquidationProtocolFeeAmount
     ) = _calculateAvailableCollateralToLiquidate(
       mockSpoke1.getReserve(daiAssetId),
       mockSpoke1.getReserve(usdcAssetId),
-      localParams.actualDebtToLiquidate,
+      vars.actualDebtToLiquidate,
       mockSpoke1.getUserSupplyInAssets(daiAssetId, USER1)
     );
 
     (
-      localParams.actualCollateralToLiquidate,
-      localParams.actualDebtToLiquidate,
-      localParams.liquidationProtocolFeeAmount
+      vars.actualCollateralToLiquidate,
+      vars.actualDebtToLiquidate,
+      vars.liquidationProtocolFeeAmount
     ) = mockSpoke1.calculateAvailableCollateralToLiquidate(
       mockSpoke1.getReserve(daiAssetId),
       mockSpoke1.getReserve(usdcAssetId),
-      localParams.actualDebtToLiquidate,
+      vars.actualDebtToLiquidate,
       mockSpoke1.getUserSupplyInAssets(daiAssetId, USER1)
     );
 
-    console2.log('localParams.healthFactor %e', localParams.healthFactor);
-    console2.log(
-      'localParams.liquidationProtocolFeeAmount %e',
-      localParams.liquidationProtocolFeeAmount
-    );
+    console2.log('vars.healthFactor %e', vars.healthFactor);
+    console2.log('vars.liquidationProtocolFeeAmount %e', vars.liquidationProtocolFeeAmount);
 
     assertEq(
-      localParams.actualCollateralToLiquidate,
-      localParams.expectedActualCollateralToLiquidate,
+      vars.actualCollateralToLiquidate,
+      vars.expectedActualCollateralToLiquidate,
       'Unexpected actualCollateralToLiquidate'
     );
     assertEq(
-      localParams.actualDebtToLiquidate,
-      localParams.expectedActualDebtToLiquidate,
+      vars.actualDebtToLiquidate,
+      vars.expectedActualDebtToLiquidate,
       'Unexpected actualDebtToLiquidate'
     );
     assertEq(
-      localParams.liquidationProtocolFeeAmount,
-      localParams.expectedLiquidationProtocolFeeAmount,
+      vars.liquidationProtocolFeeAmount,
+      vars.expectedLiquidationProtocolFeeAmount,
       'Unexpected liquidationProtocolFeeAmount'
     );
 
+    console2.log('test vars.actualCollateralToLiquidate %e', vars.actualCollateralToLiquidate);
+    console2.log('test vars.actualDebtToLiquidate %e', vars.actualDebtToLiquidate);
     console2.log(
-      'test localParams.actualCollateralToLiquidate %e',
-      localParams.actualCollateralToLiquidate
-    );
-    console2.log('test localParams.actualDebtToLiquidate %e', localParams.actualDebtToLiquidate);
-    console2.log(
-      'test localParams.expectedLiquidationProtocolFeeAmount %e',
-      localParams.expectedLiquidationProtocolFeeAmount
+      'test vars.expectedLiquidationProtocolFeeAmount %e',
+      vars.expectedLiquidationProtocolFeeAmount
     );
     assertEq(
-      (localParams.actualCollateralToLiquidate + localParams.expectedLiquidationProtocolFeeAmount)
-        .percentDiv(mockSpoke1.getLiquidationBonus(daiAssetId)),
-      localParams.actualDebtToLiquidate,
+      (vars.actualCollateralToLiquidate + vars.expectedLiquidationProtocolFeeAmount).percentDiv(
+        mockSpoke1.getLiquidationBonus(daiAssetId)
+      ),
+      vars.actualDebtToLiquidate,
       'Unexpected ratio of collateral to debt'
     );
-    localParams.collateralAmount = (localParams.actualCollateralToLiquidate +
-      localParams.expectedLiquidationProtocolFeeAmount);
-    localParams.bonusCollateral =
-      localParams.collateralAmount -
-      localParams.collateralAmount.percentDiv(mockSpoke1.getLiquidationBonus(daiAssetId));
+    vars.collateralAmount = (vars.actualCollateralToLiquidate +
+      vars.expectedLiquidationProtocolFeeAmount);
+    vars.bonusCollateral =
+      vars.collateralAmount -
+      vars.collateralAmount.percentDiv(mockSpoke1.getLiquidationBonus(daiAssetId));
 
-    // console2.log('localParams.bonusCollateral %e', localParams.bonusCollateral);
+    // console2.log('vars.bonusCollateral %e', vars.bonusCollateral);
     assertEq(
-      localParams.expectedLiquidationProtocolFeeAmount,
-      localParams.bonusCollateral.percentMul(
-        mockSpoke1.getLiquidationProtocolFeePercentage(daiAssetId)
-      )
+      vars.expectedLiquidationProtocolFeeAmount,
+      vars.bonusCollateral.percentMul(mockSpoke1.getLiquidationProtocolFeePercentage(daiAssetId))
     );
   }
 

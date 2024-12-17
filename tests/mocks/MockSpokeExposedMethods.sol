@@ -16,23 +16,25 @@ contract MockSpokeExposedMethods is Spoke {
   }
 
   function calculateActualDebtToLiquidate(
+    Reserve memory collateralReserve,
     uint256 debtToCover,
     address user,
     uint256 debtAssetId,
     uint256 totalCollateralInBaseCurrency,
     uint256 totalDebtInBaseCurrency,
     uint256 avgLiquidationThreshold,
-    Reserve memory collateralReserve
+    uint256 debtAssetPrice
   ) public view returns (uint256) {
     return
       _calculateActualDebtToLiquidate(
+        collateralReserve,
         debtToCover,
         user,
         debtAssetId,
         totalCollateralInBaseCurrency,
         totalDebtInBaseCurrency,
         avgLiquidationThreshold,
-        collateralReserve
+        debtAssetPrice
       );
   }
 
