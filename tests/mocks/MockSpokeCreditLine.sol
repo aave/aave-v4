@@ -15,6 +15,11 @@ import 'forge-std/console2.sol';
 
 // Multi asset borrow module with credit line, ie fixed IR for all users
 contract MockSpokeCreditLine is ISpoke {
+  function test_coverage_ignore() public virtual {
+    // Intentionally left blank.
+    // Excludes contract from coverage.
+  }
+
   using WadRayMath for uint256;
   using SafeERC20 for IERC20;
 

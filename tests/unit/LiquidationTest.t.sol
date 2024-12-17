@@ -12,6 +12,11 @@ contract LiquidationTest is BaseTest {
   MockSpokeExposedMethods mockSpoke1;
   MockSpokeExposedMethods mockSpoke2;
 
+  function test_coverage_ignore() public virtual {
+    // Intentionally left blank.
+    // Excludes contract from coverage.
+  }
+
   function setUp() public override {
     super.setUp();
 
