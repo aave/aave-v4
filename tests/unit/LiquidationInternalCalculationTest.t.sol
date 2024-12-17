@@ -447,6 +447,8 @@ contract LiquidationInternalCalculationTest is BaseTest {
     uint256 expectedActualCollateralToLiquidate;
     uint256 expectedActualDebtToLiquidate;
     uint256 expectedLiquidationProtocolFeeAmount;
+    uint256 collateralAmount;
+    uint256 bonusCollateral;
   }
 
   /// forge-config: default.fuzz.runs = 1000
@@ -883,11 +885,28 @@ contract LiquidationInternalCalculationTest is BaseTest {
       localParams.actualCollateralToLiquidate
     );
     console2.log('test localParams.actualDebtToLiquidate %e', localParams.actualDebtToLiquidate);
+    console2.log(
+      'test localParams.expectedLiquidationProtocolFeeAmount %e',
+      localParams.expectedLiquidationProtocolFeeAmount
+    );
     assertEq(
       (localParams.actualCollateralToLiquidate + localParams.expectedLiquidationProtocolFeeAmount)
         .percentDiv(mockSpoke1.getLiquidationBonus(daiAssetId)),
       localParams.actualDebtToLiquidate,
       'Unexpected ratio of collateral to debt'
+    );
+    localParams.collateralAmount = (localParams.actualCollateralToLiquidate +
+      localParams.expectedLiquidationProtocolFeeAmount);
+    localParams.bonusCollateral =
+      localParams.collateralAmount -
+      localParams.collateralAmount.percentDiv(mockSpoke1.getLiquidationBonus(daiAssetId));
+
+    // console2.log('localParams.bonusCollateral %e', localParams.bonusCollateral);
+    assertEq(
+      localParams.expectedLiquidationProtocolFeeAmount,
+      localParams.bonusCollateral.percentMul(
+        mockSpoke1.getLiquidationProtocolFeePercentage(daiAssetId)
+      )
     );
   }
 

@@ -747,6 +747,7 @@ contract Spoke is ISpoke {
       console2.log('liquidationBonust %e', liquidationBonus);
       console2.log('vars.bonusCollateral %e', vars.bonusCollateral);
       console2.log('liquidationProtocolFeeAmount %e', vars.liquidationProtocolFeeAmount);
+      console2.log('vars.debtAmountNeeded %e', vars.debtAmountNeeded);
 
       return (
         vars.collateralAmount - vars.liquidationProtocolFeeAmount,
