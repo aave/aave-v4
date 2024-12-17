@@ -261,7 +261,7 @@ contract LiquidationInternalCalculationTest is BaseTest {
     assertEq(healthFactor, type(uint256).max, 'Unexpected healthFactor');
   }
 
-  /// forge-config: default.fuzz.runs = 1000
+  /// forge-config: ci.fuzz.runs = 1000
   function test_fuzz_calculateUserAccountData(
     uint256 daiAmount,
     uint256 ethAmount,
@@ -342,7 +342,7 @@ contract LiquidationInternalCalculationTest is BaseTest {
     assertEq(healthFactor, expectedHF, 'Unexpected healthFactor');
   }
 
-  /// forge-config: default.fuzz.runs = 1000
+  /// forge-config: ci.fuzz.runs = 1000
   function test_fuzz_calculateUserAccountData_multiple_borrows(
     uint256 daiAmount,
     uint256 ethAmount,
@@ -452,7 +452,7 @@ contract LiquidationInternalCalculationTest is BaseTest {
     uint256 debtAssetPrice;
   }
 
-  /// forge-config: default.fuzz.runs = 1000
+  /// forge-config: ci.fuzz.runs = 1000
   function test_fuzz_calculateActualDebtToLiquidate(
     uint256 daiAmount,
     uint256 ethAmount,
@@ -547,7 +547,7 @@ contract LiquidationInternalCalculationTest is BaseTest {
     // );
   }
 
-  /// forge-config: default.fuzz.runs = 1000
+  /// forge-config: ci.fuzz.runs = 1000
   function test_fuzz_calculateActualDebtToLiquidate_noDebt(
     uint256 daiAmount,
     uint256 ethAmount,
