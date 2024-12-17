@@ -88,6 +88,14 @@ contract Spoke is ISpoke {
     uint256 liquidationProtocolFeeAmount;
   }
 
+  struct calculateActualDebtToLiquidateLocalVars {
+    uint256 liquidationRecoveryDebt;
+    uint256 maxLiquidatableDebt;
+    uint256 hfScaledDebt;
+    uint256 weightedCollateral;
+    uint256 actualDebtToLiquidate;
+  }
+
   // reserve id => user address => user data
   mapping(uint256 => mapping(address => UserConfig)) public users;
   // reserve id => reserveData
@@ -626,7 +634,9 @@ contract Spoke is ISpoke {
   ) internal view returns (uint256) {
     console2.log('----- _calculateActualDebtToLiquidate -----');
 
-    uint256 maxLiquidatableDebt = getUserDebtInAssets(debtAssetId, user);
+    calculateActualDebtToLiquidateLocalVars memory vars;
+
+    vars.maxLiquidatableDebt = getUserDebtInAssets(debtAssetId, user);
 
     console2.log(
       'HEALTH_FACTOR_LIQUIDATION_RECOVERY_THRESHOLD * totalDebtInBaseCurrency %e',
@@ -640,46 +650,45 @@ contract Spoke is ISpoke {
         1e14
     );
 
-    uint256 hfScaledDebt = HEALTH_FACTOR_LIQUIDATION_RECOVERY_THRESHOLD.wadMul(
+    vars.hfScaledDebt = HEALTH_FACTOR_LIQUIDATION_RECOVERY_THRESHOLD.wadMul(
       totalDebtInBaseCurrency
     );
-    uint256 weightedCollateral = totalCollateralInBaseCurrency.wadMul(avgLiquidationThreshold) /
-      1e4;
+    vars.weightedCollateral = totalCollateralInBaseCurrency.wadMul(avgLiquidationThreshold) / 1e4;
     // uint256 debtAssetPrice = IPriceOracle(oracle).getAssetPrice(debtAssetId);
 
     // amount of user debt that corresponds to HEALTH_FACTOR_LIQUIDATION_RECOVERY_THRESHOLD
-    uint256 liquidationRecoveryDebt = hfScaledDebt > weightedCollateral
-      ? (hfScaledDebt - weightedCollateral).wadDiv(
+    vars.liquidationRecoveryDebt = vars.hfScaledDebt > vars.weightedCollateral
+      ? (vars.hfScaledDebt - vars.weightedCollateral).wadDiv(
         HEALTH_FACTOR_LIQUIDATION_RECOVERY_THRESHOLD -
           (collateralReserve.config.lb * 1e14).percentMul(collateralReserve.config.lt) // convert BPS to WAD
       )
       : 0;
 
-    liquidationRecoveryDebt = debtAssetPrice == 0
+    vars.liquidationRecoveryDebt = debtAssetPrice == 0
       ? type(uint256).max
-      : liquidationRecoveryDebt / debtAssetPrice;
+      : vars.liquidationRecoveryDebt / debtAssetPrice;
 
-    console2.log('liquidationRecoveryDebt %e', liquidationRecoveryDebt);
+    console2.log('liquidationRecoveryDebt %e', vars.liquidationRecoveryDebt);
 
     // amount of debt that can be liquidated to bring HF to HEALTH_FACTOR_LIQUIDATION_RECOVERY_THRESHOLD
-    liquidationRecoveryDebt = totalDebtInBaseCurrency > liquidationRecoveryDebt
-      ? liquidationRecoveryDebt
+    vars.liquidationRecoveryDebt = totalDebtInBaseCurrency > vars.liquidationRecoveryDebt
+      ? vars.liquidationRecoveryDebt
       : 0;
 
     console2.log('----- _calculateDebt -----');
-    console2.log('maxLiquidatableDebt %e', maxLiquidatableDebt);
+    console2.log('maxLiquidatableDebt %e', vars.maxLiquidatableDebt);
 
-    maxLiquidatableDebt = maxLiquidatableDebt > liquidationRecoveryDebt
-      ? liquidationRecoveryDebt
-      : maxLiquidatableDebt;
+    vars.maxLiquidatableDebt = vars.maxLiquidatableDebt > vars.liquidationRecoveryDebt
+      ? vars.liquidationRecoveryDebt
+      : vars.maxLiquidatableDebt;
 
-    console2.log('maxLiquidatableDebt %e', maxLiquidatableDebt);
+    console2.log('maxLiquidatableDebt %e', vars.maxLiquidatableDebt);
 
-    uint256 actualDebtToLiquidate = debtToCover > maxLiquidatableDebt
-      ? maxLiquidatableDebt
+    vars.actualDebtToLiquidate = debtToCover > vars.maxLiquidatableDebt
+      ? vars.maxLiquidatableDebt
       : debtToCover;
-    console2.log('actualDebtToLiquidate %e', actualDebtToLiquidate);
-    return actualDebtToLiquidate;
+    console2.log('actualDebtToLiquidate %e', vars.actualDebtToLiquidate);
+    return vars.actualDebtToLiquidate;
   }
 
   /**
