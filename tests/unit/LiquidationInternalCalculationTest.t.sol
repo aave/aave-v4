@@ -745,6 +745,12 @@ contract LiquidationInternalCalculationTest is BaseTest {
       0,
       'Unexpected liquidationProtocolFeeAmount > 0'
     );
+    assertEq(
+      (localParams.actualCollateralToLiquidate + localParams.expectedLiquidationProtocolFeeAmount)
+        .percentDiv(mockSpoke1.getLiquidationBonus(daiAssetId)),
+      localParams.actualDebtToLiquidate,
+      'Unexpected ratio of collateral to debt'
+    );
   }
 
   /// forge-config: default.fuzz.runs = 1000
@@ -870,6 +876,18 @@ contract LiquidationInternalCalculationTest is BaseTest {
       localParams.liquidationProtocolFeeAmount,
       localParams.expectedLiquidationProtocolFeeAmount,
       'Unexpected liquidationProtocolFeeAmount'
+    );
+
+    console2.log(
+      'test localParams.actualCollateralToLiquidate %e',
+      localParams.actualCollateralToLiquidate
+    );
+    console2.log('test localParams.actualDebtToLiquidate %e', localParams.actualDebtToLiquidate);
+    assertEq(
+      (localParams.actualCollateralToLiquidate + localParams.expectedLiquidationProtocolFeeAmount)
+        .percentDiv(mockSpoke1.getLiquidationBonus(daiAssetId)),
+      localParams.actualDebtToLiquidate,
+      'Unexpected ratio of collateral to debt'
     );
   }
 

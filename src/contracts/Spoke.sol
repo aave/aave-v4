@@ -34,8 +34,8 @@ contract Spoke is ISpoke {
 
   struct ReserveConfig {
     uint256 lt; // 1e4 == 100%, BPS
-    uint256 lb; // BPS, 1e4 is 0% bonus, 1.1e4 is 10% bonus
-    uint256 lpfp; // liquidation protocol fee percentage, BPS.
+    uint256 lb; // liquidation bonus. 1e4 is 0% bonus, 1.1e4 is 10% bonus. BPS
+    uint256 lpfp; // liquidation protocol fee percentage. 500 is 5%. BPS.
     bool borrowable;
     bool collateral;
   }
@@ -253,7 +253,7 @@ contract Spoke is ISpoke {
       debtReserve,
       vars.actualDebtToLiquidate,
       vars.userCollateralBalance,
-      collateralReserve.config.lb // TODO: fetch from a getter?
+      getLiquidationBonus(collateralAssetId)
     );
 
     console2.log('vars.userCollateralBalance %e', vars.userCollateralBalance);
