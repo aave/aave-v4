@@ -697,7 +697,6 @@ contract Spoke is ISpoke {
     AvailableCollateralToLiquidateLocalVars memory vars;
 
     vars.collateralAssetPrice = IPriceOracle(oracle).getAssetPrice(collateralReserve.id);
-    // vars.debtAssetPrice = IPriceOracle(oracle).getAssetPrice(debtReserve.id);
 
     vars.collateralAssetUnit = 10 ** collateralReserve.decimals;
     vars.debtAssetUnit = 10 ** debtReserve.decimals;
@@ -758,6 +757,12 @@ contract Spoke is ISpoke {
     }
   }
 
+  /**
+   * @notice Sets the user's collateral usage status. Emits UsingAsCollateral
+   * @param user The address of the user
+   * @param assetId The asset id of the collateral
+   * @param usingAsCollateral The new collateral usage status
+   */
   function _setUsingAsCollateral(address user, uint256 assetId, bool usingAsCollateral) internal {
     _validateSetUsingAsCollateral(assetId, user);
     users[assetId][user].usingAsCollateral = usingAsCollateral;
