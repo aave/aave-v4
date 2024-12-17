@@ -707,9 +707,7 @@ contract Spoke is ISpoke {
     console2.log('debtAssetPrice %e', debtAssetPrice);
     console2.log('userCollateralBalance %e', userCollateralBalance);
 
-    vars.liquidationProtocolFeePercentage = getLiquidationProtocolFeePercentage(
-      collateralReserve.id
-    );
+    vars.liquidationProtocolFeePercentage = collateralReserve.config.lpfp;
 
     // find collateral amount that corresponds to the debt to cover
     vars.baseCollateral =
