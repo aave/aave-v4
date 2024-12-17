@@ -556,7 +556,7 @@ contract LiquidationTest is BaseTest {
       vars.debtReserve,
       vars.actualDebtToLiquidate,
       vars.userCollateralBalance,
-      vars.collateralReserve.config.lb // TODO: fetch from a getter?
+      mockSpoke1.getLiquidationBonus(daiAssetId)
     );
 
     vm.expectEmit(address(mockSpoke1));
@@ -618,7 +618,11 @@ contract LiquidationTest is BaseTest {
         hub.convertAssetsToSharesDown(usdcAssetId, vars.actualDebtCovered),
       'Unexpected mockSpoke1 usdc drawnShares'
     );
-    assertEq(vars.hf1, 1e18, 'Unexpected user1 final health factor');
+    assertEq(
+      vars.hf1,
+      mockSpoke1.HEALTH_FACTOR_LIQUIDATION_RECOVERY_THRESHOLD(),
+      'Unexpected user1 final health factor'
+    );
 
     // liquidator
     assertEq(
@@ -791,7 +795,7 @@ contract LiquidationTest is BaseTest {
       vars.debtReserve,
       vars.actualDebtToLiquidate,
       vars.userCollateralBalance,
-      vars.collateralReserve.config.lb // TODO: fetch from a getter?
+      mockSpoke1.getLiquidationBonus(daiAssetId)
     );
 
     vm.expectEmit(address(mockSpoke1));
@@ -871,6 +875,7 @@ contract LiquidationTest is BaseTest {
     );
   }
 
+  /// @dev Test liquidation call with liquidated amount >= user collateral balance
   function test_liquidationCall_gteUserCollateralBalance_nonZeroLiquidationProtocolFee() public {
     uint256 debtToCover = 15_000e18;
     uint256 daiAssetId = 0;
@@ -1066,7 +1071,7 @@ contract LiquidationTest is BaseTest {
     );
   }
 
-  function skip_test_liquidationCall_gteUserCollateralBalance_ltCollateralBalance() public {
+  function test_liquidationCall_gteUserCollateralBalance_ltCollateralBalance() public {
     uint256 debtToCover = 5_000e18;
     uint256 daiAssetId = 0;
     uint256 ethAssetId = 1;
@@ -1126,6 +1131,9 @@ contract LiquidationTest is BaseTest {
       usdcAssetId,
       vars.expectedCollateralLiquidated
     );
+
+    console2.log('test vars.expectedDebtCovered %e', vars.expectedDebtCovered);
+
     (, , vars.expectedProtocolFee) = _getExpectedCollateralLiquidated(
       daiAssetId,
       usdcAssetId,
@@ -1198,15 +1206,15 @@ contract LiquidationTest is BaseTest {
     vm.startPrank(LIQUIDATOR);
     usdc.approve(address(mockSpoke1), debtToCover);
 
-    // vm.expectEmit(address(mockSpoke1));
-    // emit LiquidationCall({
-    //   collateralAssetId: daiAssetId,
-    //   debtAssetId: usdcAssetId,
-    //   user: USER1,
-    //   actualDebtToLiquidate: vars.expectedDebtCovered,
-    //   actualCollateralToLiquidate: vars.expectedCollateralLiquidated - vars.expectedProtocolFee,
-    //   liquidator: LIQUIDATOR
-    // });
+    vm.expectEmit(address(mockSpoke1));
+    emit LiquidationCall({
+      collateralAssetId: daiAssetId,
+      debtAssetId: usdcAssetId,
+      user: USER1,
+      actualDebtToLiquidate: vars.expectedDebtCovered,
+      actualCollateralToLiquidate: vars.expectedCollateralLiquidated - vars.expectedProtocolFee,
+      liquidator: LIQUIDATOR
+    });
     mockSpoke1.liquidationCall(daiAssetId, usdcAssetId, USER1, debtToCover);
     vm.stopPrank();
 
@@ -1220,7 +1228,11 @@ contract LiquidationTest is BaseTest {
     vars.actualDebtCovered = debtToCover - usdc.balanceOf(LIQUIDATOR);
 
     // dai
-    assertEq(vars.user1DaiData1.usingAsCollateral, false, 'Unexpected user1 dai usingAsCollateral');
+    assertEq(
+      vars.user1DaiData1.usingAsCollateral,
+      true,
+      'Unexpected user1 final dai usingAsCollateral'
+    );
     // assertEq(vars.mockSpoke1DaiData1.totalShares, 0, 'Unexpected mockSpoke1 dai totalShares');
     assertEq(vars.mockSpoke1DaiData1.drawnShares, 0, 'Unexpected mockSpoke1 dai drawnShares');
     // eth
