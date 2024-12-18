@@ -444,7 +444,7 @@ contract LiquidationTest is BaseTest {
     vars.hf0 = mockSpoke1.getHealthFactor(USER1);
     assertTrue(
       vars.hf0 > mockSpoke1.HEALTH_FACTOR_LIQUIDATION_THRESHOLD(),
-      'Unexpected T0 health factor'
+      'Unexpected T1 health factor'
     );
 
     // T1: eth price drops from $2000 -> $800/eth
@@ -471,63 +471,63 @@ contract LiquidationTest is BaseTest {
     assertEq(
       vars.user1DaiData1.usingAsCollateral,
       true,
-      'Unexpected T0 user1 dai usingAsCollateral'
+      'Unexpected T1 user1 dai usingAsCollateral'
     );
     assertEq(
       vars.user1DaiData1.supplyShares,
       vars.mockSpoke1DaiData1.totalShares,
-      'Unexpected T0 user1 dai supplyShares'
+      'Unexpected T1 user1 dai supplyShares'
     );
-    assertEq(vars.user1DaiData1.debtShares, 0, 'Unexpected T0 user1 dai debtShares');
+    assertEq(vars.user1DaiData1.debtShares, 0, 'Unexpected T1 user1 dai debtShares');
     assertEq(
       vars.mockSpoke1DaiData1.totalShares,
       hub.convertAssetsToSharesDown(vars.daiAssetId, daiAmount),
-      'Unexpected T0 mockSpoke1 dai totalShares'
+      'Unexpected T1 mockSpoke1 dai totalShares'
     );
-    assertEq(vars.mockSpoke1DaiData1.drawnShares, 0, 'Unexpected T0 mockSpoke1 dai drawnShares');
+    assertEq(vars.mockSpoke1DaiData1.drawnShares, 0, 'Unexpected T1 mockSpoke1 dai drawnShares');
     // eth
     assertEq(
       vars.user1EthData1.usingAsCollateral,
       true,
-      'Unexpected T0 user1 eth usingAsCollateral'
+      'Unexpected T1 user1 eth usingAsCollateral'
     );
     assertEq(
       vars.user1EthData1.supplyShares,
       vars.mockSpoke1EthData1.totalShares,
-      'Unexpected T0 user1 eth supplyShares'
+      'Unexpected T1 user1 eth supplyShares'
     );
     assertEq(vars.user1EthData1.debtShares, 0, 'Unexpected user1 eth debtShares');
     assertEq(
       vars.mockSpoke1EthData1.totalShares,
       hub.convertAssetsToSharesDown(vars.ethAssetId, ethAmount),
-      'Unexpected T0 mockSpoke1 eth totalShares'
+      'Unexpected T1 mockSpoke1 eth totalShares'
     );
-    assertEq(vars.mockSpoke1EthData1.drawnShares, 0, 'Unexpected T0 mockSpoke1 eth drawnShares');
+    assertEq(vars.mockSpoke1EthData1.drawnShares, 0, 'Unexpected T1 mockSpoke1 eth drawnShares');
     // usdc
     assertEq(
       vars.user1UsdcData1.usingAsCollateral,
       false,
-      'Unexpected T0 user1 usdc usingAsCollateral'
+      'Unexpected T1 user1 usdc usingAsCollateral'
     );
     assertEq(
       vars.user2UsdcData1.supplyShares,
       vars.mockSpoke1UsdcData1.totalShares,
-      'Unexpected T0 user2 usdc supplyShares'
+      'Unexpected T1 user2 usdc supplyShares'
     );
     assertEq(
       vars.user1UsdcData1.debtShares,
       vars.user2UsdcData1.supplyShares,
-      'Unexpected T0 user1 usdc debtShares'
+      'Unexpected T1 user1 usdc debtShares'
     );
     assertEq(
       vars.mockSpoke1UsdcData1.totalShares,
       hub.convertAssetsToSharesDown(vars.usdcAssetId, usdcBorrowAmount),
-      'Unexpected T0 mockSpoke1 usdc totalShares'
+      'Unexpected T1 mockSpoke1 usdc totalShares'
     );
     assertEq(
       vars.mockSpoke1UsdcData1.drawnShares,
       hub.convertAssetsToSharesDown(vars.usdcAssetId, usdcBorrowAmount),
-      'Unexpected T0 mockSpoke1 usdc drawnShares'
+      'Unexpected T1 mockSpoke1 usdc drawnShares'
     );
 
     // T2 / T_final
@@ -700,7 +700,7 @@ contract LiquidationTest is BaseTest {
     vars.hf0 = mockSpoke1.getHealthFactor(USER1);
     assertTrue(
       vars.hf0 > mockSpoke1.HEALTH_FACTOR_LIQUIDATION_THRESHOLD(),
-      'Unexpected T0 health factor'
+      'Unexpected T1 health factor'
     );
 
     // T1: eth price drops from $2000 -> $800/eth
@@ -725,63 +725,63 @@ contract LiquidationTest is BaseTest {
     assertEq(
       vars.user1DaiData1.usingAsCollateral,
       true,
-      'Unexpected T0 user1 dai usingAsCollateral'
+      'Unexpected T1 user1 dai usingAsCollateral'
     );
     assertEq(
       vars.user1DaiData1.supplyShares,
       vars.mockSpoke1DaiData1.totalShares,
-      'Unexpected T0 user1 dai supplyShares'
+      'Unexpected T1 user1 dai supplyShares'
     );
-    assertEq(vars.user1DaiData1.debtShares, 0, 'Unexpected T0 user1 dai debtShares');
+    assertEq(vars.user1DaiData1.debtShares, 0, 'Unexpected T1 user1 dai debtShares');
     assertEq(
       vars.mockSpoke1DaiData1.totalShares,
       hub.convertAssetsToSharesDown(vars.daiAssetId, daiAmount),
-      'Unexpected T0 mockSpoke1 dai totalShares'
+      'Unexpected T1 mockSpoke1 dai totalShares'
     );
-    assertEq(vars.mockSpoke1DaiData1.drawnShares, 0, 'Unexpected T0 mockSpoke1 dai drawnShares');
+    assertEq(vars.mockSpoke1DaiData1.drawnShares, 0, 'Unexpected T1 mockSpoke1 dai drawnShares');
     // eth
     assertEq(
       vars.user1EthData1.usingAsCollateral,
       true,
-      'Unexpected T0 user1 eth usingAsCollateral'
+      'Unexpected T1 user1 eth usingAsCollateral'
     );
     assertEq(
       vars.user1EthData1.supplyShares,
       vars.mockSpoke1EthData1.totalShares,
-      'Unexpected T0 user1 eth supplyShares'
+      'Unexpected T1 user1 eth supplyShares'
     );
     assertEq(vars.user1EthData1.debtShares, 0, 'Unexpected user1 eth debtShares');
     assertEq(
       vars.mockSpoke1EthData1.totalShares,
       hub.convertAssetsToSharesDown(vars.ethAssetId, ethAmount),
-      'Unexpected T0 mockSpoke1 eth totalShares'
+      'Unexpected T1 mockSpoke1 eth totalShares'
     );
-    assertEq(vars.mockSpoke1EthData1.drawnShares, 0, 'Unexpected T0 mockSpoke1 eth drawnShares');
+    assertEq(vars.mockSpoke1EthData1.drawnShares, 0, 'Unexpected T1 mockSpoke1 eth drawnShares');
     // usdc
     assertEq(
       vars.user1UsdcData1.usingAsCollateral,
       false,
-      'Unexpected T0 user1 usdc usingAsCollateral'
+      'Unexpected T1 user1 usdc usingAsCollateral'
     );
     assertEq(
       vars.user2UsdcData1.supplyShares,
       vars.mockSpoke1UsdcData1.totalShares,
-      'Unexpected T0 user2 usdc supplyShares'
+      'Unexpected T1 user2 usdc supplyShares'
     );
     assertEq(
       vars.user1UsdcData1.debtShares,
       vars.user2UsdcData1.supplyShares,
-      'Unexpected T0 user1 usdc debtShares'
+      'Unexpected T1 user1 usdc debtShares'
     );
     assertEq(
       vars.mockSpoke1UsdcData1.totalShares,
       hub.convertAssetsToSharesDown(vars.usdcAssetId, usdcBorrowAmount),
-      'Unexpected T0 mockSpoke1 usdc totalShares'
+      'Unexpected T1 mockSpoke1 usdc totalShares'
     );
     assertEq(
       vars.mockSpoke1UsdcData1.drawnShares,
       hub.convertAssetsToSharesDown(vars.usdcAssetId, usdcBorrowAmount),
-      'Unexpected T0 mockSpoke1 usdc drawnShares'
+      'Unexpected T1 mockSpoke1 usdc drawnShares'
     );
 
     // T2 / T_final
@@ -960,7 +960,7 @@ contract LiquidationTest is BaseTest {
 
     assertTrue(
       vars.hf0 > mockSpoke1.HEALTH_FACTOR_LIQUIDATION_THRESHOLD(),
-      'Unexpected T0 health factor'
+      'Unexpected T1 health factor'
     );
 
     // T1: eth price drops from $2000 -> $800/eth
@@ -991,63 +991,63 @@ contract LiquidationTest is BaseTest {
     assertEq(
       vars.user1DaiData1.usingAsCollateral,
       true,
-      'Unexpected T0 user1 dai usingAsCollateral'
+      'Unexpected T1 user1 dai usingAsCollateral'
     );
     assertEq(
       vars.user1DaiData1.supplyShares,
       vars.mockSpoke1DaiData1.totalShares,
-      'Unexpected T0 user1 dai supplyShares'
+      'Unexpected T1 user1 dai supplyShares'
     );
-    assertEq(vars.user1DaiData1.debtShares, 0, 'Unexpected T0 user1 dai debtShares');
+    assertEq(vars.user1DaiData1.debtShares, 0, 'Unexpected T1 user1 dai debtShares');
     assertEq(
       vars.mockSpoke1DaiData1.totalShares,
       hub.convertAssetsToSharesDown(vars.daiAssetId, daiAmount),
-      'Unexpected T0 mockSpoke1 dai totalShares'
+      'Unexpected T1 mockSpoke1 dai totalShares'
     );
-    assertEq(vars.mockSpoke1DaiData1.drawnShares, 0, 'Unexpected T0 mockSpoke1 dai drawnShares');
+    assertEq(vars.mockSpoke1DaiData1.drawnShares, 0, 'Unexpected T1 mockSpoke1 dai drawnShares');
     // eth
     assertEq(
       vars.user1EthData1.usingAsCollateral,
       true,
-      'Unexpected T0 user1 eth usingAsCollateral'
+      'Unexpected T1 user1 eth usingAsCollateral'
     );
     assertEq(
       vars.user1EthData1.supplyShares,
       vars.mockSpoke1EthData1.totalShares,
-      'Unexpected T0 user1 eth supplyShares'
+      'Unexpected T1 user1 eth supplyShares'
     );
     assertEq(vars.user1EthData1.debtShares, 0, 'Unexpected user1 eth debtShares');
     assertEq(
       vars.mockSpoke1EthData1.totalShares,
       hub.convertAssetsToSharesDown(vars.ethAssetId, ethAmount),
-      'Unexpected T0 mockSpoke1 eth totalShares'
+      'Unexpected T1 mockSpoke1 eth totalShares'
     );
-    assertEq(vars.mockSpoke1EthData1.drawnShares, 0, 'Unexpected T0 mockSpoke1 eth drawnShares');
+    assertEq(vars.mockSpoke1EthData1.drawnShares, 0, 'Unexpected T1 mockSpoke1 eth drawnShares');
     // usdc
     assertEq(
       vars.user1UsdcData1.usingAsCollateral,
       false,
-      'Unexpected T0 user1 usdc usingAsCollateral'
+      'Unexpected T1 user1 usdc usingAsCollateral'
     );
     assertEq(
       vars.user2UsdcData1.supplyShares,
       vars.mockSpoke1UsdcData1.totalShares,
-      'Unexpected T0 user2 usdc supplyShares'
+      'Unexpected T1 user2 usdc supplyShares'
     );
     assertEq(
       vars.user1UsdcData1.debtShares,
       vars.user2UsdcData1.supplyShares,
-      'Unexpected T0 user1 usdc debtShares'
+      'Unexpected T1 user1 usdc debtShares'
     );
     assertEq(
       vars.mockSpoke1UsdcData1.totalShares,
       hub.convertAssetsToSharesDown(vars.usdcAssetId, usdcBorrowAmount),
-      'Unexpected T0 mockSpoke1 usdc totalShares'
+      'Unexpected T1 mockSpoke1 usdc totalShares'
     );
     assertEq(
       vars.mockSpoke1UsdcData1.drawnShares,
       hub.convertAssetsToSharesDown(vars.usdcAssetId, usdcBorrowAmount),
-      'Unexpected T0 mockSpoke1 usdc drawnShares'
+      'Unexpected T1 mockSpoke1 usdc drawnShares'
     );
 
     // action: liquidation
@@ -1202,6 +1202,7 @@ contract LiquidationTest is BaseTest {
     uint256 usdcBorrowAmount = vars.debtToCover; // 15k usdc -> $15k
     bool usingAsCollateral = true;
 
+    // T0
     // USER1 supply dai into mockSpoke1
     deal(address(dai), USER1, daiAmount);
     Utils.spokeSupply(vm, hub, mockSpoke1, vars.daiAssetId, USER1, daiAmount, USER1);
@@ -1220,17 +1221,20 @@ contract LiquidationTest is BaseTest {
     // USER1 borrow usdc
     Utils.borrow(vm, mockSpoke1, vars.usdcAssetId, USER1, usdcBorrowAmount, USER1);
 
-    console2.log('T0 hf %e', mockSpoke1.getHealthFactor(USER1));
+    vars.hf0 = mockSpoke1.getHealthFactor(USER1);
+    console2.log('T0 hf %e', vars.hf0);
 
     assertTrue(
-      mockSpoke1.getHealthFactor(USER1) > mockSpoke1.HEALTH_FACTOR_LIQUIDATION_THRESHOLD(),
-      'Unexpected T0 health factor'
+      vars.hf0 > mockSpoke1.HEALTH_FACTOR_LIQUIDATION_THRESHOLD(),
+      'Unexpected T1 health factor'
     );
 
     // eth price drops
     MockPriceOracle(address(oracle)).setAssetPrice(vars.ethAssetId, 0.1e8);
 
-    console2.log('T1 hf %e', mockSpoke1.getHealthFactor(USER1));
+    vars.hf1 = mockSpoke1.getHealthFactor(USER1);
+    assertTrue(vars.hf1 < vars.hf0, 'Unexpected change in user1 hf at T1');
+    console2.log('T1 hf %e', vars.hf1);
 
     // pre-liquidation
     vars.user1DaiData1 = mockSpoke1.getUser(vars.daiAssetId, USER1);
@@ -1254,65 +1258,66 @@ contract LiquidationTest is BaseTest {
     assertEq(
       vars.user1DaiData1.usingAsCollateral,
       true,
-      'Unexpected T0 user1 dai usingAsCollateral'
+      'Unexpected T1 user1 dai usingAsCollateral'
     );
     assertEq(
       vars.user1DaiData1.supplyShares,
       vars.mockSpoke1DaiData1.totalShares,
-      'Unexpected T0 user1 dai supplyShares'
+      'Unexpected T1 user1 dai supplyShares'
     );
-    assertEq(vars.user1DaiData1.debtShares, 0, 'Unexpected T0 user1 dai debtShares');
+    assertEq(vars.user1DaiData1.debtShares, 0, 'Unexpected T1 user1 dai debtShares');
     assertEq(
       vars.mockSpoke1DaiData1.totalShares,
       hub.convertAssetsToSharesDown(vars.daiAssetId, daiAmount),
-      'Unexpected T0 mockSpoke1 dai totalShares'
+      'Unexpected T1 mockSpoke1 dai totalShares'
     );
-    assertEq(vars.mockSpoke1DaiData1.drawnShares, 0, 'Unexpected T0 mockSpoke1 dai drawnShares');
+    assertEq(vars.mockSpoke1DaiData1.drawnShares, 0, 'Unexpected T1 mockSpoke1 dai drawnShares');
     // eth
     assertEq(
       vars.user1EthData1.usingAsCollateral,
       true,
-      'Unexpected T0 user1 eth usingAsCollateral'
+      'Unexpected T1 user1 eth usingAsCollateral'
     );
     assertEq(
       vars.user1EthData1.supplyShares,
       vars.mockSpoke1EthData1.totalShares,
-      'Unexpected T0 user1 eth supplyShares'
+      'Unexpected T1 user1 eth supplyShares'
     );
     assertEq(vars.user1EthData1.debtShares, 0, 'Unexpected user1 eth debtShares');
     assertEq(
       vars.mockSpoke1EthData1.totalShares,
       hub.convertAssetsToSharesDown(vars.ethAssetId, ethAmount),
-      'Unexpected T0 mockSpoke1 eth totalShares'
+      'Unexpected T1 mockSpoke1 eth totalShares'
     );
-    assertEq(vars.mockSpoke1EthData1.drawnShares, 0, 'Unexpected T0 mockSpoke1 eth drawnShares');
+    assertEq(vars.mockSpoke1EthData1.drawnShares, 0, 'Unexpected T1 mockSpoke1 eth drawnShares');
     // usdc
     assertEq(
       vars.user1UsdcData1.usingAsCollateral,
       false,
-      'Unexpected T0 user1 usdc usingAsCollateral'
+      'Unexpected T1 user1 usdc usingAsCollateral'
     );
     assertEq(
       vars.user2UsdcData1.supplyShares,
       vars.mockSpoke1UsdcData1.totalShares,
-      'Unexpected T0 user2 usdc supplyShares'
+      'Unexpected T1 user2 usdc supplyShares'
     );
     assertEq(
       vars.user1UsdcData1.debtShares,
       vars.user2UsdcData1.supplyShares,
-      'Unexpected T0 user1 usdc debtShares'
+      'Unexpected T1 user1 usdc debtShares'
     );
     assertEq(
       vars.mockSpoke1UsdcData1.totalShares,
       hub.convertAssetsToSharesDown(vars.usdcAssetId, usdcBorrowAmount),
-      'Unexpected T0 mockSpoke1 usdc totalShares'
+      'Unexpected T1 mockSpoke1 usdc totalShares'
     );
     assertEq(
       vars.mockSpoke1UsdcData1.drawnShares,
       hub.convertAssetsToSharesDown(vars.usdcAssetId, usdcBorrowAmount),
-      'Unexpected T0 mockSpoke1 usdc drawnShares'
+      'Unexpected T1 mockSpoke1 usdc drawnShares'
     );
 
+    // T2 / T_final
     // action: liquidation
     deal(address(usdc), LIQUIDATOR, vars.debtToCover);
     vm.startPrank(LIQUIDATOR);
@@ -1387,6 +1392,7 @@ contract LiquidationTest is BaseTest {
     vars.expectedUsdcDrawnSharesRemaining =
       vars.mockSpoke1UsdcData1.drawnShares -
       hub.convertAssetsToSharesDown(vars.usdcAssetId, vars.actualDebtCovered);
+    vars.hf2 = mockSpoke1.getHealthFactor(USER1);
 
     // dai
     assertEq(vars.user1DaiData2.usingAsCollateral, false, 'Unexpected user1 dai usingAsCollateral');
@@ -1417,11 +1423,12 @@ contract LiquidationTest is BaseTest {
         hub.convertAssetsToSharesDown(vars.usdcAssetId, vars.actualDebtCovered),
       'Unexpected mockSpoke1 usdc drawnShares'
     );
+    // health factor
     assertTrue(
-      mockSpoke1.getHealthFactor(USER1) <=
-        mockSpoke1.HEALTH_FACTOR_LIQUIDATION_RECOVERY_THRESHOLD(),
+      vars.hf2 <= mockSpoke1.HEALTH_FACTOR_LIQUIDATION_RECOVERY_THRESHOLD(),
       'Unexpected user1 final health factor'
     );
+    assertTrue(vars.hf2 < vars.hf1, 'Unexpected final decrease in user1 health factor'); // in this case, only bad debt remains, collateral fully liquidated
 
     // liquidator
     assertEq(
@@ -1481,7 +1488,7 @@ contract LiquidationTest is BaseTest {
 
     assertTrue(
       mockSpoke1.getHealthFactor(USER1) > mockSpoke1.HEALTH_FACTOR_LIQUIDATION_THRESHOLD(),
-      'Unexpected T0 health factor'
+      'Unexpected T1 health factor'
     );
 
     MockPriceOracle(address(oracle)).setAssetPrice(vars.ethAssetId, 600e8);
@@ -1514,63 +1521,63 @@ contract LiquidationTest is BaseTest {
     assertEq(
       vars.user1DaiData1.usingAsCollateral,
       true,
-      'Unexpected T0 user1 dai usingAsCollateral'
+      'Unexpected T1 user1 dai usingAsCollateral'
     );
     assertEq(
       vars.user1DaiData1.supplyShares,
       vars.mockSpoke1DaiData1.totalShares,
-      'Unexpected T0 user1 dai supplyShares'
+      'Unexpected T1 user1 dai supplyShares'
     );
-    assertEq(vars.user1DaiData1.debtShares, 0, 'Unexpected T0 user1 dai debtShares');
+    assertEq(vars.user1DaiData1.debtShares, 0, 'Unexpected T1 user1 dai debtShares');
     assertEq(
       vars.mockSpoke1DaiData1.totalShares,
       hub.convertAssetsToSharesDown(vars.daiAssetId, daiAmount),
-      'Unexpected T0 mockSpoke1 dai totalShares'
+      'Unexpected T1 mockSpoke1 dai totalShares'
     );
-    assertEq(vars.mockSpoke1DaiData1.drawnShares, 0, 'Unexpected T0 mockSpoke1 dai drawnShares');
+    assertEq(vars.mockSpoke1DaiData1.drawnShares, 0, 'Unexpected T1 mockSpoke1 dai drawnShares');
     // eth
     assertEq(
       vars.user1EthData1.usingAsCollateral,
       true,
-      'Unexpected T0 user1 eth usingAsCollateral'
+      'Unexpected T1 user1 eth usingAsCollateral'
     );
     assertEq(
       vars.user1EthData1.supplyShares,
       vars.mockSpoke1EthData1.totalShares,
-      'Unexpected T0 user1 eth supplyShares'
+      'Unexpected T1 user1 eth supplyShares'
     );
     assertEq(vars.user1EthData1.debtShares, 0, 'Unexpected user1 eth debtShares');
     assertEq(
       vars.mockSpoke1EthData1.totalShares,
       hub.convertAssetsToSharesDown(vars.ethAssetId, ethAmount),
-      'Unexpected T0 mockSpoke1 eth totalShares'
+      'Unexpected T1 mockSpoke1 eth totalShares'
     );
-    assertEq(vars.mockSpoke1EthData1.drawnShares, 0, 'Unexpected T0 mockSpoke1 eth drawnShares');
+    assertEq(vars.mockSpoke1EthData1.drawnShares, 0, 'Unexpected T1 mockSpoke1 eth drawnShares');
     // usdc
     assertEq(
       vars.user1UsdcData1.usingAsCollateral,
       false,
-      'Unexpected T0 user1 usdc usingAsCollateral'
+      'Unexpected T1 user1 usdc usingAsCollateral'
     );
     assertEq(
       vars.user2UsdcData1.supplyShares,
       vars.mockSpoke1UsdcData1.totalShares,
-      'Unexpected T0 user2 usdc supplyShares'
+      'Unexpected T1 user2 usdc supplyShares'
     );
     assertEq(
       vars.user1UsdcData1.debtShares,
       vars.user2UsdcData1.supplyShares,
-      'Unexpected T0 user1 usdc debtShares'
+      'Unexpected T1 user1 usdc debtShares'
     );
     assertEq(
       vars.mockSpoke1UsdcData1.totalShares,
       hub.convertAssetsToSharesDown(vars.usdcAssetId, usdcBorrowAmount),
-      'Unexpected T0 mockSpoke1 usdc totalShares'
+      'Unexpected T1 mockSpoke1 usdc totalShares'
     );
     assertEq(
       vars.mockSpoke1UsdcData1.drawnShares,
       hub.convertAssetsToSharesDown(vars.usdcAssetId, usdcBorrowAmount),
-      'Unexpected T0 mockSpoke1 usdc drawnShares'
+      'Unexpected T1 mockSpoke1 usdc drawnShares'
     );
 
     // action: liquidation
@@ -1736,7 +1743,7 @@ contract LiquidationTest is BaseTest {
 
     assertTrue(
       mockSpoke1.getHealthFactor(USER1) > mockSpoke1.HEALTH_FACTOR_LIQUIDATION_THRESHOLD(),
-      'Unexpected T0 health factor'
+      'Unexpected T1 health factor'
     );
 
     console2.log('T0 hf %e', mockSpoke1.getHealthFactor(USER1));
@@ -1763,63 +1770,63 @@ contract LiquidationTest is BaseTest {
     assertEq(
       vars.user1DaiData1.usingAsCollateral,
       true,
-      'Unexpected T0 user1 dai usingAsCollateral'
+      'Unexpected T1 user1 dai usingAsCollateral'
     );
     assertEq(
       vars.user1DaiData1.supplyShares,
       vars.mockSpoke1DaiData1.totalShares,
-      'Unexpected T0 user1 dai supplyShares'
+      'Unexpected T1 user1 dai supplyShares'
     );
-    assertEq(vars.user1DaiData1.debtShares, 0, 'Unexpected T0 user1 dai debtShares');
+    assertEq(vars.user1DaiData1.debtShares, 0, 'Unexpected T1 user1 dai debtShares');
     assertEq(
       vars.mockSpoke1DaiData1.totalShares,
       hub.convertAssetsToSharesDown(vars.daiAssetId, daiAmount),
-      'Unexpected T0 mockSpoke1 dai totalShares'
+      'Unexpected T1 mockSpoke1 dai totalShares'
     );
-    assertEq(vars.mockSpoke1DaiData1.drawnShares, 0, 'Unexpected T0 mockSpoke1 dai drawnShares');
+    assertEq(vars.mockSpoke1DaiData1.drawnShares, 0, 'Unexpected T1 mockSpoke1 dai drawnShares');
     // eth
     assertEq(
       vars.user1EthData1.usingAsCollateral,
       true,
-      'Unexpected T0 user1 eth usingAsCollateral'
+      'Unexpected T1 user1 eth usingAsCollateral'
     );
     assertEq(
       vars.user1EthData1.supplyShares,
       vars.mockSpoke1EthData1.totalShares,
-      'Unexpected T0 user1 eth supplyShares'
+      'Unexpected T1 user1 eth supplyShares'
     );
     assertEq(vars.user1EthData1.debtShares, 0, 'Unexpected user1 eth debtShares');
     assertEq(
       vars.mockSpoke1EthData1.totalShares,
       hub.convertAssetsToSharesDown(vars.ethAssetId, ethAmount),
-      'Unexpected T0 mockSpoke1 eth totalShares'
+      'Unexpected T1 mockSpoke1 eth totalShares'
     );
-    assertEq(vars.mockSpoke1EthData1.drawnShares, 0, 'Unexpected T0 mockSpoke1 eth drawnShares');
+    assertEq(vars.mockSpoke1EthData1.drawnShares, 0, 'Unexpected T1 mockSpoke1 eth drawnShares');
     // usdc
     assertEq(
       vars.user1UsdcData1.usingAsCollateral,
       false,
-      'Unexpected T0 user1 usdc usingAsCollateral'
+      'Unexpected T1 user1 usdc usingAsCollateral'
     );
     assertEq(
       vars.user2UsdcData1.supplyShares,
       vars.mockSpoke1UsdcData1.totalShares,
-      'Unexpected T0 user2 usdc supplyShares'
+      'Unexpected T1 user2 usdc supplyShares'
     );
     assertEq(
       vars.user1UsdcData1.debtShares,
       vars.user2UsdcData1.supplyShares,
-      'Unexpected T0 user1 usdc debtShares'
+      'Unexpected T1 user1 usdc debtShares'
     );
     assertEq(
       vars.mockSpoke1UsdcData1.totalShares,
       hub.convertAssetsToSharesDown(vars.usdcAssetId, usdcBorrowAmount),
-      'Unexpected T0 mockSpoke1 usdc totalShares'
+      'Unexpected T1 mockSpoke1 usdc totalShares'
     );
     assertEq(
       vars.mockSpoke1UsdcData1.drawnShares,
       hub.convertAssetsToSharesDown(vars.usdcAssetId, usdcBorrowAmount),
-      'Unexpected T0 mockSpoke1 usdc drawnShares'
+      'Unexpected T1 mockSpoke1 usdc drawnShares'
     );
 
     // action: liquidation
@@ -1985,7 +1992,7 @@ contract LiquidationTest is BaseTest {
 
     assertTrue(
       mockSpoke1.getHealthFactor(USER1) > mockSpoke1.HEALTH_FACTOR_LIQUIDATION_THRESHOLD(),
-      'Unexpected T0 health factor'
+      'Unexpected T1 health factor'
     );
 
     console2.log('T0 hf %e', mockSpoke1.getHealthFactor(USER1));
@@ -2020,63 +2027,63 @@ contract LiquidationTest is BaseTest {
     assertEq(
       vars.user1DaiData1.usingAsCollateral,
       true,
-      'Unexpected T0 user1 dai usingAsCollateral'
+      'Unexpected T1 user1 dai usingAsCollateral'
     );
     assertEq(
       vars.user1DaiData1.supplyShares,
       vars.mockSpoke1DaiData1.totalShares,
-      'Unexpected T0 user1 dai supplyShares'
+      'Unexpected T1 user1 dai supplyShares'
     );
-    assertEq(vars.user1DaiData1.debtShares, 0, 'Unexpected T0 user1 dai debtShares');
+    assertEq(vars.user1DaiData1.debtShares, 0, 'Unexpected T1 user1 dai debtShares');
     assertEq(
       vars.mockSpoke1DaiData1.totalShares,
       hub.convertAssetsToSharesDown(vars.daiAssetId, daiAmount),
-      'Unexpected T0 mockSpoke1 dai totalShares'
+      'Unexpected T1 mockSpoke1 dai totalShares'
     );
-    assertEq(vars.mockSpoke1DaiData1.drawnShares, 0, 'Unexpected T0 mockSpoke1 dai drawnShares');
+    assertEq(vars.mockSpoke1DaiData1.drawnShares, 0, 'Unexpected T1 mockSpoke1 dai drawnShares');
     // eth
     assertEq(
       vars.user1EthData1.usingAsCollateral,
       true,
-      'Unexpected T0 user1 eth usingAsCollateral'
+      'Unexpected T1 user1 eth usingAsCollateral'
     );
     assertEq(
       vars.user1EthData1.supplyShares,
       vars.mockSpoke1EthData1.totalShares,
-      'Unexpected T0 user1 eth supplyShares'
+      'Unexpected T1 user1 eth supplyShares'
     );
     assertEq(vars.user1EthData1.debtShares, 0, 'Unexpected user1 eth debtShares');
     assertEq(
       vars.mockSpoke1EthData1.totalShares,
       hub.convertAssetsToSharesDown(vars.ethAssetId, ethAmount),
-      'Unexpected T0 mockSpoke1 eth totalShares'
+      'Unexpected T1 mockSpoke1 eth totalShares'
     );
-    assertEq(vars.mockSpoke1EthData1.drawnShares, 0, 'Unexpected T0 mockSpoke1 eth drawnShares');
+    assertEq(vars.mockSpoke1EthData1.drawnShares, 0, 'Unexpected T1 mockSpoke1 eth drawnShares');
     // usdc
     assertEq(
       vars.user1UsdcData1.usingAsCollateral,
       false,
-      'Unexpected T0 user1 usdc usingAsCollateral'
+      'Unexpected T1 user1 usdc usingAsCollateral'
     );
     assertEq(
       vars.user2UsdcData1.supplyShares,
       vars.mockSpoke1UsdcData1.totalShares,
-      'Unexpected T0 user2 usdc supplyShares'
+      'Unexpected T1 user2 usdc supplyShares'
     );
     assertEq(
       vars.user1UsdcData1.debtShares,
       vars.user2UsdcData1.supplyShares,
-      'Unexpected T0 user1 usdc debtShares'
+      'Unexpected T1 user1 usdc debtShares'
     );
     assertEq(
       vars.mockSpoke1UsdcData1.totalShares,
       hub.convertAssetsToSharesDown(vars.usdcAssetId, usdcBorrowAmount),
-      'Unexpected T0 mockSpoke1 usdc totalShares'
+      'Unexpected T1 mockSpoke1 usdc totalShares'
     );
     assertEq(
       vars.mockSpoke1UsdcData1.drawnShares,
       hub.convertAssetsToSharesDown(vars.usdcAssetId, usdcBorrowAmount),
-      'Unexpected T0 mockSpoke1 usdc drawnShares'
+      'Unexpected T1 mockSpoke1 usdc drawnShares'
     );
 
     // action: liquidation
