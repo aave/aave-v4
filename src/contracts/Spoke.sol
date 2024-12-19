@@ -511,6 +511,8 @@ contract Spoke is ISpoke {
   }
 
   /**
+   * @notice Calculates the user account data for the specified user.
+   * @param user The address of the user
    * @return totalCollateralInBaseCurrency
    * @return totalDebtInBaseCurrency
    * @return avgLiquidationThreshold
@@ -565,12 +567,6 @@ contract Spoke is ISpoke {
         vars.totalDebtInBaseCurrency
       ) / 1e4; // HF of 1 -> 1e18
 
-    console2.log('vars.totalCollateralInBaseCurrency %e', vars.totalCollateralInBaseCurrency);
-    console2.log('vars.totalDebtInBaseCurrency %e', vars.totalDebtInBaseCurrency);
-    console2.log('vars.avgLiquidationThreshold %e', vars.avgLiquidationThreshold);
-    console2.log('vars.userRiskPremium %e', vars.userRiskPremium);
-    console2.log('vars.healthFactor %e', vars.healthFactor);
-
     return (
       vars.totalCollateralInBaseCurrency,
       vars.totalDebtInBaseCurrency,
@@ -613,14 +609,14 @@ contract Spoke is ISpoke {
   }
 
   /**
-   * @notice Calculates the total debt of the user and the actual amount to liquidate depending on the health factor.
-   * @param debtToCover The desired amount of debt to cover in base currency
-   * @param debtAssetId The asset id of the debt asset
-   * @param totalCollateralInBaseCurrency The user's total collateral in base currency
-   * @param totalDebtInBaseCurrency The user's total debt in base currency
-   * @param avgLiquidationThreshold The average liquidation threshold of the user's collateral
-   * @param collateralReserve The reserve configuration of the collateral asset
-   * @return actualDebtToLiquidate The actual amount of debt asset that can be liquidated
+   * @notice Calculates the actual amount of debt to liquidate depending on restoration of the health factor.
+   * @param debtToCover The desired amount of debt to cover in base currency.
+   * @param debtAssetId The asset id of the debt asset.
+   * @param totalCollateralInBaseCurrency The user's total collateral in base currency.
+   * @param totalDebtInBaseCurrency The user's total debt in base currency.
+   * @param avgLiquidationThreshold The average liquidation threshold of the user's collateral.
+   * @param collateralReserve The reserve configuration of the collateral asset.
+   * @return actualDebtToLiquidate The actual amount of debt asset that can be liquidated.
    */
   function _calculateActualDebtToLiquidate(
     Reserve memory collateralReserve,
@@ -632,31 +628,15 @@ contract Spoke is ISpoke {
     uint256 avgLiquidationThreshold,
     uint256 debtAssetPrice
   ) internal view returns (uint256) {
-    console2.log('----- _calculateActualDebtToLiquidate -----');
-
     calculateActualDebtToLiquidateLocalVars memory vars;
-
     vars.maxLiquidatableDebt = getUserDebtInAssets(debtAssetId, user);
-
-    console2.log(
-      'HEALTH_FACTOR_LIQUIDATION_RECOVERY_THRESHOLD * totalDebtInBaseCurrency %e',
-      HEALTH_FACTOR_LIQUIDATION_RECOVERY_THRESHOLD.wadMul(totalDebtInBaseCurrency)
-    );
-    console2.log('to sub %e', totalCollateralInBaseCurrency.wadMul(avgLiquidationThreshold));
-    console2.log(
-      'to div %e',
-      HEALTH_FACTOR_LIQUIDATION_RECOVERY_THRESHOLD -
-        collateralReserve.config.lb.percentMul(collateralReserve.config.lt) *
-        1e14
-    );
 
     vars.hfScaledDebt = HEALTH_FACTOR_LIQUIDATION_RECOVERY_THRESHOLD.wadMul(
       totalDebtInBaseCurrency
     );
     vars.weightedCollateral = totalCollateralInBaseCurrency.wadMul(avgLiquidationThreshold) / 1e4;
-    // uint256 debtAssetPrice = IPriceOracle(oracle).getAssetPrice(debtAssetId);
 
-    // amount of user debt that corresponds to HEALTH_FACTOR_LIQUIDATION_RECOVERY_THRESHOLD
+    // amount of user debt that restores HF to HEALTH_FACTOR_LIQUIDATION_RECOVERY_THRESHOLD
     vars.liquidationRecoveryDebt = vars.hfScaledDebt > vars.weightedCollateral
       ? (vars.hfScaledDebt - vars.weightedCollateral).wadDiv(
         HEALTH_FACTOR_LIQUIDATION_RECOVERY_THRESHOLD -
@@ -667,26 +647,12 @@ contract Spoke is ISpoke {
     vars.liquidationRecoveryDebt = debtAssetPrice == 0
       ? type(uint256).max
       : vars.liquidationRecoveryDebt / debtAssetPrice;
-
-    console2.log('liquidationRecoveryDebt %e', vars.liquidationRecoveryDebt);
-    console2.log('----- _calculateDebt -----');
-    console2.log('maxLiquidatableDebt %e', vars.maxLiquidatableDebt);
-
-    console2.log(
-      'vars.maxLiquidatableDebt > vars.liquidationRecoveryDebt',
-      vars.maxLiquidatableDebt > vars.liquidationRecoveryDebt
-    );
-
     vars.maxLiquidatableDebt = vars.maxLiquidatableDebt > vars.liquidationRecoveryDebt
       ? vars.liquidationRecoveryDebt
       : vars.maxLiquidatableDebt;
-
-    console2.log('maxLiquidatableDebt %e', vars.maxLiquidatableDebt);
-
     vars.actualDebtToLiquidate = debtToCover > vars.maxLiquidatableDebt
       ? vars.maxLiquidatableDebt
       : debtToCover;
-    console2.log('actualDebtToLiquidate %e', vars.actualDebtToLiquidate);
     return vars.actualDebtToLiquidate;
   }
 
