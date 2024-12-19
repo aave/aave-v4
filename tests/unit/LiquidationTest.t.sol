@@ -356,8 +356,6 @@ contract LiquidationTest is BaseTest {
     // HF drops below threshold, eth -> 0
     MockPriceOracle(address(oracle)).setAssetPrice(ethAssetId, 0);
 
-    console2.log('hf %e', mockSpoke1.getHealthFactor(USER1));
-
     // wbtc is not set usingAsCollateral
     vm.prank(LIQUIDATOR);
     vm.expectRevert(TestErrors.SPECIFIED_CURRENCY_NOT_BORROWED_BY_USER);
@@ -459,8 +457,6 @@ contract LiquidationTest is BaseTest {
     assertTrue(vars.hf1 < vars.hf0, 'Unexpected change in user1 hf at T1');
 
     Utils.updateLiquidationBonus(mockSpoke1, vars.daiAssetId, 1e4); // set 0% liq bonus
-
-    console2.log('T1 hf %e', mockSpoke1.getHealthFactor(USER1));
 
     // pre-liquidation
     vars.user1DaiData1 = mockSpoke1.getUser(vars.daiAssetId, USER1);
@@ -591,8 +587,6 @@ contract LiquidationTest is BaseTest {
     });
     mockSpoke1.liquidationCall(vars.daiAssetId, vars.usdcAssetId, USER1, vars.debtToCover);
     vm.stopPrank();
-
-    console2.log('Tf hf %e', mockSpoke1.getHealthFactor(USER1));
 
     // post-liquidation
     vars.user1DaiData2 = mockSpoke1.getUser(vars.daiAssetId, USER1);
@@ -699,7 +693,6 @@ contract LiquidationTest is BaseTest {
     // USER1 borrow usdc
     Utils.borrow(vm, mockSpoke1, vars.usdcAssetId, USER1, usdcBorrowAmount, USER1);
 
-    console2.log('T0 hf %e', mockSpoke1.getHealthFactor(USER1));
     vars.hf0 = mockSpoke1.getHealthFactor(USER1);
     assertTrue(
       vars.hf0 > mockSpoke1.HEALTH_FACTOR_LIQUIDATION_THRESHOLD(),
@@ -711,7 +704,6 @@ contract LiquidationTest is BaseTest {
 
     vars.hf1 = mockSpoke1.getHealthFactor(USER1);
     assertTrue(vars.hf1 < vars.hf0, 'Unexpected change in user1 hf at T1');
-    console2.log('T1 hf %e', vars.hf1);
 
     // pre-liquidation
     vars.user1DaiData1 = mockSpoke1.getUser(vars.daiAssetId, USER1);
@@ -842,8 +834,6 @@ contract LiquidationTest is BaseTest {
     });
     mockSpoke1.liquidationCall(vars.daiAssetId, vars.usdcAssetId, USER1, vars.debtToCover);
     vm.stopPrank();
-
-    console2.log('Tf hf %e', mockSpoke1.getHealthFactor(USER1));
 
     // post-liquidation
     vars.user1DaiData2 = mockSpoke1.getUser(vars.daiAssetId, USER1);
@@ -958,7 +948,6 @@ contract LiquidationTest is BaseTest {
     Utils.borrow(vm, mockSpoke1, vars.usdcAssetId, USER1, usdcBorrowAmount, USER1);
 
     vars.hf0 = mockSpoke1.getHealthFactor(USER1);
-    console2.log('T0 hf %e', vars.hf0);
 
     assertTrue(
       vars.hf0 > mockSpoke1.HEALTH_FACTOR_LIQUIDATION_THRESHOLD(),
@@ -969,7 +958,6 @@ contract LiquidationTest is BaseTest {
     MockPriceOracle(address(oracle)).setAssetPrice(vars.ethAssetId, 800e8);
     vars.hf1 = mockSpoke1.getHealthFactor(USER1);
     assertTrue(vars.hf1 < vars.hf0, 'Unexpected change in user1 hf at T1');
-    console2.log('T1 hf %e', vars.hf1);
 
     // pre-liquidation
     vars.user1DaiData1 = mockSpoke1.getUser(vars.daiAssetId, USER1);
@@ -1106,8 +1094,6 @@ contract LiquidationTest is BaseTest {
     });
     mockSpoke1.liquidationCall(vars.daiAssetId, vars.usdcAssetId, USER1, vars.debtToCover);
     vm.stopPrank();
-
-    console2.log('Tf hf %e', mockSpoke1.getHealthFactor(USER1));
 
     // post-liquidation
     vars.user1DaiData2 = mockSpoke1.getUser(vars.daiAssetId, USER1);
@@ -1224,7 +1210,6 @@ contract LiquidationTest is BaseTest {
     Utils.borrow(vm, mockSpoke1, vars.usdcAssetId, USER1, usdcBorrowAmount, USER1);
 
     vars.hf0 = mockSpoke1.getHealthFactor(USER1);
-    console2.log('T0 hf %e', vars.hf0);
 
     assertTrue(
       vars.hf0 > mockSpoke1.HEALTH_FACTOR_LIQUIDATION_THRESHOLD(),
@@ -1236,7 +1221,6 @@ contract LiquidationTest is BaseTest {
 
     vars.hf1 = mockSpoke1.getHealthFactor(USER1);
     assertTrue(vars.hf1 < vars.hf0, 'Unexpected change in user1 hf at T1');
-    console2.log('T1 hf %e', vars.hf1);
 
     // pre-liquidation
     vars.user1DaiData1 = mockSpoke1.getUser(vars.daiAssetId, USER1);
@@ -1375,8 +1359,6 @@ contract LiquidationTest is BaseTest {
     mockSpoke1.liquidationCall(vars.daiAssetId, vars.usdcAssetId, USER1, vars.debtToCover);
     vm.stopPrank();
 
-    console2.log('Tf hf %e', mockSpoke1.getHealthFactor(USER1));
-
     // post-liquidation
     vars.user1DaiData2 = mockSpoke1.getUser(vars.daiAssetId, USER1);
     vars.mockSpoke1DaiData2 = hub.getSpoke(vars.daiAssetId, address(mockSpoke1));
@@ -1488,7 +1470,6 @@ contract LiquidationTest is BaseTest {
     Utils.borrow(vm, mockSpoke1, vars.usdcAssetId, USER1, usdcBorrowAmount, USER1);
 
     vars.hf0 = mockSpoke1.getHealthFactor(USER1);
-    console2.log('T0 hf %e', mockSpoke1.getHealthFactor(USER1));
 
     assertTrue(
       vars.hf0 > mockSpoke1.HEALTH_FACTOR_LIQUIDATION_THRESHOLD(),
@@ -1499,7 +1480,6 @@ contract LiquidationTest is BaseTest {
     MockPriceOracle(address(oracle)).setAssetPrice(vars.ethAssetId, 600e8);
 
     vars.hf1 = mockSpoke1.getHealthFactor(USER1);
-    console2.log('T1 hf %e', mockSpoke1.getHealthFactor(USER1));
     assertTrue(
       vars.hf1 < mockSpoke1.HEALTH_FACTOR_LIQUIDATION_THRESHOLD(),
       'Unexpected T1 health factor'
@@ -1643,8 +1623,6 @@ contract LiquidationTest is BaseTest {
     mockSpoke1.liquidationCall(vars.ethAssetId, vars.usdcAssetId, USER1, vars.debtToCover);
     vm.stopPrank();
 
-    console2.log('Tf hf %e', mockSpoke1.getHealthFactor(USER1));
-
     // post-liquidation
     vars.user1DaiData2 = mockSpoke1.getUser(vars.daiAssetId, USER1);
     vars.mockSpoke1DaiData2 = hub.getSpoke(vars.daiAssetId, address(mockSpoke1));
@@ -1758,14 +1736,10 @@ contract LiquidationTest is BaseTest {
       'Unexpected T0 health factor'
     );
 
-    console2.log('T0 hf %e', mockSpoke1.getHealthFactor(USER1));
-
     // T1: eth drops fomr $2000 -> $800/eth
     MockPriceOracle(address(oracle)).setAssetPrice(vars.ethAssetId, 800e8);
 
     vars.hf1 = mockSpoke1.getHealthFactor(USER1);
-
-    console2.log('T1 hf %e', vars.hf1);
 
     // pre-liquidation
     vars.user1DaiData1 = mockSpoke1.getUser(vars.daiAssetId, USER1);
@@ -1897,8 +1871,6 @@ contract LiquidationTest is BaseTest {
     mockSpoke1.liquidationCall(vars.daiAssetId, vars.usdcAssetId, USER1, vars.debtToCover);
     vm.stopPrank();
 
-    console2.log('Tf hf %e', mockSpoke1.getHealthFactor(USER1));
-
     // post-liquidation
     vars.user1DaiData2 = mockSpoke1.getUser(vars.daiAssetId, USER1);
     vars.mockSpoke1DaiData2 = hub.getSpoke(vars.daiAssetId, address(mockSpoke1));
@@ -2011,13 +1983,9 @@ contract LiquidationTest is BaseTest {
       'Unexpected T1 health factor'
     );
 
-    console2.log('T0 hf %e', vars.hf0);
-
     // T1: eth price drops from $2000 -> $800/eth
     MockPriceOracle(address(oracle)).setAssetPrice(vars.ethAssetId, 800e8);
     vars.hf1 = mockSpoke1.getHealthFactor(USER1);
-
-    console2.log('T1 hf %e', vars.hf1);
 
     // pre-liquidation
     vars.user1DaiData1 = mockSpoke1.getUser(vars.daiAssetId, USER1);
@@ -2155,8 +2123,6 @@ contract LiquidationTest is BaseTest {
     });
     mockSpoke1.liquidationCall(vars.daiAssetId, vars.usdcAssetId, USER1, vars.debtToCover);
     vm.stopPrank();
-
-    console2.log('Tf hf %e', mockSpoke1.getHealthFactor(USER1));
 
     // post-liquidation
     vars.user1DaiData2 = mockSpoke1.getUser(vars.daiAssetId, USER1);
@@ -2283,13 +2249,9 @@ contract LiquidationTest is BaseTest {
       'Unexpected T1 health factor'
     );
 
-    console2.log('T0 hf %e', vars.hf0);
-
     // T1: eth price drops from $2000 -> $800/eth
     MockPriceOracle(address(oracle)).setAssetPrice(vars.ethAssetId, 800e8);
     vars.hf1 = mockSpoke1.getHealthFactor(USER1);
-
-    console2.log('T1 hf %e', vars.hf1);
 
     // pre-liquidation
     vars.user1DaiData1 = mockSpoke1.getUser(vars.daiAssetId, USER1);
@@ -2478,8 +2440,6 @@ contract LiquidationTest is BaseTest {
       hub.convertAssetsToSharesDown(vars.usdcAssetId, vars.actualDebtCovered);
     vars.hf2 = mockSpoke1.getHealthFactor(USER1);
 
-    console2.log('Tf hf %e', vars.hf2);
-
     // dai
     assertEq(vars.user1DaiData2.usingAsCollateral, true, 'Unexpected user1 dai usingAsCollateral');
     assertEq(
@@ -2527,7 +2487,6 @@ contract LiquidationTest is BaseTest {
       'Unexpected user1 final health factor'
     );
     assertTrue(vars.hf2 < vars.hf1, 'Unexpected increase in user1 health factor'); // remaining debt from wbtc, hf decreases
-    // console2.log();
 
     // liquidator
     assertEq(
@@ -2599,13 +2558,9 @@ contract LiquidationTest is BaseTest {
       'Unexpected T1 health factor'
     );
 
-    console2.log('T0 hf %e', vars.hf0);
-
     // T1: eth price drops from $2000 -> $800/eth
     MockPriceOracle(address(oracle)).setAssetPrice(vars.ethAssetId, 800e8);
     vars.hf1 = mockSpoke1.getHealthFactor(USER1);
-
-    console2.log('T1 hf %e', vars.hf1);
 
     // pre-liquidation
     vars.user1DaiData1 = mockSpoke1.getUser(vars.daiAssetId, USER1);
@@ -2794,8 +2749,6 @@ contract LiquidationTest is BaseTest {
       hub.convertAssetsToSharesDown(vars.usdcAssetId, vars.actualDebtCovered);
     vars.hf2 = mockSpoke1.getHealthFactor(USER1);
 
-    console2.log('Tf hf %e', vars.hf2);
-
     // dai
     assertEq(vars.user1DaiData2.usingAsCollateral, false, 'Unexpected user1 dai usingAsCollateral'); // all Dai liquidated
     assertEq(
@@ -2843,7 +2796,6 @@ contract LiquidationTest is BaseTest {
       'Unexpected user1 final health factor'
     );
     assertTrue(vars.hf2 < vars.hf1, 'Unexpected increase in user1 health factor'); // remaining debt from wbtc, hf decreases
-    // console2.log();
 
     // liquidator
     assertEq(
