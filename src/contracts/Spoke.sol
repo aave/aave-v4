@@ -512,12 +512,12 @@ contract Spoke is ISpoke {
 
   /**
    * @notice Calculates the user account data for the specified user.
-   * @param user The address of the user
-   * @return totalCollateralInBaseCurrency
-   * @return totalDebtInBaseCurrency
-   * @return avgLiquidationThreshold
-   * @return userRiskPremium
-   * @return healthFactor
+   * @param user The address of the user.
+   * @return totalCollateralInBaseCurrency The total collateral in base currency.
+   * @return totalDebtInBaseCurrency The total debt in base currency.
+   * @return avgLiquidationThreshold The weighted average liquidation threshold of the user's collateral.
+   * @return userRiskPremium The user's risk premium.
+   * @return healthFactor The user's health factor. 1e18 corresponds to a health factor of 1.
    */
   function _calculateUserAccountData(
     address user
