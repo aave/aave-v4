@@ -206,11 +206,6 @@ contract Spoke is ISpoke {
     address user,
     uint256 debtToCover
   ) external {
-    // v1 - allow the liquidator to liquidate full position if HF goes below certain threshold
-    // v2 enhancement - allow liquidator to liquidate only the amount needed to bring HF to 1
-
-    console2.log('----- liq -----');
-
     require(debtToCover > 0, 'INVALID_DEBT_TO_COVER');
 
     LiquidationCallLocalVars memory vars;
@@ -228,11 +223,8 @@ contract Spoke is ISpoke {
       vars.healthFactor
     ) = _calculateUserAccountData(user);
 
-    // console2.log('vars.healthFactor %e', vars.healthFactor);
-
     _validateLiquidationCall(collateralAssetId, debtAssetId, user, vars.healthFactor);
 
-    // TODO: optimize this calculation / input params
     vars.actualDebtToLiquidate = _calculateActualDebtToLiquidate(
       collateralReserve,
       debtToCover,
@@ -243,8 +235,6 @@ contract Spoke is ISpoke {
       vars.avgLiquidationThreshold,
       vars.debtAssetPrice
     );
-
-    // console2.log('collateral amt: %e', getUserSupplyInAsset(collateralAssetId, user));
 
     vars.userCollateralBalance = getUserSupplyInAssets(collateralAssetId, user);
 
@@ -260,25 +250,12 @@ contract Spoke is ISpoke {
       vars.debtAssetPrice
     );
 
-    console2.log('vars.userCollateralBalance %e', vars.userCollateralBalance);
-    console2.log(
-      'vars.actualCollateralToLiquidate %e %e shares',
-      vars.actualCollateralToLiquidate,
-      getUserSupplyInShares(collateralAssetId, user)
-    );
-    console2.log('vars.actualDebtToLiquidate %e', vars.actualDebtToLiquidate);
-    console2.log('vars.liquidationProtocolFeeAmount %e', vars.liquidationProtocolFeeAmount);
-
     if (
       vars.actualCollateralToLiquidate + vars.liquidationProtocolFeeAmount ==
       vars.userCollateralBalance
     ) {
-      console2.log('coll fully liquidated!');
       _setUsingAsCollateral(user, collateralReserve.id, false);
     }
-
-    // risk premium needs to be updated bc collateral/debt has been updated
-    (, uint256 newAggregatedRiskPremium) = _refreshRiskPremium();
 
     // TODO: update when restore is changed to directly call transferFrom from LH
     IERC20(debtReserve.asset).safeTransferFrom(
@@ -286,6 +263,9 @@ contract Spoke is ISpoke {
       liquidityHub,
       vars.actualDebtToLiquidate
     );
+
+    (, uint256 newAggregatedRiskPremium) = _refreshRiskPremium();
+
     // repay debt
     uint256 userDebtShares = ILiquidityHub(liquidityHub).restore(
       debtAssetId,
@@ -299,12 +279,12 @@ contract Spoke is ISpoke {
       vars.actualCollateralToLiquidate + vars.liquidationProtocolFeeAmount,
       newAggregatedRiskPremium
     );
-    // risk premium needs to be updated bc collateral/debt has been updated
-    (, newAggregatedRiskPremium) = _refreshRiskPremium();
 
     // accounting
     users[collateralAssetId][user].supplyShares -= userCollateralShares;
     users[debtAssetId][user].debtShares -= userDebtShares;
+
+    // TODO: risk premium needs to be updated again bc collateral/debt has been updated?
 
     // transfer assets to liquidator / reserve
     IERC20(collateralReserve.asset).safeTransfer(msg.sender, vars.actualCollateralToLiquidate);
