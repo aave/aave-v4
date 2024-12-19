@@ -565,7 +565,7 @@ contract Spoke is ISpoke {
       ? type(uint256).max
       : (vars.totalCollateralInBaseCurrency.wadMul(vars.avgLiquidationThreshold)).wadDiv(
         vars.totalDebtInBaseCurrency
-      ) / 1e4; // HF of 1 -> 1e18
+      ) / 1e4;
 
     return (
       vars.totalCollateralInBaseCurrency,
@@ -657,9 +657,16 @@ contract Spoke is ISpoke {
   }
 
   /**
-   * @return The maximum collateral amount that is possible to liquidate given all the liquidation constraints (liquidation bonus, liquidationProtocolFeePercentage)
-   * @return The debt amount to repay with the liquidation
-   * @return The fee taken from the liquidation bonus amount to be paid to the protocol
+   * @notice Calculates the maximum amount of collateral that can be liquidated to cover a debt.
+   * It takes into consideration the actual debt to liquidate, the liquidation bonus, and the liquidation protocol fee.
+   * @param collateralReserve The reserve configuration of the collateral asset.
+   * @param debtReserve The reserve configuration of the debt asset.
+   * @param actualDebtToLiquidate The actual amount of debt to liquidate.
+   * @param userCollateralBalance The user's balance of the collateral asset.
+   * @param debtAssetPrice The price of the debt asset.
+   * @return The maximum collateral amount that is possible to liquidate given all the liquidation constraints.
+   * @return The debt amount to repay with the liquidation.
+   * @return The fee taken from the liquidation bonus amount to be paid to the protocol.
    */
   function _calculateAvailableCollateralToLiquidate(
     Reserve memory collateralReserve,
@@ -675,11 +682,6 @@ contract Spoke is ISpoke {
     vars.collateralAssetUnit = 10 ** collateralReserve.decimals;
     vars.debtAssetUnit = 10 ** debtReserve.decimals;
 
-    console2.log('--- _calculateAvailableCollateralToLiquidate---- ');
-    console2.log('vars.collateralAssetPrice %e', vars.collateralAssetPrice);
-    console2.log('debtAssetPrice %e', debtAssetPrice);
-    console2.log('userCollateralBalance %e', userCollateralBalance);
-
     vars.liquidationProtocolFeePercentage = collateralReserve.config.lpfp;
 
     // find collateral amount that corresponds to the debt to cover
@@ -690,7 +692,6 @@ contract Spoke is ISpoke {
     vars.maxCollateralToLiquidate = vars.baseCollateral.percentMul(collateralReserve.config.lb);
 
     if (vars.maxCollateralToLiquidate > userCollateralBalance) {
-      console2.log('maxCollateralToLiquidate > userCollateralBalance');
       // back calculate debt amount needed to cover the max allowed collateral
       vars.collateralAmount = userCollateralBalance;
       vars.debtAmountNeeded = ((vars.collateralAssetPrice *
@@ -699,13 +700,11 @@ contract Spoke is ISpoke {
           collateralReserve.config.lb
         );
     } else {
-      console2.log('maxCollateralToLiquidate <= userCollateralBalance');
       vars.collateralAmount = vars.maxCollateralToLiquidate;
       vars.debtAmountNeeded = actualDebtToLiquidate;
     }
 
     if (vars.liquidationProtocolFeePercentage != 0) {
-      console2.log('vars.liquidationProtocolFeePercentage != 0');
       vars.bonusCollateral =
         vars.collateralAmount -
         vars.collateralAmount.percentDiv(collateralReserve.config.lb);
@@ -714,19 +713,12 @@ contract Spoke is ISpoke {
         vars.liquidationProtocolFeePercentage
       );
 
-      console2.log('vars.collateralAmount %e', vars.collateralAmount);
-      console2.log('liquidationBonust %e', collateralReserve.config.lb);
-      console2.log('vars.bonusCollateral %e', vars.bonusCollateral);
-      console2.log('liquidationProtocolFeeAmount %e', vars.liquidationProtocolFeeAmount);
-      console2.log('vars.debtAmountNeeded %e', vars.debtAmountNeeded);
-
       return (
         vars.collateralAmount - vars.liquidationProtocolFeeAmount,
         vars.debtAmountNeeded,
         vars.liquidationProtocolFeeAmount
       );
     } else {
-      console2.log('vars.liquidationProtocolFeePercentage == 0');
       return (vars.collateralAmount, vars.debtAmountNeeded, 0);
     }
   }
