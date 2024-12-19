@@ -13,8 +13,6 @@ import {IReserveInterestRateStrategy} from 'src/interfaces/IReserveInterestRateS
 import {IPriceOracle} from 'src/interfaces/IPriceOracle.sol';
 import {DataTypes} from 'src/libraries/types/DataTypes.sol';
 
-import 'forge-std/console2.sol';
-
 contract Spoke is ISpoke {
   using WadRayMath for uint256;
   using PercentageMath for uint256;
