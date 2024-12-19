@@ -193,7 +193,7 @@ contract HealthFactorTest is BaseTest {
     Utils.setUsingAsCollateral(vm, spoke1, USER1, daiId, usingAsCollateral);
 
     uint256 healthFactor = ISpoke(spoke1).getHealthFactor(USER1);
-    // assertEq(healthFactor, type(uint256).max, 'wrong health factor');
+    assertEq(healthFactor, type(uint256).max, 'wrong health factor');
   }
 
   function test_getHealthFactor_single_borrowed_asset() public {
