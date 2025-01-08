@@ -23,14 +23,21 @@ contract LiquidityHub is ILiquidityHub {
     DataTypes.SpokeConfig config;
   }
 
+  // TODO: Simplify the needed variables here
+  // * potentially remove totalAssetsBase
+  // * potentially store risk premium accruals separate from base interest accruals
+  // We don't need all 3 of totalPremium, totalAssets, totalAssetsBase, because totalAssets = totalAssetsBase + totalPremium
   struct Asset {
     uint256 id;
     uint256 totalShares;
+    uint256 totalSharesBase;
     uint256 totalAssets;
+    uint256 totalAssetsBase;
     uint256 drawnShares;
+    uint256 drawnSharesBase;
+    uint256 totalPremium;
     uint256 lastUpdateTimestamp;
     uint256 baseBorrowRate;
-    uint256 RPAdjustedBorrowRate;
     DataTypes.AssetConfig config;
   }
 
@@ -77,13 +84,13 @@ contract LiquidityHub is ILiquidityHub {
    */
   function updateAndGetAssetBalance(uint256 assetId) external returns (uint256) {
     Asset storage asset = assets[assetId];
-    _accrueAssetInterest(asset, asset.RPAdjustedBorrowRate);
+    _accrueAssetInterest(asset, asset.baseBorrowRate);
     return asset.totalAssets;
   }
 
   function updateAndGetShareBalance(uint256 assetId) external returns (uint256) {
     Asset storage asset = assets[assetId];
-    _accrueAssetInterest(asset, asset.RPAdjustedBorrowRate);
+    _accrueAssetInterest(asset, asset.baseBorrowRate);
     return asset.totalShares;
   }
 
@@ -97,11 +104,14 @@ contract LiquidityHub is ILiquidityHub {
     assets[assetCount] = Asset({
       id: assetCount,
       totalShares: 0,
+      totalSharesBase: 0,
       totalAssets: 0,
+      totalAssetsBase: 0,
       drawnShares: 0,
+      drawnSharesBase: 0,
+      totalPremium: 0,
       lastUpdateTimestamp: block.timestamp,
       baseBorrowRate: 0,
-      RPAdjustedBorrowRate: 0,
       config: DataTypes.AssetConfig({
         decimals: params.decimals,
         active: params.active,
@@ -168,7 +178,7 @@ contract LiquidityHub is ILiquidityHub {
     Spoke storage spoke = spokes[assetId][msg.sender];
 
     // Accrue interest before validating action
-    _accrueAssetInterest(asset, asset.RPAdjustedBorrowRate);
+    _accrueAssetInterest(asset, asset.baseBorrowRate);
     _validateSupply(asset, spoke, amount);
 
     // TODO Mitigate inflation attack (burn some amount if first supply)
@@ -202,7 +212,7 @@ contract LiquidityHub is ILiquidityHub {
     Spoke storage spoke = spokes[assetId][msg.sender];
 
     // Accrue interest before validating action
-    _accrueAssetInterest(asset, asset.RPAdjustedBorrowRate);
+    _accrueAssetInterest(asset, asset.baseBorrowRate);
     _validateWithdraw(asset, spoke, amount);
 
     uint256 sharesAmount = convertAssetsToSharesDown(assetId, amount);
@@ -231,7 +241,7 @@ contract LiquidityHub is ILiquidityHub {
     Spoke storage spoke = spokes[assetId][msg.sender];
 
     // Accrue interest before validating action
-    _accrueAssetInterest(asset, asset.RPAdjustedBorrowRate);
+    _accrueAssetInterest(asset, asset.baseBorrowRate);
     _validateDraw(asset, amount, spoke.config.drawCap);
 
     uint256 sharesAmount = convertAssetsToSharesUp(assetId, amount);
@@ -258,7 +268,7 @@ contract LiquidityHub is ILiquidityHub {
     Spoke storage spoke = spokes[assetId][msg.sender];
 
     // Accrue interest before validating action
-    _accrueAssetInterest(asset, asset.RPAdjustedBorrowRate);
+    _accrueAssetInterest(asset, asset.baseBorrowRate);
     uint256 sharesAmount = convertAssetsToSharesDown(assetId, amount);
     _validateRestore(asset, sharesAmount, spoke.drawnShares);
 
@@ -303,7 +313,10 @@ contract LiquidityHub is ILiquidityHub {
   }
 
   function getInterestRate(uint256 assetId) public view returns (uint256) {
-    return assets[assetId].RPAdjustedBorrowRate;
+    return
+      assets[assetId].baseBorrowRate +
+      (assets[assetId].baseBorrowRate * (wAvgBR[assetId].spokeBR / 1e28)) /
+      1e4;
   }
 
   function getSpokeDrawnLiquidity(uint256 assetId, address spoke) public view returns (uint256) {
@@ -375,16 +388,27 @@ contract LiquidityHub is ILiquidityHub {
     require(sharesAmount <= drawnShares, 'INVALID_RESTORE_AMOUNT');
   }
 
-  function _accrueAssetInterest(Asset storage asset, uint256 borrowRate) internal {
+  function _accrueAssetInterest(Asset storage asset, uint256 baseBorrowRate) internal {
     uint256 elapsed = block.timestamp - asset.lastUpdateTimestamp;
     if (elapsed > 0) {
-      // linear interest
-      uint256 totalDrawn = convertSharesToAssetsUp(asset.id, asset.drawnShares);
-      uint256 cumulated = totalDrawn.rayMul(
-        MathUtils.calculateLinearInterest(borrowRate, uint40(asset.lastUpdateTimestamp))
+      // Update total cumulated base interest
+      uint256 totalDrawnBase = convertSharesToAssetsUp(asset.id, asset.drawnSharesBase);
+      uint256 cumulatedBase = totalDrawnBase.rayMul(
+        MathUtils.calculateLinearInterest(baseBorrowRate, uint40(asset.lastUpdateTimestamp))
       ); // TODO rounding
-      asset.totalAssets += (cumulated - totalDrawn); // add delta, ie cumulated interest to totalAssets
-      asset.drawnShares = cumulated.toSharesDown(asset.totalAssets, asset.totalShares);
+
+      // Amount accrued since last action
+      uint256 currentAccruedBase = cumulatedBase - totalDrawnBase;
+
+      asset.totalAssetsBase = cumulatedBase;
+      asset.drawnSharesBase = cumulatedBase.toSharesDown(
+        asset.totalAssetsBase,
+        asset.totalSharesBase
+      );
+
+      // TODO: Double check math to add 1 (and rest of below)
+      asset.totalPremium += (currentAccruedBase * (wAvgBR[asset.id].spokeBR / 1e28)) / 1e4;
+      asset.totalAssets = asset.totalAssetsBase + asset.totalPremium;
 
       // TODO: RF in terms of fee shares
       asset.lastUpdateTimestamp = block.timestamp;
@@ -416,10 +440,6 @@ contract LiquidityHub is ILiquidityHub {
 
     // Caching borrow rate for next accrual on action
     asset.baseBorrowRate = baseBorrowRate;
-    asset.RPAdjustedBorrowRate =
-      baseBorrowRate +
-      (baseBorrowRate * (wAvgBR[asset.id].spokeBR / 1e28)) /
-      1e4;
   }
 
   /**

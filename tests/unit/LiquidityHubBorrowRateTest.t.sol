@@ -252,12 +252,10 @@ contract UserRiskPremiumTest is BaseTest {
   // TODO: Test via calling functions on spokes - after spoke side is implemented
 
   function _getBaseBorrowRate(uint256 assetId) internal view returns (uint256) {
-    (, , , , , uint256 borrowRate, , ) = hub.assets(assetId);
-    return borrowRate;
+    return hub.getBaseInterestRate(assetId);
   }
 
   function _getBorrowRate(uint256 assetId) internal view returns (uint256) {
-    (, , , , , , uint256 borrowRate, ) = hub.assets(assetId);
-    return borrowRate;
+    return hub.getInterestRate(assetId);
   }
 }
