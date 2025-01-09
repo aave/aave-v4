@@ -393,6 +393,7 @@ contract LiquidityHub is ILiquidityHub {
     if (elapsed > 0) {
       // Update total cumulated base interest
       uint256 totalDrawnBase = convertSharesToAssetsUp(asset.id, asset.drawnSharesBase);
+      if (totalDrawnBase == 0) return; // No interest to accrue if no liquidity drawn
       uint256 cumulatedBase = totalDrawnBase.rayMul(
         MathUtils.calculateLinearInterest(baseBorrowRate, uint40(asset.lastUpdateTimestamp))
       ); // TODO rounding
