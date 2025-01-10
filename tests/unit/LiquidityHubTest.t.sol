@@ -760,7 +760,7 @@ contract LiquidityHubTest is BaseTest {
     vm.startPrank(address(spoke1));
     IERC20(address(dai)).transfer(address(hub), drawAmount);
     vm.expectRevert(TestErrors.ASSET_NOT_ACTIVE);
-    ILiquidityHub(address(hub)).restore(daiId, drawAmount, 0);
+    ILiquidityHub(address(hub)).restore(daiId, 0, drawAmount, 0);
     vm.stopPrank();
   }
 
@@ -787,7 +787,7 @@ contract LiquidityHubTest is BaseTest {
     vm.startPrank(address(spoke1));
     IERC20(address(dai)).transfer(address(hub), drawAmount);
     vm.expectRevert(TestErrors.INVALID_RESTORE_AMOUNT);
-    ILiquidityHub(address(hub)).restore(daiId, drawAmount + 1, 0);
+    ILiquidityHub(address(hub)).restore(daiId, 0, drawAmount + 1, 0);
     vm.stopPrank();
   }
 
@@ -816,7 +816,7 @@ contract LiquidityHubTest is BaseTest {
     IERC20(address(dai)).transfer(address(hub), restoreAmount);
     vm.expectEmit(address(hub));
     emit Restore(daiId, address(spoke1), restoreAmount);
-    ILiquidityHub(address(hub)).restore(daiId, restoreAmount, 0);
+    ILiquidityHub(address(hub)).restore(daiId, 0, restoreAmount, 0);
     vm.stopPrank();
 
     LiquidityHub.Asset memory daiData = hub.getAsset(daiId);

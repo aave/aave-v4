@@ -27,6 +27,7 @@ contract LiquidityHub is ILiquidityHub {
   // * potentially remove totalAssetsBase
   // * potentially store risk premium accruals separate from base interest accruals
   // We don't need all 3 of totalPremium, totalAssets, totalAssetsBase, because totalAssets = totalAssetsBase + totalPremium
+  // TODO: Consider renaming totalAssets
   struct Asset {
     uint256 id;
     uint256 totalShares;
@@ -185,8 +186,12 @@ contract LiquidityHub is ILiquidityHub {
     uint256 sharesAmount = convertAssetsToSharesDown(assetId, amount);
     require(sharesAmount > 0, 'INVALID_AMOUNT');
 
+    asset.totalSharesBase += sharesAmount;
     asset.totalShares += sharesAmount;
+    asset.totalAssetsBase += amount;
     asset.totalAssets += amount;
+
+    // TODO: How to handle spoke shares?
     spoke.totalShares += sharesAmount;
 
     _updateBorrowRate(asset, riskPremium, amount, 0);
@@ -200,6 +205,7 @@ contract LiquidityHub is ILiquidityHub {
     return sharesAmount;
   }
 
+  // TODO: Be able to pass -1 as amount to withdraw all or accept number of shares
   function withdraw(
     uint256 assetId,
     address to,
@@ -216,7 +222,10 @@ contract LiquidityHub is ILiquidityHub {
     _validateWithdraw(asset, spoke, amount);
 
     uint256 sharesAmount = convertAssetsToSharesDown(assetId, amount);
+    // TODO: On a withdraw, how do we know which shares (base or premium) to withdraw from? - Same as restore?
+    asset.totalSharesBase -= sharesAmount;
     asset.totalShares -= sharesAmount;
+    asset.totalAssetsBase -= amount;
     asset.totalAssets -= amount;
     spoke.totalShares -= sharesAmount;
 
@@ -245,7 +254,9 @@ contract LiquidityHub is ILiquidityHub {
     _validateDraw(asset, amount, spoke.config.drawCap);
 
     uint256 sharesAmount = convertAssetsToSharesUp(assetId, amount);
+    asset.drawnSharesBase += sharesAmount;
     asset.drawnShares += sharesAmount;
+    // TODO: What do we do with spoke shares here?
     spoke.drawnShares += sharesAmount;
 
     _updateBorrowRate(asset, riskPremium, 0, amount);
@@ -257,9 +268,19 @@ contract LiquidityHub is ILiquidityHub {
     return sharesAmount;
   }
 
+  /**
+   * @notice Repays debt on behalf of user
+   * @dev Only callable by spokes
+   * @dev Interest is paid off first from premium, then from base, passed as parameters
+   * @param assetId The asset id
+   * @param amountFromPremium The amount to repay from premium interest
+   * @param amountFromBase The amount to repay from base interest
+   * @param riskPremium The aggregated risk premium of the calling spoke
+   */
   function restore(
     uint256 assetId,
-    uint256 amount,
+    uint256 amountFromPremium,
+    uint256 amountFromBase,
     uint256 riskPremium
   ) external returns (uint256) {
     // TODO: authorization - only spokes
@@ -269,10 +290,17 @@ contract LiquidityHub is ILiquidityHub {
 
     // Accrue interest before validating action
     _accrueAssetInterest(asset, asset.baseBorrowRate);
+    uint256 amount = amountFromPremium + amountFromBase;
     uint256 sharesAmount = convertAssetsToSharesDown(assetId, amount);
     _validateRestore(asset, sharesAmount, spoke.drawnShares);
 
+    if (amountFromPremium > 0) asset.totalPremium -= amountFromPremium;
+    if (amountFromBase > 0) {
+      asset.drawnSharesBase -= convertAssetsToSharesDown(assetId, amountFromBase);
+    }
     asset.drawnShares -= sharesAmount;
+
+    // TODO: How to handle spoke's side shares?
     spoke.drawnShares -= sharesAmount;
 
     _updateBorrowRate(asset, riskPremium, amount, 0);
@@ -286,6 +314,7 @@ contract LiquidityHub is ILiquidityHub {
   // public
   //
 
+  // TODO: gas optimize the conversions
   function convertAssetsToSharesUp(uint256 assetId, uint256 amount) public view returns (uint256) {
     return amount.toSharesUp(assets[assetId].totalAssets, assets[assetId].totalShares);
   }
@@ -363,7 +392,9 @@ contract LiquidityHub is ILiquidityHub {
       'SUPPLIED_AMOUNT_EXCEEDED'
     );
     require(
-      amount <= asset.totalAssets - convertSharesToAssetsUp(asset.id, asset.drawnShares),
+      amount <=
+        (asset.totalAssetsBase + asset.totalPremium) -
+          convertSharesToAssetsUp(asset.id, asset.drawnShares),
       'NOT_AVAILABLE_LIQUIDITY'
     );
   }
@@ -371,7 +402,8 @@ contract LiquidityHub is ILiquidityHub {
   function _validateDraw(Asset storage asset, uint256 amount, uint256 drawCap) internal view {
     // TODO: Other cases of status (frozen, paused)
     require(asset.config.active, 'ASSET_NOT_ACTIVE');
-    uint256 drawnAssets = convertSharesToAssetsUp(asset.id, asset.drawnShares);
+    uint256 drawnAssets = asset.drawnSharesBase.toAssetsDown(asset.totalAssets, asset.totalShares) +
+      asset.totalPremium;
     require(drawCap == type(uint256).max || amount + drawnAssets <= drawCap, 'DRAW_CAP_EXCEEDED');
     require(amount <= asset.totalAssets - drawnAssets, 'NOT_AVAILABLE_LIQUIDITY');
   }
@@ -407,7 +439,7 @@ contract LiquidityHub is ILiquidityHub {
         asset.totalSharesBase
       );
 
-      // TODO: Double check math to add 1 (and rest of below)
+      // TODO: Double check math to add 1 (and rest of below) and also put into a library -> percentmul and fromRad
       asset.totalPremium += (currentAccruedBase * (wAvgBR[asset.id].spokeBR / 1e28)) / 1e4;
       asset.totalAssets = asset.totalAssetsBase + asset.totalPremium;
 
@@ -483,12 +515,14 @@ contract LiquidityHub is ILiquidityHub {
       );
 
       // Add new value to weighted average
-      (wAvgBR[assetId].spokeBR, wAvgBR[assetId].amtDrawn) = MathUtils.addToWeightedAverage(
+      (uint256 finalWAvg, uint256 finalSumWeights) = MathUtils.addToWeightedAverage(
         newWeightedAvg,
         newSumWeights,
         newRiskPremium * newRiskPremiumWeight,
         newRiskPremiumWeight
       );
+      wAvgBR[assetId].spokeBR = finalWAvg;
+      wAvgBR[assetId].amtDrawn = finalSumWeights;
     }
 
     // Update the last received values

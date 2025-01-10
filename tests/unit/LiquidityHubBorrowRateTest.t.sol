@@ -241,9 +241,11 @@ contract UserRiskPremiumTest is BaseTest {
     uint256 newRiskPremium2 = 2e3;
     hub.draw(daiAssetId, address(spoke1), 100e18, newRiskPremium2);
     borrowRate = _getBorrowRate(daiAssetId);
-    baseBorrowRate = _getBaseBorrowRate(daiAssetId);
+    baseBorrowRate = _getBaseBorrowRate(daiAssetId); // base borrow rate is 601
+    // Looks like it's overcharging by 40% for some reason
+    // TODO: Get risk premium value
     // TODO: Debug this assertion
-    // assertEq(borrowRate, baseBorrowRate + (newRiskPremium2 * baseBorrowRate) / 1e4);
+    //assertEq(borrowRate, baseBorrowRate + (newRiskPremium2 * baseBorrowRate) / 1e4);
     vm.stopPrank();
   }
 

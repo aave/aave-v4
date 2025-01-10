@@ -103,7 +103,7 @@ contract MockSpokeCreditLine is ISpoke {
   function repay(uint256 assetId, uint256 amount) external {
     Reserve storage r = reserves[assetId];
     _updateState(r, assetId, amount, msg.sender);
-    ILiquidityHub(liquidityHub).restore(assetId, amount, 0);
+    ILiquidityHub(liquidityHub).restore(assetId, 0, amount, 0);
 
     emit Repaid(assetId, msg.sender, amount);
   }

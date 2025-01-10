@@ -172,8 +172,10 @@ contract Spoke is ISpoke {
 
     (, uint256 newAggregatedRiskPremium) = _refreshRiskPremium();
     IERC20(r.asset).safeTransferFrom(msg.sender, liquidityHub, amount);
+    // TODO: Spoke should calculate the amountFromPremium and amountFromBase
     uint256 userShares = ILiquidityHub(liquidityHub).restore(
       assetId,
+      0,
       amount,
       newAggregatedRiskPremium
     );
