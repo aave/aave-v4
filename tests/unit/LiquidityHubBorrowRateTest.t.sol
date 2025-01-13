@@ -225,8 +225,6 @@ contract UserRiskPremiumTest is BaseTest {
     vm.stopPrank();
   }
 
-  // TODO: Draw again from same spoke - show borrow rate calc uses avg of the drawn amounts / risk premiums
-  // Actually drawing again from same spoke should replace the risk premium
   function test_LHBorrowRate_BorrowTwice() public {
     uint256 newRiskPremium = 1e3;
     deal(address(dai), address(hub), 1000e18);
@@ -241,11 +239,8 @@ contract UserRiskPremiumTest is BaseTest {
     uint256 newRiskPremium2 = 2e3;
     hub.draw(daiAssetId, address(spoke1), 100e18, newRiskPremium2);
     borrowRate = _getBorrowRate(daiAssetId);
-    baseBorrowRate = _getBaseBorrowRate(daiAssetId); // base borrow rate is 601
-    // Looks like it's overcharging by 40% for some reason
-    // TODO: Get risk premium value
-    // TODO: Debug this assertion
-    //assertEq(borrowRate, baseBorrowRate + (newRiskPremium2 * baseBorrowRate) / 1e4);
+    baseBorrowRate = _getBaseBorrowRate(daiAssetId);
+    assertEq(borrowRate, baseBorrowRate + (newRiskPremium2 * baseBorrowRate) / 1e4);
     vm.stopPrank();
   }
 

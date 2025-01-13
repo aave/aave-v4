@@ -347,7 +347,7 @@ contract LiquidityHub is ILiquidityHub {
   function getInterestRate(uint256 assetId) public view returns (uint256) {
     return
       assets[assetId].baseBorrowRate +
-      (assets[assetId].baseBorrowRate * (wAvgBR[assetId].spokeBR / 1e28)) /
+      (assets[assetId].baseBorrowRate * (wAvgBR[assetId].spokeBR.fromRad())) /
       1e4;
   }
 
@@ -505,7 +505,7 @@ contract LiquidityHub is ILiquidityHub {
       (uint256 newWAvg, uint256 newSumWeights) = MathUtils.addToWeightedAverage(
         0,
         0,
-        newRiskPremium * newRiskPremiumWeight,
+        newRiskPremium,
         newRiskPremiumWeight
       );
       wAvgBR[assetId].spokeBR = newWAvg;
@@ -515,19 +515,17 @@ contract LiquidityHub is ILiquidityHub {
       (uint256 newWeightedAvg, uint256 newSumWeights) = MathUtils.subtractFromWeightedAverage(
         wAvgBR[assetId].spokeBR,
         wAvgBR[assetId].amtDrawn,
-        lastSpokeBR[msg.sender][assetId].spokeBR * lastSpokeBR[msg.sender][assetId].amtDrawn,
+        lastSpokeBR[msg.sender][assetId].spokeBR,
         lastSpokeBR[msg.sender][assetId].amtDrawn
       );
 
       // Add new value to weighted average
-      (uint256 finalWAvg, uint256 finalSumWeights) = MathUtils.addToWeightedAverage(
+      (wAvgBR[assetId].spokeBR, wAvgBR[assetId].amtDrawn) = MathUtils.addToWeightedAverage(
         newWeightedAvg,
         newSumWeights,
-        newRiskPremium * newRiskPremiumWeight,
+        newRiskPremium,
         newRiskPremiumWeight
       );
-      wAvgBR[assetId].spokeBR = finalWAvg;
-      wAvgBR[assetId].amtDrawn = finalSumWeights;
     }
 
     // Update the last received values
