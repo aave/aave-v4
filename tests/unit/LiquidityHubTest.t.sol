@@ -221,7 +221,12 @@ contract LiquidityHubTest is BaseTest {
   }
 
   function test_supply_zero_reverts() public {
-    // TODO User cannot supply 0 assets
+    uint256 assetId = 0;
+    uint256 invalidAmount = 0;
+
+    vm.prank(address(spoke1));
+    vm.expectRevert(TestErrors.INVALID_SUPPLY_AMOUNT);
+    hub.supply(assetId, invalidAmount, 0);
   }
 
   function test_supply_with_increased_index() public {
