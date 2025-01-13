@@ -27,6 +27,7 @@ contract LiquidityHub is ILiquidityHub {
   // * potentially remove totalAssetsBase
   // * potentially store risk premium accruals separate from base interest accruals
   // We don't need all 3 of totalPremium, totalAssets, totalAssetsBase, because totalAssets = totalAssetsBase + totalPremium
+  // To facilitate this refactor can expose totalAssets as a function
   // TODO: Consider renaming totalAssets
   struct Asset {
     uint256 id;
@@ -223,6 +224,7 @@ contract LiquidityHub is ILiquidityHub {
 
     uint256 sharesAmount = convertAssetsToSharesDown(assetId, amount);
     // TODO: On a withdraw, how do we know which shares (base or premium) to withdraw from? - Same as restore?
+    // It's just from base (total assets) because risk premium portion only relates to debt. Risk premium never available
     asset.totalSharesBase -= sharesAmount;
     asset.totalShares -= sharesAmount;
     asset.totalAssetsBase -= amount;
@@ -301,6 +303,7 @@ contract LiquidityHub is ILiquidityHub {
     asset.drawnShares -= sharesAmount;
 
     // TODO: How to handle spoke's side shares?
+    // TODO: Keep track of premium and base interest separately
     spoke.drawnShares -= sharesAmount;
 
     _updateBorrowRate(asset, riskPremium, amount, 0);
