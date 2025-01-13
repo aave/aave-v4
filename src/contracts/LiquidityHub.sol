@@ -426,23 +426,25 @@ contract LiquidityHub is ILiquidityHub {
   function _accrueAssetInterest(Asset storage asset, uint256 baseBorrowRate) internal {
     uint256 elapsed = block.timestamp - asset.lastUpdateTimestamp;
     if (elapsed > 0) {
-      // Update total cumulated base interest
+      // Update total cumulated base interest on outstanding debt
       uint256 totalDrawnBase = convertSharesToAssetsUp(asset.id, asset.drawnSharesBase);
       if (totalDrawnBase == 0) return; // No interest to accrue if no liquidity drawn
       uint256 cumulatedBase = totalDrawnBase.rayMul(
         MathUtils.calculateLinearInterest(baseBorrowRate, uint40(asset.lastUpdateTimestamp))
       ); // TODO rounding
 
-      // Amount accrued since last action
-      uint256 currentAccruedBase = cumulatedBase - totalDrawnBase;
-
-      asset.totalAssetsBase = cumulatedBase;
+      // Update outstanding base debt
       asset.drawnSharesBase = cumulatedBase.toSharesDown(
         asset.totalAssetsBase,
         asset.totalSharesBase
       );
 
+      // Base interest accrued since last action is added to total assets
+      uint256 currentAccruedBase = cumulatedBase - totalDrawnBase;
+      asset.totalAssetsBase += currentAccruedBase;
+
       // TODO: Double check math to add 1 (and rest of below) and also put into a library -> percentmul and fromRad
+      // Accrue total premium interest, and update total assets
       asset.totalPremium += (currentAccruedBase * (wAvgBR[asset.id].spokeBR / 1e28)) / 1e4;
       asset.totalAssets = asset.totalAssetsBase + asset.totalPremium;
 
