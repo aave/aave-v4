@@ -130,8 +130,13 @@ contract LiquidityHubTest is BaseTest {
     LiquidityHub.Asset memory reserveData = hub.getAsset(assetId);
     LiquidityHub.Spoke memory spokeData = hub.getSpoke(assetId, address(spoke1));
 
-    assertEq(reserveData.totalShares, 0, 'wrong reserve shares pre-supply');
-    assertEq(reserveData.totalAssets, 0, 'wrong reserve assets pre-supply');
+    assertEq(reserveData.totalSharesBase, 0, 'wrong reserve totalSharesBase pre-supply');
+    assertEq(reserveData.totalShares, 0, 'wrong reserve totalShares pre-supply');
+    assertEq(reserveData.totalAssetsBase, 0, 'wrong reserve totalAssetsBase pre-supply');
+    assertEq(reserveData.totalAssets, 0, 'wrong reserve totalAssets pre-supply');
+    assertEq(reserveData.drawnShares, 0, 'wrong reserve drawnShares pre-supply');
+    assertEq(reserveData.drawnSharesBase, 0, 'wrong reserve drawnSharesBase pre-supply');
+    assertEq(reserveData.totalPremium, 0, 'wrong reserve totalPremium pre-supply');
     assertEq(dai.balanceOf(address(spoke1)), amount, 'wrong user token balance pre-supply');
     assertEq(dai.balanceOf(address(hub)), 0, 'wrong hub token balance pre-supply');
 
@@ -139,7 +144,7 @@ contract LiquidityHubTest is BaseTest {
     IERC20(dai).transfer(address(hub), amount);
     vm.expectEmit(address(hub));
     emit Supply(assetId, address(spoke1), amount);
-    hub.supply(assetId, amount, 0);
+    hub.supply({assetId: assetId, amount: amount, riskPremium: 0});
     vm.stopPrank();
 
     reserveData = hub.getAsset(assetId);
@@ -150,7 +155,16 @@ contract LiquidityHubTest is BaseTest {
       hub.convertAssetsToSharesUp(assetId, amount),
       'wrong reserve total shares post-supply'
     );
-    assertEq(reserveData.totalAssets, amount, 'wrong reserve total assets post-supply');
+    assertEq(
+      reserveData.totalSharesBase,
+      hub.convertAssetsToSharesUp(assetId, amount),
+      'wrong reserve total shares base post-supply'
+    );
+    assertEq(reserveData.totalAssets, amount, 'wrong reserve totalAssets post-supply');
+    assertEq(reserveData.totalAssetsBase, amount, 'wrong reserve totalAssetsBase post-supply');
+    assertEq(reserveData.drawnShares, 0, 'wrong reserve drawnShares post-supply');
+    assertEq(reserveData.drawnSharesBase, 0, 'wrong reserve drawnShares base post-supply');
+    assertEq(reserveData.totalPremium, 0, 'wrong reserve totalPremium post-supply');
     assertEq(
       spokeData.totalShares,
       hub.convertAssetsToSharesUp(assetId, amount),
