@@ -808,8 +808,14 @@ contract LiquidityHubTest is BaseTest {
     deal(address(dai), address(spoke2), daiAmount);
     Utils.supply(vm, hub, daiId, address(spoke2), daiAmount, address(spoke2));
 
+    // LiquidityHub.Asset memory daiDataI = hub.getAsset(daiId);
+    // console2.log('daiDataI', daiDataI.totalShares, daiDataI.totalAssets, daiDataI.drawnShares);
+
     // spoke1 draw half of dai reserve liquidity
     Utils.draw(vm, hub, daiId, address(spoke1), drawAmount, address(spoke1));
+
+    // LiquidityHub.Asset memory daiData0 = hub.getAsset(daiId);
+    // console2.log('daiData0', daiData0.totalShares, daiData0.totalAssets, daiData0.drawnShares);
 
     // spoke1 restore half of drawn dai liquidity
     vm.startPrank(address(spoke1));
@@ -825,6 +831,10 @@ contract LiquidityHubTest is BaseTest {
     LiquidityHub.Spoke memory spoke1DaiData = hub.getSpoke(daiId, address(spoke1));
     LiquidityHub.Spoke memory spoke2EthData = hub.getSpoke(ethId, address(spoke2));
     LiquidityHub.Spoke memory spoke2DaiData = hub.getSpoke(daiId, address(spoke2));
+
+    // console2.log('daiData', daiData.totalShares, daiData.totalAssets, daiData.drawnShares);
+    // console2.log('daiAmount %e', daiAmount);
+    // console2.log('calc %e', ILiquidityHub(address(hub)).convertAssetsToSharesUp(daiId, daiAmount));
 
     assertEq(
       daiData.totalShares,
