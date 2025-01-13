@@ -375,9 +375,11 @@ contract LiquidityHub is ILiquidityHub {
     require(amount > 0, 'INVALID_SUPPLY_AMOUNT');
     // TODO: Different states e.g. frozen, paused
     require(asset.config.active, 'ASSET_NOT_ACTIVE');
+
     require(
       spoke.config.supplyCap == type(uint256).max ||
-        convertAssetsToSharesDown(asset.id, spoke.totalShares) + amount <= spoke.config.supplyCap,
+        spoke.totalShares.toAssetsDown(asset.totalAssets, asset.totalShares) + amount <=
+        spoke.config.supplyCap,
       'SUPPLY_CAP_EXCEEDED'
     );
   }
