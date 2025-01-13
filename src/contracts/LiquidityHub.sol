@@ -10,8 +10,6 @@ import {WadRayMath} from './WadRayMath.sol';
 import {SharesMath} from './SharesMath.sol';
 import {MathUtils} from './MathUtils.sol';
 
-import 'forge-std/console2.sol';
-
 contract LiquidityHub is ILiquidityHub {
   using SafeERC20 for IERC20;
   using WadRayMath for uint256;
@@ -292,15 +290,11 @@ contract LiquidityHub is ILiquidityHub {
     Asset storage asset = assets[assetId];
     Spoke storage spoke = spokes[assetId][msg.sender];
 
-    console2.log('LH: asset.totalAssets', asset.totalAssets);
-
     // Accrue interest before validating action
     _accrueAssetInterest(asset, asset.baseBorrowRate);
     uint256 amount = amountFromPremium + amountFromBase;
     uint256 sharesAmount = convertAssetsToSharesDown(assetId, amount);
     _validateRestore(asset, sharesAmount, spoke.drawnShares);
-
-    console2.log('LH: sharesAmount', sharesAmount);
 
     if (amountFromPremium > 0) asset.totalPremium -= amountFromPremium;
     if (amountFromBase > 0) {
@@ -308,15 +302,11 @@ contract LiquidityHub is ILiquidityHub {
     }
     asset.drawnShares -= sharesAmount;
 
-    console2.log('LH: asset.totalAssets', asset.totalAssets);
-
     // TODO: How to handle spoke's side shares?
     // TODO: Keep track of premium and base interest separately
     spoke.drawnShares -= sharesAmount;
 
     _updateBorrowRate(asset, riskPremium, amount, 0);
-
-    console2.log('LH: asset.totalAssets', asset.totalAssets);
 
     emit Restore(assetId, msg.sender, amount);
 
