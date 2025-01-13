@@ -444,13 +444,6 @@ contract LiquidityHub is ILiquidityHub {
 
       // TODO: Double check math to add 1 (and rest of below) and also put into a library -> percentmul and fromRad
       asset.totalPremium += (currentAccruedBase * (wAvgBR[asset.id].spokeBR / 1e28)) / 1e4;
-
-      console2.log(
-        'LH: currentAccruedBase, totalAssetsBase, totalPremium %e %e %e',
-        currentAccruedBase,
-        asset.totalAssetsBase,
-        asset.totalPremium
-      );
       asset.totalAssets = asset.totalAssetsBase + asset.totalPremium;
 
       // TODO: RF in terms of fee shares
