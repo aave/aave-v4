@@ -373,7 +373,6 @@ contract LiquidityHub is ILiquidityHub {
 
   function _validateSupply(Asset storage asset, Spoke storage spoke, uint256 amount) internal view {
     require(amount > 0, 'INVALID_SUPPLY_AMOUNT');
-    require(assetsList[asset.id] != address(0), 'ASSET_NOT_LISTED');
     // TODO: Different states e.g. frozen, paused
     require(asset.config.active, 'ASSET_NOT_ACTIVE');
     require(

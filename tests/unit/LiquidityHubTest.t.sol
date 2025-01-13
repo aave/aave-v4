@@ -216,7 +216,7 @@ contract LiquidityHubTest is BaseTest {
     vm.expectEmit(address(hub));
     emit Supply(assetId, spoke, amount);
 
-    hub.supply(assetId, amount, 0);
+    hub.supply({assetId: assetId, amount: amount, riskPremium: 0});
     vm.stopPrank();
   }
 
@@ -226,7 +226,7 @@ contract LiquidityHubTest is BaseTest {
 
     vm.prank(address(spoke1));
     vm.expectRevert(TestErrors.INVALID_SUPPLY_AMOUNT);
-    hub.supply(assetId, invalidAmount, 0);
+    hub.supply({assetId: assetId, amount: invalidAmount, riskPremium: 0});
   }
 
   function test_supply_with_increased_index() public {
