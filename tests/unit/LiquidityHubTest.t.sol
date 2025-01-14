@@ -177,8 +177,7 @@ contract LiquidityHubTest is BaseTest {
     uint256 amount,
     address onBehalfOf
   ) public {
-    if (spoke == address(hub) || spoke == address(0)) return;
-    if (onBehalfOf == address(0)) return;
+    vm.assume(spoke != address(hub) && spoke != address(0));
 
     assetId = bound(assetId, 0, hub.assetCount() - 1);
     amount = bound(amount, 1, type(uint128).max);
@@ -197,6 +196,7 @@ contract LiquidityHubTest is BaseTest {
 
     /// @dev Transfer is done by Spoke to Hub prior to supply logic
     /// therefore token transfer event won't be part of this flow
+    // TODO: uncomment when transfer flow is updated
     // IERC20(asset).approve(address(hub), amount);
     // vm.expectEmit(asset);
     // emit Transfer(spoke, address(hub), amount);
