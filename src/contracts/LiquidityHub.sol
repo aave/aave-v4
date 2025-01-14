@@ -225,10 +225,11 @@ contract LiquidityHub is ILiquidityHub {
     _validateWithdraw(asset, spoke, amount);
 
     uint256 sharesAmount = convertAssetsToSharesDown(assetId, amount);
-    if (amountFromPremium > 0) asset.totalPremium -= amountFromPremium;
+    if (amountFromPremium > 0) {
+      asset.totalPremium -= amountFromPremium;
+    }
     if (amountFromBase > 0) {
-      uint256 sharesFromBase = convertAssetsToSharesDown(assetId, amountFromBase);
-      asset.totalSharesBase -= sharesFromBase;
+      asset.totalSharesBase -= convertAssetsToSharesDown(assetId, amountFromBase);
       asset.totalAssetsBase -= amountFromBase;
     }
 
