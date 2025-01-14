@@ -92,6 +92,7 @@ abstract contract BaseTest is Test, Events {
   LiquidityHub hub;
   Spoke spoke1;
   Spoke spoke2;
+  Spoke spoke3;
   MockSpokeCreditLine spokeCreditLine;
   DefaultReserveInterestRateStrategy irStrategy;
   DefaultReserveInterestRateStrategy creditLineIRStrategy;
@@ -107,6 +108,7 @@ abstract contract BaseTest is Test, Events {
     hub = new LiquidityHub();
     spoke1 = new Spoke(address(hub), address(oracle));
     spoke2 = new Spoke(address(hub), address(oracle));
+    spoke3 = new Spoke(address(hub), address(oracle));
     dai = new MockERC20();
     eth = new MockERC20();
     usdc = new MockERC20();

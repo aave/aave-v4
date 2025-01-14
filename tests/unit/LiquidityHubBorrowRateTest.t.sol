@@ -16,10 +16,11 @@ contract UserRiskPremiumTest is BaseTest {
   function setUp() public override {
     super.setUp();
 
-    address[] memory spokes = new address[](2);
+    address[] memory spokes = new address[](3);
     spokes[0] = address(spoke1);
     spokes[1] = address(spoke2);
-    DataTypes.SpokeConfig[] memory spokeConfigs = new DataTypes.SpokeConfig[](2);
+    spokes[2] = address(spoke3);
+    DataTypes.SpokeConfig[] memory spokeConfigs = new DataTypes.SpokeConfig[](3);
     spokeConfigs[0] = DataTypes.SpokeConfig({
       supplyCap: type(uint256).max,
       drawCap: type(uint256).max
@@ -28,8 +29,12 @@ contract UserRiskPremiumTest is BaseTest {
       supplyCap: type(uint256).max,
       drawCap: type(uint256).max
     });
+    spokeConfigs[2] = DataTypes.SpokeConfig({
+      supplyCap: type(uint256).max,
+      drawCap: type(uint256).max
+    });
 
-    Spoke.ReserveConfig[] memory reserveConfigs = new Spoke.ReserveConfig[](2);
+    Spoke.ReserveConfig[] memory reserveConfigs = new Spoke.ReserveConfig[](3);
 
     // Add dai
     reserveConfigs[0] = Spoke.ReserveConfig({
@@ -39,6 +44,12 @@ contract UserRiskPremiumTest is BaseTest {
       collateral: true
     });
     reserveConfigs[1] = Spoke.ReserveConfig({lt: 0.8e4, lb: 0, borrowable: true, collateral: true});
+    reserveConfigs[2] = Spoke.ReserveConfig({
+      lt: 0.77e4,
+      lb: 0,
+      borrowable: true,
+      collateral: true
+    });
     Utils.addAssetAndSpokes(
       hub,
       address(dai),
@@ -53,6 +64,12 @@ contract UserRiskPremiumTest is BaseTest {
     reserveConfigs[0] = Spoke.ReserveConfig({lt: 0.8e4, lb: 0, borrowable: true, collateral: true});
     reserveConfigs[1] = Spoke.ReserveConfig({
       lt: 0.76e4,
+      lb: 0,
+      borrowable: true,
+      collateral: true
+    });
+    reserveConfigs[2] = Spoke.ReserveConfig({
+      lt: 0.79e4,
       lb: 0,
       borrowable: true,
       collateral: true
@@ -80,6 +97,12 @@ contract UserRiskPremiumTest is BaseTest {
       borrowable: true,
       collateral: true
     });
+    reserveConfigs[2] = Spoke.ReserveConfig({
+      lt: 0.75e4,
+      lb: 0,
+      borrowable: true,
+      collateral: true
+    });
     Utils.addAssetAndSpokes(
       hub,
       address(usdc),
@@ -99,6 +122,12 @@ contract UserRiskPremiumTest is BaseTest {
     });
     reserveConfigs[1] = Spoke.ReserveConfig({
       lt: 0.84e4,
+      lb: 0,
+      borrowable: true,
+      collateral: true
+    });
+    reserveConfigs[2] = Spoke.ReserveConfig({
+      lt: 0.87e4,
       lb: 0,
       borrowable: true,
       collateral: true
@@ -225,8 +254,6 @@ contract UserRiskPremiumTest is BaseTest {
     vm.stopPrank();
   }
 
-  // TODO: Draw again from same spoke - show borrow rate calc uses avg of the drawn amounts / risk premiums
-  // Actually drawing again from same spoke should replace the risk premium
   function test_LHBorrowRate_BorrowTwice() public {
     uint256 newRiskPremium = 1e3;
     deal(address(dai), address(hub), 1000e18);
@@ -237,19 +264,199 @@ contract UserRiskPremiumTest is BaseTest {
     uint256 baseBorrowRate = _getBaseBorrowRate(daiAssetId);
     assertEq(borrowRate, baseBorrowRate + (newRiskPremium * baseBorrowRate) / 1e4);
 
-    // Now if we draw again, passing a different risk premium, the borrow rate should update
+    // New risk premium from same spoke should replace avg risk premium
     uint256 newRiskPremium2 = 2e3;
     hub.draw(daiAssetId, address(spoke1), 100e18, newRiskPremium2);
     borrowRate = _getBorrowRate(daiAssetId);
-    baseBorrowRate = _getBaseBorrowRate(daiAssetId); // base borrow rate is 601
-    // Looks like it's overcharging by 40% for some reason
-    // TODO: Get risk premium value
-    // TODO: Debug this assertion
-    //assertEq(borrowRate, baseBorrowRate + (newRiskPremium2 * baseBorrowRate) / 1e4);
+    baseBorrowRate = _getBaseBorrowRate(daiAssetId);
+    assertEq(borrowRate, baseBorrowRate + (newRiskPremium2 * baseBorrowRate) / 1e4);
     vm.stopPrank();
   }
 
-  // TODO: Draw from 2 different spokes - show borrow rate calc uses weighted avg
+  function test_LHBorrowRate_BorrowTwiceFuzz(uint256 newRiskPremium) public {
+    newRiskPremium = bound(newRiskPremium, 0, 99999);
+    uint256 firstRiskPremium = 1e3;
+    deal(address(dai), address(hub), 1000e18);
+    vm.startPrank(address(spoke1));
+    hub.supply(daiAssetId, 1000e18, 0);
+    hub.draw(daiAssetId, address(spoke1), 100e18, firstRiskPremium);
+    uint256 borrowRate = _getBorrowRate(daiAssetId);
+    uint256 baseBorrowRate = _getBaseBorrowRate(daiAssetId);
+    assertEq(borrowRate, baseBorrowRate + (firstRiskPremium * baseBorrowRate) / 1e4);
+
+    // New risk premium from same spoke should replace avg risk premium
+    hub.draw(daiAssetId, address(spoke1), 100e18, newRiskPremium);
+    borrowRate = _getBorrowRate(daiAssetId);
+    baseBorrowRate = _getBaseBorrowRate(daiAssetId);
+    assertEq(borrowRate, baseBorrowRate + (newRiskPremium * baseBorrowRate) / 1e4);
+    vm.stopPrank();
+  }
+
+  function test_LHBorrowRate_DrawTwoSpokes() public {
+    uint256 rpSpoke1 = 1e3;
+    uint256 rpSpoke2 = 2e3;
+    deal(address(dai), address(hub), 5000e18);
+    vm.startPrank(address(spoke1));
+    hub.supply(daiAssetId, 1000e18, 0);
+    hub.draw(daiAssetId, address(spoke1), 100e18, rpSpoke1);
+    uint256 borrowRate = _getBorrowRate(daiAssetId);
+    uint256 baseBorrowRate = _getBaseBorrowRate(daiAssetId);
+    assertEq(borrowRate, baseBorrowRate + (rpSpoke1 * baseBorrowRate) / 1e4);
+    vm.stopPrank();
+
+    // Next spoke risk premium should be averaged with the first
+    vm.startPrank(address(spoke2));
+    hub.supply(daiAssetId, 1000e18, 0);
+    hub.draw(daiAssetId, address(spoke2), 100e18, rpSpoke2);
+    borrowRate = _getBorrowRate(daiAssetId);
+    baseBorrowRate = _getBaseBorrowRate(daiAssetId);
+    assertEq(borrowRate, baseBorrowRate + ((rpSpoke1 + rpSpoke2) * baseBorrowRate) / 2e4);
+    vm.stopPrank();
+  }
+
+  function test_LHBorrowRate_DrawTwoSpokesFuzz(uint256 rpSpoke1, uint256 rpSpoke2) public {
+    rpSpoke1 = bound(rpSpoke1, 0, 99999);
+    rpSpoke2 = bound(rpSpoke2, 0, 99999);
+    deal(address(dai), address(hub), 5000e18);
+    vm.startPrank(address(spoke1));
+    hub.supply(daiAssetId, 1000e18, 0);
+    hub.draw(daiAssetId, address(spoke1), 100e18, rpSpoke1);
+    uint256 borrowRate = _getBorrowRate(daiAssetId);
+    uint256 baseBorrowRate = _getBaseBorrowRate(daiAssetId);
+    assertEq(borrowRate, baseBorrowRate + (rpSpoke1 * baseBorrowRate) / 1e4);
+    vm.stopPrank();
+
+    // Next spoke risk premium should be averaged with the first
+    vm.startPrank(address(spoke2));
+    hub.supply(daiAssetId, 1000e18, 0);
+    hub.draw(daiAssetId, address(spoke2), 100e18, rpSpoke2);
+    borrowRate = _getBorrowRate(daiAssetId);
+    baseBorrowRate = _getBaseBorrowRate(daiAssetId);
+    assertApproxEqAbs(
+      borrowRate,
+      baseBorrowRate + ((rpSpoke1 + rpSpoke2) * baseBorrowRate) / 2e4,
+      1
+    );
+    vm.stopPrank();
+  }
+
+  function test_LHBorrowRate_DrawTwoSpokesDiffWeights() public {
+    uint256 rpSpoke1 = 1e3;
+    uint256 rpSpoke2 = 2e3;
+    uint256 drawSpoke1 = 100e18;
+    uint256 drawSpoke2 = 200e18;
+    deal(address(dai), address(hub), 5000e18);
+    vm.startPrank(address(spoke1));
+    hub.supply(daiAssetId, 1000e18, 0);
+    hub.draw(daiAssetId, address(spoke1), drawSpoke1, rpSpoke1);
+    uint256 borrowRate = _getBorrowRate(daiAssetId);
+    uint256 baseBorrowRate = _getBaseBorrowRate(daiAssetId);
+    assertEq(borrowRate, baseBorrowRate + (rpSpoke1 * baseBorrowRate) / 1e4);
+    vm.stopPrank();
+
+    // Next spoke risk premium should be averaged with the first
+    vm.startPrank(address(spoke2));
+    hub.supply(daiAssetId, 1000e18, 0);
+    hub.draw(daiAssetId, address(spoke2), drawSpoke2, rpSpoke2);
+    borrowRate = _getBorrowRate(daiAssetId);
+    baseBorrowRate = _getBaseBorrowRate(daiAssetId);
+    assertEq(
+      borrowRate,
+      baseBorrowRate +
+        ((rpSpoke1 * drawSpoke1 + rpSpoke2 * drawSpoke2) * baseBorrowRate) /
+        (1e4 * (drawSpoke1 + drawSpoke2))
+    );
+    vm.stopPrank();
+  }
+
+  function test_LHBorrowRate_DrawTwoSpokesDiffWeightsFuzz(
+    uint256 rpSpoke1,
+    uint256 drawSpoke1,
+    uint256 supplySpoke1,
+    uint256 rpSpoke2,
+    uint256 drawSpoke2,
+    uint256 supplySpoke2
+  ) public {
+    rpSpoke1 = bound(rpSpoke1, 0, 99999);
+    supplySpoke1 = bound(supplySpoke1, 2, 1e60);
+    drawSpoke1 = bound(drawSpoke1, 1, supplySpoke1 / 2);
+
+    rpSpoke2 = bound(rpSpoke2, 0, 99999);
+    supplySpoke2 = bound(supplySpoke2, 2, 1e60);
+    drawSpoke2 = bound(drawSpoke2, 1, supplySpoke2 / 2);
+
+    deal(address(dai), address(hub), supplySpoke1 + supplySpoke2);
+
+    vm.startPrank(address(spoke1));
+    hub.supply(daiAssetId, supplySpoke1, 0);
+    hub.draw(daiAssetId, address(spoke1), drawSpoke1, rpSpoke1);
+    uint256 borrowRate = _getBorrowRate(daiAssetId);
+    uint256 baseBorrowRate = _getBaseBorrowRate(daiAssetId);
+    assertEq(borrowRate, baseBorrowRate + (rpSpoke1 * baseBorrowRate) / 1e4);
+    vm.stopPrank();
+
+    // Next spoke risk premium should be averaged with the first
+    vm.startPrank(address(spoke2));
+    hub.supply(daiAssetId, supplySpoke2, 0);
+    hub.draw(daiAssetId, address(spoke2), drawSpoke2, rpSpoke2);
+    borrowRate = _getBorrowRate(daiAssetId);
+    baseBorrowRate = _getBaseBorrowRate(daiAssetId);
+    assertApproxEqAbs(
+      borrowRate,
+      baseBorrowRate +
+        ((rpSpoke1 * drawSpoke1 + rpSpoke2 * drawSpoke2) * baseBorrowRate) /
+        (1e4 * (drawSpoke1 + drawSpoke2)),
+      1
+    );
+    vm.stopPrank();
+  }
+
+  function test_LHBorrowRate_DrawThreeSpokesDiffWeightsFuzz(
+    uint256 rpSpoke1,
+    uint256 drawSpoke1,
+    uint256 rpSpoke2,
+    uint256 drawSpoke2,
+    uint256 rpSpoke3,
+    uint256 drawSpoke3
+  ) public {
+    rpSpoke1 = bound(rpSpoke1, 0, 99999);
+    drawSpoke1 = bound(drawSpoke1, 1, 1e40);
+
+    rpSpoke2 = bound(rpSpoke2, 0, 99999);
+    drawSpoke2 = bound(drawSpoke2, 1, 1e40);
+
+    rpSpoke3 = bound(rpSpoke3, 0, 99999);
+    drawSpoke3 = bound(drawSpoke3, 1, 1e40);
+
+    deal(address(dai), address(hub), 6e40);
+
+    vm.startPrank(address(spoke1));
+    hub.supply(daiAssetId, 2e40, 0);
+    hub.draw(daiAssetId, address(spoke1), drawSpoke1, rpSpoke1);
+    uint256 borrowRate = _getBorrowRate(daiAssetId);
+    uint256 baseBorrowRate = _getBaseBorrowRate(daiAssetId);
+    assertEq(borrowRate, baseBorrowRate + (rpSpoke1 * baseBorrowRate) / 1e4);
+    vm.stopPrank();
+
+    vm.startPrank(address(spoke2));
+    hub.supply(daiAssetId, 2e40, 0);
+    hub.draw(daiAssetId, address(spoke2), drawSpoke2, rpSpoke2);
+    vm.stopPrank();
+
+    vm.startPrank(address(spoke3));
+    hub.supply(daiAssetId, 2e40, 0);
+    hub.draw(daiAssetId, address(spoke3), drawSpoke3, rpSpoke3);
+    borrowRate = _getBorrowRate(daiAssetId);
+    baseBorrowRate = _getBaseBorrowRate(daiAssetId);
+    assertApproxEqAbs(
+      borrowRate,
+      baseBorrowRate +
+        ((rpSpoke1 * drawSpoke1 + rpSpoke2 * drawSpoke2 + rpSpoke3 * drawSpoke3) * baseBorrowRate) /
+        (1e4 * (drawSpoke1 + drawSpoke2 + drawSpoke3)),
+      1
+    );
+    vm.stopPrank();
+  }
 
   // TODO: Test via calling functions on spokes - after spoke side is implemented
 
