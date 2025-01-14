@@ -7,6 +7,8 @@ contract LiquidityHubTest is BaseTest {
   using SharesMath for uint256;
   using WadRayMath for uint256;
 
+  IDefaultInterestRateStrategy.InterestRateData public irData;
+
   function setUp() public override {
     super.setUp();
 
@@ -50,52 +52,15 @@ contract LiquidityHubTest is BaseTest {
     );
     MockPriceOracle(address(oracle)).setAssetPrice(ethAssetId, 2000e8);
 
-    irStrategy.setInterestRateParams(
-      daiAssetId,
-      IDefaultInterestRateStrategy.InterestRateData({
-        optimalUsageRatio: 9000, // 90.00%
-        baseVariableBorrowRate: 500, // 5.00%
-        variableRateSlope1: 500, // 5.00%
-        variableRateSlope2: 500 // 5.00%
-      })
-    );
-    irStrategy.setInterestRateParams(
-      ethAssetId,
-      IDefaultInterestRateStrategy.InterestRateData({
-        optimalUsageRatio: 9000, // 90.00%
-        baseVariableBorrowRate: 500, // 5.00%
-        variableRateSlope1: 500, // 5.00%
-        variableRateSlope2: 500 // 5.00%
-      })
-    );
+    irData = IDefaultInterestRateStrategy.InterestRateData({
+      optimalUsageRatio: 9000, // 90.00%
+      baseVariableBorrowRate: 500, // 5.00%
+      variableRateSlope1: 500, // 5.00%
+      variableRateSlope2: 500 // 5.00%
+    });
 
-    // Add dai again but with basic credit line borrow module
-    uint256 daiCreditLineAssetId = 2;
-    // flat 5% interest rate
-    creditLineIRStrategy.setInterestRateParams(
-      daiCreditLineAssetId,
-      IDefaultInterestRateStrategy.InterestRateData({
-        optimalUsageRatio: 5000, // 50.00%
-        baseVariableBorrowRate: 500, // 5.00%
-        variableRateSlope1: 500, // 5.00%
-        variableRateSlope2: 500 // 5.00%
-      })
-    );
-    spokeCreditLine = new MockSpokeCreditLine(address(hub), address(creditLineIRStrategy));
-    hub.addAsset(
-      DataTypes.AssetConfig({
-        decimals: 18,
-        active: true,
-        irStrategy: address(creditLineIRStrategy)
-      }),
-      address(dai)
-    );
-    spokeCreditLine.addReserve(
-      daiCreditLineAssetId,
-      MockSpokeCreditLine.ReserveConfig({lt: 0, lb: 0, rf: 0, borrowable: true}),
-      address(dai)
-    );
-    MockPriceOracle(address(oracle)).setAssetPrice(daiCreditLineAssetId, 1e8);
+    irStrategy.setInterestRateParams(daiAssetId, irData);
+    irStrategy.setInterestRateParams(ethAssetId, irData);
 
     vm.warp(block.timestamp + 20);
   }
@@ -176,25 +141,34 @@ contract LiquidityHubTest is BaseTest {
   }
 
   /// User makes a first supply, shares and assets amounts are correct, no precision loss
-  function skip_test_fuzz_first_supply(uint256 assetId, address user, uint256 amount) public {
-    if (user == address(hub) || user == address(0)) return;
+  function test_fuzz_first_supply(uint256 assetId, uint256 amount) public {
     assetId = bound(assetId, 0, hub.assetCount() - 1);
-    amount = bound(amount, 1, type(uint128).max);
+    amount = bound(amount, 1, type(uint256).max);
 
-    deal(hub.assetsList(assetId), user, type(uint128).max);
-    deal(hub.assetsList(assetId), USER1, type(uint128).max);
+    address asset = hub.assetsList(assetId);
+    deal(asset, address(spoke1), amount);
 
     // initial supply
-    Utils.supply(vm, hub, assetId, user, amount, user);
+    vm.startPrank(address(spoke1));
+    Utils.supply(vm, hub, assetId, address(spoke1), amount, address(spoke1));
+    vm.stopPrank();
 
     LiquidityHub.Asset memory reserveData = hub.getAsset(assetId);
-    Spoke.UserConfig memory userData = spoke1.getUser(assetId, user);
 
     // check reserve index and user interest
-    assertEq(reserveData.totalShares, amount, 'wrong reserve shares');
-    assertEq(reserveData.totalAssets, amount, 'wrong reserve assets');
-    assertEq(userData.supplyShares, amount, 'wrong user shares');
-    assertEq(spoke1.getUserDebt(assetId, user), amount, 'wrong user assets');
+    assertEq(reserveData.totalShares, amount, 'wrong reserve totalShares');
+    assertEq(reserveData.totalSharesBase, amount, 'wrong reserve totalSharesBase');
+    assertEq(reserveData.totalAssets, amount, 'wrong reserve totalAssets');
+    assertEq(reserveData.totalAssetsBase, amount, 'wrong reserve totalAssetsBase');
+    assertEq(reserveData.drawnShares, 0, 'wrong reserve drawnShares');
+    assertEq(reserveData.drawnSharesBase, 0, 'wrong reserve drawnSharesBase');
+    assertEq(reserveData.totalPremium, 0, 'wrong reserve totalPremium');
+    assertEq(reserveData.lastUpdateTimestamp, 1, 'wrong reserve lastUpdateTimestamp');
+    assertEq(
+      reserveData.baseBorrowRate,
+      irData.baseVariableBorrowRate,
+      'wrong reserve baseBorrowRate'
+    );
   }
 
   function test_fuzz_supply_events(

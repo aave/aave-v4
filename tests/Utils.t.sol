@@ -35,7 +35,7 @@ library Utils {
     address asset = hub.assetsList(assetId);
     vm.startPrank(spoke);
     IERC20(asset).transfer(address(hub), amount);
-    hub.supply(assetId, amount, 0);
+    hub.supply({assetId: assetId, amount: amount, riskPremium: 0});
     vm.stopPrank();
   }
 
