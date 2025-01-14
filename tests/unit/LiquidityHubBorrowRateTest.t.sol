@@ -411,7 +411,7 @@ contract UserRiskPremiumTest is BaseTest {
     vm.stopPrank();
   }
 
-  function test_LHBorrowRate_DrawThreeSpokesDiffWeights(
+  function test_LHBorrowRate_DrawThreeSpokesDiffWeightsFuzz(
     uint256 rpSpoke1,
     uint256 drawSpoke1,
     uint256 rpSpoke2,
