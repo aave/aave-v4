@@ -62,7 +62,13 @@ library Utils {
   ) internal {
     vm.startPrank(spoke);
     // TODO: risk premium
-    hub.withdraw(assetId, to, amount, 0);
+    hub.withdraw({
+      assetId: assetId,
+      to: to,
+      amountFromPremium: 0,
+      amountFromBase: amount,
+      riskPremium: 0
+    });
     vm.stopPrank();
   }
 

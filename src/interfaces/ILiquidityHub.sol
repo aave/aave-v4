@@ -25,7 +25,8 @@ interface ILiquidityHub {
   function withdraw(
     uint256 assetId,
     address to,
-    uint256 amount,
+    uint256 amountFromPremium,
+    uint256 amountFromBase,
     uint256 riskPremium
   ) external returns (uint256);
 

@@ -434,7 +434,13 @@ contract LiquidityHubTest is BaseTest {
     vm.startPrank(address(spoke1));
     vm.expectEmit(address(hub));
     emit Withdraw(assetId, address(spoke1), address(spoke1), amount);
-    hub.withdraw(assetId, address(spoke1), amount, 0);
+    hub.withdraw({
+      assetId: assetId,
+      to: address(spoke1),
+      amountFromPremium: 0,
+      amountFromBase: amount,
+      riskPremium: 0
+    });
     vm.stopPrank();
 
     assetData = hub.getAsset(assetId);
@@ -481,7 +487,13 @@ contract LiquidityHubTest is BaseTest {
 
     vm.prank(address(spoke1));
     vm.expectRevert(TestErrors.SUPPLIED_AMOUNT_EXCEEDED);
-    hub.withdraw(assetId, address(spoke1), amount, 0);
+    hub.withdraw({
+      assetId: assetId,
+      to: address(spoke1),
+      amountFromPremium: 0,
+      amountFromBase: amount,
+      riskPremium: 0
+    });
   }
 
   function test_withdraw_revertsWith_supplied_amount_exceeded() public {
@@ -501,12 +513,24 @@ contract LiquidityHubTest is BaseTest {
 
     vm.prank(address(spoke1));
     vm.expectRevert(TestErrors.SUPPLIED_AMOUNT_EXCEEDED);
-    hub.withdraw(assetId, address(spoke1), amount + 1, 0);
+    hub.withdraw({
+      assetId: assetId,
+      to: address(spoke1),
+      amountFromPremium: 0,
+      amountFromBase: amount + 1,
+      riskPremium: 0
+    });
 
     // advance time, but no accumulation
     vm.warp(block.timestamp + 1e18);
     vm.expectRevert(TestErrors.SUPPLIED_AMOUNT_EXCEEDED);
-    hub.withdraw(assetId, address(spoke1), amount + 1, 0);
+    hub.withdraw({
+      assetId: assetId,
+      to: address(spoke1),
+      amountFromPremium: 0,
+      amountFromBase: amount + 1,
+      riskPremium: 0
+    });
 
     reserveData = hub.getAsset(assetId);
 
@@ -532,7 +556,13 @@ contract LiquidityHubTest is BaseTest {
 
     vm.prank(address(spoke1));
     vm.expectRevert(TestErrors.SUPPLIED_AMOUNT_EXCEEDED);
-    hub.withdraw(daiId, address(spoke1), amount, 0);
+    hub.withdraw({
+      assetId: daiId,
+      to: address(spoke1),
+      amountFromPremium: 0,
+      amountFromBase: amount,
+      riskPremium: 0
+    });
   }
 
   function test_withdraw_revertsWith_asset_not_active() public {
@@ -547,7 +577,13 @@ contract LiquidityHubTest is BaseTest {
 
     vm.prank(address(spoke1));
     vm.expectRevert(TestErrors.ASSET_NOT_ACTIVE);
-    hub.withdraw(daiId, address(spoke1), amount, 0);
+    hub.withdraw({
+      assetId: daiId,
+      to: address(spoke1),
+      amountFromPremium: 0,
+      amountFromBase: amount,
+      riskPremium: 0
+    });
   }
 
   // TODO after RP logic is implemented

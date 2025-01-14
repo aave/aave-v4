@@ -134,6 +134,7 @@ contract Spoke is ISpoke {
     uint256 userShares = ILiquidityHub(liquidityHub).withdraw(
       assetId,
       to,
+      0, // TODO: amountFromPremium
       amount,
       newAggregatedRiskPremium
     );

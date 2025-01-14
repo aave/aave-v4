@@ -210,7 +210,8 @@ contract LiquidityHub is ILiquidityHub {
   function withdraw(
     uint256 assetId,
     address to,
-    uint256 amount,
+    uint256 amountFromPremium,
+    uint256 amountFromBase,
     uint256 riskPremium
   ) external returns (uint256) {
     // TODO: authorization - only spokes
@@ -220,14 +221,18 @@ contract LiquidityHub is ILiquidityHub {
 
     // Accrue interest before validating action
     _accrueAssetInterest(asset, asset.baseBorrowRate);
+    uint256 amount = amountFromPremium + amountFromBase;
     _validateWithdraw(asset, spoke, amount);
 
     uint256 sharesAmount = convertAssetsToSharesDown(assetId, amount);
-    // TODO: On a withdraw, how do we know which shares (base or premium) to withdraw from? - Same as restore?
-    // It's just from base (total assets) because risk premium portion only relates to debt. Risk premium never available
-    asset.totalSharesBase -= sharesAmount;
+    if (amountFromPremium > 0) asset.totalPremium -= amountFromPremium;
+    if (amountFromBase > 0) {
+      uint256 sharesFromBase = convertAssetsToSharesDown(assetId, amountFromBase);
+      asset.totalSharesBase -= sharesFromBase;
+      asset.totalAssetsBase -= amountFromBase;
+    }
+
     asset.totalShares -= sharesAmount;
-    asset.totalAssetsBase -= amount;
     asset.totalAssets -= amount;
     spoke.totalShares -= sharesAmount;
 
