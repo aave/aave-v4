@@ -16,10 +16,11 @@ contract UserRiskPremiumTest is BaseTest {
   function setUp() public override {
     super.setUp();
 
-    address[] memory spokes = new address[](2);
+    address[] memory spokes = new address[](3);
     spokes[0] = address(spoke1);
     spokes[1] = address(spoke2);
-    DataTypes.SpokeConfig[] memory spokeConfigs = new DataTypes.SpokeConfig[](2);
+    spokes[2] = address(spoke3);
+    DataTypes.SpokeConfig[] memory spokeConfigs = new DataTypes.SpokeConfig[](3);
     spokeConfigs[0] = DataTypes.SpokeConfig({
       supplyCap: type(uint256).max,
       drawCap: type(uint256).max
@@ -28,8 +29,12 @@ contract UserRiskPremiumTest is BaseTest {
       supplyCap: type(uint256).max,
       drawCap: type(uint256).max
     });
+    spokeConfigs[2] = DataTypes.SpokeConfig({
+      supplyCap: type(uint256).max,
+      drawCap: type(uint256).max
+    });
 
-    Spoke.ReserveConfig[] memory reserveConfigs = new Spoke.ReserveConfig[](2);
+    Spoke.ReserveConfig[] memory reserveConfigs = new Spoke.ReserveConfig[](3);
 
     // Add dai
     reserveConfigs[0] = Spoke.ReserveConfig({
@@ -39,6 +44,12 @@ contract UserRiskPremiumTest is BaseTest {
       collateral: true
     });
     reserveConfigs[1] = Spoke.ReserveConfig({lt: 0.8e4, lb: 0, borrowable: true, collateral: true});
+    reserveConfigs[2] = Spoke.ReserveConfig({
+      lt: 0.77e4,
+      lb: 0,
+      borrowable: true,
+      collateral: true
+    });
     Utils.addAssetAndSpokes(
       hub,
       address(dai),
@@ -53,6 +64,12 @@ contract UserRiskPremiumTest is BaseTest {
     reserveConfigs[0] = Spoke.ReserveConfig({lt: 0.8e4, lb: 0, borrowable: true, collateral: true});
     reserveConfigs[1] = Spoke.ReserveConfig({
       lt: 0.76e4,
+      lb: 0,
+      borrowable: true,
+      collateral: true
+    });
+    reserveConfigs[2] = Spoke.ReserveConfig({
+      lt: 0.79e4,
       lb: 0,
       borrowable: true,
       collateral: true
@@ -80,6 +97,12 @@ contract UserRiskPremiumTest is BaseTest {
       borrowable: true,
       collateral: true
     });
+    reserveConfigs[2] = Spoke.ReserveConfig({
+      lt: 0.75e4,
+      lb: 0,
+      borrowable: true,
+      collateral: true
+    });
     Utils.addAssetAndSpokes(
       hub,
       address(usdc),
@@ -99,6 +122,12 @@ contract UserRiskPremiumTest is BaseTest {
     });
     reserveConfigs[1] = Spoke.ReserveConfig({
       lt: 0.84e4,
+      lb: 0,
+      borrowable: true,
+      collateral: true
+    });
+    reserveConfigs[2] = Spoke.ReserveConfig({
+      lt: 0.87e4,
       lb: 0,
       borrowable: true,
       collateral: true
@@ -349,11 +378,11 @@ contract UserRiskPremiumTest is BaseTest {
     uint256 supplySpoke2
   ) public {
     rpSpoke1 = bound(rpSpoke1, 0, 99999);
-    supplySpoke1 = bound(supplySpoke1, 2, 1e38);
+    supplySpoke1 = bound(supplySpoke1, 2, 1e60);
     drawSpoke1 = bound(drawSpoke1, 1, supplySpoke1 / 2);
 
     rpSpoke2 = bound(rpSpoke2, 0, 99999);
-    supplySpoke2 = bound(supplySpoke2, 2, 1e38);
+    supplySpoke2 = bound(supplySpoke2, 2, 1e60);
     drawSpoke2 = bound(drawSpoke2, 1, supplySpoke2 / 2);
 
     deal(address(dai), address(hub), supplySpoke1 + supplySpoke2);
@@ -382,9 +411,58 @@ contract UserRiskPremiumTest is BaseTest {
     vm.stopPrank();
   }
 
-  // TODO: Have 3 spokes
+  function test_LHBorrowRate_DrawThreeSpokesDiffWeights(
+    uint256 rpSpoke1,
+    uint256 drawSpoke1,
+    uint256 supplySpoke1,
+    uint256 rpSpoke2,
+    uint256 drawSpoke2,
+    uint256 supplySpoke2,
+    uint256 rpSpoke3,
+    uint256 drawSpoke3,
+    uint256 supplySpoke3
+  ) public {
+    rpSpoke1 = bound(rpSpoke1, 0, 99999);
+    supplySpoke1 = bound(supplySpoke1, 2, 1e60);
+    drawSpoke1 = bound(drawSpoke1, 1, supplySpoke1 / 2);
 
-  // TODO: Have 3 spokes drawing with different weight and risk premiums
+    rpSpoke2 = bound(rpSpoke2, 0, 99999);
+    supplySpoke2 = bound(supplySpoke2, 2, 1e60);
+    drawSpoke2 = bound(drawSpoke2, 1, supplySpoke2 / 2);
+
+    rpSpoke3 = bound(rpSpoke3, 0, 99999);
+    supplySpoke3 = bound(supplySpoke3, 2, 1e60);
+    drawSpoke3 = bound(drawSpoke3, 1, supplySpoke3 / 2);
+
+    deal(address(dai), address(hub), supplySpoke1 + supplySpoke2 + supplySpoke3);
+
+    vm.startPrank(address(spoke1));
+    hub.supply(daiAssetId, supplySpoke1, 0);
+    hub.draw(daiAssetId, address(spoke1), drawSpoke1, rpSpoke1);
+    uint256 borrowRate = _getBorrowRate(daiAssetId);
+    uint256 baseBorrowRate = _getBaseBorrowRate(daiAssetId);
+    assertEq(borrowRate, baseBorrowRate + (rpSpoke1 * baseBorrowRate) / 1e4);
+    vm.stopPrank();
+
+    vm.startPrank(address(spoke2));
+    hub.supply(daiAssetId, supplySpoke2, 0);
+    hub.draw(daiAssetId, address(spoke2), drawSpoke2, rpSpoke2);
+    vm.stopPrank();
+
+    vm.startPrank(address(spoke3));
+    hub.supply(daiAssetId, supplySpoke3, 0);
+    hub.draw(daiAssetId, address(spoke3), drawSpoke3, rpSpoke3);
+    borrowRate = _getBorrowRate(daiAssetId);
+    baseBorrowRate = _getBaseBorrowRate(daiAssetId);
+    assertApproxEqAbs(
+      borrowRate,
+      baseBorrowRate +
+        ((rpSpoke1 * drawSpoke1 + rpSpoke2 * drawSpoke2 + rpSpoke3 * drawSpoke3) * baseBorrowRate) /
+        (1e4 * (drawSpoke1 + drawSpoke2 + drawSpoke3)),
+      1
+    );
+    vm.stopPrank();
+  }
 
   // TODO: Test via calling functions on spokes - after spoke side is implemented
 
