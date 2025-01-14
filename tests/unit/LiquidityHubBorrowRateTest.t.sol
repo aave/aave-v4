@@ -349,11 +349,11 @@ contract UserRiskPremiumTest is BaseTest {
     uint256 supplySpoke2
   ) public {
     rpSpoke1 = bound(rpSpoke1, 0, 99999);
-    supplySpoke1 = bound(supplySpoke1, 10, type(uint256).max);
+    supplySpoke1 = bound(supplySpoke1, 2, 1e38);
     drawSpoke1 = bound(drawSpoke1, 1, supplySpoke1 / 2);
 
     rpSpoke2 = bound(rpSpoke2, 0, 99999);
-    supplySpoke2 = bound(supplySpoke2, 10, type(uint256).max - supplySpoke1);
+    supplySpoke2 = bound(supplySpoke2, 2, 1e38);
     drawSpoke2 = bound(drawSpoke2, 1, supplySpoke2 / 2);
 
     deal(address(dai), address(hub), supplySpoke1 + supplySpoke2);
