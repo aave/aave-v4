@@ -208,7 +208,7 @@ contract LiquidityHubTest is BaseTest {
     vm.stopPrank();
   }
 
-  function test_supply_zero_reverts() public {
+  function test_supply_revertsWith_invalid_supply_amount() public {
     uint256 assetId = 0;
     uint256 invalidAmount = 0;
 
