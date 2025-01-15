@@ -357,52 +357,44 @@ contract LiquidityHubTest is BaseTest {
     assertEq(spoke2Data.drawnShares, 0, 'wrong final spoke2 drawn shares');
   }
 
-  struct TestSupplyUserParams {
+  struct TestSupplySpokeParams {
     uint256 totalAssets;
     uint256 totalShares;
-    uint256 userAssets;
-    uint256 userShares;
+    uint256 spokeAssets;
+    uint256 spokeShares;
   }
 
   /// forge-config: default.fuzz.max-test-rejects = 1
-  /// User makes a first supply, which increases overtime as yield accrues
+  /// Spoke makes a first supply, which increases overtime as yield accrues
   // TODO: to be fixed, there is precision loss
-  function skip_test_fuzz_supply_index_increase(
-    uint256 assetId,
-    address user,
-    uint256 amount
-  ) public {
-    if (user == address(hub) || user == address(0)) return;
+  function skip_test_fuzz_supply_index_increase(uint256 assetId, uint256 amount) public {
     assetId = bound(assetId, 0, hub.assetCount() - 1);
     amount = bound(amount, 1, type(uint128).max);
 
-    deal(hub.assetsList(assetId), user, type(uint128).max);
-    deal(hub.assetsList(assetId), USER1, type(uint128).max);
+    deal(hub.assetsList(assetId), address(spoke1), type(uint128).max);
 
     // initial supply
-    Utils.supply(vm, hub, assetId, user, amount, user);
+    Utils.supply(vm, hub, assetId, address(spoke1), amount, address(spoke1));
 
-    uint256 elapsedTimeChange = bound(uint160(user), 0, 30 days); // [0, 30 days] range
-    uint256 borrowRateChange = bound(uint160(user), 0, 1e27); // [0.00%, 100.00%] range;
+    uint256 elapsedTimeChange = bound(uint160(address(spoke1)), 0, 30 days); // [0, 30 days] range
+    uint256 borrowRateChange = bound(uint160(address(spoke1)), 0, 1e27); // [0.00%, 100.00%] range;
 
-    TestSupplyUserParams memory p = TestSupplyUserParams({
+    TestSupplySpokeParams memory p = TestSupplySpokeParams({
       totalAssets: amount,
       totalShares: amount,
-      userAssets: amount,
-      userShares: amount
+      spokeAssets: amount,
+      spokeShares: amount
     });
     LiquidityHub.Asset memory reserveData;
-    Spoke.UserConfig memory userData;
+    LiquidityHub.Spoke memory spokeData;
 
-    for (uint256 i = 0; i < 2; i += 1) {
+    for (uint256 i = 0; i < 2; i++) {
       reserveData = hub.getAsset(assetId);
-      userData = spoke1.getUser(assetId, user);
+      spokeData = hub.getSpoke(assetId, address(spoke1));
 
-      // check reserve index and user interest
+      // check reserve index and spoke interest
       assertEq(reserveData.totalShares, p.totalShares, 'wrong reserve shares');
       assertEq(reserveData.totalAssets, p.totalAssets, 'wrong reserve assets');
-      assertEq(userData.supplyShares, amount, 'wrong user shares');
-      assertEq(spoke1.getUserDebt(assetId, user), p.userAssets, 'wrong user assets');
 
       // rate increases
       uint256 newBorrowRate = (borrowRateChange * i) % 2e27; // randomize, 200.00% max
@@ -421,19 +413,19 @@ contract LiquidityHubTest is BaseTest {
         .calculateLinearInterest(newBorrowRate, uint40(reserveData.lastUpdateTimestamp))
         .rayMul(reserveData.totalAssets);
 
-      uint256 user2SupplyShares = 1; // minimum for 1 share
-      uint256 user2SupplyAssets = user2SupplyShares.toAssetsUp(
+      uint256 spoke2SupplyShares = 1; // minimum for 1 share
+      uint256 spoke2SupplyAssets = spoke2SupplyShares.toAssetsUp(
         p.totalAssets,
         reserveData.totalShares
       );
 
-      p.totalAssets += user2SupplyAssets;
-      p.totalShares += user2SupplyShares;
+      p.totalAssets += spoke2SupplyAssets;
+      p.totalShares += spoke2SupplyShares;
 
-      p.userAssets = p.userShares.toAssetsDown(p.totalAssets, p.totalShares);
+      p.spokeAssets = p.spokeShares.toAssetsDown(p.totalAssets, p.totalShares);
 
       // update reserve state
-      Utils.supply(vm, hub, assetId, USER1, user2SupplyAssets, USER1);
+      Utils.supply(vm, hub, assetId, address(spoke2), spoke2SupplyAssets, address(spoke2));
     }
   }
 
