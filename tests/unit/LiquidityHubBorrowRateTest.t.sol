@@ -188,11 +188,13 @@ contract UserRiskPremiumTest is BaseTest {
   function test_LHBorrowRate_Supply() public {
     deal(address(dai), address(spoke1), 1000e18);
 
-    vm.prank(address(spoke1));
+    vm.startPrank(address(spoke1));
+    LiquidityHub.Spoke memory test = hub.getSpoke(daiAssetId, address(spoke1));
     IERC20(dai).approve(address(hub), 1000e18);
     hub.supply(daiAssetId, 1000e18, 0, address(spoke1));
     // No change to risk premium, so borrow rate is just the base rate
     assertEq(_getBaseBorrowRate(daiAssetId), _getBorrowRate(daiAssetId));
+    vm.stopPrank();
   }
 
   function test_LHBorrowRate_Borrow() public {
