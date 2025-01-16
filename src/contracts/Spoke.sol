@@ -117,7 +117,8 @@ contract Spoke is ISpoke {
     uint256 userShares = ILiquidityHub(liquidityHub).supply(
       assetId,
       amount,
-      newAggregatedRiskPremium
+      newAggregatedRiskPremium,
+      msg.sender
     );
 
     users[assetId][msg.sender].supplyShares += userShares;

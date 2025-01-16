@@ -77,7 +77,7 @@ contract LiquidityHubHandler is Test {
 
     address asset = hub.assetsList(assetId);
     deal(asset, user, amount);
-    Utils.supply(vm, hub, assetId, user, amount, onBehalfOf);
+    Utils.supply(vm, hub, assetId, user, amount, user, onBehalfOf);
 
     _updateState(assetId);
     s.reserveSupplied[assetId] += amount;

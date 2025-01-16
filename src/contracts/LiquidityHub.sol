@@ -173,7 +173,12 @@ contract LiquidityHub is ILiquidityHub {
   // /////
 
   /// @dev risk premium is calculated from the spoke and passed upon every action
-  function supply(uint256 assetId, uint256 amount, uint256 riskPremium) external returns (uint256) {
+  function supply(
+    uint256 assetId,
+    uint256 amount,
+    uint256 riskPremium,
+    address user
+  ) external returns (uint256) {
     // TODO: authorization - only spokes
 
     Asset storage asset = assets[assetId];
@@ -198,8 +203,7 @@ contract LiquidityHub is ILiquidityHub {
     _updateBorrowRate(asset, riskPremium, amount, 0);
 
     // TODO: fee-on-transfer
-    // instead transferred by spoke from user to LH
-    // IERC20(assetsList[assetId]).safeTransferFrom(msg.sender, address(this), amount);
+    IERC20(assetsList[assetId]).safeTransferFrom(user, address(this), amount);
 
     emit Supply(assetId, msg.sender, amount);
 

@@ -30,12 +30,15 @@ library Utils {
     uint256 assetId,
     address spoke,
     uint256 amount,
+    address user,
     address onBehalfOf
   ) internal {
     address asset = hub.assetsList(assetId);
+    vm.prank(user);
+    IERC20(asset).approve(address(hub), amount);
     vm.startPrank(spoke);
     IERC20(asset).transfer(address(hub), amount);
-    hub.supply(assetId, amount, 0);
+    hub.supply({user: user, assetId: assetId, amount: amount, riskPremium: 0});
     vm.stopPrank();
   }
 
