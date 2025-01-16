@@ -37,7 +37,6 @@ library Utils {
     vm.prank(user);
     IERC20(asset).approve(address(hub), amount);
     vm.startPrank(spoke);
-    IERC20(asset).transfer(address(hub), amount);
     hub.supply({user: user, assetId: assetId, amount: amount, riskPremium: 0});
     vm.stopPrank();
   }
@@ -94,7 +93,7 @@ library Utils {
   ) internal {
     address asset = hub.assetsList(assetId);
     vm.startPrank(user);
-    IERC20(asset).approve(address(spoke), amount);
+    IERC20(asset).approve(address(hub), amount);
     spoke.supply(assetId, amount);
     vm.stopPrank();
   }
