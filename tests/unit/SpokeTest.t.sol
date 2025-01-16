@@ -2,6 +2,7 @@
 pragma solidity ^0.8.0;
 
 import '../BaseTest.t.sol';
+import {IERC20Errors} from 'src/dependencies/openzeppelin/IERC20Errors.sol';
 
 contract SpokeTest is BaseTest {
   using SharesMath for uint256;
@@ -128,6 +129,22 @@ contract SpokeTest is BaseTest {
 
     vm.prank(USER1);
     vm.expectRevert(TestErrors.RESERVE_NOT_LISTED);
+    spoke1.supply(assetId, amount);
+  }
+
+  function test_supply_revertsWith_ERC20InsufficientAllowance() public {
+    uint256 assetId = 0;
+    uint256 amount = 100e18;
+
+    vm.prank(USER1);
+    vm.expectRevert(
+      abi.encodeWithSelector(
+        IERC20Errors.ERC20InsufficientAllowance.selector,
+        address(hub),
+        0,
+        amount
+      )
+    );
     spoke1.supply(assetId, amount);
   }
 

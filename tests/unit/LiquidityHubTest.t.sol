@@ -2,6 +2,7 @@
 pragma solidity ^0.8.0;
 
 import '../BaseTest.t.sol';
+import {IERC20Errors} from 'src/dependencies/openzeppelin/IERC20Errors.sol';
 
 contract LiquidityHubTest is BaseTest {
   using SharesMath for uint256;
@@ -98,6 +99,23 @@ contract LiquidityHubTest is BaseTest {
     MockPriceOracle(address(oracle)).setAssetPrice(daiCreditLineAssetId, 1e8);
 
     vm.warp(block.timestamp + 20);
+  }
+
+  function test_supply_revertsWith_ERC20InsufficientAllowance() public {
+    uint256 daiId = 0;
+    uint256 amount = 100e18;
+
+    deal(address(dai), address(spoke1), amount);
+    vm.prank(address(spoke1));
+    vm.expectRevert(
+      abi.encodeWithSelector(
+        IERC20Errors.ERC20InsufficientAllowance.selector,
+        address(hub),
+        0,
+        amount
+      )
+    );
+    hub.supply(daiId, amount, 0, address(spoke1));
   }
 
   function test_supply_revertsWith_asset_not_active() public {
