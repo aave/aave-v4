@@ -212,7 +212,7 @@ contract UserRiskPremiumTest is BaseTest {
   function test_LHBorrowRate_BorrowFuzz(uint256 newRiskPremium) public {
     newRiskPremium = bound(newRiskPremium, 0, 99999);
     // Spoke 1's first borrow should set the overall borrow rate
-    deal(address(dai), address(hub), 1000e18);
+    deal(address(dai), address(spoke1), 1000e18);
     vm.startPrank(address(spoke1));
     IERC20(dai).approve(address(hub), 1000e18);
     hub.supply(daiAssetId, 1000e18, 0, address(spoke1));
@@ -225,7 +225,7 @@ contract UserRiskPremiumTest is BaseTest {
 
   function test_LHBorrowRate_BorrowAndSupply() public {
     uint256 newRiskPremium = 1e3;
-    deal(address(dai), address(hub), 2000e18);
+    deal(address(dai), address(spoke1), 2000e18);
     vm.startPrank(address(spoke1));
     IERC20(dai).approve(address(hub), 1000e18);
     hub.supply(daiAssetId, 1000e18, 0, address(spoke1));
@@ -245,8 +245,9 @@ contract UserRiskPremiumTest is BaseTest {
 
   function test_LHBorrowRate_BorrowAndSupplyFuzz(uint256 newRiskPremium) public {
     newRiskPremium = bound(newRiskPremium, 0, 99999);
-    deal(address(dai), address(hub), 1000e18);
+    deal(address(dai), address(spoke1), 2000e18);
     vm.startPrank(address(spoke1));
+    IERC20(dai).approve(address(hub), 2000e18);
     hub.supply(daiAssetId, 1000e18, 0, address(spoke1));
     hub.draw(daiAssetId, address(spoke1), 100e18, newRiskPremium);
     uint256 borrowRate = _getBorrowRate(daiAssetId);
@@ -263,8 +264,9 @@ contract UserRiskPremiumTest is BaseTest {
 
   function test_LHBorrowRate_BorrowTwice() public {
     uint256 newRiskPremium = 1e3;
-    deal(address(dai), address(hub), 1000e18);
+    deal(address(dai), address(spoke1), 1000e18);
     vm.startPrank(address(spoke1));
+    IERC20(dai).approve(address(hub), 1000e18);
     hub.supply(daiAssetId, 1000e18, 0, address(spoke1));
     hub.draw(daiAssetId, address(spoke1), 100e18, newRiskPremium);
     uint256 borrowRate = _getBorrowRate(daiAssetId);
@@ -283,8 +285,9 @@ contract UserRiskPremiumTest is BaseTest {
   function test_LHBorrowRate_BorrowTwiceFuzz(uint256 newRiskPremium) public {
     newRiskPremium = bound(newRiskPremium, 0, 99999);
     uint256 firstRiskPremium = 1e3;
-    deal(address(dai), address(hub), 1000e18);
+    deal(address(dai), address(spoke1), 1000e18);
     vm.startPrank(address(spoke1));
+    IERC20(dai).approve(address(hub), 1000e18);
     hub.supply(daiAssetId, 1000e18, 0, address(spoke1));
     hub.draw(daiAssetId, address(spoke1), 100e18, firstRiskPremium);
     uint256 borrowRate = _getBorrowRate(daiAssetId);
@@ -302,7 +305,7 @@ contract UserRiskPremiumTest is BaseTest {
   function test_LHBorrowRate_DrawTwoSpokes() public {
     uint256 rpSpoke1 = 1e3;
     uint256 rpSpoke2 = 2e3;
-    deal(address(dai), address(hub), 5000e18);
+    deal(address(dai), address(spoke1), 5000e18);
     vm.startPrank(address(spoke1));
     IERC20(dai).approve(address(hub), 1000e18);
     hub.supply(daiAssetId, 1000e18, 0, address(spoke1));
@@ -313,9 +316,10 @@ contract UserRiskPremiumTest is BaseTest {
     vm.stopPrank();
 
     // Next spoke risk premium should be averaged with the first
+    deal(address(dai), address(spoke2), 1000e18);
     vm.startPrank(address(spoke2));
     IERC20(dai).approve(address(hub), 1000e18);
-    hub.supply(daiAssetId, 1000e18, 0, address(spoke1));
+    hub.supply(daiAssetId, 1000e18, 0, address(spoke2));
     hub.draw(daiAssetId, address(spoke2), 100e18, rpSpoke2);
     borrowRate = _getBorrowRate(daiAssetId);
     baseBorrowRate = _getBaseBorrowRate(daiAssetId);
@@ -357,7 +361,7 @@ contract UserRiskPremiumTest is BaseTest {
     uint256 rpSpoke2 = 2e3;
     uint256 drawSpoke1 = 100e18;
     uint256 drawSpoke2 = 200e18;
-    deal(address(dai), address(hub), 5000e18);
+    deal(address(dai), address(spoke1), 5000e18);
     vm.startPrank(address(spoke1));
     IERC20(dai).approve(address(hub), 5000e18);
     hub.supply(daiAssetId, 1000e18, 0, address(spoke1));
