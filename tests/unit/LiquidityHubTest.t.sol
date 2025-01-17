@@ -98,7 +98,7 @@ contract LiquidityHubTest is BaseTest {
     );
     MockPriceOracle(address(oracle)).setAssetPrice(daiCreditLineAssetId, 1e8);
 
-    vm.warp(block.timestamp + 20);
+    skip(20);
 
     deal(address(dai), address(USER1), 1_000_000e18);
     vm.prank(USER1);
