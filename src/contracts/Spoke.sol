@@ -177,7 +177,7 @@ contract Spoke is ISpoke {
       amountFromPremium: 0,
       amountFromBase: amount,
       riskPremium: newAggregatedRiskPremium,
-      settler: msg.sender
+      repayer: msg.sender
     });
     users[assetId][msg.sender].debtShares -= userShares;
 

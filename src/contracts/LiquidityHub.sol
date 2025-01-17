@@ -282,7 +282,7 @@ contract LiquidityHub is ILiquidityHub {
    * @param amountFromPremium The amount to repay from premium interest
    * @param amountFromBase The amount to repay from base interest
    * @param riskPremium The aggregated risk premium of the calling spoke
-   * @param settler The address who is trying to settle the credit line
+   * @param repayer The address who is trying to settle the credit line
    * @return The amount of shares restored
    */
   function restore(
@@ -290,7 +290,7 @@ contract LiquidityHub is ILiquidityHub {
     uint256 amountFromPremium,
     uint256 amountFromBase,
     uint256 riskPremium,
-    address settler
+    address repayer
   ) external returns (uint256) {
     // TODO: authorization - only spokes
 
@@ -316,7 +316,7 @@ contract LiquidityHub is ILiquidityHub {
     _updateBorrowRate(asset, riskPremium, amount, 0);
 
     // TODO: fee-on-transfer, we receive at least `amount`
-    IERC20(assetsList[assetId]).safeTransferFrom(settler, address(this), amount);
+    IERC20(assetsList[assetId]).safeTransferFrom(repayer, address(this), amount);
 
     emit Restore(assetId, msg.sender, amount);
 

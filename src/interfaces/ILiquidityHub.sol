@@ -20,7 +20,7 @@ interface ILiquidityHub {
     uint256 amountFromPremium,
     uint256 amountFromBase,
     uint256 riskPremium,
-    address settler
+    address repayer
   ) external returns (uint256);
   function supply(
     uint256 assetId,
