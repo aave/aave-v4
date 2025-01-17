@@ -130,7 +130,7 @@ contract LiquidityHubTest is BaseTest {
 
     vm.prank(address(spoke1));
     vm.expectRevert(TestErrors.ASSET_NOT_ACTIVE);
-    hub.supply(daiId, amount, 0, address(USER1));
+    hub.supply(daiId, amount, 0, USER1);
   }
 
   function test_supply_revertsWith_supply_cap_exceeded() public {
