@@ -786,7 +786,7 @@ contract LiquidityHubTest is BaseTest {
     vm.startPrank(address(spoke1));
     IERC20(address(dai)).transfer(address(hub), drawAmount);
     vm.expectRevert(TestErrors.ASSET_NOT_ACTIVE);
-    ILiquidityHub(address(hub)).restore(daiId, 0, drawAmount, 0);
+    ILiquidityHub(address(hub)).restore(daiId, 0, drawAmount, 0, USER1);
     vm.stopPrank();
   }
 
@@ -813,7 +813,7 @@ contract LiquidityHubTest is BaseTest {
     vm.startPrank(address(spoke1));
     IERC20(address(dai)).transfer(address(hub), drawAmount);
     vm.expectRevert(TestErrors.INVALID_RESTORE_AMOUNT);
-    ILiquidityHub(address(hub)).restore(daiId, 0, drawAmount + 1, 0);
+    ILiquidityHub(address(hub)).restore(daiId, 0, drawAmount + 1, 0, USER1);
     vm.stopPrank();
   }
 
@@ -834,15 +834,14 @@ contract LiquidityHubTest is BaseTest {
     deal(address(dai), address(spoke2), daiAmount);
     Utils.supply(vm, hub, daiId, address(spoke2), daiAmount, address(spoke2), address(spoke2));
 
-    // spoke1 draw half of dai reserve liquidity
-    Utils.draw(vm, hub, daiId, address(spoke1), drawAmount, address(spoke1));
+    // spoke1 draw half of dai reserve liquidity on behalf of user
+    Utils.draw(vm, hub, daiId, address(spoke1), drawAmount, USER1);
 
-    // spoke1 restore half of drawn dai liquidity
+    // spoke1 restore half of drawn dai liquidity on behalf of user
     vm.startPrank(address(spoke1));
-    IERC20(address(dai)).transfer(address(hub), restoreAmount);
     vm.expectEmit(address(hub));
     emit Restore(daiId, address(spoke1), restoreAmount);
-    ILiquidityHub(address(hub)).restore(daiId, 0, restoreAmount, 0);
+    hub.restore(daiId, 0, restoreAmount, 0, USER1);
     vm.stopPrank();
 
     LiquidityHub.Asset memory daiData = hub.getAsset(daiId);
@@ -887,11 +886,7 @@ contract LiquidityHubTest is BaseTest {
     assertEq(spoke2DaiData.drawnShares, 0, 'wrong spoke2 drawn dai shares post-restore');
 
     assertEq(dai.balanceOf(address(hub)), daiAmount - restoreAmount, 'wrong hub dai final balance');
-    assertEq(
-      dai.balanceOf(address(spoke1)),
-      drawAmount - restoreAmount,
-      'wrong spoke1 dai final balance'
-    );
+    assertEq(dai.balanceOf(address(spoke1)), drawAmount, 'wrong spoke1 dai final balance');
     assertEq(dai.balanceOf(address(spoke2)), 0, 'wrong spoke2 dai final balance');
 
     assertEq(eth.balanceOf(address(hub)), ethAmount, 'wrong hub eth final balance');
