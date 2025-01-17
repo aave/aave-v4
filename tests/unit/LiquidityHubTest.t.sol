@@ -99,6 +99,10 @@ contract LiquidityHubTest is BaseTest {
     MockPriceOracle(address(oracle)).setAssetPrice(daiCreditLineAssetId, 1e8);
 
     vm.warp(block.timestamp + 20);
+
+    deal(address(dai), address(USER1), type(uint256).max);
+    vm.prank(USER1);
+    IERC20(dai).approve(address(hub), type(uint256).max);
   }
 
   function test_supply_revertsWith_ERC20InsufficientAllowance() public {
@@ -124,11 +128,9 @@ contract LiquidityHubTest is BaseTest {
 
     _updateActive(daiId, false);
 
-    deal(address(dai), address(spoke1), amount);
     vm.prank(address(spoke1));
-    IERC20(dai).approve(address(hub), amount);
     vm.expectRevert(TestErrors.ASSET_NOT_ACTIVE);
-    hub.supply(daiId, amount, 0, address(spoke1));
+    hub.supply(daiId, amount, 0, address(USER1));
   }
 
   function test_supply_revertsWith_supply_cap_exceeded() public {
@@ -136,33 +138,27 @@ contract LiquidityHubTest is BaseTest {
     uint256 amount = 100e18;
     _updateSupplyCap(daiId, address(spoke1), amount - 1);
 
-    deal(address(dai), address(spoke1), amount);
-    vm.prank(address(spoke1));
-    IERC20(dai).approve(address(hub), amount);
     vm.expectRevert(TestErrors.SUPPLY_CAP_EXCEEDED);
-    hub.supply(daiId, amount, 0, address(spoke1));
+    hub.supply(daiId, amount, 0, address(USER1));
   }
 
   function test_first_supply() public {
     uint256 assetId = 0; // TODO: Add getter of asset id based on address
     uint256 amount = 100e18;
 
-    deal(address(dai), address(spoke1), amount);
-
     LiquidityHub.Asset memory reserveData = hub.getAsset(assetId);
     LiquidityHub.Spoke memory spokeData = hub.getSpoke(assetId, address(spoke1));
 
+    uint256 initialUserBalance = dai.balanceOf(address(USER1));
+
     assertEq(reserveData.totalShares, 0, 'wrong reserve shares pre-supply');
     assertEq(reserveData.totalAssets, 0, 'wrong reserve assets pre-supply');
-    assertEq(dai.balanceOf(address(spoke1)), amount, 'wrong user token balance pre-supply');
     assertEq(dai.balanceOf(address(hub)), 0, 'wrong hub token balance pre-supply');
 
     vm.startPrank(address(spoke1));
-    deal(address(dai), address(spoke1), amount);
-    IERC20(dai).approve(address(hub), amount);
     vm.expectEmit(address(hub));
     emit Supply(assetId, address(spoke1), amount);
-    hub.supply(assetId, amount, 0, address(spoke1));
+    hub.supply(assetId, amount, 0, address(USER1));
     vm.stopPrank();
 
     reserveData = hub.getAsset(assetId);
@@ -180,7 +176,11 @@ contract LiquidityHubTest is BaseTest {
       'wrong spoke total shares post-supply'
     );
     assertEq(spokeData.drawnShares, 0, 'wrong spoke shares post-supply');
-    assertEq(dai.balanceOf(address(spoke1)), 0, 'wrong spoke token balance post-supply');
+    assertEq(
+      dai.balanceOf(address(USER1)),
+      initialUserBalance - amount,
+      'wrong spoke token balance post-supply'
+    );
     assertEq(dai.balanceOf(address(hub)), amount, 'wrong hub token balance post-supply');
   }
 

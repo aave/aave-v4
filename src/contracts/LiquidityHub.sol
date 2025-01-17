@@ -177,7 +177,7 @@ contract LiquidityHub is ILiquidityHub {
     uint256 assetId,
     uint256 amount,
     uint256 riskPremium,
-    address user
+    address supplier
   ) external returns (uint256) {
     // TODO: authorization - only spokes
 
@@ -203,7 +203,7 @@ contract LiquidityHub is ILiquidityHub {
     _updateBorrowRate(asset, riskPremium, amount, 0);
 
     // TODO: fee-on-transfer
-    IERC20(assetsList[assetId]).safeTransferFrom(user, address(this), amount);
+    IERC20(assetsList[assetId]).safeTransferFrom(supplier, address(this), amount);
 
     emit Supply(assetId, msg.sender, amount);
 

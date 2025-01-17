@@ -37,7 +37,7 @@ library Utils {
     vm.prank(user);
     IERC20(asset).approve(address(hub), amount);
     vm.startPrank(spoke);
-    hub.supply({user: user, assetId: assetId, amount: amount, riskPremium: 0});
+    hub.supply({assetId: assetId, amount: amount, riskPremium: 0, supplier: user});
     vm.stopPrank();
   }
 
