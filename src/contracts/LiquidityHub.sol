@@ -437,11 +437,14 @@ contract LiquidityHub is ILiquidityHub {
         MathUtils.calculateLinearInterest(baseBorrowRate, uint40(asset.lastUpdateTimestamp))
       ); // TODO rounding
 
+      // TODO: Here we are updating base debt on the old exchange rate, is this correct? - Actually I don't think drawnSharesBase needs to change here at all
       // Update outstanding base debt
       asset.drawnSharesBase = cumulatedBase.toSharesDown(
         asset.totalAssetsBase,
         asset.totalSharesBase
       );
+
+      // TODO: Don't we have to update drawnShares here?
 
       // Base interest accrued since last action is added to total assets
       uint256 currentAccruedBase = cumulatedBase - totalDrawnBase;
