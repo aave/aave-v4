@@ -30,12 +30,14 @@ library Utils {
     uint256 assetId,
     address spoke,
     uint256 amount,
+    address user,
     address onBehalfOf
   ) internal {
     address asset = hub.assetsList(assetId);
+    vm.prank(user);
+    IERC20(asset).approve(address(hub), amount);
     vm.startPrank(spoke);
-    IERC20(asset).transfer(address(hub), amount);
-    hub.supply(assetId, amount, 0);
+    hub.supply({assetId: assetId, amount: amount, riskPremium: 0, supplier: user});
     vm.stopPrank();
   }
 
@@ -45,7 +47,7 @@ library Utils {
     uint256 assetId,
     address spoke,
     uint256 amount,
-    address onBehalfOf
+    address onBehalfOf // todo: implement
   ) internal {
     vm.startPrank(spoke);
     hub.draw(assetId, spoke, amount, 0);
@@ -91,7 +93,7 @@ library Utils {
   ) internal {
     address asset = hub.assetsList(assetId);
     vm.startPrank(user);
-    IERC20(asset).approve(address(spoke), amount);
+    IERC20(asset).approve(address(hub), amount);
     spoke.supply(assetId, amount);
     vm.stopPrank();
   }

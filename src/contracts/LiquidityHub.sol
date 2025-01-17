@@ -173,7 +173,12 @@ contract LiquidityHub is ILiquidityHub {
   // /////
 
   /// @dev risk premium is calculated from the spoke and passed upon every action
-  function supply(uint256 assetId, uint256 amount, uint256 riskPremium) external returns (uint256) {
+  function supply(
+    uint256 assetId,
+    uint256 amount,
+    uint256 riskPremium,
+    address supplier
+  ) external returns (uint256) {
     // TODO: authorization - only spokes
 
     Asset storage asset = assets[assetId];
@@ -198,8 +203,7 @@ contract LiquidityHub is ILiquidityHub {
     _updateBorrowRate(asset, riskPremium, amount, 0);
 
     // TODO: fee-on-transfer
-    // instead transferred by spoke from user to LH
-    // IERC20(assetsList[assetId]).safeTransferFrom(msg.sender, address(this), amount);
+    IERC20(assetsList[assetId]).safeTransferFrom(supplier, address(this), amount);
 
     emit Supply(assetId, msg.sender, amount);
 
@@ -278,12 +282,15 @@ contract LiquidityHub is ILiquidityHub {
    * @param amountFromPremium The amount to repay from premium interest
    * @param amountFromBase The amount to repay from base interest
    * @param riskPremium The aggregated risk premium of the calling spoke
+   * @param repayer The address who is trying to settle the credit line
+   * @return The amount of shares restored
    */
   function restore(
     uint256 assetId,
     uint256 amountFromPremium,
     uint256 amountFromBase,
-    uint256 riskPremium
+    uint256 riskPremium,
+    address repayer
   ) external returns (uint256) {
     // TODO: authorization - only spokes
 
@@ -307,6 +314,9 @@ contract LiquidityHub is ILiquidityHub {
     spoke.drawnShares -= sharesAmount;
 
     _updateBorrowRate(asset, riskPremium, amount, 0);
+
+    // TODO: fee-on-transfer, we receive at least `amount`
+    IERC20(assetsList[assetId]).safeTransferFrom(repayer, address(this), amount);
 
     emit Restore(assetId, msg.sender, amount);
 
@@ -543,7 +553,6 @@ contract LiquidityHub is ILiquidityHub {
       drawnShares: 0,
       config: DataTypes.SpokeConfig({supplyCap: params.supplyCap, drawCap: params.drawCap})
     });
-
     emit SpokeAdded(assetId, spoke);
   }
 }

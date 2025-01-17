@@ -2,6 +2,7 @@
 pragma solidity ^0.8.0;
 
 import '../BaseTest.t.sol';
+import {IERC20Errors} from 'src/dependencies/openzeppelin/IERC20Errors.sol';
 
 contract SpokeTest is BaseTest {
   using SharesMath for uint256;
@@ -131,6 +132,22 @@ contract SpokeTest is BaseTest {
     spoke1.supply(assetId, amount);
   }
 
+  function test_supply_revertsWith_ERC20InsufficientAllowance() public {
+    uint256 assetId = 0;
+    uint256 amount = 100e18;
+
+    vm.prank(USER1);
+    vm.expectRevert(
+      abi.encodeWithSelector(
+        IERC20Errors.ERC20InsufficientAllowance.selector,
+        address(hub),
+        0,
+        amount
+      )
+    );
+    spoke1.supply(assetId, amount);
+  }
+
   function test_supply() public {
     uint256 assetId = 0; // TODO: Add getter of asset id based on address
     uint256 amount = 100e18;
@@ -146,7 +163,7 @@ contract SpokeTest is BaseTest {
     assertEq(userData.debtShares, 0, 'wrong user shares pre-supply');
 
     vm.startPrank(USER1);
-    IERC20(dai).approve(address(spoke1), amount);
+    dai.approve(address(hub), amount);
     vm.expectEmit(address(spoke1));
     emit Supplied(assetId, USER1, amount);
     spoke1.supply(assetId, amount);
@@ -333,7 +350,7 @@ contract SpokeTest is BaseTest {
 
     // spoke1 restore half of drawn dai liquidity
     vm.startPrank(USER1);
-    IERC20(address(dai)).approve(address(spoke1), restoreAmount);
+    IERC20(address(dai)).approve(address(hub), restoreAmount);
     vm.expectEmit(address(spoke1));
     emit Repaid(daiId, USER1, restoreAmount);
     ISpoke(address(spoke1)).repay(daiId, restoreAmount);

@@ -113,11 +113,11 @@ contract Spoke is ISpoke {
     _validateSupply(r, amount);
 
     (, uint256 newAggregatedRiskPremium) = _refreshRiskPremium();
-    IERC20(r.asset).safeTransferFrom(msg.sender, liquidityHub, amount);
     uint256 userShares = ILiquidityHub(liquidityHub).supply(
       assetId,
       amount,
-      newAggregatedRiskPremium
+      newAggregatedRiskPremium,
+      msg.sender
     );
 
     users[assetId][msg.sender].supplyShares += userShares;
@@ -171,14 +171,14 @@ contract Spoke is ISpoke {
     _validateRepay(assetId, u, amount);
 
     (, uint256 newAggregatedRiskPremium) = _refreshRiskPremium();
-    IERC20(r.asset).safeTransferFrom(msg.sender, liquidityHub, amount);
     // TODO: Spoke should calculate the amountFromPremium and amountFromBase
-    uint256 userShares = ILiquidityHub(liquidityHub).restore(
-      assetId,
-      0,
-      amount,
-      newAggregatedRiskPremium
-    );
+    uint256 userShares = ILiquidityHub(liquidityHub).restore({
+      assetId: assetId,
+      amountFromPremium: 0,
+      amountFromBase: amount,
+      riskPremium: newAggregatedRiskPremium,
+      repayer: msg.sender
+    });
     users[assetId][msg.sender].debtShares -= userShares;
 
     emit Repaid(assetId, msg.sender, amount);
