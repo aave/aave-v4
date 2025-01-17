@@ -100,9 +100,9 @@ contract LiquidityHubTest is BaseTest {
 
     skip(20);
 
-    deal(address(dai), address(USER1), 1_000_000e18);
+    deal(address(dai), USER1, 1_000_000e18);
     vm.prank(USER1);
-    IERC20(dai).approve(address(hub), 1_000_000e18);
+    dai.approve(address(hub), 1_000_000e18);
   }
 
   function test_supply_revertsWith_ERC20InsufficientAllowance() public {
@@ -139,7 +139,7 @@ contract LiquidityHubTest is BaseTest {
     _updateSupplyCap(daiId, address(spoke1), amount - 1);
 
     vm.expectRevert(TestErrors.SUPPLY_CAP_EXCEEDED);
-    hub.supply(daiId, amount, 0, address(USER1));
+    hub.supply(daiId, amount, 0, USER1);
   }
 
   function test_first_supply() public {
@@ -149,7 +149,7 @@ contract LiquidityHubTest is BaseTest {
     LiquidityHub.Asset memory reserveData = hub.getAsset(assetId);
     LiquidityHub.Spoke memory spokeData = hub.getSpoke(assetId, address(spoke1));
 
-    uint256 initialUserBalance = dai.balanceOf(address(USER1));
+    uint256 initialUserBalance = dai.balanceOf(USER1);
 
     assertEq(reserveData.totalShares, 0, 'wrong reserve shares pre-supply');
     assertEq(reserveData.totalAssets, 0, 'wrong reserve assets pre-supply');
@@ -158,7 +158,7 @@ contract LiquidityHubTest is BaseTest {
     vm.startPrank(address(spoke1));
     vm.expectEmit(address(hub));
     emit Supply(assetId, address(spoke1), amount);
-    hub.supply(assetId, amount, 0, address(USER1));
+    hub.supply(assetId, amount, 0, USER1);
     vm.stopPrank();
 
     reserveData = hub.getAsset(assetId);
@@ -177,7 +177,7 @@ contract LiquidityHubTest is BaseTest {
     );
     assertEq(spokeData.drawnShares, 0, 'wrong spoke shares post-supply');
     assertEq(
-      dai.balanceOf(address(USER1)),
+      dai.balanceOf(USER1),
       initialUserBalance - amount,
       'wrong spoke token balance post-supply'
     );
@@ -234,7 +234,7 @@ contract LiquidityHubTest is BaseTest {
     emit Transfer(USER1, address(hub), amount);
     vm.expectEmit(address(hub));
     emit Supply(assetId, spoke, amount);
-    hub.supply(assetId, amount, 0, address(USER1));
+    hub.supply(assetId, amount, 0, USER1);
     vm.stopPrank();
   }
 

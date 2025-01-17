@@ -163,7 +163,7 @@ contract SpokeTest is BaseTest {
     assertEq(userData.debtShares, 0, 'wrong user shares pre-supply');
 
     vm.startPrank(USER1);
-    IERC20(dai).approve(address(hub), amount);
+    dai.approve(address(hub), amount);
     vm.expectEmit(address(spoke1));
     emit Supplied(assetId, USER1, amount);
     spoke1.supply(assetId, amount);
