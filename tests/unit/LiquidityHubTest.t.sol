@@ -225,16 +225,16 @@ contract LiquidityHubTest is BaseTest {
     );
 
     address asset = hub.assetsList(assetId);
-
-    deal(asset, spoke, amount);
+    deal(asset, USER1, amount);
+    vm.prank(USER1);
+    IERC20(asset).approve(address(hub), amount);
 
     vm.startPrank(spoke);
-    IERC20(asset).approve(address(hub), amount);
     vm.expectEmit(asset);
-    emit Transfer(spoke, address(hub), amount);
+    emit Transfer(USER1, address(hub), amount);
     vm.expectEmit(address(hub));
     emit Supply(assetId, spoke, amount);
-    hub.supply(assetId, amount, 0, address(spoke));
+    hub.supply(assetId, amount, 0, address(USER1));
     vm.stopPrank();
   }
 
