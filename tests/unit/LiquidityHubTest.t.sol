@@ -100,9 +100,9 @@ contract LiquidityHubTest is BaseTest {
 
     vm.warp(block.timestamp + 20);
 
-    deal(address(dai), address(USER1), type(uint256).max);
+    deal(address(dai), address(USER1), 1_000_000e18);
     vm.prank(USER1);
-    IERC20(dai).approve(address(hub), type(uint256).max);
+    IERC20(dai).approve(address(hub), 1_000_000e18);
   }
 
   function test_supply_revertsWith_ERC20InsufficientAllowance() public {
