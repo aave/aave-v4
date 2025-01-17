@@ -350,7 +350,7 @@ contract SpokeTest is BaseTest {
 
     // spoke1 restore half of drawn dai liquidity
     vm.startPrank(USER1);
-    IERC20(address(dai)).approve(address(spoke1), restoreAmount);
+    IERC20(address(dai)).approve(address(hub), restoreAmount);
     vm.expectEmit(address(spoke1));
     emit Repaid(daiId, USER1, restoreAmount);
     ISpoke(address(spoke1)).repay(daiId, restoreAmount);
