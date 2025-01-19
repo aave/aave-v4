@@ -34,7 +34,7 @@ contract LiquidityHubInvariant is StdInvariant, Test {
       reserveData = hub.getAsset(i);
       asset = hub.assetsList(i);
       assertEq(
-        reserveData.totalAssets,
+        hub.getAssetTotalAssets(reserveData.id),
         IERC20(asset).balanceOf(address(hub)) - hubHandler.getAssetDonated(asset),
         'wrong total assets'
       );
@@ -48,9 +48,9 @@ contract LiquidityHubInvariant is StdInvariant, Test {
     uint256 calcExchangeRate;
     for (uint256 id = 0; id < hub.assetCount(); id++) {
       reserveData = hub.getAsset(id);
-      calcExchangeRate = reserveData.totalShares == 0
+      calcExchangeRate = reserveData.shares == 0
         ? 0
-        : reserveData.totalAssets / reserveData.totalShares;
+        : hub.getAssetTotalAssets(reserveData.id) / reserveData.shares;
 
       assertTrue(hubHandler.getLastExchangeRate(id) <= calcExchangeRate, 'supply index decrease');
     }

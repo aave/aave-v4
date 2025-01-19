@@ -151,8 +151,8 @@ contract LiquidityHubTest is BaseTest {
 
     uint256 initialUserBalance = dai.balanceOf(USER1);
 
-    assertEq(reserveData.totalShares, 0, 'wrong reserve shares pre-supply');
-    assertEq(reserveData.totalAssets, 0, 'wrong reserve assets pre-supply');
+    assertEq(reserveData.shares, 0, 'wrong reserve shares pre-supply');
+    assertEq(hub.getAssetTotalAssets(reserveData.id), 0, 'wrong reserve assets pre-supply');
     assertEq(dai.balanceOf(address(hub)), 0, 'wrong hub token balance pre-supply');
 
     vm.startPrank(address(spoke1));
@@ -165,17 +165,17 @@ contract LiquidityHubTest is BaseTest {
     spokeData = hub.getSpoke(assetId, address(spoke1));
 
     assertEq(
-      reserveData.totalShares,
+      reserveData.shares,
       hub.convertAssetsToSharesUp(assetId, amount),
       'wrong reserve total shares post-supply'
     );
-    assertEq(reserveData.totalAssets, amount, 'wrong reserve total assets post-supply');
+    assertEq(hub.getAssetTotalAssets(assetId), amount, 'wrong reserve total assets post-supply');
     assertEq(
-      spokeData.totalShares,
+      spokeData.shares,
       hub.convertAssetsToSharesUp(assetId, amount),
       'wrong spoke total shares post-supply'
     );
-    assertEq(spokeData.drawnShares, 0, 'wrong spoke shares post-supply');
+    assertEq(spokeData.debt, 0, 'wrong spoke shares post-supply');
     assertEq(
       dai.balanceOf(USER1),
       initialUserBalance - amount,
@@ -200,8 +200,8 @@ contract LiquidityHubTest is BaseTest {
     Spoke.UserConfig memory userData = spoke1.getUser(assetId, user);
 
     // check reserve index and user interest
-    assertEq(reserveData.totalShares, amount, 'wrong reserve shares');
-    assertEq(reserveData.totalAssets, amount, 'wrong reserve assets');
+    assertEq(reserveData.shares, amount, 'wrong reserve shares');
+    assertEq(hub.getAssetTotalAssets(assetId), amount, 'wrong reserve assets');
     assertEq(userData.supplyShares, amount, 'wrong user shares');
     assertEq(spoke1.getUserDebt(assetId, user), amount, 'wrong user assets');
   }
@@ -255,10 +255,10 @@ contract LiquidityHubTest is BaseTest {
     LiquidityHub.Asset memory assetData = hub.getAsset(assetId);
     LiquidityHub.Spoke memory spokeData = hub.getSpoke(assetId, address(spoke1));
 
-    assertEq(assetData.totalShares, 0, 'wrong hub total shares pre-supply');
-    assertEq(assetData.totalAssets, 0, 'wrong hub total assets pre-supply');
-    assertEq(spokeData.totalShares, 0, 'wrong hub total shares pre-supply');
-    assertEq(spokeData.drawnShares, 0, 'wrong hub drawn shares pre-supply');
+    assertEq(assetData.shares, 0, 'wrong hub total shares pre-supply');
+    assertEq(hub.getAssetTotalAssets(assetId), 0, 'wrong hub total assets pre-supply');
+    assertEq(spokeData.shares, 0, 'wrong hub total shares pre-supply');
+    assertEq(spokeData.debt, 0, 'wrong hub drawn shares pre-supply');
 
     assertEq(dai.balanceOf(address(spoke1)), amount, 'wrong spoke token balance pre-supply');
     assertEq(dai.balanceOf(address(hub)), 0, 'wrong hub token balance pre-supply');
@@ -269,7 +269,7 @@ contract LiquidityHubTest is BaseTest {
     spokeData = hub.getSpoke(assetId, address(spoke1));
 
     assertEq(
-      assetData.totalShares,
+      assetData.shares,
       ILiquidityHub(address(hub)).convertAssetsToSharesUp(assetId, amount),
       'wrong total shares post-supply'
     );

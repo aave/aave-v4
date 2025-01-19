@@ -112,8 +112,8 @@ contract LiquidityHubHandler is Test {
 
   function _updateState(uint256 assetId) internal {
     LiquidityHub.Asset memory reserveData = hub.getAsset(assetId);
-    s.lastExchangeRate[assetId] = reserveData.totalShares == 0
+    s.lastExchangeRate[assetId] = reserveData.shares == 0
       ? 0
-      : reserveData.totalAssets / reserveData.totalShares;
+      : hub.getAssetTotalAssets(assetId) / reserveData.shares;
   }
 }

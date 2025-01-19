@@ -294,7 +294,7 @@ contract HealthFactorTest is BaseTest {
       uint256 userCollateral = hub.convertSharesToAssetsDown(assetId, userConfig.supplyShares) *
         assetPrice;
       totalCollateral += userCollateral;
-      totalDebt += hub.convertSharesToAssetsDown(assetId, userConfig.debtShares) * assetPrice;
+      totalDebt += userConfig.debt * assetPrice;
 
       avgLiquidationThreshold += userCollateral * reserve.config.lt;
     }
