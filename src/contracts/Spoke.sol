@@ -37,7 +37,7 @@ contract Spoke is ISpoke {
 
   struct UserConfig {
     uint256 supplyShares;
-    uint256 debtShares;
+    uint256 debt;
     bool usingAsCollateral;
     // uint256 balance;
     // uint256 lastUpdateIndex;
@@ -74,7 +74,7 @@ contract Spoke is ISpoke {
     UserConfig memory u = users[assetId][user];
     // TODO: Instead use a getter from liquidity hub to get up-to-date user debt (with accrued debt)
     return
-      u.debtShares.rayMul(
+      u.debt.rayMul(
         MathUtils.calculateCompoundedInterest(getInterestRate(assetId), uint40(0), block.timestamp)
       );
   }
@@ -150,14 +150,14 @@ contract Spoke is ISpoke {
 
     // TODO HF check
     (, uint256 newAggregatedRiskPremium) = _refreshRiskPremium();
-    uint256 userShares = ILiquidityHub(liquidityHub).draw(
+    uint256 userDebt = ILiquidityHub(liquidityHub).draw(
       assetId,
       to,
       amount,
       newAggregatedRiskPremium
     );
     // debt still goes to original msg.sender
-    users[assetId][msg.sender].debtShares += userShares;
+    users[assetId][msg.sender].debt += userDebt;
 
     emit Borrowed(assetId, to, amount);
   }
@@ -172,14 +172,13 @@ contract Spoke is ISpoke {
 
     (, uint256 newAggregatedRiskPremium) = _refreshRiskPremium();
     // TODO: Spoke should calculate the amountFromPremium and amountFromBase
-    uint256 userShares = ILiquidityHub(liquidityHub).restore({
+    uint256 repaidDebt = ILiquidityHub(liquidityHub).restore({
       assetId: assetId,
-      amountFromPremium: 0,
-      amountFromBase: amount,
+      amount: amount,
       riskPremium: newAggregatedRiskPremium,
       repayer: msg.sender
     });
-    users[assetId][msg.sender].debtShares -= userShares;
+    users[assetId][msg.sender].debt -= repaidDebt;
 
     emit Repaid(assetId, msg.sender, amount);
   }
@@ -279,10 +278,7 @@ contract Spoke is ISpoke {
   }
 
   function _validateRepay(uint256 assetId, UserConfig storage user, uint256 amount) internal view {
-    require(
-      ILiquidityHub(liquidityHub).convertSharesToAssetsUp(assetId, user.debtShares) >= amount,
-      'REPAY_EXCEEDS_DEBT'
-    );
+    require(amount <= user.debt, 'REPAY_EXCEEDS_DEBT');
   }
 
   /**
@@ -316,7 +312,7 @@ contract Spoke is ISpoke {
   }
 
   function _borrowing(uint256 assetId, address user) internal view returns (bool) {
-    return users[assetId][user].debtShares > 0;
+    return users[assetId][user].debt > 0;
   }
 
   function _calculateUserAccountData(
@@ -349,12 +345,8 @@ contract Spoke is ISpoke {
         vars.userRiskPremium += vars.userCollateralInBaseCurrency * vars.liquidityPremium;
       }
 
-      vars.totalDebtInBaseCurrency += u.debtShares > 0
-        ? vars.assetPrice *
-          ILiquidityHub(liquidityHub).convertSharesToAssetsUp(
-            vars.assetId,
-            _calculateAccruedInterest(vars.assetId, u.debtShares)
-          )
+      vars.totalDebtInBaseCurrency += u.debt > 0
+        ? vars.assetPrice * _calculateAccruedInterest(vars.assetId, u.debt)
         : 0;
 
       vars.i++;
@@ -385,11 +377,11 @@ contract Spoke is ISpoke {
 
   function _calculateAccruedInterest(
     uint256 assetId,
-    uint256 shares
+    uint256 debt
   ) internal view returns (uint256) {
-    // TODO: use lastUpdatedTimestamp in interest math, make sure total shares includes accrued interest
+    // TODO: use lastUpdatedTimestamp in interest math, make sure total debt includes accrued interest
     return
-      shares.rayMul(
+      debt.rayMul(
         MathUtils.calculateCompoundedInterest(getInterestRate(assetId), uint40(0), block.timestamp)
       );
   }

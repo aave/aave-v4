@@ -263,7 +263,6 @@ contract LiquidityHub is ILiquidityHub {
 
     emit Draw(assetId, msg.sender, to, amount);
 
-    // TODO: We used to return shares of debt amount, is this new return value needed?
     return amount;
   }
 
@@ -314,7 +313,6 @@ contract LiquidityHub is ILiquidityHub {
 
     emit Restore(assetId, msg.sender, amount);
 
-    // TODO: We used to return sharesAmount of repaid debt. Do we still want this new absolute return value?
     return amount;
   }
 
