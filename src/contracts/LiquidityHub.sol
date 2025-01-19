@@ -15,31 +15,23 @@ contract LiquidityHub is ILiquidityHub {
   using WadRayMath for uint256;
   using SharesMath for uint256;
 
-  // TODO: update name of this struct to reference the asset/reserve?
   struct Spoke {
     uint256 totalShares;
-    uint256 drawnShares;
+    uint256 debt;
+    uint256 premium;
     // TODO: lastUpdateTimestamp?
     DataTypes.SpokeConfig config;
   }
 
-  // TODO: Simplify the needed variables here
-  // * potentially remove totalAssetsBase
-  // * potentially store risk premium accruals separate from base interest accruals
-  // We don't need all 3 of totalPremium, totalAssets, totalAssetsBase, because totalAssets = totalAssetsBase + totalPremium
-  // To facilitate this refactor can expose totalAssets as a function
-  // TODO: Consider renaming totalAssets
   struct Asset {
     uint256 id;
-    uint256 totalShares;
-    uint256 totalSharesBase;
-    uint256 totalAssets;
-    uint256 totalAssetsBase;
-    uint256 drawnShares;
-    uint256 drawnSharesBase;
-    uint256 totalPremium;
-    uint256 lastUpdateTimestamp;
+    uint256 shares;
+    uint256 availableLiquidity;
+    uint256 debt;
+    uint256 outstandingPremium;
+    uint256 baseBorrowIndex;
     uint256 baseBorrowRate;
+    uint256 lastUpdateTimestamp;
     DataTypes.AssetConfig config;
   }
 
@@ -80,6 +72,13 @@ contract LiquidityHub is ILiquidityHub {
     return spokes[assetId][spoke].config;
   }
 
+  function getAssetTotalAssets(uint256 assetId) external view returns (uint256) {
+    return
+      assets[assetId].availableLiquidity +
+      assets[assetId].debt +
+      assets[assetId].outstandingPremium;
+  }
+
   /**
    * @param assetId The asset id
    * @return The total balance of a given asset, either in shares or in assets
@@ -87,13 +86,13 @@ contract LiquidityHub is ILiquidityHub {
   function updateAndGetAssetBalance(uint256 assetId) external returns (uint256) {
     Asset storage asset = assets[assetId];
     _accrueAssetInterest(asset, asset.baseBorrowRate);
-    return asset.totalAssets;
+    return this.getAssetTotalAssets(assetId);
   }
 
   function updateAndGetShareBalance(uint256 assetId) external returns (uint256) {
     Asset storage asset = assets[assetId];
     _accrueAssetInterest(asset, asset.baseBorrowRate);
-    return asset.totalShares;
+    return asset.shares;
   }
 
   // /////
@@ -105,15 +104,13 @@ contract LiquidityHub is ILiquidityHub {
     assetsList.push(asset);
     assets[assetCount] = Asset({
       id: assetCount,
-      totalShares: 0,
-      totalSharesBase: 0,
-      totalAssets: 0,
-      totalAssetsBase: 0,
-      drawnShares: 0,
-      drawnSharesBase: 0,
-      totalPremium: 0,
-      lastUpdateTimestamp: block.timestamp,
+      shares: 0,
+      availableLiquidity: 0,
+      debt: 0,
+      outstandingPremium: 0,
+      baseBorrowIndex: 1,
       baseBorrowRate: 0,
+      lastUpdateTimestamp: block.timestamp,
       config: DataTypes.AssetConfig({
         decimals: params.decimals,
         active: params.active,
@@ -192,10 +189,8 @@ contract LiquidityHub is ILiquidityHub {
     uint256 sharesAmount = convertAssetsToSharesDown(assetId, amount);
     require(sharesAmount > 0, 'INVALID_AMOUNT');
 
-    asset.totalSharesBase += sharesAmount;
-    asset.totalShares += sharesAmount;
-    asset.totalAssetsBase += amount;
-    asset.totalAssets += amount;
+    asset.shares += sharesAmount;
+    asset.availableLiquidity += amount;
 
     // TODO: How to handle spoke shares?
     spoke.totalShares += sharesAmount;
@@ -226,14 +221,11 @@ contract LiquidityHub is ILiquidityHub {
     _accrueAssetInterest(asset, asset.baseBorrowRate);
     _validateWithdraw(asset, spoke, amount);
 
+    // TODO: Should this shares amount be from before or after accruing interest?
     uint256 sharesAmount = convertAssetsToSharesDown(assetId, amount);
-    // TODO: On a withdraw, how do we know which shares (base or premium) to withdraw from? - Same as restore?
-    // It's just from base (total assets) because risk premium portion only relates to debt. Risk premium never available
-    asset.totalSharesBase -= sharesAmount;
-    asset.totalShares -= sharesAmount;
-    asset.totalAssetsBase -= amount;
-    asset.totalAssets -= amount;
-    spoke.totalShares -= sharesAmount;
+
+    asset.shares -= sharesAmount;
+    asset.availableLiquidity -= amount;
 
     _updateBorrowRate(asset, riskPremium, 0, amount);
 
@@ -259,11 +251,11 @@ contract LiquidityHub is ILiquidityHub {
     _accrueAssetInterest(asset, asset.baseBorrowRate);
     _validateDraw(asset, amount, spoke.config.drawCap);
 
-    uint256 sharesAmount = convertAssetsToSharesUp(assetId, amount);
-    asset.drawnSharesBase += sharesAmount;
-    asset.drawnShares += sharesAmount;
-    // TODO: What do we do with spoke shares here?
-    spoke.drawnShares += sharesAmount;
+    asset.availableLiquidity -= amount;
+    asset.debt += amount;
+
+    // TODO: Properly handle spoke accounting
+    spoke.debt += amount;
 
     _updateBorrowRate(asset, riskPremium, 0, amount);
 
@@ -271,24 +263,23 @@ contract LiquidityHub is ILiquidityHub {
 
     emit Draw(assetId, msg.sender, to, amount);
 
-    return sharesAmount;
+    // TODO: We used to return shares of debt amount, is this new return value needed?
+    return amount;
   }
 
   /**
    * @notice Repays debt on behalf of user
    * @dev Only callable by spokes
-   * @dev Interest is paid off first from premium, then from base, passed as parameters
+   * @dev Interest is always paid off first from premium, then from base
    * @param assetId The asset id
-   * @param amountFromPremium The amount to repay from premium interest
-   * @param amountFromBase The amount to repay from base interest
+   * @param amount The amount to repay
    * @param riskPremium The aggregated risk premium of the calling spoke
    * @param repayer The address who is trying to settle the credit line
    * @return The amount of shares restored
    */
   function restore(
     uint256 assetId,
-    uint256 amountFromPremium,
-    uint256 amountFromBase,
+    uint256 amount,
     uint256 riskPremium,
     address repayer
   ) external returns (uint256) {
@@ -299,19 +290,22 @@ contract LiquidityHub is ILiquidityHub {
 
     // Accrue interest before validating action
     _accrueAssetInterest(asset, asset.baseBorrowRate);
-    uint256 amount = amountFromPremium + amountFromBase;
-    uint256 sharesAmount = convertAssetsToSharesDown(assetId, amount);
-    _validateRestore(asset, sharesAmount, spoke.drawnShares);
+    _validateRestore(asset, amount, spoke.debt);
 
-    if (amountFromPremium > 0) asset.totalPremium -= amountFromPremium;
-    if (amountFromBase > 0) {
-      asset.drawnSharesBase -= convertAssetsToSharesDown(assetId, amountFromBase);
+    if (amount <= asset.outstandingPremium) {
+      // If amount is less than or equal premium, only subtract from premium
+      asset.outstandingPremium -= amount;
+    } else {
+      // Subtract full premium and then subtract remainder from base
+      uint256 baseRepay = amount - asset.outstandingPremium;
+      asset.outstandingPremium = 0;
+      asset.debt -= baseRepay;
     }
-    asset.drawnShares -= sharesAmount;
 
-    // TODO: How to handle spoke's side shares?
-    // TODO: Keep track of premium and base interest separately
-    spoke.drawnShares -= sharesAmount;
+    asset.availableLiquidity += amount;
+
+    // TODO: Handle spoke side accounting
+    spoke.debt -= amount;
 
     _updateBorrowRate(asset, riskPremium, amount, 0);
 
@@ -320,7 +314,8 @@ contract LiquidityHub is ILiquidityHub {
 
     emit Restore(assetId, msg.sender, amount);
 
-    return sharesAmount;
+    // TODO: We used to return sharesAmount of repaid debt. Do we still want this new absolute return value?
+    return amount;
   }
 
   //
@@ -329,25 +324,25 @@ contract LiquidityHub is ILiquidityHub {
 
   // TODO: gas optimize the conversions
   function convertAssetsToSharesUp(uint256 assetId, uint256 amount) public view returns (uint256) {
-    return amount.toSharesUp(assets[assetId].totalAssets, assets[assetId].totalShares);
+    return amount.toSharesUp(this.getAssetTotalAssets(assetId), assets[assetId].shares);
   }
 
   function convertAssetsToSharesDown(
     uint256 assetId,
     uint256 amount
   ) public view returns (uint256) {
-    return amount.toSharesDown(assets[assetId].totalAssets, assets[assetId].totalShares);
+    return amount.toSharesDown(this.getAssetTotalAssets(assetId), assets[assetId].shares);
   }
 
   function convertSharesToAssetsUp(uint256 assetId, uint256 amount) public view returns (uint256) {
-    return amount.toAssetsUp(assets[assetId].totalAssets, assets[assetId].totalShares);
+    return amount.toAssetsUp(this.getAssetTotalAssets(assetId), assets[assetId].shares);
   }
 
   function convertSharesToAssetsDown(
     uint256 assetId,
     uint256 amount
   ) public view returns (uint256) {
-    return amount.toAssetsDown(assets[assetId].totalAssets, assets[assetId].totalShares);
+    return amount.toAssetsDown(this.getAssetTotalAssets(assetId), assets[assetId].shares);
   }
 
   function getBaseInterestRate(uint256 assetId) public view returns (uint256) {
@@ -362,19 +357,11 @@ contract LiquidityHub is ILiquidityHub {
   }
 
   function getSpokeDrawnLiquidity(uint256 assetId, address spoke) public view returns (uint256) {
-    return
-      spokes[assetId][spoke].drawnShares.toAssetsUp(
-        assets[assetId].totalAssets,
-        assets[assetId].totalShares
-      );
+    return spokes[assetId][spoke].debt;
   }
 
   function getTotalDrawnLiquidity(uint256 assetId) public view returns (uint256) {
-    return
-      assets[assetId].drawnShares.toAssetsUp(
-        assets[assetId].totalAssets,
-        assets[assetId].totalShares
-      );
+    return assets[assetId].debt;
   }
 
   //
@@ -401,65 +388,48 @@ contract LiquidityHub is ILiquidityHub {
     // TODO: still allow withdrawal even if asset is not active, only prevent for frozen/paused?
     require(asset.config.active, 'ASSET_NOT_ACTIVE');
     require(
-      amount <= convertSharesToAssetsDown(asset.id, (spoke.totalShares - spoke.drawnShares)),
+      amount <= convertSharesToAssetsDown(asset.id, spoke.totalShares) - spoke.debt,
       'SUPPLIED_AMOUNT_EXCEEDED'
     );
-    require(
-      amount <=
-        (asset.totalAssetsBase + asset.totalPremium) -
-          convertSharesToAssetsUp(asset.id, asset.drawnShares),
-      'NOT_AVAILABLE_LIQUIDITY'
-    );
+    require(amount <= asset.availableLiquidity, 'NOT_AVAILABLE_LIQUIDITY');
   }
 
   function _validateDraw(Asset storage asset, uint256 amount, uint256 drawCap) internal view {
     // TODO: Other cases of status (frozen, paused)
     require(asset.config.active, 'ASSET_NOT_ACTIVE');
-    uint256 drawnAssets = asset.drawnSharesBase.toAssetsDown(asset.totalAssets, asset.totalShares) +
-      asset.totalPremium;
-    require(drawCap == type(uint256).max || amount + drawnAssets <= drawCap, 'DRAW_CAP_EXCEEDED');
-    require(amount <= asset.totalAssets - drawnAssets, 'NOT_AVAILABLE_LIQUIDITY');
+    require(drawCap == type(uint256).max || amount + asset.debt <= drawCap, 'DRAW_CAP_EXCEEDED');
+    require(amount <= asset.availableLiquidity, 'NOT_AVAILABLE_LIQUIDITY');
   }
 
   function _validateRestore(
     Asset storage asset,
-    uint256 sharesAmount,
-    uint256 drawnShares
+    uint256 amountRestored,
+    uint256 amountDrawn
   ) internal view {
     // TODO: Other cases of status (frozen, paused)
     require(asset.config.active, 'ASSET_NOT_ACTIVE');
 
     // Ensure spoke is not restoring more than supplied
-    require(sharesAmount <= drawnShares, 'INVALID_RESTORE_AMOUNT');
+    require(amountRestored <= amountDrawn, 'INVALID_RESTORE_AMOUNT');
   }
 
   function _accrueAssetInterest(Asset storage asset, uint256 baseBorrowRate) internal {
     uint256 elapsed = block.timestamp - asset.lastUpdateTimestamp;
     if (elapsed > 0) {
       // Update total cumulated base interest on outstanding debt
-      uint256 totalDrawnBase = convertSharesToAssetsUp(asset.id, asset.drawnSharesBase);
+      uint256 totalDrawnBase = asset.debt;
       if (totalDrawnBase == 0) return; // No interest to accrue if no liquidity drawn
       uint256 cumulatedBase = totalDrawnBase.rayMul(
         MathUtils.calculateLinearInterest(baseBorrowRate, uint40(asset.lastUpdateTimestamp))
       ); // TODO rounding
 
-      // TODO: Here we are updating base debt on the old exchange rate, is this correct? - Actually I don't think drawnSharesBase needs to change here at all
       // Update outstanding base debt
-      asset.drawnSharesBase = cumulatedBase.toSharesDown(
-        asset.totalAssetsBase,
-        asset.totalSharesBase
-      );
-
-      // TODO: Don't we have to update drawnShares here?
-
-      // Base interest accrued since last action is added to total assets
-      uint256 currentAccruedBase = cumulatedBase - totalDrawnBase;
-      asset.totalAssetsBase += currentAccruedBase;
+      asset.debt = cumulatedBase;
 
       // TODO: Double check math to add 1 (and rest of below) and also put into a library -> percentmul and fromRad
-      // Accrue total premium interest, and update total assets
-      asset.totalPremium += (currentAccruedBase * (wAvgBR[asset.id].spokeBR / 1e28)) / 1e4;
-      asset.totalAssets = asset.totalAssetsBase + asset.totalPremium;
+      // Accrue total premium interest on the accrued base
+      uint256 currentAccruedBase = cumulatedBase - totalDrawnBase;
+      asset.outstandingPremium += (currentAccruedBase * (wAvgBR[asset.id].spokeBR / 1e28)) / 1e4;
 
       // TODO: RF in terms of fee shares
       asset.lastUpdateTimestamp = block.timestamp;
@@ -478,16 +448,16 @@ contract LiquidityHub is ILiquidityHub {
         DataTypes.CalculateInterestRatesParams({
           liquidityAdded: liquidityAdded,
           liquidityTaken: liquidityTaken,
-          totalDebt: convertSharesToAssetsUp(asset.id, asset.drawnShares),
+          totalDebt: asset.debt, // TODO: Does total debt here need to include premium?
           reserveFactor: 0, // TODO
           assetId: asset.id,
-          virtualUnderlyingBalance: asset.totalAssets,
+          virtualUnderlyingBalance: this.getAssetTotalAssets(asset.id),
           usingVirtualBalance: true
         })
       );
 
     // Weight is spoke.drawnShares
-    _calculateWAvgRP(asset.id, newRiskPremium, spokes[asset.id][msg.sender].drawnShares);
+    _calculateWAvgRP(asset.id, newRiskPremium, spokes[asset.id][msg.sender].debt);
 
     // Caching borrow rate for next accrual on action
     asset.baseBorrowRate = baseBorrowRate;
@@ -550,7 +520,8 @@ contract LiquidityHub is ILiquidityHub {
     require(spoke != address(0), 'INVALID_SPOKE');
     spokes[assetId][spoke] = Spoke({
       totalShares: 0,
-      drawnShares: 0,
+      debt: 0,
+      premium: 0,
       config: DataTypes.SpokeConfig({supplyCap: params.supplyCap, drawCap: params.drawCap})
     });
     emit SpokeAdded(assetId, spoke);

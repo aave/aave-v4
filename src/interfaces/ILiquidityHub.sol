@@ -17,8 +17,7 @@ interface ILiquidityHub {
   ) external returns (uint256);
   function restore(
     uint256 assetId,
-    uint256 amountFromPremium,
-    uint256 amountFromBase,
+    uint256 amount,
     uint256 riskPremium,
     address repayer
   ) external returns (uint256);
