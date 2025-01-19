@@ -16,7 +16,7 @@ contract LiquidityHub is ILiquidityHub {
   using SharesMath for uint256;
 
   struct Spoke {
-    uint256 totalShares;
+    uint256 shares;
     uint256 debt;
     uint256 premium;
     // TODO: lastUpdateTimestamp?
@@ -193,7 +193,7 @@ contract LiquidityHub is ILiquidityHub {
     asset.availableLiquidity += amount;
 
     // TODO: How to handle spoke shares?
-    spoke.totalShares += sharesAmount;
+    spoke.shares += sharesAmount;
 
     _updateBorrowRate(asset, riskPremium, amount, 0);
 
@@ -374,7 +374,7 @@ contract LiquidityHub is ILiquidityHub {
     require(asset.config.active, 'ASSET_NOT_ACTIVE');
     require(
       spoke.config.supplyCap == type(uint256).max ||
-        convertAssetsToSharesDown(asset.id, spoke.totalShares) + amount <= spoke.config.supplyCap,
+        convertAssetsToSharesDown(asset.id, spoke.shares) + amount <= spoke.config.supplyCap,
       'SUPPLY_CAP_EXCEEDED'
     );
   }
@@ -388,7 +388,7 @@ contract LiquidityHub is ILiquidityHub {
     // TODO: still allow withdrawal even if asset is not active, only prevent for frozen/paused?
     require(asset.config.active, 'ASSET_NOT_ACTIVE');
     require(
-      amount <= convertSharesToAssetsDown(asset.id, spoke.totalShares) - spoke.debt,
+      amount <= convertSharesToAssetsDown(asset.id, spoke.shares) - spoke.debt,
       'SUPPLIED_AMOUNT_EXCEEDED'
     );
     require(amount <= asset.availableLiquidity, 'NOT_AVAILABLE_LIQUIDITY');
@@ -430,6 +430,10 @@ contract LiquidityHub is ILiquidityHub {
       // Accrue total premium interest on the accrued base
       uint256 currentAccruedBase = cumulatedBase - totalDrawnBase;
       asset.outstandingPremium += (currentAccruedBase * (wAvgBR[asset.id].spokeBR / 1e28)) / 1e4;
+
+      // TODO: Fix this math
+      // Update base borrow index
+      asset.baseBorrowIndex = asset.baseBorrowIndex * (1 + asset.baseBorrowRate);
 
       // TODO: RF in terms of fee shares
       asset.lastUpdateTimestamp = block.timestamp;
@@ -519,7 +523,7 @@ contract LiquidityHub is ILiquidityHub {
   function _addSpoke(uint256 assetId, DataTypes.SpokeConfig memory params, address spoke) internal {
     require(spoke != address(0), 'INVALID_SPOKE');
     spokes[assetId][spoke] = Spoke({
-      totalShares: 0,
+      shares: 0,
       debt: 0,
       premium: 0,
       config: DataTypes.SpokeConfig({supplyCap: params.supplyCap, drawCap: params.drawCap})
