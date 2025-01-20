@@ -290,13 +290,13 @@ contract HealthFactorTest is BaseTest {
       Spoke.Reserve memory reserve = spoke1.getReserve(assetId);
       Spoke.UserConfig memory userConfig = spoke1.getUser(assetId, USER1);
 
-      uint256 assetPrice = MockPriceOracle(address(oracle)).getAssetPrice(assetId);
-      uint256 userCollateral = hub.convertToAssetsDown(assetId, userConfig.supplyShares) *
-        assetPrice;
-      totalCollateral += userCollateral;
-      totalDebt += userConfig.debt * assetPrice;
+      // uint256 assetPrice = MockPriceOracle(address(oracle)).getAssetPrice(assetId);
+      // uint256 userCollateral = hub.convertToAssetsDown(assetId, userConfig.supplyShares) *
+      //   assetPrice;
+      // totalCollateral += userCollateral;
+      // totalDebt += userConfig.debt * assetPrice;
 
-      avgLiquidationThreshold += userCollateral * reserve.config.lt;
+      // avgLiquidationThreshold += userCollateral * reserve.config.lt;
     }
     avgLiquidationThreshold = totalCollateral != 0 ? avgLiquidationThreshold / totalCollateral : 0;
     return

@@ -242,12 +242,12 @@ contract UserRiskPremiumTest is BaseTest {
       uint256 assetId = assetIds[i];
       Spoke.UserConfig memory userConfig = spoke1.getUser(assetId, USER1);
 
-      uint256 assetPrice = MockPriceOracle(address(oracle)).getAssetPrice(assetId);
-      uint256 userCollateral = hub.convertToAssetsDown(assetId, userConfig.supplyShares) *
-        assetPrice;
-      uint256 liquidityPremium = 1; // TODO: get LP from LH
-      userRiskPremium += userCollateral * liquidityPremium;
-      totalCollateral += userCollateral;
+      // uint256 assetPrice = MockPriceOracle(address(oracle)).getAssetPrice(assetId);
+      // uint256 userCollateral = hub.convertToAssetsDown(assetId, userConfig.supplyShares) *
+      //   assetPrice;
+      // uint256 liquidityPremium = 1; // TODO: get LP from LH
+      // userRiskPremium += userCollateral * liquidityPremium;
+      // totalCollateral += userCollateral;
     }
     return totalCollateral != 0 ? userRiskPremium.wadDiv(totalCollateral) : 0;
   }

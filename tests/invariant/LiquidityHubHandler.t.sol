@@ -75,8 +75,8 @@ contract LiquidityHubHandler is Test {
     assetId = bound(assetId, 0, hub.assetCount() - 1);
     amount = bound(amount, 1, type(uint128).max);
 
-    address asset = hub.assetsList(assetId);
-    deal(asset, user, amount);
+    IERC20 asset = hub.assetsList(assetId);
+    deal(address(asset), user, amount);
     Utils.supply(vm, hub, assetId, user, amount, user, onBehalfOf);
 
     _updateState(assetId);
@@ -101,13 +101,13 @@ contract LiquidityHubHandler is Test {
     assetId = bound(assetId, 0, hub.assetCount() - 1);
     amount = bound(amount, 1, type(uint128).max);
 
-    address asset = hub.assetsList(assetId);
+    IERC20 asset = hub.assetsList(assetId);
 
-    deal(asset, user, amount);
+    deal(address(asset), user, amount);
     vm.prank(user);
-    IERC20(asset).transfer(address(hub), amount);
+    asset.transfer(address(hub), amount);
 
-    s.assetDonated[asset] += amount;
+    s.assetDonated[address(asset)] += amount;
   }
 
   function _updateState(uint256 assetId) internal {
