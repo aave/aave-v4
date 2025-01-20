@@ -10,27 +10,30 @@ import {WadRayMath} from './WadRayMath.sol';
 import {SharesMath} from './SharesMath.sol';
 import {MathUtils} from './MathUtils.sol';
 
+// @dev Amounts are `asset` denominated unless specified otherwise (`share`)
 contract LiquidityHub is ILiquidityHub {
   using SafeERC20 for IERC20;
   using WadRayMath for uint256;
   using SharesMath for uint256;
+  using PercentageMath for uint256;
 
   struct Spoke {
-    uint256 shares;
-    uint256 debt;
-    uint256 premium;
+    uint256 suppliedShares; // share
+    uint256 debt; // asset
+    uint256 outstandingPremium; // asset
     // TODO: lastUpdateTimestamp?
     DataTypes.SpokeConfig config;
   }
 
   struct Asset {
     uint256 id;
-    uint256 shares;
-    uint256 availableLiquidity;
-    uint256 debt;
-    uint256 outstandingPremium;
+    uint256 suppliedShares; // share
+    uint256 availableLiquidity; // asset
+    uint256 debt; // asset
+    uint256 outstandingPremium; // asset
     uint256 baseBorrowIndex;
     uint256 baseBorrowRate;
+    uint256 averageRiskPremiumRad;
     uint256 lastUpdateTimestamp;
     DataTypes.AssetConfig config;
   }
