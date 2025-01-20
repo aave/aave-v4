@@ -9,6 +9,7 @@ import {DataTypes} from '../libraries/types/DataTypes.sol';
 import {WadRayMath} from './WadRayMath.sol';
 import {SharesMath} from './SharesMath.sol';
 import {MathUtils} from './MathUtils.sol';
+import {PercentageMath} from './PercentageMath.sol';
 
 // @dev Amounts are `asset` denominated unless specified otherwise (`share`)
 contract LiquidityHub is ILiquidityHub {
@@ -351,10 +352,8 @@ contract LiquidityHub is ILiquidityHub {
   }
 
   function getInterestRate(uint256 assetId) public view returns (uint256) {
-    return
-      assets[assetId].baseBorrowRate +
-      (assets[assetId].baseBorrowRate * (wAvgBR[assetId].spokeBR.fromRad())) /
-      1e4;
+    Asset memory asset = _assets[assetId];
+    return _getInterestRate(asset);
   }
 
   function getSpokeDrawnLiquidity(uint256 assetId, address spoke) public view returns (uint256) {
@@ -530,5 +529,12 @@ contract LiquidityHub is ILiquidityHub {
       config: DataTypes.SpokeConfig({supplyCap: params.supplyCap, drawCap: params.drawCap})
     });
     emit SpokeAdded(assetId, spoke);
+  }
+  function _getInterestRate(Asset memory asset) internal pure returns (uint256) {
+    return
+      asset
+        .baseBorrowRate
+        .percentMul(PercentageMath.PERCENTAGE_FACTOR + asset.averageRiskPremiumRad)
+        .fromRad(); // todo check for overflow, do fromRad before
   }
 }
