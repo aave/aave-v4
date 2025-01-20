@@ -345,7 +345,7 @@ contract LiquidityHub is ILiquidityHub {
     require(asset.config.active, 'ASSET_NOT_ACTIVE');
     require(
       spoke.config.supplyCap == type(uint256).max ||
-        _convertToSharesDown(asset, spoke.suppliedShares) + amount <= spoke.config.supplyCap, // todo: exchange rate is incorrect, fix
+        _convertToAssetsDown(asset, spoke.suppliedShares) + amount <= spoke.config.supplyCap,
       'SUPPLY_CAP_EXCEEDED'
     );
   }

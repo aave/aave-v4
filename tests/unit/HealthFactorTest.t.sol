@@ -3,7 +3,7 @@ pragma solidity ^0.8.0;
 
 import '../BaseTest.t.sol';
 
-contract HealthFactorTest is BaseTest {
+contract HealthFactorTest_ToMigrate is BaseTest {
   using SharesMath for uint256;
   using WadRayMath for uint256;
   using PercentageMath for uint256;
