@@ -189,7 +189,7 @@ contract LiquidityHub is ILiquidityHub {
 
     // todo: Mitigate inflation attack (burn some amount if first supply)
     uint256 sharesAmount = _convertToSharesDown(asset, amount);
-    require(sharesAmount > 0, 'INVALID_AMOUNT');
+    require(sharesAmount > 0, 'INVALID_AMOUNT'); // todo fail earlier for this case
 
     asset.suppliedShares += sharesAmount;
     asset.availableLiquidity += amount;
@@ -411,29 +411,27 @@ contract LiquidityHub is ILiquidityHub {
 
   function _accrueAssetInterest(Asset storage asset, uint256 baseBorrowRate) internal {
     uint256 elapsed = block.timestamp - asset.lastUpdateTimestamp;
-    if (elapsed > 0) {
-      // Update total cumulated base interest on outstanding debt
-      uint256 totalDrawnBase = asset.debt;
-      if (totalDrawnBase == 0) return; // No interest to accrue if no liquidity drawn
-      uint256 cumulatedBase = totalDrawnBase.rayMul(
-        MathUtils.calculateLinearInterest(baseBorrowRate, uint40(asset.lastUpdateTimestamp))
-      ); // TODO rounding
+    if (elapsed == 0) return;
 
-      // Update outstanding base debt
-      asset.debt = cumulatedBase;
+    // Update total cumulated base interest on outstanding debt
+    uint256 totalDrawnBase = asset.debt;
+    if (totalDrawnBase == 0) return; // No interest to accrue if no liquidity drawn
+    uint256 cumulatedBase = totalDrawnBase.rayMul(
+      MathUtils.calculateLinearInterest(baseBorrowRate, uint40(asset.lastUpdateTimestamp))
+    ); // TODO rounding
 
-      // TODO: Double check math to add 1 (and rest of below) and also put into a library -> percentmul and fromRad
-      // Accrue total premium interest on the accrued base
-      uint256 currentAccruedBase = cumulatedBase - totalDrawnBase;
-      asset.outstandingPremium += (currentAccruedBase * (wAvgBR[asset.id].spokeBR / 1e28)) / 1e4;
+    // Update outstanding base debt
+    asset.debt = cumulatedBase;
 
-      // TODO: Fix this math
-      // Update base borrow index
-      asset.baseBorrowIndex = asset.baseBorrowIndex * (1 + asset.baseBorrowRate);
+    // Accrue total premium interest on the accrued base
+    uint256 currentAccruedBase = cumulatedBase - totalDrawnBase;
+    asset.outstandingPremium += currentAccruedBase.percentMul(wAvgBR[asset.id].spokeBR).fromRad();
 
-      // TODO: RF in terms of fee shares
-      asset.lastUpdateTimestamp = block.timestamp;
-    }
+    // Update base borrow index
+    asset.baseBorrowIndex += asset.baseBorrowIndex.rayMul(asset.baseBorrowRate);
+
+    // TODO: RF in terms of fee shares
+    asset.lastUpdateTimestamp = block.timestamp;
   }
 
   function _updateBorrowRate(
@@ -448,7 +446,7 @@ contract LiquidityHub is ILiquidityHub {
         DataTypes.CalculateInterestRatesParams({
           liquidityAdded: liquidityAdded,
           liquidityTaken: liquidityTaken,
-          totalDebt: asset.debt, // TODO: Does total debt here need to include premium?
+          totalDebt: asset.debt, // TODO: Does total debt here need to include premium? no
           reserveFactor: 0, // TODO
           assetId: asset.id,
           virtualUnderlyingBalance: _getTotalAssets(asset),
@@ -456,7 +454,6 @@ contract LiquidityHub is ILiquidityHub {
         })
       );
 
-    // Weight is spoke.drawnShares
     _calculateWAvgRP(asset.id, newRiskPremium, _spokes[asset.id][msg.sender].debt);
 
     // Caching borrow rate for next accrual on action
