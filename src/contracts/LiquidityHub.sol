@@ -76,11 +76,9 @@ contract LiquidityHub is ILiquidityHub {
     return spokes[assetId][spoke].config;
   }
 
-  function getAssetTotalAssets(uint256 assetId) external view returns (uint256) {
-    return
-      assets[assetId].availableLiquidity +
-      assets[assetId].debt +
-      assets[assetId].outstandingPremium;
+  function getTotalAssets(uint256 assetId) external view returns (uint256) {
+    Asset storage asset = _assets[assetId];
+    return _getTotalAssets(asset);
   }
 
   /**
@@ -536,5 +534,9 @@ contract LiquidityHub is ILiquidityHub {
         .baseBorrowRate
         .percentMul(PercentageMath.PERCENTAGE_FACTOR + asset.averageRiskPremiumRad)
         .fromRad(); // todo check for overflow, do fromRad before
+  }
+
+  function _getTotalAssets(Asset memory asset) internal pure returns (uint256) {
+    return asset.availableLiquidity + asset.outstandingPremium + asset.debt;
   }
 }
