@@ -39,18 +39,17 @@ contract LiquidityHub is ILiquidityHub {
     DataTypes.AssetConfig config;
   }
 
+  mapping(uint256 assetId => Asset assetData) internal _assets;
+  IERC20[] public assetsList; // TODO: Check if Enumerable or Set makes more sense
+  uint256 public assetCount;
+
+  mapping(uint256 assetId => mapping(address spokeAddress => Spoke spokeConfig)) internal _spokes;
+
+  // todo: probably won't need
   struct WeightedAvg {
     uint256 spokeBR;
     uint256 amtDrawn;
   }
-
-  // asset id => asset data
-  mapping(uint256 => Asset) public assets;
-  address[] public assetsList; // TODO: Check if Enumerable or Set makes more sense
-  uint256 public assetCount;
-
-  // asset id => spoke address => spoke
-  mapping(uint256 => mapping(address => Spoke)) public spokes;
 
   // asset id => weighted average of spokes' borrow rates for asset
   mapping(uint256 => WeightedAvg) public wAvgBR;
@@ -62,18 +61,18 @@ contract LiquidityHub is ILiquidityHub {
   //
 
   function getAsset(uint256 assetId) external view returns (Asset memory) {
-    return assets[assetId];
+    return _assets[assetId];
   }
 
   function getSpoke(uint256 assetId, address spoke) external view returns (Spoke memory) {
-    return spokes[assetId][spoke];
+    return _spokes[assetId][spoke];
   }
 
   function getSpokeConfig(
     uint256 assetId,
     address spoke
   ) external view returns (DataTypes.SpokeConfig memory) {
-    return spokes[assetId][spoke].config;
+    return _spokes[assetId][spoke].config;
   }
 
   function getTotalAssets(uint256 assetId) external view returns (uint256) {
@@ -81,20 +80,20 @@ contract LiquidityHub is ILiquidityHub {
     return _getTotalAssets(asset);
   }
 
+  // todo: needed?
   /**
-   * @param assetId The asset id
-   * @return The total balance of a given asset, either in shares or in assets
+   * @return The total balance of a given asset in assets
    */
   function updateAndGetAssetBalance(uint256 assetId) external returns (uint256) {
-    Asset storage asset = assets[assetId];
+    Asset storage asset = _assets[assetId];
     _accrueAssetInterest(asset, asset.baseBorrowRate);
-    return this.getAssetTotalAssets(assetId);
+    return _getTotalAssets(asset);
   }
 
   function updateAndGetShareBalance(uint256 assetId) external returns (uint256) {
-    Asset storage asset = assets[assetId];
+    Asset storage asset = _assets[assetId];
     _accrueAssetInterest(asset, asset.baseBorrowRate);
-    return asset.shares;
+    return asset.suppliedShares;
   }
 
   // /////
@@ -528,6 +527,8 @@ contract LiquidityHub is ILiquidityHub {
     });
     emit SpokeAdded(assetId, spoke);
   }
+
+  // todo: pass cached memory reference like v3 in all of the below
   function _getInterestRate(Asset memory asset) internal pure returns (uint256) {
     return
       asset
@@ -538,5 +539,27 @@ contract LiquidityHub is ILiquidityHub {
 
   function _getTotalAssets(Asset memory asset) internal pure returns (uint256) {
     return asset.availableLiquidity + asset.outstandingPremium + asset.debt;
+  }
+
+  function _convertToSharesUp(Asset memory asset, uint256 assets) internal pure returns (uint256) {
+    return assets.toSharesUp(_getTotalAssets(asset), asset.suppliedShares);
+  }
+
+  function _convertToSharesDown(
+    Asset memory asset,
+    uint256 assets
+  ) internal pure returns (uint256) {
+    return assets.toSharesDown(_getTotalAssets(asset), asset.suppliedShares);
+  }
+
+  function _convertToAssetsUp(Asset memory asset, uint256 shares) internal pure returns (uint256) {
+    return shares.toAssetsUp(_getTotalAssets(asset), asset.suppliedShares);
+  }
+
+  function _convertToAssetsDown(
+    Asset memory asset,
+    uint256 shares
+  ) internal pure returns (uint256) {
+    return shares.toAssetsDown(_getTotalAssets(asset), asset.suppliedShares);
   }
 }
