@@ -1,17 +1,17 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.0;
 
-import {SafeERC20} from '../dependencies/openzeppelin/SafeERC20.sol';
-import {IERC20} from '../dependencies/openzeppelin/IERC20.sol';
-import {ILiquidityHub} from '../interfaces/ILiquidityHub.sol';
-import {IReserveInterestRateStrategy} from '../interfaces/IReserveInterestRateStrategy.sol';
-import {DataTypes} from '../libraries/types/DataTypes.sol';
-import {WadRayMath} from './WadRayMath.sol';
-import {SharesMath} from './SharesMath.sol';
-import {MathUtils} from './MathUtils.sol';
-import {PercentageMath} from './PercentageMath.sol';
+import {SafeERC20} from 'src/dependencies/openzeppelin/SafeERC20.sol';
+import {IERC20} from 'src/dependencies/openzeppelin/IERC20.sol';
+import {ILiquidityHub} from 'src/interfaces/ILiquidityHub.sol';
+import {IReserveInterestRateStrategy} from 'src/interfaces/IReserveInterestRateStrategy.sol';
+import {DataTypes} from 'src/libraries/types/DataTypes.sol';
+import {WadRayMath} from 'src/contracts/WadRayMath.sol';
+import {SharesMath} from 'src/contracts/SharesMath.sol';
+import {MathUtils} from 'src/contracts/MathUtils.sol';
+import {PercentageMath} from 'src/contracts/PercentageMath.sol';
 
-// @dev Amounts are `asset` denominated unless specified otherwise (with `share` suffix)
+// @dev Amounts are `asset` denominated by default unless specified otherwise with `share` suffix
 contract LiquidityHub is ILiquidityHub {
   using SafeERC20 for IERC20;
   using WadRayMath for uint256;
@@ -497,8 +497,8 @@ contract LiquidityHub is ILiquidityHub {
 
     uint256 newSpokeDebt = baseDebtChange > 0
       ? existingSpokeDebt + uint256(baseDebtChange) // debt added
-      : // force underflow: only possible when spoke takes repays amount more than net drawn
-      existingSpokeDebt - uint256(-baseDebtChange); // debt restored
+      // force underflow: only possible when spoke takes repays amount more than net drawn
+      : existingSpokeDebt - uint256(-baseDebtChange); // debt restored
 
     (uint256 newAssetRiskPremium, uint256 newAssetDebt) = MathUtils.addToWeightedAverage(
       assetRiskPremiumWithoutCurrent,
