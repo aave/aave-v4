@@ -17,7 +17,7 @@ contract Spoke is ISpoke {
   using PercentageMath for uint256;
   using SafeERC20 for IERC20;
 
-  address public liquidityHub;
+  ILiquidityHub public liquidityHub;
 
   struct Reserve {
     uint256 id;
@@ -66,7 +66,7 @@ contract Spoke is ISpoke {
   address public oracle;
 
   constructor(address liquidityHubAddress, address oracleAddress) {
-    liquidityHub = liquidityHubAddress;
+    liquidityHub = ILiquidityHub(liquidityHubAddress);
     oracle = oracleAddress;
   }
 
@@ -267,7 +267,7 @@ contract Spoke is ISpoke {
     uint256 amount
   ) internal view {
     require(
-      ILiquidityHub(liquidityHub).convertSharesToAssetsDown(assetId, user.supplyShares) >= amount,
+      liquidityHub.convertToAssetsDown(assetId, user.supplyShares) >= amount,
       'INSUFFICIENT_SUPPLY'
     );
   }
@@ -335,7 +335,7 @@ contract Spoke is ISpoke {
       if (_usingAsCollateral(vars.assetId, user)) {
         vars.userCollateralInBaseCurrency =
           vars.assetPrice *
-          ILiquidityHub(liquidityHub).convertSharesToAssetsDown(
+          liquidityHub.convertToAssetsDown(
             vars.assetId,
             _calculateAccruedInterest(vars.assetId, u.supplyShares)
           );
