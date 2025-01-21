@@ -192,4 +192,13 @@ library WadRayMath {
       }
     }
   }
+
+  function bpsToRad(uint256 a) internal pure returns (uint256) {
+    if (a > 100_00) a = 100_00;
+    return (a * RAD) / 100_00;
+  }
+
+  function radToBps(uint256 a) internal pure returns (uint256) {
+    return (a * 100_00) / RAD;
+  }
 }

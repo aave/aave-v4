@@ -191,7 +191,7 @@ contract LiquidityHub is ILiquidityHub {
     uint256 assetId,
     address to,
     uint256 amount,
-    uint256 riskPremium
+    uint256 riskPremiumRad
   ) external returns (uint256) {
     // TODO: authorization - only spokes
 
@@ -205,7 +205,7 @@ contract LiquidityHub is ILiquidityHub {
     _updateRiskPremiumAndBaseDebt({
       asset: asset,
       spoke: spoke,
-      newSpokeRiskPremium: riskPremium,
+      newSpokeRiskPremium: riskPremiumRad,
       baseDebtChange: 0
     });
 
@@ -226,7 +226,7 @@ contract LiquidityHub is ILiquidityHub {
     uint256 assetId,
     address to,
     uint256 amount,
-    uint256 riskPremium
+    uint256 riskPremiumRad
   ) external returns (uint256) {
     // TODO: authorization - only spokes
 
@@ -237,7 +237,7 @@ contract LiquidityHub is ILiquidityHub {
     _validateDraw(asset, amount, spoke.config.drawCap);
 
     _updateBorrowRate({asset: asset, liquidityAdded: 0, liquidityTaken: amount});
-    _updateRiskPremiumAndBaseDebt(asset, spoke, riskPremium, int256(amount)); // debt added
+    _updateRiskPremiumAndBaseDebt(asset, spoke, riskPremiumRad, int256(amount)); // debt added
 
     asset.availableLiquidity -= amount;
 
@@ -254,14 +254,14 @@ contract LiquidityHub is ILiquidityHub {
    * @dev Interest is always paid off first from premium, then from base
    * @param assetId The asset id
    * @param amount The amount to repay
-   * @param riskPremium The aggregated risk premium of the calling spoke
+   * @param riskPremiumRad The aggregated risk premium of the calling spoke
    * @param repayer The address who is trying to settle the credit line
    * @return The amount of shares restored
    */
   function restore(
     uint256 assetId,
     uint256 amount,
-    uint256 riskPremium,
+    uint256 riskPremiumRad,
     address repayer
   ) external returns (uint256) {
     // TODO: authorization - only spokes
@@ -274,7 +274,7 @@ contract LiquidityHub is ILiquidityHub {
     _updateBorrowRate({asset: asset, liquidityAdded: amount, liquidityTaken: 0});
 
     uint256 baseDebtRestored = _deductFromOutstandingPremium(asset, spoke, amount);
-    _updateRiskPremiumAndBaseDebt(asset, spoke, riskPremium, -int256(baseDebtRestored));
+    _updateRiskPremiumAndBaseDebt(asset, spoke, riskPremiumRad, -int256(baseDebtRestored));
 
     asset.availableLiquidity += amount;
 
@@ -424,9 +424,9 @@ contract LiquidityHub is ILiquidityHub {
     uint256 cumulatedBaseDebt = asset.baseDebt.rayMul(cumulatedBaseInterest);
 
     // accrue premium interest on the accrued base interest
-    asset.outstandingPremium += (cumulatedBaseDebt - existingBaseDebt)
-      .percentMul(asset.riskPremiumRad)
-      .fromRad();
+    asset.outstandingPremium += (cumulatedBaseDebt - existingBaseDebt).percentMul(
+      asset.riskPremiumRad.radToBps()
+    );
     asset.baseDebt = cumulatedBaseDebt;
     asset.baseBorrowIndex = nextBaseBorrowIndex;
     asset.lastUpdateTimestamp = block.timestamp;
@@ -445,9 +445,10 @@ contract LiquidityHub is ILiquidityHub {
       spoke.baseBorrowIndex
     );
 
-    spoke.outstandingPremium += (cumulatedBaseDebt - existingBaseDebt)
-      .percentMul(spoke.riskPremiumRad)
-      .fromRad();
+    // todo carry out multiplication in rad (radMul) for precision
+    spoke.outstandingPremium += (cumulatedBaseDebt - existingBaseDebt).percentMul(
+      spoke.riskPremiumRad.radToBps()
+    );
     spoke.baseDebt = cumulatedBaseDebt;
     spoke.baseBorrowIndex = nextBaseBorrowIndex;
     spoke.lastUpdateTimestamp = block.timestamp;
@@ -489,7 +490,7 @@ contract LiquidityHub is ILiquidityHub {
       .subtractFromWeightedAverage(
         asset.riskPremiumRad,
         existingAssetDebt,
-        spoke.riskPremiumRad.fromRad(), // use current spoke risk premium
+        spoke.riskPremiumRad, // use current spoke risk premium
         existingSpokeDebt
       );
 
@@ -501,7 +502,7 @@ contract LiquidityHub is ILiquidityHub {
     (uint256 newAssetRiskPremium, uint256 newAssetDebt) = MathUtils.addToWeightedAverage(
       assetRiskPremiumWithoutCurrent,
       assetDebtWithoutCurrent,
-      newSpokeRiskPremium.fromRad(), // use new spoke risk premium
+      newSpokeRiskPremium, // use new spoke risk premium
       newSpokeDebt
     );
 
@@ -526,13 +527,12 @@ contract LiquidityHub is ILiquidityHub {
     emit SpokeAdded(assetId, spoke);
   }
 
-  // todo: pass cached object like in v3
+  // todo: pass cached object like in v3, carry out mul in rad for precision
   function _getInterestRate(Asset storage asset) internal view returns (uint256) {
     return
-      asset
-        .baseBorrowRate
-        .percentMul(PercentageMath.PERCENTAGE_FACTOR + asset.riskPremiumRad)
-        .fromRad(); // todo check for overflow, do fromRad before
+      asset.baseBorrowRate.percentMul(
+        PercentageMath.PERCENTAGE_FACTOR + asset.riskPremiumRad.radToBps()
+      );
   }
 
   // todo: move to asset operations lib issue#93

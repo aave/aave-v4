@@ -32,30 +32,30 @@ contract LiquidityHubRiskPremiumTest_Base is BaseTest {
   uint256 daiAmount = 2000e18;
   uint256 wethAmount = 1e18;
 
-  uint256 spoke1RiskPremiumRad = uint256(0.5e4).toRad();
-  uint256 spoke2RiskPremiumRad = uint256(0.2e4).toRad();
-  uint256 spoke3RiskPremiumRad = uint256(0.3e4).toRad();
+  uint256 spoke1RiskPremiumRad = uint256(50_00).bpsToRad();
+  uint256 spoke2RiskPremiumRad = uint256(20_00).bpsToRad();
+  uint256 spoke3RiskPremiumRad = uint256(30_00).bpsToRad();
 
   function setUp() public override {
     super.setUp();
     initEnvironment();
   }
 
-  function _bound(
+  function bound(
     TestDrawAmountAndRiskPremiumRadInput memory input,
     uint256 minDrawAmount,
     uint256 maxDrawAmount
-  ) internal returns (TestDrawAmountAndRiskPremiumRadInput memory) {
+  ) internal pure returns (TestDrawAmountAndRiskPremiumRadInput memory) {
     input.drawAmount.spoke1 = bound(input.drawAmount.spoke1, minDrawAmount, maxDrawAmount);
     input.drawAmount.spoke2 = bound(input.drawAmount.spoke2, minDrawAmount, maxDrawAmount);
     input.drawAmount.spoke3 = bound(input.drawAmount.spoke3, minDrawAmount, maxDrawAmount);
 
-    uint256 maxRiskPremiumRad = uint256(PercentageMath.PERCENTAGE_FACTOR).toRad();
+    uint256 maxRiskPremiumRad = PercentageMath.PERCENTAGE_FACTOR.bpsToRad();
     input.riskPremiumRad.spoke1 = bound(input.riskPremiumRad.spoke1, 0, maxRiskPremiumRad);
-    input.riskPremiumRad.spoke1 = bound(input.riskPremiumRad.spoke1, 0, maxRiskPremiumRad);
-    input.riskPremiumRad.spoke1 = bound(input.riskPremiumRad.spoke1, 0, maxRiskPremiumRad);
+    input.riskPremiumRad.spoke2 = bound(input.riskPremiumRad.spoke2, 0, maxRiskPremiumRad);
+    input.riskPremiumRad.spoke3 = bound(input.riskPremiumRad.spoke3, 0, maxRiskPremiumRad);
 
-    vm.assume(input.drawAmount.spoke1 + input.drawAmount.spoke2 + input.drawAmount.spoke2 != 0);
+    vm.assume(input.drawAmount.spoke1 + input.drawAmount.spoke2 + input.drawAmount.spoke3 != 0);
 
     return input;
   }
@@ -168,8 +168,8 @@ contract LiquidityHubRiskPremium_ConstantTimeAndRiskPremium is LiquidityHubRiskP
     assertEq(hub.getAsset(daiAssetId).riskPremiumRad, expectedRiskPremium);
   }
 
-  function test_fuzzDrawAndAmount(TestDrawAmountAndRiskPremiumRadInput memory p) public {
-    p = _bound({input: p, minDrawAmount: 0, maxDrawAmount: daiAmount});
+  function test_fuzzDrawAndPremium(TestDrawAmountAndRiskPremiumRadInput memory p) public {
+    p = bound({input: p, minDrawAmount: 1, maxDrawAmount: daiAmount});
     uint256 totalToDraw = p.drawAmount.spoke1 + p.drawAmount.spoke2 + p.drawAmount.spoke3;
 
     vm.prank(address(spoke1));
@@ -194,20 +194,66 @@ contract LiquidityHubRiskPremium_ConstantTimeAndRiskPremium is LiquidityHubRiskP
       p.riskPremiumRad.spoke2) / totalBaseDebt;
 
     assertEq(hub.getAsset(daiAssetId).baseDebt, totalBaseDebt);
-    assertEq(hub.getAsset(daiAssetId).riskPremiumRad, expectedRiskPremium);
+    assertApproxEqAbs(hub.getAsset(daiAssetId).riskPremiumRad, expectedRiskPremium, 1);
 
     // spoke 3 draws remaining liquidity
     vm.prank(address(spoke3));
-    hub.draw(daiAssetId, alice, p.drawAmount.spoke1, p.riskPremiumRad.spoke3);
+    hub.draw(daiAssetId, alice, p.drawAmount.spoke3, p.riskPremiumRad.spoke3);
 
-    totalBaseDebt += p.drawAmount.spoke1;
+    totalBaseDebt += p.drawAmount.spoke3;
     expectedRiskPremium =
       (p.drawAmount.spoke1 *
         p.riskPremiumRad.spoke1 +
         p.drawAmount.spoke2 *
         p.riskPremiumRad.spoke2 +
-        p.drawAmount.spoke1 *
+        p.drawAmount.spoke3 *
         p.riskPremiumRad.spoke3) /
+      totalBaseDebt;
+    assertEq(hub.getAsset(daiAssetId).baseDebt, totalBaseDebt);
+    assertApproxEqAbs(hub.getAsset(daiAssetId).riskPremiumRad, expectedRiskPremium, 1);
+  }
+}
+
+contract LiquidityHubRiskPremium_VariableTimeAndConstantRiskPremium is
+  LiquidityHubRiskPremiumTest_Base
+{
+  function test_multipleDrawSameAmount() public {
+    vm.prank(address(spoke1));
+    hub.supply(daiAssetId, daiAmount, spoke1RiskPremiumRad, alice);
+
+    uint256 usdxDrawnAmount = daiAmount / 3;
+    // spoke 2 draws
+    vm.prank(address(spoke2));
+    hub.draw(daiAssetId, alice, usdxDrawnAmount, spoke2RiskPremiumRad);
+
+    assertEq(hub.getAsset(daiAssetId).baseDebt, usdxDrawnAmount);
+    assertEq(hub.getAsset(daiAssetId).riskPremiumRad, spoke2RiskPremiumRad);
+
+    // spoke 3 draws
+    vm.prank(address(spoke3));
+    hub.draw(daiAssetId, alice, usdxDrawnAmount, spoke3RiskPremiumRad);
+
+    uint256 totalBaseDebt = usdxDrawnAmount * 2;
+    uint256 expectedRiskPremium = (usdxDrawnAmount *
+      spoke2RiskPremiumRad +
+      usdxDrawnAmount *
+      spoke3RiskPremiumRad) / totalBaseDebt;
+
+    assertEq(hub.getAsset(daiAssetId).baseDebt, totalBaseDebt);
+    assertEq(hub.getAsset(daiAssetId).riskPremiumRad, expectedRiskPremium);
+
+    // spoke 1 draws remaining liquidity
+    vm.prank(address(spoke1));
+    hub.draw(daiAssetId, alice, usdxDrawnAmount, spoke1RiskPremiumRad);
+
+    totalBaseDebt = usdxDrawnAmount * 3;
+    expectedRiskPremium =
+      (usdxDrawnAmount *
+        spoke1RiskPremiumRad +
+        usdxDrawnAmount *
+        spoke2RiskPremiumRad +
+        usdxDrawnAmount *
+        spoke3RiskPremiumRad) /
       totalBaseDebt;
     assertEq(hub.getAsset(daiAssetId).baseDebt, totalBaseDebt);
     assertEq(hub.getAsset(daiAssetId).riskPremiumRad, expectedRiskPremium);
