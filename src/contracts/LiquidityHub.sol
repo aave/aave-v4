@@ -6,6 +6,7 @@ import {IERC20} from 'src/dependencies/openzeppelin/IERC20.sol';
 import {ILiquidityHub} from 'src/interfaces/ILiquidityHub.sol';
 import {IReserveInterestRateStrategy} from 'src/interfaces/IReserveInterestRateStrategy.sol';
 import {DataTypes} from 'src/libraries/types/DataTypes.sol';
+import {AssetLogic} from 'src/contracts/AssetLogic.sol';
 import {WadRayMath} from 'src/contracts/WadRayMath.sol';
 import {SharesMath} from 'src/contracts/SharesMath.sol';
 import {MathUtils} from 'src/contracts/MathUtils.sol';
@@ -40,6 +41,7 @@ contract LiquidityHub is ILiquidityHub {
   using WadRayMath for uint256;
   using SharesMath for uint256;
   using PercentageMath for uint256;
+  using AssetLogic for Asset;
 
   mapping(uint256 assetId => Asset assetData) internal _assets;
   mapping(uint256 assetId => mapping(address spokeAddress => SpokeData spokeData)) internal _spokes;
@@ -68,7 +70,7 @@ contract LiquidityHub is ILiquidityHub {
 
   function getTotalAssets(uint256 assetId) external view returns (uint256) {
     Asset storage asset = _assets[assetId];
-    return _getTotalAssets(asset);
+    return asset.totalAssets();
   }
 
   // /////
@@ -172,7 +174,7 @@ contract LiquidityHub is ILiquidityHub {
     asset.availableLiquidity += amount;
 
     // todo: Mitigate inflation attack (burn some amount if first supply)
-    uint256 sharesAmount = _convertToSharesDown(asset, amount);
+    uint256 sharesAmount = asset.convertToSharesDown(amount);
     require(sharesAmount > 0, 'INVALID_AMOUNT');
 
     asset.suppliedShares += sharesAmount;
@@ -202,16 +204,11 @@ contract LiquidityHub is ILiquidityHub {
     _validateWithdraw(asset, spoke, amount);
 
     _updateBorrowRate({asset: asset, liquidityAdded: 0, liquidityTaken: amount});
-    _updateRiskPremiumAndBaseDebt({
-      asset: asset,
-      spoke: spoke,
-      newSpokeRiskPremium: riskPremiumRad,
-      baseDebtChange: 0
-    });
+    _updateRiskPremiumAndBaseDebt(asset, spoke, riskPremiumRad, 0); // no base debt change
 
     asset.availableLiquidity -= amount;
 
-    uint256 sharesAmount = _convertToSharesDown(asset, amount);
+    uint256 sharesAmount = asset.convertToSharesDown(amount);
 
     asset.suppliedShares -= sharesAmount;
 
@@ -237,7 +234,7 @@ contract LiquidityHub is ILiquidityHub {
     _validateDraw(asset, amount, spoke.config.drawCap);
 
     _updateBorrowRate({asset: asset, liquidityAdded: 0, liquidityTaken: amount});
-    _updateRiskPremiumAndBaseDebt(asset, spoke, riskPremiumRad, int256(amount)); // debt added
+    _updateRiskPremiumAndBaseDebt(asset, spoke, riskPremiumRad, int256(amount)); // base debt added
 
     asset.availableLiquidity -= amount;
 
@@ -295,25 +292,20 @@ contract LiquidityHub is ILiquidityHub {
     return nextBaseBorrowIndex;
   }
 
-  // TODO: gas optimize the conversions
   function convertToSharesUp(uint256 assetId, uint256 assets) external view returns (uint256) {
-    Asset storage asset = _assets[assetId];
-    return _convertToSharesUp(asset, assets);
+    return _assets[assetId].convertToSharesUp(assets);
   }
 
   function convertToSharesDown(uint256 assetId, uint256 assets) external view returns (uint256) {
-    Asset storage asset = _assets[assetId];
-    return _convertToSharesDown(asset, assets);
+    return _assets[assetId].convertToSharesDown(assets);
   }
 
   function convertToAssetsUp(uint256 assetId, uint256 shares) external view returns (uint256) {
-    Asset storage asset = _assets[assetId];
-    return _convertToAssetsUp(asset, shares);
+    return _assets[assetId].convertToAssetsUp(shares);
   }
 
   function convertToAssetsDown(uint256 assetId, uint256 shares) external view returns (uint256) {
-    Asset storage asset = _assets[assetId];
-    return _convertToAssetsUp(asset, shares);
+    return _assets[assetId].convertToAssetsDown(shares);
   }
 
   function getBaseInterestRate(uint256 assetId) public view returns (uint256) {
@@ -321,8 +313,7 @@ contract LiquidityHub is ILiquidityHub {
   }
 
   function getInterestRate(uint256 assetId) public view returns (uint256) {
-    Asset storage asset = _assets[assetId];
-    return _getInterestRate(asset);
+    return _assets[assetId].getInterestRate();
   }
 
   function getSpokeDrawnLiquidity(uint256 assetId, address spoke) public view returns (uint256) {
@@ -347,7 +338,7 @@ contract LiquidityHub is ILiquidityHub {
     require(asset.config.active, 'ASSET_NOT_ACTIVE');
     require(
       spoke.config.supplyCap == type(uint256).max ||
-        _convertToAssetsDown(asset, spoke.suppliedShares) + amount <= spoke.config.supplyCap,
+        asset.convertToAssetsDown(spoke.suppliedShares) + amount <= spoke.config.supplyCap,
       'SUPPLY_CAP_EXCEEDED'
     );
   }
@@ -361,7 +352,7 @@ contract LiquidityHub is ILiquidityHub {
     // TODO: still allow withdrawal even if asset is not active, only prevent for frozen/paused?
     require(asset.config.active, 'ASSET_NOT_ACTIVE');
     require(
-      amount <= _convertToAssetsDown(asset, spoke.suppliedShares) - spoke.baseDebt,
+      amount <= asset.convertToAssetsDown(spoke.suppliedShares) - spoke.baseDebt,
       'SUPPLIED_AMOUNT_EXCEEDED'
     );
     require(amount <= asset.availableLiquidity, 'NOT_AVAILABLE_LIQUIDITY');
@@ -474,7 +465,7 @@ contract LiquidityHub is ILiquidityHub {
           totalDebt: asset.baseDebt, // TODO: Does total debt here need to include premium?
           reserveFactor: 0, // TODO
           assetId: asset.id,
-          virtualUnderlyingBalance: _getTotalAssets(asset), // without current liquidity change
+          virtualUnderlyingBalance: asset.totalAssets(), // without current liquidity change
           usingVirtualBalance: true
         })
       );
@@ -503,8 +494,8 @@ contract LiquidityHub is ILiquidityHub {
 
     uint256 newSpokeDebt = baseDebtChange > 0
       ? existingSpokeDebt + uint256(baseDebtChange) // debt added
-      // force underflow: only possible when spoke takes repays amount more than net drawn
-      : existingSpokeDebt - uint256(-baseDebtChange); // debt restored
+      : // force underflow: only possible when spoke takes repays amount more than net drawn
+      existingSpokeDebt - uint256(-baseDebtChange); // debt restored
 
     (uint256 newAssetRiskPremium, uint256 newAssetDebt) = MathUtils.addToWeightedAverage(
       assetRiskPremiumWithoutCurrent,
@@ -532,41 +523,6 @@ contract LiquidityHub is ILiquidityHub {
       config: DataTypes.SpokeConfig(params.supplyCap, params.drawCap)
     });
     emit SpokeAdded(assetId, spoke);
-  }
-
-  // todo: pass cached object like in v3, carry out mul in rad for precision
-  function _getInterestRate(Asset storage asset) internal view returns (uint256) {
-    return
-      asset.baseBorrowRate.percentMul(
-        PercentageMath.PERCENTAGE_FACTOR + asset.riskPremiumRad.radToBps()
-      );
-  }
-
-  // todo: move to asset operations lib issue#93
-  function _getTotalAssets(Asset storage asset) internal view returns (uint256) {
-    return asset.availableLiquidity + asset.outstandingPremium + asset.baseDebt;
-  }
-
-  function _convertToSharesUp(Asset storage asset, uint256 assets) internal view returns (uint256) {
-    return assets.toSharesUp(_getTotalAssets(asset), asset.suppliedShares);
-  }
-
-  function _convertToSharesDown(
-    Asset storage asset,
-    uint256 assets
-  ) internal view returns (uint256) {
-    return assets.toSharesDown(_getTotalAssets(asset), asset.suppliedShares);
-  }
-
-  function _convertToAssetsUp(Asset storage asset, uint256 shares) internal view returns (uint256) {
-    return shares.toAssetsUp(_getTotalAssets(asset), asset.suppliedShares);
-  }
-
-  function _convertToAssetsDown(
-    Asset storage asset,
-    uint256 shares
-  ) internal view returns (uint256) {
-    return shares.toAssetsDown(_getTotalAssets(asset), asset.suppliedShares);
   }
 
   // @dev `amount` can cover at most spoke's outstanding premium
