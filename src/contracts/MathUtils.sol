@@ -99,68 +99,68 @@ library MathUtils {
 
   /**
    * @notice Calculates the new weighted average given a current weighted average, the sum of the weights subtracted with a new value, weight
-   * @param currentWeightedAvgRad The base weighted average (in Rad)
+   * @dev Add precision to weighted average & new value before calling this method
+   * @param currentWeightedAvg The base weighted average
    * @param currentSumWeights The base sum of weights
    * @param newValue The new value to add or subtract
    * @param newValueWeight The weight of the new value
-   * @return newWeightedAvgRad The weighted average after the operation (in Rad)
+   * @return newWeightedAvg The weighted average after the operation
    * @return newSumWeights The sum of weights after operation, cannot be less than 0
    */
   function addToWeightedAverage(
-    uint256 currentWeightedAvgRad,
+    uint256 currentWeightedAvg,
     uint256 currentSumWeights,
     uint256 newValue,
     uint256 newValueWeight
   ) internal pure returns (uint256, uint256) {
-    // newWeightedAvgRad, newSumWeights
+    // newWeightedAvg, newSumWeights
 
     if (newValueWeight == 0) {
-      return (currentWeightedAvgRad, currentSumWeights);
+      return (currentWeightedAvg, currentSumWeights);
     }
-    // this is the first time we add, radify new average
     if (currentSumWeights == 0) {
-      return (newValue.toRad(), newValueWeight);
+      return (newValue, newValueWeight);
     }
 
     uint256 newSumWeights = currentSumWeights + newValueWeight;
-    uint256 newWeightedAvgRad = (currentWeightedAvgRad *
-      currentSumWeights +
-      (newValue * newValueWeight).toRad()) / newSumWeights; // newSumWeights cannot be zero when execution reaches here
+    uint256 newWeightedAvg = ((currentWeightedAvg * currentSumWeights) +
+      (newValue * newValueWeight)) / newSumWeights; // newSumWeights cannot be zero when execution reaches here
 
-    return (newWeightedAvgRad, newSumWeights);
+    return (newWeightedAvg, newSumWeights);
   }
 
   /**
    * @notice Calculates the new weighted average given a current weighted average, the sum of the weights added with a new value, weight
-   * @param currentWeightedAvgRad The base weighted average (in Rad)
+   * @dev Add precision to weighted average & new value before calling this method
+   * @param currentWeightedAvg The base weighted average
    * @param currentSumWeights The base sum of weights
    * @param newValue The new value to add or subtract
    * @param newValueWeight The weight of the new value
-   * @return newWeightedAvgRad The weighted average after the operation (in Rad)
+   * @return newWeightedAvg The weighted average after the operation
    * @return newSumWeights The sum of weights after operation, cannot be less than 0
    * @dev Reverts when newValueWeight is greater than currentSumWeights
    * @dev Reverts when the newWeightedValue (weight * value) is greater than currentWeightedSum (currentSumWeights * currentWeightedAvg)
    */
   function subtractFromWeightedAverage(
-    uint256 currentWeightedAvgRad,
+    uint256 currentWeightedAvg,
     uint256 currentSumWeights,
     uint256 newValue,
     uint256 newValueWeight
   ) internal pure returns (uint256, uint256) {
-    // newWeightedAvgRad, newSumWeights
-    if (newValueWeight == 0) return (currentWeightedAvgRad, currentSumWeights);
+    // newWeightedAvg, newSumWeights
+    if (newValueWeight == 0) return (currentWeightedAvg, currentSumWeights);
 
     if (currentSumWeights == newValueWeight) return (0, 0); // no change
     if (currentSumWeights < newValueWeight) revert();
 
-    uint256 newWeightedValueRad = (newValue * newValueWeight).toRad();
-    uint256 currentWeightedSumRad = currentWeightedAvgRad * currentSumWeights;
+    uint256 newWeightedValue = newValue * newValueWeight;
+    uint256 currentWeightedSum = currentWeightedAvg * currentSumWeights;
 
-    if (currentWeightedSumRad < newWeightedValueRad) revert();
+    if (currentWeightedSum < newWeightedValue) revert();
 
     uint256 newSumWeights = currentSumWeights - newValueWeight;
-    uint256 newWeightedAvgRad = (currentWeightedSumRad - newWeightedValueRad) / newSumWeights;
+    uint256 newWeightedAvg = (currentWeightedSum - newWeightedValue) / newSumWeights;
 
-    return (newWeightedAvgRad, newSumWeights);
+    return (newWeightedAvg, newSumWeights);
   }
 }

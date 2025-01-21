@@ -95,7 +95,7 @@ contract MathUtilsTest is BaseTest {
 
     for (uint256 i; i < numbers.length; ++i) {
       // truncate
-      number = numbers[i] % maxNumber;
+      number = (numbers[i] % maxNumber).toRad(); // add precision before
       weight = numbers[i] % maxWeight;
 
       calcWeightedAvg += number * weight;
@@ -112,7 +112,7 @@ contract MathUtilsTest is BaseTest {
       calcWeightedAvg /= calcSumWeights;
     }
 
-    assertApproxEqAbs(currentWeightedAvgRad.fromRad(), calcWeightedAvg, 1);
+    assertApproxEqAbs(currentWeightedAvgRad.fromRad(), calcWeightedAvg.fromRad(), 1);
     assertEq(currentSumWeights, calcSumWeights);
 
     return (currentWeightedAvgRad, currentSumWeights);
@@ -143,7 +143,7 @@ contract MathUtilsTest is BaseTest {
 
     for (uint256 i; i < numbers.length; ++i) {
       // truncate
-      uint256 number = numbers[i] % maxNumber;
+      uint256 number = (numbers[i] % maxNumber).toRad(); // add precision before
       uint256 weight = numbers[i] % maxWeight;
 
       if (!toRemoveSet.contains[i]) {
@@ -164,7 +164,7 @@ contract MathUtilsTest is BaseTest {
     }
 
     for (uint256 i; i < toRemoveSet.keys.length; ++i) {
-      uint256 newValue = numbers[toRemoveSet.keys[i]] % maxNumber;
+      uint256 newValue = (numbers[toRemoveSet.keys[i]] % maxNumber).toRad(); // add precision before
       uint256 newValueWeight = numbers[toRemoveSet.keys[i]] % maxWeight;
 
       // overflow not possible
@@ -186,7 +186,7 @@ contract MathUtilsTest is BaseTest {
       }
     }
 
-    assertApproxEqAbs(currentWeightedAvgRad.fromRad(), calcWeightedAvg, 2);
+    assertApproxEqAbs(currentWeightedAvgRad.fromRad(), calcWeightedAvg.fromRad(), 2);
     assertEq(currentSumWeights, calcSumWeights);
   }
 
