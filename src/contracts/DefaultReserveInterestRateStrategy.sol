@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: BUSL-1.1
 pragma solidity ^0.8.10;
 
+import {WadRayMath} from './WadRayMath.sol';
 import {DataTypes} from '../libraries/types/DataTypes.sol';
 import {Errors} from '../libraries/helpers/Errors.sol';
 import {IDefaultInterestRateStrategy} from '../interfaces/IDefaultInterestRateStrategy.sol';
@@ -15,6 +16,8 @@ import {IReserveInterestRateStrategy} from '../interfaces/IReserveInterestRateSt
  *   index of the _interestRateData
  */
 contract DefaultReserveInterestRateStrategy is IDefaultInterestRateStrategy {
+  using WadRayMath for uint256;
+
   /// @inheritdoc IDefaultInterestRateStrategy
   address public immutable ADDRESSES_PROVIDER;
 
@@ -140,7 +143,7 @@ contract DefaultReserveInterestRateStrategy is IDefaultInterestRateStrategy {
       vars.availableLiquidityPlusDebt = vars.availableLiquidity + vars.totalDebt;
       vars.borrowUsageRatio = (vars.totalDebt * 10000) / vars.availableLiquidityPlusDebt;
     } else {
-      return (vars.currentVariableBorrowRate);
+      return uint256(vars.currentVariableBorrowRate).bpsToRay();
     }
 
     if (vars.borrowUsageRatio > rateData.optimalUsageRatio) {
@@ -151,12 +154,12 @@ contract DefaultReserveInterestRateStrategy is IDefaultInterestRateStrategy {
         ((rateData.variableRateSlope1 + rateData.variableRateSlope2) * excessBorrowUsageRatio) /
         10000;
 
-      return vars.currentVariableBorrowRate;
+      return uint256(vars.currentVariableBorrowRate).bpsToRay();
     } else {
       vars.currentVariableBorrowRate +=
         (vars.borrowUsageRatio * rateData.variableRateSlope1) /
         rateData.optimalUsageRatio;
-      return (vars.currentVariableBorrowRate);
+      return uint256(vars.currentVariableBorrowRate).bpsToRay();
     }
   }
 }
