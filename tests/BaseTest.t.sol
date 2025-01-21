@@ -11,7 +11,7 @@ import {PercentageMath} from 'src/contracts/PercentageMath.sol';
 import {WadRayMath} from 'src/contracts/WadRayMath.sol';
 import {SharesMath} from 'src/contracts/SharesMath.sol';
 import {MathUtils} from 'src/contracts/MathUtils.sol';
-import {DefaultReserveInterestRateStrategy, IDefaultInterestRateStrategy} from 'src/contracts/DefaultReserveInterestRateStrategy.sol';
+import {DefaultReserveInterestRateStrategy, IDefaultInterestRateStrategy, IReserveInterestRateStrategy} from 'src/contracts/DefaultReserveInterestRateStrategy.sol';
 import {IERC20} from 'src/dependencies/openzeppelin/IERC20.sol';
 import {WETH9} from 'src/dependencies/weth/WETH9.sol';
 import {ISpoke} from 'src/interfaces/ISpoke.sol';
@@ -131,6 +131,10 @@ abstract contract BaseTest is Test, Events {
     usdc = new MockERC20();
     usdt = new MockERC20();
     wbtc = new MockERC20();
+
+    vm.label(address(spoke1), 'spoke1');
+    vm.label(address(spoke2), 'spoke2');
+    vm.label(address(spoke3), 'spoke3');
   }
 
   function initEnvironment() internal {

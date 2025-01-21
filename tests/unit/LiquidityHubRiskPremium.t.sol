@@ -217,45 +217,266 @@ contract LiquidityHubRiskPremium_ConstantTimeAndRiskPremium is LiquidityHubRiskP
 contract LiquidityHubRiskPremium_VariableTimeAndConstantRiskPremium is
   LiquidityHubRiskPremiumTest_Base
 {
-  function test_multipleDrawSameAmount() public {
+  using WadRayMath for uint256;
+
+  function test_fuzzMultipleDrawWhileAccruingInterest(
+    uint256 timeToSkip,
+    uint256 baseBorrowRate
+  ) public {
+    timeToSkip = bound(timeToSkip, 1 days, 10_000 days);
+    baseBorrowRate = bound(baseBorrowRate, uint256(1).bpsToRay(), uint256(100_00).bpsToRay());
+    uint40 lastUpdateTimestamp = uint40(vm.getBlockTimestamp());
+
+    vm.mockCall(
+      address(irStrategy),
+      IReserveInterestRateStrategy.calculateInterestRates.selector,
+      abi.encode(baseBorrowRate)
+    );
+
     vm.prank(address(spoke1));
     hub.supply(daiAssetId, daiAmount, spoke1RiskPremiumRad, alice);
 
-    uint256 usdxDrawnAmount = daiAmount / 3;
+    uint256 spoke1DrawAmount = daiAmount / 4;
+    uint256 spoke2DrawAmount = daiAmount / 2;
+    uint256 spoke3DrawAmount = daiAmount / 8;
+
+    // spoke 1 draws
+    vm.prank(address(spoke1));
+    hub.draw(daiAssetId, alice, spoke1DrawAmount, spoke1RiskPremiumRad);
+
+    uint256 totalBaseDebt = spoke1DrawAmount;
+    assertEq(hub.getAsset(daiAssetId).baseDebt, spoke1DrawAmount);
+    assertEq(hub.getAsset(daiAssetId).riskPremiumRad, spoke1RiskPremiumRad);
+
+    skip(timeToSkip);
+    uint256 spoke1AccruedDebt = spoke1DrawAmount.rayMul(
+      MathUtils.calculateLinearInterest(baseBorrowRate, lastUpdateTimestamp) - WadRayMath.RAY
+    );
+
     // spoke 2 draws
     vm.prank(address(spoke2));
-    hub.draw(daiAssetId, alice, usdxDrawnAmount, spoke2RiskPremiumRad);
+    hub.draw(daiAssetId, alice, spoke2DrawAmount, spoke2RiskPremiumRad); // trigger base debt update
 
-    assertEq(hub.getAsset(daiAssetId).baseDebt, usdxDrawnAmount);
-    assertEq(hub.getAsset(daiAssetId).riskPremiumRad, spoke2RiskPremiumRad);
+    // debt has been not been accrued for spoke 1 individually yet
+    assertEq(hub.getSpoke(daiAssetId, address(spoke1)).baseDebt, spoke1DrawAmount);
 
-    // spoke 3 draws
-    vm.prank(address(spoke3));
-    hub.draw(daiAssetId, alice, usdxDrawnAmount, spoke3RiskPremiumRad);
+    totalBaseDebt += spoke1AccruedDebt + spoke2DrawAmount;
+    assertEq(hub.getAsset(daiAssetId).baseDebt, totalBaseDebt); // totalDebt has been accrued
 
-    uint256 totalBaseDebt = usdxDrawnAmount * 2;
-    uint256 expectedRiskPremium = (usdxDrawnAmount *
-      spoke2RiskPremiumRad +
-      usdxDrawnAmount *
-      spoke3RiskPremiumRad) / totalBaseDebt;
+    uint256 expectedRiskPremium = ((spoke1DrawAmount + spoke1AccruedDebt) * // correctly account for spoke1 debt
+      spoke1RiskPremiumRad +
+      spoke2DrawAmount *
+      spoke2RiskPremiumRad) / totalBaseDebt;
 
     assertEq(hub.getAsset(daiAssetId).baseDebt, totalBaseDebt);
     assertEq(hub.getAsset(daiAssetId).riskPremiumRad, expectedRiskPremium);
 
-    // spoke 1 draws remaining liquidity
-    vm.prank(address(spoke1));
-    hub.draw(daiAssetId, alice, usdxDrawnAmount, spoke1RiskPremiumRad);
+    lastUpdateTimestamp = uint40(vm.getBlockTimestamp());
+    skip(timeToSkip);
 
-    totalBaseDebt = usdxDrawnAmount * 3;
+    spoke1DrawAmount += spoke1AccruedDebt;
+    spoke1AccruedDebt = spoke1DrawAmount.rayMul(
+      MathUtils.calculateLinearInterest(baseBorrowRate, lastUpdateTimestamp) - WadRayMath.RAY
+    );
+    uint256 spoke2AccruedDebt = spoke2DrawAmount.rayMul(
+      MathUtils.calculateLinearInterest(baseBorrowRate, lastUpdateTimestamp) - WadRayMath.RAY
+    );
+
+    // spoke 3 draws remaining liquidity
+    vm.prank(address(spoke3));
+    hub.draw(daiAssetId, alice, spoke3DrawAmount, spoke3RiskPremiumRad);
+
+    totalBaseDebt += spoke1AccruedDebt + spoke2AccruedDebt + spoke3DrawAmount;
     expectedRiskPremium =
-      (usdxDrawnAmount *
+      ((spoke1DrawAmount + spoke1AccruedDebt) *
         spoke1RiskPremiumRad +
-        usdxDrawnAmount *
+        (spoke2DrawAmount + spoke2AccruedDebt) *
         spoke2RiskPremiumRad +
-        usdxDrawnAmount *
+        spoke3DrawAmount *
+        spoke3RiskPremiumRad) /
+      totalBaseDebt;
+    assertApproxEqAbs(hub.getAsset(daiAssetId).baseDebt, totalBaseDebt, 1);
+    assertApproxEqAbs(hub.getAsset(daiAssetId).riskPremiumRad, expectedRiskPremium, 1);
+  }
+
+  function test_multipleDrawWhileAccruingInterest() public {
+    test_fuzzMultipleDrawWhileAccruingInterest({
+      timeToSkip: 365 days,
+      baseBorrowRate: uint256(15_00).bpsToRay()
+    });
+  }
+
+  function test_multipleDrawWhileAccruingInterestWithChangingRate() public {
+    uint256 timeToSkip = 365 days; // todo fuzz this and rate
+    uint256 rate = uint256(15_00).bpsToRay();
+    uint40 lastUpdateTimestamp = uint40(vm.getBlockTimestamp());
+
+    vm.mockCall(
+      address(irStrategy),
+      IReserveInterestRateStrategy.calculateInterestRates.selector,
+      abi.encode(rate)
+    );
+
+    vm.prank(address(spoke1));
+    hub.supply(daiAssetId, daiAmount, spoke1RiskPremiumRad, alice);
+
+    uint256 spoke1DrawAmount = daiAmount / 4;
+    uint256 spoke2DrawAmount = daiAmount / 2;
+    uint256 spoke3DrawAmount = daiAmount / 8;
+
+    // spoke 1 draws
+    vm.prank(address(spoke1));
+    hub.draw(daiAssetId, alice, spoke1DrawAmount, spoke1RiskPremiumRad);
+
+    uint256 totalBaseDebt = spoke1DrawAmount;
+    assertEq(hub.getAsset(daiAssetId).baseDebt, spoke1DrawAmount);
+    assertEq(hub.getAsset(daiAssetId).riskPremiumRad, spoke1RiskPremiumRad);
+
+    skip(timeToSkip);
+    uint256 spoke1AccruedDebt = spoke1DrawAmount.rayMul(
+      MathUtils.calculateLinearInterest(rate, lastUpdateTimestamp) - WadRayMath.RAY
+    );
+
+    // borrow rate changes with this action
+    rate *= 2;
+    vm.mockCall(
+      address(irStrategy),
+      IReserveInterestRateStrategy.calculateInterestRates.selector,
+      abi.encode(rate)
+    );
+
+    // spoke 2 draws
+    vm.prank(address(spoke2));
+    hub.draw(daiAssetId, alice, spoke2DrawAmount, spoke2RiskPremiumRad); // trigger base debt update
+
+    // debt has been not been accrued for spoke 1 individually yet
+    assertEq(hub.getSpoke(daiAssetId, address(spoke1)).baseDebt, spoke1DrawAmount);
+
+    totalBaseDebt += spoke1AccruedDebt + spoke2DrawAmount;
+    assertEq(hub.getAsset(daiAssetId).baseDebt, totalBaseDebt); // totalDebt has been accrued
+
+    uint256 expectedRiskPremium = ((spoke1DrawAmount + spoke1AccruedDebt) * // correctly account for spoke1 debt
+      spoke1RiskPremiumRad +
+      spoke2DrawAmount *
+      spoke2RiskPremiumRad) / totalBaseDebt;
+
+    assertEq(hub.getAsset(daiAssetId).baseDebt, totalBaseDebt);
+    assertEq(hub.getAsset(daiAssetId).riskPremiumRad, expectedRiskPremium);
+
+    lastUpdateTimestamp = uint40(vm.getBlockTimestamp());
+    skip(timeToSkip);
+
+    spoke1DrawAmount += spoke1AccruedDebt;
+    spoke1AccruedDebt = spoke1DrawAmount.rayMul(
+      MathUtils.calculateLinearInterest(rate, lastUpdateTimestamp) - WadRayMath.RAY
+    );
+    uint256 spoke2AccruedDebt = spoke2DrawAmount.rayMul(
+      MathUtils.calculateLinearInterest(rate, lastUpdateTimestamp) - WadRayMath.RAY
+    );
+
+    // spoke 3 draws remaining liquidity
+    vm.prank(address(spoke3));
+    hub.draw(daiAssetId, alice, spoke3DrawAmount, spoke3RiskPremiumRad);
+
+    totalBaseDebt += spoke1AccruedDebt + spoke2AccruedDebt + spoke3DrawAmount;
+    expectedRiskPremium =
+      ((spoke1DrawAmount + spoke1AccruedDebt) *
+        spoke1RiskPremiumRad +
+        (spoke2DrawAmount + spoke2AccruedDebt) *
+        spoke2RiskPremiumRad +
+        spoke3DrawAmount *
         spoke3RiskPremiumRad) /
       totalBaseDebt;
     assertEq(hub.getAsset(daiAssetId).baseDebt, totalBaseDebt);
-    assertEq(hub.getAsset(daiAssetId).riskPremiumRad, expectedRiskPremium);
+    assertApproxEqAbs(hub.getAsset(daiAssetId).riskPremiumRad, expectedRiskPremium, 1);
+  }
+
+  // todo investigate rounding issues
+  function skip_test_fuzzMultipleDrawWhileAccruingInterest(
+    TestDrawAmountAndRiskPremiumRadInput memory p,
+    uint256 timeToSkip,
+    uint256 baseBorrowRate
+  ) public {
+    p = bound({input: p, minDrawAmount: 1, maxDrawAmount: daiAmount});
+    timeToSkip = bound(timeToSkip, 1 days, 10_000 days);
+    baseBorrowRate = bound(baseBorrowRate, uint256(1).bpsToRay(), uint256(100_00).bpsToRay());
+    uint40 lastUpdateTimestamp = uint40(vm.getBlockTimestamp());
+
+    uint256 totalToDraw = p.drawAmount.spoke1 + p.drawAmount.spoke2 + p.drawAmount.spoke3;
+
+    vm.mockCall(
+      address(irStrategy),
+      IReserveInterestRateStrategy.calculateInterestRates.selector,
+      abi.encode(baseBorrowRate)
+    );
+
+    vm.prank(address(spoke1));
+    hub.supply(daiAssetId, totalToDraw, p.riskPremiumRad.spoke1, alice);
+
+    // spoke 1 draws
+    vm.prank(address(spoke1));
+    hub.draw(daiAssetId, alice, p.drawAmount.spoke1, p.riskPremiumRad.spoke1);
+
+    uint256 totalBaseDebt = p.drawAmount.spoke1;
+    assertEq(hub.getAsset(daiAssetId).baseDebt, p.drawAmount.spoke1);
+    assertEq(hub.getAsset(daiAssetId).riskPremiumRad, p.riskPremiumRad.spoke1);
+
+    skip(timeToSkip);
+    uint256 spoke1AccruedDebt = p.drawAmount.spoke1.rayMul(
+      MathUtils.calculateLinearInterest(baseBorrowRate, lastUpdateTimestamp) - WadRayMath.RAY
+    );
+
+    // borrow baseBorrowRate changes with this action
+    baseBorrowRate *= 2;
+    vm.mockCall(
+      address(irStrategy),
+      IReserveInterestRateStrategy.calculateInterestRates.selector,
+      abi.encode(baseBorrowRate)
+    );
+
+    // spoke 2 draws
+    vm.prank(address(spoke2));
+    hub.draw(daiAssetId, alice, p.drawAmount.spoke2, p.riskPremiumRad.spoke2); // trigger base debt update
+
+    // debt has been not been accrued for spoke 1 individually yet
+    assertEq(hub.getSpoke(daiAssetId, address(spoke1)).baseDebt, p.drawAmount.spoke1);
+
+    totalBaseDebt += spoke1AccruedDebt + p.drawAmount.spoke2;
+    assertEq(hub.getAsset(daiAssetId).baseDebt, totalBaseDebt); // totalDebt has been accrued
+
+    uint256 expectedRiskPremium = ((p.drawAmount.spoke1 + spoke1AccruedDebt) * // correctly account for spoke1 debt
+      p.riskPremiumRad.spoke1 +
+      p.drawAmount.spoke2 *
+      p.riskPremiumRad.spoke2) / totalBaseDebt;
+
+    assertEq(hub.getAsset(daiAssetId).baseDebt, totalBaseDebt);
+    assertApproxEqAbs(hub.getAsset(daiAssetId).riskPremiumRad, expectedRiskPremium, 1);
+
+    lastUpdateTimestamp = uint40(vm.getBlockTimestamp());
+    skip(timeToSkip);
+
+    p.drawAmount.spoke1 += spoke1AccruedDebt;
+    spoke1AccruedDebt = p.drawAmount.spoke1.rayMul(
+      MathUtils.calculateLinearInterest(baseBorrowRate, lastUpdateTimestamp) - WadRayMath.RAY
+    );
+    uint256 spoke2AccruedDebt = p.drawAmount.spoke2.rayMul(
+      MathUtils.calculateLinearInterest(baseBorrowRate, lastUpdateTimestamp) - WadRayMath.RAY
+    );
+
+    // spoke 3 draws remaining liquidity
+    vm.prank(address(spoke3));
+    hub.draw(daiAssetId, alice, p.drawAmount.spoke3, p.riskPremiumRad.spoke3);
+
+    totalBaseDebt += spoke1AccruedDebt + spoke2AccruedDebt + p.drawAmount.spoke3;
+    expectedRiskPremium =
+      ((p.drawAmount.spoke1 + spoke1AccruedDebt) *
+        p.riskPremiumRad.spoke1 +
+        (p.drawAmount.spoke2 + spoke2AccruedDebt) *
+        p.riskPremiumRad.spoke2 +
+        p.drawAmount.spoke3 *
+        p.riskPremiumRad.spoke3) /
+      totalBaseDebt;
+    assertApproxEqAbs(hub.getAsset(daiAssetId).baseDebt, totalBaseDebt, 2);
+    assertApproxEqAbs(hub.getAsset(daiAssetId).riskPremiumRad, expectedRiskPremium, 3);
   }
 }
