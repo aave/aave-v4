@@ -5,8 +5,11 @@ import 'forge-std/Test.sol';
 import 'forge-std/console2.sol';
 
 import 'src/contracts/DefaultReserveInterestRateStrategy.sol';
+import {WadRayMath} from 'src/contracts/WadRayMath.sol';
 
 contract DefaultReserveInterestRateStrategyTest is Test {
+  using WadRayMath for uint256;
+
   event RateDataUpdate(
     uint256 indexed assetId,
     uint256 optimalUsageRatio,
@@ -121,7 +124,7 @@ contract DefaultReserveInterestRateStrategyTest is Test {
     uint256 expectedVariableRate = rateStrategy.getBaseVariableBorrowRate(mockReserveAddress) +
       rateStrategy.getVariableRateSlope1(mockReserveAddress);
 
-    assertEq(expectedVariableRate, variableBorrowRate, 'Invalid borrow rate');
+    assertEq(expectedVariableRate.bpsToRay(), variableBorrowRate, 'Invalid borrow rate');
   }
 
   function test_calculate_interest_rate_100_usage_ratio() public {
@@ -153,7 +156,7 @@ contract DefaultReserveInterestRateStrategyTest is Test {
       ((rateData.variableRateSlope1 + rateData.variableRateSlope2) * excessBorrowUsageRatio) /
       10000;
 
-    assertEq(expectedVariableRate, variableBorrowRate, 'Invalid borrow rate');
+    assertEq(expectedVariableRate.bpsToRay(), variableBorrowRate, 'Invalid borrow rate');
   }
 
   function test_calculate_interest_rate_below_optimal_usage() public {
@@ -179,7 +182,11 @@ contract DefaultReserveInterestRateStrategyTest is Test {
     uint256 expectedVariableRate = rateData.baseVariableBorrowRate +
       (rateData.variableRateSlope1 * utilizationRatio) /
       rateData.optimalUsageRatio;
-    assertEq(expectedVariableRate, variableBorrowRate, 'Invalid borrow rate below optimal usage');
+    assertEq(
+      expectedVariableRate.bpsToRay(),
+      variableBorrowRate,
+      'Invalid borrow rate below optimal usage'
+    );
   }
 
   function test_calculate_interest_rate_zero_debt() public {
