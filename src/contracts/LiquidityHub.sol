@@ -4,9 +4,9 @@ pragma solidity ^0.8.0;
 import {SafeERC20} from 'src/dependencies/openzeppelin/SafeERC20.sol';
 import {IERC20} from 'src/dependencies/openzeppelin/IERC20.sol';
 import {ILiquidityHub} from 'src/interfaces/ILiquidityHub.sol';
-import {IReserveInterestRateStrategy} from 'src/interfaces/IReserveInterestRateStrategy.sol';
 import {DataTypes} from 'src/libraries/types/DataTypes.sol';
 import {AssetLogic} from 'src/contracts/AssetLogic.sol';
+import {SpokeDataLogic} from 'src/contracts/SpokeDataLogic.sol';
 import {WadRayMath} from 'src/contracts/WadRayMath.sol';
 import {SharesMath} from 'src/contracts/SharesMath.sol';
 import {MathUtils} from 'src/contracts/MathUtils.sol';
@@ -42,6 +42,7 @@ contract LiquidityHub is ILiquidityHub {
   using SharesMath for uint256;
   using PercentageMath for uint256;
   using AssetLogic for Asset;
+  using SpokeDataLogic for SpokeData;
 
   mapping(uint256 assetId => Asset assetData) internal _assets;
   mapping(uint256 assetId => mapping(address spokeAddress => SpokeData spokeData)) internal _spokes;
@@ -70,7 +71,7 @@ contract LiquidityHub is ILiquidityHub {
 
   function getTotalAssets(uint256 assetId) external view returns (uint256) {
     Asset storage asset = _assets[assetId];
-    return asset.totalAssets();
+    return asset.getTotalAssets();
   }
 
   // /////
@@ -86,7 +87,7 @@ contract LiquidityHub is ILiquidityHub {
       availableLiquidity: 0,
       baseDebt: 0,
       outstandingPremium: 0,
-      baseBorrowIndex: 1,
+      baseBorrowIndex: WadRayMath.RAY,
       baseBorrowRate: 0,
       lastUpdateTimestamp: block.timestamp,
       riskPremiumRad: 0,
@@ -163,7 +164,7 @@ contract LiquidityHub is ILiquidityHub {
     uint256 nextBaseBorrowIndex = _accrueInterest(asset, spoke);
     _validateSupply(asset, spoke, amount);
 
-    _updateBorrowRate({asset: asset, liquidityAdded: amount, liquidityTaken: 0});
+    asset.updateBorrowRate({liquidityAdded: amount, liquidityTaken: 0});
     _updateRiskPremiumAndBaseDebt({
       asset: asset,
       spoke: spoke,
@@ -203,7 +204,7 @@ contract LiquidityHub is ILiquidityHub {
     _accrueInterest(asset, spoke); // accrue interest before validating action
     _validateWithdraw(asset, spoke, amount);
 
-    _updateBorrowRate({asset: asset, liquidityAdded: 0, liquidityTaken: amount});
+    asset.updateBorrowRate({liquidityAdded: 0, liquidityTaken: amount});
     _updateRiskPremiumAndBaseDebt(asset, spoke, riskPremiumRad, 0); // no base debt change
 
     asset.availableLiquidity -= amount;
@@ -233,7 +234,7 @@ contract LiquidityHub is ILiquidityHub {
     _accrueInterest(asset, spoke); // accrue interest before validating action
     _validateDraw(asset, amount, spoke.config.drawCap);
 
-    _updateBorrowRate({asset: asset, liquidityAdded: 0, liquidityTaken: amount});
+    asset.updateBorrowRate({liquidityAdded: 0, liquidityTaken: amount});
     _updateRiskPremiumAndBaseDebt(asset, spoke, riskPremiumRad, int256(amount)); // base debt added
 
     asset.availableLiquidity -= amount;
@@ -268,7 +269,7 @@ contract LiquidityHub is ILiquidityHub {
 
     _accrueInterest(asset, spoke); // accrue interest before validating action
     _validateRestore(asset, amount, spoke.baseDebt);
-    _updateBorrowRate({asset: asset, liquidityAdded: amount, liquidityTaken: 0});
+    asset.updateBorrowRate({liquidityAdded: amount, liquidityTaken: 0});
 
     uint256 baseDebtRestored = _deductFromOutstandingPremium(asset, spoke, amount);
     _updateRiskPremiumAndBaseDebt(asset, spoke, riskPremiumRad, -int256(baseDebtRestored));
@@ -287,8 +288,7 @@ contract LiquidityHub is ILiquidityHub {
   //
 
   function previewNextBorrowIndex(uint256 assetId) public view returns (uint256) {
-    Asset storage asset = _assets[assetId];
-    (, uint256 nextBaseBorrowIndex) = _previewNextBorrowIndex(asset);
+    (, uint256 nextBaseBorrowIndex) = _assets[assetId].previewNextBorrowIndex();
     return nextBaseBorrowIndex;
   }
 
@@ -385,91 +385,10 @@ contract LiquidityHub is ILiquidityHub {
     Asset storage asset,
     SpokeData storage spoke
   ) internal returns (uint256) {
-    (uint256 cumulatedBaseInterest, uint256 nextBaseBorrowIndex) = _previewNextBorrowIndex(asset);
-    _accrueAssetInterest(asset, cumulatedBaseInterest, nextBaseBorrowIndex);
-    _accrueSpokeInterest(spoke, nextBaseBorrowIndex);
+    (uint256 cumulatedBaseInterest, uint256 nextBaseBorrowIndex) = asset.previewNextBorrowIndex();
+    asset.accrueInterest(cumulatedBaseInterest, nextBaseBorrowIndex);
+    spoke.accrueInterest(nextBaseBorrowIndex);
     return nextBaseBorrowIndex;
-  }
-
-  // @dev Utilizes existing `asset.baseBorrowIndex`
-  // @return cumulatedBaseInterest
-  // @return nextBaseBorrowIndex
-  function _previewNextBorrowIndex(Asset storage asset) internal view returns (uint256, uint256) {
-    uint256 elapsed = block.timestamp - asset.lastUpdateTimestamp;
-    if (elapsed == 0) return (0, asset.baseBorrowIndex);
-
-    uint256 cumulatedBaseInterest = MathUtils.calculateLinearInterest(
-      asset.baseBorrowRate,
-      uint40(asset.lastUpdateTimestamp)
-    );
-    return (cumulatedBaseInterest, cumulatedBaseInterest.rayMul(asset.baseBorrowIndex));
-  }
-
-  // @dev Utilizes existing `asset.baseBorrowIndex` & `asset.riskPremiumRad`
-  function _accrueAssetInterest(
-    Asset storage asset,
-    uint256 cumulatedBaseInterest,
-    uint256 nextBaseBorrowIndex
-  ) internal {
-    if (cumulatedBaseInterest == 0) return; // no interest accrued since last update
-
-    uint256 existingBaseDebt = asset.baseDebt;
-    // no interest to accrue since no liquidity has been drawn
-    if (existingBaseDebt == 0) return;
-
-    // can use `cumulatedBaseInterest` instead of `indexRatio` since LH base debt is
-    // accrued on each index update
-    uint256 cumulatedBaseDebt = asset.baseDebt.rayMul(cumulatedBaseInterest);
-
-    // accrue premium interest on the accrued base interest
-    asset.outstandingPremium += (cumulatedBaseDebt - existingBaseDebt).percentMul(
-      asset.riskPremiumRad.radToBps()
-    );
-    asset.baseDebt = cumulatedBaseDebt;
-    asset.baseBorrowIndex = nextBaseBorrowIndex;
-    asset.lastUpdateTimestamp = block.timestamp;
-  }
-
-  // @dev Utilizes existing `spoke.baseBorrowIndex` & `spoke.riskPremiumRad`
-  function _accrueSpokeInterest(SpokeData storage spoke, uint256 nextBaseBorrowIndex) internal {
-    uint256 elapsed = block.timestamp - spoke.lastUpdateTimestamp;
-    if (elapsed == 0) return;
-    uint256 existingBaseDebt = spoke.baseDebt;
-    if (existingBaseDebt == 0) return;
-
-    // todo: add rayMulDiv in WadRayMath (=mulDiv / RAY) to optimize out the one cancelled RAY
-    // & avoid precision loss
-    uint256 cumulatedBaseDebt = spoke.baseDebt.rayMul(nextBaseBorrowIndex).rayDiv(
-      spoke.baseBorrowIndex
-    );
-
-    // todo carry out multiplication in rad (radMul) for precision
-    spoke.outstandingPremium += (cumulatedBaseDebt - existingBaseDebt).percentMul(
-      spoke.riskPremiumRad.radToBps()
-    );
-    spoke.baseDebt = cumulatedBaseDebt;
-    spoke.baseBorrowIndex = nextBaseBorrowIndex;
-    spoke.lastUpdateTimestamp = block.timestamp;
-  }
-
-  function _updateBorrowRate(
-    Asset storage asset,
-    uint256 liquidityAdded,
-    uint256 liquidityTaken
-  ) internal {
-    uint256 baseBorrowRate = IReserveInterestRateStrategy(asset.config.irStrategy)
-      .calculateInterestRates(
-        DataTypes.CalculateInterestRatesParams({
-          liquidityAdded: liquidityAdded,
-          liquidityTaken: liquidityTaken,
-          totalDebt: asset.baseDebt, // TODO: Does total debt here need to include premium?
-          reserveFactor: 0, // TODO
-          assetId: asset.id,
-          virtualUnderlyingBalance: asset.totalAssets(), // without current liquidity change
-          usingVirtualBalance: true
-        })
-      );
-    asset.baseBorrowRate = baseBorrowRate;
   }
 
   // @dev Expects both `asset.baseDebt` & `spoke.baseDebt` have been accrued
@@ -517,7 +436,7 @@ contract LiquidityHub is ILiquidityHub {
       suppliedShares: 0,
       baseDebt: 0,
       outstandingPremium: 0,
-      baseBorrowIndex: 0,
+      baseBorrowIndex: WadRayMath.RAY,
       riskPremiumRad: 0,
       lastUpdateTimestamp: block.timestamp,
       config: DataTypes.SpokeConfig(params.supplyCap, params.drawCap)
