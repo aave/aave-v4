@@ -66,7 +66,7 @@ library AssetLogic {
     Asset storage asset,
     uint256 liquidityAdded,
     uint256 liquidityTaken
-  ) internal {
+  ) external {
     uint256 baseBorrowRate = IReserveInterestRateStrategy(asset.config.irStrategy)
       .calculateInterestRates(
         DataTypes.CalculateInterestRatesParams({
@@ -85,7 +85,7 @@ library AssetLogic {
   // @dev Utilizes existing `asset.baseBorrowRate` & `asset.baseBorrowIndex`
   // @return cumulatedBaseInterest (in ray)
   // @return nextBaseBorrowIndex (in ray)
-  function previewNextBorrowIndex(Asset storage asset) internal view returns (uint256, uint256) {
+  function previewNextBorrowIndex(Asset storage asset) external view returns (uint256, uint256) {
     uint256 elapsed = block.timestamp - asset.lastUpdateTimestamp;
     if (elapsed == 0) return (0, asset.baseBorrowIndex);
 
@@ -101,7 +101,7 @@ library AssetLogic {
     Asset storage asset,
     uint256 cumulatedBaseInterest,
     uint256 nextBaseBorrowIndex
-  ) internal {
+  ) external {
     if (cumulatedBaseInterest == 0) return; // no interest accrued since last update
 
     uint256 existingBaseDebt = asset.baseDebt;
