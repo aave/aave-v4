@@ -72,17 +72,17 @@ library AssetLogic {
         DataTypes.CalculateInterestRatesParams({
           liquidityAdded: liquidityAdded,
           liquidityTaken: liquidityTaken,
-          totalDebt: asset.baseDebt, // TODO: Does total debt here need to include premium?
+          totalDebt: asset.baseDebt,
           reserveFactor: 0, // TODO
           assetId: asset.id,
-          virtualUnderlyingBalance: asset.totalAssets(), // without current liquidity change
+          virtualUnderlyingBalance: asset.availableLiquidity, // without current liquidity change
           usingVirtualBalance: true
         })
       );
     asset.baseBorrowRate = baseBorrowRate;
   }
 
-  // @dev Utilizes existing `asset.baseBorrowIndex`
+  // @dev Utilizes existing `asset.baseBorrowRate` & `asset.baseBorrowIndex`
   // @return cumulatedBaseInterest (in ray)
   // @return nextBaseBorrowIndex (in ray)
   function previewNextBorrowIndex(Asset storage asset) internal view returns (uint256, uint256) {
