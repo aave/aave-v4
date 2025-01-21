@@ -161,15 +161,6 @@ contract LiquidityHub is ILiquidityHub {
     uint256 nextBaseBorrowIndex = _accrueInterest(asset, spoke);
     _validateSupply(asset, spoke, amount);
 
-    // todo: Mitigate inflation attack (burn some amount if first supply)
-    uint256 sharesAmount = _convertToSharesDown(asset, amount);
-    require(sharesAmount > 0, 'INVALID_AMOUNT');
-
-    asset.suppliedShares += sharesAmount;
-    asset.availableLiquidity += amount;
-
-    spoke.suppliedShares += sharesAmount; // todo: mint 4626 shares to abstract this accounting
-
     _updateBorrowRate({asset: asset, liquidityAdded: amount, liquidityTaken: 0});
     _updateRiskPremiumAndBaseDebt({
       asset: asset,
@@ -177,6 +168,15 @@ contract LiquidityHub is ILiquidityHub {
       newSpokeRiskPremium: riskPremium,
       baseDebtChange: 0
     });
+
+    asset.availableLiquidity += amount;
+
+    // todo: Mitigate inflation attack (burn some amount if first supply)
+    uint256 sharesAmount = _convertToSharesDown(asset, amount);
+    require(sharesAmount > 0, 'INVALID_AMOUNT');
+
+    asset.suppliedShares += sharesAmount;
+    spoke.suppliedShares += sharesAmount; // todo: mint 4626 shares to abstract this accounting
 
     // TODO: fee-on-transfer
     assetsList[assetId].safeTransferFrom(supplier, address(this), amount);
@@ -201,12 +201,6 @@ contract LiquidityHub is ILiquidityHub {
     _accrueInterest(asset, spoke); // accrue interest before validating action
     _validateWithdraw(asset, spoke, amount);
 
-    // TODO: Should this shares amount be from before or after accruing interest?
-    uint256 sharesAmount = _convertToSharesDown(asset, amount);
-
-    asset.suppliedShares -= sharesAmount;
-    asset.availableLiquidity -= amount;
-
     _updateBorrowRate({asset: asset, liquidityAdded: 0, liquidityTaken: amount});
     _updateRiskPremiumAndBaseDebt({
       asset: asset,
@@ -214,6 +208,12 @@ contract LiquidityHub is ILiquidityHub {
       newSpokeRiskPremium: riskPremium,
       baseDebtChange: 0
     });
+
+    asset.availableLiquidity -= amount;
+
+    uint256 sharesAmount = _convertToSharesDown(asset, amount);
+
+    asset.suppliedShares -= sharesAmount;
 
     assetsList[assetId].safeTransfer(to, amount);
 
@@ -236,10 +236,10 @@ contract LiquidityHub is ILiquidityHub {
     _accrueInterest(asset, spoke); // accrue interest before validating action
     _validateDraw(asset, amount, spoke.config.drawCap);
 
-    asset.availableLiquidity -= amount;
-
     _updateBorrowRate({asset: asset, liquidityAdded: 0, liquidityTaken: amount});
     _updateRiskPremiumAndBaseDebt(asset, spoke, riskPremium, int256(amount)); // debt added
+
+    asset.availableLiquidity -= amount;
 
     assetsList[assetId].safeTransfer(to, amount);
 
@@ -271,15 +271,13 @@ contract LiquidityHub is ILiquidityHub {
 
     _accrueInterest(asset, spoke); // accrue interest before validating action
     _validateRestore(asset, amount, spoke.baseDebt);
+    _updateBorrowRate({asset: asset, liquidityAdded: amount, liquidityTaken: 0});
+
+    uint256 baseDebtRestored = _deductFromOutstandingPremium(asset, spoke, amount);
+    _updateRiskPremiumAndBaseDebt(asset, spoke, riskPremium, -int256(baseDebtRestored));
 
     asset.availableLiquidity += amount;
 
-    uint256 baseDebtRestored = _deductFromOutstandingPremium(asset, spoke, amount);
-
-    _updateBorrowRate({asset: asset, liquidityAdded: amount, liquidityTaken: 0});
-    _updateRiskPremiumAndBaseDebt(asset, spoke, riskPremium, -int256(baseDebtRestored));
-
-    // TODO: fee-on-transfer, we receive at least `amount`
     assetsList[assetId].safeTransferFrom(repayer, address(this), amount);
 
     emit Restore(assetId, msg.sender, amount);
@@ -468,7 +466,7 @@ contract LiquidityHub is ILiquidityHub {
           totalDebt: asset.baseDebt, // TODO: Does total debt here need to include premium?
           reserveFactor: 0, // TODO
           assetId: asset.id,
-          virtualUnderlyingBalance: _getTotalAssets(asset),
+          virtualUnderlyingBalance: _getTotalAssets(asset), // without current liquidity change
           usingVirtualBalance: true
         })
       );
@@ -491,7 +489,7 @@ contract LiquidityHub is ILiquidityHub {
       .subtractFromWeightedAverage(
         asset.riskPremiumRad,
         existingAssetDebt,
-        spoke.riskPremiumRad, // use current spoke risk premium
+        spoke.riskPremiumRad.fromRad(), // use current spoke risk premium
         existingSpokeDebt
       );
 
@@ -503,7 +501,7 @@ contract LiquidityHub is ILiquidityHub {
     (uint256 newAssetRiskPremium, uint256 newAssetDebt) = MathUtils.addToWeightedAverage(
       assetRiskPremiumWithoutCurrent,
       assetDebtWithoutCurrent,
-      newSpokeRiskPremium, // use new spoke risk premium
+      newSpokeRiskPremium.fromRad(), // use new spoke risk premium
       newSpokeDebt
     );
 
