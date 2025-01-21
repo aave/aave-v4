@@ -2,6 +2,7 @@
 pragma solidity ^0.8.0;
 
 import '../BaseTest.t.sol';
+import {SpokeData} from 'src/contracts/LiquidityHub.sol';
 
 contract UserRiskPremiumTest_ToMigrate is BaseTest {
   using SharesMath for uint256;
@@ -189,7 +190,7 @@ contract UserRiskPremiumTest_ToMigrate is BaseTest {
     deal(address(dai), address(spoke1), 1000e18);
 
     vm.startPrank(address(spoke1));
-    LiquidityHub.Spoke memory test = hub.getSpoke(daiAssetId, address(spoke1));
+    SpokeData memory test = hub.getSpoke(daiAssetId, address(spoke1));
     dai.approve(address(hub), 1000e18);
     hub.supply(daiAssetId, 1000e18, 0, address(spoke1));
     // No change to risk premium, so borrow rate is just the base rate

@@ -1,11 +1,11 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.0;
 
-import 'forge-std/Test.sol';
+import {Test} from 'forge-std/Test.sol';
 
-import 'src/contracts/LiquidityHub.sol';
-import 'src/contracts/Spoke.sol';
-import 'src/dependencies/openzeppelin/IERC20.sol';
+import {LiquidityHub, Asset} from 'src/contracts/LiquidityHub.sol';
+import {Spoke} from 'src/contracts/Spoke.sol';
+import {IERC20} from 'src/dependencies/openzeppelin/IERC20.sol';
 import '../mocks/MockPriceOracle.sol';
 import '../mocks/MockERC20.sol';
 import '../Utils.t.sol';
@@ -111,7 +111,7 @@ contract LiquidityHubHandler is Test {
   }
 
   function _updateState(uint256 assetId) internal {
-    LiquidityHub.Asset memory reserveData = hub.getAsset(assetId);
+    Asset memory reserveData = hub.getAsset(assetId);
     // todo: remove last exchange rate, bad idea to store like this, looses precision
     s.lastExchangeRate[assetId] = reserveData.suppliedShares == 0
       ? 0

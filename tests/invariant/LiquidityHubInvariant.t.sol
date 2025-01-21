@@ -3,10 +3,9 @@ pragma solidity ^0.8.0;
 
 import 'forge-std/Test.sol';
 import 'forge-std/StdInvariant.sol';
-import 'forge-std/StdCheats.sol';
 import './LiquidityHubHandler.t.sol';
 
-import 'src/contracts/LiquidityHub.sol';
+import {LiquidityHub} from 'src/contracts/LiquidityHub.sol';
 
 contract LiquidityHubInvariant is StdInvariant, Test {
   LiquidityHubHandler hubHandler;
@@ -29,7 +28,7 @@ contract LiquidityHubInvariant is StdInvariant, Test {
     // TODO: manage asset listed multiple times
     // TODO: manage interest
     for (uint256 i; i < hub.assetCount(); ++i) {
-      LiquidityHub.Asset memory reserveData = hub.getAsset(i);
+      Asset memory reserveData = hub.getAsset(i);
       IERC20 asset = hub.assetsList(i);
       assertEq(
         hub.getTotalAssets(reserveData.id),
@@ -43,7 +42,7 @@ contract LiquidityHubInvariant is StdInvariant, Test {
   function skip_invariant_exchangeRateMonotonicallyIncreasing() public {
     // TODO this can be improved with borrows OR changes in borrowRate
     for (uint256 id = 0; id < hub.assetCount(); id++) {
-      LiquidityHub.Asset memory reserveData = hub.getAsset(id);
+      Asset memory reserveData = hub.getAsset(id);
       uint256 calcExchangeRate = reserveData.suppliedShares == 0
         ? 0
         : hub.getTotalAssets(reserveData.id) / reserveData.suppliedShares;

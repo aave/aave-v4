@@ -3,6 +3,7 @@ pragma solidity ^0.8.0;
 
 import '../BaseTest.t.sol';
 import {IERC20Errors} from 'src/dependencies/openzeppelin/IERC20Errors.sol';
+import {Asset, SpokeData} from 'src/contracts/LiquidityHub.sol';
 
 contract LiquidityHubTest_ToMigrate is BaseTest {
   using SharesMath for uint256;
@@ -146,8 +147,8 @@ contract LiquidityHubTest_ToMigrate is BaseTest {
     uint256 assetId = 0; // TODO: Add getter of asset id based on address
     uint256 amount = 100e18;
 
-    LiquidityHub.Asset memory reserveData = hub.getAsset(assetId);
-    LiquidityHub.Spoke memory spokeData = hub.getSpoke(assetId, address(spoke1));
+    Asset memory reserveData = hub.getAsset(assetId);
+    SpokeData memory spokeData = hub.getSpoke(assetId, address(spoke1));
 
     uint256 initialUserBalance = dai.balanceOf(USER1);
 
@@ -196,7 +197,7 @@ contract LiquidityHubTest_ToMigrate is BaseTest {
     // initial supply
     Utils.supply(vm, hub, assetId, user, amount, user, user);
 
-    LiquidityHub.Asset memory reserveData = hub.getAsset(assetId);
+    Asset memory reserveData = hub.getAsset(assetId);
     Spoke.UserConfig memory userData = spoke1.getUser(assetId, user);
 
     // check reserve index and user interest
@@ -252,8 +253,8 @@ contract LiquidityHubTest_ToMigrate is BaseTest {
 
     deal(address(dai), address(spoke1), amount);
 
-    LiquidityHub.Asset memory assetData = hub.getAsset(assetId);
-    LiquidityHub.Spoke memory spokeData = hub.getSpoke(assetId, address(spoke1));
+    Asset memory assetData = hub.getAsset(assetId);
+    SpokeData memory spokeData = hub.getSpoke(assetId, address(spoke1));
 
     assertEq(assetData.suppliedShares, 0, 'wrong hub total shares pre-supply');
     assertEq(hub.getTotalAssets(assetId), 0, 'wrong hub total assets pre-supply');
@@ -339,7 +340,7 @@ contract LiquidityHubTest_ToMigrate is BaseTest {
 
     // assetData = hub.getAsset(assetId);
     // spokeData = hub.getSpoke(assetId, address(spoke1));
-    // LiquidityHub.Spoke memory spoke2Data = hub.getSpoke(assetId, address(spoke2));
+    // SpokeData memory spoke2Data = hub.getSpoke(assetId, address(spoke2));
 
     // assertEq(assetData.suppliedShares, amount + spoke2SupplyShares, 'wrong final total shares');
     // assertEq(
@@ -392,7 +393,7 @@ contract LiquidityHubTest_ToMigrate is BaseTest {
     //   userAssets: amount,
     //   userShares: amount
     // });
-    // LiquidityHub.Asset memory reserveData;
+    // Asset memory reserveData;
     // Spoke.UserConfig memory userData;
 
     // for (uint256 i = 0; i < 2; i += 1) {
@@ -446,8 +447,8 @@ contract LiquidityHubTest_ToMigrate is BaseTest {
     deal(address(dai), address(spoke1), amount);
     Utils.supply(vm, hub, assetId, address(spoke1), amount, address(spoke1), address(spoke1));
 
-    LiquidityHub.Asset memory assetData = hub.getAsset(assetId);
-    LiquidityHub.Spoke memory spokeData = hub.getSpoke(assetId, address(spoke1));
+    Asset memory assetData = hub.getAsset(assetId);
+    SpokeData memory spokeData = hub.getSpoke(assetId, address(spoke1));
 
     // assertEq(
     //   assetData.suppliedShares,
@@ -525,7 +526,7 @@ contract LiquidityHubTest_ToMigrate is BaseTest {
     deal(address(dai), address(spoke1), amount);
     Utils.supply(vm, hub, assetId, address(spoke1), amount, address(spoke1), address(spoke1));
 
-    LiquidityHub.Asset memory reserveData = hub.getAsset(assetId);
+    Asset memory reserveData = hub.getAsset(assetId);
 
     // assertEq(reserveData.totalShares, amount);
     // assertEq(reserveData.totalAssets, amount);
@@ -664,10 +665,10 @@ contract LiquidityHubTest_ToMigrate is BaseTest {
     deal(address(dai), address(spoke2), daiAmount);
     Utils.supply(vm, hub, daiId, address(spoke2), daiAmount, address(spoke2), address(spoke2));
 
-    LiquidityHub.Asset memory daiData = hub.getAsset(daiId);
-    LiquidityHub.Asset memory ethData = hub.getAsset(ethId);
-    LiquidityHub.Spoke memory spoke1Data = hub.getSpoke(ethId, address(spoke1));
-    LiquidityHub.Spoke memory spoke2Data = hub.getSpoke(daiId, address(spoke2));
+    Asset memory daiData = hub.getAsset(daiId);
+    Asset memory ethData = hub.getAsset(ethId);
+    SpokeData memory spoke1Data = hub.getSpoke(ethId, address(spoke1));
+    SpokeData memory spoke2Data = hub.getSpoke(daiId, address(spoke2));
 
     // assertEq(
     //   daiData.totalShares,
@@ -844,12 +845,12 @@ contract LiquidityHubTest_ToMigrate is BaseTest {
     hub.restore(daiId, 0, restoreAmount, USER1);
     vm.stopPrank();
 
-    LiquidityHub.Asset memory daiData = hub.getAsset(daiId);
-    LiquidityHub.Asset memory ethData = hub.getAsset(ethId);
-    LiquidityHub.Spoke memory spoke1EthData = hub.getSpoke(ethId, address(spoke1));
-    LiquidityHub.Spoke memory spoke1DaiData = hub.getSpoke(daiId, address(spoke1));
-    LiquidityHub.Spoke memory spoke2EthData = hub.getSpoke(ethId, address(spoke2));
-    LiquidityHub.Spoke memory spoke2DaiData = hub.getSpoke(daiId, address(spoke2));
+    Asset memory daiData = hub.getAsset(daiId);
+    Asset memory ethData = hub.getAsset(ethId);
+    SpokeData memory spoke1EthData = hub.getSpoke(ethId, address(spoke1));
+    SpokeData memory spoke1DaiData = hub.getSpoke(daiId, address(spoke1));
+    SpokeData memory spoke2EthData = hub.getSpoke(ethId, address(spoke2));
+    SpokeData memory spoke2DaiData = hub.getSpoke(daiId, address(spoke2));
 
     // assertEq(
     //   daiData.totalShares,

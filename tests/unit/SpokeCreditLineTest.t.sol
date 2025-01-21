@@ -88,7 +88,7 @@ contract SpokeCreditLineTest is BaseTest {
   //   deal(address(dai), USER2, daiAmount);
   //   Utils.supply(vm, hub, daiId, USER2, daiAmount, USER2);
 
-  //   LiquidityHub.Asset memory daiData0 = hub.getAsset(daiId);
+  //   Asset memory daiData0 = hub.getAsset(daiId);
 
   //   assertEq(dai.balanceOf(USER1), 0);
   //   assertEq(dai.balanceOf(address(spokeCreditLine)), 0);
@@ -102,7 +102,7 @@ contract SpokeCreditLineTest is BaseTest {
   //   emit Draw(daiId, USER1, USER1, drawnAmounts[0]);
   //   ISpoke(address(spokeCreditLine)).borrow(daiId, USER1, drawnAmounts[0]);
 
-  //   LiquidityHub.Asset memory daiData1 = hub.getAsset(daiId);
+  //   Asset memory daiData1 = hub.getAsset(daiId);
 
   //   assertEq(daiData1.totalShares, daiAmount, '1) wrong total shares');
   //   assertEq(daiData1.totalAssets, daiData0.totalAssets, '1) wrong total assets');
@@ -137,7 +137,7 @@ contract SpokeCreditLineTest is BaseTest {
   //   user = spokeCreditLine.getUser(daiId, USER1);
 
   //   // hub assertions
-  //   LiquidityHub.Asset memory daiData2 = hub.getAsset(daiId);
+  //   Asset memory daiData2 = hub.getAsset(daiId);
 
   //   assertEq(daiData2.totalShares, daiAmount, '2) wrong total shares');
   //   assertEq(
@@ -198,7 +198,7 @@ contract SpokeCreditLineTest is BaseTest {
   //   deal(address(dai), USER2, daiAmount);
   //   Utils.supply(vm, hub, daiId, USER2, daiAmount, USER2);
 
-  //   LiquidityHub.Asset memory daiData0 = hub.getAsset(daiId);
+  //   Asset memory daiData0 = hub.getAsset(daiId);
 
   //   assertEq(dai.balanceOf(USER1), 0);
   //   assertEq(dai.balanceOf(address(spoke1)), 0);
@@ -211,7 +211,7 @@ contract SpokeCreditLineTest is BaseTest {
   //   vm.prank(USER1);
   //   ISpoke(address(spoke1)).borrow(daiId, USER1, drawnAmounts[0]);
 
-  //   LiquidityHub.Asset memory daiData1 = hub.getAsset(daiId);
+  //   Asset memory daiData1 = hub.getAsset(daiId);
 
   //   MockSpokeCreditLine.UserConfig memory user1 = spokeCreditLine.getUser(daiId, USER1);
 
@@ -235,7 +235,7 @@ contract SpokeCreditLineTest is BaseTest {
   //   MockSpokeCreditLine.UserConfig memory user2 = spokeCreditLine.getUser(daiId, USER2);
 
   //   // hub assertions
-  //   LiquidityHub.Asset memory daiData2 = hub.getAsset(daiId);
+  //   Asset memory daiData2 = hub.getAsset(daiId);
 
   //   assertEq(spokeCreditLine.getInterestRate(daiId), 0.05e27, '2) wrong IR'); // should be flat and constant
   //   assertEq(daiData2.totalShares, daiAmount, '2) wrong total shares');
@@ -300,7 +300,7 @@ contract SpokeCreditLineTest is BaseTest {
   //   uint256 daiAmount = 100e18;
 
   //   uint256[] memory drawnAmounts = new uint256[](numDrawings);
-  //   LiquidityHub.Asset[] memory daiData = new LiquidityHub.Asset[](numDrawings);
+  //   Asset[] memory daiData = new Asset[](numDrawings);
 
   //   // User2 supply dai
   //   deal(address(dai), USER2, daiAmount);
@@ -371,7 +371,7 @@ contract SpokeCreditLineTest is BaseTest {
 
   // // TODO: move to a helper
   // function _calculateLinearInterest(
-  //   LiquidityHub.Asset memory reserveData
+  //   Asset memory reserveData
   // ) internal view returns (uint256 totalCumulated, uint256 cumulatedInterest) {
   //   // accumulate interest over the year
   //   totalCumulated = MathUtils
