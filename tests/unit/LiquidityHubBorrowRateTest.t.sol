@@ -362,7 +362,7 @@ contract LiquidityHubBorrowRate is BaseTest {
     baseBorrowRate = _getBaseBorrowRate(daiAssetId);
     assertApproxEqAbs(
       borrowRate,
-      baseBorrowRate + ((rpSpoke1 + rpSpoke2).radToRay().rayMul(baseBorrowRate).rayDiv(2e27)),
+      baseBorrowRate + (((rpSpoke1 + rpSpoke2).radToRay().rayMul(baseBorrowRate)).rayDiv(2e27)),
       1
     );
     vm.stopPrank();

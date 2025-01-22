@@ -97,6 +97,42 @@ library WadRayMath {
   }
 
   /**
+   * @notice Multiplies two rad, rounding half up to the nearest rad
+   * @dev assembly optimized for improved gas savings, see https://twitter.com/transmissions11/status/1451131036377571328
+   * @param a Rad
+   * @param b Rad
+   * @return c = a radMul b
+   */
+  function radMul(uint256 a, uint256 b) internal pure returns (uint256 c) {
+    // to avoid overflow, a <= (type(uint256).max - HALF_RAD) / b
+    assembly {
+      if iszero(or(iszero(b), iszero(gt(a, div(sub(not(0), HALF_RAD), b))))) {
+        revert(0, 0)
+      }
+
+      c := div(add(mul(a, b), HALF_RAD), RAD)
+    }
+  }
+
+  /**
+   * @notice Divides two rad, rounding half up to the nearest rad
+   * @dev assembly optimized for improved gas savings, see https://twitter.com/transmissions11/status/1451131036377571328
+   * @param a Rad
+   * @param b Rad
+   * @return c = a radDiv b
+   */
+  function radDiv(uint256 a, uint256 b) internal pure returns (uint256 c) {
+    // to avoid overflow, a <= (type(uint256).max - halfB) / RAD
+    assembly {
+      if or(iszero(b), iszero(iszero(gt(a, div(sub(not(0), div(b, 2)), RAD))))) {
+        revert(0, 0)
+      }
+
+      c := div(add(mul(a, RAD), div(b, 2)), b)
+    }
+  }
+
+  /**
    * @dev Casts ray down to wad
    * @dev assembly optimized for improved gas savings, see https://twitter.com/transmissions11/status/1451131036377571328
    * @param a Ray
@@ -194,7 +230,6 @@ library WadRayMath {
   }
 
   function bpsToRad(uint256 a) internal pure returns (uint256) {
-    if (a > 100_00) a = 100_00;
     return (a * RAD) / 100_00;
   }
 
@@ -203,7 +238,6 @@ library WadRayMath {
   }
 
   function bpsToRay(uint256 a) internal pure returns (uint256) {
-    if (a > 100_00) a = 100_00;
     return (a * RAY) / 100_00;
   }
 
