@@ -215,6 +215,7 @@ contract LiquidityHubBorrowRate is BaseTest {
 
   function test_LHBorrowRate_BorrowFuzz(uint256 newRiskPremium) public {
     newRiskPremium = bound(newRiskPremium, 0, 99999);
+    newRiskPremium = newRiskPremium.bpsToRad();
     // Spoke 1's first borrow should set the overall borrow rate
     deal(address(tokenList.dai), address(spoke1), 1000e18);
     vm.startPrank(address(spoke1));
@@ -224,11 +225,11 @@ contract LiquidityHubBorrowRate is BaseTest {
     vm.stopPrank();
     uint256 borrowRate = _getBorrowRate(daiAssetId);
     uint256 baseBorrowRate = _getBaseBorrowRate(daiAssetId);
-    assertEq(borrowRate, baseBorrowRate + (newRiskPremium * baseBorrowRate).fromRad() / 1e4);
+    assertEq(borrowRate, baseBorrowRate + (newRiskPremium.radToRay().rayMul(baseBorrowRate)));
   }
 
   function test_LHBorrowRate_BorrowAndSupply() public {
-    uint256 newRiskPremium = 1e3;
+    uint256 newRiskPremium = uint256(1e3).bpsToRad();
     deal(address(tokenList.dai), address(spoke1), 2000e18);
     vm.startPrank(address(spoke1));
     IERC20(tokenList.dai).approve(address(hub), 1000e18);
@@ -236,98 +237,103 @@ contract LiquidityHubBorrowRate is BaseTest {
     hub.draw(daiAssetId, address(spoke1), 100e18, newRiskPremium);
     uint256 borrowRate = _getBorrowRate(daiAssetId);
     uint256 baseBorrowRate = _getBaseBorrowRate(daiAssetId);
-    assertEq(borrowRate, baseBorrowRate + (newRiskPremium * baseBorrowRate).fromRad() / 1e4);
+    assertEq(borrowRate, baseBorrowRate + (newRiskPremium.radToRay().rayMul(baseBorrowRate)));
 
     // Now if we supply again, passing same risk premium, RP doesn't update
     IERC20(tokenList.dai).approve(address(hub), 1000e18);
     hub.supply(daiAssetId, 1000e18, newRiskPremium, address(spoke1));
     borrowRate = _getBorrowRate(daiAssetId);
     baseBorrowRate = _getBaseBorrowRate(daiAssetId);
-    assertEq(borrowRate, baseBorrowRate + (newRiskPremium * baseBorrowRate).fromRad() / 1e4);
+    assertEq(borrowRate, baseBorrowRate + (newRiskPremium.radToRay().rayMul(baseBorrowRate)));
     vm.stopPrank();
   }
 
   function test_LHBorrowRate_BorrowAndSupplyFuzz(uint256 newRiskPremium) public {
     newRiskPremium = bound(newRiskPremium, 0, 99999);
-    deal(address(dai), address(spoke1), 2000e18);
+    newRiskPremium = newRiskPremium.bpsToRad();
+    deal(address(tokenList.dai), address(spoke1), 2000e18);
     vm.startPrank(address(spoke1));
-    dai.approve(address(hub), 2000e18);
+    IERC20(tokenList.dai).approve(address(hub), 2000e18);
     hub.supply(daiAssetId, 1000e18, 0, address(spoke1));
     hub.draw(daiAssetId, address(spoke1), 100e18, newRiskPremium);
     uint256 borrowRate = _getBorrowRate(daiAssetId);
     uint256 baseBorrowRate = _getBaseBorrowRate(daiAssetId);
-    assertEq(borrowRate, baseBorrowRate + (newRiskPremium * baseBorrowRate) / 1e4);
+    assertEq(borrowRate, baseBorrowRate + (newRiskPremium.radToRay().rayMul(baseBorrowRate)));
 
     // Now if we supply again, passing same risk premium, RP doesn't update
     hub.supply(daiAssetId, 1000e18, newRiskPremium, address(spoke1));
     borrowRate = _getBorrowRate(daiAssetId);
     baseBorrowRate = _getBaseBorrowRate(daiAssetId);
-    assertEq(borrowRate, baseBorrowRate + (newRiskPremium * baseBorrowRate) / 1e4);
+    assertEq(borrowRate, baseBorrowRate + (newRiskPremium.radToRay().rayMul(baseBorrowRate)));
     vm.stopPrank();
   }
 
   function test_LHBorrowRate_BorrowTwice() public {
-    uint256 newRiskPremium = 1e3;
-    deal(address(dai), address(spoke1), 1000e18);
+    uint256 newRiskPremium = uint256(1e3).bpsToRad();
+    deal(address(tokenList.dai), address(spoke1), 1000e18);
     vm.startPrank(address(spoke1));
-    dai.approve(address(hub), 1000e18);
+    IERC20(tokenList.dai).approve(address(hub), 1000e18);
     hub.supply(daiAssetId, 1000e18, 0, address(spoke1));
     hub.draw(daiAssetId, address(spoke1), 100e18, newRiskPremium);
     uint256 borrowRate = _getBorrowRate(daiAssetId);
     uint256 baseBorrowRate = _getBaseBorrowRate(daiAssetId);
-    assertEq(borrowRate, baseBorrowRate + (newRiskPremium * baseBorrowRate) / 1e4);
+    assertEq(borrowRate, baseBorrowRate + (newRiskPremium.radToRay().rayMul(baseBorrowRate)));
 
     // New risk premium from same spoke should replace avg risk premium
-    uint256 newRiskPremium2 = 2e3;
+    uint256 newRiskPremium2 = uint256(2e3).bpsToRad();
     hub.draw(daiAssetId, address(spoke1), 100e18, newRiskPremium2);
     borrowRate = _getBorrowRate(daiAssetId);
     baseBorrowRate = _getBaseBorrowRate(daiAssetId);
-    assertEq(borrowRate, baseBorrowRate + (newRiskPremium2 * baseBorrowRate) / 1e4);
+    assertEq(borrowRate, baseBorrowRate + (newRiskPremium2.radToRay().rayMul(baseBorrowRate)));
     vm.stopPrank();
   }
 
   function test_LHBorrowRate_BorrowTwiceFuzz(uint256 newRiskPremium) public {
     newRiskPremium = bound(newRiskPremium, 0, 99999);
-    uint256 firstRiskPremium = 1e3;
-    deal(address(dai), address(spoke1), 1000e18);
+    newRiskPremium = newRiskPremium.bpsToRad();
+    uint256 firstRiskPremium = uint256(1e3).bpsToRad();
+    deal(address(tokenList.dai), address(spoke1), 1000e18);
     vm.startPrank(address(spoke1));
-    dai.approve(address(hub), 1000e18);
+    IERC20(tokenList.dai).approve(address(hub), 1000e18);
     hub.supply(daiAssetId, 1000e18, 0, address(spoke1));
     hub.draw(daiAssetId, address(spoke1), 100e18, firstRiskPremium);
     uint256 borrowRate = _getBorrowRate(daiAssetId);
     uint256 baseBorrowRate = _getBaseBorrowRate(daiAssetId);
-    assertEq(borrowRate, baseBorrowRate + (firstRiskPremium * baseBorrowRate) / 1e4);
+    assertEq(borrowRate, baseBorrowRate + (firstRiskPremium.radToRay().rayMul(baseBorrowRate)));
 
     // New risk premium from same spoke should replace avg risk premium
     hub.draw(daiAssetId, address(spoke1), 100e18, newRiskPremium);
     borrowRate = _getBorrowRate(daiAssetId);
     baseBorrowRate = _getBaseBorrowRate(daiAssetId);
-    assertEq(borrowRate, baseBorrowRate + (newRiskPremium * baseBorrowRate) / 1e4);
+    assertEq(borrowRate, baseBorrowRate + (newRiskPremium.radToRay().rayMul(baseBorrowRate)));
     vm.stopPrank();
   }
 
   function test_LHBorrowRate_DrawTwoSpokes() public {
     uint256 rpSpoke1 = 1e3;
     uint256 rpSpoke2 = 2e3;
-    deal(address(dai), address(spoke1), 5000e18);
+    deal(address(tokenList.dai), address(spoke1), 5000e18);
     vm.startPrank(address(spoke1));
-    dai.approve(address(hub), 1000e18);
+    IERC20(tokenList.dai).approve(address(hub), 1000e18);
     hub.supply(daiAssetId, 1000e18, 0, address(spoke1));
     hub.draw(daiAssetId, address(spoke1), 100e18, rpSpoke1);
     uint256 borrowRate = _getBorrowRate(daiAssetId);
     uint256 baseBorrowRate = _getBaseBorrowRate(daiAssetId);
-    assertEq(borrowRate, baseBorrowRate + (rpSpoke1 * baseBorrowRate) / 1e4);
+    assertEq(borrowRate, baseBorrowRate + (rpSpoke1.radToRay().rayMul(baseBorrowRate)));
     vm.stopPrank();
 
     // Next spoke risk premium should be averaged with the first
-    deal(address(dai), address(spoke2), 1000e18);
+    deal(address(tokenList.dai), address(spoke2), 1000e18);
     vm.startPrank(address(spoke2));
-    dai.approve(address(hub), 1000e18);
+    IERC20(tokenList.dai).approve(address(hub), 1000e18);
     hub.supply(daiAssetId, 1000e18, 0, address(spoke2));
     hub.draw(daiAssetId, address(spoke2), 100e18, rpSpoke2);
     borrowRate = _getBorrowRate(daiAssetId);
     baseBorrowRate = _getBaseBorrowRate(daiAssetId);
-    assertEq(borrowRate, baseBorrowRate + ((rpSpoke1 + rpSpoke2) * baseBorrowRate) / 2e4);
+    assertEq(
+      borrowRate,
+      baseBorrowRate + ((rpSpoke1 + rpSpoke2).radToRay().rayMul(baseBorrowRate)).rayDiv(2e27)
+    );
     vm.stopPrank();
   }
 
