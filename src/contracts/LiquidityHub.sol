@@ -78,7 +78,7 @@ contract LiquidityHub is ILiquidityHub {
   // Governance
   // /////
 
-  function addAsset(DataTypes.AssetConfig memory params, address asset) external {
+  function addAsset(DataTypes.AssetConfig memory config, address asset) external {
     // TODO: AccessControl
     assetsList.push(IERC20(asset));
     _assets[assetCount] = Asset({
@@ -92,9 +92,9 @@ contract LiquidityHub is ILiquidityHub {
       lastUpdateTimestamp: block.timestamp,
       riskPremiumRad: 0,
       config: DataTypes.AssetConfig({
-        decimals: params.decimals,
-        active: params.active,
-        irStrategy: params.irStrategy
+        decimals: config.decimals,
+        active: config.active,
+        irStrategy: config.irStrategy
       })
     });
     assetCount++;
@@ -102,20 +102,20 @@ contract LiquidityHub is ILiquidityHub {
     // TODO: emit event
   }
 
-  function updateAssetConfig(uint256 assetId, DataTypes.AssetConfig memory params) external {
+  function updateAssetConfig(uint256 assetId, DataTypes.AssetConfig memory config) external {
     // TODO: AccessControl
     _assets[assetId].config = DataTypes.AssetConfig({
-      decimals: params.decimals,
-      active: params.active,
-      irStrategy: params.irStrategy
+      decimals: config.decimals,
+      active: config.active,
+      irStrategy: config.irStrategy
     });
 
     // TODO: emit event
   }
 
-  function addSpoke(uint256 assetId, DataTypes.SpokeConfig memory params, address spoke) external {
+  function addSpoke(uint256 assetId, DataTypes.SpokeConfig memory config, address spoke) external {
     // TODO: AccessControl
-    _addSpoke(assetId, params, spoke);
+    _addSpoke(assetId, config, spoke);
   }
 
   function addSpokes(
@@ -134,12 +134,12 @@ contract LiquidityHub is ILiquidityHub {
   function updateSpokeConfig(
     uint256 assetId,
     address spoke,
-    DataTypes.SpokeConfig memory params
+    DataTypes.SpokeConfig memory config
   ) external {
     // TODO: AccessControl
     _spokes[assetId][spoke].config = DataTypes.SpokeConfig({
-      drawCap: params.drawCap,
-      supplyCap: params.supplyCap
+      drawCap: config.drawCap,
+      supplyCap: config.supplyCap
     });
 
     // TODO: emit event
@@ -413,8 +413,8 @@ contract LiquidityHub is ILiquidityHub {
 
     uint256 newSpokeDebt = baseDebtChange > 0
       ? existingSpokeDebt + uint256(baseDebtChange) // debt added
-      : // force underflow: only possible when spoke takes repays amount more than net drawn
-      existingSpokeDebt - uint256(-baseDebtChange); // debt restored
+      // force underflow: only possible when spoke takes repays amount more than net drawn
+      : existingSpokeDebt - uint256(-baseDebtChange); // debt restored
 
     (uint256 newAssetRiskPremium, uint256 newAssetDebt) = MathUtils.addToWeightedAverage(
       assetRiskPremiumWithoutCurrent,
@@ -430,7 +430,7 @@ contract LiquidityHub is ILiquidityHub {
     spoke.riskPremiumRad = newSpokeRiskPremium;
   }
 
-  function _addSpoke(uint256 assetId, DataTypes.SpokeConfig memory params, address spoke) internal {
+  function _addSpoke(uint256 assetId, DataTypes.SpokeConfig memory config, address spoke) internal {
     require(spoke != address(0), 'INVALID_SPOKE');
     _spokes[assetId][spoke] = SpokeData({
       suppliedShares: 0,
@@ -439,7 +439,7 @@ contract LiquidityHub is ILiquidityHub {
       baseBorrowIndex: WadRayMath.RAY,
       riskPremiumRad: 0,
       lastUpdateTimestamp: block.timestamp,
-      config: DataTypes.SpokeConfig(params.supplyCap, params.drawCap)
+      config: DataTypes.SpokeConfig({drawCap: config.drawCap, supplyCap: config.supplyCap})
     });
     emit SpokeAdded(assetId, spoke);
   }

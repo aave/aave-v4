@@ -1,11 +1,14 @@
 // SPDX-License-Identifier: BUSL-1.1
 pragma solidity ^0.8.10;
 
+import {WadRayMath} from './WadRayMath.sol';
 import {DataTypes} from '../libraries/types/DataTypes.sol';
 import {Errors} from '../libraries/helpers/Errors.sol';
 import {IDefaultInterestRateStrategy} from '../interfaces/IDefaultInterestRateStrategy.sol';
 import {IReserveInterestRateStrategy} from '../interfaces/IReserveInterestRateStrategy.sol';
 import {WadRayMath} from './WadRayMath.sol';
+
+// TODO: update this contract to based on DefaultReserveInterestRateStrategyV2 in aave-v3-origin
 
 /**
  * @title DefaultReserveInterestRateStrategy contract
@@ -111,7 +114,6 @@ contract DefaultReserveInterestRateStrategy is IDefaultInterestRateStrategy {
       _interestRateData[assetId].variableRateSlope2;
   }
 
-  // todo: this currently returns rate in bps while expected is ray (from spec as well)
   /// @inheritdoc IReserveInterestRateStrategy
   function calculateInterestRates(
     DataTypes.CalculateInterestRatesParams memory params
