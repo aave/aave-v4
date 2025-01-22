@@ -291,15 +291,6 @@ contract LiquidityHubTest_ToMigrate is BaseTest {
     assertEq(dai.balanceOf(address(spoke1)), 0, 'wrong spoke token balance post-supply');
     assertEq(dai.balanceOf(address(hub)), amount, 'wrong hub token balance post-supply');
 
-    // Index grows but same block, no interest acc
-
-    // uint256 newBorrowRate = uint256(10_00).bpsToRad(); // 10.00%
-    // vm.mockCall(
-    //   address(hub),
-    //   abi.encodeWithSelector(ILiquidityHub.getBaseInterestRate.selector),
-    //   abi.encode(newBorrowRate)
-    // );
-
     // Time flies, no interest acc
     skip(1e4);
 
@@ -323,23 +314,28 @@ contract LiquidityHubTest_ToMigrate is BaseTest {
     assertEq(spokeData.riskPremiumRad, 0, 'wrong spoke riskPremiumRad post-skip');
     assertEq(spokeData.lastUpdateTimestamp, 1, 'wrong spoke lastUpdateTimestamp post-skip');
 
-    // state update due to reserve operation
-    // TODO helper for reserve state update
     // total assets do not change because no interest acc yet
     uint256 prevTotalAssets = hub.getTotalAssets(assetId);
 
-    uint256 spoke2SupplyShares = 1; // minimum for 1 share
+    // state update due to operation
+    // TODO helper for reserve state update
+    uint256 spoke2SupplyShares = 100000000000000000000; // minimum for 1 share
     uint256 spoke2SupplyAssets = ILiquidityHub(address(hub)).convertToAssetsDown(
       assetId,
       spoke2SupplyShares
     );
 
-    console.log('LHT: spoke2SupplyAssets', spoke2SupplyShares, spoke2SupplyAssets);
+    // uint256 spoke2SupplyAssets = (spoke2SupplyShares * prevTotalAssets) /
+    //   (prevTotalAssets - spoke2SupplyShares);
 
-    uint256 newTotalAssets = amount.toAssetsDown(
-      hub.getTotalAssets(assetId) + spoke2SupplyAssets,
-      assetData.suppliedShares + spoke2SupplyShares
-    );
+    // console.log('LHT: spoke2SupplyAssets', spoke2SupplyAssets);
+
+    // console.log('LHT: spoke2SupplyAssets', spoke2SupplyShares, spoke2SupplyAssets);
+
+    // uint256 newTotalAssets = amount.toAssetsDown(
+    //   hub.getTotalAssets(assetId) + spoke2SupplyAssets,
+    //   assetData.suppliedShares + spoke2SupplyShares
+    // );
 
     deal(address(dai), address(spoke2), spoke2SupplyAssets);
     Utils.supply(
