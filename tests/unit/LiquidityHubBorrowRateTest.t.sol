@@ -3,20 +3,20 @@ pragma solidity ^0.8.0;
 
 import '../BaseTest.t.sol';
 import {SpokeData} from 'src/contracts/LiquidityHub.sol';
+import {Asset} from 'src/contracts/LiquidityHub.sol';
 
-contract UserRiskPremiumTest_ToMigrate is BaseTest {
+contract LiquidityHubBorrowRate is BaseTest {
   using SharesMath for uint256;
   using WadRayMath for uint256;
   using PercentageMath for uint256;
 
-  uint256 public constant daiAssetId = 0;
-  uint256 public constant ethAssetId = 1;
-  uint256 public constant usdcId = 2;
-  uint256 public constant wbtcAssetId = 3;
+  uint256 public daiAssetId = 2;
 
   function setUp() public override {
     super.setUp();
+    initEnvironment();
 
+    /*
     address[] memory spokes = new address[](3);
     spokes[0] = address(spoke1);
     spokes[1] = address(spoke2);
@@ -179,6 +179,7 @@ contract UserRiskPremiumTest_ToMigrate is BaseTest {
         variableRateSlope2: 500 // 5.00%
       })
     );
+    */
   }
 
   function test_LHBorrowRate_NoActionTaken() public {
@@ -187,11 +188,11 @@ contract UserRiskPremiumTest_ToMigrate is BaseTest {
   }
 
   function test_LHBorrowRate_Supply() public {
-    deal(address(dai), address(spoke1), 1000e18);
+    deal(address(tokenList.dai), address(spoke1), 1000e18);
 
     vm.startPrank(address(spoke1));
     SpokeData memory test = hub.getSpoke(daiAssetId, address(spoke1));
-    dai.approve(address(hub), 1000e18);
+    IERC20(tokenList.dai).approve(address(hub), 1000e18);
     hub.supply(daiAssetId, 1000e18, 0, address(spoke1));
     // No change to risk premium, so borrow rate is just the base rate
     assertEq(_getBaseBorrowRate(daiAssetId), _getBorrowRate(daiAssetId));
@@ -201,29 +202,30 @@ contract UserRiskPremiumTest_ToMigrate is BaseTest {
   function test_LHBorrowRate_Borrow() public {
     // Spoke 1's first borrow should adjust the overall borrow rate with a risk premium of 10%
     uint256 newRiskPremium = 1e3;
-    deal(address(dai), address(spoke1), 1000e18);
+    newRiskPremium = newRiskPremium.toRad();
+    deal(address(tokenList.dai), address(spoke1), 1000e18);
     vm.startPrank(address(spoke1));
-    dai.approve(address(hub), 1000e18);
+    IERC20(tokenList.dai).approve(address(hub), 1000e18);
     hub.supply(daiAssetId, 1000e18, 0, address(spoke1));
     hub.draw(daiAssetId, address(spoke1), 100e18, newRiskPremium);
     vm.stopPrank();
     uint256 borrowRate = _getBorrowRate(daiAssetId);
     uint256 baseBorrowRate = _getBaseBorrowRate(daiAssetId);
-    assertEq(borrowRate, baseBorrowRate + (newRiskPremium * baseBorrowRate) / 1e4);
+    assertEq(borrowRate, baseBorrowRate + (newRiskPremium * baseBorrowRate).fromRad() / 1e4);
   }
 
   function test_LHBorrowRate_BorrowFuzz(uint256 newRiskPremium) public {
     newRiskPremium = bound(newRiskPremium, 0, 99999);
     // Spoke 1's first borrow should set the overall borrow rate
-    deal(address(dai), address(spoke1), 1000e18);
+    deal(address(tokenList.dai), address(spoke1), 1000e18);
     vm.startPrank(address(spoke1));
-    dai.approve(address(hub), 1000e18);
+    IERC20(tokenList.dai).approve(address(hub), 1000e18);
     hub.supply(daiAssetId, 1000e18, 0, address(spoke1));
     hub.draw(daiAssetId, address(spoke1), 100e18, newRiskPremium);
     vm.stopPrank();
     uint256 borrowRate = _getBorrowRate(daiAssetId);
     uint256 baseBorrowRate = _getBaseBorrowRate(daiAssetId);
-    assertEq(borrowRate, baseBorrowRate + (newRiskPremium * baseBorrowRate) / 1e4);
+    assertEq(borrowRate, baseBorrowRate + (newRiskPremium * baseBorrowRate).fromRad() / 1e4);
   }
 
   function test_LHBorrowRate_BorrowAndSupply() public {
