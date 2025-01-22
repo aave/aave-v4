@@ -360,10 +360,9 @@ contract LiquidityHubBorrowRate is BaseTest {
     hub.draw(daiAssetId, address(spoke2), 100e18, rpSpoke2);
     borrowRate = _getBorrowRate(daiAssetId);
     baseBorrowRate = _getBaseBorrowRate(daiAssetId);
-    assertApproxEqAbs(
+    assertEq(
       borrowRate,
-      baseBorrowRate + (((rpSpoke1 + rpSpoke2).radToRay().rayMul(baseBorrowRate)).rayDiv(2e27)),
-      1
+      baseBorrowRate + (((rpSpoke1 + rpSpoke2).radToRay().rayMul(baseBorrowRate)).rayDiv(2e27))
     );
     vm.stopPrank();
   }
