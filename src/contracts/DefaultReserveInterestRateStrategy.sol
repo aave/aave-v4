@@ -7,6 +7,8 @@ import {Errors} from '../libraries/helpers/Errors.sol';
 import {IDefaultInterestRateStrategy} from '../interfaces/IDefaultInterestRateStrategy.sol';
 import {IReserveInterestRateStrategy} from '../interfaces/IReserveInterestRateStrategy.sol';
 
+// TODO: update this contract to based on DefaultReserveInterestRateStrategyV2 in aave-v3-origin
+
 /**
  * @title DefaultReserveInterestRateStrategy contract
  * @author Aave Labs
@@ -111,7 +113,6 @@ contract DefaultReserveInterestRateStrategy is IDefaultInterestRateStrategy {
       _interestRateData[assetId].variableRateSlope2;
   }
 
-  // todo: this currently returns rate in bps while expected is ray (from spec as well)
   /// @inheritdoc IReserveInterestRateStrategy
   function calculateInterestRates(
     DataTypes.CalculateInterestRatesParams memory params
