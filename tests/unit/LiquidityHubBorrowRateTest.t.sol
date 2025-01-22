@@ -201,8 +201,7 @@ contract LiquidityHubBorrowRate is BaseTest {
 
   function test_LHBorrowRate_Borrow() public {
     // Spoke 1's first borrow should adjust the overall borrow rate with a risk premium of 10%
-    uint256 newRiskPremium = 1e3;
-    newRiskPremium = newRiskPremium.toRad();
+    uint256 newRiskPremium = uint256(10_00).bpsToRad();
     deal(address(tokenList.dai), address(spoke1), 1000e18);
     vm.startPrank(address(spoke1));
     IERC20(tokenList.dai).approve(address(hub), 1000e18);
@@ -211,7 +210,7 @@ contract LiquidityHubBorrowRate is BaseTest {
     vm.stopPrank();
     uint256 borrowRate = _getBorrowRate(daiAssetId);
     uint256 baseBorrowRate = _getBaseBorrowRate(daiAssetId);
-    assertEq(borrowRate, baseBorrowRate + (newRiskPremium * baseBorrowRate).fromRad() / 1e4);
+    assertEq(borrowRate, baseBorrowRate + (newRiskPremium.radToRay().rayMul(baseBorrowRate)));
   }
 
   function test_LHBorrowRate_BorrowFuzz(uint256 newRiskPremium) public {
@@ -230,21 +229,21 @@ contract LiquidityHubBorrowRate is BaseTest {
 
   function test_LHBorrowRate_BorrowAndSupply() public {
     uint256 newRiskPremium = 1e3;
-    deal(address(dai), address(spoke1), 2000e18);
+    deal(address(tokenList.dai), address(spoke1), 2000e18);
     vm.startPrank(address(spoke1));
-    dai.approve(address(hub), 1000e18);
+    IERC20(tokenList.dai).approve(address(hub), 1000e18);
     hub.supply(daiAssetId, 1000e18, 0, address(spoke1));
     hub.draw(daiAssetId, address(spoke1), 100e18, newRiskPremium);
     uint256 borrowRate = _getBorrowRate(daiAssetId);
     uint256 baseBorrowRate = _getBaseBorrowRate(daiAssetId);
-    assertEq(borrowRate, baseBorrowRate + (newRiskPremium * baseBorrowRate) / 1e4);
+    assertEq(borrowRate, baseBorrowRate + (newRiskPremium * baseBorrowRate).fromRad() / 1e4);
 
     // Now if we supply again, passing same risk premium, RP doesn't update
-    dai.approve(address(hub), 1000e18);
+    IERC20(tokenList.dai).approve(address(hub), 1000e18);
     hub.supply(daiAssetId, 1000e18, newRiskPremium, address(spoke1));
     borrowRate = _getBorrowRate(daiAssetId);
     baseBorrowRate = _getBaseBorrowRate(daiAssetId);
-    assertEq(borrowRate, baseBorrowRate + (newRiskPremium * baseBorrowRate) / 1e4);
+    assertEq(borrowRate, baseBorrowRate + (newRiskPremium * baseBorrowRate).fromRad() / 1e4);
     vm.stopPrank();
   }
 
