@@ -113,9 +113,9 @@ contract LiquidityHub is ILiquidityHub {
     // TODO: emit event
   }
 
-  function addSpoke(uint256 assetId, DataTypes.SpokeConfig memory params, address spoke) external {
+  function addSpoke(uint256 assetId, DataTypes.SpokeConfig memory config, address spoke) external {
     // TODO: AccessControl
-    _addSpoke(assetId, params, spoke);
+    _addSpoke(assetId, config, spoke);
   }
 
   function addSpokes(
@@ -439,7 +439,7 @@ contract LiquidityHub is ILiquidityHub {
       baseBorrowIndex: WadRayMath.RAY,
       riskPremiumRad: 0,
       lastUpdateTimestamp: block.timestamp,
-      config: DataTypes.SpokeConfig(params.supplyCap, params.drawCap)
+      config: DataTypes.SpokeConfig({drawCap: params.drawCap, supplyCap: params.supplyCap})
     });
     emit SpokeAdded(assetId, spoke);
   }

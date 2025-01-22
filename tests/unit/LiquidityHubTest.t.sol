@@ -918,12 +918,15 @@ contract LiquidityHubTest_ToMigrate is BaseTest {
     uint256 ethId = 1;
 
     uint256[] memory assetIds = new uint256[](2);
-    assetIds[0] = 0;
-    assetIds[1] = 1;
+    assetIds[0] = daiId;
+    assetIds[1] = ethId;
+
+    DataTypes.SpokeConfig memory daiSpokeConfig = DataTypes.SpokeConfig({supplyCap: 1, drawCap: 2});
+    DataTypes.SpokeConfig memory ethSpokeConfig = DataTypes.SpokeConfig({supplyCap: 3, drawCap: 4});
 
     DataTypes.SpokeConfig[] memory spokeConfigs = new DataTypes.SpokeConfig[](2);
-    spokeConfigs[0] = DataTypes.SpokeConfig({supplyCap: 1, drawCap: 2});
-    spokeConfigs[1] = DataTypes.SpokeConfig({supplyCap: 3, drawCap: 4});
+    spokeConfigs[0] = daiSpokeConfig;
+    spokeConfigs[1] = ethSpokeConfig;
 
     vm.expectEmit(address(hub));
     emit SpokeAdded(daiId, address(spoke1));
@@ -933,11 +936,11 @@ contract LiquidityHubTest_ToMigrate is BaseTest {
     DataTypes.SpokeConfig memory daiSpokeData = hub.getSpokeConfig(daiId, address(spoke1));
     DataTypes.SpokeConfig memory ethSpokeData = hub.getSpokeConfig(ethId, address(spoke1));
 
-    assertEq(daiSpokeData.supplyCap, 1, 'wrong dai spoke supply cap');
-    assertEq(daiSpokeData.drawCap, 2, 'wrong dai spoke draw cap');
+    assertEq(daiSpokeData.supplyCap, daiSpokeConfig.supplyCap, 'wrong dai spoke supply cap');
+    assertEq(daiSpokeData.drawCap, daiSpokeConfig.drawCap, 'wrong dai spoke draw cap');
 
-    assertEq(ethSpokeData.supplyCap, 3, 'wrong eth spoke supply cap');
-    assertEq(ethSpokeData.drawCap, 4, 'wrong eth spoke draw cap');
+    assertEq(ethSpokeData.supplyCap, ethSpokeConfig.supplyCap, 'wrong eth spoke supply cap');
+    assertEq(ethSpokeData.drawCap, ethSpokeConfig.drawCap, 'wrong eth spoke draw cap');
   }
 
   function test_addSpokes_revertsWith_invalid_spoke() public {
