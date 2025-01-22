@@ -393,11 +393,10 @@ contract LiquidityHubBorrowRate is BaseTest {
     assertEq(
       borrowRate,
       baseBorrowRate +
-        (
-          (rpSpoke1.radToRay().rayMul(drawSpoke1) + rpSpoke2.radToRay().rayMul(drawSpoke2)).rayMul(
-            baseBorrowRate
-          )
-        ).rayDiv(drawSpoke1 + drawSpoke2)
+        ((rpSpoke1.radToRay() * drawSpoke1) + rpSpoke2.radToRay() * drawSpoke2).rayMul(
+          baseBorrowRate
+        ) /
+        (drawSpoke1 + drawSpoke2)
     );
     vm.stopPrank();
   }
