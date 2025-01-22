@@ -5,6 +5,8 @@ import {Vm} from 'forge-std/Vm.sol';
 import {LiquidityHub, DataTypes} from 'src/contracts/LiquidityHub.sol';
 import {Spoke, ISpoke} from 'src/contracts/Spoke.sol';
 
+import 'forge-std/console2.sol';
+
 library Utils {
   // hub
   function addAssetAndSpokes(
@@ -32,8 +34,10 @@ library Utils {
     address user,
     address onBehalfOf
   ) internal {
-    vm.prank(user);
+    vm.startPrank(user);
     hub.assetsList(assetId).approve(address(hub), amount);
+    vm.stopPrank();
+
     vm.startPrank(spoke);
     hub.supply({assetId: assetId, amount: amount, riskPremium: 0, supplier: user});
     vm.stopPrank();

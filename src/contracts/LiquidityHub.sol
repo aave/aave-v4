@@ -12,6 +12,8 @@ import {SharesMath} from 'src/contracts/SharesMath.sol';
 import {MathUtils} from 'src/contracts/MathUtils.sol';
 import {PercentageMath} from 'src/contracts/PercentageMath.sol';
 
+import 'forge-std/console2.sol';
+
 struct SpokeData {
   uint256 suppliedShares; // share
   uint256 baseDebt; // asset
@@ -172,12 +174,11 @@ contract LiquidityHub is ILiquidityHub {
       baseDebtChange: 0
     });
 
-    asset.availableLiquidity += amount;
-
     // todo: Mitigate inflation attack (burn some amount if first supply)
     uint256 sharesAmount = asset.convertToSharesDown(amount);
     require(sharesAmount > 0, 'INVALID_AMOUNT');
 
+    asset.availableLiquidity += amount;
     asset.suppliedShares += sharesAmount;
     spoke.suppliedShares += sharesAmount; // todo: mint 4626 shares to abstract this accounting
 
@@ -413,8 +414,8 @@ contract LiquidityHub is ILiquidityHub {
 
     uint256 newSpokeDebt = baseDebtChange > 0
       ? existingSpokeDebt + uint256(baseDebtChange) // debt added
-      // force underflow: only possible when spoke takes repays amount more than net drawn
-      : existingSpokeDebt - uint256(-baseDebtChange); // debt restored
+      : // force underflow: only possible when spoke takes repays amount more than net drawn
+      existingSpokeDebt - uint256(-baseDebtChange); // debt restored
 
     (uint256 newAssetRiskPremium, uint256 newAssetDebt) = MathUtils.addToWeightedAverage(
       assetRiskPremiumWithoutCurrent,
