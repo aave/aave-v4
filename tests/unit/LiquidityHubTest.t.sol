@@ -269,8 +269,13 @@ contract LiquidityHubTest_ToMigrate is BaseTest {
     vm.stopPrank();
   }
 
-  function test_supply_zero_reverts() public {
-    // TODO User cannot supply 0 assets
+  function test_supply_revertsWith_invalid_amount() public {
+    uint256 assetId = 0; // TODO: Add getter of asset id based on address
+    uint256 amount = 0;
+
+    vm.prank(address(spoke1));
+    vm.expectRevert(TestErrors.INVALID_AMOUNT);
+    hub.supply(assetId, amount, 0, USER1);
   }
 
   function test_supply_with_increased_index() public {
