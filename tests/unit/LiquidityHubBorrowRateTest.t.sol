@@ -368,24 +368,24 @@ contract LiquidityHubBorrowRate is BaseTest {
   }
 
   function test_LHBorrowRate_DrawTwoSpokesDiffWeights() public {
-    uint256 rpSpoke1 = 1e3;
-    uint256 rpSpoke2 = 2e3;
+    uint256 rpSpoke1 = uint256(1e3).bpsToRad();
+    uint256 rpSpoke2 = uint256(2e3).bpsToRad();
     uint256 drawSpoke1 = 100e18;
     uint256 drawSpoke2 = 200e18;
-    deal(address(dai), address(spoke1), 5000e18);
+    deal(address(tokenList.dai), address(spoke1), 5000e18);
     vm.startPrank(address(spoke1));
-    dai.approve(address(hub), 5000e18);
+    IERC20(tokenList.dai).approve(address(hub), 5000e18);
     hub.supply(daiAssetId, 1000e18, 0, address(spoke1));
     hub.draw(daiAssetId, address(spoke1), drawSpoke1, rpSpoke1);
     uint256 borrowRate = _getBorrowRate(daiAssetId);
     uint256 baseBorrowRate = _getBaseBorrowRate(daiAssetId);
-    assertEq(borrowRate, baseBorrowRate + (rpSpoke1 * baseBorrowRate) / 1e4);
+    assertEq(borrowRate, baseBorrowRate + (rpSpoke1.radToRay().rayMul(baseBorrowRate)));
     vm.stopPrank();
 
     // Next spoke risk premium should be averaged with the first
-    deal(address(dai), address(spoke2), 5000e18);
+    deal(address(tokenList.dai), address(spoke2), 5000e18);
     vm.startPrank(address(spoke2));
-    dai.approve(address(hub), 5000e18);
+    IERC20(tokenList.dai).approve(address(hub), 5000e18);
     hub.supply(daiAssetId, 1000e18, 0, address(spoke2));
     hub.draw(daiAssetId, address(spoke2), drawSpoke2, rpSpoke2);
     borrowRate = _getBorrowRate(daiAssetId);
@@ -393,8 +393,11 @@ contract LiquidityHubBorrowRate is BaseTest {
     assertEq(
       borrowRate,
       baseBorrowRate +
-        ((rpSpoke1 * drawSpoke1 + rpSpoke2 * drawSpoke2) * baseBorrowRate) /
-        (1e4 * (drawSpoke1 + drawSpoke2))
+        (
+          (rpSpoke1.radToRay().rayMul(drawSpoke1) + rpSpoke2.radToRay().rayMul(drawSpoke2)).rayMul(
+            baseBorrowRate
+          )
+        ).rayDiv(drawSpoke1 + drawSpoke2)
     );
     vm.stopPrank();
   }
