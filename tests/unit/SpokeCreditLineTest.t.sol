@@ -88,7 +88,7 @@ contract SpokeCreditLineTest is BaseTest {
 
   //   // User2 supply dai
   //   deal(address(dai), USER2, daiAmount);
-  //   Utils.supply(vm, hub, daiId, USER2, daiAmount, USER2);
+  //   Utils.supply( hub, daiId, USER2, daiAmount, USER2);
 
   //   Asset memory daiData0 = hub.getAsset(daiId);
 
@@ -198,7 +198,7 @@ contract SpokeCreditLineTest is BaseTest {
 
   //   // User2 supply dai
   //   deal(address(dai), USER2, daiAmount);
-  //   Utils.supply(vm, hub, daiId, USER2, daiAmount, USER2);
+  //   Utils.supply( hub, daiId, USER2, daiAmount, USER2);
 
   //   Asset memory daiData0 = hub.getAsset(daiId);
 
@@ -306,7 +306,7 @@ contract SpokeCreditLineTest is BaseTest {
 
   //   // User2 supply dai
   //   deal(address(dai), USER2, daiAmount);
-  //   Utils.supply(vm, hub, daiId, USER2, daiAmount, USER2);
+  //   Utils.supply( hub, daiId, USER2, daiAmount, USER2);
 
   //   vm.startPrank(USER1);
   //   uint256 drawnShares;

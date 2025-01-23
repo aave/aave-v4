@@ -168,8 +168,8 @@ contract HealthFactorTest_ToMigrate is BaseTest {
 
     // USER1 supply dai into spoke1
     deal(address(dai), USER1, daiAmount);
-    Utils.spokeSupply(vm, hub, spoke1, daiId, USER1, daiAmount, USER1);
-    Utils.setUsingAsCollateral(vm, spoke1, USER1, daiId, usingAsCollateral);
+    Utils.spokeSupply(hub, spoke1, daiId, USER1, daiAmount, USER1);
+    Utils.setUsingAsCollateral(spoke1, USER1, daiId, usingAsCollateral);
 
     uint256 healthFactor = ISpoke(spoke1).getHealthFactor(USER1);
     assertEq(healthFactor, type(uint256).max, 'wrong health factor');
@@ -196,20 +196,20 @@ contract HealthFactorTest_ToMigrate is BaseTest {
 
     // USER1 supply dai into spoke1
     deal(address(dai), USER1, daiAmount);
-    Utils.spokeSupply(vm, hub, spoke1, daiId, USER1, daiAmount, USER1);
-    Utils.setUsingAsCollateral(vm, spoke1, USER1, daiId, usingAsCollateral);
+    Utils.spokeSupply(hub, spoke1, daiId, USER1, daiAmount, USER1);
+    Utils.setUsingAsCollateral(spoke1, USER1, daiId, usingAsCollateral);
 
     // USER1 supply eth into spoke1
     deal(address(eth), USER1, ethAmount);
-    Utils.spokeSupply(vm, hub, spoke1, ethId, USER1, ethAmount, USER1);
-    Utils.setUsingAsCollateral(vm, spoke1, USER1, ethId, usingAsCollateral);
+    Utils.spokeSupply(hub, spoke1, ethId, USER1, ethAmount, USER1);
+    Utils.setUsingAsCollateral(spoke1, USER1, ethId, usingAsCollateral);
 
     // USER2 supply usdc into spoke1
     deal(address(usdc), USER2, usdcBorrowAmount);
-    Utils.spokeSupply(vm, hub, spoke1, usdcId, USER2, usdcBorrowAmount, USER2);
+    Utils.spokeSupply(hub, spoke1, usdcId, USER2, usdcBorrowAmount, USER2);
 
     // USER1 borrow usdc
-    Utils.borrow(vm, spoke1, usdcId, USER1, usdcBorrowAmount, USER1);
+    Utils.borrow(spoke1, usdcId, USER1, usdcBorrowAmount, USER1);
 
     uint256 healthFactor = ISpoke(spoke1).getHealthFactor(USER1);
     assertEq(healthFactor, 2e18, 'wrong health factor');
@@ -236,27 +236,27 @@ contract HealthFactorTest_ToMigrate is BaseTest {
 
     // USER1 supply dai into spoke1
     deal(address(dai), USER1, daiAmount);
-    Utils.spokeSupply(vm, hub, spoke1, daiId, USER1, daiAmount, USER1);
-    Utils.setUsingAsCollateral(vm, spoke1, USER1, daiId, usingAsCollateral);
+    Utils.spokeSupply(hub, spoke1, daiId, USER1, daiAmount, USER1);
+    Utils.setUsingAsCollateral(spoke1, USER1, daiId, usingAsCollateral);
 
     // USER1 supply eth into spoke1
     deal(address(eth), USER1, ethAmount);
-    Utils.spokeSupply(vm, hub, spoke1, ethId, USER1, ethAmount, USER1);
-    Utils.setUsingAsCollateral(vm, spoke1, USER1, ethId, usingAsCollateral);
+    Utils.spokeSupply(hub, spoke1, ethId, USER1, ethAmount, USER1);
+    Utils.setUsingAsCollateral(spoke1, USER1, ethId, usingAsCollateral);
 
     // USER2 supply usdc into spoke1
     deal(address(usdc), USER2, usdcBorrowAmount);
-    Utils.spokeSupply(vm, hub, spoke1, usdcId, USER2, usdcBorrowAmount, USER2);
+    Utils.spokeSupply(hub, spoke1, usdcId, USER2, usdcBorrowAmount, USER2);
 
     // USER2 supply wbtc into spoke1
     deal(address(wbtc), USER2, wbtcBorrowAmount);
-    Utils.spokeSupply(vm, hub, spoke1, wbtcId, USER2, wbtcBorrowAmount, USER2);
+    Utils.spokeSupply(hub, spoke1, wbtcId, USER2, wbtcBorrowAmount, USER2);
 
     // USER1 borrow usdc
-    Utils.borrow(vm, spoke1, usdcId, USER1, usdcBorrowAmount, USER1);
+    Utils.borrow(spoke1, usdcId, USER1, usdcBorrowAmount, USER1);
 
     // USER1 borrow wbtc
-    Utils.borrow(vm, spoke1, wbtcId, USER1, wbtcBorrowAmount, USER1);
+    Utils.borrow(spoke1, wbtcId, USER1, wbtcBorrowAmount, USER1);
 
     uint256[] memory assetIds = new uint256[](4);
     assetIds[0] = daiId;

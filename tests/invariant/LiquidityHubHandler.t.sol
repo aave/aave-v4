@@ -77,7 +77,7 @@ contract LiquidityHubHandler is Test {
 
     IERC20 asset = hub.assetsList(assetId);
     deal(address(asset), user, amount);
-    Utils.supply(vm, hub, assetId, user, amount, user, onBehalfOf);
+    Utils.supply(hub, assetId, user, amount, user, onBehalfOf);
 
     _updateState(assetId);
     s.reserveSupplied[assetId] += amount;
@@ -89,7 +89,7 @@ contract LiquidityHubHandler is Test {
     // TODO: bound by bm user balance
     amount = bound(amount, 1, 2);
 
-    Utils.withdraw(vm, hub, assetId, user, amount, to);
+    Utils.withdraw(hub, assetId, user, amount, to);
 
     _updateState(assetId);
     s.reserveSupplied[assetId] -= amount;

@@ -230,7 +230,6 @@ contract LiquidityHubTest is BaseTest {
 
     // initial supply
     Utils.supply({
-      vm: vm,
       hub: hub,
       assetId: assetId,
       spoke: address(spoke1),
@@ -385,7 +384,6 @@ contract LiquidityHubTest is BaseTest {
 
     deal(address(dai), USER1, amount);
     Utils.supply({
-      vm: vm,
       hub: hub,
       assetId: assetId,
       spoke: address(spoke1),
@@ -478,7 +476,6 @@ contract LiquidityHubTest is BaseTest {
 
     deal(address(dai), USER2, spoke2SupplyAssets);
     Utils.supply({
-      vm: vm,
       hub: hub,
       assetId: assetId,
       spoke: address(spoke2),
@@ -554,7 +551,6 @@ contract LiquidityHubTest is BaseTest {
     deal(address(asset), USER1, amount);
     // initial supply
     Utils.supply({
-      vm: vm,
       hub: hub,
       assetId: assetId,
       spoke: address(spoke1),
@@ -641,7 +637,6 @@ contract LiquidityHubTest is BaseTest {
       deal(address(asset), user, p.userAssets);
       // force update with action
       Utils.supply({
-        vm: vm,
         hub: hub,
         assetId: assetId,
         spoke: address(spoke1),
@@ -708,7 +703,7 @@ contract LiquidityHubTest is BaseTest {
     // deal(address(asset), USER1, amount);
     // // initial supply
     // Utils.supply({
-    //   vm: vm,
+    //
     //   hub: hub,
     //   assetId: assetId,
     //   spoke: address(spoke1),
@@ -783,7 +778,7 @@ contract LiquidityHubTest is BaseTest {
     //   // p.totalShares += user2SupplyShares;
     //   // p.userAssets = p.userShares.toAssetsDown(p.totalAssets, p.totalShares);
     //   // // update reserve state
-    //   // Utils.supply(vm, hub, assetId, USER1, user2SupplyAssets, USER1, USER1);
+    //   // Utils.supply( hub, assetId, USER1, user2SupplyAssets, USER1, USER1);
     // }
   }
 
@@ -794,7 +789,6 @@ contract LiquidityHubTest is BaseTest {
     // User supply
     deal(address(dai), USER1, amount);
     Utils.supply({
-      vm: vm,
       hub: hub,
       assetId: assetId,
       spoke: address(spoke1),
@@ -912,7 +906,6 @@ contract LiquidityHubTest is BaseTest {
     // User supply
     deal(address(asset), user, amount);
     Utils.supply({
-      vm: vm,
       hub: hub,
       assetId: assetId,
       spoke: address(spoke1),
@@ -973,14 +966,7 @@ contract LiquidityHubTest is BaseTest {
     vm.expectEmit(address(hub));
     emit Withdraw(assetId, address(spoke1), user, amount);
 
-    Utils.withdraw({
-      vm: vm,
-      hub: hub,
-      assetId: assetId,
-      spoke: address(spoke1),
-      amount: amount,
-      to: user
-    });
+    Utils.withdraw({hub: hub, assetId: assetId, spoke: address(spoke1), amount: amount, to: user});
 
     assetData = hub.getAsset(assetId);
     spokeData = hub.getSpoke(assetId, address(spoke1));
@@ -1052,7 +1038,6 @@ contract LiquidityHubTest is BaseTest {
     // User supply
     deal(address(dai), USER1, amount);
     Utils.supply({
-      vm: vm,
       hub: hub,
       assetId: assetId,
       spoke: address(spoke1),
@@ -1123,10 +1108,10 @@ contract LiquidityHubTest is BaseTest {
 
     // User supply
     deal(address(dai), address(spoke1), amount);
-    Utils.supply(vm, hub, daiId, address(spoke1), amount, address(spoke1), address(spoke1));
+    Utils.supply(hub, daiId, address(spoke1), amount, address(spoke1), address(spoke1));
 
     // spoke1 draw all of dai reserve liquidity
-    Utils.draw(vm, hub, daiId, address(spoke1), address(spoke1), amount, address(spoke1));
+    Utils.draw(hub, daiId, address(spoke1), address(spoke1), amount, address(spoke1));
 
     vm.prank(address(spoke1));
     vm.expectRevert(TestErrors.SUPPLIED_AMOUNT_EXCEEDED);
@@ -1139,7 +1124,7 @@ contract LiquidityHubTest is BaseTest {
 
     // User supply
     deal(address(dai), address(spoke1), amount);
-    Utils.supply(vm, hub, daiId, address(spoke1), amount, address(spoke1), address(spoke1));
+    Utils.supply(hub, daiId, address(spoke1), amount, address(spoke1), address(spoke1));
 
     _updateActive(daiId, false);
 
@@ -1155,7 +1140,7 @@ contract LiquidityHubTest is BaseTest {
     uint256 daiAssetId = 0;
 
     deal(address(eth), USER1, amount);
-    Utils.supply(vm, hub, ethAssetId, USER1, amount, USER1, USER1);
+    Utils.supply(hub, ethAssetId, USER1, amount, USER1, USER1);
     spoke1.getUserDebt(ethAssetId, USER1);
     spoke1.getUserDebt(ethAssetId, USER2);
     spoke1.getUserDebt(daiAssetId, USER1);
@@ -1164,7 +1149,7 @@ contract LiquidityHubTest is BaseTest {
     // assertEq(hub.getUserRiskPremium(USER2), 0);
 
     deal(address(dai), USER2, amount);
-    Utils.supply(vm, hub, daiAssetId, USER1, amount, USER2, USER2);
+    Utils.supply(hub, daiAssetId, USER1, amount, USER2, USER2);
     spoke1.getUserDebt(ethAssetId, USER1);
     spoke1.getUserDebt(ethAssetId, USER2);
     spoke1.getUserDebt(daiAssetId, USER1);
@@ -1184,7 +1169,7 @@ contract LiquidityHubTest is BaseTest {
     // _updateLiquidityPremium(assetId, 0);
     // assertEq(hub.getUserRiskPremium(USER1), 0);
     deal(address(eth), USER1, amount);
-    Utils.supply(vm, hub, assetId, USER1, amount, USER1, USER1);
+    Utils.supply(hub, assetId, USER1, amount, USER1, USER1);
     calcRiskPremium = 0;
     // assertEq(hub.getUserRiskPremium(USER1), calcRiskPremium);
 
@@ -1207,9 +1192,9 @@ contract LiquidityHubTest is BaseTest {
     // _updateLiquidityPremium(ethAssetId, 0);
 
     deal(address(dai), USER1, daiAmount);
-    Utils.supply(vm, hub, daiAssetId, USER1, daiAmount, USER1, USER1);
+    Utils.supply(hub, daiAssetId, USER1, daiAmount, USER1, USER1);
     deal(address(eth), USER1, ethAmount);
-    Utils.supply(vm, hub, ethAssetId, USER1, ethAmount, USER1, USER1);
+    Utils.supply(hub, ethAssetId, USER1, ethAmount, USER1, USER1);
 
     uint256 calcRiskPremium = 25_00;
     // assertEq(hub.getUserRiskPremium(USER1), calcRiskPremium);
@@ -1223,11 +1208,11 @@ contract LiquidityHubTest is BaseTest {
 
     // spoke1 supply eth
     deal(address(eth), address(spoke1), ethAmount);
-    Utils.supply(vm, hub, ethId, address(spoke1), ethAmount, address(spoke1), address(spoke1));
+    Utils.supply(hub, ethId, address(spoke1), ethAmount, address(spoke1), address(spoke1));
 
     // spoke2 supply dai
     deal(address(dai), address(spoke2), daiAmount);
-    Utils.supply(vm, hub, daiId, address(spoke2), daiAmount, address(spoke2), address(spoke2));
+    Utils.supply(hub, daiId, address(spoke2), daiAmount, address(spoke2), address(spoke2));
 
     Asset memory daiData = hub.getAsset(daiId);
     Asset memory ethData = hub.getAsset(ethId);
@@ -1319,7 +1304,7 @@ contract LiquidityHubTest is BaseTest {
 
     // User2 supply dai
     deal(address(dai), address(spoke2), daiAmount);
-    Utils.supply(vm, hub, daiId, address(spoke2), daiAmount, address(spoke2), address(spoke2));
+    Utils.supply(hub, daiId, address(spoke2), daiAmount, address(spoke2), address(spoke2));
 
     vm.prank(address(spoke1));
     vm.expectRevert(TestErrors.DRAW_CAP_EXCEEDED);
@@ -1336,14 +1321,14 @@ contract LiquidityHubTest is BaseTest {
 
     // spoke1 supply eth
     deal(address(eth), address(spoke1), ethAmount);
-    Utils.supply(vm, hub, ethId, address(spoke1), ethAmount, address(spoke1), address(spoke1));
+    Utils.supply(hub, ethId, address(spoke1), ethAmount, address(spoke1), address(spoke1));
 
     // spoke2 supply dai
     deal(address(dai), address(spoke2), daiAmount);
-    Utils.supply(vm, hub, daiId, address(spoke2), daiAmount, address(spoke2), address(spoke2));
+    Utils.supply(hub, daiId, address(spoke2), daiAmount, address(spoke2), address(spoke2));
 
     // spoke1 draw half of dai reserve liquidity
-    Utils.draw(vm, hub, daiId, address(spoke1), address(spoke1), drawAmount, address(spoke1));
+    Utils.draw(hub, daiId, address(spoke1), address(spoke1), drawAmount, address(spoke1));
 
     _updateActive(daiId, false);
 
@@ -1366,7 +1351,6 @@ contract LiquidityHubTest is BaseTest {
     // spoke1 supply eth
     deal(address(eth), USER1, ethAmount);
     Utils.supply({
-      vm: vm,
       hub: hub,
       assetId: ethId,
       spoke: address(spoke1),
@@ -1378,7 +1362,6 @@ contract LiquidityHubTest is BaseTest {
     // spoke2 supply dai
     deal(address(dai), address(spoke2), daiAmount);
     Utils.supply({
-      vm: vm,
       hub: hub,
       assetId: daiId,
       spoke: address(spoke2),
@@ -1389,7 +1372,6 @@ contract LiquidityHubTest is BaseTest {
 
     // spoke1 draw half of dai reserve liquidity
     Utils.draw({
-      vm: vm,
       hub: hub,
       assetId: daiId,
       to: USER1,
@@ -1420,7 +1402,6 @@ contract LiquidityHubTest is BaseTest {
     // spoke1 supply eth
     deal(address(eth), USER1, ethAmount);
     Utils.supply({
-      vm: vm,
       hub: hub,
       assetId: ethId,
       spoke: address(spoke1),
@@ -1432,7 +1413,6 @@ contract LiquidityHubTest is BaseTest {
     // spoke2 supply dai
     deal(address(dai), address(spoke2), daiAmount);
     Utils.supply({
-      vm: vm,
       hub: hub,
       assetId: daiId,
       spoke: address(spoke2),
@@ -1443,7 +1423,6 @@ contract LiquidityHubTest is BaseTest {
 
     // spoke1 draw half of dai reserve liquidity on behalf of user
     Utils.draw({
-      vm: vm,
       hub: hub,
       assetId: daiId,
       to: USER1,
