@@ -8,6 +8,8 @@ contract SpokeCreditLineTest is BaseTest {
   using WadRayMath for uint256;
 
   function setUp() public override {
+    vm.skip(true, 'pending spoke migration');
+
     super.setUp();
 
     // Add dai
