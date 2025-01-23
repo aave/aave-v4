@@ -4,6 +4,7 @@ pragma solidity ^0.8.0;
 import '../BaseTest.t.sol';
 import {IERC20Errors} from 'src/dependencies/openzeppelin/IERC20Errors.sol';
 import {Asset, SpokeData} from 'src/contracts/LiquidityHub.sol';
+import {AssetLogic} from 'src/contracts/AssetLogic.sol';
 
 contract LiquidityHubTest_ToMigrate is BaseTest {
   using SharesMath for uint256;
@@ -275,6 +276,24 @@ contract LiquidityHubTest_ToMigrate is BaseTest {
 
     vm.prank(address(spoke1));
     vm.expectRevert(TestErrors.INVALID_AMOUNT);
+    hub.supply(assetId, amount, 0, USER1);
+  }
+
+  function test_supply_revertsWith_invalid_shares_amount() public {
+    uint256 assetId = 0; // TODO: Add getter of asset id based on address
+    uint256 amount = 1;
+
+    deal(address(dai), USER1, amount);
+    vm.prank(USER1);
+    dai.approve(address(hub), amount);
+
+    // update storage slots to create 0 shares calc
+    bytes32 baseSlot = keccak256(abi.encode(uint256(0), uint256(0))); // key: 0, slot: 0
+    vm.store(address(hub), bytes32(uint256(baseSlot) + 1), bytes32(uint256(1))); // suppliedShares slot
+    vm.store(address(hub), bytes32(uint256(baseSlot) + 2), bytes32(uint256(WadRayMath.RAD))); // availableLiquidity slot
+
+    vm.prank(address(spoke1));
+    vm.expectRevert(TestErrors.INVALID_SHARES_AMOUNT);
     hub.supply(assetId, amount, 0, USER1);
   }
 

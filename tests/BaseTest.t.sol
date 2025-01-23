@@ -73,6 +73,7 @@ library TestErrors {
   bytes constant INVALID_SPOKE = 'INVALID_SPOKE';
   bytes constant RESERVE_NOT_COLLATERAL = 'RESERVE_NOT_COLLATERAL';
   bytes constant INVALID_RESTORE_AMOUNT = 'INVALID_RESTORE_AMOUNT';
+  bytes constant INVALID_SHARES_AMOUNT = 'INVALID_SHARES_AMOUNT';
   // Spoke
   bytes constant NO_SUPPLY = 'NO_SUPPLY';
   bytes constant REPAY_EXCEEDS_DEBT = 'REPAY_EXCEEDS_DEBT';
