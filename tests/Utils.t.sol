@@ -5,8 +5,6 @@ import {Vm} from 'forge-std/Vm.sol';
 import {LiquidityHub, DataTypes} from 'src/contracts/LiquidityHub.sol';
 import {Spoke, ISpoke} from 'src/contracts/Spoke.sol';
 
-import 'forge-std/console2.sol';
-
 library Utils {
   // hub
   function addAssetAndSpokes(
