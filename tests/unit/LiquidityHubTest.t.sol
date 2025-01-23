@@ -10,7 +10,6 @@ contract LiquidityHubTest_ToMigrate is BaseTest {
   using WadRayMath for uint256;
 
   function setUp() public override {
-    vm.skip(true, 'yan working on this');
     super.setUp();
 
     address[] memory spokes = new address[](2);
