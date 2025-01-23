@@ -5,7 +5,7 @@ import '../BaseTest.t.sol';
 import {SpokeData} from 'src/contracts/LiquidityHub.sol';
 import {Asset} from 'src/contracts/LiquidityHub.sol';
 
-contract LiquidityHubBorrowRate is BaseTest {
+contract LiquidityHubBorrowRateTest is BaseTest {
   using SharesMath for uint256;
   using WadRayMath for uint256;
   using PercentageMath for uint256;
@@ -299,9 +299,6 @@ contract LiquidityHubBorrowRate is BaseTest {
     IERC20(tokenList.dai).approve(address(hub), 2e40);
     hub.supply(daiAssetId, 2e40, 0, address(spoke1));
     hub.draw(daiAssetId, address(spoke1), drawSpoke1, rpSpoke1);
-    uint256 borrowRate = _getBorrowRate(daiAssetId);
-    uint256 baseBorrowRate = _getBaseBorrowRate(daiAssetId);
-    assertEq(borrowRate, baseBorrowRate + (rpSpoke1.radToRay().rayMul(baseBorrowRate)));
     vm.stopPrank();
 
     vm.startPrank(address(spoke2));
@@ -314,16 +311,12 @@ contract LiquidityHubBorrowRate is BaseTest {
     IERC20(tokenList.dai).approve(address(hub), 2e40);
     hub.supply(daiAssetId, 2e40, 0, address(spoke3));
     hub.draw(daiAssetId, address(spoke3), drawSpoke3, rpSpoke3);
-    borrowRate = _getBorrowRate(daiAssetId);
-    baseBorrowRate = _getBaseBorrowRate(daiAssetId);
-    uint256 calcRp = (rpSpoke1 * drawSpoke1 + rpSpoke2 * drawSpoke2 + rpSpoke3 * drawSpoke3) /
-      (drawSpoke1 + drawSpoke2 + drawSpoke3);
-
-    Asset memory daiInfo = hub.getAsset(daiAssetId);
-    assertApproxEqAbs(daiInfo.riskPremiumRad, calcRp, 1);
-    // TODO: Risk premium check above is fine, but then precision error propogates into following calc
-    //assertApproxEqAbs(borrowRate, baseBorrowRate + (calcRp.radToRay().rayMul(baseBorrowRate)), 1);
     vm.stopPrank();
+
+    uint256 borrowRate = _getBorrowRate(daiAssetId);
+    uint256 baseBorrowRate = _getBaseBorrowRate(daiAssetId);
+    uint256 newRp = hub.getAsset(daiAssetId).riskPremiumRad;
+    assertEq(borrowRate, baseBorrowRate + (newRp.radToRay().rayMul(baseBorrowRate)));
   }
 
   // TODO: Test via calling functions on spokes - after spoke side is implemented
