@@ -70,34 +70,6 @@ contract LiquidityHubTest_ToMigrate is BaseTest {
         variableRateSlope2: 500 // 5.00%
       })
     );
-
-    // Add dai again but with basic credit line borrow module
-    uint256 daiCreditLineAssetId = 2;
-    // flat 5% interest rate
-    creditLineIRStrategy.setInterestRateParams(
-      daiCreditLineAssetId,
-      IDefaultInterestRateStrategy.InterestRateData({
-        optimalUsageRatio: 5000, // 50.00%
-        baseVariableBorrowRate: 500, // 5.00%
-        variableRateSlope1: 500, // 5.00%
-        variableRateSlope2: 500 // 5.00%
-      })
-    );
-    spokeCreditLine = new MockSpokeCreditLine(address(hub), address(creditLineIRStrategy));
-    hub.addAsset(
-      DataTypes.AssetConfig({
-        decimals: 18,
-        active: true,
-        irStrategy: address(creditLineIRStrategy)
-      }),
-      address(dai)
-    );
-    spokeCreditLine.addReserve(
-      daiCreditLineAssetId,
-      MockSpokeCreditLine.ReserveConfig({lt: 0, lb: 0, rf: 0, borrowable: true}),
-      address(dai)
-    );
-    MockPriceOracle(address(oracle)).setAssetPrice(daiCreditLineAssetId, 1e8);
   }
 
   function test_supply_revertsWith_ERC20InsufficientAllowance() public {
@@ -294,8 +266,11 @@ contract LiquidityHubTest_ToMigrate is BaseTest {
     hub.supply(assetId, amount, 0, USER1);
   }
 
-  function test_supply_with_increased_index() public {
+  function skip_test_supply_with_increased_index() public {
     // TODO User supplies X and gets accounted X assets and less than X shares.
+    // - do this after draw is resolved, amount is drawn, and then skip time, baseDebt grows
+    // - exchange rate increases
+    // - supply2 happens, supplies X and gets less than X shares
   }
 
   function test_supply_index_increase() public {
@@ -675,14 +650,8 @@ contract LiquidityHubTest_ToMigrate is BaseTest {
     assertEq(dai.balanceOf(USER1), amount, 'wrong user token balance post-withdraw');
   }
 
-  function skip_test_fuzz_withdraw_events(
-    uint256 assetId,
-    address user,
-    uint256 amount,
-    address to
-  ) public {
-    if (user == address(hub) || user == address(0)) return;
-    if (to == address(0)) return;
+  function test_withdraw_fuzz_events(uint256 assetId, address user, uint256 amount) public {
+    vm.assume(user != address(0) && user != address(hub) && user != address(spoke1));
     assetId = bound(assetId, 0, hub.assetCount() - 1);
     amount = bound(amount, 1, type(uint128).max);
 
@@ -690,19 +659,129 @@ contract LiquidityHubTest_ToMigrate is BaseTest {
 
     // User supply
     deal(address(asset), user, amount);
-    Utils.supply(vm, hub, assetId, user, amount, user, user);
+    Utils.supply({
+      vm: vm,
+      hub: hub,
+      assetId: assetId,
+      spoke: address(spoke1),
+      amount: amount,
+      user: user,
+      onBehalfOf: address(spoke1)
+    });
+
+    Asset memory assetData = hub.getAsset(assetId);
+    SpokeData memory spokeData = hub.getSpoke(assetId, address(spoke1));
+
+    // hub
+    assertEq(hub.getTotalAssets(assetId), amount, 'wrong hub total assets pre-withdraw');
+    // asset
+    assertEq(
+      assetData.suppliedShares,
+      hub.convertToSharesUp(assetId, amount),
+      'wrong asset total shares pre-withdraw'
+    );
+    assertEq(assetData.availableLiquidity, amount, 'wrong asset availableLiquidity pre-withdraw');
+    assertEq(assetData.baseDebt, 0, 'wrong asset baseDebt pre-withdraw');
+    assertEq(assetData.outstandingPremium, 0, 'wrong asset outstandingPremium pre-withdraw');
+    assertEq(assetData.baseBorrowIndex, WadRayMath.RAY, 'wrong asset baseBorrowIndex pre-withdraw');
+    assertEq(
+      assetData.baseBorrowRate,
+      uint(5_00).bpsToRay(),
+      'wrong asset baseBorrowRate pre-withdraw'
+    );
+    assertEq(assetData.riskPremiumRad, 0, 'wrong asset riskPremiumRad pre-withdraw');
+    assertEq(assetData.lastUpdateTimestamp, 1, 'wrong asset lastUpdateTimestamp pre-withdraw');
+    // spoke
+    assertEq(
+      spokeData.suppliedShares,
+      assetData.suppliedShares,
+      'wrong spoke suppliedShares pre-withdraw'
+    );
+    assertEq(spokeData.baseDebt, assetData.baseDebt, 'wrong spoke baseDebt pre-withdraw');
+    assertEq(
+      spokeData.outstandingPremium,
+      assetData.outstandingPremium,
+      'wrong spoke outstandingPremium pre-withdraw'
+    );
+    assertEq(
+      spokeData.baseBorrowIndex,
+      assetData.baseBorrowIndex,
+      'wrong spoke baseBorrowIndex pre-withdraw'
+    );
+    assertEq(spokeData.riskPremiumRad, 0, 'wrong spoke riskPremiumRad pre-withdraw');
+    assertEq(spokeData.lastUpdateTimestamp, 1, 'wrong spoke lastUpdateTimestamp pre-withdraw');
+    // asset
+    assertEq(asset.balanceOf(address(spoke1)), 0, 'wrong spoke token balance pre-withdraw');
+    assertEq(asset.balanceOf(address(hub)), amount, 'wrong hub token balance pre-withdraw');
+    assertEq(asset.balanceOf(user), 0, 'wrong user token balance pre-withdraw');
 
     vm.expectEmit(address(asset));
-    emit Transfer(address(hub), to, amount);
+    emit Transfer(address(hub), user, amount);
 
     vm.expectEmit(address(hub));
-    emit Withdraw(assetId, user, to, amount);
+    emit Withdraw(assetId, address(spoke1), user, amount);
 
-    Utils.withdraw(vm, hub, assetId, user, amount, to);
+    Utils.withdraw({
+      vm: vm,
+      hub: hub,
+      assetId: assetId,
+      spoke: address(spoke1),
+      amount: amount,
+      to: user
+    });
+
+    assetData = hub.getAsset(assetId);
+    spokeData = hub.getSpoke(assetId, address(spoke1));
+
+    // hub
+    assertEq(hub.getTotalAssets(assetId), 0, 'wrong hub total assets post-withdraw');
+    // asset
+    assertEq(assetData.suppliedShares, 0, 'wrong asset total shares post-withdraw');
+    assertEq(assetData.availableLiquidity, 0, 'wrong asset availableLiquidity post-withdraw');
+    assertEq(assetData.baseDebt, 0, 'wrong asset baseDebt post-withdraw');
+    assertEq(assetData.outstandingPremium, 0, 'wrong asset outstandingPremium post-withdraw');
+    assertEq(
+      assetData.baseBorrowIndex,
+      WadRayMath.RAY,
+      'wrong asset baseBorrowIndex post-withdraw'
+    );
+    assertEq(
+      assetData.baseBorrowRate,
+      uint(5_00).bpsToRay(),
+      'wrong asset baseBorrowRate post-withdraw'
+    );
+    assertEq(assetData.riskPremiumRad, 0, 'wrong asset riskPremiumRad post-withdraw');
+    assertEq(assetData.lastUpdateTimestamp, 1, 'wrong asset lastUpdateTimestamp post-withdraw');
+    // spoke
+    assertEq(
+      spokeData.suppliedShares,
+      assetData.suppliedShares,
+      'wrong spoke suppliedShares post-withdraw'
+    );
+    assertEq(spokeData.baseDebt, assetData.baseDebt, 'wrong spoke baseDebt post-withdraw');
+    assertEq(
+      spokeData.outstandingPremium,
+      assetData.outstandingPremium,
+      'wrong spoke outstandingPremium post-withdraw'
+    );
+    assertEq(
+      spokeData.baseBorrowIndex,
+      assetData.baseBorrowIndex,
+      'wrong spoke baseBorrowIndex post-withdraw'
+    );
+    assertEq(spokeData.riskPremiumRad, 0, 'wrong spoke riskPremiumRad post-withdraw');
+    assertEq(spokeData.lastUpdateTimestamp, 1, 'wrong spoke lastUpdateTimestamp post-withdraw');
+    // asset
+    assertEq(asset.balanceOf(address(spoke1)), 0, 'wrong spoke token balance post-withdraw');
+    assertEq(asset.balanceOf(address(hub)), 0, 'wrong hub token balance post-withdraw');
+    assertEq(asset.balanceOf(user), amount, 'wrong user token balance post-withdraw');
   }
 
-  function test_withdraw_all_with_interest() public {
+  function skip_test_withdraw_all_with_interest() public {
     // TODO User supplies X and withdraws more than X because there is some yield
+    // - do this after draw method is done
+    // - user1 supply, then user2 draw amount, time flies, base debt grows
+    // - user1 withdraws, should have interest
   }
 
   function test_withdraw_revertsWith_zero_supplied() public {
