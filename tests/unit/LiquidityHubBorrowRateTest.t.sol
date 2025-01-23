@@ -18,12 +18,12 @@ contract LiquidityHubInterestRateTest is BaseTest {
     initEnvironment();
   }
 
-  function test_LHInterestRate_NoActionTaken() public {
+  function test_LHgetInterestRate_NoActionTaken() public {
     uint256 borrowRate = _getBorrowRate(daiAssetId);
     assertEq(borrowRate, 0);
   }
 
-  function test_LHInterestRate_Supply() public {
+  function test_LHgetInterestRate_Supply() public {
     deal(address(tokenList.dai), address(spoke1), 1000e18);
 
     vm.startPrank(address(spoke1));
@@ -35,7 +35,7 @@ contract LiquidityHubInterestRateTest is BaseTest {
     vm.stopPrank();
   }
 
-  function test_LHInterestRate_Borrow() public {
+  function test_LHgetInterestRate_Borrow() public {
     // Spoke 1's first borrow should adjust the overall borrow rate with a risk premium of 10%
     uint256 newRiskPremium = uint256(10_00).bpsToRad();
     deal(address(tokenList.dai), address(spoke1), 1000e18);
@@ -49,7 +49,7 @@ contract LiquidityHubInterestRateTest is BaseTest {
     assertEq(borrowRate, baseBorrowRate + (newRiskPremium.radToRay().rayMul(baseBorrowRate)));
   }
 
-  function test_LHInterestRate_BorrowFuzz(uint256 newRiskPremium) public {
+  function test_LHgetInterestRate_fuzz_Borrow(uint256 newRiskPremium) public {
     newRiskPremium = bound(newRiskPremium, 0, maxBps.bpsToRad());
     // Spoke 1's first borrow should set the overall borrow rate
     deal(address(tokenList.dai), address(spoke1), 1000e18);
@@ -63,7 +63,7 @@ contract LiquidityHubInterestRateTest is BaseTest {
     assertEq(borrowRate, baseBorrowRate + (newRiskPremium.radToRay().rayMul(baseBorrowRate)));
   }
 
-  function test_LHInterestRate_BorrowAndSupply() public {
+  function test_LHgetInterestRate_BorrowAndSupply() public {
     uint256 newRiskPremium = uint256(10_00).bpsToRad();
     deal(address(tokenList.dai), address(spoke1), 2000e18);
     vm.startPrank(address(spoke1));
@@ -83,7 +83,7 @@ contract LiquidityHubInterestRateTest is BaseTest {
     vm.stopPrank();
   }
 
-  function test_LHInterestRate_BorrowAndSupplyFuzz(uint256 newRiskPremium) public {
+  function test_LHgetInterestRate_fuzz_BorrowAndSupply(uint256 newRiskPremium) public {
     newRiskPremium = bound(newRiskPremium, 0, maxBps.bpsToRad());
     deal(address(tokenList.dai), address(spoke1), 2000e18);
     vm.startPrank(address(spoke1));
@@ -102,7 +102,7 @@ contract LiquidityHubInterestRateTest is BaseTest {
     vm.stopPrank();
   }
 
-  function test_LHInterestRate_BorrowTwice() public {
+  function test_LHgetInterestRate_BorrowTwice() public {
     uint256 newRiskPremium = uint256(10_00).bpsToRad();
     deal(address(tokenList.dai), address(spoke1), 1000e18);
     vm.startPrank(address(spoke1));
@@ -122,7 +122,7 @@ contract LiquidityHubInterestRateTest is BaseTest {
     vm.stopPrank();
   }
 
-  function test_LHInterestRate_BorrowTwiceFuzz(uint256 newRiskPremium) public {
+  function test_LHgetInterestRate_fuzz_BorrowTwice(uint256 newRiskPremium) public {
     newRiskPremium = bound(newRiskPremium, 0, maxBps.bpsToRad());
     uint256 firstRiskPremium = uint256(10_00).bpsToRad();
     deal(address(tokenList.dai), address(spoke1), 1000e18);
@@ -171,7 +171,7 @@ contract LiquidityHubInterestRateTest is BaseTest {
     vm.stopPrank();
   }
 
-  function test_LHInterestRate_DrawTwoSpokesFuzz(uint256 rpSpoke1, uint256 rpSpoke2) public {
+  function test_LHgetInterestRate_fuzz_DrawTwoSpokes(uint256 rpSpoke1, uint256 rpSpoke2) public {
     rpSpoke1 = bound(rpSpoke1, 0, maxBps.bpsToRad());
     rpSpoke2 = bound(rpSpoke2, 0, maxBps.bpsToRad());
     rpSpoke1 = rpSpoke1.bpsToRad();
@@ -202,7 +202,7 @@ contract LiquidityHubInterestRateTest is BaseTest {
     vm.stopPrank();
   }
 
-  function test_LHInterestRate_DrawTwoSpokesDiffWeights() public {
+  function test_LHgetInterestRate_DrawTwoSpokesDiffWeights() public {
     uint256 rpSpoke1 = uint256(10_00).bpsToRad();
     uint256 rpSpoke2 = uint256(20_00).bpsToRad();
     uint256 drawSpoke1 = 100e18;
@@ -230,7 +230,7 @@ contract LiquidityHubInterestRateTest is BaseTest {
     vm.stopPrank();
   }
 
-  function test_LHInterestRate_DrawTwoSpokesDiffWeightsFuzz(
+  function test_LHgetInterestRate_fuzz_DrawTwoSpokesDiffWeights(
     uint256 rpSpoke1,
     uint256 drawSpoke1,
     uint256 supplySpoke1,
@@ -270,7 +270,7 @@ contract LiquidityHubInterestRateTest is BaseTest {
     vm.stopPrank();
   }
 
-  function test_LHInterestRate_DrawThreeSpokesDiffWeightsFuzz(
+  function test_LHgetInterestRate_fuzz_DrawThreeSpokesDiffWeights(
     uint256 rpSpoke1,
     uint256 drawSpoke1,
     uint256 rpSpoke2,
