@@ -9,8 +9,6 @@ import {SharesMath} from 'src/contracts/SharesMath.sol';
 import {PercentageMath} from 'src/contracts/PercentageMath.sol';
 import {WadRayMath} from 'src/contracts/WadRayMath.sol';
 
-import 'forge-std/console2.sol';
-
 library AssetLogic {
   using AssetLogic for Asset;
   using PercentageMath for uint256;
