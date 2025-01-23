@@ -406,10 +406,7 @@ contract LiquidityHubTest_ToMigrate is BaseTest {
     // state update due to operation
     // TODO helper for reserve state update
     uint256 spoke2SupplyShares = 1; // minimum for 1 share
-    uint256 spoke2SupplyAssets = ILiquidityHub(address(hub)).convertToAssetsDown(
-      assetId,
-      spoke2SupplyShares
-    );
+    uint256 spoke2SupplyAssets = hub.convertToAssetsDown(assetId, spoke2SupplyShares);
 
     uint256 newTotalAssets = amount.toAssetsDown(
       hub.getTotalAssets(assetId) + spoke2SupplyAssets,
