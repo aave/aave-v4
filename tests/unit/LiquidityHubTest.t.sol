@@ -4,7 +4,6 @@ pragma solidity ^0.8.0;
 import '../BaseTest.t.sol';
 import {IERC20Errors} from 'src/dependencies/openzeppelin/IERC20Errors.sol';
 import {Asset, SpokeData} from 'src/contracts/LiquidityHub.sol';
-import {AssetLogic} from 'src/contracts/AssetLogic.sol';
 
 contract LiquidityHubTest_ToMigrate is BaseTest {
   using SharesMath for uint256;
