@@ -5,7 +5,7 @@ import '../BaseTest.t.sol';
 import {IERC20Errors} from 'src/dependencies/openzeppelin/IERC20Errors.sol';
 import {Asset, SpokeData} from 'src/contracts/LiquidityHub.sol';
 
-contract LiquidityHubTest_ToMigrate is BaseTest {
+contract LiquidityHubTest is BaseTest {
   using SharesMath for uint256;
   using WadRayMath for uint256;
 
@@ -158,6 +158,10 @@ contract LiquidityHubTest_ToMigrate is BaseTest {
     vm.prank(USER1);
     dai.approve(address(hub), amount);
 
+    deal(address(dai), USER1, amount);
+    vm.prank(USER1);
+    dai.approve(address(hub), amount);
+
     vm.startPrank(address(spoke1));
     vm.expectEmit(address(hub));
     emit Supply(assetId, address(spoke1), amount);
@@ -170,6 +174,9 @@ contract LiquidityHubTest_ToMigrate is BaseTest {
     // hub
     assertEq(hub.getTotalAssets(assetId), amount, 'wrong total assets post-supply');
     // asset
+    // hub
+    assertEq(hub.getTotalAssets(assetId), amount, 'wrong total assets post-supply');
+    // asset
     assertEq(
       assetData.suppliedShares,
       hub.convertToSharesUp(assetId, amount),
@@ -179,6 +186,14 @@ contract LiquidityHubTest_ToMigrate is BaseTest {
     assertEq(assetData.baseDebt, 0, 'wrong asset baseDebt post-supply');
     assertEq(assetData.outstandingPremium, 0, 'wrong asset outstandingPremium post-supply');
     assertEq(assetData.baseBorrowIndex, WadRayMath.RAY, 'wrong asset baseBorrowIndex post-supply');
+    assertEq(
+      assetData.baseBorrowRate,
+      uint256(500).bpsToRay(),
+      'wrong asset baseBorrowRate post-supply'
+    );
+    assertEq(assetData.riskPremiumRad, 0, 'wrong asset riskPremiumRad post-supply');
+    assertEq(assetData.lastUpdateTimestamp, 1, 'wrong asset lastUpdateTimestamp post-supply');
+    // spoke
     assertEq(
       assetData.baseBorrowRate,
       uint256(500).bpsToRay(),

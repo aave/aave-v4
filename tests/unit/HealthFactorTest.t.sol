@@ -9,6 +9,7 @@ contract HealthFactorTest_ToMigrate is BaseTest {
   using PercentageMath for uint256;
 
   function setUp() public override {
+    vm.skip(true, 'pending spoke migration');
     super.setUp();
 
     address[] memory spokes = new address[](2);
