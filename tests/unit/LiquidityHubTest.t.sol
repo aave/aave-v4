@@ -677,7 +677,7 @@ contract LiquidityHubTest_ToMigrate is BaseTest {
     Utils.supply(vm, hub, daiId, address(spoke1), amount, address(spoke1), address(spoke1));
 
     // spoke1 draw all of dai reserve liquidity
-    Utils.draw(vm, hub, daiId, address(spoke1), amount, address(spoke1));
+    Utils.draw(vm, hub, daiId, address(spoke1), address(spoke1), amount, address(spoke1));
 
     vm.prank(address(spoke1));
     vm.expectRevert(TestErrors.SUPPLIED_AMOUNT_EXCEEDED);
@@ -894,7 +894,7 @@ contract LiquidityHubTest_ToMigrate is BaseTest {
     Utils.supply(vm, hub, daiId, address(spoke2), daiAmount, address(spoke2), address(spoke2));
 
     // spoke1 draw half of dai reserve liquidity
-    Utils.draw(vm, hub, daiId, address(spoke1), drawAmount, address(spoke1));
+    Utils.draw(vm, hub, daiId, address(spoke1), address(spoke1), drawAmount, address(spoke1));
 
     _updateActive(daiId, false);
 
@@ -923,7 +923,7 @@ contract LiquidityHubTest_ToMigrate is BaseTest {
     Utils.supply(vm, hub, daiId, address(spoke2), daiAmount, address(spoke2), address(spoke2));
 
     // spoke1 draw half of dai reserve liquidity
-    Utils.draw(vm, hub, daiId, address(spoke1), drawAmount, address(spoke1));
+    Utils.draw(vm, hub, daiId, address(spoke1), address(spoke1), drawAmount, address(spoke1));
 
     // spoke1 restore invalid amount > drawn amount
     vm.startPrank(address(spoke1));
@@ -933,7 +933,7 @@ contract LiquidityHubTest_ToMigrate is BaseTest {
     vm.stopPrank();
   }
 
-  function test_restore() public {
+  function test_restoref() public {
     uint256 daiId = 0;
     uint256 ethId = 1;
     uint256 daiAmount = 100e18;
@@ -943,29 +943,55 @@ contract LiquidityHubTest_ToMigrate is BaseTest {
     uint256 restoreAmount = daiAmount / 4;
 
     // spoke1 supply eth
-    deal(address(eth), address(spoke1), ethAmount);
-    Utils.supply(vm, hub, ethId, address(spoke1), ethAmount, address(spoke1), address(spoke1));
+    deal(address(eth), address(USER1), ethAmount);
+    Utils.supply({
+      vm: vm,
+      hub: hub,
+      assetId: ethId,
+      spoke: address(spoke1),
+      amount: ethAmount,
+      user: USER1,
+      onBehalfOf: address(spoke1)
+    });
 
     // spoke2 supply dai
     deal(address(dai), address(spoke2), daiAmount);
-    Utils.supply(vm, hub, daiId, address(spoke2), daiAmount, address(spoke2), address(spoke2));
+    Utils.supply({
+      vm: vm,
+      hub: hub,
+      assetId: daiId,
+      spoke: address(spoke2),
+      amount: daiAmount,
+      user: address(spoke2),
+      onBehalfOf: address(spoke2)
+    });
 
     // spoke1 draw half of dai reserve liquidity on behalf of user
-    Utils.draw(vm, hub, daiId, address(spoke1), drawAmount, USER1);
+    Utils.draw({
+      vm: vm,
+      hub: hub,
+      assetId: daiId,
+      to: USER1,
+      spoke: address(spoke1),
+      amount: drawAmount,
+      onBehalfOf: address(spoke1)
+    });
 
-    // spoke1 restore half of drawn dai liquidity on behalf of user
+    // spoke1 restore half of drawn dai liquidity on behalf of user1
+    vm.prank(USER1);
+    dai.approve(address(hub), restoreAmount);
     vm.startPrank(address(spoke1));
     vm.expectEmit(address(hub));
     emit Restore(daiId, address(spoke1), restoreAmount);
-    hub.restore(daiId, 0, restoreAmount, USER1);
+    hub.restore({assetId: daiId, amount: restoreAmount, riskPremiumRad: 0, repayer: USER1});
     vm.stopPrank();
 
-    Asset memory daiData = hub.getAsset(daiId);
-    Asset memory ethData = hub.getAsset(ethId);
-    SpokeData memory spoke1EthData = hub.getSpoke(ethId, address(spoke1));
-    SpokeData memory spoke1DaiData = hub.getSpoke(daiId, address(spoke1));
-    SpokeData memory spoke2EthData = hub.getSpoke(ethId, address(spoke2));
-    SpokeData memory spoke2DaiData = hub.getSpoke(daiId, address(spoke2));
+    // Asset memory daiData = hub.getAsset(daiId);
+    // Asset memory ethData = hub.getAsset(ethId);
+    // SpokeData memory spoke1EthData = hub.getSpoke(ethId, address(spoke1));
+    // SpokeData memory spoke1DaiData = hub.getSpoke(daiId, address(spoke1));
+    // SpokeData memory spoke2EthData = hub.getSpoke(ethId, address(spoke2));
+    // SpokeData memory spoke2DaiData = hub.getSpoke(daiId, address(spoke2));
 
     // assertEq(
     //   daiData.totalShares,
@@ -1002,10 +1028,11 @@ contract LiquidityHubTest_ToMigrate is BaseTest {
     // assertEq(spoke2DaiData.drawnShares, 0, 'wrong spoke2 drawn dai shares post-restore');
 
     assertEq(dai.balanceOf(address(hub)), daiAmount - restoreAmount, 'wrong hub dai final balance');
-    assertEq(dai.balanceOf(address(spoke1)), drawAmount, 'wrong spoke1 dai final balance');
+    assertEq(dai.balanceOf(USER1), drawAmount - restoreAmount, 'wrong spoke1 dai final balance');
     assertEq(dai.balanceOf(address(spoke2)), 0, 'wrong spoke2 dai final balance');
 
     assertEq(eth.balanceOf(address(hub)), ethAmount, 'wrong hub eth final balance');
+    assertEq(eth.balanceOf(USER1), 0, 'wrong user eth final balance');
     assertEq(eth.balanceOf(address(spoke1)), 0, 'wrong spoke1 eth final balance');
     assertEq(eth.balanceOf(address(spoke2)), 0, 'wrong spoke2 eth final balance');
   }
