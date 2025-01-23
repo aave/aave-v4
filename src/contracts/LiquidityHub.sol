@@ -209,6 +209,7 @@ contract LiquidityHub is ILiquidityHub {
     uint256 sharesAmount = asset.convertToSharesDown(amount);
     asset.suppliedShares -= sharesAmount;
     asset.availableLiquidity -= amount;
+    spoke.suppliedShares -= sharesAmount;
 
     assetsList[assetId].safeTransfer(to, amount);
 
