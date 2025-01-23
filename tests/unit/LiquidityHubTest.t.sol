@@ -38,7 +38,7 @@ contract LiquidityHubTest is BaseTest {
       spokeConfigs,
       reserveConfigs
     );
-    MockPriceOracle(address(oracle)).setAssetPrice(daiAssetId, 1e8);
+    oracle.setAssetPrice(daiAssetId, 1e8);
 
     // Add eth
     uint256 ethAssetId = 1;
@@ -50,7 +50,7 @@ contract LiquidityHubTest is BaseTest {
       spokeConfigs,
       reserveConfigs
     );
-    MockPriceOracle(address(oracle)).setAssetPrice(ethAssetId, 2000e8);
+    oracle.setAssetPrice(ethAssetId, 2000e8);
 
     irStrategy.setInterestRateParams(
       daiAssetId,
@@ -1566,8 +1566,8 @@ contract LiquidityHubTest is BaseTest {
     uint256 ethId = 1;
 
     uint256[] memory assetIds = new uint256[](2);
-    assetIds[0] = 0;
-    assetIds[1] = 1;
+    assetIds[0] = daiId;
+    assetIds[1] = ethId;
 
     DataTypes.SpokeConfig[] memory spokeConfigs = new DataTypes.SpokeConfig[](2);
     spokeConfigs[0] = DataTypes.SpokeConfig({supplyCap: 1, drawCap: 2});

@@ -13,4 +13,10 @@ interface IPriceOracle {
    * @return The price of the asset
    */
   function getAssetPrice(uint256 assetId) external view returns (uint256);
+
+  /**
+   * @param assetId The id of the asset
+   * @param price The price of the asset
+   */
+  function setAssetPrice(uint256 assetId, uint256 price) external;
 }
