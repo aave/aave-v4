@@ -128,12 +128,29 @@ contract LiquidityHubTest_ToMigrate is BaseTest {
     assertEq(assetData.riskPremiumRad, 0, 'wrong asset riskPremiumRad pre-supply');
     assertEq(assetData.lastUpdateTimestamp, 1, 'wrong asset lastUpdateTimestamp pre-supply');
     // spoke
-    assertEq(spokeData.suppliedShares, 0, 'wrong spoke suppliedShares pre-supply');
-    assertEq(spokeData.baseDebt, 0, 'wrong spoke baseDebt pre-supply');
-    assertEq(spokeData.outstandingPremium, 0, 'wrong spoke outstandingPremium pre-supply');
-    assertEq(spokeData.baseBorrowIndex, WadRayMath.RAY, 'wrong spoke baseBorrowIndex pre-supply');
+    assertEq(
+      spokeData.suppliedShares,
+      assetData.suppliedShares,
+      'wrong spoke suppliedShares pre-supply'
+    );
+    assertEq(spokeData.baseDebt, assetData.baseDebt, 'wrong spoke baseDebt pre-supply');
+    assertEq(
+      spokeData.outstandingPremium,
+      assetData.outstandingPremium,
+      'wrong spoke outstandingPremium pre-supply'
+    );
+    assertEq(
+      spokeData.baseBorrowIndex,
+      assetData.baseBorrowIndex,
+      'wrong spoke baseBorrowIndex pre-supply'
+    );
     assertEq(spokeData.riskPremiumRad, 0, 'wrong spoke riskPremiumRad pre-supply');
-    assertEq(spokeData.lastUpdateTimestamp, 1, 'wrong spoke lastUpdateTimestamp pre-supply');
+    assertEq(
+      spokeData.lastUpdateTimestamp,
+      assetData.lastUpdateTimestamp,
+      'wrong spoke lastUpdateTimestamp pre-supply'
+    );
+    assertEq(dai.balanceOf(USER1), 0, 'wrong user token balance post-supply');
     assertEq(dai.balanceOf(address(spoke1)), 0, 'wrong spoke token balance pre-supply');
     assertEq(dai.balanceOf(address(hub)), 0, 'wrong hub token balance pre-supply');
 
@@ -185,26 +202,76 @@ contract LiquidityHubTest_ToMigrate is BaseTest {
     assertEq(dai.balanceOf(address(hub)), amount, 'wrong hub token balance post-supply');
   }
 
-  /// User makes a first supply, shares and assets amounts are correct, no precision loss
-  function skip_test_fuzz_first_supply(uint256 assetId, address user, uint256 amount) public {
+  /// @dev User makes a first supply, shares and assets amounts are correct, no precision loss
+  function test_fuzz_first_supply(uint256 assetId, address user, uint256 amount) public {
     if (user == address(hub) || user == address(0)) return;
+    vm.assume(user != address(hub) && user != address(0) && user != address(spoke1));
     assetId = bound(assetId, 0, hub.assetCount() - 1);
     amount = bound(amount, 1, type(uint128).max);
 
-    deal(address(hub.assetsList(assetId)), user, type(uint128).max);
-    deal(address(hub.assetsList(assetId)), USER1, type(uint128).max);
+    IERC20 asset = hub.assetsList(assetId);
+
+    deal(address(asset), user, amount);
 
     // initial supply
-    Utils.supply(vm, hub, assetId, user, amount, user, user);
+    Utils.supply({
+      vm: vm,
+      hub: hub,
+      assetId: assetId,
+      spoke: address(spoke1),
+      amount: amount,
+      user: user,
+      onBehalfOf: address(spoke1)
+    });
 
-    Asset memory reserveData = hub.getAsset(assetId);
-    Spoke.UserConfig memory userData = spoke1.getUser(assetId, user);
+    Asset memory assetData = hub.getAsset(assetId);
+    SpokeData memory spokeData = hub.getSpoke(assetId, address(spoke1));
 
-    // check reserve index and user interest
-    // assertEq(reserveData.suppliedShares, amount, 'wrong reserve shares');
-    // assertEq(hub.getTotalAssets(assetId), amount, 'wrong reserve assets');
-    // assertEq(userData.supplyShares, amount, 'wrong user shares');
-    // assertEq(spoke1.getUserDebt(assetId, user), amount, 'wrong user assets');
+    // hub
+    assertEq(hub.getTotalAssets(assetId), amount, 'wrong total assets post-supply');
+    // asset
+    assertEq(
+      assetData.suppliedShares,
+      hub.convertToSharesUp(assetId, amount),
+      'wrong asset suppliedShares post-supply'
+    );
+    assertEq(assetData.availableLiquidity, amount, 'wrong asset availableLiquidity post-supply');
+    assertEq(assetData.baseDebt, 0, 'wrong asset baseDebt post-supply');
+    assertEq(assetData.outstandingPremium, 0, 'wrong asset outstandingPremium post-supply');
+    assertEq(assetData.baseBorrowIndex, WadRayMath.RAY, 'wrong asset baseBorrowIndex post-supply');
+    assertEq(
+      assetData.baseBorrowRate,
+      uint256(500).bpsToRay(),
+      'wrong asset baseBorrowRate post-supply'
+    );
+    assertEq(assetData.riskPremiumRad, 0, 'wrong asset riskPremiumRad post-supply');
+    assertEq(assetData.lastUpdateTimestamp, 1, 'wrong asset lastUpdateTimestamp post-supply');
+    // spoke
+    assertEq(
+      spokeData.suppliedShares,
+      assetData.suppliedShares,
+      'wrong spoke suppliedShares post-supply'
+    );
+    assertEq(spokeData.baseDebt, assetData.baseDebt, 'wrong baseDebt post-supply');
+    assertEq(
+      spokeData.outstandingPremium,
+      assetData.outstandingPremium,
+      'wrong spoke outstandingPremium post-supply'
+    );
+    assertEq(
+      spokeData.baseBorrowIndex,
+      assetData.baseBorrowIndex,
+      'wrong spoke baseBorrowIndex post-supply'
+    );
+    assertEq(spokeData.riskPremiumRad, 0, 'wrong spoke riskPremiumRad post-supply');
+    assertEq(
+      spokeData.lastUpdateTimestamp,
+      assetData.lastUpdateTimestamp,
+      'wrong spoke lastUpdateTimestamp post-supply'
+    );
+    assertEq(asset.balanceOf(user), 0, 'wrong user token balance post-supply');
+    assertEq(asset.balanceOf(address(spoke1)), 0, 'wrong spoke token balance post-supply');
+    assertEq(asset.balanceOf(address(hub)), amount, 'wrong hub token balance post-supply');
   }
 
   function test_fuzz_supply_events(
