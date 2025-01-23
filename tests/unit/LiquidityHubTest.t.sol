@@ -327,7 +327,15 @@ contract LiquidityHubTest_ToMigrate is BaseTest {
     assertEq(dai.balanceOf(address(hub)), 0, 'wrong hub token balance pre-supply');
 
     deal(address(dai), USER1, amount);
-    Utils.supply(vm, hub, assetId, address(spoke1), amount, USER1, address(spoke1));
+    Utils.supply({
+      vm: vm,
+      hub: hub,
+      assetId: assetId,
+      spoke: address(spoke1),
+      amount: amount,
+      user: USER1,
+      onBehalfOf: address(spoke1)
+    });
 
     assetData = hub.getAsset(assetId);
     spokeData = hub.getSpoke(assetId, address(spoke1));
@@ -411,16 +419,16 @@ contract LiquidityHubTest_ToMigrate is BaseTest {
       assetData.suppliedShares + spoke2SupplyShares
     );
 
-    deal(address(dai), address(USER2), spoke2SupplyAssets);
-    Utils.supply(
-      vm,
-      hub,
-      assetId,
-      address(spoke2),
-      spoke2SupplyAssets,
-      address(USER2),
-      address(spoke2)
-    );
+    deal(address(dai), USER2, spoke2SupplyAssets);
+    Utils.supply({
+      vm: vm,
+      hub: hub,
+      assetId: assetId,
+      spoke: address(spoke2),
+      amount: spoke2SupplyAssets,
+      user: USER2,
+      onBehalfOf: address(spoke2)
+    });
 
     assetData = hub.getAsset(assetId);
     spokeData = hub.getSpoke(assetId, address(spoke1));
@@ -467,7 +475,7 @@ contract LiquidityHubTest_ToMigrate is BaseTest {
     assertEq(spoke2Data.baseBorrowIndex, WadRayMath.RAY, 'wrong spoke2 baseBorrowIndex');
     assertEq(spoke2Data.riskPremiumRad, 0, 'wrong spoke2 riskPremiumRad');
     assertEq(spoke2Data.lastUpdateTimestamp, 1, 'wrong spoke2 lastUpdateTimestamp');
-
+    // users
     assertEq(dai.balanceOf(USER1), 0, 'wrong user token balance post-supply');
     assertEq(dai.balanceOf(USER2), 0, 'wrong user token balance post-supply');
   }
@@ -975,7 +983,7 @@ contract LiquidityHubTest_ToMigrate is BaseTest {
     uint256 restoreAmount = daiAmount / 4;
 
     // spoke1 supply eth
-    deal(address(eth), address(USER1), ethAmount);
+    deal(address(eth), USER1, ethAmount);
     Utils.supply({
       vm: vm,
       hub: hub,
