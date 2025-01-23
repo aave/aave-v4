@@ -24,10 +24,7 @@ library SpokeDataLogic {
       spoke.baseBorrowIndex
     );
 
-    // todo carry out multiplication in rad (radMul) for precision
-    spoke.outstandingPremium += (cumulatedBaseDebt - existingBaseDebt).percentMul(
-      spoke.riskPremiumRad.radToBps()
-    );
+    spoke.outstandingPremium += (cumulatedBaseDebt - existingBaseDebt).radMul(spoke.riskPremiumRad);
     spoke.baseDebt = cumulatedBaseDebt;
     spoke.baseBorrowIndex = nextBaseBorrowIndex;
     spoke.lastUpdateTimestamp = block.timestamp;
