@@ -288,7 +288,7 @@ contract LiquidityHubTest_ToMigrate is BaseTest {
     dai.approve(address(hub), amount);
 
     // update storage slots to create 0 shares calc
-    bytes32 baseSlot = keccak256(abi.encode(uint256(0), uint256(0))); // key: 0, slot: 0
+    bytes32 baseSlot = keccak256(abi.encode(uint256(assetId), uint256(0))); // key: assetId, slot: 0, ie _assets mapping, dai assetId key
     vm.store(address(hub), bytes32(uint256(baseSlot) + 1), bytes32(uint256(1))); // suppliedShares slot
     vm.store(address(hub), bytes32(uint256(baseSlot) + 2), bytes32(uint256(WadRayMath.RAD))); // availableLiquidity slot
 
