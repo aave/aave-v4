@@ -1069,6 +1069,7 @@ contract LiquidityHubTest_ToMigrate is BaseTest {
 
     assertEq(dai.balanceOf(address(hub)), daiAmount - restoreAmount, 'wrong hub dai final balance');
     assertEq(dai.balanceOf(USER1), drawAmount - restoreAmount, 'wrong spoke1 dai final balance');
+    assertEq(dai.balanceOf(address(spoke1)), 0, 'wrong spoke1 dai final balance');
     assertEq(dai.balanceOf(address(spoke2)), 0, 'wrong spoke2 dai final balance');
 
     assertEq(eth.balanceOf(address(hub)), ethAmount, 'wrong hub eth final balance');
