@@ -6,6 +6,7 @@ import {DataTypes} from '../libraries/types/DataTypes.sol';
 import {Errors} from '../libraries/helpers/Errors.sol';
 import {IDefaultInterestRateStrategy} from '../interfaces/IDefaultInterestRateStrategy.sol';
 import {IReserveInterestRateStrategy} from '../interfaces/IReserveInterestRateStrategy.sol';
+import {WadRayMath} from './WadRayMath.sol';
 
 // TODO: update this contract to based on DefaultReserveInterestRateStrategyV2 in aave-v3-origin
 
