@@ -208,11 +208,9 @@ contract LiquidityHub is ILiquidityHub {
     asset.updateBorrowRate({liquidityAdded: 0, liquidityTaken: amount});
     _updateRiskPremiumAndBaseDebt(asset, spoke, riskPremiumRad, 0); // no base debt change
 
-    asset.availableLiquidity -= amount;
-
     uint256 sharesAmount = asset.convertToSharesDown(amount);
-
     asset.suppliedShares -= sharesAmount;
+    asset.availableLiquidity -= amount;
 
     assetsList[assetId].safeTransfer(to, amount);
 
@@ -378,6 +376,8 @@ contract LiquidityHub is ILiquidityHub {
     // TODO: Other cases of status (frozen, paused)
     require(asset.config.active, 'ASSET_NOT_ACTIVE');
 
+    console2.log('LH: amountDrawn', amountDrawn, amountRestored);
+
     // Ensure spoke is not restoring more than supplied
     require(amountRestored <= amountDrawn, 'INVALID_RESTORE_AMOUNT');
   }
@@ -415,8 +415,8 @@ contract LiquidityHub is ILiquidityHub {
 
     uint256 newSpokeDebt = baseDebtChange > 0
       ? existingSpokeDebt + uint256(baseDebtChange) // debt added
-      // force underflow: only possible when spoke takes repays amount more than net drawn
-      : existingSpokeDebt - uint256(-baseDebtChange); // debt restored
+      : // force underflow: only possible when spoke takes repays amount more than net drawn
+      existingSpokeDebt - uint256(-baseDebtChange); // debt restored
 
     (uint256 newAssetRiskPremium, uint256 newAssetDebt) = MathUtils.addToWeightedAverage(
       assetRiskPremiumWithoutCurrent,
