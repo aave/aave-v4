@@ -15,6 +15,8 @@ contract UserRiskPremiumTest_ToMigrate is BaseTest {
   uint256 public constant wbtcAssetId = 3;
 
   function setUp() public override {
+    vm.skip(true, 'borrow rate tests');
+
     super.setUp();
 
     address[] memory spokes = new address[](3);

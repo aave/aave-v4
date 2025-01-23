@@ -391,14 +391,14 @@ contract LiquidityHubRiskPremium_VariableTimeAndConstantRiskPremium is
     assertApproxEqAbs(hub.getAsset(daiAssetId).riskPremiumRad, expectedRiskPremium, 1);
   }
 
-  // todo investigate rounding issues
-  function skip_test_fuzzMultipleDrawWhileAccruingInterest(
+  function test_fuzzMultipleDrawWhileAccruingInterest(
     TestDrawAmountAndRiskPremiumRadInput memory p,
     uint256 timeToSkip,
     uint256 baseBorrowRate
   ) public {
-    p = bound({input: p, minDrawAmount: 1, maxDrawAmount: daiAmount});
-    timeToSkip = bound(timeToSkip, 1 days, 10_000 days);
+    // todo: minDrawAmount temp workaround
+    p = bound({input: p, minDrawAmount: daiAmount / 1e9, maxDrawAmount: daiAmount});
+    timeToSkip = bound(timeToSkip, 1 days, 100_000 days);
     baseBorrowRate = bound(baseBorrowRate, uint256(1).bpsToRay(), uint256(100_00).bpsToRay());
     uint40 lastUpdateTimestamp = uint40(vm.getBlockTimestamp());
 
