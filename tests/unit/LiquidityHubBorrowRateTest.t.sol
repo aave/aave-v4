@@ -14,8 +14,6 @@ contract LiquidityHubInterestRateTest is BaseTest {
   uint256 public constant maxBps = 999_99;
 
   function setUp() public override {
-    vm.skip(true, 'borrow rate tests');
-
     super.setUp();
     initEnvironment();
   }
