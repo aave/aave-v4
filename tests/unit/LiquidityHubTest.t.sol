@@ -815,7 +815,7 @@ contract LiquidityHubTest is BaseTest {
     assertEq(assetData.baseBorrowIndex, WadRayMath.RAY, 'wrong asset baseBorrowIndex pre-withdraw');
     assertEq(
       assetData.baseBorrowRate,
-      uint(5_00).bpsToRay(),
+      uint256(5_00).bpsToRay(),
       'wrong asset baseBorrowRate pre-withdraw'
     );
     assertEq(assetData.riskPremiumRad, 0, 'wrong asset riskPremiumRad pre-withdraw');
@@ -867,7 +867,7 @@ contract LiquidityHubTest is BaseTest {
     );
     assertEq(
       assetData.baseBorrowRate,
-      uint(5_00).bpsToRay(),
+      uint256(5_00).bpsToRay(),
       'wrong asset baseBorrowRate post-withdraw'
     );
     assertEq(assetData.riskPremiumRad, 0, 'wrong asset riskPremiumRad post-withdraw');
@@ -932,7 +932,7 @@ contract LiquidityHubTest is BaseTest {
     assertEq(assetData.baseBorrowIndex, WadRayMath.RAY, 'wrong asset baseBorrowIndex pre-withdraw');
     assertEq(
       assetData.baseBorrowRate,
-      uint(5_00).bpsToRay(),
+      uint256(5_00).bpsToRay(),
       'wrong asset baseBorrowRate pre-withdraw'
     );
     assertEq(assetData.riskPremiumRad, 0, 'wrong asset riskPremiumRad pre-withdraw');
@@ -986,7 +986,7 @@ contract LiquidityHubTest is BaseTest {
     );
     assertEq(
       assetData.baseBorrowRate,
-      uint(5_00).bpsToRay(),
+      uint256(5_00).bpsToRay(),
       'wrong asset baseBorrowRate post-withdraw'
     );
     assertEq(assetData.riskPremiumRad, 0, 'wrong asset riskPremiumRad post-withdraw');
@@ -1074,7 +1074,7 @@ contract LiquidityHubTest is BaseTest {
     assertEq(assetData.baseBorrowIndex, WadRayMath.RAY, 'wrong asset baseBorrowIndex pre-withdraw');
     assertEq(
       assetData.baseBorrowRate,
-      uint(5_00).bpsToRay(),
+      uint256(5_00).bpsToRay(),
       'wrong asset baseBorrowRate pre-withdraw'
     );
     assertEq(assetData.riskPremiumRad, 0, 'wrong asset riskPremiumRad pre-withdraw');
