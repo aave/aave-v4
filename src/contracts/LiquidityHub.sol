@@ -236,7 +236,6 @@ contract LiquidityHub is ILiquidityHub {
     _updateRiskPremiumAndBaseDebt(asset, spoke, riskPremiumRad, int256(amount)); // base debt added
 
     asset.availableLiquidity -= amount;
-    // TODO: increase base debt on asset/spoke
 
     assetsList[assetId].safeTransfer(to, amount);
 
@@ -274,7 +273,6 @@ contract LiquidityHub is ILiquidityHub {
     _updateRiskPremiumAndBaseDebt(asset, spoke, riskPremiumRad, -int256(baseDebtRestored));
 
     asset.availableLiquidity += amount;
-    // TODO: decrease base debt on asset/spoke
 
     assetsList[assetId].safeTransferFrom(repayer, address(this), amount);
 
