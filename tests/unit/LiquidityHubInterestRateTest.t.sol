@@ -447,12 +447,12 @@ contract LiquidityHubAccrueInterestTest is BaseTest {
     uint256 riskPremium = daiInfo.riskPremiumRad;
     uint256 lastUpdateTimestamp = daiInfo.lastUpdateTimestamp;
 
-    uint256 accruedBase = MathUtils
-      .calculateLinearInterest(baseBorrowRate, uint40(startTime))
-      .rayMul(borrowAmount);
+    uint256 totalBase = MathUtils.calculateLinearInterest(baseBorrowRate, uint40(startTime)).rayMul(
+      borrowAmount
+    );
 
     assertEq(elapsed, lastUpdateTimestamp - startTime);
-    assertEq(baseDebt, accruedBase);
+    assertEq(baseDebt, totalBase);
     assertEq(riskPremium, 0);
     assertEq(outstandingPremium, 0);
     vm.stopPrank();
@@ -485,13 +485,14 @@ contract LiquidityHubAccrueInterestTest is BaseTest {
     uint256 avgRiskPremium = daiInfo.riskPremiumRad;
     uint256 lastUpdateTimestamp = daiInfo.lastUpdateTimestamp;
 
-    uint256 accruedBase = MathUtils.calculateLinearInterest(baseBorrowRate, uint40(startTime));
-    uint256 totalBase = accruedBase.rayMul(borrowAmount);
+    uint256 totalBase = MathUtils.calculateLinearInterest(baseBorrowRate, uint40(startTime)).rayMul(
+      borrowAmount
+    );
 
     assertEq(elapsed, lastUpdateTimestamp - startTime);
     assertEq(baseDebt, totalBase);
     assertEq(avgRiskPremium, riskPremium);
-    assertEq(outstandingPremium, (accruedBase).radMul(riskPremium));
+    assertEq(outstandingPremium, (totalBase - borrowAmount).radMul(riskPremium));
     vm.stopPrank();
   }
 
