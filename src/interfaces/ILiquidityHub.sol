@@ -14,13 +14,13 @@ interface ILiquidityHub {
     address to,
     uint256 amount,
     uint256 riskPremium
-  ) external returns (uint256);
+  ) external returns (uint256, uint256);
   function restore(
     uint256 assetId,
     uint256 amount,
     uint256 riskPremium,
     address repayer
-  ) external returns (uint256);
+  ) external returns (uint256, uint256);
   function supply(
     uint256 assetId,
     uint256 amount,
@@ -32,7 +32,7 @@ interface ILiquidityHub {
     address to,
     uint256 amount,
     uint256 riskPremium
-  ) external returns (uint256);
+  ) external returns (uint256, uint256);
 
   function getBaseInterestRate(uint256 assetId) external view returns (uint256);
 

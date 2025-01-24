@@ -149,7 +149,16 @@ contract LiquidityHub is ILiquidityHub {
   // Users
   // /////
 
-  /// @dev risk premium is calculated on the spoke and passed upon every action
+  /**
+   * @notice Supply asset on behalf of user.
+   * @dev Only callable by spokes.
+   * @param assetId The asset id.
+   * @param amount The amount of asset to withdraw.
+   * @param riskPremiumRad The aggregated risk premium of the calling spoke.
+   * @param supplier The address which is supplying the asset (user).
+   * @return The new base borrow index.
+   * @return The sharesAmount supplied.
+   */
   function supply(
     uint256 assetId,
     uint256 amount,
@@ -188,19 +197,29 @@ contract LiquidityHub is ILiquidityHub {
     return (nextBaseBorrowIndex, sharesAmount);
   }
 
-  // TODO: Be able to pass max(uint) as amount to withdraw all or accept number of shares
+  /**
+   * @notice Withdraw supplied asset on behalf of user.
+   * @dev Only callable by spokes.
+   * @param assetId The asset id.
+   * @param to The address to withdraw on behalf of.
+   * @param amount The amount of asset to withdraw.
+   * @param riskPremiumRad The aggregated risk premium of the calling spoke.
+   * @return The new base borrow index.
+   * @return The sharesAmount withdrawn.
+   */
   function withdraw(
     uint256 assetId,
     address to,
     uint256 amount,
     uint256 riskPremiumRad
-  ) external returns (uint256) {
+  ) external returns (uint256, uint256) {
+    // TODO: Be able to pass max(uint) as amount to withdraw all or accept number of shares
     // TODO: authorization - only spokes
 
     Asset storage asset = _assets[assetId];
     SpokeData storage spoke = _spokes[assetId][msg.sender];
 
-    _accrueInterest(asset, spoke); // accrue interest before validating action
+    uint256 nextBaseBorrowIndex = _accrueInterest(asset, spoke); // accrue interest before validating action
     _validateWithdraw(asset, spoke, amount);
 
     asset.updateBorrowRate({liquidityAdded: 0, liquidityTaken: amount});
@@ -215,21 +234,31 @@ contract LiquidityHub is ILiquidityHub {
 
     emit Withdraw(assetId, msg.sender, to, amount);
 
-    return sharesAmount;
+    return (nextBaseBorrowIndex, sharesAmount);
   }
 
+  /**
+   * @notice Draw debt on behalf of user.
+   * @dev Only callable by spokes.
+   * @param assetId The asset id.
+   * @param to The address to draw debt to (user).
+   * @param amount The amount of debt to draw.
+   * @param riskPremiumRad The aggregated risk premium of the calling spoke.
+   * @return The new base borrow index.
+   * @return The amount of debt drawn.
+   */
   function draw(
     uint256 assetId,
     address to,
     uint256 amount,
     uint256 riskPremiumRad
-  ) external returns (uint256) {
+  ) external returns (uint256, uint256) {
     // TODO: authorization - only spokes
 
     Asset storage asset = _assets[assetId];
     SpokeData storage spoke = _spokes[assetId][msg.sender];
 
-    _accrueInterest(asset, spoke); // accrue interest before validating action
+    uint256 nextBaseBorrowIndex = _accrueInterest(asset, spoke); // accrue interest before validating action
     _validateDraw(asset, amount, spoke.config.drawCap);
 
     asset.updateBorrowRate({liquidityAdded: 0, liquidityTaken: amount});
@@ -241,31 +270,32 @@ contract LiquidityHub is ILiquidityHub {
 
     emit Draw(assetId, msg.sender, to, amount);
 
-    return amount;
+    return (nextBaseBorrowIndex, amount);
   }
 
   /**
-   * @notice Repays debt on behalf of user
-   * @dev Only callable by spokes
-   * @dev Interest is always paid off first from premium, then from base
-   * @param assetId The asset id
-   * @param amount The amount to repay
-   * @param riskPremiumRad The aggregated risk premium of the calling spoke
-   * @param repayer The address who is trying to settle the credit line
-   * @return The amount of shares restored
+   * @notice Repays debt on behalf of user.
+   * @dev Only callable by spokes.
+   * @dev Interest is always paid off first from premium, then from base.
+   * @param assetId The asset id.
+   * @param amount The amount to repay.
+   * @param riskPremiumRad The aggregated risk premium of the calling spoke.
+   * @param repayer The address who is trying to settle the credit line.
+   * @return The new base borrow index.
+   * @return The amount of debt restored.
    */
   function restore(
     uint256 assetId,
     uint256 amount,
     uint256 riskPremiumRad,
     address repayer
-  ) external returns (uint256) {
+  ) external returns (uint256, uint256) {
     // TODO: authorization - only spokes
 
     Asset storage asset = _assets[assetId];
     SpokeData storage spoke = _spokes[assetId][msg.sender];
 
-    _accrueInterest(asset, spoke); // accrue interest before validating action
+    uint256 nextBaseBorrowIndex = _accrueInterest(asset, spoke); // accrue interest before validating action
     _validateRestore(asset, amount, spoke.baseDebt);
     asset.updateBorrowRate({liquidityAdded: amount, liquidityTaken: 0});
 
@@ -278,7 +308,7 @@ contract LiquidityHub is ILiquidityHub {
 
     emit Restore(assetId, msg.sender, amount);
 
-    return amount;
+    return (nextBaseBorrowIndex, amount);
   }
 
   //
