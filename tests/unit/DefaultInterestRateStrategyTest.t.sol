@@ -2,7 +2,6 @@
 pragma solidity ^0.8.10;
 
 import 'forge-std/Test.sol';
-import 'forge-std/console2.sol';
 
 import 'src/contracts/DefaultReserveInterestRateStrategy.sol';
 import {WadRayMath} from 'src/contracts/WadRayMath.sol';
