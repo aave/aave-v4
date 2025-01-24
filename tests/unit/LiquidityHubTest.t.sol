@@ -77,10 +77,9 @@ contract LiquidityHubTest is BaseTest {
   }
 
   function test_supply_revertsWith_ERC20InsufficientAllowance() public {
-    uint256 daiId = 0;
     uint256 amount = 100e18;
 
-    deal(address(dai), address(spoke1), amount);
+    deal(address(tokenList.dai), address(spoke1), amount);
     vm.prank(address(spoke1));
     vm.expectRevert(
       abi.encodeWithSelector(
@@ -90,7 +89,7 @@ contract LiquidityHubTest is BaseTest {
         amount
       )
     );
-    hub.supply(daiId, amount, 0, address(spoke1));
+    hub.supply(daiAssetId, amount, 0, address(spoke1));
   }
 
   function test_supply_revertsWith_asset_not_active() public {
@@ -383,7 +382,7 @@ contract LiquidityHubTest is BaseTest {
   }
 
   function test_supply_multiple() public {
-    uint256 assetId = 0; // TODO: Add getter of asset id based on address
+    uint256 assetId = daiAssetId; // TODO: Add getter of asset id based on address
     uint256 amount = 100e18;
 
     Asset memory assetData = hub.getAsset(assetId);
@@ -417,10 +416,10 @@ contract LiquidityHubTest is BaseTest {
       timestamp,
       'wrong spoke lastUpdateTimestamp pre-supply'
     );
-    assertEq(dai.balanceOf(address(spoke1)), 0, 'wrong spoke token balance pre-supply');
-    assertEq(dai.balanceOf(address(hub)), 0, 'wrong hub token balance pre-supply');
+    assertEq(tokenList.dai.balanceOf(address(spoke1)), 0, 'wrong spoke token balance pre-supply');
+    assertEq(tokenList.dai.balanceOf(address(hub)), 0, 'wrong hub token balance pre-supply');
 
-    deal(address(dai), USER1, amount);
+    deal(address(tokenList.dai), USER1, amount);
     Utils.supply({
       hub: hub,
       assetId: assetId,
@@ -471,9 +470,9 @@ contract LiquidityHubTest is BaseTest {
       timestamp,
       'wrong spoke lastUpdateTimestamp post-supply'
     );
-    assertEq(dai.balanceOf(address(spoke1)), 0, 'wrong spoke token balance post-supply');
-    assertEq(dai.balanceOf(address(hub)), amount, 'wrong hub token balance post-supply');
-    assertEq(dai.balanceOf(USER1), 0, 'wrong user token balance post-supply');
+    assertEq(tokenList.dai.balanceOf(address(spoke1)), 0, 'wrong spoke token balance post-supply');
+    assertEq(tokenList.dai.balanceOf(address(hub)), amount, 'wrong hub token balance post-supply');
+    assertEq(tokenList.dai.balanceOf(USER1), 0, 'wrong user token balance post-supply');
 
     // Time flies, no interest acc
     skip(1e4);
@@ -524,7 +523,7 @@ contract LiquidityHubTest is BaseTest {
       assetData.suppliedShares + spoke2SupplyShares
     );
 
-    deal(address(dai), USER2, spoke2SupplyAssets);
+    deal(address(tokenList.dai), USER2, spoke2SupplyAssets);
     Utils.supply({
       hub: hub,
       assetId: assetId,
@@ -592,8 +591,8 @@ contract LiquidityHubTest is BaseTest {
       'wrong spoke2 lastUpdateTimestamp'
     );
     // users
-    assertEq(dai.balanceOf(USER1), 0, 'wrong user token balance post-supply');
-    assertEq(dai.balanceOf(USER2), 0, 'wrong user token balance post-supply');
+    assertEq(tokenList.dai.balanceOf(USER1), 0, 'wrong user token balance post-supply');
+    assertEq(tokenList.dai.balanceOf(USER2), 0, 'wrong user token balance post-supply');
   }
 
   struct TestSupplyUserParams {
