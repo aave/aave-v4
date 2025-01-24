@@ -1152,7 +1152,7 @@ contract LiquidityHubTest is BaseTest {
 
     // assertEq(
     //   daiData.totalShares,
-    //   hub.convertToSharesUp(daiId, daiAmount),
+    //   hub.convertToSharesUp(daiAssetId, daiAmount),
     //   'wrong hub dai total shares pre-draw'
     // );
     // assertEq(daiData.totalAssets, daiAmount, 'wrong hub dai total assets pre-draw');
@@ -1204,17 +1204,20 @@ contract LiquidityHubTest is BaseTest {
     // );
     // assertEq(ethData.drawnShares, 0, 'wrong hub eth drawn shares post-draw');
 
-    assertEq(dai.balanceOf(address(spoke1)), daiAmount / 2, 'wrong spoke1 dai final balance');
-    assertEq(eth.balanceOf(address(spoke2)), 0, 'wrong spoke2 eth final balance');
+    assertEq(
+      tokenList.dai.balanceOf(address(spoke1)),
+      daiAmount / 2,
+      'wrong spoke1 dai final balance'
+    );
+    assertEq(tokenList.weth.balanceOf(address(spoke2)), 0, 'wrong spoke2 weth final balance');
   }
 
   function test_draw_revertsWith_asset_not_active() public {
-    uint256 daiId = 2;
     uint256 drawnAmount = 1;
-    _updateActive(daiId, false);
+    _updateActive(daiAssetId, false);
     vm.prank(address(spoke1));
     vm.expectRevert(TestErrors.ASSET_NOT_ACTIVE);
-    hub.draw(daiId, address(spoke1), drawnAmount, 0);
+    hub.draw(daiAssetId, address(spoke1), drawnAmount, 0);
   }
 
   function test_draw_revertsWith_not_available_liquidity() public {
@@ -1363,16 +1366,16 @@ contract LiquidityHubTest is BaseTest {
     hub.restore({assetId: daiAssetId, amount: restoreAmount, riskPremiumRad: 0, repayer: USER1});
     vm.stopPrank();
 
-    // Asset memory daiData = hub.getAsset(daiId);
+    // Asset memory daiData = hub.getAsset(daiAssetId);
     // Asset memory ethData = hub.getAsset(wethAssetId);
     // SpokeData memory spoke1EthData = hub.getSpoke(wethAssetId, address(spoke1));
-    // SpokeData memory spoke1DaiData = hub.getSpoke(daiId, address(spoke1));
+    // SpokeData memory spoke1DaiData = hub.getSpoke(daiAssetId, address(spoke1));
     // SpokeData memory spoke2EthData = hub.getSpoke(wethAssetId, address(spoke2));
-    // SpokeData memory spoke2DaiData = hub.getSpoke(daiId, address(spoke2));
+    // SpokeData memory spoke2DaiData = hub.getSpoke(daiAssetId, address(spoke2));
 
     // assertEq(
     //   daiData.totalShares,
-    //   hub.convertToSharesUp(daiId, daiAmount),
+    //   hub.convertToSharesUp(daiAssetId, daiAmount),
     //   'wrong hub dai total shares post-restore'
     // );
     // assertEq(daiData.totalAssets, daiAmount, 'wrong hub dai total assets post-restore');
@@ -1392,14 +1395,14 @@ contract LiquidityHubTest is BaseTest {
     // assertEq(spoke1DaiData.totalShares, 0, 'wrong spoke1 total dai shares post-restore');
     // assertEq(
     //   spoke1DaiData.drawnShares,
-    //   hub.convertToSharesUp(daiId, drawAmount - restoreAmount),
+    //   hub.convertToSharesUp(daiAssetId, drawAmount - restoreAmount),
     //   'wrong spoke1 drawn dai shares post-restore'
     // );
     // assertEq(spoke2EthData.totalShares, 0, 'wrong spoke2 total eth shares post-restore');
     // assertEq(spoke2EthData.drawnShares, 0, 'wrong spoke2 drawn eth shares post-restore');
     // assertEq(
     //   spoke2DaiData.totalShares,
-    //   hub.convertToSharesDown(daiId, daiAmount),
+    //   hub.convertToSharesDown(daiAssetId, daiAmount),
     //   'wrong spoke2 total dai shares post-restore'
     // );
     // assertEq(spoke2DaiData.drawnShares, 0, 'wrong spoke2 drawn dai shares post-restore');
@@ -1424,29 +1427,26 @@ contract LiquidityHubTest is BaseTest {
   }
 
   function test_addSpoke() public {
-    uint256 daiId = 0;
+    uint256 assetId = hub.assetCount();
 
     vm.expectEmit(address(hub));
-    emit SpokeAdded(daiId, address(spoke1));
-    hub.addSpoke(daiId, DataTypes.SpokeConfig({supplyCap: 1, drawCap: 1}), address(spoke1));
+    emit SpokeAdded(assetId, address(spoke1));
+    hub.addSpoke(assetId, DataTypes.SpokeConfig({supplyCap: 1, drawCap: 1}), address(spoke1));
 
-    DataTypes.SpokeConfig memory spokeData = hub.getSpokeConfig(daiId, address(spoke1));
+    DataTypes.SpokeConfig memory spokeData = hub.getSpokeConfig(assetId, address(spoke1));
     assertEq(spokeData.supplyCap, 1, 'wrong spoke supply cap');
     assertEq(spokeData.drawCap, 1, 'wrong spoke draw cap');
   }
 
   function test_addSpoke_revertsWith_invalid_spoke() public {
-    uint256 daiId = 0;
+    uint256 assetId = hub.assetCount();
     vm.expectRevert(TestErrors.INVALID_SPOKE);
-    hub.addSpoke(daiId, DataTypes.SpokeConfig({supplyCap: 1, drawCap: 1}), address(0));
+    hub.addSpoke(assetId, DataTypes.SpokeConfig({supplyCap: 1, drawCap: 1}), address(0));
   }
 
   function test_addSpokes() public {
-    uint256 daiId = 0;
-    uint256 wethAssetId = 1;
-
     uint256[] memory assetIds = new uint256[](2);
-    assetIds[0] = daiId;
+    assetIds[0] = daiAssetId;
     assetIds[1] = wethAssetId;
 
     DataTypes.SpokeConfig memory daiSpokeConfig = DataTypes.SpokeConfig({supplyCap: 1, drawCap: 2});
@@ -1457,11 +1457,11 @@ contract LiquidityHubTest is BaseTest {
     spokeConfigs[1] = ethSpokeConfig;
 
     vm.expectEmit(address(hub));
-    emit SpokeAdded(daiId, address(spoke1));
+    emit SpokeAdded(daiAssetId, address(spoke1));
     emit SpokeAdded(wethAssetId, address(spoke1));
     hub.addSpokes(assetIds, spokeConfigs, address(spoke1));
 
-    DataTypes.SpokeConfig memory daiSpokeData = hub.getSpokeConfig(daiId, address(spoke1));
+    DataTypes.SpokeConfig memory daiSpokeData = hub.getSpokeConfig(daiAssetId, address(spoke1));
     DataTypes.SpokeConfig memory ethSpokeData = hub.getSpokeConfig(wethAssetId, address(spoke1));
 
     assertEq(daiSpokeData.supplyCap, daiSpokeConfig.supplyCap, 'wrong dai spoke supply cap');
@@ -1472,11 +1472,8 @@ contract LiquidityHubTest is BaseTest {
   }
 
   function test_addSpokes_revertsWith_invalid_spoke() public {
-    uint256 daiId = 0;
-    uint256 wethAssetId = 1;
-
     uint256[] memory assetIds = new uint256[](2);
-    assetIds[0] = daiId;
+    assetIds[0] = daiAssetId;
     assetIds[1] = wethAssetId;
 
     DataTypes.SpokeConfig[] memory spokeConfigs = new DataTypes.SpokeConfig[](2);
