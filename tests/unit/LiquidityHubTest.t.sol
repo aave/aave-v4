@@ -179,7 +179,7 @@ contract LiquidityHubTest is BaseTest {
   }
 
   /// @dev User makes a first supply, shares and assets amounts are correct, no precision loss
-  function test_fuzz_first_supply(uint256 assetId, address user, uint256 amount) public {
+  function test_fuzz_supply(uint256 assetId, address user, uint256 amount) public {
     vm.assume(user != address(hub) && user != address(0) && user != address(spoke1));
     assetId = bound(assetId, 0, hub.assetCount() - 1);
     amount = bound(amount, 1, type(uint128).max);
@@ -1133,7 +1133,7 @@ contract LiquidityHubTest is BaseTest {
     // assertEq(hub.getUserRiskPremium(USER1), calcRiskPremium);
   }
 
-  function test_first_draw_same_block() public {
+  function test_draw_same_block() public {
     uint256 daiAmount = 100e18;
     uint256 wethAmount = 10e18;
     uint256 drawnAmount = daiAmount / 2;
