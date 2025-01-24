@@ -219,7 +219,6 @@ contract LiquidityHubTest is BaseTest {
 
   /// @dev User makes a first supply, shares and assets amounts are correct, no precision loss
   function test_fuzz_first_supply(uint256 assetId, address user, uint256 amount) public {
-    if (user == address(hub) || user == address(0)) return;
     vm.assume(user != address(hub) && user != address(0) && user != address(spoke1));
     assetId = bound(assetId, 0, hub.assetCount() - 1);
     amount = bound(amount, 1, type(uint128).max);
