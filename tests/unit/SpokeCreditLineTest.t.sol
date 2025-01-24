@@ -63,7 +63,7 @@ contract SpokeCreditLineTest is BaseTest {
     skip(20);
   }
 
-  // function skip_test_credit_line_config() public {
+  // function test_credit_line_config() public {
   //   uint256 daiId = 2;
   //   assertEq(spokeCreditLine.getInterestRate(daiId), 0.05e27);
 
@@ -79,7 +79,7 @@ contract SpokeCreditLineTest is BaseTest {
 
   // // test with basic borrow module
   // // credit line with fixed interest rate
-  // function skip_test_first_borrow_credit_line() public {
+  // function test_first_borrow_credit_line() public {
   //   // DAI with basic credit line borrow module
   //   uint256 daiId = 2;
   //   uint256 daiAmount = 100e18;
@@ -179,7 +179,7 @@ contract SpokeCreditLineTest is BaseTest {
   //   assertEq(userBalance, spokeCreditLine.getUserDebt(daiId, USER1), '3) wrong final user1 debt');
   // }
 
-  // function skip_test_borrow_revertsWith_reserve_not_borrowable() public {
+  // function test_borrow_revertsWith_reserve_not_borrowable() public {
   //   uint256 daiId = 2;
   //   uint256 drawnAmount = 1;
   //   _updateBorrowable(daiId, false);
@@ -189,7 +189,7 @@ contract SpokeCreditLineTest is BaseTest {
   //   ISpoke(address(spokeCreditLine)).borrow(daiId, USER1, drawnAmount);
   // }
 
-  // function skip_test_multi_borrow_credit_line() public {
+  // function test_multi_borrow_credit_line() public {
   //   // DAI with basic credit line borrow module
   //   uint256 daiId = 2;
   //   uint256 daiAmount = 100e18;
@@ -294,7 +294,7 @@ contract SpokeCreditLineTest is BaseTest {
   //   );
   // }
 
-  // function skip_test_fuzz_multiple_draws_credit_line(uint256 numDrawings, uint256 entropy) public {
+  // function test_fuzz_multiple_draws_credit_line(uint256 numDrawings, uint256 entropy) public {
   //   numDrawings = bound(numDrawings, 1, 10);
 
   //   // DAI with basic credit line borrow module
@@ -356,7 +356,7 @@ contract SpokeCreditLineTest is BaseTest {
   //   vm.stopPrank();
   // }
 
-  // function skip_test_updateReserve_revertsWith_invalid_reserve() public {
+  // function test_updateReserve_revertsWith_invalid_reserve() public {
   //   uint256 invalidReserveId = 3;
 
   //   MockSpokeCreditLine.ReserveConfig memory reserveConfig;
@@ -364,7 +364,7 @@ contract SpokeCreditLineTest is BaseTest {
   //   spokeCreditLine.updateReserve(invalidReserveId, reserveConfig);
   // }
 
-  // function skip_test_update_reserve() public {
+  // function test_update_reserve() public {
   //   uint256 daiId = 2;
 
   //   MockSpokeCreditLine.ReserveConfig memory reserveConfig;

@@ -293,8 +293,7 @@ contract LiquidityHubTest is BaseTest {
     uint256 amount,
     address onBehalfOf
   ) public {
-    vm.assume(spoke != address(hub) && spoke != address(0));
-    vm.assume(onBehalfOf != address(0));
+    vm.assume(spoke != address(hub) && spoke != address(0) && onBehalfOf != address(0));
 
     assetId = bound(assetId, 0, hub.assetCount() - 1);
     amount = bound(amount, 1, type(uint128).max);
@@ -346,7 +345,8 @@ contract LiquidityHubTest is BaseTest {
     hub.supply(assetId, amount, 0, USER1);
   }
 
-  function skip_test_supply_with_increased_index() public {
+  function test_supply_with_increased_index() public {
+    vm.skip(true);
     // TODO User supplies X and gets accounted X assets and less than X shares.
     // - do this after draw is resolved, amount is drawn, and then skip time, baseDebt grows
     // - exchange rate increases
@@ -694,11 +694,9 @@ contract LiquidityHubTest is BaseTest {
   /// User makes a first supply, which increases overtime as yield accrues
   // TODO: to be fixed, there is precision loss
   // TODO: after draw is completed. Draw some debt and skip time to change index
-  function skip_test_supply_fuzz_index_increase(
-    uint256 assetId,
-    address user,
-    uint256 amount
-  ) public {
+  function test_supply_fuzz_index_increase(uint256 assetId, address user, uint256 amount) public {
+    vm.skip(true);
+
     // vm.assume(user != address(hub) && user != address(spoke1) && user != address(0));
     // assetId = bound(assetId, 0, hub.assetCount() - 1);
     // amount = bound(amount, 1, type(uint128).max);
@@ -1018,7 +1016,8 @@ contract LiquidityHubTest is BaseTest {
     assertEq(asset.balanceOf(user), amount, 'wrong user token balance post-withdraw');
   }
 
-  function skip_test_withdraw_all_with_interest() public {
+  function test_withdraw_all_with_interest() public {
+    vm.skip(true);
     // TODO User supplies X and withdraws more than X because there is some yield
     // - do this after draw method is done
     // - user1 supply, then user2 draw amount, time flies, base debt grows
@@ -1137,7 +1136,9 @@ contract LiquidityHubTest is BaseTest {
   }
 
   // TODO after RP logic is implemented
-  function skip_test_user_riskPremium() public {
+  function test_user_riskPremium() public {
+    vm.skip(true);
+
     uint256 amount = 100e18;
     uint256 ethAssetId = 1;
     uint256 daiAssetId = 0;
@@ -1162,7 +1163,9 @@ contract LiquidityHubTest is BaseTest {
   }
 
   // TODO after RP logic is implemented
-  function skip_test_user_riskPremium_update_affects_positions() public {
+  function test_user_riskPremium_update_affects_positions() public {
+    vm.skip(true);
+
     uint256 assetId = 1;
     uint256 amount = 100e18;
 
@@ -1185,7 +1188,9 @@ contract LiquidityHubTest is BaseTest {
   }
 
   // TODO after RP logic is implemented
-  function skip_test_user_riskPremium_weighted() public {
+  function test_user_riskPremium_weighted() public {
+    vm.skip(true);
+
     uint256 ethAssetId = 1;
     uint256 daiAssetId = 0;
     uint256 ethAmount = 1e18;

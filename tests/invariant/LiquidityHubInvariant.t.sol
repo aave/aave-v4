@@ -24,7 +24,8 @@ contract LiquidityHubInvariant is StdInvariant, Test {
   /// forge-config: default.invariant.runs = 256
   /// forge-config: default.invariant.depth = 500
   /// @dev Reserve total assets must be equal to value returned by IERC20 balanceOf function minus donations
-  function skip_invariant_reserveTotalAssets() public {
+  function invariant_reserveTotalAssets() public {
+    vm.skip(true);
     // TODO: manage asset listed multiple times
     // TODO: manage interest
     for (uint256 i; i < hub.assetCount(); ++i) {
@@ -39,7 +40,8 @@ contract LiquidityHubInvariant is StdInvariant, Test {
   }
 
   /// @dev Exchange rate must be monotonically increasing
-  function skip_invariant_exchangeRateMonotonicallyIncreasing() public {
+  function invariant_exchangeRateMonotonicallyIncreasing() public {
+    vm.skip(true);
     // TODO this can be improved with borrows OR changes in borrowRate
     for (uint256 id = 0; id < hub.assetCount(); id++) {
       Asset memory reserveData = hub.getAsset(id);
