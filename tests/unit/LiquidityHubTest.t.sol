@@ -618,8 +618,6 @@ contract LiquidityHubTest is BaseTest {
       onBehalfOf: address(spoke1)
     });
 
-    uint256 elapsedTimeChange = bound(uint160(user), 0, 30 days); // [0, 30 days] range
-
     TestSupplyUserParams memory p = TestSupplyUserParams({
       totalAssets: amount,
       suppliedShares: amount,
@@ -692,7 +690,7 @@ contract LiquidityHubTest is BaseTest {
       assertEq(asset.balanceOf(USER1), 0, 'wrong user token balance post-supply');
 
       // time flies
-      uint256 elapsedTime = (i % 2 == 0 ? elapsedTimeChange : elapsedTimeChange * 2) % 30 days; // randomize, 30 days max
+      uint256 elapsedTime = _randomizer(1 days, 30 days, i);
       skip(elapsedTime);
 
       p.userShares = 1; // minimum for 1 share
