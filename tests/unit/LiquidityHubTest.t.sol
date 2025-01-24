@@ -126,7 +126,11 @@ contract LiquidityHubTest is BaseTest {
     assertEq(assetData.baseBorrowIndex, WadRayMath.RAY, 'wrong asset baseBorrowIndex pre-supply');
     assertEq(assetData.baseBorrowRate, 0, 'wrong asset baseBorrowRate pre-supply');
     assertEq(assetData.riskPremiumRad, 0, 'wrong asset riskPremiumRad pre-supply');
-    assertEq(assetData.lastUpdateTimestamp, 1, 'wrong asset lastUpdateTimestamp pre-supply');
+    assertEq(
+      assetData.lastUpdateTimestamp,
+      vm.getBlockTimestamp(),
+      'wrong asset lastUpdateTimestamp pre-supply'
+    );
     // spoke
     assertEq(
       spokeData.suppliedShares,
@@ -171,6 +175,8 @@ contract LiquidityHubTest is BaseTest {
     assetData = hub.getAsset(assetId);
     spokeData = hub.getSpoke(assetId, address(spoke1));
 
+    uint256 timestamp = vm.getBlockTimestamp();
+
     // hub
     assertEq(hub.getTotalAssets(assetId), amount, 'wrong total assets post-supply');
     // asset
@@ -192,7 +198,11 @@ contract LiquidityHubTest is BaseTest {
       'wrong asset baseBorrowRate post-supply'
     );
     assertEq(assetData.riskPremiumRad, 0, 'wrong asset riskPremiumRad post-supply');
-    assertEq(assetData.lastUpdateTimestamp, 1, 'wrong asset lastUpdateTimestamp post-supply');
+    assertEq(
+      assetData.lastUpdateTimestamp,
+      timestamp,
+      'wrong asset lastUpdateTimestamp post-supply'
+    );
     // spoke
     assertEq(
       assetData.baseBorrowRate,
@@ -200,7 +210,11 @@ contract LiquidityHubTest is BaseTest {
       'wrong asset baseBorrowRate post-supply'
     );
     assertEq(assetData.riskPremiumRad, 0, 'wrong asset riskPremiumRad post-supply');
-    assertEq(assetData.lastUpdateTimestamp, 1, 'wrong asset lastUpdateTimestamp post-supply');
+    assertEq(
+      assetData.lastUpdateTimestamp,
+      timestamp,
+      'wrong asset lastUpdateTimestamp post-supply'
+    );
     // spoke
     assertEq(
       spokeData.suppliedShares,
@@ -211,7 +225,11 @@ contract LiquidityHubTest is BaseTest {
     assertEq(spokeData.outstandingPremium, 0, 'wrong spoke outstandingPremium post-supply');
     assertEq(spokeData.baseBorrowIndex, WadRayMath.RAY, 'wrong spoke baseBorrowIndex post-supply');
     assertEq(spokeData.riskPremiumRad, 0, 'wrong spoke riskPremiumRad post-supply');
-    assertEq(spokeData.lastUpdateTimestamp, 1, 'wrong spoke lastUpdateTimestamp post-supply');
+    assertEq(
+      spokeData.lastUpdateTimestamp,
+      timestamp,
+      'wrong spoke lastUpdateTimestamp post-supply'
+    );
     assertEq(dai.balanceOf(USER1), 0, 'wrong user token balance post-supply');
     assertEq(dai.balanceOf(address(spoke1)), 0, 'wrong spoke token balance post-supply');
     assertEq(dai.balanceOf(address(hub)), amount, 'wrong hub token balance post-supply');
@@ -240,6 +258,8 @@ contract LiquidityHubTest is BaseTest {
     Asset memory assetData = hub.getAsset(assetId);
     SpokeData memory spokeData = hub.getSpoke(assetId, address(spoke1));
 
+    uint256 timestamp = vm.getBlockTimestamp();
+
     // hub
     assertEq(hub.getTotalAssets(assetId), amount, 'wrong total assets post-supply');
     // asset
@@ -258,7 +278,11 @@ contract LiquidityHubTest is BaseTest {
       'wrong asset baseBorrowRate post-supply'
     );
     assertEq(assetData.riskPremiumRad, 0, 'wrong asset riskPremiumRad post-supply');
-    assertEq(assetData.lastUpdateTimestamp, 1, 'wrong asset lastUpdateTimestamp post-supply');
+    assertEq(
+      assetData.lastUpdateTimestamp,
+      timestamp,
+      'wrong asset lastUpdateTimestamp post-supply'
+    );
     // spoke
     assertEq(
       spokeData.suppliedShares,
@@ -360,6 +384,8 @@ contract LiquidityHubTest is BaseTest {
     Asset memory assetData = hub.getAsset(assetId);
     SpokeData memory spokeData = hub.getSpoke(assetId, address(spoke1));
 
+    uint256 timestamp = vm.getBlockTimestamp();
+
     // hub
     assertEq(hub.getTotalAssets(assetId), 0, 'wrong hub total assets pre-supply');
     // asset
@@ -370,14 +396,22 @@ contract LiquidityHubTest is BaseTest {
     assertEq(assetData.baseBorrowIndex, WadRayMath.RAY, 'wrong asset baseBorrowIndex pre-supply');
     assertEq(assetData.baseBorrowRate, 0, 'wrong asset baseBorrowRate pre-supply');
     assertEq(assetData.riskPremiumRad, 0, 'wrong asset riskPremiumRad pre-supply');
-    assertEq(assetData.lastUpdateTimestamp, 1, 'wrong asset lastUpdateTimestamp pre-supply');
+    assertEq(
+      assetData.lastUpdateTimestamp,
+      timestamp,
+      'wrong asset lastUpdateTimestamp pre-supply'
+    );
     // spoke
     assertEq(spokeData.suppliedShares, 0, 'wrong spoke suppliedShares pre-supply');
     assertEq(spokeData.baseDebt, 0, 'wrong spoke baseDebt pre-supply');
     assertEq(spokeData.outstandingPremium, 0, 'wrong spoke outstandingPremium pre-supply');
     assertEq(spokeData.baseBorrowIndex, WadRayMath.RAY, 'wrong spoke baseBorrowIndex pre-supply');
     assertEq(spokeData.riskPremiumRad, 0, 'wrong spoke riskPremiumRad pre-supply');
-    assertEq(spokeData.lastUpdateTimestamp, 1, 'wrong spoke lastUpdateTimestamp pre-supply');
+    assertEq(
+      spokeData.lastUpdateTimestamp,
+      timestamp,
+      'wrong spoke lastUpdateTimestamp pre-supply'
+    );
     assertEq(dai.balanceOf(address(spoke1)), 0, 'wrong spoke token balance pre-supply');
     assertEq(dai.balanceOf(address(hub)), 0, 'wrong hub token balance pre-supply');
 
@@ -412,7 +446,11 @@ contract LiquidityHubTest is BaseTest {
       'wrong asset baseBorrowRate post-supply'
     );
     assertEq(assetData.riskPremiumRad, 0, 'wrong asset riskPremiumRad post-supply');
-    assertEq(assetData.lastUpdateTimestamp, 1, 'wrong asset lastUpdateTimestamp post-supply');
+    assertEq(
+      assetData.lastUpdateTimestamp,
+      timestamp,
+      'wrong asset lastUpdateTimestamp post-supply'
+    );
     // spoke
     assertEq(
       spokeData.suppliedShares,
@@ -423,7 +461,11 @@ contract LiquidityHubTest is BaseTest {
     assertEq(spokeData.outstandingPremium, 0, 'wrong spoke outstandingPremium post-supply');
     assertEq(spokeData.baseBorrowIndex, WadRayMath.RAY, 'wrong spoke baseBorrowIndex post-supply');
     assertEq(spokeData.riskPremiumRad, 0, 'wrong spoke riskPremiumRad post-supply');
-    assertEq(spokeData.lastUpdateTimestamp, 1, 'wrong spoke lastUpdateTimestamp post-supply');
+    assertEq(
+      spokeData.lastUpdateTimestamp,
+      timestamp,
+      'wrong spoke lastUpdateTimestamp post-supply'
+    );
     assertEq(dai.balanceOf(address(spoke1)), 0, 'wrong spoke token balance post-supply');
     assertEq(dai.balanceOf(address(hub)), amount, 'wrong hub token balance post-supply');
     assertEq(dai.balanceOf(USER1), 0, 'wrong user token balance post-supply');
@@ -447,7 +489,7 @@ contract LiquidityHubTest is BaseTest {
       'wrong asset baseBorrowRate post-skip'
     );
     assertEq(assetData.riskPremiumRad, 0, 'wrong asset riskPremiumRad post-skip');
-    assertEq(assetData.lastUpdateTimestamp, 1, 'wrong asset lastUpdateTimestamp post-skip');
+    assertEq(assetData.lastUpdateTimestamp, timestamp, 'wrong asset lastUpdateTimestamp post-skip');
     // spoke
     assertEq(
       spokeData.suppliedShares,
@@ -458,7 +500,11 @@ contract LiquidityHubTest is BaseTest {
     assertEq(spokeData.outstandingPremium, 0, 'wrong spoke outstandingPremium post-skip');
     assertEq(spokeData.baseBorrowIndex, WadRayMath.RAY, 'wrong spoke baseBorrowIndex post-skip');
     assertEq(spokeData.riskPremiumRad, 0, 'wrong spoke riskPremiumRad post-skip');
-    assertEq(spokeData.lastUpdateTimestamp, 1, 'wrong spoke lastUpdateTimestamp post-skip');
+    assertEq(
+      spokeData.lastUpdateTimestamp,
+      assetData.lastUpdateTimestamp,
+      'wrong spoke lastUpdateTimestamp post-skip'
+    );
 
     // total assets do not change because no interest acc yet
     uint256 prevTotalAssets = hub.getTotalAssets(assetId);
@@ -513,7 +559,7 @@ contract LiquidityHubTest is BaseTest {
       'wrong asset final baseBorrowRate'
     );
     assertEq(assetData.riskPremiumRad, 0, 'wrong asset final riskPremiumRad');
-    assertEq(assetData.lastUpdateTimestamp, 1, 'wrong asset final lastUpdateTimestamp');
+    assertEq(assetData.lastUpdateTimestamp, timestamp, 'wrong asset final lastUpdateTimestamp');
     // spoke
     assertEq(
       spokeData.suppliedShares,
@@ -524,14 +570,22 @@ contract LiquidityHubTest is BaseTest {
     assertEq(spokeData.outstandingPremium, 0, 'wrong final spoke outstandingPremium');
     assertEq(spokeData.baseBorrowIndex, WadRayMath.RAY, 'wrong final spoke baseBorrowIndex');
     assertEq(spokeData.riskPremiumRad, 0, 'wrong final spoke riskPremiumRad');
-    assertEq(spokeData.lastUpdateTimestamp, 1, 'wrong final spoke lastUpdateTimestamp');
+    assertEq(
+      spokeData.lastUpdateTimestamp,
+      assetData.lastUpdateTimestamp,
+      'wrong final spoke lastUpdateTimestamp'
+    );
     // spoke2
     assertEq(spoke2Data.suppliedShares, spoke2SupplyShares, 'wrong final spoke2 totalShares');
     assertEq(spoke2Data.baseDebt, 0, 'wrong final spoke2 baseDebt');
     assertEq(spoke2Data.outstandingPremium, 0, 'wrong spoke2 outstandingPremium');
     assertEq(spoke2Data.baseBorrowIndex, WadRayMath.RAY, 'wrong spoke2 baseBorrowIndex');
     assertEq(spoke2Data.riskPremiumRad, 0, 'wrong spoke2 riskPremiumRad');
-    assertEq(spoke2Data.lastUpdateTimestamp, 1, 'wrong spoke2 lastUpdateTimestamp');
+    assertEq(
+      spoke2Data.lastUpdateTimestamp,
+      assetData.lastUpdateTimestamp,
+      'wrong spoke2 lastUpdateTimestamp'
+    );
     // users
     assertEq(dai.balanceOf(USER1), 0, 'wrong user token balance post-supply');
     assertEq(dai.balanceOf(USER2), 0, 'wrong user token balance post-supply');
@@ -801,6 +855,8 @@ contract LiquidityHubTest is BaseTest {
     Asset memory assetData = hub.getAsset(assetId);
     SpokeData memory spokeData = hub.getSpoke(assetId, address(spoke1));
 
+    uint256 timestamp = vm.getBlockTimestamp();
+
     // hub
     assertEq(hub.getTotalAssets(assetId), amount, 'wrong hub total assets pre-withdraw');
     // asset
@@ -819,7 +875,11 @@ contract LiquidityHubTest is BaseTest {
       'wrong asset baseBorrowRate pre-withdraw'
     );
     assertEq(assetData.riskPremiumRad, 0, 'wrong asset riskPremiumRad pre-withdraw');
-    assertEq(assetData.lastUpdateTimestamp, 1, 'wrong asset lastUpdateTimestamp pre-withdraw');
+    assertEq(
+      assetData.lastUpdateTimestamp,
+      timestamp,
+      'wrong asset lastUpdateTimestamp pre-withdraw'
+    );
     // spoke
     assertEq(
       spokeData.suppliedShares,
@@ -838,15 +898,22 @@ contract LiquidityHubTest is BaseTest {
       'wrong spoke baseBorrowIndex pre-withdraw'
     );
     assertEq(spokeData.riskPremiumRad, 0, 'wrong spoke riskPremiumRad pre-withdraw');
-    assertEq(spokeData.lastUpdateTimestamp, 1, 'wrong spoke lastUpdateTimestamp pre-withdraw');
+    assertEq(
+      spokeData.lastUpdateTimestamp,
+      assetData.lastUpdateTimestamp,
+      'wrong spoke lastUpdateTimestamp pre-withdraw'
+    );
     // dai
     assertEq(dai.balanceOf(address(spoke1)), 0, 'wrong spoke token balance pre-withdraw');
     assertEq(dai.balanceOf(address(hub)), amount, 'wrong hub token balance pre-withdraw');
     assertEq(dai.balanceOf(USER1), 0, 'wrong user token balance pre-withdraw');
 
-    vm.startPrank(address(spoke1));
+    vm.expectEmit(address(dai));
+    emit Transfer(address(hub), USER1, amount);
     vm.expectEmit(address(hub));
     emit Withdraw(assetId, address(spoke1), USER1, amount);
+
+    vm.startPrank(address(spoke1));
     hub.withdraw({assetId: assetId, to: USER1, amount: amount, riskPremiumRad: 0});
     vm.stopPrank();
 
@@ -871,7 +938,11 @@ contract LiquidityHubTest is BaseTest {
       'wrong asset baseBorrowRate post-withdraw'
     );
     assertEq(assetData.riskPremiumRad, 0, 'wrong asset riskPremiumRad post-withdraw');
-    assertEq(assetData.lastUpdateTimestamp, 1, 'wrong asset lastUpdateTimestamp post-withdraw');
+    assertEq(
+      assetData.lastUpdateTimestamp,
+      timestamp,
+      'wrong asset lastUpdateTimestamp post-withdraw'
+    );
     // spoke
     assertEq(
       spokeData.suppliedShares,
@@ -890,14 +961,18 @@ contract LiquidityHubTest is BaseTest {
       'wrong spoke baseBorrowIndex post-withdraw'
     );
     assertEq(spokeData.riskPremiumRad, 0, 'wrong spoke riskPremiumRad post-withdraw');
-    assertEq(spokeData.lastUpdateTimestamp, 1, 'wrong spoke lastUpdateTimestamp post-withdraw');
+    assertEq(
+      spokeData.lastUpdateTimestamp,
+      assetData.lastUpdateTimestamp,
+      'wrong spoke lastUpdateTimestamp post-withdraw'
+    );
     // dai
     assertEq(dai.balanceOf(address(spoke1)), 0, 'wrong spoke token balance post-withdraw');
     assertEq(dai.balanceOf(address(hub)), 0, 'wrong hub token balance post-withdraw');
     assertEq(dai.balanceOf(USER1), amount, 'wrong user token balance post-withdraw');
   }
 
-  function test_withdraw_fuzz_events(uint256 assetId, address user, uint256 amount) public {
+  function test_withdraw_fuzz(uint256 assetId, address user, uint256 amount) public {
     vm.assume(user != address(0) && user != address(hub) && user != address(spoke1));
     assetId = bound(assetId, 0, hub.assetCount() - 1);
     amount = bound(amount, 1, type(uint128).max);
@@ -918,6 +993,8 @@ contract LiquidityHubTest is BaseTest {
     Asset memory assetData = hub.getAsset(assetId);
     SpokeData memory spokeData = hub.getSpoke(assetId, address(spoke1));
 
+    uint256 timestamp = vm.getBlockTimestamp();
+
     // hub
     assertEq(hub.getTotalAssets(assetId), amount, 'wrong hub total assets pre-withdraw');
     // asset
@@ -936,7 +1013,11 @@ contract LiquidityHubTest is BaseTest {
       'wrong asset baseBorrowRate pre-withdraw'
     );
     assertEq(assetData.riskPremiumRad, 0, 'wrong asset riskPremiumRad pre-withdraw');
-    assertEq(assetData.lastUpdateTimestamp, 1, 'wrong asset lastUpdateTimestamp pre-withdraw');
+    assertEq(
+      assetData.lastUpdateTimestamp,
+      timestamp,
+      'wrong asset lastUpdateTimestamp pre-withdraw'
+    );
     // spoke
     assertEq(
       spokeData.suppliedShares,
@@ -955,7 +1036,11 @@ contract LiquidityHubTest is BaseTest {
       'wrong spoke baseBorrowIndex pre-withdraw'
     );
     assertEq(spokeData.riskPremiumRad, 0, 'wrong spoke riskPremiumRad pre-withdraw');
-    assertEq(spokeData.lastUpdateTimestamp, 1, 'wrong spoke lastUpdateTimestamp pre-withdraw');
+    assertEq(
+      spokeData.lastUpdateTimestamp,
+      assetData.lastUpdateTimestamp,
+      'wrong spoke lastUpdateTimestamp pre-withdraw'
+    );
     // asset
     assertEq(asset.balanceOf(address(spoke1)), 0, 'wrong spoke token balance pre-withdraw');
     assertEq(asset.balanceOf(address(hub)), amount, 'wrong hub token balance pre-withdraw');
@@ -990,7 +1075,11 @@ contract LiquidityHubTest is BaseTest {
       'wrong asset baseBorrowRate post-withdraw'
     );
     assertEq(assetData.riskPremiumRad, 0, 'wrong asset riskPremiumRad post-withdraw');
-    assertEq(assetData.lastUpdateTimestamp, 1, 'wrong asset lastUpdateTimestamp post-withdraw');
+    assertEq(
+      assetData.lastUpdateTimestamp,
+      timestamp,
+      'wrong asset lastUpdateTimestamp post-withdraw'
+    );
     // spoke
     assertEq(
       spokeData.suppliedShares,
@@ -1009,7 +1098,11 @@ contract LiquidityHubTest is BaseTest {
       'wrong spoke baseBorrowIndex post-withdraw'
     );
     assertEq(spokeData.riskPremiumRad, 0, 'wrong spoke riskPremiumRad post-withdraw');
-    assertEq(spokeData.lastUpdateTimestamp, 1, 'wrong spoke lastUpdateTimestamp post-withdraw');
+    assertEq(
+      spokeData.lastUpdateTimestamp,
+      assetData.lastUpdateTimestamp,
+      'wrong spoke lastUpdateTimestamp post-withdraw'
+    );
     // asset
     assertEq(asset.balanceOf(address(spoke1)), 0, 'wrong spoke token balance post-withdraw');
     assertEq(asset.balanceOf(address(hub)), 0, 'wrong hub token balance post-withdraw');
@@ -1052,56 +1145,12 @@ contract LiquidityHubTest is BaseTest {
     vm.expectRevert(TestErrors.SUPPLIED_AMOUNT_EXCEEDED);
     hub.withdraw({assetId: assetId, to: USER1, amount: amount + 1, riskPremiumRad: 0});
 
+    uint256 timestamp = vm.getBlockTimestamp();
+
     // advance time, but no accumulation
     skip(1e18);
     vm.expectRevert(TestErrors.SUPPLIED_AMOUNT_EXCEEDED);
     hub.withdraw({assetId: assetId, to: USER1, amount: amount + 1, riskPremiumRad: 0});
-
-    Asset memory assetData = hub.getAsset(assetId);
-    SpokeData memory spokeData = hub.getSpoke(assetId, address(spoke1));
-
-    // hub
-    assertEq(hub.getTotalAssets(assetId), amount, 'wrong hub total assets pre-withdraw');
-    // asset
-    assertEq(
-      assetData.suppliedShares,
-      hub.convertToSharesUp(assetId, amount),
-      'wrong asset total shares pre-withdraw'
-    );
-    assertEq(assetData.availableLiquidity, amount, 'wrong asset availableLiquidity pre-withdraw');
-    assertEq(assetData.baseDebt, 0, 'wrong asset baseDebt pre-withdraw');
-    assertEq(assetData.outstandingPremium, 0, 'wrong asset outstandingPremium pre-withdraw');
-    assertEq(assetData.baseBorrowIndex, WadRayMath.RAY, 'wrong asset baseBorrowIndex pre-withdraw');
-    assertEq(
-      assetData.baseBorrowRate,
-      uint256(5_00).bpsToRay(),
-      'wrong asset baseBorrowRate pre-withdraw'
-    );
-    assertEq(assetData.riskPremiumRad, 0, 'wrong asset riskPremiumRad pre-withdraw');
-    assertEq(assetData.lastUpdateTimestamp, 1, 'wrong asset lastUpdateTimestamp pre-withdraw');
-    // spoke
-    assertEq(
-      spokeData.suppliedShares,
-      assetData.suppliedShares,
-      'wrong spoke suppliedShares pre-withdraw'
-    );
-    assertEq(spokeData.baseDebt, assetData.baseDebt, 'wrong spoke baseDebt pre-withdraw');
-    assertEq(
-      spokeData.outstandingPremium,
-      assetData.outstandingPremium,
-      'wrong spoke outstandingPremium pre-withdraw'
-    );
-    assertEq(
-      spokeData.baseBorrowIndex,
-      assetData.baseBorrowIndex,
-      'wrong spoke baseBorrowIndex pre-withdraw'
-    );
-    assertEq(spokeData.riskPremiumRad, 0, 'wrong spoke riskPremiumRad pre-withdraw');
-    assertEq(spokeData.lastUpdateTimestamp, 1, 'wrong spoke lastUpdateTimestamp pre-withdraw');
-    // dai
-    assertEq(dai.balanceOf(address(spoke1)), 0, 'wrong spoke token balance pre-withdraw');
-    assertEq(dai.balanceOf(address(hub)), amount, 'wrong hub token balance pre-withdraw');
-    assertEq(dai.balanceOf(USER1), 0, 'wrong user token balance pre-withdraw');
   }
 
   function test_withdraw_revertsWith_not_available_liquidity() public {
