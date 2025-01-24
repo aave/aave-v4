@@ -773,11 +773,11 @@ contract LiquidityHubTest is BaseTest {
   }
 
   function test_withdraw() public {
-    uint256 assetId = 0; // TODO: Add getter of asset id based on address
+    uint256 assetId = daiAssetId; // TODO: Add getter of asset id based on address
     uint256 amount = 100e18;
 
     // User supply
-    deal(address(dai), USER1, amount);
+    deal(address(tokenList.dai), USER1, amount);
     Utils.supply({
       hub: hub,
       assetId: assetId,
@@ -839,11 +839,11 @@ contract LiquidityHubTest is BaseTest {
       'wrong spoke lastUpdateTimestamp pre-withdraw'
     );
     // dai
-    assertEq(dai.balanceOf(address(spoke1)), 0, 'wrong spoke token balance pre-withdraw');
-    assertEq(dai.balanceOf(address(hub)), amount, 'wrong hub token balance pre-withdraw');
-    assertEq(dai.balanceOf(USER1), 0, 'wrong user token balance pre-withdraw');
+    assertEq(tokenList.dai.balanceOf(address(spoke1)), 0, 'wrong spoke token balance pre-withdraw');
+    assertEq(tokenList.dai.balanceOf(address(hub)), amount, 'wrong hub token balance pre-withdraw');
+    assertEq(tokenList.dai.balanceOf(USER1), 0, 'wrong user token balance pre-withdraw');
 
-    vm.expectEmit(address(dai));
+    vm.expectEmit(address(tokenList.dai));
     emit Transfer(address(hub), USER1, amount);
     vm.expectEmit(address(hub));
     emit Withdraw(assetId, address(spoke1), USER1, amount);
@@ -902,9 +902,13 @@ contract LiquidityHubTest is BaseTest {
       'wrong spoke lastUpdateTimestamp post-withdraw'
     );
     // dai
-    assertEq(dai.balanceOf(address(spoke1)), 0, 'wrong spoke token balance post-withdraw');
-    assertEq(dai.balanceOf(address(hub)), 0, 'wrong hub token balance post-withdraw');
-    assertEq(dai.balanceOf(USER1), amount, 'wrong user token balance post-withdraw');
+    assertEq(
+      tokenList.dai.balanceOf(address(spoke1)),
+      0,
+      'wrong spoke token balance post-withdraw'
+    );
+    assertEq(tokenList.dai.balanceOf(address(hub)), 0, 'wrong hub token balance post-withdraw');
+    assertEq(tokenList.dai.balanceOf(USER1), amount, 'wrong user token balance post-withdraw');
   }
 
   function test_withdraw_fuzz(uint256 assetId, address user, uint256 amount) public {
@@ -1062,11 +1066,11 @@ contract LiquidityHubTest is BaseTest {
   }
 
   function test_withdraw_revertsWith_supplied_amount_exceeded() public {
-    uint256 assetId = 0; // TODO: Add getter of asset id based on address
+    uint256 assetId = daiAssetId; // TODO: Add getter of asset id based on address
     uint256 amount = 100e18;
 
     // User supply
-    deal(address(dai), USER1, amount);
+    deal(address(tokenList.dai), USER1, amount);
     Utils.supply({
       hub: hub,
       assetId: assetId,
@@ -1089,34 +1093,32 @@ contract LiquidityHubTest is BaseTest {
   }
 
   function test_withdraw_revertsWith_not_available_liquidity() public {
-    uint256 daiId = 0; // TODO: Add getter of asset id based on address
     uint256 amount = 100e18;
 
     // User supply
-    deal(address(dai), address(spoke1), amount);
-    Utils.supply(hub, daiId, address(spoke1), amount, address(spoke1), address(spoke1));
+    deal(address(tokenList.dai), address(spoke1), amount);
+    Utils.supply(hub, daiAssetId, address(spoke1), amount, address(spoke1), address(spoke1));
 
     // spoke1 draw all of dai reserve liquidity
-    Utils.draw(hub, daiId, address(spoke1), address(spoke1), amount, address(spoke1));
+    Utils.draw(hub, daiAssetId, address(spoke1), address(spoke1), amount, address(spoke1));
 
     vm.prank(address(spoke1));
     vm.expectRevert(TestErrors.SUPPLIED_AMOUNT_EXCEEDED);
-    hub.withdraw(daiId, address(spoke1), amount, 0);
+    hub.withdraw(daiAssetId, address(spoke1), amount, 0);
   }
 
   function test_withdraw_revertsWith_asset_not_active() public {
-    uint256 daiId = 0; // TODO: Add getter of asset id based on address
     uint256 amount = 100e18;
 
     // User supply
-    deal(address(dai), address(spoke1), amount);
-    Utils.supply(hub, daiId, address(spoke1), amount, address(spoke1), address(spoke1));
+    deal(address(tokenList.dai), address(spoke1), amount);
+    Utils.supply(hub, daiAssetId, address(spoke1), amount, address(spoke1), address(spoke1));
 
-    _updateActive(daiId, false);
+    _updateActive(daiAssetId, false);
 
     vm.prank(address(spoke1));
     vm.expectRevert(TestErrors.ASSET_NOT_ACTIVE);
-    hub.withdraw(daiId, address(spoke1), amount, 0);
+    hub.withdraw(daiAssetId, address(spoke1), amount, 0);
   }
 
   // TODO after RP logic is implemented
