@@ -1281,28 +1281,26 @@ contract LiquidityHubTest is BaseTest {
   }
 
   function test_draw_revertsWith_not_available_liquidity() public {
-    uint256 daiId = 0;
     uint256 drawnAmount = 1;
     vm.prank(address(spoke1));
     vm.expectRevert(TestErrors.NOT_AVAILABLE_LIQUIDITY);
-    hub.draw(daiId, address(spoke1), drawnAmount, 0);
+    hub.draw(daiAssetId, address(spoke1), drawnAmount, 0);
   }
 
   function test_draw_revertsWith_cap_exceeded() public {
-    uint256 daiId = 0;
     uint256 daiAmount = 100e18;
     uint256 drawCap = 1;
     uint256 drawnAmount = drawCap + 1;
 
-    _updateDrawCap(daiId, address(spoke1), drawCap);
+    _updateDrawCap(daiAssetId, address(spoke1), drawCap);
 
     // User2 supply dai
-    deal(address(dai), address(spoke2), daiAmount);
-    Utils.supply(hub, daiId, address(spoke2), daiAmount, address(spoke2), address(spoke2));
+    deal(address(tokenList.dai), address(spoke2), daiAmount);
+    Utils.supply(hub, daiAssetId, address(spoke2), daiAmount, address(spoke2), address(spoke2));
 
     vm.prank(address(spoke1));
     vm.expectRevert(TestErrors.DRAW_CAP_EXCEEDED);
-    hub.draw(daiId, address(spoke1), drawnAmount, 0);
+    hub.draw(daiAssetId, address(spoke1), drawnAmount, 0);
   }
 
   function test_restore_revertsWith_asset_not_active() public {
