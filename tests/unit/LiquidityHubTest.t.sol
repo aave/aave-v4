@@ -603,6 +603,8 @@ contract LiquidityHubTest is BaseTest {
     assetId = bound(assetId, 0, hub.assetCount() - 1);
     amount = bound(amount, 1, type(uint128).max);
 
+    uint256 timestamp = vm.getBlockTimestamp();
+
     IERC20 asset = hub.assetsList(assetId);
 
     deal(address(asset), USER1, amount);
@@ -657,7 +659,11 @@ contract LiquidityHubTest is BaseTest {
         'wrong asset baseBorrowRate post-supply'
       );
       assertEq(assetData.riskPremiumRad, 0, 'wrong asset riskPremiumRad post-supply');
-      assertEq(assetData.lastUpdateTimestamp, 1, 'wrong asset lastUpdateTimestamp post-supply');
+      assertEq(
+        assetData.lastUpdateTimestamp,
+        timestamp,
+        'wrong asset lastUpdateTimestamp post-supply'
+      );
       // spoke
       assertEq(
         spokeData.suppliedShares,
@@ -672,7 +678,11 @@ contract LiquidityHubTest is BaseTest {
         'wrong spoke baseBorrowIndex post-supply'
       );
       assertEq(spokeData.riskPremiumRad, 0, 'wrong spoke riskPremiumRad post-supply');
-      assertEq(spokeData.lastUpdateTimestamp, 1, 'wrong spoke lastUpdateTimestamp post-supply');
+      assertEq(
+        spokeData.lastUpdateTimestamp,
+        assetData.lastUpdateTimestamp,
+        'wrong spoke lastUpdateTimestamp post-supply'
+      );
       assertEq(asset.balanceOf(address(spoke1)), 0, 'wrong spoke token balance post-supply');
       assertEq(
         asset.balanceOf(address(hub)),
@@ -724,7 +734,11 @@ contract LiquidityHubTest is BaseTest {
       'wrong asset baseBorrowRate post-supply'
     );
     assertEq(assetData.riskPremiumRad, 0, 'wrong asset riskPremiumRad post-supply');
-    assertEq(assetData.lastUpdateTimestamp, 1, 'wrong asset lastUpdateTimestamp post-supply');
+    assertEq(
+      assetData.lastUpdateTimestamp,
+      timestamp,
+      'wrong asset lastUpdateTimestamp post-supply'
+    );
     // spoke
     assertEq(
       spokeData.suppliedShares,
@@ -735,7 +749,11 @@ contract LiquidityHubTest is BaseTest {
     assertEq(spokeData.outstandingPremium, 0, 'wrong spoke outstandingPremium post-supply');
     assertEq(spokeData.baseBorrowIndex, WadRayMath.RAY, 'wrong spoke baseBorrowIndex post-supply');
     assertEq(spokeData.riskPremiumRad, 0, 'wrong spoke riskPremiumRad post-supply');
-    assertEq(spokeData.lastUpdateTimestamp, 1, 'wrong spoke lastUpdateTimestamp post-supply');
+    assertEq(
+      spokeData.lastUpdateTimestamp,
+      assetData.lastUpdateTimestamp,
+      'wrong spoke lastUpdateTimestamp post-supply'
+    );
     assertEq(asset.balanceOf(address(spoke1)), 0, 'wrong spoke token balance post-supply');
     assertEq(
       asset.balanceOf(address(hub)),
@@ -750,91 +768,6 @@ contract LiquidityHubTest is BaseTest {
   // TODO: after draw is completed. Draw some debt and skip time to change index
   function test_supply_fuzz_index_increase(uint256 assetId, address user, uint256 amount) public {
     vm.skip(true);
-
-    // vm.assume(user != address(hub) && user != address(spoke1) && user != address(0));
-    // assetId = bound(assetId, 0, hub.assetCount() - 1);
-    // amount = bound(amount, 1, type(uint128).max);
-    // IERC20 asset = hub.assetsList(assetId);
-    // deal(address(asset), USER1, amount);
-    // // initial supply
-    // Utils.supply({
-    //
-    //   hub: hub,
-    //   assetId: assetId,
-    //   spoke: address(spoke1),
-    //   amount: amount,
-    //   user: USER1,
-    //   onBehalfOf: address(spoke1)
-    // });
-    // uint256 elapsedTimeChange = bound(uint160(user), 0, 30 days); // [0, 30 days] range
-    // TestSupplyUserParams memory p = TestSupplyUserParams({
-    //   totalAssets: amount,
-    //   suppliedShares: amount,
-    //   userAssets: amount,
-    //   userShares: amount
-    // });
-    // Asset memory assetData;
-    // SpokeData memory spokeData;
-    // for (uint256 i = 0; i < 1; i++) {
-    //   assetData = hub.getAsset(assetId);
-    //   spokeData = hub.getSpoke(assetId, address(spoke1));
-    //   // hub
-    //   assertEq(hub.getTotalAssets(assetId), amount, 'wrong total assets post-supply');
-    //   // asset
-    //   assertEq(
-    //     assetData.suppliedShares,
-    //     hub.convertToSharesUp(assetId, amount),
-    //     'wrong asset suppliedShares post-supply'
-    //   );
-    //   assertEq(assetData.availableLiquidity, amount, 'wrong asset availableLiquidity post-supply');
-    //   assertEq(assetData.baseDebt, 0, 'wrong asset baseDebt post-supply');
-    //   assertEq(assetData.outstandingPremium, 0, 'wrong asset outstandingPremium post-supply');
-    //   assertEq(
-    //     assetData.baseBorrowIndex,
-    //     WadRayMath.RAY,
-    //     'wrong asset baseBorrowIndex post-supply'
-    //   );
-    //   assertEq(
-    //     assetData.baseBorrowRate,
-    //     uint256(5_00).bpsToRay(),
-    //     'wrong asset baseBorrowRate post-supply'
-    //   );
-    //   assertEq(assetData.riskPremiumRad, 0, 'wrong asset riskPremiumRad post-supply');
-    //   assertEq(assetData.lastUpdateTimestamp, 1, 'wrong asset lastUpdateTimestamp post-supply');
-    //   // spoke
-    //   assertEq(
-    //     spokeData.suppliedShares,
-    //     hub.convertToSharesDown(assetId, amount),
-    //     'wrong spoke suppliedShares post-supply'
-    //   );
-    //   assertEq(spokeData.baseDebt, 0, 'wrong baseDebt post-supply');
-    //   assertEq(spokeData.outstandingPremium, 0, 'wrong spoke outstandingPremium post-supply');
-    //   assertEq(
-    //     spokeData.baseBorrowIndex,
-    //     WadRayMath.RAY,
-    //     'wrong spoke baseBorrowIndex post-supply'
-    //   );
-    //   assertEq(spokeData.riskPremiumRad, 0, 'wrong spoke riskPremiumRad post-supply');
-    //   assertEq(spokeData.lastUpdateTimestamp, 1, 'wrong spoke lastUpdateTimestamp post-supply');
-    //   assertEq(asset.balanceOf(address(spoke1)), 0, 'wrong spoke token balance post-supply');
-    //   assertEq(asset.balanceOf(address(hub)), amount, 'wrong hub token balance post-supply');
-    //   assertEq(asset.balanceOf(USER1), 0, 'wrong user token balance post-supply');
-    //   // time flies
-    //   uint256 elapsedTime = (i % 2 == 0 ? elapsedTimeChange : elapsedTimeChange * 2) % 30 days; // randomize, 30 days max
-    //   skip(elapsedTime);
-    //   // calculate new index
-    //   p.totalAssets += amount;
-    //   uint256 user2SupplyShares = 1; // minimum for 1 share
-    //   uint256 user2SupplyAssets = user2SupplyShares.toAssetsUp(
-    //     p.totalAssets,
-    //     assetData.totalShares
-    //   );
-    //   // p.totalAssets += user2SupplyAssets;
-    //   // p.totalShares += user2SupplyShares;
-    //   // p.userAssets = p.userShares.toAssetsDown(p.totalAssets, p.totalShares);
-    //   // // update reserve state
-    //   // Utils.supply( hub, assetId, USER1, user2SupplyAssets, USER1, USER1);
-    // }
   }
 
   function test_withdraw() public {
