@@ -1383,30 +1383,30 @@ contract LiquidityHubTest is BaseTest {
   }
 
   function test_restore() public {
-    uint256 daiId = 0;
-    uint256 ethId = 1;
+    // uint256 daiId = 0;
+    // uint256 ethId = 1;
     uint256 daiAmount = 100e18;
-    uint256 ethAmount = 10e18;
+    uint256 wethAmount = 10e18;
 
     uint256 drawAmount = daiAmount / 2;
     uint256 restoreAmount = daiAmount / 4;
 
     // spoke1 supply eth
-    deal(address(eth), USER1, ethAmount);
+    deal(address(tokenList.weth), USER1, wethAmount);
     Utils.supply({
       hub: hub,
-      assetId: ethId,
+      assetId: wethAssetId,
       spoke: address(spoke1),
-      amount: ethAmount,
+      amount: wethAmount,
       user: USER1,
       onBehalfOf: address(spoke1)
     });
 
     // spoke2 supply dai
-    deal(address(dai), address(spoke2), daiAmount);
+    deal(address(tokenList.dai), address(spoke2), daiAmount);
     Utils.supply({
       hub: hub,
-      assetId: daiId,
+      assetId: daiAssetId,
       spoke: address(spoke2),
       amount: daiAmount,
       user: address(spoke2),
@@ -1416,7 +1416,7 @@ contract LiquidityHubTest is BaseTest {
     // spoke1 draw half of dai reserve liquidity on behalf of user
     Utils.draw({
       hub: hub,
-      assetId: daiId,
+      assetId: daiAssetId,
       to: USER1,
       spoke: address(spoke1),
       amount: drawAmount,
@@ -1425,11 +1425,12 @@ contract LiquidityHubTest is BaseTest {
 
     // spoke1 restore half of drawn dai liquidity on behalf of user1
     vm.prank(USER1);
-    dai.approve(address(hub), restoreAmount);
+    tokenList.dai.approve(address(hub), restoreAmount);
+
     vm.startPrank(address(spoke1));
     vm.expectEmit(address(hub));
-    emit Restore(daiId, address(spoke1), restoreAmount);
-    hub.restore({assetId: daiId, amount: restoreAmount, riskPremiumRad: 0, repayer: USER1});
+    emit Restore(daiAssetId, address(spoke1), restoreAmount);
+    hub.restore({assetId: daiAssetId, amount: restoreAmount, riskPremiumRad: 0, repayer: USER1});
     vm.stopPrank();
 
     // Asset memory daiData = hub.getAsset(daiId);
@@ -1473,15 +1474,23 @@ contract LiquidityHubTest is BaseTest {
     // );
     // assertEq(spoke2DaiData.drawnShares, 0, 'wrong spoke2 drawn dai shares post-restore');
 
-    assertEq(dai.balanceOf(address(hub)), daiAmount - restoreAmount, 'wrong hub dai final balance');
-    assertEq(dai.balanceOf(USER1), drawAmount - restoreAmount, 'wrong spoke1 dai final balance');
-    assertEq(dai.balanceOf(address(spoke1)), 0, 'wrong spoke1 dai final balance');
-    assertEq(dai.balanceOf(address(spoke2)), 0, 'wrong spoke2 dai final balance');
+    assertEq(
+      tokenList.dai.balanceOf(address(hub)),
+      daiAmount - restoreAmount,
+      'wrong hub dai final balance'
+    );
+    assertEq(
+      tokenList.dai.balanceOf(USER1),
+      drawAmount - restoreAmount,
+      'wrong spoke1 dai final balance'
+    );
+    assertEq(tokenList.dai.balanceOf(address(spoke1)), 0, 'wrong spoke1 dai final balance');
+    assertEq(tokenList.dai.balanceOf(address(spoke2)), 0, 'wrong spoke2 dai final balance');
 
-    assertEq(eth.balanceOf(address(hub)), ethAmount, 'wrong hub eth final balance');
-    assertEq(eth.balanceOf(USER1), 0, 'wrong user eth final balance');
-    assertEq(eth.balanceOf(address(spoke1)), 0, 'wrong spoke1 eth final balance');
-    assertEq(eth.balanceOf(address(spoke2)), 0, 'wrong spoke2 eth final balance');
+    assertEq(tokenList.weth.balanceOf(address(hub)), wethAmount, 'wrong hub weth final balance');
+    assertEq(tokenList.weth.balanceOf(USER1), 0, 'wrong user weth final balance');
+    assertEq(tokenList.weth.balanceOf(address(spoke1)), 0, 'wrong spoke1 weth final balance');
+    assertEq(tokenList.weth.balanceOf(address(spoke2)), 0, 'wrong spoke2 weth final balance');
   }
 
   function test_addSpoke() public {
