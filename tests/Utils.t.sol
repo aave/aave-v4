@@ -30,15 +30,16 @@ library Utils {
     uint256 assetId,
     address spoke,
     uint256 amount,
+    uint256 riskPremiumRad,
     address user,
-    address onBehalfOf
+    address onBehalfOf // todo: implement
   ) internal {
     vm.startPrank(user);
     hub.assetsList(assetId).approve(address(hub), amount);
     vm.stopPrank();
 
     vm.startPrank(spoke);
-    hub.supply({assetId: assetId, amount: amount, riskPremiumRad: 0, supplier: user});
+    hub.supply({assetId: assetId, amount: amount, riskPremiumRad: riskPremiumRad, supplier: user});
     vm.stopPrank();
   }
 
@@ -48,10 +49,11 @@ library Utils {
     address spoke,
     address to,
     uint256 amount,
+    uint256 riskPremiumRad,
     address onBehalfOf // todo: implement
   ) internal {
     vm.startPrank(spoke);
-    hub.draw({assetId: assetId, to: to, amount: amount, riskPremiumRad: 0});
+    hub.draw({assetId: assetId, to: to, amount: amount, riskPremiumRad: riskPremiumRad});
     vm.stopPrank();
   }
 
@@ -60,10 +62,11 @@ library Utils {
     uint256 assetId,
     address spoke,
     uint256 amount,
+    uint256 riskPremiumRad,
     address to
   ) internal {
     vm.startPrank(spoke);
-    hub.withdraw({assetId: assetId, to: to, amount: amount, riskPremiumRad: 0});
+    hub.withdraw({assetId: assetId, to: to, amount: amount, riskPremiumRad: riskPremiumRad});
     vm.stopPrank();
   }
 
