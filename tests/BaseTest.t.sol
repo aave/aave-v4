@@ -204,7 +204,7 @@ abstract contract BaseTest is Test, Events {
       spokeConfigs,
       reserveConfigs
     );
-    MockPriceOracle(address(oracle)).setAssetPrice(wethAssetId, 2000e8);
+    oracle.setAssetPrice(wethAssetId, 2000e8);
 
     // add USDX
     reserveConfigs[0] = Spoke.ReserveConfig(0.78e4, 0, true, true);
@@ -218,7 +218,7 @@ abstract contract BaseTest is Test, Events {
       spokeConfigs,
       reserveConfigs
     );
-    MockPriceOracle(address(oracle)).setAssetPrice(usdxAssetId, 1e8);
+    oracle.setAssetPrice(usdxAssetId, 1e8);
 
     // add DAI
     reserveConfigs[0] = Spoke.ReserveConfig(0.78e4, 0, true, true);
@@ -232,7 +232,7 @@ abstract contract BaseTest is Test, Events {
       spokeConfigs,
       reserveConfigs
     );
-    MockPriceOracle(address(oracle)).setAssetPrice(usdxAssetId, 1e8);
+    oracle.setAssetPrice(usdxAssetId, 1e8);
 
     // add WBTC
     // lt, lb, borrowable, collateral
@@ -247,7 +247,7 @@ abstract contract BaseTest is Test, Events {
       spokeConfigs,
       reserveConfigs
     );
-    MockPriceOracle(address(oracle)).setAssetPrice(wbtcAssetId, 50_000e8);
+    oracle.setAssetPrice(wbtcAssetId, 50_000e8);
 
     irStrategy.setInterestRateParams(
       wethAssetId,

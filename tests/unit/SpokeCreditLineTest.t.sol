@@ -22,7 +22,7 @@ contract SpokeCreditLineTest is BaseTest {
       Spoke.ReserveConfig({lt: 0, lb: 0, borrowable: true, collateral: false}),
       address(dai)
     );
-    MockPriceOracle(address(oracle)).setAssetPrice(0, 1e8);
+    oracle.setAssetPrice(0, 1e8);
 
     // Add eth
     hub.addAsset(
@@ -34,7 +34,7 @@ contract SpokeCreditLineTest is BaseTest {
       Spoke.ReserveConfig({lt: 0, lb: 0, borrowable: true, collateral: false}),
       address(eth)
     );
-    MockPriceOracle(address(oracle)).setAssetPrice(1, 2000e8);
+    oracle.setAssetPrice(1, 2000e8);
 
     // Add dai again but with basic credit line borrow module
     uint256 daiCreditLineAssetId = 2;
@@ -58,7 +58,7 @@ contract SpokeCreditLineTest is BaseTest {
       MockSpokeCreditLine.ReserveConfig({lt: 0, lb: 0, rf: 0, borrowable: true}),
       address(dai)
     );
-    MockPriceOracle(address(oracle)).setAssetPrice(daiCreditLineAssetId, 1e8);
+    oracle.setAssetPrice(daiCreditLineAssetId, 1e8);
 
     skip(20);
   }

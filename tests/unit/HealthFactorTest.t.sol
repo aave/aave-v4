@@ -44,7 +44,7 @@ contract HealthFactorTest_ToMigrate is BaseTest {
       spokeConfigs,
       reserveConfigs
     );
-    MockPriceOracle(address(oracle)).setAssetPrice(daiAssetId, 1e8);
+    oracle.setAssetPrice(daiAssetId, 1e8);
 
     // Add eth
     uint256 ethAssetId = 1;
@@ -63,7 +63,7 @@ contract HealthFactorTest_ToMigrate is BaseTest {
       spokeConfigs,
       reserveConfigs
     );
-    MockPriceOracle(address(oracle)).setAssetPrice(ethAssetId, 2000e8);
+    oracle.setAssetPrice(ethAssetId, 2000e8);
 
     // Add USDC
     uint256 usdcId = 2;
@@ -87,7 +87,7 @@ contract HealthFactorTest_ToMigrate is BaseTest {
       spokeConfigs,
       reserveConfigs
     );
-    MockPriceOracle(address(oracle)).setAssetPrice(usdcId, 1e8);
+    oracle.setAssetPrice(usdcId, 1e8);
 
     // Add WBTC
     uint256 wbtcAssetId = 3;
@@ -111,7 +111,7 @@ contract HealthFactorTest_ToMigrate is BaseTest {
       spokeConfigs,
       reserveConfigs
     );
-    MockPriceOracle(address(oracle)).setAssetPrice(wbtcAssetId, 50_000e8);
+    oracle.setAssetPrice(wbtcAssetId, 50_000e8);
 
     irStrategy.setInterestRateParams(
       daiAssetId,
@@ -270,11 +270,11 @@ contract HealthFactorTest_ToMigrate is BaseTest {
     assertEq(healthFactor, expectedHealthFactor, 'wrong initial health factor');
 
     // prices change for supplied assets
-    MockPriceOracle(address(oracle)).setAssetPrice(daiId, 2e8);
-    MockPriceOracle(address(oracle)).setAssetPrice(ethId, 4000e8);
+    oracle.setAssetPrice(daiId, 2e8);
+    oracle.setAssetPrice(ethId, 4000e8);
     // prices change for borrowed assets
-    MockPriceOracle(address(oracle)).setAssetPrice(usdcId, 3e8);
-    MockPriceOracle(address(oracle)).setAssetPrice(wbtcId, 70_000e8);
+    oracle.setAssetPrice(usdcId, 3e8);
+    oracle.setAssetPrice(wbtcId, 70_000e8);
 
     // updated health factor
     healthFactor = ISpoke(spoke1).getHealthFactor(USER1);
@@ -291,7 +291,7 @@ contract HealthFactorTest_ToMigrate is BaseTest {
       Spoke.Reserve memory reserve = spoke1.getReserve(assetId);
       Spoke.UserConfig memory userConfig = spoke1.getUser(assetId, USER1);
 
-      // uint256 assetPrice = MockPriceOracle(address(oracle)).getAssetPrice(assetId);
+      // uint256 assetPrice = oracle.getAssetPrice(assetId);
       // uint256 userCollateral = hub.convertToAssetsDown(assetId, userConfig.supplyShares) *
       //   assetPrice;
       // totalCollateral += userCollateral;

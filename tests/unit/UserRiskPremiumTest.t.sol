@@ -45,7 +45,7 @@ contract UserRiskPremiumTest_ToMigrate is BaseTest {
       spokeConfigs,
       reserveConfigs
     );
-    MockPriceOracle(address(oracle)).setAssetPrice(daiAssetId, 1e8);
+    oracle.setAssetPrice(daiAssetId, 1e8);
 
     // Add eth
     uint256 ethAssetId = 1;
@@ -64,7 +64,7 @@ contract UserRiskPremiumTest_ToMigrate is BaseTest {
       spokeConfigs,
       reserveConfigs
     );
-    MockPriceOracle(address(oracle)).setAssetPrice(ethAssetId, 2000e8);
+    oracle.setAssetPrice(ethAssetId, 2000e8);
 
     // Add USDC
     uint256 usdcId = 2;
@@ -88,7 +88,7 @@ contract UserRiskPremiumTest_ToMigrate is BaseTest {
       spokeConfigs,
       reserveConfigs
     );
-    MockPriceOracle(address(oracle)).setAssetPrice(usdcId, 1e8);
+    oracle.setAssetPrice(usdcId, 1e8);
 
     // Add WBTC
     uint256 wbtcAssetId = 3;
@@ -112,7 +112,7 @@ contract UserRiskPremiumTest_ToMigrate is BaseTest {
       spokeConfigs,
       reserveConfigs
     );
-    MockPriceOracle(address(oracle)).setAssetPrice(wbtcAssetId, 50_000e8);
+    oracle.setAssetPrice(wbtcAssetId, 50_000e8);
 
     irStrategy.setInterestRateParams(
       daiAssetId,
@@ -228,8 +228,8 @@ contract UserRiskPremiumTest_ToMigrate is BaseTest {
     assertEq(userRiskPremium, expectedUserRiskPremium, 'wrong expected user risk premium');
 
     // prices change for supplied eth
-    MockPriceOracle(address(oracle)).setAssetPrice(daiId, 2e8);
-    MockPriceOracle(address(oracle)).setAssetPrice(ethId, 4000e8);
+    oracle.setAssetPrice(daiId, 2e8);
+    oracle.setAssetPrice(ethId, 4000e8);
 
     // initial user risk premium
     userRiskPremium = ISpoke(spoke1).getUserRiskPremium(USER1);
@@ -244,7 +244,7 @@ contract UserRiskPremiumTest_ToMigrate is BaseTest {
       uint256 assetId = assetIds[i];
       Spoke.UserConfig memory userConfig = spoke1.getUser(assetId, USER1);
 
-      // uint256 assetPrice = MockPriceOracle(address(oracle)).getAssetPrice(assetId);
+      // uint256 assetPrice = oracle.getAssetPrice(assetId);
       // uint256 userCollateral = hub.convertToAssetsDown(assetId, userConfig.supplyShares) *
       //   assetPrice;
       // uint256 liquidityPremium = 1; // TODO: get LP from LH

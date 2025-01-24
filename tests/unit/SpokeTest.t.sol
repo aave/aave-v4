@@ -47,7 +47,7 @@ contract SpokeTest_ToMigrate is BaseTest {
       spokeConfigs,
       reserveConfigs
     );
-    MockPriceOracle(address(oracle)).setAssetPrice(daiAssetId, 1e8);
+    oracle.setAssetPrice(daiAssetId, 1e8);
 
     // Add eth
     uint256 ethAssetId = 1;
@@ -68,7 +68,7 @@ contract SpokeTest_ToMigrate is BaseTest {
       spokeConfigs,
       reserveConfigs
     );
-    MockPriceOracle(address(oracle)).setAssetPrice(ethAssetId, 2000e8);
+    oracle.setAssetPrice(ethAssetId, 2000e8);
 
     // Add USDC
     uint256 usdcId = 2;
@@ -94,7 +94,7 @@ contract SpokeTest_ToMigrate is BaseTest {
       spokeConfigs,
       reserveConfigs
     );
-    MockPriceOracle(address(oracle)).setAssetPrice(usdcId, 1e8);
+    oracle.setAssetPrice(usdcId, 1e8);
 
     irStrategy.setInterestRateParams(
       daiAssetId,
