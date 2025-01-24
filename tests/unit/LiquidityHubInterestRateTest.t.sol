@@ -496,5 +496,45 @@ contract LiquidityHubAccrueInterestTest is BaseTest {
     vm.stopPrank();
   }
 
-  // TODO: Test with risk premiums (one value and fuzzed)
+  function test_accrueInterest_fuzz_RPBorrowAndElapsed(
+    uint256 borrowAmount,
+    uint40 elapsed,
+    uint256 riskPremium
+  ) public {
+    borrowAmount = bound(borrowAmount, 1, 1e45);
+    riskPremium = bound(riskPremium, 0, maxBps.bpsToRad());
+    uint256 supplyAmount = borrowAmount * 2;
+    uint256 startTime = block.timestamp;
+
+    deal(address(tokenList.dai), address(spoke1), supplyAmount);
+    vm.startPrank(address(spoke1));
+    tokenList.dai.approve(address(hub), supplyAmount);
+    hub.supply(daiAssetId, supplyAmount, 0, address(spoke1));
+    hub.draw(daiAssetId, address(spoke1), borrowAmount, riskPremium);
+    uint256 baseBorrowRate = hub.getBaseInterestRate(daiAssetId);
+    vm.stopPrank();
+
+    // Spoke 2 does a supply to accrue interest
+    deal(address(tokenList.dai), address(spoke2), 1000e18);
+    vm.startPrank(address(spoke2));
+    skip(elapsed);
+    tokenList.dai.approve(address(hub), 1000e18);
+    hub.supply(daiAssetId, 1000e18, 0, address(spoke2));
+
+    Asset memory daiInfo = hub.getAsset(daiAssetId);
+    uint256 baseDebt = daiInfo.baseDebt;
+    uint256 outstandingPremium = daiInfo.outstandingPremium;
+    uint256 avgRiskPremium = daiInfo.riskPremiumRad;
+    uint256 lastUpdateTimestamp = daiInfo.lastUpdateTimestamp;
+
+    uint256 totalBase = MathUtils.calculateLinearInterest(baseBorrowRate, uint40(startTime)).rayMul(
+      borrowAmount
+    );
+
+    assertEq(elapsed, lastUpdateTimestamp - startTime);
+    assertEq(baseDebt, totalBase);
+    assertEq(avgRiskPremium, riskPremium);
+    assertEq(outstandingPremium, (totalBase - borrowAmount).radMul(riskPremium));
+    vm.stopPrank();
+  }
 }
