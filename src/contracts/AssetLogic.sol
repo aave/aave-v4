@@ -9,6 +9,8 @@ import {SharesMath} from 'src/contracts/SharesMath.sol';
 import {PercentageMath} from 'src/contracts/PercentageMath.sol';
 import {WadRayMath} from 'src/contracts/WadRayMath.sol';
 
+import 'forge-std/console2.sol';
+
 library AssetLogic {
   using AssetLogic for Asset;
   using PercentageMath for uint256;
@@ -75,6 +77,8 @@ library AssetLogic {
           usingVirtualBalance: true
         })
       );
+    console2.log('AL: calc %e %e %e', liquidityAdded, liquidityTaken, asset.baseDebt);
+    console2.log('AL: calc2 %e %e', asset.availableLiquidity, baseBorrowRate);
     asset.baseBorrowRate = baseBorrowRate;
   }
 

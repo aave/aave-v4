@@ -1062,7 +1062,7 @@ contract LiquidityHubTest is BaseTest {
   function test_draw_same_block() public {
     uint256 daiAmount = 100e18;
     uint256 wethAmount = 10e18;
-    uint256 drawnAmount = daiAmount / 2;
+    uint256 drawAmount = daiAmount / 2;
 
     // spoke1, USER1 supply weth
     deal(address(tokenList.weth), USER1, wethAmount);
@@ -1088,9 +1088,9 @@ contract LiquidityHubTest is BaseTest {
 
     // spoke1 draw half of dai reserve liquidity
     vm.expectEmit(address(hub));
-    emit Draw(daiAssetId, address(spoke1), USER1, drawnAmount);
+    emit Draw(daiAssetId, address(spoke1), USER1, drawAmount);
     vm.prank(address(spoke1));
-    hub.draw({assetId: daiAssetId, to: USER1, amount: drawnAmount, riskPremiumRad: 0});
+    hub.draw({assetId: daiAssetId, to: USER1, amount: drawAmount, riskPremiumRad: 0});
 
     Asset memory wethData = hub.getAsset(wethAssetId);
     Asset memory daiData = hub.getAsset(daiAssetId);
@@ -1123,7 +1123,7 @@ contract LiquidityHubTest is BaseTest {
       hub.convertToSharesUp(daiAssetId, daiAmount),
       'wrong hub dai suppliedShares post-draw'
     );
-    assertEq(daiData.baseDebt, drawnAmount, 'wrong hub dai baseDebt post-draw');
+    assertEq(daiData.baseDebt, drawAmount, 'wrong hub dai baseDebt post-draw');
     assertEq(daiData.outstandingPremium, 0, 'wrong hub dai outstandingPremium post-draw');
     assertEq(daiData.baseBorrowIndex, WadRayMath.RAY, 'wrong hub dai baseBorrowIndex post-draw');
     assertEq(daiData.riskPremiumRad, 0, 'wrong hub dai riskPremiumRad post-draw');
@@ -1198,13 +1198,13 @@ contract LiquidityHubTest is BaseTest {
       'wrong hub spoke2 lastUpdateTimestamp post-draw'
     );
     // dai balance
-    assertEq(tokenList.dai.balanceOf(USER1), drawnAmount, 'wrong USER1 dai final balance');
+    assertEq(tokenList.dai.balanceOf(USER1), drawAmount, 'wrong USER1 dai final balance');
     assertEq(tokenList.dai.balanceOf(USER2), 0, 'wrong USER2 dai final balance');
     assertEq(tokenList.dai.balanceOf(address(spoke1)), 0, 'wrong spoke1 dai final balance');
     assertEq(tokenList.dai.balanceOf(address(spoke2)), 0, 'wrong spoke2 dai final balance');
     assertEq(
       tokenList.dai.balanceOf(address(hub)),
-      daiAmount - drawnAmount,
+      daiAmount - drawAmount,
       'wrong hub dai final balance'
     );
     // weth balance
@@ -1218,7 +1218,7 @@ contract LiquidityHubTest is BaseTest {
   function test_draw_fuzz_amounts_same_block(uint256 daiAmount) public {
     daiAmount = bound(daiAmount, 10, 1e30); // TODO: update with max allowed amount when precision resolved
     uint256 wethAmount = daiAmount / 10;
-    uint256 drawnAmount = daiAmount / 2;
+    uint256 drawAmount = daiAmount / 2;
 
     // spoke1, USER1 supply weth
     deal(address(tokenList.weth), USER1, wethAmount);
@@ -1244,9 +1244,9 @@ contract LiquidityHubTest is BaseTest {
 
     // spoke1 draw half of dai reserve liquidity
     vm.expectEmit(address(hub));
-    emit Draw(daiAssetId, address(spoke1), USER1, drawnAmount);
+    emit Draw(daiAssetId, address(spoke1), USER1, drawAmount);
     vm.prank(address(spoke1));
-    hub.draw({assetId: daiAssetId, to: USER1, amount: drawnAmount, riskPremiumRad: 0});
+    hub.draw({assetId: daiAssetId, to: USER1, amount: drawAmount, riskPremiumRad: 0});
 
     Asset memory wethData = hub.getAsset(wethAssetId);
     Asset memory daiData = hub.getAsset(daiAssetId);
@@ -1279,7 +1279,7 @@ contract LiquidityHubTest is BaseTest {
       hub.convertToSharesUp(daiAssetId, daiAmount),
       'wrong hub dai suppliedShares post-draw'
     );
-    assertEq(daiData.baseDebt, drawnAmount, 'wrong hub dai baseDebt post-draw');
+    assertEq(daiData.baseDebt, drawAmount, 'wrong hub dai baseDebt post-draw');
     assertEq(daiData.outstandingPremium, 0, 'wrong hub dai outstandingPremium post-draw');
     assertEq(daiData.baseBorrowIndex, WadRayMath.RAY, 'wrong hub dai baseBorrowIndex post-draw');
     assertEq(daiData.riskPremiumRad, 0, 'wrong hub dai riskPremiumRad post-draw');
@@ -1354,13 +1354,13 @@ contract LiquidityHubTest is BaseTest {
       'wrong hub spoke2 lastUpdateTimestamp post-draw'
     );
     // dai balance
-    assertEq(tokenList.dai.balanceOf(USER1), drawnAmount, 'wrong USER1 dai final balance');
+    assertEq(tokenList.dai.balanceOf(USER1), drawAmount, 'wrong USER1 dai final balance');
     assertEq(tokenList.dai.balanceOf(USER2), 0, 'wrong USER2 dai final balance');
     assertEq(tokenList.dai.balanceOf(address(spoke1)), 0, 'wrong spoke1 dai final balance');
     assertEq(tokenList.dai.balanceOf(address(spoke2)), 0, 'wrong spoke2 dai final balance');
     assertEq(
       tokenList.dai.balanceOf(address(hub)),
-      daiAmount - drawnAmount,
+      daiAmount - drawAmount,
       'wrong hub dai final balance'
     );
     // weth balance
@@ -1372,24 +1372,24 @@ contract LiquidityHubTest is BaseTest {
   }
 
   function test_draw_revertsWith_asset_not_active() public {
-    uint256 drawnAmount = 1;
+    uint256 drawAmount = 1;
     _updateActive(daiAssetId, false);
     vm.prank(address(spoke1));
     vm.expectRevert(TestErrors.ASSET_NOT_ACTIVE);
-    hub.draw(daiAssetId, address(spoke1), drawnAmount, 0);
+    hub.draw(daiAssetId, address(spoke1), drawAmount, 0);
   }
 
   function test_draw_revertsWith_not_available_liquidity() public {
-    uint256 drawnAmount = 1;
+    uint256 drawAmount = 1;
     vm.prank(address(spoke1));
     vm.expectRevert(TestErrors.NOT_AVAILABLE_LIQUIDITY);
-    hub.draw(daiAssetId, address(spoke1), drawnAmount, 0);
+    hub.draw(daiAssetId, address(spoke1), drawAmount, 0);
   }
 
   function test_draw_revertsWith_cap_exceeded() public {
     uint256 daiAmount = 100e18;
     uint256 drawCap = 1;
-    uint256 drawnAmount = drawCap + 1;
+    uint256 drawAmount = drawCap + 1;
 
     _updateDrawCap(daiAssetId, address(spoke1), drawCap);
 
@@ -1399,7 +1399,7 @@ contract LiquidityHubTest is BaseTest {
 
     vm.prank(address(spoke1));
     vm.expectRevert(TestErrors.DRAW_CAP_EXCEEDED);
-    hub.draw(daiAssetId, address(spoke1), drawnAmount, 0);
+    hub.draw(daiAssetId, address(spoke1), drawAmount, 0);
   }
 
   function test_restore_revertsWith_asset_not_active() public {
@@ -1476,12 +1476,30 @@ contract LiquidityHubTest is BaseTest {
     vm.stopPrank();
   }
 
-  function test_restore() public {
+  struct HubData {
+    Asset daiData;
+    Asset wethData;
+    SpokeData spoke1WethData;
+    SpokeData spoke1DaiData;
+    SpokeData spoke2WethData;
+    SpokeData spoke2DaiData;
+    uint256 timestamp;
+  }
+
+  function test_restore_same_block() public {
     uint256 daiAmount = 100e18;
     uint256 wethAmount = 10e18;
 
     uint256 drawAmount = daiAmount / 2;
     uint256 restoreAmount = daiAmount / 4;
+
+    uint256 rate = uint256(15_00).bpsToRay();
+
+    vm.mockCall(
+      address(irStrategy),
+      IReserveInterestRateStrategy.calculateInterestRates.selector,
+      abi.encode(rate)
+    );
 
     // spoke1 supply eth
     deal(address(tokenList.weth), USER1, wethAmount);
@@ -1519,53 +1537,178 @@ contract LiquidityHubTest is BaseTest {
     vm.prank(USER1);
     tokenList.dai.approve(address(hub), restoreAmount);
 
-    vm.startPrank(address(spoke1));
     vm.expectEmit(address(hub));
     emit Restore(daiAssetId, address(spoke1), restoreAmount);
+
+    vm.prank(address(spoke1));
     hub.restore({assetId: daiAssetId, amount: restoreAmount, riskPremiumRad: 0, repayer: USER1});
-    vm.stopPrank();
 
-    // Asset memory daiData = hub.getAsset(daiAssetId);
-    // Asset memory ethData = hub.getAsset(wethAssetId);
-    // SpokeData memory spoke1EthData = hub.getSpoke(wethAssetId, address(spoke1));
-    // SpokeData memory spoke1DaiData = hub.getSpoke(daiAssetId, address(spoke1));
-    // SpokeData memory spoke2EthData = hub.getSpoke(wethAssetId, address(spoke2));
-    // SpokeData memory spoke2DaiData = hub.getSpoke(daiAssetId, address(spoke2));
+    HubData memory hubData;
+    hubData.daiData = hub.getAsset(daiAssetId);
+    hubData.wethData = hub.getAsset(wethAssetId);
+    hubData.spoke1WethData = hub.getSpoke(wethAssetId, address(spoke1));
+    hubData.spoke1DaiData = hub.getSpoke(daiAssetId, address(spoke1));
+    hubData.spoke2DaiData = hub.getSpoke(daiAssetId, address(spoke2));
 
-    // assertEq(
-    //   daiData.totalShares,
-    //   hub.convertToSharesUp(daiAssetId, daiAmount),
-    //   'wrong hub dai total shares post-restore'
-    // );
-    // assertEq(daiData.totalAssets, daiAmount, 'wrong hub dai total assets post-restore');
-    // assertEq(ethData.totalAssets, wethAmount, 'wrong hub eth total assets post-restore');
-    // assertEq(
-    //   ethData.totalShares,
-    //   hub.convertToSharesUp(wethAssetId, wethAmount),
-    //   'wrong hub eth total shares post-restore'
-    // );
-    // assertEq(ethData.drawnShares, 0, 'wrong hub eth drawn shares post-restore');
-    // assertEq(
-    //   spoke1EthData.totalShares,
-    //   hub.convertToSharesUp(wethAssetId, wethAmount),
-    //   'wrong spoke1 total eth shares post-restore'
-    // );
-    // assertEq(spoke1EthData.drawnShares, 0, 'wrong spoke1 drawn eth shares post-restore');
-    // assertEq(spoke1DaiData.totalShares, 0, 'wrong spoke1 total dai shares post-restore');
-    // assertEq(
-    //   spoke1DaiData.drawnShares,
-    //   hub.convertToSharesUp(daiAssetId, drawAmount - restoreAmount),
-    //   'wrong spoke1 drawn dai shares post-restore'
-    // );
-    // assertEq(spoke2EthData.totalShares, 0, 'wrong spoke2 total eth shares post-restore');
-    // assertEq(spoke2EthData.drawnShares, 0, 'wrong spoke2 drawn eth shares post-restore');
-    // assertEq(
-    //   spoke2DaiData.totalShares,
-    //   hub.convertToSharesDown(daiAssetId, daiAmount),
-    //   'wrong spoke2 total dai shares post-restore'
-    // );
-    // assertEq(spoke2DaiData.drawnShares, 0, 'wrong spoke2 drawn dai shares post-restore');
+    hubData.timestamp = vm.getBlockTimestamp();
 
+    // hub
+    assertEq(
+      hub.getTotalAssets(wethAssetId),
+      wethAmount,
+      'wrong hub weth total assets post-restore'
+    );
+    assertEq(hub.getTotalAssets(daiAssetId), daiAmount, 'wrong hub dai total assets post-restore');
+    // dai
+    assertEq(
+      hubData.daiData.suppliedShares,
+      hub.convertToSharesUp(daiAssetId, daiAmount),
+      'wrong hub dai total shares post-restore'
+    );
+    assertEq(
+      hubData.daiData.availableLiquidity,
+      daiAmount - drawAmount + restoreAmount,
+      'wrong hub dai availableLiquidity post-restore'
+    );
+    assertEq(
+      hubData.daiData.baseDebt,
+      drawAmount - restoreAmount,
+      'wrong hub dai baseDebt post-restore'
+    );
+    assertEq(
+      hubData.daiData.outstandingPremium,
+      0,
+      'wrong hub dai outstandingPremium post-restore'
+    );
+    assertEq(
+      hubData.daiData.baseBorrowIndex,
+      WadRayMath.RAY,
+      'wrong hub dai baseBorrowIndex post-restore'
+    );
+    assertEq(hubData.daiData.baseBorrowRate, rate, 'wrong hub dai baseBorrowRate post-restore');
+    assertEq(hubData.daiData.riskPremiumRad, 0, 'wrong hub dai riskPremiumRad post-restore');
+    assertEq(
+      hubData.daiData.lastUpdateTimestamp,
+      hubData.timestamp,
+      'wrong hub dai lastUpdateTimestamp post-restore'
+    );
+    // weth
+    assertEq(
+      hubData.wethData.suppliedShares,
+      hub.convertToSharesUp(wethAssetId, wethAmount),
+      'wrong hub weth total shares post-restore'
+    );
+    assertEq(
+      hubData.wethData.availableLiquidity,
+      wethAmount,
+      'wrong hub weth availableLiquidity post-restore'
+    );
+    assertEq(hubData.wethData.baseDebt, 0, 'wrong hub weth baseDebt post-restore');
+    assertEq(
+      hubData.wethData.outstandingPremium,
+      0,
+      'wrong hub weth outstandingPremium post-restore'
+    );
+    assertEq(
+      hubData.wethData.baseBorrowIndex,
+      WadRayMath.RAY,
+      'wrong hub weth baseBorrowIndex post-restore'
+    );
+    assertEq(hubData.wethData.baseBorrowRate, rate, 'wrong hub weth baseBorrowRate post-restore');
+    assertEq(hubData.wethData.riskPremiumRad, 0, 'wrong hub weth riskPremiumRad post-restore');
+    assertEq(
+      hubData.wethData.lastUpdateTimestamp,
+      hubData.timestamp,
+      'wrong hub weth lastUpdateTimestamp post-restore'
+    );
+    // spoke1 weth
+    assertEq(
+      hubData.spoke1WethData.suppliedShares,
+      hubData.wethData.suppliedShares,
+      'wrong spoke1 total weth shares post-restore'
+    );
+    assertEq(
+      hubData.spoke1WethData.baseDebt,
+      hubData.wethData.baseDebt,
+      'wrong spoke1 base weth debt'
+    );
+    assertEq(
+      hubData.spoke1WethData.outstandingPremium,
+      hubData.wethData.outstandingPremium,
+      'wrong spoke1 weth outstandingPremium post-restore'
+    );
+    assertEq(
+      hubData.spoke1WethData.baseBorrowIndex,
+      hubData.wethData.baseBorrowIndex,
+      'wrong spoke1 weth baseBorrowIndex post-restore'
+    );
+    assertEq(
+      hubData.spoke1WethData.riskPremiumRad,
+      0,
+      'wrong spoke1 weth riskPremiumRad post-restore'
+    );
+    assertEq(
+      hubData.spoke1WethData.lastUpdateTimestamp,
+      hubData.wethData.lastUpdateTimestamp,
+      'wrong spoke1 weth lastUpdateTimestamp post-restore'
+    );
+    // spoke1 dai
+    assertEq(hubData.spoke1DaiData.suppliedShares, 0, 'wrong spoke1 total dai shares post-restore');
+    assertEq(
+      hubData.spoke1DaiData.baseDebt,
+      hubData.daiData.baseDebt,
+      'wrong spoke1 base dai debt post-restore'
+    );
+    assertEq(
+      hubData.spoke1DaiData.outstandingPremium,
+      hubData.daiData.outstandingPremium,
+      'wrong spoke1 dai outstandingPremium post-restore'
+    );
+    assertEq(
+      hubData.spoke1DaiData.baseBorrowIndex,
+      hubData.daiData.baseBorrowIndex,
+      'wrong spoke1 dai baseBorrowIndex post-restore'
+    );
+    assertEq(
+      hubData.spoke1DaiData.riskPremiumRad,
+      0,
+      'wrong spoke1 dai riskPremiumRad post-restore'
+    );
+    assertEq(
+      hubData.spoke1DaiData.lastUpdateTimestamp,
+      hubData.daiData.lastUpdateTimestamp,
+      'wrong spoke1 dai lastUpdateTimestamp post-restore'
+    );
+    // spoke2 dai
+    assertEq(
+      hubData.spoke2DaiData.suppliedShares,
+      hubData.daiData.suppliedShares,
+      'wrong spoke2 total dai shares post-restore'
+    );
+    assertEq(hubData.spoke2DaiData.baseDebt, 0, 'wrong spoke2 base dai debt post-restore');
+    assertEq(
+      hubData.spoke2DaiData.outstandingPremium,
+      hubData.daiData.outstandingPremium,
+      'wrong spoke2 dai outstandingPremium post-restore'
+    );
+    assertEq(
+      hubData.spoke2DaiData.baseBorrowIndex,
+      hubData.daiData.baseBorrowIndex,
+      'wrong spoke2 dai baseBorrowIndex post-restore'
+    );
+    assertEq(
+      hubData.spoke2DaiData.riskPremiumRad,
+      0,
+      'wrong spoke2 dai riskPremiumRad post-restore'
+    );
+    assertEq(
+      hubData.spoke2DaiData.lastUpdateTimestamp,
+      hubData.daiData.lastUpdateTimestamp,
+      'wrong spoke2 dai lastUpdateTimestamp post-restore'
+    );
+
+    // token balance
+    // dai
     assertEq(
       tokenList.dai.balanceOf(address(hub)),
       daiAmount - restoreAmount,
@@ -1574,13 +1717,15 @@ contract LiquidityHubTest is BaseTest {
     assertEq(
       tokenList.dai.balanceOf(USER1),
       drawAmount - restoreAmount,
-      'wrong spoke1 dai final balance'
+      'wrong USER1 dai final balance'
     );
+    assertEq(tokenList.dai.balanceOf(USER2), 0, 'wrong USER2 dai final balance');
     assertEq(tokenList.dai.balanceOf(address(spoke1)), 0, 'wrong spoke1 dai final balance');
     assertEq(tokenList.dai.balanceOf(address(spoke2)), 0, 'wrong spoke2 dai final balance');
-
+    // weth
     assertEq(tokenList.weth.balanceOf(address(hub)), wethAmount, 'wrong hub weth final balance');
-    assertEq(tokenList.weth.balanceOf(USER1), 0, 'wrong user weth final balance');
+    assertEq(tokenList.weth.balanceOf(USER1), 0, 'wrong USER1 weth final balance');
+    assertEq(tokenList.weth.balanceOf(USER2), 0, 'wrong USER2 weth final balance');
     assertEq(tokenList.weth.balanceOf(address(spoke1)), 0, 'wrong spoke1 weth final balance');
     assertEq(tokenList.weth.balanceOf(address(spoke2)), 0, 'wrong spoke2 weth final balance');
   }
