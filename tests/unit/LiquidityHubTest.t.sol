@@ -38,7 +38,7 @@ contract LiquidityHubTest is BaseTest {
       spokeConfigs,
       reserveConfigs
     );
-    oracle.setAssetPrice(daiAssetId, 1e8);
+    MockPriceOracle(address(oracle)).setAssetPrice(daiAssetId, 1e8);
 
     // Add eth
     uint256 ethAssetId = 1;
@@ -50,7 +50,7 @@ contract LiquidityHubTest is BaseTest {
       spokeConfigs,
       reserveConfigs
     );
-    oracle.setAssetPrice(ethAssetId, 2000e8);
+    MockPriceOracle(address(oracle)).setAssetPrice(ethAssetId, 2000e8);
 
     irStrategy.setInterestRateParams(
       daiAssetId,
