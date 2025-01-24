@@ -325,3 +325,100 @@ contract LiquidityHubInterestRateTest is BaseTest {
     return hub.getInterestRate(assetId);
   }
 }
+
+contract LiquidityHubAccrueInterestTest is BaseTest {
+  using SharesMath for uint256;
+  using WadRayMath for uint256;
+  using PercentageMath for uint256;
+
+  uint256 public daiAssetId = 2;
+  uint256 public constant maxBps = 999_99;
+
+  function setUp() public override {
+    super.setUp();
+    initEnvironment();
+  }
+
+  function test_accrueInterest_NoActionTaken() public {
+    Asset memory daiInfo = hub.getAsset(daiAssetId);
+    uint256 baseDebt = daiInfo.baseDebt;
+    uint256 riskPremium = daiInfo.riskPremiumRad;
+    uint256 outstandingPremium = daiInfo.outstandingPremium;
+    uint256 lastUpdateTimestamp = daiInfo.lastUpdateTimestamp;
+    uint256 elapsed = block.timestamp - lastUpdateTimestamp;
+    assertEq(elapsed, 0);
+    assertEq(baseDebt, 0);
+    assertEq(outstandingPremium, 0);
+    assertEq(baseBorrowIndex, WadRayMath.RAY);
+    assertEq(riskPremium, 0);
+  }
+
+  function test_accrueInterest_OnlySupply(uint64 elapsed) public {
+    bound(elapsed, 0, type(uint64).max);
+    uint256 startTime = block.timestamp;
+
+    deal(address(tokenList.dai), address(spoke1), 1000e18);
+    vm.startPrank(address(spoke1));
+    tokenList.dai.approve(address(hub), 1000e18);
+    hub.supply(daiAssetId, 1000e18, 0, address(spoke1));
+    vm.stopPrank();
+
+    // Spoke 2 does a supply to accrue interest
+    deal(address(tokenList.dai), address(spoke2), 1000e18);
+    vm.startPrank(address(spoke2));
+    skip(elapsed);
+    tokenList.dai.approve(address(hub), 1000e18);
+    hub.supply(daiAssetId, 1000e18, 0, address(spoke2));
+
+    Asset memory daiInfo = hub.getAsset(daiAssetId);
+    uint256 baseDebt = daiInfo.baseDebt;
+    uint256 outstandingPremium = daiInfo.outstandingPremium;
+    uint256 riskPremium = daiInfo.riskPremiumRad;
+    uint256 lastUpdateTimestamp = daiInfo.lastUpdateTimestamp;
+
+    // Timestamp doesn't udpate when no interest accrued
+    assertEq(0, lastUpdateTimestamp - startTime);
+    assertEq(baseDebt, 0);
+    assertEq(baseBorrowIndex, WadRayMath.RAY);
+    assertEq(riskPremium, 0);
+    assertEq(outstandingPremium, 0);
+    vm.stopPrank();
+  }
+
+  function test_accrueInterest_BorrowAndWait(uint40 elapsed) public {
+    bound(elapsed, 0, type(uint40).max);
+    uint256 startTime = block.timestamp;
+    uint256 initialDebt = 100e18;
+
+    deal(address(tokenList.dai), address(spoke1), 1000e18);
+    vm.startPrank(address(spoke1));
+    tokenList.dai.approve(address(hub), 1000e18);
+    hub.supply(daiAssetId, 1000e18, 0, address(spoke1));
+    hub.draw(daiAssetId, address(spoke1), initialDebt, 0);
+    uint256 baseBorrowRate = hub.getBaseInterestRate(daiAssetId);
+    vm.stopPrank();
+
+    // Spoke 2 does a supply to accrue interest
+    deal(address(tokenList.dai), address(spoke2), 1000e18);
+    vm.startPrank(address(spoke2));
+    skip(elapsed);
+    tokenList.dai.approve(address(hub), 1000e18);
+    hub.supply(daiAssetId, 1000e18, 0, address(spoke2));
+
+    Asset memory daiInfo = hub.getAsset(daiAssetId);
+    uint256 baseDebt = daiInfo.baseDebt;
+    uint256 outstandingPremium = daiInfo.outstandingPremium;
+    uint256 riskPremium = daiInfo.riskPremiumRad;
+    uint256 lastUpdateTimestamp = daiInfo.lastUpdateTimestamp;
+
+    uint256 accruedBase = MathUtils
+      .calculateLinearInterest(baseBorrowRate, uint40(startTime))
+      .rayMul(initialDebt);
+
+    assertEq(elapsed, lastUpdateTimestamp - startTime);
+    assertEq(baseDebt, accruedBase);
+    assertEq(riskPremium, 0);
+    assertEq(outstandingPremium, 0);
+    vm.stopPrank();
+  }
+}
