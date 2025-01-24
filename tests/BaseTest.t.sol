@@ -186,16 +186,35 @@ abstract contract BaseTest is Test, Events {
     spokes[2] = address(spoke3);
     DataTypes.SpokeConfig[] memory spokeConfigs = new DataTypes.SpokeConfig[](3);
     // supplyCap, borrowCap
-    spokeConfigs[0] = DataTypes.SpokeConfig(type(uint256).max, type(uint256).max);
-    spokeConfigs[1] = DataTypes.SpokeConfig(type(uint256).max, type(uint256).max);
-    spokeConfigs[2] = DataTypes.SpokeConfig(type(uint256).max, type(uint256).max);
+    spokeConfigs[0] = DataTypes.SpokeConfig({
+      supplyCap: type(uint256).max,
+      drawCap: type(uint256).max
+    });
+    spokeConfigs[1] = DataTypes.SpokeConfig({
+      supplyCap: type(uint256).max,
+      drawCap: type(uint256).max
+    });
+    spokeConfigs[2] = DataTypes.SpokeConfig({
+      supplyCap: type(uint256).max,
+      drawCap: type(uint256).max
+    });
 
     Spoke.ReserveConfig[] memory reserveConfigs = new Spoke.ReserveConfig[](3);
 
     // add WETH
-    reserveConfigs[0] = Spoke.ReserveConfig(0.8e4, 0, true, true);
-    reserveConfigs[1] = Spoke.ReserveConfig(0.76e4, 0, true, true);
-    reserveConfigs[2] = Spoke.ReserveConfig(0.79e4, 0, true, true);
+    reserveConfigs[0] = Spoke.ReserveConfig({lt: 0.8e4, lb: 0, borrowable: true, collateral: true});
+    reserveConfigs[1] = Spoke.ReserveConfig({
+      lt: 0.76e4,
+      lb: 0,
+      borrowable: true,
+      collateral: true
+    });
+    reserveConfigs[2] = Spoke.ReserveConfig({
+      lt: 0.79e4,
+      lb: 0,
+      borrowable: true,
+      collateral: true
+    });
     Utils.addAssetAndSpokes(
       hub,
       address(tokenList.weth),
@@ -207,9 +226,24 @@ abstract contract BaseTest is Test, Events {
     oracle.setAssetPrice(wethAssetId, 2000e8);
 
     // add USDX
-    reserveConfigs[0] = Spoke.ReserveConfig(0.78e4, 0, true, true);
-    reserveConfigs[1] = Spoke.ReserveConfig(0.72e4, 0, true, true);
-    reserveConfigs[2] = Spoke.ReserveConfig(0.75e4, 0, true, true);
+    reserveConfigs[0] = Spoke.ReserveConfig({
+      lt: 0.78e4,
+      lb: 0,
+      borrowable: true,
+      collateral: true
+    });
+    reserveConfigs[1] = Spoke.ReserveConfig({
+      lt: 0.72e4,
+      lb: 0,
+      borrowable: true,
+      collateral: true
+    });
+    reserveConfigs[2] = Spoke.ReserveConfig({
+      lt: 0.75e4,
+      lb: 0,
+      borrowable: true,
+      collateral: true
+    });
     Utils.addAssetAndSpokes(
       hub,
       address(tokenList.usdx),
@@ -221,9 +255,24 @@ abstract contract BaseTest is Test, Events {
     oracle.setAssetPrice(usdxAssetId, 1e8);
 
     // add DAI
-    reserveConfigs[0] = Spoke.ReserveConfig(0.78e4, 0, true, true);
-    reserveConfigs[1] = Spoke.ReserveConfig(0.72e4, 0, true, true);
-    reserveConfigs[2] = Spoke.ReserveConfig(0.75e4, 0, true, true);
+    reserveConfigs[0] = Spoke.ReserveConfig({
+      lt: 0.78e4,
+      lb: 0,
+      borrowable: true,
+      collateral: true
+    });
+    reserveConfigs[1] = Spoke.ReserveConfig({
+      lt: 0.72e4,
+      lb: 0,
+      borrowable: true,
+      collateral: true
+    });
+    reserveConfigs[2] = Spoke.ReserveConfig({
+      lt: 0.75e4,
+      lb: 0,
+      borrowable: true,
+      collateral: true
+    });
     Utils.addAssetAndSpokes(
       hub,
       address(tokenList.dai),
@@ -236,9 +285,19 @@ abstract contract BaseTest is Test, Events {
 
     // add WBTC
     // lt, lb, borrowable, collateral
-    reserveConfigs[0] = Spoke.ReserveConfig(0.75e4, 0, true, true);
-    reserveConfigs[1] = Spoke.ReserveConfig(0.8e4, 0, true, true);
-    reserveConfigs[2] = Spoke.ReserveConfig(0.77e4, 0, true, true);
+    reserveConfigs[0] = Spoke.ReserveConfig({
+      lt: 0.75e4,
+      lb: 0,
+      borrowable: true,
+      collateral: true
+    });
+    reserveConfigs[1] = Spoke.ReserveConfig({lt: 0.8e4, lb: 0, borrowable: true, collateral: true});
+    reserveConfigs[2] = Spoke.ReserveConfig({
+      lt: 0.77e4,
+      lb: 0,
+      borrowable: true,
+      collateral: true
+    });
     Utils.addAssetAndSpokes(
       hub,
       address(tokenList.wbtc),
