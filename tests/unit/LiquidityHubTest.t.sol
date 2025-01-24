@@ -690,7 +690,7 @@ contract LiquidityHubTest is BaseTest {
       assertEq(asset.balanceOf(USER1), 0, 'wrong user token balance post-supply');
 
       // time flies
-      uint256 elapsedTime = _randomizer(1 days, 30 days, i);
+      uint256 elapsedTime = randomizer(1 days, 30 days, i);
       skip(elapsedTime);
 
       p.userShares = 1; // minimum for 1 share

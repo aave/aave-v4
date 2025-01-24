@@ -288,7 +288,7 @@ abstract contract BaseTest is Test, Events {
   }
 
   /// @dev pseudo random randomizer
-  function _randomizer(uint256 min, uint256 max, uint256 salt) internal view returns (uint256) {
+  function randomizer(uint256 min, uint256 max, uint256 salt) internal view returns (uint256) {
     return
       (uint256(keccak256(abi.encodePacked(block.timestamp, block.difficulty, salt))) %
         (max - min)) + min;
