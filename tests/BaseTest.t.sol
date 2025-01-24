@@ -91,7 +91,7 @@ abstract contract BaseTest is Test, Events {
   IERC20 internal eth;
   IERC20 internal wbtc;
 
-  IPriceOracle internal oracle;
+  MockPriceOracle internal oracle;
   LiquidityHub internal hub;
   Spoke internal spoke1;
   Spoke internal spoke2;
