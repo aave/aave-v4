@@ -1304,58 +1304,53 @@ contract LiquidityHubTest is BaseTest {
   }
 
   function test_restore_revertsWith_asset_not_active() public {
-    uint256 daiId = 0;
-    uint256 ethId = 1;
     uint256 daiAmount = 100e18;
-    uint256 ethAmount = 10e18;
+    uint256 wethAmount = 10e18;
 
     uint256 drawAmount = daiAmount / 2;
 
-    // spoke1 supply eth
-    deal(address(eth), address(spoke1), ethAmount);
-    Utils.supply(hub, ethId, address(spoke1), ethAmount, address(spoke1), address(spoke1));
+    // spoke1 supply weth
+    deal(address(tokenList.weth), address(spoke1), wethAmount);
+    Utils.supply(hub, wethAssetId, address(spoke1), wethAmount, address(spoke1), address(spoke1));
 
     // spoke2 supply dai
-    deal(address(dai), address(spoke2), daiAmount);
-    Utils.supply(hub, daiId, address(spoke2), daiAmount, address(spoke2), address(spoke2));
+    deal(address(tokenList.dai), address(spoke2), daiAmount);
+    Utils.supply(hub, daiAssetId, address(spoke2), daiAmount, address(spoke2), address(spoke2));
 
     // spoke1 draw half of dai reserve liquidity
-    Utils.draw(hub, daiId, address(spoke1), address(spoke1), drawAmount, address(spoke1));
+    Utils.draw(hub, daiAssetId, address(spoke1), address(spoke1), drawAmount, address(spoke1));
 
-    _updateActive(daiId, false);
+    _updateActive(daiAssetId, false);
 
     // spoke1 restore all of drawn dai liquidity
     vm.startPrank(address(spoke1));
-    IERC20(address(dai)).transfer(address(hub), drawAmount);
     vm.expectRevert(TestErrors.ASSET_NOT_ACTIVE);
-    hub.restore(daiId, 0, drawAmount, USER1);
+    hub.restore(daiAssetId, 0, drawAmount, USER1);
     vm.stopPrank();
   }
 
   function test_restore_revertsWith_invalid_restore_amount() public {
-    uint256 daiId = 0;
-    uint256 ethId = 1;
     uint256 daiAmount = 100e18;
-    uint256 ethAmount = 10e18;
+    uint256 wethAmount = 10e18;
 
     uint256 drawAmount = daiAmount / 2;
 
     // spoke1 supply eth
-    deal(address(eth), USER1, ethAmount);
+    deal(address(tokenList.weth), USER1, wethAmount);
     Utils.supply({
       hub: hub,
-      assetId: ethId,
+      assetId: wethAssetId,
       spoke: address(spoke1),
-      amount: ethAmount,
+      amount: wethAmount,
       user: USER1,
       onBehalfOf: address(spoke1)
     });
 
     // spoke2 supply dai
-    deal(address(dai), address(spoke2), daiAmount);
+    deal(address(tokenList.dai), address(spoke2), daiAmount);
     Utils.supply({
       hub: hub,
-      assetId: daiId,
+      assetId: daiAssetId,
       spoke: address(spoke2),
       amount: daiAmount,
       user: address(spoke2),
@@ -1365,7 +1360,7 @@ contract LiquidityHubTest is BaseTest {
     // spoke1 draw half of dai reserve liquidity
     Utils.draw({
       hub: hub,
-      assetId: daiId,
+      assetId: daiAssetId,
       to: USER1,
       spoke: address(spoke1),
       amount: drawAmount,
@@ -1373,18 +1368,16 @@ contract LiquidityHubTest is BaseTest {
     });
 
     vm.prank(USER1);
-    dai.approve(address(hub), drawAmount + 1);
+    tokenList.dai.approve(address(hub), drawAmount + 1);
 
     // user1 restore invalid amount > drawn amount
     vm.startPrank(address(spoke1));
     vm.expectRevert(TestErrors.INVALID_RESTORE_AMOUNT);
-    hub.restore({assetId: daiId, amount: drawAmount + 1, riskPremiumRad: 0, repayer: USER1});
+    hub.restore({assetId: daiAssetId, amount: drawAmount + 1, riskPremiumRad: 0, repayer: USER1});
     vm.stopPrank();
   }
 
   function test_restore() public {
-    // uint256 daiId = 0;
-    // uint256 ethId = 1;
     uint256 daiAmount = 100e18;
     uint256 wethAmount = 10e18;
 
