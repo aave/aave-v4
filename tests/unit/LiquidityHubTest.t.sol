@@ -293,8 +293,8 @@ contract LiquidityHubTest is BaseTest {
     uint256 amount,
     address onBehalfOf
   ) public {
-    if (spoke == address(hub) || spoke == address(0)) return;
-    if (onBehalfOf == address(0)) return;
+    vm.assume(spoke != address(hub) && spoke != address(0));
+    vm.assume(onBehalfOf != address(0));
 
     assetId = bound(assetId, 0, hub.assetCount() - 1);
     amount = bound(amount, 1, type(uint128).max);
@@ -765,7 +765,7 @@ contract LiquidityHubTest is BaseTest {
     //   assertEq(asset.balanceOf(USER1), 0, 'wrong user token balance post-supply');
     //   // time flies
     //   uint256 elapsedTime = (i % 2 == 0 ? elapsedTimeChange : elapsedTimeChange * 2) % 30 days; // randomize, 30 days max
-    //   vm.warp(elapsedTime);
+    //   skip(elapsedTime);
     //   // calculate new index
     //   p.totalAssets += amount;
     //   uint256 user2SupplyShares = 1; // minimum for 1 share
@@ -1050,7 +1050,7 @@ contract LiquidityHubTest is BaseTest {
     hub.withdraw({assetId: assetId, to: USER1, amount: amount + 1, riskPremiumRad: 0});
 
     // advance time, but no accumulation
-    vm.warp(block.timestamp + 1e18);
+    skip(1e18);
     vm.expectRevert(TestErrors.SUPPLIED_AMOUNT_EXCEEDED);
     hub.withdraw({assetId: assetId, to: USER1, amount: amount + 1, riskPremiumRad: 0});
 

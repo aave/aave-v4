@@ -60,7 +60,7 @@ contract SpokeCreditLineTest is BaseTest {
     );
     MockPriceOracle(address(oracle)).setAssetPrice(daiCreditLineAssetId, 1e8);
 
-    vm.warp(block.timestamp + 20);
+    skip(20);
   }
 
   // function skip_test_credit_line_config() public {

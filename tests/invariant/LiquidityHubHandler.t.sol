@@ -70,8 +70,8 @@ contract LiquidityHubHandler is Test {
   }
 
   function supply(uint256 assetId, address user, uint256 amount, address onBehalfOf) public {
-    if (user == address(hub) || user == address(0)) return;
-    if (onBehalfOf == address(0)) return;
+    vm.assume(user != address(hub) && user != address(0));
+    vm.assume(onBehalfOf!= address(0))
     assetId = bound(assetId, 0, hub.assetCount() - 1);
     amount = bound(amount, 1, type(uint128).max);
 
@@ -97,7 +97,7 @@ contract LiquidityHubHandler is Test {
   }
 
   function donate(uint256 assetId, address user, uint256 amount) public {
-    if (user == address(hub) || user == address(0)) return;
+    vm.assume(user != address(hub) && user != address(0));
     assetId = bound(assetId, 0, hub.assetCount() - 1);
     amount = bound(amount, 1, type(uint128).max);
 
