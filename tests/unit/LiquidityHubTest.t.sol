@@ -9,67 +9,71 @@ contract LiquidityHubTest is BaseTest {
   using SharesMath for uint256;
   using WadRayMath for uint256;
 
+  uint256 daiAssetId = 2;
+  uint256 wbtcAssetId = 3;
+
   function setUp() public override {
     super.setUp();
+    initEnvironment();
 
-    address[] memory spokes = new address[](2);
-    spokes[0] = address(spoke1);
-    spokes[1] = address(spoke2);
-    DataTypes.SpokeConfig[] memory spokeConfigs = new DataTypes.SpokeConfig[](2);
-    spokeConfigs[0] = DataTypes.SpokeConfig({
-      supplyCap: type(uint256).max,
-      drawCap: type(uint256).max
-    });
-    spokeConfigs[1] = DataTypes.SpokeConfig({
-      supplyCap: type(uint256).max,
-      drawCap: type(uint256).max
-    });
-    Spoke.ReserveConfig[] memory reserveConfigs = new Spoke.ReserveConfig[](2);
-    reserveConfigs[0] = Spoke.ReserveConfig({lt: 0, lb: 0, borrowable: true, collateral: false});
-    reserveConfigs[1] = Spoke.ReserveConfig({lt: 0, lb: 0, borrowable: true, collateral: false});
+    // address[] memory spokes = new address[](2);
+    // spokes[0] = address(spoke1);
+    // spokes[1] = address(spoke2);
+    // DataTypes.SpokeConfig[] memory spokeConfigs = new DataTypes.SpokeConfig[](2);
+    // spokeConfigs[0] = DataTypes.SpokeConfig({
+    //   supplyCap: type(uint256).max,
+    //   drawCap: type(uint256).max
+    // });
+    // spokeConfigs[1] = DataTypes.SpokeConfig({
+    //   supplyCap: type(uint256).max,
+    //   drawCap: type(uint256).max
+    // });
+    // Spoke.ReserveConfig[] memory reserveConfigs = new Spoke.ReserveConfig[](2);
+    // reserveConfigs[0] = Spoke.ReserveConfig({lt: 0, lb: 0, borrowable: true, collateral: false});
+    // reserveConfigs[1] = Spoke.ReserveConfig({lt: 0, lb: 0, borrowable: true, collateral: false});
 
-    // Add dai
-    uint256 daiAssetId = 0;
-    Utils.addAssetAndSpokes(
-      hub,
-      address(dai),
-      DataTypes.AssetConfig({decimals: 18, active: true, irStrategy: address(irStrategy)}),
-      spokes,
-      spokeConfigs,
-      reserveConfigs
-    );
-    oracle.setAssetPrice(daiAssetId, 1e8);
+    // // Add dai
+    // uint256 daiAssetId = 0;
+    // Utils.addAssetAndSpokes(
+    //   hub,
+    //   address(dai),
+    //   DataTypes.AssetConfig({decimals: 18, active: true, irStrategy: address(irStrategy)}),
+    //   spokes,
+    //   spokeConfigs,
+    //   reserveConfigs
+    // );
+    // oracle.setAssetPrice(daiAssetId, 1e8);
 
-    // Add eth
-    uint256 ethAssetId = 1;
-    Utils.addAssetAndSpokes(
-      hub,
-      address(eth),
-      DataTypes.AssetConfig({decimals: 18, active: true, irStrategy: address(irStrategy)}),
-      spokes,
-      spokeConfigs,
-      reserveConfigs
-    );
-    oracle.setAssetPrice(ethAssetId, 2000e8);
+    // // Add eth
+    // uint256 ethAssetId = 1;
+    // Utils.addAssetAndSpokes(
+    //   hub,
+    //   address(eth),
+    //   DataTypes.AssetConfig({decimals: 18, active: true, irStrategy: address(irStrategy)}),
+    //   spokes,
+    //   spokeConfigs,
+    //   reserveConfigs
+    // );
+    // oracle.setAssetPrice(ethAssetId, 2000e8);
 
-    irStrategy.setInterestRateParams(
-      daiAssetId,
-      IDefaultInterestRateStrategy.InterestRateData({
-        optimalUsageRatio: 90_00, // 90.00%
-        baseVariableBorrowRate: 5_00, // 5.00%
-        variableRateSlope1: 5_00, // 5.00%
-        variableRateSlope2: 5_00 // 5.00%
-      })
-    );
-    irStrategy.setInterestRateParams(
-      ethAssetId,
-      IDefaultInterestRateStrategy.InterestRateData({
-        optimalUsageRatio: 90_00, // 90.00%
-        baseVariableBorrowRate: 5_00, // 5.00%
-        variableRateSlope1: 5_00, // 5.00%
-        variableRateSlope2: 5_00 // 5.00%
-      })
-    );
+    // irStrategy.setInterestRateParams(
+    //   daiAssetId,
+    //   IDefaultInterestRateStrategy.InterestRateData({
+    //     optimalUsageRatio: 90_00, // 90.00%
+    //     baseVariableBorrowRate: 5_00, // 5.00%
+    //     variableRateSlope1: 5_00, // 5.00%
+    //     variableRateSlope2: 5_00 // 5.00%
+    //   })
+    // );
+    // irStrategy.setInterestRateParams(
+    //   ethAssetId,
+    //   IDefaultInterestRateStrategy.InterestRateData({
+    //     optimalUsageRatio: 90_00, // 90.00%
+    //     baseVariableBorrowRate: 5_00, // 5.00%
+    //     variableRateSlope1: 5_00, // 5.00%
+    //     variableRateSlope2: 5_00 // 5.00%
+    //   })
+    // );
   }
 
   function test_supply_revertsWith_ERC20InsufficientAllowance() public {
@@ -110,7 +114,7 @@ contract LiquidityHubTest is BaseTest {
   }
 
   function test_supply() public {
-    uint256 assetId = 0; // TODO: Add getter of asset id based on address
+    uint256 assetId = daiAssetId;
     uint256 amount = 100e18;
 
     Asset memory assetData = hub.getAsset(assetId);
@@ -154,17 +158,18 @@ contract LiquidityHubTest is BaseTest {
       assetData.lastUpdateTimestamp,
       'wrong spoke lastUpdateTimestamp pre-supply'
     );
-    assertEq(dai.balanceOf(USER1), 0, 'wrong user token balance post-supply');
-    assertEq(dai.balanceOf(address(spoke1)), 0, 'wrong spoke token balance pre-supply');
-    assertEq(dai.balanceOf(address(hub)), 0, 'wrong hub token balance pre-supply');
 
-    deal(address(dai), USER1, amount);
+    deal(address(tokenList.dai), USER1, amount);
     vm.prank(USER1);
-    dai.approve(address(hub), amount);
+    tokenList.dai.approve(address(hub), amount);
 
-    deal(address(dai), USER1, amount);
+    assertEq(tokenList.dai.balanceOf(USER1), amount, 'wrong user token balance pre-supply');
+    assertEq(tokenList.dai.balanceOf(address(spoke1)), 0, 'wrong spoke token balance pre-supply');
+    assertEq(tokenList.dai.balanceOf(address(hub)), 0, 'wrong hub token balance pre-supply');
+
+    deal(address(tokenList.dai), USER1, amount);
     vm.prank(USER1);
-    dai.approve(address(hub), amount);
+    tokenList.dai.approve(address(hub), amount);
 
     vm.startPrank(address(spoke1));
     vm.expectEmit(address(hub));
@@ -230,9 +235,9 @@ contract LiquidityHubTest is BaseTest {
       timestamp,
       'wrong spoke lastUpdateTimestamp post-supply'
     );
-    assertEq(dai.balanceOf(USER1), 0, 'wrong user token balance post-supply');
-    assertEq(dai.balanceOf(address(spoke1)), 0, 'wrong spoke token balance post-supply');
-    assertEq(dai.balanceOf(address(hub)), amount, 'wrong hub token balance post-supply');
+    assertEq(tokenList.dai.balanceOf(USER1), 0, 'wrong user token balance post-supply');
+    assertEq(tokenList.dai.balanceOf(address(spoke1)), 0, 'wrong spoke token balance post-supply');
+    assertEq(tokenList.dai.balanceOf(address(hub)), amount, 'wrong hub token balance post-supply');
   }
 
   /// @dev User makes a first supply, shares and assets amounts are correct, no precision loss
