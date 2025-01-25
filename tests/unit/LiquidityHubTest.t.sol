@@ -320,6 +320,7 @@ contract LiquidityHubTest is BaseTest {
   /// @dev spoke1 (USER1) supplies dai, spoke2 (USER2) supplies weth, spoke1 (USER1) draws dai
   function _setUpIncreasedIndex(
     uint256 daiAmount,
+    uint256 riskPremiumRad,
     uint256 wethAmount,
     uint256 drawAmount
   ) internal returns (uint256 rate) {
@@ -362,7 +363,7 @@ contract LiquidityHubTest is BaseTest {
       to: USER1,
       spoke: address(spoke1),
       amount: drawAmount,
-      riskPremiumRad: 0,
+      riskPremiumRad: riskPremiumRad,
       onBehalfOf: address(spoke1)
     });
   }
@@ -371,16 +372,18 @@ contract LiquidityHubTest is BaseTest {
     uint256 daiAmount = 100e18;
     uint256 wethAmount = 10e18;
     uint256 drawAmount = daiAmount / 2;
+    uint256 riskPremiumRad = uint256(20_00).bpsToRad();
 
-    uint256 rate = _setUpIncreasedIndex(daiAmount, wethAmount, drawAmount);
+    uint256 rate = _setUpIncreasedIndex(daiAmount, riskPremiumRad, wethAmount, drawAmount);
     skip(365 days);
 
     Asset memory daiData = hub.getAsset(daiAssetId);
     uint256 accruedBase = daiData.baseDebt.rayMul(rate);
+    uint256 accruedPremium = accruedBase.radMul(riskPremiumRad);
 
     uint256 supply2Amount = 10e18;
     uint256 expectedSupply2Shares = supply2Amount.toSharesDown(
-      hub.getTotalAssets(daiAssetId) + accruedBase,
+      hub.getTotalAssets(daiAssetId) + accruedBase + accruedPremium,
       daiData.suppliedShares
     );
     uint256 initialSupplyShares = daiData.suppliedShares;
