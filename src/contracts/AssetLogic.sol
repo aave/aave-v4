@@ -106,7 +106,7 @@ library AssetLogic {
 
     // can use `cumulatedBaseInterest` instead of `indexRatio` since LH base debt is
     // accrued on each index update
-    uint256 cumulatedBaseDebt = asset.baseDebt.rayMul(cumulatedBaseInterest);
+    uint256 cumulatedBaseDebt = existingBaseDebt.rayMul(cumulatedBaseInterest);
 
     // accrue premium interest on the accrued base interest
     asset.outstandingPremium += (cumulatedBaseDebt - existingBaseDebt).radMul(asset.riskPremiumRad);
