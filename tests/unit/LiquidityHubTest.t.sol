@@ -378,6 +378,7 @@ contract LiquidityHubTest is BaseTest {
 
     Asset memory daiData = hub.getAsset(daiAssetId);
     uint256 accruedBase = daiData.baseDebt.rayMul(rate);
+    uint256 initialTotalAssets = hub.getTotalAssets(daiAssetId);
 
     uint256 supply2Amount = 10e18;
     uint256 expectedSupply2Shares = supply2Amount.toSharesDown(
@@ -398,6 +399,13 @@ contract LiquidityHubTest is BaseTest {
     });
 
     daiData = hub.getAsset(daiAssetId);
+    SpokeData memory spokeData = hub.getSpoke(daiAssetId, address(spoke2));
+
+    assertEq(
+      hub.getTotalAssets(daiAssetId),
+      initialTotalAssets + accruedBase + supply2Amount,
+      'wrong hub totalAssets'
+    );
     assertEq(
       daiData.suppliedShares,
       expectedSupply2Shares + initialSupplyShares,
@@ -406,6 +414,11 @@ contract LiquidityHubTest is BaseTest {
     assertTrue(
       expectedSupply2Shares < supply2Amount,
       'increased index should lead to lower number of shares'
+    );
+    assertEq(
+      spokeData.suppliedShares,
+      daiData.suppliedShares,
+      'wrong spoke suppliedShares post-supply'
     );
   }
 
@@ -421,6 +434,7 @@ contract LiquidityHubTest is BaseTest {
     Asset memory daiData = hub.getAsset(daiAssetId);
     uint256 accruedBase = daiData.baseDebt.rayMul(rate);
     uint256 accruedPremium = accruedBase.radMul(riskPremiumRad);
+    uint256 initialTotalAssets = hub.getTotalAssets(daiAssetId);
 
     uint256 supply2Amount = 10e18;
     uint256 expectedSupply2Shares = supply2Amount.toSharesDown(
@@ -441,6 +455,13 @@ contract LiquidityHubTest is BaseTest {
     });
 
     daiData = hub.getAsset(daiAssetId);
+    SpokeData memory spokeData = hub.getSpoke(daiAssetId, address(spoke2));
+
+    assertEq(
+      hub.getTotalAssets(daiAssetId),
+      initialTotalAssets + accruedBase + accruedPremium + supply2Amount,
+      'wrong hub totalAssets'
+    );
     assertEq(
       daiData.suppliedShares,
       expectedSupply2Shares + initialSupplyShares,
@@ -449,6 +470,11 @@ contract LiquidityHubTest is BaseTest {
     assertTrue(
       expectedSupply2Shares < supply2Amount,
       'increased index should lead to lower number of shares'
+    );
+    assertEq(
+      spokeData.suppliedShares,
+      daiData.suppliedShares,
+      'wrong spoke suppliedShares post-supply'
     );
   }
 
@@ -1132,11 +1158,22 @@ contract LiquidityHubTest is BaseTest {
   }
 
   function test_withdraw_all_with_interest() public {
-    vm.skip(true);
     // TODO User supplies X and withdraws more than X because there is some yield
     // - do this after draw method is done
     // - user1 supply, then user2 draw amount, time flies, base debt grows
     // - user1 withdraws, should have interest
+    vm.skip(true);
+    uint256 daiAmount = 100e18;
+    uint256 wethAmount = 10e18;
+    uint256 drawAmount = daiAmount / 2;
+    uint256 riskPremiumRad = uint256(20_00).bpsToRad();
+    uint256 rate = _setUpIncreasedIndex(daiAmount, riskPremiumRad, wethAmount, drawAmount);
+
+    skip(365 days);
+    Asset memory daiData = hub.getAsset(daiAssetId);
+    uint256 accruedBase = daiData.baseDebt.rayMul(rate);
+
+    uint256 initialSupplyShares = daiData.suppliedShares;
   }
 
   function test_withdraw_revertsWith_zero_supplied() public {
