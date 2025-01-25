@@ -372,6 +372,47 @@ contract LiquidityHubTest is BaseTest {
     uint256 daiAmount = 100e18;
     uint256 wethAmount = 10e18;
     uint256 drawAmount = daiAmount / 2;
+
+    uint256 rate = _setUpIncreasedIndex(daiAmount, 0, wethAmount, drawAmount);
+    skip(365 days);
+
+    Asset memory daiData = hub.getAsset(daiAssetId);
+    uint256 accruedBase = daiData.baseDebt.rayMul(rate);
+
+    uint256 supply2Amount = 10e18;
+    uint256 expectedSupply2Shares = supply2Amount.toSharesDown(
+      hub.getTotalAssets(daiAssetId) + accruedBase,
+      daiData.suppliedShares
+    );
+    uint256 initialSupplyShares = daiData.suppliedShares;
+
+    deal(address(tokenList.dai), USER2, supply2Amount);
+    Utils.supply({
+      hub: hub,
+      assetId: daiAssetId,
+      spoke: address(spoke2),
+      amount: supply2Amount,
+      riskPremiumRad: 0,
+      user: USER2,
+      onBehalfOf: address(spoke2)
+    });
+
+    daiData = hub.getAsset(daiAssetId);
+    assertEq(
+      daiData.suppliedShares,
+      expectedSupply2Shares + initialSupplyShares,
+      'wrong suppliedShares post-supply'
+    );
+    assertTrue(
+      expectedSupply2Shares < supply2Amount,
+      'increased index should lead to lower number of shares'
+    );
+  }
+
+  function test_supply_with_increased_index_with_premium() public {
+    uint256 daiAmount = 100e18;
+    uint256 wethAmount = 10e18;
+    uint256 drawAmount = daiAmount / 2;
     uint256 riskPremiumRad = uint256(20_00).bpsToRad();
 
     uint256 rate = _setUpIncreasedIndex(daiAmount, riskPremiumRad, wethAmount, drawAmount);
