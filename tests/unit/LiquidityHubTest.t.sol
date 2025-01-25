@@ -368,19 +368,23 @@ contract LiquidityHubTest is BaseTest {
   }
 
   function test_supply_with_increased_index() public {
-    // TODO User supplies X and gets accounted X assets and less than X shares.
-    // - do this after draw is resolved, amount is drawn, and then skip time, baseDebt grows
-    // - exchange rate increases
-    // - supply2 happens, supplies X and gets less than X shares
-
     uint256 daiAmount = 100e18;
     uint256 wethAmount = 10e18;
     uint256 drawAmount = daiAmount / 2;
 
-    _setUpIncreasedIndex(daiAmount, wethAmount, drawAmount);
+    uint256 rate = _setUpIncreasedIndex(daiAmount, wethAmount, drawAmount);
     skip(365 days);
 
+    Asset memory daiData = hub.getAsset(daiAssetId);
+    uint256 accruedBase = daiData.baseDebt.rayMul(rate);
+
     uint256 supply2Amount = 10e18;
+    uint256 expectedSupply2Shares = supply2Amount.toSharesDown(
+      hub.getTotalAssets(daiAssetId) + accruedBase,
+      daiData.suppliedShares
+    );
+    uint256 initialSupplyShares = daiData.suppliedShares;
+
     deal(address(tokenList.dai), USER2, supply2Amount);
     Utils.supply({
       hub: hub,
@@ -392,11 +396,16 @@ contract LiquidityHubTest is BaseTest {
       onBehalfOf: address(spoke2)
     });
 
-    Asset memory daiData = hub.getAsset(daiAssetId);
-
-    uint256 expectedExchangeRate = daiAmount.toAssetsDown(daiData.suppliedShares, daiData.baseDebt);
-
-    console.log(daiData.suppliedShares, daiData.baseDebt, daiData.outstandingPremium);
+    daiData = hub.getAsset(daiAssetId);
+    assertEq(
+      daiData.suppliedShares,
+      expectedSupply2Shares + initialSupplyShares,
+      'wrong suppliedShares post-supply'
+    );
+    assertTrue(
+      expectedSupply2Shares < supply2Amount,
+      'increased index should lead to lower number of shares'
+    );
   }
 
   function test_supply_multiple() public {
