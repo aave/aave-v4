@@ -12,6 +12,8 @@ import {SharesMath} from 'src/contracts/SharesMath.sol';
 import {MathUtils} from 'src/contracts/MathUtils.sol';
 import {PercentageMath} from 'src/contracts/PercentageMath.sol';
 
+import 'forge-std/console2.sol';
+
 struct SpokeData {
   uint256 suppliedShares; // share
   uint256 baseDebt; // asset
@@ -296,7 +298,8 @@ contract LiquidityHub is ILiquidityHub {
     SpokeData storage spoke = _spokes[assetId][msg.sender];
 
     uint256 nextBaseBorrowIndex = _accrueInterest(asset, spoke); // accrue interest before validating action
-    _validateRestore(asset, amount, spoke.baseDebt);
+
+    _validateRestore(asset, amount, spoke.baseDebt + spoke.outstandingPremium);
     asset.updateBorrowRate({liquidityAdded: amount, liquidityTaken: 0});
 
     uint256 baseDebtRestored = _deductFromOutstandingPremium(asset, spoke, amount);
@@ -442,8 +445,8 @@ contract LiquidityHub is ILiquidityHub {
 
     uint256 newSpokeDebt = baseDebtChange > 0
       ? existingSpokeDebt + uint256(baseDebtChange) // debt added
-      : // force underflow: only possible when spoke takes repays amount more than net drawn
-      existingSpokeDebt - uint256(-baseDebtChange); // debt restored
+      // force underflow: only possible when spoke takes repays amount more than net drawn
+      : existingSpokeDebt - uint256(-baseDebtChange); // debt restored
 
     (uint256 newAssetRiskPremium, uint256 newAssetDebt) = MathUtils.addToWeightedAverage(
       assetRiskPremiumWithoutCurrent,
