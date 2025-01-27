@@ -216,7 +216,7 @@ contract LiquidityHubTest is BaseTest {
     uint256 timestamp = vm.getBlockTimestamp();
 
     Asset memory assetData = hub.getAsset(assetId);
-    SpokeData memory spokeData = hub.getSpoke(assetId, address(spoke1));
+    SpokeData memory spokeData = hub.getSpoke(assetId, address(spoke));
 
     // hub
     assertEq(hub.getTotalAssets(assetId), amount, 'wrong total assets post-supply');
