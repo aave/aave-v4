@@ -27,7 +27,10 @@ library SpokeDataLogic {
       spoke.baseBorrowIndex
     );
 
-    console2.log('SDL: cumulatedBaseDebt %e', cumulatedBaseDebt);
+    console2.log(
+      'SDL: outstandingPremium %e',
+      (cumulatedBaseDebt - existingBaseDebt).radMul(spoke.riskPremiumRad)
+    );
 
     spoke.outstandingPremium += (cumulatedBaseDebt - existingBaseDebt).radMul(spoke.riskPremiumRad);
     spoke.baseDebt = cumulatedBaseDebt;
