@@ -181,8 +181,6 @@ contract LiquidityHubTest is BaseTest {
     assertEq(tokenList.dai.balanceOf(address(hub)), amount, 'wrong hub token balance post-supply');
   }
 
-  // TODO: supply with multiple spokes, same asset
-
   /// @dev User makes a first supply, shares and assets amounts are correct, no precision loss
   function test_supply_fuzz(
     uint256 assetId,
@@ -212,7 +210,7 @@ contract LiquidityHubTest is BaseTest {
     emit Transfer(user, address(hub), amount);
     vm.expectEmit(address(hub));
     emit Supply(assetId, spoke, amount);
-    hub.supply(assetId, amount, 0, USER1);
+    hub.supply(assetId, amount, 0, user);
     vm.stopPrank();
 
     uint256 timestamp = vm.getBlockTimestamp();
@@ -271,8 +269,158 @@ contract LiquidityHubTest is BaseTest {
     assertEq(asset.balanceOf(address(hub)), amount, 'wrong hub token balance post-supply');
   }
 
+  /// @dev single user, 2 spokes, 2 assets, 2 amounts
+  // test that assets across different spokes don't affect each others' accounting
+  function test_supply_fuzz_multi_asset_multi_spoke(
+    uint256 assetId,
+    address user,
+    uint256 amount,
+    uint256 amount2,
+    address onBehalfOf
+  ) public {
+    vm.assume(user != address(hub) && user != address(0) && user != address(spoke1));
+
+    assetId = bound(assetId, 0, hub.assetCount() - 2);
+    amount = bound(amount, 1, type(uint128).max);
+    amount2 = bound(amount2, 1, type(uint128).max);
+
+    IERC20 asset = hub.assetsList(assetId);
+    deal(address(asset), user, amount);
+    vm.prank(user);
+    asset.approve(address(hub), amount);
+
+    IERC20 asset2 = hub.assetsList(assetId + 1);
+    deal(address(asset2), user, amount2);
+    vm.prank(user);
+    asset2.approve(address(hub), amount2);
+
+    vm.startPrank(address(spoke1));
+    vm.expectEmit(address(asset));
+    emit Transfer(user, address(hub), amount);
+    vm.expectEmit(address(hub));
+    emit Supply(assetId, address(spoke1), amount);
+    hub.supply(assetId, amount, 0, user);
+    vm.stopPrank();
+
+    vm.startPrank(address(spoke2));
+    vm.expectEmit(address(asset2));
+    emit Transfer(user, address(hub), amount2);
+    vm.expectEmit(address(hub));
+    emit Supply(assetId + 1, address(spoke2), amount2);
+    hub.supply(assetId + 1, amount2, 0, user);
+    vm.stopPrank();
+
+    uint256 timestamp = vm.getBlockTimestamp();
+
+    Asset memory assetData = hub.getAsset(assetId);
+    Asset memory asset2Data = hub.getAsset(assetId + 1);
+    SpokeData memory spokeData = hub.getSpoke(assetId, address(spoke1));
+    SpokeData memory spoke2Data = hub.getSpoke(assetId + 1, address(spoke2));
+
+    // hub
+    assertEq(hub.getTotalAssets(assetId), amount, 'wrong total assets post-supply');
+    // asset1
+    assertEq(
+      assetData.suppliedShares,
+      hub.convertToSharesUp(assetId, amount),
+      'wrong asset suppliedShares post-supply'
+    );
+    assertEq(assetData.availableLiquidity, amount, 'wrong asset availableLiquidity post-supply');
+    assertEq(assetData.baseDebt, 0, 'wrong asset baseDebt post-supply');
+    assertEq(assetData.outstandingPremium, 0, 'wrong asset outstandingPremium post-supply');
+    assertEq(assetData.baseBorrowIndex, WadRayMath.RAY, 'wrong asset baseBorrowIndex post-supply');
+    assertEq(
+      assetData.baseBorrowRate,
+      uint256(5_00).bpsToRay(),
+      'wrong asset baseBorrowRate post-supply'
+    );
+    assertEq(assetData.riskPremiumRad, 0, 'wrong asset riskPremiumRad post-supply');
+    assertEq(
+      assetData.lastUpdateTimestamp,
+      timestamp,
+      'wrong asset lastUpdateTimestamp post-supply'
+    );
+    // spoke
+    assertEq(
+      spokeData.suppliedShares,
+      assetData.suppliedShares,
+      'wrong spoke suppliedShares post-supply'
+    );
+    assertEq(spokeData.baseDebt, assetData.baseDebt, 'wrong baseDebt post-supply');
+    assertEq(
+      spokeData.outstandingPremium,
+      assetData.outstandingPremium,
+      'wrong spoke outstandingPremium post-supply'
+    );
+    assertEq(
+      spokeData.baseBorrowIndex,
+      assetData.baseBorrowIndex,
+      'wrong spoke baseBorrowIndex post-supply'
+    );
+    assertEq(spokeData.riskPremiumRad, 0, 'wrong spoke riskPremiumRad post-supply');
+    assertEq(
+      spokeData.lastUpdateTimestamp,
+      assetData.lastUpdateTimestamp,
+      'wrong spoke lastUpdateTimestamp post-supply'
+    );
+    assertEq(asset.balanceOf(user), 0, 'wrong user token balance post-supply');
+    assertEq(asset.balanceOf(address(spoke1)), 0, 'wrong spoke token balance post-supply');
+    assertEq(asset.balanceOf(address(hub)), amount, 'wrong hub token balance post-supply');
+    // asset2
+    assertEq(
+      asset2Data.suppliedShares,
+      hub.convertToSharesUp(assetId + 1, amount2),
+      'wrong asset2 suppliedShares post-supply'
+    );
+    assertEq(asset2Data.availableLiquidity, amount2, 'wrong asset2 availableLiquidity post-supply');
+    assertEq(asset2Data.baseDebt, 0, 'wrong asset2 baseDebt post-supply');
+    assertEq(asset2Data.outstandingPremium, 0, 'wrong asset2 outstandingPremium post-supply');
+    assertEq(
+      asset2Data.baseBorrowIndex,
+      WadRayMath.RAY,
+      'wrong asset2 baseBorrowIndex post-supply'
+    );
+    assertEq(
+      asset2Data.baseBorrowRate,
+      uint256(5_00).bpsToRay(),
+      'wrong asset2 baseBorrowRate post-supply'
+    );
+    assertEq(asset2Data.riskPremiumRad, 0, 'wrong asset2 riskPremiumRad post-supply');
+    assertEq(
+      asset2Data.lastUpdateTimestamp,
+      timestamp,
+      'wrong asset2 lastUpdateTimestamp post-supply'
+    );
+    // spoke2
+    assertEq(
+      spoke2Data.suppliedShares,
+      asset2Data.suppliedShares,
+      'wrong spoke2 suppliedShares post-supply'
+    );
+    assertEq(spoke2Data.baseDebt, asset2Data.baseDebt, 'wrong baseDebt post-supply');
+    assertEq(
+      spoke2Data.outstandingPremium,
+      asset2Data.outstandingPremium,
+      'wrong spoke2 outstandingPremium post-supply'
+    );
+    assertEq(
+      spoke2Data.baseBorrowIndex,
+      asset2Data.baseBorrowIndex,
+      'wrong spoke2 baseBorrowIndex post-supply'
+    );
+    assertEq(spoke2Data.riskPremiumRad, 0, 'wrong spoke2 riskPremiumRad post-supply');
+    assertEq(
+      spoke2Data.lastUpdateTimestamp,
+      asset2Data.lastUpdateTimestamp,
+      'wrong spoke2 lastUpdateTimestamp post-supply'
+    );
+    assertEq(asset2.balanceOf(user), 0, 'wrong user token balance post-supply');
+    assertEq(asset2.balanceOf(address(spoke2)), 0, 'wrong spoke2 token balance post-supply');
+    assertEq(asset2.balanceOf(address(hub)), amount2, 'wrong hub token2 balance post-supply');
+  }
+
   function test_supply_revertsWith_invalid_amount() public {
-    uint256 assetId = 0; // TODO: Add getter of asset id based on address
+    uint256 assetId = 0;
     uint256 amount = 0;
 
     vm.prank(address(spoke1));
@@ -281,7 +429,7 @@ contract LiquidityHubTest is BaseTest {
   }
 
   function test_supply_revertsWith_invalid_shares_amount() public {
-    uint256 assetId = 0; // TODO: Add getter of asset id based on address
+    uint256 assetId = 0;
     uint256 amount = 1;
 
     deal(address(dai), USER1, amount);
@@ -359,7 +507,6 @@ contract LiquidityHubTest is BaseTest {
     );
   }
 
-  // TODO: tetest_supply_fuzz_with_increased_index_with_premium
   function test_supply_with_increased_index_with_premium() public {
     uint256 daiAmount = 100e18;
     uint256 wethAmount = 10e18;
@@ -424,7 +571,7 @@ contract LiquidityHubTest is BaseTest {
   }
 
   function test_supply_multiple() public {
-    uint256 assetId = daiAssetId; // TODO: Add getter of asset id based on address
+    uint256 assetId = daiAssetId;
     uint256 amount = 100e18;
 
     Asset memory assetData = hub.getAsset(assetId);
@@ -646,7 +793,11 @@ contract LiquidityHubTest is BaseTest {
     uint256 userShares;
   }
 
-  function test_supply_fuzz_multi(uint256 assetId, address user, uint256 amount) public {
+  function test_supply_fuzz_single_spoke_multi_supply(
+    uint256 assetId,
+    address user,
+    uint256 amount
+  ) public {
     vm.assume(user != address(hub) && user != address(spoke1) && user != address(0));
     assetId = bound(assetId, 0, hub.assetCount() - 1);
     amount = bound(amount, 1, type(uint128).max);
@@ -1225,7 +1376,7 @@ contract LiquidityHubTest is BaseTest {
   // TODO: test_withdraw_fuzz_all_with_interest
 
   function test_withdraw_revertsWith_zero_supplied() public {
-    uint256 assetId = 0; // TODO: Add getter of asset id based on address
+    uint256 assetId = 0;
     uint256 amount = 1;
 
     vm.prank(address(spoke1));
@@ -1234,7 +1385,7 @@ contract LiquidityHubTest is BaseTest {
   }
 
   function test_withdraw_revertsWith_supplied_amount_exceeded() public {
-    uint256 assetId = daiAssetId; // TODO: Add getter of asset id based on address
+    uint256 assetId = daiAssetId;
     uint256 amount = 100e18;
 
     // User supply
