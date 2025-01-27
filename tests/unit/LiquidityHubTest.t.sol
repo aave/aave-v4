@@ -962,13 +962,6 @@ contract LiquidityHubTest is BaseTest {
     assertEq(asset.balanceOf(USER1), 0, 'wrong user token balance post-supply');
   }
 
-  /// User makes a first supply, which increases overtime as yield accrues
-  // TODO: to be fixed, there is precision loss
-  // TODO: after draw is completed. Draw some debt and skip time to change index
-  function test_supply_fuzz_index_increase(uint256 assetId, address user, uint256 amount) public {
-    vm.skip(true);
-  }
-
   function test_withdraw() public {
     uint256 amount = 100e18;
 
