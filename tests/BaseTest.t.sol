@@ -112,6 +112,11 @@ abstract contract BaseTest is Test, Events {
   uint256 internal wethAssetId = 0;
   uint256 internal usdxAssetId = 1;
 
+  uint256 internal mintAmount_USDX = 100_000e6;
+  uint256 internal mintAmount_DAI = 100_000e18;
+  uint256 internal mintAmount_WBTC = 100e8;
+  uint256 internal mintAmount_weth = 100e18;
+
   struct TokenList {
     WETH9 weth;
     TestnetERC20 usdx;
@@ -156,18 +161,25 @@ abstract contract BaseTest is Test, Events {
     vm.label(address(tokenList.dai), 'DAI');
     vm.label(address(tokenList.wbtc), 'WBTC');
 
-    uint256 mintAmount_USDX = 100_000e6;
-    uint256 mintAmount_DAI = 100_000e18;
-    uint256 mintAmount_WBTC = 100e8;
     address[3] memory users = [alice, bob, carol];
 
     for (uint256 x; x < users.length; ++x) {
       tokenList.usdx.mint(users[x], mintAmount_USDX);
       tokenList.dai.mint(users[x], mintAmount_DAI);
       tokenList.wbtc.mint(users[x], mintAmount_WBTC);
-      deal(address(tokenList.weth), users[x], 100e18);
+      deal(address(tokenList.weth), users[x], mintAmount_weth);
 
       vm.startPrank(users[x]);
+      tokenList.weth.approve(address(hub), type(uint256).max);
+      tokenList.usdx.approve(address(hub), type(uint256).max);
+      tokenList.dai.approve(address(hub), type(uint256).max);
+      tokenList.wbtc.approve(address(hub), type(uint256).max);
+      vm.stopPrank();
+    }
+
+    address[2] memory usersList = [USER1, USER2];
+    for (uint256 x; x < usersList.length; ++x) {
+      vm.startPrank(usersList[x]);
       tokenList.weth.approve(address(hub), type(uint256).max);
       tokenList.usdx.approve(address(hub), type(uint256).max);
       tokenList.dai.approve(address(hub), type(uint256).max);

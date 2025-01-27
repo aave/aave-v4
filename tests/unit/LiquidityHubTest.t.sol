@@ -22,7 +22,8 @@ contract LiquidityHubTest is BaseTest {
   function test_supply_revertsWith_ERC20InsufficientAllowance() public {
     uint256 amount = 100e18;
 
-    deal(address(tokenList.dai), address(spoke1), amount);
+    tokenList.dai.approve(address(hub), amount - 1);
+
     vm.prank(address(spoke1));
     vm.expectRevert(
       abi.encodeWithSelector(
@@ -100,16 +101,12 @@ contract LiquidityHubTest is BaseTest {
     );
 
     deal(address(tokenList.dai), USER1, amount);
-    vm.prank(USER1);
-    tokenList.dai.approve(address(hub), amount);
 
     assertEq(tokenList.dai.balanceOf(USER1), amount, 'wrong user token balance pre-supply');
     assertEq(tokenList.dai.balanceOf(address(spoke1)), 0, 'wrong spoke token balance pre-supply');
     assertEq(tokenList.dai.balanceOf(address(hub)), 0, 'wrong hub token balance pre-supply');
 
     deal(address(tokenList.dai), USER1, amount);
-    vm.prank(USER1);
-    tokenList.dai.approve(address(hub), amount);
 
     vm.startPrank(address(spoke1));
     vm.expectEmit(address(hub));
@@ -185,8 +182,6 @@ contract LiquidityHubTest is BaseTest {
 
     IERC20 asset = hub.assetsList(assetId);
     deal(address(asset), USER1, amount);
-    vm.prank(USER1);
-    asset.approve(address(hub), amount);
 
     vm.expectEmit(address(asset));
     emit Transfer(USER1, address(hub), amount);
@@ -269,13 +264,9 @@ contract LiquidityHubTest is BaseTest {
 
     IERC20 asset = hub.assetsList(assetId);
     deal(address(asset), user, amount);
-    vm.prank(user);
-    asset.approve(address(hub), amount);
 
     IERC20 asset2 = hub.assetsList(assetId + 1);
     deal(address(asset2), user, amount2);
-    vm.prank(user);
-    asset2.approve(address(hub), amount2);
 
     vm.startPrank(address(spoke1));
     vm.expectEmit(address(asset));
@@ -416,8 +407,6 @@ contract LiquidityHubTest is BaseTest {
     uint256 amount = 1;
 
     deal(address(dai), USER1, amount);
-    vm.prank(USER1);
-    dai.approve(address(hub), amount);
 
     // update storage slots to create 0 shares calc
     bytes32 baseSlot = keccak256(abi.encode(uint256(assetId), uint256(0))); // key: assetId, slot: 0, ie _assets mapping, dai assetId key
@@ -1305,8 +1294,6 @@ contract LiquidityHubTest is BaseTest {
 
     // USER1 restores all debt including accrual
     deal(address(tokenList.dai), USER1, restoreAmount);
-    vm.prank(USER1);
-    tokenList.dai.approve(address(hub), restoreAmount);
     vm.prank(address(spoke1));
     hub.restore({assetId: daiAssetId, amount: restoreAmount, riskPremiumRad: 0, repayer: USER1});
 
@@ -2288,8 +2275,6 @@ contract LiquidityHubTest is BaseTest {
     uint256 accruedPremium = accruedBaseDebt.radMul(riskPremiumRad);
     uint256 restoreAmount = accruedPremium / 2;
 
-    vm.prank(USER1);
-    tokenList.dai.approve(address(hub), restoreAmount);
     vm.startPrank(address(spoke1));
     hub.restore({assetId: daiAssetId, amount: restoreAmount, riskPremiumRad: 0, repayer: USER1});
     vm.stopPrank();
@@ -2370,8 +2355,6 @@ contract LiquidityHubTest is BaseTest {
 
     deal(address(tokenList.dai), USER1, restoreAmount);
 
-    vm.prank(USER1);
-    tokenList.dai.approve(address(hub), restoreAmount);
     vm.startPrank(address(spoke1));
     hub.restore({assetId: daiAssetId, amount: restoreAmount, riskPremiumRad: 0, repayer: USER1});
     vm.stopPrank();
@@ -2442,8 +2425,6 @@ contract LiquidityHubTest is BaseTest {
     uint256 accruedPremium = accruedBaseDebt.radMul(riskPremiumRad);
     uint256 restoreAmount = accruedPremium + 1; // restore amount partially contributes to base debt
 
-    vm.prank(USER1);
-    tokenList.dai.approve(address(hub), restoreAmount);
     vm.startPrank(address(spoke1));
     hub.restore({assetId: daiAssetId, amount: restoreAmount, riskPremiumRad: 0, repayer: USER1});
     vm.stopPrank();
@@ -2524,8 +2505,6 @@ contract LiquidityHubTest is BaseTest {
 
     deal(address(tokenList.dai), USER1, restoreAmount);
 
-    vm.prank(USER1);
-    tokenList.dai.approve(address(hub), restoreAmount);
     vm.startPrank(address(spoke1));
     hub.restore({assetId: daiAssetId, amount: restoreAmount, riskPremiumRad: 0, repayer: USER1});
     vm.stopPrank();
@@ -2628,10 +2607,6 @@ contract LiquidityHubTest is BaseTest {
       riskPremiumRad: 0,
       onBehalfOf: address(spoke1)
     });
-
-    // spoke1 restore half of drawn dai liquidity on behalf of user1
-    vm.prank(USER1);
-    tokenList.dai.approve(address(hub), restoreAmount);
 
     vm.expectEmit(address(hub));
     emit Restore(daiAssetId, address(spoke1), restoreAmount);
