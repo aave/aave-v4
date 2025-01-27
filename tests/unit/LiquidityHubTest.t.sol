@@ -1897,6 +1897,91 @@ contract LiquidityHubTest is BaseTest {
     vm.stopPrank();
   }
 
+  function test_restore_fuzz_revertsWith_invalid_restore_amount_with_interest(
+    uint256 drawAmount,
+    uint256 skipTime,
+    uint256 rate
+  ) public {
+    uint256 daiAmount = 100e18;
+    uint256 wethAmount = 10e18;
+
+    drawAmount = bound(drawAmount, 1, 100) * 1e18; // within supplied dai amount
+    skipTime = bound(skipTime, 1, 365 * 10) * 1 days; // 1 day to 10 years
+    rate = bound(rate, 10, 200_00).bpsToRay(); // .1% to 200%
+
+    vm.mockCall(
+      address(irStrategy),
+      IReserveInterestRateStrategy.calculateInterestRates.selector,
+      abi.encode(rate)
+    );
+
+    // spoke1 supply weth
+    deal(address(tokenList.weth), USER1, wethAmount);
+    Utils.supply({
+      hub: hub,
+      assetId: wethAssetId,
+      spoke: address(spoke1),
+      amount: wethAmount,
+      riskPremiumRad: 0,
+      user: USER1,
+      onBehalfOf: address(spoke1)
+    });
+
+    // spoke2 supply dai
+    deal(address(tokenList.dai), address(spoke2), daiAmount);
+    Utils.supply({
+      hub: hub,
+      assetId: daiAssetId,
+      spoke: address(spoke2),
+      amount: daiAmount,
+      riskPremiumRad: 0,
+      user: address(spoke2),
+      onBehalfOf: address(spoke2)
+    });
+
+    // spoke1 draw half of dai reserve liquidity
+    Utils.draw({
+      hub: hub,
+      assetId: daiAssetId,
+      to: USER1,
+      spoke: address(spoke1),
+      amount: drawAmount,
+      riskPremiumRad: 0,
+      onBehalfOf: address(spoke1)
+    });
+
+    SpokeData memory spoke1DaiData = hub.getSpoke(daiAssetId, address(spoke1));
+
+    skip(skipTime);
+
+    // spoke2 supply more dai to trigger accrual
+    deal(address(tokenList.dai), address(spoke2), daiAmount / 5);
+    Utils.supply({
+      hub: hub,
+      assetId: daiAssetId,
+      spoke: address(spoke2),
+      amount: daiAmount / 5,
+      riskPremiumRad: uint256(5_00).bpsToRad(),
+      user: address(spoke2),
+      onBehalfOf: address(spoke2)
+    });
+
+    uint256 cumulatedBaseInterest = MathUtils.calculateLinearInterest(
+      rate,
+      uint40(spoke1DaiData.lastUpdateTimestamp)
+    );
+    uint256 accruedDebt = drawAmount.rayMul(cumulatedBaseInterest);
+
+    vm.prank(USER1);
+    tokenList.dai.approve(address(hub), accruedDebt + 1);
+
+    // user1 restore invalid amount > drawn amount AND premium
+    vm.startPrank(address(spoke1));
+    vm.expectRevert(TestErrors.INVALID_RESTORE_AMOUNT);
+    hub.restore({assetId: daiAssetId, amount: accruedDebt + 1, riskPremiumRad: 0, repayer: USER1});
+    vm.stopPrank();
+  }
+
   // TODO: test_restore_revertsWith_invalid_restore_amount_with_interest_and_premium
 
   // TODO: test with restore partial amount, check premium paid off first
