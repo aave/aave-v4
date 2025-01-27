@@ -2930,8 +2930,6 @@ contract LiquidityHubTest is BaseTest {
     assertEq(tokenList.weth.balanceOf(address(spoke2)), 0, 'wrong spoke2 weth final balance');
   }
 
-  // TODO: test restore, multiple same restores of same asset, multi spokes
-
   function test_addSpoke() public {
     uint256 assetId = hub.assetCount();
 
