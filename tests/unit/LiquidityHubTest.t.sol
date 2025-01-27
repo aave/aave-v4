@@ -2252,6 +2252,88 @@ contract LiquidityHubTest is BaseTest {
       'wrong hub spoke1 lastUpdateTimestamp'
     );
   }
+
+  function test_restore_fuzz_partial_premium(
+    uint256 drawAmount,
+    uint256 skipTime,
+    uint256 rate,
+    uint256 riskPremiumRad,
+    uint256 restoreAmount
+  ) public {
+    uint256 daiAmount = 100e18;
+    uint256 wethAmount = 10e18;
+
+    drawAmount = bound(drawAmount, 1, 100) * 1e18; // within supplied dai amount
+    skipTime = bound(skipTime, 1, 365 * 10) * 1 days; // 1 day to 10 years
+    rate = bound(rate, 0, 200_00).bpsToRay(); // 0% to 200%
+    riskPremiumRad = bound(riskPremiumRad, 0, maxRiskPremiumRad);
+
+    _setUpIncreasedIndex({
+      daiAmount: daiAmount,
+      wethAmount: wethAmount,
+      daiDrawAmount: drawAmount,
+      riskPremiumRad: riskPremiumRad,
+      rate: rate
+    });
+    Asset memory daiData = hub.getAsset(daiAssetId);
+
+    skip(skipTime);
+
+    uint256 cumulatedBaseInterest = MathUtils.calculateLinearInterest(
+      rate,
+      uint40(daiData.lastUpdateTimestamp)
+    );
+    uint256 accruedBaseDebt = drawAmount.rayMul(cumulatedBaseInterest) - drawAmount;
+    uint256 accruedPremium = accruedBaseDebt.radMul(riskPremiumRad);
+    restoreAmount = bound(restoreAmount, 0, accruedPremium); // within accrued premium
+
+    deal(address(tokenList.dai), USER1, restoreAmount);
+
+    vm.prank(USER1);
+    tokenList.dai.approve(address(hub), restoreAmount);
+    vm.startPrank(address(spoke1));
+    hub.restore({assetId: daiAssetId, amount: restoreAmount, riskPremiumRad: 0, repayer: USER1});
+    vm.stopPrank();
+
+    daiData = hub.getAsset(daiAssetId);
+    SpokeData memory spoke1DaiData = hub.getSpoke(daiAssetId, address(spoke1));
+
+    // hub
+    assertEq(
+      hub.getTotalAssets(daiAssetId),
+      daiAmount + accruedPremium + accruedBaseDebt,
+      'wrong hub dai total assets'
+    );
+    assertEq(
+      daiData.outstandingPremium,
+      accruedPremium - restoreAmount,
+      'wrong hub dai outstandingPremium'
+    );
+    assertEq(daiData.baseDebt, accruedBaseDebt + drawAmount, 'wrong hub dai baseDebt');
+    assertEq(
+      daiData.availableLiquidity,
+      daiAmount - drawAmount + restoreAmount,
+      'wrong hub dai availableLiquidity'
+    );
+    assertEq(
+      daiData.lastUpdateTimestamp,
+      vm.getBlockTimestamp(),
+      'wrong hub dai lastUpdateTimestamp'
+    );
+    // spoke1
+    assertEq(
+      spoke1DaiData.outstandingPremium,
+      daiData.outstandingPremium,
+      'wrong hub spoke1 outstandingPremium'
+    );
+    assertEq(spoke1DaiData.baseDebt, daiData.baseDebt, 'wrong hub spoke1 baseDebt');
+    assertEq(
+      spoke1DaiData.lastUpdateTimestamp,
+      daiData.lastUpdateTimestamp,
+      'wrong hub spoke1 lastUpdateTimestamp'
+    );
+  }
+
   // function test_restore_partial_premium_and_base() public {}
 
   struct HubData {
