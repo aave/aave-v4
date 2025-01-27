@@ -251,37 +251,34 @@ contract LiquidityHubTest is BaseTest {
   // test that assets across different spokes don't affect each others' accounting
   function test_supply_fuzz_multi_asset_multi_spoke(
     uint256 assetId,
-    address user,
     uint256 amount,
     uint256 amount2,
     address onBehalfOf
   ) public {
-    vm.assume(user != address(hub) && user != address(0) && user != address(spoke1));
-
     assetId = bound(assetId, 0, hub.assetCount() - 2);
     amount = bound(amount, 1, type(uint128).max);
     amount2 = bound(amount2, 1, type(uint128).max);
 
     IERC20 asset = hub.assetsList(assetId);
-    deal(address(asset), user, amount);
+    deal(address(asset), USER1, amount);
 
     IERC20 asset2 = hub.assetsList(assetId + 1);
-    deal(address(asset2), user, amount2);
+    deal(address(asset2), USER1, amount2);
 
     vm.startPrank(address(spoke1));
     vm.expectEmit(address(asset));
-    emit Transfer(user, address(hub), amount);
+    emit Transfer(USER1, address(hub), amount);
     vm.expectEmit(address(hub));
     emit Supply(assetId, address(spoke1), amount);
-    hub.supply(assetId, amount, 0, user);
+    hub.supply(assetId, amount, 0, USER1);
     vm.stopPrank();
 
     vm.startPrank(address(spoke2));
     vm.expectEmit(address(asset2));
-    emit Transfer(user, address(hub), amount2);
+    emit Transfer(USER1, address(hub), amount2);
     vm.expectEmit(address(hub));
     emit Supply(assetId + 1, address(spoke2), amount2);
-    hub.supply(assetId + 1, amount2, 0, user);
+    hub.supply(assetId + 1, amount2, 0, USER1);
     vm.stopPrank();
 
     uint256 timestamp = vm.getBlockTimestamp();
@@ -337,7 +334,7 @@ contract LiquidityHubTest is BaseTest {
       assetData.lastUpdateTimestamp,
       'wrong spoke lastUpdateTimestamp post-supply'
     );
-    assertEq(asset.balanceOf(user), 0, 'wrong user token balance post-supply');
+    assertEq(asset.balanceOf(USER1), 0, 'wrong user token balance post-supply');
     assertEq(asset.balanceOf(address(spoke1)), 0, 'wrong spoke token balance post-supply');
     assertEq(asset.balanceOf(address(hub)), amount, 'wrong hub token balance post-supply');
     // asset2
@@ -388,7 +385,7 @@ contract LiquidityHubTest is BaseTest {
       asset2Data.lastUpdateTimestamp,
       'wrong spoke2 lastUpdateTimestamp post-supply'
     );
-    assertEq(asset2.balanceOf(user), 0, 'wrong user token balance post-supply');
+    assertEq(asset2.balanceOf(USER1), 0, 'wrong USER1 token balance post-supply');
     assertEq(asset2.balanceOf(address(spoke2)), 0, 'wrong spoke2 token balance post-supply');
     assertEq(asset2.balanceOf(address(hub)), amount2, 'wrong hub token2 balance post-supply');
   }
