@@ -157,9 +157,16 @@ abstract contract BaseTest is Test, Events {
     vm.label(address(tokenList.wbtc), 'WBTC');
 
     uint256 mintAmount_USDX = 100_000e6;
-    uint256 mintAmount_DAI = 100_000e18;
+    uint256 mintAmount_DAI = 1e60;
     uint256 mintAmount_WBTC = 100e8;
-    address[3] memory users = [alice, bob, carol];
+    address[6] memory users = [
+      alice,
+      bob,
+      carol,
+      address(spoke1),
+      address(spoke2),
+      address(spoke3)
+    ];
 
     for (uint256 x; x < users.length; ++x) {
       tokenList.usdx.mint(users[x], mintAmount_USDX);
