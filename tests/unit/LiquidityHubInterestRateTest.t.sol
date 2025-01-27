@@ -547,4 +547,91 @@ contract LiquidityHubAccrueInterestTest is BaseTest {
     assertEq(avgRiskPremium, riskPremium);
     assertEq(outstandingPremium, (totalBase - borrowAmount).radMul(riskPremium));
   }
+
+  function test_accrueInterest_fuzz_ChangingBorrowRate(
+    uint256 borrowAmount,
+    uint40 elapsed,
+    uint256 riskPremium
+  ) public {
+    elapsed = uint40(bound(elapsed, 1, type(uint40).max / 3));
+    borrowAmount = bound(borrowAmount, 1, 1e30);
+    riskPremium = bound(riskPremium, 0, maxBps.bpsToRad());
+    uint256 supplyAmount = borrowAmount * 2;
+    uint256 startTime = vm.getBlockTimestamp();
+
+    deal(address(tokenList.dai), address(spoke1), supplyAmount);
+    vm.startPrank(address(spoke1));
+    tokenList.dai.approve(address(hub), supplyAmount);
+    hub.supply(daiAssetId, supplyAmount, 0, address(spoke1));
+    hub.draw(daiAssetId, address(spoke1), borrowAmount, riskPremium);
+    uint256 baseBorrowRate = hub.getBaseInterestRate(daiAssetId);
+    vm.stopPrank();
+
+    // Time passes
+    skip(elapsed);
+
+    // Spoke 2 does a supply to accrue interest
+    deal(address(tokenList.dai), address(spoke2), 1000e18);
+    vm.startPrank(address(spoke2));
+    tokenList.dai.approve(address(hub), 1000e18);
+    hub.supply(daiAssetId, 1000e18, 0, address(spoke2));
+    vm.stopPrank();
+
+    // Spoke 1's debt individually has not yet accrued, even though total debt has accrued
+    assertEq(hub.getSpoke(daiAssetId, address(spoke1)).baseDebt, borrowAmount);
+
+    Asset memory daiInfo = hub.getAsset(daiAssetId);
+    uint256 baseDebt = daiInfo.baseDebt;
+    uint256 outstandingPremium = daiInfo.outstandingPremium;
+    uint256 avgRiskPremium = daiInfo.riskPremiumRad;
+    uint256 lastUpdateTimestamp = daiInfo.lastUpdateTimestamp;
+    uint40 firstAccrual = uint40(lastUpdateTimestamp);
+
+    uint256 totalBase = MathUtils.calculateLinearInterest(baseBorrowRate, uint40(startTime)).rayMul(
+      borrowAmount
+    );
+
+    assertEq(elapsed, lastUpdateTimestamp - startTime);
+    assertEq(baseDebt, totalBase);
+    assertEq(avgRiskPremium, riskPremium);
+    assertEq(outstandingPremium, (totalBase - borrowAmount).radMul(riskPremium));
+
+    // Say borrow rate changes
+    baseBorrowRate *= 2;
+    vm.mockCall(
+      address(irStrategy),
+      IReserveInterestRateStrategy.calculateInterestRates.selector,
+      abi.encode(baseBorrowRate)
+    );
+
+    // Time passes
+    skip(elapsed);
+
+    // Spoke 2 does a supply to accrue interest
+    deal(address(tokenList.dai), address(spoke2), 1000e18);
+    vm.startPrank(address(spoke2));
+    tokenList.dai.approve(address(hub), 1000e18);
+    hub.supply(daiAssetId, 1000e18, 0, address(spoke2));
+    vm.stopPrank();
+
+    // Spoke 1's debt individually has not yet accrued, even though total debt has accrued
+    assertEq(hub.getSpoke(daiAssetId, address(spoke1)).baseDebt, borrowAmount);
+
+    daiInfo = hub.getAsset(daiAssetId);
+    baseDebt = daiInfo.baseDebt;
+    outstandingPremium = daiInfo.outstandingPremium;
+    avgRiskPremium = daiInfo.riskPremiumRad;
+    lastUpdateTimestamp = daiInfo.lastUpdateTimestamp;
+
+    uint256 cumulated = MathUtils.calculateLinearInterest(
+      baseBorrowRate,
+      uint40(startTime + elapsed)
+    );
+    totalBase = cumulated.rayMul(totalBase);
+
+    assertEq(elapsed * 2, lastUpdateTimestamp - startTime);
+    //assertEq(baseDebt, totalBase);
+    //assertEq(avgRiskPremium, riskPremium);
+    //assertEq(outstandingPremium, (totalBase - borrowAmount).radMul(riskPremium));
+  }
 }
