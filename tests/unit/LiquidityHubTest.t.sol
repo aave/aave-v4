@@ -318,56 +318,6 @@ contract LiquidityHubTest is BaseTest {
     hub.supply(assetId, amount, 0, USER1);
   }
 
-  /// @dev spoke1 (USER1) supplies dai, spoke2 (USER2) supplies weth, spoke1 (USER1) draws dai
-  function _setUpIncreasedIndex(
-    uint256 daiAmount,
-    uint256 wethAmount,
-    uint256 daiDrawAmount,
-    uint256 riskPremiumRad,
-    uint256 rate
-  ) internal {
-    vm.mockCall(
-      address(irStrategy),
-      IReserveInterestRateStrategy.calculateInterestRates.selector,
-      abi.encode(rate)
-    );
-
-    // spoke1 supply weth
-    deal(address(tokenList.weth), USER1, wethAmount);
-    Utils.supply({
-      hub: hub,
-      assetId: wethAssetId,
-      spoke: address(spoke1),
-      amount: wethAmount,
-      riskPremiumRad: 0,
-      user: USER1,
-      onBehalfOf: address(spoke1)
-    });
-
-    // spoke2 supply dai
-    deal(address(tokenList.dai), USER2, daiAmount);
-    Utils.supply({
-      hub: hub,
-      assetId: daiAssetId,
-      spoke: address(spoke2),
-      amount: daiAmount,
-      riskPremiumRad: 0,
-      user: USER2,
-      onBehalfOf: address(spoke2)
-    });
-
-    // spoke1 draw half of dai reserve liquidity on behalf of user
-    Utils.draw({
-      hub: hub,
-      assetId: daiAssetId,
-      to: USER1,
-      spoke: address(spoke1),
-      amount: daiDrawAmount,
-      riskPremiumRad: riskPremiumRad,
-      onBehalfOf: address(spoke1)
-    });
-  }
-
   function test_supply_with_increased_index() public {
     uint256 daiAmount = 100e18;
     uint256 wethAmount = 10e18;
@@ -2334,7 +2284,72 @@ contract LiquidityHubTest is BaseTest {
     );
   }
 
-  // function test_restore_partial_premium_and_base() public {}
+  function test_restore_partial_premium_and_base() public {
+    uint256 daiAmount = 100e18;
+    uint256 wethAmount = 10e18;
+    uint256 drawAmount = daiAmount / 2;
+    uint256 rate = uint256(15_00).bpsToRay();
+    uint256 riskPremiumRad = uint256(30_00).bpsToRad();
+
+    _setUpIncreasedIndex({
+      daiAmount: daiAmount,
+      wethAmount: wethAmount,
+      daiDrawAmount: drawAmount,
+      riskPremiumRad: riskPremiumRad,
+      rate: rate
+    });
+    Asset memory daiData = hub.getAsset(daiAssetId);
+
+    skip(365 days);
+
+    uint256 cumulatedBaseInterest = MathUtils.calculateLinearInterest(
+      rate,
+      uint40(daiData.lastUpdateTimestamp)
+    );
+    uint256 accruedBaseDebt = drawAmount.rayMul(cumulatedBaseInterest) - drawAmount;
+    uint256 accruedPremium = accruedBaseDebt.radMul(riskPremiumRad);
+    uint256 restoreAmount = accruedPremium + 1; // restore amount partially contributes to base debt
+
+    vm.prank(USER1);
+    tokenList.dai.approve(address(hub), restoreAmount);
+    vm.startPrank(address(spoke1));
+    hub.restore({assetId: daiAssetId, amount: restoreAmount, riskPremiumRad: 0, repayer: USER1});
+    vm.stopPrank();
+
+    daiData = hub.getAsset(daiAssetId);
+    SpokeData memory spoke1DaiData = hub.getSpoke(daiAssetId, address(spoke1));
+
+    // hub
+    assertEq(
+      hub.getTotalAssets(daiAssetId),
+      daiAmount + accruedPremium + accruedBaseDebt,
+      'wrong hub dai total assets'
+    );
+    assertEq(daiData.outstandingPremium, 0, 'wrong hub dai outstandingPremium');
+    assertEq(daiData.baseDebt, accruedBaseDebt + drawAmount - 1, 'wrong hub dai baseDebt');
+    assertEq(
+      daiData.availableLiquidity,
+      daiAmount - drawAmount + restoreAmount,
+      'wrong hub dai availableLiquidity'
+    );
+    assertEq(
+      daiData.lastUpdateTimestamp,
+      vm.getBlockTimestamp(),
+      'wrong hub dai lastUpdateTimestamp'
+    );
+    // spoke1
+    assertEq(
+      spoke1DaiData.outstandingPremium,
+      daiData.outstandingPremium,
+      'wrong hub spoke1 outstandingPremium'
+    );
+    assertEq(spoke1DaiData.baseDebt, daiData.baseDebt, 'wrong hub spoke1 baseDebt');
+    assertEq(
+      spoke1DaiData.lastUpdateTimestamp,
+      daiData.lastUpdateTimestamp,
+      'wrong hub spoke1 lastUpdateTimestamp'
+    );
+  }
 
   struct HubData {
     Asset daiData;
@@ -2669,5 +2684,55 @@ contract LiquidityHubTest is BaseTest {
     DataTypes.SpokeConfig memory spokeConfig = hub.getSpokeConfig(assetId, spoke);
     spokeConfig.supplyCap = newSupplyCap;
     hub.updateSpokeConfig(assetId, spoke, spokeConfig);
+  }
+
+  /// @dev spoke1 (USER1) supplies dai, spoke2 (USER2) supplies weth, spoke1 (USER1) draws dai
+  function _setUpIncreasedIndex(
+    uint256 daiAmount,
+    uint256 wethAmount,
+    uint256 daiDrawAmount,
+    uint256 riskPremiumRad,
+    uint256 rate
+  ) internal {
+    vm.mockCall(
+      address(irStrategy),
+      IReserveInterestRateStrategy.calculateInterestRates.selector,
+      abi.encode(rate)
+    );
+
+    // spoke1 supply weth
+    deal(address(tokenList.weth), USER1, wethAmount);
+    Utils.supply({
+      hub: hub,
+      assetId: wethAssetId,
+      spoke: address(spoke1),
+      amount: wethAmount,
+      riskPremiumRad: 0,
+      user: USER1,
+      onBehalfOf: address(spoke1)
+    });
+
+    // spoke2 supply dai
+    deal(address(tokenList.dai), USER2, daiAmount);
+    Utils.supply({
+      hub: hub,
+      assetId: daiAssetId,
+      spoke: address(spoke2),
+      amount: daiAmount,
+      riskPremiumRad: 0,
+      user: USER2,
+      onBehalfOf: address(spoke2)
+    });
+
+    // spoke1 draw half of dai reserve liquidity on behalf of user
+    Utils.draw({
+      hub: hub,
+      assetId: daiAssetId,
+      to: USER1,
+      spoke: address(spoke1),
+      amount: daiDrawAmount,
+      riskPremiumRad: riskPremiumRad,
+      onBehalfOf: address(spoke1)
+    });
   }
 }
