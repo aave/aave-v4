@@ -604,6 +604,7 @@ contract LiquidityHubAccrueInterestTest is BaseTest {
       abi.encode(baseBorrowRate)
     );
 
+    lastUpdateTimestamp = vm.getBlockTimestamp();
     // Time passes
     skip(elapsed);
 
@@ -617,20 +618,19 @@ contract LiquidityHubAccrueInterestTest is BaseTest {
     // Spoke 1's debt individually has not yet accrued, even though total debt has accrued
     assertEq(hub.getSpoke(daiAssetId, address(spoke1)).baseDebt, borrowAmount);
 
+    totalBase += totalBase.rayMul(
+      MathUtils.calculateLinearInterest(baseBorrowRate, uint40(lastUpdateTimestamp)) -
+        WadRayMath.RAY
+    );
+
     daiInfo = hub.getAsset(daiAssetId);
     baseDebt = daiInfo.baseDebt;
     outstandingPremium = daiInfo.outstandingPremium;
     avgRiskPremium = daiInfo.riskPremiumRad;
     lastUpdateTimestamp = daiInfo.lastUpdateTimestamp;
 
-    uint256 cumulated = MathUtils.calculateLinearInterest(
-      baseBorrowRate,
-      uint40(startTime + elapsed)
-    );
-    totalBase = cumulated.rayMul(totalBase);
-
-    assertEq(elapsed * 2, lastUpdateTimestamp - startTime);
-    //assertEq(baseDebt, totalBase);
+    assertEq(elapsed * 2, vm.getBlockTimestamp() - startTime);
+    assertEq(baseDebt, totalBase);
     //assertEq(avgRiskPremium, riskPremium);
     //assertEq(outstandingPremium, (totalBase - borrowAmount).radMul(riskPremium));
   }
