@@ -1162,8 +1162,9 @@ contract LiquidityHubTest is BaseTest {
     uint256 wethAmount = 10e18;
     uint256 drawAmount = daiAmount / 2;
     uint256 riskPremiumRad = uint256(20_00).bpsToRad();
-    uint256 rate = _setUpIncreasedIndex(daiAmount, riskPremiumRad, wethAmount, drawAmount);
     uint256 lastUpdateTimestamp = vm.getBlockTimestamp();
+
+    uint256 rate = _setUpIncreasedIndex(daiAmount, riskPremiumRad, wethAmount, drawAmount);
 
     skip(365 days);
     Asset memory daiData = hub.getAsset(daiAssetId);
@@ -1222,14 +1223,24 @@ contract LiquidityHubTest is BaseTest {
       riskPremiumRad: 0
     });
 
+    // USER2 withdraws all liquidity with interest
     assertEq(tokenList.dai.balanceOf(USER2), daiData.availableLiquidity, 'wrong user2 dai balance');
 
     daiData = hub.getAsset(daiAssetId);
     SpokeData memory spoke1DaiData = hub.getSpoke(daiAssetId, address(spoke1));
+    SpokeData memory spoke2DaiData = hub.getSpoke(daiAssetId, address(spoke2));
 
-    assertEq(tokenList.dai.balanceOf(address(spoke1)), 0, 'wrong spoke1 dai balance');
-    assertEq(tokenList.dai.balanceOf(address(spoke2)), 0, 'wrong spoke2 dai balance');
-
+    // hub
+    assertEq(hub.getTotalAssets(daiAssetId), 0, 'wrong hub totalAssets');
+    assertEq(daiData.suppliedShares, 0, 'wrong dai suppliedShares');
+    assertEq(daiData.availableLiquidity, 0, 'wrong dai availableLiquidity');
+    assertEq(daiData.baseDebt, 0, 'wrong dai baseDebt');
+    assertEq(daiData.outstandingPremium, 0, 'wrong dai outstandingPremium');
+    assertEq(daiData.baseBorrowIndex, newBaseBorrowIndex, 'wrong dai baseBorrowIndex');
+    assertEq(daiData.baseBorrowRate, rate, 'wrong dai baseBorrowRate');
+    assertEq(daiData.riskPremiumRad, 0, 'wrong dai riskPremiumRad');
+    assertEq(daiData.lastUpdateTimestamp, vm.getBlockTimestamp(), 'wrong dai lastUpdateTimestamp');
+    // spoke1
     assertEq(spoke1DaiData.suppliedShares, 0, 'wrong spoke1 suppliedShares');
     assertEq(spoke1DaiData.baseDebt, 0, 'wrong spoke1 baseDebt');
     assertEq(spoke1DaiData.outstandingPremium, 0, 'wrong spoke1 outstandingPremium');
@@ -1240,16 +1251,21 @@ contract LiquidityHubTest is BaseTest {
       vm.getBlockTimestamp(),
       'wrong spoke1 lastUpdateTimestamp'
     );
-
-    assertEq(hub.getTotalAssets(daiAssetId), 0, 'wrong hub totalAssets');
-    assertEq(daiData.suppliedShares, 0, 'wrong dai suppliedShares');
-    assertEq(daiData.availableLiquidity, 0, 'wrong dai availableLiquidity');
-    assertEq(daiData.baseDebt, 0, 'wrong dai baseDebt');
-    assertEq(daiData.outstandingPremium, 0, 'wrong dai outstandingPremium');
-    assertEq(daiData.baseBorrowIndex, newBaseBorrowIndex, 'wrong dai baseBorrowIndex');
-    assertEq(daiData.baseBorrowRate, rate, 'wrong dai baseBorrowRate');
-    assertEq(daiData.riskPremiumRad, 0, 'wrong dai riskPremiumRad');
-    assertEq(daiData.lastUpdateTimestamp, vm.getBlockTimestamp(), 'wrong dai lastUpdateTimestamp');
+    // spoke2
+    assertEq(spoke2DaiData.suppliedShares, 0, 'wrong spoke2 suppliedShares');
+    assertEq(spoke2DaiData.baseDebt, 0, 'wrong spoke2 baseDebt');
+    assertEq(spoke2DaiData.outstandingPremium, 0, 'wrong spoke2 outstandingPremium');
+    assertEq(spoke2DaiData.baseBorrowIndex, WadRayMath.RAY, 'wrong spoke2 baseBorrowIndex');
+    assertEq(spoke2DaiData.riskPremiumRad, 0, 'wrong spoke2 riskPremiumRad');
+    assertEq(
+      spoke2DaiData.lastUpdateTimestamp,
+      lastUpdateTimestamp,
+      'wrong spoke2 lastUpdateTimestamp'
+    );
+    // dai - all to USER1
+    assertEq(tokenList.dai.balanceOf(address(spoke1)), 0, 'wrong spoke1 dai balance');
+    assertEq(tokenList.dai.balanceOf(address(spoke2)), 0, 'wrong spoke2 dai balance');
+    assertEq(tokenList.dai.balanceOf(USER1), 0, 'wrong USER1 dai balance');
   }
 
   // TODO: test with restore partial amount, check premium paid off first
