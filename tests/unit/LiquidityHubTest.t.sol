@@ -2132,6 +2132,7 @@ contract LiquidityHubTest is BaseTest {
     vm.stopPrank();
   }
 
+  /// @dev Restore some amount less than premium
   function test_restore_partial_premium() public {
     uint256 daiAmount = 100e18;
     uint256 wethAmount = 10e18;
@@ -2203,6 +2204,7 @@ contract LiquidityHubTest is BaseTest {
     );
   }
 
+  /// @dev Restore some amount less than premium
   function test_restore_fuzz_partial_premium(
     uint256 drawAmount,
     uint256 skipTime,
@@ -2284,6 +2286,7 @@ contract LiquidityHubTest is BaseTest {
     );
   }
 
+  /// @dev Restore more than premium but partial amount to eat into base debt
   function test_restore_partial_premium_and_base() public {
     uint256 daiAmount = 100e18;
     uint256 wethAmount = 10e18;
