@@ -418,6 +418,7 @@ contract LiquidityHub is ILiquidityHub {
     SpokeData storage spoke
   ) internal returns (uint256) {
     (uint256 cumulatedBaseInterest, uint256 nextBaseBorrowIndex) = asset.previewNextBorrowIndex();
+    console2.log('LH _accrueInterest: %e %e', cumulatedBaseInterest, nextBaseBorrowIndex);
     asset.accrueInterest(cumulatedBaseInterest, nextBaseBorrowIndex);
     spoke.accrueInterest(nextBaseBorrowIndex);
     return nextBaseBorrowIndex;

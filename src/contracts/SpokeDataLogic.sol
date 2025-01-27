@@ -16,6 +16,7 @@ library SpokeDataLogic {
   // @dev Utilizes existing `spoke.baseBorrowIndex` & `spoke.riskPremiumRad`
   function accrueInterest(SpokeData storage spoke, uint256 nextBaseBorrowIndex) internal {
     uint256 elapsed = block.timestamp - spoke.lastUpdateTimestamp;
+    console2.log('SDL: elapsed', elapsed, spoke.baseDebt);
     if (elapsed == 0) return;
     uint256 existingBaseDebt = spoke.baseDebt;
     if (existingBaseDebt == 0) return;
@@ -25,6 +26,8 @@ library SpokeDataLogic {
     uint256 cumulatedBaseDebt = existingBaseDebt.rayMul(nextBaseBorrowIndex).rayDiv(
       spoke.baseBorrowIndex
     );
+
+    console2.log('SDL: cumulatedBaseDebt %e', cumulatedBaseDebt);
 
     spoke.outstandingPremium += (cumulatedBaseDebt - existingBaseDebt).radMul(spoke.riskPremiumRad);
     spoke.baseDebt = cumulatedBaseDebt;
