@@ -324,10 +324,9 @@ contract LiquidityHubTest is BaseTest {
     uint256 daiAmount,
     uint256 riskPremiumRad,
     uint256 wethAmount,
-    uint256 drawAmount
-  ) internal returns (uint256 rate) {
-    rate = uint256(10_00).bpsToRay();
-
+    uint256 drawAmount,
+    uint256 rate
+  ) internal {
     vm.mockCall(
       address(irStrategy),
       IReserveInterestRateStrategy.calculateInterestRates.selector,
@@ -374,8 +373,9 @@ contract LiquidityHubTest is BaseTest {
     uint256 daiAmount = 100e18;
     uint256 wethAmount = 10e18;
     uint256 drawAmount = daiAmount / 2;
+    uint256 rate = uint256(10_00).bpsToRay();
 
-    uint256 rate = _setUpIncreasedIndex(daiAmount, 0, wethAmount, drawAmount);
+    _setUpIncreasedIndex(daiAmount, 0, wethAmount, drawAmount, rate);
     skip(365 days);
 
     Asset memory daiData = hub.getAsset(daiAssetId);
@@ -429,8 +429,9 @@ contract LiquidityHubTest is BaseTest {
     uint256 wethAmount = 10e18;
     uint256 drawAmount = daiAmount / 2;
     uint256 riskPremiumRad = uint256(20_00).bpsToRad();
+    uint256 rate = uint256(10_00).bpsToRay();
 
-    uint256 rate = _setUpIncreasedIndex(daiAmount, riskPremiumRad, wethAmount, drawAmount);
+    _setUpIncreasedIndex(daiAmount, riskPremiumRad, wethAmount, drawAmount, rate);
     skip(365 days);
 
     Asset memory daiData = hub.getAsset(daiAssetId);
@@ -1165,8 +1166,9 @@ contract LiquidityHubTest is BaseTest {
     uint256 drawAmount = daiAmount / 2;
     uint256 riskPremiumRad = uint256(20_00).bpsToRad();
     uint256 lastUpdateTimestamp = vm.getBlockTimestamp();
+    uint256 rate = uint256(10_00).bpsToRay();
 
-    uint256 rate = _setUpIncreasedIndex(daiAmount, riskPremiumRad, wethAmount, drawAmount);
+    _setUpIncreasedIndex(daiAmount, riskPremiumRad, wethAmount, drawAmount, rate);
 
     skip(365 days);
     Asset memory daiData = hub.getAsset(daiAssetId);
@@ -2161,6 +2163,21 @@ contract LiquidityHubTest is BaseTest {
   }
 
   // TODO: test with restore partial amount, check premium paid off first
+  function test_restore_partial_premium() public {
+    // uint256 daiAmount = 100e18;
+    // uint256 wethAmount = 10e18;
+    // uint256 drawAmount = daiAmount / 2;
+    // uint256 rate = _setUpIncreasedIndex(daiAmount, 0, wethAmount, drawAmount);
+    // skip(365 days);
+    // uint256 cumulatedBaseInterest = MathUtils.calculateLinearInterest(
+    //   rate,
+    //   uint40(spoke1DaiData.lastUpdateTimestamp)
+    // );
+    // uint256 cumulatedBaseDebt = drawAmount.rayMul(cumulatedBaseInterest);
+    // uint256 accruedPremium = (cumulatedBaseDebt - drawAmount).radMul(riskPremiumRad);
+  }
+
+  function test_restore_partial_premium_and_base() public {}
 
   struct HubData {
     Asset daiData;
