@@ -963,7 +963,7 @@ contract LiquidityHubTest is BaseTest {
     assertEq(tokenList.dai.balanceOf(USER1), amount, 'wrong user token balance post-withdraw');
   }
 
-  // TODO: test withdraw, same asset, multiple spokes supplied. No drawn
+  // single asset, multiple spokes supplied. No drawn
   function test_withdraw_fuzz_multi_spoke(
     uint256 amount,
     uint256 amount2,
@@ -1355,7 +1355,139 @@ contract LiquidityHubTest is BaseTest {
     assertEq(tokenList.dai.balanceOf(USER1), 0, 'wrong USER1 dai balance');
   }
 
-  // TODO: test_withdraw_fuzz_all_with_interest
+  function test_withdraw_fuzz_all_liquidity_with_interest(
+    uint256 drawAmount,
+    uint256 riskPremiumRad,
+    uint256 rate,
+    uint256 skipTime
+  ) public {
+    uint256 daiAmount = 100e18;
+    uint256 wethAmount = 10e18;
+
+    drawAmount = bound(drawAmount, 1, 100) * 1e18; // within supplied dai amount
+    skipTime = bound(skipTime, 1, 365 * 10) * 1 days; // 1 day to 10 years
+    rate = bound(rate, 0, 200_00).bpsToRay(); // .1% to 200%
+    riskPremiumRad = bound(riskPremiumRad, 0, maxRiskPremiumRad);
+
+    uint256 lastUpdateTimestamp = vm.getBlockTimestamp();
+
+    _setUpIncreasedIndex({
+      daiAmount: daiAmount,
+      wethAmount: wethAmount,
+      daiDrawAmount: drawAmount,
+      riskPremiumRad: riskPremiumRad,
+      rate: rate
+    });
+
+    skip(skipTime);
+    Asset memory daiData = hub.getAsset(daiAssetId);
+
+    uint256 accruedBase = daiData.baseDebt.rayMul(rate);
+    uint256 initialAvailableLiquidity = daiData.availableLiquidity;
+    uint256 initialSupplyShares = daiData.suppliedShares;
+
+    uint256 supply2Amount = 10e18;
+    uint256 expectedSupply2Shares = supply2Amount.toSharesDown(
+      hub.getTotalAssets(daiAssetId) + accruedBase,
+      daiData.suppliedShares
+    );
+
+    // USER2 supplies more DAI to trigger accrual
+    deal(address(tokenList.dai), USER2, supply2Amount);
+    Utils.supply({
+      hub: hub,
+      assetId: daiAssetId,
+      spoke: address(spoke2),
+      amount: supply2Amount,
+      riskPremiumRad: 0,
+      user: USER2,
+      onBehalfOf: address(spoke2)
+    });
+
+    daiData = hub.getAsset(daiAssetId);
+
+    uint256 restoreAmount = daiData.baseDebt + daiData.outstandingPremium;
+    uint256 newBaseBorrowIndex = WadRayMath.RAY +
+      WadRayMath.RAY.rayMul(
+        MathUtils.calculateLinearInterest(daiData.baseBorrowRate, uint40(lastUpdateTimestamp)) -
+          WadRayMath.RAY
+      );
+
+    // USER1 restores all debt including accrual
+    deal(address(tokenList.dai), USER1, restoreAmount);
+    vm.prank(address(spoke1));
+    hub.restore({assetId: daiAssetId, amount: restoreAmount, riskPremiumRad: 0, repayer: USER1});
+
+    daiData = hub.getAsset(daiAssetId);
+    assertEq(
+      daiData.availableLiquidity,
+      initialAvailableLiquidity + restoreAmount + supply2Amount,
+      'wrong dai availableLiquidity'
+    );
+
+    // USER2 withdraws all liquidity with interest
+    vm.prank(address(spoke2));
+    hub.withdraw({
+      assetId: daiAssetId,
+      to: USER2,
+      amount: daiData.availableLiquidity,
+      riskPremiumRad: 0
+    });
+
+    // USER2 withdraws all liquidity with interest
+    assertEq(tokenList.dai.balanceOf(USER2), daiData.availableLiquidity, 'wrong user2 dai balance');
+
+    HubData memory hubData;
+    hubData.daiData = hub.getAsset(daiAssetId);
+    hubData.spoke1DaiData = hub.getSpoke(daiAssetId, address(spoke1));
+    hubData.spoke2DaiData = hub.getSpoke(daiAssetId, address(spoke2));
+
+    // hub
+    assertEq(hub.getTotalAssets(daiAssetId), 0, 'wrong hub totalAssets');
+    assertEq(hubData.daiData.suppliedShares, 0, 'wrong dai suppliedShares');
+    assertEq(hubData.daiData.availableLiquidity, 0, 'wrong dai availableLiquidity');
+    assertEq(hubData.daiData.baseDebt, 0, 'wrong dai baseDebt');
+    assertEq(hubData.daiData.outstandingPremium, 0, 'wrong dai outstandingPremium');
+    assertEq(hubData.daiData.baseBorrowIndex, newBaseBorrowIndex, 'wrong dai baseBorrowIndex');
+    assertEq(hubData.daiData.baseBorrowRate, rate, 'wrong dai baseBorrowRate');
+    assertEq(hubData.daiData.riskPremiumRad, 0, 'wrong dai riskPremiumRad');
+    assertEq(
+      hubData.daiData.lastUpdateTimestamp,
+      vm.getBlockTimestamp(),
+      'wrong dai lastUpdateTimestamp'
+    );
+    // spoke1
+    assertEq(hubData.spoke1DaiData.suppliedShares, 0, 'wrong spoke1 suppliedShares');
+    assertEq(hubData.spoke1DaiData.baseDebt, 0, 'wrong spoke1 baseDebt');
+    assertEq(hubData.spoke1DaiData.outstandingPremium, 0, 'wrong spoke1 outstandingPremium');
+    assertEq(
+      hubData.spoke1DaiData.baseBorrowIndex,
+      newBaseBorrowIndex,
+      'wrong spoke1 baseBorrowIndex'
+    );
+    assertEq(hubData.spoke1DaiData.riskPremiumRad, 0, 'wrong spoke1 riskPremiumRad');
+    assertEq(
+      hubData.spoke1DaiData.lastUpdateTimestamp,
+      vm.getBlockTimestamp(),
+      'wrong spoke1 lastUpdateTimestamp'
+    );
+    // spoke2
+    assertEq(hubData.spoke2DaiData.suppliedShares, 0, 'wrong spoke2 suppliedShares');
+    assertEq(hubData.spoke2DaiData.baseDebt, 0, 'wrong spoke2 baseDebt');
+    assertEq(hubData.spoke2DaiData.outstandingPremium, 0, 'wrong spoke2 outstandingPremium');
+    assertEq(hubData.spoke2DaiData.baseBorrowIndex, WadRayMath.RAY, 'wrong spoke2 baseBorrowIndex');
+    assertEq(hubData.spoke2DaiData.riskPremiumRad, 0, 'wrong spoke2 riskPremiumRad');
+    assertEq(
+      hubData.spoke2DaiData.lastUpdateTimestamp,
+      lastUpdateTimestamp,
+      'wrong spoke2 lastUpdateTimestamp'
+    );
+    // dai - all to USER1
+    assertEq(tokenList.dai.balanceOf(address(spoke1)), 0, 'wrong spoke1 dai balance');
+    assertEq(tokenList.dai.balanceOf(address(spoke2)), 0, 'wrong spoke2 dai balance');
+    assertEq(tokenList.dai.balanceOf(USER1), 0, 'wrong USER1 dai balance');
+    assertEq(tokenList.dai.balanceOf(USER2), daiData.availableLiquidity, 'wrong USER2 dai balance');
+  }
 
   function test_withdraw_revertsWith_zero_supplied() public {
     uint256 assetId = 0;
