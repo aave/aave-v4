@@ -156,6 +156,7 @@ contract LiquidityHub is ILiquidityHub {
    * @param amount The amount of asset to withdraw.
    * @param riskPremiumRad The aggregated risk premium of the calling spoke.
    * @param supplier The address which is supplying the asset (user).
+   * @return The new base borrow index.
    * @return The sharesAmount supplied.
    */
   function supply(
@@ -163,7 +164,7 @@ contract LiquidityHub is ILiquidityHub {
     uint256 amount,
     uint256 riskPremiumRad,
     address supplier
-  ) external returns (uint256) {
+  ) external returns (uint256, uint256) {
     // TODO: authorization - only spokes
 
     Asset storage asset = _assets[assetId];
@@ -193,7 +194,7 @@ contract LiquidityHub is ILiquidityHub {
 
     emit Supply(assetId, msg.sender, amount);
 
-    return sharesAmount;
+    return (nextBaseBorrowIndex, sharesAmount);
   }
 
   /**
