@@ -158,7 +158,6 @@ contract LiquidityHub is ILiquidityHub {
    * @param amount The amount of asset to withdraw.
    * @param riskPremiumRad The aggregated risk premium of the calling spoke.
    * @param supplier The address which is supplying the asset (user).
-   * @return The new base borrow index.
    * @return The sharesAmount supplied.
    */
   function supply(
@@ -166,7 +165,7 @@ contract LiquidityHub is ILiquidityHub {
     uint256 amount,
     uint256 riskPremiumRad,
     address supplier
-  ) external returns (uint256, uint256) {
+  ) external returns (uint256) {
     // TODO: authorization - only spokes
 
     Asset storage asset = _assets[assetId];
@@ -196,7 +195,7 @@ contract LiquidityHub is ILiquidityHub {
 
     emit Supply(assetId, msg.sender, amount);
 
-    return (nextBaseBorrowIndex, sharesAmount);
+    return sharesAmount;
   }
 
   /**
@@ -446,8 +445,8 @@ contract LiquidityHub is ILiquidityHub {
 
     uint256 newSpokeDebt = baseDebtChange > 0
       ? existingSpokeDebt + uint256(baseDebtChange) // debt added
-      // force underflow: only possible when spoke takes repays amount more than net drawn
-      : existingSpokeDebt - uint256(-baseDebtChange); // debt restored
+      : // force underflow: only possible when spoke takes repays amount more than net drawn
+      existingSpokeDebt - uint256(-baseDebtChange); // debt restored
 
     (uint256 newAssetRiskPremium, uint256 newAssetDebt) = MathUtils.addToWeightedAverage(
       assetRiskPremiumWithoutCurrent,

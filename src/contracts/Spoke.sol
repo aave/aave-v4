@@ -113,7 +113,7 @@ contract Spoke is ISpoke {
     _validateSupply(r, amount);
 
     (, uint256 newAggregatedRiskPremium) = _refreshRiskPremium();
-    (, uint256 userShares) = liquidityHub.supply(
+    uint256 userShares = liquidityHub.supply(
       assetId,
       amount,
       newAggregatedRiskPremium,
