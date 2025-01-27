@@ -9,13 +9,9 @@ contract LiquidityHubTest is BaseTest {
   using SharesMath for uint256;
   using WadRayMath for uint256;
 
+  // TODO: read from baseTest when resolved
   uint256 daiAssetId = 2;
   uint256 wbtcAssetId = 3;
-
-  uint256 spoke1RiskPremiumRad = uint256(50_00).bpsToRad();
-  uint256 spoke2RiskPremiumRad = uint256(20_00).bpsToRad();
-  uint256 spoke3RiskPremiumRad = uint256(30_00).bpsToRad();
-
   uint256 maxRiskPremiumRad = PercentageMath.PERCENTAGE_FACTOR.bpsToRad();
 
   function setUp() public override {
