@@ -184,30 +184,41 @@ contract LiquidityHubTest is BaseTest {
   // TODO: supply with multiple spokes, same asset
 
   /// @dev User makes a first supply, shares and assets amounts are correct, no precision loss
-  function test_supply_fuzz(uint256 assetId, address user, uint256 amount) public {
+  function test_supply_fuzz(
+    uint256 assetId,
+    address user,
+    address spoke,
+    uint256 amount,
+    address onBehalfOf
+  ) public {
     vm.assume(user != address(hub) && user != address(0) && user != address(spoke1));
+    vm.assume(spoke != address(hub) && spoke != address(0) && onBehalfOf != address(0));
     assetId = bound(assetId, 0, hub.assetCount() - 1);
     amount = bound(amount, 1, type(uint128).max);
 
+    hub.addSpoke(
+      assetId,
+      DataTypes.SpokeConfig({supplyCap: type(uint256).max, drawCap: type(uint256).max}),
+      spoke
+    );
+
     IERC20 asset = hub.assetsList(assetId);
-
     deal(address(asset), user, amount);
+    vm.prank(user);
+    asset.approve(address(hub), amount);
 
-    // initial supply
-    Utils.supply({
-      hub: hub,
-      assetId: assetId,
-      spoke: address(spoke1),
-      amount: amount,
-      riskPremiumRad: 0,
-      user: user,
-      onBehalfOf: address(spoke1)
-    });
+    vm.startPrank(spoke);
+    vm.expectEmit(address(asset));
+    emit Transfer(user, address(hub), amount);
+    vm.expectEmit(address(hub));
+    emit Supply(assetId, spoke, amount);
+    hub.supply(assetId, amount, 0, USER1);
+    vm.stopPrank();
+
+    uint256 timestamp = vm.getBlockTimestamp();
 
     Asset memory assetData = hub.getAsset(assetId);
     SpokeData memory spokeData = hub.getSpoke(assetId, address(spoke1));
-
-    uint256 timestamp = vm.getBlockTimestamp();
 
     // hub
     assertEq(hub.getTotalAssets(assetId), amount, 'wrong total assets post-supply');
@@ -258,37 +269,6 @@ contract LiquidityHubTest is BaseTest {
     assertEq(asset.balanceOf(user), 0, 'wrong user token balance post-supply');
     assertEq(asset.balanceOf(address(spoke1)), 0, 'wrong spoke token balance post-supply');
     assertEq(asset.balanceOf(address(hub)), amount, 'wrong hub token balance post-supply');
-  }
-
-  function test_supply_events_fuzz(
-    uint256 assetId,
-    address spoke,
-    uint256 amount,
-    address onBehalfOf
-  ) public {
-    vm.assume(spoke != address(hub) && spoke != address(0) && onBehalfOf != address(0));
-
-    assetId = bound(assetId, 0, hub.assetCount() - 1);
-    amount = bound(amount, 1, type(uint128).max);
-
-    hub.addSpoke(
-      assetId,
-      DataTypes.SpokeConfig({supplyCap: type(uint256).max, drawCap: type(uint256).max}),
-      spoke
-    );
-
-    IERC20 asset = hub.assetsList(assetId);
-    deal(address(asset), USER1, amount);
-    vm.prank(USER1);
-    asset.approve(address(hub), amount);
-
-    vm.startPrank(spoke);
-    vm.expectEmit(address(asset));
-    emit Transfer(USER1, address(hub), amount);
-    vm.expectEmit(address(hub));
-    emit Supply(assetId, spoke, amount);
-    hub.supply(assetId, amount, 0, USER1);
-    vm.stopPrank();
   }
 
   function test_supply_revertsWith_invalid_amount() public {
