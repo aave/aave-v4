@@ -571,9 +571,9 @@ contract LiquidityHubAccrueInterestTest is BaseTest {
     skip(elapsed);
 
     // Spoke 2 does a supply to accrue interest
-    deal(address(tokenList.dai), address(spoke2), 1000e18);
+    deal(address(tokenList.dai), address(spoke2), 2000e18);
     vm.startPrank(address(spoke2));
-    tokenList.dai.approve(address(hub), 1000e18);
+    tokenList.dai.approve(address(hub), 2000e18);
     hub.supply(daiAssetId, 1000e18, 0, address(spoke2));
     vm.stopPrank();
 
@@ -585,7 +585,6 @@ contract LiquidityHubAccrueInterestTest is BaseTest {
     uint256 outstandingPremium = daiInfo.outstandingPremium;
     uint256 avgRiskPremium = daiInfo.riskPremiumRad;
     uint256 lastUpdateTimestamp = daiInfo.lastUpdateTimestamp;
-    uint40 firstAccrual = uint40(lastUpdateTimestamp);
 
     uint256 totalBase = MathUtils.calculateLinearInterest(baseBorrowRate, uint40(startTime)).rayMul(
       borrowAmount
@@ -603,6 +602,10 @@ contract LiquidityHubAccrueInterestTest is BaseTest {
       IReserveInterestRateStrategy.calculateInterestRates.selector,
       abi.encode(baseBorrowRate)
     );
+    // Make an action to cache this new borrow rate
+    vm.startPrank(address(spoke2));
+    hub.supply(daiAssetId, 1000e18, 0, address(spoke2));
+    vm.stopPrank();
 
     lastUpdateTimestamp = vm.getBlockTimestamp();
     // Time passes
@@ -631,7 +634,7 @@ contract LiquidityHubAccrueInterestTest is BaseTest {
 
     assertEq(elapsed * 2, vm.getBlockTimestamp() - startTime);
     assertEq(baseDebt, totalBase);
-    //assertEq(avgRiskPremium, riskPremium);
-    //assertEq(outstandingPremium, (totalBase - borrowAmount).radMul(riskPremium));
+    assertEq(avgRiskPremium, riskPremium);
+    assertApproxEqAbs(outstandingPremium, (totalBase - borrowAmount).radMul(riskPremium), 1);
   }
 }
