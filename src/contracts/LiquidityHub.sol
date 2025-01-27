@@ -12,8 +12,6 @@ import {SharesMath} from 'src/contracts/SharesMath.sol';
 import {MathUtils} from 'src/contracts/MathUtils.sol';
 import {PercentageMath} from 'src/contracts/PercentageMath.sol';
 
-import 'forge-std/console2.sol';
-
 struct SpokeData {
   uint256 suppliedShares; // share
   uint256 baseDebt; // asset
@@ -205,7 +203,6 @@ contract LiquidityHub is ILiquidityHub {
    * @param to The address to withdraw on behalf of.
    * @param amount The amount of asset to withdraw.
    * @param riskPremiumRad The aggregated risk premium of the calling spoke.
-   * @return The new base borrow index.
    * @return The sharesAmount withdrawn.
    */
   function withdraw(
@@ -213,7 +210,7 @@ contract LiquidityHub is ILiquidityHub {
     address to,
     uint256 amount,
     uint256 riskPremiumRad
-  ) external returns (uint256, uint256) {
+  ) external returns (uint256) {
     // TODO: Be able to pass max(uint) as amount to withdraw all or accept number of shares
     // TODO: authorization - only spokes
 
@@ -235,7 +232,7 @@ contract LiquidityHub is ILiquidityHub {
 
     emit Withdraw(assetId, msg.sender, to, amount);
 
-    return (nextBaseBorrowIndex, sharesAmount);
+    return sharesAmount;
   }
 
   /**
@@ -417,7 +414,6 @@ contract LiquidityHub is ILiquidityHub {
     SpokeData storage spoke
   ) internal returns (uint256) {
     (uint256 cumulatedBaseInterest, uint256 nextBaseBorrowIndex) = asset.previewNextBorrowIndex();
-    console2.log('LH _accrueInterest: %e %e', cumulatedBaseInterest, nextBaseBorrowIndex);
     asset.accrueInterest(cumulatedBaseInterest, nextBaseBorrowIndex);
     spoke.accrueInterest(nextBaseBorrowIndex);
     return nextBaseBorrowIndex;

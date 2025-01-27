@@ -32,7 +32,7 @@ interface ILiquidityHub {
     address to,
     uint256 amount,
     uint256 riskPremium
-  ) external returns (uint256, uint256);
+  ) external returns (uint256);
 
   function getBaseInterestRate(uint256 assetId) external view returns (uint256);
 

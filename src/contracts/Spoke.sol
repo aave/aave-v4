@@ -131,7 +131,7 @@ contract Spoke is ISpoke {
     _validateWithdraw(assetId, r, u, amount);
 
     (, uint256 newAggregatedRiskPremium) = _refreshRiskPremium();
-    (, uint256 userShares) = liquidityHub.withdraw(assetId, to, amount, newAggregatedRiskPremium);
+    uint256 userShares = liquidityHub.withdraw(assetId, to, amount, newAggregatedRiskPremium);
     users[assetId][msg.sender].supplyShares -= userShares;
 
     emit Withdrawn(assetId, msg.sender, amount);
