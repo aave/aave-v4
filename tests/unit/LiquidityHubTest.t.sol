@@ -2114,7 +2114,7 @@ contract LiquidityHubTest is BaseTest {
       spoke: address(spoke2),
       amount: daiAmount / 5,
       riskPremiumRad: uint256(5_00).bpsToRad(),
-      user: address(spoke2),
+      user: bob,
       onBehalfOf: address(spoke2)
     });
 
