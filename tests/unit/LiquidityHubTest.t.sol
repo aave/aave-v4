@@ -250,7 +250,11 @@ contract LiquidityHubTest is BaseTest {
       assetData.lastUpdateTimestamp,
       'wrong spoke lastUpdateTimestamp post-supply'
     );
-    assertEq(asset.balanceOf(alice), 0, 'wrong user token balance post-supply');
+    assertEq(
+      asset.balanceOf(alice),
+      MAX_SUPPLY_AMOUNT - amount,
+      'wrong user token balance post-supply'
+    );
     assertEq(asset.balanceOf(address(spoke1)), 0, 'wrong spoke token balance post-supply');
     assertEq(asset.balanceOf(address(hub)), amount, 'wrong hub token balance post-supply');
   }
@@ -342,7 +346,11 @@ contract LiquidityHubTest is BaseTest {
       assetData.lastUpdateTimestamp,
       'wrong spoke lastUpdateTimestamp post-supply'
     );
-    assertEq(asset.balanceOf(alice), 0, 'wrong user token balance post-supply');
+    assertEq(
+      asset.balanceOf(alice),
+      MAX_SUPPLY_AMOUNT - amount,
+      'wrong user token balance post-supply'
+    );
     assertEq(asset.balanceOf(address(spoke1)), 0, 'wrong spoke token balance post-supply');
     assertEq(asset.balanceOf(address(hub)), amount, 'wrong hub token balance post-supply');
     // asset2
@@ -393,7 +401,11 @@ contract LiquidityHubTest is BaseTest {
       asset2Data.lastUpdateTimestamp,
       'wrong spoke2 lastUpdateTimestamp post-supply'
     );
-    assertEq(asset2.balanceOf(alice), 0, 'wrong alice token balance post-supply');
+    assertEq(
+      asset2.balanceOf(alice),
+      MAX_SUPPLY_AMOUNT - amount2,
+      'wrong alice token balance post-supply'
+    );
     assertEq(asset2.balanceOf(address(spoke2)), 0, 'wrong spoke2 token balance post-supply');
     assertEq(asset2.balanceOf(address(hub)), amount2, 'wrong hub token2 balance post-supply');
   }
@@ -663,12 +675,7 @@ contract LiquidityHubTest is BaseTest {
     uint256 userShares;
   }
 
-  function test_supply_fuzz_single_spoke_multi_supply(
-    uint256 assetId,
-    address user,
-    uint256 amount
-  ) public {
-    vm.assume(user != address(hub) && user != address(spoke1) && user != address(0));
+  function test_supply_fuzz_single_spoke_multi_supply(uint256 assetId, uint256 amount) public {
     assetId = bound(assetId, 0, hub.assetCount() - 1);
     amount = bound(amount, 1, type(uint128).max);
 
@@ -696,6 +703,8 @@ contract LiquidityHubTest is BaseTest {
     });
     Asset memory assetData;
     SpokeData memory spokeData;
+
+    uint256 runningBalance = asset.balanceOf(alice);
 
     for (uint256 i = 0; i < 5; i++) {
       assetData = hub.getAsset(assetId);
@@ -757,7 +766,7 @@ contract LiquidityHubTest is BaseTest {
         hub.getTotalAssets(assetId),
         'wrong hub token balance post-supply'
       );
-      assertEq(asset.balanceOf(alice), 0, 'wrong user token balance post-supply');
+      assertEq(asset.balanceOf(alice), runningBalance, 'wrong user token balance post-supply');
 
       // time flies
       uint256 elapsedTime = randomizer(1 days, 30 days, i);
@@ -769,17 +778,18 @@ contract LiquidityHubTest is BaseTest {
       p.totalAssets += p.userAssets;
       p.suppliedShares += p.userShares;
 
-      // deal(address(asset), user, p.userAssets);
-      // force update with action
+      // force update with action from separate user
       Utils.supply({
         hub: hub,
         assetId: assetId,
         spoke: address(spoke1),
         amount: p.userAssets,
         riskPremiumRad: 0,
-        user: user,
+        user: alice,
         onBehalfOf: address(spoke1)
       });
+
+      runningBalance -= p.userAssets;
     }
 
     assetData = hub.getAsset(assetId);
@@ -829,7 +839,7 @@ contract LiquidityHubTest is BaseTest {
       hub.getTotalAssets(assetId),
       'wrong hub token balance post-supply'
     );
-    assertEq(asset.balanceOf(alice), 0, 'wrong user token balance post-supply');
+    assertEq(asset.balanceOf(alice), runningBalance, 'wrong user token balance post-supply');
   }
 
   function test_withdraw() public {
