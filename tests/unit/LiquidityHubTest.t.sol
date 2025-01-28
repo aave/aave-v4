@@ -1201,7 +1201,11 @@ contract LiquidityHubTest is BaseTest {
     // asset
     assertEq(asset.balanceOf(address(spoke1)), 0, 'wrong spoke token balance pre-withdraw');
     assertEq(asset.balanceOf(address(hub)), amount, 'wrong hub token balance pre-withdraw');
-    assertEq(asset.balanceOf(alice), 0, 'wrong alice token balance pre-withdraw');
+    assertEq(
+      asset.balanceOf(alice),
+      MAX_SUPPLY_AMOUNT - amount,
+      'wrong alice token balance pre-withdraw'
+    );
 
     vm.expectEmit(address(asset));
     emit Transfer(address(hub), alice, amount);
@@ -1270,7 +1274,7 @@ contract LiquidityHubTest is BaseTest {
     // asset
     assertEq(asset.balanceOf(address(spoke1)), 0, 'wrong spoke token balance post-withdraw');
     assertEq(asset.balanceOf(address(hub)), 0, 'wrong hub token balance post-withdraw');
-    assertEq(asset.balanceOf(alice), amount, 'wrong alice token balance post-withdraw');
+    assertEq(asset.balanceOf(alice), MAX_SUPPLY_AMOUNT, 'wrong alice token balance post-withdraw');
   }
 
   function test_withdraw_all_with_interest() public {
@@ -1489,7 +1493,11 @@ contract LiquidityHubTest is BaseTest {
     });
 
     // bob withdraws all liquidity with interest
-    assertEq(tokenList.dai.balanceOf(bob), daiData.availableLiquidity, 'wrong bob dai balance');
+    assertEq(
+      tokenList.dai.balanceOf(bob),
+      daiData.availableLiquidity - supply2Amount - daiAmount,
+      'wrong bob dai balance'
+    );
 
     HubData memory hubData;
     hubData.daiData = hub.getAsset(daiAssetId);
