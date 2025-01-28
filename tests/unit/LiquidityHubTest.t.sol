@@ -100,11 +100,11 @@ contract LiquidityHubTest is BaseTest {
     assertEq(tokenList.dai.balanceOf(address(spoke1)), 0, 'spoke token balance pre-supply');
     assertEq(tokenList.dai.balanceOf(address(hub)), 0, 'hub token balance pre-supply');
 
-    vm.startPrank(address(spoke1));
     vm.expectEmit(address(hub));
     emit Supply(assetId, address(spoke1), amount);
+
+    vm.prank(address(spoke1));
     hub.supply(assetId, amount, 0, alice);
-    vm.stopPrank();
 
     assetData = hub.getAsset(assetId);
     spokeData = hub.getSpoke(assetId, address(spoke1));
@@ -161,18 +161,18 @@ contract LiquidityHubTest is BaseTest {
   /// @dev User makes a first supply, shares and assets amounts are correct, no precision loss
   function test_supply_fuzz(uint256 assetId, uint256 amount, uint256 riskPremiumRad) public {
     assetId = bound(assetId, 0, hub.assetCount() - 1);
-    amount = bound(amount, 1, type(uint128).max);
+    amount = bound(amount, 1, MAX_SUPPLY_AMOUNT);
     riskPremiumRad = bound(riskPremiumRad, 0, maxRiskPremiumRad); // no effect on supply
 
     IERC20 asset = hub.assetsList(assetId);
 
+    vm.startPrank(address(spoke1));
     vm.expectEmit(address(asset));
     emit Transfer(alice, address(hub), amount);
     vm.expectEmit(address(hub));
     emit Supply(assetId, address(spoke1), amount);
-
-    vm.prank(address(spoke1));
     hub.supply({assetId: assetId, amount: amount, riskPremiumRad: riskPremiumRad, supplier: alice});
+    vm.stopPrank();
 
     uint256 timestamp = vm.getBlockTimestamp();
 
@@ -235,27 +235,27 @@ contract LiquidityHubTest is BaseTest {
     address onBehalfOf
   ) public {
     assetId = bound(assetId, 0, hub.assetCount() - 2);
-    amount = bound(amount, 1, type(uint128).max);
-    amount2 = bound(amount2, 1, type(uint128).max);
+    amount = bound(amount, 1, MAX_SUPPLY_AMOUNT);
+    amount2 = bound(amount2, 1, MAX_SUPPLY_AMOUNT);
 
     IERC20 asset = hub.assetsList(assetId);
     IERC20 asset2 = hub.assetsList(assetId + 1);
 
-    vm.startPrank(address(spoke1));
     vm.expectEmit(address(asset));
     emit Transfer(alice, address(hub), amount);
     vm.expectEmit(address(hub));
     emit Supply(assetId, address(spoke1), amount);
-    hub.supply(assetId, amount, 0, alice);
-    vm.stopPrank();
 
-    vm.startPrank(address(spoke2));
+    vm.prank(address(spoke1));
+    hub.supply(assetId, amount, 0, alice);
+
     vm.expectEmit(address(asset2));
     emit Transfer(alice, address(hub), amount2);
     vm.expectEmit(address(hub));
     emit Supply(assetId + 1, address(spoke2), amount2);
+
+    vm.prank(address(spoke2));
     hub.supply(assetId + 1, amount2, 0, alice);
-    vm.stopPrank();
 
     uint256 timestamp = vm.getBlockTimestamp();
 
@@ -822,9 +822,8 @@ contract LiquidityHubTest is BaseTest {
     vm.expectEmit(address(hub));
     emit Withdraw(daiAssetId, address(spoke1), alice, amount);
 
-    vm.startPrank(address(spoke1));
+    vm.prank(address(spoke1));
     hub.withdraw({assetId: daiAssetId, to: alice, amount: amount, riskPremiumRad: 0});
-    vm.stopPrank();
 
     assetData = hub.getAsset(daiAssetId);
     spokeData = hub.getSpoke(daiAssetId, address(spoke1));
@@ -1879,10 +1878,10 @@ contract LiquidityHubTest is BaseTest {
     _updateActive(daiAssetId, false);
 
     // spoke1 restore all of drawn dai liquidity
-    vm.startPrank(address(spoke1));
     vm.expectRevert(TestErrors.ASSET_NOT_ACTIVE);
-    hub.restore(daiAssetId, 0, drawAmount, alice);
-    vm.stopPrank();
+
+    vm.prank(address(spoke1));
+    hub.restore({assetId: daiAssetId, amount: drawAmount, riskPremiumRad: 0, repayer: alice});
   }
 
   function test_restore_revertsWith_invalid_restore_amount() public {
@@ -1925,10 +1924,17 @@ contract LiquidityHubTest is BaseTest {
     });
 
     // alice restore invalid amount > drawn amount AND premium
-    vm.startPrank(address(spoke1));
     vm.expectRevert(TestErrors.INVALID_RESTORE_AMOUNT);
+
+    vm.prank(address(spoke1));
     hub.restore({assetId: daiAssetId, amount: drawAmount + 1, riskPremiumRad: 0, repayer: alice});
-    vm.stopPrank();
+  }
+
+  function test_restore_revertsWith_invalid_restore_amount0() public {
+    vm.expectRevert(TestErrors.INVALID_RESTORE_AMOUNT);
+
+    vm.prank(address(spoke1));
+    hub.restore({assetId: daiAssetId, amount: 0, riskPremiumRad: 0, repayer: alice});
   }
 
   function test_restore_revertsWith_invalid_restore_amount_with_interest() public {
@@ -2000,15 +2006,16 @@ contract LiquidityHubTest is BaseTest {
     uint256 cumulatedBaseDebt = drawAmount.rayMul(cumulatedBaseInterest);
 
     // alice restore invalid amount > drawn amount AND premium
-    vm.startPrank(address(spoke1));
+
     vm.expectRevert(TestErrors.INVALID_RESTORE_AMOUNT);
+
+    vm.prank(address(spoke1));
     hub.restore({
       assetId: daiAssetId,
       amount: cumulatedBaseDebt + 1,
       riskPremiumRad: 0,
       repayer: alice
     });
-    vm.stopPrank();
   }
 
   function test_restore_fuzz_revertsWith_invalid_restore_amount_with_interest(
@@ -2084,15 +2091,15 @@ contract LiquidityHubTest is BaseTest {
     uint256 cumulatedBaseDebt = drawAmount.rayMul(cumulatedBaseInterest);
 
     // alice restore invalid amount > drawn amount AND premium
-    vm.startPrank(address(spoke1));
     vm.expectRevert(TestErrors.INVALID_RESTORE_AMOUNT);
+
+    vm.prank(address(spoke1));
     hub.restore({
       assetId: daiAssetId,
       amount: cumulatedBaseDebt + 1,
       riskPremiumRad: 0,
       repayer: alice
     });
-    vm.stopPrank();
   }
 
   function test_restore_revertsWith_invalid_restore_amount_with_interest_and_premium() public {
@@ -2166,15 +2173,15 @@ contract LiquidityHubTest is BaseTest {
     uint256 accruedPremium = (cumulatedBaseDebt - drawAmount).radMul(riskPremiumRad);
 
     // alice restore invalid amount > drawn amount AND premium
-    vm.startPrank(address(spoke1));
     vm.expectRevert(TestErrors.INVALID_RESTORE_AMOUNT);
+
+    vm.prank(address(spoke1));
     hub.restore({
       assetId: daiAssetId,
       amount: cumulatedBaseDebt + accruedPremium + 1,
       riskPremiumRad: 0,
       repayer: alice
     });
-    vm.stopPrank();
   }
 
   function test_restore_fuzz_revertsWith_invalid_restore_amount_with_interest_and_premium(
@@ -2253,15 +2260,15 @@ contract LiquidityHubTest is BaseTest {
     uint256 accruedPremium = (cumulatedBaseDebt - drawAmount).radMul(riskPremiumRad);
 
     // alice restore invalid amount > drawn amount AND premium
-    vm.startPrank(address(spoke1));
     vm.expectRevert(TestErrors.INVALID_RESTORE_AMOUNT);
+
+    vm.prank(address(spoke1));
     hub.restore({
       assetId: daiAssetId,
       amount: cumulatedBaseDebt + accruedPremium + 1,
       riskPremiumRad: 0,
       repayer: alice
     });
-    vm.stopPrank();
   }
 
   /// @dev Restore some amount less than premium
@@ -2291,9 +2298,8 @@ contract LiquidityHubTest is BaseTest {
     uint256 accruedPremium = accruedBaseDebt.radMul(riskPremiumRad);
     uint256 restoreAmount = accruedPremium / 2;
 
-    vm.startPrank(address(spoke1));
+    vm.prank(address(spoke1));
     hub.restore({assetId: daiAssetId, amount: restoreAmount, riskPremiumRad: 0, repayer: alice});
-    vm.stopPrank();
 
     daiData = hub.getAsset(daiAssetId);
     SpokeData memory spoke1DaiData = hub.getSpoke(daiAssetId, address(spoke1));
@@ -2363,11 +2369,14 @@ contract LiquidityHubTest is BaseTest {
     );
     uint256 accruedBaseDebt = drawAmount.rayMul(cumulatedBaseInterest) - drawAmount;
     uint256 accruedPremium = accruedBaseDebt.radMul(riskPremiumRad);
-    restoreAmount = bound(restoreAmount, 1, accruedPremium); // within accrued premium
 
-    vm.startPrank(address(spoke1));
+    if (accruedPremium == 0) {
+      return;
+    }
+
+    restoreAmount = bound(restoreAmount, 1, accruedPremium); // within accrued premium
+    vm.prank(address(spoke1));
     hub.restore({assetId: daiAssetId, amount: restoreAmount, riskPremiumRad: 0, repayer: alice});
-    vm.stopPrank();
 
     daiData = hub.getAsset(daiAssetId);
     SpokeData memory spoke1DaiData = hub.getSpoke(daiAssetId, address(spoke1));
@@ -2431,9 +2440,8 @@ contract LiquidityHubTest is BaseTest {
     uint256 accruedPremium = accruedBaseDebt.radMul(riskPremiumRad);
     uint256 restoreAmount = accruedPremium + 1; // restore amount partially contributes to base debt
 
-    vm.startPrank(address(spoke1));
+    vm.prank(address(spoke1));
     hub.restore({assetId: daiAssetId, amount: restoreAmount, riskPremiumRad: 0, repayer: alice});
-    vm.stopPrank();
 
     daiData = hub.getAsset(daiAssetId);
     SpokeData memory spoke1DaiData = hub.getSpoke(daiAssetId, address(spoke1));

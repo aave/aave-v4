@@ -84,7 +84,7 @@ abstract contract BaseTest is Test, Events {
   using WadRayMath for uint256;
   using SharesMath for uint256;
 
-  uint256 internal constant MAX_SUPPLY_AMOUNT = 1e45; // TODO update if needed when precision issues resolved
+  uint256 internal constant MAX_SUPPLY_AMOUNT = 1e30;
 
   // TODO: update these mocked tokens with decimals as in the real contracts, ie USDC = 6, wbtc = 8, etc.?
   IERC20 internal usdc;

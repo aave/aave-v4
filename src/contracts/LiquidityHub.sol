@@ -368,9 +368,8 @@ contract LiquidityHub is ILiquidityHub {
   ) internal view {
     // TODO: Other cases of status (frozen, paused)
     require(asset.config.active, 'ASSET_NOT_ACTIVE');
-
-    // Ensure spoke is not restoring more than supplied
-    require(amountRestored <= amountDrawn, 'INVALID_RESTORE_AMOUNT');
+    // Ensure spoke is not restoring more than supplied or equal 0
+    require(amountRestored > 0 && amountRestored <= amountDrawn, 'INVALID_RESTORE_AMOUNT');
   }
 
   // @dev Utilizes existing asset & spoke: `baseBorrowIndex`, `riskPremiumRad`
