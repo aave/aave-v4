@@ -32,7 +32,7 @@ library Utils {
     uint256 amount,
     uint256 riskPremiumRad,
     address user,
-    address onBehalfOf // todo: implement
+    address to // todo: implement
   ) internal {
     vm.startPrank(user);
     hub.assetsList(assetId).approve(address(hub), amount);

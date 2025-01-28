@@ -9,30 +9,73 @@ import '../libraries/types/DataTypes.sol';
  * @notice Basic interface for LiquidityHub
  */
 interface ILiquidityHub {
-  function draw(
-    uint256 assetId,
-    address to,
-    uint256 amount,
-    uint256 riskPremium
-  ) external returns (uint256, uint256);
-  function restore(
-    uint256 assetId,
-    uint256 amount,
-    uint256 riskPremium,
-    address repayer
-  ) external returns (uint256, uint256);
+  /**
+   * @notice Supply asset on behalf of user.
+   * @dev Only callable by spokes.
+   * @param assetId The asset id.
+   * @param amount The amount of asset to withdraw.
+   * @param riskPremiumRad The aggregated risk premium of the calling spoke.
+   * @param supplier The address which is supplying the asset (user).
+   * @return The new base borrow index.
+   * @return The sharesAmount supplied.
+   */
   function supply(
     uint256 assetId,
     uint256 amount,
-    uint256 riskPremium,
+    uint256 riskPremiumRad,
     address supplier
   ) external returns (uint256, uint256);
+
+  /**
+   * @notice Withdraw supplied asset on behalf of user.
+   * @dev Only callable by spokes.
+   * @param assetId The asset id.
+   * @param to The address to transfer the assets to.
+   * @param amount The amount of asset to withdraw.
+   * @param riskPremiumRad The aggregated risk premium of the calling spoke.
+   * @return The sharesAmount withdrawn.
+   */
   function withdraw(
     uint256 assetId,
     address to,
     uint256 amount,
-    uint256 riskPremium
+    uint256 riskPremiumRad
   ) external returns (uint256);
+
+  /**
+   * @notice Draw debt on behalf of user.
+   * @dev Only callable by spokes.
+   * @param assetId The asset id.
+   * @param to The address to draw debt to (user).
+   * @param amount The amount of debt to draw.
+   * @param riskPremiumRad The aggregated risk premium of the calling spoke.
+   * @return The new base borrow index.
+   * @return The amount of debt drawn.
+   */
+  function draw(
+    uint256 assetId,
+    address to,
+    uint256 amount,
+    uint256 riskPremiumRad
+  ) external returns (uint256, uint256);
+
+  /**
+   * @notice Repays debt on behalf of user.
+   * @dev Only callable by spokes.
+   * @dev Interest is always paid off first from premium, then from base.
+   * @param assetId The asset id.
+   * @param amount The amount to repay.
+   * @param riskPremiumRad The aggregated risk premium of the calling spoke.
+   * @param repayer The address who is trying to settle the credit line.
+   * @return The new base borrow index.
+   * @return The amount of debt restored.
+   */
+  function restore(
+    uint256 assetId,
+    uint256 amount,
+    uint256 riskPremiumRad,
+    address repayer
+  ) external returns (uint256, uint256);
 
   function getBaseInterestRate(uint256 assetId) external view returns (uint256);
 

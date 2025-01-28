@@ -149,16 +149,6 @@ contract LiquidityHub is ILiquidityHub {
   // Users
   // /////
 
-  /**
-   * @notice Supply asset on behalf of user.
-   * @dev Only callable by spokes.
-   * @param assetId The asset id.
-   * @param amount The amount of asset to withdraw.
-   * @param riskPremiumRad The aggregated risk premium of the calling spoke.
-   * @param supplier The address which is supplying the asset (user).
-   * @return The new base borrow index.
-   * @return The sharesAmount supplied.
-   */
   function supply(
     uint256 assetId,
     uint256 amount,
@@ -197,15 +187,6 @@ contract LiquidityHub is ILiquidityHub {
     return (nextBaseBorrowIndex, sharesAmount);
   }
 
-  /**
-   * @notice Withdraw supplied asset on behalf of user.
-   * @dev Only callable by spokes.
-   * @param assetId The asset id.
-   * @param to The address to withdraw on behalf of.
-   * @param amount The amount of asset to withdraw.
-   * @param riskPremiumRad The aggregated risk premium of the calling spoke.
-   * @return The sharesAmount withdrawn.
-   */
   function withdraw(
     uint256 assetId,
     address to,
@@ -236,16 +217,6 @@ contract LiquidityHub is ILiquidityHub {
     return sharesAmount;
   }
 
-  /**
-   * @notice Draw debt on behalf of user.
-   * @dev Only callable by spokes.
-   * @param assetId The asset id.
-   * @param to The address to draw debt to (user).
-   * @param amount The amount of debt to draw.
-   * @param riskPremiumRad The aggregated risk premium of the calling spoke.
-   * @return The new base borrow index.
-   * @return The amount of debt drawn.
-   */
   function draw(
     uint256 assetId,
     address to,
@@ -272,17 +243,6 @@ contract LiquidityHub is ILiquidityHub {
     return (nextBaseBorrowIndex, amount);
   }
 
-  /**
-   * @notice Repays debt on behalf of user.
-   * @dev Only callable by spokes.
-   * @dev Interest is always paid off first from premium, then from base.
-   * @param assetId The asset id.
-   * @param amount The amount to repay.
-   * @param riskPremiumRad The aggregated risk premium of the calling spoke.
-   * @param repayer The address who is trying to settle the credit line.
-   * @return The new base borrow index.
-   * @return The amount of debt restored.
-   */
   function restore(
     uint256 assetId,
     uint256 amount,
@@ -442,8 +402,8 @@ contract LiquidityHub is ILiquidityHub {
 
     uint256 newSpokeDebt = baseDebtChange > 0
       ? existingSpokeDebt + uint256(baseDebtChange) // debt added
-      // force underflow: only possible when spoke takes repays amount more than net drawn
-      : existingSpokeDebt - uint256(-baseDebtChange); // debt restored
+      : // force underflow: only possible when spoke takes repays amount more than net drawn
+      existingSpokeDebt - uint256(-baseDebtChange); // debt restored
 
     (uint256 newAssetRiskPremium, uint256 newAssetDebt) = MathUtils.addToWeightedAverage(
       assetRiskPremiumWithoutCurrent,

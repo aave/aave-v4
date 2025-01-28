@@ -118,7 +118,7 @@ abstract contract BaseTest is Test, Events {
   uint256 internal mintAmount_USDX = MAX_SUPPLY_AMOUNT;
   uint256 internal mintAmount_DAI = MAX_SUPPLY_AMOUNT;
   uint256 internal mintAmount_WBTC = MAX_SUPPLY_AMOUNT;
-  uint256 internal mintAmount_weth = MAX_SUPPLY_AMOUNT;
+  uint256 internal mintAmount_WETH = MAX_SUPPLY_AMOUNT;
 
   struct TokenList {
     WETH9 weth;
@@ -170,7 +170,7 @@ abstract contract BaseTest is Test, Events {
       tokenList.usdx.mint(users[x], mintAmount_USDX);
       tokenList.dai.mint(users[x], mintAmount_DAI);
       tokenList.wbtc.mint(users[x], mintAmount_WBTC);
-      deal(address(tokenList.weth), users[x], mintAmount_weth);
+      deal(address(tokenList.weth), users[x], mintAmount_WETH);
 
       vm.startPrank(users[x]);
       tokenList.weth.approve(address(hub), type(uint256).max);
@@ -179,16 +179,6 @@ abstract contract BaseTest is Test, Events {
       tokenList.wbtc.approve(address(hub), type(uint256).max);
       vm.stopPrank();
     }
-
-    // address[2] memory usersList = [USER1, USER2];
-    // for (uint256 x; x < usersList.length; ++x) {
-    //   vm.startPrank(usersList[x]);
-    //   tokenList.weth.approve(address(hub), type(uint256).max);
-    //   tokenList.usdx.approve(address(hub), type(uint256).max);
-    //   tokenList.dai.approve(address(hub), type(uint256).max);
-    //   tokenList.wbtc.approve(address(hub), type(uint256).max);
-    //   vm.stopPrank();
-    // }
   }
   function configureTokenList() internal {
     // todo rm override
