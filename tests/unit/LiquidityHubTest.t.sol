@@ -102,7 +102,11 @@ contract LiquidityHubTest is BaseTest {
 
     // deal(address(tokenList.dai), alice, amount);
 
-    assertEq(tokenList.dai.balanceOf(alice), amount, 'wrong user token balance pre-supply');
+    assertEq(
+      tokenList.dai.balanceOf(alice),
+      MAX_SUPPLY_AMOUNT,
+      'wrong user token balance pre-supply'
+    );
     assertEq(tokenList.dai.balanceOf(address(spoke1)), 0, 'wrong spoke token balance pre-supply');
     assertEq(tokenList.dai.balanceOf(address(hub)), 0, 'wrong hub token balance pre-supply');
 
@@ -169,7 +173,11 @@ contract LiquidityHubTest is BaseTest {
       timestamp,
       'wrong spoke lastUpdateTimestamp post-supply'
     );
-    assertEq(tokenList.dai.balanceOf(alice), 0, 'wrong user token balance post-supply');
+    assertEq(
+      tokenList.dai.balanceOf(alice),
+      MAX_SUPPLY_AMOUNT - amount,
+      'wrong user token balance post-supply'
+    );
     assertEq(tokenList.dai.balanceOf(address(spoke1)), 0, 'wrong spoke token balance post-supply');
     assertEq(tokenList.dai.balanceOf(address(hub)), amount, 'wrong hub token balance post-supply');
   }
@@ -893,7 +901,11 @@ contract LiquidityHubTest is BaseTest {
     // dai
     assertEq(tokenList.dai.balanceOf(address(spoke1)), 0, 'wrong spoke token balance pre-withdraw');
     assertEq(tokenList.dai.balanceOf(address(hub)), amount, 'wrong hub token balance pre-withdraw');
-    assertEq(tokenList.dai.balanceOf(alice), 0, 'wrong user token balance pre-withdraw');
+    assertEq(
+      tokenList.dai.balanceOf(alice),
+      MAX_SUPPLY_AMOUNT,
+      'wrong user token balance pre-withdraw'
+    );
 
     vm.expectEmit(address(tokenList.dai));
     emit Transfer(address(hub), alice, amount);
@@ -1311,7 +1323,11 @@ contract LiquidityHubTest is BaseTest {
     });
 
     // bob withdraws all liquidity with interest
-    assertEq(tokenList.dai.balanceOf(bob), daiData.availableLiquidity, 'wrong bob dai balance');
+    assertEq(
+      tokenList.dai.balanceOf(bob),
+      daiData.availableLiquidity + MAX_SUPPLY_AMOUNT,
+      'wrong bob dai balance'
+    );
 
     daiData = hub.getAsset(daiAssetId);
     SpokeData memory spoke1DaiData = hub.getSpoke(daiAssetId, address(spoke1));
@@ -2946,7 +2962,11 @@ contract LiquidityHubTest is BaseTest {
     assertEq(tokenList.dai.balanceOf(address(spoke2)), 0, 'wrong spoke2 dai final balance');
     // weth
     assertEq(tokenList.weth.balanceOf(address(hub)), wethAmount, 'wrong hub weth final balance');
-    assertEq(tokenList.weth.balanceOf(alice), 0, 'wrong alice weth final balance');
+    assertEq(
+      tokenList.weth.balanceOf(alice),
+      MAX_SUPPLY_AMOUNT - wethAmount,
+      'wrong alice weth final balance'
+    );
     assertEq(tokenList.weth.balanceOf(bob), MAX_SUPPLY_AMOUNT, 'wrong bob weth final balance');
     assertEq(tokenList.weth.balanceOf(address(spoke1)), 0, 'wrong spoke1 weth final balance');
     assertEq(tokenList.weth.balanceOf(address(spoke2)), 0, 'wrong spoke2 weth final balance');
