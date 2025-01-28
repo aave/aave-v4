@@ -611,7 +611,7 @@ contract LiquidityHubTest is BaseTest {
 
   function test_supply_fuzz_single_spoke_multi_supply(uint256 assetId, uint256 amount) public {
     assetId = bound(assetId, 0, hub.assetCount() - 1);
-    amount = bound(amount, 1, type(uint128).max);
+    amount = bound(amount, 1, MAX_SUPPLY_AMOUNT / 2);
 
     uint256 timestamp = vm.getBlockTimestamp();
 
@@ -879,8 +879,8 @@ contract LiquidityHubTest is BaseTest {
     uint256 riskPremiumRad
   ) public {
     uint256 assetId = 0;
-    amount = bound(amount, 1, type(uint128).max);
-    amount2 = bound(amount2, 1, type(uint128).max);
+    amount = bound(amount, 1, MAX_SUPPLY_AMOUNT - 1);
+    amount2 = bound(amount2, 1, MAX_SUPPLY_AMOUNT - amount);
     riskPremiumRad = bound(riskPremiumRad, 0, maxRiskPremiumRad); // no effect on withdraw because no drawn
 
     IERC20 asset = hub.assetsList(assetId);
@@ -999,7 +999,7 @@ contract LiquidityHubTest is BaseTest {
 
   function test_withdraw_fuzz(uint256 assetId, uint256 amount) public {
     assetId = bound(assetId, 0, hub.assetCount() - 1);
-    amount = bound(amount, 1, type(uint128).max);
+    amount = bound(amount, 1, MAX_SUPPLY_AMOUNT);
 
     IERC20 asset = hub.assetsList(assetId);
 
