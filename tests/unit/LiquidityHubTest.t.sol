@@ -388,7 +388,7 @@ contract LiquidityHubTest is BaseTest {
     uint256 drawAmount = daiAmount / 2;
     uint256 rate = uint256(10_00).bpsToRay();
 
-    _supplyHubAndDrawLiquidity({
+    _supplyAndDrawLiquidity({
       daiAmount: daiAmount,
       wethAmount: wethAmount,
       daiDrawAmount: drawAmount,
@@ -445,7 +445,7 @@ contract LiquidityHubTest is BaseTest {
     uint256 riskPremiumRad = uint256(20_00).bpsToRad();
     uint256 rate = uint256(10_00).bpsToRay();
 
-    _supplyHubAndDrawLiquidity({
+    _supplyAndDrawLiquidity({
       daiAmount: daiAmount,
       wethAmount: wethAmount,
       daiDrawAmount: drawAmount,
@@ -1135,7 +1135,7 @@ contract LiquidityHubTest is BaseTest {
     uint256 lastUpdateTimestamp = vm.getBlockTimestamp();
     uint256 rate = uint256(10_00).bpsToRay();
 
-    _supplyHubAndDrawLiquidity({
+    _supplyAndDrawLiquidity({
       daiAmount: daiAmount,
       wethAmount: wethAmount,
       daiDrawAmount: drawAmount,
@@ -1265,7 +1265,7 @@ contract LiquidityHubTest is BaseTest {
 
     uint256 lastUpdateTimestamp = vm.getBlockTimestamp();
 
-    _supplyHubAndDrawLiquidity({
+    _supplyAndDrawLiquidity({
       daiAmount: daiAmount,
       wethAmount: wethAmount,
       daiDrawAmount: drawAmount,
@@ -2268,7 +2268,7 @@ contract LiquidityHubTest is BaseTest {
     uint256 rate = uint256(15_00).bpsToRay();
     uint256 riskPremiumRad = uint256(30_00).bpsToRad();
 
-    _supplyHubAndDrawLiquidity({
+    _supplyAndDrawLiquidity({
       daiAmount: daiAmount,
       wethAmount: wethAmount,
       daiDrawAmount: drawAmount,
@@ -2341,7 +2341,7 @@ contract LiquidityHubTest is BaseTest {
     rate = bound(rate, 0, 200_00).bpsToRay(); // 0% to 200%
     riskPremiumRad = bound(riskPremiumRad, 0, maxRiskPremiumRad);
 
-    _supplyHubAndDrawLiquidity({
+    _supplyAndDrawLiquidity({
       daiAmount: daiAmount,
       wethAmount: wethAmount,
       daiDrawAmount: drawAmount,
@@ -2410,7 +2410,7 @@ contract LiquidityHubTest is BaseTest {
     uint256 rate = uint256(15_00).bpsToRay();
     uint256 riskPremiumRad = uint256(30_00).bpsToRad();
 
-    _supplyHubAndDrawLiquidity({
+    _supplyAndDrawLiquidity({
       daiAmount: daiAmount,
       wethAmount: wethAmount,
       daiDrawAmount: drawAmount,
@@ -2479,7 +2479,7 @@ contract LiquidityHubTest is BaseTest {
     rate = bound(rate, 0, 200_00).bpsToRay(); // 0% to 200%
     riskPremiumRad = bound(riskPremiumRad, 0, maxRiskPremiumRad);
 
-    _supplyHubAndDrawLiquidity({
+    _supplyAndDrawLiquidity({
       daiAmount: daiAmount,
       wethAmount: wethAmount,
       daiDrawAmount: drawAmount,
@@ -2845,7 +2845,7 @@ contract LiquidityHubTest is BaseTest {
   }
 
   /// @dev spoke1 (alice) supplies dai, spoke2 (bob) supplies weth, spoke1 (alice) draws dai
-  function _supplyHubAndDrawLiquidity(
+  function _supplyAndDrawLiquidity(
     uint256 daiAmount,
     uint256 wethAmount,
     uint256 daiDrawAmount,
