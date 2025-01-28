@@ -14,10 +14,10 @@ interface ILiquidityHub {
    * @dev Only callable by spokes.
    * @param assetId The asset id.
    * @param amount The amount of asset to supply.
-   * @param riskPremiumRad The aggregated risk premium of the calling spoke.
-   * @param supplier The address which is supplying the asset (user).
+   * @param riskPremiumRad The new aggregated risk premium of the calling spoke.
+   * @param supplier The address which we pull assets from (user).
    * @return The new base borrow index.
-   * @return The sharesAmount supplied.
+   * @return The amount of shares supplied.
    */
   function supply(
     uint256 assetId,
@@ -32,8 +32,8 @@ interface ILiquidityHub {
    * @param assetId The asset id.
    * @param to The address to transfer the assets to.
    * @param amount The amount of asset to withdraw.
-   * @param riskPremiumRad The aggregated risk premium of the calling spoke.
-   * @return The sharesAmount withdrawn.
+   * @param riskPremiumRad The new aggregated risk premium of the calling spoke.
+   * @return The amount of shares withdrawn.
    */
   function withdraw(
     uint256 assetId,
@@ -48,8 +48,7 @@ interface ILiquidityHub {
    * @param assetId The asset id.
    * @param to The address to draw debt to (user).
    * @param amount The amount of debt to draw.
-   * @param riskPremiumRad The aggregated risk premium of the calling spoke.
-   * @return The new base borrow index.
+   * @param riskPremiumRad The new aggregated risk premium of the calling spoke.
    * @return The amount of debt drawn.
    */
   function draw(
@@ -57,7 +56,7 @@ interface ILiquidityHub {
     address to,
     uint256 amount,
     uint256 riskPremiumRad
-  ) external returns (uint256, uint256);
+  ) external returns (uint256);
 
   /**
    * @notice Repays debt on behalf of user.
@@ -65,7 +64,7 @@ interface ILiquidityHub {
    * @dev Interest is always paid off first from premium, then from base.
    * @param assetId The asset id.
    * @param amount The amount to repay.
-   * @param riskPremiumRad The aggregated risk premium of the calling spoke.
+   * @param riskPremiumRad The new aggregated risk premium of the calling spoke.
    * @param repayer The address who is trying to settle the credit line.
    * @return The new base borrow index.
    * @return The amount of debt restored.

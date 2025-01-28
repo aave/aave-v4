@@ -145,7 +145,7 @@ contract Spoke is ISpoke {
 
     // TODO HF check
     (, uint256 newAggregatedRiskPremium) = _refreshRiskPremium();
-    (, uint256 userDebt) = liquidityHub.draw(assetId, to, amount, newAggregatedRiskPremium);
+    uint256 userDebt = liquidityHub.draw(assetId, to, amount, newAggregatedRiskPremium);
     // debt still goes to original msg.sender
     users[assetId][msg.sender].debt += userDebt;
 
