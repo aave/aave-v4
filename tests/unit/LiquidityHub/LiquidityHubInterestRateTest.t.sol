@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.0;
 
-import '../BaseTest.t.sol';
+import 'tests/BaseTest.t.sol';
 import {SpokeData} from 'src/contracts/LiquidityHub.sol';
 import {Asset} from 'src/contracts/LiquidityHub.sol';
 import {Utils} from 'tests/Utils.t.sol';

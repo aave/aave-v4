@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.0;
 
-import '../BaseTest.t.sol';
+import 'tests/BaseTest.t.sol';
 
 struct TestDrawAmountInput {
   uint256 spoke1;
