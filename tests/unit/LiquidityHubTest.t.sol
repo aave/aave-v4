@@ -166,13 +166,13 @@ contract LiquidityHubTest is BaseTest {
 
     IERC20 asset = hub.assetsList(assetId);
 
-    vm.startPrank(address(spoke1));
     vm.expectEmit(address(asset));
     emit Transfer(alice, address(hub), amount);
     vm.expectEmit(address(hub));
     emit Supply(assetId, address(spoke1), amount);
+
+    vm.prank(address(spoke1));
     hub.supply({assetId: assetId, amount: amount, riskPremiumRad: riskPremiumRad, supplier: alice});
-    vm.stopPrank();
 
     uint256 timestamp = vm.getBlockTimestamp();
 
