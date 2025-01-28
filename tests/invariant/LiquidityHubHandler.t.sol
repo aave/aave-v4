@@ -83,7 +83,7 @@ contract LiquidityHubHandler is Test {
       amount: amount,
       riskPremiumRad: 0,
       user: user,
-      onBehalfOf: onBehalfOf
+      to: onBehalfOf
     });
 
     _updateState(assetId);
