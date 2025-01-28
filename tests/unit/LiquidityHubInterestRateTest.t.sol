@@ -4,6 +4,7 @@ pragma solidity ^0.8.0;
 import '../BaseTest.t.sol';
 import {SpokeData} from 'src/contracts/LiquidityHub.sol';
 import {Asset} from 'src/contracts/LiquidityHub.sol';
+import {Utils} from 'tests/Utils.t.sol';
 
 contract LiquidityHubInterestRateTest is BaseTest {
   using SharesMath for uint256;
@@ -310,17 +311,13 @@ contract LiquidityHubAccrueInterestTest is BaseTest {
   function test_accrueInterest_OnlySupply(uint40 elapsed) public {
     uint256 startTime = vm.getBlockTimestamp();
 
-    vm.startPrank(address(spoke1));
-    hub.supply(daiAssetId, 1000e18, 0, address(spoke1));
-    vm.stopPrank();
+    Utils.supply(vm, hub, daiAssetId, address(spoke1), 1000e18, address(spoke1), address(spoke1));
 
     // Time passes
     skip(elapsed);
 
     // Spoke 2 does a supply to accrue interest
-    vm.startPrank(address(spoke2));
-    hub.supply(daiAssetId, 1000e18, 0, address(spoke2));
-    vm.stopPrank();
+    Utils.supply(vm, hub, daiAssetId, address(spoke2), 1000e18, address(spoke2), address(spoke2));
 
     Asset memory daiInfo = hub.getAsset(daiAssetId);
 
@@ -335,19 +332,15 @@ contract LiquidityHubAccrueInterestTest is BaseTest {
     uint256 startTime = vm.getBlockTimestamp();
     uint256 initialDebt = 100e18;
 
-    vm.startPrank(address(spoke1));
-    hub.supply(daiAssetId, 1000e18, 0, address(spoke1));
-    hub.draw(daiAssetId, address(spoke1), initialDebt, 0);
+    Utils.supply(vm, hub, daiAssetId, address(spoke1), 1000e18, address(spoke1), address(spoke1));
+    Utils.draw(vm, hub, daiAssetId, address(spoke1), address(spoke1), initialDebt, address(spoke1));
     uint256 baseBorrowRate = hub.getBaseInterestRate(daiAssetId);
-    vm.stopPrank();
 
     // Time passes
     skip(elapsed);
 
     // Spoke 2 does a supply to accrue interest
-    vm.startPrank(address(spoke2));
-    hub.supply(daiAssetId, 1000e18, 0, address(spoke2));
-    vm.stopPrank();
+    Utils.supply(vm, hub, daiAssetId, address(spoke2), 1000e18, address(spoke2), address(spoke2));
 
     Asset memory daiInfo = hub.getAsset(daiAssetId);
 
@@ -369,19 +362,31 @@ contract LiquidityHubAccrueInterestTest is BaseTest {
     uint256 supplyAmount = borrowAmount * 2;
     uint256 startTime = vm.getBlockTimestamp();
 
-    vm.startPrank(address(spoke1));
-    hub.supply(daiAssetId, supplyAmount, 0, address(spoke1));
-    hub.draw(daiAssetId, address(spoke1), borrowAmount, 0);
+    Utils.supply(
+      vm,
+      hub,
+      daiAssetId,
+      address(spoke1),
+      supplyAmount,
+      address(spoke1),
+      address(spoke1)
+    );
+    Utils.draw(
+      vm,
+      hub,
+      daiAssetId,
+      address(spoke1),
+      address(spoke1),
+      borrowAmount,
+      address(spoke1)
+    );
     uint256 baseBorrowRate = hub.getBaseInterestRate(daiAssetId);
-    vm.stopPrank();
 
     // Time passes
     skip(elapsed);
 
     // Spoke 2 does a supply to accrue interest
-    vm.startPrank(address(spoke2));
-    hub.supply(daiAssetId, 1000e18, 0, address(spoke2));
-    vm.stopPrank();
+    Utils.supply(vm, hub, daiAssetId, address(spoke2), 1000e18, address(spoke2), address(spoke2));
 
     Asset memory daiInfo = hub.getAsset(daiAssetId);
 
@@ -411,9 +416,7 @@ contract LiquidityHubAccrueInterestTest is BaseTest {
     skip(elapsed);
 
     // Spoke 2 does a supply to accrue interest
-    vm.startPrank(address(spoke2));
-    hub.supply(daiAssetId, 1000e18, 0, address(spoke2));
-    vm.stopPrank();
+    Utils.supply(vm, hub, daiAssetId, address(spoke2), 1000e18, address(spoke2), address(spoke2));
 
     Asset memory daiInfo = hub.getAsset(daiAssetId);
 
@@ -447,9 +450,7 @@ contract LiquidityHubAccrueInterestTest is BaseTest {
     skip(elapsed);
 
     // Spoke 2 does a supply to accrue interest
-    vm.startPrank(address(spoke2));
-    hub.supply(daiAssetId, 1000e18, 0, address(spoke2));
-    vm.stopPrank();
+    Utils.supply(vm, hub, daiAssetId, address(spoke2), 1000e18, address(spoke2), address(spoke2));
 
     Asset memory daiInfo = hub.getAsset(daiAssetId);
 
@@ -485,9 +486,7 @@ contract LiquidityHubAccrueInterestTest is BaseTest {
     skip(elapsed);
 
     // Spoke 2 does a supply to accrue interest
-    vm.startPrank(address(spoke2));
-    hub.supply(daiAssetId, 1000e18, 0, address(spoke2));
-    vm.stopPrank();
+    Utils.supply(vm, hub, daiAssetId, address(spoke2), 1000e18, address(spoke2), address(spoke2));
 
     // Spoke 1's debt individually has not yet accrued, even though total debt has accrued
     assertEq(hub.getSpoke(daiAssetId, address(spoke1)).baseDebt, borrowAmount);
@@ -511,18 +510,14 @@ contract LiquidityHubAccrueInterestTest is BaseTest {
       abi.encode(baseBorrowRate)
     );
     // Make an action to cache this new borrow rate
-    vm.startPrank(address(spoke2));
-    hub.supply(daiAssetId, 1000e18, 0, address(spoke2));
-    vm.stopPrank();
+    Utils.supply(vm, hub, daiAssetId, address(spoke2), 1000e18, address(spoke2), address(spoke2));
 
     lastUpdate = vm.getBlockTimestamp();
     // Time passes
     skip(elapsed);
 
     // Spoke 2 does a supply to accrue interest
-    vm.startPrank(address(spoke2));
-    hub.supply(daiAssetId, 1000e18, 0, address(spoke2));
-    vm.stopPrank();
+    Utils.supply(vm, hub, daiAssetId, address(spoke2), 1000e18, address(spoke2), address(spoke2));
 
     // Spoke 1's debt individually has not yet accrued, even though total debt has accrued
     assertEq(hub.getSpoke(daiAssetId, address(spoke1)).baseDebt, borrowAmount);
