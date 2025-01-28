@@ -2256,7 +2256,7 @@ contract LiquidityHubTest is BaseTest {
       spoke: address(spoke2),
       amount: daiAmount,
       riskPremiumRad: 0,
-      user: address(spoke2),
+      user: bob,
       onBehalfOf: address(spoke2)
     });
 
@@ -2283,7 +2283,7 @@ contract LiquidityHubTest is BaseTest {
       spoke: address(spoke2),
       amount: daiAmount / 5,
       riskPremiumRad: 0,
-      user: address(spoke2),
+      user: bob,
       onBehalfOf: address(spoke2)
     });
 
@@ -2937,7 +2937,11 @@ contract LiquidityHubTest is BaseTest {
       drawAmount - restoreAmount + MAX_SUPPLY_AMOUNT,
       'wrong alice dai final balance'
     );
-    assertEq(tokenList.dai.balanceOf(bob), 0, 'wrong bob dai final balance');
+    assertEq(
+      tokenList.dai.balanceOf(bob),
+      MAX_SUPPLY_AMOUNT - daiAmount,
+      'wrong bob dai final balance'
+    );
     assertEq(tokenList.dai.balanceOf(address(spoke1)), 0, 'wrong spoke1 dai final balance');
     assertEq(tokenList.dai.balanceOf(address(spoke2)), 0, 'wrong spoke2 dai final balance');
     // weth
