@@ -1599,7 +1599,7 @@ contract LiquidityHubTest is BaseTest {
       spoke: address(spoke1),
       amount: amount,
       riskPremiumRad: 0,
-      user: address(spoke1),
+      user: alice,
       onBehalfOf: address(spoke1)
     });
 
@@ -1609,36 +1609,24 @@ contract LiquidityHubTest is BaseTest {
       assetId: daiAssetId,
       spoke: address(spoke1),
       amount: amount,
-      to: address(spoke1),
+      to: alice,
       riskPremiumRad: 0,
       onBehalfOf: address(spoke1)
     });
 
-    vm.prank(address(spoke1));
     vm.expectRevert(TestErrors.SUPPLIED_AMOUNT_EXCEEDED);
+
+    vm.prank(address(spoke1));
     hub.withdraw(daiAssetId, address(spoke1), amount, 0);
   }
 
   function test_withdraw_revertsWith_asset_not_active() public {
     uint256 amount = 100e18;
-
-    // User supply
-    // deal(address(tokenList.dai), address(spoke1), amount);
-    Utils.supply({
-      hub: hub,
-      assetId: daiAssetId,
-      spoke: address(spoke1),
-      amount: amount,
-      riskPremiumRad: 0,
-      user: address(spoke1),
-      onBehalfOf: address(spoke1)
-    });
-
     _updateActive(daiAssetId, false);
 
-    vm.prank(address(spoke1));
     vm.expectRevert(TestErrors.ASSET_NOT_ACTIVE);
-    hub.withdraw(daiAssetId, address(spoke1), amount, 0);
+    vm.prank(address(spoke1));
+    hub.withdraw(daiAssetId, alice, amount, 0);
   }
 
   function test_draw_same_block() public {
