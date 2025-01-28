@@ -1398,8 +1398,8 @@ contract LiquidityHubTest is BaseTest {
     uint256 daiAmount = 100e18;
     uint256 wethAmount = 10e18;
 
-    drawAmount = bound(drawAmount, 1, 100) * 1e18; // within supplied dai amount
-    skipTime = bound(skipTime, 1, 365 * 10) * 1 days; // 1 day to 10 years
+    drawAmount = bound(drawAmount, 1, daiAmount); // within supplied dai amount
+    skipTime = bound(skipTime, 1, 365 * 10 * 1 days); // 1 day to 10 years
     rate = bound(rate, 0, 200_00).bpsToRay(); // .1% to 200%
     riskPremiumRad = bound(riskPremiumRad, 0, maxRiskPremiumRad);
 
@@ -2159,8 +2159,8 @@ contract LiquidityHubTest is BaseTest {
     uint256 daiAmount = 100e18;
     uint256 wethAmount = 10e18;
 
-    drawAmount = bound(drawAmount, 1, 100) * 1e18; // within supplied dai amount
-    skipTime = bound(skipTime, 1, 365 * 10) * 1 days; // 1 day to 10 years
+    drawAmount = bound(drawAmount, 1, daiAmount); // within supplied dai amount
+    skipTime = bound(skipTime, 1, 365 * 10 * 1 days); // 1 day to 10 years
     rate = bound(rate, 0, 200_00).bpsToRay(); // .1% to 200%
 
     vm.mockCall(
@@ -2326,8 +2326,8 @@ contract LiquidityHubTest is BaseTest {
     uint256 daiAmount = 100e18;
     uint256 wethAmount = 10e18;
 
-    drawAmount = bound(drawAmount, 1, 100) * 1e18; // within supplied dai amount
-    skipTime = bound(skipTime, 1, 365 * 10) * 1 days; // 1 day to 10 years
+    drawAmount = bound(drawAmount, 1, daiAmount); // within supplied dai amount
+    skipTime = bound(skipTime, 1, 365 * 10 * 1 days); // 1 day to 10 years
     rate = bound(rate, 0, 200_00).bpsToRay(); // .1% to 200%
     riskPremiumRad = bound(riskPremiumRad, 0, maxRiskPremiumRad);
 
@@ -2485,8 +2485,8 @@ contract LiquidityHubTest is BaseTest {
     uint256 daiAmount = 100e18;
     uint256 wethAmount = 10e18;
 
-    drawAmount = bound(drawAmount, 1, 100) * 1e18; // within supplied dai amount
-    skipTime = bound(skipTime, 1, 365 * 10) * 1 days; // 1 day to 10 years
+    drawAmount = bound(drawAmount, 1, daiAmount); // within supplied dai amount
+    skipTime = bound(skipTime, 1, 365 * 10 * 1 days); // 1 day to 10 years
     rate = bound(rate, 0, 200_00).bpsToRay(); // 0% to 200%
     riskPremiumRad = bound(riskPremiumRad, 0, maxRiskPremiumRad);
 
@@ -2629,8 +2629,8 @@ contract LiquidityHubTest is BaseTest {
     uint256 daiAmount = 100e18;
     uint256 wethAmount = 10e18;
 
-    drawAmount = bound(drawAmount, 1, 100) * 1e18; // within supplied dai amount
-    skipTime = bound(skipTime, 1, 365 * 10) * 1 days; // 1 day to 10 years
+    drawAmount = bound(drawAmount, 1, daiAmount); // within supplied dai amount
+    skipTime = bound(skipTime, 1, 365 * 10 * 1 days); // 1 day to 10 years
     rate = bound(rate, 0, 200_00).bpsToRay(); // 0% to 200%
     riskPremiumRad = bound(riskPremiumRad, 0, maxRiskPremiumRad);
 
