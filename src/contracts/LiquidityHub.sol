@@ -259,10 +259,9 @@ contract LiquidityHub is ILiquidityHub {
     SpokeData storage spoke = _spokes[assetId][msg.sender];
 
     _accrueInterest(asset, spoke); // accrue interest before validating action
-
     _validateRestore(asset, amount, spoke.baseDebt + spoke.outstandingPremium);
-    asset.updateBorrowRate({liquidityAdded: amount, liquidityTaken: 0});
 
+    asset.updateBorrowRate({liquidityAdded: amount, liquidityTaken: 0});
     uint256 baseDebtRestored = _deductFromOutstandingPremium(asset, spoke, amount);
     _updateRiskPremiumAndBaseDebt(asset, spoke, riskPremiumRad, -int256(baseDebtRestored));
 
@@ -405,8 +404,8 @@ contract LiquidityHub is ILiquidityHub {
 
     uint256 newSpokeDebt = baseDebtChange > 0
       ? existingSpokeDebt + uint256(baseDebtChange) // debt added
-      // force underflow: only possible when spoke takes repays amount more than net drawn
-      : existingSpokeDebt - uint256(-baseDebtChange); // debt restored
+      : // force underflow: only possible when spoke takes repays amount more than net drawn
+      existingSpokeDebt - uint256(-baseDebtChange); // debt restored
 
     (uint256 newAssetRiskPremium, uint256 newAssetDebt) = MathUtils.addToWeightedAverage(
       assetRiskPremiumWithoutCurrent,
