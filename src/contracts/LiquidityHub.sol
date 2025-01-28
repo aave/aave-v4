@@ -191,9 +191,9 @@ contract LiquidityHub is ILiquidityHub {
   /// @inheritdoc ILiquidityHub
   function withdraw(
     uint256 assetId,
-    address to,
     uint256 amount,
-    uint256 riskPremiumRad
+    uint256 riskPremiumRad,
+    address to
   ) external returns (uint256) {
     // TODO: Be able to pass max(uint) as amount to withdraw all or accept number of shares
     // TODO: authorization - only spokes
@@ -222,9 +222,9 @@ contract LiquidityHub is ILiquidityHub {
   /// @inheritdoc ILiquidityHub
   function draw(
     uint256 assetId,
-    address to,
     uint256 amount,
-    uint256 riskPremiumRad
+    uint256 riskPremiumRad,
+    address to
   ) external returns (uint256) {
     // TODO: authorization - only spokes
 
@@ -405,8 +405,8 @@ contract LiquidityHub is ILiquidityHub {
 
     uint256 newSpokeDebt = baseDebtChange > 0
       ? existingSpokeDebt + uint256(baseDebtChange) // debt added
-      : // force underflow: only possible when spoke takes repays amount more than net drawn
-      existingSpokeDebt - uint256(-baseDebtChange); // debt restored
+      // force underflow: only possible when spoke takes repays amount more than net drawn
+      : existingSpokeDebt - uint256(-baseDebtChange); // debt restored
 
     (uint256 newAssetRiskPremium, uint256 newAssetDebt) = MathUtils.addToWeightedAverage(
       assetRiskPremiumWithoutCurrent,

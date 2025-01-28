@@ -819,7 +819,7 @@ contract LiquidityHubTest is BaseTest {
     emit Withdraw(daiAssetId, address(spoke1), alice, amount);
 
     vm.prank(address(spoke1));
-    hub.withdraw({assetId: daiAssetId, to: alice, amount: amount, riskPremiumRad: 0});
+    hub.withdraw({assetId: daiAssetId, amount: amount, riskPremiumRad: 0, to: alice});
 
     assetData = hub.getAsset(daiAssetId);
     spokeData = hub.getSpoke(daiAssetId, address(spoke1));
@@ -1188,9 +1188,9 @@ contract LiquidityHubTest is BaseTest {
     vm.prank(address(spoke2));
     hub.withdraw({
       assetId: daiAssetId,
-      to: bob,
       amount: hubData.daiData.availableLiquidity,
-      riskPremiumRad: 0
+      riskPremiumRad: 0,
+      to: bob
     });
 
     assertEq(
@@ -1324,9 +1324,9 @@ contract LiquidityHubTest is BaseTest {
     vm.prank(address(spoke2));
     hub.withdraw({
       assetId: daiAssetId,
-      to: bob,
       amount: hubData.daiData.availableLiquidity,
-      riskPremiumRad: 0
+      riskPremiumRad: 0,
+      to: bob
     });
 
     assertEq(
@@ -1391,7 +1391,7 @@ contract LiquidityHubTest is BaseTest {
 
     vm.prank(address(spoke1));
     vm.expectRevert(TestErrors.SUPPLIED_AMOUNT_EXCEEDED);
-    hub.withdraw(assetId, address(spoke1), amount, 0);
+    hub.withdraw({assetId: assetId, amount: amount, riskPremiumRad: 0, to: address(spoke1)});
   }
 
   function test_withdraw_revertsWith_supplied_amount_exceeded() public {
@@ -1411,12 +1411,12 @@ contract LiquidityHubTest is BaseTest {
 
     vm.prank(address(spoke1));
     vm.expectRevert(TestErrors.SUPPLIED_AMOUNT_EXCEEDED);
-    hub.withdraw({assetId: assetId, to: alice, amount: amount + 1, riskPremiumRad: 0});
+    hub.withdraw({assetId: assetId, amount: amount + 1, riskPremiumRad: 0, to: alice});
 
     // advance time, but no accumulation
     skip(1e18);
     vm.expectRevert(TestErrors.SUPPLIED_AMOUNT_EXCEEDED);
-    hub.withdraw({assetId: assetId, to: alice, amount: amount + 1, riskPremiumRad: 0});
+    hub.withdraw({assetId: assetId, amount: amount + 1, riskPremiumRad: 0, to: alice});
   }
 
   function test_withdraw_revertsWith_not_available_liquidity() public {
@@ -1447,7 +1447,7 @@ contract LiquidityHubTest is BaseTest {
     vm.expectRevert(TestErrors.SUPPLIED_AMOUNT_EXCEEDED);
 
     vm.prank(address(spoke1));
-    hub.withdraw(daiAssetId, address(spoke1), amount, 0);
+    hub.withdraw({assetId: daiAssetId, amount: amount, riskPremiumRad: 0, to: address(spoke1)});
   }
 
   function test_withdraw_revertsWith_asset_not_active() public {
@@ -1456,7 +1456,7 @@ contract LiquidityHubTest is BaseTest {
 
     vm.expectRevert(TestErrors.ASSET_NOT_ACTIVE);
     vm.prank(address(spoke1));
-    hub.withdraw(daiAssetId, alice, amount, 0);
+    hub.withdraw({assetId: daiAssetId, amount: amount, riskPremiumRad: 0, to: alice});
   }
 
   function test_draw_same_block() public {
@@ -1490,7 +1490,7 @@ contract LiquidityHubTest is BaseTest {
     vm.expectEmit(address(hub));
     emit Draw(daiAssetId, address(spoke1), alice, drawAmount);
     vm.prank(address(spoke1));
-    hub.draw({assetId: daiAssetId, to: alice, amount: drawAmount, riskPremiumRad: 0});
+    hub.draw({assetId: daiAssetId, amount: drawAmount, riskPremiumRad: 0, to: alice});
 
     Asset memory wethData = hub.getAsset(wethAssetId);
     Asset memory daiData = hub.getAsset(daiAssetId);
@@ -1654,7 +1654,7 @@ contract LiquidityHubTest is BaseTest {
     vm.expectEmit(address(hub));
     emit Draw(daiAssetId, address(spoke1), alice, drawAmount);
     vm.prank(address(spoke1));
-    hub.draw({assetId: daiAssetId, to: alice, amount: drawAmount, riskPremiumRad: 0});
+    hub.draw({assetId: daiAssetId, amount: drawAmount, riskPremiumRad: 0, to: alice});
 
     Asset memory wethData = hub.getAsset(wethAssetId);
     Asset memory daiData = hub.getAsset(daiAssetId);
@@ -1792,14 +1792,14 @@ contract LiquidityHubTest is BaseTest {
     _updateActive(daiAssetId, false);
     vm.prank(address(spoke1));
     vm.expectRevert(TestErrors.ASSET_NOT_ACTIVE);
-    hub.draw(daiAssetId, address(spoke1), drawAmount, 0);
+    hub.draw({assetId: daiAssetId, amount: drawAmount, riskPremiumRad: 0, to: address(spoke1)});
   }
 
   function test_draw_revertsWith_not_available_liquidity() public {
     uint256 drawAmount = 1;
     vm.prank(address(spoke1));
     vm.expectRevert(TestErrors.NOT_AVAILABLE_LIQUIDITY);
-    hub.draw(daiAssetId, address(spoke1), drawAmount, 0);
+    hub.draw({assetId: daiAssetId, amount: drawAmount, riskPremiumRad: 0, to: address(spoke1)});
   }
 
   function test_draw_revertsWith_cap_exceeded() public {
@@ -1822,7 +1822,7 @@ contract LiquidityHubTest is BaseTest {
 
     vm.prank(address(spoke1));
     vm.expectRevert(TestErrors.DRAW_CAP_EXCEEDED);
-    hub.draw(daiAssetId, address(spoke1), drawAmount, 0);
+    hub.draw({assetId: daiAssetId, amount: drawAmount, riskPremiumRad: 0, to: address(spoke1)});
   }
 
   function test_restore_revertsWith_asset_not_active() public {

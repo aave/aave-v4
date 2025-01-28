@@ -42,7 +42,7 @@ contract LiquidityHubInterestRateTest is BaseTest {
     vm.startPrank(address(spoke1));
     tokenList.dai.approve(address(hub), 1000e18);
     hub.supply(daiAssetId, 1000e18, 0, address(spoke1));
-    hub.draw(daiAssetId, address(spoke1), 100e18, newRiskPremium);
+    hub.draw(daiAssetId, 100e18, newRiskPremium, address(spoke1));
     vm.stopPrank();
     uint256 borrowRate = _getBorrowRate(daiAssetId);
     uint256 baseBorrowRate = _getBaseBorrowRate(daiAssetId);
@@ -56,7 +56,7 @@ contract LiquidityHubInterestRateTest is BaseTest {
     vm.startPrank(address(spoke1));
     tokenList.dai.approve(address(hub), 1000e18);
     hub.supply(daiAssetId, 1000e18, 0, address(spoke1));
-    hub.draw(daiAssetId, address(spoke1), 100e18, newRiskPremium);
+    hub.draw(daiAssetId, 100e18, newRiskPremium, address(spoke1));
     vm.stopPrank();
     uint256 borrowRate = _getBorrowRate(daiAssetId);
     uint256 baseBorrowRate = _getBaseBorrowRate(daiAssetId);
@@ -69,7 +69,7 @@ contract LiquidityHubInterestRateTest is BaseTest {
     vm.startPrank(address(spoke1));
     tokenList.dai.approve(address(hub), 1000e18);
     hub.supply(daiAssetId, 1000e18, 0, address(spoke1));
-    hub.draw(daiAssetId, address(spoke1), 100e18, newRiskPremium);
+    hub.draw(daiAssetId, 100e18, newRiskPremium, address(spoke1));
     uint256 borrowRate = _getBorrowRate(daiAssetId);
     uint256 baseBorrowRate = _getBaseBorrowRate(daiAssetId);
     assertEq(borrowRate, baseBorrowRate + (newRiskPremium.radToRay().rayMul(baseBorrowRate)));
@@ -89,7 +89,7 @@ contract LiquidityHubInterestRateTest is BaseTest {
     vm.startPrank(address(spoke1));
     tokenList.dai.approve(address(hub), 2000e18);
     hub.supply(daiAssetId, 1000e18, 0, address(spoke1));
-    hub.draw(daiAssetId, address(spoke1), 100e18, newRiskPremium);
+    hub.draw(daiAssetId, 100e18, newRiskPremium, address(spoke1));
     uint256 borrowRate = _getBorrowRate(daiAssetId);
     uint256 baseBorrowRate = _getBaseBorrowRate(daiAssetId);
     assertEq(borrowRate, baseBorrowRate + (newRiskPremium.radToRay().rayMul(baseBorrowRate)));
@@ -108,14 +108,14 @@ contract LiquidityHubInterestRateTest is BaseTest {
     vm.startPrank(address(spoke1));
     tokenList.dai.approve(address(hub), 1000e18);
     hub.supply(daiAssetId, 1000e18, 0, address(spoke1));
-    hub.draw(daiAssetId, address(spoke1), 100e18, newRiskPremium);
+    hub.draw(daiAssetId, 100e18, newRiskPremium, address(spoke1));
     uint256 borrowRate = _getBorrowRate(daiAssetId);
     uint256 baseBorrowRate = _getBaseBorrowRate(daiAssetId);
     assertEq(borrowRate, baseBorrowRate + (newRiskPremium.radToRay().rayMul(baseBorrowRate)));
 
     // New risk premium from same spoke should replace avg risk premium
     uint256 newRiskPremium2 = uint256(20_00).bpsToRad();
-    hub.draw(daiAssetId, address(spoke1), 100e18, newRiskPremium2);
+    hub.draw(daiAssetId, 100e18, newRiskPremium2, address(spoke1));
     borrowRate = _getBorrowRate(daiAssetId);
     baseBorrowRate = _getBaseBorrowRate(daiAssetId);
     assertEq(borrowRate, baseBorrowRate + (newRiskPremium2.radToRay().rayMul(baseBorrowRate)));
@@ -129,13 +129,13 @@ contract LiquidityHubInterestRateTest is BaseTest {
     vm.startPrank(address(spoke1));
     tokenList.dai.approve(address(hub), 1000e18);
     hub.supply(daiAssetId, 1000e18, 0, address(spoke1));
-    hub.draw(daiAssetId, address(spoke1), 100e18, firstRiskPremium);
+    hub.draw(daiAssetId, 100e18, firstRiskPremium, address(spoke1));
     uint256 borrowRate = _getBorrowRate(daiAssetId);
     uint256 baseBorrowRate = _getBaseBorrowRate(daiAssetId);
     assertEq(borrowRate, baseBorrowRate + (firstRiskPremium.radToRay().rayMul(baseBorrowRate)));
 
     // New risk premium from same spoke should replace avg risk premium
-    hub.draw(daiAssetId, address(spoke1), 100e18, newRiskPremium);
+    hub.draw(daiAssetId, 100e18, newRiskPremium, address(spoke1));
     borrowRate = _getBorrowRate(daiAssetId);
     baseBorrowRate = _getBaseBorrowRate(daiAssetId);
     assertEq(borrowRate, baseBorrowRate + (newRiskPremium.radToRay().rayMul(baseBorrowRate)));
@@ -149,7 +149,7 @@ contract LiquidityHubInterestRateTest is BaseTest {
     vm.startPrank(address(spoke1));
     tokenList.dai.approve(address(hub), 1000e18);
     hub.supply(daiAssetId, 1000e18, 0, address(spoke1));
-    hub.draw(daiAssetId, address(spoke1), 100e18, rpSpoke1);
+    hub.draw(daiAssetId, 100e18, rpSpoke1, address(spoke1));
     uint256 borrowRate = _getBorrowRate(daiAssetId);
     uint256 baseBorrowRate = _getBaseBorrowRate(daiAssetId);
     assertEq(borrowRate, baseBorrowRate + (rpSpoke1.radToRay().rayMul(baseBorrowRate)));
@@ -160,7 +160,7 @@ contract LiquidityHubInterestRateTest is BaseTest {
     vm.startPrank(address(spoke2));
     tokenList.dai.approve(address(hub), 1000e18);
     hub.supply(daiAssetId, 1000e18, 0, address(spoke2));
-    hub.draw(daiAssetId, address(spoke2), 100e18, rpSpoke2);
+    hub.draw(daiAssetId, 100e18, rpSpoke2, address(spoke2));
     borrowRate = _getBorrowRate(daiAssetId);
     baseBorrowRate = _getBaseBorrowRate(daiAssetId);
     assertEq(
@@ -180,7 +180,7 @@ contract LiquidityHubInterestRateTest is BaseTest {
     vm.startPrank(address(spoke1));
     tokenList.dai.approve(address(hub), 5000e18);
     hub.supply(daiAssetId, 1000e18, 0, address(spoke1));
-    hub.draw(daiAssetId, address(spoke1), 100e18, rpSpoke1);
+    hub.draw(daiAssetId, 100e18, rpSpoke1, address(spoke1));
     uint256 borrowRate = _getBorrowRate(daiAssetId);
     uint256 baseBorrowRate = _getBaseBorrowRate(daiAssetId);
     assertEq(borrowRate, baseBorrowRate + (rpSpoke1.radToRay().rayMul(baseBorrowRate)));
@@ -191,7 +191,7 @@ contract LiquidityHubInterestRateTest is BaseTest {
     vm.startPrank(address(spoke2));
     tokenList.dai.approve(address(hub), 5000e18);
     hub.supply(daiAssetId, 1000e18, 0, address(spoke2));
-    hub.draw(daiAssetId, address(spoke2), 100e18, rpSpoke2);
+    hub.draw(daiAssetId, 100e18, rpSpoke2, address(spoke2));
     borrowRate = _getBorrowRate(daiAssetId);
     baseBorrowRate = _getBaseBorrowRate(daiAssetId);
     assertEq(
@@ -211,7 +211,7 @@ contract LiquidityHubInterestRateTest is BaseTest {
     vm.startPrank(address(spoke1));
     tokenList.dai.approve(address(hub), 5000e18);
     hub.supply(daiAssetId, 1000e18, 0, address(spoke1));
-    hub.draw(daiAssetId, address(spoke1), drawSpoke1, rpSpoke1);
+    hub.draw(daiAssetId, drawSpoke1, rpSpoke1, address(spoke1));
     uint256 borrowRate = _getBorrowRate(daiAssetId);
     uint256 baseBorrowRate = _getBaseBorrowRate(daiAssetId);
     assertEq(borrowRate, baseBorrowRate + (rpSpoke1.radToRay().rayMul(baseBorrowRate)));
@@ -222,7 +222,7 @@ contract LiquidityHubInterestRateTest is BaseTest {
     vm.startPrank(address(spoke2));
     tokenList.dai.approve(address(hub), 5000e18);
     hub.supply(daiAssetId, 1000e18, 0, address(spoke2));
-    hub.draw(daiAssetId, address(spoke2), drawSpoke2, rpSpoke2);
+    hub.draw(daiAssetId, drawSpoke2, rpSpoke2, address(spoke2));
     borrowRate = _getBorrowRate(daiAssetId);
     baseBorrowRate = _getBaseBorrowRate(daiAssetId);
     uint256 calcRp = (rpSpoke1 * drawSpoke1 + rpSpoke2 * drawSpoke2) / (drawSpoke1 + drawSpoke2);
@@ -252,7 +252,7 @@ contract LiquidityHubInterestRateTest is BaseTest {
     vm.startPrank(address(spoke1));
     tokenList.dai.approve(address(hub), supplySpoke1);
     hub.supply(daiAssetId, supplySpoke1, 0, address(spoke1));
-    hub.draw(daiAssetId, address(spoke1), drawSpoke1, rpSpoke1);
+    hub.draw(daiAssetId, drawSpoke1, rpSpoke1, address(spoke1));
     uint256 borrowRate = _getBorrowRate(daiAssetId);
     uint256 baseBorrowRate = _getBaseBorrowRate(daiAssetId);
     assertEq(borrowRate, baseBorrowRate + (rpSpoke1.radToRay().rayMul(baseBorrowRate)));
@@ -262,7 +262,7 @@ contract LiquidityHubInterestRateTest is BaseTest {
     vm.startPrank(address(spoke2));
     tokenList.dai.approve(address(hub), supplySpoke2);
     hub.supply(daiAssetId, supplySpoke2, 0, address(spoke2));
-    hub.draw(daiAssetId, address(spoke2), drawSpoke2, rpSpoke2);
+    hub.draw(daiAssetId, drawSpoke2, rpSpoke2, address(spoke2));
     borrowRate = _getBorrowRate(daiAssetId);
     baseBorrowRate = _getBaseBorrowRate(daiAssetId);
     uint256 calcRp = (rpSpoke1 * drawSpoke1 + rpSpoke2 * drawSpoke2) / (drawSpoke1 + drawSpoke2);
@@ -294,19 +294,19 @@ contract LiquidityHubInterestRateTest is BaseTest {
     vm.startPrank(address(spoke1));
     tokenList.dai.approve(address(hub), 2e40);
     hub.supply(daiAssetId, 2e40, 0, address(spoke1));
-    hub.draw(daiAssetId, address(spoke1), drawSpoke1, rpSpoke1);
+    hub.draw(daiAssetId, drawSpoke1, rpSpoke1, address(spoke1));
     vm.stopPrank();
 
     vm.startPrank(address(spoke2));
     tokenList.dai.approve(address(hub), 2e40);
     hub.supply(daiAssetId, 2e40, 0, address(spoke2));
-    hub.draw(daiAssetId, address(spoke2), drawSpoke2, rpSpoke2);
+    hub.draw(daiAssetId, drawSpoke2, rpSpoke2, address(spoke2));
     vm.stopPrank();
 
     vm.startPrank(address(spoke3));
     tokenList.dai.approve(address(hub), 2e40);
     hub.supply(daiAssetId, 2e40, 0, address(spoke3));
-    hub.draw(daiAssetId, address(spoke3), drawSpoke3, rpSpoke3);
+    hub.draw(daiAssetId, drawSpoke3, rpSpoke3, address(spoke3));
     vm.stopPrank();
 
     uint256 borrowRate = _getBorrowRate(daiAssetId);

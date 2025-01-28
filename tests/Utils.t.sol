@@ -52,7 +52,7 @@ library Utils {
     address onBehalfOf // todo: implement
   ) internal {
     vm.prank(spoke);
-    hub.draw({assetId: assetId, to: to, amount: amount, riskPremiumRad: riskPremiumRad});
+    hub.draw({assetId: assetId, amount: amount, riskPremiumRad: riskPremiumRad, to: to});
   }
 
   function withdraw(
@@ -64,7 +64,7 @@ library Utils {
     address to
   ) internal {
     vm.prank(spoke);
-    hub.withdraw({assetId: assetId, to: to, amount: amount, riskPremiumRad: riskPremiumRad});
+    hub.withdraw({assetId: assetId, amount: amount, riskPremiumRad: riskPremiumRad, to: to});
   }
 
   function borrow(

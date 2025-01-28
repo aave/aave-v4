@@ -30,32 +30,32 @@ interface ILiquidityHub {
    * @notice Withdraw supplied asset on behalf of user.
    * @dev Only callable by spokes.
    * @param assetId The asset id.
-   * @param to The address to transfer the assets to.
    * @param amount The amount of asset to withdraw.
    * @param riskPremiumRad The new aggregated risk premium of the calling spoke.
+   * @param to The address to transfer the assets to.
    * @return The amount of shares withdrawn.
    */
   function withdraw(
     uint256 assetId,
-    address to,
     uint256 amount,
-    uint256 riskPremiumRad
+    uint256 riskPremiumRad,
+    address to
   ) external returns (uint256);
 
   /**
    * @notice Draw debt on behalf of user.
    * @dev Only callable by spokes.
    * @param assetId The asset id.
-   * @param to The address to draw debt to (user).
    * @param amount The amount of debt to draw.
    * @param riskPremiumRad The new aggregated risk premium of the calling spoke.
+   * @param to The address to draw debt to (user).
    * @return The amount of debt drawn.
    */
   function draw(
     uint256 assetId,
-    address to,
     uint256 amount,
-    uint256 riskPremiumRad
+    uint256 riskPremiumRad,
+    address to
   ) external returns (uint256);
 
   /**
