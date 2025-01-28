@@ -2155,7 +2155,6 @@ contract LiquidityHubTest is BaseTest {
     );
 
     // spoke1 supply weth
-    // deal(address(tokenList.weth), alice, wethAmount);
     Utils.supply({
       hub: hub,
       assetId: wethAssetId,
@@ -2167,14 +2166,13 @@ contract LiquidityHubTest is BaseTest {
     });
 
     // spoke2 supply dai
-    // deal(address(tokenList.dai), address(spoke2), daiAmount);
     Utils.supply({
       hub: hub,
       assetId: daiAssetId,
       spoke: address(spoke2),
       amount: daiAmount,
       riskPremiumRad: 0,
-      user: address(spoke2),
+      user: bob,
       onBehalfOf: address(spoke2)
     });
 
@@ -2201,7 +2199,7 @@ contract LiquidityHubTest is BaseTest {
       spoke: address(spoke2),
       amount: daiAmount / 5,
       riskPremiumRad: uint256(5_00).bpsToRad(),
-      user: address(spoke2),
+      user: bob,
       onBehalfOf: address(spoke2)
     });
 
@@ -2655,9 +2653,8 @@ contract LiquidityHubTest is BaseTest {
 
     // deal(address(tokenList.dai), alice, restoreAmount);
 
-    vm.startPrank(address(spoke1));
+    vm.prank(address(spoke1));
     hub.restore({assetId: daiAssetId, amount: restoreAmount, riskPremiumRad: 0, repayer: alice});
-    vm.stopPrank();
 
     daiData = hub.getAsset(daiAssetId);
     SpokeData memory spoke1DaiData = hub.getSpoke(daiAssetId, address(spoke1));
