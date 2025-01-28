@@ -13,7 +13,7 @@ interface ILiquidityHub {
    * @notice Supply asset on behalf of user.
    * @dev Only callable by spokes.
    * @param assetId The asset id.
-   * @param amount The amount of asset to withdraw.
+   * @param amount The amount of asset to supply.
    * @param riskPremiumRad The aggregated risk premium of the calling spoke.
    * @param supplier The address which is supplying the asset (user).
    * @return The new base borrow index.
