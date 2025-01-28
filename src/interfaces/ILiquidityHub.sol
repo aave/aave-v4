@@ -66,7 +66,6 @@ interface ILiquidityHub {
    * @param amount The amount to repay.
    * @param riskPremiumRad The new aggregated risk premium of the calling spoke.
    * @param repayer The address to pull assets from.
-   * @return The new base borrow index.
    * @return The amount of debt restored.
    */
   function restore(
@@ -74,7 +73,7 @@ interface ILiquidityHub {
     uint256 amount,
     uint256 riskPremiumRad,
     address repayer
-  ) external returns (uint256, uint256);
+  ) external returns (uint256);
 
   function getBaseInterestRate(uint256 assetId) external view returns (uint256);
 

@@ -162,7 +162,7 @@ contract Spoke is ISpoke {
 
     (, uint256 newAggregatedRiskPremium) = _refreshRiskPremium();
     // TODO: Spoke should calculate the amountFromPremium and amountFromBase
-    (, uint256 repaidDebt) = liquidityHub.restore(
+    uint256 repaidDebt = liquidityHub.restore(
       assetId,
       amount,
       newAggregatedRiskPremium,

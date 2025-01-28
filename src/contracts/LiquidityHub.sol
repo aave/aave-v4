@@ -252,7 +252,7 @@ contract LiquidityHub is ILiquidityHub {
     uint256 amount,
     uint256 riskPremiumRad,
     address repayer
-  ) external returns (uint256, uint256) {
+  ) external returns (uint256) {
     // TODO: authorization - only spokes
 
     Asset storage asset = _assets[assetId];
@@ -272,7 +272,7 @@ contract LiquidityHub is ILiquidityHub {
 
     emit Restore(assetId, msg.sender, amount);
 
-    return (nextBaseBorrowIndex, amount);
+    return nextBaseBorrowIndex;
   }
 
   //
@@ -406,8 +406,8 @@ contract LiquidityHub is ILiquidityHub {
 
     uint256 newSpokeDebt = baseDebtChange > 0
       ? existingSpokeDebt + uint256(baseDebtChange) // debt added
-      // force underflow: only possible when spoke takes repays amount more than net drawn
-      : existingSpokeDebt - uint256(-baseDebtChange); // debt restored
+      : // force underflow: only possible when spoke takes repays amount more than net drawn
+      existingSpokeDebt - uint256(-baseDebtChange); // debt restored
 
     (uint256 newAssetRiskPremium, uint256 newAssetDebt) = MathUtils.addToWeightedAverage(
       assetRiskPremiumWithoutCurrent,
