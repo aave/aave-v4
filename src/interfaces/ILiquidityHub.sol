@@ -65,7 +65,7 @@ interface ILiquidityHub {
    * @param assetId The asset id.
    * @param amount The amount to repay.
    * @param riskPremiumRad The new aggregated risk premium of the calling spoke.
-   * @param repayer The address who is trying to settle the credit line.
+   * @param repayer The address to pull assets from.
    * @return The new base borrow index.
    * @return The amount of debt restored.
    */
