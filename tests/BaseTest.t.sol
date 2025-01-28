@@ -84,6 +84,8 @@ abstract contract BaseTest is Test, Events {
   using WadRayMath for uint256;
   using SharesMath for uint256;
 
+  uint256 internal constant MAX_SUPPLY_AMOUNT = 1e45; // TODO update if needed when precision issues resolved
+
   // TODO: update these mocked tokens with decimals as in the real contracts, ie USDC = 6, wbtc = 8, etc.?
   IERC20 internal usdc;
   IERC20 internal dai;
@@ -101,6 +103,7 @@ abstract contract BaseTest is Test, Events {
   DefaultReserveInterestRateStrategy internal creditLineIRStrategy;
 
   address internal mockAddressesProvider = makeAddr('mockAddressesProvider');
+  // TODO: remove after migrating to other mock users
   address internal USER1 = makeAddr('USER1');
   address internal USER2 = makeAddr('USER2');
 
@@ -112,10 +115,10 @@ abstract contract BaseTest is Test, Events {
   uint256 internal wethAssetId = 0;
   uint256 internal usdxAssetId = 1;
 
-  uint256 internal mintAmount_USDX = 100_000e6;
-  uint256 internal mintAmount_DAI = 100_000e18;
-  uint256 internal mintAmount_WBTC = 100e8;
-  uint256 internal mintAmount_weth = 100e18;
+  uint256 internal mintAmount_USDX = MAX_SUPPLY_AMOUNT;
+  uint256 internal mintAmount_DAI = MAX_SUPPLY_AMOUNT;
+  uint256 internal mintAmount_WBTC = MAX_SUPPLY_AMOUNT;
+  uint256 internal mintAmount_weth = MAX_SUPPLY_AMOUNT;
 
   struct TokenList {
     WETH9 weth;
@@ -177,15 +180,15 @@ abstract contract BaseTest is Test, Events {
       vm.stopPrank();
     }
 
-    address[2] memory usersList = [USER1, USER2];
-    for (uint256 x; x < usersList.length; ++x) {
-      vm.startPrank(usersList[x]);
-      tokenList.weth.approve(address(hub), type(uint256).max);
-      tokenList.usdx.approve(address(hub), type(uint256).max);
-      tokenList.dai.approve(address(hub), type(uint256).max);
-      tokenList.wbtc.approve(address(hub), type(uint256).max);
-      vm.stopPrank();
-    }
+    // address[2] memory usersList = [USER1, USER2];
+    // for (uint256 x; x < usersList.length; ++x) {
+    //   vm.startPrank(usersList[x]);
+    //   tokenList.weth.approve(address(hub), type(uint256).max);
+    //   tokenList.usdx.approve(address(hub), type(uint256).max);
+    //   tokenList.dai.approve(address(hub), type(uint256).max);
+    //   tokenList.wbtc.approve(address(hub), type(uint256).max);
+    //   vm.stopPrank();
+    // }
   }
   function configureTokenList() internal {
     // todo rm override

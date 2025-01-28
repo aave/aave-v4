@@ -43,7 +43,7 @@ contract LiquidityHubTest is BaseTest {
 
     vm.prank(address(spoke1));
     vm.expectRevert(TestErrors.ASSET_NOT_ACTIVE);
-    hub.supply(daiAssetId, amount, 0, USER1);
+    hub.supply(daiAssetId, amount, 0, alice);
   }
 
   function test_supply_revertsWith_supply_cap_exceeded() public {
@@ -51,7 +51,7 @@ contract LiquidityHubTest is BaseTest {
     _updateSupplyCap(daiAssetId, address(spoke1), amount - 1);
 
     vm.expectRevert(TestErrors.SUPPLY_CAP_EXCEEDED);
-    hub.supply(daiAssetId, amount, 0, USER1);
+    hub.supply(daiAssetId, amount, 0, alice);
   }
 
   function test_supply() public {
@@ -100,18 +100,18 @@ contract LiquidityHubTest is BaseTest {
       'wrong spoke lastUpdateTimestamp pre-supply'
     );
 
-    deal(address(tokenList.dai), USER1, amount);
+    // deal(address(tokenList.dai), alice, amount);
 
-    assertEq(tokenList.dai.balanceOf(USER1), amount, 'wrong user token balance pre-supply');
+    assertEq(tokenList.dai.balanceOf(alice), amount, 'wrong user token balance pre-supply');
     assertEq(tokenList.dai.balanceOf(address(spoke1)), 0, 'wrong spoke token balance pre-supply');
     assertEq(tokenList.dai.balanceOf(address(hub)), 0, 'wrong hub token balance pre-supply');
 
-    deal(address(tokenList.dai), USER1, amount);
+    // deal(address(tokenList.dai), alice, amount);
 
     vm.startPrank(address(spoke1));
     vm.expectEmit(address(hub));
     emit Supply(assetId, address(spoke1), amount);
-    hub.supply(assetId, amount, 0, USER1);
+    hub.supply(assetId, amount, 0, alice);
     vm.stopPrank();
 
     assetData = hub.getAsset(assetId);
@@ -169,7 +169,7 @@ contract LiquidityHubTest is BaseTest {
       timestamp,
       'wrong spoke lastUpdateTimestamp post-supply'
     );
-    assertEq(tokenList.dai.balanceOf(USER1), 0, 'wrong user token balance post-supply');
+    assertEq(tokenList.dai.balanceOf(alice), 0, 'wrong user token balance post-supply');
     assertEq(tokenList.dai.balanceOf(address(spoke1)), 0, 'wrong spoke token balance post-supply');
     assertEq(tokenList.dai.balanceOf(address(hub)), amount, 'wrong hub token balance post-supply');
   }
@@ -181,15 +181,15 @@ contract LiquidityHubTest is BaseTest {
     riskPremiumRad = bound(riskPremiumRad, 0, maxRiskPremiumRad); // no effect on supply
 
     IERC20 asset = hub.assetsList(assetId);
-    deal(address(asset), USER1, amount);
+    // deal(address(asset), alice, amount);
 
     vm.expectEmit(address(asset));
-    emit Transfer(USER1, address(hub), amount);
+    emit Transfer(alice, address(hub), amount);
     vm.expectEmit(address(hub));
     emit Supply(assetId, address(spoke1), amount);
 
     vm.prank(address(spoke1));
-    hub.supply({assetId: assetId, amount: amount, riskPremiumRad: riskPremiumRad, supplier: USER1});
+    hub.supply({assetId: assetId, amount: amount, riskPremiumRad: riskPremiumRad, supplier: alice});
 
     uint256 timestamp = vm.getBlockTimestamp();
 
@@ -242,7 +242,7 @@ contract LiquidityHubTest is BaseTest {
       assetData.lastUpdateTimestamp,
       'wrong spoke lastUpdateTimestamp post-supply'
     );
-    assertEq(asset.balanceOf(USER1), 0, 'wrong user token balance post-supply');
+    assertEq(asset.balanceOf(alice), 0, 'wrong user token balance post-supply');
     assertEq(asset.balanceOf(address(spoke1)), 0, 'wrong spoke token balance post-supply');
     assertEq(asset.balanceOf(address(hub)), amount, 'wrong hub token balance post-supply');
   }
@@ -260,25 +260,25 @@ contract LiquidityHubTest is BaseTest {
     amount2 = bound(amount2, 1, type(uint128).max);
 
     IERC20 asset = hub.assetsList(assetId);
-    deal(address(asset), USER1, amount);
+    // deal(address(asset), alice, amount);
 
     IERC20 asset2 = hub.assetsList(assetId + 1);
-    deal(address(asset2), USER1, amount2);
+    // deal(address(asset2), alice, amount2);
 
     vm.startPrank(address(spoke1));
     vm.expectEmit(address(asset));
-    emit Transfer(USER1, address(hub), amount);
+    emit Transfer(alice, address(hub), amount);
     vm.expectEmit(address(hub));
     emit Supply(assetId, address(spoke1), amount);
-    hub.supply(assetId, amount, 0, USER1);
+    hub.supply(assetId, amount, 0, alice);
     vm.stopPrank();
 
     vm.startPrank(address(spoke2));
     vm.expectEmit(address(asset2));
-    emit Transfer(USER1, address(hub), amount2);
+    emit Transfer(alice, address(hub), amount2);
     vm.expectEmit(address(hub));
     emit Supply(assetId + 1, address(spoke2), amount2);
-    hub.supply(assetId + 1, amount2, 0, USER1);
+    hub.supply(assetId + 1, amount2, 0, alice);
     vm.stopPrank();
 
     uint256 timestamp = vm.getBlockTimestamp();
@@ -334,7 +334,7 @@ contract LiquidityHubTest is BaseTest {
       assetData.lastUpdateTimestamp,
       'wrong spoke lastUpdateTimestamp post-supply'
     );
-    assertEq(asset.balanceOf(USER1), 0, 'wrong user token balance post-supply');
+    assertEq(asset.balanceOf(alice), 0, 'wrong user token balance post-supply');
     assertEq(asset.balanceOf(address(spoke1)), 0, 'wrong spoke token balance post-supply');
     assertEq(asset.balanceOf(address(hub)), amount, 'wrong hub token balance post-supply');
     // asset2
@@ -385,7 +385,7 @@ contract LiquidityHubTest is BaseTest {
       asset2Data.lastUpdateTimestamp,
       'wrong spoke2 lastUpdateTimestamp post-supply'
     );
-    assertEq(asset2.balanceOf(USER1), 0, 'wrong USER1 token balance post-supply');
+    assertEq(asset2.balanceOf(alice), 0, 'wrong alice token balance post-supply');
     assertEq(asset2.balanceOf(address(spoke2)), 0, 'wrong spoke2 token balance post-supply');
     assertEq(asset2.balanceOf(address(hub)), amount2, 'wrong hub token2 balance post-supply');
   }
@@ -396,14 +396,14 @@ contract LiquidityHubTest is BaseTest {
 
     vm.prank(address(spoke1));
     vm.expectRevert(TestErrors.INVALID_AMOUNT);
-    hub.supply(assetId, amount, 0, USER1);
+    hub.supply(assetId, amount, 0, alice);
   }
 
   function test_supply_revertsWith_invalid_shares_amount() public {
     uint256 assetId = 0;
     uint256 amount = 1;
 
-    deal(address(dai), USER1, amount);
+    // deal(address(dai), alice, amount);
 
     // update storage slots to create 0 shares calc
     bytes32 baseSlot = keccak256(abi.encode(uint256(assetId), uint256(0))); // key: assetId, slot: 0, ie _assets mapping, dai assetId key
@@ -412,7 +412,7 @@ contract LiquidityHubTest is BaseTest {
 
     vm.prank(address(spoke1));
     vm.expectRevert(TestErrors.INVALID_SHARES_AMOUNT);
-    hub.supply(assetId, amount, 0, USER1);
+    hub.supply(assetId, amount, 0, alice);
   }
 
   function test_supply_with_increased_index() public {
@@ -441,14 +441,14 @@ contract LiquidityHubTest is BaseTest {
     );
     uint256 initialSupplyShares = daiData.suppliedShares;
 
-    deal(address(tokenList.dai), USER2, supply2Amount);
+    // deal(address(tokenList.dai), bob, supply2Amount);
     Utils.supply({
       hub: hub,
       assetId: daiAssetId,
       spoke: address(spoke2),
       amount: supply2Amount,
       riskPremiumRad: 0,
-      user: USER2,
+      user: bob,
       onBehalfOf: address(spoke2)
     });
 
@@ -504,14 +504,14 @@ contract LiquidityHubTest is BaseTest {
     );
     uint256 initialSupplyShares = daiData.suppliedShares;
 
-    deal(address(tokenList.dai), USER2, supply2Amount);
+    // deal(address(tokenList.dai), bob, supply2Amount);
     Utils.supply({
       hub: hub,
       assetId: daiAssetId,
       spoke: address(spoke2),
       amount: supply2Amount,
       riskPremiumRad: 0,
-      user: USER2,
+      user: bob,
       onBehalfOf: address(spoke2)
     });
 
@@ -544,14 +544,14 @@ contract LiquidityHubTest is BaseTest {
     uint256 amount = 100e18;
     uint256 timestamp = vm.getBlockTimestamp();
 
-    deal(address(tokenList.dai), USER1, amount);
+    // deal(address(tokenList.dai), alice, amount);
     Utils.supply({
       hub: hub,
       assetId: assetId,
       spoke: address(spoke1),
       amount: amount,
       riskPremiumRad: 0,
-      user: USER1,
+      user: alice,
       onBehalfOf: address(spoke1)
     });
 
@@ -574,15 +574,15 @@ contract LiquidityHubTest is BaseTest {
       assetData.suppliedShares + spoke2SupplyShares
     );
 
-    // USER2 action with minimal supply shares
-    deal(address(tokenList.dai), USER2, spoke2SupplyAssets);
+    // bob action with minimal supply shares
+    // deal(address(tokenList.dai), bob, spoke2SupplyAssets);
     Utils.supply({
       hub: hub,
       assetId: assetId,
       spoke: address(spoke2),
       amount: spoke2SupplyAssets,
       riskPremiumRad: 0,
-      user: USER2,
+      user: bob,
       onBehalfOf: address(spoke2)
     });
 
@@ -644,8 +644,8 @@ contract LiquidityHubTest is BaseTest {
       'wrong spoke2 lastUpdateTimestamp'
     );
     // users
-    assertEq(tokenList.dai.balanceOf(USER1), 0, 'wrong USER1 token balance post-supply');
-    assertEq(tokenList.dai.balanceOf(USER2), 0, 'wrong USER2 token balance post-supply');
+    assertEq(tokenList.dai.balanceOf(alice), 0, 'wrong alice token balance post-supply');
+    assertEq(tokenList.dai.balanceOf(bob), 0, 'wrong bob token balance post-supply');
   }
 
   struct TestSupplyUserParams {
@@ -668,7 +668,7 @@ contract LiquidityHubTest is BaseTest {
 
     IERC20 asset = hub.assetsList(assetId);
 
-    deal(address(asset), USER1, amount);
+    // deal(address(asset), alice, amount);
     // initial supply
     Utils.supply({
       hub: hub,
@@ -676,7 +676,7 @@ contract LiquidityHubTest is BaseTest {
       spoke: address(spoke1),
       amount: amount,
       riskPremiumRad: 0,
-      user: USER1,
+      user: alice,
       onBehalfOf: address(spoke1)
     });
 
@@ -749,7 +749,7 @@ contract LiquidityHubTest is BaseTest {
         hub.getTotalAssets(assetId),
         'wrong hub token balance post-supply'
       );
-      assertEq(asset.balanceOf(USER1), 0, 'wrong user token balance post-supply');
+      assertEq(asset.balanceOf(alice), 0, 'wrong user token balance post-supply');
 
       // time flies
       uint256 elapsedTime = randomizer(1 days, 30 days, i);
@@ -761,7 +761,7 @@ contract LiquidityHubTest is BaseTest {
       p.totalAssets += p.userAssets;
       p.suppliedShares += p.userShares;
 
-      deal(address(asset), user, p.userAssets);
+      // deal(address(asset), user, p.userAssets);
       // force update with action
       Utils.supply({
         hub: hub,
@@ -821,21 +821,21 @@ contract LiquidityHubTest is BaseTest {
       hub.getTotalAssets(assetId),
       'wrong hub token balance post-supply'
     );
-    assertEq(asset.balanceOf(USER1), 0, 'wrong user token balance post-supply');
+    assertEq(asset.balanceOf(alice), 0, 'wrong user token balance post-supply');
   }
 
   function test_withdraw() public {
     uint256 amount = 100e18;
 
     // User supply
-    deal(address(tokenList.dai), USER1, amount);
+    // deal(address(tokenList.dai), alice, amount);
     Utils.supply({
       hub: hub,
       assetId: daiAssetId,
       spoke: address(spoke1),
       amount: amount,
       riskPremiumRad: 0,
-      user: USER1,
+      user: alice,
       onBehalfOf: address(spoke1)
     });
 
@@ -893,15 +893,15 @@ contract LiquidityHubTest is BaseTest {
     // dai
     assertEq(tokenList.dai.balanceOf(address(spoke1)), 0, 'wrong spoke token balance pre-withdraw');
     assertEq(tokenList.dai.balanceOf(address(hub)), amount, 'wrong hub token balance pre-withdraw');
-    assertEq(tokenList.dai.balanceOf(USER1), 0, 'wrong user token balance pre-withdraw');
+    assertEq(tokenList.dai.balanceOf(alice), 0, 'wrong user token balance pre-withdraw');
 
     vm.expectEmit(address(tokenList.dai));
-    emit Transfer(address(hub), USER1, amount);
+    emit Transfer(address(hub), alice, amount);
     vm.expectEmit(address(hub));
-    emit Withdraw(daiAssetId, address(spoke1), USER1, amount);
+    emit Withdraw(daiAssetId, address(spoke1), alice, amount);
 
     vm.startPrank(address(spoke1));
-    hub.withdraw({assetId: daiAssetId, to: USER1, amount: amount, riskPremiumRad: 0});
+    hub.withdraw({assetId: daiAssetId, to: alice, amount: amount, riskPremiumRad: 0});
     vm.stopPrank();
 
     assetData = hub.getAsset(daiAssetId);
@@ -960,7 +960,7 @@ contract LiquidityHubTest is BaseTest {
       'wrong spoke token balance post-withdraw'
     );
     assertEq(tokenList.dai.balanceOf(address(hub)), 0, 'wrong hub token balance post-withdraw');
-    assertEq(tokenList.dai.balanceOf(USER1), amount, 'wrong user token balance post-withdraw');
+    assertEq(tokenList.dai.balanceOf(alice), amount, 'wrong user token balance post-withdraw');
   }
 
   // single asset, multiple spokes supplied. No drawn
@@ -977,24 +977,24 @@ contract LiquidityHubTest is BaseTest {
     IERC20 asset = hub.assetsList(assetId);
 
     // User supply first
-    deal(address(asset), USER1, amount);
+    // deal(address(asset), alice, amount);
     Utils.supply({
       hub: hub,
       assetId: assetId,
       spoke: address(spoke1),
       amount: amount,
       riskPremiumRad: riskPremiumRad,
-      user: USER1,
+      user: alice,
       onBehalfOf: address(spoke1)
     });
-    deal(address(asset), USER1, amount2);
+    // deal(address(asset), alice, amount2);
     Utils.supply({
       hub: hub,
       assetId: assetId,
       spoke: address(spoke2),
       amount: amount2,
       riskPremiumRad: riskPremiumRad,
-      user: USER1,
+      user: alice,
       onBehalfOf: address(spoke2)
     });
 
@@ -1004,7 +1004,7 @@ contract LiquidityHubTest is BaseTest {
       spoke: address(spoke1),
       amount: amount,
       riskPremiumRad: 0,
-      to: USER1
+      to: alice
     });
     Utils.withdraw({
       hub: hub,
@@ -1012,7 +1012,7 @@ contract LiquidityHubTest is BaseTest {
       spoke: address(spoke2),
       amount: amount2,
       riskPremiumRad: 0,
-      to: USER1
+      to: alice
     });
 
     Asset memory assetData = hub.getAsset(assetId);
@@ -1092,7 +1092,7 @@ contract LiquidityHubTest is BaseTest {
     assertEq(asset.balanceOf(address(spoke1)), 0, 'wrong spoke1 token balance post-withdraw');
     assertEq(asset.balanceOf(address(spoke2)), 0, 'wrong spoke2 token balance post-withdraw');
     assertEq(asset.balanceOf(address(hub)), 0, 'wrong hub token balance post-withdraw');
-    assertEq(asset.balanceOf(USER1), amount + amount2, 'wrong user token balance post-withdraw');
+    assertEq(asset.balanceOf(alice), amount + amount2, 'wrong user token balance post-withdraw');
   }
 
   function test_withdraw_fuzz(uint256 assetId, uint256 amount) public {
@@ -1102,14 +1102,14 @@ contract LiquidityHubTest is BaseTest {
     IERC20 asset = hub.assetsList(assetId);
 
     // User supply
-    deal(address(asset), USER1, amount);
+    // deal(address(asset), alice, amount);
     Utils.supply({
       hub: hub,
       assetId: assetId,
       spoke: address(spoke1),
       amount: amount,
       riskPremiumRad: 0,
-      user: USER1,
+      user: alice,
       onBehalfOf: address(spoke1)
     });
 
@@ -1167,13 +1167,13 @@ contract LiquidityHubTest is BaseTest {
     // asset
     assertEq(asset.balanceOf(address(spoke1)), 0, 'wrong spoke token balance pre-withdraw');
     assertEq(asset.balanceOf(address(hub)), amount, 'wrong hub token balance pre-withdraw');
-    assertEq(asset.balanceOf(USER1), 0, 'wrong USER1 token balance pre-withdraw');
+    assertEq(asset.balanceOf(alice), 0, 'wrong alice token balance pre-withdraw');
 
     vm.expectEmit(address(asset));
-    emit Transfer(address(hub), USER1, amount);
+    emit Transfer(address(hub), alice, amount);
 
     vm.expectEmit(address(hub));
-    emit Withdraw(assetId, address(spoke1), USER1, amount);
+    emit Withdraw(assetId, address(spoke1), alice, amount);
 
     Utils.withdraw({
       hub: hub,
@@ -1181,7 +1181,7 @@ contract LiquidityHubTest is BaseTest {
       spoke: address(spoke1),
       amount: amount,
       riskPremiumRad: 0,
-      to: USER1
+      to: alice
     });
 
     assetData = hub.getAsset(assetId);
@@ -1236,7 +1236,7 @@ contract LiquidityHubTest is BaseTest {
     // asset
     assertEq(asset.balanceOf(address(spoke1)), 0, 'wrong spoke token balance post-withdraw');
     assertEq(asset.balanceOf(address(hub)), 0, 'wrong hub token balance post-withdraw');
-    assertEq(asset.balanceOf(USER1), amount, 'wrong USER1 token balance post-withdraw');
+    assertEq(asset.balanceOf(alice), amount, 'wrong alice token balance post-withdraw');
   }
 
   function test_withdraw_all_with_interest() public {
@@ -1268,15 +1268,15 @@ contract LiquidityHubTest is BaseTest {
       daiData.suppliedShares
     );
 
-    // USER2 supplies more DAI to trigger accrual
-    deal(address(tokenList.dai), USER2, supply2Amount);
+    // bob supplies more DAI to trigger accrual
+    // deal(address(tokenList.dai), bob, supply2Amount);
     Utils.supply({
       hub: hub,
       assetId: daiAssetId,
       spoke: address(spoke2),
       amount: supply2Amount,
       riskPremiumRad: 0,
-      user: USER2,
+      user: bob,
       onBehalfOf: address(spoke2)
     });
 
@@ -1289,10 +1289,10 @@ contract LiquidityHubTest is BaseTest {
           WadRayMath.RAY
       );
 
-    // USER1 restores all debt including accrual
-    deal(address(tokenList.dai), USER1, restoreAmount);
+    // alice restores all debt including accrual
+    // deal(address(tokenList.dai), alice, restoreAmount);
     vm.prank(address(spoke1));
-    hub.restore({assetId: daiAssetId, amount: restoreAmount, riskPremiumRad: 0, repayer: USER1});
+    hub.restore({assetId: daiAssetId, amount: restoreAmount, riskPremiumRad: 0, repayer: alice});
 
     daiData = hub.getAsset(daiAssetId);
     assertEq(
@@ -1301,17 +1301,17 @@ contract LiquidityHubTest is BaseTest {
       'wrong dai availableLiquidity'
     );
 
-    // USER2 withdraws all liquidity with interest
+    // bob withdraws all liquidity with interest
     vm.prank(address(spoke2));
     hub.withdraw({
       assetId: daiAssetId,
-      to: USER2,
+      to: bob,
       amount: daiData.availableLiquidity,
       riskPremiumRad: 0
     });
 
-    // USER2 withdraws all liquidity with interest
-    assertEq(tokenList.dai.balanceOf(USER2), daiData.availableLiquidity, 'wrong user2 dai balance');
+    // bob withdraws all liquidity with interest
+    assertEq(tokenList.dai.balanceOf(bob), daiData.availableLiquidity, 'wrong bob dai balance');
 
     daiData = hub.getAsset(daiAssetId);
     SpokeData memory spoke1DaiData = hub.getSpoke(daiAssetId, address(spoke1));
@@ -1349,10 +1349,10 @@ contract LiquidityHubTest is BaseTest {
       lastUpdateTimestamp,
       'wrong spoke2 lastUpdateTimestamp'
     );
-    // dai - all to USER1
+    // dai - all to alice
     assertEq(tokenList.dai.balanceOf(address(spoke1)), 0, 'wrong spoke1 dai balance');
     assertEq(tokenList.dai.balanceOf(address(spoke2)), 0, 'wrong spoke2 dai balance');
-    assertEq(tokenList.dai.balanceOf(USER1), 0, 'wrong USER1 dai balance');
+    assertEq(tokenList.dai.balanceOf(alice), 0, 'wrong alice dai balance');
   }
 
   function test_withdraw_fuzz_all_liquidity_with_interest(
@@ -1392,15 +1392,15 @@ contract LiquidityHubTest is BaseTest {
       daiData.suppliedShares
     );
 
-    // USER2 supplies more DAI to trigger accrual
-    deal(address(tokenList.dai), USER2, supply2Amount);
+    // bob supplies more DAI to trigger accrual
+    // deal(address(tokenList.dai), bob, supply2Amount);
     Utils.supply({
       hub: hub,
       assetId: daiAssetId,
       spoke: address(spoke2),
       amount: supply2Amount,
       riskPremiumRad: 0,
-      user: USER2,
+      user: bob,
       onBehalfOf: address(spoke2)
     });
 
@@ -1413,10 +1413,10 @@ contract LiquidityHubTest is BaseTest {
           WadRayMath.RAY
       );
 
-    // USER1 restores all debt including accrual
-    deal(address(tokenList.dai), USER1, restoreAmount);
+    // alice restores all debt including accrual
+    // deal(address(tokenList.dai), alice, restoreAmount);
     vm.prank(address(spoke1));
-    hub.restore({assetId: daiAssetId, amount: restoreAmount, riskPremiumRad: 0, repayer: USER1});
+    hub.restore({assetId: daiAssetId, amount: restoreAmount, riskPremiumRad: 0, repayer: alice});
 
     daiData = hub.getAsset(daiAssetId);
     assertEq(
@@ -1425,17 +1425,17 @@ contract LiquidityHubTest is BaseTest {
       'wrong dai availableLiquidity'
     );
 
-    // USER2 withdraws all liquidity with interest
+    // bob withdraws all liquidity with interest
     vm.prank(address(spoke2));
     hub.withdraw({
       assetId: daiAssetId,
-      to: USER2,
+      to: bob,
       amount: daiData.availableLiquidity,
       riskPremiumRad: 0
     });
 
-    // USER2 withdraws all liquidity with interest
-    assertEq(tokenList.dai.balanceOf(USER2), daiData.availableLiquidity, 'wrong user2 dai balance');
+    // bob withdraws all liquidity with interest
+    assertEq(tokenList.dai.balanceOf(bob), daiData.availableLiquidity, 'wrong bob dai balance');
 
     HubData memory hubData;
     hubData.daiData = hub.getAsset(daiAssetId);
@@ -1482,11 +1482,11 @@ contract LiquidityHubTest is BaseTest {
       lastUpdateTimestamp,
       'wrong spoke2 lastUpdateTimestamp'
     );
-    // dai - all to USER1
+    // dai - all to alice
     assertEq(tokenList.dai.balanceOf(address(spoke1)), 0, 'wrong spoke1 dai balance');
     assertEq(tokenList.dai.balanceOf(address(spoke2)), 0, 'wrong spoke2 dai balance');
-    assertEq(tokenList.dai.balanceOf(USER1), 0, 'wrong USER1 dai balance');
-    assertEq(tokenList.dai.balanceOf(USER2), daiData.availableLiquidity, 'wrong USER2 dai balance');
+    assertEq(tokenList.dai.balanceOf(alice), 0, 'wrong alice dai balance');
+    assertEq(tokenList.dai.balanceOf(bob), daiData.availableLiquidity, 'wrong bob dai balance');
   }
 
   function test_withdraw_revertsWith_zero_supplied() public {
@@ -1503,34 +1503,34 @@ contract LiquidityHubTest is BaseTest {
     uint256 amount = 100e18;
 
     // User supply
-    deal(address(tokenList.dai), USER1, amount);
+    // deal(address(tokenList.dai), alice, amount);
     Utils.supply({
       hub: hub,
       assetId: assetId,
       spoke: address(spoke1),
       amount: amount,
       riskPremiumRad: 0,
-      user: USER1,
+      user: alice,
       onBehalfOf: address(spoke1)
     });
 
     vm.prank(address(spoke1));
     vm.expectRevert(TestErrors.SUPPLIED_AMOUNT_EXCEEDED);
-    hub.withdraw({assetId: assetId, to: USER1, amount: amount + 1, riskPremiumRad: 0});
+    hub.withdraw({assetId: assetId, to: alice, amount: amount + 1, riskPremiumRad: 0});
 
     uint256 timestamp = vm.getBlockTimestamp();
 
     // advance time, but no accumulation
     skip(1e18);
     vm.expectRevert(TestErrors.SUPPLIED_AMOUNT_EXCEEDED);
-    hub.withdraw({assetId: assetId, to: USER1, amount: amount + 1, riskPremiumRad: 0});
+    hub.withdraw({assetId: assetId, to: alice, amount: amount + 1, riskPremiumRad: 0});
   }
 
   function test_withdraw_revertsWith_not_available_liquidity() public {
     uint256 amount = 100e18;
 
     // User supply
-    deal(address(tokenList.dai), address(spoke1), amount);
+    // deal(address(tokenList.dai), address(spoke1), amount);
     Utils.supply({
       hub: hub,
       assetId: daiAssetId,
@@ -1561,7 +1561,7 @@ contract LiquidityHubTest is BaseTest {
     uint256 amount = 100e18;
 
     // User supply
-    deal(address(tokenList.dai), address(spoke1), amount);
+    // deal(address(tokenList.dai), address(spoke1), amount);
     Utils.supply({
       hub: hub,
       assetId: daiAssetId,
@@ -1584,35 +1584,33 @@ contract LiquidityHubTest is BaseTest {
     uint256 wethAmount = 10e18;
     uint256 drawAmount = daiAmount / 2;
 
-    // spoke1, USER1 supply weth
-    deal(address(tokenList.weth), USER1, wethAmount);
+    // spoke1, alice supply weth
     Utils.supply({
       hub: hub,
       assetId: wethAssetId,
       spoke: address(spoke1),
       amount: wethAmount,
       riskPremiumRad: 0,
-      user: USER1,
+      user: alice,
       onBehalfOf: address(spoke1)
     });
 
-    // spoke2, USER2 supply dai
-    deal(address(tokenList.dai), USER2, daiAmount);
+    // spoke2, bob supply dai
     Utils.supply({
       hub: hub,
       assetId: daiAssetId,
       spoke: address(spoke2),
       amount: daiAmount,
       riskPremiumRad: 0,
-      user: USER2,
+      user: bob,
       onBehalfOf: address(spoke2)
     });
 
     // spoke1 draw half of dai reserve liquidity
     vm.expectEmit(address(hub));
-    emit Draw(daiAssetId, address(spoke1), USER1, drawAmount);
+    emit Draw(daiAssetId, address(spoke1), alice, drawAmount);
     vm.prank(address(spoke1));
-    hub.draw({assetId: daiAssetId, to: USER1, amount: drawAmount, riskPremiumRad: 0});
+    hub.draw({assetId: daiAssetId, to: alice, amount: drawAmount, riskPremiumRad: 0});
 
     Asset memory wethData = hub.getAsset(wethAssetId);
     Asset memory daiData = hub.getAsset(daiAssetId);
@@ -1720,8 +1718,16 @@ contract LiquidityHubTest is BaseTest {
       'wrong hub spoke2 lastUpdateTimestamp post-draw'
     );
     // dai balance
-    assertEq(tokenList.dai.balanceOf(USER1), drawAmount, 'wrong USER1 dai final balance');
-    assertEq(tokenList.dai.balanceOf(USER2), 0, 'wrong USER2 dai final balance');
+    assertEq(
+      tokenList.dai.balanceOf(alice),
+      drawAmount + MAX_SUPPLY_AMOUNT,
+      'wrong alice dai final balance'
+    );
+    assertEq(
+      tokenList.dai.balanceOf(bob),
+      MAX_SUPPLY_AMOUNT - daiAmount,
+      'wrong bob dai final balance'
+    );
     assertEq(tokenList.dai.balanceOf(address(spoke1)), 0, 'wrong spoke1 dai final balance');
     assertEq(tokenList.dai.balanceOf(address(spoke2)), 0, 'wrong spoke2 dai final balance');
     assertEq(
@@ -1730,8 +1736,12 @@ contract LiquidityHubTest is BaseTest {
       'wrong hub dai final balance'
     );
     // weth balance
-    assertEq(tokenList.weth.balanceOf(USER1), 0, 'wrong USER1 weth final balance');
-    assertEq(tokenList.weth.balanceOf(USER2), 0, 'wrong USER2 weth final balance');
+    assertEq(
+      tokenList.weth.balanceOf(alice),
+      MAX_SUPPLY_AMOUNT - wethAmount,
+      'wrong alice weth final balance'
+    );
+    assertEq(tokenList.weth.balanceOf(bob), MAX_SUPPLY_AMOUNT, 'wrong bob weth final balance');
     assertEq(tokenList.weth.balanceOf(address(spoke1)), 0, 'wrong spoke1 weth final balance');
     assertEq(tokenList.weth.balanceOf(address(spoke2)), 0, 'wrong spoke2 weth final balance');
     assertEq(tokenList.weth.balanceOf(address(hub)), wethAmount, 'wrong hub weth final balance');
@@ -1742,35 +1752,35 @@ contract LiquidityHubTest is BaseTest {
     uint256 wethAmount = daiAmount / 10;
     uint256 drawAmount = daiAmount / 2;
 
-    // spoke1, USER1 supply weth
-    deal(address(tokenList.weth), USER1, wethAmount);
+    // spoke1, alice supply weth
+    // deal(address(tokenList.weth), alice, wethAmount);
     Utils.supply({
       hub: hub,
       assetId: wethAssetId,
       spoke: address(spoke1),
       amount: wethAmount,
       riskPremiumRad: 0,
-      user: USER1,
+      user: alice,
       onBehalfOf: address(spoke1)
     });
 
-    // spoke2, USER2 supply dai
-    deal(address(tokenList.dai), USER2, daiAmount);
+    // spoke2, bob supply dai
+    // deal(address(tokenList.dai), bob, daiAmount);
     Utils.supply({
       hub: hub,
       assetId: daiAssetId,
       spoke: address(spoke2),
       amount: daiAmount,
       riskPremiumRad: 0,
-      user: USER2,
+      user: bob,
       onBehalfOf: address(spoke2)
     });
 
     // spoke1 draw half of dai reserve liquidity
     vm.expectEmit(address(hub));
-    emit Draw(daiAssetId, address(spoke1), USER1, drawAmount);
+    emit Draw(daiAssetId, address(spoke1), alice, drawAmount);
     vm.prank(address(spoke1));
-    hub.draw({assetId: daiAssetId, to: USER1, amount: drawAmount, riskPremiumRad: 0});
+    hub.draw({assetId: daiAssetId, to: alice, amount: drawAmount, riskPremiumRad: 0});
 
     Asset memory wethData = hub.getAsset(wethAssetId);
     Asset memory daiData = hub.getAsset(daiAssetId);
@@ -1878,8 +1888,16 @@ contract LiquidityHubTest is BaseTest {
       'wrong hub spoke2 lastUpdateTimestamp post-draw'
     );
     // dai balance
-    assertEq(tokenList.dai.balanceOf(USER1), drawAmount, 'wrong USER1 dai final balance');
-    assertEq(tokenList.dai.balanceOf(USER2), 0, 'wrong USER2 dai final balance');
+    assertEq(
+      tokenList.dai.balanceOf(alice),
+      MAX_SUPPLY_AMOUNT + drawAmount,
+      'wrong alice dai final balance'
+    );
+    assertEq(
+      tokenList.dai.balanceOf(bob),
+      MAX_SUPPLY_AMOUNT - daiAmount,
+      'wrong bob dai final balance'
+    );
     assertEq(tokenList.dai.balanceOf(address(spoke1)), 0, 'wrong spoke1 dai final balance');
     assertEq(tokenList.dai.balanceOf(address(spoke2)), 0, 'wrong spoke2 dai final balance');
     assertEq(
@@ -1888,8 +1906,12 @@ contract LiquidityHubTest is BaseTest {
       'wrong hub dai final balance'
     );
     // weth balance
-    assertEq(tokenList.weth.balanceOf(USER1), 0, 'wrong USER1 weth final balance');
-    assertEq(tokenList.weth.balanceOf(USER2), 0, 'wrong USER2 weth final balance');
+    assertEq(
+      tokenList.weth.balanceOf(alice),
+      MAX_SUPPLY_AMOUNT - wethAmount,
+      'wrong alice weth final balance'
+    );
+    assertEq(tokenList.weth.balanceOf(bob), MAX_SUPPLY_AMOUNT, 'wrong bob weth final balance');
     assertEq(tokenList.weth.balanceOf(address(spoke1)), 0, 'wrong spoke1 weth final balance');
     assertEq(tokenList.weth.balanceOf(address(spoke2)), 0, 'wrong spoke2 weth final balance');
     assertEq(tokenList.weth.balanceOf(address(hub)), wethAmount, 'wrong hub weth final balance');
@@ -1918,14 +1940,13 @@ contract LiquidityHubTest is BaseTest {
     _updateDrawCap(daiAssetId, address(spoke1), drawCap);
 
     // spoke2 supply dai
-    deal(address(tokenList.dai), address(spoke2), daiAmount);
     Utils.supply({
       hub: hub,
       assetId: daiAssetId,
       spoke: address(spoke2),
       amount: daiAmount,
       riskPremiumRad: 0,
-      user: address(spoke2),
+      user: alice,
       onBehalfOf: address(spoke2)
     });
 
@@ -1941,7 +1962,7 @@ contract LiquidityHubTest is BaseTest {
     uint256 drawAmount = daiAmount / 2;
 
     // spoke1 supply weth
-    deal(address(tokenList.weth), address(spoke1), wethAmount);
+    // deal(address(tokenList.weth), address(spoke1), wethAmount);
     Utils.supply({
       hub: hub,
       assetId: wethAssetId,
@@ -1953,7 +1974,7 @@ contract LiquidityHubTest is BaseTest {
     });
 
     // spoke2 supply dai
-    deal(address(tokenList.dai), address(spoke2), daiAmount);
+    // deal(address(tokenList.dai), address(spoke2), daiAmount);
     Utils.supply({
       hub: hub,
       assetId: daiAssetId,
@@ -1980,7 +2001,7 @@ contract LiquidityHubTest is BaseTest {
     // spoke1 restore all of drawn dai liquidity
     vm.startPrank(address(spoke1));
     vm.expectRevert(TestErrors.ASSET_NOT_ACTIVE);
-    hub.restore(daiAssetId, 0, drawAmount, USER1);
+    hub.restore(daiAssetId, 0, drawAmount, alice);
     vm.stopPrank();
   }
 
@@ -1991,19 +2012,19 @@ contract LiquidityHubTest is BaseTest {
     uint256 drawAmount = daiAmount / 2;
 
     // spoke1 supply weth
-    deal(address(tokenList.weth), USER1, wethAmount);
+    // deal(address(tokenList.weth), alice, wethAmount);
     Utils.supply({
       hub: hub,
       assetId: wethAssetId,
       spoke: address(spoke1),
       amount: wethAmount,
       riskPremiumRad: 0,
-      user: USER1,
+      user: alice,
       onBehalfOf: address(spoke1)
     });
 
     // spoke2 supply dai
-    deal(address(tokenList.dai), address(spoke2), daiAmount);
+    // deal(address(tokenList.dai), address(spoke2), daiAmount);
     Utils.supply({
       hub: hub,
       assetId: daiAssetId,
@@ -2018,17 +2039,17 @@ contract LiquidityHubTest is BaseTest {
     Utils.draw({
       hub: hub,
       assetId: daiAssetId,
-      to: USER1,
+      to: alice,
       spoke: address(spoke1),
       amount: drawAmount,
       riskPremiumRad: 0,
       onBehalfOf: address(spoke1)
     });
 
-    // user1 restore invalid amount > drawn amount AND premium
+    // alice restore invalid amount > drawn amount AND premium
     vm.startPrank(address(spoke1));
     vm.expectRevert(TestErrors.INVALID_RESTORE_AMOUNT);
-    hub.restore({assetId: daiAssetId, amount: drawAmount + 1, riskPremiumRad: 0, repayer: USER1});
+    hub.restore({assetId: daiAssetId, amount: drawAmount + 1, riskPremiumRad: 0, repayer: alice});
     vm.stopPrank();
   }
 
@@ -2047,19 +2068,19 @@ contract LiquidityHubTest is BaseTest {
     );
 
     // spoke1 supply weth
-    deal(address(tokenList.weth), USER1, wethAmount);
+    // deal(address(tokenList.weth), alice, wethAmount);
     Utils.supply({
       hub: hub,
       assetId: wethAssetId,
       spoke: address(spoke1),
       amount: wethAmount,
       riskPremiumRad: 0,
-      user: USER1,
+      user: alice,
       onBehalfOf: address(spoke1)
     });
 
     // spoke2 supply dai
-    deal(address(tokenList.dai), address(spoke2), daiAmount);
+    // deal(address(tokenList.dai), address(spoke2), daiAmount);
     Utils.supply({
       hub: hub,
       assetId: daiAssetId,
@@ -2074,7 +2095,7 @@ contract LiquidityHubTest is BaseTest {
     Utils.draw({
       hub: hub,
       assetId: daiAssetId,
-      to: USER1,
+      to: alice,
       spoke: address(spoke1),
       amount: drawAmount,
       riskPremiumRad: 0,
@@ -2086,7 +2107,7 @@ contract LiquidityHubTest is BaseTest {
     skip(skipTime);
 
     // spoke2 supply more dai to trigger accrual
-    deal(address(tokenList.dai), address(spoke2), daiAmount / 5);
+    // deal(address(tokenList.dai), address(spoke2), daiAmount / 5);
     Utils.supply({
       hub: hub,
       assetId: daiAssetId,
@@ -2103,14 +2124,14 @@ contract LiquidityHubTest is BaseTest {
     );
     uint256 cumulatedBaseDebt = drawAmount.rayMul(cumulatedBaseInterest);
 
-    // user1 restore invalid amount > drawn amount AND premium
+    // alice restore invalid amount > drawn amount AND premium
     vm.startPrank(address(spoke1));
     vm.expectRevert(TestErrors.INVALID_RESTORE_AMOUNT);
     hub.restore({
       assetId: daiAssetId,
       amount: cumulatedBaseDebt + 1,
       riskPremiumRad: 0,
-      repayer: USER1
+      repayer: alice
     });
     vm.stopPrank();
   }
@@ -2134,19 +2155,19 @@ contract LiquidityHubTest is BaseTest {
     );
 
     // spoke1 supply weth
-    deal(address(tokenList.weth), USER1, wethAmount);
+    // deal(address(tokenList.weth), alice, wethAmount);
     Utils.supply({
       hub: hub,
       assetId: wethAssetId,
       spoke: address(spoke1),
       amount: wethAmount,
       riskPremiumRad: 0,
-      user: USER1,
+      user: alice,
       onBehalfOf: address(spoke1)
     });
 
     // spoke2 supply dai
-    deal(address(tokenList.dai), address(spoke2), daiAmount);
+    // deal(address(tokenList.dai), address(spoke2), daiAmount);
     Utils.supply({
       hub: hub,
       assetId: daiAssetId,
@@ -2161,7 +2182,7 @@ contract LiquidityHubTest is BaseTest {
     Utils.draw({
       hub: hub,
       assetId: daiAssetId,
-      to: USER1,
+      to: alice,
       spoke: address(spoke1),
       amount: drawAmount,
       riskPremiumRad: 0,
@@ -2173,7 +2194,7 @@ contract LiquidityHubTest is BaseTest {
     skip(skipTime);
 
     // spoke2 supply more dai to trigger accrual
-    deal(address(tokenList.dai), address(spoke2), daiAmount / 5);
+    // deal(address(tokenList.dai), address(spoke2), daiAmount / 5);
     Utils.supply({
       hub: hub,
       assetId: daiAssetId,
@@ -2190,14 +2211,14 @@ contract LiquidityHubTest is BaseTest {
     );
     uint256 cumulatedBaseDebt = drawAmount.rayMul(cumulatedBaseInterest);
 
-    // user1 restore invalid amount > drawn amount AND premium
+    // alice restore invalid amount > drawn amount AND premium
     vm.startPrank(address(spoke1));
     vm.expectRevert(TestErrors.INVALID_RESTORE_AMOUNT);
     hub.restore({
       assetId: daiAssetId,
       amount: cumulatedBaseDebt + 1,
       riskPremiumRad: 0,
-      repayer: USER1
+      repayer: alice
     });
     vm.stopPrank();
   }
@@ -2218,19 +2239,19 @@ contract LiquidityHubTest is BaseTest {
     );
 
     // spoke1 supply weth
-    deal(address(tokenList.weth), USER1, wethAmount);
+    // deal(address(tokenList.weth), alice, wethAmount);
     Utils.supply({
       hub: hub,
       assetId: wethAssetId,
       spoke: address(spoke1),
       amount: wethAmount,
       riskPremiumRad: 0,
-      user: USER1,
+      user: alice,
       onBehalfOf: address(spoke1)
     });
 
     // spoke2 supply dai
-    deal(address(tokenList.dai), address(spoke2), daiAmount);
+    // deal(address(tokenList.dai), address(spoke2), daiAmount);
     Utils.supply({
       hub: hub,
       assetId: daiAssetId,
@@ -2245,7 +2266,7 @@ contract LiquidityHubTest is BaseTest {
     Utils.draw({
       hub: hub,
       assetId: daiAssetId,
-      to: USER1,
+      to: alice,
       spoke: address(spoke1),
       amount: drawAmount,
       riskPremiumRad: riskPremiumRad,
@@ -2257,7 +2278,7 @@ contract LiquidityHubTest is BaseTest {
     skip(skipTime);
 
     // spoke2 supply more dai to trigger accrual
-    deal(address(tokenList.dai), address(spoke2), daiAmount / 5);
+    // deal(address(tokenList.dai), address(spoke2), daiAmount / 5);
     Utils.supply({
       hub: hub,
       assetId: daiAssetId,
@@ -2275,14 +2296,14 @@ contract LiquidityHubTest is BaseTest {
     uint256 cumulatedBaseDebt = drawAmount.rayMul(cumulatedBaseInterest);
     uint256 accruedPremium = (cumulatedBaseDebt - drawAmount).radMul(riskPremiumRad);
 
-    // user1 restore invalid amount > drawn amount AND premium
+    // alice restore invalid amount > drawn amount AND premium
     vm.startPrank(address(spoke1));
     vm.expectRevert(TestErrors.INVALID_RESTORE_AMOUNT);
     hub.restore({
       assetId: daiAssetId,
       amount: cumulatedBaseDebt + accruedPremium + 1,
       riskPremiumRad: 0,
-      repayer: USER1
+      repayer: alice
     });
     vm.stopPrank();
   }
@@ -2308,19 +2329,19 @@ contract LiquidityHubTest is BaseTest {
     );
 
     // spoke1 supply weth
-    deal(address(tokenList.weth), USER1, wethAmount);
+    // deal(address(tokenList.weth), alice, wethAmount);
     Utils.supply({
       hub: hub,
       assetId: wethAssetId,
       spoke: address(spoke1),
       amount: wethAmount,
       riskPremiumRad: 0,
-      user: USER1,
+      user: alice,
       onBehalfOf: address(spoke1)
     });
 
     // spoke2 supply dai
-    deal(address(tokenList.dai), address(spoke2), daiAmount);
+    // deal(address(tokenList.dai), address(spoke2), daiAmount);
     Utils.supply({
       hub: hub,
       assetId: daiAssetId,
@@ -2335,7 +2356,7 @@ contract LiquidityHubTest is BaseTest {
     Utils.draw({
       hub: hub,
       assetId: daiAssetId,
-      to: USER1,
+      to: alice,
       spoke: address(spoke1),
       amount: drawAmount,
       riskPremiumRad: riskPremiumRad,
@@ -2347,7 +2368,7 @@ contract LiquidityHubTest is BaseTest {
     skip(skipTime);
 
     // spoke2 supply more dai to trigger accrual
-    deal(address(tokenList.dai), address(spoke2), daiAmount / 5);
+    // deal(address(tokenList.dai), address(spoke2), daiAmount / 5);
     Utils.supply({
       hub: hub,
       assetId: daiAssetId,
@@ -2365,14 +2386,14 @@ contract LiquidityHubTest is BaseTest {
     uint256 cumulatedBaseDebt = drawAmount.rayMul(cumulatedBaseInterest);
     uint256 accruedPremium = (cumulatedBaseDebt - drawAmount).radMul(riskPremiumRad);
 
-    // user1 restore invalid amount > drawn amount AND premium
+    // alice restore invalid amount > drawn amount AND premium
     vm.startPrank(address(spoke1));
     vm.expectRevert(TestErrors.INVALID_RESTORE_AMOUNT);
     hub.restore({
       assetId: daiAssetId,
       amount: cumulatedBaseDebt + accruedPremium + 1,
       riskPremiumRad: 0,
-      repayer: USER1
+      repayer: alice
     });
     vm.stopPrank();
   }
@@ -2405,7 +2426,7 @@ contract LiquidityHubTest is BaseTest {
     uint256 restoreAmount = accruedPremium / 2;
 
     vm.startPrank(address(spoke1));
-    hub.restore({assetId: daiAssetId, amount: restoreAmount, riskPremiumRad: 0, repayer: USER1});
+    hub.restore({assetId: daiAssetId, amount: restoreAmount, riskPremiumRad: 0, repayer: alice});
     vm.stopPrank();
 
     daiData = hub.getAsset(daiAssetId);
@@ -2482,10 +2503,10 @@ contract LiquidityHubTest is BaseTest {
     uint256 accruedPremium = accruedBaseDebt.radMul(riskPremiumRad);
     restoreAmount = bound(restoreAmount, 0, accruedPremium); // within accrued premium
 
-    deal(address(tokenList.dai), USER1, restoreAmount);
+    // deal(address(tokenList.dai), alice, restoreAmount);
 
     vm.startPrank(address(spoke1));
-    hub.restore({assetId: daiAssetId, amount: restoreAmount, riskPremiumRad: 0, repayer: USER1});
+    hub.restore({assetId: daiAssetId, amount: restoreAmount, riskPremiumRad: 0, repayer: alice});
     vm.stopPrank();
 
     daiData = hub.getAsset(daiAssetId);
@@ -2555,7 +2576,7 @@ contract LiquidityHubTest is BaseTest {
     uint256 restoreAmount = accruedPremium + 1; // restore amount partially contributes to base debt
 
     vm.startPrank(address(spoke1));
-    hub.restore({assetId: daiAssetId, amount: restoreAmount, riskPremiumRad: 0, repayer: USER1});
+    hub.restore({assetId: daiAssetId, amount: restoreAmount, riskPremiumRad: 0, repayer: alice});
     vm.stopPrank();
 
     daiData = hub.getAsset(daiAssetId);
@@ -2632,10 +2653,10 @@ contract LiquidityHubTest is BaseTest {
       accruedPremium + accruedBaseDebt + drawAmount
     ); // more than accrued premium, less than total debt
 
-    deal(address(tokenList.dai), USER1, restoreAmount);
+    // deal(address(tokenList.dai), alice, restoreAmount);
 
     vm.startPrank(address(spoke1));
-    hub.restore({assetId: daiAssetId, amount: restoreAmount, riskPremiumRad: 0, repayer: USER1});
+    hub.restore({assetId: daiAssetId, amount: restoreAmount, riskPremiumRad: 0, repayer: alice});
     vm.stopPrank();
 
     daiData = hub.getAsset(daiAssetId);
@@ -2703,26 +2724,26 @@ contract LiquidityHubTest is BaseTest {
     );
 
     // spoke1 supply weth
-    deal(address(tokenList.weth), USER1, wethAmount);
+    // deal(address(tokenList.weth), alice, wethAmount);
     Utils.supply({
       hub: hub,
       assetId: wethAssetId,
       spoke: address(spoke1),
       amount: wethAmount,
       riskPremiumRad: 0,
-      user: USER1,
+      user: alice,
       onBehalfOf: address(spoke1)
     });
 
     // spoke2 supply dai
-    deal(address(tokenList.dai), USER2, daiAmount);
+    // deal(address(tokenList.dai), bob, daiAmount);
     Utils.supply({
       hub: hub,
       assetId: daiAssetId,
       spoke: address(spoke2),
       amount: daiAmount,
       riskPremiumRad: 0,
-      user: USER2,
+      user: bob,
       onBehalfOf: address(spoke2)
     });
 
@@ -2730,7 +2751,7 @@ contract LiquidityHubTest is BaseTest {
     Utils.draw({
       hub: hub,
       assetId: daiAssetId,
-      to: USER1,
+      to: alice,
       spoke: address(spoke1),
       amount: drawAmount,
       riskPremiumRad: 0,
@@ -2741,7 +2762,7 @@ contract LiquidityHubTest is BaseTest {
     emit Restore(daiAssetId, address(spoke1), restoreAmount);
 
     vm.prank(address(spoke1));
-    hub.restore({assetId: daiAssetId, amount: restoreAmount, riskPremiumRad: 0, repayer: USER1});
+    hub.restore({assetId: daiAssetId, amount: restoreAmount, riskPremiumRad: 0, repayer: alice});
 
     HubData memory hubData;
     hubData.daiData = hub.getAsset(daiAssetId);
@@ -2915,17 +2936,17 @@ contract LiquidityHubTest is BaseTest {
       'wrong hub dai final balance'
     );
     assertEq(
-      tokenList.dai.balanceOf(USER1),
-      drawAmount - restoreAmount,
-      'wrong USER1 dai final balance'
+      tokenList.dai.balanceOf(alice),
+      drawAmount - restoreAmount + MAX_SUPPLY_AMOUNT,
+      'wrong alice dai final balance'
     );
-    assertEq(tokenList.dai.balanceOf(USER2), 0, 'wrong USER2 dai final balance');
+    assertEq(tokenList.dai.balanceOf(bob), 0, 'wrong bob dai final balance');
     assertEq(tokenList.dai.balanceOf(address(spoke1)), 0, 'wrong spoke1 dai final balance');
     assertEq(tokenList.dai.balanceOf(address(spoke2)), 0, 'wrong spoke2 dai final balance');
     // weth
     assertEq(tokenList.weth.balanceOf(address(hub)), wethAmount, 'wrong hub weth final balance');
-    assertEq(tokenList.weth.balanceOf(USER1), 0, 'wrong USER1 weth final balance');
-    assertEq(tokenList.weth.balanceOf(USER2), 0, 'wrong USER2 weth final balance');
+    assertEq(tokenList.weth.balanceOf(alice), 0, 'wrong alice weth final balance');
+    assertEq(tokenList.weth.balanceOf(bob), MAX_SUPPLY_AMOUNT, 'wrong bob weth final balance');
     assertEq(tokenList.weth.balanceOf(address(spoke1)), 0, 'wrong spoke1 weth final balance');
     assertEq(tokenList.weth.balanceOf(address(spoke2)), 0, 'wrong spoke2 weth final balance');
   }
@@ -3006,7 +3027,7 @@ contract LiquidityHubTest is BaseTest {
     hub.updateSpokeConfig(assetId, spoke, spokeConfig);
   }
 
-  /// @dev spoke1 (USER1) supplies dai, spoke2 (USER2) supplies weth, spoke1 (USER1) draws dai
+  /// @dev spoke1 (alice) supplies dai, spoke2 (bob) supplies weth, spoke1 (alice) draws dai
   function _setUpIncreasedIndex(
     uint256 daiAmount,
     uint256 wethAmount,
@@ -3021,26 +3042,24 @@ contract LiquidityHubTest is BaseTest {
     );
 
     // spoke1 supply weth
-    deal(address(tokenList.weth), USER1, wethAmount);
     Utils.supply({
       hub: hub,
       assetId: wethAssetId,
       spoke: address(spoke1),
       amount: wethAmount,
       riskPremiumRad: 0,
-      user: USER1,
+      user: alice,
       onBehalfOf: address(spoke1)
     });
 
     // spoke2 supply dai
-    deal(address(tokenList.dai), USER2, daiAmount);
     Utils.supply({
       hub: hub,
       assetId: daiAssetId,
       spoke: address(spoke2),
       amount: daiAmount,
       riskPremiumRad: 0,
-      user: USER2,
+      user: bob,
       onBehalfOf: address(spoke2)
     });
 
@@ -3048,7 +3067,7 @@ contract LiquidityHubTest is BaseTest {
     Utils.draw({
       hub: hub,
       assetId: daiAssetId,
-      to: USER1,
+      to: alice,
       spoke: address(spoke1),
       amount: daiDrawAmount,
       riskPremiumRad: riskPremiumRad,
