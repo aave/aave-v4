@@ -1162,13 +1162,13 @@ contract LiquidityHubTest is BaseTest {
       to: address(spoke2)
     });
 
-    hubData.daiData = hub.getAsset(daiAssetId);
+    hubData.daiData1 = hub.getAsset(daiAssetId);
 
-    uint256 restoreAmount = hubData.daiData.baseDebt + hubData.daiData.outstandingPremium;
+    uint256 restoreAmount = hubData.daiData1.baseDebt + hubData.daiData1.outstandingPremium;
     uint256 newBaseBorrowIndex = WadRayMath.RAY +
       WadRayMath.RAY.rayMul(
         MathUtils.calculateLinearInterest(
-          hubData.daiData.baseBorrowRate,
+          hubData.daiData1.baseBorrowRate,
           uint40(lastUpdateTimestamp)
         ) - WadRayMath.RAY
       );
@@ -1177,9 +1177,9 @@ contract LiquidityHubTest is BaseTest {
     vm.prank(address(spoke1));
     hub.restore({assetId: daiAssetId, amount: restoreAmount, riskPremiumRad: 0, repayer: alice});
 
-    hubData.daiData = hub.getAsset(daiAssetId);
+    hubData.daiData2 = hub.getAsset(daiAssetId);
     assertEq(
-      hubData.daiData.availableLiquidity,
+      hubData.daiData2.availableLiquidity,
       initialAvailableLiquidity + restoreAmount + supply2Amount,
       'dai availableLiquidity'
     );
@@ -1188,32 +1188,32 @@ contract LiquidityHubTest is BaseTest {
     vm.prank(address(spoke2));
     hub.withdraw({
       assetId: daiAssetId,
-      amount: hubData.daiData.availableLiquidity,
+      amount: hubData.daiData2.availableLiquidity,
       riskPremiumRad: 0,
       to: bob
     });
 
     assertEq(
       tokenList.dai.balanceOf(bob),
-      MAX_SUPPLY_AMOUNT + hubData.daiData.availableLiquidity - supply2Amount - daiAmount,
+      MAX_SUPPLY_AMOUNT + hubData.daiData2.availableLiquidity - supply2Amount - daiAmount,
       'bob dai balance'
     );
 
-    hubData.daiData = hub.getAsset(daiAssetId);
+    hubData.daiData3 = hub.getAsset(daiAssetId);
     hubData.spoke1DaiData = hub.getSpoke(daiAssetId, address(spoke1));
     hubData.spoke2DaiData = hub.getSpoke(daiAssetId, address(spoke2));
 
     // hub
     assertEq(hub.getTotalAssets(daiAssetId), 0, 'hub totalAssets');
-    assertEq(hubData.daiData.suppliedShares, 0, 'dai suppliedShares');
-    assertEq(hubData.daiData.availableLiquidity, 0, 'dai availableLiquidity');
-    assertEq(hubData.daiData.baseDebt, 0, 'dai baseDebt');
-    assertEq(hubData.daiData.outstandingPremium, 0, 'dai outstandingPremium');
-    assertEq(hubData.daiData.baseBorrowIndex, newBaseBorrowIndex, 'dai baseBorrowIndex');
-    assertEq(hubData.daiData.baseBorrowRate, rate, 'dai baseBorrowRate');
-    assertEq(hubData.daiData.riskPremiumRad, 0, 'dai riskPremiumRad');
+    assertEq(hubData.daiData3.suppliedShares, 0, 'dai suppliedShares');
+    assertEq(hubData.daiData3.availableLiquidity, 0, 'dai availableLiquidity');
+    assertEq(hubData.daiData3.baseDebt, 0, 'dai baseDebt');
+    assertEq(hubData.daiData3.outstandingPremium, 0, 'dai outstandingPremium');
+    assertEq(hubData.daiData3.baseBorrowIndex, newBaseBorrowIndex, 'dai baseBorrowIndex');
+    assertEq(hubData.daiData3.baseBorrowRate, rate, 'dai baseBorrowRate');
+    assertEq(hubData.daiData3.riskPremiumRad, 0, 'dai riskPremiumRad');
     assertEq(
-      hubData.daiData.lastUpdateTimestamp,
+      hubData.daiData3.lastUpdateTimestamp,
       vm.getBlockTimestamp(),
       'dai lastUpdateTimestamp'
     );
@@ -2542,6 +2542,9 @@ contract LiquidityHubTest is BaseTest {
 
   struct HubData {
     Asset daiData;
+    Asset daiData1;
+    Asset daiData2;
+    Asset daiData3;
     Asset wethData;
     SpokeData spoke1WethData;
     SpokeData spoke1DaiData;
