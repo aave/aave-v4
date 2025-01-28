@@ -38,9 +38,8 @@ library Utils {
     hub.assetsList(assetId).approve(address(hub), amount);
     vm.stopPrank();
 
-    vm.startPrank(spoke);
+    vm.prank(spoke);
     hub.supply({assetId: assetId, amount: amount, riskPremiumRad: riskPremiumRad, supplier: user});
-    vm.stopPrank();
   }
 
   function draw(
@@ -52,9 +51,8 @@ library Utils {
     uint256 riskPremiumRad,
     address onBehalfOf // todo: implement
   ) internal {
-    vm.startPrank(spoke);
+    vm.prank(spoke);
     hub.draw({assetId: assetId, to: to, amount: amount, riskPremiumRad: riskPremiumRad});
-    vm.stopPrank();
   }
 
   function withdraw(
@@ -65,9 +63,8 @@ library Utils {
     uint256 riskPremiumRad,
     address to
   ) internal {
-    vm.startPrank(spoke);
+    vm.prank(spoke);
     hub.withdraw({assetId: assetId, to: to, amount: amount, riskPremiumRad: riskPremiumRad});
-    vm.stopPrank();
   }
 
   function borrow(
@@ -77,9 +74,8 @@ library Utils {
     uint256 amount,
     address onBehalfOf
   ) internal {
-    vm.startPrank(user);
+    vm.prank(user);
     spoke.borrow(assetId, user, amount);
-    vm.stopPrank();
   }
 
   // spoke

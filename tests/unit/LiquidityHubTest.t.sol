@@ -231,15 +231,16 @@ contract LiquidityHubTest is BaseTest {
   function test_supply_fuzz_multi_asset_multi_spoke(
     uint256 assetId,
     uint256 amount,
-    uint256 amount2,
-    address onBehalfOf
+    uint256 amount2
   ) public {
     assetId = bound(assetId, 0, hub.assetCount() - 2);
     amount = bound(amount, 1, MAX_SUPPLY_AMOUNT);
     amount2 = bound(amount2, 1, MAX_SUPPLY_AMOUNT);
 
+    uint256 assetId2 = assetId + 1;
+
     IERC20 asset = hub.assetsList(assetId);
-    IERC20 asset2 = hub.assetsList(assetId + 1);
+    IERC20 asset2 = hub.assetsList(assetId2);
 
     vm.expectEmit(address(asset));
     emit Transfer(alice, address(hub), amount);
@@ -252,17 +253,17 @@ contract LiquidityHubTest is BaseTest {
     vm.expectEmit(address(asset2));
     emit Transfer(alice, address(hub), amount2);
     vm.expectEmit(address(hub));
-    emit Supply(assetId + 1, address(spoke2), amount2);
+    emit Supply(assetId2, address(spoke2), amount2);
 
     vm.prank(address(spoke2));
-    hub.supply(assetId + 1, amount2, 0, alice);
+    hub.supply(assetId2, amount2, 0, alice);
 
     uint256 timestamp = vm.getBlockTimestamp();
 
     Asset memory assetData = hub.getAsset(assetId);
-    Asset memory asset2Data = hub.getAsset(assetId + 1);
+    Asset memory asset2Data = hub.getAsset(assetId2);
     SpokeData memory spokeData = hub.getSpoke(assetId, address(spoke1));
-    SpokeData memory spoke2Data = hub.getSpoke(assetId + 1, address(spoke2));
+    SpokeData memory spoke2Data = hub.getSpoke(assetId2, address(spoke2));
 
     // hub
     assertEq(hub.getTotalAssets(assetId), amount, 'total assets post-supply');
@@ -312,7 +313,7 @@ contract LiquidityHubTest is BaseTest {
     // asset2
     assertEq(
       asset2Data.suppliedShares,
-      hub.convertToSharesUp(assetId + 1, amount2),
+      hub.convertToSharesUp(assetId2, amount2),
       'asset2 suppliedShares post-supply'
     );
     assertEq(asset2Data.availableLiquidity, amount2, 'asset2 availableLiquidity post-supply');
@@ -1147,9 +1148,7 @@ contract LiquidityHubTest is BaseTest {
     HubData memory hubData;
     hubData.daiData = hub.getAsset(daiAssetId);
 
-    uint256 accruedBase = hubData.daiData.baseDebt.rayMul(rate);
     uint256 initialAvailableLiquidity = hubData.daiData.availableLiquidity;
-
     uint256 supply2Amount = 10e18;
 
     // bob supplies more DAI to trigger accrual
