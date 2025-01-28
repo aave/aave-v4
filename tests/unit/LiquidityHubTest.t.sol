@@ -1969,7 +1969,7 @@ contract LiquidityHubTest is BaseTest {
       spoke: address(spoke1),
       amount: wethAmount,
       riskPremiumRad: 0,
-      user: address(spoke1),
+      user: alice,
       onBehalfOf: address(spoke1)
     });
 
@@ -1981,7 +1981,7 @@ contract LiquidityHubTest is BaseTest {
       spoke: address(spoke2),
       amount: daiAmount,
       riskPremiumRad: 0,
-      user: address(spoke2),
+      user: bob,
       onBehalfOf: address(spoke2)
     });
 
@@ -1989,7 +1989,7 @@ contract LiquidityHubTest is BaseTest {
     Utils.draw({
       hub: hub,
       assetId: daiAssetId,
-      to: address(spoke1),
+      to: alice,
       spoke: address(spoke1),
       amount: drawAmount,
       riskPremiumRad: 0,
