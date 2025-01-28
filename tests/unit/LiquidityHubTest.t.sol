@@ -524,11 +524,6 @@ contract LiquidityHubTest is BaseTest {
     uint256 spoke2SupplyShares = 1; // minimum for 1 share
     uint256 spoke2SupplyAssets = hub.convertToAssetsDown(assetId, spoke2SupplyShares);
 
-    uint256 newTotalAssets = amount.toAssetsDown(
-      hub.getTotalAssets(assetId) + spoke2SupplyAssets,
-      assetData.suppliedShares + spoke2SupplyShares
-    );
-
     // bob action with minimal supply shares
     Utils.supply({
       hub: hub,
@@ -1154,13 +1149,8 @@ contract LiquidityHubTest is BaseTest {
 
     uint256 accruedBase = hubData.daiData.baseDebt.rayMul(rate);
     uint256 initialAvailableLiquidity = hubData.daiData.availableLiquidity;
-    uint256 initialSupplyShares = hubData.daiData.suppliedShares;
 
     uint256 supply2Amount = 10e18;
-    uint256 expectedSupply2Shares = supply2Amount.toSharesDown(
-      hub.getTotalAssets(daiAssetId) + accruedBase,
-      hubData.daiData.suppliedShares
-    );
 
     // bob supplies more DAI to trigger accrual
     Utils.supply({
