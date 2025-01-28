@@ -115,10 +115,10 @@ abstract contract BaseTest is Test, Events {
   uint256 internal wethAssetId = 0;
   uint256 internal usdxAssetId = 1;
 
-  // uint256 internal mintAmount_USDX = MAX_SUPPLY_AMOUNT;
-  // uint256 internal mintAmount_DAI = MAX_SUPPLY_AMOUNT;
-  // uint256 internal mintAmount_WBTC = MAX_SUPPLY_AMOUNT;
-  // uint256 internal mintAmount_WETH = MAX_SUPPLY_AMOUNT;
+  uint256 internal mintAmount_USDX = MAX_SUPPLY_AMOUNT;
+  uint256 internal mintAmount_DAI = MAX_SUPPLY_AMOUNT;
+  uint256 internal mintAmount_WBTC = MAX_SUPPLY_AMOUNT;
+  uint256 internal mintAmount_WETH = MAX_SUPPLY_AMOUNT;
 
   struct TokenList {
     WETH9 weth;
@@ -164,25 +164,37 @@ abstract contract BaseTest is Test, Events {
     vm.label(address(tokenList.dai), 'DAI');
     vm.label(address(tokenList.wbtc), 'WBTC');
 
-    uint256 mintAmount_USDX = 100_000e6;
-    uint256 mintAmount_DAI = 1e60;
-    uint256 mintAmount_WBTC = 100e8;
-    address[6] memory users = [
-      alice,
-      bob,
-      carol,
-      address(spoke1),
-      address(spoke2),
-      address(spoke3)
-    ];
+    address[3] memory users = [alice, bob, carol];
 
     for (uint256 x; x < users.length; ++x) {
       tokenList.usdx.mint(users[x], mintAmount_USDX);
       tokenList.dai.mint(users[x], mintAmount_DAI);
       tokenList.wbtc.mint(users[x], mintAmount_WBTC);
-      deal(address(tokenList.weth), users[x], 100e18);
+      deal(address(tokenList.weth), users[x], mintAmount_WETH);
 
       vm.startPrank(users[x]);
+      tokenList.weth.approve(address(hub), type(uint256).max);
+      tokenList.usdx.approve(address(hub), type(uint256).max);
+      tokenList.dai.approve(address(hub), type(uint256).max);
+      tokenList.wbtc.approve(address(hub), type(uint256).max);
+      vm.stopPrank();
+    }
+  }
+
+  function spokeMintAndApprove() internal {
+    uint256 spokeMintAmount_USDX = 100_000e6;
+    uint256 spokeMintAmount_DAI = 1e60;
+    uint256 spokeMintAmount_WBTC = 100e8;
+    uint256 spokeMintAmount_WETH = 100e18;
+    address[3] memory spokes = [address(spoke1), address(spoke2), address(spoke3)];
+
+    for (uint256 x; x < spokes.length; ++x) {
+      tokenList.usdx.mint(spokes[x], spokeMintAmount_USDX);
+      tokenList.dai.mint(spokes[x], spokeMintAmount_DAI);
+      tokenList.wbtc.mint(spokes[x], spokeMintAmount_WBTC);
+      deal(address(tokenList.weth), spokes[x], spokeMintAmount_WETH);
+
+      vm.startPrank(spokes[x]);
       tokenList.weth.approve(address(hub), type(uint256).max);
       tokenList.usdx.approve(address(hub), type(uint256).max);
       tokenList.dai.approve(address(hub), type(uint256).max);

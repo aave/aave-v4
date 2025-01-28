@@ -17,6 +17,7 @@ contract LiquidityHubInterestRateTest is BaseTest {
   function setUp() public override {
     super.setUp();
     initEnvironment();
+    spokeMintAndApprove();
   }
 
   function test_getInterestRate_NoActionTaken() public {
