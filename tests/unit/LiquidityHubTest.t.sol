@@ -2031,7 +2031,7 @@ contract LiquidityHubTest is BaseTest {
       spoke: address(spoke2),
       amount: daiAmount,
       riskPremiumRad: 0,
-      user: address(spoke2),
+      user: bob,
       onBehalfOf: address(spoke2)
     });
 
@@ -2087,7 +2087,7 @@ contract LiquidityHubTest is BaseTest {
       spoke: address(spoke2),
       amount: daiAmount,
       riskPremiumRad: 0,
-      user: address(spoke2),
+      user: bob,
       onBehalfOf: address(spoke2)
     });
 
