@@ -664,8 +664,16 @@ contract LiquidityHubTest is BaseTest {
       'wrong spoke2 lastUpdateTimestamp'
     );
     // users
-    assertEq(tokenList.dai.balanceOf(alice), 0, 'wrong alice token balance post-supply');
-    assertEq(tokenList.dai.balanceOf(bob), 0, 'wrong bob token balance post-supply');
+    assertEq(
+      tokenList.dai.balanceOf(alice),
+      MAX_SUPPLY_AMOUNT - amount,
+      'wrong alice token balance post-supply'
+    );
+    assertEq(
+      tokenList.dai.balanceOf(bob),
+      MAX_SUPPLY_AMOUNT - spoke2SupplyAssets,
+      'wrong bob token balance post-supply'
+    );
   }
 
   struct TestSupplyUserParams {
