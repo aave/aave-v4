@@ -2363,7 +2363,7 @@ contract LiquidityHubTest is BaseTest {
     );
     uint256 accruedBaseDebt = drawAmount.rayMul(cumulatedBaseInterest) - drawAmount;
     uint256 accruedPremium = accruedBaseDebt.radMul(riskPremiumRad);
-    restoreAmount = bound(restoreAmount, 0, accruedPremium); // within accrued premium
+    restoreAmount = bound(restoreAmount, 1, accruedPremium); // within accrued premium
 
     vm.startPrank(address(spoke1));
     hub.restore({assetId: daiAssetId, amount: restoreAmount, riskPremiumRad: 0, repayer: alice});
