@@ -70,14 +70,13 @@ contract LiquidityHubHandler is Test {
   }
 
   function supply(uint256 assetId, address user, uint256 amount, address onBehalfOf) public {
-    if (user == address(hub) || user == address(0)) return;
-    if (onBehalfOf == address(0)) return;
+    vm.assume(user != address(hub) && user != address(0) && onBehalfOf != address(0));
     assetId = bound(assetId, 0, hub.assetCount() - 1);
     amount = bound(amount, 1, type(uint128).max);
 
     IERC20 asset = hub.assetsList(assetId);
     deal(address(asset), user, amount);
-    Utils.supply(vm, hub, assetId, user, amount, user, onBehalfOf);
+    Utils.supply(hub, assetId, user, amount, user, onBehalfOf);
 
     _updateState(assetId);
     s.reserveSupplied[assetId] += amount;
@@ -89,7 +88,7 @@ contract LiquidityHubHandler is Test {
     // TODO: bound by bm user balance
     amount = bound(amount, 1, 2);
 
-    Utils.withdraw(vm, hub, assetId, user, amount, to);
+    Utils.withdraw(hub, assetId, user, amount, to);
 
     _updateState(assetId);
     s.reserveSupplied[assetId] -= amount;
@@ -97,7 +96,7 @@ contract LiquidityHubHandler is Test {
   }
 
   function donate(uint256 assetId, address user, uint256 amount) public {
-    if (user == address(hub) || user == address(0)) return;
+    vm.assume(user != address(hub) && user != address(0));
     assetId = bound(assetId, 0, hub.assetCount() - 1);
     amount = bound(amount, 1, type(uint128).max);
 

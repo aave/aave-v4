@@ -91,7 +91,7 @@ abstract contract BaseTest is Test, Events {
   IERC20 internal eth;
   IERC20 internal wbtc;
 
-  IPriceOracle internal oracle;
+  MockPriceOracle internal oracle;
   LiquidityHub internal hub;
   Spoke internal spoke1;
   Spoke internal spoke2;
@@ -211,7 +211,7 @@ abstract contract BaseTest is Test, Events {
       spokeConfigs,
       reserveConfigs
     );
-    MockPriceOracle(address(oracle)).setAssetPrice(wethAssetId, 2000e8);
+    oracle.setAssetPrice(wethAssetId, 2000e8);
 
     // add USDX
     reserveConfigs[0] = Spoke.ReserveConfig(0.78e4, 0, true, true);
@@ -225,7 +225,7 @@ abstract contract BaseTest is Test, Events {
       spokeConfigs,
       reserveConfigs
     );
-    MockPriceOracle(address(oracle)).setAssetPrice(usdxAssetId, 1e8);
+    oracle.setAssetPrice(usdxAssetId, 1e8);
 
     // add DAI
     reserveConfigs[0] = Spoke.ReserveConfig(0.78e4, 0, true, true);
@@ -239,7 +239,7 @@ abstract contract BaseTest is Test, Events {
       spokeConfigs,
       reserveConfigs
     );
-    MockPriceOracle(address(oracle)).setAssetPrice(usdxAssetId, 1e8);
+    oracle.setAssetPrice(usdxAssetId, 1e8);
 
     // add WBTC
     // lt, lb, borrowable, collateral
@@ -254,7 +254,7 @@ abstract contract BaseTest is Test, Events {
       spokeConfigs,
       reserveConfigs
     );
-    MockPriceOracle(address(oracle)).setAssetPrice(wbtcAssetId, 50_000e8);
+    oracle.setAssetPrice(wbtcAssetId, 50_000e8);
 
     irStrategy.setInterestRateParams(
       wethAssetId,
@@ -292,5 +292,12 @@ abstract contract BaseTest is Test, Events {
         variableRateSlope2: 5_00 // 5.00%
       })
     );
+  }
+
+  /// @dev pseudo random randomizer
+  function randomizer(uint256 min, uint256 max, uint256 salt) internal view returns (uint256) {
+    return
+      (uint256(keccak256(abi.encodePacked(block.timestamp, block.difficulty, salt))) %
+        (max - min)) + min;
   }
 }

@@ -47,7 +47,7 @@ contract SpokeTest_ToMigrate is BaseTest {
       spokeConfigs,
       reserveConfigs
     );
-    MockPriceOracle(address(oracle)).setAssetPrice(daiAssetId, 1e8);
+    oracle.setAssetPrice(daiAssetId, 1e8);
 
     // Add eth
     uint256 ethAssetId = 1;
@@ -68,7 +68,7 @@ contract SpokeTest_ToMigrate is BaseTest {
       spokeConfigs,
       reserveConfigs
     );
-    MockPriceOracle(address(oracle)).setAssetPrice(ethAssetId, 2000e8);
+    oracle.setAssetPrice(ethAssetId, 2000e8);
 
     // Add USDC
     uint256 usdcId = 2;
@@ -94,7 +94,7 @@ contract SpokeTest_ToMigrate is BaseTest {
       spokeConfigs,
       reserveConfigs
     );
-    MockPriceOracle(address(oracle)).setAssetPrice(usdcId, 1e8);
+    oracle.setAssetPrice(usdcId, 1e8);
 
     irStrategy.setInterestRateParams(
       daiAssetId,
@@ -192,11 +192,11 @@ contract SpokeTest_ToMigrate is BaseTest {
 
     // USER1 supply eth
     deal(address(eth), USER1, ethAmount);
-    Utils.spokeSupply(vm, hub, spoke1, ethId, USER1, ethAmount, USER1);
+    Utils.spokeSupply(hub, spoke1, ethId, USER1, ethAmount, USER1);
 
     // USER2 supply dai
     deal(address(dai), USER2, daiAmount);
-    Utils.spokeSupply(vm, hub, spoke1, daiId, USER2, daiAmount, USER2);
+    Utils.spokeSupply(hub, spoke1, daiId, USER2, daiAmount, USER2);
 
     // set reserve not borrowable
     Utils.updateBorrowable(spoke1, daiId, false);
@@ -215,11 +215,11 @@ contract SpokeTest_ToMigrate is BaseTest {
 
     // USER1 supply eth
     deal(address(eth), USER1, ethAmount);
-    Utils.spokeSupply(vm, hub, spoke1, ethId, USER1, ethAmount, USER1);
+    Utils.spokeSupply(hub, spoke1, ethId, USER1, ethAmount, USER1);
 
     // USER2 supply dai
     deal(address(dai), USER2, daiAmount);
-    Utils.spokeSupply(vm, hub, spoke1, daiId, USER2, daiAmount, USER2);
+    Utils.spokeSupply(hub, spoke1, daiId, USER2, daiAmount, USER2);
 
     Spoke.UserConfig memory user1Data = spoke1.getUser(ethId, USER1);
     Spoke.UserConfig memory user2Data = spoke1.getUser(daiId, USER2);
@@ -274,7 +274,7 @@ contract SpokeTest_ToMigrate is BaseTest {
 
     // USER1 supply
     deal(address(dai), USER1, amount);
-    Utils.spokeSupply(vm, hub, spoke1, assetId, USER1, amount, USER1);
+    Utils.spokeSupply(hub, spoke1, assetId, USER1, amount, USER1);
 
     Spoke.UserConfig memory user1Data = spoke1.getUser(assetId, USER1);
 
@@ -314,14 +314,14 @@ contract SpokeTest_ToMigrate is BaseTest {
 
     // USER1 supply eth
     deal(address(eth), USER1, ethAmount);
-    Utils.spokeSupply(vm, hub, spoke1, ethId, USER1, ethAmount, USER1);
+    Utils.spokeSupply(hub, spoke1, ethId, USER1, ethAmount, USER1);
 
     // USER2 supply dai
     deal(address(dai), USER2, daiAmount);
-    Utils.spokeSupply(vm, hub, spoke1, daiId, USER2, daiAmount, USER2);
+    Utils.spokeSupply(hub, spoke1, daiId, USER2, daiAmount, USER2);
 
     // USER1 borrow half of dai reserve liquidity
-    Utils.borrow(vm, spoke1, daiId, USER1, drawAmount, USER1);
+    Utils.borrow(spoke1, daiId, USER1, drawAmount, USER1);
 
     // spoke1 restore half of drawn dai liquidity
     vm.startPrank(USER1);
@@ -341,14 +341,14 @@ contract SpokeTest_ToMigrate is BaseTest {
 
     // USER1 supply eth
     deal(address(eth), USER1, ethAmount);
-    Utils.spokeSupply(vm, hub, spoke1, ethId, USER1, ethAmount, USER1);
+    Utils.spokeSupply(hub, spoke1, ethId, USER1, ethAmount, USER1);
 
     // USER2 supply dai
     deal(address(dai), USER2, daiAmount);
-    Utils.spokeSupply(vm, hub, spoke1, daiId, USER2, daiAmount, USER2);
+    Utils.spokeSupply(hub, spoke1, daiId, USER2, daiAmount, USER2);
 
     // USER1 borrow half of dai reserve liquidity
-    Utils.borrow(vm, spoke1, daiId, USER1, drawAmount, USER1);
+    Utils.borrow(spoke1, daiId, USER1, drawAmount, USER1);
 
     // spoke1 restore half of drawn dai liquidity
     vm.startPrank(USER1);
@@ -456,7 +456,7 @@ contract SpokeTest_ToMigrate is BaseTest {
 
     // USER1 supply dai into spoke1
     deal(address(dai), USER1, daiAmount);
-    Utils.spokeSupply(vm, hub, spoke1, daiId, USER1, daiAmount, USER1);
+    Utils.spokeSupply(hub, spoke1, daiId, USER1, daiAmount, USER1);
 
     vm.prank(USER1);
     vm.expectEmit(address(spoke1));

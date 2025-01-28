@@ -6,6 +6,8 @@ import {LiquidityHub, DataTypes} from 'src/contracts/LiquidityHub.sol';
 import {Spoke, ISpoke} from 'src/contracts/Spoke.sol';
 
 library Utils {
+  Vm internal constant vm = Vm(address(uint160(uint256(keccak256('hevm cheat code')))));
+
   // hub
   function addAssetAndSpokes(
     LiquidityHub hub,
@@ -24,7 +26,6 @@ library Utils {
   }
 
   function supply(
-    Vm vm,
     LiquidityHub hub,
     uint256 assetId,
     address spoke,
@@ -42,7 +43,6 @@ library Utils {
   }
 
   function draw(
-    Vm vm,
     LiquidityHub hub,
     uint256 assetId,
     address spoke,
@@ -56,7 +56,6 @@ library Utils {
   }
 
   function withdraw(
-    Vm vm,
     LiquidityHub hub,
     uint256 assetId,
     address spoke,
@@ -64,13 +63,11 @@ library Utils {
     address to
   ) internal {
     vm.startPrank(spoke);
-    // TODO: risk premium
-    hub.withdraw(assetId, to, amount, 0);
+    hub.withdraw({assetId: assetId, to: to, amount: amount, riskPremiumRad: 0});
     vm.stopPrank();
   }
 
   function borrow(
-    Vm vm,
     Spoke spoke,
     uint256 assetId,
     address user,
@@ -84,7 +81,6 @@ library Utils {
 
   // spoke
   function spokeSupply(
-    Vm vm,
     LiquidityHub hub,
     Spoke spoke,
     uint256 assetId,
@@ -98,7 +94,6 @@ library Utils {
     vm.stopPrank();
   }
   function setUsingAsCollateral(
-    Vm vm,
     Spoke spoke,
     address user,
     uint256 assetId,
