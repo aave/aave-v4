@@ -149,6 +149,7 @@ contract LiquidityHub is ILiquidityHub {
   // Users
   // /////
 
+  /// @inheritdoc ILiquidityHub
   function supply(
     uint256 assetId,
     uint256 amount,
@@ -187,6 +188,7 @@ contract LiquidityHub is ILiquidityHub {
     return (nextBaseBorrowIndex, sharesAmount);
   }
 
+  /// @inheritdoc ILiquidityHub
   function withdraw(
     uint256 assetId,
     address to,
@@ -217,6 +219,7 @@ contract LiquidityHub is ILiquidityHub {
     return sharesAmount;
   }
 
+  /// @inheritdoc ILiquidityHub
   function draw(
     uint256 assetId,
     address to,
@@ -243,6 +246,7 @@ contract LiquidityHub is ILiquidityHub {
     return amount;
   }
 
+  /// @inheritdoc ILiquidityHub
   function restore(
     uint256 assetId,
     uint256 amount,
@@ -402,8 +406,8 @@ contract LiquidityHub is ILiquidityHub {
 
     uint256 newSpokeDebt = baseDebtChange > 0
       ? existingSpokeDebt + uint256(baseDebtChange) // debt added
-      : // force underflow: only possible when spoke takes repays amount more than net drawn
-      existingSpokeDebt - uint256(-baseDebtChange); // debt restored
+      // force underflow: only possible when spoke takes repays amount more than net drawn
+      : existingSpokeDebt - uint256(-baseDebtChange); // debt restored
 
     (uint256 newAssetRiskPremium, uint256 newAssetDebt) = MathUtils.addToWeightedAverage(
       assetRiskPremiumWithoutCurrent,
