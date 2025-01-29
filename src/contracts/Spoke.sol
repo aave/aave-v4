@@ -120,12 +120,14 @@ contract Spoke is ISpoke {
   function supply(uint256 assetId, uint256 amount) external {
     Reserve storage r = reserves[assetId];
 
-    _accrueAssetInterest(assetId);
+    uint256 newBaseBorrowIndex = liquidityHub.previewNextBorrowIndex(assetId);
+
+    _accrueAssetInterest(assetId, newBaseBorrowIndex);
     _validateSupply(r, amount);
 
     // Update user's risk premium and wAvgRP across all users of spoke
     (, uint256 newAggregatedRiskPremium) = _refreshRiskPremium();
-    (uint256 newBaseBorrowIndex, uint256 userShares) = liquidityHub.supply(
+    (, uint256 userShares) = liquidityHub.supply(
       assetId,
       amount,
       newAggregatedRiskPremium,
@@ -401,7 +403,7 @@ contract Spoke is ISpoke {
   }
 
   // TODO: Implement
-  function _accrueAssetInterest(uint256 assetId) internal {
+  function _accrueAssetInterest(uint256 assetId, uint256 newBaseBorrowIndex) internal {
     return;
   }
 }
