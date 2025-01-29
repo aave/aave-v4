@@ -24,7 +24,12 @@ contract Spoke is ISpoke {
     address asset;
     // uint256 totalDebt;
     // uint256 lastUpdateIndex;
-    // uint256 lastUpdateTimestamp;
+    uint256 baseDebt;
+    uint256 outstandingPremium;
+    uint256 totalSupplyShares;
+    uint256 baseBorrowIndex;
+    uint256 lastUpdateTimestamp;
+    uint256 wAvgRP;
     ReserveConfig config;
   }
 
@@ -42,6 +47,11 @@ contract Spoke is ISpoke {
     // uint256 balance;
     // uint256 lastUpdateIndex;
     // uint256 lastUpdateTimestamp;
+    uint256 baseDebt;
+    uint256 outstandingPremium;
+    uint256 totalSupplyShares;
+    uint256 baseBorrowIndex;
+    uint256 riskPremium;
   }
 
   struct CalculateUserAccountDataVars {
@@ -110,10 +120,11 @@ contract Spoke is ISpoke {
   function supply(uint256 assetId, uint256 amount) external {
     Reserve storage r = reserves[assetId];
 
+    _accrueAssetInterest(assetId);
     _validateSupply(r, amount);
 
     (, uint256 newAggregatedRiskPremium) = _refreshRiskPremium();
-    (, uint256 userShares) = liquidityHub.supply(
+    (uint256 newBaseBorrowIndex, uint256 userShares) = liquidityHub.supply(
       assetId,
       amount,
       newAggregatedRiskPremium,
@@ -121,6 +132,9 @@ contract Spoke is ISpoke {
     );
 
     users[assetId][msg.sender].supplyShares += userShares;
+    reserves[assetId].totalSupplyShares += userShares;
+
+    _updateUserWavgRP(assetId, msg.sender, userShares, newBaseBorrowIndex);
 
     emit Supplied(assetId, msg.sender, amount);
   }
@@ -275,6 +289,7 @@ contract Spoke is ISpoke {
   @return uint256 new risk premium
   @return uint256 new aggregated risk premium
   */
+  // TODO: Implement
   function _refreshRiskPremium() internal returns (uint256, uint256) {
     // TODO: update state - debt shares
 
@@ -283,6 +298,16 @@ contract Spoke is ISpoke {
     // TODO: aggregated risk premium, ie loop over all assets and sum up risk premium
     uint256 newAggregatedRiskPremium = 0;
     return (newUserRiskPremium, newAggregatedRiskPremium);
+  }
+
+  // TODO: Implement
+  function _updateUserWavgRP(
+    uint256 assetId,
+    address user,
+    uint256 userShares,
+    uint256 newBaseBorrowIndex
+  ) internal {
+    return;
   }
 
   function _validateSetUsingAsCollateral(uint256 assetId, address user) internal view {
@@ -374,5 +399,10 @@ contract Spoke is ISpoke {
       debt.rayMul(
         MathUtils.calculateCompoundedInterest(getInterestRate(assetId), uint40(0), block.timestamp)
       );
+  }
+
+  // TODO: Implement
+  function _accrueAssetInterest(uint256 assetId) internal {
+    return;
   }
 }
