@@ -276,9 +276,6 @@ contract LiquidityHubInterestRateTest is BaseTest {
     uint256 newRp = hub.getAsset(daiAssetId).riskPremiumRad;
     assertEq(borrowRate, baseBorrowRate + (newRp.radToRay().rayMul(baseBorrowRate)));
   }
-
-  // TODO: Test via calling functions on spokes - after spoke side is implemented
-
   function _getBaseBorrowRate(uint256 assetId) internal view returns (uint256) {
     return hub.getBaseInterestRate(assetId);
   }
