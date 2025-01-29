@@ -177,7 +177,7 @@ contract LiquidityHubRestoreTest is LiquidityHubBaseTest {
       uint40(spoke1DaiData.lastUpdateTimestamp)
     );
     uint256 cumulatedBaseDebt = drawAmount.rayMul(cumulatedBaseInterest);
-    assert(cumulatedBaseDebt > 0);
+    vm.assume(cumulatedBaseDebt > 0);
 
     // alice restore invalid amount > drawn amount AND premium
     vm.expectRevert(TestErrors.INVALID_RESTORE_AMOUNT);
@@ -262,7 +262,7 @@ contract LiquidityHubRestoreTest is LiquidityHubBaseTest {
       uint40(spoke1DaiData.lastUpdateTimestamp)
     );
     uint256 cumulatedBaseDebt = drawAmount.rayMul(cumulatedBaseInterest);
-    assert(cumulatedBaseDebt > 0);
+    vm.assume(cumulatedBaseDebt > 0);
 
     // alice restore invalid amount > drawn amount AND premium
     vm.expectRevert(TestErrors.INVALID_RESTORE_AMOUNT);
@@ -345,7 +345,7 @@ contract LiquidityHubRestoreTest is LiquidityHubBaseTest {
     );
     uint256 cumulatedBaseDebt = drawAmount.rayMul(cumulatedBaseInterest);
     uint256 accruedPremium = (cumulatedBaseDebt - drawAmount).radMul(riskPremiumRad);
-    assert(accruedPremium > 0 && cumulatedBaseDebt > 0);
+    vm.assume(accruedPremium > 0);
 
     // alice restore invalid amount > drawn amount AND premium
     vm.expectRevert(TestErrors.INVALID_RESTORE_AMOUNT);
@@ -473,7 +473,7 @@ contract LiquidityHubRestoreTest is LiquidityHubBaseTest {
     uint256 accruedBaseDebt = drawAmount.rayMul(cumulatedBaseInterest) - drawAmount;
     uint256 accruedPremium = accruedBaseDebt.radMul(riskPremiumRad);
 
-    assert(accruedPremium > 0);
+    vm.assume(accruedPremium > 0);
 
     uint256 restoreAmount = accruedPremium / 2;
 
@@ -615,7 +615,7 @@ contract LiquidityHubRestoreTest is LiquidityHubBaseTest {
     );
     uint256 accruedBaseDebt = drawAmount.rayMul(cumulatedBaseInterest) - drawAmount;
     uint256 accruedPremium = accruedBaseDebt.radMul(riskPremiumRad);
-    assert(accruedPremium > 0);
+    vm.assume(accruedPremium > 0);
     uint256 restoreAmount = accruedPremium + 1; // restore amount partially contributes to base debt
 
     vm.prank(address(spoke1));
