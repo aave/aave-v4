@@ -200,7 +200,7 @@ contract LiquidityHubRestoreTest is LiquidityHubBaseTest {
     uint256 wethAmount = 10e18;
 
     drawAmount = bound(drawAmount, 1, daiAmount); // within supplied dai amount
-    skipTime = bound(skipTime, 1, 365 * 10 * 1 days); // 1 day to 10 years
+    skipTime = bound(skipTime, 1, 365 * 10 * 1 days); // 1 sec to 10 years
     rate = bound(rate, 0, 200_00).bpsToRay(); // .1% to 200%
 
     vm.mockCall(
