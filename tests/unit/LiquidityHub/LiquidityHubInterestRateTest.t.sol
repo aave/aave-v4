@@ -6,7 +6,7 @@ import {SpokeData} from 'src/contracts/LiquidityHub.sol';
 import {Asset} from 'src/contracts/LiquidityHub.sol';
 import {Utils} from 'tests/Utils.t.sol';
 
-contract LiquidityHubAccrueInterestTest is BaseTest {
+contract LiquidityHubInterestRateTest is BaseTest {
   using SharesMath for uint256;
   using WadRayMath for uint256;
   using PercentageMath for uint256;
