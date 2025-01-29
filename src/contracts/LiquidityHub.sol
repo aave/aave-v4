@@ -149,7 +149,7 @@ contract LiquidityHub is ILiquidityHub {
   // Users
   // /////
 
-  /// @dev risk premium is calculated on the spoke and passed upon every action
+  /// @inheritdoc ILiquidityHub
   function supply(
     uint256 assetId,
     uint256 amount,
@@ -188,13 +188,14 @@ contract LiquidityHub is ILiquidityHub {
     return (nextBaseBorrowIndex, sharesAmount);
   }
 
-  // TODO: Be able to pass max(uint) as amount to withdraw all or accept number of shares
+  /// @inheritdoc ILiquidityHub
   function withdraw(
     uint256 assetId,
-    address to,
     uint256 amount,
-    uint256 riskPremiumRad
+    uint256 riskPremiumRad,
+    address to
   ) external returns (uint256) {
+    // TODO: Be able to pass max(uint) as amount to withdraw all or accept number of shares
     // TODO: authorization - only spokes
 
     Asset storage asset = _assets[assetId];
@@ -218,11 +219,12 @@ contract LiquidityHub is ILiquidityHub {
     return sharesAmount;
   }
 
+  /// @inheritdoc ILiquidityHub
   function draw(
     uint256 assetId,
-    address to,
     uint256 amount,
-    uint256 riskPremiumRad
+    uint256 riskPremiumRad,
+    address to
   ) external returns (uint256) {
     // TODO: authorization - only spokes
 
@@ -244,16 +246,7 @@ contract LiquidityHub is ILiquidityHub {
     return amount;
   }
 
-  /**
-   * @notice Repays debt on behalf of user
-   * @dev Only callable by spokes
-   * @dev Interest is always paid off first from premium, then from base
-   * @param assetId The asset id
-   * @param amount The amount to repay
-   * @param riskPremiumRad The aggregated risk premium of the calling spoke
-   * @param repayer The address who is trying to settle the credit line
-   * @return The amount of shares restored
-   */
+  /// @inheritdoc ILiquidityHub
   function restore(
     uint256 assetId,
     uint256 amount,
@@ -266,9 +259,9 @@ contract LiquidityHub is ILiquidityHub {
     SpokeData storage spoke = _spokes[assetId][msg.sender];
 
     _accrueInterest(asset, spoke); // accrue interest before validating action
-    _validateRestore(asset, amount, spoke.baseDebt);
-    asset.updateBorrowRate({liquidityAdded: amount, liquidityTaken: 0});
+    _validateRestore(asset, amount, spoke.baseDebt + spoke.outstandingPremium);
 
+    asset.updateBorrowRate({liquidityAdded: amount, liquidityTaken: 0});
     uint256 baseDebtRestored = _deductFromOutstandingPremium(asset, spoke, amount);
     _updateRiskPremiumAndBaseDebt(asset, spoke, riskPremiumRad, -int256(baseDebtRestored));
 
@@ -374,9 +367,8 @@ contract LiquidityHub is ILiquidityHub {
   ) internal view {
     // TODO: Other cases of status (frozen, paused)
     require(asset.config.active, 'ASSET_NOT_ACTIVE');
-
-    // Ensure spoke is not restoring more than supplied
-    require(amountRestored <= amountDrawn, 'INVALID_RESTORE_AMOUNT');
+    // Ensure spoke is not restoring more than supplied or equal 0
+    require(amountRestored > 0 && amountRestored <= amountDrawn, 'INVALID_RESTORE_AMOUNT');
   }
 
   // @dev Utilizes existing asset & spoke: `baseBorrowIndex`, `riskPremiumRad`

@@ -84,6 +84,8 @@ abstract contract BaseTest is Test, Events {
   using WadRayMath for uint256;
   using SharesMath for uint256;
 
+  uint256 internal constant MAX_SUPPLY_AMOUNT = 1e30;
+
   // TODO: update these mocked tokens with decimals as in the real contracts, ie USDC = 6, wbtc = 8, etc.?
   IERC20 internal usdc;
   IERC20 internal dai;
@@ -101,6 +103,7 @@ abstract contract BaseTest is Test, Events {
   DefaultReserveInterestRateStrategy internal creditLineIRStrategy;
 
   address internal mockAddressesProvider = makeAddr('mockAddressesProvider');
+  // TODO: remove after migrating to other mock users
   address internal USER1 = makeAddr('USER1');
   address internal USER2 = makeAddr('USER2');
 
@@ -111,6 +114,11 @@ abstract contract BaseTest is Test, Events {
   TokenList internal tokenList;
   uint256 internal wethAssetId = 0;
   uint256 internal usdxAssetId = 1;
+
+  uint256 internal mintAmount_USDX = MAX_SUPPLY_AMOUNT;
+  uint256 internal mintAmount_DAI = MAX_SUPPLY_AMOUNT;
+  uint256 internal mintAmount_WBTC = MAX_SUPPLY_AMOUNT;
+  uint256 internal mintAmount_WETH = MAX_SUPPLY_AMOUNT;
 
   struct TokenList {
     WETH9 weth;
@@ -156,25 +164,37 @@ abstract contract BaseTest is Test, Events {
     vm.label(address(tokenList.dai), 'DAI');
     vm.label(address(tokenList.wbtc), 'WBTC');
 
-    uint256 mintAmount_USDX = 100_000e6;
-    uint256 mintAmount_DAI = 1e60;
-    uint256 mintAmount_WBTC = 100e8;
-    address[6] memory users = [
-      alice,
-      bob,
-      carol,
-      address(spoke1),
-      address(spoke2),
-      address(spoke3)
-    ];
+    address[3] memory users = [alice, bob, carol];
 
     for (uint256 x; x < users.length; ++x) {
       tokenList.usdx.mint(users[x], mintAmount_USDX);
       tokenList.dai.mint(users[x], mintAmount_DAI);
       tokenList.wbtc.mint(users[x], mintAmount_WBTC);
-      deal(address(tokenList.weth), users[x], 100e18);
+      deal(address(tokenList.weth), users[x], mintAmount_WETH);
 
       vm.startPrank(users[x]);
+      tokenList.weth.approve(address(hub), type(uint256).max);
+      tokenList.usdx.approve(address(hub), type(uint256).max);
+      tokenList.dai.approve(address(hub), type(uint256).max);
+      tokenList.wbtc.approve(address(hub), type(uint256).max);
+      vm.stopPrank();
+    }
+  }
+
+  function spokeMintAndApprove() internal {
+    uint256 spokeMintAmount_USDX = 100_000e6;
+    uint256 spokeMintAmount_DAI = 1e60;
+    uint256 spokeMintAmount_WBTC = 100e8;
+    uint256 spokeMintAmount_WETH = 100e18;
+    address[3] memory spokes = [address(spoke1), address(spoke2), address(spoke3)];
+
+    for (uint256 x; x < spokes.length; ++x) {
+      tokenList.usdx.mint(spokes[x], spokeMintAmount_USDX);
+      tokenList.dai.mint(spokes[x], spokeMintAmount_DAI);
+      tokenList.wbtc.mint(spokes[x], spokeMintAmount_WBTC);
+      deal(address(tokenList.weth), spokes[x], spokeMintAmount_WETH);
+
+      vm.startPrank(spokes[x]);
       tokenList.weth.approve(address(hub), type(uint256).max);
       tokenList.usdx.approve(address(hub), type(uint256).max);
       tokenList.dai.approve(address(hub), type(uint256).max);
@@ -193,16 +213,35 @@ abstract contract BaseTest is Test, Events {
     spokes[2] = address(spoke3);
     DataTypes.SpokeConfig[] memory spokeConfigs = new DataTypes.SpokeConfig[](3);
     // supplyCap, borrowCap
-    spokeConfigs[0] = DataTypes.SpokeConfig(type(uint256).max, type(uint256).max);
-    spokeConfigs[1] = DataTypes.SpokeConfig(type(uint256).max, type(uint256).max);
-    spokeConfigs[2] = DataTypes.SpokeConfig(type(uint256).max, type(uint256).max);
+    spokeConfigs[0] = DataTypes.SpokeConfig({
+      supplyCap: type(uint256).max,
+      drawCap: type(uint256).max
+    });
+    spokeConfigs[1] = DataTypes.SpokeConfig({
+      supplyCap: type(uint256).max,
+      drawCap: type(uint256).max
+    });
+    spokeConfigs[2] = DataTypes.SpokeConfig({
+      supplyCap: type(uint256).max,
+      drawCap: type(uint256).max
+    });
 
     Spoke.ReserveConfig[] memory reserveConfigs = new Spoke.ReserveConfig[](3);
 
     // add WETH
-    reserveConfigs[0] = Spoke.ReserveConfig(0.8e4, 0, true, true);
-    reserveConfigs[1] = Spoke.ReserveConfig(0.76e4, 0, true, true);
-    reserveConfigs[2] = Spoke.ReserveConfig(0.79e4, 0, true, true);
+    reserveConfigs[0] = Spoke.ReserveConfig({lt: 0.8e4, lb: 0, borrowable: true, collateral: true});
+    reserveConfigs[1] = Spoke.ReserveConfig({
+      lt: 0.76e4,
+      lb: 0,
+      borrowable: true,
+      collateral: true
+    });
+    reserveConfigs[2] = Spoke.ReserveConfig({
+      lt: 0.79e4,
+      lb: 0,
+      borrowable: true,
+      collateral: true
+    });
     Utils.addAssetAndSpokes(
       hub,
       address(tokenList.weth),
@@ -214,9 +253,24 @@ abstract contract BaseTest is Test, Events {
     oracle.setAssetPrice(wethAssetId, 2000e8);
 
     // add USDX
-    reserveConfigs[0] = Spoke.ReserveConfig(0.78e4, 0, true, true);
-    reserveConfigs[1] = Spoke.ReserveConfig(0.72e4, 0, true, true);
-    reserveConfigs[2] = Spoke.ReserveConfig(0.75e4, 0, true, true);
+    reserveConfigs[0] = Spoke.ReserveConfig({
+      lt: 0.78e4,
+      lb: 0,
+      borrowable: true,
+      collateral: true
+    });
+    reserveConfigs[1] = Spoke.ReserveConfig({
+      lt: 0.72e4,
+      lb: 0,
+      borrowable: true,
+      collateral: true
+    });
+    reserveConfigs[2] = Spoke.ReserveConfig({
+      lt: 0.75e4,
+      lb: 0,
+      borrowable: true,
+      collateral: true
+    });
     Utils.addAssetAndSpokes(
       hub,
       address(tokenList.usdx),
@@ -228,9 +282,24 @@ abstract contract BaseTest is Test, Events {
     oracle.setAssetPrice(usdxAssetId, 1e8);
 
     // add DAI
-    reserveConfigs[0] = Spoke.ReserveConfig(0.78e4, 0, true, true);
-    reserveConfigs[1] = Spoke.ReserveConfig(0.72e4, 0, true, true);
-    reserveConfigs[2] = Spoke.ReserveConfig(0.75e4, 0, true, true);
+    reserveConfigs[0] = Spoke.ReserveConfig({
+      lt: 0.78e4,
+      lb: 0,
+      borrowable: true,
+      collateral: true
+    });
+    reserveConfigs[1] = Spoke.ReserveConfig({
+      lt: 0.72e4,
+      lb: 0,
+      borrowable: true,
+      collateral: true
+    });
+    reserveConfigs[2] = Spoke.ReserveConfig({
+      lt: 0.75e4,
+      lb: 0,
+      borrowable: true,
+      collateral: true
+    });
     Utils.addAssetAndSpokes(
       hub,
       address(tokenList.dai),
@@ -243,9 +312,19 @@ abstract contract BaseTest is Test, Events {
 
     // add WBTC
     // lt, lb, borrowable, collateral
-    reserveConfigs[0] = Spoke.ReserveConfig(0.75e4, 0, true, true);
-    reserveConfigs[1] = Spoke.ReserveConfig(0.8e4, 0, true, true);
-    reserveConfigs[2] = Spoke.ReserveConfig(0.77e4, 0, true, true);
+    reserveConfigs[0] = Spoke.ReserveConfig({
+      lt: 0.75e4,
+      lb: 0,
+      borrowable: true,
+      collateral: true
+    });
+    reserveConfigs[1] = Spoke.ReserveConfig({lt: 0.8e4, lb: 0, borrowable: true, collateral: true});
+    reserveConfigs[2] = Spoke.ReserveConfig({
+      lt: 0.77e4,
+      lb: 0,
+      borrowable: true,
+      collateral: true
+    });
     Utils.addAssetAndSpokes(
       hub,
       address(tokenList.wbtc),
@@ -296,8 +375,6 @@ abstract contract BaseTest is Test, Events {
 
   /// @dev pseudo random randomizer
   function randomizer(uint256 min, uint256 max, uint256 salt) internal view returns (uint256) {
-    return
-      (uint256(keccak256(abi.encodePacked(block.timestamp, block.difficulty, salt))) %
-        (max - min)) + min;
+    return (uint256(keccak256(abi.encodePacked(vm.getBlockTimestamp(), salt))) % (max - min)) + min;
   }
 }

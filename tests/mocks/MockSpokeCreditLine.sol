@@ -90,7 +90,7 @@ contract MockSpokeCreditLine is ISpoke {
     _updateState(r, assetId, amount, msg.sender);
 
     // TODO: risk premium; to
-    ILiquidityHub(liquidityHub).draw(assetId, to, amount, 0);
+    ILiquidityHub(liquidityHub).draw(assetId, amount, 0, to);
 
     // keep liquidity in borrow module
     IERC20(reserves[assetId].asset).safeTransfer(to, amount);

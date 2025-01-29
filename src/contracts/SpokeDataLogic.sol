@@ -20,10 +20,9 @@ library SpokeDataLogic {
 
     // todo: add rayMulDiv in WadRayMath (=mulDiv / RAY) to optimize out the one cancelled RAY
     // & avoid precision loss
-    uint256 cumulatedBaseDebt = spoke.baseDebt.rayMul(nextBaseBorrowIndex).rayDiv(
+    uint256 cumulatedBaseDebt = existingBaseDebt.rayMul(nextBaseBorrowIndex).rayDiv(
       spoke.baseBorrowIndex
     );
-
     spoke.outstandingPremium += (cumulatedBaseDebt - existingBaseDebt).radMul(spoke.riskPremiumRad);
     spoke.baseDebt = cumulatedBaseDebt;
     spoke.baseBorrowIndex = nextBaseBorrowIndex;

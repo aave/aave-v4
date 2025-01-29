@@ -131,7 +131,7 @@ contract Spoke is ISpoke {
     _validateWithdraw(assetId, r, u, amount);
 
     (, uint256 newAggregatedRiskPremium) = _refreshRiskPremium();
-    uint256 userShares = liquidityHub.withdraw(assetId, to, amount, newAggregatedRiskPremium);
+    uint256 userShares = liquidityHub.withdraw(assetId, amount, newAggregatedRiskPremium, to);
     users[assetId][msg.sender].supplyShares -= userShares;
 
     emit Withdrawn(assetId, msg.sender, amount);
@@ -145,7 +145,7 @@ contract Spoke is ISpoke {
 
     // TODO HF check
     (, uint256 newAggregatedRiskPremium) = _refreshRiskPremium();
-    uint256 userDebt = liquidityHub.draw(assetId, to, amount, newAggregatedRiskPremium);
+    uint256 userDebt = liquidityHub.draw(assetId, amount, newAggregatedRiskPremium, to);
     // debt still goes to original msg.sender
     users[assetId][msg.sender].debt += userDebt;
 
