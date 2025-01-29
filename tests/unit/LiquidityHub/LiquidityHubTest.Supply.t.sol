@@ -379,26 +379,32 @@ contract LiquidityHubSupplyTest is LiquidityHubBaseTest {
     hub.supply(assetId, amount, 0, alice);
   }
 
-  // function test_supply_revertsWith_invalid_shares_amount() public {
-  //   // mint max
-  //   // inflate exchange rate
-  //   Utils.supply({
-  //     hub: hub,
-  //     assetId: daiAssetId,
-  //     spoke: address(spoke1),
-  //     amount: MAX_SUPPLY_AMOUNT,
-  //     riskPremiumRad: 0,
-  //     user: bob,
-  //     to: address(spoke1)
-  //   });
+  function test_supply_revertsWith_invalid_shares_amount() public {
+    // inflate exchange rate
+    uint256 daiAmount = 1e9 * 1e18;
+    uint256 wethAmount = 10e18;
+    uint256 drawAmount = daiAmount;
+    uint256 rate = uint256(100_00).bpsToRay();
 
-  //   // supply < 1 share
-  //   uint256 amount = 1;
+    _supplyAndDrawLiquidity({
+      daiAmount: daiAmount,
+      wethAmount: wethAmount,
+      daiDrawAmount: drawAmount,
+      riskPremiumRad: 0,
+      rate: rate
+    });
+    skip(365 days * 10);
 
-  //   vm.prank(address(spoke1));
-  //   vm.expectRevert(TestErrors.INVALID_SHARES_AMOUNT);
-  //   hub.supply(daiAssetId, amount, 0, alice);
-  // }
+    // trigger exchange rate update
+    vm.prank(address(spoke1));
+    hub.supply(daiAssetId, 1e18, 0, alice);
+
+    // supply < 1 share
+    uint256 amount = 1;
+    vm.prank(address(spoke1));
+    vm.expectRevert(TestErrors.INVALID_SHARES_AMOUNT);
+    hub.supply(daiAssetId, amount, 0, alice);
+  }
 
   function test_supply_with_increased_index() public {
     uint256 daiAmount = 100e18;
