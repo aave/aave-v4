@@ -469,6 +469,9 @@ contract LiquidityHubRestoreTest is LiquidityHubBaseTest {
     );
     uint256 accruedBaseDebt = drawAmount.rayMul(cumulatedBaseInterest) - drawAmount;
     uint256 accruedPremium = accruedBaseDebt.radMul(riskPremiumRad);
+
+    require(accruedPremium > 0);
+
     uint256 restoreAmount = accruedPremium / 2;
 
     vm.prank(address(spoke1));
@@ -612,6 +615,8 @@ contract LiquidityHubRestoreTest is LiquidityHubBaseTest {
     uint256 accruedBaseDebt = drawAmount.rayMul(cumulatedBaseInterest) - drawAmount;
     uint256 accruedPremium = accruedBaseDebt.radMul(riskPremiumRad);
     uint256 restoreAmount = accruedPremium + 1; // restore amount partially contributes to base debt
+
+    require(accruedPremium > 0);
 
     vm.prank(address(spoke1));
     hub.restore({assetId: daiAssetId, amount: restoreAmount, riskPremiumRad: 0, repayer: alice});
