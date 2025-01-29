@@ -303,6 +303,10 @@ contract Spoke is ISpoke {
 
   // TODO: Implement
   function _updateSingleUserRiskPremium(address user) internal returns (uint256) {
+    // TODO: Sort assets by ascending order of liquidity premium
+
+    // TODO: Put users' debt into a variable tempDebt
+    // TODO: While the tempDebt variable is non-zero, loop over collateral assets, adding up weighted risk premium, and subtract corresponding amt from tempDebt
     return 0;
   }
 

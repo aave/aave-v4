@@ -31,6 +31,7 @@ struct Asset {
   uint256 baseBorrowIndex; // in ray
   uint256 baseBorrowRate; // in ray
   uint256 riskPremiumRad; // in rad
+  uint256 liquidityPremiumRad; // in rad
   uint256 lastUpdateTimestamp;
   DataTypes.AssetConfig config;
 }
@@ -91,6 +92,7 @@ contract LiquidityHub is ILiquidityHub {
       baseBorrowRate: 0,
       lastUpdateTimestamp: block.timestamp,
       riskPremiumRad: 0,
+      liquidityPremiumRad: 0,
       config: DataTypes.AssetConfig({
         decimals: config.decimals,
         active: config.active,
