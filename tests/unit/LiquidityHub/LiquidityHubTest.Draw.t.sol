@@ -352,23 +352,39 @@ contract LiquidityHubDrawTest is LiquidityHubBaseTest {
     hub.draw({assetId: daiAssetId, amount: drawAmount, riskPremiumRad: 0, to: address(spoke1)});
   }
 
-  function test_draw_revertsWith_cap_exceeded() public {
+  function test_draw_revertsWith_draw_cap_exceeded_due_to_interest() public {
     uint256 daiAmount = 100e18;
-    uint256 drawCap = 1;
-    uint256 drawAmount = drawCap + 1;
+    uint256 drawCap = daiAmount;
+    uint256 wethAmount = 10e18;
+    uint256 drawAmount = drawCap;
+    uint256 rate = uint256(10_00).bpsToRay();
 
     _updateDrawCap(daiAssetId, address(spoke1), drawCap);
 
-    // spoke2 supply dai
-    Utils.supply({
-      hub: hub,
-      assetId: daiAssetId,
-      spoke: address(spoke2),
-      amount: daiAmount,
+    _supplyAndDrawLiquidity({
+      daiAmount: daiAmount,
+      wethAmount: wethAmount,
+      daiDrawAmount: drawAmount,
       riskPremiumRad: 0,
-      user: alice,
-      to: address(spoke2)
+      rate: rate
     });
+    skip(365 days);
+
+    // restore to provide liquidity
+    vm.startPrank(address(spoke1));
+    hub.restore({assetId: daiAssetId, amount: 1, riskPremiumRad: 0, repayer: alice});
+
+    vm.expectRevert(TestErrors.DRAW_CAP_EXCEEDED);
+    hub.draw({assetId: daiAssetId, amount: 1, riskPremiumRad: 0, to: bob});
+    vm.stopPrank();
+  }
+
+  function test_draw_revertsWith_draw_cap_exceeded() public {
+    uint256 daiAmount = 100e18;
+    uint256 drawCap = daiAmount;
+    uint256 drawAmount = drawCap + 1;
+
+    _updateDrawCap(daiAssetId, address(spoke1), drawCap);
 
     vm.prank(address(spoke1));
     vm.expectRevert(TestErrors.DRAW_CAP_EXCEEDED);

@@ -98,7 +98,7 @@ contract LiquidityHubBaseTest is BaseTest {
       to: address(spoke2)
     });
 
-    // spoke1 draw half of dai reserve liquidity on behalf of user
+    // spoke1 draw dai liquidity on behalf of user
     Utils.draw({
       hub: hub,
       assetId: daiAssetId,
