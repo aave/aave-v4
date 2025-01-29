@@ -123,6 +123,7 @@ contract Spoke is ISpoke {
     _accrueAssetInterest(assetId);
     _validateSupply(r, amount);
 
+    // Update user's risk premium and wAvgRP across all users of spoke
     (, uint256 newAggregatedRiskPremium) = _refreshRiskPremium();
     (uint256 newBaseBorrowIndex, uint256 userShares) = liquidityHub.supply(
       assetId,
@@ -133,8 +134,6 @@ contract Spoke is ISpoke {
 
     users[assetId][msg.sender].supplyShares += userShares;
     reserves[assetId].totalSupplyShares += userShares;
-
-    _updateUserWavgRP(assetId, msg.sender, userShares, newBaseBorrowIndex);
 
     emit Supplied(assetId, msg.sender, amount);
   }
@@ -294,20 +293,20 @@ contract Spoke is ISpoke {
     // TODO: update state - debt shares
 
     // TODO: refresh risk premium of user, specific assets user has supplied
-    uint256 newUserRiskPremium = 0;
+    uint256 newUserRiskPremium = _updateSingleUserRiskPremium(msg.sender);
     // TODO: aggregated risk premium, ie loop over all assets and sum up risk premium
-    uint256 newAggregatedRiskPremium = 0;
+    uint256 newAggregatedRiskPremium = _updateSpokeWAvgRP(msg.sender, newUserRiskPremium);
     return (newUserRiskPremium, newAggregatedRiskPremium);
   }
 
   // TODO: Implement
-  function _updateUserWavgRP(
-    uint256 assetId,
-    address user,
-    uint256 userShares,
-    uint256 newBaseBorrowIndex
-  ) internal {
-    return;
+  function _updateSingleUserRiskPremium(address user) internal returns (uint256) {
+    return 0;
+  }
+
+  // TODO: Implement
+  function _updateSpokeWAvgRP(address user, uint256 newUserRiskPremium) internal returns (uint256) {
+    return 0;
   }
 
   function _validateSetUsingAsCollateral(uint256 assetId, address user) internal view {
