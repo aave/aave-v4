@@ -59,8 +59,8 @@ interface ILiquidityHub {
   ) external returns (uint256);
 
   /**
-   * @notice Repays debt on behalf of user.
-   * @dev Only callable by spokes.
+   * @notice Repays debt on behalf of user
+   * @dev Only callable by spokes
    * @dev Interest is always paid off first from premium, then from base.
    * @param assetId The asset id.
    * @param amount The amount to repay.

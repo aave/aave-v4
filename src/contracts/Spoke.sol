@@ -70,7 +70,7 @@ contract Spoke is ISpoke {
   // reserve id => user address => user data
   mapping(uint256 => mapping(address => UserConfig)) public users;
   // reserve id => reserveData
-  mapping(uint256 => Reserve) public reserves;
+  mapping(uint256 => Reserve) internal _reserves;
   uint256[] public reservesList; // assetIds
   uint256 public reserveCount;
   address public oracle;
@@ -90,7 +90,7 @@ contract Spoke is ISpoke {
   }
 
   function getReserveDebt(uint256 assetId) external view returns (uint256) {
-    Reserve storage r = reserves[assetId];
+    Reserve storage r = _reserves[assetId];
 
     // TODO: Instead use a getter from liquidity hub to get up-to-date reserve debt (with accrued debt)
     // return
@@ -103,7 +103,7 @@ contract Spoke is ISpoke {
   /// governance
   function updateReserveConfig(uint256 assetId, ReserveConfig calldata params) external {
     // TODO: AccessControl
-    reserves[assetId].config = ReserveConfig({
+    _reserves[assetId].config = ReserveConfig({
       lt: params.lt,
       lb: params.lb,
       borrowable: params.borrowable,
@@ -118,7 +118,7 @@ contract Spoke is ISpoke {
   // /////
 
   function supply(uint256 assetId, uint256 amount) external {
-    Reserve storage r = reserves[assetId];
+    Reserve storage r = _reserves[assetId];
 
     uint256 newBaseBorrowIndex = liquidityHub.previewNextBorrowIndex(assetId);
 
@@ -135,13 +135,13 @@ contract Spoke is ISpoke {
     );
 
     users[assetId][msg.sender].supplyShares += userShares;
-    reserves[assetId].totalSupplyShares += userShares;
+    _reserves[assetId].totalSupplyShares += userShares;
 
     emit Supplied(assetId, msg.sender, amount);
   }
 
   function withdraw(uint256 assetId, address to, uint256 amount) external {
-    Reserve storage r = reserves[assetId];
+    Reserve storage r = _reserves[assetId];
     UserConfig storage u = users[assetId][msg.sender];
     _validateWithdraw(assetId, r, u, amount);
 
@@ -155,7 +155,7 @@ contract Spoke is ISpoke {
   function borrow(uint256 assetId, address to, uint256 amount) external {
     // TODO: referral code
     // TODO: onBehalfOf with credit delegation
-    Reserve storage r = reserves[assetId];
+    Reserve storage r = _reserves[assetId];
     _validateBorrow(r, amount);
 
     // TODO HF check
@@ -172,7 +172,7 @@ contract Spoke is ISpoke {
     // TODO: onBehalfOf
 
     UserConfig storage u = users[assetId][msg.sender];
-    Reserve storage r = reserves[assetId];
+    Reserve storage r = _reserves[assetId];
     _validateRepay(assetId, u, amount);
 
     (, uint256 newAggregatedRiskPremium) = _refreshRiskPremium();
@@ -219,14 +219,14 @@ contract Spoke is ISpoke {
   function addReserve(uint256 assetId, ReserveConfig memory params, address asset) external {
     // TODO: validate assetId does not exist already, valid asset
     // require(asset != address(0), 'INVALID_ASSET');
-    // require(reserves[assetId].asset == address(0), 'RESERVE_ID_ALREADY_EXISTS');
+    // require(_reserves[assetId].asset == address(0), 'RESERVE_ID_ALREADY_EXISTS');
 
     // TODO: AccessControl
     // TODO: assigning reserveId as the latest reserveCount
     reservesList.push(assetId);
-    reserves[assetId].id = assetId;
-    reserves[assetId].asset = asset;
-    reserves[assetId].config = ReserveConfig({
+    _reserves[assetId].id = assetId;
+    _reserves[assetId].asset = asset;
+    _reserves[assetId].config = ReserveConfig({
       lt: params.lt,
       lb: params.lb,
       borrowable: params.borrowable,
@@ -239,9 +239,9 @@ contract Spoke is ISpoke {
 
   function updateReserve(uint256 assetId, ReserveConfig memory params) external {
     // TODO: More sophisticated
-    require(reserves[assetId].id != 0, 'INVALID_RESERVE');
+    require(_reserves[assetId].id != 0, 'INVALID_RESERVE');
     // TODO: AccessControl
-    reserves[assetId].config = ReserveConfig({
+    _reserves[assetId].config = ReserveConfig({
       lt: params.lt,
       lb: params.lb,
       borrowable: params.borrowable,
@@ -251,7 +251,7 @@ contract Spoke is ISpoke {
 
   // public
   function getReserve(uint256 assetId) public view returns (Reserve memory) {
-    return reserves[assetId];
+    return _reserves[assetId];
   }
 
   function getUser(uint256 assetId, address user) public view returns (UserConfig memory) {
@@ -312,7 +312,7 @@ contract Spoke is ISpoke {
   }
 
   function _validateSetUsingAsCollateral(uint256 assetId, address user) internal view {
-    require(reserves[assetId].config.collateral, 'RESERVE_NOT_COLLATERAL');
+    require(_reserves[assetId].config.collateral, 'RESERVE_NOT_COLLATERAL');
     require(users[assetId][user].supplyShares > 0, 'NO_SUPPLY');
   }
 
@@ -402,8 +402,27 @@ contract Spoke is ISpoke {
       );
   }
 
-  // TODO: Implement
   function _accrueAssetInterest(uint256 assetId, uint256 newBaseBorrowIndex) internal {
-    return;
+    Reserve storage reserve = _reserves[assetId];
+
+    // no interest to accrue if no time passed
+    if (reserve.lastUpdateTimestamp == block.timestamp) return;
+
+    uint256 cumulatedBaseInterest = MathUtils.calculateLinearInterest(
+      reserve.baseBorrowIndex.rayDiv(newBaseBorrowIndex),
+      uint40(reserve.lastUpdateTimestamp)
+    );
+
+    uint256 existingBaseDebt = reserve.baseDebt;
+    // no interest to accrue since no liquidity has been drawn
+    if (existingBaseDebt == 0) return;
+
+    uint256 cumulatedBaseDebt = existingBaseDebt.rayMul(cumulatedBaseInterest);
+
+    // accrue premium interest on the accrued base interest
+    reserve.outstandingPremium += (cumulatedBaseDebt - existingBaseDebt).radMul(reserve.wAvgRP);
+    reserve.baseDebt = cumulatedBaseDebt;
+    reserve.baseBorrowIndex = newBaseBorrowIndex;
+    reserve.lastUpdateTimestamp = block.timestamp;
   }
 }
