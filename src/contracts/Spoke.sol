@@ -40,6 +40,11 @@ contract Spoke is ISpoke {
     bool collateral;
   }
 
+  struct ReservePremium {
+    uint256 assetId;
+    uint256 liquidityPremium;
+  }
+
   struct UserConfig {
     uint256 supplyShares;
     uint256 debt;
@@ -292,22 +297,77 @@ contract Spoke is ISpoke {
   */
   // TODO: Implement
   function _refreshRiskPremium() internal returns (uint256, uint256) {
-    // TODO: update state - debt shares
-
-    // TODO: refresh risk premium of user, specific assets user has supplied
+    // Refresh risk premium of user, specific assets user has supplied
     uint256 newUserRiskPremium = _updateSingleUserRiskPremium(msg.sender);
     // TODO: aggregated risk premium, ie loop over all assets and sum up risk premium
     uint256 newAggregatedRiskPremium = _updateSpokeWAvgRP(msg.sender, newUserRiskPremium);
     return (newUserRiskPremium, newAggregatedRiskPremium);
   }
 
-  // TODO: Implement
+  /// @dev It's assumed interest has been accrued before this function call
   function _updateSingleUserRiskPremium(address user) internal returns (uint256) {
-    // TODO: Sort assets by ascending order of liquidity premium
+    uint256 reservesListLength = reservesList.length;
+    ReservePremium[] memory reservePremium = new ReservePremium[](reservesListLength);
 
-    // TODO: Put users' debt into a variable tempDebt
-    // TODO: While the tempDebt variable is non-zero, loop over collateral assets, adding up weighted risk premium, and subtract corresponding amt from tempDebt
-    return 0;
+    // Variable to decrement as we count up user RP
+    uint256 tempDebt = 0;
+    uint256 newUserRiskPremium = 0;
+    uint256 assetId;
+    uint256 userSupply;
+
+    // Get all asset risk premiums
+    for (uint256 i = 0; i < reservesListLength; i++) {
+      assetId = reservesList[i];
+      reservePremium[i] = ReservePremium({
+        assetId: assetId,
+        liquidityPremium: liquidityHub.getLiquidityPremium(assetId)
+      });
+      // Add up user debt for each asset
+      tempDebt += users[assetId][user].debt;
+    }
+
+    // If user has no debt, return 0 risk premium
+    if (tempDebt == 0) return 0;
+
+    // Sort assets by ascending order of liquidity premium using bubble sort for small arrays
+    for (uint256 i = 0; i < reservesListLength - 1; i++) {
+      for (uint256 j = 0; j < reservesListLength - i - 1; j++) {
+        if (reservePremium[j].liquidityPremium > reservePremium[j + 1].liquidityPremium) {
+          // Swap elements
+          ReservePremium memory temp = reservePremium[j];
+          reservePremium[j] = reservePremium[j + 1];
+          reservePremium[j + 1] = temp;
+        }
+      }
+    }
+
+    // While the tempDebt variable is non-zero, loop over collateral assets, adding up weighted risk premium, and subtract corresponding amt from tempDebt
+    for (uint256 i = 0; i < reservesListLength; i++) {
+      assetId = reservePremium[i].assetId;
+      if (!_usingAsCollateral(assetId, user)) continue;
+
+      // Convert user's supply shares for this asset to absolute amount
+      userSupply = liquidityHub.convertToAssetsDown(assetId, users[assetId][user].supplyShares);
+
+      if (userSupply >= tempDebt) {
+        // This asset completes user debt, so add up weighted risk premium and break
+        newUserRiskPremium +=
+          tempDebt *
+          reservePremium[i].liquidityPremium *
+          IPriceOracle(oracle).getAssetPrice(assetId);
+        break;
+      } else {
+        // Add up weighted risk premium
+        newUserRiskPremium +=
+          userSupply *
+          reservePremium[i].liquidityPremium *
+          IPriceOracle(oracle).getAssetPrice(assetId);
+        // Subtract user supply from tempDebt
+        tempDebt -= userSupply;
+      }
+    }
+
+    return newUserRiskPremium;
   }
 
   // TODO: Implement

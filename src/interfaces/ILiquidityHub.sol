@@ -76,8 +76,8 @@ interface ILiquidityHub {
   ) external returns (uint256);
 
   function previewNextBorrowIndex(uint256 assetId) external view returns (uint256);
-
   function getBaseInterestRate(uint256 assetId) external view returns (uint256);
+  function getLiquidityPremium(uint256 assetId) external view returns (uint256);
 
   function addAsset(DataTypes.AssetConfig memory params, address asset) external;
   function addSpoke(uint256 assetId, DataTypes.SpokeConfig memory params, address spoke) external;
