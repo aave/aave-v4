@@ -103,7 +103,7 @@ contract LiquidityHubRestoreTest is LiquidityHubBaseTest {
     hub.restore({assetId: daiAssetId, amount: drawAmount + 1, riskPremiumRad: 0, repayer: alice});
   }
 
-  function test_restore_revertsWith_invalid_restore_amount0() public {
+  function test_restore_revertsWith_invalid_restore_amount_zero() public {
     vm.expectRevert(TestErrors.INVALID_RESTORE_AMOUNT);
 
     vm.prank(address(spoke1));
