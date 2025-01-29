@@ -201,7 +201,7 @@ contract LiquidityHubRestoreTest is LiquidityHubBaseTest {
 
     drawAmount = bound(drawAmount, 1, daiAmount); // within supplied dai amount
     skipTime = bound(skipTime, 1, 365 * 10 * 1 days); // 1 sec to 10 years
-    rate = bound(rate, 1, 200_00).bpsToRay(); // 0.01% to 200%
+    rate = bound(rate, 1, 1000_00).bpsToRay(); // 0.01% to 1000%
 
     vm.mockCall(
       address(irStrategy),
@@ -368,7 +368,7 @@ contract LiquidityHubRestoreTest is LiquidityHubBaseTest {
 
     drawAmount = bound(drawAmount, 1, daiAmount); // within supplied dai amount
     skipTime = bound(skipTime, 1, 365 * 10 * 1 days); // 1 sec to 10 years
-    rate = bound(rate, 1, 200_00).bpsToRay(); // 0.01% to 200%
+    rate = bound(rate, 1, 1000_00).bpsToRay(); // 0.01% to 1000%
     riskPremiumRad = bound(riskPremiumRad, 1, maxRiskPremiumRad);
 
     vm.mockCall(
@@ -525,7 +525,7 @@ contract LiquidityHubRestoreTest is LiquidityHubBaseTest {
 
     drawAmount = bound(drawAmount, 1, daiAmount); // within supplied dai amount
     skipTime = bound(skipTime, 1, 365 * 10 * 1 days); // 1 sec to 10 years
-    rate = bound(rate, 1, 200_00).bpsToRay(); // 0.01% to 200%
+    rate = bound(rate, 1, 1000_00).bpsToRay(); // 0.01% to 1000%
     riskPremiumRad = bound(riskPremiumRad, 1, maxRiskPremiumRad);
 
     _supplyAndDrawLiquidity({
@@ -665,7 +665,7 @@ contract LiquidityHubRestoreTest is LiquidityHubBaseTest {
 
     drawAmount = bound(drawAmount, 1, daiAmount); // within supplied dai amount
     skipTime = bound(skipTime, 1, 365 * 10 * 1 days); // 1 sec to 10 years
-    rate = bound(rate, 1, 200_00).bpsToRay(); // 0.01% to 200%
+    rate = bound(rate, 1, 1000_00).bpsToRay(); // 0.01% to 1000%
     riskPremiumRad = bound(riskPremiumRad, 1, maxRiskPremiumRad);
 
     _supplyAndDrawLiquidity({
