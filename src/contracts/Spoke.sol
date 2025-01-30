@@ -387,34 +387,34 @@ contract Spoke is ISpoke {
     Reserve storage reserve = _reserves[assetId];
     UserConfig storage user = users[assetId][msg.sender];
 
-    uint256 existingBaseDebt = reserve.baseDebt;
-    uint256 existingUserBaseDebt = user.baseDebt;
+    uint256 existingReserveDebt = reserve.baseDebt;
+    uint256 existingUserDebt = user.baseDebt;
 
     // Weighted average risk premium of all users without current user
-    (uint256 riskPremiumWithoutCurrent, uint256 userDebtWithoutCurrent) = MathUtils
+    (uint256 reserveRiskPremiumWithoutCurrent, uint256 reserveDebtWithoutCurrent) = MathUtils
       .subtractFromWeightedAverage(
         reserve.wAvgRP,
-        existingBaseDebt,
+        existingReserveDebt,
         user.riskPremium,
-        existingUserBaseDebt
+        existingUserDebt
       );
 
     uint256 newUserDebt = baseDebtChange > 0
-      ? existingUserBaseDebt + uint256(baseDebtChange) // debt added
+      ? existingUserDebt + uint256(baseDebtChange) // debt added
       // force underflow: only possible when user takes repays amount more than net drawn
-      : existingUserBaseDebt - uint256(-baseDebtChange); // debt restored
+      : existingUserDebt - uint256(-baseDebtChange); // debt restored
 
-    (uint256 newRiskPremium, uint256 newBaseDebt) = MathUtils.addToWeightedAverage(
-      riskPremiumWithoutCurrent,
-      userDebtWithoutCurrent,
+    (uint256 newReserveRiskPremium, uint256 newReserveDebt) = MathUtils.addToWeightedAverage(
+      reserveRiskPremiumWithoutCurrent,
+      reserveDebtWithoutCurrent,
       newUserRiskPremium,
       newUserDebt
     );
 
-    reserve.baseDebt = newBaseDebt;
+    reserve.baseDebt = newReserveDebt;
     user.baseDebt = newUserDebt;
 
-    reserve.wAvgRP = newRiskPremium;
+    reserve.wAvgRP = newReserveRiskPremium;
     user.riskPremium = newUserRiskPremium;
   }
 
