@@ -103,7 +103,7 @@ contract LiquidityHubRestoreTest is LiquidityHubBaseTest {
     hub.restore({assetId: daiAssetId, amount: drawAmount + 1, riskPremiumRad: 0, repayer: alice});
   }
 
-  function test_restore_revertsWith_invalid_restore_amount0() public {
+  function test_restore_revertsWith_invalid_restore_amount_zero() public {
     vm.expectRevert(TestErrors.INVALID_RESTORE_AMOUNT);
 
     vm.prank(address(spoke1));
@@ -177,9 +177,9 @@ contract LiquidityHubRestoreTest is LiquidityHubBaseTest {
       uint40(spoke1DaiData.lastUpdateTimestamp)
     );
     uint256 cumulatedBaseDebt = drawAmount.rayMul(cumulatedBaseInterest);
+    assert(cumulatedBaseDebt > 0);
 
     // alice restore invalid amount > drawn amount AND premium
-
     vm.expectRevert(TestErrors.INVALID_RESTORE_AMOUNT);
 
     vm.prank(address(spoke1));
@@ -200,8 +200,8 @@ contract LiquidityHubRestoreTest is LiquidityHubBaseTest {
     uint256 wethAmount = 10e18;
 
     drawAmount = bound(drawAmount, 1, daiAmount); // within supplied dai amount
-    skipTime = bound(skipTime, 1, 365 * 10 * 1 days); // 1 day to 10 years
-    rate = bound(rate, 0, 200_00).bpsToRay(); // .1% to 200%
+    skipTime = bound(skipTime, 1, 365 * 10 * 1 days); // 1 sec to 10 years
+    rate = bound(rate, 1, 1000_00).bpsToRay(); // 0.01% to 1000%
 
     vm.mockCall(
       address(irStrategy),
@@ -262,6 +262,7 @@ contract LiquidityHubRestoreTest is LiquidityHubBaseTest {
       uint40(spoke1DaiData.lastUpdateTimestamp)
     );
     uint256 cumulatedBaseDebt = drawAmount.rayMul(cumulatedBaseInterest);
+    vm.assume(cumulatedBaseDebt > 0);
 
     // alice restore invalid amount > drawn amount AND premium
     vm.expectRevert(TestErrors.INVALID_RESTORE_AMOUNT);
@@ -344,6 +345,7 @@ contract LiquidityHubRestoreTest is LiquidityHubBaseTest {
     );
     uint256 cumulatedBaseDebt = drawAmount.rayMul(cumulatedBaseInterest);
     uint256 accruedPremium = (cumulatedBaseDebt - drawAmount).radMul(riskPremiumRad);
+    assert(accruedPremium > 0);
 
     // alice restore invalid amount > drawn amount AND premium
     vm.expectRevert(TestErrors.INVALID_RESTORE_AMOUNT);
@@ -367,9 +369,9 @@ contract LiquidityHubRestoreTest is LiquidityHubBaseTest {
     uint256 wethAmount = 10e18;
 
     drawAmount = bound(drawAmount, 1, daiAmount); // within supplied dai amount
-    skipTime = bound(skipTime, 1, 365 * 10 * 1 days); // 1 day to 10 years
-    rate = bound(rate, 0, 200_00).bpsToRay(); // .1% to 200%
-    riskPremiumRad = bound(riskPremiumRad, 0, maxRiskPremiumRad);
+    skipTime = bound(skipTime, 1, 365 * 10 * 1 days); // 1 sec to 10 years
+    rate = bound(rate, 1, 1000_00).bpsToRay(); // 0.01% to 1000%
+    riskPremiumRad = bound(riskPremiumRad, 1, maxRiskPremiumRad);
 
     vm.mockCall(
       address(irStrategy),
@@ -431,6 +433,7 @@ contract LiquidityHubRestoreTest is LiquidityHubBaseTest {
     );
     uint256 cumulatedBaseDebt = drawAmount.rayMul(cumulatedBaseInterest);
     uint256 accruedPremium = (cumulatedBaseDebt - drawAmount).radMul(riskPremiumRad);
+    vm.assume(accruedPremium > 0); // accrued premium can round to 0 in edge case - ex. (cumulatedBaseDebt - drawAmount) = 1, riskPremiumRad = 1
 
     // alice restore invalid amount > drawn amount AND premium
     vm.expectRevert(TestErrors.INVALID_RESTORE_AMOUNT);
@@ -469,6 +472,9 @@ contract LiquidityHubRestoreTest is LiquidityHubBaseTest {
     );
     uint256 accruedBaseDebt = drawAmount.rayMul(cumulatedBaseInterest) - drawAmount;
     uint256 accruedPremium = accruedBaseDebt.radMul(riskPremiumRad);
+
+    assert(accruedPremium > 0);
+
     uint256 restoreAmount = accruedPremium / 2;
 
     vm.prank(address(spoke1));
@@ -521,9 +527,9 @@ contract LiquidityHubRestoreTest is LiquidityHubBaseTest {
     uint256 wethAmount = 10e18;
 
     drawAmount = bound(drawAmount, 1, daiAmount); // within supplied dai amount
-    skipTime = bound(skipTime, 1, 365 * 10 * 1 days); // 1 day to 10 years
-    rate = bound(rate, 0, 200_00).bpsToRay(); // 0% to 200%
-    riskPremiumRad = bound(riskPremiumRad, 0, maxRiskPremiumRad);
+    skipTime = bound(skipTime, 1, 365 * 10 * 1 days); // 1 sec to 10 years
+    rate = bound(rate, 1, 1000_00).bpsToRay(); // 0.01% to 1000%
+    riskPremiumRad = bound(riskPremiumRad, 1, maxRiskPremiumRad);
 
     _supplyAndDrawLiquidity({
       daiAmount: daiAmount,
@@ -543,9 +549,7 @@ contract LiquidityHubRestoreTest is LiquidityHubBaseTest {
     uint256 accruedBaseDebt = drawAmount.rayMul(cumulatedBaseInterest) - drawAmount;
     uint256 accruedPremium = accruedBaseDebt.radMul(riskPremiumRad);
 
-    if (accruedPremium == 0) {
-      return;
-    }
+    vm.assume(accruedPremium > 0);
 
     restoreAmount = bound(restoreAmount, 1, accruedPremium); // within accrued premium
     vm.prank(address(spoke1));
@@ -611,6 +615,7 @@ contract LiquidityHubRestoreTest is LiquidityHubBaseTest {
     );
     uint256 accruedBaseDebt = drawAmount.rayMul(cumulatedBaseInterest) - drawAmount;
     uint256 accruedPremium = accruedBaseDebt.radMul(riskPremiumRad);
+    assert(accruedPremium > 0);
     uint256 restoreAmount = accruedPremium + 1; // restore amount partially contributes to base debt
 
     vm.prank(address(spoke1));
@@ -659,9 +664,9 @@ contract LiquidityHubRestoreTest is LiquidityHubBaseTest {
     uint256 wethAmount = 10e18;
 
     drawAmount = bound(drawAmount, 1, daiAmount); // within supplied dai amount
-    skipTime = bound(skipTime, 1, 365 * 10 * 1 days); // 1 day to 10 years
-    rate = bound(rate, 0, 200_00).bpsToRay(); // 0% to 200%
-    riskPremiumRad = bound(riskPremiumRad, 0, maxRiskPremiumRad);
+    skipTime = bound(skipTime, 1, 365 * 10 * 1 days); // 1 sec to 10 years
+    rate = bound(rate, 1, 1000_00).bpsToRay(); // 0.01% to 1000%
+    riskPremiumRad = bound(riskPremiumRad, 1, maxRiskPremiumRad);
 
     _supplyAndDrawLiquidity({
       daiAmount: daiAmount,
@@ -680,6 +685,8 @@ contract LiquidityHubRestoreTest is LiquidityHubBaseTest {
     );
     uint256 accruedBaseDebt = drawAmount.rayMul(cumulatedBaseInterest) - drawAmount;
     uint256 accruedPremium = accruedBaseDebt.radMul(riskPremiumRad);
+    vm.assume(accruedPremium > 0);
+
     restoreAmount = bound(
       restoreAmount,
       accruedPremium + 1,

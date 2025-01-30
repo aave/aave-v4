@@ -43,6 +43,28 @@ contract LiquidityHubSupplyTest is LiquidityHubBaseTest {
     hub.supply(daiAssetId, amount, 0, alice);
   }
 
+  function test_supply_revertsWith_supply_cap_exceeded_due_to_interest() public {
+    uint256 amount = 1;
+    _updateSupplyCap(daiAssetId, address(spoke1), amount);
+
+    uint256 daiAmount = 100e18;
+    uint256 wethAmount = 10e18;
+    uint256 drawAmount = daiAmount / 2;
+    uint256 rate = uint256(10_00).bpsToRay();
+
+    _supplyAndDrawLiquidity({
+      daiAmount: daiAmount,
+      wethAmount: wethAmount,
+      daiDrawAmount: drawAmount,
+      riskPremiumRad: 0,
+      rate: rate
+    });
+    skip(365 days);
+
+    vm.expectRevert(TestErrors.SUPPLY_CAP_EXCEEDED);
+    hub.supply(daiAssetId, amount, 0, alice);
+  }
+
   function test_supply() public {
     uint256 assetId = daiAssetId;
     uint256 amount = 100e18;
@@ -358,17 +380,30 @@ contract LiquidityHubSupplyTest is LiquidityHubBaseTest {
   }
 
   function test_supply_revertsWith_invalid_shares_amount() public {
-    uint256 assetId = 0;
+    // inflate exchange rate
+    uint256 daiAmount = 1e9 * 1e18;
+    uint256 wethAmount = 10e18;
+    uint256 drawAmount = daiAmount;
+    uint256 rate = uint256(100_00).bpsToRay();
+
+    _supplyAndDrawLiquidity({
+      daiAmount: daiAmount,
+      wethAmount: wethAmount,
+      daiDrawAmount: drawAmount,
+      riskPremiumRad: 0,
+      rate: rate
+    });
+    skip(365 days * 10);
+
+    // trigger exchange rate update
+    vm.prank(address(spoke1));
+    hub.supply(daiAssetId, 1e18, 0, alice);
+
+    // supply < 1 share
     uint256 amount = 1;
-
-    // update storage slots to create 0 shares calc
-    bytes32 baseSlot = keccak256(abi.encode(uint256(assetId), uint256(0))); // key: assetId, slot: 0, ie _assets mapping, dai assetId key
-    vm.store(address(hub), bytes32(uint256(baseSlot) + 1), bytes32(uint256(1))); // suppliedShares slot
-    vm.store(address(hub), bytes32(uint256(baseSlot) + 2), bytes32(uint256(WadRayMath.RAD))); // availableLiquidity slot
-
     vm.prank(address(spoke1));
     vm.expectRevert(TestErrors.INVALID_SHARES_AMOUNT);
-    hub.supply(assetId, amount, 0, alice);
+    hub.supply(daiAssetId, amount, 0, alice);
   }
 
   function test_supply_with_increased_index() public {
