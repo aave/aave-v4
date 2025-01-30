@@ -131,7 +131,7 @@ contract Spoke is ISpoke {
     _validateSupply(r, amount);
 
     // Update user's risk premium and wAvgRP across all users of spoke
-    (, uint256 newAggregatedRiskPremium) = _refreshRiskPremium();
+    (, uint256 newAggregatedRiskPremium) = _refreshRiskPremium(assetId, 0);
     (, uint256 userShares) = liquidityHub.supply(
       assetId,
       amount,
@@ -150,7 +150,7 @@ contract Spoke is ISpoke {
     UserConfig storage u = users[assetId][msg.sender];
     _validateWithdraw(assetId, r, u, amount);
 
-    (, uint256 newAggregatedRiskPremium) = _refreshRiskPremium();
+    (, uint256 newAggregatedRiskPremium) = _refreshRiskPremium(assetId, 0);
     uint256 userShares = liquidityHub.withdraw(assetId, amount, newAggregatedRiskPremium, to);
     users[assetId][msg.sender].supplyShares -= userShares;
 
@@ -164,7 +164,7 @@ contract Spoke is ISpoke {
     _validateBorrow(r, amount);
 
     // TODO HF check
-    (, uint256 newAggregatedRiskPremium) = _refreshRiskPremium();
+    (, uint256 newAggregatedRiskPremium) = _refreshRiskPremium(assetId, int256(amount));
     uint256 userDebt = liquidityHub.draw(assetId, amount, newAggregatedRiskPremium, to);
     // debt still goes to original msg.sender
     users[assetId][msg.sender].debt += userDebt;
@@ -180,7 +180,8 @@ contract Spoke is ISpoke {
     Reserve storage r = _reserves[assetId];
     _validateRepay(assetId, u, amount);
 
-    (, uint256 newAggregatedRiskPremium) = _refreshRiskPremium();
+    // TODO: Should only be the base debt restored instead of amount in following line
+    (, uint256 newAggregatedRiskPremium) = _refreshRiskPremium(assetId, -int256(amount));
     // TODO: Spoke should calculate the amountFromPremium and amountFromBase
     uint256 repaidDebt = liquidityHub.restore(
       assetId,
@@ -292,15 +293,22 @@ contract Spoke is ISpoke {
   }
 
   /**
+  @param baseDebtChange The change in base debt of the reserve
   @return uint256 new risk premium
   @return uint256 new aggregated risk premium
   */
-  // TODO: Implement
-  function _refreshRiskPremium() internal returns (uint256, uint256) {
+  function _refreshRiskPremium(
+    uint256 assetId,
+    int256 baseDebtChange
+  ) internal returns (uint256, uint256) {
     // Refresh risk premium of user, specific assets user has supplied
     uint256 newUserRiskPremium = _updateSingleUserRiskPremium(msg.sender);
-    // TODO: aggregated risk premium, ie loop over all assets and sum up risk premium
-    uint256 newAggregatedRiskPremium = _updateSpokeWAvgRP(msg.sender, newUserRiskPremium);
+    // Refresh weighted average risk premium across all users of spoke
+    uint256 newAggregatedRiskPremium = _updateSpokeWAvgRP(
+      assetId,
+      newUserRiskPremium,
+      baseDebtChange
+    );
     return (newUserRiskPremium, newAggregatedRiskPremium);
   }
 
@@ -370,9 +378,44 @@ contract Spoke is ISpoke {
     return newUserRiskPremium;
   }
 
-  // TODO: Implement
-  function _updateSpokeWAvgRP(address user, uint256 newUserRiskPremium) internal returns (uint256) {
-    return 0;
+  /// @dev It's assumed interest has been accrued before this function call
+  function _updateSpokeWAvgRP(
+    uint256 assetId,
+    uint256 newUserRiskPremium,
+    int256 baseDebtChange
+  ) internal returns (uint256) {
+    Reserve storage reserve = _reserves[assetId];
+    UserConfig storage user = users[assetId][msg.sender];
+
+    uint256 existingBaseDebt = reserve.baseDebt;
+    uint256 existingUserBaseDebt = user.baseDebt;
+
+    // Weighted average risk premium of all users without current user
+    (uint256 riskPremiumWithoutCurrent, uint256 userDebtWithoutCurrent) = MathUtils
+      .subtractFromWeightedAverage(
+        reserve.wAvgRP,
+        existingBaseDebt,
+        user.riskPremium,
+        existingUserBaseDebt
+      );
+
+    uint256 newUserDebt = baseDebtChange > 0
+      ? existingUserBaseDebt + uint256(baseDebtChange) // debt added
+      // force underflow: only possible when user takes repays amount more than net drawn
+      : existingUserBaseDebt - uint256(-baseDebtChange); // debt restored
+
+    (uint256 newRiskPremium, uint256 newBaseDebt) = MathUtils.addToWeightedAverage(
+      riskPremiumWithoutCurrent,
+      userDebtWithoutCurrent,
+      newUserRiskPremium,
+      newUserDebt
+    );
+
+    reserve.baseDebt = newBaseDebt;
+    user.baseDebt = newUserDebt;
+
+    reserve.wAvgRP = newRiskPremium;
+    user.riskPremium = newUserRiskPremium;
   }
 
   function _validateSetUsingAsCollateral(uint256 assetId, address user) internal view {
