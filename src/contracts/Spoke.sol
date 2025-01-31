@@ -125,9 +125,7 @@ contract Spoke is ISpoke {
   function supply(uint256 assetId, uint256 amount) external {
     Reserve storage r = _reserves[assetId];
 
-    uint256 newBaseBorrowIndex = liquidityHub.previewNextBorrowIndex(assetId);
-
-    _accrueAssetInterest(assetId, newBaseBorrowIndex);
+    _accrueAssetInterest(assetId, liquidityHub.previewNextBorrowIndex(assetId));
     _validateSupply(r, amount);
 
     // Update user's risk premium and wAvgRP across all users of spoke
@@ -337,6 +335,7 @@ contract Spoke is ISpoke {
     // If user has no debt, return 0 risk premium
     if (tempDebt == 0) return 0;
 
+    // TODO: Reconsider this n^2 sort, potentially just keep sorted list of assets (by LP)
     // Sort assets by ascending order of liquidity premium using bubble sort for small arrays
     for (uint256 i = 0; i < reservesListLength - 1; i++) {
       for (uint256 j = 0; j < reservesListLength - i - 1; j++) {
@@ -517,15 +516,12 @@ contract Spoke is ISpoke {
     // no interest to accrue if no time passed
     if (reserve.lastUpdateTimestamp == currentTime) return;
 
-    uint256 cumulatedBaseInterest = MathUtils.calculateLinearInterest(
-      newBaseBorrowIndex.rayDiv(reserve.baseBorrowIndex),
-      uint40(reserve.lastUpdateTimestamp)
-    );
-
     uint256 existingBaseDebt = reserve.baseDebt;
     // no interest to accrue since no liquidity has been drawn
     if (existingBaseDebt == 0) return;
-    uint256 cumulatedBaseDebt = existingBaseDebt.rayMul(cumulatedBaseInterest);
+
+    uint256 newIndexRatio = newBaseBorrowIndex.rayDiv(reserve.baseBorrowIndex);
+    uint256 cumulatedBaseDebt = existingBaseDebt.rayMul(newIndexRatio);
 
     // accrue premium interest on the accrued base interest
     reserve.baseDebt = cumulatedBaseDebt;
@@ -534,15 +530,12 @@ contract Spoke is ISpoke {
     reserve.lastUpdateTimestamp = currentTime;
 
     // User specific updates
-    cumulatedBaseInterest = MathUtils.calculateLinearInterest(
-      newBaseBorrowIndex.rayDiv(user.baseBorrowIndex),
-      uint40(user.lastUpdateTimestamp)
-    );
-
     existingBaseDebt = user.baseDebt;
     // no interest to accrue since no liquidity has been drawn
     if (existingBaseDebt == 0) return;
-    cumulatedBaseDebt = existingBaseDebt.rayMul(cumulatedBaseInterest);
+
+    newIndexRatio = newBaseBorrowIndex.rayDiv(user.baseBorrowIndex);
+    cumulatedBaseDebt = existingBaseDebt.rayMul(newIndexRatio);
 
     user.baseDebt = cumulatedBaseDebt;
     user.outstandingPremium += (cumulatedBaseDebt - existingBaseDebt).radMul(user.riskPremium);
