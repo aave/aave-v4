@@ -4,7 +4,7 @@ pragma solidity ^0.8.0;
 import '../BaseTest.t.sol';
 import {IERC20Errors} from 'src/dependencies/openzeppelin/IERC20Errors.sol';
 
-contract SpokeTest_ToMigrate is BaseTest {
+contract SpokeTest is BaseTest {
   using SharesMath for uint256;
   using WadRayMath for uint256;
 
@@ -156,11 +156,11 @@ contract SpokeTest_ToMigrate is BaseTest {
 
     Spoke.UserConfig memory userData = spoke1.getUser(assetId, USER1);
 
-    // assertEq(dai.balanceOf(USER1), amount, 'wrong user token balance pre-supply');
-    // assertEq(dai.balanceOf(address(hub)), 0, 'wrong hub token balance pre-supply');
-    // assertEq(dai.balanceOf(address(spoke1)), 0, 'wrong spoke token balance pre-supply');
-    // assertEq(userData.supplyShares, 0, 'wrong user shares pre-supply');
-    // assertEq(userData.debtShares, 0, 'wrong user shares pre-supply');
+    assertEq(dai.balanceOf(USER1), amount, 'user token balance pre-supply');
+    assertEq(dai.balanceOf(address(hub)), 0, 'hub token balance pre-supply');
+    assertEq(dai.balanceOf(address(spoke1)), 0, 'spoke token balance pre-supply');
+    assertEq(userData.totalSupplyShares, 0, 'user supply shares pre-supply');
+    assertEq(userData.baseDebt, 0, 'user base debt pre-supply');
 
     vm.startPrank(USER1);
     dai.approve(address(hub), amount);
@@ -171,15 +171,15 @@ contract SpokeTest_ToMigrate is BaseTest {
 
     userData = spoke1.getUser(assetId, USER1);
 
-    // assertEq(dai.balanceOf(USER1), 0);
-    // assertEq(dai.balanceOf(address(hub)), amount);
-    // assertEq(dai.balanceOf(address(spoke1)), 0, 'wrong spoke token balance post-supply');
-    // assertEq(
-    //   userData.supplyShares,
-    //   hub.convertToSharesDown(assetId, amount),
-    //   'wrong user supply shares'
-    // );
-    // assertEq(userData.debtShares, 0, 'wrong user debt shares');
+    assertEq(dai.balanceOf(USER1), 0);
+    assertEq(dai.balanceOf(address(hub)), amount);
+    assertEq(dai.balanceOf(address(spoke1)), 0, 'spoke token balance post-supply');
+    assertEq(
+      userData.totalSupplyShares,
+      hub.convertToSharesDown(assetId, amount),
+      'user supply shares post-supply'
+    );
+    assertEq(userData.baseDebt, 0, 'user base debt post-supply');
   }
 
   function test_borrow_revertsWith_reserve_not_borrowable() public {
