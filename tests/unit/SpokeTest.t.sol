@@ -182,6 +182,41 @@ contract SpokeTest is BaseTest {
     assertEq(userData.baseDebt, 0, 'user base debt post-supply');
   }
 
+  function test_supply_fuzz_amounts(uint256 amount) public {
+    amount = bound(amount, 1, MAX_SUPPLY_AMOUNT);
+
+    uint256 assetId = 0; // TODO: Add getter of asset id based on address
+
+    deal(address(dai), USER1, amount);
+
+    Spoke.UserConfig memory userData = spoke1.getUser(assetId, USER1);
+
+    assertEq(dai.balanceOf(USER1), amount, 'user token balance pre-supply');
+    assertEq(dai.balanceOf(address(hub)), 0, 'hub token balance pre-supply');
+    assertEq(dai.balanceOf(address(spoke1)), 0, 'spoke token balance pre-supply');
+    assertEq(userData.totalSupplyShares, 0, 'user supply shares pre-supply');
+    assertEq(userData.baseDebt, 0, 'user base debt pre-supply');
+
+    vm.startPrank(USER1);
+    dai.approve(address(hub), amount);
+    vm.expectEmit(address(spoke1));
+    emit Supplied(assetId, USER1, amount);
+    spoke1.supply(assetId, amount);
+    vm.stopPrank();
+
+    userData = spoke1.getUser(assetId, USER1);
+
+    assertEq(dai.balanceOf(USER1), 0);
+    assertEq(dai.balanceOf(address(hub)), amount);
+    assertEq(dai.balanceOf(address(spoke1)), 0, 'spoke token balance post-supply');
+    assertEq(
+      userData.totalSupplyShares,
+      hub.convertToSharesDown(assetId, amount),
+      'user supply shares post-supply'
+    );
+    assertEq(userData.baseDebt, 0, 'user base debt post-supply');
+  }
+
   function test_borrow_revertsWith_reserve_not_borrowable() public {
     uint256 daiId = 0;
     uint256 ethId = 1;
