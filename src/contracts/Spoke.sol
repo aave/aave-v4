@@ -318,6 +318,7 @@ contract Spoke is ISpoke {
     // Variable to decrement as we count up user RP
     uint256 tempDebt = 0;
     uint256 newUserRiskPremium = 0;
+    uint256 collateralValue = 0;
     uint256 assetId;
     uint256 userSupply;
 
@@ -328,8 +329,8 @@ contract Spoke is ISpoke {
         assetId: assetId,
         liquidityPremium: liquidityHub.getLiquidityPremium(assetId)
       });
-      // Add up user debt for each asset
-      tempDebt += users[assetId][user].debt;
+      // Add up user debt for each asset, including price
+      tempDebt += users[assetId][user].debt * IPriceOracle(oracle).getAssetPrice(assetId);
     }
 
     // If user has no debt, return 0 risk premium
@@ -353,28 +354,27 @@ contract Spoke is ISpoke {
       assetId = reservePremium[i].assetId;
       if (!_usingAsCollateral(assetId, user)) continue;
 
-      // Convert user's supply shares for this asset to absolute amount
-      userSupply = liquidityHub.convertToAssetsDown(assetId, users[assetId][user].supplyShares);
+      // Convert user's supply shares for this asset to collateral value
+      userSupply =
+        liquidityHub.convertToAssetsDown(assetId, users[assetId][user].supplyShares) *
+        IPriceOracle(oracle).getAssetPrice(assetId);
 
       if (userSupply >= tempDebt) {
         // This asset completes user debt, so add up weighted risk premium and break
-        newUserRiskPremium +=
-          tempDebt *
-          reservePremium[i].liquidityPremium *
-          IPriceOracle(oracle).getAssetPrice(assetId);
+        newUserRiskPremium += tempDebt * reservePremium[i].liquidityPremium;
+        collateralValue += tempDebt;
         break;
       } else {
         // Add up weighted risk premium
-        newUserRiskPremium +=
-          userSupply *
-          reservePremium[i].liquidityPremium *
-          IPriceOracle(oracle).getAssetPrice(assetId);
+        newUserRiskPremium += userSupply * reservePremium[i].liquidityPremium;
+        collateralValue += userSupply;
         // Subtract user supply from tempDebt
         tempDebt -= userSupply;
       }
     }
 
-    return newUserRiskPremium;
+    // TODO: Precision and units for this division
+    return newUserRiskPremium / collateralValue;
   }
 
   /// @dev It's assumed interest has been accrued before this function call
