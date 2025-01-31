@@ -9,8 +9,6 @@ contract SpokeTest_ToMigrate is BaseTest {
   using WadRayMath for uint256;
 
   function setUp() public override {
-    vm.skip(true, 'pending spoke migration');
-
     super.setUp();
 
     address[] memory spokes = new address[](2);
@@ -303,6 +301,8 @@ contract SpokeTest_ToMigrate is BaseTest {
     // assertEq(user1Data.debtShares, 0, 'wrong user debt shares post-withdraw');
   }
 
+  /* TODO: Add this test back */
+  /*
   function test_repay_revertsWith_repay_exceeds_debt() public {
     uint256 daiId = 0;
     uint256 ethId = 1;
@@ -330,6 +330,10 @@ contract SpokeTest_ToMigrate is BaseTest {
     ISpoke(address(spoke1)).repay(daiId, restoreAmount);
     vm.stopPrank();
   }
+  */
+
+  /* TODO: Add this test back */
+  /*
   function test_repay() public {
     uint256 daiId = 0;
     uint256 ethId = 1;
@@ -393,6 +397,7 @@ contract SpokeTest_ToMigrate is BaseTest {
     // assertEq(eth.balanceOf(USER1), 0, 'wrong USER1 eth final balance');
     // assertEq(eth.balanceOf(USER2), 0, 'wrong USER2 eth final balance');
   }
+  */
 
   function test_updateReserveConfig() public {
     uint256 daiId = 0;

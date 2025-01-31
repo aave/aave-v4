@@ -367,6 +367,7 @@ contract Spoke is ISpoke {
       }
     }
 
+    if (collateralValue == 0) return 0;
     // TODO: Precision and units for this division
     return newUserRiskPremium / collateralValue;
   }
