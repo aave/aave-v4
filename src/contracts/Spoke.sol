@@ -22,8 +22,6 @@ contract Spoke is ISpoke {
   struct Reserve {
     uint256 id;
     address asset;
-    // uint256 totalDebt;
-    // uint256 lastUpdateIndex;
     uint256 baseDebt;
     uint256 outstandingPremium;
     uint256 totalSupplyShares;
@@ -46,11 +44,7 @@ contract Spoke is ISpoke {
   }
 
   struct UserConfig {
-    uint256 supplyShares;
-    uint256 debt;
     bool usingAsCollateral;
-    // uint256 balance;
-    // uint256 lastUpdateIndex;
     uint256 baseDebt;
     uint256 outstandingPremium;
     uint256 totalSupplyShares;
@@ -89,7 +83,7 @@ contract Spoke is ISpoke {
     UserConfig memory u = users[assetId][user];
     // TODO: Instead use a getter from liquidity hub to get up-to-date user debt (with accrued debt)
     return
-      u.debt.rayMul(
+      u.baseDebt.rayMul(
         MathUtils.calculateCompoundedInterest(getInterestRate(assetId), uint40(0), block.timestamp)
       );
   }
@@ -137,7 +131,7 @@ contract Spoke is ISpoke {
       msg.sender // supplier
     );
 
-    users[assetId][msg.sender].supplyShares += userShares;
+    users[assetId][msg.sender].totalSupplyShares += userShares;
     _reserves[assetId].totalSupplyShares += userShares;
 
     emit Supplied(assetId, msg.sender, amount);
@@ -150,7 +144,7 @@ contract Spoke is ISpoke {
 
     (, uint256 newAggregatedRiskPremium) = _refreshRiskPremium(assetId, 0);
     uint256 userShares = liquidityHub.withdraw(assetId, amount, newAggregatedRiskPremium, to);
-    users[assetId][msg.sender].supplyShares -= userShares;
+    users[assetId][msg.sender].totalSupplyShares -= userShares;
 
     emit Withdrawn(assetId, msg.sender, amount);
   }
@@ -165,7 +159,7 @@ contract Spoke is ISpoke {
     (, uint256 newAggregatedRiskPremium) = _refreshRiskPremium(assetId, int256(amount));
     uint256 userDebt = liquidityHub.draw(assetId, amount, newAggregatedRiskPremium, to);
     // debt still goes to original msg.sender
-    users[assetId][msg.sender].debt += userDebt;
+    users[assetId][msg.sender].baseDebt += userDebt;
 
     emit Borrowed(assetId, to, amount);
   }
@@ -187,7 +181,7 @@ contract Spoke is ISpoke {
       newAggregatedRiskPremium,
       msg.sender // repayer
     );
-    users[assetId][msg.sender].debt -= repaidDebt;
+    users[assetId][msg.sender].baseDebt -= repaidDebt;
 
     emit Repaid(assetId, msg.sender, amount);
   }
@@ -276,7 +270,7 @@ contract Spoke is ISpoke {
     uint256 amount
   ) internal view {
     require(
-      liquidityHub.convertToAssetsDown(assetId, user.supplyShares) >= amount,
+      liquidityHub.convertToAssetsDown(assetId, user.totalSupplyShares) >= amount,
       'INSUFFICIENT_SUPPLY'
     );
   }
@@ -287,7 +281,7 @@ contract Spoke is ISpoke {
   }
 
   function _validateRepay(uint256 assetId, UserConfig storage user, uint256 amount) internal view {
-    require(amount <= user.debt, 'REPAY_EXCEEDS_DEBT');
+    require(amount <= user.baseDebt, 'REPAY_EXCEEDS_DEBT');
   }
 
   /**
@@ -330,7 +324,7 @@ contract Spoke is ISpoke {
         liquidityPremium: liquidityHub.getLiquidityPremium(assetId)
       });
       // Add up user debt for each asset, including price
-      tempDebt += users[assetId][user].debt * IPriceOracle(oracle).getAssetPrice(assetId);
+      tempDebt += users[assetId][user].baseDebt * IPriceOracle(oracle).getAssetPrice(assetId);
     }
 
     // If user has no debt, return 0 risk premium
@@ -356,7 +350,7 @@ contract Spoke is ISpoke {
 
       // Convert user's supply shares for this asset to collateral value
       userSupply =
-        liquidityHub.convertToAssetsDown(assetId, users[assetId][user].supplyShares) *
+        liquidityHub.convertToAssetsDown(assetId, users[assetId][user].totalSupplyShares) *
         IPriceOracle(oracle).getAssetPrice(assetId);
 
       if (userSupply >= tempDebt) {
@@ -419,7 +413,7 @@ contract Spoke is ISpoke {
 
   function _validateSetUsingAsCollateral(uint256 assetId, address user) internal view {
     require(_reserves[assetId].config.collateral, 'RESERVE_NOT_COLLATERAL');
-    require(users[assetId][user].supplyShares > 0, 'NO_SUPPLY');
+    require(users[assetId][user].totalSupplyShares > 0, 'NO_SUPPLY');
   }
 
   function _usingAsCollateralOrBorrowing(
@@ -434,7 +428,7 @@ contract Spoke is ISpoke {
   }
 
   function _borrowing(uint256 assetId, address user) internal view returns (bool) {
-    return users[assetId][user].debt > 0;
+    return users[assetId][user].baseDebt > 0;
   }
 
   function _calculateUserAccountData(
@@ -459,7 +453,7 @@ contract Spoke is ISpoke {
           vars.assetPrice *
           liquidityHub.convertToAssetsDown(
             vars.assetId,
-            _calculateAccruedInterest(vars.assetId, u.supplyShares)
+            _calculateAccruedInterest(vars.assetId, u.totalSupplyShares)
           );
         vars.liquidityPremium = 1; // TODO: get LP from LH
         vars.totalCollateralInBaseCurrency += vars.userCollateralInBaseCurrency;
@@ -467,8 +461,8 @@ contract Spoke is ISpoke {
         vars.userRiskPremium += vars.userCollateralInBaseCurrency * vars.liquidityPremium;
       }
 
-      vars.totalDebtInBaseCurrency += u.debt > 0
-        ? vars.assetPrice * _calculateAccruedInterest(vars.assetId, u.debt)
+      vars.totalDebtInBaseCurrency += u.baseDebt > 0
+        ? vars.assetPrice * _calculateAccruedInterest(vars.assetId, u.baseDebt)
         : 0;
 
       vars.i++;
