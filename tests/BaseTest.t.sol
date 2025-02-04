@@ -51,6 +51,7 @@ contract Events {
     uint256 indexed assetId,
     uint256 lt,
     uint256 lb,
+    uint256 liquidityPremium,
     bool borrowable,
     bool collateral
   );
@@ -114,6 +115,7 @@ abstract contract BaseTest is Test, Events {
   TokenList internal tokenList;
   uint256 internal wethAssetId = 0;
   uint256 internal usdxAssetId = 1;
+  uint256 internal daiAssetId = 2;
 
   uint256 internal mintAmount_USDX = MAX_SUPPLY_AMOUNT;
   uint256 internal mintAmount_DAI = MAX_SUPPLY_AMOUNT;
@@ -204,7 +206,6 @@ abstract contract BaseTest is Test, Events {
   }
   function configureTokenList() internal {
     // todo rm override
-    uint256 daiAssetId = 2;
     uint256 wbtcAssetId = 3;
 
     address[] memory spokes = new address[](3);
@@ -229,16 +230,24 @@ abstract contract BaseTest is Test, Events {
     Spoke.ReserveConfig[] memory reserveConfigs = new Spoke.ReserveConfig[](3);
 
     // add WETH
-    reserveConfigs[0] = Spoke.ReserveConfig({lt: 0.8e4, lb: 0, borrowable: true, collateral: true});
+    reserveConfigs[0] = Spoke.ReserveConfig({
+      lt: 0.8e4,
+      lb: 0,
+      liquidityPremium: 0,
+      borrowable: true,
+      collateral: true
+    });
     reserveConfigs[1] = Spoke.ReserveConfig({
       lt: 0.76e4,
       lb: 0,
+      liquidityPremium: 0,
       borrowable: true,
       collateral: true
     });
     reserveConfigs[2] = Spoke.ReserveConfig({
       lt: 0.79e4,
       lb: 0,
+      liquidityPremium: 0,
       borrowable: true,
       collateral: true
     });
@@ -256,18 +265,21 @@ abstract contract BaseTest is Test, Events {
     reserveConfigs[0] = Spoke.ReserveConfig({
       lt: 0.78e4,
       lb: 0,
+      liquidityPremium: 0,
       borrowable: true,
       collateral: true
     });
     reserveConfigs[1] = Spoke.ReserveConfig({
       lt: 0.72e4,
       lb: 0,
+      liquidityPremium: 0,
       borrowable: true,
       collateral: true
     });
     reserveConfigs[2] = Spoke.ReserveConfig({
       lt: 0.75e4,
       lb: 0,
+      liquidityPremium: 0,
       borrowable: true,
       collateral: true
     });
@@ -285,18 +297,21 @@ abstract contract BaseTest is Test, Events {
     reserveConfigs[0] = Spoke.ReserveConfig({
       lt: 0.78e4,
       lb: 0,
+      liquidityPremium: 0,
       borrowable: true,
       collateral: true
     });
     reserveConfigs[1] = Spoke.ReserveConfig({
       lt: 0.72e4,
       lb: 0,
+      liquidityPremium: 0,
       borrowable: true,
       collateral: true
     });
     reserveConfigs[2] = Spoke.ReserveConfig({
       lt: 0.75e4,
       lb: 0,
+      liquidityPremium: 0,
       borrowable: true,
       collateral: true
     });
@@ -315,13 +330,21 @@ abstract contract BaseTest is Test, Events {
     reserveConfigs[0] = Spoke.ReserveConfig({
       lt: 0.75e4,
       lb: 0,
+      liquidityPremium: 0,
       borrowable: true,
       collateral: true
     });
-    reserveConfigs[1] = Spoke.ReserveConfig({lt: 0.8e4, lb: 0, borrowable: true, collateral: true});
+    reserveConfigs[1] = Spoke.ReserveConfig({
+      lt: 0.8e4,
+      lb: 0,
+      liquidityPremium: 0,
+      borrowable: true,
+      collateral: true
+    });
     reserveConfigs[2] = Spoke.ReserveConfig({
       lt: 0.77e4,
       lb: 0,
+      liquidityPremium: 0,
       borrowable: true,
       collateral: true
     });

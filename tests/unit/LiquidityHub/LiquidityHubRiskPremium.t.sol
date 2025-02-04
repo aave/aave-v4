@@ -26,7 +26,6 @@ contract LiquidityHubRiskPremiumTest_Base is BaseTest {
   using PercentageMath for uint256;
 
   // todo: move to base test after conflict resolution
-  uint256 internal daiAssetId = 2;
   uint256 internal wbtcAssetId = 3;
 
   uint256 daiAmount = 2000e18;

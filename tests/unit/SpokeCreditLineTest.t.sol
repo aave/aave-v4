@@ -19,7 +19,7 @@ contract SpokeCreditLineTest is BaseTest {
     );
     spoke1.addReserve(
       0,
-      Spoke.ReserveConfig({lt: 0, lb: 0, borrowable: true, collateral: false}),
+      Spoke.ReserveConfig({lt: 0, lb: 0, liquidityPremium: 0, borrowable: true, collateral: false}),
       address(dai)
     );
     oracle.setAssetPrice(0, 1e8);
@@ -31,7 +31,7 @@ contract SpokeCreditLineTest is BaseTest {
     );
     spoke1.addReserve(
       1,
-      Spoke.ReserveConfig({lt: 0, lb: 0, borrowable: true, collateral: false}),
+      Spoke.ReserveConfig({lt: 0, lb: 0, liquidityPremium: 0, borrowable: true, collateral: false}),
       address(eth)
     );
     oracle.setAssetPrice(1, 2000e8);

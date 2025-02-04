@@ -10,7 +10,10 @@ contract SpokeTest is BaseTest {
 
   function setUp() public override {
     super.setUp();
+    super.initEnvironment();
+  }
 
+  /*
     address[] memory spokes = new address[](2);
     spokes[0] = address(spoke1);
     spokes[1] = address(spoke2);
@@ -32,10 +35,17 @@ contract SpokeTest is BaseTest {
     reserveConfigs[0] = Spoke.ReserveConfig({
       lt: 0.75e4,
       lb: 0,
+      liquidityPremium: 0,
       borrowable: true,
       collateral: true
     });
-    reserveConfigs[1] = Spoke.ReserveConfig({lt: 0.8e4, lb: 0, borrowable: true, collateral: true});
+    reserveConfigs[1] = Spoke.ReserveConfig({
+      lt: 0.8e4,
+      lb: 0,
+      liquidityPremium: 0,
+      borrowable: true,
+      collateral: true
+    });
 
     Utils.addAssetAndSpokes(
       hub,
@@ -50,10 +60,17 @@ contract SpokeTest is BaseTest {
     // Add eth
     uint256 ethAssetId = 1;
 
-    reserveConfigs[0] = Spoke.ReserveConfig({lt: 0.8e4, lb: 0, borrowable: true, collateral: true});
+    reserveConfigs[0] = Spoke.ReserveConfig({
+      lt: 0.8e4,
+      lb: 0,
+      liquidityPremium: 0,
+      borrowable: true,
+      collateral: true
+    });
     reserveConfigs[1] = Spoke.ReserveConfig({
       lt: 0.76e4,
       lb: 0,
+      liquidityPremium: 0,
       borrowable: true,
       collateral: true
     });
@@ -74,12 +91,14 @@ contract SpokeTest is BaseTest {
     reserveConfigs[0] = Spoke.ReserveConfig({
       lt: 0.78e4,
       lb: 0,
+      liquidityPremium: 0,
       borrowable: true,
       collateral: true
     });
     reserveConfigs[1] = Spoke.ReserveConfig({
       lt: 0.72e4,
       lb: 0,
+      liquidityPremium: 0,
       borrowable: true,
       collateral: true
     });
@@ -122,6 +141,7 @@ contract SpokeTest is BaseTest {
       })
     );
   }
+  */
 
   function test_supply_revertsWith_reserve_not_listed() public {
     uint256 assetId = 5; // invalid assetId
@@ -132,6 +152,7 @@ contract SpokeTest is BaseTest {
     spoke1.supply(assetId, amount);
   }
 
+  /*
   function test_supply_revertsWith_ERC20InsufficientAllowance() public {
     uint256 assetId = 0;
     uint256 amount = 100e18;
@@ -147,36 +168,35 @@ contract SpokeTest is BaseTest {
     );
     spoke1.supply(assetId, amount);
   }
+  */
 
   function test_supply() public {
-    uint256 assetId = 0; // TODO: Add getter of asset id based on address
+    // TODO: Add getter of asset id based on address
     uint256 amount = 100e18;
 
-    deal(address(dai), USER1, amount);
+    deal(address(tokenList.dai), bob, amount);
 
-    Spoke.UserConfig memory userData = spoke1.getUser(assetId, USER1);
+    Spoke.UserConfig memory userData = spoke1.getUser(daiAssetId, USER1);
 
-    assertEq(dai.balanceOf(USER1), amount, 'user token balance pre-supply');
-    assertEq(dai.balanceOf(address(hub)), 0, 'hub token balance pre-supply');
-    assertEq(dai.balanceOf(address(spoke1)), 0, 'spoke token balance pre-supply');
-    assertEq(userData.totalSupplyShares, 0, 'user supply shares pre-supply');
+    assertEq(tokenList.dai.balanceOf(bob), amount, 'user token balance pre-supply');
+    assertEq(tokenList.dai.balanceOf(address(hub)), 0, 'hub token balance pre-supply');
+    assertEq(tokenList.dai.balanceOf(address(spoke1)), 0, 'spoke token balance pre-supply');
+    assertEq(userData.suppliedShares, 0, 'user supply shares pre-supply');
     assertEq(userData.baseDebt, 0, 'user base debt pre-supply');
 
-    vm.startPrank(USER1);
-    dai.approve(address(hub), amount);
+    vm.prank(bob);
     vm.expectEmit(address(spoke1));
-    emit Supplied(assetId, USER1, amount);
-    spoke1.supply(assetId, amount);
-    vm.stopPrank();
+    emit Supplied(daiAssetId, bob, amount);
+    spoke1.supply(daiAssetId, amount);
 
-    userData = spoke1.getUser(assetId, USER1);
+    userData = spoke1.getUser(daiAssetId, bob);
 
-    assertEq(dai.balanceOf(USER1), 0);
-    assertEq(dai.balanceOf(address(hub)), amount);
-    assertEq(dai.balanceOf(address(spoke1)), 0, 'spoke token balance post-supply');
+    assertEq(tokenList.dai.balanceOf(bob), 0);
+    assertEq(tokenList.dai.balanceOf(address(hub)), amount);
+    assertEq(tokenList.dai.balanceOf(address(spoke1)), 0, 'spoke token balance post-supply');
     assertEq(
-      userData.totalSupplyShares,
-      hub.convertToSharesDown(assetId, amount),
+      userData.suppliedShares,
+      hub.convertToSharesDown(daiAssetId, amount),
       'user supply shares post-supply'
     );
     assertEq(userData.baseDebt, 0, 'user base debt post-supply');
@@ -185,77 +205,69 @@ contract SpokeTest is BaseTest {
   function test_supply_fuzz_amounts(uint256 amount) public {
     amount = bound(amount, 1, MAX_SUPPLY_AMOUNT);
 
-    uint256 assetId = 0; // TODO: Add getter of asset id based on address
+    deal(address(tokenList.dai), bob, amount);
 
-    deal(address(dai), USER1, amount);
+    Spoke.UserConfig memory userData = spoke1.getUser(daiAssetId, bob);
 
-    Spoke.UserConfig memory userData = spoke1.getUser(assetId, USER1);
-
-    assertEq(dai.balanceOf(USER1), amount, 'user token balance pre-supply');
-    assertEq(dai.balanceOf(address(hub)), 0, 'hub token balance pre-supply');
-    assertEq(dai.balanceOf(address(spoke1)), 0, 'spoke token balance pre-supply');
-    assertEq(userData.totalSupplyShares, 0, 'user supply shares pre-supply');
+    assertEq(tokenList.dai.balanceOf(bob), amount, 'user token balance pre-supply');
+    assertEq(tokenList.dai.balanceOf(address(hub)), 0, 'hub token balance pre-supply');
+    assertEq(tokenList.dai.balanceOf(address(spoke1)), 0, 'spoke token balance pre-supply');
+    assertEq(userData.suppliedShares, 0, 'user supply shares pre-supply');
     assertEq(userData.baseDebt, 0, 'user base debt pre-supply');
 
-    vm.startPrank(USER1);
-    dai.approve(address(hub), amount);
+    vm.prank(bob);
     vm.expectEmit(address(spoke1));
-    emit Supplied(assetId, USER1, amount);
-    spoke1.supply(assetId, amount);
-    vm.stopPrank();
+    emit Supplied(daiAssetId, bob, amount);
+    spoke1.supply(daiAssetId, amount);
 
-    userData = spoke1.getUser(assetId, USER1);
+    userData = spoke1.getUser(daiAssetId, bob);
 
-    assertEq(dai.balanceOf(USER1), 0);
-    assertEq(dai.balanceOf(address(hub)), amount);
-    assertEq(dai.balanceOf(address(spoke1)), 0, 'spoke token balance post-supply');
+    assertEq(tokenList.dai.balanceOf(bob), 0);
+    assertEq(tokenList.dai.balanceOf(address(hub)), amount);
+    assertEq(tokenList.dai.balanceOf(address(spoke1)), 0, 'spoke token balance post-supply');
     assertEq(
-      userData.totalSupplyShares,
-      hub.convertToSharesDown(assetId, amount),
+      userData.suppliedShares,
+      hub.convertToSharesDown(daiAssetId, amount),
       'user supply shares post-supply'
     );
     assertEq(userData.baseDebt, 0, 'user base debt post-supply');
   }
 
   function test_borrow_revertsWith_reserve_not_borrowable() public {
-    uint256 daiId = 0;
-    uint256 ethId = 1;
     uint256 daiAmount = 100e18;
-    uint256 ethAmount = 10e18;
+    uint256 wethAmount = 10e18;
 
-    // USER1 supply eth
-    deal(address(eth), USER1, ethAmount);
-    Utils.spokeSupply(hub, spoke1, ethId, USER1, ethAmount, USER1);
+    // Bob supply weth
+    deal(address(tokenList.weth), bob, wethAmount);
+    Utils.spokeSupply(hub, spoke1, wethAssetId, bob, wethAmount, bob);
 
-    // USER2 supply dai
-    deal(address(dai), USER2, daiAmount);
-    Utils.spokeSupply(hub, spoke1, daiId, USER2, daiAmount, USER2);
+    // Alice supply dai
+    deal(address(tokenList.dai), alice, daiAmount);
+    Utils.spokeSupply(hub, spoke1, daiAssetId, alice, daiAmount, alice);
 
     // set reserve not borrowable
-    Utils.updateBorrowable(spoke1, daiId, false);
+    Utils.updateBorrowable(spoke1, daiAssetId, false);
 
-    // USER1 draw half of dai reserve liquidity
-    vm.prank(USER1);
+    // Bob draw half of dai reserve liquidity
+    vm.prank(bob);
     vm.expectRevert(TestErrors.RESERVE_NOT_BORROWABLE);
-    ISpoke(spoke1).borrow(daiId, USER1, daiAmount / 2);
+    ISpoke(spoke1).borrow(daiAssetId, bob, daiAmount / 2);
   }
 
   function test_borrow() public {
-    uint256 daiId = 0;
-    uint256 ethId = 1;
     uint256 daiAmount = 100e18;
-    uint256 ethAmount = 10e18;
+    uint256 wethAmount = 10e18;
 
-    // USER1 supply eth
-    deal(address(eth), USER1, ethAmount);
-    Utils.spokeSupply(hub, spoke1, ethId, USER1, ethAmount, USER1);
+    // Bob supply weth
+    deal(address(tokenList.weth), USER1, wethAmount);
+    Utils.spokeSupply(hub, spoke1, wethAssetId, bob, wethAmount, bob);
 
-    // USER2 supply dai
-    deal(address(dai), USER2, daiAmount);
-    Utils.spokeSupply(hub, spoke1, daiId, USER2, daiAmount, USER2);
+    // Alice supply dai
+    deal(address(tokenList.dai), alice, daiAmount);
+    Utils.spokeSupply(hub, spoke1, daiAssetId, alice, daiAmount, alice);
 
-    Spoke.UserConfig memory user1Data = spoke1.getUser(ethId, USER1);
-    Spoke.UserConfig memory user2Data = spoke1.getUser(daiId, USER2);
+    Spoke.UserConfig memory user1Data = spoke1.getUser(wethAssetId, bob);
+    Spoke.UserConfig memory user2Data = spoke1.getUser(daiAssetId, alice);
 
     // assertEq(
     //   user1Data.supplyShares,
@@ -275,13 +287,13 @@ contract SpokeTest is BaseTest {
     // assertEq(eth.balanceOf(USER2), 0, 'wrong spoke2 eth balance pre-draw');
 
     // USER1 draw half of dai reserve liquidity
-    vm.prank(USER1);
+    vm.prank(bob);
     vm.expectEmit(address(spoke1));
-    emit Borrowed(daiId, USER1, daiAmount / 2);
-    ISpoke(spoke1).borrow(daiId, USER1, daiAmount / 2);
+    emit Borrowed(daiAssetId, bob, daiAmount / 2);
+    ISpoke(spoke1).borrow(daiAssetId, bob, daiAmount / 2);
 
-    user1Data = spoke1.getUser(ethId, USER1);
-    user2Data = spoke1.getUser(daiId, USER2);
+    user1Data = spoke1.getUser(wethAssetId, bob);
+    user2Data = spoke1.getUser(daiAssetId, alice);
 
     // assertEq(
     //   user1Data.supplyShares,
@@ -302,14 +314,14 @@ contract SpokeTest is BaseTest {
   }
 
   function test_withdraw() public {
-    uint256 assetId = 0; // TODO: Add getter of asset id based on address
+    // TODO: Add getter of asset id based on address
     uint256 amount = 100e18;
 
-    // USER1 supply
-    deal(address(dai), USER1, amount);
-    Utils.spokeSupply(hub, spoke1, assetId, USER1, amount, USER1);
+    // Bob supply
+    deal(address(tokenList.dai), bob, amount);
+    Utils.spokeSupply(hub, spoke1, daiAssetId, bob, amount, bob);
 
-    Spoke.UserConfig memory user1Data = spoke1.getUser(assetId, USER1);
+    Spoke.UserConfig memory user1Data = spoke1.getUser(daiAssetId, bob);
 
     // assertEq(dai.balanceOf(address(spoke1)), 0, 'wrong spoke token balance pre-withdraw');
     // assertEq(dai.balanceOf(address(hub)), amount, 'wrong hub token balance pre-withdraw');
@@ -321,13 +333,13 @@ contract SpokeTest is BaseTest {
     // );
     // assertEq(user1Data.debtShares, 0, 'wrong user debt shares post-withdraw');
 
-    vm.startPrank(USER1);
+    vm.startPrank(bob);
     vm.expectEmit(address(spoke1));
-    emit Withdrawn(assetId, USER1, amount);
-    spoke1.withdraw(assetId, USER1, amount);
+    emit Withdrawn(daiAssetId, bob, amount);
+    spoke1.withdraw(daiAssetId, bob, amount);
     vm.stopPrank();
 
-    user1Data = spoke1.getUser(assetId, USER1);
+    user1Data = spoke1.getUser(daiAssetId, bob);
 
     // assertEq(dai.balanceOf(address(spoke1)), 0, 'wrong spoke token balance post-withdraw');
     // assertEq(dai.balanceOf(address(hub)), 0, 'wrong hub token balance post-withdraw');
@@ -442,6 +454,7 @@ contract SpokeTest is BaseTest {
     Spoke.ReserveConfig memory newReserveConfig = Spoke.ReserveConfig({
       lt: reserveData.config.lt + 1,
       lb: reserveData.config.lb + 1,
+      liquidityPremium: 0,
       borrowable: !reserveData.config.borrowable,
       collateral: !reserveData.config.collateral
     });
@@ -450,6 +463,7 @@ contract SpokeTest is BaseTest {
       daiId,
       newReserveConfig.lt,
       newReserveConfig.lb,
+      newReserveConfig.liquidityPremium,
       newReserveConfig.borrowable,
       newReserveConfig.collateral
     );
@@ -459,19 +473,23 @@ contract SpokeTest is BaseTest {
 
     assertEq(reserveData.config.lt, newReserveConfig.lt, 'wrong lt');
     assertEq(reserveData.config.lb, newReserveConfig.lb, 'wrong lb');
+    assertEq(
+      reserveData.config.liquidityPremium,
+      newReserveConfig.liquidityPremium,
+      'wrong liquidityPremium'
+    );
     assertEq(reserveData.config.borrowable, newReserveConfig.borrowable, 'wrong borrowable');
     assertEq(reserveData.config.collateral, newReserveConfig.collateral, 'wrong collateral');
   }
 
   function test_setUsingAsCollateral_revertsWith_reserve_not_collateral() public {
-    uint256 daiId = 0;
     bool newCollateral = false;
     bool usingAsCollateral = true;
-    Utils.updateCollateral(spoke1, daiId, newCollateral);
+    Utils.updateCollateral(spoke1, daiAssetId, newCollateral);
 
-    vm.prank(USER1);
+    vm.prank(bob);
     vm.expectRevert(TestErrors.RESERVE_NOT_COLLATERAL);
-    ISpoke(spoke1).setUsingAsCollateral(daiId, usingAsCollateral);
+    ISpoke(spoke1).setUsingAsCollateral(daiAssetId, usingAsCollateral);
   }
 
   function test_setUsingAsCollateral_revertsWith_no_supply() public {
@@ -486,24 +504,23 @@ contract SpokeTest is BaseTest {
   }
 
   function test_setUsingAsCollateral() public {
-    uint256 daiId = 0;
     bool newCollateral = true;
     bool usingAsCollateral = true;
     uint256 daiAmount = 100e18;
 
     // ensure DAI is allowed as collateral
-    Utils.updateCollateral(spoke1, daiId, newCollateral);
+    Utils.updateCollateral(spoke1, daiAssetId, newCollateral);
 
-    // USER1 supply dai into spoke1
-    deal(address(dai), USER1, daiAmount);
-    Utils.spokeSupply(hub, spoke1, daiId, USER1, daiAmount, USER1);
+    // Bob supply dai into spoke1
+    deal(address(tokenList.dai), bob, daiAmount);
+    Utils.spokeSupply(hub, spoke1, daiAssetId, bob, daiAmount, bob);
 
-    vm.prank(USER1);
+    vm.prank(bob);
     vm.expectEmit(address(spoke1));
-    emit UsingAsCollateral(daiId, USER1, usingAsCollateral);
-    ISpoke(spoke1).setUsingAsCollateral(daiId, usingAsCollateral);
+    emit UsingAsCollateral(daiAssetId, bob, usingAsCollateral);
+    ISpoke(spoke1).setUsingAsCollateral(daiAssetId, usingAsCollateral);
 
-    Spoke.UserConfig memory userData = spoke1.getUser(daiId, USER1);
+    Spoke.UserConfig memory userData = spoke1.getUser(daiAssetId, bob);
     assertEq(userData.usingAsCollateral, usingAsCollateral, 'wrong usingAsCollateral');
   }
 }

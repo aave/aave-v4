@@ -32,10 +32,17 @@ contract HealthFactorTest_ToMigrate is BaseTest {
     reserveConfigs[0] = Spoke.ReserveConfig({
       lt: 0.75e4,
       lb: 0,
+      liquidityPremium: 0,
       borrowable: true,
       collateral: true
     });
-    reserveConfigs[1] = Spoke.ReserveConfig({lt: 0.8e4, lb: 0, borrowable: true, collateral: true});
+    reserveConfigs[1] = Spoke.ReserveConfig({
+      lt: 0.8e4,
+      lb: 0,
+      liquidityPremium: 0,
+      borrowable: true,
+      collateral: true
+    });
     Utils.addAssetAndSpokes(
       hub,
       address(dai),
@@ -48,10 +55,17 @@ contract HealthFactorTest_ToMigrate is BaseTest {
 
     // Add eth
     uint256 ethAssetId = 1;
-    reserveConfigs[0] = Spoke.ReserveConfig({lt: 0.8e4, lb: 0, borrowable: true, collateral: true});
+    reserveConfigs[0] = Spoke.ReserveConfig({
+      lt: 0.8e4,
+      lb: 0,
+      liquidityPremium: 0,
+      borrowable: true,
+      collateral: true
+    });
     reserveConfigs[1] = Spoke.ReserveConfig({
       lt: 0.76e4,
       lb: 0,
+      liquidityPremium: 0,
       borrowable: true,
       collateral: true
     });
@@ -70,12 +84,14 @@ contract HealthFactorTest_ToMigrate is BaseTest {
     reserveConfigs[0] = Spoke.ReserveConfig({
       lt: 0.78e4,
       lb: 0,
+      liquidityPremium: 0,
       borrowable: true,
       collateral: true
     });
     reserveConfigs[1] = Spoke.ReserveConfig({
       lt: 0.72e4,
       lb: 0,
+      liquidityPremium: 0,
       borrowable: true,
       collateral: true
     });
@@ -94,12 +110,14 @@ contract HealthFactorTest_ToMigrate is BaseTest {
     reserveConfigs[0] = Spoke.ReserveConfig({
       lt: 0.85e4,
       lb: 0,
+      liquidityPremium: 0,
       borrowable: true,
       collateral: true
     });
     reserveConfigs[1] = Spoke.ReserveConfig({
       lt: 0.84e4,
       lb: 0,
+      liquidityPremium: 0,
       borrowable: true,
       collateral: true
     });

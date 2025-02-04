@@ -31,7 +31,6 @@ struct Asset {
   uint256 baseBorrowIndex; // in ray
   uint256 baseBorrowRate; // in ray
   uint256 riskPremiumRad; // in rad
-  uint256 liquidityPremiumRad; // in rad
   uint256 lastUpdateTimestamp;
   DataTypes.AssetConfig config;
 }
@@ -57,10 +56,6 @@ contract LiquidityHub is ILiquidityHub {
 
   function getAsset(uint256 assetId) external view returns (Asset memory) {
     return _assets[assetId];
-  }
-
-  function getLiquidityPremium(uint256 assetId) external view returns (uint256) {
-    return _assets[assetId].liquidityPremiumRad;
   }
 
   function getSpoke(uint256 assetId, address spoke) external view returns (SpokeData memory) {
@@ -96,7 +91,6 @@ contract LiquidityHub is ILiquidityHub {
       baseBorrowRate: 0,
       lastUpdateTimestamp: block.timestamp,
       riskPremiumRad: 0,
-      liquidityPremiumRad: 0,
       config: DataTypes.AssetConfig({
         decimals: config.decimals,
         active: config.active,
