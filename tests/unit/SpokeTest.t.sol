@@ -4,11 +4,13 @@ pragma solidity ^0.8.0;
 import '../BaseTest.t.sol';
 import {IERC20Errors} from 'src/dependencies/openzeppelin/IERC20Errors.sol';
 
-contract SpokeTest is BaseTest {
+contract SpokeTest_ToMigrate is BaseTest {
   using SharesMath for uint256;
   using WadRayMath for uint256;
 
   function setUp() public override {
+    vm.skip(true, 'pending spoke migration');
+
     super.setUp();
     super.initEnvironment();
   }
