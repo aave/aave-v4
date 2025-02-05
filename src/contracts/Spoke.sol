@@ -387,7 +387,7 @@ contract Spoke is ISpoke {
     // While the tempDebt variable is non-zero, loop over collateral reserves, adding up weighted risk premium, and subtract corresponding amt from tempDebt
     for (uint256 i = 0; i < reservesListLength; i++) {
       reserveId = reservePremium[i].reserveId;
-      if (!_usingAsCollateral(reserveId, user)) continue;
+      if (!_users[reserveId][user].usingAsCollateral) continue;
 
       // Convert user's supply shares for this reserve to collateral value
       userSupply =
@@ -459,15 +459,9 @@ contract Spoke is ISpoke {
     uint256 reserveId,
     address user
   ) internal view returns (bool) {
-    return _usingAsCollateral(reserveId, user) || _borrowing(reserveId, user);
-  }
-
-  function _usingAsCollateral(uint256 reserveId, address user) internal view returns (bool) {
-    return _users[reserveId][user].usingAsCollateral;
-  }
-
-  function _borrowing(uint256 reserveId, address user) internal view returns (bool) {
-    return _users[reserveId][user].baseDebt > 0;
+    return
+      _users[reserveId][user].usingAsCollateral ||
+      _users[reserveId][user].baseDebt + _users[reserveId][user].outstandingPremium > 0;
   }
 
   function _calculateUserAccountData(
@@ -487,7 +481,7 @@ contract Spoke is ISpoke {
 
       vars.reservePrice = IPriceOracle(oracle).getAssetPrice(vars.reserveId);
 
-      if (_usingAsCollateral(vars.reserveId, userAddress)) {
+      if (_users[vars.reserveId][userAddress].usingAsCollateral) {
         vars.userCollateralInBaseCurrency =
           vars.reservePrice *
           liquidityHub.convertToAssetsDown(
