@@ -183,6 +183,7 @@ contract Spoke is ISpoke {
     Reserve storage reserve = _reserves[reserveId];
     UserConfig storage user = _users[reserveId][msg.sender];
 
+    _accrueAssetInterest(reserveId, liquidityHub.previewNextBorrowIndex(reserveId));
     _validateBorrow(reserve, amount);
 
     // TODO HF check
@@ -192,33 +193,36 @@ contract Spoke is ISpoke {
       baseDebtChange: int256(amount)
     });
     uint256 userDebt = liquidityHub.draw(reserveId, amount, newAggregatedRiskPremium, to);
+
     // debt still goes to original msg.sender
     user.baseDebt += userDebt;
+    reserve.baseDebt += userDebt;
 
     emit Borrowed(reserveId, to, amount);
   }
 
   function repay(uint256 reserveId, uint256 amount) external {
-    // TODO: Implement repay, calls liquidity hub restore method
     // TODO: onBehalfOf
     UserConfig storage user = _users[reserveId][msg.sender];
     Reserve storage reserve = _reserves[reserveId];
 
+    _accrueAssetInterest(reserveId, liquidityHub.previewNextBorrowIndex(reserveId));
     _validateRepay(reserveId, user, amount);
 
-    // TODO: Should only be the base debt restored instead of amount in following line
     uint256 newAggregatedRiskPremium = _updateRiskPremiumAndBaseDebt({
       reserve: reserve,
       user: user,
       baseDebtChange: -int256(amount)
     });
-    // TODO: Spoke should calculate the amountFromPremium and amountFromBase
+
     uint256 repaidDebt = liquidityHub.restore(
       reserveId,
       amount,
       newAggregatedRiskPremium,
       msg.sender // repayer
     );
+
+    // TODO: Repaid debt happens first from premium, then base
     user.baseDebt -= repaidDebt;
 
     emit Repaid(reserveId, msg.sender, amount);
