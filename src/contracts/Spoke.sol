@@ -71,6 +71,7 @@ contract Spoke is ISpoke {
   mapping(uint256 => mapping(address => UserConfig)) internal _users;
   // reserve id => reserveData
   mapping(uint256 => Reserve) internal _reserves;
+
   uint256[] public reservesList; // reserveIds
   uint256 public reserveCount;
   address public oracle;
@@ -137,7 +138,7 @@ contract Spoke is ISpoke {
     _validateSupply(reserve, amount);
 
     // Update user's risk premium and wAvgRP across all users of spoke
-    uint256 newAggregatedRiskPremium = _updateRiskPremium({
+    uint256 newAggregatedRiskPremium = _updateRiskPremiumAndBaseDebt({
       reserve: reserve,
       user: user,
       baseDebtChange: 0
@@ -159,15 +160,19 @@ contract Spoke is ISpoke {
     Reserve storage reserve = _reserves[reserveId];
     UserConfig storage user = _users[reserveId][msg.sender];
 
+    _accrueAssetInterest(reserveId, liquidityHub.previewNextBorrowIndex(reserveId));
     _validateWithdraw(reserveId, reserve, user, amount);
 
-    uint256 newAggregatedRiskPremium = _updateRiskPremium({
+    // Update user's risk premium and wAvgRP across all users of spoke
+    uint256 newAggregatedRiskPremium = _updateRiskPremiumAndBaseDebt({
       reserve: reserve,
       user: user,
       baseDebtChange: 0
     });
     uint256 userShares = liquidityHub.withdraw(reserveId, amount, newAggregatedRiskPremium, to);
+
     user.suppliedShares -= userShares;
+    reserve.suppliedShares -= userShares;
 
     emit Withdrawn(reserveId, msg.sender, amount);
   }
@@ -181,7 +186,7 @@ contract Spoke is ISpoke {
     _validateBorrow(reserve, amount);
 
     // TODO HF check
-    uint256 newAggregatedRiskPremium = _updateRiskPremium({
+    uint256 newAggregatedRiskPremium = _updateRiskPremiumAndBaseDebt({
       reserve: reserve,
       user: user,
       baseDebtChange: int256(amount)
@@ -202,7 +207,7 @@ contract Spoke is ISpoke {
     _validateRepay(reserveId, user, amount);
 
     // TODO: Should only be the base debt restored instead of amount in following line
-    uint256 newAggregatedRiskPremium = _updateRiskPremium({
+    uint256 newAggregatedRiskPremium = _updateRiskPremiumAndBaseDebt({
       reserve: reserve,
       user: user,
       baseDebtChange: -int256(amount)
@@ -328,7 +333,7 @@ contract Spoke is ISpoke {
   @param baseDebtChange The change in base debt of the reserve
   @return uint256 new aggregated risk premium
   */
-  function _updateRiskPremium(
+  function _updateRiskPremiumAndBaseDebt(
     Reserve storage reserve,
     UserConfig storage user,
     int256 baseDebtChange
@@ -336,7 +341,7 @@ contract Spoke is ISpoke {
     // Refresh risk premium of user, specific assets user has supplied
     uint256 newUserRiskPremium = _updateUserRiskPremium(msg.sender);
     // Refresh weighted average risk premium across all users of spoke
-    uint256 newAggregatedRiskPremium = _updateSpokeRiskPremium(
+    uint256 newAggregatedRiskPremium = _updateSpokeRiskPremiumAndBaseDebt(
       reserve,
       user,
       newUserRiskPremium,
@@ -413,7 +418,7 @@ contract Spoke is ISpoke {
   }
 
   /// @dev It's assumed interest has been accrued before this function call
-  function _updateSpokeRiskPremium(
+  function _updateSpokeRiskPremiumAndBaseDebt(
     Reserve storage reserve,
     UserConfig storage user,
     uint256 newUserRiskPremium,
