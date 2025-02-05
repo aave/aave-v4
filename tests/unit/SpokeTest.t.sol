@@ -4,146 +4,14 @@ pragma solidity ^0.8.0;
 import '../BaseTest.t.sol';
 import {IERC20Errors} from 'src/dependencies/openzeppelin/IERC20Errors.sol';
 
-contract SpokeTest_ToMigrate is BaseTest {
+contract SpokeTest is BaseTest {
   using SharesMath for uint256;
   using WadRayMath for uint256;
 
   function setUp() public override {
-    vm.skip(true, 'pending spoke migration');
-
     super.setUp();
     super.initEnvironment();
   }
-
-  /*
-    address[] memory spokes = new address[](2);
-    spokes[0] = address(spoke1);
-    spokes[1] = address(spoke2);
-    DataTypes.SpokeConfig[] memory spokeConfigs = new DataTypes.SpokeConfig[](2);
-    spokeConfigs[0] = DataTypes.SpokeConfig({
-      supplyCap: type(uint256).max,
-      drawCap: type(uint256).max
-    });
-    spokeConfigs[1] = DataTypes.SpokeConfig({
-      supplyCap: type(uint256).max,
-      drawCap: type(uint256).max
-    });
-
-    Spoke.ReserveConfig[] memory reserveConfigs = new Spoke.ReserveConfig[](2);
-
-    // Add dai
-    uint256 daiAssetId = 0;
-
-    reserveConfigs[0] = Spoke.ReserveConfig({
-      lt: 0.75e4,
-      lb: 0,
-      liquidityPremium: 0,
-      borrowable: true,
-      collateral: true
-    });
-    reserveConfigs[1] = Spoke.ReserveConfig({
-      lt: 0.8e4,
-      lb: 0,
-      liquidityPremium: 0,
-      borrowable: true,
-      collateral: true
-    });
-
-    Utils.addAssetAndSpokes(
-      hub,
-      address(dai),
-      DataTypes.AssetConfig({decimals: 18, active: true, irStrategy: address(irStrategy)}),
-      spokes,
-      spokeConfigs,
-      reserveConfigs
-    );
-    oracle.setAssetPrice(daiAssetId, 1e8);
-
-    // Add eth
-    uint256 ethAssetId = 1;
-
-    reserveConfigs[0] = Spoke.ReserveConfig({
-      lt: 0.8e4,
-      lb: 0,
-      liquidityPremium: 0,
-      borrowable: true,
-      collateral: true
-    });
-    reserveConfigs[1] = Spoke.ReserveConfig({
-      lt: 0.76e4,
-      lb: 0,
-      liquidityPremium: 0,
-      borrowable: true,
-      collateral: true
-    });
-
-    Utils.addAssetAndSpokes(
-      hub,
-      address(eth),
-      DataTypes.AssetConfig({decimals: 18, active: true, irStrategy: address(irStrategy)}),
-      spokes,
-      spokeConfigs,
-      reserveConfigs
-    );
-    oracle.setAssetPrice(ethAssetId, 2000e8);
-
-    // Add USDC
-    uint256 usdcId = 2;
-
-    reserveConfigs[0] = Spoke.ReserveConfig({
-      lt: 0.78e4,
-      lb: 0,
-      liquidityPremium: 0,
-      borrowable: true,
-      collateral: true
-    });
-    reserveConfigs[1] = Spoke.ReserveConfig({
-      lt: 0.72e4,
-      lb: 0,
-      liquidityPremium: 0,
-      borrowable: true,
-      collateral: true
-    });
-
-    Utils.addAssetAndSpokes(
-      hub,
-      address(usdc),
-      DataTypes.AssetConfig({decimals: 18, active: true, irStrategy: address(irStrategy)}),
-      spokes,
-      spokeConfigs,
-      reserveConfigs
-    );
-    oracle.setAssetPrice(usdcId, 1e8);
-
-    irStrategy.setInterestRateParams(
-      daiAssetId,
-      IDefaultInterestRateStrategy.InterestRateData({
-        optimalUsageRatio: 9000, // 90.00%
-        baseVariableBorrowRate: 500, // 5.00%
-        variableRateSlope1: 500, // 5.00%
-        variableRateSlope2: 500 // 5.00%
-      })
-    );
-    irStrategy.setInterestRateParams(
-      ethAssetId,
-      IDefaultInterestRateStrategy.InterestRateData({
-        optimalUsageRatio: 9000, // 90.00%
-        baseVariableBorrowRate: 500, // 5.00%
-        variableRateSlope1: 500, // 5.00%
-        variableRateSlope2: 500 // 5.00%
-      })
-    );
-    irStrategy.setInterestRateParams(
-      usdcId,
-      IDefaultInterestRateStrategy.InterestRateData({
-        optimalUsageRatio: 9000, // 90.00%
-        baseVariableBorrowRate: 500, // 5.00%
-        variableRateSlope1: 500, // 5.00%
-        variableRateSlope2: 500 // 5.00%
-      })
-    );
-  }
-  */
 
   function test_supply_revertsWith_reserve_not_listed() public {
     uint256 assetId = 5; // invalid assetId
@@ -154,23 +22,22 @@ contract SpokeTest_ToMigrate is BaseTest {
     spoke1.supply(assetId, amount);
   }
 
-  /*
   function test_supply_revertsWith_ERC20InsufficientAllowance() public {
-    uint256 assetId = 0;
     uint256 amount = 100e18;
 
-    vm.prank(USER1);
+    vm.startPrank(bob);
+    tokenList.dai.approve(address(hub), amount - 1);
     vm.expectRevert(
       abi.encodeWithSelector(
         IERC20Errors.ERC20InsufficientAllowance.selector,
         address(hub),
-        0,
+        amount - 1,
         amount
       )
     );
-    spoke1.supply(assetId, amount);
+    spoke1.supply(daiAssetId, amount);
+    vm.stopPrank();
   }
-  */
 
   function test_supply() public {
     // TODO: Add getter of asset id based on address

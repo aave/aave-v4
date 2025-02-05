@@ -11,8 +11,6 @@ contract LiquidityHubSupplyTest is LiquidityHubBaseTest {
   function test_supply_revertsWith_ERC20InsufficientAllowance() public {
     uint256 amount = 100e18;
 
-    tokenList.dai.approve(address(hub), amount - 1);
-
     vm.prank(address(spoke1));
     vm.expectRevert(
       abi.encodeWithSelector(
