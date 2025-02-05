@@ -20,7 +20,6 @@ contract Spoke is ISpoke {
   ILiquidityHub public liquidityHub;
 
   struct Reserve {
-    uint256 id;
     uint256 assetId;
     address asset;
     uint256 baseDebt;
@@ -278,7 +277,6 @@ contract Spoke is ISpoke {
     // TODO: AccessControl
     // TODO: assigning reserveId as the latest reserveCount
     reservesList.push(reserveId);
-    reserve.id = reserveId;
     reserve.assetId = assetId;
     reserve.asset = asset;
     reserve.config = ReserveConfig({
@@ -295,7 +293,7 @@ contract Spoke is ISpoke {
 
   function updateReserve(uint256 reserveId, ReserveConfig memory params) external {
     // TODO: More sophisticated
-    require(_reserves[reserveId].id != 0, 'INVALID_RESERVE');
+    require(_reserves[reserveId].asset != address(0), 'INVALID_RESERVE');
     // TODO: AccessControl
     _reserves[reserveId].config = ReserveConfig({
       lt: params.lt,
