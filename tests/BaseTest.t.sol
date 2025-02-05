@@ -116,11 +116,12 @@ abstract contract BaseTest is Test, Events {
   uint256 internal wethAssetId = 0;
   uint256 internal usdxAssetId = 1;
   uint256 internal daiAssetId = 2;
+  uint256 internal wbtcAssetId = 3;
 
+  uint256 internal mintAmount_WETH = MAX_SUPPLY_AMOUNT;
   uint256 internal mintAmount_USDX = MAX_SUPPLY_AMOUNT;
   uint256 internal mintAmount_DAI = MAX_SUPPLY_AMOUNT;
   uint256 internal mintAmount_WBTC = MAX_SUPPLY_AMOUNT;
-  uint256 internal mintAmount_WETH = MAX_SUPPLY_AMOUNT;
 
   struct TokenList {
     WETH9 weth;
@@ -205,9 +206,6 @@ abstract contract BaseTest is Test, Events {
     }
   }
   function configureTokenList() internal {
-    // todo rm override
-    uint256 wbtcAssetId = 3;
-
     address[] memory spokes = new address[](3);
     spokes[0] = address(spoke1);
     spokes[1] = address(spoke2);

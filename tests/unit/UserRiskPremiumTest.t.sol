@@ -107,7 +107,6 @@ contract UserRiskPremiumTest_ToMigrate is BaseTest {
     oracle.setAssetPrice(usdcId, 1e8);
 
     // Add WBTC
-    uint256 wbtcAssetId = 3;
     reserveConfigs[0] = Spoke.ReserveConfig({
       lt: 0.85e4,
       lb: 0,

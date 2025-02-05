@@ -10,7 +10,6 @@ contract LiquidityHubBaseTest is BaseTest {
   using WadRayMath for uint256;
 
   // TODO: read from baseTest when resolved
-  uint256 wbtcAssetId = 3;
   uint256 maxRiskPremiumRad = PercentageMath.PERCENTAGE_FACTOR.bpsToRad();
 
   struct TestSupplyUserParams {
