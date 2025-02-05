@@ -392,18 +392,7 @@ contract Spoke is ISpoke {
     // If user has no debt, return 0 risk premium
     if (tempDebt == 0) return 0;
 
-    // TODO: Reconsider this n^2 sort, potentially just keep sorted list of reserves (by LP)
-    // Sort reserves by ascending order of liquidity premium using bubble sort for small arrays
-    for (uint256 i = 0; i < reservesListLength - 1; i++) {
-      for (uint256 j = 0; j < reservesListLength - i - 1; j++) {
-        if (reservePremium[j].liquidityPremium > reservePremium[j + 1].liquidityPremium) {
-          // Swap elements
-          ReservePremium memory temp = reservePremium[j];
-          reservePremium[j] = reservePremium[j + 1];
-          reservePremium[j + 1] = temp;
-        }
-      }
-    }
+    // TODO: Ensure reserves are sorted by liquidity premium
 
     // While the tempDebt variable is non-zero, loop over collateral reserves, adding up weighted risk premium, and subtract corresponding amt from tempDebt
     for (uint256 i = 0; i < reservesListLength; i++) {
@@ -454,8 +443,8 @@ contract Spoke is ISpoke {
 
     uint256 newUserDebt = baseDebtChange > 0
       ? existingUserDebt + uint256(baseDebtChange) // debt added
-      // force underflow: only possible when user takes repays amount more than net drawn
-      : existingUserDebt - uint256(-baseDebtChange); // debt restored
+      : // force underflow: only possible when user takes repays amount more than net drawn
+      existingUserDebt - uint256(-baseDebtChange); // debt restored
 
     (uint256 newReserveRiskPremium, uint256 newReserveDebt) = MathUtils.addToWeightedAverage(
       reserveRiskPremiumWithoutCurrent,
