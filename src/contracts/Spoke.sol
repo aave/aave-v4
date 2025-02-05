@@ -246,8 +246,11 @@ contract Spoke is ISpoke {
   }
 
   function setUsingAsCollateral(uint256 reserveId, bool usingAsCollateral) external {
-    _validateSetUsingAsCollateral(_reserves[reserveId], _users[msg.sender][reserveId]);
-    _users[msg.sender][reserveId].usingAsCollateral = usingAsCollateral;
+    Reserve storage reserve = _reserves[reserveId];
+    UserConfig storage user = _users[msg.sender][reserveId];
+
+    _validateSetUsingAsCollateral(reserve, user);
+    user.usingAsCollateral = usingAsCollateral;
 
     emit UsingAsCollateral(reserveId, msg.sender, usingAsCollateral);
   }
@@ -468,8 +471,8 @@ contract Spoke is ISpoke {
 
     uint256 newUserDebt = baseDebtChange > 0
       ? existingUserDebt + uint256(baseDebtChange) // debt added
-      : // force underflow: only possible when user takes repays amount more than net drawn
-      existingUserDebt - uint256(-baseDebtChange); // debt restored
+      // force underflow: only possible when user takes repays amount more than net drawn
+      : existingUserDebt - uint256(-baseDebtChange); // debt restored
 
     (uint256 newReserveRiskPremium, uint256 newReserveDebt) = MathUtils.addToWeightedAverage(
       reserveRiskPremiumWithoutCurrent,
