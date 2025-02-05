@@ -246,7 +246,7 @@ contract Spoke is ISpoke {
   }
 
   function setUsingAsCollateral(uint256 reserveId, bool usingAsCollateral) external {
-    _validateSetUsingAsCollateral(reserveId, msg.sender);
+    _validateSetUsingAsCollateral(_reserves[reserveId], _users[msg.sender][reserveId]);
     _users[msg.sender][reserveId].usingAsCollateral = usingAsCollateral;
 
     emit UsingAsCollateral(reserveId, msg.sender, usingAsCollateral);
@@ -400,7 +400,7 @@ contract Spoke is ISpoke {
     // While the tempDebt variable is non-zero, loop over collateral reserves, adding up weighted risk premium, and subtract corresponding amt from tempDebt
     for (uint256 i = 0; i < reservesListLength; i++) {
       reserveId = reservePremium[i].reserveId;
-      if (!userData[reserveId].usingAsCollateral) continue;
+      if (!_usingAsCollateral(userData[reserveId])) continue;
 
       // Convert user's supply shares for this reserve to collateral value
       userSupply =
@@ -446,8 +446,8 @@ contract Spoke is ISpoke {
 
     uint256 newUserDebt = baseDebtChange > 0
       ? existingUserDebt + uint256(baseDebtChange) // debt added
-      // force underflow: only possible when user takes repays amount more than net drawn
-      : existingUserDebt - uint256(-baseDebtChange); // debt restored
+      : // force underflow: only possible when user takes repays amount more than net drawn
+      existingUserDebt - uint256(-baseDebtChange); // debt restored
 
     (uint256 newReserveRiskPremium, uint256 newReserveDebt) = MathUtils.addToWeightedAverage(
       reserveRiskPremiumWithoutCurrent,
@@ -463,18 +463,24 @@ contract Spoke is ISpoke {
     user.riskPremium = newUserRiskPremium;
   }
 
-  function _validateSetUsingAsCollateral(uint256 reserveId, address user) internal view {
-    require(_reserves[reserveId].config.collateral, 'RESERVE_NOT_COLLATERAL');
-    require(_users[user][reserveId].suppliedShares > 0, 'NO_SUPPLY');
+  function _validateSetUsingAsCollateral(
+    Reserve storage reserve,
+    UserConfig storage user
+  ) internal view {
+    require(reserve.config.collateral, 'RESERVE_NOT_COLLATERAL');
+    require(user.suppliedShares > 0, 'NO_SUPPLY');
   }
 
-  function _usingAsCollateralOrBorrowing(
-    uint256 reserveId,
-    address user
-  ) internal view returns (bool) {
-    return
-      _users[user][reserveId].usingAsCollateral ||
-      _users[user][reserveId].baseDebt + _users[user][reserveId].outstandingPremium > 0;
+  function _usingAsCollateral(UserConfig storage user) internal view returns (bool) {
+    return user.usingAsCollateral;
+  }
+
+  function _borrowing(UserConfig storage user) internal view returns (bool) {
+    return user.baseDebt + user.outstandingPremium > 0;
+  }
+
+  function _usingAsCollateralOrBorrowing(UserConfig storage user) internal view returns (bool) {
+    return _usingAsCollateral(user) || _borrowing(user);
   }
 
   function _calculateUserAccountData(
@@ -484,7 +490,7 @@ contract Spoke is ISpoke {
     uint256 reservesListLength = reservesList.length;
     while (vars.i < reservesListLength) {
       vars.reserveId = reservesList[vars.i];
-      if (!_usingAsCollateralOrBorrowing(vars.reserveId, userAddress)) {
+      if (!_usingAsCollateralOrBorrowing(_users[userAddress][vars.reserveId])) {
         vars.i++;
         continue;
       }
@@ -494,7 +500,7 @@ contract Spoke is ISpoke {
 
       vars.reservePrice = IPriceOracle(oracle).getAssetPrice(vars.reserveId);
 
-      if (_users[userAddress][vars.reserveId].usingAsCollateral) {
+      if (_usingAsCollateral(_users[userAddress][vars.reserveId])) {
         vars.userCollateralInBaseCurrency =
           vars.reservePrice *
           liquidityHub.convertToAssetsDown(
