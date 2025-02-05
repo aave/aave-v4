@@ -216,10 +216,14 @@ contract Spoke is ISpoke {
     _accrueAssetInterest(reserveId, liquidityHub.previewNextBorrowIndex(reserve.assetId));
     _validateRepay(reserveId, user, amount);
 
+    // Repaid debt happens first from premium, then base
+    uint256 baseDebtRestored = _deductFromOutstandingPremium(reserve, user, amount);
+    user.baseDebt -= baseDebtRestored;
+
     uint256 newAggregatedRiskPremium = _updateRiskPremiumAndBaseDebt({
       reserve: reserve,
       user: user,
-      baseDebtChange: -int256(amount)
+      baseDebtChange: -int256(baseDebtRestored)
     });
 
     uint256 repaidDebt = liquidityHub.restore(
@@ -228,9 +232,6 @@ contract Spoke is ISpoke {
       newAggregatedRiskPremium,
       msg.sender // repayer
     );
-
-    // TODO: Repaid debt happens first from premium, then base
-    user.baseDebt -= repaidDebt;
 
     emit Repaid(reserveId, msg.sender, amount);
   }
@@ -344,6 +345,29 @@ contract Spoke is ISpoke {
     uint256 amount
   ) internal view {
     require(amount <= user.baseDebt, 'REPAY_EXCEEDS_DEBT');
+  }
+
+  function _deductFromOutstandingPremium(
+    Reserve storage reserve,
+    UserConfig storage user,
+    uint256 amount
+  ) internal returns (uint256) {
+    uint256 userOutstandingPremium = user.outstandingPremium;
+
+    uint256 baseDebtRestored;
+
+    if (amount > userOutstandingPremium) {
+      baseDebtRestored = amount - userOutstandingPremium;
+      user.outstandingPremium = 0;
+      // underflow not possible bc of invariant: reserve.outstandingPremium >= user.outstandingPremium
+      reserve.outstandingPremium -= userOutstandingPremium;
+    } else {
+      // no base debt is restored, only outstanding premium
+      user.outstandingPremium -= amount;
+      reserve.outstandingPremium -= amount;
+    }
+
+    return baseDebtRestored;
   }
 
   /**
