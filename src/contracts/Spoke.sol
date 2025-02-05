@@ -71,6 +71,8 @@ contract Spoke is ISpoke {
   mapping(uint256 => mapping(address => UserConfig)) internal _users;
   // reserve id => reserveData
   mapping(uint256 => Reserve) internal _reserves;
+  // reserveId => assetId
+  mapping(uint256 => uint256) internal _assetIds;
 
   uint256[] public reservesList; // reserveIds
   uint256 public reserveCount;
@@ -134,7 +136,7 @@ contract Spoke is ISpoke {
     Reserve storage reserve = _reserves[reserveId];
     UserConfig storage user = _users[reserveId][msg.sender];
 
-    _accrueAssetInterest(reserveId, liquidityHub.previewNextBorrowIndex(reserveId));
+    _accrueAssetInterest(reserveId, liquidityHub.previewNextBorrowIndex(_assetIds[reserveId]));
     _validateSupply(reserve, amount);
 
     // Update user's risk premium and wAvgRP across all users of spoke
@@ -144,7 +146,7 @@ contract Spoke is ISpoke {
       baseDebtChange: 0
     });
     (, uint256 userShares) = liquidityHub.supply(
-      reserveId,
+      _assetIds[reserveId],
       amount,
       newAggregatedRiskPremium,
       msg.sender // supplier
@@ -160,7 +162,7 @@ contract Spoke is ISpoke {
     Reserve storage reserve = _reserves[reserveId];
     UserConfig storage user = _users[reserveId][msg.sender];
 
-    _accrueAssetInterest(reserveId, liquidityHub.previewNextBorrowIndex(reserveId));
+    _accrueAssetInterest(reserveId, liquidityHub.previewNextBorrowIndex(_assetIds[reserveId]));
     _validateWithdraw(reserveId, reserve, user, amount);
 
     // Update user's risk premium and wAvgRP across all users of spoke
@@ -169,7 +171,12 @@ contract Spoke is ISpoke {
       user: user,
       baseDebtChange: 0
     });
-    uint256 userShares = liquidityHub.withdraw(reserveId, amount, newAggregatedRiskPremium, to);
+    uint256 userShares = liquidityHub.withdraw(
+      _assetIds[reserveId],
+      amount,
+      newAggregatedRiskPremium,
+      to
+    );
 
     user.suppliedShares -= userShares;
     reserve.suppliedShares -= userShares;
@@ -183,7 +190,7 @@ contract Spoke is ISpoke {
     Reserve storage reserve = _reserves[reserveId];
     UserConfig storage user = _users[reserveId][msg.sender];
 
-    _accrueAssetInterest(reserveId, liquidityHub.previewNextBorrowIndex(reserveId));
+    _accrueAssetInterest(reserveId, liquidityHub.previewNextBorrowIndex(_assetIds[reserveId]));
     _validateBorrow(reserve, amount);
 
     // TODO HF check
@@ -192,7 +199,12 @@ contract Spoke is ISpoke {
       user: user,
       baseDebtChange: int256(amount)
     });
-    uint256 userDebt = liquidityHub.draw(reserveId, amount, newAggregatedRiskPremium, to);
+    uint256 userDebt = liquidityHub.draw(
+      _assetIds[reserveId],
+      amount,
+      newAggregatedRiskPremium,
+      to
+    );
 
     // debt still goes to original msg.sender
     user.baseDebt += userDebt;
@@ -206,7 +218,7 @@ contract Spoke is ISpoke {
     UserConfig storage user = _users[reserveId][msg.sender];
     Reserve storage reserve = _reserves[reserveId];
 
-    _accrueAssetInterest(reserveId, liquidityHub.previewNextBorrowIndex(reserveId));
+    _accrueAssetInterest(reserveId, liquidityHub.previewNextBorrowIndex(_assetIds[reserveId]));
     _validateRepay(reserveId, user, amount);
 
     uint256 newAggregatedRiskPremium = _updateRiskPremiumAndBaseDebt({
@@ -216,7 +228,7 @@ contract Spoke is ISpoke {
     });
 
     uint256 repaidDebt = liquidityHub.restore(
-      reserveId,
+      _assetIds[reserveId],
       amount,
       newAggregatedRiskPremium,
       msg.sender // repayer
@@ -256,8 +268,14 @@ contract Spoke is ISpoke {
   // Governance
   // /////
 
-  function addReserve(uint256 reserveId, ReserveConfig memory params, address asset) external {
+  function addReserve(
+    uint256 reserveId,
+    uint256 assetId,
+    ReserveConfig memory params,
+    address asset
+  ) external {
     Reserve storage reserve = _reserves[reserveId];
+    _assetIds[reserveId] = assetId;
     // TODO: validate reserveId does not exist already, valid asset
     // require(asset != address(0), 'INVALID_ASSET');
     // require(_reserves[reserveId].asset == address(0), 'RESERVE_ID_ALREADY_EXISTS');
@@ -442,8 +460,8 @@ contract Spoke is ISpoke {
 
     uint256 newUserDebt = baseDebtChange > 0
       ? existingUserDebt + uint256(baseDebtChange) // debt added
-      : // force underflow: only possible when user takes repays amount more than net drawn
-      existingUserDebt - uint256(-baseDebtChange); // debt restored
+      // force underflow: only possible when user takes repays amount more than net drawn
+      : existingUserDebt - uint256(-baseDebtChange); // debt restored
 
     (uint256 newReserveRiskPremium, uint256 newReserveDebt) = MathUtils.addToWeightedAverage(
       reserveRiskPremiumWithoutCurrent,

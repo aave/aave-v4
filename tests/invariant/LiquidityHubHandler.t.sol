@@ -48,6 +48,7 @@ contract LiquidityHubHandler is Test {
     );
     bm.addReserve(
       0,
+      0,
       Spoke.ReserveConfig({
         lt: 0,
         lb: 0,

@@ -21,7 +21,7 @@ library Utils {
     uint256 assetId = hub.assetCount() - 1;
     for (uint256 i = 0; i < spokes.length; i++) {
       hub.addSpoke(assetId, spokeConfigs[i], spokes[i]);
-      Spoke(spokes[i]).addReserve(assetId, reserveConfigs[i], asset);
+      Spoke(spokes[i]).addReserve(assetId, assetId, reserveConfigs[i], asset);
     }
   }
 
