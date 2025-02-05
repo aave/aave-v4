@@ -21,6 +21,7 @@ contract Spoke is ISpoke {
 
   struct Reserve {
     uint256 id;
+    uint256 assetId;
     address asset;
     uint256 baseDebt;
     uint256 outstandingPremium;
@@ -71,8 +72,6 @@ contract Spoke is ISpoke {
   mapping(uint256 => mapping(address => UserConfig)) internal _users;
   // reserve id => reserveData
   mapping(uint256 => Reserve) internal _reserves;
-  // reserveId => assetId
-  mapping(uint256 => uint256) internal _assetIds;
 
   uint256[] public reservesList; // reserveIds
   uint256 public reserveCount;
@@ -136,7 +135,7 @@ contract Spoke is ISpoke {
     Reserve storage reserve = _reserves[reserveId];
     UserConfig storage user = _users[reserveId][msg.sender];
 
-    _accrueAssetInterest(reserveId, liquidityHub.previewNextBorrowIndex(_assetIds[reserveId]));
+    _accrueAssetInterest(reserveId, liquidityHub.previewNextBorrowIndex(reserve.assetId));
     _validateSupply(reserve, amount);
 
     // Update user's risk premium and wAvgRP across all users of spoke
@@ -146,7 +145,7 @@ contract Spoke is ISpoke {
       baseDebtChange: 0
     });
     (, uint256 userShares) = liquidityHub.supply(
-      _assetIds[reserveId],
+      reserve.assetId,
       amount,
       newAggregatedRiskPremium,
       msg.sender // supplier
@@ -162,7 +161,7 @@ contract Spoke is ISpoke {
     Reserve storage reserve = _reserves[reserveId];
     UserConfig storage user = _users[reserveId][msg.sender];
 
-    _accrueAssetInterest(reserveId, liquidityHub.previewNextBorrowIndex(_assetIds[reserveId]));
+    _accrueAssetInterest(reserveId, liquidityHub.previewNextBorrowIndex(reserve.assetId));
     _validateWithdraw(reserveId, reserve, user, amount);
 
     // Update user's risk premium and wAvgRP across all users of spoke
@@ -172,7 +171,7 @@ contract Spoke is ISpoke {
       baseDebtChange: 0
     });
     uint256 userShares = liquidityHub.withdraw(
-      _assetIds[reserveId],
+      reserve.assetId,
       amount,
       newAggregatedRiskPremium,
       to
@@ -190,7 +189,7 @@ contract Spoke is ISpoke {
     Reserve storage reserve = _reserves[reserveId];
     UserConfig storage user = _users[reserveId][msg.sender];
 
-    _accrueAssetInterest(reserveId, liquidityHub.previewNextBorrowIndex(_assetIds[reserveId]));
+    _accrueAssetInterest(reserveId, liquidityHub.previewNextBorrowIndex(reserve.assetId));
     _validateBorrow(reserve, amount);
 
     // TODO HF check
@@ -199,12 +198,7 @@ contract Spoke is ISpoke {
       user: user,
       baseDebtChange: int256(amount)
     });
-    uint256 userDebt = liquidityHub.draw(
-      _assetIds[reserveId],
-      amount,
-      newAggregatedRiskPremium,
-      to
-    );
+    uint256 userDebt = liquidityHub.draw(reserve.assetId, amount, newAggregatedRiskPremium, to);
 
     // debt still goes to original msg.sender
     user.baseDebt += userDebt;
@@ -218,7 +212,7 @@ contract Spoke is ISpoke {
     UserConfig storage user = _users[reserveId][msg.sender];
     Reserve storage reserve = _reserves[reserveId];
 
-    _accrueAssetInterest(reserveId, liquidityHub.previewNextBorrowIndex(_assetIds[reserveId]));
+    _accrueAssetInterest(reserveId, liquidityHub.previewNextBorrowIndex(reserve.assetId));
     _validateRepay(reserveId, user, amount);
 
     uint256 newAggregatedRiskPremium = _updateRiskPremiumAndBaseDebt({
@@ -228,7 +222,7 @@ contract Spoke is ISpoke {
     });
 
     uint256 repaidDebt = liquidityHub.restore(
-      _assetIds[reserveId],
+      reserve.assetId,
       amount,
       newAggregatedRiskPremium,
       msg.sender // repayer
@@ -275,7 +269,6 @@ contract Spoke is ISpoke {
     address asset
   ) external {
     Reserve storage reserve = _reserves[reserveId];
-    _assetIds[reserveId] = assetId;
     // TODO: validate reserveId does not exist already, valid asset
     // require(asset != address(0), 'INVALID_ASSET');
     // require(_reserves[reserveId].asset == address(0), 'RESERVE_ID_ALREADY_EXISTS');
@@ -284,6 +277,7 @@ contract Spoke is ISpoke {
     // TODO: assigning reserveId as the latest reserveCount
     reservesList.push(reserveId);
     reserve.id = reserveId;
+    reserve.assetId = assetId;
     reserve.asset = asset;
     reserve.config = ReserveConfig({
       lt: params.lt,
