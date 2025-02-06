@@ -207,9 +207,6 @@ contract LiquidityHub is ILiquidityHub {
     _updateRiskPremiumAndBaseDebt(asset, spoke, riskPremiumRad, 0); // no base debt change
 
     uint256 sharesAmount = asset.convertToSharesDown(amount);
-    if (sharesAmount > asset.suppliedShares) {
-      sharesAmount = asset.suppliedShares;
-    }
     asset.suppliedShares -= sharesAmount;
     asset.availableLiquidity -= amount;
     spoke.suppliedShares -= sharesAmount;
@@ -265,9 +262,6 @@ contract LiquidityHub is ILiquidityHub {
 
     asset.updateBorrowRate({liquidityAdded: amount, liquidityTaken: 0});
     uint256 baseDebtRestored = _deductFromOutstandingPremium(asset, spoke, amount);
-    if (baseDebtRestored > asset.baseDebt) {
-      baseDebtRestored = asset.baseDebt;
-    }
     _updateRiskPremiumAndBaseDebt(asset, spoke, riskPremiumRad, -int256(baseDebtRestored));
 
     asset.availableLiquidity += amount;

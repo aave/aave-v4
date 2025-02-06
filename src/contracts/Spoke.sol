@@ -164,8 +164,8 @@ contract Spoke is ISpoke {
     _accrueAssetInterest(reserveId, liquidityHub.previewNextBorrowIndex(reserve.assetId));
     _validateWithdraw(reserveId, reserve, user, amount);
 
-    if (amount > liquidityHub.convertToAssetsDown(reserveId, user.suppliedShares)) {
-      amount = liquidityHub.convertToAssetsDown(reserveId, user.suppliedShares);
+    if (amount > liquidityHub.convertToAssetsDown(reserve.assetId, user.suppliedShares)) {
+      amount = liquidityHub.convertToAssetsDown(reserve.assetId, user.suppliedShares);
     }
 
     // Update user's risk premium and wAvgRP across all users of spoke
@@ -337,7 +337,7 @@ contract Spoke is ISpoke {
     uint256 amount
   ) internal view {
     require(
-      liquidityHub.convertToAssetsDown(reserveId, user.suppliedShares) >= amount,
+      liquidityHub.convertToAssetsDown(_reserves[reserveId].assetId, user.suppliedShares) >= amount,
       'INSUFFICIENT_SUPPLY'
     );
   }
