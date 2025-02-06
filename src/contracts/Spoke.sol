@@ -158,16 +158,12 @@ contract Spoke is ISpoke {
   }
 
   function withdraw(uint256 reserveId, address to, uint256 amount) external {
+    // TODO: Be able to pass max(uint) as amount to withdraw all supplied shares
     Reserve storage reserve = _reserves[reserveId];
     UserConfig storage user = _users[msg.sender][reserveId];
 
     _accrueAssetInterest(reserveId, liquidityHub.previewNextBorrowIndex(reserve.assetId));
     _validateWithdraw(reserveId, reserve, user, amount);
-
-    uint256 suppliedAmount = liquidityHub.convertToAssetsDown(reserve.assetId, user.suppliedShares);
-    if (amount > suppliedAmount) {
-      amount = suppliedAmount;
-    }
 
     // Update user's risk premium and wAvgRP across all users of spoke
     uint256 newAggregatedRiskPremium = _updateRiskPremiumAndBaseDebt({
@@ -213,6 +209,7 @@ contract Spoke is ISpoke {
   }
 
   function repay(uint256 reserveId, uint256 amount) external {
+    // TODO: Be able to pass max(uint) as amount to restore all debt
     // TODO: onBehalfOf
     UserConfig storage user = _users[msg.sender][reserveId];
     Reserve storage reserve = _reserves[reserveId];
@@ -222,9 +219,6 @@ contract Spoke is ISpoke {
 
     // Repaid debt happens first from premium, then base
     uint256 baseDebtRestored = _deductFromOutstandingPremium(reserve, user, amount);
-    if (baseDebtRestored > user.baseDebt) {
-      baseDebtRestored = user.baseDebt;
-    }
     user.baseDebt -= baseDebtRestored;
 
     uint256 newAggregatedRiskPremium = _updateRiskPremiumAndBaseDebt({
@@ -480,8 +474,8 @@ contract Spoke is ISpoke {
 
     uint256 newUserDebt = baseDebtChange > 0
       ? existingUserDebt + uint256(baseDebtChange) // debt added
-      : // force underflow: only possible when user takes repays amount more than net drawn
-      existingUserDebt - uint256(-baseDebtChange); // debt restored
+      // force underflow: only possible when user takes repays amount more than net drawn
+      : existingUserDebt - uint256(-baseDebtChange); // debt restored
 
     (uint256 newReserveRiskPremium, uint256 newReserveDebt) = MathUtils.addToWeightedAverage(
       reserveRiskPremiumWithoutCurrent,
