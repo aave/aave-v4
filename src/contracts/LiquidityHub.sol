@@ -265,6 +265,9 @@ contract LiquidityHub is ILiquidityHub {
 
     asset.updateBorrowRate({liquidityAdded: amount, liquidityTaken: 0});
     uint256 baseDebtRestored = _deductFromOutstandingPremium(asset, spoke, amount);
+    if (baseDebtRestored > asset.baseDebt) {
+      baseDebtRestored = asset.baseDebt;
+    }
     _updateRiskPremiumAndBaseDebt(asset, spoke, riskPremiumRad, -int256(baseDebtRestored));
 
     asset.availableLiquidity += amount;
