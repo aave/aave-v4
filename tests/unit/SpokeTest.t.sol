@@ -46,11 +46,13 @@ contract SpokeTest is BaseTest {
     deal(address(tokenList.dai), bob, amount);
 
     Spoke.UserConfig memory userData = spoke1.getUser(daiAssetId, USER1);
+    Spoke.Reserve memory reserveData = spoke1.getReserve(daiAssetId);
 
     assertEq(tokenList.dai.balanceOf(bob), amount, 'user token balance pre-supply');
     assertEq(tokenList.dai.balanceOf(address(hub)), 0, 'hub token balance pre-supply');
     assertEq(tokenList.dai.balanceOf(address(spoke1)), 0, 'spoke token balance pre-supply');
     assertEq(userData.suppliedShares, 0, 'user supply shares pre-supply');
+    assertEq(reserveData.suppliedShares, 0, 'reserve total shares pre-supply');
     assertEq(userData.baseDebt, 0, 'user base debt pre-supply');
 
     vm.prank(bob);
@@ -59,6 +61,7 @@ contract SpokeTest is BaseTest {
     spoke1.supply(daiAssetId, amount);
 
     userData = spoke1.getUser(daiAssetId, bob);
+    reserveData = spoke1.getReserve(daiAssetId);
 
     assertEq(tokenList.dai.balanceOf(bob), 0);
     assertEq(tokenList.dai.balanceOf(address(hub)), amount);
@@ -67,6 +70,11 @@ contract SpokeTest is BaseTest {
       userData.suppliedShares,
       hub.convertToSharesDown(daiAssetId, amount),
       'user supply shares post-supply'
+    );
+    assertEq(
+      reserveData.suppliedShares,
+      hub.convertToSharesDown(daiAssetId, amount),
+      'reserve supplied shares post-supply'
     );
     assertEq(userData.baseDebt, 0, 'user base debt post-supply');
   }
@@ -77,11 +85,13 @@ contract SpokeTest is BaseTest {
     deal(address(tokenList.dai), bob, amount);
 
     Spoke.UserConfig memory userData = spoke1.getUser(daiAssetId, bob);
+    Spoke.Reserve memory reserveData = spoke1.getReserve(daiAssetId);
 
     assertEq(tokenList.dai.balanceOf(bob), amount, 'user token balance pre-supply');
     assertEq(tokenList.dai.balanceOf(address(hub)), 0, 'hub token balance pre-supply');
     assertEq(tokenList.dai.balanceOf(address(spoke1)), 0, 'spoke token balance pre-supply');
     assertEq(userData.suppliedShares, 0, 'user supply shares pre-supply');
+    assertEq(reserveData.suppliedShares, 0, 'reserve supply shares pre-supply');
     assertEq(userData.baseDebt, 0, 'user base debt pre-supply');
 
     vm.prank(bob);
@@ -90,6 +100,7 @@ contract SpokeTest is BaseTest {
     spoke1.supply(daiAssetId, amount);
 
     userData = spoke1.getUser(daiAssetId, bob);
+    reserveData = spoke1.getReserve(daiAssetId);
 
     assertEq(tokenList.dai.balanceOf(bob), 0);
     assertEq(tokenList.dai.balanceOf(address(hub)), amount);
@@ -98,6 +109,11 @@ contract SpokeTest is BaseTest {
       userData.suppliedShares,
       hub.convertToSharesDown(daiAssetId, amount),
       'user supply shares post-supply'
+    );
+    assertEq(
+      reserveData.suppliedShares,
+      hub.convertToSharesDown(daiAssetId, amount),
+      'reserve supplied shares post-supply'
     );
     assertEq(userData.baseDebt, 0, 'user base debt post-supply');
   }
