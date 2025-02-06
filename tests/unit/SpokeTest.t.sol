@@ -40,7 +40,6 @@ contract SpokeTest is BaseTest {
   }
 
   function test_supply() public {
-    // TODO: Add getter of asset id based on address
     uint256 amount = 100e18;
 
     deal(address(tokenList.dai), bob, amount);
