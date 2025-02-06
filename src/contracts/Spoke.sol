@@ -164,6 +164,10 @@ contract Spoke is ISpoke {
     _accrueAssetInterest(reserveId, liquidityHub.previewNextBorrowIndex(reserve.assetId));
     _validateWithdraw(reserveId, reserve, user, amount);
 
+    if (amount > liquidityHub.convertToAssetsDown(reserveId, user.suppliedShares)) {
+      amount = liquidityHub.convertToAssetsDown(reserveId, user.suppliedShares);
+    }
+
     // Update user's risk premium and wAvgRP across all users of spoke
     uint256 newAggregatedRiskPremium = _updateRiskPremiumAndBaseDebt({
       reserve: reserve,
