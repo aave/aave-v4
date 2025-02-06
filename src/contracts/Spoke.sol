@@ -164,8 +164,9 @@ contract Spoke is ISpoke {
     _accrueAssetInterest(reserveId, liquidityHub.previewNextBorrowIndex(reserve.assetId));
     _validateWithdraw(reserveId, reserve, user, amount);
 
-    if (amount > liquidityHub.convertToAssetsDown(reserve.assetId, user.suppliedShares)) {
-      amount = liquidityHub.convertToAssetsDown(reserve.assetId, user.suppliedShares);
+    uint256 suppliedAmount = liquidityHub.convertToAssetsDown(reserve.assetId, user.suppliedShares);
+    if (amount > suppliedAmount) {
+      amount = suppliedAmount;
     }
 
     // Update user's risk premium and wAvgRP across all users of spoke
@@ -479,8 +480,8 @@ contract Spoke is ISpoke {
 
     uint256 newUserDebt = baseDebtChange > 0
       ? existingUserDebt + uint256(baseDebtChange) // debt added
-      // force underflow: only possible when user takes repays amount more than net drawn
-      : existingUserDebt - uint256(-baseDebtChange); // debt restored
+      : // force underflow: only possible when user takes repays amount more than net drawn
+      existingUserDebt - uint256(-baseDebtChange); // debt restored
 
     (uint256 newReserveRiskPremium, uint256 newReserveDebt) = MathUtils.addToWeightedAverage(
       reserveRiskPremiumWithoutCurrent,
