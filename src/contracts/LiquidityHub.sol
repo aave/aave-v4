@@ -195,7 +195,6 @@ contract LiquidityHub is ILiquidityHub {
     uint256 riskPremiumRad,
     address to
   ) external returns (uint256) {
-    // TODO: Be able to pass max(uint) as amount to withdraw all or accept number of shares
     // TODO: authorization - only spokes
 
     Asset storage asset = _assets[assetId];
@@ -208,6 +207,9 @@ contract LiquidityHub is ILiquidityHub {
     _updateRiskPremiumAndBaseDebt(asset, spoke, riskPremiumRad, 0); // no base debt change
 
     uint256 sharesAmount = asset.convertToSharesDown(amount);
+    if (sharesAmount > asset.suppliedShares) {
+      sharesAmount = asset.suppliedShares;
+    }
     asset.suppliedShares -= sharesAmount;
     asset.availableLiquidity -= amount;
     spoke.suppliedShares -= sharesAmount;
