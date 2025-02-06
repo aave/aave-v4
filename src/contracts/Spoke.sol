@@ -217,6 +217,9 @@ contract Spoke is ISpoke {
 
     // Repaid debt happens first from premium, then base
     uint256 baseDebtRestored = _deductFromOutstandingPremium(reserve, user, amount);
+    if (baseDebtRestored > user.baseDebt) {
+      baseDebtRestored = user.baseDebt;
+    }
     user.baseDebt -= baseDebtRestored;
 
     uint256 newAggregatedRiskPremium = _updateRiskPremiumAndBaseDebt({
