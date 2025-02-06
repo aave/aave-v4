@@ -253,6 +253,7 @@ contract LiquidityHub is ILiquidityHub {
     uint256 riskPremiumRad,
     address repayer
   ) external returns (uint256) {
+    // TODO: Be able to pass max(uint) as amount to restore all debt
     // TODO: authorization - only spokes
 
     Asset storage asset = _assets[assetId];

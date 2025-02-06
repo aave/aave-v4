@@ -158,6 +158,7 @@ contract Spoke is ISpoke {
   }
 
   function withdraw(uint256 reserveId, address to, uint256 amount) external {
+    // TODO: Be able to pass max(uint) as amount to withdraw all supplied shares
     Reserve storage reserve = _reserves[reserveId];
     UserConfig storage user = _users[msg.sender][reserveId];
 
@@ -208,6 +209,7 @@ contract Spoke is ISpoke {
   }
 
   function repay(uint256 reserveId, uint256 amount) external {
+    // TODO: Be able to pass max(uint) as amount to restore all debt
     // TODO: onBehalfOf
     UserConfig storage user = _users[msg.sender][reserveId];
     Reserve storage reserve = _reserves[reserveId];
@@ -330,7 +332,7 @@ contract Spoke is ISpoke {
     uint256 amount
   ) internal view {
     require(
-      liquidityHub.convertToAssetsDown(reserveId, user.suppliedShares) >= amount,
+      liquidityHub.convertToAssetsDown(_reserves[reserveId].assetId, user.suppliedShares) >= amount,
       'INSUFFICIENT_SUPPLY'
     );
   }
