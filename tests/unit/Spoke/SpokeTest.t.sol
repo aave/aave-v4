@@ -142,59 +142,65 @@ contract SpokeTest is BaseTest {
     uint256 daiAmount = 100e18;
     uint256 wethAmount = 10e18;
 
+    // Reset account balances
+    deal(address(tokenList.dai), bob, 0);
+    deal(address(tokenList.weth), alice, 0);
+
     // Bob supply weth
-    deal(address(tokenList.weth), USER1, wethAmount);
+    deal(address(tokenList.weth), bob, wethAmount);
     Utils.spokeSupply(hub, spoke1, wethAssetId, bob, wethAmount, bob);
 
     // Alice supply dai
     deal(address(tokenList.dai), alice, daiAmount);
     Utils.spokeSupply(hub, spoke1, daiAssetId, alice, daiAmount, alice);
 
-    Spoke.UserConfig memory user1Data = spoke1.getUser(wethAssetId, bob);
-    Spoke.UserConfig memory user2Data = spoke1.getUser(daiAssetId, alice);
+    Spoke.UserConfig memory bobData = spoke1.getUser(wethAssetId, bob);
+    Spoke.UserConfig memory aliceData = spoke1.getUser(daiAssetId, alice);
 
-    // assertEq(
-    //   user1Data.supplyShares,
-    //   ILiquidityHub(address(hub)).convertToSharesDown(ethId, ethAmount),
-    //   'wrong user1 supply shares pre-draw'
-    // );
-    // assertEq(user1Data.debtShares, 0, 'wrong user1 debt shares pre-draw');
-    // assertEq(
-    //   user2Data.supplyShares,
-    //   ILiquidityHub(address(hub)).convertToSharesDown(daiId, daiAmount),
-    //   'wrong user2 supply shares pre-draw'
-    // );
-    // assertEq(user2Data.debtShares, 0, 'wrong user2 debt shares pre-draw');
-    // assertEq(dai.balanceOf(address(spoke1)), 0, 'wrong spoke1 dai balance pre-draw');
-    // assertEq(eth.balanceOf(address(spoke2)), 0, 'wrong spoke2 eth balance pre-draw');
-    // assertEq(dai.balanceOf(USER1), 0, 'wrong spoke1 dai balance pre-draw');
-    // assertEq(eth.balanceOf(USER2), 0, 'wrong spoke2 eth balance pre-draw');
+    assertEq(
+      bobData.suppliedShares,
+      hub.convertToSharesDown(wethAssetId, wethAmount),
+      'bob supply shares pre-draw'
+    );
+    assertEq(bobData.baseDebt, 0, 'bob base debt pre-draw');
+    assertEq(
+      aliceData.suppliedShares,
+      hub.convertToSharesDown(daiAssetId, daiAmount),
+      'alice supply shares pre-draw'
+    );
+    assertEq(aliceData.baseDebt, 0, 'alice base debt pre-draw');
+    assertEq(tokenList.dai.balanceOf(address(spoke1)), 0, 'spoke1 dai balance pre-draw');
+    assertEq(tokenList.weth.balanceOf(address(spoke2)), 0, 'spoke2 weth balance pre-draw');
+    assertEq(tokenList.dai.balanceOf(bob), 0, 'bob dai balance pre-draw');
+    assertEq(tokenList.weth.balanceOf(alice), 0, 'alice weth balance pre-draw');
 
-    // USER1 draw half of dai reserve liquidity
+    // Bob draw half of dai reserve liquidity
     vm.prank(bob);
     vm.expectEmit(address(spoke1));
     emit Borrowed(daiAssetId, bob, daiAmount / 2);
-    ISpoke(spoke1).borrow(daiAssetId, bob, daiAmount / 2);
+    spoke1.borrow(daiAssetId, bob, daiAmount / 2);
 
-    user1Data = spoke1.getUser(wethAssetId, bob);
-    user2Data = spoke1.getUser(daiAssetId, alice);
+    bobData = spoke1.getUser(wethAssetId, bob);
+    aliceData = spoke1.getUser(daiAssetId, alice);
 
-    // assertEq(
-    //   user1Data.supplyShares,
-    //   ILiquidityHub(address(hub)).convertToSharesDown(ethId, ethAmount),
-    //   'wrong user1 supply shares final balance'
-    // );
-    // assertEq(user1Data.debtShares, 0, 'wrong user1 debt shares final balance');
-    // assertEq(
-    //   user2Data.supplyShares,
-    //   ILiquidityHub(address(hub)).convertToSharesDown(daiId, daiAmount),
-    //   'wrong user2 supply shares final balance'
-    // );
-    // assertEq(user2Data.debtShares, 0, 'wrong user2 debt shares final');
-    // assertEq(dai.balanceOf(USER1), daiAmount / 2, 'wrong USER1 dai final balance');
-    // assertEq(eth.balanceOf(USER2), 0, 'wrong USER2 eth final balance');
-    // assertEq(dai.balanceOf(address(spoke1)), 0, 'wrong spoke1 dai final balance');
-    // assertEq(eth.balanceOf(address(spoke2)), 0, 'wrong spoke2 eth final balance');
+    assertEq(
+      bobData.suppliedShares,
+      hub.convertToSharesDown(wethAssetId, wethAmount),
+      'bob supply shares final balance'
+    );
+    assertEq(bobData.baseDebt, 0, 'bob base debt weth final balance');
+    bobData = spoke1.getUser(daiAssetId, bob);
+    assertEq(bobData.baseDebt, daiAmount / 2, 'bob base debt dai final balance');
+    assertEq(
+      aliceData.suppliedShares,
+      hub.convertToSharesDown(daiAssetId, daiAmount),
+      'alice supply shares final balance'
+    );
+    assertEq(aliceData.baseDebt, 0, 'alice base debt final');
+    assertEq(tokenList.dai.balanceOf(bob), daiAmount / 2, 'bob dai final balance');
+    assertEq(tokenList.weth.balanceOf(alice), 0, 'alice weth final balance');
+    assertEq(tokenList.dai.balanceOf(address(spoke1)), 0, 'spoke1 dai final balance');
+    assertEq(tokenList.weth.balanceOf(address(spoke2)), 0, 'spoke2 weth final balance');
   }
 
   function test_withdraw() public {
