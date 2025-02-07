@@ -221,6 +221,24 @@ contract SpokeTest is BaseTest {
     spoke1.borrow(daiAssetId, bob, daiAmount + 1);
   }
 
+  function test_borrow_revertsWith_invalid_draw_amount() public {
+    uint256 daiAmount = 100e18;
+    uint256 wethAmount = 10e18;
+
+    // Bob supply weth
+    deal(address(tokenList.weth), bob, wethAmount);
+    Utils.spokeSupply(hub, spoke1, wethAssetId, bob, wethAmount, bob);
+
+    // Alice supply dai
+    deal(address(tokenList.dai), alice, daiAmount);
+    Utils.spokeSupply(hub, spoke1, daiAssetId, alice, daiAmount, alice);
+
+    // Bob draw 0 dai
+    vm.prank(bob);
+    vm.expectRevert('INVALID_DRAW_AMOUNT');
+    spoke1.borrow(daiAssetId, bob, 0);
+  }
+
   function test_borrow_fuzz_amounts(uint256 wethSupplyAmount, uint256 daiBorrowAmount) public {
     wethSupplyAmount = bound(wethSupplyAmount, 1, MAX_SUPPLY_AMOUNT);
     daiBorrowAmount = bound(daiBorrowAmount, 1, wethSupplyAmount / 2 + 1);
