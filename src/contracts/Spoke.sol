@@ -215,7 +215,6 @@ contract Spoke is ISpoke {
 
     // Repaid debt happens first from premium, then base
     uint256 baseDebtRestored = _deductFromOutstandingPremium(reserve, user, amount);
-    user.baseDebt -= baseDebtRestored;
 
     uint256 newAggregatedRiskPremium = _updateRiskPremiumAndBaseDebt({
       reserve: reserve,
@@ -223,7 +222,7 @@ contract Spoke is ISpoke {
       baseDebtChange: -int256(baseDebtRestored)
     });
 
-    uint256 repaidDebt = liquidityHub.restore(
+    liquidityHub.restore(
       reserve.assetId,
       amount,
       newAggregatedRiskPremium,
