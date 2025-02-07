@@ -325,7 +325,7 @@ contract LiquidityHub is ILiquidityHub {
     SpokeData storage spoke,
     uint256 amount
   ) internal view {
-    require(amount > 0, 'INVALID_AMOUNT');
+    require(amount > 0, 'INVALID_SUPPLY_AMOUNT');
     require(assetsList[asset.id] != IERC20(address(0)), 'ASSET_NOT_LISTED');
     // TODO: Different states e.g. frozen, paused
     require(asset.config.active, 'ASSET_NOT_ACTIVE');
@@ -344,6 +344,7 @@ contract LiquidityHub is ILiquidityHub {
     // TODO: Other cases of status (frozen, paused)
     // TODO: still allow withdrawal even if asset is not active, only prevent for frozen/paused?
     require(asset.config.active, 'ASSET_NOT_ACTIVE');
+    require(amount > 0, 'INVALID_WITHDRAW_AMOUNT');
     require(
       amount <= asset.convertToAssetsDown(spoke.suppliedShares) - spoke.baseDebt,
       'SUPPLIED_AMOUNT_EXCEEDED'
@@ -354,6 +355,7 @@ contract LiquidityHub is ILiquidityHub {
   function _validateDraw(Asset storage asset, uint256 amount, uint256 drawCap) internal view {
     // TODO: Other cases of status (frozen, paused)
     require(asset.config.active, 'ASSET_NOT_ACTIVE');
+    require(amount > 0, 'INVALID_DRAW_AMOUNT');
     require(
       drawCap == type(uint256).max || amount + asset.baseDebt <= drawCap,
       'DRAW_CAP_EXCEEDED'
@@ -405,8 +407,8 @@ contract LiquidityHub is ILiquidityHub {
 
     uint256 newSpokeDebt = baseDebtChange > 0
       ? existingSpokeDebt + uint256(baseDebtChange) // debt added
-      : // force underflow: only possible when spoke takes repays amount more than net drawn
-      existingSpokeDebt - uint256(-baseDebtChange); // debt restored
+      // force underflow: only possible when spoke takes repays amount more than net drawn
+      : existingSpokeDebt - uint256(-baseDebtChange); // debt restored
 
     (uint256 newAssetRiskPremium, uint256 newAssetDebt) = MathUtils.addToWeightedAverage(
       assetRiskPremiumWithoutCurrent,

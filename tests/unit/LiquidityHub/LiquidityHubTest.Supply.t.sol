@@ -373,7 +373,7 @@ contract LiquidityHubSupplyTest is LiquidityHubBaseTest {
     uint256 amount = 0;
 
     vm.prank(address(spoke1));
-    vm.expectRevert(TestErrors.INVALID_AMOUNT);
+    vm.expectRevert(TestErrors.INVALID_SUPPLY_AMOUNT);
     hub.supply(assetId, amount, 0, alice);
   }
 
