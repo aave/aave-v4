@@ -432,7 +432,10 @@ contract Spoke is ISpoke {
 
       // Convert user's supply shares for this reserve to collateral value
       userSupply =
-        liquidityHub.convertToAssetsDown(reserveId, userData[reserveId].suppliedShares) *
+        liquidityHub.convertToAssetsDown(
+          _reserves[reserveId].assetId,
+          userData[reserveId].suppliedShares
+        ) *
         IPriceOracle(oracle).getAssetPrice(reserveId);
 
       if (userSupply >= tempDebt) {
@@ -474,8 +477,8 @@ contract Spoke is ISpoke {
 
     uint256 newUserDebt = baseDebtChange > 0
       ? existingUserDebt + uint256(baseDebtChange) // debt added
-      // force underflow: only possible when user takes repays amount more than net drawn
-      : existingUserDebt - uint256(-baseDebtChange); // debt restored
+      : // force underflow: only possible when user takes repays amount more than net drawn
+      existingUserDebt - uint256(-baseDebtChange); // debt restored
 
     (uint256 newReserveRiskPremium, uint256 newReserveDebt) = MathUtils.addToWeightedAverage(
       reserveRiskPremiumWithoutCurrent,
