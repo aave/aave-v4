@@ -235,7 +235,7 @@ contract SpokeTest is BaseTest {
 
     // Bob draw 0 dai
     vm.prank(bob);
-    vm.expectRevert('INVALID_DRAW_AMOUNT');
+    vm.expectRevert(TestErrors.INVALID_DRAW_AMOUNT);
     spoke1.borrow(daiAssetId, bob, 0);
   }
 
