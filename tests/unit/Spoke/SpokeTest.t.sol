@@ -10,7 +10,7 @@ contract SpokeTest is BaseTest {
 
   function setUp() public override {
     super.setUp();
-    super.initEnvironment();
+    initEnvironment();
   }
 
   function test_supply_revertsWith_reserve_not_listed() public {
@@ -217,7 +217,7 @@ contract SpokeTest is BaseTest {
 
     // Bob draw more than supplied dai amount
     vm.prank(bob);
-    vm.expectRevert('NOT_AVAILABLE_LIQUIDITY');
+    vm.expectRevert(TestErrors.NOT_AVAILABLE_LIQUIDITY);
     spoke1.borrow(daiAssetId, bob, daiAmount + 1);
   }
 

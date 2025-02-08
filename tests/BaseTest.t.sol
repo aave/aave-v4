@@ -118,6 +118,11 @@ abstract contract BaseTest is Test, Events {
   uint256 internal daiAssetId = 2;
   uint256 internal wbtcAssetId = 3;
 
+  uint256 internal wethReserveId = 4;
+  uint256 internal usdxReserveId = 5;
+  uint256 internal daiReserveId = 6;
+  uint256 internal wbtcReserveId = 7;
+
   uint256 internal mintAmount_WETH = MAX_SUPPLY_AMOUNT;
   uint256 internal mintAmount_USDX = MAX_SUPPLY_AMOUNT;
   uint256 internal mintAmount_DAI = MAX_SUPPLY_AMOUNT;

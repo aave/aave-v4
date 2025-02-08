@@ -142,6 +142,7 @@ contract Spoke is ISpoke {
     uint256 newAggregatedRiskPremium = _updateRiskPremiumAndBaseDebt({
       reserve: reserve,
       user: user,
+      userAddress: msg.sender,
       baseDebtChange: 0
     });
     (, uint256 userShares) = liquidityHub.supply(
@@ -169,17 +170,18 @@ contract Spoke is ISpoke {
     uint256 newAggregatedRiskPremium = _updateRiskPremiumAndBaseDebt({
       reserve: reserve,
       user: user,
+      userAddress: msg.sender,
       baseDebtChange: 0
     });
-    uint256 userShares = liquidityHub.withdraw(
+    uint256 withdrawnShares = liquidityHub.withdraw(
       reserve.assetId,
       amount,
       newAggregatedRiskPremium,
       to
     );
 
-    user.suppliedShares -= userShares;
-    reserve.suppliedShares -= userShares;
+    user.suppliedShares -= withdrawnShares;
+    reserve.suppliedShares -= withdrawnShares;
 
     emit Withdrawn(reserveId, msg.sender, amount);
   }
@@ -197,6 +199,7 @@ contract Spoke is ISpoke {
     uint256 newAggregatedRiskPremium = _updateRiskPremiumAndBaseDebt({
       reserve: reserve,
       user: user,
+      userAddress: msg.sender,
       baseDebtChange: int256(amount)
     });
     liquidityHub.draw(reserve.assetId, amount, newAggregatedRiskPremium, to);
@@ -219,6 +222,7 @@ contract Spoke is ISpoke {
     uint256 newAggregatedRiskPremium = _updateRiskPremiumAndBaseDebt({
       reserve: reserve,
       user: user,
+      userAddress: msg.sender,
       baseDebtChange: -int256(baseDebtRestored)
     });
 
@@ -376,10 +380,11 @@ contract Spoke is ISpoke {
   function _updateRiskPremiumAndBaseDebt(
     Reserve storage reserve,
     UserConfig storage user,
+    address userAddress,
     int256 baseDebtChange
   ) internal returns (uint256) {
     // Refresh risk premium of user, specific assets user has supplied
-    uint256 newUserRiskPremium = _updateUserRiskPremium(_users[msg.sender]);
+    uint256 newUserRiskPremium = _updateUserRiskPremium(_users[userAddress]);
     // Refresh weighted average risk premium across all users of spoke
     uint256 newAggregatedRiskPremium = _updateSpokeRiskPremiumAndBaseDebt(
       reserve,
@@ -445,7 +450,7 @@ contract Spoke is ISpoke {
     }
 
     if (collateralValue == 0) return 0;
-    return newUserRiskPremium.percentDiv(collateralValue);
+    return newUserRiskPremium / collateralValue;
   }
 
   /// @dev It's assumed interest has been accrued before this function call
