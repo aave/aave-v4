@@ -47,6 +47,7 @@ contract UserRiskPremiumTest_ToMigrate is BaseTest {
     Utils.addAssetAndSpokes(
       hub,
       address(dai),
+      daiReserveId,
       DataTypes.AssetConfig({decimals: 18, active: true, irStrategy: address(irStrategy)}),
       spokes,
       spokeConfigs,
@@ -73,6 +74,7 @@ contract UserRiskPremiumTest_ToMigrate is BaseTest {
     Utils.addAssetAndSpokes(
       hub,
       address(eth),
+      wethReserveId,
       DataTypes.AssetConfig({decimals: 18, active: true, irStrategy: address(irStrategy)}),
       spokes,
       spokeConfigs,
@@ -99,6 +101,7 @@ contract UserRiskPremiumTest_ToMigrate is BaseTest {
     Utils.addAssetAndSpokes(
       hub,
       address(usdc),
+      usdxReserveId,
       DataTypes.AssetConfig({decimals: 18, active: true, irStrategy: address(irStrategy)}),
       spokes,
       spokeConfigs,
@@ -124,6 +127,7 @@ contract UserRiskPremiumTest_ToMigrate is BaseTest {
     Utils.addAssetAndSpokes(
       hub,
       address(wbtc),
+      wbtcReserveId,
       DataTypes.AssetConfig({decimals: 18, active: true, irStrategy: address(irStrategy)}),
       spokes,
       spokeConfigs,

@@ -124,6 +124,9 @@ abstract contract BaseTest is Test, Events {
   uint256 internal daiReserveId = 6;
   uint256 internal wbtcReserveId = 7;
 
+  mapping(uint256 => uint256) internal assetIdToReserveId;
+  mapping(uint256 => uint256) internal reserveIdToAssetId;
+
   uint256 internal mintAmount_WETH = MAX_SUPPLY_AMOUNT;
   uint256 internal mintAmount_USDX = MAX_SUPPLY_AMOUNT;
   uint256 internal mintAmount_DAI = MAX_SUPPLY_AMOUNT;
@@ -153,6 +156,10 @@ abstract contract BaseTest is Test, Events {
     vm.label(address(spoke1), 'spoke1');
     vm.label(address(spoke2), 'spoke2');
     vm.label(address(spoke3), 'spoke3');
+
+    for (uint256 i; i < 4; ++i) {
+      assetIdToReserveId[i] = i + 4;
+    }
   }
 
   function initEnvironment() internal {
@@ -258,6 +265,7 @@ abstract contract BaseTest is Test, Events {
     Utils.addAssetAndSpokes(
       hub,
       address(tokenList.weth),
+      wethReserveId,
       DataTypes.AssetConfig({decimals: 18, active: true, irStrategy: address(irStrategy)}),
       spokes,
       spokeConfigs,
@@ -290,6 +298,7 @@ abstract contract BaseTest is Test, Events {
     Utils.addAssetAndSpokes(
       hub,
       address(tokenList.usdx),
+      usdxReserveId,
       DataTypes.AssetConfig({decimals: 6, active: true, irStrategy: address(irStrategy)}),
       spokes,
       spokeConfigs,
@@ -322,6 +331,7 @@ abstract contract BaseTest is Test, Events {
     Utils.addAssetAndSpokes(
       hub,
       address(tokenList.dai),
+      daiReserveId,
       DataTypes.AssetConfig({decimals: 18, active: true, irStrategy: address(irStrategy)}),
       spokes,
       spokeConfigs,
@@ -355,6 +365,7 @@ abstract contract BaseTest is Test, Events {
     Utils.addAssetAndSpokes(
       hub,
       address(tokenList.wbtc),
+      wbtcReserveId,
       DataTypes.AssetConfig({decimals: 8, active: true, irStrategy: address(irStrategy)}),
       spokes,
       spokeConfigs,
