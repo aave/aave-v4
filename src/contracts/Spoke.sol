@@ -288,9 +288,8 @@ contract Spoke is ISpoke {
       borrowable: params.borrowable,
       collateral: params.collateral
     });
-    reserveCount++;
 
-    return reserveCount - 1;
+    return reserveCount++;
 
     // emit event
   }
@@ -477,8 +476,8 @@ contract Spoke is ISpoke {
 
     uint256 newUserDebt = baseDebtChange > 0
       ? existingUserDebt + uint256(baseDebtChange) // debt added
-      // force underflow: only possible when user takes repays amount more than net drawn
-      : existingUserDebt - uint256(-baseDebtChange); // debt restored
+      : // force underflow: only possible when user takes repays amount more than net drawn
+      existingUserDebt - uint256(-baseDebtChange); // debt restored
 
     (uint256 newReserveRiskPremium, uint256 newReserveDebt) = MathUtils.addToWeightedAverage(
       reserveRiskPremiumWithoutCurrent,
