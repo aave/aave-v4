@@ -67,6 +67,7 @@ library TestErrors {
   bytes constant INVALID_AMOUNT = 'INVALID_AMOUNT';
   bytes constant INVALID_SUPPLY_AMOUNT = 'INVALID_SUPPLY_AMOUNT';
   bytes constant INVALID_DRAW_AMOUNT = 'INVALID_DRAW_AMOUNT';
+  bytes constant INVALID_WITHDRAW_AMOUNT = 'INVALID_WITHDRAW_AMOUNT';
   bytes constant SUPPLY_CAP_EXCEEDED = 'SUPPLY_CAP_EXCEEDED';
   bytes constant DRAW_CAP_EXCEEDED = 'DRAW_CAP_EXCEEDED';
   bytes constant SUPPLIED_AMOUNT_EXCEEDED = 'SUPPLIED_AMOUNT_EXCEEDED';
@@ -125,7 +126,7 @@ abstract contract BaseTest is Test, Events {
   uint256 internal wbtcReserveId = 7;
 
   mapping(uint256 => uint256) internal assetIdToReserveId;
-  mapping(uint256 => uint256) internal reserveIdToAssetId;
+  mapping(uint256 => uint256) internal reserveIdRiskPremium;
 
   uint256 internal mintAmount_WETH = MAX_SUPPLY_AMOUNT;
   uint256 internal mintAmount_USDX = MAX_SUPPLY_AMOUNT;
