@@ -12,7 +12,6 @@ library Utils {
   function addAssetAndSpokes(
     LiquidityHub hub,
     address asset,
-    uint256 reserveId,
     DataTypes.AssetConfig memory assetConfig,
     address[] memory spokes,
     DataTypes.SpokeConfig[] memory spokeConfigs,
@@ -22,7 +21,7 @@ library Utils {
     uint256 assetId = hub.assetCount() - 1;
     for (uint256 i = 0; i < spokes.length; i++) {
       hub.addSpoke(assetId, spokeConfigs[i], spokes[i]);
-      Spoke(spokes[i]).addReserve(reserveId, assetId, reserveConfigs[i], asset);
+      Spoke(spokes[i]).addReserve(assetId, reserveConfigs[i], asset);
     }
   }
 

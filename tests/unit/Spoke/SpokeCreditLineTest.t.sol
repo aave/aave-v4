@@ -19,7 +19,6 @@ contract SpokeCreditLineTest is BaseTest {
     );
     spoke1.addReserve(
       0,
-      0,
       Spoke.ReserveConfig({lt: 0, lb: 0, liquidityPremium: 0, borrowable: true, collateral: false}),
       address(dai)
     );
@@ -31,7 +30,6 @@ contract SpokeCreditLineTest is BaseTest {
       address(eth)
     );
     spoke1.addReserve(
-      1,
       1,
       Spoke.ReserveConfig({lt: 0, lb: 0, liquidityPremium: 0, borrowable: true, collateral: false}),
       address(eth)
