@@ -260,7 +260,7 @@ contract LiquidityHubWithdrawTest is LiquidityHubBaseTest {
   }
 
   function test_withdraw_fuzz(uint256 assetId, uint256 amount) public {
-    assetId = bound(assetId, 0, hub.assetCount() - 1);
+    assetId = bound(assetId, 0, hub.assetCount() - 2); // Exclude duplicated DAI
     amount = bound(amount, 1, MAX_SUPPLY_AMOUNT);
 
     IERC20 asset = hub.assetsList(assetId);

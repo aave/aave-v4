@@ -119,6 +119,7 @@ abstract contract BaseTest is Test, Events {
   uint256 internal usdxAssetId = 1;
   uint256 internal daiAssetId = 2;
   uint256 internal wbtcAssetId = 3;
+  uint256 internal dai2AssetId = 4;
 
   uint256 internal mintAmount_WETH = MAX_SUPPLY_AMOUNT;
   uint256 internal mintAmount_USDX = MAX_SUPPLY_AMOUNT;
@@ -241,7 +242,7 @@ abstract contract BaseTest is Test, Events {
       DataTypes.AssetConfig({decimals: 18, active: true, irStrategy: address(irStrategy)}),
       address(tokenList.dai)
     );
-    oracle.setAssetPrice(usdxAssetId, 1e8);
+    oracle.setAssetPrice(daiAssetId, 1e8);
 
     // add WBTC
     hub.addAsset(
@@ -417,6 +418,26 @@ abstract contract BaseTest is Test, Events {
     hub.addSpoke(usdxAssetId, spokeConfig, address(spoke3));
     hub.addSpoke(wethAssetId, spokeConfig, address(spoke3));
     hub.addSpoke(wbtcAssetId, spokeConfig, address(spoke3));
+
+    // Spoke 2 to have an extra dai reserve
+    hub.addAsset(
+      DataTypes.AssetConfig({decimals: 18, active: true, irStrategy: address(irStrategy)}),
+      address(tokenList.dai)
+    );
+    oracle.setAssetPrice(dai2AssetId, 1e8);
+    daiConfig = Spoke.ReserveConfig({
+      lt: 0.70e4,
+      lb: 0,
+      liquidityPremium: 0,
+      borrowable: true,
+      collateral: true
+    });
+    reserveIds[spoke2][dai2AssetId] = spoke2.addReserve(
+      dai2AssetId,
+      daiConfig,
+      address(tokenList.dai)
+    );
+    hub.addSpoke(dai2AssetId, spokeConfig, address(spoke2));
 
     irStrategy.setInterestRateParams(
       wethAssetId,
