@@ -139,7 +139,6 @@ abstract contract BaseTest is Test, Events {
     ReserveInfo dai;
     ReserveInfo usdx;
     ReserveInfo dai2;
-    ReserveInfo dai3;
   }
 
   struct ReserveInfo {
@@ -464,14 +463,6 @@ abstract contract BaseTest is Test, Events {
     );
     spokeInfo[spoke2].dai2.liquidityPremium = daiConfig.liquidityPremium;
     hub.addSpoke(dai2AssetId, spokeConfig, address(spoke2));
-
-    // Spoke 1 to have an extra dai reserve same asset as dai
-    spokeInfo[spoke1].dai3.reserveId = spoke3.addReserve(
-      daiAssetId,
-      daiConfig,
-      address(tokenList.dai)
-    );
-    spokeInfo[spoke1].dai3.liquidityPremium = daiConfig.liquidityPremium;
 
     irStrategy.setInterestRateParams(
       wethAssetId,
