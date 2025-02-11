@@ -18,9 +18,9 @@ interface ISpoke {
 
   /// @dev working with bps units 10_000 = 100%
   function getInterestRate(uint256 reserveId) external view returns (uint256);
-  function borrow(uint256 reserveId, address to, uint256 amount) external;
+  function borrow(uint256 reserveId, uint256 amount, address to) external;
   function repay(uint256 reserveId, uint256 amount) external;
-  function withdraw(uint256 reserveId, address to, uint256 amount) external;
+  function withdraw(uint256 reserveId, uint256 amount, address to) external;
   function supply(uint256 reserveId, uint256 amount) external;
   function setUsingAsCollateral(uint256 reserveId, bool usingAsCollateral) external;
   function getHealthFactor(address user) external view returns (uint256);

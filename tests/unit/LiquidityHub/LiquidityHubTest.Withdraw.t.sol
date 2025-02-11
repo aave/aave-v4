@@ -260,7 +260,7 @@ contract LiquidityHubWithdrawTest is LiquidityHubBaseTest {
   }
 
   function test_withdraw_fuzz(uint256 assetId, uint256 amount) public {
-    assetId = bound(assetId, 0, hub.assetCount() - 1);
+    assetId = bound(assetId, 0, hub.assetCount() - 2); // Exclude duplicated DAI
     amount = bound(amount, 1, MAX_SUPPLY_AMOUNT);
 
     IERC20 asset = hub.assetsList(assetId);
@@ -714,6 +714,25 @@ contract LiquidityHubWithdrawTest is LiquidityHubBaseTest {
 
     vm.prank(address(spoke1));
     hub.withdraw({assetId: daiAssetId, amount: amount, riskPremiumRad: 0, to: address(spoke1)});
+  }
+
+  function test_withdraw_revertsWith_invalid_withdraw_amount() public {
+    uint256 amount = 100e18;
+
+    // User supply
+    Utils.supply({
+      hub: hub,
+      assetId: daiAssetId,
+      spoke: address(spoke1),
+      amount: amount,
+      riskPremiumRad: 0,
+      user: alice,
+      to: address(spoke1)
+    });
+
+    vm.expectRevert(TestErrors.INVALID_WITHDRAW_AMOUNT);
+    vm.prank(address(spoke1));
+    hub.withdraw({assetId: daiAssetId, amount: 0, riskPremiumRad: 0, to: alice});
   }
 
   function test_withdraw_revertsWith_asset_not_active() public {

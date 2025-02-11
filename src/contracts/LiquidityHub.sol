@@ -155,13 +155,13 @@ contract LiquidityHub is ILiquidityHub {
     uint256 amount,
     uint256 riskPremiumRad,
     address supplier
-  ) external returns (uint256, uint256) {
+  ) external returns (uint256) {
     // TODO: authorization - only spokes
 
     Asset storage asset = _assets[assetId];
     SpokeData storage spoke = _spokes[assetId][msg.sender];
 
-    uint256 nextBaseBorrowIndex = _accrueInterest(asset, spoke);
+    _accrueInterest(asset, spoke);
     _validateSupply(asset, spoke, amount);
 
     asset.updateBorrowRate({liquidityAdded: amount, liquidityTaken: 0});
@@ -185,7 +185,7 @@ contract LiquidityHub is ILiquidityHub {
 
     emit Supply(assetId, msg.sender, amount);
 
-    return (nextBaseBorrowIndex, sharesAmount);
+    return sharesAmount;
   }
 
   /// @inheritdoc ILiquidityHub
@@ -195,7 +195,6 @@ contract LiquidityHub is ILiquidityHub {
     uint256 riskPremiumRad,
     address to
   ) external returns (uint256) {
-    // TODO: Be able to pass max(uint) as amount to withdraw all or accept number of shares
     // TODO: authorization - only spokes
 
     Asset storage asset = _assets[assetId];
@@ -253,7 +252,6 @@ contract LiquidityHub is ILiquidityHub {
     uint256 riskPremiumRad,
     address repayer
   ) external returns (uint256) {
-    // TODO: Be able to pass max(uint) as amount to restore all debt
     // TODO: authorization - only spokes
 
     Asset storage asset = _assets[assetId];
@@ -407,8 +405,8 @@ contract LiquidityHub is ILiquidityHub {
 
     uint256 newSpokeDebt = baseDebtChange > 0
       ? existingSpokeDebt + uint256(baseDebtChange) // debt added
-      // force underflow: only possible when spoke takes repays amount more than net drawn
-      : existingSpokeDebt - uint256(-baseDebtChange); // debt restored
+      : // force underflow: only possible when spoke takes repays amount more than net drawn
+      existingSpokeDebt - uint256(-baseDebtChange); // debt restored
 
     (uint256 newAssetRiskPremium, uint256 newAssetDebt) = MathUtils.addToWeightedAverage(
       assetRiskPremiumWithoutCurrent,

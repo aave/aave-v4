@@ -82,7 +82,7 @@ contract MockSpokeCreditLine is ISpoke {
       );
   }
 
-  function borrow(uint256 assetId, address to, uint256 amount) external {
+  function borrow(uint256 assetId, uint256 amount, address to) external {
     Reserve storage r = reserves[assetId];
     _validateBorrow(r, amount);
     // TODO: decide if state should be updated before or after liquidity hub call
@@ -116,7 +116,7 @@ contract MockSpokeCreditLine is ISpoke {
     // intentionally left blank
   }
 
-  function withdraw(uint256 assetId, address to, uint256 amount) external {
+  function withdraw(uint256 assetId, uint256 amount, address to) external {
     // intentionally left blank
   }
 

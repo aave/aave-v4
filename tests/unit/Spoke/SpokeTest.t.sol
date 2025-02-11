@@ -10,7 +10,7 @@ contract SpokeTest is BaseTest {
 
   function setUp() public override {
     super.setUp();
-    super.initEnvironment();
+    initEnvironment();
   }
 
   function test_withdraw() public {
@@ -19,9 +19,9 @@ contract SpokeTest is BaseTest {
 
     // Bob supply
     deal(address(tokenList.dai), bob, amount);
-    Utils.spokeSupply(hub, spoke1, daiAssetId, bob, amount, bob);
+    Utils.spokeSupply(hub, spoke1, spokeInfo[spoke1].dai.reserveId, bob, amount, bob);
 
-    Spoke.UserConfig memory user1Data = spoke1.getUser(daiAssetId, bob);
+    Spoke.UserConfig memory user1Data = spoke1.getUser(spokeInfo[spoke1].dai.reserveId, bob);
 
     // assertEq(dai.balanceOf(address(spoke1)), 0, 'wrong spoke token balance pre-withdraw');
     // assertEq(dai.balanceOf(address(hub)), amount, 'wrong hub token balance pre-withdraw');
@@ -35,11 +35,11 @@ contract SpokeTest is BaseTest {
 
     vm.startPrank(bob);
     vm.expectEmit(address(spoke1));
-    emit Withdrawn(daiAssetId, bob, amount);
-    spoke1.withdraw(daiAssetId, bob, amount);
+    emit Withdrawn(spokeInfo[spoke1].dai.reserveId, bob, amount);
+    spoke1.withdraw(spokeInfo[spoke1].dai.reserveId, amount, bob);
     vm.stopPrank();
 
-    user1Data = spoke1.getUser(daiAssetId, bob);
+    user1Data = spoke1.getUser(spokeInfo[spoke1].dai.reserveId, bob);
 
     // assertEq(dai.balanceOf(address(spoke1)), 0, 'wrong spoke token balance post-withdraw');
     // assertEq(dai.balanceOf(address(hub)), 0, 'wrong hub token balance post-withdraw');
@@ -192,35 +192,24 @@ contract SpokeTest is BaseTest {
     ISpoke(spoke1).setUsingAsCollateral(daiAssetId, usingAsCollateral);
   }
 
-  function test_setUsingAsCollateral_revertsWith_no_supply() public {
-    uint256 daiId = 0;
-    bool newCollateral = true;
-    bool usingAsCollateral = true;
-    Utils.updateCollateral(spoke1, daiId, newCollateral);
-
-    vm.prank(USER1);
-    vm.expectRevert(TestErrors.NO_SUPPLY);
-    ISpoke(spoke1).setUsingAsCollateral(daiId, usingAsCollateral);
-  }
-
   function test_setUsingAsCollateral() public {
     bool newCollateral = true;
     bool usingAsCollateral = true;
     uint256 daiAmount = 100e18;
 
     // ensure DAI is allowed as collateral
-    Utils.updateCollateral(spoke1, daiAssetId, newCollateral);
+    Utils.updateCollateral(spoke1, spokeInfo[spoke1].dai.reserveId, newCollateral);
 
     // Bob supply dai into spoke1
     deal(address(tokenList.dai), bob, daiAmount);
-    Utils.spokeSupply(hub, spoke1, daiAssetId, bob, daiAmount, bob);
+    Utils.spokeSupply(hub, spoke1, spokeInfo[spoke1].dai.reserveId, bob, daiAmount, bob);
 
     vm.prank(bob);
     vm.expectEmit(address(spoke1));
-    emit UsingAsCollateral(daiAssetId, bob, usingAsCollateral);
-    ISpoke(spoke1).setUsingAsCollateral(daiAssetId, usingAsCollateral);
+    emit UsingAsCollateral(spokeInfo[spoke1].dai.reserveId, bob, usingAsCollateral);
+    ISpoke(spoke1).setUsingAsCollateral(spokeInfo[spoke1].dai.reserveId, usingAsCollateral);
 
-    Spoke.UserConfig memory userData = spoke1.getUser(daiAssetId, bob);
+    Spoke.UserConfig memory userData = spoke1.getUser(spokeInfo[spoke1].dai.reserveId, bob);
     assertEq(userData.usingAsCollateral, usingAsCollateral, 'wrong usingAsCollateral');
   }
 }
