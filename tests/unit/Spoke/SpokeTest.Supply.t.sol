@@ -116,4 +116,8 @@ contract SpokeSupplyTest is BaseTest {
     );
     assertEq(userData.baseDebt, 0, 'user base debt post-supply');
   }
+
+  // TODO: test supply reverts with 0 amount
+  // TODO: test supply with increased index and no premium (where sharesAmount < amount)
+  // TODO: test supply with increased increased index and premium
 }
