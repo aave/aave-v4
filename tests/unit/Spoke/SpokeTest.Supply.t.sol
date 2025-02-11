@@ -56,7 +56,7 @@ contract SpokeSupplyTest is BaseTest {
 
     vm.prank(bob);
     vm.expectEmit(address(spoke1));
-    emit Supplied(spokeInfo[spoke1].dai.reserveId, bob, amount);
+    emit Supplied(spokeInfo[spoke1].dai.reserveId, amount, bob);
     spoke1.supply(spokeInfo[spoke1].dai.reserveId, amount);
 
     userData = spoke1.getUser(spokeInfo[spoke1].dai.reserveId, bob);
@@ -95,7 +95,7 @@ contract SpokeSupplyTest is BaseTest {
 
     vm.prank(bob);
     vm.expectEmit(address(spoke1));
-    emit Supplied(spokeInfo[spoke1].dai.reserveId, bob, amount);
+    emit Supplied(spokeInfo[spoke1].dai.reserveId, amount, bob);
     spoke1.supply(spokeInfo[spoke1].dai.reserveId, amount);
 
     userData = spoke1.getUser(spokeInfo[spoke1].dai.reserveId, bob);

@@ -43,10 +43,10 @@ contract Events {
   event SpokeAdded(uint256 indexed assetId, address indexed spoke);
 
   // ISpoke
-  event Borrowed(uint256 indexed assetId, address indexed user, uint256 amount);
-  event Repaid(uint256 indexed assetId, address indexed user, uint256 amount);
-  event Supplied(uint256 indexed assetId, address indexed user, uint256 amount);
-  event Withdrawn(uint256 indexed assetId, address indexed user, uint256 amount);
+  event Borrowed(uint256 indexed assetId, uint256 amount, address indexed user);
+  event Repaid(uint256 indexed assetId, uint256 amount, address indexed user);
+  event Supplied(uint256 indexed assetId, uint256 amount, address indexed user);
+  event Withdrawn(uint256 indexed assetId, uint256 amount, address indexed user);
   event ReserveConfigUpdated(
     uint256 indexed assetId,
     uint256 lt,
@@ -55,7 +55,7 @@ contract Events {
     bool borrowable,
     bool collateral
   );
-  event UsingAsCollateral(uint256 indexed assetId, address indexed user, bool usingAsCollateral);
+  event UsingAsCollateral(uint256 indexed assetId, bool usingAsCollateral, address indexed user);
 }
 
 library TestErrors {

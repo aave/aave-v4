@@ -2,11 +2,11 @@
 pragma solidity ^0.8.0;
 import {DataTypes} from '../libraries/types/DataTypes.sol';
 interface ISpoke {
-  event Borrowed(uint256 indexed reserveId, address indexed user, uint256 amount);
-  event Repaid(uint256 indexed reserveId, address indexed user, uint256 amount);
-  event Supplied(uint256 indexed reserveId, address indexed user, uint256 amount);
-  event Withdrawn(uint256 indexed reserveId, address indexed user, uint256 amount);
-  event UsingAsCollateral(uint256 indexed reserveId, address indexed user, bool usingAsCollateral);
+  event Borrowed(uint256 indexed reserveId, uint256 amount, address indexed user);
+  event Repaid(uint256 indexed reserveId, uint256 amount, address indexed user);
+  event Supplied(uint256 indexed reserveId, uint256 amount, address indexed user);
+  event Withdrawn(uint256 indexed reserveId, uint256 amount, address indexed user);
+  event UsingAsCollateral(uint256 indexed reserveId, bool usingAsCollateral, address indexed user);
   event ReserveConfigUpdated(
     uint256 indexed reserveId,
     uint256 lt,
