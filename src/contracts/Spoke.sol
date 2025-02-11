@@ -87,7 +87,7 @@ contract Spoke is ISpoke {
     return
       user.baseDebt.rayMul(
         MathUtils.calculateCompoundedInterest(
-          getInterestRate(reserveId),
+          getInterestRate(_reserves[reserveId].assetId),
           uint40(user.lastUpdateTimestamp),
           block.timestamp
         )
@@ -256,10 +256,10 @@ contract Spoke is ISpoke {
   }
 
   // TODO: Needed?
-  function getInterestRate(uint256 reserveId) public view returns (uint256) {
+  function getInterestRate(uint256 assetId) public view returns (uint256) {
     // read from state, convert to ray
     // TODO: should be final IR rather than base?
-    return ILiquidityHub(liquidityHub).getBaseInterestRate(reserveId);
+    return ILiquidityHub(liquidityHub).getBaseInterestRate(assetId);
   }
 
   // /////
@@ -474,8 +474,8 @@ contract Spoke is ISpoke {
 
     uint256 newUserDebt = baseDebtChange > 0
       ? existingUserDebt + uint256(baseDebtChange) // debt added
-      // force underflow: only possible when user takes repays amount more than net drawn
-      : existingUserDebt - uint256(-baseDebtChange); // debt restored
+      : // force underflow: only possible when user takes repays amount more than net drawn
+      existingUserDebt - uint256(-baseDebtChange); // debt restored
 
     (uint256 newReserveRiskPremium, uint256 newReserveDebt) = MathUtils.addToWeightedAverage(
       reserveRiskPremiumWithoutCurrent,
@@ -531,7 +531,7 @@ contract Spoke is ISpoke {
         vars.userCollateralInBaseCurrency =
           vars.reservePrice *
           liquidityHub.convertToAssetsDown(
-            vars.reserveId,
+            _reserves[vars.reserveId].assetId,
             _calculateAccruedInterest(vars.reserveId, user.suppliedShares)
           );
         vars.liquidityPremium = 1; // TODO: get LP from LH
@@ -578,7 +578,7 @@ contract Spoke is ISpoke {
     return
       debt.rayMul(
         MathUtils.calculateCompoundedInterest(
-          getInterestRate(reserveId),
+          getInterestRate(_reserves[reserveId].assetId),
           uint40(0),
           block.timestamp
         )
