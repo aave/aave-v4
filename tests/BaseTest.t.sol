@@ -465,9 +465,6 @@ abstract contract BaseTest is Test, Events {
     spokeInfo[spoke2].dai2.liquidityPremium = daiConfig.liquidityPremium;
     hub.addSpoke(dai2AssetId, spokeConfig, address(spoke2));
 
-    /* Currently can't list same assetId on spoke twice.
-     * Because LH uses assetId and spoke address internally
-
     // Spoke 1 to have an extra dai reserve same asset as dai
     spokeInfo[spoke1].dai3.reserveId = spoke3.addReserve(
       daiAssetId,
@@ -475,8 +472,6 @@ abstract contract BaseTest is Test, Events {
       address(tokenList.dai)
     );
     spokeInfo[spoke1].dai3.liquidityPremium = daiConfig.liquidityPremium;
-    hub.addSpoke(daiAssetId, spokeConfig, address(spoke1));
-    */
 
     irStrategy.setInterestRateParams(
       wethAssetId,
