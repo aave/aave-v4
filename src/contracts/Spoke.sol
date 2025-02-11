@@ -345,7 +345,7 @@ contract Spoke is ISpoke {
     UserConfig storage user,
     uint256 amount
   ) internal view {
-    require(amount <= user.baseDebt, 'REPAY_EXCEEDS_DEBT');
+    require(amount <= user.baseDebt + user.outstandingPremium, 'REPAY_EXCEEDS_DEBT');
   }
 
   function _deductFromOutstandingPremium(
@@ -393,7 +393,7 @@ contract Spoke is ISpoke {
     return newAggregatedRiskPremium;
   }
 
-  /// @dev It's assumed interest has been accrued before this function call
+  /// @dev It's assumed interest has been accrued before this function call.
   function _calcUserRiskPremium(
     mapping(uint256 => UserConfig) storage userData
   ) internal returns (uint256) {
@@ -454,7 +454,7 @@ contract Spoke is ISpoke {
     return newUserRiskPremium / collateralValue;
   }
 
-  /// @dev It's assumed interest has been accrued before this function call
+  /// @dev It's assumed interest has been accrued before this function call.
   function _updateSpokeRiskPremiumAndBaseDebt(
     Reserve storage reserve,
     UserConfig storage user,

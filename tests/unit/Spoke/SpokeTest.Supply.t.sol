@@ -13,10 +13,10 @@ contract SpokeSupplyTest is BaseTest {
   }
 
   function test_supply_revertsWith_reserve_not_listed() public {
-    uint256 reserveId = 20; // invalid assetId
+    uint256 reserveId = spoke1.reserveCount() + 1; // invalid reserveId
     uint256 amount = 100e18;
 
-    vm.prank(USER1);
+    vm.prank(bob);
     vm.expectRevert(TestErrors.RESERVE_NOT_LISTED);
     spoke1.supply(reserveId, amount);
   }
