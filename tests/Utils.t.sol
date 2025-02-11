@@ -75,7 +75,7 @@ library Utils {
     address onBehalfOf
   ) internal {
     vm.prank(user);
-    spoke.borrow(reserveId, user, amount);
+    spoke.borrow(reserveId, amount, user);
   }
 
   // spoke

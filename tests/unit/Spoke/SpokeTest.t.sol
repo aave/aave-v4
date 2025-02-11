@@ -31,7 +31,7 @@ contract SpokeTest is BaseTest {
     // Bob draw half of dai reserve liquidity
     vm.prank(bob);
     vm.expectRevert(TestErrors.RESERVE_NOT_BORROWABLE);
-    ISpoke(spoke1).borrow(spokeInfo[spoke1].dai.reserveId, bob, daiAmount / 2);
+    ISpoke(spoke1).borrow(spokeInfo[spoke1].dai.reserveId, daiAmount / 2, bob);
   }
 
   function test_borrow() public {
@@ -74,7 +74,7 @@ contract SpokeTest is BaseTest {
     vm.prank(bob);
     vm.expectEmit(address(spoke1));
     emit Borrowed(spokeInfo[spoke1].dai.reserveId, bob, daiAmount / 2);
-    spoke1.borrow(spokeInfo[spoke1].dai.reserveId, bob, daiAmount / 2);
+    spoke1.borrow(spokeInfo[spoke1].dai.reserveId, daiAmount / 2, bob);
 
     bobData = spoke1.getUser(spokeInfo[spoke1].weth.reserveId, bob);
     aliceData = spoke1.getUser(spokeInfo[spoke1].dai.reserveId, alice);
@@ -114,7 +114,7 @@ contract SpokeTest is BaseTest {
     // Bob draw more than supplied dai amount
     vm.prank(bob);
     vm.expectRevert(TestErrors.NOT_AVAILABLE_LIQUIDITY);
-    spoke1.borrow(spokeInfo[spoke1].dai.reserveId, bob, daiAmount + 1);
+    spoke1.borrow(spokeInfo[spoke1].dai.reserveId, daiAmount + 1, bob);
   }
 
   function test_borrow_revertsWith_invalid_draw_amount() public {
@@ -132,7 +132,7 @@ contract SpokeTest is BaseTest {
     // Bob draw 0 dai
     vm.prank(bob);
     vm.expectRevert(TestErrors.INVALID_DRAW_AMOUNT);
-    spoke1.borrow(spokeInfo[spoke1].dai.reserveId, bob, 0);
+    spoke1.borrow(spokeInfo[spoke1].dai.reserveId, 0, bob);
   }
 
   function test_borrow_fuzz_amounts(uint256 wethSupplyAmount, uint256 daiBorrowAmount) public {
@@ -175,7 +175,7 @@ contract SpokeTest is BaseTest {
     vm.prank(bob);
     vm.expectEmit(address(spoke1));
     emit Borrowed(spokeInfo[spoke1].dai.reserveId, bob, daiBorrowAmount);
-    spoke1.borrow(spokeInfo[spoke1].dai.reserveId, bob, daiBorrowAmount);
+    spoke1.borrow(spokeInfo[spoke1].dai.reserveId, daiBorrowAmount, bob);
 
     bobData = spoke1.getUser(spokeInfo[spoke1].weth.reserveId, bob);
     aliceData = spoke1.getUser(spokeInfo[spoke1].dai.reserveId, alice);
@@ -223,7 +223,7 @@ contract SpokeTest is BaseTest {
     vm.startPrank(bob);
     vm.expectEmit(address(spoke1));
     emit Withdrawn(spokeInfo[spoke1].dai.reserveId, bob, amount);
-    spoke1.withdraw(spokeInfo[spoke1].dai.reserveId, bob, amount);
+    spoke1.withdraw(spokeInfo[spoke1].dai.reserveId, amount, bob);
     vm.stopPrank();
 
     user1Data = spoke1.getUser(spokeInfo[spoke1].dai.reserveId, bob);

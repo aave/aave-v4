@@ -157,7 +157,7 @@ contract Spoke is ISpoke {
     emit Supplied(reserveId, msg.sender, amount);
   }
 
-  function withdraw(uint256 reserveId, address to, uint256 amount) external {
+  function withdraw(uint256 reserveId, uint256 amount, address to) external {
     // TODO: Be able to pass max(uint) as amount to withdraw all supplied shares
     Reserve storage reserve = _reserves[reserveId];
     UserConfig storage user = _users[msg.sender][reserveId];
@@ -185,7 +185,7 @@ contract Spoke is ISpoke {
     emit Withdrawn(reserveId, msg.sender, amount);
   }
 
-  function borrow(uint256 reserveId, address to, uint256 amount) external {
+  function borrow(uint256 reserveId, uint256 amount, address to) external {
     // TODO: referral code
     // TODO: onBehalfOf with credit delegation
     Reserve storage reserve = _reserves[reserveId];
@@ -318,7 +318,6 @@ contract Spoke is ISpoke {
 
   // internal
   function _validateSupply(Reserve storage reserve, uint256 amount) internal view {
-    // TODO: Decide where supply cap is checked
     require(reserve.asset != address(0), 'RESERVE_NOT_LISTED');
   }
 
@@ -475,8 +474,8 @@ contract Spoke is ISpoke {
 
     uint256 newUserDebt = baseDebtChange > 0
       ? existingUserDebt + uint256(baseDebtChange) // debt added
-      : // force underflow: only possible when user takes repays amount more than net drawn
-      existingUserDebt - uint256(-baseDebtChange); // debt restored
+      // force underflow: only possible when user takes repays amount more than net drawn
+      : existingUserDebt - uint256(-baseDebtChange); // debt restored
 
     (uint256 newReserveRiskPremium, uint256 newReserveDebt) = MathUtils.addToWeightedAverage(
       reserveRiskPremiumWithoutCurrent,
