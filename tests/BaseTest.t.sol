@@ -139,6 +139,7 @@ abstract contract BaseTest is Test, Events {
     ReserveInfo dai;
     ReserveInfo usdx;
     ReserveInfo dai2;
+    ReserveInfo dai3;
   }
 
   struct ReserveInfo {
@@ -464,6 +465,19 @@ abstract contract BaseTest is Test, Events {
     spokeInfo[spoke2].dai2.liquidityPremium = daiConfig.liquidityPremium;
     hub.addSpoke(dai2AssetId, spokeConfig, address(spoke2));
 
+    /* Currently can't list same assetId on spoke twice.
+     * Because LH uses assetId and spoke address internally
+
+    // Spoke 1 to have an extra dai reserve same asset as dai
+    spokeInfo[spoke1].dai3.reserveId = spoke3.addReserve(
+      daiAssetId,
+      daiConfig,
+      address(tokenList.dai)
+    );
+    spokeInfo[spoke1].dai3.liquidityPremium = daiConfig.liquidityPremium;
+    hub.addSpoke(daiAssetId, spokeConfig, address(spoke1));
+    */
+
     irStrategy.setInterestRateParams(
       wethAssetId,
       IDefaultInterestRateStrategy.InterestRateData({
@@ -493,6 +507,15 @@ abstract contract BaseTest is Test, Events {
     );
     irStrategy.setInterestRateParams(
       daiAssetId,
+      IDefaultInterestRateStrategy.InterestRateData({
+        optimalUsageRatio: 90_00, // 90.00%
+        baseVariableBorrowRate: 5_00, // 5.00%
+        variableRateSlope1: 5_00, // 5.00%
+        variableRateSlope2: 5_00 // 5.00%
+      })
+    );
+    irStrategy.setInterestRateParams(
+      dai2AssetId,
       IDefaultInterestRateStrategy.InterestRateData({
         optimalUsageRatio: 90_00, // 90.00%
         baseVariableBorrowRate: 5_00, // 5.00%
