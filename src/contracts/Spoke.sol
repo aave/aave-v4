@@ -39,11 +39,6 @@ contract Spoke is ISpoke {
     bool collateral;
   }
 
-  struct ReservePremium {
-    uint256 reserveId;
-    uint256 liquidityPremium;
-  }
-
   struct UserConfig {
     bool usingAsCollateral;
     uint256 baseDebt;
@@ -392,12 +387,12 @@ contract Spoke is ISpoke {
     return newAggregatedRiskPremium;
   }
 
+  /// @dev TODO: It's assumed reservesList (or similar) is sorted by liquidity premium
   /// @dev It's assumed interest has been accrued before this function call.
   function _calcUserRiskPremium(
     mapping(uint256 => UserConfig) storage userData
   ) internal returns (uint256) {
     uint256 reservesListLength = reservesList.length;
-    ReservePremium[] memory reservePremium = new ReservePremium[](reservesListLength);
 
     // Variable to decrement as we count up user RP
     uint256 tempDebt = 0;
@@ -406,25 +401,18 @@ contract Spoke is ISpoke {
     uint256 reserveId;
     uint256 userSupply;
 
-    // Get all reserve risk premiums
+    // Add up user debt for each reserve, including price
     for (uint256 i; i < reservesListLength; ++i) {
       reserveId = reservesList[i];
-      reservePremium[i] = ReservePremium({
-        reserveId: reserveId,
-        liquidityPremium: _reserves[reserveId].config.liquidityPremium
-      });
-      // Add up user debt for each reserve, including price
       tempDebt += userData[reserveId].baseDebt * IPriceOracle(oracle).getAssetPrice(reserveId);
     }
 
     // If user has no debt, return 0 risk premium
     if (tempDebt == 0) return 0;
 
-    // TODO: Ensure reserves are sorted by liquidity premium
-
     // While the tempDebt variable is non-zero, loop over collateral reserves, adding up weighted risk premium, and subtract corresponding amt from tempDebt
     for (uint256 i; i < reservesListLength; ++i) {
-      reserveId = reservePremium[i].reserveId;
+      reserveId = reservesList[i];
       if (!_usingAsCollateral(userData[reserveId])) continue;
 
       // Convert user's supply shares for this reserve to collateral value
@@ -437,12 +425,12 @@ contract Spoke is ISpoke {
 
       if (userSupply >= tempDebt) {
         // This reserve completes user debt, so add up weighted risk premium and break
-        newUserRiskPremium += tempDebt * reservePremium[i].liquidityPremium;
+        newUserRiskPremium += tempDebt * _reserves[reserveId].config.liquidityPremium;
         collateralValue += tempDebt;
         break;
       } else {
         // Add up weighted risk premium
-        newUserRiskPremium += userSupply * reservePremium[i].liquidityPremium;
+        newUserRiskPremium += userSupply * _reserves[reserveId].config.liquidityPremium;
         collateralValue += userSupply;
         // Subtract user supply from tempDebt
         tempDebt -= userSupply;
@@ -474,8 +462,8 @@ contract Spoke is ISpoke {
 
     uint256 newUserDebt = baseDebtChange > 0
       ? existingUserDebt + uint256(baseDebtChange) // debt added
-      : // force underflow: only possible when user takes repays amount more than net drawn
-      existingUserDebt - uint256(-baseDebtChange); // debt restored
+      // force underflow: only possible when user takes repays amount more than net drawn
+      : existingUserDebt - uint256(-baseDebtChange); // debt restored
 
     (uint256 newReserveRiskPremium, uint256 newReserveDebt) = MathUtils.addToWeightedAverage(
       reserveRiskPremiumWithoutCurrent,
