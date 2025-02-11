@@ -155,13 +155,13 @@ contract LiquidityHub is ILiquidityHub {
     uint256 amount,
     uint256 riskPremiumRad,
     address supplier
-  ) external returns (uint256, uint256) {
+  ) external returns (uint256) {
     // TODO: authorization - only spokes
 
     Asset storage asset = _assets[assetId];
     SpokeData storage spoke = _spokes[assetId][msg.sender];
 
-    uint256 nextBaseBorrowIndex = _accrueInterest(asset, spoke);
+    _accrueInterest(asset, spoke);
     _validateSupply(asset, spoke, amount);
 
     asset.updateBorrowRate({liquidityAdded: amount, liquidityTaken: 0});
@@ -185,7 +185,7 @@ contract LiquidityHub is ILiquidityHub {
 
     emit Supply(assetId, msg.sender, amount);
 
-    return (nextBaseBorrowIndex, sharesAmount);
+    return sharesAmount;
   }
 
   /// @inheritdoc ILiquidityHub

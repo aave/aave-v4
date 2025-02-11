@@ -68,7 +68,6 @@ contract Spoke is ISpoke {
   }
 
   // user address => reserve id => user data
-  // reserve id => user address => user data
   mapping(address => mapping(uint256 => UserConfig)) internal _users;
   // reserve id => reserveData
   mapping(uint256 => Reserve) internal _reserves;
@@ -89,7 +88,7 @@ contract Spoke is ISpoke {
       user.baseDebt.rayMul(
         MathUtils.calculateCompoundedInterest(
           getInterestRate(reserveId),
-          uint40(0),
+          uint40(user.lastUpdateTimestamp),
           block.timestamp
         )
       );
@@ -145,15 +144,15 @@ contract Spoke is ISpoke {
       userAddress: msg.sender,
       baseDebtChange: 0
     });
-    (, uint256 userShares) = liquidityHub.supply(
+    uint256 suppliedShares = liquidityHub.supply(
       reserve.assetId,
       amount,
       newAggregatedRiskPremium,
       msg.sender // supplier
     );
 
-    user.suppliedShares += userShares;
-    reserve.suppliedShares += userShares;
+    user.suppliedShares += suppliedShares;
+    reserve.suppliedShares += suppliedShares;
 
     emit Supplied(reserveId, msg.sender, amount);
   }
@@ -373,8 +372,8 @@ contract Spoke is ISpoke {
   }
 
   /**
-  @param baseDebtChange The change in base debt of the reserve
-  @return uint256 new aggregated risk premium
+  @param baseDebtChange The change in base debt of the reserve.
+  @return The new aggregated risk premium.
   */
   function _updateRiskPremiumAndBaseDebt(
     Reserve storage reserve,
@@ -382,8 +381,8 @@ contract Spoke is ISpoke {
     address userAddress,
     int256 baseDebtChange
   ) internal returns (uint256) {
-    // Refresh risk premium of user, specific assets user has supplied
-    uint256 newUserRiskPremium = _updateUserRiskPremium(_users[userAddress]);
+    // Calculate risk premium of user
+    uint256 newUserRiskPremium = _calcUserRiskPremium(_users[userAddress]);
     // Refresh weighted average risk premium across all users of spoke
     uint256 newAggregatedRiskPremium = _updateSpokeRiskPremiumAndBaseDebt(
       reserve,
@@ -395,7 +394,7 @@ contract Spoke is ISpoke {
   }
 
   /// @dev It's assumed interest has been accrued before this function call
-  function _updateUserRiskPremium(
+  function _calcUserRiskPremium(
     mapping(uint256 => UserConfig) storage userData
   ) internal returns (uint256) {
     uint256 reservesListLength = reservesList.length;
@@ -409,7 +408,7 @@ contract Spoke is ISpoke {
     uint256 userSupply;
 
     // Get all reserve risk premiums
-    for (uint256 i = 0; i < reservesListLength; i++) {
+    for (uint256 i; i < reservesListLength; ++i) {
       reserveId = reservesList[i];
       reservePremium[i] = ReservePremium({
         reserveId: reserveId,
@@ -425,7 +424,7 @@ contract Spoke is ISpoke {
     // TODO: Ensure reserves are sorted by liquidity premium
 
     // While the tempDebt variable is non-zero, loop over collateral reserves, adding up weighted risk premium, and subtract corresponding amt from tempDebt
-    for (uint256 i = 0; i < reservesListLength; i++) {
+    for (uint256 i; i < reservesListLength; ++i) {
       reserveId = reservePremium[i].reserveId;
       if (!_usingAsCollateral(userData[reserveId])) continue;
 
@@ -498,7 +497,6 @@ contract Spoke is ISpoke {
     UserConfig storage user
   ) internal view {
     require(reserve.config.collateral, 'RESERVE_NOT_COLLATERAL');
-    require(user.suppliedShares > 0, 'NO_SUPPLY');
   }
 
   function _usingAsCollateral(UserConfig storage user) internal view returns (bool) {

@@ -16,7 +16,6 @@ interface ILiquidityHub {
    * @param amount The amount of asset to supply.
    * @param riskPremiumRad The new aggregated risk premium of the calling spoke.
    * @param supplier The address which we pull assets from (user).
-   * @return The new base borrow index.
    * @return The amount of shares supplied.
    */
   function supply(
@@ -24,7 +23,7 @@ interface ILiquidityHub {
     uint256 amount,
     uint256 riskPremiumRad,
     address supplier
-  ) external returns (uint256, uint256);
+  ) external returns (uint256);
 
   /**
    * @notice Withdraw supplied asset on behalf of user.
