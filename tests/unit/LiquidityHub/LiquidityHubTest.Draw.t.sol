@@ -352,6 +352,13 @@ contract LiquidityHubDrawTest is LiquidityHubBaseTest {
     hub.draw({assetId: daiAssetId, amount: drawAmount, riskPremiumRad: 0, to: address(spoke1)});
   }
 
+  function test_draw_revertsWith_invalid_draw_amount() public {
+    uint256 drawAmount = 0;
+    vm.prank(address(spoke1));
+    vm.expectRevert(TestErrors.INVALID_DRAW_AMOUNT);
+    hub.draw({assetId: daiAssetId, amount: drawAmount, riskPremiumRad: 0, to: address(spoke1)});
+  }
+
   function test_draw_revertsWith_draw_cap_exceeded_due_to_interest() public {
     uint256 daiAmount = 100e18;
     uint256 drawCap = daiAmount;

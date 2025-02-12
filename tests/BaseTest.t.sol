@@ -43,18 +43,19 @@ contract Events {
   event SpokeAdded(uint256 indexed assetId, address indexed spoke);
 
   // ISpoke
-  event Borrowed(uint256 indexed assetId, address indexed user, uint256 amount);
-  event Repaid(uint256 indexed assetId, address indexed user, uint256 amount);
-  event Supplied(uint256 indexed assetId, address indexed user, uint256 amount);
-  event Withdrawn(uint256 indexed assetId, address indexed user, uint256 amount);
+  event Borrowed(uint256 indexed assetId, uint256 amount, address indexed user);
+  event Repaid(uint256 indexed assetId, uint256 amount, address indexed user);
+  event Supplied(uint256 indexed assetId, uint256 amount, address indexed user);
+  event Withdrawn(uint256 indexed assetId, uint256 amount, address indexed user);
   event ReserveConfigUpdated(
     uint256 indexed assetId,
     uint256 lt,
     uint256 lb,
+    uint256 liquidityPremium,
     bool borrowable,
     bool collateral
   );
-  event UsingAsCollateral(uint256 indexed assetId, address indexed user, bool usingAsCollateral);
+  event UsingAsCollateral(uint256 indexed assetId, bool usingAsCollateral, address indexed user);
 }
 
 library TestErrors {
@@ -64,6 +65,9 @@ library TestErrors {
   bytes constant ASSET_NOT_ACTIVE = 'ASSET_NOT_ACTIVE';
   bytes constant ASSET_NOT_LISTED = 'ASSET_NOT_LISTED';
   bytes constant INVALID_AMOUNT = 'INVALID_AMOUNT';
+  bytes constant INVALID_SUPPLY_AMOUNT = 'INVALID_SUPPLY_AMOUNT';
+  bytes constant INVALID_DRAW_AMOUNT = 'INVALID_DRAW_AMOUNT';
+  bytes constant INVALID_WITHDRAW_AMOUNT = 'INVALID_WITHDRAW_AMOUNT';
   bytes constant SUPPLY_CAP_EXCEEDED = 'SUPPLY_CAP_EXCEEDED';
   bytes constant DRAW_CAP_EXCEEDED = 'DRAW_CAP_EXCEEDED';
   bytes constant SUPPLIED_AMOUNT_EXCEEDED = 'SUPPLIED_AMOUNT_EXCEEDED';
@@ -86,7 +90,6 @@ abstract contract BaseTest is Test, Events {
 
   uint256 internal constant MAX_SUPPLY_AMOUNT = 1e30;
 
-  // TODO: update these mocked tokens with decimals as in the real contracts, ie USDC = 6, wbtc = 8, etc.?
   IERC20 internal usdc;
   IERC20 internal dai;
   IERC20 internal usdt;
@@ -114,11 +117,14 @@ abstract contract BaseTest is Test, Events {
   TokenList internal tokenList;
   uint256 internal wethAssetId = 0;
   uint256 internal usdxAssetId = 1;
+  uint256 internal daiAssetId = 2;
+  uint256 internal wbtcAssetId = 3;
+  uint256 internal dai2AssetId = 4;
 
+  uint256 internal mintAmount_WETH = MAX_SUPPLY_AMOUNT;
   uint256 internal mintAmount_USDX = MAX_SUPPLY_AMOUNT;
   uint256 internal mintAmount_DAI = MAX_SUPPLY_AMOUNT;
   uint256 internal mintAmount_WBTC = MAX_SUPPLY_AMOUNT;
-  uint256 internal mintAmount_WETH = MAX_SUPPLY_AMOUNT;
 
   struct TokenList {
     WETH9 weth;
@@ -126,6 +132,21 @@ abstract contract BaseTest is Test, Events {
     TestnetERC20 dai;
     TestnetERC20 wbtc;
   }
+
+  struct SpokeInfo {
+    ReserveInfo weth;
+    ReserveInfo wbtc;
+    ReserveInfo dai;
+    ReserveInfo usdx;
+    ReserveInfo dai2; // Special case: dai listed twice on hub and spoke2 (unique assetIds)
+  }
+
+  struct ReserveInfo {
+    uint256 reserveId;
+    uint256 liquidityPremium;
+  }
+
+  mapping(Spoke => SpokeInfo) internal spokeInfo;
 
   function setUp() public virtual {
     oracle = new MockPriceOracle();
@@ -203,137 +224,245 @@ abstract contract BaseTest is Test, Events {
     }
   }
   function configureTokenList() internal {
-    // todo rm override
-    uint256 daiAssetId = 2;
-    uint256 wbtcAssetId = 3;
-
     address[] memory spokes = new address[](3);
     spokes[0] = address(spoke1);
     spokes[1] = address(spoke2);
     spokes[2] = address(spoke3);
-    DataTypes.SpokeConfig[] memory spokeConfigs = new DataTypes.SpokeConfig[](3);
-    // supplyCap, borrowCap
-    spokeConfigs[0] = DataTypes.SpokeConfig({
-      supplyCap: type(uint256).max,
-      drawCap: type(uint256).max
-    });
-    spokeConfigs[1] = DataTypes.SpokeConfig({
-      supplyCap: type(uint256).max,
-      drawCap: type(uint256).max
-    });
-    spokeConfigs[2] = DataTypes.SpokeConfig({
+    DataTypes.SpokeConfig memory spokeConfig = DataTypes.SpokeConfig({
       supplyCap: type(uint256).max,
       drawCap: type(uint256).max
     });
 
-    Spoke.ReserveConfig[] memory reserveConfigs = new Spoke.ReserveConfig[](3);
+    // Add all assets to the Liquidity Hub
 
     // add WETH
-    reserveConfigs[0] = Spoke.ReserveConfig({lt: 0.8e4, lb: 0, borrowable: true, collateral: true});
-    reserveConfigs[1] = Spoke.ReserveConfig({
-      lt: 0.76e4,
-      lb: 0,
-      borrowable: true,
-      collateral: true
-    });
-    reserveConfigs[2] = Spoke.ReserveConfig({
-      lt: 0.79e4,
-      lb: 0,
-      borrowable: true,
-      collateral: true
-    });
-    Utils.addAssetAndSpokes(
-      hub,
-      address(tokenList.weth),
+    hub.addAsset(
       DataTypes.AssetConfig({decimals: 18, active: true, irStrategy: address(irStrategy)}),
-      spokes,
-      spokeConfigs,
-      reserveConfigs
+      address(tokenList.weth)
     );
     oracle.setAssetPrice(wethAssetId, 2000e8);
 
     // add USDX
-    reserveConfigs[0] = Spoke.ReserveConfig({
-      lt: 0.78e4,
-      lb: 0,
-      borrowable: true,
-      collateral: true
-    });
-    reserveConfigs[1] = Spoke.ReserveConfig({
-      lt: 0.72e4,
-      lb: 0,
-      borrowable: true,
-      collateral: true
-    });
-    reserveConfigs[2] = Spoke.ReserveConfig({
-      lt: 0.75e4,
-      lb: 0,
-      borrowable: true,
-      collateral: true
-    });
-    Utils.addAssetAndSpokes(
-      hub,
-      address(tokenList.usdx),
+    hub.addAsset(
       DataTypes.AssetConfig({decimals: 6, active: true, irStrategy: address(irStrategy)}),
-      spokes,
-      spokeConfigs,
-      reserveConfigs
+      address(tokenList.usdx)
     );
     oracle.setAssetPrice(usdxAssetId, 1e8);
 
     // add DAI
-    reserveConfigs[0] = Spoke.ReserveConfig({
-      lt: 0.78e4,
-      lb: 0,
-      borrowable: true,
-      collateral: true
-    });
-    reserveConfigs[1] = Spoke.ReserveConfig({
-      lt: 0.72e4,
-      lb: 0,
-      borrowable: true,
-      collateral: true
-    });
-    reserveConfigs[2] = Spoke.ReserveConfig({
-      lt: 0.75e4,
-      lb: 0,
-      borrowable: true,
-      collateral: true
-    });
-    Utils.addAssetAndSpokes(
-      hub,
-      address(tokenList.dai),
+    hub.addAsset(
       DataTypes.AssetConfig({decimals: 18, active: true, irStrategy: address(irStrategy)}),
-      spokes,
-      spokeConfigs,
-      reserveConfigs
+      address(tokenList.dai)
     );
-    oracle.setAssetPrice(usdxAssetId, 1e8);
+    oracle.setAssetPrice(daiAssetId, 1e8);
 
     // add WBTC
-    // lt, lb, borrowable, collateral
-    reserveConfigs[0] = Spoke.ReserveConfig({
-      lt: 0.75e4,
-      lb: 0,
-      borrowable: true,
-      collateral: true
-    });
-    reserveConfigs[1] = Spoke.ReserveConfig({lt: 0.8e4, lb: 0, borrowable: true, collateral: true});
-    reserveConfigs[2] = Spoke.ReserveConfig({
-      lt: 0.77e4,
-      lb: 0,
-      borrowable: true,
-      collateral: true
-    });
-    Utils.addAssetAndSpokes(
-      hub,
-      address(tokenList.wbtc),
+    hub.addAsset(
       DataTypes.AssetConfig({decimals: 8, active: true, irStrategy: address(irStrategy)}),
-      spokes,
-      spokeConfigs,
-      reserveConfigs
+      address(tokenList.wbtc)
     );
     oracle.setAssetPrice(wbtcAssetId, 50_000e8);
+
+    // Spoke 1 reserve configs
+    Spoke.ReserveConfig memory wethConfig = Spoke.ReserveConfig({
+      lt: 0.8e4,
+      lb: 0,
+      liquidityPremium: 0,
+      borrowable: true,
+      collateral: true
+    });
+    Spoke.ReserveConfig memory wbtcConfig = Spoke.ReserveConfig({
+      lt: 0.75e4,
+      lb: 0,
+      liquidityPremium: 10,
+      borrowable: true,
+      collateral: true
+    });
+    Spoke.ReserveConfig memory daiConfig = Spoke.ReserveConfig({
+      lt: 0.78e4,
+      lb: 0,
+      liquidityPremium: 20,
+      borrowable: true,
+      collateral: true
+    });
+    Spoke.ReserveConfig memory usdxConfig = Spoke.ReserveConfig({
+      lt: 0.78e4,
+      lb: 0,
+      liquidityPremium: 50,
+      borrowable: true,
+      collateral: true
+    });
+
+    spokeInfo[spoke1].weth.reserveId = spoke1.addReserve(
+      wethAssetId,
+      wethConfig,
+      address(tokenList.weth)
+    );
+    spokeInfo[spoke1].weth.liquidityPremium = wethConfig.liquidityPremium;
+    spokeInfo[spoke1].wbtc.reserveId = spoke1.addReserve(
+      wbtcAssetId,
+      wbtcConfig,
+      address(tokenList.wbtc)
+    );
+    spokeInfo[spoke1].wbtc.liquidityPremium = wbtcConfig.liquidityPremium;
+    spokeInfo[spoke1].dai.reserveId = spoke1.addReserve(
+      daiAssetId,
+      daiConfig,
+      address(tokenList.dai)
+    );
+    spokeInfo[spoke1].dai.liquidityPremium = daiConfig.liquidityPremium;
+    spokeInfo[spoke1].usdx.reserveId = spoke1.addReserve(
+      usdxAssetId,
+      usdxConfig,
+      address(tokenList.usdx)
+    );
+    spokeInfo[spoke1].usdx.liquidityPremium = usdxConfig.liquidityPremium;
+
+    hub.addSpoke(wethAssetId, spokeConfig, address(spoke1));
+    hub.addSpoke(wbtcAssetId, spokeConfig, address(spoke1));
+    hub.addSpoke(daiAssetId, spokeConfig, address(spoke1));
+    hub.addSpoke(usdxAssetId, spokeConfig, address(spoke1));
+
+    // Spoke 2 reserve configs
+    wbtcConfig = Spoke.ReserveConfig({
+      lt: 0.8e4,
+      lb: 0,
+      liquidityPremium: 0,
+      borrowable: true,
+      collateral: true
+    });
+    wethConfig = Spoke.ReserveConfig({
+      lt: 0.76e4,
+      lb: 0,
+      liquidityPremium: 10,
+      borrowable: true,
+      collateral: true
+    });
+    daiConfig = Spoke.ReserveConfig({
+      lt: 0.72e4,
+      lb: 0,
+      liquidityPremium: 20,
+      borrowable: true,
+      collateral: true
+    });
+    usdxConfig = Spoke.ReserveConfig({
+      lt: 0.72e4,
+      lb: 0,
+      liquidityPremium: 50,
+      borrowable: true,
+      collateral: true
+    });
+
+    spokeInfo[spoke2].wbtc.reserveId = spoke2.addReserve(
+      wbtcAssetId,
+      wbtcConfig,
+      address(tokenList.wbtc)
+    );
+    spokeInfo[spoke2].wbtc.liquidityPremium = wbtcConfig.liquidityPremium;
+    spokeInfo[spoke2].weth.reserveId = spoke2.addReserve(
+      wethAssetId,
+      wethConfig,
+      address(tokenList.weth)
+    );
+    spokeInfo[spoke2].weth.liquidityPremium = wethConfig.liquidityPremium;
+    spokeInfo[spoke2].dai.reserveId = spoke2.addReserve(
+      daiAssetId,
+      daiConfig,
+      address(tokenList.dai)
+    );
+    spokeInfo[spoke2].dai.liquidityPremium = daiConfig.liquidityPremium;
+    spokeInfo[spoke2].usdx.reserveId = spoke2.addReserve(
+      usdxAssetId,
+      usdxConfig,
+      address(tokenList.usdx)
+    );
+    spokeInfo[spoke2].usdx.liquidityPremium = usdxConfig.liquidityPremium;
+
+    hub.addSpoke(wbtcAssetId, spokeConfig, address(spoke2));
+    hub.addSpoke(wethAssetId, spokeConfig, address(spoke2));
+    hub.addSpoke(daiAssetId, spokeConfig, address(spoke2));
+    hub.addSpoke(usdxAssetId, spokeConfig, address(spoke2));
+
+    // Spoke 3 reserve configs
+    daiConfig = Spoke.ReserveConfig({
+      lt: 0.75e4,
+      lb: 0,
+      liquidityPremium: 0,
+      borrowable: true,
+      collateral: true
+    });
+    usdxConfig = Spoke.ReserveConfig({
+      lt: 0.75e4,
+      lb: 0,
+      liquidityPremium: 10,
+      borrowable: true,
+      collateral: true
+    });
+    wethConfig = Spoke.ReserveConfig({
+      lt: 0.79e4,
+      lb: 0,
+      liquidityPremium: 20,
+      borrowable: true,
+      collateral: true
+    });
+    wbtcConfig = Spoke.ReserveConfig({
+      lt: 0.77e4,
+      lb: 0,
+      liquidityPremium: 50,
+      borrowable: true,
+      collateral: true
+    });
+
+    spokeInfo[spoke3].dai.reserveId = spoke3.addReserve(
+      daiAssetId,
+      daiConfig,
+      address(tokenList.dai)
+    );
+    spokeInfo[spoke3].dai.liquidityPremium = daiConfig.liquidityPremium;
+    spokeInfo[spoke3].usdx.reserveId = spoke3.addReserve(
+      usdxAssetId,
+      usdxConfig,
+      address(tokenList.usdx)
+    );
+    spokeInfo[spoke3].usdx.liquidityPremium = usdxConfig.liquidityPremium;
+    spokeInfo[spoke3].weth.reserveId = spoke3.addReserve(
+      wethAssetId,
+      wethConfig,
+      address(tokenList.weth)
+    );
+    spokeInfo[spoke3].weth.liquidityPremium = wethConfig.liquidityPremium;
+    spokeInfo[spoke3].wbtc.reserveId = spoke3.addReserve(
+      wbtcAssetId,
+      wbtcConfig,
+      address(tokenList.wbtc)
+    );
+    spokeInfo[spoke3].wbtc.liquidityPremium = wbtcConfig.liquidityPremium;
+
+    hub.addSpoke(daiAssetId, spokeConfig, address(spoke3));
+    hub.addSpoke(usdxAssetId, spokeConfig, address(spoke3));
+    hub.addSpoke(wethAssetId, spokeConfig, address(spoke3));
+    hub.addSpoke(wbtcAssetId, spokeConfig, address(spoke3));
+
+    // Spoke 2 to have an extra dai reserve
+    hub.addAsset(
+      DataTypes.AssetConfig({decimals: 18, active: true, irStrategy: address(irStrategy)}),
+      address(tokenList.dai)
+    );
+    oracle.setAssetPrice(dai2AssetId, 1e8);
+    daiConfig = Spoke.ReserveConfig({
+      lt: 0.70e4,
+      lb: 0,
+      liquidityPremium: 100,
+      borrowable: true,
+      collateral: true
+    });
+    spokeInfo[spoke2].dai2.reserveId = spoke2.addReserve(
+      dai2AssetId,
+      daiConfig,
+      address(tokenList.dai)
+    );
+    spokeInfo[spoke2].dai2.liquidityPremium = daiConfig.liquidityPremium;
+    hub.addSpoke(dai2AssetId, spokeConfig, address(spoke2));
 
     irStrategy.setInterestRateParams(
       wethAssetId,
@@ -364,6 +493,15 @@ abstract contract BaseTest is Test, Events {
     );
     irStrategy.setInterestRateParams(
       daiAssetId,
+      IDefaultInterestRateStrategy.InterestRateData({
+        optimalUsageRatio: 90_00, // 90.00%
+        baseVariableBorrowRate: 5_00, // 5.00%
+        variableRateSlope1: 5_00, // 5.00%
+        variableRateSlope2: 5_00 // 5.00%
+      })
+    );
+    irStrategy.setInterestRateParams(
+      dai2AssetId,
       IDefaultInterestRateStrategy.InterestRateData({
         optimalUsageRatio: 90_00, // 90.00%
         baseVariableBorrowRate: 5_00, // 5.00%

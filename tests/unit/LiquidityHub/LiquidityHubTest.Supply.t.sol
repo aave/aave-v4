@@ -11,8 +11,6 @@ contract LiquidityHubSupplyTest is LiquidityHubBaseTest {
   function test_supply_revertsWith_ERC20InsufficientAllowance() public {
     uint256 amount = 100e18;
 
-    tokenList.dai.approve(address(hub), amount - 1);
-
     vm.prank(address(spoke1));
     vm.expectRevert(
       abi.encodeWithSelector(
@@ -171,7 +169,7 @@ contract LiquidityHubSupplyTest is LiquidityHubBaseTest {
 
   /// @dev User makes a first supply, shares and assets amounts are correct, no precision loss
   function test_supply_fuzz(uint256 assetId, uint256 amount, uint256 riskPremiumRad) public {
-    assetId = bound(assetId, 0, hub.assetCount() - 1);
+    assetId = bound(assetId, 0, hub.assetCount() - 2); // Exclude duplicated DAI
     amount = bound(amount, 1, MAX_SUPPLY_AMOUNT);
     riskPremiumRad = bound(riskPremiumRad, 0, maxRiskPremiumRad); // no effect on supply
 
@@ -244,7 +242,7 @@ contract LiquidityHubSupplyTest is LiquidityHubBaseTest {
     uint256 amount,
     uint256 amount2
   ) public {
-    assetId = bound(assetId, 0, hub.assetCount() - 2);
+    assetId = bound(assetId, 0, hub.assetCount() - 3); // Exclude duplicated DAI
     amount = bound(amount, 1, MAX_SUPPLY_AMOUNT);
     amount2 = bound(amount2, 1, MAX_SUPPLY_AMOUNT);
 
@@ -375,7 +373,7 @@ contract LiquidityHubSupplyTest is LiquidityHubBaseTest {
     uint256 amount = 0;
 
     vm.prank(address(spoke1));
-    vm.expectRevert(TestErrors.INVALID_AMOUNT);
+    vm.expectRevert(TestErrors.INVALID_SUPPLY_AMOUNT);
     hub.supply(assetId, amount, 0, alice);
   }
 
@@ -623,7 +621,7 @@ contract LiquidityHubSupplyTest is LiquidityHubBaseTest {
   }
 
   function test_supply_fuzz_single_spoke_multi_supply(uint256 assetId, uint256 amount) public {
-    assetId = bound(assetId, 0, hub.assetCount() - 1);
+    assetId = bound(assetId, 0, hub.assetCount() - 2); // Exclude duplicated DAI
     amount = bound(amount, 1, MAX_SUPPLY_AMOUNT / 2);
 
     uint256 timestamp = vm.getBlockTimestamp();

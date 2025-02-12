@@ -82,7 +82,7 @@ contract MockSpokeCreditLine is ISpoke {
       );
   }
 
-  function borrow(uint256 assetId, address to, uint256 amount) external {
+  function borrow(uint256 assetId, uint256 amount, address to) external {
     Reserve storage r = reserves[assetId];
     _validateBorrow(r, amount);
     // TODO: decide if state should be updated before or after liquidity hub call
@@ -95,7 +95,7 @@ contract MockSpokeCreditLine is ISpoke {
     // keep liquidity in borrow module
     IERC20(reserves[assetId].asset).safeTransfer(to, amount);
 
-    emit Borrowed(assetId, to, amount);
+    emit Borrowed(assetId, amount, to);
   }
 
   // TODO: Implement repay, calls liquidity hub restore method
@@ -105,7 +105,7 @@ contract MockSpokeCreditLine is ISpoke {
     _updateState(r, assetId, amount, msg.sender);
     ILiquidityHub(liquidityHub).restore(assetId, amount, 0, msg.sender);
 
-    emit Repaid(assetId, msg.sender, amount);
+    emit Repaid(assetId, amount, msg.sender);
   }
 
   function setUsingAsCollateral(uint256 assetId, bool usingAsCollateral) external {
@@ -116,7 +116,7 @@ contract MockSpokeCreditLine is ISpoke {
     // intentionally left blank
   }
 
-  function withdraw(uint256 assetId, address to, uint256 amount) external {
+  function withdraw(uint256 assetId, uint256 amount, address to) external {
     // intentionally left blank
   }
 

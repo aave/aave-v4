@@ -20,34 +20,39 @@ contract Spoke is ISpoke {
   ILiquidityHub public liquidityHub;
 
   struct Reserve {
-    uint256 id;
+    uint256 assetId;
     address asset;
-    // uint256 totalDebt;
-    // uint256 lastUpdateIndex;
-    // uint256 lastUpdateTimestamp;
+    uint256 baseDebt;
+    uint256 outstandingPremium;
+    uint256 suppliedShares;
+    uint256 baseBorrowIndex;
+    uint256 lastUpdateTimestamp;
+    uint256 riskPremiumRad;
     ReserveConfig config;
   }
 
   struct ReserveConfig {
     uint256 lt; // 1e4 == 100%, BPS
     uint256 lb; // TODO: liquidationProtocolFee
+    uint256 liquidityPremium; // BPS
     bool borrowable;
     bool collateral;
   }
 
   struct UserConfig {
-    uint256 supplyShares;
-    uint256 debt;
     bool usingAsCollateral;
-    // uint256 balance;
-    // uint256 lastUpdateIndex;
-    // uint256 lastUpdateTimestamp;
+    uint256 baseDebt;
+    uint256 outstandingPremium;
+    uint256 suppliedShares;
+    uint256 baseBorrowIndex;
+    uint256 riskPremium;
+    uint256 lastUpdateTimestamp;
   }
 
   struct CalculateUserAccountDataVars {
     uint256 i;
-    uint256 assetId;
-    uint256 assetPrice;
+    uint256 reserveId;
+    uint256 reservePrice;
     uint256 liquidityPremium;
     uint256 userCollateralInBaseCurrency;
     uint256 totalCollateralInBaseCurrency;
@@ -57,11 +62,12 @@ contract Spoke is ISpoke {
     uint256 healthFactor;
   }
 
-  // reserve id => user address => user data
-  mapping(uint256 => mapping(address => UserConfig)) public users;
+  // user address => reserve id => user data
+  mapping(address => mapping(uint256 => UserConfig)) internal _users;
   // reserve id => reserveData
-  mapping(uint256 => Reserve) public reserves;
-  uint256[] public reservesList; // assetIds
+  mapping(uint256 => Reserve) internal _reserves;
+
+  uint256[] public reservesList; // reserveIds
   uint256 public reserveCount;
   address public oracle;
 
@@ -70,107 +76,158 @@ contract Spoke is ISpoke {
     oracle = oracleAddress;
   }
 
-  function getUserDebt(uint256 assetId, address user) external view returns (uint256) {
-    UserConfig memory u = users[assetId][user];
+  function getUserDebt(uint256 reserveId, address user) external view returns (uint256) {
+    UserConfig memory user = _users[user][reserveId];
     // TODO: Instead use a getter from liquidity hub to get up-to-date user debt (with accrued debt)
     return
-      u.debt.rayMul(
-        MathUtils.calculateCompoundedInterest(getInterestRate(assetId), uint40(0), block.timestamp)
+      user.baseDebt.rayMul(
+        MathUtils.calculateCompoundedInterest(
+          getInterestRate(_reserves[reserveId].assetId),
+          uint40(user.lastUpdateTimestamp),
+          block.timestamp
+        )
       );
   }
 
-  function getReserveDebt(uint256 assetId) external view returns (uint256) {
-    Reserve storage r = reserves[assetId];
+  function getReserveDebt(uint256 reserveId) external view returns (uint256) {
+    Reserve storage reserve = _reserves[reserveId];
 
     // TODO: Instead use a getter from liquidity hub to get up-to-date reserve debt (with accrued debt)
     // return
     //   r.totalDebt.rayMul(
-    //     MathUtils.calculateCompoundedInterest(getInterestRate(assetId), uint40(0), block.timestamp)
+    //     MathUtils.calculateCompoundedInterest(getInterestRate(reserveId), uint40(0), block.timestamp)
     //   );
     return 0;
   }
 
   /// governance
-  function updateReserveConfig(uint256 assetId, ReserveConfig calldata params) external {
+  function updateReserveConfig(uint256 reserveId, ReserveConfig calldata params) external {
     // TODO: AccessControl
-    reserves[assetId].config = ReserveConfig({
+    _reserves[reserveId].config = ReserveConfig({
       lt: params.lt,
       lb: params.lb,
+      liquidityPremium: params.liquidityPremium,
       borrowable: params.borrowable,
       collateral: params.collateral
     });
 
-    emit ReserveConfigUpdated(assetId, params.lt, params.lb, params.borrowable, params.collateral);
+    emit ReserveConfigUpdated(
+      reserveId,
+      params.lt,
+      params.lb,
+      params.liquidityPremium,
+      params.borrowable,
+      params.collateral
+    );
   }
 
   // /////
   // Users
   // /////
 
-  function supply(uint256 assetId, uint256 amount) external {
-    Reserve storage r = reserves[assetId];
+  function supply(uint256 reserveId, uint256 amount) external {
+    Reserve storage reserve = _reserves[reserveId];
+    UserConfig storage user = _users[msg.sender][reserveId];
 
-    _validateSupply(r, amount);
+    _accrueAssetInterest(reserveId, liquidityHub.previewNextBorrowIndex(reserve.assetId));
+    _validateSupply(reserve, amount);
 
-    (, uint256 newAggregatedRiskPremium) = _refreshRiskPremium();
-    (, uint256 userShares) = liquidityHub.supply(
-      assetId,
+    // Update user's risk premium and wAvgRP across all users of spoke
+    uint256 newAggregatedRiskPremium = _updateRiskPremiumAndBaseDebt({
+      reserve: reserve,
+      user: user,
+      userAddress: msg.sender,
+      baseDebtChange: 0
+    });
+    uint256 suppliedShares = liquidityHub.supply(
+      reserve.assetId,
       amount,
       newAggregatedRiskPremium,
       msg.sender // supplier
     );
 
-    users[assetId][msg.sender].supplyShares += userShares;
+    user.suppliedShares += suppliedShares;
+    reserve.suppliedShares += suppliedShares;
 
-    emit Supplied(assetId, msg.sender, amount);
+    emit Supplied(reserveId, amount, msg.sender);
   }
 
-  function withdraw(uint256 assetId, address to, uint256 amount) external {
-    Reserve storage r = reserves[assetId];
-    UserConfig storage u = users[assetId][msg.sender];
-    _validateWithdraw(assetId, r, u, amount);
+  function withdraw(uint256 reserveId, uint256 amount, address to) external {
+    // TODO: Be able to pass max(uint) as amount to withdraw all supplied shares
+    Reserve storage reserve = _reserves[reserveId];
+    UserConfig storage user = _users[msg.sender][reserveId];
 
-    (, uint256 newAggregatedRiskPremium) = _refreshRiskPremium();
-    uint256 userShares = liquidityHub.withdraw(assetId, amount, newAggregatedRiskPremium, to);
-    users[assetId][msg.sender].supplyShares -= userShares;
+    _accrueAssetInterest(reserveId, liquidityHub.previewNextBorrowIndex(reserve.assetId));
+    _validateWithdraw(reserveId, reserve, user, amount);
 
-    emit Withdrawn(assetId, msg.sender, amount);
+    // Update user's risk premium and wAvgRP across all users of spoke
+    uint256 newAggregatedRiskPremium = _updateRiskPremiumAndBaseDebt({
+      reserve: reserve,
+      user: user,
+      userAddress: msg.sender,
+      baseDebtChange: 0
+    });
+    uint256 withdrawnShares = liquidityHub.withdraw(
+      reserve.assetId,
+      amount,
+      newAggregatedRiskPremium,
+      to
+    );
+
+    user.suppliedShares -= withdrawnShares;
+    reserve.suppliedShares -= withdrawnShares;
+
+    emit Withdrawn(reserveId, amount, msg.sender);
   }
 
-  function borrow(uint256 assetId, address to, uint256 amount) external {
+  function borrow(uint256 reserveId, uint256 amount, address to) external {
     // TODO: referral code
     // TODO: onBehalfOf with credit delegation
-    Reserve storage r = reserves[assetId];
-    _validateBorrow(r, amount);
+    Reserve storage reserve = _reserves[reserveId];
+    UserConfig storage user = _users[msg.sender][reserveId];
+
+    _accrueAssetInterest(reserveId, liquidityHub.previewNextBorrowIndex(reserve.assetId));
+    _validateBorrow(reserve, amount);
 
     // TODO HF check
-    (, uint256 newAggregatedRiskPremium) = _refreshRiskPremium();
-    uint256 userDebt = liquidityHub.draw(assetId, amount, newAggregatedRiskPremium, to);
-    // debt still goes to original msg.sender
-    users[assetId][msg.sender].debt += userDebt;
+    uint256 newAggregatedRiskPremium = _updateRiskPremiumAndBaseDebt({
+      reserve: reserve,
+      user: user,
+      userAddress: msg.sender,
+      baseDebtChange: int256(amount)
+    });
+    liquidityHub.draw(reserve.assetId, amount, newAggregatedRiskPremium, to);
 
-    emit Borrowed(assetId, to, amount);
+    emit Borrowed(reserveId, amount, to);
   }
 
-  function repay(uint256 assetId, uint256 amount) external {
-    // TODO: Implement repay, calls liquidity hub restore method
+  function repay(uint256 reserveId, uint256 amount) external {
+    // TODO: Be able to pass max(uint) as amount to restore all debt
     // TODO: onBehalfOf
+    UserConfig storage user = _users[msg.sender][reserveId];
+    Reserve storage reserve = _reserves[reserveId];
 
-    UserConfig storage u = users[assetId][msg.sender];
-    Reserve storage r = reserves[assetId];
-    _validateRepay(assetId, u, amount);
+    _accrueAssetInterest(reserveId, liquidityHub.previewNextBorrowIndex(reserve.assetId));
+    _validateRepay(reserveId, user, amount);
 
-    (, uint256 newAggregatedRiskPremium) = _refreshRiskPremium();
-    // TODO: Spoke should calculate the amountFromPremium and amountFromBase
-    uint256 repaidDebt = liquidityHub.restore(
-      assetId,
+    // Repaid debt happens first from premium, then base
+    uint256 baseDebtRestored = _deductFromOutstandingPremium(reserve, user, amount);
+
+    uint256 newAggregatedRiskPremium = _updateRiskPremiumAndBaseDebt({
+      reserve: reserve,
+      user: user,
+      userAddress: msg.sender,
+      baseDebtChange: -int256(baseDebtRestored)
+    });
+
+    liquidityHub.restore(
+      reserve.assetId,
       amount,
       newAggregatedRiskPremium,
       msg.sender // repayer
     );
-    users[assetId][msg.sender].debt -= repaidDebt;
 
-    emit Repaid(assetId, msg.sender, amount);
+    emit Repaid(reserveId, amount, msg.sender);
   }
 
   function getUserRiskPremium(address user) external view returns (uint256) {
@@ -183,11 +240,14 @@ contract Spoke is ISpoke {
     return healthFactor;
   }
 
-  function setUsingAsCollateral(uint256 assetId, bool usingAsCollateral) external {
-    _validateSetUsingAsCollateral(assetId, msg.sender);
-    users[assetId][msg.sender].usingAsCollateral = usingAsCollateral;
+  function setUsingAsCollateral(uint256 reserveId, bool usingAsCollateral) external {
+    Reserve storage reserve = _reserves[reserveId];
+    UserConfig storage user = _users[msg.sender][reserveId];
 
-    emit UsingAsCollateral(assetId, msg.sender, usingAsCollateral);
+    _validateSetUsingAsCollateral(reserve, user);
+    user.usingAsCollateral = usingAsCollateral;
+
+    emit UsingAsCollateral(reserveId, usingAsCollateral, msg.sender);
   }
 
   // TODO: Needed?
@@ -201,63 +261,69 @@ contract Spoke is ISpoke {
   // Governance
   // /////
 
-  function addReserve(uint256 assetId, ReserveConfig memory params, address asset) external {
-    // TODO: validate assetId does not exist already, valid asset
+  function addReserve(
+    uint256 assetId,
+    ReserveConfig memory params,
+    address asset
+  ) external returns (uint256) {
+    Reserve storage reserve = _reserves[reserveCount];
+    // TODO: validate reserveId does not exist already, valid asset
     // require(asset != address(0), 'INVALID_ASSET');
-    // require(reserves[assetId].asset == address(0), 'RESERVE_ID_ALREADY_EXISTS');
+    // require(_reserves[reserveId].asset == address(0), 'RESERVE_ID_ALREADY_EXISTS');
 
     // TODO: AccessControl
-    // TODO: assigning reserveId as the latest reserveCount
-    reservesList.push(assetId);
-    reserves[assetId].id = assetId;
-    reserves[assetId].asset = asset;
-    reserves[assetId].config = ReserveConfig({
+    reservesList.push(reserveCount);
+    reserve.assetId = assetId;
+    reserve.asset = asset;
+    reserve.config = ReserveConfig({
       lt: params.lt,
       lb: params.lb,
+      liquidityPremium: params.liquidityPremium,
       borrowable: params.borrowable,
       collateral: params.collateral
     });
-    reserveCount++;
+
+    return reserveCount++;
 
     // emit event
   }
 
-  function updateReserve(uint256 assetId, ReserveConfig memory params) external {
+  function updateReserve(uint256 reserveId, ReserveConfig memory params) external {
     // TODO: More sophisticated
-    require(reserves[assetId].id != 0, 'INVALID_RESERVE');
+    require(_reserves[reserveId].asset != address(0), 'INVALID_RESERVE');
     // TODO: AccessControl
-    reserves[assetId].config = ReserveConfig({
+    _reserves[reserveId].config = ReserveConfig({
       lt: params.lt,
       lb: params.lb,
+      liquidityPremium: params.liquidityPremium,
       borrowable: params.borrowable,
       collateral: params.collateral
     });
   }
 
   // public
-  function getReserve(uint256 assetId) public view returns (Reserve memory) {
-    return reserves[assetId];
+  function getReserve(uint256 reserveId) public view returns (Reserve memory) {
+    return _reserves[reserveId];
   }
 
-  function getUser(uint256 assetId, address user) public view returns (UserConfig memory) {
-    UserConfig memory u = users[assetId][user];
-    return u;
+  function getUser(uint256 reserveId, address user) public view returns (UserConfig memory) {
+    UserConfig memory user = _users[user][reserveId];
+    return user;
   }
 
   // internal
   function _validateSupply(Reserve storage reserve, uint256 amount) internal view {
-    // TODO: Decide where supply cap is checked
     require(reserve.asset != address(0), 'RESERVE_NOT_LISTED');
   }
 
   function _validateWithdraw(
-    uint256 assetId,
+    uint256 reserveId,
     Reserve storage reserve,
     UserConfig storage user,
     uint256 amount
   ) internal view {
     require(
-      liquidityHub.convertToAssetsDown(assetId, user.supplyShares) >= amount,
+      liquidityHub.convertToAssetsDown(_reserves[reserveId].assetId, user.suppliedShares) >= amount,
       'INSUFFICIENT_SUPPLY'
     );
   }
@@ -267,76 +333,203 @@ contract Spoke is ISpoke {
     // TODO: validation on HF to allow borrowing amount
   }
 
-  function _validateRepay(uint256 assetId, UserConfig storage user, uint256 amount) internal view {
-    require(amount <= user.debt, 'REPAY_EXCEEDS_DEBT');
+  // TODO: Place this and LH equivalent in a generic logic library
+  function _validateRepay(
+    uint256 reserveId,
+    UserConfig storage user,
+    uint256 amount
+  ) internal view {
+    require(amount <= user.baseDebt + user.outstandingPremium, 'REPAY_EXCEEDS_DEBT');
+  }
+
+  function _deductFromOutstandingPremium(
+    Reserve storage reserve,
+    UserConfig storage user,
+    uint256 amount
+  ) internal returns (uint256) {
+    uint256 userOutstandingPremium = user.outstandingPremium;
+
+    uint256 baseDebtRestored;
+
+    if (amount > userOutstandingPremium) {
+      baseDebtRestored = amount - userOutstandingPremium;
+      user.outstandingPremium = 0;
+      // underflow not possible bc of invariant: reserve.outstandingPremium >= user.outstandingPremium
+      reserve.outstandingPremium -= userOutstandingPremium;
+    } else {
+      // no base debt is restored, only outstanding premium
+      user.outstandingPremium -= amount;
+      reserve.outstandingPremium -= amount;
+    }
+
+    return baseDebtRestored;
   }
 
   /**
-  @return uint256 new risk premium
-  @return uint256 new aggregated risk premium
+  @param baseDebtChange The change in base debt of the reserve.
+  @return The new aggregated risk premium.
   */
-  function _refreshRiskPremium() internal returns (uint256, uint256) {
-    // TODO: update state - debt shares
+  function _updateRiskPremiumAndBaseDebt(
+    Reserve storage reserve,
+    UserConfig storage user,
+    address userAddress,
+    int256 baseDebtChange
+  ) internal returns (uint256) {
+    // Calculate risk premium of user
+    uint256 newUserRiskPremium = _calcUserRiskPremium(_users[userAddress]);
+    // Refresh weighted average risk premium across all users of spoke
+    uint256 newAggregatedRiskPremium = _updateSpokeRiskPremiumAndBaseDebt(
+      reserve,
+      user,
+      newUserRiskPremium,
+      baseDebtChange
+    );
+    return newAggregatedRiskPremium;
+  }
 
-    // TODO: refresh risk premium of user, specific assets user has supplied
+  /// @dev TODO: It's assumed reservesList (or similar) is sorted by liquidity premium
+  /// @dev It's assumed interest has been accrued before this function call.
+  function _calcUserRiskPremium(
+    mapping(uint256 => UserConfig) storage userData
+  ) internal returns (uint256) {
+    uint256 reservesListLength = reservesList.length;
+
+    // Variable to decrement as we count up user RP
+    uint256 tempDebt = 0;
     uint256 newUserRiskPremium = 0;
-    // TODO: aggregated risk premium, ie loop over all assets and sum up risk premium
-    uint256 newAggregatedRiskPremium = 0;
-    return (newUserRiskPremium, newAggregatedRiskPremium);
+    uint256 collateralValue = 0;
+    uint256 reserveId;
+    uint256 userSupply;
+
+    // Add up user debt for each reserve, including price
+    for (uint256 i; i < reservesListLength; ++i) {
+      reserveId = reservesList[i];
+      tempDebt += userData[reserveId].baseDebt * IPriceOracle(oracle).getAssetPrice(reserveId);
+    }
+
+    // If user has no debt, return 0 risk premium
+    if (tempDebt == 0) return 0;
+
+    // While the tempDebt variable is non-zero, loop over collateral reserves, adding up weighted risk premium, and subtract corresponding amt from tempDebt
+    for (uint256 i; i < reservesListLength; ++i) {
+      reserveId = reservesList[i];
+      if (!_usingAsCollateral(userData[reserveId])) continue;
+
+      // Convert user's supply shares for this reserve to collateral value
+      userSupply =
+        liquidityHub.convertToAssetsDown(
+          _reserves[reserveId].assetId,
+          userData[reserveId].suppliedShares
+        ) *
+        IPriceOracle(oracle).getAssetPrice(reserveId);
+
+      if (userSupply >= tempDebt) {
+        // This reserve completes user debt, so add up weighted risk premium and break
+        newUserRiskPremium += tempDebt * _reserves[reserveId].config.liquidityPremium;
+        collateralValue += tempDebt;
+        break;
+      } else {
+        // Add up weighted risk premium
+        newUserRiskPremium += userSupply * _reserves[reserveId].config.liquidityPremium;
+        collateralValue += userSupply;
+        // Subtract user supply from tempDebt
+        tempDebt -= userSupply;
+      }
+    }
+
+    if (collateralValue == 0) return 0;
+    return newUserRiskPremium / collateralValue;
   }
 
-  function _validateSetUsingAsCollateral(uint256 assetId, address user) internal view {
-    require(reserves[assetId].config.collateral, 'RESERVE_NOT_COLLATERAL');
-    require(users[assetId][user].supplyShares > 0, 'NO_SUPPLY');
+  /// @dev It's assumed interest has been accrued before this function call.
+  function _updateSpokeRiskPremiumAndBaseDebt(
+    Reserve storage reserve,
+    UserConfig storage user,
+    uint256 newUserRiskPremium,
+    int256 baseDebtChange
+  ) internal returns (uint256) {
+    uint256 existingReserveDebt = reserve.baseDebt;
+    uint256 existingUserDebt = user.baseDebt;
+
+    // Weighted average risk premium of all users without current user
+    (uint256 reserveRiskPremiumWithoutCurrent, uint256 reserveDebtWithoutCurrent) = MathUtils
+      .subtractFromWeightedAverage(
+        reserve.riskPremiumRad,
+        existingReserveDebt,
+        user.riskPremium,
+        existingUserDebt
+      );
+
+    uint256 newUserDebt = baseDebtChange > 0
+      ? existingUserDebt + uint256(baseDebtChange) // debt added
+      : // force underflow: only possible when user takes repays amount more than net drawn
+      existingUserDebt - uint256(-baseDebtChange); // debt restored
+
+    (uint256 newReserveRiskPremium, uint256 newReserveDebt) = MathUtils.addToWeightedAverage(
+      reserveRiskPremiumWithoutCurrent,
+      reserveDebtWithoutCurrent,
+      newUserRiskPremium,
+      newUserDebt
+    );
+
+    reserve.baseDebt = newReserveDebt;
+    user.baseDebt = newUserDebt;
+
+    reserve.riskPremiumRad = newReserveRiskPremium;
+    user.riskPremium = newUserRiskPremium;
   }
 
-  function _usingAsCollateralOrBorrowing(
-    uint256 assetId,
-    address user
-  ) internal view returns (bool) {
-    return _usingAsCollateral(assetId, user) || _borrowing(assetId, user);
+  function _validateSetUsingAsCollateral(
+    Reserve storage reserve,
+    UserConfig storage user
+  ) internal view {
+    require(reserve.config.collateral, 'RESERVE_NOT_COLLATERAL');
   }
 
-  function _usingAsCollateral(uint256 assetId, address user) internal view returns (bool) {
-    return users[assetId][user].usingAsCollateral;
+  function _usingAsCollateral(UserConfig storage user) internal view returns (bool) {
+    return user.usingAsCollateral;
   }
 
-  function _borrowing(uint256 assetId, address user) internal view returns (bool) {
-    return users[assetId][user].debt > 0;
+  function _borrowing(UserConfig storage user) internal view returns (bool) {
+    return user.baseDebt + user.outstandingPremium > 0;
+  }
+
+  function _usingAsCollateralOrBorrowing(UserConfig storage user) internal view returns (bool) {
+    return _usingAsCollateral(user) || _borrowing(user);
   }
 
   function _calculateUserAccountData(
-    address user
+    address userAddress
   ) internal view returns (uint256, uint256, uint256, uint256, uint256) {
     CalculateUserAccountDataVars memory vars;
     uint256 reservesListLength = reservesList.length;
     while (vars.i < reservesListLength) {
-      vars.assetId = reservesList[vars.i];
-      if (!_usingAsCollateralOrBorrowing(vars.assetId, user)) {
+      vars.reserveId = reservesList[vars.i];
+      if (!_usingAsCollateralOrBorrowing(_users[userAddress][vars.reserveId])) {
         vars.i++;
         continue;
       }
 
-      UserConfig memory u = getUser(vars.assetId, user);
-      Reserve memory r = getReserve(vars.assetId);
+      UserConfig memory user = getUser(vars.reserveId, userAddress);
+      Reserve memory reserve = getReserve(vars.reserveId);
 
-      vars.assetPrice = IPriceOracle(oracle).getAssetPrice(vars.assetId);
+      vars.reservePrice = IPriceOracle(oracle).getAssetPrice(vars.reserveId);
 
-      if (_usingAsCollateral(vars.assetId, user)) {
+      if (_usingAsCollateral(_users[userAddress][vars.reserveId])) {
         vars.userCollateralInBaseCurrency =
-          vars.assetPrice *
+          vars.reservePrice *
           liquidityHub.convertToAssetsDown(
-            vars.assetId,
-            _calculateAccruedInterest(vars.assetId, u.supplyShares)
+            _reserves[vars.reserveId].assetId,
+            _calculateAccruedInterest(vars.reserveId, user.suppliedShares)
           );
         vars.liquidityPremium = 1; // TODO: get LP from LH
         vars.totalCollateralInBaseCurrency += vars.userCollateralInBaseCurrency;
-        vars.avgLiquidationThreshold += vars.userCollateralInBaseCurrency * r.config.lt;
+        vars.avgLiquidationThreshold += vars.userCollateralInBaseCurrency * reserve.config.lt;
         vars.userRiskPremium += vars.userCollateralInBaseCurrency * vars.liquidityPremium;
       }
 
-      vars.totalDebtInBaseCurrency += u.debt > 0
-        ? vars.assetPrice * _calculateAccruedInterest(vars.assetId, u.debt)
+      vars.totalDebtInBaseCurrency += user.baseDebt > 0
+        ? vars.reservePrice * _calculateAccruedInterest(vars.reserveId, user.baseDebt)
         : 0;
 
       vars.i++;
@@ -366,13 +559,53 @@ contract Spoke is ISpoke {
   }
 
   function _calculateAccruedInterest(
-    uint256 assetId,
+    uint256 reserveId,
     uint256 debt
   ) internal view returns (uint256) {
     // TODO: use lastUpdatedTimestamp in interest math, make sure total debt includes accrued interest
     return
       debt.rayMul(
-        MathUtils.calculateCompoundedInterest(getInterestRate(assetId), uint40(0), block.timestamp)
+        MathUtils.calculateCompoundedInterest(
+          getInterestRate(_reserves[reserveId].assetId),
+          uint40(0),
+          block.timestamp
+        )
       );
+  }
+
+  function _accrueAssetInterest(uint256 reserveId, uint256 newBaseBorrowIndex) internal {
+    Reserve storage reserve = _reserves[reserveId];
+    UserConfig storage user = _users[msg.sender][reserveId];
+
+    // no interest to accrue if no time passed
+    if (reserve.lastUpdateTimestamp == block.timestamp) return;
+
+    uint256 existingBaseDebt = reserve.baseDebt;
+    // no interest to accrue since no liquidity has been drawn
+    if (existingBaseDebt == 0) return;
+
+    uint256 cumulatedBaseDebt = existingBaseDebt.rayMul(
+      newBaseBorrowIndex.rayDiv(reserve.baseBorrowIndex)
+    );
+
+    // accrue premium interest on the accrued base interest
+    reserve.baseDebt = cumulatedBaseDebt;
+    reserve.outstandingPremium += (cumulatedBaseDebt - existingBaseDebt).radMul(
+      reserve.riskPremiumRad
+    );
+    reserve.baseBorrowIndex = newBaseBorrowIndex;
+    reserve.lastUpdateTimestamp = block.timestamp;
+
+    // User specific updates
+    existingBaseDebt = user.baseDebt;
+    // no interest to accrue since no liquidity has been drawn
+    if (existingBaseDebt == 0) return;
+
+    cumulatedBaseDebt = existingBaseDebt.rayMul(newBaseBorrowIndex.rayDiv(user.baseBorrowIndex));
+
+    user.baseDebt = cumulatedBaseDebt;
+    user.outstandingPremium += (cumulatedBaseDebt - existingBaseDebt).radMul(user.riskPremium);
+    user.baseBorrowIndex = newBaseBorrowIndex;
+    user.lastUpdateTimestamp = block.timestamp;
   }
 }

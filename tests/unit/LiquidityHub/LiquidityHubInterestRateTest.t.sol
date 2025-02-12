@@ -11,7 +11,6 @@ contract LiquidityHubInterestRateTest is BaseTest {
   using WadRayMath for uint256;
   using PercentageMath for uint256;
 
-  uint256 public daiAssetId = 2;
   uint256 public constant MAX_BPS = 999_99;
 
   function setUp() public override {

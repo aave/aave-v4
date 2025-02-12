@@ -155,13 +155,13 @@ contract LiquidityHub is ILiquidityHub {
     uint256 amount,
     uint256 riskPremiumRad,
     address supplier
-  ) external returns (uint256, uint256) {
+  ) external returns (uint256) {
     // TODO: authorization - only spokes
 
     Asset storage asset = _assets[assetId];
     SpokeData storage spoke = _spokes[assetId][msg.sender];
 
-    uint256 nextBaseBorrowIndex = _accrueInterest(asset, spoke);
+    _accrueInterest(asset, spoke);
     _validateSupply(asset, spoke, amount);
 
     asset.updateBorrowRate({liquidityAdded: amount, liquidityTaken: 0});
@@ -185,7 +185,7 @@ contract LiquidityHub is ILiquidityHub {
 
     emit Supply(assetId, msg.sender, amount);
 
-    return (nextBaseBorrowIndex, sharesAmount);
+    return sharesAmount;
   }
 
   /// @inheritdoc ILiquidityHub
@@ -195,7 +195,6 @@ contract LiquidityHub is ILiquidityHub {
     uint256 riskPremiumRad,
     address to
   ) external returns (uint256) {
-    // TODO: Be able to pass max(uint) as amount to withdraw all or accept number of shares
     // TODO: authorization - only spokes
 
     Asset storage asset = _assets[assetId];
@@ -324,7 +323,7 @@ contract LiquidityHub is ILiquidityHub {
     SpokeData storage spoke,
     uint256 amount
   ) internal view {
-    require(amount > 0, 'INVALID_AMOUNT');
+    require(amount > 0, 'INVALID_SUPPLY_AMOUNT');
     require(assetsList[asset.id] != IERC20(address(0)), 'ASSET_NOT_LISTED');
     // TODO: Different states e.g. frozen, paused
     require(asset.config.active, 'ASSET_NOT_ACTIVE');
@@ -343,6 +342,7 @@ contract LiquidityHub is ILiquidityHub {
     // TODO: Other cases of status (frozen, paused)
     // TODO: still allow withdrawal even if asset is not active, only prevent for frozen/paused?
     require(asset.config.active, 'ASSET_NOT_ACTIVE');
+    require(amount > 0, 'INVALID_WITHDRAW_AMOUNT');
     require(
       amount <= asset.convertToAssetsDown(spoke.suppliedShares) - spoke.baseDebt,
       'SUPPLIED_AMOUNT_EXCEEDED'
@@ -353,6 +353,7 @@ contract LiquidityHub is ILiquidityHub {
   function _validateDraw(Asset storage asset, uint256 amount, uint256 drawCap) internal view {
     // TODO: Other cases of status (frozen, paused)
     require(asset.config.active, 'ASSET_NOT_ACTIVE');
+    require(amount > 0, 'INVALID_DRAW_AMOUNT');
     require(
       drawCap == type(uint256).max || amount + asset.baseDebt <= drawCap,
       'DRAW_CAP_EXCEEDED'
