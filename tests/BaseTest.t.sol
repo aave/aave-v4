@@ -138,7 +138,7 @@ abstract contract BaseTest is Test, Events {
     ReserveInfo wbtc;
     ReserveInfo dai;
     ReserveInfo usdx;
-    ReserveInfo dai2;
+    ReserveInfo dai2; // Special case: dai listed twice on hub and spoke2 (unique assetIds)
   }
 
   struct ReserveInfo {
