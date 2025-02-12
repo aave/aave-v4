@@ -266,6 +266,10 @@ contract LiquidityHub is ILiquidityHub {
     uint256 baseDebtRestored = _deductFromOutstandingPremium(asset, spoke, amount);
     _updateRiskPremiumAndBaseDebt(asset, spoke, riskPremiumRad, -int256(baseDebtRestored));
 
+    // if fully restored debt, reset base borrow index to 0 (sentinel)
+    // gas refund + allows invariant testing to be easier
+    // do it and then eval later whether
+
     asset.availableLiquidity += amount;
 
     assetsList[assetId].safeTransferFrom(repayer, address(this), amount);
@@ -413,8 +417,8 @@ contract LiquidityHub is ILiquidityHub {
 
     uint256 newSpokeDebt = baseDebtChange > 0
       ? existingSpokeDebt + uint256(baseDebtChange) // debt added
-      : // force underflow: only possible when spoke takes repays amount more than net drawn
-      existingSpokeDebt - uint256(-baseDebtChange); // debt restored
+      // force underflow: only possible when spoke takes repays amount more than net drawn
+      : existingSpokeDebt - uint256(-baseDebtChange); // debt restored
 
     (uint256 newAssetRiskPremium, uint256 newAssetDebt) = MathUtils.addToWeightedAverage(
       assetRiskPremiumWithoutCurrent,

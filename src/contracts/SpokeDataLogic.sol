@@ -14,9 +14,13 @@ library SpokeDataLogic {
   // @dev Utilizes existing `spoke.baseBorrowIndex` & `spoke.riskPremiumRad`
   function accrueInterest(SpokeData storage spoke, uint256 nextBaseBorrowIndex) internal {
     uint256 elapsed = block.timestamp - spoke.lastUpdateTimestamp;
-    if (elapsed == 0) return;
+    if (elapsed == 0) {
+      return;
+    }
     uint256 existingBaseDebt = spoke.baseDebt;
-    if (existingBaseDebt == 0) return;
+    if (existingBaseDebt == 0) {
+      return;
+    }
 
     // todo: add rayMulDiv in WadRayMath (=mulDiv / RAY) to optimize out the one cancelled RAY
     // & avoid precision loss
