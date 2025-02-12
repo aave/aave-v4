@@ -577,6 +577,14 @@ contract Spoke is ISpoke {
     Reserve storage reserve = _reserves[reserveId];
     UserConfig storage user = _users[msg.sender][reserveId];
 
+    // proposed solution for init index
+    // if (userFirstDraw) {
+    //   user.baseBorrowIndex = newBaseBorrowIndex;
+    //   if (reserve.baseDebt == 0) {
+    //     reserve.baseBorrowIndex = newBaseBorrowIndex;
+    //   }
+    // }
+
     // no interest to accrue if no time passed
     if (reserve.lastUpdateTimestamp == block.timestamp) return;
 
