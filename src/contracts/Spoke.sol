@@ -17,7 +17,7 @@ contract Spoke is ISpoke {
   using PercentageMath for uint256;
   using SafeERC20 for IERC20;
 
-  ILiquidityHub public liquidityHub;
+  address public liquidityHub;
 
   struct Reserve {
     uint256 id;
@@ -37,7 +37,7 @@ contract Spoke is ISpoke {
 
   struct UserConfig {
     uint256 supplyShares;
-    uint256 debt;
+    uint256 debtShares;
     bool usingAsCollateral;
     // uint256 balance;
     // uint256 lastUpdateIndex;
@@ -66,7 +66,7 @@ contract Spoke is ISpoke {
   address public oracle;
 
   constructor(address liquidityHubAddress, address oracleAddress) {
-    liquidityHub = ILiquidityHub(liquidityHubAddress);
+    liquidityHub = liquidityHubAddress;
     oracle = oracleAddress;
   }
 
@@ -74,7 +74,7 @@ contract Spoke is ISpoke {
     UserConfig memory u = users[assetId][user];
     // TODO: Instead use a getter from liquidity hub to get up-to-date user debt (with accrued debt)
     return
-      u.debt.rayMul(
+      u.debtShares.rayMul(
         MathUtils.calculateCompoundedInterest(getInterestRate(assetId), uint40(0), block.timestamp)
       );
   }
@@ -113,11 +113,11 @@ contract Spoke is ISpoke {
     _validateSupply(r, amount);
 
     (, uint256 newAggregatedRiskPremium) = _refreshRiskPremium();
-    (, uint256 userShares) = liquidityHub.supply(
+    IERC20(r.asset).safeTransferFrom(msg.sender, liquidityHub, amount);
+    uint256 userShares = ILiquidityHub(liquidityHub).supply(
       assetId,
       amount,
-      newAggregatedRiskPremium,
-      msg.sender // supplier
+      newAggregatedRiskPremium
     );
 
     users[assetId][msg.sender].supplyShares += userShares;
@@ -131,7 +131,12 @@ contract Spoke is ISpoke {
     _validateWithdraw(assetId, r, u, amount);
 
     (, uint256 newAggregatedRiskPremium) = _refreshRiskPremium();
-    uint256 userShares = liquidityHub.withdraw(assetId, amount, newAggregatedRiskPremium, to);
+    uint256 userShares = ILiquidityHub(liquidityHub).withdraw(
+      assetId,
+      to,
+      amount,
+      newAggregatedRiskPremium
+    );
     users[assetId][msg.sender].supplyShares -= userShares;
 
     emit Withdrawn(assetId, msg.sender, amount);
@@ -145,9 +150,14 @@ contract Spoke is ISpoke {
 
     // TODO HF check
     (, uint256 newAggregatedRiskPremium) = _refreshRiskPremium();
-    uint256 userDebt = liquidityHub.draw(assetId, amount, newAggregatedRiskPremium, to);
+    uint256 userShares = ILiquidityHub(liquidityHub).draw(
+      assetId,
+      to,
+      amount,
+      newAggregatedRiskPremium
+    );
     // debt still goes to original msg.sender
-    users[assetId][msg.sender].debt += userDebt;
+    users[assetId][msg.sender].debtShares += userShares;
 
     emit Borrowed(assetId, to, amount);
   }
@@ -161,14 +171,13 @@ contract Spoke is ISpoke {
     _validateRepay(assetId, u, amount);
 
     (, uint256 newAggregatedRiskPremium) = _refreshRiskPremium();
-    // TODO: Spoke should calculate the amountFromPremium and amountFromBase
-    uint256 repaidDebt = liquidityHub.restore(
+    IERC20(r.asset).safeTransferFrom(msg.sender, liquidityHub, amount);
+    uint256 userShares = ILiquidityHub(liquidityHub).restore(
       assetId,
       amount,
-      newAggregatedRiskPremium,
-      msg.sender // repayer
+      newAggregatedRiskPremium
     );
-    users[assetId][msg.sender].debt -= repaidDebt;
+    users[assetId][msg.sender].debtShares -= userShares;
 
     emit Repaid(assetId, msg.sender, amount);
   }
@@ -257,7 +266,7 @@ contract Spoke is ISpoke {
     uint256 amount
   ) internal view {
     require(
-      liquidityHub.convertToAssetsDown(assetId, user.supplyShares) >= amount,
+      ILiquidityHub(liquidityHub).convertSharesToAssetsDown(assetId, user.supplyShares) >= amount,
       'INSUFFICIENT_SUPPLY'
     );
   }
@@ -268,7 +277,10 @@ contract Spoke is ISpoke {
   }
 
   function _validateRepay(uint256 assetId, UserConfig storage user, uint256 amount) internal view {
-    require(amount <= user.debt, 'REPAY_EXCEEDS_DEBT');
+    require(
+      ILiquidityHub(liquidityHub).convertSharesToAssetsUp(assetId, user.debtShares) >= amount,
+      'REPAY_EXCEEDS_DEBT'
+    );
   }
 
   /**
@@ -302,7 +314,7 @@ contract Spoke is ISpoke {
   }
 
   function _borrowing(uint256 assetId, address user) internal view returns (bool) {
-    return users[assetId][user].debt > 0;
+    return users[assetId][user].debtShares > 0;
   }
 
   function _calculateUserAccountData(
@@ -325,7 +337,7 @@ contract Spoke is ISpoke {
       if (_usingAsCollateral(vars.assetId, user)) {
         vars.userCollateralInBaseCurrency =
           vars.assetPrice *
-          liquidityHub.convertToAssetsDown(
+          ILiquidityHub(liquidityHub).convertSharesToAssetsDown(
             vars.assetId,
             _calculateAccruedInterest(vars.assetId, u.supplyShares)
           );
@@ -335,8 +347,12 @@ contract Spoke is ISpoke {
         vars.userRiskPremium += vars.userCollateralInBaseCurrency * vars.liquidityPremium;
       }
 
-      vars.totalDebtInBaseCurrency += u.debt > 0
-        ? vars.assetPrice * _calculateAccruedInterest(vars.assetId, u.debt)
+      vars.totalDebtInBaseCurrency += u.debtShares > 0
+        ? vars.assetPrice *
+          ILiquidityHub(liquidityHub).convertSharesToAssetsUp(
+            vars.assetId,
+            _calculateAccruedInterest(vars.assetId, u.debtShares)
+          )
         : 0;
 
       vars.i++;
@@ -367,11 +383,11 @@ contract Spoke is ISpoke {
 
   function _calculateAccruedInterest(
     uint256 assetId,
-    uint256 debt
+    uint256 shares
   ) internal view returns (uint256) {
-    // TODO: use lastUpdatedTimestamp in interest math, make sure total debt includes accrued interest
+    // TODO: use lastUpdatedTimestamp in interest math, make sure total shares includes accrued interest
     return
-      debt.rayMul(
+      shares.rayMul(
         MathUtils.calculateCompoundedInterest(getInterestRate(assetId), uint40(0), block.timestamp)
       );
   }

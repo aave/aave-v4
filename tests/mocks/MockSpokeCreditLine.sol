@@ -90,7 +90,7 @@ contract MockSpokeCreditLine is ISpoke {
     _updateState(r, assetId, amount, msg.sender);
 
     // TODO: risk premium; to
-    ILiquidityHub(liquidityHub).draw(assetId, amount, 0, to);
+    ILiquidityHub(liquidityHub).draw(assetId, to, amount, 0);
 
     // keep liquidity in borrow module
     IERC20(reserves[assetId].asset).safeTransfer(to, amount);
@@ -103,7 +103,7 @@ contract MockSpokeCreditLine is ISpoke {
   function repay(uint256 assetId, uint256 amount) external {
     Reserve storage r = reserves[assetId];
     _updateState(r, assetId, amount, msg.sender);
-    ILiquidityHub(liquidityHub).restore(assetId, amount, 0, msg.sender);
+    ILiquidityHub(liquidityHub).restore(assetId, amount, 0);
 
     emit Repaid(assetId, msg.sender, amount);
   }

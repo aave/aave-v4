@@ -1,26 +1,23 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.0;
 
-import {Test} from 'forge-std/Test.sol';
-import {console2 as console} from 'forge-std/console2.sol';
+import 'forge-std/Test.sol';
+import 'forge-std/console2.sol';
 // import 'forge-std/StdCheats.sol';
 
-import {LiquidityHub, ILiquidityHub} from 'src/contracts/LiquidityHub.sol';
-import {Spoke, ISpoke} from 'src/contracts/Spoke.sol';
-import {PercentageMath} from 'src/contracts/PercentageMath.sol';
-import {WadRayMath} from 'src/contracts/WadRayMath.sol';
-import {SharesMath} from 'src/contracts/SharesMath.sol';
-import {MathUtils} from 'src/contracts/MathUtils.sol';
-import {DefaultReserveInterestRateStrategy, IDefaultInterestRateStrategy, IReserveInterestRateStrategy} from 'src/contracts/DefaultReserveInterestRateStrategy.sol';
-import {IERC20} from 'src/dependencies/openzeppelin/IERC20.sol';
-import {WETH9} from 'src/dependencies/weth/WETH9.sol';
-import {ISpoke} from 'src/interfaces/ISpoke.sol';
-import {DataTypes} from 'src/libraries/types/DataTypes.sol';
-import {TestnetERC20} from './mocks/TestnetERC20.sol';
-import {MockERC20} from './mocks/MockERC20.sol';
-import {MockPriceOracle, IPriceOracle} from './mocks/MockPriceOracle.sol';
-import {MockSpokeCreditLine} from './mocks/MockSpokeCreditLine.sol';
-import {Utils} from './Utils.t.sol';
+import 'src/contracts/LiquidityHub.sol';
+import 'src/contracts/Spoke.sol';
+import 'src/contracts/WadRayMath.sol';
+import 'src/contracts/SharesMath.sol';
+import 'src/contracts/MathUtils.sol';
+import 'src/contracts/DefaultReserveInterestRateStrategy.sol';
+import 'src/dependencies/openzeppelin/IERC20.sol';
+import 'src/interfaces/ISpoke.sol';
+import 'src/libraries/types/DataTypes.sol';
+import './mocks/MockERC20.sol';
+import './mocks/MockPriceOracle.sol';
+import './mocks/MockSpokeCreditLine.sol';
+import './Utils.t.sol';
 
 // library Constants {}
 
@@ -73,7 +70,6 @@ library TestErrors {
   bytes constant INVALID_SPOKE = 'INVALID_SPOKE';
   bytes constant RESERVE_NOT_COLLATERAL = 'RESERVE_NOT_COLLATERAL';
   bytes constant INVALID_RESTORE_AMOUNT = 'INVALID_RESTORE_AMOUNT';
-  bytes constant INVALID_SHARES_AMOUNT = 'INVALID_SHARES_AMOUNT';
   // Spoke
   bytes constant NO_SUPPLY = 'NO_SUPPLY';
   bytes constant REPAY_EXCEEDS_DEBT = 'REPAY_EXCEEDS_DEBT';
@@ -84,8 +80,6 @@ abstract contract BaseTest is Test, Events {
   using WadRayMath for uint256;
   using SharesMath for uint256;
 
-  uint256 internal constant MAX_SUPPLY_AMOUNT = 1e30;
-
   // TODO: update these mocked tokens with decimals as in the real contracts, ie USDC = 6, wbtc = 8, etc.?
   IERC20 internal usdc;
   IERC20 internal dai;
@@ -93,39 +87,17 @@ abstract contract BaseTest is Test, Events {
   IERC20 internal eth;
   IERC20 internal wbtc;
 
-  MockPriceOracle internal oracle;
-  LiquidityHub internal hub;
-  Spoke internal spoke1;
-  Spoke internal spoke2;
-  Spoke internal spoke3;
-  MockSpokeCreditLine internal spokeCreditLine;
-  DefaultReserveInterestRateStrategy internal irStrategy;
-  DefaultReserveInterestRateStrategy internal creditLineIRStrategy;
+  IPriceOracle oracle;
+  LiquidityHub hub;
+  Spoke spoke1;
+  Spoke spoke2;
+  MockSpokeCreditLine spokeCreditLine;
+  DefaultReserveInterestRateStrategy irStrategy;
+  DefaultReserveInterestRateStrategy creditLineIRStrategy;
 
   address internal mockAddressesProvider = makeAddr('mockAddressesProvider');
-  // TODO: remove after migrating to other mock users
   address internal USER1 = makeAddr('USER1');
   address internal USER2 = makeAddr('USER2');
-
-  address internal alice = makeAddr('alice');
-  address internal bob = makeAddr('bob');
-  address internal carol = makeAddr('carol');
-
-  TokenList internal tokenList;
-  uint256 internal wethAssetId = 0;
-  uint256 internal usdxAssetId = 1;
-
-  uint256 internal mintAmount_USDX = MAX_SUPPLY_AMOUNT;
-  uint256 internal mintAmount_DAI = MAX_SUPPLY_AMOUNT;
-  uint256 internal mintAmount_WBTC = MAX_SUPPLY_AMOUNT;
-  uint256 internal mintAmount_WETH = MAX_SUPPLY_AMOUNT;
-
-  struct TokenList {
-    WETH9 weth;
-    TestnetERC20 usdx;
-    TestnetERC20 dai;
-    TestnetERC20 wbtc;
-  }
 
   function setUp() public virtual {
     oracle = new MockPriceOracle();
@@ -134,247 +106,10 @@ abstract contract BaseTest is Test, Events {
     hub = new LiquidityHub();
     spoke1 = new Spoke(address(hub), address(oracle));
     spoke2 = new Spoke(address(hub), address(oracle));
-    spoke3 = new Spoke(address(hub), address(oracle));
     dai = new MockERC20();
     eth = new MockERC20();
     usdc = new MockERC20();
     usdt = new MockERC20();
     wbtc = new MockERC20();
-
-    vm.label(address(spoke1), 'spoke1');
-    vm.label(address(spoke2), 'spoke2');
-    vm.label(address(spoke3), 'spoke3');
-  }
-
-  function initEnvironment() internal {
-    deployMintAndApproveTokenList();
-    configureTokenList();
-  }
-
-  function deployMintAndApproveTokenList() internal {
-    tokenList = TokenList(
-      new WETH9(),
-      new TestnetERC20('USDX', 'USDX', 6),
-      new TestnetERC20('DAI', 'DAI', 18),
-      new TestnetERC20('WBTC', 'WBTC', 8)
-    );
-
-    vm.label(address(tokenList.weth), 'WETH');
-    vm.label(address(tokenList.usdx), 'USDX');
-    vm.label(address(tokenList.dai), 'DAI');
-    vm.label(address(tokenList.wbtc), 'WBTC');
-
-    address[3] memory users = [alice, bob, carol];
-
-    for (uint256 x; x < users.length; ++x) {
-      tokenList.usdx.mint(users[x], mintAmount_USDX);
-      tokenList.dai.mint(users[x], mintAmount_DAI);
-      tokenList.wbtc.mint(users[x], mintAmount_WBTC);
-      deal(address(tokenList.weth), users[x], mintAmount_WETH);
-
-      vm.startPrank(users[x]);
-      tokenList.weth.approve(address(hub), type(uint256).max);
-      tokenList.usdx.approve(address(hub), type(uint256).max);
-      tokenList.dai.approve(address(hub), type(uint256).max);
-      tokenList.wbtc.approve(address(hub), type(uint256).max);
-      vm.stopPrank();
-    }
-  }
-
-  function spokeMintAndApprove() internal {
-    uint256 spokeMintAmount_USDX = 100_000e6;
-    uint256 spokeMintAmount_DAI = 1e60;
-    uint256 spokeMintAmount_WBTC = 100e8;
-    uint256 spokeMintAmount_WETH = 100e18;
-    address[3] memory spokes = [address(spoke1), address(spoke2), address(spoke3)];
-
-    for (uint256 x; x < spokes.length; ++x) {
-      tokenList.usdx.mint(spokes[x], spokeMintAmount_USDX);
-      tokenList.dai.mint(spokes[x], spokeMintAmount_DAI);
-      tokenList.wbtc.mint(spokes[x], spokeMintAmount_WBTC);
-      deal(address(tokenList.weth), spokes[x], spokeMintAmount_WETH);
-
-      vm.startPrank(spokes[x]);
-      tokenList.weth.approve(address(hub), type(uint256).max);
-      tokenList.usdx.approve(address(hub), type(uint256).max);
-      tokenList.dai.approve(address(hub), type(uint256).max);
-      tokenList.wbtc.approve(address(hub), type(uint256).max);
-      vm.stopPrank();
-    }
-  }
-  function configureTokenList() internal {
-    // todo rm override
-    uint256 daiAssetId = 2;
-    uint256 wbtcAssetId = 3;
-
-    address[] memory spokes = new address[](3);
-    spokes[0] = address(spoke1);
-    spokes[1] = address(spoke2);
-    spokes[2] = address(spoke3);
-    DataTypes.SpokeConfig[] memory spokeConfigs = new DataTypes.SpokeConfig[](3);
-    // supplyCap, borrowCap
-    spokeConfigs[0] = DataTypes.SpokeConfig({
-      supplyCap: type(uint256).max,
-      drawCap: type(uint256).max
-    });
-    spokeConfigs[1] = DataTypes.SpokeConfig({
-      supplyCap: type(uint256).max,
-      drawCap: type(uint256).max
-    });
-    spokeConfigs[2] = DataTypes.SpokeConfig({
-      supplyCap: type(uint256).max,
-      drawCap: type(uint256).max
-    });
-
-    Spoke.ReserveConfig[] memory reserveConfigs = new Spoke.ReserveConfig[](3);
-
-    // add WETH
-    reserveConfigs[0] = Spoke.ReserveConfig({lt: 0.8e4, lb: 0, borrowable: true, collateral: true});
-    reserveConfigs[1] = Spoke.ReserveConfig({
-      lt: 0.76e4,
-      lb: 0,
-      borrowable: true,
-      collateral: true
-    });
-    reserveConfigs[2] = Spoke.ReserveConfig({
-      lt: 0.79e4,
-      lb: 0,
-      borrowable: true,
-      collateral: true
-    });
-    Utils.addAssetAndSpokes(
-      hub,
-      address(tokenList.weth),
-      DataTypes.AssetConfig({decimals: 18, active: true, irStrategy: address(irStrategy)}),
-      spokes,
-      spokeConfigs,
-      reserveConfigs
-    );
-    oracle.setAssetPrice(wethAssetId, 2000e8);
-
-    // add USDX
-    reserveConfigs[0] = Spoke.ReserveConfig({
-      lt: 0.78e4,
-      lb: 0,
-      borrowable: true,
-      collateral: true
-    });
-    reserveConfigs[1] = Spoke.ReserveConfig({
-      lt: 0.72e4,
-      lb: 0,
-      borrowable: true,
-      collateral: true
-    });
-    reserveConfigs[2] = Spoke.ReserveConfig({
-      lt: 0.75e4,
-      lb: 0,
-      borrowable: true,
-      collateral: true
-    });
-    Utils.addAssetAndSpokes(
-      hub,
-      address(tokenList.usdx),
-      DataTypes.AssetConfig({decimals: 6, active: true, irStrategy: address(irStrategy)}),
-      spokes,
-      spokeConfigs,
-      reserveConfigs
-    );
-    oracle.setAssetPrice(usdxAssetId, 1e8);
-
-    // add DAI
-    reserveConfigs[0] = Spoke.ReserveConfig({
-      lt: 0.78e4,
-      lb: 0,
-      borrowable: true,
-      collateral: true
-    });
-    reserveConfigs[1] = Spoke.ReserveConfig({
-      lt: 0.72e4,
-      lb: 0,
-      borrowable: true,
-      collateral: true
-    });
-    reserveConfigs[2] = Spoke.ReserveConfig({
-      lt: 0.75e4,
-      lb: 0,
-      borrowable: true,
-      collateral: true
-    });
-    Utils.addAssetAndSpokes(
-      hub,
-      address(tokenList.dai),
-      DataTypes.AssetConfig({decimals: 18, active: true, irStrategy: address(irStrategy)}),
-      spokes,
-      spokeConfigs,
-      reserveConfigs
-    );
-    oracle.setAssetPrice(usdxAssetId, 1e8);
-
-    // add WBTC
-    // lt, lb, borrowable, collateral
-    reserveConfigs[0] = Spoke.ReserveConfig({
-      lt: 0.75e4,
-      lb: 0,
-      borrowable: true,
-      collateral: true
-    });
-    reserveConfigs[1] = Spoke.ReserveConfig({lt: 0.8e4, lb: 0, borrowable: true, collateral: true});
-    reserveConfigs[2] = Spoke.ReserveConfig({
-      lt: 0.77e4,
-      lb: 0,
-      borrowable: true,
-      collateral: true
-    });
-    Utils.addAssetAndSpokes(
-      hub,
-      address(tokenList.wbtc),
-      DataTypes.AssetConfig({decimals: 8, active: true, irStrategy: address(irStrategy)}),
-      spokes,
-      spokeConfigs,
-      reserveConfigs
-    );
-    oracle.setAssetPrice(wbtcAssetId, 50_000e8);
-
-    irStrategy.setInterestRateParams(
-      wethAssetId,
-      IDefaultInterestRateStrategy.InterestRateData({
-        optimalUsageRatio: 90_00, // 90.00%
-        baseVariableBorrowRate: 5_00, // 5.00%
-        variableRateSlope1: 5_00, // 5.00%
-        variableRateSlope2: 5_00 // 5.00%
-      })
-    );
-    irStrategy.setInterestRateParams(
-      usdxAssetId,
-      IDefaultInterestRateStrategy.InterestRateData({
-        optimalUsageRatio: 90_00, // 90.00%
-        baseVariableBorrowRate: 5_00, // 5.00%
-        variableRateSlope1: 5_00, // 5.00%
-        variableRateSlope2: 5_00 // 5.00%
-      })
-    );
-    irStrategy.setInterestRateParams(
-      wbtcAssetId,
-      IDefaultInterestRateStrategy.InterestRateData({
-        optimalUsageRatio: 90_00, // 90.00%
-        baseVariableBorrowRate: 5_00, // 5.00%
-        variableRateSlope1: 5_00, // 5.00%
-        variableRateSlope2: 5_00 // 5.00%
-      })
-    );
-    irStrategy.setInterestRateParams(
-      daiAssetId,
-      IDefaultInterestRateStrategy.InterestRateData({
-        optimalUsageRatio: 90_00, // 90.00%
-        baseVariableBorrowRate: 5_00, // 5.00%
-        variableRateSlope1: 5_00, // 5.00%
-        variableRateSlope2: 5_00 // 5.00%
-      })
-    );
-  }
-
-  /// @dev pseudo random randomizer
-  function randomizer(uint256 min, uint256 max, uint256 salt) internal view returns (uint256) {
-    return (uint256(keccak256(abi.encodePacked(vm.getBlockTimestamp(), salt))) % (max - min)) + min;
   }
 }

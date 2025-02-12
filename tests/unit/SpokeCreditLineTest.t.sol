@@ -8,8 +8,6 @@ contract SpokeCreditLineTest is BaseTest {
   using WadRayMath for uint256;
 
   function setUp() public override {
-    vm.skip(true, 'pending spoke migration');
-
     super.setUp();
 
     // Add dai
@@ -22,7 +20,7 @@ contract SpokeCreditLineTest is BaseTest {
       Spoke.ReserveConfig({lt: 0, lb: 0, borrowable: true, collateral: false}),
       address(dai)
     );
-    oracle.setAssetPrice(0, 1e8);
+    MockPriceOracle(address(oracle)).setAssetPrice(0, 1e8);
 
     // Add eth
     hub.addAsset(
@@ -34,7 +32,7 @@ contract SpokeCreditLineTest is BaseTest {
       Spoke.ReserveConfig({lt: 0, lb: 0, borrowable: true, collateral: false}),
       address(eth)
     );
-    oracle.setAssetPrice(1, 2000e8);
+    MockPriceOracle(address(oracle)).setAssetPrice(1, 2000e8);
 
     // Add dai again but with basic credit line borrow module
     uint256 daiCreditLineAssetId = 2;
@@ -58,12 +56,12 @@ contract SpokeCreditLineTest is BaseTest {
       MockSpokeCreditLine.ReserveConfig({lt: 0, lb: 0, rf: 0, borrowable: true}),
       address(dai)
     );
-    oracle.setAssetPrice(daiCreditLineAssetId, 1e8);
+    MockPriceOracle(address(oracle)).setAssetPrice(daiCreditLineAssetId, 1e8);
 
-    skip(20);
+    vm.warp(block.timestamp + 20);
   }
 
-  // function test_credit_line_config() public {
+  // function skip_test_credit_line_config() public {
   //   uint256 daiId = 2;
   //   assertEq(spokeCreditLine.getInterestRate(daiId), 0.05e27);
 
@@ -79,7 +77,7 @@ contract SpokeCreditLineTest is BaseTest {
 
   // // test with basic borrow module
   // // credit line with fixed interest rate
-  // function test_first_borrow_credit_line() public {
+  // function skip_test_first_borrow_credit_line() public {
   //   // DAI with basic credit line borrow module
   //   uint256 daiId = 2;
   //   uint256 daiAmount = 100e18;
@@ -88,9 +86,9 @@ contract SpokeCreditLineTest is BaseTest {
 
   //   // User2 supply dai
   //   deal(address(dai), USER2, daiAmount);
-  //   Utils.supply( hub, daiId, USER2, daiAmount, USER2);
+  //   Utils.supply(vm, hub, daiId, USER2, daiAmount, USER2);
 
-  //   Asset memory daiData0 = hub.getAsset(daiId);
+  //   LiquidityHub.Asset memory daiData0 = hub.getAsset(daiId);
 
   //   assertEq(dai.balanceOf(USER1), 0);
   //   assertEq(dai.balanceOf(address(spokeCreditLine)), 0);
@@ -104,7 +102,7 @@ contract SpokeCreditLineTest is BaseTest {
   //   emit Draw(daiId, USER1, USER1, drawnAmounts[0]);
   //   ISpoke(address(spokeCreditLine)).borrow(daiId, USER1, drawnAmounts[0]);
 
-  //   Asset memory daiData1 = hub.getAsset(daiId);
+  //   LiquidityHub.Asset memory daiData1 = hub.getAsset(daiId);
 
   //   assertEq(daiData1.totalShares, daiAmount, '1) wrong total shares');
   //   assertEq(daiData1.totalAssets, daiData0.totalAssets, '1) wrong total assets');
@@ -139,7 +137,7 @@ contract SpokeCreditLineTest is BaseTest {
   //   user = spokeCreditLine.getUser(daiId, USER1);
 
   //   // hub assertions
-  //   Asset memory daiData2 = hub.getAsset(daiId);
+  //   LiquidityHub.Asset memory daiData2 = hub.getAsset(daiId);
 
   //   assertEq(daiData2.totalShares, daiAmount, '2) wrong total shares');
   //   assertEq(
@@ -179,7 +177,7 @@ contract SpokeCreditLineTest is BaseTest {
   //   assertEq(userBalance, spokeCreditLine.getUserDebt(daiId, USER1), '3) wrong final user1 debt');
   // }
 
-  // function test_borrow_revertsWith_reserve_not_borrowable() public {
+  // function skip_test_borrow_revertsWith_reserve_not_borrowable() public {
   //   uint256 daiId = 2;
   //   uint256 drawnAmount = 1;
   //   _updateBorrowable(daiId, false);
@@ -189,7 +187,7 @@ contract SpokeCreditLineTest is BaseTest {
   //   ISpoke(address(spokeCreditLine)).borrow(daiId, USER1, drawnAmount);
   // }
 
-  // function test_multi_borrow_credit_line() public {
+  // function skip_test_multi_borrow_credit_line() public {
   //   // DAI with basic credit line borrow module
   //   uint256 daiId = 2;
   //   uint256 daiAmount = 100e18;
@@ -198,9 +196,9 @@ contract SpokeCreditLineTest is BaseTest {
 
   //   // User2 supply dai
   //   deal(address(dai), USER2, daiAmount);
-  //   Utils.supply( hub, daiId, USER2, daiAmount, USER2);
+  //   Utils.supply(vm, hub, daiId, USER2, daiAmount, USER2);
 
-  //   Asset memory daiData0 = hub.getAsset(daiId);
+  //   LiquidityHub.Asset memory daiData0 = hub.getAsset(daiId);
 
   //   assertEq(dai.balanceOf(USER1), 0);
   //   assertEq(dai.balanceOf(address(spoke1)), 0);
@@ -213,7 +211,7 @@ contract SpokeCreditLineTest is BaseTest {
   //   vm.prank(USER1);
   //   ISpoke(address(spoke1)).borrow(daiId, USER1, drawnAmounts[0]);
 
-  //   Asset memory daiData1 = hub.getAsset(daiId);
+  //   LiquidityHub.Asset memory daiData1 = hub.getAsset(daiId);
 
   //   MockSpokeCreditLine.UserConfig memory user1 = spokeCreditLine.getUser(daiId, USER1);
 
@@ -237,7 +235,7 @@ contract SpokeCreditLineTest is BaseTest {
   //   MockSpokeCreditLine.UserConfig memory user2 = spokeCreditLine.getUser(daiId, USER2);
 
   //   // hub assertions
-  //   Asset memory daiData2 = hub.getAsset(daiId);
+  //   LiquidityHub.Asset memory daiData2 = hub.getAsset(daiId);
 
   //   assertEq(spokeCreditLine.getInterestRate(daiId), 0.05e27, '2) wrong IR'); // should be flat and constant
   //   assertEq(daiData2.totalShares, daiAmount, '2) wrong total shares');
@@ -294,7 +292,7 @@ contract SpokeCreditLineTest is BaseTest {
   //   );
   // }
 
-  // function test_fuzz_multiple_draws_credit_line(uint256 numDrawings, uint256 entropy) public {
+  // function skip_test_fuzz_multiple_draws_credit_line(uint256 numDrawings, uint256 entropy) public {
   //   numDrawings = bound(numDrawings, 1, 10);
 
   //   // DAI with basic credit line borrow module
@@ -302,11 +300,11 @@ contract SpokeCreditLineTest is BaseTest {
   //   uint256 daiAmount = 100e18;
 
   //   uint256[] memory drawnAmounts = new uint256[](numDrawings);
-  //   Asset[] memory daiData = new Asset[](numDrawings);
+  //   LiquidityHub.Asset[] memory daiData = new LiquidityHub.Asset[](numDrawings);
 
   //   // User2 supply dai
   //   deal(address(dai), USER2, daiAmount);
-  //   Utils.supply( hub, daiId, USER2, daiAmount, USER2);
+  //   Utils.supply(vm, hub, daiId, USER2, daiAmount, USER2);
 
   //   vm.startPrank(USER1);
   //   uint256 drawnShares;
@@ -356,7 +354,7 @@ contract SpokeCreditLineTest is BaseTest {
   //   vm.stopPrank();
   // }
 
-  // function test_updateReserve_revertsWith_invalid_reserve() public {
+  // function skip_test_updateReserve_revertsWith_invalid_reserve() public {
   //   uint256 invalidReserveId = 3;
 
   //   MockSpokeCreditLine.ReserveConfig memory reserveConfig;
@@ -364,7 +362,7 @@ contract SpokeCreditLineTest is BaseTest {
   //   spokeCreditLine.updateReserve(invalidReserveId, reserveConfig);
   // }
 
-  // function test_update_reserve() public {
+  // function skip_test_update_reserve() public {
   //   uint256 daiId = 2;
 
   //   MockSpokeCreditLine.ReserveConfig memory reserveConfig;
@@ -373,7 +371,7 @@ contract SpokeCreditLineTest is BaseTest {
 
   // // TODO: move to a helper
   // function _calculateLinearInterest(
-  //   Asset memory reserveData
+  //   LiquidityHub.Asset memory reserveData
   // ) internal view returns (uint256 totalCumulated, uint256 cumulatedInterest) {
   //   // accumulate interest over the year
   //   totalCumulated = MathUtils
