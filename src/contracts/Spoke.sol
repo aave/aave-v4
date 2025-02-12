@@ -275,6 +275,7 @@ contract Spoke is ISpoke {
     reservesList.push(reserveCount);
     reserve.assetId = assetId;
     reserve.asset = asset;
+    reserve.baseBorrowIndex = liquidityHub.previewNextBorrowIndex(assetId);
     reserve.config = ReserveConfig({
       lt: params.lt,
       lb: params.lb,
@@ -462,8 +463,8 @@ contract Spoke is ISpoke {
 
     uint256 newUserDebt = baseDebtChange > 0
       ? existingUserDebt + uint256(baseDebtChange) // debt added
-      : // force underflow: only possible when user takes repays amount more than net drawn
-      existingUserDebt - uint256(-baseDebtChange); // debt restored
+      // force underflow: only possible when user takes repays amount more than net drawn
+      : existingUserDebt - uint256(-baseDebtChange); // debt restored
 
     (uint256 newReserveRiskPremium, uint256 newReserveDebt) = MathUtils.addToWeightedAverage(
       reserveRiskPremiumWithoutCurrent,
@@ -600,11 +601,13 @@ contract Spoke is ISpoke {
     existingBaseDebt = user.baseDebt;
     // no interest to accrue since no liquidity has been drawn
     if (existingBaseDebt == 0) return;
-
-    cumulatedBaseDebt = existingBaseDebt.rayMul(newBaseBorrowIndex.rayDiv(user.baseBorrowIndex));
-
-    user.baseDebt = cumulatedBaseDebt;
-    user.outstandingPremium += (cumulatedBaseDebt - existingBaseDebt).radMul(user.riskPremium);
+    // if baseBorrowIndex is not initialized, there is no interest to accrue
+    uint256 userBaseBorrowIndex = user.baseBorrowIndex;
+    if (userBaseBorrowIndex != 0) {
+      cumulatedBaseDebt = existingBaseDebt.rayMul(newBaseBorrowIndex.rayDiv(userBaseBorrowIndex));
+      user.baseDebt = cumulatedBaseDebt;
+      user.outstandingPremium += (cumulatedBaseDebt - existingBaseDebt).radMul(user.riskPremium);
+    }
     user.baseBorrowIndex = newBaseBorrowIndex;
     user.lastUpdateTimestamp = block.timestamp;
   }
