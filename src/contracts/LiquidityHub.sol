@@ -12,6 +12,8 @@ import {SharesMath} from 'src/contracts/SharesMath.sol';
 import {MathUtils} from 'src/contracts/MathUtils.sol';
 import {PercentageMath} from 'src/contracts/PercentageMath.sol';
 
+import 'forge-std/console2.sol';
+
 struct SpokeData {
   uint256 suppliedShares; // share
   uint256 baseDebt; // asset
@@ -384,7 +386,6 @@ contract LiquidityHub is ILiquidityHub {
   function _accrueInterest(
     Asset storage asset,
     SpokeData storage spoke,
-    bool isDrawAndExistingAssetBaseDebtZero,
     bool isDrawAndExistingSpokeBaseDebtZero
   ) internal returns (uint256) {
     (uint256 cumulatedBaseInterest, uint256 nextBaseBorrowIndex) = asset.previewNextBorrowIndex();
@@ -427,8 +428,8 @@ contract LiquidityHub is ILiquidityHub {
 
     uint256 newSpokeDebt = baseDebtChange > 0
       ? existingSpokeDebt + uint256(baseDebtChange) // debt added
-      : // force underflow: only possible when spoke takes repays amount more than net drawn
-      existingSpokeDebt - uint256(-baseDebtChange); // debt restored
+      // force underflow: only possible when spoke takes repays amount more than net drawn
+      : existingSpokeDebt - uint256(-baseDebtChange); // debt restored
 
     (uint256 newAssetRiskPremium, uint256 newAssetDebt) = MathUtils.addToWeightedAverage(
       assetRiskPremiumWithoutCurrent,
@@ -440,12 +441,14 @@ contract LiquidityHub is ILiquidityHub {
     asset.baseDebt = newAssetDebt;
     spoke.baseDebt = newSpokeDebt;
 
-    if (newAssetDebt == 0) {
-      asset.baseBorrowIndex = 0; // sentinel value index
-    }
-    if (newSpokeDebt == 0) {
-      spoke.baseBorrowIndex = 0; // sentinel value index
-    }
+    // if (newAssetDebt == 0) {
+    //   console2.log('LH', 'resetting asset base borrow index');
+    //   asset.baseBorrowIndex = 0; // sentinel value index
+    // }
+    // if (newSpokeDebt == 0) {
+    //   console2.log('LH', 'resetting spoke base borrow index');
+    //   spoke.baseBorrowIndex = 0; // sentinel value index
+    // }
 
     asset.riskPremiumRad = newAssetRiskPremium;
     spoke.riskPremiumRad = newSpokeRiskPremium;

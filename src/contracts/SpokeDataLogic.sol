@@ -5,6 +5,8 @@ import {SharesMath} from 'src/contracts/SharesMath.sol';
 import {PercentageMath} from 'src/contracts/PercentageMath.sol';
 import {WadRayMath} from 'src/contracts/WadRayMath.sol';
 
+import 'forge-std/console2.sol';
+
 library SpokeDataLogic {
   using SpokeDataLogic for SpokeData;
   using PercentageMath for uint256;
@@ -21,6 +23,8 @@ library SpokeDataLogic {
     if (existingBaseDebt == 0) {
       return;
     }
+
+    console2.log('SL', spoke.baseBorrowIndex);
 
     // todo: add rayMulDiv in WadRayMath (=mulDiv / RAY) to optimize out the one cancelled RAY
     // & avoid precision loss
