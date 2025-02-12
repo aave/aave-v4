@@ -161,7 +161,7 @@ contract LiquidityHub is ILiquidityHub {
     Asset storage asset = _assets[assetId];
     SpokeData storage spoke = _spokes[assetId][msg.sender];
 
-    _accrueInterest(asset, spoke);
+    _accrueInterest(asset, spoke, false);
     _validateSupply(asset, spoke, amount);
 
     asset.updateBorrowRate({liquidityAdded: amount, liquidityTaken: 0});
@@ -200,7 +200,7 @@ contract LiquidityHub is ILiquidityHub {
     Asset storage asset = _assets[assetId];
     SpokeData storage spoke = _spokes[assetId][msg.sender];
 
-    _accrueInterest(asset, spoke); // accrue interest before validating action
+    _accrueInterest(asset, spoke, false); // accrue interest before validating action
     _validateWithdraw(asset, spoke, amount);
 
     asset.updateBorrowRate({liquidityAdded: 0, liquidityTaken: amount});
@@ -230,7 +230,9 @@ contract LiquidityHub is ILiquidityHub {
     Asset storage asset = _assets[assetId];
     SpokeData storage spoke = _spokes[assetId][msg.sender];
 
-    _accrueInterest(asset, spoke); // accrue interest before validating action
+    bool isDrawAndExistingBaseDebtZero = spoke.baseDebt == 0;
+
+    _accrueInterest(asset, spoke, isDrawAndExistingBaseDebtZero); // accrue interest before validating action
     _validateDraw(asset, amount, spoke.config.drawCap);
 
     asset.updateBorrowRate({liquidityAdded: 0, liquidityTaken: amount});
@@ -257,7 +259,7 @@ contract LiquidityHub is ILiquidityHub {
     Asset storage asset = _assets[assetId];
     SpokeData storage spoke = _spokes[assetId][msg.sender];
 
-    _accrueInterest(asset, spoke); // accrue interest before validating action
+    _accrueInterest(asset, spoke, false); // accrue interest before validating action
     _validateRestore(asset, amount, spoke.baseDebt + spoke.outstandingPremium);
 
     asset.updateBorrowRate({liquidityAdded: amount, liquidityTaken: 0});
@@ -375,11 +377,17 @@ contract LiquidityHub is ILiquidityHub {
   // @dev Utilizes existing asset & spoke: `baseBorrowIndex`, `riskPremiumRad`
   function _accrueInterest(
     Asset storage asset,
-    SpokeData storage spoke
+    SpokeData storage spoke,
+    bool isDrawAndExistingBaseDebtZero
   ) internal returns (uint256) {
     (uint256 cumulatedBaseInterest, uint256 nextBaseBorrowIndex) = asset.previewNextBorrowIndex();
     asset.accrueInterest(cumulatedBaseInterest, nextBaseBorrowIndex);
-    spoke.accrueInterest(nextBaseBorrowIndex);
+    if (isDrawAndExistingBaseDebtZero) {
+      spoke.baseBorrowIndex = nextBaseBorrowIndex;
+    } else {
+      spoke.accrueInterest(nextBaseBorrowIndex);
+    }
+    // spoke.accrueInterest(nextBaseBorrowIndex);
     return nextBaseBorrowIndex;
   }
 
@@ -405,8 +413,8 @@ contract LiquidityHub is ILiquidityHub {
 
     uint256 newSpokeDebt = baseDebtChange > 0
       ? existingSpokeDebt + uint256(baseDebtChange) // debt added
-      : // force underflow: only possible when spoke takes repays amount more than net drawn
-      existingSpokeDebt - uint256(-baseDebtChange); // debt restored
+      // force underflow: only possible when spoke takes repays amount more than net drawn
+      : existingSpokeDebt - uint256(-baseDebtChange); // debt restored
 
     (uint256 newAssetRiskPremium, uint256 newAssetDebt) = MathUtils.addToWeightedAverage(
       assetRiskPremiumWithoutCurrent,
@@ -428,7 +436,7 @@ contract LiquidityHub is ILiquidityHub {
       suppliedShares: 0,
       baseDebt: 0,
       outstandingPremium: 0,
-      baseBorrowIndex: WadRayMath.RAY,
+      baseBorrowIndex: WadRayMath.RAY, // check this fail
       riskPremiumRad: 0,
       lastUpdateTimestamp: block.timestamp,
       config: DataTypes.SpokeConfig({drawCap: config.drawCap, supplyCap: config.supplyCap})
