@@ -413,8 +413,8 @@ contract LiquidityHub is ILiquidityHub {
 
     uint256 newSpokeDebt = baseDebtChange > 0
       ? existingSpokeDebt + uint256(baseDebtChange) // debt added
-      // force underflow: only possible when spoke takes repays amount more than net drawn
-      : existingSpokeDebt - uint256(-baseDebtChange); // debt restored
+      : // force underflow: only possible when spoke takes repays amount more than net drawn
+      existingSpokeDebt - uint256(-baseDebtChange); // debt restored
 
     (uint256 newAssetRiskPremium, uint256 newAssetDebt) = MathUtils.addToWeightedAverage(
       assetRiskPremiumWithoutCurrent,
@@ -436,7 +436,7 @@ contract LiquidityHub is ILiquidityHub {
       suppliedShares: 0,
       baseDebt: 0,
       outstandingPremium: 0,
-      baseBorrowIndex: WadRayMath.RAY, // check this fail
+      baseBorrowIndex: 0, // discuss later. Should not be init to 1?
       riskPremiumRad: 0,
       lastUpdateTimestamp: block.timestamp,
       config: DataTypes.SpokeConfig({drawCap: config.drawCap, supplyCap: config.supplyCap})
