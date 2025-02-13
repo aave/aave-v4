@@ -13,7 +13,7 @@ library SpokeDataLogic {
 
   // @dev Utilizes existing `spoke.baseBorrowIndex` & `spoke.riskPremiumRad`
   function accrueInterest(SpokeData storage spoke, uint256 nextBaseBorrowIndex) internal {
-    if (block.timestamp - spoke.lastUpdateTimestamp == 0) return;
+    if (block.timestamp == spoke.lastUpdateTimestamp) return;
 
     uint256 existingBaseDebt = spoke.baseDebt;
     if (existingBaseDebt != 0) {
