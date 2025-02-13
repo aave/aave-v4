@@ -562,6 +562,11 @@ contract LiquidityHubSupplyTest is LiquidityHubBaseTest {
     spokeData = hub.getSpoke(assetId, address(spoke1));
     SpokeData memory spoke2Data = hub.getSpoke(assetId, address(spoke2));
 
+    uint256 cumulatedBaseInterest = MathUtils.calculateLinearInterest(
+      assetData.baseBorrowRate,
+      uint40(timestamp)
+    );
+
     // hub
     assertEq(
       hub.getTotalAssets(assetId),
@@ -577,10 +582,18 @@ contract LiquidityHubSupplyTest is LiquidityHubBaseTest {
     );
     assertEq(assetData.baseDebt, 0, 'asset final baseDebt');
     assertEq(assetData.outstandingPremium, 0, 'asset final outstandingPremium');
-    assertEq(assetData.baseBorrowIndex, WadRayMath.RAY, 'asset final baseBorrowIndex');
+    assertEq(
+      assetData.baseBorrowIndex,
+      INIT_BASE_BORROW_INDEX.rayMul(cumulatedBaseInterest),
+      'asset final baseBorrowIndex'
+    );
     assertEq(assetData.baseBorrowRate, uint256(5_00).bpsToRay(), 'asset final baseBorrowRate');
     assertEq(assetData.riskPremiumRad, 0, 'asset final riskPremiumRad');
-    assertEq(assetData.lastUpdateTimestamp, timestamp, 'asset final lastUpdateTimestamp');
+    assertEq(
+      assetData.lastUpdateTimestamp,
+      vm.getBlockTimestamp(),
+      'asset final lastUpdateTimestamp'
+    );
     // spoke
     assertEq(
       spokeData.suppliedShares,
@@ -589,18 +602,14 @@ contract LiquidityHubSupplyTest is LiquidityHubBaseTest {
     );
     assertEq(spokeData.baseDebt, 0, 'final spoke baseDebt');
     assertEq(spokeData.outstandingPremium, 0, 'final spoke outstandingPremium');
-    assertEq(spokeData.baseBorrowIndex, WadRayMath.RAY, 'final spoke baseBorrowIndex');
+    assertEq(spokeData.baseBorrowIndex, INIT_BASE_BORROW_INDEX, 'final spoke baseBorrowIndex');
     assertEq(spokeData.riskPremiumRad, 0, 'final spoke riskPremiumRad');
-    assertEq(
-      spokeData.lastUpdateTimestamp,
-      assetData.lastUpdateTimestamp,
-      'final spoke lastUpdateTimestamp'
-    );
+    assertEq(spokeData.lastUpdateTimestamp, timestamp, 'final spoke lastUpdateTimestamp');
     // spoke2
     assertEq(spoke2Data.suppliedShares, spoke2SupplyShares, 'final spoke2 totalShares');
     assertEq(spoke2Data.baseDebt, 0, 'final spoke2 baseDebt');
     assertEq(spoke2Data.outstandingPremium, 0, 'spoke2 outstandingPremium');
-    assertEq(spoke2Data.baseBorrowIndex, WadRayMath.RAY, 'spoke2 baseBorrowIndex');
+    assertEq(spoke2Data.baseBorrowIndex, assetData.baseBorrowIndex, 'spoke2 baseBorrowIndex');
     assertEq(spoke2Data.riskPremiumRad, 0, 'spoke2 riskPremiumRad');
     assertEq(
       spoke2Data.lastUpdateTimestamp,
