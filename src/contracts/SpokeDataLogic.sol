@@ -24,7 +24,7 @@ library SpokeDataLogic {
       return;
     }
 
-    console2.log('SL', spoke.baseBorrowIndex);
+    // console2.log('SL', spoke.baseBorrowIndex);
 
     // todo: add rayMulDiv in WadRayMath (=mulDiv / RAY) to optimize out the one cancelled RAY
     // & avoid precision loss
