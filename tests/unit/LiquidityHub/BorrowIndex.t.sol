@@ -4,18 +4,17 @@ import 'tests/BaseTest.t.sol';
 
 contract BorrowIndexTest is BaseTest {
   using WadRayMath for uint256;
+  uint256 internal amount = 1000e18;
+  uint256 internal borrowRate = 10_00;
+  uint256 internal delay = 365 days;
 
   function setUp() public override {
     deployFixtures();
     initEnvironment();
+    _mockInterestRate(borrowRate);
   }
 
   function test_spokeAddedMidWay() public {
-    uint256 amount = 1000e18;
-    uint256 borrowRate = 10_00;
-    uint256 delay = 365 days;
-    _mockInterestRate(borrowRate);
-
     vm.startPrank(address(spoke1));
     hub.supply(wethAssetId, amount, 0, alice);
     hub.draw(wethAssetId, amount / 2, 0, alice);
@@ -49,11 +48,6 @@ contract BorrowIndexTest is BaseTest {
   }
 
   function test_noDebtMidWay_sameSpokeAndNewSpokeDrawAgain() public {
-    uint256 amount = 1000e18;
-    uint256 borrowRate = 10_00;
-    uint256 delay = 365 days;
-    _mockInterestRate(borrowRate);
-
     vm.startPrank(address(spoke1));
     hub.supply(wethAssetId, amount, 0, alice);
     hub.draw(wethAssetId, amount / 2, 0, alice);
@@ -97,21 +91,48 @@ contract BorrowIndexTest is BaseTest {
     assertEq(
       hub.getSpoke(wethAssetId, address(spoke1)).baseDebt,
       expectedSpokeBaseDebt,
-      'spoke1 base debt mismatch'
+      'existing spoke base debt mismatch'
     );
     assertEq(
       hub.getSpoke(wethAssetId, spoke4).baseDebt,
       expectedSpokeBaseDebt,
-      'spoke4 base debt mis match'
+      'new spoke base debt mismatch'
     );
   }
 
-  function test_noDebtMidWay_differentExistingSpokeAndNewSpokeDrawAgain() public {
-    uint256 amount = 1000e18;
-    uint256 borrowRate = 10_00;
-    uint256 delay = 365 days;
-    _mockInterestRate(borrowRate);
+  // ! todo investigate supplier can withdraw 2x+ right after supplying when there's no debt in the system
+  function test_noDebtMidWay_suppliersDoNotEarn() public {
+    vm.startPrank(address(spoke1));
+    hub.supply(wethAssetId, amount, 0, alice);
+    hub.draw(wethAssetId, amount / 2, 0, alice);
+    vm.stopPrank();
 
+    uint256 lastUpdateTimestamp = vm.getBlockTimestamp();
+    skip(delay);
+
+    uint256 spoke1ExpectedDebt = MathUtils
+      .calculateLinearInterest(borrowRate.bpsToRay(), uint40(lastUpdateTimestamp))
+      .rayMul(amount / 2);
+    vm.prank(address(spoke1));
+    hub.restore(wethAssetId, spoke1ExpectedDebt, 0, alice);
+    assertEq(hub.getSpoke(wethAssetId, address(spoke1)).baseDebt, 0);
+    assertEq(hub.getAsset(wethAssetId).baseDebt, 0);
+
+    skip(delay / 2);
+    // no debt period
+    vm.prank(address(spoke1));
+    uint256 sharesMinted = hub.supply(wethAssetId, amount, 0, alice);
+    assertApproxEqAbs(amount, hub.convertToAssetsDown(wethAssetId, sharesMinted), 1);
+    assertApproxEqAbs(hub.convertToSharesDown(wethAssetId, amount), sharesMinted, 1);
+
+    // SHOULD NOT BE ABLE TO WITHDRAW MORE THAN SUPPLIED BUT CAN
+    // skip(delay / 2);
+    vm.expectRevert('SUPPLIED_AMOUNT_EXCEEDED'); // does not revert
+    vm.prank(address(spoke1));
+    hub.withdraw(wethAssetId, amount + 1e21 + 1e18, 0, alice);
+  }
+
+  function test_noDebtMidWay_differentExistingSpokeAndNewSpokeDrawAgain() public {
     vm.startPrank(address(spoke1));
     hub.supply(wethAssetId, amount, 0, alice);
     hub.draw(wethAssetId, amount / 2, 0, alice);
@@ -155,12 +176,12 @@ contract BorrowIndexTest is BaseTest {
     assertEq(
       hub.getSpoke(wethAssetId, address(spoke2)).baseDebt,
       expectedSpokeBaseDebt,
-      'spoke2 base debt mismatch'
+      'existing spoke base debt mismatch'
     );
     assertEq(
       hub.getSpoke(wethAssetId, spoke4).baseDebt,
       expectedSpokeBaseDebt,
-      'spoke4 base debt mis match'
+      'new spoke base debt mismatch'
     );
   }
 
