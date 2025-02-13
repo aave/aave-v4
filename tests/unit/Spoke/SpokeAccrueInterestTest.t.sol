@@ -39,9 +39,9 @@ contract SpokeAccrueInterestTest is BaseTest {
     Spoke.Reserve memory daiInfo = spoke1.getReserve(spokeInfo[spoke1].dai.reserveId);
 
     // Timestamp doesn't update when no interest accrued
-    assertEq(daiInfo.lastUpdateTimestamp, 0);
-    assertEq(daiInfo.baseDebt, 0);
-    assertEq(daiInfo.riskPremiumRad, 0);
-    assertEq(daiInfo.outstandingPremium, 0);
+    assertEq(daiInfo.lastUpdateTimestamp, vm.getBlockTimestamp(), 'lastUpdateTimestamp');
+    assertEq(daiInfo.baseDebt, 0, 'baseDebt');
+    assertEq(daiInfo.riskPremiumRad, 0, 'riskPremiumRad');
+    assertEq(daiInfo.outstandingPremium, 0, 'outstandingPremium');
   }
 }
