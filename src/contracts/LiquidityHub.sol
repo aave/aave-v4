@@ -379,9 +379,6 @@ contract LiquidityHub is ILiquidityHub {
   function _accrueInterest(Asset storage asset, SpokeData storage spoke) internal {
     uint256 nextBaseBorrowIndex = asset.previewNextBorrowIndex();
 
-    this.getAsset(asset.id);
-    this.getSpoke(asset.id, msg.sender);
-
     asset.accrueInterest(nextBaseBorrowIndex);
     spoke.accrueInterest(nextBaseBorrowIndex);
   }
@@ -408,8 +405,8 @@ contract LiquidityHub is ILiquidityHub {
 
     uint256 newSpokeDebt = baseDebtChange > 0
       ? existingSpokeDebt + uint256(baseDebtChange) // debt added
-      // force underflow: only possible when spoke takes repays amount more than net drawn
-      : existingSpokeDebt - uint256(-baseDebtChange); // debt restored
+      : // force underflow: only possible when spoke takes repays amount more than net drawn
+      existingSpokeDebt - uint256(-baseDebtChange); // debt restored
 
     (uint256 newAssetRiskPremium, uint256 newAssetDebt) = MathUtils.addToWeightedAverage(
       assetRiskPremiumWithoutCurrent,
@@ -431,7 +428,7 @@ contract LiquidityHub is ILiquidityHub {
       suppliedShares: 0,
       baseDebt: 0,
       outstandingPremium: 0,
-      baseBorrowIndex: WadRayMath.RAY, // spoke initializes with zero borrow index
+      baseBorrowIndex: WadRayMath.RAY, // should ideally initialize with sentinel value (0), fix tests, should keep increasing monotonically, at zero debt should remain constant
       riskPremiumRad: 0,
       lastUpdateTimestamp: block.timestamp,
       config: DataTypes.SpokeConfig({drawCap: config.drawCap, supplyCap: config.supplyCap})

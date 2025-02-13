@@ -164,26 +164,6 @@ contract BorrowIndexTest is BaseTest {
     );
   }
 
-  function test_cheaper() public {
-    uint a = vm.randomUint(0, 3);
-    uint b = vm.randomUint(0, 3);
-    while (!(a == 0 || b == 0)) {
-      a = vm.randomUint(0, 3);
-      b = vm.randomUint(0, 3);
-    }
-    bool ok1;
-    bool ok2;
-    uint gas = gasleft();
-    ok1 = a == 0 || b == 0;
-    gas -= gasleft();
-    emit log_named_uint('gas1', gas);
-    gas = gasleft();
-    ok2 = a * b == 0;
-    gas -= gasleft();
-    emit log_named_uint('gas2', gas);
-    assertEq(ok1, ok2);
-  }
-
   function _deployAndAddSpoke(uint256 assetId) internal returns (address) {
     Spoke spoke = new Spoke(address(hub), address(oracle));
     hub.addSpoke(
