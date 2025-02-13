@@ -394,11 +394,13 @@ contract LiquidityHub is ILiquidityHub {
 
     if (isDrawAndExistingSpokeBaseDebtZero) {
       spoke.baseBorrowIndex = nextBaseBorrowIndex;
+      spoke.lastUpdateTimestamp = block.timestamp;
       // for the case where:
       // all asset debt is repaid, and then a new draw happens with some accrual
       // also need to keep a hub global index as source of truth?
       if (asset.baseDebt == 0) {
         asset.baseBorrowIndex = nextBaseBorrowIndex;
+        asset.lastUpdateTimestamp = block.timestamp;
       }
     } else {
       spoke.accrueInterest(nextBaseBorrowIndex);
