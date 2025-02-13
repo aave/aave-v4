@@ -130,6 +130,10 @@ contract LiquidityHubAccrueAssetInterestDynamicTimeTest is BaseTest {
       onBehalfOf: address(spoke1)
     });
 
+    assetData.t0 = hub.getAsset(wethAssetId);
+    assertEq(assetData.t0.baseBorrowIndex, INIT_INDEX, 't0 Asset index');
+    assertEq(assetData.t0.baseDebt, spoke1Amounts.draw0, 't0 Asset base debt');
+
     // t1: add spoke4; draws
     skip(365 days);
     spoke4Amounts.draw1 = 1e18;
@@ -195,59 +199,131 @@ contract LiquidityHubAccrueAssetInterestDynamicTimeTest is BaseTest {
     );
   }
 
-  // t0: skip
+  // t0:
   // t1: spoke1 draws
   // t2: spoke4 is added; draws
   // t3: spoke4 trivial supply action to trigger accrual
-  function skip_test_accrueInterest_dynamicTime_scenario2() public {
-    skip(365 days);
+  function test_accrueInterest_dynamicTime_scenario2() public {
+    Timestamps memory timestamps;
+    AssetDataLocal memory assetData;
+    SpokeDataLocal memory spokeData;
+    Spoke1Amounts memory spoke1Amounts;
+    Spoke4Amounts memory spoke4Amounts;
+    CumulatedInterest memory cumulated;
 
-    // t1: spoke1 draws
+    // t0
+    timestamps.t0 = uint40(vm.getBlockTimestamp());
+    assetData.t0 = hub.getAsset(wethAssetId);
+    assertEq(assetData.t0.baseBorrowIndex, INIT_INDEX, 't0 Asset index');
+    assertEq(assetData.t0.baseDebt, 0, 't0 Asset base debt');
+
+    // t1: spoke1 supplies/draws
+    skip(365 days);
+    timestamps.t1 = uint40(vm.getBlockTimestamp());
+    spoke1Amounts.supply1 = 10e18;
+    spoke1Amounts.draw1 = 5e18;
+
+    assetData.t1 = hub.getAsset(wethAssetId);
+    assertEq(assetData.t1.baseBorrowIndex, INIT_INDEX, 't1 Asset index');
+    assertEq(assetData.t1.baseDebt, 0, 't1 Asset base debt');
+
     Utils.supply({
       hub: hub,
       assetId: wethAssetId,
       spoke: address(spoke1),
-      amount: 10e18,
+      amount: spoke1Amounts.supply1,
       riskPremiumRad: 0,
       user: bob,
       to: address(spoke1)
     });
-    vm.prank(address(spoke1));
-    hub.draw({assetId: wethAssetId, amount: 5e18, riskPremiumRad: 0, to: bob});
+    Utils.draw({
+      hub: hub,
+      assetId: wethAssetId,
+      spoke: address(spoke1),
+      amount: spoke1Amounts.draw1,
+      riskPremiumRad: 0,
+      to: bob,
+      onBehalfOf: address(spoke1)
+    });
 
-    skip(365 days);
+    assetData.t1 = hub.getAsset(wethAssetId);
+    cumulated.t1 = MathUtils.calculateLinearInterest(assetData.t1.baseBorrowRate, timestamps.t0);
+
+    /// @notice !! this fails because assetData.t1.baseBorrowIndex is incorrectly 1.1
+    /// it should remain at 1 because nothing on asset accrued from t0 -> t1
+    assertEq(assetData.t1.baseBorrowIndex, INIT_INDEX.rayMul(cumulated.t1), 't1 Asset index');
+    assertEq(assetData.t1.baseDebt, spoke1Amounts.draw1, 't1 Asset base debt');
 
     // t2: add spoke4; draws
-    hub.addSpoke(wethAssetId, spokeConfig, address(spoke4));
-
-    uint256 debtAmount = 1e18;
-    vm.prank(address(spoke4));
-    hub.draw({assetId: wethAssetId, amount: debtAmount, riskPremiumRad: 0, to: bob});
-
-    uint40 timestamp2 = uint40(vm.getBlockTimestamp());
-
     skip(365 days);
+    timestamps.t2 = uint40(vm.getBlockTimestamp());
+    spoke4Amounts.draw2 = 1e18;
 
-    // t3: spoke4 trivial supply to trigger accrual
-    Utils.supply({
+    hub.addSpoke(wethAssetId, spokeConfig, address(spoke4));
+    Utils.draw({
       hub: hub,
       assetId: wethAssetId,
       spoke: address(spoke4),
-      amount: 1e18,
+      amount: spoke4Amounts.draw2,
       riskPremiumRad: 0,
-      user: bob,
-      to: address(spoke4)
+      to: bob,
+      onBehalfOf: address(spoke4)
     });
 
-    Asset memory wethData = hub.getAsset(wethAssetId);
-    SpokeData memory spokeData = hub.getSpoke(wethAssetId, address(spoke4));
+    assetData.t2 = hub.getAsset(wethAssetId);
+    spokeData.t2 = hub.getSpoke(wethAssetId, address(spoke4));
+    cumulated.t2 = MathUtils.calculateLinearInterest(assetData.t2.baseBorrowRate, timestamps.t1);
+    console.log('expected cumulated (t1 -> t2) %e', cumulated.t2);
+    console.log('actual asset t2 index %e (incorrect)', assetData.t2.baseBorrowIndex);
+    console.log('actual asset t1 index %e', assetData.t1.baseBorrowIndex);
 
-    uint256 expectedBaseDebt = MathUtils
-      .calculateLinearInterest(wethData.baseBorrowRate, timestamp2)
-      .rayMul(debtAmount);
+    /// @notice !! this fails because assetData.t2.baseBorrowIndex is incorrectly 1.32 (ie 1.2 * 1.1)
+    /// it accrues interest from t0 to t2 (10% over 2 years) instead of t1 to t2 (10% over 1 year)
+    /// because asset.lastUpdateTimestamp was not updated at t1 (during first draw)
+    assertEq(
+      assetData.t2.baseBorrowIndex,
+      assetData.t1.baseBorrowIndex.rayMul(cumulated.t2),
+      't2 Asset index'
+    );
 
-    assertEq(expectedBaseDebt, spokeData.baseDebt, 'updated base debt');
-    assertEq(wethData.baseBorrowIndex, spokeData.baseBorrowIndex, 'updated base index');
+    // assertEq(
+    //   assetData.t2.baseDebt,
+    //   spoke1Amounts.draw0.rayMul(cumulated.t2) + spoke4Amounts.draw1,
+    //   't2 Asset base debt'
+    // );
+    // assertEq(spokeData.t2.baseBorrowIndex, assetData.t2.baseBorrowIndex, 't2 Spoke4 index');
+    // assertEq(spokeData.t2.baseDebt, spoke4Amounts.draw1, 't2 Spoke4 base debt');
+
+    // // t2: spoke4 trivial supply to trigger accrual
+    // skip(365 days);
+    // spoke4Amounts.supply2 = 1e8;
+
+    // Utils.supply({
+    //   hub: hub,
+    //   assetId: wethAssetId,
+    //   spoke: address(spoke4),
+    //   amount: spoke4Amounts.supply2,
+    //   riskPremiumRad: 0,
+    //   user: bob,
+    //   to: address(spoke4)
+    // });
+
+    // assetData.t2 = hub.getAsset(wethAssetId);
+    // spokeData.t2 = hub.getSpoke(wethAssetId, address(spoke4));
+    // cumulated.t2 = MathUtils.calculateLinearInterest(assetData.t2.baseBorrowRate, timestamps.t1);
+
+    // assertEq(
+    //   assetData.t2.baseBorrowIndex,
+    //   assetData.t1.baseBorrowIndex.rayMul(cumulated.t2),
+    //   't2 Asset index'
+    // );
+    // assertEq(spoke4Amounts.draw1.rayMul(cumulated.t2), spokeData.t2.baseDebt, 't2 Asset base debt');
+    // assertEq(assetData.t2.baseBorrowIndex, spokeData.t2.baseBorrowIndex, 't2 Spoke4 index');
+    // assertEq(
+    //   spoke4Amounts.draw1.rayMul(cumulated.t2),
+    //   spokeData.t2.baseDebt,
+    //   't2 Spoke4 base debt'
+    // );
   }
 
   // t0: spoke1 draws

@@ -9,6 +9,8 @@ import {SharesMath} from 'src/contracts/SharesMath.sol';
 import {PercentageMath} from 'src/contracts/PercentageMath.sol';
 import {WadRayMath} from 'src/contracts/WadRayMath.sol';
 
+import 'forge-std/console2.sol';
+
 library AssetLogic {
   using AssetLogic for Asset;
   using PercentageMath for uint256;
@@ -89,6 +91,14 @@ library AssetLogic {
       asset.baseBorrowRate,
       uint40(asset.lastUpdateTimestamp)
     );
+    // console2.log(
+    //   'AL: asset.baseBorrowRate = %e, cumulatedBaseInterest = %e, asset.lastUpdateTimestamp',
+    //   asset.baseBorrowRate,
+    //   cumulatedBaseInterest,
+    //   asset.lastUpdateTimestamp
+    // );
+    // console2.log('AL: block.timestamp', block.timestamp);
+    // console2.log('AL: cumulatedBaseInterest %e', cumulatedBaseInterest);
     return (cumulatedBaseInterest, cumulatedBaseInterest.rayMul(asset.baseBorrowIndex));
   }
 
