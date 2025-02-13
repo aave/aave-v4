@@ -105,10 +105,10 @@ library AssetLogic {
       asset.baseBorrowIndex
     ); // precision loss, same as in v3
     // uint256 cumulatedBaseDebt = (existingBaseDebt * nextBaseBorrowIndex) / asset.baseBorrowIndex; // accurate, overflows
-    // uint256 cumulatedBaseDebt = (existingBaseDebt).mulDiv(
+    // uint256 cumulatedBaseDebt = existingBaseDebt.mulDiv(
     //   nextBaseBorrowIndex,
     //   asset.baseBorrowIndex
-    // ); // accurate, no overflows
+    // ); // no overflow, but still inaccurate?
 
     // accrue premium interest on the accrued base interest
     asset.outstandingPremium += (cumulatedBaseDebt - existingBaseDebt).radMul(asset.riskPremiumRad);

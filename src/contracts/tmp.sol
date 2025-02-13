@@ -9,7 +9,7 @@ library DataTypes {
   }
 }
 
-interface temp {
+interface InterfaceForAssetLogicLibSuchThatItShowsUpInForgeTraces {
   struct Asset {
     uint256 id;
     uint256 suppliedShares;
