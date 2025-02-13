@@ -464,7 +464,7 @@ contract LiquidityHub is ILiquidityHub {
       suppliedShares: 0,
       baseDebt: 0,
       outstandingPremium: 0,
-      baseBorrowIndex: 0, // discuss later. Should not be init to 1?
+      baseBorrowIndex: WadRayMath.RAY, // discuss later. Should not be init to 1 - sentinel value or 0?
       riskPremiumRad: 0,
       lastUpdateTimestamp: block.timestamp,
       config: DataTypes.SpokeConfig({drawCap: config.drawCap, supplyCap: config.supplyCap})
