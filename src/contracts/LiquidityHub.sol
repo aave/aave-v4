@@ -206,7 +206,7 @@ contract LiquidityHub is ILiquidityHub {
     asset.updateBorrowRate({liquidityAdded: 0, liquidityTaken: amount});
     _updateRiskPremiumAndBaseDebt(asset, spoke, riskPremiumRad, 0); // no base debt change
 
-    uint256 sharesAmount = asset.convertToSharesDown(amount);
+    uint256 sharesAmount = asset.convertToSharesDown(amount); // ! needs to round up
     asset.suppliedShares -= sharesAmount;
     asset.availableLiquidity -= amount;
     spoke.suppliedShares -= sharesAmount;
@@ -315,6 +315,11 @@ contract LiquidityHub is ILiquidityHub {
 
   function getTotalDrawnLiquidity(uint256 assetId) public view returns (uint256) {
     return _assets[assetId].baseDebt;
+  }
+
+  function exchangeRateRay(uint256 assetId) external view returns (uint256) {
+    Asset storage asset = _assets[assetId];
+    return (asset.totalAssets() * 1e27) / asset.totalShares();
   }
 
   //

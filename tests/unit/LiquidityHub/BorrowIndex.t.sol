@@ -100,7 +100,7 @@ contract BorrowIndexTest is BaseTest {
     );
   }
 
-  // ! todo investigate supplier can withdraw 2x+ right after supplying when there's no debt in the system
+  /// infinite withdraw due to dust shares
   function test_noDebtMidWay_suppliersDoNotEarn() public {
     vm.startPrank(address(spoke1));
     hub.supply(wethAssetId, amount, 0, alice);
@@ -120,16 +120,50 @@ contract BorrowIndexTest is BaseTest {
 
     skip(delay / 2);
     // no debt period
-    vm.prank(address(spoke1));
+    vm.prank(address(spoke2));
     uint256 sharesMinted = hub.supply(wethAssetId, amount, 0, alice);
     assertApproxEqAbs(amount, hub.convertToAssetsDown(wethAssetId, sharesMinted), 1);
     assertApproxEqAbs(hub.convertToSharesDown(wethAssetId, amount), sharesMinted, 1);
+    assertEq(hub.getSpoke(wethAssetId, address(spoke2)).suppliedShares, sharesMinted);
 
-    // SHOULD NOT BE ABLE TO WITHDRAW MORE THAN SUPPLIED BUT CAN
-    // skip(delay / 2);
-    vm.expectRevert('SUPPLIED_AMOUNT_EXCEEDED'); // does not revert
+    skip(delay / 2); // since system has no debt, no interest should accrue
+
+    assertApproxEqAbs(amount, hub.convertToAssetsDown(wethAssetId, sharesMinted), 1);
+
+    vm.expectRevert('SUPPLIED_AMOUNT_EXCEEDED'); // should not revert
+    vm.prank(address(spoke2));
+    hub.withdraw(wethAssetId, amount, 0, alice);
+
+    vm.prank(address(spoke2));
+    hub.withdraw(wethAssetId, amount - 1, 0, alice);
+
+    // DUST SHARES LEFT
+    assertEq(hub.getSpoke(wethAssetId, address(spoke2)).suppliedShares, 1); // should be zero
+
+    vm.prank(address(spoke2));
+    hub.withdraw(wethAssetId, 1, 0, alice);
+
+    assertEq(hub.getSpoke(wethAssetId, address(spoke2)).suppliedShares, 1); // should be zero
+
+    vm.prank(address(spoke2));
+    hub.withdraw(wethAssetId, 1, 0, alice);
+
+    assertEq(hub.getSpoke(wethAssetId, address(spoke2)).suppliedShares, 1); // should be zero
+  }
+
+  function test_withdrawRightAfterSupplying() public {
     vm.prank(address(spoke1));
-    hub.withdraw(wethAssetId, amount + 1e21 + 1e18, 0, alice);
+    uint256 sharesMinted = hub.supply(wethAssetId, amount, 0, alice);
+    assertApproxEqAbs(amount, hub.convertToAssetsDown(wethAssetId, sharesMinted), 1);
+
+    vm.prank(address(spoke2));
+    sharesMinted = hub.supply(wethAssetId, amount, 0, alice);
+    assertApproxEqAbs(amount, hub.convertToAssetsDown(wethAssetId, sharesMinted), 1);
+
+    vm.prank(address(spoke2));
+    hub.withdraw(wethAssetId, amount, 0, alice);
+
+    assertEq(hub.getSpoke(wethAssetId, address(spoke2)).suppliedShares, 0);
   }
 
   function test_noDebtMidWay_differentExistingSpokeAndNewSpokeDrawAgain() public {
