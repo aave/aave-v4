@@ -285,14 +285,13 @@ contract LiquidityHubAccrueAssetInterestDynamicTimeTest is BaseTest {
       assetData.t1.baseBorrowIndex.rayMul(cumulated.t2),
       't2 Asset index'
     );
-
-    // assertEq(
-    //   assetData.t2.baseDebt,
-    //   spoke1Amounts.draw0.rayMul(cumulated.t2) + spoke4Amounts.draw1,
-    //   't2 Asset base debt'
-    // );
-    // assertEq(spokeData.t2.baseBorrowIndex, assetData.t2.baseBorrowIndex, 't2 Spoke4 index');
-    // assertEq(spokeData.t2.baseDebt, spoke4Amounts.draw1, 't2 Spoke4 base debt');
+    assertEq(
+      assetData.t2.baseDebt,
+      spoke1Amounts.draw1.rayMul(cumulated.t2) + spoke4Amounts.draw2,
+      't2 Asset base debt'
+    );
+    assertEq(spokeData.t2.baseBorrowIndex, assetData.t2.baseBorrowIndex, 't2 Spoke4 index');
+    assertEq(spokeData.t2.baseDebt, spoke4Amounts.draw2, 't2 Spoke4 base debt');
 
     // // t2: spoke4 trivial supply to trigger accrual
     // skip(365 days);

@@ -394,13 +394,13 @@ contract LiquidityHub is ILiquidityHub {
 
     if (isDrawAndExistingSpokeBaseDebtZero) {
       spoke.baseBorrowIndex = nextBaseBorrowIndex;
-      spoke.lastUpdateTimestamp = block.timestamp;
+      spoke.lastUpdateTimestamp = block.timestamp; // comment this line to see failing test
       // for the case where:
       // all asset debt is repaid, and then a new draw happens with some accrual
       // also need to keep a hub global index as source of truth?
       if (asset.baseDebt == 0) {
         asset.baseBorrowIndex = nextBaseBorrowIndex;
-        asset.lastUpdateTimestamp = block.timestamp;
+        asset.lastUpdateTimestamp = block.timestamp; // comment this line to see failing test
       }
     } else {
       spoke.accrueInterest(nextBaseBorrowIndex);
@@ -432,8 +432,8 @@ contract LiquidityHub is ILiquidityHub {
 
     uint256 newSpokeDebt = baseDebtChange > 0
       ? existingSpokeDebt + uint256(baseDebtChange) // debt added
-      : // force underflow: only possible when spoke takes repays amount more than net drawn
-      existingSpokeDebt - uint256(-baseDebtChange); // debt restored
+      // force underflow: only possible when spoke takes repays amount more than net drawn
+      : existingSpokeDebt - uint256(-baseDebtChange); // debt restored
 
     (uint256 newAssetRiskPremium, uint256 newAssetDebt) = MathUtils.addToWeightedAverage(
       assetRiskPremiumWithoutCurrent,
