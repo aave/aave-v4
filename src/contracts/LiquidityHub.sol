@@ -206,7 +206,9 @@ contract LiquidityHub is ILiquidityHub {
     asset.updateBorrowRate({liquidityAdded: 0, liquidityTaken: amount});
     _updateRiskPremiumAndBaseDebt(asset, spoke, riskPremiumRad, 0); // no base debt change
 
-    uint256 sharesAmount = asset.convertToSharesDown(amount); // ! needs to round up
+    uint256 sharesAmount = asset.convertToSharesDown(amount);
+    require(sharesAmount > 0, 'INVALID_SHARES_AMOUNT');
+
     asset.suppliedShares -= sharesAmount;
     asset.availableLiquidity -= amount;
     spoke.suppliedShares -= sharesAmount;
