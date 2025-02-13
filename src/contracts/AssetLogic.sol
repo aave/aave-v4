@@ -8,12 +8,14 @@ import {Asset} from 'src/contracts/LiquidityHub.sol';
 import {SharesMath} from 'src/contracts/SharesMath.sol';
 import {PercentageMath} from 'src/contracts/PercentageMath.sol';
 import {WadRayMath} from 'src/contracts/WadRayMath.sol';
+import {FullMath} from 'src/contracts/FullMath.sol';
 
 library AssetLogic {
   using AssetLogic for Asset;
   using PercentageMath for uint256;
   using SharesMath for uint256;
   using WadRayMath for uint256;
+  using FullMath for uint256;
 
   // todo add remaining: accrue interest, previewNextBorrowIndex, validate*
 
@@ -79,34 +81,34 @@ library AssetLogic {
   }
 
   // @dev Utilizes existing `asset.baseBorrowRate` & `asset.baseBorrowIndex`
-  // @return cumulatedBaseInterest (in ray)
   // @return nextBaseBorrowIndex (in ray)
-  function previewNextBorrowIndex(Asset storage asset) external view returns (uint256, uint256) {
-    uint256 elapsed = block.timestamp - asset.lastUpdateTimestamp;
-    if (elapsed == 0) return (0, asset.baseBorrowIndex);
+  function previewNextBorrowIndex(Asset storage asset) external view returns (uint256) {
+    uint256 lastUpdateTimestamp = asset.lastUpdateTimestamp;
+    if (block.timestamp - lastUpdateTimestamp == 0) return asset.baseBorrowIndex;
 
     uint256 cumulatedBaseInterest = MathUtils.calculateLinearInterest(
       asset.baseBorrowRate,
-      uint40(asset.lastUpdateTimestamp)
+      uint40(lastUpdateTimestamp)
     );
-    return (cumulatedBaseInterest, cumulatedBaseInterest.rayMul(asset.baseBorrowIndex));
+    return cumulatedBaseInterest.rayMul(asset.baseBorrowIndex);
   }
 
   // @dev Utilizes existing `asset.baseBorrowIndex` & `asset.riskPremiumRad`
-  function accrueInterest(
-    Asset storage asset,
-    uint256 cumulatedBaseInterest,
-    uint256 nextBaseBorrowIndex
-  ) external {
-    if (cumulatedBaseInterest == 0) return; // no interest accrued since last update
+  function accrueInterest(Asset storage asset, uint256 nextBaseBorrowIndex) external {
+    if (block.timestamp - asset.lastUpdateTimestamp == 0) return;
 
     uint256 existingBaseDebt = asset.baseDebt;
     // no interest to accrue since no liquidity has been drawn
     if (existingBaseDebt == 0) return;
 
-    // can use `cumulatedBaseInterest` instead of `indexRatio` since LH base debt is
-    // accrued on each index update
-    uint256 cumulatedBaseDebt = existingBaseDebt.rayMul(cumulatedBaseInterest);
+    uint256 cumulatedBaseDebt = existingBaseDebt.rayMul(nextBaseBorrowIndex).rayDiv(
+      asset.baseBorrowIndex
+    ); // precision loss, same as in v3
+    // uint256 cumulatedBaseDebt = (existingBaseDebt * nextBaseBorrowIndex) / asset.baseBorrowIndex; // accurate, overflows
+    // uint256 cumulatedBaseDebt = (existingBaseDebt).mulDiv(
+    //   nextBaseBorrowIndex,
+    //   asset.baseBorrowIndex
+    // ); // accurate, no overflows
 
     // accrue premium interest on the accrued base interest
     asset.outstandingPremium += (cumulatedBaseDebt - existingBaseDebt).radMul(asset.riskPremiumRad);

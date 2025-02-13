@@ -3,7 +3,6 @@ pragma solidity ^0.8.0;
 
 import {Test} from 'forge-std/Test.sol';
 import {console2 as console} from 'forge-std/console2.sol';
-// import 'forge-std/StdCheats.sol';
 
 import {LiquidityHub, ILiquidityHub} from 'src/contracts/LiquidityHub.sol';
 import {Spoke, ISpoke} from 'src/contracts/Spoke.sol';
@@ -149,6 +148,10 @@ abstract contract BaseTest is Test, Events {
   mapping(Spoke => SpokeInfo) internal spokeInfo;
 
   function setUp() public virtual {
+    deployFixtures();
+  }
+
+  function deployFixtures() internal {
     oracle = new MockPriceOracle();
     creditLineIRStrategy = new DefaultReserveInterestRateStrategy(mockAddressesProvider);
     irStrategy = new DefaultReserveInterestRateStrategy(mockAddressesProvider);
@@ -512,7 +515,7 @@ abstract contract BaseTest is Test, Events {
   }
 
   /// @dev pseudo random randomizer
-  function randomizer(uint256 min, uint256 max, uint256 salt) internal view returns (uint256) {
-    return (uint256(keccak256(abi.encodePacked(vm.getBlockTimestamp(), salt))) % (max - min)) + min;
+  function randomizer(uint256 min, uint256 max, uint256) internal returns (uint256) {
+    return vm.randomUint(min, max);
   }
 }

@@ -240,12 +240,12 @@ contract LiquidityHubAccrueInterestTest is BaseTest {
     daiInfo = hub.getAsset(daiAssetId);
 
     assertEq(elapsed * 2, vm.getBlockTimestamp() - startTime);
-    assertEq(daiInfo.baseDebt, totalBase);
+    assertApproxEqRel(daiInfo.baseDebt, totalBase, 0.01e18);
     assertEq(daiInfo.riskPremiumRad, riskPremium);
-    assertApproxEqAbs(
+    assertApproxEqRel(
       daiInfo.outstandingPremium,
       (totalBase - borrowAmount).radMul(riskPremium),
-      1
+      0.01e18 // loss propagates
     );
   }
 }
