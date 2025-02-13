@@ -9,6 +9,8 @@ contract LiquidityHubBaseTest is BaseTest {
   using SharesMath for uint256;
   using WadRayMath for uint256;
 
+  uint256 internal constant INIT_BASE_BORROW_INDEX = WadRayMath.RAY;
+
   // TODO: read from baseTest when resolved
   uint256 maxRiskPremiumRad = PercentageMath.PERCENTAGE_FACTOR.bpsToRad();
 

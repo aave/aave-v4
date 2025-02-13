@@ -10,7 +10,7 @@ contract LiquidityHubConfigTest is LiquidityHubBaseTest {
   using WadRayMath for uint256;
 
   function test_addSpoke() public {
-    uint256 assetId = hub.assetCount();
+    uint256 assetId = hub.assetCount() - 1;
 
     vm.expectEmit(address(hub));
     emit SpokeAdded(assetId, address(spoke1));

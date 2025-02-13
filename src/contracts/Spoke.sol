@@ -585,7 +585,9 @@ contract Spoke is ISpoke {
     uint256 nextBaseBorrowIndex
   ) internal {
     // no interest to accrue if no time passed
-    if (reserve.lastUpdateTimestamp == block.timestamp) return;
+    if (reserve.lastUpdateTimestamp == block.timestamp) {
+      return;
+    }
 
     uint256 existingBaseDebt = reserve.baseDebt;
     if (existingBaseDebt != 0) {
@@ -604,7 +606,9 @@ contract Spoke is ISpoke {
   }
 
   function _accrueUserAssetInterest(UserConfig storage user, uint256 nextBaseBorrowIndex) internal {
-    if (user.lastUpdateTimestamp == block.timestamp) return;
+    if (user.lastUpdateTimestamp == block.timestamp) {
+      return;
+    }
 
     uint256 existingBaseDebt = user.baseDebt;
     if (existingBaseDebt != 0) {
