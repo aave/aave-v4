@@ -8,14 +8,12 @@ import {Asset} from 'src/contracts/LiquidityHub.sol';
 import {SharesMath} from 'src/contracts/SharesMath.sol';
 import {PercentageMath} from 'src/contracts/PercentageMath.sol';
 import {WadRayMath} from 'src/contracts/WadRayMath.sol';
-import {FullMath} from 'src/contracts/FullMath.sol';
 
 library AssetLogic {
   using AssetLogic for Asset;
   using PercentageMath for uint256;
   using SharesMath for uint256;
   using WadRayMath for uint256;
-  using FullMath for uint256;
 
   // todo add remaining: accrue interest, previewNextBorrowIndex, validate*
 
@@ -98,19 +96,20 @@ library AssetLogic {
     if (block.timestamp - asset.lastUpdateTimestamp == 0) return;
 
     uint256 existingBaseDebt = asset.baseDebt;
-    // no interest to accrue since no liquidity has been drawn
-    if (existingBaseDebt == 0) return;
 
-    uint256 cumulatedBaseDebt = existingBaseDebt.rayMul(nextBaseBorrowIndex).rayDiv(
-      asset.baseBorrowIndex
-    ); // precision loss, same as in v3
-    // uint256 cumulatedBaseDebt = (existingBaseDebt * nextBaseBorrowIndex) / asset.baseBorrowIndex; // accurate, overflows
-    // uint256 cumulatedBaseDebt = existingBaseDebt.mulDiv(nextBaseBorrowIndex, asset.baseBorrowIndex); // no overflow, but still inaccurate?
+    if (existingBaseDebt != 0) {
+      uint256 cumulatedBaseDebt = existingBaseDebt.rayMul(nextBaseBorrowIndex).rayDiv(
+        asset.baseBorrowIndex
+      ); // precision loss avoidable
 
-    // accrue premium interest on the accrued base interest
-    asset.outstandingPremium += (cumulatedBaseDebt - existingBaseDebt).radMul(asset.riskPremiumRad);
-    asset.baseDebt = cumulatedBaseDebt;
-    asset.baseBorrowIndex = nextBaseBorrowIndex;
+      // accrue premium interest on the accrued base interest
+      asset.outstandingPremium += (cumulatedBaseDebt - existingBaseDebt).radMul(
+        asset.riskPremiumRad
+      );
+      asset.baseDebt = cumulatedBaseDebt;
+    }
+
+    asset.baseBorrowIndex = nextBaseBorrowIndex; // opt: doesn't need update on supply, withdraw actions?
     asset.lastUpdateTimestamp = block.timestamp;
   }
 }
