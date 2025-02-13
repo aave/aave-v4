@@ -399,7 +399,7 @@ contract LiquidityHub is ILiquidityHub {
       // all asset debt is repaid, and then a new draw happens with some accrual
       // also need to keep a hub global index as source of truth?
       if (asset.baseDebt == 0) {
-        asset.baseBorrowIndex = nextBaseBorrowIndex;
+        // asset.baseBorrowIndex = nextBaseBorrowIndex;
         asset.lastUpdateTimestamp = block.timestamp; // comment this line to see failing test
       }
     } else {
@@ -432,8 +432,8 @@ contract LiquidityHub is ILiquidityHub {
 
     uint256 newSpokeDebt = baseDebtChange > 0
       ? existingSpokeDebt + uint256(baseDebtChange) // debt added
-      // force underflow: only possible when spoke takes repays amount more than net drawn
-      : existingSpokeDebt - uint256(-baseDebtChange); // debt restored
+      : // force underflow: only possible when spoke takes repays amount more than net drawn
+      existingSpokeDebt - uint256(-baseDebtChange); // debt restored
 
     (uint256 newAssetRiskPremium, uint256 newAssetDebt) = MathUtils.addToWeightedAverage(
       assetRiskPremiumWithoutCurrent,
