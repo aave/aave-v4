@@ -315,11 +315,6 @@ contract LiquidityHub is ILiquidityHub {
     return _assets[assetId].baseDebt;
   }
 
-  function exchangeRateRay(uint256 assetId) external view returns (uint256) {
-    Asset storage asset = _assets[assetId];
-    return (asset.totalAssets() * 1e27) / asset.totalShares();
-  }
-
   //
   // Internal
   //
@@ -408,8 +403,8 @@ contract LiquidityHub is ILiquidityHub {
 
     uint256 newSpokeDebt = baseDebtChange > 0
       ? existingSpokeDebt + uint256(baseDebtChange) // debt added
-      // force underflow: only possible when spoke takes repays amount more than net drawn
-      : existingSpokeDebt - uint256(-baseDebtChange); // debt restored
+      : // force underflow: only possible when spoke takes repays amount more than net drawn
+      existingSpokeDebt - uint256(-baseDebtChange); // debt restored
 
     (uint256 newAssetRiskPremium, uint256 newAssetDebt) = MathUtils.addToWeightedAverage(
       assetRiskPremiumWithoutCurrent,
