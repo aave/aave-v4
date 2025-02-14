@@ -257,12 +257,13 @@ contract LiquidityHubAccrueInterestTest is BaseTest {
     );
 
     assertEq(elapsed * 2, vm.getBlockTimestamp() - timestamps.t0, 'elapsed');
-    assertApproxEqAbs(totalBase, assetData.t2.baseDebt, 1);
+    assertApproxEqAbs(totalBase, assetData.t2.baseDebt, 1, 'baseDebt');
     assertEq(assetData.t2.riskPremiumRad, riskPremium, 'riskPremiumRad');
     assertApproxEqAbs(
       (totalBase - borrowAmount).radMul(riskPremium),
       assetData.t2.outstandingPremium,
-      1
+      1,
+      'outstandingPremium'
     );
   }
 }
