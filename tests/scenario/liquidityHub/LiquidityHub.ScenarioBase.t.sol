@@ -5,6 +5,8 @@ import 'tests/BaseTest.t.sol';
 import {Asset, SpokeData} from 'src/contracts/LiquidityHub.sol';
 
 abstract contract LiquidityHubScenarioBaseTest is BaseTest {
+  bool internal isPrintLogs = false;
+
   // t0_i: prior to action
   // t0_f: after action
   struct Timestamps {
@@ -125,29 +127,39 @@ abstract contract LiquidityHubScenarioBaseTest is BaseTest {
     t10
   }
 
-  function initialSetup() internal virtual {
+  function setUp() public virtual override {
+    super.setUp();
+
     timestamps.push(vm.getBlockTimestamp());
   }
   function precondition(Stages stage) internal virtual {}
+  function initialAssertions(Stages stage) internal virtual {}
+
+  function printInitialLog(Stages stage) internal virtual {}
   function exec(Stages stage) internal virtual {}
+  function finalAssertions(Stages stage) internal virtual {}
   function skipTime(Stages stage) internal virtual {}
   function postcondition(Stages stage) internal virtual {
     timestamps.push(vm.getBlockTimestamp());
   }
-  function initialAssertions(Stages stage) internal virtual {}
-  function finalAssertions(Stages stage) internal virtual {}
+  function printFinalLog(Stages stage) internal virtual {}
 
   function testScenario() public virtual {
     Stages stage = Stages.t0;
 
-    initialSetup();
     for (uint256 t = 0; t < 10; t++) {
       precondition(stage);
       initialAssertions(stage);
+      if (isPrintLogs) {
+        printInitialLog(stage);
+      }
       exec(stage);
       finalAssertions(stage);
       skipTime(stage);
       postcondition(stage);
+      if (isPrintLogs) {
+        printFinalLog(stage);
+      }
       stage = Stages(uint256(stage) + 1);
     }
   }
