@@ -256,16 +256,13 @@ contract LiquidityHubAccrueInterestTest is BaseTest {
       assetData.t1.baseBorrowIndex
     );
 
-    uint256 bound = 1000;
-    vm.assume(assetData.t2.baseDebt >= bound && assetData.t2.outstandingPremium >= bound);
-
     assertEq(elapsed * 2, vm.getBlockTimestamp() - timestamps.t0, 'elapsed');
-    assertApproxEqRel(totalBase, assetData.t2.baseDebt, 1e18 / bound);
+    assertApproxEqAbs(totalBase, assetData.t2.baseDebt, 1);
     assertEq(assetData.t2.riskPremiumRad, riskPremium, 'riskPremiumRad');
-    assertApproxEqRel(
+    assertApproxEqAbs(
       (totalBase - borrowAmount).radMul(riskPremium),
       assetData.t2.outstandingPremium,
-      1e18 / bound
+      1
     );
   }
 }
