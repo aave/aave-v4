@@ -498,11 +498,11 @@ contract LiquidityHubWithdrawTest is LiquidityHubBaseTest {
     assertEq(hubData.spoke2DaiData.suppliedShares, 0, 'spoke2 suppliedShares');
     assertEq(hubData.spoke2DaiData.baseDebt, 0, 'spoke2 baseDebt');
     assertEq(hubData.spoke2DaiData.outstandingPremium, 0, 'spoke2 outstandingPremium');
-    assertEq(hubData.spoke2DaiData.baseBorrowIndex, WadRayMath.RAY, 'spoke2 baseBorrowIndex');
+    assertEq(hubData.spoke2DaiData.baseBorrowIndex, newBaseBorrowIndex, 'spoke2 baseBorrowIndex');
     assertEq(hubData.spoke2DaiData.riskPremiumRad, 0, 'spoke2 riskPremiumRad');
     assertEq(
       hubData.spoke2DaiData.lastUpdateTimestamp,
-      lastUpdateTimestamp,
+      vm.getBlockTimestamp(),
       'spoke2 lastUpdateTimestamp'
     );
     // dai - all to alice
@@ -634,11 +634,11 @@ contract LiquidityHubWithdrawTest is LiquidityHubBaseTest {
     assertEq(hubData.spoke2DaiData.suppliedShares, 0, 'spoke2 suppliedShares');
     assertEq(hubData.spoke2DaiData.baseDebt, 0, 'spoke2 baseDebt');
     assertEq(hubData.spoke2DaiData.outstandingPremium, 0, 'spoke2 outstandingPremium');
-    assertEq(hubData.spoke2DaiData.baseBorrowIndex, WadRayMath.RAY, 'spoke2 baseBorrowIndex');
+    assertEq(hubData.spoke2DaiData.baseBorrowIndex, newBaseBorrowIndex, 'spoke2 baseBorrowIndex');
     assertEq(hubData.spoke2DaiData.riskPremiumRad, 0, 'spoke2 riskPremiumRad');
     assertEq(
       hubData.spoke2DaiData.lastUpdateTimestamp,
-      lastUpdateTimestamp,
+      vm.getBlockTimestamp(),
       'spoke2 lastUpdateTimestamp'
     );
     // dai - all to alice

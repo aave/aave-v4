@@ -129,7 +129,7 @@ contract Spoke is ISpoke {
     Reserve storage reserve = _reserves[reserveId];
     UserConfig storage user = _users[msg.sender][reserveId];
 
-    _accrueAssetInterest(reserveId, liquidityHub.previewNextBorrowIndex(reserve.assetId));
+    _accrueAssetInterest(reserve, user);
     _validateSupply(reserve, amount);
 
     // Update user's risk premium and wAvgRP across all users of spoke
@@ -157,8 +157,8 @@ contract Spoke is ISpoke {
     Reserve storage reserve = _reserves[reserveId];
     UserConfig storage user = _users[msg.sender][reserveId];
 
-    _accrueAssetInterest(reserveId, liquidityHub.previewNextBorrowIndex(reserve.assetId));
-    _validateWithdraw(reserveId, reserve, user, amount);
+    _accrueAssetInterest(reserve, user);
+    _validateWithdraw(reserve, user, amount);
 
     // Update user's risk premium and wAvgRP across all users of spoke
     uint256 newAggregatedRiskPremium = _updateRiskPremiumAndBaseDebt({
@@ -186,7 +186,7 @@ contract Spoke is ISpoke {
     Reserve storage reserve = _reserves[reserveId];
     UserConfig storage user = _users[msg.sender][reserveId];
 
-    _accrueAssetInterest(reserveId, liquidityHub.previewNextBorrowIndex(reserve.assetId));
+    _accrueAssetInterest(reserve, user);
     _validateBorrow(reserve, amount);
 
     // TODO HF check
@@ -207,8 +207,8 @@ contract Spoke is ISpoke {
     UserConfig storage user = _users[msg.sender][reserveId];
     Reserve storage reserve = _reserves[reserveId];
 
-    _accrueAssetInterest(reserveId, liquidityHub.previewNextBorrowIndex(reserve.assetId));
-    _validateRepay(reserveId, user, amount);
+    _accrueAssetInterest(reserve, user);
+    _validateRepay(reserve, user, amount);
 
     // Repaid debt happens first from premium, then base
     uint256 baseDebtRestored = _deductFromOutstandingPremium(reserve, user, amount);
@@ -317,13 +317,12 @@ contract Spoke is ISpoke {
   }
 
   function _validateWithdraw(
-    uint256 reserveId,
     Reserve storage reserve,
     UserConfig storage user,
     uint256 amount
   ) internal view {
     require(
-      liquidityHub.convertToAssetsDown(_reserves[reserveId].assetId, user.suppliedShares) >= amount,
+      liquidityHub.convertToAssetsDown(reserve.assetId, user.suppliedShares) >= amount,
       'INSUFFICIENT_SUPPLY'
     );
   }
@@ -335,7 +334,7 @@ contract Spoke is ISpoke {
 
   // TODO: Place this and LH equivalent in a generic logic library
   function _validateRepay(
-    uint256 reserveId,
+    Reserve storage reserve,
     UserConfig storage user,
     uint256 amount
   ) internal view {
@@ -573,39 +572,55 @@ contract Spoke is ISpoke {
       );
   }
 
-  function _accrueAssetInterest(uint256 reserveId, uint256 newBaseBorrowIndex) internal {
-    Reserve storage reserve = _reserves[reserveId];
-    UserConfig storage user = _users[msg.sender][reserveId];
+  function _accrueAssetInterest(Reserve storage reserve, UserConfig storage user) internal {
+    uint256 nextBaseBorrowIndex = liquidityHub.previewNextBorrowIndex(reserve.assetId);
 
+    // todo: lib migration
+    _accrueSpokeAssetInterest(reserve, nextBaseBorrowIndex);
+    _accrueUserAssetInterest(user, nextBaseBorrowIndex);
+  }
+
+  function _accrueSpokeAssetInterest(
+    Reserve storage reserve,
+    uint256 nextBaseBorrowIndex
+  ) internal {
     // no interest to accrue if no time passed
-    if (reserve.lastUpdateTimestamp == block.timestamp) return;
+    if (reserve.lastUpdateTimestamp == block.timestamp) {
+      return;
+    }
 
     uint256 existingBaseDebt = reserve.baseDebt;
-    // no interest to accrue since no liquidity has been drawn
-    if (existingBaseDebt == 0) return;
+    if (existingBaseDebt != 0) {
+      uint256 cumulatedBaseDebt = existingBaseDebt.rayMul(nextBaseBorrowIndex).rayDiv(
+        reserve.baseBorrowIndex
+      );
 
-    uint256 cumulatedBaseDebt = existingBaseDebt.rayMul(
-      newBaseBorrowIndex.rayDiv(reserve.baseBorrowIndex)
-    );
+      reserve.baseDebt = cumulatedBaseDebt;
+      reserve.outstandingPremium += (cumulatedBaseDebt - existingBaseDebt).radMul(
+        reserve.riskPremiumRad
+      );
+    }
 
-    // accrue premium interest on the accrued base interest
-    reserve.baseDebt = cumulatedBaseDebt;
-    reserve.outstandingPremium += (cumulatedBaseDebt - existingBaseDebt).radMul(
-      reserve.riskPremiumRad
-    );
-    reserve.baseBorrowIndex = newBaseBorrowIndex;
+    reserve.baseBorrowIndex = nextBaseBorrowIndex;
     reserve.lastUpdateTimestamp = block.timestamp;
+  }
 
-    // User specific updates
-    existingBaseDebt = user.baseDebt;
-    // no interest to accrue since no liquidity has been drawn
-    if (existingBaseDebt == 0) return;
+  function _accrueUserAssetInterest(UserConfig storage user, uint256 nextBaseBorrowIndex) internal {
+    if (user.lastUpdateTimestamp == block.timestamp) {
+      return;
+    }
 
-    cumulatedBaseDebt = existingBaseDebt.rayMul(newBaseBorrowIndex.rayDiv(user.baseBorrowIndex));
+    uint256 existingBaseDebt = user.baseDebt;
+    if (existingBaseDebt != 0) {
+      uint256 cumulatedBaseDebt = existingBaseDebt.rayMul(nextBaseBorrowIndex).rayDiv(
+        user.baseBorrowIndex
+      );
 
-    user.baseDebt = cumulatedBaseDebt;
-    user.outstandingPremium += (cumulatedBaseDebt - existingBaseDebt).radMul(user.riskPremium);
-    user.baseBorrowIndex = newBaseBorrowIndex;
+      user.baseDebt = cumulatedBaseDebt;
+      user.outstandingPremium += (cumulatedBaseDebt - existingBaseDebt).radMul(user.riskPremium);
+    }
+
+    user.baseBorrowIndex = nextBaseBorrowIndex;
     user.lastUpdateTimestamp = block.timestamp;
   }
 }

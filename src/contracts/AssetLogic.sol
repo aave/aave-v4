@@ -79,39 +79,41 @@ library AssetLogic {
   }
 
   // @dev Utilizes existing `asset.baseBorrowRate` & `asset.baseBorrowIndex`
-  // @return cumulatedBaseInterest (in ray)
   // @return nextBaseBorrowIndex (in ray)
-  function previewNextBorrowIndex(Asset storage asset) external view returns (uint256, uint256) {
-    uint256 elapsed = block.timestamp - asset.lastUpdateTimestamp;
-    if (elapsed == 0) return (0, asset.baseBorrowIndex);
+  function previewNextBorrowIndex(Asset storage asset) external view returns (uint256) {
+    uint256 lastUpdateTimestamp = asset.lastUpdateTimestamp;
+    if (block.timestamp == lastUpdateTimestamp) {
+      return asset.baseBorrowIndex;
+    }
 
     uint256 cumulatedBaseInterest = MathUtils.calculateLinearInterest(
       asset.baseBorrowRate,
-      uint40(asset.lastUpdateTimestamp)
+      uint40(lastUpdateTimestamp)
     );
-    return (cumulatedBaseInterest, cumulatedBaseInterest.rayMul(asset.baseBorrowIndex));
+    return cumulatedBaseInterest.rayMul(asset.baseBorrowIndex);
   }
 
   // @dev Utilizes existing `asset.baseBorrowIndex` & `asset.riskPremiumRad`
-  function accrueInterest(
-    Asset storage asset,
-    uint256 cumulatedBaseInterest,
-    uint256 nextBaseBorrowIndex
-  ) external {
-    if (cumulatedBaseInterest == 0) return; // no interest accrued since last update
+  function accrueInterest(Asset storage asset, uint256 nextBaseBorrowIndex) external {
+    if (block.timestamp == asset.lastUpdateTimestamp) {
+      return;
+    }
 
     uint256 existingBaseDebt = asset.baseDebt;
-    // no interest to accrue since no liquidity has been drawn
-    if (existingBaseDebt == 0) return;
 
-    // can use `cumulatedBaseInterest` instead of `indexRatio` since LH base debt is
-    // accrued on each index update
-    uint256 cumulatedBaseDebt = existingBaseDebt.rayMul(cumulatedBaseInterest);
+    if (existingBaseDebt != 0) {
+      uint256 cumulatedBaseDebt = existingBaseDebt.rayMul(nextBaseBorrowIndex).rayDiv(
+        asset.baseBorrowIndex
+      ); // precision loss avoidable
 
-    // accrue premium interest on the accrued base interest
-    asset.outstandingPremium += (cumulatedBaseDebt - existingBaseDebt).radMul(asset.riskPremiumRad);
-    asset.baseDebt = cumulatedBaseDebt;
-    asset.baseBorrowIndex = nextBaseBorrowIndex;
+      // accrue premium interest on the accrued base interest
+      asset.outstandingPremium += (cumulatedBaseDebt - existingBaseDebt).radMul(
+        asset.riskPremiumRad
+      );
+      asset.baseDebt = cumulatedBaseDebt;
+    }
+
+    asset.baseBorrowIndex = nextBaseBorrowIndex; // opt: doesn't need update on supply, withdraw actions?
     asset.lastUpdateTimestamp = block.timestamp;
   }
 }

@@ -3,9 +3,8 @@ pragma solidity ^0.8.0;
 
 import {Test} from 'forge-std/Test.sol';
 import {console2 as console} from 'forge-std/console2.sol';
-// import 'forge-std/StdCheats.sol';
 
-import {LiquidityHub, ILiquidityHub} from 'src/contracts/LiquidityHub.sol';
+import {LiquidityHub, ILiquidityHub, SpokeData, Asset} from 'src/contracts/LiquidityHub.sol';
 import {Spoke, ISpoke} from 'src/contracts/Spoke.sol';
 import {PercentageMath} from 'src/contracts/PercentageMath.sol';
 import {WadRayMath} from 'src/contracts/WadRayMath.sol';
@@ -146,9 +145,78 @@ abstract contract BaseTest is Test, Events {
     uint256 liquidityPremium;
   }
 
+  struct Timestamps {
+    uint40 t0;
+    uint40 t1;
+    uint40 t2;
+    uint40 t3;
+    uint40 t4;
+  }
+
+  struct Spoke1DataLocal {
+    SpokeData t0;
+    SpokeData t1;
+    SpokeData t2;
+    SpokeData t3;
+    SpokeData t4;
+  }
+
+  struct Spoke2DataLocal {
+    SpokeData t0;
+    SpokeData t1;
+    SpokeData t2;
+    SpokeData t3;
+    SpokeData t4;
+  }
+
+  struct AssetDataLocal {
+    Asset t0;
+    Asset t1;
+    Asset t2;
+    Asset t3;
+    Asset t4;
+  }
+
+  struct CumulatedInterest {
+    uint256 t1;
+    uint256 t2;
+    uint256 t3;
+    uint256 t4;
+  }
+
+  struct Spoke1Amounts {
+    uint256 draw0;
+    uint256 draw1;
+    uint256 draw2;
+    uint256 draw3;
+    uint256 draw4;
+    uint256 supply0;
+    uint256 supply1;
+    uint256 supply2;
+    uint256 supply3;
+    uint256 supply4;
+  }
+
+  struct Spoke2Amounts {
+    uint256 draw0;
+    uint256 draw1;
+    uint256 draw2;
+    uint256 draw3;
+    uint256 draw4;
+    uint256 supply0;
+    uint256 supply1;
+    uint256 supply2;
+    uint256 supply3;
+    uint256 supply4;
+  }
+
   mapping(Spoke => SpokeInfo) internal spokeInfo;
 
   function setUp() public virtual {
+    deployFixtures();
+  }
+
+  function deployFixtures() internal {
     oracle = new MockPriceOracle();
     creditLineIRStrategy = new DefaultReserveInterestRateStrategy(mockAddressesProvider);
     irStrategy = new DefaultReserveInterestRateStrategy(mockAddressesProvider);
@@ -512,7 +580,7 @@ abstract contract BaseTest is Test, Events {
   }
 
   /// @dev pseudo random randomizer
-  function randomizer(uint256 min, uint256 max, uint256 salt) internal view returns (uint256) {
-    return (uint256(keccak256(abi.encodePacked(vm.getBlockTimestamp(), salt))) % (max - min)) + min;
+  function randomizer(uint256 min, uint256 max, uint256) internal returns (uint256) {
+    return vm.randomUint(min, max);
   }
 }
