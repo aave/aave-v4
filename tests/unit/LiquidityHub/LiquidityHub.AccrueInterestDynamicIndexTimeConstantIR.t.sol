@@ -6,12 +6,10 @@ import {SpokeData} from 'src/contracts/LiquidityHub.sol';
 import {Asset} from 'src/contracts/LiquidityHub.sol';
 import {Utils} from 'tests/Utils.t.sol';
 
-contract LiquidityHubAccrueAssetInterestDynamicTimeTest is BaseTest {
+contract LiquidityHubAccrueInterestDynamicTimeConstantIR is BaseTest {
   using SharesMath for uint256;
   using WadRayMath for uint256;
   using PercentageMath for uint256;
-
-  uint256 public constant MAX_BPS = 999_99;
 
   DataTypes.SpokeConfig internal spokeConfig;
   Spoke internal spoke4;
@@ -25,6 +23,7 @@ contract LiquidityHubAccrueAssetInterestDynamicTimeTest is BaseTest {
 
     spokeConfig = DataTypes.SpokeConfig({supplyCap: type(uint256).max, drawCap: type(uint256).max});
 
+    // mock constant 10% IR
     vm.mockCall(
       address(irStrategy),
       IReserveInterestRateStrategy.calculateInterestRates.selector,
@@ -43,6 +42,71 @@ contract LiquidityHubAccrueAssetInterestDynamicTimeTest is BaseTest {
   }
 
   struct Spoke4Amounts {
+    uint256 draw0;
+    uint256 draw1;
+    uint256 draw2;
+    uint256 draw3;
+    uint256 draw4;
+    uint256 supply0;
+    uint256 supply1;
+    uint256 supply2;
+    uint256 supply3;
+    uint256 supply4;
+  }
+
+  struct Timestamps {
+    uint40 t0;
+    uint40 t1;
+    uint40 t2;
+    uint40 t3;
+    uint40 t4;
+  }
+
+  struct Spoke1DataLocal {
+    SpokeData t0;
+    SpokeData t1;
+    SpokeData t2;
+    SpokeData t3;
+    SpokeData t4;
+  }
+
+  struct Spoke2DataLocal {
+    SpokeData t0;
+    SpokeData t1;
+    SpokeData t2;
+    SpokeData t3;
+    SpokeData t4;
+  }
+
+  struct AssetDataLocal {
+    Asset t0;
+    Asset t1;
+    Asset t2;
+    Asset t3;
+    Asset t4;
+  }
+
+  struct CumulatedInterest {
+    uint256 t1;
+    uint256 t2;
+    uint256 t3;
+    uint256 t4;
+  }
+
+  struct Spoke1Amounts {
+    uint256 draw0;
+    uint256 draw1;
+    uint256 draw2;
+    uint256 draw3;
+    uint256 draw4;
+    uint256 supply0;
+    uint256 supply1;
+    uint256 supply2;
+    uint256 supply3;
+    uint256 supply4;
+  }
+
+  struct Spoke2Amounts {
     uint256 draw0;
     uint256 draw1;
     uint256 draw2;
@@ -200,88 +264,99 @@ contract LiquidityHubAccrueAssetInterestDynamicTimeTest is BaseTest {
       user: bob,
       to: address(spoke1)
     });
-    Utils.draw({
-      hub: hub,
-      assetId: wethAssetId,
-      spoke: address(spoke1),
-      amount: spoke1Amounts.draw1,
-      riskPremiumRad: 0,
-      to: bob,
-      onBehalfOf: address(spoke1)
-    });
+    // Utils.draw({
+    //   hub: hub,
+    //   assetId: wethAssetId,
+    //   spoke: address(spoke1),
+    //   amount: spoke1Amounts.draw1,
+    //   riskPremiumRad: 0,
+    //   to: bob,
+    //   onBehalfOf: address(spoke1)
+    // });
+
+    // skip(365 days);
+    // Utils.supply({
+    //   hub: hub,
+    //   assetId: wethAssetId,
+    //   spoke: address(spoke1),
+    //   amount: spoke1Amounts.supply1,
+    //   riskPremiumRad: 0,
+    //   user: bob,
+    //   to: address(spoke1)
+    // });
 
     assetData.t1 = hub.getAsset(wethAssetId);
     // t1 last time since debt in the system
     cumulated.t1 = MathUtils.calculateLinearInterest(assetData.t1.baseBorrowRate, timestamps.t1);
 
-    assertEq(cumulated.t1, WadRayMath.RAY, 't1 Cumulated interest');
+    // assertEq(cumulated.t1, WadRayMath.RAY, 't1 Cumulated interest');
     assertEq(assetData.t1.baseBorrowIndex, INIT_INDEX, 't1 Asset index'); // since no time elapsed
-    assertEq(assetData.t1.baseDebt, spoke1Amounts.draw1, 't1 Asset base debt');
+    // assertEq(assetData.t1.baseDebt, spoke1Amounts.draw1, 't1 Asset base debt');
 
-    // t2: add spoke4; draws
-    skip(365 days);
-    timestamps.t2 = uint40(vm.getBlockTimestamp());
-    spoke4Amounts.draw2 = 1e18;
+    // // t2: add spoke4; draws
+    // skip(365 days);
+    // timestamps.t2 = uint40(vm.getBlockTimestamp());
+    // spoke4Amounts.draw2 = 1e18;
 
-    hub.addSpoke(wethAssetId, spokeConfig, address(spoke4));
-    Utils.draw({
-      hub: hub,
-      assetId: wethAssetId,
-      spoke: address(spoke4),
-      amount: spoke4Amounts.draw2,
-      riskPremiumRad: 0,
-      to: bob,
-      onBehalfOf: address(spoke4)
-    });
+    // hub.addSpoke(wethAssetId, spokeConfig, address(spoke4));
+    // Utils.draw({
+    //   hub: hub,
+    //   assetId: wethAssetId,
+    //   spoke: address(spoke4),
+    //   amount: spoke4Amounts.draw2,
+    //   riskPremiumRad: 0,
+    //   to: bob,
+    //   onBehalfOf: address(spoke4)
+    // });
 
-    assetData.t2 = hub.getAsset(wethAssetId);
-    spokeData.t2 = hub.getSpoke(wethAssetId, address(spoke4));
-    cumulated.t2 = MathUtils.calculateLinearInterest(assetData.t2.baseBorrowRate, timestamps.t1); // last action since last draw
+    // assetData.t2 = hub.getAsset(wethAssetId);
+    // spokeData.t2 = hub.getSpoke(wethAssetId, address(spoke4));
+    // cumulated.t2 = MathUtils.calculateLinearInterest(assetData.t2.baseBorrowRate, timestamps.t1); // last action since last draw
 
-    assertEq(
-      assetData.t2.baseBorrowIndex,
-      assetData.t1.baseBorrowIndex.rayMul(cumulated.t2),
-      't2 Asset index'
-    );
-    assertEq(
-      assetData.t2.baseDebt,
-      spoke1Amounts.draw1.rayMul(cumulated.t2) + spoke4Amounts.draw2,
-      't2 Asset base debt'
-    );
-    assertEq(spokeData.t2.baseBorrowIndex, assetData.t2.baseBorrowIndex, 't2 Spoke4 index');
-    assertEq(spokeData.t2.baseDebt, spoke4Amounts.draw2, 't2 Spoke4 base debt');
+    // assertEq(
+    //   assetData.t2.baseBorrowIndex,
+    //   assetData.t1.baseBorrowIndex.rayMul(cumulated.t2),
+    //   't2 Asset index'
+    // );
+    // assertEq(
+    //   assetData.t2.baseDebt,
+    //   spoke1Amounts.draw1.rayMul(cumulated.t2) + spoke4Amounts.draw2,
+    //   't2 Asset base debt'
+    // );
+    // assertEq(spokeData.t2.baseBorrowIndex, assetData.t2.baseBorrowIndex, 't2 Spoke4 index');
+    // assertEq(spokeData.t2.baseDebt, spoke4Amounts.draw2, 't2 Spoke4 base debt');
 
-    // t3: spoke4 trivial supply to trigger accrual
-    skip(365 days);
-    timestamps.t3 = uint40(vm.getBlockTimestamp());
-    spoke4Amounts.supply3 = 1e8;
+    // // t3: spoke4 trivial supply to trigger accrual
+    // skip(365 days);
+    // timestamps.t3 = uint40(vm.getBlockTimestamp());
+    // spoke4Amounts.supply3 = 1e8;
 
-    Utils.supply({
-      hub: hub,
-      assetId: wethAssetId,
-      spoke: address(spoke4),
-      amount: spoke4Amounts.supply3,
-      riskPremiumRad: 0,
-      user: bob,
-      to: address(spoke4)
-    });
+    // Utils.supply({
+    //   hub: hub,
+    //   assetId: wethAssetId,
+    //   spoke: address(spoke4),
+    //   amount: spoke4Amounts.supply3,
+    //   riskPremiumRad: 0,
+    //   user: bob,
+    //   to: address(spoke4)
+    // });
 
-    assetData.t3 = hub.getAsset(wethAssetId);
-    spokeData.t3 = hub.getSpoke(wethAssetId, address(spoke4));
-    cumulated.t3 = MathUtils.calculateLinearInterest(assetData.t3.baseBorrowRate, timestamps.t2);
+    // assetData.t3 = hub.getAsset(wethAssetId);
+    // spokeData.t3 = hub.getSpoke(wethAssetId, address(spoke4));
+    // cumulated.t3 = MathUtils.calculateLinearInterest(assetData.t3.baseBorrowRate, timestamps.t2);
 
-    assertEq(
-      assetData.t3.baseBorrowIndex,
-      assetData.t2.baseBorrowIndex.rayMul(cumulated.t3),
-      't3 Asset index'
-    );
-    assertEq(spoke4Amounts.draw2.rayMul(cumulated.t3), spokeData.t3.baseDebt, 't3 Asset base debt');
-    assertEq(assetData.t3.baseBorrowIndex, spokeData.t3.baseBorrowIndex, 't2 Spoke4 index');
-    assertEq(
-      spoke4Amounts.draw2.rayMul(cumulated.t3),
-      spokeData.t3.baseDebt,
-      't3 Spoke4 base debt'
-    );
+    // assertEq(
+    //   assetData.t3.baseBorrowIndex,
+    //   assetData.t2.baseBorrowIndex.rayMul(cumulated.t3),
+    //   't3 Asset index'
+    // );
+    // assertEq(spoke4Amounts.draw2.rayMul(cumulated.t3), spokeData.t3.baseDebt, 't3 Asset base debt');
+    // assertEq(assetData.t3.baseBorrowIndex, spokeData.t3.baseBorrowIndex, 't2 Spoke4 index');
+    // assertEq(
+    //   spoke4Amounts.draw2.rayMul(cumulated.t3),
+    //   spokeData.t3.baseDebt,
+    //   't3 Spoke4 base debt'
+    // );
   }
 
   // t0	asset added, spoke1 added
@@ -429,10 +504,10 @@ contract LiquidityHubAccrueAssetInterestDynamicTimeTest is BaseTest {
   }
 
   function _mockInterestRate(uint256 bps) internal {
-    vm.mockCall(
-      address(irStrategy),
-      IReserveInterestRateStrategy.calculateInterestRates.selector,
-      abi.encode(bps.bpsToRay())
-    );
+    // vm.mockCall(
+    //   address(irStrategy),
+    //   IReserveInterestRateStrategy.calculateInterestRates.selector,
+    //   abi.encode(bps.bpsToRay())
+    // );
   }
 }

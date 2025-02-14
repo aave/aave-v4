@@ -13,6 +13,92 @@ contract LiquidityHubAccrueInterestTest is BaseTest {
 
   uint256 public constant MAX_BPS = 999_99;
 
+  struct SpokeDataLocal {
+    SpokeData t0;
+    SpokeData t1;
+    SpokeData t2;
+    SpokeData t3;
+    SpokeData t4;
+  }
+
+  struct Spoke4Amounts {
+    uint256 draw0;
+    uint256 draw1;
+    uint256 draw2;
+    uint256 draw3;
+    uint256 draw4;
+    uint256 supply0;
+    uint256 supply1;
+    uint256 supply2;
+    uint256 supply3;
+    uint256 supply4;
+  }
+
+  struct Timestamps {
+    uint40 t0;
+    uint40 t1;
+    uint40 t2;
+    uint40 t3;
+    uint40 t4;
+  }
+
+  struct Spoke1DataLocal {
+    SpokeData t0;
+    SpokeData t1;
+    SpokeData t2;
+    SpokeData t3;
+    SpokeData t4;
+  }
+
+  struct Spoke2DataLocal {
+    SpokeData t0;
+    SpokeData t1;
+    SpokeData t2;
+    SpokeData t3;
+    SpokeData t4;
+  }
+
+  struct AssetDataLocal {
+    Asset t0;
+    Asset t1;
+    Asset t2;
+    Asset t3;
+    Asset t4;
+  }
+
+  struct CumulatedInterest {
+    uint256 t1;
+    uint256 t2;
+    uint256 t3;
+    uint256 t4;
+  }
+
+  struct Spoke1Amounts {
+    uint256 draw0;
+    uint256 draw1;
+    uint256 draw2;
+    uint256 draw3;
+    uint256 draw4;
+    uint256 supply0;
+    uint256 supply1;
+    uint256 supply2;
+    uint256 supply3;
+    uint256 supply4;
+  }
+
+  struct Spoke2Amounts {
+    uint256 draw0;
+    uint256 draw1;
+    uint256 draw2;
+    uint256 draw3;
+    uint256 draw4;
+    uint256 supply0;
+    uint256 supply1;
+    uint256 supply2;
+    uint256 supply3;
+    uint256 supply4;
+  }
+
   function setUp() public override {
     super.setUp();
     initEnvironment();
