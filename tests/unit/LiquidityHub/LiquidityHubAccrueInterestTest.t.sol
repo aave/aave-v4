@@ -199,7 +199,6 @@ contract LiquidityHubAccrueInterestTest is BaseTest {
     hub.draw(daiAssetId, borrowAmount, riskPremium, address(spoke1));
     vm.stopPrank();
 
-    // uint256 baseBorrowRate = hub.getBaseInterestRate(daiAssetId);
     assetData.t0 = hub.getAsset(daiAssetId);
 
     // Time passes
@@ -213,7 +212,6 @@ contract LiquidityHubAccrueInterestTest is BaseTest {
     // Spoke 1's debt individually has not yet accrued, even though total debt has accrued
     assertEq(hub.getSpoke(daiAssetId, address(spoke1)).baseDebt, borrowAmount);
 
-    // Asset memory daiInfo = hub.getAsset(daiAssetId);
     assetData.t1 = hub.getAsset(daiAssetId);
 
     uint256 totalBase = borrowAmount
@@ -267,7 +265,7 @@ contract LiquidityHubAccrueInterestTest is BaseTest {
     assertApproxEqRel(
       (totalBase - borrowAmount).radMul(riskPremium),
       assetData.t2.outstandingPremium,
-      1e18 / bound // loss propagates
+      1e18 / bound
     );
   }
 }
