@@ -591,8 +591,8 @@ contract Spoke is ISpoke {
 
     uint256 existingBaseDebt = reserve.baseDebt;
     if (existingBaseDebt != 0) {
-      uint256 cumulatedBaseDebt = existingBaseDebt.rayMul(
-        nextBaseBorrowIndex.rayDiv(reserve.baseBorrowIndex)
+      uint256 cumulatedBaseDebt = existingBaseDebt.rayMul(nextBaseBorrowIndex).rayDiv(
+        reserve.baseBorrowIndex
       );
 
       reserve.baseDebt = cumulatedBaseDebt;
@@ -612,8 +612,8 @@ contract Spoke is ISpoke {
 
     uint256 existingBaseDebt = user.baseDebt;
     if (existingBaseDebt != 0) {
-      uint256 cumulatedBaseDebt = existingBaseDebt.rayMul(
-        nextBaseBorrowIndex.rayDiv(user.baseBorrowIndex)
+      uint256 cumulatedBaseDebt = existingBaseDebt.rayMul(nextBaseBorrowIndex).rayDiv(
+        user.baseBorrowIndex
       );
 
       user.baseDebt = cumulatedBaseDebt;
