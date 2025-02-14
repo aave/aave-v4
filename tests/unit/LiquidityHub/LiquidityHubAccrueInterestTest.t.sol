@@ -245,9 +245,6 @@ contract LiquidityHubAccrueInterestTest is BaseTest {
     skip(elapsed);
     timestamps.t2 = uint40(vm.getBlockTimestamp());
 
-    console.log('assetData.t2.baseBorrowRate', assetData.t2.baseBorrowRate);
-    console.log('cumulated.t2', cumulated.t2);
-
     // Spoke 2 does a supply to accrue interest
     Utils.supply(hub, daiAssetId, address(spoke2), 1000e18, 0, address(spoke2), address(spoke2));
 
@@ -261,15 +258,16 @@ contract LiquidityHubAccrueInterestTest is BaseTest {
       assetData.t1.baseBorrowIndex
     );
 
-    vm.assume(assetData.t2.baseDebt >= 100 && assetData.t2.outstandingPremium >= 100);
+    uint256 bound = 1000;
+    vm.assume(assetData.t2.baseDebt >= bound && assetData.t2.outstandingPremium >= bound);
 
     assertEq(elapsed * 2, vm.getBlockTimestamp() - timestamps.t0, 'elapsed');
-    assertApproxEqRel(totalBase, assetData.t2.baseDebt, 0.01e18);
+    assertApproxEqRel(totalBase, assetData.t2.baseDebt, 1e18 / bound);
     assertEq(assetData.t2.riskPremiumRad, riskPremium, 'riskPremiumRad');
     assertApproxEqRel(
       (totalBase - borrowAmount).radMul(riskPremium),
       assetData.t2.outstandingPremium,
-      0.01e18 // loss propagates
+      1e18 / bound // loss propagates
     );
   }
 }
