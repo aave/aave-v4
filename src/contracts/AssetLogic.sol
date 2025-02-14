@@ -82,7 +82,9 @@ library AssetLogic {
   // @return nextBaseBorrowIndex (in ray)
   function previewNextBorrowIndex(Asset storage asset) external view returns (uint256) {
     uint256 lastUpdateTimestamp = asset.lastUpdateTimestamp;
-    if (block.timestamp == lastUpdateTimestamp) return asset.baseBorrowIndex;
+    if (block.timestamp == lastUpdateTimestamp) {
+      return asset.baseBorrowIndex;
+    }
 
     uint256 cumulatedBaseInterest = MathUtils.calculateLinearInterest(
       asset.baseBorrowRate,
@@ -93,7 +95,9 @@ library AssetLogic {
 
   // @dev Utilizes existing `asset.baseBorrowIndex` & `asset.riskPremiumRad`
   function accrueInterest(Asset storage asset, uint256 nextBaseBorrowIndex) external {
-    if (block.timestamp == asset.lastUpdateTimestamp) return;
+    if (block.timestamp == asset.lastUpdateTimestamp) {
+      return;
+    }
 
     uint256 existingBaseDebt = asset.baseDebt;
 
