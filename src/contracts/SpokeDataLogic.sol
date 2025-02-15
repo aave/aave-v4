@@ -28,9 +28,8 @@ library SpokeDataLogic {
         spoke.riskPremiumRad
       );
       spoke.baseDebt = cumulatedBaseDebt;
+      spoke.baseBorrowIndex = nextBaseBorrowIndex;
+      spoke.lastUpdateTimestamp = block.timestamp;
     }
-
-    spoke.baseBorrowIndex = nextBaseBorrowIndex; // opt: doesn't need update on supply/withdraw actions?
-    spoke.lastUpdateTimestamp = block.timestamp;
   }
 }
