@@ -163,4 +163,8 @@ abstract contract LiquidityHubScenarioBaseTest is BaseTest {
       stage = Stages(uint256(stage) + 1);
     }
   }
+
+  function timeAt(Stages stage) internal view returns (uint256) {
+    return timestamps[uint256(stage)];
+  }
 }
