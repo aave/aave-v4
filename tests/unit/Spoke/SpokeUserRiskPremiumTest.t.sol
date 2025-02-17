@@ -22,7 +22,6 @@ contract SpokeUserRiskPremiumTest is BaseTest {
   function test_getUserRiskPremium_single_asset_collateral() public {
     uint256 daiReserveId = spokeInfo[spoke1].dai.reserveId;
     uint256 daiAmount = 100e18;
-    bool newCollateral = true;
     bool usingAsCollateral = true;
 
     // Bob supply dai into spoke1
@@ -37,7 +36,6 @@ contract SpokeUserRiskPremiumTest is BaseTest {
     uint256 daiReserveId = spokeInfo[spoke1].dai.reserveId;
     uint256 supplyAmount = 100e18;
     uint256 borrowAmount = 50e18;
-    bool newCollateral = true;
     bool usingAsCollateral = true;
 
     // Bob supply dai into spoke1
@@ -52,7 +50,26 @@ contract SpokeUserRiskPremiumTest is BaseTest {
     assertEq(userRiskPremium, daiInfo.config.liquidityPremium, 'wrong user risk premium');
   }
 
-  // TODO: Fuzz the amount of single collateral, show that user risk premium still matches that of reserve lp
+  function test_getUserRiskPremium_fuzz_single_asset_collateral_borrowed_amount(
+    uint256 borrowAmount
+  ) public {
+    borrowAmount = bound(borrowAmount, 1, 1e30);
+    uint256 supplyAmount = borrowAmount * 2;
+    uint256 daiReserveId = spokeInfo[spoke1].dai.reserveId;
+    bool usingAsCollateral = true;
+
+    // Bob supply dai into spoke1
+    deal(address(tokenList.dai), bob, supplyAmount);
+    Utils.spokeSupply(hub, spoke1, daiReserveId, bob, supplyAmount, bob);
+    Utils.setUsingAsCollateral(spoke1, bob, daiReserveId, usingAsCollateral);
+    Utils.spokeBorrow(spoke1, daiReserveId, bob, borrowAmount, bob);
+
+    uint256 userRiskPremium = spoke1.getUserRiskPremium(bob);
+    Spoke.Reserve memory daiInfo = spoke1.getReserve(daiReserveId);
+
+    // With single collateral, user rp will match liquidity premium of collateral
+    assertEq(userRiskPremium, daiInfo.config.liquidityPremium, 'wrong user risk premium');
+  }
 
   /*
   function test_getUserRiskPremium_multi_asset_collateral() public {
