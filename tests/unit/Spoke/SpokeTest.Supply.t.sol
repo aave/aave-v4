@@ -35,7 +35,7 @@ contract SpokeSupplyTest is BaseTest {
         amount
       )
     );
-    spoke1.supply(daiAssetId, amount);
+    spoke1.supply(spokeInfo[spoke1].dai.reserveId, amount);
     vm.stopPrank();
   }
 
@@ -44,7 +44,7 @@ contract SpokeSupplyTest is BaseTest {
 
     vm.prank(bob);
     vm.expectRevert(TestErrors.INVALID_SUPPLY_AMOUNT);
-    spoke1.supply(daiAssetId, amount);
+    spoke1.supply(spokeInfo[spoke1].dai.reserveId, amount);
   }
 
   function test_supply() public {
@@ -64,7 +64,7 @@ contract SpokeSupplyTest is BaseTest {
 
     vm.prank(bob);
     vm.expectEmit(address(spoke1));
-    emit Supplied(spokeInfo[spoke1].dai.reserveId, bob, amount);
+    emit Supplied(spokeInfo[spoke1].dai.reserveId, amount, bob);
     spoke1.supply(spokeInfo[spoke1].dai.reserveId, amount);
 
     userData = spoke1.getUser(spokeInfo[spoke1].dai.reserveId, bob);
@@ -103,7 +103,7 @@ contract SpokeSupplyTest is BaseTest {
 
     vm.prank(bob);
     vm.expectEmit(address(spoke1));
-    emit Supplied(spokeInfo[spoke1].dai.reserveId, bob, amount);
+    emit Supplied(spokeInfo[spoke1].dai.reserveId, amount, bob);
     spoke1.supply(spokeInfo[spoke1].dai.reserveId, amount);
 
     userData = spoke1.getUser(spokeInfo[spoke1].dai.reserveId, bob);
@@ -124,4 +124,7 @@ contract SpokeSupplyTest is BaseTest {
     );
     assertEq(userData.baseDebt, 0, 'user base debt post-supply');
   }
+
+  // TODO: test supply with increased index and no premium (where sharesAmount < amount)
+  // TODO: test supply with increased increased index and premium
 }

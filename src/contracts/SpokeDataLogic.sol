@@ -13,19 +13,24 @@ library SpokeDataLogic {
 
   // @dev Utilizes existing `spoke.baseBorrowIndex` & `spoke.riskPremiumRad`
   function accrueInterest(SpokeData storage spoke, uint256 nextBaseBorrowIndex) internal {
-    uint256 elapsed = block.timestamp - spoke.lastUpdateTimestamp;
-    if (elapsed == 0) return;
-    uint256 existingBaseDebt = spoke.baseDebt;
-    if (existingBaseDebt == 0) return;
+    if (block.timestamp == spoke.lastUpdateTimestamp) {
+      return;
+    }
 
-    // todo: add rayMulDiv in WadRayMath (=mulDiv / RAY) to optimize out the one cancelled RAY
-    // & avoid precision loss
-    uint256 cumulatedBaseDebt = existingBaseDebt.rayMul(nextBaseBorrowIndex).rayDiv(
-      spoke.baseBorrowIndex
-    );
-    spoke.outstandingPremium += (cumulatedBaseDebt - existingBaseDebt).radMul(spoke.riskPremiumRad);
-    spoke.baseDebt = cumulatedBaseDebt;
-    spoke.baseBorrowIndex = nextBaseBorrowIndex;
+    uint256 existingBaseDebt = spoke.baseDebt;
+    if (existingBaseDebt != 0) {
+      uint256 cumulatedBaseDebt = existingBaseDebt.rayMul(nextBaseBorrowIndex).rayDiv(
+        spoke.baseBorrowIndex
+      ); // precision loss, same as in v3
+
+      // accrue premium interest on the accrued base interest
+      spoke.outstandingPremium += (cumulatedBaseDebt - existingBaseDebt).radMul(
+        spoke.riskPremiumRad
+      );
+      spoke.baseDebt = cumulatedBaseDebt;
+    }
+
+    spoke.baseBorrowIndex = nextBaseBorrowIndex; // opt: doesn't need update on supply/withdraw actions?
     spoke.lastUpdateTimestamp = block.timestamp;
   }
 }

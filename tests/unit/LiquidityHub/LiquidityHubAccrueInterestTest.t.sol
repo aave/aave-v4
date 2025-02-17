@@ -41,10 +41,10 @@ contract LiquidityHubAccrueInterestTest is BaseTest {
     Asset memory daiInfo = hub.getAsset(daiAssetId);
 
     // Timestamp doesn't update when no interest accrued
-    assertEq(daiInfo.lastUpdateTimestamp, startTime);
-    assertEq(daiInfo.baseDebt, 0);
-    assertEq(daiInfo.riskPremiumRad, 0);
-    assertEq(daiInfo.outstandingPremium, 0);
+    assertEq(daiInfo.lastUpdateTimestamp, vm.getBlockTimestamp(), 'lastUpdateTimestamp');
+    assertEq(daiInfo.baseDebt, 0, 'baseDebt');
+    assertEq(daiInfo.riskPremiumRad, 0, 'riskPremiumRad');
+    assertEq(daiInfo.outstandingPremium, 0, 'outstandingPremium');
   }
 
   function test_accrueInterest_fuzz_BorrowAndWait(uint40 elapsed) public {
@@ -183,18 +183,28 @@ contract LiquidityHubAccrueInterestTest is BaseTest {
     elapsed = uint40(bound(elapsed, 1, type(uint40).max / 3));
     borrowAmount = bound(borrowAmount, 1, 1e30);
     riskPremium = bound(riskPremium, 0, MAX_BPS.bpsToRad());
-    uint256 supplyAmount = borrowAmount * 2;
-    uint256 startTime = vm.getBlockTimestamp();
-    uint256 lastUpdate = startTime;
+
+    Timestamps memory timestamps;
+    AssetDataLocal memory assetData;
+    Spoke1DataLocal memory spokeData;
+    Spoke1Amounts memory spoke1Amounts;
+    Spoke2Amounts memory spoke2Amounts;
+    CumulatedInterest memory cumulated;
+
+    spoke1Amounts.supply0 = borrowAmount * 2;
+    timestamps.t0 = uint40(vm.getBlockTimestamp());
 
     vm.startPrank(address(spoke1));
-    hub.supply(daiAssetId, supplyAmount, 0, address(spoke1));
+    hub.supply(daiAssetId, spoke1Amounts.supply0, 0, address(spoke1));
     hub.draw(daiAssetId, borrowAmount, riskPremium, address(spoke1));
-    uint256 baseBorrowRate = hub.getBaseInterestRate(daiAssetId);
     vm.stopPrank();
+
+    assetData.t0 = hub.getAsset(daiAssetId);
 
     // Time passes
     skip(elapsed);
+    timestamps.t1 = uint40(vm.getBlockTimestamp());
+    cumulated.t1 = MathUtils.calculateLinearInterest(assetData.t0.baseBorrowRate, timestamps.t0);
 
     // Spoke 2 does a supply to accrue interest
     Utils.supply(hub, daiAssetId, address(spoke2), 1000e18, 0, address(spoke2), address(spoke2));
@@ -202,19 +212,23 @@ contract LiquidityHubAccrueInterestTest is BaseTest {
     // Spoke 1's debt individually has not yet accrued, even though total debt has accrued
     assertEq(hub.getSpoke(daiAssetId, address(spoke1)).baseDebt, borrowAmount);
 
-    Asset memory daiInfo = hub.getAsset(daiAssetId);
+    assetData.t1 = hub.getAsset(daiAssetId);
 
-    uint256 totalBase = MathUtils
-      .calculateLinearInterest(baseBorrowRate, uint40(lastUpdate))
-      .rayMul(borrowAmount);
+    uint256 totalBase = borrowAmount
+      .rayMul(cumulated.t1.rayMul(assetData.t0.baseBorrowIndex))
+      .rayDiv(assetData.t0.baseBorrowIndex);
 
-    assertEq(daiInfo.lastUpdateTimestamp - lastUpdate, elapsed);
-    assertEq(daiInfo.baseDebt, totalBase);
-    assertEq(daiInfo.riskPremiumRad, riskPremium);
-    assertEq(daiInfo.outstandingPremium, (totalBase - borrowAmount).radMul(riskPremium));
+    assertEq(assetData.t1.lastUpdateTimestamp - timestamps.t0, elapsed, 'elapsed');
+    assertEq(assetData.t1.baseDebt, totalBase, 'baseDebt');
+    assertEq(assetData.t1.riskPremiumRad, riskPremium, 'riskPremiumRad');
+    assertEq(
+      assetData.t1.outstandingPremium,
+      (totalBase - borrowAmount).radMul(riskPremium),
+      'outstandingPremium'
+    );
 
     // Say borrow rate changes
-    baseBorrowRate *= 2;
+    uint256 baseBorrowRate = 2 * assetData.t1.baseBorrowRate;
     vm.mockCall(
       address(irStrategy),
       IReserveInterestRateStrategy.calculateInterestRates.selector,
@@ -223,9 +237,11 @@ contract LiquidityHubAccrueInterestTest is BaseTest {
     // Make an action to cache this new borrow rate
     Utils.supply(hub, daiAssetId, address(spoke2), 1000e18, 0, address(spoke2), address(spoke2));
 
-    lastUpdate = vm.getBlockTimestamp();
+    assetData.t1 = hub.getAsset(daiAssetId);
+
     // Time passes
     skip(elapsed);
+    timestamps.t2 = uint40(vm.getBlockTimestamp());
 
     // Spoke 2 does a supply to accrue interest
     Utils.supply(hub, daiAssetId, address(spoke2), 1000e18, 0, address(spoke2), address(spoke2));
@@ -233,19 +249,21 @@ contract LiquidityHubAccrueInterestTest is BaseTest {
     // Spoke 1's debt individually has not yet accrued, even though total debt has accrued
     assertEq(hub.getSpoke(daiAssetId, address(spoke1)).baseDebt, borrowAmount);
 
-    totalBase += totalBase.rayMul(
-      MathUtils.calculateLinearInterest(baseBorrowRate, uint40(lastUpdate)) - WadRayMath.RAY
+    assetData.t2 = hub.getAsset(daiAssetId);
+    cumulated.t2 = MathUtils.calculateLinearInterest(assetData.t2.baseBorrowRate, timestamps.t1);
+
+    totalBase = totalBase.rayMul(cumulated.t2.rayMul(assetData.t1.baseBorrowIndex)).rayDiv(
+      assetData.t1.baseBorrowIndex
     );
 
-    daiInfo = hub.getAsset(daiAssetId);
-
-    assertEq(elapsed * 2, vm.getBlockTimestamp() - startTime);
-    assertEq(daiInfo.baseDebt, totalBase);
-    assertEq(daiInfo.riskPremiumRad, riskPremium);
+    assertEq(elapsed * 2, vm.getBlockTimestamp() - timestamps.t0, 'elapsed');
+    assertApproxEqAbs(totalBase, assetData.t2.baseDebt, 1, 'baseDebt');
+    assertEq(assetData.t2.riskPremiumRad, riskPremium, 'riskPremiumRad');
     assertApproxEqAbs(
-      daiInfo.outstandingPremium,
       (totalBase - borrowAmount).radMul(riskPremium),
-      1
+      assetData.t2.outstandingPremium,
+      1,
+      'outstandingPremium'
     );
   }
 }

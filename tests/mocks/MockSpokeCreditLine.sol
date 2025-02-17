@@ -95,7 +95,7 @@ contract MockSpokeCreditLine is ISpoke {
     // keep liquidity in borrow module
     IERC20(reserves[assetId].asset).safeTransfer(to, amount);
 
-    emit Borrowed(assetId, to, amount);
+    emit Borrowed(assetId, amount, to);
   }
 
   // TODO: Implement repay, calls liquidity hub restore method
@@ -105,7 +105,7 @@ contract MockSpokeCreditLine is ISpoke {
     _updateState(r, assetId, amount, msg.sender);
     ILiquidityHub(liquidityHub).restore(assetId, amount, 0, msg.sender);
 
-    emit Repaid(assetId, msg.sender, amount);
+    emit Repaid(assetId, amount, msg.sender);
   }
 
   function setUsingAsCollateral(uint256 assetId, bool usingAsCollateral) external {

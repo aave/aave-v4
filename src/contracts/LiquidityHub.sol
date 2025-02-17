@@ -207,6 +207,8 @@ contract LiquidityHub is ILiquidityHub {
     _updateRiskPremiumAndBaseDebt(asset, spoke, riskPremiumRad, 0); // no base debt change
 
     uint256 sharesAmount = asset.convertToSharesDown(amount);
+    require(sharesAmount > 0, 'INVALID_SHARES_AMOUNT');
+
     asset.suppliedShares -= sharesAmount;
     asset.availableLiquidity -= amount;
     spoke.suppliedShares -= sharesAmount;
@@ -278,8 +280,7 @@ contract LiquidityHub is ILiquidityHub {
   //
 
   function previewNextBorrowIndex(uint256 assetId) public view returns (uint256) {
-    (, uint256 nextBaseBorrowIndex) = _assets[assetId].previewNextBorrowIndex();
-    return nextBaseBorrowIndex;
+    return _assets[assetId].previewNextBorrowIndex();
   }
 
   function convertToSharesUp(uint256 assetId, uint256 assets) external view returns (uint256) {
@@ -373,14 +374,11 @@ contract LiquidityHub is ILiquidityHub {
   }
 
   // @dev Utilizes existing asset & spoke: `baseBorrowIndex`, `riskPremiumRad`
-  function _accrueInterest(
-    Asset storage asset,
-    SpokeData storage spoke
-  ) internal returns (uint256) {
-    (uint256 cumulatedBaseInterest, uint256 nextBaseBorrowIndex) = asset.previewNextBorrowIndex();
-    asset.accrueInterest(cumulatedBaseInterest, nextBaseBorrowIndex);
+  function _accrueInterest(Asset storage asset, SpokeData storage spoke) internal {
+    uint256 nextBaseBorrowIndex = asset.previewNextBorrowIndex();
+
+    asset.accrueInterest(nextBaseBorrowIndex);
     spoke.accrueInterest(nextBaseBorrowIndex);
-    return nextBaseBorrowIndex;
   }
 
   // @dev Expects both `asset.baseDebt` & `spoke.baseDebt` have been accrued
@@ -424,14 +422,17 @@ contract LiquidityHub is ILiquidityHub {
 
   function _addSpoke(uint256 assetId, DataTypes.SpokeConfig memory config, address spoke) internal {
     require(spoke != address(0), 'INVALID_SPOKE');
+    uint256 currentAssetBaseBorrowIndex = _assets[assetId].previewNextBorrowIndex();
+    // is zero when asset.baseBorrowIndex == 0 (ie asset not registered)
+    require(currentAssetBaseBorrowIndex != 0, 'INVALID_ASSET');
     _spokes[assetId][spoke] = SpokeData({
       suppliedShares: 0,
       baseDebt: 0,
       outstandingPremium: 0,
-      baseBorrowIndex: WadRayMath.RAY,
+      baseBorrowIndex: currentAssetBaseBorrowIndex,
       riskPremiumRad: 0,
       lastUpdateTimestamp: block.timestamp,
-      config: DataTypes.SpokeConfig({drawCap: config.drawCap, supplyCap: config.supplyCap})
+      config: config
     });
     emit SpokeAdded(assetId, spoke);
   }

@@ -69,7 +69,7 @@ contract SpokeBorrowTest is BaseTest {
     // Bob draw half of dai reserve liquidity
     vm.prank(bob);
     vm.expectEmit(address(spoke1));
-    emit Borrowed(spokeInfo[spoke1].dai.reserveId, bob, daiAmount / 2);
+    emit Borrowed(spokeInfo[spoke1].dai.reserveId, daiAmount / 2, bob);
     spoke1.borrow(spokeInfo[spoke1].dai.reserveId, daiAmount / 2, bob);
 
     bobData = spoke1.getUser(spokeInfo[spoke1].weth.reserveId, bob);
@@ -170,7 +170,7 @@ contract SpokeBorrowTest is BaseTest {
     // Bob draw dai
     vm.prank(bob);
     vm.expectEmit(address(spoke1));
-    emit Borrowed(spokeInfo[spoke1].dai.reserveId, bob, daiBorrowAmount);
+    emit Borrowed(spokeInfo[spoke1].dai.reserveId, daiBorrowAmount, bob);
     spoke1.borrow(spokeInfo[spoke1].dai.reserveId, daiBorrowAmount, bob);
 
     bobData = spoke1.getUser(spokeInfo[spoke1].weth.reserveId, bob);
