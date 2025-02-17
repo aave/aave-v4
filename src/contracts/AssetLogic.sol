@@ -111,9 +111,8 @@ library AssetLogic {
         asset.riskPremiumRad
       );
       asset.baseDebt = cumulatedBaseDebt;
+      asset.baseBorrowIndex = nextBaseBorrowIndex; // opt: doesn't need update on supply, withdraw actions?
+      asset.lastUpdateTimestamp = block.timestamp;
     }
-
-    asset.baseBorrowIndex = nextBaseBorrowIndex; // opt: doesn't need update on supply, withdraw actions?
-    asset.lastUpdateTimestamp = block.timestamp;
   }
 }
