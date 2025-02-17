@@ -421,11 +421,11 @@ contract LiquidityHubSupplyTest is LiquidityHubBaseTest {
 
     Asset memory daiData = hub.getAsset(daiAssetId);
     uint256 accruedBase = daiData.baseDebt.rayMul(rate);
-    uint256 initialTotalAssets = hub.getTotalAssets(daiAssetId);
+    uint256 initialTotalAssets = daiAmount;
 
     uint256 supply2Amount = 10e18;
     uint256 expectedSupply2Shares = supply2Amount.toSharesDown(
-      hub.getTotalAssets(daiAssetId) + accruedBase,
+      initialTotalAssets + accruedBase,
       daiData.suppliedShares
     );
     uint256 initialSupplyShares = daiData.suppliedShares;
@@ -453,8 +453,9 @@ contract LiquidityHubSupplyTest is LiquidityHubBaseTest {
       expectedSupply2Shares + initialSupplyShares,
       'suppliedShares post-supply'
     );
-    assertTrue(
-      expectedSupply2Shares < supply2Amount,
+    assertLt(
+      expectedSupply2Shares,
+      supply2Amount,
       'increased index should lead to lower number of shares'
     );
     assertEq(spokeData.suppliedShares, daiData.suppliedShares, 'spoke suppliedShares post-supply');
@@ -479,11 +480,11 @@ contract LiquidityHubSupplyTest is LiquidityHubBaseTest {
     Asset memory daiData = hub.getAsset(daiAssetId);
     uint256 accruedBase = daiData.baseDebt.rayMul(rate);
     uint256 accruedPremium = accruedBase.radMul(riskPremiumRad);
-    uint256 initialTotalAssets = hub.getTotalAssets(daiAssetId);
+    uint256 initialTotalAssets = daiAmount;
 
     uint256 supply2Amount = 10e18;
     uint256 expectedSupply2Shares = supply2Amount.toSharesDown(
-      hub.getTotalAssets(daiAssetId) + accruedBase + accruedPremium,
+      initialTotalAssets + accruedBase + accruedPremium,
       daiData.suppliedShares
     );
     uint256 initialSupplyShares = daiData.suppliedShares;
@@ -510,6 +511,11 @@ contract LiquidityHubSupplyTest is LiquidityHubBaseTest {
       daiData.suppliedShares,
       expectedSupply2Shares + initialSupplyShares,
       'suppliedShares post-supply'
+    );
+    assertEq(
+      hub.convertToAssetsUp(daiAssetId, expectedSupply2Shares),
+      supply2Amount,
+      'assets to shares post-supply'
     );
     assertTrue(
       expectedSupply2Shares < supply2Amount,
