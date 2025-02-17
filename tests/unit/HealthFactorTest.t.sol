@@ -74,7 +74,7 @@ contract HealthFactorTest_ToMigrate is BaseTest {
     );
 
     // USER1 borrow usdc
-    Utils.borrow(spoke1, spokeInfo[spoke1].usdx.reserveId, USER1, usdcBorrowAmount, USER1);
+    Utils.spokeBorrow(spoke1, spokeInfo[spoke1].usdx.reserveId, USER1, usdcBorrowAmount, USER1);
 
     uint256 healthFactor = ISpoke(spoke1).getHealthFactor(USER1);
     assertEq(healthFactor, 2e18, 'wrong health factor');
@@ -127,10 +127,10 @@ contract HealthFactorTest_ToMigrate is BaseTest {
     );
 
     // USER1 borrow usdc
-    Utils.borrow(spoke1, spokeInfo[spoke1].usdx.reserveId, USER1, usdcBorrowAmount, USER1);
+    Utils.spokeBorrow(spoke1, spokeInfo[spoke1].usdx.reserveId, USER1, usdcBorrowAmount, USER1);
 
     // USER1 borrow wbtc
-    Utils.borrow(spoke1, spokeInfo[spoke1].wbtc.reserveId, USER1, wbtcBorrowAmount, USER1);
+    Utils.spokeBorrow(spoke1, spokeInfo[spoke1].wbtc.reserveId, USER1, wbtcBorrowAmount, USER1);
 
     uint256[] memory assetIds = new uint256[](4);
     assetIds[0] = daiAssetId;

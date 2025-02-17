@@ -67,7 +67,8 @@ library Utils {
     hub.withdraw({assetId: assetId, amount: amount, riskPremiumRad: riskPremiumRad, to: to});
   }
 
-  function borrow(
+  // spoke
+  function spokeBorrow(
     Spoke spoke,
     uint256 reserveId,
     address user,
@@ -78,7 +79,6 @@ library Utils {
     spoke.borrow(reserveId, amount, user);
   }
 
-  // spoke
   function spokeSupply(
     LiquidityHub hub,
     Spoke spoke,
