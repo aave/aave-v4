@@ -267,15 +267,15 @@ contract Spoke is ISpoke {
     ReserveConfig memory params,
     address asset
   ) external returns (uint256) {
-    uint256 reserveCountTmp = reserveCount;
-    Reserve storage reserve = _reserves[reserveCountTmp];
+    uint256 _reserveCount = reserveCount;
+    Reserve storage reserve = _reserves[_reserveCount];
     // TODO: validate reserveId does not exist already, valid asset
     // require(asset != address(0), 'INVALID_ASSET');
     // require(_reserves[reserveId].asset == address(0), 'RESERVE_ID_ALREADY_EXISTS');
 
     // TODO: AccessControl
-    reservesList.push(reserveCountTmp);
-    _reserves[reserveCountTmp] = Reserve({
+    reservesList.push(_reserveCount);
+    _reserves[_reserveCount] = Reserve({
       assetId: assetId,
       asset: asset,
       baseDebt: 0,
@@ -470,8 +470,8 @@ contract Spoke is ISpoke {
 
     uint256 newUserDebt = baseDebtChange > 0
       ? existingUserDebt + uint256(baseDebtChange) // debt added
-      // force underflow: only possible when user takes repays amount more than net drawn
-      : existingUserDebt - uint256(-baseDebtChange); // debt restored
+      : // force underflow: only possible when user takes repays amount more than net drawn
+      existingUserDebt - uint256(-baseDebtChange); // debt restored
 
     (uint256 newReserveRiskPremium, uint256 newReserveDebt) = MathUtils.addToWeightedAverage(
       reserveRiskPremiumWithoutCurrent,
