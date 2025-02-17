@@ -85,7 +85,7 @@ library AssetLogic {
   // @return nextBaseBorrowIndex (in ray)
   function previewNextBorrowIndex(Asset storage asset) internal view returns (uint256) {
     uint256 lastUpdateTimestamp = asset.lastUpdateTimestamp;
-    if (block.timestamp == lastUpdateTimestamp) {
+    if (lastUpdateTimestamp == block.timestamp) {
       return asset.baseBorrowIndex;
     }
 
@@ -115,7 +115,7 @@ library AssetLogic {
     uint256 existingBaseDebt = asset.baseDebt;
     uint256 existingOutstandingPremium = asset.outstandingPremium;
 
-    if (existingBaseDebt == 0 || block.timestamp == asset.lastUpdateTimestamp) {
+    if (existingBaseDebt == 0 || asset.lastUpdateTimestamp == block.timestamp) {
       return (existingBaseDebt, existingOutstandingPremium);
     }
 
