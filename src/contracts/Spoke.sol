@@ -236,8 +236,7 @@ contract Spoke is ISpoke {
   }
 
   function getUserRiskPremium(address user) external view returns (uint256) {
-    (, , , uint256 userRiskPremium, ) = _calculateUserAccountData(user);
-    return userRiskPremium;
+    return _calcUserRiskPremium(_users[user]);
   }
 
   function getHealthFactor(address user) external view returns (uint256) {
@@ -395,7 +394,7 @@ contract Spoke is ISpoke {
   /// @dev It's assumed interest has been accrued before this function call.
   function _calcUserRiskPremium(
     mapping(uint256 => UserConfig) storage userData
-  ) internal returns (uint256) {
+  ) internal view returns (uint256) {
     uint256 reservesListLength = reservesList.length;
 
     // Variable to decrement as we count up user RP

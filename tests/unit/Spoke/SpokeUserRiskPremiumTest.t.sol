@@ -1,42 +1,60 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.0;
 
-import '../BaseTest.t.sol';
+import 'tests/BaseTest.t.sol';
+import {Spoke} from 'src/contracts/Spoke.sol';
 
-contract UserRiskPremiumTest_ToMigrate is BaseTest {
+contract SpokeUserRiskPremiumTest is BaseTest {
   using SharesMath for uint256;
   using WadRayMath for uint256;
   using PercentageMath for uint256;
 
   function setUp() public override {
-    vm.skip(true, 'pending spoke migration');
-
     super.setUp();
+    initEnvironment();
   }
 
   function test_getUserRiskPremium_no_collateral() public view {
-    uint256 userRiskPremium = ISpoke(spoke1).getUserRiskPremium(USER1);
+    uint256 userRiskPremium = spoke1.getUserRiskPremium(bob);
     assertEq(userRiskPremium, 0, 'wrong user risk premium');
   }
 
   function test_getUserRiskPremium_single_asset_collateral() public {
-    uint256 daiId = 0;
+    uint256 daiReserveId = spokeInfo[spoke1].dai.reserveId;
     uint256 daiAmount = 100e18;
     bool newCollateral = true;
     bool usingAsCollateral = true;
 
-    // ensure DAI allowed as collateral
-    Utils.updateCollateral(spoke1, daiId, newCollateral);
+    // Bob supply dai into spoke1
+    Utils.spokeSupply(hub, spoke1, daiReserveId, bob, daiAmount, bob);
+    Utils.setUsingAsCollateral(spoke1, bob, daiReserveId, usingAsCollateral);
 
-    // USER1 supply dai into spoke1
-    deal(address(dai), USER1, daiAmount);
-    Utils.spokeSupply(hub, spoke1, daiId, USER1, daiAmount, USER1);
-    Utils.setUsingAsCollateral(spoke1, USER1, daiId, usingAsCollateral);
-
-    uint256 userRiskPremium = ISpoke(spoke1).getUserRiskPremium(USER1);
-    assertEq(userRiskPremium, 1e18, 'wrong user risk premium'); // TODO: fix when LP is implemented
+    uint256 userRiskPremium = spoke1.getUserRiskPremium(bob);
+    assertEq(userRiskPremium, 0, 'wrong user risk premium');
   }
 
+  function test_getUserRiskPremium_single_asset_collateral_borrowed() public {
+    uint256 daiReserveId = spokeInfo[spoke1].dai.reserveId;
+    uint256 supplyAmount = 100e18;
+    uint256 borrowAmount = 50e18;
+    bool newCollateral = true;
+    bool usingAsCollateral = true;
+
+    // Bob supply dai into spoke1
+    Utils.spokeSupply(hub, spoke1, daiReserveId, bob, supplyAmount, bob);
+    Utils.setUsingAsCollateral(spoke1, bob, daiReserveId, usingAsCollateral);
+    Utils.spokeBorrow(spoke1, daiReserveId, bob, borrowAmount, bob);
+
+    uint256 userRiskPremium = spoke1.getUserRiskPremium(bob);
+    Spoke.Reserve memory daiInfo = spoke1.getReserve(daiReserveId);
+
+    // With single collateral, user rp will match liquidity premium of collateral
+    assertEq(userRiskPremium, daiInfo.config.liquidityPremium, 'wrong user risk premium');
+  }
+
+  // TODO: Fuzz the amount of single collateral, show that user risk premium still matches that of reserve lp
+
+  /*
   function test_getUserRiskPremium_multi_asset_collateral() public {
     uint256 daiId = 0;
     uint256 ethId = 1;
@@ -124,4 +142,5 @@ contract UserRiskPremiumTest_ToMigrate is BaseTest {
     }
     return totalCollateral != 0 ? userRiskPremium.wadDiv(totalCollateral) : 0;
   }
+  */
 }

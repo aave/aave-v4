@@ -342,21 +342,21 @@ abstract contract BaseTest is Test, Events {
     Spoke.ReserveConfig memory wbtcConfig = Spoke.ReserveConfig({
       lt: 0.75e4,
       lb: 0,
-      liquidityPremium: 10,
+      liquidityPremium: 10_00,
       borrowable: true,
       collateral: true
     });
     Spoke.ReserveConfig memory daiConfig = Spoke.ReserveConfig({
       lt: 0.78e4,
       lb: 0,
-      liquidityPremium: 20,
+      liquidityPremium: 20_00,
       borrowable: true,
       collateral: true
     });
     Spoke.ReserveConfig memory usdxConfig = Spoke.ReserveConfig({
       lt: 0.78e4,
       lb: 0,
-      liquidityPremium: 50,
+      liquidityPremium: 50_00,
       borrowable: true,
       collateral: true
     });
@@ -402,21 +402,21 @@ abstract contract BaseTest is Test, Events {
     wethConfig = Spoke.ReserveConfig({
       lt: 0.76e4,
       lb: 0,
-      liquidityPremium: 10,
+      liquidityPremium: 10_00,
       borrowable: true,
       collateral: true
     });
     daiConfig = Spoke.ReserveConfig({
       lt: 0.72e4,
       lb: 0,
-      liquidityPremium: 20,
+      liquidityPremium: 20_00,
       borrowable: true,
       collateral: true
     });
     usdxConfig = Spoke.ReserveConfig({
       lt: 0.72e4,
       lb: 0,
-      liquidityPremium: 50,
+      liquidityPremium: 50_00,
       borrowable: true,
       collateral: true
     });
@@ -462,21 +462,21 @@ abstract contract BaseTest is Test, Events {
     usdxConfig = Spoke.ReserveConfig({
       lt: 0.75e4,
       lb: 0,
-      liquidityPremium: 10,
+      liquidityPremium: 10_00,
       borrowable: true,
       collateral: true
     });
     wethConfig = Spoke.ReserveConfig({
       lt: 0.79e4,
       lb: 0,
-      liquidityPremium: 20,
+      liquidityPremium: 20_00,
       borrowable: true,
       collateral: true
     });
     wbtcConfig = Spoke.ReserveConfig({
       lt: 0.77e4,
       lb: 0,
-      liquidityPremium: 50,
+      liquidityPremium: 50_00,
       borrowable: true,
       collateral: true
     });
@@ -520,7 +520,7 @@ abstract contract BaseTest is Test, Events {
     daiConfig = Spoke.ReserveConfig({
       lt: 0.70e4,
       lb: 0,
-      liquidityPremium: 100,
+      liquidityPremium: 100_00,
       borrowable: true,
       collateral: true
     });
