@@ -330,7 +330,7 @@ contract BorrowIndex_Scenario1Test is LiquidityHubScenarioBaseTest {
       assertEq(
         spokes.spoke4.t2_f.baseBorrowIndex,
         assets.assetData0.t2_f.baseBorrowIndex,
-        't2_f Spoke4 base debt'
+        't2_f Spoke4 index'
       );
       assertEq(
         spokes.spoke4.t2_f.baseDebt,
