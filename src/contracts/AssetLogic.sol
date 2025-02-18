@@ -100,7 +100,7 @@ library AssetLogic {
     return cumulatedBaseInterest.rayMul(asset.baseBorrowIndex);
   }
 
-  // @dev Utilizes existing `asset.baseBorrowIndex` & `asset.riskPremiumRad`
+  // @dev Utilizes existing `asset.baseBorrowIndex` & `asset.riskPremium`
   function accrueInterest(Asset storage asset, uint256 nextBaseBorrowIndex) internal {
     (uint256 cumulatedBaseDebt, uint256 cumulatedOutstandingPremium) = asset.previewInterest(
       nextBaseBorrowIndex
@@ -130,7 +130,7 @@ library AssetLogic {
     return (
       cumulatedBaseDebt,
       existingOutstandingPremium +
-        (cumulatedBaseDebt - existingBaseDebt).radMul(asset.riskPremiumRad)
+        (cumulatedBaseDebt - existingBaseDebt).percentMul(asset.riskPremium.fromRay())
     );
   }
 }
