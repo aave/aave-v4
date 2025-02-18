@@ -96,7 +96,7 @@ contract LiquidityHubSupplyTest is LiquidityHubBaseTest {
       'spoke outstandingPremium pre-supply'
     );
     assertEq(spokeData.baseBorrowIndex, 0, 'spoke baseBorrowIndex pre-supply');
-    assertEq(spokeData.riskPremium, 0, 'spoke riskPremiumRad pre-supply');
+    assertEq(spokeData.riskPremium, 0, 'spoke riskPremium pre-supply');
     assertEq(spokeData.lastUpdateTimestamp, 0, 'spoke lastUpdateTimestamp pre-supply');
 
     assertEq(tokenList.dai.balanceOf(alice), MAX_SUPPLY_AMOUNT, 'user token balance pre-supply');
