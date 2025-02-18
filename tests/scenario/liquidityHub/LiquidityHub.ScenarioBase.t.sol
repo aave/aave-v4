@@ -46,7 +46,7 @@ abstract contract LiquidityHubScenarioBaseTest is BaseTest {
   }
 
   uint256[] internal timestamps;
-  AssetDatas[NUM_SPOKES] internal assets;
+  AssetDatas[NUM_ASSETS] internal assets;
   SpokeDatas[NUM_SPOKES] internal spokes;
   SpokeActionAssetIds[NUM_SPOKES] internal spokeActions;
   SpokeAmounts[NUM_SPOKES] internal spokeAmounts;
