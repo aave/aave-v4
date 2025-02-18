@@ -27,15 +27,6 @@ abstract contract LiquidityHubScenarioBaseTest is BaseTest {
     Asset[NUM_TIMESTAMPS] t_f;
   }
 
-  struct SpokeDataLocal {
-    SpokeDatas[NUM_SPOKES] spoke;
-  }
-
-  // for either generic or specific asset data
-  struct AssetDataLocal {
-    AssetDatas[NUM_ASSETS] assetData;
-  }
-
   struct CalculatedStates {
     Timestamps cumulatedBaseInterest;
   }
@@ -55,8 +46,8 @@ abstract contract LiquidityHubScenarioBaseTest is BaseTest {
   }
 
   uint256[] internal timestamps;
-  AssetDataLocal internal assets;
-  SpokeDataLocal internal spokes;
+  AssetDatas[NUM_SPOKES] internal assets;
+  SpokeDatas[NUM_SPOKES] internal spokes;
   SpokeActionAssetIds[NUM_SPOKES] internal spokeActions;
   SpokeAmounts[NUM_SPOKES] internal spokeAmounts;
   CalculatedStates internal states;
