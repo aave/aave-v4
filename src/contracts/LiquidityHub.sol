@@ -314,15 +314,21 @@ contract LiquidityHub is ILiquidityHub {
     return cumulatedBaseDebt;
   }
 
-  function getTotalDrawnLiquidity(uint256 assetId) public view returns (uint256) {
+  function getAssetDrawnLiquidity(uint256 assetId) public view returns (uint256) {
     (uint256 cumulatedBaseDebt, ) = _assets[assetId].previewInterest(
       _assets[assetId].previewNextBorrowIndex()
     );
     return cumulatedBaseDebt;
   }
 
-  function getSpokeTotalDebt(uint256 assetId, address spoke) public view returns (uint256) {
+  function getSpokeDebt(uint256 assetId, address spoke) public view returns (uint256) {
     (uint256 cumulatedBaseDebt, uint256 cumulatedOutstandingPremium) = _spokes[assetId][spoke]
+      .previewInterest(_assets[assetId].previewNextBorrowIndex());
+    return cumulatedBaseDebt + cumulatedOutstandingPremium;
+  }
+
+  function getAssetDebt(uint256 assetId) public view returns (uint256) {
+    (uint256 cumulatedBaseDebt, uint256 cumulatedOutstandingPremium) = _assets[assetId]
       .previewInterest(_assets[assetId].previewNextBorrowIndex());
     return cumulatedBaseDebt + cumulatedOutstandingPremium;
   }
