@@ -93,17 +93,9 @@ contract LiquidityHubSupplyTest is LiquidityHubBaseTest {
       assetData.outstandingPremium,
       'spoke outstandingPremium pre-supply'
     );
-    assertEq(
-      spokeData.baseBorrowIndex,
-      assetData.baseBorrowIndex,
-      'spoke baseBorrowIndex pre-supply'
-    );
+    assertEq(spokeData.baseBorrowIndex, 0, 'spoke baseBorrowIndex pre-supply');
     assertEq(spokeData.riskPremiumRad, 0, 'spoke riskPremiumRad pre-supply');
-    assertEq(
-      spokeData.lastUpdateTimestamp,
-      assetData.lastUpdateTimestamp,
-      'spoke lastUpdateTimestamp pre-supply'
-    );
+    assertEq(spokeData.lastUpdateTimestamp, 0, 'spoke lastUpdateTimestamp pre-supply');
 
     assertEq(tokenList.dai.balanceOf(alice), MAX_SUPPLY_AMOUNT, 'user token balance pre-supply');
     assertEq(tokenList.dai.balanceOf(address(spoke1)), 0, 'spoke token balance pre-supply');

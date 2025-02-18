@@ -17,6 +17,7 @@ contract Spoke is ISpoke {
   using PercentageMath for uint256;
   using SafeERC20 for IERC20;
 
+  uint256 public constant DEFAULT_SPOKE_INDEX = 0;
   ILiquidityHub public liquidityHub;
 
   struct Reserve {
@@ -258,26 +259,34 @@ contract Spoke is ISpoke {
     ReserveConfig memory params,
     address asset
   ) external returns (uint256) {
-    Reserve storage reserve = _reserves[reserveCount];
+    uint256 _reserveCount = reserveCount;
+    Reserve storage reserve = _reserves[_reserveCount];
     // TODO: validate reserveId does not exist already, valid asset
     // require(asset != address(0), 'INVALID_ASSET');
     // require(_reserves[reserveId].asset == address(0), 'RESERVE_ID_ALREADY_EXISTS');
 
     // TODO: AccessControl
-    reservesList.push(reserveCount);
-    reserve.assetId = assetId;
-    reserve.asset = asset;
-    reserve.config = ReserveConfig({
-      lt: params.lt,
-      lb: params.lb,
-      liquidityPremium: params.liquidityPremium,
-      borrowable: params.borrowable,
-      collateral: params.collateral
+    reservesList.push(reserveCount++);
+    _reserves[_reserveCount] = Reserve({
+      assetId: assetId,
+      asset: asset,
+      baseDebt: 0,
+      outstandingPremium: 0,
+      suppliedShares: 0,
+      baseBorrowIndex: DEFAULT_SPOKE_INDEX,
+      lastUpdateTimestamp: 0,
+      riskPremiumRad: 0,
+      config: ReserveConfig({
+        lt: params.lt,
+        lb: params.lb,
+        liquidityPremium: params.liquidityPremium,
+        borrowable: params.borrowable,
+        collateral: params.collateral
+      })
     });
 
-    return reserveCount++;
-
-    // emit event
+    return _reserveCount;
+    // todo: emit event
   }
 
   function updateReserve(uint256 reserveId, ReserveConfig memory params) external {

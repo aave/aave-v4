@@ -44,6 +44,9 @@ contract LiquidityHub is ILiquidityHub {
   using AssetLogic for Asset;
   using SpokeDataLogic for SpokeData;
 
+  uint256 public constant DEFAULT_ASSET_INDEX = WadRayMath.RAY;
+  uint256 public constant DEFAULT_SPOKE_INDEX = 0;
+
   mapping(uint256 assetId => Asset assetData) internal _assets;
   mapping(uint256 assetId => mapping(address spokeAddress => SpokeData spokeData)) internal _spokes;
 
@@ -87,7 +90,7 @@ contract LiquidityHub is ILiquidityHub {
       availableLiquidity: 0,
       baseDebt: 0,
       outstandingPremium: 0,
-      baseBorrowIndex: WadRayMath.RAY,
+      baseBorrowIndex: DEFAULT_ASSET_INDEX,
       baseBorrowRate: 0,
       lastUpdateTimestamp: block.timestamp,
       riskPremiumRad: 0,
@@ -424,8 +427,8 @@ contract LiquidityHub is ILiquidityHub {
 
     uint256 newSpokeDebt = baseDebtChange > 0
       ? existingSpokeDebt + uint256(baseDebtChange) // debt added
-      : // force underflow: only possible when spoke takes repays amount more than net drawn
-      existingSpokeDebt - uint256(-baseDebtChange); // debt restored
+      // force underflow: only possible when spoke takes repays amount more than net drawn
+      : existingSpokeDebt - uint256(-baseDebtChange); // debt restored
 
     (uint256 newAssetRiskPremium, uint256 newAssetDebt) = MathUtils.addToWeightedAverage(
       assetRiskPremiumWithoutCurrent,
@@ -443,16 +446,13 @@ contract LiquidityHub is ILiquidityHub {
 
   function _addSpoke(uint256 assetId, DataTypes.SpokeConfig memory config, address spoke) internal {
     require(spoke != address(0), 'INVALID_SPOKE');
-    uint256 currentAssetBaseBorrowIndex = _assets[assetId].previewNextBorrowIndex();
-    // is zero when asset.baseBorrowIndex == 0 (ie asset not registered)
-    require(currentAssetBaseBorrowIndex != 0, 'INVALID_ASSET');
     _spokes[assetId][spoke] = SpokeData({
       suppliedShares: 0,
       baseDebt: 0,
       outstandingPremium: 0,
-      baseBorrowIndex: currentAssetBaseBorrowIndex,
+      baseBorrowIndex: DEFAULT_SPOKE_INDEX,
       riskPremiumRad: 0,
-      lastUpdateTimestamp: block.timestamp,
+      lastUpdateTimestamp: 0,
       config: config
     });
     emit SpokeAdded(assetId, spoke);
