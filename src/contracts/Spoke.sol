@@ -407,7 +407,9 @@ contract Spoke is ISpoke {
     // Add up user debt for each reserve, including price
     for (uint256 i; i < reservesListLength; ++i) {
       reserveId = reservesList[i];
-      tempDebt += userData[reserveId].baseDebt * IPriceOracle(oracle).getAssetPrice(reserveId);
+      tempDebt +=
+        userData[reserveId].baseDebt *
+        IPriceOracle(oracle).getAssetPrice(_reserves[reserveId].assetId);
     }
 
     // If user has no debt, return 0 risk premium
@@ -424,7 +426,7 @@ contract Spoke is ISpoke {
           _reserves[reserveId].assetId,
           userData[reserveId].suppliedShares
         ) *
-        IPriceOracle(oracle).getAssetPrice(reserveId);
+        IPriceOracle(oracle).getAssetPrice(_reserves[reserveId].assetId);
 
       if (userSupply >= tempDebt) {
         // This reserve completes user debt, so add up weighted risk premium and break

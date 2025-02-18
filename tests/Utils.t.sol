@@ -80,7 +80,6 @@ library Utils {
   }
 
   function spokeSupply(
-    LiquidityHub hub,
     Spoke spoke,
     uint256 reserveId,
     address user,

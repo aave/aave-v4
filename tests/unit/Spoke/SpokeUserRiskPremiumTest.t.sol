@@ -25,7 +25,7 @@ contract SpokeUserRiskPremiumTest is BaseTest {
     bool usingAsCollateral = true;
 
     // Bob supply dai into spoke1
-    Utils.spokeSupply(hub, spoke1, daiReserveId, bob, daiAmount, bob);
+    Utils.spokeSupply(spoke1, daiReserveId, bob, daiAmount, bob);
     Utils.setUsingAsCollateral(spoke1, bob, daiReserveId, usingAsCollateral);
 
     uint256 userRiskPremium = spoke1.getUserRiskPremium(bob);
@@ -39,7 +39,7 @@ contract SpokeUserRiskPremiumTest is BaseTest {
     bool usingAsCollateral = true;
 
     // Bob supply dai into spoke1
-    Utils.spokeSupply(hub, spoke1, daiReserveId, bob, supplyAmount, bob);
+    Utils.spokeSupply(spoke1, daiReserveId, bob, supplyAmount, bob);
     Utils.setUsingAsCollateral(spoke1, bob, daiReserveId, usingAsCollateral);
     Utils.spokeBorrow(spoke1, daiReserveId, bob, borrowAmount, bob);
 
@@ -60,7 +60,7 @@ contract SpokeUserRiskPremiumTest is BaseTest {
 
     // Bob supply dai into spoke1
     deal(address(tokenList.dai), bob, supplyAmount);
-    Utils.spokeSupply(hub, spoke1, daiReserveId, bob, supplyAmount, bob);
+    Utils.spokeSupply(spoke1, daiReserveId, bob, supplyAmount, bob);
     Utils.setUsingAsCollateral(spoke1, bob, daiReserveId, usingAsCollateral);
     Utils.spokeBorrow(spoke1, daiReserveId, bob, borrowAmount, bob);
 
@@ -71,35 +71,61 @@ contract SpokeUserRiskPremiumTest is BaseTest {
     assertEq(userRiskPremium, daiInfo.config.liquidityPremium, 'wrong user risk premium');
   }
 
-  /*
   function test_getUserRiskPremium_multi_asset_collateral() public {
-    uint256 daiId = 0;
-    uint256 ethId = 1;
+    uint256 daiReserveId = spokeInfo[spoke1].dai.reserveId;
+    uint256 usdxReserveId = spokeInfo[spoke1].usdx.reserveId;
+    uint256 wethReserveId = spokeInfo[spoke1].weth.reserveId;
 
-    uint256 daiAmount = 100e18;
-    uint256 ethAmount = 10e18;
+    uint256 daiSupplyAmount = 1000e18;
+    uint256 usdxSupplyAmount = 1000e18;
+    uint256 wethSupplyAmount = 1000e18;
 
-    bool newCollateral = true;
     bool usingAsCollateral = true;
 
-    // ensure DAI allowed as collateral
-    Utils.updateCollateral(spoke1, daiId, newCollateral);
-    Utils.updateCollateral(spoke1, ethId, newCollateral);
+    // Bob supply dai into spoke1
+    Utils.spokeSupply(spoke1, daiReserveId, bob, daiSupplyAmount, bob);
+    Utils.setUsingAsCollateral(spoke1, bob, daiReserveId, usingAsCollateral);
 
-    // USER1 supply dai into spoke1
-    deal(address(dai), USER1, daiAmount);
-    Utils.spokeSupply(hub, spoke1, daiId, USER1, daiAmount, USER1);
-    Utils.setUsingAsCollateral(spoke1, USER1, daiId, usingAsCollateral);
+    // Bob supply usdx into spoke1
+    Utils.spokeSupply(spoke1, usdxReserveId, bob, usdxSupplyAmount, bob);
+    Utils.setUsingAsCollateral(spoke1, bob, usdxReserveId, usingAsCollateral);
 
-    // USER1 supply eth into spoke1
-    deal(address(eth), USER1, ethAmount);
-    Utils.spokeSupply(hub, spoke1, ethId, USER1, ethAmount, USER1);
-    Utils.setUsingAsCollateral(spoke1, USER1, ethId, usingAsCollateral);
+    // Bob supply weth into spoke1
+    Utils.spokeSupply(spoke1, wethReserveId, bob, wethSupplyAmount, bob);
+    Utils.setUsingAsCollateral(spoke1, bob, wethReserveId, usingAsCollateral);
 
-    uint256 userRiskPremium = ISpoke(spoke1).getUserRiskPremium(USER1);
-    assertEq(userRiskPremium, 1e18, 'wrong user risk premium'); // TODO: fix when LP is implemented
+    // Bob draw 2000 total dai + usdx
+    Utils.spokeBorrow(spoke1, daiReserveId, bob, daiSupplyAmount, bob);
+    Utils.spokeBorrow(spoke1, usdxReserveId, bob, usdxSupplyAmount, bob);
+
+    Spoke.Reserve memory daiInfo = spoke1.getReserve(daiReserveId);
+    Spoke.Reserve memory usdxInfo = spoke1.getReserve(usdxReserveId);
+    Spoke.Reserve memory wethInfo = spoke1.getReserve(wethReserveId);
+
+    // Weth is enough to cover the total debt
+    uint256 expectedUserRiskPremium = wethInfo.config.liquidityPremium;
+
+    Spoke.UserConfig memory userConfig = spoke1.getUser(daiReserveId, bob);
+    assertEq(userConfig.suppliedShares, hub.convertToSharesDown(daiAssetId, daiSupplyAmount));
+    assertEq(userConfig.baseDebt, daiSupplyAmount);
+
+    userConfig = spoke1.getUser(usdxReserveId, bob);
+    assertEq(userConfig.suppliedShares, hub.convertToSharesDown(usdxAssetId, usdxSupplyAmount));
+    assertEq(userConfig.baseDebt, usdxSupplyAmount);
+
+    userConfig = spoke1.getUser(wethReserveId, bob);
+    assertEq(userConfig.suppliedShares, hub.convertToSharesDown(wethAssetId, wethSupplyAmount));
+    assertEq(userConfig.baseDebt, 0);
+
+    uint256 userRiskPremium = spoke1.getUserRiskPremium(bob);
+    assertEq(userRiskPremium, expectedUserRiskPremium, 'wrong user risk premium');
   }
 
+  // TODO: Two assets, weth partially covering
+  // TODO: Two assets, average of the two
+  // TODO: Fuzz amounts of two assets, weighted avg of the two
+
+  /*
   function test_getUserRiskPremium_asset_price_changes() public {
     uint256 daiId = 0;
     uint256 ethId = 1;
@@ -160,4 +186,10 @@ contract SpokeUserRiskPremiumTest is BaseTest {
     return totalCollateral != 0 ? userRiskPremium.wadDiv(totalCollateral) : 0;
   }
   */
+
+  // TODO: Test multiple assets with different liquidity premiums
+  // TODO: Fuzz multiple asset amounts with diff liquidity premiums
+  // TODO: Show that whatever asset you supply in addition will not affect liquidity premium
+
+  // TODO: Test where we change one of the liquidity premiums to make our current data structure out of order to ensure ordering works
 }

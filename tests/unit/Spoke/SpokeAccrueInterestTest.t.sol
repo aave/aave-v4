@@ -29,13 +29,13 @@ contract SpokeAccrueInterestTest is BaseTest {
     uint256 amount = 1000e18;
 
     // Bob supplies through spoke 1
-    Utils.spokeSupply(hub, spoke1, spokeInfo[spoke1].dai.reserveId, bob, amount, bob);
+    Utils.spokeSupply(spoke1, spokeInfo[spoke1].dai.reserveId, bob, amount, bob);
 
     // Time passes
     skip(elapsed);
 
     // Alice does a supply through same spoke to accrue interest
-    Utils.spokeSupply(hub, spoke1, spokeInfo[spoke1].dai.reserveId, alice, amount, alice);
+    Utils.spokeSupply(spoke1, spokeInfo[spoke1].dai.reserveId, alice, amount, alice);
 
     Spoke.Reserve memory daiInfo = spoke1.getReserve(spokeInfo[spoke1].dai.reserveId);
 
@@ -51,7 +51,7 @@ contract SpokeAccrueInterestTest is BaseTest {
     uint256 startTime = vm.getBlockTimestamp();
 
     // Bob supplies and borrows through spoke 1
-    Utils.spokeSupply(hub, spoke1, spokeInfo[spoke1].dai.reserveId, bob, amount * 2, bob);
+    Utils.spokeSupply(spoke1, spokeInfo[spoke1].dai.reserveId, bob, amount * 2, bob);
     Utils.spokeBorrow(spoke1, spokeInfo[spoke1].dai.reserveId, bob, amount, bob);
 
     uint256 baseBorrowRate = hub.getBaseInterestRate(daiAssetId);
@@ -60,7 +60,7 @@ contract SpokeAccrueInterestTest is BaseTest {
     skip(365 days);
 
     // Bob does a supply through same spoke to accrue interest
-    Utils.spokeSupply(hub, spoke1, spokeInfo[spoke1].dai.reserveId, bob, 1e18, bob);
+    Utils.spokeSupply(spoke1, spokeInfo[spoke1].dai.reserveId, bob, 1e18, bob);
 
     Spoke.Reserve memory daiInfo = spoke1.getReserve(spokeInfo[spoke1].dai.reserveId);
     Asset memory daiAssetInfo = hub.getAsset(daiAssetId);
@@ -87,7 +87,7 @@ contract SpokeAccrueInterestTest is BaseTest {
     uint256 startTime = vm.getBlockTimestamp();
 
     // Bob supplies and borrows through spoke 1
-    Utils.spokeSupply(hub, spoke1, spokeInfo[spoke1].dai.reserveId, bob, amount * 2, bob);
+    Utils.spokeSupply(spoke1, spokeInfo[spoke1].dai.reserveId, bob, amount * 2, bob);
     Utils.spokeBorrow(spoke1, spokeInfo[spoke1].dai.reserveId, bob, amount, bob);
 
     uint256 baseBorrowRate = hub.getBaseInterestRate(daiAssetId);
@@ -96,7 +96,7 @@ contract SpokeAccrueInterestTest is BaseTest {
     skip(elapsed);
 
     // Bob does a supply through same spoke to accrue interest
-    Utils.spokeSupply(hub, spoke1, spokeInfo[spoke1].dai.reserveId, bob, 1e18, bob);
+    Utils.spokeSupply(spoke1, spokeInfo[spoke1].dai.reserveId, bob, 1e18, bob);
 
     Spoke.Reserve memory daiInfo = spoke1.getReserve(spokeInfo[spoke1].dai.reserveId);
     Asset memory daiAssetInfo = hub.getAsset(daiAssetId);
@@ -128,7 +128,7 @@ contract SpokeAccrueInterestTest is BaseTest {
     deal(address(tokenList.dai), bob, supplyAmount + 1e18);
 
     // Bob supplies and borrows through spoke 1
-    Utils.spokeSupply(hub, spoke1, spokeInfo[spoke1].dai.reserveId, bob, supplyAmount, bob);
+    Utils.spokeSupply(spoke1, spokeInfo[spoke1].dai.reserveId, bob, supplyAmount, bob);
     Utils.spokeBorrow(spoke1, spokeInfo[spoke1].dai.reserveId, bob, borrowAmount, bob);
 
     uint256 baseBorrowRate = hub.getBaseInterestRate(daiAssetId);
@@ -137,7 +137,7 @@ contract SpokeAccrueInterestTest is BaseTest {
     skip(elapsed);
 
     // Bob does a supply through same spoke to accrue interest
-    Utils.spokeSupply(hub, spoke1, spokeInfo[spoke1].dai.reserveId, bob, 1e18, bob);
+    Utils.spokeSupply(spoke1, spokeInfo[spoke1].dai.reserveId, bob, 1e18, bob);
 
     Spoke.Reserve memory daiInfo = spoke1.getReserve(spokeInfo[spoke1].dai.reserveId);
     Asset memory daiAssetInfo = hub.getAsset(daiAssetId);
