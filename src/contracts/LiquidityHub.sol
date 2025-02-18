@@ -259,8 +259,8 @@ contract LiquidityHub is ILiquidityHub {
     Asset storage asset = _assets[assetId];
     SpokeData storage spoke = _spokes[assetId][msg.sender];
 
-    uint256 nextBaseBorrowIndex = _accrueInterest(asset, spoke); // accrue interest before validating action
-    _validateRestore(asset, spoke, amount, nextBaseBorrowIndex);
+    _accrueInterest(asset, spoke); // accrue interest before validating action
+    _validateRestore(asset, spoke, amount);
 
     asset.updateBorrowRate({liquidityAdded: amount, liquidityTaken: 0});
     uint256 baseDebtRestored = _deductFromOutstandingPremium(asset, spoke, amount);
@@ -315,6 +315,12 @@ contract LiquidityHub is ILiquidityHub {
     return _assets[assetId].baseDebt;
   }
 
+  function getSpokeTotalDebt(uint256 assetId, address spoke) public view returns (uint256) {
+    (uint256 cumulatedBaseDebt, uint256 cumulatedOutstandingPremium) = _spokes[assetId][spoke]
+      .previewInterest(_assets[assetId].previewNextBorrowIndex());
+    return cumulatedBaseDebt + cumulatedOutstandingPremium;
+  }
+
   //
   // Internal
   //
@@ -365,17 +371,13 @@ contract LiquidityHub is ILiquidityHub {
   function _validateRestore(
     Asset storage asset,
     SpokeData storage spoke,
-    uint256 amountRestored,
-    uint256 nextBaseBorrowIndex
+    uint256 amountRestored
   ) internal view {
     // TODO: Other cases of status (frozen, paused)
     require(asset.config.active, 'ASSET_NOT_ACTIVE');
-    // Ensure spoke is not restoring more than supplied or equal 0
-    (uint256 cumulatedBaseDebt, uint256 cumulatedOutstandingPremium) = spoke.previewInterest(
-      nextBaseBorrowIndex
-    );
+    // Ensure spoke is not restoring more than accrued drawn or equal 0
     require(
-      amountRestored > 0 && amountRestored <= cumulatedBaseDebt + cumulatedOutstandingPremium,
+      amountRestored > 0 && amountRestored <= getSpokeTotalDebt(asset.id, msg.sender),
       'INVALID_RESTORE_AMOUNT'
     );
   }
