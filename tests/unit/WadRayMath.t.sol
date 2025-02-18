@@ -16,8 +16,6 @@ contract WadRayMathTests is Test {
     assertEq(w.HALF_WAD(), 1e18 / 2, 'half wad');
     assertEq(w.RAY(), 1e27, 'ray');
     assertEq(w.HALF_RAY(), 1e27 / 2, 'half_ray');
-    assertEq(w.RAD(), 1e8, 'ray');
-    assertEq(w.HALF_RAD(), 1e8 / 2, 'half_rad');
   }
 
   function test_wadMul_edge() public view {
@@ -116,25 +114,5 @@ contract WadRayMathTests is Test {
       assertEq(w.rayToWad(a), a / w.WAD_RAY_RATIO());
       assertEq(w.rayToWad(a), b);
     }
-  }
-
-  function test_radMul_fuzzing(uint256 a, uint256 b) public {
-    if ((b == 0 || (a > (type(uint256).max - w.HALF_RAD()) / b) == false) == false) {
-      vm.expectRevert();
-      w.radMul(a, b);
-      return;
-    }
-
-    assertEq(w.radMul(a, b), ((a * b) + w.HALF_RAD()) / w.RAD());
-  }
-
-  function test_radDiv_fuzzing(uint256 a, uint256 b) public {
-    if ((b == 0) || (((a > ((type(uint256).max - b / 2) / w.RAD())) == false) == false)) {
-      vm.expectRevert();
-      w.radDiv(a, b);
-      return;
-    }
-
-    assertEq(w.radDiv(a, b), ((a * w.RAD()) + (b / 2)) / b);
   }
 }
