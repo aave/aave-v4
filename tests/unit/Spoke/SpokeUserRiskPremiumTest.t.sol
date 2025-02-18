@@ -183,7 +183,65 @@ contract SpokeUserRiskPremiumTest is BaseTest {
     assertEq(userRiskPremium, expectedUserRiskPremium, 'wrong user risk premium');
   }
 
-  // TODO: Two assets, average of the two
+  function test_getUserRiskPremium_two_assets_equal_parts() public {
+    uint256 daiReserveId = spokeInfo[spoke1].dai.reserveId;
+    uint256 usdxReserveId = spokeInfo[spoke1].usdx.reserveId;
+    uint256 wethReserveId = spokeInfo[spoke1].weth.reserveId;
+
+    uint256 daiSupplyAmount = 2000e18;
+    uint256 usdxSupplyAmount = 6000e18;
+    uint256 wethSupplyAmount = 10e18;
+
+    uint256 wethBorrowAmount = 2e18;
+
+    bool usingAsCollateral = true;
+
+    // Bob supply dai into spoke1
+    Utils.spokeSupply(spoke1, daiReserveId, bob, daiSupplyAmount, bob);
+    Utils.setUsingAsCollateral(spoke1, bob, daiReserveId, usingAsCollateral);
+
+    // Bob supply usdx into spoke1
+    Utils.spokeSupply(spoke1, usdxReserveId, bob, usdxSupplyAmount, bob);
+    Utils.setUsingAsCollateral(spoke1, bob, usdxReserveId, usingAsCollateral);
+
+    // Alice supply weth into spoke1
+    Utils.spokeSupply(spoke1, wethReserveId, alice, wethSupplyAmount, alice);
+    Utils.setUsingAsCollateral(spoke1, alice, wethReserveId, usingAsCollateral);
+
+    // Bob draw $4000 total in weth
+    Utils.spokeBorrow(spoke1, wethReserveId, bob, wethBorrowAmount, bob);
+
+    Spoke.Reserve memory daiInfo = spoke1.getReserve(daiReserveId);
+    Spoke.Reserve memory usdxInfo = spoke1.getReserve(usdxReserveId);
+    Spoke.Reserve memory wethInfo = spoke1.getReserve(wethReserveId);
+
+    Spoke.UserConfig memory userConfig = spoke1.getUser(daiReserveId, bob);
+    assertEq(userConfig.suppliedShares, hub.convertToSharesDown(daiAssetId, daiSupplyAmount));
+    assertEq(userConfig.baseDebt, 0);
+
+    userConfig = spoke1.getUser(usdxReserveId, bob);
+    assertEq(userConfig.suppliedShares, hub.convertToSharesDown(usdxAssetId, usdxSupplyAmount));
+    assertEq(userConfig.baseDebt, 0);
+
+    userConfig = spoke1.getUser(wethReserveId, bob);
+    assertEq(userConfig.baseDebt, wethBorrowAmount);
+
+    userConfig = spoke1.getUser(wethReserveId, alice);
+    assertEq(userConfig.suppliedShares, hub.convertToSharesDown(wethAssetId, wethSupplyAmount));
+
+    // Dai and usdx will each cover half the debt
+    uint256 expectedUserRiskPremium = (daiInfo.config.liquidityPremium *
+      2000e18 *
+      oracle.getAssetPrice(daiAssetId) +
+      usdxInfo.config.liquidityPremium *
+      2000e18 *
+      oracle.getAssetPrice(usdxAssetId)) /
+      (2000e18 * oracle.getAssetPrice(daiAssetId) + 2000e18 * oracle.getAssetPrice(usdxAssetId));
+
+    uint256 userRiskPremium = spoke1.getUserRiskPremium(bob);
+    assertEq(userRiskPremium, expectedUserRiskPremium, 'wrong user risk premium');
+  }
+
   // TODO: Fuzz amounts of two assets, weighted avg of the two
   // TODO: A mix of 4 of the assets, weighted avg of the four
 
