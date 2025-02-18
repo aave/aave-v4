@@ -14,7 +14,7 @@ interface ILiquidityHub {
    * @dev Only callable by spokes.
    * @param assetId The asset id.
    * @param amount The amount of asset to supply.
-   * @param riskPremium The new aggregated risk premium of the calling spoke.
+   * @param riskPremium The new aggregated risk premium (in bps) of the calling spoke.
    * @param supplier The address which we pull assets from (user).
    * @return The amount of shares supplied.
    */
@@ -30,7 +30,7 @@ interface ILiquidityHub {
    * @dev Only callable by spokes.
    * @param assetId The asset id.
    * @param amount The amount of asset to withdraw.
-   * @param riskPremium The new aggregated risk premium of the calling spoke.
+   * @param riskPremium The new aggregated risk premium (in bps) of the calling spoke.
    * @param to The address to transfer the assets to.
    * @return The amount of shares withdrawn.
    */
@@ -46,7 +46,7 @@ interface ILiquidityHub {
    * @dev Only callable by spokes.
    * @param assetId The asset id.
    * @param amount The amount of debt to draw.
-   * @param riskPremium The new aggregated risk premium of the calling spoke.
+   * @param riskPremium The new aggregated risk premium (in bps) of the calling spoke.
    * @param to The address to draw debt to (user).
    * @return The amount of debt drawn.
    */
@@ -63,7 +63,7 @@ interface ILiquidityHub {
    * @dev Interest is always paid off first from premium, then from base.
    * @param assetId The asset id.
    * @param amount The amount to repay.
-   * @param riskPremium The new aggregated risk premium of the calling spoke.
+   * @param riskPremium The new aggregated risk premium (in bps) of the calling spoke.
    * @param repayer The address to pull assets from.
    * @return The amount of debt restored.
    */

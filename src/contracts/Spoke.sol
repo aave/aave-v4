@@ -634,10 +634,4 @@ contract Spoke is ISpoke {
     user.baseBorrowIndex = nextBaseBorrowIndex;
     user.lastUpdateTimestamp = block.timestamp;
   }
-
-  function _fromBoundedRay(uint256 value) internal pure returns (uint32) {
-    uint256 ret = value.fromRay();
-    require(ret < 1000_00, 'INVALID_BPS');
-    return uint32(ret);
-  }
 }

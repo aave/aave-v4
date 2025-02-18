@@ -17,7 +17,6 @@ struct SpokeData {
   uint256 baseDebt; // asset
   uint256 outstandingPremium; // asset
   uint256 baseBorrowIndex; // in ray
-  // todo add ray to this name?
   uint256 riskPremium; // weighted average risk premium in ray
   uint256 lastUpdateTimestamp;
   DataTypes.SpokeConfig config;
@@ -40,6 +39,7 @@ struct Asset {
 contract LiquidityHub is ILiquidityHub {
   using SafeERC20 for IERC20;
   using WadRayMath for uint256;
+  using WadRayMath for uint32;
   using SharesMath for uint256;
   using PercentageMath for uint256;
   using AssetLogic for Asset;
@@ -172,7 +172,7 @@ contract LiquidityHub is ILiquidityHub {
     _updateRiskPremiumAndBaseDebt({
       asset: asset,
       spoke: spoke,
-      newSpokeRiskPremium: _toBoundedRay(riskPremium),
+      newSpokeRiskPremium: riskPremium.toBoundedRay(),
       baseDebtChange: 0
     });
 
@@ -208,7 +208,7 @@ contract LiquidityHub is ILiquidityHub {
     _validateWithdraw(asset, spoke, amount);
 
     asset.updateBorrowRate({liquidityAdded: 0, liquidityTaken: amount});
-    _updateRiskPremiumAndBaseDebt(asset, spoke, _toBoundedRay(riskPremium), 0); // no base debt change
+    _updateRiskPremiumAndBaseDebt(asset, spoke, riskPremium.toBoundedRay(), 0); // no base debt change
 
     uint256 sharesAmount = asset.convertToSharesDown(amount);
     require(sharesAmount > 0, 'INVALID_SHARES_AMOUNT');
@@ -240,7 +240,7 @@ contract LiquidityHub is ILiquidityHub {
     _validateDraw(asset, amount, spoke.config.drawCap);
 
     asset.updateBorrowRate({liquidityAdded: 0, liquidityTaken: amount});
-    _updateRiskPremiumAndBaseDebt(asset, spoke, _toBoundedRay(riskPremium), int256(amount)); // base debt added
+    _updateRiskPremiumAndBaseDebt(asset, spoke, riskPremium.toBoundedRay(), int256(amount)); // base debt added
 
     asset.availableLiquidity -= amount;
 
@@ -271,7 +271,7 @@ contract LiquidityHub is ILiquidityHub {
     _updateRiskPremiumAndBaseDebt(
       asset,
       spoke,
-      _toBoundedRay(riskPremium),
+      riskPremium.toBoundedRay(),
       -int256(baseDebtRestored)
     );
 
@@ -465,10 +465,5 @@ contract LiquidityHub is ILiquidityHub {
     }
 
     return baseDebtRestored;
-  }
-
-  function _toBoundedRay(uint32 bps) internal pure returns (uint256) {
-    require(bps <= 1000_00, 'INVALID_BPS');
-    return uint256(bps) * 1e27;
   }
 }

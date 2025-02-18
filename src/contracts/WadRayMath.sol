@@ -127,7 +127,18 @@ library WadRayMath {
   }
 
   /**
-   * @dev Truncates number from Rad, loosing denominator precision
+   * @notice Casts value to Ray, adding 27 digits of precision, capping the number at 100_000
+   * @dev The number is capped at 100_000, reverts otherwise
+   * @param a The number
+   * @return b (= a * 1e27)
+   */
+  function toBoundedRay(uint32 a) internal pure returns (uint256) {
+    require(a <= 1000_00, 'INVALID_BPS');
+    return uint256(a) * 1e27;
+  }
+
+  /**
+   * @notice Truncates number from Ray, losing denominator precision
    * @param a The number in Ray
    * @return b (= a / 1e27)
    */
