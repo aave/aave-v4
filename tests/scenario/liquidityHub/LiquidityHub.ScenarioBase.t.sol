@@ -5,27 +5,35 @@ import 'tests/BaseTest.t.sol';
 import {Asset, SpokeData} from 'src/contracts/LiquidityHub.sol';
 
 abstract contract LiquidityHubScenarioBaseTest is BaseTest {
+  uint256 internal constant NUM_TIMESTAMPS = 10;
+  uint256 internal constant NUM_SPOKES = 4;
+  uint256 internal constant NUM_ASSETS = 4;
   bool internal isPrintLogs = false;
 
+  // _i: initial, prior to action at a given time
+  // _f: final, after action at a given time
   struct Timestamps {
-    uint256[10] t;
+    uint256[NUM_TIMESTAMPS] t_i;
+    uint256[NUM_TIMESTAMPS] t_f;
   }
 
   struct SpokeDatas {
-    SpokeData[10] t;
+    SpokeData[NUM_TIMESTAMPS] t_i;
+    SpokeData[NUM_TIMESTAMPS] t_f;
   }
 
   struct AssetDatas {
-    Asset[10] t;
+    Asset[NUM_TIMESTAMPS] t_i;
+    Asset[NUM_TIMESTAMPS] t_f;
   }
 
   struct SpokeDataLocal {
-    SpokeDatas[4] spoke;
+    SpokeDatas[NUM_SPOKES] spoke;
   }
 
   // for either generic or specific asset data
   struct AssetDataLocal {
-    AssetDatas[4] assetData;
+    AssetDatas[NUM_ASSETS] assetData;
   }
 
   struct CalculatedStates {
@@ -47,20 +55,10 @@ abstract contract LiquidityHubScenarioBaseTest is BaseTest {
   }
 
   uint256[] internal timestamps;
-  // _i: initial, prior to action at a given time
-  // _f: final, after action at a given time
-  AssetDataLocal internal assets_i;
-  AssetDataLocal internal assets_f;
-  SpokeDataLocal internal spokes_i;
-  SpokeDataLocal internal spokes_f;
-  SpokeAmounts internal spoke1Amounts;
-  SpokeActionAssetIds internal spoke1Actions;
-  SpokeAmounts internal spoke2Amounts;
-  SpokeActionAssetIds internal spoke2Actions;
-  SpokeAmounts internal spoke3Amounts;
-  SpokeActionAssetIds internal spoke3Actions;
-  SpokeAmounts internal spoke4Amounts;
-  SpokeActionAssetIds internal spoke4Actions;
+  AssetDataLocal internal assets;
+  SpokeDataLocal internal spokes;
+  SpokeActionAssetIds[NUM_SPOKES] internal spokeActions;
+  SpokeAmounts[NUM_SPOKES] internal spokeAmounts;
   CalculatedStates internal states;
 
   enum Stages {
