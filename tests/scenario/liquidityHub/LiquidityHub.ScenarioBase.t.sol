@@ -84,6 +84,8 @@ abstract contract LiquidityHubScenarioBaseTest is BaseTest {
   }
 
   uint256[] internal timestamps;
+  // _i: initial, prior to action at a given time
+  // _f: final, after action at a given time
   AssetDataLocal internal assets_i;
   AssetDataLocal internal assets_f;
   SpokeDataLocal internal spokes_i;
