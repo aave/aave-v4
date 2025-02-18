@@ -6,25 +6,6 @@ import {Test} from 'forge-std/Test.sol';
 import {EnumerableSet} from 'src/dependencies/openzeppelin/EnumerableSet.sol';
 import {MathUtils} from 'src/contracts/MathUtils.sol';
 import {WadRayMath} from 'src/contracts/WadRayMath.sol';
-import {PercentageMath} from 'src/contracts/PercentageMath.sol';
-
-/** notes
- add test
- - adding all, and then removing every other value (test_fuzz_WeightedAverageRemoveMultiple is more comprehensive)
- - only add max possible values at each step, limits for overflow
- - add, rm multiple, add
-todo
- - rm OZ enumerable set and just use mine?
-
- ceiling values (value, weight): 1e4, 1e45 and 1e18, 1e30 
- from https://www.notion.so/aave/Updated-Incremental-Weighted-Average-Usage-1469d63a22de80d3aebdedae4de6deb2?pvs=4
-
-test_fuzz_WeightedAverageRemoveSingle
-in: values: [1000000000000000000000000000 [1e27], 1727], toRemoveIndex: 0
-1e27 eats up 1727
- */
-
-// todo rename all number to value
 
 /// forge-config: default.allow_internal_expect_revert = true
 contract MathUtilsWeightedAverage is Test {
