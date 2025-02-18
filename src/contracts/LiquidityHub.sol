@@ -259,8 +259,8 @@ contract LiquidityHub is ILiquidityHub {
     Asset storage asset = _assets[assetId];
     SpokeData storage spoke = _spokes[assetId][msg.sender];
 
-    _accrueInterest(asset, spoke); // accrue interest before validating action
-    _validateRestore(asset, amount, spoke.baseDebt + spoke.outstandingPremium);
+    uint256 nextBaseBorrowIndex = _accrueInterest(asset, spoke); // accrue interest before validating action
+    _validateRestore(asset, spoke, amount, nextBaseBorrowIndex);
 
     asset.updateBorrowRate({liquidityAdded: amount, liquidityTaken: 0});
     uint256 baseDebtRestored = _deductFromOutstandingPremium(asset, spoke, amount);
@@ -364,21 +364,33 @@ contract LiquidityHub is ILiquidityHub {
 
   function _validateRestore(
     Asset storage asset,
+    SpokeData storage spoke,
     uint256 amountRestored,
-    uint256 amountDrawn
+    uint256 nextBaseBorrowIndex
   ) internal view {
     // TODO: Other cases of status (frozen, paused)
     require(asset.config.active, 'ASSET_NOT_ACTIVE');
     // Ensure spoke is not restoring more than supplied or equal 0
-    require(amountRestored > 0 && amountRestored <= amountDrawn, 'INVALID_RESTORE_AMOUNT');
+    (uint256 cumulatedBaseDebt, uint256 cumulatedOutstandingPremium) = spoke.previewInterest(
+      nextBaseBorrowIndex
+    );
+    require(
+      amountRestored > 0 && amountRestored <= cumulatedBaseDebt + cumulatedOutstandingPremium,
+      'INVALID_RESTORE_AMOUNT'
+    );
   }
 
   // @dev Utilizes existing asset & spoke: `baseBorrowIndex`, `riskPremiumRad`
-  function _accrueInterest(Asset storage asset, SpokeData storage spoke) internal {
+  function _accrueInterest(
+    Asset storage asset,
+    SpokeData storage spoke
+  ) internal returns (uint256) {
     uint256 nextBaseBorrowIndex = asset.previewNextBorrowIndex();
 
     asset.accrueInterest(nextBaseBorrowIndex);
     spoke.accrueInterest(nextBaseBorrowIndex);
+
+    return nextBaseBorrowIndex;
   }
 
   // @dev Expects both `asset.baseDebt` & `spoke.baseDebt` have been accrued
