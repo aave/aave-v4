@@ -1104,7 +1104,7 @@ contract LiquidityHubRestoreTest is LiquidityHubBaseTest {
     uint256 cumulatedBaseDebt = drawAmount.rayMul(cumulatedBaseInterest);
     vm.assume(cumulatedBaseDebt > 0);
 
-    // alice restore invalid amount = drawn amount (no premium)
+    // alice restore amount = drawn amount (no premium)
 
     vm.prank(address(spoke1));
     hub.restore({
@@ -1194,7 +1194,7 @@ contract LiquidityHubRestoreTest is LiquidityHubBaseTest {
     uint256 accruedPremium = (cumulatedBaseDebt - drawAmount).radMul(riskPremiumRad);
     assert(accruedPremium > 0);
 
-    // alice restore invalid amount = drawn amount AND premium
+    // alice restore amount = drawn amount AND premium
 
     vm.prank(address(spoke1));
     hub.restore({
@@ -1289,7 +1289,7 @@ contract LiquidityHubRestoreTest is LiquidityHubBaseTest {
     uint256 accruedPremium = (cumulatedBaseDebt - drawAmount).radMul(riskPremiumRad);
     vm.assume(accruedPremium > 0); // accrued premium can round to 0 in edge case - ex. (cumulatedBaseDebt - drawAmount) = 1, riskPremiumRad = 1
 
-    // alice restore invalid amount = drawn amount AND premium
+    // alice restore amount = drawn amount AND premium
 
     vm.prank(address(spoke1));
     hub.restore({

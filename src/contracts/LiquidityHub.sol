@@ -308,11 +308,17 @@ contract LiquidityHub is ILiquidityHub {
   }
 
   function getSpokeDrawnLiquidity(uint256 assetId, address spoke) public view returns (uint256) {
-    return _spokes[assetId][spoke].baseDebt;
+    (uint256 cumulatedBaseDebt, ) = _spokes[assetId][spoke].previewInterest(
+      _assets[assetId].previewNextBorrowIndex()
+    );
+    return cumulatedBaseDebt;
   }
 
   function getTotalDrawnLiquidity(uint256 assetId) public view returns (uint256) {
-    return _assets[assetId].baseDebt;
+    (uint256 cumulatedBaseDebt, ) = _assets[assetId].previewInterest(
+      _assets[assetId].previewNextBorrowIndex()
+    );
+    return cumulatedBaseDebt;
   }
 
   function getSpokeTotalDebt(uint256 assetId, address spoke) public view returns (uint256) {
@@ -383,16 +389,11 @@ contract LiquidityHub is ILiquidityHub {
   }
 
   // @dev Utilizes existing asset & spoke: `baseBorrowIndex`, `riskPremiumRad`
-  function _accrueInterest(
-    Asset storage asset,
-    SpokeData storage spoke
-  ) internal returns (uint256) {
+  function _accrueInterest(Asset storage asset, SpokeData storage spoke) internal {
     uint256 nextBaseBorrowIndex = asset.previewNextBorrowIndex();
 
     asset.accrueInterest(nextBaseBorrowIndex);
     spoke.accrueInterest(nextBaseBorrowIndex);
-
-    return nextBaseBorrowIndex;
   }
 
   // @dev Expects both `asset.baseDebt` & `spoke.baseDebt` have been accrued
@@ -417,8 +418,8 @@ contract LiquidityHub is ILiquidityHub {
 
     uint256 newSpokeDebt = baseDebtChange > 0
       ? existingSpokeDebt + uint256(baseDebtChange) // debt added
-      : // force underflow: only possible when spoke takes repays amount more than net drawn
-      existingSpokeDebt - uint256(-baseDebtChange); // debt restored
+      // force underflow: only possible when spoke takes repays amount more than net drawn
+      : existingSpokeDebt - uint256(-baseDebtChange); // debt restored
 
     (uint256 newAssetRiskPremium, uint256 newAssetDebt) = MathUtils.addToWeightedAverage(
       assetRiskPremiumWithoutCurrent,
