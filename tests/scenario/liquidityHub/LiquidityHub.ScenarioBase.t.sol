@@ -7,75 +7,43 @@ import {Asset, SpokeData} from 'src/contracts/LiquidityHub.sol';
 abstract contract LiquidityHubScenarioBaseTest is BaseTest {
   bool internal isPrintLogs = false;
 
-  // t0_i: prior to action
-  // t0_f: after action
   struct Timestamps {
-    uint256 t0_i;
-    uint256 t0_f;
-    uint256 t1_i;
-    uint256 t1_f;
-    uint256 t2_i;
-    uint256 t2_f;
-    uint256 t3_i;
-    uint256 t3_f;
-    uint256 t4_i;
-    uint256 t4_f;
-    uint256 t5_i;
-    uint256 t5_f;
-    uint256 t6_i;
-    uint256 t6_f;
-    uint256 t7_i;
-    uint256 t7_f;
-    uint256 t8_i;
-    uint256 t8_f;
-    uint256 t9_i;
-    uint256 t9_f;
+    uint256 t0;
+    uint256 t1;
+    uint256 t2;
+    uint256 t3;
+    uint256 t4;
+    uint256 t5;
+    uint256 t6;
+    uint256 t7;
+    uint256 t8;
+    uint256 t9;
   }
 
   struct SpokeDatas {
-    SpokeData t0_i;
-    SpokeData t0_f;
-    SpokeData t1_i;
-    SpokeData t1_f;
-    SpokeData t2_i;
-    SpokeData t2_f;
-    SpokeData t3_i;
-    SpokeData t3_f;
-    SpokeData t4_i;
-    SpokeData t4_f;
-    SpokeData t5_i;
-    SpokeData t5_f;
-    SpokeData t6_i;
-    SpokeData t6_f;
-    SpokeData t7_i;
-    SpokeData t7_f;
-    SpokeData t8_i;
-    SpokeData t8_f;
-    SpokeData t9_i;
-    SpokeData t9_f;
+    SpokeData t0;
+    SpokeData t1;
+    SpokeData t2;
+    SpokeData t3;
+    SpokeData t4;
+    SpokeData t5;
+    SpokeData t6;
+    SpokeData t7;
+    SpokeData t8;
+    SpokeData t9;
   }
 
   struct AssetDatas {
-    Asset t0_i;
-    Asset t0_f;
-    Asset t1_i;
-    Asset t1_f;
-    Asset t2_i;
-    Asset t2_f;
-    Asset t3_i;
-    Asset t3_f;
-    Asset t4_i;
-    Asset t4_f;
-    Asset t5_i;
-    Asset t5_f;
-    Asset t6_i;
-    Asset t6_f;
-    Asset t7_i;
-    Asset t7_f;
-    Asset t8_i;
-    Asset t8_f;
-    Asset t9_i;
-    Asset t9_f;
+    Asset t0;
+    Asset t1;
+    Asset t2;
+    Asset t3;
+    Asset t4;
+    Asset t5;
+    Asset t6;
+    Asset t7;
+    Asset t8;
+    Asset t9;
   }
 
   struct SpokeDataLocal {
@@ -116,8 +84,10 @@ abstract contract LiquidityHubScenarioBaseTest is BaseTest {
   }
 
   uint256[] internal timestamps;
-  AssetDataLocal internal assets;
-  SpokeDataLocal internal spokes;
+  AssetDataLocal internal assets_i;
+  AssetDataLocal internal assets_f;
+  SpokeDataLocal internal spokes_i;
+  SpokeDataLocal internal spokes_f;
   SpokeAmounts internal spoke1Amounts;
   SpokeActionAssetIds internal spoke1Actions;
   SpokeAmounts internal spoke2Amounts;
@@ -180,7 +150,7 @@ abstract contract LiquidityHubScenarioBaseTest is BaseTest {
     }
   }
 
-  function timeAt(Stages stage) internal view returns (uint256) {
-    return timestamps[uint256(stage)];
+  function timeAt(Stages stage) internal view returns (uint40) {
+    return uint40(timestamps[uint256(stage)]);
   }
 }
