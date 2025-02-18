@@ -20,19 +20,12 @@ abstract contract LiquidityHubScenarioBaseTest is BaseTest {
   }
 
   struct SpokeDataLocal {
-    SpokeDatas spoke1;
-    SpokeDatas spoke2;
-    SpokeDatas spoke3;
-    SpokeDatas spoke4;
+    SpokeDatas[4] spoke;
   }
 
   // for either generic or specific asset data
   struct AssetDataLocal {
     AssetDatas[4] assetData;
-    AssetDatas wethData;
-    AssetDatas daiData;
-    AssetDatas usdcData;
-    AssetDatas wbtcData;
   }
 
   struct CalculatedStates {

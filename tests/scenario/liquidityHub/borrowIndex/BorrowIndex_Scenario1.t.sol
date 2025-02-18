@@ -65,7 +65,7 @@ contract BorrowIndex_Scenario1Test is LiquidityHubScenarioBaseTest {
     super.initialAssertions(stage);
     if (stage == Stages.t0) {
       assets_i.assetData[0].t[0] = hub.getAsset(assetId);
-      spokes_i.spoke1.t[0] = hub.getSpoke(assetId, address(spoke1));
+      spokes_i.spoke[0].t[0] = hub.getSpoke(assetId, address(spoke1));
 
       // asset
       assertEq(
@@ -82,15 +82,15 @@ contract BorrowIndex_Scenario1Test is LiquidityHubScenarioBaseTest {
 
       // spoke1
       assertEq(
-        spokes_i.spoke1.t[0].baseBorrowIndex,
+        spokes_i.spoke[0].t[0].baseBorrowIndex,
         hub.DEFAULT_SPOKE_INDEX(),
         't0_i Spoke1 index'
       );
-      assertEq(spokes_i.spoke1.t[0].baseDebt, 0, 't0_i Spoke1 base debt');
-      assertEq(spokes_i.spoke1.t[0].lastUpdateTimestamp, 0, 't0_i Spoke1 lastUpdateTimestamp');
+      assertEq(spokes_i.spoke[0].t[0].baseDebt, 0, 't0_i Spoke1 base debt');
+      assertEq(spokes_i.spoke[0].t[0].lastUpdateTimestamp, 0, 't0_i Spoke1 lastUpdateTimestamp');
     } else if (stage == Stages.t1) {
       assets_i.assetData[0].t[1] = hub.getAsset(assetId);
-      spokes_i.spoke1.t[1] = hub.getSpoke(assetId, address(spoke1));
+      spokes_i.spoke[0].t[1] = hub.getSpoke(assetId, address(spoke1));
 
       // asset
       assertEq(
@@ -111,21 +111,21 @@ contract BorrowIndex_Scenario1Test is LiquidityHubScenarioBaseTest {
 
       // spoke1
       assertEq(
-        spokes_i.spoke1.t[1].baseBorrowIndex,
+        spokes_i.spoke[0].t[1].baseBorrowIndex,
         assets_i.assetData[0].t[0].baseBorrowIndex,
         't1_i Spoke1 index'
       );
-      assertEq(spokes_i.spoke1.t[1].baseDebt, spoke1Amounts.draw.t[0], 't1_i Spoke1 base debt');
+      assertEq(spokes_i.spoke[0].t[1].baseDebt, spoke1Amounts.draw.t[0], 't1_i Spoke1 base debt');
       assertEq(
-        spokes_i.spoke1.t[1].lastUpdateTimestamp,
+        spokes_i.spoke[0].t[1].lastUpdateTimestamp,
         timeAt(Stages.t0),
         't1_i Spoke1 lastUpdateTimestamp'
       );
       // no spoke4 yet
     } else if (stage == Stages.t2) {
       assets_i.assetData[0].t[2] = hub.getAsset(assetId);
-      spokes_i.spoke1.t[2] = hub.getSpoke(assetId, address(spoke1));
-      spokes_i.spoke4.t[2] = hub.getSpoke(assetId, address(spoke4));
+      spokes_i.spoke[0].t[2] = hub.getSpoke(assetId, address(spoke1));
+      spokes_i.spoke[3].t[2] = hub.getSpoke(assetId, address(spoke4));
 
       // asset
       assertEq(
@@ -146,26 +146,26 @@ contract BorrowIndex_Scenario1Test is LiquidityHubScenarioBaseTest {
 
       // spoke1
       assertEq(
-        spokes_i.spoke1.t[2].baseBorrowIndex,
+        spokes_i.spoke[0].t[2].baseBorrowIndex,
         hub.DEFAULT_ASSET_INDEX(),
         't2_i Spoke1 index'
       );
-      assertEq(spokes_i.spoke1.t[2].baseDebt, spoke1Amounts.draw.t[0], 't2_i Spoke1 base debt');
+      assertEq(spokes_i.spoke[0].t[2].baseDebt, spoke1Amounts.draw.t[0], 't2_i Spoke1 base debt');
       assertEq(
-        spokes_i.spoke1.t[2].lastUpdateTimestamp,
+        spokes_i.spoke[0].t[2].lastUpdateTimestamp,
         timeAt(Stages.t0),
         't2_i Spoke1 lastUpdateTimestamp'
       );
 
       // spoke4
       assertEq(
-        spokes_i.spoke4.t[2].baseBorrowIndex,
+        spokes_i.spoke[3].t[2].baseBorrowIndex,
         assets_i.assetData[0].t[2].baseBorrowIndex,
         't2_i Spoke4 index'
       );
-      assertEq(spokes_i.spoke4.t[2].baseDebt, spoke4Amounts.draw.t[1], 't2_i Spoke4 base debt');
+      assertEq(spokes_i.spoke[3].t[2].baseDebt, spoke4Amounts.draw.t[1], 't2_i Spoke4 base debt');
       assertEq(
-        spokes_i.spoke4.t[2].lastUpdateTimestamp,
+        spokes_i.spoke[3].t[2].lastUpdateTimestamp,
         timeAt(Stages.t1),
         't2_i Spoke4 lastUpdateTimestamp'
       );
@@ -227,7 +227,7 @@ contract BorrowIndex_Scenario1Test is LiquidityHubScenarioBaseTest {
   function finalAssertions(Stages t) internal override {
     if (t == Stages.t0) {
       assets_f.assetData[0].t[0] = hub.getAsset(assetId);
-      spokes_f.spoke1.t[0] = hub.getSpoke(assetId, address(spoke1));
+      spokes_f.spoke[0].t[0] = hub.getSpoke(assetId, address(spoke1));
 
       // asset
       assertEq(
@@ -248,21 +248,21 @@ contract BorrowIndex_Scenario1Test is LiquidityHubScenarioBaseTest {
 
       // spoke1
       assertEq(
-        spokes_f.spoke1.t[0].baseBorrowIndex,
+        spokes_f.spoke[0].t[0].baseBorrowIndex,
         hub.DEFAULT_ASSET_INDEX(),
         't0_f Spoke1 index'
       );
-      assertEq(spokes_f.spoke1.t[0].baseDebt, spoke1Amounts.draw.t[0], 't0_f Spoke1 base debt');
+      assertEq(spokes_f.spoke[0].t[0].baseDebt, spoke1Amounts.draw.t[0], 't0_f Spoke1 base debt');
       assertEq(
-        spokes_f.spoke1.t[0].lastUpdateTimestamp,
+        spokes_f.spoke[0].t[0].lastUpdateTimestamp,
         timeAt(Stages.t0),
         't0_f Spoke1 lastUpdateTimestamp'
       );
       // no spoke4 yet
     } else if (t == Stages.t1) {
       assets_f.assetData[0].t[1] = hub.getAsset(assetId);
-      spokes_f.spoke1.t[1] = hub.getSpoke(assetId, address(spoke1));
-      spokes_f.spoke4.t[1] = hub.getSpoke(assetId, address(spoke4));
+      spokes_f.spoke[0].t[1] = hub.getSpoke(assetId, address(spoke1));
+      spokes_f.spoke[3].t[1] = hub.getSpoke(assetId, address(spoke4));
       states.cumulatedBaseInterest.t[1] = MathUtils.calculateLinearInterest(
         assets_f.assetData[0].t[0].baseBorrowRate,
         timeAt(Stages.t0)
@@ -288,37 +288,37 @@ contract BorrowIndex_Scenario1Test is LiquidityHubScenarioBaseTest {
       // spoke1
       // nothing changes vs t0 because no spoke1 action
       assertEq(
-        spokes_f.spoke1.t[1].baseBorrowIndex,
-        spokes_f.spoke1.t[0].baseBorrowIndex,
+        spokes_f.spoke[0].t[1].baseBorrowIndex,
+        spokes_f.spoke[0].t[0].baseBorrowIndex,
         't1_f Spoke1 index'
       );
       assertEq(
-        spokes_f.spoke1.t[1].baseDebt,
-        spokes_f.spoke1.t[0].baseDebt,
+        spokes_f.spoke[0].t[1].baseDebt,
+        spokes_f.spoke[0].t[0].baseDebt,
         't1_f Spoke1 base debt'
       );
       assertEq(
-        spokes_f.spoke1.t[1].lastUpdateTimestamp,
-        spokes_f.spoke1.t[0].lastUpdateTimestamp,
+        spokes_f.spoke[0].t[1].lastUpdateTimestamp,
+        spokes_f.spoke[0].t[0].lastUpdateTimestamp,
         't1_f Spoke1 base debt'
       );
 
       // spoke4
       assertEq(
-        spokes_f.spoke4.t[1].baseBorrowIndex,
+        spokes_f.spoke[3].t[1].baseBorrowIndex,
         assets_f.assetData[0].t[1].baseBorrowIndex,
         't1_f Spoke4 index'
       );
-      assertEq(spokes_f.spoke4.t[1].baseDebt, spoke4Amounts.draw.t[1], 't1_f Spoke4 base debt');
+      assertEq(spokes_f.spoke[3].t[1].baseDebt, spoke4Amounts.draw.t[1], 't1_f Spoke4 base debt');
       assertEq(
-        spokes_f.spoke4.t[1].lastUpdateTimestamp,
+        spokes_f.spoke[3].t[1].lastUpdateTimestamp,
         timeAt(Stages.t1),
         't1_f Spoke4 lastUpdateTimestamp'
       );
     } else if (t == Stages.t2) {
       assets_f.assetData[0].t[2] = hub.getAsset(assetId);
-      spokes_f.spoke1.t[2] = hub.getSpoke(assetId, address(spoke1));
-      spokes_f.spoke4.t[2] = hub.getSpoke(assetId, address(spoke4));
+      spokes_f.spoke[0].t[2] = hub.getSpoke(assetId, address(spoke1));
+      spokes_f.spoke[3].t[2] = hub.getSpoke(assetId, address(spoke4));
       states.cumulatedBaseInterest.t[2] = MathUtils.calculateLinearInterest(
         assets_f.assetData[0].t[1].baseBorrowRate,
         timeAt(Stages.t1)
@@ -339,34 +339,34 @@ contract BorrowIndex_Scenario1Test is LiquidityHubScenarioBaseTest {
       // spoke1
       // nothing changes vs t0 because no spoke1 action
       assertEq(
-        spokes_f.spoke1.t[2].baseBorrowIndex,
-        spokes_f.spoke1.t[0].baseBorrowIndex,
+        spokes_f.spoke[0].t[2].baseBorrowIndex,
+        spokes_f.spoke[0].t[0].baseBorrowIndex,
         't2_f Spoke1 index'
       );
       assertEq(
-        spokes_f.spoke1.t[2].baseDebt,
-        spokes_f.spoke1.t[0].baseDebt,
+        spokes_f.spoke[0].t[2].baseDebt,
+        spokes_f.spoke[0].t[0].baseDebt,
         't2_f Spoke1 base debt'
       );
       assertEq(
-        spokes_f.spoke1.t[2].lastUpdateTimestamp,
-        spokes_f.spoke1.t[0].lastUpdateTimestamp,
+        spokes_f.spoke[0].t[2].lastUpdateTimestamp,
+        spokes_f.spoke[0].t[0].lastUpdateTimestamp,
         't2_f Spoke1 lastUpdateTimestamp'
       );
 
       // spoke4
       assertEq(
-        spokes_f.spoke4.t[2].baseBorrowIndex,
+        spokes_f.spoke[3].t[2].baseBorrowIndex,
         assets_f.assetData[0].t[2].baseBorrowIndex,
         't2_f Spoke4 index'
       );
       assertEq(
-        spokes_f.spoke4.t[2].baseDebt,
+        spokes_f.spoke[3].t[2].baseDebt,
         spoke4Amounts.draw.t[1].rayMul(states.cumulatedBaseInterest.t[2]),
         't2_f Spoke4 base debt'
       );
       assertEq(
-        spokes_f.spoke4.t[2].lastUpdateTimestamp,
+        spokes_f.spoke[3].t[2].lastUpdateTimestamp,
         timeAt(Stages.t2),
         't2_f Spoke4 lastUpdateTimestamp'
       );
@@ -381,9 +381,9 @@ contract BorrowIndex_Scenario1Test is LiquidityHubScenarioBaseTest {
       console.log('Asset base debt %e', assets_i.assetData[0].t[0].baseDebt);
       console.log('Asset last update timestamp', assets_i.assetData[0].t[0].lastUpdateTimestamp);
 
-      console.log('Spoke1 borrow index %27e', spokes_i.spoke1.t[0].baseBorrowIndex);
-      console.log('Spoke1 base debt %e', spokes_i.spoke1.t[0].baseDebt);
-      console.log('Spoke1 last update timestamp', spokes_i.spoke1.t[0].lastUpdateTimestamp);
+      console.log('Spoke1 borrow index %27e', spokes_i.spoke[0].t[0].baseBorrowIndex);
+      console.log('Spoke1 base debt %e', spokes_i.spoke[0].t[0].baseDebt);
+      console.log('Spoke1 last update timestamp', spokes_i.spoke[0].t[0].lastUpdateTimestamp);
     } else if (stage == Stages.t1) {
       console.log('----- t1_i -----');
 
@@ -391,9 +391,9 @@ contract BorrowIndex_Scenario1Test is LiquidityHubScenarioBaseTest {
       console.log('Asset base debt %e', assets_i.assetData[0].t[1].baseDebt);
       console.log('Asset last update timestamp', assets_i.assetData[0].t[1].lastUpdateTimestamp);
 
-      console.log('Spoke1 borrow index %27e', spokes_i.spoke1.t[1].baseBorrowIndex);
-      console.log('Spoke1 base debt %e', spokes_i.spoke1.t[0].baseDebt);
-      console.log('Spoke1 last update timestamp', spokes_i.spoke1.t[1].lastUpdateTimestamp);
+      console.log('Spoke1 borrow index %27e', spokes_i.spoke[0].t[1].baseBorrowIndex);
+      console.log('Spoke1 base debt %e', spokes_i.spoke[0].t[0].baseDebt);
+      console.log('Spoke1 last update timestamp', spokes_i.spoke[0].t[1].lastUpdateTimestamp);
     } else if (stage == Stages.t2) {
       console.log('----- t2_i -----');
 
@@ -401,13 +401,13 @@ contract BorrowIndex_Scenario1Test is LiquidityHubScenarioBaseTest {
       console.log('Asset base debt %e', assets_i.assetData[0].t[2].baseDebt);
       console.log('Asset last update timestamp', assets_i.assetData[0].t[2].lastUpdateTimestamp);
 
-      console.log('Spoke1 borrow index %27e', spokes_i.spoke1.t[2].baseBorrowIndex);
-      console.log('Spoke1 base debt %e', spokes_i.spoke1.t[2].baseDebt);
-      console.log('Spoke1 last update timestamp', spokes_i.spoke1.t[2].lastUpdateTimestamp);
+      console.log('Spoke1 borrow index %27e', spokes_i.spoke[0].t[2].baseBorrowIndex);
+      console.log('Spoke1 base debt %e', spokes_i.spoke[0].t[2].baseDebt);
+      console.log('Spoke1 last update timestamp', spokes_i.spoke[0].t[2].lastUpdateTimestamp);
 
-      console.log('Spoke4 borrow index %27e', spokes_f.spoke4.t[1].baseBorrowIndex);
-      console.log('Spoke4 base debt %e', spokes_f.spoke4.t[1].baseDebt);
-      console.log('Spoke4 last update timestamp', spokes_f.spoke4.t[1].lastUpdateTimestamp);
+      console.log('Spoke4 borrow index %27e', spokes_f.spoke[3].t[1].baseBorrowIndex);
+      console.log('Spoke4 base debt %e', spokes_f.spoke[3].t[1].baseDebt);
+      console.log('Spoke4 last update timestamp', spokes_f.spoke[3].t[1].lastUpdateTimestamp);
     }
   }
 
@@ -419,9 +419,9 @@ contract BorrowIndex_Scenario1Test is LiquidityHubScenarioBaseTest {
       console.log('Asset base debt %e', assets_f.assetData[0].t[0].baseDebt);
       console.log('Asset last update timestamp', assets_f.assetData[0].t[0].lastUpdateTimestamp);
 
-      console.log('Spoke1 borrow index %27e', spokes_f.spoke1.t[0].baseBorrowIndex);
-      console.log('Spoke1 base debt %e', spokes_f.spoke1.t[0].baseDebt);
-      console.log('Spoke1 last update timestamp', spokes_f.spoke1.t[0].lastUpdateTimestamp);
+      console.log('Spoke1 borrow index %27e', spokes_f.spoke[0].t[0].baseBorrowIndex);
+      console.log('Spoke1 base debt %e', spokes_f.spoke[0].t[0].baseDebt);
+      console.log('Spoke1 last update timestamp', spokes_f.spoke[0].t[0].lastUpdateTimestamp);
     } else if (stage == Stages.t1) {
       console.log('----- t1_f -----');
 
@@ -429,13 +429,13 @@ contract BorrowIndex_Scenario1Test is LiquidityHubScenarioBaseTest {
       console.log('Asset base debt %e', assets_f.assetData[0].t[1].baseDebt);
       console.log('Asset last update timestamp', assets_f.assetData[0].t[1].lastUpdateTimestamp);
 
-      console.log('Spoke1 borrow index %27e', spokes_f.spoke1.t[1].baseBorrowIndex);
-      console.log('Spoke1 base debt %e', spokes_f.spoke1.t[1].baseDebt);
-      console.log('Spoke1 last update timestamp', spokes_f.spoke1.t[1].lastUpdateTimestamp);
+      console.log('Spoke1 borrow index %27e', spokes_f.spoke[0].t[1].baseBorrowIndex);
+      console.log('Spoke1 base debt %e', spokes_f.spoke[0].t[1].baseDebt);
+      console.log('Spoke1 last update timestamp', spokes_f.spoke[0].t[1].lastUpdateTimestamp);
 
-      console.log('Spoke4 borrow index %27e', spokes_f.spoke4.t[1].baseBorrowIndex);
-      console.log('Spoke4 base debt %e', spokes_f.spoke4.t[1].baseDebt);
-      console.log('Spoke4 last update timestamp', spokes_f.spoke4.t[1].lastUpdateTimestamp);
+      console.log('Spoke4 borrow index %27e', spokes_f.spoke[3].t[1].baseBorrowIndex);
+      console.log('Spoke4 base debt %e', spokes_f.spoke[3].t[1].baseDebt);
+      console.log('Spoke4 last update timestamp', spokes_f.spoke[3].t[1].lastUpdateTimestamp);
     } else if (stage == Stages.t2) {
       console.log('----- t2_f -----');
 
@@ -443,13 +443,13 @@ contract BorrowIndex_Scenario1Test is LiquidityHubScenarioBaseTest {
       console.log('Asset base debt %e', assets_f.assetData[0].t[2].baseDebt);
       console.log('Asset last update timestamp', assets_f.assetData[0].t[2].lastUpdateTimestamp);
 
-      console.log('Spoke1 borrow index %27e', spokes_f.spoke1.t[2].baseBorrowIndex);
-      console.log('Spoke1 base debt %e', spokes_f.spoke1.t[2].baseDebt);
-      console.log('Spoke1 last update timestamp', spokes_f.spoke1.t[2].lastUpdateTimestamp);
+      console.log('Spoke1 borrow index %27e', spokes_f.spoke[0].t[2].baseBorrowIndex);
+      console.log('Spoke1 base debt %e', spokes_f.spoke[0].t[2].baseDebt);
+      console.log('Spoke1 last update timestamp', spokes_f.spoke[0].t[2].lastUpdateTimestamp);
 
-      console.log('Spoke4 borrow index %27e', spokes_f.spoke4.t[2].baseBorrowIndex);
-      console.log('Spoke4 base debt %e', spokes_f.spoke4.t[2].baseDebt);
-      console.log('Spoke4 last update timestamp', spokes_f.spoke4.t[2].lastUpdateTimestamp);
+      console.log('Spoke4 borrow index %27e', spokes_f.spoke[3].t[2].baseBorrowIndex);
+      console.log('Spoke4 base debt %e', spokes_f.spoke[3].t[2].baseDebt);
+      console.log('Spoke4 last update timestamp', spokes_f.spoke[3].t[2].lastUpdateTimestamp);
     }
   }
 }
