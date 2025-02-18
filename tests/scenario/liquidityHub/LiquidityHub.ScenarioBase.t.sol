@@ -8,42 +8,15 @@ abstract contract LiquidityHubScenarioBaseTest is BaseTest {
   bool internal isPrintLogs = false;
 
   struct Timestamps {
-    uint256 t0;
-    uint256 t1;
-    uint256 t2;
-    uint256 t3;
-    uint256 t4;
-    uint256 t5;
-    uint256 t6;
-    uint256 t7;
-    uint256 t8;
-    uint256 t9;
+    uint256[10] t;
   }
 
   struct SpokeDatas {
-    SpokeData t0;
-    SpokeData t1;
-    SpokeData t2;
-    SpokeData t3;
-    SpokeData t4;
-    SpokeData t5;
-    SpokeData t6;
-    SpokeData t7;
-    SpokeData t8;
-    SpokeData t9;
+    SpokeData[10] t;
   }
 
   struct AssetDatas {
-    Asset t0;
-    Asset t1;
-    Asset t2;
-    Asset t3;
-    Asset t4;
-    Asset t5;
-    Asset t6;
-    Asset t7;
-    Asset t8;
-    Asset t9;
+    Asset[10] t;
   }
 
   struct SpokeDataLocal {
@@ -55,10 +28,7 @@ abstract contract LiquidityHubScenarioBaseTest is BaseTest {
 
   // for either generic or specific asset data
   struct AssetDataLocal {
-    AssetDatas assetData0;
-    AssetDatas assetData1;
-    AssetDatas assetData2;
-    AssetDatas assetData3;
+    AssetDatas[4] assetData;
     AssetDatas wethData;
     AssetDatas daiData;
     AssetDatas usdcData;
