@@ -9,6 +9,13 @@ contract LiquidityHubRestoreTest is LiquidityHubBaseTest {
   using SharesMath for uint256;
   using WadRayMath for uint256;
 
+  struct DebtData {
+    uint256 assetDebt;
+    uint256 assetDrawnLiquidity;
+    uint256[4] spokeDebt;
+    uint256[4] spokeDrawnLiquidity;
+  }
+
   function test_restore_revertsWith_asset_not_active() public {
     uint256 daiAmount = 100e18;
     uint256 wethAmount = 10e18;
@@ -177,7 +184,7 @@ contract LiquidityHubRestoreTest is LiquidityHubBaseTest {
       uint40(spoke1DaiData.lastUpdateTimestamp)
     );
     uint256 cumulatedBaseDebt = drawAmount.rayMul(cumulatedBaseInterest);
-    assert(cumulatedBaseDebt > 0);
+    assertTrue(cumulatedBaseDebt > 0);
 
     // alice restore invalid amount > drawn amount (no premium)
     vm.expectRevert(TestErrors.INVALID_RESTORE_AMOUNT);
@@ -345,7 +352,7 @@ contract LiquidityHubRestoreTest is LiquidityHubBaseTest {
     );
     uint256 cumulatedBaseDebt = drawAmount.rayMul(cumulatedBaseInterest);
     uint256 accruedPremium = (cumulatedBaseDebt - drawAmount).radMul(riskPremiumRad);
-    assert(accruedPremium > 0);
+    assertTrue(accruedPremium > 0);
 
     // alice restore invalid amount > drawn amount AND premium
     vm.expectRevert(TestErrors.INVALID_RESTORE_AMOUNT);
@@ -473,7 +480,7 @@ contract LiquidityHubRestoreTest is LiquidityHubBaseTest {
     uint256 accruedBaseDebt = drawAmount.rayMul(cumulatedBaseInterest) - drawAmount;
     uint256 accruedPremium = accruedBaseDebt.radMul(riskPremiumRad);
 
-    assert(accruedPremium > 0);
+    assertTrue(accruedPremium > 0);
 
     uint256 restoreAmount = accruedPremium / 2;
 
@@ -482,6 +489,11 @@ contract LiquidityHubRestoreTest is LiquidityHubBaseTest {
 
     daiData = hub.getAsset(daiAssetId);
     SpokeData memory spoke1DaiData = hub.getSpoke(daiAssetId, address(spoke1));
+    DebtData memory debtData;
+    debtData.assetDebt = hub.getAssetDebt(daiAssetId);
+    debtData.assetDrawnLiquidity = hub.getAssetDrawnLiquidity(daiAssetId);
+    debtData.spokeDebt[0] = hub.getSpokeDebt(daiAssetId, address(spoke1));
+    debtData.spokeDrawnLiquidity[0] = hub.getSpokeDrawnLiquidity(daiAssetId, address(spoke1));
 
     // hub
     assertEq(
@@ -501,6 +513,8 @@ contract LiquidityHubRestoreTest is LiquidityHubBaseTest {
       'hub dai availableLiquidity'
     );
     assertEq(daiData.lastUpdateTimestamp, vm.getBlockTimestamp(), 'hub dai lastUpdateTimestamp');
+    assertEq(debtData.assetDebt, daiData.baseDebt + daiData.outstandingPremium, 'hub assetDebt');
+    assertEq(debtData.assetDrawnLiquidity, daiData.baseDebt, 'hub assetDrawnLiquidity');
     // spoke1
     assertEq(
       spoke1DaiData.outstandingPremium,
@@ -513,6 +527,8 @@ contract LiquidityHubRestoreTest is LiquidityHubBaseTest {
       daiData.lastUpdateTimestamp,
       'hub spoke1 lastUpdateTimestamp'
     );
+    assertEq(debtData.spokeDebt[0], daiData.baseDebt + daiData.outstandingPremium, 'hub spokeDebt');
+    assertEq(debtData.spokeDrawnLiquidity[0], daiData.baseDebt, 'hub spokeDrawnLiquidity');
   }
 
   /// @dev Restore some amount less than premium
@@ -557,6 +573,11 @@ contract LiquidityHubRestoreTest is LiquidityHubBaseTest {
 
     daiData = hub.getAsset(daiAssetId);
     SpokeData memory spoke1DaiData = hub.getSpoke(daiAssetId, address(spoke1));
+    DebtData memory debtData;
+    debtData.assetDebt = hub.getAssetDebt(daiAssetId);
+    debtData.assetDrawnLiquidity = hub.getAssetDrawnLiquidity(daiAssetId);
+    debtData.spokeDebt[0] = hub.getSpokeDebt(daiAssetId, address(spoke1));
+    debtData.spokeDrawnLiquidity[0] = hub.getSpokeDrawnLiquidity(daiAssetId, address(spoke1));
 
     // hub
     assertEq(
@@ -576,6 +597,8 @@ contract LiquidityHubRestoreTest is LiquidityHubBaseTest {
       'hub dai availableLiquidity'
     );
     assertEq(daiData.lastUpdateTimestamp, vm.getBlockTimestamp(), 'hub dai lastUpdateTimestamp');
+    assertEq(debtData.assetDebt, daiData.baseDebt + daiData.outstandingPremium, 'hub assetDebt');
+    assertEq(debtData.assetDrawnLiquidity, daiData.baseDebt, 'hub assetDrawnLiquidity');
     // spoke1
     assertEq(
       spoke1DaiData.outstandingPremium,
@@ -588,6 +611,8 @@ contract LiquidityHubRestoreTest is LiquidityHubBaseTest {
       daiData.lastUpdateTimestamp,
       'hub spoke1 lastUpdateTimestamp'
     );
+    assertEq(debtData.spokeDebt[0], daiData.baseDebt + daiData.outstandingPremium, 'hub spokeDebt');
+    assertEq(debtData.spokeDrawnLiquidity[0], daiData.baseDebt, 'hub spokeDrawnLiquidity');
   }
 
   /// @dev Restore more than premium but partial amount to eat into base debt
@@ -615,7 +640,7 @@ contract LiquidityHubRestoreTest is LiquidityHubBaseTest {
     );
     uint256 accruedBaseDebt = drawAmount.rayMul(cumulatedBaseInterest) - drawAmount;
     uint256 accruedPremium = accruedBaseDebt.radMul(riskPremiumRad);
-    assert(accruedPremium > 0);
+    assertTrue(accruedPremium > 0);
     uint256 restoreAmount = accruedPremium + 1; // restore amount partially contributes to base debt
 
     vm.prank(address(spoke1));
@@ -623,6 +648,11 @@ contract LiquidityHubRestoreTest is LiquidityHubBaseTest {
 
     daiData = hub.getAsset(daiAssetId);
     SpokeData memory spoke1DaiData = hub.getSpoke(daiAssetId, address(spoke1));
+    DebtData memory debtData;
+    debtData.assetDebt = hub.getAssetDebt(daiAssetId);
+    debtData.assetDrawnLiquidity = hub.getAssetDrawnLiquidity(daiAssetId);
+    debtData.spokeDebt[0] = hub.getSpokeDebt(daiAssetId, address(spoke1));
+    debtData.spokeDrawnLiquidity[0] = hub.getSpokeDrawnLiquidity(daiAssetId, address(spoke1));
 
     // hub
     assertEq(
@@ -638,6 +668,8 @@ contract LiquidityHubRestoreTest is LiquidityHubBaseTest {
       'hub dai availableLiquidity'
     );
     assertEq(daiData.lastUpdateTimestamp, vm.getBlockTimestamp(), 'hub dai lastUpdateTimestamp');
+    assertEq(debtData.assetDebt, daiData.baseDebt, 'hub assetDebt');
+    assertEq(debtData.assetDrawnLiquidity, daiData.baseDebt, 'hub assetDrawnLiquidity');
     // spoke1
     assertEq(
       spoke1DaiData.outstandingPremium,
@@ -650,6 +682,8 @@ contract LiquidityHubRestoreTest is LiquidityHubBaseTest {
       daiData.lastUpdateTimestamp,
       'hub spoke1 lastUpdateTimestamp'
     );
+    assertEq(debtData.spokeDebt[0], daiData.baseDebt, 'hub spokeDebt');
+    assertEq(debtData.spokeDrawnLiquidity[0], daiData.baseDebt, 'hub spokeDrawnLiquidity');
   }
 
   /// @dev Restore more than premium but partial amount to eat into base debt
@@ -698,6 +732,11 @@ contract LiquidityHubRestoreTest is LiquidityHubBaseTest {
 
     daiData = hub.getAsset(daiAssetId);
     SpokeData memory spoke1DaiData = hub.getSpoke(daiAssetId, address(spoke1));
+    DebtData memory debtData;
+    debtData.assetDebt = hub.getAssetDebt(daiAssetId);
+    debtData.assetDrawnLiquidity = hub.getAssetDrawnLiquidity(daiAssetId);
+    debtData.spokeDebt[0] = hub.getSpokeDebt(daiAssetId, address(spoke1));
+    debtData.spokeDrawnLiquidity[0] = hub.getSpokeDrawnLiquidity(daiAssetId, address(spoke1));
 
     // hub
     assertEq(
@@ -717,6 +756,8 @@ contract LiquidityHubRestoreTest is LiquidityHubBaseTest {
       'hub dai availableLiquidity'
     );
     assertEq(daiData.lastUpdateTimestamp, vm.getBlockTimestamp(), 'hub dai lastUpdateTimestamp');
+    assertEq(debtData.assetDebt, daiData.baseDebt, 'hub assetDebt');
+    assertEq(debtData.assetDrawnLiquidity, daiData.baseDebt, 'hub assetDrawnLiquidity');
     // spoke1
     assertEq(
       spoke1DaiData.outstandingPremium,
@@ -729,9 +770,11 @@ contract LiquidityHubRestoreTest is LiquidityHubBaseTest {
       daiData.lastUpdateTimestamp,
       'hub spoke1 lastUpdateTimestamp'
     );
+    assertEq(debtData.spokeDebt[0], daiData.baseDebt, 'hub spokeDebt');
+    assertEq(debtData.spokeDrawnLiquidity[0], daiData.baseDebt, 'hub spokeDrawnLiquidity');
   }
 
-  function test_restore_same_block() public {
+  function test_restore_partial_same_block() public {
     uint256 daiAmount = 100e18;
     uint256 wethAmount = 10e18;
 
@@ -791,12 +834,23 @@ contract LiquidityHubRestoreTest is LiquidityHubBaseTest {
     hubData.spoke1WethData = hub.getSpoke(wethAssetId, address(spoke1));
     hubData.spoke1DaiData = hub.getSpoke(daiAssetId, address(spoke1));
     hubData.spoke2DaiData = hub.getSpoke(daiAssetId, address(spoke2));
-
     hubData.timestamp = vm.getBlockTimestamp();
+
+    DebtData memory debtData;
+    debtData.assetDebt = hub.getAssetDebt(daiAssetId);
+    debtData.assetDrawnLiquidity = hub.getAssetDrawnLiquidity(daiAssetId);
+    debtData.spokeDebt[0] = hub.getSpokeDebt(daiAssetId, address(spoke1));
+    debtData.spokeDrawnLiquidity[0] = hub.getSpokeDrawnLiquidity(daiAssetId, address(spoke1));
 
     // hub
     assertEq(hub.getTotalAssets(wethAssetId), wethAmount, 'hub weth total assets post-restore');
     assertEq(hub.getTotalAssets(daiAssetId), daiAmount, 'hub dai total assets post-restore');
+    assertEq(debtData.assetDebt, drawAmount - restoreAmount, 'hub total debt post-restore');
+    assertEq(
+      debtData.assetDrawnLiquidity,
+      drawAmount - restoreAmount,
+      'hub assetDrawnLiquidity post-restore'
+    );
     // dai
     assertEq(
       hubData.daiData.suppliedShares,
@@ -892,6 +946,12 @@ contract LiquidityHubRestoreTest is LiquidityHubBaseTest {
       hubData.spoke1DaiData.lastUpdateTimestamp,
       hubData.daiData.lastUpdateTimestamp,
       'spoke1 dai lastUpdateTimestamp post-restore'
+    );
+    assertEq(debtData.spokeDebt[0], hubData.daiData.baseDebt, 'spoke1 total debt post-restore');
+    assertEq(
+      debtData.spokeDrawnLiquidity[0],
+      hubData.daiData.baseDebt,
+      'spoke1 total drawn liquidity post-restore'
     );
     // spoke2 dai
     assertEq(
@@ -1011,7 +1071,7 @@ contract LiquidityHubRestoreTest is LiquidityHubBaseTest {
       uint40(spoke1DaiData.lastUpdateTimestamp)
     );
     uint256 cumulatedBaseDebt = drawAmount.rayMul(cumulatedBaseInterest);
-    assert(cumulatedBaseDebt > 0);
+    assertTrue(cumulatedBaseDebt > 0);
 
     // alice restore amount = drawn amount
     vm.prank(address(spoke1));
@@ -1024,11 +1084,23 @@ contract LiquidityHubRestoreTest is LiquidityHubBaseTest {
 
     Asset memory daiData = hub.getAsset(daiAssetId);
     SpokeData memory spoke1Data = hub.getSpoke(daiAssetId, address(spoke1));
+    DebtData memory debtData;
+    debtData.assetDebt = hub.getAssetDebt(daiAssetId);
+    debtData.assetDrawnLiquidity = hub.getAssetDrawnLiquidity(daiAssetId);
+    debtData.spokeDebt[0] = hub.getSpokeDebt(daiAssetId, address(spoke1));
+    debtData.spokeDrawnLiquidity[0] = hub.getSpokeDrawnLiquidity(daiAssetId, address(spoke1));
 
+    // asset
     assertEq(daiData.baseDebt, 0, 'asset baseDebt');
     assertEq(daiData.outstandingPremium, 0, 'asset outstandingPremium');
+    assertEq(debtData.assetDebt, 0, 'asset baseDebt');
+    assertEq(debtData.assetDrawnLiquidity, 0, 'asset drawnLiquidity');
+
+    // spoke
     assertEq(spoke1Data.baseDebt, 0, 'spoke1 baseDebt');
     assertEq(spoke1Data.outstandingPremium, 0, 'spoke1 outstandingPremium');
+    assertEq(debtData.spokeDebt[0], 0, 'spoke1 baseDebt');
+    assertEq(debtData.spokeDrawnLiquidity[0], 0, 'spoke1 drawnLiquidity');
   }
 
   function test_restore_fuzz_full_restore_amount_with_interest(
@@ -1116,11 +1188,23 @@ contract LiquidityHubRestoreTest is LiquidityHubBaseTest {
 
     Asset memory daiData = hub.getAsset(daiAssetId);
     SpokeData memory spoke1Data = hub.getSpoke(daiAssetId, address(spoke1));
+    DebtData memory debtData;
+    debtData.assetDebt = hub.getAssetDebt(daiAssetId);
+    debtData.assetDrawnLiquidity = hub.getAssetDrawnLiquidity(daiAssetId);
+    debtData.spokeDebt[0] = hub.getSpokeDebt(daiAssetId, address(spoke1));
+    debtData.spokeDrawnLiquidity[0] = hub.getSpokeDrawnLiquidity(daiAssetId, address(spoke1));
 
+    // asset
     assertEq(daiData.baseDebt, 0, 'asset baseDebt');
     assertEq(daiData.outstandingPremium, 0, 'asset outstandingPremium');
+    assertEq(debtData.assetDebt, 0, 'asset baseDebt');
+    assertEq(debtData.assetDrawnLiquidity, 0, 'asset drawnLiquidity');
+
+    // spoke
     assertEq(spoke1Data.baseDebt, 0, 'spoke1 baseDebt');
     assertEq(spoke1Data.outstandingPremium, 0, 'spoke1 outstandingPremium');
+    assertEq(debtData.spokeDebt[0], 0, 'spoke1 baseDebt');
+    assertEq(debtData.spokeDrawnLiquidity[0], 0, 'spoke1 drawnLiquidity');
   }
 
   function test_restore_full_amount_with_interest_and_premium() public {
@@ -1192,7 +1276,7 @@ contract LiquidityHubRestoreTest is LiquidityHubBaseTest {
     );
     uint256 cumulatedBaseDebt = drawAmount.rayMul(cumulatedBaseInterest);
     uint256 accruedPremium = (cumulatedBaseDebt - drawAmount).radMul(riskPremiumRad);
-    assert(accruedPremium > 0);
+    assertTrue(accruedPremium > 0);
 
     // alice restore amount = drawn amount AND premium
 
@@ -1206,11 +1290,23 @@ contract LiquidityHubRestoreTest is LiquidityHubBaseTest {
 
     Asset memory daiData = hub.getAsset(daiAssetId);
     SpokeData memory spoke1Data = hub.getSpoke(daiAssetId, address(spoke1));
+    DebtData memory debtData;
+    debtData.assetDebt = hub.getAssetDebt(daiAssetId);
+    debtData.assetDrawnLiquidity = hub.getAssetDrawnLiquidity(daiAssetId);
+    debtData.spokeDebt[0] = hub.getSpokeDebt(daiAssetId, address(spoke1));
+    debtData.spokeDrawnLiquidity[0] = hub.getSpokeDrawnLiquidity(daiAssetId, address(spoke1));
 
+    // asset
     assertEq(daiData.baseDebt, 0, 'asset baseDebt');
     assertEq(daiData.outstandingPremium, 0, 'asset outstandingPremium');
+    assertEq(debtData.assetDebt, 0, 'asset baseDebt');
+    assertEq(debtData.assetDrawnLiquidity, 0, 'asset drawnLiquidity');
+
+    // spoke
     assertEq(spoke1Data.baseDebt, 0, 'spoke1 baseDebt');
     assertEq(spoke1Data.outstandingPremium, 0, 'spoke1 outstandingPremium');
+    assertEq(debtData.spokeDebt[0], 0, 'spoke1 baseDebt');
+    assertEq(debtData.spokeDrawnLiquidity[0], 0, 'spoke1 drawnLiquidity');
   }
 
   function test_restore_fuzz_full_amount_with_interest_and_premium(
@@ -1301,10 +1397,22 @@ contract LiquidityHubRestoreTest is LiquidityHubBaseTest {
 
     Asset memory daiData = hub.getAsset(daiAssetId);
     SpokeData memory spoke1Data = hub.getSpoke(daiAssetId, address(spoke1));
+    DebtData memory debtData;
+    debtData.assetDebt = hub.getAssetDebt(daiAssetId);
+    debtData.assetDrawnLiquidity = hub.getAssetDrawnLiquidity(daiAssetId);
+    debtData.spokeDebt[0] = hub.getSpokeDebt(daiAssetId, address(spoke1));
+    debtData.spokeDrawnLiquidity[0] = hub.getSpokeDrawnLiquidity(daiAssetId, address(spoke1));
 
+    // asset
     assertEq(daiData.baseDebt, 0, 'asset baseDebt');
     assertEq(daiData.outstandingPremium, 0, 'asset outstandingPremium');
+    assertEq(debtData.assetDebt, 0, 'asset baseDebt');
+    assertEq(debtData.assetDrawnLiquidity, 0, 'asset drawnLiquidity');
+
+    // spoke
     assertEq(spoke1Data.baseDebt, 0, 'spoke1 baseDebt');
     assertEq(spoke1Data.outstandingPremium, 0, 'spoke1 outstandingPremium');
+    assertEq(debtData.spokeDebt[0], 0, 'spoke1 baseDebt');
+    assertEq(debtData.spokeDrawnLiquidity[0], 0, 'spoke1 drawnLiquidity');
   }
 }
