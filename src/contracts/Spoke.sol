@@ -28,7 +28,7 @@ contract Spoke is ISpoke {
     uint256 suppliedShares;
     uint256 baseBorrowIndex;
     uint256 lastUpdateTimestamp;
-    uint256 riskPremiumRad;
+    uint256 riskPremium;
     ReserveConfig config;
   }
 
@@ -134,7 +134,7 @@ contract Spoke is ISpoke {
     _validateSupply(reserve, amount);
 
     // Update user's risk premium and wAvgRP across all users of spoke
-    uint256 newAggregatedRiskPremium = _updateRiskPremiumAndBaseDebt({
+    uint32 newAggregatedRiskPremium = _updateRiskPremiumAndBaseDebt({
       reserve: reserve,
       user: user,
       userAddress: msg.sender,
@@ -162,7 +162,7 @@ contract Spoke is ISpoke {
     _validateWithdraw(reserve, user, amount);
 
     // Update user's risk premium and wAvgRP across all users of spoke
-    uint256 newAggregatedRiskPremium = _updateRiskPremiumAndBaseDebt({
+    uint32 newAggregatedRiskPremium = _updateRiskPremiumAndBaseDebt({
       reserve: reserve,
       user: user,
       userAddress: msg.sender,
@@ -191,7 +191,7 @@ contract Spoke is ISpoke {
     _validateBorrow(reserve, amount);
 
     // TODO HF check
-    uint256 newAggregatedRiskPremium = _updateRiskPremiumAndBaseDebt({
+    uint32 newAggregatedRiskPremium = _updateRiskPremiumAndBaseDebt({
       reserve: reserve,
       user: user,
       userAddress: msg.sender,
@@ -214,7 +214,7 @@ contract Spoke is ISpoke {
     // Repaid debt happens first from premium, then base
     uint256 baseDebtRestored = _deductFromOutstandingPremium(reserve, user, amount);
 
-    uint256 newAggregatedRiskPremium = _updateRiskPremiumAndBaseDebt({
+    uint32 newAggregatedRiskPremium = _updateRiskPremiumAndBaseDebt({
       reserve: reserve,
       user: user,
       userAddress: msg.sender,
@@ -382,7 +382,7 @@ contract Spoke is ISpoke {
     UserConfig storage user,
     address userAddress,
     int256 baseDebtChange
-  ) internal returns (uint256) {
+  ) internal returns (uint32) {
     // Calculate risk premium of user
     uint256 newUserRiskPremium = _calcUserRiskPremium(_users[userAddress]);
     // Refresh weighted average risk premium across all users of spoke
@@ -392,7 +392,7 @@ contract Spoke is ISpoke {
       newUserRiskPremium,
       baseDebtChange
     );
-    return newAggregatedRiskPremium;
+    return uint32(newAggregatedRiskPremium.fromRay());
   }
 
   /// @dev TODO: It's assumed reservesList (or similar) is sorted by liquidity premium
@@ -462,7 +462,7 @@ contract Spoke is ISpoke {
     // Weighted average risk premium of all users without current user
     (uint256 reserveRiskPremiumWithoutCurrent, uint256 reserveDebtWithoutCurrent) = MathUtils
       .subtractFromWeightedAverage(
-        reserve.riskPremiumRad,
+        reserve.riskPremium,
         existingReserveDebt,
         user.riskPremium,
         existingUserDebt
@@ -483,7 +483,7 @@ contract Spoke is ISpoke {
     reserve.baseDebt = newReserveDebt;
     user.baseDebt = newUserDebt;
 
-    reserve.riskPremiumRad = newReserveRiskPremium;
+    reserve.riskPremium = newReserveRiskPremium;
     user.riskPremium = newUserRiskPremium;
   }
 
@@ -605,8 +605,8 @@ contract Spoke is ISpoke {
       );
 
       reserve.baseDebt = cumulatedBaseDebt;
-      reserve.outstandingPremium += (cumulatedBaseDebt - existingBaseDebt).radMul(
-        reserve.riskPremiumRad
+      reserve.outstandingPremium += (cumulatedBaseDebt - existingBaseDebt).percentMul(
+        reserve.riskPremium.fromRay()
       );
     }
 
@@ -626,10 +626,18 @@ contract Spoke is ISpoke {
       );
 
       user.baseDebt = cumulatedBaseDebt;
-      user.outstandingPremium += (cumulatedBaseDebt - existingBaseDebt).radMul(user.riskPremium);
+      user.outstandingPremium += (cumulatedBaseDebt - existingBaseDebt).percentMul(
+        user.riskPremium.fromRay()
+      );
     }
 
     user.baseBorrowIndex = nextBaseBorrowIndex;
     user.lastUpdateTimestamp = block.timestamp;
+  }
+
+  function _fromBoundedRay(uint256 value) internal pure returns (uint32) {
+    uint256 ret = value.fromRay();
+    require(ret < 1000_00, 'INVALID_BPS');
+    return uint32(ret);
   }
 }

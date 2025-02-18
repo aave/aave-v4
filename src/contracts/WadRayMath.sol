@@ -229,6 +229,17 @@ library WadRayMath {
     }
   }
 
+  /**
+   * @dev Truncates number from Rad, loosing denominator precision
+   * @param a The number in Ray
+   * @return b (= a / 1e27)
+   */
+  function fromRay(uint256 a) internal pure returns (uint256 b) {
+    assembly {
+      b := div(a, RAY)
+    }
+  }
+
   function bpsToRad(uint256 a) internal pure returns (uint256) {
     return (a * RAD) / 100_00;
   }

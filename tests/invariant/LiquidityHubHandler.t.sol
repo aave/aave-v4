@@ -87,7 +87,7 @@ contract LiquidityHubHandler is Test {
       assetId: assetId,
       spoke: address(bm),
       amount: amount,
-      riskPremiumRad: 0,
+      riskPremium: 0,
       user: user,
       to: onBehalfOf
     });
@@ -107,7 +107,7 @@ contract LiquidityHubHandler is Test {
       assetId: assetId,
       spoke: address(bm),
       amount: amount,
-      riskPremiumRad: 0,
+      riskPremium: 0,
       to: to
     });
 

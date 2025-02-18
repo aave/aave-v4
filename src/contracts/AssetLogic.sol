@@ -58,7 +58,11 @@ library AssetLogic {
   }
 
   function getInterestRate(Asset storage asset) external view returns (uint256) {
-    return asset.baseBorrowRate.radMul(WadRayMath.RAD + asset.riskPremiumRad);
+    // @dev we truncate fromRay before `percentMul` as we only have accurate data until bps
+    return
+      asset.baseBorrowRate.percentMul(
+        PercentageMath.PERCENTAGE_FACTOR + asset.riskPremium.fromRay()
+      );
   }
 
   function updateBorrowRate(

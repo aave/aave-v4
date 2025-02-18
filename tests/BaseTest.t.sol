@@ -88,6 +88,7 @@ abstract contract BaseTest is Test, Events {
   using SharesMath for uint256;
 
   uint256 internal constant MAX_SUPPLY_AMOUNT = 1e30;
+  uint32 internal constant MAX_RISK_PREMIUM_BPS = 999_99;
 
   IERC20 internal usdc;
   IERC20 internal dai;
@@ -517,5 +518,9 @@ abstract contract BaseTest is Test, Events {
   /// @dev pseudo random randomizer
   function randomizer(uint256 min, uint256 max, uint256) internal returns (uint256) {
     return vm.randomUint(min, max);
+  }
+
+  function bound(uint32 x, uint32 min, uint32 max) internal pure returns (uint32) {
+    return uint32(bound(uint256(x), uint256(min), uint256(max)));
   }
 }

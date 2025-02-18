@@ -17,7 +17,8 @@ struct SpokeData {
   uint256 baseDebt; // asset
   uint256 outstandingPremium; // asset
   uint256 baseBorrowIndex; // in ray
-  uint256 riskPremiumRad; // weighted average risk premium in rad (bps value with extra `rad` precision)
+  // todo add ray to this name?
+  uint256 riskPremium; // weighted average risk premium in ray
   uint256 lastUpdateTimestamp;
   DataTypes.SpokeConfig config;
 }
@@ -30,7 +31,7 @@ struct Asset {
   uint256 outstandingPremium; // asset
   uint256 baseBorrowIndex; // in ray
   uint256 baseBorrowRate; // in ray
-  uint256 riskPremiumRad; // in rad
+  uint256 riskPremium; // weighted average risk premium in ray
   uint256 lastUpdateTimestamp;
   DataTypes.AssetConfig config;
 }
@@ -93,7 +94,7 @@ contract LiquidityHub is ILiquidityHub {
       baseBorrowIndex: DEFAULT_ASSET_INDEX,
       baseBorrowRate: 0,
       lastUpdateTimestamp: block.timestamp,
-      riskPremiumRad: 0,
+      riskPremium: 0,
       config: DataTypes.AssetConfig({
         decimals: config.decimals,
         active: config.active,
@@ -156,7 +157,7 @@ contract LiquidityHub is ILiquidityHub {
   function supply(
     uint256 assetId,
     uint256 amount,
-    uint256 riskPremiumRad,
+    uint32 riskPremium,
     address supplier
   ) external returns (uint256) {
     // TODO: authorization - only spokes
@@ -171,7 +172,7 @@ contract LiquidityHub is ILiquidityHub {
     _updateRiskPremiumAndBaseDebt({
       asset: asset,
       spoke: spoke,
-      newSpokeRiskPremium: riskPremiumRad,
+      newSpokeRiskPremium: _toBoundedRay(riskPremium),
       baseDebtChange: 0
     });
 
@@ -195,7 +196,7 @@ contract LiquidityHub is ILiquidityHub {
   function withdraw(
     uint256 assetId,
     uint256 amount,
-    uint256 riskPremiumRad,
+    uint32 riskPremium,
     address to
   ) external returns (uint256) {
     // TODO: authorization - only spokes
@@ -207,7 +208,7 @@ contract LiquidityHub is ILiquidityHub {
     _validateWithdraw(asset, spoke, amount);
 
     asset.updateBorrowRate({liquidityAdded: 0, liquidityTaken: amount});
-    _updateRiskPremiumAndBaseDebt(asset, spoke, riskPremiumRad, 0); // no base debt change
+    _updateRiskPremiumAndBaseDebt(asset, spoke, _toBoundedRay(riskPremium), 0); // no base debt change
 
     uint256 sharesAmount = asset.convertToSharesDown(amount);
     require(sharesAmount > 0, 'INVALID_SHARES_AMOUNT');
@@ -227,7 +228,7 @@ contract LiquidityHub is ILiquidityHub {
   function draw(
     uint256 assetId,
     uint256 amount,
-    uint256 riskPremiumRad,
+    uint32 riskPremium,
     address to
   ) external returns (uint256) {
     // TODO: authorization - only spokes
@@ -239,7 +240,7 @@ contract LiquidityHub is ILiquidityHub {
     _validateDraw(asset, amount, spoke.config.drawCap);
 
     asset.updateBorrowRate({liquidityAdded: 0, liquidityTaken: amount});
-    _updateRiskPremiumAndBaseDebt(asset, spoke, riskPremiumRad, int256(amount)); // base debt added
+    _updateRiskPremiumAndBaseDebt(asset, spoke, _toBoundedRay(riskPremium), int256(amount)); // base debt added
 
     asset.availableLiquidity -= amount;
 
@@ -254,7 +255,7 @@ contract LiquidityHub is ILiquidityHub {
   function restore(
     uint256 assetId,
     uint256 amount,
-    uint256 riskPremiumRad,
+    uint32 riskPremium,
     address repayer
   ) external returns (uint256) {
     // TODO: authorization - only spokes
@@ -267,7 +268,12 @@ contract LiquidityHub is ILiquidityHub {
 
     asset.updateBorrowRate({liquidityAdded: amount, liquidityTaken: 0});
     uint256 baseDebtRestored = _deductFromOutstandingPremium(asset, spoke, amount);
-    _updateRiskPremiumAndBaseDebt(asset, spoke, riskPremiumRad, -int256(baseDebtRestored));
+    _updateRiskPremiumAndBaseDebt(
+      asset,
+      spoke,
+      _toBoundedRay(riskPremium),
+      -int256(baseDebtRestored)
+    );
 
     asset.availableLiquidity += amount;
 
@@ -376,7 +382,7 @@ contract LiquidityHub is ILiquidityHub {
     require(amountRestored > 0 && amountRestored <= amountDrawn, 'INVALID_RESTORE_AMOUNT');
   }
 
-  // @dev Utilizes existing asset & spoke: `baseBorrowIndex`, `riskPremiumRad`
+  // @dev Utilizes existing asset & spoke: `baseBorrowIndex`, `riskPremium`
   function _accrueInterest(Asset storage asset, SpokeData storage spoke) internal {
     uint256 nextBaseBorrowIndex = asset.previewNextBorrowIndex();
 
@@ -398,16 +404,16 @@ contract LiquidityHub is ILiquidityHub {
     // weighted average risk premium of all spokes without current `spoke`
     (uint256 assetRiskPremiumWithoutCurrent, uint256 assetDebtWithoutCurrent) = MathUtils
       .subtractFromWeightedAverage(
-        asset.riskPremiumRad,
+        asset.riskPremium,
         existingAssetDebt,
-        spoke.riskPremiumRad, // use current spoke risk premium
+        spoke.riskPremium, // use current spoke risk premium
         existingSpokeDebt
       );
 
     uint256 newSpokeDebt = baseDebtChange > 0
       ? existingSpokeDebt + uint256(baseDebtChange) // debt added
-      // force underflow: only possible when spoke takes repays amount more than net drawn
-      : existingSpokeDebt - uint256(-baseDebtChange); // debt restored
+      : // force underflow: only possible when spoke takes repays amount more than net drawn
+      existingSpokeDebt - uint256(-baseDebtChange); // debt restored
 
     (uint256 newAssetRiskPremium, uint256 newAssetDebt) = MathUtils.addToWeightedAverage(
       assetRiskPremiumWithoutCurrent,
@@ -419,8 +425,8 @@ contract LiquidityHub is ILiquidityHub {
     asset.baseDebt = newAssetDebt;
     spoke.baseDebt = newSpokeDebt;
 
-    asset.riskPremiumRad = newAssetRiskPremium;
-    spoke.riskPremiumRad = newSpokeRiskPremium;
+    asset.riskPremium = newAssetRiskPremium;
+    spoke.riskPremium = newSpokeRiskPremium;
   }
 
   function _addSpoke(uint256 assetId, DataTypes.SpokeConfig memory config, address spoke) internal {
@@ -430,7 +436,7 @@ contract LiquidityHub is ILiquidityHub {
       baseDebt: 0,
       outstandingPremium: 0,
       baseBorrowIndex: DEFAULT_SPOKE_INDEX,
-      riskPremiumRad: 0,
+      riskPremium: 0,
       lastUpdateTimestamp: 0,
       config: config
     });
@@ -459,5 +465,10 @@ contract LiquidityHub is ILiquidityHub {
     }
 
     return baseDebtRestored;
+  }
+
+  function _toBoundedRay(uint32 bps) internal pure returns (uint256) {
+    require(bps <= 1000_00, 'INVALID_BPS');
+    return uint256(bps) * 1e27;
   }
 }

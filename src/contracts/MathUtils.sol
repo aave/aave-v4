@@ -97,6 +97,8 @@ library MathUtils {
     return calculateCompoundedInterest(rate, lastUpdateTimestamp, block.timestamp);
   }
 
+  event log_named_uint(string, uint);
+
   /**
    * @notice Calculates the new weighted average given a current weighted average, the sum of the weights subtracted with a new value, weight
    * @dev Add precision to weighted average & new value before calling this method
@@ -112,7 +114,7 @@ library MathUtils {
     uint256 currentSumWeights,
     uint256 newValue,
     uint256 newValueWeight
-  ) internal pure returns (uint256, uint256) {
+  ) external pure returns (uint256, uint256) {
     // newWeightedAvg, newSumWeights
 
     if (newValueWeight == 0) {
