@@ -274,7 +274,7 @@ contract Spoke is ISpoke {
     // require(_reserves[reserveId].asset == address(0), 'RESERVE_ID_ALREADY_EXISTS');
 
     // TODO: AccessControl
-    reservesList.push(_reserveCount);
+    reservesList.push(reserveCount++);
     _reserves[_reserveCount] = Reserve({
       assetId: assetId,
       asset: asset,
@@ -293,7 +293,7 @@ contract Spoke is ISpoke {
       })
     });
 
-    return reserveCount++;
+    return _reserveCount;
     // todo: emit event
   }
 
@@ -470,8 +470,8 @@ contract Spoke is ISpoke {
 
     uint256 newUserDebt = baseDebtChange > 0
       ? existingUserDebt + uint256(baseDebtChange) // debt added
-      : // force underflow: only possible when user takes repays amount more than net drawn
-      existingUserDebt - uint256(-baseDebtChange); // debt restored
+      // force underflow: only possible when user takes repays amount more than net drawn
+      : existingUserDebt - uint256(-baseDebtChange); // debt restored
 
     (uint256 newReserveRiskPremium, uint256 newReserveDebt) = MathUtils.addToWeightedAverage(
       reserveRiskPremiumWithoutCurrent,
