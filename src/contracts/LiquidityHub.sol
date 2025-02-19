@@ -30,7 +30,7 @@ struct Asset {
   uint256 outstandingPremium; // asset
   uint256 baseBorrowIndex; // in ray
   uint256 baseBorrowRate; // in ray
-  uint256 riskPremium; // weighted average risk premium in ray
+  uint256 riskPremium; // weighted average risk premium of all spokes with ray precision
   uint256 lastUpdateTimestamp;
   DataTypes.AssetConfig config;
 }
@@ -412,8 +412,8 @@ contract LiquidityHub is ILiquidityHub {
 
     uint256 newSpokeDebt = baseDebtChange > 0
       ? existingSpokeDebt + uint256(baseDebtChange) // debt added
-      : // force underflow: only possible when spoke takes repays amount more than net drawn
-      existingSpokeDebt - uint256(-baseDebtChange); // debt restored
+      // force underflow: only possible when spoke takes repays amount more than net drawn
+      : existingSpokeDebt - uint256(-baseDebtChange); // debt restored
 
     (uint256 newAssetRiskPremium, uint256 newAssetDebt) = MathUtils.addToWeightedAverage(
       assetRiskPremiumWithoutCurrent,

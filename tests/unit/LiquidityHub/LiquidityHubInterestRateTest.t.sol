@@ -267,11 +267,6 @@ contract LiquidityHubInterestRateTest is BaseTest {
     uint256 calcRp = (rpSpoke1 * drawSpoke1 + rpSpoke2 * drawSpoke2 + rpSpoke3 * drawSpoke3) /
       (drawSpoke1 + drawSpoke2 + drawSpoke3);
 
-    console.log('let rpSpoke1 = %sn; let drawSpoke1 = %sn', rpSpoke1, drawSpoke1);
-    console.log('let rpSpoke2 = %sn; let drawSpoke2 = %sn', rpSpoke2, drawSpoke2);
-    console.log('let rpSpoke3 = %sn; let drawSpoke3 = %sn', rpSpoke3, drawSpoke3);
-    console.log('calcRp %s, newRp %s', calcRp, newRp);
-
     assertApproxEqAbs(calcRp, newRp, 1);
     assertEq(borrowRate, baseBorrowRate + baseBorrowRate.percentMul(newRp));
   }
