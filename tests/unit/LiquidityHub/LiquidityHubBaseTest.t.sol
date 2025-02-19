@@ -36,6 +36,13 @@ contract LiquidityHubBaseTest is BaseTest {
     uint256 expectedSupply2Shares;
   }
 
+  struct DebtData {
+    uint256 assetDebt;
+    uint256 assetBaseDebt;
+    uint256[4] spokeDebt;
+    uint256[4] spokeBaseDebt;
+  }
+
   function setUp() public override {
     super.setUp();
     initEnvironment();
@@ -105,5 +112,18 @@ contract LiquidityHubBaseTest is BaseTest {
       riskPremium: riskPremium,
       onBehalfOf: address(spoke1)
     });
+  }
+
+  function _getDebt(uint256 assetId) internal view returns (DebtData memory) {
+    DebtData memory debtData;
+    debtData.assetDebt = hub.getAssetDebt(assetId);
+    debtData.assetBaseDebt = hub.getAssetBaseDebt(assetId);
+    debtData.spokeDebt[0] = hub.getSpokeDebt(assetId, address(spoke1));
+    debtData.spokeBaseDebt[0] = hub.getSpokeBaseDebt(assetId, address(spoke1));
+    debtData.spokeDebt[1] = hub.getSpokeDebt(assetId, address(spoke2));
+    debtData.spokeBaseDebt[1] = hub.getSpokeBaseDebt(assetId, address(spoke2));
+    debtData.spokeDebt[2] = hub.getSpokeDebt(assetId, address(spoke3));
+    debtData.spokeBaseDebt[2] = hub.getSpokeBaseDebt(assetId, address(spoke3));
+    return debtData;
   }
 }
