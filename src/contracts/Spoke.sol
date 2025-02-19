@@ -597,7 +597,7 @@ contract Spoke is ISpoke {
     return (
       cumulatedBaseDebt,
       existingOutstandingPremium +
-        (cumulatedBaseDebt - existingBaseDebt).percentMul(existingOutstandingPremium.derayify())
+        (cumulatedBaseDebt - existingBaseDebt).percentMul(reserve.riskPremium.derayify())
     );
   }
 
@@ -631,7 +631,7 @@ contract Spoke is ISpoke {
     return (
       cumulatedBaseDebt,
       existingOutstandingPremium +
-        (cumulatedBaseDebt - existingBaseDebt).percentMul(existingOutstandingPremium.derayify())
+        (cumulatedBaseDebt - existingBaseDebt).percentMul(user.riskPremium.derayify())
     );
   }
 
