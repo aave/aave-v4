@@ -597,7 +597,7 @@ contract Spoke is ISpoke {
     return (
       cumulatedBaseDebt,
       existingOutstandingPremium +
-        (cumulatedBaseDebt - existingBaseDebt).percentMul(reserve.riskPremium.derayify())
+        (cumulatedBaseDebt - existingBaseDebt).percentMul(existingOutstandingPremium.derayify())
     );
   }
 
@@ -628,8 +628,11 @@ contract Spoke is ISpoke {
       user.baseBorrowIndex
     );
 
-    user.baseDebt = cumulatedBaseDebt;
-    user.outstandingPremium += (cumulatedBaseDebt - existingBaseDebt).radMul(user.riskPremium);
+    return (
+      cumulatedBaseDebt,
+      existingOutstandingPremium +
+        (cumulatedBaseDebt - existingBaseDebt).percentMul(existingOutstandingPremium.derayify())
+    );
   }
 
   function _accrueUserInterest(UserConfig storage user, uint256 nextBaseBorrowIndex) internal {

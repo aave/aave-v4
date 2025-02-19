@@ -1025,7 +1025,7 @@ contract LiquidityHubRestoreTest is LiquidityHubBaseTest {
       assetId: wethAssetId,
       spoke: address(spoke1),
       amount: wethAmount,
-      riskPremiumRad: 0,
+      riskPremium: 0,
       user: alice,
       to: address(spoke1)
     });
@@ -1036,7 +1036,7 @@ contract LiquidityHubRestoreTest is LiquidityHubBaseTest {
       assetId: daiAssetId,
       spoke: address(spoke2),
       amount: daiAmount,
-      riskPremiumRad: 0,
+      riskPremium: 0,
       user: bob,
       to: address(spoke2)
     });
@@ -1048,7 +1048,7 @@ contract LiquidityHubRestoreTest is LiquidityHubBaseTest {
       to: alice,
       spoke: address(spoke1),
       amount: drawAmount,
-      riskPremiumRad: 0,
+      riskPremium: 0,
       onBehalfOf: address(spoke1)
     });
 
@@ -1062,7 +1062,7 @@ contract LiquidityHubRestoreTest is LiquidityHubBaseTest {
       assetId: daiAssetId,
       spoke: address(spoke2),
       amount: daiAmount / 5,
-      riskPremiumRad: uint256(5_00).bpsToRad(),
+      riskPremium: 5_00,
       user: bob,
       to: address(spoke2)
     });
@@ -1076,12 +1076,7 @@ contract LiquidityHubRestoreTest is LiquidityHubBaseTest {
 
     // alice restore amount = drawn amount
     vm.prank(address(spoke1));
-    hub.restore({
-      assetId: daiAssetId,
-      amount: cumulatedBaseDebt,
-      riskPremiumRad: 0,
-      repayer: alice
-    });
+    hub.restore({assetId: daiAssetId, amount: cumulatedBaseDebt, riskPremium: 0, repayer: alice});
 
     Asset memory daiData = hub.getAsset(daiAssetId);
     SpokeData memory spoke1Data = hub.getSpoke(daiAssetId, address(spoke1));
@@ -1128,7 +1123,7 @@ contract LiquidityHubRestoreTest is LiquidityHubBaseTest {
       assetId: wethAssetId,
       spoke: address(spoke1),
       amount: wethAmount,
-      riskPremiumRad: 0,
+      riskPremium: 0,
       user: alice,
       to: address(spoke1)
     });
@@ -1139,7 +1134,7 @@ contract LiquidityHubRestoreTest is LiquidityHubBaseTest {
       assetId: daiAssetId,
       spoke: address(spoke2),
       amount: daiAmount,
-      riskPremiumRad: 0,
+      riskPremium: 0,
       user: bob,
       to: address(spoke2)
     });
@@ -1151,7 +1146,7 @@ contract LiquidityHubRestoreTest is LiquidityHubBaseTest {
       to: alice,
       spoke: address(spoke1),
       amount: drawAmount,
-      riskPremiumRad: 0,
+      riskPremium: 0,
       onBehalfOf: address(spoke1)
     });
 
@@ -1165,7 +1160,7 @@ contract LiquidityHubRestoreTest is LiquidityHubBaseTest {
       assetId: daiAssetId,
       spoke: address(spoke2),
       amount: daiAmount / 5,
-      riskPremiumRad: uint256(5_00).bpsToRad(),
+      riskPremium: 5_00,
       user: bob,
       to: address(spoke2)
     });
@@ -1180,12 +1175,7 @@ contract LiquidityHubRestoreTest is LiquidityHubBaseTest {
     // alice restore amount = drawn amount (no premium)
 
     vm.prank(address(spoke1));
-    hub.restore({
-      assetId: daiAssetId,
-      amount: cumulatedBaseDebt,
-      riskPremiumRad: 0,
-      repayer: alice
-    });
+    hub.restore({assetId: daiAssetId, amount: cumulatedBaseDebt, riskPremium: 0, repayer: alice});
 
     Asset memory daiData = hub.getAsset(daiAssetId);
     SpokeData memory spoke1Data = hub.getSpoke(daiAssetId, address(spoke1));
@@ -1215,7 +1205,7 @@ contract LiquidityHubRestoreTest is LiquidityHubBaseTest {
     uint256 drawAmount = daiAmount / 2;
     uint256 skipTime = 365 days / 2;
     uint256 rate = uint256(15_00).bpsToRay();
-    uint256 riskPremiumRad = uint256(30_00).bpsToRad();
+    uint32 riskPremium = 30_00;
 
     vm.mockCall(
       address(irStrategy),
@@ -1229,7 +1219,7 @@ contract LiquidityHubRestoreTest is LiquidityHubBaseTest {
       assetId: wethAssetId,
       spoke: address(spoke1),
       amount: wethAmount,
-      riskPremiumRad: 0,
+      riskPremium: 0,
       user: alice,
       to: address(spoke1)
     });
@@ -1240,7 +1230,7 @@ contract LiquidityHubRestoreTest is LiquidityHubBaseTest {
       assetId: daiAssetId,
       spoke: address(spoke2),
       amount: daiAmount,
-      riskPremiumRad: 0,
+      riskPremium: 0,
       user: bob,
       to: address(spoke2)
     });
@@ -1252,7 +1242,7 @@ contract LiquidityHubRestoreTest is LiquidityHubBaseTest {
       to: alice,
       spoke: address(spoke1),
       amount: drawAmount,
-      riskPremiumRad: riskPremiumRad,
+      riskPremium: riskPremium,
       onBehalfOf: address(spoke1)
     });
 
@@ -1266,7 +1256,7 @@ contract LiquidityHubRestoreTest is LiquidityHubBaseTest {
       assetId: daiAssetId,
       spoke: address(spoke2),
       amount: daiAmount / 5,
-      riskPremiumRad: 0,
+      riskPremium: 0,
       user: bob,
       to: address(spoke2)
     });
@@ -1276,7 +1266,7 @@ contract LiquidityHubRestoreTest is LiquidityHubBaseTest {
       uint40(spoke1DaiData.lastUpdateTimestamp)
     );
     uint256 cumulatedBaseDebt = drawAmount.rayMul(cumulatedBaseInterest);
-    uint256 accruedPremium = (cumulatedBaseDebt - drawAmount).radMul(riskPremiumRad);
+    uint256 accruedPremium = (cumulatedBaseDebt - drawAmount).percentMul(riskPremium);
     assertTrue(accruedPremium > 0);
 
     // alice restore amount = drawn amount AND premium
@@ -1285,7 +1275,7 @@ contract LiquidityHubRestoreTest is LiquidityHubBaseTest {
     hub.restore({
       assetId: daiAssetId,
       amount: cumulatedBaseDebt + accruedPremium,
-      riskPremiumRad: 0,
+      riskPremium: 0,
       repayer: alice
     });
 
@@ -1314,7 +1304,7 @@ contract LiquidityHubRestoreTest is LiquidityHubBaseTest {
     uint256 drawAmount,
     uint256 skipTime,
     uint256 rate,
-    uint256 riskPremiumRad
+    uint32 riskPremium
   ) public {
     uint256 daiAmount = 100e18;
     uint256 wethAmount = 10e18;
@@ -1322,7 +1312,7 @@ contract LiquidityHubRestoreTest is LiquidityHubBaseTest {
     drawAmount = bound(drawAmount, 1, daiAmount); // within supplied dai amount
     skipTime = bound(skipTime, 1, 365 * 10 * 1 days); // 1 sec to 10 years
     rate = bound(rate, 1, 1000_00).bpsToRay(); // 0.01% to 1000%
-    riskPremiumRad = bound(riskPremiumRad, 1, maxRiskPremiumRad);
+    riskPremium = uint32(bound(riskPremium, 1, MAX_RISK_PREMIUM_BPS));
 
     vm.mockCall(
       address(irStrategy),
@@ -1336,7 +1326,7 @@ contract LiquidityHubRestoreTest is LiquidityHubBaseTest {
       assetId: wethAssetId,
       spoke: address(spoke1),
       amount: wethAmount,
-      riskPremiumRad: 0,
+      riskPremium: 0,
       user: alice,
       to: address(spoke1)
     });
@@ -1347,7 +1337,7 @@ contract LiquidityHubRestoreTest is LiquidityHubBaseTest {
       assetId: daiAssetId,
       spoke: address(spoke2),
       amount: daiAmount,
-      riskPremiumRad: 0,
+      riskPremium: 0,
       user: bob,
       to: address(spoke2)
     });
@@ -1359,7 +1349,7 @@ contract LiquidityHubRestoreTest is LiquidityHubBaseTest {
       to: alice,
       spoke: address(spoke1),
       amount: drawAmount,
-      riskPremiumRad: riskPremiumRad,
+      riskPremium: riskPremium,
       onBehalfOf: address(spoke1)
     });
 
@@ -1373,7 +1363,7 @@ contract LiquidityHubRestoreTest is LiquidityHubBaseTest {
       assetId: daiAssetId,
       spoke: address(spoke2),
       amount: daiAmount / 5,
-      riskPremiumRad: 0,
+      riskPremium: 0,
       user: bob,
       to: address(spoke2)
     });
@@ -1383,8 +1373,8 @@ contract LiquidityHubRestoreTest is LiquidityHubBaseTest {
       uint40(spoke1DaiData.lastUpdateTimestamp)
     );
     uint256 cumulatedBaseDebt = drawAmount.rayMul(cumulatedBaseInterest);
-    uint256 accruedPremium = (cumulatedBaseDebt - drawAmount).radMul(riskPremiumRad);
-    vm.assume(accruedPremium > 0); // accrued premium can round to 0 in edge case - ex. (cumulatedBaseDebt - drawAmount) = 1, riskPremiumRad = 1
+    uint256 accruedPremium = (cumulatedBaseDebt - drawAmount).percentMul(riskPremium);
+    vm.assume(accruedPremium > 0); // accrued premium can round to 0 in edge case - ex. (cumulatedBaseDebt - drawAmount) = 1, riskPremium = 1
 
     // alice restore amount = drawn amount AND premium
 
@@ -1392,7 +1382,7 @@ contract LiquidityHubRestoreTest is LiquidityHubBaseTest {
     hub.restore({
       assetId: daiAssetId,
       amount: cumulatedBaseDebt + accruedPremium,
-      riskPremiumRad: 0,
+      riskPremium: 0,
       repayer: alice
     });
 
