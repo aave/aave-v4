@@ -322,6 +322,118 @@ contract SpokeUserRiskPremiumTest is BaseTest {
     assertEq(userRiskPremium, expectedUserRiskPremium, 'wrong user risk premium');
   }
 
+  function test_getUserRiskPremium_fuzz_two_assets_supply_and_borrow(
+    uint256 daiSupplyAmount
+  ) public {
+    /// @dev We supply with a high value lp asset so it's ignored in rp calcs, but allows user to borrow large amounts
+    /// @dev We borrow with any asset because only it's value is important, it's lp is ignored
+    /// @dev We fix borrow amount, and fuzz the supply amounts, checking rp calc is correct
+    uint256 totalBorrowAmount = MAX_SUPPLY_AMOUNT / 2;
+    // Dai lp to account for up to 100% of the debt value
+    daiSupplyAmount = bound(daiSupplyAmount, 1, totalBorrowAmount);
+    uint256 usdxSupplyAmount = totalBorrowAmount - daiSupplyAmount;
+    uint256 wethSupplyAmount = MAX_SUPPLY_AMOUNT;
+
+    assertEq(daiSupplyAmount + usdxSupplyAmount, totalBorrowAmount, 'wrong supply amounts');
+
+    uint256 daiReserveId = spokeInfo[spoke3].dai.reserveId;
+    uint256 usdxReserveId = spokeInfo[spoke3].usdx.reserveId;
+    uint256 wethReserveId = spokeInfo[spoke3].weth.reserveId;
+
+    // Borrow all value in weth. Each weth is 2000 stablecoins
+    uint256 wethBorrowAmount = totalBorrowAmount / 2000;
+
+    bool usingAsCollateral = true;
+
+    // Bob supply dai into spoke3
+    Utils.spokeSupply(spoke3, daiReserveId, bob, daiSupplyAmount, bob);
+    Utils.setUsingAsCollateral(spoke3, bob, daiReserveId, usingAsCollateral);
+
+    // Bob supply usdx into spoke3
+    if (usdxSupplyAmount > 0) {
+      Utils.spokeSupply(spoke3, usdxReserveId, bob, usdxSupplyAmount, bob);
+      Utils.setUsingAsCollateral(spoke3, bob, usdxReserveId, usingAsCollateral);
+    }
+
+    // Bob supply weth into spoke3
+    Utils.spokeSupply(spoke3, wethReserveId, bob, wethSupplyAmount, bob);
+    Utils.setUsingAsCollateral(spoke3, bob, wethReserveId, usingAsCollateral);
+
+    // Bob draw weth
+    Utils.spokeBorrow(spoke3, wethReserveId, bob, wethBorrowAmount, bob);
+
+    Spoke.Reserve memory daiInfo = spoke3.getReserve(daiReserveId);
+    Spoke.Reserve memory usdxInfo = spoke3.getReserve(usdxReserveId);
+    Spoke.Reserve memory wethInfo = spoke3.getReserve(wethReserveId);
+
+    // Dai and usdx will each cover part of the debt
+    uint256 expectedUserRiskPremium = (daiInfo.config.liquidityPremium *
+      daiSupplyAmount *
+      oracle.getAssetPrice(daiAssetId) +
+      usdxInfo.config.liquidityPremium *
+      usdxSupplyAmount *
+      oracle.getAssetPrice(usdxAssetId)) /
+      (daiSupplyAmount *
+        oracle.getAssetPrice(daiAssetId) +
+        usdxSupplyAmount *
+        oracle.getAssetPrice(usdxAssetId));
+
+    uint256 userRiskPremium = spoke3.getUserRiskPremium(bob);
+    assertEq(userRiskPremium, expectedUserRiskPremium, 'wrong user risk premium');
+  }
+
+  // TODO: A mix of 3 assets, weighted avg of the three
+  function test_getUserRiskPremium_fuzz_three_assets_diff_amounts(uint256 daiSupplyAmount) public {
+    // Dai lp to account for up to 100% of the debt value
+    daiSupplyAmount = bound(daiSupplyAmount, 1, 4000e18);
+    uint256 usdxLpContributionAmount = 4000e18 - daiSupplyAmount;
+
+    uint256 daiReserveId = spokeInfo[spoke1].dai.reserveId;
+    uint256 usdxReserveId = spokeInfo[spoke1].usdx.reserveId;
+    uint256 wethReserveId = spokeInfo[spoke1].weth.reserveId;
+
+    uint256 usdxSupplyAmount = 6000e18;
+    uint256 wethSupplyAmount = 10e18;
+
+    uint256 wethBorrowAmount = 2e18;
+
+    bool usingAsCollateral = true;
+
+    // Bob supply dai into spoke1
+    Utils.spokeSupply(spoke1, daiReserveId, bob, daiSupplyAmount, bob);
+    Utils.setUsingAsCollateral(spoke1, bob, daiReserveId, usingAsCollateral);
+
+    // Bob supply usdx into spoke1
+    Utils.spokeSupply(spoke1, usdxReserveId, bob, usdxSupplyAmount, bob);
+    Utils.setUsingAsCollateral(spoke1, bob, usdxReserveId, usingAsCollateral);
+
+    // Alice supply weth into spoke1
+    Utils.spokeSupply(spoke1, wethReserveId, alice, wethSupplyAmount, alice);
+    Utils.setUsingAsCollateral(spoke1, alice, wethReserveId, usingAsCollateral);
+
+    // Bob draw $4000 total in weth
+    Utils.spokeBorrow(spoke1, wethReserveId, bob, wethBorrowAmount, bob);
+
+    Spoke.Reserve memory daiInfo = spoke1.getReserve(daiReserveId);
+    Spoke.Reserve memory usdxInfo = spoke1.getReserve(usdxReserveId);
+    Spoke.Reserve memory wethInfo = spoke1.getReserve(wethReserveId);
+
+    // Dai and usdx will each cover half the debt
+    uint256 expectedUserRiskPremium = (daiInfo.config.liquidityPremium *
+      daiSupplyAmount *
+      oracle.getAssetPrice(daiAssetId) +
+      usdxInfo.config.liquidityPremium *
+      usdxLpContributionAmount *
+      oracle.getAssetPrice(usdxAssetId)) /
+      (daiSupplyAmount *
+        oracle.getAssetPrice(daiAssetId) +
+        usdxLpContributionAmount *
+        oracle.getAssetPrice(usdxAssetId));
+
+    uint256 userRiskPremium = spoke1.getUserRiskPremium(bob);
+    assertEq(userRiskPremium, expectedUserRiskPremium, 'wrong user risk premium');
+  }
+
   // TODO: A mix of 4 of the assets, weighted avg of the four
 
   /*
