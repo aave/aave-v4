@@ -1312,7 +1312,7 @@ contract LiquidityHubRestoreTest is LiquidityHubBaseTest {
     drawAmount = bound(drawAmount, 1, daiAmount); // within supplied dai amount
     skipTime = bound(skipTime, 1, 365 * 10 * 1 days); // 1 sec to 10 years
     rate = bound(rate, 1, 1000_00).bpsToRay(); // 0.01% to 1000%
-    riskPremium = uint32(bound(riskPremium, 1, MAX_RISK_PREMIUM_BPS));
+    riskPremium %= MAX_RISK_PREMIUM_BPS;
 
     vm.mockCall(
       address(irStrategy),
