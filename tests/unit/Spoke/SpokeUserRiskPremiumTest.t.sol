@@ -53,7 +53,7 @@ contract SpokeUserRiskPremiumTest is BaseTest {
   function test_getUserRiskPremium_fuzz_single_asset_collateral_borrowed_amount(
     uint256 borrowAmount
   ) public {
-    borrowAmount = bound(borrowAmount, 1, 1e30);
+    borrowAmount = bound(borrowAmount, 1, MAX_SUPPLY_AMOUNT);
     uint256 supplyAmount = borrowAmount * 2;
     uint256 daiReserveId = spokeInfo[spoke1].dai.reserveId;
     bool usingAsCollateral = true;
@@ -69,6 +69,35 @@ contract SpokeUserRiskPremiumTest is BaseTest {
 
     // With single collateral, user rp will match liquidity premium of collateral
     assertEq(userRiskPremium, daiInfo.config.liquidityPremium, 'wrong user risk premium');
+  }
+
+  function test_getUserRiskPremium_fuzz_supply_does_not_impact(
+    uint256 borrowAmount,
+    uint256 additionalSupplyAmount
+  ) public {
+    borrowAmount = bound(borrowAmount, 1, MAX_SUPPLY_AMOUNT / 2);
+    additionalSupplyAmount = bound(additionalSupplyAmount, 1, MAX_SUPPLY_AMOUNT);
+
+    uint256 supplyAmount = borrowAmount * 2;
+    uint256 daiReserveId = spokeInfo[spoke1].dai.reserveId;
+    uint256 usdxReserveId = spokeInfo[spoke1].usdx.reserveId;
+    bool usingAsCollateral = true;
+
+    // Bob supply dai into spoke1
+    deal(address(tokenList.dai), bob, supplyAmount);
+    Utils.spokeSupply(spoke1, daiReserveId, bob, supplyAmount, bob);
+    Utils.setUsingAsCollateral(spoke1, bob, daiReserveId, usingAsCollateral);
+    Utils.spokeBorrow(spoke1, daiReserveId, bob, borrowAmount, bob);
+
+    uint256 userRiskPremium = spoke1.getUserRiskPremium(bob);
+    Spoke.Reserve memory daiInfo = spoke1.getReserve(daiReserveId);
+
+    // With single collateral, user rp will match liquidity premium of collateral
+    assertEq(userRiskPremium, daiInfo.config.liquidityPremium, 'wrong user risk premium');
+
+    // Supplying more risky asset (usdx) should not impact user risk premium
+    Utils.spokeSupply(spoke1, usdxReserveId, bob, additionalSupplyAmount, bob);
+    assertEq(spoke1.getUserRiskPremium(bob), userRiskPremium, 'wrong user risk premium');
   }
 
   function test_getUserRiskPremium_multi_asset_collateral() public {
@@ -359,7 +388,6 @@ contract SpokeUserRiskPremiumTest is BaseTest {
 
   // TODO: Test multiple assets with different liquidity premiums
   // TODO: Fuzz multiple asset amounts with diff liquidity premiums
-  // TODO: Show that whatever asset you supply in addition will not affect liquidity premium
 
   // TODO: Test where we change one of the liquidity premiums to make our current data structure out of order to ensure ordering works
 }
