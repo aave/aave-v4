@@ -48,6 +48,14 @@ contract WadRayMathWrapper {
     return WadRayMath.wadToRay(a);
   }
 
+  function rayify(uint256 a) public pure returns (uint256) {
+    return WadRayMath.rayify(a);
+  }
+
+  function derayify(uint256 a) public pure returns (uint256) {
+    return WadRayMath.derayify(a);
+  }
+
   function bpsToRay(uint256 a) internal pure returns (uint256) {
     return WadRayMath.bpsToRay(a);
   }
