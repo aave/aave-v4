@@ -58,10 +58,10 @@ library AssetLogic {
   }
 
   function getInterestRate(Asset storage asset) external view returns (uint256) {
-    // @dev we truncate fromRay before `percentMul` as we only have accurate data until bps
+    // @dev we truncate (ie `derayify()`) before `percentMul` as we only have accurate data until bps
     return
       asset.baseBorrowRate.percentMul(
-        PercentageMath.PERCENTAGE_FACTOR + asset.riskPremium.fromRay()
+        PercentageMath.PERCENTAGE_FACTOR + asset.riskPremium.derayify()
       );
   }
 
@@ -130,7 +130,7 @@ library AssetLogic {
     return (
       cumulatedBaseDebt,
       existingOutstandingPremium +
-        (cumulatedBaseDebt - existingBaseDebt).percentMul(asset.riskPremium.fromRay())
+        (cumulatedBaseDebt - existingBaseDebt).percentMul(asset.riskPremium.derayify())
     );
   }
 }

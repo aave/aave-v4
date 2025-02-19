@@ -189,7 +189,7 @@ contract LiquidityHubInterestRateTest is BaseTest {
     borrowRate = _getBorrowRate(daiAssetId);
     baseBorrowRate = _getBaseBorrowRate(daiAssetId);
     uint256 calcRp = (rpSpoke1 * drawSpoke1 + rpSpoke2 * drawSpoke2) / (drawSpoke1 + drawSpoke2);
-    assertEq(calcRp, hub.getAsset(daiAssetId).riskPremium.fromRay());
+    assertEq(calcRp, hub.getAsset(daiAssetId).riskPremium.derayify());
     assertEq(borrowRate, baseBorrowRate + baseBorrowRate.percentMul(calcRp));
     vm.stopPrank();
   }
@@ -263,7 +263,7 @@ contract LiquidityHubInterestRateTest is BaseTest {
 
     uint256 borrowRate = _getBorrowRate(daiAssetId);
     uint256 baseBorrowRate = _getBaseBorrowRate(daiAssetId);
-    uint256 newRp = hub.getAsset(daiAssetId).riskPremium.fromRay();
+    uint256 newRp = hub.getAsset(daiAssetId).riskPremium.derayify();
     uint256 calcRp = (rpSpoke1 * drawSpoke1 + rpSpoke2 * drawSpoke2 + rpSpoke3 * drawSpoke3) /
       (drawSpoke1 + drawSpoke2 + drawSpoke3);
 

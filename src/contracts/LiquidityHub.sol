@@ -39,7 +39,6 @@ struct Asset {
 contract LiquidityHub is ILiquidityHub {
   using SafeERC20 for IERC20;
   using WadRayMath for uint256;
-  using WadRayMath for uint32;
   using SharesMath for uint256;
   using PercentageMath for uint256;
   using AssetLogic for Asset;
@@ -172,7 +171,7 @@ contract LiquidityHub is ILiquidityHub {
     _updateRiskPremiumAndBaseDebt({
       asset: asset,
       spoke: spoke,
-      newSpokeRiskPremium: riskPremium.toBoundedRay(),
+      newSpokeRiskPremium: _boundBps(riskPremium).rayify(),
       baseDebtChange: 0
     });
 
@@ -208,7 +207,7 @@ contract LiquidityHub is ILiquidityHub {
     _validateWithdraw(asset, spoke, amount);
 
     asset.updateBorrowRate({liquidityAdded: 0, liquidityTaken: amount});
-    _updateRiskPremiumAndBaseDebt(asset, spoke, riskPremium.toBoundedRay(), 0); // no base debt change
+    _updateRiskPremiumAndBaseDebt(asset, spoke, _boundBps(riskPremium).rayify(), 0); // no base debt change
 
     uint256 sharesAmount = asset.convertToSharesDown(amount);
     require(sharesAmount > 0, 'INVALID_SHARES_AMOUNT');
@@ -240,7 +239,7 @@ contract LiquidityHub is ILiquidityHub {
     _validateDraw(asset, amount, spoke.config.drawCap);
 
     asset.updateBorrowRate({liquidityAdded: 0, liquidityTaken: amount});
-    _updateRiskPremiumAndBaseDebt(asset, spoke, riskPremium.toBoundedRay(), int256(amount)); // base debt added
+    _updateRiskPremiumAndBaseDebt(asset, spoke, _boundBps(riskPremium).rayify(), int256(amount)); // base debt added
 
     asset.availableLiquidity -= amount;
 
@@ -271,7 +270,7 @@ contract LiquidityHub is ILiquidityHub {
     _updateRiskPremiumAndBaseDebt(
       asset,
       spoke,
-      riskPremium.toBoundedRay(),
+      _boundBps(riskPremium).rayify(),
       -int256(baseDebtRestored)
     );
 
@@ -412,8 +411,8 @@ contract LiquidityHub is ILiquidityHub {
 
     uint256 newSpokeDebt = baseDebtChange > 0
       ? existingSpokeDebt + uint256(baseDebtChange) // debt added
-      // force underflow: only possible when spoke takes repays amount more than net drawn
-      : existingSpokeDebt - uint256(-baseDebtChange); // debt restored
+      : // force underflow: only possible when spoke takes repays amount more than net drawn
+      existingSpokeDebt - uint256(-baseDebtChange); // debt restored
 
     (uint256 newAssetRiskPremium, uint256 newAssetDebt) = MathUtils.addToWeightedAverage(
       assetRiskPremiumWithoutCurrent,
@@ -465,5 +464,10 @@ contract LiquidityHub is ILiquidityHub {
     }
 
     return baseDebtRestored;
+  }
+
+  function _boundBps(uint32 a) internal pure returns (uint256) {
+    require(a < 1000_00, 'INVALID_BPS');
+    return uint256(a);
   }
 }

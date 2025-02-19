@@ -223,7 +223,7 @@ contract LiquidityHubAccrueInterestTest is BaseTest {
 
     assertEq(daiInfo.lastUpdateTimestamp - startTime, elapsed);
     assertEq(daiInfo.baseDebt, totalBase);
-    assertEq(daiInfo.riskPremium.fromRay(), riskPremium);
+    assertEq(daiInfo.riskPremium.derayify(), riskPremium);
     assertEq(daiInfo.outstandingPremium, (totalBase - borrowAmount).percentMul(riskPremium));
   }
 
@@ -257,7 +257,7 @@ contract LiquidityHubAccrueInterestTest is BaseTest {
 
     assertEq(daiInfo.lastUpdateTimestamp - startTime, elapsed);
     assertEq(daiInfo.baseDebt, totalBase);
-    assertEq(daiInfo.riskPremium.fromRay(), riskPremium);
+    assertEq(daiInfo.riskPremium.derayify(), riskPremium);
     assertEq(daiInfo.outstandingPremium, (totalBase - borrowAmount).percentMul(riskPremium));
   }
 
@@ -306,7 +306,7 @@ contract LiquidityHubAccrueInterestTest is BaseTest {
 
     assertEq(assetData.t1.lastUpdateTimestamp - timestamps.t0, elapsed, 'elapsed');
     assertEq(assetData.t1.baseDebt, totalBase, 'baseDebt');
-    assertEq(assetData.t1.riskPremium.fromRay(), riskPremium, 'riskPremium');
+    assertEq(assetData.t1.riskPremium.derayify(), riskPremium, 'riskPremium');
     assertEq(
       assetData.t1.outstandingPremium,
       (totalBase - borrowAmount).percentMul(riskPremium),
@@ -344,7 +344,7 @@ contract LiquidityHubAccrueInterestTest is BaseTest {
 
     assertEq(elapsed * 2, vm.getBlockTimestamp() - timestamps.t0, 'elapsed');
     assertApproxEqAbs(totalBase, assetData.t2.baseDebt, 1, 'baseDebt');
-    assertEq(assetData.t2.riskPremium.fromRay(), riskPremium, 'riskPremium');
+    assertEq(assetData.t2.riskPremium.derayify(), riskPremium, 'riskPremium');
     assertApproxEqAbs(
       (totalBase - borrowAmount).percentMul(riskPremium),
       assetData.t2.outstandingPremium,

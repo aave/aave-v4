@@ -25,7 +25,7 @@ library SpokeDataLogic {
 
       // accrue premium interest on the accrued base interest
       spoke.outstandingPremium += (cumulatedBaseDebt - existingBaseDebt).percentMul(
-        spoke.riskPremium.fromRay()
+        spoke.riskPremium.derayify()
       );
       spoke.baseDebt = cumulatedBaseDebt;
     }

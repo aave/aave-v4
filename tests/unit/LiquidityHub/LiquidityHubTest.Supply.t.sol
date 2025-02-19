@@ -218,7 +218,7 @@ contract LiquidityHubSupplyTest is LiquidityHubBaseTest {
       assetData.baseBorrowIndex,
       'spoke baseBorrowIndex post-supply'
     );
-    assertEq(spokeData.riskPremium.fromRay(), riskPremium, 'spoke riskPremium post-supply');
+    assertEq(spokeData.riskPremium.derayify(), riskPremium, 'spoke riskPremium post-supply');
     assertEq(
       spokeData.lastUpdateTimestamp,
       assetData.lastUpdateTimestamp,

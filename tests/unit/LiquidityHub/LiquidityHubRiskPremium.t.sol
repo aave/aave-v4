@@ -74,7 +74,7 @@ contract LiquidityHubRiskPremium_ConstantTimeAndRiskPremium is LiquidityHubRiskP
     hub.draw(daiAssetId, usdxDrawnAmount, spoke2RiskPremium, alice);
 
     assertEq(hub.getAsset(daiAssetId).baseDebt, usdxDrawnAmount);
-    assertEq(hub.getAsset(daiAssetId).riskPremium.fromRay(), spoke2RiskPremium);
+    assertEq(hub.getAsset(daiAssetId).riskPremium.derayify(), spoke2RiskPremium);
   }
 
   function test_multipleDrawSameAmount() public {
@@ -87,7 +87,7 @@ contract LiquidityHubRiskPremium_ConstantTimeAndRiskPremium is LiquidityHubRiskP
     hub.draw(daiAssetId, usdxDrawnAmount, spoke2RiskPremium, alice);
 
     assertEq(hub.getAsset(daiAssetId).baseDebt, usdxDrawnAmount);
-    assertEq(hub.getAsset(daiAssetId).riskPremium.fromRay(), spoke2RiskPremium);
+    assertEq(hub.getAsset(daiAssetId).riskPremium.derayify(), spoke2RiskPremium);
 
     // spoke 3 draws
     vm.prank(address(spoke3));
@@ -100,7 +100,7 @@ contract LiquidityHubRiskPremium_ConstantTimeAndRiskPremium is LiquidityHubRiskP
       spoke3RiskPremium) / totalBaseDebt;
 
     assertEq(hub.getAsset(daiAssetId).baseDebt, totalBaseDebt);
-    assertEq(hub.getAsset(daiAssetId).riskPremium.fromRay(), expectedRiskPremium);
+    assertEq(hub.getAsset(daiAssetId).riskPremium.derayify(), expectedRiskPremium);
 
     // spoke 1 draws remaining liquidity
     vm.prank(address(spoke1));
@@ -116,7 +116,7 @@ contract LiquidityHubRiskPremium_ConstantTimeAndRiskPremium is LiquidityHubRiskP
         spoke3RiskPremium) /
       totalBaseDebt;
     assertEq(hub.getAsset(daiAssetId).baseDebt, totalBaseDebt);
-    assertEq(hub.getAsset(daiAssetId).riskPremium.fromRay(), expectedRiskPremium);
+    assertEq(hub.getAsset(daiAssetId).riskPremium.derayify(), expectedRiskPremium);
   }
 
   function test_multipleDrawMultipleAmount() public {
@@ -133,7 +133,7 @@ contract LiquidityHubRiskPremium_ConstantTimeAndRiskPremium is LiquidityHubRiskP
 
     uint256 totalBaseDebt = spoke1DrawAmount;
     assertEq(hub.getAsset(daiAssetId).baseDebt, spoke1DrawAmount);
-    assertEq(hub.getAsset(daiAssetId).riskPremium.fromRay(), spoke1RiskPremium);
+    assertEq(hub.getAsset(daiAssetId).riskPremium.derayify(), spoke1RiskPremium);
 
     // spoke 2 draws
     vm.prank(address(spoke2));
@@ -146,7 +146,7 @@ contract LiquidityHubRiskPremium_ConstantTimeAndRiskPremium is LiquidityHubRiskP
       spoke2RiskPremium) / totalBaseDebt;
 
     assertEq(hub.getAsset(daiAssetId).baseDebt, totalBaseDebt);
-    assertEq(hub.getAsset(daiAssetId).riskPremium.fromRay(), expectedRiskPremium);
+    assertEq(hub.getAsset(daiAssetId).riskPremium.derayify(), expectedRiskPremium);
 
     // spoke 3 draws remaining liquidity
     vm.prank(address(spoke3));
@@ -162,7 +162,7 @@ contract LiquidityHubRiskPremium_ConstantTimeAndRiskPremium is LiquidityHubRiskP
         spoke3RiskPremium) /
       totalBaseDebt;
     assertEq(hub.getAsset(daiAssetId).baseDebt, totalBaseDebt);
-    assertEq(hub.getAsset(daiAssetId).riskPremium.fromRay(), expectedRiskPremium);
+    assertEq(hub.getAsset(daiAssetId).riskPremium.derayify(), expectedRiskPremium);
   }
 
   function test_fuzzDrawAndPremium(TestDrawAmountAndRiskPremiumInput memory p) public {
@@ -178,7 +178,7 @@ contract LiquidityHubRiskPremium_ConstantTimeAndRiskPremium is LiquidityHubRiskP
 
     uint256 totalBaseDebt = p.drawAmount.spoke1;
     assertEq(hub.getAsset(daiAssetId).baseDebt, p.drawAmount.spoke1);
-    assertEq(hub.getAsset(daiAssetId).riskPremium.fromRay(), p.riskPremium.spoke1);
+    assertEq(hub.getAsset(daiAssetId).riskPremium.derayify(), p.riskPremium.spoke1);
 
     // spoke 2 draws
     vm.prank(address(spoke2));
@@ -191,7 +191,7 @@ contract LiquidityHubRiskPremium_ConstantTimeAndRiskPremium is LiquidityHubRiskP
       p.riskPremium.spoke2) / totalBaseDebt;
 
     assertEq(hub.getAsset(daiAssetId).baseDebt, totalBaseDebt);
-    assertApproxEqAbs(hub.getAsset(daiAssetId).riskPremium.fromRay(), expectedRiskPremium, 1);
+    assertApproxEqAbs(hub.getAsset(daiAssetId).riskPremium.derayify(), expectedRiskPremium, 1);
 
     // spoke 3 draws remaining liquidity
     vm.prank(address(spoke3));
@@ -207,7 +207,7 @@ contract LiquidityHubRiskPremium_ConstantTimeAndRiskPremium is LiquidityHubRiskP
         p.riskPremium.spoke3) /
       totalBaseDebt;
     assertEq(hub.getAsset(daiAssetId).baseDebt, totalBaseDebt);
-    assertApproxEqAbs(hub.getAsset(daiAssetId).riskPremium.fromRay(), expectedRiskPremium, 1);
+    assertApproxEqAbs(hub.getAsset(daiAssetId).riskPremium.derayify(), expectedRiskPremium, 1);
   }
 }
 
@@ -243,7 +243,7 @@ contract LiquidityHubRiskPremium_VariableTimeAndConstantRiskPremium is
 
     uint256 totalBaseDebt = spoke1DrawAmount;
     assertEq(hub.getAsset(daiAssetId).baseDebt, spoke1DrawAmount);
-    assertEq(hub.getAsset(daiAssetId).riskPremium.fromRay(), spoke1RiskPremium);
+    assertEq(hub.getAsset(daiAssetId).riskPremium.derayify(), spoke1RiskPremium);
 
     skip(timeToSkip);
     uint256 spoke1AccruedDebt = spoke1DrawAmount.rayMul(
@@ -266,7 +266,7 @@ contract LiquidityHubRiskPremium_VariableTimeAndConstantRiskPremium is
       spoke2RiskPremium) / totalBaseDebt;
 
     assertEq(hub.getAsset(daiAssetId).baseDebt, totalBaseDebt);
-    assertEq(hub.getAsset(daiAssetId).riskPremium.fromRay(), expectedRiskPremium);
+    assertEq(hub.getAsset(daiAssetId).riskPremium.derayify(), expectedRiskPremium);
 
     lastUpdateTimestamp = uint40(vm.getBlockTimestamp());
     skip(timeToSkip);
@@ -293,7 +293,7 @@ contract LiquidityHubRiskPremium_VariableTimeAndConstantRiskPremium is
         spoke3RiskPremium) /
       totalBaseDebt;
     assertApproxEqAbs(hub.getAsset(daiAssetId).baseDebt, totalBaseDebt, 1);
-    assertApproxEqAbs(hub.getAsset(daiAssetId).riskPremium.fromRay(), expectedRiskPremium, 1);
+    assertApproxEqAbs(hub.getAsset(daiAssetId).riskPremium.derayify(), expectedRiskPremium, 1);
   }
 
   function test_multipleDrawWhileAccruingInterest() public {
@@ -327,7 +327,7 @@ contract LiquidityHubRiskPremium_VariableTimeAndConstantRiskPremium is
 
     uint256 totalBaseDebt = spoke1DrawAmount;
     assertEq(hub.getAsset(daiAssetId).baseDebt, spoke1DrawAmount);
-    assertEq(hub.getAsset(daiAssetId).riskPremium.fromRay(), spoke1RiskPremium);
+    assertEq(hub.getAsset(daiAssetId).riskPremium.derayify(), spoke1RiskPremium);
 
     skip(timeToSkip);
     uint256 spoke1AccruedDebt = spoke1DrawAmount.rayMul(
@@ -358,7 +358,7 @@ contract LiquidityHubRiskPremium_VariableTimeAndConstantRiskPremium is
       spoke2RiskPremium) / totalBaseDebt;
 
     assertEq(hub.getAsset(daiAssetId).baseDebt, totalBaseDebt);
-    assertEq(hub.getAsset(daiAssetId).riskPremium.fromRay(), expectedRiskPremium);
+    assertEq(hub.getAsset(daiAssetId).riskPremium.derayify(), expectedRiskPremium);
 
     lastUpdateTimestamp = uint40(vm.getBlockTimestamp());
     skip(timeToSkip);
@@ -385,7 +385,7 @@ contract LiquidityHubRiskPremium_VariableTimeAndConstantRiskPremium is
         spoke3RiskPremium) /
       totalBaseDebt;
     assertEq(hub.getAsset(daiAssetId).baseDebt, totalBaseDebt);
-    assertApproxEqAbs(hub.getAsset(daiAssetId).riskPremium.fromRay(), expectedRiskPremium, 1);
+    assertApproxEqAbs(hub.getAsset(daiAssetId).riskPremium.derayify(), expectedRiskPremium, 1);
   }
 
   function test_fuzzMultipleDrawWhileAccruingInterest(
@@ -416,7 +416,7 @@ contract LiquidityHubRiskPremium_VariableTimeAndConstantRiskPremium is
 
     uint256 totalBaseDebt = p.drawAmount.spoke1;
     assertEq(hub.getAsset(daiAssetId).baseDebt, p.drawAmount.spoke1);
-    assertEq(hub.getAsset(daiAssetId).riskPremium.fromRay(), p.riskPremium.spoke1);
+    assertEq(hub.getAsset(daiAssetId).riskPremium.derayify(), p.riskPremium.spoke1);
 
     skip(timeToSkip);
     uint256 spoke1AccruedDebt = p.drawAmount.spoke1.rayMul(
@@ -447,7 +447,7 @@ contract LiquidityHubRiskPremium_VariableTimeAndConstantRiskPremium is
       p.riskPremium.spoke2) / totalBaseDebt;
 
     assertEq(hub.getAsset(daiAssetId).baseDebt, totalBaseDebt);
-    assertApproxEqAbs(hub.getAsset(daiAssetId).riskPremium.fromRay(), expectedRiskPremium, 1);
+    assertApproxEqAbs(hub.getAsset(daiAssetId).riskPremium.derayify(), expectedRiskPremium, 1);
 
     lastUpdateTimestamp = uint40(vm.getBlockTimestamp());
     skip(timeToSkip);
@@ -474,6 +474,6 @@ contract LiquidityHubRiskPremium_VariableTimeAndConstantRiskPremium is
         p.riskPremium.spoke3) /
       totalBaseDebt;
     assertApproxEqAbs(hub.getAsset(daiAssetId).baseDebt, totalBaseDebt, 2);
-    assertApproxEqAbs(hub.getAsset(daiAssetId).riskPremium.fromRay(), expectedRiskPremium, 3);
+    assertApproxEqAbs(hub.getAsset(daiAssetId).riskPremium.derayify(), expectedRiskPremium, 3);
   }
 }

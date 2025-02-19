@@ -390,7 +390,7 @@ contract Spoke is ISpoke {
       newUserRiskPremium,
       baseDebtChange
     );
-    return uint32(newAggregatedRiskPremium.fromRay());
+    return uint32(newAggregatedRiskPremium.derayify());
   }
 
   /// @dev TODO: It's assumed reservesList (or similar) is sorted by liquidity premium
@@ -468,8 +468,8 @@ contract Spoke is ISpoke {
 
     uint256 newUserDebt = baseDebtChange > 0
       ? existingUserDebt + uint256(baseDebtChange) // debt added
-      // force underflow: only possible when user takes repays amount more than net drawn
-      : existingUserDebt - uint256(-baseDebtChange); // debt restored
+      : // force underflow: only possible when user takes repays amount more than net drawn
+      existingUserDebt - uint256(-baseDebtChange); // debt restored
 
     (uint256 newReserveRiskPremium, uint256 newReserveDebt) = MathUtils.addToWeightedAverage(
       reserveRiskPremiumWithoutCurrent,
@@ -604,7 +604,7 @@ contract Spoke is ISpoke {
 
       reserve.baseDebt = cumulatedBaseDebt;
       reserve.outstandingPremium += (cumulatedBaseDebt - existingBaseDebt).percentMul(
-        reserve.riskPremium.fromRay()
+        reserve.riskPremium.derayify()
       );
     }
 
@@ -625,7 +625,7 @@ contract Spoke is ISpoke {
 
       user.baseDebt = cumulatedBaseDebt;
       user.outstandingPremium += (cumulatedBaseDebt - existingBaseDebt).percentMul(
-        user.riskPremium.fromRay()
+        user.riskPremium.derayify()
       );
     }
 
