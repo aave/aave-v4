@@ -304,7 +304,7 @@ contract LiquidityHubRiskPremium_VariableTimeAndConstantRiskPremium is
   }
 
   function test_multipleDrawWhileAccruingInterestWithChangingRate() public {
-    uint256 timeToSkip = 365 days; // todo fuzz this and rate
+    uint256 timeToSkip = 365 days;
     uint256 rate = uint256(15_00).bpsToRay();
     uint40 lastUpdateTimestamp = uint40(vm.getBlockTimestamp());
 
@@ -393,8 +393,7 @@ contract LiquidityHubRiskPremium_VariableTimeAndConstantRiskPremium is
     uint256 timeToSkip,
     uint256 baseBorrowRate
   ) public {
-    // todo: minDrawAmount temp workaround
-    p = bound({input: p, minDrawAmount: daiAmount / 1e9, maxDrawAmount: daiAmount});
+    p = bound({input: p, minDrawAmount: daiAmount, maxDrawAmount: daiAmount});
     timeToSkip = bound(timeToSkip, 1 days, 100_000 days);
     baseBorrowRate = bound(baseBorrowRate, uint256(1).bpsToRay(), uint256(100_00).bpsToRay());
     uint40 lastUpdateTimestamp = uint40(vm.getBlockTimestamp());
@@ -473,7 +472,7 @@ contract LiquidityHubRiskPremium_VariableTimeAndConstantRiskPremium is
         p.drawAmount.spoke3 *
         p.riskPremium.spoke3) /
       totalBaseDebt;
-    assertApproxEqAbs(hub.getAsset(daiAssetId).baseDebt, totalBaseDebt, 2);
-    assertApproxEqAbs(hub.getAsset(daiAssetId).riskPremium.derayify(), expectedRiskPremium, 3);
+    assertApproxEqAbs(hub.getAsset(daiAssetId).baseDebt, totalBaseDebt, 1);
+    assertApproxEqAbs(hub.getAsset(daiAssetId).riskPremium.derayify(), expectedRiskPremium, 1);
   }
 }

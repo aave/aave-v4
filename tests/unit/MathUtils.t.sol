@@ -201,7 +201,7 @@ contract MathUtilsWeightedAverage is Test {
     }
 
     assertEq(currentSumWeights, calcSumWeights);
-    assertApproxEqAbs((currentWeightedAvg / precision), calcWeightedAvg, 2);
+    assertApproxEqAbs((currentWeightedAvg / precision), calcWeightedAvg, 1);
   }
 
   function _runWeightedAverageAdd(
@@ -236,7 +236,7 @@ contract MathUtilsWeightedAverage is Test {
     }
 
     assertEq(currentSumWeights, calcSumWeights);
-    assertApproxEqAbs((currentWeightedAvg / precision), calcWeightedAvg, 2);
+    assertApproxEqAbs((currentWeightedAvg / precision), calcWeightedAvg, 1);
 
     return (currentWeightedAvg, currentSumWeights);
   }
@@ -293,7 +293,7 @@ contract MathUtilsWeightedAverage is Test {
     }
 
     assertEq(currentSumWeights, calcSumWeights);
-    assertApproxEqAbs(currentWeightedAvg / precision, calcWeightedAvg, 2);
+    assertApproxEqAbs(currentWeightedAvg / precision, calcWeightedAvg, 1);
   }
 
   function _boundAndSplitArray(
