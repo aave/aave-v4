@@ -8,6 +8,8 @@ import {Asset, SpokeData} from 'src/contracts/LiquidityHub.sol';
 contract LiquidityHubSupplyTest is LiquidityHubBaseTest {
   using SharesMath for uint256;
   using WadRayMath for uint256;
+  using PercentageMath for uint256;
+
   function test_supply_revertsWith_ERC20InsufficientAllowance() public {
     uint256 amount = 100e18;
 
@@ -54,7 +56,7 @@ contract LiquidityHubSupplyTest is LiquidityHubBaseTest {
       daiAmount: daiAmount,
       wethAmount: wethAmount,
       daiDrawAmount: drawAmount,
-      riskPremiumRad: 0,
+      riskPremium: 0,
       rate: rate
     });
     skip(365 days);
@@ -79,7 +81,7 @@ contract LiquidityHubSupplyTest is LiquidityHubBaseTest {
     assertEq(assetData.outstandingPremium, 0, 'asset outstandingPremium pre-supply');
     assertEq(assetData.baseBorrowIndex, WadRayMath.RAY, 'asset baseBorrowIndex pre-supply');
     assertEq(assetData.baseBorrowRate, 0, 'asset baseBorrowRate pre-supply');
-    assertEq(assetData.riskPremiumRad, 0, 'asset riskPremiumRad pre-supply');
+    assertEq(assetData.riskPremium, 0, 'asset riskPremium pre-supply');
     assertEq(
       assetData.lastUpdateTimestamp,
       vm.getBlockTimestamp(),
@@ -94,7 +96,7 @@ contract LiquidityHubSupplyTest is LiquidityHubBaseTest {
       'spoke outstandingPremium pre-supply'
     );
     assertEq(spokeData.baseBorrowIndex, 0, 'spoke baseBorrowIndex pre-supply');
-    assertEq(spokeData.riskPremiumRad, 0, 'spoke riskPremiumRad pre-supply');
+    assertEq(spokeData.riskPremium, 0, 'spoke riskPremium pre-supply');
     assertEq(spokeData.lastUpdateTimestamp, 0, 'spoke lastUpdateTimestamp pre-supply');
 
     assertEq(tokenList.dai.balanceOf(alice), MAX_SUPPLY_AMOUNT, 'user token balance pre-supply');
@@ -129,7 +131,7 @@ contract LiquidityHubSupplyTest is LiquidityHubBaseTest {
       uint256(5_00).bpsToRay(),
       'asset baseBorrowRate post-supply'
     );
-    assertEq(assetData.riskPremiumRad, 0, 'asset riskPremiumRad post-supply');
+    assertEq(assetData.riskPremium, 0, 'asset riskPremium post-supply');
     assertEq(assetData.lastUpdateTimestamp, timestamp, 'asset lastUpdateTimestamp post-supply');
     // spoke
     assertEq(
@@ -137,7 +139,7 @@ contract LiquidityHubSupplyTest is LiquidityHubBaseTest {
       uint256(5_00).bpsToRay(),
       'asset baseBorrowRate post-supply'
     );
-    assertEq(assetData.riskPremiumRad, 0, 'asset riskPremiumRad post-supply');
+    assertEq(assetData.riskPremium, 0, 'asset riskPremium post-supply');
     assertEq(assetData.lastUpdateTimestamp, timestamp, 'asset lastUpdateTimestamp post-supply');
     // spoke
     assertEq(
@@ -148,7 +150,7 @@ contract LiquidityHubSupplyTest is LiquidityHubBaseTest {
     assertEq(spokeData.baseDebt, 0, 'baseDebt post-supply');
     assertEq(spokeData.outstandingPremium, 0, 'spoke outstandingPremium post-supply');
     assertEq(spokeData.baseBorrowIndex, WadRayMath.RAY, 'spoke baseBorrowIndex post-supply');
-    assertEq(spokeData.riskPremiumRad, 0, 'spoke riskPremiumRad post-supply');
+    assertEq(spokeData.riskPremium, 0, 'spoke riskPremium post-supply');
     assertEq(spokeData.lastUpdateTimestamp, timestamp, 'spoke lastUpdateTimestamp post-supply');
     assertEq(
       tokenList.dai.balanceOf(alice),
@@ -160,10 +162,10 @@ contract LiquidityHubSupplyTest is LiquidityHubBaseTest {
   }
 
   /// @dev User makes a first supply, shares and assets amounts are correct, no precision loss
-  function test_supply_fuzz(uint256 assetId, uint256 amount, uint256 riskPremiumRad) public {
+  function test_supply_fuzz(uint256 assetId, uint256 amount, uint32 riskPremium) public {
     assetId = bound(assetId, 0, hub.assetCount() - 2); // Exclude duplicated DAI
     amount = bound(amount, 1, MAX_SUPPLY_AMOUNT);
-    riskPremiumRad = bound(riskPremiumRad, 0, maxRiskPremiumRad); // no effect on supply
+    riskPremium %= MAX_RISK_PREMIUM_BPS; // no effect on supply
 
     IERC20 asset = hub.assetsList(assetId);
 
@@ -173,7 +175,7 @@ contract LiquidityHubSupplyTest is LiquidityHubBaseTest {
     emit Supply(assetId, address(spoke1), amount);
 
     vm.prank(address(spoke1));
-    hub.supply({assetId: assetId, amount: amount, riskPremiumRad: riskPremiumRad, supplier: alice});
+    hub.supply({assetId: assetId, amount: amount, riskPremium: riskPremium, supplier: alice});
 
     uint256 timestamp = vm.getBlockTimestamp();
 
@@ -197,7 +199,7 @@ contract LiquidityHubSupplyTest is LiquidityHubBaseTest {
       uint256(5_00).bpsToRay(),
       'asset baseBorrowRate post-supply'
     );
-    assertEq(assetData.riskPremiumRad, 0, 'asset riskPremiumRad post-supply');
+    assertEq(assetData.riskPremium, 0, 'asset riskPremium post-supply');
     assertEq(assetData.lastUpdateTimestamp, timestamp, 'asset lastUpdateTimestamp post-supply');
     // spoke
     assertEq(
@@ -216,7 +218,7 @@ contract LiquidityHubSupplyTest is LiquidityHubBaseTest {
       assetData.baseBorrowIndex,
       'spoke baseBorrowIndex post-supply'
     );
-    assertEq(spokeData.riskPremiumRad, riskPremiumRad, 'spoke riskPremiumRad post-supply');
+    assertEq(spokeData.riskPremium.derayify(), riskPremium, 'spoke riskPremium post-supply');
     assertEq(
       spokeData.lastUpdateTimestamp,
       assetData.lastUpdateTimestamp,
@@ -283,7 +285,7 @@ contract LiquidityHubSupplyTest is LiquidityHubBaseTest {
       uint256(5_00).bpsToRay(),
       'asset baseBorrowRate post-supply'
     );
-    assertEq(assetData.riskPremiumRad, 0, 'asset riskPremiumRad post-supply');
+    assertEq(assetData.riskPremium, 0, 'asset riskPremium post-supply');
     assertEq(assetData.lastUpdateTimestamp, timestamp, 'asset lastUpdateTimestamp post-supply');
     // spoke
     assertEq(
@@ -302,7 +304,7 @@ contract LiquidityHubSupplyTest is LiquidityHubBaseTest {
       assetData.baseBorrowIndex,
       'spoke baseBorrowIndex post-supply'
     );
-    assertEq(spokeData.riskPremiumRad, 0, 'spoke riskPremiumRad post-supply');
+    assertEq(spokeData.riskPremium, 0, 'spoke riskPremium post-supply');
     assertEq(
       spokeData.lastUpdateTimestamp,
       assetData.lastUpdateTimestamp,
@@ -326,7 +328,7 @@ contract LiquidityHubSupplyTest is LiquidityHubBaseTest {
       uint256(5_00).bpsToRay(),
       'asset2 baseBorrowRate post-supply'
     );
-    assertEq(asset2Data.riskPremiumRad, 0, 'asset2 riskPremiumRad post-supply');
+    assertEq(asset2Data.riskPremium, 0, 'asset2 riskPremium post-supply');
     assertEq(asset2Data.lastUpdateTimestamp, timestamp, 'asset2 lastUpdateTimestamp post-supply');
     // spoke2
     assertEq(
@@ -345,7 +347,7 @@ contract LiquidityHubSupplyTest is LiquidityHubBaseTest {
       asset2Data.baseBorrowIndex,
       'spoke2 baseBorrowIndex post-supply'
     );
-    assertEq(spoke2Data.riskPremiumRad, 0, 'spoke2 riskPremiumRad post-supply');
+    assertEq(spoke2Data.riskPremium, 0, 'spoke2 riskPremium post-supply');
     assertEq(
       spoke2Data.lastUpdateTimestamp,
       asset2Data.lastUpdateTimestamp,
@@ -380,7 +382,7 @@ contract LiquidityHubSupplyTest is LiquidityHubBaseTest {
       daiAmount: daiAmount,
       wethAmount: wethAmount,
       daiDrawAmount: drawAmount,
-      riskPremiumRad: 0,
+      riskPremium: 0,
       rate: rate
     });
     skip(365 days * 10);
@@ -406,7 +408,7 @@ contract LiquidityHubSupplyTest is LiquidityHubBaseTest {
       daiAmount: daiAmount,
       wethAmount: wethAmount,
       daiDrawAmount: drawAmount,
-      riskPremiumRad: 0,
+      riskPremium: 0,
       rate: rate
     });
     skip(365 days);
@@ -427,7 +429,7 @@ contract LiquidityHubSupplyTest is LiquidityHubBaseTest {
       assetId: daiAssetId,
       spoke: address(spoke2),
       amount: supply2Amount,
-      riskPremiumRad: 0,
+      riskPremium: 0,
       user: bob,
       to: address(spoke2)
     });
@@ -457,21 +459,21 @@ contract LiquidityHubSupplyTest is LiquidityHubBaseTest {
     uint256 daiAmount = 100e18;
     uint256 wethAmount = 10e18;
     uint256 drawAmount = daiAmount / 2;
-    uint256 riskPremiumRad = uint256(20_00).bpsToRad();
+    uint32 riskPremium = 20_00;
     uint256 rate = uint256(10_00).bpsToRay();
 
     _supplyAndDrawLiquidity({
       daiAmount: daiAmount,
       wethAmount: wethAmount,
       daiDrawAmount: drawAmount,
-      riskPremiumRad: riskPremiumRad,
+      riskPremium: riskPremium,
       rate: rate
     });
     skip(365 days);
 
     Asset memory daiData = hub.getAsset(daiAssetId);
     uint256 accruedBase = daiData.baseDebt.rayMul(rate);
-    uint256 accruedPremium = accruedBase.radMul(riskPremiumRad);
+    uint256 accruedPremium = accruedBase.percentMul(riskPremium);
     uint256 initialTotalAssets = daiAmount;
 
     uint256 supply2Amount = 10e18;
@@ -486,7 +488,7 @@ contract LiquidityHubSupplyTest is LiquidityHubBaseTest {
       assetId: daiAssetId,
       spoke: address(spoke2),
       amount: supply2Amount,
-      riskPremiumRad: 0,
+      riskPremium: 0,
       user: bob,
       to: address(spoke2)
     });
@@ -526,7 +528,7 @@ contract LiquidityHubSupplyTest is LiquidityHubBaseTest {
       assetId: assetId,
       spoke: address(spoke1),
       amount: amount,
-      riskPremiumRad: 0,
+      riskPremium: 0,
       user: alice,
       to: address(spoke1)
     });
@@ -551,7 +553,7 @@ contract LiquidityHubSupplyTest is LiquidityHubBaseTest {
       assetId: assetId,
       spoke: address(spoke2),
       amount: spoke2SupplyAssets,
-      riskPremiumRad: 0,
+      riskPremium: 0,
       user: bob,
       to: address(spoke2)
     });
@@ -586,7 +588,7 @@ contract LiquidityHubSupplyTest is LiquidityHubBaseTest {
       'asset final baseBorrowIndex'
     );
     assertEq(assetData.baseBorrowRate, uint256(5_00).bpsToRay(), 'asset final baseBorrowRate');
-    assertEq(assetData.riskPremiumRad, 0, 'asset final riskPremiumRad');
+    assertEq(assetData.riskPremium, 0, 'asset final riskPremium');
     assertEq(
       assetData.lastUpdateTimestamp,
       vm.getBlockTimestamp(),
@@ -601,14 +603,14 @@ contract LiquidityHubSupplyTest is LiquidityHubBaseTest {
     assertEq(spokeData.baseDebt, 0, 'final spoke baseDebt');
     assertEq(spokeData.outstandingPremium, 0, 'final spoke outstandingPremium');
     assertEq(spokeData.baseBorrowIndex, INIT_BASE_BORROW_INDEX, 'final spoke baseBorrowIndex');
-    assertEq(spokeData.riskPremiumRad, 0, 'final spoke riskPremiumRad');
+    assertEq(spokeData.riskPremium, 0, 'final spoke riskPremium');
     assertEq(spokeData.lastUpdateTimestamp, timestamp, 'final spoke lastUpdateTimestamp');
     // spoke2
     assertEq(spoke2Data.suppliedShares, spoke2SupplyShares, 'final spoke2 totalShares');
     assertEq(spoke2Data.baseDebt, 0, 'final spoke2 baseDebt');
     assertEq(spoke2Data.outstandingPremium, 0, 'spoke2 outstandingPremium');
     assertEq(spoke2Data.baseBorrowIndex, assetData.baseBorrowIndex, 'spoke2 baseBorrowIndex');
-    assertEq(spoke2Data.riskPremiumRad, 0, 'spoke2 riskPremiumRad');
+    assertEq(spoke2Data.riskPremium, 0, 'spoke2 riskPremium');
     assertEq(
       spoke2Data.lastUpdateTimestamp,
       assetData.lastUpdateTimestamp,
@@ -641,7 +643,7 @@ contract LiquidityHubSupplyTest is LiquidityHubBaseTest {
       assetId: assetId,
       spoke: address(spoke1),
       amount: amount,
-      riskPremiumRad: 0,
+      riskPremium: 0,
       user: alice,
       to: address(spoke1)
     });
@@ -685,7 +687,7 @@ contract LiquidityHubSupplyTest is LiquidityHubBaseTest {
         uint256(5_00).bpsToRay(),
         'asset baseBorrowRate post-supply'
       );
-      assertEq(assetData.riskPremiumRad, 0, 'asset riskPremiumRad post-supply');
+      assertEq(assetData.riskPremium, 0, 'asset riskPremium post-supply');
       assertEq(
         assetData.lastUpdateTimestamp,
         vm.getBlockTimestamp(),
@@ -704,7 +706,7 @@ contract LiquidityHubSupplyTest is LiquidityHubBaseTest {
         assetData.baseBorrowIndex,
         'spoke baseBorrowIndex post-supply'
       );
-      assertEq(spokeData.riskPremiumRad, 0, 'spoke riskPremiumRad post-supply');
+      assertEq(spokeData.riskPremium, 0, 'spoke riskPremium post-supply');
       assertEq(
         spokeData.lastUpdateTimestamp,
         assetData.lastUpdateTimestamp,
@@ -737,7 +739,7 @@ contract LiquidityHubSupplyTest is LiquidityHubBaseTest {
         assetId: assetId,
         spoke: address(spoke1),
         amount: p.userAssets,
-        riskPremiumRad: 0,
+        riskPremium: 0,
         user: alice,
         to: address(spoke1)
       });
@@ -770,7 +772,7 @@ contract LiquidityHubSupplyTest is LiquidityHubBaseTest {
       uint256(5_00).bpsToRay(),
       'asset baseBorrowRate post-supply'
     );
-    assertEq(assetData.riskPremiumRad, 0, 'asset riskPremiumRad post-supply');
+    assertEq(assetData.riskPremium, 0, 'asset riskPremium post-supply');
     assertEq(
       assetData.lastUpdateTimestamp,
       vm.getBlockTimestamp(),
@@ -789,7 +791,7 @@ contract LiquidityHubSupplyTest is LiquidityHubBaseTest {
       assetData.baseBorrowIndex,
       'spoke baseBorrowIndex post-supply'
     );
-    assertEq(spokeData.riskPremiumRad, 0, 'spoke riskPremiumRad post-supply');
+    assertEq(spokeData.riskPremium, 0, 'spoke riskPremium post-supply');
     assertEq(
       spokeData.lastUpdateTimestamp,
       assetData.lastUpdateTimestamp,

@@ -11,7 +11,7 @@ library SpokeDataLogic {
   using SharesMath for uint256;
   using WadRayMath for uint256;
 
-  // @dev Utilizes existing `spoke.baseBorrowIndex` & `spoke.riskPremiumRad`
+  // @dev Utilizes existing `spoke.baseBorrowIndex` & `spoke.riskPremium`
   function accrueInterest(SpokeData storage spoke, uint256 nextBaseBorrowIndex) internal {
     (uint256 cumulatedBaseDebt, uint256 cumulatedOutstandingPremium) = spoke.previewInterest(
       nextBaseBorrowIndex
@@ -41,7 +41,7 @@ library SpokeDataLogic {
     return (
       cumulatedBaseDebt,
       existingOutstandingPremium +
-        (cumulatedBaseDebt - existingBaseDebt).radMul(spoke.riskPremiumRad)
+        (cumulatedBaseDebt - existingBaseDebt).percentMul(spoke.riskPremium.derayify())
     );
   }
 }

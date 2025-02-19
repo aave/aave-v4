@@ -88,6 +88,7 @@ abstract contract BaseTest is Test, Events {
   using SharesMath for uint256;
 
   uint256 internal constant MAX_SUPPLY_AMOUNT = 1e30;
+  uint32 internal constant MAX_RISK_PREMIUM_BPS = 1000_00;
 
   IERC20 internal usdc;
   IERC20 internal dai;

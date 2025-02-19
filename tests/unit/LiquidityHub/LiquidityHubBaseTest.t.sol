@@ -11,9 +11,6 @@ contract LiquidityHubBaseTest is BaseTest {
 
   uint256 internal constant INIT_BASE_BORROW_INDEX = WadRayMath.RAY;
 
-  // TODO: read from baseTest when resolved
-  uint256 maxRiskPremiumRad = PercentageMath.PERCENTAGE_FACTOR.bpsToRad();
-
   struct TestSupplyUserParams {
     uint256 totalAssets;
     uint256 suppliedShares;
@@ -67,7 +64,7 @@ contract LiquidityHubBaseTest is BaseTest {
     uint256 daiAmount,
     uint256 wethAmount,
     uint256 daiDrawAmount,
-    uint256 riskPremiumRad,
+    uint32 riskPremium,
     uint256 rate
   ) internal {
     vm.mockCall(
@@ -82,7 +79,7 @@ contract LiquidityHubBaseTest is BaseTest {
       assetId: wethAssetId,
       spoke: address(spoke1),
       amount: wethAmount,
-      riskPremiumRad: 0,
+      riskPremium: 0,
       user: alice,
       to: address(spoke1)
     });
@@ -93,7 +90,7 @@ contract LiquidityHubBaseTest is BaseTest {
       assetId: daiAssetId,
       spoke: address(spoke2),
       amount: daiAmount,
-      riskPremiumRad: 0,
+      riskPremium: 0,
       user: bob,
       to: address(spoke2)
     });
@@ -105,7 +102,7 @@ contract LiquidityHubBaseTest is BaseTest {
       to: alice,
       spoke: address(spoke1),
       amount: daiDrawAmount,
-      riskPremiumRad: riskPremiumRad,
+      riskPremium: riskPremium,
       onBehalfOf: address(spoke1)
     });
   }

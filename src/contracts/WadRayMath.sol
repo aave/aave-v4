@@ -11,8 +11,6 @@ pragma solidity ^0.8.0;
  */
 library WadRayMath {
   // HALF_WAD and HALF_RAY expressed with extended notation as constant with operations are not supported in Yul assembly
-  // todo: fix naming for 8 decimal fixed math, RAD is 45
-  uint256 internal constant RAD = 1e8;
   uint256 internal constant HALF_RAD = 0.5e8;
 
   uint256 internal constant WAD = 1e18;
@@ -22,7 +20,6 @@ library WadRayMath {
   uint256 internal constant HALF_RAY = 0.5e27;
 
   uint256 internal constant WAD_RAY_RATIO = 1e9;
-  uint256 internal constant RAD_RAY_RATIO = 1e19;
 
   /**
    * @dev Multiplies two wad, rounding half up to the nearest wad
@@ -97,42 +94,6 @@ library WadRayMath {
   }
 
   /**
-   * @notice Multiplies two rad, rounding half up to the nearest rad
-   * @dev assembly optimized for improved gas savings, see https://twitter.com/transmissions11/status/1451131036377571328
-   * @param a Rad
-   * @param b Rad
-   * @return c = a radMul b
-   */
-  function radMul(uint256 a, uint256 b) internal pure returns (uint256 c) {
-    // to avoid overflow, a <= (type(uint256).max - HALF_RAD) / b
-    assembly {
-      if iszero(or(iszero(b), iszero(gt(a, div(sub(not(0), HALF_RAD), b))))) {
-        revert(0, 0)
-      }
-
-      c := div(add(mul(a, b), HALF_RAD), RAD)
-    }
-  }
-
-  /**
-   * @notice Divides two rad, rounding half up to the nearest rad
-   * @dev assembly optimized for improved gas savings, see https://twitter.com/transmissions11/status/1451131036377571328
-   * @param a Rad
-   * @param b Rad
-   * @return c = a radDiv b
-   */
-  function radDiv(uint256 a, uint256 b) internal pure returns (uint256 c) {
-    // to avoid overflow, a <= (type(uint256).max - halfB) / RAD
-    assembly {
-      if or(iszero(b), iszero(iszero(gt(a, div(sub(not(0), div(b, 2)), RAD))))) {
-        revert(0, 0)
-      }
-
-      c := div(add(mul(a, RAD), div(b, 2)), b)
-    }
-  }
-
-  /**
    * @dev Casts ray down to wad
    * @dev assembly optimized for improved gas savings, see https://twitter.com/transmissions11/status/1451131036377571328
    * @param a Ray
@@ -166,75 +127,30 @@ library WadRayMath {
   }
 
   /**
-   * @dev Casts ray down to rad
-   * @dev assembly optimized for improved gas savings, see https://twitter.com/transmissions11/status/1451131036377571328
-   * @param a Ray
-   * @return b = a converted to rad, rounded half up to the nearest rad
+   * @notice Casts value to Ray, adding 27 digits of precision
+   * @param a The number
+   * @return b (= a * 1e27)
    */
-  function rayToRad(uint256 a) internal pure returns (uint256 b) {
+  function rayify(uint256 a) internal pure returns (uint256 b) {
+    // to avoid overflow, b/RAY == a
     assembly {
-      b := div(a, RAD_RAY_RATIO)
-      let remainder := mod(a, RAD_RAY_RATIO)
-      if iszero(lt(remainder, div(RAD_RAY_RATIO, 2))) {
-        b := add(b, 1)
-      }
-    }
-  }
+      b := mul(a, RAY)
 
-  /**
-   * @dev Converts rad up to ray
-   * @dev assembly optimized for improved gas savings, see https://twitter.com/transmissions11/status/1451131036377571328
-   * @param a Rad
-   * @return b = a converted in ray
-   */
-  function radToRay(uint256 a) internal pure returns (uint256 b) {
-    // to avoid overflow, b/RAD_RAY_RATIO == a
-    assembly {
-      b := mul(a, RAD_RAY_RATIO)
-
-      if iszero(eq(div(b, RAD_RAY_RATIO), a)) {
+      if iszero(eq(div(b, RAY), a)) {
         revert(0, 0)
       }
     }
   }
 
   /**
-   * @dev Converts number to Rad (8-decimal fixed point units)
-   * @param a The number to convert
-   * @return b in Ray (b = a * 1e8)
+   * @notice Truncates number from Ray precision
+   * @param a The number in Ray precision
+   * @return b (= a / 1e27)
    */
-  function toRad(uint256 a) internal pure returns (uint256 b) {
-    // to avoid overflow, b/RAD == a
+  function derayify(uint256 a) internal pure returns (uint256 b) {
     assembly {
-      b := mul(a, RAD)
-
-      if iszero(eq(div(b, RAD), a)) {
-        revert(0, 0)
-      }
+      b := div(a, RAY)
     }
-  }
-
-  /**
-   * @dev Truncates number from Rad, loosing denominator precision
-   * @param a The number in Rad
-   * @return b (= a / 1e8, rounded up if remainder is >= 0.5 RAD)
-   */
-  function fromRad(uint256 a) internal pure returns (uint256 b) {
-    assembly {
-      b := div(a, RAD)
-      let remainder := mod(a, RAD)
-      if iszero(lt(remainder, div(RAD, 2))) {
-        b := add(b, 1)
-      }
-    }
-  }
-
-  function bpsToRad(uint256 a) internal pure returns (uint256) {
-    return (a * RAD) / 100_00;
-  }
-
-  function radToBps(uint256 a) internal pure returns (uint256) {
-    return (a * 100_00) / RAD;
   }
 
   function bpsToRay(uint256 a) internal pure returns (uint256) {

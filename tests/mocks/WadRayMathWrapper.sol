@@ -12,16 +12,8 @@ contract WadRayMathWrapper {
     return WadRayMath.RAY;
   }
 
-  function RAD() public pure returns (uint256) {
-    return WadRayMath.RAD;
-  }
-
   function HALF_RAY() public pure returns (uint256) {
     return WadRayMath.HALF_RAY;
-  }
-
-  function HALF_RAD() public pure returns (uint256) {
-    return WadRayMath.HALF_RAD;
   }
 
   function HALF_WAD() public pure returns (uint256) {
@@ -30,10 +22,6 @@ contract WadRayMathWrapper {
 
   function WAD_RAY_RATIO() public pure returns (uint256) {
     return WadRayMath.WAD_RAY_RATIO;
-  }
-
-  function RAD_RAY_RATIO() public pure returns (uint256) {
-    return WadRayMath.RAD_RAY_RATIO;
   }
 
   function wadMul(uint256 a, uint256 b) public pure returns (uint256) {
@@ -52,14 +40,6 @@ contract WadRayMathWrapper {
     return WadRayMath.rayDiv(a, b);
   }
 
-  function radMul(uint256 a, uint256 b) public pure returns (uint256) {
-    return WadRayMath.radMul(a, b);
-  }
-
-  function radDiv(uint256 a, uint256 b) public pure returns (uint256) {
-    return WadRayMath.radDiv(a, b);
-  }
-
   function rayToWad(uint256 a) public pure returns (uint256) {
     return WadRayMath.rayToWad(a);
   }
@@ -68,28 +48,12 @@ contract WadRayMathWrapper {
     return WadRayMath.wadToRay(a);
   }
 
-  function rayToRad(uint256 a) public pure returns (uint256) {
-    return WadRayMath.rayToRad(a);
+  function rayify(uint256 a) public pure returns (uint256) {
+    return WadRayMath.rayify(a);
   }
 
-  function radToRay(uint256 a) public pure returns (uint256) {
-    return WadRayMath.radToRay(a);
-  }
-
-  function toRad(uint256 a) public pure returns (uint256) {
-    return WadRayMath.toRad(a);
-  }
-
-  function fromRad(uint256 a) public pure returns (uint256) {
-    return WadRayMath.fromRad(a);
-  }
-
-  function bpsToRad(uint256 a) internal pure returns (uint256) {
-    return WadRayMath.bpsToRad(a);
-  }
-
-  function radToBps(uint256 a) internal pure returns (uint256) {
-    return WadRayMath.radToBps(a);
+  function derayify(uint256 a) public pure returns (uint256) {
+    return WadRayMath.derayify(a);
   }
 
   function bpsToRay(uint256 a) internal pure returns (uint256) {

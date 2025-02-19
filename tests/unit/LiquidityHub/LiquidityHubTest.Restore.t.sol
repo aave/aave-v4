@@ -8,6 +8,7 @@ import {Asset, SpokeData} from 'src/contracts/LiquidityHub.sol';
 contract LiquidityHubRestoreTest is LiquidityHubBaseTest {
   using SharesMath for uint256;
   using WadRayMath for uint256;
+  using PercentageMath for uint256;
 
   struct DebtData {
     uint256 assetDebt;
@@ -28,7 +29,7 @@ contract LiquidityHubRestoreTest is LiquidityHubBaseTest {
       assetId: wethAssetId,
       spoke: address(spoke1),
       amount: wethAmount,
-      riskPremiumRad: 0,
+      riskPremium: 0,
       user: alice,
       to: address(spoke1)
     });
@@ -39,7 +40,7 @@ contract LiquidityHubRestoreTest is LiquidityHubBaseTest {
       assetId: daiAssetId,
       spoke: address(spoke2),
       amount: daiAmount,
-      riskPremiumRad: 0,
+      riskPremium: 0,
       user: bob,
       to: address(spoke2)
     });
@@ -51,7 +52,7 @@ contract LiquidityHubRestoreTest is LiquidityHubBaseTest {
       to: alice,
       spoke: address(spoke1),
       amount: drawAmount,
-      riskPremiumRad: 0,
+      riskPremium: 0,
       onBehalfOf: address(spoke1)
     });
 
@@ -61,7 +62,7 @@ contract LiquidityHubRestoreTest is LiquidityHubBaseTest {
     vm.expectRevert(TestErrors.ASSET_NOT_ACTIVE);
 
     vm.prank(address(spoke1));
-    hub.restore({assetId: daiAssetId, amount: drawAmount, riskPremiumRad: 0, repayer: alice});
+    hub.restore({assetId: daiAssetId, amount: drawAmount, riskPremium: 0, repayer: alice});
   }
 
   function test_restore_revertsWith_invalid_restore_amount() public {
@@ -76,7 +77,7 @@ contract LiquidityHubRestoreTest is LiquidityHubBaseTest {
       assetId: wethAssetId,
       spoke: address(spoke1),
       amount: wethAmount,
-      riskPremiumRad: 0,
+      riskPremium: 0,
       user: alice,
       to: address(spoke1)
     });
@@ -87,7 +88,7 @@ contract LiquidityHubRestoreTest is LiquidityHubBaseTest {
       assetId: daiAssetId,
       spoke: address(spoke2),
       amount: daiAmount,
-      riskPremiumRad: 0,
+      riskPremium: 0,
       user: bob,
       to: address(spoke2)
     });
@@ -99,7 +100,7 @@ contract LiquidityHubRestoreTest is LiquidityHubBaseTest {
       to: alice,
       spoke: address(spoke1),
       amount: drawAmount,
-      riskPremiumRad: 0,
+      riskPremium: 0,
       onBehalfOf: address(spoke1)
     });
 
@@ -107,14 +108,14 @@ contract LiquidityHubRestoreTest is LiquidityHubBaseTest {
     vm.expectRevert(TestErrors.INVALID_RESTORE_AMOUNT);
 
     vm.prank(address(spoke1));
-    hub.restore({assetId: daiAssetId, amount: drawAmount + 1, riskPremiumRad: 0, repayer: alice});
+    hub.restore({assetId: daiAssetId, amount: drawAmount + 1, riskPremium: 0, repayer: alice});
   }
 
   function test_restore_revertsWith_invalid_restore_amount_zero() public {
     vm.expectRevert(TestErrors.INVALID_RESTORE_AMOUNT);
 
     vm.prank(address(spoke1));
-    hub.restore({assetId: daiAssetId, amount: 0, riskPremiumRad: 0, repayer: alice});
+    hub.restore({assetId: daiAssetId, amount: 0, riskPremium: 0, repayer: alice});
   }
 
   function test_restore_revertsWith_invalid_restore_amount_with_interest() public {
@@ -137,7 +138,7 @@ contract LiquidityHubRestoreTest is LiquidityHubBaseTest {
       assetId: wethAssetId,
       spoke: address(spoke1),
       amount: wethAmount,
-      riskPremiumRad: 0,
+      riskPremium: 0,
       user: alice,
       to: address(spoke1)
     });
@@ -148,7 +149,7 @@ contract LiquidityHubRestoreTest is LiquidityHubBaseTest {
       assetId: daiAssetId,
       spoke: address(spoke2),
       amount: daiAmount,
-      riskPremiumRad: 0,
+      riskPremium: 0,
       user: bob,
       to: address(spoke2)
     });
@@ -160,7 +161,7 @@ contract LiquidityHubRestoreTest is LiquidityHubBaseTest {
       to: alice,
       spoke: address(spoke1),
       amount: drawAmount,
-      riskPremiumRad: 0,
+      riskPremium: 0,
       onBehalfOf: address(spoke1)
     });
 
@@ -174,7 +175,7 @@ contract LiquidityHubRestoreTest is LiquidityHubBaseTest {
       assetId: daiAssetId,
       spoke: address(spoke2),
       amount: daiAmount / 5,
-      riskPremiumRad: uint256(5_00).bpsToRad(),
+      riskPremium: 5_00,
       user: bob,
       to: address(spoke2)
     });
@@ -193,7 +194,7 @@ contract LiquidityHubRestoreTest is LiquidityHubBaseTest {
     hub.restore({
       assetId: daiAssetId,
       amount: cumulatedBaseDebt + 1,
-      riskPremiumRad: 0,
+      riskPremium: 0,
       repayer: alice
     });
   }
@@ -222,7 +223,7 @@ contract LiquidityHubRestoreTest is LiquidityHubBaseTest {
       assetId: wethAssetId,
       spoke: address(spoke1),
       amount: wethAmount,
-      riskPremiumRad: 0,
+      riskPremium: 0,
       user: alice,
       to: address(spoke1)
     });
@@ -233,7 +234,7 @@ contract LiquidityHubRestoreTest is LiquidityHubBaseTest {
       assetId: daiAssetId,
       spoke: address(spoke2),
       amount: daiAmount,
-      riskPremiumRad: 0,
+      riskPremium: 0,
       user: bob,
       to: address(spoke2)
     });
@@ -245,7 +246,7 @@ contract LiquidityHubRestoreTest is LiquidityHubBaseTest {
       to: alice,
       spoke: address(spoke1),
       amount: drawAmount,
-      riskPremiumRad: 0,
+      riskPremium: 0,
       onBehalfOf: address(spoke1)
     });
 
@@ -259,7 +260,7 @@ contract LiquidityHubRestoreTest is LiquidityHubBaseTest {
       assetId: daiAssetId,
       spoke: address(spoke2),
       amount: daiAmount / 5,
-      riskPremiumRad: uint256(5_00).bpsToRad(),
+      riskPremium: 5_00,
       user: bob,
       to: address(spoke2)
     });
@@ -278,7 +279,7 @@ contract LiquidityHubRestoreTest is LiquidityHubBaseTest {
     hub.restore({
       assetId: daiAssetId,
       amount: cumulatedBaseDebt + 1,
-      riskPremiumRad: 0,
+      riskPremium: 0,
       repayer: alice
     });
   }
@@ -290,7 +291,7 @@ contract LiquidityHubRestoreTest is LiquidityHubBaseTest {
     uint256 drawAmount = daiAmount / 2;
     uint256 skipTime = 365 days / 2;
     uint256 rate = uint256(15_00).bpsToRay();
-    uint256 riskPremiumRad = uint256(30_00).bpsToRad();
+    uint32 riskPremium = 30_00;
 
     vm.mockCall(
       address(irStrategy),
@@ -304,7 +305,7 @@ contract LiquidityHubRestoreTest is LiquidityHubBaseTest {
       assetId: wethAssetId,
       spoke: address(spoke1),
       amount: wethAmount,
-      riskPremiumRad: 0,
+      riskPremium: 0,
       user: alice,
       to: address(spoke1)
     });
@@ -315,7 +316,7 @@ contract LiquidityHubRestoreTest is LiquidityHubBaseTest {
       assetId: daiAssetId,
       spoke: address(spoke2),
       amount: daiAmount,
-      riskPremiumRad: 0,
+      riskPremium: 0,
       user: bob,
       to: address(spoke2)
     });
@@ -327,7 +328,7 @@ contract LiquidityHubRestoreTest is LiquidityHubBaseTest {
       to: alice,
       spoke: address(spoke1),
       amount: drawAmount,
-      riskPremiumRad: riskPremiumRad,
+      riskPremium: riskPremium,
       onBehalfOf: address(spoke1)
     });
 
@@ -341,7 +342,7 @@ contract LiquidityHubRestoreTest is LiquidityHubBaseTest {
       assetId: daiAssetId,
       spoke: address(spoke2),
       amount: daiAmount / 5,
-      riskPremiumRad: 0,
+      riskPremium: 0,
       user: bob,
       to: address(spoke2)
     });
@@ -351,7 +352,7 @@ contract LiquidityHubRestoreTest is LiquidityHubBaseTest {
       uint40(spoke1DaiData.lastUpdateTimestamp)
     );
     uint256 cumulatedBaseDebt = drawAmount.rayMul(cumulatedBaseInterest);
-    uint256 accruedPremium = (cumulatedBaseDebt - drawAmount).radMul(riskPremiumRad);
+    uint256 accruedPremium = (cumulatedBaseDebt - drawAmount).percentMul(riskPremium);
     assertTrue(accruedPremium > 0);
 
     // alice restore invalid amount > drawn amount AND premium
@@ -361,7 +362,7 @@ contract LiquidityHubRestoreTest is LiquidityHubBaseTest {
     hub.restore({
       assetId: daiAssetId,
       amount: cumulatedBaseDebt + accruedPremium + 1,
-      riskPremiumRad: 0,
+      riskPremium: 0,
       repayer: alice
     });
   }
@@ -370,7 +371,7 @@ contract LiquidityHubRestoreTest is LiquidityHubBaseTest {
     uint256 drawAmount,
     uint256 skipTime,
     uint256 rate,
-    uint256 riskPremiumRad
+    uint32 riskPremium
   ) public {
     uint256 daiAmount = 100e18;
     uint256 wethAmount = 10e18;
@@ -378,7 +379,7 @@ contract LiquidityHubRestoreTest is LiquidityHubBaseTest {
     drawAmount = bound(drawAmount, 1, daiAmount); // within supplied dai amount
     skipTime = bound(skipTime, 1, 365 * 10 * 1 days); // 1 sec to 10 years
     rate = bound(rate, 1, 1000_00).bpsToRay(); // 0.01% to 1000%
-    riskPremiumRad = bound(riskPremiumRad, 1, maxRiskPremiumRad);
+    riskPremium %= MAX_RISK_PREMIUM_BPS;
 
     vm.mockCall(
       address(irStrategy),
@@ -392,7 +393,7 @@ contract LiquidityHubRestoreTest is LiquidityHubBaseTest {
       assetId: wethAssetId,
       spoke: address(spoke1),
       amount: wethAmount,
-      riskPremiumRad: 0,
+      riskPremium: 0,
       user: alice,
       to: address(spoke1)
     });
@@ -403,7 +404,7 @@ contract LiquidityHubRestoreTest is LiquidityHubBaseTest {
       assetId: daiAssetId,
       spoke: address(spoke2),
       amount: daiAmount,
-      riskPremiumRad: 0,
+      riskPremium: 0,
       user: bob,
       to: address(spoke2)
     });
@@ -415,7 +416,7 @@ contract LiquidityHubRestoreTest is LiquidityHubBaseTest {
       to: alice,
       spoke: address(spoke1),
       amount: drawAmount,
-      riskPremiumRad: riskPremiumRad,
+      riskPremium: riskPremium,
       onBehalfOf: address(spoke1)
     });
 
@@ -429,7 +430,7 @@ contract LiquidityHubRestoreTest is LiquidityHubBaseTest {
       assetId: daiAssetId,
       spoke: address(spoke2),
       amount: daiAmount / 5,
-      riskPremiumRad: 0,
+      riskPremium: 0,
       user: bob,
       to: address(spoke2)
     });
@@ -439,8 +440,8 @@ contract LiquidityHubRestoreTest is LiquidityHubBaseTest {
       uint40(spoke1DaiData.lastUpdateTimestamp)
     );
     uint256 cumulatedBaseDebt = drawAmount.rayMul(cumulatedBaseInterest);
-    uint256 accruedPremium = (cumulatedBaseDebt - drawAmount).radMul(riskPremiumRad);
-    vm.assume(accruedPremium > 0); // accrued premium can round to 0 in edge case - ex. (cumulatedBaseDebt - drawAmount) = 1, riskPremiumRad = 1
+    uint256 accruedPremium = (cumulatedBaseDebt - drawAmount).percentMul(riskPremium);
+    vm.assume(accruedPremium > 0); // accrued premium can round to 0 in edge case - ex. (cumulatedBaseDebt - drawAmount) = 1, riskPremium = 1
 
     // alice restore invalid amount > drawn amount AND premium
     vm.expectRevert(TestErrors.INVALID_RESTORE_AMOUNT);
@@ -449,7 +450,7 @@ contract LiquidityHubRestoreTest is LiquidityHubBaseTest {
     hub.restore({
       assetId: daiAssetId,
       amount: cumulatedBaseDebt + accruedPremium + 1,
-      riskPremiumRad: 0,
+      riskPremium: 0,
       repayer: alice
     });
   }
@@ -460,13 +461,13 @@ contract LiquidityHubRestoreTest is LiquidityHubBaseTest {
     uint256 wethAmount = 10e18;
     uint256 drawAmount = daiAmount / 2;
     uint256 rate = uint256(15_00).bpsToRay();
-    uint256 riskPremiumRad = uint256(30_00).bpsToRad();
+    uint32 riskPremium = 30_00;
 
     _supplyAndDrawLiquidity({
       daiAmount: daiAmount,
       wethAmount: wethAmount,
       daiDrawAmount: drawAmount,
-      riskPremiumRad: riskPremiumRad,
+      riskPremium: riskPremium,
       rate: rate
     });
     Asset memory daiData = hub.getAsset(daiAssetId);
@@ -478,14 +479,14 @@ contract LiquidityHubRestoreTest is LiquidityHubBaseTest {
       uint40(daiData.lastUpdateTimestamp)
     );
     uint256 accruedBaseDebt = drawAmount.rayMul(cumulatedBaseInterest) - drawAmount;
-    uint256 accruedPremium = accruedBaseDebt.radMul(riskPremiumRad);
+    uint256 accruedPremium = accruedBaseDebt.percentMul(riskPremium);
 
     assertTrue(accruedPremium > 0);
 
     uint256 restoreAmount = accruedPremium / 2;
 
     vm.prank(address(spoke1));
-    hub.restore({assetId: daiAssetId, amount: restoreAmount, riskPremiumRad: 0, repayer: alice});
+    hub.restore({assetId: daiAssetId, amount: restoreAmount, riskPremium: 0, repayer: alice});
 
     daiData = hub.getAsset(daiAssetId);
     SpokeData memory spoke1DaiData = hub.getSpoke(daiAssetId, address(spoke1));
@@ -536,7 +537,7 @@ contract LiquidityHubRestoreTest is LiquidityHubBaseTest {
     uint256 drawAmount,
     uint256 skipTime,
     uint256 rate,
-    uint256 riskPremiumRad,
+    uint32 riskPremium,
     uint256 restoreAmount
   ) public {
     uint256 daiAmount = 100e18;
@@ -545,13 +546,13 @@ contract LiquidityHubRestoreTest is LiquidityHubBaseTest {
     drawAmount = bound(drawAmount, 1, daiAmount); // within supplied dai amount
     skipTime = bound(skipTime, 1, 365 * 10 * 1 days); // 1 sec to 10 years
     rate = bound(rate, 1, 1000_00).bpsToRay(); // 0.01% to 1000%
-    riskPremiumRad = bound(riskPremiumRad, 1, maxRiskPremiumRad);
+    riskPremium %= MAX_RISK_PREMIUM_BPS;
 
     _supplyAndDrawLiquidity({
       daiAmount: daiAmount,
       wethAmount: wethAmount,
       daiDrawAmount: drawAmount,
-      riskPremiumRad: riskPremiumRad,
+      riskPremium: riskPremium,
       rate: rate
     });
     Asset memory daiData = hub.getAsset(daiAssetId);
@@ -563,13 +564,13 @@ contract LiquidityHubRestoreTest is LiquidityHubBaseTest {
       uint40(daiData.lastUpdateTimestamp)
     );
     uint256 accruedBaseDebt = drawAmount.rayMul(cumulatedBaseInterest) - drawAmount;
-    uint256 accruedPremium = accruedBaseDebt.radMul(riskPremiumRad);
+    uint256 accruedPremium = accruedBaseDebt.percentMul(riskPremium);
 
     vm.assume(accruedPremium > 0);
 
     restoreAmount = bound(restoreAmount, 1, accruedPremium); // within accrued premium
     vm.prank(address(spoke1));
-    hub.restore({assetId: daiAssetId, amount: restoreAmount, riskPremiumRad: 0, repayer: alice});
+    hub.restore({assetId: daiAssetId, amount: restoreAmount, riskPremium: 0, repayer: alice});
 
     daiData = hub.getAsset(daiAssetId);
     SpokeData memory spoke1DaiData = hub.getSpoke(daiAssetId, address(spoke1));
@@ -621,13 +622,13 @@ contract LiquidityHubRestoreTest is LiquidityHubBaseTest {
     uint256 wethAmount = 10e18;
     uint256 drawAmount = daiAmount / 2;
     uint256 rate = uint256(15_00).bpsToRay();
-    uint256 riskPremiumRad = uint256(30_00).bpsToRad();
+    uint32 riskPremium = 30_00;
 
     _supplyAndDrawLiquidity({
       daiAmount: daiAmount,
       wethAmount: wethAmount,
       daiDrawAmount: drawAmount,
-      riskPremiumRad: riskPremiumRad,
+      riskPremium: riskPremium,
       rate: rate
     });
     Asset memory daiData = hub.getAsset(daiAssetId);
@@ -639,12 +640,12 @@ contract LiquidityHubRestoreTest is LiquidityHubBaseTest {
       uint40(daiData.lastUpdateTimestamp)
     );
     uint256 accruedBaseDebt = drawAmount.rayMul(cumulatedBaseInterest) - drawAmount;
-    uint256 accruedPremium = accruedBaseDebt.radMul(riskPremiumRad);
+    uint256 accruedPremium = accruedBaseDebt.percentMul(riskPremium);
     assertTrue(accruedPremium > 0);
     uint256 restoreAmount = accruedPremium + 1; // restore amount partially contributes to base debt
 
     vm.prank(address(spoke1));
-    hub.restore({assetId: daiAssetId, amount: restoreAmount, riskPremiumRad: 0, repayer: alice});
+    hub.restore({assetId: daiAssetId, amount: restoreAmount, riskPremium: 0, repayer: alice});
 
     daiData = hub.getAsset(daiAssetId);
     SpokeData memory spoke1DaiData = hub.getSpoke(daiAssetId, address(spoke1));
@@ -691,7 +692,7 @@ contract LiquidityHubRestoreTest is LiquidityHubBaseTest {
     uint256 drawAmount,
     uint256 skipTime,
     uint256 rate,
-    uint256 riskPremiumRad,
+    uint32 riskPremium,
     uint256 restoreAmount
   ) public {
     uint256 daiAmount = 100e18;
@@ -700,13 +701,13 @@ contract LiquidityHubRestoreTest is LiquidityHubBaseTest {
     drawAmount = bound(drawAmount, 1, daiAmount); // within supplied dai amount
     skipTime = bound(skipTime, 1, 365 * 10 * 1 days); // 1 sec to 10 years
     rate = bound(rate, 1, 1000_00).bpsToRay(); // 0.01% to 1000%
-    riskPremiumRad = bound(riskPremiumRad, 1, maxRiskPremiumRad);
+    riskPremium %= MAX_RISK_PREMIUM_BPS;
 
     _supplyAndDrawLiquidity({
       daiAmount: daiAmount,
       wethAmount: wethAmount,
       daiDrawAmount: drawAmount,
-      riskPremiumRad: riskPremiumRad,
+      riskPremium: riskPremium,
       rate: rate
     });
     Asset memory daiData = hub.getAsset(daiAssetId);
@@ -718,7 +719,7 @@ contract LiquidityHubRestoreTest is LiquidityHubBaseTest {
       uint40(daiData.lastUpdateTimestamp)
     );
     uint256 accruedBaseDebt = drawAmount.rayMul(cumulatedBaseInterest) - drawAmount;
-    uint256 accruedPremium = accruedBaseDebt.radMul(riskPremiumRad);
+    uint256 accruedPremium = accruedBaseDebt.percentMul(riskPremium);
     vm.assume(accruedPremium > 0);
 
     restoreAmount = bound(
@@ -728,7 +729,7 @@ contract LiquidityHubRestoreTest is LiquidityHubBaseTest {
     ); // more than accrued premium, less than total debt
 
     vm.prank(address(spoke1));
-    hub.restore({assetId: daiAssetId, amount: restoreAmount, riskPremiumRad: 0, repayer: alice});
+    hub.restore({assetId: daiAssetId, amount: restoreAmount, riskPremium: 0, repayer: alice});
 
     daiData = hub.getAsset(daiAssetId);
     SpokeData memory spoke1DaiData = hub.getSpoke(daiAssetId, address(spoke1));
@@ -795,7 +796,7 @@ contract LiquidityHubRestoreTest is LiquidityHubBaseTest {
       assetId: wethAssetId,
       spoke: address(spoke1),
       amount: wethAmount,
-      riskPremiumRad: 0,
+      riskPremium: 0,
       user: alice,
       to: address(spoke1)
     });
@@ -806,7 +807,7 @@ contract LiquidityHubRestoreTest is LiquidityHubBaseTest {
       assetId: daiAssetId,
       spoke: address(spoke2),
       amount: daiAmount,
-      riskPremiumRad: 0,
+      riskPremium: 0,
       user: bob,
       to: address(spoke2)
     });
@@ -818,7 +819,7 @@ contract LiquidityHubRestoreTest is LiquidityHubBaseTest {
       to: alice,
       spoke: address(spoke1),
       amount: drawAmount,
-      riskPremiumRad: 0,
+      riskPremium: 0,
       onBehalfOf: address(spoke1)
     });
 
@@ -826,7 +827,7 @@ contract LiquidityHubRestoreTest is LiquidityHubBaseTest {
     emit Restore(daiAssetId, address(spoke1), restoreAmount);
 
     vm.prank(address(spoke1));
-    hub.restore({assetId: daiAssetId, amount: restoreAmount, riskPremiumRad: 0, repayer: alice});
+    hub.restore({assetId: daiAssetId, amount: restoreAmount, riskPremium: 0, repayer: alice});
 
     HubData memory hubData;
     hubData.daiData = hub.getAsset(daiAssetId);
@@ -870,7 +871,7 @@ contract LiquidityHubRestoreTest is LiquidityHubBaseTest {
       'hub dai baseBorrowIndex post-restore'
     );
     assertEq(hubData.daiData.baseBorrowRate, rate, 'hub dai baseBorrowRate post-restore');
-    assertEq(hubData.daiData.riskPremiumRad, 0, 'hub dai riskPremiumRad post-restore');
+    assertEq(hubData.daiData.riskPremium, 0, 'hub dai riskPremium post-restore');
     assertEq(
       hubData.daiData.lastUpdateTimestamp,
       hubData.timestamp,
@@ -895,7 +896,7 @@ contract LiquidityHubRestoreTest is LiquidityHubBaseTest {
       'hub weth baseBorrowIndex post-restore'
     );
     assertEq(hubData.wethData.baseBorrowRate, rate, 'hub weth baseBorrowRate post-restore');
-    assertEq(hubData.wethData.riskPremiumRad, 0, 'hub weth riskPremiumRad post-restore');
+    assertEq(hubData.wethData.riskPremium, 0, 'hub weth riskPremium post-restore');
     assertEq(
       hubData.wethData.lastUpdateTimestamp,
       hubData.timestamp,
@@ -918,7 +919,7 @@ contract LiquidityHubRestoreTest is LiquidityHubBaseTest {
       hubData.wethData.baseBorrowIndex,
       'spoke1 weth baseBorrowIndex post-restore'
     );
-    assertEq(hubData.spoke1WethData.riskPremiumRad, 0, 'spoke1 weth riskPremiumRad post-restore');
+    assertEq(hubData.spoke1WethData.riskPremium, 0, 'spoke1 weth riskPremium post-restore');
     assertEq(
       hubData.spoke1WethData.lastUpdateTimestamp,
       hubData.wethData.lastUpdateTimestamp,
@@ -941,7 +942,7 @@ contract LiquidityHubRestoreTest is LiquidityHubBaseTest {
       hubData.daiData.baseBorrowIndex,
       'spoke1 dai baseBorrowIndex post-restore'
     );
-    assertEq(hubData.spoke1DaiData.riskPremiumRad, 0, 'spoke1 dai riskPremiumRad post-restore');
+    assertEq(hubData.spoke1DaiData.riskPremium, 0, 'spoke1 dai riskPremium post-restore');
     assertEq(
       hubData.spoke1DaiData.lastUpdateTimestamp,
       hubData.daiData.lastUpdateTimestamp,
@@ -970,7 +971,7 @@ contract LiquidityHubRestoreTest is LiquidityHubBaseTest {
       hubData.daiData.baseBorrowIndex,
       'spoke2 dai baseBorrowIndex post-restore'
     );
-    assertEq(hubData.spoke2DaiData.riskPremiumRad, 0, 'spoke2 dai riskPremiumRad post-restore');
+    assertEq(hubData.spoke2DaiData.riskPremium, 0, 'spoke2 dai riskPremium post-restore');
     assertEq(
       hubData.spoke2DaiData.lastUpdateTimestamp,
       hubData.daiData.lastUpdateTimestamp,

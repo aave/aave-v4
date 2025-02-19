@@ -8,9 +8,7 @@ import {MathUtils} from 'src/contracts/MathUtils.sol';
 import {PercentageMath} from 'src/contracts/PercentageMath.sol';
 import {ILiquidityHub} from 'src/interfaces/ILiquidityHub.sol';
 import {ISpoke} from 'src/interfaces/ISpoke.sol';
-import {IReserveInterestRateStrategy} from 'src/interfaces/IReserveInterestRateStrategy.sol';
 import {IPriceOracle} from 'src/interfaces/IPriceOracle.sol';
-import {DataTypes} from 'src/libraries/types/DataTypes.sol';
 
 contract Spoke is ISpoke {
   using WadRayMath for uint256;
@@ -28,7 +26,7 @@ contract Spoke is ISpoke {
     uint256 suppliedShares;
     uint256 baseBorrowIndex;
     uint256 lastUpdateTimestamp;
-    uint256 riskPremiumRad;
+    uint256 riskPremium; // weighted average risk premium of all users with ray precision
     ReserveConfig config;
   }
 
@@ -126,7 +124,7 @@ contract Spoke is ISpoke {
     _validateSupply(reserve, amount);
 
     // Update user's risk premium and wAvgRP across all users of spoke
-    uint256 newAggregatedRiskPremium = _updateRiskPremiumAndBaseDebt({
+    uint32 newAggregatedRiskPremium = _updateRiskPremiumAndBaseDebt({
       reserve: reserve,
       user: user,
       userAddress: msg.sender,
@@ -154,7 +152,7 @@ contract Spoke is ISpoke {
     _validateWithdraw(reserve, user, amount);
 
     // Update user's risk premium and wAvgRP across all users of spoke
-    uint256 newAggregatedRiskPremium = _updateRiskPremiumAndBaseDebt({
+    uint32 newAggregatedRiskPremium = _updateRiskPremiumAndBaseDebt({
       reserve: reserve,
       user: user,
       userAddress: msg.sender,
@@ -183,7 +181,7 @@ contract Spoke is ISpoke {
     _validateBorrow(reserve, amount);
 
     // TODO HF check
-    uint256 newAggregatedRiskPremium = _updateRiskPremiumAndBaseDebt({
+    uint32 newAggregatedRiskPremium = _updateRiskPremiumAndBaseDebt({
       reserve: reserve,
       user: user,
       userAddress: msg.sender,
@@ -206,7 +204,7 @@ contract Spoke is ISpoke {
     // Repaid debt happens first from premium, then base
     uint256 baseDebtRestored = _deductFromOutstandingPremium(reserve, user, amount);
 
-    uint256 newAggregatedRiskPremium = _updateRiskPremiumAndBaseDebt({
+    uint32 newAggregatedRiskPremium = _updateRiskPremiumAndBaseDebt({
       reserve: reserve,
       user: user,
       userAddress: msg.sender,
@@ -275,7 +273,7 @@ contract Spoke is ISpoke {
       suppliedShares: 0,
       baseBorrowIndex: DEFAULT_SPOKE_INDEX,
       lastUpdateTimestamp: 0,
-      riskPremiumRad: 0,
+      riskPremium: 0,
       config: ReserveConfig({
         lt: params.lt,
         lb: params.lb,
@@ -374,7 +372,7 @@ contract Spoke is ISpoke {
     UserConfig storage user,
     address userAddress,
     int256 baseDebtChange
-  ) internal returns (uint256) {
+  ) internal returns (uint32) {
     // Calculate risk premium of user
     uint256 newUserRiskPremium = _calcUserRiskPremium(_users[userAddress]);
     // Refresh weighted average risk premium across all users of spoke
@@ -384,7 +382,7 @@ contract Spoke is ISpoke {
       newUserRiskPremium,
       baseDebtChange
     );
-    return newAggregatedRiskPremium;
+    return uint32(newAggregatedRiskPremium.derayify());
   }
 
   /// @dev TODO: It's assumed reservesList (or similar) is sorted by liquidity premium
@@ -454,7 +452,7 @@ contract Spoke is ISpoke {
     // Weighted average risk premium of all users without current user
     (uint256 reserveRiskPremiumWithoutCurrent, uint256 reserveDebtWithoutCurrent) = MathUtils
       .subtractFromWeightedAverage(
-        reserve.riskPremiumRad,
+        reserve.riskPremium,
         existingReserveDebt,
         user.riskPremium,
         existingUserDebt
@@ -462,8 +460,8 @@ contract Spoke is ISpoke {
 
     uint256 newUserDebt = baseDebtChange > 0
       ? existingUserDebt + uint256(baseDebtChange) // debt added
-      // force underflow: only possible when user takes repays amount more than net drawn
-      : existingUserDebt - uint256(-baseDebtChange); // debt restored
+      : // force underflow: only possible when user takes repays amount more than net drawn
+      existingUserDebt - uint256(-baseDebtChange); // debt restored
 
     (uint256 newReserveRiskPremium, uint256 newReserveDebt) = MathUtils.addToWeightedAverage(
       reserveRiskPremiumWithoutCurrent,
@@ -475,7 +473,7 @@ contract Spoke is ISpoke {
     reserve.baseDebt = newReserveDebt;
     user.baseDebt = newUserDebt;
 
-    reserve.riskPremiumRad = newReserveRiskPremium;
+    reserve.riskPremium = newReserveRiskPremium;
     user.riskPremium = newUserRiskPremium;
   }
 
@@ -599,7 +597,7 @@ contract Spoke is ISpoke {
     return (
       cumulatedBaseDebt,
       existingOutstandingPremium +
-        (cumulatedBaseDebt - existingBaseDebt).radMul(reserve.riskPremiumRad)
+        (cumulatedBaseDebt - existingBaseDebt).percentMul(reserve.riskPremium.derayify())
     );
   }
 
@@ -630,10 +628,8 @@ contract Spoke is ISpoke {
       user.baseBorrowIndex
     );
 
-    return (
-      cumulatedBaseDebt,
-      existingOutstandingPremium + (cumulatedBaseDebt - existingBaseDebt).radMul(user.riskPremium)
-    );
+    user.baseDebt = cumulatedBaseDebt;
+    user.outstandingPremium += (cumulatedBaseDebt - existingBaseDebt).radMul(user.riskPremium);
   }
 
   function _accrueUserInterest(UserConfig storage user, uint256 nextBaseBorrowIndex) internal {

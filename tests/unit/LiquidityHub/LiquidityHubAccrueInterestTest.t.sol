@@ -110,7 +110,7 @@ contract LiquidityHubAccrueInterestTest is BaseTest {
     assertEq(daiInfo.lastUpdateTimestamp, vm.getBlockTimestamp());
     assertEq(daiInfo.baseDebt, 0);
     assertEq(daiInfo.outstandingPremium, 0);
-    assertEq(daiInfo.riskPremiumRad, 0);
+    assertEq(daiInfo.riskPremium, 0);
   }
 
   function test_accrueInterest_OnlySupply(uint40 elapsed) public {
@@ -129,7 +129,7 @@ contract LiquidityHubAccrueInterestTest is BaseTest {
     // Timestamp doesn't update when no interest accrued
     assertEq(daiInfo.lastUpdateTimestamp, vm.getBlockTimestamp(), 'lastUpdateTimestamp');
     assertEq(daiInfo.baseDebt, 0, 'baseDebt');
-    assertEq(daiInfo.riskPremiumRad, 0, 'riskPremiumRad');
+    assertEq(daiInfo.riskPremium, 0, 'riskPremium');
     assertEq(daiInfo.outstandingPremium, 0, 'outstandingPremium');
   }
 
@@ -155,7 +155,7 @@ contract LiquidityHubAccrueInterestTest is BaseTest {
 
     assertEq(elapsed, daiInfo.lastUpdateTimestamp - startTime);
     assertEq(daiInfo.baseDebt, totalBase);
-    assertEq(daiInfo.riskPremiumRad, 0);
+    assertEq(daiInfo.riskPremium, 0);
     assertEq(daiInfo.outstandingPremium, 0);
   }
 
@@ -193,18 +193,18 @@ contract LiquidityHubAccrueInterestTest is BaseTest {
 
     assertEq(elapsed, daiInfo.lastUpdateTimestamp - startTime);
     assertEq(daiInfo.baseDebt, totalBase);
-    assertEq(daiInfo.riskPremiumRad, 0);
+    assertEq(daiInfo.riskPremium, 0);
     assertEq(daiInfo.outstandingPremium, 0);
   }
 
   function test_accrueInterest_TenPercentRP(uint256 borrowAmount, uint40 elapsed) public {
     borrowAmount = bound(borrowAmount, 1, 1e30);
-    uint256 riskPremium = uint256(10_00).bpsToRad();
+    uint32 riskPremium = 10_00;
     uint256 supplyAmount = borrowAmount * 2;
     uint256 startTime = vm.getBlockTimestamp();
 
     vm.startPrank(address(spoke1));
-    hub.supply(daiAssetId, supplyAmount, 0, address(spoke1));
+    hub.supply(daiAssetId, supplyAmount, uint32(0), address(spoke1));
     hub.draw(daiAssetId, borrowAmount, riskPremium, address(spoke1));
     uint256 baseBorrowRate = hub.getBaseInterestRate(daiAssetId);
     vm.stopPrank();
@@ -223,17 +223,17 @@ contract LiquidityHubAccrueInterestTest is BaseTest {
 
     assertEq(daiInfo.lastUpdateTimestamp - startTime, elapsed);
     assertEq(daiInfo.baseDebt, totalBase);
-    assertEq(daiInfo.riskPremiumRad, riskPremium);
-    assertEq(daiInfo.outstandingPremium, (totalBase - borrowAmount).radMul(riskPremium));
+    assertEq(daiInfo.riskPremium.derayify(), riskPremium);
+    assertEq(daiInfo.outstandingPremium, (totalBase - borrowAmount).percentMul(riskPremium));
   }
 
   function test_accrueInterest_fuzz_RPBorrowAndElapsed(
     uint256 borrowAmount,
     uint40 elapsed,
-    uint256 riskPremium
+    uint32 riskPremium
   ) public {
     borrowAmount = bound(borrowAmount, 1, 1e30);
-    riskPremium = bound(riskPremium, 0, MAX_BPS.bpsToRad());
+    riskPremium %= MAX_RISK_PREMIUM_BPS;
     uint256 supplyAmount = borrowAmount * 2;
     uint256 startTime = vm.getBlockTimestamp();
 
@@ -257,18 +257,18 @@ contract LiquidityHubAccrueInterestTest is BaseTest {
 
     assertEq(daiInfo.lastUpdateTimestamp - startTime, elapsed);
     assertEq(daiInfo.baseDebt, totalBase);
-    assertEq(daiInfo.riskPremiumRad, riskPremium);
-    assertEq(daiInfo.outstandingPremium, (totalBase - borrowAmount).radMul(riskPremium));
+    assertEq(daiInfo.riskPremium.derayify(), riskPremium);
+    assertEq(daiInfo.outstandingPremium, (totalBase - borrowAmount).percentMul(riskPremium));
   }
 
   function test_accrueInterest_fuzz_ChangingBorrowRate(
     uint256 borrowAmount,
     uint40 elapsed,
-    uint256 riskPremium
+    uint32 riskPremium
   ) public {
     elapsed = uint40(bound(elapsed, 1, type(uint40).max / 3));
     borrowAmount = bound(borrowAmount, 1, 1e30);
-    riskPremium = bound(riskPremium, 0, MAX_BPS.bpsToRad());
+    riskPremium %= MAX_RISK_PREMIUM_BPS;
 
     Timestamps memory timestamps;
     AssetDataLocal memory assetData;
@@ -306,10 +306,10 @@ contract LiquidityHubAccrueInterestTest is BaseTest {
 
     assertEq(assetData.t1.lastUpdateTimestamp - timestamps.t0, elapsed, 'elapsed');
     assertEq(assetData.t1.baseDebt, totalBase, 'baseDebt');
-    assertEq(assetData.t1.riskPremiumRad, riskPremium, 'riskPremiumRad');
+    assertEq(assetData.t1.riskPremium.derayify(), riskPremium, 'riskPremium');
     assertEq(
       assetData.t1.outstandingPremium,
-      (totalBase - borrowAmount).radMul(riskPremium),
+      (totalBase - borrowAmount).percentMul(riskPremium),
       'outstandingPremium'
     );
 
@@ -344,9 +344,9 @@ contract LiquidityHubAccrueInterestTest is BaseTest {
 
     assertEq(elapsed * 2, vm.getBlockTimestamp() - timestamps.t0, 'elapsed');
     assertApproxEqAbs(totalBase, assetData.t2.baseDebt, 1, 'baseDebt');
-    assertEq(assetData.t2.riskPremiumRad, riskPremium, 'riskPremiumRad');
+    assertEq(assetData.t2.riskPremium.derayify(), riskPremium, 'riskPremium');
     assertApproxEqAbs(
-      (totalBase - borrowAmount).radMul(riskPremium),
+      (totalBase - borrowAmount).percentMul(riskPremium),
       assetData.t2.outstandingPremium,
       1,
       'outstandingPremium'
