@@ -484,8 +484,8 @@ contract Spoke is ISpoke {
 
     uint256 newUserDebt = baseDebtChange > 0
       ? existingUserDebt + uint256(baseDebtChange) // debt added
-      // force underflow: only possible when user takes repays amount more than net drawn
-      : existingUserDebt - uint256(-baseDebtChange); // debt restored
+      : // force underflow: only possible when user takes repays amount more than net drawn
+      existingUserDebt - uint256(-baseDebtChange); // debt restored
 
     (uint256 newReserveRiskPremium, uint256 newReserveDebt) = MathUtils.addToWeightedAverage(
       reserveRiskPremiumWithoutCurrent,
@@ -649,8 +649,6 @@ contract Spoke is ISpoke {
 
   /// @dev Decodes (, liquidityPremium) from uint256
   function _compareLp(uint256 a, uint256 b) internal pure returns (bool) {
-    a = a & ((1 << 128) - 1);
-    b = b & ((1 << 128) - 1);
-    return a < b;
+    return a & ((1 << 128) - 1) < b & ((1 << 128) - 1);
   }
 }
