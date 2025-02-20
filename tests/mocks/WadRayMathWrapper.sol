@@ -2,6 +2,45 @@
 pragma solidity ^0.8.10;
 
 import {WadRayMath} from 'src/contracts/WadRayMath.sol';
+import {WadRayMathExtended} from 'src/contracts/WadRayMathExtended.sol';
+
+contract WadRayMathExtendedWrapper {
+  function WAD() public pure returns (uint256) {
+    return WadRayMathExtended.WAD;
+  }
+
+  function RAY() public pure returns (uint256) {
+    return WadRayMathExtended.RAY;
+  }
+
+  function wadMulDown(uint256 a, uint256 b) public pure returns (uint256) {
+    return WadRayMathExtended.wadMulDown(a, b);
+  }
+  function wadMulUp(uint256 a, uint256 b) public pure returns (uint256) {
+    return WadRayMathExtended.wadMulUp(a, b);
+  }
+
+  function wadDivDown(uint256 a, uint256 b) public pure returns (uint256) {
+    return WadRayMathExtended.wadDivDown(a, b);
+  }
+  function wadDivUp(uint256 a, uint256 b) public pure returns (uint256) {
+    return WadRayMathExtended.wadDivUp(a, b);
+  }
+
+  function rayMulDown(uint256 a, uint256 b) public pure returns (uint256) {
+    return WadRayMathExtended.rayMulDown(a, b);
+  }
+  function rayMulUp(uint256 a, uint256 b) public pure returns (uint256) {
+    return WadRayMathExtended.rayMulUp(a, b);
+  }
+
+  function rayDivDown(uint256 a, uint256 b) public pure returns (uint256) {
+    return WadRayMathExtended.rayDivDown(a, b);
+  }
+  function rayDivUp(uint256 a, uint256 b) public pure returns (uint256) {
+    return WadRayMathExtended.rayDivUp(a, b);
+  }
+}
 
 contract WadRayMathWrapper {
   function WAD() public pure returns (uint256) {
