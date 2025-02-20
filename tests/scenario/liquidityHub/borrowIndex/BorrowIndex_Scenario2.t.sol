@@ -58,109 +58,109 @@ contract BorrowIndex_Scenario2Test is BorrowIndexBase {
     if (stage == stages[0]) {
       // asset
       assertEq(
-        assets[state.assetId].t_i[0].baseBorrowIndex,
+        assets[state.assetId].t_i[t].baseBorrowIndex,
         hub.DEFAULT_ASSET_INDEX(),
         't0_i Asset index'
       );
-      assertEq(assets[state.assetId].t_i[0].baseDebt, 0, 't0_i Asset base debt');
+      assertEq(assets[state.assetId].t_i[t].baseDebt, 0, 't0_i Asset base debt');
       assertEq(
-        assets[state.assetId].t_i[0].lastUpdateTimestamp,
-        timeAt(stages[0]),
+        assets[state.assetId].t_i[t].lastUpdateTimestamp,
+        timeAt(stages[t]),
         't0_i Asset lastUpdateTimestamp'
       );
     } else if (stage == stages[1]) {
       // asset
       assertEq(
-        assets[state.assetId].t_i[1].baseBorrowIndex,
+        assets[state.assetId].t_i[t].baseBorrowIndex,
         hub.DEFAULT_ASSET_INDEX(),
         't1_i Asset index'
       );
-      assertEq(assets[state.assetId].t_i[1].baseDebt, 0, 't1_i Asset base debt');
+      assertEq(assets[state.assetId].t_i[t].baseDebt, 0, 't1_i Asset base debt');
       assertEq(
-        assets[state.assetId].t_i[1].lastUpdateTimestamp,
-        timeAt(stages[0]),
+        assets[state.assetId].t_i[t].lastUpdateTimestamp,
+        timeAt(stages[t - 1]),
         't1_i Asset lastUpdateTimestamp'
       );
 
       // spoke1
-      assertEq(spokes[0].t_i[1].baseBorrowIndex, hub.DEFAULT_SPOKE_INDEX(), 't1_i Spoke1 index');
-      assertEq(spokes[0].t_i[1].baseDebt, 0, 't1_i Spoke1 base debt');
-      assertEq(spokes[0].t_i[1].lastUpdateTimestamp, 0, 't1_i Spoke1 lastUpdateTimestamp');
+      assertEq(spokes[0].t_i[t].baseBorrowIndex, hub.DEFAULT_SPOKE_INDEX(), 't1_i Spoke1 index');
+      assertEq(spokes[0].t_i[t].baseDebt, 0, 't1_i Spoke1 base debt');
+      assertEq(spokes[0].t_i[t].lastUpdateTimestamp, 0, 't1_i Spoke1 lastUpdateTimestamp');
     } else if (stage == stages[2]) {
       // asset
       assertEq(
-        assets[state.assetId].t_i[2].baseBorrowIndex,
+        assets[state.assetId].t_i[t].baseBorrowIndex,
         hub.DEFAULT_ASSET_INDEX(),
         't2_i Asset index'
       );
       assertEq(
-        assets[state.assetId].t_i[2].baseDebt,
-        spokes[0].actions.draw[1].amount,
+        assets[state.assetId].t_i[t].baseDebt,
+        spokes[0].actions.draw[t - 1].amount,
         't2_i Asset base debt'
       );
       assertEq(
-        assets[state.assetId].t_i[2].lastUpdateTimestamp,
-        timeAt(stages[1]),
+        assets[state.assetId].t_i[t].lastUpdateTimestamp,
+        timeAt(stages[t - 1]),
         't2_i Asset lastUpdateTimestamp'
       );
 
       // spoke1
       assertEq(
-        spokes[0].t_i[2].baseBorrowIndex,
-        assets[state.assetId].t_i[2].baseBorrowIndex,
+        spokes[0].t_i[t].baseBorrowIndex,
+        assets[state.assetId].t_i[t].baseBorrowIndex,
         't2_i Spoke1 index'
       );
-      assertEq(spokes[0].t_i[2].baseDebt, spokes[0].t_f[1].baseDebt, 't2_i Spoke1 base debt');
+      assertEq(spokes[0].t_i[t].baseDebt, spokes[0].t_f[1].baseDebt, 't2_i Spoke1 base debt');
       assertEq(
-        spokes[0].t_i[2].lastUpdateTimestamp,
-        timeAt(stages[1]),
+        spokes[0].t_i[t].lastUpdateTimestamp,
+        timeAt(stages[t - 1]),
         't2_i Spoke1 lastUpdateTimestamp'
       );
     } else if (stage == stages[3]) {
       // asset
       assertEq(
-        assets[state.assetId].t_i[3].baseBorrowIndex,
-        assets[state.assetId].t_f[2].baseBorrowIndex,
+        assets[state.assetId].t_i[t].baseBorrowIndex,
+        assets[state.assetId].t_f[t - 1].baseBorrowIndex,
         't3_i Asset index'
       );
       assertEq(
-        assets[state.assetId].t_i[3].baseDebt,
-        assets[state.assetId].t_f[2].baseDebt,
+        assets[state.assetId].t_i[t].baseDebt,
+        assets[state.assetId].t_f[t - 1].baseDebt,
         't3_i Asset base debt'
       );
       assertEq(
-        assets[state.assetId].t_i[3].lastUpdateTimestamp,
-        timeAt(stages[2]),
+        assets[state.assetId].t_i[t].lastUpdateTimestamp,
+        timeAt(stages[t - 1]),
         't3_i Asset lastUpdateTimestamp'
       );
 
       // spoke1
-      assertEq(spokes[0].t_i[3].baseBorrowIndex, hub.DEFAULT_ASSET_INDEX(), 't3_i Spoke1 index');
+      assertEq(spokes[0].t_i[t].baseBorrowIndex, hub.DEFAULT_ASSET_INDEX(), 't3_i Spoke1 index');
       assertEq(
-        spokes[0].t_i[3].baseDebt,
-        spokes[0].actions.draw[1].amount,
+        spokes[0].t_i[t].baseDebt,
+        spokes[0].actions.draw[t - 2].amount,
         't3_i Spoke1 base debt'
       );
       assertEq(
-        spokes[0].t_i[3].lastUpdateTimestamp,
-        timeAt(stages[1]),
+        spokes[0].t_i[t].lastUpdateTimestamp,
+        timeAt(stages[t - 2]),
         't3_i Spoke1 lastUpdateTimestamp'
       );
 
       // spoke4
       assertEq(
-        spokes[3].t_i[3].baseBorrowIndex,
-        assets[state.assetId].t_i[3].baseBorrowIndex,
+        spokes[3].t_i[t].baseBorrowIndex,
+        assets[state.assetId].t_i[t].baseBorrowIndex,
         't3_i Spoke4 index'
       );
       assertEq(
-        spokes[3].t_i[3].baseDebt,
-        spokes[3].actions.draw[2].amount,
+        spokes[3].t_i[t].baseDebt,
+        spokes[3].actions.draw[t - 1].amount,
         't3_i Spoke4 base debt'
       );
       assertEq(
-        spokes[3].t_i[3].lastUpdateTimestamp,
-        timeAt(stages[2]),
+        spokes[3].t_i[t].lastUpdateTimestamp,
+        timeAt(stages[t - 1]),
         't3_i Spoke4 lastUpdateTimestamp'
       );
     }
@@ -223,49 +223,49 @@ contract BorrowIndex_Scenario2Test is BorrowIndexBase {
     if (stage == stages[0]) {
       // asset
       assertEq(
-        assets[state.assetId].t_f[0].baseBorrowIndex,
+        assets[state.assetId].t_f[t].baseBorrowIndex,
         hub.DEFAULT_ASSET_INDEX(),
         't0_f Asset index'
       );
-      assertEq(assets[state.assetId].t_f[0].baseDebt, 0, 't0_f Asset base debt');
+      assertEq(assets[state.assetId].t_f[t].baseDebt, 0, 't0_f Asset base debt');
       assertEq(
-        assets[state.assetId].t_f[0].lastUpdateTimestamp,
-        timeAt(stages[0]),
+        assets[state.assetId].t_f[t].lastUpdateTimestamp,
+        timeAt(stages[t]),
         't0_f Asset lastUpdateTimestamp'
       );
 
       // spoke1
-      assertEq(spokes[0].t_f[0].baseBorrowIndex, hub.DEFAULT_SPOKE_INDEX(), 't0_f Spoke1 index');
-      assertEq(spokes[0].t_f[0].baseDebt, 0, 't0_f Spoke1 base debt');
-      assertEq(spokes[0].t_f[0].lastUpdateTimestamp, 0, 't0_f Spoke1 lastUpdateTimestamp');
+      assertEq(spokes[0].t_f[t].baseBorrowIndex, hub.DEFAULT_SPOKE_INDEX(), 't0_f Spoke1 index');
+      assertEq(spokes[0].t_f[t].baseDebt, 0, 't0_f Spoke1 base debt');
+      assertEq(spokes[0].t_f[t].lastUpdateTimestamp, 0, 't0_f Spoke1 lastUpdateTimestamp');
     } else if (stage == stages[1]) {
       // asset
       assertEq(
-        assets[state.assetId].t_f[1].baseBorrowIndex,
+        assets[state.assetId].t_f[t].baseBorrowIndex,
         hub.DEFAULT_ASSET_INDEX(),
         't1_f Asset index'
       );
       assertEq(
-        assets[state.assetId].t_f[1].baseDebt,
-        spokes[0].actions.draw[1].amount,
+        assets[state.assetId].t_f[t].baseDebt,
+        spokes[0].actions.draw[t].amount,
         't1_f Asset base debt'
       );
       assertEq(
-        assets[state.assetId].t_f[1].lastUpdateTimestamp,
-        timeAt(stages[1]),
+        assets[state.assetId].t_f[t].lastUpdateTimestamp,
+        timeAt(stages[t]),
         't1_f Asset lastUpdateTimestamp'
       );
 
       // spoke1
-      assertEq(spokes[0].t_f[1].baseBorrowIndex, hub.DEFAULT_ASSET_INDEX(), 't1_f Spoke1 index');
+      assertEq(spokes[0].t_f[t].baseBorrowIndex, hub.DEFAULT_ASSET_INDEX(), 't1_f Spoke1 index');
       assertEq(
-        spokes[0].t_f[1].baseDebt,
-        spokes[0].actions.draw[1].amount,
+        spokes[0].t_f[t].baseDebt,
+        spokes[0].actions.draw[t].amount,
         't1_f Spoke1 base debt'
       );
       assertEq(
-        spokes[0].t_f[1].lastUpdateTimestamp,
-        timeAt(stages[1]),
+        spokes[0].t_f[t].lastUpdateTimestamp,
+        timeAt(stages[t]),
         't1_f Spoke1 lastUpdateTimestamp'
       );
     } else if (stage == stages[2]) {
@@ -353,13 +353,13 @@ contract BorrowIndex_Scenario2Test is BorrowIndexBase {
       // no action, should be the same as t1
       assertEq(
         spokes[0].t_f[t].baseBorrowIndex,
-        spokes[0].t_f[1].baseBorrowIndex,
+        spokes[0].t_f[t - 2].baseBorrowIndex,
         't3_f Spoke1 index'
       );
-      assertEq(spokes[0].t_f[t].baseDebt, spokes[0].t_f[1].baseDebt, 't3_f Spoke1 base debt');
+      assertEq(spokes[0].t_f[t].baseDebt, spokes[0].t_f[t - 2].baseDebt, 't3_f Spoke1 base debt');
       assertEq(
         spokes[0].t_f[t].lastUpdateTimestamp,
-        spokes[0].t_f[1].lastUpdateTimestamp,
+        spokes[0].t_f[t - 2].lastUpdateTimestamp,
         't3_f Spoke1 lastUpdateTimestamp'
       );
 
