@@ -568,10 +568,6 @@ contract SpokeUserRiskPremiumTest is BaseTest {
     );
   }
 
-  // TODO: Have an asset value change such that one asset is no longer being used in the equation
-  // TODO: Have an asset value change such that it is still being used in the equation, but it is a different result
-
-  // TODO: Have the last asset change value such that dai2 is actually being used in the equation
   function test_getUserRiskPremium_fuzz_four_assets_change_one_price(
     uint256 wbtcSupplyAmount,
     uint256 wethSupplyAmount,
