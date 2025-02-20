@@ -20,7 +20,10 @@ library AssetLogic {
   // todo: option for cached object
 
   function totalAssets(Asset storage asset) internal view returns (uint256) {
-    return asset.availableLiquidity + asset.outstandingPremium + asset.baseDebt;
+    (uint256 baseDebt, uint256 outstandingPremium) = asset.previewInterest(
+      asset.previewNextBorrowIndex()
+    );
+    return asset.availableLiquidity + baseDebt + outstandingPremium;
   }
 
   function totalShares(Asset storage asset) internal view returns (uint256) {
@@ -55,7 +58,11 @@ library AssetLogic {
   }
 
   function getInterestRate(Asset storage asset) external view returns (uint256) {
-    return asset.baseBorrowRate.radMul(WadRayMath.RAD + asset.riskPremiumRad);
+    // @dev we truncate (ie `derayify()`) before `percentMul` as we only have accurate data until bps
+    return
+      asset.baseBorrowRate.percentMul(
+        PercentageMath.PERCENTAGE_FACTOR + asset.riskPremium.derayify()
+      );
   }
 
   function updateBorrowRate(
@@ -80,9 +87,9 @@ library AssetLogic {
 
   // @dev Utilizes existing `asset.baseBorrowRate` & `asset.baseBorrowIndex`
   // @return nextBaseBorrowIndex (in ray)
-  function previewNextBorrowIndex(Asset storage asset) external view returns (uint256) {
+  function previewNextBorrowIndex(Asset storage asset) internal view returns (uint256) {
     uint256 lastUpdateTimestamp = asset.lastUpdateTimestamp;
-    if (block.timestamp == lastUpdateTimestamp) {
+    if (lastUpdateTimestamp == block.timestamp) {
       return asset.baseBorrowIndex;
     }
 
@@ -93,27 +100,37 @@ library AssetLogic {
     return cumulatedBaseInterest.rayMul(asset.baseBorrowIndex);
   }
 
-  // @dev Utilizes existing `asset.baseBorrowIndex` & `asset.riskPremiumRad`
-  function accrueInterest(Asset storage asset, uint256 nextBaseBorrowIndex) external {
-    if (block.timestamp == asset.lastUpdateTimestamp) {
-      return;
-    }
+  // @dev Utilizes existing `asset.baseBorrowIndex` & `asset.riskPremium`
+  function accrueInterest(Asset storage asset, uint256 nextBaseBorrowIndex) internal {
+    (uint256 cumulatedBaseDebt, uint256 cumulatedOutstandingPremium) = asset.previewInterest(
+      nextBaseBorrowIndex
+    );
 
-    uint256 existingBaseDebt = asset.baseDebt;
-
-    if (existingBaseDebt != 0) {
-      uint256 cumulatedBaseDebt = existingBaseDebt.rayMul(nextBaseBorrowIndex).rayDiv(
-        asset.baseBorrowIndex
-      ); // precision loss avoidable
-
-      // accrue premium interest on the accrued base interest
-      asset.outstandingPremium += (cumulatedBaseDebt - existingBaseDebt).radMul(
-        asset.riskPremiumRad
-      );
-      asset.baseDebt = cumulatedBaseDebt;
-    }
-
-    asset.baseBorrowIndex = nextBaseBorrowIndex; // opt: doesn't need update on supply, withdraw actions?
+    asset.baseDebt = cumulatedBaseDebt;
+    asset.outstandingPremium = cumulatedOutstandingPremium;
+    asset.baseBorrowIndex = nextBaseBorrowIndex;
     asset.lastUpdateTimestamp = block.timestamp;
+  }
+
+  function previewInterest(
+    Asset storage asset,
+    uint256 nextBaseBorrowIndex
+  ) internal view returns (uint256, uint256) {
+    uint256 existingBaseDebt = asset.baseDebt;
+    uint256 existingOutstandingPremium = asset.outstandingPremium;
+
+    if (existingBaseDebt == 0 || asset.lastUpdateTimestamp == block.timestamp) {
+      return (existingBaseDebt, existingOutstandingPremium);
+    }
+
+    uint256 cumulatedBaseDebt = existingBaseDebt.rayMul(nextBaseBorrowIndex).rayDiv(
+      asset.baseBorrowIndex
+    ); // precision loss avoidable
+
+    return (
+      cumulatedBaseDebt,
+      existingOutstandingPremium +
+        (cumulatedBaseDebt - existingBaseDebt).percentMul(asset.riskPremium.derayify())
+    );
   }
 }

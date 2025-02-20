@@ -22,7 +22,7 @@ contract SpokeAccrueInterestTest is BaseTest {
     assertEq(daiInfo.lastUpdateTimestamp, 0);
     assertEq(daiInfo.baseDebt, 0);
     assertEq(daiInfo.outstandingPremium, 0);
-    assertEq(daiInfo.riskPremiumRad, 0);
+    assertEq(daiInfo.riskPremium, 0);
   }
 
   function test_accrueInterest_OnlySupply(uint40 elapsed) public {
@@ -42,7 +42,7 @@ contract SpokeAccrueInterestTest is BaseTest {
     // Timestamp doesn't update when no interest accrued
     assertEq(daiInfo.lastUpdateTimestamp, vm.getBlockTimestamp(), 'lastUpdateTimestamp');
     assertEq(daiInfo.baseDebt, 0, 'baseDebt');
-    assertEq(daiInfo.riskPremiumRad, 0, 'riskPremiumRad');
+    assertEq(daiInfo.riskPremium, 0, 'riskPremium');
     assertEq(daiInfo.outstandingPremium, 0, 'outstandingPremium');
   }
 
@@ -72,12 +72,12 @@ contract SpokeAccrueInterestTest is BaseTest {
     // Spoke checks
     assertEq(daiInfo.lastUpdateTimestamp, vm.getBlockTimestamp(), 'lastUpdateTimestamp');
     assertEq(daiInfo.baseDebt, totalBase, 'baseDebt');
-    assertEq(daiInfo.riskPremiumRad, 0, 'riskPremiumRad');
+    assertEq(daiInfo.riskPremium, 0, 'riskPremium');
     assertEq(daiInfo.outstandingPremium, 0, 'outstandingPremium');
 
     // LH checks
     assertEq(daiAssetInfo.baseDebt, totalBase);
-    assertEq(daiAssetInfo.riskPremiumRad, 0);
+    assertEq(daiAssetInfo.riskPremium, 0);
     assertEq(daiAssetInfo.outstandingPremium, 0);
     assertEq(daiAssetInfo.lastUpdateTimestamp, vm.getBlockTimestamp());
   }
@@ -108,12 +108,12 @@ contract SpokeAccrueInterestTest is BaseTest {
     // Spoke checks
     assertEq(daiInfo.lastUpdateTimestamp, vm.getBlockTimestamp(), 'lastUpdateTimestamp');
     assertEq(daiInfo.baseDebt, totalBase, 'baseDebt');
-    assertEq(daiInfo.riskPremiumRad, 0, 'riskPremiumRad');
+    assertEq(daiInfo.riskPremium, 0, 'riskPremium');
     assertEq(daiInfo.outstandingPremium, 0, 'outstandingPremium');
 
     // LH checks
     assertEq(daiAssetInfo.baseDebt, totalBase);
-    assertEq(daiAssetInfo.riskPremiumRad, 0);
+    assertEq(daiAssetInfo.riskPremium, 0);
     assertEq(daiAssetInfo.outstandingPremium, 0);
     assertEq(daiAssetInfo.lastUpdateTimestamp, vm.getBlockTimestamp());
   }
@@ -149,12 +149,12 @@ contract SpokeAccrueInterestTest is BaseTest {
     // Spoke checks
     assertEq(daiInfo.lastUpdateTimestamp, vm.getBlockTimestamp(), 'lastUpdateTimestamp');
     assertEq(daiInfo.baseDebt, totalBase, 'baseDebt');
-    assertEq(daiInfo.riskPremiumRad, 0, 'riskPremiumRad');
+    assertEq(daiInfo.riskPremium, 0, 'riskPremium');
     assertEq(daiInfo.outstandingPremium, 0, 'outstandingPremium');
 
     // LH checks
     assertEq(daiAssetInfo.baseDebt, totalBase);
-    assertEq(daiAssetInfo.riskPremiumRad, 0);
+    assertEq(daiAssetInfo.riskPremium, 0);
     assertEq(daiAssetInfo.outstandingPremium, 0);
     assertEq(daiAssetInfo.lastUpdateTimestamp, vm.getBlockTimestamp());
   }

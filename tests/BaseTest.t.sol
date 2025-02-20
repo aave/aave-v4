@@ -88,6 +88,7 @@ abstract contract BaseTest is Test, Events {
   using SharesMath for uint256;
 
   uint256 internal constant MAX_SUPPLY_AMOUNT = 1e30;
+  uint32 internal constant MAX_RISK_PREMIUM_BPS = 1000_00;
 
   IERC20 internal usdc;
   IERC20 internal dai;
@@ -143,71 +144,6 @@ abstract contract BaseTest is Test, Events {
   struct ReserveInfo {
     uint256 reserveId;
     uint256 liquidityPremium;
-  }
-
-  struct Timestamps {
-    uint40 t0;
-    uint40 t1;
-    uint40 t2;
-    uint40 t3;
-    uint40 t4;
-  }
-
-  struct Spoke1DataLocal {
-    SpokeData t0;
-    SpokeData t1;
-    SpokeData t2;
-    SpokeData t3;
-    SpokeData t4;
-  }
-
-  struct Spoke2DataLocal {
-    SpokeData t0;
-    SpokeData t1;
-    SpokeData t2;
-    SpokeData t3;
-    SpokeData t4;
-  }
-
-  struct AssetDataLocal {
-    Asset t0;
-    Asset t1;
-    Asset t2;
-    Asset t3;
-    Asset t4;
-  }
-
-  struct CumulatedInterest {
-    uint256 t1;
-    uint256 t2;
-    uint256 t3;
-    uint256 t4;
-  }
-
-  struct Spoke1Amounts {
-    uint256 draw0;
-    uint256 draw1;
-    uint256 draw2;
-    uint256 draw3;
-    uint256 draw4;
-    uint256 supply0;
-    uint256 supply1;
-    uint256 supply2;
-    uint256 supply3;
-    uint256 supply4;
-  }
-
-  struct Spoke2Amounts {
-    uint256 draw0;
-    uint256 draw1;
-    uint256 draw2;
-    uint256 draw3;
-    uint256 draw4;
-    uint256 supply0;
-    uint256 supply1;
-    uint256 supply2;
-    uint256 supply3;
-    uint256 supply4;
   }
 
   mapping(Spoke => SpokeInfo) internal spokeInfo;

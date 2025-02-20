@@ -16,8 +16,6 @@ contract WadRayMathTests is Test {
     assertEq(w.HALF_WAD(), 1e18 / 2, 'half wad');
     assertEq(w.RAY(), 1e27, 'ray');
     assertEq(w.HALF_RAY(), 1e27 / 2, 'half_ray');
-    assertEq(w.RAD(), 1e8, 'ray');
-    assertEq(w.HALF_RAD(), 1e8 / 2, 'half_rad');
   }
 
   function test_wadMul_edge() public view {
@@ -26,7 +24,7 @@ contract WadRayMathTests is Test {
     assertEq(w.wadMul(0, 0), 0);
   }
 
-  function test_wadMul_fuzzing(uint256 a, uint256 b) public {
+  function test_wadMul_fuzz(uint256 a, uint256 b) public {
     if ((b == 0 || (a > (type(uint256).max - w.HALF_WAD()) / b) == false) == false) {
       vm.expectRevert();
       w.wadMul(a, b);
@@ -36,7 +34,7 @@ contract WadRayMathTests is Test {
     assertEq(w.wadMul(a, b), ((a * b) + w.HALF_WAD()) / w.WAD());
   }
 
-  function test_wadDiv_fuzzing(uint256 a, uint256 b) public {
+  function test_wadDiv_fuzz(uint256 a, uint256 b) public {
     if ((b == 0) || (((a > ((type(uint256).max - b / 2) / w.WAD())) == false) == false)) {
       vm.expectRevert();
       w.wadDiv(a, b);
@@ -118,23 +116,23 @@ contract WadRayMathTests is Test {
     }
   }
 
-  function test_radMul_fuzzing(uint256 a, uint256 b) public {
-    if ((b == 0 || (a > (type(uint256).max - w.HALF_RAD()) / b) == false) == false) {
-      vm.expectRevert();
-      w.radMul(a, b);
-      return;
+  function test_rayify_fuzz(uint256 a) public {
+    uint256 b;
+    bool safetyCheck;
+    unchecked {
+      b = a * w.RAY();
+      safetyCheck = b / w.RAY() == a;
     }
-
-    assertEq(w.radMul(a, b), ((a * b) + w.HALF_RAD()) / w.RAD());
+    if (!safetyCheck) {
+      vm.expectRevert();
+      w.rayify(a);
+    } else {
+      assertEq(w.rayify(a), a * w.RAY());
+      assertEq(w.rayify(a), b);
+    }
   }
 
-  function test_radDiv_fuzzing(uint256 a, uint256 b) public {
-    if ((b == 0) || (((a > ((type(uint256).max - b / 2) / w.RAD())) == false) == false)) {
-      vm.expectRevert();
-      w.radDiv(a, b);
-      return;
-    }
-
-    assertEq(w.radDiv(a, b), ((a * w.RAD()) + (b / 2)) / b);
+  function test_derayify_fuzz(uint256 a) public {
+    assertEq(w.derayify(a), a / w.RAY());
   }
 }

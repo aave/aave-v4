@@ -1,111 +1,233 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.0;
 
-import '../BaseTest.t.sol';
+import {Test} from 'forge-std/Test.sol';
+
+import {EnumerableSet} from 'src/dependencies/openzeppelin/EnumerableSet.sol';
+import {MathUtils} from 'src/contracts/MathUtils.sol';
+import {WadRayMath} from 'src/contracts/WadRayMath.sol';
 
 /// forge-config: default.allow_internal_expect_revert = true
-contract MathUtilsTest is BaseTest {
+contract MathUtilsWeightedAverage is Test {
   using WadRayMath for uint256;
 
-  struct Set {
-    uint256[] keys;
-    mapping(uint256 key => bool seen) contains;
-  }
-  Set internal toRemoveSet;
+  using EnumerableSet for EnumerableSet.UintSet;
+  EnumerableSet.UintSet internal toRemoveSet;
 
-  /// forge-config: ci.fuzz.runs = 10000
+  struct Bound {
+    uint256 maxValue;
+    uint256 maxWeight;
+    uint256 maxIterations;
+    // additional added precision multiplier only to value to reduce rounding precision loss
+    uint256 precision;
+  }
+  Bound[] internal bounds;
+
+  function setUp() public {
+    bounds.push(
+      Bound({maxValue: 1e4, maxWeight: 1e30, maxIterations: 1e9, precision: WadRayMath.RAY})
+    );
+
+    _validateBounds();
+  }
+
   function test_fuzz_WeightedAverageAdd(uint256[] memory numbers) public {
-    // base case limits, type(uint128).max ~ 1e38
-    _runWeightedAverageAdd(numbers, 1e38, 100_00);
-    _runWeightedAverageAdd(numbers, 1e48, 100_00);
+    for (uint256 i; i < bounds.length; ++i) {
+      (uint256[] memory values, uint256[] memory weights) = _boundAndSplitArray(numbers, bounds[i]);
+      _runWeightedAverageAdd({values: values, weights: weights, precision: bounds[i].precision});
+    }
   }
 
-  /// forge-config: ci.fuzz.runs = 10000
-  function test_fuzz_WeightedAverageRemoveMultiple(
-    uint256[] memory numbers,
-    uint256[] memory toRemoveIndexes
-  ) public {
-    // base case limits, type(uint128).max ~ 1e38
-    _runWeightedAverageRemove(numbers, toRemoveIndexes, 1e38, 100_00);
-    _runWeightedAverageRemove(numbers, toRemoveIndexes, 1e48, 100_00);
-  }
-
-  /// forge-config: ci.fuzz.runs = 10000
   function test_fuzz_WeightedAverageRemoveSingle(
     uint256[] memory numbers,
     uint256 toRemoveIndex
   ) public {
     uint256[] memory toRemoveIndexes = new uint256[](1);
     toRemoveIndexes[0] = toRemoveIndex;
-    // base case limits, type(uint128).max ~ 1e38
-    _runWeightedAverageRemove(numbers, toRemoveIndexes, 1e38, 100_00);
-    _runWeightedAverageRemove(numbers, toRemoveIndexes, 1e48, 100_00);
+    for (uint256 i; i < bounds.length; ++i) {
+      (uint256[] memory values, uint256[] memory weights) = _boundAndSplitArray(numbers, bounds[i]);
+      // populates `toRemoveSet` in storage (not persisted between runs)
+      _toSet(toRemoveIndexes, _min(values.length, bounds[i].maxIterations));
+      _runWeightedAverageRemove({values: values, weights: weights, precision: bounds[i].precision});
+    }
+  }
+
+  function test_fuzz_WeightedAverageRemoveMultiple(
+    uint256[] memory numbers,
+    uint256[] memory toRemoveIndexes
+  ) public {
+    for (uint256 i; i < bounds.length; ++i) {
+      (uint256[] memory values, uint256[] memory weights) = _boundAndSplitArray(numbers, bounds[i]);
+      // populates `toRemoveSet` in storage (not persisted between runs)
+      _toSet(toRemoveIndexes, _min(values.length, bounds[i].maxIterations));
+      _runWeightedAverageRemove({values: values, weights: weights, precision: bounds[i].precision});
+    }
+  }
+
+  function test_fuzz_WeightedAverageRemoveMultiplePotentiallyAll(
+    uint256[] memory numbers,
+    uint256[] memory toRemoveIndexes
+  ) public {
+    for (uint256 i; i < bounds.length; ++i) {
+      (uint256[] memory values, uint256[] memory weights) = _boundAndSplitArray(numbers, bounds[i]);
+      // populates `toRemoveSet` in storage (not persisted between runs)
+      _toSetWithoutDuplicates(toRemoveIndexes, _min(values.length, bounds[i].maxIterations));
+      _runWeightedAverageRemove({values: values, weights: weights, precision: bounds[i].precision});
+    }
   }
 
   function test_fuzz_Revert_WeightedAverageRemoveInvalidWeightedValue(
     uint256[] memory numbers
   ) public {
-    (uint256 currentWeightedAvgRad, uint256 currentSumWeights) = _runWeightedAverageAdd(
-      numbers,
-      1e48,
-      100_00
+    for (uint256 i; i < bounds.length; ++i) {
+      (uint256[] memory values, uint256[] memory weights) = _boundAndSplitArray(numbers, bounds[i]);
+      _runWeightedAverageRemoveInvalidWeightedValue({
+        values: values,
+        weights: weights,
+        precision: bounds[i].precision
+      });
+    }
+  }
+
+  function test_fuzz_WeightedAverageRemoveAlternateValues(uint256[] memory numbers) public {
+    for (uint256 i; i < bounds.length; ++i) {
+      (uint256[] memory values, uint256[] memory weights) = _boundAndSplitArray(numbers, bounds[i]);
+      _runWeightedAverageRemoveAlternateValues({
+        values: values,
+        weights: weights,
+        precision: bounds[i].precision
+      });
+    }
+  }
+
+  function _runWeightedAverageRemoveInvalidWeightedValue(
+    uint256[] memory values,
+    uint256[] memory weights,
+    uint256 precision
+  ) internal {
+    (uint256 currentWeightedAvg, uint256 currentSumWeights) = _runWeightedAverageAdd(
+      values,
+      weights,
+      precision
     );
 
-    for (uint256 i; i < numbers.length; ++i) {
-      uint256 maxNumber;
+    for (uint256 i; i < values.length; ++i) {
+      uint256 maxValue;
       uint256 maxWeight;
-      for (uint256 j = i; j < numbers.length; ++j) {
-        maxNumber = _max(maxNumber, numbers[j] % 1e48);
-        maxWeight = _max(maxWeight, numbers[j] % 100_00);
+      for (uint256 j = i; j < values.length; ++j) {
+        maxValue = _max(maxValue, values[j]);
+        maxWeight = _max(maxWeight, weights[j]);
       }
 
       vm.expectRevert();
       MathUtils.subtractFromWeightedAverage(
-        currentWeightedAvgRad,
+        currentWeightedAvg,
         currentSumWeights,
-        maxNumber + 1,
+        maxValue + 1,
         maxWeight + 1
       );
 
-      uint256 number = numbers[i] % 1e48;
-      uint256 weight = numbers[i] % 100_00;
-
-      (currentWeightedAvgRad, currentSumWeights) = MathUtils.subtractFromWeightedAverage(
-        currentWeightedAvgRad,
+      (currentWeightedAvg, currentSumWeights) = MathUtils.subtractFromWeightedAverage(
+        currentWeightedAvg,
         currentSumWeights,
-        number,
+        values[i],
+        weights[i]
+      );
+    }
+  }
+
+  function _runWeightedAverageRemoveAlternateValues(
+    uint256[] memory values,
+    uint256[] memory weights,
+    uint256 precision
+  ) internal {
+    _resetToRemoveSet();
+    uint256 length;
+    assertEq((length = values.length), weights.length);
+    uint256 currentSumWeights;
+    uint256 currentWeightedAvg;
+
+    uint256 calcWeightedAvg;
+    uint256 calcSumWeights;
+
+    uint256 counter;
+    // roughly every 10 iterations, we remove a value
+    uint256 interval = vm.randomUint() % 10;
+
+    for (uint256 i; i < length; ++i) {
+      if (i > 0 && ++counter == interval) {
+        // remove a random value added so far
+        uint256 toRemoveIndex = _getRandomUnseenInRange(i);
+        toRemoveSet.add(toRemoveIndex);
+
+        uint256 newValue = values[toRemoveIndex];
+        uint256 newWeight = weights[toRemoveIndex];
+
+        (currentWeightedAvg, currentSumWeights) = MathUtils.subtractFromWeightedAverage(
+          currentWeightedAvg,
+          currentSumWeights,
+          newValue,
+          newWeight
+        );
+
+        calcWeightedAvg -= (newValue / precision) * newWeight;
+        calcSumWeights -= newWeight;
+
+        assertEq(currentSumWeights, calcSumWeights);
+        if (calcSumWeights != 0) {
+          assertApproxEqAbs(
+            (currentWeightedAvg / precision),
+            (calcWeightedAvg / calcSumWeights),
+            2
+          );
+        }
+      }
+
+      uint256 value = values[i];
+      uint256 weight = weights[i];
+
+      calcWeightedAvg += (value / precision) * weight;
+      calcSumWeights += weight;
+
+      (currentWeightedAvg, currentSumWeights) = MathUtils.addToWeightedAverage(
+        currentWeightedAvg,
+        currentSumWeights,
+        value,
         weight
       );
     }
+    if (calcSumWeights != 0) {
+      calcWeightedAvg /= calcSumWeights;
+    }
+
+    assertEq(currentSumWeights, calcSumWeights);
+    assertApproxEqAbs((currentWeightedAvg / precision), calcWeightedAvg, 1);
   }
 
   function _runWeightedAverageAdd(
-    uint256[] memory numbers,
-    uint256 maxNumber,
-    uint256 maxWeight
-  ) public returns (uint256, uint256) {
-    vm.assume(numbers.length > 0);
-
+    uint256[] memory values,
+    uint256[] memory weights,
+    uint256 precision
+  ) public pure returns (uint256, uint256) {
+    uint256 length;
+    assertEq((length = values.length), weights.length);
     uint256 currentSumWeights;
-    uint256 currentWeightedAvgRad;
+    uint256 currentWeightedAvg;
 
     uint256 calcWeightedAvg;
     uint256 calcSumWeights;
-    uint256 number;
-    uint256 weight;
 
-    for (uint256 i; i < numbers.length; ++i) {
-      // truncate
-      number = (numbers[i] % maxNumber).toRad(); // add precision before
-      weight = numbers[i] % maxWeight;
+    for (uint256 i; i < length; ++i) {
+      uint256 value = values[i];
+      uint256 weight = weights[i];
 
-      calcWeightedAvg += number * weight;
+      calcWeightedAvg += (value / precision) * weight;
       calcSumWeights += weight;
 
-      (currentWeightedAvgRad, currentSumWeights) = MathUtils.addToWeightedAverage(
-        currentWeightedAvgRad,
+      (currentWeightedAvg, currentSumWeights) = MathUtils.addToWeightedAverage(
+        currentWeightedAvg,
         currentSumWeights,
-        number,
+        value,
         weight
       );
     }
@@ -113,82 +235,141 @@ contract MathUtilsTest is BaseTest {
       calcWeightedAvg /= calcSumWeights;
     }
 
-    assertApproxEqAbs(currentWeightedAvgRad.fromRad(), calcWeightedAvg.fromRad(), 1);
     assertEq(currentSumWeights, calcSumWeights);
+    assertApproxEqAbs((currentWeightedAvg / precision), calcWeightedAvg, 1);
 
-    return (currentWeightedAvgRad, currentSumWeights);
+    return (currentWeightedAvg, currentSumWeights);
   }
 
   function _runWeightedAverageRemove(
-    uint256[] memory numbers,
-    uint256[] memory toRemoveIndexes,
-    uint256 maxNumber,
-    uint256 maxWeight
+    uint256[] memory values,
+    uint256[] memory weights,
+    uint256 precision
   ) public {
-    vm.assume(numbers.length > 1);
+    uint256 length;
+    assertEq((length = values.length), weights.length);
 
-    for (uint256 i; i < _min(numbers.length, toRemoveIndexes.length); ++i) {
-      uint256 key = bound(toRemoveIndexes[i], 0, numbers.length - 1);
-      if (!toRemoveSet.contains[key]) {
-        // toRemoveSet is not persisted between runs
-        toRemoveSet.keys.push(key);
-        toRemoveSet.contains[key] = true;
-      }
-    }
-
-    uint256 currentSumWeights;
-    uint256 currentWeightedAvgRad;
+    (uint256 currentWeightedAvg, uint256 currentSumWeights) = _runWeightedAverageAdd(
+      values,
+      weights,
+      precision
+    );
 
     uint256 calcWeightedAvg;
     uint256 calcSumWeights;
 
-    for (uint256 i; i < numbers.length; ++i) {
-      // truncate
-      uint256 number = (numbers[i] % maxNumber).toRad(); // add precision before
-      uint256 weight = numbers[i] % maxWeight;
-
-      if (!toRemoveSet.contains[i]) {
-        calcWeightedAvg += number * weight;
-        calcSumWeights += weight;
+    for (uint256 i; i < values.length; ++i) {
+      if (!toRemoveSet.contains(i)) {
+        calcWeightedAvg += (values[i] / precision) * weights[i];
+        calcSumWeights += weights[i];
       }
-
-      (currentWeightedAvgRad, currentSumWeights) = MathUtils.addToWeightedAverage(
-        currentWeightedAvgRad,
-        currentSumWeights,
-        number,
-        weight
-      );
     }
 
     if (calcSumWeights != 0) {
       calcWeightedAvg /= calcSumWeights;
     }
 
-    for (uint256 i; i < toRemoveSet.keys.length; ++i) {
-      uint256 newValue = (numbers[toRemoveSet.keys[i]] % maxNumber).toRad(); // add precision before
-      uint256 newValueWeight = numbers[toRemoveSet.keys[i]] % maxWeight;
+    for (uint256 i; i < toRemoveSet.length(); ++i) {
+      uint256 newValue = values[toRemoveSet.at(i)];
+      uint256 newWeight = weights[toRemoveSet.at(i)];
 
       // overflow not possible
-      if (currentWeightedAvgRad * currentSumWeights < (newValue * newValueWeight).toRad()) {
+      if (currentWeightedAvg * currentSumWeights < (newValue * newWeight)) {
         vm.expectRevert();
         MathUtils.subtractFromWeightedAverage(
-          currentWeightedAvgRad,
+          currentWeightedAvg,
           currentSumWeights,
           newValue,
-          newValueWeight
+          newWeight
         );
       } else {
-        (currentWeightedAvgRad, currentSumWeights) = MathUtils.subtractFromWeightedAverage(
-          currentWeightedAvgRad,
+        (currentWeightedAvg, currentSumWeights) = MathUtils.subtractFromWeightedAverage(
+          currentWeightedAvg,
           currentSumWeights,
           newValue,
-          newValueWeight
+          newWeight
         );
       }
     }
 
-    assertApproxEqAbs(currentWeightedAvgRad.fromRad(), calcWeightedAvg.fromRad(), 2);
     assertEq(currentSumWeights, calcSumWeights);
+    assertApproxEqAbs(currentWeightedAvg / precision, calcWeightedAvg, 1);
+  }
+
+  function _boundAndSplitArray(
+    uint256[] memory _numbers,
+    Bound memory _bound
+  ) internal returns (uint256[] memory, uint256[] memory) {
+    // bound.maxIterations is not assumed for performance
+    uint256 length = _min(_numbers.length, _bound.maxIterations);
+    vm.assume(length > 0);
+    uint256[] memory values = new uint256[](length);
+    uint256[] memory weights = new uint256[](length);
+
+    // truncate, don't randomize `value` to retain fuzzer's heuristics
+    for (uint256 i; i < length; ++i) {
+      // add precision before
+      values[i] = (_numbers[i] % _bound.maxValue) * _bound.precision;
+      // add decimal randomization
+      values[i] += (vm.randomUint() % _bound.precision);
+      // add pseudo-randomization to `weight`
+      weights[i] = (_numbers[i] ^ vm.randomUint()) % _bound.maxWeight;
+    }
+
+    // loop over & free memory
+    delete _numbers;
+
+    return (values, weights);
+  }
+
+  // @dev populates `toRemoveSet` in storage (not persisted between runs)
+  function _toSet(uint256[] memory _toRemoveIndexes, uint256 count) internal {
+    _resetToRemoveSet();
+    assertEq(toRemoveSet.length(), 0);
+    for (uint256 i; i < _toRemoveIndexes.length; ++i) {
+      toRemoveSet.add(_toRemoveIndexes[i] % count);
+    }
+  }
+
+  // @dev populates `toRemoveSet` in storage (not persisted between runs) while avoiding duplicate entries,
+  // can potentially fill entire domain (of useful indexes)
+  function _toSetWithoutDuplicates(uint256[] memory _toRemoveIndexes, uint256 _bound) internal {
+    _resetToRemoveSet();
+    assertEq(toRemoveSet.length(), 0);
+    for (uint256 i; i < _min(_toRemoveIndexes.length, _bound); ++i) {
+      while (!toRemoveSet.add(_toRemoveIndexes[i] % _bound)) {
+        unchecked {
+          _toRemoveIndexes[i]++;
+        }
+      }
+    }
+  }
+
+  function _validateBounds() internal view {
+    for (uint256 i; i < bounds.length; ++i) {
+      Bound memory bound = bounds[i];
+      assertLt(
+        (bound.maxValue * bound.precision) * bound.maxWeight * bound.maxIterations,
+        type(uint256).max,
+        'overflow'
+      );
+      assertLt(bound.maxWeight, bound.maxValue * bound.precision, 'precision');
+    }
+  }
+
+  function _resetToRemoveSet() internal {
+    uint256[] memory values = toRemoveSet.values();
+    for (uint256 i; i < values.length; ++i) {
+      toRemoveSet.remove(values[i]);
+    }
+  }
+
+  function _getRandomUnseenInRange(uint256 limit) internal returns (uint256) {
+    uint256 random;
+    do {
+      random = vm.randomUint() % limit;
+    } while (toRemoveSet.contains(random));
+    return random;
   }
 
   function _min(uint256 a, uint256 b) private pure returns (uint256) {

@@ -18,7 +18,7 @@ contract LiquidityHubWithdrawTest is LiquidityHubBaseTest {
       assetId: daiAssetId,
       spoke: address(spoke1),
       amount: amount,
-      riskPremiumRad: 0,
+      riskPremium: 0,
       user: alice,
       to: address(spoke1)
     });
@@ -45,7 +45,7 @@ contract LiquidityHubWithdrawTest is LiquidityHubBaseTest {
       uint256(5_00).bpsToRay(),
       'asset baseBorrowRate pre-withdraw'
     );
-    assertEq(assetData.riskPremiumRad, 0, 'asset riskPremiumRad pre-withdraw');
+    assertEq(assetData.riskPremium, 0, 'asset riskPremium pre-withdraw');
     assertEq(assetData.lastUpdateTimestamp, timestamp, 'asset lastUpdateTimestamp pre-withdraw');
     // spoke
     assertEq(
@@ -64,7 +64,7 @@ contract LiquidityHubWithdrawTest is LiquidityHubBaseTest {
       assetData.baseBorrowIndex,
       'spoke baseBorrowIndex pre-withdraw'
     );
-    assertEq(spokeData.riskPremiumRad, 0, 'spoke riskPremiumRad pre-withdraw');
+    assertEq(spokeData.riskPremium, 0, 'spoke riskPremium pre-withdraw');
     assertEq(
       spokeData.lastUpdateTimestamp,
       assetData.lastUpdateTimestamp,
@@ -85,7 +85,7 @@ contract LiquidityHubWithdrawTest is LiquidityHubBaseTest {
     emit Withdraw(daiAssetId, address(spoke1), alice, amount);
 
     vm.prank(address(spoke1));
-    hub.withdraw({assetId: daiAssetId, amount: amount, riskPremiumRad: 0, to: alice});
+    hub.withdraw({assetId: daiAssetId, amount: amount, riskPremium: 0, to: alice});
 
     assetData = hub.getAsset(daiAssetId);
     spokeData = hub.getSpoke(daiAssetId, address(spoke1));
@@ -103,7 +103,7 @@ contract LiquidityHubWithdrawTest is LiquidityHubBaseTest {
       uint256(5_00).bpsToRay(),
       'asset baseBorrowRate post-withdraw'
     );
-    assertEq(assetData.riskPremiumRad, 0, 'asset riskPremiumRad post-withdraw');
+    assertEq(assetData.riskPremium, 0, 'asset riskPremium post-withdraw');
     assertEq(assetData.lastUpdateTimestamp, timestamp, 'asset lastUpdateTimestamp post-withdraw');
     // spoke
     assertEq(
@@ -122,7 +122,7 @@ contract LiquidityHubWithdrawTest is LiquidityHubBaseTest {
       assetData.baseBorrowIndex,
       'spoke baseBorrowIndex post-withdraw'
     );
-    assertEq(spokeData.riskPremiumRad, 0, 'spoke riskPremiumRad post-withdraw');
+    assertEq(spokeData.riskPremium, 0, 'spoke riskPremium post-withdraw');
     assertEq(
       spokeData.lastUpdateTimestamp,
       assetData.lastUpdateTimestamp,
@@ -138,12 +138,12 @@ contract LiquidityHubWithdrawTest is LiquidityHubBaseTest {
   function test_withdraw_fuzz_multi_spoke(
     uint256 amount,
     uint256 amount2,
-    uint256 riskPremiumRad
+    uint32 riskPremium
   ) public {
     uint256 assetId = 0;
     amount = bound(amount, 1, MAX_SUPPLY_AMOUNT - 1);
     amount2 = bound(amount2, 1, MAX_SUPPLY_AMOUNT - amount);
-    riskPremiumRad = bound(riskPremiumRad, 0, maxRiskPremiumRad); // no effect on withdraw because no drawn
+    riskPremium %= MAX_RISK_PREMIUM_BPS; // no effect on withdraw because no drawn
 
     IERC20 asset = hub.assetsList(assetId);
 
@@ -152,7 +152,7 @@ contract LiquidityHubWithdrawTest is LiquidityHubBaseTest {
       assetId: assetId,
       spoke: address(spoke1),
       amount: amount,
-      riskPremiumRad: riskPremiumRad,
+      riskPremium: riskPremium,
       user: alice,
       to: address(spoke1)
     });
@@ -161,7 +161,7 @@ contract LiquidityHubWithdrawTest is LiquidityHubBaseTest {
       assetId: assetId,
       spoke: address(spoke2),
       amount: amount2,
-      riskPremiumRad: riskPremiumRad,
+      riskPremium: riskPremium,
       user: alice,
       to: address(spoke2)
     });
@@ -171,7 +171,7 @@ contract LiquidityHubWithdrawTest is LiquidityHubBaseTest {
       assetId: assetId,
       spoke: address(spoke1),
       amount: amount,
-      riskPremiumRad: 0,
+      riskPremium: 0,
       to: alice
     });
     Utils.withdraw({
@@ -179,7 +179,7 @@ contract LiquidityHubWithdrawTest is LiquidityHubBaseTest {
       assetId: assetId,
       spoke: address(spoke2),
       amount: amount2,
-      riskPremiumRad: 0,
+      riskPremium: 0,
       to: alice
     });
 
@@ -200,7 +200,7 @@ contract LiquidityHubWithdrawTest is LiquidityHubBaseTest {
       uint256(5_00).bpsToRay(),
       'asset baseBorrowRate post-withdraw'
     );
-    assertEq(assetData.riskPremiumRad, 0, 'asset riskPremiumRad post-withdraw');
+    assertEq(assetData.riskPremium, 0, 'asset riskPremium post-withdraw');
     assertEq(
       assetData.lastUpdateTimestamp,
       vm.getBlockTimestamp(),
@@ -223,7 +223,7 @@ contract LiquidityHubWithdrawTest is LiquidityHubBaseTest {
       assetData.baseBorrowIndex,
       'spoke baseBorrowIndex post-withdraw'
     );
-    assertEq(spokeData.riskPremiumRad, 0, 'spoke riskPremiumRad post-withdraw');
+    assertEq(spokeData.riskPremium, 0, 'spoke riskPremium post-withdraw');
     assertEq(
       spokeData.lastUpdateTimestamp,
       assetData.lastUpdateTimestamp,
@@ -246,7 +246,7 @@ contract LiquidityHubWithdrawTest is LiquidityHubBaseTest {
       assetData.baseBorrowIndex,
       'spoke baseBorrowIndex post-withdraw'
     );
-    assertEq(spoke2Data.riskPremiumRad, 0, 'spoke riskPremiumRad post-withdraw');
+    assertEq(spoke2Data.riskPremium, 0, 'spoke riskPremium post-withdraw');
     assertEq(
       spoke2Data.lastUpdateTimestamp,
       assetData.lastUpdateTimestamp,
@@ -270,7 +270,7 @@ contract LiquidityHubWithdrawTest is LiquidityHubBaseTest {
       assetId: assetId,
       spoke: address(spoke1),
       amount: amount,
-      riskPremiumRad: 0,
+      riskPremium: 0,
       user: alice,
       to: address(spoke1)
     });
@@ -297,7 +297,7 @@ contract LiquidityHubWithdrawTest is LiquidityHubBaseTest {
       uint256(5_00).bpsToRay(),
       'asset baseBorrowRate pre-withdraw'
     );
-    assertEq(assetData.riskPremiumRad, 0, 'asset riskPremiumRad pre-withdraw');
+    assertEq(assetData.riskPremium, 0, 'asset riskPremium pre-withdraw');
     assertEq(assetData.lastUpdateTimestamp, timestamp, 'asset lastUpdateTimestamp pre-withdraw');
     // spoke
     assertEq(
@@ -316,7 +316,7 @@ contract LiquidityHubWithdrawTest is LiquidityHubBaseTest {
       assetData.baseBorrowIndex,
       'spoke baseBorrowIndex pre-withdraw'
     );
-    assertEq(spokeData.riskPremiumRad, 0, 'spoke riskPremiumRad pre-withdraw');
+    assertEq(spokeData.riskPremium, 0, 'spoke riskPremium pre-withdraw');
     assertEq(
       spokeData.lastUpdateTimestamp,
       assetData.lastUpdateTimestamp,
@@ -342,7 +342,7 @@ contract LiquidityHubWithdrawTest is LiquidityHubBaseTest {
       assetId: assetId,
       spoke: address(spoke1),
       amount: amount,
-      riskPremiumRad: 0,
+      riskPremium: 0,
       to: alice
     });
 
@@ -362,7 +362,7 @@ contract LiquidityHubWithdrawTest is LiquidityHubBaseTest {
       uint256(5_00).bpsToRay(),
       'asset baseBorrowRate post-withdraw'
     );
-    assertEq(assetData.riskPremiumRad, 0, 'asset riskPremiumRad post-withdraw');
+    assertEq(assetData.riskPremium, 0, 'asset riskPremium post-withdraw');
     assertEq(assetData.lastUpdateTimestamp, timestamp, 'asset lastUpdateTimestamp post-withdraw');
     // spoke
     assertEq(
@@ -381,7 +381,7 @@ contract LiquidityHubWithdrawTest is LiquidityHubBaseTest {
       assetData.baseBorrowIndex,
       'spoke baseBorrowIndex post-withdraw'
     );
-    assertEq(spokeData.riskPremiumRad, 0, 'spoke riskPremiumRad post-withdraw');
+    assertEq(spokeData.riskPremium, 0, 'spoke riskPremium post-withdraw');
     assertEq(
       spokeData.lastUpdateTimestamp,
       assetData.lastUpdateTimestamp,
@@ -397,7 +397,7 @@ contract LiquidityHubWithdrawTest is LiquidityHubBaseTest {
     uint256 daiAmount = 100e18;
     uint256 wethAmount = 10e18;
     uint256 drawAmount = daiAmount / 2;
-    uint256 riskPremiumRad = uint256(20_00).bpsToRad();
+    uint32 riskPremium = 20_00;
     uint256 lastUpdateTimestamp = vm.getBlockTimestamp();
     uint256 rate = uint256(10_00).bpsToRay();
 
@@ -405,7 +405,7 @@ contract LiquidityHubWithdrawTest is LiquidityHubBaseTest {
       daiAmount: daiAmount,
       wethAmount: wethAmount,
       daiDrawAmount: drawAmount,
-      riskPremiumRad: riskPremiumRad,
+      riskPremium: riskPremium,
       rate: rate
     });
 
@@ -423,7 +423,7 @@ contract LiquidityHubWithdrawTest is LiquidityHubBaseTest {
       assetId: daiAssetId,
       spoke: address(spoke2),
       amount: supply2Amount,
-      riskPremiumRad: 0,
+      riskPremium: 0,
       user: bob,
       to: address(spoke2)
     });
@@ -441,7 +441,7 @@ contract LiquidityHubWithdrawTest is LiquidityHubBaseTest {
 
     // alice restores all debt including accrual
     vm.prank(address(spoke1));
-    hub.restore({assetId: daiAssetId, amount: restoreAmount, riskPremiumRad: 0, repayer: alice});
+    hub.restore({assetId: daiAssetId, amount: restoreAmount, riskPremium: 0, repayer: alice});
 
     hubData.daiData2 = hub.getAsset(daiAssetId);
     assertEq(
@@ -455,7 +455,7 @@ contract LiquidityHubWithdrawTest is LiquidityHubBaseTest {
     hub.withdraw({
       assetId: daiAssetId,
       amount: hubData.daiData2.availableLiquidity,
-      riskPremiumRad: 0,
+      riskPremium: 0,
       to: bob
     });
 
@@ -477,7 +477,7 @@ contract LiquidityHubWithdrawTest is LiquidityHubBaseTest {
     assertEq(hubData.daiData3.outstandingPremium, 0, 'dai outstandingPremium');
     assertEq(hubData.daiData3.baseBorrowIndex, newBaseBorrowIndex, 'dai baseBorrowIndex');
     assertEq(hubData.daiData3.baseBorrowRate, rate, 'dai baseBorrowRate');
-    assertEq(hubData.daiData3.riskPremiumRad, 0, 'dai riskPremiumRad');
+    assertEq(hubData.daiData3.riskPremium, 0, 'dai riskPremium');
     assertEq(
       hubData.daiData3.lastUpdateTimestamp,
       vm.getBlockTimestamp(),
@@ -488,7 +488,7 @@ contract LiquidityHubWithdrawTest is LiquidityHubBaseTest {
     assertEq(hubData.spoke1DaiData.baseDebt, 0, 'spoke1 baseDebt');
     assertEq(hubData.spoke1DaiData.outstandingPremium, 0, 'spoke1 outstandingPremium');
     assertEq(hubData.spoke1DaiData.baseBorrowIndex, newBaseBorrowIndex, 'spoke1 baseBorrowIndex');
-    assertEq(hubData.spoke1DaiData.riskPremiumRad, 0, 'spoke1 riskPremiumRad');
+    assertEq(hubData.spoke1DaiData.riskPremium, 0, 'spoke1 riskPremium');
     assertEq(
       hubData.spoke1DaiData.lastUpdateTimestamp,
       vm.getBlockTimestamp(),
@@ -499,7 +499,7 @@ contract LiquidityHubWithdrawTest is LiquidityHubBaseTest {
     assertEq(hubData.spoke2DaiData.baseDebt, 0, 'spoke2 baseDebt');
     assertEq(hubData.spoke2DaiData.outstandingPremium, 0, 'spoke2 outstandingPremium');
     assertEq(hubData.spoke2DaiData.baseBorrowIndex, newBaseBorrowIndex, 'spoke2 baseBorrowIndex');
-    assertEq(hubData.spoke2DaiData.riskPremiumRad, 0, 'spoke2 riskPremiumRad');
+    assertEq(hubData.spoke2DaiData.riskPremium, 0, 'spoke2 riskPremium');
     assertEq(
       hubData.spoke2DaiData.lastUpdateTimestamp,
       vm.getBlockTimestamp(),
@@ -517,7 +517,7 @@ contract LiquidityHubWithdrawTest is LiquidityHubBaseTest {
 
   function test_withdraw_fuzz_all_liquidity_with_interest(
     uint256 drawAmount,
-    uint256 riskPremiumRad,
+    uint32 riskPremium,
     uint256 rate,
     uint256 skipTime
   ) public {
@@ -527,7 +527,7 @@ contract LiquidityHubWithdrawTest is LiquidityHubBaseTest {
     drawAmount = bound(drawAmount, 1, daiAmount); // within supplied dai amount
     skipTime = bound(skipTime, 1, 365 * 10 * 1 days); // 1 day to 10 years
     rate = bound(rate, 0, 200_00).bpsToRay(); // .1% to 200%
-    riskPremiumRad = bound(riskPremiumRad, 0, maxRiskPremiumRad);
+    riskPremium %= MAX_RISK_PREMIUM_BPS;
 
     uint256 lastUpdateTimestamp = vm.getBlockTimestamp();
 
@@ -535,7 +535,7 @@ contract LiquidityHubWithdrawTest is LiquidityHubBaseTest {
       daiAmount: daiAmount,
       wethAmount: wethAmount,
       daiDrawAmount: drawAmount,
-      riskPremiumRad: riskPremiumRad,
+      riskPremium: riskPremium,
       rate: rate
     });
 
@@ -559,7 +559,7 @@ contract LiquidityHubWithdrawTest is LiquidityHubBaseTest {
       assetId: daiAssetId,
       spoke: address(spoke2),
       amount: hubData.supply2Amount,
-      riskPremiumRad: 0,
+      riskPremium: 0,
       user: bob,
       to: address(spoke2)
     });
@@ -577,7 +577,7 @@ contract LiquidityHubWithdrawTest is LiquidityHubBaseTest {
 
     // alice restores all debt including accrual
     vm.prank(address(spoke1));
-    hub.restore({assetId: daiAssetId, amount: restoreAmount, riskPremiumRad: 0, repayer: alice});
+    hub.restore({assetId: daiAssetId, amount: restoreAmount, riskPremium: 0, repayer: alice});
 
     hubData.daiData = hub.getAsset(daiAssetId);
     assertEq(
@@ -591,7 +591,7 @@ contract LiquidityHubWithdrawTest is LiquidityHubBaseTest {
     hub.withdraw({
       assetId: daiAssetId,
       amount: hubData.daiData.availableLiquidity,
-      riskPremiumRad: 0,
+      riskPremium: 0,
       to: bob
     });
 
@@ -613,7 +613,7 @@ contract LiquidityHubWithdrawTest is LiquidityHubBaseTest {
     assertEq(hubData.daiData.outstandingPremium, 0, 'dai outstandingPremium');
     assertEq(hubData.daiData.baseBorrowIndex, newBaseBorrowIndex, 'dai baseBorrowIndex');
     assertEq(hubData.daiData.baseBorrowRate, rate, 'dai baseBorrowRate');
-    assertEq(hubData.daiData.riskPremiumRad, 0, 'dai riskPremiumRad');
+    assertEq(hubData.daiData.riskPremium, 0, 'dai riskPremium');
     assertEq(
       hubData.daiData.lastUpdateTimestamp,
       vm.getBlockTimestamp(),
@@ -624,7 +624,7 @@ contract LiquidityHubWithdrawTest is LiquidityHubBaseTest {
     assertEq(hubData.spoke1DaiData.baseDebt, 0, 'spoke1 baseDebt');
     assertEq(hubData.spoke1DaiData.outstandingPremium, 0, 'spoke1 outstandingPremium');
     assertEq(hubData.spoke1DaiData.baseBorrowIndex, newBaseBorrowIndex, 'spoke1 baseBorrowIndex');
-    assertEq(hubData.spoke1DaiData.riskPremiumRad, 0, 'spoke1 riskPremiumRad');
+    assertEq(hubData.spoke1DaiData.riskPremium, 0, 'spoke1 riskPremium');
     assertEq(
       hubData.spoke1DaiData.lastUpdateTimestamp,
       vm.getBlockTimestamp(),
@@ -635,7 +635,7 @@ contract LiquidityHubWithdrawTest is LiquidityHubBaseTest {
     assertEq(hubData.spoke2DaiData.baseDebt, 0, 'spoke2 baseDebt');
     assertEq(hubData.spoke2DaiData.outstandingPremium, 0, 'spoke2 outstandingPremium');
     assertEq(hubData.spoke2DaiData.baseBorrowIndex, newBaseBorrowIndex, 'spoke2 baseBorrowIndex');
-    assertEq(hubData.spoke2DaiData.riskPremiumRad, 0, 'spoke2 riskPremiumRad');
+    assertEq(hubData.spoke2DaiData.riskPremium, 0, 'spoke2 riskPremium');
     assertEq(
       hubData.spoke2DaiData.lastUpdateTimestamp,
       vm.getBlockTimestamp(),
@@ -657,7 +657,7 @@ contract LiquidityHubWithdrawTest is LiquidityHubBaseTest {
 
     vm.prank(address(spoke1));
     vm.expectRevert(TestErrors.SUPPLIED_AMOUNT_EXCEEDED);
-    hub.withdraw({assetId: assetId, amount: amount, riskPremiumRad: 0, to: address(spoke1)});
+    hub.withdraw({assetId: assetId, amount: amount, riskPremium: 0, to: address(spoke1)});
   }
 
   function test_withdraw_revertsWith_supplied_amount_exceeded() public {
@@ -670,19 +670,19 @@ contract LiquidityHubWithdrawTest is LiquidityHubBaseTest {
       assetId: assetId,
       spoke: address(spoke1),
       amount: amount,
-      riskPremiumRad: 0,
+      riskPremium: 0,
       user: alice,
       to: address(spoke1)
     });
 
     vm.prank(address(spoke1));
     vm.expectRevert(TestErrors.SUPPLIED_AMOUNT_EXCEEDED);
-    hub.withdraw({assetId: assetId, amount: amount + 1, riskPremiumRad: 0, to: alice});
+    hub.withdraw({assetId: assetId, amount: amount + 1, riskPremium: 0, to: alice});
 
     // advance time, but no accumulation
     skip(1e18);
     vm.expectRevert(TestErrors.SUPPLIED_AMOUNT_EXCEEDED);
-    hub.withdraw({assetId: assetId, amount: amount + 1, riskPremiumRad: 0, to: alice});
+    hub.withdraw({assetId: assetId, amount: amount + 1, riskPremium: 0, to: alice});
   }
 
   function test_withdraw_revertsWith_not_available_liquidity() public {
@@ -694,7 +694,7 @@ contract LiquidityHubWithdrawTest is LiquidityHubBaseTest {
       assetId: daiAssetId,
       spoke: address(spoke1),
       amount: amount,
-      riskPremiumRad: 0,
+      riskPremium: 0,
       user: alice,
       to: address(spoke1)
     });
@@ -706,14 +706,14 @@ contract LiquidityHubWithdrawTest is LiquidityHubBaseTest {
       spoke: address(spoke1),
       amount: amount,
       to: alice,
-      riskPremiumRad: 0,
+      riskPremium: 0,
       onBehalfOf: address(spoke1)
     });
 
     vm.expectRevert(TestErrors.SUPPLIED_AMOUNT_EXCEEDED);
 
     vm.prank(address(spoke1));
-    hub.withdraw({assetId: daiAssetId, amount: amount, riskPremiumRad: 0, to: address(spoke1)});
+    hub.withdraw({assetId: daiAssetId, amount: amount, riskPremium: 0, to: address(spoke1)});
   }
 
   function test_withdraw_revertsWith_invalid_withdraw_amount() public {
@@ -725,14 +725,14 @@ contract LiquidityHubWithdrawTest is LiquidityHubBaseTest {
       assetId: daiAssetId,
       spoke: address(spoke1),
       amount: amount,
-      riskPremiumRad: 0,
+      riskPremium: 0,
       user: alice,
       to: address(spoke1)
     });
 
     vm.expectRevert(TestErrors.INVALID_WITHDRAW_AMOUNT);
     vm.prank(address(spoke1));
-    hub.withdraw({assetId: daiAssetId, amount: 0, riskPremiumRad: 0, to: alice});
+    hub.withdraw({assetId: daiAssetId, amount: 0, riskPremium: 0, to: alice});
   }
 
   function test_withdraw_revertsWith_asset_not_active() public {
@@ -741,6 +741,6 @@ contract LiquidityHubWithdrawTest is LiquidityHubBaseTest {
 
     vm.expectRevert(TestErrors.ASSET_NOT_ACTIVE);
     vm.prank(address(spoke1));
-    hub.withdraw({assetId: daiAssetId, amount: amount, riskPremiumRad: 0, to: alice});
+    hub.withdraw({assetId: daiAssetId, amount: amount, riskPremium: 0, to: alice});
   }
 }
