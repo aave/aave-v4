@@ -3,6 +3,7 @@ pragma solidity ^0.8.0;
 
 import {SafeERC20} from 'src/dependencies/openzeppelin/SafeERC20.sol';
 import {IERC20} from 'src/dependencies/openzeppelin/IERC20.sol';
+import {Arrays} from 'src/dependencies/openzeppelin/Arrays.sol';
 import {WadRayMath} from 'src/contracts/WadRayMath.sol';
 import {MathUtils} from 'src/contracts/MathUtils.sol';
 import {PercentageMath} from 'src/contracts/PercentageMath.sol';
@@ -390,35 +391,46 @@ contract Spoke is ISpoke {
     return newAggregatedRiskPremium;
   }
 
-  /// @dev TODO: It's assumed reservesList (or similar) is sorted by liquidity premium
   /// @dev It's assumed interest has been accrued before this function call.
   function _calcUserRiskPremium(
     mapping(uint256 => UserConfig) storage userData
   ) internal view returns (uint256) {
     uint256 reservesListLength = reservesList.length;
+    uint256[] memory userCollaterals = new uint256[](reservesListLength);
 
     // Variable to decrement as we count up user RP
     uint256 tempDebt = 0;
     uint256 newUserRiskPremium = 0;
     uint256 collateralValue = 0;
+    uint256 userCollateralAssets = 0;
     uint256 reserveId;
     uint256 userSupply;
 
-    // Add up user debt for each reserve, including price
+    // Add up user debt for each reserve, including price. Store user collaterals
     for (uint256 i; i < reservesListLength; ++i) {
       reserveId = reservesList[i];
       tempDebt +=
         userData[reserveId].baseDebt *
         IPriceOracle(oracle).getAssetPrice(_reserves[reserveId].assetId);
+
+      if (_usingAsCollateral(userData[reserveId])) {
+        // Pack (reserveId, liquidityPremium) into a single uint256
+        userCollaterals[userCollateralAssets++] =
+          (reserveId << 128) |
+          _reserves[reserveId].config.liquidityPremium;
+      }
     }
 
     // If user has no debt, return 0 risk premium
     if (tempDebt == 0) return 0;
 
+    // TODO: Optimize this
+    // Sort array of user collaterals by liquidity premium
+    Arrays.sort(userCollaterals, _compareLp);
+
     // While the tempDebt variable is non-zero, loop over collateral reserves, adding up weighted risk premium, and subtract corresponding amt from tempDebt
-    for (uint256 i; i < reservesListLength; ++i) {
-      reserveId = reservesList[i];
-      if (!_usingAsCollateral(userData[reserveId])) continue;
+    for (uint256 i; i < userCollateralAssets; ++i) {
+      reserveId = userCollaterals[i] >> 128;
 
       // Convert user's supply shares for this reserve to collateral value
       userSupply =
@@ -467,8 +479,8 @@ contract Spoke is ISpoke {
 
     uint256 newUserDebt = baseDebtChange > 0
       ? existingUserDebt + uint256(baseDebtChange) // debt added
-      // force underflow: only possible when user takes repays amount more than net drawn
-      : existingUserDebt - uint256(-baseDebtChange); // debt restored
+      : // force underflow: only possible when user takes repays amount more than net drawn
+      existingUserDebt - uint256(-baseDebtChange); // debt restored
 
     (uint256 newReserveRiskPremium, uint256 newReserveDebt) = MathUtils.addToWeightedAverage(
       reserveRiskPremiumWithoutCurrent,
@@ -628,5 +640,12 @@ contract Spoke is ISpoke {
 
     user.baseBorrowIndex = nextBaseBorrowIndex;
     user.lastUpdateTimestamp = block.timestamp;
+  }
+
+  /// @dev Decodes (, liquidityPremium) from uint256
+  function _compareLp(uint256 a, uint256 b) internal pure returns (bool) {
+    a = a & ((1 << 128) - 1);
+    b = b & ((1 << 128) - 1);
+    return a < b;
   }
 }
