@@ -19,16 +19,16 @@ contract BorrowIndex_Scenario3Test is BorrowIndexBase {
   // t7
   // t8 spoke1 supply (check asset index)
 
-  // Assumptions:
-  // - constant 10% IR
-  // - 1 year between each action
-  // - single asset (weth)
-
   function setUp() public override {
     super.setUp();
     isPrintLogs = false;
   }
 
+  // Assumptions:
+  // - constant 10% IR
+  // - 1 year between each action
+  // - single asset (weth)
+  // - 0 risk premium
   function test_borrowIndexScenario3() public {
     state.assetId = wethAssetId;
     fillSkipTimeAndBaseBorrowRate(state, 365 days, 10_00);
@@ -41,9 +41,11 @@ contract BorrowIndex_Scenario3Test is BorrowIndexBase {
     _testScenario();
   }
 
-  /// forge-config: default.fuzz.runs = 100
-  /// forge-config: default.fuzz.show-logs = true
-  function skip_test_fuzz_borrowIndexScenario3(TestState memory _state) public {
+  // Assumptions:
+  // - single assetId (fuzzed but does not vary from action to action)
+  // - 0 risk premium
+  function fuzz_borrowIndexScenario3(TestState memory _state) public {
+    vm.skip(true, 'pending resolution of precision/rounding/shares impl');
     boundFuzzStates(state, _state);
     vm.assume(
       state.actions[0].supply[1].amount >
@@ -253,16 +255,6 @@ contract BorrowIndex_Scenario3Test is BorrowIndexBase {
         repayer: bob
       });
     } else if (stage == stages[6]) {
-      // console.log('spokes[3].actions.restore[t].amount %e', spokes[3].actions.restore[t].amount);
-      // console.log(
-      //   assets[state.assetId].t_i[t] %e',
-      //   assets[state.assetId].t_i[t].baseDebt.rayMul(states.cumulatedBaseInterest.t_i[t])
-      // );
-      console.log('spokes[0].t_f[5].baseDebt', spokes[0].t_f[5].baseDebt);
-
-      spokes[3].actions.restore[t].amount = assets[state.assetId].t_i[t].baseDebt.rayMul(
-        states.cumulatedBaseInterest.t_i[t]
-      );
       Utils.restore({
         hub: hub,
         assetId: state.assetId,

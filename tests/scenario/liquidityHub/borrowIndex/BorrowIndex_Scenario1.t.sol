@@ -12,17 +12,17 @@ contract BorrowIndex_Scenario1Test is BorrowIndexBase {
   // t1: spoke4 is added; spoke4 draws
   // t2: spoke4 trivial supply action to trigger accrual
 
-  // Assumptions:
-  // - constant 10% IR
-  // - 1 year between each action
-  // - single asset (weth)
-
   function setUp() public override {
     super.setUp();
 
     isPrintLogs = false;
   }
 
+  // Assumptions:
+  // - constant 10% IR
+  // - 1 year between each action
+  // - single asset (weth)
+  // - 0 risk premium
   function test_borrowIndexScenario1() public {
     uint256 assetId = wethAssetId;
 
@@ -36,15 +36,11 @@ contract BorrowIndex_Scenario1Test is BorrowIndexBase {
     _testScenario();
   }
 
-  /// forge-config: default.fuzz.runs = 100
-  /// forge-config: default.fuzz.show-logs = true
+  // Assumptions:
+  // - single assetId (fuzzed but does not vary from action to action)
+  // - 0 risk premium
   function test_fuzz_borrowIndexScenario1(TestState memory _state) public {
     boundFuzzStates(state, _state);
-    // state.actions[0].supply[0].amount = bound(_state.actions[0].supply[0].amount, 1e10, 1e30);
-    // state.actions[0].draw[0].amount = bound(_state.actions[0].draw[0].amount, 1e10, 1e30);
-    // state.actions[3].draw[1].amount = bound(_state.actions[3].draw[1].amount, 1e10, 1e30);
-    // state.actions[3].supply[2].amount = bound(_state.actions[3].supply[2].amount, 1e10, 1e30);
-
     vm.assume(
       state.actions[0].supply[0].amount >
         state.actions[0].draw[0].amount + state.actions[3].draw[1].amount
@@ -55,7 +51,6 @@ contract BorrowIndex_Scenario1Test is BorrowIndexBase {
 
   function precondition(Stage stage) internal override {
     super.precondition(stage);
-
     mockBaseBorrowRate(state.baseBorrowRate[t]);
   }
   function initialAssertions(Stage stage) internal override {

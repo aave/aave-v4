@@ -13,17 +13,17 @@ contract BorrowIndex_Scenario2Test is BorrowIndexBase {
   // t2: spoke4 is added; spoke4 draws
   // t3: spoke4 trivial supply action to trigger accrual
 
-  // Assumptions:
-  // - constant 10% IR
-  // - 1 year between each action
-  // - single asset (weth)
-
   function setUp() public override {
     super.setUp();
 
     isPrintLogs = false;
   }
 
+  // Assumptions:
+  // - constant 10% IR
+  // - 1 year between each action
+  // - single asset (weth)
+  // - 0 risk premium
   function test_borrowIndexScenario2() public {
     state.assetId = wethAssetId;
     fillSkipTimeAndBaseBorrowRate(state, 365 days, 10_00);
@@ -34,8 +34,9 @@ contract BorrowIndex_Scenario2Test is BorrowIndexBase {
     _testScenario();
   }
 
-  /// forge-config: default.fuzz.runs = 100
-  /// forge-config: default.fuzz.show-logs = true
+  // Assumptions:
+  // - single assetId (fuzzed but does not vary from action to action)
+  // - 0 risk premium
   function test_fuzz_borrowIndexScenario2(TestState memory _state) public {
     state.assetId = bound(_state.assetId, 0, NUM_ASSETS - 1);
     boundFuzzStates(state, _state);
