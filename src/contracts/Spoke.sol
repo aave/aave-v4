@@ -76,19 +76,19 @@ contract Spoke is ISpoke {
   }
 
   function getUserDebt(uint256 reserveId, address user) external view returns (uint256, uint256) {
-    (uint256 cumulatedBaseDebt, uint256 cumulatedOutstandingPremium) = _previewUserInterest(
-      _users[user][reserveId],
-      liquidityHub.previewNextBorrowIndex(_reserves[reserveId].assetId)
-    );
-    return (cumulatedBaseDebt, cumulatedOutstandingPremium);
+    return
+      _previewUserInterest(
+        _users[user][reserveId],
+        liquidityHub.previewNextBorrowIndex(_reserves[reserveId].assetId)
+      );
   }
 
   function getReserveDebt(uint256 reserveId) external view returns (uint256, uint256) {
-    (uint256 cumulatedBaseDebt, uint256 cumulatedOutstandingPremium) = _previewSpokeInterest(
-      _reserves[reserveId],
-      liquidityHub.previewNextBorrowIndex(_reserves[reserveId].assetId)
-    );
-    return (cumulatedBaseDebt, cumulatedOutstandingPremium);
+    return
+      _previewSpokeInterest(
+        _reserves[reserveId],
+        liquidityHub.previewNextBorrowIndex(_reserves[reserveId].assetId)
+      );
   }
 
   function getUserCumulativeDebt(uint256 reserveId, address user) external view returns (uint256) {
@@ -476,8 +476,8 @@ contract Spoke is ISpoke {
 
     uint256 newUserDebt = baseDebtChange > 0
       ? existingUserDebt + uint256(baseDebtChange) // debt added
-      : // force underflow: only possible when user takes repays amount more than net drawn
-      existingUserDebt - uint256(-baseDebtChange); // debt restored
+      // force underflow: only possible when user takes repays amount more than net drawn
+      : existingUserDebt - uint256(-baseDebtChange); // debt restored
 
     (uint256 newReserveRiskPremium, uint256 newReserveDebt) = MathUtils.addToWeightedAverage(
       reserveRiskPremiumWithoutCurrent,
