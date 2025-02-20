@@ -424,13 +424,18 @@ contract Spoke is ISpoke {
     // If user has no debt, return 0 risk premium
     if (tempDebt == 0) return 0;
 
+    uint256[] memory packedUserCollaterals = new uint256[](userCollateralAssets);
+    for (uint256 i; i < userCollateralAssets; ++i) {
+      packedUserCollaterals[i] = userCollaterals[i];
+    }
+
     // TODO: Optimize this
     // Sort array of user collaterals by liquidity premium
-    Arrays.sort(userCollaterals, _compareLp);
+    Arrays.sort(packedUserCollaterals, _compareLp);
 
     // While the tempDebt variable is non-zero, loop over collateral reserves, adding up weighted risk premium, and subtract corresponding amt from tempDebt
     for (uint256 i; i < userCollateralAssets; ++i) {
-      reserveId = userCollaterals[i] >> 128;
+      reserveId = packedUserCollaterals[i] >> 128;
 
       // Convert user's supply shares for this reserve to collateral value
       userSupply =
@@ -479,8 +484,8 @@ contract Spoke is ISpoke {
 
     uint256 newUserDebt = baseDebtChange > 0
       ? existingUserDebt + uint256(baseDebtChange) // debt added
-      : // force underflow: only possible when user takes repays amount more than net drawn
-      existingUserDebt - uint256(-baseDebtChange); // debt restored
+      // force underflow: only possible when user takes repays amount more than net drawn
+      : existingUserDebt - uint256(-baseDebtChange); // debt restored
 
     (uint256 newReserveRiskPremium, uint256 newReserveDebt) = MathUtils.addToWeightedAverage(
       reserveRiskPremiumWithoutCurrent,
