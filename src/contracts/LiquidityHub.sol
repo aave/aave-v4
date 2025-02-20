@@ -311,8 +311,9 @@ contract LiquidityHub is ILiquidityHub {
     return _assets[assetId].convertToAssetsDown(shares);
   }
 
+  // TODO: check if this should round down. ERC4626 rounds down in both directions.
   function convertToShares(uint256 assetId, uint256 assets) external view returns (uint256) {
-    return _assets[assetId].convertToSharesDown(assets);
+    return _assets[assetId].convertToSharesUp(assets);
   }
 
   function getBaseInterestRate(uint256 assetId) public view returns (uint256) {
