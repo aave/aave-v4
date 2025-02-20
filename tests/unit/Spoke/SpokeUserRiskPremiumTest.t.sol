@@ -568,70 +568,161 @@ contract SpokeUserRiskPremiumTest is BaseTest {
     );
   }
 
-  /*
-  function test_getUserRiskPremium_asset_price_changes() public {
-    uint256 daiId = 0;
-    uint256 ethId = 1;
+  // TODO: Have an asset value change such that one asset is no longer being used in the equation
+  // TODO: Have an asset value change such that it is still being used in the equation, but it is a different result
 
-    uint256 daiAmount = 10_000e18; // 10k dai -> $10k
-    uint256 ethAmount = 10e18; // 10 eth -> $20k
-    // total collateral -> $30k
-    bool newCollateral = true;
-    bool usingAsCollateral = true;
+  // TODO: Have the last asset change value such that dai2 is actually being used in the equation
+  function test_getUserRiskPremium_fuzz_four_assets_change_one_price(
+    uint256 wbtcSupplyAmount,
+    uint256 wethSupplyAmount,
+    uint256 daiSupplyAmount,
+    uint256 newUsdxPrice
+  ) public {
+    uint256 totalBorrowAmount = MAX_SUPPLY_AMOUNT / 2;
 
-    // ensure DAI/ETH allowed as collateral
-    Utils.updateCollateral(spoke1, daiId, newCollateral);
-    Utils.updateCollateral(spoke1, ethId, newCollateral);
+    newUsdxPrice = bound(newUsdxPrice, 0, 2000e8);
+    /// @dev The multiplications & divisions are to normalize asset values to stablecoin prices to ensure we stay under limits
+    wbtcSupplyAmount = bound(wbtcSupplyAmount, 0, totalBorrowAmount / 50000);
+    wethSupplyAmount = bound(
+      wethSupplyAmount,
+      0,
+      (totalBorrowAmount - wbtcSupplyAmount * 50000) / 2000
+    );
+    daiSupplyAmount = bound(
+      daiSupplyAmount,
+      0,
+      totalBorrowAmount - wbtcSupplyAmount * 50000 - wethSupplyAmount * 2000
+    );
+    uint256 usdxSupplyAmount = totalBorrowAmount -
+      wbtcSupplyAmount *
+      50000 -
+      wethSupplyAmount *
+      2000 -
+      daiSupplyAmount;
 
-    // USER1 supply dai into spoke1
-    deal(address(dai), USER1, daiAmount);
-    Utils.spokeSupply(hub, spoke1, daiId, USER1, daiAmount, USER1);
-    Utils.setUsingAsCollateral(spoke1, USER1, daiId, usingAsCollateral);
+    vm.assume(
+      wbtcSupplyAmount * 50000 + wethSupplyAmount * 2000 + daiSupplyAmount + usdxSupplyAmount <=
+        totalBorrowAmount
+    );
+    assertLe(
+      wbtcSupplyAmount + wethSupplyAmount + daiSupplyAmount + usdxSupplyAmount,
+      totalBorrowAmount,
+      'wrong supply amounts'
+    );
 
-    // USER1 supply eth into spoke1
-    deal(address(eth), USER1, ethAmount);
-    Utils.spokeSupply(hub, spoke1, ethId, USER1, ethAmount, USER1);
-    Utils.setUsingAsCollateral(spoke1, USER1, ethId, usingAsCollateral);
+    // Borrow all value in dai2. Each wbtc is 50000 stablecoins, weth is 2000
+    uint256 dai2BorrowAmount = daiSupplyAmount +
+      usdxSupplyAmount +
+      wethSupplyAmount *
+      2000 +
+      wbtcSupplyAmount *
+      50000;
 
-    uint256[] memory assetIds = new uint256[](4);
-    assetIds[0] = daiId;
-    assetIds[1] = ethId;
+    // Handle supplying max of both dai and dai2
+    deal(address(tokenList.dai), bob, MAX_SUPPLY_AMOUNT * 2);
 
-    // initial user risk premium
-    uint256 userRiskPremium = ISpoke(spoke1).getUserRiskPremium(USER1);
-    uint256 expectedUserRiskPremium = _calculateUserRiskPremium(assetIds);
-    assertEq(userRiskPremium, expectedUserRiskPremium, 'wrong expected user risk premium');
-
-    // prices change for supplied eth
-    oracle.setAssetPrice(daiId, 2e8);
-    oracle.setAssetPrice(ethId, 4000e8);
-
-    // initial user risk premium
-    userRiskPremium = ISpoke(spoke1).getUserRiskPremium(USER1);
-    expectedUserRiskPremium = _calculateUserRiskPremium(assetIds);
-    assertEq(userRiskPremium, expectedUserRiskPremium, 'wrong expected user risk premium');
-  }
-
-  function _calculateUserRiskPremium(uint256[] memory assetIds) internal view returns (uint256) {
-    uint256 totalCollateral = 0;
-    uint256 userRiskPremium = 0;
-    for (uint256 i = 0; i < assetIds.length; i++) {
-      uint256 assetId = assetIds[i];
-      Spoke.UserConfig memory userConfig = spoke1.getUser(assetId, USER1);
-
-      // uint256 assetPrice = oracle.getAssetPrice(assetId);
-      // uint256 userCollateral = hub.convertToAssetsDown(assetId, userConfig.supplyShares) *
-      //   assetPrice;
-      // uint256 liquidityPremium = 1; // TODO: get LP from LH
-      // userRiskPremium += userCollateral * liquidityPremium;
-      // totalCollateral += userCollateral;
+    // Bob supply wbtc into spoke2
+    if (wbtcSupplyAmount > 0) {
+      Utils.spokeSupply(spoke2, spokeInfo[spoke2].wbtc.reserveId, bob, wbtcSupplyAmount, bob);
+      Utils.setUsingAsCollateral(spoke2, bob, spokeInfo[spoke2].wbtc.reserveId, true);
     }
-    return totalCollateral != 0 ? userRiskPremium.wadDiv(totalCollateral) : 0;
-  }
-  */
 
-  // TODO: Test multiple assets with different liquidity premiums
-  // TODO: Fuzz multiple asset amounts with diff liquidity premiums
+    // Bob supply weth into spoke2
+    if (wethSupplyAmount > 0) {
+      Utils.spokeSupply(spoke2, spokeInfo[spoke2].weth.reserveId, bob, wethSupplyAmount, bob);
+      Utils.setUsingAsCollateral(spoke2, bob, spokeInfo[spoke2].weth.reserveId, true);
+    }
+
+    // Bob supply dai into spoke2
+    if (daiSupplyAmount > 0) {
+      Utils.spokeSupply(spoke2, spokeInfo[spoke2].dai.reserveId, bob, daiSupplyAmount, bob);
+      Utils.setUsingAsCollateral(spoke2, bob, spokeInfo[spoke2].dai.reserveId, true);
+    }
+
+    // Bob supply usdx into spoke2
+    if (usdxSupplyAmount > 0) {
+      Utils.spokeSupply(spoke2, spokeInfo[spoke2].usdx.reserveId, bob, usdxSupplyAmount, bob);
+      Utils.setUsingAsCollateral(spoke2, bob, spokeInfo[spoke2].usdx.reserveId, true);
+    }
+
+    // Bob supply dai2 into spoke2
+    Utils.spokeSupply(spoke2, spokeInfo[spoke2].dai2.reserveId, bob, MAX_SUPPLY_AMOUNT, bob);
+    Utils.setUsingAsCollateral(spoke2, bob, spokeInfo[spoke2].dai2.reserveId, true);
+
+    // Bob draw dai2
+    Utils.spokeBorrow(spoke2, spokeInfo[spoke2].dai2.reserveId, bob, dai2BorrowAmount, bob);
+
+    // wbtc, weth, dai, and usdx will each cover part of the debt
+    uint256 expectedUserRiskPremium = (
+      (0 *
+        wbtcSupplyAmount *
+        oracle.getAssetPrice(wbtcAssetId) +
+        wethSupplyAmount *
+        oracle.getAssetPrice(wethAssetId) *
+        10_00 +
+        20_00 *
+        daiSupplyAmount *
+        oracle.getAssetPrice(daiAssetId) +
+        50_00 *
+        usdxSupplyAmount *
+        oracle.getAssetPrice(usdxAssetId))
+    ) /
+      (wbtcSupplyAmount *
+        oracle.getAssetPrice(wbtcAssetId) +
+        wethSupplyAmount *
+        oracle.getAssetPrice(wethAssetId) +
+        daiSupplyAmount *
+        oracle.getAssetPrice(daiAssetId) +
+        usdxSupplyAmount *
+        oracle.getAssetPrice(usdxAssetId));
+
+    assertApproxEqAbs(
+      spoke2.getUserRiskPremium(bob),
+      expectedUserRiskPremium,
+      1,
+      'wrong user risk premium'
+    );
+
+    // Now change the price of usdx
+    oracle.setAssetPrice(usdxAssetId, newUsdxPrice);
+
+    if (newUsdxPrice >= 1e8) {
+      // If price is greater, calc remains the same
+      assertApproxEqAbs(
+        spoke2.getUserRiskPremium(bob),
+        expectedUserRiskPremium,
+        1,
+        'wrong user risk premium'
+      );
+    } else {
+      // Otherwise, the difference from old contribution becomes dai2 contribution (100% lp)
+      uint256 dai2Contribution = usdxSupplyAmount * 1e8 - usdxSupplyAmount * newUsdxPrice;
+      expectedUserRiskPremium =
+        (0 *
+          wbtcSupplyAmount *
+          oracle.getAssetPrice(wbtcAssetId) +
+          wethSupplyAmount *
+          oracle.getAssetPrice(wethAssetId) *
+          10_00 +
+          20_00 *
+          daiSupplyAmount *
+          oracle.getAssetPrice(daiAssetId) +
+          50_00 *
+          usdxSupplyAmount *
+          newUsdxPrice +
+          dai2Contribution *
+          100_00) /
+        (wbtcSupplyAmount *
+          oracle.getAssetPrice(wbtcAssetId) +
+          wethSupplyAmount *
+          oracle.getAssetPrice(wethAssetId) +
+          daiSupplyAmount *
+          oracle.getAssetPrice(daiAssetId) +
+          usdxSupplyAmount *
+          newUsdxPrice +
+          dai2Contribution);
+    }
+  }
 
   // TODO: Test where we change one of the liquidity premiums to make our current data structure out of order to ensure ordering works
 }
