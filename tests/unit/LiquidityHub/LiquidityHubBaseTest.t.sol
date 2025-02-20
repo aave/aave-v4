@@ -36,11 +36,15 @@ contract LiquidityHubBaseTest is BaseTest {
     uint256 expectedSupply2Shares;
   }
 
+  struct DebtAccounting {
+    uint256 cumulativeDebt;
+    uint256 baseDebt;
+    uint256 outstandingPremium;
+  }
+
   struct DebtData {
-    uint256 assetDebt;
-    uint256 assetBaseDebt;
-    uint256[4] spokeDebt;
-    uint256[4] spokeBaseDebt;
+    DebtAccounting asset;
+    DebtAccounting[3] spoke;
   }
 
   function setUp() public override {
@@ -116,14 +120,17 @@ contract LiquidityHubBaseTest is BaseTest {
 
   function _getDebt(uint256 assetId) internal view returns (DebtData memory) {
     DebtData memory debtData;
-    debtData.assetDebt = hub.getAssetDebt(assetId);
-    debtData.assetBaseDebt = hub.getAssetBaseDebt(assetId);
-    debtData.spokeDebt[0] = hub.getSpokeDebt(assetId, address(spoke1));
-    debtData.spokeBaseDebt[0] = hub.getSpokeBaseDebt(assetId, address(spoke1));
-    debtData.spokeDebt[1] = hub.getSpokeDebt(assetId, address(spoke2));
-    debtData.spokeBaseDebt[1] = hub.getSpokeBaseDebt(assetId, address(spoke2));
-    debtData.spokeDebt[2] = hub.getSpokeDebt(assetId, address(spoke3));
-    debtData.spokeBaseDebt[2] = hub.getSpokeBaseDebt(assetId, address(spoke3));
+    debtData.asset.cumulativeDebt = hub.getAssetCumulativeDebt(assetId);
+    (debtData.asset.baseDebt, debtData.asset.outstandingPremium) = hub.getAssetDebt(assetId);
+
+    address[3] memory spokes = [address(spoke1), address(spoke2), address(spoke3)];
+    for (uint256 i = 0; i < 3; i++) {
+      debtData.spoke[i].cumulativeDebt = hub.getSpokeCumulativeDebt(assetId, address(spokes[i]));
+      (debtData.spoke[i].baseDebt, debtData.spoke[i].outstandingPremium) = hub.getSpokeDebt(
+        assetId,
+        spokes[i]
+      );
+    }
     return debtData;
   }
 }

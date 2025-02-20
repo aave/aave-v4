@@ -83,8 +83,9 @@ contract LiquidityHubDrawTest is LiquidityHubBaseTest {
       vm.getBlockTimestamp(),
       'hub dai lastUpdateTimestamp post-draw'
     );
-    assertEq(daiDebtData.assetDebt, drawAmount, 'asset totalDebt');
-    assertEq(daiDebtData.assetBaseDebt, drawAmount, 'asset baseDebt');
+    assertEq(daiDebtData.asset.cumulativeDebt, drawAmount, 'asset cumulativeDebt');
+    assertEq(daiDebtData.asset.baseDebt, drawAmount, 'asset baseDebt');
+    assertEq(daiDebtData.asset.outstandingPremium, 0, 'asset outstandingPremium');
     // spoke1 weth
     assertEq(
       spoke1WethData.suppliedShares,
@@ -127,8 +128,9 @@ contract LiquidityHubDrawTest is LiquidityHubBaseTest {
       daiData.lastUpdateTimestamp,
       'hub spoke1 lastUpdateTimestamp post-draw'
     );
-    assertEq(daiDebtData.spokeDebt[0], drawAmount, 'asset totalDebt');
-    assertEq(daiDebtData.spokeBaseDebt[0], drawAmount, 'asset baseDebt');
+    assertEq(daiDebtData.spoke[0].cumulativeDebt, drawAmount, 'spoke1 cumulativeDebt');
+    assertEq(daiDebtData.spoke[0].baseDebt, drawAmount, 'spoke1 baseDebt');
+    assertEq(daiDebtData.spoke[0].outstandingPremium, 0, 'spoke1 outstandingPremium');
     // spoke2
     assertEq(
       spoke2Data.suppliedShares,
@@ -152,8 +154,9 @@ contract LiquidityHubDrawTest is LiquidityHubBaseTest {
       daiData.lastUpdateTimestamp,
       'hub spoke2 lastUpdateTimestamp post-draw'
     );
-    assertEq(daiDebtData.spokeDebt[1], 0, 'asset totalDebt');
-    assertEq(daiDebtData.spokeBaseDebt[1], 0, 'asset baseDebt');
+    assertEq(daiDebtData.spoke[1].cumulativeDebt, 0, 'spoke2 cumulativeDebt');
+    assertEq(daiDebtData.spoke[1].baseDebt, 0, 'spoke2 baseDebt');
+    assertEq(daiDebtData.spoke[1].outstandingPremium, 0, 'spoke2 outstandingPremium');
     // dai balance
     assertEq(
       tokenList.dai.balanceOf(alice),
@@ -247,13 +250,16 @@ contract LiquidityHubDrawTest is LiquidityHubBaseTest {
     );
     assertEq(daiData.baseDebt, drawAmount, 'hub dai baseDebt post-draw');
     assertEq(daiData.outstandingPremium, 0, 'hub dai outstandingPremium post-draw');
-    assertEq(daiData.baseBorrowIndex, WadRayMath.RAY, 'hub dai baseBorrowIndex post-draw');
+    assertEq(daiData.baseBorrowIndex, INIT_BASE_BORROW_INDEX, 'hub dai baseBorrowIndex post-draw');
     assertEq(daiData.riskPremium, 0, 'hub dai riskPremium post-draw');
     assertEq(
       daiData.lastUpdateTimestamp,
       vm.getBlockTimestamp(),
       'hub dai lastUpdateTimestamp post-draw'
     );
+    assertEq(daiDebtData.asset.cumulativeDebt, drawAmount, 'asset cumulativeDebt');
+    assertEq(daiDebtData.asset.baseDebt, drawAmount, 'asset baseDebt');
+    assertEq(daiDebtData.asset.outstandingPremium, 0, 'asset outstandingPremium');
     // spoke1 weth
     assertEq(
       spoke1WethData.suppliedShares,
@@ -296,8 +302,9 @@ contract LiquidityHubDrawTest is LiquidityHubBaseTest {
       daiData.lastUpdateTimestamp,
       'hub spoke1 lastUpdateTimestamp post-draw'
     );
-    assertEq(daiDebtData.spokeDebt[0], drawAmount, 'asset totalDebt');
-    assertEq(daiDebtData.spokeBaseDebt[0], drawAmount, 'asset baseDebt');
+    assertEq(daiDebtData.spoke[0].cumulativeDebt, drawAmount, 'spoke1 cumulativeDebt');
+    assertEq(daiDebtData.spoke[0].baseDebt, drawAmount, 'spoke1 baseDebt');
+    assertEq(daiDebtData.spoke[0].outstandingPremium, 0, 'spoke1 outstandingPremium');
     // spoke2
     assertEq(
       spoke2Data.suppliedShares,
@@ -321,6 +328,9 @@ contract LiquidityHubDrawTest is LiquidityHubBaseTest {
       daiData.lastUpdateTimestamp,
       'hub spoke2 lastUpdateTimestamp post-draw'
     );
+    assertEq(daiDebtData.spoke[1].cumulativeDebt, 0, 'spoke2 cumulativeDebt');
+    assertEq(daiDebtData.spoke[1].baseDebt, 0, 'spoke2 baseDebt');
+    assertEq(daiDebtData.spoke[1].outstandingPremium, 0, 'spoke2 outstandingPremium');
     // dai balance
     assertEq(
       tokenList.dai.balanceOf(alice),
@@ -335,8 +345,6 @@ contract LiquidityHubDrawTest is LiquidityHubBaseTest {
       daiAmount - drawAmount,
       'hub dai final balance'
     );
-    assertEq(daiDebtData.spokeDebt[1], 0, 'asset totalDebt');
-    assertEq(daiDebtData.spokeBaseDebt[1], 0, 'asset baseDebt');
     // weth balance
     assertEq(
       tokenList.weth.balanceOf(alice),

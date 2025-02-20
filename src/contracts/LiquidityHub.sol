@@ -315,27 +315,25 @@ contract LiquidityHub is ILiquidityHub {
     return _assets[assetId].getInterestRate();
   }
 
-  function getSpokeBaseDebt(uint256 assetId, address spoke) public view returns (uint256) {
-    (uint256 cumulatedBaseDebt, ) = _spokes[assetId][spoke].previewInterest(
-      _assets[assetId].previewNextBorrowIndex()
-    );
-    return cumulatedBaseDebt;
+  function getSpokeDebt(uint256 assetId, address spoke) public view returns (uint256, uint256) {
+    (uint256 cumulatedBaseDebt, uint256 cumulatedOutstandingPremium) = _spokes[assetId][spoke]
+      .previewInterest(_assets[assetId].previewNextBorrowIndex());
+    return (cumulatedBaseDebt, cumulatedOutstandingPremium);
   }
 
-  function getAssetBaseDebt(uint256 assetId) public view returns (uint256) {
-    (uint256 cumulatedBaseDebt, ) = _assets[assetId].previewInterest(
-      _assets[assetId].previewNextBorrowIndex()
-    );
-    return cumulatedBaseDebt;
+  function getAssetDebt(uint256 assetId) public view returns (uint256, uint256) {
+    (uint256 cumulatedBaseDebt, uint256 cumulatedOutstandingPremium) = _assets[assetId]
+      .previewInterest(_assets[assetId].previewNextBorrowIndex());
+    return (cumulatedBaseDebt, cumulatedOutstandingPremium);
   }
 
-  function getSpokeDebt(uint256 assetId, address spoke) public view returns (uint256) {
+  function getSpokeCumulativeDebt(uint256 assetId, address spoke) public view returns (uint256) {
     (uint256 cumulatedBaseDebt, uint256 cumulatedOutstandingPremium) = _spokes[assetId][spoke]
       .previewInterest(_assets[assetId].previewNextBorrowIndex());
     return cumulatedBaseDebt + cumulatedOutstandingPremium;
   }
 
-  function getAssetDebt(uint256 assetId) public view returns (uint256) {
+  function getAssetCumulativeDebt(uint256 assetId) public view returns (uint256) {
     (uint256 cumulatedBaseDebt, uint256 cumulatedOutstandingPremium) = _assets[assetId]
       .previewInterest(_assets[assetId].previewNextBorrowIndex());
     return cumulatedBaseDebt + cumulatedOutstandingPremium;

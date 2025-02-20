@@ -75,7 +75,23 @@ contract Spoke is ISpoke {
     oracle = oracleAddress;
   }
 
-  function getUserDebt(uint256 reserveId, address user) external view returns (uint256) {
+  function getUserDebt(uint256 reserveId, address user) external view returns (uint256, uint256) {
+    (uint256 cumulatedBaseDebt, uint256 cumulatedOutstandingPremium) = _previewUserInterest(
+      _users[user][reserveId],
+      liquidityHub.previewNextBorrowIndex(_reserves[reserveId].assetId)
+    );
+    return (cumulatedBaseDebt, cumulatedOutstandingPremium);
+  }
+
+  function getReserveDebt(uint256 reserveId) external view returns (uint256, uint256) {
+    (uint256 cumulatedBaseDebt, uint256 cumulatedOutstandingPremium) = _previewSpokeInterest(
+      _reserves[reserveId],
+      liquidityHub.previewNextBorrowIndex(_reserves[reserveId].assetId)
+    );
+    return (cumulatedBaseDebt, cumulatedOutstandingPremium);
+  }
+
+  function getUserCumulativeDebt(uint256 reserveId, address user) external view returns (uint256) {
     (uint256 cumulatedBaseDebt, uint256 cumulatedOutstandingPremium) = _previewUserInterest(
       _users[user][reserveId],
       liquidityHub.previewNextBorrowIndex(_reserves[reserveId].assetId)
@@ -83,7 +99,7 @@ contract Spoke is ISpoke {
     return cumulatedBaseDebt + cumulatedOutstandingPremium;
   }
 
-  function getReserveDebt(uint256 reserveId) external view returns (uint256) {
+  function getReserveCumulativeDebt(uint256 reserveId) external view returns (uint256) {
     (uint256 cumulatedBaseDebt, uint256 cumulatedOutstandingPremium) = _previewSpokeInterest(
       _reserves[reserveId],
       liquidityHub.previewNextBorrowIndex(_reserves[reserveId].assetId)
