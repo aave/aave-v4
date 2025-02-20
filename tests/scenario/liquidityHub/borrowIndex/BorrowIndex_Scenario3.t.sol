@@ -10,7 +10,7 @@ contract BorrowIndex_Scenario3Test is BorrowIndexBase {
   // t0	asset added, spoke1 added
   // t1	spoke1 supply, spoke1 draw
   // t2	spoke4 added
-  // t3	spoke4 draw
+  // t3	spoke4 supply, spoke4 draw
   // t4	spoke4 supply
   // t5 spoke1 repay
   // t6 spoke4 repay
@@ -32,6 +32,7 @@ contract BorrowIndex_Scenario3Test is BorrowIndexBase {
     fillSkipTimeAndBaseBorrowRate(state, 365 days, 10_00);
     state.actions[0].supply[1].amount = 10e18;
     state.actions[0].draw[1].amount = 5e18;
+    state.actions[3].supply[3].amount = 10e18;
     state.actions[3].draw[3].amount = 1e18;
     state.actions[3].supply[4].amount = 1e8;
     state.actions[0].supply[8].amount = 2e18;
@@ -224,6 +225,15 @@ contract BorrowIndex_Scenario3Test is BorrowIndexBase {
     } else if (stage == stages[2]) {
       hub.addSpoke(state.assetId, spokeConfig, spokes[3].addr);
     } else if (stage == stages[3]) {
+      Utils.supply({
+        hub: hub,
+        assetId: state.assetId,
+        spoke: spokes[3].addr,
+        amount: spokes[3].actions.supply[t].amount,
+        riskPremium: 0,
+        user: bob,
+        to: spokes[3].addr
+      });
       Utils.draw({
         hub: hub,
         assetId: state.assetId,

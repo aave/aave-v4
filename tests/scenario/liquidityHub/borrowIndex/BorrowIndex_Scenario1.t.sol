@@ -8,7 +8,7 @@ contract BorrowIndex_Scenario1Test is BorrowIndexBase {
 
   // Scenario:
   // t0: asset added, spoke1 added, spoke1 draws
-  // t1: spoke4 is added; spoke4 draws
+  // t1: spoke4 is added; spoke4 supplies, spoke4 draws
   // t2: spoke4 trivial supply action to trigger accrual
 
   function setUp() public override {
@@ -29,6 +29,7 @@ contract BorrowIndex_Scenario1Test is BorrowIndexBase {
     fillSkipTimeAndBaseBorrowRate(state, 365 days, 10_00);
     state.actions[0].supply[0].amount = 10e18;
     state.actions[0].draw[0].amount = 5e18;
+    state.actions[3].supply[1].amount = 10e18;
     state.actions[3].draw[1].amount = 1e18;
     state.actions[3].supply[2].amount = 1e8;
 
@@ -182,6 +183,15 @@ contract BorrowIndex_Scenario1Test is BorrowIndexBase {
       });
     } else if (stage == stages[1]) {
       hub.addSpoke(state.assetId, spokeConfig, spokes[3].addr);
+      Utils.supply({
+        hub: hub,
+        assetId: state.assetId,
+        spoke: spokes[3].addr,
+        amount: spokes[3].actions.supply[t].amount,
+        riskPremium: 0,
+        user: bob,
+        to: spokes[3].addr
+      });
       Utils.draw({
         hub: hub,
         assetId: state.assetId,
