@@ -19,7 +19,7 @@ library PercentageMath {
    * @notice Executes a percentage multiplication
    * @dev assembly optimized for improved gas savings, see https://twitter.com/transmissions11/status/1451131036377571328
    * @param value The value of which the percentage needs to be calculated
-   * @param percentage The percentage of the value to be calculated
+   * @param percentage The percentage of the value to be calculated (in BPS)
    * @return result value percentmul percentage
    */
   function percentMul(uint256 value, uint256 percentage) internal pure returns (uint256 result) {
@@ -42,7 +42,7 @@ library PercentageMath {
    * @notice Executes a percentage division
    * @dev assembly optimized for improved gas savings, see https://twitter.com/transmissions11/status/1451131036377571328
    * @param value The value of which the percentage needs to be calculated
-   * @param percentage The percentage of the value to be calculated
+   * @param percentage The percentage of the value to be calculated (in BPS)
    * @return result value percentdiv percentage
    */
   function percentDiv(uint256 value, uint256 percentage) internal pure returns (uint256 result) {
