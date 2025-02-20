@@ -39,6 +39,8 @@ contract SpokeSupplyTest is BaseTest {
     vm.stopPrank();
   }
 
+  // TODO: change all assertions to be from getters instead of internal storage
+
   function test_supply() public {
     uint256 amount = 100e18;
 
@@ -93,9 +95,9 @@ contract SpokeSupplyTest is BaseTest {
     assertEq(reserveData.suppliedShares, 0, 'reserve supply shares pre-supply');
     assertEq(userData.baseDebt, 0, 'user base debt pre-supply');
 
-    vm.prank(bob);
     vm.expectEmit(address(spoke1));
     emit Supplied(spokeInfo[spoke1].dai.reserveId, amount, bob);
+    vm.prank(bob);
     spoke1.supply(spokeInfo[spoke1].dai.reserveId, amount);
 
     userData = spoke1.getUser(spokeInfo[spoke1].dai.reserveId, bob);
@@ -117,7 +119,53 @@ contract SpokeSupplyTest is BaseTest {
     assertEq(userData.baseDebt, 0, 'user base debt post-supply');
   }
 
-  // TODO: test supply reverts with 0 amount
-  // TODO: test supply with increased index and no premium (where sharesAmount < amount)
-  // TODO: test supply with increased increased index and premium
+  function test_supply_revertsWith_invalid_supply_amount() public {
+    uint256 amount = 0;
+
+    vm.prank(bob);
+    vm.expectRevert(TestErrors.INVALID_SUPPLY_AMOUNT);
+    spoke1.supply(spokeInfo[spoke1].dai.reserveId, amount);
+  }
+
+  function test_supply_index_increase_no_premium() public {
+    // Alice supply/draw to start index
+    // asset with LP = 0
+    // time skip to increase index
+
+    vm.expectEmit(address(spoke1));
+    emit Supplied(spokeInfo[spoke1].dai.reserveId, amount, bob);
+
+    vm.prank(bob);
+    spoke1.supply(spokeInfo[spoke1].dai.reserveId, amount);
+  }
+
+  function test_supply_fuzz_index_increase_no_premium() public {
+    // fuzz supply/draw amount for alice
+    // fuzz supply amount for bob
+
+    // Alice supply/draw to start index
+    // asset with LP = 0
+    // time skip to increase index
+
+    vm.expectEmit(address(spoke1));
+    emit Supplied(spokeInfo[spoke1].dai.reserveId, amount, bob);
+
+    vm.prank(bob);
+    spoke1.supply(spokeInfo[spoke1].dai.reserveId, amount);
+  }
+
+  function test_supply_fuzz_index_increase_with_premium() public {
+    // fuzz supply/draw amount for Alice
+    // fuzz supply amount for bob
+
+    // Alice supply/draw to start index
+    // asset with LP > 0
+    // time skip to increase index
+
+    vm.expectEmit(address(spoke1));
+    emit Supplied(spokeInfo[spoke1].dai.reserveId, amount, bob);
+
+    vm.prank(bob);
+    spoke1.supply(spokeInfo[spoke1].dai.reserveId, amount);
+  }
 }
