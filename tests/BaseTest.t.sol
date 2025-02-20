@@ -386,10 +386,10 @@ abstract contract BaseTest is Test, Events {
     );
     spokeInfo[spoke1].usdx.liquidityPremium = usdxConfig.liquidityPremium;
 
+    hub.addSpoke(usdxAssetId, spokeConfig, address(spoke1));
     hub.addSpoke(wethAssetId, spokeConfig, address(spoke1));
     hub.addSpoke(wbtcAssetId, spokeConfig, address(spoke1));
     hub.addSpoke(daiAssetId, spokeConfig, address(spoke1));
-    hub.addSpoke(usdxAssetId, spokeConfig, address(spoke1));
 
     // Spoke 2 reserve configs
     wbtcConfig = Spoke.ReserveConfig({
@@ -446,10 +446,10 @@ abstract contract BaseTest is Test, Events {
     );
     spokeInfo[spoke2].usdx.liquidityPremium = usdxConfig.liquidityPremium;
 
+    hub.addSpoke(usdxAssetId, spokeConfig, address(spoke2));
     hub.addSpoke(wbtcAssetId, spokeConfig, address(spoke2));
     hub.addSpoke(wethAssetId, spokeConfig, address(spoke2));
     hub.addSpoke(daiAssetId, spokeConfig, address(spoke2));
-    hub.addSpoke(usdxAssetId, spokeConfig, address(spoke2));
 
     // Spoke 3 reserve configs
     daiConfig = Spoke.ReserveConfig({
@@ -506,10 +506,10 @@ abstract contract BaseTest is Test, Events {
     );
     spokeInfo[spoke3].wbtc.liquidityPremium = wbtcConfig.liquidityPremium;
 
+    hub.addSpoke(wbtcAssetId, spokeConfig, address(spoke3));
     hub.addSpoke(daiAssetId, spokeConfig, address(spoke3));
     hub.addSpoke(usdxAssetId, spokeConfig, address(spoke3));
     hub.addSpoke(wethAssetId, spokeConfig, address(spoke3));
-    hub.addSpoke(wbtcAssetId, spokeConfig, address(spoke3));
 
     // Spoke 2 to have an extra dai reserve
     hub.addAsset(
