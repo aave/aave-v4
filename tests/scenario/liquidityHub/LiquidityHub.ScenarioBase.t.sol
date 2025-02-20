@@ -18,6 +18,10 @@ abstract contract LiquidityHubScenarioBaseTest is BaseTest {
   uint256 internal constant NUM_TIMESTAMPS = 10;
   uint256 internal constant NUM_SPOKES = 4;
   uint256 internal constant NUM_ASSETS = 4;
+  uint256 internal constant MAX_BOUNDED_AMOUNT = 1e30;
+  uint256 internal constant MIN_BOUNDED_AMOUNT = 1e10;
+  uint256 internal constant MAX_SKIP_TIME = 10_000 days;
+  uint256 internal constant MAX_BASE_BORROW_RATE = 1000_00; // BPS
   bool internal isPrintLogs = false;
   uint256 internal t; // internal stage index
 
@@ -158,6 +162,7 @@ abstract contract LiquidityHubScenarioBaseTest is BaseTest {
     );
   }
 
+  // initialize state array for non-fuzz tests with constant skipTimes and borrowRates across actions
   function fillSkipTimeAndBaseBorrowRate(
     TestState storage state,
     uint256 time,
@@ -169,24 +174,37 @@ abstract contract LiquidityHubScenarioBaseTest is BaseTest {
     }
   }
 
+  // TODO: bound fuzz states for riskPremium
   function boundFuzzStates(
     TestState storage state,
     TestState memory _state
   ) internal returns (uint256) {
     state.assetId = bound(_state.assetId, 0, NUM_ASSETS - 1);
     for (uint256 i = 0; i < NUM_TIMESTAMPS; i++) {
-      state.baseBorrowRate[i] = bound(_state.baseBorrowRate[0], 0, 1000_00);
-      state.skipTime[i] = bound(_state.skipTime[0], 0, 10_000 days);
+      state.baseBorrowRate[i] = bound(_state.baseBorrowRate[0], 0, MAX_BASE_BORROW_RATE);
+      state.skipTime[i] = bound(_state.skipTime[0], 0, MAX_BASE_BORROW_RATE);
 
       for (uint256 j = 0; j < NUM_SPOKES; j++) {
-        state.actions[j].supply[i].amount = bound(_state.actions[j].supply[i].amount, 1e10, 1e30);
-        state.actions[j].draw[i].amount = bound(_state.actions[j].draw[i].amount, 1e10, 1e30);
+        state.actions[j].supply[i].amount = bound(
+          _state.actions[j].supply[i].amount,
+          MIN_BOUNDED_AMOUNT,
+          MAX_BOUNDED_AMOUNT
+        );
+        state.actions[j].draw[i].amount = bound(
+          _state.actions[j].draw[i].amount,
+          MIN_BOUNDED_AMOUNT,
+          MAX_BOUNDED_AMOUNT
+        );
         state.actions[j].withdraw[i].amount = bound(
           _state.actions[j].withdraw[i].amount,
-          1e10,
-          1e30
+          MIN_BOUNDED_AMOUNT,
+          MAX_BOUNDED_AMOUNT
         );
-        state.actions[j].restore[i].amount = bound(_state.actions[j].restore[i].amount, 1e10, 1e30);
+        state.actions[j].restore[i].amount = bound(
+          _state.actions[j].restore[i].amount,
+          MIN_BOUNDED_AMOUNT,
+          MAX_BOUNDED_AMOUNT
+        );
       }
     }
   }
