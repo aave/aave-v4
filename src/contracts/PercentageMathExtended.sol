@@ -2,7 +2,7 @@
 pragma solidity ^0.8.0;
 
 /**
- * @title PercentageMath library
+ * @title PercentageMathExtended library
  * @author Aave
  * @notice Provides functions to perform percentage calculations
  * @dev Percentages are defined by default with 2 decimals of precision (100.00). The precision is indicated by PERCENTAGE_FACTOR
@@ -16,7 +16,7 @@ library PercentageMathExtended {
    * @dev assembly optimized for improved gas savings, see https://twitter.com/transmissions11/status/1451131036377571328
    * @param value The value of which the percentage needs to be calculated
    * @param percentage The percentage of the value to be calculated
-   * @return result value percentmul percentage
+   * @return result value percentMul percentage
    */
   function percentMulDown(
     uint256 value,
@@ -37,7 +37,7 @@ library PercentageMathExtended {
    * @dev assembly optimized for improved gas savings, see https://twitter.com/transmissions11/status/1451131036377571328
    * @param value The value of which the percentage needs to be calculated
    * @param percentage The percentage of the value to be calculated
-   * @return result value percentmul percentage
+   * @return result value percentMul percentage
    */
   function percentMulUp(uint256 value, uint256 percentage) internal pure returns (uint256 result) {
     // to avoid overflow, value <= type(uint256).max / percentage
@@ -52,11 +52,11 @@ library PercentageMathExtended {
   }
 
   /**
-   * @notice Executes a percentage division, rpunded down
+   * @notice Executes a percentage division, rounded down
    * @dev assembly optimized for improved gas savings, see https://twitter.com/transmissions11/status/1451131036377571328
    * @param value The value of which the percentage needs to be calculated
    * @param percentage The percentage of the value to be calculated
-   * @return result value percentdiv percentage
+   * @return result value percentDiv percentage
    */
   function percentDivDown(
     uint256 value,
@@ -77,7 +77,7 @@ library PercentageMathExtended {
    * @dev assembly optimized for improved gas savings, see https://twitter.com/transmissions11/status/1451131036377571328
    * @param value The value of which the percentage needs to be calculated
    * @param percentage The percentage of the value to be calculated
-   * @return result value percentdiv percentage
+   * @return result value percentDiv percentage
    */
   function percentDivUp(uint256 value, uint256 percentage) internal pure returns (uint256 result) {
     // to avoid overflow, value <= type(uint256).max / PERCENTAGE_FACTOR
