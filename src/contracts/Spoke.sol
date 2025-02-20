@@ -107,6 +107,26 @@ contract Spoke is ISpoke {
     return cumulatedBaseDebt + cumulatedOutstandingPremium;
   }
 
+  function getSuppliedAmount(uint256 reserveId, address user) external view returns (uint256) {
+    return
+      liquidityHub.convertToAssets(
+        _reserves[reserveId].assetId,
+        _users[user][reserveId].suppliedShares
+      );
+  }
+
+  function getSuppliedShares(uint256 reserveId, address user) external view returns (uint256) {
+    return _users[user][reserveId].suppliedShares;
+  }
+
+  function getReserveRiskPremium(uint256 reserveId) external view returns (uint256) {
+    return _reserves[reserveId].riskPremium.derayify();
+  }
+
+  function getUserRiskPremium(uint256 reserveId, address user) external view returns (uint256) {
+    return _users[user][reserveId].riskPremium.derayify();
+  }
+
   /// governance
   function updateReserveConfig(uint256 reserveId, ReserveConfig calldata params) external {
     // TODO: AccessControl

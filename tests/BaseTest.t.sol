@@ -18,7 +18,6 @@ import {DataTypes} from 'src/libraries/types/DataTypes.sol';
 import {TestnetERC20} from './mocks/TestnetERC20.sol';
 import {MockERC20} from './mocks/MockERC20.sol';
 import {MockPriceOracle, IPriceOracle} from './mocks/MockPriceOracle.sol';
-import {MockSpokeCreditLine} from './mocks/MockSpokeCreditLine.sol';
 import {Utils} from './Utils.t.sol';
 
 // library Constants {}
@@ -101,7 +100,6 @@ abstract contract BaseTest is Test, Events {
   Spoke internal spoke1;
   Spoke internal spoke2;
   Spoke internal spoke3;
-  MockSpokeCreditLine internal spokeCreditLine;
   DefaultReserveInterestRateStrategy internal irStrategy;
   DefaultReserveInterestRateStrategy internal creditLineIRStrategy;
 

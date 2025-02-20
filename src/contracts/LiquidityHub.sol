@@ -307,6 +307,14 @@ contract LiquidityHub is ILiquidityHub {
     return _assets[assetId].convertToAssetsDown(shares);
   }
 
+  function convertToAssets(uint256 assetId, uint256 shares) external view returns (uint256) {
+    return _assets[assetId].convertToAssetsDown(shares);
+  }
+
+  function convertToShares(uint256 assetId, uint256 assets) external view returns (uint256) {
+    return _assets[assetId].convertToSharesDown(assets);
+  }
+
   function getBaseInterestRate(uint256 assetId) public view returns (uint256) {
     return _assets[assetId].baseBorrowRate;
   }
@@ -315,24 +323,40 @@ contract LiquidityHub is ILiquidityHub {
     return _assets[assetId].getInterestRate();
   }
 
-  function getSpokeDebt(uint256 assetId, address spoke) public view returns (uint256, uint256) {
+  function getSpokeDebt(uint256 assetId, address spoke) external view returns (uint256, uint256) {
     return _spokes[assetId][spoke].previewInterest(_assets[assetId].previewNextBorrowIndex());
   }
 
-  function getAssetDebt(uint256 assetId) public view returns (uint256, uint256) {
+  function getAssetDebt(uint256 assetId) external view returns (uint256, uint256) {
     return _assets[assetId].previewInterest(_assets[assetId].previewNextBorrowIndex());
   }
 
-  function getSpokeCumulativeDebt(uint256 assetId, address spoke) public view returns (uint256) {
+  function getSpokeCumulativeDebt(uint256 assetId, address spoke) external view returns (uint256) {
     (uint256 cumulatedBaseDebt, uint256 cumulatedOutstandingPremium) = _spokes[assetId][spoke]
       .previewInterest(_assets[assetId].previewNextBorrowIndex());
     return cumulatedBaseDebt + cumulatedOutstandingPremium;
   }
 
-  function getAssetCumulativeDebt(uint256 assetId) public view returns (uint256) {
+  function getAssetCumulativeDebt(uint256 assetId) external view returns (uint256) {
     (uint256 cumulatedBaseDebt, uint256 cumulatedOutstandingPremium) = _assets[assetId]
       .previewInterest(_assets[assetId].previewNextBorrowIndex());
     return cumulatedBaseDebt + cumulatedOutstandingPremium;
+  }
+
+  function getSuppliedAmount(uint256 assetId, address spoke) external view returns (uint256) {
+    return _assets[assetId].convertToAssetsDown(_spokes[assetId][spoke].suppliedShares);
+  }
+
+  function getSuppliedShares(uint256 assetId, address spoke) external view returns (uint256) {
+    return _spokes[assetId][spoke].suppliedShares;
+  }
+
+  function getAssetRiskPremium(uint256 assetId) external view returns (uint256) {
+    return _assets[assetId].riskPremium.derayify();
+  }
+
+  function getSpokeRiskPremium(uint256 assetId, address spoke) external view returns (uint256) {
+    return _spokes[assetId][spoke].riskPremium.derayify();
   }
 
   //
