@@ -40,10 +40,10 @@ contract BorrowIndex_Scenario1Test is BorrowIndexBase {
   /// forge-config: default.fuzz.show-logs = true
   function test_fuzz_borrowIndexScenario1(TestState memory _state) public {
     boundFuzzStates(state, _state);
-    state.actions[0].supply[0].amount = bound(_state.actions[0].supply[0].amount, 1e10, 1e30);
-    state.actions[0].draw[0].amount = bound(_state.actions[0].draw[0].amount, 1e10, 1e30);
-    state.actions[3].draw[1].amount = bound(_state.actions[3].draw[1].amount, 1e10, 1e30);
-    state.actions[3].supply[2].amount = bound(_state.actions[3].supply[2].amount, 1e10, 1e30);
+    // state.actions[0].supply[0].amount = bound(_state.actions[0].supply[0].amount, 1e10, 1e30);
+    // state.actions[0].draw[0].amount = bound(_state.actions[0].draw[0].amount, 1e10, 1e30);
+    // state.actions[3].draw[1].amount = bound(_state.actions[3].draw[1].amount, 1e10, 1e30);
+    // state.actions[3].supply[2].amount = bound(_state.actions[3].supply[2].amount, 1e10, 1e30);
 
     vm.assume(
       state.actions[0].supply[0].amount >

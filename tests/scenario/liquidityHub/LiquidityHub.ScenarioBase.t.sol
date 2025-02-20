@@ -177,6 +177,17 @@ abstract contract LiquidityHubScenarioBaseTest is BaseTest {
     for (uint256 i = 0; i < NUM_TIMESTAMPS; i++) {
       state.baseBorrowRate[i] = bound(_state.baseBorrowRate[0], 0, 1000_00);
       state.skipTime[i] = bound(_state.skipTime[0], 0, 10_000 days);
+
+      for (uint256 j = 0; j < NUM_SPOKES; j++) {
+        state.actions[j].supply[i].amount = bound(_state.actions[j].supply[i].amount, 1e10, 1e30);
+        state.actions[j].draw[i].amount = bound(_state.actions[j].draw[i].amount, 1e10, 1e30);
+        state.actions[j].withdraw[i].amount = bound(
+          _state.actions[j].withdraw[i].amount,
+          1e10,
+          1e30
+        );
+        state.actions[j].restore[i].amount = bound(_state.actions[j].restore[i].amount, 1e10, 1e30);
+      }
     }
   }
 }

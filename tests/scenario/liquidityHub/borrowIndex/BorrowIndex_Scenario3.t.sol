@@ -255,7 +255,7 @@ contract BorrowIndex_Scenario3Test is BorrowIndexBase {
     } else if (stage == stages[6]) {
       // console.log('spokes[3].actions.restore[t].amount %e', spokes[3].actions.restore[t].amount);
       // console.log(
-      //   'ssets[state.assetId].t_i[t] %e',
+      //   assets[state.assetId].t_i[t] %e',
       //   assets[state.assetId].t_i[t].baseDebt.rayMul(states.cumulatedBaseInterest.t_i[t])
       // );
       console.log('spokes[0].t_f[5].baseDebt', spokes[0].t_f[5].baseDebt);
