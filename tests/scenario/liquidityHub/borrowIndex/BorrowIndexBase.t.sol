@@ -4,10 +4,6 @@ pragma solidity ^0.8.0;
 import 'tests/scenario/liquidityHub/LiquidityHub.ScenarioBase.t.sol';
 
 contract BorrowIndexBase is LiquidityHubScenarioBaseTest {
-  using SharesMath for uint256;
-  using WadRayMath for uint256;
-  using PercentageMath for uint256;
-
   uint256 internal expectedPrecision = 0.00_00000001e18; // 1e18 is 100%; 0.0000001%
 
   function setUp() public virtual override {
@@ -45,7 +41,6 @@ contract BorrowIndexBase is LiquidityHubScenarioBaseTest {
 
   function finalAssertions(Stage stage) internal virtual override {
     super.finalAssertions(stage);
-
     assets[state.assetId].t_f[t] = hub.getAsset(state.assetId);
     for (uint256 i = 0; i < NUM_SPOKES; i++) {
       spokes[i].t_f[t] = hub.getSpoke(state.assetId, spokes[i].addr);

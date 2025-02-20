@@ -2,10 +2,9 @@
 pragma solidity ^0.8.0;
 
 import 'tests/scenario/liquidityHub/borrowIndex/BorrowIndexBase.t.sol';
+
 contract BorrowIndex_Scenario1Test is BorrowIndexBase {
-  using SharesMath for uint256;
   using WadRayMath for uint256;
-  using PercentageMath for uint256;
 
   // Scenario:
   // t0: asset added, spoke1 added, spoke1 draws
@@ -303,19 +302,21 @@ contract BorrowIndex_Scenario1Test is BorrowIndexBase {
       );
     } else if (stage == stages[2]) {
       states.cumulatedBaseInterest.t_f[t] = MathUtils.calculateLinearInterest(
-        assets[state.assetId].t_f[1].baseBorrowRate,
-        timeAt(stages[1])
+        assets[state.assetId].t_f[t - 1].baseBorrowRate,
+        timeAt(stages[t - 1])
       );
 
       // asset
       assertEq(
         assets[state.assetId].t_f[t].baseBorrowIndex,
-        assets[state.assetId].t_f[1].baseBorrowIndex.rayMul(states.cumulatedBaseInterest.t_f[t]),
+        assets[state.assetId].t_f[t - 1].baseBorrowIndex.rayMul(
+          states.cumulatedBaseInterest.t_f[t]
+        ),
         't2_f Asset index'
       );
       assertApproxEqRel(
         assets[state.assetId].t_f[t].baseDebt,
-        assets[state.assetId].t_f[1].baseDebt.rayMul(states.cumulatedBaseInterest.t_f[t]),
+        assets[state.assetId].t_f[t - 1].baseDebt.rayMul(states.cumulatedBaseInterest.t_f[t]),
         expectedPrecision,
         't2_f Asset base debt'
       );
@@ -324,13 +325,13 @@ contract BorrowIndex_Scenario1Test is BorrowIndexBase {
       // nothing changes vs t0 because no spoke1 action
       assertEq(
         spokes[0].t_f[t].baseBorrowIndex,
-        spokes[0].t_f[0].baseBorrowIndex,
+        spokes[0].t_f[t - 2].baseBorrowIndex,
         't2_f Spoke1 index'
       );
-      assertEq(spokes[0].t_f[t].baseDebt, spokes[0].t_f[0].baseDebt, 't2_f Spoke1 base debt');
+      assertEq(spokes[0].t_f[t].baseDebt, spokes[0].t_f[t - 2].baseDebt, 't2_f Spoke1 base debt');
       assertEq(
         spokes[0].t_f[t].lastUpdateTimestamp,
-        spokes[0].t_f[0].lastUpdateTimestamp,
+        spokes[0].t_f[t - 2].lastUpdateTimestamp,
         't2_f Spoke1 lastUpdateTimestamp'
       );
 
@@ -342,7 +343,7 @@ contract BorrowIndex_Scenario1Test is BorrowIndexBase {
       );
       assertApproxEqRel(
         spokes[3].t_f[t].baseDebt,
-        spokes[3].actions.draw[1].amount.rayMul(states.cumulatedBaseInterest.t_f[t]),
+        spokes[3].actions.draw[t - 1].amount.rayMul(states.cumulatedBaseInterest.t_f[t]),
         expectedPrecision,
         't2_f Spoke4 base debt'
       );

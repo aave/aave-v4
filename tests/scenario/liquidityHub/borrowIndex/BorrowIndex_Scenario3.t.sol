@@ -4,9 +4,7 @@ pragma solidity ^0.8.0;
 import 'tests/scenario/liquidityHub/borrowIndex/BorrowIndexBase.t.sol';
 
 contract BorrowIndex_Scenario3Test is BorrowIndexBase {
-  using SharesMath for uint256;
   using WadRayMath for uint256;
-  using PercentageMath for uint256;
 
   // Scenario:
   // t0	asset added, spoke1 added
