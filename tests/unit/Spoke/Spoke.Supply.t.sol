@@ -75,52 +75,64 @@ contract SpokeSupplyTest is BaseTest {
 
     TestData[2] memory userData;
     TestData[2] memory reserveData;
-    uint256 t = 0;
+    uint256 phase = 0;
 
-    userData[t] = _getUserData(spokeInfo[spoke1].dai.reserveId, bob);
-    reserveData[t] = _getReserveData(spokeInfo[spoke1].dai.reserveId);
+    userData[phase] = _getUserData(spokeInfo[spoke1].dai.reserveId, bob);
+    reserveData[phase] = _getReserveData(spokeInfo[spoke1].dai.reserveId);
 
     // dai balance
     assertEq(tokenList.dai.balanceOf(bob), amount, 'user token balance pre-supply');
     assertEq(tokenList.dai.balanceOf(address(hub)), 0, 'hub token balance pre-supply');
     assertEq(tokenList.dai.balanceOf(address(spoke1)), 0, 'spoke token balance pre-supply');
     // reserve
-    assertEq(reserveData[t].baseDebt, 0, 'reserve baseDebt pre-supply');
-    assertEq(reserveData[t].outstandingPremium, 0, 'reserve outstandingPremium pre-supply');
-    assertEq(reserveData[t].suppliedShares, 0, 'reserve suppliedShares pre-supply');
+    assertEq(reserveData[phase].baseDebt, 0, 'reserve baseDebt pre-supply');
+    assertEq(reserveData[phase].outstandingPremium, 0, 'reserve outstandingPremium pre-supply');
+    assertEq(reserveData[phase].suppliedShares, 0, 'reserve suppliedShares pre-supply');
+    assertEq(reserveData[phase].lastUpdateTimestamp, 0, 'reserve lastUpdateTimestamp pre-supply');
     // user
-    assertEq(userData[t].baseDebt, 0, 'user baseDebt pre-supply');
-    assertEq(userData[t].outstandingPremium, 0, 'user outstandingPremium pre-supply');
-    assertEq(userData[t].suppliedShares, 0, 'user suppliedShares pre-supply');
+    assertEq(userData[phase].baseDebt, 0, 'user baseDebt pre-supply');
+    assertEq(userData[phase].outstandingPremium, 0, 'user outstandingPremium pre-supply');
+    assertEq(userData[phase].suppliedShares, 0, 'user suppliedShares pre-supply');
+    assertEq(userData[phase].lastUpdateTimestamp, 0, 'user lastUpdateTimestamp pre-supply');
 
     vm.prank(bob);
     vm.expectEmit(address(spoke1));
     emit Supplied(spokeInfo[spoke1].dai.reserveId, amount, bob);
     spoke1.supply(spokeInfo[spoke1].dai.reserveId, amount);
 
-    t = 1;
-    userData[t] = _getUserData(spokeInfo[spoke1].dai.reserveId, bob);
-    reserveData[t] = _getReserveData(spokeInfo[spoke1].dai.reserveId);
+    phase = 1;
+    userData[phase] = _getUserData(spokeInfo[spoke1].dai.reserveId, bob);
+    reserveData[phase] = _getReserveData(spokeInfo[spoke1].dai.reserveId);
 
     // dai balance
     assertEq(tokenList.dai.balanceOf(bob), 0);
     assertEq(tokenList.dai.balanceOf(address(hub)), amount);
     assertEq(tokenList.dai.balanceOf(address(spoke1)), 0, 'spoke token balance post-supply');
     // reserve
-    assertEq(reserveData[t].baseDebt, 0, 'reserve baseDebt post-supply');
-    assertEq(reserveData[t].outstandingPremium, 0, 'reserve outstandingPremium post-supply');
+    assertEq(reserveData[phase].baseDebt, 0, 'reserve baseDebt post-supply');
+    assertEq(reserveData[phase].outstandingPremium, 0, 'reserve outstandingPremium post-supply');
     assertEq(
-      reserveData[t].suppliedShares,
+      reserveData[phase].suppliedShares,
       hub.convertToSharesDown(daiAssetId, amount),
       'reserve suppliedShares post-supply'
     );
-    // user
-    assertEq(userData[t].baseDebt, 0, 'user baseDebt post-supply');
-    assertEq(userData[t].outstandingPremium, 0, 'user outstandingPremium post-supply');
     assertEq(
-      userData[t].suppliedShares,
+      reserveData[phase].lastUpdateTimestamp,
+      vm.getBlockTimestamp(),
+      'reserve lastUpdateTimestamp post-supply'
+    );
+    // user
+    assertEq(userData[phase].baseDebt, 0, 'user baseDebt post-supply');
+    assertEq(userData[phase].outstandingPremium, 0, 'user outstandingPremium post-supply');
+    assertEq(
+      userData[phase].suppliedShares,
       hub.convertToSharesDown(daiAssetId, amount),
       'user suppliedShares post-supply'
+    );
+    assertEq(
+      userData[phase].lastUpdateTimestamp,
+      vm.getBlockTimestamp(),
+      'user lastUpdateTimestamp post-supply'
     );
   }
 
@@ -131,52 +143,64 @@ contract SpokeSupplyTest is BaseTest {
 
     TestData[2] memory userData;
     TestData[2] memory reserveData;
-    uint256 t = 0;
+    uint256 phase = 0;
 
-    userData[t] = _getUserData(spokeInfo[spoke1].dai.reserveId, bob);
-    reserveData[t] = _getReserveData(spokeInfo[spoke1].dai.reserveId);
+    userData[phase] = _getUserData(spokeInfo[spoke1].dai.reserveId, bob);
+    reserveData[phase] = _getReserveData(spokeInfo[spoke1].dai.reserveId);
 
     // dai balance
     assertEq(tokenList.dai.balanceOf(bob), amount, 'user token balance pre-supply');
     assertEq(tokenList.dai.balanceOf(address(hub)), 0, 'hub token balance pre-supply');
     assertEq(tokenList.dai.balanceOf(address(spoke1)), 0, 'spoke token balance pre-supply');
     // reserve
-    assertEq(reserveData[t].baseDebt, 0, 'reserve baseDebt pre-supply');
-    assertEq(reserveData[t].outstandingPremium, 0, 'reserve outstandingPremium pre-supply');
-    assertEq(reserveData[t].suppliedShares, 0, 'reserve suppliedShares pre-supply');
+    assertEq(reserveData[phase].baseDebt, 0, 'reserve baseDebt pre-supply');
+    assertEq(reserveData[phase].outstandingPremium, 0, 'reserve outstandingPremium pre-supply');
+    assertEq(reserveData[phase].suppliedShares, 0, 'reserve suppliedShares pre-supply');
+    assertEq(reserveData[phase].lastUpdateTimestamp, 0, 'reserve lastUpdateTimestamp pre-supply');
     // user
-    assertEq(userData[t].baseDebt, 0, 'user baseDebt pre-supply');
-    assertEq(userData[t].outstandingPremium, 0, 'user outstandingPremium pre-supply');
-    assertEq(userData[t].suppliedShares, 0, 'user suppliedShares pre-supply');
+    assertEq(userData[phase].baseDebt, 0, 'user baseDebt pre-supply');
+    assertEq(userData[phase].outstandingPremium, 0, 'user outstandingPremium pre-supply');
+    assertEq(userData[phase].suppliedShares, 0, 'user suppliedShares pre-supply');
+    assertEq(userData[phase].lastUpdateTimestamp, 0, 'user lastUpdateTimestamp pre-supply');
 
     vm.expectEmit(address(spoke1));
     emit Supplied(spokeInfo[spoke1].dai.reserveId, amount, bob);
     vm.prank(bob);
     spoke1.supply(spokeInfo[spoke1].dai.reserveId, amount);
 
-    t = 1;
-    userData[t] = _getUserData(spokeInfo[spoke1].dai.reserveId, bob);
-    reserveData[t] = _getReserveData(spokeInfo[spoke1].dai.reserveId);
+    phase = 1;
+    userData[phase] = _getUserData(spokeInfo[spoke1].dai.reserveId, bob);
+    reserveData[phase] = _getReserveData(spokeInfo[spoke1].dai.reserveId);
 
     // dai balance
     assertEq(tokenList.dai.balanceOf(bob), 0);
     assertEq(tokenList.dai.balanceOf(address(hub)), amount);
     assertEq(tokenList.dai.balanceOf(address(spoke1)), 0, 'spoke token balance post-supply');
     // reserve
-    assertEq(reserveData[t].baseDebt, 0, 'reserve baseDebt post-supply');
-    assertEq(reserveData[t].outstandingPremium, 0, 'reserve outstandingPremium post-supply');
+    assertEq(reserveData[phase].baseDebt, 0, 'reserve baseDebt post-supply');
+    assertEq(reserveData[phase].outstandingPremium, 0, 'reserve outstandingPremium post-supply');
     assertEq(
-      reserveData[t].suppliedShares,
+      reserveData[phase].suppliedShares,
       hub.convertToSharesDown(daiAssetId, amount),
       'reserve suppliedShares post-supply'
     );
-    // user
-    assertEq(userData[t].baseDebt, 0, 'user baseDebt post-supply');
-    assertEq(userData[t].outstandingPremium, 0, 'user outstandingPremium post-supply');
     assertEq(
-      userData[t].suppliedShares,
+      reserveData[phase].lastUpdateTimestamp,
+      vm.getBlockTimestamp(),
+      'reserve lastUpdateTimestamp post-supply'
+    );
+    // user
+    assertEq(userData[phase].baseDebt, 0, 'user baseDebt post-supply');
+    assertEq(userData[phase].outstandingPremium, 0, 'user outstandingPremium post-supply');
+    assertEq(
+      userData[phase].suppliedShares,
       hub.convertToSharesDown(daiAssetId, amount),
       'user suppliedShares post-supply'
+    );
+    assertEq(
+      userData[phase].lastUpdateTimestamp,
+      vm.getBlockTimestamp(),
+      'user lastUpdateTimestamp post-supply'
     );
   }
 
