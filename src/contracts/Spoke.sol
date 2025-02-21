@@ -484,7 +484,7 @@ contract Spoke is ISpoke {
     }
 
     if (collateralValue == 0) return 0;
-    return newUserRiskPremium / collateralValue;
+    return newUserRiskPremium.rayDiv(collateralValue);
   }
 
   /// @dev It's assumed interest has been accrued before this function call.
@@ -508,8 +508,8 @@ contract Spoke is ISpoke {
 
     uint256 newUserDebt = baseDebtChange > 0
       ? existingUserDebt + uint256(baseDebtChange) // debt added
-      : // force underflow: only possible when user takes repays amount more than net drawn
-      existingUserDebt - uint256(-baseDebtChange); // debt restored
+      // force underflow: only possible when user takes repays amount more than net drawn
+      : existingUserDebt - uint256(-baseDebtChange); // debt restored
 
     (uint256 newReserveRiskPremium, uint256 newReserveDebt) = MathUtils.addToWeightedAverage(
       reserveRiskPremiumWithoutCurrent,
@@ -523,6 +523,8 @@ contract Spoke is ISpoke {
 
     reserve.riskPremium = newReserveRiskPremium;
     user.riskPremium = newUserRiskPremium;
+
+    return newReserveRiskPremium;
   }
 
   function _validateSetUsingAsCollateral(
