@@ -107,7 +107,7 @@ contract Spoke is ISpoke {
     return cumulatedBaseDebt + cumulatedOutstandingPremium;
   }
 
-  function getSuppliedReserveAmount(uint256 reserveId) external view returns (uint256) {
+  function getReserveSuppliedAmount(uint256 reserveId) external view returns (uint256) {
     return
       liquidityHub.convertToAssets(
         _reserves[reserveId].assetId,
@@ -115,7 +115,7 @@ contract Spoke is ISpoke {
       );
   }
 
-  function getSuppliedReserveShares(uint256 reserveId) external view returns (uint256) {
+  function getReserveSuppliedShares(uint256 reserveId) external view returns (uint256) {
     return _reserves[reserveId].suppliedShares;
   }
 
