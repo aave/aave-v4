@@ -16,7 +16,8 @@ contract Spoke is ISpoke {
   using SafeERC20 for IERC20;
 
   uint256 public constant DEFAULT_SPOKE_INDEX = 0;
-  ILiquidityHub public liquidityHub;
+  ILiquidityHub public immutable liquidityHub;
+  IPriceOracle public immutable oracle;
 
   struct Reserve {
     uint256 assetId;
@@ -68,11 +69,10 @@ contract Spoke is ISpoke {
 
   uint256[] public reservesList; // reserveIds
   uint256 public reserveCount;
-  address public oracle;
 
   constructor(address liquidityHubAddress, address oracleAddress) {
     liquidityHub = ILiquidityHub(liquidityHubAddress);
-    oracle = oracleAddress;
+    oracle = IPriceOracle(oracleAddress);
   }
 
   function getUserDebt(uint256 reserveId, address user) external view returns (uint256, uint256) {
@@ -438,7 +438,7 @@ contract Spoke is ISpoke {
     // Add up user debt for each reserve, including price
     for (uint256 i; i < reservesListLength; ++i) {
       reserveId = reservesList[i];
-      tempDebt += userData[reserveId].baseDebt * IPriceOracle(oracle).getAssetPrice(reserveId);
+      tempDebt += userData[reserveId].baseDebt * oracle.getAssetPrice(reserveId);
     }
 
     // If user has no debt, return 0 risk premium
@@ -455,7 +455,7 @@ contract Spoke is ISpoke {
           _reserves[reserveId].assetId,
           userData[reserveId].suppliedShares
         ) *
-        IPriceOracle(oracle).getAssetPrice(reserveId);
+        oracle.getAssetPrice(reserveId);
 
       if (userSupply >= tempDebt) {
         // This reserve completes user debt, so add up weighted risk premium and break
@@ -547,7 +547,7 @@ contract Spoke is ISpoke {
       UserConfig memory user = getUser(vars.reserveId, userAddress);
       Reserve memory reserve = getReserve(vars.reserveId);
 
-      vars.reservePrice = IPriceOracle(oracle).getAssetPrice(vars.reserveId);
+      vars.reservePrice = oracle.getAssetPrice(vars.reserveId);
 
       if (_usingAsCollateral(_users[userAddress][vars.reserveId])) {
         vars.userCollateralInBaseCurrency =
