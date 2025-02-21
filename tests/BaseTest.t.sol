@@ -276,21 +276,21 @@ abstract contract BaseTest is Test, Events {
     Spoke.ReserveConfig memory wbtcConfig = Spoke.ReserveConfig({
       lt: 0.75e4,
       lb: 0,
-      liquidityPremium: 10,
+      liquidityPremium: 10_00,
       borrowable: true,
       collateral: true
     });
     Spoke.ReserveConfig memory daiConfig = Spoke.ReserveConfig({
       lt: 0.78e4,
       lb: 0,
-      liquidityPremium: 20,
+      liquidityPremium: 20_00,
       borrowable: true,
       collateral: true
     });
     Spoke.ReserveConfig memory usdxConfig = Spoke.ReserveConfig({
       lt: 0.78e4,
       lb: 0,
-      liquidityPremium: 50,
+      liquidityPremium: 50_00,
       borrowable: true,
       collateral: true
     });
