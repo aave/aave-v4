@@ -80,6 +80,19 @@ interface ILiquidityHub {
   function addAsset(DataTypes.AssetConfig memory params, address asset) external;
   function addSpoke(uint256 assetId, DataTypes.SpokeConfig memory params, address spoke) external;
 
+  function convertToAssets(uint256 assetId, uint256 shares) external view returns (uint256);
+  function convertToShares(uint256 assetId, uint256 assets) external view returns (uint256);
+
+  function getSpokeDebt(uint256 assetId, address spoke) external view returns (uint256, uint256);
+  function getSpokeCumulativeDebt(uint256 assetId, address spoke) external view returns (uint256);
+  function getAssetDebt(uint256 assetId) external view returns (uint256, uint256);
+  function getAssetCumulativeDebt(uint256 assetId) external view returns (uint256);
+  function getSuppliedAmount(uint256 assetId, address spoke) external view returns (uint256);
+  function getSuppliedShares(uint256 assetId, address spoke) external view returns (uint256);
+  function getAssetRiskPremium(uint256 assetId) external view returns (uint256);
+  function getSpokeRiskPremium(uint256 assetId, address spoke) external view returns (uint256);
+
+  // todo: remove explicit rounding
   function convertToAssetsUp(uint256 assetId, uint256 shares) external view returns (uint256);
   function convertToAssetsDown(uint256 assetId, uint256 shares) external view returns (uint256);
   function convertToSharesUp(uint256 assetId, uint256 assets) external view returns (uint256);

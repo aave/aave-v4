@@ -263,7 +263,7 @@ contract LiquidityHub is ILiquidityHub {
     SpokeData storage spoke = _spokes[assetId][msg.sender];
 
     _accrueInterest(asset, spoke); // accrue interest before validating action
-    _validateRestore(asset, amount, spoke.baseDebt + spoke.outstandingPremium);
+    _validateRestore(asset, spoke, amount);
 
     asset.updateBorrowRate({liquidityAdded: amount, liquidityTaken: 0});
     uint256 baseDebtRestored = _deductFromOutstandingPremium(asset, spoke, amount);
@@ -307,6 +307,14 @@ contract LiquidityHub is ILiquidityHub {
     return _assets[assetId].convertToAssetsDown(shares);
   }
 
+  function convertToAssets(uint256 assetId, uint256 shares) external view returns (uint256) {
+    return _assets[assetId].convertToAssetsDown(shares);
+  }
+
+  function convertToShares(uint256 assetId, uint256 assets) external view returns (uint256) {
+    return _assets[assetId].convertToSharesDown(assets);
+  }
+
   function getBaseInterestRate(uint256 assetId) public view returns (uint256) {
     return _assets[assetId].baseBorrowRate;
   }
@@ -315,12 +323,44 @@ contract LiquidityHub is ILiquidityHub {
     return _assets[assetId].getInterestRate();
   }
 
-  function getSpokeDrawnLiquidity(uint256 assetId, address spoke) public view returns (uint256) {
-    return _spokes[assetId][spoke].baseDebt;
+  function getSpokeDebt(uint256 assetId, address spoke) external view returns (uint256, uint256) {
+    (uint256 cumulatedBaseDebt, uint256 cumulatedOutstandingPremium) = _spokes[assetId][spoke]
+      .previewInterest(_assets[assetId].previewNextBorrowIndex());
+    return (cumulatedBaseDebt, cumulatedOutstandingPremium);
   }
 
-  function getTotalDrawnLiquidity(uint256 assetId) public view returns (uint256) {
-    return _assets[assetId].baseDebt;
+  function getAssetDebt(uint256 assetId) external view returns (uint256, uint256) {
+    (uint256 cumulatedBaseDebt, uint256 cumulatedOutstandingPremium) = _assets[assetId]
+      .previewInterest(_assets[assetId].previewNextBorrowIndex());
+    return (cumulatedBaseDebt, cumulatedOutstandingPremium);
+  }
+
+  function getSpokeCumulativeDebt(uint256 assetId, address spoke) external view returns (uint256) {
+    (uint256 cumulatedBaseDebt, uint256 cumulatedOutstandingPremium) = _spokes[assetId][spoke]
+      .previewInterest(_assets[assetId].previewNextBorrowIndex());
+    return cumulatedBaseDebt + cumulatedOutstandingPremium;
+  }
+
+  function getAssetCumulativeDebt(uint256 assetId) external view returns (uint256) {
+    (uint256 cumulatedBaseDebt, uint256 cumulatedOutstandingPremium) = _assets[assetId]
+      .previewInterest(_assets[assetId].previewNextBorrowIndex());
+    return cumulatedBaseDebt + cumulatedOutstandingPremium;
+  }
+
+  function getSuppliedAmount(uint256 assetId, address spoke) external view returns (uint256) {
+    return _assets[assetId].convertToAssetsDown(_spokes[assetId][spoke].suppliedShares);
+  }
+
+  function getSuppliedShares(uint256 assetId, address spoke) external view returns (uint256) {
+    return _spokes[assetId][spoke].suppliedShares;
+  }
+
+  function getAssetRiskPremium(uint256 assetId) external view returns (uint256) {
+    return _assets[assetId].riskPremium.derayify();
+  }
+
+  function getSpokeRiskPremium(uint256 assetId, address spoke) external view returns (uint256) {
+    return _spokes[assetId][spoke].riskPremium.derayify();
   }
 
   //
@@ -372,13 +412,16 @@ contract LiquidityHub is ILiquidityHub {
 
   function _validateRestore(
     Asset storage asset,
-    uint256 amountRestored,
-    uint256 amountDrawn
+    SpokeData storage spoke,
+    uint256 amountRestored
   ) internal view {
     // TODO: Other cases of status (frozen, paused)
     require(asset.config.active, 'ASSET_NOT_ACTIVE');
-    // Ensure spoke is not restoring more than supplied or equal 0
-    require(amountRestored > 0 && amountRestored <= amountDrawn, 'INVALID_RESTORE_AMOUNT');
+    // Ensure spoke is not restoring more than accrued drawn or equal 0
+    require(
+      amountRestored > 0 && amountRestored <= spoke.baseDebt + spoke.outstandingPremium,
+      'INVALID_RESTORE_AMOUNT'
+    );
   }
 
   // @dev Utilizes existing asset & spoke: `baseBorrowIndex`, `riskPremium`
