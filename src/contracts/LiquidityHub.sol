@@ -347,11 +347,19 @@ contract LiquidityHub is ILiquidityHub {
     return cumulatedBaseDebt + cumulatedOutstandingPremium;
   }
 
-  function getSuppliedAmount(uint256 assetId, address spoke) external view returns (uint256) {
+  function getSuppliedAssetAmount(uint256 assetId) external view returns (uint256) {
+    return _assets[assetId].convertToAssetsDown(_assets[assetId].suppliedShares);
+  }
+
+  function getSuppliedAssetShares(uint256 assetId) external view returns (uint256) {
+    return _assets[assetId].suppliedShares;
+  }
+
+  function getSuppliedSpokeAmount(uint256 assetId, address spoke) external view returns (uint256) {
     return _assets[assetId].convertToAssetsDown(_spokes[assetId][spoke].suppliedShares);
   }
 
-  function getSuppliedShares(uint256 assetId, address spoke) external view returns (uint256) {
+  function getSuppliedSpokeShares(uint256 assetId, address spoke) external view returns (uint256) {
     return _spokes[assetId][spoke].suppliedShares;
   }
 
@@ -454,8 +462,8 @@ contract LiquidityHub is ILiquidityHub {
 
     uint256 newSpokeDebt = baseDebtChange > 0
       ? existingSpokeDebt + uint256(baseDebtChange) // debt added
-      : // force underflow: only possible when spoke takes repays amount more than net drawn
-      existingSpokeDebt - uint256(-baseDebtChange); // debt restored
+      // force underflow: only possible when spoke takes repays amount more than net drawn
+      : existingSpokeDebt - uint256(-baseDebtChange); // debt restored
 
     (uint256 newAssetRiskPremium, uint256 newAssetDebt) = MathUtils.addToWeightedAverage(
       assetRiskPremiumWithoutCurrent,
