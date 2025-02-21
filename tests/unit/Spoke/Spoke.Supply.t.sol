@@ -60,56 +60,68 @@ contract SpokeSupplyTest is BaseTest {
 
   function _getUserData(uint256 reserveId, address user) internal returns (TestData memory) {
     // only to check lastUpdateTimestamp
-    Spoke.UserConfig memory userStorageData = spoke1.getUser(reserveId, bob);
-    TestData memory userData = spoke1.getUser(reserveId);
-    (userData.baseDebt, userData.outstandingPremium) = spoke1.getUserDebt(reserveId);
-    userData.suppliedShares = spoke1.getUserSuppliedShares(reserveId);
+    Spoke.UserConfig memory userStorageData = spoke1.getUser(reserveId, user);
+    TestData memory userData;
+    (userData.baseDebt, userData.outstandingPremium) = spoke1.getUserDebt(reserveId, user);
+    userData.suppliedShares = spoke1.getUserSuppliedShares(reserveId, user);
     userData.lastUpdateTimestamp = userStorageData.lastUpdateTimestamp;
     return userData;
   }
 
-  // function _getReserveAndUserData(uint256 reserveId, address user) internal returns (uint256) {
-  //   TestData memory userData = spoke1.getReserveDebt(reserveId, user);
-  //   return userData.baseDebt;
-  // }
-
-  function test_supplyy() public {
+  function test_supply() public {
     uint256 amount = 100e18;
 
     deal(address(tokenList.dai), bob, amount);
 
-    // Spoke.UserConfig memory userData = spoke1.getUser(spokeInfo[spoke1].dai.reserveId, bob);
-    // Spoke.Reserve memory reserveData = spoke1.getReserve(spokeInfo[spoke1].dai.reserveId);
+    TestData[2] memory userData;
+    TestData[2] memory reserveData;
+    uint256 t = 0;
 
+    userData[t] = _getUserData(spokeInfo[spoke1].dai.reserveId, bob);
+    reserveData[t] = _getReserveData(spokeInfo[spoke1].dai.reserveId);
+
+    // dai balance
     assertEq(tokenList.dai.balanceOf(bob), amount, 'user token balance pre-supply');
     assertEq(tokenList.dai.balanceOf(address(hub)), 0, 'hub token balance pre-supply');
     assertEq(tokenList.dai.balanceOf(address(spoke1)), 0, 'spoke token balance pre-supply');
-    // assertEq(userData.suppliedShares, 0, 'user supply shares pre-supply');
-    // assertEq(reserveData.suppliedShares, 0, 'reserve total shares pre-supply');
-    // assertEq(userData.baseDebt, 0, 'user base debt pre-supply');
+    // reserve
+    assertEq(reserveData[t].baseDebt, 0, 'reserve baseDebt pre-supply');
+    assertEq(reserveData[t].outstandingPremium, 0, 'reserve outstandingPremium pre-supply');
+    assertEq(reserveData[t].suppliedShares, 0, 'reserve suppliedShares pre-supply');
+    // user
+    assertEq(userData[t].baseDebt, 0, 'user baseDebt pre-supply');
+    assertEq(userData[t].outstandingPremium, 0, 'user outstandingPremium pre-supply');
+    assertEq(userData[t].suppliedShares, 0, 'user suppliedShares pre-supply');
 
     vm.prank(bob);
     vm.expectEmit(address(spoke1));
     emit Supplied(spokeInfo[spoke1].dai.reserveId, amount, bob);
     spoke1.supply(spokeInfo[spoke1].dai.reserveId, amount);
 
-    // userData = spoke1.getUser(spokeInfo[spoke1].dai.reserveId, bob);
-    // reserveData = spoke1.getReserve(spokeInfo[spoke1].dai.reserveId);
+    t = 1;
+    userData[t] = _getUserData(spokeInfo[spoke1].dai.reserveId, bob);
+    reserveData[t] = _getReserveData(spokeInfo[spoke1].dai.reserveId);
 
-    // assertEq(tokenList.dai.balanceOf(bob), 0);
-    // assertEq(tokenList.dai.balanceOf(address(hub)), amount);
-    // assertEq(tokenList.dai.balanceOf(address(spoke1)), 0, 'spoke token balance post-supply');
-    // assertEq(
-    //   userData.suppliedShares,
-    //   hub.convertToSharesDown(daiAssetId, amount),
-    //   'user supply shares post-supply'
-    // );
-    // assertEq(
-    //   reserveData.suppliedShares,
-    //   hub.convertToSharesDown(daiAssetId, amount),
-    //   'reserve supplied shares post-supply'
-    // );
-    // assertEq(userData.baseDebt, 0, 'user base debt post-supply');
+    // dai balance
+    assertEq(tokenList.dai.balanceOf(bob), 0);
+    assertEq(tokenList.dai.balanceOf(address(hub)), amount);
+    assertEq(tokenList.dai.balanceOf(address(spoke1)), 0, 'spoke token balance post-supply');
+    // reserve
+    assertEq(reserveData[t].baseDebt, 0, 'reserve baseDebt post-supply');
+    assertEq(reserveData[t].outstandingPremium, 0, 'reserve outstandingPremium post-supply');
+    assertEq(
+      reserveData[t].suppliedShares,
+      hub.convertToSharesDown(daiAssetId, amount),
+      'reserve suppliedShares post-supply'
+    );
+    // user
+    assertEq(userData[t].baseDebt, 0, 'user baseDebt post-supply');
+    assertEq(userData[t].outstandingPremium, 0, 'user outstandingPremium post-supply');
+    assertEq(
+      userData[t].suppliedShares,
+      hub.convertToSharesDown(daiAssetId, amount),
+      'user suppliedShares post-supply'
+    );
   }
 
   function test_supply_fuzz_amounts(uint256 amount) public {
