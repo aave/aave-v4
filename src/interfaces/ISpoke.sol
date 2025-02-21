@@ -32,8 +32,8 @@ interface ISpoke {
   function getUserRiskPremium(address user) external view returns (uint256);
   function getReserveRiskPremium(uint256 reserveId) external view returns (uint256);
 
-  function getSuppliedReserveAmount(uint256 reserveId) external view returns (uint256);
-  function getSuppliedReserveShares(uint256 reserveId) external view returns (uint256);
+  function getReserveSuppliedAmount(uint256 reserveId) external view returns (uint256);
+  function getReserveSuppliedShares(uint256 reserveId) external view returns (uint256);
   function getUserSuppliedAmount(uint256 reserveId, address user) external view returns (uint256);
   function getUserSuppliedShares(uint256 reserveId, address user) external view returns (uint256);
 }
