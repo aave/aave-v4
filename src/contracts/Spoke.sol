@@ -123,8 +123,8 @@ contract Spoke is ISpoke {
     return _reserves[reserveId].riskPremium.derayify();
   }
 
-  function getUserRiskPremium(uint256 reserveId, address user) external view returns (uint256) {
-    return _users[user][reserveId].riskPremium.derayify();
+  function getUserRiskPremium(address user) external view returns (uint256) {
+    return _calcUserRiskPremium(_users[user]).derayify();
   }
 
   /// governance
@@ -255,11 +255,6 @@ contract Spoke is ISpoke {
     );
 
     emit Repaid(reserveId, amount, msg.sender);
-  }
-
-  function getUserRiskPremium(address user) external view returns (uint256) {
-    (, , , uint256 userRiskPremium, ) = _calculateUserAccountData(user);
-    return userRiskPremium;
   }
 
   function getHealthFactor(address user) external view returns (uint256) {
@@ -425,7 +420,7 @@ contract Spoke is ISpoke {
   /// @dev It's assumed interest has been accrued before this function call.
   function _calcUserRiskPremium(
     mapping(uint256 => UserConfig) storage userData
-  ) internal returns (uint256) {
+  ) internal view returns (uint256) {
     uint256 reservesListLength = reservesList.length;
 
     // Variable to decrement as we count up user RP
