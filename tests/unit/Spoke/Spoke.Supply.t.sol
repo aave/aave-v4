@@ -129,38 +129,55 @@ contract SpokeSupplyTest is BaseTest {
 
     deal(address(tokenList.dai), bob, amount);
 
-    Spoke.UserConfig memory userData = spoke1.getUser(spokeInfo[spoke1].dai.reserveId, bob);
-    Spoke.Reserve memory reserveData = spoke1.getReserve(spokeInfo[spoke1].dai.reserveId);
+    TestData[2] memory userData;
+    TestData[2] memory reserveData;
+    uint256 t = 0;
 
+    userData[t] = _getUserData(spokeInfo[spoke1].dai.reserveId, bob);
+    reserveData[t] = _getReserveData(spokeInfo[spoke1].dai.reserveId);
+
+    // dai balance
     assertEq(tokenList.dai.balanceOf(bob), amount, 'user token balance pre-supply');
     assertEq(tokenList.dai.balanceOf(address(hub)), 0, 'hub token balance pre-supply');
     assertEq(tokenList.dai.balanceOf(address(spoke1)), 0, 'spoke token balance pre-supply');
-    assertEq(userData.suppliedShares, 0, 'user supply shares pre-supply');
-    assertEq(reserveData.suppliedShares, 0, 'reserve supply shares pre-supply');
-    assertEq(userData.baseDebt, 0, 'user base debt pre-supply');
+    // reserve
+    assertEq(reserveData[t].baseDebt, 0, 'reserve baseDebt pre-supply');
+    assertEq(reserveData[t].outstandingPremium, 0, 'reserve outstandingPremium pre-supply');
+    assertEq(reserveData[t].suppliedShares, 0, 'reserve suppliedShares pre-supply');
+    // user
+    assertEq(userData[t].baseDebt, 0, 'user baseDebt pre-supply');
+    assertEq(userData[t].outstandingPremium, 0, 'user outstandingPremium pre-supply');
+    assertEq(userData[t].suppliedShares, 0, 'user suppliedShares pre-supply');
 
     vm.expectEmit(address(spoke1));
     emit Supplied(spokeInfo[spoke1].dai.reserveId, amount, bob);
     vm.prank(bob);
     spoke1.supply(spokeInfo[spoke1].dai.reserveId, amount);
 
-    userData = spoke1.getUser(spokeInfo[spoke1].dai.reserveId, bob);
-    reserveData = spoke1.getReserve(spokeInfo[spoke1].dai.reserveId);
+    t = 1;
+    userData[t] = _getUserData(spokeInfo[spoke1].dai.reserveId, bob);
+    reserveData[t] = _getReserveData(spokeInfo[spoke1].dai.reserveId);
 
+    // dai balance
     assertEq(tokenList.dai.balanceOf(bob), 0);
     assertEq(tokenList.dai.balanceOf(address(hub)), amount);
     assertEq(tokenList.dai.balanceOf(address(spoke1)), 0, 'spoke token balance post-supply');
+    // reserve
+    assertEq(reserveData[t].baseDebt, 0, 'reserve baseDebt post-supply');
+    assertEq(reserveData[t].outstandingPremium, 0, 'reserve outstandingPremium post-supply');
     assertEq(
-      userData.suppliedShares,
+      reserveData[t].suppliedShares,
       hub.convertToSharesDown(daiAssetId, amount),
-      'user supply shares post-supply'
+      'reserve suppliedShares post-supply'
     );
+    // user
+    assertEq(userData[t].baseDebt, 0, 'user baseDebt post-supply');
+    assertEq(userData[t].outstandingPremium, 0, 'user outstandingPremium post-supply');
     assertEq(
-      reserveData.suppliedShares,
+      userData[t].suppliedShares,
       hub.convertToSharesDown(daiAssetId, amount),
-      'reserve supplied shares post-supply'
+      'user suppliedShares post-supply'
     );
-    assertEq(userData.baseDebt, 0, 'user base debt post-supply');
   }
 
   function test_supply_revertsWith_invalid_supply_amount() public {
