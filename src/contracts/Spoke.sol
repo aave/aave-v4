@@ -484,7 +484,7 @@ contract Spoke is ISpoke {
     }
 
     if (collateralValue == 0) return 0;
-    return newUserRiskPremium / collateralValue;
+    return newUserRiskPremium.rayDiv(collateralValue);
   }
 
   /// @dev It's assumed interest has been accrued before this function call.
