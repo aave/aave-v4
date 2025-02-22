@@ -273,10 +273,10 @@ abstract contract BaseTest is Test, Events {
       borrowable: true,
       collateral: true
     });
-    Spoke.ReserveConfig memory wbtcConfig = Spoke.ReserveConfig({
-      lt: 0.75e4,
+    Spoke.ReserveConfig memory usdxConfig = Spoke.ReserveConfig({
+      lt: 0.78e4,
       lb: 0,
-      liquidityPremium: 10_00,
+      liquidityPremium: 50_00,
       borrowable: true,
       collateral: true
     });
@@ -287,10 +287,10 @@ abstract contract BaseTest is Test, Events {
       borrowable: true,
       collateral: true
     });
-    Spoke.ReserveConfig memory usdxConfig = Spoke.ReserveConfig({
-      lt: 0.78e4,
+    Spoke.ReserveConfig memory wbtcConfig = Spoke.ReserveConfig({
+      lt: 0.75e4,
       lb: 0,
-      liquidityPremium: 50_00,
+      liquidityPremium: 10_00,
       borrowable: true,
       collateral: true
     });
@@ -301,38 +301,31 @@ abstract contract BaseTest is Test, Events {
       address(tokenList.weth)
     );
     spokeInfo[spoke1].weth.liquidityPremium = wethConfig.liquidityPremium;
-    spokeInfo[spoke1].wbtc.reserveId = spoke1.addReserve(
-      wbtcAssetId,
-      wbtcConfig,
-      address(tokenList.wbtc)
-    );
-    spokeInfo[spoke1].wbtc.liquidityPremium = wbtcConfig.liquidityPremium;
-    spokeInfo[spoke1].dai.reserveId = spoke1.addReserve(
-      daiAssetId,
-      daiConfig,
-      address(tokenList.dai)
-    );
-    spokeInfo[spoke1].dai.liquidityPremium = daiConfig.liquidityPremium;
     spokeInfo[spoke1].usdx.reserveId = spoke1.addReserve(
       usdxAssetId,
       usdxConfig,
       address(tokenList.usdx)
     );
     spokeInfo[spoke1].usdx.liquidityPremium = usdxConfig.liquidityPremium;
+    spokeInfo[spoke1].dai.reserveId = spoke1.addReserve(
+      daiAssetId,
+      daiConfig,
+      address(tokenList.dai)
+    );
+    spokeInfo[spoke1].dai.liquidityPremium = daiConfig.liquidityPremium;
+    spokeInfo[spoke1].wbtc.reserveId = spoke1.addReserve(
+      wbtcAssetId,
+      wbtcConfig,
+      address(tokenList.wbtc)
+    );
+    spokeInfo[spoke1].wbtc.liquidityPremium = wbtcConfig.liquidityPremium;
 
-    hub.addSpoke(usdxAssetId, spokeConfig, address(spoke1));
     hub.addSpoke(wethAssetId, spokeConfig, address(spoke1));
-    hub.addSpoke(wbtcAssetId, spokeConfig, address(spoke1));
+    hub.addSpoke(usdxAssetId, spokeConfig, address(spoke1));
     hub.addSpoke(daiAssetId, spokeConfig, address(spoke1));
+    hub.addSpoke(wbtcAssetId, spokeConfig, address(spoke1));
 
     // Spoke 2 reserve configs
-    wbtcConfig = Spoke.ReserveConfig({
-      lt: 0.8e4,
-      lb: 0,
-      liquidityPremium: 0,
-      borrowable: true,
-      collateral: true
-    });
     wethConfig = Spoke.ReserveConfig({
       lt: 0.76e4,
       lb: 0,
@@ -354,42 +347,49 @@ abstract contract BaseTest is Test, Events {
       borrowable: true,
       collateral: true
     });
+    wbtcConfig = Spoke.ReserveConfig({
+      lt: 0.8e4,
+      lb: 0,
+      liquidityPremium: 0,
+      borrowable: true,
+      collateral: true
+    });
 
-    spokeInfo[spoke2].wbtc.reserveId = spoke2.addReserve(
-      wbtcAssetId,
-      wbtcConfig,
-      address(tokenList.wbtc)
-    );
-    spokeInfo[spoke2].wbtc.liquidityPremium = wbtcConfig.liquidityPremium;
     spokeInfo[spoke2].weth.reserveId = spoke2.addReserve(
       wethAssetId,
       wethConfig,
       address(tokenList.weth)
     );
     spokeInfo[spoke2].weth.liquidityPremium = wethConfig.liquidityPremium;
-    spokeInfo[spoke2].dai.reserveId = spoke2.addReserve(
-      daiAssetId,
-      daiConfig,
-      address(tokenList.dai)
-    );
-    spokeInfo[spoke2].dai.liquidityPremium = daiConfig.liquidityPremium;
     spokeInfo[spoke2].usdx.reserveId = spoke2.addReserve(
       usdxAssetId,
       usdxConfig,
       address(tokenList.usdx)
     );
     spokeInfo[spoke2].usdx.liquidityPremium = usdxConfig.liquidityPremium;
+    spokeInfo[spoke2].dai.reserveId = spoke2.addReserve(
+      daiAssetId,
+      daiConfig,
+      address(tokenList.dai)
+    );
+    spokeInfo[spoke2].dai.liquidityPremium = daiConfig.liquidityPremium;
+    spokeInfo[spoke2].wbtc.reserveId = spoke2.addReserve(
+      wbtcAssetId,
+      wbtcConfig,
+      address(tokenList.wbtc)
+    );
+    spokeInfo[spoke2].wbtc.liquidityPremium = wbtcConfig.liquidityPremium;
 
-    hub.addSpoke(usdxAssetId, spokeConfig, address(spoke2));
-    hub.addSpoke(wbtcAssetId, spokeConfig, address(spoke2));
     hub.addSpoke(wethAssetId, spokeConfig, address(spoke2));
+    hub.addSpoke(usdxAssetId, spokeConfig, address(spoke2));
     hub.addSpoke(daiAssetId, spokeConfig, address(spoke2));
+    hub.addSpoke(wbtcAssetId, spokeConfig, address(spoke2));
 
     // Spoke 3 reserve configs
-    daiConfig = Spoke.ReserveConfig({
-      lt: 0.75e4,
+    wethConfig = Spoke.ReserveConfig({
+      lt: 0.79e4,
       lb: 0,
-      liquidityPremium: 0,
+      liquidityPremium: 20_00,
       borrowable: true,
       collateral: true
     });
@@ -400,10 +400,10 @@ abstract contract BaseTest is Test, Events {
       borrowable: true,
       collateral: true
     });
-    wethConfig = Spoke.ReserveConfig({
-      lt: 0.79e4,
+    daiConfig = Spoke.ReserveConfig({
+      lt: 0.75e4,
       lb: 0,
-      liquidityPremium: 20_00,
+      liquidityPremium: 0,
       borrowable: true,
       collateral: true
     });
@@ -415,24 +415,24 @@ abstract contract BaseTest is Test, Events {
       collateral: true
     });
 
-    spokeInfo[spoke3].dai.reserveId = spoke3.addReserve(
-      daiAssetId,
-      daiConfig,
-      address(tokenList.dai)
-    );
-    spokeInfo[spoke3].dai.liquidityPremium = daiConfig.liquidityPremium;
-    spokeInfo[spoke3].usdx.reserveId = spoke3.addReserve(
-      usdxAssetId,
-      usdxConfig,
-      address(tokenList.usdx)
-    );
-    spokeInfo[spoke3].usdx.liquidityPremium = usdxConfig.liquidityPremium;
     spokeInfo[spoke3].weth.reserveId = spoke3.addReserve(
       wethAssetId,
       wethConfig,
       address(tokenList.weth)
     );
     spokeInfo[spoke3].weth.liquidityPremium = wethConfig.liquidityPremium;
+    spokeInfo[spoke3].usdx.reserveId = spoke3.addReserve(
+      usdxAssetId,
+      usdxConfig,
+      address(tokenList.usdx)
+    );
+    spokeInfo[spoke3].usdx.liquidityPremium = usdxConfig.liquidityPremium;
+    spokeInfo[spoke3].dai.reserveId = spoke3.addReserve(
+      daiAssetId,
+      daiConfig,
+      address(tokenList.dai)
+    );
+    spokeInfo[spoke3].dai.liquidityPremium = daiConfig.liquidityPremium;
     spokeInfo[spoke3].wbtc.reserveId = spoke3.addReserve(
       wbtcAssetId,
       wbtcConfig,
@@ -440,10 +440,10 @@ abstract contract BaseTest is Test, Events {
     );
     spokeInfo[spoke3].wbtc.liquidityPremium = wbtcConfig.liquidityPremium;
 
-    hub.addSpoke(wbtcAssetId, spokeConfig, address(spoke3));
-    hub.addSpoke(daiAssetId, spokeConfig, address(spoke3));
-    hub.addSpoke(usdxAssetId, spokeConfig, address(spoke3));
     hub.addSpoke(wethAssetId, spokeConfig, address(spoke3));
+    hub.addSpoke(usdxAssetId, spokeConfig, address(spoke3));
+    hub.addSpoke(daiAssetId, spokeConfig, address(spoke3));
+    hub.addSpoke(wbtcAssetId, spokeConfig, address(spoke3));
 
     // Spoke 2 to have an extra dai reserve
     hub.addAsset(
@@ -485,7 +485,7 @@ abstract contract BaseTest is Test, Events {
       })
     );
     irStrategy.setInterestRateParams(
-      wbtcAssetId,
+      daiAssetId,
       IDefaultInterestRateStrategy.InterestRateData({
         optimalUsageRatio: 90_00, // 90.00%
         baseVariableBorrowRate: 5_00, // 5.00%
@@ -494,7 +494,7 @@ abstract contract BaseTest is Test, Events {
       })
     );
     irStrategy.setInterestRateParams(
-      daiAssetId,
+      wbtcAssetId,
       IDefaultInterestRateStrategy.InterestRateData({
         optimalUsageRatio: 90_00, // 90.00%
         baseVariableBorrowRate: 5_00, // 5.00%

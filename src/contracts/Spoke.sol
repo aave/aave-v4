@@ -39,11 +39,6 @@ contract Spoke is ISpoke {
     bool collateral;
   }
 
-  struct ReservePremium {
-    uint256 reserveId;
-    uint256 liquidityPremium;
-  }
-
   struct UserConfig {
     bool usingAsCollateral;
     uint256 baseDebt;
@@ -454,9 +449,10 @@ contract Spoke is ISpoke {
 
       if (_usingAsCollateral(userData[reserveId])) {
         // Pack (reserveId, liquidityPremium) into a single uint256
-        userCollaterals[userCollateralAssets++] =
-          (reserveId << 128) |
-          _reserves[reserveId].config.liquidityPremium;
+        userCollaterals[userCollateralAssets++] = _pack(
+          reserveId,
+          _reserves[reserveId].config.liquidityPremium
+        );
       }
     }
 
@@ -474,7 +470,7 @@ contract Spoke is ISpoke {
 
     // While the tempDebt variable is non-zero, loop over collateral reserves, adding up weighted risk premium, and subtract corresponding amt from tempDebt
     for (uint256 i; i < userCollateralAssets; ++i) {
-      reserveId = packedUserCollaterals[i] >> 128;
+      reserveId = _unpackReserveId(packedUserCollaterals[i]);
 
       // Convert user's supply shares for this reserve to collateral value
       userSupply =
@@ -486,12 +482,12 @@ contract Spoke is ISpoke {
 
       if (userSupply >= tempDebt) {
         // This reserve completes user debt, so add up weighted risk premium and break
-        newUserRiskPremium += tempDebt * _reserves[reserveId].config.liquidityPremium;
+        newUserRiskPremium += tempDebt * _unpackLP(packedUserCollaterals[i]);
         collateralValue += tempDebt;
         break;
       } else {
         // Add up weighted risk premium
-        newUserRiskPremium += userSupply * _reserves[reserveId].config.liquidityPremium;
+        newUserRiskPremium += userSupply * _unpackLP(packedUserCollaterals[i]);
         collateralValue += userSupply;
         // Subtract user supply from tempDebt
         tempDebt -= userSupply;
@@ -523,8 +519,8 @@ contract Spoke is ISpoke {
 
     uint256 newUserDebt = baseDebtChange > 0
       ? existingUserDebt + uint256(baseDebtChange) // debt added
-      // force underflow: only possible when user takes repays amount more than net drawn
-      : existingUserDebt - uint256(-baseDebtChange); // debt restored
+      : // force underflow: only possible when user takes repays amount more than net drawn
+      existingUserDebt - uint256(-baseDebtChange); // debt restored
 
     (uint256 newReserveRiskPremium, uint256 newReserveDebt) = MathUtils.addToWeightedAverage(
       reserveRiskPremiumWithoutCurrent,
@@ -713,5 +709,17 @@ contract Spoke is ISpoke {
   /// @dev Decodes (, liquidityPremium) from uint256
   function _compareLp(uint256 a, uint256 b) internal pure returns (bool) {
     return a & ((1 << 128) - 1) < b & ((1 << 128) - 1);
+  }
+
+  function _pack(uint256 reserveId, uint256 liquidityPremium) internal pure returns (uint256) {
+    return (reserveId << 128) | liquidityPremium;
+  }
+
+  function _unpackReserveId(uint256 packed) internal pure returns (uint256) {
+    return packed >> 128;
+  }
+
+  function _unpackLP(uint256 packed) internal pure returns (uint256) {
+    return packed & ((1 << 128) - 1);
   }
 }
