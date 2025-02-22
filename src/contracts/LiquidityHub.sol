@@ -363,6 +363,10 @@ contract LiquidityHub is ILiquidityHub {
     return _spokes[assetId][spoke].riskPremium.derayify();
   }
 
+  function getAssetLastUpdate(uint256 assetId) external view returns (uint256) {
+    return _assets[assetId].lastUpdateTimestamp;
+  }
+
   //
   // Internal
   //
@@ -454,8 +458,8 @@ contract LiquidityHub is ILiquidityHub {
 
     uint256 newSpokeDebt = baseDebtChange > 0
       ? existingSpokeDebt + uint256(baseDebtChange) // debt added
-      // force underflow: only possible when spoke takes repays amount more than net drawn
-      : existingSpokeDebt - uint256(-baseDebtChange); // debt restored
+      : // force underflow: only possible when spoke takes repays amount more than net drawn
+      existingSpokeDebt - uint256(-baseDebtChange); // debt restored
 
     (uint256 newAssetRiskPremium, uint256 newAssetDebt) = MathUtils.addToWeightedAverage(
       assetRiskPremiumWithoutCurrent,
