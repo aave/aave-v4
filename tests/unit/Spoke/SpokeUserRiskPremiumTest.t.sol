@@ -44,7 +44,7 @@ contract SpokeUserRiskPremiumTest is BaseTest {
 
   function test_getUserRiskPremium_no_collateral() public view {
     uint256 userRiskPremium = spoke1.getUserRiskPremium(bob);
-    assertEq(userRiskPremium, 0, 'wrong user risk premium');
+    assertEq(userRiskPremium, 0, 'user risk premium');
   }
 
   function test_getUserRiskPremium_single_asset_collateral() public {
@@ -56,7 +56,7 @@ contract SpokeUserRiskPremiumTest is BaseTest {
     Utils.setUsingAsCollateral(spoke1, bob, daiReserveId, true);
 
     uint256 userRiskPremium = spoke1.getUserRiskPremium(bob);
-    assertEq(userRiskPremium, 0, 'wrong user risk premium');
+    assertEq(userRiskPremium, 0, 'user risk premium');
   }
 
   function test_getUserRiskPremium_single_asset_collateral_borrowed() public {
@@ -73,7 +73,7 @@ contract SpokeUserRiskPremiumTest is BaseTest {
     Spoke.Reserve memory daiInfo = spoke1.getReserve(daiReserveId);
 
     // With single collateral, user rp will match liquidity premium of collateral
-    assertEq(userRiskPremium, daiInfo.config.liquidityPremium, 'wrong user risk premium');
+    assertEq(userRiskPremium, daiInfo.config.liquidityPremium, 'user risk premium');
   }
 
   function test_getUserRiskPremium_fuzz_single_asset_collateral_borrowed_amount(
@@ -87,7 +87,7 @@ contract SpokeUserRiskPremiumTest is BaseTest {
     params.daiReserveId = spokeInfo[spoke1].dai.reserveId;
     params.supplyAmount = borrowAmount * 2;
 
-    params.daiLP = spoke1.getReserve(params.daiReserveId).config.liquidityPremium;
+    params.daiLP = spoke1.getLiquidityPremium(params.daiReserveId);
 
     // Bob supply dai into spoke1
     deal(address(tokenList.dai), bob, params.supplyAmount);
@@ -96,7 +96,7 @@ contract SpokeUserRiskPremiumTest is BaseTest {
     Utils.spokeBorrow(spoke1, params.daiReserveId, bob, params.borrowAmount, bob);
 
     // With single collateral, user rp will match liquidity premium of collateral
-    assertEq(spoke1.getUserRiskPremium(bob), params.daiLP, 'wrong user risk premium');
+    assertEq(spoke1.getUserRiskPremium(bob), params.daiLP, 'user risk premium');
   }
 
   function test_getUserRiskPremium_fuzz_supply_does_not_impact(
@@ -113,7 +113,7 @@ contract SpokeUserRiskPremiumTest is BaseTest {
     params.daiReserveId = spokeInfo[spoke1].dai.reserveId;
     params.usdxReserveId = spokeInfo[spoke1].usdx.reserveId;
 
-    params.daiLP = spoke1.getReserve(params.daiReserveId).config.liquidityPremium;
+    params.daiLP = spoke1.getLiquidityPremium(params.daiReserveId);
 
     // Bob supply dai into spoke1
     deal(address(tokenList.dai), bob, params.supplyAmount);
@@ -124,11 +124,11 @@ contract SpokeUserRiskPremiumTest is BaseTest {
     uint256 userRiskPremium = spoke1.getUserRiskPremium(bob);
 
     // With single collateral, user rp will match liquidity premium of collateral
-    assertEq(userRiskPremium, params.daiLP, 'wrong user risk premium');
+    assertEq(userRiskPremium, params.daiLP, 'user risk premium');
 
     // Supplying more risky asset (usdx) should not impact user risk premium
     Utils.spokeSupply(spoke1, params.usdxReserveId, bob, additionalSupplyAmount, bob);
-    assertEq(spoke1.getUserRiskPremium(bob), userRiskPremium, 'wrong user risk premium');
+    assertEq(spoke1.getUserRiskPremium(bob), userRiskPremium, 'user risk premium');
   }
 
   function test_getUserRiskPremium_multi_asset_collateral() public {
@@ -143,9 +143,9 @@ contract SpokeUserRiskPremiumTest is BaseTest {
     params.daiBorrowAmount = 1000e18;
     params.usdxBorrowAmount = 1000e18;
 
-    params.daiLP = spoke1.getReserve(params.daiReserveId).config.liquidityPremium;
-    params.usdxLP = spoke1.getReserve(params.usdxReserveId).config.liquidityPremium;
-    params.wethLP = spoke1.getReserve(params.wethReserveId).config.liquidityPremium;
+    params.daiLP = spoke1.getLiquidityPremium(params.daiReserveId);
+    params.usdxLP = spoke1.getLiquidityPremium(params.usdxReserveId);
+    params.wethLP = spoke1.getLiquidityPremium(params.wethReserveId);
 
     // Bob supply dai into spoke1
     Utils.spokeSupply(spoke1, params.daiReserveId, bob, params.daiSupplyAmount, bob);
@@ -187,7 +187,7 @@ contract SpokeUserRiskPremiumTest is BaseTest {
     );
     assertEq(userConfig.baseDebt, 0);
 
-    assertEq(spoke1.getUserRiskPremium(bob), expectedUserRiskPremium, 'wrong user risk premium');
+    assertEq(spoke1.getUserRiskPremium(bob), expectedUserRiskPremium, 'user risk premium');
   }
 
   function test_getUserRiskPremium_multi_asset_collateral_weth_partial_cover() public {
@@ -200,9 +200,9 @@ contract SpokeUserRiskPremiumTest is BaseTest {
     params.usdxSupplyAmount = 2000e18;
     params.wethSupplyAmount = 1e18;
 
-    params.daiLP = spoke1.getReserve(params.daiReserveId).config.liquidityPremium;
-    params.usdxLP = spoke1.getReserve(params.usdxReserveId).config.liquidityPremium;
-    params.wethLP = spoke1.getReserve(params.wethReserveId).config.liquidityPremium;
+    params.daiLP = spoke1.getLiquidityPremium(params.daiReserveId);
+    params.usdxLP = spoke1.getLiquidityPremium(params.usdxReserveId);
+    params.wethLP = spoke1.getLiquidityPremium(params.wethReserveId);
 
     // Bob supply dai into spoke1
     Utils.spokeSupply(spoke1, params.daiReserveId, bob, params.daiSupplyAmount, bob);
@@ -264,7 +264,7 @@ contract SpokeUserRiskPremiumTest is BaseTest {
         params.daiSupplyAmount *
         oracle.getAssetPrice(daiAssetId));
 
-    assertEq(spoke1.getUserRiskPremium(bob), expectedUserRiskPremium, 'wrong user risk premium');
+    assertEq(spoke1.getUserRiskPremium(bob), expectedUserRiskPremium, 'user risk premium');
   }
 
   function test_getUserRiskPremium_two_assets_equal_parts() public {
@@ -279,9 +279,9 @@ contract SpokeUserRiskPremiumTest is BaseTest {
 
     params.wethBorrowAmount = 2e18;
 
-    params.daiLP = spoke1.getReserve(params.daiReserveId).config.liquidityPremium;
-    params.usdxLP = spoke1.getReserve(params.usdxReserveId).config.liquidityPremium;
-    params.wethLP = spoke1.getReserve(params.wethReserveId).config.liquidityPremium;
+    params.daiLP = spoke1.getLiquidityPremium(params.daiReserveId);
+    params.usdxLP = spoke1.getLiquidityPremium(params.usdxReserveId);
+    params.wethLP = spoke1.getLiquidityPremium(params.wethReserveId);
 
     // Bob supply dai into spoke1
     Utils.spokeSupply(spoke1, params.daiReserveId, bob, params.daiSupplyAmount, bob);
@@ -334,7 +334,7 @@ contract SpokeUserRiskPremiumTest is BaseTest {
         equalDebtContribution *
         oracle.getAssetPrice(usdxAssetId));
 
-    assertEq(spoke1.getUserRiskPremium(bob), expectedUserRiskPremium, 'wrong user risk premium');
+    assertEq(spoke1.getUserRiskPremium(bob), expectedUserRiskPremium, 'user risk premium');
   }
 
   function test_getUserRiskPremium_fuzz_two_assets_diff_amounts(uint256 daiSupplyAmount) public {
@@ -342,110 +342,109 @@ contract SpokeUserRiskPremiumTest is BaseTest {
     daiSupplyAmount = bound(daiSupplyAmount, 1, 4000e18);
     uint256 usdxLpContributionAmount = 4000e18 - daiSupplyAmount;
 
-    uint256 daiReserveId = spokeInfo[spoke1].dai.reserveId;
-    uint256 usdxReserveId = spokeInfo[spoke1].usdx.reserveId;
-    uint256 wethReserveId = spokeInfo[spoke1].weth.reserveId;
+    TestInfo memory params;
+    params.daiReserveId = spokeInfo[spoke1].dai.reserveId;
+    params.usdxReserveId = spokeInfo[spoke1].usdx.reserveId;
+    params.wethReserveId = spokeInfo[spoke1].weth.reserveId;
 
-    uint256 usdxSupplyAmount = 6000e18;
-    uint256 wethSupplyAmount = 10e18;
+    params.daiSupplyAmount = daiSupplyAmount;
+    params.usdxSupplyAmount = 6000e18;
+    params.wethSupplyAmount = 10e18;
 
-    uint256 wethBorrowAmount = 2e18;
+    params.wethBorrowAmount = 2e18;
 
-    bool usingAsCollateral = true;
+    params.daiLP = spoke1.getLiquidityPremium(params.daiReserveId);
+    params.usdxLP = spoke1.getLiquidityPremium(params.usdxReserveId);
+    params.wethLP = spoke1.getLiquidityPremium(params.wethReserveId);
 
     // Bob supply dai into spoke1
-    Utils.spokeSupply(spoke1, daiReserveId, bob, daiSupplyAmount, bob);
-    Utils.setUsingAsCollateral(spoke1, bob, daiReserveId, usingAsCollateral);
+    Utils.spokeSupply(spoke1, params.daiReserveId, bob, params.daiSupplyAmount, bob);
+    Utils.setUsingAsCollateral(spoke1, bob, params.daiReserveId, true);
 
     // Bob supply usdx into spoke1
-    Utils.spokeSupply(spoke1, usdxReserveId, bob, usdxSupplyAmount, bob);
-    Utils.setUsingAsCollateral(spoke1, bob, usdxReserveId, usingAsCollateral);
+    Utils.spokeSupply(spoke1, params.usdxReserveId, bob, params.usdxSupplyAmount, bob);
+    Utils.setUsingAsCollateral(spoke1, bob, params.usdxReserveId, true);
 
     // Alice supply weth into spoke1
-    Utils.spokeSupply(spoke1, wethReserveId, alice, wethSupplyAmount, alice);
-    Utils.setUsingAsCollateral(spoke1, alice, wethReserveId, usingAsCollateral);
+    Utils.spokeSupply(spoke1, params.wethReserveId, alice, params.wethSupplyAmount, alice);
+    Utils.setUsingAsCollateral(spoke1, alice, params.wethReserveId, true);
 
     // Bob draw $4000 total in weth
-    Utils.spokeBorrow(spoke1, wethReserveId, bob, wethBorrowAmount, bob);
-
-    Spoke.Reserve memory daiInfo = spoke1.getReserve(daiReserveId);
-    Spoke.Reserve memory usdxInfo = spoke1.getReserve(usdxReserveId);
-    Spoke.Reserve memory wethInfo = spoke1.getReserve(wethReserveId);
+    Utils.spokeBorrow(spoke1, params.wethReserveId, bob, params.wethBorrowAmount, bob);
 
     // Dai and usdx will each cover half the debt
-    uint256 expectedUserRiskPremium = (daiInfo.config.liquidityPremium *
-      daiSupplyAmount *
+    uint256 expectedUserRiskPremium = (params.daiLP *
+      params.daiSupplyAmount *
       oracle.getAssetPrice(daiAssetId) +
-      usdxInfo.config.liquidityPremium *
+      params.usdxLP *
       usdxLpContributionAmount *
       oracle.getAssetPrice(usdxAssetId)) /
-      (daiSupplyAmount *
+      (params.daiSupplyAmount *
         oracle.getAssetPrice(daiAssetId) +
         usdxLpContributionAmount *
         oracle.getAssetPrice(usdxAssetId));
 
-    uint256 userRiskPremium = spoke1.getUserRiskPremium(bob);
-    assertEq(userRiskPremium, expectedUserRiskPremium, 'wrong user risk premium');
+    assertEq(spoke1.getUserRiskPremium(bob), expectedUserRiskPremium, 'user risk premium');
   }
 
+  /// @dev Supply with a high value lp asset so it's ignored in rp calcs, but allows user to borrow large amounts.
+  /// @dev Borrow with any asset because only it's value is important, it's lp is ignored.
+  /// @dev Fix borrow amount, and fuzz the supply amounts, checking rp calc is correct.
   function test_getUserRiskPremium_fuzz_two_assets_supply_and_borrow(
     uint256 daiSupplyAmount
   ) public {
-    /// @dev We supply with a high value lp asset so it's ignored in rp calcs, but allows user to borrow large amounts
-    /// @dev We borrow with any asset because only it's value is important, it's lp is ignored
-    /// @dev We fix borrow amount, and fuzz the supply amounts, checking rp calc is correct
     uint256 totalBorrowAmount = MAX_SUPPLY_AMOUNT / 2;
     // Dai lp to account for up to 100% of the debt value
     daiSupplyAmount = bound(daiSupplyAmount, 1, totalBorrowAmount);
-    uint256 usdxSupplyAmount = totalBorrowAmount - daiSupplyAmount;
-    uint256 wethSupplyAmount = MAX_SUPPLY_AMOUNT;
 
-    assertEq(daiSupplyAmount + usdxSupplyAmount, totalBorrowAmount, 'wrong supply amounts');
+    TestInfo memory params;
+    params.daiReserveId = spokeInfo[spoke3].dai.reserveId;
+    params.usdxReserveId = spokeInfo[spoke3].usdx.reserveId;
+    params.wethReserveId = spokeInfo[spoke3].weth.reserveId;
 
-    uint256 daiReserveId = spokeInfo[spoke3].dai.reserveId;
-    uint256 usdxReserveId = spokeInfo[spoke3].usdx.reserveId;
-    uint256 wethReserveId = spokeInfo[spoke3].weth.reserveId;
+    params.daiSupplyAmount = daiSupplyAmount;
+    params.usdxSupplyAmount = totalBorrowAmount - daiSupplyAmount;
+    params.wethSupplyAmount = MAX_SUPPLY_AMOUNT;
 
     // Borrow all value in weth. Each weth is 2000 stablecoins
-    uint256 wethBorrowAmount = totalBorrowAmount / 2000;
+    params.wethBorrowAmount = totalBorrowAmount / 2000;
 
-    bool usingAsCollateral = true;
+    params.daiLP = spoke3.getLiquidityPremium(params.daiReserveId);
+    params.usdxLP = spoke3.getLiquidityPremium(params.usdxReserveId);
+    params.wethLP = spoke3.getLiquidityPremium(params.wethReserveId);
+
+    assertEq(params.daiSupplyAmount + params.usdxSupplyAmount, totalBorrowAmount, 'supply amounts');
 
     // Bob supply dai into spoke3
-    Utils.spokeSupply(spoke3, daiReserveId, bob, daiSupplyAmount, bob);
-    Utils.setUsingAsCollateral(spoke3, bob, daiReserveId, usingAsCollateral);
+    Utils.spokeSupply(spoke3, params.daiReserveId, bob, params.daiSupplyAmount, bob);
+    Utils.setUsingAsCollateral(spoke3, bob, params.daiReserveId, true);
 
     // Bob supply usdx into spoke3
-    if (usdxSupplyAmount > 0) {
-      Utils.spokeSupply(spoke3, usdxReserveId, bob, usdxSupplyAmount, bob);
-      Utils.setUsingAsCollateral(spoke3, bob, usdxReserveId, usingAsCollateral);
+    if (params.usdxSupplyAmount > 0) {
+      Utils.spokeSupply(spoke3, params.usdxReserveId, bob, params.usdxSupplyAmount, bob);
+      Utils.setUsingAsCollateral(spoke3, bob, params.usdxReserveId, true);
     }
 
     // Bob supply weth into spoke3
-    Utils.spokeSupply(spoke3, wethReserveId, bob, wethSupplyAmount, bob);
-    Utils.setUsingAsCollateral(spoke3, bob, wethReserveId, usingAsCollateral);
+    Utils.spokeSupply(spoke3, params.wethReserveId, bob, params.wethSupplyAmount, bob);
+    Utils.setUsingAsCollateral(spoke3, bob, params.wethReserveId, true);
 
     // Bob draw weth
-    Utils.spokeBorrow(spoke3, wethReserveId, bob, wethBorrowAmount, bob);
-
-    Spoke.Reserve memory daiInfo = spoke3.getReserve(daiReserveId);
-    Spoke.Reserve memory usdxInfo = spoke3.getReserve(usdxReserveId);
-    Spoke.Reserve memory wethInfo = spoke3.getReserve(wethReserveId);
+    Utils.spokeBorrow(spoke3, params.wethReserveId, bob, params.wethBorrowAmount, bob);
 
     // Dai and usdx will each cover part of the debt
-    uint256 expectedUserRiskPremium = (daiInfo.config.liquidityPremium *
-      daiSupplyAmount *
+    uint256 expectedUserRiskPremium = (params.daiLP *
+      params.daiSupplyAmount *
       oracle.getAssetPrice(daiAssetId) +
-      usdxInfo.config.liquidityPremium *
-      usdxSupplyAmount *
+      params.usdxLP *
+      params.usdxSupplyAmount *
       oracle.getAssetPrice(usdxAssetId)) /
-      (daiSupplyAmount *
+      (params.daiSupplyAmount *
         oracle.getAssetPrice(daiAssetId) +
-        usdxSupplyAmount *
+        params.usdxSupplyAmount *
         oracle.getAssetPrice(usdxAssetId));
 
-    uint256 userRiskPremium = spoke3.getUserRiskPremium(bob);
-    assertEq(userRiskPremium, expectedUserRiskPremium, 'wrong user risk premium');
+    assertEq(spoke3.getUserRiskPremium(bob), expectedUserRiskPremium, 'user risk premium');
   }
 
   function test_getUserRiskPremium_fuzz_three_assets_supply_and_borrow(
@@ -453,70 +452,84 @@ contract SpokeUserRiskPremiumTest is BaseTest {
     uint256 usdxSupplyAmount
   ) public {
     uint256 totalBorrowAmount = MAX_SUPPLY_AMOUNT / 2;
-    uint256 wbtcSupplyAmount = MAX_SUPPLY_AMOUNT;
-
     daiSupplyAmount = bound(daiSupplyAmount, 0, totalBorrowAmount);
     usdxSupplyAmount = bound(usdxSupplyAmount, 0, totalBorrowAmount - daiSupplyAmount);
-    uint256 wethSupplyAmount = totalBorrowAmount - daiSupplyAmount - usdxSupplyAmount;
 
-    vm.assume(daiSupplyAmount + usdxSupplyAmount + wethSupplyAmount == totalBorrowAmount);
-    assertEq(
-      daiSupplyAmount + usdxSupplyAmount + wethSupplyAmount,
-      totalBorrowAmount,
-      'wrong supply amounts'
-    );
+    TestInfo memory params;
+    params.daiReserveId = spokeInfo[spoke3].dai.reserveId;
+    params.usdxReserveId = spokeInfo[spoke3].usdx.reserveId;
+    params.wethReserveId = spokeInfo[spoke3].weth.reserveId;
+    params.wbtcReserveId = spokeInfo[spoke3].wbtc.reserveId;
 
-    // Borrow all value in wbtc. Each wbtc is 50000 stablecoins, weth is 2000
-    uint256 wbtcBorrowAmount = (daiSupplyAmount + usdxSupplyAmount + (wethSupplyAmount * 2000)) /
+    params.daiSupplyAmount = daiSupplyAmount;
+    params.usdxSupplyAmount = usdxSupplyAmount;
+    params.wethSupplyAmount = totalBorrowAmount - daiSupplyAmount - usdxSupplyAmount;
+    params.wbtcSupplyAmount = MAX_SUPPLY_AMOUNT;
+
+    // Each weth is 2000 stablecoins; each wbtc is 50000
+    params.wbtcBorrowAmount =
+      (params.daiSupplyAmount + params.usdxSupplyAmount + (params.wethSupplyAmount * 2000)) /
       50000;
 
-    bool usingAsCollateral = true;
+    params.daiLP = spoke3.getLiquidityPremium(params.daiReserveId);
+    params.usdxLP = spoke3.getLiquidityPremium(params.usdxReserveId);
+    params.wethLP = spoke3.getLiquidityPremium(params.wethReserveId);
+
+    vm.assume(
+      params.daiSupplyAmount + params.usdxSupplyAmount + params.wethSupplyAmount ==
+        totalBorrowAmount
+    );
+    assertEq(
+      params.daiSupplyAmount + params.usdxSupplyAmount + params.wethSupplyAmount,
+      totalBorrowAmount,
+      'supply amounts'
+    );
 
     // Bob supply dai into spoke3
-    if (daiSupplyAmount > 0) {
-      Utils.spokeSupply(spoke3, spokeInfo[spoke3].dai.reserveId, bob, daiSupplyAmount, bob);
-      Utils.setUsingAsCollateral(spoke3, bob, spokeInfo[spoke3].dai.reserveId, usingAsCollateral);
+    if (params.daiSupplyAmount > 0) {
+      Utils.spokeSupply(spoke3, params.daiReserveId, bob, params.daiSupplyAmount, bob);
+      Utils.setUsingAsCollateral(spoke3, bob, params.daiReserveId, true);
     }
 
     // Bob supply usdx into spoke3
-    if (usdxSupplyAmount > 0) {
-      Utils.spokeSupply(spoke3, spokeInfo[spoke3].usdx.reserveId, bob, usdxSupplyAmount, bob);
-      Utils.setUsingAsCollateral(spoke3, bob, spokeInfo[spoke3].usdx.reserveId, usingAsCollateral);
+    if (params.usdxSupplyAmount > 0) {
+      Utils.spokeSupply(spoke3, params.usdxReserveId, bob, params.usdxSupplyAmount, bob);
+      Utils.setUsingAsCollateral(spoke3, bob, params.usdxReserveId, true);
     }
 
     // Bob supply weth into spoke3
-    if (wethSupplyAmount > 0) {
-      Utils.spokeSupply(spoke3, spokeInfo[spoke3].weth.reserveId, bob, wethSupplyAmount, bob);
-      Utils.setUsingAsCollateral(spoke3, bob, spokeInfo[spoke3].weth.reserveId, usingAsCollateral);
+    if (params.wethSupplyAmount > 0) {
+      Utils.spokeSupply(spoke3, params.wethReserveId, bob, params.wethSupplyAmount, bob);
+      Utils.setUsingAsCollateral(spoke3, bob, params.wethReserveId, true);
     }
 
     // Bob supply wbtc into spoke3
-    Utils.spokeSupply(spoke3, spokeInfo[spoke3].wbtc.reserveId, bob, wbtcSupplyAmount, bob);
+    Utils.spokeSupply(spoke3, params.wbtcReserveId, bob, params.wbtcSupplyAmount, bob);
 
     // Bob draw wbtc
-    Utils.spokeBorrow(spoke3, spokeInfo[spoke3].wbtc.reserveId, bob, wbtcBorrowAmount, bob);
-
-    Spoke.Reserve memory daiInfo = spoke3.getReserve(spokeInfo[spoke3].dai.reserveId);
-    Spoke.Reserve memory usdxInfo = spoke3.getReserve(spokeInfo[spoke3].usdx.reserveId);
-    Spoke.Reserve memory wethInfo = spoke3.getReserve(spokeInfo[spoke3].weth.reserveId);
+    Utils.spokeBorrow(spoke3, params.wbtcReserveId, bob, params.wbtcBorrowAmount, bob);
 
     // Dai, usdx, and weth will each cover part of the debt
-    uint256 expectedUserRiskPremium = ((daiInfo.config.liquidityPremium *
-      daiSupplyAmount *
+    uint256 expectedUserRiskPremium = ((params.daiLP *
+      params.daiSupplyAmount *
       oracle.getAssetPrice(daiAssetId) +
-      usdxInfo.config.liquidityPremium *
-      usdxSupplyAmount *
+      params.usdxLP *
+      params.usdxSupplyAmount *
       oracle.getAssetPrice(usdxAssetId)) +
-      (wethSupplyAmount * oracle.getAssetPrice(wethAssetId) * wethInfo.config.liquidityPremium)) /
-      (daiSupplyAmount *
+      (params.wethSupplyAmount * oracle.getAssetPrice(wethAssetId) * params.wethLP)) /
+      (params.daiSupplyAmount *
         oracle.getAssetPrice(daiAssetId) +
-        usdxSupplyAmount *
+        params.usdxSupplyAmount *
         oracle.getAssetPrice(usdxAssetId) +
-        wethSupplyAmount *
+        params.wethSupplyAmount *
         oracle.getAssetPrice(wethAssetId));
 
-    uint256 userRiskPremium = spoke3.getUserRiskPremium(bob);
-    assertApproxEqAbs(userRiskPremium, expectedUserRiskPremium, 1, 'wrong user risk premium');
+    assertApproxEqAbs(
+      spoke3.getUserRiskPremium(bob),
+      expectedUserRiskPremium,
+      1,
+      'user risk premium'
+    );
   }
 
   function test_getUserRiskPremium_fuzz_four_assets_supply_and_borrow(
@@ -538,99 +551,120 @@ contract SpokeUserRiskPremiumTest is BaseTest {
       0,
       totalBorrowAmount - wbtcSupplyAmount * 50000 - wethSupplyAmount * 2000
     );
-    uint256 usdxSupplyAmount = totalBorrowAmount -
+
+    TestInfo memory params;
+    params.daiReserveId = spokeInfo[spoke2].dai.reserveId;
+    params.usdxReserveId = spokeInfo[spoke2].usdx.reserveId;
+    params.wethReserveId = spokeInfo[spoke2].weth.reserveId;
+    params.wbtcReserveId = spokeInfo[spoke2].wbtc.reserveId;
+    params.dai2ReserveId = spokeInfo[spoke2].dai2.reserveId;
+
+    params.daiSupplyAmount = daiSupplyAmount;
+    params.usdxSupplyAmount =
+      totalBorrowAmount -
       wbtcSupplyAmount *
       50000 -
       wethSupplyAmount *
       2000 -
       daiSupplyAmount;
+    params.wethSupplyAmount = wethSupplyAmount;
+    params.wbtcSupplyAmount = wbtcSupplyAmount;
 
     vm.assume(
-      wbtcSupplyAmount * 50000 + wethSupplyAmount * 2000 + daiSupplyAmount + usdxSupplyAmount <=
+      params.wbtcSupplyAmount *
+        50000 +
+        params.wethSupplyAmount *
+        2000 +
+        params.daiSupplyAmount +
+        params.usdxSupplyAmount <=
         totalBorrowAmount
     );
     assertLe(
-      wbtcSupplyAmount + wethSupplyAmount + daiSupplyAmount + usdxSupplyAmount,
+      params.wbtcSupplyAmount +
+        params.wethSupplyAmount +
+        params.daiSupplyAmount +
+        params.usdxSupplyAmount,
       totalBorrowAmount,
-      'wrong supply amounts'
+      'supply amounts'
     );
 
     // Borrow all value in dai2. Each wbtc is 50000 stablecoins, weth is 2000
-    uint256 dai2BorrowAmount = daiSupplyAmount +
-      usdxSupplyAmount +
-      wethSupplyAmount *
+    params.dai2BorrowAmount =
+      params.daiSupplyAmount +
+      params.usdxSupplyAmount +
+      params.wethSupplyAmount *
       2000 +
-      wbtcSupplyAmount *
+      params.wbtcSupplyAmount *
       50000;
+
+    params.daiLP = spoke2.getLiquidityPremium(params.daiReserveId);
+    params.wethLP = spoke2.getLiquidityPremium(params.wethReserveId);
+    params.usdxLP = spoke2.getLiquidityPremium(params.usdxReserveId);
+    params.wbtcLP = spoke2.getLiquidityPremium(params.wbtcReserveId);
 
     // Handle supplying max of both dai and dai2
     deal(address(tokenList.dai), bob, MAX_SUPPLY_AMOUNT * 2);
 
     // Bob supply wbtc into spoke2
-    if (wbtcSupplyAmount > 0) {
-      Utils.spokeSupply(spoke2, spokeInfo[spoke2].wbtc.reserveId, bob, wbtcSupplyAmount, bob);
-      Utils.setUsingAsCollateral(spoke2, bob, spokeInfo[spoke2].wbtc.reserveId, true);
+    if (params.wbtcSupplyAmount > 0) {
+      Utils.spokeSupply(spoke2, params.wbtcReserveId, bob, params.wbtcSupplyAmount, bob);
+      Utils.setUsingAsCollateral(spoke2, bob, params.wbtcReserveId, true);
     }
 
     // Bob supply weth into spoke2
-    if (wethSupplyAmount > 0) {
-      Utils.spokeSupply(spoke2, spokeInfo[spoke2].weth.reserveId, bob, wethSupplyAmount, bob);
-      Utils.setUsingAsCollateral(spoke2, bob, spokeInfo[spoke2].weth.reserveId, true);
+    if (params.wethSupplyAmount > 0) {
+      Utils.spokeSupply(spoke2, params.wethReserveId, bob, params.wethSupplyAmount, bob);
+      Utils.setUsingAsCollateral(spoke2, bob, params.wethReserveId, true);
     }
 
     // Bob supply dai into spoke2
-    if (daiSupplyAmount > 0) {
-      Utils.spokeSupply(spoke2, spokeInfo[spoke2].dai.reserveId, bob, daiSupplyAmount, bob);
-      Utils.setUsingAsCollateral(spoke2, bob, spokeInfo[spoke2].dai.reserveId, true);
+    if (params.daiSupplyAmount > 0) {
+      Utils.spokeSupply(spoke2, params.daiReserveId, bob, params.daiSupplyAmount, bob);
+      Utils.setUsingAsCollateral(spoke2, bob, params.daiReserveId, true);
     }
 
     // Bob supply usdx into spoke2
-    if (usdxSupplyAmount > 0) {
-      Utils.spokeSupply(spoke2, spokeInfo[spoke2].usdx.reserveId, bob, usdxSupplyAmount, bob);
-      Utils.setUsingAsCollateral(spoke2, bob, spokeInfo[spoke2].usdx.reserveId, true);
+    if (params.usdxSupplyAmount > 0) {
+      Utils.spokeSupply(spoke2, params.usdxReserveId, bob, params.usdxSupplyAmount, bob);
+      Utils.setUsingAsCollateral(spoke2, bob, params.usdxReserveId, true);
     }
 
     // Bob supply dai2 into spoke2
-    Utils.spokeSupply(spoke2, spokeInfo[spoke2].dai2.reserveId, bob, MAX_SUPPLY_AMOUNT, bob);
-    Utils.setUsingAsCollateral(spoke2, bob, spokeInfo[spoke2].dai2.reserveId, true);
+    Utils.spokeSupply(spoke2, params.dai2ReserveId, bob, MAX_SUPPLY_AMOUNT, bob);
+    Utils.setUsingAsCollateral(spoke2, bob, params.dai2ReserveId, true);
 
     // Bob draw dai2
-    Utils.spokeBorrow(spoke2, spokeInfo[spoke2].dai2.reserveId, bob, dai2BorrowAmount, bob);
-
-    Spoke.Reserve memory wbtcInfo = spoke2.getReserve(spokeInfo[spoke2].wbtc.reserveId);
-    Spoke.Reserve memory wethInfo = spoke2.getReserve(spokeInfo[spoke2].weth.reserveId);
-    Spoke.Reserve memory daiInfo = spoke2.getReserve(spokeInfo[spoke2].dai.reserveId);
-    Spoke.Reserve memory usdxInfo = spoke2.getReserve(spokeInfo[spoke2].usdx.reserveId);
+    Utils.spokeBorrow(spoke2, params.dai2ReserveId, bob, params.dai2BorrowAmount, bob);
 
     // wbtc, weth, dai, and usdx will each cover part of the debt
     uint256 expectedUserRiskPremium = (
-      (wbtcInfo.config.liquidityPremium *
-        wbtcSupplyAmount *
+      (params.wbtcLP *
+        params.wbtcSupplyAmount *
         oracle.getAssetPrice(wbtcAssetId) +
-        wethSupplyAmount *
-        oracle.getAssetPrice(wethAssetId) *
-        wethInfo.config.liquidityPremium +
-        daiInfo.config.liquidityPremium *
-        daiSupplyAmount *
+        params.wethLP *
+        params.wethSupplyAmount *
+        oracle.getAssetPrice(wethAssetId) +
+        params.daiLP *
+        params.daiSupplyAmount *
         oracle.getAssetPrice(daiAssetId) +
-        usdxInfo.config.liquidityPremium *
-        usdxSupplyAmount *
+        params.usdxLP *
+        params.usdxSupplyAmount *
         oracle.getAssetPrice(usdxAssetId))
     ) /
-      (wbtcSupplyAmount *
+      (params.wbtcSupplyAmount *
         oracle.getAssetPrice(wbtcAssetId) +
-        wethSupplyAmount *
+        params.wethSupplyAmount *
         oracle.getAssetPrice(wethAssetId) +
-        daiSupplyAmount *
+        params.daiSupplyAmount *
         oracle.getAssetPrice(daiAssetId) +
-        usdxSupplyAmount *
+        params.usdxSupplyAmount *
         oracle.getAssetPrice(usdxAssetId));
 
     assertApproxEqAbs(
       spoke2.getUserRiskPremium(bob),
       expectedUserRiskPremium,
       1,
-      'wrong user risk premium'
+      'user risk premium'
     );
   }
 
@@ -669,7 +703,7 @@ contract SpokeUserRiskPremiumTest is BaseTest {
     assertLe(
       wbtcSupplyAmount + wethSupplyAmount + daiSupplyAmount + usdxSupplyAmount,
       totalBorrowAmount,
-      'wrong supply amounts'
+      'supply amounts'
     );
 
     // Borrow all value in dai2. Each wbtc is 50000 stablecoins, weth is 2000
@@ -742,7 +776,7 @@ contract SpokeUserRiskPremiumTest is BaseTest {
       spoke2.getUserRiskPremium(bob),
       expectedUserRiskPremium,
       1,
-      'wrong user risk premium'
+      'user risk premium'
     );
 
     // Now change the price of usdx
@@ -754,7 +788,7 @@ contract SpokeUserRiskPremiumTest is BaseTest {
         spoke2.getUserRiskPremium(bob),
         expectedUserRiskPremium,
         1,
-        'wrong user risk premium'
+        'user risk premium'
       );
     } else {
       // Otherwise, the difference from old contribution becomes dai2 contribution (100% lp)
@@ -823,7 +857,7 @@ contract SpokeUserRiskPremiumTest is BaseTest {
     assertLe(
       wbtcSupplyAmount + wethSupplyAmount + daiSupplyAmount + usdxSupplyAmount,
       totalBorrowAmount,
-      'wrong supply amounts'
+      'supply amounts'
     );
 
     // Borrow all value in dai2. Each wbtc is 50000 stablecoins, weth is 2000
@@ -896,7 +930,7 @@ contract SpokeUserRiskPremiumTest is BaseTest {
       spoke2.getUserRiskPremium(bob),
       expectedUserRiskPremium,
       1,
-      'wrong user risk premium'
+      'user risk premium'
     );
 
     // Change the liquidity premium of wbtc
@@ -939,7 +973,7 @@ contract SpokeUserRiskPremiumTest is BaseTest {
       spoke2.getUserRiskPremium(bob),
       expectedUserRiskPremium,
       1,
-      'wrong user risk premium'
+      'user risk premium'
     );
   }
 }

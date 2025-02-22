@@ -133,6 +133,10 @@ contract Spoke is ISpoke {
     return _users[user][reserveId].riskPremium.derayify();
   }
 
+  function getLiquidityPremium(uint256 reserveId) external view returns (uint256) {
+    return _reserves[reserveId].config.liquidityPremium;
+  }
+
   /// governance
   function updateReserveConfig(uint256 reserveId, ReserveConfig calldata params) external {
     // TODO: AccessControl
