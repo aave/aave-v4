@@ -282,10 +282,10 @@ contract Spoke is ISpoke {
   }
 
   // TODO: Needed?
-  function getInterestRate(uint256 reserveId) public view returns (uint256) {
+  function getInterestRate(uint256 assetId) public view returns (uint256) {
     // read from state, convert to ray
     // TODO: should be final IR rather than base?
-    return ILiquidityHub(liquidityHub).getBaseInterestRate(reserveId);
+    return ILiquidityHub(liquidityHub).getBaseInterestRate(assetId);
   }
 
   // /////
@@ -519,8 +519,8 @@ contract Spoke is ISpoke {
 
     uint256 newUserDebt = baseDebtChange > 0
       ? existingUserDebt + uint256(baseDebtChange) // debt added
-      : // force underflow: only possible when user takes repays amount more than net drawn
-      existingUserDebt - uint256(-baseDebtChange); // debt restored
+      // force underflow: only possible when user takes repays amount more than net drawn
+      : existingUserDebt - uint256(-baseDebtChange); // debt restored
 
     (uint256 newReserveRiskPremium, uint256 newReserveDebt) = MathUtils.addToWeightedAverage(
       reserveRiskPremiumWithoutCurrent,
