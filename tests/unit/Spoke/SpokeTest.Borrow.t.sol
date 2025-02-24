@@ -31,6 +31,28 @@ contract SpokeBorrowTest is BaseTest {
     spoke1.borrow(daiReserveId, daiAmount / 2, bob);
   }
 
+  function test_borrow_revertsWith_asset_not_active() public {
+    uint256 daiReserveId = spokeInfo[spoke1].dai.reserveId;
+    uint256 wethReserveId = spokeInfo[spoke1].weth.reserveId;
+
+    uint256 daiAmount = 100e18;
+    uint256 wethAmount = 10e18;
+
+    // Bob supply weth
+    Utils.spokeSupply(spoke1, wethReserveId, bob, wethAmount, bob);
+
+    // Alice supply dai
+    Utils.spokeSupply(spoke1, daiReserveId, alice, daiAmount, alice);
+
+    // set asset not active
+    _updateActive(daiAssetId, false);
+
+    // Bob draw half of dai reserve liquidity
+    vm.prank(bob);
+    vm.expectRevert(TestErrors.ASSET_NOT_ACTIVE);
+    spoke1.borrow(daiReserveId, daiAmount / 2, bob);
+  }
+
   function test_borrow() public {
     uint256 daiReserveId = spokeInfo[spoke1].dai.reserveId;
     uint256 wethReserveId = spokeInfo[spoke1].weth.reserveId;
@@ -251,5 +273,105 @@ contract SpokeBorrowTest is BaseTest {
 
     vm.expectRevert(TestErrors.DRAW_CAP_EXCEEDED);
     Utils.spokeBorrow(spoke1, daiReserveId, bob, 1, bob);
+  }
+
+  function test_borrow_fuzz_multiple_reserves(
+    uint256 daiBorrowAmount,
+    uint256 wethBorrowamount,
+    uint256 usdxBorrowAmount,
+    uint256 wbtcBorrowAmount
+  ) public {
+    uint256 daiReserveId = spokeInfo[spoke2].dai.reserveId;
+    uint256 wethReserveId = spokeInfo[spoke2].weth.reserveId;
+    uint256 usdxReserveId = spokeInfo[spoke2].usdx.reserveId;
+    uint256 wbtcReserveId = spokeInfo[spoke2].wbtc.reserveId;
+    uint256 dai2ReserveId = spokeInfo[spoke2].dai2.reserveId;
+
+    daiBorrowAmount = bound(daiBorrowAmount, 0, MAX_SUPPLY_AMOUNT / 2);
+    wethBorrowamount = bound(wethBorrowamount, 0, MAX_SUPPLY_AMOUNT / 2);
+    usdxBorrowAmount = bound(usdxBorrowAmount, 0, MAX_SUPPLY_AMOUNT / 2);
+    wbtcBorrowAmount = bound(wbtcBorrowAmount, 0, MAX_SUPPLY_AMOUNT / 2);
+
+    // Account for dai and dai2 supply actions
+    deal(address(tokenList.dai), bob, 2 * MAX_SUPPLY_AMOUNT);
+
+    // Bob supply all reserves
+    Utils.spokeSupply(spoke2, daiReserveId, bob, MAX_SUPPLY_AMOUNT, bob);
+    Utils.spokeSupply(spoke2, wethReserveId, bob, MAX_SUPPLY_AMOUNT, bob);
+    Utils.spokeSupply(spoke2, usdxReserveId, bob, MAX_SUPPLY_AMOUNT, bob);
+    Utils.spokeSupply(spoke2, wbtcReserveId, bob, MAX_SUPPLY_AMOUNT, bob);
+    Utils.spokeSupply(spoke2, dai2ReserveId, bob, MAX_SUPPLY_AMOUNT, bob);
+
+    Spoke.UserConfig memory bobData = _getUserSpokeInfo(spoke2, bob, daiReserveId);
+    assertEq(
+      bobData.suppliedShares,
+      hub.convertToSharesDown(daiAssetId, MAX_SUPPLY_AMOUNT),
+      'bob supply shares pre-draw'
+    );
+    assertEq(bobData.baseDebt, 0, 'bob base debt pre-draw');
+    bobData = _getUserSpokeInfo(spoke2, bob, wethReserveId);
+    assertEq(
+      bobData.suppliedShares,
+      hub.convertToSharesDown(wethAssetId, MAX_SUPPLY_AMOUNT),
+      'bob supply shares pre-draw'
+    );
+    assertEq(bobData.baseDebt, 0, 'bob base debt pre-draw');
+    bobData = _getUserSpokeInfo(spoke2, bob, usdxReserveId);
+    assertEq(
+      bobData.suppliedShares,
+      hub.convertToSharesDown(usdxAssetId, MAX_SUPPLY_AMOUNT),
+      'bob supply shares pre-draw'
+    );
+    assertEq(bobData.baseDebt, 0, 'bob base debt pre-draw');
+    bobData = _getUserSpokeInfo(spoke2, bob, wbtcReserveId);
+    assertEq(
+      bobData.suppliedShares,
+      hub.convertToSharesDown(wbtcAssetId, MAX_SUPPLY_AMOUNT),
+      'bob supply shares pre-draw'
+    );
+    assertEq(bobData.baseDebt, 0, 'bob base debt pre-draw');
+
+    // Bob borrow all reserves
+    if (daiBorrowAmount > 0) {
+      Utils.spokeBorrow(spoke2, daiReserveId, bob, daiBorrowAmount, bob);
+    }
+    if (wethBorrowamount > 0) {
+      Utils.spokeBorrow(spoke2, wethReserveId, bob, wethBorrowamount, bob);
+    }
+    if (usdxBorrowAmount > 0) {
+      Utils.spokeBorrow(spoke2, usdxReserveId, bob, usdxBorrowAmount, bob);
+    }
+    if (wbtcBorrowAmount > 0) {
+      Utils.spokeBorrow(spoke2, wbtcReserveId, bob, wbtcBorrowAmount, bob);
+    }
+
+    bobData = _getUserSpokeInfo(spoke2, bob, daiReserveId);
+    assertEq(
+      bobData.suppliedShares,
+      hub.convertToSharesDown(daiAssetId, MAX_SUPPLY_AMOUNT),
+      'bob supply shares final balance'
+    );
+    assertEq(bobData.baseDebt, daiBorrowAmount, 'bob base debt dai final balance');
+    bobData = _getUserSpokeInfo(spoke2, bob, wethReserveId);
+    assertEq(
+      bobData.suppliedShares,
+      hub.convertToSharesDown(wethAssetId, MAX_SUPPLY_AMOUNT),
+      'bob supply shares final balance'
+    );
+    assertEq(bobData.baseDebt, wethBorrowamount, 'bob base debt weth final balance');
+    bobData = _getUserSpokeInfo(spoke2, bob, usdxReserveId);
+    assertEq(
+      bobData.suppliedShares,
+      hub.convertToSharesDown(usdxAssetId, MAX_SUPPLY_AMOUNT),
+      'bob supply shares final balance'
+    );
+    assertEq(bobData.baseDebt, usdxBorrowAmount, 'bob base debt usdx final balance');
+    bobData = _getUserSpokeInfo(spoke2, bob, wbtcReserveId);
+    assertEq(
+      bobData.suppliedShares,
+      hub.convertToSharesDown(wbtcAssetId, MAX_SUPPLY_AMOUNT),
+      'bob supply shares final balance'
+    );
+    assertEq(bobData.baseDebt, wbtcBorrowAmount, 'bob base debt wbtc final balance');
   }
 }

@@ -534,4 +534,10 @@ abstract contract BaseTest is Test, Events {
     (userConfig.baseDebt, ) = spoke.getUserDebt(reserveId, user);
     return userConfig;
   }
+
+  function _updateActive(uint256 assetId, bool newActive) internal {
+    DataTypes.AssetConfig memory reserveConfig = hub.getAsset(assetId).config;
+    reserveConfig.active = newActive;
+    hub.updateAssetConfig(assetId, reserveConfig);
+  }
 }
