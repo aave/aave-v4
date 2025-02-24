@@ -4,7 +4,7 @@ pragma solidity ^0.8.0;
 import 'tests/scenario/liquidityHub/LiquidityHub.ScenarioBase.t.sol';
 import {Utils} from 'tests/Utils.t.sol';
 
-contract BorrowIndex_Scenario3Test is LiquidityHubScenarioBaseTest {
+contract BorrowIndex_Scenario3Test is LiquidityHubScenarioBase {
   using SharesMath for uint256;
   using WadRayMath for uint256;
   using PercentageMath for uint256;

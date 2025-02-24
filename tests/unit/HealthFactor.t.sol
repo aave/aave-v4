@@ -1,9 +1,9 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.0;
 
-import '../BaseTest.t.sol';
+import '../Base.t.sol';
 
-contract HealthFactorTest_ToMigrate is BaseTest {
+contract HealthFactorTest_ToMigrate is Base {
   using SharesMath for uint256;
   using WadRayMath for uint256;
   using PercentageMath for uint256;

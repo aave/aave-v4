@@ -1,9 +1,9 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.0;
 
-import './LiquidityHubBaseTest.t.sol';
+import './LiquidityHubBase.t.sol';
 
-contract LiquidityHubDrawTest is LiquidityHubBaseTest {
+contract LiquidityHubDrawTest is LiquidityHubBase {
   using SharesMath for uint256;
   using WadRayMath for uint256;
 

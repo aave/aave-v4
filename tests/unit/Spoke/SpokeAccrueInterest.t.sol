@@ -1,10 +1,10 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.0;
 
-import 'tests/BaseTest.t.sol';
+import 'tests/Base.t.sol';
 import {Spoke} from 'src/contracts/Spoke.sol';
 
-contract SpokeAccrueInterestTest is BaseTest {
+contract SpokeAccrueInterestTest is Base {
   using SharesMath for uint256;
   using WadRayMath for uint256;
   using PercentageMath for uint256;

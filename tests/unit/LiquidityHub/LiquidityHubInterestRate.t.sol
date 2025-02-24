@@ -1,10 +1,10 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.0;
 
-import 'tests/BaseTest.t.sol';
+import 'tests/Base.t.sol';
 import {Utils} from 'tests/Utils.t.sol';
 
-contract LiquidityHubInterestRateTest is BaseTest {
+contract LiquidityHubInterestRateTest is Base {
   using SharesMath for uint256;
   using WadRayMath for uint256;
   using PercentageMath for uint256;

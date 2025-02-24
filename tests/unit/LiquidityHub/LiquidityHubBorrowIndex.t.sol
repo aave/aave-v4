@@ -1,8 +1,8 @@
 pragma solidity ^0.8.0;
 
-import 'tests/BaseTest.t.sol';
+import 'tests/Base.t.sol';
 
-contract LiquidityHubBorrowIndexTest is BaseTest {
+contract LiquidityHubBorrowIndex is Base {
   using WadRayMath for uint256;
   uint256 internal amount = 1000e18;
   uint256 internal borrowRate = 10_00;

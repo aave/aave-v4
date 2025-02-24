@@ -3,10 +3,10 @@ pragma solidity ^0.8.0;
 
 import {IERC20Errors} from 'src/dependencies/openzeppelin/IERC20Errors.sol';
 
-import 'tests/BaseTest.t.sol';
+import 'tests/Base.t.sol';
 import {Spoke} from 'src/contracts/Spoke.sol';
 
-contract SpokeSupplyTest is BaseTest {
+contract SpokeSupplyTest is Base {
   function setUp() public override {
     super.setUp();
     initEnvironment();

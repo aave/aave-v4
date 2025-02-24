@@ -82,7 +82,7 @@ library TestErrors {
   bytes constant RESERVE_NOT_LISTED = 'RESERVE_NOT_LISTED';
 }
 
-abstract contract BaseTest is Test, Events {
+abstract contract Base is Test, Events {
   using WadRayMath for uint256;
   using SharesMath for uint256;
 

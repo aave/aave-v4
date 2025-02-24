@@ -1,11 +1,11 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.0;
 
-import 'tests/BaseTest.t.sol';
+import 'tests/Base.t.sol';
 import {IERC20Errors} from 'src/dependencies/openzeppelin/IERC20Errors.sol';
 import {DataTypes} from 'src/libraries/types/DataTypes.sol';
 
-contract LiquidityHubBaseTest is BaseTest {
+contract LiquidityHubBase is Base {
   using SharesMath for uint256;
   using WadRayMath for uint256;
 

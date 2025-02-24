@@ -1,9 +1,9 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.0;
 
-import 'tests/BaseTest.t.sol';
+import 'tests/Base.t.sol';
 
-contract SpokeBorrowTest is BaseTest {
+contract SpokeBorrowTest is Base {
   function setUp() public override {
     super.setUp();
     super.initEnvironment();
@@ -75,13 +75,13 @@ contract SpokeBorrowTest is BaseTest {
 
     assertEq(
       bobData.suppliedShares,
-      hub.convertToSharesDown(wethAssetId, wethAmount),
+      hub.convertToShares(wethAssetId, wethAmount),
       'bob supply shares pre-draw'
     );
     assertEq(bobData.baseDebt, 0, 'bob base debt pre-draw');
     assertEq(
       aliceData.suppliedShares,
-      hub.convertToSharesDown(daiAssetId, daiAmount),
+      hub.convertToShares(daiAssetId, daiAmount),
       'alice supply shares pre-draw'
     );
     assertEq(aliceData.baseDebt, 0, 'alice base debt pre-draw');
@@ -101,7 +101,7 @@ contract SpokeBorrowTest is BaseTest {
 
     assertEq(
       bobData.suppliedShares,
-      hub.convertToSharesDown(wethAssetId, wethAmount),
+      hub.convertToShares(wethAssetId, wethAmount),
       'bob supply shares final balance'
     );
     assertEq(bobData.baseDebt, 0, 'bob base debt weth final balance');
@@ -109,7 +109,7 @@ contract SpokeBorrowTest is BaseTest {
     assertEq(bobData.baseDebt, daiAmount / 2, 'bob base debt dai final balance');
     assertEq(
       aliceData.suppliedShares,
-      hub.convertToSharesDown(daiAssetId, daiAmount),
+      hub.convertToShares(daiAssetId, daiAmount),
       'alice supply shares final balance'
     );
     assertEq(aliceData.baseDebt, 0, 'alice base debt final');
@@ -179,13 +179,13 @@ contract SpokeBorrowTest is BaseTest {
 
     assertEq(
       bobData.suppliedShares,
-      hub.convertToSharesDown(wethAssetId, wethSupplyAmount),
+      hub.convertToShares(wethAssetId, wethSupplyAmount),
       'bob supply shares pre-draw'
     );
     assertEq(bobData.baseDebt, 0, 'bob base debt pre-draw');
     assertEq(
       aliceData.suppliedShares,
-      hub.convertToSharesDown(daiAssetId, daiBorrowAmount),
+      hub.convertToShares(daiAssetId, daiBorrowAmount),
       'alice supply shares pre-draw'
     );
     assertEq(aliceData.baseDebt, 0, 'alice base debt pre-draw');
@@ -197,23 +197,23 @@ contract SpokeBorrowTest is BaseTest {
     // Bob draw dai
     vm.prank(bob);
     vm.expectEmit(address(spoke1));
-    emit Borrowed(spokeInfo[spoke1].dai.reserveId, daiBorrowAmount, bob);
-    spoke1.borrow(spokeInfo[spoke1].dai.reserveId, daiBorrowAmount, bob);
+    emit Borrowed(daiReserveId, daiBorrowAmount, bob);
+    spoke1.borrow(daiReserveId, daiBorrowAmount, bob);
 
     bobData = _getUserSpokeInfo(spoke1, bob, wethReserveId);
     aliceData = _getUserSpokeInfo(spoke1, alice, daiReserveId);
 
     assertEq(
       bobData.suppliedShares,
-      hub.convertToSharesDown(wethAssetId, wethSupplyAmount),
+      hub.convertToShares(wethAssetId, wethSupplyAmount),
       'bob supply shares final balance'
     );
     assertEq(bobData.baseDebt, 0, 'bob base debt weth final balance');
-    bobData = spoke1.getUser(spokeInfo[spoke1].dai.reserveId, bob);
+    bobData = spoke1.getUser(daiReserveId, bob);
     assertEq(bobData.baseDebt, daiBorrowAmount, 'bob base debt dai final balance');
     assertEq(
       aliceData.suppliedShares,
-      hub.convertToSharesDown(daiAssetId, daiBorrowAmount),
+      hub.convertToShares(daiAssetId, daiBorrowAmount),
       'alice supply shares final balance'
     );
     assertEq(aliceData.baseDebt, 0, 'alice base debt final');
@@ -305,28 +305,28 @@ contract SpokeBorrowTest is BaseTest {
     DataTypes.UserConfig memory bobData = _getUserSpokeInfo(spoke2, bob, daiReserveId);
     assertEq(
       bobData.suppliedShares,
-      hub.convertToSharesDown(daiAssetId, MAX_SUPPLY_AMOUNT),
+      hub.convertToShares(daiAssetId, MAX_SUPPLY_AMOUNT),
       'bob supply shares pre-draw'
     );
     assertEq(bobData.baseDebt, 0, 'bob base debt pre-draw');
     bobData = _getUserSpokeInfo(spoke2, bob, wethReserveId);
     assertEq(
       bobData.suppliedShares,
-      hub.convertToSharesDown(wethAssetId, MAX_SUPPLY_AMOUNT),
+      hub.convertToShares(wethAssetId, MAX_SUPPLY_AMOUNT),
       'bob supply shares pre-draw'
     );
     assertEq(bobData.baseDebt, 0, 'bob base debt pre-draw');
     bobData = _getUserSpokeInfo(spoke2, bob, usdxReserveId);
     assertEq(
       bobData.suppliedShares,
-      hub.convertToSharesDown(usdxAssetId, MAX_SUPPLY_AMOUNT),
+      hub.convertToShares(usdxAssetId, MAX_SUPPLY_AMOUNT),
       'bob supply shares pre-draw'
     );
     assertEq(bobData.baseDebt, 0, 'bob base debt pre-draw');
     bobData = _getUserSpokeInfo(spoke2, bob, wbtcReserveId);
     assertEq(
       bobData.suppliedShares,
-      hub.convertToSharesDown(wbtcAssetId, MAX_SUPPLY_AMOUNT),
+      hub.convertToShares(wbtcAssetId, MAX_SUPPLY_AMOUNT),
       'bob supply shares pre-draw'
     );
     assertEq(bobData.baseDebt, 0, 'bob base debt pre-draw');
@@ -348,28 +348,28 @@ contract SpokeBorrowTest is BaseTest {
     bobData = _getUserSpokeInfo(spoke2, bob, daiReserveId);
     assertEq(
       bobData.suppliedShares,
-      hub.convertToSharesDown(daiAssetId, MAX_SUPPLY_AMOUNT),
+      hub.convertToShares(daiAssetId, MAX_SUPPLY_AMOUNT),
       'bob supply shares final balance'
     );
     assertEq(bobData.baseDebt, daiBorrowAmount, 'bob base debt dai final balance');
     bobData = _getUserSpokeInfo(spoke2, bob, wethReserveId);
     assertEq(
       bobData.suppliedShares,
-      hub.convertToSharesDown(wethAssetId, MAX_SUPPLY_AMOUNT),
+      hub.convertToShares(wethAssetId, MAX_SUPPLY_AMOUNT),
       'bob supply shares final balance'
     );
     assertEq(bobData.baseDebt, wethBorrowamount, 'bob base debt weth final balance');
     bobData = _getUserSpokeInfo(spoke2, bob, usdxReserveId);
     assertEq(
       bobData.suppliedShares,
-      hub.convertToSharesDown(usdxAssetId, MAX_SUPPLY_AMOUNT),
+      hub.convertToShares(usdxAssetId, MAX_SUPPLY_AMOUNT),
       'bob supply shares final balance'
     );
     assertEq(bobData.baseDebt, usdxBorrowAmount, 'bob base debt usdx final balance');
     bobData = _getUserSpokeInfo(spoke2, bob, wbtcReserveId);
     assertEq(
       bobData.suppliedShares,
-      hub.convertToSharesDown(wbtcAssetId, MAX_SUPPLY_AMOUNT),
+      hub.convertToShares(wbtcAssetId, MAX_SUPPLY_AMOUNT),
       'bob supply shares final balance'
     );
     assertEq(bobData.baseDebt, wbtcBorrowAmount, 'bob base debt wbtc final balance');
