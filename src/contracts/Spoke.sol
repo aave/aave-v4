@@ -127,6 +127,10 @@ contract Spoke is ISpoke {
     return _users[user][reserveId].riskPremium.derayify();
   }
 
+  function getCurrentRiskPremium(address user) external view returns (uint256) {
+    return _calcUserRiskPremium(_users[user]).derayify();
+  }
+
   /// governance
   function updateReserveConfig(uint256 reserveId, ReserveConfig calldata params) external {
     // TODO: AccessControl
@@ -172,6 +176,8 @@ contract Spoke is ISpoke {
       newAggregatedRiskPremium,
       msg.sender // supplier
     );
+
+    setUsingAsCollateral(reserveId, true);
 
     user.suppliedShares += suppliedShares;
     reserve.suppliedShares += suppliedShares;
@@ -267,7 +273,7 @@ contract Spoke is ISpoke {
     return healthFactor;
   }
 
-  function setUsingAsCollateral(uint256 reserveId, bool usingAsCollateral) external {
+  function setUsingAsCollateral(uint256 reserveId, bool usingAsCollateral) public {
     Reserve storage reserve = _reserves[reserveId];
     UserConfig storage user = _users[msg.sender][reserveId];
 
@@ -278,10 +284,10 @@ contract Spoke is ISpoke {
   }
 
   // TODO: Needed?
-  function getInterestRate(uint256 assetId) public view returns (uint256) {
+  function getInterestRate(uint256 reserve) public view returns (uint256) {
     // read from state, convert to ray
     // TODO: should be final IR rather than base?
-    return ILiquidityHub(liquidityHub).getBaseInterestRate(assetId);
+    return ILiquidityHub(liquidityHub).getBaseInterestRate(reserve);
   }
 
   // /////
@@ -334,6 +340,13 @@ contract Spoke is ISpoke {
       borrowable: params.borrowable,
       collateral: params.collateral
     });
+  }
+
+  function updateLiquidityPremium(uint256 reserveId, uint256 liquidityPremium) external {
+    require(_reserves[reserveId].asset != address(0), 'INVALID_RESERVE');
+    ReserveConfig memory existingReserve = _reserves[reserveId].config;
+    existingReserve.liquidityPremium = liquidityPremium;
+    _reserves[reserveId].config = existingReserve;
   }
 
   // public
@@ -423,9 +436,10 @@ contract Spoke is ISpoke {
 
   /// @dev TODO: It's assumed reservesList (or similar) is sorted by liquidity premium
   /// @dev It's assumed interest has been accrued before this function call.
+  // !                                   ^^^^^^^^^
   function _calcUserRiskPremium(
     mapping(uint256 => UserConfig) storage userData
-  ) internal returns (uint256) {
+  ) internal view returns (uint256) {
     uint256 reservesListLength = reservesList.length;
 
     // Variable to decrement as we count up user RP
@@ -472,7 +486,7 @@ contract Spoke is ISpoke {
     }
 
     if (collateralValue == 0) return 0;
-    return newUserRiskPremium / collateralValue;
+    return (newUserRiskPremium / collateralValue).rayify();
   }
 
   /// @dev It's assumed interest has been accrued before this function call.
