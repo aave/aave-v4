@@ -70,8 +70,8 @@ contract SpokeBorrowTest is BaseTest {
     // Alice supply dai
     Utils.spokeSupply(spoke1, daiReserveId, alice, daiAmount, alice);
 
-    Spoke.UserConfig memory bobData = _getUserSpokeInfo(spoke1, bob, wethReserveId);
-    Spoke.UserConfig memory aliceData = _getUserSpokeInfo(spoke1, alice, daiReserveId);
+    DataTypes.UserConfig memory bobData = _getUserSpokeInfo(spoke1, bob, wethReserveId);
+    DataTypes.UserConfig memory aliceData = _getUserSpokeInfo(spoke1, alice, daiReserveId);
 
     assertEq(
       bobData.suppliedShares,
@@ -174,8 +174,8 @@ contract SpokeBorrowTest is BaseTest {
     // Alice supply dai
     Utils.spokeSupply(spoke1, daiReserveId, alice, daiBorrowAmount, alice);
 
-    Spoke.UserConfig memory bobData = _getUserSpokeInfo(spoke1, bob, wethReserveId);
-    Spoke.UserConfig memory aliceData = _getUserSpokeInfo(spoke1, alice, daiReserveId);
+    DataTypes.UserConfig memory bobData = _getUserSpokeInfo(spoke1, bob, wethReserveId);
+    DataTypes.UserConfig memory aliceData = _getUserSpokeInfo(spoke1, alice, daiReserveId);
 
     assertEq(
       bobData.suppliedShares,
@@ -302,7 +302,7 @@ contract SpokeBorrowTest is BaseTest {
     Utils.spokeSupply(spoke2, wbtcReserveId, bob, MAX_SUPPLY_AMOUNT, bob);
     Utils.spokeSupply(spoke2, dai2ReserveId, bob, MAX_SUPPLY_AMOUNT, bob);
 
-    Spoke.UserConfig memory bobData = _getUserSpokeInfo(spoke2, bob, daiReserveId);
+    DataTypes.UserConfig memory bobData = _getUserSpokeInfo(spoke2, bob, daiReserveId);
     assertEq(
       bobData.suppliedShares,
       hub.convertToSharesDown(daiAssetId, MAX_SUPPLY_AMOUNT),

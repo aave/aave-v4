@@ -4,6 +4,7 @@ pragma solidity ^0.8.0;
 import {Vm} from 'forge-std/Vm.sol';
 import {LiquidityHub, DataTypes} from 'src/contracts/LiquidityHub.sol';
 import {Spoke} from 'src/contracts/Spoke.sol';
+import {DataTypes} from 'src/libraries/types/DataTypes.sol';
 
 library Utils {
   Vm internal constant vm = Vm(address(uint160(uint256(keccak256('hevm cheat code')))));
@@ -15,7 +16,7 @@ library Utils {
     DataTypes.AssetConfig memory assetConfig,
     address[] memory spokes,
     DataTypes.SpokeConfig[] memory spokeConfigs,
-    Spoke.ReserveConfig[] memory reserveConfigs
+    DataTypes.ReserveConfig[] memory reserveConfigs
   ) internal {
     hub.addAsset(assetConfig, asset);
     uint256 assetId = hub.assetCount() - 1;
@@ -101,19 +102,19 @@ library Utils {
   }
 
   function updateLiquidationThreshold(Spoke spoke, uint256 reserveId, uint256 newLt) internal {
-    Spoke.Reserve memory reserveData = spoke.getReserve(reserveId);
+    DataTypes.Reserve memory reserveData = spoke.getReserve(reserveId);
     reserveData.config.lt = newLt;
     spoke.updateReserveConfig(reserveId, reserveData.config);
   }
 
   function updateCollateral(Spoke spoke, uint256 reserveId, bool newCollateral) internal {
-    Spoke.Reserve memory reserveData = spoke.getReserve(reserveId);
+    DataTypes.Reserve memory reserveData = spoke.getReserve(reserveId);
     reserveData.config.collateral = newCollateral;
     spoke.updateReserveConfig(reserveId, reserveData.config);
   }
 
   function updateBorrowable(Spoke spoke, uint256 reserveId, bool newBorrowable) internal {
-    Spoke.Reserve memory reserveData = spoke.getReserve(reserveId);
+    DataTypes.Reserve memory reserveData = spoke.getReserve(reserveId);
     reserveData.config.borrowable = newBorrowable;
     spoke.updateReserveConfig(reserveId, reserveData.config);
   }

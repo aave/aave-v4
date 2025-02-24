@@ -17,7 +17,7 @@ contract SpokeAccrueInterestTest is BaseTest {
   }
 
   function test_accrueInterest_NoActionTaken() public {
-    Spoke.Reserve memory daiInfo = spoke1.getReserve(spokeInfo[spoke1].dai.reserveId);
+    DataTypes.Reserve memory daiInfo = spoke1.getReserve(spokeInfo[spoke1].dai.reserveId);
     assertEq(daiInfo.lastUpdateTimestamp, 0);
     assertEq(daiInfo.baseDebt, 0);
     assertEq(daiInfo.outstandingPremium, 0);
@@ -36,7 +36,7 @@ contract SpokeAccrueInterestTest is BaseTest {
     // Alice does a supply through same spoke to accrue interest
     Utils.spokeSupply(spoke1, spokeInfo[spoke1].dai.reserveId, alice, amount, alice);
 
-    Spoke.Reserve memory daiInfo = spoke1.getReserve(spokeInfo[spoke1].dai.reserveId);
+    DataTypes.Reserve memory daiInfo = spoke1.getReserve(spokeInfo[spoke1].dai.reserveId);
 
     // Timestamp doesn't update when no interest accrued
     assertEq(daiInfo.lastUpdateTimestamp, vm.getBlockTimestamp(), 'lastUpdateTimestamp');

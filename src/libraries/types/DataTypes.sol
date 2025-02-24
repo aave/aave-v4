@@ -12,6 +12,49 @@ library DataTypes {
     bool usingVirtualBalance;
   }
 
+  struct Reserve {
+    uint256 assetId;
+    address asset;
+    uint256 baseDebt;
+    uint256 outstandingPremium;
+    uint256 suppliedShares;
+    uint256 baseBorrowIndex;
+    uint256 lastUpdateTimestamp;
+    uint256 riskPremium; // weighted average risk premium of all users with ray precision
+    ReserveConfig config;
+  }
+
+  struct ReserveConfig {
+    uint256 lt; // 1e4 == 100%, BPS
+    uint256 lb; // TODO: liquidationProtocolFee
+    uint256 liquidityPremium; // BPS
+    bool borrowable;
+    bool collateral;
+  }
+
+  struct UserConfig {
+    bool usingAsCollateral;
+    uint256 baseDebt;
+    uint256 outstandingPremium;
+    uint256 suppliedShares;
+    uint256 baseBorrowIndex;
+    uint256 riskPremium;
+    uint256 lastUpdateTimestamp;
+  }
+
+  struct CalculateUserAccountDataVars {
+    uint256 i;
+    uint256 reserveId;
+    uint256 reservePrice;
+    uint256 liquidityPremium;
+    uint256 userCollateralInBaseCurrency;
+    uint256 totalCollateralInBaseCurrency;
+    uint256 totalDebtInBaseCurrency;
+    uint256 avgLiquidationThreshold;
+    uint256 userRiskPremium;
+    uint256 healthFactor;
+  }
+
   // TODO: borrow cap per spoke
   struct SpokeConfig {
     uint256 drawCap; // asset denominated

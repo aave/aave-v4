@@ -266,28 +266,28 @@ abstract contract BaseTest is Test, Events {
     oracle.setAssetPrice(wbtcAssetId, 50_000e8);
 
     // Spoke 1 reserve configs
-    Spoke.ReserveConfig memory wethConfig = Spoke.ReserveConfig({
+    DataTypes.ReserveConfig memory wethConfig = DataTypes.ReserveConfig({
       lt: 0.8e4,
       lb: 0,
       liquidityPremium: 0,
       borrowable: true,
       collateral: true
     });
-    Spoke.ReserveConfig memory wbtcConfig = Spoke.ReserveConfig({
+    DataTypes.ReserveConfig memory wbtcConfig = DataTypes.ReserveConfig({
       lt: 0.75e4,
       lb: 0,
       liquidityPremium: 10,
       borrowable: true,
       collateral: true
     });
-    Spoke.ReserveConfig memory daiConfig = Spoke.ReserveConfig({
+    DataTypes.ReserveConfig memory daiConfig = DataTypes.ReserveConfig({
       lt: 0.78e4,
       lb: 0,
       liquidityPremium: 20,
       borrowable: true,
       collateral: true
     });
-    Spoke.ReserveConfig memory usdxConfig = Spoke.ReserveConfig({
+    DataTypes.ReserveConfig memory usdxConfig = DataTypes.ReserveConfig({
       lt: 0.78e4,
       lb: 0,
       liquidityPremium: 50,
@@ -326,28 +326,28 @@ abstract contract BaseTest is Test, Events {
     hub.addSpoke(usdxAssetId, spokeConfig, address(spoke1));
 
     // Spoke 2 reserve configs
-    wbtcConfig = Spoke.ReserveConfig({
+    wbtcConfig = DataTypes.ReserveConfig({
       lt: 0.8e4,
       lb: 0,
       liquidityPremium: 0,
       borrowable: true,
       collateral: true
     });
-    wethConfig = Spoke.ReserveConfig({
+    wethConfig = DataTypes.ReserveConfig({
       lt: 0.76e4,
       lb: 0,
       liquidityPremium: 10,
       borrowable: true,
       collateral: true
     });
-    daiConfig = Spoke.ReserveConfig({
+    daiConfig = DataTypes.ReserveConfig({
       lt: 0.72e4,
       lb: 0,
       liquidityPremium: 20,
       borrowable: true,
       collateral: true
     });
-    usdxConfig = Spoke.ReserveConfig({
+    usdxConfig = DataTypes.ReserveConfig({
       lt: 0.72e4,
       lb: 0,
       liquidityPremium: 50,
@@ -386,28 +386,28 @@ abstract contract BaseTest is Test, Events {
     hub.addSpoke(usdxAssetId, spokeConfig, address(spoke2));
 
     // Spoke 3 reserve configs
-    daiConfig = Spoke.ReserveConfig({
+    daiConfig = DataTypes.ReserveConfig({
       lt: 0.75e4,
       lb: 0,
       liquidityPremium: 0,
       borrowable: true,
       collateral: true
     });
-    usdxConfig = Spoke.ReserveConfig({
+    usdxConfig = DataTypes.ReserveConfig({
       lt: 0.75e4,
       lb: 0,
       liquidityPremium: 10,
       borrowable: true,
       collateral: true
     });
-    wethConfig = Spoke.ReserveConfig({
+    wethConfig = DataTypes.ReserveConfig({
       lt: 0.79e4,
       lb: 0,
       liquidityPremium: 20,
       borrowable: true,
       collateral: true
     });
-    wbtcConfig = Spoke.ReserveConfig({
+    wbtcConfig = DataTypes.ReserveConfig({
       lt: 0.77e4,
       lb: 0,
       liquidityPremium: 50,
@@ -451,7 +451,7 @@ abstract contract BaseTest is Test, Events {
       address(tokenList.dai)
     );
     oracle.setAssetPrice(dai2AssetId, 1e8);
-    daiConfig = Spoke.ReserveConfig({
+    daiConfig = DataTypes.ReserveConfig({
       lt: 0.70e4,
       lb: 0,
       liquidityPremium: 100,
@@ -528,8 +528,8 @@ abstract contract BaseTest is Test, Events {
     Spoke spoke,
     address user,
     uint256 reserveId
-  ) internal view returns (Spoke.UserConfig memory) {
-    Spoke.UserConfig memory userConfig;
+  ) internal view returns (DataTypes.UserConfig memory) {
+    DataTypes.UserConfig memory userConfig;
     userConfig.suppliedShares = spoke.getSuppliedShares(reserveId, user);
     (userConfig.baseDebt, ) = spoke.getUserDebt(reserveId, user);
     return userConfig;

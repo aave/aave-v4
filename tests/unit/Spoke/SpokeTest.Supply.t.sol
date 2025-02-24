@@ -44,8 +44,8 @@ contract SpokeSupplyTest is BaseTest {
 
     deal(address(tokenList.dai), bob, amount);
 
-    Spoke.UserConfig memory userData = spoke1.getUser(spokeInfo[spoke1].dai.reserveId, bob);
-    Spoke.Reserve memory reserveData = spoke1.getReserve(spokeInfo[spoke1].dai.reserveId);
+    DataTypes.UserConfig memory userData = spoke1.getUser(spokeInfo[spoke1].dai.reserveId, bob);
+    DataTypes.Reserve memory reserveData = spoke1.getReserve(spokeInfo[spoke1].dai.reserveId);
 
     assertEq(tokenList.dai.balanceOf(bob), amount, 'user token balance pre-supply');
     assertEq(tokenList.dai.balanceOf(address(hub)), 0, 'hub token balance pre-supply');
@@ -83,8 +83,8 @@ contract SpokeSupplyTest is BaseTest {
 
     deal(address(tokenList.dai), bob, amount);
 
-    Spoke.UserConfig memory userData = spoke1.getUser(spokeInfo[spoke1].dai.reserveId, bob);
-    Spoke.Reserve memory reserveData = spoke1.getReserve(spokeInfo[spoke1].dai.reserveId);
+    DataTypes.UserConfig memory userData = spoke1.getUser(spokeInfo[spoke1].dai.reserveId, bob);
+    DataTypes.Reserve memory reserveData = spoke1.getReserve(spokeInfo[spoke1].dai.reserveId);
 
     assertEq(tokenList.dai.balanceOf(bob), amount, 'user token balance pre-supply');
     assertEq(tokenList.dai.balanceOf(address(hub)), 0, 'hub token balance pre-supply');

@@ -9,6 +9,7 @@ import {PercentageMath} from 'src/contracts/PercentageMath.sol';
 import {ILiquidityHub} from 'src/interfaces/ILiquidityHub.sol';
 import {ISpoke} from 'src/interfaces/ISpoke.sol';
 import {IPriceOracle} from 'src/interfaces/IPriceOracle.sol';
+import {DataTypes} from 'src/libraries/types/DataTypes.sol';
 
 contract Spoke is ISpoke {
   using WadRayMath for uint256;
@@ -18,53 +19,10 @@ contract Spoke is ISpoke {
   uint256 public constant DEFAULT_SPOKE_INDEX = 0;
   ILiquidityHub public liquidityHub;
 
-  struct Reserve {
-    uint256 assetId;
-    address asset;
-    uint256 baseDebt;
-    uint256 outstandingPremium;
-    uint256 suppliedShares;
-    uint256 baseBorrowIndex;
-    uint256 lastUpdateTimestamp;
-    uint256 riskPremium; // weighted average risk premium of all users with ray precision
-    ReserveConfig config;
-  }
-
-  struct ReserveConfig {
-    uint256 lt; // 1e4 == 100%, BPS
-    uint256 lb; // TODO: liquidationProtocolFee
-    uint256 liquidityPremium; // BPS
-    bool borrowable;
-    bool collateral;
-  }
-
-  struct UserConfig {
-    bool usingAsCollateral;
-    uint256 baseDebt;
-    uint256 outstandingPremium;
-    uint256 suppliedShares;
-    uint256 baseBorrowIndex;
-    uint256 riskPremium;
-    uint256 lastUpdateTimestamp;
-  }
-
-  struct CalculateUserAccountDataVars {
-    uint256 i;
-    uint256 reserveId;
-    uint256 reservePrice;
-    uint256 liquidityPremium;
-    uint256 userCollateralInBaseCurrency;
-    uint256 totalCollateralInBaseCurrency;
-    uint256 totalDebtInBaseCurrency;
-    uint256 avgLiquidationThreshold;
-    uint256 userRiskPremium;
-    uint256 healthFactor;
-  }
-
   // user address => reserve id => user data
-  mapping(address => mapping(uint256 => UserConfig)) internal _users;
+  mapping(address => mapping(uint256 => DataTypes.UserConfig)) internal _users;
   // reserve id => reserveData
-  mapping(uint256 => Reserve) internal _reserves;
+  mapping(uint256 => DataTypes.Reserve) internal _reserves;
 
   uint256[] public reservesList; // reserveIds
   uint256 public reserveCount;
@@ -128,9 +86,12 @@ contract Spoke is ISpoke {
   }
 
   /// governance
-  function updateReserveConfig(uint256 reserveId, ReserveConfig calldata params) external {
+  function updateReserveConfig(
+    uint256 reserveId,
+    DataTypes.ReserveConfig calldata params
+  ) external {
     // TODO: AccessControl
-    _reserves[reserveId].config = ReserveConfig({
+    _reserves[reserveId].config = DataTypes.ReserveConfig({
       lt: params.lt,
       lb: params.lb,
       liquidityPremium: params.liquidityPremium,
@@ -153,8 +114,8 @@ contract Spoke is ISpoke {
   // /////
 
   function supply(uint256 reserveId, uint256 amount) external {
-    Reserve storage reserve = _reserves[reserveId];
-    UserConfig storage user = _users[msg.sender][reserveId];
+    DataTypes.Reserve storage reserve = _reserves[reserveId];
+    DataTypes.UserConfig storage user = _users[msg.sender][reserveId];
 
     _accrueInterest(reserve, user);
     _validateSupply(reserve, amount);
@@ -181,8 +142,8 @@ contract Spoke is ISpoke {
 
   function withdraw(uint256 reserveId, uint256 amount, address to) external {
     // TODO: Be able to pass max(uint) as amount to withdraw all supplied shares
-    Reserve storage reserve = _reserves[reserveId];
-    UserConfig storage user = _users[msg.sender][reserveId];
+    DataTypes.Reserve storage reserve = _reserves[reserveId];
+    DataTypes.UserConfig storage user = _users[msg.sender][reserveId];
 
     _accrueInterest(reserve, user);
     _validateWithdraw(reserve, user, amount);
@@ -210,8 +171,8 @@ contract Spoke is ISpoke {
   function borrow(uint256 reserveId, uint256 amount, address to) external {
     // TODO: referral code
     // TODO: onBehalfOf with credit delegation
-    Reserve storage reserve = _reserves[reserveId];
-    UserConfig storage user = _users[msg.sender][reserveId];
+    DataTypes.Reserve storage reserve = _reserves[reserveId];
+    DataTypes.UserConfig storage user = _users[msg.sender][reserveId];
 
     _accrueInterest(reserve, user);
     _validateBorrow(reserve, amount);
@@ -231,8 +192,8 @@ contract Spoke is ISpoke {
   function repay(uint256 reserveId, uint256 amount) external {
     // TODO: Be able to pass max(uint) as amount to restore all debt
     // TODO: onBehalfOf
-    UserConfig storage user = _users[msg.sender][reserveId];
-    Reserve storage reserve = _reserves[reserveId];
+    DataTypes.UserConfig storage user = _users[msg.sender][reserveId];
+    DataTypes.Reserve storage reserve = _reserves[reserveId];
 
     _accrueInterest(reserve, user);
     _validateRepay(reserve, user, amount);
@@ -268,8 +229,8 @@ contract Spoke is ISpoke {
   }
 
   function setUsingAsCollateral(uint256 reserveId, bool usingAsCollateral) external {
-    Reserve storage reserve = _reserves[reserveId];
-    UserConfig storage user = _users[msg.sender][reserveId];
+    DataTypes.Reserve storage reserve = _reserves[reserveId];
+    DataTypes.UserConfig storage user = _users[msg.sender][reserveId];
 
     _validateSetUsingAsCollateral(reserve, user);
     user.usingAsCollateral = usingAsCollateral;
@@ -290,18 +251,18 @@ contract Spoke is ISpoke {
 
   function addReserve(
     uint256 assetId,
-    ReserveConfig memory params,
+    DataTypes.ReserveConfig memory params,
     address asset
   ) external returns (uint256) {
     uint256 _reserveCount = reserveCount;
-    Reserve storage reserve = _reserves[_reserveCount];
+    DataTypes.Reserve storage reserve = _reserves[_reserveCount];
     // TODO: validate reserveId does not exist already, valid asset
     // require(asset != address(0), 'INVALID_ASSET');
     // require(_reserves[reserveId].asset == address(0), 'RESERVE_ID_ALREADY_EXISTS');
 
     // TODO: AccessControl
     reservesList.push(reserveCount++);
-    _reserves[_reserveCount] = Reserve({
+    _reserves[_reserveCount] = DataTypes.Reserve({
       assetId: assetId,
       asset: asset,
       baseDebt: 0,
@@ -310,7 +271,7 @@ contract Spoke is ISpoke {
       baseBorrowIndex: DEFAULT_SPOKE_INDEX,
       lastUpdateTimestamp: 0,
       riskPremium: 0,
-      config: ReserveConfig({
+      config: DataTypes.ReserveConfig({
         lt: params.lt,
         lb: params.lb,
         liquidityPremium: params.liquidityPremium,
@@ -323,11 +284,11 @@ contract Spoke is ISpoke {
     // todo: emit event
   }
 
-  function updateReserve(uint256 reserveId, ReserveConfig memory params) external {
+  function updateReserve(uint256 reserveId, DataTypes.ReserveConfig memory params) external {
     // TODO: More sophisticated
     require(_reserves[reserveId].asset != address(0), 'INVALID_RESERVE');
     // TODO: AccessControl
-    _reserves[reserveId].config = ReserveConfig({
+    _reserves[reserveId].config = DataTypes.ReserveConfig({
       lt: params.lt,
       lb: params.lb,
       liquidityPremium: params.liquidityPremium,
@@ -337,23 +298,26 @@ contract Spoke is ISpoke {
   }
 
   // public
-  function getReserve(uint256 reserveId) public view returns (Reserve memory) {
+  function getReserve(uint256 reserveId) public view returns (DataTypes.Reserve memory) {
     return _reserves[reserveId];
   }
 
-  function getUser(uint256 reserveId, address user) public view returns (UserConfig memory) {
-    UserConfig memory user = _users[user][reserveId];
+  function getUser(
+    uint256 reserveId,
+    address user
+  ) public view returns (DataTypes.UserConfig memory) {
+    DataTypes.UserConfig memory user = _users[user][reserveId];
     return user;
   }
 
   // internal
-  function _validateSupply(Reserve storage reserve, uint256 amount) internal view {
+  function _validateSupply(DataTypes.Reserve storage reserve, uint256 amount) internal view {
     require(reserve.asset != address(0), 'RESERVE_NOT_LISTED');
   }
 
   function _validateWithdraw(
-    Reserve storage reserve,
-    UserConfig storage user,
+    DataTypes.Reserve storage reserve,
+    DataTypes.UserConfig storage user,
     uint256 amount
   ) internal view {
     require(
@@ -362,23 +326,23 @@ contract Spoke is ISpoke {
     );
   }
 
-  function _validateBorrow(Reserve storage reserve, uint256 amount) internal view {
+  function _validateBorrow(DataTypes.Reserve storage reserve, uint256 amount) internal view {
     require(reserve.config.borrowable, 'RESERVE_NOT_BORROWABLE');
     // TODO: validation on HF to allow borrowing amount
   }
 
   // TODO: Place this and LH equivalent in a generic logic library
   function _validateRepay(
-    Reserve storage reserve,
-    UserConfig storage user,
+    DataTypes.Reserve storage reserve,
+    DataTypes.UserConfig storage user,
     uint256 amount
   ) internal view {
     require(amount <= user.baseDebt + user.outstandingPremium, 'REPAY_EXCEEDS_DEBT');
   }
 
   function _deductFromOutstandingPremium(
-    Reserve storage reserve,
-    UserConfig storage user,
+    DataTypes.Reserve storage reserve,
+    DataTypes.UserConfig storage user,
     uint256 amount
   ) internal returns (uint256) {
     uint256 userOutstandingPremium = user.outstandingPremium;
@@ -404,8 +368,8 @@ contract Spoke is ISpoke {
   @return The new aggregated risk premium.
   */
   function _updateRiskPremiumAndBaseDebt(
-    Reserve storage reserve,
-    UserConfig storage user,
+    DataTypes.Reserve storage reserve,
+    DataTypes.UserConfig storage user,
     address userAddress,
     int256 baseDebtChange
   ) internal returns (uint32) {
@@ -424,7 +388,7 @@ contract Spoke is ISpoke {
   /// @dev TODO: It's assumed reservesList (or similar) is sorted by liquidity premium
   /// @dev It's assumed interest has been accrued before this function call.
   function _calcUserRiskPremium(
-    mapping(uint256 => UserConfig) storage userData
+    mapping(uint256 => DataTypes.UserConfig) storage userData
   ) internal view returns (uint256) {
     uint256 reservesListLength = reservesList.length;
 
@@ -477,8 +441,8 @@ contract Spoke is ISpoke {
 
   /// @dev It's assumed interest has been accrued before this function call.
   function _updateSpokeRiskPremiumAndBaseDebt(
-    Reserve storage reserve,
-    UserConfig storage user,
+    DataTypes.Reserve storage reserve,
+    DataTypes.UserConfig storage user,
     uint256 newUserRiskPremium,
     int256 baseDebtChange
   ) internal returns (uint256) {
@@ -496,8 +460,8 @@ contract Spoke is ISpoke {
 
     uint256 newUserDebt = baseDebtChange > 0
       ? existingUserDebt + uint256(baseDebtChange) // debt added
-      // force underflow: only possible when user takes repays amount more than net drawn
-      : existingUserDebt - uint256(-baseDebtChange); // debt restored
+      : // force underflow: only possible when user takes repays amount more than net drawn
+      existingUserDebt - uint256(-baseDebtChange); // debt restored
 
     (uint256 newReserveRiskPremium, uint256 newReserveDebt) = MathUtils.addToWeightedAverage(
       reserveRiskPremiumWithoutCurrent,
@@ -514,28 +478,30 @@ contract Spoke is ISpoke {
   }
 
   function _validateSetUsingAsCollateral(
-    Reserve storage reserve,
-    UserConfig storage user
+    DataTypes.Reserve storage reserve,
+    DataTypes.UserConfig storage user
   ) internal view {
     require(reserve.config.collateral, 'RESERVE_NOT_COLLATERAL');
   }
 
-  function _usingAsCollateral(UserConfig storage user) internal view returns (bool) {
+  function _usingAsCollateral(DataTypes.UserConfig storage user) internal view returns (bool) {
     return user.usingAsCollateral;
   }
 
-  function _borrowing(UserConfig storage user) internal view returns (bool) {
+  function _borrowing(DataTypes.UserConfig storage user) internal view returns (bool) {
     return user.baseDebt + user.outstandingPremium > 0;
   }
 
-  function _usingAsCollateralOrBorrowing(UserConfig storage user) internal view returns (bool) {
+  function _usingAsCollateralOrBorrowing(
+    DataTypes.UserConfig storage user
+  ) internal view returns (bool) {
     return _usingAsCollateral(user) || _borrowing(user);
   }
 
   function _calculateUserAccountData(
     address userAddress
   ) internal view returns (uint256, uint256, uint256, uint256, uint256) {
-    CalculateUserAccountDataVars memory vars;
+    DataTypes.CalculateUserAccountDataVars memory vars;
     uint256 reservesListLength = reservesList.length;
     while (vars.i < reservesListLength) {
       vars.reserveId = reservesList[vars.i];
@@ -544,8 +510,8 @@ contract Spoke is ISpoke {
         continue;
       }
 
-      UserConfig memory user = getUser(vars.reserveId, userAddress);
-      Reserve memory reserve = getReserve(vars.reserveId);
+      DataTypes.UserConfig memory user = getUser(vars.reserveId, userAddress);
+      DataTypes.Reserve memory reserve = getReserve(vars.reserveId);
 
       vars.reservePrice = IPriceOracle(oracle).getAssetPrice(vars.reserveId);
 
@@ -607,7 +573,10 @@ contract Spoke is ISpoke {
       );
   }
 
-  function _accrueInterest(Reserve storage reserve, UserConfig storage user) internal {
+  function _accrueInterest(
+    DataTypes.Reserve storage reserve,
+    DataTypes.UserConfig storage user
+  ) internal {
     uint256 nextBaseBorrowIndex = liquidityHub.previewNextBorrowIndex(reserve.assetId);
 
     // todo: lib migration
@@ -616,7 +585,7 @@ contract Spoke is ISpoke {
   }
 
   function _previewSpokeInterest(
-    Reserve storage reserve,
+    DataTypes.Reserve storage reserve,
     uint256 nextBaseBorrowIndex
   ) internal view returns (uint256, uint256) {
     uint256 existingBaseDebt = reserve.baseDebt;
@@ -637,7 +606,10 @@ contract Spoke is ISpoke {
     );
   }
 
-  function _accrueSpokeInterest(Reserve storage reserve, uint256 nextBaseBorrowIndex) internal {
+  function _accrueSpokeInterest(
+    DataTypes.Reserve storage reserve,
+    uint256 nextBaseBorrowIndex
+  ) internal {
     (uint256 cumulatedBaseDebt, uint256 cumulatedOutstandingPremium) = _previewSpokeInterest(
       reserve,
       nextBaseBorrowIndex
@@ -650,7 +622,7 @@ contract Spoke is ISpoke {
   }
 
   function _previewUserInterest(
-    UserConfig storage user,
+    DataTypes.UserConfig storage user,
     uint256 nextBaseBorrowIndex
   ) internal view returns (uint256, uint256) {
     uint256 existingBaseDebt = user.baseDebt;
@@ -671,7 +643,10 @@ contract Spoke is ISpoke {
     );
   }
 
-  function _accrueUserInterest(UserConfig storage user, uint256 nextBaseBorrowIndex) internal {
+  function _accrueUserInterest(
+    DataTypes.UserConfig storage user,
+    uint256 nextBaseBorrowIndex
+  ) internal {
     (uint256 cumulatedBaseDebt, uint256 cumulatedOutstandingPremium) = _previewUserInterest(
       user,
       nextBaseBorrowIndex

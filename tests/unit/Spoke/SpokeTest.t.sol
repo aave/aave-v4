@@ -50,8 +50,8 @@ contract SpokeTest is BaseTest {
     deal(address(tokenList.dai), alice, daiAmount);
     Utils.spokeSupply(spoke1, spokeInfo[spoke1].dai.reserveId, alice, daiAmount, alice);
 
-    Spoke.UserConfig memory bobData = spoke1.getUser(spokeInfo[spoke1].weth.reserveId, bob);
-    Spoke.UserConfig memory aliceData = spoke1.getUser(spokeInfo[spoke1].dai.reserveId, alice);
+    DataTypes.UserConfig memory bobData = spoke1.getUser(spokeInfo[spoke1].weth.reserveId, bob);
+    DataTypes.UserConfig memory aliceData = spoke1.getUser(spokeInfo[spoke1].dai.reserveId, alice);
 
     assertEq(
       bobData.suppliedShares,
@@ -151,8 +151,8 @@ contract SpokeTest is BaseTest {
     deal(address(tokenList.dai), alice, daiBorrowAmount);
     Utils.spokeSupply(spoke1, spokeInfo[spoke1].dai.reserveId, alice, daiBorrowAmount, alice);
 
-    Spoke.UserConfig memory bobData = spoke1.getUser(spokeInfo[spoke1].weth.reserveId, bob);
-    Spoke.UserConfig memory aliceData = spoke1.getUser(spokeInfo[spoke1].dai.reserveId, alice);
+    DataTypes.UserConfig memory bobData = spoke1.getUser(spokeInfo[spoke1].weth.reserveId, bob);
+    DataTypes.UserConfig memory aliceData = spoke1.getUser(spokeInfo[spoke1].dai.reserveId, alice);
 
     assertEq(
       bobData.suppliedShares,
@@ -208,7 +208,7 @@ contract SpokeTest is BaseTest {
     deal(address(tokenList.dai), bob, amount);
     Utils.spokeSupply(spoke1, spokeInfo[spoke1].dai.reserveId, bob, amount, bob);
 
-    Spoke.UserConfig memory user1Data = spoke1.getUser(spokeInfo[spoke1].dai.reserveId, bob);
+    DataTypes.UserConfig memory user1Data = spoke1.getUser(spokeInfo[spoke1].dai.reserveId, bob);
 
     // assertEq(dai.balanceOf(address(spoke1)), 0, 'wrong spoke token balance pre-withdraw');
     // assertEq(dai.balanceOf(address(hub)), amount, 'wrong hub token balance pre-withdraw');
@@ -336,9 +336,9 @@ contract SpokeTest is BaseTest {
   function test_updateReserveConfig() public {
     uint256 daiId = 0;
 
-    Spoke.Reserve memory reserveData = spoke1.getReserve(daiId);
+    DataTypes.Reserve memory reserveData = spoke1.getReserve(daiId);
 
-    Spoke.ReserveConfig memory newReserveConfig = Spoke.ReserveConfig({
+    DataTypes.ReserveConfig memory newReserveConfig = DataTypes.ReserveConfig({
       lt: reserveData.config.lt + 1,
       lb: reserveData.config.lb + 1,
       liquidityPremium: 0,
@@ -396,7 +396,7 @@ contract SpokeTest is BaseTest {
     emit UsingAsCollateral(spokeInfo[spoke1].dai.reserveId, usingAsCollateral, bob);
     ISpoke(spoke1).setUsingAsCollateral(spokeInfo[spoke1].dai.reserveId, usingAsCollateral);
 
-    Spoke.UserConfig memory userData = spoke1.getUser(spokeInfo[spoke1].dai.reserveId, bob);
+    DataTypes.UserConfig memory userData = spoke1.getUser(spokeInfo[spoke1].dai.reserveId, bob);
     assertEq(userData.usingAsCollateral, usingAsCollateral, 'wrong usingAsCollateral');
   }
 }
