@@ -1,18 +1,10 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.0;
 
-import {IERC20Errors} from 'src/dependencies/openzeppelin/IERC20Errors.sol';
+import 'tests/unit/Spoke/SpokeBaseTest.t.sol';
 
-import 'tests/BaseTest.t.sol';
-import {Spoke} from 'src/contracts/Spoke.sol';
-
-contract SpokeWithdrawTest is BaseTest {
+contract SpokeWithdrawTest is SpokeBaseTest {
   using WadRayMath for uint256;
-
-  function setUp() public override {
-    super.setUp();
-    initEnvironment();
-  }
 
   function test_withdraw_revertsWith_supplied_amount_exceeded_zero_supplied() public {
     uint256 reserveId = 0;

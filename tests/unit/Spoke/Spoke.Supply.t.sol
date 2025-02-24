@@ -1,12 +1,9 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.0;
 
-import {IERC20Errors} from 'src/dependencies/openzeppelin/IERC20Errors.sol';
+import 'tests/unit/Spoke/SpokeBaseTest.t.sol';
 
-import 'tests/BaseTest.t.sol';
-import {Spoke} from 'src/contracts/Spoke.sol';
-
-contract SpokeSupplyTest is BaseTest {
+contract SpokeSupplyTest is SpokeBaseTest {
   using WadRayMath for uint256;
 
   struct TestData {
@@ -31,11 +28,6 @@ contract SpokeSupplyTest is BaseTest {
     uint256 reserveId;
     uint256 amount;
     address supplier;
-  }
-
-  function setUp() public override {
-    super.setUp();
-    initEnvironment();
   }
 
   function test_supply_revertsWith_reserve_not_listed() public {
@@ -543,7 +535,7 @@ contract SpokeSupplyTest is BaseTest {
   }
 
   // increase share conversion index on BorrowReserve asset
-  // using CollateralReserve asset the collateral
+  // using CollateralReserve asset collateral
   // supplies/draws BorrowReserve asset
   function _increaseShareConversionIndex(
     CollateralReserve memory collateral,
