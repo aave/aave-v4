@@ -477,9 +477,11 @@ contract LiquidityHub is ILiquidityHub {
 
   function _addSpoke(uint256 assetId, DataTypes.SpokeConfig memory config, address spoke) internal {
     require(spoke != address(0), 'INVALID_SPOKE');
-    uint256 currentAssetBaseBorrowIndex = _assets[assetId].previewNextBorrowIndex();
-    // is zero when asset.baseBorrowIndex == 0 (ie asset not registered)
-    require(currentAssetBaseBorrowIndex != 0, 'INVALID_ASSET');
+    require(
+      _assets[assetId].baseBorrowIndex != 0 && _assets[assetId].lastUpdateTimestamp != 0,
+      'INVALID_ASSET'
+    );
+
     _spokes[assetId][spoke] = SpokeData({
       suppliedShares: 0,
       baseDebt: 0,
@@ -489,6 +491,7 @@ contract LiquidityHub is ILiquidityHub {
       lastUpdateTimestamp: 0,
       config: config
     });
+
     emit SpokeAdded(assetId, spoke);
   }
 
