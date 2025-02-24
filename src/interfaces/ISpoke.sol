@@ -1,6 +1,11 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.0;
 
+/**
+ * @title ILiquidityHub
+ * @author Aave Labs
+ * @notice Basic interface for LiquidityHub
+ */
 interface ISpoke {
   event Borrowed(uint256 indexed reserveId, uint256 amount, address indexed user);
   event Repaid(uint256 indexed reserveId, uint256 amount, address indexed user);
