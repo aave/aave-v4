@@ -145,6 +145,12 @@ abstract contract BaseTest is Test, Events {
     uint256 liquidityPremium;
   }
 
+  struct DebtAccounting {
+    uint256 cumulativeDebt;
+    uint256 baseDebt;
+    uint256 outstandingPremium;
+  }
+
   mapping(Spoke => SpokeInfo) internal spokeInfo;
 
   function setUp() public virtual {

@@ -36,12 +36,6 @@ contract LiquidityHubBaseTest is BaseTest {
     uint256 expectedSupply2Shares;
   }
 
-  struct DebtAccounting {
-    uint256 cumulativeDebt;
-    uint256 baseDebt;
-    uint256 outstandingPremium;
-  }
-
   struct DebtData {
     DebtAccounting asset;
     DebtAccounting[3] spoke;
