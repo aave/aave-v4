@@ -271,12 +271,6 @@ contract SpokeWithdrawTest is SpokeBaseTest {
       'supplied amount with interest'
     );
 
-    // console.log(
-    //   'bob %e',
-    //   spoke1.getUserSuppliedAmount(state.reserveId, bob),
-    //   spoke1.getUserSuppliedShares(state.reserveId, bob),
-    //   hub.convertToShares(daiAssetId, withdrawAmount)
-    // );
     stage++;
     state.withdrawnShares = hub.convertToShares(daiAssetId, state.withdrawAmount);
     reserveData[stage] = _getReserveData(spokeInfo[spoke1].dai.reserveId);
@@ -292,12 +286,6 @@ contract SpokeWithdrawTest is SpokeBaseTest {
     aliceData[stage] = _getUserData(spokeInfo[spoke1].dai.reserveId, alice);
     bobData[stage] = _getUserData(spokeInfo[spoke1].dai.reserveId, bob);
     tokenData[stage] = _getTokenBalances(address(tokenList.dai), address(spoke1));
-
-    // console.log(
-    //   'bob after withdraw %e %e',
-    //   spoke1.getUserSuppliedAmount(state.reserveId, bob),
-    //   spoke1.getUserSuppliedShares(state.reserveId, bob)
-    // );
 
     state.cumulatedBaseInterest = MathUtils.calculateLinearInterest(
       state.rate,
