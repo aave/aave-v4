@@ -11,11 +11,6 @@ contract BorrowIndexBase is LiquidityHubScenarioBaseTest {
     initEnvironment();
     spokeMintAndApprove();
 
-    deal(address(tokenList.dai), bob, 1e60);
-    deal(address(tokenList.wbtc), bob, 1e60);
-    deal(address(tokenList.weth), bob, 1e60);
-    deal(address(tokenList.usdx), bob, 1e60);
-
     spokeConfig = DataTypes.SpokeConfig({supplyCap: type(uint256).max, drawCap: type(uint256).max});
     spoke4 = new Spoke(address(hub), address(oracle));
     spokes[3].addr = address(spoke4);

@@ -27,11 +27,14 @@ contract BorrowIndex_Scenario1Test is BorrowIndexBase {
 
     state.assetId = assetId;
     fillSkipTimeAndBaseBorrowRate(state, 365 days, 10_00);
-    state.actions[0].supply[0].amount = 10e18;
-    state.actions[0].draw[0].amount = 5e18;
-    state.actions[3].supply[1].amount = 10e18;
-    state.actions[3].draw[1].amount = 1e18;
-    state.actions[3].supply[2].amount = 1e8;
+    // time t0
+    state.actions[spoke1Index].supply[0].amount = 10e18;
+    state.actions[spoke1Index].draw[0].amount = 5e18;
+    // time t1
+    state.actions[spoke4Index].supply[1].amount = 10e18;
+    state.actions[spoke4Index].draw[1].amount = 1e18;
+    // time t2
+    state.actions[spoke4Index].supply[2].amount = 1e8;
 
     _testScenario();
   }

@@ -26,11 +26,14 @@ contract BorrowIndex_Scenario2Test is BorrowIndexBase {
   function test_borrowIndexScenario2() public {
     state.assetId = wethAssetId;
     fillSkipTimeAndBaseBorrowRate(state, 365 days, 10_00);
-    state.actions[0].supply[1].amount = 10e18;
-    state.actions[0].draw[1].amount = 5e18;
-    state.actions[3].supply[2].amount = 10e18;
-    state.actions[3].draw[2].amount = 1e18;
-    state.actions[3].supply[3].amount = 1e8;
+    // time t1
+    state.actions[spoke1Index].supply[1].amount = 10e18;
+    state.actions[spoke1Index].draw[1].amount = 5e18;
+    // time t2
+    state.actions[spoke4Index].supply[2].amount = 10e18;
+    state.actions[spoke4Index].draw[2].amount = 1e18;
+    // time t3
+    state.actions[spoke4Index].supply[3].amount = 1e8;
     _testScenario();
   }
 

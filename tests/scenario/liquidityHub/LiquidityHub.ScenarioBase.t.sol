@@ -18,12 +18,17 @@ abstract contract LiquidityHubScenarioBaseTest is BaseTest {
   uint256 internal constant NUM_TIMESTAMPS = 10;
   uint256 internal constant NUM_SPOKES = 4;
   uint256 internal constant NUM_ASSETS = 4;
-  uint256 internal constant MAX_BOUNDED_AMOUNT = 1e30;
+  uint256 internal constant MAX_BOUNDED_AMOUNT = MAX_SUPPLY_AMOUNT / NUM_TIMESTAMPS;
   uint256 internal constant MIN_BOUNDED_AMOUNT = 1e10;
   uint256 internal constant MAX_SKIP_TIME = 10_000 days;
   uint256 internal constant MAX_BASE_BORROW_RATE = 1000_00; // BPS
   bool internal isPrintLogs = false;
   uint256 internal t; // internal stage index
+
+  uint256 internal spoke1Index = 0;
+  uint256 internal spoke2Index = 1;
+  uint256 internal spoke3Index = 2;
+  uint256 internal spoke4Index = 3;
 
   struct TestState {
     uint256 assetId;
@@ -62,28 +67,13 @@ abstract contract LiquidityHubScenarioBaseTest is BaseTest {
   }
 
   struct SpokeActions {
-    SupplyAction[NUM_TIMESTAMPS] supply;
-    WithdrawAction[NUM_TIMESTAMPS] withdraw;
-    DrawAction[NUM_TIMESTAMPS] draw;
-    RestoreAction[NUM_TIMESTAMPS] restore;
+    SpokeAction[NUM_TIMESTAMPS] supply;
+    SpokeAction[NUM_TIMESTAMPS] withdraw;
+    SpokeAction[NUM_TIMESTAMPS] draw;
+    SpokeAction[NUM_TIMESTAMPS] restore;
   }
 
-  struct SupplyAction {
-    uint256 amount;
-    uint256 assetId;
-  }
-
-  struct WithdrawAction {
-    uint256 amount;
-    uint256 assetId;
-  }
-
-  struct DrawAction {
-    uint256 amount;
-    uint256 assetId;
-  }
-
-  struct RestoreAction {
+  struct SpokeAction {
     uint256 amount;
     uint256 assetId;
   }
@@ -97,9 +87,9 @@ abstract contract LiquidityHubScenarioBaseTest is BaseTest {
   function setUp() public virtual override {
     super.setUp();
 
-    spokes[0].addr = address(spoke1);
-    spokes[1].addr = address(spoke2);
-    spokes[2].addr = address(spoke3);
+    spokes[spoke1Index].addr = address(spoke1);
+    spokes[spoke2Index].addr = address(spoke2);
+    spokes[spoke3Index].addr = address(spoke3);
 
     // init stages
     for (uint8 i = 0; i < NUM_TIMESTAMPS; i++) {
