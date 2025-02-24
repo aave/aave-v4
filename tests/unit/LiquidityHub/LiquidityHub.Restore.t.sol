@@ -47,7 +47,7 @@ contract LiquidityHubRestoreTest is LiquidityHubBase {
       onBehalfOf: address(spoke1)
     });
 
-    _updateActive(daiAssetId, false);
+    Utils.updateAssetActive(hub, daiAssetId, false);
 
     // spoke1 restore all of drawn dai liquidity
     vm.expectRevert(TestErrors.ASSET_NOT_ACTIVE);

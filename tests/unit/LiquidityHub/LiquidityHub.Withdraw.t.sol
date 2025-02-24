@@ -735,7 +735,7 @@ contract LiquidityHubWithdrawTest is LiquidityHubBase {
 
   function test_withdraw_revertsWith_asset_not_active() public {
     uint256 amount = 100e18;
-    _updateActive(daiAssetId, false);
+    Utils.updateAssetActive(hub, daiAssetId, false);
 
     vm.expectRevert(TestErrors.ASSET_NOT_ACTIVE);
     vm.prank(address(spoke1));

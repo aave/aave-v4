@@ -68,6 +68,13 @@ library Utils {
     hub.withdraw({assetId: assetId, amount: amount, riskPremium: riskPremium, to: to});
   }
 
+  function updateAssetActive(LiquidityHub hub, uint256 assetId, bool newActive) internal {
+    DataTypes.AssetConfig memory assetConfig = hub.getAsset(assetId).config;
+    assetConfig.active = newActive;
+    hub.updateAssetConfig(assetId, assetConfig);
+  }
+
+  // spoke
   function spokeBorrow(
     Spoke spoke,
     uint256 reserveId,
@@ -79,7 +86,6 @@ library Utils {
     spoke.borrow(reserveId, amount, user);
   }
 
-  // spoke
   function spokeSupply(
     Spoke spoke,
     uint256 reserveId,
@@ -117,5 +123,36 @@ library Utils {
     DataTypes.Reserve memory reserveData = spoke.getReserve(reserveId);
     reserveData.config.borrowable = newBorrowable;
     spoke.updateReserveConfig(reserveId, reserveData.config);
+  }
+
+  /// @dev pseudo random randomizer
+  function randomizer(uint256 min, uint256 max, uint256) internal returns (uint256) {
+    return vm.randomUint(min, max);
+  }
+
+  function updateDrawCap(
+    LiquidityHub hub,
+    uint256 assetId,
+    address spoke,
+    uint256 newDrawCap
+  ) internal {
+    DataTypes.SpokeConfig memory spokeConfig = hub.getSpokeConfig(assetId, spoke);
+    spokeConfig.drawCap = newDrawCap;
+    hub.updateSpokeConfig(assetId, spoke, spokeConfig);
+  }
+
+  function getUserSpokeInfo(
+    Spoke spoke,
+    address user,
+    uint256 reserveId
+  ) internal view returns (DataTypes.UserConfig memory) {
+    DataTypes.UserConfig memory userConfig;
+    userConfig.usingAsCollateral = spoke.getUsingAsCollateral(reserveId, user);
+    (userConfig.baseDebt, userConfig.outstandingPremium) = spoke.getUserDebt(reserveId, user);
+    userConfig.suppliedShares = spoke.getSuppliedShares(reserveId, user);
+    userConfig.baseBorrowIndex = spoke.getUserBaseBorrowIndex(reserveId, user);
+    userConfig.riskPremium = spoke.getUserRiskPremium(reserveId, user);
+    userConfig.lastUpdateTimestamp = spoke.getUserLastUpdate(reserveId, user);
+    return userConfig;
   }
 }

@@ -33,58 +33,6 @@ contract Spoke is ISpoke {
     oracle = oracleAddress;
   }
 
-  function getUserDebt(uint256 reserveId, address user) external view returns (uint256, uint256) {
-    (uint256 cumulatedBaseDebt, uint256 cumulatedOutstandingPremium) = _previewUserInterest(
-      _users[user][reserveId],
-      liquidityHub.previewNextBorrowIndex(_reserves[reserveId].assetId)
-    );
-    return (cumulatedBaseDebt, cumulatedOutstandingPremium);
-  }
-
-  function getReserveDebt(uint256 reserveId) external view returns (uint256, uint256) {
-    (uint256 cumulatedBaseDebt, uint256 cumulatedOutstandingPremium) = _previewSpokeInterest(
-      _reserves[reserveId],
-      liquidityHub.previewNextBorrowIndex(_reserves[reserveId].assetId)
-    );
-    return (cumulatedBaseDebt, cumulatedOutstandingPremium);
-  }
-
-  function getUserCumulativeDebt(uint256 reserveId, address user) external view returns (uint256) {
-    (uint256 cumulatedBaseDebt, uint256 cumulatedOutstandingPremium) = _previewUserInterest(
-      _users[user][reserveId],
-      liquidityHub.previewNextBorrowIndex(_reserves[reserveId].assetId)
-    );
-    return cumulatedBaseDebt + cumulatedOutstandingPremium;
-  }
-
-  function getReserveCumulativeDebt(uint256 reserveId) external view returns (uint256) {
-    (uint256 cumulatedBaseDebt, uint256 cumulatedOutstandingPremium) = _previewSpokeInterest(
-      _reserves[reserveId],
-      liquidityHub.previewNextBorrowIndex(_reserves[reserveId].assetId)
-    );
-    return cumulatedBaseDebt + cumulatedOutstandingPremium;
-  }
-
-  function getSuppliedAmount(uint256 reserveId, address user) external view returns (uint256) {
-    return
-      liquidityHub.convertToAssets(
-        _reserves[reserveId].assetId,
-        _users[user][reserveId].suppliedShares
-      );
-  }
-
-  function getSuppliedShares(uint256 reserveId, address user) external view returns (uint256) {
-    return _users[user][reserveId].suppliedShares;
-  }
-
-  function getReserveRiskPremium(uint256 reserveId) external view returns (uint256) {
-    return _reserves[reserveId].riskPremium.derayify();
-  }
-
-  function getUserRiskPremium(uint256 reserveId, address user) external view returns (uint256) {
-    return _users[user][reserveId].riskPremium.derayify();
-  }
-
   /// governance
   function updateReserveConfig(
     uint256 reserveId,
@@ -218,16 +166,6 @@ contract Spoke is ISpoke {
     emit Repaid(reserveId, amount, msg.sender);
   }
 
-  function getUserRiskPremium(address user) external view returns (uint256) {
-    (, , , uint256 userRiskPremium, ) = _calculateUserAccountData(user);
-    return userRiskPremium;
-  }
-
-  function getHealthFactor(address user) external view returns (uint256) {
-    (, , , , uint256 healthFactor) = _calculateUserAccountData(user);
-    return healthFactor;
-  }
-
   function setUsingAsCollateral(uint256 reserveId, bool usingAsCollateral) external {
     DataTypes.Reserve storage reserve = _reserves[reserveId];
     DataTypes.UserConfig storage user = _users[msg.sender][reserveId];
@@ -236,6 +174,80 @@ contract Spoke is ISpoke {
     user.usingAsCollateral = usingAsCollateral;
 
     emit UsingAsCollateral(reserveId, usingAsCollateral, msg.sender);
+  }
+
+  function getUsingAsCollateral(uint256 reserveId, address user) external view returns (bool) {
+    return _users[user][reserveId].usingAsCollateral;
+  }
+
+  function getUserDebt(uint256 reserveId, address user) external view returns (uint256, uint256) {
+    (uint256 cumulatedBaseDebt, uint256 cumulatedOutstandingPremium) = _previewUserInterest(
+      _users[user][reserveId],
+      liquidityHub.previewNextBorrowIndex(_reserves[reserveId].assetId)
+    );
+    return (cumulatedBaseDebt, cumulatedOutstandingPremium);
+  }
+
+  function getUserCumulativeDebt(uint256 reserveId, address user) external view returns (uint256) {
+    (uint256 cumulatedBaseDebt, uint256 cumulatedOutstandingPremium) = _previewUserInterest(
+      _users[user][reserveId],
+      liquidityHub.previewNextBorrowIndex(_reserves[reserveId].assetId)
+    );
+    return cumulatedBaseDebt + cumulatedOutstandingPremium;
+  }
+
+  function getSuppliedShares(uint256 reserveId, address user) external view returns (uint256) {
+    return _users[user][reserveId].suppliedShares;
+  }
+
+  function getSuppliedAmount(uint256 reserveId, address user) external view returns (uint256) {
+    return
+      liquidityHub.convertToAssets(
+        _reserves[reserveId].assetId,
+        _users[user][reserveId].suppliedShares
+      );
+  }
+
+  function getUserBaseBorrowIndex(uint256 reserveId, address user) external view returns (uint256) {
+    return _users[user][reserveId].baseBorrowIndex;
+  }
+
+  function getUserRiskPremium(uint256 reserveId, address user) external view returns (uint256) {
+    return _users[user][reserveId].riskPremium.derayify();
+  }
+
+  function getUserLastUpdate(uint256 reserveId, address user) external view returns (uint256) {
+    return _users[user][reserveId].lastUpdateTimestamp;
+  }
+
+  function getReserveDebt(uint256 reserveId) external view returns (uint256, uint256) {
+    (uint256 cumulatedBaseDebt, uint256 cumulatedOutstandingPremium) = _previewSpokeInterest(
+      _reserves[reserveId],
+      liquidityHub.previewNextBorrowIndex(_reserves[reserveId].assetId)
+    );
+    return (cumulatedBaseDebt, cumulatedOutstandingPremium);
+  }
+
+  function getReserveCumulativeDebt(uint256 reserveId) external view returns (uint256) {
+    (uint256 cumulatedBaseDebt, uint256 cumulatedOutstandingPremium) = _previewSpokeInterest(
+      _reserves[reserveId],
+      liquidityHub.previewNextBorrowIndex(_reserves[reserveId].assetId)
+    );
+    return cumulatedBaseDebt + cumulatedOutstandingPremium;
+  }
+
+  function getReserveRiskPremium(uint256 reserveId) external view returns (uint256) {
+    return _reserves[reserveId].riskPremium.derayify();
+  }
+
+  function getUserRiskPremium(address user) external view returns (uint256) {
+    (, , , uint256 userRiskPremium, ) = _calculateUserAccountData(user);
+    return userRiskPremium;
+  }
+
+  function getHealthFactor(address user) external view returns (uint256) {
+    (, , , , uint256 healthFactor) = _calculateUserAccountData(user);
+    return healthFactor;
   }
 
   // TODO: Needed?
@@ -460,8 +472,8 @@ contract Spoke is ISpoke {
 
     uint256 newUserDebt = baseDebtChange > 0
       ? existingUserDebt + uint256(baseDebtChange) // debt added
-      : // force underflow: only possible when user takes repays amount more than net drawn
-      existingUserDebt - uint256(-baseDebtChange); // debt restored
+      // force underflow: only possible when user takes repays amount more than net drawn
+      : existingUserDebt - uint256(-baseDebtChange); // debt restored
 
     (uint256 newReserveRiskPremium, uint256 newReserveDebt) = MathUtils.addToWeightedAverage(
       reserveRiskPremiumWithoutCurrent,

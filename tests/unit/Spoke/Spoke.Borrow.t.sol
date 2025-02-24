@@ -45,7 +45,7 @@ contract SpokeBorrowTest is Base {
     Utils.spokeSupply(spoke1, daiReserveId, alice, daiAmount, alice);
 
     // set asset not active
-    _updateActive(daiAssetId, false);
+    Utils.updateAssetActive(hub, daiAssetId, false);
 
     // Bob draw half of dai reserve liquidity
     vm.prank(bob);
@@ -70,8 +70,8 @@ contract SpokeBorrowTest is Base {
     // Alice supply dai
     Utils.spokeSupply(spoke1, daiReserveId, alice, daiAmount, alice);
 
-    DataTypes.UserConfig memory bobData = _getUserSpokeInfo(spoke1, bob, wethReserveId);
-    DataTypes.UserConfig memory aliceData = _getUserSpokeInfo(spoke1, alice, daiReserveId);
+    DataTypes.UserConfig memory bobData = Utils.getUserSpokeInfo(spoke1, bob, wethReserveId);
+    DataTypes.UserConfig memory aliceData = Utils.getUserSpokeInfo(spoke1, alice, daiReserveId);
 
     assertEq(
       bobData.suppliedShares,
@@ -96,8 +96,8 @@ contract SpokeBorrowTest is Base {
     emit Borrowed(daiReserveId, daiAmount / 2, bob);
     spoke1.borrow(daiReserveId, daiAmount / 2, bob);
 
-    bobData = _getUserSpokeInfo(spoke1, bob, wethReserveId);
-    aliceData = _getUserSpokeInfo(spoke1, alice, daiReserveId);
+    bobData = Utils.getUserSpokeInfo(spoke1, bob, wethReserveId);
+    aliceData = Utils.getUserSpokeInfo(spoke1, alice, daiReserveId);
 
     assertEq(
       bobData.suppliedShares,
@@ -174,8 +174,8 @@ contract SpokeBorrowTest is Base {
     // Alice supply dai
     Utils.spokeSupply(spoke1, daiReserveId, alice, daiBorrowAmount, alice);
 
-    DataTypes.UserConfig memory bobData = _getUserSpokeInfo(spoke1, bob, wethReserveId);
-    DataTypes.UserConfig memory aliceData = _getUserSpokeInfo(spoke1, alice, daiReserveId);
+    DataTypes.UserConfig memory bobData = Utils.getUserSpokeInfo(spoke1, bob, wethReserveId);
+    DataTypes.UserConfig memory aliceData = Utils.getUserSpokeInfo(spoke1, alice, daiReserveId);
 
     assertEq(
       bobData.suppliedShares,
@@ -200,8 +200,8 @@ contract SpokeBorrowTest is Base {
     emit Borrowed(daiReserveId, daiBorrowAmount, bob);
     spoke1.borrow(daiReserveId, daiBorrowAmount, bob);
 
-    bobData = _getUserSpokeInfo(spoke1, bob, wethReserveId);
-    aliceData = _getUserSpokeInfo(spoke1, alice, daiReserveId);
+    bobData = Utils.getUserSpokeInfo(spoke1, bob, wethReserveId);
+    aliceData = Utils.getUserSpokeInfo(spoke1, alice, daiReserveId);
 
     assertEq(
       bobData.suppliedShares,
@@ -232,7 +232,7 @@ contract SpokeBorrowTest is Base {
     uint256 drawCap = daiAmount;
     uint256 drawAmount = drawCap + 1;
 
-    _updateDrawCap(daiAssetId, address(spoke1), drawCap);
+    Utils.updateDrawCap(hub, daiAssetId, address(spoke1), drawCap);
 
     // Bob supply weth
     Utils.spokeSupply(spoke1, wethReserveId, bob, wethSupplyAmount, bob);
@@ -255,7 +255,7 @@ contract SpokeBorrowTest is Base {
     uint256 wethSupplyAmount = 10e18;
     uint256 drawAmount = drawCap - 1;
 
-    _updateDrawCap(daiAssetId, address(spoke1), drawCap);
+    Utils.updateDrawCap(hub, daiAssetId, address(spoke1), drawCap);
 
     // Bob supply weth
     Utils.spokeSupply(spoke1, wethReserveId, bob, wethSupplyAmount, bob);
@@ -302,28 +302,28 @@ contract SpokeBorrowTest is Base {
     Utils.spokeSupply(spoke2, wbtcReserveId, bob, MAX_SUPPLY_AMOUNT, bob);
     Utils.spokeSupply(spoke2, dai2ReserveId, bob, MAX_SUPPLY_AMOUNT, bob);
 
-    DataTypes.UserConfig memory bobData = _getUserSpokeInfo(spoke2, bob, daiReserveId);
+    DataTypes.UserConfig memory bobData = Utils.getUserSpokeInfo(spoke2, bob, daiReserveId);
     assertEq(
       bobData.suppliedShares,
       hub.convertToShares(daiAssetId, MAX_SUPPLY_AMOUNT),
       'bob supply shares pre-draw'
     );
     assertEq(bobData.baseDebt, 0, 'bob base debt pre-draw');
-    bobData = _getUserSpokeInfo(spoke2, bob, wethReserveId);
+    bobData = Utils.getUserSpokeInfo(spoke2, bob, wethReserveId);
     assertEq(
       bobData.suppliedShares,
       hub.convertToShares(wethAssetId, MAX_SUPPLY_AMOUNT),
       'bob supply shares pre-draw'
     );
     assertEq(bobData.baseDebt, 0, 'bob base debt pre-draw');
-    bobData = _getUserSpokeInfo(spoke2, bob, usdxReserveId);
+    bobData = Utils.getUserSpokeInfo(spoke2, bob, usdxReserveId);
     assertEq(
       bobData.suppliedShares,
       hub.convertToShares(usdxAssetId, MAX_SUPPLY_AMOUNT),
       'bob supply shares pre-draw'
     );
     assertEq(bobData.baseDebt, 0, 'bob base debt pre-draw');
-    bobData = _getUserSpokeInfo(spoke2, bob, wbtcReserveId);
+    bobData = Utils.getUserSpokeInfo(spoke2, bob, wbtcReserveId);
     assertEq(
       bobData.suppliedShares,
       hub.convertToShares(wbtcAssetId, MAX_SUPPLY_AMOUNT),
@@ -345,28 +345,28 @@ contract SpokeBorrowTest is Base {
       Utils.spokeBorrow(spoke2, wbtcReserveId, bob, wbtcBorrowAmount, bob);
     }
 
-    bobData = _getUserSpokeInfo(spoke2, bob, daiReserveId);
+    bobData = Utils.getUserSpokeInfo(spoke2, bob, daiReserveId);
     assertEq(
       bobData.suppliedShares,
       hub.convertToShares(daiAssetId, MAX_SUPPLY_AMOUNT),
       'bob supply shares final balance'
     );
     assertEq(bobData.baseDebt, daiBorrowAmount, 'bob base debt dai final balance');
-    bobData = _getUserSpokeInfo(spoke2, bob, wethReserveId);
+    bobData = Utils.getUserSpokeInfo(spoke2, bob, wethReserveId);
     assertEq(
       bobData.suppliedShares,
       hub.convertToShares(wethAssetId, MAX_SUPPLY_AMOUNT),
       'bob supply shares final balance'
     );
     assertEq(bobData.baseDebt, wethBorrowamount, 'bob base debt weth final balance');
-    bobData = _getUserSpokeInfo(spoke2, bob, usdxReserveId);
+    bobData = Utils.getUserSpokeInfo(spoke2, bob, usdxReserveId);
     assertEq(
       bobData.suppliedShares,
       hub.convertToShares(usdxAssetId, MAX_SUPPLY_AMOUNT),
       'bob supply shares final balance'
     );
     assertEq(bobData.baseDebt, usdxBorrowAmount, 'bob base debt usdx final balance');
-    bobData = _getUserSpokeInfo(spoke2, bob, wbtcReserveId);
+    bobData = Utils.getUserSpokeInfo(spoke2, bob, wbtcReserveId);
     assertEq(
       bobData.suppliedShares,
       hub.convertToShares(wbtcAssetId, MAX_SUPPLY_AMOUNT),

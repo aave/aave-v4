@@ -27,7 +27,7 @@ contract LiquidityHubSupplyTest is LiquidityHubBase {
   function test_supply_revertsWith_asset_not_active() public {
     uint256 amount = 100e18;
 
-    _updateActive(daiAssetId, false);
+    Utils.updateAssetActive(hub, daiAssetId, false);
 
     vm.prank(address(spoke1));
     vm.expectRevert(TestErrors.ASSET_NOT_ACTIVE);
@@ -723,7 +723,7 @@ contract LiquidityHubSupplyTest is LiquidityHubBase {
       prevAssetData = assetData;
 
       // time flies
-      uint256 elapsedTime = randomizer(1 days, 30 days, i);
+      uint256 elapsedTime = Utils.randomizer(1 days, 30 days, i);
       skip(elapsedTime);
 
       p.userShares = 1; // minimum for 1 share

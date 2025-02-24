@@ -512,32 +512,4 @@ abstract contract Base is Test, Events {
       })
     );
   }
-
-  /// @dev pseudo random randomizer
-  function randomizer(uint256 min, uint256 max, uint256) internal returns (uint256) {
-    return vm.randomUint(min, max);
-  }
-
-  function _updateDrawCap(uint256 assetId, address spoke, uint256 newDrawCap) internal {
-    DataTypes.SpokeConfig memory spokeConfig = hub.getSpokeConfig(assetId, spoke);
-    spokeConfig.drawCap = newDrawCap;
-    hub.updateSpokeConfig(assetId, spoke, spokeConfig);
-  }
-
-  function _getUserSpokeInfo(
-    Spoke spoke,
-    address user,
-    uint256 reserveId
-  ) internal view returns (DataTypes.UserConfig memory) {
-    DataTypes.UserConfig memory userConfig;
-    userConfig.suppliedShares = spoke.getSuppliedShares(reserveId, user);
-    (userConfig.baseDebt, ) = spoke.getUserDebt(reserveId, user);
-    return userConfig;
-  }
-
-  function _updateActive(uint256 assetId, bool newActive) internal {
-    DataTypes.AssetConfig memory reserveConfig = hub.getAsset(assetId).config;
-    reserveConfig.active = newActive;
-    hub.updateAssetConfig(assetId, reserveConfig);
-  }
 }
