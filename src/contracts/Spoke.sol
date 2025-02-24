@@ -7,7 +7,7 @@ import {WadRayMath} from 'src/contracts/WadRayMath.sol';
 import {MathUtils} from 'src/contracts/MathUtils.sol';
 import {PercentageMath} from 'src/contracts/PercentageMath.sol';
 import {ILiquidityHub} from 'src/interfaces/ILiquidityHub.sol';
-import {ISpoke} from 'src/interfaces/ISpoke.sol';
+import {ISpoke, SpokeErrors} from 'src/interfaces/ISpoke.sol';
 import {IPriceOracle} from 'src/interfaces/IPriceOracle.sol';
 import {DataTypes} from 'src/libraries/types/DataTypes.sol';
 
@@ -286,7 +286,7 @@ contract Spoke is ISpoke {
 
   function updateReserve(uint256 reserveId, DataTypes.ReserveConfig memory params) external {
     // TODO: More sophisticated
-    require(_reserves[reserveId].asset != address(0), 'INVALID_RESERVE');
+    require(_reserves[reserveId].asset != address(0), SpokeErrors.INVALID_RESERVE);
     // TODO: AccessControl
     _reserves[reserveId].config = DataTypes.ReserveConfig({
       lt: params.lt,
@@ -312,7 +312,7 @@ contract Spoke is ISpoke {
 
   // internal
   function _validateSupply(DataTypes.Reserve storage reserve, uint256 amount) internal view {
-    require(reserve.asset != address(0), 'RESERVE_NOT_LISTED');
+    require(reserve.asset != address(0), SpokeErrors.RESERVE_NOT_LISTED);
   }
 
   function _validateWithdraw(
@@ -322,12 +322,12 @@ contract Spoke is ISpoke {
   ) internal view {
     require(
       liquidityHub.convertToAssetsDown(reserve.assetId, user.suppliedShares) >= amount,
-      'INSUFFICIENT_SUPPLY'
+      SpokeErrors.INSUFFICIENT_SUPPLY
     );
   }
 
   function _validateBorrow(DataTypes.Reserve storage reserve, uint256 amount) internal view {
-    require(reserve.config.borrowable, 'RESERVE_NOT_BORROWABLE');
+    require(reserve.config.borrowable, SpokeErrors.RESERVE_NOT_BORROWABLE);
     // TODO: validation on HF to allow borrowing amount
   }
 
@@ -337,7 +337,7 @@ contract Spoke is ISpoke {
     DataTypes.UserConfig storage user,
     uint256 amount
   ) internal view {
-    require(amount <= user.baseDebt + user.outstandingPremium, 'REPAY_EXCEEDS_DEBT');
+    require(amount <= user.baseDebt + user.outstandingPremium, SpokeErrors.REPAY_EXCEEDS_DEBT);
   }
 
   function _deductFromOutstandingPremium(
@@ -481,7 +481,7 @@ contract Spoke is ISpoke {
     DataTypes.Reserve storage reserve,
     DataTypes.UserConfig storage user
   ) internal view {
-    require(reserve.config.collateral, 'RESERVE_NOT_COLLATERAL');
+    require(reserve.config.collateral, SpokeErrors.RESERVE_NOT_COLLATERAL);
   }
 
   function _usingAsCollateral(DataTypes.UserConfig storage user) internal view returns (bool) {

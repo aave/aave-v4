@@ -109,3 +109,25 @@ interface ILiquidityHub {
   event Restore(uint256 indexed assetId, address indexed spoke, uint256 amount);
   event SpokeAdded(uint256 indexed assetId, address indexed spoke);
 }
+
+/**
+ * @title Liquidity Hub Errors Library
+ * @author Aave Labs
+ * @notice Defines the error messages emitted by the LiquidityHub
+ */
+library LiquidityHubErrors {
+  bytes public constant MISMATCHED_CONFIGS = 'MISMATCHED_CONFIGS';
+  bytes public constant INVALID_SHARES_AMOUNT = 'INVALID_SHARES_AMOUNT';
+  bytes public constant INVALID_SUPPLY_AMOUNT = 'INVALID_SUPPLY_AMOUNT';
+  bytes public constant ASSET_NOT_LISTED = 'ASSET_NOT_LISTED';
+  bytes public constant ASSET_NOT_ACTIVE = 'ASSET_NOT_ACTIVE';
+  bytes public constant SUPPLY_CAP_EXCEEDED = 'SUPPLY_CAP_EXCEEDED';
+  bytes public constant INVALID_WITHDRAW_AMOUNT = 'INVALID_WITHDRAW_AMOUNT';
+  bytes public constant SUPPLIED_AMOUNT_EXCEEDED = 'SUPPLIED_AMOUNT_EXCEEDED';
+  bytes public constant NOT_AVAILABLE_LIQUIDITY = 'NOT_AVAILABLE_LIQUIDITY';
+  bytes public constant INVALID_DRAW_AMOUNT = 'INVALID_DRAW_AMOUNT';
+  bytes public constant DRAW_CAP_EXCEEDED = 'DRAW_CAP_EXCEEDED';
+  bytes public constant INVALID_RESTORE_AMOUNT = 'INVALID_RESTORE_AMOUNT';
+  bytes public constant INVALID_SPOKE = 'INVALID_SPOKE';
+  bytes public constant INVALID_BPS = 'INVALID_BPS';
+}

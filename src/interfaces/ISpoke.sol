@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.0;
-import {DataTypes} from '../libraries/types/DataTypes.sol';
+
 interface ISpoke {
   event Borrowed(uint256 indexed reserveId, uint256 amount, address indexed user);
   event Repaid(uint256 indexed reserveId, uint256 amount, address indexed user);
@@ -33,4 +33,18 @@ interface ISpoke {
   function getReserveRiskPremium(uint256 reserveId) external view returns (uint256);
   function getSuppliedAmount(uint256 reserveId, address user) external view returns (uint256);
   function getSuppliedShares(uint256 reserveId, address user) external view returns (uint256);
+}
+
+/**
+ * @title Spoke Errors Library
+ * @author Aave Labs
+ * @notice Defines the error messages emitted by the Spoke
+ */
+library SpokeErrors {
+  string public constant INVALID_RESERVE = 'INVALID_RESERVE';
+  string public constant RESERVE_NOT_LISTED = 'RESERVE_NOT_LISTED';
+  string public constant INSUFFICIENT_SUPPLY = 'INSUFFICIENT_SUPPLY';
+  string public constant RESERVE_NOT_BORROWABLE = 'RESERVE_NOT_BORROWABLE';
+  string public constant REPAY_EXCEEDS_DEBT = 'REPAY_EXCEEDS_DEBT';
+  string public constant RESERVE_NOT_COLLATERAL = 'RESERVE_NOT_COLLATERAL';
 }
