@@ -2,8 +2,6 @@
 pragma solidity ^0.8.0;
 
 import 'tests/scenario/liquidityHub/LiquidityHub.ScenarioBase.t.sol';
-import {SpokeData} from 'src/contracts/LiquidityHub.sol';
-import {Asset} from 'src/contracts/LiquidityHub.sol';
 import {Utils} from 'tests/Utils.t.sol';
 
 contract BorrowIndex_Scenario2Test is LiquidityHubScenarioBaseTest {

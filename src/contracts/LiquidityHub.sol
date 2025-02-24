@@ -12,43 +12,21 @@ import {SharesMath} from 'src/contracts/SharesMath.sol';
 import {MathUtils} from 'src/contracts/MathUtils.sol';
 import {PercentageMath} from 'src/contracts/PercentageMath.sol';
 
-struct SpokeData {
-  uint256 suppliedShares; // share
-  uint256 baseDebt; // asset
-  uint256 outstandingPremium; // asset
-  uint256 baseBorrowIndex; // in ray
-  uint256 riskPremium; // weighted average risk premium in ray
-  uint256 lastUpdateTimestamp;
-  DataTypes.SpokeConfig config;
-}
-
-struct Asset {
-  uint256 id;
-  uint256 suppliedShares; // share
-  uint256 availableLiquidity; // asset
-  uint256 baseDebt; // asset
-  uint256 outstandingPremium; // asset
-  uint256 baseBorrowIndex; // in ray
-  uint256 baseBorrowRate; // in ray
-  uint256 riskPremium; // weighted average risk premium of all spokes with ray precision
-  uint256 lastUpdateTimestamp;
-  DataTypes.AssetConfig config;
-}
-
 // @dev Amounts are `asset` denominated by default unless specified otherwise with `share` suffix
 contract LiquidityHub is ILiquidityHub {
   using SafeERC20 for IERC20;
   using WadRayMath for uint256;
   using SharesMath for uint256;
   using PercentageMath for uint256;
-  using AssetLogic for Asset;
-  using SpokeDataLogic for SpokeData;
+  using AssetLogic for DataTypes.Asset;
+  using SpokeDataLogic for DataTypes.SpokeData;
 
   uint256 public constant DEFAULT_ASSET_INDEX = WadRayMath.RAY;
   uint256 public constant DEFAULT_SPOKE_INDEX = 0;
 
-  mapping(uint256 assetId => Asset assetData) internal _assets;
-  mapping(uint256 assetId => mapping(address spokeAddress => SpokeData spokeData)) internal _spokes;
+  mapping(uint256 assetId => DataTypes.Asset assetData) internal _assets;
+  mapping(uint256 assetId => mapping(address spokeAddress => DataTypes.SpokeData spokeData))
+    internal _spokes;
 
   IERC20[] public assetsList; // TODO: Check if Enumerable or Set makes more sense
   uint256 public assetCount;
@@ -57,11 +35,14 @@ contract LiquidityHub is ILiquidityHub {
   // External
   //
 
-  function getAsset(uint256 assetId) external view returns (Asset memory) {
+  function getAsset(uint256 assetId) external view returns (DataTypes.Asset memory) {
     return _assets[assetId];
   }
 
-  function getSpoke(uint256 assetId, address spoke) external view returns (SpokeData memory) {
+  function getSpoke(
+    uint256 assetId,
+    address spoke
+  ) external view returns (DataTypes.SpokeData memory) {
     return _spokes[assetId][spoke];
   }
 
@@ -73,7 +54,7 @@ contract LiquidityHub is ILiquidityHub {
   }
 
   function getTotalAssets(uint256 assetId) external view returns (uint256) {
-    Asset storage asset = _assets[assetId];
+    DataTypes.Asset storage asset = _assets[assetId];
     return asset.getTotalAssets();
   }
 
@@ -84,7 +65,7 @@ contract LiquidityHub is ILiquidityHub {
   function addAsset(DataTypes.AssetConfig memory config, address asset) external {
     // TODO: AccessControl
     assetsList.push(IERC20(asset));
-    _assets[assetCount] = Asset({
+    _assets[assetCount] = DataTypes.Asset({
       id: assetCount,
       suppliedShares: 0,
       availableLiquidity: 0,
@@ -161,8 +142,8 @@ contract LiquidityHub is ILiquidityHub {
   ) external returns (uint256) {
     // TODO: authorization - only spokes
 
-    Asset storage asset = _assets[assetId];
-    SpokeData storage spoke = _spokes[assetId][msg.sender];
+    DataTypes.Asset storage asset = _assets[assetId];
+    DataTypes.SpokeData storage spoke = _spokes[assetId][msg.sender];
 
     _accrueInterest(asset, spoke);
     _validateSupply(asset, spoke, amount);
@@ -200,8 +181,8 @@ contract LiquidityHub is ILiquidityHub {
   ) external returns (uint256) {
     // TODO: authorization - only spokes
 
-    Asset storage asset = _assets[assetId];
-    SpokeData storage spoke = _spokes[assetId][msg.sender];
+    DataTypes.Asset storage asset = _assets[assetId];
+    DataTypes.SpokeData storage spoke = _spokes[assetId][msg.sender];
 
     _accrueInterest(asset, spoke); // accrue interest before validating action
     _validateWithdraw(asset, spoke, amount);
@@ -232,8 +213,8 @@ contract LiquidityHub is ILiquidityHub {
   ) external returns (uint256) {
     // TODO: authorization - only spokes
 
-    Asset storage asset = _assets[assetId];
-    SpokeData storage spoke = _spokes[assetId][msg.sender];
+    DataTypes.Asset storage asset = _assets[assetId];
+    DataTypes.SpokeData storage spoke = _spokes[assetId][msg.sender];
 
     _accrueInterest(asset, spoke); // accrue interest before validating action
     _validateDraw(asset, amount, spoke.config.drawCap);
@@ -259,8 +240,8 @@ contract LiquidityHub is ILiquidityHub {
   ) external returns (uint256) {
     // TODO: authorization - only spokes
 
-    Asset storage asset = _assets[assetId];
-    SpokeData storage spoke = _spokes[assetId][msg.sender];
+    DataTypes.Asset storage asset = _assets[assetId];
+    DataTypes.SpokeData storage spoke = _spokes[assetId][msg.sender];
 
     _accrueInterest(asset, spoke); // accrue interest before validating action
     _validateRestore(asset, spoke, amount);
@@ -368,8 +349,8 @@ contract LiquidityHub is ILiquidityHub {
   //
 
   function _validateSupply(
-    Asset storage asset,
-    SpokeData storage spoke,
+    DataTypes.Asset storage asset,
+    DataTypes.SpokeData storage spoke,
     uint256 amount
   ) internal view {
     require(amount > 0, 'INVALID_SUPPLY_AMOUNT');
@@ -384,8 +365,8 @@ contract LiquidityHub is ILiquidityHub {
   }
 
   function _validateWithdraw(
-    Asset storage asset,
-    SpokeData storage spoke,
+    DataTypes.Asset storage asset,
+    DataTypes.SpokeData storage spoke,
     uint256 amount
   ) internal view {
     // TODO: Other cases of status (frozen, paused)
@@ -399,7 +380,11 @@ contract LiquidityHub is ILiquidityHub {
     require(amount <= asset.availableLiquidity, 'NOT_AVAILABLE_LIQUIDITY');
   }
 
-  function _validateDraw(Asset storage asset, uint256 amount, uint256 drawCap) internal view {
+  function _validateDraw(
+    DataTypes.Asset storage asset,
+    uint256 amount,
+    uint256 drawCap
+  ) internal view {
     // TODO: Other cases of status (frozen, paused)
     require(asset.config.active, 'ASSET_NOT_ACTIVE');
     require(amount > 0, 'INVALID_DRAW_AMOUNT');
@@ -411,8 +396,8 @@ contract LiquidityHub is ILiquidityHub {
   }
 
   function _validateRestore(
-    Asset storage asset,
-    SpokeData storage spoke,
+    DataTypes.Asset storage asset,
+    DataTypes.SpokeData storage spoke,
     uint256 amountRestored
   ) internal view {
     // TODO: Other cases of status (frozen, paused)
@@ -425,7 +410,10 @@ contract LiquidityHub is ILiquidityHub {
   }
 
   // @dev Utilizes existing asset & spoke: `baseBorrowIndex`, `riskPremium`
-  function _accrueInterest(Asset storage asset, SpokeData storage spoke) internal {
+  function _accrueInterest(
+    DataTypes.Asset storage asset,
+    DataTypes.SpokeData storage spoke
+  ) internal {
     uint256 nextBaseBorrowIndex = asset.previewNextBorrowIndex();
 
     asset.accrueInterest(nextBaseBorrowIndex);
@@ -435,8 +423,8 @@ contract LiquidityHub is ILiquidityHub {
   // @dev Expects both `asset.baseDebt` & `spoke.baseDebt` have been accrued
   // @dev Does not update `outstandingPremium`
   function _updateRiskPremiumAndBaseDebt(
-    Asset storage asset,
-    SpokeData storage spoke,
+    DataTypes.Asset storage asset,
+    DataTypes.SpokeData storage spoke,
     uint256 newSpokeRiskPremium,
     int256 baseDebtChange
   ) internal {
@@ -473,7 +461,7 @@ contract LiquidityHub is ILiquidityHub {
 
   function _addSpoke(uint256 assetId, DataTypes.SpokeConfig memory config, address spoke) internal {
     require(spoke != address(0), 'INVALID_SPOKE');
-    _spokes[assetId][spoke] = SpokeData({
+    _spokes[assetId][spoke] = DataTypes.SpokeData({
       suppliedShares: 0,
       baseDebt: 0,
       outstandingPremium: 0,
@@ -487,8 +475,8 @@ contract LiquidityHub is ILiquidityHub {
 
   // @dev `amount` can cover at most spoke's outstanding premium
   function _deductFromOutstandingPremium(
-    Asset storage asset,
-    SpokeData storage spoke,
+    DataTypes.Asset storage asset,
+    DataTypes.SpokeData storage spoke,
     uint256 amount
   ) internal returns (uint256) {
     uint256 spokeOutstandingPremium = spoke.outstandingPremium;

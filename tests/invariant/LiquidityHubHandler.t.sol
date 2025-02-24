@@ -3,7 +3,7 @@ pragma solidity ^0.8.0;
 
 import {Test} from 'forge-std/Test.sol';
 
-import {LiquidityHub, Asset} from 'src/contracts/LiquidityHub.sol';
+import {LiquidityHub} from 'src/contracts/LiquidityHub.sol';
 import {Spoke} from 'src/contracts/Spoke.sol';
 import {IERC20} from 'src/dependencies/openzeppelin/IERC20.sol';
 import '../mocks/MockPriceOracle.sol';
@@ -131,7 +131,7 @@ contract LiquidityHubHandler is Test {
   }
 
   function _updateState(uint256 assetId) internal {
-    Asset memory reserveData = hub.getAsset(assetId);
+    DataTypes.Asset memory reserveData = hub.getAsset(assetId);
     // todo: remove last exchange rate, bad idea to store like this, looses precision
     s.lastExchangeRate[assetId] = reserveData.suppliedShares == 0
       ? 0

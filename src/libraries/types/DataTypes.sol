@@ -2,6 +2,43 @@
 pragma solidity ^0.8.10;
 
 library DataTypes {
+  // Liquidity Hub types
+  struct SpokeData {
+    uint256 suppliedShares; // share
+    uint256 baseDebt; // asset
+    uint256 outstandingPremium; // asset
+    uint256 baseBorrowIndex; // in ray
+    uint256 riskPremium; // weighted average risk premium in ray
+    uint256 lastUpdateTimestamp;
+    DataTypes.SpokeConfig config;
+  }
+
+  struct Asset {
+    uint256 id;
+    uint256 suppliedShares; // share
+    uint256 availableLiquidity; // asset
+    uint256 baseDebt; // asset
+    uint256 outstandingPremium; // asset
+    uint256 baseBorrowIndex; // in ray
+    uint256 baseBorrowRate; // in ray
+    uint256 riskPremium; // weighted average risk premium of all spokes with ray precision
+    uint256 lastUpdateTimestamp;
+    DataTypes.AssetConfig config;
+  }
+
+  // TODO: borrow cap per spoke
+  struct SpokeConfig {
+    uint256 drawCap; // asset denominated
+    uint256 supplyCap; // asset denominated
+  }
+
+  struct AssetConfig {
+    uint256 decimals;
+    bool active; // TODO: frozen, paused
+    address irStrategy; // todo use interface
+  }
+
+  // Spoke types
   struct CalculateInterestRatesParams {
     uint256 liquidityAdded;
     uint256 liquidityTaken;
@@ -53,17 +90,5 @@ library DataTypes {
     uint256 avgLiquidationThreshold;
     uint256 userRiskPremium;
     uint256 healthFactor;
-  }
-
-  // TODO: borrow cap per spoke
-  struct SpokeConfig {
-    uint256 drawCap; // asset denominated
-    uint256 supplyCap; // asset denominated
-  }
-
-  struct AssetConfig {
-    uint256 decimals;
-    bool active; // TODO: frozen, paused
-    address irStrategy; // todo use interface
   }
 }

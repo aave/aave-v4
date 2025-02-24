@@ -3,7 +3,6 @@ pragma solidity ^0.8.0;
 
 import './LiquidityHubBaseTest.t.sol';
 import {IERC20Errors} from 'src/dependencies/openzeppelin/IERC20Errors.sol';
-import {Asset, SpokeData} from 'src/contracts/LiquidityHub.sol';
 
 contract LiquidityHubSupplyTest is LiquidityHubBaseTest {
   using SharesMath for uint256;
@@ -69,8 +68,8 @@ contract LiquidityHubSupplyTest is LiquidityHubBaseTest {
     uint256 assetId = daiAssetId;
     uint256 amount = 100e18;
 
-    Asset memory assetData = hub.getAsset(assetId);
-    SpokeData memory spokeData = hub.getSpoke(assetId, address(spoke1));
+    DataTypes.Asset memory assetData = hub.getAsset(assetId);
+    DataTypes.SpokeData memory spokeData = hub.getSpoke(assetId, address(spoke1));
 
     // hub
     assertEq(hub.getTotalAssets(assetId), 0, 'hub total assets pre-supply');
@@ -179,8 +178,8 @@ contract LiquidityHubSupplyTest is LiquidityHubBaseTest {
 
     uint256 timestamp = vm.getBlockTimestamp();
 
-    Asset memory assetData = hub.getAsset(assetId);
-    SpokeData memory spokeData = hub.getSpoke(assetId, address(spoke1));
+    DataTypes.Asset memory assetData = hub.getAsset(assetId);
+    DataTypes.SpokeData memory spokeData = hub.getSpoke(assetId, address(spoke1));
 
     // hub
     assertEq(hub.getTotalAssets(assetId), amount, 'total assets post-supply');
@@ -263,10 +262,10 @@ contract LiquidityHubSupplyTest is LiquidityHubBaseTest {
 
     uint256 timestamp = vm.getBlockTimestamp();
 
-    Asset memory assetData = hub.getAsset(assetId);
-    Asset memory asset2Data = hub.getAsset(assetId2);
-    SpokeData memory spokeData = hub.getSpoke(assetId, address(spoke1));
-    SpokeData memory spoke2Data = hub.getSpoke(assetId2, address(spoke2));
+    DataTypes.Asset memory assetData = hub.getAsset(assetId);
+    DataTypes.Asset memory asset2Data = hub.getAsset(assetId2);
+    DataTypes.SpokeData memory spokeData = hub.getSpoke(assetId, address(spoke1));
+    DataTypes.SpokeData memory spoke2Data = hub.getSpoke(assetId2, address(spoke2));
 
     // hub
     assertEq(hub.getTotalAssets(assetId), amount, 'total assets post-supply');
@@ -413,7 +412,7 @@ contract LiquidityHubSupplyTest is LiquidityHubBaseTest {
     });
     skip(365 days);
 
-    Asset memory daiData = hub.getAsset(daiAssetId);
+    DataTypes.Asset memory daiData = hub.getAsset(daiAssetId);
     uint256 accruedBase = daiData.baseDebt.rayMul(rate);
     uint256 initialTotalAssets = daiAmount;
 
@@ -435,7 +434,7 @@ contract LiquidityHubSupplyTest is LiquidityHubBaseTest {
     });
 
     daiData = hub.getAsset(daiAssetId);
-    SpokeData memory spokeData = hub.getSpoke(daiAssetId, address(spoke2));
+    DataTypes.SpokeData memory spokeData = hub.getSpoke(daiAssetId, address(spoke2));
 
     assertEq(
       hub.getTotalAssets(daiAssetId),
@@ -471,7 +470,7 @@ contract LiquidityHubSupplyTest is LiquidityHubBaseTest {
     });
     skip(365 days);
 
-    Asset memory daiData = hub.getAsset(daiAssetId);
+    DataTypes.Asset memory daiData = hub.getAsset(daiAssetId);
     uint256 accruedBase = daiData.baseDebt.rayMul(rate);
     uint256 accruedPremium = accruedBase.percentMul(riskPremium);
     uint256 initialTotalAssets = daiAmount;
@@ -494,7 +493,7 @@ contract LiquidityHubSupplyTest is LiquidityHubBaseTest {
     });
 
     daiData = hub.getAsset(daiAssetId);
-    SpokeData memory spokeData = hub.getSpoke(daiAssetId, address(spoke2));
+    DataTypes.SpokeData memory spokeData = hub.getSpoke(daiAssetId, address(spoke2));
 
     assertEq(
       hub.getTotalAssets(daiAssetId),
@@ -533,8 +532,8 @@ contract LiquidityHubSupplyTest is LiquidityHubBaseTest {
       to: address(spoke1)
     });
 
-    Asset memory assetData = hub.getAsset(assetId);
-    SpokeData memory spokeData = hub.getSpoke(assetId, address(spoke1));
+    DataTypes.Asset memory assetData = hub.getAsset(assetId);
+    DataTypes.SpokeData memory spokeData = hub.getSpoke(assetId, address(spoke1));
 
     // Time flies, no interest acc
     skip(1e4);
@@ -560,7 +559,7 @@ contract LiquidityHubSupplyTest is LiquidityHubBaseTest {
 
     assetData = hub.getAsset(assetId);
     spokeData = hub.getSpoke(assetId, address(spoke1));
-    SpokeData memory spoke2Data = hub.getSpoke(assetId, address(spoke2));
+    DataTypes.SpokeData memory spoke2Data = hub.getSpoke(assetId, address(spoke2));
 
     uint256 cumulatedBaseInterest = MathUtils.calculateLinearInterest(
       assetData.baseBorrowRate,
@@ -654,9 +653,9 @@ contract LiquidityHubSupplyTest is LiquidityHubBaseTest {
       userAssets: 0,
       userShares: 0
     });
-    Asset memory assetData;
-    SpokeData memory spokeData;
-    Asset memory prevAssetData = hub.getAsset(assetId);
+    DataTypes.Asset memory assetData;
+    DataTypes.SpokeData memory spokeData;
+    DataTypes.Asset memory prevAssetData = hub.getAsset(assetId);
 
     uint256 runningBalance = asset.balanceOf(alice);
     uint256 cumulatedBaseInterest;

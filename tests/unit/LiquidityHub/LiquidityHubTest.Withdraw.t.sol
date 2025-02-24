@@ -2,8 +2,6 @@
 pragma solidity ^0.8.0;
 
 import './LiquidityHubBaseTest.t.sol';
-import {IERC20Errors} from 'src/dependencies/openzeppelin/IERC20Errors.sol';
-import {Asset, SpokeData} from 'src/contracts/LiquidityHub.sol';
 
 contract LiquidityHubWithdrawTest is LiquidityHubBaseTest {
   using SharesMath for uint256;
@@ -23,8 +21,8 @@ contract LiquidityHubWithdrawTest is LiquidityHubBaseTest {
       to: address(spoke1)
     });
 
-    Asset memory assetData = hub.getAsset(daiAssetId);
-    SpokeData memory spokeData = hub.getSpoke(daiAssetId, address(spoke1));
+    DataTypes.Asset memory assetData = hub.getAsset(daiAssetId);
+    DataTypes.SpokeData memory spokeData = hub.getSpoke(daiAssetId, address(spoke1));
 
     uint256 timestamp = vm.getBlockTimestamp();
 
@@ -183,9 +181,9 @@ contract LiquidityHubWithdrawTest is LiquidityHubBaseTest {
       to: alice
     });
 
-    Asset memory assetData = hub.getAsset(assetId);
-    SpokeData memory spokeData = hub.getSpoke(assetId, address(spoke1));
-    SpokeData memory spoke2Data = hub.getSpoke(assetId, address(spoke2));
+    DataTypes.Asset memory assetData = hub.getAsset(assetId);
+    DataTypes.SpokeData memory spokeData = hub.getSpoke(assetId, address(spoke1));
+    DataTypes.SpokeData memory spoke2Data = hub.getSpoke(assetId, address(spoke2));
 
     // hub
     assertEq(hub.getTotalAssets(assetId), 0, 'hub total assets post-withdraw');
@@ -275,8 +273,8 @@ contract LiquidityHubWithdrawTest is LiquidityHubBaseTest {
       to: address(spoke1)
     });
 
-    Asset memory assetData = hub.getAsset(assetId);
-    SpokeData memory spokeData = hub.getSpoke(assetId, address(spoke1));
+    DataTypes.Asset memory assetData = hub.getAsset(assetId);
+    DataTypes.SpokeData memory spokeData = hub.getSpoke(assetId, address(spoke1));
 
     uint256 timestamp = vm.getBlockTimestamp();
 

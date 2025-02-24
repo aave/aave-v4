@@ -2,8 +2,6 @@
 pragma solidity ^0.8.0;
 
 import 'tests/BaseTest.t.sol';
-import {SpokeData} from 'src/contracts/LiquidityHub.sol';
-import {Asset} from 'src/contracts/LiquidityHub.sol';
 import {Utils} from 'tests/Utils.t.sol';
 
 contract LiquidityHubInterestRateTest is BaseTest {
@@ -26,7 +24,7 @@ contract LiquidityHubInterestRateTest is BaseTest {
 
   function test_getInterestRate_Supply() public {
     vm.startPrank(address(spoke1));
-    SpokeData memory test = hub.getSpoke(daiAssetId, address(spoke1));
+    DataTypes.SpokeData memory test = hub.getSpoke(daiAssetId, address(spoke1));
     hub.supply(daiAssetId, 1000e18, 0, address(spoke1));
     // No change to risk premium, so borrow rate is just the base rate
     assertEq(_getBaseBorrowRate(daiAssetId), _getBorrowRate(daiAssetId));

@@ -2,8 +2,6 @@
 pragma solidity ^0.8.0;
 
 import './LiquidityHubBaseTest.t.sol';
-import {IERC20Errors} from 'src/dependencies/openzeppelin/IERC20Errors.sol';
-import {Asset, SpokeData} from 'src/contracts/LiquidityHub.sol';
 
 contract LiquidityHubDrawTest is LiquidityHubBaseTest {
   using SharesMath for uint256;
@@ -42,13 +40,13 @@ contract LiquidityHubDrawTest is LiquidityHubBaseTest {
     vm.prank(address(spoke1));
     hub.draw({assetId: daiAssetId, amount: drawAmount, riskPremium: 0, to: alice});
 
-    Asset memory wethData = hub.getAsset(wethAssetId);
-    Asset memory daiData = hub.getAsset(daiAssetId);
+    DataTypes.Asset memory wethData = hub.getAsset(wethAssetId);
+    DataTypes.Asset memory daiData = hub.getAsset(daiAssetId);
     DebtData memory daiDebtData = _getDebt(daiAssetId);
 
-    SpokeData memory spoke1WethData = hub.getSpoke(wethAssetId, address(spoke1));
-    SpokeData memory spoke1DaiData = hub.getSpoke(daiAssetId, address(spoke1));
-    SpokeData memory spoke2Data = hub.getSpoke(daiAssetId, address(spoke2));
+    DataTypes.SpokeData memory spoke1WethData = hub.getSpoke(wethAssetId, address(spoke1));
+    DataTypes.SpokeData memory spoke1DaiData = hub.getSpoke(daiAssetId, address(spoke1));
+    DataTypes.SpokeData memory spoke2Data = hub.getSpoke(daiAssetId, address(spoke2));
 
     // hub
     assertEq(hub.getTotalAssets(wethAssetId), wethAmount, 'hub weth total assets post-draw');
@@ -216,13 +214,13 @@ contract LiquidityHubDrawTest is LiquidityHubBaseTest {
     vm.prank(address(spoke1));
     hub.draw({assetId: daiAssetId, amount: drawAmount, riskPremium: 0, to: alice});
 
-    Asset memory wethData = hub.getAsset(wethAssetId);
-    Asset memory daiData = hub.getAsset(daiAssetId);
+    DataTypes.Asset memory wethData = hub.getAsset(wethAssetId);
+    DataTypes.Asset memory daiData = hub.getAsset(daiAssetId);
     DebtData memory daiDebtData = _getDebt(daiAssetId);
 
-    SpokeData memory spoke1WethData = hub.getSpoke(wethAssetId, address(spoke1));
-    SpokeData memory spoke1DaiData = hub.getSpoke(daiAssetId, address(spoke1));
-    SpokeData memory spoke2Data = hub.getSpoke(daiAssetId, address(spoke2));
+    DataTypes.SpokeData memory spoke1WethData = hub.getSpoke(wethAssetId, address(spoke1));
+    DataTypes.SpokeData memory spoke1DaiData = hub.getSpoke(daiAssetId, address(spoke1));
+    DataTypes.SpokeData memory spoke2Data = hub.getSpoke(daiAssetId, address(spoke2));
 
     // hub
     assertEq(hub.getTotalAssets(wethAssetId), wethAmount, 'hub weth total assets post-draw');

@@ -2,8 +2,6 @@
 pragma solidity ^0.8.0;
 
 import './LiquidityHubBaseTest.t.sol';
-import {IERC20Errors} from 'src/dependencies/openzeppelin/IERC20Errors.sol';
-import {Asset, SpokeData} from 'src/contracts/LiquidityHub.sol';
 
 contract LiquidityHubRestoreTest is LiquidityHubBaseTest {
   using SharesMath for uint256;
@@ -158,7 +156,7 @@ contract LiquidityHubRestoreTest is LiquidityHubBaseTest {
       onBehalfOf: address(spoke1)
     });
 
-    SpokeData memory spoke1DaiData = hub.getSpoke(daiAssetId, address(spoke1));
+    DataTypes.SpokeData memory spoke1DaiData = hub.getSpoke(daiAssetId, address(spoke1));
 
     skip(skipTime);
 
@@ -243,7 +241,7 @@ contract LiquidityHubRestoreTest is LiquidityHubBaseTest {
       onBehalfOf: address(spoke1)
     });
 
-    SpokeData memory spoke1DaiData = hub.getSpoke(daiAssetId, address(spoke1));
+    DataTypes.SpokeData memory spoke1DaiData = hub.getSpoke(daiAssetId, address(spoke1));
 
     skip(skipTime);
 
@@ -325,7 +323,7 @@ contract LiquidityHubRestoreTest is LiquidityHubBaseTest {
       onBehalfOf: address(spoke1)
     });
 
-    SpokeData memory spoke1DaiData = hub.getSpoke(daiAssetId, address(spoke1));
+    DataTypes.SpokeData memory spoke1DaiData = hub.getSpoke(daiAssetId, address(spoke1));
 
     skip(skipTime);
 
@@ -413,7 +411,7 @@ contract LiquidityHubRestoreTest is LiquidityHubBaseTest {
       onBehalfOf: address(spoke1)
     });
 
-    SpokeData memory spoke1DaiData = hub.getSpoke(daiAssetId, address(spoke1));
+    DataTypes.SpokeData memory spoke1DaiData = hub.getSpoke(daiAssetId, address(spoke1));
 
     skip(skipTime);
 
@@ -463,7 +461,7 @@ contract LiquidityHubRestoreTest is LiquidityHubBaseTest {
       riskPremium: riskPremium,
       rate: rate
     });
-    Asset memory daiData = hub.getAsset(daiAssetId);
+    DataTypes.Asset memory daiData = hub.getAsset(daiAssetId);
 
     skip(365 days);
 
@@ -482,7 +480,7 @@ contract LiquidityHubRestoreTest is LiquidityHubBaseTest {
     hub.restore({assetId: daiAssetId, amount: restoreAmount, riskPremium: 0, repayer: alice});
 
     daiData = hub.getAsset(daiAssetId);
-    SpokeData memory spoke1DaiData = hub.getSpoke(daiAssetId, address(spoke1));
+    DataTypes.SpokeData memory spoke1DaiData = hub.getSpoke(daiAssetId, address(spoke1));
     DebtData memory daiDebtData = _getDebt(daiAssetId);
 
     // hub
@@ -563,7 +561,7 @@ contract LiquidityHubRestoreTest is LiquidityHubBaseTest {
       riskPremium: riskPremium,
       rate: rate
     });
-    Asset memory daiData = hub.getAsset(daiAssetId);
+    DataTypes.Asset memory daiData = hub.getAsset(daiAssetId);
 
     skip(skipTime);
 
@@ -581,7 +579,7 @@ contract LiquidityHubRestoreTest is LiquidityHubBaseTest {
     hub.restore({assetId: daiAssetId, amount: restoreAmount, riskPremium: 0, repayer: alice});
 
     daiData = hub.getAsset(daiAssetId);
-    SpokeData memory spoke1DaiData = hub.getSpoke(daiAssetId, address(spoke1));
+    DataTypes.SpokeData memory spoke1DaiData = hub.getSpoke(daiAssetId, address(spoke1));
     DebtData memory daiDebtData = _getDebt(daiAssetId);
 
     // hub
@@ -654,7 +652,7 @@ contract LiquidityHubRestoreTest is LiquidityHubBaseTest {
       riskPremium: riskPremium,
       rate: rate
     });
-    Asset memory daiData = hub.getAsset(daiAssetId);
+    DataTypes.Asset memory daiData = hub.getAsset(daiAssetId);
 
     skip(365 days);
 
@@ -671,7 +669,7 @@ contract LiquidityHubRestoreTest is LiquidityHubBaseTest {
     hub.restore({assetId: daiAssetId, amount: restoreAmount, riskPremium: 0, repayer: alice});
 
     daiData = hub.getAsset(daiAssetId);
-    SpokeData memory spoke1DaiData = hub.getSpoke(daiAssetId, address(spoke1));
+    DataTypes.SpokeData memory spoke1DaiData = hub.getSpoke(daiAssetId, address(spoke1));
     DebtData memory daiDebtData = _getDebt(daiAssetId);
 
     // hub
@@ -740,7 +738,7 @@ contract LiquidityHubRestoreTest is LiquidityHubBaseTest {
       riskPremium: riskPremium,
       rate: rate
     });
-    Asset memory daiData = hub.getAsset(daiAssetId);
+    DataTypes.Asset memory daiData = hub.getAsset(daiAssetId);
 
     skip(skipTime);
 
@@ -762,7 +760,7 @@ contract LiquidityHubRestoreTest is LiquidityHubBaseTest {
     hub.restore({assetId: daiAssetId, amount: restoreAmount, riskPremium: 0, repayer: alice});
 
     daiData = hub.getAsset(daiAssetId);
-    SpokeData memory spoke1DaiData = hub.getSpoke(daiAssetId, address(spoke1));
+    DataTypes.SpokeData memory spoke1DaiData = hub.getSpoke(daiAssetId, address(spoke1));
     DebtData memory daiDebtData = _getDebt(daiAssetId);
 
     // hub
@@ -1090,7 +1088,7 @@ contract LiquidityHubRestoreTest is LiquidityHubBaseTest {
       onBehalfOf: address(spoke1)
     });
 
-    SpokeData memory spoke1DaiData = hub.getSpoke(daiAssetId, address(spoke1));
+    DataTypes.SpokeData memory spoke1DaiData = hub.getSpoke(daiAssetId, address(spoke1));
 
     skip(skipTime);
 
@@ -1116,8 +1114,8 @@ contract LiquidityHubRestoreTest is LiquidityHubBaseTest {
     vm.prank(address(spoke1));
     hub.restore({assetId: daiAssetId, amount: cumulatedBaseDebt, riskPremium: 0, repayer: alice});
 
-    Asset memory daiData = hub.getAsset(daiAssetId);
-    SpokeData memory spoke1Data = hub.getSpoke(daiAssetId, address(spoke1));
+    DataTypes.Asset memory daiData = hub.getAsset(daiAssetId);
+    DataTypes.SpokeData memory spoke1Data = hub.getSpoke(daiAssetId, address(spoke1));
     DebtData memory daiDebtData = _getDebt(daiAssetId);
 
     // asset
@@ -1186,7 +1184,7 @@ contract LiquidityHubRestoreTest is LiquidityHubBaseTest {
       onBehalfOf: address(spoke1)
     });
 
-    SpokeData memory spoke1DaiData = hub.getSpoke(daiAssetId, address(spoke1));
+    DataTypes.SpokeData memory spoke1DaiData = hub.getSpoke(daiAssetId, address(spoke1));
 
     skip(skipTime);
 
@@ -1213,8 +1211,8 @@ contract LiquidityHubRestoreTest is LiquidityHubBaseTest {
     vm.prank(address(spoke1));
     hub.restore({assetId: daiAssetId, amount: cumulatedBaseDebt, riskPremium: 0, repayer: alice});
 
-    Asset memory daiData = hub.getAsset(daiAssetId);
-    SpokeData memory spoke1Data = hub.getSpoke(daiAssetId, address(spoke1));
+    DataTypes.Asset memory daiData = hub.getAsset(daiAssetId);
+    DataTypes.SpokeData memory spoke1Data = hub.getSpoke(daiAssetId, address(spoke1));
     DebtData memory daiDebtData = _getDebt(daiAssetId);
 
     // asset
@@ -1280,7 +1278,7 @@ contract LiquidityHubRestoreTest is LiquidityHubBaseTest {
       onBehalfOf: address(spoke1)
     });
 
-    SpokeData memory spoke1DaiData = hub.getSpoke(daiAssetId, address(spoke1));
+    DataTypes.SpokeData memory spoke1DaiData = hub.getSpoke(daiAssetId, address(spoke1));
 
     skip(skipTime);
 
@@ -1313,8 +1311,8 @@ contract LiquidityHubRestoreTest is LiquidityHubBaseTest {
       repayer: alice
     });
 
-    Asset memory daiData = hub.getAsset(daiAssetId);
-    SpokeData memory spoke1Data = hub.getSpoke(daiAssetId, address(spoke1));
+    DataTypes.Asset memory daiData = hub.getAsset(daiAssetId);
+    DataTypes.SpokeData memory spoke1Data = hub.getSpoke(daiAssetId, address(spoke1));
     DebtData memory daiDebtData = _getDebt(daiAssetId);
 
     // asset
@@ -1385,7 +1383,7 @@ contract LiquidityHubRestoreTest is LiquidityHubBaseTest {
       onBehalfOf: address(spoke1)
     });
 
-    SpokeData memory spoke1DaiData = hub.getSpoke(daiAssetId, address(spoke1));
+    DataTypes.SpokeData memory spoke1DaiData = hub.getSpoke(daiAssetId, address(spoke1));
 
     skip(skipTime);
 
@@ -1418,8 +1416,8 @@ contract LiquidityHubRestoreTest is LiquidityHubBaseTest {
       repayer: alice
     });
 
-    Asset memory daiData = hub.getAsset(daiAssetId);
-    SpokeData memory spoke1Data = hub.getSpoke(daiAssetId, address(spoke1));
+    DataTypes.Asset memory daiData = hub.getAsset(daiAssetId);
+    DataTypes.SpokeData memory spoke1Data = hub.getSpoke(daiAssetId, address(spoke1));
     DebtData memory daiDebtData = _getDebt(daiAssetId);
 
     // asset
