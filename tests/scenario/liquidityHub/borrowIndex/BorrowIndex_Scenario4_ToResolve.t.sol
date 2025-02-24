@@ -31,11 +31,16 @@ contract BorrowIndex_Scenario4Test is BorrowIndexBase {
     // fillSkipTimeAndBaseBorrowRate(state, 1 days, 10_00); // failing edge case combination
     fillSkipTimeAndBaseBorrowRate(state, 50 days, 1_00); // failing edge case combination
 
-    state.actions[0].supply[1].amount = 10e18;
-    state.actions[0].draw[1].amount = 5e18;
-    state.actions[3].draw[3].amount = 1e18;
-    state.actions[3].supply[4].amount = 1e8;
-    state.actions[0].supply[8].amount = 2e18;
+    // time t1
+    state.actions[spoke1Index].supply[1].amount = 10e18;
+    state.actions[spoke1Index].draw[1].amount = 5e18;
+    // time t3
+    state.actions[spoke4Index].supply[3].amount = 10e18;
+    state.actions[spoke4Index].draw[3].amount = 1e18;
+    // time t4
+    state.actions[spoke4Index].supply[4].amount = 1e8;
+    // time t8
+    state.actions[spoke1Index].supply[8].amount = 2e18;
 
     _testScenario();
   }
