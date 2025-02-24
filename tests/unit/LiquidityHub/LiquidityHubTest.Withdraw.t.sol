@@ -2,7 +2,6 @@
 pragma solidity ^0.8.0;
 
 import './LiquidityHubBaseTest.t.sol';
-import {IERC20Errors} from 'src/dependencies/openzeppelin/IERC20Errors.sol';
 import {Asset, SpokeData} from 'src/contracts/LiquidityHub.sol';
 
 contract LiquidityHubWithdrawTest is LiquidityHubBaseTest {
@@ -651,7 +650,7 @@ contract LiquidityHubWithdrawTest is LiquidityHubBaseTest {
     );
   }
 
-  function test_withdraw_revertsWith_zero_supplied() public {
+  function test_withdraw_revertsWith_supplied_amount_exceeded_zero_supplied() public {
     uint256 assetId = 0;
     uint256 amount = 1;
 
