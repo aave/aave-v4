@@ -3,6 +3,8 @@ pragma solidity ^0.8.0;
 
 import 'tests/BaseTest.t.sol';
 
+// TODO: Use getters instead of storage
+
 contract SpokeBorrowTest is BaseTest {
   function setUp() public override {
     super.setUp();
@@ -217,8 +219,34 @@ contract SpokeBorrowTest is BaseTest {
     spoke1.borrow(spokeInfo[spoke1].dai.reserveId, drawAmount, bob);
   }
 
-  // TODO: test_borrow_revertsWith_draw_cap_exceeded_due_to_interest
-  function test_borrow_revertsWith_draw_cap_exceeded_due_to_interest() public {}
+  function test_borrow_revertsWith_draw_cap_exceeded_due_to_interest() public {
+    uint256 daiReserveId = spokeInfo[spoke1].dai.reserveId;
+    uint256 wethReserveId = spokeInfo[spoke1].weth.reserveId;
+
+    uint256 daiAmount = 100e18;
+    uint256 drawCap = daiAmount;
+    uint256 wethSupplyAmount = 10e18;
+    uint256 drawAmount = drawCap - 1;
+
+    _updateDrawCap(daiAssetId, address(spoke1), drawCap);
+
+    // Bob supply weth
+    Utils.spokeSupply(spoke1, wethReserveId, bob, wethSupplyAmount, bob);
+
+    // Alice supply dai
+    Utils.spokeSupply(spoke1, daiReserveId, alice, daiAmount, alice);
+
+    // Bob draw dai
+    Utils.spokeBorrow(spoke1, daiReserveId, bob, drawAmount, bob);
+
+    skip(365 days);
+
+    // Additional supply to accrue interest
+    Utils.spokeSupply(spoke1, daiReserveId, bob, 1e18, bob);
+
+    vm.expectRevert(TestErrors.DRAW_CAP_EXCEEDED);
+    Utils.spokeBorrow(spoke1, daiReserveId, bob, 1, bob);
+  }
 
   function _updateDrawCap(uint256 assetId, address spoke, uint256 newDrawCap) internal {
     DataTypes.SpokeConfig memory spokeConfig = hub.getSpokeConfig(assetId, spoke);
