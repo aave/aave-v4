@@ -30,7 +30,7 @@ contract UserRiskPremiumTest_ToMigrate is BaseTest {
 
     // USER1 supply dai into spoke1
     deal(address(dai), USER1, daiAmount);
-    Utils.spokeSupply(hub, spoke1, daiId, USER1, daiAmount, USER1);
+    Utils.spokeSupply(spoke1, daiId, USER1, daiAmount, USER1);
     Utils.setUsingAsCollateral(spoke1, USER1, daiId, usingAsCollateral);
 
     uint256 userRiskPremium = ISpoke(spoke1).getUserRiskPremium(USER1);
@@ -53,12 +53,12 @@ contract UserRiskPremiumTest_ToMigrate is BaseTest {
 
     // USER1 supply dai into spoke1
     deal(address(dai), USER1, daiAmount);
-    Utils.spokeSupply(hub, spoke1, daiId, USER1, daiAmount, USER1);
+    Utils.spokeSupply(spoke1, daiId, USER1, daiAmount, USER1);
     Utils.setUsingAsCollateral(spoke1, USER1, daiId, usingAsCollateral);
 
     // USER1 supply eth into spoke1
     deal(address(eth), USER1, ethAmount);
-    Utils.spokeSupply(hub, spoke1, ethId, USER1, ethAmount, USER1);
+    Utils.spokeSupply(spoke1, ethId, USER1, ethAmount, USER1);
     Utils.setUsingAsCollateral(spoke1, USER1, ethId, usingAsCollateral);
 
     uint256 userRiskPremium = ISpoke(spoke1).getUserRiskPremium(USER1);
@@ -81,12 +81,12 @@ contract UserRiskPremiumTest_ToMigrate is BaseTest {
 
     // USER1 supply dai into spoke1
     deal(address(dai), USER1, daiAmount);
-    Utils.spokeSupply(hub, spoke1, daiId, USER1, daiAmount, USER1);
+    Utils.spokeSupply(spoke1, daiId, USER1, daiAmount, USER1);
     Utils.setUsingAsCollateral(spoke1, USER1, daiId, usingAsCollateral);
 
     // USER1 supply eth into spoke1
     deal(address(eth), USER1, ethAmount);
-    Utils.spokeSupply(hub, spoke1, ethId, USER1, ethAmount, USER1);
+    Utils.spokeSupply(spoke1, ethId, USER1, ethAmount, USER1);
     Utils.setUsingAsCollateral(spoke1, USER1, ethId, usingAsCollateral);
 
     uint256[] memory assetIds = new uint256[](4);

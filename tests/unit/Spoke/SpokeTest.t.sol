@@ -19,11 +19,11 @@ contract SpokeTest is BaseTest {
 
     // Bob supply weth
     deal(address(tokenList.weth), bob, wethAmount);
-    Utils.spokeSupply(hub, spoke1, spokeInfo[spoke1].weth.reserveId, bob, wethAmount, bob);
+    Utils.spokeSupply(spoke1, spokeInfo[spoke1].weth.reserveId, bob, wethAmount, bob);
 
     // Alice supply dai
     deal(address(tokenList.dai), alice, daiAmount);
-    Utils.spokeSupply(hub, spoke1, spokeInfo[spoke1].dai.reserveId, alice, daiAmount, alice);
+    Utils.spokeSupply(spoke1, spokeInfo[spoke1].dai.reserveId, alice, daiAmount, alice);
 
     // set reserve not borrowable
     Utils.updateBorrowable(spoke1, spokeInfo[spoke1].dai.reserveId, false);
@@ -44,11 +44,11 @@ contract SpokeTest is BaseTest {
 
     // Bob supply weth
     deal(address(tokenList.weth), bob, wethAmount);
-    Utils.spokeSupply(hub, spoke1, spokeInfo[spoke1].weth.reserveId, bob, wethAmount, bob);
+    Utils.spokeSupply(spoke1, spokeInfo[spoke1].weth.reserveId, bob, wethAmount, bob);
 
     // Alice supply dai
     deal(address(tokenList.dai), alice, daiAmount);
-    Utils.spokeSupply(hub, spoke1, spokeInfo[spoke1].dai.reserveId, alice, daiAmount, alice);
+    Utils.spokeSupply(spoke1, spokeInfo[spoke1].dai.reserveId, alice, daiAmount, alice);
 
     Spoke.UserConfig memory bobData = spoke1.getUser(spokeInfo[spoke1].weth.reserveId, bob);
     Spoke.UserConfig memory aliceData = spoke1.getUser(spokeInfo[spoke1].dai.reserveId, alice);
@@ -105,11 +105,11 @@ contract SpokeTest is BaseTest {
 
     // Bob supply weth
     deal(address(tokenList.weth), bob, wethAmount);
-    Utils.spokeSupply(hub, spoke1, spokeInfo[spoke1].weth.reserveId, bob, wethAmount, bob);
+    Utils.spokeSupply(spoke1, spokeInfo[spoke1].weth.reserveId, bob, wethAmount, bob);
 
     // Alice supply dai
     deal(address(tokenList.dai), alice, daiAmount);
-    Utils.spokeSupply(hub, spoke1, spokeInfo[spoke1].dai.reserveId, alice, daiAmount, alice);
+    Utils.spokeSupply(spoke1, spokeInfo[spoke1].dai.reserveId, alice, daiAmount, alice);
 
     // Bob draw more than supplied dai amount
     vm.prank(bob);
@@ -123,11 +123,11 @@ contract SpokeTest is BaseTest {
 
     // Bob supply weth
     deal(address(tokenList.weth), bob, wethAmount);
-    Utils.spokeSupply(hub, spoke1, spokeInfo[spoke1].weth.reserveId, bob, wethAmount, bob);
+    Utils.spokeSupply(spoke1, spokeInfo[spoke1].weth.reserveId, bob, wethAmount, bob);
 
     // Alice supply dai
     deal(address(tokenList.dai), alice, daiAmount);
-    Utils.spokeSupply(hub, spoke1, spokeInfo[spoke1].dai.reserveId, alice, daiAmount, alice);
+    Utils.spokeSupply(spoke1, spokeInfo[spoke1].dai.reserveId, alice, daiAmount, alice);
 
     // Bob draw 0 dai
     vm.prank(bob);
@@ -145,11 +145,11 @@ contract SpokeTest is BaseTest {
 
     // Bob supply weth
     deal(address(tokenList.weth), bob, wethSupplyAmount);
-    Utils.spokeSupply(hub, spoke1, spokeInfo[spoke1].weth.reserveId, bob, wethSupplyAmount, bob);
+    Utils.spokeSupply(spoke1, spokeInfo[spoke1].weth.reserveId, bob, wethSupplyAmount, bob);
 
     // Alice supply dai
     deal(address(tokenList.dai), alice, daiBorrowAmount);
-    Utils.spokeSupply(hub, spoke1, spokeInfo[spoke1].dai.reserveId, alice, daiBorrowAmount, alice);
+    Utils.spokeSupply(spoke1, spokeInfo[spoke1].dai.reserveId, alice, daiBorrowAmount, alice);
 
     Spoke.UserConfig memory bobData = spoke1.getUser(spokeInfo[spoke1].weth.reserveId, bob);
     Spoke.UserConfig memory aliceData = spoke1.getUser(spokeInfo[spoke1].dai.reserveId, alice);
@@ -206,7 +206,7 @@ contract SpokeTest is BaseTest {
 
     // Bob supply
     deal(address(tokenList.dai), bob, amount);
-    Utils.spokeSupply(hub, spoke1, spokeInfo[spoke1].dai.reserveId, bob, amount, bob);
+    Utils.spokeSupply(spoke1, spokeInfo[spoke1].dai.reserveId, bob, amount, bob);
 
     Spoke.UserConfig memory user1Data = spoke1.getUser(spokeInfo[spoke1].dai.reserveId, bob);
 
@@ -248,11 +248,11 @@ contract SpokeTest is BaseTest {
 
     // USER1 supply eth
     deal(address(eth), USER1, ethAmount);
-    Utils.spokeSupply(hub, spoke1, ethId, USER1, ethAmount, USER1);
+    Utils.spokeSupply(spoke1, ethId, USER1, ethAmount, USER1);
 
     // USER2 supply dai
     deal(address(dai), USER2, daiAmount);
-    Utils.spokeSupply(hub, spoke1, daiId, USER2, daiAmount, USER2);
+    Utils.spokeSupply(spoke1, daiId, USER2, daiAmount, USER2);
 
     // USER1 borrow half of dai reserve liquidity
     Utils.borrow(spoke1, daiId, USER1, drawAmount, USER1);
@@ -279,11 +279,11 @@ contract SpokeTest is BaseTest {
 
     // USER1 supply eth
     deal(address(eth), USER1, ethAmount);
-    Utils.spokeSupply(hub, spoke1, ethId, USER1, ethAmount, USER1);
+    Utils.spokeSupply(spoke1, ethId, USER1, ethAmount, USER1);
 
     // USER2 supply dai
     deal(address(dai), USER2, daiAmount);
-    Utils.spokeSupply(hub, spoke1, daiId, USER2, daiAmount, USER2);
+    Utils.spokeSupply(spoke1, daiId, USER2, daiAmount, USER2);
 
     // USER1 borrow half of dai reserve liquidity
     Utils.borrow(spoke1, daiId, USER1, drawAmount, USER1);
@@ -389,7 +389,7 @@ contract SpokeTest is BaseTest {
 
     // Bob supply dai into spoke1
     deal(address(tokenList.dai), bob, daiAmount);
-    Utils.spokeSupply(hub, spoke1, spokeInfo[spoke1].dai.reserveId, bob, daiAmount, bob);
+    Utils.spokeSupply(spoke1, spokeInfo[spoke1].dai.reserveId, bob, daiAmount, bob);
 
     vm.prank(bob);
     vm.expectEmit(address(spoke1));

@@ -29,7 +29,7 @@ contract HealthFactorTest_ToMigrate is BaseTest {
 
     // USER1 supply dai into spoke1
     deal(address(tokenList.dai), USER1, daiAmount);
-    Utils.spokeSupply(hub, spoke1, spokeInfo[spoke1].dai.reserveId, USER1, daiAmount, USER1);
+    Utils.spokeSupply(spoke1, spokeInfo[spoke1].dai.reserveId, USER1, daiAmount, USER1);
     Utils.setUsingAsCollateral(spoke1, USER1, spokeInfo[spoke1].dai.reserveId, usingAsCollateral);
 
     uint256 healthFactor = spoke1.getHealthFactor(USER1);
@@ -54,27 +54,20 @@ contract HealthFactorTest_ToMigrate is BaseTest {
 
     // USER1 supply dai into spoke1
     deal(address(dai), USER1, daiAmount);
-    Utils.spokeSupply(hub, spoke1, spokeInfo[spoke1].dai.reserveId, USER1, daiAmount, USER1);
+    Utils.spokeSupply(spoke1, spokeInfo[spoke1].dai.reserveId, USER1, daiAmount, USER1);
     Utils.setUsingAsCollateral(spoke1, USER1, spokeInfo[spoke1].dai.reserveId, usingAsCollateral);
 
     // USER1 supply eth into spoke1
     deal(address(eth), USER1, wethAmount);
-    Utils.spokeSupply(hub, spoke1, spokeInfo[spoke1].weth.reserveId, USER1, wethAmount, USER1);
+    Utils.spokeSupply(spoke1, spokeInfo[spoke1].weth.reserveId, USER1, wethAmount, USER1);
     Utils.setUsingAsCollateral(spoke1, USER1, spokeInfo[spoke1].weth.reserveId, usingAsCollateral);
 
     // USER2 supply usdc into spoke1
     deal(address(usdc), USER2, usdcBorrowAmount);
-    Utils.spokeSupply(
-      hub,
-      spoke1,
-      spokeInfo[spoke1].usdx.reserveId,
-      USER2,
-      usdcBorrowAmount,
-      USER2
-    );
+    Utils.spokeSupply(spoke1, spokeInfo[spoke1].usdx.reserveId, USER2, usdcBorrowAmount, USER2);
 
     // USER1 borrow usdc
-    Utils.borrow(spoke1, spokeInfo[spoke1].usdx.reserveId, USER1, usdcBorrowAmount, USER1);
+    Utils.spokeBorrow(spoke1, spokeInfo[spoke1].usdx.reserveId, USER1, usdcBorrowAmount, USER1);
 
     uint256 healthFactor = ISpoke(spoke1).getHealthFactor(USER1);
     assertEq(healthFactor, 2e18, 'wrong health factor');
@@ -96,41 +89,27 @@ contract HealthFactorTest_ToMigrate is BaseTest {
 
     // USER1 supply dai into spoke1
     deal(address(tokenList.dai), USER1, daiAmount);
-    Utils.spokeSupply(hub, spoke1, spokeInfo[spoke1].dai.reserveId, USER1, daiAmount, USER1);
+    Utils.spokeSupply(spoke1, spokeInfo[spoke1].dai.reserveId, USER1, daiAmount, USER1);
     Utils.setUsingAsCollateral(spoke1, USER1, spokeInfo[spoke1].dai.reserveId, usingAsCollateral);
 
     // USER1 supply eth into spoke1
     deal(address(tokenList.weth), USER1, wethAmount);
-    Utils.spokeSupply(hub, spoke1, spokeInfo[spoke1].weth.reserveId, USER1, wethAmount, USER1);
+    Utils.spokeSupply(spoke1, spokeInfo[spoke1].weth.reserveId, USER1, wethAmount, USER1);
     Utils.setUsingAsCollateral(spoke1, USER1, spokeInfo[spoke1].weth.reserveId, usingAsCollateral);
 
     // USER2 supply usdc into spoke1
     deal(address(tokenList.usdx), USER2, usdcBorrowAmount);
-    Utils.spokeSupply(
-      hub,
-      spoke1,
-      spokeInfo[spoke1].usdx.reserveId,
-      USER2,
-      usdcBorrowAmount,
-      USER2
-    );
+    Utils.spokeSupply(spoke1, spokeInfo[spoke1].usdx.reserveId, USER2, usdcBorrowAmount, USER2);
 
     // USER2 supply wbtc into spoke1
     deal(address(tokenList.wbtc), USER2, wbtcBorrowAmount);
-    Utils.spokeSupply(
-      hub,
-      spoke1,
-      spokeInfo[spoke1].wbtc.reserveId,
-      USER2,
-      wbtcBorrowAmount,
-      USER2
-    );
+    Utils.spokeSupply(spoke1, spokeInfo[spoke1].wbtc.reserveId, USER2, wbtcBorrowAmount, USER2);
 
     // USER1 borrow usdc
-    Utils.borrow(spoke1, spokeInfo[spoke1].usdx.reserveId, USER1, usdcBorrowAmount, USER1);
+    Utils.spokeBorrow(spoke1, spokeInfo[spoke1].usdx.reserveId, USER1, usdcBorrowAmount, USER1);
 
     // USER1 borrow wbtc
-    Utils.borrow(spoke1, spokeInfo[spoke1].wbtc.reserveId, USER1, wbtcBorrowAmount, USER1);
+    Utils.spokeBorrow(spoke1, spokeInfo[spoke1].wbtc.reserveId, USER1, wbtcBorrowAmount, USER1);
 
     uint256[] memory assetIds = new uint256[](4);
     assetIds[0] = daiAssetId;

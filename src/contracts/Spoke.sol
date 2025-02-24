@@ -425,7 +425,7 @@ contract Spoke is ISpoke {
   /// @dev It's assumed interest has been accrued before this function call.
   function _calcUserRiskPremium(
     mapping(uint256 => UserConfig) storage userData
-  ) internal returns (uint256) {
+  ) internal view returns (uint256) {
     uint256 reservesListLength = reservesList.length;
 
     // Variable to decrement as we count up user RP
@@ -496,8 +496,8 @@ contract Spoke is ISpoke {
 
     uint256 newUserDebt = baseDebtChange > 0
       ? existingUserDebt + uint256(baseDebtChange) // debt added
-      : // force underflow: only possible when user takes repays amount more than net drawn
-      existingUserDebt - uint256(-baseDebtChange); // debt restored
+      // force underflow: only possible when user takes repays amount more than net drawn
+      : existingUserDebt - uint256(-baseDebtChange); // debt restored
 
     (uint256 newReserveRiskPremium, uint256 newReserveDebt) = MathUtils.addToWeightedAverage(
       reserveRiskPremiumWithoutCurrent,

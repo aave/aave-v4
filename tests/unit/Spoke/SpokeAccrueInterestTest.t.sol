@@ -28,13 +28,13 @@ contract SpokeAccrueInterestTest is BaseTest {
     uint256 amount = 1000e18;
 
     // Bob supplies through spoke 1
-    Utils.spokeSupply(hub, spoke1, spokeInfo[spoke1].dai.reserveId, bob, amount, bob);
+    Utils.spokeSupply(spoke1, spokeInfo[spoke1].dai.reserveId, bob, amount, bob);
 
     // Time passes
     skip(elapsed);
 
     // Alice does a supply through same spoke to accrue interest
-    Utils.spokeSupply(hub, spoke1, spokeInfo[spoke1].dai.reserveId, alice, amount, alice);
+    Utils.spokeSupply(spoke1, spokeInfo[spoke1].dai.reserveId, alice, amount, alice);
 
     Spoke.Reserve memory daiInfo = spoke1.getReserve(spokeInfo[spoke1].dai.reserveId);
 

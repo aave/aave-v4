@@ -3,7 +3,7 @@ pragma solidity ^0.8.0;
 
 import {Vm} from 'forge-std/Vm.sol';
 import {LiquidityHub, DataTypes} from 'src/contracts/LiquidityHub.sol';
-import {Spoke, ISpoke} from 'src/contracts/Spoke.sol';
+import {Spoke} from 'src/contracts/Spoke.sol';
 
 library Utils {
   Vm internal constant vm = Vm(address(uint160(uint256(keccak256('hevm cheat code')))));
@@ -67,7 +67,7 @@ library Utils {
     hub.withdraw({assetId: assetId, amount: amount, riskPremium: riskPremium, to: to});
   }
 
-  function borrow(
+  function spokeBorrow(
     Spoke spoke,
     uint256 reserveId,
     address user,
@@ -80,7 +80,6 @@ library Utils {
 
   // spoke
   function spokeSupply(
-    LiquidityHub hub,
     Spoke spoke,
     uint256 reserveId,
     address user,
