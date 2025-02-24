@@ -2,8 +2,8 @@
 pragma solidity ^0.8.0;
 
 import {Vm} from 'forge-std/Vm.sol';
-import {LiquidityHub, DataTypes} from 'src/contracts/LiquidityHub.sol';
-import {Spoke} from 'src/contracts/Spoke.sol';
+import {ILiquidityHub} from 'src/interfaces/ILiquidityHub.sol';
+import {ISpoke} from 'src/interfaces/ISpoke.sol';
 import {DataTypes} from 'src/libraries/types/DataTypes.sol';
 
 library Utils {
@@ -11,7 +11,7 @@ library Utils {
 
   // hub
   function addAssetAndSpokes(
-    LiquidityHub hub,
+    ILiquidityHub hub,
     address asset,
     DataTypes.AssetConfig memory assetConfig,
     address[] memory spokes,
@@ -22,12 +22,12 @@ library Utils {
     uint256 assetId = hub.assetCount() - 1;
     for (uint256 i = 0; i < spokes.length; i++) {
       hub.addSpoke(assetId, spokeConfigs[i], spokes[i]);
-      Spoke(spokes[i]).addReserve(assetId, reserveConfigs[i], asset);
+      ISpoke(spokes[i]).addReserve(assetId, reserveConfigs[i], asset);
     }
   }
 
   function supply(
-    LiquidityHub hub,
+    ILiquidityHub hub,
     uint256 assetId,
     address spoke,
     uint256 amount,
@@ -44,7 +44,7 @@ library Utils {
   }
 
   function draw(
-    LiquidityHub hub,
+    ILiquidityHub hub,
     uint256 assetId,
     address spoke,
     address to,
@@ -57,7 +57,7 @@ library Utils {
   }
 
   function withdraw(
-    LiquidityHub hub,
+    ILiquidityHub hub,
     uint256 assetId,
     address spoke,
     uint256 amount,
@@ -68,7 +68,7 @@ library Utils {
     hub.withdraw({assetId: assetId, amount: amount, riskPremium: riskPremium, to: to});
   }
 
-  function updateAssetActive(LiquidityHub hub, uint256 assetId, bool newActive) internal {
+  function updateAssetActive(ILiquidityHub hub, uint256 assetId, bool newActive) internal {
     DataTypes.AssetConfig memory assetConfig = hub.getAsset(assetId).config;
     assetConfig.active = newActive;
     hub.updateAssetConfig(assetId, assetConfig);
@@ -76,7 +76,7 @@ library Utils {
 
   // spoke
   function spokeBorrow(
-    Spoke spoke,
+    ISpoke spoke,
     uint256 reserveId,
     address user,
     uint256 amount,
@@ -87,7 +87,7 @@ library Utils {
   }
 
   function spokeSupply(
-    Spoke spoke,
+    ISpoke spoke,
     uint256 reserveId,
     address user,
     uint256 amount,
@@ -98,7 +98,7 @@ library Utils {
   }
 
   function setUsingAsCollateral(
-    Spoke spoke,
+    ISpoke spoke,
     address user,
     uint256 reserveId,
     bool usingAsCollateral
@@ -107,19 +107,19 @@ library Utils {
     spoke.setUsingAsCollateral(reserveId, usingAsCollateral);
   }
 
-  function updateLiquidationThreshold(Spoke spoke, uint256 reserveId, uint256 newLt) internal {
+  function updateLiquidationThreshold(ISpoke spoke, uint256 reserveId, uint256 newLt) internal {
     DataTypes.Reserve memory reserveData = spoke.getReserve(reserveId);
     reserveData.config.lt = newLt;
     spoke.updateReserveConfig(reserveId, reserveData.config);
   }
 
-  function updateCollateral(Spoke spoke, uint256 reserveId, bool newCollateral) internal {
+  function updateCollateral(ISpoke spoke, uint256 reserveId, bool newCollateral) internal {
     DataTypes.Reserve memory reserveData = spoke.getReserve(reserveId);
     reserveData.config.collateral = newCollateral;
     spoke.updateReserveConfig(reserveId, reserveData.config);
   }
 
-  function updateBorrowable(Spoke spoke, uint256 reserveId, bool newBorrowable) internal {
+  function updateBorrowable(ISpoke spoke, uint256 reserveId, bool newBorrowable) internal {
     DataTypes.Reserve memory reserveData = spoke.getReserve(reserveId);
     reserveData.config.borrowable = newBorrowable;
     spoke.updateReserveConfig(reserveId, reserveData.config);
@@ -131,7 +131,7 @@ library Utils {
   }
 
   function updateDrawCap(
-    LiquidityHub hub,
+    ILiquidityHub hub,
     uint256 assetId,
     address spoke,
     uint256 newDrawCap
@@ -142,7 +142,7 @@ library Utils {
   }
 
   function getUserSpokeInfo(
-    Spoke spoke,
+    ISpoke spoke,
     address user,
     uint256 reserveId
   ) internal view returns (DataTypes.UserConfig memory) {

@@ -1,7 +1,8 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.0;
 
-import '../libraries/types/DataTypes.sol';
+import {IERC20} from 'src/dependencies/openzeppelin/IERC20.sol';
+import {DataTypes} from 'src/libraries/types/DataTypes.sol';
 
 /**
  * @title ILiquidityHub
@@ -74,11 +75,17 @@ interface ILiquidityHub {
     address repayer
   ) external returns (uint256);
 
-  function previewNextBorrowIndex(uint256 assetId) external view returns (uint256);
-  function getBaseInterestRate(uint256 assetId) external view returns (uint256);
-
   function addAsset(DataTypes.AssetConfig memory params, address asset) external;
   function addSpoke(uint256 assetId, DataTypes.SpokeConfig memory params, address spoke) external;
+  function updateAssetConfig(uint256 assetId, DataTypes.AssetConfig memory config) external;
+  function updateSpokeConfig(
+    uint256 assetId,
+    address spoke,
+    DataTypes.SpokeConfig memory config
+  ) external;
+
+  function previewNextBorrowIndex(uint256 assetId) external view returns (uint256);
+  function getBaseInterestRate(uint256 assetId) external view returns (uint256);
 
   function convertToAssets(uint256 assetId, uint256 shares) external view returns (uint256);
   function convertToShares(uint256 assetId, uint256 assets) external view returns (uint256);
@@ -91,6 +98,13 @@ interface ILiquidityHub {
   function getSuppliedShares(uint256 assetId, address spoke) external view returns (uint256);
   function getAssetRiskPremium(uint256 assetId) external view returns (uint256);
   function getSpokeRiskPremium(uint256 assetId, address spoke) external view returns (uint256);
+  function assetCount() external view returns (uint256);
+  function assetsList(uint256 assetId) external view returns (IERC20);
+  function getAsset(uint256 assetId) external view returns (DataTypes.Asset memory);
+  function getSpokeConfig(
+    uint256 assetId,
+    address spoke
+  ) external view returns (DataTypes.SpokeConfig memory);
 
   // todo: remove explicit rounding
   function convertToAssetsUp(uint256 assetId, uint256 shares) external view returns (uint256);

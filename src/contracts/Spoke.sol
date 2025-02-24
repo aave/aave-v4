@@ -212,6 +212,7 @@ contract Spoke is ISpoke {
     return _users[user][reserveId].baseBorrowIndex;
   }
 
+  // TODO: Global user risk premium, not based on reserveId
   function getUserRiskPremium(uint256 reserveId, address user) external view returns (uint256) {
     return _users[user][reserveId].riskPremium.derayify();
   }
@@ -472,8 +473,8 @@ contract Spoke is ISpoke {
 
     uint256 newUserDebt = baseDebtChange > 0
       ? existingUserDebt + uint256(baseDebtChange) // debt added
-      // force underflow: only possible when user takes repays amount more than net drawn
-      : existingUserDebt - uint256(-baseDebtChange); // debt restored
+      : // force underflow: only possible when user takes repays amount more than net drawn
+      existingUserDebt - uint256(-baseDebtChange); // debt restored
 
     (uint256 newReserveRiskPremium, uint256 newReserveDebt) = MathUtils.addToWeightedAverage(
       reserveRiskPremiumWithoutCurrent,
