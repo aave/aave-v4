@@ -87,10 +87,13 @@ interface ILiquidityHub {
   function getSpokeCumulativeDebt(uint256 assetId, address spoke) external view returns (uint256);
   function getAssetDebt(uint256 assetId) external view returns (uint256, uint256);
   function getAssetCumulativeDebt(uint256 assetId) external view returns (uint256);
-  function getSuppliedAmount(uint256 assetId, address spoke) external view returns (uint256);
-  function getSuppliedShares(uint256 assetId, address spoke) external view returns (uint256);
   function getAssetRiskPremium(uint256 assetId) external view returns (uint256);
   function getSpokeRiskPremium(uint256 assetId, address spoke) external view returns (uint256);
+
+  function getAssetSuppliedAmount(uint256 assetId) external view returns (uint256);
+  function getAssetSuppliedShares(uint256 assetId) external view returns (uint256);
+  function getSpokeSuppliedAmount(uint256 assetId, address spoke) external view returns (uint256);
+  function getSpokeSuppliedShares(uint256 assetId, address spoke) external view returns (uint256);
 
   // todo: remove explicit rounding
   function convertToAssetsUp(uint256 assetId, uint256 shares) external view returns (uint256);

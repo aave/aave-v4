@@ -107,7 +107,19 @@ contract Spoke is ISpoke {
     return cumulatedBaseDebt + cumulatedOutstandingPremium;
   }
 
-  function getSuppliedAmount(uint256 reserveId, address user) external view returns (uint256) {
+  function getReserveSuppliedAmount(uint256 reserveId) external view returns (uint256) {
+    return
+      liquidityHub.convertToAssets(
+        _reserves[reserveId].assetId,
+        _reserves[reserveId].suppliedShares
+      );
+  }
+
+  function getReserveSuppliedShares(uint256 reserveId) external view returns (uint256) {
+    return _reserves[reserveId].suppliedShares;
+  }
+
+  function getUserSuppliedAmount(uint256 reserveId, address user) external view returns (uint256) {
     return
       liquidityHub.convertToAssets(
         _reserves[reserveId].assetId,
@@ -115,7 +127,7 @@ contract Spoke is ISpoke {
       );
   }
 
-  function getSuppliedShares(uint256 reserveId, address user) external view returns (uint256) {
+  function getUserSuppliedShares(uint256 reserveId, address user) external view returns (uint256) {
     return _users[user][reserveId].suppliedShares;
   }
 
@@ -467,7 +479,7 @@ contract Spoke is ISpoke {
     }
 
     if (collateralValue == 0) return 0;
-    return newUserRiskPremium / collateralValue;
+    return (newUserRiskPremium / collateralValue).rayify();
   }
 
   /// @dev It's assumed interest has been accrued before this function call.
@@ -491,8 +503,8 @@ contract Spoke is ISpoke {
 
     uint256 newUserDebt = baseDebtChange > 0
       ? existingUserDebt + uint256(baseDebtChange) // debt added
-      : // force underflow: only possible when user takes repays amount more than net drawn
-      existingUserDebt - uint256(-baseDebtChange); // debt restored
+      // force underflow: only possible when user takes repays amount more than net drawn
+      : existingUserDebt - uint256(-baseDebtChange); // debt restored
 
     (uint256 newReserveRiskPremium, uint256 newReserveDebt) = MathUtils.addToWeightedAverage(
       reserveRiskPremiumWithoutCurrent,
@@ -506,6 +518,8 @@ contract Spoke is ISpoke {
 
     reserve.riskPremium = newReserveRiskPremium;
     user.riskPremium = newUserRiskPremium;
+
+    return newReserveRiskPremium;
   }
 
   function _validateSetUsingAsCollateral(

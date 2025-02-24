@@ -347,11 +347,19 @@ contract LiquidityHub is ILiquidityHub {
     return cumulatedBaseDebt + cumulatedOutstandingPremium;
   }
 
-  function getSuppliedAmount(uint256 assetId, address spoke) external view returns (uint256) {
+  function getAssetSuppliedAmount(uint256 assetId) external view returns (uint256) {
+    return _assets[assetId].convertToAssetsDown(_assets[assetId].suppliedShares);
+  }
+
+  function getAssetSuppliedShares(uint256 assetId) external view returns (uint256) {
+    return _assets[assetId].suppliedShares;
+  }
+
+  function getSpokeSuppliedAmount(uint256 assetId, address spoke) external view returns (uint256) {
     return _assets[assetId].convertToAssetsDown(_spokes[assetId][spoke].suppliedShares);
   }
 
-  function getSuppliedShares(uint256 assetId, address spoke) external view returns (uint256) {
+  function getSpokeSuppliedShares(uint256 assetId, address spoke) external view returns (uint256) {
     return _spokes[assetId][spoke].suppliedShares;
   }
 
