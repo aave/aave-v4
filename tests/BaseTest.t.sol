@@ -517,4 +517,21 @@ abstract contract BaseTest is Test, Events {
   function randomizer(uint256 min, uint256 max, uint256) internal returns (uint256) {
     return vm.randomUint(min, max);
   }
+
+  function _updateDrawCap(uint256 assetId, address spoke, uint256 newDrawCap) internal {
+    DataTypes.SpokeConfig memory spokeConfig = hub.getSpokeConfig(assetId, spoke);
+    spokeConfig.drawCap = newDrawCap;
+    hub.updateSpokeConfig(assetId, spoke, spokeConfig);
+  }
+
+  function _getUserSpokeInfo(
+    Spoke spoke,
+    address user,
+    uint256 reserveId
+  ) internal view returns (Spoke.UserConfig memory) {
+    Spoke.UserConfig memory userConfig;
+    userConfig.suppliedShares = spoke.getSuppliedShares(reserveId, user);
+    (userConfig.baseDebt, ) = spoke.getUserDebt(reserveId, user);
+    return userConfig;
+  }
 }

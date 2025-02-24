@@ -3,8 +3,6 @@ pragma solidity ^0.8.0;
 
 import 'tests/BaseTest.t.sol';
 
-// TODO: Use getters instead of storage
-
 contract SpokeBorrowTest is BaseTest {
   function setUp() public override {
     super.setUp();
@@ -12,27 +10,31 @@ contract SpokeBorrowTest is BaseTest {
   }
 
   function test_borrow_revertsWith_reserve_not_borrowable() public {
+    uint256 daiReserveId = spokeInfo[spoke1].dai.reserveId;
+    uint256 wethReserveId = spokeInfo[spoke1].weth.reserveId;
+
     uint256 daiAmount = 100e18;
     uint256 wethAmount = 10e18;
 
     // Bob supply weth
-    deal(address(tokenList.weth), bob, wethAmount);
-    Utils.spokeSupply(spoke1, spokeInfo[spoke1].weth.reserveId, bob, wethAmount, bob);
+    Utils.spokeSupply(spoke1, wethReserveId, bob, wethAmount, bob);
 
     // Alice supply dai
-    deal(address(tokenList.dai), alice, daiAmount);
-    Utils.spokeSupply(spoke1, spokeInfo[spoke1].dai.reserveId, alice, daiAmount, alice);
+    Utils.spokeSupply(spoke1, daiReserveId, alice, daiAmount, alice);
 
     // set reserve not borrowable
-    Utils.updateBorrowable(spoke1, spokeInfo[spoke1].dai.reserveId, false);
+    Utils.updateBorrowable(spoke1, daiReserveId, false);
 
     // Bob draw half of dai reserve liquidity
     vm.prank(bob);
     vm.expectRevert(TestErrors.RESERVE_NOT_BORROWABLE);
-    ISpoke(spoke1).borrow(spokeInfo[spoke1].dai.reserveId, daiAmount / 2, bob);
+    spoke1.borrow(daiReserveId, daiAmount / 2, bob);
   }
 
   function test_borrow() public {
+    uint256 daiReserveId = spokeInfo[spoke1].dai.reserveId;
+    uint256 wethReserveId = spokeInfo[spoke1].weth.reserveId;
+
     uint256 daiAmount = 100e18;
     uint256 wethAmount = 10e18;
 
@@ -41,15 +43,13 @@ contract SpokeBorrowTest is BaseTest {
     deal(address(tokenList.weth), alice, 0);
 
     // Bob supply weth
-    deal(address(tokenList.weth), bob, wethAmount);
-    Utils.spokeSupply(spoke1, spokeInfo[spoke1].weth.reserveId, bob, wethAmount, bob);
+    Utils.spokeSupply(spoke1, wethReserveId, bob, wethAmount, bob);
 
     // Alice supply dai
-    deal(address(tokenList.dai), alice, daiAmount);
-    Utils.spokeSupply(spoke1, spokeInfo[spoke1].dai.reserveId, alice, daiAmount, alice);
+    Utils.spokeSupply(spoke1, daiReserveId, alice, daiAmount, alice);
 
-    Spoke.UserConfig memory bobData = spoke1.getUser(spokeInfo[spoke1].weth.reserveId, bob);
-    Spoke.UserConfig memory aliceData = spoke1.getUser(spokeInfo[spoke1].dai.reserveId, alice);
+    Spoke.UserConfig memory bobData = _getUserSpokeInfo(spoke1, bob, wethReserveId);
+    Spoke.UserConfig memory aliceData = _getUserSpokeInfo(spoke1, alice, daiReserveId);
 
     assertEq(
       bobData.suppliedShares,
@@ -71,11 +71,11 @@ contract SpokeBorrowTest is BaseTest {
     // Bob draw half of dai reserve liquidity
     vm.prank(bob);
     vm.expectEmit(address(spoke1));
-    emit Borrowed(spokeInfo[spoke1].dai.reserveId, daiAmount / 2, bob);
-    spoke1.borrow(spokeInfo[spoke1].dai.reserveId, daiAmount / 2, bob);
+    emit Borrowed(daiReserveId, daiAmount / 2, bob);
+    spoke1.borrow(daiReserveId, daiAmount / 2, bob);
 
-    bobData = spoke1.getUser(spokeInfo[spoke1].weth.reserveId, bob);
-    aliceData = spoke1.getUser(spokeInfo[spoke1].dai.reserveId, alice);
+    bobData = _getUserSpokeInfo(spoke1, bob, wethReserveId);
+    aliceData = _getUserSpokeInfo(spoke1, alice, daiReserveId);
 
     assertEq(
       bobData.suppliedShares,
@@ -83,7 +83,7 @@ contract SpokeBorrowTest is BaseTest {
       'bob supply shares final balance'
     );
     assertEq(bobData.baseDebt, 0, 'bob base debt weth final balance');
-    bobData = spoke1.getUser(spokeInfo[spoke1].dai.reserveId, bob);
+    bobData = spoke1.getUser(daiReserveId, bob);
     assertEq(bobData.baseDebt, daiAmount / 2, 'bob base debt dai final balance');
     assertEq(
       aliceData.suppliedShares,
@@ -98,42 +98,47 @@ contract SpokeBorrowTest is BaseTest {
   }
 
   function test_borrow_revertsWith_not_available_liquidity() public {
+    uint256 daiReserveId = spokeInfo[spoke1].dai.reserveId;
+    uint256 wethReserveId = spokeInfo[spoke1].weth.reserveId;
+
     uint256 daiAmount = 100e18;
     uint256 wethAmount = 10e18;
 
     // Bob supply weth
-    deal(address(tokenList.weth), bob, wethAmount);
-    Utils.spokeSupply(spoke1, spokeInfo[spoke1].weth.reserveId, bob, wethAmount, bob);
+    Utils.spokeSupply(spoke1, wethReserveId, bob, wethAmount, bob);
 
     // Alice supply dai
-    deal(address(tokenList.dai), alice, daiAmount);
-    Utils.spokeSupply(spoke1, spokeInfo[spoke1].dai.reserveId, alice, daiAmount, alice);
+    Utils.spokeSupply(spoke1, daiReserveId, alice, daiAmount, alice);
 
     // Bob draw more than supplied dai amount
     vm.prank(bob);
     vm.expectRevert(TestErrors.NOT_AVAILABLE_LIQUIDITY);
-    spoke1.borrow(spokeInfo[spoke1].dai.reserveId, daiAmount + 1, bob);
+    spoke1.borrow(daiReserveId, daiAmount + 1, bob);
   }
 
   function test_borrow_revertsWith_invalid_draw_amount() public {
+    uint256 daiReserveId = spokeInfo[spoke1].dai.reserveId;
+    uint256 wethReserveId = spokeInfo[spoke1].weth.reserveId;
+
     uint256 daiAmount = 100e18;
     uint256 wethAmount = 10e18;
 
     // Bob supply weth
-    deal(address(tokenList.weth), bob, wethAmount);
-    Utils.spokeSupply(spoke1, spokeInfo[spoke1].weth.reserveId, bob, wethAmount, bob);
+    Utils.spokeSupply(spoke1, wethReserveId, bob, wethAmount, bob);
 
     // Alice supply dai
-    deal(address(tokenList.dai), alice, daiAmount);
-    Utils.spokeSupply(spoke1, spokeInfo[spoke1].dai.reserveId, alice, daiAmount, alice);
+    Utils.spokeSupply(spoke1, daiReserveId, alice, daiAmount, alice);
 
     // Bob draw 0 dai
     vm.prank(bob);
     vm.expectRevert(TestErrors.INVALID_DRAW_AMOUNT);
-    spoke1.borrow(spokeInfo[spoke1].dai.reserveId, 0, bob);
+    spoke1.borrow(daiReserveId, 0, bob);
   }
 
   function test_borrow_fuzz_amounts(uint256 wethSupplyAmount, uint256 daiBorrowAmount) public {
+    uint256 daiReserveId = spokeInfo[spoke1].dai.reserveId;
+    uint256 wethReserveId = spokeInfo[spoke1].weth.reserveId;
+
     wethSupplyAmount = bound(wethSupplyAmount, 1, MAX_SUPPLY_AMOUNT);
     daiBorrowAmount = bound(daiBorrowAmount, 1, wethSupplyAmount / 2 + 1);
 
@@ -142,15 +147,13 @@ contract SpokeBorrowTest is BaseTest {
     deal(address(tokenList.weth), alice, 0);
 
     // Bob supply weth
-    deal(address(tokenList.weth), bob, wethSupplyAmount);
-    Utils.spokeSupply(spoke1, spokeInfo[spoke1].weth.reserveId, bob, wethSupplyAmount, bob);
+    Utils.spokeSupply(spoke1, wethReserveId, bob, wethSupplyAmount, bob);
 
     // Alice supply dai
-    deal(address(tokenList.dai), alice, daiBorrowAmount);
-    Utils.spokeSupply(spoke1, spokeInfo[spoke1].dai.reserveId, alice, daiBorrowAmount, alice);
+    Utils.spokeSupply(spoke1, daiReserveId, alice, daiBorrowAmount, alice);
 
-    Spoke.UserConfig memory bobData = spoke1.getUser(spokeInfo[spoke1].weth.reserveId, bob);
-    Spoke.UserConfig memory aliceData = spoke1.getUser(spokeInfo[spoke1].dai.reserveId, alice);
+    Spoke.UserConfig memory bobData = _getUserSpokeInfo(spoke1, bob, wethReserveId);
+    Spoke.UserConfig memory aliceData = _getUserSpokeInfo(spoke1, alice, daiReserveId);
 
     assertEq(
       bobData.suppliedShares,
@@ -175,8 +178,8 @@ contract SpokeBorrowTest is BaseTest {
     emit Borrowed(spokeInfo[spoke1].dai.reserveId, daiBorrowAmount, bob);
     spoke1.borrow(spokeInfo[spoke1].dai.reserveId, daiBorrowAmount, bob);
 
-    bobData = spoke1.getUser(spokeInfo[spoke1].weth.reserveId, bob);
-    aliceData = spoke1.getUser(spokeInfo[spoke1].dai.reserveId, alice);
+    bobData = _getUserSpokeInfo(spoke1, bob, wethReserveId);
+    aliceData = _getUserSpokeInfo(spoke1, alice, daiReserveId);
 
     assertEq(
       bobData.suppliedShares,
@@ -199,6 +202,9 @@ contract SpokeBorrowTest is BaseTest {
   }
 
   function test_borrow_revertsWith_draw_cap_exceeded() public {
+    uint256 daiReserveId = spokeInfo[spoke1].dai.reserveId;
+    uint256 wethReserveId = spokeInfo[spoke1].weth.reserveId;
+
     uint256 wethSupplyAmount = 100e18;
     uint256 daiAmount = 100e18;
     uint256 drawCap = daiAmount;
@@ -207,16 +213,15 @@ contract SpokeBorrowTest is BaseTest {
     _updateDrawCap(daiAssetId, address(spoke1), drawCap);
 
     // Bob supply weth
-    Utils.spokeSupply(spoke1, spokeInfo[spoke1].weth.reserveId, bob, wethSupplyAmount, bob);
+    Utils.spokeSupply(spoke1, wethReserveId, bob, wethSupplyAmount, bob);
 
     // Alice supply dai
-    deal(address(tokenList.dai), alice, daiAmount);
-    Utils.spokeSupply(spoke1, spokeInfo[spoke1].dai.reserveId, alice, daiAmount, alice);
+    Utils.spokeSupply(spoke1, daiReserveId, alice, daiAmount, alice);
 
     // Bob borrow dai amount exceeding draw cap
     vm.prank(bob);
     vm.expectRevert(TestErrors.DRAW_CAP_EXCEEDED);
-    spoke1.borrow(spokeInfo[spoke1].dai.reserveId, drawAmount, bob);
+    spoke1.borrow(daiReserveId, drawAmount, bob);
   }
 
   function test_borrow_revertsWith_draw_cap_exceeded_due_to_interest() public {
@@ -246,11 +251,5 @@ contract SpokeBorrowTest is BaseTest {
 
     vm.expectRevert(TestErrors.DRAW_CAP_EXCEEDED);
     Utils.spokeBorrow(spoke1, daiReserveId, bob, 1, bob);
-  }
-
-  function _updateDrawCap(uint256 assetId, address spoke, uint256 newDrawCap) internal {
-    DataTypes.SpokeConfig memory spokeConfig = hub.getSpokeConfig(assetId, spoke);
-    spokeConfig.drawCap = newDrawCap;
-    hub.updateSpokeConfig(assetId, spoke, spokeConfig);
   }
 }

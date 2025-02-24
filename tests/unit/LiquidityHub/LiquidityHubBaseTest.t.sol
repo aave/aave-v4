@@ -58,12 +58,6 @@ contract LiquidityHubBaseTest is BaseTest {
     hub.updateAssetConfig(assetId, reserveConfig);
   }
 
-  function _updateDrawCap(uint256 assetId, address spoke, uint256 newDrawCap) internal {
-    DataTypes.SpokeConfig memory spokeConfig = hub.getSpokeConfig(assetId, spoke);
-    spokeConfig.drawCap = newDrawCap;
-    hub.updateSpokeConfig(assetId, spoke, spokeConfig);
-  }
-
   function _updateSupplyCap(uint256 assetId, address spoke, uint256 newSupplyCap) internal {
     DataTypes.SpokeConfig memory spokeConfig = hub.getSpokeConfig(assetId, spoke);
     spokeConfig.supplyCap = newSupplyCap;
