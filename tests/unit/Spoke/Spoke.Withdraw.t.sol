@@ -91,4 +91,37 @@ contract SpokeWithdrawTest is BaseTest {
     vm.expectRevert(TestErrors.SUPPLIED_AMOUNT_EXCEEDED);
     spoke1.withdraw({reserveId: reserveId, amount: amount - borrowAmount + 1, to: alice});
   }
+
+  function test_withdraw_fuzz_multi_user(
+    uint256 amount,
+    uint256 amount2,
+    uint256 reserveId
+  ) public {
+    reserveId = bound(amount, 0, 2);
+    amount = bound(amount, 1, MAX_SUPPLY_AMOUNT - 1);
+    amount2 = bound(amount2, 1, MAX_SUPPLY_AMOUNT - amount);
+
+    Utils.spokeSupply({
+      hub: hub,
+      spoke: spoke1,
+      reserveId: reserveId,
+      user: alice,
+      amount: amount,
+      to: alice
+    });
+    Utils.spokeSupply({
+      hub: hub,
+      spoke: spoke1,
+      reserveId: reserveId,
+      user: bob,
+      amount: amount2,
+      to: bob
+    });
+
+    vm.prank(alice);
+    spoke1.withdraw({reserveId: reserveId, amount: amount, to: alice});
+
+    vm.prank(bob);
+    spoke1.withdraw({reserveId: reserveId, amount: amount2, to: bob});
+  }
 }
