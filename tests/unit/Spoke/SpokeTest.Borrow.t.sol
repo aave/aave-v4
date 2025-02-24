@@ -195,4 +195,34 @@ contract SpokeBorrowTest is BaseTest {
     assertEq(tokenList.dai.balanceOf(address(spoke1)), 0, 'spoke1 dai final balance');
     assertEq(tokenList.weth.balanceOf(address(spoke2)), 0, 'spoke2 weth final balance');
   }
+
+  function test_borrow_revertsWith_draw_cap_exceeded() public {
+    uint256 wethSupplyAmount = 100e18;
+    uint256 daiAmount = 100e18;
+    uint256 drawCap = daiAmount;
+    uint256 drawAmount = drawCap + 1;
+
+    _updateDrawCap(daiAssetId, address(spoke1), drawCap);
+
+    // Bob supply weth
+    Utils.spokeSupply(spoke1, spokeInfo[spoke1].weth.reserveId, bob, wethSupplyAmount, bob);
+
+    // Alice supply dai
+    deal(address(tokenList.dai), alice, daiAmount);
+    Utils.spokeSupply(spoke1, spokeInfo[spoke1].dai.reserveId, alice, daiAmount, alice);
+
+    // Bob borrow dai amount exceeding draw cap
+    vm.prank(bob);
+    vm.expectRevert(TestErrors.DRAW_CAP_EXCEEDED);
+    spoke1.borrow(spokeInfo[spoke1].dai.reserveId, drawAmount, bob);
+  }
+
+  // TODO: test_borrow_revertsWith_draw_cap_exceeded_due_to_interest
+  function test_borrow_revertsWith_draw_cap_exceeded_due_to_interest() public {}
+
+  function _updateDrawCap(uint256 assetId, address spoke, uint256 newDrawCap) internal {
+    DataTypes.SpokeConfig memory spokeConfig = hub.getSpokeConfig(assetId, spoke);
+    spokeConfig.drawCap = newDrawCap;
+    hub.updateSpokeConfig(assetId, spoke, spokeConfig);
+  }
 }
