@@ -52,8 +52,8 @@ contract BorrowIndex_Scenario4Test is BorrowIndexBase {
   function test_fuzz_borrowIndexScenario3(TestState memory _state) public {
     boundFuzzStates(state, _state);
     vm.assume(
-      state.actions[0].supply[1].amount >
-        state.actions[0].draw[1].amount + state.actions[3].draw[3].amount
+      state.actions[spoke1Index].supply[1].amount >
+        state.actions[spoke1Index].draw[1].amount + state.actions[spoke4Index].draw[3].amount
     );
     _testScenario();
   }
@@ -67,20 +67,26 @@ contract BorrowIndex_Scenario4Test is BorrowIndexBase {
         assets[state.assetId].t_f[t - 1].baseBorrowRate,
         timeAt(stages[t - 1])
       );
-      states.cumulatedSpokeBaseDebt[0].t_i[t] = states.cumulatedSpokeBaseDebt[0].t_f[t - 1].rayMul(
-        states.cumulatedBaseInterest.t_i[t]
-      );
-      spokes[0].actions.restore[t].amount = states.cumulatedSpokeBaseDebt[0].t_i[t];
+      states.cumulatedSpokeBaseDebt[spoke1Index].t_i[t] = states
+        .cumulatedSpokeBaseDebt[spoke1Index]
+        .t_f[t - 1]
+        .rayMul(states.cumulatedBaseInterest.t_i[t]);
+      spokes[spoke1Index].actions.restore[t].amount = states
+        .cumulatedSpokeBaseDebt[spoke1Index]
+        .t_i[t];
     } else if (stage == stages[6]) {
       states.cumulatedBaseInterest.t_i[t] = MathUtils.calculateLinearInterest(
         assets[state.assetId].t_f[t - 1].baseBorrowRate,
         timeAt(stages[t - 1])
       );
-      states.cumulatedSpokeBaseDebt[3].t_i[t] = states.cumulatedSpokeBaseDebt[3].t_f[t - 1].rayMul(
-        states.cumulatedBaseInterest.t_i[t]
-      );
+      states.cumulatedSpokeBaseDebt[spoke4Index].t_i[t] = states
+        .cumulatedSpokeBaseDebt[spoke4Index]
+        .t_f[t - 1]
+        .rayMul(states.cumulatedBaseInterest.t_i[t]);
 
-      spokes[3].actions.restore[t].amount = states.cumulatedSpokeBaseDebt[3].t_i[t];
+      spokes[spoke4Index].actions.restore[t].amount = states
+        .cumulatedSpokeBaseDebt[spoke4Index]
+        .t_i[t];
     }
   }
 
@@ -91,49 +97,49 @@ contract BorrowIndex_Scenario4Test is BorrowIndexBase {
       Utils.supply({
         hub: hub,
         assetId: state.assetId,
-        spoke: spokes[0].addr,
-        amount: spokes[0].actions.supply[t].amount,
+        spoke: spokes[spoke1Index].addr,
+        amount: spokes[spoke1Index].actions.supply[t].amount,
         riskPremium: 0,
         user: bob,
-        to: spokes[0].addr
+        to: spokes[spoke1Index].addr
       });
       Utils.draw({
         hub: hub,
         assetId: state.assetId,
-        spoke: spokes[0].addr,
-        amount: spokes[0].actions.draw[t].amount,
+        spoke: spokes[spoke1Index].addr,
+        amount: spokes[spoke1Index].actions.draw[t].amount,
         riskPremium: 0,
         to: bob,
-        onBehalfOf: spokes[0].addr
+        onBehalfOf: spokes[spoke1Index].addr
       });
     } else if (stage == stages[2]) {
-      hub.addSpoke(state.assetId, spokeConfig, spokes[3].addr);
+      hub.addSpoke(state.assetId, spokeConfig, spokes[spoke4Index].addr);
     } else if (stage == stages[3]) {
       Utils.draw({
         hub: hub,
         assetId: state.assetId,
-        spoke: spokes[3].addr,
-        amount: spokes[3].actions.draw[t].amount,
+        spoke: spokes[spoke4Index].addr,
+        amount: spokes[spoke4Index].actions.draw[t].amount,
         riskPremium: 0,
         to: bob,
-        onBehalfOf: spokes[3].addr
+        onBehalfOf: spokes[spoke4Index].addr
       });
     } else if (stage == stages[4]) {
       Utils.supply({
         hub: hub,
         assetId: state.assetId,
-        spoke: spokes[3].addr,
-        amount: spokes[3].actions.supply[t].amount,
+        spoke: spokes[spoke4Index].addr,
+        amount: spokes[spoke4Index].actions.supply[t].amount,
         riskPremium: 0,
         user: bob,
-        to: spokes[3].addr
+        to: spokes[spoke4Index].addr
       });
     } else if (stage == stages[5]) {
       Utils.restore({
         hub: hub,
         assetId: state.assetId,
-        spoke: spokes[0].addr,
-        amount: spokes[0].actions.restore[t].amount,
+        spoke: spokes[spoke1Index].addr,
+        amount: spokes[spoke1Index].actions.restore[t].amount,
         riskPremium: 0,
         repayer: bob
       });
@@ -144,8 +150,8 @@ contract BorrowIndex_Scenario4Test is BorrowIndexBase {
       Utils.restore({
         hub: hub,
         assetId: state.assetId,
-        spoke: spokes[3].addr,
-        amount: spokes[3].actions.restore[t].amount,
+        spoke: spokes[spoke4Index].addr,
+        amount: spokes[spoke4Index].actions.restore[t].amount,
         riskPremium: 0,
         repayer: bob
       });
