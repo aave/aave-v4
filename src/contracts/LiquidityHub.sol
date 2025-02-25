@@ -367,6 +367,10 @@ contract LiquidityHub is ILiquidityHub {
     return _assets[assetId].lastUpdateTimestamp;
   }
 
+  function getAssetConfig(uint256 assetId) external view returns (DataTypes.AssetConfig memory) {
+    return _assets[assetId].config;
+  }
+
   //
   // Internal
   //

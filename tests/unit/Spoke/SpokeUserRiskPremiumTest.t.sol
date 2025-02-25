@@ -135,10 +135,10 @@ contract SpokeUserRiskPremiumTest is BaseTest {
     params.wethReserveId = spokeInfo[spoke1].weth.reserveId;
 
     params.daiSupplyAmount = 1000e18;
-    params.usdxSupplyAmount = 1000e18;
+    params.usdxSupplyAmount = 1000e6;
     params.wethSupplyAmount = 1000e18;
     params.daiBorrowAmount = 1000e18;
-    params.usdxBorrowAmount = 1000e18;
+    params.usdxBorrowAmount = 1000e6;
 
     params.daiLP = spoke1.getLiquidityPremium(params.daiReserveId);
     params.usdxLP = spoke1.getLiquidityPremium(params.usdxReserveId);
@@ -194,7 +194,7 @@ contract SpokeUserRiskPremiumTest is BaseTest {
     params.wethReserveId = spokeInfo[spoke1].weth.reserveId;
 
     params.daiSupplyAmount = 2000e18;
-    params.usdxSupplyAmount = 2000e18;
+    params.usdxSupplyAmount = 2000e6;
     params.wethSupplyAmount = 1e18;
 
     params.daiLP = spoke1.getLiquidityPremium(params.daiReserveId);
@@ -271,7 +271,7 @@ contract SpokeUserRiskPremiumTest is BaseTest {
     params.wethReserveId = spokeInfo[spoke1].weth.reserveId;
 
     params.daiSupplyAmount = 2000e18;
-    params.usdxSupplyAmount = 6000e18;
+    params.usdxSupplyAmount = 6000e6;
     params.wethSupplyAmount = 10e18;
 
     params.wethBorrowAmount = 2e18;
@@ -337,7 +337,7 @@ contract SpokeUserRiskPremiumTest is BaseTest {
   function test_getUserRiskPremium_fuzz_two_assets_diff_amounts(uint256 daiSupplyAmount) public {
     // Dai lp to account for up to 100% of the debt value
     daiSupplyAmount = bound(daiSupplyAmount, 1, 4000e18);
-    uint256 usdxLpContributionAmount = 4000e18 - daiSupplyAmount;
+    uint256 usdxLpContributionAmount = (4000e18 - daiSupplyAmount) / 1e12;
 
     TestInfo memory params;
     params.daiReserveId = spokeInfo[spoke1].dai.reserveId;
@@ -345,7 +345,7 @@ contract SpokeUserRiskPremiumTest is BaseTest {
     params.wethReserveId = spokeInfo[spoke1].weth.reserveId;
 
     params.daiSupplyAmount = daiSupplyAmount;
-    params.usdxSupplyAmount = 6000e18;
+    params.usdxSupplyAmount = 6000e6;
     params.wethSupplyAmount = 10e18;
 
     params.wethBorrowAmount = 2e18;
