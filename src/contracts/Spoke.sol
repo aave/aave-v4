@@ -757,6 +757,8 @@ contract Spoke is ISpoke {
   /**
    * @dev Trigger risk premium update on all drawn reserves of `user` except the reserve's corresponding
    * to `assetIdToAvoid` as those are expected to be updated outside of this method.
+   * We only update risk premium for drawn assets and not supplied bc user RP does not contribute to
+   * the other two RPs (Asset, Spoke/Reserve) as by definition they're based on drawn assets only.
    */
   function _notifyRiskPremiumUpdate(uint256 assetIdToAvoid, address userAddress) internal {
     uint256 reserveCount_ = reserveCount;
@@ -767,7 +769,7 @@ contract Spoke is ISpoke {
       Reserve storage reserve = _reserves[i];
       uint256 assetId = reserve.assetId;
       // todo keep borrowed assets in transient storage/pass through?
-      if (assetId != assetIdToAvoid && _isBorrowing(user)) {
+      if (_isBorrowing(user) && assetId != assetIdToAvoid) {
         _accrueInterest(reserve, user, userData);
         uint32 newRiskPremium = _updateRiskPremiumAndBaseDebt(
           reserve,
