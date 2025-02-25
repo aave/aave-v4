@@ -324,8 +324,7 @@ contract Spoke is ISpoke {
     uint256 _reserveCount = reserveCount;
     Reserve storage reserve = _reserves[_reserveCount];
     // TODO: validate reserveId does not exist already, valid asset
-    // require(asset != address(0), 'INVALID_ASSET');
-    // require(_reserves[reserveId].asset == address(0), 'RESERVE_ID_ALREADY_EXISTS');
+    require(liquidityPremium <= PercentageMath.PERCENTAGE_FACTOR * 10, 'INVALID_LIQUIDITY_PREMIUM');
 
     // TODO: AccessControl
     reservesList.push(reserveCount++);
@@ -574,7 +573,9 @@ contract Spoke is ISpoke {
         vars.assetId = reserve.assetId;
         vars.liquidityPremium = reserve.config.liquidityPremium;
         vars.assetPrice = oracle.getAssetPrice(vars.assetId);
-        vars.assetUnit = 10 ** liquidityHub.getAssetConfig(vars.assetId).decimals; // unchecked
+        unchecked {
+          vars.assetUnit = 10 ** liquidityHub.getAssetConfig(vars.assetId).decimals;
+        }
         vars.userCollateralInBaseCurrency = _getUserBalanceInBaseCurrency(
           user,
           vars.assetId,
