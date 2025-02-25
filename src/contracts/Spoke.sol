@@ -514,13 +514,13 @@ contract Spoke is ISpoke {
   }
 
   // todo opt: use bitmap
-  function _borrowing(UserConfig storage user) internal view returns (bool) {
+  function _isBorrowing(UserConfig storage user) internal view returns (bool) {
     return user.baseDebt + user.outstandingPremium > 0;
   }
 
   // todo opt: use bitmap
   function _usingAsCollateralOrBorrowing(UserConfig storage user) internal view returns (bool) {
-    return _usingAsCollateral(user) || _borrowing(user);
+    return _usingAsCollateral(user) || _isBorrowing(user);
   }
 
   function _calculateUserAccountData(
@@ -535,7 +535,7 @@ contract Spoke is ISpoke {
 
       if (!_usingAsCollateralOrBorrowing(user)) {
         unchecked {
-          vars.reserveId++;
+          ++vars.reserveId;
         }
         continue;
       }
@@ -548,11 +548,11 @@ contract Spoke is ISpoke {
 
       if (_usingAsCollateral(user)) {
         unchecked {
-          vars.suppliedReserveCount++;
+          ++vars.suppliedReserveCount;
         }
       }
 
-      if (_borrowing(user)) {
+      if (_isBorrowing(user)) {
         vars.totalDebtInBaseCurrency += _getUserDebtInBaseCurrency(
           user,
           userData,
@@ -563,7 +563,7 @@ contract Spoke is ISpoke {
       }
 
       unchecked {
-        vars.reserveId++;
+        ++vars.reserveId;
       }
     }
 
@@ -591,12 +591,12 @@ contract Spoke is ISpoke {
         vars.avgLiquidationThreshold += vars.userCollateralInBaseCurrency * reserve.config.lt;
 
         unchecked {
-          vars.i++;
+          ++vars.i;
         }
       }
 
       unchecked {
-        vars.reserveId++;
+        ++vars.reserveId;
       }
     }
 
@@ -629,7 +629,7 @@ contract Spoke is ISpoke {
       vars.userRiskPremium += vars.userCollateralInBaseCurrency * vars.liquidityPremium;
       vars.totalCollateralInBaseCurrency += vars.userCollateralInBaseCurrency;
       vars.totalDebtInBaseCurrency -= vars.userCollateralInBaseCurrency;
-      vars.i++;
+      ++vars.i;
     }
 
     if (vars.totalCollateralInBaseCurrency > 0) {
@@ -751,7 +751,7 @@ contract Spoke is ISpoke {
 
   /**
    * @dev Trigger risk premium update on all drawn reserves of `user` except the reserve's corresponding
-   * to `assetIdToAvoid` as those are expected to be updated outside of this method
+   * to `assetIdToAvoid` as those are expected to be updated outside of this method.
    */
   function _notifyRiskPremiumUpdate(uint256 assetIdToAvoid, address userAddress) internal {
     uint256 reserveCount_ = reserveCount;
@@ -762,7 +762,7 @@ contract Spoke is ISpoke {
       Reserve storage reserve = _reserves[i];
       uint256 assetId = reserve.assetId;
       // todo keep borrowed assets in transient storage/pass through?
-      if (assetId != assetIdToAvoid && _borrowing(user)) {
+      if (assetId != assetIdToAvoid && _isBorrowing(user)) {
         _accrueInterest(reserve, user, userData);
         uint32 newRiskPremium = _updateRiskPremiumAndBaseDebt(
           reserve,
@@ -774,7 +774,7 @@ contract Spoke is ISpoke {
         liquidityHub.accrueInterest(assetId, newRiskPremium);
       }
       unchecked {
-        i++;
+        ++i;
       }
     }
   }
