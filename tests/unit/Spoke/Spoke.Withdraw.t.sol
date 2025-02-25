@@ -372,29 +372,13 @@ contract SpokeWithdrawTest is SpokeBaseTest {
       rate: state.rate
     });
 
-    TestData[4] memory reserveData;
-    TestData[4] memory aliceData;
-    TestData[4] memory bobData;
-    TokenData[4] memory tokenData;
+    // number of test stages
+    TestData[3] memory reserveData;
+    TestData[3] memory aliceData;
+    TestData[3] memory bobData;
+    TokenData[3] memory tokenData;
 
     uint256 stage = 0;
-    reserveData[stage] = _getReserveData(state.reserveId);
-    aliceData[stage] = _getUserData(state.reserveId, alice);
-    bobData[stage] = _getUserData(state.reserveId, bob);
-    tokenData[stage] = _getTokenBalances(address(tokenList.dai), address(spoke1));
-
-    // action on the borrowed reserve to trigger risk premium
-    // TODO: shouldnt be needed after RP accrual is fixed
-    // Utils.spokeSupply({
-    //   hub: hub,
-    //   spoke: spoke1,
-    //   reserveId: state.reserveId,
-    //   user: alice,
-    //   amount: state.trivialSupplyAmount,
-    //   to: alice
-    // });
-
-    stage = 1;
     reserveData[stage] = _getReserveData(state.reserveId);
     aliceData[stage] = _getUserData(state.reserveId, alice);
     bobData[stage] = _getUserData(state.reserveId, bob);
@@ -415,7 +399,7 @@ contract SpokeWithdrawTest is SpokeBaseTest {
       'alice has no premium contribution to exchange rate'
     );
 
-    stage = 2;
+    stage = 1;
     state.withdrawnShares = hub.convertToShares(daiAssetId, state.withdrawAmount);
     reserveData[stage] = _getReserveData(state.reserveId);
     aliceData[stage] = _getUserData(state.reserveId, alice);
@@ -425,7 +409,7 @@ contract SpokeWithdrawTest is SpokeBaseTest {
     vm.prank(bob);
     spoke1.withdraw({reserveId: state.reserveId, amount: state.withdrawAmount, to: bob});
 
-    stage = 3;
+    stage = 2;
     reserveData[stage] = _getReserveData(state.reserveId);
     aliceData[stage] = _getUserData(state.reserveId, alice);
     bobData[stage] = _getUserData(state.reserveId, bob);
@@ -529,6 +513,7 @@ contract SpokeWithdrawTest is SpokeBaseTest {
       rate: state.rate
     });
 
+    // number of test stages
     TestData[5] memory reserveData;
     TestData[5] memory aliceData;
     TestData[5] memory bobData;
