@@ -287,6 +287,17 @@ contract LiquidityHub is ILiquidityHub {
     return amount;
   }
 
+  /// @inheritdoc ILiquidityHub
+  function accrueInterest(uint256 assetId, uint32 riskPremium) external {
+    // TODO: authorization - only spokes
+
+    Asset storage asset = _assets[assetId];
+    SpokeData storage spoke = _spokes[assetId][msg.sender];
+
+    _accrueInterest(asset, spoke);
+    _updateRiskPremiumAndBaseDebt(asset, spoke, _boundBps(riskPremium).rayify(), 0);
+  }
+
   //
   // public
   //
@@ -373,6 +384,11 @@ contract LiquidityHub is ILiquidityHub {
 
   function getSpokeRiskPremium(uint256 assetId, address spoke) external view returns (uint256) {
     return _spokes[assetId][spoke].riskPremium.derayify();
+  }
+
+  /// @inheritdoc ILiquidityHub
+  function getAssetConfig(uint256 assetId) external view returns (DataTypes.AssetConfig memory) {
+    return _assets[assetId].config;
   }
 
   //
@@ -466,8 +482,8 @@ contract LiquidityHub is ILiquidityHub {
 
     uint256 newSpokeDebt = baseDebtChange > 0
       ? existingSpokeDebt + uint256(baseDebtChange) // debt added
-      // force underflow: only possible when spoke takes repays amount more than net drawn
       : existingSpokeDebt - uint256(-baseDebtChange); // debt restored
+    // force underflow^: only possible when spoke takes repays amount more than net drawn
 
     (uint256 newAssetRiskPremium, uint256 newAssetDebt) = MathUtils.addToWeightedAverage(
       assetRiskPremiumWithoutCurrent,

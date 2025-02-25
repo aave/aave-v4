@@ -76,6 +76,7 @@ interface ILiquidityHub {
 
   function previewNextBorrowIndex(uint256 assetId) external view returns (uint256);
   function getBaseInterestRate(uint256 assetId) external view returns (uint256);
+  function accrueInterest(uint256 assetId, uint32 riskPremium) external;
 
   function addAsset(DataTypes.AssetConfig memory params, address asset) external;
   function addSpoke(uint256 assetId, DataTypes.SpokeConfig memory params, address spoke) external;
@@ -94,6 +95,7 @@ interface ILiquidityHub {
   function getAssetSuppliedShares(uint256 assetId) external view returns (uint256);
   function getSpokeSuppliedAmount(uint256 assetId, address spoke) external view returns (uint256);
   function getSpokeSuppliedShares(uint256 assetId, address spoke) external view returns (uint256);
+  function getAssetConfig(uint256 assetId) external view returns (DataTypes.AssetConfig memory);
 
   // todo: remove explicit rounding
   function convertToAssetsUp(uint256 assetId, uint256 shares) external view returns (uint256);
