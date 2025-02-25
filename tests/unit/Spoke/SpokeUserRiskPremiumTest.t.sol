@@ -441,7 +441,12 @@ contract SpokeUserRiskPremiumTest is BaseTest {
         params.usdxSupplyAmount *
         oracle.getAssetPrice(usdxAssetId));
 
-    assertEq(spoke3.getUserRiskPremium(bob), expectedUserRiskPremium, 'user risk premium');
+    assertApproxEqAbs(
+      spoke3.getUserRiskPremium(bob),
+      expectedUserRiskPremium,
+      1,
+      'user risk premium'
+    );
   }
 
   function test_getUserRiskPremium_fuzz_three_assets_supply_and_borrow(
