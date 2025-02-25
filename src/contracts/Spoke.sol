@@ -749,16 +749,20 @@ contract Spoke is ISpoke {
     user.lastUpdateTimestamp = block.timestamp;
   }
 
+  /**
+   * @dev Trigger risk premium update on all drawn reserves of `user` except the reserve's corresponding
+   * to `assetIdToAvoid` as those are expected to be updated outside of this method
+   */
   function _notifyRiskPremiumUpdate(uint256 assetIdToAvoid, address userAddress) internal {
     uint256 reserveCount_ = reserveCount;
     uint256 i;
+    UserData storage userData = _userData[userAddress];
     while (i < reserveCount_) {
       UserConfig storage user = _users[userAddress][i];
       Reserve storage reserve = _reserves[i];
       uint256 assetId = reserve.assetId;
+      // todo keep borrowed assets in transient storage/pass through?
       if (assetId != assetIdToAvoid && _borrowing(user)) {
-        // todo keep borrowed assets in transient storage/pass through?
-        UserData storage userData = _userData[userAddress];
         _accrueInterest(reserve, user, userData);
         uint32 newRiskPremium = _updateRiskPremiumAndBaseDebt(
           reserve,
@@ -769,7 +773,9 @@ contract Spoke is ISpoke {
         );
         liquidityHub.accrueInterest(assetId, newRiskPremium);
       }
-      i++;
+      unchecked {
+        i++;
+      }
     }
   }
 }
