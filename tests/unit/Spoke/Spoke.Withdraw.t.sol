@@ -127,40 +127,96 @@ contract SpokeWithdrawTest is SpokeBaseTest {
     spoke1.withdraw({reserveId: reserveId, amount: amount - borrowAmount + 1, to: alice});
   }
 
-  // function test_withdraw() public {
-  //   // TODO: Add getter of asset id based on address
-  //   uint256 amount = 100e18;
+  function test_withdraw_same_block() public {
+    uint256 amount = 100e18;
+    uint256 reserveId = spokeInfo[spoke1].dai.reserveId;
 
-  //   // Bob supply
-  //   deal(address(tokenList.dai), bob, amount);
-  //   Utils.spokeSupply(hub, spoke1, spokeInfo[spoke1].dai.reserveId, bob, amount, bob);
+    TestData[2] memory reserveData;
+    TestData[2] memory bobData;
+    TokenData[2] memory tokenData;
 
-  //   Spoke.UserConfig memory user1Data = spoke1.getUser(spokeInfo[spoke1].dai.reserveId, bob);
+    uint256 expectedSupplyShares = hub.convertToSharesDown(daiAssetId, amount);
 
-  //   // assertEq(dai.balanceOf(address(spoke1)), 0, 'wrong spoke token balance pre-withdraw');
-  //   // assertEq(dai.balanceOf(address(hub)), amount, 'wrong hub token balance pre-withdraw');
-  //   // assertEq(dai.balanceOf(USER1), 0, 'wrong user token balance pre-withdraw');
-  //   // assertEq(
-  //   //   user1Data.supplyShares,
-  //   //   ILiquidityHub(hub).convertToSharesDown(assetId, amount),
-  //   //   'wrong user supply shares post-withdraw'
-  //   // );
-  //   // assertEq(user1Data.debtShares, 0, 'wrong user debt shares post-withdraw');
+    // Bob supply
+    Utils.spokeSupply({
+      hub: hub,
+      spoke: spoke1,
+      reserveId: reserveId,
+      user: bob,
+      amount: amount,
+      to: bob
+    });
 
-  //   vm.startPrank(bob);
-  //   vm.expectEmit(address(spoke1));
-  //   emit Withdrawn(spokeInfo[spoke1].dai.reserveId, amount, bob);
-  //   spoke1.withdraw(spokeInfo[spoke1].dai.reserveId, amount, bob);
-  //   vm.stopPrank();
+    uint256 stage = 0;
+    reserveData[stage] = _getReserveData(reserveId);
+    bobData[stage] = _getUserData(reserveId, bob);
+    tokenData[stage] = _getTokenBalances(address(tokenList.dai), address(spoke1));
 
-  //   user1Data = spoke1.getUser(spokeInfo[spoke1].dai.reserveId, bob);
+    // reserve
+    assertEq(reserveData[stage].suppliedAmount, amount, 'reserve suppliedAmount pre-withdraw');
+    assertEq(
+      reserveData[stage].lastUpdateTimestamp,
+      vm.getBlockTimestamp(),
+      'reserve lastUpdateTimestamp pre-withdraw'
+    );
+    assertEq(
+      reserveData[stage].suppliedShares,
+      expectedSupplyShares,
+      'bob suppliedShares pre-withdraw'
+    );
+    // bob
+    assertEq(bobData[stage].suppliedAmount, amount, 'bob suppliedAmount pre-withdraw');
+    assertEq(
+      bobData[stage].lastUpdateTimestamp,
+      vm.getBlockTimestamp(),
+      'bob lastUpdateTimestamp pre-withdraw'
+    );
+    assertEq(
+      bobData[stage].suppliedShares,
+      expectedSupplyShares,
+      'bob suppliedShares pre-withdraw'
+    );
+    // token
+    assertEq(tokenData[stage].spokeBalance, 0, 'dai spokeBalance pre-withdraw');
+    assertEq(tokenData[stage].hubBalance, amount, 'dai hubBalance pre-withdraw');
+    assertEq(
+      tokenList.dai.balanceOf(bob),
+      MAX_SUPPLY_AMOUNT - amount,
+      'bob dai balance pre-withdraw'
+    );
 
-  //   // assertEq(dai.balanceOf(address(spoke1)), 0, 'wrong spoke token balance post-withdraw');
-  //   // assertEq(dai.balanceOf(address(hub)), 0, 'wrong hub token balance post-withdraw');
-  //   // assertEq(dai.balanceOf(USER1), amount, 'wrong user token balance post-withdraw');
-  //   // assertEq(user1Data.supplyShares, 0, 'wrong user supply shares post-withdraw');
-  //   // assertEq(user1Data.debtShares, 0, 'wrong user debt shares post-withdraw');
-  // }
+    vm.startPrank(bob);
+    vm.expectEmit(address(spoke1));
+    emit Withdrawn(reserveId, amount, bob);
+    spoke1.withdraw(reserveId, amount, bob);
+    vm.stopPrank();
+
+    stage = 1;
+    reserveData[stage] = _getReserveData(reserveId);
+    bobData[stage] = _getUserData(reserveId, bob);
+    tokenData[stage] = _getTokenBalances(address(tokenList.dai), address(spoke1));
+
+    // reserve
+    assertEq(reserveData[stage].suppliedAmount, 0, 'reserve suppliedAmount post-withdraw');
+    assertEq(
+      reserveData[stage].lastUpdateTimestamp,
+      vm.getBlockTimestamp(),
+      'reserve lastUpdateTimestamp post-withdraw'
+    );
+    assertEq(reserveData[stage].suppliedShares, 0, 'bob suppliedShares post-withdraw');
+    // bob
+    assertEq(bobData[stage].suppliedAmount, 0, 'bob suppliedAmount post-withdraw');
+    assertEq(
+      bobData[stage].lastUpdateTimestamp,
+      vm.getBlockTimestamp(),
+      'bob lastUpdateTimestamp post-withdraw'
+    );
+    assertEq(bobData[stage].suppliedShares, 0, 'bob suppliedShares post-withdraw');
+    // token
+    assertEq(tokenData[stage].spokeBalance, 0, 'dai spokeBalance post-withdraw');
+    assertEq(tokenData[stage].hubBalance, 0, 'dai hubBalance post-withdraw');
+    assertEq(tokenList.dai.balanceOf(bob), MAX_SUPPLY_AMOUNT, 'bob dai balance post-withdraw');
+  }
 
   // multiple users, same asset. No debt
   function test_withdraw_fuzz_multi_user(
