@@ -83,12 +83,6 @@ contract SpokeBaseTest is BaseTest {
       to: borrow.supplier
     });
 
-    // console.log(
-    //   'bob %e',
-    //   spoke1.getUserSuppliedAmount(borrow.reserveId, bob),
-    //   spoke1.getUserSuppliedShares(borrow.reserveId, bob)
-    // );
-
     // borrower borrows asset
     Utils.borrow({
       spoke: spoke1,
