@@ -547,6 +547,7 @@ contract Spoke is ISpoke {
       }
 
       if (_usingAsCollateral(user)) {
+        // @dev opt: this can be extracted by counting number of set bits in a supplied (only) bitmap saving one loop
         unchecked {
           ++vars.suppliedReserveCount;
         }
