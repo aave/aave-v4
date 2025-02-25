@@ -18,7 +18,7 @@ contract Spoke is ISpoke {
   using KeyValueListInMemory for KeyValueListInMemory.List;
 
   uint256 public constant DEFAULT_SPOKE_INDEX = 0;
-  // todo capitalize
+  // todo capitalize, oracle should be mutable?
   ILiquidityHub public immutable liquidityHub;
   IPriceOracle public immutable oracle;
 
@@ -42,6 +42,7 @@ contract Spoke is ISpoke {
     bool collateral;
   }
 
+  // todo rename to UserPosition
   struct UserConfig {
     bool usingAsCollateral;
     uint256 baseDebt;
@@ -443,61 +444,6 @@ contract Spoke is ISpoke {
       baseDebtChange
     );
     return uint32(newAggregatedRiskPremium.derayify());
-  }
-
-  /// @dev It's assumed interest has been accrued before this function call.
-  // !                                   ^^^^^^^^^
-  // todo: merge with calculateUserAccountData (consideration: gas supply)
-  function _calcUserRiskPremium(
-    mapping(uint256 => UserConfig) storage userData
-  ) internal view returns (uint256) {
-    uint256 reservesListLength = reservesList.length;
-
-    // Variable to decrement as we count up user RP
-    uint256 tempDebt = 0;
-    uint256 newUserRiskPremium = 0;
-    uint256 collateralValue = 0;
-    uint256 reserveId;
-    uint256 userSupply;
-
-    // Add up user debt for each reserve, including price
-    for (uint256 i; i < reservesListLength; ++i) {
-      reserveId = reservesList[i];
-      tempDebt += userData[reserveId].baseDebt * oracle.getAssetPrice(reserveId);
-    }
-
-    // If user has no debt, return 0 risk premium
-    if (tempDebt == 0) return 0;
-
-    // While the tempDebt variable is non-zero, loop over collateral reserves, adding up weighted risk premium, and subtract corresponding amt from tempDebt
-    for (uint256 i; i < reservesListLength; ++i) {
-      reserveId = reservesList[i];
-      if (!_usingAsCollateral(userData[reserveId])) continue;
-
-      // Convert user's supply shares for this reserve to collateral value
-      userSupply =
-        liquidityHub.convertToAssetsDown(
-          _reserves[reserveId].assetId,
-          userData[reserveId].suppliedShares
-        ) *
-        oracle.getAssetPrice(reserveId);
-
-      if (userSupply >= tempDebt) {
-        // This reserve completes user debt, so add up weighted risk premium and break
-        newUserRiskPremium += tempDebt * _reserves[reserveId].config.liquidityPremium;
-        collateralValue += tempDebt;
-        break;
-      } else {
-        // Add up weighted risk premium
-        newUserRiskPremium += userSupply * _reserves[reserveId].config.liquidityPremium;
-        collateralValue += userSupply;
-        // Subtract user supply from tempDebt
-        tempDebt -= userSupply;
-      }
-    }
-
-    if (collateralValue == 0) return 0;
-    return (newUserRiskPremium / collateralValue).rayify();
   }
 
   /// @dev It's assumed interest has been accrued before this function call.
