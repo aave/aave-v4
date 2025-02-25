@@ -186,11 +186,6 @@ contract Spoke is ISpoke {
     );
     _notifyRiskPremiumUpdate(reserve.assetId, msg.sender);
 
-    // first supply, set as collateral by default
-    if (user.suppliedShares > 0) {
-      setUsingAsCollateral(reserveId, true);
-    }
-
     user.suppliedShares += suppliedShares;
     reserve.suppliedShares += suppliedShares;
 
