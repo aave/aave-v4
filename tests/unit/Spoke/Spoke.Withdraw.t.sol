@@ -582,7 +582,7 @@ contract SpokeWithdrawTest is SpokeBaseTest {
     );
     assertEq(
       reserveData[stage].suppliedShares,
-      hub.convertToShares(daiAssetId, expectedBaseDebt + expectedPremium),
+      reserveData[1].suppliedShares - state.withdrawnShares,
       'reserveData supplied shares'
     );
     assertEq(
