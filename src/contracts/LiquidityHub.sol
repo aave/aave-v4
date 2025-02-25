@@ -283,6 +283,14 @@ contract LiquidityHub is ILiquidityHub {
     return amount;
   }
 
+  function accrueInterest(uint256 assetId, uint32 riskPremium) external {
+    Asset storage asset = _assets[assetId];
+    SpokeData storage spoke = _spokes[assetId][msg.sender];
+
+    _accrueInterest(asset, spoke);
+    _updateRiskPremiumAndBaseDebt(asset, spoke, _boundBps(riskPremium).rayify(), 0);
+  }
+
   //
   // public
   //
@@ -458,8 +466,8 @@ contract LiquidityHub is ILiquidityHub {
 
     uint256 newSpokeDebt = baseDebtChange > 0
       ? existingSpokeDebt + uint256(baseDebtChange) // debt added
-      : // force underflow: only possible when spoke takes repays amount more than net drawn
-      existingSpokeDebt - uint256(-baseDebtChange); // debt restored
+      // force underflow: only possible when spoke takes repays amount more than net drawn
+      : existingSpokeDebt - uint256(-baseDebtChange); // debt restored
 
     (uint256 newAssetRiskPremium, uint256 newAssetDebt) = MathUtils.addToWeightedAverage(
       assetRiskPremiumWithoutCurrent,

@@ -183,6 +183,7 @@ contract Spoke is ISpoke {
       newAggregatedRiskPremium,
       msg.sender // supplier
     );
+    _notifyRiskPremiumUpdate(reserve.assetId, msg.sender);
 
     setUsingAsCollateral(reserveId, true);
 
@@ -215,6 +216,7 @@ contract Spoke is ISpoke {
       newAggregatedRiskPremium,
       to
     );
+    _notifyRiskPremiumUpdate(reserve.assetId, msg.sender);
 
     user.suppliedShares -= withdrawnShares;
     reserve.suppliedShares -= withdrawnShares;
@@ -241,6 +243,7 @@ contract Spoke is ISpoke {
       baseDebtChange: int256(amount)
     });
     liquidityHub.draw(reserve.assetId, amount, newAggregatedRiskPremium, to);
+    _notifyRiskPremiumUpdate(reserve.assetId, msg.sender);
 
     emit Borrowed(reserveId, amount, to);
   }
@@ -272,6 +275,7 @@ contract Spoke is ISpoke {
       newAggregatedRiskPremium,
       msg.sender // repayer
     );
+    _notifyRiskPremiumUpdate(reserve.assetId, msg.sender);
 
     emit Repaid(reserveId, amount, msg.sender);
   }
@@ -450,7 +454,7 @@ contract Spoke is ISpoke {
     int256 baseDebtChange
   ) internal returns (uint32) {
     // Calculate risk premium of user
-    (uint256 newUserRiskPremium, , ) = _calculateUserAccountData(userAddress);
+    (uint256 newUserRiskPremium, , ) = _calculateUserAccountData(userAddress); // todo pass this around in cached object (rm dup run in _notify)
     // Refresh weighted average risk premium across all users of spoke
     uint256 newAggregatedRiskPremium = _updateSpokeRiskPremiumAndBaseDebt(
       reserve,
@@ -732,5 +736,29 @@ contract Spoke is ISpoke {
     user.outstandingPremium = cumulatedOutstandingPremium;
     user.baseBorrowIndex = nextBaseBorrowIndex;
     user.lastUpdateTimestamp = block.timestamp;
+  }
+
+  function _notifyRiskPremiumUpdate(uint256 assetIdToAvoid, address userAddress) internal {
+    uint256 reserveCount_ = reserveCount;
+    uint256 i;
+    while (i < reserveCount_) {
+      UserConfig storage user = _users[userAddress][i];
+      Reserve storage reserve = _reserves[i];
+      uint256 assetId = reserve.assetId;
+      if (assetId != assetIdToAvoid && _borrowing(user)) {
+        // todo keep borrowed assets in transient storage/pass through?
+        UserData storage userData = _userData[userAddress];
+        _accrueInterest(reserve, user, userData);
+        uint32 newRiskPremium = _updateRiskPremiumAndBaseDebt(
+          reserve,
+          user,
+          userData,
+          userAddress,
+          0
+        );
+        liquidityHub.accrueInterest(assetId, newRiskPremium);
+      }
+      i++;
+    }
   }
 }
