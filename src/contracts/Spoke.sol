@@ -71,7 +71,7 @@ contract Spoke is ISpoke {
     uint256 liquidityPremium;
     uint256 healthFactor;
     // number of assets used as collateral for the risk premium calculation
-    uint256 suppliedReserveCount;
+    uint256 collateralReserveCount;
   }
 
   // todo rename UserConfig => UserPosition
@@ -544,7 +544,7 @@ contract Spoke is ISpoke {
       if (_usingAsCollateral(user)) {
         // @dev opt: this can be extracted by counting number of set bits in a supplied (only) bitmap saving one loop
         unchecked {
-          ++vars.suppliedReserveCount;
+          ++vars.collateralReserveCount;
         }
       }
 
@@ -564,7 +564,7 @@ contract Spoke is ISpoke {
     }
 
     // @dev only allocate required memory at the cost of an extra loop
-    KeyValueListInMemory.List memory list = KeyValueListInMemory.init(vars.suppliedReserveCount);
+    KeyValueListInMemory.List memory list = KeyValueListInMemory.init(vars.collateralReserveCount);
     vars.i = 0;
     vars.reserveId = 0;
     while (vars.reserveId < reservesListLength) {
@@ -616,7 +616,7 @@ contract Spoke is ISpoke {
     // value used in risk premium, `totalDebtInBaseCurrency` represents running outstanding debt
     vars.totalCollateralInBaseCurrency = 0;
 
-    while (vars.i < vars.suppliedReserveCount && vars.totalDebtInBaseCurrency > 0) {
+    while (vars.i < vars.collateralReserveCount && vars.totalDebtInBaseCurrency > 0) {
       if (vars.totalDebtInBaseCurrency == 0) break;
       (vars.liquidityPremium, vars.userCollateralInBaseCurrency) = list.get(vars.i);
       if (vars.userCollateralInBaseCurrency > vars.totalDebtInBaseCurrency) {
