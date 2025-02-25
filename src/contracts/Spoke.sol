@@ -53,6 +53,13 @@ contract Spoke is ISpoke {
   }
 
   struct UserData {
+    /**
+     * ray-extended risk premium bps of user
+     * for example, if risk premium bps is 15_50 (15.5%),
+     * then this value is 1550_000000000000000000000000000 (1550 * 1e27),
+     * stored with high precision to be equivalent with other RPs (Asset, Spoke/Reserve)
+     * since they have to maintain a running weighted average
+     */
     uint256 riskPremium;
     // todo supplied/borrowed (2d) bitmap
   }
