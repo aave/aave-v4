@@ -374,6 +374,7 @@ contract LiquidityHub is ILiquidityHub {
     return _spokes[assetId][spoke].riskPremium.derayify();
   }
 
+  /// @inheritdoc ILiquidityHub
   function getAssetConfig(uint256 assetId) external view returns (DataTypes.AssetConfig memory) {
     return _assets[assetId].config;
   }

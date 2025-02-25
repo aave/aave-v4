@@ -30,7 +30,7 @@ contract Spoke is ISpoke {
     uint256 suppliedShares;
     uint256 baseBorrowIndex;
     uint256 lastUpdateTimestamp;
-    uint256 riskPremium; // weighted average risk premium of all users with ray precision
+    uint256 riskPremium; // rayified bps: weighted average risk premium of all users with ray precision
     ReserveConfig config;
   }
 
@@ -70,6 +70,7 @@ contract Spoke is ISpoke {
     uint256 userRiskPremium;
     uint256 liquidityPremium;
     uint256 healthFactor;
+    // number of assets used as collateral for the risk premium calculation
     uint256 suppliedReserveCount;
   }
 
@@ -308,13 +309,6 @@ contract Spoke is ISpoke {
     emit UsingAsCollateral(reserveId, usingAsCollateral, msg.sender);
   }
 
-  // TODO: Needed?
-  function getInterestRate(uint256 reserve) public view returns (uint256) {
-    // read from state, convert to ray
-    // TODO: should be final IR rather than base?
-    return ILiquidityHub(liquidityHub).getBaseInterestRate(reserve);
-  }
-
   function getReservePrice(uint256 reserveId) public view returns (uint256) {
     return oracle.getAssetPrice(_reserves[reserveId].assetId);
   }
@@ -519,11 +513,12 @@ contract Spoke is ISpoke {
     return user.usingAsCollateral;
   }
 
-  // todo is user borrowing is baseDebt is 0, but outstandingPremium is non zero if we allow only repaying base debt?
+  // todo opt: use bitmap
   function _borrowing(UserConfig storage user) internal view returns (bool) {
     return user.baseDebt + user.outstandingPremium > 0;
   }
 
+  // todo opt: use bitmap
   function _usingAsCollateralOrBorrowing(UserConfig storage user) internal view returns (bool) {
     return _usingAsCollateral(user) || _borrowing(user);
   }
@@ -539,16 +534,22 @@ contract Spoke is ISpoke {
       UserData storage userData = _userData[userAddress];
 
       if (!_usingAsCollateralOrBorrowing(user)) {
-        vars.reserveId++;
+        unchecked {
+          vars.reserveId++;
+        }
         continue;
       }
       vars.assetId = _reserves[vars.reserveId].assetId;
 
       vars.assetPrice = oracle.getAssetPrice(vars.assetId);
-      vars.assetUnit = 10 ** liquidityHub.getAssetConfig(vars.assetId).decimals;
+      unchecked {
+        vars.assetUnit = 10 ** liquidityHub.getAssetConfig(vars.assetId).decimals;
+      }
 
       if (_usingAsCollateral(user)) {
-        vars.suppliedReserveCount++;
+        unchecked {
+          vars.suppliedReserveCount++;
+        }
       }
 
       if (_borrowing(user)) {
@@ -561,9 +562,12 @@ contract Spoke is ISpoke {
         );
       }
 
-      vars.reserveId++;
+      unchecked {
+        vars.reserveId++;
+      }
     }
 
+    // @dev only allocate required memory at the cost of an extra loop
     KeyValueListInMemory.List memory list = KeyValueListInMemory.init(vars.suppliedReserveCount);
     vars.i = 0;
     vars.reserveId = 0;
@@ -574,7 +578,7 @@ contract Spoke is ISpoke {
         vars.assetId = reserve.assetId;
         vars.liquidityPremium = reserve.config.liquidityPremium;
         vars.assetPrice = oracle.getAssetPrice(vars.assetId);
-        vars.assetUnit = 10 ** liquidityHub.getAssetConfig(vars.assetId).decimals;
+        vars.assetUnit = 10 ** liquidityHub.getAssetConfig(vars.assetId).decimals; // unchecked
         vars.userCollateralInBaseCurrency = _getUserBalanceInBaseCurrency(
           user,
           vars.assetId,
@@ -586,10 +590,14 @@ contract Spoke is ISpoke {
         list.add(vars.i, vars.liquidityPremium, vars.userCollateralInBaseCurrency);
         vars.avgLiquidationThreshold += vars.userCollateralInBaseCurrency * reserve.config.lt;
 
-        vars.i++;
+        unchecked {
+          vars.i++;
+        }
       }
 
-      vars.reserveId++;
+      unchecked {
+        vars.reserveId++;
+      }
     }
 
     vars.avgLiquidationThreshold = vars.totalCollateralInBaseCurrency == 0
