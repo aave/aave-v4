@@ -7,13 +7,9 @@ import {Spoke} from 'src/contracts/Spoke.sol';
 
 contract SpokeBaseTest is BaseTest {
   struct TestData {
-    uint256 baseDebt;
-    uint256 outstandingPremium;
-    uint256 suppliedShares;
+    Spoke.Reserve data;
     uint256 suppliedAmount;
-    uint256 lastUpdateTimestamp;
     uint256 cumulatedBaseInterest;
-    uint256 riskPremium;
   }
 
   struct TokenData {
@@ -21,30 +17,24 @@ contract SpokeBaseTest is BaseTest {
     uint256 hubBalance;
   }
 
-  struct CollateralReserve {
+  struct TestReserve {
     uint256 reserveId;
-    uint256 amount;
-  }
-
-  struct BorrowReserve {
-    uint256 reserveId;
-    uint256 amount;
+    uint256 supplyAmount;
+    uint256 borrowAmount;
     address supplier;
+    address borrower;
   }
   function setUp() public virtual override {
     super.setUp();
     initEnvironment();
   }
 
-  // increase share conversion index on BorrowReserve asset
-  // using CollateralReserve asset collateral
-  // supplies BorrowReserve asset
-  // borrower borrows half of supplied amount
-  /// @return supplyAmount of BorrowReserve asset (2x of borrow amount)
+  // increase share conversion index on borrowed asset
+  /// @return supplyAmount of borrowed asset
+  /// @return supplyShares of collateral asset
   function _increaseShareConversionIndex(
-    CollateralReserve memory collateral,
-    BorrowReserve memory borrow,
-    address borrower,
+    TestReserve memory collateral,
+    TestReserve memory borrow,
     uint256 rate
   ) internal returns (uint256, uint256) {
     vm.mockCall(
@@ -53,33 +43,37 @@ contract SpokeBaseTest is BaseTest {
       abi.encode(rate)
     );
 
-    uint256 supplyAmount = borrow.amount * 2; // supply amount asset to be borrowed
+    Spoke.Reserve memory collateralReserve = spoke1.getReserve(collateral.reserveId);
+    Spoke.Reserve memory borrowReserve = spoke1.getReserve(borrow.reserveId);
+    uint256 collateralSupplyShares = hub.convertToShares(
+      collateralReserve.assetId,
+      collateral.supplyAmount
+    );
+    uint256 borrowSupplyShares = hub.convertToShares(borrowReserve.assetId, borrow.supplyAmount);
 
-    // borrower supplies collateral asset
+    // supply collateral asset
     Utils.spokeSupply({
       hub: hub,
       spoke: spoke1,
       reserveId: collateral.reserveId,
-      user: borrower,
-      amount: collateral.amount,
-      to: borrower
+      user: collateral.supplier,
+      amount: collateral.supplyAmount,
+      to: collateral.supplier
     });
     Utils.setUsingAsCollateral({
       spoke: spoke1,
-      user: borrower,
+      user: collateral.supplier,
       reserveId: collateral.reserveId,
       usingAsCollateral: true
     });
 
-    Spoke.Reserve memory reserve = spoke1.getReserve(collateral.reserveId);
-    uint256 supplyShares = hub.convertToShares(reserve.assetId, supplyAmount);
     // other user supplies enough asset to be drawn
     Utils.spokeSupply({
       hub: hub,
       spoke: spoke1,
       reserveId: borrow.reserveId,
       user: borrow.supplier,
-      amount: supplyAmount,
+      amount: borrow.supplyAmount,
       to: borrow.supplier
     });
 
@@ -87,26 +81,28 @@ contract SpokeBaseTest is BaseTest {
     Utils.borrow({
       spoke: spoke1,
       reserveId: borrow.reserveId,
-      user: borrower,
-      amount: borrow.amount,
-      onBehalfOf: borrower
+      user: borrow.borrower,
+      amount: borrow.borrowAmount,
+      onBehalfOf: borrow.borrower
     });
 
     // skip time to increase index
     skip(365 days);
 
-    return (supplyAmount, supplyShares);
+    return (collateralSupplyShares, borrowSupplyShares);
   }
 
   function _getReserveData(uint256 reserveId) internal view returns (TestData memory) {
     // only to check lastUpdateTimestamp
     Spoke.Reserve memory reserveStorageData = spoke1.getReserve(reserveId);
     TestData memory reserveData;
-    (reserveData.baseDebt, reserveData.outstandingPremium) = spoke1.getReserveDebt(reserveId);
-    reserveData.suppliedShares = spoke1.getReserveSuppliedShares(reserveId);
+    (reserveData.data.baseDebt, reserveData.data.outstandingPremium) = spoke1.getReserveDebt(
+      reserveId
+    );
+    reserveData.data.suppliedShares = spoke1.getReserveSuppliedShares(reserveId);
+    reserveData.data.lastUpdateTimestamp = reserveStorageData.lastUpdateTimestamp;
+    reserveData.data.riskPremium = spoke1.getReserveRiskPremium(reserveId);
     reserveData.suppliedAmount = spoke1.getReserveSuppliedAmount(reserveId);
-    reserveData.lastUpdateTimestamp = reserveStorageData.lastUpdateTimestamp;
-    reserveData.riskPremium = spoke1.getReserveRiskPremium(reserveId);
     return reserveData;
   }
 
@@ -114,11 +110,14 @@ contract SpokeBaseTest is BaseTest {
     // only to check lastUpdateTimestamp
     Spoke.UserConfig memory userStorageData = spoke1.getUser(reserveId, user);
     TestData memory userData;
-    (userData.baseDebt, userData.outstandingPremium) = spoke1.getUserDebt(reserveId, user);
-    userData.suppliedShares = spoke1.getUserSuppliedShares(reserveId, user);
+    (userData.data.baseDebt, userData.data.outstandingPremium) = spoke1.getUserDebt(
+      reserveId,
+      user
+    );
+    userData.data.suppliedShares = spoke1.getUserSuppliedShares(reserveId, user);
+    userData.data.lastUpdateTimestamp = userStorageData.lastUpdateTimestamp;
+    userData.data.riskPremium = spoke1.getUserRiskPremium(user);
     userData.suppliedAmount = spoke1.getUserSuppliedAmount(reserveId, user);
-    userData.lastUpdateTimestamp = userStorageData.lastUpdateTimestamp;
-    userData.riskPremium = spoke1.getUserRiskPremium(user);
     return userData;
   }
 
