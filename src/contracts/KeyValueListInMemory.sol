@@ -25,9 +25,17 @@ library KeyValueListInMemory {
     Arrays.sort(self._inner, valueComparator);
   }
 
+  function sortByKey(List memory self) internal pure {
+    Arrays.sort(self._inner, keyComparator);
+  }
+
   // @dev key, value < uint(128).max checks are omitted
   function pack(uint256 key, uint256 value) internal pure returns (uint256) {
     return (key << 128) | value;
+  }
+
+  function unpackKey(uint256 data) internal pure returns (uint256) {
+    return data >> 128;
   }
 
   function unpackValue(uint256 data) internal pure returns (uint256) {
@@ -35,10 +43,14 @@ library KeyValueListInMemory {
   }
 
   function unpack(uint256 data) internal pure returns (uint256, uint256) {
-    return (data >> 128, unpackValue(data));
+    return (unpackKey(data), unpackValue(data));
   }
 
   function valueComparator(uint256 a, uint256 b) internal pure returns (bool) {
     return unpackValue(a) < unpackValue(b);
+  }
+
+  function keyComparator(uint256 a, uint256 b) internal pure returns (bool) {
+    return unpackKey(a) < unpackKey(b);
   }
 }

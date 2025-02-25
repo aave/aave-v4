@@ -92,6 +92,8 @@ interface ILiquidityHub {
   function getAssetRiskPremium(uint256 assetId) external view returns (uint256);
   function getSpokeRiskPremium(uint256 assetId, address spoke) external view returns (uint256);
 
+  function getAssetConfig(uint256 assetId) external view returns (DataTypes.AssetConfig memory);
+
   // todo: remove explicit rounding
   function convertToAssetsUp(uint256 assetId, uint256 shares) external view returns (uint256);
   function convertToAssetsDown(uint256 assetId, uint256 shares) external view returns (uint256);
