@@ -145,6 +145,10 @@ contract Spoke is ISpoke {
     return _reserves[reserveId].riskPremium.derayify();
   }
 
+  function getUserData(address user) external view returns (UserData memory) {
+    return _userData[user];
+  }
+
   /// governance
   function updateReserveConfig(uint256 reserveId, ReserveConfig calldata params) external {
     // TODO: AccessControl
@@ -792,5 +796,7 @@ contract Spoke is ISpoke {
         ++i;
       }
     }
+    (uint256 newUserRiskPremium, , ) = _calculateUserAccountData(userAddress); // TODO: optimize
+    userData.riskPremium = newUserRiskPremium;
   }
 }
