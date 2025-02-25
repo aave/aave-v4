@@ -324,7 +324,10 @@ contract Spoke is ISpoke {
     uint256 _reserveCount = reserveCount;
     Reserve storage reserve = _reserves[_reserveCount];
     // TODO: validate reserveId does not exist already, valid asset
-    require(liquidityPremium <= PercentageMath.PERCENTAGE_FACTOR * 10, 'INVALID_LIQUIDITY_PREMIUM');
+    require(
+      params.liquidityPremium <= PercentageMath.PERCENTAGE_FACTOR * 10,
+      'INVALID_LIQUIDITY_PREMIUM'
+    );
 
     // TODO: AccessControl
     reservesList.push(reserveCount++);
@@ -353,6 +356,11 @@ contract Spoke is ISpoke {
   function updateReserve(uint256 reserveId, ReserveConfig memory params) external {
     // TODO: More sophisticated
     require(_reserves[reserveId].asset != address(0), 'INVALID_RESERVE');
+    require(
+      params.liquidityPremium <= PercentageMath.PERCENTAGE_FACTOR * 10,
+      'INVALID_LIQUIDITY_PREMIUM'
+    );
+
     // TODO: AccessControl
     _reserves[reserveId].config = ReserveConfig({
       lt: params.lt,
