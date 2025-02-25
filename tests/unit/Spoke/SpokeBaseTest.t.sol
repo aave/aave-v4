@@ -118,7 +118,7 @@ contract SpokeBaseTest is BaseTest {
     userData.suppliedShares = spoke1.getUserSuppliedShares(reserveId, user);
     userData.suppliedAmount = spoke1.getUserSuppliedAmount(reserveId, user);
     userData.lastUpdateTimestamp = userStorageData.lastUpdateTimestamp;
-    userData.riskPremium = spoke1.getUserRiskPremium(reserveId, user);
+    userData.riskPremium = spoke1.getUserRiskPremium(user);
     return userData;
   }
 
