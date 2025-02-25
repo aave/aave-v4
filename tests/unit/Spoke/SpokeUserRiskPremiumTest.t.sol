@@ -79,15 +79,13 @@ contract SpokeUserRiskPremiumTest is BaseTest {
     borrowAmount = bound(borrowAmount, 1, MAX_SUPPLY_AMOUNT);
 
     TestInfo memory params;
-    params.borrowAmount = borrowAmount;
-
     params.daiReserveId = spokeInfo[spoke1].dai.reserveId;
+    params.borrowAmount = borrowAmount;
     params.supplyAmount = borrowAmount * 2;
 
     params.daiLP = spoke1.getLiquidityPremium(params.daiReserveId);
 
     // Bob supply dai into spoke1
-    deal(address(tokenList.dai), bob, params.supplyAmount);
     Utils.spokeSupply(spoke1, params.daiReserveId, bob, params.supplyAmount, bob);
     Utils.setUsingAsCollateral(spoke1, bob, params.daiReserveId, true);
     Utils.spokeBorrow(spoke1, params.daiReserveId, bob, params.borrowAmount, bob);
@@ -113,9 +111,10 @@ contract SpokeUserRiskPremiumTest is BaseTest {
     params.daiLP = spoke1.getLiquidityPremium(params.daiReserveId);
 
     // Bob supply dai into spoke1
-    deal(address(tokenList.dai), bob, params.supplyAmount);
     Utils.spokeSupply(spoke1, params.daiReserveId, bob, params.supplyAmount, bob);
     Utils.setUsingAsCollateral(spoke1, bob, params.daiReserveId, true);
+
+    // Bob draw dai
     Utils.spokeBorrow(spoke1, params.daiReserveId, bob, params.borrowAmount, bob);
 
     uint256 userRiskPremium = spoke1.getUserRiskPremium(bob);
@@ -125,7 +124,7 @@ contract SpokeUserRiskPremiumTest is BaseTest {
 
     // Supplying more risky asset (usdx) should not impact user risk premium
     Utils.spokeSupply(spoke1, params.usdxReserveId, bob, additionalSupplyAmount, bob);
-    assertEq(spoke1.getUserRiskPremium(bob), userRiskPremium, 'user risk premium');
+    assertEq(spoke1.getUserRiskPremium(bob), userRiskPremium, 'user risk premium after supply');
   }
 
   function test_getUserRiskPremium_multi_asset_collateral() public {
@@ -371,17 +370,18 @@ contract SpokeUserRiskPremiumTest is BaseTest {
 
     // Dai and usdx will each cover half the debt
     uint256 expectedUserRiskPremium = (params.daiLP *
-      params.daiSupplyAmount *
-      oracle.getAssetPrice(daiAssetId) +
+      _normalizedValue(params.daiSupplyAmount, daiAssetId) +
       params.usdxLP *
-      usdxLpContributionAmount *
-      oracle.getAssetPrice(usdxAssetId)) /
-      (params.daiSupplyAmount *
-        oracle.getAssetPrice(daiAssetId) +
-        usdxLpContributionAmount *
-        oracle.getAssetPrice(usdxAssetId));
+      _normalizedValue(usdxLpContributionAmount, usdxAssetId)) /
+      (_normalizedValue(params.daiSupplyAmount, daiAssetId) +
+        _normalizedValue(usdxLpContributionAmount, usdxAssetId));
 
-    assertEq(spoke1.getUserRiskPremium(bob), expectedUserRiskPremium, 'user risk premium');
+    assertApproxEqAbs(
+      spoke1.getUserRiskPremium(bob),
+      expectedUserRiskPremium,
+      1,
+      'user risk premium'
+    );
   }
 
   /// @dev Supply with a high value lp asset so it's ignored in rp calcs, but allows user to borrow large amounts.
@@ -1033,5 +1033,9 @@ contract SpokeUserRiskPremiumTest is BaseTest {
       1,
       'user risk premium'
     );
+  }
+
+  function _normalizedValue(uint256 amount, uint256 assetId) internal returns (uint256) {
+    return (amount * oracle.getAssetPrice(assetId)) / (10 ** hub.getAssetConfig(assetId).decimals);
   }
 }
