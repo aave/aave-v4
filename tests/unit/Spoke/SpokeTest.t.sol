@@ -200,41 +200,6 @@ contract SpokeTest is BaseTest {
     assertEq(tokenList.weth.balanceOf(address(spoke2)), 0, 'spoke2 weth final balance');
   }
 
-  function test_withdraw() public {
-    // TODO: Add getter of asset id based on address
-    uint256 amount = 100e18;
-
-    // Bob supply
-    deal(address(tokenList.dai), bob, amount);
-    Utils.spokeSupply(hub, spoke1, spokeInfo[spoke1].dai.reserveId, bob, amount, bob);
-
-    Spoke.UserConfig memory user1Data = spoke1.getUser(spokeInfo[spoke1].dai.reserveId, bob);
-
-    // assertEq(dai.balanceOf(address(spoke1)), 0, 'wrong spoke token balance pre-withdraw');
-    // assertEq(dai.balanceOf(address(hub)), amount, 'wrong hub token balance pre-withdraw');
-    // assertEq(dai.balanceOf(USER1), 0, 'wrong user token balance pre-withdraw');
-    // assertEq(
-    //   user1Data.supplyShares,
-    //   ILiquidityHub(hub).convertToSharesDown(assetId, amount),
-    //   'wrong user supply shares post-withdraw'
-    // );
-    // assertEq(user1Data.debtShares, 0, 'wrong user debt shares post-withdraw');
-
-    vm.startPrank(bob);
-    vm.expectEmit(address(spoke1));
-    emit Withdrawn(spokeInfo[spoke1].dai.reserveId, amount, bob);
-    spoke1.withdraw(spokeInfo[spoke1].dai.reserveId, amount, bob);
-    vm.stopPrank();
-
-    user1Data = spoke1.getUser(spokeInfo[spoke1].dai.reserveId, bob);
-
-    // assertEq(dai.balanceOf(address(spoke1)), 0, 'wrong spoke token balance post-withdraw');
-    // assertEq(dai.balanceOf(address(hub)), 0, 'wrong hub token balance post-withdraw');
-    // assertEq(dai.balanceOf(USER1), amount, 'wrong user token balance post-withdraw');
-    // assertEq(user1Data.supplyShares, 0, 'wrong user supply shares post-withdraw');
-    // assertEq(user1Data.debtShares, 0, 'wrong user debt shares post-withdraw');
-  }
-
   /* TODO: Add this test back */
   /*
   function test_repay_revertsWith_repay_exceeds_debt() public {

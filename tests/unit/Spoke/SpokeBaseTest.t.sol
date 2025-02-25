@@ -10,7 +10,10 @@ contract SpokeBaseTest is BaseTest {
     uint256 baseDebt;
     uint256 outstandingPremium;
     uint256 suppliedShares;
+    uint256 suppliedAmount;
     uint256 lastUpdateTimestamp;
+    uint256 cumulatedBaseInterest;
+    uint256 riskPremium;
   }
 
   struct TokenData {
@@ -107,7 +110,9 @@ contract SpokeBaseTest is BaseTest {
     TestData memory reserveData;
     (reserveData.baseDebt, reserveData.outstandingPremium) = spoke1.getReserveDebt(reserveId);
     reserveData.suppliedShares = spoke1.getReserveSuppliedShares(reserveId);
+    reserveData.suppliedAmount = spoke1.getReserveSuppliedAmount(reserveId);
     reserveData.lastUpdateTimestamp = reserveStorageData.lastUpdateTimestamp;
+    reserveData.riskPremium = spoke1.getReserveRiskPremium(reserveId);
     return reserveData;
   }
 
@@ -117,7 +122,9 @@ contract SpokeBaseTest is BaseTest {
     TestData memory userData;
     (userData.baseDebt, userData.outstandingPremium) = spoke1.getUserDebt(reserveId, user);
     userData.suppliedShares = spoke1.getUserSuppliedShares(reserveId, user);
+    userData.suppliedAmount = spoke1.getUserSuppliedAmount(reserveId, user);
     userData.lastUpdateTimestamp = userStorageData.lastUpdateTimestamp;
+    userData.riskPremium = spoke1.getUserRiskPremium(reserveId, user);
     return userData;
   }
 
