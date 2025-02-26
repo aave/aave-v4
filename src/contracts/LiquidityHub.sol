@@ -311,26 +311,26 @@ contract LiquidityHub is ILiquidityHub {
     return _assets[assetId].getInterestRate();
   }
 
-  function getSpokeDebt(uint256 assetId, address spoke) external view returns (uint256, uint256) {
-    (uint256 cumulatedBaseDebt, uint256 cumulatedOutstandingPremium) = _spokes[assetId][spoke]
-      .previewInterest(_assets[assetId].previewNextBorrowIndex());
-    return (cumulatedBaseDebt, cumulatedOutstandingPremium);
-  }
-
   function getAssetDebt(uint256 assetId) external view returns (uint256, uint256) {
     (uint256 cumulatedBaseDebt, uint256 cumulatedOutstandingPremium) = _assets[assetId]
       .previewInterest(_assets[assetId].previewNextBorrowIndex());
     return (cumulatedBaseDebt, cumulatedOutstandingPremium);
   }
 
-  function getSpokeCumulativeDebt(uint256 assetId, address spoke) external view returns (uint256) {
-    (uint256 cumulatedBaseDebt, uint256 cumulatedOutstandingPremium) = _spokes[assetId][spoke]
+  function getAssetCumulativeDebt(uint256 assetId) external view returns (uint256) {
+    (uint256 cumulatedBaseDebt, uint256 cumulatedOutstandingPremium) = _assets[assetId]
       .previewInterest(_assets[assetId].previewNextBorrowIndex());
     return cumulatedBaseDebt + cumulatedOutstandingPremium;
   }
 
-  function getAssetCumulativeDebt(uint256 assetId) external view returns (uint256) {
-    (uint256 cumulatedBaseDebt, uint256 cumulatedOutstandingPremium) = _assets[assetId]
+  function getSpokeDebt(uint256 assetId, address spoke) external view returns (uint256, uint256) {
+    (uint256 cumulatedBaseDebt, uint256 cumulatedOutstandingPremium) = _spokes[assetId][spoke]
+      .previewInterest(_assets[assetId].previewNextBorrowIndex());
+    return (cumulatedBaseDebt, cumulatedOutstandingPremium);
+  }
+
+  function getSpokeCumulativeDebt(uint256 assetId, address spoke) external view returns (uint256) {
+    (uint256 cumulatedBaseDebt, uint256 cumulatedOutstandingPremium) = _spokes[assetId][spoke]
       .previewInterest(_assets[assetId].previewNextBorrowIndex());
     return cumulatedBaseDebt + cumulatedOutstandingPremium;
   }

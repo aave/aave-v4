@@ -34,11 +34,59 @@ contract Spoke is ISpoke {
     oracle = IPriceOracle(oracleAddress);
   }
 
-  /// governance
+  // /////
+  // Governance
+  // /////
+
+  function addReserve(
+    uint256 assetId,
+    DataTypes.ReserveConfig memory params,
+    address asset
+  ) external returns (uint256) {
+    uint256 _reserveCount = reserveCount;
+    DataTypes.Reserve storage reserve = _reserves[_reserveCount];
+    // TODO: validate reserveId does not exist already, valid asset
+    require(
+      params.liquidityPremium <= PercentageMath.PERCENTAGE_FACTOR * 10,
+      InvalidLiquidityPremium(params.liquidityPremium)
+    );
+
+    // TODO: AccessControl
+    reservesList.push(reserveCount++);
+    _reserves[_reserveCount] = DataTypes.Reserve({
+      reserveId: _reserveCount,
+      assetId: assetId,
+      asset: asset,
+      baseDebt: 0,
+      outstandingPremium: 0,
+      suppliedShares: 0,
+      baseBorrowIndex: DEFAULT_SPOKE_INDEX,
+      lastUpdateTimestamp: 0,
+      riskPremium: 0,
+      config: DataTypes.ReserveConfig({
+        lt: params.lt,
+        lb: params.lb,
+        liquidityPremium: params.liquidityPremium,
+        borrowable: params.borrowable,
+        collateral: params.collateral
+      })
+    });
+
+    emit ReserveAdded(_reserveCount, assetId, asset);
+
+    return _reserveCount;
+  }
+
   function updateReserveConfig(
     uint256 reserveId,
     DataTypes.ReserveConfig calldata params
   ) external {
+    // TODO: More sophisticated
+    require(_reserves[reserveId].asset != address(0), InvalidReserve(reserveId));
+    require(
+      params.liquidityPremium <= PercentageMath.PERCENTAGE_FACTOR * 10,
+      InvalidLiquidityPremium(params.liquidityPremium)
+    );
     // TODO: AccessControl
     _reserves[reserveId].config = DataTypes.ReserveConfig({
       lt: params.lt,
@@ -56,6 +104,18 @@ contract Spoke is ISpoke {
       params.borrowable,
       params.collateral
     );
+  }
+
+  // todo: access control, general setter like maker's dss, flag engine like v3
+  function updateLiquidityPremium(uint256 reserveId, uint256 liquidityPremium) external {
+    require(_reserves[reserveId].asset != address(0), InvalidReserve(reserveId));
+    require(
+      liquidityPremium <= PercentageMath.PERCENTAGE_FACTOR * 10,
+      InvalidLiquidityPremium(liquidityPremium)
+    );
+    _reserves[reserveId].config.liquidityPremium = liquidityPremium;
+
+    emit LiquidityPremiumUpdated(reserveId, liquidityPremium);
   }
 
   // /////
@@ -178,6 +238,16 @@ contract Spoke is ISpoke {
     emit Repaid(reserveId, amount, msg.sender);
   }
 
+  function setUsingAsCollateral(uint256 reserveId, bool usingAsCollateral) external {
+    DataTypes.Reserve storage reserve = _reserves[reserveId];
+    DataTypes.UserConfig storage user = _users[msg.sender][reserveId];
+
+    _validateSetUsingAsCollateral(reserve, user);
+    user.usingAsCollateral = usingAsCollateral;
+
+    emit UsingAsCollateral(reserveId, usingAsCollateral, msg.sender);
+  }
+
   function getUsingAsCollateral(uint256 reserveId, address user) external view returns (bool) {
     return _users[user][reserveId].usingAsCollateral;
   }
@@ -263,91 +333,12 @@ contract Spoke is ISpoke {
     return healthFactor;
   }
 
-  function setUsingAsCollateral(uint256 reserveId, bool usingAsCollateral) public {
-    DataTypes.Reserve storage reserve = _reserves[reserveId];
-    DataTypes.UserConfig storage user = _users[msg.sender][reserveId];
-
-    _validateSetUsingAsCollateral(reserve, user);
-    user.usingAsCollateral = usingAsCollateral;
-
-    emit UsingAsCollateral(reserveId, usingAsCollateral, msg.sender);
-  }
-
   function getReservePrice(uint256 reserveId) public view returns (uint256) {
     return oracle.getAssetPrice(_reserves[reserveId].assetId);
   }
 
   function getLiquidityPremium(uint256 reserveId) public view returns (uint256) {
     return _reserves[reserveId].config.liquidityPremium;
-  }
-
-  // /////
-  // Governance
-  // /////
-
-  function addReserve(
-    uint256 assetId,
-    DataTypes.ReserveConfig memory params,
-    address asset
-  ) external returns (uint256) {
-    uint256 _reserveCount = reserveCount;
-    DataTypes.Reserve storage reserve = _reserves[_reserveCount];
-    // TODO: validate reserveId does not exist already, valid asset
-    require(
-      params.liquidityPremium <= PercentageMath.PERCENTAGE_FACTOR * 10,
-      InvalidLiquidityPremium(params.liquidityPremium)
-    );
-
-    // TODO: AccessControl
-    reservesList.push(reserveCount++);
-    _reserves[_reserveCount] = DataTypes.Reserve({
-      reserveId: _reserveCount,
-      assetId: assetId,
-      asset: asset,
-      baseDebt: 0,
-      outstandingPremium: 0,
-      suppliedShares: 0,
-      baseBorrowIndex: DEFAULT_SPOKE_INDEX,
-      lastUpdateTimestamp: 0,
-      riskPremium: 0,
-      config: DataTypes.ReserveConfig({
-        lt: params.lt,
-        lb: params.lb,
-        liquidityPremium: params.liquidityPremium,
-        borrowable: params.borrowable,
-        collateral: params.collateral
-      })
-    });
-
-    return _reserveCount;
-    // todo: emit event
-  }
-
-  function updateReserve(uint256 reserveId, DataTypes.ReserveConfig memory params) external {
-    // TODO: More sophisticated
-    require(_reserves[reserveId].asset != address(0), InvalidReserve(reserveId));
-    require(
-      params.liquidityPremium <= PercentageMath.PERCENTAGE_FACTOR * 10,
-      InvalidLiquidityPremium(params.liquidityPremium)
-    );
-    // TODO: AccessControl
-    _reserves[reserveId].config = DataTypes.ReserveConfig({
-      lt: params.lt,
-      lb: params.lb,
-      liquidityPremium: params.liquidityPremium,
-      borrowable: params.borrowable,
-      collateral: params.collateral
-    });
-  }
-
-  // todo: access control, general setter like maker's dss, flag engine like v3
-  function updateLiquidityPremium(uint256 reserveId, uint256 liquidityPremium) external {
-    require(_reserves[reserveId].asset != address(0), InvalidReserve(reserveId));
-    require(
-      liquidityPremium <= PercentageMath.PERCENTAGE_FACTOR * 10,
-      InvalidLiquidityPremium(liquidityPremium)
-    );
-    _reserves[reserveId].config.liquidityPremium = liquidityPremium;
   }
 
   // public
