@@ -679,6 +679,7 @@ contract LiquidityHubWithdrawTest is LiquidityHubBase {
 
     // advance time, but no accumulation
     skip(1e18);
+    vm.prank(address(spoke1));
     vm.expectRevert(abi.encodeWithSelector(ILiquidityHub.SuppliedAmountExceeded.selector, amount));
     hub.withdraw({assetId: assetId, amount: amount + 1, riskPremium: 0, to: alice});
   }

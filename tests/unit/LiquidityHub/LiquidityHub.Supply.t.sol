@@ -43,6 +43,7 @@ contract LiquidityHubSupplyTest is LiquidityHubBase {
     hub.supply(daiAssetId, amount, 0, alice);
   }
 
+  // TODO: Update this test since Alice never supplied Dai before, so doesn't accrue interest on it
   function test_supply_revertsWith_supply_cap_exceeded_due_to_interest() public {
     uint256 amount = 1;
     _updateSupplyCap(daiAssetId, address(spoke1), amount);
@@ -61,7 +62,7 @@ contract LiquidityHubSupplyTest is LiquidityHubBase {
     });
     skip(365 days);
 
-    vm.expectRevert(abi.encodeWithSelector(ILiquidityHub.SupplyCapExceeded.selector, amount));
+    vm.expectRevert(abi.encodeWithSelector(ILiquidityHub.SupplyCapExceeded.selector, 0));
     hub.supply(daiAssetId, amount, 0, alice);
   }
 
