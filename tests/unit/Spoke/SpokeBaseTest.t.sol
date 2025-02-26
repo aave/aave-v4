@@ -29,7 +29,7 @@ contract SpokeBaseTest is BaseTest {
     initEnvironment();
   }
 
-  // increase share conversion index on borrowed asset
+  // increase share conversion index on borrow asset
   /// @return supplyAmount of borrowed asset
   /// @return supplyShares of collateral asset
   function _increaseShareConversionIndex(
