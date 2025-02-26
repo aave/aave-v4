@@ -30,8 +30,8 @@ contract SpokeBaseTest is BaseTest {
   }
 
   // increase share conversion index on borrow asset
-  /// @return supplyAmount of borrowed asset
   /// @return supplyShares of collateral asset
+  /// @return supplyShares of borrowed asset
   function _increaseShareConversionIndex(
     TestReserve memory collateral,
     TestReserve memory borrow,
