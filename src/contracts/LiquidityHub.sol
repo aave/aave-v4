@@ -31,33 +31,6 @@ contract LiquidityHub is ILiquidityHub {
   IERC20[] public assetsList; // TODO: Check if Enumerable or Set makes more sense
   uint256 public assetCount;
 
-  //
-  // External
-  //
-
-  function getAsset(uint256 assetId) external view returns (DataTypes.Asset memory) {
-    return _assets[assetId];
-  }
-
-  function getSpoke(
-    uint256 assetId,
-    address spoke
-  ) external view returns (DataTypes.SpokeData memory) {
-    return _spokes[assetId][spoke];
-  }
-
-  function getSpokeConfig(
-    uint256 assetId,
-    address spoke
-  ) external view returns (DataTypes.SpokeConfig memory) {
-    return _spokes[assetId][spoke].config;
-  }
-
-  function getTotalAssets(uint256 assetId) external view returns (uint256) {
-    DataTypes.Asset storage asset = _assets[assetId];
-    return asset.getTotalAssets();
-  }
-
   // /////
   // Governance
   // /////
@@ -83,7 +56,7 @@ contract LiquidityHub is ILiquidityHub {
     });
     assetCount++;
 
-    // TODO: emit event
+    emit AssetAdded(assetCount - 1, asset);
   }
 
   function updateAssetConfig(uint256 assetId, DataTypes.AssetConfig memory config) external {
@@ -94,7 +67,7 @@ contract LiquidityHub is ILiquidityHub {
       irStrategy: config.irStrategy
     });
 
-    // TODO: emit event
+    emit AssetConfigUpdated(assetId, config.decimals, config.active, config.irStrategy);
   }
 
   function addSpoke(uint256 assetId, DataTypes.SpokeConfig memory config, address spoke) external {
@@ -126,7 +99,7 @@ contract LiquidityHub is ILiquidityHub {
       supplyCap: config.supplyCap
     });
 
-    // TODO: emit event
+    emit SpokeConfigUpdated(assetId, spoke, config.drawCap, config.supplyCap);
   }
 
   // /////
@@ -281,6 +254,29 @@ contract LiquidityHub is ILiquidityHub {
 
   function previewNextBorrowIndex(uint256 assetId) public view returns (uint256) {
     return _assets[assetId].previewNextBorrowIndex();
+  }
+
+  function getAsset(uint256 assetId) external view returns (DataTypes.Asset memory) {
+    return _assets[assetId];
+  }
+
+  function getSpoke(
+    uint256 assetId,
+    address spoke
+  ) external view returns (DataTypes.SpokeData memory) {
+    return _spokes[assetId][spoke];
+  }
+
+  function getSpokeConfig(
+    uint256 assetId,
+    address spoke
+  ) external view returns (DataTypes.SpokeConfig memory) {
+    return _spokes[assetId][spoke].config;
+  }
+
+  function getTotalAssets(uint256 assetId) external view returns (uint256) {
+    DataTypes.Asset storage asset = _assets[assetId];
+    return asset.getTotalAssets();
   }
 
   function convertToSharesUp(uint256 assetId, uint256 assets) external view returns (uint256) {

@@ -20,6 +20,19 @@ interface ILiquidityHub {
   event Draw(uint256 indexed assetId, address indexed spoke, address indexed to, uint256 amount);
   event Restore(uint256 indexed assetId, address indexed spoke, uint256 amount);
   event SpokeAdded(uint256 indexed assetId, address indexed spoke);
+  event AssetAdded(uint256 indexed assetId, address indexed asset);
+  event AssetConfigUpdated(
+    uint256 indexed assetId,
+    uint256 decimals,
+    bool active,
+    address irStrategy
+  );
+  event SpokeConfigUpdated(
+    uint256 indexed assetId,
+    address indexed spoke,
+    uint256 drawCap,
+    uint256 supplyCap
+  );
 
   error MismatchedConfigs();
   error InvalidSharesAmount(uint256 sharesAmount);
