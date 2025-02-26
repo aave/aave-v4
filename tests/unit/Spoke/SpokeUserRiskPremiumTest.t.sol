@@ -86,6 +86,7 @@ contract SpokeUserRiskPremiumTest is BaseTest {
     params.daiLP = spoke1.getLiquidityPremium(params.daiReserveId);
 
     // Bob supply dai into spoke1
+    deal(address(tokenList.dai), bob, params.supplyAmount);
     Utils.spokeSupply(spoke1, params.daiReserveId, bob, params.supplyAmount, bob);
     Utils.setUsingAsCollateral(spoke1, bob, params.daiReserveId, true);
     Utils.spokeBorrow(spoke1, params.daiReserveId, bob, params.borrowAmount, bob);
@@ -455,7 +456,7 @@ contract SpokeUserRiskPremiumTest is BaseTest {
   ) public {
     uint256 totalBorrowAmount = MAX_SUPPLY_AMOUNT / 2;
     daiSupplyAmount = bound(daiSupplyAmount, 0, totalBorrowAmount);
-    usdxSupplyAmount = bound(usdxSupplyAmount, 0, totalBorrowAmount - daiSupplyAmount);
+    usdxSupplyAmount = bound(usdxSupplyAmount, 0, totalBorrowAmount - daiSupplyAmount) / 1e12;
 
     TestInfo memory params;
     params.daiReserveId = spokeInfo[spoke3].dai.reserveId;
@@ -465,24 +466,28 @@ contract SpokeUserRiskPremiumTest is BaseTest {
 
     params.daiSupplyAmount = daiSupplyAmount;
     params.usdxSupplyAmount = usdxSupplyAmount;
-    params.wethSupplyAmount = totalBorrowAmount - daiSupplyAmount - usdxSupplyAmount;
+    params.wethSupplyAmount = totalBorrowAmount - daiSupplyAmount - usdxSupplyAmount * 1e12;
     params.wbtcSupplyAmount = MAX_SUPPLY_AMOUNT;
 
     // Each weth is 2000 stablecoins; each wbtc is 50000
     params.wbtcBorrowAmount =
-      (params.daiSupplyAmount + params.usdxSupplyAmount + (params.wethSupplyAmount * 2000)) /
-      50000;
+      (params.daiSupplyAmount *
+        1e8 +
+        params.usdxSupplyAmount *
+        1e12 +
+        (params.wethSupplyAmount * 2000e8)) /
+      50000e8;
 
     params.daiLP = spoke3.getLiquidityPremium(params.daiReserveId);
     params.usdxLP = spoke3.getLiquidityPremium(params.usdxReserveId);
     params.wethLP = spoke3.getLiquidityPremium(params.wethReserveId);
 
     vm.assume(
-      params.daiSupplyAmount + params.usdxSupplyAmount + params.wethSupplyAmount ==
+      params.daiSupplyAmount + params.usdxSupplyAmount * 1e12 + params.wethSupplyAmount ==
         totalBorrowAmount
     );
     assertEq(
-      params.daiSupplyAmount + params.usdxSupplyAmount + params.wethSupplyAmount,
+      params.daiSupplyAmount + params.usdxSupplyAmount * 1e12 + params.wethSupplyAmount,
       totalBorrowAmount,
       'supply amounts'
     );
@@ -512,19 +517,15 @@ contract SpokeUserRiskPremiumTest is BaseTest {
     Utils.spokeBorrow(spoke3, params.wbtcReserveId, bob, params.wbtcBorrowAmount, bob);
 
     // Dai, usdx, and weth will each cover part of the debt
-    uint256 expectedUserRiskPremium = ((params.daiLP *
-      params.daiSupplyAmount *
-      oracle.getAssetPrice(daiAssetId) +
+    uint256 expectedUserRiskPremium = (params.daiLP *
+      _normalizedValue(params.daiSupplyAmount, daiAssetId) +
       params.usdxLP *
-      params.usdxSupplyAmount *
-      oracle.getAssetPrice(usdxAssetId)) +
-      (params.wethSupplyAmount * oracle.getAssetPrice(wethAssetId) * params.wethLP)) /
-      (params.daiSupplyAmount *
-        oracle.getAssetPrice(daiAssetId) +
-        params.usdxSupplyAmount *
-        oracle.getAssetPrice(usdxAssetId) +
-        params.wethSupplyAmount *
-        oracle.getAssetPrice(wethAssetId));
+      _normalizedValue(params.usdxSupplyAmount, usdxAssetId) +
+      params.wethLP *
+      _normalizedValue(params.wethSupplyAmount, wethAssetId)) /
+      (_normalizedValue(params.daiSupplyAmount, daiAssetId) +
+        _normalizedValue(params.usdxSupplyAmount, usdxAssetId) +
+        _normalizedValue(params.wethSupplyAmount, wethAssetId));
 
     assertApproxEqAbs(
       spoke3.getUserRiskPremium(bob),
