@@ -18,7 +18,7 @@ import {DataTypes} from 'src/libraries/types/DataTypes.sol';
 import {TestnetERC20} from './mocks/TestnetERC20.sol';
 import {MockERC20} from './mocks/MockERC20.sol';
 import {MockPriceOracle, IPriceOracle} from './mocks/MockPriceOracle.sol';
-import {Utils} from './Utils.t.sol';
+import {Utils} from './Utils.sol';
 
 // library Constants {}
 

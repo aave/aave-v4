@@ -2,7 +2,6 @@
 pragma solidity ^0.8.0;
 
 import 'tests/scenario/liquidityHub/LiquidityHub.ScenarioBase.t.sol';
-import {Utils} from 'tests/Utils.t.sol';
 
 contract BorrowIndex_Scenario1Test is LiquidityHubScenarioBase {
   using SharesMath for uint256;

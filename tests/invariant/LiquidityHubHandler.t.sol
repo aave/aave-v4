@@ -8,7 +8,7 @@ import {Spoke} from 'src/contracts/Spoke.sol';
 import {IERC20} from 'src/dependencies/openzeppelin/IERC20.sol';
 import '../mocks/MockPriceOracle.sol';
 import '../mocks/MockERC20.sol';
-import '../Utils.t.sol';
+import '../Utils.sol';
 import 'src/contracts/DefaultReserveInterestRateStrategy.sol';
 
 contract LiquidityHubHandler is Test {
