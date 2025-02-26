@@ -161,17 +161,6 @@ contract SpokeRiskPremiumScenarioTest is BaseTest {
     assertEq(hub.getSpokeRiskPremium(daiAssetId, address(spoke1)), 0);
   }
 
-  function _usdxReserveId(Spoke spoke) internal view returns (uint256) {
-    return spokeInfo[spoke].usdx.reserveId;
-  }
-  function _daiReserveId(Spoke spoke) internal view returns (uint256) {
-    return spokeInfo[spoke].dai.reserveId;
-  }
-
-  function _wethReserveId(Spoke spoke) internal view returns (uint256) {
-    return spokeInfo[spoke].weth.reserveId;
-  }
-
   function _getValueInBaseCurrency(
     uint256 assetId,
     uint256 amount

@@ -524,4 +524,15 @@ abstract contract BaseTest is Test, Events {
   function randomizer(uint256 min, uint256 max, uint256) internal returns (uint256) {
     return vm.randomUint(min, max);
   }
+
+  function _usdxReserveId(Spoke spoke) internal view returns (uint256) {
+    return spokeInfo[spoke].usdx.reserveId;
+  }
+  function _daiReserveId(Spoke spoke) internal view returns (uint256) {
+    return spokeInfo[spoke].dai.reserveId;
+  }
+
+  function _wethReserveId(Spoke spoke) internal view returns (uint256) {
+    return spokeInfo[spoke].weth.reserveId;
+  }
 }

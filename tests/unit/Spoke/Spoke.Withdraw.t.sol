@@ -347,7 +347,7 @@ contract SpokeWithdrawTest is SpokeBaseTest {
     // set weth LP to 0 for no premium contribution
     Utils.updateLiquidityPremium({
       spoke: spoke1,
-      reserveId: _wethLiquidityPremium(),
+      reserveId: _wethReserveId(spoke1),
       newLiquidityPremium: 0
     });
 
