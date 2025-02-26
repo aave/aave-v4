@@ -595,12 +595,4 @@ contract SpokeSupplyTest is SpokeBaseTest {
       'user lastUpdateTimestamp post-supply'
     );
   }
-
-  function _wethLiquidityPremium() internal view returns (uint256) {
-    return spokeInfo[spoke1].weth.reserveId;
-  }
-
-  function _daiLiquidityPremium() internal view returns (uint256) {
-    return spokeInfo[spoke1].dai.reserveId;
-  }
 }

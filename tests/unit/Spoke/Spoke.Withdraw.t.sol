@@ -344,6 +344,13 @@ contract SpokeWithdrawTest is SpokeBaseTest {
   }
 
   function test_withdraw_all_liquidity_with_interest_no_premium() public {
+    // set weth LP to 0 for no premium contribution
+    Utils.updateLiquidityPremium({
+      spoke: spoke1,
+      reserveId: _wethLiquidityPremium(),
+      newLiquidityPremium: 0
+    });
+
     State memory state;
     state.reserveId = spokeInfo[spoke1].dai.reserveId;
     state.collateralReserveId = spokeInfo[spoke1].weth.reserveId;
@@ -603,7 +610,7 @@ contract SpokeWithdrawTest is SpokeBaseTest {
     uint256 expectedPremium = (reserveData[stage].data.baseDebt -
       state.borrowAmount.rayMul(reserveData[stage - 1].cumulatedBaseInterest)).percentMul(
         reserveData[stage].data.riskPremium
-      ); // 2 stages of accumulation
+      ) + reserveData[1].data.outstandingPremium;
 
     // reserve
     assertEq(reserveData[stage].data.baseDebt, expectedBaseDebt, 'reserveData base debt');
