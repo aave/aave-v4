@@ -30,7 +30,7 @@ contract LiquidityHubSupplyTest is LiquidityHubBase {
     Utils.updateAssetActive(hub, daiAssetId, false);
 
     vm.prank(address(spoke1));
-    vm.expectRevert(TestErrors.ASSET_NOT_ACTIVE);
+    vm.expectRevert(abi.encodeWithSelector(ILiquidityHub.AssetNotActive.selector, daiAssetId));
     hub.supply(daiAssetId, amount, 0, alice);
   }
 
@@ -38,7 +38,8 @@ contract LiquidityHubSupplyTest is LiquidityHubBase {
     uint256 amount = 100e18;
     _updateSupplyCap(daiAssetId, address(spoke1), amount - 1);
 
-    vm.expectRevert(TestErrors.SUPPLY_CAP_EXCEEDED);
+    vm.expectRevert(abi.encodeWithSelector(ILiquidityHub.SupplyCapExceeded.selector, amount - 1));
+    vm.prank(address(spoke1));
     hub.supply(daiAssetId, amount, 0, alice);
   }
 
@@ -60,7 +61,7 @@ contract LiquidityHubSupplyTest is LiquidityHubBase {
     });
     skip(365 days);
 
-    vm.expectRevert(TestErrors.SUPPLY_CAP_EXCEEDED);
+    vm.expectRevert(abi.encodeWithSelector(ILiquidityHub.SupplyCapExceeded.selector, amount));
     hub.supply(daiAssetId, amount, 0, alice);
   }
 
@@ -366,7 +367,7 @@ contract LiquidityHubSupplyTest is LiquidityHubBase {
     uint256 amount = 0;
 
     vm.prank(address(spoke1));
-    vm.expectRevert(TestErrors.INVALID_SUPPLY_AMOUNT);
+    vm.expectRevert(abi.encodeWithSelector(ILiquidityHub.InvalidSupplyAmount.selector, amount));
     hub.supply(assetId, amount, 0, alice);
   }
 
@@ -393,7 +394,7 @@ contract LiquidityHubSupplyTest is LiquidityHubBase {
     // supply < 1 share
     uint256 amount = 1;
     vm.prank(address(spoke1));
-    vm.expectRevert(TestErrors.INVALID_SHARES_AMOUNT);
+    vm.expectRevert(abi.encodeWithSelector(ILiquidityHub.InvalidSharesAmount.selector, 0));
     hub.supply(daiAssetId, amount, 0, alice);
   }
 

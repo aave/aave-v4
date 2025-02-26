@@ -3,7 +3,7 @@ pragma solidity ^0.8.0;
 
 import {SafeERC20} from 'src/dependencies/openzeppelin/SafeERC20.sol';
 import {IERC20} from 'src/dependencies/openzeppelin/IERC20.sol';
-import {ILiquidityHub, LiquidityHubErrors} from 'src/interfaces/ILiquidityHub.sol';
+import {ILiquidityHub} from 'src/interfaces/ILiquidityHub.sol';
 import {DataTypes} from 'src/libraries/types/DataTypes.sol';
 import {AssetLogic} from 'src/contracts/AssetLogic.sol';
 import {SpokeDataLogic} from 'src/contracts/SpokeDataLogic.sol';
@@ -109,7 +109,7 @@ contract LiquidityHub is ILiquidityHub {
   ) external {
     // TODO: AccessControl
 
-    require(assetIds.length == configs.length, LiquidityHubErrors.MISMATCHED_CONFIGS);
+    require(assetIds.length == configs.length, MismatchedConfigs());
     for (uint256 i; i < assetIds.length; i++) {
       _addSpoke(assetIds[i], configs[i], spoke);
     }
@@ -158,7 +158,7 @@ contract LiquidityHub is ILiquidityHub {
 
     // todo: Mitigate inflation attack (burn some amount if first supply)
     uint256 sharesAmount = asset.convertToSharesDown(amount);
-    require(sharesAmount > 0, LiquidityHubErrors.INVALID_SHARES_AMOUNT);
+    require(sharesAmount > 0, InvalidSharesAmount(sharesAmount));
 
     asset.availableLiquidity += amount;
     asset.suppliedShares += sharesAmount;
@@ -191,7 +191,7 @@ contract LiquidityHub is ILiquidityHub {
     _updateRiskPremiumAndBaseDebt(asset, spoke, _boundBps(riskPremium).rayify(), 0); // no base debt change
 
     uint256 sharesAmount = asset.convertToSharesDown(amount);
-    require(sharesAmount > 0, LiquidityHubErrors.INVALID_SHARES_AMOUNT);
+    require(sharesAmount > 0, InvalidSharesAmount(sharesAmount));
 
     asset.suppliedShares -= sharesAmount;
     asset.availableLiquidity -= amount;
@@ -369,14 +369,14 @@ contract LiquidityHub is ILiquidityHub {
     DataTypes.SpokeData storage spoke,
     uint256 amount
   ) internal view {
-    require(amount > 0, LiquidityHubErrors.INVALID_SUPPLY_AMOUNT);
-    require(assetsList[asset.id] != IERC20(address(0)), LiquidityHubErrors.ASSET_NOT_LISTED);
+    require(amount > 0, InvalidSupplyAmount(amount));
+    require(assetsList[asset.id] != IERC20(address(0)), AssetNotListed(asset.id));
     // TODO: Different states e.g. frozen, paused
-    require(asset.config.active, LiquidityHubErrors.ASSET_NOT_ACTIVE);
+    require(asset.config.active, AssetNotActive(asset.id));
     require(
       spoke.config.supplyCap == type(uint256).max ||
         asset.convertToAssetsDown(spoke.suppliedShares) + amount <= spoke.config.supplyCap,
-      LiquidityHubErrors.SUPPLY_CAP_EXCEEDED
+      SupplyCapExceeded(spoke.config.supplyCap)
     );
   }
 
@@ -387,13 +387,11 @@ contract LiquidityHub is ILiquidityHub {
   ) internal view {
     // TODO: Other cases of status (frozen, paused)
     // TODO: still allow withdrawal even if asset is not active, only prevent for frozen/paused?
-    require(asset.config.active, LiquidityHubErrors.ASSET_NOT_ACTIVE);
-    require(amount > 0, LiquidityHubErrors.INVALID_WITHDRAW_AMOUNT);
-    require(
-      amount <= asset.convertToAssetsDown(spoke.suppliedShares) - spoke.baseDebt,
-      LiquidityHubErrors.SUPPLIED_AMOUNT_EXCEEDED
-    );
-    require(amount <= asset.availableLiquidity, LiquidityHubErrors.NOT_AVAILABLE_LIQUIDITY);
+    require(asset.config.active, AssetNotActive(asset.id));
+    require(amount > 0, InvalidWithdrawAmount(amount));
+    uint256 withdrawable = asset.convertToAssetsDown(spoke.suppliedShares) - spoke.baseDebt;
+    require(amount <= withdrawable, SuppliedAmountExceeded(withdrawable));
+    require(amount <= asset.availableLiquidity, NotAvailableLiquidity(asset.availableLiquidity));
   }
 
   function _validateDraw(
@@ -402,13 +400,13 @@ contract LiquidityHub is ILiquidityHub {
     uint256 drawCap
   ) internal view {
     // TODO: Other cases of status (frozen, paused)
-    require(asset.config.active, LiquidityHubErrors.ASSET_NOT_ACTIVE);
-    require(amount > 0, LiquidityHubErrors.INVALID_DRAW_AMOUNT);
+    require(asset.config.active, AssetNotActive(asset.id));
+    require(amount > 0, InvalidDrawAmount(amount));
     require(
       drawCap == type(uint256).max || amount + asset.baseDebt <= drawCap,
-      LiquidityHubErrors.DRAW_CAP_EXCEEDED
+      DrawCapExceeded(drawCap)
     );
-    require(amount <= asset.availableLiquidity, LiquidityHubErrors.NOT_AVAILABLE_LIQUIDITY);
+    require(amount <= asset.availableLiquidity, NotAvailableLiquidity(asset.availableLiquidity));
   }
 
   function _validateRestore(
@@ -417,11 +415,11 @@ contract LiquidityHub is ILiquidityHub {
     uint256 amountRestored
   ) internal view {
     // TODO: Other cases of status (frozen, paused)
-    require(asset.config.active, LiquidityHubErrors.ASSET_NOT_ACTIVE);
+    require(asset.config.active, AssetNotActive(asset.id));
     // Ensure spoke is not restoring more than accrued drawn or equal 0
     require(
       amountRestored > 0 && amountRestored <= spoke.baseDebt + spoke.outstandingPremium,
-      LiquidityHubErrors.INVALID_RESTORE_AMOUNT
+      InvalidRestoreAmount(amountRestored)
     );
   }
 
@@ -476,7 +474,7 @@ contract LiquidityHub is ILiquidityHub {
   }
 
   function _addSpoke(uint256 assetId, DataTypes.SpokeConfig memory config, address spoke) internal {
-    require(spoke != address(0), LiquidityHubErrors.INVALID_SPOKE);
+    require(spoke != address(0), InvalidSpoke(spoke));
     _spokes[assetId][spoke] = DataTypes.SpokeData({
       suppliedShares: 0,
       baseDebt: 0,
@@ -514,7 +512,7 @@ contract LiquidityHub is ILiquidityHub {
   }
 
   function _boundBps(uint32 a) internal pure returns (uint256) {
-    require(a < 1000_00, LiquidityHubErrors.INVALID_BPS);
+    require(a < 1000_00, InvalidBps(a));
     return uint256(a);
   }
 }

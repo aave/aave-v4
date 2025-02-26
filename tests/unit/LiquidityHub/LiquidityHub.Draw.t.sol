@@ -359,21 +359,21 @@ contract LiquidityHubDrawTest is LiquidityHubBase {
     uint256 drawAmount = 1;
     Utils.updateAssetActive(hub, daiAssetId, false);
     vm.prank(address(spoke1));
-    vm.expectRevert(TestErrors.ASSET_NOT_ACTIVE);
+    vm.expectRevert(abi.encodeWithSelector(ILiquidityHub.AssetNotActive.selector, daiAssetId));
     hub.draw({assetId: daiAssetId, amount: drawAmount, riskPremium: 0, to: address(spoke1)});
   }
 
   function test_draw_revertsWith_not_available_liquidity() public {
     uint256 drawAmount = 1;
     vm.prank(address(spoke1));
-    vm.expectRevert(TestErrors.NOT_AVAILABLE_LIQUIDITY);
+    vm.expectRevert(abi.encodeWithSelector(ILiquidityHub.NotAvailableLiquidity.selector, 0));
     hub.draw({assetId: daiAssetId, amount: drawAmount, riskPremium: 0, to: address(spoke1)});
   }
 
   function test_draw_revertsWith_invalid_draw_amount() public {
     uint256 drawAmount = 0;
     vm.prank(address(spoke1));
-    vm.expectRevert(TestErrors.INVALID_DRAW_AMOUNT);
+    vm.expectRevert(abi.encodeWithSelector(ILiquidityHub.InvalidDrawAmount.selector, drawAmount));
     hub.draw({assetId: daiAssetId, amount: drawAmount, riskPremium: 0, to: address(spoke1)});
   }
 
@@ -399,7 +399,7 @@ contract LiquidityHubDrawTest is LiquidityHubBase {
     vm.startPrank(address(spoke1));
     hub.restore({assetId: daiAssetId, amount: 1, riskPremium: 0, repayer: alice});
 
-    vm.expectRevert(TestErrors.DRAW_CAP_EXCEEDED);
+    vm.expectRevert(abi.encodeWithSelector(ILiquidityHub.DrawCapExceeded.selector, drawCap));
     hub.draw({assetId: daiAssetId, amount: 1, riskPremium: 0, to: bob});
     vm.stopPrank();
   }
@@ -412,7 +412,7 @@ contract LiquidityHubDrawTest is LiquidityHubBase {
     Utils.updateDrawCap(hub, daiAssetId, address(spoke1), drawCap);
 
     vm.prank(address(spoke1));
-    vm.expectRevert(TestErrors.DRAW_CAP_EXCEEDED);
+    vm.expectRevert(abi.encodeWithSelector(ILiquidityHub.DrawCapExceeded.selector, drawCap));
     hub.draw({assetId: daiAssetId, amount: drawAmount, riskPremium: 0, to: address(spoke1)});
   }
 }

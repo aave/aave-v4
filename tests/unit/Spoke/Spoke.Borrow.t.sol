@@ -17,7 +17,7 @@ contract SpokeBorrowTest is Base {
 
     // Bob try to draw some dai
     vm.prank(bob);
-    vm.expectRevert(ISpoke.ReserveNotBorrowable.selector);
+    vm.expectRevert(abi.encodeWithSelector(ISpoke.ReserveNotBorrowable.selector, daiReserveId));
     spoke1.borrow(daiReserveId, 1, bob);
   }
 
@@ -29,7 +29,7 @@ contract SpokeBorrowTest is Base {
 
     // Bob try to draw some dai
     vm.prank(bob);
-    vm.expectRevert(TestErrors.ASSET_NOT_ACTIVE);
+    vm.expectRevert(abi.encodeWithSelector(ILiquidityHub.AssetNotActive.selector, daiAssetId));
     spoke1.borrow(daiReserveId, 1, bob);
   }
 
@@ -143,14 +143,16 @@ contract SpokeBorrowTest is Base {
 
     // Bob draw more than supplied dai amount
     vm.prank(bob);
-    vm.expectRevert(TestErrors.NOT_AVAILABLE_LIQUIDITY);
+    vm.expectRevert(
+      abi.encodeWithSelector(ILiquidityHub.NotAvailableLiquidity.selector, daiAmount)
+    );
     spoke1.borrow(daiReserveId, daiAmount + 1, bob);
   }
 
   function test_borrow_revertsWith_invalid_draw_amount() public {
     // Bob draw 0 dai
     vm.prank(bob);
-    vm.expectRevert(TestErrors.INVALID_DRAW_AMOUNT);
+    vm.expectRevert(abi.encodeWithSelector(ILiquidityHub.InvalidDrawAmount.selector, 0));
     spoke1.borrow(spokeInfo[spoke1].dai.reserveId, 0, bob);
   }
 
@@ -251,7 +253,7 @@ contract SpokeBorrowTest is Base {
 
     // Bob borrow dai amount exceeding draw cap
     vm.prank(bob);
-    vm.expectRevert(TestErrors.DRAW_CAP_EXCEEDED);
+    vm.expectRevert(abi.encodeWithSelector(ILiquidityHub.DrawCapExceeded.selector, drawCap));
     spoke1.borrow(daiReserveId, drawAmount, bob);
   }
 
@@ -280,7 +282,7 @@ contract SpokeBorrowTest is Base {
     // Additional supply to accrue interest
     Utils.spokeSupply(spoke1, daiReserveId, bob, 1e18, bob);
 
-    vm.expectRevert(TestErrors.DRAW_CAP_EXCEEDED);
+    vm.expectRevert(abi.encodeWithSelector(ILiquidityHub.DrawCapExceeded.selector, drawCap));
     Utils.spokeBorrow(spoke1, daiReserveId, bob, 1, bob);
   }
 

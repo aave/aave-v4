@@ -10,6 +10,32 @@ import {DataTypes} from 'src/libraries/types/DataTypes.sol';
  * @notice Basic interface for LiquidityHub
  */
 interface ILiquidityHub {
+  event Supply(uint256 indexed assetId, address indexed spoke, uint256 amount);
+  event Withdraw(
+    uint256 indexed assetId,
+    address indexed spoke,
+    address indexed to,
+    uint256 amount
+  );
+  event Draw(uint256 indexed assetId, address indexed spoke, address indexed to, uint256 amount);
+  event Restore(uint256 indexed assetId, address indexed spoke, uint256 amount);
+  event SpokeAdded(uint256 indexed assetId, address indexed spoke);
+
+  error MismatchedConfigs();
+  error InvalidSharesAmount(uint256 sharesAmount);
+  error InvalidSupplyAmount(uint256 suppliedAmount);
+  error AssetNotListed(uint256 assetId);
+  error AssetNotActive(uint256 assetId);
+  error SupplyCapExceeded(uint256 supplyCap);
+  error InvalidWithdrawAmount(uint256 withdrawAmount);
+  error SuppliedAmountExceeded(uint256 suppliedAmount);
+  error NotAvailableLiquidity(uint256 availableLiquidity);
+  error InvalidDrawAmount(uint256 drawAmount);
+  error DrawCapExceeded(uint256 drawCap);
+  error InvalidRestoreAmount(uint256 restoreAmount);
+  error InvalidSpoke(address spoke);
+  error InvalidBps(uint256 bps);
+
   /**
    * @notice Supply asset on behalf of user.
    * @dev Only callable by spokes.
@@ -114,37 +140,4 @@ interface ILiquidityHub {
   function convertToAssetsDown(uint256 assetId, uint256 shares) external view returns (uint256);
   function convertToSharesUp(uint256 assetId, uint256 assets) external view returns (uint256);
   function convertToSharesDown(uint256 assetId, uint256 assets) external view returns (uint256);
-
-  event Supply(uint256 indexed assetId, address indexed spoke, uint256 amount);
-  event Withdraw(
-    uint256 indexed assetId,
-    address indexed spoke,
-    address indexed to,
-    uint256 amount
-  );
-  event Draw(uint256 indexed assetId, address indexed spoke, address indexed to, uint256 amount);
-  event Restore(uint256 indexed assetId, address indexed spoke, uint256 amount);
-  event SpokeAdded(uint256 indexed assetId, address indexed spoke);
-}
-
-/**
- * @title Liquidity Hub Errors Library
- * @author Aave Labs
- * @notice Defines the error messages emitted by the LiquidityHub
- */
-library LiquidityHubErrors {
-  string public constant MISMATCHED_CONFIGS = 'MISMATCHED_CONFIGS';
-  string public constant INVALID_SHARES_AMOUNT = 'INVALID_SHARES_AMOUNT';
-  string public constant INVALID_SUPPLY_AMOUNT = 'INVALID_SUPPLY_AMOUNT';
-  string public constant ASSET_NOT_LISTED = 'ASSET_NOT_LISTED';
-  string public constant ASSET_NOT_ACTIVE = 'ASSET_NOT_ACTIVE';
-  string public constant SUPPLY_CAP_EXCEEDED = 'SUPPLY_CAP_EXCEEDED';
-  string public constant INVALID_WITHDRAW_AMOUNT = 'INVALID_WITHDRAW_AMOUNT';
-  string public constant SUPPLIED_AMOUNT_EXCEEDED = 'SUPPLIED_AMOUNT_EXCEEDED';
-  string public constant NOT_AVAILABLE_LIQUIDITY = 'NOT_AVAILABLE_LIQUIDITY';
-  string public constant INVALID_DRAW_AMOUNT = 'INVALID_DRAW_AMOUNT';
-  string public constant DRAW_CAP_EXCEEDED = 'DRAW_CAP_EXCEEDED';
-  string public constant INVALID_RESTORE_AMOUNT = 'INVALID_RESTORE_AMOUNT';
-  string public constant INVALID_SPOKE = 'INVALID_SPOKE';
-  string public constant INVALID_BPS = 'INVALID_BPS';
 }

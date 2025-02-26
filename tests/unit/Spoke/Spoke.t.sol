@@ -30,7 +30,9 @@ contract SpokeTest is Base {
 
     // Bob draw half of dai reserve liquidity
     vm.prank(bob);
-    vm.expectRevert(ISpoke.ReserveNotBorrowable.selector);
+    vm.expectRevert(
+      abi.encodeWithSelector(ISpoke.ReserveNotBorrowable.selector, spokeInfo[spoke1].dai.reserveId)
+    );
     ISpoke(spoke1).borrow(spokeInfo[spoke1].dai.reserveId, daiAmount / 2, bob);
   }
 
@@ -113,7 +115,9 @@ contract SpokeTest is Base {
 
     // Bob draw more than supplied dai amount
     vm.prank(bob);
-    vm.expectRevert(TestErrors.NOT_AVAILABLE_LIQUIDITY);
+    vm.expectRevert(
+      abi.encodeWithSelector(ILiquidityHub.NotAvailableLiquidity.selector, daiAmount)
+    );
     spoke1.borrow(spokeInfo[spoke1].dai.reserveId, daiAmount + 1, bob);
   }
 
@@ -131,7 +135,7 @@ contract SpokeTest is Base {
 
     // Bob draw 0 dai
     vm.prank(bob);
-    vm.expectRevert(TestErrors.INVALID_DRAW_AMOUNT);
+    vm.expectRevert(abi.encodeWithSelector(ILiquidityHub.InvalidDrawAmount.selector, 0));
     spoke1.borrow(spokeInfo[spoke1].dai.reserveId, 0, bob);
   }
 
@@ -372,11 +376,12 @@ contract SpokeTest is Base {
   function test_setUsingAsCollateral_revertsWith_reserve_not_collateral() public {
     bool newCollateral = false;
     bool usingAsCollateral = true;
-    Utils.updateCollateral(spoke1, daiAssetId, newCollateral);
+    uint256 daiReserveId = spokeInfo[spoke1].dai.reserveId;
+    Utils.updateCollateral(spoke1, daiReserveId, newCollateral);
 
     vm.prank(bob);
-    vm.expectRevert(ISpoke.ReserveNotCollateral.selector);
-    ISpoke(spoke1).setUsingAsCollateral(daiAssetId, usingAsCollateral);
+    vm.expectRevert(abi.encodeWithSelector(ISpoke.ReserveNotCollateral.selector, daiReserveId));
+    ISpoke(spoke1).setUsingAsCollateral(daiReserveId, usingAsCollateral);
   }
 
   function test_setUsingAsCollateral() public {

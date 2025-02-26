@@ -654,7 +654,7 @@ contract LiquidityHubWithdrawTest is LiquidityHubBase {
     uint256 amount = 1;
 
     vm.prank(address(spoke1));
-    vm.expectRevert(TestErrors.SUPPLIED_AMOUNT_EXCEEDED);
+    vm.expectRevert(abi.encodeWithSelector(ILiquidityHub.SuppliedAmountExceeded.selector, 0));
     hub.withdraw({assetId: assetId, amount: amount, riskPremium: 0, to: address(spoke1)});
   }
 
@@ -674,12 +674,12 @@ contract LiquidityHubWithdrawTest is LiquidityHubBase {
     });
 
     vm.prank(address(spoke1));
-    vm.expectRevert(TestErrors.SUPPLIED_AMOUNT_EXCEEDED);
+    vm.expectRevert(abi.encodeWithSelector(ILiquidityHub.SuppliedAmountExceeded.selector, amount));
     hub.withdraw({assetId: assetId, amount: amount + 1, riskPremium: 0, to: alice});
 
     // advance time, but no accumulation
     skip(1e18);
-    vm.expectRevert(TestErrors.SUPPLIED_AMOUNT_EXCEEDED);
+    vm.expectRevert(abi.encodeWithSelector(ILiquidityHub.SuppliedAmountExceeded.selector, amount));
     hub.withdraw({assetId: assetId, amount: amount + 1, riskPremium: 0, to: alice});
   }
 
@@ -708,7 +708,7 @@ contract LiquidityHubWithdrawTest is LiquidityHubBase {
       onBehalfOf: address(spoke1)
     });
 
-    vm.expectRevert(TestErrors.SUPPLIED_AMOUNT_EXCEEDED);
+    vm.expectRevert(abi.encodeWithSelector(ILiquidityHub.SuppliedAmountExceeded.selector, 0));
 
     vm.prank(address(spoke1));
     hub.withdraw({assetId: daiAssetId, amount: amount, riskPremium: 0, to: address(spoke1)});
@@ -728,7 +728,7 @@ contract LiquidityHubWithdrawTest is LiquidityHubBase {
       to: address(spoke1)
     });
 
-    vm.expectRevert(TestErrors.INVALID_WITHDRAW_AMOUNT);
+    vm.expectRevert(abi.encodeWithSelector(ILiquidityHub.InvalidWithdrawAmount.selector, 0));
     vm.prank(address(spoke1));
     hub.withdraw({assetId: daiAssetId, amount: 0, riskPremium: 0, to: alice});
   }
@@ -737,7 +737,7 @@ contract LiquidityHubWithdrawTest is LiquidityHubBase {
     uint256 amount = 100e18;
     Utils.updateAssetActive(hub, daiAssetId, false);
 
-    vm.expectRevert(TestErrors.ASSET_NOT_ACTIVE);
+    vm.expectRevert(abi.encodeWithSelector(ILiquidityHub.AssetNotActive.selector, daiAssetId));
     vm.prank(address(spoke1));
     hub.withdraw({assetId: daiAssetId, amount: amount, riskPremium: 0, to: alice});
   }

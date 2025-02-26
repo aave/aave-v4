@@ -56,32 +56,6 @@ contract Events {
   event UsingAsCollateral(uint256 indexed assetId, bool usingAsCollateral, address indexed user);
 }
 
-library TestErrors {
-  // Aave
-  // LiquidityHub
-  bytes constant NOT_AVAILABLE_LIQUIDITY = 'NOT_AVAILABLE_LIQUIDITY';
-  bytes constant ASSET_NOT_ACTIVE = 'ASSET_NOT_ACTIVE';
-  bytes constant ASSET_NOT_LISTED = 'ASSET_NOT_LISTED';
-  bytes constant INVALID_AMOUNT = 'INVALID_AMOUNT';
-  bytes constant INVALID_SUPPLY_AMOUNT = 'INVALID_SUPPLY_AMOUNT';
-  bytes constant INVALID_DRAW_AMOUNT = 'INVALID_DRAW_AMOUNT';
-  bytes constant INVALID_WITHDRAW_AMOUNT = 'INVALID_WITHDRAW_AMOUNT';
-  bytes constant SUPPLY_CAP_EXCEEDED = 'SUPPLY_CAP_EXCEEDED';
-  bytes constant DRAW_CAP_EXCEEDED = 'DRAW_CAP_EXCEEDED';
-  bytes constant SUPPLIED_AMOUNT_EXCEEDED = 'SUPPLIED_AMOUNT_EXCEEDED';
-  bytes constant INSUFFICIENT_LIQUIDITY = 'INSUFFICIENT_LIQUIDITY';
-  bytes constant RESERVE_NOT_BORROWABLE = 'RESERVE_NOT_BORROWABLE';
-  bytes constant INVALID_RESERVE = 'INVALID_RESERVE';
-  bytes constant INVALID_SPOKE = 'INVALID_SPOKE';
-  bytes constant RESERVE_NOT_COLLATERAL = 'RESERVE_NOT_COLLATERAL';
-  bytes constant INVALID_RESTORE_AMOUNT = 'INVALID_RESTORE_AMOUNT';
-  bytes constant INVALID_SHARES_AMOUNT = 'INVALID_SHARES_AMOUNT';
-  // Spoke
-  bytes constant NO_SUPPLY = 'NO_SUPPLY';
-  bytes constant REPAY_EXCEEDS_DEBT = 'REPAY_EXCEEDS_DEBT';
-  bytes constant RESERVE_NOT_LISTED = 'RESERVE_NOT_LISTED';
-}
-
 abstract contract Base is Test, Events {
   using WadRayMath for uint256;
   using SharesMath for uint256;

@@ -295,12 +295,13 @@ contract Spoke is ISpoke {
     // TODO: validate reserveId does not exist already, valid asset
     require(
       params.liquidityPremium <= PercentageMath.PERCENTAGE_FACTOR * 10,
-      InvalidLiquidityPremium()
+      InvalidLiquidityPremium(params.liquidityPremium)
     );
 
     // TODO: AccessControl
     reservesList.push(reserveCount++);
     _reserves[_reserveCount] = DataTypes.Reserve({
+      reserveId: _reserveCount,
       assetId: assetId,
       asset: asset,
       baseDebt: 0,
@@ -327,7 +328,7 @@ contract Spoke is ISpoke {
     require(_reserves[reserveId].asset != address(0), InvalidReserve(reserveId));
     require(
       params.liquidityPremium <= PercentageMath.PERCENTAGE_FACTOR * 10,
-      InvalidLiquidityPremium()
+      InvalidLiquidityPremium(params.liquidityPremium)
     );
     // TODO: AccessControl
     _reserves[reserveId].config = DataTypes.ReserveConfig({
@@ -342,7 +343,10 @@ contract Spoke is ISpoke {
   // todo: access control, general setter like maker's dss, flag engine like v3
   function updateLiquidityPremium(uint256 reserveId, uint256 liquidityPremium) external {
     require(_reserves[reserveId].asset != address(0), InvalidReserve(reserveId));
-    require(liquidityPremium <= PercentageMath.PERCENTAGE_FACTOR * 10, InvalidLiquidityPremium());
+    require(
+      liquidityPremium <= PercentageMath.PERCENTAGE_FACTOR * 10,
+      InvalidLiquidityPremium(liquidityPremium)
+    );
     _reserves[reserveId].config.liquidityPremium = liquidityPremium;
   }
 
@@ -369,14 +373,12 @@ contract Spoke is ISpoke {
     DataTypes.UserConfig storage user,
     uint256 amount
   ) internal view {
-    require(
-      liquidityHub.convertToAssetsDown(reserve.assetId, user.suppliedShares) >= amount,
-      InsufficientSupply()
-    );
+    uint256 suppliedAmount = liquidityHub.convertToAssetsDown(reserve.assetId, user.suppliedShares);
+    require(suppliedAmount >= amount, InsufficientSupply(suppliedAmount));
   }
 
   function _validateBorrow(DataTypes.Reserve storage reserve, uint256 amount) internal view {
-    require(reserve.config.borrowable, ReserveNotBorrowable());
+    require(reserve.config.borrowable, ReserveNotBorrowable(reserve.reserveId));
     // TODO: validation on HF to allow borrowing amount
   }
 
@@ -386,7 +388,10 @@ contract Spoke is ISpoke {
     DataTypes.UserConfig storage user,
     uint256 amount
   ) internal view {
-    require(amount <= user.baseDebt + user.outstandingPremium, RepayExceedsDebt());
+    require(
+      amount <= user.baseDebt + user.outstandingPremium,
+      RepayExceedsDebt(user.baseDebt + user.outstandingPremium)
+    );
   }
 
   function _deductFromOutstandingPremium(
@@ -471,7 +476,7 @@ contract Spoke is ISpoke {
     DataTypes.Reserve storage reserve,
     DataTypes.UserConfig storage user
   ) internal view {
-    require(reserve.config.collateral, ReserveNotCollateral());
+    require(reserve.config.collateral, ReserveNotCollateral(reserve.reserveId));
   }
 
   function _usingAsCollateral(DataTypes.UserConfig storage user) internal view returns (bool) {

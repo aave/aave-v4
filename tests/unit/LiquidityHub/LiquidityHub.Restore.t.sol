@@ -50,7 +50,7 @@ contract LiquidityHubRestoreTest is LiquidityHubBase {
     Utils.updateAssetActive(hub, daiAssetId, false);
 
     // spoke1 restore all of drawn dai liquidity
-    vm.expectRevert(TestErrors.ASSET_NOT_ACTIVE);
+    vm.expectRevert(abi.encodeWithSelector(ILiquidityHub.AssetNotActive.selector, daiAssetId));
 
     vm.prank(address(spoke1));
     hub.restore({assetId: daiAssetId, amount: drawAmount, riskPremium: 0, repayer: alice});
@@ -96,14 +96,16 @@ contract LiquidityHubRestoreTest is LiquidityHubBase {
     });
 
     // alice restore invalid amount > drawn amount AND premium
-    vm.expectRevert(TestErrors.INVALID_RESTORE_AMOUNT);
+    vm.expectRevert(
+      abi.encodeWithSelector(ILiquidityHub.InvalidRestoreAmount.selector, drawAmount + 1)
+    );
 
     vm.prank(address(spoke1));
     hub.restore({assetId: daiAssetId, amount: drawAmount + 1, riskPremium: 0, repayer: alice});
   }
 
   function test_restore_revertsWith_invalid_restore_amount_zero() public {
-    vm.expectRevert(TestErrors.INVALID_RESTORE_AMOUNT);
+    vm.expectRevert(abi.encodeWithSelector(ILiquidityHub.InvalidRestoreAmount.selector, 0));
 
     vm.prank(address(spoke1));
     hub.restore({assetId: daiAssetId, amount: 0, riskPremium: 0, repayer: alice});
@@ -179,7 +181,9 @@ contract LiquidityHubRestoreTest is LiquidityHubBase {
     assertTrue(cumulatedBaseDebt > 0);
 
     // alice restore invalid amount > drawn amount (no premium)
-    vm.expectRevert(TestErrors.INVALID_RESTORE_AMOUNT);
+    vm.expectRevert(
+      abi.encodeWithSelector(ILiquidityHub.InvalidRestoreAmount.selector, cumulatedBaseDebt + 1)
+    );
 
     vm.prank(address(spoke1));
     hub.restore({
@@ -264,7 +268,9 @@ contract LiquidityHubRestoreTest is LiquidityHubBase {
     vm.assume(cumulatedBaseDebt > 0);
 
     // alice restore invalid amount > drawn amount (no premium)
-    vm.expectRevert(TestErrors.INVALID_RESTORE_AMOUNT);
+    vm.expectRevert(
+      abi.encodeWithSelector(ILiquidityHub.InvalidRestoreAmount.selector, cumulatedBaseDebt + 1)
+    );
 
     vm.prank(address(spoke1));
     hub.restore({
@@ -347,7 +353,12 @@ contract LiquidityHubRestoreTest is LiquidityHubBase {
     assertTrue(accruedPremium > 0);
 
     // alice restore invalid amount > drawn amount AND premium
-    vm.expectRevert(TestErrors.INVALID_RESTORE_AMOUNT);
+    vm.expectRevert(
+      abi.encodeWithSelector(
+        ILiquidityHub.InvalidRestoreAmount.selector,
+        cumulatedBaseDebt + accruedPremium + 1
+      )
+    );
 
     vm.prank(address(spoke1));
     hub.restore({
@@ -435,7 +446,12 @@ contract LiquidityHubRestoreTest is LiquidityHubBase {
     vm.assume(accruedPremium > 0); // accrued premium can round to 0 in edge case - ex. (cumulatedBaseDebt - drawAmount) = 1, riskPremium = 1
 
     // alice restore invalid amount > drawn amount AND premium
-    vm.expectRevert(TestErrors.INVALID_RESTORE_AMOUNT);
+    vm.expectRevert(
+      abi.encodeWithSelector(
+        ILiquidityHub.InvalidRestoreAmount.selector,
+        cumulatedBaseDebt + accruedPremium + 1
+      )
+    );
 
     vm.prank(address(spoke1));
     hub.restore({

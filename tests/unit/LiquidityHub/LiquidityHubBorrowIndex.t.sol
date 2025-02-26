@@ -130,7 +130,9 @@ contract LiquidityHubBorrowIndex is Base {
 
     assertApproxEqAbs(amount, hub.convertToAssetsDown(wethAssetId, sharesMinted), 1);
 
-    vm.expectRevert(TestErrors.SUPPLIED_AMOUNT_EXCEEDED); // should not revert
+    vm.expectRevert(
+      abi.encodeWithSelector(ILiquidityHub.SuppliedAmountExceeded.selector, amount - 1)
+    ); // should not revert
     vm.prank(address(spoke2));
     hub.withdraw(wethAssetId, amount, 0, alice);
 
@@ -141,7 +143,7 @@ contract LiquidityHubBorrowIndex is Base {
     assertEq(hub.getSpoke(wethAssetId, address(spoke2)).suppliedShares, 1); // should be zero
 
     // after zero amount check, cannot withdraw one 1 wei of shares in contract
-    vm.expectRevert(TestErrors.INVALID_SHARES_AMOUNT);
+    vm.expectRevert(abi.encodeWithSelector(ILiquidityHub.InvalidSharesAmount.selector, 0));
     vm.prank(address(spoke2));
     hub.withdraw(wethAssetId, 1, 0, alice);
 

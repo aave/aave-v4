@@ -25,11 +25,12 @@ interface ISpoke {
 
   error InvalidReserve(uint256 reserveId);
   error ReserveNotListed();
-  error InvalidLiquidityPremium();
-  error InsufficientSupply();
-  error ReserveNotBorrowable();
-  error RepayExceedsDebt();
-  error ReserveNotCollateral();
+  error InvalidLiquidityPremium(uint256 liquidityPremium);
+  error InsufficientSupply(uint256 supply);
+  error NotAvailableLiquidity(uint256 availableLiquidity);
+  error ReserveNotBorrowable(uint256 reserveId);
+  error RepayExceedsDebt(uint256 debt);
+  error ReserveNotCollateral(uint256 reserveId);
 
   function addReserve(
     uint256 assetId,

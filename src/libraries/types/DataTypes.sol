@@ -49,6 +49,7 @@ library DataTypes {
   }
 
   struct Reserve {
+    uint256 reserveId;
     uint256 assetId;
     address asset;
     uint256 baseDebt;
