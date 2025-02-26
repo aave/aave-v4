@@ -84,6 +84,7 @@ interface ILiquidityHub {
     DataTypes.SpokeConfig memory config
   ) external;
 
+  function accrueInterest(uint256 assetId, uint32 riskPremium) external;
   function previewNextBorrowIndex(uint256 assetId) external view returns (uint256);
   function getBaseInterestRate(uint256 assetId) external view returns (uint256);
 
@@ -105,6 +106,8 @@ interface ILiquidityHub {
     uint256 assetId,
     address spoke
   ) external view returns (DataTypes.SpokeConfig memory);
+
+  function getAssetConfig(uint256 assetId) external view returns (DataTypes.AssetConfig memory);
 
   // todo: remove explicit rounding
   function convertToAssetsUp(uint256 assetId, uint256 shares) external view returns (uint256);

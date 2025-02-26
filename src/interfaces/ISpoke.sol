@@ -51,8 +51,6 @@ interface ISpoke {
   function getReserveRiskPremium(uint256 reserveId) external view returns (uint256);
   function getUserRiskPremium(address user) external view returns (uint256);
   function getHealthFactor(address user) external view returns (uint256);
-  /// @dev working with bps units 10_000 = 100%
-  function getInterestRate(uint256 reserveId) external view returns (uint256);
   function getUserBaseBorrowIndex(uint256 reserveId, address user) external view returns (uint256);
 
   function getReserve(uint256 reserveId) external view returns (DataTypes.Reserve memory);

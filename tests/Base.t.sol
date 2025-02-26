@@ -269,28 +269,28 @@ abstract contract Base is Test, Events {
     DataTypes.ReserveConfig memory wethConfig = DataTypes.ReserveConfig({
       lt: 0.8e4,
       lb: 0,
-      liquidityPremium: 0,
+      liquidityPremium: 15_00,
       borrowable: true,
       collateral: true
     });
     DataTypes.ReserveConfig memory wbtcConfig = DataTypes.ReserveConfig({
       lt: 0.75e4,
       lb: 0,
-      liquidityPremium: 10,
+      liquidityPremium: 50_00,
       borrowable: true,
       collateral: true
     });
     DataTypes.ReserveConfig memory daiConfig = DataTypes.ReserveConfig({
       lt: 0.78e4,
       lb: 0,
-      liquidityPremium: 20,
+      liquidityPremium: 20_00,
       borrowable: true,
       collateral: true
     });
     DataTypes.ReserveConfig memory usdxConfig = DataTypes.ReserveConfig({
       lt: 0.78e4,
       lb: 0,
-      liquidityPremium: 50,
+      liquidityPremium: 50_00,
       borrowable: true,
       collateral: true
     });
