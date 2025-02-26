@@ -141,7 +141,7 @@ library Utils {
     hub.updateSpokeConfig(assetId, spoke, spokeConfig);
   }
 
-  function getUserSpokeInfo(
+  function getUserInfo(
     ISpoke spoke,
     address user,
     uint256 reserveId

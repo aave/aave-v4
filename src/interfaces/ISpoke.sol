@@ -4,9 +4,9 @@ pragma solidity ^0.8.0;
 import {DataTypes} from 'src/libraries/types/DataTypes.sol';
 
 /**
- * @title ILiquidityHub
+ * @title ISpoke
  * @author Aave Labs
- * @notice Basic interface for LiquidityHub
+ * @notice Basic interface for Spoke
  */
 interface ISpoke {
   event Borrowed(uint256 indexed reserveId, uint256 amount, address indexed user);

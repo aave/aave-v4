@@ -26,7 +26,6 @@ library DataTypes {
     DataTypes.AssetConfig config;
   }
 
-  // TODO: borrow cap per spoke
   struct SpokeConfig {
     uint256 drawCap; // asset denominated
     uint256 supplyCap; // asset denominated

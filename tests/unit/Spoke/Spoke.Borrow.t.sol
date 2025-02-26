@@ -6,7 +6,7 @@ import 'tests/Base.t.sol';
 contract SpokeBorrowTest is Base {
   function setUp() public override {
     super.setUp();
-    super.initEnvironment();
+    initEnvironment();
   }
 
   function test_borrow_revertsWith_reserve_not_borrowable() public {
@@ -37,66 +37,105 @@ contract SpokeBorrowTest is Base {
     uint256 daiReserveId = spokeInfo[spoke1].dai.reserveId;
     uint256 wethReserveId = spokeInfo[spoke1].weth.reserveId;
 
-    uint256 daiAmount = 100e18;
-    uint256 wethAmount = 10e18;
+    uint256 daiSupplyAmount = 100e18;
+    uint256 wethSupplyAmount = 10e18;
+    uint256 daiBorrowAmount = daiSupplyAmount / 2;
 
-    uint256 bobStartingBalance = tokenList.dai.balanceOf(bob);
-    uint256 aliceStartingBalance = tokenList.weth.balanceOf(alice);
+    uint256 bobDaiBalanceBefore = tokenList.dai.balanceOf(bob);
+    uint256 bobWethBalanceBefore = tokenList.weth.balanceOf(bob);
+    uint256 aliceDaiBalanceBefore = tokenList.dai.balanceOf(alice);
+    uint256 aliceWethBalanceBefore = tokenList.weth.balanceOf(alice);
 
     // Bob supply weth
-    Utils.spokeSupply(spoke1, wethReserveId, bob, wethAmount, bob);
+    Utils.spokeSupply(spoke1, wethReserveId, bob, wethSupplyAmount, bob);
 
     // Alice supply dai
-    Utils.spokeSupply(spoke1, daiReserveId, alice, daiAmount, alice);
+    Utils.spokeSupply(spoke1, daiReserveId, alice, daiSupplyAmount, alice);
 
-    DataTypes.UserConfig memory bobData = Utils.getUserSpokeInfo(spoke1, bob, wethReserveId);
-    DataTypes.UserConfig memory aliceData = Utils.getUserSpokeInfo(spoke1, alice, daiReserveId);
+    DataTypes.UserConfig memory bobDaiData = Utils.getUserInfo(spoke1, bob, daiReserveId);
+    DataTypes.UserConfig memory bobWethData = Utils.getUserInfo(spoke1, bob, wethReserveId);
+    DataTypes.UserConfig memory aliceDaiData = Utils.getUserInfo(spoke1, alice, daiReserveId);
+    DataTypes.UserConfig memory aliceWethData = Utils.getUserInfo(spoke1, alice, wethReserveId);
 
+    assertEq(bobDaiData.suppliedShares, 0, 'bob dai supply shares pre-draw');
+    assertEq(bobDaiData.baseDebt, 0, 'bob dai base debt pre-draw');
     assertEq(
-      bobData.suppliedShares,
-      hub.convertToShares(wethAssetId, wethAmount),
+      bobWethData.suppliedShares,
+      hub.convertToShares(wethAssetId, wethSupplyAmount),
       'bob supply shares pre-draw'
     );
-    assertEq(bobData.baseDebt, 0, 'bob base debt pre-draw');
+    assertEq(bobWethData.baseDebt, 0, 'bob weth base debt pre-draw');
     assertEq(
-      aliceData.suppliedShares,
-      hub.convertToShares(daiAssetId, daiAmount),
-      'alice supply shares pre-draw'
+      aliceDaiData.suppliedShares,
+      hub.convertToShares(daiAssetId, daiSupplyAmount),
+      'alice dai supply shares pre-draw'
     );
-    assertEq(aliceData.baseDebt, 0, 'alice base debt pre-draw');
+    assertEq(aliceDaiData.baseDebt, 0, 'alice dai base debt pre-draw');
+    assertEq(aliceWethData.suppliedShares, 0, 'alice weth supply shares pre-draw');
+    assertEq(aliceWethData.baseDebt, 0, 'alice weth base debt pre-draw');
+
     assertEq(tokenList.dai.balanceOf(address(spoke1)), 0, 'spoke1 dai balance pre-draw');
     assertEq(tokenList.weth.balanceOf(address(spoke2)), 0, 'spoke2 weth balance pre-draw');
-    assertEq(tokenList.dai.balanceOf(bob), bobStartingBalance, 'bob dai balance pre-draw');
-    assertEq(tokenList.weth.balanceOf(alice), aliceStartingBalance, 'alice weth balance pre-draw');
+    assertEq(tokenList.dai.balanceOf(bob), bobDaiBalanceBefore, 'bob dai balance pre-draw');
+    assertEq(
+      tokenList.weth.balanceOf(bob),
+      bobWethBalanceBefore - wethSupplyAmount,
+      'bob weth balance pre-draw'
+    );
+    assertEq(
+      tokenList.dai.balanceOf(alice),
+      aliceDaiBalanceBefore - daiSupplyAmount,
+      'alice dai balance pre-draw'
+    );
+    assertEq(
+      tokenList.weth.balanceOf(alice),
+      aliceWethBalanceBefore,
+      'alice weth balance pre-draw'
+    );
 
     // Bob draw half of dai reserve liquidity
     vm.prank(bob);
     vm.expectEmit(address(spoke1));
-    emit Borrowed(daiReserveId, daiAmount / 2, bob);
-    spoke1.borrow(daiReserveId, daiAmount / 2, bob);
+    emit Borrowed(daiReserveId, daiBorrowAmount, bob);
+    spoke1.borrow(daiReserveId, daiBorrowAmount, bob);
 
-    bobData = Utils.getUserSpokeInfo(spoke1, bob, wethReserveId);
-    aliceData = Utils.getUserSpokeInfo(spoke1, alice, daiReserveId);
+    bobDaiData = Utils.getUserInfo(spoke1, bob, daiReserveId);
+    bobWethData = Utils.getUserInfo(spoke1, bob, wethReserveId);
+    aliceDaiData = Utils.getUserInfo(spoke1, alice, daiReserveId);
+    aliceWethData = Utils.getUserInfo(spoke1, alice, wethReserveId);
 
-    uint256 bobEndingBalance = tokenList.dai.balanceOf(bob);
-    uint256 aliceEndingBalance = tokenList.weth.balanceOf(alice);
-
+    assertEq(bobDaiData.suppliedShares, 0, 'bob dai supply shares final balance');
     assertEq(
-      bobData.suppliedShares,
-      hub.convertToShares(wethAssetId, wethAmount),
-      'bob supply shares final balance'
+      bobWethData.suppliedShares,
+      hub.convertToShares(wethAssetId, wethSupplyAmount),
+      'bob weth supply shares final balance'
     );
-    assertEq(bobData.baseDebt, 0, 'bob base debt weth final balance');
-    bobData = spoke1.getUser(daiReserveId, bob);
-    assertEq(bobData.baseDebt, daiAmount / 2, 'bob base debt dai final balance');
+    assertEq(bobWethData.baseDebt, 0, 'bob weth base debt  final balance');
+    assertEq(bobDaiData.baseDebt, daiBorrowAmount, 'bob dai base debt final balance');
     assertEq(
-      aliceData.suppliedShares,
-      hub.convertToShares(daiAssetId, daiAmount),
-      'alice supply shares final balance'
+      aliceDaiData.suppliedShares,
+      hub.convertToShares(daiAssetId, daiSupplyAmount),
+      'alice dai supply shares final balance'
     );
-    assertEq(aliceData.baseDebt, 0, 'alice base debt final');
-    assertEq(bobEndingBalance, bobStartingBalance + (daiAmount / 2), 'bob dai final balance');
-    assertEq(aliceEndingBalance, aliceStartingBalance, 'alice weth final balance');
+    assertEq(aliceDaiData.baseDebt, 0, 'alice dai base debt final');
+    assertEq(aliceWethData.suppliedShares, 0, 'alice weth supply shares final balance');
+    assertEq(aliceWethData.baseDebt, 0, 'alice weth base debt final');
+    assertEq(
+      tokenList.dai.balanceOf(bob),
+      bobDaiBalanceBefore + daiBorrowAmount,
+      'bob dai final balance'
+    );
+    assertEq(
+      tokenList.weth.balanceOf(bob),
+      bobWethBalanceBefore - wethSupplyAmount,
+      'bob weth final balance'
+    );
+    assertEq(
+      tokenList.dai.balanceOf(alice),
+      aliceDaiBalanceBefore - daiSupplyAmount,
+      'alice dai final balance'
+    );
+    assertEq(tokenList.weth.balanceOf(alice), aliceWethBalanceBefore, 'alice weth final balance');
     assertEq(tokenList.dai.balanceOf(address(spoke1)), 0, 'spoke1 dai final balance');
     assertEq(tokenList.weth.balanceOf(address(spoke2)), 0, 'spoke2 weth final balance');
   }
@@ -140,11 +179,11 @@ contract SpokeBorrowTest is Base {
     // Alice supply dai
     Utils.spokeSupply(spoke1, daiReserveId, alice, daiBorrowAmount, alice);
 
-    DataTypes.UserConfig memory bobData = Utils.getUserSpokeInfo(spoke1, bob, wethReserveId);
-    DataTypes.UserConfig memory aliceData = Utils.getUserSpokeInfo(spoke1, alice, daiReserveId);
+    DataTypes.UserConfig memory bobData = Utils.getUserInfo(spoke1, bob, wethReserveId);
+    DataTypes.UserConfig memory aliceData = Utils.getUserInfo(spoke1, alice, daiReserveId);
 
-    uint256 bobStartingBalance = tokenList.dai.balanceOf(bob);
-    uint256 aliceStartingBalance = tokenList.weth.balanceOf(alice);
+    uint256 bobBalanceBefore = tokenList.dai.balanceOf(bob);
+    uint256 aliceBalanceBefore = tokenList.weth.balanceOf(alice);
 
     assertEq(
       bobData.suppliedShares,
@@ -160,8 +199,8 @@ contract SpokeBorrowTest is Base {
     assertEq(aliceData.baseDebt, 0, 'alice base debt pre-draw');
     assertEq(tokenList.dai.balanceOf(address(spoke1)), 0, 'spoke1 dai balance pre-draw');
     assertEq(tokenList.weth.balanceOf(address(spoke2)), 0, 'spoke2 weth balance pre-draw');
-    assertEq(tokenList.dai.balanceOf(bob), bobStartingBalance, 'bob dai balance pre-draw');
-    assertEq(tokenList.weth.balanceOf(alice), aliceStartingBalance, 'alice weth balance pre-draw');
+    assertEq(tokenList.dai.balanceOf(bob), bobBalanceBefore, 'bob dai balance pre-draw');
+    assertEq(tokenList.weth.balanceOf(alice), aliceBalanceBefore, 'alice weth balance pre-draw');
 
     // Bob draw dai
     vm.prank(bob);
@@ -169,11 +208,11 @@ contract SpokeBorrowTest is Base {
     emit Borrowed(daiReserveId, daiBorrowAmount, bob);
     spoke1.borrow(daiReserveId, daiBorrowAmount, bob);
 
-    bobData = Utils.getUserSpokeInfo(spoke1, bob, wethReserveId);
-    aliceData = Utils.getUserSpokeInfo(spoke1, alice, daiReserveId);
+    bobData = Utils.getUserInfo(spoke1, bob, wethReserveId);
+    aliceData = Utils.getUserInfo(spoke1, alice, daiReserveId);
 
-    uint256 bobEndingBalance = tokenList.dai.balanceOf(bob);
-    uint256 aliceEndingBalance = tokenList.weth.balanceOf(alice);
+    uint256 bobBalanceAfter = tokenList.dai.balanceOf(bob);
+    uint256 aliceBalanceAfter = tokenList.weth.balanceOf(alice);
 
     assertEq(
       bobData.suppliedShares,
@@ -189,8 +228,8 @@ contract SpokeBorrowTest is Base {
       'alice supply shares final balance'
     );
     assertEq(aliceData.baseDebt, 0, 'alice base debt final');
-    assertEq(bobEndingBalance, bobStartingBalance + daiBorrowAmount, 'bob dai final balance');
-    assertEq(aliceEndingBalance, aliceStartingBalance, 'alice weth final balance');
+    assertEq(bobBalanceAfter, bobBalanceBefore + daiBorrowAmount, 'bob dai final balance');
+    assertEq(aliceBalanceAfter, aliceBalanceBefore, 'alice weth final balance');
     assertEq(tokenList.dai.balanceOf(address(spoke1)), 0, 'spoke1 dai final balance');
     assertEq(tokenList.weth.balanceOf(address(spoke2)), 0, 'spoke2 weth final balance');
   }
@@ -264,28 +303,28 @@ contract SpokeBorrowTest is Base {
     Utils.spokeSupply(spoke2, wbtcReserveId, bob, MAX_SUPPLY_AMOUNT, bob);
     Utils.spokeSupply(spoke2, dai2ReserveId, bob, MAX_SUPPLY_AMOUNT, bob);
 
-    DataTypes.UserConfig memory bobData = Utils.getUserSpokeInfo(spoke2, bob, daiReserveId);
+    DataTypes.UserConfig memory bobData = Utils.getUserInfo(spoke2, bob, daiReserveId);
     assertEq(
       bobData.suppliedShares,
       hub.convertToShares(daiAssetId, MAX_SUPPLY_AMOUNT),
       'bob supply shares pre-draw'
     );
     assertEq(bobData.baseDebt, 0, 'bob base debt pre-draw');
-    bobData = Utils.getUserSpokeInfo(spoke2, bob, wethReserveId);
+    bobData = Utils.getUserInfo(spoke2, bob, wethReserveId);
     assertEq(
       bobData.suppliedShares,
       hub.convertToShares(wethAssetId, MAX_SUPPLY_AMOUNT),
       'bob supply shares pre-draw'
     );
     assertEq(bobData.baseDebt, 0, 'bob base debt pre-draw');
-    bobData = Utils.getUserSpokeInfo(spoke2, bob, usdxReserveId);
+    bobData = Utils.getUserInfo(spoke2, bob, usdxReserveId);
     assertEq(
       bobData.suppliedShares,
       hub.convertToShares(usdxAssetId, MAX_SUPPLY_AMOUNT),
       'bob supply shares pre-draw'
     );
     assertEq(bobData.baseDebt, 0, 'bob base debt pre-draw');
-    bobData = Utils.getUserSpokeInfo(spoke2, bob, wbtcReserveId);
+    bobData = Utils.getUserInfo(spoke2, bob, wbtcReserveId);
     assertEq(
       bobData.suppliedShares,
       hub.convertToShares(wbtcAssetId, MAX_SUPPLY_AMOUNT),
@@ -307,28 +346,28 @@ contract SpokeBorrowTest is Base {
       Utils.spokeBorrow(spoke2, wbtcReserveId, bob, wbtcBorrowAmount, bob);
     }
 
-    bobData = Utils.getUserSpokeInfo(spoke2, bob, daiReserveId);
+    bobData = Utils.getUserInfo(spoke2, bob, daiReserveId);
     assertEq(
       bobData.suppliedShares,
       hub.convertToShares(daiAssetId, MAX_SUPPLY_AMOUNT),
       'bob supply shares final balance'
     );
     assertEq(bobData.baseDebt, daiBorrowAmount, 'bob base debt dai final balance');
-    bobData = Utils.getUserSpokeInfo(spoke2, bob, wethReserveId);
+    bobData = Utils.getUserInfo(spoke2, bob, wethReserveId);
     assertEq(
       bobData.suppliedShares,
       hub.convertToShares(wethAssetId, MAX_SUPPLY_AMOUNT),
       'bob supply shares final balance'
     );
     assertEq(bobData.baseDebt, wethBorrowamount, 'bob base debt weth final balance');
-    bobData = Utils.getUserSpokeInfo(spoke2, bob, usdxReserveId);
+    bobData = Utils.getUserInfo(spoke2, bob, usdxReserveId);
     assertEq(
       bobData.suppliedShares,
       hub.convertToShares(usdxAssetId, MAX_SUPPLY_AMOUNT),
       'bob supply shares final balance'
     );
     assertEq(bobData.baseDebt, usdxBorrowAmount, 'bob base debt usdx final balance');
-    bobData = Utils.getUserSpokeInfo(spoke2, bob, wbtcReserveId);
+    bobData = Utils.getUserInfo(spoke2, bob, wbtcReserveId);
     assertEq(
       bobData.suppliedShares,
       hub.convertToShares(wbtcAssetId, MAX_SUPPLY_AMOUNT),
