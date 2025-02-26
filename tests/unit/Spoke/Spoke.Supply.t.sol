@@ -202,6 +202,13 @@ contract SpokeSupplyTest is SpokeBaseTest {
   }
 
   function test_supply_index_increase_no_premium() public {
+    // set weth LP to 0 for no premium contribution
+    Utils.updateLiquidityPremium({
+      spoke: spoke1,
+      reserveId: _wethLiquidityPremium(),
+      newLiquidityPremium: 0
+    });
+
     _increaseShareConversionIndex({
       collateral: TestReserve({
         reserveId: spokeInfo[spoke1].weth.reserveId,
@@ -288,6 +295,13 @@ contract SpokeSupplyTest is SpokeBaseTest {
 
   function test_supply_fuzz_index_increase_no_premium(uint256 amount) public {
     amount = bound(amount, 1, MAX_SUPPLY_AMOUNT);
+
+    // set weth LP to 0 for no premium contribution
+    Utils.updateLiquidityPremium({
+      spoke: spoke1,
+      reserveId: _wethLiquidityPremium(),
+      newLiquidityPremium: 0
+    });
 
     _increaseShareConversionIndex({
       collateral: TestReserve({
@@ -580,5 +594,13 @@ contract SpokeSupplyTest is SpokeBaseTest {
       vm.getBlockTimestamp(),
       'user lastUpdateTimestamp post-supply'
     );
+  }
+
+  function _wethLiquidityPremium() internal view returns (uint256) {
+    return spokeInfo[spoke1].weth.reserveId;
+  }
+
+  function _daiLiquidityPremium() internal view returns (uint256) {
+    return spokeInfo[spoke1].dai.reserveId;
   }
 }

@@ -118,4 +118,14 @@ library Utils {
     reserveData.config.borrowable = newBorrowable;
     spoke.updateReserveConfig(reserveId, reserveData.config);
   }
+
+  function updateLiquidityPremium(
+    Spoke spoke,
+    uint256 reserveId,
+    uint256 newLiquidityPremium
+  ) internal {
+    Spoke.Reserve memory reserveData = spoke.getReserve(reserveId);
+    reserveData.config.liquidityPremium = newLiquidityPremium;
+    spoke.updateReserveConfig(reserveId, reserveData.config);
+  }
 }
