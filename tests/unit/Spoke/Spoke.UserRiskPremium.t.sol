@@ -10,18 +10,9 @@ contract SpokeUserRiskPremiumTest is BaseTest {
   using WadRayMath for uint256;
   using PercentageMath for uint256;
 
-  uint256 rate;
   function setUp() public override {
     super.setUp();
     initEnvironment();
-
-    rate = uint256(10_00).bpsToRay();
-
-    vm.mockCall(
-      address(irStrategy),
-      IReserveInterestRateStrategy.calculateInterestRates.selector,
-      abi.encode(rate)
-    );
   }
 
   struct RPBasicTestData {
@@ -41,6 +32,14 @@ contract SpokeUserRiskPremiumTest is BaseTest {
 
   function test_user_rp_single_asset() public {
     RPBasicTestData memory state;
+
+    uint256 rate = uint256(10_00).bpsToRay();
+
+    vm.mockCall(
+      address(irStrategy),
+      IReserveInterestRateStrategy.calculateInterestRates.selector,
+      abi.encode(rate)
+    );
 
     state.daiReserveId = spokeInfo[spoke1].dai.reserveId;
     state.usdxReserveId = spokeInfo[spoke1].usdx.reserveId;
@@ -95,8 +94,19 @@ contract SpokeUserRiskPremiumTest is BaseTest {
     );
   }
 
-  function test_fuzz_user_rp_single_asset(uint256 skipTime, uint256 borrowedAmount) public {
+  function test_fuzz_user_rp_single_asset(
+    uint256 rate,
+    uint256 skipTime,
+    uint256 borrowedAmount
+  ) public {
     skipTime = bound(skipTime, 1, 10_000 days);
+    rate = uint256(bound(rate, 1, MAX_BORROW_RATE)).bpsToRay();
+
+    vm.mockCall(
+      address(irStrategy),
+      IReserveInterestRateStrategy.calculateInterestRates.selector,
+      abi.encode(rate)
+    );
 
     RPBasicTestData memory state;
     state.suppliedAmount = 100e18;

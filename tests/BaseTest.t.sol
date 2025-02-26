@@ -88,6 +88,7 @@ abstract contract BaseTest is Test, Events {
 
   uint256 internal constant MAX_SUPPLY_AMOUNT = 1e30;
   uint32 internal constant MAX_RISK_PREMIUM_BPS = 1000_00;
+  uint256 internal constant MAX_BORROW_RATE = 1000_00; // in BPS, matches DefaultReserveInterestRateStrategy
 
   IERC20 internal usdc;
   IERC20 internal dai;
