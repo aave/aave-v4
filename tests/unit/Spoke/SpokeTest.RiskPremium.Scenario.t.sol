@@ -74,8 +74,8 @@ contract SpokeRiskPremiumScenarioTest is BaseTest {
     skip(vars.delay);
 
     // since only DAI is borrowed in the system, supply interest is accrued only on it
-    assertEq(spoke1.getSuppliedAmount(_usdxReserveId(spoke1), alice), vars.usdxSupplyAmount);
-    assertEq(spoke1.getSuppliedAmount(_wethReserveId(spoke1), alice), vars.wethSupplyAmount);
+    assertEq(spoke1.getUserSuppliedAmount(_usdxReserveId(spoke1), alice), vars.usdxSupplyAmount);
+    assertEq(spoke1.getUserSuppliedAmount(_wethReserveId(spoke1), alice), vars.wethSupplyAmount);
 
     uint256 accruedDaiDebt = vars.daiBorrowAmount.rayMul(
       MathUtils.calculateLinearInterest(
