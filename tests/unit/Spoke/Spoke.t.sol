@@ -30,7 +30,7 @@ contract SpokeTest is Base {
 
     // Bob draw half of dai reserve liquidity
     vm.prank(bob);
-    vm.expectRevert(TestErrors.RESERVE_NOT_BORROWABLE);
+    vm.expectRevert(ISpoke.ReserveNotBorrowable.selector);
     ISpoke(spoke1).borrow(spokeInfo[spoke1].dai.reserveId, daiAmount / 2, bob);
   }
 
@@ -375,7 +375,7 @@ contract SpokeTest is Base {
     Utils.updateCollateral(spoke1, daiAssetId, newCollateral);
 
     vm.prank(bob);
-    vm.expectRevert(TestErrors.RESERVE_NOT_COLLATERAL);
+    vm.expectRevert(ISpoke.ReserveNotCollateral.selector);
     ISpoke(spoke1).setUsingAsCollateral(daiAssetId, usingAsCollateral);
   }
 

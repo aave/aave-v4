@@ -17,7 +17,7 @@ contract SpokeBorrowTest is Base {
 
     // Bob try to draw some dai
     vm.prank(bob);
-    vm.expectRevert(TestErrors.RESERVE_NOT_BORROWABLE);
+    vm.expectRevert(ISpoke.ReserveNotBorrowable.selector);
     spoke1.borrow(daiReserveId, 1, bob);
   }
 

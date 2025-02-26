@@ -17,7 +17,7 @@ contract SpokeSupplyTest is Base {
     uint256 amount = 100e18;
 
     vm.prank(bob);
-    vm.expectRevert(TestErrors.RESERVE_NOT_LISTED);
+    vm.expectRevert(ISpoke.ReserveNotListed.selector);
     spoke1.supply(reserveId, amount);
   }
 

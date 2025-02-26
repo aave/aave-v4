@@ -23,6 +23,14 @@ interface ISpoke {
     bool collateral
   );
 
+  error InvalidReserve(uint256 reserveId);
+  error ReserveNotListed();
+  error InvalidLiquidityPremium();
+  error InsufficientSupply();
+  error ReserveNotBorrowable();
+  error RepayExceedsDebt();
+  error ReserveNotCollateral();
+
   function addReserve(
     uint256 assetId,
     DataTypes.ReserveConfig memory params,
@@ -54,18 +62,4 @@ interface ISpoke {
   function getUserBaseBorrowIndex(uint256 reserveId, address user) external view returns (uint256);
 
   function getReserve(uint256 reserveId) external view returns (DataTypes.Reserve memory);
-}
-
-/**
- * @title Spoke Errors Library
- * @author Aave Labs
- * @notice Defines the error messages emitted by the Spoke
- */
-library SpokeErrors {
-  string public constant INVALID_RESERVE = 'INVALID_RESERVE';
-  string public constant RESERVE_NOT_LISTED = 'RESERVE_NOT_LISTED';
-  string public constant INSUFFICIENT_SUPPLY = 'INSUFFICIENT_SUPPLY';
-  string public constant RESERVE_NOT_BORROWABLE = 'RESERVE_NOT_BORROWABLE';
-  string public constant REPAY_EXCEEDS_DEBT = 'REPAY_EXCEEDS_DEBT';
-  string public constant RESERVE_NOT_COLLATERAL = 'RESERVE_NOT_COLLATERAL';
 }
