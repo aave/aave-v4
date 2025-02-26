@@ -21,6 +21,7 @@ contract SpokeUserRiskPremiumTest is BaseTest {
     uint256 suppliedAmount;
     uint40 lastUpdateTimestamp;
     uint256 existingBaseDebt;
+    uint256 existingOutstandingPremium;
     uint256 cumulatedBaseInterest;
     uint256 cumulatedBaseDebt;
     uint256 cumulatedOutstandingPremium;
@@ -28,6 +29,7 @@ contract SpokeUserRiskPremiumTest is BaseTest {
     uint256 userRiskPremiumFly;
     uint256 expectedUserRiskPremium;
     uint256 expectedOutstandingPremium;
+    uint256[5] borrowedAmount;
   }
 
   function test_user_rp_single_asset() public {
@@ -86,6 +88,70 @@ contract SpokeUserRiskPremiumTest is BaseTest {
     );
     state.expectedOutstandingPremium = (state.existingBaseDebt.rayMul(state.cumulatedBaseInterest) -
       state.existingBaseDebt).percentMul(state.userRiskPremiumFly);
+
+    assertEq(
+      state.expectedOutstandingPremium,
+      state.cumulatedOutstandingPremium,
+      'outstanding premium after accrual'
+    );
+  }
+
+  function test_user_rp_single_asset_multi_borrow() public {
+    RPBasicTestData memory state;
+
+    uint256 rate = uint256(10_00).bpsToRay();
+
+    vm.mockCall(
+      address(irStrategy),
+      IReserveInterestRateStrategy.calculateInterestRates.selector,
+      abi.encode(rate)
+    );
+
+    state.daiReserveId = spokeInfo[spoke1].dai.reserveId;
+    state.usdxReserveId = spokeInfo[spoke1].usdx.reserveId;
+    state.borrowedAmount[0] = 10e18;
+    state.borrowedAmount[1] = 20e18;
+
+    // bob supplies dai
+    vm.prank(bob);
+    spoke1.supply({reserveId: state.daiReserveId, amount: 100e18});
+
+    // alice supplies usdx
+    vm.startPrank(alice);
+    spoke1.supply({reserveId: state.usdxReserveId, amount: 100e18});
+    spoke1.setUsingAsCollateral(state.usdxReserveId, true);
+
+    // alice borrows dai
+    spoke1.borrow({reserveId: state.daiReserveId, amount: state.borrowedAmount[0], to: alice});
+
+    // alice accrues debt and premium
+    skip(365 days);
+    // alice borrows more dai
+    spoke1.borrow({reserveId: state.daiReserveId, amount: state.borrowedAmount[1], to: alice});
+    (state.existingBaseDebt, state.existingOutstandingPremium) = spoke1.getUserDebt(
+      spokeInfo[spoke1].dai.reserveId,
+      alice
+    );
+    state.userRiskPremiumFly = spoke1.getUserRiskPremium(alice);
+    state.lastUpdateTimestamp = uint40(vm.getBlockTimestamp());
+
+    // alice accrues debt and premium
+    skip(365 days);
+
+    state.cumulatedBaseInterest = MathUtils.calculateLinearInterest(
+      rate,
+      state.lastUpdateTimestamp
+    );
+
+    (state.cumulatedBaseDebt, state.cumulatedOutstandingPremium) = spoke1.getUserDebt(
+      spokeInfo[spoke1].dai.reserveId,
+      alice
+    );
+
+    state.expectedOutstandingPremium =
+      (state.existingBaseDebt.rayMul(state.cumulatedBaseInterest) - state.existingBaseDebt)
+        .percentMul(spoke1.getReserve(state.usdxReserveId).config.liquidityPremium) +
+      state.existingOutstandingPremium;
 
     assertEq(
       state.expectedOutstandingPremium,
