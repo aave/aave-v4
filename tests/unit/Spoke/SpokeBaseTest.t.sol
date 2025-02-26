@@ -126,8 +126,8 @@ contract SpokeBaseTest is BaseTest {
     address spoke
   ) internal view returns (TokenData memory) {
     TokenData memory tokenData;
-    tokenData.spokeBalance = tokenList.dai.balanceOf(spoke);
-    tokenData.hubBalance = tokenList.dai.balanceOf(address(hub));
+    tokenData.spokeBalance = IERC20(token).balanceOf(spoke);
+    tokenData.hubBalance = IERC20(token).balanceOf(address(hub));
     return tokenData;
   }
 }

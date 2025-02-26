@@ -270,9 +270,14 @@ contract SpokeSupplyTest is SpokeBaseTest {
     );
   }
 
-  function test_supply_fuzz_index_increase_no_premium(uint256 amount, uint256 rate) public {
+  function test_supply_fuzz_index_increase_no_premium(
+    uint256 amount,
+    uint256 rate,
+    uint256 reserveId
+  ) public {
     amount = bound(amount, 1, MAX_SUPPLY_AMOUNT);
     rate = bound(rate, 1, MAX_BORROW_RATE).bpsToRay();
+    reserveId = bound(reserveId, 0, spokeInfo[spoke1].MAX_RESERVE_ID);
 
     // set weth LP to 0 for no premium contribution
     Utils.updateLiquidityPremium({
@@ -283,14 +288,14 @@ contract SpokeSupplyTest is SpokeBaseTest {
 
     _increaseShareConversionIndex({
       collateral: TestReserve({
-        reserveId: spokeInfo[spoke1].weth.reserveId,
+        reserveId: _wethReserveId(spoke1),
         supplier: alice,
         borrower: address(0),
         supplyAmount: 100e18,
         borrowAmount: 0
       }),
       borrow: TestReserve({
-        reserveId: _daiReserveId(spoke1),
+        reserveId: reserveId,
         borrowAmount: 10e18,
         supplyAmount: 20e18,
         supplier: bob,
@@ -299,54 +304,62 @@ contract SpokeSupplyTest is SpokeBaseTest {
       rate: rate
     });
 
-    uint256 expectedShares = hub.convertToShares(daiAssetId, amount);
+    uint256 assetId = spoke1.getReserve(reserveId).assetId;
+    address asset = spoke1.getReserve(reserveId).asset;
+
+    uint256 expectedShares = hub.convertToShares(assetId, amount);
+    vm.assume(expectedShares > 0);
     assertTrue(expectedShares < amount, 'exchange rate should be > 1');
 
     TestData[2] memory carolData;
-    TestData[2] memory daiData;
+    TestData[2] memory reserveData;
     TokenData[2] memory tokenData;
     uint256 stage = 0;
 
-    carolData[stage] = _getUserData(_daiReserveId(spoke1), carol);
-    daiData[stage] = _getReserveData(_daiReserveId(spoke1));
-    tokenData[stage] = _getTokenBalances(address(tokenList.dai), address(spoke1));
+    carolData[stage] = _getUserData(reserveId, carol);
+    reserveData[stage] = _getReserveData(reserveId);
+    tokenData[stage] = _getTokenBalances(asset, address(spoke1));
 
     vm.assume(hub.convertToShares(daiAssetId, amount) > 0);
 
-    deal(address(tokenList.dai), carol, amount);
+    deal(asset, carol, amount);
 
     vm.prank(carol);
     vm.expectEmit(address(spoke1));
-    emit Supplied(_daiReserveId(spoke1), amount, carol);
-    spoke1.supply(_daiReserveId(spoke1), amount);
+    emit Supplied(reserveId, amount, carol);
+    spoke1.supply(reserveId, amount);
     stage = 1;
 
-    carolData[stage] = _getUserData(_daiReserveId(spoke1), carol);
-    daiData[stage] = _getReserveData(_daiReserveId(spoke1));
-    tokenData[stage] = _getTokenBalances(address(tokenList.dai), address(spoke1));
+    carolData[stage] = _getUserData(reserveId, carol);
+    reserveData[stage] = _getReserveData(reserveId);
+    tokenData[stage] = _getTokenBalances(asset, address(spoke1));
 
-    // dai balance
-    assertEq(tokenList.dai.balanceOf(carol), 0, 'user token balance post-supply');
+    // token balance
+    assertEq(IERC20(asset).balanceOf(carol), 0, 'user token balance post-supply');
     assertEq(
-      tokenList.dai.balanceOf(address(hub)),
+      IERC20(asset).balanceOf(address(hub)),
       tokenData[stage - 1].hubBalance + amount,
       'hub token balance post-supply'
     );
-    assertEq(tokenList.dai.balanceOf(address(spoke1)), 0, 'spoke token balance post-supply');
+    assertEq(IERC20(asset).balanceOf(address(spoke1)), 0, 'spoke token balance post-supply');
     // reserve
     assertEq(
-      daiData[stage].data.baseDebt,
-      daiData[stage - 1].data.baseDebt,
+      reserveData[stage].data.baseDebt,
+      reserveData[stage - 1].data.baseDebt,
       'reserve baseDebt post-supply'
     );
-    assertEq(daiData[stage].data.outstandingPremium, 0, 'reserve outstandingPremium post-supply');
     assertEq(
-      daiData[stage].data.suppliedShares,
-      daiData[stage - 1].data.suppliedShares + expectedShares,
+      reserveData[stage].data.outstandingPremium,
+      0,
+      'reserve outstandingPremium post-supply'
+    );
+    assertEq(
+      reserveData[stage].data.suppliedShares,
+      reserveData[stage - 1].data.suppliedShares + expectedShares,
       'reserve suppliedShares post-supply'
     );
     assertEq(
-      daiData[stage].data.lastUpdateTimestamp,
+      reserveData[stage].data.lastUpdateTimestamp,
       vm.getBlockTimestamp(),
       'reserve lastUpdateTimestamp post-supply'
     );
@@ -455,81 +468,94 @@ contract SpokeSupplyTest is SpokeBaseTest {
     );
   }
 
-  function test_supply_fuzz_index_increase_with_premium(uint256 amount, uint256 rate) public {
+  function test_supply_fuzz_index_increase_with_premium(
+    uint256 amount,
+    uint256 rate,
+    uint256 reserveId
+  ) public {
     amount = bound(amount, 1, MAX_SUPPLY_AMOUNT);
     rate = bound(rate, 1, MAX_BORROW_RATE).bpsToRay();
+    reserveId = bound(reserveId, 0, spokeInfo[spoke1].MAX_RESERVE_ID);
+
+    uint256 assetId = spoke1.getReserve(reserveId).assetId;
+    address asset = spoke1.getReserve(reserveId).asset;
 
     // alice supplies usdx as collateral, borrows dai
     _increaseShareConversionIndex({
       collateral: TestReserve({
-        reserveId: spokeInfo[spoke1].usdx.reserveId,
+        reserveId: _wethReserveId(spoke1),
         supplier: alice,
         supplyAmount: 100e18,
         borrower: address(0),
         borrowAmount: 0
       }),
       borrow: TestReserve({
-        reserveId: _daiReserveId(spoke1),
+        reserveId: reserveId,
         borrowAmount: 10e18,
         supplyAmount: 20e18,
         borrower: alice,
         supplier: bob
       }),
-      rate: uint256(10_00).bpsToRay()
+      rate: rate
     });
 
     uint256 amount = 1e18;
-    uint256 expectedShares = hub.convertToShares(daiAssetId, amount);
+    uint256 expectedShares = hub.convertToShares(assetId, amount);
+    vm.assume(expectedShares > 0);
     assertTrue(expectedShares < amount, 'exchange rate should be > 1');
 
     TestData[2] memory carolData;
-    TestData[2] memory daiData;
+    TestData[2] memory reserveData;
     TokenData[2] memory tokenData;
     uint256 stage = 0;
 
-    carolData[stage] = _getUserData(_daiReserveId(spoke1), carol);
-    daiData[stage] = _getReserveData(_daiReserveId(spoke1));
-    tokenData[stage] = _getTokenBalances(address(tokenList.dai), address(spoke1));
+    carolData[stage] = _getUserData(reserveId, carol);
+    reserveData[stage] = _getReserveData(reserveId);
+    tokenData[stage] = _getTokenBalances(asset, address(spoke1));
 
-    assertTrue(daiData[stage].data.outstandingPremium > 0, 'reserve outstandingPremium pre-supply');
+    assertTrue(
+      reserveData[stage].data.outstandingPremium > 0,
+      'reserve outstandingPremium pre-supply'
+    );
 
-    deal(address(tokenList.dai), carol, amount);
+    deal(asset, carol, amount);
 
     vm.prank(carol);
     vm.expectEmit(address(spoke1));
-    emit Supplied(_daiReserveId(spoke1), amount, carol);
-    spoke1.supply(_daiReserveId(spoke1), amount);
+    emit Supplied(reserveId, amount, carol);
+    spoke1.supply(reserveId, amount);
+
     stage = 1;
 
-    carolData[stage] = _getUserData(_daiReserveId(spoke1), carol);
-    daiData[stage] = _getReserveData(_daiReserveId(spoke1));
-    tokenData[stage] = _getTokenBalances(address(tokenList.dai), address(spoke1));
+    carolData[stage] = _getUserData(reserveId, carol);
+    reserveData[stage] = _getReserveData(reserveId);
+    tokenData[stage] = _getTokenBalances(asset, address(spoke1));
 
-    // dai balance
-    assertEq(tokenList.dai.balanceOf(carol), 0, 'user token balance post-supply');
+    // token balance
+    assertEq(IERC20(asset).balanceOf(carol), 0, 'user token balance post-supply');
     assertEq(
-      tokenList.dai.balanceOf(address(hub)),
+      IERC20(asset).balanceOf(address(hub)),
       tokenData[stage - 1].hubBalance + amount,
       'hub token balance post-supply'
     );
-    assertEq(tokenList.dai.balanceOf(address(spoke1)), 0, 'spoke token balance post-supply');
+    assertEq(IERC20(asset).balanceOf(address(spoke1)), 0, 'spoke token balance post-supply');
     // reserve
     assertEq(
-      daiData[stage].data.baseDebt,
-      daiData[stage - 1].data.baseDebt,
+      reserveData[stage].data.baseDebt,
+      reserveData[stage - 1].data.baseDebt,
       'reserve baseDebt post-supply'
     );
     assertTrue(
-      daiData[stage].data.outstandingPremium > 0,
+      reserveData[stage].data.outstandingPremium > 0,
       'reserve outstandingPremium post-supply'
     );
     assertEq(
-      daiData[stage].data.suppliedShares,
-      daiData[stage - 1].data.suppliedShares + expectedShares,
+      reserveData[stage].data.suppliedShares,
+      reserveData[stage - 1].data.suppliedShares + expectedShares,
       'reserve suppliedShares post-supply'
     );
     assertEq(
-      daiData[stage].data.lastUpdateTimestamp,
+      reserveData[stage].data.lastUpdateTimestamp,
       vm.getBlockTimestamp(),
       'reserve lastUpdateTimestamp post-supply'
     );

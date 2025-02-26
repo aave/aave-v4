@@ -19,35 +19,32 @@ contract SpokeWithdrawTest is SpokeBaseTest {
   }
 
   function test_withdraw_revertsWith_supplied_amount_exceeded_zero_supplied() public {
-    uint256 reserveId = 0;
+    uint256 reserveId = _daiReserveId(spoke1);
     uint256 amount = 1;
 
     vm.prank(address(alice));
     vm.expectRevert(TestErrors.SUPPLIED_AMOUNT_EXCEEDED);
-    spoke1.withdraw({reserveId: reserveId, amount: amount, to: alice});
+    spoke1.withdraw(reserveId, amount, alice);
   }
 
   function test_withdraw_fuzz_revertsWith_supplied_amount_exceeded_zero_supplied(
-    uint256 amount,
-    uint256 reserveId
+    uint256 amount
   ) public {
-    reserveId = bound(amount, 0, spokeInfo[spoke1].MAX_RESERVE_ID);
     amount = bound(amount, 1, MAX_SUPPLY_AMOUNT);
 
     vm.prank(address(alice));
     vm.expectRevert(TestErrors.SUPPLIED_AMOUNT_EXCEEDED);
-    spoke1.withdraw({reserveId: reserveId, amount: amount, to: alice});
+    spoke1.withdraw(_daiReserveId(spoke1), amount, alice);
   }
 
   function test_withdraw_revertsWith_supplied_amount_exceeded() public {
-    uint256 reserveId = spokeInfo[spoke1].weth.reserveId;
     uint256 amount = 100e18;
 
     // User spoke supply
     Utils.spokeSupply({
       hub: hub,
       spoke: spoke1,
-      reserveId: reserveId,
+      reserveId: _daiReserveId(spoke1),
       user: alice,
       amount: amount,
       to: alice
@@ -55,86 +52,63 @@ contract SpokeWithdrawTest is SpokeBaseTest {
 
     vm.prank(address(spoke1));
     vm.expectRevert(TestErrors.SUPPLIED_AMOUNT_EXCEEDED);
-    spoke1.withdraw({reserveId: reserveId, amount: amount + 1, to: alice});
+    spoke1.withdraw(_daiReserveId(spoke1), amount + 1, alice);
 
+    // skip time but no index increase with no borrow
     skip(365 days);
 
     vm.prank(address(alice));
     vm.expectRevert(TestErrors.SUPPLIED_AMOUNT_EXCEEDED);
-    spoke1.withdraw({reserveId: reserveId, amount: amount + 1, to: alice});
+    spoke1.withdraw(_daiReserveId(spoke1), amount + 1, alice);
   }
 
-  function test_withdraw_fuzz_revertsWith_supplied_amount_exceeded(
-    uint256 amount,
-    uint256 reserveId
-  ) public {
-    reserveId = bound(amount, 0, spokeInfo[spoke1].MAX_RESERVE_ID);
-    amount = bound(amount, 1, MAX_SUPPLY_AMOUNT);
-
-    // User spoke supply
-    Utils.spokeSupply({
-      hub: hub,
-      spoke: spoke1,
-      reserveId: reserveId,
-      user: alice,
-      amount: amount,
-      to: alice
-    });
-
-    vm.prank(address(spoke1));
-    vm.expectRevert(TestErrors.SUPPLIED_AMOUNT_EXCEEDED);
-    spoke1.withdraw({reserveId: reserveId, amount: amount + 1, to: alice});
-
-    skip(365 days);
-
-    vm.prank(address(alice));
-    vm.expectRevert(TestErrors.SUPPLIED_AMOUNT_EXCEEDED);
-    spoke1.withdraw({reserveId: reserveId, amount: amount + 1, to: alice});
-  }
-
+  // user has both supplied shares and debt on a reserve
   function test_withdraw_revertsWith_supplied_amount_exceeded_with_debt() public {
-    uint256 reserveId = spokeInfo[spoke1].weth.reserveId;
     uint256 supplyAmount = 100e18;
     uint256 borrowAmount = 50e18;
 
-    // User spoke supply
+    // Alice supplies dai
     Utils.spokeSupply({
       hub: hub,
       spoke: spoke1,
-      reserveId: reserveId,
+      reserveId: _daiReserveId(spoke1),
       user: alice,
       amount: supplyAmount,
       to: alice
     });
 
-    // User spoke borrow
+    // Alice borrows dai
     Utils.borrow({
       spoke: spoke1,
-      reserveId: reserveId,
+      reserveId: _daiReserveId(spoke1),
       user: alice,
       amount: borrowAmount,
       onBehalfOf: alice
     });
 
+    uint256 availableLiquidity = hub.getAvailableLiquidity(daiAssetId);
+
     vm.prank(address(alice));
     vm.expectRevert(TestErrors.SUPPLIED_AMOUNT_EXCEEDED);
-    spoke1.withdraw({reserveId: reserveId, amount: supplyAmount - borrowAmount + 1, to: alice});
+    spoke1.withdraw({reserveId: _daiReserveId(spoke1), amount: availableLiquidity + 1, to: bob});
 
     skip(365 days);
+    // index has now increased
 
     vm.prank(address(alice));
     vm.expectRevert(TestErrors.SUPPLIED_AMOUNT_EXCEEDED);
-    spoke1.withdraw({reserveId: reserveId, amount: supplyAmount - borrowAmount + 1, to: alice});
+    spoke1.withdraw({reserveId: _daiReserveId(spoke1), amount: availableLiquidity + 1, to: alice});
   }
 
+  // user has both supplied shares and debt on a reserve
   function test_withdraw_fuzz_revertsWith_supplied_amount_exceeded_with_debt(
     uint256 reserveId,
     uint256 supplyAmount,
     uint256 borrowAmount
   ) public {
     reserveId = bound(reserveId, 0, spokeInfo[spoke1].MAX_RESERVE_ID);
-    supplyAmount = bound(supplyAmount, 1, MAX_SUPPLY_AMOUNT);
-    borrowAmount = bound(borrowAmount, 1, supplyAmount); // ensure it is within LT
+    supplyAmount = bound(supplyAmount, 2, MAX_SUPPLY_AMOUNT);
+    borrowAmount = bound(borrowAmount, 1, supplyAmount / 2); // ensure it is within LT
 
     // User spoke supply
     Utils.spokeSupply({
@@ -155,22 +129,24 @@ contract SpokeWithdrawTest is SpokeBaseTest {
       onBehalfOf: alice
     });
 
+    uint256 availableLiquidity = hub.getAvailableLiquidity(reserveId);
+    vm.assume(availableLiquidity > 1);
+
     vm.prank(address(alice));
     vm.expectRevert(TestErrors.SUPPLIED_AMOUNT_EXCEEDED);
-    spoke1.withdraw({reserveId: reserveId, amount: supplyAmount - borrowAmount + 1, to: alice});
+    spoke1.withdraw({reserveId: reserveId, amount: availableLiquidity + 1, to: alice});
 
     skip(365 days);
 
     vm.prank(address(alice));
     vm.expectRevert(TestErrors.SUPPLIED_AMOUNT_EXCEEDED);
-    spoke1.withdraw({reserveId: reserveId, amount: supplyAmount - borrowAmount + 1, to: alice});
+    spoke1.withdraw({reserveId: reserveId, amount: availableLiquidity + 1, to: alice});
   }
 
   function test_withdraw_same_block() public {
     uint256 amount = 100e18;
-    uint256 reserveId = spokeInfo[spoke1].dai.reserveId;
 
-    TestData[2] memory reserveData;
+    TestData[2] memory daiData;
     TestData[2] memory bobData;
     TokenData[2] memory tokenData;
 
@@ -180,26 +156,26 @@ contract SpokeWithdrawTest is SpokeBaseTest {
     Utils.spokeSupply({
       hub: hub,
       spoke: spoke1,
-      reserveId: reserveId,
+      reserveId: _daiReserveId(spoke1),
       user: bob,
       amount: amount,
       to: bob
     });
 
     uint256 stage = 0;
-    reserveData[stage] = _getReserveData(reserveId);
-    bobData[stage] = _getUserData(reserveId, bob);
+    daiData[stage] = _getReserveData(_daiReserveId(spoke1));
+    bobData[stage] = _getUserData(_daiReserveId(spoke1), bob);
     tokenData[stage] = _getTokenBalances(address(tokenList.dai), address(spoke1));
 
     // reserve
-    assertEq(reserveData[stage].suppliedAmount, amount, 'reserve suppliedAmount pre-withdraw');
+    assertEq(daiData[stage].suppliedAmount, amount, 'reserve suppliedAmount pre-withdraw');
     assertEq(
-      reserveData[stage].data.lastUpdateTimestamp,
+      daiData[stage].data.lastUpdateTimestamp,
       vm.getBlockTimestamp(),
       'reserve lastUpdateTimestamp pre-withdraw'
     );
     assertEq(
-      reserveData[stage].data.suppliedShares,
+      daiData[stage].data.suppliedShares,
       expectedSupplyShares,
       'bob suppliedShares pre-withdraw'
     );
@@ -226,23 +202,23 @@ contract SpokeWithdrawTest is SpokeBaseTest {
 
     vm.startPrank(bob);
     vm.expectEmit(address(spoke1));
-    emit Withdrawn(reserveId, amount, bob);
-    spoke1.withdraw(reserveId, amount, bob);
+    emit Withdrawn(_daiReserveId(spoke1), amount, bob);
+    spoke1.withdraw(_daiReserveId(spoke1), amount, bob);
     vm.stopPrank();
 
     stage = 1;
-    reserveData[stage] = _getReserveData(reserveId);
-    bobData[stage] = _getUserData(reserveId, bob);
+    daiData[stage] = _getReserveData(_daiReserveId(spoke1));
+    bobData[stage] = _getUserData(_daiReserveId(spoke1), bob);
     tokenData[stage] = _getTokenBalances(address(tokenList.dai), address(spoke1));
 
     // reserve
-    assertEq(reserveData[stage].suppliedAmount, 0, 'reserve suppliedAmount post-withdraw');
+    assertEq(daiData[stage].suppliedAmount, 0, 'reserve suppliedAmount post-withdraw');
     assertEq(
-      reserveData[stage].data.lastUpdateTimestamp,
+      daiData[stage].data.lastUpdateTimestamp,
       vm.getBlockTimestamp(),
       'reserve lastUpdateTimestamp post-withdraw'
     );
-    assertEq(reserveData[stage].data.suppliedShares, 0, 'bob suppliedShares post-withdraw');
+    assertEq(daiData[stage].data.suppliedShares, 0, 'bob suppliedShares post-withdraw');
     // bob
     assertEq(bobData[stage].suppliedAmount, 0, 'bob suppliedAmount post-withdraw');
     assertEq(
@@ -257,71 +233,189 @@ contract SpokeWithdrawTest is SpokeBaseTest {
     assertEq(tokenList.dai.balanceOf(bob), MAX_SUPPLY_AMOUNT, 'bob dai balance post-withdraw');
   }
 
+  struct MultiUserTestState {
+    uint256 aliceWithdrawAmount;
+    uint256 bobWithdrawAmount;
+  }
+
+  struct MultiUserFuzzParams {
+    uint256 aliceAmount;
+    uint256 bobAmount;
+    uint256 borrowAmount;
+    uint256 reserveId;
+    uint256 skipTime;
+  }
+
   // multiple users, same asset. No debt
-  function test_withdraw_fuzz_multi_user(
-    uint256 amount,
-    uint256 amount2,
-    uint256 reserveId,
-    uint256 skipTime
-  ) public {
-    reserveId = bound(amount, 0, spokeInfo[spoke1].MAX_RESERVE_ID);
-    amount = bound(amount, 1, MAX_SUPPLY_AMOUNT - 1);
-    amount2 = bound(amount2, 1, MAX_SUPPLY_AMOUNT - amount);
-    skipTime = bound(skipTime, 0, 10_000 days);
+  function test_withdraw_fuzz_multi_user(MultiUserFuzzParams memory params) public {
+    params.reserveId = bound(params.reserveId, 0, spokeInfo[spoke1].MAX_RESERVE_ID);
+    params.aliceAmount = bound(params.aliceAmount, 1, MAX_SUPPLY_AMOUNT - 1);
+    params.bobAmount = bound(params.bobAmount, 1, MAX_SUPPLY_AMOUNT - params.aliceAmount);
+    params.skipTime = bound(params.skipTime, 0, 10_000 days);
+    params.borrowAmount = bound(
+      params.borrowAmount,
+      1,
+      (params.aliceAmount + params.bobAmount) / 2
+    ); // some buffer on available borrowable liquidity
+
+    // params.aliceAmount = 1e18;
+    // params.bobAmount = 2e18;
+    // params.skipTime = 365 days;
+
+    uint256 assetId = spoke1.getReserve(params.reserveId).assetId;
+    address asset = spoke1.getReserve(params.reserveId).asset;
 
     Utils.spokeSupply({
       hub: hub,
       spoke: spoke1,
-      reserveId: reserveId,
+      reserveId: params.reserveId,
       user: alice,
-      amount: amount,
+      amount: params.aliceAmount,
       to: alice
     });
     Utils.spokeSupply({
       hub: hub,
       spoke: spoke1,
-      reserveId: reserveId,
+      reserveId: params.reserveId,
       user: bob,
-      amount: amount2,
+      amount: params.bobAmount,
       to: bob
     });
 
-    vm.prank(alice);
-    spoke1.withdraw({reserveId: reserveId, amount: amount, to: alice});
+    // carol borrows in order to increase index
+    Utils.spokeSupply({
+      hub: hub,
+      spoke: spoke1,
+      reserveId: _wbtcReserveId(spoke1),
+      user: carol,
+      amount: params.borrowAmount, // highest value asset so that it is enough collateral
+      to: carol
+    });
+    Utils.borrow({
+      spoke: spoke1,
+      reserveId: params.reserveId,
+      user: carol,
+      amount: params.borrowAmount,
+      onBehalfOf: carol
+    });
 
-    skip(skipTime);
+    skip(365 days);
+
+    console.log(
+      'spoke1.getUserCumulativeDebt(params.reserveId, carol) %e %e',
+      spoke1.getUserCumulativeDebt(params.reserveId, carol),
+      params.borrowAmount
+    );
+
+    // carol repays all with interest
+    vm.startPrank(carol);
+    spoke1.repay(params.reserveId, spoke1.getUserCumulativeDebt(params.reserveId, carol));
+    vm.stopPrank();
+
+    console.log(
+      'getAvailableLiquidity %e %e %e',
+      hub.getAvailableLiquidity(assetId),
+      spoke1.getReserveSuppliedAmount(params.reserveId),
+      spoke1.getReserveSuppliedShares(params.reserveId)
+    );
+
+    console.log(
+      'supplied %e %e %e',
+      spoke1.getUserSuppliedAmount(params.reserveId, alice),
+      spoke1.getUserSuppliedAmount(params.reserveId, bob)
+    );
+
+    TestData[3] memory reserveData;
+    TestData[3] memory aliceData;
+    TestData[3] memory bobData;
+    TokenData[3] memory tokenData;
+
+    uint256 stage = 0;
+    reserveData[stage] = _getReserveData(params.reserveId);
+    aliceData[stage] = _getUserData(params.reserveId, alice);
+    bobData[stage] = _getUserData(params.reserveId, bob);
+    tokenData[stage] = _getTokenBalances(asset, address(spoke1));
+
+    console.log(
+      'values %e %e',
+      spoke1.getUserSuppliedAmount(params.reserveId, alice),
+      params.aliceAmount
+    );
+    vm.assume(aliceData[stage].suppliedAmount > params.aliceAmount);
+
+    vm.prank(alice);
+    spoke1.withdraw({
+      reserveId: params.reserveId,
+      amount: aliceData[stage].suppliedAmount,
+      to: alice
+    });
+
+    skip(params.skipTime);
+
+    stage = 1;
+    reserveData[stage] = _getReserveData(params.reserveId);
+    aliceData[stage] = _getUserData(params.reserveId, alice);
+    bobData[stage] = _getUserData(params.reserveId, bob);
+    tokenData[stage] = _getTokenBalances(asset, address(spoke1));
+
+    console.log('aliceData[stage].data.suppliedShares %e', aliceData[stage].data.suppliedShares);
+
+    vm.assume(bobData[stage].suppliedAmount > params.bobAmount);
 
     vm.prank(bob);
-    spoke1.withdraw({reserveId: reserveId, amount: amount2, to: bob});
+    spoke1.withdraw({reserveId: params.reserveId, amount: bobData[stage].suppliedAmount, to: bob});
 
-    TestData memory reserveData = _getReserveData(spokeInfo[spoke1].dai.reserveId);
-    TestData memory aliceData = _getUserData(spokeInfo[spoke1].dai.reserveId, alice);
-    TestData memory bobData = _getUserData(spokeInfo[spoke1].dai.reserveId, bob);
-    TokenData memory tokenData = _getTokenBalances(address(tokenList.dai), address(spoke1));
+    stage = 2;
+    reserveData[stage] = _getReserveData(params.reserveId);
+    aliceData[stage] = _getUserData(params.reserveId, alice);
+    bobData[stage] = _getUserData(params.reserveId, bob);
+    tokenData[stage] = _getTokenBalances(asset, address(spoke1));
+
+    console.log('bobData[stage].data.suppliedShares %e', bobData[stage].data.suppliedShares);
 
     // reserve
-    assertEq(reserveData.data.baseDebt, 0, 'reserveData base debt');
-    assertEq(reserveData.data.outstandingPremium, 0, 'reserveData outstanding premium');
-    assertEq(reserveData.data.suppliedShares, 0, 'reserveData supplied shares');
-    assertEq(reserveData.data.lastUpdateTimestamp, 0, 'reserveData last update timestamp');
+    assertEq(reserveData[stage].data.baseDebt, 0, 'reserveData base debt');
+    assertEq(reserveData[stage].data.outstandingPremium, 0, 'reserveData outstanding premium');
+    assertApproxEqAbs(reserveData[stage].data.suppliedShares, 0, 2, 'reserveData supplied shares'); // 1 share difference for each user
+    assertEq(
+      reserveData[stage].data.lastUpdateTimestamp,
+      vm.getBlockTimestamp(),
+      'reserveData last update timestamp'
+    );
 
     // alice
-    assertEq(aliceData.data.baseDebt, 0, 'aliceData base debt');
-    assertEq(aliceData.data.outstandingPremium, 0, 'aliceData outstanding premium');
-    assertEq(aliceData.data.suppliedShares, 0, 'aliceData supplied shares');
-    assertEq(aliceData.data.lastUpdateTimestamp, 0, 'aliceData last update timestamp');
+    assertEq(aliceData[stage].data.baseDebt, 0, 'aliceData base debt');
+    assertEq(aliceData[stage].data.outstandingPremium, 0, 'aliceData outstanding premium');
+    assertApproxEqAbs(aliceData[stage].data.suppliedShares, 0, 1, 'aliceData supplied shares'); // 1 share difference
+    assertEq(
+      aliceData[stage].data.lastUpdateTimestamp,
+      reserveData[stage - 1].data.lastUpdateTimestamp,
+      'aliceData last update timestamp'
+    );
 
     // bob
-    assertEq(bobData.data.baseDebt, 0, 'bobData base debt');
-    assertEq(bobData.data.outstandingPremium, 0, 'bobData outstanding premium');
-    assertEq(bobData.data.suppliedShares, 0, 'bobData supplied shares');
-    assertEq(bobData.data.lastUpdateTimestamp, 0, 'bobData last update timestamp');
+    assertEq(bobData[stage].data.baseDebt, 0, 'bobData base debt');
+    assertEq(bobData[stage].data.outstandingPremium, 0, 'bobData outstanding premium');
+    assertApproxEqAbs(bobData[stage].data.suppliedShares, 0, 1, 'bobData supplied shares'); // 1 share difference
+    assertEq(
+      bobData[stage].data.lastUpdateTimestamp,
+      reserveData[stage].data.lastUpdateTimestamp,
+      'bobData last update timestamp'
+    );
 
     // token
-    assertEq(tokenData.spokeBalance, 0, 'tokenData spoke balance');
-    assertEq(tokenData.hubBalance, 0, 'tokenData hub balance');
-    assertEq(tokenList.dai.balanceOf(address(alice)), MAX_SUPPLY_AMOUNT, 'alice balance');
-    assertEq(tokenList.dai.balanceOf(address(bob)), MAX_SUPPLY_AMOUNT, 'bob balance');
+    assertEq(tokenData[stage].spokeBalance, 0, 'tokenData spoke balance');
+    assertApproxEqAbs(tokenData[stage].hubBalance, 0, 2, 'tokenData hub balance'); // 1 amoutn difference for each user
+    assertEq(
+      IERC20(asset).balanceOf(address(alice)),
+      MAX_SUPPLY_AMOUNT - params.aliceAmount + aliceData[0].suppliedAmount,
+      'alice balance'
+    );
+    assertEq(
+      IERC20(asset).balanceOf(address(bob)),
+      MAX_SUPPLY_AMOUNT - params.bobAmount + bobData[1].suppliedAmount,
+      'bob balance'
+    );
   }
 
   struct State {

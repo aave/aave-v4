@@ -536,4 +536,8 @@ abstract contract BaseTest is Test, Events {
   function _wethReserveId(Spoke spoke) internal view returns (uint256) {
     return spokeInfo[spoke].weth.reserveId;
   }
+
+  function _wbtcReserveId(Spoke spoke) internal view returns (uint256) {
+    return spokeInfo[spoke].wbtc.reserveId;
+  }
 }
