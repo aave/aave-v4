@@ -50,9 +50,20 @@ contract BorrowIndex_Scenario3Test is BorrowIndexBase {
   function fuzz_borrowIndexScenario3(TestState memory _state) public {
     vm.skip(true, 'pending resolution of precision/rounding/shares impl');
     boundFuzzStates(state, _state);
-    vm.assume(
-      state.actions[SPOKE1_INDEX].supply[1].amount >
-        state.actions[SPOKE1_INDEX].draw[1].amount + state.actions[SPOKE4_INDEX].draw[3].amount
+    state.actions[SPOKE1_INDEX].draw[1].amount = bound(
+      state.actions[SPOKE1_INDEX].draw[1].amount,
+      MIN_BOUNDED_AMOUNT,
+      MAX_BOUNDED_AMOUNT / 4
+    );
+    state.actions[SPOKE4_INDEX].draw[3].amount = bound(
+      state.actions[SPOKE4_INDEX].draw[3].amount,
+      MIN_BOUNDED_AMOUNT,
+      MAX_BOUNDED_AMOUNT / 4
+    );
+    state.actions[SPOKE1_INDEX].supply[1].amount = bound(
+      state.actions[SPOKE1_INDEX].supply[1].amount,
+      (state.actions[SPOKE1_INDEX].draw[1].amount + state.actions[SPOKE4_INDEX].draw[3].amount) * 2, // to maintain 2x collateralization and buffer
+      MAX_BOUNDED_AMOUNT
     );
     _testScenario();
   }

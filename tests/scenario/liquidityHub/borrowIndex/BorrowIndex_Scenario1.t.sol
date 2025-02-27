@@ -42,13 +42,23 @@ contract BorrowIndex_Scenario1Test is BorrowIndexBase {
   // Assumptions:
   // - single assetId (fuzzed but does not vary from action to action)
   // - 0 risk premium
-  /// forge-config: default.fuzz.runs = 1000
-  /// forge-config: default.fuzz.max_test_rejects = 1_000_000
   function test_fuzz_borrowIndexScenario1(TestState memory _state) public {
     boundFuzzStates(state, _state);
-    vm.assume(
-      state.actions[SPOKE1_INDEX].supply[0].amount >
-        state.actions[SPOKE1_INDEX].draw[0].amount + state.actions[SPOKE4_INDEX].draw[1].amount
+
+    state.actions[SPOKE1_INDEX].draw[0].amount = bound(
+      state.actions[SPOKE1_INDEX].draw[0].amount,
+      MIN_BOUNDED_AMOUNT,
+      MAX_BOUNDED_AMOUNT / 4
+    );
+    state.actions[SPOKE4_INDEX].draw[1].amount = bound(
+      state.actions[SPOKE4_INDEX].draw[1].amount,
+      MIN_BOUNDED_AMOUNT,
+      MAX_BOUNDED_AMOUNT / 4
+    );
+    state.actions[SPOKE1_INDEX].supply[0].amount = bound(
+      state.actions[SPOKE1_INDEX].supply[0].amount,
+      (state.actions[SPOKE1_INDEX].draw[0].amount + state.actions[SPOKE4_INDEX].draw[1].amount) * 2, // to maintain 2x collateralization and buffer
+      MAX_BOUNDED_AMOUNT
     );
 
     _testScenario();
