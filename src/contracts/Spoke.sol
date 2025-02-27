@@ -48,7 +48,7 @@ contract Spoke is ISpoke {
     // TODO: validate reserveId does not exist already, valid asset
     require(
       params.liquidityPremium <= PercentageMath.PERCENTAGE_FACTOR * 10,
-      InvalidLiquidityPremium(params.liquidityPremium)
+      InvalidLiquidityPremium()
     );
 
     // TODO: AccessControl
@@ -82,10 +82,10 @@ contract Spoke is ISpoke {
     DataTypes.ReserveConfig calldata params
   ) external {
     // TODO: More sophisticated
-    require(_reserves[reserveId].asset != address(0), InvalidReserve(reserveId));
+    require(_reserves[reserveId].asset != address(0), InvalidReserve());
     require(
       params.liquidityPremium <= PercentageMath.PERCENTAGE_FACTOR * 10,
-      InvalidLiquidityPremium(params.liquidityPremium)
+      InvalidLiquidityPremium()
     );
     // TODO: AccessControl
     _reserves[reserveId].config = DataTypes.ReserveConfig({
@@ -108,11 +108,8 @@ contract Spoke is ISpoke {
 
   // todo: access control, general setter like maker's dss, flag engine like v3
   function updateLiquidityPremium(uint256 reserveId, uint256 liquidityPremium) external {
-    require(_reserves[reserveId].asset != address(0), InvalidReserve(reserveId));
-    require(
-      liquidityPremium <= PercentageMath.PERCENTAGE_FACTOR * 10,
-      InvalidLiquidityPremium(liquidityPremium)
-    );
+    require(_reserves[reserveId].asset != address(0), InvalidReserve());
+    require(liquidityPremium <= PercentageMath.PERCENTAGE_FACTOR * 10, InvalidLiquidityPremium());
     _reserves[reserveId].config.liquidityPremium = liquidityPremium;
 
     emit LiquidityPremiumUpdated(reserveId, liquidityPremium);
@@ -379,10 +376,8 @@ contract Spoke is ISpoke {
     DataTypes.UserConfig storage user,
     uint256 amount
   ) internal view {
-    require(
-      amount <= user.baseDebt + user.outstandingPremium,
-      RepayExceedsDebt(user.baseDebt + user.outstandingPremium)
-    );
+    uint256 userDebt = user.baseDebt + user.outstandingPremium;
+    require(amount <= userDebt, RepayAmountExceedsDebt(userDebt));
   }
 
   function _deductFromOutstandingPremium(

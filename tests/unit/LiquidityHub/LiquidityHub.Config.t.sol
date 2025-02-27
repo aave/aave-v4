@@ -22,7 +22,7 @@ contract LiquidityHubConfigTest is LiquidityHubBase {
 
   function test_addSpoke_revertsWith_invalid_spoke() public {
     uint256 assetId = hub.assetCount();
-    vm.expectRevert(abi.encodeWithSelector(ILiquidityHub.InvalidSpoke.selector, address(0)));
+    vm.expectRevert(ILiquidityHub.InvalidSpoke.selector);
     hub.addSpoke(assetId, DataTypes.SpokeConfig({supplyCap: 1, drawCap: 1}), address(0));
   }
 
@@ -62,7 +62,7 @@ contract LiquidityHubConfigTest is LiquidityHubBase {
     spokeConfigs[0] = DataTypes.SpokeConfig({supplyCap: 1, drawCap: 2});
     spokeConfigs[1] = DataTypes.SpokeConfig({supplyCap: 3, drawCap: 4});
 
-    vm.expectRevert(abi.encodeWithSelector(ILiquidityHub.InvalidSpoke.selector, address(0)));
+    vm.expectRevert(ILiquidityHub.InvalidSpoke.selector);
     hub.addSpokes(assetIds, spokeConfigs, address(0));
   }
 }

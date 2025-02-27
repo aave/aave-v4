@@ -729,14 +729,14 @@ contract LiquidityHubWithdrawTest is LiquidityHubBase {
       to: address(spoke1)
     });
 
-    vm.expectRevert(abi.encodeWithSelector(ILiquidityHub.InvalidWithdrawAmount.selector, 0));
+    vm.expectRevert(ILiquidityHub.InvalidWithdrawAmount.selector);
     vm.prank(address(spoke1));
     hub.withdraw({assetId: daiAssetId, amount: 0, riskPremium: 0, to: alice});
   }
 
   function test_withdraw_revertsWith_asset_not_active() public {
     uint256 amount = 100e18;
-    Utils.updateAssetActive(hub, daiAssetId, false);
+    updateAssetActive(hub, daiAssetId, false);
 
     vm.expectRevert(abi.encodeWithSelector(ILiquidityHub.AssetNotActive.selector, daiAssetId));
     vm.prank(address(spoke1));

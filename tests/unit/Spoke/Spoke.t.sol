@@ -26,7 +26,7 @@ contract SpokeTest is Base {
     Utils.spokeSupply(spoke1, spokeInfo[spoke1].dai.reserveId, alice, daiAmount, alice);
 
     // set reserve not borrowable
-    Utils.updateBorrowable(spoke1, spokeInfo[spoke1].dai.reserveId, false);
+    updateBorrowable(spoke1, spokeInfo[spoke1].dai.reserveId, false);
 
     // Bob draw half of dai reserve liquidity
     vm.prank(bob);
@@ -135,7 +135,7 @@ contract SpokeTest is Base {
 
     // Bob draw 0 dai
     vm.prank(bob);
-    vm.expectRevert(abi.encodeWithSelector(ILiquidityHub.InvalidDrawAmount.selector, 0));
+    vm.expectRevert(ILiquidityHub.InvalidDrawAmount.selector);
     spoke1.borrow(spokeInfo[spoke1].dai.reserveId, 0, bob);
   }
 
@@ -377,7 +377,7 @@ contract SpokeTest is Base {
     bool newCollateral = false;
     bool usingAsCollateral = true;
     uint256 daiReserveId = spokeInfo[spoke1].dai.reserveId;
-    Utils.updateCollateral(spoke1, daiReserveId, newCollateral);
+    updateCollateral(spoke1, daiReserveId, newCollateral);
 
     vm.prank(bob);
     vm.expectRevert(abi.encodeWithSelector(ISpoke.ReserveNotCollateral.selector, daiReserveId));
@@ -390,7 +390,7 @@ contract SpokeTest is Base {
     uint256 daiAmount = 100e18;
 
     // ensure DAI is allowed as collateral
-    Utils.updateCollateral(spoke1, spokeInfo[spoke1].dai.reserveId, newCollateral);
+    updateCollateral(spoke1, spokeInfo[spoke1].dai.reserveId, newCollateral);
 
     // Bob supply dai into spoke1
     deal(address(tokenList.dai), bob, daiAmount);

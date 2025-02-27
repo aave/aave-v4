@@ -26,13 +26,13 @@ interface ISpoke {
   event Repaid(uint256 indexed reserveId, uint256 amount, address indexed user);
   event UsingAsCollateral(uint256 indexed reserveId, bool usingAsCollateral, address indexed user);
 
-  error InvalidReserve(uint256 reserveId);
+  error InvalidReserve();
   error ReserveNotListed();
-  error InvalidLiquidityPremium(uint256 liquidityPremium);
+  error InvalidLiquidityPremium();
   error InsufficientSupply(uint256 supply);
   error NotAvailableLiquidity(uint256 availableLiquidity);
   error ReserveNotBorrowable(uint256 reserveId);
-  error RepayExceedsDebt(uint256 debt);
+  error RepayAmountExceedsDebt(uint256 debt);
   error ReserveNotCollateral(uint256 reserveId);
 
   function addReserve(

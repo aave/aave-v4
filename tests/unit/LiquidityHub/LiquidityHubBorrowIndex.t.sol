@@ -143,7 +143,7 @@ contract LiquidityHubBorrowIndex is Base {
     assertEq(hub.getSpoke(wethAssetId, address(spoke2)).suppliedShares, 1); // should be zero
 
     // after zero amount check, cannot withdraw one 1 wei of shares in contract
-    vm.expectRevert(abi.encodeWithSelector(ILiquidityHub.InvalidSharesAmount.selector, 0));
+    vm.expectRevert(ILiquidityHub.InvalidSharesAmount.selector);
     vm.prank(address(spoke2));
     hub.withdraw(wethAssetId, 1, 0, alice);
 

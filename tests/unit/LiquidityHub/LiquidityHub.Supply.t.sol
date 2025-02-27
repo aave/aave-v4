@@ -27,7 +27,7 @@ contract LiquidityHubSupplyTest is LiquidityHubBase {
   function test_supply_revertsWith_asset_not_active() public {
     uint256 amount = 100e18;
 
-    Utils.updateAssetActive(hub, daiAssetId, false);
+    updateAssetActive(hub, daiAssetId, false);
 
     vm.prank(address(spoke1));
     vm.expectRevert(abi.encodeWithSelector(ILiquidityHub.AssetNotActive.selector, daiAssetId));
@@ -50,6 +50,8 @@ contract LiquidityHubSupplyTest is LiquidityHubBase {
     uint256 newSupplyCap = daiAmount + 1;
     uint256 rate = uint256(10_00).bpsToRay();
 
+    _updateSupplyCap(daiAssetId, address(spoke2), newSupplyCap);
+
     _supplyAndDrawLiquidity({
       daiAmount: daiAmount,
       wethAmount: wethAmount,
@@ -58,8 +60,6 @@ contract LiquidityHubSupplyTest is LiquidityHubBase {
       rate: rate
     });
     skip(365 days);
-
-    _updateSupplyCap(daiAssetId, address(spoke2), newSupplyCap);
 
     vm.expectRevert(abi.encodeWithSelector(ILiquidityHub.SupplyCapExceeded.selector, newSupplyCap));
     vm.prank(address(spoke2));
@@ -395,7 +395,7 @@ contract LiquidityHubSupplyTest is LiquidityHubBase {
     // supply < 1 share
     uint256 amount = 1;
     vm.prank(address(spoke1));
-    vm.expectRevert(abi.encodeWithSelector(ILiquidityHub.InvalidSharesAmount.selector, 0));
+    vm.expectRevert(ILiquidityHub.InvalidSharesAmount.selector);
     hub.supply(daiAssetId, amount, 0, alice);
   }
 
@@ -725,7 +725,7 @@ contract LiquidityHubSupplyTest is LiquidityHubBase {
       prevAssetData = assetData;
 
       // time flies
-      uint256 elapsedTime = Utils.randomizer(1 days, 30 days, i);
+      uint256 elapsedTime = randomizer(1 days, 30 days, i);
       skip(elapsedTime);
 
       p.userShares = 1; // minimum for 1 share

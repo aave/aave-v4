@@ -35,18 +35,18 @@ interface ILiquidityHub {
   );
 
   error MismatchedConfigs();
-  error InvalidSharesAmount(uint256 sharesAmount);
+  error InvalidSharesAmount();
   error InvalidSupplyAmount(uint256 suppliedAmount);
   error AssetNotListed(uint256 assetId);
   error AssetNotActive(uint256 assetId);
   error SupplyCapExceeded(uint256 supplyCap);
-  error InvalidWithdrawAmount(uint256 withdrawAmount);
+  error InvalidWithdrawAmount();
   error SuppliedAmountExceeded(uint256 suppliedAmount);
   error NotAvailableLiquidity(uint256 availableLiquidity);
-  error InvalidDrawAmount(uint256 drawAmount);
+  error InvalidDrawAmount();
   error DrawCapExceeded(uint256 drawCap);
-  error InvalidRestoreAmount(uint256 restoreAmount);
-  error InvalidSpoke(address spoke);
+  error ZeroOrSurplusAmountRestored(uint256 maxAllowedRestore);
+  error InvalidSpoke();
   error InvalidBps(uint256 bps);
 
   function addAsset(DataTypes.AssetConfig memory params, address asset) external;

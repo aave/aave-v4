@@ -357,7 +357,7 @@ contract LiquidityHubDrawTest is LiquidityHubBase {
 
   function test_draw_revertsWith_asset_not_active() public {
     uint256 drawAmount = 1;
-    Utils.updateAssetActive(hub, daiAssetId, false);
+    updateAssetActive(hub, daiAssetId, false);
     vm.prank(address(spoke1));
     vm.expectRevert(abi.encodeWithSelector(ILiquidityHub.AssetNotActive.selector, daiAssetId));
     hub.draw({assetId: daiAssetId, amount: drawAmount, riskPremium: 0, to: address(spoke1)});
@@ -373,7 +373,7 @@ contract LiquidityHubDrawTest is LiquidityHubBase {
   function test_draw_revertsWith_invalid_draw_amount() public {
     uint256 drawAmount = 0;
     vm.prank(address(spoke1));
-    vm.expectRevert(abi.encodeWithSelector(ILiquidityHub.InvalidDrawAmount.selector, drawAmount));
+    vm.expectRevert(ILiquidityHub.InvalidDrawAmount.selector);
     hub.draw({assetId: daiAssetId, amount: drawAmount, riskPremium: 0, to: address(spoke1)});
   }
 
@@ -384,7 +384,7 @@ contract LiquidityHubDrawTest is LiquidityHubBase {
     uint256 drawAmount = drawCap;
     uint256 rate = uint256(10_00).bpsToRay();
 
-    Utils.updateDrawCap(hub, daiAssetId, address(spoke1), drawCap);
+    updateDrawCap(hub, daiAssetId, address(spoke1), drawCap);
 
     _supplyAndDrawLiquidity({
       daiAmount: daiAmount,
@@ -409,7 +409,7 @@ contract LiquidityHubDrawTest is LiquidityHubBase {
     uint256 drawCap = daiAmount;
     uint256 drawAmount = drawCap + 1;
 
-    Utils.updateDrawCap(hub, daiAssetId, address(spoke1), drawCap);
+    updateDrawCap(hub, daiAssetId, address(spoke1), drawCap);
 
     vm.prank(address(spoke1));
     vm.expectRevert(abi.encodeWithSelector(ILiquidityHub.DrawCapExceeded.selector, drawCap));

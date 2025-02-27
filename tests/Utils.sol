@@ -10,22 +10,6 @@ library Utils {
   Vm internal constant vm = Vm(address(uint160(uint256(keccak256('hevm cheat code')))));
 
   // hub
-  function addAssetAndSpokes(
-    ILiquidityHub hub,
-    address asset,
-    DataTypes.AssetConfig memory assetConfig,
-    address[] memory spokes,
-    DataTypes.SpokeConfig[] memory spokeConfigs,
-    DataTypes.ReserveConfig[] memory reserveConfigs
-  ) internal {
-    hub.addAsset(assetConfig, asset);
-    uint256 assetId = hub.assetCount() - 1;
-    for (uint256 i = 0; i < spokes.length; i++) {
-      hub.addSpoke(assetId, spokeConfigs[i], spokes[i]);
-      ISpoke(spokes[i]).addReserve(assetId, reserveConfigs[i], asset);
-    }
-  }
-
   function supply(
     ILiquidityHub hub,
     uint256 assetId,
@@ -68,12 +52,6 @@ library Utils {
     hub.withdraw({assetId: assetId, amount: amount, riskPremium: riskPremium, to: to});
   }
 
-  function updateAssetActive(ILiquidityHub hub, uint256 assetId, bool newActive) internal {
-    DataTypes.AssetConfig memory assetConfig = hub.getAsset(assetId).config;
-    assetConfig.active = newActive;
-    hub.updateAssetConfig(assetId, assetConfig);
-  }
-
   // spoke
   function spokeBorrow(
     ISpoke spoke,
@@ -95,64 +73,5 @@ library Utils {
   ) internal {
     vm.prank(user);
     spoke.supply(reserveId, amount);
-  }
-
-  function setUsingAsCollateral(
-    ISpoke spoke,
-    address user,
-    uint256 reserveId,
-    bool usingAsCollateral
-  ) internal {
-    vm.prank(user);
-    spoke.setUsingAsCollateral(reserveId, usingAsCollateral);
-  }
-
-  function updateLiquidationThreshold(ISpoke spoke, uint256 reserveId, uint256 newLt) internal {
-    DataTypes.Reserve memory reserveData = spoke.getReserve(reserveId);
-    reserveData.config.lt = newLt;
-    spoke.updateReserveConfig(reserveId, reserveData.config);
-  }
-
-  function updateCollateral(ISpoke spoke, uint256 reserveId, bool newCollateral) internal {
-    DataTypes.Reserve memory reserveData = spoke.getReserve(reserveId);
-    reserveData.config.collateral = newCollateral;
-    spoke.updateReserveConfig(reserveId, reserveData.config);
-  }
-
-  function updateBorrowable(ISpoke spoke, uint256 reserveId, bool newBorrowable) internal {
-    DataTypes.Reserve memory reserveData = spoke.getReserve(reserveId);
-    reserveData.config.borrowable = newBorrowable;
-    spoke.updateReserveConfig(reserveId, reserveData.config);
-  }
-
-  /// @dev pseudo random randomizer
-  function randomizer(uint256 min, uint256 max, uint256) internal returns (uint256) {
-    return vm.randomUint(min, max);
-  }
-
-  function updateDrawCap(
-    ILiquidityHub hub,
-    uint256 assetId,
-    address spoke,
-    uint256 newDrawCap
-  ) internal {
-    DataTypes.SpokeConfig memory spokeConfig = hub.getSpokeConfig(assetId, spoke);
-    spokeConfig.drawCap = newDrawCap;
-    hub.updateSpokeConfig(assetId, spoke, spokeConfig);
-  }
-
-  function getUserInfo(
-    ISpoke spoke,
-    address user,
-    uint256 reserveId
-  ) internal view returns (DataTypes.UserConfig memory) {
-    DataTypes.UserConfig memory userConfig;
-    userConfig.usingAsCollateral = spoke.getUsingAsCollateral(reserveId, user);
-    (userConfig.baseDebt, userConfig.outstandingPremium) = spoke.getUserDebt(reserveId, user);
-    userConfig.suppliedShares = spoke.getSuppliedShares(reserveId, user);
-    userConfig.baseBorrowIndex = spoke.getUserBaseBorrowIndex(reserveId, user);
-    userConfig.riskPremium = spoke.getUserRiskPremium(reserveId, user);
-    userConfig.lastUpdateTimestamp = spoke.getUserLastUpdate(reserveId, user);
-    return userConfig;
   }
 }
