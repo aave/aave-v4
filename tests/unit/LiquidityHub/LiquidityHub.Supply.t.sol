@@ -36,9 +36,10 @@ contract LiquidityHubSupplyTest is LiquidityHubBase {
 
   function test_supply_revertsWith_supply_cap_exceeded() public {
     uint256 amount = 100e18;
-    _updateSupplyCap(daiAssetId, address(spoke1), amount - 1);
+    uint256 newSupplyCap = amount - 1;
+    _updateSupplyCap(daiAssetId, address(spoke1), newSupplyCap);
 
-    vm.expectRevert(abi.encodeWithSelector(ILiquidityHub.SupplyCapExceeded.selector, amount - 1));
+    vm.expectRevert(abi.encodeWithSelector(ILiquidityHub.SupplyCapExceeded.selector, newSupplyCap));
     vm.prank(address(spoke1));
     hub.supply(daiAssetId, amount, 0, alice);
   }
@@ -63,7 +64,7 @@ contract LiquidityHubSupplyTest is LiquidityHubBase {
 
     vm.expectRevert(abi.encodeWithSelector(ILiquidityHub.SupplyCapExceeded.selector, newSupplyCap));
     vm.prank(address(spoke2));
-    hub.supply(daiAssetId, 1e8, 0, alice);
+    hub.supply(daiAssetId, 1, 0, alice);
   }
 
   function test_supply() public {
@@ -171,7 +172,7 @@ contract LiquidityHubSupplyTest is LiquidityHubBase {
     IERC20 asset = hub.assetsList(assetId);
 
     vm.expectEmit(address(asset));
-    emit Transfer(alice, address(hub), amount);
+    emit IERC20.Transfer(alice, address(hub), amount);
     vm.expectEmit(address(hub));
     emit ILiquidityHub.Supply(assetId, address(spoke1), amount);
 
@@ -247,7 +248,7 @@ contract LiquidityHubSupplyTest is LiquidityHubBase {
     IERC20 asset2 = hub.assetsList(assetId2);
 
     vm.expectEmit(address(asset));
-    emit Transfer(alice, address(hub), amount);
+    emit IERC20.Transfer(alice, address(hub), amount);
     vm.expectEmit(address(hub));
     emit ILiquidityHub.Supply(assetId, address(spoke1), amount);
 
@@ -255,7 +256,7 @@ contract LiquidityHubSupplyTest is LiquidityHubBase {
     hub.supply(assetId, amount, 0, alice);
 
     vm.expectEmit(address(asset2));
-    emit Transfer(alice, address(hub), amount2);
+    emit IERC20.Transfer(alice, address(hub), amount2);
     vm.expectEmit(address(hub));
     emit ILiquidityHub.Supply(assetId2, address(spoke2), amount2);
 

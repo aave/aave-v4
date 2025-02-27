@@ -20,12 +20,7 @@ import {MockERC20} from './mocks/MockERC20.sol';
 import {MockPriceOracle, IPriceOracle} from './mocks/MockPriceOracle.sol';
 import {Utils} from './Utils.sol';
 
-contract Events {
-  // OpenZeppelin
-  event Transfer(address indexed from, address indexed to, uint256 value);
-}
-
-abstract contract Base is Test, Events {
+abstract contract Base is Test {
   using WadRayMath for uint256;
   using SharesMath for uint256;
 
