@@ -11,14 +11,19 @@ import {WadRayMath} from 'src/contracts/WadRayMath.sol';
 import {SharesMath} from 'src/contracts/SharesMath.sol';
 import {MathUtils} from 'src/contracts/MathUtils.sol';
 import {DefaultReserveInterestRateStrategy, IDefaultInterestRateStrategy, IReserveInterestRateStrategy} from 'src/contracts/DefaultReserveInterestRateStrategy.sol';
-import {IERC20} from 'src/dependencies/openzeppelin/IERC20.sol';
-import {WETH9} from 'src/dependencies/weth/WETH9.sol';
 import {ISpoke} from 'src/interfaces/ISpoke.sol';
 import {DataTypes} from 'src/libraries/types/DataTypes.sol';
+import {Utils} from './Utils.sol';
+
+// mocks
 import {TestnetERC20} from './mocks/TestnetERC20.sol';
 import {MockERC20} from './mocks/MockERC20.sol';
 import {MockPriceOracle, IPriceOracle} from './mocks/MockPriceOracle.sol';
-import {Utils} from './Utils.sol';
+
+// dependencies
+import {IERC20Errors} from 'src/dependencies/openzeppelin/IERC20Errors.sol';
+import {IERC20} from 'src/dependencies/openzeppelin/IERC20.sol';
+import {WETH9} from 'src/dependencies/weth/WETH9.sol';
 
 abstract contract Base is Test {
   using WadRayMath for uint256;
@@ -27,6 +32,7 @@ abstract contract Base is Test {
   uint256 internal constant MAX_SUPPLY_AMOUNT = 1e30;
   uint32 internal constant MAX_RISK_PREMIUM_BPS = 1000_00;
   uint256 internal constant MAX_BORROW_RATE = 1000_00; // matches DefaultReserveInterestRateStrategy
+  uint256 internal constant MAX_SKIP_TIME = 10_000 days;
 
   IERC20 internal usdc;
   IERC20 internal dai;
@@ -547,5 +553,19 @@ abstract contract Base is Test {
     userConfig.riskPremium = spoke.getUserRiskPremium(reserveId, user);
     userConfig.lastUpdateTimestamp = spoke.getUserLastUpdate(reserveId, user);
     return userConfig;
+  }
+
+  function _getAssetInfo(Spoke spoke, uint256 reserveId) internal view returns (uint256, IERC20) {
+    DataTypes.Reserve memory reserve = spoke.getReserve(reserveId);
+    return (reserve.assetId, IERC20(reserve.asset));
+  }
+
+  function _getWithdrawalLimit(
+    Spoke spoke,
+    uint256 reserveId,
+    address user
+  ) internal view returns (uint256) {
+    (uint256 baseDebt, ) = spoke1.getUserDebt(_daiReserveId(spoke1), user);
+    spoke.getUserSuppliedAmount(reserveId, user) - baseDebt;
   }
 }

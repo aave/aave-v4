@@ -2,7 +2,6 @@
 pragma solidity ^0.8.0;
 
 import 'tests/Base.t.sol';
-import {IERC20Errors} from 'src/dependencies/openzeppelin/IERC20Errors.sol';
 
 contract SpokeTest is Base {
   using SharesMath for uint256;

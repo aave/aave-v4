@@ -2,7 +2,6 @@
 pragma solidity ^0.8.0;
 
 import 'tests/Base.t.sol';
-import {IERC20Errors} from 'src/dependencies/openzeppelin/IERC20Errors.sol';
 import {DataTypes} from 'src/libraries/types/DataTypes.sol';
 
 contract SpokeBaseTest is Base {
@@ -30,12 +29,14 @@ contract SpokeBaseTest is Base {
   }
 
   // increase share conversion index on borrow asset
+  // supply collateral asset, borrow asset, skip time to increase index
   /// @return supplyShares of collateral asset
   /// @return supplyShares of borrowed asset
-  function _increaseShareConversionIndex(
+  function _executeSupplyAndBorrow(
     TestReserve memory collateral,
     TestReserve memory borrow,
-    uint256 rate
+    uint256 rate,
+    uint256 skipTime
   ) internal returns (uint256, uint256) {
     vm.mockCall(
       address(irStrategy),
@@ -85,7 +86,7 @@ contract SpokeBaseTest is Base {
     });
 
     // skip time to increase index
-    skip(365 days);
+    skip(skipTime);
 
     return (collateralSupplyShares, borrowSupplyShares);
   }
@@ -119,13 +120,10 @@ contract SpokeBaseTest is Base {
     return userData;
   }
 
-  function _getTokenBalances(
-    address token,
-    address spoke
-  ) internal view returns (TokenData memory) {
+  function _getTokenBalances(IERC20 token, address spoke) internal view returns (TokenData memory) {
     TokenData memory tokenData;
-    tokenData.spokeBalance = IERC20(token).balanceOf(spoke);
-    tokenData.hubBalance = IERC20(token).balanceOf(address(hub));
+    tokenData.spokeBalance = token.balanceOf(spoke);
+    tokenData.hubBalance = token.balanceOf(address(hub));
     return tokenData;
   }
 }

@@ -2,7 +2,6 @@
 pragma solidity ^0.8.0;
 
 import './LiquidityHubBase.t.sol';
-import {IERC20Errors} from 'src/dependencies/openzeppelin/IERC20Errors.sol';
 
 contract LiquidityHubSupplyTest is LiquidityHubBase {
   using SharesMath for uint256;

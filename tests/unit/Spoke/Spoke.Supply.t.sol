@@ -187,7 +187,7 @@ contract SpokeSupplyTest is SpokeBaseTest {
       newLiquidityPremium: 0
     });
 
-    _increaseShareConversionIndex({
+    _executeSupplyAndBorrow({
       collateral: TestReserve({
         reserveId: spokeInfo[spoke1].weth.reserveId,
         supplier: alice,
@@ -202,12 +202,13 @@ contract SpokeSupplyTest is SpokeBaseTest {
         supplier: bob,
         borrower: alice
       }),
-      rate: uint256(10_00).bpsToRay()
+      rate: uint256(10_00).bpsToRay(),
+      skipTime: 365 days
     });
 
     uint256 amount = 1e18;
     uint256 expectedShares = hub.convertToShares(daiAssetId, amount);
-    assertTrue(expectedShares < amount, 'exchange rate should be > 1');
+    assertGt(amount, expectedShares, 'exchange rate should be > 1');
 
     TestData[2] memory carolData;
     TestData[2] memory daiData;
@@ -216,7 +217,7 @@ contract SpokeSupplyTest is SpokeBaseTest {
 
     carolData[stage] = _getUserData(_daiReserveId(spoke1), carol);
     daiData[stage] = _getReserveData(_daiReserveId(spoke1));
-    tokenData[stage] = _getTokenBalances(address(tokenList.dai), address(spoke1));
+    tokenData[stage] = _getTokenBalances(tokenList.dai, address(spoke1));
 
     deal(address(tokenList.dai), carol, amount);
 
@@ -228,7 +229,7 @@ contract SpokeSupplyTest is SpokeBaseTest {
 
     carolData[stage] = _getUserData(_daiReserveId(spoke1), carol);
     daiData[stage] = _getReserveData(_daiReserveId(spoke1));
-    tokenData[stage] = _getTokenBalances(address(tokenList.dai), address(spoke1));
+    tokenData[stage] = _getTokenBalances(tokenList.dai, address(spoke1));
 
     // dai balance
     assertEq(tokenList.dai.balanceOf(carol), 0, 'user token balance post-supply');
@@ -270,14 +271,22 @@ contract SpokeSupplyTest is SpokeBaseTest {
     );
   }
 
+  struct SupplyFuzzLocal {
+    uint256 assetId;
+    IERC20 asset;
+    uint256 expectedShares;
+  }
+
   function test_supply_fuzz_index_increase_no_premium(
     uint256 amount,
     uint256 rate,
-    uint256 reserveId
+    uint256 reserveId,
+    uint256 skipTime
   ) public {
     amount = bound(amount, 1, MAX_SUPPLY_AMOUNT);
     rate = bound(rate, 1, MAX_BORROW_RATE).bpsToRay();
     reserveId = bound(reserveId, 0, spokeInfo[spoke1].MAX_RESERVE_ID);
+    skipTime = bound(skipTime, 1, MAX_SKIP_TIME);
 
     // set weth LP to 0 for no premium contribution
     updateLiquidityPremium({
@@ -286,7 +295,8 @@ contract SpokeSupplyTest is SpokeBaseTest {
       newLiquidityPremium: 0
     });
 
-    _increaseShareConversionIndex({
+    // increase index on reserveId
+    _executeSupplyAndBorrow({
       collateral: TestReserve({
         reserveId: _wethReserveId(spoke1),
         supplier: alice,
@@ -301,15 +311,17 @@ contract SpokeSupplyTest is SpokeBaseTest {
         supplier: bob,
         borrower: alice
       }),
-      rate: rate
+      rate: rate,
+      skipTime: skipTime
     });
 
-    uint256 assetId = spoke1.getReserve(reserveId).assetId;
-    address asset = spoke1.getReserve(reserveId).asset;
+    SupplyFuzzLocal memory state;
 
-    uint256 expectedShares = hub.convertToShares(assetId, amount);
-    vm.assume(expectedShares > 0);
-    assertTrue(expectedShares < amount, 'exchange rate should be > 1');
+    (state.assetId, state.asset) = _getAssetInfo(spoke1, reserveId);
+
+    state.expectedShares = hub.convertToShares(state.assetId, amount);
+    vm.assume(state.expectedShares > 0);
+    assertGt(amount, state.expectedShares, 'exchange rate should be > 1');
 
     TestData[2] memory carolData;
     TestData[2] memory reserveData;
@@ -318,11 +330,9 @@ contract SpokeSupplyTest is SpokeBaseTest {
 
     carolData[stage] = _getUserData(reserveId, carol);
     reserveData[stage] = _getReserveData(reserveId);
-    tokenData[stage] = _getTokenBalances(asset, address(spoke1));
+    tokenData[stage] = _getTokenBalances(state.asset, address(spoke1));
 
     vm.assume(hub.convertToShares(daiAssetId, amount) > 0);
-
-    deal(asset, carol, amount);
 
     vm.prank(carol);
     vm.expectEmit(address(spoke1));
@@ -332,16 +342,20 @@ contract SpokeSupplyTest is SpokeBaseTest {
 
     carolData[stage] = _getUserData(reserveId, carol);
     reserveData[stage] = _getReserveData(reserveId);
-    tokenData[stage] = _getTokenBalances(asset, address(spoke1));
+    tokenData[stage] = _getTokenBalances(state.asset, address(spoke1));
 
     // token balance
-    assertEq(IERC20(asset).balanceOf(carol), 0, 'user token balance post-supply');
     assertEq(
-      IERC20(asset).balanceOf(address(hub)),
+      state.asset.balanceOf(carol),
+      MAX_SUPPLY_AMOUNT - amount,
+      'user token balance post-supply'
+    );
+    assertEq(
+      state.asset.balanceOf(address(hub)),
       tokenData[stage - 1].hubBalance + amount,
       'hub token balance post-supply'
     );
-    assertEq(IERC20(asset).balanceOf(address(spoke1)), 0, 'spoke token balance post-supply');
+    assertEq(state.asset.balanceOf(address(spoke1)), 0, 'spoke token balance post-supply');
     // reserve
     assertEq(
       reserveData[stage].data.baseDebt,
@@ -355,7 +369,7 @@ contract SpokeSupplyTest is SpokeBaseTest {
     );
     assertEq(
       reserveData[stage].data.suppliedShares,
-      reserveData[stage - 1].data.suppliedShares + expectedShares,
+      reserveData[stage - 1].data.suppliedShares + state.expectedShares,
       'reserve suppliedShares post-supply'
     );
     assertEq(
@@ -368,7 +382,7 @@ contract SpokeSupplyTest is SpokeBaseTest {
     assertEq(carolData[stage].data.outstandingPremium, 0, 'user outstandingPremium post-supply');
     assertEq(
       carolData[stage].data.suppliedShares,
-      expectedShares,
+      state.expectedShares,
       'user suppliedShares post-supply'
     );
     assertEq(
@@ -381,7 +395,7 @@ contract SpokeSupplyTest is SpokeBaseTest {
   function test_supply_index_increase_with_premium() public {
     // alice supplies weth as collateral, borrows dai
     // increase dai share exchange rate
-    _increaseShareConversionIndex({
+    _executeSupplyAndBorrow({
       collateral: TestReserve({
         reserveId: _wethReserveId(spoke1),
         supplyAmount: 100e18,
@@ -396,12 +410,13 @@ contract SpokeSupplyTest is SpokeBaseTest {
         borrower: alice,
         supplyAmount: 20e18
       }),
-      rate: uint256(10_00).bpsToRay()
+      rate: uint256(10_00).bpsToRay(),
+      skipTime: 365 days
     });
 
     uint256 amount = 1e18;
     uint256 expectedShares = hub.convertToShares(daiAssetId, amount);
-    assertTrue(expectedShares < amount, 'exchange rate should be > 1');
+    assertGt(amount, expectedShares, 'exchange rate should be > 1');
 
     TestData[2] memory carolData;
     TestData[2] memory daiData;
@@ -410,12 +425,9 @@ contract SpokeSupplyTest is SpokeBaseTest {
 
     carolData[stage] = _getUserData(_daiReserveId(spoke1), carol);
     daiData[stage] = _getReserveData(_daiReserveId(spoke1));
-    tokenData[stage] = _getTokenBalances(address(tokenList.dai), address(spoke1));
+    tokenData[stage] = _getTokenBalances(tokenList.dai, address(spoke1));
 
-    assertTrue(
-      daiData[stage].data.outstandingPremium > 0,
-      'reserve outstandingPremium post-supply'
-    );
+    assertGt(daiData[stage].data.outstandingPremium, 0, 'reserve outstandingPremium post-supply');
 
     deal(address(tokenList.dai), carol, amount);
 
@@ -427,7 +439,7 @@ contract SpokeSupplyTest is SpokeBaseTest {
 
     carolData[stage] = _getUserData(_daiReserveId(spoke1), carol);
     daiData[stage] = _getReserveData(_daiReserveId(spoke1));
-    tokenData[stage] = _getTokenBalances(address(tokenList.dai), address(spoke1));
+    tokenData[stage] = _getTokenBalances(tokenList.dai, address(spoke1));
 
     // dai balance
     assertEq(tokenList.dai.balanceOf(carol), 0, 'user token balance post-supply');
@@ -471,17 +483,18 @@ contract SpokeSupplyTest is SpokeBaseTest {
   function test_supply_fuzz_index_increase_with_premium(
     uint256 amount,
     uint256 rate,
-    uint256 reserveId
+    uint256 reserveId,
+    uint256 skipTime
   ) public {
     amount = bound(amount, 1, MAX_SUPPLY_AMOUNT);
     rate = bound(rate, 1, MAX_BORROW_RATE).bpsToRay();
     reserveId = bound(reserveId, 0, spokeInfo[spoke1].MAX_RESERVE_ID);
+    skipTime = bound(skipTime, 1, MAX_SKIP_TIME);
 
-    uint256 assetId = spoke1.getReserve(reserveId).assetId;
-    address asset = spoke1.getReserve(reserveId).asset;
+    (uint256 assetId, IERC20 asset) = _getAssetInfo(spoke1, reserveId);
 
     // alice supplies usdx as collateral, borrows dai
-    _increaseShareConversionIndex({
+    _executeSupplyAndBorrow({
       collateral: TestReserve({
         reserveId: _wethReserveId(spoke1),
         supplier: alice,
@@ -496,13 +509,14 @@ contract SpokeSupplyTest is SpokeBaseTest {
         borrower: alice,
         supplier: bob
       }),
-      rate: rate
+      rate: rate,
+      skipTime: skipTime
     });
 
     uint256 amount = 1e18;
     uint256 expectedShares = hub.convertToShares(assetId, amount);
     vm.assume(expectedShares > 0);
-    assertTrue(expectedShares < amount, 'exchange rate should be > 1');
+    assertGt(amount, expectedShares, 'exchange rate should be > 1');
 
     TestData[2] memory carolData;
     TestData[2] memory reserveData;
@@ -513,12 +527,13 @@ contract SpokeSupplyTest is SpokeBaseTest {
     reserveData[stage] = _getReserveData(reserveId);
     tokenData[stage] = _getTokenBalances(asset, address(spoke1));
 
-    assertTrue(
-      reserveData[stage].data.outstandingPremium > 0,
+    assertGt(
+      reserveData[stage].data.outstandingPremium,
+      0,
       'reserve outstandingPremium pre-supply'
     );
 
-    deal(asset, carol, amount);
+    deal(address(asset), carol, amount);
 
     vm.prank(carol);
     vm.expectEmit(address(spoke1));
@@ -532,13 +547,13 @@ contract SpokeSupplyTest is SpokeBaseTest {
     tokenData[stage] = _getTokenBalances(asset, address(spoke1));
 
     // token balance
-    assertEq(IERC20(asset).balanceOf(carol), 0, 'user token balance post-supply');
+    assertEq(asset.balanceOf(carol), 0, 'user token balance post-supply');
     assertEq(
-      IERC20(asset).balanceOf(address(hub)),
+      asset.balanceOf(address(hub)),
       tokenData[stage - 1].hubBalance + amount,
       'hub token balance post-supply'
     );
-    assertEq(IERC20(asset).balanceOf(address(spoke1)), 0, 'spoke token balance post-supply');
+    assertEq(asset.balanceOf(address(spoke1)), 0, 'spoke token balance post-supply');
     // reserve
     assertEq(
       reserveData[stage].data.baseDebt,
