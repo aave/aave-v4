@@ -1,11 +1,10 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.0;
 
-import './LiquidityHubBaseTest.t.sol';
 import {IERC20Errors} from 'src/dependencies/openzeppelin/IERC20Errors.sol';
-import {Asset, SpokeData} from 'src/contracts/LiquidityHub.sol';
+import './LiquidityHubBase.t.sol';
 
-contract LiquidityHubConfigTest is LiquidityHubBaseTest {
+contract LiquidityHubConfigTest is LiquidityHubBase {
   using SharesMath for uint256;
   using WadRayMath for uint256;
 
@@ -13,7 +12,7 @@ contract LiquidityHubConfigTest is LiquidityHubBaseTest {
     uint256 assetId = hub.assetCount() - 1;
 
     vm.expectEmit(address(hub));
-    emit SpokeAdded(assetId, address(spoke1));
+    emit ILiquidityHub.SpokeAdded(assetId, address(spoke1));
     hub.addSpoke(assetId, DataTypes.SpokeConfig({supplyCap: 1, drawCap: 1}), address(spoke1));
 
     DataTypes.SpokeConfig memory spokeData = hub.getSpokeConfig(assetId, address(spoke1));
@@ -23,7 +22,7 @@ contract LiquidityHubConfigTest is LiquidityHubBaseTest {
 
   function test_addSpoke_revertsWith_invalid_spoke() public {
     uint256 assetId = hub.assetCount();
-    vm.expectRevert(TestErrors.INVALID_SPOKE);
+    vm.expectRevert(ILiquidityHub.InvalidSpoke.selector);
     hub.addSpoke(assetId, DataTypes.SpokeConfig({supplyCap: 1, drawCap: 1}), address(0));
   }
 
@@ -40,8 +39,8 @@ contract LiquidityHubConfigTest is LiquidityHubBaseTest {
     spokeConfigs[1] = ethSpokeConfig;
 
     vm.expectEmit(address(hub));
-    emit SpokeAdded(daiAssetId, address(spoke1));
-    emit SpokeAdded(wethAssetId, address(spoke1));
+    emit ILiquidityHub.SpokeAdded(daiAssetId, address(spoke1));
+    emit ILiquidityHub.SpokeAdded(wethAssetId, address(spoke1));
     hub.addSpokes(assetIds, spokeConfigs, address(spoke1));
 
     DataTypes.SpokeConfig memory daiSpokeData = hub.getSpokeConfig(daiAssetId, address(spoke1));
@@ -63,7 +62,7 @@ contract LiquidityHubConfigTest is LiquidityHubBaseTest {
     spokeConfigs[0] = DataTypes.SpokeConfig({supplyCap: 1, drawCap: 2});
     spokeConfigs[1] = DataTypes.SpokeConfig({supplyCap: 3, drawCap: 4});
 
-    vm.expectRevert(TestErrors.INVALID_SPOKE);
+    vm.expectRevert(ILiquidityHub.InvalidSpoke.selector);
     hub.addSpokes(assetIds, spokeConfigs, address(0));
   }
 }

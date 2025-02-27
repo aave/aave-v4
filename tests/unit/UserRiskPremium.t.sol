@@ -1,9 +1,9 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.0;
 
-import '../BaseTest.t.sol';
+import '../Base.t.sol';
 
-contract UserRiskPremiumTest_ToMigrate is BaseTest {
+contract UserRiskPremiumTest_ToMigrate is Base {
   using SharesMath for uint256;
   using WadRayMath for uint256;
   using PercentageMath for uint256;
@@ -26,12 +26,12 @@ contract UserRiskPremiumTest_ToMigrate is BaseTest {
     bool usingAsCollateral = true;
 
     // ensure DAI allowed as collateral
-    Utils.updateCollateral(spoke1, daiId, newCollateral);
+    updateCollateral(spoke1, daiId, newCollateral);
 
     // USER1 supply dai into spoke1
     deal(address(dai), USER1, daiAmount);
-    Utils.spokeSupply(hub, spoke1, daiId, USER1, daiAmount, USER1);
-    Utils.setUsingAsCollateral(spoke1, USER1, daiId, usingAsCollateral);
+    Utils.spokeSupply(spoke1, daiId, USER1, daiAmount, USER1);
+    setUsingAsCollateral(spoke1, USER1, daiId, usingAsCollateral);
 
     uint256 userRiskPremium = ISpoke(spoke1).getUserRiskPremium(USER1);
     assertEq(userRiskPremium, 1e18, 'wrong user risk premium'); // TODO: fix when LP is implemented
@@ -48,18 +48,18 @@ contract UserRiskPremiumTest_ToMigrate is BaseTest {
     bool usingAsCollateral = true;
 
     // ensure DAI allowed as collateral
-    Utils.updateCollateral(spoke1, daiId, newCollateral);
-    Utils.updateCollateral(spoke1, ethId, newCollateral);
+    updateCollateral(spoke1, daiId, newCollateral);
+    updateCollateral(spoke1, ethId, newCollateral);
 
     // USER1 supply dai into spoke1
     deal(address(dai), USER1, daiAmount);
-    Utils.spokeSupply(hub, spoke1, daiId, USER1, daiAmount, USER1);
-    Utils.setUsingAsCollateral(spoke1, USER1, daiId, usingAsCollateral);
+    Utils.spokeSupply(spoke1, daiId, USER1, daiAmount, USER1);
+    setUsingAsCollateral(spoke1, USER1, daiId, usingAsCollateral);
 
     // USER1 supply eth into spoke1
     deal(address(eth), USER1, ethAmount);
-    Utils.spokeSupply(hub, spoke1, ethId, USER1, ethAmount, USER1);
-    Utils.setUsingAsCollateral(spoke1, USER1, ethId, usingAsCollateral);
+    Utils.spokeSupply(spoke1, ethId, USER1, ethAmount, USER1);
+    setUsingAsCollateral(spoke1, USER1, ethId, usingAsCollateral);
 
     uint256 userRiskPremium = ISpoke(spoke1).getUserRiskPremium(USER1);
     assertEq(userRiskPremium, 1e18, 'wrong user risk premium'); // TODO: fix when LP is implemented
@@ -76,18 +76,18 @@ contract UserRiskPremiumTest_ToMigrate is BaseTest {
     bool usingAsCollateral = true;
 
     // ensure DAI/ETH allowed as collateral
-    Utils.updateCollateral(spoke1, daiId, newCollateral);
-    Utils.updateCollateral(spoke1, ethId, newCollateral);
+    updateCollateral(spoke1, daiId, newCollateral);
+    updateCollateral(spoke1, ethId, newCollateral);
 
     // USER1 supply dai into spoke1
     deal(address(dai), USER1, daiAmount);
-    Utils.spokeSupply(hub, spoke1, daiId, USER1, daiAmount, USER1);
-    Utils.setUsingAsCollateral(spoke1, USER1, daiId, usingAsCollateral);
+    Utils.spokeSupply(spoke1, daiId, USER1, daiAmount, USER1);
+    setUsingAsCollateral(spoke1, USER1, daiId, usingAsCollateral);
 
     // USER1 supply eth into spoke1
     deal(address(eth), USER1, ethAmount);
-    Utils.spokeSupply(hub, spoke1, ethId, USER1, ethAmount, USER1);
-    Utils.setUsingAsCollateral(spoke1, USER1, ethId, usingAsCollateral);
+    Utils.spokeSupply(spoke1, ethId, USER1, ethAmount, USER1);
+    setUsingAsCollateral(spoke1, USER1, ethId, usingAsCollateral);
 
     uint256[] memory assetIds = new uint256[](4);
     assetIds[0] = daiId;
@@ -113,7 +113,7 @@ contract UserRiskPremiumTest_ToMigrate is BaseTest {
     uint256 userRiskPremium = 0;
     for (uint256 i = 0; i < assetIds.length; i++) {
       uint256 assetId = assetIds[i];
-      Spoke.UserConfig memory userConfig = spoke1.getUser(assetId, USER1);
+      DataTypes.UserConfig memory userConfig = spoke1.getUser(assetId, USER1);
 
       // uint256 assetPrice = oracle.getAssetPrice(assetId);
       // uint256 userCollateral = hub.convertToAssetsDown(assetId, userConfig.supplyShares) *

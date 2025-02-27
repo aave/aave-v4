@@ -1,12 +1,9 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.0;
 
-import 'tests/BaseTest.t.sol';
-import {SpokeData} from 'src/contracts/LiquidityHub.sol';
-import {Asset} from 'src/contracts/LiquidityHub.sol';
-import {Utils} from 'tests/Utils.t.sol';
+import 'tests/Base.t.sol';
 
-contract LiquidityHubAccrueInterestTest is BaseTest {
+contract LiquidityHubAccrueInterestTest is Base {
   using SharesMath for uint256;
   using WadRayMath for uint256;
   using PercentageMath for uint256;
@@ -14,11 +11,11 @@ contract LiquidityHubAccrueInterestTest is BaseTest {
   uint256 public constant MAX_BPS = 999_99;
 
   struct SpokeDataLocal {
-    SpokeData t0;
-    SpokeData t1;
-    SpokeData t2;
-    SpokeData t3;
-    SpokeData t4;
+    DataTypes.SpokeData t0;
+    DataTypes.SpokeData t1;
+    DataTypes.SpokeData t2;
+    DataTypes.SpokeData t3;
+    DataTypes.SpokeData t4;
   }
 
   struct Spoke4Amounts {
@@ -43,27 +40,27 @@ contract LiquidityHubAccrueInterestTest is BaseTest {
   }
 
   struct Spoke1DataLocal {
-    SpokeData t0;
-    SpokeData t1;
-    SpokeData t2;
-    SpokeData t3;
-    SpokeData t4;
+    DataTypes.SpokeData t0;
+    DataTypes.SpokeData t1;
+    DataTypes.SpokeData t2;
+    DataTypes.SpokeData t3;
+    DataTypes.SpokeData t4;
   }
 
   struct Spoke2DataLocal {
-    SpokeData t0;
-    SpokeData t1;
-    SpokeData t2;
-    SpokeData t3;
-    SpokeData t4;
+    DataTypes.SpokeData t0;
+    DataTypes.SpokeData t1;
+    DataTypes.SpokeData t2;
+    DataTypes.SpokeData t3;
+    DataTypes.SpokeData t4;
   }
 
   struct AssetDataLocal {
-    Asset t0;
-    Asset t1;
-    Asset t2;
-    Asset t3;
-    Asset t4;
+    DataTypes.Asset t0;
+    DataTypes.Asset t1;
+    DataTypes.Asset t2;
+    DataTypes.Asset t3;
+    DataTypes.Asset t4;
   }
 
   struct CumulatedInterest {
@@ -106,7 +103,7 @@ contract LiquidityHubAccrueInterestTest is BaseTest {
   }
 
   function test_accrueInterest_NoActionTaken() public {
-    Asset memory daiInfo = hub.getAsset(daiAssetId);
+    DataTypes.Asset memory daiInfo = hub.getAsset(daiAssetId);
     assertEq(daiInfo.lastUpdateTimestamp, vm.getBlockTimestamp());
     assertEq(daiInfo.baseDebt, 0);
     assertEq(daiInfo.outstandingPremium, 0);
@@ -124,7 +121,7 @@ contract LiquidityHubAccrueInterestTest is BaseTest {
     // Spoke 2 does a supply to accrue interest
     Utils.supply(hub, daiAssetId, address(spoke2), 1000e18, 0, address(spoke2), address(spoke2));
 
-    Asset memory daiInfo = hub.getAsset(daiAssetId);
+    DataTypes.Asset memory daiInfo = hub.getAsset(daiAssetId);
 
     // Timestamp doesn't update when no interest accrued
     assertEq(daiInfo.lastUpdateTimestamp, vm.getBlockTimestamp(), 'lastUpdateTimestamp');
@@ -147,7 +144,7 @@ contract LiquidityHubAccrueInterestTest is BaseTest {
     // Spoke 2 does a supply to accrue interest
     Utils.supply(hub, daiAssetId, address(spoke2), 1000e18, 0, address(spoke2), address(spoke2));
 
-    Asset memory daiInfo = hub.getAsset(daiAssetId);
+    DataTypes.Asset memory daiInfo = hub.getAsset(daiAssetId);
 
     uint256 totalBase = MathUtils.calculateLinearInterest(baseBorrowRate, uint40(startTime)).rayMul(
       initialDebt
@@ -185,7 +182,7 @@ contract LiquidityHubAccrueInterestTest is BaseTest {
     // Spoke 2 does a supply to accrue interest
     Utils.supply(hub, daiAssetId, address(spoke2), 1000e18, 0, address(spoke2), address(spoke2));
 
-    Asset memory daiInfo = hub.getAsset(daiAssetId);
+    DataTypes.Asset memory daiInfo = hub.getAsset(daiAssetId);
 
     uint256 totalBase = MathUtils.calculateLinearInterest(baseBorrowRate, uint40(startTime)).rayMul(
       borrowAmount
@@ -215,7 +212,7 @@ contract LiquidityHubAccrueInterestTest is BaseTest {
     // Spoke 2 does a supply to accrue interest
     Utils.supply(hub, daiAssetId, address(spoke2), 1000e18, 0, address(spoke2), address(spoke2));
 
-    Asset memory daiInfo = hub.getAsset(daiAssetId);
+    DataTypes.Asset memory daiInfo = hub.getAsset(daiAssetId);
 
     uint256 totalBase = MathUtils.calculateLinearInterest(baseBorrowRate, uint40(startTime)).rayMul(
       borrowAmount
@@ -249,7 +246,7 @@ contract LiquidityHubAccrueInterestTest is BaseTest {
     // Spoke 2 does a supply to accrue interest
     Utils.supply(hub, daiAssetId, address(spoke2), 1000e18, 0, address(spoke2), address(spoke2));
 
-    Asset memory daiInfo = hub.getAsset(daiAssetId);
+    DataTypes.Asset memory daiInfo = hub.getAsset(daiAssetId);
 
     uint256 totalBase = MathUtils.calculateLinearInterest(baseBorrowRate, uint40(startTime)).rayMul(
       borrowAmount

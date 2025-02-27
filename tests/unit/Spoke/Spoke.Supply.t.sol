@@ -11,7 +11,7 @@ contract SpokeSupplyTest is SpokeBaseTest {
     uint256 amount = 100e18;
 
     vm.prank(bob);
-    vm.expectRevert(TestErrors.RESERVE_NOT_LISTED);
+    vm.expectRevert(ISpoke.ReserveNotListed.selector);
     spoke1.supply(reserveId, amount);
   }
 
@@ -37,7 +37,7 @@ contract SpokeSupplyTest is SpokeBaseTest {
     uint256 amount = 0;
 
     vm.prank(bob);
-    vm.expectRevert(TestErrors.INVALID_SUPPLY_AMOUNT);
+    vm.expectRevert(ILiquidityHub.InvalidSupplyAmount.selector);
     spoke1.supply(_daiReserveId(spoke1), amount);
   }
 
@@ -68,7 +68,7 @@ contract SpokeSupplyTest is SpokeBaseTest {
 
     vm.prank(bob);
     vm.expectEmit(address(spoke1));
-    emit Supplied(_daiReserveId(spoke1), amount, bob);
+    emit ISpoke.Supplied(_daiReserveId(spoke1), bob, amount);
     spoke1.supply(_daiReserveId(spoke1), amount);
 
     stage = 1;
@@ -139,7 +139,7 @@ contract SpokeSupplyTest is SpokeBaseTest {
     assertEq(bobData[stage].data.lastUpdateTimestamp, 0, 'user lastUpdateTimestamp pre-supply');
 
     vm.expectEmit(address(spoke1));
-    emit Supplied(_daiReserveId(spoke1), amount, bob);
+    emit ISpoke.Supplied(_daiReserveId(spoke1), bob, amount);
     vm.prank(bob);
     spoke1.supply(_daiReserveId(spoke1), amount);
 
@@ -181,7 +181,7 @@ contract SpokeSupplyTest is SpokeBaseTest {
 
   function test_supply_index_increase_no_premium() public {
     // set weth LP to 0 for no premium contribution
-    Utils.updateLiquidityPremium({
+    updateLiquidityPremium({
       spoke: spoke1,
       reserveId: _wethReserveId(spoke1),
       newLiquidityPremium: 0
@@ -222,7 +222,7 @@ contract SpokeSupplyTest is SpokeBaseTest {
 
     vm.prank(carol);
     vm.expectEmit(address(spoke1));
-    emit Supplied(_daiReserveId(spoke1), amount, carol);
+    emit ISpoke.Supplied(_daiReserveId(spoke1), carol, amount);
     spoke1.supply(_daiReserveId(spoke1), amount);
     stage = 1;
 
@@ -280,7 +280,7 @@ contract SpokeSupplyTest is SpokeBaseTest {
     reserveId = bound(reserveId, 0, spokeInfo[spoke1].MAX_RESERVE_ID);
 
     // set weth LP to 0 for no premium contribution
-    Utils.updateLiquidityPremium({
+    updateLiquidityPremium({
       spoke: spoke1,
       reserveId: _wethReserveId(spoke1),
       newLiquidityPremium: 0
@@ -326,7 +326,7 @@ contract SpokeSupplyTest is SpokeBaseTest {
 
     vm.prank(carol);
     vm.expectEmit(address(spoke1));
-    emit Supplied(reserveId, amount, carol);
+    emit ISpoke.Supplied(reserveId, carol, amount);
     spoke1.supply(reserveId, amount);
     stage = 1;
 
@@ -421,7 +421,7 @@ contract SpokeSupplyTest is SpokeBaseTest {
 
     vm.prank(carol);
     vm.expectEmit(address(spoke1));
-    emit Supplied(_daiReserveId(spoke1), amount, carol);
+    emit ISpoke.Supplied(_daiReserveId(spoke1), carol, amount);
     spoke1.supply(_daiReserveId(spoke1), amount);
     stage = 1;
 
@@ -522,7 +522,7 @@ contract SpokeSupplyTest is SpokeBaseTest {
 
     vm.prank(carol);
     vm.expectEmit(address(spoke1));
-    emit Supplied(reserveId, amount, carol);
+    emit ISpoke.Supplied(reserveId, carol, amount);
     spoke1.supply(reserveId, amount);
 
     stage = 1;

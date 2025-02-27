@@ -6,6 +6,7 @@ import 'forge-std/StdInvariant.sol';
 import './LiquidityHubHandler.t.sol';
 
 import {LiquidityHub} from 'src/contracts/LiquidityHub.sol';
+import {DataTypes} from 'src/libraries/types/DataTypes.sol';
 
 contract LiquidityHubInvariant is StdInvariant, Test {
   LiquidityHubHandler hubHandler;
@@ -29,7 +30,7 @@ contract LiquidityHubInvariant is StdInvariant, Test {
     // TODO: manage asset listed multiple times
     // TODO: manage interest
     for (uint256 i; i < hub.assetCount(); ++i) {
-      Asset memory reserveData = hub.getAsset(i);
+      DataTypes.Asset memory reserveData = hub.getAsset(i);
       IERC20 asset = hub.assetsList(i);
       assertEq(
         hub.getTotalAssets(reserveData.id),
@@ -44,7 +45,7 @@ contract LiquidityHubInvariant is StdInvariant, Test {
     vm.skip(true);
     // TODO this can be improved with borrows OR changes in borrowRate
     for (uint256 id = 0; id < hub.assetCount(); id++) {
-      Asset memory reserveData = hub.getAsset(id);
+      DataTypes.Asset memory reserveData = hub.getAsset(id);
       uint256 calcExchangeRate = reserveData.suppliedShares == 0
         ? 0
         : hub.getTotalAssets(reserveData.id) / reserveData.suppliedShares;

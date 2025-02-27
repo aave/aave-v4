@@ -1,13 +1,13 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.0;
 
-import 'tests/BaseTest.t.sol';
+import 'tests/Base.t.sol';
 import {IERC20Errors} from 'src/dependencies/openzeppelin/IERC20Errors.sol';
-import {Spoke} from 'src/contracts/Spoke.sol';
+import {DataTypes} from 'src/libraries/types/DataTypes.sol';
 
-contract SpokeBaseTest is BaseTest {
+contract SpokeBaseTest is Base {
   struct TestData {
-    Spoke.Reserve data;
+    DataTypes.Reserve data;
     uint256 suppliedAmount;
     uint256 cumulatedBaseInterest;
   }
@@ -43,8 +43,8 @@ contract SpokeBaseTest is BaseTest {
       abi.encode(rate)
     );
 
-    Spoke.Reserve memory collateralReserve = spoke1.getReserve(collateral.reserveId);
-    Spoke.Reserve memory borrowReserve = spoke1.getReserve(borrow.reserveId);
+    DataTypes.Reserve memory collateralReserve = spoke1.getReserve(collateral.reserveId);
+    DataTypes.Reserve memory borrowReserve = spoke1.getReserve(borrow.reserveId);
     uint256 collateralSupplyShares = hub.convertToShares(
       collateralReserve.assetId,
       collateral.supplyAmount
@@ -53,14 +53,13 @@ contract SpokeBaseTest is BaseTest {
 
     // supply collateral asset
     Utils.spokeSupply({
-      hub: hub,
       spoke: spoke1,
       reserveId: collateral.reserveId,
       user: collateral.supplier,
       amount: collateral.supplyAmount,
-      to: collateral.supplier
+      onBehalfOf: collateral.supplier
     });
-    Utils.setUsingAsCollateral({
+    setUsingAsCollateral({
       spoke: spoke1,
       user: collateral.supplier,
       reserveId: collateral.reserveId,
@@ -69,16 +68,15 @@ contract SpokeBaseTest is BaseTest {
 
     // other user supplies enough asset to be drawn
     Utils.spokeSupply({
-      hub: hub,
       spoke: spoke1,
       reserveId: borrow.reserveId,
       user: borrow.supplier,
       amount: borrow.supplyAmount,
-      to: borrow.supplier
+      onBehalfOf: borrow.supplier
     });
 
     // borrower borrows asset
-    Utils.borrow({
+    Utils.spokeBorrow({
       spoke: spoke1,
       reserveId: borrow.reserveId,
       user: borrow.borrower,
@@ -94,7 +92,7 @@ contract SpokeBaseTest is BaseTest {
 
   function _getReserveData(uint256 reserveId) internal view returns (TestData memory) {
     // only to check lastUpdateTimestamp
-    Spoke.Reserve memory reserveStorageData = spoke1.getReserve(reserveId);
+    DataTypes.Reserve memory reserveStorageData = spoke1.getReserve(reserveId);
     TestData memory reserveData;
     (reserveData.data.baseDebt, reserveData.data.outstandingPremium) = spoke1.getReserveDebt(
       reserveId
@@ -108,7 +106,7 @@ contract SpokeBaseTest is BaseTest {
 
   function _getUserData(uint256 reserveId, address user) internal view returns (TestData memory) {
     // only to check lastUpdateTimestamp
-    Spoke.UserConfig memory userStorageData = spoke1.getUser(reserveId, user);
+    DataTypes.UserConfig memory userStorageData = spoke1.getUser(reserveId, user);
     TestData memory userData;
     (userData.data.baseDebt, userData.data.outstandingPremium) = spoke1.getUserDebt(
       reserveId,

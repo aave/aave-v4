@@ -23,7 +23,12 @@ contract SpokeWithdrawTest is SpokeBaseTest {
     uint256 amount = 1;
 
     vm.prank(address(alice));
-    vm.expectRevert(TestErrors.SUPPLIED_AMOUNT_EXCEEDED);
+    vm.expectRevert(
+      abi.encodeWithSelector(
+        ISpoke.InsufficientSupply.selector,
+        _getWithdrawalLimit(spoke1, reserveId, alice)
+      )
+    );
     spoke1.withdraw(reserveId, amount, alice);
   }
 
@@ -33,7 +38,12 @@ contract SpokeWithdrawTest is SpokeBaseTest {
     amount = bound(amount, 1, MAX_SUPPLY_AMOUNT);
 
     vm.prank(address(alice));
-    vm.expectRevert(TestErrors.SUPPLIED_AMOUNT_EXCEEDED);
+    vm.expectRevert(
+      abi.encodeWithSelector(
+        ISpoke.InsufficientSupply.selector,
+        _getWithdrawalLimit(spoke1, _daiReserveId(spoke1), alice)
+      )
+    );
     spoke1.withdraw(_daiReserveId(spoke1), amount, alice);
   }
 
@@ -42,23 +52,32 @@ contract SpokeWithdrawTest is SpokeBaseTest {
 
     // User spoke supply
     Utils.spokeSupply({
-      hub: hub,
       spoke: spoke1,
       reserveId: _daiReserveId(spoke1),
       user: alice,
       amount: amount,
-      to: alice
+      onBehalfOf: alice
     });
 
     vm.prank(address(spoke1));
-    vm.expectRevert(TestErrors.SUPPLIED_AMOUNT_EXCEEDED);
+    vm.expectRevert(
+      abi.encodeWithSelector(
+        ISpoke.InsufficientSupply.selector,
+        _getWithdrawalLimit(spoke1, _daiReserveId(spoke1), alice)
+      )
+    );
     spoke1.withdraw(_daiReserveId(spoke1), amount + 1, alice);
 
     // skip time but no index increase with no borrow
     skip(365 days);
 
     vm.prank(address(alice));
-    vm.expectRevert(TestErrors.SUPPLIED_AMOUNT_EXCEEDED);
+    vm.expectRevert(
+      abi.encodeWithSelector(
+        ISpoke.InsufficientSupply.selector,
+        _getWithdrawalLimit(spoke1, _daiReserveId(spoke1), alice)
+      )
+    );
     spoke1.withdraw(_daiReserveId(spoke1), amount + 1, alice);
   }
 
@@ -69,16 +88,15 @@ contract SpokeWithdrawTest is SpokeBaseTest {
 
     // Alice supplies dai
     Utils.spokeSupply({
-      hub: hub,
       spoke: spoke1,
       reserveId: _daiReserveId(spoke1),
       user: alice,
       amount: supplyAmount,
-      to: alice
+      onBehalfOf: alice
     });
 
     // Alice borrows dai
-    Utils.borrow({
+    Utils.spokeBorrow({
       spoke: spoke1,
       reserveId: _daiReserveId(spoke1),
       user: alice,
@@ -89,14 +107,24 @@ contract SpokeWithdrawTest is SpokeBaseTest {
     uint256 availableLiquidity = hub.getAvailableLiquidity(daiAssetId);
 
     vm.prank(address(alice));
-    vm.expectRevert(TestErrors.SUPPLIED_AMOUNT_EXCEEDED);
+    vm.expectRevert(
+      abi.encodeWithSelector(
+        ISpoke.InsufficientSupply.selector,
+        _getWithdrawalLimit(spoke1, _daiReserveId(spoke1), alice)
+      )
+    );
     spoke1.withdraw({reserveId: _daiReserveId(spoke1), amount: availableLiquidity + 1, to: bob});
 
     skip(365 days);
     // index has now increased
 
     vm.prank(address(alice));
-    vm.expectRevert(TestErrors.SUPPLIED_AMOUNT_EXCEEDED);
+    vm.expectRevert(
+      abi.encodeWithSelector(
+        ISpoke.InsufficientSupply.selector,
+        _getWithdrawalLimit(spoke1, _daiReserveId(spoke1), alice)
+      )
+    );
     spoke1.withdraw({reserveId: _daiReserveId(spoke1), amount: availableLiquidity + 1, to: alice});
   }
 
@@ -120,16 +148,15 @@ contract SpokeWithdrawTest is SpokeBaseTest {
 
     // User spoke supply
     Utils.spokeSupply({
-      hub: hub,
       spoke: spoke1,
       reserveId: reserveId,
       user: alice,
       amount: supplyAmount,
-      to: alice
+      onBehalfOf: alice
     });
 
     // User spoke borrow
-    Utils.borrow({
+    Utils.spokeBorrow({
       spoke: spoke1,
       reserveId: reserveId,
       user: alice,
@@ -141,13 +168,23 @@ contract SpokeWithdrawTest is SpokeBaseTest {
     vm.assume(availableLiquidity > 1);
 
     vm.prank(address(alice));
-    vm.expectRevert(TestErrors.SUPPLIED_AMOUNT_EXCEEDED);
+    vm.expectRevert(
+      abi.encodeWithSelector(
+        ISpoke.InsufficientSupply.selector,
+        _getWithdrawalLimit(spoke1, reserveId, alice)
+      )
+    );
     spoke1.withdraw({reserveId: reserveId, amount: availableLiquidity + 1, to: alice});
 
     skip(365 days);
 
     vm.prank(address(alice));
-    vm.expectRevert(TestErrors.SUPPLIED_AMOUNT_EXCEEDED);
+    vm.expectRevert(
+      abi.encodeWithSelector(
+        ISpoke.InsufficientSupply.selector,
+        _getWithdrawalLimit(spoke1, reserveId, alice)
+      )
+    );
     spoke1.withdraw({reserveId: reserveId, amount: availableLiquidity + 1, to: alice});
   }
 
@@ -162,12 +199,11 @@ contract SpokeWithdrawTest is SpokeBaseTest {
 
     // Bob supply
     Utils.spokeSupply({
-      hub: hub,
       spoke: spoke1,
       reserveId: _daiReserveId(spoke1),
       user: bob,
       amount: amount,
-      to: bob
+      onBehalfOf: bob
     });
 
     uint256 stage = 0;
@@ -210,7 +246,7 @@ contract SpokeWithdrawTest is SpokeBaseTest {
 
     vm.startPrank(bob);
     vm.expectEmit(address(spoke1));
-    emit Withdrawn(_daiReserveId(spoke1), amount, bob);
+    emit ISpoke.Withdrawn(_daiReserveId(spoke1), bob, amount);
     spoke1.withdraw(_daiReserveId(spoke1), amount, bob);
     vm.stopPrank();
 
@@ -280,32 +316,29 @@ contract SpokeWithdrawTest is SpokeBaseTest {
     uint256 assetId = _getAssetId(spoke1, params.reserveId);
 
     Utils.spokeSupply({
-      hub: hub,
       spoke: spoke1,
       reserveId: params.reserveId,
       user: alice,
       amount: params.aliceAmount,
-      to: alice
+      onBehalfOf: alice
     });
     Utils.spokeSupply({
-      hub: hub,
       spoke: spoke1,
       reserveId: params.reserveId,
       user: bob,
       amount: params.bobAmount,
-      to: bob
+      onBehalfOf: bob
     });
 
     // carol borrows in order to increase index
     Utils.spokeSupply({
-      hub: hub,
       spoke: spoke1,
       reserveId: _wbtcReserveId(spoke1),
       user: carol,
       amount: params.borrowAmount, // highest value asset so that it is enough collateral
-      to: carol
+      onBehalfOf: carol
     });
-    Utils.borrow({
+    Utils.spokeBorrow({
       spoke: spoke1,
       reserveId: params.reserveId,
       user: carol,
@@ -437,7 +470,7 @@ contract SpokeWithdrawTest is SpokeBaseTest {
 
   function test_withdraw_all_liquidity_with_interest_no_premium() public {
     // set weth LP to 0 for no premium contribution
-    Utils.updateLiquidityPremium({
+    updateLiquidityPremium({
       spoke: spoke1,
       reserveId: _wethReserveId(spoke1),
       newLiquidityPremium: 0
@@ -604,7 +637,7 @@ contract SpokeWithdrawTest is SpokeBaseTest {
     uint256 assetId = _getAssetId(spoke1, params.reserveId);
 
     // set weth LP to 0 for no premium contribution
-    Utils.updateLiquidityPremium({
+    updateLiquidityPremium({
       spoke: spoke1,
       reserveId: _wbtcReserveId(spoke1), // use highest-valued asset
       newLiquidityPremium: 0
@@ -1036,5 +1069,14 @@ contract SpokeWithdrawTest is SpokeBaseTest {
 
   function _getAssetId(Spoke spoke, uint256 reserveId) internal returns (uint256) {
     return spoke.getReserve(reserveId).assetId;
+  }
+
+  function _getWithdrawalLimit(
+    Spoke spoke,
+    uint256 reserveId,
+    address user
+  ) internal returns (uint256) {
+    (uint256 baseDebt, ) = spoke1.getUserDebt(_daiReserveId(spoke1), user);
+    spoke.getUserSuppliedAmount(reserveId, user) - baseDebt;
   }
 }

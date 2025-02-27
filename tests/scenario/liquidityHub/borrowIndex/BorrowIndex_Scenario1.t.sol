@@ -2,11 +2,8 @@
 pragma solidity ^0.8.0;
 
 import 'tests/scenario/liquidityHub/LiquidityHub.ScenarioBase.t.sol';
-import {SpokeData} from 'src/contracts/LiquidityHub.sol';
-import {Asset} from 'src/contracts/LiquidityHub.sol';
-import {Utils} from 'tests/Utils.t.sol';
 
-contract BorrowIndex_Scenario1Test is LiquidityHubScenarioBaseTest {
+contract BorrowIndex_Scenario1Test is LiquidityHubScenarioBase {
   using SharesMath for uint256;
   using WadRayMath for uint256;
   using PercentageMath for uint256;

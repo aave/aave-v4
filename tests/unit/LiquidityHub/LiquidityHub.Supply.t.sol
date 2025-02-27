@@ -1,11 +1,10 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.0;
 
-import './LiquidityHubBaseTest.t.sol';
+import './LiquidityHubBase.t.sol';
 import {IERC20Errors} from 'src/dependencies/openzeppelin/IERC20Errors.sol';
-import {Asset, SpokeData} from 'src/contracts/LiquidityHub.sol';
 
-contract LiquidityHubSupplyTest is LiquidityHubBaseTest {
+contract LiquidityHubSupplyTest is LiquidityHubBase {
   using SharesMath for uint256;
   using WadRayMath for uint256;
   using PercentageMath for uint256;
@@ -28,29 +27,31 @@ contract LiquidityHubSupplyTest is LiquidityHubBaseTest {
   function test_supply_revertsWith_asset_not_active() public {
     uint256 amount = 100e18;
 
-    _updateActive(daiAssetId, false);
+    updateAssetActive(hub, daiAssetId, false);
 
     vm.prank(address(spoke1));
-    vm.expectRevert(TestErrors.ASSET_NOT_ACTIVE);
+    vm.expectRevert(abi.encodeWithSelector(ILiquidityHub.AssetNotActive.selector, daiAssetId));
     hub.supply(daiAssetId, amount, 0, alice);
   }
 
   function test_supply_revertsWith_supply_cap_exceeded() public {
     uint256 amount = 100e18;
-    _updateSupplyCap(daiAssetId, address(spoke1), amount - 1);
+    uint256 newSupplyCap = amount - 1;
+    _updateSupplyCap(daiAssetId, address(spoke1), newSupplyCap);
 
-    vm.expectRevert(TestErrors.SUPPLY_CAP_EXCEEDED);
+    vm.expectRevert(abi.encodeWithSelector(ILiquidityHub.SupplyCapExceeded.selector, newSupplyCap));
+    vm.prank(address(spoke1));
     hub.supply(daiAssetId, amount, 0, alice);
   }
 
   function test_supply_revertsWith_supply_cap_exceeded_due_to_interest() public {
-    uint256 amount = 1;
-    _updateSupplyCap(daiAssetId, address(spoke1), amount);
-
     uint256 daiAmount = 100e18;
     uint256 wethAmount = 10e18;
     uint256 drawAmount = daiAmount / 2;
+    uint256 newSupplyCap = daiAmount + 1;
     uint256 rate = uint256(10_00).bpsToRay();
+
+    _updateSupplyCap(daiAssetId, address(spoke2), newSupplyCap);
 
     _supplyAndDrawLiquidity({
       daiAmount: daiAmount,
@@ -61,16 +62,17 @@ contract LiquidityHubSupplyTest is LiquidityHubBaseTest {
     });
     skip(365 days);
 
-    vm.expectRevert(TestErrors.SUPPLY_CAP_EXCEEDED);
-    hub.supply(daiAssetId, amount, 0, alice);
+    vm.expectRevert(abi.encodeWithSelector(ILiquidityHub.SupplyCapExceeded.selector, newSupplyCap));
+    vm.prank(address(spoke2));
+    hub.supply(daiAssetId, 1, 0, alice);
   }
 
   function test_supply() public {
     uint256 assetId = daiAssetId;
     uint256 amount = 100e18;
 
-    Asset memory assetData = hub.getAsset(assetId);
-    SpokeData memory spokeData = hub.getSpoke(assetId, address(spoke1));
+    DataTypes.Asset memory assetData = hub.getAsset(assetId);
+    DataTypes.SpokeData memory spokeData = hub.getSpoke(assetId, address(spoke1));
 
     // hub
     assertEq(hub.getTotalAssets(assetId), 0, 'hub total assets pre-supply');
@@ -104,7 +106,7 @@ contract LiquidityHubSupplyTest is LiquidityHubBaseTest {
     assertEq(tokenList.dai.balanceOf(address(hub)), 0, 'hub token balance pre-supply');
 
     vm.expectEmit(address(hub));
-    emit Supply(assetId, address(spoke1), amount);
+    emit ILiquidityHub.Supply(assetId, address(spoke1), amount);
 
     vm.prank(address(spoke1));
     hub.supply(assetId, amount, 0, alice);
@@ -170,17 +172,17 @@ contract LiquidityHubSupplyTest is LiquidityHubBaseTest {
     IERC20 asset = hub.assetsList(assetId);
 
     vm.expectEmit(address(asset));
-    emit Transfer(alice, address(hub), amount);
+    emit IERC20.Transfer(alice, address(hub), amount);
     vm.expectEmit(address(hub));
-    emit Supply(assetId, address(spoke1), amount);
+    emit ILiquidityHub.Supply(assetId, address(spoke1), amount);
 
     vm.prank(address(spoke1));
     hub.supply({assetId: assetId, amount: amount, riskPremium: riskPremium, supplier: alice});
 
     uint256 timestamp = vm.getBlockTimestamp();
 
-    Asset memory assetData = hub.getAsset(assetId);
-    SpokeData memory spokeData = hub.getSpoke(assetId, address(spoke1));
+    DataTypes.Asset memory assetData = hub.getAsset(assetId);
+    DataTypes.SpokeData memory spokeData = hub.getSpoke(assetId, address(spoke1));
 
     // hub
     assertEq(hub.getTotalAssets(assetId), amount, 'total assets post-supply');
@@ -246,27 +248,27 @@ contract LiquidityHubSupplyTest is LiquidityHubBaseTest {
     IERC20 asset2 = hub.assetsList(assetId2);
 
     vm.expectEmit(address(asset));
-    emit Transfer(alice, address(hub), amount);
+    emit IERC20.Transfer(alice, address(hub), amount);
     vm.expectEmit(address(hub));
-    emit Supply(assetId, address(spoke1), amount);
+    emit ILiquidityHub.Supply(assetId, address(spoke1), amount);
 
     vm.prank(address(spoke1));
     hub.supply(assetId, amount, 0, alice);
 
     vm.expectEmit(address(asset2));
-    emit Transfer(alice, address(hub), amount2);
+    emit IERC20.Transfer(alice, address(hub), amount2);
     vm.expectEmit(address(hub));
-    emit Supply(assetId2, address(spoke2), amount2);
+    emit ILiquidityHub.Supply(assetId2, address(spoke2), amount2);
 
     vm.prank(address(spoke2));
     hub.supply(assetId2, amount2, 0, alice);
 
     uint256 timestamp = vm.getBlockTimestamp();
 
-    Asset memory assetData = hub.getAsset(assetId);
-    Asset memory asset2Data = hub.getAsset(assetId2);
-    SpokeData memory spokeData = hub.getSpoke(assetId, address(spoke1));
-    SpokeData memory spoke2Data = hub.getSpoke(assetId2, address(spoke2));
+    DataTypes.Asset memory assetData = hub.getAsset(assetId);
+    DataTypes.Asset memory asset2Data = hub.getAsset(assetId2);
+    DataTypes.SpokeData memory spokeData = hub.getSpoke(assetId, address(spoke1));
+    DataTypes.SpokeData memory spoke2Data = hub.getSpoke(assetId2, address(spoke2));
 
     // hub
     assertEq(hub.getTotalAssets(assetId), amount, 'total assets post-supply');
@@ -367,7 +369,7 @@ contract LiquidityHubSupplyTest is LiquidityHubBaseTest {
     uint256 amount = 0;
 
     vm.prank(address(spoke1));
-    vm.expectRevert(TestErrors.INVALID_SUPPLY_AMOUNT);
+    vm.expectRevert(ILiquidityHub.InvalidSupplyAmount.selector);
     hub.supply(assetId, amount, 0, alice);
   }
 
@@ -394,7 +396,7 @@ contract LiquidityHubSupplyTest is LiquidityHubBaseTest {
     // supply < 1 share
     uint256 amount = 1;
     vm.prank(address(spoke1));
-    vm.expectRevert(TestErrors.INVALID_SHARES_AMOUNT);
+    vm.expectRevert(ILiquidityHub.InvalidSharesAmount.selector);
     hub.supply(daiAssetId, amount, 0, alice);
   }
 
@@ -413,7 +415,7 @@ contract LiquidityHubSupplyTest is LiquidityHubBaseTest {
     });
     skip(365 days);
 
-    Asset memory daiData = hub.getAsset(daiAssetId);
+    DataTypes.Asset memory daiData = hub.getAsset(daiAssetId);
     uint256 accruedBase = daiData.baseDebt.rayMul(rate);
     uint256 initialTotalAssets = daiAmount;
 
@@ -435,7 +437,7 @@ contract LiquidityHubSupplyTest is LiquidityHubBaseTest {
     });
 
     daiData = hub.getAsset(daiAssetId);
-    SpokeData memory spokeData = hub.getSpoke(daiAssetId, address(spoke2));
+    DataTypes.SpokeData memory spokeData = hub.getSpoke(daiAssetId, address(spoke2));
 
     assertEq(
       hub.getTotalAssets(daiAssetId),
@@ -471,7 +473,7 @@ contract LiquidityHubSupplyTest is LiquidityHubBaseTest {
     });
     skip(365 days);
 
-    Asset memory daiData = hub.getAsset(daiAssetId);
+    DataTypes.Asset memory daiData = hub.getAsset(daiAssetId);
     uint256 accruedBase = daiData.baseDebt.rayMul(rate);
     uint256 accruedPremium = accruedBase.percentMul(riskPremium);
     uint256 initialTotalAssets = daiAmount;
@@ -494,7 +496,7 @@ contract LiquidityHubSupplyTest is LiquidityHubBaseTest {
     });
 
     daiData = hub.getAsset(daiAssetId);
-    SpokeData memory spokeData = hub.getSpoke(daiAssetId, address(spoke2));
+    DataTypes.SpokeData memory spokeData = hub.getSpoke(daiAssetId, address(spoke2));
 
     assertEq(
       hub.getTotalAssets(daiAssetId),
@@ -533,8 +535,8 @@ contract LiquidityHubSupplyTest is LiquidityHubBaseTest {
       to: address(spoke1)
     });
 
-    Asset memory assetData = hub.getAsset(assetId);
-    SpokeData memory spokeData = hub.getSpoke(assetId, address(spoke1));
+    DataTypes.Asset memory assetData = hub.getAsset(assetId);
+    DataTypes.SpokeData memory spokeData = hub.getSpoke(assetId, address(spoke1));
 
     // Time flies, no interest acc
     skip(1e4);
@@ -560,7 +562,7 @@ contract LiquidityHubSupplyTest is LiquidityHubBaseTest {
 
     assetData = hub.getAsset(assetId);
     spokeData = hub.getSpoke(assetId, address(spoke1));
-    SpokeData memory spoke2Data = hub.getSpoke(assetId, address(spoke2));
+    DataTypes.SpokeData memory spoke2Data = hub.getSpoke(assetId, address(spoke2));
 
     uint256 cumulatedBaseInterest = MathUtils.calculateLinearInterest(
       assetData.baseBorrowRate,
@@ -654,9 +656,9 @@ contract LiquidityHubSupplyTest is LiquidityHubBaseTest {
       userAssets: 0,
       userShares: 0
     });
-    Asset memory assetData;
-    SpokeData memory spokeData;
-    Asset memory prevAssetData = hub.getAsset(assetId);
+    DataTypes.Asset memory assetData;
+    DataTypes.SpokeData memory spokeData;
+    DataTypes.Asset memory prevAssetData = hub.getAsset(assetId);
 
     uint256 runningBalance = asset.balanceOf(alice);
     uint256 cumulatedBaseInterest;
