@@ -1,9 +1,9 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.0;
 
-import 'tests/unit/Spoke/SpokeBaseTest.t.sol';
+import 'tests/unit/Spoke/SpokeBase.t.sol';
 
-contract SpokeWithdrawTest is SpokeBaseTest {
+contract SpokeWithdrawTest is SpokeBase {
   using WadRayMath for uint256;
   using PercentageMath for uint256;
 
@@ -210,8 +210,8 @@ contract SpokeWithdrawTest is SpokeBaseTest {
     });
 
     uint256 stage = 0;
-    daiData[stage] = _getReserveData(_daiReserveId(spoke1));
-    bobData[stage] = _getUserData(_daiReserveId(spoke1), bob);
+    daiData[stage] = _getReserveData(spoke1, _daiReserveId(spoke1));
+    bobData[stage] = _getUserData(spoke1, _daiReserveId(spoke1), bob);
     tokenData[stage] = _getTokenBalances(tokenList.dai, address(spoke1));
 
     // reserve
@@ -253,8 +253,8 @@ contract SpokeWithdrawTest is SpokeBaseTest {
     spoke1.withdraw(_daiReserveId(spoke1), amount, bob);
 
     stage = 1;
-    daiData[stage] = _getReserveData(_daiReserveId(spoke1));
-    bobData[stage] = _getUserData(_daiReserveId(spoke1), bob);
+    daiData[stage] = _getReserveData(spoke1, _daiReserveId(spoke1));
+    bobData[stage] = _getUserData(spoke1, _daiReserveId(spoke1), bob);
     tokenData[stage] = _getTokenBalances(tokenList.dai, address(spoke1));
 
     // reserve
@@ -371,9 +371,9 @@ contract SpokeWithdrawTest is SpokeBaseTest {
     TokenData[3] memory tokenData;
 
     state.stage = 0;
-    reserveData[state.stage] = _getReserveData(params.reserveId);
-    aliceData[state.stage] = _getUserData(params.reserveId, alice);
-    bobData[state.stage] = _getUserData(params.reserveId, bob);
+    reserveData[state.stage] = _getReserveData(spoke1, params.reserveId);
+    aliceData[state.stage] = _getUserData(spoke1, params.reserveId, alice);
+    bobData[state.stage] = _getUserData(spoke1, params.reserveId, bob);
     tokenData[state.stage] = _getTokenBalances(state.asset, address(spoke1));
 
     vm.assume(
@@ -391,9 +391,9 @@ contract SpokeWithdrawTest is SpokeBaseTest {
     skip(params.skipTime[1]);
 
     state.stage = 1;
-    reserveData[state.stage] = _getReserveData(params.reserveId);
-    aliceData[state.stage] = _getUserData(params.reserveId, alice);
-    bobData[state.stage] = _getUserData(params.reserveId, bob);
+    reserveData[state.stage] = _getReserveData(spoke1, params.reserveId);
+    aliceData[state.stage] = _getUserData(spoke1, params.reserveId, alice);
+    bobData[state.stage] = _getUserData(spoke1, params.reserveId, bob);
     tokenData[state.stage] = _getTokenBalances(state.asset, address(spoke1));
 
     vm.assume(
@@ -409,9 +409,9 @@ contract SpokeWithdrawTest is SpokeBaseTest {
     });
 
     state.stage = 2;
-    reserveData[state.stage] = _getReserveData(params.reserveId);
-    aliceData[state.stage] = _getUserData(params.reserveId, alice);
-    bobData[state.stage] = _getUserData(params.reserveId, bob);
+    reserveData[state.stage] = _getReserveData(spoke1, params.reserveId);
+    aliceData[state.stage] = _getUserData(spoke1, params.reserveId, alice);
+    bobData[state.stage] = _getUserData(spoke1, params.reserveId, bob);
     tokenData[state.stage] = _getTokenBalances(state.asset, address(spoke1));
 
     state.sharePrecision = hub.convertToAssets(state.assetId, 1);
@@ -516,6 +516,7 @@ contract SpokeWithdrawTest is SpokeBaseTest {
     state.rate = uint256(10_00).bpsToRay();
 
     (, state.supplyShares) = _executeSupplyAndBorrow({
+      spoke: spoke1,
       collateral: TestReserve({
         reserveId: state.collateralReserveId,
         supplier: alice,
@@ -556,9 +557,9 @@ contract SpokeWithdrawTest is SpokeBaseTest {
     TokenData[3] memory tokenData;
 
     uint256 stage = 0;
-    reserveData[stage] = _getReserveData(state.reserveId);
-    aliceData[stage] = _getUserData(state.reserveId, alice);
-    bobData[stage] = _getUserData(state.reserveId, bob);
+    reserveData[stage] = _getReserveData(spoke1, state.reserveId);
+    aliceData[stage] = _getUserData(spoke1, state.reserveId, alice);
+    bobData[stage] = _getUserData(spoke1, state.reserveId, bob);
     tokenData[stage] = _getTokenBalances(tokenList.dai, address(spoke1));
 
     state.withdrawAmount = hub.getAvailableLiquidity(daiAssetId);
@@ -571,18 +572,18 @@ contract SpokeWithdrawTest is SpokeBaseTest {
 
     stage = 1;
     state.withdrawnShares = hub.convertToShares(daiAssetId, state.withdrawAmount);
-    reserveData[stage] = _getReserveData(state.reserveId);
-    aliceData[stage] = _getUserData(state.reserveId, alice);
-    bobData[stage] = _getUserData(state.reserveId, bob);
+    reserveData[stage] = _getReserveData(spoke1, state.reserveId);
+    aliceData[stage] = _getUserData(spoke1, state.reserveId, alice);
+    bobData[stage] = _getUserData(spoke1, state.reserveId, bob);
     tokenData[stage] = _getTokenBalances(tokenList.dai, address(spoke1));
 
     vm.prank(bob);
     spoke1.withdraw({reserveId: state.reserveId, amount: state.withdrawAmount, to: bob});
 
     stage = 2;
-    reserveData[stage] = _getReserveData(state.reserveId);
-    aliceData[stage] = _getUserData(state.reserveId, alice);
-    bobData[stage] = _getUserData(state.reserveId, bob);
+    reserveData[stage] = _getReserveData(spoke1, state.reserveId);
+    aliceData[stage] = _getUserData(spoke1, state.reserveId, alice);
+    bobData[stage] = _getUserData(spoke1, state.reserveId, bob);
     tokenData[stage] = _getTokenBalances(tokenList.dai, address(spoke1));
 
     reserveData[stage].cumulatedBaseInterest = MathUtils.calculateLinearInterest(
@@ -687,6 +688,7 @@ contract SpokeWithdrawTest is SpokeBaseTest {
     state.timestamp = vm.getBlockTimestamp();
 
     (, state.supplyShares) = _executeSupplyAndBorrow({
+      spoke: spoke1,
       collateral: TestReserve({
         reserveId: state.collateralReserveId,
         supplier: alice,
@@ -728,9 +730,9 @@ contract SpokeWithdrawTest is SpokeBaseTest {
     TokenData[3] memory tokenData;
 
     uint256 stage = 0;
-    reserveData[stage] = _getReserveData(state.reserveId);
-    aliceData[stage] = _getUserData(state.reserveId, alice);
-    bobData[stage] = _getUserData(state.reserveId, bob);
+    reserveData[stage] = _getReserveData(spoke1, state.reserveId);
+    aliceData[stage] = _getUserData(spoke1, state.reserveId, alice);
+    bobData[stage] = _getUserData(spoke1, state.reserveId, bob);
     tokenData[stage] = _getTokenBalances(asset, address(spoke1));
 
     state.withdrawAmount = hub.getAvailableLiquidity(state.reserveId);
@@ -742,9 +744,9 @@ contract SpokeWithdrawTest is SpokeBaseTest {
     );
 
     stage = 1;
-    reserveData[stage] = _getReserveData(state.reserveId);
-    aliceData[stage] = _getUserData(state.reserveId, alice);
-    bobData[stage] = _getUserData(state.reserveId, bob);
+    reserveData[stage] = _getReserveData(spoke1, state.reserveId);
+    aliceData[stage] = _getUserData(spoke1, state.reserveId, alice);
+    bobData[stage] = _getUserData(spoke1, state.reserveId, bob);
     tokenData[stage] = _getTokenBalances(asset, address(spoke1));
     state.withdrawnShares = hub.convertToShares(assetId, state.withdrawAmount);
 
@@ -752,9 +754,9 @@ contract SpokeWithdrawTest is SpokeBaseTest {
     spoke1.withdraw({reserveId: state.reserveId, amount: state.withdrawAmount, to: bob});
 
     stage = 2;
-    reserveData[stage] = _getReserveData(state.reserveId);
-    aliceData[stage] = _getUserData(state.reserveId, alice);
-    bobData[stage] = _getUserData(state.reserveId, bob);
+    reserveData[stage] = _getReserveData(spoke1, state.reserveId);
+    aliceData[stage] = _getUserData(spoke1, state.reserveId, alice);
+    bobData[stage] = _getUserData(spoke1, state.reserveId, bob);
     tokenData[stage] = _getTokenBalances(asset, address(spoke1));
 
     // reserve
@@ -827,6 +829,7 @@ contract SpokeWithdrawTest is SpokeBaseTest {
     uint256 timestamp = vm.getBlockTimestamp();
 
     (, state.supplyShares) = _executeSupplyAndBorrow({
+      spoke: spoke1,
       collateral: TestReserve({
         reserveId: state.collateralReserveId,
         supplier: alice,
@@ -855,9 +858,9 @@ contract SpokeWithdrawTest is SpokeBaseTest {
     spoke1.repay(state.reserveId, repayAmount);
 
     uint256 stage = 0;
-    daiData[stage] = _getReserveData(state.reserveId);
-    aliceData[stage] = _getUserData(state.reserveId, alice);
-    bobData[stage] = _getUserData(state.reserveId, bob);
+    daiData[stage] = _getReserveData(spoke1, state.reserveId);
+    aliceData[stage] = _getUserData(spoke1, state.reserveId, alice);
+    bobData[stage] = _getUserData(spoke1, state.reserveId, bob);
     tokenData[stage] = _getTokenBalances(tokenList.dai, address(spoke1));
     daiData[stage].cumulatedBaseInterest = MathUtils.calculateLinearInterest(
       state.rate,
@@ -874,9 +877,9 @@ contract SpokeWithdrawTest is SpokeBaseTest {
 
     stage = 1;
     state.withdrawnShares = hub.convertToShares(daiAssetId, state.withdrawAmount);
-    daiData[stage] = _getReserveData(state.reserveId);
-    aliceData[stage] = _getUserData(state.reserveId, alice);
-    bobData[stage] = _getUserData(state.reserveId, bob);
+    daiData[stage] = _getReserveData(spoke1, state.reserveId);
+    aliceData[stage] = _getUserData(spoke1, state.reserveId, alice);
+    bobData[stage] = _getUserData(spoke1, state.reserveId, bob);
     tokenData[stage] = _getTokenBalances(tokenList.dai, address(spoke1));
 
     vm.prank(bob);
@@ -888,9 +891,9 @@ contract SpokeWithdrawTest is SpokeBaseTest {
     );
 
     stage = 2;
-    daiData[stage] = _getReserveData(state.reserveId);
-    aliceData[stage] = _getUserData(state.reserveId, alice);
-    bobData[stage] = _getUserData(state.reserveId, bob);
+    daiData[stage] = _getReserveData(spoke1, state.reserveId);
+    aliceData[stage] = _getUserData(spoke1, state.reserveId, alice);
+    bobData[stage] = _getUserData(spoke1, state.reserveId, bob);
     tokenData[stage] = _getTokenBalances(tokenList.dai, address(spoke1));
 
     daiData[stage].cumulatedBaseInterest = MathUtils.calculateLinearInterest(
@@ -984,6 +987,7 @@ contract SpokeWithdrawTest is SpokeBaseTest {
     state.timestamp = vm.getBlockTimestamp();
 
     (, state.supplyShares) = _executeSupplyAndBorrow({
+      spoke: spoke1,
       collateral: TestReserve({
         reserveId: state.collateralReserveId,
         supplier: alice,
@@ -1019,9 +1023,9 @@ contract SpokeWithdrawTest is SpokeBaseTest {
     TokenData[3] memory tokenData;
 
     uint256 stage = 0;
-    reserveData[stage] = _getReserveData(state.reserveId);
-    aliceData[stage] = _getUserData(state.reserveId, alice);
-    bobData[stage] = _getUserData(state.reserveId, bob);
+    reserveData[stage] = _getReserveData(spoke1, state.reserveId);
+    aliceData[stage] = _getUserData(spoke1, state.reserveId, alice);
+    bobData[stage] = _getUserData(spoke1, state.reserveId, bob);
     tokenData[stage] = _getTokenBalances(asset, address(spoke1));
 
     state.withdrawAmount = hub.getAvailableLiquidity(state.reserveId);
@@ -1040,9 +1044,9 @@ contract SpokeWithdrawTest is SpokeBaseTest {
     );
 
     stage = 1;
-    reserveData[stage] = _getReserveData(state.reserveId);
-    aliceData[stage] = _getUserData(state.reserveId, alice);
-    bobData[stage] = _getUserData(state.reserveId, bob);
+    reserveData[stage] = _getReserveData(spoke1, state.reserveId);
+    aliceData[stage] = _getUserData(spoke1, state.reserveId, alice);
+    bobData[stage] = _getUserData(spoke1, state.reserveId, bob);
     tokenData[stage] = _getTokenBalances(asset, address(spoke1));
     state.withdrawnShares = hub.convertToShares(assetId, state.withdrawAmount);
 
@@ -1050,9 +1054,9 @@ contract SpokeWithdrawTest is SpokeBaseTest {
     spoke1.withdraw({reserveId: state.reserveId, amount: state.withdrawAmount, to: bob});
 
     stage = 2;
-    reserveData[stage] = _getReserveData(state.reserveId);
-    aliceData[stage] = _getUserData(state.reserveId, alice);
-    bobData[stage] = _getUserData(state.reserveId, bob);
+    reserveData[stage] = _getReserveData(spoke1, state.reserveId);
+    aliceData[stage] = _getUserData(spoke1, state.reserveId, alice);
+    bobData[stage] = _getUserData(spoke1, state.reserveId, bob);
     tokenData[stage] = _getTokenBalances(asset, address(spoke1));
 
     // reserve

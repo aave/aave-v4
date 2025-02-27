@@ -1,9 +1,9 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.0;
 
-import 'tests/unit/Spoke/SpokeBaseTest.t.sol';
+import 'tests/unit/Spoke/SpokeBase.t.sol';
 
-contract SpokeSupplyTest is SpokeBaseTest {
+contract SpokeSupplyTest is SpokeBase {
   using WadRayMath for uint256;
 
   function test_supply_revertsWith_reserve_not_listed() public {
@@ -48,8 +48,8 @@ contract SpokeSupplyTest is SpokeBaseTest {
     TestData[2] memory daiData;
     uint256 stage = 0;
 
-    bobData[stage] = _getUserData(_daiReserveId(spoke1), bob);
-    daiData[stage] = _getReserveData(_daiReserveId(spoke1));
+    bobData[stage] = _getUserData(spoke1, _daiReserveId(spoke1), bob);
+    daiData[stage] = _getReserveData(spoke1, _daiReserveId(spoke1));
 
     // dai balance
     assertEq(tokenList.dai.balanceOf(bob), mintAmount_DAI, 'user token balance pre-supply');
@@ -72,8 +72,8 @@ contract SpokeSupplyTest is SpokeBaseTest {
     spoke1.supply(_daiReserveId(spoke1), amount);
 
     stage = 1;
-    bobData[stage] = _getUserData(_daiReserveId(spoke1), bob);
-    daiData[stage] = _getReserveData(_daiReserveId(spoke1));
+    bobData[stage] = _getUserData(spoke1, _daiReserveId(spoke1), bob);
+    daiData[stage] = _getReserveData(spoke1, _daiReserveId(spoke1));
 
     // dai balance
     assertEq(
@@ -120,8 +120,8 @@ contract SpokeSupplyTest is SpokeBaseTest {
     TestData[2] memory daiData;
     uint256 stage = 0;
 
-    bobData[stage] = _getUserData(_daiReserveId(spoke1), bob);
-    daiData[stage] = _getReserveData(_daiReserveId(spoke1));
+    bobData[stage] = _getUserData(spoke1, _daiReserveId(spoke1), bob);
+    daiData[stage] = _getReserveData(spoke1, _daiReserveId(spoke1));
 
     // dai balance
     assertEq(tokenList.dai.balanceOf(bob), amount, 'user token balance pre-supply');
@@ -144,8 +144,8 @@ contract SpokeSupplyTest is SpokeBaseTest {
     spoke1.supply(_daiReserveId(spoke1), amount);
 
     stage = 1;
-    bobData[stage] = _getUserData(_daiReserveId(spoke1), bob);
-    daiData[stage] = _getReserveData(_daiReserveId(spoke1));
+    bobData[stage] = _getUserData(spoke1, _daiReserveId(spoke1), bob);
+    daiData[stage] = _getReserveData(spoke1, _daiReserveId(spoke1));
 
     // dai balance
     assertEq(tokenList.dai.balanceOf(bob), 0, 'user token balance post-supply');
@@ -188,6 +188,7 @@ contract SpokeSupplyTest is SpokeBaseTest {
     });
 
     _executeSupplyAndBorrow({
+      spoke: spoke1,
       collateral: TestReserve({
         reserveId: spokeInfo[spoke1].weth.reserveId,
         supplier: alice,
@@ -215,8 +216,8 @@ contract SpokeSupplyTest is SpokeBaseTest {
     TokenData[2] memory tokenData;
     uint256 stage = 0;
 
-    carolData[stage] = _getUserData(_daiReserveId(spoke1), carol);
-    daiData[stage] = _getReserveData(_daiReserveId(spoke1));
+    carolData[stage] = _getUserData(spoke1, _daiReserveId(spoke1), carol);
+    daiData[stage] = _getReserveData(spoke1, _daiReserveId(spoke1));
     tokenData[stage] = _getTokenBalances(tokenList.dai, address(spoke1));
 
     deal(address(tokenList.dai), carol, amount);
@@ -227,8 +228,8 @@ contract SpokeSupplyTest is SpokeBaseTest {
     spoke1.supply(_daiReserveId(spoke1), amount);
     stage = 1;
 
-    carolData[stage] = _getUserData(_daiReserveId(spoke1), carol);
-    daiData[stage] = _getReserveData(_daiReserveId(spoke1));
+    carolData[stage] = _getUserData(spoke1, _daiReserveId(spoke1), carol);
+    daiData[stage] = _getReserveData(spoke1, _daiReserveId(spoke1));
     tokenData[stage] = _getTokenBalances(tokenList.dai, address(spoke1));
 
     // dai balance
@@ -297,6 +298,7 @@ contract SpokeSupplyTest is SpokeBaseTest {
 
     // increase index on reserveId
     _executeSupplyAndBorrow({
+      spoke: spoke1,
       collateral: TestReserve({
         reserveId: _wethReserveId(spoke1),
         supplier: alice,
@@ -328,8 +330,8 @@ contract SpokeSupplyTest is SpokeBaseTest {
     TokenData[2] memory tokenData;
     uint256 stage = 0;
 
-    carolData[stage] = _getUserData(reserveId, carol);
-    reserveData[stage] = _getReserveData(reserveId);
+    carolData[stage] = _getUserData(spoke1, reserveId, carol);
+    reserveData[stage] = _getReserveData(spoke1, reserveId);
     tokenData[stage] = _getTokenBalances(state.asset, address(spoke1));
 
     vm.assume(hub.convertToShares(daiAssetId, amount) > 0);
@@ -340,8 +342,8 @@ contract SpokeSupplyTest is SpokeBaseTest {
     spoke1.supply(reserveId, amount);
     stage = 1;
 
-    carolData[stage] = _getUserData(reserveId, carol);
-    reserveData[stage] = _getReserveData(reserveId);
+    carolData[stage] = _getUserData(spoke1, reserveId, carol);
+    reserveData[stage] = _getReserveData(spoke1, reserveId);
     tokenData[stage] = _getTokenBalances(state.asset, address(spoke1));
 
     // token balance
@@ -396,6 +398,7 @@ contract SpokeSupplyTest is SpokeBaseTest {
     // alice supplies weth as collateral, borrows dai
     // increase dai share exchange rate
     _executeSupplyAndBorrow({
+      spoke: spoke1,
       collateral: TestReserve({
         reserveId: _wethReserveId(spoke1),
         supplyAmount: 100e18,
@@ -423,8 +426,8 @@ contract SpokeSupplyTest is SpokeBaseTest {
     TokenData[2] memory tokenData;
     uint256 stage = 0;
 
-    carolData[stage] = _getUserData(_daiReserveId(spoke1), carol);
-    daiData[stage] = _getReserveData(_daiReserveId(spoke1));
+    carolData[stage] = _getUserData(spoke1, _daiReserveId(spoke1), carol);
+    daiData[stage] = _getReserveData(spoke1, _daiReserveId(spoke1));
     tokenData[stage] = _getTokenBalances(tokenList.dai, address(spoke1));
 
     assertGt(daiData[stage].data.outstandingPremium, 0, 'reserve outstandingPremium post-supply');
@@ -437,8 +440,8 @@ contract SpokeSupplyTest is SpokeBaseTest {
     spoke1.supply(_daiReserveId(spoke1), amount);
     stage = 1;
 
-    carolData[stage] = _getUserData(_daiReserveId(spoke1), carol);
-    daiData[stage] = _getReserveData(_daiReserveId(spoke1));
+    carolData[stage] = _getUserData(spoke1, _daiReserveId(spoke1), carol);
+    daiData[stage] = _getReserveData(spoke1, _daiReserveId(spoke1));
     tokenData[stage] = _getTokenBalances(tokenList.dai, address(spoke1));
 
     // dai balance
@@ -495,6 +498,7 @@ contract SpokeSupplyTest is SpokeBaseTest {
 
     // alice supplies usdx as collateral, borrows dai
     _executeSupplyAndBorrow({
+      spoke: spoke1,
       collateral: TestReserve({
         reserveId: _wethReserveId(spoke1),
         supplier: alice,
@@ -523,8 +527,8 @@ contract SpokeSupplyTest is SpokeBaseTest {
     TokenData[2] memory tokenData;
     uint256 stage = 0;
 
-    carolData[stage] = _getUserData(reserveId, carol);
-    reserveData[stage] = _getReserveData(reserveId);
+    carolData[stage] = _getUserData(spoke1, reserveId, carol);
+    reserveData[stage] = _getReserveData(spoke1, reserveId);
     tokenData[stage] = _getTokenBalances(asset, address(spoke1));
 
     assertGt(
@@ -542,8 +546,8 @@ contract SpokeSupplyTest is SpokeBaseTest {
 
     stage = 1;
 
-    carolData[stage] = _getUserData(reserveId, carol);
-    reserveData[stage] = _getReserveData(reserveId);
+    carolData[stage] = _getUserData(spoke1, reserveId, carol);
+    reserveData[stage] = _getReserveData(spoke1, reserveId);
     tokenData[stage] = _getTokenBalances(asset, address(spoke1));
 
     // token balance
