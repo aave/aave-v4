@@ -53,6 +53,17 @@ library Utils {
   }
 
   // spoke
+  function spokeSupply(
+    ISpoke spoke,
+    uint256 reserveId,
+    address user,
+    uint256 amount,
+    address onBehalfOf
+  ) internal {
+    vm.prank(user);
+    spoke.supply(reserveId, amount);
+  }
+
   function spokeBorrow(
     ISpoke spoke,
     uint256 reserveId,
@@ -64,14 +75,8 @@ library Utils {
     spoke.borrow(reserveId, amount, user);
   }
 
-  function spokeSupply(
-    ISpoke spoke,
-    uint256 reserveId,
-    address user,
-    uint256 amount,
-    address onBehalfOf
-  ) internal {
+  function spokeRepay(ISpoke spoke, uint256 reserveId, address user, uint256 amount) internal {
     vm.prank(user);
-    spoke.supply(reserveId, amount);
+    spoke.repay(reserveId, amount);
   }
 }

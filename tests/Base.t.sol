@@ -171,6 +171,7 @@ abstract contract Base is Test {
       vm.stopPrank();
     }
   }
+  
   function configureTokenList() internal {
     address[] memory spokes = new address[](3);
     spokes[0] = address(spoke1);
