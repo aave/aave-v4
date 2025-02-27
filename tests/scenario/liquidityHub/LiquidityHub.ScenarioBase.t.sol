@@ -19,15 +19,15 @@ abstract contract LiquidityHubScenarioBaseTest is BaseTest {
   uint256 internal constant NUM_SPOKES = 4;
   uint256 internal constant NUM_ASSETS = 4;
   uint256 internal constant MAX_BOUNDED_AMOUNT = MAX_SUPPLY_AMOUNT / NUM_TIMESTAMPS;
-  uint256 internal constant MIN_BOUNDED_AMOUNT = 1;
+  uint256 internal constant MIN_BOUNDED_AMOUNT = 1e10;
   uint256 internal constant MAX_SKIP_TIME = 10_000 days;
   bool internal isPrintLogs = false;
   uint256 internal t; // internal stage index
 
-  uint256 internal spoke1Index = 0;
-  uint256 internal spoke2Index = 1;
-  uint256 internal spoke3Index = 2;
-  uint256 internal spoke4Index = 3;
+  uint256 internal constant spoke1Index = 0;
+  uint256 internal constant spoke2Index = 1;
+  uint256 internal constant spoke3Index = 2;
+  uint256 internal constant spoke4Index = 3;
 
   struct TestState {
     uint256 assetId;
@@ -38,7 +38,7 @@ abstract contract LiquidityHubScenarioBaseTest is BaseTest {
 
   TestState internal state;
   DataTypes.SpokeConfig internal spokeConfig;
-  Spoke internal spoke4;
+  Spoke internal spoke4; // to be added during scenario tests
 
   // _i: initial, prior to action at a given time
   // _f: final, after action at a given time

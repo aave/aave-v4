@@ -3,9 +3,11 @@ pragma solidity ^0.8.0;
 
 import 'tests/scenario/liquidityHub/borrowIndex/BorrowIndexBase.t.sol';
 
+// TODO: resolve after precision/rounding/shares impl
+// and after LH tests are migrated to use getters instead of reading from storage baseDebt, outstandingPremium, etc.
+// see https://github.com/aave/aave-v4/issues/195
+
 contract BorrowIndex_Scenario4Test is BorrowIndexBase {
-  // TODO: resolve after precision/rounding/shares impl
-  // and after LH tests are migrated to use getters instead of reading from storage baseDebt, outstandingPremium, etc.
   using SharesMath for uint256;
   using WadRayMath for uint256;
   using PercentageMath for uint256;
