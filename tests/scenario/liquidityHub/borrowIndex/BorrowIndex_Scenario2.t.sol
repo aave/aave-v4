@@ -39,7 +39,9 @@ contract BorrowIndex_Scenario2Test is BorrowIndexBase {
 
   // Assumptions:
   // - single assetId (fuzzed but does not vary from action to action)
-  // - 0 risk premium   /// forge-config: default.fuzz.runs = 1000
+  // - 0 risk premium
+  /// forge-config: default.fuzz.runs = 10000
+  /// forge-config: default.fuzz.max_test_rejects = 1_000_000
   function test_fuzz_borrowIndexScenario2(TestState memory _state) public {
     state.assetId = bound(_state.assetId, 0, NUM_ASSETS - 1);
     boundFuzzStates(state, _state);
@@ -210,6 +212,9 @@ contract BorrowIndex_Scenario2Test is BorrowIndexBase {
       });
     } else if (stage == stages[2]) {
       hub.addSpoke(state.assetId, spokeConfig, spokes[spoke4Index].addr);
+      vm.assume(
+        hub.convertToShares(state.assetId, spokes[spoke4Index].actions.supply[t].amount) > 0
+      );
       Utils.supply({
         hub: hub,
         assetId: state.assetId,
@@ -229,6 +234,9 @@ contract BorrowIndex_Scenario2Test is BorrowIndexBase {
         onBehalfOf: spokes[spoke4Index].addr
       });
     } else if (stage == stages[3]) {
+      vm.assume(
+        hub.convertToShares(state.assetId, spokes[spoke4Index].actions.supply[t].amount) > 0
+      );
       Utils.supply({
         hub: hub,
         assetId: state.assetId,
@@ -382,12 +390,23 @@ contract BorrowIndex_Scenario2Test is BorrowIndexBase {
         ),
         't3_f Asset index'
       );
-      assertApproxEqRel(
-        assets[state.assetId].t_f[t].baseDebt,
-        assets[state.assetId].t_f[t - 1].baseDebt.rayMul(states.cumulatedBaseInterest.t_f[t]),
-        expectedPrecision,
-        't3_f Asset base debt'
-      );
+      // only assert on expectedPrecision if the precision percentage is greater than 1 wei
+      if (assets[state.assetId].t_f[t].baseDebt.wadMul(expectedPrecision) > 1) {
+        assertApproxEqRel(
+          assets[state.assetId].t_f[t].baseDebt,
+          assets[state.assetId].t_f[t - 1].baseDebt.rayMul(states.cumulatedBaseInterest.t_f[t]),
+          expectedPrecision,
+          't3_f Asset base debt'
+        );
+      } else {
+        assertApproxEqAbs(
+          assets[state.assetId].t_f[t].baseDebt,
+          assets[state.assetId].t_f[t - 1].baseDebt.rayMul(states.cumulatedBaseInterest.t_f[t]),
+          1,
+          't3_f Asset base debt'
+        );
+      }
+
       assertEq(
         assets[state.assetId].t_f[t].lastUpdateTimestamp,
         timeAt(stages[t]),
@@ -418,12 +437,22 @@ contract BorrowIndex_Scenario2Test is BorrowIndexBase {
         assets[state.assetId].t_f[t].baseBorrowIndex,
         't3_f Spoke4 index'
       );
-      assertApproxEqRel(
-        spokes[spoke4Index].t_f[t].baseDebt,
-        spokes[spoke4Index].t_f[t - 1].baseDebt.rayMul(states.cumulatedBaseInterest.t_f[t]),
-        expectedPrecision,
-        't3_f Spoke4 base debt'
-      );
+      // only assert on expectedPrecision if the precision percentage is greater than 1 wei
+      if (spokes[spoke4Index].t_f[t].baseDebt.wadMul(expectedPrecision) > 1) {
+        assertApproxEqRel(
+          spokes[spoke4Index].t_f[t].baseDebt,
+          spokes[spoke4Index].t_f[t - 1].baseDebt.rayMul(states.cumulatedBaseInterest.t_f[t]),
+          expectedPrecision,
+          't3_f Spoke4 base debt'
+        );
+      } else {
+        assertApproxEqAbs(
+          spokes[spoke4Index].t_f[t].baseDebt,
+          spokes[spoke4Index].t_f[t - 1].baseDebt.rayMul(states.cumulatedBaseInterest.t_f[t]),
+          1,
+          't3_f Spoke4 base debt'
+        );
+      }
       assertEq(
         spokes[spoke4Index].t_f[t].lastUpdateTimestamp,
         timeAt(stages[t]),

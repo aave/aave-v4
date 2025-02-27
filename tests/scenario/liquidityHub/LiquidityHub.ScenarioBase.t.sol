@@ -19,7 +19,7 @@ abstract contract LiquidityHubScenarioBaseTest is BaseTest {
   uint256 internal constant NUM_SPOKES = 4;
   uint256 internal constant NUM_ASSETS = 4;
   uint256 internal constant MAX_BOUNDED_AMOUNT = MAX_SUPPLY_AMOUNT / NUM_TIMESTAMPS;
-  uint256 internal constant MIN_BOUNDED_AMOUNT = 1e10;
+  uint256 internal constant MIN_BOUNDED_AMOUNT = 1;
   uint256 internal constant MAX_SKIP_TIME = 10_000 days;
   bool internal isPrintLogs = false;
   uint256 internal t; // internal stage index
