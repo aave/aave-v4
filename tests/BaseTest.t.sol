@@ -18,7 +18,6 @@ import {DataTypes} from 'src/libraries/types/DataTypes.sol';
 import {TestnetERC20} from './mocks/TestnetERC20.sol';
 import {MockERC20} from './mocks/MockERC20.sol';
 import {MockPriceOracle, IPriceOracle} from './mocks/MockPriceOracle.sol';
-import {MockSpokeCreditLine} from './mocks/MockSpokeCreditLine.sol';
 import {Utils} from './Utils.t.sol';
 
 // library Constants {}
@@ -102,7 +101,6 @@ abstract contract BaseTest is Test, Events {
   Spoke internal spoke1;
   Spoke internal spoke2;
   Spoke internal spoke3;
-  MockSpokeCreditLine internal spokeCreditLine;
   DefaultReserveInterestRateStrategy internal irStrategy;
   DefaultReserveInterestRateStrategy internal creditLineIRStrategy;
 
@@ -272,28 +270,28 @@ abstract contract BaseTest is Test, Events {
     Spoke.ReserveConfig memory wethConfig = Spoke.ReserveConfig({
       lt: 0.8e4,
       lb: 0,
-      liquidityPremium: 0,
+      liquidityPremium: 15_00,
       borrowable: true,
       collateral: true
     });
     Spoke.ReserveConfig memory wbtcConfig = Spoke.ReserveConfig({
       lt: 0.75e4,
       lb: 0,
-      liquidityPremium: 10,
+      liquidityPremium: 50_00,
       borrowable: true,
       collateral: true
     });
     Spoke.ReserveConfig memory daiConfig = Spoke.ReserveConfig({
       lt: 0.78e4,
       lb: 0,
-      liquidityPremium: 20,
+      liquidityPremium: 20_00,
       borrowable: true,
       collateral: true
     });
     Spoke.ReserveConfig memory usdxConfig = Spoke.ReserveConfig({
       lt: 0.78e4,
       lb: 0,
-      liquidityPremium: 50,
+      liquidityPremium: 50_00,
       borrowable: true,
       collateral: true
     });

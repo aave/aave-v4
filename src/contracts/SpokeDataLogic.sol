@@ -13,24 +13,35 @@ library SpokeDataLogic {
 
   // @dev Utilizes existing `spoke.baseBorrowIndex` & `spoke.riskPremium`
   function accrueInterest(SpokeData storage spoke, uint256 nextBaseBorrowIndex) internal {
-    if (spoke.lastUpdateTimestamp == block.timestamp) {
-      return;
-    }
+    (uint256 cumulatedBaseDebt, uint256 cumulatedOutstandingPremium) = spoke.previewInterest(
+      nextBaseBorrowIndex
+    );
 
-    uint256 existingBaseDebt = spoke.baseDebt;
-    if (existingBaseDebt != 0) {
-      uint256 cumulatedBaseDebt = existingBaseDebt.rayMul(nextBaseBorrowIndex).rayDiv(
-        spoke.baseBorrowIndex
-      ); // precision loss, same as in v3
-
-      // accrue premium interest on the accrued base interest
-      spoke.outstandingPremium += (cumulatedBaseDebt - existingBaseDebt).percentMul(
-        spoke.riskPremium.derayify()
-      );
-      spoke.baseDebt = cumulatedBaseDebt;
-    }
-
+    spoke.baseDebt = cumulatedBaseDebt;
+    spoke.outstandingPremium = cumulatedOutstandingPremium;
     spoke.baseBorrowIndex = nextBaseBorrowIndex; // opt: doesn't need update on supply/withdraw actions?
     spoke.lastUpdateTimestamp = block.timestamp;
+  }
+
+  function previewInterest(
+    SpokeData storage spoke,
+    uint256 nextBaseBorrowIndex
+  ) internal view returns (uint256, uint256) {
+    uint256 existingBaseDebt = spoke.baseDebt;
+    uint256 existingOutstandingPremium = spoke.outstandingPremium;
+
+    if (existingBaseDebt == 0 || spoke.lastUpdateTimestamp == block.timestamp) {
+      return (existingBaseDebt, existingOutstandingPremium);
+    }
+
+    uint256 cumulatedBaseDebt = existingBaseDebt.rayMul(nextBaseBorrowIndex).rayDiv(
+      spoke.baseBorrowIndex
+    );
+
+    return (
+      cumulatedBaseDebt,
+      existingOutstandingPremium +
+        (cumulatedBaseDebt - existingBaseDebt).percentMul(spoke.riskPremium.derayify())
+    );
   }
 }
