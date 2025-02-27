@@ -1,11 +1,9 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.0;
 
-import './LiquidityHubBaseTest.t.sol';
-import {IERC20Errors} from 'src/dependencies/openzeppelin/IERC20Errors.sol';
-import {Asset, SpokeData} from 'src/contracts/LiquidityHub.sol';
+import './LiquidityHubBase.t.sol';
 
-contract LiquidityHubDrawTest is LiquidityHubBaseTest {
+contract LiquidityHubDrawTest is LiquidityHubBase {
   using SharesMath for uint256;
   using WadRayMath for uint256;
 
@@ -38,17 +36,17 @@ contract LiquidityHubDrawTest is LiquidityHubBaseTest {
 
     // spoke1 draw half of dai reserve liquidity
     vm.expectEmit(address(hub));
-    emit Draw(daiAssetId, address(spoke1), alice, drawAmount);
+    emit ILiquidityHub.Draw(daiAssetId, address(spoke1), alice, drawAmount);
     vm.prank(address(spoke1));
     hub.draw({assetId: daiAssetId, amount: drawAmount, riskPremium: 0, to: alice});
 
-    Asset memory wethData = hub.getAsset(wethAssetId);
-    Asset memory daiData = hub.getAsset(daiAssetId);
+    DataTypes.Asset memory wethData = hub.getAsset(wethAssetId);
+    DataTypes.Asset memory daiData = hub.getAsset(daiAssetId);
     DebtData memory daiDebtData = _getDebt(daiAssetId);
 
-    SpokeData memory spoke1WethData = hub.getSpoke(wethAssetId, address(spoke1));
-    SpokeData memory spoke1DaiData = hub.getSpoke(daiAssetId, address(spoke1));
-    SpokeData memory spoke2Data = hub.getSpoke(daiAssetId, address(spoke2));
+    DataTypes.SpokeData memory spoke1WethData = hub.getSpoke(wethAssetId, address(spoke1));
+    DataTypes.SpokeData memory spoke1DaiData = hub.getSpoke(daiAssetId, address(spoke1));
+    DataTypes.SpokeData memory spoke2Data = hub.getSpoke(daiAssetId, address(spoke2));
 
     // hub
     assertEq(hub.getTotalAssets(wethAssetId), wethAmount, 'hub weth total assets post-draw');
@@ -212,17 +210,17 @@ contract LiquidityHubDrawTest is LiquidityHubBaseTest {
 
     // spoke1 draw half of dai reserve liquidity
     vm.expectEmit(address(hub));
-    emit Draw(daiAssetId, address(spoke1), alice, drawAmount);
+    emit ILiquidityHub.Draw(daiAssetId, address(spoke1), alice, drawAmount);
     vm.prank(address(spoke1));
     hub.draw({assetId: daiAssetId, amount: drawAmount, riskPremium: 0, to: alice});
 
-    Asset memory wethData = hub.getAsset(wethAssetId);
-    Asset memory daiData = hub.getAsset(daiAssetId);
+    DataTypes.Asset memory wethData = hub.getAsset(wethAssetId);
+    DataTypes.Asset memory daiData = hub.getAsset(daiAssetId);
     DebtData memory daiDebtData = _getDebt(daiAssetId);
 
-    SpokeData memory spoke1WethData = hub.getSpoke(wethAssetId, address(spoke1));
-    SpokeData memory spoke1DaiData = hub.getSpoke(daiAssetId, address(spoke1));
-    SpokeData memory spoke2Data = hub.getSpoke(daiAssetId, address(spoke2));
+    DataTypes.SpokeData memory spoke1WethData = hub.getSpoke(wethAssetId, address(spoke1));
+    DataTypes.SpokeData memory spoke1DaiData = hub.getSpoke(daiAssetId, address(spoke1));
+    DataTypes.SpokeData memory spoke2Data = hub.getSpoke(daiAssetId, address(spoke2));
 
     // hub
     assertEq(hub.getTotalAssets(wethAssetId), wethAmount, 'hub weth total assets post-draw');
@@ -359,23 +357,23 @@ contract LiquidityHubDrawTest is LiquidityHubBaseTest {
 
   function test_draw_revertsWith_asset_not_active() public {
     uint256 drawAmount = 1;
-    _updateActive(daiAssetId, false);
+    updateAssetActive(hub, daiAssetId, false);
     vm.prank(address(spoke1));
-    vm.expectRevert(TestErrors.ASSET_NOT_ACTIVE);
+    vm.expectRevert(abi.encodeWithSelector(ILiquidityHub.AssetNotActive.selector, daiAssetId));
     hub.draw({assetId: daiAssetId, amount: drawAmount, riskPremium: 0, to: address(spoke1)});
   }
 
   function test_draw_revertsWith_not_available_liquidity() public {
     uint256 drawAmount = 1;
     vm.prank(address(spoke1));
-    vm.expectRevert(TestErrors.NOT_AVAILABLE_LIQUIDITY);
+    vm.expectRevert(abi.encodeWithSelector(ILiquidityHub.NotAvailableLiquidity.selector, 0));
     hub.draw({assetId: daiAssetId, amount: drawAmount, riskPremium: 0, to: address(spoke1)});
   }
 
   function test_draw_revertsWith_invalid_draw_amount() public {
     uint256 drawAmount = 0;
     vm.prank(address(spoke1));
-    vm.expectRevert(TestErrors.INVALID_DRAW_AMOUNT);
+    vm.expectRevert(ILiquidityHub.InvalidDrawAmount.selector);
     hub.draw({assetId: daiAssetId, amount: drawAmount, riskPremium: 0, to: address(spoke1)});
   }
 
@@ -386,7 +384,7 @@ contract LiquidityHubDrawTest is LiquidityHubBaseTest {
     uint256 drawAmount = drawCap;
     uint256 rate = uint256(10_00).bpsToRay();
 
-    _updateDrawCap(daiAssetId, address(spoke1), drawCap);
+    updateDrawCap(hub, daiAssetId, address(spoke1), drawCap);
 
     _supplyAndDrawLiquidity({
       daiAmount: daiAmount,
@@ -401,7 +399,7 @@ contract LiquidityHubDrawTest is LiquidityHubBaseTest {
     vm.startPrank(address(spoke1));
     hub.restore({assetId: daiAssetId, amount: 1, riskPremium: 0, repayer: alice});
 
-    vm.expectRevert(TestErrors.DRAW_CAP_EXCEEDED);
+    vm.expectRevert(abi.encodeWithSelector(ILiquidityHub.DrawCapExceeded.selector, drawCap));
     hub.draw({assetId: daiAssetId, amount: 1, riskPremium: 0, to: bob});
     vm.stopPrank();
   }
@@ -411,10 +409,10 @@ contract LiquidityHubDrawTest is LiquidityHubBaseTest {
     uint256 drawCap = daiAmount;
     uint256 drawAmount = drawCap + 1;
 
-    _updateDrawCap(daiAssetId, address(spoke1), drawCap);
+    updateDrawCap(hub, daiAssetId, address(spoke1), drawCap);
 
     vm.prank(address(spoke1));
-    vm.expectRevert(TestErrors.DRAW_CAP_EXCEEDED);
+    vm.expectRevert(abi.encodeWithSelector(ILiquidityHub.DrawCapExceeded.selector, drawCap));
     hub.draw({assetId: daiAssetId, amount: drawAmount, riskPremium: 0, to: address(spoke1)});
   }
 }

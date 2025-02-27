@@ -1,8 +1,8 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.0;
 
-import 'tests/BaseTest.t.sol';
-import {Asset, SpokeData} from 'src/contracts/LiquidityHub.sol';
+import 'tests/Base.t.sol';
+import {DataTypes} from 'src/libraries/types/DataTypes.sol';
 
 type Stage is uint8;
 function eq(Stage a, Stage b) pure returns (bool) {
@@ -10,7 +10,7 @@ function eq(Stage a, Stage b) pure returns (bool) {
 }
 using {eq as ==} for Stage global;
 
-abstract contract LiquidityHubScenarioBaseTest is BaseTest {
+abstract contract LiquidityHubScenarioBaseTest is Base {
   using SharesMath for uint256;
   using WadRayMath for uint256;
   using PercentageMath for uint256;
@@ -48,15 +48,15 @@ abstract contract LiquidityHubScenarioBaseTest is BaseTest {
   }
 
   struct SpokeDatas {
-    SpokeData[NUM_TIMESTAMPS] t_i;
-    SpokeData[NUM_TIMESTAMPS] t_f;
+    DataTypes.SpokeData[NUM_TIMESTAMPS] t_i;
+    DataTypes.SpokeData[NUM_TIMESTAMPS] t_f;
     address addr;
     SpokeActions actions;
   }
 
   struct AssetDatas {
-    Asset[NUM_TIMESTAMPS] t_i;
-    Asset[NUM_TIMESTAMPS] t_f;
+    DataTypes.Asset[NUM_TIMESTAMPS] t_i;
+    DataTypes.Asset[NUM_TIMESTAMPS] t_f;
   }
 
   struct CalculatedStates {

@@ -1,8 +1,8 @@
 pragma solidity ^0.8.0;
 
-import 'tests/BaseTest.t.sol';
+import 'tests/Base.t.sol';
 
-contract LiquidityHubBorrowIndexTest is BaseTest {
+contract LiquidityHubBorrowIndex is Base {
   using WadRayMath for uint256;
   uint256 internal amount = 1000e18;
   uint256 internal borrowRate = 10_00;
@@ -130,7 +130,9 @@ contract LiquidityHubBorrowIndexTest is BaseTest {
 
     assertApproxEqAbs(amount, hub.convertToAssetsDown(wethAssetId, sharesMinted), 1);
 
-    vm.expectRevert(TestErrors.SUPPLIED_AMOUNT_EXCEEDED); // should not revert
+    vm.expectRevert(
+      abi.encodeWithSelector(ILiquidityHub.SuppliedAmountExceeded.selector, amount - 1)
+    ); // should not revert
     vm.prank(address(spoke2));
     hub.withdraw(wethAssetId, amount, 0, alice);
 
@@ -141,7 +143,7 @@ contract LiquidityHubBorrowIndexTest is BaseTest {
     assertEq(hub.getSpoke(wethAssetId, address(spoke2)).suppliedShares, 1); // should be zero
 
     // after zero amount check, cannot withdraw one 1 wei of shares in contract
-    vm.expectRevert(TestErrors.INVALID_SHARES_AMOUNT);
+    vm.expectRevert(ILiquidityHub.InvalidSharesAmount.selector);
     vm.prank(address(spoke2));
     hub.withdraw(wethAssetId, 1, 0, alice);
 

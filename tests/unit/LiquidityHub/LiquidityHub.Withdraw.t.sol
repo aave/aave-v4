@@ -1,11 +1,9 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.0;
 
-import './LiquidityHubBaseTest.t.sol';
-import {IERC20Errors} from 'src/dependencies/openzeppelin/IERC20Errors.sol';
-import {Asset, SpokeData} from 'src/contracts/LiquidityHub.sol';
+import './LiquidityHubBase.t.sol';
 
-contract LiquidityHubWithdrawTest is LiquidityHubBaseTest {
+contract LiquidityHubWithdrawTest is LiquidityHubBase {
   using SharesMath for uint256;
   using WadRayMath for uint256;
 
@@ -23,8 +21,8 @@ contract LiquidityHubWithdrawTest is LiquidityHubBaseTest {
       to: address(spoke1)
     });
 
-    Asset memory assetData = hub.getAsset(daiAssetId);
-    SpokeData memory spokeData = hub.getSpoke(daiAssetId, address(spoke1));
+    DataTypes.Asset memory assetData = hub.getAsset(daiAssetId);
+    DataTypes.SpokeData memory spokeData = hub.getSpoke(daiAssetId, address(spoke1));
 
     uint256 timestamp = vm.getBlockTimestamp();
 
@@ -80,9 +78,9 @@ contract LiquidityHubWithdrawTest is LiquidityHubBaseTest {
     );
 
     vm.expectEmit(address(tokenList.dai));
-    emit Transfer(address(hub), alice, amount);
+    emit IERC20.Transfer(address(hub), alice, amount);
     vm.expectEmit(address(hub));
-    emit Withdraw(daiAssetId, address(spoke1), alice, amount);
+    emit ILiquidityHub.Withdraw(daiAssetId, address(spoke1), alice, amount);
 
     vm.prank(address(spoke1));
     hub.withdraw({assetId: daiAssetId, amount: amount, riskPremium: 0, to: alice});
@@ -183,9 +181,9 @@ contract LiquidityHubWithdrawTest is LiquidityHubBaseTest {
       to: alice
     });
 
-    Asset memory assetData = hub.getAsset(assetId);
-    SpokeData memory spokeData = hub.getSpoke(assetId, address(spoke1));
-    SpokeData memory spoke2Data = hub.getSpoke(assetId, address(spoke2));
+    DataTypes.Asset memory assetData = hub.getAsset(assetId);
+    DataTypes.SpokeData memory spokeData = hub.getSpoke(assetId, address(spoke1));
+    DataTypes.SpokeData memory spoke2Data = hub.getSpoke(assetId, address(spoke2));
 
     // hub
     assertEq(hub.getTotalAssets(assetId), 0, 'hub total assets post-withdraw');
@@ -275,8 +273,8 @@ contract LiquidityHubWithdrawTest is LiquidityHubBaseTest {
       to: address(spoke1)
     });
 
-    Asset memory assetData = hub.getAsset(assetId);
-    SpokeData memory spokeData = hub.getSpoke(assetId, address(spoke1));
+    DataTypes.Asset memory assetData = hub.getAsset(assetId);
+    DataTypes.SpokeData memory spokeData = hub.getSpoke(assetId, address(spoke1));
 
     uint256 timestamp = vm.getBlockTimestamp();
 
@@ -332,10 +330,10 @@ contract LiquidityHubWithdrawTest is LiquidityHubBaseTest {
     );
 
     vm.expectEmit(address(asset));
-    emit Transfer(address(hub), alice, amount);
+    emit IERC20.Transfer(address(hub), alice, amount);
 
     vm.expectEmit(address(hub));
-    emit Withdraw(assetId, address(spoke1), alice, amount);
+    emit ILiquidityHub.Withdraw(assetId, address(spoke1), alice, amount);
 
     Utils.withdraw({
       hub: hub,
@@ -656,7 +654,7 @@ contract LiquidityHubWithdrawTest is LiquidityHubBaseTest {
     uint256 amount = 1;
 
     vm.prank(address(spoke1));
-    vm.expectRevert(TestErrors.SUPPLIED_AMOUNT_EXCEEDED);
+    vm.expectRevert(abi.encodeWithSelector(ILiquidityHub.SuppliedAmountExceeded.selector, 0));
     hub.withdraw({assetId: assetId, amount: amount, riskPremium: 0, to: address(spoke1)});
   }
 
@@ -676,12 +674,13 @@ contract LiquidityHubWithdrawTest is LiquidityHubBaseTest {
     });
 
     vm.prank(address(spoke1));
-    vm.expectRevert(TestErrors.SUPPLIED_AMOUNT_EXCEEDED);
+    vm.expectRevert(abi.encodeWithSelector(ILiquidityHub.SuppliedAmountExceeded.selector, amount));
     hub.withdraw({assetId: assetId, amount: amount + 1, riskPremium: 0, to: alice});
 
     // advance time, but no accumulation
     skip(1e18);
-    vm.expectRevert(TestErrors.SUPPLIED_AMOUNT_EXCEEDED);
+    vm.prank(address(spoke1));
+    vm.expectRevert(abi.encodeWithSelector(ILiquidityHub.SuppliedAmountExceeded.selector, amount));
     hub.withdraw({assetId: assetId, amount: amount + 1, riskPremium: 0, to: alice});
   }
 
@@ -710,7 +709,7 @@ contract LiquidityHubWithdrawTest is LiquidityHubBaseTest {
       onBehalfOf: address(spoke1)
     });
 
-    vm.expectRevert(TestErrors.SUPPLIED_AMOUNT_EXCEEDED);
+    vm.expectRevert(abi.encodeWithSelector(ILiquidityHub.SuppliedAmountExceeded.selector, 0));
 
     vm.prank(address(spoke1));
     hub.withdraw({assetId: daiAssetId, amount: amount, riskPremium: 0, to: address(spoke1)});
@@ -730,16 +729,16 @@ contract LiquidityHubWithdrawTest is LiquidityHubBaseTest {
       to: address(spoke1)
     });
 
-    vm.expectRevert(TestErrors.INVALID_WITHDRAW_AMOUNT);
+    vm.expectRevert(ILiquidityHub.InvalidWithdrawAmount.selector);
     vm.prank(address(spoke1));
     hub.withdraw({assetId: daiAssetId, amount: 0, riskPremium: 0, to: alice});
   }
 
   function test_withdraw_revertsWith_asset_not_active() public {
     uint256 amount = 100e18;
-    _updateActive(daiAssetId, false);
+    updateAssetActive(hub, daiAssetId, false);
 
-    vm.expectRevert(TestErrors.ASSET_NOT_ACTIVE);
+    vm.expectRevert(abi.encodeWithSelector(ILiquidityHub.AssetNotActive.selector, daiAssetId));
     vm.prank(address(spoke1));
     hub.withdraw({assetId: daiAssetId, amount: amount, riskPremium: 0, to: alice});
   }

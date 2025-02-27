@@ -3,10 +3,10 @@ pragma solidity ^0.8.0;
 
 import {IERC20Errors} from 'src/dependencies/openzeppelin/IERC20Errors.sol';
 
-import 'tests/BaseTest.t.sol';
+import 'tests/Base.t.sol';
 import {Spoke} from 'src/contracts/Spoke.sol';
 
-contract SpokeSupplyTest is BaseTest {
+contract SpokeSupplyTest is Base {
   function setUp() public override {
     super.setUp();
     initEnvironment();
@@ -17,7 +17,7 @@ contract SpokeSupplyTest is BaseTest {
     uint256 amount = 100e18;
 
     vm.prank(bob);
-    vm.expectRevert(TestErrors.RESERVE_NOT_LISTED);
+    vm.expectRevert(ISpoke.ReserveNotListed.selector);
     spoke1.supply(reserveId, amount);
   }
 
@@ -44,8 +44,8 @@ contract SpokeSupplyTest is BaseTest {
 
     deal(address(tokenList.dai), bob, amount);
 
-    Spoke.UserConfig memory userData = spoke1.getUser(spokeInfo[spoke1].dai.reserveId, bob);
-    Spoke.Reserve memory reserveData = spoke1.getReserve(spokeInfo[spoke1].dai.reserveId);
+    DataTypes.UserConfig memory userData = spoke1.getUser(spokeInfo[spoke1].dai.reserveId, bob);
+    DataTypes.Reserve memory reserveData = spoke1.getReserve(spokeInfo[spoke1].dai.reserveId);
 
     assertEq(tokenList.dai.balanceOf(bob), amount, 'user token balance pre-supply');
     assertEq(tokenList.dai.balanceOf(address(hub)), 0, 'hub token balance pre-supply');
@@ -56,7 +56,7 @@ contract SpokeSupplyTest is BaseTest {
 
     vm.prank(bob);
     vm.expectEmit(address(spoke1));
-    emit Supplied(spokeInfo[spoke1].dai.reserveId, amount, bob);
+    emit ISpoke.Supplied(spokeInfo[spoke1].dai.reserveId, bob, amount);
     spoke1.supply(spokeInfo[spoke1].dai.reserveId, amount);
 
     userData = spoke1.getUser(spokeInfo[spoke1].dai.reserveId, bob);
@@ -83,8 +83,8 @@ contract SpokeSupplyTest is BaseTest {
 
     deal(address(tokenList.dai), bob, amount);
 
-    Spoke.UserConfig memory userData = spoke1.getUser(spokeInfo[spoke1].dai.reserveId, bob);
-    Spoke.Reserve memory reserveData = spoke1.getReserve(spokeInfo[spoke1].dai.reserveId);
+    DataTypes.UserConfig memory userData = spoke1.getUser(spokeInfo[spoke1].dai.reserveId, bob);
+    DataTypes.Reserve memory reserveData = spoke1.getReserve(spokeInfo[spoke1].dai.reserveId);
 
     assertEq(tokenList.dai.balanceOf(bob), amount, 'user token balance pre-supply');
     assertEq(tokenList.dai.balanceOf(address(hub)), 0, 'hub token balance pre-supply');
@@ -95,7 +95,7 @@ contract SpokeSupplyTest is BaseTest {
 
     vm.prank(bob);
     vm.expectEmit(address(spoke1));
-    emit Supplied(spokeInfo[spoke1].dai.reserveId, amount, bob);
+    emit ISpoke.Supplied(spokeInfo[spoke1].dai.reserveId, bob, amount);
     spoke1.supply(spokeInfo[spoke1].dai.reserveId, amount);
 
     userData = spoke1.getUser(spokeInfo[spoke1].dai.reserveId, bob);

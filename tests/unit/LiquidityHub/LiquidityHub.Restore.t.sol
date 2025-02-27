@@ -1,11 +1,9 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.0;
 
-import './LiquidityHubBaseTest.t.sol';
-import {IERC20Errors} from 'src/dependencies/openzeppelin/IERC20Errors.sol';
-import {Asset, SpokeData} from 'src/contracts/LiquidityHub.sol';
+import './LiquidityHubBase.t.sol';
 
-contract LiquidityHubRestoreTest is LiquidityHubBaseTest {
+contract LiquidityHubRestoreTest is LiquidityHubBase {
   using SharesMath for uint256;
   using WadRayMath for uint256;
   using PercentageMath for uint256;
@@ -49,10 +47,10 @@ contract LiquidityHubRestoreTest is LiquidityHubBaseTest {
       onBehalfOf: address(spoke1)
     });
 
-    _updateActive(daiAssetId, false);
+    updateAssetActive(hub, daiAssetId, false);
 
     // spoke1 restore all of drawn dai liquidity
-    vm.expectRevert(TestErrors.ASSET_NOT_ACTIVE);
+    vm.expectRevert(abi.encodeWithSelector(ILiquidityHub.AssetNotActive.selector, daiAssetId));
 
     vm.prank(address(spoke1));
     hub.restore({assetId: daiAssetId, amount: drawAmount, riskPremium: 0, repayer: alice});
@@ -98,14 +96,16 @@ contract LiquidityHubRestoreTest is LiquidityHubBaseTest {
     });
 
     // alice restore invalid amount > drawn amount AND premium
-    vm.expectRevert(TestErrors.INVALID_RESTORE_AMOUNT);
+    vm.expectRevert(
+      abi.encodeWithSelector(ILiquidityHub.ZeroOrSurplusAmountRestored.selector, drawAmount)
+    );
 
     vm.prank(address(spoke1));
     hub.restore({assetId: daiAssetId, amount: drawAmount + 1, riskPremium: 0, repayer: alice});
   }
 
   function test_restore_revertsWith_invalid_restore_amount_zero() public {
-    vm.expectRevert(TestErrors.INVALID_RESTORE_AMOUNT);
+    vm.expectRevert(abi.encodeWithSelector(ILiquidityHub.ZeroOrSurplusAmountRestored.selector, 0));
 
     vm.prank(address(spoke1));
     hub.restore({assetId: daiAssetId, amount: 0, riskPremium: 0, repayer: alice});
@@ -158,7 +158,7 @@ contract LiquidityHubRestoreTest is LiquidityHubBaseTest {
       onBehalfOf: address(spoke1)
     });
 
-    SpokeData memory spoke1DaiData = hub.getSpoke(daiAssetId, address(spoke1));
+    DataTypes.SpokeData memory spoke1DaiData = hub.getSpoke(daiAssetId, address(spoke1));
 
     skip(skipTime);
 
@@ -181,7 +181,9 @@ contract LiquidityHubRestoreTest is LiquidityHubBaseTest {
     assertTrue(cumulatedBaseDebt > 0);
 
     // alice restore invalid amount > drawn amount (no premium)
-    vm.expectRevert(TestErrors.INVALID_RESTORE_AMOUNT);
+    vm.expectRevert(
+      abi.encodeWithSelector(ILiquidityHub.ZeroOrSurplusAmountRestored.selector, cumulatedBaseDebt)
+    );
 
     vm.prank(address(spoke1));
     hub.restore({
@@ -243,7 +245,7 @@ contract LiquidityHubRestoreTest is LiquidityHubBaseTest {
       onBehalfOf: address(spoke1)
     });
 
-    SpokeData memory spoke1DaiData = hub.getSpoke(daiAssetId, address(spoke1));
+    DataTypes.SpokeData memory spoke1DaiData = hub.getSpoke(daiAssetId, address(spoke1));
 
     skip(skipTime);
 
@@ -266,7 +268,9 @@ contract LiquidityHubRestoreTest is LiquidityHubBaseTest {
     vm.assume(cumulatedBaseDebt > 0);
 
     // alice restore invalid amount > drawn amount (no premium)
-    vm.expectRevert(TestErrors.INVALID_RESTORE_AMOUNT);
+    vm.expectRevert(
+      abi.encodeWithSelector(ILiquidityHub.ZeroOrSurplusAmountRestored.selector, cumulatedBaseDebt)
+    );
 
     vm.prank(address(spoke1));
     hub.restore({
@@ -325,7 +329,7 @@ contract LiquidityHubRestoreTest is LiquidityHubBaseTest {
       onBehalfOf: address(spoke1)
     });
 
-    SpokeData memory spoke1DaiData = hub.getSpoke(daiAssetId, address(spoke1));
+    DataTypes.SpokeData memory spoke1DaiData = hub.getSpoke(daiAssetId, address(spoke1));
 
     skip(skipTime);
 
@@ -349,7 +353,12 @@ contract LiquidityHubRestoreTest is LiquidityHubBaseTest {
     assertTrue(accruedPremium > 0);
 
     // alice restore invalid amount > drawn amount AND premium
-    vm.expectRevert(TestErrors.INVALID_RESTORE_AMOUNT);
+    vm.expectRevert(
+      abi.encodeWithSelector(
+        ILiquidityHub.ZeroOrSurplusAmountRestored.selector,
+        cumulatedBaseDebt + accruedPremium
+      )
+    );
 
     vm.prank(address(spoke1));
     hub.restore({
@@ -413,7 +422,7 @@ contract LiquidityHubRestoreTest is LiquidityHubBaseTest {
       onBehalfOf: address(spoke1)
     });
 
-    SpokeData memory spoke1DaiData = hub.getSpoke(daiAssetId, address(spoke1));
+    DataTypes.SpokeData memory spoke1DaiData = hub.getSpoke(daiAssetId, address(spoke1));
 
     skip(skipTime);
 
@@ -437,7 +446,12 @@ contract LiquidityHubRestoreTest is LiquidityHubBaseTest {
     vm.assume(accruedPremium > 0); // accrued premium can round to 0 in edge case - ex. (cumulatedBaseDebt - drawAmount) = 1, riskPremium = 1
 
     // alice restore invalid amount > drawn amount AND premium
-    vm.expectRevert(TestErrors.INVALID_RESTORE_AMOUNT);
+    vm.expectRevert(
+      abi.encodeWithSelector(
+        ILiquidityHub.ZeroOrSurplusAmountRestored.selector,
+        cumulatedBaseDebt + accruedPremium
+      )
+    );
 
     vm.prank(address(spoke1));
     hub.restore({
@@ -463,7 +477,7 @@ contract LiquidityHubRestoreTest is LiquidityHubBaseTest {
       riskPremium: riskPremium,
       rate: rate
     });
-    Asset memory daiData = hub.getAsset(daiAssetId);
+    DataTypes.Asset memory daiData = hub.getAsset(daiAssetId);
 
     skip(365 days);
 
@@ -482,7 +496,7 @@ contract LiquidityHubRestoreTest is LiquidityHubBaseTest {
     hub.restore({assetId: daiAssetId, amount: restoreAmount, riskPremium: 0, repayer: alice});
 
     daiData = hub.getAsset(daiAssetId);
-    SpokeData memory spoke1DaiData = hub.getSpoke(daiAssetId, address(spoke1));
+    DataTypes.SpokeData memory spoke1DaiData = hub.getSpoke(daiAssetId, address(spoke1));
     DebtData memory daiDebtData = _getDebt(daiAssetId);
 
     // hub
@@ -563,7 +577,7 @@ contract LiquidityHubRestoreTest is LiquidityHubBaseTest {
       riskPremium: riskPremium,
       rate: rate
     });
-    Asset memory daiData = hub.getAsset(daiAssetId);
+    DataTypes.Asset memory daiData = hub.getAsset(daiAssetId);
 
     skip(skipTime);
 
@@ -581,7 +595,7 @@ contract LiquidityHubRestoreTest is LiquidityHubBaseTest {
     hub.restore({assetId: daiAssetId, amount: restoreAmount, riskPremium: 0, repayer: alice});
 
     daiData = hub.getAsset(daiAssetId);
-    SpokeData memory spoke1DaiData = hub.getSpoke(daiAssetId, address(spoke1));
+    DataTypes.SpokeData memory spoke1DaiData = hub.getSpoke(daiAssetId, address(spoke1));
     DebtData memory daiDebtData = _getDebt(daiAssetId);
 
     // hub
@@ -654,7 +668,7 @@ contract LiquidityHubRestoreTest is LiquidityHubBaseTest {
       riskPremium: riskPremium,
       rate: rate
     });
-    Asset memory daiData = hub.getAsset(daiAssetId);
+    DataTypes.Asset memory daiData = hub.getAsset(daiAssetId);
 
     skip(365 days);
 
@@ -671,7 +685,7 @@ contract LiquidityHubRestoreTest is LiquidityHubBaseTest {
     hub.restore({assetId: daiAssetId, amount: restoreAmount, riskPremium: 0, repayer: alice});
 
     daiData = hub.getAsset(daiAssetId);
-    SpokeData memory spoke1DaiData = hub.getSpoke(daiAssetId, address(spoke1));
+    DataTypes.SpokeData memory spoke1DaiData = hub.getSpoke(daiAssetId, address(spoke1));
     DebtData memory daiDebtData = _getDebt(daiAssetId);
 
     // hub
@@ -740,7 +754,7 @@ contract LiquidityHubRestoreTest is LiquidityHubBaseTest {
       riskPremium: riskPremium,
       rate: rate
     });
-    Asset memory daiData = hub.getAsset(daiAssetId);
+    DataTypes.Asset memory daiData = hub.getAsset(daiAssetId);
 
     skip(skipTime);
 
@@ -762,7 +776,7 @@ contract LiquidityHubRestoreTest is LiquidityHubBaseTest {
     hub.restore({assetId: daiAssetId, amount: restoreAmount, riskPremium: 0, repayer: alice});
 
     daiData = hub.getAsset(daiAssetId);
-    SpokeData memory spoke1DaiData = hub.getSpoke(daiAssetId, address(spoke1));
+    DataTypes.SpokeData memory spoke1DaiData = hub.getSpoke(daiAssetId, address(spoke1));
     DebtData memory daiDebtData = _getDebt(daiAssetId);
 
     // hub
@@ -868,7 +882,7 @@ contract LiquidityHubRestoreTest is LiquidityHubBaseTest {
     });
 
     vm.expectEmit(address(hub));
-    emit Restore(daiAssetId, address(spoke1), restoreAmount);
+    emit ILiquidityHub.Restore(daiAssetId, address(spoke1), restoreAmount);
 
     vm.prank(address(spoke1));
     hub.restore({assetId: daiAssetId, amount: restoreAmount, riskPremium: 0, repayer: alice});
@@ -1090,7 +1104,7 @@ contract LiquidityHubRestoreTest is LiquidityHubBaseTest {
       onBehalfOf: address(spoke1)
     });
 
-    SpokeData memory spoke1DaiData = hub.getSpoke(daiAssetId, address(spoke1));
+    DataTypes.SpokeData memory spoke1DaiData = hub.getSpoke(daiAssetId, address(spoke1));
 
     skip(skipTime);
 
@@ -1116,8 +1130,8 @@ contract LiquidityHubRestoreTest is LiquidityHubBaseTest {
     vm.prank(address(spoke1));
     hub.restore({assetId: daiAssetId, amount: cumulatedBaseDebt, riskPremium: 0, repayer: alice});
 
-    Asset memory daiData = hub.getAsset(daiAssetId);
-    SpokeData memory spoke1Data = hub.getSpoke(daiAssetId, address(spoke1));
+    DataTypes.Asset memory daiData = hub.getAsset(daiAssetId);
+    DataTypes.SpokeData memory spoke1Data = hub.getSpoke(daiAssetId, address(spoke1));
     DebtData memory daiDebtData = _getDebt(daiAssetId);
 
     // asset
@@ -1186,7 +1200,7 @@ contract LiquidityHubRestoreTest is LiquidityHubBaseTest {
       onBehalfOf: address(spoke1)
     });
 
-    SpokeData memory spoke1DaiData = hub.getSpoke(daiAssetId, address(spoke1));
+    DataTypes.SpokeData memory spoke1DaiData = hub.getSpoke(daiAssetId, address(spoke1));
 
     skip(skipTime);
 
@@ -1213,8 +1227,8 @@ contract LiquidityHubRestoreTest is LiquidityHubBaseTest {
     vm.prank(address(spoke1));
     hub.restore({assetId: daiAssetId, amount: cumulatedBaseDebt, riskPremium: 0, repayer: alice});
 
-    Asset memory daiData = hub.getAsset(daiAssetId);
-    SpokeData memory spoke1Data = hub.getSpoke(daiAssetId, address(spoke1));
+    DataTypes.Asset memory daiData = hub.getAsset(daiAssetId);
+    DataTypes.SpokeData memory spoke1Data = hub.getSpoke(daiAssetId, address(spoke1));
     DebtData memory daiDebtData = _getDebt(daiAssetId);
 
     // asset
@@ -1280,7 +1294,7 @@ contract LiquidityHubRestoreTest is LiquidityHubBaseTest {
       onBehalfOf: address(spoke1)
     });
 
-    SpokeData memory spoke1DaiData = hub.getSpoke(daiAssetId, address(spoke1));
+    DataTypes.SpokeData memory spoke1DaiData = hub.getSpoke(daiAssetId, address(spoke1));
 
     skip(skipTime);
 
@@ -1313,8 +1327,8 @@ contract LiquidityHubRestoreTest is LiquidityHubBaseTest {
       repayer: alice
     });
 
-    Asset memory daiData = hub.getAsset(daiAssetId);
-    SpokeData memory spoke1Data = hub.getSpoke(daiAssetId, address(spoke1));
+    DataTypes.Asset memory daiData = hub.getAsset(daiAssetId);
+    DataTypes.SpokeData memory spoke1Data = hub.getSpoke(daiAssetId, address(spoke1));
     DebtData memory daiDebtData = _getDebt(daiAssetId);
 
     // asset
@@ -1385,7 +1399,7 @@ contract LiquidityHubRestoreTest is LiquidityHubBaseTest {
       onBehalfOf: address(spoke1)
     });
 
-    SpokeData memory spoke1DaiData = hub.getSpoke(daiAssetId, address(spoke1));
+    DataTypes.SpokeData memory spoke1DaiData = hub.getSpoke(daiAssetId, address(spoke1));
 
     skip(skipTime);
 
@@ -1418,8 +1432,8 @@ contract LiquidityHubRestoreTest is LiquidityHubBaseTest {
       repayer: alice
     });
 
-    Asset memory daiData = hub.getAsset(daiAssetId);
-    SpokeData memory spoke1Data = hub.getSpoke(daiAssetId, address(spoke1));
+    DataTypes.Asset memory daiData = hub.getAsset(daiAssetId);
+    DataTypes.SpokeData memory spoke1Data = hub.getSpoke(daiAssetId, address(spoke1));
     DebtData memory daiDebtData = _getDebt(daiAssetId);
 
     // asset
