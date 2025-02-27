@@ -9,7 +9,7 @@ import {DataTypes} from 'src/libraries/types/DataTypes.sol';
  * @notice Basic interface for Spoke
  */
 interface ISpoke {
-  event ReserveAdded(uint256 indexed reserveId, uint256 assetId, address asset);
+  event ReserveAdded(uint256 indexed reserveId, uint256 assetId);
   event ReserveConfigUpdated(
     uint256 indexed reserveId,
     uint256 lt,

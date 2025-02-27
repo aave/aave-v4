@@ -508,7 +508,7 @@ contract LiquidityHub is ILiquidityHub {
   }
 
   function _boundBps(uint32 a) internal pure returns (uint256) {
-    require(a < 1000_00, InvalidBps(a));
+    require(a < 1000_00, InvalidRiskPremiumBps(a));
     return uint256(a);
   }
 }

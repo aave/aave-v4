@@ -47,7 +47,7 @@ interface ILiquidityHub {
   error DrawCapExceeded(uint256 drawCap);
   error ZeroOrSurplusAmountRestored(uint256 maxAllowedRestore);
   error InvalidSpoke();
-  error InvalidBps(uint256 bps);
+  error InvalidRiskPremiumBps(uint256 bps);
 
   function addAsset(DataTypes.AssetConfig memory params, address asset) external;
   function updateAssetConfig(uint256 assetId, DataTypes.AssetConfig memory config) external;

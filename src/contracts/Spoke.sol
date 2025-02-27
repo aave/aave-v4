@@ -72,7 +72,7 @@ contract Spoke is ISpoke {
       })
     });
 
-    emit ReserveAdded(_reserveCount, assetId, asset);
+    emit ReserveAdded(_reserveCount, assetId);
 
     return _reserveCount;
   }
@@ -362,7 +362,7 @@ contract Spoke is ISpoke {
     uint256 amount
   ) internal view {
     uint256 suppliedAmount = liquidityHub.convertToAssetsDown(reserve.assetId, user.suppliedShares);
-    require(suppliedAmount >= amount, InsufficientSupply(suppliedAmount));
+    require(amount <= suppliedAmount, InsufficientSupply(suppliedAmount));
   }
 
   function _validateBorrow(DataTypes.Reserve storage reserve, uint256 amount) internal view {
