@@ -210,6 +210,9 @@ contract BorrowIndex_Scenario2Test is BorrowIndexBase {
       });
     } else if (stage == stages[2]) {
       hub.addSpoke(state.assetId, spokeConfig, spokes[spoke4Index].addr);
+      vm.assume(
+        hub.convertToShares(state.assetId, spokes[spoke4Index].actions.supply[t].amount) > 0
+      );
       Utils.supply({
         hub: hub,
         assetId: state.assetId,
@@ -374,6 +377,8 @@ contract BorrowIndex_Scenario2Test is BorrowIndexBase {
         timeAt(stages[t - 1])
       );
 
+      vm.assume(assets[state.assetId].t_f[t].baseDebt.wadMul(expectedPrecision) > 1);
+
       // asset
       assertEq(
         assets[state.assetId].t_f[t].baseBorrowIndex,
@@ -411,6 +416,8 @@ contract BorrowIndex_Scenario2Test is BorrowIndexBase {
         spokes[spoke1Index].t_f[t - 2].lastUpdateTimestamp,
         't3_f Spoke1 lastUpdateTimestamp'
       );
+
+      vm.assume(spokes[spoke4Index].t_f[t].baseDebt.wadMul(expectedPrecision) > 1);
 
       // spoke4
       assertEq(

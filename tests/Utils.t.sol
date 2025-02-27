@@ -68,7 +68,7 @@ library Utils {
     vm.stopPrank();
 
     vm.prank(spoke);
-    hub.restore({assetId: assetId, amount: amount, riskPremium: riskPremium, repayer: repayer});
+    hub.restore(assetId, amount, riskPremium, repayer);
   }
 
   function withdraw(
