@@ -36,7 +36,7 @@ contract LiquidityHubDrawTest is LiquidityHubBase {
 
     // spoke1 draw half of dai reserve liquidity
     vm.expectEmit(address(hub));
-    emit Draw(daiAssetId, address(spoke1), alice, drawAmount);
+    emit ILiquidityHub.Draw(daiAssetId, address(spoke1), alice, drawAmount);
     vm.prank(address(spoke1));
     hub.draw({assetId: daiAssetId, amount: drawAmount, riskPremium: 0, to: alice});
 
@@ -210,7 +210,7 @@ contract LiquidityHubDrawTest is LiquidityHubBase {
 
     // spoke1 draw half of dai reserve liquidity
     vm.expectEmit(address(hub));
-    emit Draw(daiAssetId, address(spoke1), alice, drawAmount);
+    emit ILiquidityHub.Draw(daiAssetId, address(spoke1), alice, drawAmount);
     vm.prank(address(spoke1));
     hub.draw({assetId: daiAssetId, amount: drawAmount, riskPremium: 0, to: alice});
 

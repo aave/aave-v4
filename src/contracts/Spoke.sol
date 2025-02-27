@@ -145,7 +145,7 @@ contract Spoke is ISpoke {
     user.suppliedShares += suppliedShares;
     reserve.suppliedShares += suppliedShares;
 
-    emit Supplied(reserveId, amount, msg.sender);
+    emit Supplied(reserveId, msg.sender, amount);
   }
 
   function withdraw(uint256 reserveId, uint256 amount, address to) external {
@@ -176,7 +176,7 @@ contract Spoke is ISpoke {
     user.suppliedShares -= withdrawnShares;
     reserve.suppliedShares -= withdrawnShares;
 
-    emit Withdrawn(reserveId, amount, msg.sender);
+    emit Withdrawn(reserveId, msg.sender, amount);
   }
 
   function borrow(uint256 reserveId, uint256 amount, address to) external {
@@ -200,7 +200,7 @@ contract Spoke is ISpoke {
     liquidityHub.draw(reserve.assetId, amount, uint32(newReserveRiskPremium.derayify()), to);
     _notifyRiskPremiumUpdate(reserve.assetId, msg.sender, newUserRiskPremium);
 
-    emit Borrowed(reserveId, amount, to);
+    emit Borrowed(reserveId, to, amount);
   }
 
   function repay(uint256 reserveId, uint256 amount) external {
@@ -232,7 +232,7 @@ contract Spoke is ISpoke {
     );
     _notifyRiskPremiumUpdate(reserve.assetId, msg.sender, newUserRiskPremium);
 
-    emit Repaid(reserveId, amount, msg.sender);
+    emit Repaid(reserveId, msg.sender, amount);
   }
 
   function setUsingAsCollateral(uint256 reserveId, bool usingAsCollateral) external {
@@ -242,7 +242,7 @@ contract Spoke is ISpoke {
     _validateSetUsingAsCollateral(reserve, user);
     user.usingAsCollateral = usingAsCollateral;
 
-    emit UsingAsCollateral(reserveId, usingAsCollateral, msg.sender);
+    emit UsingAsCollateral(reserveId, msg.sender, usingAsCollateral);
   }
 
   function getUsingAsCollateral(uint256 reserveId, address user) external view returns (bool) {

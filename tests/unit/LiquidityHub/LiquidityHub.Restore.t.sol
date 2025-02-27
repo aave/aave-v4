@@ -882,7 +882,7 @@ contract LiquidityHubRestoreTest is LiquidityHubBase {
     });
 
     vm.expectEmit(address(hub));
-    emit Restore(daiAssetId, address(spoke1), restoreAmount);
+    emit ILiquidityHub.Restore(daiAssetId, address(spoke1), restoreAmount);
 
     vm.prank(address(spoke1));
     hub.restore({assetId: daiAssetId, amount: restoreAmount, riskPremium: 0, repayer: alice});

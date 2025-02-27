@@ -37,7 +37,7 @@ library Utils {
     address onBehalfOf // todo: implement
   ) internal {
     vm.prank(spoke);
-    hub.draw({assetId: assetId, amount: amount, riskPremium: riskPremium, to: to});
+    hub.draw(assetId, amount, riskPremium, to);
   }
 
   function withdraw(
@@ -49,7 +49,7 @@ library Utils {
     address to
   ) internal {
     vm.prank(spoke);
-    hub.withdraw({assetId: assetId, amount: amount, riskPremium: riskPremium, to: to});
+    hub.withdraw(assetId, amount, riskPremium, to);
   }
 
   // spoke

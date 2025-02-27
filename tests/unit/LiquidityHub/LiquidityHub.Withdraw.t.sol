@@ -80,7 +80,7 @@ contract LiquidityHubWithdrawTest is LiquidityHubBase {
     vm.expectEmit(address(tokenList.dai));
     emit Transfer(address(hub), alice, amount);
     vm.expectEmit(address(hub));
-    emit Withdraw(daiAssetId, address(spoke1), alice, amount);
+    emit ILiquidityHub.Withdraw(daiAssetId, address(spoke1), alice, amount);
 
     vm.prank(address(spoke1));
     hub.withdraw({assetId: daiAssetId, amount: amount, riskPremium: 0, to: alice});
@@ -333,7 +333,7 @@ contract LiquidityHubWithdrawTest is LiquidityHubBase {
     emit Transfer(address(hub), alice, amount);
 
     vm.expectEmit(address(hub));
-    emit Withdraw(assetId, address(spoke1), alice, amount);
+    emit ILiquidityHub.Withdraw(assetId, address(spoke1), alice, amount);
 
     Utils.withdraw({
       hub: hub,

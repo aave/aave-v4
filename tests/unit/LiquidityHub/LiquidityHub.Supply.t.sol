@@ -105,7 +105,7 @@ contract LiquidityHubSupplyTest is LiquidityHubBase {
     assertEq(tokenList.dai.balanceOf(address(hub)), 0, 'hub token balance pre-supply');
 
     vm.expectEmit(address(hub));
-    emit Supply(assetId, address(spoke1), amount);
+    emit ILiquidityHub.Supply(assetId, address(spoke1), amount);
 
     vm.prank(address(spoke1));
     hub.supply(assetId, amount, 0, alice);
@@ -173,7 +173,7 @@ contract LiquidityHubSupplyTest is LiquidityHubBase {
     vm.expectEmit(address(asset));
     emit Transfer(alice, address(hub), amount);
     vm.expectEmit(address(hub));
-    emit Supply(assetId, address(spoke1), amount);
+    emit ILiquidityHub.Supply(assetId, address(spoke1), amount);
 
     vm.prank(address(spoke1));
     hub.supply({assetId: assetId, amount: amount, riskPremium: riskPremium, supplier: alice});
@@ -249,7 +249,7 @@ contract LiquidityHubSupplyTest is LiquidityHubBase {
     vm.expectEmit(address(asset));
     emit Transfer(alice, address(hub), amount);
     vm.expectEmit(address(hub));
-    emit Supply(assetId, address(spoke1), amount);
+    emit ILiquidityHub.Supply(assetId, address(spoke1), amount);
 
     vm.prank(address(spoke1));
     hub.supply(assetId, amount, 0, alice);
@@ -257,7 +257,7 @@ contract LiquidityHubSupplyTest is LiquidityHubBase {
     vm.expectEmit(address(asset2));
     emit Transfer(alice, address(hub), amount2);
     vm.expectEmit(address(hub));
-    emit Supply(assetId2, address(spoke2), amount2);
+    emit ILiquidityHub.Supply(assetId2, address(spoke2), amount2);
 
     vm.prank(address(spoke2));
     hub.supply(assetId2, amount2, 0, alice);
@@ -368,7 +368,7 @@ contract LiquidityHubSupplyTest is LiquidityHubBase {
     uint256 amount = 0;
 
     vm.prank(address(spoke1));
-    vm.expectRevert(abi.encodeWithSelector(ILiquidityHub.InvalidSupplyAmount.selector, amount));
+    vm.expectRevert(ILiquidityHub.InvalidSupplyAmount.selector);
     hub.supply(assetId, amount, 0, alice);
   }
 

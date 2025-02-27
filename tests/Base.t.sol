@@ -20,40 +20,9 @@ import {MockERC20} from './mocks/MockERC20.sol';
 import {MockPriceOracle, IPriceOracle} from './mocks/MockPriceOracle.sol';
 import {Utils} from './Utils.sol';
 
-// library Constants {}
-
 contract Events {
   // OpenZeppelin
   event Transfer(address indexed from, address indexed to, uint256 value);
-
-  // Aave
-
-  // ILiquidityHub
-  event Supply(uint256 indexed assetId, address indexed spoke, uint256 amount);
-  event Withdraw(
-    uint256 indexed assetId,
-    address indexed spoke,
-    address indexed to,
-    uint256 amount
-  );
-  event Draw(uint256 indexed assetId, address indexed spoke, address indexed to, uint256 amount);
-  event Restore(uint256 indexed assetId, address indexed spoke, uint256 amount);
-  event SpokeAdded(uint256 indexed assetId, address indexed spoke);
-
-  // ISpoke
-  event Borrowed(uint256 indexed assetId, uint256 amount, address indexed user);
-  event Repaid(uint256 indexed assetId, uint256 amount, address indexed user);
-  event Supplied(uint256 indexed assetId, uint256 amount, address indexed user);
-  event Withdrawn(uint256 indexed assetId, uint256 amount, address indexed user);
-  event ReserveConfigUpdated(
-    uint256 indexed assetId,
-    uint256 lt,
-    uint256 lb,
-    uint256 liquidityPremium,
-    bool borrowable,
-    bool collateral
-  );
-  event UsingAsCollateral(uint256 indexed assetId, bool usingAsCollateral, address indexed user);
 }
 
 abstract contract Base is Test, Events {

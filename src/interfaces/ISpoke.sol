@@ -9,7 +9,7 @@ import {DataTypes} from 'src/libraries/types/DataTypes.sol';
  * @notice Basic interface for Spoke
  */
 interface ISpoke {
-  event ReserveAdded(uint256 indexed reserveId, uint256 assetId);
+  event ReserveAdded(uint256 indexed reserveId, uint256 indexed assetId);
   event ReserveConfigUpdated(
     uint256 indexed reserveId,
     uint256 lt,
@@ -20,11 +20,11 @@ interface ISpoke {
   );
   event LiquidityPremiumUpdated(uint256 indexed reserveId, uint256 liquidityPremium);
 
-  event Supplied(uint256 indexed reserveId, uint256 amount, address indexed user);
-  event Withdrawn(uint256 indexed reserveId, uint256 amount, address indexed user);
-  event Borrowed(uint256 indexed reserveId, uint256 amount, address indexed user);
-  event Repaid(uint256 indexed reserveId, uint256 amount, address indexed user);
-  event UsingAsCollateral(uint256 indexed reserveId, bool usingAsCollateral, address indexed user);
+  event Supplied(uint256 indexed reserveId, address indexed user, uint256 amount);
+  event Withdrawn(uint256 indexed reserveId, address indexed user, uint256 amount);
+  event Borrowed(uint256 indexed reserveId, address indexed user, uint256 amount);
+  event Repaid(uint256 indexed reserveId, address indexed user, uint256 amount);
+  event UsingAsCollateral(uint256 indexed reserveId, address indexed user, bool usingAsCollateral);
 
   error InvalidReserve();
   error ReserveNotListed();

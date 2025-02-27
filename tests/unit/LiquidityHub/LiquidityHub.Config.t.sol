@@ -1,8 +1,8 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.0;
 
-import './LiquidityHubBase.t.sol';
 import {IERC20Errors} from 'src/dependencies/openzeppelin/IERC20Errors.sol';
+import './LiquidityHubBase.t.sol';
 
 contract LiquidityHubConfigTest is LiquidityHubBase {
   using SharesMath for uint256;
@@ -12,7 +12,7 @@ contract LiquidityHubConfigTest is LiquidityHubBase {
     uint256 assetId = hub.assetCount() - 1;
 
     vm.expectEmit(address(hub));
-    emit SpokeAdded(assetId, address(spoke1));
+    emit ILiquidityHub.SpokeAdded(assetId, address(spoke1));
     hub.addSpoke(assetId, DataTypes.SpokeConfig({supplyCap: 1, drawCap: 1}), address(spoke1));
 
     DataTypes.SpokeConfig memory spokeData = hub.getSpokeConfig(assetId, address(spoke1));
@@ -39,8 +39,8 @@ contract LiquidityHubConfigTest is LiquidityHubBase {
     spokeConfigs[1] = ethSpokeConfig;
 
     vm.expectEmit(address(hub));
-    emit SpokeAdded(daiAssetId, address(spoke1));
-    emit SpokeAdded(wethAssetId, address(spoke1));
+    emit ILiquidityHub.SpokeAdded(daiAssetId, address(spoke1));
+    emit ILiquidityHub.SpokeAdded(wethAssetId, address(spoke1));
     hub.addSpokes(assetIds, spokeConfigs, address(spoke1));
 
     DataTypes.SpokeConfig memory daiSpokeData = hub.getSpokeConfig(daiAssetId, address(spoke1));

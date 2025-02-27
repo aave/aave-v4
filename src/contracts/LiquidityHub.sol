@@ -274,8 +274,7 @@ contract LiquidityHub is ILiquidityHub {
   }
 
   function getTotalAssets(uint256 assetId) external view returns (uint256) {
-    DataTypes.Asset storage asset = _assets[assetId];
-    return asset.getTotalAssets();
+    return _assets[assetId].getTotalAssets();
   }
 
   function convertToSharesUp(uint256 assetId, uint256 assets) external view returns (uint256) {
@@ -364,7 +363,7 @@ contract LiquidityHub is ILiquidityHub {
     DataTypes.SpokeData storage spoke,
     uint256 amount
   ) internal view {
-    require(amount > 0, InvalidSupplyAmount(amount));
+    require(amount > 0, InvalidSupplyAmount());
     require(assetsList[asset.id] != IERC20(address(0)), AssetNotListed(asset.id));
     // TODO: Different states e.g. frozen, paused
     require(asset.config.active, AssetNotActive(asset.id));

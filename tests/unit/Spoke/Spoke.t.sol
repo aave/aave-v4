@@ -75,7 +75,7 @@ contract SpokeTest is Base {
     // Bob draw half of dai reserve liquidity
     vm.prank(bob);
     vm.expectEmit(address(spoke1));
-    emit Borrowed(spokeInfo[spoke1].dai.reserveId, daiAmount / 2, bob);
+    emit ISpoke.Borrowed(spokeInfo[spoke1].dai.reserveId, bob, daiAmount / 2);
     spoke1.borrow(spokeInfo[spoke1].dai.reserveId, daiAmount / 2, bob);
 
     bobData = spoke1.getUser(spokeInfo[spoke1].weth.reserveId, bob);
@@ -178,7 +178,7 @@ contract SpokeTest is Base {
     // Bob draw dai
     vm.prank(bob);
     vm.expectEmit(address(spoke1));
-    emit Borrowed(spokeInfo[spoke1].dai.reserveId, daiBorrowAmount, bob);
+    emit ISpoke.Borrowed(spokeInfo[spoke1].dai.reserveId, bob, daiBorrowAmount);
     spoke1.borrow(spokeInfo[spoke1].dai.reserveId, daiBorrowAmount, bob);
 
     bobData = spoke1.getUser(spokeInfo[spoke1].weth.reserveId, bob);
@@ -226,7 +226,7 @@ contract SpokeTest is Base {
 
     vm.startPrank(bob);
     vm.expectEmit(address(spoke1));
-    emit Withdrawn(spokeInfo[spoke1].dai.reserveId, amount, bob);
+    emit ISpoke.Withdrawn(spokeInfo[spoke1].dai.reserveId, bob, amount);
     spoke1.withdraw(spokeInfo[spoke1].dai.reserveId, amount, bob);
     vm.stopPrank();
 
@@ -350,7 +350,7 @@ contract SpokeTest is Base {
       collateral: !reserveData.config.collateral
     });
     vm.expectEmit(address(spoke1));
-    emit ReserveConfigUpdated(
+    emit ISpoke.ReserveConfigUpdated(
       daiId,
       newReserveConfig.lt,
       newReserveConfig.lb,
@@ -398,7 +398,7 @@ contract SpokeTest is Base {
 
     vm.prank(bob);
     vm.expectEmit(address(spoke1));
-    emit UsingAsCollateral(spokeInfo[spoke1].dai.reserveId, usingAsCollateral, bob);
+    emit ISpoke.UsingAsCollateral(spokeInfo[spoke1].dai.reserveId, bob, usingAsCollateral);
     ISpoke(spoke1).setUsingAsCollateral(spokeInfo[spoke1].dai.reserveId, usingAsCollateral);
 
     DataTypes.UserConfig memory userData = spoke1.getUser(spokeInfo[spoke1].dai.reserveId, bob);
