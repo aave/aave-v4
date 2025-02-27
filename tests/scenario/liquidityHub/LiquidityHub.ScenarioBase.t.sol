@@ -19,16 +19,15 @@ abstract contract LiquidityHubScenarioBaseTest is BaseTest {
   uint256 internal constant NUM_SPOKES = 4;
   uint256 internal constant NUM_ASSETS = 4;
   uint256 internal constant MAX_BOUNDED_AMOUNT = MAX_SUPPLY_AMOUNT / NUM_TIMESTAMPS;
-  uint256 internal constant MIN_BOUNDED_AMOUNT = 1e10;
+  uint256 internal constant MIN_BOUNDED_AMOUNT = 1;
   uint256 internal constant MAX_SKIP_TIME = 10_000 days;
-  uint256 internal constant MAX_BASE_BORROW_RATE = 1000_00; // BPS
   bool internal isPrintLogs = false;
   uint256 internal t; // internal stage index
 
-  uint256 internal spoke1Index = 0;
-  uint256 internal spoke2Index = 1;
-  uint256 internal spoke3Index = 2;
-  uint256 internal spoke4Index = 3;
+  uint256 internal constant SPOKE1_INDEX = 0;
+  uint256 internal constant SPOKE2_INDEX = 1;
+  uint256 internal constant SPOKE3_INDEX = 2;
+  uint256 internal constant SPOKE4_INDEX = 3;
 
   struct TestState {
     uint256 assetId;
@@ -39,7 +38,7 @@ abstract contract LiquidityHubScenarioBaseTest is BaseTest {
 
   TestState internal state;
   DataTypes.SpokeConfig internal spokeConfig;
-  Spoke internal spoke4;
+  Spoke internal spoke4; // init to be added during scenario tests
 
   // _i: initial, prior to action at a given time
   // _f: final, after action at a given time
@@ -87,9 +86,9 @@ abstract contract LiquidityHubScenarioBaseTest is BaseTest {
   function setUp() public virtual override {
     super.setUp();
 
-    spokes[spoke1Index].addr = address(spoke1);
-    spokes[spoke2Index].addr = address(spoke2);
-    spokes[spoke3Index].addr = address(spoke3);
+    spokes[SPOKE1_INDEX].addr = address(spoke1);
+    spokes[SPOKE2_INDEX].addr = address(spoke2);
+    spokes[SPOKE3_INDEX].addr = address(spoke3);
 
     // init stages
     for (uint8 i = 0; i < NUM_TIMESTAMPS; i++) {
