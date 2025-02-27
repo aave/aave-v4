@@ -312,12 +312,6 @@ contract LiquidityHub is ILiquidityHub {
   function getAssetDebt(uint256 assetId) external view returns (uint256, uint256) {
     (uint256 cumulatedBaseDebt, uint256 cumulatedOutstandingPremium) = _assets[assetId]
       .previewInterest(_assets[assetId].previewNextBorrowIndex());
-    return cumulatedBaseDebt + cumulatedOutstandingPremium;
-  }
-
-  function getSpokeDebt(uint256 assetId, address spoke) external view returns (uint256, uint256) {
-    (uint256 cumulatedBaseDebt, uint256 cumulatedOutstandingPremium) = _spokes[assetId][spoke]
-      .previewInterest(_assets[assetId].previewNextBorrowIndex());
     return (cumulatedBaseDebt, cumulatedOutstandingPremium);
   }
 
@@ -339,6 +333,10 @@ contract LiquidityHub is ILiquidityHub {
     return cumulatedBaseDebt + cumulatedOutstandingPremium;
   }
 
+  function getAssetSuppliedAmount(uint256 assetId) external view returns (uint256) {
+    return _assets[assetId].convertToAssetsDown(_assets[assetId].suppliedShares);
+  }
+
   function getAssetSuppliedShares(uint256 assetId) external view returns (uint256) {
     return _assets[assetId].suppliedShares;
   }
@@ -351,10 +349,6 @@ contract LiquidityHub is ILiquidityHub {
     return _spokes[assetId][spoke].suppliedShares;
   }
 
-  function getAssetSuppliedAmount(uint256 assetId) external view returns (uint256) {
-    return _assets[assetId].convertToAssetsDown(_assets[assetId].suppliedShares);
-  }
-
   function getAssetRiskPremium(uint256 assetId) external view returns (uint256) {
     return _assets[assetId].riskPremium.derayify();
   }
@@ -363,13 +357,13 @@ contract LiquidityHub is ILiquidityHub {
     return _spokes[assetId][spoke].riskPremium.derayify();
   }
 
+  function getAvailableLiquidity(uint256 assetId) external view returns (uint256) {
+    return _assets[assetId].availableLiquidity;
+  }
+
   /// @inheritdoc ILiquidityHub
   function getAssetConfig(uint256 assetId) external view returns (DataTypes.AssetConfig memory) {
     return _assets[assetId].config;
-  }
-
-  function getAvailableLiquidity(uint256 assetId) external view returns (uint256) {
-    return _assets[assetId].availableLiquidity;
   }
 
   //

@@ -232,7 +232,98 @@ contract Spoke is ISpoke {
     );
     _notifyRiskPremiumUpdate(reserve.assetId, msg.sender, newUserRiskPremium);
 
-    emit Repaid(reserveId, amount, msg.sender);
+    emit Repaid(reserveId, msg.sender, amount);
+  }
+
+  function setUsingAsCollateral(uint256 reserveId, bool usingAsCollateral) external {
+    DataTypes.Reserve storage reserve = _reserves[reserveId];
+    DataTypes.UserConfig storage user = _users[msg.sender][reserveId];
+
+    _validateSetUsingAsCollateral(reserve, user);
+    user.usingAsCollateral = usingAsCollateral;
+
+    emit UsingAsCollateral(reserveId, msg.sender, usingAsCollateral);
+  }
+
+  function getUsingAsCollateral(uint256 reserveId, address user) external view returns (bool) {
+    return _users[user][reserveId].usingAsCollateral;
+  }
+
+  function getUserDebt(uint256 reserveId, address user) external view returns (uint256, uint256) {
+    (uint256 cumulatedBaseDebt, uint256 cumulatedOutstandingPremium) = _previewUserInterest(
+      _users[user][reserveId],
+      _userData[user],
+      liquidityHub.previewNextBorrowIndex(_reserves[reserveId].assetId)
+    );
+    return (cumulatedBaseDebt, cumulatedOutstandingPremium);
+  }
+
+  function getUserCumulativeDebt(uint256 reserveId, address user) external view returns (uint256) {
+    (uint256 cumulatedBaseDebt, uint256 cumulatedOutstandingPremium) = _previewUserInterest(
+      _users[user][reserveId],
+      _userData[user],
+      liquidityHub.previewNextBorrowIndex(_reserves[reserveId].assetId)
+    );
+    return cumulatedBaseDebt + cumulatedOutstandingPremium;
+  }
+
+  function getReserveSuppliedAmount(uint256 reserveId) external view returns (uint256) {
+    return
+      liquidityHub.convertToAssets(
+        _reserves[reserveId].assetId,
+        _reserves[reserveId].suppliedShares
+      );
+  }
+
+  function getReserveSuppliedShares(uint256 reserveId) external view returns (uint256) {
+    return _reserves[reserveId].suppliedShares;
+  }
+
+  function getUserSuppliedAmount(uint256 reserveId, address user) external view returns (uint256) {
+    return
+      liquidityHub.convertToAssets(
+        _reserves[reserveId].assetId,
+        _users[user][reserveId].suppliedShares
+      );
+  }
+
+  function getUserSuppliedShares(uint256 reserveId, address user) external view returns (uint256) {
+    return _users[user][reserveId].suppliedShares;
+  }
+  function getUserBaseBorrowIndex(uint256 reserveId, address user) external view returns (uint256) {
+    return _users[user][reserveId].baseBorrowIndex;
+  }
+
+  // TODO: Global user risk premium, not based on reserveId
+  function getUserRiskPremium(uint256 reserveId, address user) external view returns (uint256) {
+    return _users[user][reserveId].riskPremium.derayify();
+  }
+
+  function getUserLastUpdate(uint256 reserveId, address user) external view returns (uint256) {
+    return _users[user][reserveId].lastUpdateTimestamp;
+  }
+
+  function getReserveDebt(uint256 reserveId) external view returns (uint256, uint256) {
+    (uint256 cumulatedBaseDebt, uint256 cumulatedOutstandingPremium) = _previewSpokeInterest(
+      _reserves[reserveId],
+      liquidityHub.previewNextBorrowIndex(_reserves[reserveId].assetId)
+    );
+    return (cumulatedBaseDebt, cumulatedOutstandingPremium);
+  }
+
+  function getReserveCumulativeDebt(uint256 reserveId) external view returns (uint256) {
+    (uint256 cumulatedBaseDebt, uint256 cumulatedOutstandingPremium) = _previewSpokeInterest(
+      _reserves[reserveId],
+      liquidityHub.previewNextBorrowIndex(_reserves[reserveId].assetId)
+    );
+    return cumulatedBaseDebt + cumulatedOutstandingPremium;
+  }
+
+  // todo by default returns only stored value, consider renaming to `getLast{Used,Stored}ReserveRiskPremium`
+  // to be inline with user's stored rp getter. we don't have an up to date rp concept here since that requires
+  // looping over all contributing users (ie one's drawing this reserve)
+  function getReserveRiskPremium(uint256 reserveId) external view returns (uint256) {
+    return _reserves[reserveId].riskPremium.derayify();
   }
 
   function getUserRiskPremium(address user) external view returns (uint256) {
@@ -281,10 +372,11 @@ contract Spoke is ISpoke {
     DataTypes.UserConfig storage user,
     uint256 amount
   ) internal view {
-    require(
-      liquidityHub.convertToAssetsDown(reserve.assetId, user.suppliedShares) >= amount,
-      'INSUFFICIENT_SUPPLY'
-    );
+    uint256 suppliedAmount = liquidityHub.convertToAssetsDown(
+      reserve.assetId,
+      user.suppliedShares
+    ) - user.baseDebt;
+    require(amount <= suppliedAmount, InsufficientSupply(suppliedAmount));
   }
 
   function _validateBorrow(DataTypes.Reserve storage reserve, uint256 amount) internal view {
