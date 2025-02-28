@@ -27,6 +27,7 @@ contract Spoke is ISpoke {
 
   uint256[] public reservesList; // todo: rm, not needed
   uint256 public reserveCount;
+  uint256 public constant HEALTH_FACTOR_LIQUIDATION_THRESHOLD = WadRayMath.WAD; // todo: adjustable by governance?
 
   constructor(address liquidityHubAddress, address oracleAddress) {
     liquidityHub = ILiquidityHub(liquidityHubAddress);
@@ -175,6 +176,8 @@ contract Spoke is ISpoke {
     user.suppliedShares -= withdrawnShares;
     reserve.suppliedShares -= withdrawnShares;
 
+    _validateHealthFactor(msg.sender);
+
     emit Withdrawn(reserveId, msg.sender, amount);
   }
 
@@ -186,7 +189,7 @@ contract Spoke is ISpoke {
     DataTypes.UserData storage userData = _userData[msg.sender];
 
     _accrueInterest(reserve, user, userData);
-    _validateBorrow(reserve, amount);
+    _validateBorrow(reserve, amount, msg.sender);
 
     // TODO HF check
     (uint256 newReserveRiskPremium, uint256 newUserRiskPremium) = _updateRiskPremiumAndBaseDebt({
@@ -315,7 +318,7 @@ contract Spoke is ISpoke {
     return _userData[user].riskPremium.derayify();
   }
 
-  function getHealthFactor(address user) external view returns (uint256) {
+  function getHealthFactor(address user) public view returns (uint256) {
     (, , uint256 healthFactor) = _calculateUserAccountData(user);
     return healthFactor;
   }
@@ -359,9 +362,13 @@ contract Spoke is ISpoke {
     require(amount <= suppliedAmount, InsufficientSupply(suppliedAmount));
   }
 
-  function _validateBorrow(DataTypes.Reserve storage reserve, uint256 amount) internal view {
+  function _validateBorrow(
+    DataTypes.Reserve storage reserve,
+    uint256 amount,
+    address userAddress
+  ) internal {
     require(reserve.config.borrowable, ReserveNotBorrowable(reserve.reserveId));
-    // TODO: validation on HF to allow borrowing amount
+    _validateHealthFactor(userAddress);
   }
 
   // TODO: Place this and LH equivalent in a generic logic library
@@ -783,5 +790,13 @@ contract Spoke is ISpoke {
     reserve.riskPremium = newReserveRiskPremium;
 
     return newReserveRiskPremium;
+  }
+
+  function _validateHealthFactor(address userAddress) internal {
+    (, , uint256 healthFactor) = _calculateUserAccountData(userAddress);
+    require(
+      healthFactor >= HEALTH_FACTOR_LIQUIDATION_THRESHOLD,
+      HealthFactorLowerThanLiquidationThreshold()
+    );
   }
 }

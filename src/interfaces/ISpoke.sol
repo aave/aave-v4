@@ -34,6 +34,7 @@ interface ISpoke {
   error ReserveNotBorrowable(uint256 reserveId);
   error RepayAmountExceedsDebt(uint256 debt);
   error ReserveNotCollateral(uint256 reserveId);
+  error HealthFactorLowerThanLiquidationThreshold();
 
   function addReserve(
     uint256 assetId,
