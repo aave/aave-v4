@@ -50,7 +50,7 @@ contract LiquidityHubRestoreTest is LiquidityHubBase {
     updateAssetActive(hub, daiAssetId, false);
 
     // spoke1 restore all of drawn dai liquidity
-    vm.expectRevert(abi.encodeWithSelector(ILiquidityHub.AssetNotActive.selector, daiAssetId));
+    vm.expectRevert(ILiquidityHub.AssetNotActive.selector);
 
     vm.prank(address(spoke1));
     hub.restore({assetId: daiAssetId, amount: drawAmount, riskPremium: 0, repayer: alice});

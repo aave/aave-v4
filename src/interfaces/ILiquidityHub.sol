@@ -38,8 +38,8 @@ interface ILiquidityHub {
   error MismatchedConfigs();
   error InvalidSharesAmount();
   error InvalidSupplyAmount();
-  error AssetNotListed(uint256 assetId);
-  error AssetNotActive(uint256 assetId);
+  error AssetNotListed();
+  error AssetNotActive();
   error SupplyCapExceeded(uint256 supplyCap);
   error InvalidWithdrawAmount();
   error SuppliedAmountExceeded(uint256 suppliedAmount);

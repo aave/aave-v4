@@ -30,7 +30,7 @@ contract LiquidityHubSupplyTest is LiquidityHubBase {
     updateAssetActive(hub, daiAssetId, false);
 
     vm.prank(address(spoke1));
-    vm.expectRevert(abi.encodeWithSelector(ILiquidityHub.AssetNotActive.selector, daiAssetId));
+    vm.expectRevert(ILiquidityHub.AssetNotActive.selector);
     hub.supply(daiAssetId, amount, 0, alice);
   }
 

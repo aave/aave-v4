@@ -364,9 +364,9 @@ contract LiquidityHub is ILiquidityHub {
     uint256 amount
   ) internal view {
     require(amount > 0, InvalidSupplyAmount());
-    require(assetsList[asset.id] != IERC20(address(0)), AssetNotListed(asset.id));
+    require(assetsList[asset.id] != IERC20(address(0)), AssetNotListed());
     // TODO: Different states e.g. frozen, paused
-    require(asset.config.active, AssetNotActive(asset.id));
+    require(asset.config.active, AssetNotActive());
     require(
       spoke.config.supplyCap == type(uint256).max ||
         asset.convertToAssetsDown(spoke.suppliedShares) + amount <= spoke.config.supplyCap,
@@ -381,7 +381,7 @@ contract LiquidityHub is ILiquidityHub {
   ) internal view {
     // TODO: Other cases of status (frozen, paused)
     // TODO: still allow withdrawal even if asset is not active, only prevent for frozen/paused?
-    require(asset.config.active, AssetNotActive(asset.id));
+    require(asset.config.active, AssetNotActive());
     require(amount > 0, InvalidWithdrawAmount());
     uint256 withdrawable = asset.convertToAssetsDown(spoke.suppliedShares) - spoke.baseDebt;
     require(amount <= withdrawable, SuppliedAmountExceeded(withdrawable));
@@ -394,7 +394,7 @@ contract LiquidityHub is ILiquidityHub {
     uint256 drawCap
   ) internal view {
     // TODO: Other cases of status (frozen, paused)
-    require(asset.config.active, AssetNotActive(asset.id));
+    require(asset.config.active, AssetNotActive());
     require(amount > 0, InvalidDrawAmount());
     require(
       drawCap == type(uint256).max || amount + asset.baseDebt <= drawCap,
@@ -409,7 +409,7 @@ contract LiquidityHub is ILiquidityHub {
     uint256 amountRestored
   ) internal view {
     // TODO: Other cases of status (frozen, paused)
-    require(asset.config.active, AssetNotActive(asset.id));
+    require(asset.config.active, AssetNotActive());
     // Ensure spoke is not restoring more than accrued drawn or equal 0
     uint256 maxAllowedRestore = spoke.baseDebt + spoke.outstandingPremium;
     require(

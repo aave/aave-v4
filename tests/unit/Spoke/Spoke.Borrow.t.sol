@@ -29,7 +29,7 @@ contract SpokeBorrowTest is Base {
 
     // Bob try to draw some dai
     vm.prank(bob);
-    vm.expectRevert(abi.encodeWithSelector(ILiquidityHub.AssetNotActive.selector, daiAssetId));
+    vm.expectRevert(ILiquidityHub.AssetNotActive.selector);
     spoke1.borrow(daiReserveId, 1, bob);
   }
 
