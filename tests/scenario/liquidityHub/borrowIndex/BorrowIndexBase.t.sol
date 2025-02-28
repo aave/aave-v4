@@ -4,7 +4,7 @@ pragma solidity ^0.8.0;
 import 'tests/scenario/liquidityHub/LiquidityHub.ScenarioBase.t.sol';
 
 contract BorrowIndexBase is LiquidityHubScenarioBaseTest {
-  uint256 internal expectedPrecision = 0.00_00000001e18; // 1e18 is 100%; 0.0000001%
+  uint256 internal constant expectedPrecision = 0.00_00000001e18; // 1e18 is 100%; 0.0000001%
 
   function setUp() public virtual override {
     super.setUp();
