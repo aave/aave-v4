@@ -338,6 +338,10 @@ contract Spoke is ISpoke {
     return _reserves[reserveId].config.liquidityPremium;
   }
 
+  function getLiquidationThreshold(uint256 reserveId) public view returns (uint256) {
+    return _reserves[reserveId].config.lt;
+  }
+
   // public
   function getReserve(uint256 reserveId) public view returns (DataTypes.Reserve memory) {
     return _reserves[reserveId];

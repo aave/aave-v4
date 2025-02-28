@@ -66,6 +66,7 @@ interface ISpoke {
   function getHealthFactor(address user) external view returns (uint256);
   function getReservePrice(uint256 reserveId) external view returns (uint256);
   function getLiquidityPremium(uint256 reserveId) external view returns (uint256);
+  function getLiquidationThreshold(uint256 reserveId) external view returns (uint256);
   function getReserve(uint256 reserveId) external view returns (DataTypes.Reserve memory);
   function getUser(
     uint256 reserveId,
