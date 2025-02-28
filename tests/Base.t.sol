@@ -548,7 +548,7 @@ abstract contract Base is Test {
     DataTypes.UserPosition memory userPosition;
     userPosition.usingAsCollateral = spoke.getUsingAsCollateral(reserveId, user);
     (userPosition.baseDebt, userPosition.outstandingPremium) = spoke.getUserDebt(reserveId, user);
-    userPosition.suppliedShares = spoke.getSuppliedShares(reserveId, user);
+    userPosition.suppliedShares = spoke.getUserSuppliedShares(reserveId, user);
     userPosition.baseBorrowIndex = spoke.getUserBaseBorrowIndex(reserveId, user);
     userPosition.riskPremium = spoke.getUserRiskPremium(user);
     userPosition.lastUpdateTimestamp = spoke.getUserPosition(reserveId, user).lastUpdateTimestamp;
