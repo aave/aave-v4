@@ -511,8 +511,8 @@ abstract contract Base is Test {
     (userConfig.baseDebt, userConfig.outstandingPremium) = spoke.getUserDebt(reserveId, user);
     userConfig.suppliedShares = spoke.getSuppliedShares(reserveId, user);
     userConfig.baseBorrowIndex = spoke.getUserBaseBorrowIndex(reserveId, user);
-    userConfig.riskPremium = spoke.getUserRiskPremium(reserveId, user);
-    userConfig.lastUpdateTimestamp = spoke.getUserLastUpdate(reserveId, user);
+    userConfig.riskPremium = spoke.getUserRiskPremium(user);
+    userConfig.lastUpdateTimestamp = spoke.getUser(reserveId, user).lastUpdateTimestamp;
     return userConfig;
   }
 }

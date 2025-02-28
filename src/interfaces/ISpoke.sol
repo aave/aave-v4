@@ -55,9 +55,6 @@ interface ISpoke {
   function getSuppliedShares(uint256 reserveId, address user) external view returns (uint256);
   function getSuppliedAmount(uint256 reserveId, address user) external view returns (uint256);
   function getUserBaseBorrowIndex(uint256 reserveId, address user) external view returns (uint256);
-  // TODO: Remove this in favor of the below global user risk premium once implemented
-  function getUserRiskPremium(uint256 reserveId, address user) external view returns (uint256);
-  function getUserLastUpdate(uint256 reserveId, address user) external view returns (uint256);
   function getReserveDebt(uint256 reserveId) external view returns (uint256, uint256);
   function getReserveCumulativeDebt(uint256 reserveId) external view returns (uint256);
   function getReserveRiskPremium(uint256 reserveId) external view returns (uint256);

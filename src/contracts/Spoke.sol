@@ -283,15 +283,6 @@ contract Spoke is ISpoke {
     return _users[user][reserveId].baseBorrowIndex;
   }
 
-  // TODO: Global user risk premium, not based on reserveId
-  function getUserRiskPremium(uint256 reserveId, address user) external view returns (uint256) {
-    return _users[user][reserveId].riskPremium.derayify();
-  }
-
-  function getUserLastUpdate(uint256 reserveId, address user) external view returns (uint256) {
-    return _users[user][reserveId].lastUpdateTimestamp;
-  }
-
   function getReserveDebt(uint256 reserveId) external view returns (uint256, uint256) {
     (uint256 cumulatedBaseDebt, uint256 cumulatedOutstandingPremium) = _previewSpokeInterest(
       _reserves[reserveId],
