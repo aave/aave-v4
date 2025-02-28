@@ -63,7 +63,7 @@ interface ISpoke {
    * @notice Borrow an amount of underlying asset from the specified reserve.
    * @param reserveId The reserveId of the underlying asset as registered on the spoke.
    * @param amount The amount of underlying assets to borrow.
-   * @param to The address to credit the debt to.
+   * @param to The address to transfer the underlying assets to.
    */
   function borrow(uint256 reserveId, uint256 amount, address to) external;
 

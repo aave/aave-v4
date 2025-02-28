@@ -101,7 +101,7 @@ interface ILiquidityHub {
    * @param assetId The asset id.
    * @param amount The amount of debt to draw.
    * @param riskPremium The new aggregated risk premium (in bps) of the calling spoke.
-   * @param to The address to credit the debt to.
+   * @param to The address to transfer the underlying assets to.
    * @return The amount of debt drawn.
    */
   function draw(
