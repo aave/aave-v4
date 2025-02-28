@@ -64,8 +64,8 @@ interface ISpoke {
   function getReservePrice(uint256 reserveId) external view returns (uint256);
   function getLiquidityPremium(uint256 reserveId) external view returns (uint256);
   function getReserve(uint256 reserveId) external view returns (DataTypes.Reserve memory);
-  function getUser(
+  function getUserPosition(
     uint256 reserveId,
     address user
-  ) external view returns (DataTypes.UserConfig memory);
+  ) external view returns (DataTypes.UserPosition memory);
 }

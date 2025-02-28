@@ -69,7 +69,7 @@ library DataTypes {
     bool collateral;
   }
 
-  struct UserConfig {
+  struct UserPosition {
     bool usingAsCollateral;
     uint256 baseDebt;
     uint256 outstandingPremium;
