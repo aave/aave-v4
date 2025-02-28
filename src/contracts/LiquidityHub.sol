@@ -162,7 +162,7 @@ contract LiquidityHub is ILiquidityHub {
     asset.updateBorrowRate({liquidityAdded: 0, liquidityTaken: amount});
     _updateRiskPremiumAndBaseDebt(asset, spoke, _boundBps(riskPremium).rayify(), 0); // no base debt change
 
-    uint256 sharesAmount = asset.convertToSharesDown(amount);
+    uint256 sharesAmount = asset.convertToSharesUp(amount);
     require(sharesAmount > 0, InvalidSharesAmount());
 
     asset.suppliedShares -= sharesAmount;
@@ -395,7 +395,7 @@ contract LiquidityHub is ILiquidityHub {
     // TODO: still allow withdrawal even if asset is not active, only prevent for frozen/paused?
     require(asset.config.active, AssetNotActive());
     require(amount > 0, InvalidWithdrawAmount());
-    uint256 withdrawable = asset.convertToAssetsDown(spoke.suppliedShares) - spoke.baseDebt;
+    uint256 withdrawable = asset.convertToAssetsDown(spoke.suppliedShares);
     require(amount <= withdrawable, SuppliedAmountExceeded(withdrawable));
     require(amount <= asset.availableLiquidity, NotAvailableLiquidity(asset.availableLiquidity));
   }

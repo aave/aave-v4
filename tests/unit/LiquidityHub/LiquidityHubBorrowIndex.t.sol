@@ -2,6 +2,7 @@ pragma solidity ^0.8.0;
 
 import 'tests/Base.t.sol';
 
+// todo: refactor to use getters
 contract LiquidityHubBorrowIndex is Base {
   using WadRayMath for uint256;
   uint256 internal amount = 1000e18;
@@ -100,7 +101,6 @@ contract LiquidityHubBorrowIndex is Base {
     );
   }
 
-  // todo investigate dust amount issue
   function test_noDebtPeriod_suppliersDoNotEarn() public {
     vm.startPrank(address(spoke1));
     hub.supply(wethAssetId, amount, 0, alice);
@@ -122,13 +122,13 @@ contract LiquidityHubBorrowIndex is Base {
     // no debt period
     vm.prank(address(spoke2));
     uint256 sharesMinted = hub.supply(wethAssetId, amount, 0, alice);
-    assertApproxEqAbs(amount, hub.convertToAssetsDown(wethAssetId, sharesMinted), 1);
-    assertApproxEqAbs(hub.convertToSharesDown(wethAssetId, amount), sharesMinted, 1);
+    assertApproxEqAbs(amount, hub.convertToAssets(wethAssetId, sharesMinted), 1);
+    assertApproxEqAbs(hub.convertToShares(wethAssetId, amount), sharesMinted, 1);
     assertEq(hub.getSpoke(wethAssetId, address(spoke2)).suppliedShares, sharesMinted);
 
     skip(delay / 2); // since system has no debt, no interest should accrue
 
-    assertApproxEqAbs(amount, hub.convertToAssetsDown(wethAssetId, sharesMinted), 1);
+    assertApproxEqAbs(amount, hub.convertToAssets(wethAssetId, sharesMinted), 1);
 
     vm.expectRevert(
       abi.encodeWithSelector(ILiquidityHub.SuppliedAmountExceeded.selector, amount - 1)
@@ -139,22 +139,17 @@ contract LiquidityHubBorrowIndex is Base {
     vm.prank(address(spoke2));
     hub.withdraw(wethAssetId, amount - 1, 0, alice);
 
-    // DUST SHARES LEFT
-    assertEq(hub.getSpoke(wethAssetId, address(spoke2)).suppliedShares, 1); // should be zero
+    // no dust remains
+    assertEq(hub.getSpoke(wethAssetId, address(spoke2)).suppliedShares, 0);
 
     // after zero amount check, cannot withdraw one 1 wei of shares in contract
-    vm.expectRevert(ILiquidityHub.InvalidSharesAmount.selector);
+    vm.expectRevert(abi.encodeWithSelector(ILiquidityHub.SuppliedAmountExceeded.selector, 0));
     vm.prank(address(spoke2));
     hub.withdraw(wethAssetId, 1, 0, alice);
 
-    // 1 wei is lost to precision
-    assertEq(
-      hub.convertToAssetsDown(
-        wethAssetId,
-        hub.getSpoke(wethAssetId, address(spoke2)).suppliedShares
-      ),
-      1
-    );
+    // no supplied shares or amounts remain
+    assertEq(hub.getSpokeSuppliedShares(wethAssetId, address(spoke2)), 0);
+    assertEq(hub.getSpokeSuppliedAmount(wethAssetId, address(spoke2)), 0);
   }
 
   function test_withdrawRightAfterSupplying() public {

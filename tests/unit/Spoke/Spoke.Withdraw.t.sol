@@ -7,26 +7,17 @@ contract SpokeWithdrawTest is SpokeBase {
   using WadRayMath for uint256;
   using PercentageMath for uint256;
 
-  function setUp() public override {
-    super.setUp();
-
-    // mock constant 10% IR by default
-    vm.mockCall(
-      address(irStrategy),
-      IReserveInterestRateStrategy.calculateInterestRates.selector,
-      abi.encode(uint256(10_00).bpsToRay())
-    );
-  }
-
   function test_withdraw_revertsWith_supplied_amount_exceeded_zero_supplied() public {
-    uint256 reserveId = _daiReserveId(spoke1);
+    uint256 reserveId = daiReserveId(spoke1);
     uint256 amount = 1;
+
+    assertEq(spoke1.getUserSuppliedAmount(reserveId, alice), 0);
 
     vm.prank(alice);
     vm.expectRevert(
       abi.encodeWithSelector(
         ISpoke.InsufficientSupply.selector,
-        _getWithdrawalLimit(spoke1, reserveId, alice)
+        getWithdrawalLimit(spoke1, reserveId, alice)
       )
     );
     spoke1.withdraw(reserveId, amount, alice);
@@ -36,15 +27,18 @@ contract SpokeWithdrawTest is SpokeBase {
     uint256 amount
   ) public {
     amount = bound(amount, 1, MAX_SUPPLY_AMOUNT);
+    uint256 reserveId = daiReserveId(spoke1);
+
+    assertEq(spoke1.getUserSuppliedAmount(reserveId, alice), 0);
 
     vm.prank(alice);
     vm.expectRevert(
       abi.encodeWithSelector(
         ISpoke.InsufficientSupply.selector,
-        _getWithdrawalLimit(spoke1, _daiReserveId(spoke1), alice)
+        getWithdrawalLimit(spoke1, reserveId, alice)
       )
     );
-    spoke1.withdraw(_daiReserveId(spoke1), amount, alice);
+    spoke1.withdraw(reserveId, amount, alice);
   }
 
   function test_withdraw_revertsWith_supplied_amount_exceeded() public {
@@ -53,7 +47,7 @@ contract SpokeWithdrawTest is SpokeBase {
     // User spoke supply
     Utils.spokeSupply({
       spoke: spoke1,
-      reserveId: _daiReserveId(spoke1),
+      reserveId: daiReserveId(spoke1),
       user: alice,
       amount: amount,
       onBehalfOf: alice
@@ -63,10 +57,10 @@ contract SpokeWithdrawTest is SpokeBase {
     vm.expectRevert(
       abi.encodeWithSelector(
         ISpoke.InsufficientSupply.selector,
-        _getWithdrawalLimit(spoke1, _daiReserveId(spoke1), alice)
+        getWithdrawalLimit(spoke1, daiReserveId(spoke1), alice)
       )
     );
-    spoke1.withdraw(_daiReserveId(spoke1), amount + 1, alice);
+    spoke1.withdraw(daiReserveId(spoke1), amount + 1, alice);
 
     // skip time but no index increase with no borrow
     skip(365 days);
@@ -75,10 +69,10 @@ contract SpokeWithdrawTest is SpokeBase {
     vm.expectRevert(
       abi.encodeWithSelector(
         ISpoke.InsufficientSupply.selector,
-        _getWithdrawalLimit(spoke1, _daiReserveId(spoke1), alice)
+        getWithdrawalLimit(spoke1, daiReserveId(spoke1), alice)
       )
     );
-    spoke1.withdraw(_daiReserveId(spoke1), amount + 1, alice);
+    spoke1.withdraw(daiReserveId(spoke1), amount + 1, alice);
   }
 
   // user has both supplied shares and debt on a reserve
@@ -89,7 +83,7 @@ contract SpokeWithdrawTest is SpokeBase {
     // Alice supplies dai
     Utils.spokeSupply({
       spoke: spoke1,
-      reserveId: _daiReserveId(spoke1),
+      reserveId: daiReserveId(spoke1),
       user: alice,
       amount: supplyAmount,
       onBehalfOf: alice
@@ -98,7 +92,7 @@ contract SpokeWithdrawTest is SpokeBase {
     // Alice borrows dai
     Utils.spokeBorrow({
       spoke: spoke1,
-      reserveId: _daiReserveId(spoke1),
+      reserveId: daiReserveId(spoke1),
       user: alice,
       amount: borrowAmount,
       onBehalfOf: alice
@@ -110,10 +104,10 @@ contract SpokeWithdrawTest is SpokeBase {
     vm.expectRevert(
       abi.encodeWithSelector(
         ISpoke.InsufficientSupply.selector,
-        _getWithdrawalLimit(spoke1, _daiReserveId(spoke1), alice)
+        getWithdrawalLimit(spoke1, daiReserveId(spoke1), alice)
       )
     );
-    spoke1.withdraw({reserveId: _daiReserveId(spoke1), amount: availableLiquidity + 1, to: bob});
+    spoke1.withdraw({reserveId: daiReserveId(spoke1), amount: availableLiquidity + 1, to: bob});
 
     skip(365 days);
     // index has now increased
@@ -122,10 +116,10 @@ contract SpokeWithdrawTest is SpokeBase {
     vm.expectRevert(
       abi.encodeWithSelector(
         ISpoke.InsufficientSupply.selector,
-        _getWithdrawalLimit(spoke1, _daiReserveId(spoke1), alice)
+        getWithdrawalLimit(spoke1, daiReserveId(spoke1), alice)
       )
     );
-    spoke1.withdraw({reserveId: _daiReserveId(spoke1), amount: availableLiquidity + 1, to: alice});
+    spoke1.withdraw({reserveId: daiReserveId(spoke1), amount: availableLiquidity + 1, to: alice});
   }
 
   // user has both supplied shares and debt on a reserve
@@ -173,7 +167,7 @@ contract SpokeWithdrawTest is SpokeBase {
     vm.expectRevert(
       abi.encodeWithSelector(
         ISpoke.InsufficientSupply.selector,
-        _getWithdrawalLimit(spoke1, reserveId, alice)
+        getWithdrawalLimit(spoke1, reserveId, alice)
       )
     );
     spoke1.withdraw({reserveId: reserveId, amount: availableLiquidity + 1, to: alice});
@@ -185,7 +179,7 @@ contract SpokeWithdrawTest is SpokeBase {
     vm.expectRevert(
       abi.encodeWithSelector(
         ISpoke.InsufficientSupply.selector,
-        _getWithdrawalLimit(spoke1, reserveId, alice)
+        getWithdrawalLimit(spoke1, reserveId, alice)
       )
     );
     spoke1.withdraw({reserveId: reserveId, amount: availableLiquidity + 1, to: alice});
@@ -195,7 +189,7 @@ contract SpokeWithdrawTest is SpokeBase {
     uint256 amount = 100e18;
 
     TestData[2] memory daiData;
-    TestData[2] memory bobData;
+    TestUserData[2] memory bobData;
     TokenData[2] memory tokenData;
 
     uint256 expectedSupplyShares = hub.convertToSharesDown(daiAssetId, amount);
@@ -203,16 +197,16 @@ contract SpokeWithdrawTest is SpokeBase {
     // Bob supply
     Utils.spokeSupply({
       spoke: spoke1,
-      reserveId: _daiReserveId(spoke1),
+      reserveId: daiReserveId(spoke1),
       user: bob,
       amount: amount,
       onBehalfOf: bob
     });
 
     uint256 stage = 0;
-    daiData[stage] = _getReserveData(spoke1, _daiReserveId(spoke1));
-    bobData[stage] = _getUserData(spoke1, _daiReserveId(spoke1), bob);
-    tokenData[stage] = _getTokenBalances(tokenList.dai, address(spoke1));
+    daiData[stage] = loadReserveInfo(spoke1, daiReserveId(spoke1));
+    bobData[stage] = loadUserInfo(spoke1, daiReserveId(spoke1), bob);
+    tokenData[stage] = getTokenBalances(tokenList.dai, address(spoke1));
 
     // reserve
     assertEq(daiData[stage].suppliedAmount, amount, 'reserve suppliedAmount pre-withdraw');
@@ -248,14 +242,14 @@ contract SpokeWithdrawTest is SpokeBase {
     );
 
     vm.expectEmit(address(spoke1));
-    emit ISpoke.Withdrawn(_daiReserveId(spoke1), bob, amount);
+    emit ISpoke.Withdrawn(daiReserveId(spoke1), bob, amount);
     vm.prank(bob);
-    spoke1.withdraw(_daiReserveId(spoke1), amount, bob);
+    spoke1.withdraw(daiReserveId(spoke1), amount, bob);
 
     stage = 1;
-    daiData[stage] = _getReserveData(spoke1, _daiReserveId(spoke1));
-    bobData[stage] = _getUserData(spoke1, _daiReserveId(spoke1), bob);
-    tokenData[stage] = _getTokenBalances(tokenList.dai, address(spoke1));
+    daiData[stage] = loadReserveInfo(spoke1, daiReserveId(spoke1));
+    bobData[stage] = loadUserInfo(spoke1, daiReserveId(spoke1), bob);
+    tokenData[stage] = getTokenBalances(tokenList.dai, address(spoke1));
 
     // reserve
     assertEq(daiData[stage].suppliedAmount, 0, 'reserve suppliedAmount post-withdraw');
@@ -296,7 +290,7 @@ contract SpokeWithdrawTest is SpokeBase {
     uint256 rate;
   }
 
-  // multiple users, same asset. No debt
+  // multiple users, same asset
   function test_withdraw_fuzz_all_liquidity_with_interest_multi_user(
     MultiUserFuzzParams memory params
   ) public {
@@ -320,7 +314,7 @@ contract SpokeWithdrawTest is SpokeBase {
       abi.encode(params.rate)
     );
 
-    (state.assetId, state.asset) = _getAssetInfo(spoke1, params.reserveId);
+    (state.assetId, state.asset) = getAssetInfo(spoke1, params.reserveId);
 
     // alice supplies reserve
     Utils.spokeSupply({
@@ -342,7 +336,7 @@ contract SpokeWithdrawTest is SpokeBase {
     // carol borrows in order to increase index
     Utils.spokeSupply({
       spoke: spoke1,
-      reserveId: _wbtcReserveId(spoke1),
+      reserveId: wbtcReserveId(spoke1),
       user: carol,
       amount: params.borrowAmount, // highest value asset so that it is enough collateral
       onBehalfOf: carol
@@ -360,27 +354,29 @@ contract SpokeWithdrawTest is SpokeBase {
 
     // carol repays all with interest
     state.repayAmount = spoke1.getUserCumulativeDebt(params.reserveId, carol);
-
+    // deal in case carol's repayAmount exceeds default supplied amount due to interest
     deal(address(state.asset), carol, state.repayAmount);
     vm.prank(carol);
     spoke1.repay(params.reserveId, state.repayAmount);
 
     TestData[3] memory reserveData;
-    TestData[3] memory aliceData;
-    TestData[3] memory bobData;
+    TestUserData[3] memory aliceData;
+    TestUserData[3] memory bobData;
     TokenData[3] memory tokenData;
 
     state.stage = 0;
-    reserveData[state.stage] = _getReserveData(spoke1, params.reserveId);
-    aliceData[state.stage] = _getUserData(spoke1, params.reserveId, alice);
-    bobData[state.stage] = _getUserData(spoke1, params.reserveId, bob);
-    tokenData[state.stage] = _getTokenBalances(state.asset, address(spoke1));
+    reserveData[state.stage] = loadReserveInfo(spoke1, params.reserveId);
+    aliceData[state.stage] = loadUserInfo(spoke1, params.reserveId, alice);
+    bobData[state.stage] = loadUserInfo(spoke1, params.reserveId, bob);
+    tokenData[state.stage] = getTokenBalances(state.asset, address(spoke1));
 
+    // make sure alice has a share to withdraw
     vm.assume(
       aliceData[state.stage].suppliedAmount > params.aliceAmount &&
-        hub.convertToShares(state.assetId, aliceData[state.stage].suppliedAmount) > 0
+        aliceData[state.stage].data.suppliedShares > 0
     );
 
+    // withdraw all supplied
     vm.prank(alice);
     spoke1.withdraw({
       reserveId: params.reserveId,
@@ -388,19 +384,22 @@ contract SpokeWithdrawTest is SpokeBase {
       to: alice
     });
 
+    // skip time to accrue interest for bob
     skip(params.skipTime[1]);
 
     state.stage = 1;
-    reserveData[state.stage] = _getReserveData(spoke1, params.reserveId);
-    aliceData[state.stage] = _getUserData(spoke1, params.reserveId, alice);
-    bobData[state.stage] = _getUserData(spoke1, params.reserveId, bob);
-    tokenData[state.stage] = _getTokenBalances(state.asset, address(spoke1));
+    reserveData[state.stage] = loadReserveInfo(spoke1, params.reserveId);
+    aliceData[state.stage] = loadUserInfo(spoke1, params.reserveId, alice);
+    bobData[state.stage] = loadUserInfo(spoke1, params.reserveId, bob);
+    tokenData[state.stage] = getTokenBalances(state.asset, address(spoke1));
 
+    // make sure bob has a share to withdraw
     vm.assume(
       bobData[state.stage].suppliedAmount > params.bobAmount &&
-        hub.convertToShares(state.assetId, bobData[state.stage].suppliedAmount) > 0
+        bobData[state.stage].data.suppliedShares > 0
     );
 
+    // bob withdraws all supplied
     vm.prank(bob);
     spoke1.withdraw({
       reserveId: params.reserveId,
@@ -409,12 +408,10 @@ contract SpokeWithdrawTest is SpokeBase {
     });
 
     state.stage = 2;
-    reserveData[state.stage] = _getReserveData(spoke1, params.reserveId);
-    aliceData[state.stage] = _getUserData(spoke1, params.reserveId, alice);
-    bobData[state.stage] = _getUserData(spoke1, params.reserveId, bob);
-    tokenData[state.stage] = _getTokenBalances(state.asset, address(spoke1));
-
-    state.sharePrecision = hub.convertToAssets(state.assetId, 1);
+    reserveData[state.stage] = loadReserveInfo(spoke1, params.reserveId);
+    aliceData[state.stage] = loadUserInfo(spoke1, params.reserveId, alice);
+    bobData[state.stage] = loadUserInfo(spoke1, params.reserveId, bob);
+    tokenData[state.stage] = getTokenBalances(state.asset, address(spoke1));
 
     // reserve
     assertEq(reserveData[state.stage].data.baseDebt, 0, 'reserveData base debt');
@@ -423,12 +420,7 @@ contract SpokeWithdrawTest is SpokeBase {
       0,
       'reserveData outstanding premium'
     );
-    assertApproxEqAbs(
-      reserveData[state.stage].data.suppliedShares,
-      0,
-      state.sharePrecision + 1,
-      'reserveData supplied shares'
-    ); // dust remains due to rounding, 1 share difference plus 1 wei
+    assertEq(reserveData[state.stage].data.suppliedShares, 0, 'reserveData supplied shares');
     assertEq(
       reserveData[state.stage].data.lastUpdateTimestamp,
       vm.getBlockTimestamp(),
@@ -438,12 +430,7 @@ contract SpokeWithdrawTest is SpokeBase {
     // alice
     assertEq(aliceData[state.stage].data.baseDebt, 0, 'aliceData base debt');
     assertEq(aliceData[state.stage].data.outstandingPremium, 0, 'aliceData outstanding premium');
-    assertApproxEqAbs(
-      aliceData[state.stage].data.suppliedShares,
-      0,
-      1,
-      'aliceData supplied shares'
-    ); // 1 share difference
+    assertEq(aliceData[state.stage].data.suppliedShares, 0, 'aliceData supplied shares');
     assertEq(
       aliceData[state.stage].data.lastUpdateTimestamp,
       reserveData[state.stage - 1].data.lastUpdateTimestamp,
@@ -453,7 +440,7 @@ contract SpokeWithdrawTest is SpokeBase {
     // bob
     assertEq(bobData[state.stage].data.baseDebt, 0, 'bobData base debt');
     assertEq(bobData[state.stage].data.outstandingPremium, 0, 'bobData outstanding premium');
-    assertApproxEqAbs(bobData[state.stage].data.suppliedShares, 0, 1, 'bobData supplied shares'); // 1 share difference
+    assertEq(bobData[state.stage].data.suppliedShares, 0, 'bobData supplied shares');
     assertEq(
       bobData[state.stage].data.lastUpdateTimestamp,
       reserveData[state.stage].data.lastUpdateTimestamp,
@@ -462,12 +449,7 @@ contract SpokeWithdrawTest is SpokeBase {
 
     // token
     assertEq(tokenData[state.stage].spokeBalance, 0, 'tokenData spoke balance');
-    assertApproxEqAbs(
-      tokenData[state.stage].hubBalance,
-      0,
-      state.sharePrecision * 2 + 1,
-      'tokenData hub balance'
-    ); // 1 share difference from each user, 1 wei off from rounding
+    assertEq(tokenData[state.stage].hubBalance, 0, 'tokenData hub balance');
     assertEq(
       state.asset.balanceOf(alice),
       MAX_SUPPLY_AMOUNT - params.aliceAmount + aliceData[0].suppliedAmount,
@@ -480,7 +462,7 @@ contract SpokeWithdrawTest is SpokeBase {
     );
   }
 
-  struct State {
+  struct TestState {
     uint256 reserveId;
     uint256 collateralReserveId;
     uint256 suppliedCollateralAmount;
@@ -502,38 +484,20 @@ contract SpokeWithdrawTest is SpokeBase {
     // set weth LP to 0 for no premium contribution
     updateLiquidityPremium({
       spoke: spoke1,
-      reserveId: _wethReserveId(spoke1),
+      reserveId: wethReserveId(spoke1),
       newLiquidityPremium: 0
     });
 
-    State memory state;
+    TestState memory state;
     state.reserveId = spokeInfo[spoke1].dai.reserveId;
-    state.collateralReserveId = spokeInfo[spoke1].weth.reserveId;
-    state.suppliedCollateralAmount = 100e18;
-    state.borrowAmount = 10e18;
-    state.borrowReserveSupplyAmount = 20e18;
-    state.timestamp = vm.getBlockTimestamp();
-    state.rate = uint256(10_00).bpsToRay();
 
-    (, state.supplyShares) = _executeSupplyAndBorrow({
-      spoke: spoke1,
-      collateral: TestReserve({
-        reserveId: state.collateralReserveId,
-        supplier: alice,
-        supplyAmount: state.suppliedCollateralAmount,
-        borrower: address(0),
-        borrowAmount: 0
-      }),
-      borrow: TestReserve({
-        reserveId: state.reserveId,
-        borrowAmount: state.borrowAmount,
-        supplyAmount: state.borrowReserveSupplyAmount,
-        supplier: bob,
-        borrower: alice
-      }),
-      rate: state.rate,
-      skipTime: 365 days
-    });
+    (
+      ,
+      ,
+      state.borrowAmount,
+      state.supplyShares,
+      state.borrowReserveSupplyAmount
+    ) = _increaseReserveIndex(spoke1, state.reserveId);
 
     (state.aliceBaseDebt, state.aliceOutstandingPremium) = spoke1.getUserDebt(
       state.reserveId,
@@ -552,15 +516,15 @@ contract SpokeWithdrawTest is SpokeBase {
 
     // number of test stages
     TestData[3] memory reserveData;
-    TestData[3] memory aliceData;
-    TestData[3] memory bobData;
+    TestUserData[3] memory aliceData;
+    TestUserData[3] memory bobData;
     TokenData[3] memory tokenData;
 
     uint256 stage = 0;
-    reserveData[stage] = _getReserveData(spoke1, state.reserveId);
-    aliceData[stage] = _getUserData(spoke1, state.reserveId, alice);
-    bobData[stage] = _getUserData(spoke1, state.reserveId, bob);
-    tokenData[stage] = _getTokenBalances(tokenList.dai, address(spoke1));
+    reserveData[stage] = loadReserveInfo(spoke1, state.reserveId);
+    aliceData[stage] = loadUserInfo(spoke1, state.reserveId, alice);
+    bobData[stage] = loadUserInfo(spoke1, state.reserveId, bob);
+    tokenData[stage] = getTokenBalances(tokenList.dai, address(spoke1));
 
     state.withdrawAmount = hub.getAvailableLiquidity(daiAssetId);
 
@@ -572,19 +536,21 @@ contract SpokeWithdrawTest is SpokeBase {
 
     stage = 1;
     state.withdrawnShares = hub.convertToShares(daiAssetId, state.withdrawAmount);
-    reserveData[stage] = _getReserveData(spoke1, state.reserveId);
-    aliceData[stage] = _getUserData(spoke1, state.reserveId, alice);
-    bobData[stage] = _getUserData(spoke1, state.reserveId, bob);
-    tokenData[stage] = _getTokenBalances(tokenList.dai, address(spoke1));
+    reserveData[stage] = loadReserveInfo(spoke1, state.reserveId);
+    aliceData[stage] = loadUserInfo(spoke1, state.reserveId, alice);
+    bobData[stage] = loadUserInfo(spoke1, state.reserveId, bob);
+    tokenData[stage] = getTokenBalances(tokenList.dai, address(spoke1));
 
+    // withdraw all available liquidity
+    // bc debt is fully repaid, bob can withdraw all supplied
     vm.prank(bob);
     spoke1.withdraw({reserveId: state.reserveId, amount: state.withdrawAmount, to: bob});
 
     stage = 2;
-    reserveData[stage] = _getReserveData(spoke1, state.reserveId);
-    aliceData[stage] = _getUserData(spoke1, state.reserveId, alice);
-    bobData[stage] = _getUserData(spoke1, state.reserveId, bob);
-    tokenData[stage] = _getTokenBalances(tokenList.dai, address(spoke1));
+    reserveData[stage] = loadReserveInfo(spoke1, state.reserveId);
+    aliceData[stage] = loadUserInfo(spoke1, state.reserveId, alice);
+    bobData[stage] = loadUserInfo(spoke1, state.reserveId, bob);
+    tokenData[stage] = getTokenBalances(tokenList.dai, address(spoke1));
 
     reserveData[stage].cumulatedBaseInterest = MathUtils.calculateLinearInterest(
       state.rate,
@@ -614,11 +580,7 @@ contract SpokeWithdrawTest is SpokeBase {
     // bob
     assertEq(bobData[stage].data.baseDebt, 0, 'bobData base debt');
     assertEq(bobData[stage].data.outstandingPremium, 0, 'bobData outstanding premium');
-    assertEq(
-      bobData[stage].data.suppliedShares,
-      state.supplyShares - state.withdrawnShares,
-      'bobData supplied shares'
-    );
+    assertEq(bobData[stage].data.suppliedShares, 0, 'bobData supplied shares');
     assertEq(
       bobData[stage].data.lastUpdateTimestamp,
       vm.getBlockTimestamp(),
@@ -667,18 +629,19 @@ contract SpokeWithdrawTest is SpokeBase {
       abi.encode(params.rate)
     );
 
-    vm.assume(params.reserveId != _wbtcReserveId(spoke1));
+    // don't borrow the collateral asset
+    vm.assume(params.reserveId != wbtcReserveId(spoke1));
 
-    (uint256 assetId, IERC20 asset) = _getAssetInfo(spoke1, params.reserveId);
+    (uint256 assetId, IERC20 asset) = getAssetInfo(spoke1, params.reserveId);
 
     // set weth LP to 0 for no premium contribution
     updateLiquidityPremium({
       spoke: spoke1,
-      reserveId: _wbtcReserveId(spoke1), // use highest-valued asset
+      reserveId: wbtcReserveId(spoke1), // use highest-valued asset
       newLiquidityPremium: 0
     });
 
-    State memory state;
+    TestState memory state;
     state.reserveId = params.reserveId;
     state.collateralReserveId = spokeInfo[spoke1].wbtc.reserveId;
     state.suppliedCollateralAmount = MAX_SUPPLY_AMOUNT; // ensure enough collateral
@@ -707,7 +670,6 @@ contract SpokeWithdrawTest is SpokeBase {
       skipTime: params.skipTime
     });
 
-    // repay all debt with interest
     uint256 repayAmount = spoke1.getUserCumulativeDebt(state.reserveId, alice);
     // deal because repayAmount may exceed default supplied amount due to interest
     deal(address(asset), alice, repayAmount);
@@ -720,23 +682,24 @@ contract SpokeWithdrawTest is SpokeBase {
       'alice has no premium contribution to exchange rate'
     );
 
+    // alice repays all with interest
     vm.prank(alice);
     spoke1.repay(state.reserveId, repayAmount);
 
     // number of test stages
     TestData[3] memory reserveData;
-    TestData[3] memory aliceData;
-    TestData[3] memory bobData;
+    TestUserData[3] memory aliceData;
+    TestUserData[3] memory bobData;
     TokenData[3] memory tokenData;
 
     uint256 stage = 0;
-    reserveData[stage] = _getReserveData(spoke1, state.reserveId);
-    aliceData[stage] = _getUserData(spoke1, state.reserveId, alice);
-    bobData[stage] = _getUserData(spoke1, state.reserveId, bob);
-    tokenData[stage] = _getTokenBalances(asset, address(spoke1));
-
+    reserveData[stage] = loadReserveInfo(spoke1, state.reserveId);
+    aliceData[stage] = loadUserInfo(spoke1, state.reserveId, alice);
+    bobData[stage] = loadUserInfo(spoke1, state.reserveId, bob);
+    tokenData[stage] = getTokenBalances(asset, address(spoke1));
     state.withdrawAmount = hub.getAvailableLiquidity(state.reserveId);
 
+    // bob's supplied amount has grown due to index increase
     assertGt(
       spoke1.getUserSuppliedAmount(state.reserveId, bob),
       state.supplyAmount,
@@ -744,20 +707,21 @@ contract SpokeWithdrawTest is SpokeBase {
     );
 
     stage = 1;
-    reserveData[stage] = _getReserveData(spoke1, state.reserveId);
-    aliceData[stage] = _getUserData(spoke1, state.reserveId, alice);
-    bobData[stage] = _getUserData(spoke1, state.reserveId, bob);
-    tokenData[stage] = _getTokenBalances(asset, address(spoke1));
+    reserveData[stage] = loadReserveInfo(spoke1, state.reserveId);
+    aliceData[stage] = loadUserInfo(spoke1, state.reserveId, alice);
+    bobData[stage] = loadUserInfo(spoke1, state.reserveId, bob);
+    tokenData[stage] = getTokenBalances(asset, address(spoke1));
     state.withdrawnShares = hub.convertToShares(assetId, state.withdrawAmount);
 
+    // bob withdraws all
     vm.prank(bob);
     spoke1.withdraw({reserveId: state.reserveId, amount: state.withdrawAmount, to: bob});
 
     stage = 2;
-    reserveData[stage] = _getReserveData(spoke1, state.reserveId);
-    aliceData[stage] = _getUserData(spoke1, state.reserveId, alice);
-    bobData[stage] = _getUserData(spoke1, state.reserveId, bob);
-    tokenData[stage] = _getTokenBalances(asset, address(spoke1));
+    reserveData[stage] = loadReserveInfo(spoke1, state.reserveId);
+    aliceData[stage] = loadUserInfo(spoke1, state.reserveId, alice);
+    bobData[stage] = loadUserInfo(spoke1, state.reserveId, bob);
+    tokenData[stage] = getTokenBalances(asset, address(spoke1));
 
     // reserve
     assertEq(reserveData[stage].data.baseDebt, 0, 'reserveData base debt');
@@ -796,7 +760,7 @@ contract SpokeWithdrawTest is SpokeBase {
     // token
     assertEq(tokenData[stage].spokeBalance, 0, 'tokenData spoke balance');
     assertEq(tokenData[stage].hubBalance, 0, 'tokenData hub balance');
-    // assertEq(asset.balanceOf(alice), 0, 'alice balance');
+    assertEq(asset.balanceOf(alice), 0, 'alice balance');
     assertEq(
       asset.balanceOf(bob),
       MAX_SUPPLY_AMOUNT - state.borrowReserveSupplyAmount + state.withdrawAmount,
@@ -805,48 +769,22 @@ contract SpokeWithdrawTest is SpokeBase {
   }
 
   function test_withdraw_all_liquidity_with_interest_with_premium() public {
-    State memory state;
+    TestState memory state;
     state.reserveId = spokeInfo[spoke1].dai.reserveId;
-    state.collateralReserveId = spokeInfo[spoke1].usdx.reserveId;
-    state.suppliedCollateralAmount = 100e18;
-    state.borrowAmount = 10e18;
-    state.borrowReserveSupplyAmount = 20e18;
-    state.timestamp = vm.getBlockTimestamp();
-    state.rate = uint256(10_00).bpsToRay();
-
-    vm.mockCall(
-      address(irStrategy),
-      IReserveInterestRateStrategy.calculateInterestRates.selector,
-      abi.encode(state.rate)
-    );
 
     // number of test stages
     TestData[3] memory daiData;
-    TestData[3] memory aliceData;
-    TestData[3] memory bobData;
+    TestUserData[3] memory aliceData;
+    TestUserData[3] memory bobData;
     TokenData[3] memory tokenData;
 
-    uint256 timestamp = vm.getBlockTimestamp();
-
-    (, state.supplyShares) = _executeSupplyAndBorrow({
-      spoke: spoke1,
-      collateral: TestReserve({
-        reserveId: state.collateralReserveId,
-        supplier: alice,
-        borrower: address(0),
-        supplyAmount: state.suppliedCollateralAmount,
-        borrowAmount: 0
-      }),
-      borrow: TestReserve({
-        reserveId: state.reserveId,
-        supplier: bob,
-        borrower: alice,
-        supplyAmount: state.borrowReserveSupplyAmount,
-        borrowAmount: state.borrowAmount
-      }),
-      rate: state.rate,
-      skipTime: 365 days
-    });
+    (
+      ,
+      ,
+      state.borrowAmount,
+      state.supplyShares,
+      state.borrowReserveSupplyAmount
+    ) = _increaseReserveIndex(spoke1, state.reserveId);
 
     (, state.aliceOutstandingPremium) = spoke1.getUserDebt(state.reserveId, alice);
 
@@ -858,14 +796,10 @@ contract SpokeWithdrawTest is SpokeBase {
     spoke1.repay(state.reserveId, repayAmount);
 
     uint256 stage = 0;
-    daiData[stage] = _getReserveData(spoke1, state.reserveId);
-    aliceData[stage] = _getUserData(spoke1, state.reserveId, alice);
-    bobData[stage] = _getUserData(spoke1, state.reserveId, bob);
-    tokenData[stage] = _getTokenBalances(tokenList.dai, address(spoke1));
-    daiData[stage].cumulatedBaseInterest = MathUtils.calculateLinearInterest(
-      state.rate,
-      uint40(timestamp)
-    );
+    daiData[stage] = loadReserveInfo(spoke1, state.reserveId);
+    aliceData[stage] = loadUserInfo(spoke1, state.reserveId, alice);
+    bobData[stage] = loadUserInfo(spoke1, state.reserveId, bob);
+    tokenData[stage] = getTokenBalances(tokenList.dai, address(spoke1));
 
     state.withdrawAmount = hub.getAvailableLiquidity(daiAssetId); // withdraw all liquidity
 
@@ -877,29 +811,20 @@ contract SpokeWithdrawTest is SpokeBase {
 
     stage = 1;
     state.withdrawnShares = hub.convertToShares(daiAssetId, state.withdrawAmount);
-    daiData[stage] = _getReserveData(spoke1, state.reserveId);
-    aliceData[stage] = _getUserData(spoke1, state.reserveId, alice);
-    bobData[stage] = _getUserData(spoke1, state.reserveId, bob);
-    tokenData[stage] = _getTokenBalances(tokenList.dai, address(spoke1));
+    daiData[stage] = loadReserveInfo(spoke1, state.reserveId);
+    aliceData[stage] = loadUserInfo(spoke1, state.reserveId, alice);
+    bobData[stage] = loadUserInfo(spoke1, state.reserveId, bob);
+    tokenData[stage] = getTokenBalances(tokenList.dai, address(spoke1));
 
+    // debt is fully repaid, so bob can withdraw all supplied
     vm.prank(bob);
     spoke1.withdraw({reserveId: state.reserveId, amount: state.withdrawAmount, to: bob});
 
-    daiData[stage].cumulatedBaseInterest = MathUtils.calculateLinearInterest(
-      state.rate,
-      uint40(daiData[stage - 1].data.lastUpdateTimestamp)
-    );
-
     stage = 2;
-    daiData[stage] = _getReserveData(spoke1, state.reserveId);
-    aliceData[stage] = _getUserData(spoke1, state.reserveId, alice);
-    bobData[stage] = _getUserData(spoke1, state.reserveId, bob);
-    tokenData[stage] = _getTokenBalances(tokenList.dai, address(spoke1));
-
-    daiData[stage].cumulatedBaseInterest = MathUtils.calculateLinearInterest(
-      state.rate,
-      uint40(daiData[stage - 1].data.lastUpdateTimestamp)
-    );
+    daiData[stage] = loadReserveInfo(spoke1, state.reserveId);
+    aliceData[stage] = loadUserInfo(spoke1, state.reserveId, alice);
+    bobData[stage] = loadUserInfo(spoke1, state.reserveId, bob);
+    tokenData[stage] = getTokenBalances(tokenList.dai, address(spoke1));
 
     // reserve
     assertEq(daiData[stage].data.baseDebt, 0, 'reserveData base debt');
@@ -928,11 +853,7 @@ contract SpokeWithdrawTest is SpokeBase {
     // bob
     assertEq(bobData[stage].data.baseDebt, 0, 'bobData base debt');
     assertEq(bobData[stage].data.outstandingPremium, 0, 'bobData outstanding premium');
-    assertEq(
-      bobData[stage].data.suppliedShares,
-      state.supplyShares - state.withdrawnShares,
-      'bobData supplied shares'
-    );
+    assertEq(bobData[stage].data.suppliedShares, 0, 'bobData supplied shares');
     assertEq(
       bobData[stage].data.lastUpdateTimestamp,
       vm.getBlockTimestamp(),
@@ -973,11 +894,11 @@ contract SpokeWithdrawTest is SpokeBase {
       abi.encode(params.rate)
     );
 
-    vm.assume(params.reserveId != _wbtcReserveId(spoke1)); // wbtc used as collateral
+    vm.assume(params.reserveId != wbtcReserveId(spoke1)); // wbtc used as collateral
 
-    (uint256 assetId, IERC20 asset) = _getAssetInfo(spoke1, params.reserveId);
+    (uint256 assetId, IERC20 asset) = getAssetInfo(spoke1, params.reserveId);
 
-    State memory state;
+    TestState memory state;
     state.reserveId = params.reserveId;
     state.collateralReserveId = spokeInfo[spoke1].wbtc.reserveId;
     state.suppliedCollateralAmount = MAX_SUPPLY_AMOUNT; // ensure enough collateral
@@ -1018,15 +939,15 @@ contract SpokeWithdrawTest is SpokeBase {
 
     // number of test stages
     TestData[3] memory reserveData;
-    TestData[3] memory aliceData;
-    TestData[3] memory bobData;
+    TestUserData[3] memory aliceData;
+    TestUserData[3] memory bobData;
     TokenData[3] memory tokenData;
 
     uint256 stage = 0;
-    reserveData[stage] = _getReserveData(spoke1, state.reserveId);
-    aliceData[stage] = _getUserData(spoke1, state.reserveId, alice);
-    bobData[stage] = _getUserData(spoke1, state.reserveId, bob);
-    tokenData[stage] = _getTokenBalances(asset, address(spoke1));
+    reserveData[stage] = loadReserveInfo(spoke1, state.reserveId);
+    aliceData[stage] = loadUserInfo(spoke1, state.reserveId, alice);
+    bobData[stage] = loadUserInfo(spoke1, state.reserveId, bob);
+    tokenData[stage] = getTokenBalances(asset, address(spoke1));
 
     state.withdrawAmount = hub.getAvailableLiquidity(state.reserveId);
 
@@ -1044,20 +965,20 @@ contract SpokeWithdrawTest is SpokeBase {
     );
 
     stage = 1;
-    reserveData[stage] = _getReserveData(spoke1, state.reserveId);
-    aliceData[stage] = _getUserData(spoke1, state.reserveId, alice);
-    bobData[stage] = _getUserData(spoke1, state.reserveId, bob);
-    tokenData[stage] = _getTokenBalances(asset, address(spoke1));
+    reserveData[stage] = loadReserveInfo(spoke1, state.reserveId);
+    aliceData[stage] = loadUserInfo(spoke1, state.reserveId, alice);
+    bobData[stage] = loadUserInfo(spoke1, state.reserveId, bob);
+    tokenData[stage] = getTokenBalances(asset, address(spoke1));
     state.withdrawnShares = hub.convertToShares(assetId, state.withdrawAmount);
 
     vm.prank(bob);
     spoke1.withdraw({reserveId: state.reserveId, amount: state.withdrawAmount, to: bob});
 
     stage = 2;
-    reserveData[stage] = _getReserveData(spoke1, state.reserveId);
-    aliceData[stage] = _getUserData(spoke1, state.reserveId, alice);
-    bobData[stage] = _getUserData(spoke1, state.reserveId, bob);
-    tokenData[stage] = _getTokenBalances(asset, address(spoke1));
+    reserveData[stage] = loadReserveInfo(spoke1, state.reserveId);
+    aliceData[stage] = loadUserInfo(spoke1, state.reserveId, alice);
+    bobData[stage] = loadUserInfo(spoke1, state.reserveId, bob);
+    tokenData[stage] = getTokenBalances(asset, address(spoke1));
 
     // reserve
     assertEq(reserveData[stage].data.baseDebt, 0, 'reserveData base debt');

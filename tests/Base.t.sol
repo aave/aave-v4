@@ -504,9 +504,9 @@ abstract contract Base is Test {
     uint256 reserveId,
     uint256 newLiquidityPremium
   ) internal {
-    DataTypes.Reserve memory reserveData = spoke.getReserve(reserveId);
-    reserveData.config.liquidityPremium = newLiquidityPremium;
-    spoke.updateReserveConfig(reserveId, reserveData.config);
+    DataTypes.ReserveConfig memory reserveConfig = spoke.getReserve(reserveId).config;
+    reserveConfig.liquidityPremium = newLiquidityPremium;
+    spoke.updateReserveConfig(reserveId, reserveConfig);
   }
 
   /// @dev pseudo random randomizer
@@ -514,18 +514,23 @@ abstract contract Base is Test {
     return vm.randomUint(min, max);
   }
 
-  function _usdxReserveId(Spoke spoke) internal view returns (uint256) {
+  // assumes spoke has usdx supported
+  function usdxReserveId(Spoke spoke) internal view returns (uint256) {
     return spokeInfo[spoke].usdx.reserveId;
   }
-  function _daiReserveId(Spoke spoke) internal view returns (uint256) {
+
+  // assumes spoke has dai supported
+  function daiReserveId(Spoke spoke) internal view returns (uint256) {
     return spokeInfo[spoke].dai.reserveId;
   }
 
-  function _wethReserveId(Spoke spoke) internal view returns (uint256) {
+  // assumes spoke has weth supported
+  function wethReserveId(Spoke spoke) internal view returns (uint256) {
     return spokeInfo[spoke].weth.reserveId;
   }
 
-  function _wbtcReserveId(Spoke spoke) internal view returns (uint256) {
+  // assumes spoke has wbtc supported
+  function wbtcReserveId(Spoke spoke) internal view returns (uint256) {
     return spokeInfo[spoke].wbtc.reserveId;
   }
 
@@ -555,17 +560,30 @@ abstract contract Base is Test {
     return userPosition;
   }
 
-  function _getAssetInfo(Spoke spoke, uint256 reserveId) internal view returns (uint256, IERC20) {
+  function getReserveInfo(
+    ISpoke spoke,
+    uint256 reserveId
+  ) internal view returns (DataTypes.Reserve memory) {
+    DataTypes.Reserve memory reserveData = spoke.getReserve(reserveId);
+    (reserveData.baseDebt, reserveData.outstandingPremium) = spoke.getReserveDebt(reserveId);
+    reserveData.suppliedShares = spoke.getReserveSuppliedShares(reserveId);
+    reserveData.riskPremium = spoke.getReserveRiskPremium(reserveId);
+    reserveData.lastUpdateTimestamp = reserveData.lastUpdateTimestamp;
+    reserveData.baseBorrowIndex = reserveData.baseBorrowIndex;
+    return reserveData;
+  }
+
+  function getAssetInfo(Spoke spoke, uint256 reserveId) internal view returns (uint256, IERC20) {
     DataTypes.Reserve memory reserve = spoke.getReserve(reserveId);
     return (reserve.assetId, IERC20(reserve.asset));
   }
 
-  function _getWithdrawalLimit(
+  function getWithdrawalLimit(
     Spoke spoke,
     uint256 reserveId,
     address user
   ) internal view returns (uint256) {
-    (uint256 baseDebt, ) = spoke1.getUserDebt(_daiReserveId(spoke1), user);
+    (uint256 baseDebt, ) = spoke1.getUserDebt(daiReserveId(spoke1), user);
     spoke.getUserSuppliedAmount(reserveId, user) - baseDebt;
   }
 }
