@@ -43,9 +43,36 @@ interface ISpoke {
   function updateReserveConfig(uint256 reserveId, DataTypes.ReserveConfig calldata params) external;
   function updateLiquidityPremium(uint256 reserveId, uint256 liquidityPremium) external;
 
+  /**
+   * @notice Supply an amount of underlying asset of the specified reserve.
+   * @dev Liquidity Hub pulls underlying asset from caller, hence it needs prior approval.
+   * @param reserveId The reserveId of the underlying asset as registered on the spoke.
+   * @param amount The amount of asset to supply.
+   */
   function supply(uint256 reserveId, uint256 amount) external;
+
+  /**
+   * @notice Withdraw supplied amount of underlying asset from the specified reserve.
+   * @param reserveId The reserveId of the underlying asset as registered on the spoke.
+   * @param amount The amount of asset to withdraw.
+   * @param to The address to transfer the assets to.
+   */
   function withdraw(uint256 reserveId, uint256 amount, address to) external;
+
+  /**
+   * @notice Borrow an amount of underlying asset from the specified reserve.
+   * @param reserveId The reserveId of the underlying asset as registered on the spoke.
+   * @param amount The amount of underlying assets to borrow.
+   * @param to The address to transfer the underlying assets to.
+   */
   function borrow(uint256 reserveId, uint256 amount, address to) external;
+
+  /**
+   * @notice Repays a borrowed amount on a specified reserve.
+   * @dev Liquidity Hub pulls underlying asset from caller, hence it needs prior approval.
+   * @param reserveId The reserveId of the underlying asset as registered on the spoke.
+   * @param amount The amount to repay.
+   */
   function repay(uint256 reserveId, uint256 amount) external;
   function setUsingAsCollateral(uint256 reserveId, bool usingAsCollateral) external;
 
@@ -57,9 +84,6 @@ interface ISpoke {
   function getUserSuppliedAmount(uint256 reserveId, address user) external view returns (uint256);
   function getUserSuppliedShares(uint256 reserveId, address user) external view returns (uint256);
   function getUserBaseBorrowIndex(uint256 reserveId, address user) external view returns (uint256);
-  // TODO: Remove this in favor of the below global user risk premium once implemented
-  function getUserRiskPremium(uint256 reserveId, address user) external view returns (uint256);
-  function getUserLastUpdate(uint256 reserveId, address user) external view returns (uint256);
   function getReserveDebt(uint256 reserveId) external view returns (uint256, uint256);
   function getReserveCumulativeDebt(uint256 reserveId) external view returns (uint256);
   function getReserveRiskPremium(uint256 reserveId) external view returns (uint256);
@@ -69,8 +93,8 @@ interface ISpoke {
   function getReservePrice(uint256 reserveId) external view returns (uint256);
   function getLiquidityPremium(uint256 reserveId) external view returns (uint256);
   function getReserve(uint256 reserveId) external view returns (DataTypes.Reserve memory);
-  function getUser(
+  function getUserPosition(
     uint256 reserveId,
     address user
-  ) external view returns (DataTypes.UserConfig memory);
+  ) external view returns (DataTypes.UserPosition memory);
 }

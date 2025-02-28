@@ -160,7 +160,7 @@ contract SpokeBase is Base {
     address user
   ) internal view returns (TestData memory) {
     // only to check lastUpdateTimestamp
-    DataTypes.UserConfig memory userStorageData = spoke.getUser(reserveId, user);
+    DataTypes.UserConfig memory userStorageData = spoke.getUserPosition(reserveId, user);
     TestData memory userData;
     (userData.data.baseDebt, userData.data.outstandingPremium) = spoke.getUserDebt(reserveId, user);
     userData.data.suppliedShares = spoke.getUserSuppliedShares(reserveId, user);

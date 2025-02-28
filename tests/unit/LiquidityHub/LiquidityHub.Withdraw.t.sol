@@ -738,7 +738,7 @@ contract LiquidityHubWithdrawTest is LiquidityHubBase {
     uint256 amount = 100e18;
     updateAssetActive(hub, daiAssetId, false);
 
-    vm.expectRevert(abi.encodeWithSelector(ILiquidityHub.AssetNotActive.selector, daiAssetId));
+    vm.expectRevert(ILiquidityHub.AssetNotActive.selector);
     vm.prank(address(spoke1));
     hub.withdraw({assetId: daiAssetId, amount: amount, riskPremium: 0, to: alice});
   }

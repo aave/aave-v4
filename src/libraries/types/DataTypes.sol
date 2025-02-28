@@ -8,7 +8,8 @@ library DataTypes {
     uint256 baseDebt; // asset
     uint256 outstandingPremium; // asset
     uint256 baseBorrowIndex; // in ray
-    uint256 riskPremium; // weighted average risk premium in ray
+    // rayified weighted average risk premium of all users drawing this asset
+    uint256 riskPremium;
     uint256 lastUpdateTimestamp;
     DataTypes.SpokeConfig config;
   }
@@ -21,7 +22,8 @@ library DataTypes {
     uint256 outstandingPremium; // asset
     uint256 baseBorrowIndex; // in ray
     uint256 baseBorrowRate; // in ray
-    uint256 riskPremium; // weighted average risk premium of all spokes with ray precision
+    // rayified weighted average risk premium of all spokes drawing this asset
+    uint256 riskPremium;
     uint256 lastUpdateTimestamp;
     DataTypes.AssetConfig config;
   }
@@ -69,7 +71,7 @@ library DataTypes {
     bool collateral;
   }
 
-  struct UserConfig {
+  struct UserPosition {
     bool usingAsCollateral;
     uint256 baseDebt;
     uint256 outstandingPremium;

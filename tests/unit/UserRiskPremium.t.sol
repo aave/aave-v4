@@ -113,10 +113,10 @@ contract UserRiskPremiumTest_ToMigrate is Base {
     uint256 userRiskPremium = 0;
     for (uint256 i = 0; i < assetIds.length; i++) {
       uint256 assetId = assetIds[i];
-      DataTypes.UserConfig memory userConfig = spoke1.getUser(assetId, USER1);
+      DataTypes.UserPosition memory userPosition = spoke1.getUserPosition(assetId, USER1);
 
       // uint256 assetPrice = oracle.getAssetPrice(assetId);
-      // uint256 userCollateral = hub.convertToAssetsDown(assetId, userConfig.supplyShares) *
+      // uint256 userCollateral = hub.convertToAssetsDown(assetId, userPosition.supplyShares) *
       //   assetPrice;
       // uint256 liquidityPremium = 1; // TODO: get LP from LH
       // userRiskPremium += userCollateral * liquidityPremium;
