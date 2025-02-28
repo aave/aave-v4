@@ -255,12 +255,15 @@ contract SpokeBorrowTest is Base {
 
     // Bob supply weth
     Utils.spokeSupply(spoke1, wethReserveId, bob, wethSupplyAmount, bob);
+    setUsingAsCollateral(spoke1, bob, wethReserveId, true);
 
     // Alice supply dai
     Utils.spokeSupply(spoke1, daiReserveId, alice, daiAmount, alice);
 
     // Bob draw dai
     Utils.spokeBorrow(spoke1, daiReserveId, bob, drawAmount, bob);
+
+    assertGt(spoke1.getHealthFactor(bob), spoke1.HEALTH_FACTOR_LIQUIDATION_THRESHOLD());
 
     skip(365 days);
 
@@ -281,22 +284,22 @@ contract SpokeBorrowTest is Base {
     uint256 wethReserveId = spokeInfo[spoke2].weth.reserveId;
     uint256 usdxReserveId = spokeInfo[spoke2].usdx.reserveId;
     uint256 wbtcReserveId = spokeInfo[spoke2].wbtc.reserveId;
-    uint256 dai2ReserveId = spokeInfo[spoke2].dai2.reserveId;
 
     daiBorrowAmount = bound(daiBorrowAmount, 0, MAX_SUPPLY_AMOUNT / 2);
     wethBorrowAmount = bound(wethBorrowAmount, 0, MAX_SUPPLY_AMOUNT / 2);
     usdxBorrowAmount = bound(usdxBorrowAmount, 0, MAX_SUPPLY_AMOUNT / 2);
     wbtcBorrowAmount = bound(wbtcBorrowAmount, 0, MAX_SUPPLY_AMOUNT / 2);
 
-    // Account for dai and dai2 supply actions
-    deal(address(tokenList.dai), bob, 2 * MAX_SUPPLY_AMOUNT);
-
     // Bob supply all reserves
     Utils.spokeSupply(spoke2, daiReserveId, bob, MAX_SUPPLY_AMOUNT, bob);
     Utils.spokeSupply(spoke2, wethReserveId, bob, MAX_SUPPLY_AMOUNT, bob);
     Utils.spokeSupply(spoke2, usdxReserveId, bob, MAX_SUPPLY_AMOUNT, bob);
     Utils.spokeSupply(spoke2, wbtcReserveId, bob, MAX_SUPPLY_AMOUNT, bob);
-    Utils.spokeSupply(spoke2, dai2ReserveId, bob, MAX_SUPPLY_AMOUNT, bob);
+    // set all as collateral to allow borrowing
+    setUsingAsCollateral(spoke2, bob, daiReserveId, true);
+    setUsingAsCollateral(spoke2, bob, wethReserveId, true);
+    setUsingAsCollateral(spoke2, bob, usdxReserveId, true);
+    setUsingAsCollateral(spoke2, bob, wbtcReserveId, true);
 
     DataTypes.UserPosition memory bobData = getUserInfo(spoke2, bob, daiReserveId);
     assertEq(
@@ -329,15 +332,19 @@ contract SpokeBorrowTest is Base {
 
     // Bob borrow all reserves
     if (daiBorrowAmount > 0) {
+      assertGt(spoke2.getHealthFactor(bob), spoke2.HEALTH_FACTOR_LIQUIDATION_THRESHOLD());
       Utils.spokeBorrow(spoke2, daiReserveId, bob, daiBorrowAmount, bob);
     }
     if (wethBorrowAmount > 0) {
+      assertGt(spoke2.getHealthFactor(bob), spoke2.HEALTH_FACTOR_LIQUIDATION_THRESHOLD());
       Utils.spokeBorrow(spoke2, wethReserveId, bob, wethBorrowAmount, bob);
     }
     if (usdxBorrowAmount > 0) {
+      assertGt(spoke2.getHealthFactor(bob), spoke2.HEALTH_FACTOR_LIQUIDATION_THRESHOLD());
       Utils.spokeBorrow(spoke2, usdxReserveId, bob, usdxBorrowAmount, bob);
     }
     if (wbtcBorrowAmount > 0) {
+      assertGt(spoke2.getHealthFactor(bob), spoke2.HEALTH_FACTOR_LIQUIDATION_THRESHOLD());
       Utils.spokeBorrow(spoke2, wbtcReserveId, bob, wbtcBorrowAmount, bob);
     }
 

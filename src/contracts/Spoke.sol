@@ -318,7 +318,7 @@ contract Spoke is ISpoke {
     return _userData[user].riskPremium.derayify();
   }
 
-  function getHealthFactor(address user) public view returns (uint256) {
+  function getHealthFactor(address user) external view returns (uint256) {
     (, , uint256 healthFactor) = _calculateUserAccountData(user);
     return healthFactor;
   }
@@ -366,7 +366,7 @@ contract Spoke is ISpoke {
     DataTypes.Reserve storage reserve,
     uint256 amount,
     address userAddress
-  ) internal {
+  ) internal view {
     require(reserve.config.borrowable, ReserveNotBorrowable(reserve.reserveId));
     _validateHealthFactor(userAddress);
   }
@@ -792,7 +792,7 @@ contract Spoke is ISpoke {
     return newReserveRiskPremium;
   }
 
-  function _validateHealthFactor(address userAddress) internal {
+  function _validateHealthFactor(address userAddress) internal view {
     (, , uint256 healthFactor) = _calculateUserAccountData(userAddress);
     require(
       healthFactor >= HEALTH_FACTOR_LIQUIDATION_THRESHOLD,
