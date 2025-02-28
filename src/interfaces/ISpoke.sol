@@ -52,7 +52,7 @@ interface ISpoke {
   function supply(uint256 reserveId, uint256 amount) external;
 
   /**
-   * @notice Withdraw supplied amount of underlying asset from the specified reserve, sent at `to`.
+   * @notice Withdraw supplied amount of underlying asset from the specified reserve.
    * @param reserveId The reserveId of the underlying asset as registered on the spoke.
    * @param amount The amount of asset to withdraw.
    * @param to The address to transfer the assets to.
