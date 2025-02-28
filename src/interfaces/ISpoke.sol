@@ -60,7 +60,7 @@ interface ISpoke {
   function withdraw(uint256 reserveId, uint256 amount, address to) external;
 
   /**
-   * @notice Allows the caller to draw debt from the specified reserve.
+   * @notice Borrow an amount of underlying asset from the specified reserve.
    * @param reserveId The reserveId of the underlying asset as registered on the spoke.
    * @param amount The amount of debt to draw.
    * @param to The address to credit the debt to.
