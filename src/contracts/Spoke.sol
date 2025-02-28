@@ -20,8 +20,7 @@ contract Spoke is ISpoke {
   ILiquidityHub public immutable liquidityHub;
   IPriceOracle public immutable oracle;
 
-  // todo rename UserConfig => UserPosition
-  mapping(address user => mapping(uint256 reserveId => DataTypes.UserConfig position))
+  mapping(address user => mapping(uint256 reserveId => DataTypes.UserPosition position))
     internal _users;
   mapping(address user => DataTypes.UserData data) internal _userData;
   mapping(uint256 reserveId => DataTypes.Reserve reserveData) internal _reserves;
@@ -121,7 +120,7 @@ contract Spoke is ISpoke {
 
   function supply(uint256 reserveId, uint256 amount) external {
     DataTypes.Reserve storage reserve = _reserves[reserveId];
-    DataTypes.UserConfig storage user = _users[msg.sender][reserveId];
+    DataTypes.UserPosition storage user = _users[msg.sender][reserveId];
     DataTypes.UserData storage userData = _userData[msg.sender];
 
     _accrueInterest(reserve, user, userData);
@@ -151,7 +150,7 @@ contract Spoke is ISpoke {
   function withdraw(uint256 reserveId, uint256 amount, address to) external {
     // TODO: Be able to pass max(uint) as amount to withdraw all supplied shares
     DataTypes.Reserve storage reserve = _reserves[reserveId];
-    DataTypes.UserConfig storage user = _users[msg.sender][reserveId];
+    DataTypes.UserPosition storage user = _users[msg.sender][reserveId];
     DataTypes.UserData storage userData = _userData[msg.sender];
 
     _accrueInterest(reserve, user, userData);
@@ -183,7 +182,7 @@ contract Spoke is ISpoke {
     // TODO: referral code
     // TODO: onBehalfOf with credit delegation
     DataTypes.Reserve storage reserve = _reserves[reserveId];
-    DataTypes.UserConfig storage user = _users[msg.sender][reserveId];
+    DataTypes.UserPosition storage user = _users[msg.sender][reserveId];
     DataTypes.UserData storage userData = _userData[msg.sender];
 
     _accrueInterest(reserve, user, userData);
@@ -206,7 +205,7 @@ contract Spoke is ISpoke {
   function repay(uint256 reserveId, uint256 amount) external {
     // TODO: Be able to pass max(uint) as amount to restore all debt
     // TODO: onBehalfOf
-    DataTypes.UserConfig storage user = _users[msg.sender][reserveId];
+    DataTypes.UserPosition storage user = _users[msg.sender][reserveId];
     DataTypes.Reserve storage reserve = _reserves[reserveId];
     DataTypes.UserData storage userData = _userData[msg.sender];
 
@@ -237,7 +236,7 @@ contract Spoke is ISpoke {
 
   function setUsingAsCollateral(uint256 reserveId, bool usingAsCollateral) external {
     DataTypes.Reserve storage reserve = _reserves[reserveId];
-    DataTypes.UserConfig storage user = _users[msg.sender][reserveId];
+    DataTypes.UserPosition storage user = _users[msg.sender][reserveId];
 
     _validateSetUsingAsCollateral(reserve, user);
     user.usingAsCollateral = usingAsCollateral;
@@ -281,15 +280,6 @@ contract Spoke is ISpoke {
 
   function getUserBaseBorrowIndex(uint256 reserveId, address user) external view returns (uint256) {
     return _users[user][reserveId].baseBorrowIndex;
-  }
-
-  // TODO: Global user risk premium, not based on reserveId
-  function getUserRiskPremium(uint256 reserveId, address user) external view returns (uint256) {
-    return _users[user][reserveId].riskPremium.derayify();
-  }
-
-  function getUserLastUpdate(uint256 reserveId, address user) external view returns (uint256) {
-    return _users[user][reserveId].lastUpdateTimestamp;
   }
 
   function getReserveDebt(uint256 reserveId) external view returns (uint256, uint256) {
@@ -347,11 +337,11 @@ contract Spoke is ISpoke {
     return _reserves[reserveId];
   }
 
-  function getUser(
+  function getUserPosition(
     uint256 reserveId,
     address user
-  ) public view returns (DataTypes.UserConfig memory) {
-    DataTypes.UserConfig memory user = _users[user][reserveId];
+  ) public view returns (DataTypes.UserPosition memory) {
+    DataTypes.UserPosition memory user = _users[user][reserveId];
     return user;
   }
 
@@ -362,7 +352,7 @@ contract Spoke is ISpoke {
 
   function _validateWithdraw(
     DataTypes.Reserve storage reserve,
-    DataTypes.UserConfig storage user,
+    DataTypes.UserPosition storage user,
     uint256 amount
   ) internal view {
     uint256 suppliedAmount = liquidityHub.convertToAssetsDown(reserve.assetId, user.suppliedShares);
@@ -377,7 +367,7 @@ contract Spoke is ISpoke {
   // TODO: Place this and LH equivalent in a generic logic library
   function _validateRepay(
     DataTypes.Reserve storage reserve,
-    DataTypes.UserConfig storage user,
+    DataTypes.UserPosition storage user,
     uint256 amount
   ) internal view {
     uint256 userDebt = user.baseDebt + user.outstandingPremium;
@@ -386,7 +376,7 @@ contract Spoke is ISpoke {
 
   function _deductFromOutstandingPremium(
     DataTypes.Reserve storage reserve,
-    DataTypes.UserConfig storage user,
+    DataTypes.UserPosition storage user,
     uint256 amount
   ) internal returns (uint256) {
     uint256 userOutstandingPremium = user.outstandingPremium;
@@ -415,7 +405,7 @@ contract Spoke is ISpoke {
    */
   function _updateRiskPremiumAndBaseDebt(
     DataTypes.Reserve storage reserve,
-    DataTypes.UserConfig storage user,
+    DataTypes.UserPosition storage user,
     DataTypes.UserData storage userData,
     address userAddress,
     int256 baseDebtChange
@@ -464,23 +454,23 @@ contract Spoke is ISpoke {
 
   function _validateSetUsingAsCollateral(
     DataTypes.Reserve storage reserve,
-    DataTypes.UserConfig storage user
+    DataTypes.UserPosition storage user
   ) internal view {
     require(reserve.config.collateral, ReserveNotCollateral(reserve.reserveId));
   }
 
-  function _usingAsCollateral(DataTypes.UserConfig storage user) internal view returns (bool) {
+  function _usingAsCollateral(DataTypes.UserPosition storage user) internal view returns (bool) {
     return user.usingAsCollateral;
   }
 
   // todo opt: use bitmap
-  function _isBorrowing(DataTypes.UserConfig storage user) internal view returns (bool) {
+  function _isBorrowing(DataTypes.UserPosition storage user) internal view returns (bool) {
     return user.baseDebt + user.outstandingPremium > 0;
   }
 
   // todo opt: use bitmap
   function _usingAsCollateralOrBorrowing(
-    DataTypes.UserConfig storage user
+    DataTypes.UserPosition storage user
   ) internal view returns (bool) {
     return _usingAsCollateral(user) || _isBorrowing(user);
   }
@@ -492,7 +482,7 @@ contract Spoke is ISpoke {
     uint256 reservesListLength = reservesList.length;
 
     while (vars.reserveId < reservesListLength) {
-      DataTypes.UserConfig storage user = _users[userAddress][vars.reserveId];
+      DataTypes.UserPosition storage user = _users[userAddress][vars.reserveId];
       DataTypes.UserData storage userData = _userData[userAddress];
 
       if (!_usingAsCollateralOrBorrowing(user)) {
@@ -535,7 +525,7 @@ contract Spoke is ISpoke {
     vars.i = 0;
     vars.reserveId = 0;
     while (vars.reserveId < reservesListLength) {
-      DataTypes.UserConfig storage user = _users[userAddress][vars.reserveId];
+      DataTypes.UserPosition storage user = _users[userAddress][vars.reserveId];
       DataTypes.Reserve storage reserve = _reserves[vars.reserveId];
       if (_usingAsCollateral(user)) {
         vars.assetId = reserve.assetId;
@@ -604,7 +594,7 @@ contract Spoke is ISpoke {
   }
 
   function _getUserDebtInBaseCurrency(
-    DataTypes.UserConfig storage user,
+    DataTypes.UserPosition storage user,
     DataTypes.UserData storage userData,
     uint256 assetId,
     uint256 assetPrice,
@@ -619,7 +609,7 @@ contract Spoke is ISpoke {
   }
 
   function _getUserBalanceInBaseCurrency(
-    DataTypes.UserConfig storage user,
+    DataTypes.UserPosition storage user,
     uint256 assetId,
     uint256 assetPrice,
     uint256 assetUnit
@@ -629,7 +619,7 @@ contract Spoke is ISpoke {
 
   function _accrueInterest(
     DataTypes.Reserve storage reserve,
-    DataTypes.UserConfig storage user,
+    DataTypes.UserPosition storage user,
     DataTypes.UserData storage userData
   ) internal {
     uint256 nextBaseBorrowIndex = liquidityHub.previewNextBorrowIndex(reserve.assetId);
@@ -677,7 +667,7 @@ contract Spoke is ISpoke {
   }
 
   function _previewUserInterest(
-    DataTypes.UserConfig storage user,
+    DataTypes.UserPosition storage user,
     DataTypes.UserData storage userData, // todo opt: pass user rp only
     uint256 nextBaseBorrowIndex
   ) internal view returns (uint256, uint256) {
@@ -700,7 +690,7 @@ contract Spoke is ISpoke {
   }
 
   function _accrueUserInterest(
-    DataTypes.UserConfig storage user,
+    DataTypes.UserPosition storage user,
     DataTypes.UserData storage userData,
     uint256 nextBaseBorrowIndex
   ) internal {
@@ -734,7 +724,7 @@ contract Spoke is ISpoke {
     // _updateRiskPremiumAndBaseDebt does not update user risk premium, opt: pass this value in cached obj
     uint256 existingUserRiskPremium = userData.riskPremium;
     while (i < reserveCount_) {
-      DataTypes.UserConfig storage user = _users[userAddress][i];
+      DataTypes.UserPosition storage user = _users[userAddress][i];
       DataTypes.Reserve storage reserve = _reserves[i];
       uint256 assetId = reserve.assetId;
       // todo keep borrowed assets in transient storage/pass through?
@@ -768,7 +758,7 @@ contract Spoke is ISpoke {
    */
   function _refreshReserveRiskPremium(
     DataTypes.Reserve storage reserve,
-    DataTypes.UserConfig storage user, // user position on this reserve
+    DataTypes.UserPosition storage user, // user position on this reserve
     uint256 existingUserRiskPremium,
     uint256 newUserRiskPremium
   ) internal returns (uint256) {

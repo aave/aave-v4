@@ -29,7 +29,7 @@ contract SpokeBorrowTest is Base {
 
     // Bob try to draw some dai
     vm.prank(bob);
-    vm.expectRevert(abi.encodeWithSelector(ILiquidityHub.AssetNotActive.selector, daiAssetId));
+    vm.expectRevert(ILiquidityHub.AssetNotActive.selector);
     spoke1.borrow(daiReserveId, 1, bob);
   }
 
@@ -47,10 +47,10 @@ contract SpokeBorrowTest is Base {
     // Alice supply dai
     Utils.spokeSupply(spoke1, daiReserveId, alice, daiSupplyAmount, alice);
 
-    DataTypes.UserConfig memory bobDaiData = getUserInfo(spoke1, bob, daiReserveId);
-    DataTypes.UserConfig memory bobWethData = getUserInfo(spoke1, bob, wethReserveId);
-    DataTypes.UserConfig memory aliceDaiData = getUserInfo(spoke1, alice, daiReserveId);
-    DataTypes.UserConfig memory aliceWethData = getUserInfo(spoke1, alice, wethReserveId);
+    DataTypes.UserPosition memory bobDaiData = getUserInfo(spoke1, bob, daiReserveId);
+    DataTypes.UserPosition memory bobWethData = getUserInfo(spoke1, bob, wethReserveId);
+    DataTypes.UserPosition memory aliceDaiData = getUserInfo(spoke1, alice, daiReserveId);
+    DataTypes.UserPosition memory aliceWethData = getUserInfo(spoke1, alice, wethReserveId);
 
     uint256 bobDaiBalanceBefore = tokenList.dai.balanceOf(bob);
     uint256 bobWethBalanceBefore = tokenList.weth.balanceOf(bob);
@@ -160,10 +160,10 @@ contract SpokeBorrowTest is Base {
     // Alice supply dai
     Utils.spokeSupply(spoke1, daiReserveId, alice, daiBorrowAmount, alice);
 
-    DataTypes.UserConfig memory bobDaiData = getUserInfo(spoke1, bob, daiReserveId);
-    DataTypes.UserConfig memory bobWethData = getUserInfo(spoke1, bob, wethReserveId);
-    DataTypes.UserConfig memory aliceDaiData = getUserInfo(spoke1, alice, daiReserveId);
-    DataTypes.UserConfig memory aliceWethData = getUserInfo(spoke1, alice, wethReserveId);
+    DataTypes.UserPosition memory bobDaiData = getUserInfo(spoke1, bob, daiReserveId);
+    DataTypes.UserPosition memory bobWethData = getUserInfo(spoke1, bob, wethReserveId);
+    DataTypes.UserPosition memory aliceDaiData = getUserInfo(spoke1, alice, daiReserveId);
+    DataTypes.UserPosition memory aliceWethData = getUserInfo(spoke1, alice, wethReserveId);
 
     uint256 bobDaiBalanceBefore = tokenList.dai.balanceOf(bob);
     uint256 bobWethBalanceBefore = tokenList.weth.balanceOf(bob);
@@ -298,7 +298,7 @@ contract SpokeBorrowTest is Base {
     Utils.spokeSupply(spoke2, wbtcReserveId, bob, MAX_SUPPLY_AMOUNT, bob);
     Utils.spokeSupply(spoke2, dai2ReserveId, bob, MAX_SUPPLY_AMOUNT, bob);
 
-    DataTypes.UserConfig memory bobData = getUserInfo(spoke2, bob, daiReserveId);
+    DataTypes.UserPosition memory bobData = getUserInfo(spoke2, bob, daiReserveId);
     assertEq(
       bobData.suppliedShares,
       hub.convertToShares(daiAssetId, MAX_SUPPLY_AMOUNT),

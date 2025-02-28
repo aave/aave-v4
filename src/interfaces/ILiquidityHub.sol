@@ -10,15 +10,6 @@ import {DataTypes} from 'src/libraries/types/DataTypes.sol';
  * @notice Basic interface for LiquidityHub
  */
 interface ILiquidityHub {
-  event Supply(uint256 indexed assetId, address indexed spoke, uint256 amount);
-  event Withdraw(
-    uint256 indexed assetId,
-    address indexed spoke,
-    address indexed to,
-    uint256 amount
-  );
-  event Draw(uint256 indexed assetId, address indexed spoke, address indexed to, uint256 amount);
-  event Restore(uint256 indexed assetId, address indexed spoke, uint256 amount);
   event SpokeAdded(uint256 indexed assetId, address indexed spoke);
   event AssetAdded(uint256 indexed assetId, address indexed asset);
   event AssetConfigUpdated(
@@ -34,11 +25,21 @@ interface ILiquidityHub {
     uint256 supplyCap
   );
 
+  event Supply(uint256 indexed assetId, address indexed spoke, uint256 amount);
+  event Withdraw(
+    uint256 indexed assetId,
+    address indexed spoke,
+    address indexed to,
+    uint256 amount
+  );
+  event Draw(uint256 indexed assetId, address indexed spoke, address indexed to, uint256 amount);
+  event Restore(uint256 indexed assetId, address indexed spoke, uint256 amount);
+
   error MismatchedConfigs();
   error InvalidSharesAmount();
   error InvalidSupplyAmount();
-  error AssetNotListed(uint256 assetId);
-  error AssetNotActive(uint256 assetId);
+  error AssetNotListed();
+  error AssetNotActive();
   error SupplyCapExceeded(uint256 supplyCap);
   error InvalidWithdrawAmount();
   error SuppliedAmountExceeded(uint256 suppliedAmount);
@@ -101,7 +102,7 @@ interface ILiquidityHub {
    * @param assetId The asset id.
    * @param amount The amount of debt to draw.
    * @param riskPremium The new aggregated risk premium (in bps) of the calling spoke.
-   * @param to The address to draw debt to (user).
+   * @param to The address to transfer the underlying assets to.
    * @return The amount of debt drawn.
    */
   function draw(

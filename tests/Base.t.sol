@@ -505,14 +505,14 @@ abstract contract Base is Test {
     ISpoke spoke,
     address user,
     uint256 reserveId
-  ) internal view returns (DataTypes.UserConfig memory) {
-    DataTypes.UserConfig memory userConfig;
-    userConfig.usingAsCollateral = spoke.getUsingAsCollateral(reserveId, user);
-    (userConfig.baseDebt, userConfig.outstandingPremium) = spoke.getUserDebt(reserveId, user);
-    userConfig.suppliedShares = spoke.getSuppliedShares(reserveId, user);
-    userConfig.baseBorrowIndex = spoke.getUserBaseBorrowIndex(reserveId, user);
-    userConfig.riskPremium = spoke.getUserRiskPremium(reserveId, user);
-    userConfig.lastUpdateTimestamp = spoke.getUserLastUpdate(reserveId, user);
-    return userConfig;
+  ) internal view returns (DataTypes.UserPosition memory) {
+    DataTypes.UserPosition memory userPosition;
+    userPosition.usingAsCollateral = spoke.getUsingAsCollateral(reserveId, user);
+    (userPosition.baseDebt, userPosition.outstandingPremium) = spoke.getUserDebt(reserveId, user);
+    userPosition.suppliedShares = spoke.getSuppliedShares(reserveId, user);
+    userPosition.baseBorrowIndex = spoke.getUserBaseBorrowIndex(reserveId, user);
+    userPosition.riskPremium = spoke.getUserRiskPremium(user);
+    userPosition.lastUpdateTimestamp = spoke.getUserPosition(reserveId, user).lastUpdateTimestamp;
+    return userPosition;
   }
 }
