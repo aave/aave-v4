@@ -44,7 +44,7 @@ interface ISpoke {
   function updateLiquidityPremium(uint256 reserveId, uint256 liquidityPremium) external;
 
   /**
-   * @notice Supply an `amount` of underlying asset of the specified reserve.
+   * @notice Supply an amount of underlying asset of the specified reserve.
    * @dev Liquidity Hub pulls underlying asset from caller, hence it needs prior approval.
    * @param reserveId The reserveId of the underlying asset as registered on the spoke.
    * @param amount The amount of asset to supply.
@@ -52,7 +52,7 @@ interface ISpoke {
   function supply(uint256 reserveId, uint256 amount) external;
 
   /**
-   * @notice Withdraw supplied `amount` of underlying asset from the specified reserve, sent at `to`.
+   * @notice Withdraw supplied amount of underlying asset from the specified reserve, sent at `to`.
    * @param reserveId The reserveId of the underlying asset as registered on the spoke.
    * @param amount The amount of asset to withdraw.
    * @param to The address to transfer the assets to.
@@ -68,7 +68,7 @@ interface ISpoke {
   function borrow(uint256 reserveId, uint256 amount, address to) external;
 
   /**
-   * @notice Repays a borrowed `amount` on a specified reserve.
+   * @notice Repays a borrowed amount on a specified reserve.
    * @dev Liquidity Hub pulls underlying asset from caller, hence it needs prior approval.
    * @param reserveId The reserveId of the underlying asset as registered on the spoke.
    * @param amount The amount to repay.
