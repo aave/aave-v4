@@ -10,15 +10,6 @@ import {DataTypes} from 'src/libraries/types/DataTypes.sol';
  * @notice Basic interface for LiquidityHub
  */
 interface ILiquidityHub {
-  event Supply(uint256 indexed assetId, address indexed spoke, uint256 amount);
-  event Withdraw(
-    uint256 indexed assetId,
-    address indexed spoke,
-    address indexed to,
-    uint256 amount
-  );
-  event Draw(uint256 indexed assetId, address indexed spoke, address indexed to, uint256 amount);
-  event Restore(uint256 indexed assetId, address indexed spoke, uint256 amount);
   event SpokeAdded(uint256 indexed assetId, address indexed spoke);
   event AssetAdded(uint256 indexed assetId, address indexed asset);
   event AssetConfigUpdated(
@@ -33,6 +24,16 @@ interface ILiquidityHub {
     uint256 drawCap,
     uint256 supplyCap
   );
+
+  event Supply(uint256 indexed assetId, address indexed spoke, uint256 amount);
+  event Withdraw(
+    uint256 indexed assetId,
+    address indexed spoke,
+    address indexed to,
+    uint256 amount
+  );
+  event Draw(uint256 indexed assetId, address indexed spoke, address indexed to, uint256 amount);
+  event Restore(uint256 indexed assetId, address indexed spoke, uint256 amount);
 
   error MismatchedConfigs();
   error InvalidSharesAmount();
