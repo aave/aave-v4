@@ -309,7 +309,7 @@ contract Spoke is ISpoke {
   }
 
   function getUserRiskPremium(address user) external view returns (uint256) {
-    (uint256 userRiskPremium, , ) = _calculateUserAccountData(user);
+    (uint256 userRiskPremium, , , , ) = _calculateUserAccountData(user);
     return userRiskPremium.derayify();
   }
 
@@ -319,7 +319,7 @@ contract Spoke is ISpoke {
   }
 
   function getHealthFactor(address user) external view returns (uint256) {
-    (, , uint256 healthFactor) = _calculateUserAccountData(user);
+    (, , uint256 healthFactor, , ) = _calculateUserAccountData(user);
     return healthFactor;
   }
 
@@ -333,6 +333,28 @@ contract Spoke is ISpoke {
 
   function getLiquidationThreshold(uint256 reserveId) public view returns (uint256) {
     return _reserves[reserveId].config.lt;
+  }
+
+  function calculateUserAccountData(
+    address user
+  )
+    external
+    view
+    returns (
+      uint256 userRiskPremium,
+      uint256 avgLiquidationThreshold,
+      uint256 healthFactor,
+      uint256 totalCollateralInBaseCurrency,
+      uint256 totalDebtInBaseCurrency
+    )
+  {
+    (
+      userRiskPremium,
+      avgLiquidationThreshold,
+      healthFactor,
+      totalCollateralInBaseCurrency,
+      totalDebtInBaseCurrency
+    ) = _calculateUserAccountData(user);
   }
 
   // public
@@ -445,7 +467,7 @@ contract Spoke is ISpoke {
 
     // todo consider decoupling risk premium calc, pass in cached obj
     // @dev we need `user.baseDebt` (userPosition.baseDebt) updated before calculating new user risk premium
-    (uint256 newUserRiskPremium, , ) = _calculateUserAccountData(userAddress);
+    (uint256 newUserRiskPremium, , , , ) = _calculateUserAccountData(userAddress);
 
     (uint256 newReserveRiskPremium, ) = MathUtils.addToWeightedAverage(
       reserveRiskPremiumWithoutCurrent,
@@ -482,9 +504,14 @@ contract Spoke is ISpoke {
     return _usingAsCollateral(user) || _isBorrowing(user);
   }
 
+  /// @return userRiskPremium
+  /// @return avgLiquidationThreshold
+  /// @return healthFactor
+  /// @return totalCollateralInBaseCurrency
+  /// @return totalDebtInBaseCurrency
   function _calculateUserAccountData(
     address userAddress
-  ) internal view returns (uint256, uint256, uint256) {
+  ) internal view returns (uint256, uint256, uint256, uint256, uint256) {
     DataTypes.CalculateUserAccountDataVars memory vars;
     uint256 reservesListLength = reservesList.length;
 
@@ -597,7 +624,13 @@ contract Spoke is ISpoke {
       vars.userRiskPremium = (vars.userRiskPremium / vars.totalCollateralInBaseCurrency).rayify();
     }
 
-    return (vars.userRiskPremium, vars.avgLiquidationThreshold, vars.healthFactor);
+    return (
+      vars.userRiskPremium,
+      vars.avgLiquidationThreshold,
+      vars.healthFactor,
+      vars.totalCollateralInBaseCurrency,
+      vars.totalDebtInBaseCurrency
+    );
   }
 
   function _getUserDebtInBaseCurrency(
@@ -793,7 +826,7 @@ contract Spoke is ISpoke {
   }
 
   function _validateHealthFactor(address userAddress) internal view {
-    (, , uint256 healthFactor) = _calculateUserAccountData(userAddress);
+    (, , uint256 healthFactor, , ) = _calculateUserAccountData(userAddress);
     require(
       healthFactor >= HEALTH_FACTOR_LIQUIDATION_THRESHOLD,
       HealthFactorLowerThanLiquidationThreshold()
