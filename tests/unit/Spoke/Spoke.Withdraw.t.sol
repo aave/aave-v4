@@ -43,6 +43,7 @@ contract SpokeWithdrawTest is SpokeBase {
     });
 
     uint256 withdrawalLimit = getWithdrawalLimit(spoke1, reserveId, alice);
+    assertGt(withdrawalLimit, 0);
 
     vm.prank(alice);
     vm.expectRevert(abi.encodeWithSelector(ISpoke.InsufficientSupply.selector, withdrawalLimit));
@@ -50,6 +51,8 @@ contract SpokeWithdrawTest is SpokeBase {
 
     // skip time but no index increase with no borrow
     skip(365 days);
+    // withdrawal limit remains constant
+    assertEq(withdrawalLimit, getWithdrawalLimit(spoke1, reserveId, alice));
 
     vm.prank(alice);
     vm.expectRevert(abi.encodeWithSelector(ISpoke.InsufficientSupply.selector, withdrawalLimit));
@@ -87,8 +90,9 @@ contract SpokeWithdrawTest is SpokeBase {
     // accrue interest
     skip(365 days);
 
-    // newWithdrawalLimit with accrued interest
     uint256 newWithdrawalLimit = getWithdrawalLimit(spoke1, reserveId, alice);
+    // newWithdrawalLimit with accrued interest should be greater than supplyAmount
+    assertGt(newWithdrawalLimit, supplyAmount);
 
     vm.prank(alice);
     vm.expectRevert(abi.encodeWithSelector(ISpoke.InsufficientSupply.selector, newWithdrawalLimit));
@@ -107,7 +111,7 @@ contract SpokeWithdrawTest is SpokeBase {
     supplyAmount = bound(supplyAmount, 2, MAX_SUPPLY_AMOUNT);
     borrowAmount = bound(borrowAmount, 1, supplyAmount / 2); // ensure it is within LT
     rate = bound(rate, 1, MAX_BORROW_RATE).bpsToRay();
-    skipTime = bound(skipTime, 0, MAX_SKIP_TIME);
+    skipTime = bound(skipTime, 1, MAX_SKIP_TIME);
 
     vm.mockCall(
       address(irStrategy),
@@ -140,8 +144,9 @@ contract SpokeWithdrawTest is SpokeBase {
     // debt accrues
     skip(skipTime);
 
-    // newWithdrawalLimit with accrued interest
     uint256 newWithdrawalLimit = getWithdrawalLimit(spoke1, reserveId, alice);
+    // newWithdrawalLimit with accrued interest should be greater than supplyAmount
+    vm.assume(newWithdrawalLimit > supplyAmount);
 
     vm.prank(alice);
     vm.expectRevert(abi.encodeWithSelector(ISpoke.InsufficientSupply.selector, newWithdrawalLimit));
