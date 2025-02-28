@@ -583,7 +583,6 @@ abstract contract Base is Test {
     uint256 reserveId,
     address user
   ) internal view returns (uint256) {
-    (uint256 baseDebt, ) = spoke1.getUserDebt(daiReserveId(spoke1), user);
-    spoke.getUserSuppliedAmount(reserveId, user) - baseDebt;
+    return spoke.getUserSuppliedAmount(reserveId, user);
   }
 }
