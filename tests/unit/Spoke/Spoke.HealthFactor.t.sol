@@ -66,98 +66,123 @@ contract HealthFactorTest is Base {
   }
 
   function test_getHealthFactor_multi_asset_price_changes() public {
-    vm.skip(true);
-    uint256 daiAmount = 10_000e18; // 10k dai -> $10k
-    uint256 wethAmount = 10e18; // 10 eth -> $20k
+    uint256 daiAmount = 10_000 *
+      10 ** _getAssetConfig(spoke1, spokeInfo[spoke1].dai.reserveId).decimals; // 10k dai -> $10k
+    uint256 wethAmount = 10 *
+      10 ** _getAssetConfig(spoke1, spokeInfo[spoke1].weth.reserveId).decimals; // 10 eth -> $20k
     // total collateral -> $30k
-    uint256 usdcBorrowAmount = 15_000e18; // 15k usdc -> $15k
-    uint256 wbtcBorrowAmount = 0.5e18; // 0.5 wbtc -> $25k
-    // total borrowed -> $40k
+    uint256 usdxBorrowAmount = 15_000 *
+      10 ** _getAssetConfig(spoke1, spokeInfo[spoke1].usdx.reserveId).decimals; // 15k usdc -> $15k
+    uint256 wbtcBorrowAmount = 0.1e1 *
+      10 ** _getAssetConfig(spoke1, spokeInfo[spoke1].wbtc.reserveId).decimals; // 0.1 wbtc -> $5k
+    // total borrowed -> $20k
     bool newCollateral = true;
     bool usingAsCollateral = true;
-
-    // ensure DAI/ETH allowed as collateral
-    updateCollateral(spoke1, spokeInfo[spoke1].dai.reserveId, newCollateral);
-    updateCollateral(spoke1, spokeInfo[spoke1].weth.reserveId, newCollateral);
 
     // alice supply dai into spoke1
     deal(address(tokenList.dai), alice, daiAmount);
     Utils.spokeSupply(spoke1, spokeInfo[spoke1].dai.reserveId, alice, daiAmount, alice);
     setUsingAsCollateral(spoke1, alice, spokeInfo[spoke1].dai.reserveId, usingAsCollateral);
 
-    // alice supply eth into spoke1
+    // alice supply weth into spoke1
     deal(address(tokenList.weth), alice, wethAmount);
     Utils.spokeSupply(spoke1, spokeInfo[spoke1].weth.reserveId, alice, wethAmount, alice);
     setUsingAsCollateral(spoke1, alice, spokeInfo[spoke1].weth.reserveId, usingAsCollateral);
 
     // bob supply usdc into spoke1
-    deal(address(tokenList.usdx), bob, usdcBorrowAmount);
-    Utils.spokeSupply(spoke1, spokeInfo[spoke1].usdx.reserveId, bob, usdcBorrowAmount, bob);
+    deal(address(tokenList.usdx), bob, usdxBorrowAmount);
+    Utils.spokeSupply(spoke1, spokeInfo[spoke1].usdx.reserveId, bob, usdxBorrowAmount, bob);
 
     // bob supply wbtc into spoke1
     deal(address(tokenList.wbtc), bob, wbtcBorrowAmount);
     Utils.spokeSupply(spoke1, spokeInfo[spoke1].wbtc.reserveId, bob, wbtcBorrowAmount, bob);
 
     // alice borrow usdc
-    Utils.spokeBorrow(spoke1, spokeInfo[spoke1].usdx.reserveId, alice, usdcBorrowAmount, alice);
+    Utils.spokeBorrow(spoke1, spokeInfo[spoke1].usdx.reserveId, alice, usdxBorrowAmount, alice);
 
     // alice borrow wbtc
     Utils.spokeBorrow(spoke1, spokeInfo[spoke1].wbtc.reserveId, alice, wbtcBorrowAmount, alice);
 
-    uint256[] memory assetIds = new uint256[](4);
-    assetIds[0] = daiAssetId;
-    assetIds[1] = wethAssetId;
-    assetIds[2] = usdxAssetId;
-    assetIds[3] = wbtcAssetId;
+    uint256[] memory reserveIds = new uint256[](4);
+    reserveIds[0] = spokeInfo[spoke1].dai.reserveId;
+    reserveIds[1] = spokeInfo[spoke1].weth.reserveId;
+    reserveIds[2] = spokeInfo[spoke1].usdx.reserveId;
+    reserveIds[3] = spokeInfo[spoke1].wbtc.reserveId;
 
     // initial health factor
     uint256 healthFactor = ISpoke(spoke1).getHealthFactor(alice);
-    uint256 expectedHealthFactor = _calculateHealthFactor(spoke1, alice, assetIds);
-    assertEq(healthFactor, expectedHealthFactor, 'wrong initial health factor');
+    uint256 expectedHealthFactor = _calculateExpectedHealthFactor(spoke1, alice, reserveIds);
+    assertEq(healthFactor, expectedHealthFactor, 'wrong health factor initial');
 
-    // prices change for supplied assets
-    oracle.setAssetPrice(spokeInfo[spoke1].dai.reserveId, 2e8);
-    oracle.setAssetPrice(spokeInfo[spoke1].weth.reserveId, 4000e8);
-    // prices change for borrowed assets
-    oracle.setAssetPrice(spokeInfo[spoke1].usdx.reserveId, 3e8);
-    oracle.setAssetPrice(spokeInfo[spoke1].wbtc.reserveId, 70_000e8);
+    // double price changes for both supplied/borrowed assets, HF stays the same
+    oracle.setAssetPrice(daiAssetId, oracle.getAssetPrice(daiAssetId) * 2);
+    oracle.setAssetPrice(wethAssetId, oracle.getAssetPrice(wethAssetId) * 2);
+    oracle.setAssetPrice(usdxAssetId, oracle.getAssetPrice(usdxAssetId) * 2);
+    oracle.setAssetPrice(wbtcAssetId, oracle.getAssetPrice(wbtcAssetId) * 2);
 
-    // updated health factor
+    // same health factor
     healthFactor = ISpoke(spoke1).getHealthFactor(alice);
-    // expectedHealthFactor = _calculateHealthFactor(assetIds);
-    assertEq(healthFactor, 2 * WadRayMath.WAD, 'wrong final health factor');
+    assertEq(healthFactor, expectedHealthFactor, 'wrong health factor final');
   }
 
-  function _calculateHealthFactor(
+  struct HFCalcLocal {
+    uint256 totalCollateral;
+    uint256 totalDebt;
+    uint256 avgLiquidationThreshold;
+    uint256 assetId;
+    uint256 i;
+    uint256 assetPrice;
+    uint256 assetUnit;
+    uint256 userCollateral;
+  }
+  function _calculateExpectedHealthFactor(
     Spoke spoke,
     address user,
     uint256[] memory reserveIds
-  ) internal view returns (uint256) {
-    uint256 totalCollateral = 0;
-    uint256 totalDebt = 0;
-    uint256 avgLiquidationThreshold = 0;
-    for (uint256 i = 0; i < reserveIds.length; i++) {
-      // uint256 reserveId = reserveIds[i];
-      // uint256 assetPrice = oracle.getAssetPrice(assetId);
-      // uint256 userCollateral = hub.convertToAssets(
-      //   assetId,
-      //   spoke1.getUserSupplyAmount(reserveId, alice)
-      // ) * assetPrice;
-      // totalCollateral += userCollateral;
-      // totalDebt += userConfig.debt * assetPrice;
-      // avgLiquidationThreshold +=
-      //   userCollateral *
-      //   spoke1.getLiquidationThreshold(reserveInfo[spoke1][assetId].reserveId);
+  ) internal returns (uint256) {
+    HFCalcLocal memory vars;
+
+    for (vars.i = 0; vars.i < reserveIds.length; vars.i++) {
+      (vars.assetId, ) = getAssetInfo(spoke, reserveIds[vars.i]);
+      vars.assetPrice = oracle.getAssetPrice(vars.assetId);
+      vars.assetUnit = 10 ** _getAssetConfig(spoke, reserveIds[vars.i]).decimals;
+      vars.userCollateral =
+        (hub.convertToAssets(vars.assetId, spoke1.getSuppliedAmount(reserveIds[vars.i], user)) *
+          vars.assetPrice) /
+        vars.assetUnit;
+      vars.totalCollateral += vars.userCollateral;
+
+      vars.totalDebt +=
+        (spoke.getUserCumulativeDebt(reserveIds[vars.i], user) * vars.assetPrice) /
+        vars.assetUnit;
+      vars.avgLiquidationThreshold +=
+        vars.userCollateral *
+        spoke1.getLiquidationThreshold(reserveIds[vars.i]);
     }
 
-    avgLiquidationThreshold = totalCollateral != 0 ? avgLiquidationThreshold / totalCollateral : 0;
+    vars.avgLiquidationThreshold = vars.totalCollateral != 0
+      ? vars.avgLiquidationThreshold / vars.totalCollateral
+      : 0;
     return
-      totalDebt == 0
+      vars.totalDebt == 0
         ? type(uint256).max
-        : (totalCollateral.percentMul(avgLiquidationThreshold)).wadDiv(totalDebt);
+        : (vars.totalCollateral.percentMul(vars.avgLiquidationThreshold)).wadDiv(vars.totalDebt);
   }
 
   function _daiReserveId(Spoke spoke) internal view returns (uint256) {
     return spokeInfo[spoke].dai.reserveId;
+  }
+
+  function getAssetInfo(Spoke spoke, uint256 reserveId) internal view returns (uint256, IERC20) {
+    DataTypes.Reserve memory reserve = spoke.getReserve(reserveId);
+    return (reserve.assetId, IERC20(reserve.asset));
+  }
+
+  function _getAssetConfig(
+    Spoke spoke,
+    uint256 reserveId
+  ) internal returns (DataTypes.AssetConfig memory) {
+    (uint256 assetId, ) = getAssetInfo(spoke, reserveId);
+    return hub.getAsset(assetId).config;
   }
 }
