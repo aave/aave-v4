@@ -50,64 +50,44 @@ contract SpokeBase is Base {
   // increase share conversion index on given reserve
   // bob supplies borrow asset
   // alice supply (weth) collateral asset, borrow asset, skip 1 year to increase index
-  /// @return supplyShares of collateral asset
-  /// @return supplyShares of borrowed asset
+  /// @return supply amount of collateral asset
+  /// @return supply shares of collateral asset
+  /// @return borrow amount of borrowed asset
+  /// @return supply shares of borrowed asset
+  /// @return supply amount of borrowed asset
   function _increaseReserveIndex(
     Spoke spoke,
     uint256 reserveId
   ) internal returns (uint256, uint256, uint256, uint256, uint256) {
     SupplyBorrowLocal memory state;
-    TestReserve memory collateral;
-    TestReserve memory borrow;
 
+    TestReserve memory collateral;
     collateral.reserveId = wethReserveId(spoke);
     collateral.supplyAmount = 1_000e18;
     collateral.supplier = alice;
+
+    TestReserve memory borrow;
     borrow.reserveId = reserveId;
     borrow.supplier = bob;
     borrow.borrower = alice;
     borrow.supplyAmount = 100e18;
     borrow.borrowAmount = borrow.supplyAmount / 2;
-    (state.borrowReserveAssetId, ) = getAssetInfo(spoke, reserveId);
-    state.borrowSupplyShares = hub.convertToShares(state.borrowReserveAssetId, borrow.supplyAmount);
 
-    // supply collateral asset
-    Utils.spokeSupply({
+    (state.borrowReserveAssetId, ) = getAssetInfo(spoke, borrow.reserveId);
+    (state.collateralSupplyShares, state.borrowSupplyShares) = _executeSpokeSupplyAndBorrow({
       spoke: spoke,
-      reserveId: collateral.reserveId,
-      user: collateral.supplier,
-      amount: collateral.supplyAmount,
-      onBehalfOf: collateral.supplier
-    });
-    setUsingAsCollateral({
-      spoke: spoke,
-      user: collateral.supplier,
-      reserveId: collateral.reserveId,
-      usingAsCollateral: true
+      collateral: collateral,
+      borrow: borrow,
+      rate: 0,
+      isMockRate: false,
+      skipTime: 365 days
     });
 
-    // other user supplies enough asset to be drawn
-    Utils.spokeSupply({
-      spoke: spoke,
-      reserveId: reserveId,
-      user: borrow.supplier,
-      amount: borrow.supplyAmount,
-      onBehalfOf: borrow.supplier
-    });
-
-    // borrower borrows asset
-    Utils.spokeBorrow({
-      spoke: spoke,
-      reserveId: reserveId,
-      user: borrow.borrower,
-      amount: borrow.borrowAmount,
-      onBehalfOf: borrow.borrower
-    });
-
-    // skip time to increase index
-    skip(365 days);
-    (uint256 assetId, ) = getAssetInfo(spoke, reserveId);
-    assertGt(borrow.borrowAmount, hub.convertToShares(assetId, borrow.borrowAmount));
+    // index has increased, ie now the shares are less than the amount
+    assertGt(
+      borrow.supplyAmount,
+      hub.convertToShares(state.borrowReserveAssetId, borrow.supplyAmount)
+    );
 
     return (
       collateral.supplyAmount,
@@ -121,20 +101,23 @@ contract SpokeBase is Base {
   // supply collateral asset, borrow asset, skip time to increase index on borrow asset
   /// @return supplyShares of collateral asset
   /// @return supplyShares of borrowed asset
-  function _executeSupplyAndBorrow(
+  function _executeSpokeSupplyAndBorrow(
     Spoke spoke,
     TestReserve memory collateral,
     TestReserve memory borrow,
     uint256 rate,
+    bool isMockRate,
     uint256 skipTime
   ) internal returns (uint256, uint256) {
     SupplyBorrowLocal memory state;
 
-    vm.mockCall(
-      address(irStrategy),
-      IReserveInterestRateStrategy.calculateInterestRates.selector,
-      abi.encode(rate)
-    );
+    if (isMockRate) {
+      vm.mockCall(
+        address(irStrategy),
+        IReserveInterestRateStrategy.calculateInterestRates.selector,
+        abi.encode(rate)
+      );
+    }
 
     (state.collateralReserveAssetId, ) = getAssetInfo(spoke, collateral.reserveId);
     (state.borrowReserveAssetId, ) = getAssetInfo(spoke, borrow.reserveId);

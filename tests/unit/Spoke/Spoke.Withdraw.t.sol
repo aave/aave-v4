@@ -618,7 +618,7 @@ contract SpokeWithdrawTest is SpokeBase {
     state.rate = params.rate;
     state.timestamp = vm.getBlockTimestamp();
 
-    (, state.supplyShares) = _executeSupplyAndBorrow({
+    (, state.supplyShares) = _executeSpokeSupplyAndBorrow({
       spoke: spoke1,
       collateral: TestReserve({
         reserveId: state.collateralReserveId,
@@ -635,6 +635,7 @@ contract SpokeWithdrawTest is SpokeBase {
         borrower: alice
       }),
       rate: state.rate,
+      isMockRate: true,
       skipTime: params.skipTime
     });
 
@@ -875,7 +876,7 @@ contract SpokeWithdrawTest is SpokeBase {
     state.rate = params.rate;
     state.timestamp = vm.getBlockTimestamp();
 
-    (, state.supplyShares) = _executeSupplyAndBorrow({
+    (, state.supplyShares) = _executeSpokeSupplyAndBorrow({
       spoke: spoke1,
       collateral: TestReserve({
         reserveId: state.collateralReserveId,
@@ -892,6 +893,7 @@ contract SpokeWithdrawTest is SpokeBase {
         borrower: alice
       }),
       rate: state.rate,
+      isMockRate: true,
       skipTime: params.skipTime
     });
 

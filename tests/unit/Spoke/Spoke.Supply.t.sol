@@ -280,7 +280,7 @@ contract SpokeSupplyTest is SpokeBase {
     });
 
     // increase index on reserveId
-    _executeSupplyAndBorrow({
+    _executeSpokeSupplyAndBorrow({
       spoke: spoke1,
       collateral: TestReserve({
         reserveId: wethReserveId(spoke1),
@@ -297,6 +297,7 @@ contract SpokeSupplyTest is SpokeBase {
         borrower: alice
       }),
       rate: rate,
+      isMockRate: true,
       skipTime: skipTime
     });
 
@@ -460,7 +461,7 @@ contract SpokeSupplyTest is SpokeBase {
     (uint256 assetId, IERC20 asset) = getAssetInfo(spoke1, reserveId);
 
     // alice supplies usdx as collateral, borrows dai
-    _executeSupplyAndBorrow({
+    _executeSpokeSupplyAndBorrow({
       spoke: spoke1,
       collateral: TestReserve({
         reserveId: wethReserveId(spoke1),
@@ -477,6 +478,7 @@ contract SpokeSupplyTest is SpokeBase {
         supplier: bob
       }),
       rate: rate,
+      isMockRate: true,
       skipTime: skipTime
     });
 
