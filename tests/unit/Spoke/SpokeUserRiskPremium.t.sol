@@ -549,16 +549,16 @@ contract SpokeUserRiskPremiumTest is Base {
     uint256 totalBorrowAmount = MAX_SUPPLY_AMOUNT / 2;
 
     /// @dev The multiplications & divisions are to normalize asset values to stablecoin prices to ensure we stay under limits
-    wbtcSupplyAmount = bound(wbtcSupplyAmount, 0, totalBorrowAmount / 50000);
+    wbtcSupplyAmount = bound(wbtcSupplyAmount, 0, totalBorrowAmount / 50000e10);
     wethSupplyAmount = bound(
       wethSupplyAmount,
       0,
-      (totalBorrowAmount - wbtcSupplyAmount * 50000) / 2000
+      (totalBorrowAmount - wbtcSupplyAmount * 50000e10) / 2000
     );
     daiSupplyAmount = bound(
       daiSupplyAmount,
       0,
-      totalBorrowAmount - wbtcSupplyAmount * 50000 - wethSupplyAmount * 2000
+      totalBorrowAmount - wbtcSupplyAmount * 50000e10 - wethSupplyAmount * 2000
     );
 
     TestInfo memory params;
@@ -570,29 +570,33 @@ contract SpokeUserRiskPremiumTest is Base {
 
     params.daiSupplyAmount = daiSupplyAmount;
     params.usdxSupplyAmount =
-      totalBorrowAmount -
-      wbtcSupplyAmount *
-      50000 -
-      wethSupplyAmount *
-      2000 -
-      daiSupplyAmount;
+      (totalBorrowAmount -
+        wbtcSupplyAmount *
+        50000e10 -
+        wethSupplyAmount *
+        2000 -
+        daiSupplyAmount) /
+      1e12;
     params.wethSupplyAmount = wethSupplyAmount;
     params.wbtcSupplyAmount = wbtcSupplyAmount;
 
     vm.assume(
       params.wbtcSupplyAmount *
-        50000 +
+        50000e10 +
         params.wethSupplyAmount *
         2000 +
         params.daiSupplyAmount +
-        params.usdxSupplyAmount <=
+        params.usdxSupplyAmount *
+        1e12 <=
         totalBorrowAmount
     );
     assertLe(
-      params.wbtcSupplyAmount +
+      params.wbtcSupplyAmount *
+        50000e10 +
         params.wethSupplyAmount +
         params.daiSupplyAmount +
-        params.usdxSupplyAmount,
+        params.usdxSupplyAmount *
+        1e12,
       totalBorrowAmount,
       'supply amounts'
     );
@@ -600,11 +604,12 @@ contract SpokeUserRiskPremiumTest is Base {
     // Borrow all value in dai2. Each wbtc is 50000 stablecoins, weth is 2000
     params.dai2BorrowAmount =
       params.daiSupplyAmount +
-      params.usdxSupplyAmount +
+      params.usdxSupplyAmount *
+      1e12 +
       params.wethSupplyAmount *
       2000 +
       params.wbtcSupplyAmount *
-      50000;
+      50000e10;
 
     params.daiLP = spoke2.getLiquidityPremium(params.daiReserveId);
     params.wethLP = spoke2.getLiquidityPremium(params.wethReserveId);
@@ -646,28 +651,18 @@ contract SpokeUserRiskPremiumTest is Base {
     Utils.spokeBorrow(spoke2, params.dai2ReserveId, bob, params.dai2BorrowAmount, bob);
 
     // wbtc, weth, dai, and usdx will each cover part of the debt
-    uint256 expectedUserRiskPremium = (
-      (params.wbtcLP *
-        params.wbtcSupplyAmount *
-        oracle.getAssetPrice(wbtcAssetId) +
-        params.wethLP *
-        params.wethSupplyAmount *
-        oracle.getAssetPrice(wethAssetId) +
-        params.daiLP *
-        params.daiSupplyAmount *
-        oracle.getAssetPrice(daiAssetId) +
-        params.usdxLP *
-        params.usdxSupplyAmount *
-        oracle.getAssetPrice(usdxAssetId))
-    ) /
-      (params.wbtcSupplyAmount *
-        oracle.getAssetPrice(wbtcAssetId) +
-        params.wethSupplyAmount *
-        oracle.getAssetPrice(wethAssetId) +
-        params.daiSupplyAmount *
-        oracle.getAssetPrice(daiAssetId) +
-        params.usdxSupplyAmount *
-        oracle.getAssetPrice(usdxAssetId));
+    uint256 expectedUserRiskPremium = ((params.wbtcLP *
+      _normalizedValue(params.wbtcSupplyAmount, wbtcAssetId) +
+      params.wethLP *
+      _normalizedValue(params.wethSupplyAmount, wethAssetId) +
+      params.daiLP *
+      _normalizedValue(params.daiSupplyAmount, daiAssetId) +
+      params.usdxLP *
+      _normalizedValue(params.usdxSupplyAmount, usdxAssetId)) /
+      (_normalizedValue(params.wbtcSupplyAmount, wbtcAssetId) +
+        _normalizedValue(params.wethSupplyAmount, wethAssetId) +
+        _normalizedValue(params.daiSupplyAmount, daiAssetId) +
+        _normalizedValue(params.usdxSupplyAmount, usdxAssetId)));
 
     assertApproxEqAbs(
       spoke2.getUserRiskPremium(bob),
@@ -687,16 +682,16 @@ contract SpokeUserRiskPremiumTest is Base {
 
     newUsdxPrice = bound(newUsdxPrice, 0, 2000e8);
     /// @dev The multiplications & divisions are to normalize asset values to stablecoin prices to ensure we stay under limits
-    wbtcSupplyAmount = bound(wbtcSupplyAmount, 0, totalBorrowAmount / 50000);
+    wbtcSupplyAmount = bound(wbtcSupplyAmount, 0, totalBorrowAmount / 50000e10);
     wethSupplyAmount = bound(
       wethSupplyAmount,
       0,
-      (totalBorrowAmount - wbtcSupplyAmount * 50000) / 2000
+      (totalBorrowAmount - wbtcSupplyAmount * 50000e10) / 2000
     );
     daiSupplyAmount = bound(
       daiSupplyAmount,
       0,
-      totalBorrowAmount - wbtcSupplyAmount * 50000 - wethSupplyAmount * 2000
+      totalBorrowAmount - wbtcSupplyAmount * 50000e10 - wethSupplyAmount * 2000
     );
 
     TestInfo memory params;
@@ -709,28 +704,31 @@ contract SpokeUserRiskPremiumTest is Base {
     params.daiSupplyAmount = daiSupplyAmount;
     params.wethSupplyAmount = wethSupplyAmount;
     params.usdxSupplyAmount =
-      totalBorrowAmount -
-      wbtcSupplyAmount *
-      50000 -
-      wethSupplyAmount *
-      2000 -
-      daiSupplyAmount;
+      (totalBorrowAmount -
+        wbtcSupplyAmount *
+        50000e10 -
+        wethSupplyAmount *
+        2000 -
+        daiSupplyAmount) /
+      1e12;
     params.wbtcSupplyAmount = wbtcSupplyAmount;
 
     vm.assume(
       params.wbtcSupplyAmount *
-        50000 +
+        50000e10 +
         params.wethSupplyAmount *
         2000 +
         params.daiSupplyAmount +
-        params.usdxSupplyAmount <=
+        params.usdxSupplyAmount *
+        1e12 <=
         totalBorrowAmount
     );
     assertLe(
       params.wbtcSupplyAmount +
         params.wethSupplyAmount +
         params.daiSupplyAmount +
-        params.usdxSupplyAmount,
+        params.usdxSupplyAmount *
+        1e12,
       totalBorrowAmount,
       'supply amounts'
     );
@@ -738,11 +736,12 @@ contract SpokeUserRiskPremiumTest is Base {
     // Borrow all value in dai2. Each wbtc is 50000 stablecoins, weth is 2000
     params.dai2BorrowAmount =
       params.daiSupplyAmount +
-      params.usdxSupplyAmount +
+      params.usdxSupplyAmount *
+      1e12 +
       params.wethSupplyAmount *
       2000 +
       params.wbtcSupplyAmount *
-      50000;
+      50000e10;
 
     params.daiLP = spoke2.getLiquidityPremium(params.daiReserveId);
     params.wethLP = spoke2.getLiquidityPremium(params.wethReserveId);
@@ -785,28 +784,18 @@ contract SpokeUserRiskPremiumTest is Base {
     Utils.spokeBorrow(spoke2, params.dai2ReserveId, bob, params.dai2BorrowAmount, bob);
 
     // wbtc, weth, dai, and usdx will each cover part of the debt
-    uint256 expectedUserRiskPremium = (
-      (params.wbtcLP *
-        params.wbtcSupplyAmount *
-        oracle.getAssetPrice(wbtcAssetId) +
-        params.wethLP *
-        params.wethSupplyAmount *
-        oracle.getAssetPrice(wethAssetId) +
-        params.daiLP *
-        params.daiSupplyAmount *
-        oracle.getAssetPrice(daiAssetId) +
-        params.usdxLP *
-        params.usdxSupplyAmount *
-        oracle.getAssetPrice(usdxAssetId))
-    ) /
-      (params.wbtcSupplyAmount *
-        oracle.getAssetPrice(wbtcAssetId) +
-        params.wethSupplyAmount *
-        oracle.getAssetPrice(wethAssetId) +
-        params.daiSupplyAmount *
-        oracle.getAssetPrice(daiAssetId) +
-        params.usdxSupplyAmount *
-        oracle.getAssetPrice(usdxAssetId));
+    uint256 expectedUserRiskPremium = ((params.wbtcLP *
+      _normalizedValue(params.wbtcSupplyAmount, wbtcAssetId) +
+      params.wethLP *
+      _normalizedValue(params.wethSupplyAmount, wethAssetId) +
+      params.daiLP *
+      _normalizedValue(params.daiSupplyAmount, daiAssetId) +
+      params.usdxLP *
+      _normalizedValue(params.usdxSupplyAmount, usdxAssetId)) /
+      (_normalizedValue(params.wbtcSupplyAmount, wbtcAssetId) +
+        _normalizedValue(params.wethSupplyAmount, wethAssetId) +
+        _normalizedValue(params.daiSupplyAmount, daiAssetId) +
+        _normalizedValue(params.usdxSupplyAmount, usdxAssetId)));
 
     assertApproxEqAbs(
       spoke2.getUserRiskPremium(bob),
@@ -829,33 +818,26 @@ contract SpokeUserRiskPremiumTest is Base {
     } else {
       // Otherwise, the difference from old contribution becomes dai2 contribution (100% lp)
       uint256 dai2Contribution = params.usdxSupplyAmount *
-        1e8 -
+        1e8 *
+        1e12 -
         params.usdxSupplyAmount *
+        1e12 *
         newUsdxPrice;
-      expectedUserRiskPremium =
-        (params.wbtcLP *
-          params.wbtcSupplyAmount *
-          oracle.getAssetPrice(wbtcAssetId) +
-          params.wethLP *
-          params.wethSupplyAmount *
-          oracle.getAssetPrice(wethAssetId) +
-          params.daiLP *
-          params.daiSupplyAmount *
-          oracle.getAssetPrice(daiAssetId) +
-          params.usdxLP *
-          params.usdxSupplyAmount *
-          newUsdxPrice +
-          dai2Contribution *
-          params.dai2LP) /
-        (params.wbtcSupplyAmount *
-          oracle.getAssetPrice(wbtcAssetId) +
-          params.wethSupplyAmount *
-          oracle.getAssetPrice(wethAssetId) +
-          params.daiSupplyAmount *
-          oracle.getAssetPrice(daiAssetId) +
-          params.usdxSupplyAmount *
-          newUsdxPrice +
-          dai2Contribution);
+      expectedUserRiskPremium = ((params.wbtcLP *
+        _normalizedValue(params.wbtcSupplyAmount, wbtcAssetId) +
+        params.wethLP *
+        _normalizedValue(params.wethSupplyAmount, wethAssetId) +
+        params.daiLP *
+        _normalizedValue(params.daiSupplyAmount, daiAssetId) +
+        params.usdxLP *
+        _normalizedValue(params.usdxSupplyAmount, usdxAssetId) +
+        params.dai2LP *
+        _normalizedValue(dai2Contribution, daiAssetId)) /
+        (_normalizedValue(params.wbtcSupplyAmount, wbtcAssetId) +
+          _normalizedValue(params.wethSupplyAmount, wethAssetId) +
+          _normalizedValue(params.daiSupplyAmount, daiAssetId) +
+          _normalizedValue(params.usdxSupplyAmount, usdxAssetId) +
+          _normalizedValue(dai2Contribution, daiAssetId)));
     }
   }
 
@@ -870,16 +852,16 @@ contract SpokeUserRiskPremiumTest is Base {
     // Bound LP to below dai2 so asset is still used in rp calc
     newLpValue = bound(newLpValue, 0, 99_99);
     /// @dev The multiplications & divisions are to normalize asset values to stablecoin prices to ensure we stay under limits
-    wbtcSupplyAmount = bound(wbtcSupplyAmount, 0, totalBorrowAmount / 50000);
+    wbtcSupplyAmount = bound(wbtcSupplyAmount, 0, totalBorrowAmount / 50000e10);
     wethSupplyAmount = bound(
       wethSupplyAmount,
       0,
-      (totalBorrowAmount - wbtcSupplyAmount * 50000) / 2000
+      (totalBorrowAmount - wbtcSupplyAmount * 50000e10) / 2000
     );
     daiSupplyAmount = bound(
       daiSupplyAmount,
       0,
-      totalBorrowAmount - wbtcSupplyAmount * 50000 - wethSupplyAmount * 2000
+      totalBorrowAmount - wbtcSupplyAmount * 50000e10 - wethSupplyAmount * 2000
     );
 
     TestInfo memory params;
@@ -892,28 +874,33 @@ contract SpokeUserRiskPremiumTest is Base {
     params.daiSupplyAmount = daiSupplyAmount;
     params.wethSupplyAmount = wethSupplyAmount;
     params.usdxSupplyAmount =
-      totalBorrowAmount -
-      wbtcSupplyAmount *
-      50000 -
-      wethSupplyAmount *
-      2000 -
-      daiSupplyAmount;
+      (totalBorrowAmount -
+        wbtcSupplyAmount *
+        50000e10 -
+        wethSupplyAmount *
+        2000 -
+        daiSupplyAmount) /
+      1e12;
     params.wbtcSupplyAmount = wbtcSupplyAmount;
 
     vm.assume(
       params.wbtcSupplyAmount *
-        50000 +
+        50000e10 +
         params.wethSupplyAmount *
         2000 +
         params.daiSupplyAmount +
-        params.usdxSupplyAmount <=
+        params.usdxSupplyAmount *
+        1e12 <=
         totalBorrowAmount
     );
     assertLe(
-      params.wbtcSupplyAmount +
-        params.wethSupplyAmount +
+      params.wbtcSupplyAmount *
+        5000e10 +
+        params.wethSupplyAmount *
+        2000 +
         params.daiSupplyAmount +
-        params.usdxSupplyAmount,
+        params.usdxSupplyAmount *
+        1e12,
       totalBorrowAmount,
       'supply amounts'
     );
@@ -921,11 +908,12 @@ contract SpokeUserRiskPremiumTest is Base {
     // Borrow all value in dai2. Each wbtc is 50000 stablecoins, weth is 2000
     params.dai2BorrowAmount =
       params.daiSupplyAmount +
-      params.usdxSupplyAmount +
+      params.usdxSupplyAmount *
+      1e12 +
       params.wethSupplyAmount *
       2000 +
       params.wbtcSupplyAmount *
-      50000;
+      50000e10;
 
     params.daiLP = spoke2.getLiquidityPremium(params.daiReserveId);
     params.wethLP = spoke2.getLiquidityPremium(params.wethReserveId);
@@ -968,28 +956,18 @@ contract SpokeUserRiskPremiumTest is Base {
     Utils.spokeBorrow(spoke2, params.dai2ReserveId, bob, params.dai2BorrowAmount, bob);
 
     // wbtc, weth, dai, and usdx will each cover part of the debt
-    uint256 expectedUserRiskPremium = (
-      (params.wbtcLP *
-        params.wbtcSupplyAmount *
-        oracle.getAssetPrice(wbtcAssetId) +
-        params.wethLP *
-        params.wethSupplyAmount *
-        oracle.getAssetPrice(wethAssetId) +
-        params.daiLP *
-        params.daiSupplyAmount *
-        oracle.getAssetPrice(daiAssetId) +
-        params.usdxLP *
-        params.usdxSupplyAmount *
-        oracle.getAssetPrice(usdxAssetId))
-    ) /
-      (params.wbtcSupplyAmount *
-        oracle.getAssetPrice(wbtcAssetId) +
-        params.wethSupplyAmount *
-        oracle.getAssetPrice(wethAssetId) +
-        params.daiSupplyAmount *
-        oracle.getAssetPrice(daiAssetId) +
-        params.usdxSupplyAmount *
-        oracle.getAssetPrice(usdxAssetId));
+    uint256 expectedUserRiskPremium = ((params.wbtcLP *
+      _normalizedValue(params.wbtcSupplyAmount, wbtcAssetId) +
+      params.wethLP *
+      _normalizedValue(params.wethSupplyAmount, wethAssetId) +
+      params.daiLP *
+      _normalizedValue(params.daiSupplyAmount, daiAssetId) +
+      params.usdxLP *
+      _normalizedValue(params.usdxSupplyAmount, usdxAssetId)) /
+      (_normalizedValue(params.wbtcSupplyAmount, wbtcAssetId) +
+        _normalizedValue(params.wethSupplyAmount, wethAssetId) +
+        _normalizedValue(params.daiSupplyAmount, daiAssetId) +
+        _normalizedValue(params.usdxSupplyAmount, usdxAssetId)));
 
     assertApproxEqAbs(
       spoke2.getUserRiskPremium(bob),
@@ -1010,29 +988,18 @@ contract SpokeUserRiskPremiumTest is Base {
       })
     );
 
-    expectedUserRiskPremium =
-      (
-        (newLpValue *
-          params.wbtcSupplyAmount *
-          oracle.getAssetPrice(wbtcAssetId) +
-          params.wethLP *
-          params.wethSupplyAmount *
-          oracle.getAssetPrice(wethAssetId) +
-          params.daiLP *
-          params.daiSupplyAmount *
-          oracle.getAssetPrice(daiAssetId) +
-          params.usdxLP *
-          params.usdxSupplyAmount *
-          oracle.getAssetPrice(usdxAssetId))
-      ) /
-      (params.wbtcSupplyAmount *
-        oracle.getAssetPrice(wbtcAssetId) +
-        params.wethSupplyAmount *
-        oracle.getAssetPrice(wethAssetId) +
-        params.daiSupplyAmount *
-        oracle.getAssetPrice(daiAssetId) +
-        params.usdxSupplyAmount *
-        oracle.getAssetPrice(usdxAssetId));
+    expectedUserRiskPremium = ((newLpValue *
+      _normalizedValue(params.wbtcSupplyAmount, wbtcAssetId) +
+      params.wethLP *
+      _normalizedValue(params.wethSupplyAmount, wethAssetId) +
+      params.daiLP *
+      _normalizedValue(params.daiSupplyAmount, daiAssetId) +
+      params.usdxLP *
+      _normalizedValue(params.usdxSupplyAmount, usdxAssetId)) /
+      (_normalizedValue(params.wbtcSupplyAmount, wbtcAssetId) +
+        _normalizedValue(params.wethSupplyAmount, wethAssetId) +
+        _normalizedValue(params.daiSupplyAmount, daiAssetId) +
+        _normalizedValue(params.usdxSupplyAmount, usdxAssetId)));
 
     assertApproxEqAbs(
       spoke2.getUserRiskPremium(bob),
