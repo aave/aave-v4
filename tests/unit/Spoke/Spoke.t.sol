@@ -1,10 +1,10 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.0;
 
-import 'tests/BaseTest.t.sol';
+import 'tests/Base.t.sol';
 import {IERC20Errors} from 'src/dependencies/openzeppelin/IERC20Errors.sol';
 
-contract SpokeTest is BaseTest {
+contract SpokeTest is Base {
   using SharesMath for uint256;
   using WadRayMath for uint256;
 
@@ -21,7 +21,10 @@ contract SpokeTest is BaseTest {
     deal(address(tokenList.dai), bob, amount);
     Utils.spokeSupply(spoke1, spokeInfo[spoke1].dai.reserveId, bob, amount, bob);
 
-    Spoke.UserConfig memory user1Data = spoke1.getUser(spokeInfo[spoke1].dai.reserveId, bob);
+    DataTypes.UserPosition memory user1Data = spoke1.getUserPosition(
+      spokeInfo[spoke1].dai.reserveId,
+      bob
+    );
 
     // assertEq(dai.balanceOf(address(spoke1)), 0, 'wrong spoke token balance pre-withdraw');
     // assertEq(dai.balanceOf(address(hub)), amount, 'wrong hub token balance pre-withdraw');
@@ -35,11 +38,11 @@ contract SpokeTest is BaseTest {
 
     vm.startPrank(bob);
     vm.expectEmit(address(spoke1));
-    emit Withdrawn(spokeInfo[spoke1].dai.reserveId, amount, bob);
+    emit ISpoke.Withdrawn(spokeInfo[spoke1].dai.reserveId, bob, amount);
     spoke1.withdraw(spokeInfo[spoke1].dai.reserveId, amount, bob);
     vm.stopPrank();
 
-    user1Data = spoke1.getUser(spokeInfo[spoke1].dai.reserveId, bob);
+    user1Data = spoke1.getUserPosition(spokeInfo[spoke1].dai.reserveId, bob);
 
     // assertEq(dai.balanceOf(address(spoke1)), 0, 'wrong spoke token balance post-withdraw');
     // assertEq(dai.balanceOf(address(hub)), 0, 'wrong hub token balance post-withdraw');
@@ -61,11 +64,11 @@ contract SpokeTest is BaseTest {
 
     // USER1 supply eth
     deal(address(eth), USER1, ethAmount);
-    Utils.spokeSupply(hub, spoke1, ethId, USER1, ethAmount, USER1);
+    Utils.spokeSupply(spoke1, ethId, USER1, ethAmount, USER1);
 
     // USER2 supply dai
     deal(address(dai), USER2, daiAmount);
-    Utils.spokeSupply(hub, spoke1, daiId, USER2, daiAmount, USER2);
+    Utils.spokeSupply(spoke1, daiId, USER2, daiAmount, USER2);
 
     // USER1 borrow half of dai reserve liquidity
     Utils.borrow(spoke1, daiId, USER1, drawAmount, USER1);
@@ -92,11 +95,11 @@ contract SpokeTest is BaseTest {
 
     // USER1 supply eth
     deal(address(eth), USER1, ethAmount);
-    Utils.spokeSupply(hub, spoke1, ethId, USER1, ethAmount, USER1);
+    Utils.spokeSupply(spoke1, ethId, USER1, ethAmount, USER1);
 
     // USER2 supply dai
     deal(address(dai), USER2, daiAmount);
-    Utils.spokeSupply(hub, spoke1, daiId, USER2, daiAmount, USER2);
+    Utils.spokeSupply(spoke1, daiId, USER2, daiAmount, USER2);
 
     // USER1 borrow half of dai reserve liquidity
     Utils.borrow(spoke1, daiId, USER1, drawAmount, USER1);
@@ -109,10 +112,10 @@ contract SpokeTest is BaseTest {
     ISpoke(address(spoke1)).repay(daiId, restoreAmount);
     vm.stopPrank();
 
-    Spoke.UserConfig memory user1EthData = spoke1.getUser(ethId, USER1);
-    Spoke.UserConfig memory user2EthData = spoke1.getUser(ethId, USER2);
-    Spoke.UserConfig memory user1DaiData = spoke1.getUser(daiId, USER1);
-    Spoke.UserConfig memory user2DaiData = spoke1.getUser(daiId, USER2);
+    Spoke.UserPosition memory user1EthData = spoke1.getUserPosition(ethId, USER1);
+    Spoke.UserPosition memory user2EthData = spoke1.getUserPosition(ethId, USER2);
+    Spoke.UserPosition memory user1DaiData = spoke1.getUserPosition(daiId, USER1);
+    Spoke.UserPosition memory user2DaiData = spoke1.getUserPosition(daiId, USER2);
 
     // assertEq(
     //   user1EthData.supplyShares,
@@ -149,9 +152,9 @@ contract SpokeTest is BaseTest {
   function test_updateReserveConfig() public {
     uint256 daiId = 0;
 
-    Spoke.Reserve memory reserveData = spoke1.getReserve(daiId);
+    DataTypes.Reserve memory reserveData = spoke1.getReserve(daiId);
 
-    Spoke.ReserveConfig memory newReserveConfig = Spoke.ReserveConfig({
+    DataTypes.ReserveConfig memory newReserveConfig = DataTypes.ReserveConfig({
       lt: reserveData.config.lt + 1,
       lb: reserveData.config.lb + 1,
       liquidityPremium: 0,
@@ -159,7 +162,7 @@ contract SpokeTest is BaseTest {
       collateral: !reserveData.config.collateral
     });
     vm.expectEmit(address(spoke1));
-    emit ReserveConfigUpdated(
+    emit ISpoke.ReserveConfigUpdated(
       daiId,
       newReserveConfig.lt,
       newReserveConfig.lb,
@@ -185,11 +188,12 @@ contract SpokeTest is BaseTest {
   function test_setUsingAsCollateral_revertsWith_reserve_not_collateral() public {
     bool newCollateral = false;
     bool usingAsCollateral = true;
-    Utils.updateCollateral(spoke1, daiAssetId, newCollateral);
+    uint256 daiReserveId = spokeInfo[spoke1].dai.reserveId;
+    updateCollateral(spoke1, daiReserveId, newCollateral);
 
     vm.prank(bob);
-    vm.expectRevert(TestErrors.RESERVE_NOT_COLLATERAL);
-    ISpoke(spoke1).setUsingAsCollateral(daiAssetId, usingAsCollateral);
+    vm.expectRevert(abi.encodeWithSelector(ISpoke.ReserveNotCollateral.selector, daiReserveId));
+    ISpoke(spoke1).setUsingAsCollateral(daiReserveId, usingAsCollateral);
   }
 
   function test_setUsingAsCollateral() public {
@@ -198,7 +202,7 @@ contract SpokeTest is BaseTest {
     uint256 daiAmount = 100e18;
 
     // ensure DAI is allowed as collateral
-    Utils.updateCollateral(spoke1, spokeInfo[spoke1].dai.reserveId, newCollateral);
+    updateCollateral(spoke1, spokeInfo[spoke1].dai.reserveId, newCollateral);
 
     // Bob supply dai into spoke1
     deal(address(tokenList.dai), bob, daiAmount);
@@ -206,10 +210,13 @@ contract SpokeTest is BaseTest {
 
     vm.prank(bob);
     vm.expectEmit(address(spoke1));
-    emit UsingAsCollateral(spokeInfo[spoke1].dai.reserveId, usingAsCollateral, bob);
+    emit ISpoke.UsingAsCollateral(spokeInfo[spoke1].dai.reserveId, bob, usingAsCollateral);
     ISpoke(spoke1).setUsingAsCollateral(spokeInfo[spoke1].dai.reserveId, usingAsCollateral);
 
-    Spoke.UserConfig memory userData = spoke1.getUser(spokeInfo[spoke1].dai.reserveId, bob);
+    DataTypes.UserPosition memory userData = spoke1.getUserPosition(
+      spokeInfo[spoke1].dai.reserveId,
+      bob
+    );
     assertEq(userData.usingAsCollateral, usingAsCollateral, 'wrong usingAsCollateral');
   }
 }

@@ -1,9 +1,9 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.0;
 
-import '../BaseTest.t.sol';
+import '../Base.t.sol';
 
-contract HealthFactorTest_ToMigrate is BaseTest {
+contract HealthFactorTest_ToMigrate is Base {
   using SharesMath for uint256;
   using WadRayMath for uint256;
   using PercentageMath for uint256;
@@ -25,12 +25,12 @@ contract HealthFactorTest_ToMigrate is BaseTest {
     bool usingAsCollateral = true;
 
     // ensure DAI allowed as collateral
-    Utils.updateCollateral(spoke1, spokeInfo[spoke1].dai.reserveId, newCollateral);
+    updateCollateral(spoke1, spokeInfo[spoke1].dai.reserveId, newCollateral);
 
     // USER1 supply dai into spoke1
     deal(address(tokenList.dai), USER1, daiAmount);
     Utils.spokeSupply(spoke1, spokeInfo[spoke1].dai.reserveId, USER1, daiAmount, USER1);
-    Utils.setUsingAsCollateral(spoke1, USER1, spokeInfo[spoke1].dai.reserveId, usingAsCollateral);
+    setUsingAsCollateral(spoke1, USER1, spokeInfo[spoke1].dai.reserveId, usingAsCollateral);
 
     uint256 healthFactor = spoke1.getHealthFactor(USER1);
     assertEq(healthFactor, type(uint256).max, 'wrong health factor');
@@ -45,22 +45,22 @@ contract HealthFactorTest_ToMigrate is BaseTest {
     bool usingAsCollateral = true;
 
     // ensure DAI/ETH allowed as collateral
-    Utils.updateCollateral(spoke1, spokeInfo[spoke1].dai.reserveId, newCollateral);
-    Utils.updateCollateral(spoke1, spokeInfo[spoke1].weth.reserveId, newCollateral);
+    updateCollateral(spoke1, spokeInfo[spoke1].dai.reserveId, newCollateral);
+    updateCollateral(spoke1, spokeInfo[spoke1].weth.reserveId, newCollateral);
 
     // set Lt to 100% for both assets
-    Utils.updateLiquidationThreshold(spoke1, spokeInfo[spoke1].dai.reserveId, 1e4);
-    Utils.updateLiquidationThreshold(spoke1, spokeInfo[spoke1].weth.reserveId, 1e4);
+    updateLiquidationThreshold(spoke1, spokeInfo[spoke1].dai.reserveId, 1e4);
+    updateLiquidationThreshold(spoke1, spokeInfo[spoke1].weth.reserveId, 1e4);
 
     // USER1 supply dai into spoke1
     deal(address(dai), USER1, daiAmount);
     Utils.spokeSupply(spoke1, spokeInfo[spoke1].dai.reserveId, USER1, daiAmount, USER1);
-    Utils.setUsingAsCollateral(spoke1, USER1, spokeInfo[spoke1].dai.reserveId, usingAsCollateral);
+    setUsingAsCollateral(spoke1, USER1, spokeInfo[spoke1].dai.reserveId, usingAsCollateral);
 
     // USER1 supply eth into spoke1
     deal(address(eth), USER1, wethAmount);
     Utils.spokeSupply(spoke1, spokeInfo[spoke1].weth.reserveId, USER1, wethAmount, USER1);
-    Utils.setUsingAsCollateral(spoke1, USER1, spokeInfo[spoke1].weth.reserveId, usingAsCollateral);
+    setUsingAsCollateral(spoke1, USER1, spokeInfo[spoke1].weth.reserveId, usingAsCollateral);
 
     // USER2 supply usdc into spoke1
     deal(address(usdc), USER2, usdcBorrowAmount);
@@ -84,18 +84,18 @@ contract HealthFactorTest_ToMigrate is BaseTest {
     bool usingAsCollateral = true;
 
     // ensure DAI/ETH allowed as collateral
-    Utils.updateCollateral(spoke1, spokeInfo[spoke1].dai.reserveId, newCollateral);
-    Utils.updateCollateral(spoke1, spokeInfo[spoke1].weth.reserveId, newCollateral);
+    updateCollateral(spoke1, spokeInfo[spoke1].dai.reserveId, newCollateral);
+    updateCollateral(spoke1, spokeInfo[spoke1].weth.reserveId, newCollateral);
 
     // USER1 supply dai into spoke1
     deal(address(tokenList.dai), USER1, daiAmount);
     Utils.spokeSupply(spoke1, spokeInfo[spoke1].dai.reserveId, USER1, daiAmount, USER1);
-    Utils.setUsingAsCollateral(spoke1, USER1, spokeInfo[spoke1].dai.reserveId, usingAsCollateral);
+    setUsingAsCollateral(spoke1, USER1, spokeInfo[spoke1].dai.reserveId, usingAsCollateral);
 
     // USER1 supply eth into spoke1
     deal(address(tokenList.weth), USER1, wethAmount);
     Utils.spokeSupply(spoke1, spokeInfo[spoke1].weth.reserveId, USER1, wethAmount, USER1);
-    Utils.setUsingAsCollateral(spoke1, USER1, spokeInfo[spoke1].weth.reserveId, usingAsCollateral);
+    setUsingAsCollateral(spoke1, USER1, spokeInfo[spoke1].weth.reserveId, usingAsCollateral);
 
     // USER2 supply usdc into spoke1
     deal(address(tokenList.usdx), USER2, usdcBorrowAmount);
@@ -142,16 +142,16 @@ contract HealthFactorTest_ToMigrate is BaseTest {
     for (uint256 i = 0; i < assetIds.length; i++) {
       uint256 assetId = assetIds[i];
       // Spoke.Reserve memory reserve = spoke1.getReserve(spokeInfo[spoke1][assetId].reserveId);
-      // Spoke.UserConfig memory userConfig = spoke1.getUser(
+      // Spoke.UserPosition memory userPosition = spoke1.getUserPosition(
       //   reserveInfo[spoke1][assetId].reserveId,
       //   USER1
       // );
 
       // uint256 assetPrice = oracle.getAssetPrice(assetId);
-      // uint256 userCollateral = hub.convertToAssetsDown(assetId, userConfig.supplyShares) *
+      // uint256 userCollateral = hub.convertToAssetsDown(assetId, userPosition.supplyShares) *
       //   assetPrice;
       // totalCollateral += userCollateral;
-      // totalDebt += userConfig.debt * assetPrice;
+      // totalDebt += userPosition.debt * assetPrice;
 
       // avgLiquidationThreshold += userCollateral * reserve.config.lt;
     }

@@ -1,11 +1,11 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.0;
 
-import 'tests/BaseTest.t.sol';
+import 'tests/Base.t.sol';
 import {IERC20Errors} from 'src/dependencies/openzeppelin/IERC20Errors.sol';
-import {Asset, SpokeData} from 'src/contracts/LiquidityHub.sol';
+import {DataTypes} from 'src/libraries/types/DataTypes.sol';
 
-contract LiquidityHubBaseTest is BaseTest {
+contract LiquidityHubBase is Base {
   using SharesMath for uint256;
   using WadRayMath for uint256;
 
@@ -19,15 +19,15 @@ contract LiquidityHubBaseTest is BaseTest {
   }
 
   struct HubData {
-    Asset daiData;
-    Asset daiData1;
-    Asset daiData2;
-    Asset daiData3;
-    Asset wethData;
-    SpokeData spoke1WethData;
-    SpokeData spoke1DaiData;
-    SpokeData spoke2WethData;
-    SpokeData spoke2DaiData;
+    DataTypes.Asset daiData;
+    DataTypes.Asset daiData1;
+    DataTypes.Asset daiData2;
+    DataTypes.Asset daiData3;
+    DataTypes.Asset wethData;
+    DataTypes.SpokeData spoke1WethData;
+    DataTypes.SpokeData spoke1DaiData;
+    DataTypes.SpokeData spoke2WethData;
+    DataTypes.SpokeData spoke2DaiData;
     uint256 timestamp;
     uint256 accruedBase;
     uint256 initialAvailableLiquidity;
@@ -50,18 +50,6 @@ contract LiquidityHubBaseTest is BaseTest {
   function setUp() public override {
     super.setUp();
     initEnvironment();
-  }
-
-  function _updateActive(uint256 assetId, bool newActive) internal {
-    DataTypes.AssetConfig memory reserveConfig = hub.getAsset(assetId).config;
-    reserveConfig.active = newActive;
-    hub.updateAssetConfig(assetId, reserveConfig);
-  }
-
-  function _updateDrawCap(uint256 assetId, address spoke, uint256 newDrawCap) internal {
-    DataTypes.SpokeConfig memory spokeConfig = hub.getSpokeConfig(assetId, spoke);
-    spokeConfig.drawCap = newDrawCap;
-    hub.updateSpokeConfig(assetId, spoke, spokeConfig);
   }
 
   function _updateSupplyCap(uint256 assetId, address spoke, uint256 newSupplyCap) internal {

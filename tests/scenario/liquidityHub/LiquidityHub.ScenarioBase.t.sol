@@ -1,10 +1,10 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.0;
 
-import 'tests/BaseTest.t.sol';
-import {Asset, SpokeData} from 'src/contracts/LiquidityHub.sol';
+import 'tests/Base.t.sol';
+import {DataTypes} from 'src/libraries/types/DataTypes.sol';
 
-abstract contract LiquidityHubScenarioBaseTest is BaseTest {
+abstract contract LiquidityHubScenarioBase is Base {
   uint256 internal constant NUM_TIMESTAMPS = 10;
   uint256 internal constant NUM_SPOKES = 4;
   uint256 internal constant NUM_ASSETS = 4;
@@ -18,13 +18,13 @@ abstract contract LiquidityHubScenarioBaseTest is BaseTest {
   }
 
   struct SpokeDatas {
-    SpokeData[NUM_TIMESTAMPS] t_i;
-    SpokeData[NUM_TIMESTAMPS] t_f;
+    DataTypes.SpokeData[NUM_TIMESTAMPS] t_i;
+    DataTypes.SpokeData[NUM_TIMESTAMPS] t_f;
   }
 
   struct AssetDatas {
-    Asset[NUM_TIMESTAMPS] t_i;
-    Asset[NUM_TIMESTAMPS] t_f;
+    DataTypes.Asset[NUM_TIMESTAMPS] t_i;
+    DataTypes.Asset[NUM_TIMESTAMPS] t_f;
   }
 
   struct CalculatedStates {

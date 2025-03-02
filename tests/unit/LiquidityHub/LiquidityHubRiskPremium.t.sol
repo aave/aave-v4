@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.0;
 
-import 'tests/BaseTest.t.sol';
+import 'tests/Base.t.sol';
 
 struct TestDrawAmountInput {
   uint256 spoke1;
@@ -20,7 +20,7 @@ struct TestDrawAmountAndRiskPremiumInput {
   TestRiskPremiumInput riskPremium;
 }
 
-contract LiquidityHubRiskPremiumTest_Base is BaseTest {
+contract LiquidityHubRiskPremiumTest_Base is Base {
   using SharesMath for uint256;
   using WadRayMath for uint256;
   using PercentageMath for uint256;

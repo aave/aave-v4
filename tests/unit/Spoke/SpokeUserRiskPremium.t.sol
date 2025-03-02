@@ -1,10 +1,10 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.0;
 
-import 'tests/BaseTest.t.sol';
+import 'tests/Base.t.sol';
 import {Spoke} from 'src/contracts/Spoke.sol';
 
-contract SpokeUserRiskPremiumTest is BaseTest {
+contract SpokeUserRiskPremiumTest is Base {
   using SharesMath for uint256;
   using WadRayMath for uint256;
   using PercentageMath for uint256;
@@ -50,7 +50,7 @@ contract SpokeUserRiskPremiumTest is BaseTest {
 
     // Bob supply dai into spoke1
     Utils.spokeSupply(spoke1, daiReserveId, bob, daiAmount, bob);
-    Utils.setUsingAsCollateral(spoke1, bob, daiReserveId, true);
+    setUsingAsCollateral(spoke1, bob, daiReserveId, true);
 
     uint256 userRiskPremium = spoke1.getUserRiskPremium(bob);
     assertEq(userRiskPremium, 0, 'user risk premium');
@@ -63,11 +63,11 @@ contract SpokeUserRiskPremiumTest is BaseTest {
 
     // Bob supply dai into spoke1
     Utils.spokeSupply(spoke1, daiReserveId, bob, supplyAmount, bob);
-    Utils.setUsingAsCollateral(spoke1, bob, daiReserveId, true);
+    setUsingAsCollateral(spoke1, bob, daiReserveId, true);
     Utils.spokeBorrow(spoke1, daiReserveId, bob, borrowAmount, bob);
 
     uint256 userRiskPremium = spoke1.getUserRiskPremium(bob);
-    Spoke.Reserve memory daiInfo = spoke1.getReserve(daiReserveId);
+    DataTypes.Reserve memory daiInfo = spoke1.getReserve(daiReserveId);
 
     // With single collateral, user rp will match liquidity premium of collateral
     assertEq(userRiskPremium, daiInfo.config.liquidityPremium, 'user risk premium');
@@ -88,7 +88,7 @@ contract SpokeUserRiskPremiumTest is BaseTest {
     // Bob supply dai into spoke1
     deal(address(tokenList.dai), bob, params.supplyAmount);
     Utils.spokeSupply(spoke1, params.daiReserveId, bob, params.supplyAmount, bob);
-    Utils.setUsingAsCollateral(spoke1, bob, params.daiReserveId, true);
+    setUsingAsCollateral(spoke1, bob, params.daiReserveId, true);
     Utils.spokeBorrow(spoke1, params.daiReserveId, bob, params.borrowAmount, bob);
 
     // With single collateral, user rp will match liquidity premium of collateral
@@ -113,7 +113,7 @@ contract SpokeUserRiskPremiumTest is BaseTest {
 
     // Bob supply dai into spoke1
     Utils.spokeSupply(spoke1, params.daiReserveId, bob, params.supplyAmount, bob);
-    Utils.setUsingAsCollateral(spoke1, bob, params.daiReserveId, true);
+    setUsingAsCollateral(spoke1, bob, params.daiReserveId, true);
 
     // Bob draw dai
     Utils.spokeBorrow(spoke1, params.daiReserveId, bob, params.borrowAmount, bob);
@@ -146,15 +146,15 @@ contract SpokeUserRiskPremiumTest is BaseTest {
 
     // Bob supply dai into spoke1
     Utils.spokeSupply(spoke1, params.daiReserveId, bob, params.daiSupplyAmount, bob);
-    Utils.setUsingAsCollateral(spoke1, bob, params.daiReserveId, true);
+    setUsingAsCollateral(spoke1, bob, params.daiReserveId, true);
 
     // Bob supply usdx into spoke1
     Utils.spokeSupply(spoke1, params.usdxReserveId, bob, params.usdxSupplyAmount, bob);
-    Utils.setUsingAsCollateral(spoke1, bob, params.usdxReserveId, true);
+    setUsingAsCollateral(spoke1, bob, params.usdxReserveId, true);
 
     // Bob supply weth into spoke1
     Utils.spokeSupply(spoke1, params.wethReserveId, bob, params.wethSupplyAmount, bob);
-    Utils.setUsingAsCollateral(spoke1, bob, params.wethReserveId, true);
+    setUsingAsCollateral(spoke1, bob, params.wethReserveId, true);
 
     // Bob draw 2000 total dai + usdx
     Utils.spokeBorrow(spoke1, params.daiReserveId, bob, params.daiBorrowAmount, bob);
@@ -163,21 +163,21 @@ contract SpokeUserRiskPremiumTest is BaseTest {
     // Weth is enough to cover the total debt
     uint256 expectedUserRiskPremium = params.wethLP;
 
-    Spoke.UserConfig memory userConfig = spoke1.getUser(params.daiReserveId, bob);
+    DataTypes.UserPosition memory userConfig = spoke1.getUserPosition(params.daiReserveId, bob);
     assertEq(
       userConfig.suppliedShares,
       hub.convertToSharesDown(daiAssetId, params.daiSupplyAmount)
     );
     assertEq(userConfig.baseDebt, params.daiSupplyAmount);
 
-    userConfig = spoke1.getUser(params.usdxReserveId, bob);
+    userConfig = spoke1.getUserPosition(params.usdxReserveId, bob);
     assertEq(
       userConfig.suppliedShares,
       hub.convertToSharesDown(usdxAssetId, params.usdxSupplyAmount)
     );
     assertEq(userConfig.baseDebt, params.usdxSupplyAmount);
 
-    userConfig = spoke1.getUser(params.wethReserveId, bob);
+    userConfig = spoke1.getUserPosition(params.wethReserveId, bob);
     assertEq(
       userConfig.suppliedShares,
       hub.convertToSharesDown(wethAssetId, params.wethSupplyAmount)
@@ -203,35 +203,35 @@ contract SpokeUserRiskPremiumTest is BaseTest {
 
     // Bob supply dai into spoke1
     Utils.spokeSupply(spoke1, params.daiReserveId, bob, params.daiSupplyAmount, bob);
-    Utils.setUsingAsCollateral(spoke1, bob, params.daiReserveId, true);
+    setUsingAsCollateral(spoke1, bob, params.daiReserveId, true);
 
     // Bob supply usdx into spoke1
     Utils.spokeSupply(spoke1, params.usdxReserveId, bob, params.usdxSupplyAmount, bob);
-    Utils.setUsingAsCollateral(spoke1, bob, params.usdxReserveId, true);
+    setUsingAsCollateral(spoke1, bob, params.usdxReserveId, true);
 
     // Bob supply weth into spoke1
     Utils.spokeSupply(spoke1, params.wethReserveId, bob, params.wethSupplyAmount, bob);
-    Utils.setUsingAsCollateral(spoke1, bob, params.wethReserveId, true);
+    setUsingAsCollateral(spoke1, bob, params.wethReserveId, true);
 
     // Bob draw 2000 total dai + usdx
     Utils.spokeBorrow(spoke1, params.daiReserveId, bob, params.daiSupplyAmount, bob);
     Utils.spokeBorrow(spoke1, params.usdxReserveId, bob, params.usdxSupplyAmount, bob);
 
-    Spoke.UserConfig memory userConfig = spoke1.getUser(params.daiReserveId, bob);
+    DataTypes.UserPosition memory userConfig = spoke1.getUserPosition(params.daiReserveId, bob);
     assertEq(
       userConfig.suppliedShares,
       hub.convertToSharesDown(daiAssetId, params.daiSupplyAmount)
     );
     assertEq(userConfig.baseDebt, params.daiSupplyAmount);
 
-    userConfig = spoke1.getUser(params.usdxReserveId, bob);
+    userConfig = spoke1.getUserPosition(params.usdxReserveId, bob);
     assertEq(
       userConfig.suppliedShares,
       hub.convertToSharesDown(usdxAssetId, params.usdxSupplyAmount)
     );
     assertEq(userConfig.baseDebt, params.usdxSupplyAmount);
 
-    userConfig = spoke1.getUser(params.wethReserveId, bob);
+    userConfig = spoke1.getUserPosition(params.wethReserveId, bob);
     assertEq(
       userConfig.suppliedShares,
       hub.convertToSharesDown(wethAssetId, params.wethSupplyAmount)
@@ -282,37 +282,37 @@ contract SpokeUserRiskPremiumTest is BaseTest {
 
     // Bob supply dai into spoke1
     Utils.spokeSupply(spoke1, params.daiReserveId, bob, params.daiSupplyAmount, bob);
-    Utils.setUsingAsCollateral(spoke1, bob, params.daiReserveId, true);
+    setUsingAsCollateral(spoke1, bob, params.daiReserveId, true);
 
     // Bob supply usdx into spoke1
     Utils.spokeSupply(spoke1, params.usdxReserveId, bob, params.usdxSupplyAmount, bob);
-    Utils.setUsingAsCollateral(spoke1, bob, params.usdxReserveId, true);
+    setUsingAsCollateral(spoke1, bob, params.usdxReserveId, true);
 
     // Alice supply weth into spoke1
     Utils.spokeSupply(spoke1, params.wethReserveId, alice, params.wethSupplyAmount, alice);
-    Utils.setUsingAsCollateral(spoke1, alice, params.wethReserveId, true);
+    setUsingAsCollateral(spoke1, alice, params.wethReserveId, true);
 
     // Bob draw $4000 total in weth
     Utils.spokeBorrow(spoke1, params.wethReserveId, bob, params.wethBorrowAmount, bob);
 
-    Spoke.UserConfig memory userConfig = spoke1.getUser(params.daiReserveId, bob);
+    DataTypes.UserPosition memory userConfig = spoke1.getUserPosition(params.daiReserveId, bob);
     assertEq(
       userConfig.suppliedShares,
       hub.convertToSharesDown(daiAssetId, params.daiSupplyAmount)
     );
     assertEq(userConfig.baseDebt, 0);
 
-    userConfig = spoke1.getUser(params.usdxReserveId, bob);
+    userConfig = spoke1.getUserPosition(params.usdxReserveId, bob);
     assertEq(
       userConfig.suppliedShares,
       hub.convertToSharesDown(usdxAssetId, params.usdxSupplyAmount)
     );
     assertEq(userConfig.baseDebt, 0);
 
-    userConfig = spoke1.getUser(params.wethReserveId, bob);
+    userConfig = spoke1.getUserPosition(params.wethReserveId, bob);
     assertEq(userConfig.baseDebt, params.wethBorrowAmount);
 
-    userConfig = spoke1.getUser(params.wethReserveId, alice);
+    userConfig = spoke1.getUserPosition(params.wethReserveId, alice);
     assertEq(
       userConfig.suppliedShares,
       hub.convertToSharesDown(wethAssetId, params.wethSupplyAmount)
@@ -356,15 +356,15 @@ contract SpokeUserRiskPremiumTest is BaseTest {
 
     // Bob supply dai into spoke1
     Utils.spokeSupply(spoke1, params.daiReserveId, bob, params.daiSupplyAmount, bob);
-    Utils.setUsingAsCollateral(spoke1, bob, params.daiReserveId, true);
+    setUsingAsCollateral(spoke1, bob, params.daiReserveId, true);
 
     // Bob supply usdx into spoke1
     Utils.spokeSupply(spoke1, params.usdxReserveId, bob, params.usdxSupplyAmount, bob);
-    Utils.setUsingAsCollateral(spoke1, bob, params.usdxReserveId, true);
+    setUsingAsCollateral(spoke1, bob, params.usdxReserveId, true);
 
     // Alice supply weth into spoke1
     Utils.spokeSupply(spoke1, params.wethReserveId, alice, params.wethSupplyAmount, alice);
-    Utils.setUsingAsCollateral(spoke1, alice, params.wethReserveId, true);
+    setUsingAsCollateral(spoke1, alice, params.wethReserveId, true);
 
     // Bob draw $4000 total in weth
     Utils.spokeBorrow(spoke1, params.wethReserveId, bob, params.wethBorrowAmount, bob);
@@ -415,17 +415,17 @@ contract SpokeUserRiskPremiumTest is BaseTest {
 
     // Bob supply dai into spoke3
     Utils.spokeSupply(spoke3, params.daiReserveId, bob, params.daiSupplyAmount, bob);
-    Utils.setUsingAsCollateral(spoke3, bob, params.daiReserveId, true);
+    setUsingAsCollateral(spoke3, bob, params.daiReserveId, true);
 
     // Bob supply usdx into spoke3
     if (params.usdxSupplyAmount > 0) {
       Utils.spokeSupply(spoke3, params.usdxReserveId, bob, params.usdxSupplyAmount, bob);
-      Utils.setUsingAsCollateral(spoke3, bob, params.usdxReserveId, true);
+      setUsingAsCollateral(spoke3, bob, params.usdxReserveId, true);
     }
 
     // Bob supply weth into spoke3
     Utils.spokeSupply(spoke3, params.wethReserveId, bob, params.wethSupplyAmount, bob);
-    Utils.setUsingAsCollateral(spoke3, bob, params.wethReserveId, true);
+    setUsingAsCollateral(spoke3, bob, params.wethReserveId, true);
 
     // Bob draw weth
     Utils.spokeBorrow(spoke3, params.wethReserveId, bob, params.wethBorrowAmount, bob);
@@ -495,19 +495,19 @@ contract SpokeUserRiskPremiumTest is BaseTest {
     // Bob supply dai into spoke3
     if (params.daiSupplyAmount > 0) {
       Utils.spokeSupply(spoke3, params.daiReserveId, bob, params.daiSupplyAmount, bob);
-      Utils.setUsingAsCollateral(spoke3, bob, params.daiReserveId, true);
+      setUsingAsCollateral(spoke3, bob, params.daiReserveId, true);
     }
 
     // Bob supply usdx into spoke3
     if (params.usdxSupplyAmount > 0) {
       Utils.spokeSupply(spoke3, params.usdxReserveId, bob, params.usdxSupplyAmount, bob);
-      Utils.setUsingAsCollateral(spoke3, bob, params.usdxReserveId, true);
+      setUsingAsCollateral(spoke3, bob, params.usdxReserveId, true);
     }
 
     // Bob supply weth into spoke3
     if (params.wethSupplyAmount > 0) {
       Utils.spokeSupply(spoke3, params.wethReserveId, bob, params.wethSupplyAmount, bob);
-      Utils.setUsingAsCollateral(spoke3, bob, params.wethReserveId, true);
+      setUsingAsCollateral(spoke3, bob, params.wethReserveId, true);
     }
 
     // Bob supply wbtc into spoke3
@@ -611,30 +611,30 @@ contract SpokeUserRiskPremiumTest is BaseTest {
     // Bob supply wbtc into spoke2
     if (params.wbtcSupplyAmount > 0) {
       Utils.spokeSupply(spoke2, params.wbtcReserveId, bob, params.wbtcSupplyAmount, bob);
-      Utils.setUsingAsCollateral(spoke2, bob, params.wbtcReserveId, true);
+      setUsingAsCollateral(spoke2, bob, params.wbtcReserveId, true);
     }
 
     // Bob supply weth into spoke2
     if (params.wethSupplyAmount > 0) {
       Utils.spokeSupply(spoke2, params.wethReserveId, bob, params.wethSupplyAmount, bob);
-      Utils.setUsingAsCollateral(spoke2, bob, params.wethReserveId, true);
+      setUsingAsCollateral(spoke2, bob, params.wethReserveId, true);
     }
 
     // Bob supply dai into spoke2
     if (params.daiSupplyAmount > 0) {
       Utils.spokeSupply(spoke2, params.daiReserveId, bob, params.daiSupplyAmount, bob);
-      Utils.setUsingAsCollateral(spoke2, bob, params.daiReserveId, true);
+      setUsingAsCollateral(spoke2, bob, params.daiReserveId, true);
     }
 
     // Bob supply usdx into spoke2
     if (params.usdxSupplyAmount > 0) {
       Utils.spokeSupply(spoke2, params.usdxReserveId, bob, params.usdxSupplyAmount, bob);
-      Utils.setUsingAsCollateral(spoke2, bob, params.usdxReserveId, true);
+      setUsingAsCollateral(spoke2, bob, params.usdxReserveId, true);
     }
 
     // Bob supply dai2 into spoke2
     Utils.spokeSupply(spoke2, params.dai2ReserveId, bob, MAX_SUPPLY_AMOUNT, bob);
-    Utils.setUsingAsCollateral(spoke2, bob, params.dai2ReserveId, true);
+    setUsingAsCollateral(spoke2, bob, params.dai2ReserveId, true);
 
     // Bob draw dai2
     Utils.spokeBorrow(spoke2, params.dai2ReserveId, bob, params.dai2BorrowAmount, bob);
@@ -750,30 +750,30 @@ contract SpokeUserRiskPremiumTest is BaseTest {
     // Bob supply wbtc into spoke2
     if (params.wbtcSupplyAmount > 0) {
       Utils.spokeSupply(spoke2, params.wbtcReserveId, bob, params.wbtcSupplyAmount, bob);
-      Utils.setUsingAsCollateral(spoke2, bob, params.wbtcReserveId, true);
+      setUsingAsCollateral(spoke2, bob, params.wbtcReserveId, true);
     }
 
     // Bob supply weth into spoke2
     if (params.wethSupplyAmount > 0) {
       Utils.spokeSupply(spoke2, params.wethReserveId, bob, params.wethSupplyAmount, bob);
-      Utils.setUsingAsCollateral(spoke2, bob, params.wethReserveId, true);
+      setUsingAsCollateral(spoke2, bob, params.wethReserveId, true);
     }
 
     // Bob supply dai into spoke2
     if (params.daiSupplyAmount > 0) {
       Utils.spokeSupply(spoke2, params.daiReserveId, bob, params.daiSupplyAmount, bob);
-      Utils.setUsingAsCollateral(spoke2, bob, params.daiReserveId, true);
+      setUsingAsCollateral(spoke2, bob, params.daiReserveId, true);
     }
 
     // Bob supply usdx into spoke2
     if (params.usdxSupplyAmount > 0) {
       Utils.spokeSupply(spoke2, params.usdxReserveId, bob, params.usdxSupplyAmount, bob);
-      Utils.setUsingAsCollateral(spoke2, bob, params.usdxReserveId, true);
+      setUsingAsCollateral(spoke2, bob, params.usdxReserveId, true);
     }
 
     // Bob supply dai2 into spoke2
     Utils.spokeSupply(spoke2, params.dai2ReserveId, bob, MAX_SUPPLY_AMOUNT, bob);
-    Utils.setUsingAsCollateral(spoke2, bob, params.dai2ReserveId, true);
+    setUsingAsCollateral(spoke2, bob, params.dai2ReserveId, true);
 
     // Bob draw dai2
     Utils.spokeBorrow(spoke2, params.dai2ReserveId, bob, params.dai2BorrowAmount, bob);
@@ -933,30 +933,30 @@ contract SpokeUserRiskPremiumTest is BaseTest {
     // Bob supply wbtc into spoke2
     if (params.wbtcSupplyAmount > 0) {
       Utils.spokeSupply(spoke2, params.wbtcReserveId, bob, params.wbtcSupplyAmount, bob);
-      Utils.setUsingAsCollateral(spoke2, bob, params.wbtcReserveId, true);
+      setUsingAsCollateral(spoke2, bob, params.wbtcReserveId, true);
     }
 
     // Bob supply weth into spoke2
     if (params.wethSupplyAmount > 0) {
       Utils.spokeSupply(spoke2, params.wethReserveId, bob, params.wethSupplyAmount, bob);
-      Utils.setUsingAsCollateral(spoke2, bob, params.wethReserveId, true);
+      setUsingAsCollateral(spoke2, bob, params.wethReserveId, true);
     }
 
     // Bob supply dai into spoke2
     if (params.daiSupplyAmount > 0) {
       Utils.spokeSupply(spoke2, params.daiReserveId, bob, params.daiSupplyAmount, bob);
-      Utils.setUsingAsCollateral(spoke2, bob, params.daiReserveId, true);
+      setUsingAsCollateral(spoke2, bob, params.daiReserveId, true);
     }
 
     // Bob supply usdx into spoke2
     if (params.usdxSupplyAmount > 0) {
       Utils.spokeSupply(spoke2, params.usdxReserveId, bob, params.usdxSupplyAmount, bob);
-      Utils.setUsingAsCollateral(spoke2, bob, params.usdxReserveId, true);
+      setUsingAsCollateral(spoke2, bob, params.usdxReserveId, true);
     }
 
     // Bob supply dai2 into spoke2
     Utils.spokeSupply(spoke2, params.dai2ReserveId, bob, MAX_SUPPLY_AMOUNT, bob);
-    Utils.setUsingAsCollateral(spoke2, bob, params.dai2ReserveId, true);
+    setUsingAsCollateral(spoke2, bob, params.dai2ReserveId, true);
 
     // Bob draw dai2
     Utils.spokeBorrow(spoke2, params.dai2ReserveId, bob, params.dai2BorrowAmount, bob);
@@ -995,7 +995,7 @@ contract SpokeUserRiskPremiumTest is BaseTest {
     // Change the liquidity premium of wbtc
     spoke2.updateReserveConfig(
       params.wbtcReserveId,
-      Spoke.ReserveConfig({
+      DataTypes.ReserveConfig({
         lt: 0.8e4,
         lb: 0,
         liquidityPremium: newLpValue,

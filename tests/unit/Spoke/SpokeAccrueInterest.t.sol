@@ -1,11 +1,11 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.0;
 
-import 'tests/BaseTest.t.sol';
+import 'tests/Base.t.sol';
 import {Spoke} from 'src/contracts/Spoke.sol';
 import {LiquidityHub} from 'src/contracts/LiquidityHub.sol';
 
-contract SpokeAccrueInterestTest is BaseTest {
+contract SpokeAccrueInterestTest is Base {
   using SharesMath for uint256;
   using WadRayMath for uint256;
   using PercentageMath for uint256;
@@ -18,12 +18,11 @@ contract SpokeAccrueInterestTest is BaseTest {
   }
 
   function test_accrueInterest_NoActionTaken() public {
-    (uint256 baseDebt, uint256 outstandingPremium) = spoke1.getReserveDebt(
-      spokeInfo[spoke1].dai.reserveId
-    );
-    assertEq(baseDebt, 0);
-    assertEq(outstandingPremium, 0);
-    assertEq(spoke1.getReserveLastUpdate(spokeInfo[spoke1].dai.reserveId), 0);
+    DataTypes.Reserve memory daiInfo = spoke1.getReserve(spokeInfo[spoke1].dai.reserveId);
+    assertEq(daiInfo.lastUpdateTimestamp, 0);
+    assertEq(daiInfo.baseDebt, 0);
+    assertEq(daiInfo.outstandingPremium, 0);
+    assertEq(daiInfo.riskPremium, 0);
   }
 
   function test_accrueInterest_OnlySupply(uint40 elapsed) public {
@@ -39,7 +38,7 @@ contract SpokeAccrueInterestTest is BaseTest {
     // Alice does a supply through same spoke to accrue interest
     Utils.spokeSupply(spoke1, daiReserveId, alice, amount, alice);
 
-    (uint256 baseDebt, uint256 outstandingPremium) = spoke1.getReserveDebt(daiReserveId);
+    DataTypes.Reserve memory daiInfo = spoke1.getReserve(daiReserveId);
 
     // Timestamp doesn't update when no interest accrued
     assertEq(
@@ -47,8 +46,8 @@ contract SpokeAccrueInterestTest is BaseTest {
       vm.getBlockTimestamp(),
       'lastUpdateTimestamp'
     );
-    assertEq(baseDebt, 0, 'baseDebt');
-    assertEq(outstandingPremium, 0, 'outstandingPremium');
+    assertEq(daiInfo.baseDebt, 0, 'baseDebt');
+    assertEq(daiInfo.outstandingPremium, 0, 'outstandingPremium');
   }
 
   function test_accrueInterest_BorrowAndWait() public {
