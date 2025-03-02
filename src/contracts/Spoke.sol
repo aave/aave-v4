@@ -560,9 +560,11 @@ contract Spoke is ISpoke {
       ? 0
       : vars.avgLiquidationThreshold / vars.totalCollateralInBaseCurrency;
 
+    /*
     vars.userRiskPremium = vars.totalCollateralInBaseCurrency == 0
       ? 0
       : vars.userRiskPremium.wadDiv(vars.totalCollateralInBaseCurrency);
+    */
 
     vars.healthFactor = vars.totalDebtInBaseCurrency == 0
       ? type(uint256).max

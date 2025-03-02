@@ -91,8 +91,13 @@ contract SpokeUserRiskPremiumTest is Base {
     setUsingAsCollateral(spoke1, bob, params.daiReserveId, true);
     Utils.spokeBorrow(spoke1, params.daiReserveId, bob, params.borrowAmount, bob);
 
-    // With single collateral, user rp will match liquidity premium of collateral
-    assertEq(spoke1.getUserRiskPremium(bob), params.daiLP, 'user risk premium');
+    if (_normalizedValue(params.borrowAmount, daiAssetId) > 0) {
+      // With single collateral, user rp will match liquidity premium of collateral
+      assertEq(spoke1.getUserRiskPremium(bob), params.daiLP, 'user risk premium');
+    } else {
+      // Dust amount borrowed, no risk premium
+      assertEq(spoke1.getUserRiskPremium(bob), 0, 'user risk premium');
+    }
   }
 
   function test_getUserRiskPremium_fuzz_supply_does_not_impact(
@@ -120,8 +125,13 @@ contract SpokeUserRiskPremiumTest is Base {
 
     uint256 userRiskPremium = spoke1.getUserRiskPremium(bob);
 
-    // With single collateral, user rp will match liquidity premium of collateral
-    assertEq(userRiskPremium, params.daiLP, 'user risk premium');
+    if (_normalizedValue(params.borrowAmount, daiAssetId) > 0) {
+      // With single collateral, user rp will match liquidity premium of collateral
+      assertEq(userRiskPremium, params.daiLP, 'user risk premium');
+    } else {
+      // Dust amount borrowed, no risk premium
+      assertEq(userRiskPremium, 0, 'user risk premium');
+    }
 
     // Supplying more risky asset (usdx) should not impact user risk premium
     Utils.spokeSupply(spoke1, params.usdxReserveId, bob, additionalSupplyAmount, bob);
@@ -319,17 +329,13 @@ contract SpokeUserRiskPremiumTest is Base {
     );
 
     // Dai and usdx will each cover half the debt
-    uint256 equalDebtContribution = 2000e18;
+    uint256 usdxContribution = 2000e6;
     uint256 expectedUserRiskPremium = (params.daiLP *
-      equalDebtContribution *
-      oracle.getAssetPrice(daiAssetId) +
+      _normalizedValue(params.daiSupplyAmount, daiAssetId) +
       params.usdxLP *
-      equalDebtContribution *
-      oracle.getAssetPrice(usdxAssetId)) /
-      (equalDebtContribution *
-        oracle.getAssetPrice(daiAssetId) +
-        equalDebtContribution *
-        oracle.getAssetPrice(usdxAssetId));
+      _normalizedValue(usdxContribution, usdxAssetId)) /
+      (_normalizedValue(params.daiSupplyAmount, daiAssetId) +
+        _normalizedValue(usdxContribution, usdxAssetId));
 
     assertEq(spoke1.getUserRiskPremium(bob), expectedUserRiskPremium, 'user risk premium');
   }
