@@ -359,7 +359,7 @@ contract LiquidityHubDrawTest is LiquidityHubBase {
     uint256 drawAmount = 1;
     updateAssetActive(hub, daiAssetId, false);
     vm.prank(address(spoke1));
-    vm.expectRevert(abi.encodeWithSelector(ILiquidityHub.AssetNotActive.selector, daiAssetId));
+    vm.expectRevert(ILiquidityHub.AssetNotActive.selector);
     hub.draw({assetId: daiAssetId, amount: drawAmount, riskPremium: 0, to: address(spoke1)});
   }
 

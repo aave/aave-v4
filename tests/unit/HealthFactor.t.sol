@@ -142,16 +142,16 @@ contract HealthFactorTest_ToMigrate is Base {
     for (uint256 i = 0; i < assetIds.length; i++) {
       uint256 assetId = assetIds[i];
       // Spoke.Reserve memory reserve = spoke1.getReserve(spokeInfo[spoke1][assetId].reserveId);
-      // Spoke.UserConfig memory userConfig = spoke1.getUser(
+      // Spoke.UserPosition memory userPosition = spoke1.getUserPosition(
       //   reserveInfo[spoke1][assetId].reserveId,
       //   USER1
       // );
 
       // uint256 assetPrice = oracle.getAssetPrice(assetId);
-      // uint256 userCollateral = hub.convertToAssetsDown(assetId, userConfig.supplyShares) *
+      // uint256 userCollateral = hub.convertToAssetsDown(assetId, userPosition.supplyShares) *
       //   assetPrice;
       // totalCollateral += userCollateral;
-      // totalDebt += userConfig.debt * assetPrice;
+      // totalDebt += userPosition.debt * assetPrice;
 
       // avgLiquidationThreshold += userCollateral * reserve.config.lt;
     }

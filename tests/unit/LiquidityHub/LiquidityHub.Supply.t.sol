@@ -2,7 +2,6 @@
 pragma solidity ^0.8.0;
 
 import './LiquidityHubBase.t.sol';
-import {IERC20Errors} from 'src/dependencies/openzeppelin/IERC20Errors.sol';
 
 contract LiquidityHubSupplyTest is LiquidityHubBase {
   using SharesMath for uint256;
@@ -30,7 +29,7 @@ contract LiquidityHubSupplyTest is LiquidityHubBase {
     updateAssetActive(hub, daiAssetId, false);
 
     vm.prank(address(spoke1));
-    vm.expectRevert(abi.encodeWithSelector(ILiquidityHub.AssetNotActive.selector, daiAssetId));
+    vm.expectRevert(ILiquidityHub.AssetNotActive.selector);
     hub.supply(daiAssetId, amount, 0, alice);
   }
 
