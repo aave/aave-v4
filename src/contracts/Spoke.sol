@@ -361,10 +361,7 @@ contract Spoke is ISpoke {
     DataTypes.UserPosition storage user,
     uint256 amount
   ) internal view {
-    uint256 suppliedAmount = liquidityHub.convertToAssetsDown(
-      reserve.assetId,
-      user.suppliedShares
-    ) - user.baseDebt;
+    uint256 suppliedAmount = liquidityHub.convertToAssetsDown(reserve.assetId, user.suppliedShares);
     require(amount <= suppliedAmount, InsufficientSupply(suppliedAmount));
   }
 

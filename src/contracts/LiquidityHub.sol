@@ -423,7 +423,7 @@ contract LiquidityHub is ILiquidityHub {
     // TODO: Other cases of status (frozen, paused)
     require(asset.config.active, AssetNotActive());
     require(amountRestored > 0, InvalidRestoreAmount());
-    // Ensure spoke is not restoring more than accrued drawn or equal 0
+    // Ensure spoke is not restoring more than accrued drawn
     uint256 maxAllowedRestore = spoke.baseDebt + spoke.outstandingPremium;
     require(amountRestored <= maxAllowedRestore, SurplusAmountRestored(maxAllowedRestore));
   }

@@ -6,7 +6,7 @@ import 'tests/unit/Spoke/SpokeBase.t.sol';
 contract SpokeRepayTest is SpokeBase {
   using PercentageMath for uint256;
 
-  function test_repay_same_block2() public {
+  function test_repay_same_block() public {
     uint256 daiSupplyAmount = 100e18;
     uint256 wethSupplyAmount = 10e18;
     uint256 daiBorrowAmount = daiSupplyAmount / 2;
@@ -40,13 +40,11 @@ contract SpokeRepayTest is SpokeBase {
     assertEq(bobWethDataBefore.suppliedShares, hub.convertToShares(wethAssetId, wethSupplyAmount));
     assertEq(bobWethDataBefore.baseDebt, 0);
 
-    console.log('balance pre', tokenList.dai.balanceOf(bob));
     // Bob repays half of principal debt
     vm.expectEmit(address(spoke1));
     emit ISpoke.Repaid(daiReserveId(spoke1), bob, daiRepayAmount);
     vm.prank(bob);
     spoke1.repay(daiReserveId(spoke1), daiRepayAmount);
-    console.log('balance after', tokenList.dai.balanceOf(bob));
 
     DataTypes.UserPosition memory bobDaiDataAfter = getUserInfo(spoke1, bob, daiReserveId(spoke1));
     DataTypes.UserPosition memory bobWethDataAfter = getUserInfo(
@@ -209,6 +207,8 @@ contract SpokeRepayTest is SpokeBase {
     );
 
     assertEq(bobDaiDataAfter.suppliedShares, bobDaiDataBefore.suppliedShares);
+    assertEq(bobDaiDataAfter.outstandingPremium, 0, 'bob dai outstanding premium final balance');
+    assertEq(bobDaiDataAfter.baseDebt, daiBorrowAmount, 'bob dai base debt final balance');
     assertEq(
       bobDaiDataAfter.baseDebt + bobDaiDataAfter.outstandingPremium,
       daiBorrowAmount,
@@ -472,6 +472,34 @@ contract SpokeRepayTest is SpokeBase {
     spoke1.repay(daiReserveId(spoke1), 1);
   }
 
+  function test_repay_revertsWith_amount_exceeds_debt_with_non_zero_debt() public {
+    uint256 daiSupplyAmount = 100e18;
+    uint256 wethSupplyAmount = 10e18;
+    uint256 daiBorrowAmount = daiSupplyAmount / 2;
+    // Bob supply weth
+    Utils.spokeSupply(spoke1, wethReserveId(spoke1), bob, wethSupplyAmount, bob);
+    setUsingAsCollateral(spoke1, bob, wethReserveId(spoke1), true);
+
+    // Alice supply dai
+    Utils.spokeSupply(spoke1, daiReserveId(spoke1), alice, daiSupplyAmount, alice);
+
+    // Bob borrow dai
+    Utils.spokeBorrow(spoke1, daiReserveId(spoke1), bob, daiBorrowAmount, bob);
+
+    DataTypes.UserPosition memory bobDaiData = getUserInfo(spoke1, bob, daiReserveId(spoke1));
+    assertEq(
+      bobDaiData.baseDebt + bobDaiData.outstandingPremium,
+      daiBorrowAmount,
+      'bob dai debt before'
+    );
+
+    vm.expectRevert(
+      abi.encodeWithSelector(ISpoke.RepayAmountExceedsDebt.selector, daiBorrowAmount)
+    );
+    vm.prank(bob);
+    spoke1.repay(daiReserveId(spoke1), daiBorrowAmount + 1);
+  }
+
   /// repay all or a portion of total debt in same block
   function test_repay_same_block_fuzz_amounts(
     uint256 daiBorrowAmount,
@@ -689,7 +717,7 @@ contract SpokeRepayTest is SpokeBase {
       bobDaiDataBefore.outstandingPremium -
       daiBorrowAmount;
     if (bobDaiInterest == 0) {
-      // no enough time travel for interest accrual
+      // not enough time travel for interest accrual
       daiRepayAmount = 0;
       vm.expectRevert(ILiquidityHub.InvalidRestoreAmount.selector);
       vm.prank(bob);
@@ -789,7 +817,7 @@ contract SpokeRepayTest is SpokeBase {
     // Bob repays
     uint256 bobDaiPremium = bobDaiDataBefore.outstandingPremium;
     if (bobDaiPremium == 0) {
-      // no enough time travel for premium accrual
+      // not enough time travel for premium accrual
       daiRepayAmount = 0;
       vm.expectRevert(ILiquidityHub.InvalidRestoreAmount.selector);
       vm.prank(bob);
@@ -911,7 +939,7 @@ contract SpokeRepayTest is SpokeBase {
     // Bob repays
     uint256 bobDaiBaseDebt = bobDaiDataBefore.baseDebt - daiBorrowAmount;
     if (bobDaiBaseDebt == 0) {
-      // no enough time travel for premium accrual
+      // not enough time travel for premium accrual
       daiRepayAmount = 0;
       vm.expectRevert(ILiquidityHub.InvalidRestoreAmount.selector);
       spoke1.repay(daiReserveId(spoke1), daiRepayAmount);
@@ -1019,7 +1047,7 @@ contract SpokeRepayTest is SpokeBase {
     // Bob repays
     uint256 bobDaiBaseDebt = bobDaiDataBefore.baseDebt - daiBorrowAmount;
     if (bobDaiBaseDebt == 0) {
-      // no enough time travel for premium accrual
+      // not enough time travel for premium accrual
       daiRepayAmount = 0;
       vm.expectRevert(ILiquidityHub.InvalidRestoreAmount.selector);
       spoke1.repay(daiReserveId(spoke1), daiRepayAmount);
@@ -1074,7 +1102,7 @@ contract SpokeRepayTest is SpokeBase {
     DataTypes.UserPosition posAfter; // positionAfter
   }
 
-  /// borrow and replay multiple reserves
+  /// borrow and repay multiple reserves
   function test_repay_multiple_reserves_fuzz_amountsAndWait(
     uint256 daiBorrowAmount,
     uint256 wethBorrowAmount,
