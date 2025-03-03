@@ -346,7 +346,7 @@ contract Spoke is ISpoke {
     return _reserves[reserveId].config.lt;
   }
 
-  function calculateUserAccountData(
+  function getUserAccountData(
     address user
   )
     external
