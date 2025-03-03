@@ -266,11 +266,19 @@ contract Spoke is ISpoke {
     return cumulatedBaseDebt + cumulatedOutstandingPremium;
   }
 
-  function getSuppliedShares(uint256 reserveId, address user) external view returns (uint256) {
-    return _users[user][reserveId].suppliedShares;
+  function getReserveSuppliedAmount(uint256 reserveId) external view returns (uint256) {
+    return
+      liquidityHub.convertToAssets(
+        _reserves[reserveId].assetId,
+        _reserves[reserveId].suppliedShares
+      );
   }
 
-  function getSuppliedAmount(uint256 reserveId, address user) external view returns (uint256) {
+  function getReserveSuppliedShares(uint256 reserveId) external view returns (uint256) {
+    return _reserves[reserveId].suppliedShares;
+  }
+
+  function getUserSuppliedAmount(uint256 reserveId, address user) external view returns (uint256) {
     return
       liquidityHub.convertToAssets(
         _reserves[reserveId].assetId,
@@ -278,6 +286,9 @@ contract Spoke is ISpoke {
       );
   }
 
+  function getUserSuppliedShares(uint256 reserveId, address user) external view returns (uint256) {
+    return _users[user][reserveId].suppliedShares;
+  }
   function getUserBaseBorrowIndex(uint256 reserveId, address user) external view returns (uint256) {
     return _users[user][reserveId].baseBorrowIndex;
   }

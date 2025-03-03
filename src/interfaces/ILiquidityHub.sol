@@ -150,8 +150,10 @@ interface ILiquidityHub {
   function getAssetCumulativeDebt(uint256 assetId) external view returns (uint256);
   function getSpokeDebt(uint256 assetId, address spoke) external view returns (uint256, uint256);
   function getSpokeCumulativeDebt(uint256 assetId, address spoke) external view returns (uint256);
-  function getSuppliedAmount(uint256 assetId, address spoke) external view returns (uint256);
-  function getSuppliedShares(uint256 assetId, address spoke) external view returns (uint256);
+  function getAssetSuppliedAmount(uint256 assetId) external view returns (uint256);
+  function getAssetSuppliedShares(uint256 assetId) external view returns (uint256);
+  function getSpokeSuppliedAmount(uint256 assetId, address spoke) external view returns (uint256);
+  function getSpokeSuppliedShares(uint256 assetId, address spoke) external view returns (uint256);
   function getAssetRiskPremium(uint256 assetId) external view returns (uint256);
   function getSpokeRiskPremium(uint256 assetId, address spoke) external view returns (uint256);
   function getAssetConfig(uint256 assetId) external view returns (DataTypes.AssetConfig memory);

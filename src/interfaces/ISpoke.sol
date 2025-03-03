@@ -79,8 +79,10 @@ interface ISpoke {
   function getUsingAsCollateral(uint256 reserveId, address user) external view returns (bool);
   function getUserDebt(uint256 reserveId, address user) external view returns (uint256, uint256);
   function getUserCumulativeDebt(uint256 reserveId, address user) external view returns (uint256);
-  function getSuppliedShares(uint256 reserveId, address user) external view returns (uint256);
-  function getSuppliedAmount(uint256 reserveId, address user) external view returns (uint256);
+  function getReserveSuppliedAmount(uint256 reserveId) external view returns (uint256);
+  function getReserveSuppliedShares(uint256 reserveId) external view returns (uint256);
+  function getUserSuppliedAmount(uint256 reserveId, address user) external view returns (uint256);
+  function getUserSuppliedShares(uint256 reserveId, address user) external view returns (uint256);
   function getUserBaseBorrowIndex(uint256 reserveId, address user) external view returns (uint256);
   function getReserveDebt(uint256 reserveId) external view returns (uint256, uint256);
   function getReserveCumulativeDebt(uint256 reserveId) external view returns (uint256);

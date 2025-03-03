@@ -38,14 +38,10 @@ contract SpokeAccrueInterestTest is Base {
     // Alice does a supply through same spoke to accrue interest
     Utils.spokeSupply(spoke1, daiReserveId, alice, amount, alice);
 
-    DataTypes.Reserve memory daiInfo = spoke1.getReserve(daiReserveId);
+    DataTypes.Reserve memory daiInfo = getReserveInfo(spoke1, daiReserveId);
 
     // Timestamp doesn't update when no interest accrued
-    assertEq(
-      spoke1.getReserveLastUpdate(daiReserveId),
-      vm.getBlockTimestamp(),
-      'lastUpdateTimestamp'
-    );
+    assertEq(daiInfo.lastUpdateTimestamp, vm.getBlockTimestamp(), 'lastUpdateTimestamp');
     assertEq(daiInfo.baseDebt, 0, 'baseDebt');
     assertEq(daiInfo.outstandingPremium, 0, 'outstandingPremium');
   }
@@ -71,10 +67,7 @@ contract SpokeAccrueInterestTest is Base {
       daiReserveId
     );
     uint256 reserveLastUpdate = spoke1.getReserveLastUpdate(daiReserveId);
-
-    (uint256 assetBaseDebt, uint256 assetOutstandingPremium) = hub.getAssetDebt(daiAssetId);
-    uint256 assetLastUpdate = hub.getAssetLastUpdate(daiAssetId);
-    uint256 assetRiskPremium = hub.getAssetRiskPremium(daiAssetId);
+    DataTypes.Asset memory daiInfo = hub.getAsset(daiAssetId);
 
     uint256 totalBase = MathUtils.calculateLinearInterest(baseBorrowRate, uint40(startTime)).rayMul(
       amount
@@ -86,10 +79,10 @@ contract SpokeAccrueInterestTest is Base {
     assertEq(reserveOutstandingPremium, 0, 'outstandingPremium');
 
     // LH checks
-    assertEq(assetBaseDebt, totalBase);
-    assertEq(assetRiskPremium, 0);
-    assertEq(assetOutstandingPremium, 0);
-    assertEq(assetLastUpdate, vm.getBlockTimestamp());
+    assertEq(daiInfo.baseDebt, totalBase, 'asset base debt');
+    assertEq(daiInfo.riskPremium, 0);
+    assertEq(daiInfo.outstandingPremium, 0);
+    assertEq(daiInfo.lastUpdateTimestamp, vm.getBlockTimestamp());
   }
 
   function test_accrueInterest_fuzz_BorrowAndWait(uint40 elapsed) public {
@@ -113,10 +106,7 @@ contract SpokeAccrueInterestTest is Base {
       daiReserveId
     );
     uint256 reserveLastUpdate = spoke1.getReserveLastUpdate(daiReserveId);
-
-    (uint256 assetBaseDebt, uint256 assetOutstandingPremium) = hub.getAssetDebt(daiAssetId);
-    uint256 assetLastUpdate = hub.getAssetLastUpdate(daiAssetId);
-    uint256 assetRiskPremium = hub.getAssetRiskPremium(daiAssetId);
+    DataTypes.Asset memory daiInfo = hub.getAsset(daiAssetId);
 
     uint256 totalBase = MathUtils.calculateLinearInterest(baseBorrowRate, uint40(startTime)).rayMul(
       amount
@@ -128,10 +118,10 @@ contract SpokeAccrueInterestTest is Base {
     assertEq(reserveOutstandingPremium, 0, 'outstandingPremium');
 
     // LH checks
-    assertEq(assetBaseDebt, totalBase);
-    assertEq(assetRiskPremium, 0);
-    assertEq(assetOutstandingPremium, 0);
-    assertEq(assetLastUpdate, vm.getBlockTimestamp());
+    assertEq(daiInfo.baseDebt, totalBase);
+    assertEq(daiInfo.riskPremium, 0);
+    assertEq(daiInfo.outstandingPremium, 0);
+    assertEq(daiInfo.lastUpdateTimestamp, vm.getBlockTimestamp());
   }
 
   function test_accrueInterest_fuzz_BorrowAmountAndElapsed(
@@ -160,10 +150,7 @@ contract SpokeAccrueInterestTest is Base {
       daiReserveId
     );
     uint256 reserveLastUpdate = spoke1.getReserveLastUpdate(daiReserveId);
-
-    (uint256 assetBaseDebt, uint256 assetOutstandingPremium) = hub.getAssetDebt(daiAssetId);
-    uint256 assetLastUpdate = hub.getAssetLastUpdate(daiAssetId);
-    uint256 assetRiskPremium = hub.getAssetRiskPremium(daiAssetId);
+    DataTypes.Asset memory daiInfo = hub.getAsset(daiAssetId);
 
     uint256 totalBase = MathUtils.calculateLinearInterest(baseBorrowRate, uint40(startTime)).rayMul(
       borrowAmount
@@ -175,10 +162,10 @@ contract SpokeAccrueInterestTest is Base {
     assertEq(reserveOutstandingPremium, 0, 'outstandingPremium');
 
     // LH checks
-    assertEq(assetBaseDebt, totalBase);
-    assertEq(assetRiskPremium, 0);
-    assertEq(assetOutstandingPremium, 0);
-    assertEq(assetLastUpdate, vm.getBlockTimestamp());
+    assertEq(daiInfo.baseDebt, totalBase);
+    assertEq(daiInfo.riskPremium, 0);
+    assertEq(daiInfo.outstandingPremium, 0);
+    assertEq(daiInfo.lastUpdateTimestamp, vm.getBlockTimestamp());
   }
 
   // TODO: test_accrueInterest_TenPercentRP

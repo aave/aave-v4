@@ -649,7 +649,7 @@ contract LiquidityHubWithdrawTest is LiquidityHubBase {
     );
   }
 
-  function test_withdraw_revertsWith_zero_supplied() public {
+  function test_withdraw_revertsWith_supplied_amount_exceeded_zero_supplied() public {
     uint256 assetId = 0;
     uint256 amount = 1;
 
@@ -709,7 +709,7 @@ contract LiquidityHubWithdrawTest is LiquidityHubBase {
       onBehalfOf: address(spoke1)
     });
 
-    vm.expectRevert(abi.encodeWithSelector(ILiquidityHub.SuppliedAmountExceeded.selector, 0));
+    vm.expectRevert(abi.encodeWithSelector(ILiquidityHub.NotAvailableLiquidity.selector, 0));
 
     vm.prank(address(spoke1));
     hub.withdraw({assetId: daiAssetId, amount: amount, riskPremium: 0, to: address(spoke1)});
