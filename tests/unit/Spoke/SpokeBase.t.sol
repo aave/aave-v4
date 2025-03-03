@@ -228,15 +228,16 @@ contract SpokeBase is Base {
   }
 
   function _calcMinimumCollAmount(
+    ISpoke spoke,
     uint256 collReserveId,
     uint256 debtReserveId,
     uint256 debtAmount
   ) internal view returns (uint256) {
-    DataTypes.Reserve memory collData = spoke1.getReserve(collReserveId);
+    DataTypes.Reserve memory collData = spoke.getReserve(collReserveId);
     uint256 collPrice = oracle.getAssetPrice(collData.assetId);
     uint256 collAssetUnits = 10 ** hub.getAsset(collData.assetId).config.decimals;
 
-    DataTypes.Reserve memory debtData = spoke1.getReserve(debtReserveId);
+    DataTypes.Reserve memory debtData = spoke.getReserve(debtReserveId);
     uint256 debtAssetUnits = 10 ** hub.getAsset(debtData.assetId).config.decimals;
     uint256 debtPrice = oracle.getAssetPrice(debtData.assetId);
 

@@ -482,6 +482,7 @@ contract SpokeRepayTest is SpokeBase {
 
     // calculate weth collateral
     uint256 wethSupplyAmount = _calcMinimumCollAmount(
+      spoke1,
       wethReserveId(spoke1),
       daiReserveId(spoke1),
       daiBorrowAmount
@@ -556,6 +557,7 @@ contract SpokeRepayTest is SpokeBase {
 
     // calculate weth collateral
     uint256 wethSupplyAmount = _calcMinimumCollAmount(
+      spoke1,
       wethReserveId(spoke1),
       daiReserveId(spoke1),
       daiBorrowAmount
@@ -639,6 +641,7 @@ contract SpokeRepayTest is SpokeBase {
 
     // calculate weth collateral
     uint256 wethSupplyAmount = _calcMinimumCollAmount(
+      spoke1,
       wethReserveId(spoke1),
       daiReserveId(spoke1),
       daiBorrowAmount
@@ -740,6 +743,7 @@ contract SpokeRepayTest is SpokeBase {
 
     // calculate weth collateral
     uint256 wethSupplyAmount = _calcMinimumCollAmount(
+      spoke1,
       wethReserveId(spoke1),
       daiReserveId(spoke1),
       daiBorrowAmount
@@ -848,6 +852,7 @@ contract SpokeRepayTest is SpokeBase {
 
     // calculate weth collateral
     uint256 wethSupplyAmount = _calcMinimumCollAmount(
+      spoke1,
       wethReserveId(spoke1),
       daiReserveId(spoke1),
       daiBorrowAmount
@@ -967,6 +972,7 @@ contract SpokeRepayTest is SpokeBase {
 
     // calculate weth collateral
     uint256 wethSupplyAmount = _calcMinimumCollAmount(
+      spoke1,
       wethReserveId(spoke1),
       daiReserveId(spoke1),
       daiBorrowAmount
@@ -1098,17 +1104,29 @@ contract SpokeRepayTest is SpokeBase {
     // calculate weth collateral
     {
       uint256 wethSupplyAmount = _calcMinimumCollAmount(
+        spoke1,
         wethReserveId(spoke1),
         daiReserveId(spoke1),
         daiInfo.borrowAmount
       ) +
-        _calcMinimumCollAmount(wethReserveId(spoke1), usdxReserveId(spoke1), usdxInfo.borrowAmount);
+        _calcMinimumCollAmount(
+          spoke1,
+          wethReserveId(spoke1),
+          usdxReserveId(spoke1),
+          usdxInfo.borrowAmount
+        );
       uint256 wbtcSupplyAmount = _calcMinimumCollAmount(
+        spoke1,
         wbtcReserveId(spoke1),
         wethReserveId(spoke1),
         wethInfo.borrowAmount
       ) +
-        _calcMinimumCollAmount(wbtcReserveId(spoke1), wbtcReserveId(spoke1), wbtcInfo.borrowAmount);
+        _calcMinimumCollAmount(
+          spoke1,
+          wbtcReserveId(spoke1),
+          wbtcReserveId(spoke1),
+          wbtcInfo.borrowAmount
+        );
 
       // Bob supply weth and wbtc
       deal(address(tokenList.weth), bob, wethSupplyAmount);
