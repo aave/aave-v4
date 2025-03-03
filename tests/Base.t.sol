@@ -564,12 +564,12 @@ abstract contract Base is Test {
     ISpoke spoke,
     uint256 reserveId
   ) internal view returns (DataTypes.Reserve memory) {
-    DataTypes.Reserve memory reserveData = spoke.getReserve(reserveId);
+    DataTypes.Reserve memory reserveData;
     (reserveData.baseDebt, reserveData.outstandingPremium) = spoke.getReserveDebt(reserveId);
     reserveData.suppliedShares = spoke.getReserveSuppliedShares(reserveId);
     reserveData.riskPremium = spoke.getReserveRiskPremium(reserveId);
-    reserveData.lastUpdateTimestamp = reserveData.lastUpdateTimestamp;
-    reserveData.baseBorrowIndex = reserveData.baseBorrowIndex;
+    reserveData.lastUpdateTimestamp = spoke.getReserve(reserveId).lastUpdateTimestamp;
+    reserveData.baseBorrowIndex = spoke.getReserve(reserveId).baseBorrowIndex;
     return reserveData;
   }
 
@@ -584,6 +584,7 @@ abstract contract Base is Test {
     asset.riskPremium = hub.getAssetRiskPremium(assetId);
     asset.lastUpdateTimestamp = hub.getAsset(assetId).lastUpdateTimestamp;
     asset.config = hub.getAssetConfig(assetId);
+    return asset;
   }
 
   function getAsset(Spoke spoke, uint256 reserveId) internal view returns (uint256, IERC20) {
