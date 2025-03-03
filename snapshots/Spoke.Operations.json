@@ -2,8 +2,11 @@
   "borrow": "439072",
   "repay: full": "289214",
   "repay: partial": "293134",
-  "supply": "446726",
+  "supply: 0 debt": "403501",
+  "supply: 1 debt": "243937",
+  "supply: 2 debt": "303364",
+  "supply: 3 debt": "422190",
   "usingAsCollateral": "50717",
-  "withdraw: full": "232969",
+  "withdraw: full": "247369",
   "withdraw: partial": "235637"
 }

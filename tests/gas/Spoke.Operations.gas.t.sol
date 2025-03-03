@@ -7,16 +7,39 @@ contract SpokeOperations_Gas_Tests is Base {
   function setUp() public override {
     deployFixtures();
     initEnvironment();
+
+    vm.startPrank(address(spoke2));
+    hub.supply(daiAssetId, 1000e18, 20_09, bob);
+    hub.supply(wethAssetId, 1000e18, 0, bob);
+    hub.supply(usdxAssetId, 1000e6, 8_50, bob);
+    hub.supply(wbtcAssetId, 1000e8, 37_05, bob);
+    vm.stopPrank();
   }
 
   function test_supply() public {
-    vm.prank(alice);
-    spoke1.supply(spokeInfo[spoke1].usdx.reserveId, 1000e6);
-    vm.snapshotGasLastCall('Spoke.Operations', 'supply');
+    vm.startPrank(alice);
 
-    vm.prank(alice);
     spoke1.setUsingAsCollateral(spokeInfo[spoke1].usdx.reserveId, true);
     vm.snapshotGasLastCall('Spoke.Operations', 'usingAsCollateral');
+
+    spoke1.supply(spokeInfo[spoke1].usdx.reserveId, 1000e6);
+    vm.snapshotGasLastCall('Spoke.Operations', 'supply: 0 debt');
+
+    spoke1.borrow(spokeInfo[spoke1].usdx.reserveId, 500e6, alice);
+    spoke1.supply(spokeInfo[spoke1].usdx.reserveId, 1000e6);
+    vm.snapshotGasLastCall('Spoke.Operations', 'supply: 1 debt');
+
+    spoke1.borrow(spokeInfo[spoke1].dai.reserveId, 500e18, alice);
+    spoke1.supply(spokeInfo[spoke1].usdx.reserveId, 1000e6);
+    vm.snapshotGasLastCall('Spoke.Operations', 'supply: 2 debt');
+
+    spoke1.borrow(spokeInfo[spoke1].weth.reserveId, 500e18, alice);
+    spoke1.supply(spokeInfo[spoke1].usdx.reserveId, 1000e6);
+    vm.snapshotGasLastCall('Spoke.Operations', 'supply: 3 debt');
+
+    spoke1.borrow(spokeInfo[spoke1].wbtc.reserveId, 500e8, alice);
+    spoke1.supply(spokeInfo[spoke1].usdx.reserveId, 1000e6);
+    vm.snapshotGasLastCall('Spoke.Operations', 'supply: 3 debt');
   }
 
   function test_withdraw() public {
