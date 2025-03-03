@@ -47,7 +47,8 @@ contract BorrowIndex_Scenario3Test is BorrowIndexBase {
   // Assumptions:
   // - single assetId (fuzzed but does not vary from action to action)
   // - 0 risk premium
-  function fuzz_borrowIndexScenario3(TestState memory _state) public {
+  function test_fuzz_borrowIndexScenario3(TestState memory _state) public {
+    // see scenario4 for failing edge case where sum of spoke debt can exceed asset debt
     vm.skip(true, 'pending resolution of precision/rounding/shares impl');
     boundFuzzStates(state, _state);
     state.actions[SPOKE1_INDEX].draw[1].amount = bound(

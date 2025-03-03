@@ -11,7 +11,7 @@ contract BorrowIndex_Scenario4Test is BorrowIndexBase {
   using WadRayMath for uint256;
   using PercentageMath for uint256;
 
-  // Scenario:
+  // Scenario: (duplicated from scenario3 but with failing edge case combinations of skip time/borrow rate)
   // t0	asset added, spoke1 added
   // t1	spoke1 supply, spoke1 draw
   // t2	spoke4 added
@@ -24,11 +24,13 @@ contract BorrowIndex_Scenario4Test is BorrowIndexBase {
     super.setUp();
     isPrintLogs = false;
 
+    // comment below to see failing test scenario (test_borrowIndexScenario4)
     vm.skip(true, 'pending resolution of precision/rounding/shares impl');
   }
 
   function test_borrowIndexScenario4() public {
     state.assetId = wethAssetId;
+    // failing edge case combinations lead to scenarios where repay amounts are not clean/round numbers
     // fillSkipTimeAndBaseBorrowRate(state, 1 days, 10_00); // failing edge case combination
     fillSkipTimeAndBaseBorrowRate(state, 50 days, 1_00); // failing edge case combination
 
@@ -50,7 +52,8 @@ contract BorrowIndex_Scenario4Test is BorrowIndexBase {
   // - single assetId (fuzzed but does not vary from action to action)
   /// forge-config: default.fuzz.runs = 100
   /// forge-config: default.fuzz.show-logs = true
-  function test_fuzz_borrowIndexScenario3(TestState memory _state) public {
+  function test_fuzz_borrowIndexScenario4(TestState memory _state) public {
+    vm.skip(true, 'pending resolution of precision/rounding/shares impl');
     boundFuzzStates(state, _state);
     vm.assume(
       state.actions[SPOKE1_INDEX].supply[1].amount >
@@ -75,19 +78,30 @@ contract BorrowIndex_Scenario4Test is BorrowIndexBase {
       spokes[SPOKE1_INDEX].actions.restore[t].amount = states
         .cumulatedSpokeBaseDebt[SPOKE1_INDEX]
         .t_i[t];
-    } else if (stage == stages[6]) {
-      states.cumulatedBaseInterest.t_i[t] = MathUtils.calculateLinearInterest(
-        assets[state.assetId].t_f[t - 1].baseBorrowRate,
-        timeAt(stages[t - 1])
-      );
-      states.cumulatedSpokeBaseDebt[SPOKE4_INDEX].t_i[t] = states
-        .cumulatedSpokeBaseDebt[SPOKE4_INDEX]
-        .t_f[t - 1]
-        .rayMul(states.cumulatedBaseInterest.t_i[t]);
 
-      spokes[SPOKE4_INDEX].actions.restore[t].amount = states
-        .cumulatedSpokeBaseDebt[SPOKE4_INDEX]
-        .t_i[t];
+      uint256 sumSpokeDebt = hub.getSpokeCumulativeDebt(state.assetId, spokes[SPOKE1_INDEX].addr) +
+        hub.getSpokeCumulativeDebt(state.assetId, spokes[SPOKE4_INDEX].addr);
+      console.log('time t5');
+      console.log('sum of all spoke debt %e', sumSpokeDebt);
+      console.log('asset cumulative debt %e', hub.getAssetCumulativeDebt(state.assetId));
+      console.log(
+        'sum of all spoke debt > asset debt?',
+        sumSpokeDebt > hub.getAssetCumulativeDebt(state.assetId)
+      );
+    } else if (stage == stages[6]) {
+      spokes[SPOKE4_INDEX].actions.restore[t].amount = hub.getSpokeCumulativeDebt(
+        state.assetId,
+        spokes[SPOKE4_INDEX].addr
+      );
+      uint256 sumSpokeDebt = hub.getSpokeCumulativeDebt(state.assetId, spokes[SPOKE1_INDEX].addr) +
+        hub.getSpokeCumulativeDebt(state.assetId, spokes[SPOKE4_INDEX].addr);
+      console.log('time t6');
+      console.log('sum of all spoke debt %e', sumSpokeDebt);
+      console.log('asset cumulative debt %e', hub.getAssetCumulativeDebt(state.assetId));
+      console.log(
+        'sum of all spoke debt > asset debt?',
+        sumSpokeDebt > hub.getAssetCumulativeDebt(state.assetId)
+      );
     }
   }
 
@@ -147,7 +161,7 @@ contract BorrowIndex_Scenario4Test is BorrowIndexBase {
     } else if (stage == stages[6]) {
       // failing in this action during a restore for spoke4
       // in LH - spoke4's spoke.baseDebt > asset.baseDebt
-      // in LH - reverts due to _updateRiskPremiumAndBaseDebt -> MathUtils.subtractFromWeightedAverage
+      // in LH - reverts due to underflow on _updateRiskPremiumAndBaseDebt -> MathUtils.subtractFromWeightedAverage
       Utils.restore({
         hub: hub,
         assetId: state.assetId,
@@ -162,5 +176,57 @@ contract BorrowIndex_Scenario4Test is BorrowIndexBase {
   function skipTime(Stage stage) internal override {
     super.skipTime(stage);
     skip(state.skipTime[t]);
+  }
+
+  function finalAssertions(Stage stage) internal override {
+    super.finalAssertions(stage);
+
+    if (stage == stages[2]) {
+      states.cumulatedBaseInterest.t_f[t] = MathUtils.calculateLinearInterest(
+        assets[state.assetId].t_f[t - 1].baseBorrowRate,
+        timeAt(stages[t - 1])
+      );
+    } else if (stage == stages[3]) {
+      states.cumulatedBaseInterest.t_f[t] = MathUtils.calculateLinearInterest(
+        assets[state.assetId].t_f[t - 1].baseBorrowRate,
+        timeAt(stages[1])
+      );
+      states.cumulatedSpokeBaseDebt[SPOKE1_INDEX].t_f[t] = spokes[SPOKE1_INDEX]
+        .t_f[t]
+        .baseDebt
+        .rayMul(states.cumulatedBaseInterest.t_f[t]);
+    } else if (stage == stages[4]) {
+      states.cumulatedBaseInterest.t_f[t] = MathUtils.calculateLinearInterest(
+        assets[state.assetId].t_f[SPOKE4_INDEX].baseBorrowRate,
+        timeAt(stages[SPOKE4_INDEX])
+      );
+      states.cumulatedSpokeBaseDebt[SPOKE1_INDEX].t_f[t] = states
+        .cumulatedSpokeBaseDebt[SPOKE1_INDEX]
+        .t_f[t - 1]
+        .rayMul(states.cumulatedBaseInterest.t_f[t]);
+      states.cumulatedSpokeBaseDebt[SPOKE4_INDEX].t_f[t] = spokes[SPOKE4_INDEX]
+        .t_f[t - 1]
+        .baseDebt
+        .rayMul(states.cumulatedBaseInterest.t_f[t - 1]);
+    } else if (stage == stages[5]) {
+      states.cumulatedBaseInterest.t_f[t] = MathUtils.calculateLinearInterest(
+        assets[state.assetId].t_f[t - 1].baseBorrowRate,
+        timeAt(stages[t - 1])
+      );
+      states.cumulatedSpokeBaseDebt[SPOKE4_INDEX].t_f[t] = spokes[SPOKE4_INDEX]
+        .t_f[t - 1]
+        .baseDebt
+        .rayMul(states.cumulatedBaseInterest.t_f[t]);
+    } else if (stage == stages[6]) {
+      states.cumulatedBaseInterest.t_f[t] = MathUtils.calculateLinearInterest(
+        assets[state.assetId].t_f[t - 1].baseBorrowRate,
+        timeAt(stages[t - 1])
+      );
+    } else if (stage == stages[8]) {
+      states.cumulatedBaseInterest.t_f[t] = MathUtils.calculateLinearInterest(
+        assets[state.assetId].t_f[t - 1].baseBorrowRate,
+        timeAt(stages[t - 2])
+      );
+    }
   }
 }
