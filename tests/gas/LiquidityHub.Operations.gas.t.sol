@@ -26,6 +26,7 @@ contract SpokeOperations_Gas_Tests is Base {
 
     hub.withdraw(usdxAssetId, 500e6, 20_74, alice);
     vm.snapshotGasLastCall('Hub.Operations', 'withdraw: full');
+    vm.stopPrank();
   }
 
   function test_draw() public {
@@ -39,6 +40,7 @@ contract SpokeOperations_Gas_Tests is Base {
 
     hub.draw(daiAssetId, 500e18, 19_00, alice);
     vm.snapshotGasLastCall('Hub.Operations', 'draw');
+    vm.stopPrank();
   }
 
   function test_restore() public {
@@ -59,6 +61,7 @@ contract SpokeOperations_Gas_Tests is Base {
     uint256 cumulativeDebtRemaining = hub.getSpokeCumulativeDebt(daiAssetId, address(spoke1));
     hub.restore(daiAssetId, cumulativeDebtRemaining, 21_90, alice);
     vm.snapshotGasLastCall('Hub.Operations', 'restore: full');
+    vm.stopPrank();
   }
 
   function test_accrueInterest() public {

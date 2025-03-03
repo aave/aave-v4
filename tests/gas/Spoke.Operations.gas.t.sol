@@ -36,9 +36,11 @@ contract SpokeOperations_Gas_Tests is Base {
     spoke1.borrow(spokeInfo[spoke1].weth.reserveId, 400e18, alice);
     spoke1.supply(spokeInfo[spoke1].wbtc.reserveId, 500e8);
     vm.snapshotGasLastCall('Spoke.Operations', 'supply: 3 debt');
+    vm.stopPrank();
   }
 
   function test_usingAsCollateral() public {
+    vm.prank(alice);
     spoke1.setUsingAsCollateral(spokeInfo[spoke1].usdx.reserveId, true);
     vm.snapshotGasLastCall('Spoke.Operations', 'usingAsCollateral');
   }
@@ -55,6 +57,7 @@ contract SpokeOperations_Gas_Tests is Base {
 
     spoke1.withdraw(spokeInfo[spoke1].usdx.reserveId, 500e6, alice);
     vm.snapshotGasLastCall('Spoke.Operations', 'withdraw: full');
+    vm.stopPrank();
   }
 
   function test_borrow() public {
@@ -67,6 +70,7 @@ contract SpokeOperations_Gas_Tests is Base {
 
     spoke1.borrow(spokeInfo[spoke1].dai.reserveId, 500e18, alice);
     vm.snapshotGasLastCall('Spoke.Operations', 'borrow');
+    vm.stopPrank();
   }
 
   function test_restore() public {
@@ -90,5 +94,6 @@ contract SpokeOperations_Gas_Tests is Base {
     );
     spoke1.repay(spokeInfo[spoke1].dai.reserveId, cumulativeDebtRemaining);
     vm.snapshotGasLastCall('Spoke.Operations', 'repay: full');
+    vm.stopPrank();
   }
 }

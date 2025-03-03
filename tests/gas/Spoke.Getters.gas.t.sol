@@ -21,6 +21,7 @@ contract SpokeGetters_Gas_Tests is Base {
 
     spoke1.getUserAccountData(alice);
     vm.snapshotGasLastCall('Spoke.Getters', 'getUserAccountData: supplies: 1, borrows: 0');
+    vm.stopPrank();
   }
 
   function test_getUserAccountData_twoSupplies() external {
@@ -33,6 +34,7 @@ contract SpokeGetters_Gas_Tests is Base {
 
     spoke1.getUserAccountData(alice);
     vm.snapshotGasLastCall('Spoke.Getters', 'getUserAccountData: supplies: 2, borrows: 0');
+    vm.stopPrank();
   }
 
   function test_getUserAccountData_twoSupplies_oneBorrows() external {
@@ -50,6 +52,7 @@ contract SpokeGetters_Gas_Tests is Base {
 
     spoke1.getUserAccountData(alice);
     vm.snapshotGasLastCall('Spoke.Getters', 'getUserAccountData: supplies: 2, borrows: 1');
+    vm.stopPrank();
   }
 
   function test_getUserAccountData_twoSupplies_twoBorrows() external {
@@ -70,5 +73,6 @@ contract SpokeGetters_Gas_Tests is Base {
 
     spoke1.getUserAccountData(alice);
     vm.snapshotGasLastCall('Spoke.Getters', 'getUserAccountData: supplies: 2, borrows: 2');
+    vm.stopPrank();
   }
 }
