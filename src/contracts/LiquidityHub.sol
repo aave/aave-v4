@@ -162,7 +162,7 @@ contract LiquidityHub is ILiquidityHub {
     asset.updateBorrowRate({liquidityAdded: 0, liquidityTaken: amount});
     _updateRiskPremiumAndBaseDebt(asset, spoke, _boundBps(riskPremium).rayify(), 0); // no base debt change
 
-    uint256 sharesAmount = asset.convertToSharesDown(amount);
+    uint256 sharesAmount = asset.convertToSharesUp(amount);
     require(sharesAmount > 0, InvalidSharesAmount());
 
     asset.suppliedShares -= sharesAmount;
@@ -333,11 +333,19 @@ contract LiquidityHub is ILiquidityHub {
     return cumulatedBaseDebt + cumulatedOutstandingPremium;
   }
 
-  function getSuppliedAmount(uint256 assetId, address spoke) external view returns (uint256) {
+  function getAssetSuppliedAmount(uint256 assetId) external view returns (uint256) {
+    return _assets[assetId].convertToAssetsDown(_assets[assetId].suppliedShares);
+  }
+
+  function getAssetSuppliedShares(uint256 assetId) external view returns (uint256) {
+    return _assets[assetId].suppliedShares;
+  }
+
+  function getSpokeSuppliedAmount(uint256 assetId, address spoke) external view returns (uint256) {
     return _assets[assetId].convertToAssetsDown(_spokes[assetId][spoke].suppliedShares);
   }
 
-  function getSuppliedShares(uint256 assetId, address spoke) external view returns (uint256) {
+  function getSpokeSuppliedShares(uint256 assetId, address spoke) external view returns (uint256) {
     return _spokes[assetId][spoke].suppliedShares;
   }
 
@@ -347,6 +355,10 @@ contract LiquidityHub is ILiquidityHub {
 
   function getSpokeRiskPremium(uint256 assetId, address spoke) external view returns (uint256) {
     return _spokes[assetId][spoke].riskPremium.derayify();
+  }
+
+  function getAvailableLiquidity(uint256 assetId) external view returns (uint256) {
+    return _assets[assetId].availableLiquidity;
   }
 
   /// @inheritdoc ILiquidityHub
@@ -383,7 +395,7 @@ contract LiquidityHub is ILiquidityHub {
     // TODO: still allow withdrawal even if asset is not active, only prevent for frozen/paused?
     require(asset.config.active, AssetNotActive());
     require(amount > 0, InvalidWithdrawAmount());
-    uint256 withdrawable = asset.convertToAssetsDown(spoke.suppliedShares) - spoke.baseDebt;
+    uint256 withdrawable = asset.convertToAssetsDown(spoke.suppliedShares);
     require(amount <= withdrawable, SuppliedAmountExceeded(withdrawable));
     require(amount <= asset.availableLiquidity, NotAvailableLiquidity(asset.availableLiquidity));
   }

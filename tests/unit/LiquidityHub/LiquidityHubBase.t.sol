@@ -2,7 +2,6 @@
 pragma solidity ^0.8.0;
 
 import 'tests/Base.t.sol';
-import {IERC20Errors} from 'src/dependencies/openzeppelin/IERC20Errors.sol';
 import {DataTypes} from 'src/libraries/types/DataTypes.sol';
 
 contract LiquidityHubBase is Base {
@@ -34,12 +33,6 @@ contract LiquidityHubBase is Base {
     uint256 initialSupplyShares;
     uint256 supply2Amount;
     uint256 expectedSupply2Shares;
-  }
-
-  struct DebtAccounting {
-    uint256 cumulativeDebt;
-    uint256 baseDebt;
-    uint256 outstandingPremium;
   }
 
   struct DebtData {
