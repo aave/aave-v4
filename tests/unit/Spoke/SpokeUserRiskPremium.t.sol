@@ -1,6 +1,8 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.0;
 
+import {Arrays} from 'src/dependencies/openzeppelin/Arrays.sol';
+import {KeyValueListInMemory} from 'src/contracts/KeyValueListInMemory.sol';
 import 'tests/Base.t.sol';
 import {Spoke} from 'src/contracts/Spoke.sol';
 
@@ -8,6 +10,7 @@ contract SpokeUserRiskPremiumTest is Base {
   using SharesMath for uint256;
   using WadRayMath for uint256;
   using PercentageMath for uint256;
+  using KeyValueListInMemory for KeyValueListInMemory.List;
 
   struct TestInfo {
     uint256 daiReserveId;
@@ -32,6 +35,11 @@ contract SpokeUserRiskPremiumTest is Base {
     uint256 usdxLP;
     uint256 wbtcLP;
     uint256 dai2LP;
+  }
+
+  struct ReserveLP {
+    uint256 reserveId;
+    uint256 lp;
   }
 
   function setUp() public override {
@@ -1011,5 +1019,65 @@ contract SpokeUserRiskPremiumTest is Base {
 
   function _normalizedValue(uint256 amount, uint256 assetId) internal returns (uint256) {
     return (amount * oracle.getAssetPrice(assetId)) / (10 ** hub.getAssetConfig(assetId).decimals);
+  }
+
+  function _calculateExpectedUserRP(address user, Spoke spoke) internal returns (uint256) {
+    uint256 assetId;
+    uint256 totalDebt;
+    uint256 suppliedReservesCount;
+    uint256 userRP;
+    DataTypes.UserPosition memory userPosition;
+
+    // Find all reserves user has supplied, adding up total debt
+    for (uint256 i; i < spoke.reserveCount(); ++i) {
+      userPosition = spoke.getUserPosition(i, user);
+      if (userPosition.usingAsCollateral) {
+        ++suppliedReservesCount;
+      }
+      (assetId, ) = getAsset(spoke, i);
+      totalDebt += _normalizedValue(
+        userPosition.baseDebt + userPosition.outstandingPremium,
+        assetId
+      );
+    }
+
+    // Gather up list of reserves as collateral to sort by LP
+    KeyValueListInMemory.List memory reserveLP = KeyValueListInMemory.init(suppliedReservesCount);
+    uint256 idx = 0;
+    for (uint256 i; i < spoke.reserveCount(); ++i) {
+      userPosition = spoke.getUserPosition(i, user);
+      if (userPosition.usingAsCollateral) {
+        reserveLP.add(idx, spoke.getLiquidityPremium(i), i);
+        ++idx;
+      }
+    }
+
+    // Sort supplied reserves by LP
+    reserveLP.sortByKey();
+
+    // While user's normalized debt amount is non-zero, iterate through supplied reserves, and add up LP
+    idx = 0;
+    uint256 originalTotalDebt = totalDebt;
+    while (totalDebt > 0) {
+      (uint256 lp, uint256 reserveId) = reserveLP.get(idx);
+      userPosition = spoke.getUserPosition(reserveId, user);
+      (assetId, ) = getAsset(spoke, reserveId);
+      uint256 supplyAmount = _normalizedValue(
+        hub.convertToSharesDown(assetId, userPosition.suppliedShares),
+        assetId
+      );
+
+      if (supplyAmount >= totalDebt) {
+        userRP += totalDebt * lp;
+        break;
+      } else {
+        userRP += supplyAmount * lp;
+        totalDebt -= supplyAmount;
+      }
+
+      ++idx;
+    }
+
+    return userRP / originalTotalDebt;
   }
 }

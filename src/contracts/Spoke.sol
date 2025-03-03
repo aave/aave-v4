@@ -344,11 +344,6 @@ contract Spoke is ISpoke {
     return _reserves[reserveId];
   }
 
-  // TODO: Remove after finding best solution to get timestamp
-  function getReserveLastUpdate(uint256 reserveId) public view returns (uint256) {
-    return _reserves[reserveId].lastUpdateTimestamp;
-  }
-
   function getUserPosition(
     uint256 reserveId,
     address user
