@@ -709,7 +709,7 @@ contract LiquidityHubWithdrawTest is LiquidityHubBase {
       onBehalfOf: address(spoke1)
     });
 
-    vm.expectRevert(abi.encodeWithSelector(ILiquidityHub.SuppliedAmountExceeded.selector, 0));
+    vm.expectRevert(abi.encodeWithSelector(ILiquidityHub.NotAvailableLiquidity.selector, 0));
 
     vm.prank(address(spoke1));
     hub.withdraw({assetId: daiAssetId, amount: amount, riskPremium: 0, to: address(spoke1)});
@@ -738,7 +738,7 @@ contract LiquidityHubWithdrawTest is LiquidityHubBase {
     uint256 amount = 100e18;
     updateAssetActive(hub, daiAssetId, false);
 
-    vm.expectRevert(abi.encodeWithSelector(ILiquidityHub.AssetNotActive.selector, daiAssetId));
+    vm.expectRevert(ILiquidityHub.AssetNotActive.selector);
     vm.prank(address(spoke1));
     hub.withdraw({assetId: daiAssetId, amount: amount, riskPremium: 0, to: alice});
   }
