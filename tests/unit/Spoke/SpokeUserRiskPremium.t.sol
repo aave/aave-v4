@@ -392,7 +392,7 @@ contract SpokeUserRiskPremiumTest is Base {
   }
 
   /// @dev Supply with a high value lp asset so it's ignored in rp calcs, but allows user to borrow large amounts.
-  /// @dev Borrow with any asset because only it's value is important, it's lp is ignored.
+  /// @dev Borrow with any asset because only its value is important, its lp is ignored.
   /// @dev Fix borrow amount, and fuzz the supply amounts, checking rp calc is correct.
   function test_getUserRiskPremium_fuzz_two_assets_supply_and_borrow(
     uint256 daiSupplyAmount
