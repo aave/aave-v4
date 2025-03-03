@@ -30,6 +30,10 @@ contract SpokeUserRiskPremiumTest is Base {
     uint256 wethBorrowAmount;
     uint256 wbtcBorrowAmount;
     uint256 dai2BorrowAmount;
+    uint256 daiPrice;
+    uint256 wethPrice;
+    uint256 usdxPrice;
+    uint256 wbtcPrice;
     uint256 daiLP;
     uint256 wethLP;
     uint256 usdxLP;
@@ -1017,6 +1021,143 @@ contract SpokeUserRiskPremiumTest is Base {
     );
   }
 
+  function test_getUserRiskPremium_fuzz_four_assets_prices_supply_debt(
+    TestInfo memory params
+  ) public {
+    params.daiSupplyAmount = bound(params.daiSupplyAmount, 0, MAX_SUPPLY_AMOUNT);
+    params.wethSupplyAmount = bound(params.wethSupplyAmount, 0, MAX_SUPPLY_AMOUNT);
+    params.usdxSupplyAmount = bound(params.usdxSupplyAmount, 0, MAX_SUPPLY_AMOUNT);
+    params.wbtcSupplyAmount = bound(params.wbtcSupplyAmount, 0, MAX_SUPPLY_AMOUNT);
+
+    params.daiBorrowAmount = bound(params.daiBorrowAmount, 0, params.daiSupplyAmount / 2);
+    params.wethBorrowAmount = bound(params.wethBorrowAmount, 0, params.wethSupplyAmount / 2);
+    params.usdxBorrowAmount = bound(params.usdxBorrowAmount, 0, params.usdxSupplyAmount / 2);
+    params.wbtcBorrowAmount = bound(params.wbtcBorrowAmount, 0, params.wbtcSupplyAmount / 2);
+
+    vm.assume(
+      params.daiSupplyAmount +
+        params.wethSupplyAmount +
+        params.usdxSupplyAmount +
+        params.wbtcSupplyAmount <=
+        MAX_SUPPLY_AMOUNT
+    );
+    vm.assume(
+      params.daiBorrowAmount +
+        params.wethBorrowAmount +
+        params.usdxBorrowAmount +
+        params.wbtcBorrowAmount <=
+        MAX_SUPPLY_AMOUNT / 2
+    );
+
+    params.daiPrice = bound(params.daiPrice, 0, 1e16);
+    params.wethPrice = bound(params.wethPrice, 0, 1e16);
+    params.usdxPrice = bound(params.usdxPrice, 0, 1e16);
+    params.wbtcPrice = bound(params.wbtcPrice, 0, 1e16);
+
+    params.daiLP = bound(params.daiLP, 0, 1000_00);
+    params.wethLP = bound(params.wethLP, 0, 1000_00);
+    params.usdxLP = bound(params.usdxLP, 0, 1000_00);
+    params.wbtcLP = bound(params.wbtcLP, 0, 1000_00);
+
+    // Bob supply dai into spoke2
+    if (params.daiSupplyAmount > 0) {
+      Utils.spokeSupply(spoke2, spokeInfo[spoke2].dai.reserveId, bob, params.daiSupplyAmount, bob);
+      setUsingAsCollateral(spoke2, bob, spokeInfo[spoke2].dai.reserveId, true);
+    }
+
+    // Bob supply weth into spoke2
+    if (params.wethSupplyAmount > 0) {
+      Utils.spokeSupply(
+        spoke2,
+        spokeInfo[spoke2].weth.reserveId,
+        bob,
+        params.wethSupplyAmount,
+        bob
+      );
+      setUsingAsCollateral(spoke2, bob, spokeInfo[spoke2].weth.reserveId, true);
+    }
+
+    // Bob supply usdx into spoke2
+    if (params.usdxSupplyAmount > 0) {
+      Utils.spokeSupply(
+        spoke2,
+        spokeInfo[spoke2].usdx.reserveId,
+        bob,
+        params.usdxSupplyAmount,
+        bob
+      );
+      setUsingAsCollateral(spoke2, bob, spokeInfo[spoke2].usdx.reserveId, true);
+    }
+
+    // Bob supply wbtc into spoke2
+    if (params.wbtcSupplyAmount > 0) {
+      Utils.spokeSupply(
+        spoke2,
+        spokeInfo[spoke2].wbtc.reserveId,
+        bob,
+        params.wbtcSupplyAmount,
+        bob
+      );
+      setUsingAsCollateral(spoke2, bob, spokeInfo[spoke2].wbtc.reserveId, true);
+    }
+
+    // Update prices
+    oracle.setAssetPrice(daiAssetId, params.daiPrice);
+    oracle.setAssetPrice(wethAssetId, params.wethPrice);
+    oracle.setAssetPrice(usdxAssetId, params.usdxPrice);
+    oracle.setAssetPrice(wbtcAssetId, params.wbtcPrice);
+
+    // Update LPs
+    spoke2.updateReserveConfig(
+      spokeInfo[spoke2].dai.reserveId,
+      DataTypes.ReserveConfig({
+        lt: 0.8e4,
+        lb: 0,
+        liquidityPremium: params.daiLP,
+        borrowable: true,
+        collateral: true
+      })
+    );
+    spoke2.updateReserveConfig(
+      spokeInfo[spoke2].weth.reserveId,
+      DataTypes.ReserveConfig({
+        lt: 0.8e4,
+        lb: 0,
+        liquidityPremium: params.wethLP,
+        borrowable: true,
+        collateral: true
+      })
+    );
+    spoke2.updateReserveConfig(
+      spokeInfo[spoke2].usdx.reserveId,
+      DataTypes.ReserveConfig({
+        lt: 0.8e4,
+        lb: 0,
+        liquidityPremium: params.usdxLP,
+        borrowable: true,
+        collateral: true
+      })
+    );
+    spoke2.updateReserveConfig(
+      spokeInfo[spoke2].wbtc.reserveId,
+      DataTypes.ReserveConfig({
+        lt: 0.8e4,
+        lb: 0,
+        liquidityPremium: params.wbtcLP,
+        borrowable: true,
+        collateral: true
+      })
+    );
+
+    // Check user risk premium
+    assertApproxEqAbs(
+      spoke2.getUserRiskPremium(bob),
+      _calculateExpectedUserRP(bob, spoke2),
+      1,
+      'user risk premium'
+    );
+  }
+
   function _normalizedValue(uint256 amount, uint256 assetId) internal returns (uint256) {
     return (amount * oracle.getAssetPrice(assetId)) / (10 ** hub.getAssetConfig(assetId).decimals);
   }
@@ -1039,6 +1180,10 @@ contract SpokeUserRiskPremiumTest is Base {
         userPosition.baseDebt + userPosition.outstandingPremium,
         assetId
       );
+    }
+
+    if (totalDebt == 0) {
+      return 0;
     }
 
     // Gather up list of reserves as collateral to sort by LP
