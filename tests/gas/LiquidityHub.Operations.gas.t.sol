@@ -33,7 +33,7 @@ contract SpokeOperations_Gas_Tests is Base {
     hub.supply(daiAssetId, 1000e18, 15_00, alice);
 
     vm.startPrank(address(spoke1));
-    hub.supply(usdxAssetId, 1000e6, 15_00, alice);
+    hub.supply(usdxAssetId, 1000e6, 18_80, alice);
 
     skip(100);
 
@@ -62,12 +62,16 @@ contract SpokeOperations_Gas_Tests is Base {
   }
 
   function test_accrueInterest() public {
-    vm.prank(address(spoke2));
+    vm.startPrank(address(spoke2));
     hub.supply(daiAssetId, 1000e18, 20_09, bob);
+    hub.draw(daiAssetId, 500e18, 20_09, bob);
+    vm.stopPrank();
 
     vm.prank(address(spoke1));
     hub.draw(daiAssetId, 500e18, 15_00, alice);
+
     skip(100);
+
     hub.accrueInterest(daiAssetId, 21_09);
     vm.snapshotGasLastCall('Hub.Operations', 'accrueInterest');
   }
