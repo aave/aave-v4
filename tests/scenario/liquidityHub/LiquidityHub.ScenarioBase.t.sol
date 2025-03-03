@@ -20,7 +20,6 @@ abstract contract LiquidityHubScenarioBaseTest is Base {
   uint256 internal constant NUM_ASSETS = 4;
   uint256 internal constant MAX_BOUNDED_AMOUNT = MAX_SUPPLY_AMOUNT / NUM_TIMESTAMPS;
   uint256 internal constant MIN_BOUNDED_AMOUNT = 1;
-  uint256 internal constant MAX_SKIP_TIME = 10_000 days;
   bool internal isPrintLogs = false;
   uint256 internal t; // internal stage index
 
@@ -170,8 +169,8 @@ abstract contract LiquidityHubScenarioBaseTest is Base {
   ) internal returns (uint256) {
     state.assetId = bound(_state.assetId, 0, NUM_ASSETS - 1);
     for (uint256 i = 0; i < NUM_TIMESTAMPS; i++) {
-      state.baseBorrowRate[i] = bound(_state.baseBorrowRate[0], 0, MAX_BASE_BORROW_RATE);
-      state.skipTime[i] = bound(_state.skipTime[0], 0, MAX_BASE_BORROW_RATE);
+      state.baseBorrowRate[i] = bound(_state.baseBorrowRate[0], 0, MAX_BORROW_RATE);
+      state.skipTime[i] = bound(_state.skipTime[0], 0, MAX_BORROW_RATE);
 
       for (uint256 j = 0; j < NUM_SPOKES; j++) {
         state.actions[j].supply[i].amount = bound(
