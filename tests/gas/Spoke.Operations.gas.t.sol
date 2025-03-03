@@ -21,9 +21,7 @@ contract SpokeOperations_Gas_Tests is Base {
 
     spoke1.supply(spokeInfo[spoke1].usdx.reserveId, 500e6);
     vm.snapshotGasLastCall('Spoke.Operations', 'supply: 0 debt, not usingAsCollateral');
-
     spoke1.setUsingAsCollateral(spokeInfo[spoke1].usdx.reserveId, true);
-    vm.snapshotGasLastCall('Spoke.Operations', 'usingAsCollateral');
 
     spoke1.borrow(spokeInfo[spoke1].usdx.reserveId, 400e6, alice);
     spoke1.supply(spokeInfo[spoke1].dai.reserveId, 500e18);
@@ -38,11 +36,11 @@ contract SpokeOperations_Gas_Tests is Base {
     spoke1.borrow(spokeInfo[spoke1].weth.reserveId, 400e18, alice);
     spoke1.supply(spokeInfo[spoke1].wbtc.reserveId, 500e8);
     vm.snapshotGasLastCall('Spoke.Operations', 'supply: 3 debt');
-    spoke1.setUsingAsCollateral(spokeInfo[spoke1].wbtc.reserveId, true);
+  }
 
-    spoke1.borrow(spokeInfo[spoke1].wbtc.reserveId, 400e8, alice);
-    spoke1.supply(spokeInfo[spoke1].usdx.reserveId, 1000e6);
-    vm.snapshotGasLastCall('Spoke.Operations', 'supply: 4 debt');
+  function test_usingAsCollateral() public {
+    spoke1.setUsingAsCollateral(spokeInfo[spoke1].usdx.reserveId, true);
+    vm.snapshotGasLastCall('Spoke.Operations', 'usingAsCollateral');
   }
 
   function test_withdraw() public {
