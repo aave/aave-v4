@@ -72,6 +72,7 @@ contract SpokeOperations_Gas_Tests is Base {
 
     skip(100);
 
+    vm.prank(address(spoke1));
     hub.accrueInterest(daiAssetId, 21_09);
     vm.snapshotGasLastCall('Hub.Operations', 'accrueInterest');
   }
