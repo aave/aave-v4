@@ -5,6 +5,8 @@ import 'tests/Base.t.sol';
 import {DataTypes} from 'src/libraries/types/DataTypes.sol';
 
 contract SpokeBase is Base {
+  using PercentageMath for uint256;
+
   struct TestData {
     DataTypes.Reserve data;
     uint256 suppliedAmount;
@@ -222,5 +224,25 @@ contract SpokeBase is Base {
     tokenData.spokeBalance = token.balanceOf(spoke);
     tokenData.hubBalance = token.balanceOf(address(hub));
     return tokenData;
+  }
+
+  function _calcMinimumCollAmount(
+    ISpoke spoke,
+    uint256 collReserveId,
+    uint256 debtReserveId,
+    uint256 debtAmount
+  ) internal view returns (uint256) {
+    DataTypes.Reserve memory collData = spoke.getReserve(collReserveId);
+    uint256 collPrice = oracle.getAssetPrice(collData.assetId);
+    uint256 collAssetUnits = 10 ** hub.getAsset(collData.assetId).config.decimals;
+
+    DataTypes.Reserve memory debtData = spoke.getReserve(debtReserveId);
+    uint256 debtAssetUnits = 10 ** hub.getAsset(debtData.assetId).config.decimals;
+    uint256 debtPrice = oracle.getAssetPrice(debtData.assetId);
+
+    return
+      ((debtAmount * debtPrice * collAssetUnits) / (collPrice * debtAssetUnits)).percentDiv(
+        collData.config.lt
+      ) + 1;
   }
 }

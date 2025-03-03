@@ -994,4 +994,48 @@ contract SpokeWithdrawTest is SpokeBase {
       'bob balance'
     );
   }
+
+  function test_withdraw_revertsWith_HealthFactorLowerThanLiquidationThreshold() public {
+    uint256 debtAmount = 50e18;
+    uint256 collReserveId = wethReserveId(spoke1);
+    uint256 debtReserveId = daiReserveId(spoke1);
+
+    uint256 minCollAmount = _calcMinimumCollAmount({
+      spoke: ISpoke(spoke1),
+      collReserveId: collReserveId,
+      debtReserveId: debtReserveId,
+      debtAmount: debtAmount
+    });
+
+    // Alice supplies weth as collateral
+    Utils.spokeSupply({
+      spoke: spoke1,
+      reserveId: collReserveId,
+      user: alice,
+      amount: debtAmount,
+      onBehalfOf: alice
+    });
+
+    // Bob supplies dai
+    Utils.spokeSupply({
+      spoke: spoke1,
+      reserveId: debtReserveId,
+      user: bob,
+      amount: debtAmount,
+      onBehalfOf: bob
+    });
+
+    // Alice borrows dai
+    Utils.spokeBorrow({
+      spoke: spoke1,
+      reserveId: debtReserveId,
+      user: alice,
+      amount: debtAmount,
+      onBehalfOf: alice
+    });
+
+    vm.prank(alice);
+    vm.expectRevert(ISpoke.HealthFactorLowerThanLiquidationThreshold.selector);
+    spoke1.withdraw({reserveId: collReserveId, amount: 1, to: alice});
+  }
 }

@@ -839,7 +839,7 @@ contract Spoke is ISpoke {
   function _validateHealthFactor(address userAddress) internal view {
     (, , uint256 healthFactor, , ) = _calculateUserAccountData(userAddress);
     require(
-      healthFactor >= HEALTH_FACTOR_LIQUIDATION_THRESHOLD,
+      healthFactor > HEALTH_FACTOR_LIQUIDATION_THRESHOLD,
       HealthFactorLowerThanLiquidationThreshold()
     );
   }
