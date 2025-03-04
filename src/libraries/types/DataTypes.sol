@@ -106,6 +106,8 @@ library DataTypes {
     uint256 userCollateralInBaseCurrency;
     uint256 totalCollateralInBaseCurrency;
     uint256 totalDebtInBaseCurrency;
+    uint256 debtCounterInBaseCurrency;
+    uint256 collateralCounterInBaseCurrency;
     uint256 avgLiquidationThreshold;
     uint256 userRiskPremium;
     uint256 healthFactor;
