@@ -1158,11 +1158,135 @@ contract SpokeUserRiskPremiumTest is Base {
     );
   }
 
-  function _normalizedValue(uint256 amount, uint256 assetId) internal returns (uint256) {
+  function test_getUserRiskPremium_fuzz_applyingInterest(
+    uint256 daiSupplyAmount,
+    uint256 usdxSupplyAmount
+  ) public {
+    uint256 totalBorrowAmount = MAX_SUPPLY_AMOUNT / 2;
+    daiSupplyAmount = bound(daiSupplyAmount, 0, totalBorrowAmount);
+    usdxSupplyAmount = bound(usdxSupplyAmount, 0, totalBorrowAmount - daiSupplyAmount) / 1e12;
+
+    TestInfo memory params;
+    params.daiReserveId = spokeInfo[spoke3].dai.reserveId;
+    params.usdxReserveId = spokeInfo[spoke3].usdx.reserveId;
+    params.wethReserveId = spokeInfo[spoke3].weth.reserveId;
+    params.wbtcReserveId = spokeInfo[spoke3].wbtc.reserveId;
+
+    params.daiSupplyAmount = daiSupplyAmount;
+    params.usdxSupplyAmount = usdxSupplyAmount;
+    params.wethSupplyAmount = totalBorrowAmount - daiSupplyAmount - usdxSupplyAmount * 1e12;
+    params.wbtcSupplyAmount = MAX_SUPPLY_AMOUNT;
+
+    // Each weth is 2000 stablecoins; each wbtc is 50000
+    params.wbtcBorrowAmount =
+      (params.daiSupplyAmount + params.usdxSupplyAmount * 1e12 + (params.wethSupplyAmount * 2000)) /
+      50000e10;
+
+    params.daiLP = spoke3.getLiquidityPremium(params.daiReserveId);
+    params.usdxLP = spoke3.getLiquidityPremium(params.usdxReserveId);
+    params.wethLP = spoke3.getLiquidityPremium(params.wethReserveId);
+
+    vm.assume(
+      params.daiSupplyAmount + params.usdxSupplyAmount * 1e12 + params.wethSupplyAmount ==
+        totalBorrowAmount
+    );
+    assertEq(
+      params.daiSupplyAmount + params.usdxSupplyAmount * 1e12 + params.wethSupplyAmount,
+      totalBorrowAmount,
+      'supply amounts'
+    );
+
+    // Bob supply dai into spoke3
+    if (params.daiSupplyAmount > 0) {
+      Utils.spokeSupply(spoke3, params.daiReserveId, bob, params.daiSupplyAmount, bob);
+      setUsingAsCollateral(spoke3, bob, params.daiReserveId, true);
+    }
+
+    // Bob supply usdx into spoke3
+    if (params.usdxSupplyAmount > 0) {
+      Utils.spokeSupply(spoke3, params.usdxReserveId, bob, params.usdxSupplyAmount, bob);
+      setUsingAsCollateral(spoke3, bob, params.usdxReserveId, true);
+    }
+
+    // Bob supply weth into spoke3
+    if (params.wethSupplyAmount > 0) {
+      Utils.spokeSupply(spoke3, params.wethReserveId, bob, params.wethSupplyAmount, bob);
+      setUsingAsCollateral(spoke3, bob, params.wethReserveId, true);
+    }
+
+    // Bob supply wbtc into spoke3
+    Utils.spokeSupply(spoke3, params.wbtcReserveId, bob, params.wbtcSupplyAmount, bob);
+    setUsingAsCollateral(spoke3, bob, params.wbtcReserveId, true);
+
+    // Bob draw wbtc
+    Utils.spokeBorrow(spoke3, params.wbtcReserveId, bob, params.wbtcBorrowAmount, bob);
+
+    // Dai, usdx, and weth will each cover part of the debt
+    uint256 expectedUserRiskPremium = (params.daiLP *
+      _normalizedValue(params.daiSupplyAmount, daiAssetId) +
+      params.usdxLP *
+      _normalizedValue(params.usdxSupplyAmount, usdxAssetId) +
+      params.wethLP *
+      _normalizedValue(params.wethSupplyAmount, wethAssetId)) /
+      (_normalizedValue(params.daiSupplyAmount, daiAssetId) +
+        _normalizedValue(params.usdxSupplyAmount, usdxAssetId) +
+        _normalizedValue(params.wethSupplyAmount, wethAssetId));
+
+    assertApproxEqAbs(
+      spoke3.getUserRiskPremium(bob),
+      expectedUserRiskPremium,
+      1,
+      'user risk premium'
+    );
+
+    // Get the base rate of wbtc
+    uint256 baseRate = hub.getBaseInterestRate(wbtcAssetId);
+    uint256 baseDebt = params.wbtcBorrowAmount;
+    uint256 originalBaseDebt = params.wbtcBorrowAmount;
+    (uint256 actualBaseDebt, uint256 actualPremium) = spoke3.getUserDebt(params.wbtcReserveId, bob);
+    uint256 startTime = vm.getBlockTimestamp();
+
+    assertEq(baseDebt, actualBaseDebt, 'user base debt');
+    assertEq(actualPremium, 0, 'user outstanding premium');
+
+    // Wait a year
+    skip(365 days);
+
+    // See if base debt of wbtc changes appropriately
+    baseDebt = MathUtils.calculateLinearInterest(baseRate, uint40(startTime)).rayMul(baseDebt);
+    (actualBaseDebt, actualPremium) = spoke3.getUserDebt(params.wbtcReserveId, bob);
+    assertEq(baseDebt, actualBaseDebt, 'user base debt');
+    assertGt(baseDebt, originalBaseDebt, 'base debt should increase');
+
+    // Recalc user risk premium in case of changes due to interest accrual
+    expectedUserRiskPremium = _calculateExpectedUserRP(bob, spoke3);
+
+    // See if outstanding premium changes proportionally to user risk premium change
+    uint256 premiumDebt = (baseDebt - originalBaseDebt).percentMul(expectedUserRiskPremium);
+    assertEq(premiumDebt, actualPremium, 'user outstanding premium');
+
+    // Since Bob is only user, reserve debt should be equal to user debt
+    (uint256 reserveDebt, uint256 reservePremium) = spoke3.getReserveDebt(params.wbtcReserveId);
+    assertEq(reserveDebt, baseDebt, 'reserve base debt');
+    assertEq(reservePremium, premiumDebt, 'reserve outstanding premium');
+
+    // See if values are reflected on hub side as well
+    (uint256 spokeDebt, uint256 spokePremium) = hub.getSpokeDebt(wbtcAssetId, address(spoke3));
+    assertEq(spokeDebt, baseDebt, 'hub spoke base debt');
+    assertEq(spokePremium, premiumDebt, 'hub spoke outstanding premium');
+
+    (uint256 assetDebt, uint256 assetPremium) = hub.getAssetDebt(wbtcAssetId);
+    assertEq(assetDebt, baseDebt, 'hub asset base debt');
+    assertEq(assetPremium, premiumDebt, 'hub asset outstanding premium');
+  }
+
+  // TODO: Borrow 2 assets and ensure user risk premium is calculated and applied correctly, and both debt assets accrue
+
+  function _normalizedValue(uint256 amount, uint256 assetId) internal view returns (uint256) {
     return (amount * oracle.getAssetPrice(assetId)) / (10 ** hub.getAssetConfig(assetId).decimals);
   }
 
-  function _calculateExpectedUserRP(address user, ISpoke spoke) internal returns (uint256) {
+  function _calculateExpectedUserRP(address user, ISpoke spoke) internal view returns (uint256) {
     uint256 assetId;
     uint256 totalDebt;
     uint256 suppliedReservesCount;
