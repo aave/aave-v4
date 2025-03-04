@@ -42,9 +42,9 @@ abstract contract Base is Test {
 
   MockPriceOracle internal oracle;
   LiquidityHub internal hub;
-  Spoke internal spoke1;
-  Spoke internal spoke2;
-  Spoke internal spoke3;
+  ISpoke internal spoke1;
+  ISpoke internal spoke2;
+  ISpoke internal spoke3;
   DefaultReserveInterestRateStrategy internal irStrategy;
   DefaultReserveInterestRateStrategy internal creditLineIRStrategy;
 
@@ -96,7 +96,7 @@ abstract contract Base is Test {
     uint256 outstandingPremium;
   }
 
-  mapping(Spoke => SpokeInfo) internal spokeInfo;
+  mapping(ISpoke => SpokeInfo) internal spokeInfo;
 
   function setUp() public virtual {
     deployFixtures();
@@ -107,9 +107,9 @@ abstract contract Base is Test {
     creditLineIRStrategy = new DefaultReserveInterestRateStrategy(mockAddressesProvider);
     irStrategy = new DefaultReserveInterestRateStrategy(mockAddressesProvider);
     hub = new LiquidityHub();
-    spoke1 = new Spoke(address(hub), address(oracle));
-    spoke2 = new Spoke(address(hub), address(oracle));
-    spoke3 = new Spoke(address(hub), address(oracle));
+    spoke1 = ISpoke(new Spoke(address(hub), address(oracle)));
+    spoke2 = ISpoke(new Spoke(address(hub), address(oracle)));
+    spoke3 = ISpoke(new Spoke(address(hub), address(oracle)));
     dai = new MockERC20();
     eth = new MockERC20();
     usdc = new MockERC20();
@@ -177,6 +177,7 @@ abstract contract Base is Test {
       vm.stopPrank();
     }
   }
+
   function configureTokenList() internal {
     address[] memory spokes = new address[](3);
     spokes[0] = address(spoke1);
@@ -500,7 +501,7 @@ abstract contract Base is Test {
   }
 
   function updateLiquidityPremium(
-    Spoke spoke,
+    ISpoke spoke,
     uint256 reserveId,
     uint256 newLiquidityPremium
   ) internal {
@@ -515,22 +516,22 @@ abstract contract Base is Test {
   }
 
   // assumes spoke has usdx supported
-  function usdxReserveId(Spoke spoke) internal view returns (uint256) {
+  function usdxReserveId(ISpoke spoke) internal view returns (uint256) {
     return spokeInfo[spoke].usdx.reserveId;
   }
 
   // assumes spoke has dai supported
-  function daiReserveId(Spoke spoke) internal view returns (uint256) {
+  function daiReserveId(ISpoke spoke) internal view returns (uint256) {
     return spokeInfo[spoke].dai.reserveId;
   }
 
   // assumes spoke has weth supported
-  function wethReserveId(Spoke spoke) internal view returns (uint256) {
+  function wethReserveId(ISpoke spoke) internal view returns (uint256) {
     return spokeInfo[spoke].weth.reserveId;
   }
 
   // assumes spoke has wbtc supported
-  function wbtcReserveId(Spoke spoke) internal view returns (uint256) {
+  function wbtcReserveId(ISpoke spoke) internal view returns (uint256) {
     return spokeInfo[spoke].wbtc.reserveId;
   }
 
@@ -573,13 +574,13 @@ abstract contract Base is Test {
     return reserveData;
   }
 
-  function getAssetInfo(Spoke spoke, uint256 reserveId) internal view returns (uint256, IERC20) {
+  function getAssetInfo(ISpoke spoke, uint256 reserveId) internal view returns (uint256, IERC20) {
     DataTypes.Reserve memory reserve = spoke.getReserve(reserveId);
     return (reserve.assetId, IERC20(reserve.asset));
   }
 
   function getWithdrawalLimit(
-    Spoke spoke,
+    ISpoke spoke,
     uint256 reserveId,
     address user
   ) internal view returns (uint256) {
