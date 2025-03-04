@@ -5,6 +5,7 @@ on:
   push:
     branches:
       - main
+      - feat/*
   workflow_dispatch:
 
 jobs:
@@ -29,4 +30,3 @@ jobs:
             echo "➡️ Run 'make gas-report' locally and commit the updated snapshot."
             exit $EXIT_CODE
           fi
-
