@@ -5,6 +5,7 @@ import 'tests/Base.t.sol';
 
 contract SpokeBase is Base {
   using PercentageMath for uint256;
+  using WadRayMath for uint256;
 
   struct TestData {
     DataTypes.Reserve data;
@@ -242,26 +243,22 @@ contract SpokeBase is Base {
     uint256 debtPrice = oracle.getAssetPrice(debtData.assetId);
 
     uint256 minColl = ((debtAmount * debtPrice * collAssetUnits) / (collPrice * debtAssetUnits))
-      .percentDiv(collData.config.lt) + 1;
-
-    console.log('calcDebt %e', (debtAmount * debtPrice) / (debtAssetUnits));
-    console.log(
-      'calcColl %e',
-      ((minColl * collPrice) / collAssetUnits).percentMul(collData.config.lt)
-    );
+      .percentDiv(collData.config.lt) + _calcMinAmountWithinHFResolution(spoke, collReserveId);
 
     return minColl;
   }
 
   // calculate min allowable debt amount which truncates to 0 due to precision loss within HF calc
-  // due to mul by assetPrice (1e8) and div by assetUnit (10 ** decimals) in _getUserDebtInBaseCurrency / _getUserBalanceInBaseCurrency
+  // due to mul by assetPrice (1e8) and div by assetUnit (10 ** decimals) in _getUserDebtInBaseCurrency & _getUserBalanceInBaseCurrency
   function _calcMinAmountWithinHFResolution(
     ISpoke spoke,
     uint256 reserveId
   ) internal view returns (uint256) {
     (uint256 assetId, ) = getAssetInfo(spoke, reserveId);
-    uint256 decimals = hub.getAssetConfig(assetId).decimals;
-    // assume asset price is returned with 8 units of precision
-    return 10 ** (decimals - 8) - 1;
+    uint256 units = 10 ** hub.getAssetConfig(assetId).decimals;
+    uint256 price = oracle.getAssetPrice(assetId);
+    // make sure to round up
+    console.log('minFactor %e', (units + price - 1) / price);
+    return (units + price - 1) / price;
   }
 }

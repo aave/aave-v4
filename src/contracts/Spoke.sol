@@ -611,8 +611,8 @@ contract Spoke is ISpoke {
       ? 0
       : vars.userRiskPremium.wadDiv(vars.totalCollateralInBaseCurrency);
     console2.log(
-      'SP: coll/debt/mul %e %e',
-      vars.totalCollateralInBaseCurrency,
+      'SP: mul/debt/cmp %e %e',
+      vars.totalCollateralInBaseCurrency.percentMul(vars.avgLiquidationThreshold),
       vars.totalDebtInBaseCurrency,
       vars.totalCollateralInBaseCurrency.percentMul(vars.avgLiquidationThreshold) >
         vars.totalDebtInBaseCurrency
@@ -676,6 +676,12 @@ contract Spoke is ISpoke {
     uint256 assetPrice,
     uint256 assetUnit
   ) internal view returns (uint256) {
+    console2.log(
+      'SP: assetId %s, suppliedAmt: %e bal: %e',
+      assetId,
+      liquidityHub.convertToAssets(assetId, user.suppliedShares),
+      (liquidityHub.convertToAssets(assetId, user.suppliedShares) * assetPrice) / assetUnit
+    );
     return (liquidityHub.convertToAssets(assetId, user.suppliedShares) * assetPrice) / assetUnit;
   }
 
@@ -849,6 +855,7 @@ contract Spoke is ISpoke {
 
   function _validateHealthFactor(address userAddress) internal view {
     (, , uint256 healthFactor, , ) = _calculateUserAccountData(userAddress);
+    // console2.log('SP validateHF', healthFactor >= HEALTH_FACTOR_LIQUIDATION_THRESHOLD);
     require(
       healthFactor >= HEALTH_FACTOR_LIQUIDATION_THRESHOLD,
       HealthFactorLowerThanLiquidationThreshold()

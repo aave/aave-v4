@@ -1294,4 +1294,88 @@ contract SpokeWithdrawTest is SpokeBase {
   //   vm.expectRevert(ISpoke.HealthFactorLowerThanLiquidationThreshold.selector);
   //   spoke1.withdraw({reserveId: collReserveId, amount: 1, to: alice});
   // }
+
+  function test_withdraw_fuzz_revertsWith_HealthFactorLowerThanLiquidationThreshold()
+    public
+  // uint256 debtAmount //
+  {
+    uint256 collReserveId = wethReserveId(spoke1);
+    uint256 debtReserveId = daiReserveId(spoke1);
+    uint256 debtAmount = 133757651538751390055685;
+    // uint256 debtAmount = 10e18;
+
+    // if debt amount is greater than HF resolution, no withdrawal is allowed
+    // debtAmount = bound(
+    //   debtAmount,
+    //   _calcMinDebtAmountWithinHFResolution(spoke1, collReserveId),
+    //   MAX_SUPPLY_AMOUNT
+    // );
+
+    uint256 minCollAmount = _calcMinimumCollAmount({
+      spoke: ISpoke(spoke1),
+      collReserveId: collReserveId,
+      debtReserveId: debtReserveId,
+      debtAmount: debtAmount
+    });
+
+    // console.log('minColl %e', minCollAmount);
+
+    // Alice supplies weth as collateral
+    Utils.spokeSupply({
+      spoke: spoke1,
+      reserveId: collReserveId,
+      user: alice,
+      amount: minCollAmount,
+      onBehalfOf: alice
+    });
+    setUsingAsCollateral(spoke1, alice, collReserveId, true);
+
+    // Bob supplies dai
+    Utils.spokeSupply({
+      spoke: spoke1,
+      reserveId: debtReserveId,
+      user: bob,
+      amount: debtAmount,
+      onBehalfOf: bob
+    });
+
+    // Alice borrows dai
+    Utils.spokeBorrow({
+      spoke: spoke1,
+      reserveId: debtReserveId,
+      user: alice,
+      amount: debtAmount,
+      onBehalfOf: alice
+    });
+
+    (
+      uint256 userRiskPremium,
+      uint256 avgLiquidationThreshold,
+      uint256 healthFactor,
+      uint256 totalCollateralInBaseCurrency,
+      uint256 totalDebtInBaseCurrency
+    ) = spoke1.getUserAccountData(alice);
+
+    console.log(
+      'test hf %e %e %e',
+      avgLiquidationThreshold,
+      totalCollateralInBaseCurrency,
+      totalDebtInBaseCurrency
+    );
+
+    console.log(
+      'backcalc',
+      ((totalCollateralInBaseCurrency.percentMul(8000) - totalDebtInBaseCurrency) * 10 ** 18) /
+        oracle.getAssetPrice(spoke1.getReserve(collReserveId).assetId)
+    );
+
+    uint256 draw = ((totalCollateralInBaseCurrency.percentMul(8000) - totalDebtInBaseCurrency) *
+      10 ** 18) / oracle.getAssetPrice(spoke1.getReserve(collReserveId).assetId);
+
+    assertGe(spoke1.getHealthFactor(alice), spoke1.HEALTH_FACTOR_LIQUIDATION_THRESHOLD());
+
+    vm.expectRevert(ISpoke.HealthFactorLowerThanLiquidationThreshold.selector);
+    vm.prank(alice);
+    spoke1.withdraw({reserveId: collReserveId, amount: draw + 1, to: alice});
+  }
 }
