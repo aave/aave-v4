@@ -3,7 +3,7 @@ pragma solidity ^0.8.0;
 
 import {Base} from 'tests/Base.t.sol';
 
-contract SpokeOperations_Gas_Tests is Base {
+contract LiquidityHubOperations_Gas_Tests is Base {
   function setUp() public override {
     deployFixtures();
     initEnvironment();
