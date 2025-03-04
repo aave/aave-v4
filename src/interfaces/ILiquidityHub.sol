@@ -42,11 +42,12 @@ interface ILiquidityHub {
   error AssetNotActive();
   error SupplyCapExceeded(uint256 supplyCap);
   error InvalidWithdrawAmount();
+  error InvalidRestoreAmount();
   error SuppliedAmountExceeded(uint256 suppliedAmount);
   error NotAvailableLiquidity(uint256 availableLiquidity);
   error InvalidDrawAmount();
   error DrawCapExceeded(uint256 drawCap);
-  error ZeroOrSurplusAmountRestored(uint256 maxAllowedRestore);
+  error SurplusAmountRestored(uint256 maxAllowedRestore);
   error InvalidSpoke();
   error InvalidRiskPremiumBps(uint256 bps);
 

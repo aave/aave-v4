@@ -1162,7 +1162,7 @@ contract SpokeUserRiskPremiumTest is Base {
     return (amount * oracle.getAssetPrice(assetId)) / (10 ** hub.getAssetConfig(assetId).decimals);
   }
 
-  function _calculateExpectedUserRP(address user, Spoke spoke) internal returns (uint256) {
+  function _calculateExpectedUserRP(address user, ISpoke spoke) internal returns (uint256) {
     uint256 assetId;
     uint256 totalDebt;
     uint256 suppliedReservesCount;

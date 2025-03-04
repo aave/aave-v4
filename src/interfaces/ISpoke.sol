@@ -2,6 +2,8 @@
 pragma solidity ^0.8.0;
 
 import {DataTypes} from 'src/libraries/types/DataTypes.sol';
+import {ILiquidityHub} from 'src/interfaces/ILiquidityHub.sol';
+import {IPriceOracle} from 'src/interfaces/IPriceOracle.sol';
 
 /**
  * @title ISpoke
@@ -97,4 +99,8 @@ interface ISpoke {
     uint256 reserveId,
     address user
   ) external view returns (DataTypes.UserPosition memory);
+  function liquidityHub() external view returns (ILiquidityHub);
+  function oracle() external view returns (IPriceOracle);
+  function reservesList(uint256) external view returns (uint256);
+  function reserveCount() external view returns (uint256);
 }

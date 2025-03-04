@@ -2,19 +2,18 @@
 pragma solidity ^0.8.0;
 
 import 'tests/Base.t.sol';
-import {DataTypes} from 'src/libraries/types/DataTypes.sol';
 
 contract SpokeBase is Base {
+  using PercentageMath for uint256;
+
   struct TestData {
     DataTypes.Reserve data;
     uint256 suppliedAmount;
-    uint256 cumulatedBaseInterest;
   }
 
   struct TestUserData {
     DataTypes.UserPosition data;
     uint256 suppliedAmount;
-    uint256 cumulatedBaseInterest;
   }
 
   struct TokenData {
@@ -29,6 +28,7 @@ contract SpokeBase is Base {
     address supplier;
     address borrower;
   }
+
   function setUp() public virtual override {
     super.setUp();
     initEnvironment();
@@ -56,7 +56,7 @@ contract SpokeBase is Base {
   /// @return supply shares of borrowed asset
   /// @return supply amount of borrowed asset
   function _increaseReserveIndex(
-    Spoke spoke,
+    ISpoke spoke,
     uint256 reserveId
   ) internal returns (uint256, uint256, uint256, uint256, uint256) {
     SupplyBorrowLocal memory state;
@@ -102,7 +102,7 @@ contract SpokeBase is Base {
   /// @return supplyShares of collateral asset
   /// @return supplyShares of borrowed asset
   function _executeSpokeSupplyAndBorrow(
-    Spoke spoke,
+    ISpoke spoke,
     TestReserve memory collateral,
     TestReserve memory borrow,
     uint256 rate,
@@ -199,7 +199,10 @@ contract SpokeBase is Base {
     return (state.collateralSupplyShares, state.borrowSupplyShares);
   }
 
-  function loadReserveInfo(Spoke spoke, uint256 reserveId) internal view returns (TestData memory) {
+  function loadReserveInfo(
+    ISpoke spoke,
+    uint256 reserveId
+  ) internal view returns (TestData memory) {
     TestData memory reserveInfo;
     reserveInfo.data = getReserveInfo(spoke, reserveId);
     reserveInfo.suppliedAmount = spoke.getReserveSuppliedAmount(reserveId);
@@ -222,5 +225,25 @@ contract SpokeBase is Base {
     tokenData.spokeBalance = token.balanceOf(spoke);
     tokenData.hubBalance = token.balanceOf(address(hub));
     return tokenData;
+  }
+
+  function _calcMinimumCollAmount(
+    ISpoke spoke,
+    uint256 collReserveId,
+    uint256 debtReserveId,
+    uint256 debtAmount
+  ) internal view returns (uint256) {
+    DataTypes.Reserve memory collData = spoke.getReserve(collReserveId);
+    uint256 collPrice = oracle.getAssetPrice(collData.assetId);
+    uint256 collAssetUnits = 10 ** hub.getAsset(collData.assetId).config.decimals;
+
+    DataTypes.Reserve memory debtData = spoke.getReserve(debtReserveId);
+    uint256 debtAssetUnits = 10 ** hub.getAsset(debtData.assetId).config.decimals;
+    uint256 debtPrice = oracle.getAssetPrice(debtData.assetId);
+
+    return
+      ((debtAmount * debtPrice * collAssetUnits) / (collPrice * debtAssetUnits)).percentDiv(
+        collData.config.lt
+      ) + 1;
   }
 }

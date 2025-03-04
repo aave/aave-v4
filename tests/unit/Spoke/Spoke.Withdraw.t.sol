@@ -520,11 +520,6 @@ contract SpokeWithdrawTest is SpokeBase {
     bobData[stage] = loadUserInfo(spoke1, state.reserveId, bob);
     tokenData[stage] = getTokenBalances(tokenList.dai, address(spoke1));
 
-    reserveData[stage].cumulatedBaseInterest = MathUtils.calculateLinearInterest(
-      state.rate,
-      uint40(state.timestamp)
-    );
-
     // reserve
     assertEq(reserveData[stage].data.baseDebt, 0, 'reserveData base debt');
     assertEq(reserveData[stage].data.outstandingPremium, 0, 'reserveData outstanding premium');

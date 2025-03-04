@@ -348,8 +348,7 @@ contract Spoke is ISpoke {
     uint256 reserveId,
     address user
   ) public view returns (DataTypes.UserPosition memory) {
-    DataTypes.UserPosition memory user = _users[user][reserveId];
-    return user;
+    return _users[user][reserveId];
   }
 
   // internal

@@ -97,7 +97,7 @@ contract LiquidityHubRestoreTest is LiquidityHubBase {
 
     // alice restore invalid amount > drawn amount AND premium
     vm.expectRevert(
-      abi.encodeWithSelector(ILiquidityHub.ZeroOrSurplusAmountRestored.selector, drawAmount)
+      abi.encodeWithSelector(ILiquidityHub.SurplusAmountRestored.selector, drawAmount)
     );
 
     vm.prank(address(spoke1));
@@ -105,7 +105,7 @@ contract LiquidityHubRestoreTest is LiquidityHubBase {
   }
 
   function test_restore_revertsWith_invalid_restore_amount_zero() public {
-    vm.expectRevert(abi.encodeWithSelector(ILiquidityHub.ZeroOrSurplusAmountRestored.selector, 0));
+    vm.expectRevert(ILiquidityHub.InvalidRestoreAmount.selector);
 
     vm.prank(address(spoke1));
     hub.restore({assetId: daiAssetId, amount: 0, riskPremium: 0, repayer: alice});
@@ -182,7 +182,7 @@ contract LiquidityHubRestoreTest is LiquidityHubBase {
 
     // alice restore invalid amount > drawn amount (no premium)
     vm.expectRevert(
-      abi.encodeWithSelector(ILiquidityHub.ZeroOrSurplusAmountRestored.selector, cumulatedBaseDebt)
+      abi.encodeWithSelector(ILiquidityHub.SurplusAmountRestored.selector, cumulatedBaseDebt)
     );
 
     vm.prank(address(spoke1));
@@ -269,7 +269,7 @@ contract LiquidityHubRestoreTest is LiquidityHubBase {
 
     // alice restore invalid amount > drawn amount (no premium)
     vm.expectRevert(
-      abi.encodeWithSelector(ILiquidityHub.ZeroOrSurplusAmountRestored.selector, cumulatedBaseDebt)
+      abi.encodeWithSelector(ILiquidityHub.SurplusAmountRestored.selector, cumulatedBaseDebt)
     );
 
     vm.prank(address(spoke1));
@@ -355,7 +355,7 @@ contract LiquidityHubRestoreTest is LiquidityHubBase {
     // alice restore invalid amount > drawn amount AND premium
     vm.expectRevert(
       abi.encodeWithSelector(
-        ILiquidityHub.ZeroOrSurplusAmountRestored.selector,
+        ILiquidityHub.SurplusAmountRestored.selector,
         cumulatedBaseDebt + accruedPremium
       )
     );
@@ -448,7 +448,7 @@ contract LiquidityHubRestoreTest is LiquidityHubBase {
     // alice restore invalid amount > drawn amount AND premium
     vm.expectRevert(
       abi.encodeWithSelector(
-        ILiquidityHub.ZeroOrSurplusAmountRestored.selector,
+        ILiquidityHub.SurplusAmountRestored.selector,
         cumulatedBaseDebt + accruedPremium
       )
     );
