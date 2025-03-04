@@ -38,6 +38,10 @@ contract SpokeRiskPremiumScenarioTest is Base {
     vars.daiBorrowAmount = 10_000e18; // 10_000 usd, 20 lp
     vars.delay = 365 days;
 
+    // set LT to 1 for Alice collateral
+    updateLiquidationThreshold(spoke1, wethReserveId(spoke1), 10_000);
+    updateLiquidationThreshold(spoke1, usdxReserveId(spoke1), 10_000);
+
     vm.prank(bob);
     spoke1.supply(daiReserveId(spoke1), vars.daiBorrowAmount);
 
