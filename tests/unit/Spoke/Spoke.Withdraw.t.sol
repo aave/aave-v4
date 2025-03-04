@@ -309,6 +309,7 @@ contract SpokeWithdrawTest is SpokeBase {
       amount: params.borrowAmount, // highest value asset so that it is enough collateral
       onBehalfOf: carol
     });
+    setUsingAsCollateral(spoke1, carol, wbtcReserveId(spoke1), true);
     Utils.spokeBorrow({
       spoke: spoke1,
       reserveId: params.reserveId,
