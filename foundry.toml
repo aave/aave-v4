@@ -14,7 +14,6 @@ isolate = true
 gas_snapshot_check = true
 [fuzz]
 runs = 10000
-show_logs = true
 
 [rpc_endpoints]
 mainnet = "${RPC_MAINNET}"
