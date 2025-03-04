@@ -19,6 +19,8 @@ jobs:
         uses: actions/checkout@v4
       - name: Install Foundry
         uses: bgd-labs/github-workflows/.github/actions/foundry-setup@main
+      - name: Build Project
+        run: make build
       - name: Check gas snapshot
         run: |
           set +e
