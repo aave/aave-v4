@@ -1294,16 +1294,4 @@ contract SpokeWithdrawTest is SpokeBase {
   //   vm.expectRevert(ISpoke.HealthFactorLowerThanLiquidationThreshold.selector);
   //   spoke1.withdraw({reserveId: collReserveId, amount: 1, to: alice});
   // }
-
-  // calculate min allowable debt amount which truncates to 0 due to precision loss within HF calc
-  // due to mul by assetPrice (1e8) and div by assetUnit (10 ** decimals) in _getUserDebtInBaseCurrency / _getUserBalanceInBaseCurrency
-  function _calcMinDebtAmountWithinHFResolution(
-    ISpoke spoke,
-    uint256 reserveId
-  ) internal returns (uint256) {
-    (uint256 assetId, ) = getAssetInfo(spoke, reserveId);
-    uint256 decimals = hub.getAssetConfig(assetId).decimals;
-    // assume asset price is returned with 8 units of precision
-    return 10 ** (decimals - 8) - 1;
-  }
 }

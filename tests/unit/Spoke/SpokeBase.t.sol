@@ -241,9 +241,27 @@ contract SpokeBase is Base {
     uint256 debtAssetUnits = 10 ** hub.getAsset(debtData.assetId).config.decimals;
     uint256 debtPrice = oracle.getAssetPrice(debtData.assetId);
 
-    return
-      ((debtAmount * debtPrice * collAssetUnits) / (collPrice * debtAssetUnits)).percentDiv(
-        collData.config.lt
-      ) + 1;
+    uint256 minColl = ((debtAmount * debtPrice * collAssetUnits) / (collPrice * debtAssetUnits))
+      .percentDiv(collData.config.lt) + 1;
+
+    console.log('calcDebt %e', (debtAmount * debtPrice) / (debtAssetUnits));
+    console.log(
+      'calcColl %e',
+      ((minColl * collPrice) / collAssetUnits).percentMul(collData.config.lt)
+    );
+
+    return minColl;
+  }
+
+  // calculate min allowable debt amount which truncates to 0 due to precision loss within HF calc
+  // due to mul by assetPrice (1e8) and div by assetUnit (10 ** decimals) in _getUserDebtInBaseCurrency / _getUserBalanceInBaseCurrency
+  function _calcMinAmountWithinHFResolution(
+    ISpoke spoke,
+    uint256 reserveId
+  ) internal view returns (uint256) {
+    (uint256 assetId, ) = getAssetInfo(spoke, reserveId);
+    uint256 decimals = hub.getAssetConfig(assetId).decimals;
+    // assume asset price is returned with 8 units of precision
+    return 10 ** (decimals - 8) - 1;
   }
 }

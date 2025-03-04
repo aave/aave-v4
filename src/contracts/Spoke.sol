@@ -10,6 +10,8 @@ import {ISpoke} from 'src/interfaces/ISpoke.sol';
 import {IPriceOracle} from 'src/interfaces/IPriceOracle.sol';
 import {DataTypes} from 'src/libraries/types/DataTypes.sol';
 
+import 'forge-std/console2.sol';
+
 contract Spoke is ISpoke {
   using WadRayMath for uint256;
   using PercentageMath for uint256;
@@ -201,6 +203,7 @@ contract Spoke is ISpoke {
     });
     liquidityHub.draw(reserve.assetId, amount, uint32(newReserveRiskPremium.derayify()), to);
     _notifyRiskPremiumUpdate(reserve.assetId, msg.sender, newUserRiskPremium);
+    console2.log('post-borrow');
     _validateHealthFactor(msg.sender);
 
     emit Borrowed(reserveId, to, amount);
@@ -607,12 +610,20 @@ contract Spoke is ISpoke {
     vars.userRiskPremium = vars.totalCollateralInBaseCurrency == 0
       ? 0
       : vars.userRiskPremium.wadDiv(vars.totalCollateralInBaseCurrency);
-
+    console2.log(
+      'SP: coll/debt/mul %e %e',
+      vars.totalCollateralInBaseCurrency,
+      vars.totalDebtInBaseCurrency,
+      vars.totalCollateralInBaseCurrency.percentMul(vars.avgLiquidationThreshold) >
+        vars.totalDebtInBaseCurrency
+    );
     vars.healthFactor = vars.totalDebtInBaseCurrency == 0
       ? type(uint256).max
       : (vars.totalCollateralInBaseCurrency.percentMul(vars.avgLiquidationThreshold)).wadDiv(
         vars.totalDebtInBaseCurrency
       ); // HF of 1 -> 1e18
+
+    console2.log('SP: hf %e', vars.healthFactor);
 
     list.sortByKey(); // sort by liquidity premium
     vars.i = 0;
@@ -839,7 +850,7 @@ contract Spoke is ISpoke {
   function _validateHealthFactor(address userAddress) internal view {
     (, , uint256 healthFactor, , ) = _calculateUserAccountData(userAddress);
     require(
-      healthFactor > HEALTH_FACTOR_LIQUIDATION_THRESHOLD,
+      healthFactor >= HEALTH_FACTOR_LIQUIDATION_THRESHOLD,
       HealthFactorLowerThanLiquidationThreshold()
     );
   }
