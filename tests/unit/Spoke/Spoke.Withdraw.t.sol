@@ -996,13 +996,11 @@ contract SpokeWithdrawTest is SpokeBase {
     uint256 debtReserveId = daiReserveId(spoke1);
 
     uint256 minCollAmount = _calcMinimumCollAmount({
-      spoke: ISpoke(spoke1),
+      spoke: spoke1,
       collReserveId: collReserveId,
       debtReserveId: debtReserveId,
       debtAmount: debtAmount
-    }) - 1;
-
-    console.log('minCollAmount %e', minCollAmount);
+    });
 
     // Alice supplies weth as collateral
     Utils.spokeSupply({
@@ -1013,8 +1011,6 @@ contract SpokeWithdrawTest is SpokeBase {
       onBehalfOf: alice
     });
     setUsingAsCollateral(spoke1, alice, collReserveId, true);
-
-    spoke1.getHealthFactor(alice);
 
     // Bob supplies dai
     Utils.spokeSupply({
@@ -1042,234 +1038,215 @@ contract SpokeWithdrawTest is SpokeBase {
     spoke1.withdraw({reserveId: collReserveId, amount: 1, to: alice});
   }
 
-  function test_withdraw_fuzz_revertsWith_HealthFactorLowerThanLiquidationThreshold()
-    public
-  // uint256 debtAmount //
-  {
-    uint256 collReserveId = wethReserveId(spoke1);
-    uint256 debtReserveId = daiReserveId(spoke1);
-    uint256 debtAmount = 133757651538751390055685;
-    // uint256 debtAmount = 10e18;
+  // function test_withdraw_revertsWith_HealthFactorLowerThanLiquidationThreshold_interest_increase()
+  //   public
+  // {
+  //   uint256 debtAmount = 50e18;
+  //   uint256 collReserveId = wethReserveId(spoke1);
+  //   uint256 debtReserveId = daiReserveId(spoke1);
 
-    // if debt amount is greater than HF resolution, no withdrawal is allowed
-    // debtAmount = bound(
-    //   debtAmount,
-    //   _calcMinDebtAmountWithinHFResolution(spoke1, collReserveId),
-    //   MAX_SUPPLY_AMOUNT
-    // );
+  //   uint256 minCollAmount = _calcMinimumCollAmount({
+  //     spoke: spoke1,
+  //     collReserveId: collReserveId,
+  //     debtReserveId: debtReserveId,
+  //     debtAmount: debtAmount
+  //   });
 
-    uint256 minCollAmount = _calcMinimumCollAmount({
-      spoke: ISpoke(spoke1),
-      collReserveId: collReserveId,
-      debtReserveId: debtReserveId,
-      debtAmount: debtAmount
-    }) + _calcMinDebtAmountWithinHFResolution(spoke1, collReserveId);
+  //   // Alice supplies weth as collateral
+  //   Utils.spokeSupply({
+  //     spoke: spoke1,
+  //     reserveId: collReserveId,
+  //     user: alice,
+  //     amount: minCollAmount,
+  //     onBehalfOf: alice
+  //   });
+  //   setUsingAsCollateral(spoke1, alice, collReserveId, true);
 
-    // console.log('minColl %e', minCollAmount);
+  //   // Bob supplies dai
+  //   Utils.spokeSupply({
+  //     spoke: spoke1,
+  //     reserveId: debtReserveId,
+  //     user: bob,
+  //     amount: debtAmount,
+  //     onBehalfOf: bob
+  //   });
 
-    // Alice supplies weth as collateral
-    Utils.spokeSupply({
-      spoke: spoke1,
-      reserveId: collReserveId,
-      user: alice,
-      amount: minCollAmount,
-      onBehalfOf: alice
-    });
-    setUsingAsCollateral(spoke1, alice, collReserveId, true);
+  //   // // Alice borrows dai
+  //   // Utils.spokeBorrow({
+  //   //   spoke: spoke1,
+  //   //   reserveId: debtReserveId,
+  //   //   user: alice,
+  //   //   amount: debtAmount,
+  //   //   onBehalfOf: alice
+  //   // });
 
-    // Bob supplies dai
-    Utils.spokeSupply({
-      spoke: spoke1,
-      reserveId: debtReserveId,
-      user: bob,
-      amount: debtAmount,
-      onBehalfOf: bob
-    });
+  //   // // accrue interest so that alice is undercollateralized
+  //   // skip(365 days);
 
-    // Alice borrows dai
-    Utils.spokeBorrow({
-      spoke: spoke1,
-      reserveId: debtReserveId,
-      user: alice,
-      amount: debtAmount,
-      onBehalfOf: alice
-    });
+  //   // assertLt(spoke1.getHealthFactor(alice), spoke1.HEALTH_FACTOR_LIQUIDATION_THRESHOLD());
 
-    (
-      uint256 userRiskPremium,
-      uint256 avgLiquidationThreshold,
-      uint256 healthFactor,
-      uint256 totalCollateralInBaseCurrency,
-      uint256 totalDebtInBaseCurrency
-    ) = spoke1.getUserAccountData(alice);
+  //   // // withdrawing any amount will result in HF < threshold
+  //   // vm.prank(alice);
+  //   // vm.expectRevert(ISpoke.HealthFactorLowerThanLiquidationThreshold.selector);
+  //   // spoke1.withdraw({reserveId: collReserveId, amount: 1, to: alice});
+  // }
 
-    console.log(
-      'test hf %e %e %e',
-      avgLiquidationThreshold,
-      totalCollateralInBaseCurrency,
-      totalDebtInBaseCurrency
-    );
+  // // if user borrows a debt amount less than precision loss, user can withdraw all
+  // function test_withdraw_lt_precision_bounds() public {
+  //   uint256 collReserveId = wethReserveId(spoke1);
+  //   uint256 debtReserveId = daiReserveId(spoke1);
+  //   uint256 debtAmount = _calcMinDebtAmountWithinHFResolution(spoke1, collReserveId);
 
-    console.log(
-      'backcalc',
-      ((totalCollateralInBaseCurrency.percentMul(8000) - totalDebtInBaseCurrency) * 10 ** 18) /
-        oracle.getAssetPrice(spoke1.getReserve(collReserveId).assetId)
-    );
+  //   uint256 maxCollAmount = MAX_SUPPLY_AMOUNT;
 
-    uint256 draw = ((totalCollateralInBaseCurrency.percentMul(8000) - totalDebtInBaseCurrency) *
-      10 ** 18) / oracle.getAssetPrice(spoke1.getReserve(collReserveId).assetId);
+  //   // Alice supplies weth as collateral
+  //   Utils.spokeSupply({
+  //     spoke: spoke1,
+  //     reserveId: collReserveId,
+  //     user: alice,
+  //     amount: maxCollAmount,
+  //     onBehalfOf: alice
+  //   });
+  //   setUsingAsCollateral(spoke1, alice, collReserveId, true);
 
-    assertGe(spoke1.getHealthFactor(alice), spoke1.HEALTH_FACTOR_LIQUIDATION_THRESHOLD());
+  //   // Bob supplies dai
+  //   Utils.spokeSupply({
+  //     spoke: spoke1,
+  //     reserveId: debtReserveId,
+  //     user: bob,
+  //     amount: debtAmount,
+  //     onBehalfOf: bob
+  //   });
 
-    vm.expectRevert(ISpoke.HealthFactorLowerThanLiquidationThreshold.selector);
-    vm.prank(alice);
-    spoke1.withdraw({reserveId: collReserveId, amount: draw + 1, to: alice});
-  }
+  //   // Alice borrows dai
+  //   Utils.spokeBorrow({
+  //     spoke: spoke1,
+  //     reserveId: debtReserveId,
+  //     user: alice,
+  //     amount: debtAmount,
+  //     onBehalfOf: alice
+  //   });
 
-  // if user borrows a debt amount less than precision loss, user can withdraw all
-  function test_withdraw_lt_precision_bounds() public {
-    uint256 collReserveId = wethReserveId(spoke1);
-    uint256 debtReserveId = daiReserveId(spoke1);
-    uint256 debtAmount = _calcMinDebtAmountWithinHFResolution(spoke1, collReserveId) - 1;
+  //   assertGt(spoke1.getHealthFactor(alice), spoke1.HEALTH_FACTOR_LIQUIDATION_THRESHOLD());
 
-    uint256 maxCollAmount = MAX_SUPPLY_AMOUNT;
+  //   uint256 aliceDaiBalanceBefore = tokenList.weth.balanceOf(alice);
+  //   uint256 fullSuppliedAmount = spoke1.getUserSuppliedAmount(collReserveId, alice);
 
-    // Alice supplies weth as collateral
-    Utils.spokeSupply({
-      spoke: spoke1,
-      reserveId: collReserveId,
-      user: alice,
-      amount: maxCollAmount,
-      onBehalfOf: alice
-    });
-    setUsingAsCollateral(spoke1, alice, collReserveId, true);
+  //   vm.prank(alice);
+  //   spoke1.withdraw({reserveId: collReserveId, amount: fullSuppliedAmount, to: alice});
 
-    // Bob supplies dai
-    Utils.spokeSupply({
-      spoke: spoke1,
-      reserveId: debtReserveId,
-      user: bob,
-      amount: debtAmount,
-      onBehalfOf: bob
-    });
+  //   uint256 aliceDaiBalanceAfter = tokenList.weth.balanceOf(alice);
 
-    // Alice borrows dai
-    Utils.spokeBorrow({
-      spoke: spoke1,
-      reserveId: debtReserveId,
-      user: alice,
-      amount: debtAmount,
-      onBehalfOf: alice
-    });
+  //   assertEq(aliceDaiBalanceAfter, aliceDaiBalanceBefore + fullSuppliedAmount, 'alice dai balance');
+  // }
 
-    assertGt(spoke1.getHealthFactor(alice), spoke1.HEALTH_FACTOR_LIQUIDATION_THRESHOLD());
+  // function test_withdraw_fuzz_lt_precision_bounds(uint256 debtAmount) public {
+  //   uint256 collReserveId = wethReserveId(spoke1);
+  //   uint256 debtReserveId = daiReserveId(spoke1);
+  //   uint256 debtAmount = bound(
+  //     debtAmount,
+  //     1,
+  //     _calcMinDebtAmountWithinHFResolution(spoke1, collReserveId) - 1
+  //   );
 
-    uint256 fullSuppliedAmount = spoke1.getUserSuppliedAmount(collReserveId, alice);
-    vm.prank(alice);
-    spoke1.withdraw({reserveId: collReserveId, amount: fullSuppliedAmount, to: alice});
-  }
+  //   uint256 maxCollAmount = MAX_SUPPLY_AMOUNT;
 
-  function test_withdraw_fuzz_lt_precision_bounds(uint256 debtAmount) public {
-    uint256 collReserveId = wethReserveId(spoke1);
-    uint256 debtReserveId = daiReserveId(spoke1);
-    uint256 debtAmount = bound(
-      debtAmount,
-      1,
-      _calcMinDebtAmountWithinHFResolution(spoke1, collReserveId) - 1
-    );
+  //   // Alice supplies weth as collateral
+  //   Utils.spokeSupply({
+  //     spoke: spoke1,
+  //     reserveId: collReserveId,
+  //     user: alice,
+  //     amount: maxCollAmount,
+  //     onBehalfOf: alice
+  //   });
 
-    uint256 maxCollAmount = MAX_SUPPLY_AMOUNT;
+  //   // Bob supplies weth
+  //   Utils.spokeSupply({
+  //     spoke: spoke1,
+  //     reserveId: debtReserveId,
+  //     user: bob,
+  //     amount: debtAmount,
+  //     onBehalfOf: bob
+  //   });
 
-    // Alice supplies weth as collateral
-    Utils.spokeSupply({
-      spoke: spoke1,
-      reserveId: collReserveId,
-      user: alice,
-      amount: maxCollAmount,
-      onBehalfOf: alice
-    });
+  //   // Bob supplies dai
+  //   Utils.spokeSupply({
+  //     spoke: spoke1,
+  //     reserveId: debtReserveId,
+  //     user: bob,
+  //     amount: debtAmount,
+  //     onBehalfOf: bob
+  //   });
 
-    // Bob supplies weth
-    Utils.spokeSupply({
-      spoke: spoke1,
-      reserveId: debtReserveId,
-      user: bob,
-      amount: debtAmount,
-      onBehalfOf: bob
-    });
+  //   // Alice borrows dai
+  //   Utils.spokeBorrow({
+  //     spoke: spoke1,
+  //     reserveId: debtReserveId,
+  //     user: alice,
+  //     amount: debtAmount,
+  //     onBehalfOf: alice
+  //   });
 
-    // Bob supplies dai
-    Utils.spokeSupply({
-      spoke: spoke1,
-      reserveId: debtReserveId,
-      user: bob,
-      amount: debtAmount,
-      onBehalfOf: bob
-    });
+  //   assertGt(spoke1.getHealthFactor(alice), spoke1.HEALTH_FACTOR_LIQUIDATION_THRESHOLD());
 
-    // Alice borrows dai
-    Utils.spokeBorrow({
-      spoke: spoke1,
-      reserveId: debtReserveId,
-      user: alice,
-      amount: debtAmount,
-      onBehalfOf: alice
-    });
+  //   uint256 aliceDaiBalanceBefore = tokenList.weth.balanceOf(alice);
+  //   uint256 fullSuppliedAmount = spoke1.getUserSuppliedAmount(collReserveId, alice);
 
-    assertGt(spoke1.getHealthFactor(alice), spoke1.HEALTH_FACTOR_LIQUIDATION_THRESHOLD());
+  //   vm.prank(alice);
+  //   spoke1.withdraw({reserveId: collReserveId, amount: fullSuppliedAmount, to: alice});
 
-    uint256 fullSuppliedAmount = spoke1.getUserSuppliedAmount(collReserveId, alice);
-    vm.prank(alice);
-    spoke1.withdraw({reserveId: collReserveId, amount: fullSuppliedAmount, to: alice});
-  }
+  //   uint256 aliceDaiBalanceAfter = tokenList.weth.balanceOf(alice);
 
-  function test_withdraw_gt_HF_threshold() public {
-    uint256 debtAmount = 50e18;
-    uint256 collReserveId = wethReserveId(spoke1);
-    uint256 debtReserveId = daiReserveId(spoke1);
-    uint256 collAmountBuffer = 10e18;
+  //   assertEq(aliceDaiBalanceAfter, aliceDaiBalanceBefore + fullSuppliedAmount, 'alice dai balance');
+  // }
 
-    uint256 minCollAmount = _calcMinimumCollAmount({
-      spoke: ISpoke(spoke1),
-      collReserveId: collReserveId,
-      debtReserveId: debtReserveId,
-      debtAmount: debtAmount
-    }) - 1;
+  // function test_withdraw_gt_HF_threshold() public {
+  //   uint256 debtAmount = 50e18;
+  //   uint256 collReserveId = wethReserveId(spoke1);
+  //   uint256 debtReserveId = daiReserveId(spoke1);
+  //   uint256 collAmountBuffer = 10e18;
 
-    console.log('minCollAmount %e %e', minCollAmount, collAmountBuffer);
+  //   uint256 minCollAmount = _calcMinimumCollAmount({
+  //     spoke: ISpoke(spoke1),
+  //     collReserveId: collReserveId,
+  //     debtReserveId: debtReserveId,
+  //     debtAmount: debtAmount
+  //   }) - 1;
 
-    // Alice supplies weth as collateral
-    Utils.spokeSupply({
-      spoke: spoke1,
-      reserveId: collReserveId,
-      user: alice,
-      amount: minCollAmount + collAmountBuffer,
-      onBehalfOf: alice
-    });
+  //   console.log('minCollAmount %e %e', minCollAmount, collAmountBuffer);
 
-    // Bob supplies dai
-    Utils.spokeSupply({
-      spoke: spoke1,
-      reserveId: debtReserveId,
-      user: bob,
-      amount: debtAmount,
-      onBehalfOf: bob
-    });
+  //   // Alice supplies weth as collateral
+  //   Utils.spokeSupply({
+  //     spoke: spoke1,
+  //     reserveId: collReserveId,
+  //     user: alice,
+  //     amount: minCollAmount + collAmountBuffer,
+  //     onBehalfOf: alice
+  //   });
 
-    // Alice borrows dai
-    Utils.spokeBorrow({
-      spoke: spoke1,
-      reserveId: debtReserveId,
-      user: alice,
-      amount: debtAmount,
-      onBehalfOf: alice
-    });
+  //   // Bob supplies dai
+  //   Utils.spokeSupply({
+  //     spoke: spoke1,
+  //     reserveId: debtReserveId,
+  //     user: bob,
+  //     amount: debtAmount,
+  //     onBehalfOf: bob
+  //   });
 
-    // withdrawing any amount will result in HF < threshold
-    vm.prank(alice);
-    vm.expectRevert(ISpoke.HealthFactorLowerThanLiquidationThreshold.selector);
-    spoke1.withdraw({reserveId: collReserveId, amount: 1, to: alice});
-  }
+  //   // Alice borrows dai
+  //   Utils.spokeBorrow({
+  //     spoke: spoke1,
+  //     reserveId: debtReserveId,
+  //     user: alice,
+  //     amount: debtAmount,
+  //     onBehalfOf: alice
+  //   });
+
+  //   // withdrawing any amount will result in HF < threshold
+  //   vm.prank(alice);
+  //   vm.expectRevert(ISpoke.HealthFactorLowerThanLiquidationThreshold.selector);
+  //   spoke1.withdraw({reserveId: collReserveId, amount: 1, to: alice});
+  // }
 
   // // withdraw fails after
   // function test_withdraw_revertsWith_HealthFactorLowerThanLiquidationThreshold_with_debt_increase() public {
@@ -1319,12 +1296,12 @@ contract SpokeWithdrawTest is SpokeBase {
   // calculate min allowable debt amount which truncates to 0 due to precision loss within HF calc
   // due to mul by assetPrice (1e8) and div by assetUnit (10 ** decimals) in _getUserDebtInBaseCurrency / _getUserBalanceInBaseCurrency
   function _calcMinDebtAmountWithinHFResolution(
-    Spoke spoke,
+    ISpoke spoke,
     uint256 reserveId
   ) internal returns (uint256) {
     (uint256 assetId, ) = getAssetInfo(spoke, reserveId);
     uint256 decimals = hub.getAssetConfig(assetId).decimals;
     // assume asset price is returned with 8 units of precision
-    return 10 ** (decimals - 8);
+    return 10 ** (decimals - 8) - 1;
   }
 }

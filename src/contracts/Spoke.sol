@@ -201,6 +201,7 @@ contract Spoke is ISpoke {
     });
     liquidityHub.draw(reserve.assetId, amount, uint32(newReserveRiskPremium.derayify()), to);
     _notifyRiskPremiumUpdate(reserve.assetId, msg.sender, newUserRiskPremium);
+    _validateHealthFactor(msg.sender);
 
     emit Borrowed(reserveId, to, amount);
   }

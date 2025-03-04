@@ -43,6 +43,7 @@ contract SpokeBorrowTest is Base {
 
     // Bob supply weth
     Utils.spokeSupply(spoke1, wethReserveId, bob, wethSupplyAmount, bob);
+    setUsingAsCollateral(spoke1, bob, wethReserveId, true);
 
     // Alice supply dai
     Utils.spokeSupply(spoke1, daiReserveId, alice, daiSupplyAmount, alice);
@@ -156,6 +157,7 @@ contract SpokeBorrowTest is Base {
 
     // Bob supply weth
     Utils.spokeSupply(spoke1, wethReserveId, bob, wethSupplyAmount, bob);
+    setUsingAsCollateral(spoke1, bob, wethReserveId, true);
 
     // Alice supply dai
     Utils.spokeSupply(spoke1, daiReserveId, alice, daiBorrowAmount, alice);

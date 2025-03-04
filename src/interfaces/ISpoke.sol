@@ -108,4 +108,5 @@ interface ISpoke {
   function oracle() external view returns (IPriceOracle);
   function reservesList(uint256) external view returns (uint256);
   function reserveCount() external view returns (uint256);
+  function HEALTH_FACTOR_LIQUIDATION_THRESHOLD() external view returns (uint256);
 }
