@@ -1150,10 +1150,9 @@ contract SpokeUserRiskPremiumTest is Base {
     );
 
     // Check user risk premium
-    assertApproxEqAbs(
+    assertEq(
       spoke2.getUserRiskPremium(bob),
       _calculateExpectedUserRP(bob, spoke2),
-      1,
       'user risk premium'
     );
   }
@@ -1281,6 +1280,147 @@ contract SpokeUserRiskPremiumTest is Base {
   }
 
   // TODO: Borrow 2 assets and ensure user risk premium is calculated and applied correctly, and both debt assets accrue
+  function test_getUserRiskPremium_fuzz_applyInterest_two_reserves_borrowed(
+    uint256 daiSupplyAmount,
+    uint256 usdxSupplyAmount,
+    uint256 wbtcBorrowamount,
+    uint256 wethBorrowAmount
+  ) public {
+    uint256 totalBorrowAmount = MAX_SUPPLY_AMOUNT / 2;
+    daiSupplyAmount = bound(daiSupplyAmount, 0, totalBorrowAmount);
+    usdxSupplyAmount = bound(usdxSupplyAmount, 0, totalBorrowAmount - daiSupplyAmount) / 1e12;
+    wbtcBorrowamount = bound(wbtcBorrowamount, 1, totalBorrowAmount);
+    wethBorrowAmount = bound(wethBorrowAmount, 1, totalBorrowAmount);
+
+    TestInfo memory params;
+    params.daiReserveId = spokeInfo[spoke3].dai.reserveId;
+    params.usdxReserveId = spokeInfo[spoke3].usdx.reserveId;
+    params.wethReserveId = spokeInfo[spoke3].weth.reserveId;
+    params.wbtcReserveId = spokeInfo[spoke3].wbtc.reserveId;
+
+    params.daiSupplyAmount = daiSupplyAmount;
+    params.usdxSupplyAmount = usdxSupplyAmount;
+    params.wethSupplyAmount = totalBorrowAmount - daiSupplyAmount - usdxSupplyAmount * 1e12;
+    params.wbtcSupplyAmount = MAX_SUPPLY_AMOUNT;
+
+    vm.assume(
+      params.daiSupplyAmount + params.usdxSupplyAmount * 1e12 + params.wethSupplyAmount ==
+        totalBorrowAmount
+    );
+    vm.assume(wbtcBorrowamount + wethBorrowAmount <= totalBorrowAmount);
+    params.wbtcBorrowAmount = wbtcBorrowamount;
+    params.wethBorrowAmount = wethBorrowAmount;
+
+    params.daiLP = spoke3.getLiquidityPremium(params.daiReserveId);
+    params.usdxLP = spoke3.getLiquidityPremium(params.usdxReserveId);
+    params.wethLP = spoke3.getLiquidityPremium(params.wethReserveId);
+
+    // Bob supply dai into spoke3
+    if (params.daiSupplyAmount > 0) {
+      Utils.spokeSupply(spoke3, params.daiReserveId, bob, params.daiSupplyAmount, bob);
+      setUsingAsCollateral(spoke3, bob, params.daiReserveId, true);
+    }
+
+    // Bob supply usdx into spoke3
+    if (params.usdxSupplyAmount > 0) {
+      Utils.spokeSupply(spoke3, params.usdxReserveId, bob, params.usdxSupplyAmount, bob);
+      setUsingAsCollateral(spoke3, bob, params.usdxReserveId, true);
+    }
+
+    // Bob supply weth into spoke3
+    if (params.wethSupplyAmount > 0) {
+      Utils.spokeSupply(spoke3, params.wethReserveId, bob, params.wethSupplyAmount, bob);
+      setUsingAsCollateral(spoke3, bob, params.wethReserveId, true);
+    }
+
+    // Bob supply wbtc into spoke3
+    Utils.spokeSupply(spoke3, params.wbtcReserveId, bob, params.wbtcSupplyAmount, bob);
+    setUsingAsCollateral(spoke3, bob, params.wbtcReserveId, true);
+
+    // Alice supply remaining weth into spoke3
+    if (MAX_SUPPLY_AMOUNT - params.wethSupplyAmount > 0) {
+      Utils.spokeSupply(
+        spoke3,
+        params.wethReserveId,
+        alice,
+        MAX_SUPPLY_AMOUNT - params.wethSupplyAmount,
+        alice
+      );
+    }
+
+    // Bob draw wbtc
+    Utils.spokeBorrow(spoke3, params.wbtcReserveId, bob, params.wbtcBorrowAmount, bob);
+
+    // Bob  draw weth
+    Utils.spokeBorrow(spoke3, params.wethReserveId, bob, params.wethBorrowAmount, bob);
+
+    uint256 expectedUserRiskPremium = _calculateExpectedUserRP(bob, spoke3);
+
+    assertApproxEqAbs(
+      spoke3.getUserRiskPremium(bob),
+      expectedUserRiskPremium,
+      1,
+      'user risk premium'
+    );
+
+    // Get the base rate of wbtc
+    uint256 baseRateWbtc = hub.getBaseInterestRate(wbtcAssetId);
+    uint256 baseDebt = params.wbtcBorrowAmount;
+    uint256 originalBaseDebtWbtc = params.wbtcBorrowAmount;
+    (uint256 actualBaseDebt, uint256 actualPremium) = spoke3.getUserDebt(params.wbtcReserveId, bob);
+    uint256 startTime = vm.getBlockTimestamp();
+
+    assertEq(baseDebt, actualBaseDebt, 'user base debt');
+    assertEq(actualPremium, 0, 'user outstanding premium');
+
+    // Get the base rate of weth
+    uint256 baseRateWeth = hub.getBaseInterestRate(wethAssetId);
+    baseDebt = params.wethBorrowAmount;
+    uint256 originalBaseDebtWeth = params.wethBorrowAmount;
+    (actualBaseDebt, actualPremium) = spoke3.getUserDebt(params.wethReserveId, bob);
+
+    assertEq(baseDebt, actualBaseDebt, 'user base debt');
+    assertEq(actualPremium, 0, 'user outstanding premium');
+
+    // Wait a year
+    skip(365 days);
+
+    // See if base debt of wbtc changes appropriately
+    baseDebt = MathUtils.calculateLinearInterest(baseRateWbtc, uint40(startTime)).rayMul(
+      originalBaseDebtWbtc
+    );
+    (actualBaseDebt, actualPremium) = spoke3.getUserDebt(params.wbtcReserveId, bob);
+    assertEq(baseDebt, actualBaseDebt, 'user base debt');
+    assertGt(baseDebt, originalBaseDebtWbtc, 'base debt should increase');
+
+    // Recalc user risk premium in case of changes due to interest accrual
+    expectedUserRiskPremium = _calculateExpectedUserRP(bob, spoke3);
+    assertEq(
+      expectedUserRiskPremium,
+      spoke3.getUserRiskPremium(bob),
+      'user risk premium after interest accrual'
+    );
+
+    // See if outstanding premium changes proportionally to user risk premium change
+    uint256 premiumDebt = (baseDebt - originalBaseDebtWbtc).percentMul(expectedUserRiskPremium);
+    assertEq(premiumDebt, actualPremium, 'user outstanding premium');
+
+    // Since Bob is only user, reserve debt should be equal to user debt
+    (uint256 reserveDebt, uint256 reservePremium) = spoke3.getReserveDebt(params.wbtcReserveId);
+    assertEq(reserveDebt, baseDebt, 'reserve base debt');
+    assertEq(reservePremium, premiumDebt, 'reserve outstanding premium');
+
+    // See if values are reflected on hub side as well
+    (uint256 spokeDebt, uint256 spokePremium) = hub.getSpokeDebt(wbtcAssetId, address(spoke3));
+    assertEq(spokeDebt, baseDebt, 'hub spoke base debt');
+    assertEq(spokePremium, premiumDebt, 'hub spoke outstanding premium');
+
+    (uint256 assetDebt, uint256 assetPremium) = hub.getAssetDebt(wbtcAssetId);
+    assertEq(assetDebt, baseDebt, 'hub asset base debt');
+    assertEq(assetPremium, premiumDebt, 'hub asset outstanding premium');
+
+    // Check same for weth
+  }
 
   function _normalizedValue(uint256 amount, uint256 assetId) internal view returns (uint256) {
     return (amount * oracle.getAssetPrice(assetId)) / (10 ** hub.getAssetConfig(assetId).decimals);
@@ -1332,7 +1472,7 @@ contract SpokeUserRiskPremiumTest is Base {
       userPosition = spoke.getUserPosition(reserveId, user);
       (assetId, ) = getAsset(spoke, reserveId);
       uint256 supplyAmount = _normalizedValue(
-        hub.convertToSharesDown(assetId, userPosition.suppliedShares),
+        hub.convertToAssets(assetId, userPosition.suppliedShares),
         assetId
       );
 
