@@ -5,7 +5,6 @@ on:
   push:
     branches:
       - main
-      - feat/*
   workflow_dispatch:
 
 jobs:
@@ -19,7 +18,7 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
       - name: Install Foundry
-        uses: bgd-labs/github-workflows/.github/workflows/foundry-setup.yml@main
+        uses: bgd-labs/github-workflows/.github/actions/foundry-setup@main
       - name: Check gas snapshot
         run: |
           set +e
