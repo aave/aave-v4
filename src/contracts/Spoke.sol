@@ -331,6 +331,10 @@ contract Spoke is ISpoke {
     return healthFactor;
   }
 
+  function getUserAccountData(address user) external view returns (uint256, uint256, uint256) {
+    return _calculateUserAccountData(user);
+  }
+
   function getReservePrice(uint256 reserveId) public view returns (uint256) {
     return oracle.getAssetPrice(_reserves[reserveId].assetId);
   }
