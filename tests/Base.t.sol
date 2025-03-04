@@ -566,11 +566,16 @@ abstract contract Base is Test {
     uint256 reserveId
   ) internal view returns (DataTypes.Reserve memory) {
     DataTypes.Reserve memory reserveData;
+    reserveData.reserveId = reserveId;
+    IERC20 asset;
+    (reserveData.assetId, asset) = getAsset(spoke, reserveId);
+    reserveData.asset = address(asset);
     (reserveData.baseDebt, reserveData.outstandingPremium) = spoke.getReserveDebt(reserveId);
     reserveData.suppliedShares = spoke.getReserveSuppliedShares(reserveId);
     reserveData.riskPremium = spoke.getReserveRiskPremium(reserveId);
     reserveData.lastUpdateTimestamp = spoke.getReserve(reserveId).lastUpdateTimestamp;
     reserveData.baseBorrowIndex = spoke.getReserve(reserveId).baseBorrowIndex;
+    reserveData.config = spoke.getReserve(reserveId).config;
     return reserveData;
   }
 

@@ -466,7 +466,7 @@ contract SpokeSupplyTest is SpokeBase {
       collateral: TestReserve({
         reserveId: usdxReserveId(spoke1),
         supplier: alice,
-        supplyAmount: 100e8,
+        supplyAmount: 100e6,
         borrower: address(0),
         borrowAmount: 0
       }),
