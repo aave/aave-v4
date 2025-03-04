@@ -12,3 +12,22 @@ jobs:
     uses: bgd-labs/github-workflows/.github/workflows/foundry-test.yml@main
     secrets:
       ALCHEMY_API_KEY: ${{ secrets.ALCHEMY_KEY }}
+  gas-snapshot:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+      - name: Install Foundry
+        uses: bgd-labs/github-workflows/.github/actions/foundry-setup@main
+      - name: Build Project
+        run: make build
+      - name: Check gas snapshot
+        run: |
+          set +e
+          FORGE_SNAPSHOT_CHECK=true make gas-report
+          EXIT_CODE=$?
+          if [ $EXIT_CODE -ne 0 ]; then
+            echo "❌ Gas snapshot check failed!"
+            echo "➡️ Run 'make gas-report' locally and commit the updated snapshot."
+            exit $EXIT_CODE
+          fi

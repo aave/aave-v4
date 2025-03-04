@@ -6,6 +6,7 @@ out = 'out'
 libs = ['lib']
 remappings = []
 fs_permissions = [{ access = "write", path = "./reports" }]
+optimizer = false
 
 [profile.ci]
 [fuzz]

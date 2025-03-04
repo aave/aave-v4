@@ -20,7 +20,7 @@ contract SpokeOperations_Gas_Tests is Base {
     vm.startPrank(alice);
 
     spoke1.supply(spokeInfo[spoke1].usdx.reserveId, 500e6);
-    vm.snapshotGasLastCall('Spoke.Operations', 'supply: 0 debt, not usingAsCollateral');
+    vm.snapshotGasLastCall('Spoke.Operations', 'supply: 0 debt, collateralDisabled');
     spoke1.setUsingAsCollateral(spokeInfo[spoke1].usdx.reserveId, true);
 
     spoke1.borrow(spokeInfo[spoke1].usdx.reserveId, 400e6, alice);
