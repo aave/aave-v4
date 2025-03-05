@@ -1095,8 +1095,6 @@ contract SpokeWithdrawTest is SpokeBase {
     spoke1.withdraw({reserveId: collReserveId, amount: 1, to: alice});
   }
 
-  // todo: withdraw from multiple reserves
-
   function test_withdraw_revertsWith_HealthFactorLowerThanLiquidationThreshold_multiple_borrows()
     public
   {
@@ -1172,5 +1170,80 @@ contract SpokeWithdrawTest is SpokeBase {
     vm.prank(alice);
     vm.expectRevert(ISpoke.HealthFactorLowerThanLiquidationThreshold.selector);
     spoke1.withdraw({reserveId: collReserveId, amount: 1, to: alice});
+  }
+
+  function test_withdraw_revertsWith_HealthFactorLowerThanLiquidationThreshold_multiple_colls()
+    public
+  {
+    uint256 debtAmountDai = 3_000e18;
+    uint256 debtAmountUsdx = 5_000e6;
+    // weth collateral for dai debt
+    uint256 collReserveId = wethReserveId(spoke1);
+    uint256 debtReserveIdUsdx = usdxReserveId(spoke1);
+    uint256 debtReserveIdDai = daiReserveId(spoke1);
+
+    uint256 minCollAmount = _calcMinimumCollAmount({
+      spoke: spoke1,
+      collReserveId: collReserveId,
+      debtReserveId: debtReserveIdUsdx,
+      debtAmount: debtAmountUsdx
+    }) +
+      _calcMinimumCollAmount({
+        spoke: spoke1,
+        collReserveId: collReserveId,
+        debtReserveId: debtReserveIdDai,
+        debtAmount: debtAmountDai
+      });
+
+    // Alice supplies weth as collateral
+    Utils.spokeSupply({
+      spoke: spoke1,
+      reserveId: collReserveId,
+      user: alice,
+      amount: minCollAmount,
+      onBehalfOf: alice
+    });
+    setUsingAsCollateral(spoke1, alice, collReserveId, true);
+
+    // Bob supplies usdx
+    Utils.spokeSupply({
+      spoke: spoke1,
+      reserveId: debtReserveIdUsdx,
+      user: bob,
+      amount: debtAmountUsdx,
+      onBehalfOf: bob
+    });
+    // Alice borrows usdx
+    Utils.spokeBorrow({
+      spoke: spoke1,
+      reserveId: debtReserveIdUsdx,
+      user: alice,
+      amount: debtAmountUsdx,
+      onBehalfOf: alice
+    });
+
+    // Bob supplies dai
+    Utils.spokeSupply({
+      spoke: spoke1,
+      reserveId: debtReserveIdDai,
+      user: bob,
+      amount: debtAmountDai,
+      onBehalfOf: bob
+    });
+    // Alice borrows dai
+    Utils.spokeBorrow({
+      spoke: spoke1,
+      reserveId: debtReserveIdDai,
+      user: alice,
+      amount: debtAmountDai,
+      onBehalfOf: alice
+    });
+
+    assertGe(spoke1.getHealthFactor(alice), spoke1.HEALTH_FACTOR_LIQUIDATION_THRESHOLD());
+
+    // withdrawing some nontrivial amount of weth will result in HF < threshold
+    vm.prank(alice);
+    vm.expectRevert(ISpoke.HealthFactorLowerThanLiquidationThreshold.selector);
+    spoke1.withdraw({reserveId: collReserveId, amount: 1e15, to: alice}); // 1e-3 weth
   }
 }

@@ -610,13 +610,13 @@ contract Spoke is ISpoke {
     vars.userRiskPremium = vars.totalCollateralInBaseCurrency == 0
       ? 0
       : vars.userRiskPremium.wadDiv(vars.totalCollateralInBaseCurrency);
-    // console2.log(
-    //   'SP: mul/debt/cmp %e %e',
-    //   vars.totalCollateralInBaseCurrency.percentMul(vars.avgLiquidationThreshold),
-    //   vars.totalDebtInBaseCurrency,
-    //   vars.totalCollateralInBaseCurrency.percentMul(vars.avgLiquidationThreshold) >
-    //     vars.totalDebtInBaseCurrency
-    // );
+    console2.log(
+      'SP: mul/debt/cmp %e %e',
+      vars.totalCollateralInBaseCurrency.percentMul(vars.avgLiquidationThreshold),
+      vars.totalDebtInBaseCurrency,
+      vars.totalCollateralInBaseCurrency.percentMul(vars.avgLiquidationThreshold) >
+        vars.totalDebtInBaseCurrency
+    );
     vars.healthFactor = vars.totalDebtInBaseCurrency == 0
       ? type(uint256).max
       : (vars.totalCollateralInBaseCurrency.percentMul(vars.avgLiquidationThreshold)).wadDiv(

@@ -279,6 +279,37 @@ contract SpokeBase is Base {
       );
   }
 
+  // 2 collaterals for a single debt
+  // function _calcMaxDebtAmountMultiColl(
+  //   ISpoke spoke,
+  //   uint256 collReserveId,
+  //   uint256 collReserveId2,
+  //   uint256 debtReserveId,
+  //   uint256 collAmount,
+  //   uint256 collAmount2
+  // ) internal view returns (uint256) {
+  //   DataTypes.Reserve memory collData = spoke.getReserve(collReserveId);
+  //   uint256 collPrice = oracle.getAssetPrice(collData.assetId);
+  //   uint256 collAssetUnits = 10 ** hub.getAsset(collData.assetId).config.decimals;
+
+  //   DataTypes.Reserve memory collData2 = spoke.getReserve(collReserveId2);
+  //   uint256 collPrice2 = oracle.getAssetPrice(collData2.assetId);
+  //   uint256 collAssetUnits2 = 10 ** hub.getAsset(collData2.assetId).config.decimals;
+
+  //   DataTypes.Reserve memory debtData = spoke.getReserve(debtReserveId);
+  //   uint256 debtAssetUnits = 10 ** hub.getAsset(debtData.assetId).config.decimals;
+  //   uint256 debtPrice = oracle.getAssetPrice(debtData.assetId);
+
+  //   uint256 totalCollValue = (collAmount * collPrice) /
+  //     collAssetUnits +
+  //     (collAmount2 * collPrice2) /
+  //     collAssetUnits2;
+
+  //   console.log('totalCollValue %e', totalCollValue.percentMul(collData.config.lt));
+
+  //   return ((totalCollValue * debtAssetUnits).percentMul(collData.config.lt) / (debtPrice));
+  // }
+
   // calculate min allowable debt amount which truncates to 0 due to precision loss within HF calc
   // due to mul by assetPrice (1e8) and div by assetUnit (10 ** decimals) in _getUserDebtInBaseCurrency & _getUserBalanceInBaseCurrency
   function _calcMinAmountWithinHFResolution(
@@ -289,7 +320,7 @@ contract SpokeBase is Base {
     uint256 units = 10 ** hub.getAssetConfig(assetId).decimals;
     uint256 price = oracle.getAssetPrice(assetId);
     // make sure to round up
-    console.log('assetId: minFactor %e', units / price, IERC20Metadata(address(asset)).symbol());
+    // console.log('assetId: minFactor %e', units / price, IERC20Metadata(address(asset)).symbol());
     return units / price > 0 ? units / price : 1;
   }
 }
