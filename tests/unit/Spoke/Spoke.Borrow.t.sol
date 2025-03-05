@@ -1,14 +1,9 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.0;
 
-import 'tests/Base.t.sol';
+import 'tests/unit/Spoke/SpokeBase.t.sol';
 
-contract SpokeBorrowTest is Base {
-  function setUp() public override {
-    super.setUp();
-    initEnvironment();
-  }
-
+contract SpokeBorrowTest is SpokeBase {
   function test_borrow_revertsWith_reserve_not_borrowable() public {
     uint256 daiReserveId = spokeInfo[spoke1].dai.reserveId;
 
@@ -382,4 +377,71 @@ contract SpokeBorrowTest is Base {
 
   // TODO: test borrow after currently below HF (after debt accrual brings user below HF)
   // TODO: test borrow while above HF, but borrow brings user below HF
+
+  function test_borrow_revertsWith_HealthFactorLowerThanLiquidationThreshold() public {
+    uint256 daiReserveId = spokeInfo[spoke1].dai.reserveId;
+    uint256 wethReserveId = spokeInfo[spoke1].weth.reserveId;
+
+    uint256 wethSupplyAmount = 10e18;
+    uint256 maxDebtAmount = _calcMaxDebtAmount({
+      spoke: spoke1,
+      collReserveId: wethReserveId,
+      debtReserveId: daiReserveId,
+      collAmount: wethSupplyAmount
+    });
+
+    // Bob supply weth
+    Utils.spokeSupply(spoke1, wethReserveId, bob, wethSupplyAmount, bob);
+    setUsingAsCollateral(spoke1, bob, wethReserveId, true);
+
+    // Alice supply dai
+    Utils.spokeSupply(spoke1, daiReserveId, alice, maxDebtAmount * 2, alice); // supply enough buffer for multiple borrows
+
+    // Bob draw max allowed debt amt of dai reserve liquidity
+    vm.prank(bob);
+    spoke1.borrow(daiReserveId, maxDebtAmount, bob);
+
+    assertEq(spoke1.getHealthFactor(bob), spoke1.HEALTH_FACTOR_LIQUIDATION_THRESHOLD());
+
+    vm.prank(bob);
+    vm.expectRevert(ISpoke.HealthFactorLowerThanLiquidationThreshold.selector);
+    spoke1.borrow(daiReserveId, 1e11, bob); // TODO: update with exact amount, resolve precision
+  }
+
+  function test_borrow_revertsWith_HealthFactorLowerThanLiquidationThreshold_with_interest()
+    public
+  {
+    uint256 daiReserveId = spokeInfo[spoke1].dai.reserveId;
+    uint256 wethReserveId = spokeInfo[spoke1].weth.reserveId;
+
+    uint256 wethSupplyAmount = 10e18;
+    uint256 maxDebtAmount = _calcMaxDebtAmount({
+      spoke: spoke1,
+      collReserveId: wethReserveId,
+      debtReserveId: daiReserveId,
+      collAmount: wethSupplyAmount
+    });
+
+    // Bob supply weth
+    Utils.spokeSupply(spoke1, wethReserveId, bob, wethSupplyAmount, bob);
+    setUsingAsCollateral(spoke1, bob, wethReserveId, true);
+
+    // Alice supply dai
+    Utils.spokeSupply(spoke1, daiReserveId, alice, maxDebtAmount * 2, alice); // supply enough buffer for multiple borrows
+
+    // Bob draw max allowed debt amt of dai reserve liquidity
+    vm.prank(bob);
+    spoke1.borrow(daiReserveId, maxDebtAmount, bob);
+
+    assertEq(spoke1.getHealthFactor(bob), spoke1.HEALTH_FACTOR_LIQUIDATION_THRESHOLD());
+
+    // accrue debt to decrease HF
+    skip(365 days);
+
+    assertLt(spoke1.getHealthFactor(bob), spoke1.HEALTH_FACTOR_LIQUIDATION_THRESHOLD());
+
+    vm.prank(bob);
+    vm.expectRevert(ISpoke.HealthFactorLowerThanLiquidationThreshold.selector);
+    spoke1.borrow(daiReserveId, 1e11, bob); // TODO: update with exact amount, resolve precision
+  }
 }
