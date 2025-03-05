@@ -16,7 +16,7 @@ contract LiquidityHubInterestRateTest is Base {
     spokeMintAndApprove();
   }
 
-  function test_getInterestRate_NoActionTaken() public {
+  function test_getInterestRate_NoActionTaken() public view {
     uint256 borrowRate = _getBorrowRate(daiAssetId);
     assertEq(borrowRate, 0);
   }

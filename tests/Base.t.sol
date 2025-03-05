@@ -289,21 +289,21 @@ abstract contract Base is Test {
     wethConfig = DataTypes.ReserveConfig({
       lt: 0.76e4,
       lb: 0,
-      liquidityPremium: 10,
+      liquidityPremium: 10_00,
       borrowable: true,
       collateral: true
     });
     daiConfig = DataTypes.ReserveConfig({
       lt: 0.72e4,
       lb: 0,
-      liquidityPremium: 20,
+      liquidityPremium: 20_00,
       borrowable: true,
       collateral: true
     });
     usdxConfig = DataTypes.ReserveConfig({
       lt: 0.72e4,
       lb: 0,
-      liquidityPremium: 50,
+      liquidityPremium: 50_00,
       borrowable: true,
       collateral: true
     });
@@ -349,21 +349,21 @@ abstract contract Base is Test {
     usdxConfig = DataTypes.ReserveConfig({
       lt: 0.75e4,
       lb: 0,
-      liquidityPremium: 10,
+      liquidityPremium: 10_00,
       borrowable: true,
       collateral: true
     });
     wethConfig = DataTypes.ReserveConfig({
       lt: 0.79e4,
       lb: 0,
-      liquidityPremium: 20,
+      liquidityPremium: 20_00,
       borrowable: true,
       collateral: true
     });
     wbtcConfig = DataTypes.ReserveConfig({
       lt: 0.77e4,
       lb: 0,
-      liquidityPremium: 50,
+      liquidityPremium: 50_00,
       borrowable: true,
       collateral: true
     });
@@ -407,7 +407,7 @@ abstract contract Base is Test {
     daiConfig = DataTypes.ReserveConfig({
       lt: 0.70e4,
       lb: 0,
-      liquidityPremium: 100,
+      liquidityPremium: 100_00,
       borrowable: true,
       collateral: true
     });

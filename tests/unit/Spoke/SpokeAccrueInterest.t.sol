@@ -16,7 +16,7 @@ contract SpokeAccrueInterestTest is Base {
     initEnvironment();
   }
 
-  function test_accrueInterest_NoActionTaken() public {
+  function test_accrueInterest_NoActionTaken() public view {
     DataTypes.Reserve memory daiInfo = spoke1.getReserve(spokeInfo[spoke1].dai.reserveId);
     assertEq(daiInfo.lastUpdateTimestamp, 0);
     assertEq(daiInfo.baseDebt, 0);

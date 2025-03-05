@@ -632,8 +632,8 @@ contract Spoke is ISpoke {
         vars.userCollateralInBaseCurrency = vars.debtCounterInBaseCurrency;
       }
       vars.userRiskPremium += vars.userCollateralInBaseCurrency * vars.liquidityPremium;
-      vars.totalCollateralInBaseCurrency += vars.userCollateralInBaseCurrency;
-      vars.totalDebtInBaseCurrency -= vars.userCollateralInBaseCurrency;
+      vars.collateralCounterInBaseCurrency += vars.userCollateralInBaseCurrency;
+      vars.debtCounterInBaseCurrency -= vars.userCollateralInBaseCurrency;
       unchecked {
         ++vars.i;
       }

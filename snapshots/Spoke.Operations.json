@@ -1,7 +1,6 @@
 {
-  "supply: 0 debt, collateralDisabled": "363393",
-  "supply: 0 debt, collateralEnabled": "383972",
-  "usingAsCollateral": "50151",
-  "withdraw: full": "239477",
-  "withdraw: partial": "229424"
+  "supply: 0 debt, collateralDisabled": "342025",
+  "supply: 1 debt": "317296",
+  "supply: 2 debt": "339844",
+  "supply: 3 debt": "360184"
 }
