@@ -681,12 +681,6 @@ contract Spoke is ISpoke {
     uint256 assetPrice,
     uint256 assetUnit
   ) internal view returns (uint256) {
-    // console2.log(
-    //   'SP: assetId %s, suppliedAmt: %e bal: %e',
-    //   assetId,
-    //   liquidityHub.convertToAssets(assetId, user.suppliedShares),
-    //   (liquidityHub.convertToAssets(assetId, user.suppliedShares) * assetPrice) / assetUnit
-    // );
     return (liquidityHub.convertToAssets(assetId, user.suppliedShares) * assetPrice) / assetUnit;
   }
 
