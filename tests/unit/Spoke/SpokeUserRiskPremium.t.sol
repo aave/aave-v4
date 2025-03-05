@@ -1523,6 +1523,20 @@ contract SpokeUserRiskPremiumTest is Base {
       debts.bobDaiBaseDebtAfter + debts.aliceDaiBaseDebtAfter,
       'reserve base debt after accrual'
     );
+
+    // Get reserve risk premiumm and ensure it's correctly wAvg of users
+    DataTypes.Reserve memory reserve = spoke1.getReserve(params.daiReserveId);
+    console.log(reserve.riskPremium);
+    console.log(bobExpectedRiskPremium);
+    console.log(aliceExpectedRiskPremium);
+    console.log(
+      (bobDaiBorrowAmount *
+        bobExpectedRiskPremium.rayify() +
+        aliceDaiBorrowAmount *
+        aliceExpectedRiskPremium.rayify()) / (bobDaiBorrowAmount + aliceDaiBorrowAmount)
+    );
+
+    // TODO: Reserve premium not matching sum of users' outstanding premium debts
     assertEq(
       rateChecks.reservePremium,
       debts.bobDaiPremiumDebtAfter + debts.aliceDaiPremiumDebtAfter,
