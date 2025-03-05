@@ -1236,6 +1236,8 @@ contract SpokeUserRiskPremiumTest is Base {
     );
   }
 
+  // TODO: Show 2 diff users borrowing the same 2 assets, and show their own risk premiums are calculated and applied correctly
+
   function _normalizedValue(uint256 amount, uint256 assetId) internal view returns (uint256) {
     return
       (amount * oracle.getAssetPrice(assetId) * WadRayMath.WAD) /
