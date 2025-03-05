@@ -244,6 +244,15 @@ contract Spoke is ISpoke {
     emit UsingAsCollateral(reserveId, msg.sender, usingAsCollateral);
   }
 
+  function refreshRiskPremium(address user) external {
+    (uint256 newUserRiskPremium, , ) = _calculateUserAccountData(user);
+    _notifyRiskPremiumUpdate({
+      assetIdToAvoid: type(uint256).max,
+      userAddress: user,
+      newUserRiskPremium: newUserRiskPremium
+    });
+  }
+
   function getUsingAsCollateral(uint256 reserveId, address user) external view returns (bool) {
     return _users[user][reserveId].usingAsCollateral;
   }

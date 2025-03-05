@@ -77,6 +77,7 @@ interface ISpoke {
    */
   function repay(uint256 reserveId, uint256 amount) external;
   function setUsingAsCollateral(uint256 reserveId, bool usingAsCollateral) external;
+  function refreshRiskPremium(address user) external;
 
   function getUsingAsCollateral(uint256 reserveId, address user) external view returns (bool);
   function getUserDebt(uint256 reserveId, address user) external view returns (uint256, uint256);
