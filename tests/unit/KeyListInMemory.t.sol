@@ -10,7 +10,7 @@ contract KeyValueListInMemoryTest is Test {
   function test_fuzz_sortByKey(uint256[] memory seed) public pure {
     vm.assume(seed.length > 0);
     KeyValueListInMemory.List memory list = KeyValueListInMemory.init(seed.length);
-    for (uint256 i = 0; i < seed.length; ++i) {
+    for (uint256 i; i < seed.length; ++i) {
       list.add(i, _truncateKey(seed[i]), _truncateValue(seed[i]));
     }
     list.sortByKey();
@@ -20,7 +20,7 @@ contract KeyValueListInMemoryTest is Test {
   function test_fuzz_sortByKey_length(uint256 length) public {
     length = bound(length, 1, 1e2);
     KeyValueListInMemory.List memory list = KeyValueListInMemory.init(length);
-    for (uint256 i = 0; i < length; ++i) {
+    for (uint256 i; i < length; ++i) {
       list.add(i, _truncateKey(vm.randomUint()), _truncateValue(vm.randomUint()));
     }
     list.sortByKey();
@@ -30,7 +30,7 @@ contract KeyValueListInMemoryTest is Test {
   function test_fuzz_get(uint256[] memory seed) public pure {
     vm.assume(seed.length > 0);
     KeyValueListInMemory.List memory list = KeyValueListInMemory.init(seed.length);
-    for (uint256 i = 0; i < seed.length; ++i) {
+    for (uint256 i; i < seed.length; ++i) {
       list.add(i, _truncateKey(seed[i]), _truncateValue(seed[i]));
     }
     for (uint256 i; i < seed.length; ++i) {
