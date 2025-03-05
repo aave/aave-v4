@@ -37,6 +37,7 @@ contract LiquidityHub is ILiquidityHub {
 
   function addAsset(DataTypes.AssetConfig memory config, address asset) external {
     // TODO: AccessControl
+    // todo restrict max asset decimals to 18
     assetsList.push(IERC20(asset));
     _assets[assetCount] = DataTypes.Asset({
       id: assetCount,

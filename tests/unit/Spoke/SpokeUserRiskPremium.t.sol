@@ -664,14 +664,11 @@ contract SpokeUserRiskPremiumTest is Base {
     // Now change the price of usdx
     oracle.setAssetPrice(usdxAssetId, newUsdxPrice);
 
-    // TODO: Resolve precision issues
-    /*
     assertEq(
       spoke2.getUserRiskPremium(bob),
       _calculateExpectedUserRP(bob, spoke2),
       'user risk premium after price'
     );
-    */
   }
 
   function test_getUserRiskPremium_fuzz_four_assets_change_lp(
@@ -1275,7 +1272,9 @@ contract SpokeUserRiskPremiumTest is Base {
   // TODO: Show 2 diff users borrowing the same 2 assets, and show their own risk premiums are calculated and applied correctly
 
   function _normalizedValue(uint256 amount, uint256 assetId) internal view returns (uint256) {
-    return (amount * oracle.getAssetPrice(assetId)) / (10 ** hub.getAssetConfig(assetId).decimals);
+    return
+      (amount * oracle.getAssetPrice(assetId) * 1e18) /
+      (10 ** hub.getAssetConfig(assetId).decimals);
   }
 
   function _calculateExpectedUserRP(address user, ISpoke spoke) internal view returns (uint256) {
