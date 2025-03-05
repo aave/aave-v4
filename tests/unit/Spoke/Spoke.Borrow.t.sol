@@ -379,4 +379,7 @@ contract SpokeBorrowTest is Base {
     );
     assertEq(bobData.baseDebt, wbtcBorrowAmount, 'bob base debt wbtc final balance');
   }
+
+  // TODO: test borrow after currently below HF (after debt accrual brings user below HF)
+  // TODO: test borrow while above HF, but borrow brings user below HF
 }
