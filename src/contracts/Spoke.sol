@@ -203,7 +203,7 @@ contract Spoke is ISpoke {
     });
     liquidityHub.draw(reserve.assetId, amount, uint32(newReserveRiskPremium.derayify()), to);
     _notifyRiskPremiumUpdate(reserve.assetId, msg.sender, newUserRiskPremium);
-    console2.log('post-borrow');
+    // console2.log('post-borrow');
     _validateHealthFactor(msg.sender);
 
     emit Borrowed(reserveId, to, amount);
@@ -610,22 +610,22 @@ contract Spoke is ISpoke {
     vars.userRiskPremium = vars.totalCollateralInBaseCurrency == 0
       ? 0
       : vars.userRiskPremium.wadDiv(vars.totalCollateralInBaseCurrency);
-    console2.log(
-      'SP: mul/debt/cmp %e %e',
-      vars.totalCollateralInBaseCurrency.percentMul(vars.avgLiquidationThreshold),
-      vars.totalDebtInBaseCurrency,
-      vars.totalCollateralInBaseCurrency.percentMul(vars.avgLiquidationThreshold) >
-        vars.totalDebtInBaseCurrency
-    );
+    // console2.log(
+    //   'SP: mul/debt/cmp %e %e',
+    //   vars.totalCollateralInBaseCurrency.percentMul(vars.avgLiquidationThreshold),
+    //   vars.totalDebtInBaseCurrency,
+    //   vars.totalCollateralInBaseCurrency.percentMul(vars.avgLiquidationThreshold) >
+    //     vars.totalDebtInBaseCurrency
+    // );
     vars.healthFactor = vars.totalDebtInBaseCurrency == 0
       ? type(uint256).max
       : (vars.totalCollateralInBaseCurrency.percentMul(vars.avgLiquidationThreshold)).wadDiv(
         vars.totalDebtInBaseCurrency
       ); // HF of 1 -> 1e18
 
-    if (vars.totalDebtInBaseCurrency > 0) {
-      console2.log('SP: hf %e', vars.healthFactor);
-    }
+    // if (vars.totalDebtInBaseCurrency > 0) {
+    //   console2.log('SP: hf %e', vars.healthFactor);
+    // }
 
     vars.collateralCounterInBaseCurrency = vars.totalCollateralInBaseCurrency;
     vars.debtCounterInBaseCurrency = vars.totalDebtInBaseCurrency;
@@ -681,12 +681,12 @@ contract Spoke is ISpoke {
     uint256 assetPrice,
     uint256 assetUnit
   ) internal view returns (uint256) {
-    console2.log(
-      'SP: assetId %s, suppliedAmt: %e bal: %e',
-      assetId,
-      liquidityHub.convertToAssets(assetId, user.suppliedShares),
-      (liquidityHub.convertToAssets(assetId, user.suppliedShares) * assetPrice) / assetUnit
-    );
+    // console2.log(
+    //   'SP: assetId %s, suppliedAmt: %e bal: %e',
+    //   assetId,
+    //   liquidityHub.convertToAssets(assetId, user.suppliedShares),
+    //   (liquidityHub.convertToAssets(assetId, user.suppliedShares) * assetPrice) / assetUnit
+    // );
     return (liquidityHub.convertToAssets(assetId, user.suppliedShares) * assetPrice) / assetUnit;
   }
 
