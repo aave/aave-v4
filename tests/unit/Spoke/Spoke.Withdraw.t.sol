@@ -992,7 +992,9 @@ contract SpokeWithdrawTest is SpokeBase {
     );
   }
 
-  function test_withdraw_revertsWith_HealthFactorLowerThanLiquidationThreshold() public {
+  function test_withdraw_revertsWith_HealthFactorLowerThanLiquidationThreshold_singleBorrow()
+    public
+  {
     uint256 collAmount = 50e18;
     uint256 collReserveId = wethReserveId(spoke1);
     uint256 debtReserveId = daiReserveId(spoke1);
@@ -1034,10 +1036,12 @@ contract SpokeWithdrawTest is SpokeBase {
 
     assertEq(spoke1.getHealthFactor(alice), spoke1.HEALTH_FACTOR_LIQUIDATION_THRESHOLD());
 
+    uint256 amount = _calcMinAmountWithinHFResolution(spoke1, collReserveId);
+
     // withdrawing any amount will result in HF < threshold
     vm.prank(alice);
     vm.expectRevert(ISpoke.HealthFactorLowerThanLiquidationThreshold.selector);
-    spoke1.withdraw({reserveId: collReserveId, amount: 1, to: alice});
+    spoke1.withdraw({reserveId: collReserveId, amount: amount, to: alice});
   }
 
   function test_withdraw_revertsWith_HealthFactorLowerThanLiquidationThreshold_price_drop() public {
@@ -1219,10 +1223,12 @@ contract SpokeWithdrawTest is SpokeBase {
 
     assertEq(spoke1.getHealthFactor(alice), spoke1.HEALTH_FACTOR_LIQUIDATION_THRESHOLD());
 
+    uint256 amount = _calcMinAmountWithinHFResolution(spoke1, collReserveId);
+
     // withdrawing any amount of dai will result in HF < threshold
     vm.prank(alice);
     vm.expectRevert(ISpoke.HealthFactorLowerThanLiquidationThreshold.selector);
-    spoke1.withdraw({reserveId: collReserveId, amount: 1, to: alice});
+    spoke1.withdraw({reserveId: collReserveId, amount: amount, to: alice});
   }
 
   function test_withdraw_revertsWith_HealthFactorLowerThanLiquidationThreshold_multiple_colls()
