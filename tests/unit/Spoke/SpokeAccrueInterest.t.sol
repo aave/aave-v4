@@ -219,7 +219,6 @@ contract SpokeAccrueInterestTest is SpokeBase {
     assertEq(assetInfo.riskPremium, riskPremium, 'asset risk premium');
   }
 
-  // TODO: test_accrueInterest_fuzz_RPBorrowAndElapsed
   // Fuzz a mix of borrowed and supplied assets for bob, check his RP, ensure correct interest accrual
   function test_accrueInterest_fuzz_RPBorrowAndElapsed(
     TestAmounts memory amounts,
@@ -340,7 +339,7 @@ contract SpokeAccrueInterestTest is SpokeBase {
 
     // Check Bob's risk premium
     uint256 bobRp = spoke1.getUserRiskPremium(bob);
-    assertEq(bobRp, _calculateExpectedUserRP(bob, spoke1), 'user risk premium');
+    assertEq(bobRp, _calculateExpectedUserRP(bob, spoke1), 'user risk premium Before');
 
     // Check Bob's base debt and outstanding premium for all assets at user, reserve, spoke, and asset level
     _checkDebtAndRP(bob, spoke1, daiReserveId, daiAssetId, amounts.daiBorrowAmount, 0, bobRp);
@@ -373,7 +372,6 @@ contract SpokeAccrueInterestTest is SpokeBase {
       bobRp
     );
 
-    /*
     expectedBaseDebt = MathUtils
       .calculateLinearInterest(rates.wethBaseBorrowRate, uint40(startTime))
       .rayMul(amounts.wethBorrowAmount);
@@ -387,10 +385,39 @@ contract SpokeAccrueInterestTest is SpokeBase {
       expectedPremium,
       bobRp
     );
-    */
+
+    expectedBaseDebt = MathUtils
+      .calculateLinearInterest(rates.usdxBaseBorrowRate, uint40(startTime))
+      .rayMul(amounts.usdxBorrowAmount);
+    expectedPremium = (expectedBaseDebt - amounts.usdxBorrowAmount).percentMul(bobRp);
+    _checkDebtAndRP(
+      bob,
+      spoke1,
+      usdxReserveId,
+      usdxAssetId,
+      expectedBaseDebt,
+      expectedPremium,
+      bobRp
+    );
+
+    expectedBaseDebt = MathUtils
+      .calculateLinearInterest(rates.wbtcBaseBorrowRate, uint40(startTime))
+      .rayMul(amounts.wbtcBorrowAmount);
+    expectedPremium = (expectedBaseDebt - amounts.wbtcBorrowAmount).percentMul(bobRp);
+    _checkDebtAndRP(
+      bob,
+      spoke1,
+      wbtcReserveId,
+      wbtcAssetId,
+      expectedBaseDebt,
+      expectedPremium,
+      bobRp
+    );
   }
 
   // TODO: test_accrueInterest_fuzz_ChangingBorrowRate
+
+  // TODO: Second accrual after an action - which should update the user rp
 
   function _checkDebtAndRP(
     address user,
@@ -402,10 +429,12 @@ contract SpokeAccrueInterestTest is SpokeBase {
     uint256 expectedRiskPremium
   ) internal {
     DataTypes.UserPosition memory userPosition = getUserInfo(spoke, user, reserveId);
+    // User rp does not update until the next action
+    uint256 userRp = spoke.getLastUsedUserRiskPremium(user);
 
     assertEq(userPosition.baseDebt, expectedBaseDebt, 'user base debt');
     assertEq(userPosition.outstandingPremium, expectedPremium, 'user outstanding premium');
-    assertEq(userPosition.riskPremium, expectedRiskPremium, 'user risk premium');
+    assertEq(userRp, expectedRiskPremium, 'user risk premium');
 
     DataTypes.Reserve memory reserveInfo = getReserveInfo(spoke, reserveId);
 
