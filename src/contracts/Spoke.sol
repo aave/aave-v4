@@ -620,26 +620,6 @@ contract Spoke is ISpoke {
       ? 0
       : vars.avgLiquidationThreshold / vars.totalCollateralInBaseCurrency;
 
-    // vars.healthFactor = vars.totalDebtInBaseCurrency == 0
-    //   ? type(uint256).max
-    //   : (vars.totalCollateralInBaseCurrency.percentMul(vars.avgLiquidationThreshold)).wadDiv(
-    //     vars.totalDebtInBaseCurrency
-    //   ); // HF of 1 -> 1e18
-
-    // hfTest = vars.totalDebtInBaseCurrency == 0
-    //   ? type(uint256).max
-    //   : hfTest.wadDiv(vars.totalDebtInBaseCurrency).percentMul(1);
-
-    // vars.avgLiquidationThreshold = vars.totalCollateralInBaseCurrency == 0
-    //   ? 0
-    //   : vars.avgLiquidationThreshold;
-
-    // vars.avgLiquidationThreshold = vars.totalCollateralInBaseCurrency == 0
-    //   ? 0
-    //   : vars.avgLiquidationThreshold / vars.totalCollateralInBaseCurrency;
-
-    console2.log('SP: hf %e LT %e', vars.healthFactor, vars.avgLiquidationThreshold);
-
     // vars.collateralCounterInBaseCurrency = vars.totalCollateralInBaseCurrency;
     // vars.debtCounterInBaseCurrency = vars.totalDebtInBaseCurrency;
 

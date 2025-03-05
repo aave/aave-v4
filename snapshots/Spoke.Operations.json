@@ -1,4 +1,5 @@
 {
+<<<<<<< HEAD
   "borrow": "461335",
   "repay: full": "273564",
   "repay: partial": "273784",
@@ -10,4 +11,17 @@
   "usingAsCollateral": "50151",
   "withdraw: full": "243130",
   "withdraw: partial": "233077"
+=======
+  "borrow": "416552",
+  "repay: full": "270984",
+  "repay: partial": "271211",
+  "supply: 0 debt, collateralDisabled": "363244",
+  "supply: 0 debt, collateralEnabled": "383823",
+  "supply: 1 debt": "438862",
+  "supply: 2 debt": "511698",
+  "supply: 3 debt": "582314",
+  "usingAsCollateral": "50151",
+  "withdraw: full": "222680",
+  "withdraw: partial": "212536"
+>>>>>>> main
 }

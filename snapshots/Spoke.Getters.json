@@ -1,7 +1,15 @@
 {
+<<<<<<< HEAD
   "getUserAccountData: supplies: 0, borrows: 0": "36146",
   "getUserAccountData: supplies: 1, borrows: 0": "28317",
   "getUserAccountData: supplies: 2, borrows: 0": "36204",
   "getUserAccountData: supplies: 2, borrows: 1": "35097",
   "getUserAccountData: supplies: 2, borrows: 2": "40365"
+=======
+  "getUserAccountData: supplies: 0, borrows: 0": "32889",
+  "getUserAccountData: supplies: 1, borrows: 0": "27559",
+  "getUserAccountData: supplies: 2, borrows: 0": "35445",
+  "getUserAccountData: supplies: 2, borrows: 1": "34347",
+  "getUserAccountData: supplies: 2, borrows: 2": "40722"
+>>>>>>> main
 }
