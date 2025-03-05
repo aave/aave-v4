@@ -41,7 +41,7 @@ abstract contract Base is Test {
   IERC20 internal wbtc;
 
   MockPriceOracle internal oracle;
-  LiquidityHub internal hub;
+  ILiquidityHub internal hub;
   ISpoke internal spoke1;
   ISpoke internal spoke2;
   ISpoke internal spoke3;
@@ -192,28 +192,52 @@ abstract contract Base is Test {
 
     // add WETH
     hub.addAsset(
-      DataTypes.AssetConfig({decimals: 18, active: true, irStrategy: address(irStrategy)}),
+      DataTypes.AssetConfig({
+        decimals: 18,
+        active: true,
+        paused: false,
+        frozen: false,
+        irStrategy: address(irStrategy)
+      }),
       address(tokenList.weth)
     );
     oracle.setAssetPrice(wethAssetId, 2000e8);
 
     // add USDX
     hub.addAsset(
-      DataTypes.AssetConfig({decimals: 6, active: true, irStrategy: address(irStrategy)}),
+      DataTypes.AssetConfig({
+        decimals: 6,
+        active: true,
+        paused: false,
+        frozen: false,
+        irStrategy: address(irStrategy)
+      }),
       address(tokenList.usdx)
     );
     oracle.setAssetPrice(usdxAssetId, 1e8);
 
     // add DAI
     hub.addAsset(
-      DataTypes.AssetConfig({decimals: 18, active: true, irStrategy: address(irStrategy)}),
+      DataTypes.AssetConfig({
+        decimals: 18,
+        active: true,
+        paused: false,
+        frozen: false,
+        irStrategy: address(irStrategy)
+      }),
       address(tokenList.dai)
     );
     oracle.setAssetPrice(daiAssetId, 1e8);
 
     // add WBTC
     hub.addAsset(
-      DataTypes.AssetConfig({decimals: 8, active: true, irStrategy: address(irStrategy)}),
+      DataTypes.AssetConfig({
+        decimals: 8,
+        active: true,
+        paused: false,
+        frozen: false,
+        irStrategy: address(irStrategy)
+      }),
       address(tokenList.wbtc)
     );
     oracle.setAssetPrice(wbtcAssetId, 50_000e8);
@@ -400,7 +424,13 @@ abstract contract Base is Test {
 
     // Spoke 2 to have an extra dai reserve
     hub.addAsset(
-      DataTypes.AssetConfig({decimals: 18, active: true, irStrategy: address(irStrategy)}),
+      DataTypes.AssetConfig({
+        decimals: 18,
+        active: true,
+        frozen: false,
+        paused: false,
+        irStrategy: address(irStrategy)
+      }),
       address(tokenList.dai)
     );
     oracle.setAssetPrice(dai2AssetId, 1e8);

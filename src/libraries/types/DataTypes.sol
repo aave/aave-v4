@@ -35,7 +35,9 @@ library DataTypes {
 
   struct AssetConfig {
     uint256 decimals;
-    bool active; // TODO: frozen, paused
+    bool active;
+    bool frozen;
+    bool paused;
     address irStrategy; // todo use interface
   }
 

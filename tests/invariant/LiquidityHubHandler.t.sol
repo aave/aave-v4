@@ -43,7 +43,13 @@ contract LiquidityHubHandler is Test {
 
     // Add dai
     hub.addAsset(
-      DataTypes.AssetConfig({decimals: 18, active: true, irStrategy: address(0)}),
+      DataTypes.AssetConfig({
+        decimals: 18,
+        active: true,
+        frozen: false,
+        paused: false,
+        irStrategy: address(0)
+      }),
       address(dai)
     );
     bm.addReserve(

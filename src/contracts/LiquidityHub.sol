@@ -51,6 +51,8 @@ contract LiquidityHub is ILiquidityHub {
       config: DataTypes.AssetConfig({
         decimals: config.decimals,
         active: config.active,
+        frozen: config.frozen,
+        paused: config.paused,
         irStrategy: config.irStrategy
       })
     });
@@ -59,10 +61,19 @@ contract LiquidityHub is ILiquidityHub {
   }
 
   function updateAssetConfig(uint256 assetId, DataTypes.AssetConfig memory config) external {
+    DataTypes.Asset storage asset = _assets[assetId];
+
+    // in order to switch off an asset, enforce 0 suppliers
+    if (!config.active) {
+      require(asset.suppliedShares == 0, AssetCannotBePaused());
+    }
+
     // TODO: AccessControl
-    _assets[assetId].config = DataTypes.AssetConfig({
+    asset.config = DataTypes.AssetConfig({
       decimals: config.decimals,
       active: config.active,
+      frozen: config.frozen,
+      paused: config.paused,
       irStrategy: config.irStrategy
     });
 
