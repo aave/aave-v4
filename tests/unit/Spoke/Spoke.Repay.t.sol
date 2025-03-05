@@ -1110,7 +1110,7 @@ contract SpokeRepayTest is SpokeBase {
     uint256 usdxBorrowAmount,
     uint256 wbtcBorrowAmount,
     uint256 repayPortion,
-    uint40 skipTime
+    uint256 skipTime
   ) public {
     RepayMultipleLocal memory daiInfo;
     RepayMultipleLocal memory wethInfo;
@@ -1122,6 +1122,7 @@ contract SpokeRepayTest is SpokeBase {
     usdxInfo.borrowAmount = bound(usdxBorrowAmount, 1, MAX_SUPPLY_AMOUNT / 2);
     wbtcInfo.borrowAmount = bound(wbtcBorrowAmount, 1, MAX_SUPPLY_AMOUNT / 2);
     repayPortion = bound(repayPortion, 0, PercentageMath.PERCENTAGE_FACTOR);
+    skipTime = bound(skipTime, 1, MAX_SKIP_TIME);
 
     daiInfo.repayAmount = daiInfo.borrowAmount.percentMul(repayPortion);
     wethInfo.repayAmount = wethInfo.borrowAmount.percentMul(repayPortion);
@@ -1204,79 +1205,78 @@ contract SpokeRepayTest is SpokeBase {
     // Time passes
     skip(skipTime);
 
-    spoke1.getUserRiskPremium(bob);
-    // daiInfo.posBefore = getUserInfo(spoke1, bob, daiReserveId(spoke1));
-    // wethInfo.posBefore = getUserInfo(spoke1, bob, wethReserveId(spoke1));
-    // usdxInfo.posBefore = getUserInfo(spoke1, bob, usdxReserveId(spoke1));
-    // wbtcInfo.posBefore = getUserInfo(spoke1, bob, wbtcReserveId(spoke1));
+    daiInfo.posBefore = getUserInfo(spoke1, bob, daiReserveId(spoke1));
+    wethInfo.posBefore = getUserInfo(spoke1, bob, wethReserveId(spoke1));
+    usdxInfo.posBefore = getUserInfo(spoke1, bob, usdxReserveId(spoke1));
+    wbtcInfo.posBefore = getUserInfo(spoke1, bob, wbtcReserveId(spoke1));
 
-    // assertGe(
-    //   daiInfo.posBefore.baseDebt + daiInfo.posBefore.outstandingPremium,
-    //   daiInfo.borrowAmount
-    // );
-    // assertGe(
-    //   wethInfo.posBefore.baseDebt + wethInfo.posBefore.outstandingPremium,
-    //   wethInfo.borrowAmount
-    // );
-    // assertGe(
-    //   wbtcInfo.posBefore.baseDebt + wbtcInfo.posBefore.outstandingPremium,
-    //   wbtcInfo.borrowAmount
-    // );
-    // assertGe(
-    //   usdxInfo.posBefore.baseDebt + usdxInfo.posBefore.outstandingPremium,
-    //   usdxInfo.borrowAmount
-    // );
+    assertGe(
+      daiInfo.posBefore.baseDebt + daiInfo.posBefore.outstandingPremium,
+      daiInfo.borrowAmount
+    );
+    assertGe(
+      wethInfo.posBefore.baseDebt + wethInfo.posBefore.outstandingPremium,
+      wethInfo.borrowAmount
+    );
+    assertGe(
+      wbtcInfo.posBefore.baseDebt + wbtcInfo.posBefore.outstandingPremium,
+      wbtcInfo.borrowAmount
+    );
+    assertGe(
+      usdxInfo.posBefore.baseDebt + usdxInfo.posBefore.outstandingPremium,
+      usdxInfo.borrowAmount
+    );
 
-    // // Repayments
-    // if (daiInfo.repayAmount > 0) {
-    //   deal(address(tokenList.dai), bob, daiInfo.repayAmount);
-    //   Utils.spokeRepay(spoke1, daiReserveId(spoke1), bob, daiInfo.repayAmount);
-    // }
-    // if (wethInfo.repayAmount > 0) {
-    //   deal(address(tokenList.weth), bob, wethInfo.repayAmount);
-    //   Utils.spokeRepay(spoke1, wethReserveId(spoke1), bob, wethInfo.repayAmount);
-    // }
-    // if (wbtcInfo.repayAmount > 0) {
-    //   deal(address(tokenList.wbtc), bob, wbtcInfo.repayAmount);
-    //   Utils.spokeRepay(spoke1, wbtcReserveId(spoke1), bob, wbtcInfo.repayAmount);
-    // }
-    // if (usdxInfo.repayAmount > 0) {
-    //   deal(address(tokenList.usdx), bob, usdxInfo.repayAmount);
-    //   Utils.spokeRepay(spoke1, usdxReserveId(spoke1), bob, usdxInfo.repayAmount);
-    // }
+    // Repayments
+    if (daiInfo.repayAmount > 0) {
+      deal(address(tokenList.dai), bob, daiInfo.repayAmount);
+      Utils.spokeRepay(spoke1, daiReserveId(spoke1), bob, daiInfo.repayAmount);
+    }
+    if (wethInfo.repayAmount > 0) {
+      deal(address(tokenList.weth), bob, wethInfo.repayAmount);
+      Utils.spokeRepay(spoke1, wethReserveId(spoke1), bob, wethInfo.repayAmount);
+    }
+    if (wbtcInfo.repayAmount > 0) {
+      deal(address(tokenList.wbtc), bob, wbtcInfo.repayAmount);
+      Utils.spokeRepay(spoke1, wbtcReserveId(spoke1), bob, wbtcInfo.repayAmount);
+    }
+    if (usdxInfo.repayAmount > 0) {
+      deal(address(tokenList.usdx), bob, usdxInfo.repayAmount);
+      Utils.spokeRepay(spoke1, usdxReserveId(spoke1), bob, usdxInfo.repayAmount);
+    }
 
-    // daiInfo.posAfter = getUserInfo(spoke1, bob, daiReserveId(spoke1));
-    // wethInfo.posAfter = getUserInfo(spoke1, bob, wethReserveId(spoke1));
-    // usdxInfo.posAfter = getUserInfo(spoke1, bob, usdxReserveId(spoke1));
-    // wbtcInfo.posAfter = getUserInfo(spoke1, bob, wbtcReserveId(spoke1));
+    daiInfo.posAfter = getUserInfo(spoke1, bob, daiReserveId(spoke1));
+    wethInfo.posAfter = getUserInfo(spoke1, bob, wethReserveId(spoke1));
+    usdxInfo.posAfter = getUserInfo(spoke1, bob, usdxReserveId(spoke1));
+    wbtcInfo.posAfter = getUserInfo(spoke1, bob, wbtcReserveId(spoke1));
 
-    // // collateral remains the same
-    // assertEq(daiInfo.posAfter.suppliedShares, daiInfo.posBefore.suppliedShares);
-    // assertEq(wethInfo.posAfter.suppliedShares, wethInfo.posBefore.suppliedShares);
-    // assertEq(usdxInfo.posAfter.suppliedShares, usdxInfo.posBefore.suppliedShares);
-    // assertEq(wbtcInfo.posAfter.suppliedShares, wbtcInfo.posBefore.suppliedShares);
+    // collateral remains the same
+    assertEq(daiInfo.posAfter.suppliedShares, daiInfo.posBefore.suppliedShares);
+    assertEq(wethInfo.posAfter.suppliedShares, wethInfo.posBefore.suppliedShares);
+    assertEq(usdxInfo.posAfter.suppliedShares, usdxInfo.posBefore.suppliedShares);
+    assertEq(wbtcInfo.posAfter.suppliedShares, wbtcInfo.posBefore.suppliedShares);
 
-    // // debt
-    // assertEq(
-    //   daiInfo.posAfter.baseDebt + daiInfo.posAfter.outstandingPremium,
-    //   daiInfo.posBefore.baseDebt + daiInfo.posBefore.outstandingPremium - daiInfo.repayAmount,
-    //   'bob dai debt final balance'
-    // );
-    // assertEq(
-    //   wethInfo.posAfter.baseDebt + wethInfo.posAfter.outstandingPremium,
-    //   wethInfo.posBefore.baseDebt + wethInfo.posBefore.outstandingPremium - wethInfo.repayAmount,
-    //   'bob weth debt final balance'
-    // );
-    // assertEq(
-    //   usdxInfo.posAfter.baseDebt + usdxInfo.posAfter.outstandingPremium,
-    //   usdxInfo.posBefore.baseDebt + usdxInfo.posBefore.outstandingPremium - usdxInfo.repayAmount,
-    //   'bob usdx debt final balance'
-    // );
-    // assertEq(
-    //   wbtcInfo.posAfter.baseDebt + wbtcInfo.posAfter.outstandingPremium,
-    //   wbtcInfo.posBefore.baseDebt + wbtcInfo.posBefore.outstandingPremium - wbtcInfo.repayAmount,
-    //   'bob wbtc debt final balance'
-    // );
+    // debt
+    assertEq(
+      daiInfo.posAfter.baseDebt + daiInfo.posAfter.outstandingPremium,
+      daiInfo.posBefore.baseDebt + daiInfo.posBefore.outstandingPremium - daiInfo.repayAmount,
+      'bob dai debt final balance'
+    );
+    assertEq(
+      wethInfo.posAfter.baseDebt + wethInfo.posAfter.outstandingPremium,
+      wethInfo.posBefore.baseDebt + wethInfo.posBefore.outstandingPremium - wethInfo.repayAmount,
+      'bob weth debt final balance'
+    );
+    assertEq(
+      usdxInfo.posAfter.baseDebt + usdxInfo.posAfter.outstandingPremium,
+      usdxInfo.posBefore.baseDebt + usdxInfo.posBefore.outstandingPremium - usdxInfo.repayAmount,
+      'bob usdx debt final balance'
+    );
+    assertEq(
+      wbtcInfo.posAfter.baseDebt + wbtcInfo.posAfter.outstandingPremium,
+      wbtcInfo.posBefore.baseDebt + wbtcInfo.posBefore.outstandingPremium - wbtcInfo.repayAmount,
+      'bob wbtc debt final balance'
+    );
   }
 
   /// todo: borrow, repay, borrow more, repay

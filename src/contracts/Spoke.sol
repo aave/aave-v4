@@ -203,7 +203,7 @@ contract Spoke is ISpoke {
     });
     liquidityHub.draw(reserve.assetId, amount, uint32(newReserveRiskPremium.derayify()), to);
     _notifyRiskPremiumUpdate(reserve.assetId, msg.sender, newUserRiskPremium);
-    console2.log('post-borrow');
+    // console2.log('post-borrow');
     _validateHealthFactor(msg.sender);
 
     emit Borrowed(reserveId, to, amount);
@@ -334,13 +334,9 @@ contract Spoke is ISpoke {
   }
 
   function getHealthFactor(address user) external view returns (uint256) {
-    (, , uint256 healthFactor, uint256 totalColl, uint256 totalDebt) = _calculateUserAccountData(
-      user
-    );
-    // console2.log('sp totalColl %e, totalDebt %e', totalColl, totalDebt);
+    (, , uint256 healthFactor, , ) = _calculateUserAccountData(user);
     return healthFactor;
   }
-
   function getReservePrice(uint256 reserveId) public view returns (uint256) {
     return oracle.getAssetPrice(_reserves[reserveId].assetId);
   }
@@ -550,7 +546,7 @@ contract Spoke is ISpoke {
       }
 
       if (_usingAsCollateral(user)) {
-        // @dev opt: this can be extracted by counting number of set bits in a supplied (only) bitmap saving one loop
+        /// @dev opt: this can be extracted by counting number of set bits in a supplied (only) bitmap saving one loop
         unchecked {
           ++vars.collateralReserveCount;
         }
@@ -606,57 +602,68 @@ contract Spoke is ISpoke {
       }
     }
 
-    if (vars.totalDebtInBaseCurrency > 0) {
-      console2.log(
-        'SP: new hf %e',
-        (vars.avgLiquidationThreshold.wadDiv(vars.totalDebtInBaseCurrency).percentMul(1))
-      );
-    }
+    // uint256 hfTest = vars.totalCollateralInBaseCurrency == 0 ? 0 : vars.avgLiquidationThreshold;
 
-    // if (vars.avgLiquidationThreshold == 7999) {
-    //   vars.avgLiquidationThreshold = 8000;
+    // if (vars.totalDebtInBaseCurrency > 0) {
+    //   console2.log(
+    //     'SP hf calc %e',
+    //     vars.avgLiquidationThreshold.wadDiv(vars.totalDebtInBaseCurrency).percentMul(1),
+    //     uint(0).wadDiv(vars.totalDebtInBaseCurrency).percentMul(1)
+    //   );
     // }
 
-    // vars.healthFactor = vars.totalDebtInBaseCurrency == 0
-    //   ? type(uint256).max
-    //   : vars.avgLiquidationThreshold.wadDiv(vars.totalDebtInBaseCurrency).percentMul(1); // HF of 1 -> 1e18
-    vars.healthFactor = 1e18;
+    vars.healthFactor = vars.totalDebtInBaseCurrency == 0
+      ? type(uint256).max
+      : vars.avgLiquidationThreshold.wadDiv(vars.totalDebtInBaseCurrency).percentMul(1); // HF of 1 -> 1e18
 
     vars.avgLiquidationThreshold = vars.totalCollateralInBaseCurrency == 0
       ? 0
       : vars.avgLiquidationThreshold / vars.totalCollateralInBaseCurrency;
 
-    // console2.log(
-    //   'SP: tc %e | td %e | LT %e',
-    //   vars.totalCollateralInBaseCurrency,
-    //   vars.totalDebtInBaseCurrency,
-    //   vars.avgLiquidationThreshold
-    // );
-    // console2.log('avg lt %e %e', vars.avgLiquidationThreshold, vars.healthFactor);
+    // vars.healthFactor = vars.totalDebtInBaseCurrency == 0
+    //   ? type(uint256).max
+    //   : (vars.totalCollateralInBaseCurrency.percentMul(vars.avgLiquidationThreshold)).wadDiv(
+    //     vars.totalDebtInBaseCurrency
+    //   ); // HF of 1 -> 1e18
+
+    // hfTest = vars.totalDebtInBaseCurrency == 0
+    //   ? type(uint256).max
+    //   : hfTest.wadDiv(vars.totalDebtInBaseCurrency).percentMul(1);
+
+    // vars.avgLiquidationThreshold = vars.totalCollateralInBaseCurrency == 0
+    //   ? 0
+    //   : vars.avgLiquidationThreshold;
+
+    // vars.avgLiquidationThreshold = vars.totalCollateralInBaseCurrency == 0
+    //   ? 0
+    //   : vars.avgLiquidationThreshold / vars.totalCollateralInBaseCurrency;
+
+    console2.log('SP: hf %e', vars.healthFactor);
 
     // vars.collateralCounterInBaseCurrency = vars.totalCollateralInBaseCurrency;
     // vars.debtCounterInBaseCurrency = vars.totalDebtInBaseCurrency;
-    // console2.log('here %e', vars.collateralCounterInBaseCurrency);
 
     list.sortByKey(); // sort by liquidity premium
     vars.i = 0;
     // @dev from this point onwards, `collateralCounterInBaseCurrency` represents running collateral
     // value used in risk premium, `debtCounterInBaseCurrency` represents running outstanding debt
-    vars.totalCollateralInBaseCurrency = 0;
-    while (vars.i < vars.collateralReserveCount && vars.totalDebtInBaseCurrency > 0) {
-      if (vars.totalDebtInBaseCurrency == 0) break;
+    vars.userCollateralInBaseCurrency = 0;
+    while (vars.i < vars.collateralReserveCount && vars.debtCounterInBaseCurrency > 0) {
+      if (vars.debtCounterInBaseCurrency == 0) break;
       (vars.liquidityPremium, vars.userCollateralInBaseCurrency) = list.get(vars.i);
-      if (vars.userCollateralInBaseCurrency > vars.totalDebtInBaseCurrency) {
-        vars.userCollateralInBaseCurrency = vars.totalDebtInBaseCurrency;
+      if (vars.userCollateralInBaseCurrency > vars.debtCounterInBaseCurrency) {
+        vars.userCollateralInBaseCurrency = vars.debtCounterInBaseCurrency;
       }
       vars.userRiskPremium += vars.userCollateralInBaseCurrency * vars.liquidityPremium;
       vars.totalCollateralInBaseCurrency += vars.userCollateralInBaseCurrency;
       vars.totalDebtInBaseCurrency -= vars.userCollateralInBaseCurrency;
-      ++vars.i;
+      unchecked {
+        ++vars.i;
+      }
     }
 
-    if (vars.totalCollateralInBaseCurrency > 0) {
-      vars.userRiskPremium = (vars.userRiskPremium / vars.totalCollateralInBaseCurrency).rayify();
+    if (vars.collateralCounterInBaseCurrency > 0) {
+      vars.userRiskPremium = (vars.userRiskPremium / vars.collateralCounterInBaseCurrency).rayify();
     }
 
     return (
@@ -680,14 +687,6 @@ contract Spoke is ISpoke {
       userData,
       liquidityHub.previewNextBorrowIndex(assetId)
     );
-    // uint256 debt = ((cumulativeBaseDebt + cumulativeOutstandingPremium) * assetPrice).wadify() /
-    //   assetUnit;
-    // console2.log(
-    //   'SP debt: shares %e | bal %e | eq',
-    //   (cumulativeBaseDebt + cumulativeOutstandingPremium),
-    //   debt,
-    //   debt == 0
-    // );
     return ((cumulativeBaseDebt + cumulativeOutstandingPremium) * assetPrice).wadify() / assetUnit;
   }
 
@@ -697,16 +696,6 @@ contract Spoke is ISpoke {
     uint256 assetPrice,
     uint256 assetUnit
   ) internal view returns (uint256) {
-    // uint256 bal = (liquidityHub.convertToAssets(assetId, user.suppliedShares) * assetPrice)
-    //   .wadify() / assetUnit;
-
-    // console2.log(
-    //   'SP coll: assets %e | bal %e | eq',
-    //   liquidityHub.convertToAssets(assetId, user.suppliedShares),
-    //   bal,
-    //   bal == 0
-    // );
-
     return
       (liquidityHub.convertToAssets(assetId, user.suppliedShares) * assetPrice).wadify() /
       assetUnit;

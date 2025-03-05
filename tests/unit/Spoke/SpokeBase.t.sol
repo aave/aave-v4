@@ -252,9 +252,10 @@ contract SpokeBase is Base {
     //     .percentDiv((collData.config.lt.rayify() - 1).derayify())
     // ).dewadify() + 1;
 
-    uint256 normalizedDebtAmount = (debtAmount * debtPrice).wadify() / debtAssetUnits + 1;
+    uint256 normalizedDebtAmount = (debtAmount * debtPrice).wadify() / debtAssetUnits;
     uint256 normalizedCollPrice = collPrice.wadify() / collAssetUnits;
 
+    // // actual
     uint256 minColl = (normalizedDebtAmount.wadify() /
       normalizedCollPrice.wadify().percentMul(collData.config.lt)) + 1;
 
@@ -294,7 +295,7 @@ contract SpokeBase is Base {
     uint256 minColl = (
       ((debtAmount * debtPrice * collAssetUnits).wadify().percentDiv(collData.config.lt) /
         (collPrice * debtAssetUnits).wadify())
-    );
+    ) + 1;
 
     return minColl;
   }
