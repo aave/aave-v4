@@ -456,13 +456,13 @@ contract SpokeBorrowTest is SpokeBase {
     uint256 daiDebtAmount = 1_000e18;
     uint256 usdxDebtAmount = 2_000e6;
 
-    uint256 wethCollAmount = _calcMinimumCollAmount({
+    uint256 wethCollAmount = _calcMinimumCollAmountExact({
       spoke: spoke1,
       collReserveId: wethReserveId,
       debtReserveId: daiReserveId,
       debtAmount: daiDebtAmount
     }) +
-      _calcMinimumCollAmount({
+      _calcMinimumCollAmountExact({
         spoke: spoke1,
         collReserveId: wethReserveId,
         debtReserveId: usdxReserveId,
@@ -511,13 +511,13 @@ contract SpokeBorrowTest is SpokeBase {
     uint256 daiDebtAmount = 1_000e18;
     uint256 usdxDebtAmount = 2_000e6;
 
-    uint256 wethCollAmount = _calcMinimumCollAmount({
+    uint256 wethCollAmount = _calcMinimumCollAmountExact({
       spoke: spoke1,
       collReserveId: wethReserveId,
       debtReserveId: daiReserveId,
       debtAmount: daiDebtAmount
     }) +
-      _calcMinimumCollAmount({
+      _calcMinimumCollAmountExact({
         spoke: spoke1,
         collReserveId: wethReserveId,
         debtReserveId: usdxReserveId,

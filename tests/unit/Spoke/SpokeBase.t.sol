@@ -228,7 +228,7 @@ contract SpokeBase is Base {
     return tokenData;
   }
 
-  function _calcMinimumCollAmount(
+  function _calcMinimumCollAmountRoundUp(
     ISpoke spoke,
     uint256 collReserveId,
     uint256 debtReserveId,
@@ -242,20 +242,58 @@ contract SpokeBase is Base {
     uint256 debtAssetUnits = 10 ** hub.getAsset(debtData.assetId).config.decimals;
     uint256 debtPrice = oracle.getAssetPrice(debtData.assetId);
 
-    // add rounding up to ensure that min collateral leads to hf > 1
     // uint256 minColl = ((debtAmount * debtPrice * collAssetUnits) / (collPrice * debtAssetUnits))
     //   .percentDiv(collData.config.lt - 1) + _calcMinAmountWithinHFResolution(spoke, collReserveId);
 
-    uint256 minColl = (
-      (((debtAmount * debtPrice).wadify() * collAssetUnits) / (collPrice * debtAssetUnits))
-        .percentDiv(collData.config.lt - 1)
-    ).dewadify() + 1;
+    // add rounding up to ensure that min collateral leads to hf > 1
+    // todo: optimize this for exact values, esp small debt amounts relative to units
+    // uint256 minColl = (
+    //   ((debtAmount * debtPrice * collAssetUnits).wadify() / (collPrice * debtAssetUnits))
+    //     .percentDiv((collData.config.lt.rayify() - 1).derayify())
+    // ).dewadify() + 1;
 
-    console.log('minres %e %e', _calcMinAmountWithinHFResolution(spoke, collReserveId), minColl);
-    console.log(
-      'calc debt %e | calc coll %e',
-      (debtAmount * debtPrice).wadify() / debtAssetUnits,
-      (minColl * collPrice).wadify() / collAssetUnits
+    uint256 normalizedDebtAmount = (debtAmount * debtPrice).wadify() / debtAssetUnits + 1;
+    uint256 normalizedCollPrice = collPrice.wadify() / collAssetUnits;
+
+    uint256 minColl = (normalizedDebtAmount.wadify() /
+      normalizedCollPrice.wadify().percentMul(collData.config.lt)) + 1;
+
+    // console.log('minres %e', (collPrice * debtAssetUnits).wadify().percentMul(collData.config.lt));
+    // console.log(
+    //   'calc debt %e | calc coll %e',
+    //   ((debtAmount * debtPrice).wadify() / debtAssetUnits).dewadify(),
+    //   ((minColl * collPrice).wadify() / collAssetUnits).dewadify()
+    // );
+
+    return minColl;
+  }
+
+  // function _calcMinimumCollAmounts(
+  //   ISpoke spoke,
+  //   uint256[] memory collReserveIds,
+  //   uint256[] memory debtReserveIds,
+  //   uint256 debtAmount
+  // ) {
+  //   _calcAvgLT();
+  // }
+
+  function _calcMinimumCollAmountExact(
+    ISpoke spoke,
+    uint256 collReserveId,
+    uint256 debtReserveId,
+    uint256 debtAmount
+  ) internal view returns (uint256) {
+    DataTypes.Reserve memory collData = spoke.getReserve(collReserveId);
+    uint256 collPrice = oracle.getAssetPrice(collData.assetId);
+    uint256 collAssetUnits = 10 ** hub.getAsset(collData.assetId).config.decimals;
+
+    DataTypes.Reserve memory debtData = spoke.getReserve(debtReserveId);
+    uint256 debtAssetUnits = 10 ** hub.getAsset(debtData.assetId).config.decimals;
+    uint256 debtPrice = oracle.getAssetPrice(debtData.assetId);
+
+    uint256 minColl = (
+      ((debtAmount * debtPrice * collAssetUnits).wadify().percentDiv(collData.config.lt) /
+        (collPrice * debtAssetUnits).wadify())
     );
 
     return minColl;
@@ -276,9 +314,10 @@ contract SpokeBase is Base {
     uint256 debtPrice = oracle.getAssetPrice(debtData.assetId);
 
     return
-      ((collAmount * collPrice * debtAssetUnits) / (debtPrice * collAssetUnits)).percentMul(
-        collData.config.lt
-      );
+      (
+        ((collAmount * collPrice * debtAssetUnits).wadify() / (debtPrice * collAssetUnits))
+          .percentMul(collData.config.lt)
+      ).dewadify();
   }
 
   // calculate min allowable debt amount which truncates to 0 due to precision loss within HF calc

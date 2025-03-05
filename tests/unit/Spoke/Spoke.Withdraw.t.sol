@@ -1036,12 +1036,10 @@ contract SpokeWithdrawTest is SpokeBase {
 
     assertEq(spoke1.getHealthFactor(alice), spoke1.HEALTH_FACTOR_LIQUIDATION_THRESHOLD());
 
-    uint256 amount = _calcMinAmountWithinHFResolution(spoke1, collReserveId);
-
     // withdrawing any amount will result in HF < threshold
     vm.prank(alice);
     vm.expectRevert(ISpoke.HealthFactorLowerThanLiquidationThreshold.selector);
-    spoke1.withdraw({reserveId: collReserveId, amount: amount, to: alice});
+    spoke1.withdraw({reserveId: collReserveId, amount: 1, to: alice}); // TODO: amount should be 1?
   }
 
   function test_withdraw_revertsWith_HealthFactorLowerThanLiquidationThreshold_price_drop() public {
@@ -1223,12 +1221,10 @@ contract SpokeWithdrawTest is SpokeBase {
 
     assertEq(spoke1.getHealthFactor(alice), spoke1.HEALTH_FACTOR_LIQUIDATION_THRESHOLD());
 
-    uint256 amount = _calcMinAmountWithinHFResolution(spoke1, collReserveId);
-
     // withdrawing any amount of dai will result in HF < threshold
     vm.prank(alice);
     vm.expectRevert(ISpoke.HealthFactorLowerThanLiquidationThreshold.selector);
-    spoke1.withdraw({reserveId: collReserveId, amount: amount, to: alice});
+    spoke1.withdraw({reserveId: collReserveId, amount: 1, to: alice});
   }
 
   function test_withdraw_revertsWith_HealthFactorLowerThanLiquidationThreshold_multiple_colls()
@@ -1241,13 +1237,13 @@ contract SpokeWithdrawTest is SpokeBase {
     uint256 debtReserveIdUsdx = usdxReserveId(spoke1);
     uint256 debtReserveIdDai = daiReserveId(spoke1);
 
-    uint256 minCollAmount = _calcMinimumCollAmount({
+    uint256 minCollAmount = _calcMinimumCollAmountExact({
       spoke: spoke1,
       collReserveId: collReserveId,
       debtReserveId: debtReserveIdUsdx,
       debtAmount: debtAmountUsdx
     }) +
-      _calcMinimumCollAmount({
+      _calcMinimumCollAmountExact({
         spoke: spoke1,
         collReserveId: collReserveId,
         debtReserveId: debtReserveIdDai,
@@ -1298,11 +1294,13 @@ contract SpokeWithdrawTest is SpokeBase {
       onBehalfOf: alice
     });
 
+    console.log('hf %e', spoke1.getHealthFactor(alice));
+
     assertGe(spoke1.getHealthFactor(alice), spoke1.HEALTH_FACTOR_LIQUIDATION_THRESHOLD());
 
     // withdrawing some nontrivial amount of weth will result in HF < threshold
     vm.prank(alice);
     vm.expectRevert(ISpoke.HealthFactorLowerThanLiquidationThreshold.selector);
-    spoke1.withdraw({reserveId: collReserveId, amount: 1e15, to: alice}); // 1e-3 weth
+    spoke1.withdraw({reserveId: collReserveId, amount: 1, to: alice}); // todo: resolve precision so amount=1?
   }
 }
