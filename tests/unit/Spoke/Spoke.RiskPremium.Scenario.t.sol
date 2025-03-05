@@ -159,6 +159,8 @@ contract SpokeRiskPremiumScenarioTest is Base {
     uint256 assetId,
     uint256 amount
   ) internal view returns (uint256) {
-    return (amount * oracle.getAssetPrice(assetId)) / 10 ** hub.getAsset(assetId).config.decimals;
+    return
+      (amount * oracle.getAssetPrice(assetId)).wadify() /
+      10 ** hub.getAsset(assetId).config.decimals;
   }
 }

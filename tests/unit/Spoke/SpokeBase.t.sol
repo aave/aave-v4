@@ -251,7 +251,9 @@ contract SpokeBase is Base {
   }
 
   function _normalizedValue(uint256 amount, uint256 assetId) internal view returns (uint256) {
-    return (amount * oracle.getAssetPrice(assetId)) / (10 ** hub.getAssetConfig(assetId).decimals);
+    return
+      (amount * oracle.getAssetPrice(assetId) * 1e18) /
+      (10 ** hub.getAssetConfig(assetId).decimals);
   }
 
   function _calculateExpectedUserRP(address user, ISpoke spoke) internal view returns (uint256) {
