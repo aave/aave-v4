@@ -992,106 +992,111 @@ contract SpokeWithdrawTest is SpokeBase {
     );
   }
 
-  // function test_withdraw_revertsWith_HealthFactorLowerThanLiquidationThreshold() public {
-  //   uint256 debtAmount = 50e18;
-  //   uint256 collReserveId = wethReserveId(spoke1);
-  //   uint256 debtReserveId = daiReserveId(spoke1);
+  // todo: test withdraw currently above HF, withdraw enough for HF to be below threshold
+  // todo: test withdraw already below HF, cannot withdraw any
 
-  //   uint256 minCollAmount = _calcMinimumCollAmount({
-  //     spoke: spoke1,
-  //     collReserveId: collReserveId,
-  //     debtReserveId: debtReserveId,
-  //     debtAmount: debtAmount
-  //   });
+  function test_withdraw_revertsWith_HealthFactorLowerThanLiquidationThreshold() public {
+    uint256 collAmount = 50e18;
+    uint256 collReserveId = wethReserveId(spoke1);
+    uint256 debtReserveId = daiReserveId(spoke1);
 
-  //   // Alice supplies weth as collateral
-  //   Utils.spokeSupply({
-  //     spoke: spoke1,
-  //     reserveId: collReserveId,
-  //     user: alice,
-  //     amount: minCollAmount,
-  //     onBehalfOf: alice
-  //   });
-  //   setUsingAsCollateral(spoke1, alice, collReserveId, true);
+    uint256 maxDebtAmount = _calcMaxDebtAmount({
+      spoke: spoke1,
+      collReserveId: collReserveId,
+      debtReserveId: debtReserveId,
+      collAmount: collAmount
+    });
 
-  //   // Bob supplies dai
-  //   Utils.spokeSupply({
-  //     spoke: spoke1,
-  //     reserveId: debtReserveId,
-  //     user: bob,
-  //     amount: debtAmount,
-  //     onBehalfOf: bob
-  //   });
+    // Alice supplies weth as collateral
+    Utils.spokeSupply({
+      spoke: spoke1,
+      reserveId: collReserveId,
+      user: alice,
+      amount: collAmount,
+      onBehalfOf: alice
+    });
+    setUsingAsCollateral(spoke1, alice, collReserveId, true);
 
-  //   // Alice borrows dai
-  //   Utils.spokeBorrow({
-  //     spoke: spoke1,
-  //     reserveId: debtReserveId,
-  //     user: alice,
-  //     amount: debtAmount,
-  //     onBehalfOf: alice
-  //   });
+    // Bob supplies dai
+    Utils.spokeSupply({
+      spoke: spoke1,
+      reserveId: debtReserveId,
+      user: bob,
+      amount: maxDebtAmount,
+      onBehalfOf: bob
+    });
 
-  //   assertEq(spoke1.getHealthFactor(alice), spoke1.HEALTH_FACTOR_LIQUIDATION_THRESHOLD());
+    // Alice borrows dai
+    Utils.spokeBorrow({
+      spoke: spoke1,
+      reserveId: debtReserveId,
+      user: alice,
+      amount: maxDebtAmount,
+      onBehalfOf: alice
+    });
 
-  //   // withdrawing any amount will result in HF < threshold
-  //   vm.prank(alice);
-  //   vm.expectRevert(ISpoke.HealthFactorLowerThanLiquidationThreshold.selector);
-  //   spoke1.withdraw({reserveId: collReserveId, amount: 1, to: alice});
-  // }
+    assertEq(spoke1.getHealthFactor(alice), spoke1.HEALTH_FACTOR_LIQUIDATION_THRESHOLD());
 
-  // function test_withdraw_revertsWith_HealthFactorLowerThanLiquidationThreshold_interest_increase()
-  //   public
-  // {
-  //   uint256 debtAmount = 50e18;
-  //   uint256 collReserveId = wethReserveId(spoke1);
-  //   uint256 debtReserveId = daiReserveId(spoke1);
+    // withdrawing any amount will result in HF < threshold
+    vm.prank(alice);
+    vm.expectRevert(ISpoke.HealthFactorLowerThanLiquidationThreshold.selector);
+    spoke1.withdraw({reserveId: collReserveId, amount: 1, to: alice});
+  }
 
-  //   uint256 minCollAmount = _calcMinimumCollAmount({
-  //     spoke: spoke1,
-  //     collReserveId: collReserveId,
-  //     debtReserveId: debtReserveId,
-  //     debtAmount: debtAmount
-  //   });
+  function test_withdraw_revertsWith_HealthFactorLowerThanLiquidationThreshold_interest_increase()
+    public
+  {
+    uint256 collAmount = 50e18;
+    uint256 collReserveId = wethReserveId(spoke1);
+    uint256 debtReserveId = daiReserveId(spoke1);
 
-  //   // Alice supplies weth as collateral
-  //   Utils.spokeSupply({
-  //     spoke: spoke1,
-  //     reserveId: collReserveId,
-  //     user: alice,
-  //     amount: minCollAmount,
-  //     onBehalfOf: alice
-  //   });
-  //   setUsingAsCollateral(spoke1, alice, collReserveId, true);
+    uint256 maxDebtAmount = _calcMaxDebtAmount({
+      spoke: spoke1,
+      collReserveId: collReserveId,
+      debtReserveId: debtReserveId,
+      collAmount: collAmount
+    });
 
-  //   // Bob supplies dai
-  //   Utils.spokeSupply({
-  //     spoke: spoke1,
-  //     reserveId: debtReserveId,
-  //     user: bob,
-  //     amount: debtAmount,
-  //     onBehalfOf: bob
-  //   });
+    // Alice supplies weth as collateral
+    Utils.spokeSupply({
+      spoke: spoke1,
+      reserveId: collReserveId,
+      user: alice,
+      amount: collAmount,
+      onBehalfOf: alice
+    });
+    setUsingAsCollateral(spoke1, alice, collReserveId, true);
 
-  //   // // Alice borrows dai
-  //   // Utils.spokeBorrow({
-  //   //   spoke: spoke1,
-  //   //   reserveId: debtReserveId,
-  //   //   user: alice,
-  //   //   amount: debtAmount,
-  //   //   onBehalfOf: alice
-  //   // });
+    // Bob supplies dai
+    Utils.spokeSupply({
+      spoke: spoke1,
+      reserveId: debtReserveId,
+      user: bob,
+      amount: maxDebtAmount,
+      onBehalfOf: bob
+    });
 
-  //   // // accrue interest so that alice is undercollateralized
-  //   // skip(365 days);
+    // Alice borrows dai
+    Utils.spokeBorrow({
+      spoke: spoke1,
+      reserveId: debtReserveId,
+      user: alice,
+      amount: maxDebtAmount,
+      onBehalfOf: alice
+    });
 
-  //   // assertLt(spoke1.getHealthFactor(alice), spoke1.HEALTH_FACTOR_LIQUIDATION_THRESHOLD());
+    assertGe(spoke1.getHealthFactor(alice), spoke1.HEALTH_FACTOR_LIQUIDATION_THRESHOLD());
 
-  //   // // withdrawing any amount will result in HF < threshold
-  //   // vm.prank(alice);
-  //   // vm.expectRevert(ISpoke.HealthFactorLowerThanLiquidationThreshold.selector);
-  //   // spoke1.withdraw({reserveId: collReserveId, amount: 1, to: alice});
-  // }
+    // accrue interest so that alice is undercollateralized
+    skip(365 days);
+
+    assertLt(spoke1.getHealthFactor(alice), spoke1.HEALTH_FACTOR_LIQUIDATION_THRESHOLD());
+
+    // withdrawing any amount will result in HF < threshold
+    vm.prank(alice);
+    vm.expectRevert(ISpoke.HealthFactorLowerThanLiquidationThreshold.selector);
+    spoke1.withdraw({reserveId: collReserveId, amount: 1, to: alice});
+  }
 
   // // if user borrows a debt amount less than precision loss, user can withdraw all
   // function test_withdraw_lt_precision_bounds() public {
@@ -1294,22 +1299,16 @@ contract SpokeWithdrawTest is SpokeBase {
   //   vm.expectRevert(ISpoke.HealthFactorLowerThanLiquidationThreshold.selector);
   //   spoke1.withdraw({reserveId: collReserveId, amount: 1, to: alice});
   // }
-
-  function test_withdraw_fuzz_revertsWith_HealthFactorLowerThanLiquidationThreshold()
-    public
-  // uint256 debtAmount //
-  {
+  function test_withdraw_fuzz_revertsWith_HealthFactorLowerThanLiquidationThreshold(
+    uint256 debtAmount //  //
+  ) public {
     uint256 collReserveId = wethReserveId(spoke1);
     uint256 debtReserveId = daiReserveId(spoke1);
-    uint256 debtAmount = 133757651538751390055685;
+    // uint256 debtAmount = 133757651538751390055685;
     // uint256 debtAmount = 10e18;
 
     // if debt amount is greater than HF resolution, no withdrawal is allowed
-    // debtAmount = bound(
-    //   debtAmount,
-    //   _calcMinDebtAmountWithinHFResolution(spoke1, collReserveId),
-    //   MAX_SUPPLY_AMOUNT
-    // );
+    debtAmount = bound(debtAmount, 1, MAX_SUPPLY_AMOUNT);
 
     uint256 minCollAmount = _calcMinimumCollAmount({
       spoke: ISpoke(spoke1),
@@ -1318,7 +1317,7 @@ contract SpokeWithdrawTest is SpokeBase {
       debtAmount: debtAmount
     });
 
-    // console.log('minColl %e', minCollAmount);
+    console.log('minColl %e', minCollAmount);
 
     // Alice supplies weth as collateral
     Utils.spokeSupply({
@@ -1348,34 +1347,48 @@ contract SpokeWithdrawTest is SpokeBase {
       onBehalfOf: alice
     });
 
-    (
-      uint256 userRiskPremium,
-      uint256 avgLiquidationThreshold,
-      uint256 healthFactor,
-      uint256 totalCollateralInBaseCurrency,
-      uint256 totalDebtInBaseCurrency
-    ) = spoke1.getUserAccountData(alice);
+    // (
+    //   ,
+    //   ,
+    //   uint256 healthFactor,
+    //   uint256 totalCollateralInBaseCurrency,
+    //   uint256 totalDebtInBaseCurrency
+    // ) = spoke1.getUserAccountData(alice);
 
-    console.log(
-      'test hf %e %e %e',
-      avgLiquidationThreshold,
-      totalCollateralInBaseCurrency,
-      totalDebtInBaseCurrency
-    );
+    // console.log('test hf %e %e', totalCollateralInBaseCurrency, totalDebtInBaseCurrency);
 
-    console.log(
-      'backcalc',
-      ((totalCollateralInBaseCurrency.percentMul(8000) - totalDebtInBaseCurrency) * 10 ** 18) /
-        oracle.getAssetPrice(spoke1.getReserve(collReserveId).assetId)
-    );
+    // console.log(
+    //   'backcalc',
+    //   ((totalCollateralInBaseCurrency.percentMul(8000) - totalDebtInBaseCurrency) * 10 ** 18) /
+    //     oracle.getAssetPrice(spoke1.getReserve(collReserveId).assetId)
+    // );
 
-    uint256 draw = ((totalCollateralInBaseCurrency.percentMul(8000) - totalDebtInBaseCurrency) *
-      10 ** 18) / oracle.getAssetPrice(spoke1.getReserve(collReserveId).assetId);
+    // allowable amount to withdraw is the total supplied
+    // uint256 allowableWithdrawal = (
+    //   (totalCollateralInBaseCurrency.percentMul(8000) - totalDebtInBaseCurrency)
+    // ) / (oracle.getAssetPrice(spoke1.getReserve(collReserveId).assetId) * 1e18);
 
-    assertGe(spoke1.getHealthFactor(alice), spoke1.HEALTH_FACTOR_LIQUIDATION_THRESHOLD());
+    // console.log(
+    //   'calcavail %e %e %e',
+    //   allowableWithdrawal,
+    //   // (spoke1.getUserSuppliedAmount(collReserveId, alice) * assetPrice) /
+    //   //   oracle.getAssetPrice(spoke1.getReserve(collReserveId).assetId),
+    //   minCollAmount
+    // );
 
-    vm.expectRevert(ISpoke.HealthFactorLowerThanLiquidationThreshold.selector);
-    vm.prank(alice);
-    spoke1.withdraw({reserveId: collReserveId, amount: draw + 1, to: alice});
+    // // assertGe(spoke1.getHealthFactor(alice), spoke1.HEALTH_FACTOR_LIQUIDATION_THRESHOLD());
+
+    // console.log(
+    //   'hf before draw %e %e %e',
+    //   spoke1.getUserSuppliedAmount(collReserveId, alice),
+    //   allowableWithdrawal,
+    //   spoke1.getHealthFactor(alice)
+    // );
+
+    // vm.expectRevert(ISpoke.HealthFactorLowerThanLiquidationThreshold.selector);
+    // vm.prank(alice);
+    // spoke1.withdraw({reserveId: collReserveId, amount: 1, to: alice});
+
+    // console.log('hf aft draw %e %e', spoke1.getHealthFactor(alice));
   }
 }

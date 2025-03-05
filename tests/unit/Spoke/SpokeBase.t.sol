@@ -2,6 +2,7 @@
 pragma solidity ^0.8.0;
 
 import 'tests/Base.t.sol';
+import {IERC20Metadata} from 'src/dependencies/openzeppelin/IERC20Metadata.sol';
 
 contract SpokeBase is Base {
   using PercentageMath for uint256;
@@ -242,10 +243,40 @@ contract SpokeBase is Base {
     uint256 debtAssetUnits = 10 ** hub.getAsset(debtData.assetId).config.decimals;
     uint256 debtPrice = oracle.getAssetPrice(debtData.assetId);
 
+    // uint256 minColl = ((debtAmount * debtPrice * collAssetUnits) / (collPrice * debtAssetUnits))
+    //   .percentDiv(collData.config.lt - 1) + _calcMinAmountWithinHFResolution(spoke, collReserveId);
+
     uint256 minColl = ((debtAmount * debtPrice * collAssetUnits) / (collPrice * debtAssetUnits))
-      .percentDiv(collData.config.lt) + _calcMinAmountWithinHFResolution(spoke, collReserveId);
+      .percentDiv(collData.config.lt - 1) + _calcMinAmountWithinHFResolution(spoke, collReserveId);
+
+    // console.log(
+    //   'calcDebt %e | calcColl %e | res %e',
+    //   (debtAmount * debtPrice) / debtAssetUnits,
+    //   (minColl * collPrice).percentMul(collData.config.lt) / collAssetUnits,
+    //   minColl
+    // );
 
     return minColl;
+  }
+
+  function _calcMaxDebtAmount(
+    ISpoke spoke,
+    uint256 collReserveId,
+    uint256 debtReserveId,
+    uint256 collAmount
+  ) internal view returns (uint256) {
+    DataTypes.Reserve memory collData = spoke.getReserve(collReserveId);
+    uint256 collPrice = oracle.getAssetPrice(collData.assetId);
+    uint256 collAssetUnits = 10 ** hub.getAsset(collData.assetId).config.decimals;
+
+    DataTypes.Reserve memory debtData = spoke.getReserve(debtReserveId);
+    uint256 debtAssetUnits = 10 ** hub.getAsset(debtData.assetId).config.decimals;
+    uint256 debtPrice = oracle.getAssetPrice(debtData.assetId);
+
+    return
+      ((collAmount * collPrice * debtAssetUnits) / (debtPrice * collAssetUnits)).percentMul(
+        collData.config.lt
+      );
   }
 
   // calculate min allowable debt amount which truncates to 0 due to precision loss within HF calc
@@ -254,11 +285,11 @@ contract SpokeBase is Base {
     ISpoke spoke,
     uint256 reserveId
   ) internal view returns (uint256) {
-    (uint256 assetId, ) = getAssetInfo(spoke, reserveId);
+    (uint256 assetId, IERC20 asset) = getAssetInfo(spoke, reserveId);
     uint256 units = 10 ** hub.getAssetConfig(assetId).decimals;
     uint256 price = oracle.getAssetPrice(assetId);
     // make sure to round up
-    console.log('minFactor %e', (units + price - 1) / price);
-    return (units + price - 1) / price;
+    console.log('assetId: minFactor %e', units / price, IERC20Metadata(address(asset)).symbol());
+    return units / price > 0 ? units / price : 1;
   }
 }

@@ -623,27 +623,32 @@ contract Spoke is ISpoke {
         vars.totalDebtInBaseCurrency
       ); // HF of 1 -> 1e18
 
-    console2.log('SP: hf %e', vars.healthFactor);
+    if (vars.totalDebtInBaseCurrency > 0) {
+      console2.log('SP: hf %e', vars.healthFactor);
+    }
+
+    vars.collateralCounterInBaseCurrency = vars.totalCollateralInBaseCurrency;
+    vars.debtCounterInBaseCurrency = vars.totalDebtInBaseCurrency;
 
     list.sortByKey(); // sort by liquidity premium
     vars.i = 0;
-    // @dev from this point onwards, `totalCollateralInBaseCurrency` represents running collateral
-    // value used in risk premium, `totalDebtInBaseCurrency` represents running outstanding debt
-    vars.totalCollateralInBaseCurrency = 0;
-    while (vars.i < vars.collateralReserveCount && vars.totalDebtInBaseCurrency > 0) {
-      if (vars.totalDebtInBaseCurrency == 0) break;
+    // @dev from this point onwards, `collateralCounterInBaseCurrency` represents running collateral
+    // value used in risk premium, `debtCounterInBaseCurrency` represents running outstanding debt
+    vars.collateralCounterInBaseCurrency = 0;
+    while (vars.i < vars.collateralReserveCount && vars.debtCounterInBaseCurrency > 0) {
+      if (vars.debtCounterInBaseCurrency == 0) break;
       (vars.liquidityPremium, vars.userCollateralInBaseCurrency) = list.get(vars.i);
-      if (vars.userCollateralInBaseCurrency > vars.totalDebtInBaseCurrency) {
-        vars.userCollateralInBaseCurrency = vars.totalDebtInBaseCurrency;
+      if (vars.userCollateralInBaseCurrency > vars.debtCounterInBaseCurrency) {
+        vars.userCollateralInBaseCurrency = vars.debtCounterInBaseCurrency;
       }
       vars.userRiskPremium += vars.userCollateralInBaseCurrency * vars.liquidityPremium;
-      vars.totalCollateralInBaseCurrency += vars.userCollateralInBaseCurrency;
-      vars.totalDebtInBaseCurrency -= vars.userCollateralInBaseCurrency;
+      vars.collateralCounterInBaseCurrency += vars.userCollateralInBaseCurrency;
+      vars.debtCounterInBaseCurrency -= vars.userCollateralInBaseCurrency;
       ++vars.i;
     }
 
-    if (vars.totalCollateralInBaseCurrency > 0) {
-      vars.userRiskPremium = (vars.userRiskPremium / vars.totalCollateralInBaseCurrency).rayify();
+    if (vars.collateralCounterInBaseCurrency > 0) {
+      vars.userRiskPremium = (vars.userRiskPremium / vars.collateralCounterInBaseCurrency).rayify();
     }
 
     return (
