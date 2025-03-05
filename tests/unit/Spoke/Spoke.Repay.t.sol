@@ -1159,7 +1159,8 @@ contract SpokeRepayTest is SpokeBase {
           wethReserveId(spoke1),
           usdxReserveId(spoke1),
           usdxInfo.borrowAmount
-        );
+        ) +
+        1;
       uint256 wbtcSupplyAmount = _calcMinimumCollAmount(
         spoke1,
         wbtcReserveId(spoke1),
@@ -1171,7 +1172,8 @@ contract SpokeRepayTest is SpokeBase {
           wbtcReserveId(spoke1),
           wbtcReserveId(spoke1),
           wbtcInfo.borrowAmount
-        );
+        ) +
+        1;
 
       // Bob supply weth and wbtc
       deal(address(tokenList.weth), bob, wethSupplyAmount);

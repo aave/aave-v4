@@ -243,8 +243,20 @@ contract SpokeBase is Base {
     uint256 debtPrice = oracle.getAssetPrice(debtData.assetId);
 
     // add rounding up to ensure that min collateral leads to hf > 1
-    uint256 minColl = ((debtAmount * debtPrice * collAssetUnits) / (collPrice * debtAssetUnits))
-      .percentDiv(collData.config.lt - 1) + _calcMinAmountWithinHFResolution(spoke, collReserveId);
+    // uint256 minColl = ((debtAmount * debtPrice * collAssetUnits) / (collPrice * debtAssetUnits))
+    //   .percentDiv(collData.config.lt - 1) + _calcMinAmountWithinHFResolution(spoke, collReserveId);
+
+    uint256 minColl = (
+      (((debtAmount * debtPrice).wadify() * collAssetUnits) / (collPrice * debtAssetUnits))
+        .percentDiv(collData.config.lt - 1)
+    ).dewadify() + 1;
+
+    console.log('minres %e %e', _calcMinAmountWithinHFResolution(spoke, collReserveId), minColl);
+    console.log(
+      'calc debt %e | calc coll %e',
+      (debtAmount * debtPrice).wadify() / debtAssetUnits,
+      (minColl * collPrice).wadify() / collAssetUnits
+    );
 
     return minColl;
   }

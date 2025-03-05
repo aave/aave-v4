@@ -613,9 +613,15 @@ contract Spoke is ISpoke {
         vars.totalDebtInBaseCurrency
       ); // HF of 1 -> 1e18
 
-    // if (vars.totalDebtInBaseCurrency > 0) {
-    //   console2.log('SP: hf %e', vars.healthFactor);
-    // }
+    console2.log(
+      'SP: tc %e | td %e | LT %e',
+      vars.totalCollateralInBaseCurrency,
+      vars.totalDebtInBaseCurrency,
+      vars.avgLiquidationThreshold
+    );
+    if (vars.totalDebtInBaseCurrency > 0) {
+      console2.log('SP: hf %e', vars.healthFactor);
+    }
 
     vars.collateralCounterInBaseCurrency = vars.totalCollateralInBaseCurrency;
     vars.debtCounterInBaseCurrency = vars.totalDebtInBaseCurrency;
