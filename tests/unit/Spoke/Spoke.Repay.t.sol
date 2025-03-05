@@ -1116,26 +1116,10 @@ contract SpokeRepayTest is SpokeBase {
     RepayMultipleLocal memory usdxInfo;
     RepayMultipleLocal memory wbtcInfo;
 
-    daiInfo.borrowAmount = bound(
-      daiBorrowAmount,
-      _calcMinAmountWithinHFResolution(spoke1, daiReserveId(spoke1)),
-      MAX_SUPPLY_AMOUNT / 2
-    );
-    wethInfo.borrowAmount = bound(
-      wethBorrowAmount,
-      _calcMinAmountWithinHFResolution(spoke1, wethReserveId(spoke1)),
-      MAX_SUPPLY_AMOUNT / 2
-    );
-    usdxInfo.borrowAmount = bound(
-      usdxBorrowAmount,
-      _calcMinAmountWithinHFResolution(spoke1, usdxReserveId(spoke1)),
-      MAX_SUPPLY_AMOUNT / 2
-    );
-    wbtcInfo.borrowAmount = bound(
-      wbtcBorrowAmount,
-      _calcMinAmountWithinHFResolution(spoke1, wbtcReserveId(spoke1)),
-      MAX_SUPPLY_AMOUNT / 2
-    );
+    daiInfo.borrowAmount = bound(daiBorrowAmount, 1, MAX_SUPPLY_AMOUNT / 2);
+    wethInfo.borrowAmount = bound(wethBorrowAmount, 1, MAX_SUPPLY_AMOUNT / 2);
+    usdxInfo.borrowAmount = bound(usdxBorrowAmount, 1, MAX_SUPPLY_AMOUNT / 2);
+    wbtcInfo.borrowAmount = bound(wbtcBorrowAmount, 1, MAX_SUPPLY_AMOUNT / 2);
     repayPortion = bound(repayPortion, 0, PercentageMath.PERCENTAGE_FACTOR);
 
     daiInfo.repayAmount = daiInfo.borrowAmount.percentMul(repayPortion);
