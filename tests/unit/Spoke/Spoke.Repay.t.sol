@@ -1103,7 +1103,6 @@ contract SpokeRepayTest is SpokeBase {
   }
 
   /// borrow and repay multiple reserves
-  /// forge-config: default.fuzz.runs = 1000
   function test_repay_multiple_reserves_fuzz_amountsAndWait(
     uint256 daiBorrowAmount,
     uint256 wethBorrowAmount,

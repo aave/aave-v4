@@ -995,7 +995,7 @@ contract SpokeWithdrawTest is SpokeBase {
   function test_withdraw_revertsWith_HealthFactorLowerThanLiquidationThreshold_singleBorrow()
     public
   {
-    uint256 collAmount = 50e18;
+    uint256 collAmount = 1e18; // weth
     uint256 collReserveId = wethReserveId(spoke1);
     uint256 debtReserveId = daiReserveId(spoke1);
 
@@ -1039,11 +1039,11 @@ contract SpokeWithdrawTest is SpokeBase {
     // withdrawing any amount will result in HF < threshold
     vm.prank(alice);
     vm.expectRevert(ISpoke.HealthFactorLowerThanLiquidationThreshold.selector);
-    spoke1.withdraw({reserveId: collReserveId, amount: 1, to: alice}); // TODO: amount should be 1?
+    spoke1.withdraw({reserveId: collReserveId, amount: 1, to: alice});
   }
 
   function test_withdraw_revertsWith_HealthFactorLowerThanLiquidationThreshold_price_drop() public {
-    uint256 collAmount = 50e18;
+    uint256 collAmount = 1e18;
     uint256 collReserveId = wethReserveId(spoke1);
     uint256 debtReserveId = daiReserveId(spoke1);
 
@@ -1168,7 +1168,7 @@ contract SpokeWithdrawTest is SpokeBase {
       collAmount: collAmount
     });
 
-    uint256 maxDebtAmountUsdx = _calcMaxDebtAmount({
+    uint256 maxDebtAmountWeth = _calcMaxDebtAmount({
       spoke: spoke1,
       collReserveId: collReserveId,
       debtReserveId: debtReserveId2,
@@ -1207,7 +1207,7 @@ contract SpokeWithdrawTest is SpokeBase {
       spoke: spoke1,
       reserveId: debtReserveId2,
       user: bob,
-      amount: maxDebtAmountUsdx,
+      amount: maxDebtAmountWeth,
       onBehalfOf: bob
     });
     // Alice borrows dai
@@ -1215,7 +1215,7 @@ contract SpokeWithdrawTest is SpokeBase {
       spoke: spoke1,
       reserveId: debtReserveId2,
       user: alice,
-      amount: maxDebtAmountUsdx,
+      amount: maxDebtAmountWeth,
       onBehalfOf: alice
     });
 
@@ -1231,24 +1231,25 @@ contract SpokeWithdrawTest is SpokeBase {
     public
   {
     uint256 debtAmountDai = 3_000e18;
-    uint256 debtAmountUsdx = 5_000e6;
+    uint256 debtAmountWeth = 2e18;
     // weth collateral for dai debt
-    uint256 collReserveId = wethReserveId(spoke1);
-    uint256 debtReserveIdUsdx = usdxReserveId(spoke1);
+    uint256 collReserveId = usdxReserveId(spoke1);
+    uint256 debtReserveIdWeth = wethReserveId(spoke1);
     uint256 debtReserveIdDai = daiReserveId(spoke1);
 
     uint256 minCollAmount = _calcMinimumCollAmountExact({
       spoke: spoke1,
       collReserveId: collReserveId,
-      debtReserveId: debtReserveIdUsdx,
-      debtAmount: debtAmountUsdx
+      debtReserveId: debtReserveIdWeth,
+      debtAmount: debtAmountWeth
     }) +
       _calcMinimumCollAmountExact({
         spoke: spoke1,
         collReserveId: collReserveId,
         debtReserveId: debtReserveIdDai,
         debtAmount: debtAmountDai
-      });
+      }) -
+      1; // remove 1 wei of rounding
 
     // Alice supplies weth as collateral
     Utils.spokeSupply({
@@ -1260,20 +1261,20 @@ contract SpokeWithdrawTest is SpokeBase {
     });
     setUsingAsCollateral(spoke1, alice, collReserveId, true);
 
-    // Bob supplies usdx
+    // Bob supplies weth
     Utils.spokeSupply({
       spoke: spoke1,
-      reserveId: debtReserveIdUsdx,
+      reserveId: debtReserveIdWeth,
       user: bob,
-      amount: debtAmountUsdx,
+      amount: debtAmountWeth,
       onBehalfOf: bob
     });
-    // Alice borrows usdx
+    // Alice borrows weth
     Utils.spokeBorrow({
       spoke: spoke1,
-      reserveId: debtReserveIdUsdx,
+      reserveId: debtReserveIdWeth,
       user: alice,
-      amount: debtAmountUsdx,
+      amount: debtAmountWeth,
       onBehalfOf: alice
     });
 
@@ -1293,8 +1294,6 @@ contract SpokeWithdrawTest is SpokeBase {
       amount: debtAmountDai,
       onBehalfOf: alice
     });
-
-    console.log('hf %e', spoke1.getHealthFactor(alice));
 
     assertGe(spoke1.getHealthFactor(alice), spoke1.HEALTH_FACTOR_LIQUIDATION_THRESHOLD());
 

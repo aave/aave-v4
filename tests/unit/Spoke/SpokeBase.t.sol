@@ -316,9 +316,9 @@ contract SpokeBase is Base {
 
     return
       (
-        ((collAmount * collPrice * debtAssetUnits).wadify() / (debtPrice * collAssetUnits))
-          .percentMul(collData.config.lt)
-      ).dewadify();
+        ((collAmount * collPrice * debtAssetUnits).wadify().percentMul(collData.config.lt) /
+          (debtPrice * collAssetUnits).wadify())
+      ) - 1;
   }
 
   // calculate min allowable debt amount which truncates to 0 due to precision loss within HF calc
