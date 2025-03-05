@@ -64,4 +64,62 @@ contract LiquidityHubConfigTest is LiquidityHubBase {
     vm.expectRevert(ILiquidityHub.InvalidSpoke.selector);
     hub.addSpokes(assetIds, spokeConfigs, address(0));
   }
+
+  function test_updateAssetConfig_paused() public {
+    DataTypes.AssetConfig memory config = hub.getAssetConfig(daiAssetId);
+    // initially not paused
+    assertEq(config.paused, false);
+
+    config.paused = true;
+
+    hub.updateAssetConfig(daiAssetId, config);
+    assertEq(hub.getAssetConfig(daiAssetId).paused, true, 'asset paused');
+
+    config.paused = false;
+
+    hub.updateAssetConfig(daiAssetId, config);
+    assertEq(hub.getAssetConfig(daiAssetId).paused, false, 'asset un-paused');
+  }
+
+  function test_updateAssetConfig_frozen() public {
+    DataTypes.AssetConfig memory config = hub.getAssetConfig(daiAssetId);
+    // initially not frozen
+    assertEq(config.frozen, false);
+
+    config.frozen = true;
+
+    hub.updateAssetConfig(daiAssetId, config);
+    assertEq(hub.getAssetConfig(daiAssetId).frozen, true, 'asset frozen');
+
+    config.frozen = false;
+
+    hub.updateAssetConfig(daiAssetId, config);
+    assertEq(hub.getAssetConfig(daiAssetId).frozen, false, 'asset un-frozen');
+  }
+
+  function test_updateAssetConfig_fuzz_decimals(uint256 decimals) public {
+    DataTypes.AssetConfig memory config = hub.getAssetConfig(daiAssetId);
+    assertEq(config.decimals, 18);
+
+    config.decimals = decimals;
+
+    hub.updateAssetConfig(daiAssetId, config);
+    assertEq(hub.getAssetConfig(daiAssetId).decimals, decimals, 'asset decimals');
+  }
+
+  function test_updateAssetConfig_active() public {
+    DataTypes.AssetConfig memory config = hub.getAssetConfig(daiAssetId);
+    // initially active
+    assertEq(config.active, true);
+
+    config.active = false;
+
+    hub.updateAssetConfig(daiAssetId, config);
+    assertEq(hub.getAssetConfig(daiAssetId).active, false, 'asset not active');
+
+    config.active = true;
+
+    hub.updateAssetConfig(daiAssetId, config);
+    assertEq(hub.getAssetConfig(daiAssetId).active, true, 'asset active');
+  }
 }
