@@ -4,10 +4,14 @@ test = 'tests'
 script = 'scripts'
 out = 'out'
 libs = ['lib']
-remappings = []
 fs_permissions = [{ access = "write", path = "./reports" }]
+optimizer = true
+optimizer_runs = 200
+bytecode_hash = "none"
+isolate = true
 
 [profile.ci]
+gas_snapshot_check = true
 [fuzz]
 runs = 10000
 
