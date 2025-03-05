@@ -289,21 +289,21 @@ abstract contract Base is Test {
     wethConfig = DataTypes.ReserveConfig({
       lt: 0.76e4,
       lb: 0,
-      liquidityPremium: 10,
+      liquidityPremium: 10_00,
       borrowable: true,
       collateral: true
     });
     daiConfig = DataTypes.ReserveConfig({
       lt: 0.72e4,
       lb: 0,
-      liquidityPremium: 20,
+      liquidityPremium: 20_00,
       borrowable: true,
       collateral: true
     });
     usdxConfig = DataTypes.ReserveConfig({
       lt: 0.72e4,
       lb: 0,
-      liquidityPremium: 50,
+      liquidityPremium: 50_00,
       borrowable: true,
       collateral: true
     });
@@ -349,21 +349,21 @@ abstract contract Base is Test {
     usdxConfig = DataTypes.ReserveConfig({
       lt: 0.75e4,
       lb: 0,
-      liquidityPremium: 10,
+      liquidityPremium: 10_00,
       borrowable: true,
       collateral: true
     });
     wethConfig = DataTypes.ReserveConfig({
       lt: 0.79e4,
       lb: 0,
-      liquidityPremium: 20,
+      liquidityPremium: 20_00,
       borrowable: true,
       collateral: true
     });
     wbtcConfig = DataTypes.ReserveConfig({
       lt: 0.77e4,
       lb: 0,
-      liquidityPremium: 50,
+      liquidityPremium: 50_00,
       borrowable: true,
       collateral: true
     });
@@ -407,7 +407,7 @@ abstract contract Base is Test {
     daiConfig = DataTypes.ReserveConfig({
       lt: 0.70e4,
       lb: 0,
-      liquidityPremium: 100,
+      liquidityPremium: 100_00,
       borrowable: true,
       collateral: true
     });
@@ -565,16 +565,49 @@ abstract contract Base is Test {
     ISpoke spoke,
     uint256 reserveId
   ) internal view returns (DataTypes.Reserve memory) {
-    DataTypes.Reserve memory reserveData = spoke.getReserve(reserveId);
+    DataTypes.Reserve memory reserveData;
+    reserveData.reserveId = reserveId;
+    IERC20 asset;
+    (reserveData.assetId, asset) = getAsset(spoke, reserveId);
+    reserveData.asset = address(asset);
     (reserveData.baseDebt, reserveData.outstandingPremium) = spoke.getReserveDebt(reserveId);
     reserveData.suppliedShares = spoke.getReserveSuppliedShares(reserveId);
     reserveData.riskPremium = spoke.getReserveRiskPremium(reserveId);
-    reserveData.lastUpdateTimestamp = reserveData.lastUpdateTimestamp;
-    reserveData.baseBorrowIndex = reserveData.baseBorrowIndex;
+    reserveData.lastUpdateTimestamp = spoke.getReserve(reserveId).lastUpdateTimestamp;
+    reserveData.baseBorrowIndex = spoke.getReserve(reserveId).baseBorrowIndex;
+    reserveData.config = spoke.getReserve(reserveId).config;
     return reserveData;
   }
 
-  function getAssetInfo(ISpoke spoke, uint256 reserveId) internal view returns (uint256, IERC20) {
+  function getSpokeInfo(
+    uint256 assetId,
+    address spoke
+  ) internal view returns (DataTypes.SpokeData memory) {
+    DataTypes.SpokeData memory spokeData;
+    spokeData.suppliedShares = hub.getSpokeSuppliedShares(assetId, spoke);
+    (spokeData.baseDebt, spokeData.outstandingPremium) = hub.getSpokeDebt(assetId, spoke);
+    spokeData.baseBorrowIndex = hub.getSpoke(assetId, spoke).baseBorrowIndex;
+    spokeData.riskPremium = hub.getSpokeRiskPremium(assetId, spoke);
+    spokeData.lastUpdateTimestamp = hub.getSpoke(assetId, spoke).lastUpdateTimestamp;
+    spokeData.config = hub.getSpokeConfig(assetId, spoke);
+    return spokeData;
+  }
+
+  function getAssetInfo(uint256 assetId) internal view returns (DataTypes.Asset memory) {
+    DataTypes.Asset memory asset;
+    asset.id = assetId;
+    asset.suppliedShares = hub.getAssetSuppliedShares(assetId);
+    asset.availableLiquidity = hub.getAvailableLiquidity(assetId);
+    (asset.baseDebt, asset.outstandingPremium) = hub.getAssetDebt(assetId);
+    asset.baseBorrowIndex = hub.getAsset(assetId).baseBorrowIndex;
+    asset.baseBorrowRate = hub.getBaseInterestRate(assetId);
+    asset.riskPremium = hub.getAssetRiskPremium(assetId);
+    asset.lastUpdateTimestamp = hub.getAsset(assetId).lastUpdateTimestamp;
+    asset.config = hub.getAssetConfig(assetId);
+    return asset;
+  }
+
+  function getAsset(ISpoke spoke, uint256 reserveId) internal view returns (uint256, IERC20) {
     DataTypes.Reserve memory reserve = spoke.getReserve(reserveId);
     return (reserve.assetId, IERC20(reserve.asset));
   }
