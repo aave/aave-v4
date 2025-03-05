@@ -1040,6 +1040,59 @@ contract SpokeWithdrawTest is SpokeBase {
     spoke1.withdraw({reserveId: collReserveId, amount: 1, to: alice});
   }
 
+  function test_withdraw_revertsWith_HealthFactorLowerThanLiquidationThreshold_price_drop() public {
+    uint256 collAmount = 50e18;
+    uint256 collReserveId = wethReserveId(spoke1);
+    uint256 debtReserveId = daiReserveId(spoke1);
+
+    uint256 maxDebtAmount = _calcMaxDebtAmount({
+      spoke: spoke1,
+      collReserveId: collReserveId,
+      debtReserveId: debtReserveId,
+      collAmount: collAmount
+    });
+
+    // Alice supplies weth as collateral
+    Utils.spokeSupply({
+      spoke: spoke1,
+      reserveId: collReserveId,
+      user: alice,
+      amount: collAmount,
+      onBehalfOf: alice
+    });
+    setUsingAsCollateral(spoke1, alice, collReserveId, true);
+
+    // Bob supplies dai
+    Utils.spokeSupply({
+      spoke: spoke1,
+      reserveId: debtReserveId,
+      user: bob,
+      amount: maxDebtAmount,
+      onBehalfOf: bob
+    });
+
+    // Alice borrows dai
+    Utils.spokeBorrow({
+      spoke: spoke1,
+      reserveId: debtReserveId,
+      user: alice,
+      amount: maxDebtAmount,
+      onBehalfOf: alice
+    });
+
+    // alice is above HF threshold right after borrowing
+    assertGe(spoke1.getHealthFactor(alice), spoke1.HEALTH_FACTOR_LIQUIDATION_THRESHOLD());
+
+    // collateral price drop by half so that alice is undercollateralized
+    oracle.setAssetPrice(wethAssetId, 1000e8);
+    assertLt(spoke1.getHealthFactor(alice), spoke1.HEALTH_FACTOR_LIQUIDATION_THRESHOLD());
+
+    // withdrawing any amount will result in HF < threshold
+    vm.prank(alice);
+    vm.expectRevert(ISpoke.HealthFactorLowerThanLiquidationThreshold.selector);
+    spoke1.withdraw({reserveId: collReserveId, amount: 1, to: alice});
+  }
+
   function test_withdraw_revertsWith_HealthFactorLowerThanLiquidationThreshold_interest_increase()
     public
   {
