@@ -355,11 +355,36 @@ contract LiquidityHubDrawTest is LiquidityHubBase {
     assertEq(tokenList.weth.balanceOf(address(hub)), wethAmount, 'hub weth final balance');
   }
 
-  function test_draw_revertsWith_asset_not_active() public {
+  function test_draw_revertsWith_AssetNotActive() public {
     uint256 drawAmount = 1;
     updateAssetActive(hub, daiAssetId, false);
+
+    assertFalse(hub.getAsset(daiAssetId).config.active);
+
     vm.prank(address(spoke1));
     vm.expectRevert(ILiquidityHub.AssetNotActive.selector);
+    hub.draw({assetId: daiAssetId, amount: drawAmount, riskPremium: 0, to: address(spoke1)});
+  }
+
+  function test_draw_revertsWith_AssetPaused() public {
+    uint256 drawAmount = 1;
+    updateAssetPaused(hub, daiAssetId, true);
+
+    assertTrue(hub.getAsset(daiAssetId).config.paused);
+
+    vm.prank(address(spoke1));
+    vm.expectRevert(ILiquidityHub.AssetPaused.selector);
+    hub.draw({assetId: daiAssetId, amount: drawAmount, riskPremium: 0, to: address(spoke1)});
+  }
+
+  function test_draw_revertsWith_AssetFrozen() public {
+    uint256 drawAmount = 1;
+    updateAssetFrozen(hub, daiAssetId, true);
+
+    assertTrue(hub.getAsset(daiAssetId).config.frozen);
+
+    vm.prank(address(spoke1));
+    vm.expectRevert(ILiquidityHub.AssetFrozen.selector);
     hub.draw({assetId: daiAssetId, amount: drawAmount, riskPremium: 0, to: address(spoke1)});
   }
 
