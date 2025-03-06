@@ -122,4 +122,26 @@ contract LiquidityHubConfigTest is LiquidityHubBase {
     hub.updateAssetConfig(daiAssetId, config);
     assertEq(hub.getAssetConfig(daiAssetId).active, true, 'asset active');
   }
+
+  function test_updateAssetConfig_revertsWith_AssetCannotBePaused() public {
+    // spoke1 supply weth
+    Utils.supply({
+      hub: hub,
+      assetId: wethAssetId,
+      spoke: address(spoke1),
+      amount: 1e18,
+      riskPremium: 0,
+      user: alice,
+      to: address(spoke1)
+    });
+
+    assertGt(hub.getAssetSuppliedShares(wethAssetId), 0);
+
+    DataTypes.AssetConfig memory config = hub.getAssetConfig(wethAssetId);
+    config.active = false;
+
+    vm.prank(ADMIN);
+    vm.expectRevert(ILiquidityHub.AssetCannotBePaused.selector);
+    hub.updateAssetConfig(wethAssetId, config);
+  }
 }

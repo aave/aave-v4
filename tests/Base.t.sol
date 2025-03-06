@@ -57,6 +57,8 @@ abstract contract Base is Test {
   address internal bob = makeAddr('bob');
   address internal carol = makeAddr('carol');
 
+  address internal ADMIN = makeAddr('ADMIN');
+
   TokenList internal tokenList;
   uint256 internal wethAssetId = 0;
   uint256 internal usdxAssetId = 1;
@@ -100,6 +102,8 @@ abstract contract Base is Test {
 
   function setUp() public virtual {
     deployFixtures();
+
+    // todo: set up admin role when access controls impl
   }
 
   function deployFixtures() internal {
