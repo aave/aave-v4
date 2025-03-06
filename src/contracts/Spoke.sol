@@ -621,29 +621,29 @@ contract Spoke is ISpoke {
       : vars.avgLiquidationThreshold / vars.totalCollateralInBaseCurrency;
 
     // vars.collateralCounterInBaseCurrency = vars.totalCollateralInBaseCurrency;
-    // vars.debtCounterInBaseCurrency = vars.totalDebtInBaseCurrency;
+    vars.debtCounterInBaseCurrency = vars.totalDebtInBaseCurrency;
 
     list.sortByKey(); // sort by liquidity premium
     vars.i = 0;
     // @dev from this point onwards, `collateralCounterInBaseCurrency` represents running collateral
     // value used in risk premium, `debtCounterInBaseCurrency` represents running outstanding debt
-    vars.totalCollateralInBaseCurrency = 0;
-    while (vars.i < vars.collateralReserveCount && vars.totalDebtInBaseCurrency > 0) {
-      if (vars.totalDebtInBaseCurrency == 0) break;
+    vars.collateralCounterInBaseCurrency = 0;
+    while (vars.i < vars.collateralReserveCount && vars.debtCounterInBaseCurrency > 0) {
+      if (vars.debtCounterInBaseCurrency == 0) break;
       (vars.liquidityPremium, vars.userCollateralInBaseCurrency) = list.get(vars.i);
-      if (vars.userCollateralInBaseCurrency > vars.totalDebtInBaseCurrency) {
-        vars.userCollateralInBaseCurrency = vars.totalDebtInBaseCurrency;
+      if (vars.userCollateralInBaseCurrency > vars.debtCounterInBaseCurrency) {
+        vars.userCollateralInBaseCurrency = vars.debtCounterInBaseCurrency;
       }
       vars.userRiskPremium += vars.userCollateralInBaseCurrency * vars.liquidityPremium;
-      vars.totalCollateralInBaseCurrency += vars.userCollateralInBaseCurrency;
-      vars.totalDebtInBaseCurrency -= vars.userCollateralInBaseCurrency;
+      vars.collateralCounterInBaseCurrency += vars.userCollateralInBaseCurrency;
+      vars.debtCounterInBaseCurrency -= vars.userCollateralInBaseCurrency;
       unchecked {
         ++vars.i;
       }
     }
 
-    if (vars.totalCollateralInBaseCurrency > 0) {
-      vars.userRiskPremium = (vars.userRiskPremium / vars.totalCollateralInBaseCurrency).rayify();
+    if (vars.collateralCounterInBaseCurrency > 0) {
+      vars.userRiskPremium = (vars.userRiskPremium / vars.collateralCounterInBaseCurrency).rayify();
     }
 
     return (vars.userRiskPremium, vars.avgLiquidationThreshold, vars.healthFactor, 0, 0);
