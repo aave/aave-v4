@@ -10,8 +10,6 @@ import {ISpoke} from 'src/interfaces/ISpoke.sol';
 import {IPriceOracle} from 'src/interfaces/IPriceOracle.sol';
 import {DataTypes} from 'src/libraries/types/DataTypes.sol';
 
-import 'forge-std/console2.sol';
-
 contract Spoke is ISpoke {
   using WadRayMath for uint256;
   using PercentageMath for uint256;
@@ -203,7 +201,6 @@ contract Spoke is ISpoke {
     });
     liquidityHub.draw(reserve.assetId, amount, uint32(newReserveRiskPremium.derayify()), to);
     _notifyRiskPremiumUpdate(reserve.assetId, msg.sender, newUserRiskPremium);
-    // console2.log('post-borrow');
     _validateHealthFactor(msg.sender);
 
     emit Borrowed(reserveId, to, amount);
@@ -602,34 +599,16 @@ contract Spoke is ISpoke {
       }
     }
 
-    // uint256 hfTest = vars.totalCollateralInBaseCurrency == 0 ? 0 : vars.avgLiquidationThreshold;
-
-    // if (vars.totalDebtInBaseCurrency > 0) {
-    // console2.log(
-    //   'SP hf calc %e',
-    //   vars.avgLiquidationThreshold.wadDiv(vars.totalDebtInBaseCurrency).percentMul(1),
-    //   uint(0).wadDiv(vars.totalDebtInBaseCurrency).percentMul(1)
-    // );
-    // }
-
+    // (avgLiquidationThreshold / totalCollateral) * totalCollateral can be simplified to avgLiquidationThreshold
+    // then convert from BPS wad back into wad
     vars.healthFactor = vars.totalDebtInBaseCurrency == 0
       ? type(uint256).max
       : vars.avgLiquidationThreshold.wadDiv(vars.totalDebtInBaseCurrency).percentMul(1); // HF of 1 -> 1e18
 
-    console2.log('lt %e', vars.avgLiquidationThreshold);
     vars.avgLiquidationThreshold = vars.totalCollateralInBaseCurrency == 0
       ? 0
       : vars.avgLiquidationThreshold / vars.totalCollateralInBaseCurrency;
 
-    console2.log(
-      'SP hf calc %e coll: %e debt: %e',
-      vars.healthFactor,
-      vars.totalCollateralInBaseCurrency,
-      vars.totalDebtInBaseCurrency
-    );
-    console2.log('lt %e', vars.avgLiquidationThreshold);
-
-    // vars.collateralCounterInBaseCurrency = vars.totalCollateralInBaseCurrency;
     vars.debtCounterInBaseCurrency = vars.totalDebtInBaseCurrency;
 
     list.sortByKey(); // sort by liquidity premium
@@ -670,11 +649,6 @@ contract Spoke is ISpoke {
       userData,
       liquidityHub.previewNextBorrowIndex(assetId)
     );
-
-    console2.log(
-      'debt %e',
-      ((cumulativeBaseDebt + cumulativeOutstandingPremium) * assetPrice).wadify() / assetUnit
-    );
     return ((cumulativeBaseDebt + cumulativeOutstandingPremium) * assetPrice).wadify() / assetUnit;
   }
 
@@ -684,10 +658,6 @@ contract Spoke is ISpoke {
     uint256 assetPrice,
     uint256 assetUnit
   ) internal view returns (uint256) {
-    console2.log(
-      'bal %e',
-      (liquidityHub.convertToAssets(assetId, user.suppliedShares) * assetPrice).wadify() / assetUnit
-    );
     return
       (liquidityHub.convertToAssets(assetId, user.suppliedShares) * assetPrice).wadify() /
       assetUnit;
@@ -863,11 +833,6 @@ contract Spoke is ISpoke {
 
   function _validateHealthFactor(address userAddress) internal view {
     (, , uint256 healthFactor, , ) = _calculateUserAccountData(userAddress);
-    console2.log(
-      'SP validateHF %e',
-      healthFactor,
-      healthFactor >= HEALTH_FACTOR_LIQUIDATION_THRESHOLD
-    );
     require(
       healthFactor >= HEALTH_FACTOR_LIQUIDATION_THRESHOLD,
       HealthFactorLowerThanLiquidationThreshold()

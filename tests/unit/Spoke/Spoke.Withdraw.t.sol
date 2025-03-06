@@ -1330,19 +1330,20 @@ contract SpokeWithdrawTest is SpokeBase {
     uint256 debtReserveId = daiReserveId(spoke1);
     uint256 debtReserveId2 = usdxReserveId(spoke1);
 
+    // TODO: investigate rounding precision with multiple debts
     uint256 maxDebtAmountDai = _calcMaxDebtAmount({
       spoke: spoke1,
       collReserveId: collReserveId,
       debtReserveId: debtReserveId,
       collAmount: collAmount
-    });
+    }) + 1; // remove rounding precision
 
     uint256 maxDebtAmountWeth = _calcMaxDebtAmount({
       spoke: spoke1,
       collReserveId: collReserveId,
       debtReserveId: debtReserveId2,
       collAmount: collAmount2
-    });
+    }) + 1; // remove rounding precision
 
     // Alice supplies weth as collateral
     Utils.spokeSupply({
@@ -1393,23 +1394,13 @@ contract SpokeWithdrawTest is SpokeBase {
     // withdrawing any non trivial amount of dai will result in HF < threshold
     vm.prank(alice);
     vm.expectRevert(ISpoke.HealthFactorLowerThanLiquidationThreshold.selector);
-    spoke1.withdraw({reserveId: collReserveId, amount: 2, to: alice}); // 2 wei off for each coll
+    spoke1.withdraw({reserveId: collReserveId, amount: 2, to: alice}); // 1 wei off for each coll
   }
 
-  // function test_tmp_b() public {
-  //   test_withdraw_fuzz_revertsWith_HealthFactorLowerThanLiquidationThreshold_multiple_borrows(
-  //     7567,
-  //     3672963697
-  //   );
-  //   // uint(0).percentDiv(1);
-  // }
-
-  function skip_test_withdraw_fuzz_revertsWith_HealthFactorLowerThanLiquidationThreshold_multiple_borrows(
+  function test_withdraw_fuzz_revertsWith_HealthFactorLowerThanLiquidationThreshold_multiple_borrows(
     uint256 collAmount,
     uint256 collAmount2
   ) public {
-    // uint256 collAmount = 1e18; // weth $2000
-    // uint256 collAmount2 = 2e18; // weth $4000
     collAmount = bound(collAmount, 1, MAX_SUPPLY_AMOUNT / 2); // to stay within uint256 bounds for _calcMaxDebtAmount
     collAmount2 = bound(collAmount2, 1, MAX_SUPPLY_AMOUNT / 2); // to stay within uint256 bounds for _calcMaxDebtAmount
     uint256 collReserveId = wethReserveId(spoke1);
@@ -1432,7 +1423,7 @@ contract SpokeWithdrawTest is SpokeBase {
       collReserveId: collReserveId,
       debtReserveId: debtReserveId2,
       collAmount: collAmount2
-    }) - 1;
+    });
 
     vm.assume(maxDebtAmountUsdx < MAX_SUPPLY_AMOUNT && maxDebtAmountUsdx > 1);
 
@@ -1441,34 +1432,27 @@ contract SpokeWithdrawTest is SpokeBase {
       spoke: spoke1,
       reserveId: collReserveId,
       user: alice,
-      amount: (collAmount + collAmount2).percentMul(11000),
+      amount: (collAmount + collAmount2),
       onBehalfOf: alice
     });
     setUsingAsCollateral(spoke1, alice, collReserveId, true);
 
-    console.log('dai %e', maxDebtAmountDai, 'usdx %e', maxDebtAmountUsdx);
-    console.log(
-      'total coll %e %e',
-      (collAmount + collAmount2),
-      (collAmount + collAmount2).percentMul(10100)
-    );
-
-    // // Bob supplies dai
-    // Utils.spokeSupply({
-    //   spoke: spoke1,
-    //   reserveId: debtReserveId,
-    //   user: bob,
-    //   amount: maxDebtAmountDai,
-    //   onBehalfOf: bob
-    // });
-    // // Alice borrows dai
-    // Utils.spokeBorrow({
-    //   spoke: spoke1,
-    //   reserveId: debtReserveId,
-    //   user: alice,
-    //   amount: maxDebtAmountDai,
-    //   onBehalfOf: alice
-    // });
+    // Bob supplies dai
+    Utils.spokeSupply({
+      spoke: spoke1,
+      reserveId: debtReserveId,
+      user: bob,
+      amount: maxDebtAmountDai,
+      onBehalfOf: bob
+    });
+    // Alice borrows dai
+    Utils.spokeBorrow({
+      spoke: spoke1,
+      reserveId: debtReserveId,
+      user: alice,
+      amount: maxDebtAmountDai,
+      onBehalfOf: alice
+    });
 
     // Bob supplies dai
     Utils.spokeSupply({
@@ -1478,7 +1462,6 @@ contract SpokeWithdrawTest is SpokeBase {
       amount: maxDebtAmountUsdx,
       onBehalfOf: bob
     });
-    console.log('hf %e', spoke1.getHealthFactor(alice));
     // Alice borrows dai
     Utils.spokeBorrow({
       spoke: spoke1,
@@ -1488,16 +1471,16 @@ contract SpokeWithdrawTest is SpokeBase {
       onBehalfOf: alice
     });
 
-    // assertGe(spoke1.getHealthFactor(alice), spoke1.HEALTH_FACTOR_LIQUIDATION_THRESHOLD());
+    assertGe(spoke1.getHealthFactor(alice), spoke1.HEALTH_FACTOR_LIQUIDATION_THRESHOLD());
 
-    // // withdrawing larger of coll amounts will result in HF < threshold
-    // vm.prank(alice);
-    // vm.expectRevert(ISpoke.HealthFactorLowerThanLiquidationThreshold.selector);
-    // spoke1.withdraw({
-    //   reserveId: collReserveId,
-    //   amount: collAmount > collAmount2 ? collAmount : collAmount2,
-    //   to: alice
-    // });
+    // withdrawing larger coll amount will result in HF < threshold
+    vm.prank(alice);
+    vm.expectRevert(ISpoke.HealthFactorLowerThanLiquidationThreshold.selector);
+    spoke1.withdraw({
+      reserveId: collReserveId,
+      amount: collAmount > collAmount2 ? collAmount : collAmount2,
+      to: alice
+    });
   }
 
   function test_withdraw_revertsWith_HealthFactorLowerThanLiquidationThreshold_multiple_colls()

@@ -264,15 +264,13 @@ contract SpokeBase is Base {
     uint256 debtAssetUnits = 10 ** hub.getAsset(debtData.assetId).config.decimals;
     uint256 debtPrice = oracle.getAssetPrice(debtData.assetId);
 
-    uint256 maxDebt = (
-      ((collAmount * collPrice * debtAssetUnits).wadify() / (debtPrice * collAssetUnits).wadify())
-        .percentMul(collData.config.lt)
-    );
-    console.log('maxDebt %e', maxDebt);
+    uint256 normalizedDebtAmount = (debtPrice).wadify() / debtAssetUnits;
+    uint256 normalizedCollPrice = (collAmount * collPrice).wadify() / collAssetUnits;
 
-    return (
-      ((collAmount * collPrice * debtAssetUnits).wadify() / (debtPrice * collAssetUnits).wadify())
-        .percentMul(collData.config.lt)
+    uint256 maxDebt = (
+      (normalizedCollPrice.wadify().percentMul(collData.config.lt) / normalizedDebtAmount.wadify())
     );
+
+    return maxDebt > 1 ? maxDebt - 1 : maxDebt;
   }
 }
