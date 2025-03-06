@@ -187,4 +187,22 @@ library WadRayMath {
   function rayToBps(uint256 a) internal pure returns (uint256) {
     return (a * 100_00) / RAY;
   }
+
+  /**
+   * @notice Removes BPS factor from a value.
+   * @param value The value of which to convert from BPS.
+   * @return result value (stripped of BPS factor).
+   */
+  function fromBps(uint256 value) internal pure returns (uint256) {
+    return value / 1e4;
+  }
+
+  /**
+   * @notice Adds BPS factor to a value.
+   * @param value The value of which to convert to BPS.
+   * @return result value (in BPS).
+   */
+  function toBps(uint256 value) internal pure returns (uint256) {
+    return value * 1e4;
+  }
 }

@@ -189,9 +189,8 @@ contract Spoke is ISpoke {
     DataTypes.UserData storage userData = _userData[msg.sender];
 
     _accrueInterest(reserve, user, userData);
-    _validateBorrow(reserve, amount, msg.sender);
+    _validateBorrow(reserve, msg.sender);
 
-    // TODO HF check
     (uint256 newReserveRiskPremium, uint256 newUserRiskPremium) = _updateRiskPremiumAndBaseDebt({
       reserve: reserve,
       user: user,
@@ -200,8 +199,8 @@ contract Spoke is ISpoke {
       baseDebtChange: int256(amount)
     });
     liquidityHub.draw(reserve.assetId, amount, uint32(newReserveRiskPremium.derayify()), to);
-    _notifyRiskPremiumUpdate(reserve.assetId, msg.sender, newUserRiskPremium);
     _validateHealthFactor(msg.sender);
+    _notifyRiskPremiumUpdate(reserve.assetId, msg.sender, newUserRiskPremium);
 
     emit Borrowed(reserveId, to, amount);
   }
@@ -394,11 +393,7 @@ contract Spoke is ISpoke {
     require(amount <= suppliedAmount, InsufficientSupply(suppliedAmount));
   }
 
-  function _validateBorrow(
-    DataTypes.Reserve storage reserve,
-    uint256 amount,
-    address userAddress
-  ) internal view {
+  function _validateBorrow(DataTypes.Reserve storage reserve, address userAddress) internal view {
     require(reserve.config.borrowable, ReserveNotBorrowable(reserve.reserveId));
     _validateHealthFactor(userAddress);
   }
@@ -543,7 +538,7 @@ contract Spoke is ISpoke {
       }
 
       if (_usingAsCollateral(user)) {
-        /// @dev opt: this can be extracted by counting number of set bits in a supplied (only) bitmap saving one loop
+        // @dev opt: this can be extracted by counting number of set bits in a supplied (only) bitmap saving one loop
         unchecked {
           ++vars.collateralReserveCount;
         }
@@ -599,12 +594,14 @@ contract Spoke is ISpoke {
       }
     }
 
+    // at this point avgLiquidationThreshold is a weighted sum of collateral scaled by LT
     // (avgLiquidationThreshold / totalCollateral) * totalCollateral can be simplified to avgLiquidationThreshold
-    // then convert from BPS wad back into wad
+    // strip BPS factor from result, because running avgLiquidationThreshold sum has been scaled by LT (in BPS) above
     vars.healthFactor = vars.totalDebtInBaseCurrency == 0
       ? type(uint256).max
-      : vars.avgLiquidationThreshold.wadDiv(vars.totalDebtInBaseCurrency).percentMul(1); // HF of 1 -> 1e18
+      : vars.avgLiquidationThreshold.wadDiv(vars.totalDebtInBaseCurrency).fromBps(); // HF of 1 -> 1e18
 
+    // divide by total collateral to get avg LT in BPS
     vars.avgLiquidationThreshold = vars.totalCollateralInBaseCurrency == 0
       ? 0
       : vars.avgLiquidationThreshold / vars.totalCollateralInBaseCurrency;
