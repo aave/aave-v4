@@ -135,12 +135,13 @@ contract LiquidityHubConfigTest is LiquidityHubBase {
       to: address(spoke1)
     });
 
+    // asset should have supplied shares
     assertGt(hub.getAssetSuppliedShares(wethAssetId), 0);
 
     DataTypes.AssetConfig memory config = hub.getAssetConfig(wethAssetId);
     config.active = false;
 
-    vm.prank(ADMIN);
+    vm.prank(HUB_ADMIN);
     vm.expectRevert(ILiquidityHub.AssetCannotBePaused.selector);
     hub.updateAssetConfig(wethAssetId, config);
   }

@@ -23,13 +23,36 @@ contract LiquidityHubSupplyTest is LiquidityHubBase {
     hub.supply(daiAssetId, amount, 0, address(spoke1));
   }
 
-  function test_supply_revertsWith_asset_not_active() public {
+  function test_supply_revertsWith_AssetNotActive() public {
     uint256 amount = 100e18;
 
     updateAssetActive(hub, daiAssetId, false);
+    assertFalse(hub.getAsset(daiAssetId).config.active);
 
     vm.prank(address(spoke1));
     vm.expectRevert(ILiquidityHub.AssetNotActive.selector);
+    hub.supply(daiAssetId, amount, 0, alice);
+  }
+
+  function test_supply_revertsWith_AssetPaused() public {
+    uint256 amount = 100e18;
+
+    updateAssetPaused(hub, daiAssetId, true);
+    assertTrue(hub.getAsset(daiAssetId).config.paused);
+
+    vm.prank(address(spoke1));
+    vm.expectRevert(ILiquidityHub.AssetPaused.selector);
+    hub.supply(daiAssetId, amount, 0, alice);
+  }
+
+  function test_supply_revertsWith_AssetFrozen() public {
+    uint256 amount = 100e18;
+
+    updateAssetFrozen(hub, daiAssetId, true);
+    assertTrue(hub.getAsset(daiAssetId).config.frozen);
+
+    vm.prank(address(spoke1));
+    vm.expectRevert(ILiquidityHub.AssetFrozen.selector);
     hub.supply(daiAssetId, amount, 0, alice);
   }
 

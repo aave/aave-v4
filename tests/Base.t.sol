@@ -57,7 +57,8 @@ abstract contract Base is Test {
   address internal bob = makeAddr('bob');
   address internal carol = makeAddr('carol');
 
-  address internal ADMIN = makeAddr('ADMIN');
+  address internal HUB_ADMIN = makeAddr('HUB_ADMIN');
+  address internal SPOKE_ADMIN = makeAddr('SPOKE_ADMIN');
 
   TokenList internal tokenList;
   uint256 internal wethAssetId = 0;
@@ -500,9 +501,27 @@ abstract contract Base is Test {
     );
   }
 
-  function updateAssetActive(ILiquidityHub hub, uint256 assetId, bool newActive) internal {
+  function updateAssetActive(ILiquidityHub hub, uint256 assetId, bool newActiveFlag) internal {
     DataTypes.AssetConfig memory assetConfig = hub.getAsset(assetId).config;
-    assetConfig.active = newActive;
+    assetConfig.active = newActiveFlag;
+
+    vm.prank(HUB_ADMIN);
+    hub.updateAssetConfig(assetId, assetConfig);
+  }
+
+  function updateAssetPaused(ILiquidityHub hub, uint256 assetId, bool newPausedFlag) internal {
+    DataTypes.AssetConfig memory assetConfig = hub.getAsset(assetId).config;
+    assetConfig.paused = newPausedFlag;
+
+    vm.prank(HUB_ADMIN);
+    hub.updateAssetConfig(assetId, assetConfig);
+  }
+
+  function updateAssetFrozen(ILiquidityHub hub, uint256 assetId, bool newFrozenFlag) internal {
+    DataTypes.AssetConfig memory assetConfig = hub.getAsset(assetId).config;
+    assetConfig.frozen = newFrozenFlag;
+
+    vm.prank(HUB_ADMIN);
     hub.updateAssetConfig(assetId, assetConfig);
   }
 
