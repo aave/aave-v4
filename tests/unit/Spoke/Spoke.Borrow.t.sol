@@ -441,12 +441,13 @@ contract SpokeBorrowTest is SpokeBase {
 
     vm.prank(bob);
     vm.expectRevert(ISpoke.HealthFactorLowerThanLiquidationThreshold.selector);
-    spoke1.borrow(daiReserveId, 1e1, bob); // TODO: update with exact amount, resolve precision
+    spoke1.borrow(daiReserveId, 1, bob); // TODO: update with exact amount, resolve precision
   }
 
   function test_borrow_fuzz_revertsWith_HealthFactorLowerThanLiquidationThreshold_with_interest(
     uint256 skipTime
   ) public {
+    skipTime = bound(skipTime, 1, MAX_SKIP_TIME);
     uint256 daiReserveId = spokeInfo[spoke1].dai.reserveId;
     uint256 wethReserveId = spokeInfo[spoke1].weth.reserveId;
 
@@ -474,11 +475,9 @@ contract SpokeBorrowTest is SpokeBase {
     // accrue debt to decrease HF
     skip(skipTime);
 
-    vm.assume(spoke1.getHealthFactor(bob) > spoke1.HEALTH_FACTOR_LIQUIDATION_THRESHOLD());
-
     vm.prank(bob);
     vm.expectRevert(ISpoke.HealthFactorLowerThanLiquidationThreshold.selector);
-    spoke1.borrow(daiReserveId, 1e1, bob); // TODO: update with exact amount, resolve precision
+    spoke1.borrow(daiReserveId, 1, bob); // TODO: update with exact amount, resolve precision
   }
 
   function test_borrow_revertsWith_HealthFactorLowerThanLiquidationThreshold_multiple_colls()

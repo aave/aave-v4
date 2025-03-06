@@ -315,8 +315,8 @@ contract SpokeBase is Base {
     uint256 debtPrice = oracle.getAssetPrice(debtData.assetId);
 
     return (
-      ((collAmount * collPrice * debtAssetUnits).wadify().percentMul(collData.config.lt) /
-        (debtPrice * collAssetUnits).wadify())
+      ((collAmount * collPrice * debtAssetUnits).wadify() / (debtPrice * collAssetUnits).wadify())
+        .percentMul(collData.config.lt)
     );
   }
 
