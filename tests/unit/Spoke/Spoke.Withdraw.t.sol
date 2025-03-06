@@ -7,6 +7,10 @@ contract SpokeWithdrawTest is SpokeBase {
   using WadRayMath for uint256;
   using PercentageMath for uint256;
 
+  // WETH: $2000, 1e18 units
+  // USDX: $1, 1e6 units
+  // DAI: $1, 1e18 units
+
   function test_withdraw_revertsWith_InsufficientSupply_zero_supplied() public {
     uint256 reserveId = _daiReserveId(spoke1);
     uint256 amount = 1;
@@ -992,6 +996,7 @@ contract SpokeWithdrawTest is SpokeBase {
     );
   }
 
+  /// @dev cannot withdraw an amount if resulting withdrawal would result in HF < threshold
   function test_withdraw_revertsWith_HealthFactorLowerThanLiquidationThreshold_singleBorrow()
     public
   {
@@ -1042,22 +1047,22 @@ contract SpokeWithdrawTest is SpokeBase {
     spoke1.withdraw({reserveId: collReserveId, amount: 1, to: alice});
   }
 
+  /// @dev fuzz - cannot withdraw an amount if resulting withdrawal would result in HF < threshold
   function test_withdraw_fuzz_revertsWith_HealthFactorLowerThanLiquidationThreshold_singleBorrow(
-    uint256 collAmount
+    uint256 debtAmount
   ) public {
-    collAmount = bound(collAmount, 1, MAX_SUPPLY_AMOUNT / 2); // to stay within uint256 bounds for _calcMaxDebtAmount
-    uint256 withdrawalAmount = collAmount;
+    debtAmount = bound(debtAmount, 1, MAX_SUPPLY_AMOUNT); // to stay within uint256 bounds for _calcMaxDebtAmount
     uint256 collReserveId = _wethReserveId(spoke1);
     uint256 debtReserveId = _daiReserveId(spoke1);
 
-    uint256 maxDebtAmount = _calcMaxDebtAmount({
+    uint256 collAmount = _calcMinimumCollAmount({
       spoke: spoke1,
       collReserveId: collReserveId,
       debtReserveId: debtReserveId,
-      collAmount: collAmount
+      debtAmount: debtAmount
     });
 
-    vm.assume(maxDebtAmount < MAX_SUPPLY_AMOUNT && maxDebtAmount > 1);
+    vm.assume(collAmount < MAX_SUPPLY_AMOUNT && collAmount > 1);
 
     // Alice supplies weth as collateral
     Utils.spokeSupply({
@@ -1074,7 +1079,7 @@ contract SpokeWithdrawTest is SpokeBase {
       spoke: spoke1,
       reserveId: debtReserveId,
       user: bob,
-      amount: maxDebtAmount,
+      amount: debtAmount,
       onBehalfOf: bob
     });
 
@@ -1083,18 +1088,19 @@ contract SpokeWithdrawTest is SpokeBase {
       spoke: spoke1,
       reserveId: debtReserveId,
       user: alice,
-      amount: maxDebtAmount,
+      amount: debtAmount,
       onBehalfOf: alice
     });
 
     assertGe(spoke1.getHealthFactor(alice), spoke1.HEALTH_FACTOR_LIQUIDATION_THRESHOLD());
 
-    // withdrawing collateral will result in HF < threshold
+    // withdrawing coll will result in HF < threshold
     vm.prank(alice);
     vm.expectRevert(ISpoke.HealthFactorLowerThanLiquidationThreshold.selector);
-    spoke1.withdraw({reserveId: collReserveId, amount: withdrawalAmount, to: alice});
+    spoke1.withdraw({reserveId: collReserveId, amount: collAmount, to: alice}); // todo: resolve precision, should be 1?
   }
 
+  /// @dev cannot withdraw an amount if HF < threshold due to price drop
   function test_withdraw_revertsWith_HealthFactorLowerThanLiquidationThreshold_price_drop() public {
     uint256 collAmount = 1e18;
     uint256 collReserveId = _wethReserveId(spoke1);
@@ -1139,7 +1145,8 @@ contract SpokeWithdrawTest is SpokeBase {
     assertGe(spoke1.getHealthFactor(alice), spoke1.HEALTH_FACTOR_LIQUIDATION_THRESHOLD());
 
     // collateral price drop by half so that alice is undercollateralized
-    oracle.setAssetPrice(wethAssetId, 1000e8);
+    uint256 newPrice = _calcPrice(oracle.getAssetPrice(wethAssetId), 50_00); // 50% price drop
+    oracle.setAssetPrice(wethAssetId, newPrice);
     assertLt(spoke1.getHealthFactor(alice), spoke1.HEALTH_FACTOR_LIQUIDATION_THRESHOLD());
 
     // withdrawing any amount will result in HF < threshold
@@ -1148,9 +1155,13 @@ contract SpokeWithdrawTest is SpokeBase {
     spoke1.withdraw({reserveId: collReserveId, amount: 1, to: alice});
   }
 
+  /// @dev fuzz - cannot withdraw an amount if resulting withdrawal would result in HF < threshold
   function test_withdraw_fuzz_revertsWith_HealthFactorLowerThanLiquidationThreshold_price_drop(
-    uint256 collAmount
+    uint256 collAmount,
+    uint256 newPrice
   ) public {
+    uint256 currPrice = oracle.getAssetPrice(wethAssetId);
+    newPrice = bound(newPrice, 0, currPrice - 1);
     collAmount = bound(collAmount, 1, MAX_SUPPLY_AMOUNT / 2); // to stay within uint256 bounds for _calcMaxDebtAmount
     uint256 collReserveId = _wethReserveId(spoke1);
     uint256 debtReserveId = _daiReserveId(spoke1);
@@ -1195,9 +1206,9 @@ contract SpokeWithdrawTest is SpokeBase {
     // alice is above HF threshold right after borrowing
     assertGe(spoke1.getHealthFactor(alice), spoke1.HEALTH_FACTOR_LIQUIDATION_THRESHOLD());
 
-    // collateral price drop by half so that alice is undercollateralized
-    oracle.setAssetPrice(wethAssetId, 1000e8);
-    assertLt(spoke1.getHealthFactor(alice), spoke1.HEALTH_FACTOR_LIQUIDATION_THRESHOLD());
+    // collateral price drop so that alice is undercollateralized
+    oracle.setAssetPrice(wethAssetId, newPrice);
+    vm.assume(spoke1.getHealthFactor(alice) < spoke1.HEALTH_FACTOR_LIQUIDATION_THRESHOLD());
 
     // withdrawing any amount will result in HF < threshold
     vm.prank(alice);
@@ -1205,6 +1216,7 @@ contract SpokeWithdrawTest is SpokeBase {
     spoke1.withdraw({reserveId: collReserveId, amount: 1, to: alice});
   }
 
+  /// @dev cannot withdraw an amount if HF < threshold due to interest
   function test_withdraw_revertsWith_HealthFactorLowerThanLiquidationThreshold_interest_increase()
     public
   {
@@ -1260,11 +1272,12 @@ contract SpokeWithdrawTest is SpokeBase {
     spoke1.withdraw({reserveId: collReserveId, amount: 1, to: alice});
   }
 
+  /// @dev fuzz - cannot withdraw an amount if HF < threshold due to interest
   function test_withdraw_fuzz_revertsWith_HealthFactorLowerThanLiquidationThreshold_interest_increase(
     uint256 collAmount,
     uint256 skipTime
   ) public {
-    collAmount = bound(collAmount, 1, MAX_SUPPLY_AMOUNT / 2); // to stay within uint256 bounds for _calcMaxDebtAmount
+    collAmount = bound(collAmount, 1, MAX_SUPPLY_AMOUNT);
     skipTime = bound(skipTime, 1, MAX_SKIP_TIME);
     uint256 collReserveId = _wethReserveId(spoke1);
     uint256 debtReserveId = _daiReserveId(spoke1);
@@ -1319,11 +1332,12 @@ contract SpokeWithdrawTest is SpokeBase {
     spoke1.withdraw({reserveId: collReserveId, amount: 1, to: alice});
   }
 
-  function test_withdraw_revertsWith_HealthFactorLowerThanLiquidationThreshold_multiple_borrows()
+  /// @dev cannot withdraw an amount if it brings HF < 1, multiple debts on same collateral
+  function test_withdraw_revertsWith_HealthFactorLowerThanLiquidationThreshold_multiple_debts()
     public
   {
-    uint256 collAmount = 1e18; // weth $2000
-    uint256 collAmount2 = 2e18; // weth $4000
+    uint256 collAmount = 1e18;
+    uint256 collAmount2 = 2e18;
     uint256 collReserveId = _wethReserveId(spoke1);
 
     // weth collateral for dai/usdx debt
@@ -1397,7 +1411,7 @@ contract SpokeWithdrawTest is SpokeBase {
     spoke1.withdraw({reserveId: collReserveId, amount: 2, to: alice}); // 1 wei off for each coll
   }
 
-  function test_withdraw_fuzz_revertsWith_HealthFactorLowerThanLiquidationThreshold_multiple_borrows(
+  function test_withdraw_fuzz_revertsWith_HealthFactorLowerThanLiquidationThreshold_multiple_debts(
     uint256 collAmount,
     uint256 collAmount2
   ) public {
