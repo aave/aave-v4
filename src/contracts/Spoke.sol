@@ -189,9 +189,8 @@ contract Spoke is ISpoke {
     DataTypes.UserData storage userData = _userData[msg.sender];
 
     _accrueInterest(reserve, user, userData);
-    _validateBorrow(reserve, amount, msg.sender);
+    _validateBorrow(reserve, msg.sender);
 
-    // TODO HF check
     (uint256 newReserveRiskPremium, uint256 newUserRiskPremium) = _updateRiskPremiumAndBaseDebt({
       reserve: reserve,
       user: user,
@@ -200,8 +199,8 @@ contract Spoke is ISpoke {
       baseDebtChange: int256(amount)
     });
     liquidityHub.draw(reserve.assetId, amount, uint32(newReserveRiskPremium.derayify()), to);
-    _notifyRiskPremiumUpdate(reserve.assetId, msg.sender, newUserRiskPremium);
     _validateHealthFactor(msg.sender);
+    _notifyRiskPremiumUpdate(reserve.assetId, msg.sender, newUserRiskPremium);
 
     emit Borrowed(reserveId, to, amount);
   }
@@ -394,11 +393,7 @@ contract Spoke is ISpoke {
     require(amount <= suppliedAmount, InsufficientSupply(suppliedAmount));
   }
 
-  function _validateBorrow(
-    DataTypes.Reserve storage reserve,
-    uint256 amount,
-    address userAddress
-  ) internal view {
+  function _validateBorrow(DataTypes.Reserve storage reserve, address userAddress) internal view {
     require(reserve.config.borrowable, ReserveNotBorrowable(reserve.reserveId));
     _validateHealthFactor(userAddress);
   }
