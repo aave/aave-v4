@@ -8,55 +8,7 @@ contract LiquidityHubRestoreTest is LiquidityHubBase {
   using WadRayMath for uint256;
   using PercentageMath for uint256;
 
-  function test_restore_revertsWith_asset_not_active() public {
-    uint256 daiAmount = 100e18;
-    uint256 wethAmount = 10e18;
-
-    uint256 drawAmount = daiAmount / 2;
-
-    // spoke1 supply weth
-    Utils.supply({
-      hub: hub,
-      assetId: wethAssetId,
-      spoke: address(spoke1),
-      amount: wethAmount,
-      riskPremium: 0,
-      user: alice,
-      to: address(spoke1)
-    });
-
-    // spoke2 supply dai
-    Utils.supply({
-      hub: hub,
-      assetId: daiAssetId,
-      spoke: address(spoke2),
-      amount: daiAmount,
-      riskPremium: 0,
-      user: bob,
-      to: address(spoke2)
-    });
-
-    // spoke1 draw half of dai reserve liquidity
-    Utils.draw({
-      hub: hub,
-      assetId: daiAssetId,
-      to: alice,
-      spoke: address(spoke1),
-      amount: drawAmount,
-      riskPremium: 0,
-      onBehalfOf: address(spoke1)
-    });
-
-    updateAssetActive(hub, daiAssetId, false);
-
-    // spoke1 restore all of drawn dai liquidity
-    vm.expectRevert(ILiquidityHub.AssetNotActive.selector);
-
-    vm.prank(address(spoke1));
-    hub.restore({assetId: daiAssetId, amount: drawAmount, riskPremium: 0, repayer: alice});
-  }
-
-  function test_restore_revertsWith_invalid_restore_amount() public {
+  function test_restore_revertsWith_SurplusAmountRestored() public {
     uint256 daiAmount = 100e18;
     uint256 wethAmount = 10e18;
 
@@ -104,14 +56,34 @@ contract LiquidityHubRestoreTest is LiquidityHubBase {
     hub.restore({assetId: daiAssetId, amount: drawAmount + 1, riskPremium: 0, repayer: alice});
   }
 
-  function test_restore_revertsWith_invalid_restore_amount_zero() public {
+  function test_restore_revertsWith_InvalidRestoreAmount_zero() public {
     vm.expectRevert(ILiquidityHub.InvalidRestoreAmount.selector);
 
     vm.prank(address(spoke1));
     hub.restore({assetId: daiAssetId, amount: 0, riskPremium: 0, repayer: alice});
   }
 
-  function test_restore_revertsWith_invalid_restore_amount_with_interest() public {
+  function test_restore_revertsWith_AssetNotActive() public {
+    updateAssetActive(hub, daiAssetId, false);
+
+    assertFalse(hub.getAsset(daiAssetId).config.active);
+
+    vm.expectRevert(ILiquidityHub.AssetNotActive.selector);
+    vm.prank(address(spoke1));
+    hub.restore({assetId: daiAssetId, amount: 1, riskPremium: 0, repayer: alice});
+  }
+
+  function test_restore_revertsWith_AssetPaused() public {
+    updateAssetPaused(hub, daiAssetId, true);
+
+    assertTrue(hub.getAsset(daiAssetId).config.paused);
+
+    vm.expectRevert(ILiquidityHub.AssetPaused.selector);
+    vm.prank(address(spoke1));
+    hub.restore({assetId: daiAssetId, amount: 1, riskPremium: 0, repayer: alice});
+  }
+
+  function test_restore_revertsWith_SurplusAmountRestored_with_interest() public {
     uint256 daiAmount = 100e18;
     uint256 wethAmount = 10e18;
 
@@ -194,7 +166,7 @@ contract LiquidityHubRestoreTest is LiquidityHubBase {
     });
   }
 
-  function test_restore_fuzz_revertsWith_invalid_restore_amount_with_interest(
+  function test_restore_fuzz_revertsWith_SurplusAmountRestored_with_interest(
     uint256 drawAmount,
     uint256 skipTime,
     uint256 rate
@@ -281,7 +253,7 @@ contract LiquidityHubRestoreTest is LiquidityHubBase {
     });
   }
 
-  function test_restore_revertsWith_invalid_restore_amount_with_interest_and_premium() public {
+  function test_restore_revertsWith_SurplusAmountRestored_with_interest_and_premium() public {
     uint256 daiAmount = 100e18;
     uint256 wethAmount = 10e18;
 
@@ -369,7 +341,7 @@ contract LiquidityHubRestoreTest is LiquidityHubBase {
     });
   }
 
-  function test_restore_fuzz_revertsWith_invalid_restore_amount_with_interest_and_premium(
+  function test_restore_fuzz_revertsWith_SurplusAmountRestored_with_interest_and_premium(
     uint256 drawAmount,
     uint256 skipTime,
     uint256 rate,
