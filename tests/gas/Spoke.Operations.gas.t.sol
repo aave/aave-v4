@@ -64,7 +64,7 @@ contract SpokeOperations_Gas_Tests is Base {
     vm.stopPrank();
   }
 
-  function test_borrow_temp() public {
+  function test_borrow() public {
     vm.prank(bob);
     spoke1.supply(spokeInfo[spoke1].dai.reserveId, 1000e18);
 
