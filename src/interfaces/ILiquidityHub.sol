@@ -161,10 +161,4 @@ interface ILiquidityHub {
 
   function assetCount() external view returns (uint256);
   function assetsList(uint256 assetId) external view returns (IERC20);
-
-  // todo: remove explicit rounding
-  function convertToAssetsUp(uint256 assetId, uint256 shares) external view returns (uint256);
-  function convertToAssetsDown(uint256 assetId, uint256 shares) external view returns (uint256);
-  function convertToSharesUp(uint256 assetId, uint256 assets) external view returns (uint256);
-  function convertToSharesDown(uint256 assetId, uint256 assets) external view returns (uint256);
 }

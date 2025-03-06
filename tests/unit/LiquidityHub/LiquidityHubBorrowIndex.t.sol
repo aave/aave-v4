@@ -155,11 +155,11 @@ contract LiquidityHubBorrowIndex is Base {
   function test_withdrawRightAfterSupplying() public {
     vm.prank(address(spoke1));
     uint256 sharesMinted = hub.supply(wethAssetId, amount, 0, alice);
-    assertApproxEqAbs(amount, hub.convertToAssetsDown(wethAssetId, sharesMinted), 1);
+    assertApproxEqAbs(amount, hub.convertToAssets(wethAssetId, sharesMinted), 1);
 
     vm.prank(address(spoke2));
     sharesMinted = hub.supply(wethAssetId, amount, 0, alice);
-    assertApproxEqAbs(amount, hub.convertToAssetsDown(wethAssetId, sharesMinted), 1);
+    assertApproxEqAbs(amount, hub.convertToAssets(wethAssetId, sharesMinted), 1);
 
     vm.prank(address(spoke2));
     hub.withdraw(wethAssetId, amount, 0, alice);
