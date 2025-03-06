@@ -759,7 +759,8 @@ contract SpokeBorrowTest is SpokeBase {
     assertEq(spoke1.getHealthFactor(bob), spoke1.HEALTH_FACTOR_LIQUIDATION_THRESHOLD());
 
     // collateral price drop by half so that bob is undercollateralized
-    oracle.setAssetPrice(wethAssetId, 1000e8);
+    uint256 newPrice = _calcPrice(oracle.getAssetPrice(wethAssetId), 50_00); // 50% price drop
+    oracle.setAssetPrice(wethAssetId, newPrice);
     assertLt(spoke1.getHealthFactor(bob), spoke1.HEALTH_FACTOR_LIQUIDATION_THRESHOLD());
 
     vm.prank(bob);
@@ -769,11 +770,13 @@ contract SpokeBorrowTest is SpokeBase {
 
   /// @dev fuzz - if HF drops below threshold due to price drop, user cannot borrow more
   function test_borrow_fuzz_revertsWith_HealthFactorLowerThanLiquidationThreshold_price_drop(
+    uint256 wethSupplyAmount,
     uint256 newPrice
   ) public {
     // weth collateral
     uint256 currPrice = oracle.getAssetPrice(wethAssetId);
     newPrice = bound(newPrice, 0, currPrice - 1);
+    wethSupplyAmount = bound(wethSupplyAmount, 1, MAX_SUPPLY_AMOUNT);
 
     uint256 daiReserveId = spokeInfo[spoke1].dai.reserveId; // debt
     uint256 wethReserveId = spokeInfo[spoke1].weth.reserveId; // collateral
@@ -785,6 +788,8 @@ contract SpokeBorrowTest is SpokeBase {
       debtReserveId: daiReserveId,
       collAmount: wethSupplyAmount
     });
+
+    vm.assume(maxDebtAmount < MAX_SUPPLY_AMOUNT / 2 && maxDebtAmount > 0);
 
     // Bob supply weth
     Utils.spokeSupply(spoke1, wethReserveId, bob, wethSupplyAmount, bob);
@@ -1062,6 +1067,149 @@ contract SpokeBorrowTest is SpokeBase {
 
     // invalid HF
     vm.assume(spoke1.getHealthFactor(bob) < spoke1.HEALTH_FACTOR_LIQUIDATION_THRESHOLD());
+
+    // cannot borrow more dai
+    vm.prank(bob);
+    vm.expectRevert(ISpoke.HealthFactorLowerThanLiquidationThreshold.selector);
+    spoke1.borrow(usdxReserveId, 1, bob);
+
+    // cannot borrow more usdx
+    vm.prank(bob);
+    vm.expectRevert(ISpoke.HealthFactorLowerThanLiquidationThreshold.selector);
+    spoke1.borrow(usdxReserveId, 1, bob);
+  }
+
+  /// @dev cannot borrow more with multiple colls for same debt, if HF drops below threshold due to price drop
+  function test_borrow_revertsWith_HealthFactorLowerThanLiquidationThreshold_multiple_colls_price_drop()
+    public
+  {
+    // weth/dai collateral
+    uint256 wethReserveId = spokeInfo[spoke1].weth.reserveId;
+    uint256 daiReserveId = spokeInfo[spoke1].dai.reserveId;
+    // usdx debt
+    uint256 usdxReserveId = spokeInfo[spoke1].usdx.reserveId;
+
+    uint256 usdxDebtAmountWeth = 3000e6;
+    uint256 usdxDebtAmountDai = 5000e6;
+
+    uint256 wethCollAmount = _calcMinimumCollAmount({
+      spoke: spoke1,
+      collReserveId: wethReserveId,
+      debtReserveId: usdxReserveId,
+      debtAmount: usdxDebtAmountWeth
+    });
+    uint256 daiCollAmount = _calcMinimumCollAmount({
+      spoke: spoke1,
+      collReserveId: daiReserveId,
+      debtReserveId: usdxReserveId,
+      debtAmount: usdxDebtAmountDai
+    });
+
+    // Bob supply weth collateral
+    Utils.spokeSupply(spoke1, wethReserveId, bob, wethCollAmount, bob);
+    setUsingAsCollateral(spoke1, bob, wethReserveId, true);
+
+    // Bob supply dai collateral
+    Utils.spokeSupply(spoke1, daiReserveId, bob, daiCollAmount, bob);
+    setUsingAsCollateral(spoke1, bob, daiReserveId, true);
+
+    // Alice supply usdx
+    Utils.spokeSupply(
+      spoke1,
+      usdxReserveId,
+      alice,
+      (usdxDebtAmountWeth + usdxDebtAmountDai) * 2,
+      alice
+    ); // supply enough buffer for multiple borrows
+
+    // Bob draw max allowed usdx debt
+    vm.prank(bob);
+    spoke1.borrow(usdxReserveId, (usdxDebtAmountWeth + usdxDebtAmountDai), bob);
+
+    // valid HF
+    assertEq(spoke1.getHealthFactor(bob), spoke1.HEALTH_FACTOR_LIQUIDATION_THRESHOLD());
+
+    // collateral price drop by half so that bob is undercollateralized
+    uint256 newPrice = _calcPrice(oracle.getAssetPrice(wethAssetId), 50_00); // 50% price drop
+    oracle.setAssetPrice(wethAssetId, newPrice);
+
+    // invalid HF
+    assertLt(spoke1.getHealthFactor(bob), spoke1.HEALTH_FACTOR_LIQUIDATION_THRESHOLD());
+
+    // cannot borrow more dai
+    vm.prank(bob);
+    vm.expectRevert(ISpoke.HealthFactorLowerThanLiquidationThreshold.selector);
+    spoke1.borrow(usdxReserveId, 1, bob);
+
+    // cannot borrow more usdx
+    vm.prank(bob);
+    vm.expectRevert(ISpoke.HealthFactorLowerThanLiquidationThreshold.selector);
+    spoke1.borrow(usdxReserveId, 1, bob);
+  }
+
+  /// @dev fuzz - cannot borrow more with multiple colls for same debt, if HF drops below threshold due to price drop
+  function test_fuzz_borrow_revertsWith_HealthFactorLowerThanLiquidationThreshold_multiple_colls_price_drop(
+    uint256 newPrice,
+    uint256 usdxDebtAmountWeth,
+    uint256 usdxDebtAmountDai
+  ) public {
+    uint256 currPrice = oracle.getAssetPrice(wethAssetId);
+    newPrice = bound(newPrice, 0, currPrice - 1);
+    usdxDebtAmountWeth = bound(usdxDebtAmountWeth, 1, MAX_SUPPLY_AMOUNT / 4); // so that later 2xsupply is sufficient for draw
+    usdxDebtAmountDai = bound(usdxDebtAmountDai, 1, MAX_SUPPLY_AMOUNT / 4); // so that later 2xsupply is sufficient for draw
+
+    // weth/dai collateral
+    uint256 wethReserveId = spokeInfo[spoke1].weth.reserveId;
+    uint256 daiReserveId = spokeInfo[spoke1].dai.reserveId;
+    // usdx debt
+    uint256 usdxReserveId = spokeInfo[spoke1].usdx.reserveId;
+
+    uint256 wethCollAmount = _calcMinimumCollAmount({
+      spoke: spoke1,
+      collReserveId: wethReserveId,
+      debtReserveId: usdxReserveId,
+      debtAmount: usdxDebtAmountWeth
+    });
+    uint256 daiCollAmount = _calcMinimumCollAmount({
+      spoke: spoke1,
+      collReserveId: daiReserveId,
+      debtReserveId: usdxReserveId,
+      debtAmount: usdxDebtAmountDai
+    });
+
+    vm.assume(wethCollAmount < MAX_SUPPLY_AMOUNT && wethCollAmount > 0);
+    vm.assume(daiCollAmount < MAX_SUPPLY_AMOUNT && daiCollAmount > 0);
+
+    // Bob supply weth collateral
+    Utils.spokeSupply(spoke1, wethReserveId, bob, wethCollAmount, bob);
+    setUsingAsCollateral(spoke1, bob, wethReserveId, true);
+
+    // Bob supply dai collateral
+    Utils.spokeSupply(spoke1, daiReserveId, bob, daiCollAmount, bob);
+    setUsingAsCollateral(spoke1, bob, daiReserveId, true);
+
+    // Alice supply usdx
+    Utils.spokeSupply(
+      spoke1,
+      usdxReserveId,
+      alice,
+      (usdxDebtAmountWeth + usdxDebtAmountDai) * 2,
+      alice
+    ); // supply enough buffer for multiple borrows
+
+    // Bob draw max allowed usdx debt
+    vm.prank(bob);
+    spoke1.borrow(usdxReserveId, (usdxDebtAmountWeth + usdxDebtAmountDai), bob);
+
+    // valid HF
+    assertEq(spoke1.getHealthFactor(bob), spoke1.HEALTH_FACTOR_LIQUIDATION_THRESHOLD());
+
+    // collateral price drop by half so that bob is undercollateralized
+    uint256 newPrice = _calcPrice(oracle.getAssetPrice(wethAssetId), 50_00); // 50% price drop
+    oracle.setAssetPrice(wethAssetId, newPrice);
+
+    // invalid HF
+    assertLt(spoke1.getHealthFactor(bob), spoke1.HEALTH_FACTOR_LIQUIDATION_THRESHOLD());
 
     // cannot borrow more dai
     vm.prank(bob);
