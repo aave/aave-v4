@@ -995,7 +995,7 @@ contract SpokeWithdrawTest is SpokeBase {
   function test_withdraw_revertsWith_HealthFactorLowerThanLiquidationThreshold_singleBorrow()
     public
   {
-    uint256 collAmount = 1e18; // weth
+    uint256 collAmount = 1e18; // $2k in weth
     uint256 collReserveId = wethReserveId(spoke1);
     uint256 debtReserveId = daiReserveId(spoke1);
 
@@ -1153,12 +1153,12 @@ contract SpokeWithdrawTest is SpokeBase {
   function test_withdraw_revertsWith_HealthFactorLowerThanLiquidationThreshold_multiple_borrows()
     public
   {
-    uint256 collAmount = 1e18;
-    uint256 collAmount2 = 2e18;
-    // weth collateral for dai debt
+    uint256 collAmount = 1e18; // weth $2000
+    uint256 collAmount2 = 2e18; // weth $4000
     uint256 collReserveId = wethReserveId(spoke1);
+
+    // weth collateral for dai/usdx debt
     uint256 debtReserveId = daiReserveId(spoke1);
-    // weth collateral for usdx debt
     uint256 debtReserveId2 = usdxReserveId(spoke1);
 
     uint256 maxDebtAmountDai = _calcMaxDebtAmount({
@@ -1221,10 +1221,10 @@ contract SpokeWithdrawTest is SpokeBase {
 
     assertGe(spoke1.getHealthFactor(alice), spoke1.HEALTH_FACTOR_LIQUIDATION_THRESHOLD());
 
-    // withdrawing any amount of dai will result in HF < threshold
+    // withdrawing any non trivial amount of dai will result in HF < threshold
     vm.prank(alice);
     vm.expectRevert(ISpoke.HealthFactorLowerThanLiquidationThreshold.selector);
-    spoke1.withdraw({reserveId: collReserveId, amount: 1e1, to: alice}); // TODO: resolve precision so amount=1?
+    spoke1.withdraw({reserveId: collReserveId, amount: 2, to: alice}); // 2 wei off for each coll
   }
 
   function test_withdraw_revertsWith_HealthFactorLowerThanLiquidationThreshold_multiple_colls()
@@ -1300,6 +1300,6 @@ contract SpokeWithdrawTest is SpokeBase {
     // withdrawing some nontrivial amount of weth will result in HF < threshold
     vm.prank(alice);
     vm.expectRevert(ISpoke.HealthFactorLowerThanLiquidationThreshold.selector);
-    spoke1.withdraw({reserveId: collReserveId, amount: 1, to: alice}); // todo: resolve precision so amount=1?
+    spoke1.withdraw({reserveId: collReserveId, amount: 1, to: alice});
   }
 }
