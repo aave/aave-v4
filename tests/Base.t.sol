@@ -28,6 +28,7 @@ import {WETH9} from 'src/dependencies/weth/WETH9.sol';
 abstract contract Base is Test {
   using WadRayMath for uint256;
   using SharesMath for uint256;
+  using PercentageMath for uint256;
 
   uint256 internal constant MAX_SUPPLY_AMOUNT = 1e30;
   uint32 internal constant MAX_RISK_PREMIUM_BPS = 1000_00;
@@ -585,5 +586,11 @@ abstract contract Base is Test {
     address user
   ) internal view returns (uint256) {
     return spoke.getUserSuppliedAmount(reserveId, user);
+  }
+
+  function _calcPrice(uint256 price, uint256 percent) public pure returns (uint256) {
+    if (percent == 0) return price;
+    uint256 result = price.percentMul(percent);
+    return result > price ? result - price : price - result;
   }
 }
