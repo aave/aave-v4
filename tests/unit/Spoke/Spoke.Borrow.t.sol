@@ -480,7 +480,7 @@ contract SpokeBorrowTest is SpokeBase {
     spoke1.borrow(daiReserveId, 1, bob);
   }
 
-  function test_borrow_revertsWith_HealthFactorLowerThanLiquidationThreshold_multiple_colls()
+  function test_borrow_revertsWith_HealthFactorLowerThanLiquidationThreshold_multiple_colls_y()
     public
   {
     // weth collateral
@@ -489,24 +489,24 @@ contract SpokeBorrowTest is SpokeBase {
     uint256 daiReserveId = spokeInfo[spoke1].dai.reserveId;
     uint256 usdxReserveId = spokeInfo[spoke1].usdx.reserveId;
 
-    uint256 daiDebtAmount = 1_000e18;
-    uint256 usdxDebtAmount = 2_000e6;
+    uint256 wethCollAmountDai = 1e18;
+    uint256 wethCollAmountUsdx = 2e18;
 
-    uint256 wethCollAmount = _calcMinimumCollAmount({
+    uint256 daiDebtAmount = _calcMaxDebtAmount({
       spoke: spoke1,
       collReserveId: wethReserveId,
       debtReserveId: daiReserveId,
-      debtAmount: daiDebtAmount
-    }) +
-      _calcMinimumCollAmount({
-        spoke: spoke1,
-        collReserveId: wethReserveId,
-        debtReserveId: usdxReserveId,
-        debtAmount: usdxDebtAmount
-      });
+      collAmount: wethCollAmountDai
+    });
+    uint256 usdxDebtAmount = _calcMaxDebtAmount({
+      spoke: spoke1,
+      collReserveId: wethReserveId,
+      debtReserveId: usdxReserveId,
+      collAmount: wethCollAmountUsdx
+    });
 
     // Bob supply weth
-    Utils.spokeSupply(spoke1, wethReserveId, bob, wethCollAmount, bob);
+    Utils.spokeSupply(spoke1, wethReserveId, bob, wethCollAmountDai + wethCollAmountUsdx, bob);
     setUsingAsCollateral(spoke1, bob, wethReserveId, true);
 
     // Alice supply dai
@@ -527,12 +527,71 @@ contract SpokeBorrowTest is SpokeBase {
     // cannot borrow more dai
     vm.prank(bob);
     vm.expectRevert(ISpoke.HealthFactorLowerThanLiquidationThreshold.selector);
-    spoke1.borrow(daiReserveId, 1e18, bob);
+    spoke1.borrow(daiReserveId, 1e13, bob); // todo: update with exact amount, resolve precision which is 1e18/1e5
 
     // cannot borrow more usdx
     vm.prank(bob);
     vm.expectRevert(ISpoke.HealthFactorLowerThanLiquidationThreshold.selector);
-    spoke1.borrow(usdxReserveId, 1e6, bob);
+    spoke1.borrow(usdxReserveId, 1e1, bob); // todo: update with exact amount, resolve precision which is 1e6/1e5
+  }
+
+  function test_borrow_fuzz_revertsWith_HealthFactorLowerThanLiquidationThreshold_multiple_colls_y(
+    uint256 wethCollAmountDai,
+    uint256 wethCollAmountUsdx
+  ) public {
+    wethCollAmountDai = bound(wethCollAmountDai, 1, MAX_SUPPLY_AMOUNT / 2);
+    wethCollAmountUsdx = bound(wethCollAmountUsdx, 1, MAX_SUPPLY_AMOUNT / 2);
+
+    // weth collateral
+    uint256 wethReserveId = spokeInfo[spoke1].weth.reserveId;
+    // dai/usdx debt
+    uint256 daiReserveId = spokeInfo[spoke1].dai.reserveId;
+    uint256 usdxReserveId = spokeInfo[spoke1].usdx.reserveId;
+
+    uint256 daiDebtAmount = _calcMaxDebtAmount({
+      spoke: spoke1,
+      collReserveId: wethReserveId,
+      debtReserveId: daiReserveId,
+      collAmount: wethCollAmountDai
+    });
+    uint256 usdxDebtAmount = _calcMaxDebtAmount({
+      spoke: spoke1,
+      collReserveId: wethReserveId,
+      debtReserveId: usdxReserveId,
+      collAmount: wethCollAmountUsdx
+    });
+
+    vm.assume(usdxDebtAmount < MAX_SUPPLY_AMOUNT && usdxDebtAmount > 0);
+    vm.assume(daiDebtAmount < MAX_SUPPLY_AMOUNT && daiDebtAmount > 0);
+
+    // Bob supply weth
+    Utils.spokeSupply(spoke1, wethReserveId, bob, wethCollAmountDai + wethCollAmountUsdx, bob);
+    setUsingAsCollateral(spoke1, bob, wethReserveId, true);
+
+    // Alice supply dai
+    Utils.spokeSupply(spoke1, daiReserveId, alice, daiDebtAmount * 2, alice); // supply enough buffer for multiple borrows
+    // Alice supply usdx
+    Utils.spokeSupply(spoke1, usdxReserveId, alice, usdxDebtAmount * 2, alice); // supply enough buffer for multiple borrows
+
+    // Bob draw max allowed debt amt of dai reserve liquidity
+    vm.prank(bob);
+    spoke1.borrow(daiReserveId, daiDebtAmount, bob);
+
+    vm.prank(bob);
+    spoke1.borrow(usdxReserveId, usdxDebtAmount, bob);
+
+    // valid HF
+    assertGe(spoke1.getHealthFactor(bob), spoke1.HEALTH_FACTOR_LIQUIDATION_THRESHOLD());
+
+    // cannot borrow more dai
+    vm.prank(bob);
+    vm.expectRevert(ISpoke.HealthFactorLowerThanLiquidationThreshold.selector);
+    spoke1.borrow(daiReserveId, 1e13, bob); // todo: update with exact amount, resolve precision which is 1e18/1e5
+
+    // cannot borrow more usdx
+    vm.prank(bob);
+    vm.expectRevert(ISpoke.HealthFactorLowerThanLiquidationThreshold.selector);
+    spoke1.borrow(usdxReserveId, 1e1, bob); // todo: update with exact amount, resolve precision which is 1e6/1e5
   }
 
   function test_borrow_revertsWith_HealthFactorLowerThanLiquidationThreshold_multiple_colls_with_interest()
@@ -622,8 +681,8 @@ contract SpokeBorrowTest is SpokeBase {
       collAmount: wethCollForUsdx
     });
 
-    vm.assume(daiDebtAmount < MAX_SUPPLY_AMOUNT / 2 && daiDebtAmount > 1);
-    vm.assume(usdxDebtAmount < MAX_SUPPLY_AMOUNT / 2 && usdxDebtAmount > 1);
+    vm.assume(daiDebtAmount < MAX_SUPPLY_AMOUNT / 2 && daiDebtAmount > 0);
+    vm.assume(usdxDebtAmount < MAX_SUPPLY_AMOUNT / 2 && usdxDebtAmount > 0);
 
     // Bob supply weth
     Utils.spokeSupply(spoke1, wethReserveId, bob, wethCollForDai + wethCollForUsdx, bob);

@@ -538,7 +538,7 @@ contract Spoke is ISpoke {
       }
 
       if (_usingAsCollateral(user)) {
-        /// @dev opt: this can be extracted by counting number of set bits in a supplied (only) bitmap saving one loop
+        // @dev opt: this can be extracted by counting number of set bits in a supplied (only) bitmap saving one loop
         unchecked {
           ++vars.collateralReserveCount;
         }
@@ -594,12 +594,14 @@ contract Spoke is ISpoke {
       }
     }
 
+    // at this point avgLiquidationThreshold is a weighted sum of collateral scaled by LT
     // (avgLiquidationThreshold / totalCollateral) * totalCollateral can be simplified to avgLiquidationThreshold
-    // strip BPS factor from result, because avgLiquidationThreshold has been scaled by LT (in BPS) above
+    // strip BPS factor from result, because running avgLiquidationThreshold sum has been scaled by LT (in BPS) above
     vars.healthFactor = vars.totalDebtInBaseCurrency == 0
       ? type(uint256).max
       : vars.avgLiquidationThreshold.wadDiv(vars.totalDebtInBaseCurrency).fromBps(); // HF of 1 -> 1e18
 
+    // divide by total collateral to get avg LT in BPS
     vars.avgLiquidationThreshold = vars.totalCollateralInBaseCurrency == 0
       ? 0
       : vars.avgLiquidationThreshold / vars.totalCollateralInBaseCurrency;
