@@ -1685,6 +1685,186 @@ contract SpokeWithdrawTest is SpokeBase {
     spoke1.withdraw({reserveId: wethReserveId, amount: 1, to: alice});
   }
 
+  /// @dev cannot withdraw an amount if HF < 1 due to interest, if multiple debts for same coll
+  function test_withdraw_revertsWith_HealthFactorLowerThanLiquidationThreshold_multiple_debts_with_interest()
+    public
+  {
+    uint256 daiDebtAmount = 1000e18;
+    uint256 usdxDebtAmount = 2000e6;
+
+    // weth collateral
+    uint256 wethReserveId = _wethReserveId(spoke1);
+    // dai/usdx debt
+    uint256 daiReserveId = _daiReserveId(spoke1);
+    uint256 usdxReserveId = _usdxReserveId(spoke1);
+
+    uint256 wethCollAmountDai = _calcMinimumCollAmount({
+      spoke: spoke1,
+      collReserveId: wethReserveId,
+      debtReserveId: daiReserveId,
+      debtAmount: daiDebtAmount
+    });
+
+    uint256 wethCollAmountUsdx = _calcMinimumCollAmount({
+      spoke: spoke1,
+      collReserveId: wethReserveId,
+      debtReserveId: usdxReserveId,
+      debtAmount: usdxDebtAmount
+    });
+
+    // Alice supplies weth as collateral
+    Utils.spokeSupply({
+      spoke: spoke1,
+      reserveId: wethReserveId,
+      user: alice,
+      amount: wethCollAmountDai + wethCollAmountUsdx,
+      onBehalfOf: alice
+    });
+    setUsingAsCollateral(spoke1, alice, wethReserveId, true);
+
+    // Bob supplies dai
+    Utils.spokeSupply({
+      spoke: spoke1,
+      reserveId: daiReserveId,
+      user: bob,
+      amount: daiDebtAmount,
+      onBehalfOf: bob
+    });
+    // Alice borrows dai
+    Utils.spokeBorrow({
+      spoke: spoke1,
+      reserveId: daiReserveId,
+      user: alice,
+      amount: daiDebtAmount,
+      onBehalfOf: alice
+    });
+
+    // Bob supplies usdx
+    Utils.spokeSupply({
+      spoke: spoke1,
+      reserveId: usdxReserveId,
+      user: bob,
+      amount: usdxDebtAmount,
+      onBehalfOf: bob
+    });
+    // Alice borrows usdx
+    Utils.spokeBorrow({
+      spoke: spoke1,
+      reserveId: usdxReserveId,
+      user: alice,
+      amount: usdxDebtAmount,
+      onBehalfOf: alice
+    });
+
+    assertApproxEqAbs(
+      spoke1.getHealthFactor(alice),
+      spoke1.HEALTH_FACTOR_LIQUIDATION_THRESHOLD(),
+      1
+    );
+
+    // skip time to accrue interest
+    skip(365 days);
+
+    assertLt(spoke1.getHealthFactor(alice), spoke1.HEALTH_FACTOR_LIQUIDATION_THRESHOLD());
+
+    // withdrawing any non trivial amount of dai will result in HF < threshold
+    vm.prank(alice);
+    vm.expectRevert(ISpoke.HealthFactorLowerThanLiquidationThreshold.selector);
+    spoke1.withdraw({reserveId: wethReserveId, amount: 1, to: alice});
+  }
+
+  /// @dev fuzz - cannot withdraw an amount if HF < 1 due to interest, if multiple debts for same coll
+  function test_withdraw_fuzz_revertsWith_HealthFactorLowerThanLiquidationThreshold_multiple_debts_with_interest(
+    uint256 daiDebtAmount,
+    uint256 usdxDebtAmount,
+    uint256 skipTime
+  ) public {
+    skipTime = bound(skipTime, 1, MAX_SKIP_TIME);
+
+    daiDebtAmount = bound(daiDebtAmount, 1, MAX_SUPPLY_AMOUNT);
+    usdxDebtAmount = bound(usdxDebtAmount, 1, MAX_SUPPLY_AMOUNT);
+
+    // weth collateral
+    uint256 wethReserveId = _wethReserveId(spoke1);
+    // dai/usdx debt
+    uint256 daiReserveId = _daiReserveId(spoke1);
+    uint256 usdxReserveId = _usdxReserveId(spoke1);
+
+    uint256 wethCollAmountDai = _calcMinimumCollAmount({
+      spoke: spoke1,
+      collReserveId: wethReserveId,
+      debtReserveId: daiReserveId,
+      debtAmount: daiDebtAmount
+    });
+
+    uint256 wethCollAmountUsdx = _calcMinimumCollAmount({
+      spoke: spoke1,
+      collReserveId: wethReserveId,
+      debtReserveId: usdxReserveId,
+      debtAmount: usdxDebtAmount
+    });
+
+    vm.assume(
+      wethCollAmountDai + wethCollAmountUsdx < MAX_SUPPLY_AMOUNT &&
+        wethCollAmountDai + wethCollAmountUsdx > 0
+    );
+
+    // Alice supplies weth as collateral
+    Utils.spokeSupply({
+      spoke: spoke1,
+      reserveId: wethReserveId,
+      user: alice,
+      amount: wethCollAmountDai + wethCollAmountUsdx,
+      onBehalfOf: alice
+    });
+    setUsingAsCollateral(spoke1, alice, wethReserveId, true);
+
+    // Bob supplies dai
+    Utils.spokeSupply({
+      spoke: spoke1,
+      reserveId: daiReserveId,
+      user: bob,
+      amount: daiDebtAmount,
+      onBehalfOf: bob
+    });
+    // Alice borrows dai
+    Utils.spokeBorrow({
+      spoke: spoke1,
+      reserveId: daiReserveId,
+      user: alice,
+      amount: daiDebtAmount,
+      onBehalfOf: alice
+    });
+
+    // Bob supplies usdx
+    Utils.spokeSupply({
+      spoke: spoke1,
+      reserveId: usdxReserveId,
+      user: bob,
+      amount: usdxDebtAmount,
+      onBehalfOf: bob
+    });
+    // Alice borrows usdx
+    Utils.spokeBorrow({
+      spoke: spoke1,
+      reserveId: usdxReserveId,
+      user: alice,
+      amount: usdxDebtAmount,
+      onBehalfOf: alice
+    });
+
+    assertGe(spoke1.getHealthFactor(alice), spoke1.HEALTH_FACTOR_LIQUIDATION_THRESHOLD());
+
+    // debt accrual so that alice is undercollateralized
+    skip(skipTime);
+    vm.assume(spoke1.getHealthFactor(alice) < spoke1.HEALTH_FACTOR_LIQUIDATION_THRESHOLD());
+
+    // withdrawing any non trivial amount of dai will result in HF < threshold
+    vm.prank(alice);
+    vm.expectRevert(ISpoke.HealthFactorLowerThanLiquidationThreshold.selector);
+    spoke1.withdraw({reserveId: wethReserveId, amount: 1, to: alice});
+  }
+
   /// @dev cannot withdraw an amount to bring HF < 1, if multiple colls for same debt
   function test_withdraw_revertsWith_HealthFactorLowerThanLiquidationThreshold_multiple_colls()
     public
