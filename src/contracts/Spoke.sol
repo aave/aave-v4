@@ -63,8 +63,8 @@ contract Spoke is ISpoke {
       lastUpdateTimestamp: 0,
       riskPremium: 0,
       config: DataTypes.ReserveConfig({
-        lt: params.lt,
-        lb: params.lb,
+        liquidationThreshold: params.liquidationThreshold,
+        liquidationBonus: params.liquidationBonus,
         liquidityPremium: params.liquidityPremium,
         borrowable: params.borrowable,
         collateral: params.collateral
@@ -88,8 +88,8 @@ contract Spoke is ISpoke {
     );
     // TODO: AccessControl
     _reserves[reserveId].config = DataTypes.ReserveConfig({
-      lt: params.lt,
-      lb: params.lb,
+      liquidationThreshold: params.liquidationThreshold,
+      liquidationBonus: params.liquidationBonus,
       liquidityPremium: params.liquidityPremium,
       borrowable: params.borrowable,
       collateral: params.collateral
@@ -97,8 +97,8 @@ contract Spoke is ISpoke {
 
     emit ReserveConfigUpdated(
       reserveId,
-      params.lt,
-      params.lb,
+      params.liquidationThreshold,
+      params.liquidationBonus,
       params.liquidityPremium,
       params.borrowable,
       params.collateral
@@ -553,7 +553,9 @@ contract Spoke is ISpoke {
 
         vars.totalCollateralInBaseCurrency += vars.userCollateralInBaseCurrency;
         list.add(vars.i, vars.liquidityPremium, vars.userCollateralInBaseCurrency);
-        vars.avgLiquidationThreshold += vars.userCollateralInBaseCurrency * reserve.config.lt;
+        vars.avgLiquidationThreshold +=
+          vars.userCollateralInBaseCurrency *
+          reserve.config.liquidationThreshold;
 
         unchecked {
           ++vars.i;

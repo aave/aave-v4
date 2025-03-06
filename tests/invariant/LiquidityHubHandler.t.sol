@@ -55,8 +55,8 @@ contract LiquidityHubHandler is Test {
     bm.addReserve(
       0,
       DataTypes.ReserveConfig({
-        lt: 0,
-        lb: 0,
+        liquidationThreshold: 0,
+        liquidationBonus: 0,
         liquidityPremium: 0,
         borrowable: false,
         collateral: false

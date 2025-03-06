@@ -66,8 +66,8 @@ library DataTypes {
   }
 
   struct ReserveConfig {
-    uint256 lt; // 1e4 == 100%, BPS
-    uint256 lb; // TODO: liquidationProtocolFee
+    uint256 liquidationThreshold; // BPS
+    uint256 liquidationBonus; // TODO: liquidationProtocolFee
     uint256 liquidityPremium; // BPS
     bool borrowable;
     bool collateral;

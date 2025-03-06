@@ -319,8 +319,8 @@ contract SpokeTest is Base {
     DataTypes.Reserve memory reserveData = spoke1.getReserve(daiId);
 
     DataTypes.ReserveConfig memory newReserveConfig = DataTypes.ReserveConfig({
-      lt: reserveData.config.lt + 1,
-      lb: reserveData.config.lb + 1,
+      liquidationThreshold: reserveData.config.liquidationThreshold + 1,
+      liquidationBonus: reserveData.config.liquidationBonus + 1,
       liquidityPremium: 0,
       borrowable: !reserveData.config.borrowable,
       collateral: !reserveData.config.collateral
@@ -328,8 +328,8 @@ contract SpokeTest is Base {
     vm.expectEmit(address(spoke1));
     emit ISpoke.ReserveConfigUpdated(
       daiId,
-      newReserveConfig.lt,
-      newReserveConfig.lb,
+      newReserveConfig.liquidationThreshold,
+      newReserveConfig.liquidationBonus,
       newReserveConfig.liquidityPremium,
       newReserveConfig.borrowable,
       newReserveConfig.collateral
@@ -338,8 +338,12 @@ contract SpokeTest is Base {
 
     reserveData = spoke1.getReserve(daiId);
 
-    assertEq(reserveData.config.lt, newReserveConfig.lt, 'wrong lt');
-    assertEq(reserveData.config.lb, newReserveConfig.lb, 'wrong lb');
+    assertEq(
+      reserveData.config.liquidationThreshold,
+      newReserveConfig.liquidationThreshold,
+      'wrong lt'
+    );
+    assertEq(reserveData.config.liquidationBonus, newReserveConfig.liquidationBonus, 'wrong lb');
     assertEq(
       reserveData.config.liquidityPremium,
       newReserveConfig.liquidityPremium,

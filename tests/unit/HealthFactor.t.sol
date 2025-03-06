@@ -153,7 +153,7 @@ contract HealthFactorTest_ToMigrate is Base {
       // totalCollateral += userCollateral;
       // totalDebt += userPosition.debt * assetPrice;
 
-      // avgLiquidationThreshold += userCollateral * reserve.config.lt;
+      // avgLiquidationThreshold += userCollateral * reserve.config.liquidationThreshold;
     }
     avgLiquidationThreshold = totalCollateral != 0 ? avgLiquidationThreshold / totalCollateral : 0;
     return
