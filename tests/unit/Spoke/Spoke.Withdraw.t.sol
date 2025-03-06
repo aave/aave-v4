@@ -1909,59 +1909,453 @@ contract SpokeWithdrawTest is SpokeBase {
     // valid HF
     assertEq(spoke1.getHealthFactor(bob), spoke1.HEALTH_FACTOR_LIQUIDATION_THRESHOLD());
 
+    // withdrawing weth will result in HF < threshold
+    vm.prank(bob);
+    vm.expectRevert(ISpoke.HealthFactorLowerThanLiquidationThreshold.selector);
+    spoke1.withdraw({reserveId: wethReserveId, amount: wethCollAmount, to: bob}); // todo: resolve precision, should be 1
+
+    // withdrawing dai will result in HF < threshold
+    vm.prank(bob);
+    vm.expectRevert(ISpoke.HealthFactorLowerThanLiquidationThreshold.selector);
+    spoke1.withdraw({reserveId: daiReserveId, amount: daiCollAmount, to: bob}); // todo: resolve precision, should be 1
+  }
+
+  /// @dev cannot withdraw an amount to bring HF < 1, if multiple colls for same debt
+  function test_withdraw_fuzz_revertsWith_HealthFactorLowerThanLiquidationThreshold_multiple_colls(
+    uint256 usdxDebtAmountWeth,
+    uint256 usdxDebtAmountDai
+  ) public {
+    usdxDebtAmountWeth = bound(usdxDebtAmountWeth, 1, MAX_SUPPLY_AMOUNT);
+    usdxDebtAmountDai = bound(usdxDebtAmountDai, 1, MAX_SUPPLY_AMOUNT);
+
+    // weth/dai collateral
+    uint256 wethReserveId = _wethReserveId(spoke1);
+    uint256 daiReserveId = _daiReserveId(spoke1);
+    // usdx debt
+    uint256 usdxReserveId = _usdxReserveId(spoke1);
+
+    uint256 wethCollAmount = _calcMinimumCollAmount({
+      spoke: spoke1,
+      collReserveId: wethReserveId,
+      debtReserveId: usdxReserveId,
+      debtAmount: usdxDebtAmountWeth
+    });
+    uint256 daiCollAmount = _calcMinimumCollAmount({
+      spoke: spoke1,
+      collReserveId: daiReserveId,
+      debtReserveId: usdxReserveId,
+      debtAmount: usdxDebtAmountDai
+    });
+
+    vm.assume(wethCollAmount < MAX_SUPPLY_AMOUNT && wethCollAmount > 0);
+    vm.assume(daiCollAmount < MAX_SUPPLY_AMOUNT && daiCollAmount > 0);
+
+    // Bob supply weth collateral
+    Utils.spokeSupply(spoke1, wethReserveId, bob, wethCollAmount, bob);
+    setUsingAsCollateral(spoke1, bob, wethReserveId, true);
+
+    // Bob supply dai collateral
+    Utils.spokeSupply(spoke1, daiReserveId, bob, daiCollAmount, bob);
+    setUsingAsCollateral(spoke1, bob, daiReserveId, true);
+
+    // Alice supply usdx
+    Utils.spokeSupply(spoke1, usdxReserveId, alice, usdxDebtAmountWeth + usdxDebtAmountDai, alice); // supply enough buffer for multiple borrows
+
+    // Bob draw max allowed usdx debt
+    vm.prank(bob);
+    spoke1.borrow(usdxReserveId, (usdxDebtAmountWeth + usdxDebtAmountDai), bob);
+
+    // valid HF
+    assertGe(spoke1.getHealthFactor(bob), spoke1.HEALTH_FACTOR_LIQUIDATION_THRESHOLD());
+
     // withdrawing some nontrivial amount of weth will result in HF < threshold
     vm.prank(bob);
     vm.expectRevert(ISpoke.HealthFactorLowerThanLiquidationThreshold.selector);
-    spoke1.withdraw({reserveId: wethReserveId, amount: 3, to: bob}); // todo: resolve precision, should be 1
+    spoke1.withdraw({reserveId: wethReserveId, amount: wethCollAmount, to: bob}); // todo: resolve precision, should be 1
+
+    // withdrawing some nontrivial amount of weth will result in HF < threshold
+    vm.prank(bob);
+    vm.expectRevert(ISpoke.HealthFactorLowerThanLiquidationThreshold.selector);
+    spoke1.withdraw({reserveId: daiReserveId, amount: daiCollAmount, to: bob}); // todo: resolve precision, should be 1
   }
 
-  // /// @dev cannot withdraw an amount to bring HF < 1, if multiple colls for same debt
-  // function test_withdraw_fuzz_revertsWith_HealthFactorLowerThanLiquidationThreshold_multiple_colls()
-  //   public
-  // {
-  //   // weth/dai collateral
-  //   uint256 wethReserveId = _wethReserveId(spoke1);
-  //   uint256 daiReserveId = _daiReserveId(spoke1);
-  //   // usdx debt
-  //   uint256 usdxReserveId = _usdxReserveId(spoke1);
+  /// @dev cannot withdraw an amount if HF < 1 due to interest, if multiple colls for same debt
+  function test_withdraw_revertsWith_HealthFactorLowerThanLiquidationThreshold_multiple_colls_with_interest()
+    public
+  {
+    // weth/dai collateral
+    uint256 wethReserveId = _wethReserveId(spoke1);
+    uint256 daiReserveId = _daiReserveId(spoke1);
+    // usdx debt
+    uint256 usdxReserveId = _usdxReserveId(spoke1);
 
-  //   uint256 usdxDebtAmountWeth = 3000e6;
-  //   uint256 usdxDebtAmountDai = 5000e6;
+    uint256 usdxDebtAmountWeth = 3000e6;
+    uint256 usdxDebtAmountDai = 5000e6;
 
-  //   uint256 wethCollAmount = _calcMinimumCollAmount({
-  //     spoke: spoke1,
-  //     collReserveId: wethReserveId,
-  //     debtReserveId: usdxReserveId,
-  //     debtAmount: usdxDebtAmountWeth
-  //   });
-  //   uint256 daiCollAmount = _calcMinimumCollAmount({
-  //     spoke: spoke1,
-  //     collReserveId: daiReserveId,
-  //     debtReserveId: usdxReserveId,
-  //     debtAmount: usdxDebtAmountDai
-  //   });
+    uint256 wethCollAmount = _calcMinimumCollAmount({
+      spoke: spoke1,
+      collReserveId: wethReserveId,
+      debtReserveId: usdxReserveId,
+      debtAmount: usdxDebtAmountWeth
+    });
+    uint256 daiCollAmount = _calcMinimumCollAmount({
+      spoke: spoke1,
+      collReserveId: daiReserveId,
+      debtReserveId: usdxReserveId,
+      debtAmount: usdxDebtAmountDai
+    });
 
-  //   // Bob supply weth collateral
-  //   Utils.spokeSupply(spoke1, wethReserveId, bob, wethCollAmount, bob);
-  //   setUsingAsCollateral(spoke1, bob, wethReserveId, true);
+    // Bob supply weth collateral
+    Utils.spokeSupply(spoke1, wethReserveId, bob, wethCollAmount, bob);
+    setUsingAsCollateral(spoke1, bob, wethReserveId, true);
 
-  //   // Bob supply dai collateral
-  //   Utils.spokeSupply(spoke1, daiReserveId, bob, daiCollAmount, bob);
-  //   setUsingAsCollateral(spoke1, bob, daiReserveId, true);
+    // Bob supply dai collateral
+    Utils.spokeSupply(spoke1, daiReserveId, bob, daiCollAmount, bob);
+    setUsingAsCollateral(spoke1, bob, daiReserveId, true);
 
-  //   // Alice supply usdx
-  //   Utils.spokeSupply(spoke1, usdxReserveId, alice, usdxDebtAmountWeth + usdxDebtAmountDai, alice); // supply enough buffer for multiple borrows
+    // Alice supply usdx
+    Utils.spokeSupply(spoke1, usdxReserveId, alice, usdxDebtAmountWeth + usdxDebtAmountDai, alice); // supply enough buffer for multiple borrows
 
-  //   // Bob draw max allowed usdx debt
-  //   vm.prank(bob);
-  //   spoke1.borrow(usdxReserveId, (usdxDebtAmountWeth + usdxDebtAmountDai), bob);
+    // Bob draw max allowed usdx debt
+    vm.prank(bob);
+    spoke1.borrow(usdxReserveId, (usdxDebtAmountWeth + usdxDebtAmountDai), bob);
 
-  //   // valid HF
-  //   assertEq(spoke1.getHealthFactor(bob), spoke1.HEALTH_FACTOR_LIQUIDATION_THRESHOLD());
+    // valid HF
+    assertEq(spoke1.getHealthFactor(bob), spoke1.HEALTH_FACTOR_LIQUIDATION_THRESHOLD());
 
-  //   // withdrawing some nontrivial amount of weth will result in HF < threshold
-  //   vm.prank(bob);
-  //   vm.expectRevert(ISpoke.HealthFactorLowerThanLiquidationThreshold.selector);
-  //   spoke1.withdraw({reserveId: wethReserveId, amount: 3, to: bob}); // todo: resolve precision, should be 1
-  // }
+    // skip time to accrue debt
+    skip(365 days);
+    // invalid HF
+    assertLt(spoke1.getHealthFactor(bob), spoke1.HEALTH_FACTOR_LIQUIDATION_THRESHOLD());
+
+    // withdrawing weth will result in HF < threshold
+    vm.prank(bob);
+    vm.expectRevert(ISpoke.HealthFactorLowerThanLiquidationThreshold.selector);
+    spoke1.withdraw({reserveId: wethReserveId, amount: wethCollAmount, to: bob}); // todo: resolve precision, should be 1
+
+    // withdrawing dai will result in HF < threshold
+    vm.prank(bob);
+    vm.expectRevert(ISpoke.HealthFactorLowerThanLiquidationThreshold.selector);
+    spoke1.withdraw({reserveId: daiReserveId, amount: daiCollAmount, to: bob}); // todo: resolve precision, should be 1
+  }
+
+  /// @dev cannot withdraw an amount if HF < 1 due to interest, if multiple colls for same debt
+  function test_withdraw_fuzz_revertsWith_HealthFactorLowerThanLiquidationThreshold_multiple_colls_with_interest(
+    uint256 usdxDebtAmountWeth,
+    uint256 usdxDebtAmountDai
+  ) public {
+    usdxDebtAmountWeth = bound(usdxDebtAmountWeth, 1, MAX_SUPPLY_AMOUNT);
+    usdxDebtAmountDai = bound(usdxDebtAmountDai, 1, MAX_SUPPLY_AMOUNT);
+
+    // weth/dai collateral
+    uint256 wethReserveId = _wethReserveId(spoke1);
+    uint256 daiReserveId = _daiReserveId(spoke1);
+    // usdx debt
+    uint256 usdxReserveId = _usdxReserveId(spoke1);
+
+    uint256 wethCollAmount = _calcMinimumCollAmount({
+      spoke: spoke1,
+      collReserveId: wethReserveId,
+      debtReserveId: usdxReserveId,
+      debtAmount: usdxDebtAmountWeth
+    });
+    uint256 daiCollAmount = _calcMinimumCollAmount({
+      spoke: spoke1,
+      collReserveId: daiReserveId,
+      debtReserveId: usdxReserveId,
+      debtAmount: usdxDebtAmountDai
+    });
+
+    vm.assume(wethCollAmount < MAX_SUPPLY_AMOUNT && wethCollAmount > 0);
+    vm.assume(daiCollAmount < MAX_SUPPLY_AMOUNT && daiCollAmount > 0);
+
+    // Bob supply weth collateral
+    Utils.spokeSupply(spoke1, wethReserveId, bob, wethCollAmount, bob);
+    setUsingAsCollateral(spoke1, bob, wethReserveId, true);
+
+    // Bob supply dai collateral
+    Utils.spokeSupply(spoke1, daiReserveId, bob, daiCollAmount, bob);
+    setUsingAsCollateral(spoke1, bob, daiReserveId, true);
+
+    // Alice supply usdx
+    Utils.spokeSupply(spoke1, usdxReserveId, alice, usdxDebtAmountWeth + usdxDebtAmountDai, alice); // supply enough buffer for multiple borrows
+
+    // Bob draw max allowed usdx debt
+    vm.prank(bob);
+    spoke1.borrow(usdxReserveId, (usdxDebtAmountWeth + usdxDebtAmountDai), bob);
+
+    // valid HF
+    assertGe(spoke1.getHealthFactor(bob), spoke1.HEALTH_FACTOR_LIQUIDATION_THRESHOLD());
+
+    // skip time to accrue debt
+    skip(365 days);
+    // invalid HF
+    vm.assume(spoke1.getHealthFactor(bob) < spoke1.HEALTH_FACTOR_LIQUIDATION_THRESHOLD());
+
+    // withdrawing some nontrivial amount of weth will result in HF < threshold
+    vm.prank(bob);
+    vm.expectRevert(ISpoke.HealthFactorLowerThanLiquidationThreshold.selector);
+    spoke1.withdraw({reserveId: wethReserveId, amount: 1, to: bob});
+
+    // withdrawing some nontrivial amount of weth will result in HF < threshold
+    vm.prank(bob);
+    vm.expectRevert(ISpoke.HealthFactorLowerThanLiquidationThreshold.selector);
+    spoke1.withdraw({reserveId: daiReserveId, amount: 1, to: bob});
+  }
+
+  /// @dev cannot withdraw an amount if HF < 1 due to price drop, if multiple colls for same debt
+  function test_withdraw_revertsWith_HealthFactorLowerThanLiquidationThreshold_multiple_colls_price_drop_weth()
+    public
+  {
+    // weth/dai collateral
+    uint256 wethReserveId = _wethReserveId(spoke1);
+    uint256 daiReserveId = _daiReserveId(spoke1);
+    // usdx debt
+    uint256 usdxReserveId = _usdxReserveId(spoke1);
+
+    uint256 usdxDebtAmountWeth = 3000e6;
+    uint256 usdxDebtAmountDai = 5000e6;
+
+    uint256 wethCollAmount = _calcMinimumCollAmount({
+      spoke: spoke1,
+      collReserveId: wethReserveId,
+      debtReserveId: usdxReserveId,
+      debtAmount: usdxDebtAmountWeth
+    });
+    uint256 daiCollAmount = _calcMinimumCollAmount({
+      spoke: spoke1,
+      collReserveId: daiReserveId,
+      debtReserveId: usdxReserveId,
+      debtAmount: usdxDebtAmountDai
+    });
+
+    // Bob supply weth collateral
+    Utils.spokeSupply(spoke1, wethReserveId, bob, wethCollAmount, bob);
+    setUsingAsCollateral(spoke1, bob, wethReserveId, true);
+
+    // Bob supply dai collateral
+    Utils.spokeSupply(spoke1, daiReserveId, bob, daiCollAmount, bob);
+    setUsingAsCollateral(spoke1, bob, daiReserveId, true);
+
+    // Alice supply usdx
+    Utils.spokeSupply(spoke1, usdxReserveId, alice, usdxDebtAmountWeth + usdxDebtAmountDai, alice); // supply enough buffer for multiple borrows
+
+    // Bob draw max allowed usdx debt
+    vm.prank(bob);
+    spoke1.borrow(usdxReserveId, (usdxDebtAmountWeth + usdxDebtAmountDai), bob);
+
+    // valid HF
+    assertEq(spoke1.getHealthFactor(bob), spoke1.HEALTH_FACTOR_LIQUIDATION_THRESHOLD());
+
+    // collateral price drop by half so that bob is undercollateralized
+    uint256 newPrice = _calcPrice(oracle.getAssetPrice(wethAssetId), 50_00); // 50% price drop
+    oracle.setAssetPrice(wethAssetId, newPrice);
+    // invalid HF
+    assertLt(spoke1.getHealthFactor(bob), spoke1.HEALTH_FACTOR_LIQUIDATION_THRESHOLD());
+
+    // withdrawing weth will result in HF < threshold
+    vm.prank(bob);
+    vm.expectRevert(ISpoke.HealthFactorLowerThanLiquidationThreshold.selector);
+    spoke1.withdraw({reserveId: wethReserveId, amount: wethCollAmount, to: bob}); // todo: resolve precision, should be 1
+
+    // withdrawing dai will result in HF < threshold
+    vm.prank(bob);
+    vm.expectRevert(ISpoke.HealthFactorLowerThanLiquidationThreshold.selector);
+    spoke1.withdraw({reserveId: daiReserveId, amount: daiCollAmount, to: bob}); // todo: resolve precision, should be 1
+  }
+
+  /// @dev fuzz - cannot withdraw an amount if HF < 1 due to price drop, if multiple colls for same debt
+  function test_withdraw_fuzz_revertsWith_HealthFactorLowerThanLiquidationThreshold_multiple_colls_price_drop_weth(
+    uint256 usdxDebtAmountWeth,
+    uint256 usdxDebtAmountDai,
+    uint256 newPrice
+  ) public {
+    uint256 currPrice = oracle.getAssetPrice(wethAssetId);
+    newPrice = bound(newPrice, 0, currPrice - 1);
+    usdxDebtAmountWeth = bound(usdxDebtAmountWeth, 1, MAX_SUPPLY_AMOUNT);
+    usdxDebtAmountDai = bound(usdxDebtAmountDai, 1, MAX_SUPPLY_AMOUNT);
+
+    // weth/dai collateral
+    uint256 wethReserveId = _wethReserveId(spoke1);
+    uint256 daiReserveId = _daiReserveId(spoke1);
+    // usdx debt
+    uint256 usdxReserveId = _usdxReserveId(spoke1);
+
+    uint256 wethCollAmount = _calcMinimumCollAmount({
+      spoke: spoke1,
+      collReserveId: wethReserveId,
+      debtReserveId: usdxReserveId,
+      debtAmount: usdxDebtAmountWeth
+    });
+    uint256 daiCollAmount = _calcMinimumCollAmount({
+      spoke: spoke1,
+      collReserveId: daiReserveId,
+      debtReserveId: usdxReserveId,
+      debtAmount: usdxDebtAmountDai
+    });
+
+    vm.assume(wethCollAmount < MAX_SUPPLY_AMOUNT && wethCollAmount > 0);
+    vm.assume(daiCollAmount < MAX_SUPPLY_AMOUNT && daiCollAmount > 0);
+
+    // Bob supply weth collateral
+    Utils.spokeSupply(spoke1, wethReserveId, bob, wethCollAmount, bob);
+    setUsingAsCollateral(spoke1, bob, wethReserveId, true);
+
+    // Bob supply dai collateral
+    Utils.spokeSupply(spoke1, daiReserveId, bob, daiCollAmount, bob);
+    setUsingAsCollateral(spoke1, bob, daiReserveId, true);
+
+    // Alice supply usdx
+    Utils.spokeSupply(spoke1, usdxReserveId, alice, usdxDebtAmountWeth + usdxDebtAmountDai, alice); // supply enough buffer for multiple borrows
+
+    // Bob draw max allowed usdx debt
+    vm.prank(bob);
+    spoke1.borrow(usdxReserveId, (usdxDebtAmountWeth + usdxDebtAmountDai), bob);
+
+    // valid HF
+    assertGe(spoke1.getHealthFactor(bob), spoke1.HEALTH_FACTOR_LIQUIDATION_THRESHOLD());
+
+    // collateral price drop by half so that bob is undercollateralized
+    oracle.setAssetPrice(wethAssetId, newPrice);
+    // invalid HF
+    vm.assume(spoke1.getHealthFactor(bob) < spoke1.HEALTH_FACTOR_LIQUIDATION_THRESHOLD());
+
+    // withdrawing some nontrivial amount of weth will result in HF < threshold
+    vm.prank(bob);
+    vm.expectRevert(ISpoke.HealthFactorLowerThanLiquidationThreshold.selector);
+    spoke1.withdraw({reserveId: wethReserveId, amount: 1, to: bob});
+
+    // withdrawing some nontrivial amount of weth will result in HF < threshold
+    vm.prank(bob);
+    vm.expectRevert(ISpoke.HealthFactorLowerThanLiquidationThreshold.selector);
+    spoke1.withdraw({reserveId: daiReserveId, amount: 1, to: bob});
+  }
+
+  /// @dev cannot withdraw an amount if HF < 1 due to price drop, if multiple colls for same debt
+  function test_withdraw_revertsWith_HealthFactorLowerThanLiquidationThreshold_multiple_colls_price_drop_dai()
+    public
+  {
+    // weth/dai collateral
+    uint256 wethReserveId = _wethReserveId(spoke1);
+    uint256 daiReserveId = _daiReserveId(spoke1);
+    // usdx debt
+    uint256 usdxReserveId = _usdxReserveId(spoke1);
+
+    uint256 usdxDebtAmountWeth = 3000e6;
+    uint256 usdxDebtAmountDai = 5000e6;
+
+    uint256 wethCollAmount = _calcMinimumCollAmount({
+      spoke: spoke1,
+      collReserveId: wethReserveId,
+      debtReserveId: usdxReserveId,
+      debtAmount: usdxDebtAmountWeth
+    });
+    uint256 daiCollAmount = _calcMinimumCollAmount({
+      spoke: spoke1,
+      collReserveId: daiReserveId,
+      debtReserveId: usdxReserveId,
+      debtAmount: usdxDebtAmountDai
+    });
+
+    // Bob supply weth collateral
+    Utils.spokeSupply(spoke1, wethReserveId, bob, wethCollAmount, bob);
+    setUsingAsCollateral(spoke1, bob, wethReserveId, true);
+
+    // Bob supply dai collateral
+    Utils.spokeSupply(spoke1, daiReserveId, bob, daiCollAmount, bob);
+    setUsingAsCollateral(spoke1, bob, daiReserveId, true);
+
+    // Alice supply usdx
+    Utils.spokeSupply(spoke1, usdxReserveId, alice, usdxDebtAmountWeth + usdxDebtAmountDai, alice); // supply enough buffer for multiple borrows
+
+    // Bob draw max allowed usdx debt
+    vm.prank(bob);
+    spoke1.borrow(usdxReserveId, (usdxDebtAmountWeth + usdxDebtAmountDai), bob);
+
+    // valid HF
+    assertEq(spoke1.getHealthFactor(bob), spoke1.HEALTH_FACTOR_LIQUIDATION_THRESHOLD());
+
+    // collateral price drop by half so that bob is undercollateralized
+    uint256 newPrice = _calcPrice(oracle.getAssetPrice(daiReserveId), 50_00); // 50% price drop
+    oracle.setAssetPrice(daiReserveId, newPrice);
+    // invalid HF
+    assertLt(spoke1.getHealthFactor(bob), spoke1.HEALTH_FACTOR_LIQUIDATION_THRESHOLD());
+
+    // withdrawing weth will result in HF < threshold
+    vm.prank(bob);
+    vm.expectRevert(ISpoke.HealthFactorLowerThanLiquidationThreshold.selector);
+    spoke1.withdraw({reserveId: wethReserveId, amount: wethCollAmount, to: bob}); // todo: resolve precision, should be 1
+
+    // withdrawing dai will result in HF < threshold
+    vm.prank(bob);
+    vm.expectRevert(ISpoke.HealthFactorLowerThanLiquidationThreshold.selector);
+    spoke1.withdraw({reserveId: daiReserveId, amount: daiCollAmount, to: bob}); // todo: resolve precision, should be 1
+  }
+
+  /// @dev fuzz - cannot withdraw an amount if HF < 1 due to price drop, if multiple colls for same debt
+  function test_withdraw_fuzz_revertsWith_HealthFactorLowerThanLiquidationThreshold_multiple_colls_price_drop_dai(
+    uint256 usdxDebtAmountWeth,
+    uint256 usdxDebtAmountDai,
+    uint256 newPrice
+  ) public {
+    uint256 currPrice = oracle.getAssetPrice(daiAssetId);
+    newPrice = bound(newPrice, 0, currPrice - 1);
+    usdxDebtAmountWeth = bound(usdxDebtAmountWeth, 1, MAX_SUPPLY_AMOUNT);
+    usdxDebtAmountDai = bound(usdxDebtAmountDai, 1, MAX_SUPPLY_AMOUNT);
+
+    // weth/dai collateral
+    uint256 wethReserveId = _wethReserveId(spoke1);
+    uint256 daiReserveId = _daiReserveId(spoke1);
+    // usdx debt
+    uint256 usdxReserveId = _usdxReserveId(spoke1);
+
+    uint256 wethCollAmount = _calcMinimumCollAmount({
+      spoke: spoke1,
+      collReserveId: wethReserveId,
+      debtReserveId: usdxReserveId,
+      debtAmount: usdxDebtAmountWeth
+    });
+    uint256 daiCollAmount = _calcMinimumCollAmount({
+      spoke: spoke1,
+      collReserveId: daiReserveId,
+      debtReserveId: usdxReserveId,
+      debtAmount: usdxDebtAmountDai
+    });
+
+    vm.assume(wethCollAmount < MAX_SUPPLY_AMOUNT && wethCollAmount > 0);
+    vm.assume(daiCollAmount < MAX_SUPPLY_AMOUNT && daiCollAmount > 0);
+
+    // Bob supply weth collateral
+    Utils.spokeSupply(spoke1, wethReserveId, bob, wethCollAmount, bob);
+    setUsingAsCollateral(spoke1, bob, wethReserveId, true);
+
+    // Bob supply dai collateral
+    Utils.spokeSupply(spoke1, daiReserveId, bob, daiCollAmount, bob);
+    setUsingAsCollateral(spoke1, bob, daiReserveId, true);
+
+    // Alice supply usdx
+    Utils.spokeSupply(spoke1, usdxReserveId, alice, usdxDebtAmountWeth + usdxDebtAmountDai, alice); // supply enough buffer for multiple borrows
+
+    // Bob draw max allowed usdx debt
+    vm.prank(bob);
+    spoke1.borrow(usdxReserveId, (usdxDebtAmountWeth + usdxDebtAmountDai), bob);
+
+    // valid HF
+    assertGe(spoke1.getHealthFactor(bob), spoke1.HEALTH_FACTOR_LIQUIDATION_THRESHOLD());
+
+    // collateral price drop by half so that bob is undercollateralized
+    oracle.setAssetPrice(daiAssetId, newPrice);
+    // invalid HF
+    vm.assume(spoke1.getHealthFactor(bob) < spoke1.HEALTH_FACTOR_LIQUIDATION_THRESHOLD());
+
+    // withdrawing some nontrivial amount of weth will result in HF < threshold
+    vm.prank(bob);
+    vm.expectRevert(ISpoke.HealthFactorLowerThanLiquidationThreshold.selector);
+    spoke1.withdraw({reserveId: wethReserveId, amount: 1, to: bob});
+
+    // withdrawing some nontrivial amount of weth will result in HF < threshold
+    vm.prank(bob);
+    vm.expectRevert(ISpoke.HealthFactorLowerThanLiquidationThreshold.selector);
+    spoke1.withdraw({reserveId: daiReserveId, amount: 1, to: bob});
+  }
 }
