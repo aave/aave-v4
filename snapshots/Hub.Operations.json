@@ -1,9 +1,9 @@
 {
-  "accrueInterest": "55786",
-  "draw": "160185",
-  "restore: full": "68650",
-  "restore: partial": "76272",
-  "supply": "242545",
-  "withdraw: full": "36551",
-  "withdraw: partial": "29993"
+  "accrueInterest": "112872",
+  "draw": "218984",
+  "restore: full": "129874",
+  "restore: partial": "129872",
+  "supply": "256121",
+  "withdraw: full": "101538",
+  "withdraw: partial": "109071"
 }
