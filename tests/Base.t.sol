@@ -221,29 +221,29 @@ abstract contract Base is Test {
 
     // Spoke 1 reserve configs
     DataTypes.ReserveConfig memory wethConfig = DataTypes.ReserveConfig({
-      lt: 0.8e4,
-      lb: 0,
+      liquidationThreshold: 0.8e4,
+      liquidationBonus: 0,
       liquidityPremium: 15_00,
       borrowable: true,
       collateral: true
     });
     DataTypes.ReserveConfig memory wbtcConfig = DataTypes.ReserveConfig({
-      lt: 0.75e4,
-      lb: 0,
+      liquidationThreshold: 0.75e4,
+      liquidationBonus: 0,
       liquidityPremium: 50_00,
       borrowable: true,
       collateral: true
     });
     DataTypes.ReserveConfig memory daiConfig = DataTypes.ReserveConfig({
-      lt: 0.78e4,
-      lb: 0,
+      liquidationThreshold: 0.78e4,
+      liquidationBonus: 0,
       liquidityPremium: 20_00,
       borrowable: true,
       collateral: true
     });
     DataTypes.ReserveConfig memory usdxConfig = DataTypes.ReserveConfig({
-      lt: 0.78e4,
-      lb: 0,
+      liquidationThreshold: 0.78e4,
+      liquidationBonus: 0,
       liquidityPremium: 50_00,
       borrowable: true,
       collateral: true
@@ -281,29 +281,29 @@ abstract contract Base is Test {
 
     // Spoke 2 reserve configs
     wbtcConfig = DataTypes.ReserveConfig({
-      lt: 0.8e4,
-      lb: 0,
+      liquidationThreshold: 0.8e4,
+      liquidationBonus: 0,
       liquidityPremium: 0,
       borrowable: true,
       collateral: true
     });
     wethConfig = DataTypes.ReserveConfig({
-      lt: 0.76e4,
-      lb: 0,
+      liquidationThreshold: 0.76e4,
+      liquidationBonus: 0,
       liquidityPremium: 10_00,
       borrowable: true,
       collateral: true
     });
     daiConfig = DataTypes.ReserveConfig({
-      lt: 0.72e4,
-      lb: 0,
+      liquidationThreshold: 0.72e4,
+      liquidationBonus: 0,
       liquidityPremium: 20_00,
       borrowable: true,
       collateral: true
     });
     usdxConfig = DataTypes.ReserveConfig({
-      lt: 0.72e4,
-      lb: 0,
+      liquidationThreshold: 0.72e4,
+      liquidationBonus: 0,
       liquidityPremium: 50_00,
       borrowable: true,
       collateral: true
@@ -341,29 +341,29 @@ abstract contract Base is Test {
 
     // Spoke 3 reserve configs
     daiConfig = DataTypes.ReserveConfig({
-      lt: 0.75e4,
-      lb: 0,
+      liquidationThreshold: 0.75e4,
+      liquidationBonus: 0,
       liquidityPremium: 0,
       borrowable: true,
       collateral: true
     });
     usdxConfig = DataTypes.ReserveConfig({
-      lt: 0.75e4,
-      lb: 0,
+      liquidationThreshold: 0.75e4,
+      liquidationBonus: 0,
       liquidityPremium: 10_00,
       borrowable: true,
       collateral: true
     });
     wethConfig = DataTypes.ReserveConfig({
-      lt: 0.79e4,
-      lb: 0,
+      liquidationThreshold: 0.79e4,
+      liquidationBonus: 0,
       liquidityPremium: 20_00,
       borrowable: true,
       collateral: true
     });
     wbtcConfig = DataTypes.ReserveConfig({
-      lt: 0.77e4,
-      lb: 0,
+      liquidationThreshold: 0.77e4,
+      liquidationBonus: 0,
       liquidityPremium: 50_00,
       borrowable: true,
       collateral: true
@@ -406,8 +406,8 @@ abstract contract Base is Test {
     );
     oracle.setAssetPrice(dai2AssetId, 1e8);
     daiConfig = DataTypes.ReserveConfig({
-      lt: 0.70e4,
-      lb: 0,
+      liquidationThreshold: 0.70e4,
+      liquidationBonus: 0,
       liquidityPremium: 100_00,
       borrowable: true,
       collateral: true
@@ -485,7 +485,7 @@ abstract contract Base is Test {
 
   function updateLiquidationThreshold(ISpoke spoke, uint256 reserveId, uint256 newLt) internal {
     DataTypes.Reserve memory reserveData = spoke.getReserve(reserveId);
-    reserveData.config.lt = newLt;
+    reserveData.config.liquidationThreshold = newLt;
     spoke.updateReserveConfig(reserveId, reserveData.config);
   }
 
