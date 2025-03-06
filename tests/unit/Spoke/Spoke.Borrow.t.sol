@@ -375,7 +375,7 @@ contract SpokeBorrowTest is SpokeBase {
     assertEq(bobData.baseDebt, wbtcBorrowAmount, 'bob base debt wbtc final balance');
   }
 
-  function test_borrow_revertsWith_HealthFactorLowerThanLiquidationThreshold() public {
+  function test_borrow_revertsWith_HealthFactorLowerThanLiquidationThresholdT() public {
     uint256 daiReserveId = spokeInfo[spoke1].dai.reserveId;
     uint256 wethReserveId = spokeInfo[spoke1].weth.reserveId;
 
@@ -404,7 +404,7 @@ contract SpokeBorrowTest is SpokeBase {
     // cannot borrow a non trivial amount that brings HF below threshold
     vm.prank(bob);
     vm.expectRevert(ISpoke.HealthFactorLowerThanLiquidationThreshold.selector);
-    spoke1.borrow(daiReserveId, 1e11, bob); // TODO: update with exact amount, resolve precision
+    spoke1.borrow(daiReserveId, 1e4, bob); // TODO: update with exact amount, resolve precision
   }
 
   function test_borrow_revertsWith_HealthFactorLowerThanLiquidationThreshold_with_interest()
@@ -441,7 +441,44 @@ contract SpokeBorrowTest is SpokeBase {
 
     vm.prank(bob);
     vm.expectRevert(ISpoke.HealthFactorLowerThanLiquidationThreshold.selector);
-    spoke1.borrow(daiReserveId, 1e11, bob); // TODO: update with exact amount, resolve precision
+    spoke1.borrow(daiReserveId, 1e1, bob); // TODO: update with exact amount, resolve precision
+  }
+
+  function test_borrow_fuzz_revertsWith_HealthFactorLowerThanLiquidationThreshold_with_interest(
+    uint256 skipTime
+  ) public {
+    uint256 daiReserveId = spokeInfo[spoke1].dai.reserveId;
+    uint256 wethReserveId = spokeInfo[spoke1].weth.reserveId;
+
+    uint256 wethSupplyAmount = 10e18;
+    uint256 maxDebtAmount = _calcMaxDebtAmount({
+      spoke: spoke1,
+      collReserveId: wethReserveId,
+      debtReserveId: daiReserveId,
+      collAmount: wethSupplyAmount
+    });
+
+    // Bob supply weth
+    Utils.spokeSupply(spoke1, wethReserveId, bob, wethSupplyAmount, bob);
+    setUsingAsCollateral(spoke1, bob, wethReserveId, true);
+
+    // Alice supply dai
+    Utils.spokeSupply(spoke1, daiReserveId, alice, maxDebtAmount * 2, alice); // supply enough buffer for multiple borrows
+
+    // Bob draw max allowed debt amt of dai reserve liquidity
+    vm.prank(bob);
+    spoke1.borrow(daiReserveId, maxDebtAmount, bob);
+
+    assertEq(spoke1.getHealthFactor(bob), spoke1.HEALTH_FACTOR_LIQUIDATION_THRESHOLD());
+
+    // accrue debt to decrease HF
+    skip(skipTime);
+
+    vm.assume(spoke1.getHealthFactor(bob) > spoke1.HEALTH_FACTOR_LIQUIDATION_THRESHOLD());
+
+    vm.prank(bob);
+    vm.expectRevert(ISpoke.HealthFactorLowerThanLiquidationThreshold.selector);
+    spoke1.borrow(daiReserveId, 1e1, bob); // TODO: update with exact amount, resolve precision
   }
 
   function test_borrow_revertsWith_HealthFactorLowerThanLiquidationThreshold_multiple_colls()
@@ -551,7 +588,7 @@ contract SpokeBorrowTest is SpokeBase {
     // cannot borrow more dai
     vm.prank(bob);
     vm.expectRevert(ISpoke.HealthFactorLowerThanLiquidationThreshold.selector);
-    spoke1.borrow(daiReserveId, 1e11, bob);
+    spoke1.borrow(daiReserveId, 1e1, bob);
 
     // cannot borrow more usdx
     vm.prank(bob);
@@ -590,6 +627,6 @@ contract SpokeBorrowTest is SpokeBase {
 
     vm.prank(bob);
     vm.expectRevert(ISpoke.HealthFactorLowerThanLiquidationThreshold.selector);
-    spoke1.borrow(daiReserveId, 1e11, bob); // TODO: update with exact amount, resolve precision
+    spoke1.borrow(daiReserveId, 1e1, bob); // TODO: update with exact amount, resolve precision
   }
 }

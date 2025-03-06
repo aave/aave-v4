@@ -314,11 +314,10 @@ contract SpokeBase is Base {
     uint256 debtAssetUnits = 10 ** hub.getAsset(debtData.assetId).config.decimals;
     uint256 debtPrice = oracle.getAssetPrice(debtData.assetId);
 
-    return
-      (
-        ((collAmount * collPrice * debtAssetUnits).wadify().percentMul(collData.config.lt) /
-          (debtPrice * collAssetUnits).wadify())
-      ) - 1;
+    return (
+      ((collAmount * collPrice * debtAssetUnits).wadify().percentMul(collData.config.lt) /
+        (debtPrice * collAssetUnits).wadify())
+    );
   }
 
   // calculate min allowable debt amount which truncates to 0 due to precision loss within HF calc

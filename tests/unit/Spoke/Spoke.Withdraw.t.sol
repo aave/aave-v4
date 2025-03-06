@@ -1166,14 +1166,14 @@ contract SpokeWithdrawTest is SpokeBase {
       collReserveId: collReserveId,
       debtReserveId: debtReserveId,
       collAmount: collAmount
-    }) + 1;
+    });
 
     uint256 maxDebtAmountWeth = _calcMaxDebtAmount({
       spoke: spoke1,
       collReserveId: collReserveId,
       debtReserveId: debtReserveId2,
       collAmount: collAmount2
-    }) + 1;
+    });
 
     // Alice supplies weth as collateral
     Utils.spokeSupply({
