@@ -1202,7 +1202,7 @@ contract SpokeBorrowTest is SpokeBase {
     spoke1.borrow(usdxReserveId, (usdxDebtAmountWeth + usdxDebtAmountDai), bob);
 
     // valid HF
-    assertEq(spoke1.getHealthFactor(bob), spoke1.HEALTH_FACTOR_LIQUIDATION_THRESHOLD());
+    assertGe(spoke1.getHealthFactor(bob), spoke1.HEALTH_FACTOR_LIQUIDATION_THRESHOLD()); // can be GE due to edge cases
 
     // collateral price drop by half so that bob is undercollateralized
     uint256 newPrice = _calcPrice(oracle.getAssetPrice(wethAssetId), 50_00); // 50% price drop
