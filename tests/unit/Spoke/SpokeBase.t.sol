@@ -228,7 +228,7 @@ contract SpokeBase is Base {
     return tokenData;
   }
 
-  function _calcMinimumCollAmountRoundUp(
+  function _calcMinimumCollAmount(
     ISpoke spoke,
     uint256 collReserveId,
     uint256 debtReserveId,
@@ -241,63 +241,13 @@ contract SpokeBase is Base {
     DataTypes.Reserve memory debtData = spoke.getReserve(debtReserveId);
     uint256 debtAssetUnits = 10 ** hub.getAsset(debtData.assetId).config.decimals;
     uint256 debtPrice = oracle.getAssetPrice(debtData.assetId);
-
-    // uint256 minColl = ((debtAmount * debtPrice * collAssetUnits) / (collPrice * debtAssetUnits))
-    //   .percentDiv(collData.config.lt - 1) + _calcMinAmountWithinHFResolution(spoke, collReserveId);
-
-    // add rounding up to ensure that min collateral leads to hf > 1
-    // todo: optimize this for exact values, esp small debt amounts relative to units
-    // uint256 minColl = (
-    //   ((debtAmount * debtPrice * collAssetUnits).wadify() / (collPrice * debtAssetUnits))
-    //     .percentDiv((collData.config.lt.rayify() - 1).derayify())
-    // ).dewadify() + 1;
 
     uint256 normalizedDebtAmount = (debtAmount * debtPrice).wadify() / debtAssetUnits;
     uint256 normalizedCollPrice = collPrice.wadify() / collAssetUnits;
 
-    // // actual
-    uint256 minColl = (normalizedDebtAmount.wadify() /
-      normalizedCollPrice.wadify().percentMul(collData.config.lt)) + 1;
-
-    // console.log('minres %e', (collPrice * debtAssetUnits).wadify().percentMul(collData.config.lt));
-    // console.log(
-    //   'calc debt %e | calc coll %e',
-    //   ((debtAmount * debtPrice).wadify() / debtAssetUnits).dewadify(),
-    //   ((minColl * collPrice).wadify() / collAssetUnits).dewadify()
-    // );
-
-    return minColl;
-  }
-
-  // function _calcMinimumCollAmounts(
-  //   ISpoke spoke,
-  //   uint256[] memory collReserveIds,
-  //   uint256[] memory debtReserveIds,
-  //   uint256 debtAmount
-  // ) {
-  //   _calcAvgLT();
-  // }
-
-  function _calcMinimumCollAmountExact(
-    ISpoke spoke,
-    uint256 collReserveId,
-    uint256 debtReserveId,
-    uint256 debtAmount
-  ) internal view returns (uint256) {
-    DataTypes.Reserve memory collData = spoke.getReserve(collReserveId);
-    uint256 collPrice = oracle.getAssetPrice(collData.assetId);
-    uint256 collAssetUnits = 10 ** hub.getAsset(collData.assetId).config.decimals;
-
-    DataTypes.Reserve memory debtData = spoke.getReserve(debtReserveId);
-    uint256 debtAssetUnits = 10 ** hub.getAsset(debtData.assetId).config.decimals;
-    uint256 debtPrice = oracle.getAssetPrice(debtData.assetId);
-
-    uint256 minColl = (
-      ((debtAmount * debtPrice * collAssetUnits).wadify().percentDiv(collData.config.lt) /
-        (collPrice * debtAssetUnits).wadify())
-    ) + 1;
-
-    return minColl;
+    return
+      (normalizedDebtAmount.wadify() /
+        normalizedCollPrice.wadify().percentMul(collData.config.lt)) + 1;
   }
 
   function _calcMaxDebtAmount(
@@ -314,22 +264,15 @@ contract SpokeBase is Base {
     uint256 debtAssetUnits = 10 ** hub.getAsset(debtData.assetId).config.decimals;
     uint256 debtPrice = oracle.getAssetPrice(debtData.assetId);
 
+    uint256 maxDebt = (
+      ((collAmount * collPrice * debtAssetUnits).wadify() / (debtPrice * collAssetUnits).wadify())
+        .percentMul(collData.config.lt)
+    );
+    console.log('maxDebt %e', maxDebt);
+
     return (
       ((collAmount * collPrice * debtAssetUnits).wadify() / (debtPrice * collAssetUnits).wadify())
         .percentMul(collData.config.lt)
     );
-  }
-
-  // calculate min allowable debt amount which truncates to 0 due to precision loss within HF calc
-  // due to mul by assetPrice (Xe8) and div by assetUnit (10 ** decimals) in _getUserDebtInBaseCurrency & _getUserBalanceInBaseCurrency
-  function _calcMinAmountWithinHFResolution(
-    ISpoke spoke,
-    uint256 reserveId
-  ) internal view returns (uint256) {
-    (uint256 assetId, ) = getAssetInfo(spoke, reserveId);
-    uint256 units = 10 ** hub.getAssetConfig(assetId).decimals;
-    uint256 price = oracle.getAssetPrice(assetId);
-    // make sure to round up
-    return units / price > 0 ? units / price : 1;
   }
 }

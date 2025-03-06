@@ -509,7 +509,7 @@ contract SpokeRepayTest is SpokeBase {
     daiRepayAmount = bound(daiRepayAmount, 1, daiBorrowAmount);
 
     // calculate weth collateral
-    uint256 wethSupplyAmount = _calcMinimumCollAmountRoundUp(
+    uint256 wethSupplyAmount = _calcMinimumCollAmount(
       spoke1,
       wethReserveId(spoke1),
       daiReserveId(spoke1),
@@ -584,7 +584,7 @@ contract SpokeRepayTest is SpokeBase {
     daiRepayAmount = bound(daiRepayAmount, 1, daiBorrowAmount);
 
     // calculate weth collateral
-    uint256 wethSupplyAmount = _calcMinimumCollAmountRoundUp(
+    uint256 wethSupplyAmount = _calcMinimumCollAmount(
       spoke1,
       wethReserveId(spoke1),
       daiReserveId(spoke1),
@@ -668,7 +668,7 @@ contract SpokeRepayTest is SpokeBase {
     daiBorrowAmount = bound(daiBorrowAmount, 1, MAX_SUPPLY_AMOUNT / 2);
 
     // calculate weth collateral
-    uint256 wethSupplyAmount = _calcMinimumCollAmountRoundUp(
+    uint256 wethSupplyAmount = _calcMinimumCollAmount(
       spoke1,
       wethReserveId(spoke1),
       daiReserveId(spoke1),
@@ -770,7 +770,7 @@ contract SpokeRepayTest is SpokeBase {
     daiBorrowAmount = bound(daiBorrowAmount, 1, MAX_SUPPLY_AMOUNT / 2);
 
     // calculate weth collateral
-    uint256 wethSupplyAmount = _calcMinimumCollAmountRoundUp(
+    uint256 wethSupplyAmount = _calcMinimumCollAmount(
       spoke1,
       wethReserveId(spoke1),
       daiReserveId(spoke1),
@@ -879,7 +879,7 @@ contract SpokeRepayTest is SpokeBase {
     daiBorrowAmount = bound(daiBorrowAmount, 1, MAX_SUPPLY_AMOUNT / 2);
 
     // calculate weth collateral
-    uint256 wethSupplyAmount = _calcMinimumCollAmountRoundUp(
+    uint256 wethSupplyAmount = _calcMinimumCollAmount(
       spoke1,
       wethReserveId(spoke1),
       daiReserveId(spoke1),
@@ -999,7 +999,7 @@ contract SpokeRepayTest is SpokeBase {
     updateLiquidityPremium(spoke1, wethReserveId(spoke1), 0);
 
     // calculate weth collateral
-    uint256 wethSupplyAmount = _calcMinimumCollAmountRoundUp(
+    uint256 wethSupplyAmount = _calcMinimumCollAmount(
       spoke1,
       wethReserveId(spoke1),
       daiReserveId(spoke1),
@@ -1133,25 +1133,25 @@ contract SpokeRepayTest is SpokeBase {
     // calculate weth collateral
     // calculate wbtc collateral
     {
-      uint256 wethSupplyAmount = _calcMinimumCollAmountRoundUp(
+      uint256 wethSupplyAmount = _calcMinimumCollAmount(
         spoke1,
         wethReserveId(spoke1),
         daiReserveId(spoke1),
         daiInfo.borrowAmount
       ) +
-        _calcMinimumCollAmountRoundUp(
+        _calcMinimumCollAmount(
           spoke1,
           wethReserveId(spoke1),
           usdxReserveId(spoke1),
           usdxInfo.borrowAmount
         );
-      uint256 wbtcSupplyAmount = _calcMinimumCollAmountRoundUp(
+      uint256 wbtcSupplyAmount = _calcMinimumCollAmount(
         spoke1,
         wbtcReserveId(spoke1),
         wethReserveId(spoke1),
         wethInfo.borrowAmount
       ) +
-        _calcMinimumCollAmountRoundUp(
+        _calcMinimumCollAmount(
           spoke1,
           wbtcReserveId(spoke1),
           wbtcReserveId(spoke1),
