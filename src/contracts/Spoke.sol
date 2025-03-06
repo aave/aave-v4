@@ -203,13 +203,19 @@ contract Spoke is ISpoke {
   }
 
   function repay(uint256 reserveId, uint256 amount) external {
-    // TODO: Be able to pass max(uint) as amount to restore all debt
     // TODO: onBehalfOf
     DataTypes.UserPosition storage user = _users[msg.sender][reserveId];
     DataTypes.Reserve storage reserve = _reserves[reserveId];
     DataTypes.UserData storage userData = _userData[msg.sender];
 
     _accrueInterest(reserve, user, userData);
+
+    // User wants to repay all the debt
+    uint256 currentDebt = user.baseDebt + user.outstandingPremium;
+    if (amount == type(uint256).max) {
+      amount = currentDebt;
+    }
+
     _validateRepay(reserve, user, amount);
 
     // Repaid debt happens first from premium, then base
@@ -289,6 +295,7 @@ contract Spoke is ISpoke {
   function getUserSuppliedShares(uint256 reserveId, address user) external view returns (uint256) {
     return _users[user][reserveId].suppliedShares;
   }
+
   function getUserBaseBorrowIndex(uint256 reserveId, address user) external view returns (uint256) {
     return _users[user][reserveId].baseBorrowIndex;
   }

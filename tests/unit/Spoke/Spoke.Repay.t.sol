@@ -303,6 +303,70 @@ contract SpokeRepayTest is SpokeBase {
     assertEq(tokenList.weth.balanceOf(bob), bobWethBalanceBefore);
   }
 
+  function test_repay_max() public {
+    uint256 daiSupplyAmount = 100e18;
+    uint256 wethSupplyAmount = 10e18;
+    uint256 daiBorrowAmount = daiSupplyAmount / 2;
+
+    // Bob supplies WETH as collateral
+    Utils.spokeSupply(spoke1, wethReserveId(spoke1), bob, wethSupplyAmount, bob);
+    setUsingAsCollateral(spoke1, bob, wethReserveId(spoke1), true);
+
+    // Alice supplies DAI
+    Utils.spokeSupply(spoke1, daiReserveId(spoke1), alice, daiSupplyAmount, alice);
+
+    // Bob borrows DAI
+    Utils.spokeBorrow(spoke1, daiReserveId(spoke1), bob, daiBorrowAmount, bob);
+
+    DataTypes.UserPosition memory bobDaiDataBefore = getUserInfo(spoke1, bob, daiReserveId(spoke1));
+    uint256 bobDaiBalanceBefore = tokenList.dai.balanceOf(bob);
+
+    assertEq(bobDaiDataBefore.suppliedShares, 0);
+    assertEq(
+      bobDaiDataBefore.baseDebt + bobDaiDataBefore.outstandingPremium,
+      daiBorrowAmount,
+      'Initial bob dai debt'
+    );
+
+    // Time passes so that interest accrues
+    skip(10 days);
+
+    bobDaiDataBefore = getUserInfo(spoke1, bob, daiReserveId(spoke1));
+    // Bob's debt (base debt + premium) is greater than the original borrow amount
+    assertGt(
+      bobDaiDataBefore.baseDebt + bobDaiDataBefore.outstandingPremium,
+      daiBorrowAmount,
+      'Accrued interest increased bob dai debt'
+    );
+
+    // Calculate full debt before repayment
+    uint256 fullDebt = bobDaiDataBefore.baseDebt + bobDaiDataBefore.outstandingPremium;
+
+    vm.expectEmit(address(spoke1));
+    emit ISpoke.Repaid(daiReserveId(spoke1), bob, fullDebt);
+
+    // Bob repays using the max value to signal full repayment
+    vm.prank(bob);
+    spoke1.repay(daiReserveId(spoke1), type(uint256).max);
+
+    DataTypes.UserPosition memory bobDaiDataAfter = getUserInfo(spoke1, bob, daiReserveId(spoke1));
+    uint256 bobDaiBalanceAfter = tokenList.dai.balanceOf(bob);
+
+    // Verify that Bob's debt is fully cleared after repayment
+    assertEq(
+      bobDaiDataAfter.baseDebt + bobDaiDataAfter.outstandingPremium,
+      0,
+      "Bob's dai debt should be cleared"
+    );
+
+    // Verify that his DAI balance was reduced by the full debt amount
+    assertEq(
+      bobDaiBalanceAfter,
+      bobDaiBalanceBefore - fullDebt,
+      "Bob's dai balance decreased by full debt repaid"
+    );
+  }
+
   /// repay all accrued base debt when outstanding premium is already repaid
   function test_repay_only_base_debt() public {
     uint256 daiSupplyAmount = 100e18;
