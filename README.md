@@ -17,6 +17,7 @@ forge install
 # required for linting
 yarn install
 ```
+
 ## Tests
 
 - To run the full test suite: `make test`
