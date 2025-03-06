@@ -120,7 +120,7 @@ contract LiquidityHubSupplyTest is LiquidityHubBase {
     // asset
     assertEq(
       assetData.suppliedShares,
-      hub.convertToSharesUp(assetId, amount),
+      hub.convertToShares(assetId, amount),
       'asset suppliedShares post-supply'
     );
     assertEq(assetData.availableLiquidity, amount, 'asset availableLiquidity post-supply');
@@ -145,7 +145,7 @@ contract LiquidityHubSupplyTest is LiquidityHubBase {
     // spoke
     assertEq(
       spokeData.suppliedShares,
-      hub.convertToSharesDown(assetId, amount),
+      hub.convertToShares(assetId, amount),
       'spoke suppliedShares post-supply'
     );
     assertEq(spokeData.baseDebt, 0, 'baseDebt post-supply');
@@ -188,7 +188,7 @@ contract LiquidityHubSupplyTest is LiquidityHubBase {
     // asset
     assertEq(
       assetData.suppliedShares,
-      hub.convertToSharesUp(assetId, amount),
+      hub.convertToShares(assetId, amount),
       'asset suppliedShares post-supply'
     );
     assertEq(assetData.availableLiquidity, amount, 'asset availableLiquidity post-supply');
@@ -274,7 +274,7 @@ contract LiquidityHubSupplyTest is LiquidityHubBase {
     // asset1
     assertEq(
       assetData.suppliedShares,
-      hub.convertToSharesUp(assetId, amount),
+      hub.convertToShares(assetId, amount),
       'asset suppliedShares post-supply'
     );
     assertEq(assetData.availableLiquidity, amount, 'asset availableLiquidity post-supply');
@@ -317,7 +317,7 @@ contract LiquidityHubSupplyTest is LiquidityHubBase {
     // asset2
     assertEq(
       asset2Data.suppliedShares,
-      hub.convertToSharesUp(assetId2, amount2),
+      hub.convertToShares(assetId2, amount2),
       'asset2 suppliedShares post-supply'
     );
     assertEq(asset2Data.availableLiquidity, amount2, 'asset2 availableLiquidity post-supply');
@@ -502,14 +502,16 @@ contract LiquidityHubSupplyTest is LiquidityHubBase {
       initialTotalAssets + accruedBase + accruedPremium + supply2Amount,
       'hub totalAssets'
     );
-    assertEq(
+    assertApproxEqAbs(
       daiData.suppliedShares,
       expectedSupply2Shares + initialSupplyShares,
+      1,
       'suppliedShares post-supply'
     );
-    assertEq(
-      hub.convertToAssetsUp(daiAssetId, expectedSupply2Shares),
+    assertApproxEqAbs(
+      hub.convertToAssets(daiAssetId, expectedSupply2Shares),
       supply2Amount,
+      1,
       'assets to shares post-supply'
     );
     assertTrue(
@@ -546,7 +548,7 @@ contract LiquidityHubSupplyTest is LiquidityHubBase {
     // state update due to operation
     // TODO helper for reserve state update
     uint256 spoke2SupplyShares = 1; // minimum for 1 share
-    uint256 spoke2SupplyAssets = hub.convertToAssetsDown(assetId, spoke2SupplyShares);
+    uint256 spoke2SupplyAssets = hub.convertToAssets(assetId, spoke2SupplyShares);
 
     // bob action with minimal supply shares
     Utils.supply({
@@ -598,7 +600,7 @@ contract LiquidityHubSupplyTest is LiquidityHubBase {
     // spoke
     assertEq(
       spokeData.suppliedShares,
-      hub.convertToSharesDown(assetId, amount),
+      hub.convertToShares(assetId, amount),
       'final spoke suppliedShares'
     );
     assertEq(spokeData.baseDebt, 0, 'final spoke baseDebt');

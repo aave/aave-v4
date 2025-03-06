@@ -54,7 +54,7 @@ contract LiquidityHubDrawTest is LiquidityHubBase {
     // weth
     assertEq(
       wethData.suppliedShares,
-      hub.convertToSharesUp(wethAssetId, wethAmount),
+      hub.convertToShares(wethAssetId, wethAmount),
       'hub weth suppliedShares post-draw'
     );
     assertEq(wethData.baseDebt, 0, 'hub weth baseDebt post-draw');
@@ -69,7 +69,7 @@ contract LiquidityHubDrawTest is LiquidityHubBase {
     // dai
     assertEq(
       daiData.suppliedShares,
-      hub.convertToSharesUp(daiAssetId, daiAmount),
+      hub.convertToShares(daiAssetId, daiAmount),
       'hub dai suppliedShares post-draw'
     );
     assertEq(daiData.baseDebt, drawAmount, 'hub dai baseDebt post-draw');
@@ -228,7 +228,7 @@ contract LiquidityHubDrawTest is LiquidityHubBase {
     // weth
     assertEq(
       wethData.suppliedShares,
-      hub.convertToSharesUp(wethAssetId, wethAmount),
+      hub.convertToShares(wethAssetId, wethAmount),
       'hub weth suppliedShares post-draw'
     );
     assertEq(wethData.baseDebt, 0, 'hub weth baseDebt post-draw');
@@ -243,7 +243,7 @@ contract LiquidityHubDrawTest is LiquidityHubBase {
     // dai
     assertEq(
       daiData.suppliedShares,
-      hub.convertToSharesUp(daiAssetId, daiAmount),
+      hub.convertToShares(daiAssetId, daiAmount),
       'hub dai suppliedShares post-draw'
     );
     assertEq(daiData.baseDebt, drawAmount, 'hub dai baseDebt post-draw');
