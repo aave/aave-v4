@@ -773,9 +773,9 @@ contract SpokeBorrowTest is SpokeBase {
     uint256 wethSupplyAmount,
     uint256 newPrice
   ) public {
-    // weth collateral
     uint256 currPrice = oracle.getAssetPrice(wethAssetId);
     newPrice = bound(newPrice, 0, currPrice - 1);
+    // weth collateral
     wethSupplyAmount = bound(wethSupplyAmount, 1, MAX_SUPPLY_AMOUNT);
 
     uint256 daiReserveId = spokeInfo[spoke1].dai.reserveId; // debt
