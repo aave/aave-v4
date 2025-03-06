@@ -388,8 +388,9 @@ contract LiquidityHub is ILiquidityHub {
   ) internal view {
     require(amount > 0, InvalidSupplyAmount());
     require(assetsList[asset.id] != IERC20(address(0)), AssetNotListed());
-    // TODO: Different states e.g. frozen, paused
     require(asset.config.active, AssetNotActive());
+    require(!asset.config.paused, AssetPaused());
+    require(!asset.config.frozen, AssetFrozen());
     require(
       spoke.config.supplyCap == type(uint256).max ||
         asset.convertToAssetsDown(spoke.suppliedShares) + amount <= spoke.config.supplyCap,
@@ -402,10 +403,9 @@ contract LiquidityHub is ILiquidityHub {
     DataTypes.SpokeData storage spoke,
     uint256 amount
   ) internal view {
-    // TODO: Other cases of status (frozen, paused)
-    // TODO: still allow withdrawal even if asset is not active, only prevent for frozen/paused?
-    require(asset.config.active, AssetNotActive());
     require(amount > 0, InvalidWithdrawAmount());
+    require(asset.config.active, AssetNotActive());
+    require(!asset.config.paused, AssetPaused());
     uint256 withdrawable = asset.convertToAssetsDown(spoke.suppliedShares);
     require(amount <= withdrawable, SuppliedAmountExceeded(withdrawable));
     require(amount <= asset.availableLiquidity, NotAvailableLiquidity(asset.availableLiquidity));
@@ -416,9 +416,10 @@ contract LiquidityHub is ILiquidityHub {
     uint256 amount,
     uint256 drawCap
   ) internal view {
-    // TODO: Other cases of status (frozen, paused)
-    require(asset.config.active, AssetNotActive());
     require(amount > 0, InvalidDrawAmount());
+    require(asset.config.active, AssetNotActive());
+    require(!asset.config.paused, AssetPaused());
+    require(!asset.config.frozen, AssetFrozen());
     require(
       drawCap == type(uint256).max || amount + asset.baseDebt <= drawCap,
       DrawCapExceeded(drawCap)
@@ -431,9 +432,9 @@ contract LiquidityHub is ILiquidityHub {
     DataTypes.SpokeData storage spoke,
     uint256 amountRestored
   ) internal view {
-    // TODO: Other cases of status (frozen, paused)
-    require(asset.config.active, AssetNotActive());
     require(amountRestored > 0, InvalidRestoreAmount());
+    require(asset.config.active, AssetNotActive());
+    require(!asset.config.paused, AssetPaused());
     // Ensure spoke is not restoring more than accrued drawn
     uint256 maxAllowedRestore = spoke.baseDebt + spoke.outstandingPremium;
     require(amountRestored <= maxAllowedRestore, SurplusAmountRestored(maxAllowedRestore));

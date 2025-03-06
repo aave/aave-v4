@@ -51,6 +51,8 @@ interface ILiquidityHub {
   error InvalidSpoke();
   error InvalidRiskPremiumBps(uint256 bps);
   error AssetCannotBePaused();
+  error AssetPaused();
+  error AssetFrozen();
 
   function addAsset(DataTypes.AssetConfig memory params, address asset) external;
   function updateAssetConfig(uint256 assetId, DataTypes.AssetConfig memory config) external;
