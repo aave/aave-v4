@@ -243,7 +243,7 @@ abstract contract Base is Test {
     DataTypes.ReserveConfig memory wbtcConfig = DataTypes.ReserveConfig({
       lt: 0.75e4,
       lb: 0,
-      liquidityPremium: 50_00,
+      liquidityPremium: 5_00,
       borrowable: true,
       collateral: true
     });
@@ -533,6 +533,11 @@ abstract contract Base is Test {
   // assumes spoke has wbtc supported
   function wbtcReserveId(ISpoke spoke) internal view returns (uint256) {
     return spokeInfo[spoke].wbtc.reserveId;
+  }
+
+  // assumes spoke has dai2 supported
+  function dai2ReserveId(ISpoke spoke) internal view returns (uint256) {
+    return spokeInfo[spoke].dai2.reserveId;
   }
 
   function updateDrawCap(
