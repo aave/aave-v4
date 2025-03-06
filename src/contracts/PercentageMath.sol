@@ -58,4 +58,13 @@ library PercentageMath {
       result := div(add(mul(value, PERCENTAGE_FACTOR), div(percentage, 2)), percentage)
     }
   }
+
+  /**
+   * @notice Removes BPS factor from a value.
+   * @param value The value of which to convert from BPS.
+   * @return result value (stripped of BPS factor).
+   */
+  function fromBps(uint256 value) internal pure returns (uint256) {
+    return value / PERCENTAGE_FACTOR;
+  }
 }
