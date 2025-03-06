@@ -595,10 +595,10 @@ contract Spoke is ISpoke {
     }
 
     // (avgLiquidationThreshold / totalCollateral) * totalCollateral can be simplified to avgLiquidationThreshold
-    // then convert from BPS wad back into wad
+    // strip BPS factor from result, because avgLiquidationThreshold has been scaled by LT (in BPS) above
     vars.healthFactor = vars.totalDebtInBaseCurrency == 0
       ? type(uint256).max
-      : vars.avgLiquidationThreshold.wadDiv(vars.totalDebtInBaseCurrency).percentMul(1); // HF of 1 -> 1e18
+      : vars.avgLiquidationThreshold.wadDiv(vars.totalDebtInBaseCurrency).fromBps(); // HF of 1 -> 1e18
 
     vars.avgLiquidationThreshold = vars.totalCollateralInBaseCurrency == 0
       ? 0
