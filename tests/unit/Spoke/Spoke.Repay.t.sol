@@ -6,6 +6,12 @@ import 'tests/unit/Spoke/SpokeBase.t.sol';
 contract SpokeRepayTest is SpokeBase {
   using PercentageMath for uint256;
 
+  function setUp() public override {
+    super.setUp();
+    // Set Weth LP to nonzero
+    updateLiquidityPremium(spoke1, wethReserveId(spoke1), 10_00);
+  }
+
   function test_repay_same_block() public {
     uint256 daiSupplyAmount = 100e18;
     uint256 wethSupplyAmount = 10e18;
@@ -232,20 +238,20 @@ contract SpokeRepayTest is SpokeBase {
     uint256 daiBorrowAmount = daiSupplyAmount / 2;
 
     // Bob supply weth
-    Utils.spokeSupply(spoke2, wethReserveId(spoke2), bob, wethSupplyAmount, bob);
-    setUsingAsCollateral(spoke2, bob, wethReserveId(spoke2), true);
+    Utils.spokeSupply(spoke1, wethReserveId(spoke1), bob, wethSupplyAmount, bob);
+    setUsingAsCollateral(spoke1, bob, wethReserveId(spoke1), true);
 
     // Alice supply dai
-    Utils.spokeSupply(spoke2, daiReserveId(spoke2), alice, daiSupplyAmount, alice);
+    Utils.spokeSupply(spoke1, daiReserveId(spoke1), alice, daiSupplyAmount, alice);
 
     // Bob borrow dai
-    Utils.spokeBorrow(spoke2, daiReserveId(spoke2), bob, daiBorrowAmount, bob);
+    Utils.spokeBorrow(spoke1, daiReserveId(spoke1), bob, daiBorrowAmount, bob);
 
-    DataTypes.UserPosition memory bobDaiDataBefore = getUserInfo(spoke2, bob, daiReserveId(spoke2));
+    DataTypes.UserPosition memory bobDaiDataBefore = getUserInfo(spoke1, bob, daiReserveId(spoke1));
     DataTypes.UserPosition memory bobWethDataBefore = getUserInfo(
-      spoke2,
+      spoke1,
       bob,
-      wethReserveId(spoke2)
+      wethReserveId(spoke1)
     );
     uint256 bobDaiBalanceBefore = tokenList.dai.balanceOf(bob);
     uint256 bobWethBalanceBefore = tokenList.weth.balanceOf(bob);
@@ -262,7 +268,7 @@ contract SpokeRepayTest is SpokeBase {
     // Time passes
     skip(10 days);
 
-    bobDaiDataBefore = getUserInfo(spoke2, bob, daiReserveId(spoke2));
+    bobDaiDataBefore = getUserInfo(spoke1, bob, daiReserveId(spoke1));
     assertGt(
       bobDaiDataBefore.baseDebt + bobDaiDataBefore.outstandingPremium,
       daiBorrowAmount,
@@ -273,16 +279,16 @@ contract SpokeRepayTest is SpokeBase {
     uint256 daiRepayAmount = bobDaiDataBefore.outstandingPremium;
     assertGt(daiRepayAmount, 0); // interest is not zero
 
-    vm.expectEmit(address(spoke2));
-    emit ISpoke.Repaid(daiReserveId(spoke2), bob, daiRepayAmount);
+    vm.expectEmit(address(spoke1));
+    emit ISpoke.Repaid(daiReserveId(spoke1), bob, daiRepayAmount);
     vm.prank(bob);
-    spoke2.repay(daiReserveId(spoke2), daiRepayAmount);
+    spoke1.repay(daiReserveId(spoke1), daiRepayAmount);
 
-    DataTypes.UserPosition memory bobDaiDataAfter = getUserInfo(spoke2, bob, daiReserveId(spoke2));
+    DataTypes.UserPosition memory bobDaiDataAfter = getUserInfo(spoke1, bob, daiReserveId(spoke1));
     DataTypes.UserPosition memory bobWethDataAfter = getUserInfo(
-      spoke2,
+      spoke1,
       bob,
-      wethReserveId(spoke2)
+      wethReserveId(spoke1)
     );
 
     assertEq(bobDaiDataAfter.suppliedShares, bobDaiDataBefore.suppliedShares);
@@ -310,20 +316,20 @@ contract SpokeRepayTest is SpokeBase {
     uint256 daiBorrowAmount = daiSupplyAmount / 2;
 
     // Bob supply weth
-    Utils.spokeSupply(spoke2, wethReserveId(spoke2), bob, wethSupplyAmount, bob);
-    setUsingAsCollateral(spoke2, bob, wethReserveId(spoke2), true);
+    Utils.spokeSupply(spoke1, wethReserveId(spoke1), bob, wethSupplyAmount, bob);
+    setUsingAsCollateral(spoke1, bob, wethReserveId(spoke1), true);
 
     // Alice supply dai
-    Utils.spokeSupply(spoke2, daiReserveId(spoke2), alice, daiSupplyAmount, alice);
+    Utils.spokeSupply(spoke1, daiReserveId(spoke1), alice, daiSupplyAmount, alice);
 
     // Bob borrow dai
-    Utils.spokeBorrow(spoke2, daiReserveId(spoke2), bob, daiBorrowAmount, bob);
+    Utils.spokeBorrow(spoke1, daiReserveId(spoke1), bob, daiBorrowAmount, bob);
 
-    DataTypes.UserPosition memory bobDaiDataBefore = getUserInfo(spoke2, bob, daiReserveId(spoke2));
+    DataTypes.UserPosition memory bobDaiDataBefore = getUserInfo(spoke1, bob, daiReserveId(spoke1));
     DataTypes.UserPosition memory bobWethDataBefore = getUserInfo(
-      spoke2,
+      spoke1,
       bob,
-      wethReserveId(spoke2)
+      wethReserveId(spoke1)
     );
     uint256 bobDaiBalanceBefore = tokenList.dai.balanceOf(bob);
     uint256 bobWethBalanceBefore = tokenList.weth.balanceOf(bob);
@@ -340,7 +346,7 @@ contract SpokeRepayTest is SpokeBase {
     // Time passes
     skip(10 days);
 
-    bobDaiDataBefore = getUserInfo(spoke2, bob, daiReserveId(spoke2));
+    bobDaiDataBefore = getUserInfo(spoke1, bob, daiReserveId(spoke1));
     assertGt(
       bobDaiDataBefore.baseDebt + bobDaiDataBefore.outstandingPremium,
       daiBorrowAmount,
@@ -349,9 +355,9 @@ contract SpokeRepayTest is SpokeBase {
 
     // Bob repays premium
     vm.prank(bob);
-    spoke2.repay(daiReserveId(spoke2), bobDaiDataBefore.outstandingPremium);
+    spoke1.repay(daiReserveId(spoke1), bobDaiDataBefore.outstandingPremium);
 
-    bobDaiDataBefore = getUserInfo(spoke2, bob, daiReserveId(spoke2));
+    bobDaiDataBefore = getUserInfo(spoke1, bob, daiReserveId(spoke1));
     bobDaiBalanceBefore = tokenList.dai.balanceOf(bob);
 
     assertEq(bobDaiDataBefore.outstandingPremium, 0);
@@ -360,16 +366,16 @@ contract SpokeRepayTest is SpokeBase {
     uint256 daiRepayAmount = bobDaiDataBefore.baseDebt - daiBorrowAmount;
     assertGt(daiRepayAmount, 0); // interest is not zero
 
-    vm.expectEmit(address(spoke2));
-    emit ISpoke.Repaid(daiReserveId(spoke2), bob, daiRepayAmount);
+    vm.expectEmit(address(spoke1));
+    emit ISpoke.Repaid(daiReserveId(spoke1), bob, daiRepayAmount);
     vm.prank(bob);
-    spoke2.repay(daiReserveId(spoke2), daiRepayAmount);
+    spoke1.repay(daiReserveId(spoke1), daiRepayAmount);
 
-    DataTypes.UserPosition memory bobDaiDataAfter = getUserInfo(spoke2, bob, daiReserveId(spoke2));
+    DataTypes.UserPosition memory bobDaiDataAfter = getUserInfo(spoke1, bob, daiReserveId(spoke1));
     DataTypes.UserPosition memory bobWethDataAfter = getUserInfo(
-      spoke2,
+      spoke1,
       bob,
-      wethReserveId(spoke2)
+      wethReserveId(spoke1)
     );
 
     assertEq(bobDaiDataAfter.suppliedShares, bobDaiDataBefore.suppliedShares);

@@ -73,7 +73,7 @@ contract SpokeBase is Base {
     borrow.supplyAmount = 100e18;
     borrow.borrowAmount = borrow.supplyAmount / 2;
 
-    (state.borrowReserveAssetId, ) = getAsset(spoke, borrow.reserveId);
+    (state.borrowReserveAssetId, ) = getAssetByReserveId(spoke, borrow.reserveId);
     (state.collateralSupplyShares, state.borrowSupplyShares) = _executeSpokeSupplyAndBorrow({
       spoke: spoke,
       collateral: collateral,
@@ -119,8 +119,8 @@ contract SpokeBase is Base {
       );
     }
 
-    (state.collateralReserveAssetId, ) = getAsset(spoke, collateral.reserveId);
-    (state.borrowReserveAssetId, ) = getAsset(spoke, borrow.reserveId);
+    (state.collateralReserveAssetId, ) = getAssetByReserveId(spoke, collateral.reserveId);
+    (state.borrowReserveAssetId, ) = getAssetByReserveId(spoke, borrow.reserveId);
     state.collateralSupplyShares = hub.convertToShares(
       state.collateralReserveAssetId,
       collateral.supplyAmount

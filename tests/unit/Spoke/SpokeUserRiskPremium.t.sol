@@ -1,13 +1,12 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.0;
 
-import {Arrays} from 'src/dependencies/openzeppelin/Arrays.sol';
+import 'tests/unit/Spoke/SpokeBase.t.sol';
 import {KeyValueListInMemory} from 'src/contracts/KeyValueListInMemory.sol';
-import 'tests/Base.t.sol';
 import {Spoke} from 'src/contracts/Spoke.sol';
 import {WadRayMath} from 'src/contracts/WadRayMath.sol';
 
-contract SpokeUserRiskPremiumTest is Base {
+contract SpokeUserRiskPremiumTest is SpokeBase {
   using SharesMath for uint256;
   using WadRayMath for uint256;
   using PercentageMath for uint256;
@@ -82,22 +81,23 @@ contract SpokeUserRiskPremiumTest is Base {
     uint256 aliceTotalUsdxDebt;
   }
 
-  struct ReserveLP {
-    uint256 reserveId;
-    uint256 lp;
-  }
-
-  function setUp() public override {
-    super.setUp();
-    super.initEnvironment();
-  }
-
-  function test_getUserRiskPremium_no_collateral() public view {
+  function test_getUserRiskPremium_no_collateral() public {
+    // Assert Bob has no collateral
+    for (uint256 i = 0; i < spoke1.reserveCount(); i++) {
+      DataTypes.UserPosition memory bobInfo = getUserInfo(spoke1, bob, i);
+      assertEq(bobInfo.suppliedShares, 0, 'bob supplied collateral');
+    }
     uint256 userRiskPremium = spoke1.getUserRiskPremium(bob);
     assertEq(userRiskPremium, 0, 'user risk premium');
   }
 
-  function test_getUserRiskPremium_single_asset_collateral() public {
+  function test_getUserRiskPremium_no_collateral_set() public {
+    Utils.spokeSupply(spoke1, spokeInfo[spoke1].dai.reserveId, bob, 100e18, bob);
+    // Bob doesn't set dai as collateral, despite supplying, so his user rp is 0
+    assertEq(spoke1.getUserRiskPremium(bob), 0, 'user risk premium');
+  }
+
+  function test_getUserRiskPremium_single_reserve_collateral() public {
     uint256 daiReserveId = spokeInfo[spoke1].dai.reserveId;
     uint256 daiAmount = 100e18;
 
@@ -109,7 +109,7 @@ contract SpokeUserRiskPremiumTest is Base {
     assertEq(userRiskPremium, 0, 'user risk premium');
   }
 
-  function test_getUserRiskPremium_single_asset_collateral_borrowed() public {
+  function test_getUserRiskPremium_single_reserve_collateral_borrowed() public {
     uint256 daiReserveId = spokeInfo[spoke1].dai.reserveId;
     uint256 supplyAmount = 100e18;
     uint256 borrowAmount = 50e18;
@@ -126,7 +126,7 @@ contract SpokeUserRiskPremiumTest is Base {
     assertEq(userRiskPremium, daiInfo.config.liquidityPremium, 'user risk premium');
   }
 
-  function test_getUserRiskPremium_fuzz_single_asset_collateral_borrowed_amount(
+  function test_getUserRiskPremium_fuzz_single_reserve_collateral_borrowed_amount(
     uint256 borrowAmount
   ) public {
     borrowAmount = bound(borrowAmount, 1, MAX_SUPPLY_AMOUNT / 2);
@@ -175,12 +175,12 @@ contract SpokeUserRiskPremiumTest is Base {
     // With single collateral, user rp will match liquidity premium of collateral
     assertEq(userRiskPremium, params.daiLP, 'user risk premium');
 
-    // Supplying more risky asset (usdx) should not impact user risk premium
+    // Supplying more risky reserve (usdx) should not impact user risk premium
     Utils.spokeSupply(spoke1, params.usdxReserveId, bob, additionalSupplyAmount, bob);
     assertEq(spoke1.getUserRiskPremium(bob), userRiskPremium, 'user risk premium after supply');
   }
 
-  function test_getUserRiskPremium_multi_asset_collateral() public {
+  function test_getUserRiskPremium_multi_reserve_collateral() public {
     TestInfo memory params;
     params.daiReserveId = spokeInfo[spoke1].dai.reserveId;
     params.usdxReserveId = spokeInfo[spoke1].usdx.reserveId;
@@ -217,7 +217,7 @@ contract SpokeUserRiskPremiumTest is Base {
     assertEq(spoke1.getUserRiskPremium(bob), expectedUserRiskPremium, 'user risk premium');
   }
 
-  function test_getUserRiskPremium_multi_asset_collateral_weth_partial_cover() public {
+  function test_getUserRiskPremium_multi_reserve_collateral_weth_partial_cover() public {
     TestInfo memory params;
     params.daiReserveId = spokeInfo[spoke1].dai.reserveId;
     params.usdxReserveId = spokeInfo[spoke1].usdx.reserveId;
@@ -243,7 +243,7 @@ contract SpokeUserRiskPremiumTest is Base {
     Utils.spokeSupply(spoke1, params.wethReserveId, bob, params.wethSupplyAmount, bob);
     setUsingAsCollateral(spoke1, bob, params.wethReserveId, true);
 
-    // Bob draw 2000 total dai + usdx
+    // Bob draw dai + usdx
     Utils.spokeBorrow(spoke1, params.daiReserveId, bob, params.daiSupplyAmount, bob);
     Utils.spokeBorrow(spoke1, params.usdxReserveId, bob, params.usdxSupplyAmount, bob);
 
@@ -255,7 +255,7 @@ contract SpokeUserRiskPremiumTest is Base {
     );
   }
 
-  function test_getUserRiskPremium_two_assets_equal_parts() public {
+  function test_getUserRiskPremium_two_reserves_equal_parts() public {
     TestInfo memory params;
     params.daiReserveId = spokeInfo[spoke1].dai.reserveId;
     params.usdxReserveId = spokeInfo[spoke1].usdx.reserveId;
@@ -283,10 +283,10 @@ contract SpokeUserRiskPremiumTest is Base {
     Utils.spokeSupply(spoke1, params.wethReserveId, alice, params.wethSupplyAmount, alice);
     setUsingAsCollateral(spoke1, alice, params.wethReserveId, true);
 
-    // Bob draw $4000 total in weth
+    // Bob draw weth
     Utils.spokeBorrow(spoke1, params.wethReserveId, bob, params.wethBorrowAmount, bob);
 
-    // Dai and usdx will each cover half the debt
+    // Dai and usdx will each cover half the debt, because dai has lower lp than usdx
     assertEq(
       spoke1.getUserRiskPremium(bob),
       _calculateExpectedUserRP(bob, spoke1),
@@ -294,7 +294,7 @@ contract SpokeUserRiskPremiumTest is Base {
     );
   }
 
-  function test_getUserRiskPremium_fuzz_two_assets_diff_amounts(uint256 daiSupplyAmount) public {
+  function test_getUserRiskPremium_fuzz_two_reserves_diff_amounts(uint256 daiSupplyAmount) public {
     // Dai lp to account for up to 100% of the debt value
     daiSupplyAmount = bound(daiSupplyAmount, 1, 4000e18);
 
@@ -325,7 +325,7 @@ contract SpokeUserRiskPremiumTest is Base {
     Utils.spokeSupply(spoke1, params.wethReserveId, alice, params.wethSupplyAmount, alice);
     setUsingAsCollateral(spoke1, alice, params.wethReserveId, true);
 
-    // Bob draw $4000 total in weth
+    // Bob draw weth
     Utils.spokeBorrow(spoke1, params.wethReserveId, bob, params.wethBorrowAmount, bob);
 
     // Dai and usdx will each cover part of the debt
@@ -336,7 +336,7 @@ contract SpokeUserRiskPremiumTest is Base {
     );
   }
 
-  function test_getUserRiskPremium_fuzz_two_assets_supply_and_borrow(
+  function test_getUserRiskPremium_fuzz_two_reserves_supply_and_borrow(
     uint256 daiSupplyAmount,
     uint256 usdxSupplyAmount,
     uint256 wethBorrowAmount
@@ -392,7 +392,7 @@ contract SpokeUserRiskPremiumTest is Base {
     );
   }
 
-  function test_getUserRiskPremium_fuzz_three_assets_supply_and_borrow(
+  function test_getUserRiskPremium_fuzz_three_reserves_supply_and_borrow(
     uint256 daiSupplyAmount,
     uint256 usdxSupplyAmount,
     uint256 wethSupplyAmount,
@@ -456,7 +456,7 @@ contract SpokeUserRiskPremiumTest is Base {
     );
   }
 
-  function test_getUserRiskPremium_fuzz_four_assets_supply_and_borrow(
+  function test_getUserRiskPremium_fuzz_four_reserves_supply_and_borrow(
     uint256 daiSupplyAmount,
     uint256 wethSupplyAmount,
     uint256 usdxSupplyAmount,
@@ -536,7 +536,7 @@ contract SpokeUserRiskPremiumTest is Base {
     );
   }
 
-  function test_getUserRiskPremium_fuzz_four_assets_change_one_price(
+  function test_getUserRiskPremium_fuzz_four_reserves_change_one_price(
     uint256 daiSupplyAmount,
     uint256 wethSupplyAmount,
     uint256 usdxSupplyAmount,
@@ -629,7 +629,7 @@ contract SpokeUserRiskPremiumTest is Base {
     );
   }
 
-  function test_getUserRiskPremium_fuzz_four_assets_change_lp(
+  function test_getUserRiskPremium_fuzz_four_reserves_change_lp(
     uint256 daiSupplyAmount,
     uint256 wethSupplyAmount,
     uint256 usdxSupplyAmount,
@@ -639,7 +639,7 @@ contract SpokeUserRiskPremiumTest is Base {
   ) public {
     uint256 totalBorrowAmount = MAX_SUPPLY_AMOUNT / 2;
 
-    // Bound LP to below dai2 so asset is still used in rp calc
+    // Bound LP to below dai2 so reserve is still used in rp calc
     newLpValue = bound(newLpValue, 0, 99_99);
 
     daiSupplyAmount = bound(daiSupplyAmount, 0, MAX_SUPPLY_AMOUNT);
@@ -738,7 +738,7 @@ contract SpokeUserRiskPremiumTest is Base {
     );
   }
 
-  function test_getUserRiskPremium_fuzz_four_assets_prices_supply_debt(
+  function test_getUserRiskPremium_fuzz_four_reserves_prices_supply_debt(
     TestInfo memory params
   ) public {
     params.daiSupplyAmount = bound(params.daiSupplyAmount, 0, MAX_SUPPLY_AMOUNT);
@@ -1654,7 +1654,7 @@ contract SpokeUserRiskPremiumTest is Base {
     );
   }
 
-  // TODO: Fuzz test showing 2 diff users borrowing the same 2 assets, and show their own risk premiums are calculated and applied correctly
+  // TODO: Fuzz test showing 2 diff users borrowing the same 2 reserves, and show their own risk premiums are calculated and applied correctly
 
   function _normalizedValue(uint256 amount, uint256 assetId) internal view returns (uint256) {
     return
@@ -1674,7 +1674,7 @@ contract SpokeUserRiskPremiumTest is Base {
       if (spoke.getUsingAsCollateral(reserveId, user)) {
         ++suppliedReservesCount;
       }
-      (assetId, ) = getAsset(spoke, reserveId);
+      (assetId, ) = getAssetByReserveId(spoke, reserveId);
       totalDebt += _normalizedValue(spoke.getUserCumulativeDebt(reserveId, user), assetId);
     }
 
@@ -1701,7 +1701,7 @@ contract SpokeUserRiskPremiumTest is Base {
     while (totalDebt > 0) {
       (uint256 lp, uint256 reserveId) = reserveLP.get(idx);
       userPosition = getUserInfo(spoke, user, reserveId);
-      (assetId, ) = getAsset(spoke, reserveId);
+      (assetId, ) = getAssetByReserveId(spoke, reserveId);
       uint256 supplyAmount = _normalizedValue(
         hub.convertToAssets(assetId, userPosition.suppliedShares),
         assetId

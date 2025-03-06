@@ -568,7 +568,7 @@ abstract contract Base is Test {
     DataTypes.Reserve memory reserveData;
     reserveData.reserveId = reserveId;
     IERC20 asset;
-    (reserveData.assetId, asset) = getAsset(spoke, reserveId);
+    (reserveData.assetId, asset) = getAssetByReserveId(spoke, reserveId);
     reserveData.asset = address(asset);
     (reserveData.baseDebt, reserveData.outstandingPremium) = spoke.getReserveDebt(reserveId);
     reserveData.suppliedShares = spoke.getReserveSuppliedShares(reserveId);
@@ -593,7 +593,10 @@ abstract contract Base is Test {
     return asset;
   }
 
-  function getAsset(ISpoke spoke, uint256 reserveId) internal view returns (uint256, IERC20) {
+  function getAssetByReserveId(
+    ISpoke spoke,
+    uint256 reserveId
+  ) internal view returns (uint256, IERC20) {
     DataTypes.Reserve memory reserve = spoke.getReserve(reserveId);
     return (reserve.assetId, IERC20(reserve.asset));
   }
