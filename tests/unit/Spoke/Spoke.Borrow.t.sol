@@ -1221,4 +1221,6 @@ contract SpokeBorrowTest is SpokeBase {
     vm.expectRevert(ISpoke.HealthFactorLowerThanLiquidationThreshold.selector);
     spoke1.borrow(usdxReserveId, 1, bob);
   }
+
+  // TODO: tests with other combos of collateral/debt, particularly with different units
 }
