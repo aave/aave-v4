@@ -8,7 +8,7 @@ contract SpokeWithdrawTest is SpokeBase {
   using PercentageMath for uint256;
 
   function test_withdraw_revertsWith_InsufficientSupply_zero_supplied() public {
-    uint256 reserveId = daiReserveId(spoke1);
+    uint256 reserveId = _daiReserveId(spoke1);
     uint256 amount = 1;
 
     assertEq(spoke1.getUserSuppliedAmount(reserveId, alice), 0);
@@ -20,7 +20,7 @@ contract SpokeWithdrawTest is SpokeBase {
 
   function test_withdraw_fuzz_revertsWith_InsufficientSupply_zero_supplied(uint256 amount) public {
     amount = bound(amount, 1, MAX_SUPPLY_AMOUNT);
-    uint256 reserveId = daiReserveId(spoke1);
+    uint256 reserveId = _daiReserveId(spoke1);
 
     assertEq(spoke1.getUserSuppliedAmount(reserveId, alice), 0);
 
@@ -31,7 +31,7 @@ contract SpokeWithdrawTest is SpokeBase {
 
   function test_withdraw_revertsWith_InsufficientSupply_with_supply() public {
     uint256 amount = 100e18;
-    uint256 reserveId = daiReserveId(spoke1);
+    uint256 reserveId = _daiReserveId(spoke1);
 
     // User spoke supply
     Utils.spokeSupply({
@@ -63,7 +63,7 @@ contract SpokeWithdrawTest is SpokeBase {
   function test_withdraw_revertsWith_InsufficientSupply_with_debt() public {
     uint256 supplyAmount = 100e18;
     uint256 borrowAmount = 50e18;
-    uint256 reserveId = daiReserveId(spoke1);
+    uint256 reserveId = _daiReserveId(spoke1);
 
     // Alice supplies dai
     Utils.spokeSupply({
@@ -166,15 +166,15 @@ contract SpokeWithdrawTest is SpokeBase {
     // Bob supply
     Utils.spokeSupply({
       spoke: spoke1,
-      reserveId: daiReserveId(spoke1),
+      reserveId: _daiReserveId(spoke1),
       user: bob,
       amount: amount,
       onBehalfOf: bob
     });
 
     uint256 stage = 0;
-    daiData[stage] = loadReserveInfo(spoke1, daiReserveId(spoke1));
-    bobData[stage] = loadUserInfo(spoke1, daiReserveId(spoke1), bob);
+    daiData[stage] = loadReserveInfo(spoke1, _daiReserveId(spoke1));
+    bobData[stage] = loadUserInfo(spoke1, _daiReserveId(spoke1), bob);
     tokenData[stage] = getTokenBalances(tokenList.dai, address(spoke1));
 
     // reserve
@@ -211,13 +211,13 @@ contract SpokeWithdrawTest is SpokeBase {
     );
 
     vm.expectEmit(address(spoke1));
-    emit ISpoke.Withdrawn(daiReserveId(spoke1), bob, amount);
+    emit ISpoke.Withdrawn(_daiReserveId(spoke1), bob, amount);
     vm.prank(bob);
-    spoke1.withdraw(daiReserveId(spoke1), amount, bob);
+    spoke1.withdraw(_daiReserveId(spoke1), amount, bob);
 
     stage = 1;
-    daiData[stage] = loadReserveInfo(spoke1, daiReserveId(spoke1));
-    bobData[stage] = loadUserInfo(spoke1, daiReserveId(spoke1), bob);
+    daiData[stage] = loadReserveInfo(spoke1, _daiReserveId(spoke1));
+    bobData[stage] = loadUserInfo(spoke1, _daiReserveId(spoke1), bob);
     tokenData[stage] = getTokenBalances(tokenList.dai, address(spoke1));
 
     // reserve
@@ -305,12 +305,12 @@ contract SpokeWithdrawTest is SpokeBase {
     // carol borrows in order to increase index
     Utils.spokeSupply({
       spoke: spoke1,
-      reserveId: wbtcReserveId(spoke1),
+      reserveId: _wbtcReserveId(spoke1),
       user: carol,
       amount: params.borrowAmount, // highest value asset so that it is enough collateral
       onBehalfOf: carol
     });
-    setUsingAsCollateral(spoke1, carol, wbtcReserveId(spoke1), true);
+    setUsingAsCollateral(spoke1, carol, _wbtcReserveId(spoke1), true);
     Utils.spokeBorrow({
       spoke: spoke1,
       reserveId: params.reserveId,
@@ -454,7 +454,7 @@ contract SpokeWithdrawTest is SpokeBase {
     // set weth LP to 0 for no premium contribution
     updateLiquidityPremium({
       spoke: spoke1,
-      reserveId: wethReserveId(spoke1),
+      reserveId: _wethReserveId(spoke1),
       newLiquidityPremium: 0
     });
 
@@ -595,14 +595,14 @@ contract SpokeWithdrawTest is SpokeBase {
     );
 
     // don't borrow the collateral asset
-    vm.assume(params.reserveId != wbtcReserveId(spoke1));
+    vm.assume(params.reserveId != _wbtcReserveId(spoke1));
 
     (uint256 assetId, IERC20 asset) = getAssetInfo(spoke1, params.reserveId);
 
     // set weth LP to 0 for no premium contribution
     updateLiquidityPremium({
       spoke: spoke1,
-      reserveId: wbtcReserveId(spoke1), // use highest-valued asset
+      reserveId: _wbtcReserveId(spoke1), // use highest-valued asset
       newLiquidityPremium: 0
     });
 
@@ -860,7 +860,7 @@ contract SpokeWithdrawTest is SpokeBase {
       abi.encode(params.rate)
     );
 
-    vm.assume(params.reserveId != wbtcReserveId(spoke1)); // wbtc used as collateral
+    vm.assume(params.reserveId != _wbtcReserveId(spoke1)); // wbtc used as collateral
 
     (uint256 assetId, IERC20 asset) = getAssetInfo(spoke1, params.reserveId);
 
@@ -996,8 +996,8 @@ contract SpokeWithdrawTest is SpokeBase {
     public
   {
     uint256 collAmount = 1e18; // $2k in weth
-    uint256 collReserveId = wethReserveId(spoke1);
-    uint256 debtReserveId = daiReserveId(spoke1);
+    uint256 collReserveId = _wethReserveId(spoke1);
+    uint256 debtReserveId = _daiReserveId(spoke1);
 
     uint256 maxDebtAmount = _calcMaxDebtAmount({
       spoke: spoke1,
@@ -1047,8 +1047,8 @@ contract SpokeWithdrawTest is SpokeBase {
   ) public {
     collAmount = bound(collAmount, 1, MAX_SUPPLY_AMOUNT / 2); // to stay within uint256 bounds for _calcMaxDebtAmount
     uint256 withdrawalAmount = collAmount;
-    uint256 collReserveId = wethReserveId(spoke1);
-    uint256 debtReserveId = daiReserveId(spoke1);
+    uint256 collReserveId = _wethReserveId(spoke1);
+    uint256 debtReserveId = _daiReserveId(spoke1);
 
     uint256 maxDebtAmount = _calcMaxDebtAmount({
       spoke: spoke1,
@@ -1097,8 +1097,8 @@ contract SpokeWithdrawTest is SpokeBase {
 
   function test_withdraw_revertsWith_HealthFactorLowerThanLiquidationThreshold_price_drop() public {
     uint256 collAmount = 1e18;
-    uint256 collReserveId = wethReserveId(spoke1);
-    uint256 debtReserveId = daiReserveId(spoke1);
+    uint256 collReserveId = _wethReserveId(spoke1);
+    uint256 debtReserveId = _daiReserveId(spoke1);
 
     uint256 maxDebtAmount = _calcMaxDebtAmount({
       spoke: spoke1,
@@ -1152,8 +1152,8 @@ contract SpokeWithdrawTest is SpokeBase {
     uint256 collAmount
   ) public {
     collAmount = bound(collAmount, 1, MAX_SUPPLY_AMOUNT / 2); // to stay within uint256 bounds for _calcMaxDebtAmount
-    uint256 collReserveId = wethReserveId(spoke1);
-    uint256 debtReserveId = daiReserveId(spoke1);
+    uint256 collReserveId = _wethReserveId(spoke1);
+    uint256 debtReserveId = _daiReserveId(spoke1);
 
     uint256 maxDebtAmount = _calcMaxDebtAmount({
       spoke: spoke1,
@@ -1209,8 +1209,8 @@ contract SpokeWithdrawTest is SpokeBase {
     public
   {
     uint256 collAmount = 50e18;
-    uint256 collReserveId = wethReserveId(spoke1);
-    uint256 debtReserveId = daiReserveId(spoke1);
+    uint256 collReserveId = _wethReserveId(spoke1);
+    uint256 debtReserveId = _daiReserveId(spoke1);
 
     uint256 maxDebtAmount = _calcMaxDebtAmount({
       spoke: spoke1,
@@ -1266,8 +1266,8 @@ contract SpokeWithdrawTest is SpokeBase {
   ) public {
     collAmount = bound(collAmount, 1, MAX_SUPPLY_AMOUNT / 2); // to stay within uint256 bounds for _calcMaxDebtAmount
     skipTime = bound(skipTime, 1, MAX_SKIP_TIME);
-    uint256 collReserveId = wethReserveId(spoke1);
-    uint256 debtReserveId = daiReserveId(spoke1);
+    uint256 collReserveId = _wethReserveId(spoke1);
+    uint256 debtReserveId = _daiReserveId(spoke1);
 
     uint256 maxDebtAmount = _calcMaxDebtAmount({
       spoke: spoke1,
@@ -1324,11 +1324,11 @@ contract SpokeWithdrawTest is SpokeBase {
   {
     uint256 collAmount = 1e18; // weth $2000
     uint256 collAmount2 = 2e18; // weth $4000
-    uint256 collReserveId = wethReserveId(spoke1);
+    uint256 collReserveId = _wethReserveId(spoke1);
 
     // weth collateral for dai/usdx debt
-    uint256 debtReserveId = daiReserveId(spoke1);
-    uint256 debtReserveId2 = usdxReserveId(spoke1);
+    uint256 debtReserveId = _daiReserveId(spoke1);
+    uint256 debtReserveId2 = _usdxReserveId(spoke1);
 
     // TODO: investigate rounding precision with multiple debts
     uint256 maxDebtAmountDai = _calcMaxDebtAmount({
@@ -1403,11 +1403,11 @@ contract SpokeWithdrawTest is SpokeBase {
   ) public {
     collAmount = bound(collAmount, 1, MAX_SUPPLY_AMOUNT / 2); // to stay within uint256 bounds for _calcMaxDebtAmount
     collAmount2 = bound(collAmount2, 1, MAX_SUPPLY_AMOUNT / 2); // to stay within uint256 bounds for _calcMaxDebtAmount
-    uint256 collReserveId = wethReserveId(spoke1);
+    uint256 collReserveId = _wethReserveId(spoke1);
 
     // weth collateral for dai/usdx debt
-    uint256 debtReserveId = daiReserveId(spoke1);
-    uint256 debtReserveId2 = usdxReserveId(spoke1);
+    uint256 debtReserveId = _daiReserveId(spoke1);
+    uint256 debtReserveId2 = _usdxReserveId(spoke1);
 
     uint256 maxDebtAmountDai = _calcMaxDebtAmount({
       spoke: spoke1,
@@ -1489,9 +1489,9 @@ contract SpokeWithdrawTest is SpokeBase {
     uint256 debtAmountDai = 3_000e18;
     uint256 debtAmountWeth = 2e18;
     // weth collateral for dai debt
-    uint256 collReserveId = usdxReserveId(spoke1);
-    uint256 debtReserveIdWeth = wethReserveId(spoke1);
-    uint256 debtReserveIdDai = daiReserveId(spoke1);
+    uint256 collReserveId = _usdxReserveId(spoke1);
+    uint256 debtReserveIdWeth = _wethReserveId(spoke1);
+    uint256 debtReserveIdDai = _daiReserveId(spoke1);
 
     uint256 minCollAmount = _calcMinimumCollAmount({
       spoke: spoke1,

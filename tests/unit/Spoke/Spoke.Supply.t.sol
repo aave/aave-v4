@@ -29,7 +29,7 @@ contract SpokeSupplyTest is SpokeBase {
         amount
       )
     );
-    spoke1.supply(daiReserveId(spoke1), amount);
+    spoke1.supply(_daiReserveId(spoke1), amount);
     vm.stopPrank();
   }
 
@@ -38,7 +38,7 @@ contract SpokeSupplyTest is SpokeBase {
 
     vm.prank(bob);
     vm.expectRevert(ILiquidityHub.InvalidSupplyAmount.selector);
-    spoke1.supply(daiReserveId(spoke1), amount);
+    spoke1.supply(_daiReserveId(spoke1), amount);
   }
 
   function test_supply() public {
@@ -48,8 +48,8 @@ contract SpokeSupplyTest is SpokeBase {
     TestData[2] memory daiData;
     uint256 stage = 0;
 
-    bobData[stage] = loadUserInfo(spoke1, daiReserveId(spoke1), bob);
-    daiData[stage] = loadReserveInfo(spoke1, daiReserveId(spoke1));
+    bobData[stage] = loadUserInfo(spoke1, _daiReserveId(spoke1), bob);
+    daiData[stage] = loadReserveInfo(spoke1, _daiReserveId(spoke1));
 
     // dai balance
     assertEq(tokenList.dai.balanceOf(bob), mintAmount_DAI, 'user token balance pre-supply');
@@ -68,12 +68,12 @@ contract SpokeSupplyTest is SpokeBase {
 
     vm.prank(bob);
     vm.expectEmit(address(spoke1));
-    emit ISpoke.Supplied(daiReserveId(spoke1), bob, amount);
-    spoke1.supply(daiReserveId(spoke1), amount);
+    emit ISpoke.Supplied(_daiReserveId(spoke1), bob, amount);
+    spoke1.supply(_daiReserveId(spoke1), amount);
 
     stage = 1;
-    bobData[stage] = loadUserInfo(spoke1, daiReserveId(spoke1), bob);
-    daiData[stage] = loadReserveInfo(spoke1, daiReserveId(spoke1));
+    bobData[stage] = loadUserInfo(spoke1, _daiReserveId(spoke1), bob);
+    daiData[stage] = loadReserveInfo(spoke1, _daiReserveId(spoke1));
 
     // dai balance
     assertEq(
@@ -120,8 +120,8 @@ contract SpokeSupplyTest is SpokeBase {
     TestData[2] memory daiData;
     uint256 stage = 0;
 
-    bobData[stage] = loadUserInfo(spoke1, daiReserveId(spoke1), bob);
-    daiData[stage] = loadReserveInfo(spoke1, daiReserveId(spoke1));
+    bobData[stage] = loadUserInfo(spoke1, _daiReserveId(spoke1), bob);
+    daiData[stage] = loadReserveInfo(spoke1, _daiReserveId(spoke1));
 
     // dai balance
     assertEq(tokenList.dai.balanceOf(bob), amount, 'user token balance pre-supply');
@@ -139,13 +139,13 @@ contract SpokeSupplyTest is SpokeBase {
     assertEq(bobData[stage].data.lastUpdateTimestamp, 0, 'user lastUpdateTimestamp pre-supply');
 
     vm.expectEmit(address(spoke1));
-    emit ISpoke.Supplied(daiReserveId(spoke1), bob, amount);
+    emit ISpoke.Supplied(_daiReserveId(spoke1), bob, amount);
     vm.prank(bob);
-    spoke1.supply(daiReserveId(spoke1), amount);
+    spoke1.supply(_daiReserveId(spoke1), amount);
 
     stage = 1;
-    bobData[stage] = loadUserInfo(spoke1, daiReserveId(spoke1), bob);
-    daiData[stage] = loadReserveInfo(spoke1, daiReserveId(spoke1));
+    bobData[stage] = loadUserInfo(spoke1, _daiReserveId(spoke1), bob);
+    daiData[stage] = loadReserveInfo(spoke1, _daiReserveId(spoke1));
 
     // dai balance
     assertEq(tokenList.dai.balanceOf(bob), 0, 'user token balance post-supply');
@@ -183,12 +183,12 @@ contract SpokeSupplyTest is SpokeBase {
     // set weth LP to 0 for no premium contribution
     updateLiquidityPremium({
       spoke: spoke1,
-      reserveId: wethReserveId(spoke1),
+      reserveId: _wethReserveId(spoke1),
       newLiquidityPremium: 0
     });
 
     // increase index on reserveId (uses weth as collateral)
-    _increaseReserveIndex(spoke1, daiReserveId(spoke1));
+    _increaseReserveIndex(spoke1, _daiReserveId(spoke1));
 
     uint256 amount = 1e18;
     uint256 expectedShares = hub.convertToShares(daiAssetId, amount);
@@ -199,20 +199,20 @@ contract SpokeSupplyTest is SpokeBase {
     TokenData[2] memory tokenData;
     uint256 stage = 0;
 
-    carolData[stage] = loadUserInfo(spoke1, daiReserveId(spoke1), carol);
-    daiData[stage] = loadReserveInfo(spoke1, daiReserveId(spoke1));
+    carolData[stage] = loadUserInfo(spoke1, _daiReserveId(spoke1), carol);
+    daiData[stage] = loadReserveInfo(spoke1, _daiReserveId(spoke1));
     tokenData[stage] = getTokenBalances(tokenList.dai, address(spoke1));
 
     deal(address(tokenList.dai), carol, amount);
 
     vm.prank(carol);
     vm.expectEmit(address(spoke1));
-    emit ISpoke.Supplied(daiReserveId(spoke1), carol, amount);
-    spoke1.supply(daiReserveId(spoke1), amount);
+    emit ISpoke.Supplied(_daiReserveId(spoke1), carol, amount);
+    spoke1.supply(_daiReserveId(spoke1), amount);
     stage = 1;
 
-    carolData[stage] = loadUserInfo(spoke1, daiReserveId(spoke1), carol);
-    daiData[stage] = loadReserveInfo(spoke1, daiReserveId(spoke1));
+    carolData[stage] = loadUserInfo(spoke1, _daiReserveId(spoke1), carol);
+    daiData[stage] = loadReserveInfo(spoke1, _daiReserveId(spoke1));
     tokenData[stage] = getTokenBalances(tokenList.dai, address(spoke1));
 
     // dai balance
@@ -275,7 +275,7 @@ contract SpokeSupplyTest is SpokeBase {
     // set weth LP to 0 for no premium contribution
     updateLiquidityPremium({
       spoke: spoke1,
-      reserveId: wethReserveId(spoke1),
+      reserveId: _wethReserveId(spoke1),
       newLiquidityPremium: 0
     });
 
@@ -283,7 +283,7 @@ contract SpokeSupplyTest is SpokeBase {
     _executeSpokeSupplyAndBorrow({
       spoke: spoke1,
       collateral: TestReserve({
-        reserveId: wethReserveId(spoke1),
+        reserveId: _wethReserveId(spoke1),
         supplier: alice,
         borrower: address(0),
         supplyAmount: 100e18,
@@ -379,7 +379,7 @@ contract SpokeSupplyTest is SpokeBase {
   }
 
   function test_supply_index_increase_with_premium() public {
-    _increaseReserveIndex(spoke1, daiReserveId(spoke1));
+    _increaseReserveIndex(spoke1, _daiReserveId(spoke1));
 
     uint256 amount = 1e18;
     uint256 expectedShares = hub.convertToShares(daiAssetId, amount);
@@ -390,8 +390,8 @@ contract SpokeSupplyTest is SpokeBase {
     TokenData[2] memory tokenData;
     uint256 stage = 0;
 
-    carolData[stage] = loadUserInfo(spoke1, daiReserveId(spoke1), carol);
-    daiData[stage] = loadReserveInfo(spoke1, daiReserveId(spoke1));
+    carolData[stage] = loadUserInfo(spoke1, _daiReserveId(spoke1), carol);
+    daiData[stage] = loadReserveInfo(spoke1, _daiReserveId(spoke1));
     tokenData[stage] = getTokenBalances(tokenList.dai, address(spoke1));
 
     assertGt(daiData[stage].data.outstandingPremium, 0, 'reserve outstandingPremium post-supply');
@@ -400,12 +400,12 @@ contract SpokeSupplyTest is SpokeBase {
 
     vm.prank(carol);
     vm.expectEmit(address(spoke1));
-    emit ISpoke.Supplied(daiReserveId(spoke1), carol, amount);
-    spoke1.supply(daiReserveId(spoke1), amount);
+    emit ISpoke.Supplied(_daiReserveId(spoke1), carol, amount);
+    spoke1.supply(_daiReserveId(spoke1), amount);
     stage = 1;
 
-    carolData[stage] = loadUserInfo(spoke1, daiReserveId(spoke1), carol);
-    daiData[stage] = loadReserveInfo(spoke1, daiReserveId(spoke1));
+    carolData[stage] = loadUserInfo(spoke1, _daiReserveId(spoke1), carol);
+    daiData[stage] = loadReserveInfo(spoke1, _daiReserveId(spoke1));
     tokenData[stage] = getTokenBalances(tokenList.dai, address(spoke1));
 
     // dai balance
@@ -464,7 +464,7 @@ contract SpokeSupplyTest is SpokeBase {
     _executeSpokeSupplyAndBorrow({
       spoke: spoke1,
       collateral: TestReserve({
-        reserveId: wethReserveId(spoke1),
+        reserveId: _wethReserveId(spoke1),
         supplier: alice,
         supplyAmount: 100e18,
         borrower: address(0),

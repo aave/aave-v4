@@ -63,7 +63,7 @@ contract SpokeBase is Base {
     SupplyBorrowLocal memory state;
 
     TestReserve memory collateral;
-    collateral.reserveId = wethReserveId(spoke);
+    collateral.reserveId = _wethReserveId(spoke);
     collateral.supplyAmount = 1_000e18;
     collateral.supplier = alice;
 

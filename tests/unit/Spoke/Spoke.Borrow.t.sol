@@ -641,10 +641,8 @@ contract SpokeBorrowTest is SpokeBase {
     vm.prank(bob);
     spoke1.borrow(usdxReserveId, usdxDebtAmount, bob);
 
-    console.log('hf %e', spoke1.getHealthFactor(bob));
-
     // valid HF
-    assertGe(spoke1.getHealthFactor(bob), spoke1.HEALTH_FACTOR_LIQUIDATION_THRESHOLD());
+    assertGe(spoke1.getHealthFactor(bob), spoke1.HEALTH_FACTOR_LIQUIDATION_THRESHOLD()); // can be GE for edge cases of coll/debt amount, ie 1
 
     skip(skipTime);
     vm.assume(spoke1.getHealthFactor(bob) < spoke1.HEALTH_FACTOR_LIQUIDATION_THRESHOLD());

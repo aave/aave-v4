@@ -517,22 +517,22 @@ abstract contract Base is Test {
   }
 
   // assumes spoke has usdx supported
-  function usdxReserveId(ISpoke spoke) internal view returns (uint256) {
+  function _usdxReserveId(ISpoke spoke) internal view returns (uint256) {
     return spokeInfo[spoke].usdx.reserveId;
   }
 
   // assumes spoke has dai supported
-  function daiReserveId(ISpoke spoke) internal view returns (uint256) {
+  function _daiReserveId(ISpoke spoke) internal view returns (uint256) {
     return spokeInfo[spoke].dai.reserveId;
   }
 
   // assumes spoke has weth supported
-  function wethReserveId(ISpoke spoke) internal view returns (uint256) {
+  function _wethReserveId(ISpoke spoke) internal view returns (uint256) {
     return spokeInfo[spoke].weth.reserveId;
   }
 
   // assumes spoke has wbtc supported
-  function wbtcReserveId(ISpoke spoke) internal view returns (uint256) {
+  function _wbtcReserveId(ISpoke spoke) internal view returns (uint256) {
     return spokeInfo[spoke].wbtc.reserveId;
   }
 
