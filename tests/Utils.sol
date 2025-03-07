@@ -52,6 +52,22 @@ library Utils {
     hub.withdraw(assetId, amount, riskPremium, to);
   }
 
+  function restore(
+    ILiquidityHub hub,
+    uint256 assetId,
+    address spoke,
+    uint256 amount,
+    uint32 riskPremium,
+    address repayer
+  ) internal {
+    vm.startPrank(repayer);
+    hub.assetsList(assetId).approve(address(hub), amount);
+    vm.stopPrank();
+
+    vm.prank(spoke);
+    hub.restore(assetId, amount, riskPremium, repayer);
+  }
+
   // spoke
   function spokeSupply(
     ISpoke spoke,

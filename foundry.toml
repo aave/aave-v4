@@ -5,6 +5,8 @@ script = 'scripts'
 out = 'out'
 libs = ['lib']
 fs_permissions = [{ access = "write", path = "./reports" }]
+solc_version = "0.8.28"
+evm_version = "cancun"
 optimizer = true
 optimizer_runs = 200
 bytecode_hash = "none"

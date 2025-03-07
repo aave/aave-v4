@@ -80,7 +80,7 @@ contract SpokeTest is Base {
 
     // assertEq(
     //   user1EthData.supplyShares,
-    //   ILiquidityHub(address(hub)).convertToSharesDown(ethId, ethAmount),
+    //   ILiquidityHub(address(hub)).convertToShares(ethId, ethAmount),
     //   'wrong user1 eth supply shares final balance'
     // );
     // assertEq(user1EthData.debtShares, 0, 'wrong user1 eth debt shares final balance');
@@ -90,12 +90,12 @@ contract SpokeTest is Base {
     // assertEq(user1DaiData.supplyShares, 0, 'wrong user1 dai supply shares final balance');
     // assertEq(
     //   user1DaiData.debtShares,
-    //   ILiquidityHub(address(hub)).convertToSharesDown(ethId, drawAmount - restoreAmount),
+    //   ILiquidityHub(address(hub)).convertToShares(ethId, drawAmount - restoreAmount),
     //   'wrong user1 dai debt shares final balance'
     // );
     // assertEq(
     //   user2DaiData.supplyShares,
-    //   ILiquidityHub(address(hub)).convertToSharesDown(daiId, daiAmount),
+    //   ILiquidityHub(address(hub)).convertToShares(daiId, daiAmount),
     //   'wrong user2 dai supply shares final balance'
     // );
     // assertEq(user2DaiData.debtShares, 0, 'wrong user2 dai debt shares final balance');
