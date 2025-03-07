@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.0;
 
-import 'tests/scenario/liquidityHub/borrowIndex/BorrowIndexBase.t.sol';
+import 'tests/scenario/liquidityHub/borrowIndex/BorrowIndexScenarioBase.t.sol';
 
 // TODO: resolve after precision/rounding/shares impl
 // and after LH tests are migrated to use getters instead of reading from storage baseDebt, outstandingPremium, etc.

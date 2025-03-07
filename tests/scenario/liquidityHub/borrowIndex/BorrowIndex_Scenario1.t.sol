@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.0;
 
-import 'tests/scenario/liquidityHub/borrowIndex/BorrowIndexBase.t.sol';
+import 'tests/scenario/liquidityHub/borrowIndex/BorrowIndexScenarioBase.t.sol';
 
 contract BorrowIndex_Scenario1Test is BorrowIndexScenarioBaseTest {
   using WadRayMath for uint256;
