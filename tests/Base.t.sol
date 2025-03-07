@@ -577,6 +577,30 @@ abstract contract Base is Test {
     hub.updateAssetConfig(assetId, assetConfig);
   }
 
+  function updateReserveFrozenFlag(ISpoke spoke, uint256 reserveId, bool newFrozenFlag) internal {
+    DataTypes.ReserveConfig memory config = spoke.getReserve(reserveId).config;
+    config.frozen = newFrozenFlag;
+
+    vm.prank(SPOKE_ADMIN);
+    spoke1.updateReserveConfig(reserveId, config);
+  }
+
+  function updateReservePausedFlag(ISpoke spoke, uint256 reserveId, bool newPausedFlag) internal {
+    DataTypes.ReserveConfig memory config = spoke.getReserve(reserveId).config;
+    config.paused = newPausedFlag;
+
+    vm.prank(SPOKE_ADMIN);
+    spoke1.updateReserveConfig(reserveId, config);
+  }
+
+  function updateReserveActiveFlag(ISpoke spoke, uint256 reserveId, bool newActiveFlag) internal {
+    DataTypes.ReserveConfig memory config = spoke.getReserve(reserveId).config;
+    config.active = newActiveFlag;
+
+    vm.prank(SPOKE_ADMIN);
+    spoke1.updateReserveConfig(reserveId, config);
+  }
+
   function setUsingAsCollateral(
     ISpoke spoke,
     address user,

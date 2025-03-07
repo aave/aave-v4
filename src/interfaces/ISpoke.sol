@@ -41,6 +41,9 @@ interface ISpoke {
   error RepayAmountExceedsDebt(uint256 debt);
   error ReserveNotCollateral(uint256 reserveId);
   error ReserveCannotBeInactive();
+  error ReserveNotActive();
+  error ReservePaused();
+  error ReserveFrozen();
 
   function addReserve(
     uint256 assetId,

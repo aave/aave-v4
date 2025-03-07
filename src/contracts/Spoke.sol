@@ -374,6 +374,9 @@ contract Spoke is ISpoke {
   // internal
   function _validateSupply(DataTypes.Reserve storage reserve, uint256 amount) internal view {
     require(reserve.asset != address(0), ReserveNotListed());
+    require(reserve.config.active, ReserveNotActive());
+    require(!reserve.config.paused, ReservePaused());
+    require(!reserve.config.frozen, ReserveFrozen());
   }
 
   function _validateWithdraw(

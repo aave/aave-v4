@@ -6,13 +6,49 @@ import 'tests/unit/Spoke/SpokeBase.t.sol';
 contract SpokeSupplyTest is SpokeBase {
   using WadRayMath for uint256;
 
-  function test_supply_revertsWith_reserve_not_listed() public {
+  function test_supply_revertsWith_ReserveNotListed() public {
     uint256 reserveId = spoke1.reserveCount() + 1; // invalid reserveId
     uint256 amount = 100e18;
 
     vm.prank(bob);
     vm.expectRevert(ISpoke.ReserveNotListed.selector);
     spoke1.supply(reserveId, amount);
+  }
+
+  function test_supply_revertsWith_ReserveNotActive() public {
+    uint256 daiReserveId = daiReserveId(spoke1);
+    uint256 amount = 100e18;
+
+    updateReserveActiveFlag(spoke1, daiReserveId, false);
+    assertFalse(spoke1.getReserve(daiReserveId).config.active);
+
+    vm.prank(bob);
+    vm.expectRevert(ISpoke.ReserveNotActive.selector);
+    spoke1.supply(daiReserveId, amount);
+  }
+
+  function test_supply_revertsWith_ReservePaused() public {
+    uint256 daiReserveId = daiReserveId(spoke1);
+    uint256 amount = 100e18;
+
+    updateReservePausedFlag(spoke1, daiReserveId, true);
+    assertTrue(spoke1.getReserve(daiReserveId).config.active);
+
+    vm.prank(bob);
+    vm.expectRevert(ISpoke.ReservePaused.selector);
+    spoke1.supply(daiReserveId, amount);
+  }
+
+  function test_supply_revertsWith_ReserveFrozen() public {
+    uint256 daiReserveId = daiReserveId(spoke1);
+    uint256 amount = 100e18;
+
+    updateReserveFrozenFlag(spoke1, daiReserveId, true);
+    assertTrue(spoke1.getReserve(daiReserveId).config.active);
+
+    vm.prank(bob);
+    vm.expectRevert(ISpoke.ReserveFrozen.selector);
+    spoke1.supply(daiReserveId, amount);
   }
 
   function test_supply_revertsWith_ERC20InsufficientAllowance() public {
