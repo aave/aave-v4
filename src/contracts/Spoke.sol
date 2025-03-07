@@ -215,8 +215,7 @@ contract Spoke is ISpoke {
     if (amount > currentDebt) {
       amount = currentDebt;
     }
-
-    _validateRepay(reserve, user, amount);
+    _validateRepay(reserve);
 
     // Repaid debt happens first from premium, then base
     uint256 baseDebtRestored = _deductFromOutstandingPremium(reserve, user, amount);
@@ -382,13 +381,8 @@ contract Spoke is ISpoke {
   }
 
   // TODO: Place this and LH equivalent in a generic logic library
-  function _validateRepay(
-    DataTypes.Reserve storage reserve,
-    DataTypes.UserPosition storage user,
-    uint256 amount
-  ) internal view {
-    uint256 userDebt = user.baseDebt + user.outstandingPremium;
-    require(amount <= userDebt, RepayAmountExceedsDebt(userDebt));
+  function _validateRepay(DataTypes.Reserve storage reserve) internal view {
+    // will be filled in during risk config
   }
 
   function _deductFromOutstandingPremium(
