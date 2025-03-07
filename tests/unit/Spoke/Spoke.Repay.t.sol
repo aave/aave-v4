@@ -372,6 +372,10 @@ contract SpokeRepayTest is SpokeBase {
     );
     assertEq(baseDaiDebt, 0);
     assertEq(outstandingDaiPremium, 0);
+
+    // verify LH asset debt is 0
+    uint256 lhAssetDebt = hub.getAssetCumulativeDebt(daiReserveId(spoke1));
+    assertEq(lhAssetDebt, 0);
   }
 
   function test_fuzz_repay_max_amount_gt_current_debt(uint256 repayAmount) public {
@@ -442,6 +446,10 @@ contract SpokeRepayTest is SpokeBase {
     );
     assertEq(baseDaiDebt, 0);
     assertEq(outstandingDaiPremium, 0);
+
+    // verify LH asset debt is 0
+    uint256 lhAssetDebt = hub.getAssetCumulativeDebt(daiReserveId(spoke1));
+    assertEq(lhAssetDebt, 0);
   }
 
   /// repay all accrued base debt when outstanding premium is already repaid
