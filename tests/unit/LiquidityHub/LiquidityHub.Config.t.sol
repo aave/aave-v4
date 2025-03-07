@@ -145,4 +145,80 @@ contract LiquidityHubConfigTest is LiquidityHubBase {
     vm.expectRevert(ILiquidityHub.AssetCannotBeInactive.selector);
     hub.updateAssetConfig(wethAssetId, config);
   }
+
+  function test_updateAssetConfig_decimals() public {
+    DataTypes.AssetConfig memory config = hub.getAssetConfig(daiAssetId);
+    uint256 newDecimals = 27;
+    assertNotEq(config.decimals, newDecimals);
+
+    config.decimals = newDecimals;
+
+    vm.prank(HUB_ADMIN);
+    hub.updateAssetConfig(daiAssetId, config);
+
+    assertEq(hub.getAssetConfig(daiAssetId).decimals, newDecimals, 'asset decimals');
+  }
+
+  function test_updateAssetConfig_revertsWith_InvalidIrStrategy() public {
+    DataTypes.AssetConfig memory config = hub.getAssetConfig(daiAssetId);
+
+    config.irStrategy = address(0);
+
+    vm.prank(HUB_ADMIN);
+    vm.expectRevert(ILiquidityHub.InvalidIrStrategy.selector);
+    hub.updateAssetConfig(daiAssetId, config);
+  }
+
+  function test_updateAssetConfig_irStrategy() public {
+    DataTypes.AssetConfig memory config = hub.getAssetConfig(daiAssetId);
+    address newIrStrategy = address(1);
+    assertNotEq(config.irStrategy, newIrStrategy);
+
+    config.irStrategy = newIrStrategy;
+
+    vm.prank(HUB_ADMIN);
+    hub.updateAssetConfig(daiAssetId, config);
+
+    assertEq(hub.getAssetConfig(daiAssetId).irStrategy, newIrStrategy, 'asset irStrategy');
+  }
+
+  function test_updateSpokeConfig_drawCap() public {
+    DataTypes.SpokeConfig memory config = hub.getSpokeConfig(daiAssetId, address(spoke1));
+    uint256 drawCap = 5;
+    assertNotEq(config.drawCap, drawCap);
+
+    config.drawCap = drawCap;
+
+    vm.prank(HUB_ADMIN);
+    hub.updateSpokeConfig(daiAssetId, address(spoke1), config);
+
+    assertEq(hub.getSpokeConfig(daiAssetId, address(spoke1)).drawCap, drawCap, 'asset drawCap');
+  }
+
+  function test_updateSpokeConfig_supplyCap() public {
+    DataTypes.SpokeConfig memory config = hub.getSpokeConfig(daiAssetId, address(spoke1));
+    uint256 drawCap = 5;
+    assertNotEq(config.drawCap, drawCap);
+
+    config.drawCap = drawCap;
+
+    vm.prank(HUB_ADMIN);
+    hub.updateSpokeConfig(daiAssetId, address(spoke1), config);
+
+    assertEq(hub.getSpokeConfig(daiAssetId, address(spoke1)).drawCap, drawCap, 'asset drawCap');
+  }
+
+  function test_updateSpokeConfig_emit() public {
+    DataTypes.SpokeConfig memory config = hub.getSpokeConfig(daiAssetId, address(spoke1));
+
+    vm.prank(HUB_ADMIN);
+    vm.expectEmit(address(hub));
+    emit ILiquidityHub.SpokeConfigUpdated(
+      daiAssetId,
+      address(spoke1),
+      config.drawCap,
+      config.supplyCap
+    );
+    hub.updateSpokeConfig(daiAssetId, address(spoke1), config);
+  }
 }

@@ -18,7 +18,7 @@ contract SpokeConfigTest is SpokeBase {
       paused: !reserveData.config.paused,
       liquidationThreshold: reserveData.config.liquidationThreshold + 1,
       liquidationBonus: reserveData.config.liquidationBonus + 1,
-      liquidityPremium: 0,
+      liquidityPremium: reserveData.config.liquidityPremium + 1,
       borrowable: !reserveData.config.borrowable,
       collateral: !reserveData.config.collateral
     });

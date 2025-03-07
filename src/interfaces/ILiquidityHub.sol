@@ -53,6 +53,7 @@ interface ILiquidityHub {
   error AssetCannotBeInactive();
   error AssetPaused();
   error AssetFrozen();
+  error InvalidIrStrategy();
 
   function addAsset(DataTypes.AssetConfig memory params, address asset) external;
   function updateAssetConfig(uint256 assetId, DataTypes.AssetConfig memory config) external;

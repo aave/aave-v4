@@ -67,6 +67,7 @@ contract LiquidityHub is ILiquidityHub {
     if (!config.active) {
       require(asset.suppliedShares == 0, AssetCannotBeInactive());
     }
+    require(config.irStrategy != address(0), InvalidIrStrategy());
 
     // TODO: AccessControl
     asset.config = DataTypes.AssetConfig({
