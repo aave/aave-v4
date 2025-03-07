@@ -7,6 +7,30 @@ contract SpokeWithdrawTest is SpokeBase {
   using WadRayMath for uint256;
   using PercentageMath for uint256;
 
+  function test_withdraw_revertsWith_ReserveNotActive() public {
+    uint256 daiReserveId = daiReserveId(spoke1);
+    uint256 amount = 100e18;
+
+    updateReserveActiveFlag(spoke1, daiReserveId, false);
+    assertFalse(spoke1.getReserve(daiReserveId).config.active);
+
+    vm.prank(bob);
+    vm.expectRevert(ISpoke.ReserveNotActive.selector);
+    spoke1.withdraw(daiReserveId, amount, bob);
+  }
+
+  function test_withdraw_revertsWith_ReservePaused() public {
+    uint256 daiReserveId = daiReserveId(spoke1);
+    uint256 amount = 100e18;
+
+    updateReservePausedFlag(spoke1, daiReserveId, true);
+    assertTrue(spoke1.getReserve(daiReserveId).config.active);
+
+    vm.prank(bob);
+    vm.expectRevert(ISpoke.ReservePaused.selector);
+    spoke1.withdraw(daiReserveId, amount, bob);
+  }
+
   function test_withdraw_revertsWith_InsufficientSupply_zero_supplied() public {
     uint256 reserveId = daiReserveId(spoke1);
     uint256 amount = 1;
