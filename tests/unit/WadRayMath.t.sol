@@ -135,4 +135,24 @@ contract WadRayMathTests is Test {
   function test_derayify_fuzz(uint256 a) public {
     assertEq(w.derayify(a), a / w.RAY());
   }
+
+  function test_wadify_fuzz(uint256 a) public {
+    uint256 b;
+    bool safetyCheck;
+    unchecked {
+      b = a * w.WAD();
+      safetyCheck = b / w.WAD() == a;
+    }
+    if (!safetyCheck) {
+      vm.expectRevert();
+      w.wadify(a);
+    } else {
+      assertEq(w.wadify(a), a * w.WAD());
+      assertEq(w.wadify(a), b);
+    }
+  }
+
+  function test_dewadify_fuzz(uint256 a) public {
+    assertEq(w.dewadify(a), a / w.WAD());
+  }
 }
