@@ -49,8 +49,8 @@ contract HealthFactorTest_ToMigrate is Base {
     updateCollateralFlag(spoke1, spokeInfo[spoke1].weth.reserveId, newCollateralFlag);
 
     // set Lt to 100% for both assets
-    updateLiquidationThreshold(spoke1, spokeInfo[spoke1].dai.reserveId, 1e4);
-    updateLiquidationThreshold(spoke1, spokeInfo[spoke1].weth.reserveId, 1e4);
+    updatecollateralFactor(spoke1, spokeInfo[spoke1].dai.reserveId, 1e4);
+    updatecollateralFactor(spoke1, spokeInfo[spoke1].weth.reserveId, 1e4);
 
     // USER1 supply dai into spoke1
     deal(address(dai), USER1, daiAmount);
@@ -138,7 +138,7 @@ contract HealthFactorTest_ToMigrate is Base {
   function _calculateHealthFactor(uint256[] memory assetIds) internal view returns (uint256) {
     uint256 totalCollateral = 0;
     uint256 totalDebt = 0;
-    uint256 avgLiquidationThreshold = 0;
+    uint256 avgcollateralFactor = 0;
     for (uint256 i = 0; i < assetIds.length; i++) {
       uint256 assetId = assetIds[i];
       // Spoke.Reserve memory reserve = spoke1.getReserve(spokeInfo[spoke1][assetId].reserveId);
@@ -153,12 +153,12 @@ contract HealthFactorTest_ToMigrate is Base {
       // totalCollateral += userCollateral;
       // totalDebt += userPosition.debt * assetPrice;
 
-      // avgLiquidationThreshold += userCollateral * reserve.config.liquidationThreshold;
+      // avgcollateralFactor += userCollateral * reserve.config.collateralFactor;
     }
-    avgLiquidationThreshold = totalCollateral != 0 ? avgLiquidationThreshold / totalCollateral : 0;
+    avgcollateralFactor = totalCollateral != 0 ? avgcollateralFactor / totalCollateral : 0;
     return
       totalDebt == 0
         ? type(uint256).max
-        : (totalCollateral.percentMul(avgLiquidationThreshold)).wadDiv(totalDebt);
+        : (totalCollateral.percentMul(avgcollateralFactor)).wadDiv(totalDebt);
   }
 }

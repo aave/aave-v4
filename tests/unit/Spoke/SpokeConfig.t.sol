@@ -16,7 +16,7 @@ contract SpokeConfigTest is SpokeBase {
       active: !reserveData.config.active,
       frozen: !reserveData.config.frozen,
       paused: !reserveData.config.paused,
-      liquidationThreshold: reserveData.config.liquidationThreshold + 1,
+      collateralFactor: reserveData.config.collateralFactor + 1,
       liquidationBonus: reserveData.config.liquidationBonus + 1,
       liquidityPremium: reserveData.config.liquidityPremium + 1,
       borrowable: !reserveData.config.borrowable,
@@ -29,7 +29,7 @@ contract SpokeConfigTest is SpokeBase {
       newReserveConfig.active,
       newReserveConfig.frozen,
       newReserveConfig.paused,
-      newReserveConfig.liquidationThreshold,
+      newReserveConfig.collateralFactor,
       newReserveConfig.liquidationBonus,
       newReserveConfig.liquidityPremium,
       newReserveConfig.borrowable,
@@ -39,11 +39,7 @@ contract SpokeConfigTest is SpokeBase {
 
     reserveData = spoke1.getReserve(daiReserveId);
 
-    assertEq(
-      reserveData.config.liquidationThreshold,
-      newReserveConfig.liquidationThreshold,
-      'wrong lt'
-    );
+    assertEq(reserveData.config.collateralFactor, newReserveConfig.collateralFactor, 'wrong lt');
     assertEq(reserveData.config.liquidationBonus, newReserveConfig.liquidationBonus, 'wrong lb');
     assertEq(
       reserveData.config.liquidityPremium,

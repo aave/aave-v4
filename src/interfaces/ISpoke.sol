@@ -18,7 +18,7 @@ interface ISpoke {
     bool active,
     bool frozen,
     bool paused,
-    uint256 liquidationThreshold,
+    uint256 collateralFactor,
     uint256 liquidationBonus,
     uint256 liquidityPremium,
     bool borrowable,

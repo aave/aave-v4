@@ -67,7 +67,7 @@ contract Spoke is ISpoke {
         active: config.active,
         frozen: config.frozen,
         paused: config.paused,
-        liquidationThreshold: config.liquidationThreshold,
+        collateralFactor: config.collateralFactor,
         liquidationBonus: config.liquidationBonus,
         liquidityPremium: config.liquidityPremium,
         borrowable: config.borrowable,
@@ -100,7 +100,7 @@ contract Spoke is ISpoke {
       active: config.active,
       frozen: config.frozen,
       paused: config.paused,
-      liquidationThreshold: config.liquidationThreshold,
+      collateralFactor: config.collateralFactor,
       liquidationBonus: config.liquidationBonus,
       liquidityPremium: config.liquidityPremium,
       borrowable: config.borrowable,
@@ -113,7 +113,7 @@ contract Spoke is ISpoke {
       config.active,
       config.frozen,
       config.paused,
-      config.liquidationThreshold,
+      config.collateralFactor,
       config.liquidationBonus,
       config.liquidityPremium,
       config.borrowable,
@@ -579,9 +579,9 @@ contract Spoke is ISpoke {
 
         vars.totalCollateralInBaseCurrency += vars.userCollateralInBaseCurrency;
         list.add(vars.i, vars.liquidityPremium, vars.userCollateralInBaseCurrency);
-        vars.avgLiquidationThreshold +=
+        vars.avgcollateralFactor +=
           vars.userCollateralInBaseCurrency *
-          reserve.config.liquidationThreshold;
+          reserve.config.collateralFactor;
 
         unchecked {
           ++vars.i;
@@ -593,13 +593,13 @@ contract Spoke is ISpoke {
       }
     }
 
-    vars.avgLiquidationThreshold = vars.totalCollateralInBaseCurrency == 0
+    vars.avgcollateralFactor = vars.totalCollateralInBaseCurrency == 0
       ? 0
-      : vars.avgLiquidationThreshold / vars.totalCollateralInBaseCurrency;
+      : vars.avgcollateralFactor / vars.totalCollateralInBaseCurrency;
 
     vars.healthFactor = vars.totalDebtInBaseCurrency == 0
       ? type(uint256).max
-      : (vars.totalCollateralInBaseCurrency.percentMul(vars.avgLiquidationThreshold)).wadDiv(
+      : (vars.totalCollateralInBaseCurrency.percentMul(vars.avgcollateralFactor)).wadDiv(
         vars.totalDebtInBaseCurrency
       ); // HF of 1 -> 1e18
 
@@ -626,7 +626,7 @@ contract Spoke is ISpoke {
       vars.userRiskPremium = (vars.userRiskPremium / vars.totalCollateralInBaseCurrency).rayify();
     }
 
-    return (vars.userRiskPremium, vars.avgLiquidationThreshold, vars.healthFactor);
+    return (vars.userRiskPremium, vars.avgcollateralFactor, vars.healthFactor);
   }
 
   function _getUserDebtInBaseCurrency(

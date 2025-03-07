@@ -70,7 +70,7 @@ library DataTypes {
     bool active;
     bool frozen;
     bool paused;
-    uint256 liquidationThreshold; // BPS
+    uint256 collateralFactor; // BPS
     uint256 liquidationBonus; // TODO: liquidationProtocolFee
     uint256 liquidityPremium; // BPS
     bool borrowable;
@@ -112,7 +112,7 @@ library DataTypes {
     uint256 userCollateralInBaseCurrency;
     uint256 totalCollateralInBaseCurrency;
     uint256 totalDebtInBaseCurrency;
-    uint256 avgLiquidationThreshold;
+    uint256 avgcollateralFactor;
     uint256 userRiskPremium;
     uint256 healthFactor;
   }

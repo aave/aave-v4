@@ -253,7 +253,7 @@ abstract contract Base is Test {
       active: true,
       frozen: false,
       paused: false,
-      liquidationThreshold: 0.8e4,
+      collateralFactor: 0.8e4,
       liquidationBonus: 0,
       liquidityPremium: 15_00,
       borrowable: true,
@@ -264,7 +264,7 @@ abstract contract Base is Test {
       active: true,
       frozen: false,
       paused: false,
-      liquidationThreshold: 0.75e4,
+      collateralFactor: 0.75e4,
       liquidationBonus: 0,
       liquidityPremium: 50_00,
       borrowable: true,
@@ -275,7 +275,7 @@ abstract contract Base is Test {
       active: true,
       frozen: false,
       paused: false,
-      liquidationThreshold: 0.78e4,
+      collateralFactor: 0.78e4,
       liquidationBonus: 0,
       liquidityPremium: 20_00,
       borrowable: true,
@@ -286,7 +286,7 @@ abstract contract Base is Test {
       active: true,
       frozen: false,
       paused: false,
-      liquidationThreshold: 0.78e4,
+      collateralFactor: 0.78e4,
       liquidationBonus: 0,
       liquidityPremium: 50_00,
       borrowable: true,
@@ -329,7 +329,7 @@ abstract contract Base is Test {
       active: true,
       frozen: false,
       paused: false,
-      liquidationThreshold: 0.8e4,
+      collateralFactor: 0.8e4,
       liquidationBonus: 0,
       liquidityPremium: 0,
       borrowable: true,
@@ -340,7 +340,7 @@ abstract contract Base is Test {
       active: true,
       frozen: false,
       paused: false,
-      liquidationThreshold: 0.76e4,
+      collateralFactor: 0.76e4,
       liquidationBonus: 0,
       liquidityPremium: 10,
       borrowable: true,
@@ -351,7 +351,7 @@ abstract contract Base is Test {
       active: true,
       frozen: false,
       paused: false,
-      liquidationThreshold: 0.72e4,
+      collateralFactor: 0.72e4,
       liquidationBonus: 0,
       liquidityPremium: 20,
       borrowable: true,
@@ -362,7 +362,7 @@ abstract contract Base is Test {
       active: true,
       frozen: false,
       paused: false,
-      liquidationThreshold: 0.72e4,
+      collateralFactor: 0.72e4,
       liquidationBonus: 0,
       liquidityPremium: 50,
       borrowable: true,
@@ -405,7 +405,7 @@ abstract contract Base is Test {
       active: true,
       frozen: false,
       paused: false,
-      liquidationThreshold: 0.75e4,
+      collateralFactor: 0.75e4,
       liquidationBonus: 0,
       liquidityPremium: 0,
       borrowable: true,
@@ -416,7 +416,7 @@ abstract contract Base is Test {
       active: true,
       frozen: false,
       paused: false,
-      liquidationThreshold: 0.75e4,
+      collateralFactor: 0.75e4,
       liquidationBonus: 0,
       liquidityPremium: 10,
       borrowable: true,
@@ -427,7 +427,7 @@ abstract contract Base is Test {
       active: true,
       frozen: false,
       paused: false,
-      liquidationThreshold: 0.79e4,
+      collateralFactor: 0.79e4,
       liquidationBonus: 0,
       liquidityPremium: 20,
       borrowable: true,
@@ -438,7 +438,7 @@ abstract contract Base is Test {
       active: true,
       frozen: false,
       paused: false,
-      liquidationThreshold: 0.77e4,
+      collateralFactor: 0.77e4,
       liquidationBonus: 0,
       liquidityPremium: 50,
       borrowable: true,
@@ -492,7 +492,7 @@ abstract contract Base is Test {
       active: true,
       frozen: false,
       paused: false,
-      liquidationThreshold: 0.70e4,
+      collateralFactor: 0.70e4,
       liquidationBonus: 0,
       liquidityPremium: 100,
       borrowable: true,
@@ -611,9 +611,9 @@ abstract contract Base is Test {
     spoke.setUsingAsCollateral(reserveId, usingAsCollateral);
   }
 
-  function updateLiquidationThreshold(ISpoke spoke, uint256 reserveId, uint256 newLt) internal {
+  function updatecollateralFactor(ISpoke spoke, uint256 reserveId, uint256 newLt) internal {
     DataTypes.Reserve memory reserveData = spoke.getReserve(reserveId);
-    reserveData.config.liquidationThreshold = newLt;
+    reserveData.config.collateralFactor = newLt;
     spoke.updateReserveConfig(reserveId, reserveData.config);
   }
 
