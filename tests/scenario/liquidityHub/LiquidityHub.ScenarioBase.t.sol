@@ -5,6 +5,7 @@ import 'tests/Base.t.sol';
 import {DataTypes} from 'src/libraries/types/DataTypes.sol';
 
 type Stage is uint8;
+
 function eq(Stage a, Stage b) pure returns (bool) {
   return Stage.unwrap(a) == Stage.unwrap(b);
 }
@@ -49,7 +50,7 @@ abstract contract LiquidityHubScenarioBaseTest is Base {
   struct SpokeDatas {
     DataTypes.SpokeData[NUM_TIMESTAMPS] t_i;
     DataTypes.SpokeData[NUM_TIMESTAMPS] t_f;
-    address addr;
+    address spokeAddress;
     SpokeActions actions;
   }
 
@@ -85,9 +86,9 @@ abstract contract LiquidityHubScenarioBaseTest is Base {
   function setUp() public virtual override {
     super.setUp();
 
-    spokes[SPOKE1_INDEX].addr = address(spoke1);
-    spokes[SPOKE2_INDEX].addr = address(spoke2);
-    spokes[SPOKE3_INDEX].addr = address(spoke3);
+    spokes[SPOKE1_INDEX].spokeAddress = address(spoke1);
+    spokes[SPOKE2_INDEX].spokeAddress = address(spoke2);
+    spokes[SPOKE3_INDEX].spokeAddress = address(spoke3);
 
     // init stages
     for (uint8 i = 0; i < NUM_TIMESTAMPS; i++) {

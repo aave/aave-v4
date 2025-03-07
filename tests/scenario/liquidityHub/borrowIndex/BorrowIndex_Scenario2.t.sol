@@ -3,7 +3,7 @@ pragma solidity ^0.8.0;
 
 import 'tests/scenario/liquidityHub/borrowIndex/BorrowIndexBase.t.sol';
 
-contract BorrowIndex_Scenario2Test is BorrowIndexBase {
+contract BorrowIndex_Scenario2Test is BorrowIndexScenarioBaseTest {
   using WadRayMath for uint256;
 
   // Scenario:
@@ -204,43 +204,43 @@ contract BorrowIndex_Scenario2Test is BorrowIndexBase {
       Utils.supply({
         hub: hub,
         assetId: state.assetId,
-        spoke: spokes[SPOKE1_INDEX].addr,
+        spoke: spokes[SPOKE1_INDEX].spokeAddress,
         amount: spokes[SPOKE1_INDEX].actions.supply[t].amount,
         riskPremium: 0,
         user: bob,
-        to: spokes[SPOKE1_INDEX].addr
+        to: spokes[SPOKE1_INDEX].spokeAddress
       });
       Utils.draw({
         hub: hub,
         assetId: state.assetId,
-        spoke: spokes[SPOKE1_INDEX].addr,
+        spoke: spokes[SPOKE1_INDEX].spokeAddress,
         amount: spokes[SPOKE1_INDEX].actions.draw[t].amount,
         riskPremium: 0,
         to: bob,
-        onBehalfOf: spokes[SPOKE1_INDEX].addr
+        onBehalfOf: spokes[SPOKE1_INDEX].spokeAddress
       });
     } else if (stage == stages[2]) {
-      hub.addSpoke(state.assetId, spokeConfig, spokes[SPOKE4_INDEX].addr);
+      hub.addSpoke(state.assetId, spokeConfig, spokes[SPOKE4_INDEX].spokeAddress);
       vm.assume(
         hub.convertToShares(state.assetId, spokes[SPOKE4_INDEX].actions.supply[t].amount) > 0
       );
       Utils.supply({
         hub: hub,
         assetId: state.assetId,
-        spoke: spokes[SPOKE4_INDEX].addr,
+        spoke: spokes[SPOKE4_INDEX].spokeAddress,
         amount: spokes[SPOKE4_INDEX].actions.supply[t].amount,
         riskPremium: 0,
         user: bob,
-        to: spokes[SPOKE4_INDEX].addr
+        to: spokes[SPOKE4_INDEX].spokeAddress
       });
       Utils.draw({
         hub: hub,
         assetId: state.assetId,
-        spoke: spokes[SPOKE4_INDEX].addr,
+        spoke: spokes[SPOKE4_INDEX].spokeAddress,
         amount: spokes[SPOKE4_INDEX].actions.draw[t].amount,
         riskPremium: 0,
         to: bob,
-        onBehalfOf: spokes[SPOKE4_INDEX].addr
+        onBehalfOf: spokes[SPOKE4_INDEX].spokeAddress
       });
     } else if (stage == stages[3]) {
       vm.assume(
@@ -249,11 +249,11 @@ contract BorrowIndex_Scenario2Test is BorrowIndexBase {
       Utils.supply({
         hub: hub,
         assetId: state.assetId,
-        spoke: spokes[SPOKE4_INDEX].addr,
+        spoke: spokes[SPOKE4_INDEX].spokeAddress,
         amount: spokes[SPOKE4_INDEX].actions.supply[t].amount,
         riskPremium: 0,
         user: bob,
-        to: spokes[SPOKE4_INDEX].addr
+        to: spokes[SPOKE4_INDEX].spokeAddress
       });
     }
   }

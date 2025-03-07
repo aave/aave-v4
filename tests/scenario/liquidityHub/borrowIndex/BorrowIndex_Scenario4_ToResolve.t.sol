@@ -6,7 +6,7 @@ import 'tests/scenario/liquidityHub/borrowIndex/BorrowIndexBase.t.sol';
 // TODO: resolve after precision/rounding/shares impl
 // and after LH tests are migrated to use getters instead of reading from storage baseDebt, outstandingPremium, etc.
 // see https://github.com/aave/aave-v4/issues/195
-contract BorrowIndex_Scenario4Test is BorrowIndexBase {
+contract BorrowIndex_Scenario4Test is BorrowIndexScenarioBaseTest {
   using SharesMath for uint256;
   using WadRayMath for uint256;
   using PercentageMath for uint256;
@@ -79,8 +79,10 @@ contract BorrowIndex_Scenario4Test is BorrowIndexBase {
         .cumulatedSpokeBaseDebt[SPOKE1_INDEX]
         .t_i[t];
 
-      uint256 sumSpokeDebt = hub.getSpokeCumulativeDebt(state.assetId, spokes[SPOKE1_INDEX].addr) +
-        hub.getSpokeCumulativeDebt(state.assetId, spokes[SPOKE4_INDEX].addr);
+      uint256 sumSpokeDebt = hub.getSpokeCumulativeDebt(
+        state.assetId,
+        spokes[SPOKE1_INDEX].spokeAddress
+      ) + hub.getSpokeCumulativeDebt(state.assetId, spokes[SPOKE4_INDEX].spokeAddress);
       console.log('time t5');
       console.log('sum of all spoke debt %e', sumSpokeDebt);
       console.log('asset cumulative debt %e', hub.getAssetCumulativeDebt(state.assetId));
@@ -91,10 +93,12 @@ contract BorrowIndex_Scenario4Test is BorrowIndexBase {
     } else if (stage == stages[6]) {
       spokes[SPOKE4_INDEX].actions.restore[t].amount = hub.getSpokeCumulativeDebt(
         state.assetId,
-        spokes[SPOKE4_INDEX].addr
+        spokes[SPOKE4_INDEX].spokeAddress
       );
-      uint256 sumSpokeDebt = hub.getSpokeCumulativeDebt(state.assetId, spokes[SPOKE1_INDEX].addr) +
-        hub.getSpokeCumulativeDebt(state.assetId, spokes[SPOKE4_INDEX].addr);
+      uint256 sumSpokeDebt = hub.getSpokeCumulativeDebt(
+        state.assetId,
+        spokes[SPOKE1_INDEX].spokeAddress
+      ) + hub.getSpokeCumulativeDebt(state.assetId, spokes[SPOKE4_INDEX].spokeAddress);
       console.log('time t6');
       console.log('sum of all spoke debt %e', sumSpokeDebt);
       console.log('asset cumulative debt %e', hub.getAssetCumulativeDebt(state.assetId));
@@ -112,48 +116,48 @@ contract BorrowIndex_Scenario4Test is BorrowIndexBase {
       Utils.supply({
         hub: hub,
         assetId: state.assetId,
-        spoke: spokes[SPOKE1_INDEX].addr,
+        spoke: spokes[SPOKE1_INDEX].spokeAddress,
         amount: spokes[SPOKE1_INDEX].actions.supply[t].amount,
         riskPremium: 0,
         user: bob,
-        to: spokes[SPOKE1_INDEX].addr
+        to: spokes[SPOKE1_INDEX].spokeAddress
       });
       Utils.draw({
         hub: hub,
         assetId: state.assetId,
-        spoke: spokes[SPOKE1_INDEX].addr,
+        spoke: spokes[SPOKE1_INDEX].spokeAddress,
         amount: spokes[SPOKE1_INDEX].actions.draw[t].amount,
         riskPremium: 0,
         to: bob,
-        onBehalfOf: spokes[SPOKE1_INDEX].addr
+        onBehalfOf: spokes[SPOKE1_INDEX].spokeAddress
       });
     } else if (stage == stages[2]) {
-      hub.addSpoke(state.assetId, spokeConfig, spokes[SPOKE4_INDEX].addr);
+      hub.addSpoke(state.assetId, spokeConfig, spokes[SPOKE4_INDEX].spokeAddress);
     } else if (stage == stages[3]) {
       Utils.draw({
         hub: hub,
         assetId: state.assetId,
-        spoke: spokes[SPOKE4_INDEX].addr,
+        spoke: spokes[SPOKE4_INDEX].spokeAddress,
         amount: spokes[SPOKE4_INDEX].actions.draw[t].amount,
         riskPremium: 0,
         to: bob,
-        onBehalfOf: spokes[SPOKE4_INDEX].addr
+        onBehalfOf: spokes[SPOKE4_INDEX].spokeAddress
       });
     } else if (stage == stages[4]) {
       Utils.supply({
         hub: hub,
         assetId: state.assetId,
-        spoke: spokes[SPOKE4_INDEX].addr,
+        spoke: spokes[SPOKE4_INDEX].spokeAddress,
         amount: spokes[SPOKE4_INDEX].actions.supply[t].amount,
         riskPremium: 0,
         user: bob,
-        to: spokes[SPOKE4_INDEX].addr
+        to: spokes[SPOKE4_INDEX].spokeAddress
       });
     } else if (stage == stages[5]) {
       Utils.restore({
         hub: hub,
         assetId: state.assetId,
-        spoke: spokes[SPOKE1_INDEX].addr,
+        spoke: spokes[SPOKE1_INDEX].spokeAddress,
         amount: spokes[SPOKE1_INDEX].actions.restore[t].amount,
         riskPremium: 0,
         repayer: bob
@@ -165,7 +169,7 @@ contract BorrowIndex_Scenario4Test is BorrowIndexBase {
       Utils.restore({
         hub: hub,
         assetId: state.assetId,
-        spoke: spokes[SPOKE4_INDEX].addr,
+        spoke: spokes[SPOKE4_INDEX].spokeAddress,
         amount: spokes[SPOKE4_INDEX].actions.restore[t].amount,
         riskPremium: 0,
         repayer: bob
