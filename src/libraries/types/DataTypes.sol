@@ -34,20 +34,22 @@ library DataTypes {
   }
 
   struct AssetConfig {
+    bool active;
+    bool frozen;
+    bool paused;
     uint256 decimals;
-    bool active; // TODO: frozen, paused
     address irStrategy; // todo use interface
   }
 
   // Spoke types
   struct CalculateInterestRatesParams {
+    bool usingVirtualBalance;
     uint256 liquidityAdded;
     uint256 liquidityTaken;
     uint256 totalDebt;
     uint256 reserveFactor; // likely not required
     uint256 assetId;
     uint256 virtualUnderlyingBalance;
-    bool usingVirtualBalance;
   }
 
   struct Reserve {
@@ -64,11 +66,15 @@ library DataTypes {
   }
 
   struct ReserveConfig {
-    uint256 lt; // 1e4 == 100%, BPS
-    uint256 lb; // TODO: liquidationProtocolFee
-    uint256 liquidityPremium; // BPS
+    bool active;
+    bool frozen;
+    bool paused;
     bool borrowable;
     bool collateral;
+    uint256 decimals;
+    uint256 collateralFactor; // BPS
+    uint256 liquidationBonus; // TODO: liquidationProtocolFee
+    uint256 liquidityPremium; // BPS
   }
 
   struct UserPosition {
@@ -106,7 +112,7 @@ library DataTypes {
     uint256 userCollateralInBaseCurrency;
     uint256 totalCollateralInBaseCurrency;
     uint256 totalDebtInBaseCurrency;
-    uint256 avgLiquidationThreshold;
+    uint256 avgCollateralFactor;
     uint256 userRiskPremium;
     uint256 healthFactor;
   }

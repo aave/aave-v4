@@ -102,7 +102,7 @@ contract LiquidityHubAccrueInterestTest is Base {
     spokeMintAndApprove();
   }
 
-  function test_accrueInterest_NoActionTaken() public {
+  function test_accrueInterest_NoActionTaken() public view {
     DataTypes.Asset memory daiInfo = hub.getAsset(daiAssetId);
     assertEq(daiInfo.lastUpdateTimestamp, vm.getBlockTimestamp());
     assertEq(daiInfo.baseDebt, 0);
@@ -111,8 +111,6 @@ contract LiquidityHubAccrueInterestTest is Base {
   }
 
   function test_accrueInterest_OnlySupply(uint40 elapsed) public {
-    uint256 startTime = vm.getBlockTimestamp();
-
     Utils.supply(hub, daiAssetId, address(spoke1), 1000e18, 0, address(spoke1), address(spoke1));
 
     // Time passes
@@ -269,9 +267,7 @@ contract LiquidityHubAccrueInterestTest is Base {
 
     Timestamps memory timestamps;
     AssetDataLocal memory assetData;
-    Spoke1DataLocal memory spokeData;
     Spoke1Amounts memory spoke1Amounts;
-    Spoke2Amounts memory spoke2Amounts;
     CumulatedInterest memory cumulated;
 
     spoke1Amounts.supply0 = borrowAmount * 2;

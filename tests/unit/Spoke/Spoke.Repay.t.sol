@@ -144,6 +144,39 @@ contract SpokeRepayTest is SpokeBase {
     assertEq(tokenList.weth.balanceOf(bob), bobWethBalanceBefore);
   }
 
+  function test_repay_revertsWith_ReserveNotActive() public {
+    uint256 daiReserveId = daiReserveId(spoke1);
+    uint256 amount = 100e18;
+
+    updateReserveActiveFlag(spoke1, daiReserveId, false);
+    assertFalse(spoke1.getReserve(daiReserveId).config.active);
+
+    vm.expectRevert(ISpoke.ReserveNotActive.selector);
+    vm.prank(bob);
+    spoke1.repay(daiReserveId, amount);
+  }
+
+  function test_repay_revertsWith_ReservePaused() public {
+    uint256 daiReserveId = daiReserveId(spoke1);
+    uint256 amount = 100e18;
+
+    updateReservePausedFlag(spoke1, daiReserveId, true);
+    assertTrue(spoke1.getReserve(daiReserveId).config.paused);
+
+    vm.expectRevert(ISpoke.ReservePaused.selector);
+    vm.prank(bob);
+    spoke1.repay(daiReserveId, amount);
+  }
+
+  function test_repay_revertsWith_ReserveNotListed() public {
+    uint256 reserveId = spoke1.reserveCount() + 1; // invalid reserveId
+    uint256 amount = 100e18;
+
+    vm.expectRevert(ISpoke.ReserveNotListed.selector);
+    vm.prank(bob);
+    spoke1.repay(reserveId, amount);
+  }
+
   /// repay all debt interest
   function test_repay_only_interest() public {
     uint256 daiSupplyAmount = 100e18;
@@ -942,6 +975,7 @@ contract SpokeRepayTest is SpokeBase {
       // not enough time travel for premium accrual
       daiRepayAmount = 0;
       vm.expectRevert(ILiquidityHub.InvalidRestoreAmount.selector);
+      vm.prank(bob);
       spoke1.repay(daiReserveId(spoke1), daiRepayAmount);
     } else {
       // interest is at least 1
@@ -1050,6 +1084,7 @@ contract SpokeRepayTest is SpokeBase {
       // not enough time travel for premium accrual
       daiRepayAmount = 0;
       vm.expectRevert(ILiquidityHub.InvalidRestoreAmount.selector);
+      vm.prank(bob);
       spoke1.repay(daiReserveId(spoke1), daiRepayAmount);
     } else {
       // interest is at least 1

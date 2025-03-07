@@ -649,16 +649,16 @@ contract LiquidityHubWithdrawTest is LiquidityHubBase {
     );
   }
 
-  function test_withdraw_revertsWith_supplied_amount_exceeded_zero_supplied() public {
+  function test_withdraw_revertsWith_SuppliedAmountExceeded_zero_supplied() public {
     uint256 assetId = 0;
     uint256 amount = 1;
 
-    vm.prank(address(spoke1));
     vm.expectRevert(abi.encodeWithSelector(ILiquidityHub.SuppliedAmountExceeded.selector, 0));
+    vm.prank(address(spoke1));
     hub.withdraw({assetId: assetId, amount: amount, riskPremium: 0, to: address(spoke1)});
   }
 
-  function test_withdraw_revertsWith_supplied_amount_exceeded() public {
+  function test_withdraw_revertsWith_SuppliedAmountExceeded() public {
     uint256 assetId = daiAssetId;
     uint256 amount = 100e18;
 
@@ -673,18 +673,19 @@ contract LiquidityHubWithdrawTest is LiquidityHubBase {
       to: address(spoke1)
     });
 
-    vm.prank(address(spoke1));
     vm.expectRevert(abi.encodeWithSelector(ILiquidityHub.SuppliedAmountExceeded.selector, amount));
+    vm.prank(address(spoke1));
     hub.withdraw({assetId: assetId, amount: amount + 1, riskPremium: 0, to: alice});
 
     // advance time, but no accumulation
     skip(1e18);
-    vm.prank(address(spoke1));
+
     vm.expectRevert(abi.encodeWithSelector(ILiquidityHub.SuppliedAmountExceeded.selector, amount));
+    vm.prank(address(spoke1));
     hub.withdraw({assetId: assetId, amount: amount + 1, riskPremium: 0, to: alice});
   }
 
-  function test_withdraw_revertsWith_not_available_liquidity() public {
+  function test_withdraw_revertsWith_NotAvailableLiquidity() public {
     uint256 amount = 100e18;
 
     // User supply
@@ -710,12 +711,11 @@ contract LiquidityHubWithdrawTest is LiquidityHubBase {
     });
 
     vm.expectRevert(abi.encodeWithSelector(ILiquidityHub.NotAvailableLiquidity.selector, 0));
-
     vm.prank(address(spoke1));
     hub.withdraw({assetId: daiAssetId, amount: amount, riskPremium: 0, to: address(spoke1)});
   }
 
-  function test_withdraw_revertsWith_invalid_withdraw_amount() public {
+  function test_withdraw_revertsWith_InvalidWithdrawAmount() public {
     uint256 amount = 100e18;
 
     // User supply
@@ -734,11 +734,24 @@ contract LiquidityHubWithdrawTest is LiquidityHubBase {
     hub.withdraw({assetId: daiAssetId, amount: 0, riskPremium: 0, to: alice});
   }
 
-  function test_withdraw_revertsWith_asset_not_active() public {
+  function test_withdraw_revertsWith_AssetNotActive() public {
     uint256 amount = 100e18;
     updateAssetActive(hub, daiAssetId, false);
 
+    assertFalse(hub.getAssetConfig(daiAssetId).active);
+
     vm.expectRevert(ILiquidityHub.AssetNotActive.selector);
+    vm.prank(address(spoke1));
+    hub.withdraw({assetId: daiAssetId, amount: amount, riskPremium: 0, to: alice});
+  }
+
+  function test_withdraw_revertsWith_AssetPaused() public {
+    uint256 amount = 100e18;
+    updateAssetPaused(hub, daiAssetId, true);
+
+    assertTrue(hub.getAssetConfig(daiAssetId).paused);
+
+    vm.expectRevert(ILiquidityHub.AssetPaused.selector);
     vm.prank(address(spoke1));
     hub.withdraw({assetId: daiAssetId, amount: amount, riskPremium: 0, to: alice});
   }
