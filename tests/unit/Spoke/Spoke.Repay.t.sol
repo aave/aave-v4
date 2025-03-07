@@ -365,6 +365,83 @@ contract SpokeRepayTest is SpokeBase {
       bobDaiBalanceBefore - fullDebt,
       "Bob's dai balance decreased by full debt repaid"
     );
+
+    // Verify reserve debt is 0
+    (uint256 baseDaiDebt, uint256 outstandingDaiPremium) = spoke1.getReserveDebt(
+      daiReserveId(spoke1)
+    );
+    assertEq(baseDaiDebt, 0);
+    assertEq(outstandingDaiPremium, 0);
+  }
+
+  function test_fuzz_repay_max_amount_gt_current_debt(uint256 repayAmount) public {
+    uint256 daiSupplyAmount = 100e18;
+    uint256 wethSupplyAmount = 10e18;
+    uint256 daiBorrowAmount = daiSupplyAmount / 2;
+
+    // Bob supplies WETH as collateral
+    Utils.spokeSupply(spoke1, wethReserveId(spoke1), bob, wethSupplyAmount, bob);
+    setUsingAsCollateral(spoke1, bob, wethReserveId(spoke1), true);
+
+    // Alice supplies DAI
+    Utils.spokeSupply(spoke1, daiReserveId(spoke1), alice, daiSupplyAmount, alice);
+
+    // Bob borrows DAI
+    Utils.spokeBorrow(spoke1, daiReserveId(spoke1), bob, daiBorrowAmount, bob);
+
+    DataTypes.UserPosition memory bobDaiDataBefore = getUserInfo(spoke1, bob, daiReserveId(spoke1));
+    uint256 bobDaiBalanceBefore = tokenList.dai.balanceOf(bob);
+
+    assertEq(bobDaiDataBefore.suppliedShares, 0);
+    assertEq(
+      bobDaiDataBefore.baseDebt + bobDaiDataBefore.outstandingPremium,
+      daiBorrowAmount,
+      'Initial bob dai debt'
+    );
+
+    // Time passes so that interest accrues
+    skip(10 days);
+
+    bobDaiDataBefore = getUserInfo(spoke1, bob, daiReserveId(spoke1));
+    // Bob's debt (base debt + premium) is greater than the original borrow amount
+    assertGt(
+      bobDaiDataBefore.baseDebt + bobDaiDataBefore.outstandingPremium,
+      daiBorrowAmount,
+      'Accrued interest increased bob dai debt'
+    );
+
+    // Calculate full debt before repayment
+    uint256 fullDebt = bobDaiDataBefore.baseDebt + bobDaiDataBefore.outstandingPremium;
+    uint256 repayAmount = bound(repayAmount, fullDebt + 1, type(uint256).max - 1);
+
+    vm.expectEmit(address(spoke1));
+    emit ISpoke.Repaid(daiReserveId(spoke1), bob, fullDebt);
+
+    // Bob repays using repay Amount > full debt
+    vm.prank(bob);
+    spoke1.repay(daiReserveId(spoke1), repayAmount);
+
+    DataTypes.UserPosition memory bobDaiDataAfter = getUserInfo(spoke1, bob, daiReserveId(spoke1));
+    uint256 bobDaiBalanceAfter = tokenList.dai.balanceOf(bob);
+
+    assertEq(
+      bobDaiDataAfter.baseDebt + bobDaiDataAfter.outstandingPremium,
+      0,
+      "Bob's dai debt should be cleared"
+    );
+
+    assertEq(
+      bobDaiBalanceAfter,
+      bobDaiBalanceBefore - fullDebt,
+      "Bob's dai balance decreased by full debt repaid"
+    );
+
+    // Verify reserve debt is 0
+    (uint256 baseDaiDebt, uint256 outstandingDaiPremium) = spoke1.getReserveDebt(
+      daiReserveId(spoke1)
+    );
+    assertEq(baseDaiDebt, 0);
+    assertEq(outstandingDaiPremium, 0);
   }
 
   /// repay all accrued base debt when outstanding premium is already repaid

@@ -212,7 +212,7 @@ contract Spoke is ISpoke {
 
     // User wants to repay all the debt
     uint256 currentDebt = user.baseDebt + user.outstandingPremium;
-    if (amount == type(uint256).max) {
+    if (amount > currentDebt) {
       amount = currentDebt;
     }
 
