@@ -369,7 +369,10 @@ contract Spoke is ISpoke {
     require(reserve.asset != address(0), ReserveNotListed());
     require(reserve.config.active, ReserveNotActive());
     require(!reserve.config.paused, ReservePaused());
-    uint256 suppliedAmount = liquidityHub.convertToAssets(reserve.assetId, userPosition.suppliedShares);
+    uint256 suppliedAmount = liquidityHub.convertToAssets(
+      reserve.assetId,
+      userPosition.suppliedShares
+    );
     require(amount <= suppliedAmount, InsufficientSupply(suppliedAmount));
   }
 
