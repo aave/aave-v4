@@ -65,7 +65,7 @@ contract LiquidityHub is ILiquidityHub {
 
     // in order to switch off an asset, enforce 0 suppliers
     if (!config.active) {
-      require(asset.suppliedShares == 0, AssetCannotBePaused());
+      require(asset.suppliedShares == 0, AssetCannotBeInactive());
     }
 
     // TODO: AccessControl

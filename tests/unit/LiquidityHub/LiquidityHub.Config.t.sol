@@ -123,7 +123,7 @@ contract LiquidityHubConfigTest is LiquidityHubBase {
     assertEq(hub.getAssetConfig(daiAssetId).active, true, 'asset active');
   }
 
-  function test_updateAssetConfig_revertsWith_AssetCannotBePaused() public {
+  function test_updateAssetConfig_revertsWith_AssetCannotBeInactive() public {
     // spoke1 supply weth
     Utils.supply({
       hub: hub,
@@ -142,7 +142,7 @@ contract LiquidityHubConfigTest is LiquidityHubBase {
     config.active = false;
 
     vm.prank(HUB_ADMIN);
-    vm.expectRevert(ILiquidityHub.AssetCannotBePaused.selector);
+    vm.expectRevert(ILiquidityHub.AssetCannotBeInactive.selector);
     hub.updateAssetConfig(wethAssetId, config);
   }
 }

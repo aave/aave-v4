@@ -50,7 +50,7 @@ interface ILiquidityHub {
   error SurplusAmountRestored(uint256 maxAllowedRestore);
   error InvalidSpoke();
   error InvalidRiskPremiumBps(uint256 bps);
-  error AssetCannotBePaused();
+  error AssetCannotBeInactive();
   error AssetPaused();
   error AssetFrozen();
 

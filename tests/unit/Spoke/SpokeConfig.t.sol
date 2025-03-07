@@ -88,4 +88,43 @@ contract SpokeConfigTest is SpokeBase {
     );
     assertEq(userData.usingAsCollateral, usingAsCollateral, 'wrong usingAsCollateral');
   }
+
+  function test_updateReserveConfig_revertsWith_InvalidLiquidityPremium() public {
+    uint256 daiReserveId = daiReserveId(spoke1);
+    DataTypes.ReserveConfig memory config = spoke1.getReserve(daiReserveId).config;
+
+    config.liquidityPremium = PercentageMath.PERCENTAGE_FACTOR * 10 + 1;
+
+    vm.prank(SPOKE_ADMIN);
+    vm.expectRevert(abi.encodeWithSelector(ISpoke.InvalidLiquidityPremium.selector));
+    spoke1.updateReserveConfig(daiReserveId, config);
+  }
+
+  function test_updateReserveConfig_revertsWith_InvalidReserve() public {
+    uint256 invalidReserveId = spoke1.reserveCount();
+    DataTypes.ReserveConfig memory config;
+
+    vm.prank(SPOKE_ADMIN);
+    vm.expectRevert(abi.encodeWithSelector(ISpoke.InvalidReserve.selector));
+    spoke1.updateReserveConfig(invalidReserveId, config);
+  }
+
+  function test_updateReserveConfig_revertsWith_ReserveCannotBePaused() public {
+    uint256 daiReserveId = daiReserveId(spoke1);
+    DataTypes.ReserveConfig memory config = spoke1.getReserve(daiReserveId).config;
+    config.active = false;
+
+    // supply some DAI to the reserve to prevent pausing
+    Utils.spokeSupply({
+      spoke: spoke1,
+      reserveId: daiReserveId,
+      user: bob,
+      amount: 100e18,
+      onBehalfOf: bob
+    });
+
+    vm.prank(SPOKE_ADMIN);
+    vm.expectRevert(abi.encodeWithSelector(ISpoke.ReserveCannotBeInactive.selector));
+    spoke1.updateReserveConfig(daiReserveId, config);
+  }
 }

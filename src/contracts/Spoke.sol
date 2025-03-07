@@ -39,14 +39,14 @@ contract Spoke is ISpoke {
 
   function addReserve(
     uint256 assetId,
-    DataTypes.ReserveConfig memory params,
+    DataTypes.ReserveConfig memory config,
     address asset
   ) external returns (uint256) {
     uint256 _reserveCount = reserveCount;
     DataTypes.Reserve storage reserve = _reserves[_reserveCount];
     // TODO: validate reserveId does not exist already, valid asset
     require(
-      params.liquidityPremium <= PercentageMath.PERCENTAGE_FACTOR * 10,
+      config.liquidityPremium <= PercentageMath.PERCENTAGE_FACTOR * 10,
       InvalidLiquidityPremium()
     );
 
@@ -63,15 +63,15 @@ contract Spoke is ISpoke {
       lastUpdateTimestamp: 0,
       riskPremium: 0,
       config: DataTypes.ReserveConfig({
-        decimals: params.decimals,
-        active: params.active,
-        frozen: params.frozen,
-        paused: params.paused,
-        liquidationThreshold: params.liquidationThreshold,
-        liquidationBonus: params.liquidationBonus,
-        liquidityPremium: params.liquidityPremium,
-        borrowable: params.borrowable,
-        collateral: params.collateral
+        decimals: config.decimals,
+        active: config.active,
+        frozen: config.frozen,
+        paused: config.paused,
+        liquidationThreshold: config.liquidationThreshold,
+        liquidationBonus: config.liquidationBonus,
+        liquidityPremium: config.liquidityPremium,
+        borrowable: config.borrowable,
+        collateral: config.collateral
       })
     });
 
@@ -82,38 +82,42 @@ contract Spoke is ISpoke {
 
   function updateReserveConfig(
     uint256 reserveId,
-    DataTypes.ReserveConfig calldata params
+    DataTypes.ReserveConfig calldata config
   ) external {
     // TODO: More sophisticated
-    require(_reserves[reserveId].asset != address(0), InvalidReserve());
     require(
-      params.liquidityPremium <= PercentageMath.PERCENTAGE_FACTOR * 10,
+      config.liquidityPremium <= PercentageMath.PERCENTAGE_FACTOR * 10,
       InvalidLiquidityPremium()
     );
+    require(_reserves[reserveId].asset != address(0), InvalidReserve());
+    // in order to switch off a reserve, enforce 0 suppliers
+    if (!config.active) {
+      require(_reserves[reserveId].suppliedShares == 0, ReserveCannotBeInactive());
+    }
     // TODO: AccessControl
     _reserves[reserveId].config = DataTypes.ReserveConfig({
-      decimals: params.decimals,
-      active: params.active,
-      frozen: params.frozen,
-      paused: params.paused,
-      liquidationThreshold: params.liquidationThreshold,
-      liquidationBonus: params.liquidationBonus,
-      liquidityPremium: params.liquidityPremium,
-      borrowable: params.borrowable,
-      collateral: params.collateral
+      decimals: config.decimals,
+      active: config.active,
+      frozen: config.frozen,
+      paused: config.paused,
+      liquidationThreshold: config.liquidationThreshold,
+      liquidationBonus: config.liquidationBonus,
+      liquidityPremium: config.liquidityPremium,
+      borrowable: config.borrowable,
+      collateral: config.collateral
     });
 
     emit ReserveConfigUpdated(
       reserveId,
-      params.decimals,
-      params.active,
-      params.frozen,
-      params.paused,
-      params.liquidationThreshold,
-      params.liquidationBonus,
-      params.liquidityPremium,
-      params.borrowable,
-      params.collateral
+      config.decimals,
+      config.active,
+      config.frozen,
+      config.paused,
+      config.liquidationThreshold,
+      config.liquidationBonus,
+      config.liquidityPremium,
+      config.borrowable,
+      config.collateral
     );
   }
 
