@@ -133,7 +133,8 @@ contract LiquidityHub is ILiquidityHub {
       asset: asset,
       spoke: spoke,
       newSpokeRiskPremium: _boundBps(riskPremium).rayify(),
-      baseDebtChange: 0
+      baseDebtAdded: 0,
+      baseDebtTaken: 0
     });
 
     // todo: Mitigate inflation attack (burn some amount if first supply)
@@ -142,7 +143,7 @@ contract LiquidityHub is ILiquidityHub {
 
     asset.availableLiquidity += amount;
     asset.suppliedShares += sharesAmount;
-    spoke.suppliedShares += sharesAmount; // todo: mint 4626 shares to abstract this accounting
+    spoke.suppliedShares += sharesAmount;
 
     // TODO: fee-on-transfer
     assetsList[assetId].safeTransferFrom(supplier, address(this), amount);
@@ -168,7 +169,13 @@ contract LiquidityHub is ILiquidityHub {
     _validateWithdraw(asset, spoke, amount);
 
     asset.updateBorrowRate({liquidityAdded: 0, liquidityTaken: amount});
-    _updateRiskPremiumAndBaseDebt(asset, spoke, _boundBps(riskPremium).rayify(), 0); // no base debt change
+    _updateRiskPremiumAndBaseDebt({
+      asset: asset,
+      spoke: spoke,
+      newSpokeRiskPremium: _boundBps(riskPremium).rayify(),
+      baseDebtAdded: 0,
+      baseDebtTaken: 0
+    });
 
     uint256 sharesAmount = asset.convertToSharesUp(amount);
     require(sharesAmount > 0, InvalidSharesAmount());
@@ -200,7 +207,13 @@ contract LiquidityHub is ILiquidityHub {
     _validateDraw(asset, amount, spoke.config.drawCap);
 
     asset.updateBorrowRate({liquidityAdded: 0, liquidityTaken: amount});
-    _updateRiskPremiumAndBaseDebt(asset, spoke, _boundBps(riskPremium).rayify(), int256(amount)); // base debt added
+    _updateRiskPremiumAndBaseDebt({
+      asset: asset,
+      spoke: spoke,
+      newSpokeRiskPremium: _boundBps(riskPremium).rayify(),
+      baseDebtAdded: amount,
+      baseDebtTaken: 0
+    });
 
     asset.availableLiquidity -= amount;
 
@@ -228,12 +241,13 @@ contract LiquidityHub is ILiquidityHub {
 
     asset.updateBorrowRate({liquidityAdded: amount, liquidityTaken: 0});
     uint256 baseDebtRestored = _deductFromOutstandingPremium(asset, spoke, amount);
-    _updateRiskPremiumAndBaseDebt(
-      asset,
-      spoke,
-      _boundBps(riskPremium).rayify(),
-      -int256(baseDebtRestored)
-    );
+    _updateRiskPremiumAndBaseDebt({
+      asset: asset,
+      spoke: spoke,
+      newSpokeRiskPremium: _boundBps(riskPremium).rayify(),
+      baseDebtAdded: 0,
+      baseDebtTaken: baseDebtRestored
+    });
 
     asset.availableLiquidity += amount;
 
@@ -252,7 +266,13 @@ contract LiquidityHub is ILiquidityHub {
     DataTypes.SpokeData storage spoke = _spokes[assetId][msg.sender];
 
     _accrueInterest(asset, spoke);
-    _updateRiskPremiumAndBaseDebt(asset, spoke, _boundBps(riskPremium).rayify(), 0);
+    _updateRiskPremiumAndBaseDebt({
+      asset: asset,
+      spoke: spoke,
+      newSpokeRiskPremium: _boundBps(riskPremium).rayify(),
+      baseDebtAdded: 0,
+      baseDebtTaken: 0
+    });
   }
 
   //
@@ -283,22 +303,6 @@ contract LiquidityHub is ILiquidityHub {
 
   function getTotalAssets(uint256 assetId) external view returns (uint256) {
     return _assets[assetId].getTotalAssets();
-  }
-
-  function convertToSharesUp(uint256 assetId, uint256 assets) external view returns (uint256) {
-    return _assets[assetId].convertToSharesUp(assets);
-  }
-
-  function convertToSharesDown(uint256 assetId, uint256 assets) external view returns (uint256) {
-    return _assets[assetId].convertToSharesDown(assets);
-  }
-
-  function convertToAssetsUp(uint256 assetId, uint256 shares) external view returns (uint256) {
-    return _assets[assetId].convertToAssetsUp(shares);
-  }
-
-  function convertToAssetsDown(uint256 assetId, uint256 shares) external view returns (uint256) {
-    return _assets[assetId].convertToAssetsDown(shares);
   }
 
   function convertToAssets(uint256 assetId, uint256 shares) external view returns (uint256) {
@@ -454,7 +458,8 @@ contract LiquidityHub is ILiquidityHub {
     DataTypes.Asset storage asset,
     DataTypes.SpokeData storage spoke,
     uint256 newSpokeRiskPremium,
-    int256 baseDebtChange
+    uint256 baseDebtAdded,
+    uint256 baseDebtTaken
   ) internal {
     uint256 existingAssetDebt = asset.baseDebt;
     uint256 existingSpokeDebt = spoke.baseDebt;
@@ -468,10 +473,8 @@ contract LiquidityHub is ILiquidityHub {
         existingSpokeDebt
       );
 
-    uint256 newSpokeDebt = baseDebtChange > 0
-      ? existingSpokeDebt + uint256(baseDebtChange) // debt added
-      : existingSpokeDebt - uint256(-baseDebtChange); // debt restored
-    // force underflow^: only possible when spoke takes repays amount more than net drawn
+    // This results in an underflow if more base debt than the total accounted is taken
+    uint256 newSpokeDebt = existingSpokeDebt + baseDebtAdded - baseDebtTaken;
 
     (uint256 newAssetRiskPremium, uint256 newAssetDebt) = MathUtils.addToWeightedAverage(
       assetRiskPremiumWithoutCurrent,
