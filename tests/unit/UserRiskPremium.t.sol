@@ -22,11 +22,11 @@ contract UserRiskPremiumTest_ToMigrate is Base {
   function test_getUserRiskPremium_single_asset_collateral() public {
     uint256 daiId = 0;
     uint256 daiAmount = 100e18;
-    bool newCollateral = true;
+    bool newCollateralFlag = true;
     bool usingAsCollateral = true;
 
     // ensure DAI allowed as collateral
-    updateCollateral(spoke1, daiId, newCollateral);
+    updateCollateralFlag(spoke1, daiId, newCollateralFlag);
 
     // USER1 supply dai into spoke1
     deal(address(dai), USER1, daiAmount);
@@ -44,12 +44,12 @@ contract UserRiskPremiumTest_ToMigrate is Base {
     uint256 daiAmount = 100e18;
     uint256 ethAmount = 10e18;
 
-    bool newCollateral = true;
+    bool newCollateralFlag = true;
     bool usingAsCollateral = true;
 
     // ensure DAI allowed as collateral
-    updateCollateral(spoke1, daiId, newCollateral);
-    updateCollateral(spoke1, ethId, newCollateral);
+    updateCollateralFlag(spoke1, daiId, newCollateralFlag);
+    updateCollateralFlag(spoke1, ethId, newCollateralFlag);
 
     // USER1 supply dai into spoke1
     deal(address(dai), USER1, daiAmount);
@@ -72,12 +72,12 @@ contract UserRiskPremiumTest_ToMigrate is Base {
     uint256 daiAmount = 10_000e18; // 10k dai -> $10k
     uint256 ethAmount = 10e18; // 10 eth -> $20k
     // total collateral -> $30k
-    bool newCollateral = true;
+    bool newCollateralFlag = true;
     bool usingAsCollateral = true;
 
     // ensure DAI/ETH allowed as collateral
-    updateCollateral(spoke1, daiId, newCollateral);
-    updateCollateral(spoke1, ethId, newCollateral);
+    updateCollateralFlag(spoke1, daiId, newCollateralFlag);
+    updateCollateralFlag(spoke1, ethId, newCollateralFlag);
 
     // USER1 supply dai into spoke1
     deal(address(dai), USER1, daiAmount);

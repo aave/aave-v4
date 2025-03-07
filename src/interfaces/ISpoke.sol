@@ -12,14 +12,7 @@ import {IPriceOracle} from 'src/interfaces/IPriceOracle.sol';
  */
 interface ISpoke {
   event ReserveAdded(uint256 indexed reserveId, uint256 indexed assetId);
-  event ReserveConfigUpdated(
-    uint256 indexed reserveId,
-    uint256 lt,
-    uint256 lb,
-    uint256 liquidityPremium,
-    bool borrowable,
-    bool collateral
-  );
+  event ReserveConfigUpdated(uint256 indexed reserveId, DataTypes.ReserveConfig config);
   event LiquidityPremiumUpdated(uint256 indexed reserveId, uint256 liquidityPremium);
 
   event Supplied(uint256 indexed reserveId, address indexed user, uint256 amount);
@@ -35,13 +28,18 @@ interface ISpoke {
   error NotAvailableLiquidity(uint256 availableLiquidity);
   error ReserveNotBorrowable(uint256 reserveId);
   error RepayAmountExceedsDebt(uint256 debt);
-  error ReserveNotCollateral(uint256 reserveId);
+  error ReserveCannotBeUsedAsCollateral(uint256 reserveId);
+  error ReserveNotActive();
+  error ReservePaused();
+  error ReserveFrozen();
+  error InvalidCollateralFactor();
+  error InvalidLiquidationBonus();
+  error InvalidReserveDecimals();
   error HealthFactorLowerThanLiquidationThreshold();
 
   function addReserve(
     uint256 assetId,
-    DataTypes.ReserveConfig memory params,
-    address asset
+    DataTypes.ReserveConfig memory params
   ) external returns (uint256);
   function updateReserveConfig(uint256 reserveId, DataTypes.ReserveConfig calldata params) external;
   function updateLiquidityPremium(uint256 reserveId, uint256 liquidityPremium) external;
@@ -98,7 +96,7 @@ interface ISpoke {
   function getHealthFactor(address user) external view returns (uint256);
   function getReservePrice(uint256 reserveId) external view returns (uint256);
   function getLiquidityPremium(uint256 reserveId) external view returns (uint256);
-  function getLiquidationThreshold(uint256 reserveId) external view returns (uint256);
+  function getCollateralFactor(uint256 reserveId) external view returns (uint256);
   function getReserve(uint256 reserveId) external view returns (DataTypes.Reserve memory);
   function getUserPosition(
     uint256 reserveId,

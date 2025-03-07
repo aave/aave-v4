@@ -247,7 +247,7 @@ contract SpokeBase is Base {
 
     return
       (normalizedDebtAmount.wadify() /
-        normalizedCollPrice.wadify().percentMul(collData.config.lt)) + 1;
+        normalizedCollPrice.wadify().percentMul(collData.config.collateralFactor)) + 1;
   }
 
   function _calcMaxDebtAmount(
@@ -268,7 +268,8 @@ contract SpokeBase is Base {
     uint256 normalizedCollPrice = (collAmount * collPrice).wadify() / collAssetUnits;
 
     uint256 maxDebt = (
-      (normalizedCollPrice.wadify().percentMul(collData.config.lt) / normalizedDebtAmount.wadify())
+      (normalizedCollPrice.wadify().percentMul(collData.config.collateralFactor) /
+        normalizedDebtAmount.wadify())
     );
 
     return maxDebt > 1 ? maxDebt - 1 : maxDebt;

@@ -50,6 +50,11 @@ interface ILiquidityHub {
   error SurplusAmountRestored(uint256 maxAllowedRestore);
   error InvalidSpoke();
   error InvalidRiskPremiumBps(uint256 bps);
+  error AssetPaused();
+  error AssetFrozen();
+  error InvalidIrStrategy();
+  error InvalidAssetDecimals();
+  error InvalidAssetAddress();
 
   function addAsset(DataTypes.AssetConfig memory params, address asset) external;
   function updateAssetConfig(uint256 assetId, DataTypes.AssetConfig memory config) external;
@@ -158,7 +163,11 @@ interface ILiquidityHub {
   function getAssetRiskPremium(uint256 assetId) external view returns (uint256);
   function getSpokeRiskPremium(uint256 assetId, address spoke) external view returns (uint256);
   function getAssetConfig(uint256 assetId) external view returns (DataTypes.AssetConfig memory);
+  function getAvailableLiquidity(uint256 assetId) external view returns (uint256);
 
   function assetCount() external view returns (uint256);
   function assetsList(uint256 assetId) external view returns (IERC20);
+  function DEFAULT_ASSET_INDEX() external view returns (uint256);
+  function DEFAULT_SPOKE_INDEX() external view returns (uint256);
+  function MAX_ALLOWED_ASSET_DECIMALS() external view returns (uint256);
 }

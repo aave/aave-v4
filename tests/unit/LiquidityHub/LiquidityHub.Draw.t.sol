@@ -355,25 +355,52 @@ contract LiquidityHubDrawTest is LiquidityHubBase {
     assertEq(tokenList.weth.balanceOf(address(hub)), wethAmount, 'hub weth final balance');
   }
 
-  function test_draw_revertsWith_asset_not_active() public {
+  function test_draw_revertsWith_AssetNotActive() public {
     uint256 drawAmount = 1;
     updateAssetActive(hub, daiAssetId, false);
-    vm.prank(address(spoke1));
+
+    assertFalse(hub.getAsset(daiAssetId).config.active);
+
     vm.expectRevert(ILiquidityHub.AssetNotActive.selector);
+    vm.prank(address(spoke1));
+    hub.draw({assetId: daiAssetId, amount: drawAmount, riskPremium: 0, to: address(spoke1)});
+  }
+
+  function test_draw_revertsWith_AssetPaused() public {
+    uint256 drawAmount = 1;
+    updateAssetPaused(hub, daiAssetId, true);
+
+    assertTrue(hub.getAsset(daiAssetId).config.paused);
+
+    vm.expectRevert(ILiquidityHub.AssetPaused.selector);
+    vm.prank(address(spoke1));
+    hub.draw({assetId: daiAssetId, amount: drawAmount, riskPremium: 0, to: address(spoke1)});
+  }
+
+  function test_draw_revertsWith_AssetFrozen() public {
+    uint256 drawAmount = 1;
+    updateAssetFrozen(hub, daiAssetId, true);
+
+    assertTrue(hub.getAsset(daiAssetId).config.frozen);
+
+    vm.expectRevert(ILiquidityHub.AssetFrozen.selector);
+    vm.prank(address(spoke1));
     hub.draw({assetId: daiAssetId, amount: drawAmount, riskPremium: 0, to: address(spoke1)});
   }
 
   function test_draw_revertsWith_not_available_liquidity() public {
     uint256 drawAmount = 1;
-    vm.prank(address(spoke1));
+
     vm.expectRevert(abi.encodeWithSelector(ILiquidityHub.NotAvailableLiquidity.selector, 0));
+    vm.prank(address(spoke1));
     hub.draw({assetId: daiAssetId, amount: drawAmount, riskPremium: 0, to: address(spoke1)});
   }
 
   function test_draw_revertsWith_invalid_draw_amount() public {
     uint256 drawAmount = 0;
-    vm.prank(address(spoke1));
+
     vm.expectRevert(ILiquidityHub.InvalidDrawAmount.selector);
+    vm.prank(address(spoke1));
     hub.draw({assetId: daiAssetId, amount: drawAmount, riskPremium: 0, to: address(spoke1)});
   }
 
@@ -411,8 +438,8 @@ contract LiquidityHubDrawTest is LiquidityHubBase {
 
     updateDrawCap(hub, daiAssetId, address(spoke1), drawCap);
 
-    vm.prank(address(spoke1));
     vm.expectRevert(abi.encodeWithSelector(ILiquidityHub.DrawCapExceeded.selector, drawCap));
+    vm.prank(address(spoke1));
     hub.draw({assetId: daiAssetId, amount: drawAmount, riskPremium: 0, to: address(spoke1)});
   }
 }

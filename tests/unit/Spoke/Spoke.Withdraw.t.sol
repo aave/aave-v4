@@ -11,14 +11,47 @@ contract SpokeWithdrawTest is SpokeBase {
   // USDX: $1, 1e6 units
   // DAI: $1, 1e18 units
 
+  function test_withdraw_revertsWith_ReserveNotActive() public {
+    uint256 daiReserveId = _daiReserveId(spoke1);
+    uint256 amount = 100e18;
+
+    updateReserveActiveFlag(spoke1, daiReserveId, false);
+    assertFalse(spoke1.getReserve(daiReserveId).config.active);
+
+    vm.expectRevert(ISpoke.ReserveNotActive.selector);
+    vm.prank(bob);
+    spoke1.withdraw(daiReserveId, amount, bob);
+  }
+
+  function test_withdraw_revertsWith_ReservePaused() public {
+    uint256 daiReserveId = _daiReserveId(spoke1);
+    uint256 amount = 100e18;
+
+    updateReservePausedFlag(spoke1, daiReserveId, true);
+    assertTrue(spoke1.getReserve(daiReserveId).config.paused);
+
+    vm.expectRevert(ISpoke.ReservePaused.selector);
+    vm.prank(bob);
+    spoke1.withdraw(daiReserveId, amount, bob);
+  }
+
+  function test_withdraw_revertsWith_ReserveNotListed() public {
+    uint256 reserveId = spoke1.reserveCount() + 1; // invalid reserveId
+    uint256 amount = 100e18;
+
+    vm.expectRevert(ISpoke.ReserveNotListed.selector);
+    vm.prank(bob);
+    spoke1.withdraw(reserveId, amount, bob);
+  }
+
   function test_withdraw_revertsWith_InsufficientSupply_zero_supplied() public {
     uint256 reserveId = _daiReserveId(spoke1);
     uint256 amount = 1;
 
     assertEq(spoke1.getUserSuppliedAmount(reserveId, alice), 0);
 
-    vm.prank(alice);
     vm.expectRevert(abi.encodeWithSelector(ISpoke.InsufficientSupply.selector, 0));
+    vm.prank(alice);
     spoke1.withdraw(reserveId, amount, alice);
   }
 
@@ -28,8 +61,8 @@ contract SpokeWithdrawTest is SpokeBase {
 
     assertEq(spoke1.getUserSuppliedAmount(reserveId, alice), 0);
 
-    vm.prank(alice);
     vm.expectRevert(abi.encodeWithSelector(ISpoke.InsufficientSupply.selector, 0));
+    vm.prank(alice);
     spoke1.withdraw(reserveId, amount, alice);
   }
 
@@ -49,8 +82,8 @@ contract SpokeWithdrawTest is SpokeBase {
     uint256 withdrawalLimit = getWithdrawalLimit(spoke1, reserveId, alice);
     assertGt(withdrawalLimit, 0);
 
-    vm.prank(alice);
     vm.expectRevert(abi.encodeWithSelector(ISpoke.InsufficientSupply.selector, withdrawalLimit));
+    vm.prank(alice);
     spoke1.withdraw(reserveId, withdrawalLimit + 1, alice);
 
     // skip time but no index increase with no borrow
@@ -58,8 +91,8 @@ contract SpokeWithdrawTest is SpokeBase {
     // withdrawal limit remains constant
     assertEq(withdrawalLimit, getWithdrawalLimit(spoke1, reserveId, alice));
 
-    vm.prank(alice);
     vm.expectRevert(abi.encodeWithSelector(ISpoke.InsufficientSupply.selector, withdrawalLimit));
+    vm.prank(alice);
     spoke1.withdraw(reserveId, withdrawalLimit + 1, alice);
   }
 
@@ -88,8 +121,8 @@ contract SpokeWithdrawTest is SpokeBase {
       onBehalfOf: alice
     });
 
-    vm.prank(alice);
     vm.expectRevert(abi.encodeWithSelector(ISpoke.InsufficientSupply.selector, supplyAmount));
+    vm.prank(alice);
     spoke1.withdraw({reserveId: reserveId, amount: supplyAmount + 1, to: bob});
 
     // accrue interest
@@ -99,8 +132,8 @@ contract SpokeWithdrawTest is SpokeBase {
     // newWithdrawalLimit with accrued interest should be greater than supplyAmount
     assertGt(newWithdrawalLimit, supplyAmount);
 
-    vm.prank(alice);
     vm.expectRevert(abi.encodeWithSelector(ISpoke.InsufficientSupply.selector, newWithdrawalLimit));
+    vm.prank(alice);
     spoke1.withdraw({reserveId: reserveId, amount: newWithdrawalLimit + 1, to: alice});
   }
 
@@ -114,7 +147,7 @@ contract SpokeWithdrawTest is SpokeBase {
   ) public {
     reserveId = bound(reserveId, 0, spokeInfo[spoke1].MAX_RESERVE_ID);
     supplyAmount = bound(supplyAmount, 2, MAX_SUPPLY_AMOUNT);
-    borrowAmount = bound(borrowAmount, 1, supplyAmount / 2); // ensure it is within LT
+    borrowAmount = bound(borrowAmount, 1, supplyAmount / 2); // ensure it is within Collateral Factor
     rate = bound(rate, 1, MAX_BORROW_RATE).bpsToRay();
     skipTime = bound(skipTime, 1, MAX_SKIP_TIME);
 
@@ -142,8 +175,8 @@ contract SpokeWithdrawTest is SpokeBase {
       onBehalfOf: alice
     });
 
-    vm.prank(alice);
     vm.expectRevert(abi.encodeWithSelector(ISpoke.InsufficientSupply.selector, supplyAmount));
+    vm.prank(alice);
     spoke1.withdraw({reserveId: reserveId, amount: supplyAmount + 1, to: alice});
 
     // debt accrues
@@ -153,8 +186,8 @@ contract SpokeWithdrawTest is SpokeBase {
     // newWithdrawalLimit with accrued interest should be greater than supplyAmount
     vm.assume(newWithdrawalLimit > supplyAmount);
 
-    vm.prank(alice);
     vm.expectRevert(abi.encodeWithSelector(ISpoke.InsufficientSupply.selector, newWithdrawalLimit));
+    vm.prank(alice);
     spoke1.withdraw({reserveId: reserveId, amount: newWithdrawalLimit + 1, to: alice});
   }
 
