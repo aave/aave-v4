@@ -326,7 +326,7 @@ abstract contract Base is Test {
       paused: false,
       collateralFactor: 76_00,
       liquidationBonus: 0,
-      liquidityPremium: 10,
+      liquidityPremium: 10_00,
       borrowable: true,
       collateral: true
     });
@@ -337,7 +337,7 @@ abstract contract Base is Test {
       paused: false,
       collateralFactor: 72_00,
       liquidationBonus: 0,
-      liquidityPremium: 20,
+      liquidityPremium: 20_00,
       borrowable: true,
       collateral: true
     });
@@ -348,7 +348,7 @@ abstract contract Base is Test {
       paused: false,
       collateralFactor: 72_00,
       liquidationBonus: 0,
-      liquidityPremium: 50,
+      liquidityPremium: 50_00,
       borrowable: true,
       collateral: true
     });
@@ -386,7 +386,7 @@ abstract contract Base is Test {
       paused: false,
       collateralFactor: 75_00,
       liquidationBonus: 0,
-      liquidityPremium: 10,
+      liquidityPremium: 10_00,
       borrowable: true,
       collateral: true
     });
@@ -397,7 +397,7 @@ abstract contract Base is Test {
       paused: false,
       collateralFactor: 79_00,
       liquidationBonus: 0,
-      liquidityPremium: 20,
+      liquidityPremium: 20_00,
       borrowable: true,
       collateral: true
     });
@@ -408,7 +408,7 @@ abstract contract Base is Test {
       paused: false,
       collateralFactor: 77_00,
       liquidationBonus: 0,
-      liquidityPremium: 50,
+      liquidityPremium: 50_00,
       borrowable: true,
       collateral: true
     });
@@ -446,7 +446,7 @@ abstract contract Base is Test {
       paused: false,
       collateralFactor: 70_00,
       liquidationBonus: 0,
-      liquidityPremium: 100,
+      liquidityPremium: 100_00,
       borrowable: true,
       collateral: true
     });
@@ -560,7 +560,7 @@ abstract contract Base is Test {
     spoke.setUsingAsCollateral(reserveId, usingAsCollateral);
   }
 
-  function updatecollateralFactor(
+  function updateCollateralFactor(
     ISpoke spoke,
     uint256 reserveId,
     uint256 newCollateralFactor

@@ -11,7 +11,6 @@ contract LiquidityHubSupplyTest is LiquidityHubBase {
   function test_supply_revertsWith_ERC20InsufficientAllowance() public {
     uint256 amount = 100e18;
 
-    vm.prank(address(spoke1));
     vm.expectRevert(
       abi.encodeWithSelector(
         IERC20Errors.ERC20InsufficientAllowance.selector,
@@ -20,6 +19,7 @@ contract LiquidityHubSupplyTest is LiquidityHubBase {
         amount
       )
     );
+    vm.prank(address(spoke1));
     hub.supply(daiAssetId, amount, 0, address(spoke1));
   }
 
@@ -29,8 +29,8 @@ contract LiquidityHubSupplyTest is LiquidityHubBase {
     updateAssetActive(hub, daiAssetId, false);
     assertFalse(hub.getAsset(daiAssetId).config.active);
 
-    vm.prank(address(spoke1));
     vm.expectRevert(ILiquidityHub.AssetNotActive.selector);
+    vm.prank(address(spoke1));
     hub.supply(daiAssetId, amount, 0, alice);
   }
 
@@ -40,8 +40,8 @@ contract LiquidityHubSupplyTest is LiquidityHubBase {
     updateAssetPaused(hub, daiAssetId, true);
     assertTrue(hub.getAsset(daiAssetId).config.paused);
 
-    vm.prank(address(spoke1));
     vm.expectRevert(ILiquidityHub.AssetPaused.selector);
+    vm.prank(address(spoke1));
     hub.supply(daiAssetId, amount, 0, alice);
   }
 
@@ -51,8 +51,8 @@ contract LiquidityHubSupplyTest is LiquidityHubBase {
     updateAssetFrozen(hub, daiAssetId, true);
     assertTrue(hub.getAsset(daiAssetId).config.frozen);
 
-    vm.prank(address(spoke1));
     vm.expectRevert(ILiquidityHub.AssetFrozen.selector);
+    vm.prank(address(spoke1));
     hub.supply(daiAssetId, amount, 0, alice);
   }
 
@@ -390,8 +390,8 @@ contract LiquidityHubSupplyTest is LiquidityHubBase {
     uint256 assetId = 0;
     uint256 amount = 0;
 
-    vm.prank(address(spoke1));
     vm.expectRevert(ILiquidityHub.InvalidSupplyAmount.selector);
+    vm.prank(address(spoke1));
     hub.supply(assetId, amount, 0, alice);
   }
 
@@ -417,8 +417,8 @@ contract LiquidityHubSupplyTest is LiquidityHubBase {
 
     // supply < 1 share
     uint256 amount = 1;
-    vm.prank(address(spoke1));
     vm.expectRevert(ILiquidityHub.InvalidSharesAmount.selector);
+    vm.prank(address(spoke1));
     hub.supply(daiAssetId, amount, 0, alice);
   }
 

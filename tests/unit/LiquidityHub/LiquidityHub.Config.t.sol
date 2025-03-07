@@ -10,9 +10,9 @@ contract LiquidityHubConfigTest is LiquidityHubBase {
   function test_addSpoke() public {
     uint256 assetId = hub.assetCount() - 1;
 
-    vm.prank(HUB_ADMIN);
     vm.expectEmit(address(hub));
     emit ILiquidityHub.SpokeAdded(assetId, address(spoke1));
+    vm.prank(HUB_ADMIN);
     hub.addSpoke(assetId, DataTypes.SpokeConfig({supplyCap: 1, drawCap: 1}), address(spoke1));
 
     DataTypes.SpokeConfig memory spokeData = hub.getSpokeConfig(assetId, address(spoke1));
@@ -23,8 +23,8 @@ contract LiquidityHubConfigTest is LiquidityHubBase {
   function test_addSpoke_revertsWith_invalid_spoke() public {
     uint256 assetId = hub.assetCount();
 
-    vm.prank(HUB_ADMIN);
     vm.expectRevert(ILiquidityHub.InvalidSpoke.selector);
+    vm.prank(HUB_ADMIN);
     hub.addSpoke(assetId, DataTypes.SpokeConfig({supplyCap: 1, drawCap: 1}), address(0));
   }
 
@@ -65,8 +65,8 @@ contract LiquidityHubConfigTest is LiquidityHubBase {
     spokeConfigs[0] = DataTypes.SpokeConfig({supplyCap: 1, drawCap: 2});
     spokeConfigs[1] = DataTypes.SpokeConfig({supplyCap: 3, drawCap: 4});
 
-    vm.prank(HUB_ADMIN);
     vm.expectRevert(ILiquidityHub.InvalidSpoke.selector);
+    vm.prank(HUB_ADMIN);
     hub.addSpokes(assetIds, spokeConfigs, address(0));
   }
 
@@ -77,8 +77,8 @@ contract LiquidityHubConfigTest is LiquidityHubBase {
 
     config.paused = true;
 
-    vm.prank(HUB_ADMIN);
     hub.updateAssetConfig(daiAssetId, config);
+    vm.prank(HUB_ADMIN);
     assertEq(hub.getAssetConfig(daiAssetId).paused, true, 'asset paused');
 
     config.paused = false;
@@ -136,29 +136,6 @@ contract LiquidityHubConfigTest is LiquidityHubBase {
     assertEq(hub.getAssetConfig(daiAssetId).active, true, 'asset active');
   }
 
-  function test_updateAssetConfig_revertsWith_AssetCannotBeInactive() public {
-    // spoke1 supply weth
-    Utils.supply({
-      hub: hub,
-      assetId: wethAssetId,
-      spoke: address(spoke1),
-      amount: 1e18,
-      riskPremium: 0,
-      user: alice,
-      to: address(spoke1)
-    });
-
-    // asset should have supplied shares
-    assertGt(hub.getAssetSuppliedShares(wethAssetId), 0);
-
-    DataTypes.AssetConfig memory config = hub.getAssetConfig(wethAssetId);
-    config.active = false;
-
-    vm.prank(HUB_ADMIN);
-    vm.expectRevert(ILiquidityHub.AssetCannotBeInactive.selector);
-    hub.updateAssetConfig(wethAssetId, config);
-  }
-
   function test_updateAssetConfig_decimals() public {
     DataTypes.AssetConfig memory config = hub.getAssetConfig(daiAssetId);
     uint256 newDecimals = 12;
@@ -179,8 +156,8 @@ contract LiquidityHubConfigTest is LiquidityHubBase {
 
     config.decimals = newDecimals;
 
-    vm.prank(HUB_ADMIN);
     vm.expectRevert(ILiquidityHub.InvalidAssetDecimals.selector);
+    vm.prank(HUB_ADMIN);
     hub.updateAssetConfig(daiAssetId, config);
   }
 
@@ -189,8 +166,8 @@ contract LiquidityHubConfigTest is LiquidityHubBase {
 
     config.irStrategy = address(0);
 
-    vm.prank(HUB_ADMIN);
     vm.expectRevert(ILiquidityHub.InvalidIrStrategy.selector);
+    vm.prank(HUB_ADMIN);
     hub.updateAssetConfig(daiAssetId, config);
   }
 
@@ -269,9 +246,25 @@ contract LiquidityHubConfigTest is LiquidityHubBase {
     assertEq(config.irStrategy, address(irStrategy), 'asset irStrategy');
   }
 
-  function test_addAsset_revertsWith_InvalidAssetDecimals() public {
+  function test_addAsset_fuzz(DataTypes.AssetConfig memory newConfig, address asset) public {
+    newConfig.decimals = bound(newConfig.decimals, 0, hub.MAX_ALLOWED_ASSET_DECIMALS());
+    vm.assume(newConfig.irStrategy != address(0) && asset != address(0));
+
     vm.prank(HUB_ADMIN);
+    hub.addAsset(newConfig, asset);
+
+    uint256 assetId = hub.assetCount() - 1;
+    DataTypes.AssetConfig memory config = hub.getAssetConfig(assetId);
+    assertEq(config.decimals, newConfig.decimals, 'asset decimals');
+    assertEq(config.active, newConfig.active, 'asset active');
+    assertEq(config.frozen, newConfig.frozen, 'asset frozen');
+    assertEq(config.paused, newConfig.paused, 'asset paused');
+    assertEq(config.irStrategy, newConfig.irStrategy, 'asset irStrategy');
+  }
+
+  function test_addAsset_revertsWith_InvalidAssetDecimals() public {
     vm.expectRevert(ILiquidityHub.InvalidAssetDecimals.selector);
+    vm.prank(HUB_ADMIN);
     hub.addAsset(
       DataTypes.AssetConfig({
         decimals: 19, // invalid decimals
@@ -285,8 +278,8 @@ contract LiquidityHubConfigTest is LiquidityHubBase {
   }
 
   function test_addAsset_revertsWith_InvalidAssetAddress() public {
-    vm.prank(HUB_ADMIN);
     vm.expectRevert(ILiquidityHub.InvalidAssetAddress.selector);
+    vm.prank(HUB_ADMIN);
     hub.addAsset(
       DataTypes.AssetConfig({
         decimals: 18,
@@ -300,8 +293,8 @@ contract LiquidityHubConfigTest is LiquidityHubBase {
   }
 
   function test_addAsset_revertsWith_InvalidIrStrategy() public {
-    vm.prank(HUB_ADMIN);
     vm.expectRevert(ILiquidityHub.InvalidIrStrategy.selector);
+    vm.prank(HUB_ADMIN);
     hub.addAsset(
       DataTypes.AssetConfig({
         decimals: 18,

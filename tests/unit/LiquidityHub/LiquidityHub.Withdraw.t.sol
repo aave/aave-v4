@@ -653,8 +653,8 @@ contract LiquidityHubWithdrawTest is LiquidityHubBase {
     uint256 assetId = 0;
     uint256 amount = 1;
 
-    vm.prank(address(spoke1));
     vm.expectRevert(abi.encodeWithSelector(ILiquidityHub.SuppliedAmountExceeded.selector, 0));
+    vm.prank(address(spoke1));
     hub.withdraw({assetId: assetId, amount: amount, riskPremium: 0, to: address(spoke1)});
   }
 
@@ -673,14 +673,15 @@ contract LiquidityHubWithdrawTest is LiquidityHubBase {
       to: address(spoke1)
     });
 
-    vm.prank(address(spoke1));
     vm.expectRevert(abi.encodeWithSelector(ILiquidityHub.SuppliedAmountExceeded.selector, amount));
+    vm.prank(address(spoke1));
     hub.withdraw({assetId: assetId, amount: amount + 1, riskPremium: 0, to: alice});
 
     // advance time, but no accumulation
     skip(1e18);
-    vm.prank(address(spoke1));
+
     vm.expectRevert(abi.encodeWithSelector(ILiquidityHub.SuppliedAmountExceeded.selector, amount));
+    vm.prank(address(spoke1));
     hub.withdraw({assetId: assetId, amount: amount + 1, riskPremium: 0, to: alice});
   }
 
@@ -710,7 +711,6 @@ contract LiquidityHubWithdrawTest is LiquidityHubBase {
     });
 
     vm.expectRevert(abi.encodeWithSelector(ILiquidityHub.NotAvailableLiquidity.selector, 0));
-
     vm.prank(address(spoke1));
     hub.withdraw({assetId: daiAssetId, amount: amount, riskPremium: 0, to: address(spoke1)});
   }

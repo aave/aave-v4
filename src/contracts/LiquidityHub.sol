@@ -64,13 +64,7 @@ contract LiquidityHub is ILiquidityHub {
 
   function updateAssetConfig(uint256 assetId, DataTypes.AssetConfig calldata config) external {
     _validateAssetConfig(config, address(assetsList[assetId]));
-
     DataTypes.Asset storage asset = _assets[assetId];
-    // in order to switch off an asset, enforce 0 suppliers
-    if (!config.active) {
-      require(asset.suppliedShares == 0, AssetCannotBeInactive());
-    }
-
     // TODO: AccessControl
     asset.config = DataTypes.AssetConfig({
       decimals: config.decimals,
@@ -390,10 +384,10 @@ contract LiquidityHub is ILiquidityHub {
     uint256 amount
   ) internal view {
     require(amount > 0, InvalidSupplyAmount());
-    require(assetsList[asset.id] != IERC20(address(0)), AssetNotListed());
     require(asset.config.active, AssetNotActive());
     require(!asset.config.paused, AssetPaused());
     require(!asset.config.frozen, AssetFrozen());
+    require(assetsList[asset.id] != IERC20(address(0)), AssetNotListed());
     require(
       spoke.config.supplyCap == type(uint256).max ||
         asset.convertToAssetsDown(spoke.suppliedShares) + amount <= spoke.config.supplyCap,

@@ -49,8 +49,8 @@ contract HealthFactorTest_ToMigrate is Base {
     updateCollateralFlag(spoke1, spokeInfo[spoke1].weth.reserveId, newCollateralFlag);
 
     // set Lt to 100% for both assets
-    updatecollateralFactor(spoke1, spokeInfo[spoke1].dai.reserveId, 1e4);
-    updatecollateralFactor(spoke1, spokeInfo[spoke1].weth.reserveId, 1e4);
+    updateCollateralFactor(spoke1, spokeInfo[spoke1].dai.reserveId, 1e4);
+    updateCollateralFactor(spoke1, spokeInfo[spoke1].weth.reserveId, 1e4);
 
     // USER1 supply dai into spoke1
     deal(address(dai), USER1, daiAmount);
