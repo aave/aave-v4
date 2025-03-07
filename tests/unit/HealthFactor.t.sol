@@ -148,7 +148,7 @@ contract HealthFactorTest_ToMigrate is Base {
       // );
 
       // uint256 assetPrice = oracle.getAssetPrice(assetId);
-      // uint256 userCollateral = hub.convertToAssetsDown(assetId, userPosition.supplyShares) *
+      // uint256 userCollateral = hub.convertToAssets(assetId, userPosition.supplyShares) *
       //   assetPrice;
       // totalCollateral += userCollateral;
       // totalDebt += userPosition.debt * assetPrice;

@@ -31,7 +31,7 @@ contract LiquidityHubWithdrawTest is LiquidityHubBase {
     // asset
     assertEq(
       assetData.suppliedShares,
-      hub.convertToSharesUp(daiAssetId, amount),
+      hub.convertToShares(daiAssetId, amount),
       'asset total shares pre-withdraw'
     );
     assertEq(assetData.availableLiquidity, amount, 'asset availableLiquidity pre-withdraw');
@@ -283,7 +283,7 @@ contract LiquidityHubWithdrawTest is LiquidityHubBase {
     // asset
     assertEq(
       assetData.suppliedShares,
-      hub.convertToSharesUp(assetId, amount),
+      hub.convertToShares(assetId, amount),
       'asset total shares pre-withdraw'
     );
     assertEq(assetData.availableLiquidity, amount, 'asset availableLiquidity pre-withdraw');

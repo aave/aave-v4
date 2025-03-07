@@ -386,7 +386,7 @@ contract Spoke is ISpoke {
   ) internal view {
     require(reserve.config.active, ReserveNotActive());
     require(!reserve.config.paused, ReservePaused());
-    uint256 suppliedAmount = liquidityHub.convertToAssetsDown(reserve.assetId, user.suppliedShares);
+    uint256 suppliedAmount = liquidityHub.convertToAssets(reserve.assetId, user.suppliedShares);
     require(amount <= suppliedAmount, InsufficientSupply(suppliedAmount));
   }
 

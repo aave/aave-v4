@@ -875,7 +875,7 @@ contract LiquidityHubRestoreTest is LiquidityHubBase {
     // dai
     assertEq(
       hubData.daiData.suppliedShares,
-      hub.convertToSharesUp(daiAssetId, daiAmount),
+      hub.convertToShares(daiAssetId, daiAmount),
       'hub dai total shares post-restore'
     );
     assertEq(
@@ -903,7 +903,7 @@ contract LiquidityHubRestoreTest is LiquidityHubBase {
     // weth
     assertEq(
       hubData.wethData.suppliedShares,
-      hub.convertToSharesUp(wethAssetId, wethAmount),
+      hub.convertToShares(wethAssetId, wethAmount),
       'hub weth total shares post-restore'
     );
     assertEq(
