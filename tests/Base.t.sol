@@ -617,9 +617,9 @@ abstract contract Base is Test {
     spoke.updateReserveConfig(reserveId, reserveData.config);
   }
 
-  function updateCollateral(ISpoke spoke, uint256 reserveId, bool newCollateral) internal {
+  function updateCollateralFlag(ISpoke spoke, uint256 reserveId, bool newCollateralFlag) internal {
     DataTypes.Reserve memory reserveData = spoke.getReserve(reserveId);
-    reserveData.config.collateral = newCollateral;
+    reserveData.config.collateral = newCollateralFlag;
     spoke.updateReserveConfig(reserveId, reserveData.config);
   }
 

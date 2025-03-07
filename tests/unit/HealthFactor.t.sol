@@ -21,11 +21,11 @@ contract HealthFactorTest_ToMigrate is Base {
 
   function test_getHealthFactor_no_borrowed() public {
     uint256 daiAmount = 100e18;
-    bool newCollateral = true;
+    bool newCollateralFlag = true;
     bool usingAsCollateral = true;
 
     // ensure DAI allowed as collateral
-    updateCollateral(spoke1, spokeInfo[spoke1].dai.reserveId, newCollateral);
+    updateCollateralFlag(spoke1, spokeInfo[spoke1].dai.reserveId, newCollateralFlag);
 
     // USER1 supply dai into spoke1
     deal(address(tokenList.dai), USER1, daiAmount);
@@ -41,12 +41,12 @@ contract HealthFactorTest_ToMigrate is Base {
     uint256 wethAmount = 10e18; // 10 eth -> $20k
     // total collateral -> $30k
     uint256 usdcBorrowAmount = 15_000e18; // 15k usdc -> $15k
-    bool newCollateral = true;
+    bool newCollateralFlag = true;
     bool usingAsCollateral = true;
 
     // ensure DAI/ETH allowed as collateral
-    updateCollateral(spoke1, spokeInfo[spoke1].dai.reserveId, newCollateral);
-    updateCollateral(spoke1, spokeInfo[spoke1].weth.reserveId, newCollateral);
+    updateCollateralFlag(spoke1, spokeInfo[spoke1].dai.reserveId, newCollateralFlag);
+    updateCollateralFlag(spoke1, spokeInfo[spoke1].weth.reserveId, newCollateralFlag);
 
     // set Lt to 100% for both assets
     updateLiquidationThreshold(spoke1, spokeInfo[spoke1].dai.reserveId, 1e4);
@@ -80,12 +80,12 @@ contract HealthFactorTest_ToMigrate is Base {
     uint256 usdcBorrowAmount = 15_000e18; // 15k usdc -> $15k
     uint256 wbtcBorrowAmount = 0.5e18; // 0.5 wbtc -> $25k
     // total borrowed -> $40k
-    bool newCollateral = true;
+    bool newCollateralFlag = true;
     bool usingAsCollateral = true;
 
     // ensure DAI/ETH allowed as collateral
-    updateCollateral(spoke1, spokeInfo[spoke1].dai.reserveId, newCollateral);
-    updateCollateral(spoke1, spokeInfo[spoke1].weth.reserveId, newCollateral);
+    updateCollateralFlag(spoke1, spokeInfo[spoke1].dai.reserveId, newCollateralFlag);
+    updateCollateralFlag(spoke1, spokeInfo[spoke1].weth.reserveId, newCollateralFlag);
 
     // USER1 supply dai into spoke1
     deal(address(tokenList.dai), USER1, daiAmount);

@@ -55,10 +55,10 @@ contract SpokeConfigTest is SpokeBase {
   }
 
   function test_setUsingAsCollateral_revertsWith_ReserveNotCollateral() public {
-    bool newCollateral = false;
+    bool newCollateralFlag = false;
     bool usingAsCollateral = true;
     uint256 daiReserveId = spokeInfo[spoke1].dai.reserveId;
-    updateCollateral(spoke1, daiReserveId, newCollateral);
+    updateCollateralFlag(spoke1, daiReserveId, newCollateralFlag);
 
     vm.prank(bob);
     vm.expectRevert(abi.encodeWithSelector(ISpoke.ReserveNotCollateral.selector, daiReserveId));
@@ -66,12 +66,12 @@ contract SpokeConfigTest is SpokeBase {
   }
 
   function test_setUsingAsCollateral() public {
-    bool newCollateral = true;
+    bool newCollateralFlag = true;
     bool usingAsCollateral = true;
     uint256 daiAmount = 100e18;
 
     // ensure DAI is allowed as collateral
-    updateCollateral(spoke1, spokeInfo[spoke1].dai.reserveId, newCollateral);
+    updateCollateralFlag(spoke1, spokeInfo[spoke1].dai.reserveId, newCollateralFlag);
 
     // Bob supply dai into spoke1
     deal(address(tokenList.dai), bob, daiAmount);
