@@ -331,6 +331,10 @@ contract Spoke is ISpoke {
     return healthFactor;
   }
 
+  function getUserAccountData(address user) external view returns (uint256, uint256, uint256) {
+    return _calculateUserAccountData(user);
+  }
+
   function getReservePrice(uint256 reserveId) public view returns (uint256) {
     return oracle.getAssetPrice(_reserves[reserveId].assetId);
   }
@@ -348,8 +352,7 @@ contract Spoke is ISpoke {
     uint256 reserveId,
     address user
   ) public view returns (DataTypes.UserPosition memory) {
-    DataTypes.UserPosition memory user = _users[user][reserveId];
-    return user;
+    return _users[user][reserveId];
   }
 
   // internal
@@ -362,7 +365,7 @@ contract Spoke is ISpoke {
     DataTypes.UserPosition storage user,
     uint256 amount
   ) internal view {
-    uint256 suppliedAmount = liquidityHub.convertToAssetsDown(reserve.assetId, user.suppliedShares);
+    uint256 suppliedAmount = liquidityHub.convertToAssets(reserve.assetId, user.suppliedShares);
     require(amount <= suppliedAmount, InsufficientSupply(suppliedAmount));
   }
 
@@ -566,10 +569,6 @@ contract Spoke is ISpoke {
       ? 0
       : vars.avgLiquidationThreshold / vars.totalCollateralInBaseCurrency;
 
-    vars.userRiskPremium = vars.totalCollateralInBaseCurrency == 0
-      ? 0
-      : vars.userRiskPremium.wadDiv(vars.totalCollateralInBaseCurrency);
-
     vars.healthFactor = vars.totalDebtInBaseCurrency == 0
       ? type(uint256).max
       : (vars.totalCollateralInBaseCurrency.percentMul(vars.avgLiquidationThreshold)).wadDiv(
@@ -590,7 +589,9 @@ contract Spoke is ISpoke {
       vars.userRiskPremium += vars.userCollateralInBaseCurrency * vars.liquidityPremium;
       vars.totalCollateralInBaseCurrency += vars.userCollateralInBaseCurrency;
       vars.totalDebtInBaseCurrency -= vars.userCollateralInBaseCurrency;
-      ++vars.i;
+      unchecked {
+        ++vars.i;
+      }
     }
 
     if (vars.totalCollateralInBaseCurrency > 0) {
@@ -612,7 +613,7 @@ contract Spoke is ISpoke {
       userData,
       liquidityHub.previewNextBorrowIndex(assetId)
     );
-    return ((cumulativeBaseDebt + cumulativeOutstandingPremium) * assetPrice) / assetUnit;
+    return ((cumulativeBaseDebt + cumulativeOutstandingPremium) * assetPrice).wadify() / assetUnit;
   }
 
   function _getUserBalanceInBaseCurrency(
@@ -621,7 +622,9 @@ contract Spoke is ISpoke {
     uint256 assetPrice,
     uint256 assetUnit
   ) internal view returns (uint256) {
-    return (liquidityHub.convertToAssets(assetId, user.suppliedShares) * assetPrice) / assetUnit;
+    return
+      (liquidityHub.convertToAssets(assetId, user.suppliedShares) * assetPrice).wadify() /
+      assetUnit;
   }
 
   function _accrueInterest(
@@ -726,13 +729,13 @@ contract Spoke is ISpoke {
     uint256 newUserRiskPremium
   ) internal {
     uint256 reserveCount_ = reserveCount;
-    uint256 i;
+    uint256 reserveId;
     DataTypes.UserData storage userData = _userData[userAddress];
     // _updateRiskPremiumAndBaseDebt does not update user risk premium, opt: pass this value in cached obj
     uint256 existingUserRiskPremium = userData.riskPremium;
-    while (i < reserveCount_) {
-      DataTypes.UserPosition storage user = _users[userAddress][i];
-      DataTypes.Reserve storage reserve = _reserves[i];
+    while (reserveId < reserveCount_) {
+      DataTypes.UserPosition storage user = _users[userAddress][reserveId];
+      DataTypes.Reserve storage reserve = _reserves[reserveId];
       uint256 assetId = reserve.assetId;
       // todo keep borrowed assets in transient storage/pass through?
       if (_isBorrowing(user) && assetId != assetIdToAvoid) {
@@ -747,7 +750,7 @@ contract Spoke is ISpoke {
         liquidityHub.accrueInterest(assetId, uint32(newReserveRiskPremium.derayify()));
       }
       unchecked {
-        ++i;
+        ++reserveId;
       }
     }
     userData.riskPremium = newUserRiskPremium;

@@ -37,6 +37,7 @@ contract LiquidityHub is ILiquidityHub {
 
   function addAsset(DataTypes.AssetConfig memory config, address asset) external {
     // TODO: AccessControl
+    // todo restrict max asset decimals to 18
     assetsList.push(IERC20(asset));
     _assets[assetCount] = DataTypes.Asset({
       id: assetCount,
@@ -422,12 +423,10 @@ contract LiquidityHub is ILiquidityHub {
   ) internal view {
     // TODO: Other cases of status (frozen, paused)
     require(asset.config.active, AssetNotActive());
-    // Ensure spoke is not restoring more than accrued drawn or equal 0
+    require(amountRestored > 0, InvalidRestoreAmount());
+    // Ensure spoke is not restoring more than accrued drawn
     uint256 maxAllowedRestore = spoke.baseDebt + spoke.outstandingPremium;
-    require(
-      amountRestored > 0 && amountRestored <= maxAllowedRestore,
-      ZeroOrSurplusAmountRestored(maxAllowedRestore)
-    );
+    require(amountRestored <= maxAllowedRestore, SurplusAmountRestored(maxAllowedRestore));
   }
 
   // @dev Utilizes existing asset & spoke: `baseBorrowIndex`, `riskPremium`

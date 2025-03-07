@@ -42,11 +42,12 @@ interface ILiquidityHub {
   error AssetNotActive();
   error SupplyCapExceeded(uint256 supplyCap);
   error InvalidWithdrawAmount();
+  error InvalidRestoreAmount();
   error SuppliedAmountExceeded(uint256 suppliedAmount);
   error NotAvailableLiquidity(uint256 availableLiquidity);
   error InvalidDrawAmount();
   error DrawCapExceeded(uint256 drawCap);
-  error ZeroOrSurplusAmountRestored(uint256 maxAllowedRestore);
+  error SurplusAmountRestored(uint256 maxAllowedRestore);
   error InvalidSpoke();
   error InvalidRiskPremiumBps(uint256 bps);
 
@@ -160,10 +161,4 @@ interface ILiquidityHub {
 
   function assetCount() external view returns (uint256);
   function assetsList(uint256 assetId) external view returns (IERC20);
-
-  // todo: remove explicit rounding
-  function convertToAssetsUp(uint256 assetId, uint256 shares) external view returns (uint256);
-  function convertToAssetsDown(uint256 assetId, uint256 shares) external view returns (uint256);
-  function convertToSharesUp(uint256 assetId, uint256 assets) external view returns (uint256);
-  function convertToSharesDown(uint256 assetId, uint256 assets) external view returns (uint256);
 }
