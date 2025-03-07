@@ -9,15 +9,54 @@ contract SpokeBorrowTest is Base {
     initEnvironment();
   }
 
-  function test_borrow_revertsWith_reserve_not_borrowable() public {
-    uint256 daiReserveId = spokeInfo[spoke1].dai.reserveId;
+  function test_borrow_revertsWith_ReserveNotBorrowable() public {
+    uint256 daiReserveId = daiReserveId(spoke1);
 
     // set reserve not borrowable
-    updateBorrowable(spoke1, daiReserveId, false);
+    updateReserveBorrowableFlag(spoke1, daiReserveId, false);
+    assertFalse(spoke1.getReserve(daiReserveId).config.borrowable);
 
     // Bob try to draw some dai
     vm.prank(bob);
     vm.expectRevert(abi.encodeWithSelector(ISpoke.ReserveNotBorrowable.selector, daiReserveId));
+    spoke1.borrow(daiReserveId, 1, bob);
+  }
+
+  function test_borrow_revertsWith_ReserveNotActive() public {
+    uint256 daiReserveId = daiReserveId(spoke1);
+
+    updateReserveActiveFlag(spoke1, daiReserveId, false);
+    assertFalse(spoke1.getReserve(daiReserveId).config.active);
+
+    // Bob try to draw some dai
+    vm.prank(bob);
+    vm.expectRevert(ISpoke.ReserveNotActive.selector);
+    spoke1.borrow(daiReserveId, 1, bob);
+  }
+
+  function test_borrow_revertsWith_ReservePaused() public {
+    uint256 daiReserveId = daiReserveId(spoke1);
+    uint256 amount = 100e18;
+
+    updateReservePausedFlag(spoke1, daiReserveId, true);
+    assertTrue(spoke1.getReserve(daiReserveId).config.paused);
+
+    // Bob try to draw some dai
+    vm.prank(bob);
+    vm.expectRevert(ISpoke.ReservePaused.selector);
+    spoke1.borrow(daiReserveId, 1, bob);
+  }
+
+  function test_borrow_revertsWith_ReserveFrozen() public {
+    uint256 daiReserveId = daiReserveId(spoke1);
+    uint256 amount = 100e18;
+
+    updateReserveFrozenFlag(spoke1, daiReserveId, true);
+    assertTrue(spoke1.getReserve(daiReserveId).config.frozen);
+
+    // Bob try to draw some dai
+    vm.prank(bob);
+    vm.expectRevert(ISpoke.ReserveFrozen.selector);
     spoke1.borrow(daiReserveId, 1, bob);
   }
 

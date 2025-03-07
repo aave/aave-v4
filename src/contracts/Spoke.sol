@@ -391,6 +391,9 @@ contract Spoke is ISpoke {
   }
 
   function _validateBorrow(DataTypes.Reserve storage reserve, uint256 amount) internal view {
+    require(reserve.config.active, ReserveNotActive());
+    require(!reserve.config.paused, ReservePaused());
+    require(!reserve.config.frozen, ReserveFrozen());
     require(reserve.config.borrowable, ReserveNotBorrowable(reserve.reserveId));
     // TODO: validation on HF to allow borrowing amount
   }

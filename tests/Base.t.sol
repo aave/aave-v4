@@ -623,7 +623,11 @@ abstract contract Base is Test {
     spoke.updateReserveConfig(reserveId, reserveData.config);
   }
 
-  function updateBorrowable(ISpoke spoke, uint256 reserveId, bool newBorrowable) internal {
+  function updateReserveBorrowableFlag(
+    ISpoke spoke,
+    uint256 reserveId,
+    bool newBorrowable
+  ) internal {
     DataTypes.Reserve memory reserveData = spoke.getReserve(reserveId);
     reserveData.config.borrowable = newBorrowable;
     spoke.updateReserveConfig(reserveId, reserveData.config);
