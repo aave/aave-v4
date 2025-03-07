@@ -21,6 +21,7 @@ contract LiquidityHub is ILiquidityHub {
   using AssetLogic for DataTypes.Asset;
   using SpokeDataLogic for DataTypes.SpokeData;
 
+  uint256 public constant MAX_ALLOWED_ASSET_DECIMALS = 18;
   uint256 public constant DEFAULT_ASSET_INDEX = WadRayMath.RAY;
   uint256 public constant DEFAULT_SPOKE_INDEX = 0;
 
@@ -35,9 +36,9 @@ contract LiquidityHub is ILiquidityHub {
   // Governance
   // /////
 
-  function addAsset(DataTypes.AssetConfig memory config, address asset) external {
+  function addAsset(DataTypes.AssetConfig calldata config, address asset) external {
     // TODO: AccessControl
-    // todo restrict max asset decimals to 18
+    _validateAssetConfig(config, asset);
     assetsList.push(IERC20(asset));
     _assets[assetCount] = DataTypes.Asset({
       id: assetCount,
@@ -61,14 +62,14 @@ contract LiquidityHub is ILiquidityHub {
     emit AssetAdded(assetCount++, asset);
   }
 
-  function updateAssetConfig(uint256 assetId, DataTypes.AssetConfig memory config) external {
-    DataTypes.Asset storage asset = _assets[assetId];
+  function updateAssetConfig(uint256 assetId, DataTypes.AssetConfig calldata config) external {
+    _validateAssetConfig(config, address(assetsList[assetId]));
 
+    DataTypes.Asset storage asset = _assets[assetId];
     // in order to switch off an asset, enforce 0 suppliers
     if (!config.active) {
       require(asset.suppliedShares == 0, AssetCannotBeInactive());
     }
-    require(config.irStrategy != address(0), InvalidIrStrategy());
 
     // TODO: AccessControl
     asset.config = DataTypes.AssetConfig({
@@ -533,5 +534,11 @@ contract LiquidityHub is ILiquidityHub {
   function _boundBps(uint32 a) internal pure returns (uint256) {
     require(a < 1000_00, InvalidRiskPremiumBps(a));
     return uint256(a);
+  }
+
+  function _validateAssetConfig(DataTypes.AssetConfig calldata config, address asset) internal {
+    require(asset != address(0), InvalidAssetAddress());
+    require(config.irStrategy != address(0), InvalidIrStrategy());
+    require(config.decimals <= MAX_ALLOWED_ASSET_DECIMALS, InvalidAssetDecimals());
   }
 }

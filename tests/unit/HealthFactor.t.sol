@@ -138,7 +138,7 @@ contract HealthFactorTest_ToMigrate is Base {
   function _calculateHealthFactor(uint256[] memory assetIds) internal view returns (uint256) {
     uint256 totalCollateral = 0;
     uint256 totalDebt = 0;
-    uint256 avgcollateralFactor = 0;
+    uint256 avgCollateralFactor = 0;
     for (uint256 i = 0; i < assetIds.length; i++) {
       uint256 assetId = assetIds[i];
       // Spoke.Reserve memory reserve = spoke1.getReserve(spokeInfo[spoke1][assetId].reserveId);
@@ -153,12 +153,12 @@ contract HealthFactorTest_ToMigrate is Base {
       // totalCollateral += userCollateral;
       // totalDebt += userPosition.debt * assetPrice;
 
-      // avgcollateralFactor += userCollateral * reserve.config.collateralFactor;
+      // avgCollateralFactor += userCollateral * reserve.config.collateralFactor;
     }
-    avgcollateralFactor = totalCollateral != 0 ? avgcollateralFactor / totalCollateral : 0;
+    avgCollateralFactor = totalCollateral != 0 ? avgCollateralFactor / totalCollateral : 0;
     return
       totalDebt == 0
         ? type(uint256).max
-        : (totalCollateral.percentMul(avgcollateralFactor)).wadDiv(totalDebt);
+        : (totalCollateral.percentMul(avgCollateralFactor)).wadDiv(totalDebt);
   }
 }

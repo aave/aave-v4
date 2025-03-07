@@ -133,7 +133,7 @@ contract SpokeWithdrawTest is SpokeBase {
   ) public {
     reserveId = bound(reserveId, 0, spokeInfo[spoke1].MAX_RESERVE_ID);
     supplyAmount = bound(supplyAmount, 2, MAX_SUPPLY_AMOUNT);
-    borrowAmount = bound(borrowAmount, 1, supplyAmount / 2); // ensure it is within LT
+    borrowAmount = bound(borrowAmount, 1, supplyAmount / 2); // ensure it is within Collateral Factor
     rate = bound(rate, 1, MAX_BORROW_RATE).bpsToRay();
     skipTime = bound(skipTime, 1, MAX_SKIP_TIME);
 

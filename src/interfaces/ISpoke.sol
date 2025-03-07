@@ -14,7 +14,6 @@ interface ISpoke {
   event ReserveAdded(uint256 indexed reserveId, uint256 indexed assetId);
   event ReserveConfigUpdated(
     uint256 indexed reserveId,
-    uint256 decimals,
     bool active,
     bool frozen,
     bool paused,
@@ -39,16 +38,18 @@ interface ISpoke {
   error NotAvailableLiquidity(uint256 availableLiquidity);
   error ReserveNotBorrowable(uint256 reserveId);
   error RepayAmountExceedsDebt(uint256 debt);
-  error ReserveNotCollateral(uint256 reserveId);
+  error ReserveCannotBeUsedAsCollateral(uint256 reserveId);
   error ReserveCannotBeInactive();
   error ReserveNotActive();
   error ReservePaused();
   error ReserveFrozen();
+  error InvalidCollateralFactor();
+  error InvalidLiquidationBonus();
+  error InvalidReserveDecimals();
 
   function addReserve(
     uint256 assetId,
-    DataTypes.ReserveConfig memory params,
-    address asset
+    DataTypes.ReserveConfig memory params
   ) external returns (uint256);
   function updateReserveConfig(uint256 reserveId, DataTypes.ReserveConfig calldata params) external;
   function updateLiquidityPremium(uint256 reserveId, uint256 liquidityPremium) external;

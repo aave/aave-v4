@@ -54,6 +54,8 @@ interface ILiquidityHub {
   error AssetPaused();
   error AssetFrozen();
   error InvalidIrStrategy();
+  error InvalidAssetDecimals();
+  error InvalidAssetAddress();
 
   function addAsset(DataTypes.AssetConfig memory params, address asset) external;
   function updateAssetConfig(uint256 assetId, DataTypes.AssetConfig memory config) external;
@@ -168,4 +170,5 @@ interface ILiquidityHub {
   function assetsList(uint256 assetId) external view returns (IERC20);
   function DEFAULT_ASSET_INDEX() external view returns (uint256);
   function DEFAULT_SPOKE_INDEX() external view returns (uint256);
+  function MAX_ALLOWED_ASSET_DECIMALS() external view returns (uint256);
 }
