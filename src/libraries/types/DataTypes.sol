@@ -34,10 +34,10 @@ library DataTypes {
   }
 
   struct AssetConfig {
-    uint256 decimals;
     bool active;
     bool frozen;
     bool paused;
+    uint8 decimals;
     address irStrategy; // todo use interface
   }
 
@@ -66,15 +66,15 @@ library DataTypes {
   }
 
   struct ReserveConfig {
-    uint256 decimals;
     bool active;
     bool frozen;
     bool paused;
-    uint256 collateralFactor; // BPS
-    uint256 liquidationBonus; // TODO: liquidationProtocolFee
-    uint256 liquidityPremium; // BPS
     bool borrowable;
     bool collateral;
+    uint8 decimals;
+    uint16 collateralFactor; // BPS
+    uint16 liquidationBonus; // TODO: liquidationProtocolFee
+    uint16 liquidityPremium; // BPS
   }
 
   struct UserPosition {
