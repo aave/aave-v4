@@ -23,17 +23,7 @@ contract SpokeConfigTest is SpokeBase {
       collateral: !reserveData.config.collateral
     });
     vm.expectEmit(address(spoke1));
-    emit ISpoke.ReserveConfigUpdated(
-      daiReserveId,
-      newReserveConfig.active,
-      newReserveConfig.frozen,
-      newReserveConfig.paused,
-      newReserveConfig.collateralFactor,
-      newReserveConfig.liquidationBonus,
-      newReserveConfig.liquidityPremium,
-      newReserveConfig.borrowable,
-      newReserveConfig.collateral
-    );
+    emit ISpoke.ReserveConfigUpdated(daiReserveId, newReserveConfig);
     vm.prank(SPOKE_ADMIN);
     spoke1.updateReserveConfig(daiReserveId, newReserveConfig);
 

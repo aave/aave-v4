@@ -12,17 +12,7 @@ import {IPriceOracle} from 'src/interfaces/IPriceOracle.sol';
  */
 interface ISpoke {
   event ReserveAdded(uint256 indexed reserveId, uint256 indexed assetId);
-  event ReserveConfigUpdated(
-    uint256 indexed reserveId,
-    bool active,
-    bool frozen,
-    bool paused,
-    uint256 collateralFactor,
-    uint256 liquidationBonus,
-    uint256 liquidityPremium,
-    bool borrowable,
-    bool collateral
-  );
+  event ReserveConfigUpdated(uint256 indexed reserveId, DataTypes.ReserveConfig config);
   event LiquidityPremiumUpdated(uint256 indexed reserveId, uint256 liquidityPremium);
 
   event Supplied(uint256 indexed reserveId, address indexed user, uint256 amount);

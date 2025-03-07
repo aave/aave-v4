@@ -95,17 +95,7 @@ contract Spoke is ISpoke {
       collateral: config.collateral
     });
 
-    emit ReserveConfigUpdated(
-      reserveId,
-      config.active,
-      config.frozen,
-      config.paused,
-      config.collateralFactor,
-      config.liquidationBonus,
-      config.liquidityPremium,
-      config.borrowable,
-      config.collateral
-    );
+    emit ReserveConfigUpdated(reserveId, config);
   }
 
   // todo: access control, general setter like maker's dss, flag engine like v3
