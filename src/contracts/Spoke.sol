@@ -404,6 +404,8 @@ contract Spoke is ISpoke {
     DataTypes.UserPosition storage user,
     uint256 amount
   ) internal view {
+    require(reserve.config.active, ReserveNotActive());
+    require(!reserve.config.paused, ReservePaused());
     uint256 userDebt = user.baseDebt + user.outstandingPremium;
     require(amount <= userDebt, RepayAmountExceedsDebt(userDebt));
   }
