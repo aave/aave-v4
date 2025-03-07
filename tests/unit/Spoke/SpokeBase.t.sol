@@ -243,7 +243,7 @@ contract SpokeBase is Base {
 
     return
       ((debtAmount * debtPrice * collAssetUnits) / (collPrice * debtAssetUnits)).percentDiv(
-        collData.config.lt
+        collData.config.collateralFactor
       ) + 1;
   }
 }

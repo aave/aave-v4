@@ -39,17 +39,11 @@ contract Spoke is ISpoke {
 
   function addReserve(
     uint256 assetId,
-    DataTypes.ReserveConfig memory params,
-    address asset
+    DataTypes.ReserveConfig calldata config
   ) external returns (uint256) {
+    _validateReserveConfig(config);
+    address asset = address(liquidityHub.assetsList(assetId)); // will revert on invalid assetId
     uint256 _reserveCount = reserveCount;
-    DataTypes.Reserve storage reserve = _reserves[_reserveCount];
-    // TODO: validate reserveId does not exist already, valid asset
-    require(
-      params.liquidityPremium <= PercentageMath.PERCENTAGE_FACTOR * 10,
-      InvalidLiquidityPremium()
-    );
-
     // TODO: AccessControl
     reservesList.push(reserveCount++);
     _reserves[_reserveCount] = DataTypes.Reserve({
@@ -63,11 +57,15 @@ contract Spoke is ISpoke {
       lastUpdateTimestamp: 0,
       riskPremium: 0,
       config: DataTypes.ReserveConfig({
-        lt: params.lt,
-        lb: params.lb,
-        liquidityPremium: params.liquidityPremium,
-        borrowable: params.borrowable,
-        collateral: params.collateral
+        decimals: config.decimals,
+        active: config.active,
+        frozen: config.frozen,
+        paused: config.paused,
+        collateralFactor: config.collateralFactor,
+        liquidationBonus: config.liquidationBonus,
+        liquidityPremium: config.liquidityPremium,
+        borrowable: config.borrowable,
+        collateral: config.collateral
       })
     });
 
@@ -78,31 +76,26 @@ contract Spoke is ISpoke {
 
   function updateReserveConfig(
     uint256 reserveId,
-    DataTypes.ReserveConfig calldata params
+    DataTypes.ReserveConfig calldata config
   ) external {
     // TODO: More sophisticated
-    require(_reserves[reserveId].asset != address(0), InvalidReserve());
-    require(
-      params.liquidityPremium <= PercentageMath.PERCENTAGE_FACTOR * 10,
-      InvalidLiquidityPremium()
-    );
+    _validateReserveConfig(config);
+    DataTypes.Reserve storage reserve = _reserves[reserveId];
+    require(reserve.asset != address(0), InvalidReserve());
     // TODO: AccessControl
-    _reserves[reserveId].config = DataTypes.ReserveConfig({
-      lt: params.lt,
-      lb: params.lb,
-      liquidityPremium: params.liquidityPremium,
-      borrowable: params.borrowable,
-      collateral: params.collateral
+    reserve.config = DataTypes.ReserveConfig({
+      decimals: reserve.config.decimals, // decimals remains existing value
+      active: config.active,
+      frozen: config.frozen,
+      paused: config.paused,
+      collateralFactor: config.collateralFactor,
+      liquidationBonus: config.liquidationBonus,
+      liquidityPremium: config.liquidityPremium,
+      borrowable: config.borrowable,
+      collateral: config.collateral
     });
 
-    emit ReserveConfigUpdated(
-      reserveId,
-      params.lt,
-      params.lb,
-      params.liquidityPremium,
-      params.borrowable,
-      params.collateral
-    );
+    emit ReserveConfigUpdated(reserveId, config);
   }
 
   // todo: access control, general setter like maker's dss, flag engine like v3
@@ -364,6 +357,9 @@ contract Spoke is ISpoke {
   // internal
   function _validateSupply(DataTypes.Reserve storage reserve, uint256 amount) internal view {
     require(reserve.asset != address(0), ReserveNotListed());
+    require(reserve.config.active, ReserveNotActive());
+    require(!reserve.config.paused, ReservePaused());
+    require(!reserve.config.frozen, ReserveFrozen());
   }
 
   function _validateWithdraw(
@@ -371,18 +367,27 @@ contract Spoke is ISpoke {
     DataTypes.UserPosition storage user,
     uint256 amount
   ) internal view {
-    uint256 suppliedAmount = liquidityHub.convertToAssetsDown(reserve.assetId, user.suppliedShares);
+    require(reserve.asset != address(0), ReserveNotListed());
+    require(reserve.config.active, ReserveNotActive());
+    require(!reserve.config.paused, ReservePaused());
+    uint256 suppliedAmount = liquidityHub.convertToAssets(reserve.assetId, user.suppliedShares);
     require(amount <= suppliedAmount, InsufficientSupply(suppliedAmount));
   }
 
   function _validateBorrow(DataTypes.Reserve storage reserve, uint256 amount) internal view {
+    require(reserve.asset != address(0), ReserveNotListed());
+    require(reserve.config.active, ReserveNotActive());
+    require(!reserve.config.paused, ReservePaused());
+    require(!reserve.config.frozen, ReserveFrozen());
     require(reserve.config.borrowable, ReserveNotBorrowable(reserve.reserveId));
     // TODO: validation on HF to allow borrowing amount
   }
 
   // TODO: Place this and LH equivalent in a generic logic library
   function _validateRepay(DataTypes.Reserve storage reserve) internal view {
-    // will be filled in during risk config
+    require(reserve.asset != address(0), ReserveNotListed());
+    require(reserve.config.active, ReserveNotActive());
+    require(!reserve.config.paused, ReservePaused());
   }
 
   function _deductFromOutstandingPremium(
@@ -467,7 +472,9 @@ contract Spoke is ISpoke {
     DataTypes.Reserve storage reserve,
     DataTypes.UserPosition storage user
   ) internal view {
-    require(reserve.config.collateral, ReserveNotCollateral(reserve.reserveId));
+    require(reserve.config.active, ReserveNotActive());
+    require(!reserve.config.paused, ReservePaused());
+    require(reserve.config.collateral, ReserveCannotBeUsedAsCollateral(reserve.reserveId));
   }
 
   function _usingAsCollateral(DataTypes.UserPosition storage user) internal view returns (bool) {
@@ -554,7 +561,9 @@ contract Spoke is ISpoke {
 
         vars.totalCollateralInBaseCurrency += vars.userCollateralInBaseCurrency;
         list.add(vars.i, vars.liquidityPremium, vars.userCollateralInBaseCurrency);
-        vars.avgLiquidationThreshold += vars.userCollateralInBaseCurrency * reserve.config.lt;
+        vars.avgCollateralFactor +=
+          vars.userCollateralInBaseCurrency *
+          reserve.config.collateralFactor;
 
         unchecked {
           ++vars.i;
@@ -566,13 +575,13 @@ contract Spoke is ISpoke {
       }
     }
 
-    vars.avgLiquidationThreshold = vars.totalCollateralInBaseCurrency == 0
+    vars.avgCollateralFactor = vars.totalCollateralInBaseCurrency == 0
       ? 0
-      : vars.avgLiquidationThreshold / vars.totalCollateralInBaseCurrency;
+      : vars.avgCollateralFactor / vars.totalCollateralInBaseCurrency;
 
     vars.healthFactor = vars.totalDebtInBaseCurrency == 0
       ? type(uint256).max
-      : (vars.totalCollateralInBaseCurrency.percentMul(vars.avgLiquidationThreshold)).wadDiv(
+      : (vars.totalCollateralInBaseCurrency.percentMul(vars.avgCollateralFactor)).wadDiv(
         vars.totalDebtInBaseCurrency
       ); // HF of 1 -> 1e18
 
@@ -599,7 +608,7 @@ contract Spoke is ISpoke {
       vars.userRiskPremium = (vars.userRiskPremium / vars.totalCollateralInBaseCurrency).rayify();
     }
 
-    return (vars.userRiskPremium, vars.avgLiquidationThreshold, vars.healthFactor);
+    return (vars.userRiskPremium, vars.avgCollateralFactor, vars.healthFactor);
   }
 
   function _getUserDebtInBaseCurrency(
@@ -794,5 +803,15 @@ contract Spoke is ISpoke {
     reserve.riskPremium = newReserveRiskPremium;
 
     return newReserveRiskPremium;
+  }
+
+  function _validateReserveConfig(DataTypes.ReserveConfig calldata config) internal view {
+    require(config.collateralFactor <= PercentageMath.PERCENTAGE_FACTOR, InvalidCollateralFactor()); // max 100.00%
+    require(config.liquidationBonus <= PercentageMath.PERCENTAGE_FACTOR, InvalidLiquidationBonus()); // max 100.00%
+    require(
+      config.liquidityPremium <= PercentageMath.PERCENTAGE_FACTOR * 10,
+      InvalidLiquidityPremium()
+    ); // max 1000.00%
+    require(config.decimals <= liquidityHub.MAX_ALLOWED_ASSET_DECIMALS(), InvalidReserveDecimals());
   }
 }

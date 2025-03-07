@@ -21,6 +21,7 @@ contract LiquidityHub is ILiquidityHub {
   using AssetLogic for DataTypes.Asset;
   using SpokeDataLogic for DataTypes.SpokeData;
 
+  uint256 public constant MAX_ALLOWED_ASSET_DECIMALS = 18;
   uint256 public constant DEFAULT_ASSET_INDEX = WadRayMath.RAY;
   uint256 public constant DEFAULT_SPOKE_INDEX = 0;
 
@@ -35,9 +36,9 @@ contract LiquidityHub is ILiquidityHub {
   // Governance
   // /////
 
-  function addAsset(DataTypes.AssetConfig memory config, address asset) external {
+  function addAsset(DataTypes.AssetConfig calldata config, address asset) external {
     // TODO: AccessControl
-    // todo restrict max asset decimals to 18
+    _validateAssetConfig(config, asset);
     assetsList.push(IERC20(asset));
     _assets[assetCount] = DataTypes.Asset({
       id: assetCount,
@@ -52,6 +53,8 @@ contract LiquidityHub is ILiquidityHub {
       config: DataTypes.AssetConfig({
         decimals: config.decimals,
         active: config.active,
+        frozen: config.frozen,
+        paused: config.paused,
         irStrategy: config.irStrategy
       })
     });
@@ -59,11 +62,15 @@ contract LiquidityHub is ILiquidityHub {
     emit AssetAdded(assetCount++, asset);
   }
 
-  function updateAssetConfig(uint256 assetId, DataTypes.AssetConfig memory config) external {
+  function updateAssetConfig(uint256 assetId, DataTypes.AssetConfig calldata config) external {
+    _validateAssetConfig(config, address(assetsList[assetId]));
+    DataTypes.Asset storage asset = _assets[assetId];
     // TODO: AccessControl
-    _assets[assetId].config = DataTypes.AssetConfig({
+    asset.config = DataTypes.AssetConfig({
       decimals: config.decimals,
       active: config.active,
+      frozen: config.frozen,
+      paused: config.paused,
       irStrategy: config.irStrategy
     });
 
@@ -377,9 +384,10 @@ contract LiquidityHub is ILiquidityHub {
     uint256 amount
   ) internal view {
     require(amount > 0, InvalidSupplyAmount());
-    require(assetsList[asset.id] != IERC20(address(0)), AssetNotListed());
-    // TODO: Different states e.g. frozen, paused
     require(asset.config.active, AssetNotActive());
+    require(!asset.config.paused, AssetPaused());
+    require(!asset.config.frozen, AssetFrozen());
+    require(assetsList[asset.id] != IERC20(address(0)), AssetNotListed());
     require(
       spoke.config.supplyCap == type(uint256).max ||
         asset.convertToAssetsDown(spoke.suppliedShares) + amount <= spoke.config.supplyCap,
@@ -392,10 +400,9 @@ contract LiquidityHub is ILiquidityHub {
     DataTypes.SpokeData storage spoke,
     uint256 amount
   ) internal view {
-    // TODO: Other cases of status (frozen, paused)
-    // TODO: still allow withdrawal even if asset is not active, only prevent for frozen/paused?
-    require(asset.config.active, AssetNotActive());
     require(amount > 0, InvalidWithdrawAmount());
+    require(asset.config.active, AssetNotActive());
+    require(!asset.config.paused, AssetPaused());
     uint256 withdrawable = asset.convertToAssetsDown(spoke.suppliedShares);
     require(amount <= withdrawable, SuppliedAmountExceeded(withdrawable));
     require(amount <= asset.availableLiquidity, NotAvailableLiquidity(asset.availableLiquidity));
@@ -406,9 +413,10 @@ contract LiquidityHub is ILiquidityHub {
     uint256 amount,
     uint256 drawCap
   ) internal view {
-    // TODO: Other cases of status (frozen, paused)
-    require(asset.config.active, AssetNotActive());
     require(amount > 0, InvalidDrawAmount());
+    require(asset.config.active, AssetNotActive());
+    require(!asset.config.paused, AssetPaused());
+    require(!asset.config.frozen, AssetFrozen());
     require(
       drawCap == type(uint256).max || amount + asset.baseDebt <= drawCap,
       DrawCapExceeded(drawCap)
@@ -421,9 +429,9 @@ contract LiquidityHub is ILiquidityHub {
     DataTypes.SpokeData storage spoke,
     uint256 amountRestored
   ) internal view {
-    // TODO: Other cases of status (frozen, paused)
-    require(asset.config.active, AssetNotActive());
     require(amountRestored > 0, InvalidRestoreAmount());
+    require(asset.config.active, AssetNotActive());
+    require(!asset.config.paused, AssetPaused());
     // Ensure spoke is not restoring more than accrued drawn
     uint256 maxAllowedRestore = spoke.baseDebt + spoke.outstandingPremium;
     require(amountRestored <= maxAllowedRestore, SurplusAmountRestored(maxAllowedRestore));
@@ -520,5 +528,11 @@ contract LiquidityHub is ILiquidityHub {
   function _boundBps(uint32 a) internal pure returns (uint256) {
     require(a < 1000_00, InvalidRiskPremiumBps(a));
     return uint256(a);
+  }
+
+  function _validateAssetConfig(DataTypes.AssetConfig calldata config, address asset) internal {
+    require(asset != address(0), InvalidAssetAddress());
+    require(config.irStrategy != address(0), InvalidIrStrategy());
+    require(config.decimals <= MAX_ALLOWED_ASSET_DECIMALS, InvalidAssetDecimals());
   }
 }

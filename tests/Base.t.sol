@@ -41,7 +41,7 @@ abstract contract Base is Test {
   IERC20 internal wbtc;
 
   MockPriceOracle internal oracle;
-  LiquidityHub internal hub;
+  ILiquidityHub internal hub;
   ISpoke internal spoke1;
   ISpoke internal spoke2;
   ISpoke internal spoke3;
@@ -56,6 +56,9 @@ abstract contract Base is Test {
   address internal alice = makeAddr('alice');
   address internal bob = makeAddr('bob');
   address internal carol = makeAddr('carol');
+
+  address internal HUB_ADMIN = makeAddr('HUB_ADMIN');
+  address internal SPOKE_ADMIN = makeAddr('SPOKE_ADMIN');
 
   TokenList internal tokenList;
   uint256 internal wethAssetId = 0;
@@ -100,6 +103,8 @@ abstract contract Base is Test {
 
   function setUp() public virtual {
     deployFixtures();
+
+    // todo: set up admin role when access controls impl
   }
 
   function deployFixtures() internal {
@@ -189,88 +194,112 @@ abstract contract Base is Test {
     });
 
     // Add all assets to the Liquidity Hub
-
+    vm.startPrank(HUB_ADMIN);
     // add WETH
     hub.addAsset(
-      DataTypes.AssetConfig({decimals: 18, active: true, irStrategy: address(irStrategy)}),
+      DataTypes.AssetConfig({
+        decimals: 18,
+        active: true,
+        paused: false,
+        frozen: false,
+        irStrategy: address(irStrategy)
+      }),
       address(tokenList.weth)
     );
     oracle.setAssetPrice(wethAssetId, 2000e8);
 
     // add USDX
     hub.addAsset(
-      DataTypes.AssetConfig({decimals: 6, active: true, irStrategy: address(irStrategy)}),
+      DataTypes.AssetConfig({
+        decimals: 6,
+        active: true,
+        paused: false,
+        frozen: false,
+        irStrategy: address(irStrategy)
+      }),
       address(tokenList.usdx)
     );
     oracle.setAssetPrice(usdxAssetId, 1e8);
 
     // add DAI
     hub.addAsset(
-      DataTypes.AssetConfig({decimals: 18, active: true, irStrategy: address(irStrategy)}),
+      DataTypes.AssetConfig({
+        decimals: 18,
+        active: true,
+        paused: false,
+        frozen: false,
+        irStrategy: address(irStrategy)
+      }),
       address(tokenList.dai)
     );
     oracle.setAssetPrice(daiAssetId, 1e8);
 
     // add WBTC
     hub.addAsset(
-      DataTypes.AssetConfig({decimals: 8, active: true, irStrategy: address(irStrategy)}),
+      DataTypes.AssetConfig({
+        decimals: 8,
+        active: true,
+        paused: false,
+        frozen: false,
+        irStrategy: address(irStrategy)
+      }),
       address(tokenList.wbtc)
     );
     oracle.setAssetPrice(wbtcAssetId, 50_000e8);
 
     // Spoke 1 reserve configs
     DataTypes.ReserveConfig memory wethConfig = DataTypes.ReserveConfig({
-      lt: 0.8e4,
-      lb: 0,
+      decimals: 18,
+      active: true,
+      frozen: false,
+      paused: false,
+      collateralFactor: 80_00,
+      liquidationBonus: 0,
       liquidityPremium: 15_00,
       borrowable: true,
       collateral: true
     });
     DataTypes.ReserveConfig memory wbtcConfig = DataTypes.ReserveConfig({
-      lt: 0.75e4,
-      lb: 0,
+      decimals: 8,
+      active: true,
+      frozen: false,
+      paused: false,
+      collateralFactor: 75_00,
+      liquidationBonus: 0,
       liquidityPremium: 50_00,
       borrowable: true,
       collateral: true
     });
     DataTypes.ReserveConfig memory daiConfig = DataTypes.ReserveConfig({
-      lt: 0.78e4,
-      lb: 0,
+      decimals: 18,
+      active: true,
+      frozen: false,
+      paused: false,
+      collateralFactor: 78_00,
+      liquidationBonus: 0,
       liquidityPremium: 20_00,
       borrowable: true,
       collateral: true
     });
     DataTypes.ReserveConfig memory usdxConfig = DataTypes.ReserveConfig({
-      lt: 0.78e4,
-      lb: 0,
+      decimals: 6,
+      active: true,
+      frozen: false,
+      paused: false,
+      collateralFactor: 78_00,
+      liquidationBonus: 0,
       liquidityPremium: 50_00,
       borrowable: true,
       collateral: true
     });
 
-    spokeInfo[spoke1].weth.reserveId = spoke1.addReserve(
-      wethAssetId,
-      wethConfig,
-      address(tokenList.weth)
-    );
+    spokeInfo[spoke1].weth.reserveId = spoke1.addReserve(wethAssetId, wethConfig);
     spokeInfo[spoke1].weth.liquidityPremium = wethConfig.liquidityPremium;
-    spokeInfo[spoke1].wbtc.reserveId = spoke1.addReserve(
-      wbtcAssetId,
-      wbtcConfig,
-      address(tokenList.wbtc)
-    );
+    spokeInfo[spoke1].wbtc.reserveId = spoke1.addReserve(wbtcAssetId, wbtcConfig);
     spokeInfo[spoke1].wbtc.liquidityPremium = wbtcConfig.liquidityPremium;
-    spokeInfo[spoke1].dai.reserveId = spoke1.addReserve(
-      daiAssetId,
-      daiConfig,
-      address(tokenList.dai)
-    );
+    spokeInfo[spoke1].dai.reserveId = spoke1.addReserve(daiAssetId, daiConfig);
     spokeInfo[spoke1].dai.liquidityPremium = daiConfig.liquidityPremium;
-    spokeInfo[spoke1].usdx.reserveId = spoke1.addReserve(
-      usdxAssetId,
-      usdxConfig,
-      address(tokenList.usdx)
-    );
+    spokeInfo[spoke1].usdx.reserveId = spoke1.addReserve(usdxAssetId, usdxConfig);
     spokeInfo[spoke1].usdx.liquidityPremium = usdxConfig.liquidityPremium;
 
     hub.addSpoke(wethAssetId, spokeConfig, address(spoke1));
@@ -280,57 +309,57 @@ abstract contract Base is Test {
 
     // Spoke 2 reserve configs
     wbtcConfig = DataTypes.ReserveConfig({
-      lt: 0.8e4,
-      lb: 0,
+      decimals: 8,
+      active: true,
+      frozen: false,
+      paused: false,
+      collateralFactor: 80_00,
+      liquidationBonus: 0,
       liquidityPremium: 0,
       borrowable: true,
       collateral: true
     });
     wethConfig = DataTypes.ReserveConfig({
-      lt: 0.76e4,
-      lb: 0,
-      liquidityPremium: 10,
+      decimals: 18,
+      active: true,
+      frozen: false,
+      paused: false,
+      collateralFactor: 76_00,
+      liquidationBonus: 0,
+      liquidityPremium: 10_00,
       borrowable: true,
       collateral: true
     });
     daiConfig = DataTypes.ReserveConfig({
-      lt: 0.72e4,
-      lb: 0,
-      liquidityPremium: 20,
+      decimals: 18,
+      active: true,
+      frozen: false,
+      paused: false,
+      collateralFactor: 72_00,
+      liquidationBonus: 0,
+      liquidityPremium: 20_00,
       borrowable: true,
       collateral: true
     });
     usdxConfig = DataTypes.ReserveConfig({
-      lt: 0.72e4,
-      lb: 0,
-      liquidityPremium: 50,
+      decimals: 6,
+      active: true,
+      frozen: false,
+      paused: false,
+      collateralFactor: 72_00,
+      liquidationBonus: 0,
+      liquidityPremium: 50_00,
       borrowable: true,
       collateral: true
     });
 
-    spokeInfo[spoke2].wbtc.reserveId = spoke2.addReserve(
-      wbtcAssetId,
-      wbtcConfig,
-      address(tokenList.wbtc)
-    );
+    spokeInfo[spoke2].wbtc.reserveId = spoke2.addReserve(wbtcAssetId, wbtcConfig);
     spokeInfo[spoke2].wbtc.liquidityPremium = wbtcConfig.liquidityPremium;
-    spokeInfo[spoke2].weth.reserveId = spoke2.addReserve(
-      wethAssetId,
-      wethConfig,
-      address(tokenList.weth)
-    );
+    spokeInfo[spoke2].weth.reserveId = spoke2.addReserve(wethAssetId, wethConfig);
     spokeInfo[spoke2].weth.liquidityPremium = wethConfig.liquidityPremium;
-    spokeInfo[spoke2].dai.reserveId = spoke2.addReserve(
-      daiAssetId,
-      daiConfig,
-      address(tokenList.dai)
-    );
+    spokeInfo[spoke2].dai.reserveId = spoke2.addReserve(daiAssetId, daiConfig);
     spokeInfo[spoke2].dai.liquidityPremium = daiConfig.liquidityPremium;
-    spokeInfo[spoke2].usdx.reserveId = spoke2.addReserve(
-      usdxAssetId,
-      usdxConfig,
-      address(tokenList.usdx)
-    );
+    spokeInfo[spoke2].usdx.reserveId = spoke2.addReserve(usdxAssetId, usdxConfig);
     spokeInfo[spoke2].usdx.liquidityPremium = usdxConfig.liquidityPremium;
 
     hub.addSpoke(wbtcAssetId, spokeConfig, address(spoke2));
@@ -340,57 +369,57 @@ abstract contract Base is Test {
 
     // Spoke 3 reserve configs
     daiConfig = DataTypes.ReserveConfig({
-      lt: 0.75e4,
-      lb: 0,
+      decimals: 18,
+      active: true,
+      frozen: false,
+      paused: false,
+      collateralFactor: 75_00,
+      liquidationBonus: 0,
       liquidityPremium: 0,
       borrowable: true,
       collateral: true
     });
     usdxConfig = DataTypes.ReserveConfig({
-      lt: 0.75e4,
-      lb: 0,
-      liquidityPremium: 10,
+      decimals: 6,
+      active: true,
+      frozen: false,
+      paused: false,
+      collateralFactor: 75_00,
+      liquidationBonus: 0,
+      liquidityPremium: 10_00,
       borrowable: true,
       collateral: true
     });
     wethConfig = DataTypes.ReserveConfig({
-      lt: 0.79e4,
-      lb: 0,
-      liquidityPremium: 20,
+      decimals: 18,
+      active: true,
+      frozen: false,
+      paused: false,
+      collateralFactor: 79_00,
+      liquidationBonus: 0,
+      liquidityPremium: 20_00,
       borrowable: true,
       collateral: true
     });
     wbtcConfig = DataTypes.ReserveConfig({
-      lt: 0.77e4,
-      lb: 0,
-      liquidityPremium: 50,
+      decimals: 8,
+      active: true,
+      frozen: false,
+      paused: false,
+      collateralFactor: 77_00,
+      liquidationBonus: 0,
+      liquidityPremium: 50_00,
       borrowable: true,
       collateral: true
     });
 
-    spokeInfo[spoke3].dai.reserveId = spoke3.addReserve(
-      daiAssetId,
-      daiConfig,
-      address(tokenList.dai)
-    );
+    spokeInfo[spoke3].dai.reserveId = spoke3.addReserve(daiAssetId, daiConfig);
     spokeInfo[spoke3].dai.liquidityPremium = daiConfig.liquidityPremium;
-    spokeInfo[spoke3].usdx.reserveId = spoke3.addReserve(
-      usdxAssetId,
-      usdxConfig,
-      address(tokenList.usdx)
-    );
+    spokeInfo[spoke3].usdx.reserveId = spoke3.addReserve(usdxAssetId, usdxConfig);
     spokeInfo[spoke3].usdx.liquidityPremium = usdxConfig.liquidityPremium;
-    spokeInfo[spoke3].weth.reserveId = spoke3.addReserve(
-      wethAssetId,
-      wethConfig,
-      address(tokenList.weth)
-    );
+    spokeInfo[spoke3].weth.reserveId = spoke3.addReserve(wethAssetId, wethConfig);
     spokeInfo[spoke3].weth.liquidityPremium = wethConfig.liquidityPremium;
-    spokeInfo[spoke3].wbtc.reserveId = spoke3.addReserve(
-      wbtcAssetId,
-      wbtcConfig,
-      address(tokenList.wbtc)
-    );
+    spokeInfo[spoke3].wbtc.reserveId = spoke3.addReserve(wbtcAssetId, wbtcConfig);
     spokeInfo[spoke3].wbtc.liquidityPremium = wbtcConfig.liquidityPremium;
 
     hub.addSpoke(daiAssetId, spokeConfig, address(spoke3));
@@ -400,22 +429,28 @@ abstract contract Base is Test {
 
     // Spoke 2 to have an extra dai reserve
     hub.addAsset(
-      DataTypes.AssetConfig({decimals: 18, active: true, irStrategy: address(irStrategy)}),
+      DataTypes.AssetConfig({
+        decimals: 18,
+        active: true,
+        frozen: false,
+        paused: false,
+        irStrategy: address(irStrategy)
+      }),
       address(tokenList.dai)
     );
     oracle.setAssetPrice(dai2AssetId, 1e8);
     daiConfig = DataTypes.ReserveConfig({
-      lt: 0.70e4,
-      lb: 0,
-      liquidityPremium: 100,
+      decimals: 18,
+      active: true,
+      frozen: false,
+      paused: false,
+      collateralFactor: 70_00,
+      liquidationBonus: 0,
+      liquidityPremium: 100_00,
       borrowable: true,
       collateral: true
     });
-    spokeInfo[spoke2].dai2.reserveId = spoke2.addReserve(
-      dai2AssetId,
-      daiConfig,
-      address(tokenList.dai)
-    );
+    spokeInfo[spoke2].dai2.reserveId = spoke2.addReserve(dai2AssetId, daiConfig);
     spokeInfo[spoke2].dai2.liquidityPremium = daiConfig.liquidityPremium;
     hub.addSpoke(dai2AssetId, spokeConfig, address(spoke2));
 
@@ -464,12 +499,55 @@ abstract contract Base is Test {
         variableRateSlope2: 5_00 // 5.00%
       })
     );
+    vm.stopPrank();
   }
 
-  function updateAssetActive(ILiquidityHub hub, uint256 assetId, bool newActive) internal {
+  function updateAssetActive(ILiquidityHub hub, uint256 assetId, bool newActiveFlag) internal {
     DataTypes.AssetConfig memory assetConfig = hub.getAsset(assetId).config;
-    assetConfig.active = newActive;
+    assetConfig.active = newActiveFlag;
+
+    vm.prank(HUB_ADMIN);
     hub.updateAssetConfig(assetId, assetConfig);
+  }
+
+  function updateAssetPaused(ILiquidityHub hub, uint256 assetId, bool newPausedFlag) internal {
+    DataTypes.AssetConfig memory assetConfig = hub.getAsset(assetId).config;
+    assetConfig.paused = newPausedFlag;
+
+    vm.prank(HUB_ADMIN);
+    hub.updateAssetConfig(assetId, assetConfig);
+  }
+
+  function updateAssetFrozen(ILiquidityHub hub, uint256 assetId, bool newFrozenFlag) internal {
+    DataTypes.AssetConfig memory assetConfig = hub.getAsset(assetId).config;
+    assetConfig.frozen = newFrozenFlag;
+
+    vm.prank(HUB_ADMIN);
+    hub.updateAssetConfig(assetId, assetConfig);
+  }
+
+  function updateReserveFrozenFlag(ISpoke spoke, uint256 reserveId, bool newFrozenFlag) internal {
+    DataTypes.ReserveConfig memory config = spoke.getReserve(reserveId).config;
+    config.frozen = newFrozenFlag;
+
+    vm.prank(SPOKE_ADMIN);
+    spoke.updateReserveConfig(reserveId, config);
+  }
+
+  function updateReservePausedFlag(ISpoke spoke, uint256 reserveId, bool newPausedFlag) internal {
+    DataTypes.ReserveConfig memory config = spoke.getReserve(reserveId).config;
+    config.paused = newPausedFlag;
+
+    vm.prank(SPOKE_ADMIN);
+    spoke.updateReserveConfig(reserveId, config);
+  }
+
+  function updateReserveActiveFlag(ISpoke spoke, uint256 reserveId, bool newActiveFlag) internal {
+    DataTypes.ReserveConfig memory config = spoke.getReserve(reserveId).config;
+    config.active = newActiveFlag;
+
+    vm.prank(SPOKE_ADMIN);
+    spoke.updateReserveConfig(reserveId, config);
   }
 
   function setUsingAsCollateral(
@@ -482,19 +560,27 @@ abstract contract Base is Test {
     spoke.setUsingAsCollateral(reserveId, usingAsCollateral);
   }
 
-  function updateLiquidationThreshold(ISpoke spoke, uint256 reserveId, uint256 newLt) internal {
+  function updateCollateralFactor(
+    ISpoke spoke,
+    uint256 reserveId,
+    uint256 newCollateralFactor
+  ) internal {
     DataTypes.Reserve memory reserveData = spoke.getReserve(reserveId);
-    reserveData.config.lt = newLt;
+    reserveData.config.collateralFactor = newCollateralFactor;
     spoke.updateReserveConfig(reserveId, reserveData.config);
   }
 
-  function updateCollateral(ISpoke spoke, uint256 reserveId, bool newCollateral) internal {
+  function updateCollateralFlag(ISpoke spoke, uint256 reserveId, bool newCollateralFlag) internal {
     DataTypes.Reserve memory reserveData = spoke.getReserve(reserveId);
-    reserveData.config.collateral = newCollateral;
+    reserveData.config.collateral = newCollateralFlag;
     spoke.updateReserveConfig(reserveId, reserveData.config);
   }
 
-  function updateBorrowable(ISpoke spoke, uint256 reserveId, bool newBorrowable) internal {
+  function updateReserveBorrowableFlag(
+    ISpoke spoke,
+    uint256 reserveId,
+    bool newBorrowable
+  ) internal {
     DataTypes.Reserve memory reserveData = spoke.getReserve(reserveId);
     reserveData.config.borrowable = newBorrowable;
     spoke.updateReserveConfig(reserveId, reserveData.config);
