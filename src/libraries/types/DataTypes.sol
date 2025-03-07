@@ -66,6 +66,10 @@ library DataTypes {
   }
 
   struct ReserveConfig {
+    uint256 decimals;
+    bool active;
+    bool frozen;
+    bool paused;
     uint256 liquidationThreshold; // BPS
     uint256 liquidationBonus; // TODO: liquidationProtocolFee
     uint256 liquidityPremium; // BPS

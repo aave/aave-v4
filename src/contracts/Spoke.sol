@@ -63,6 +63,10 @@ contract Spoke is ISpoke {
       lastUpdateTimestamp: 0,
       riskPremium: 0,
       config: DataTypes.ReserveConfig({
+        decimals: params.decimals,
+        active: params.active,
+        frozen: params.frozen,
+        paused: params.paused,
         liquidationThreshold: params.liquidationThreshold,
         liquidationBonus: params.liquidationBonus,
         liquidityPremium: params.liquidityPremium,
@@ -88,6 +92,10 @@ contract Spoke is ISpoke {
     );
     // TODO: AccessControl
     _reserves[reserveId].config = DataTypes.ReserveConfig({
+      decimals: params.decimals,
+      active: params.active,
+      frozen: params.frozen,
+      paused: params.paused,
       liquidationThreshold: params.liquidationThreshold,
       liquidationBonus: params.liquidationBonus,
       liquidityPremium: params.liquidityPremium,
@@ -97,6 +105,10 @@ contract Spoke is ISpoke {
 
     emit ReserveConfigUpdated(
       reserveId,
+      params.decimals,
+      params.active,
+      params.frozen,
+      params.paused,
       params.liquidationThreshold,
       params.liquidationBonus,
       params.liquidityPremium,

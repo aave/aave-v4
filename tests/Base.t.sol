@@ -249,6 +249,10 @@ abstract contract Base is Test {
 
     // Spoke 1 reserve configs
     DataTypes.ReserveConfig memory wethConfig = DataTypes.ReserveConfig({
+      decimals: 18,
+      active: true,
+      frozen: false,
+      paused: false,
       liquidationThreshold: 0.8e4,
       liquidationBonus: 0,
       liquidityPremium: 15_00,
@@ -256,6 +260,10 @@ abstract contract Base is Test {
       collateral: true
     });
     DataTypes.ReserveConfig memory wbtcConfig = DataTypes.ReserveConfig({
+      decimals: 8,
+      active: true,
+      frozen: false,
+      paused: false,
       liquidationThreshold: 0.75e4,
       liquidationBonus: 0,
       liquidityPremium: 50_00,
@@ -263,6 +271,10 @@ abstract contract Base is Test {
       collateral: true
     });
     DataTypes.ReserveConfig memory daiConfig = DataTypes.ReserveConfig({
+      decimals: 18,
+      active: true,
+      frozen: false,
+      paused: false,
       liquidationThreshold: 0.78e4,
       liquidationBonus: 0,
       liquidityPremium: 20_00,
@@ -270,6 +282,10 @@ abstract contract Base is Test {
       collateral: true
     });
     DataTypes.ReserveConfig memory usdxConfig = DataTypes.ReserveConfig({
+      decimals: 6,
+      active: true,
+      frozen: false,
+      paused: false,
       liquidationThreshold: 0.78e4,
       liquidationBonus: 0,
       liquidityPremium: 50_00,
@@ -309,6 +325,10 @@ abstract contract Base is Test {
 
     // Spoke 2 reserve configs
     wbtcConfig = DataTypes.ReserveConfig({
+      decimals: 8,
+      active: true,
+      frozen: false,
+      paused: false,
       liquidationThreshold: 0.8e4,
       liquidationBonus: 0,
       liquidityPremium: 0,
@@ -316,6 +336,10 @@ abstract contract Base is Test {
       collateral: true
     });
     wethConfig = DataTypes.ReserveConfig({
+      decimals: 18,
+      active: true,
+      frozen: false,
+      paused: false,
       liquidationThreshold: 0.76e4,
       liquidationBonus: 0,
       liquidityPremium: 10,
@@ -323,6 +347,10 @@ abstract contract Base is Test {
       collateral: true
     });
     daiConfig = DataTypes.ReserveConfig({
+      decimals: 18,
+      active: true,
+      frozen: false,
+      paused: false,
       liquidationThreshold: 0.72e4,
       liquidationBonus: 0,
       liquidityPremium: 20,
@@ -330,6 +358,10 @@ abstract contract Base is Test {
       collateral: true
     });
     usdxConfig = DataTypes.ReserveConfig({
+      decimals: 6,
+      active: true,
+      frozen: false,
+      paused: false,
       liquidationThreshold: 0.72e4,
       liquidationBonus: 0,
       liquidityPremium: 50,
@@ -369,6 +401,10 @@ abstract contract Base is Test {
 
     // Spoke 3 reserve configs
     daiConfig = DataTypes.ReserveConfig({
+      decimals: 18,
+      active: true,
+      frozen: false,
+      paused: false,
       liquidationThreshold: 0.75e4,
       liquidationBonus: 0,
       liquidityPremium: 0,
@@ -376,6 +412,10 @@ abstract contract Base is Test {
       collateral: true
     });
     usdxConfig = DataTypes.ReserveConfig({
+      decimals: 6,
+      active: true,
+      frozen: false,
+      paused: false,
       liquidationThreshold: 0.75e4,
       liquidationBonus: 0,
       liquidityPremium: 10,
@@ -383,6 +423,10 @@ abstract contract Base is Test {
       collateral: true
     });
     wethConfig = DataTypes.ReserveConfig({
+      decimals: 18,
+      active: true,
+      frozen: false,
+      paused: false,
       liquidationThreshold: 0.79e4,
       liquidationBonus: 0,
       liquidityPremium: 20,
@@ -390,6 +434,10 @@ abstract contract Base is Test {
       collateral: true
     });
     wbtcConfig = DataTypes.ReserveConfig({
+      decimals: 8,
+      active: true,
+      frozen: false,
+      paused: false,
       liquidationThreshold: 0.77e4,
       liquidationBonus: 0,
       liquidityPremium: 50,
@@ -440,6 +488,10 @@ abstract contract Base is Test {
     );
     oracle.setAssetPrice(dai2AssetId, 1e8);
     daiConfig = DataTypes.ReserveConfig({
+      decimals: 18,
+      active: true,
+      frozen: false,
+      paused: false,
       liquidationThreshold: 0.70e4,
       liquidationBonus: 0,
       liquidityPremium: 100,

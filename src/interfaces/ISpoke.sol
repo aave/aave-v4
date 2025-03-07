@@ -14,8 +14,12 @@ interface ISpoke {
   event ReserveAdded(uint256 indexed reserveId, uint256 indexed assetId);
   event ReserveConfigUpdated(
     uint256 indexed reserveId,
-    uint256 lt,
-    uint256 lb,
+    uint256 decimals,
+    bool active,
+    bool frozen,
+    bool paused,
+    uint256 liquidationThreshold,
+    uint256 liquidationBonus,
     uint256 liquidityPremium,
     bool borrowable,
     bool collateral
