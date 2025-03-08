@@ -712,16 +712,7 @@ contract SpokeUserRiskPremiumTest is SpokeBase {
     );
 
     // Change the liquidity premium of wbtc
-    spoke2.updateReserveConfig(
-      wbtcInfo.reserveId,
-      DataTypes.ReserveConfig({
-        lt: 0.8e4,
-        lb: 0,
-        liquidityPremium: newLpValue,
-        borrowable: true,
-        collateral: true
-      })
-    );
+    spoke2.updateLiquidityPremium(wbtcInfo.reserveId, newLpValue);
 
     assertEq(
       spoke2.getUserRiskPremium(bob),
@@ -804,46 +795,10 @@ contract SpokeUserRiskPremiumTest is SpokeBase {
     oracle.setAssetPrice(wbtcAssetId, wbtcInfo.price);
 
     // Update LPs
-    spoke2.updateReserveConfig(
-      daiReserveId(spoke2),
-      DataTypes.ReserveConfig({
-        lt: 0.8e4,
-        lb: 0,
-        liquidityPremium: daiInfo.lp,
-        borrowable: true,
-        collateral: true
-      })
-    );
-    spoke2.updateReserveConfig(
-      wethReserveId(spoke2),
-      DataTypes.ReserveConfig({
-        lt: 0.8e4,
-        lb: 0,
-        liquidityPremium: wethInfo.lp,
-        borrowable: true,
-        collateral: true
-      })
-    );
-    spoke2.updateReserveConfig(
-      usdxReserveId(spoke2),
-      DataTypes.ReserveConfig({
-        lt: 0.8e4,
-        lb: 0,
-        liquidityPremium: usdxInfo.lp,
-        borrowable: true,
-        collateral: true
-      })
-    );
-    spoke2.updateReserveConfig(
-      wbtcReserveId(spoke2),
-      DataTypes.ReserveConfig({
-        lt: 0.8e4,
-        lb: 0,
-        liquidityPremium: wbtcInfo.lp,
-        borrowable: true,
-        collateral: true
-      })
-    );
+    spoke2.updateLiquidityPremium(daiReserveId(spoke2), daiInfo.lp);
+    spoke2.updateLiquidityPremium(wethReserveId(spoke2), wethInfo.lp);
+    spoke2.updateLiquidityPremium(usdxReserveId(spoke2), usdxInfo.lp);
+    spoke2.updateLiquidityPremium(wbtcReserveId(spoke2), wbtcInfo.lp);
 
     // Check user risk premium
     assertEq(
@@ -1200,6 +1155,10 @@ contract SpokeUserRiskPremiumTest is SpokeBase {
   /// Bob and Alice each supply and borrow varying amounts of usdx and dai, we check interest accrues and values percolate to hub.
   /// After 1 year, Alice does a repay, and we ensure the same values are updated accordingly at the end of year 2.
   function test_getUserRiskPremium_applyInterest_two_users_two_reserves_borrowed() public {
+    // Set Dai lp to 10% and usdx to 20%
+    spoke1.updateLiquidityPremium(daiReserveId(spoke1), 10_00);
+    spoke1.updateLiquidityPremium(usdxReserveId(spoke1), 20_00);
+
     Amounts memory amounts;
 
     amounts.bobDaiSupplyAmount = 1000e18;

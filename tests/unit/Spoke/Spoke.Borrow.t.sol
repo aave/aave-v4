@@ -9,15 +9,65 @@ contract SpokeBorrowTest is Base {
     initEnvironment();
   }
 
-  function test_borrow_revertsWith_reserve_not_borrowable() public {
-    uint256 daiReserveId = spokeInfo[spoke1].dai.reserveId;
+  function test_borrow_revertsWith_ReserveNotBorrowable() public {
+    uint256 daiReserveId = daiReserveId(spoke1);
 
     // set reserve not borrowable
-    updateBorrowable(spoke1, daiReserveId, false);
+    updateReserveBorrowableFlag(spoke1, daiReserveId, false);
+    assertFalse(spoke1.getReserve(daiReserveId).config.borrowable);
 
     // Bob try to draw some dai
-    vm.prank(bob);
     vm.expectRevert(abi.encodeWithSelector(ISpoke.ReserveNotBorrowable.selector, daiReserveId));
+    vm.prank(bob);
+    spoke1.borrow(daiReserveId, 1, bob);
+  }
+
+  function test_borrow_revertsWith_ReserveNotActive() public {
+    uint256 daiReserveId = daiReserveId(spoke1);
+
+    updateReserveActiveFlag(spoke1, daiReserveId, false);
+    assertFalse(spoke1.getReserve(daiReserveId).config.active);
+
+    // Bob try to draw some dai
+    vm.expectRevert(ISpoke.ReserveNotActive.selector);
+    vm.prank(bob);
+    spoke1.borrow(daiReserveId, 1, bob);
+  }
+
+  function test_borrow_revertsWith_ReserveNotListed() public {
+    uint256 reserveId = spoke1.reserveCount() + 1; // invalid reserveId
+
+    // Bob try to draw some dai
+    vm.expectRevert(ISpoke.ReserveNotListed.selector);
+    vm.prank(bob);
+    spoke1.borrow(reserveId, 1, bob);
+  }
+
+  function test_borrow_revertsWith_ReservePaused() public {
+    uint256 daiReserveId = daiReserveId(spoke1);
+    uint256 amount = 100e18;
+
+    updateReservePausedFlag(spoke1, daiReserveId, true);
+    assertTrue(spoke1.getReserve(daiReserveId).config.paused);
+
+    // Bob try to draw some dai
+
+    vm.expectRevert(ISpoke.ReservePaused.selector);
+    vm.prank(bob);
+    spoke1.borrow(daiReserveId, 1, bob);
+  }
+
+  function test_borrow_revertsWith_ReserveFrozen() public {
+    uint256 daiReserveId = daiReserveId(spoke1);
+    uint256 amount = 100e18;
+
+    updateReserveFrozenFlag(spoke1, daiReserveId, true);
+    assertTrue(spoke1.getReserve(daiReserveId).config.frozen);
+
+    // Bob try to draw some dai
+
+    vm.expectRevert(ISpoke.ReserveFrozen.selector);
+    vm.prank(bob);
     spoke1.borrow(daiReserveId, 1, bob);
   }
 
@@ -28,8 +78,9 @@ contract SpokeBorrowTest is Base {
     updateAssetActive(hub, daiAssetId, false);
 
     // Bob try to draw some dai
-    vm.prank(bob);
+
     vm.expectRevert(ILiquidityHub.AssetNotActive.selector);
+    vm.prank(bob);
     spoke1.borrow(daiReserveId, 1, bob);
   }
 
@@ -133,17 +184,19 @@ contract SpokeBorrowTest is Base {
     Utils.spokeSupply(spoke1, daiReserveId, alice, daiAmount, alice);
 
     // Bob draw more than supplied dai amount
-    vm.prank(bob);
+
     vm.expectRevert(
       abi.encodeWithSelector(ILiquidityHub.NotAvailableLiquidity.selector, daiAmount)
     );
+    vm.prank(bob);
     spoke1.borrow(daiReserveId, daiAmount + 1, bob);
   }
 
   function test_borrow_revertsWith_invalid_draw_amount() public {
     // Bob draw 0 dai
-    vm.prank(bob);
+
     vm.expectRevert(ILiquidityHub.InvalidDrawAmount.selector);
+    vm.prank(bob);
     spoke1.borrow(spokeInfo[spoke1].dai.reserveId, 0, bob);
   }
 
@@ -237,8 +290,9 @@ contract SpokeBorrowTest is Base {
     updateDrawCap(hub, daiAssetId, address(spoke1), drawCap);
 
     // Bob borrow dai amount exceeding draw cap
-    vm.prank(bob);
+
     vm.expectRevert(abi.encodeWithSelector(ILiquidityHub.DrawCapExceeded.selector, drawCap));
+    vm.prank(bob);
     spoke1.borrow(daiReserveId, drawAmount, bob);
   }
 

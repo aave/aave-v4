@@ -21,6 +21,7 @@ contract LiquidityHub is ILiquidityHub {
   using AssetLogic for DataTypes.Asset;
   using SpokeDataLogic for DataTypes.SpokeData;
 
+  uint256 public constant MAX_ALLOWED_ASSET_DECIMALS = 18;
   uint256 public constant DEFAULT_ASSET_INDEX = WadRayMath.RAY;
   uint256 public constant DEFAULT_SPOKE_INDEX = 0;
 
@@ -35,9 +36,9 @@ contract LiquidityHub is ILiquidityHub {
   // Governance
   // /////
 
-  function addAsset(DataTypes.AssetConfig memory config, address asset) external {
+  function addAsset(DataTypes.AssetConfig calldata config, address asset) external {
     // TODO: AccessControl
-    // todo restrict max asset decimals to 18
+    _validateAssetConfig(config, asset);
     assetsList.push(IERC20(asset));
     _assets[assetCount] = DataTypes.Asset({
       id: assetCount,
@@ -52,6 +53,8 @@ contract LiquidityHub is ILiquidityHub {
       config: DataTypes.AssetConfig({
         decimals: config.decimals,
         active: config.active,
+        frozen: config.frozen,
+        paused: config.paused,
         irStrategy: config.irStrategy
       })
     });
@@ -59,11 +62,15 @@ contract LiquidityHub is ILiquidityHub {
     emit AssetAdded(assetCount++, asset);
   }
 
-  function updateAssetConfig(uint256 assetId, DataTypes.AssetConfig memory config) external {
+  function updateAssetConfig(uint256 assetId, DataTypes.AssetConfig calldata config) external {
+    _validateAssetConfig(config, address(assetsList[assetId]));
+    DataTypes.Asset storage asset = _assets[assetId];
     // TODO: AccessControl
-    _assets[assetId].config = DataTypes.AssetConfig({
+    asset.config = DataTypes.AssetConfig({
       decimals: config.decimals,
       active: config.active,
+      frozen: config.frozen,
+      paused: config.paused,
       irStrategy: config.irStrategy
     });
 
@@ -126,7 +133,8 @@ contract LiquidityHub is ILiquidityHub {
       asset: asset,
       spoke: spoke,
       newSpokeRiskPremium: _boundBps(riskPremium).rayify(),
-      baseDebtChange: 0
+      baseDebtAdded: 0,
+      baseDebtTaken: 0
     });
 
     // todo: Mitigate inflation attack (burn some amount if first supply)
@@ -135,7 +143,7 @@ contract LiquidityHub is ILiquidityHub {
 
     asset.availableLiquidity += amount;
     asset.suppliedShares += sharesAmount;
-    spoke.suppliedShares += sharesAmount; // todo: mint 4626 shares to abstract this accounting
+    spoke.suppliedShares += sharesAmount;
 
     // TODO: fee-on-transfer
     assetsList[assetId].safeTransferFrom(supplier, address(this), amount);
@@ -161,7 +169,13 @@ contract LiquidityHub is ILiquidityHub {
     _validateWithdraw(asset, spoke, amount);
 
     asset.updateBorrowRate({liquidityAdded: 0, liquidityTaken: amount});
-    _updateRiskPremiumAndBaseDebt(asset, spoke, _boundBps(riskPremium).rayify(), 0); // no base debt change
+    _updateRiskPremiumAndBaseDebt({
+      asset: asset,
+      spoke: spoke,
+      newSpokeRiskPremium: _boundBps(riskPremium).rayify(),
+      baseDebtAdded: 0,
+      baseDebtTaken: 0
+    });
 
     uint256 sharesAmount = asset.convertToSharesUp(amount);
     require(sharesAmount > 0, InvalidSharesAmount());
@@ -193,7 +207,13 @@ contract LiquidityHub is ILiquidityHub {
     _validateDraw(asset, amount, spoke.config.drawCap);
 
     asset.updateBorrowRate({liquidityAdded: 0, liquidityTaken: amount});
-    _updateRiskPremiumAndBaseDebt(asset, spoke, _boundBps(riskPremium).rayify(), int256(amount)); // base debt added
+    _updateRiskPremiumAndBaseDebt({
+      asset: asset,
+      spoke: spoke,
+      newSpokeRiskPremium: _boundBps(riskPremium).rayify(),
+      baseDebtAdded: amount,
+      baseDebtTaken: 0
+    });
 
     asset.availableLiquidity -= amount;
 
@@ -221,12 +241,13 @@ contract LiquidityHub is ILiquidityHub {
 
     asset.updateBorrowRate({liquidityAdded: amount, liquidityTaken: 0});
     uint256 baseDebtRestored = _deductFromOutstandingPremium(asset, spoke, amount);
-    _updateRiskPremiumAndBaseDebt(
-      asset,
-      spoke,
-      _boundBps(riskPremium).rayify(),
-      -int256(baseDebtRestored)
-    );
+    _updateRiskPremiumAndBaseDebt({
+      asset: asset,
+      spoke: spoke,
+      newSpokeRiskPremium: _boundBps(riskPremium).rayify(),
+      baseDebtAdded: 0,
+      baseDebtTaken: baseDebtRestored
+    });
 
     asset.availableLiquidity += amount;
 
@@ -245,7 +266,13 @@ contract LiquidityHub is ILiquidityHub {
     DataTypes.SpokeData storage spoke = _spokes[assetId][msg.sender];
 
     _accrueInterest(asset, spoke);
-    _updateRiskPremiumAndBaseDebt(asset, spoke, _boundBps(riskPremium).rayify(), 0);
+    _updateRiskPremiumAndBaseDebt({
+      asset: asset,
+      spoke: spoke,
+      newSpokeRiskPremium: _boundBps(riskPremium).rayify(),
+      baseDebtAdded: 0,
+      baseDebtTaken: 0
+    });
   }
 
   //
@@ -276,22 +303,6 @@ contract LiquidityHub is ILiquidityHub {
 
   function getTotalAssets(uint256 assetId) external view returns (uint256) {
     return _assets[assetId].getTotalAssets();
-  }
-
-  function convertToSharesUp(uint256 assetId, uint256 assets) external view returns (uint256) {
-    return _assets[assetId].convertToSharesUp(assets);
-  }
-
-  function convertToSharesDown(uint256 assetId, uint256 assets) external view returns (uint256) {
-    return _assets[assetId].convertToSharesDown(assets);
-  }
-
-  function convertToAssetsUp(uint256 assetId, uint256 shares) external view returns (uint256) {
-    return _assets[assetId].convertToAssetsUp(shares);
-  }
-
-  function convertToAssetsDown(uint256 assetId, uint256 shares) external view returns (uint256) {
-    return _assets[assetId].convertToAssetsDown(shares);
   }
 
   function convertToAssets(uint256 assetId, uint256 shares) external view returns (uint256) {
@@ -377,9 +388,10 @@ contract LiquidityHub is ILiquidityHub {
     uint256 amount
   ) internal view {
     require(amount > 0, InvalidSupplyAmount());
-    require(assetsList[asset.id] != IERC20(address(0)), AssetNotListed());
-    // TODO: Different states e.g. frozen, paused
     require(asset.config.active, AssetNotActive());
+    require(!asset.config.paused, AssetPaused());
+    require(!asset.config.frozen, AssetFrozen());
+    require(assetsList[asset.id] != IERC20(address(0)), AssetNotListed());
     require(
       spoke.config.supplyCap == type(uint256).max ||
         asset.convertToAssetsDown(spoke.suppliedShares) + amount <= spoke.config.supplyCap,
@@ -392,10 +404,9 @@ contract LiquidityHub is ILiquidityHub {
     DataTypes.SpokeData storage spoke,
     uint256 amount
   ) internal view {
-    // TODO: Other cases of status (frozen, paused)
-    // TODO: still allow withdrawal even if asset is not active, only prevent for frozen/paused?
-    require(asset.config.active, AssetNotActive());
     require(amount > 0, InvalidWithdrawAmount());
+    require(asset.config.active, AssetNotActive());
+    require(!asset.config.paused, AssetPaused());
     uint256 withdrawable = asset.convertToAssetsDown(spoke.suppliedShares);
     require(amount <= withdrawable, SuppliedAmountExceeded(withdrawable));
     require(amount <= asset.availableLiquidity, NotAvailableLiquidity(asset.availableLiquidity));
@@ -406,9 +417,10 @@ contract LiquidityHub is ILiquidityHub {
     uint256 amount,
     uint256 drawCap
   ) internal view {
-    // TODO: Other cases of status (frozen, paused)
-    require(asset.config.active, AssetNotActive());
     require(amount > 0, InvalidDrawAmount());
+    require(asset.config.active, AssetNotActive());
+    require(!asset.config.paused, AssetPaused());
+    require(!asset.config.frozen, AssetFrozen());
     require(
       drawCap == type(uint256).max || amount + asset.baseDebt <= drawCap,
       DrawCapExceeded(drawCap)
@@ -421,9 +433,9 @@ contract LiquidityHub is ILiquidityHub {
     DataTypes.SpokeData storage spoke,
     uint256 amountRestored
   ) internal view {
-    // TODO: Other cases of status (frozen, paused)
-    require(asset.config.active, AssetNotActive());
     require(amountRestored > 0, InvalidRestoreAmount());
+    require(asset.config.active, AssetNotActive());
+    require(!asset.config.paused, AssetPaused());
     // Ensure spoke is not restoring more than accrued drawn
     uint256 maxAllowedRestore = spoke.baseDebt + spoke.outstandingPremium;
     require(amountRestored <= maxAllowedRestore, SurplusAmountRestored(maxAllowedRestore));
@@ -446,7 +458,8 @@ contract LiquidityHub is ILiquidityHub {
     DataTypes.Asset storage asset,
     DataTypes.SpokeData storage spoke,
     uint256 newSpokeRiskPremium,
-    int256 baseDebtChange
+    uint256 baseDebtAdded,
+    uint256 baseDebtTaken
   ) internal {
     uint256 existingAssetDebt = asset.baseDebt;
     uint256 existingSpokeDebt = spoke.baseDebt;
@@ -460,10 +473,8 @@ contract LiquidityHub is ILiquidityHub {
         existingSpokeDebt
       );
 
-    uint256 newSpokeDebt = baseDebtChange > 0
-      ? existingSpokeDebt + uint256(baseDebtChange) // debt added
-      : existingSpokeDebt - uint256(-baseDebtChange); // debt restored
-    // force underflow^: only possible when spoke takes repays amount more than net drawn
+    // This results in an underflow if more base debt than the total accounted is taken
+    uint256 newSpokeDebt = existingSpokeDebt + baseDebtAdded - baseDebtTaken;
 
     (uint256 newAssetRiskPremium, uint256 newAssetDebt) = MathUtils.addToWeightedAverage(
       assetRiskPremiumWithoutCurrent,
@@ -521,5 +532,11 @@ contract LiquidityHub is ILiquidityHub {
   function _boundBps(uint32 a) internal pure returns (uint256) {
     require(a < 1000_00, InvalidRiskPremiumBps(a));
     return uint256(a);
+  }
+
+  function _validateAssetConfig(DataTypes.AssetConfig calldata config, address asset) internal {
+    require(asset != address(0), InvalidAssetAddress());
+    require(config.irStrategy != address(0), InvalidIrStrategy());
+    require(config.decimals <= MAX_ALLOWED_ASSET_DECIMALS, InvalidAssetDecimals());
   }
 }

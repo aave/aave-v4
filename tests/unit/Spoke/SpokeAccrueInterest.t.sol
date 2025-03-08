@@ -80,11 +80,10 @@ contract SpokeAccrueInterestTest is SpokeBase {
     uint256 borrowAmount,
     uint40 elapsed
   ) public {
-    borrowAmount = bound(borrowAmount, 1, 1e30);
+    borrowAmount = bound(borrowAmount, 1, MAX_SUPPLY_AMOUNT / 2);
     uint256 supplyAmount = borrowAmount * 2;
     uint256 startTime = vm.getBlockTimestamp();
     uint256 wethReserveId = wethReserveId(spoke1);
-    deal(address(tokenList.weth), bob, supplyAmount + 1e18);
 
     // Bob supplies and borrows through spoke 1
     Utils.spokeSupply(spoke1, wethReserveId, bob, supplyAmount, bob);
