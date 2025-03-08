@@ -236,6 +236,6 @@ contract SpokeConfigTest is SpokeBase {
 
     vm.expectRevert(ISpoke.InvalidReserveDecimals.selector);
     vm.prank(SPOKE_ADMIN);
-    spoke1.addReserve(wethAssetId, newReserveConfig);
+    spoke1.addReserve(reserveId, newReserveConfig);
   }
 }

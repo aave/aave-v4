@@ -31,7 +31,7 @@ contract Spoke is ISpoke {
 
   uint256[] public reservesList; // todo: rm, not needed
   uint256 public reserveCount;
-  uint256 public constant HEALTH_FACTOR_LIQUIDATION_THRESHOLD = WadRayMath.WAD; // todo: adjustable by governance?
+  uint256 public constant HEALTH_FACTOR_LIQUIDATION_THRESHOLD = WadRayMath.WAD;
 
   constructor(address liquidityHubAddress, address oracleAddress) {
     liquidityHub = ILiquidityHub(liquidityHubAddress);
