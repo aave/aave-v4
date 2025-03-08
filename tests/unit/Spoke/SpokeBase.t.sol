@@ -249,9 +249,10 @@ contract SpokeBase is Base {
       ) + 1;
   }
 
-  function _getNormalizedReserveValue(
-    uint256 amount,
-    uint256 assetId
+  /// @dev Returns the USD value of the reserve normalized by it's decimals, in terms of WAD
+  function _getReserveValueInBaseCurrency(
+    uint256 assetId,
+    uint256 amount
   ) internal view returns (uint256) {
     return
       (amount * oracle.getAssetPrice(assetId) * WadRayMath.WAD) /
@@ -271,9 +272,9 @@ contract SpokeBase is Base {
         ++suppliedReservesCount;
       }
       (assetId, ) = getAssetByReserveId(spoke, reserveId);
-      totalDebt += _getNormalizedReserveValue(
-        spoke.getUserCumulativeDebt(reserveId, user),
-        assetId
+      totalDebt += _getReserveValueInBaseCurrency(
+        assetId,
+        spoke.getUserCumulativeDebt(reserveId, user)
       );
     }
 
@@ -301,9 +302,9 @@ contract SpokeBase is Base {
       (uint256 lp, uint256 reserveId) = reserveLP.get(idx);
       userPosition = getUserInfo(spoke, user, reserveId);
       (assetId, ) = getAssetByReserveId(spoke, reserveId);
-      uint256 supplyAmount = _getNormalizedReserveValue(
-        hub.convertToAssets(assetId, userPosition.suppliedShares),
-        assetId
+      uint256 supplyAmount = _getReserveValueInBaseCurrency(
+        assetId,
+        hub.convertToAssets(assetId, userPosition.suppliedShares)
       );
 
       if (supplyAmount >= totalDebt) {

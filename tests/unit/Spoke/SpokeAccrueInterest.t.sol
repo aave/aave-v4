@@ -10,17 +10,19 @@ contract SpokeAccrueInterestTest is SpokeBase {
   using WadRayMath for uint256;
   using PercentageMath for uint256;
 
+  /// No interest should accrue when no action is taken.
   function test_accrueInterest_NoActionTaken() public {
-    DataTypes.Reserve memory wethInfo = getReserveInfo(spoke1, spokeInfo[spoke1].weth.reserveId);
+    DataTypes.Reserve memory wethInfo = getReserveInfo(spoke1, wethReserveId(spoke1));
     assertEq(wethInfo.lastUpdateTimestamp, 0);
     assertEq(wethInfo.baseDebt, 0);
     assertEq(wethInfo.outstandingPremium, 0);
     assertEq(wethInfo.riskPremium, 0);
   }
 
+  /// Supply an asset only, and check no interest accrued.
   function test_accrueInterest_OnlySupply(uint40 elapsed) public {
     uint256 amount = 1000e18;
-    uint256 wethReserveId = spokeInfo[spoke1].weth.reserveId;
+    uint256 wethReserveId = wethReserveId(spoke1);
 
     // Bob supplies through spoke 1
     Utils.spokeSupply(spoke1, wethReserveId, bob, amount, bob);
@@ -38,9 +40,10 @@ contract SpokeAccrueInterestTest is SpokeBase {
     assertEq(wethInfo.outstandingPremium, 0, 'outstandingPremium');
   }
 
+  /// Supply and draw a reserve, wait a year, and check interest accrued.
   function test_accrueInterest_BorrowAndWait() public {
     uint256 amount = 1000e18;
-    uint256 wethReserveId = spokeInfo[spoke1].weth.reserveId;
+    uint256 wethReserveId = wethReserveId(spoke1);
     uint256 startTime = vm.getBlockTimestamp();
 
     // Bob supplies and borrows through spoke 1
@@ -72,6 +75,7 @@ contract SpokeAccrueInterestTest is SpokeBase {
     assertEq(wethAssetInfo.lastUpdateTimestamp, lastUpdate);
   }
 
+  /// Supply and draw arbitrary amounts of a reserve, wait arbitrary time, and check interest accrued correctly.
   function test_accrueInterest_fuzz_BorrowAmountAndElapsed(
     uint256 borrowAmount,
     uint40 elapsed
@@ -79,7 +83,7 @@ contract SpokeAccrueInterestTest is SpokeBase {
     borrowAmount = bound(borrowAmount, 1, 1e30);
     uint256 supplyAmount = borrowAmount * 2;
     uint256 startTime = vm.getBlockTimestamp();
-    uint256 wethReserveId = spokeInfo[spoke1].weth.reserveId;
+    uint256 wethReserveId = wethReserveId(spoke1);
     deal(address(tokenList.weth), bob, supplyAmount + 1e18);
 
     // Bob supplies and borrows through spoke 1

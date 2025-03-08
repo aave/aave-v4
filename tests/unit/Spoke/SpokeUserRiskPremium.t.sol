@@ -2,8 +2,6 @@
 pragma solidity ^0.8.0;
 
 import 'tests/unit/Spoke/SpokeBase.t.sol';
-import {Spoke} from 'src/contracts/Spoke.sol';
-import {WadRayMath} from 'src/contracts/WadRayMath.sol';
 
 contract SpokeUserRiskPremiumTest is SpokeBase {
   using SharesMath for uint256;
@@ -68,21 +66,24 @@ contract SpokeUserRiskPremiumTest is SpokeBase {
     uint256 aliceUsdxSupplyAmount;
   }
 
+  /// With no collateral supplied, user risk premium is 0.
   function test_getUserRiskPremium_no_collateral() public {
     // Assert Bob has no collateral
-    for (uint256 i = 0; i < spoke1.reserveCount(); i++) {
-      DataTypes.UserPosition memory bobInfo = getUserInfo(spoke1, bob, i);
+    for (uint256 reserveId = 0; reserveId < spoke1.reserveCount(); reserveId++) {
+      DataTypes.UserPosition memory bobInfo = getUserInfo(spoke1, bob, reserveId);
       assertEq(bobInfo.suppliedShares, 0, 'bob supplied collateral');
     }
     assertEq(spoke1.getUserRiskPremium(bob), 0, 'user risk premium');
   }
 
+  /// Without a collateral set, user risk premium is 0.
   function test_getUserRiskPremium_no_collateral_set() public {
     Utils.spokeSupply(spoke1, daiReserveId(spoke1), bob, 100e18, bob);
     // Bob doesn't set dai as collateral, despite supplying, so his user rp is 0
     assertEq(spoke1.getUserRiskPremium(bob), 0, 'user risk premium');
   }
 
+  /// Without a draw, user risk premium is 0.
   function test_getUserRiskPremium_single_reserve_collateral() public {
     uint256 daiReserveId = daiReserveId(spoke1);
     uint256 daiAmount = 100e18;
@@ -94,6 +95,7 @@ contract SpokeUserRiskPremiumTest is SpokeBase {
     assertEq(spoke1.getUserRiskPremium(bob), 0, 'user risk premium');
   }
 
+  /// When supplying and borrowing one reserve, user risk premium matches the liquidity premium of that reserve.
   function test_getUserRiskPremium_single_reserve_collateral_borrowed() public {
     uint256 daiReserveId = daiReserveId(spoke1);
     uint256 supplyAmount = 100e18;
@@ -111,6 +113,7 @@ contract SpokeUserRiskPremiumTest is SpokeBase {
     assertEq(userRiskPremium, daiInfo.config.liquidityPremium, 'user risk premium');
   }
 
+  /// When supplying and borrowing one reserve (fuzzed amounts), user risk premium matches the liquidity premium of that reserve.
   function test_getUserRiskPremium_fuzz_single_reserve_collateral_borrowed_amount(
     uint256 borrowAmount
   ) public {
@@ -132,6 +135,8 @@ contract SpokeUserRiskPremiumTest is SpokeBase {
     assertEq(spoke1.getUserRiskPremium(bob), daiInfo.lp, 'user risk premium');
   }
 
+  /// When supplying and borrowing one reserve each, user risk premium matches the liquidity premium of the collateral.
+  /// An additional supply of a riskier collateral does not impact the user risk premium.
   function test_getUserRiskPremium_fuzz_supply_does_not_impact(
     uint256 borrowAmount,
     uint256 additionalSupplyAmount
@@ -168,6 +173,7 @@ contract SpokeUserRiskPremiumTest is SpokeBase {
     assertEq(spoke1.getUserRiskPremium(bob), userRiskPremium, 'user risk premium after supply');
   }
 
+  /// Supply 3 reserves, borrow 2, such that 1 reserve fully covers the debt, then check user risk premium calc.
   function test_getUserRiskPremium_multi_reserve_collateral() public {
     ReserveInfoLocal memory daiInfo;
     ReserveInfoLocal memory usdxInfo;
@@ -205,14 +211,16 @@ contract SpokeUserRiskPremiumTest is SpokeBase {
 
     // Weth is enough to cover the total debt
     assertGe(
-      _getNormalizedReserveValue(wethInfo.supplyAmount, wethAssetId),
-      _getNormalizedReserveValue(daiInfo.borrowAmount + usdxInfo.borrowAmount, daiAssetId),
+      _getReserveValueInBaseCurrency(wethAssetId, wethInfo.supplyAmount),
+      _getReserveValueInBaseCurrency(daiAssetId, daiInfo.borrowAmount) +
+        _getReserveValueInBaseCurrency(usdxAssetId, usdxInfo.borrowAmount),
       'weth supply covers debt'
     );
     uint256 expectedUserRiskPremium = wethInfo.lp;
     assertEq(spoke1.getUserRiskPremium(bob), expectedUserRiskPremium, 'user risk premium');
   }
 
+  /// Supply 3 reserves, borrow 2, such that 2 reserves fully cover the debt, then check user risk premium calc.
   function test_getUserRiskPremium_multi_reserve_collateral_weth_partial_cover() public {
     ReserveInfoLocal memory daiInfo;
     ReserveInfoLocal memory usdxInfo;
@@ -254,6 +262,7 @@ contract SpokeUserRiskPremiumTest is SpokeBase {
     );
   }
 
+  /// Supply 2 reserves and borrow one such that the 2 reserves equally cover debt, then check user risk premium calc.
   function test_getUserRiskPremium_two_reserves_equal_parts() public {
     ReserveInfoLocal memory daiInfo;
     ReserveInfoLocal memory usdxInfo;
@@ -296,6 +305,7 @@ contract SpokeUserRiskPremiumTest is SpokeBase {
     );
   }
 
+  /// Supply 2 reserves and borrow one. Check user risk premium calc.
   function test_getUserRiskPremium_fuzz_two_reserves_supply_and_borrow(
     uint256 daiSupplyAmount,
     uint256 usdxSupplyAmount,
@@ -355,6 +365,7 @@ contract SpokeUserRiskPremiumTest is SpokeBase {
     );
   }
 
+  /// Supply 3 reserves and borrow one. Check user risk premium calc.
   function test_getUserRiskPremium_fuzz_three_reserves_supply_and_borrow(
     uint256 daiSupplyAmount,
     uint256 usdxSupplyAmount,
@@ -423,6 +434,7 @@ contract SpokeUserRiskPremiumTest is SpokeBase {
     );
   }
 
+  /// Supply 4 reserves and borrow one. Check user risk premium calc.
   function test_getUserRiskPremium_fuzz_four_reserves_supply_and_borrow(
     uint256 daiSupplyAmount,
     uint256 wethSupplyAmount,
@@ -508,6 +520,7 @@ contract SpokeUserRiskPremiumTest is SpokeBase {
     );
   }
 
+  /// Supply 4 reserves and borrow one. Change the price of one reserve, and check user risk premium calc.
   function test_getUserRiskPremium_fuzz_four_reserves_change_one_price(
     uint256 daiSupplyAmount,
     uint256 wethSupplyAmount,
@@ -607,6 +620,7 @@ contract SpokeUserRiskPremiumTest is SpokeBase {
     );
   }
 
+  /// Supply 4 reserves and borrow one. Change liquidity premium of a reserve, and check user risk premium calc.
   function test_getUserRiskPremium_fuzz_four_reserves_change_lp(
     uint256 daiSupplyAmount,
     uint256 wethSupplyAmount,
@@ -716,6 +730,8 @@ contract SpokeUserRiskPremiumTest is SpokeBase {
     );
   }
 
+  /// Bob supplies and borrows varying amounts of 4 reserves.
+  /// We update prices and reserve liquidity premiums, then ensure risk premium is calculated correctly.
   function test_getUserRiskPremium_fuzz_four_reserves_prices_supply_debt(
     ReserveInfoLocal memory daiInfo,
     ReserveInfoLocal memory wethInfo,
@@ -837,6 +853,8 @@ contract SpokeUserRiskPremiumTest is SpokeBase {
     );
   }
 
+  /// Bob supplies varying amounts of dai, weth, and usdx, and max wbtc; borrows wbtc.
+  /// We check Bob's risk premium and interest accrual are calculated correctly and accounting percolates through hub.
   function test_getUserRiskPremium_fuzz_applyingInterest(
     uint256 daiSupplyAmount,
     uint256 wethSupplyAmount,
@@ -922,6 +940,13 @@ contract SpokeUserRiskPremiumTest is SpokeBase {
       'user risk premium after interest accrual'
     );
 
+    // Ensure the calculated risk premium would match
+    assertEq(
+      spoke3.getUserRiskPremium(bob),
+      _calculateExpectedUserRP(bob, spoke3),
+      'bob risk premium after time skip'
+    );
+
     // See if base debt of wbtc changes appropriately
     baseDebt = MathUtils.calculateLinearInterest(baseRate, uint40(startTime)).rayMul(baseDebt);
     (actualBaseDebt, actualPremium) = spoke3.getUserDebt(wbtcInfo.reserveId, bob);
@@ -946,6 +971,8 @@ contract SpokeUserRiskPremiumTest is SpokeBase {
     assertEq(assetPremium, premiumDebt, 'hub asset outstanding premium');
   }
 
+  /// Bob supplies varying amounts of dai, weth, usdx, and max wbtc, then borrows varying wbtc and weth amounts.
+  /// We check interest is updated properly after 1 year, and accounting percolates up through liquidity hub.
   function test_getUserRiskPremium_fuzz_applyInterest_two_reserves_borrowed(
     uint256 daiSupplyAmount,
     uint256 usdxSupplyAmount,
@@ -1064,6 +1091,13 @@ contract SpokeUserRiskPremiumTest is SpokeBase {
       'user risk premium after interest accrual'
     );
 
+    // Ensure the calculated risk premium would match
+    assertEq(
+      spoke3.getUserRiskPremium(bob),
+      _calculateExpectedUserRP(bob, spoke3),
+      'bob risk premium after time skip'
+    );
+
     // See if base debt of wbtc changes appropriately
     debtChecks.baseDebt = MathUtils
       .calculateLinearInterest(rates.baseRateWbtc, uint40(rates.startTime))
@@ -1163,6 +1197,8 @@ contract SpokeUserRiskPremiumTest is SpokeBase {
     );
   }
 
+  /// Bob and Alice each supply and borrow varying amounts of usdx and dai, we check interest accrues and values percolate to hub.
+  /// After 1 year, Alice does a repay, and we ensure the same values are updated accordingly at the end of year 2.
   function test_getUserRiskPremium_applyInterest_two_users_two_reserves_borrowed() public {
     Amounts memory amounts;
 
@@ -1278,6 +1314,18 @@ contract SpokeUserRiskPremiumTest is SpokeBase {
       spoke1.getLastUsedUserRiskPremium(alice),
       aliceExpectedRiskPremium,
       'alice risk premium after interest accrual'
+    );
+
+    // Ensure the calculated risk premium would match
+    assertEq(
+      spoke1.getUserRiskPremium(bob),
+      _calculateExpectedUserRP(bob, spoke1),
+      'bob risk premium after time skip'
+    );
+    assertEq(
+      spoke1.getUserRiskPremium(alice),
+      _calculateExpectedUserRP(alice, spoke1),
+      'alice risk premium after time skip'
     );
 
     Debts memory debts;
