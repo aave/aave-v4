@@ -607,9 +607,9 @@ contract Spoke is ISpoke {
       }
     }
 
-    // at this point avgCollateralFactor is a weighted sum of collateral scaled by LT
+    // at this point avgCollateralFactor is a weighted sum of collateral scaled by collateralFactor
     // (avgCollateralFactor / totalCollateral) * totalCollateral can be simplified to avgCollateralFactor
-    // strip BPS factor from result, because running avgCollateralFactor sum has been scaled by LT (in BPS) above
+    // strip BPS factor from result, because running avgCollateralFactor sum has been scaled by collateralFactor (in BPS) above
     vars.healthFactor = vars.totalDebtInBaseCurrency == 0
       ? type(uint256).max
       : vars.avgCollateralFactor.wadDiv(vars.totalDebtInBaseCurrency).fromBps(); // HF of 1 -> 1e18
@@ -770,7 +770,7 @@ contract Spoke is ISpoke {
     (, , uint256 healthFactor, , ) = _calculateUserAccountData(userAddress);
     require(
       healthFactor >= HEALTH_FACTOR_LIQUIDATION_THRESHOLD,
-      HealthFactorLowerThanLiquidationThreshold()
+      HealthFactorLowerThanCollateralFactor()
     );
   }
 

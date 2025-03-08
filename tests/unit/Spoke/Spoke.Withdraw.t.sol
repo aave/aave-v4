@@ -1030,9 +1030,7 @@ contract SpokeWithdrawTest is SpokeBase {
   }
 
   /// @dev cannot withdraw an amount if resulting withdrawal would result in HF < threshold
-  function test_withdraw_revertsWith_HealthFactorLowerThanLiquidationThreshold_singleBorrow()
-    public
-  {
+  function test_withdraw_revertsWith_HealthFactorLowerThanCollateralFactor_singleBorrow() public {
     uint256 collAmount = 1e18; // $2k in weth
     uint256 collReserveId = _wethReserveId(spoke1);
     uint256 debtReserveId = _daiReserveId(spoke1);
@@ -1076,12 +1074,12 @@ contract SpokeWithdrawTest is SpokeBase {
 
     // withdrawing any amount will result in HF < threshold
     vm.prank(alice);
-    vm.expectRevert(ISpoke.HealthFactorLowerThanLiquidationThreshold.selector);
+    vm.expectRevert(ISpoke.HealthFactorLowerThanCollateralFactor.selector);
     spoke1.withdraw({reserveId: collReserveId, amount: 1, to: alice});
   }
 
   /// @dev fuzz - cannot withdraw an amount if resulting withdrawal would result in HF < threshold
-  function test_withdraw_fuzz_revertsWith_HealthFactorLowerThanLiquidationThreshold_singleBorrow(
+  function test_withdraw_fuzz_revertsWith_HealthFactorLowerThanCollateralFactor_singleBorrow(
     uint256 debtAmount
   ) public {
     debtAmount = bound(debtAmount, 1, MAX_SUPPLY_AMOUNT); // to stay within uint256 bounds for _calcMaxDebtAmount
@@ -1129,12 +1127,12 @@ contract SpokeWithdrawTest is SpokeBase {
 
     // withdrawing coll will result in HF < threshold
     vm.prank(alice);
-    vm.expectRevert(ISpoke.HealthFactorLowerThanLiquidationThreshold.selector);
+    vm.expectRevert(ISpoke.HealthFactorLowerThanCollateralFactor.selector);
     spoke1.withdraw({reserveId: collReserveId, amount: collAmount, to: alice}); // todo: resolve precision, should be 1?
   }
 
   /// @dev cannot withdraw an amount if HF < threshold due to price drop
-  function test_withdraw_revertsWith_HealthFactorLowerThanLiquidationThreshold_price_drop() public {
+  function test_withdraw_revertsWith_HealthFactorLowerThanCollateralFactor_price_drop() public {
     uint256 collAmount = 1e18;
     uint256 collReserveId = _wethReserveId(spoke1);
     uint256 debtReserveId = _daiReserveId(spoke1);
@@ -1184,12 +1182,12 @@ contract SpokeWithdrawTest is SpokeBase {
 
     // withdrawing any amount will result in HF < threshold
     vm.prank(alice);
-    vm.expectRevert(ISpoke.HealthFactorLowerThanLiquidationThreshold.selector);
+    vm.expectRevert(ISpoke.HealthFactorLowerThanCollateralFactor.selector);
     spoke1.withdraw({reserveId: collReserveId, amount: 1, to: alice});
   }
 
   /// @dev fuzz - cannot withdraw an amount if resulting withdrawal would result in HF < threshold
-  function test_withdraw_fuzz_revertsWith_HealthFactorLowerThanLiquidationThreshold_price_drop(
+  function test_withdraw_fuzz_revertsWith_HealthFactorLowerThanCollateralFactor_price_drop(
     uint256 collAmount,
     uint256 newPrice
   ) public {
@@ -1245,12 +1243,12 @@ contract SpokeWithdrawTest is SpokeBase {
 
     // withdrawing any amount will result in HF < threshold
     vm.prank(alice);
-    vm.expectRevert(ISpoke.HealthFactorLowerThanLiquidationThreshold.selector);
+    vm.expectRevert(ISpoke.HealthFactorLowerThanCollateralFactor.selector);
     spoke1.withdraw({reserveId: collReserveId, amount: 1, to: alice});
   }
 
   /// @dev cannot withdraw an amount if HF < threshold due to interest
-  function test_withdraw_revertsWith_HealthFactorLowerThanLiquidationThreshold_interest_increase()
+  function test_withdraw_revertsWith_HealthFactorLowerThanCollateralFactor_interest_increase()
     public
   {
     uint256 collAmount = 50e18;
@@ -1301,12 +1299,12 @@ contract SpokeWithdrawTest is SpokeBase {
 
     // withdrawing any amount will result in HF < threshold
     vm.prank(alice);
-    vm.expectRevert(ISpoke.HealthFactorLowerThanLiquidationThreshold.selector);
+    vm.expectRevert(ISpoke.HealthFactorLowerThanCollateralFactor.selector);
     spoke1.withdraw({reserveId: collReserveId, amount: 1, to: alice});
   }
 
   /// @dev fuzz - cannot withdraw an amount if HF < threshold due to interest
-  function test_withdraw_fuzz_revertsWith_HealthFactorLowerThanLiquidationThreshold_interest_increase(
+  function test_withdraw_fuzz_revertsWith_HealthFactorLowerThanCollateralFactor_interest_increase(
     uint256 collAmount,
     uint256 skipTime
   ) public {
@@ -1361,14 +1359,12 @@ contract SpokeWithdrawTest is SpokeBase {
 
     // withdrawing any amount will result in HF < threshold
     vm.prank(alice);
-    vm.expectRevert(ISpoke.HealthFactorLowerThanLiquidationThreshold.selector);
+    vm.expectRevert(ISpoke.HealthFactorLowerThanCollateralFactor.selector);
     spoke1.withdraw({reserveId: collReserveId, amount: 1, to: alice});
   }
 
   /// @dev cannot withdraw an amount to bring HF < 1, if multiple debts for same coll
-  function test_withdraw_revertsWith_HealthFactorLowerThanLiquidationThreshold_multiple_debts()
-    public
-  {
+  function test_withdraw_revertsWith_HealthFactorLowerThanCollateralFactor_multiple_debts() public {
     uint256 daiDebtAmount = 1000e18;
     uint256 usdxDebtAmount = 2000e6;
 
@@ -1444,12 +1440,12 @@ contract SpokeWithdrawTest is SpokeBase {
 
     // withdrawing any non trivial amount of dai will result in HF < threshold
     vm.prank(alice);
-    vm.expectRevert(ISpoke.HealthFactorLowerThanLiquidationThreshold.selector);
+    vm.expectRevert(ISpoke.HealthFactorLowerThanCollateralFactor.selector);
     spoke1.withdraw({reserveId: wethReserveId, amount: 3, to: alice}); // todo: resolve precision. Should be 1
   }
 
   /// @dev fuzz - cannot withdraw an amount to bring HF < 1, if multiple debts for same coll
-  function test_withdraw_fuzz_revertsWith_HealthFactorLowerThanLiquidationThreshold_multiple_debts(
+  function test_withdraw_fuzz_revertsWith_HealthFactorLowerThanCollateralFactor_multiple_debts(
     uint256 daiDebtAmount,
     uint256 usdxDebtAmount
   ) public {
@@ -1529,7 +1525,7 @@ contract SpokeWithdrawTest is SpokeBase {
 
     // withdrawing any non trivial amount of dai will result in HF < threshold
     vm.prank(alice);
-    vm.expectRevert(ISpoke.HealthFactorLowerThanLiquidationThreshold.selector);
+    vm.expectRevert(ISpoke.HealthFactorLowerThanCollateralFactor.selector);
     spoke1.withdraw({
       reserveId: wethReserveId,
       amount: wethCollAmountDai + wethCollAmountUsdx,
@@ -1538,7 +1534,7 @@ contract SpokeWithdrawTest is SpokeBase {
   }
 
   /// @dev cannot withdraw an amount if HF < 1 due to price drop, if multiple debts for same coll
-  function test_withdraw_revertsWith_HealthFactorLowerThanLiquidationThreshold_multiple_debts_price_drop()
+  function test_withdraw_revertsWith_HealthFactorLowerThanCollateralFactor_multiple_debts_price_drop()
     public
   {
     uint256 daiDebtAmount = 1000e18;
@@ -1621,12 +1617,12 @@ contract SpokeWithdrawTest is SpokeBase {
 
     // withdrawing any non trivial amount of dai will result in HF < threshold
     vm.prank(alice);
-    vm.expectRevert(ISpoke.HealthFactorLowerThanLiquidationThreshold.selector);
+    vm.expectRevert(ISpoke.HealthFactorLowerThanCollateralFactor.selector);
     spoke1.withdraw({reserveId: wethReserveId, amount: 1, to: alice});
   }
 
   /// @dev fuzz - cannot withdraw an amount if HF < 1 due to price drop, if multiple debts for same coll
-  function test_withdraw_fuzz_revertsWith_HealthFactorLowerThanLiquidationThreshold_multiple_debts_price_drop(
+  function test_withdraw_fuzz_revertsWith_HealthFactorLowerThanCollateralFactor_multiple_debts_price_drop(
     uint256 daiDebtAmount,
     uint256 usdxDebtAmount,
     uint256 newPrice
@@ -1714,12 +1710,12 @@ contract SpokeWithdrawTest is SpokeBase {
 
     // withdrawing any non trivial amount of dai will result in HF < threshold
     vm.prank(alice);
-    vm.expectRevert(ISpoke.HealthFactorLowerThanLiquidationThreshold.selector);
+    vm.expectRevert(ISpoke.HealthFactorLowerThanCollateralFactor.selector);
     spoke1.withdraw({reserveId: wethReserveId, amount: 1, to: alice});
   }
 
   /// @dev cannot withdraw an amount if HF < 1 due to interest, if multiple debts for same coll
-  function test_withdraw_revertsWith_HealthFactorLowerThanLiquidationThreshold_multiple_debts_with_interest()
+  function test_withdraw_revertsWith_HealthFactorLowerThanCollateralFactor_multiple_debts_with_interest()
     public
   {
     uint256 daiDebtAmount = 1000e18;
@@ -1802,12 +1798,12 @@ contract SpokeWithdrawTest is SpokeBase {
 
     // withdrawing any non trivial amount of dai will result in HF < threshold
     vm.prank(alice);
-    vm.expectRevert(ISpoke.HealthFactorLowerThanLiquidationThreshold.selector);
+    vm.expectRevert(ISpoke.HealthFactorLowerThanCollateralFactor.selector);
     spoke1.withdraw({reserveId: wethReserveId, amount: 1, to: alice});
   }
 
   /// @dev fuzz - cannot withdraw an amount if HF < 1 due to interest, if multiple debts for same coll
-  function test_withdraw_fuzz_revertsWith_HealthFactorLowerThanLiquidationThreshold_multiple_debts_with_interest(
+  function test_withdraw_fuzz_revertsWith_HealthFactorLowerThanCollateralFactor_multiple_debts_with_interest(
     uint256 daiDebtAmount,
     uint256 usdxDebtAmount,
     uint256 skipTime
@@ -1894,14 +1890,12 @@ contract SpokeWithdrawTest is SpokeBase {
 
     // withdrawing any non trivial amount of dai will result in HF < threshold
     vm.prank(alice);
-    vm.expectRevert(ISpoke.HealthFactorLowerThanLiquidationThreshold.selector);
+    vm.expectRevert(ISpoke.HealthFactorLowerThanCollateralFactor.selector);
     spoke1.withdraw({reserveId: wethReserveId, amount: 1, to: alice});
   }
 
   /// @dev cannot withdraw an amount to bring HF < 1, if multiple colls for same debt
-  function test_withdraw_revertsWith_HealthFactorLowerThanLiquidationThreshold_multiple_colls()
-    public
-  {
+  function test_withdraw_revertsWith_HealthFactorLowerThanCollateralFactor_multiple_colls() public {
     // weth/dai collateral
     uint256 wethReserveId = _wethReserveId(spoke1);
     uint256 daiReserveId = _daiReserveId(spoke1);
@@ -1944,17 +1938,17 @@ contract SpokeWithdrawTest is SpokeBase {
 
     // withdrawing weth will result in HF < threshold
     vm.prank(bob);
-    vm.expectRevert(ISpoke.HealthFactorLowerThanLiquidationThreshold.selector);
+    vm.expectRevert(ISpoke.HealthFactorLowerThanCollateralFactor.selector);
     spoke1.withdraw({reserveId: wethReserveId, amount: wethCollAmount, to: bob}); // todo: resolve precision, should be 1
 
     // withdrawing dai will result in HF < threshold
     vm.prank(bob);
-    vm.expectRevert(ISpoke.HealthFactorLowerThanLiquidationThreshold.selector);
+    vm.expectRevert(ISpoke.HealthFactorLowerThanCollateralFactor.selector);
     spoke1.withdraw({reserveId: daiReserveId, amount: daiCollAmount, to: bob}); // todo: resolve precision, should be 1
   }
 
   /// @dev cannot withdraw an amount to bring HF < 1, if multiple colls for same debt
-  function test_withdraw_fuzz_revertsWith_HealthFactorLowerThanLiquidationThreshold_multiple_colls(
+  function test_withdraw_fuzz_revertsWith_HealthFactorLowerThanCollateralFactor_multiple_colls(
     uint256 usdxDebtAmountWeth,
     uint256 usdxDebtAmountDai
   ) public {
@@ -2003,17 +1997,17 @@ contract SpokeWithdrawTest is SpokeBase {
 
     // withdrawing some nontrivial amount of weth will result in HF < threshold
     vm.prank(bob);
-    vm.expectRevert(ISpoke.HealthFactorLowerThanLiquidationThreshold.selector);
+    vm.expectRevert(ISpoke.HealthFactorLowerThanCollateralFactor.selector);
     spoke1.withdraw({reserveId: wethReserveId, amount: wethCollAmount, to: bob}); // todo: resolve precision, should be 1
 
     // withdrawing some nontrivial amount of weth will result in HF < threshold
     vm.prank(bob);
-    vm.expectRevert(ISpoke.HealthFactorLowerThanLiquidationThreshold.selector);
+    vm.expectRevert(ISpoke.HealthFactorLowerThanCollateralFactor.selector);
     spoke1.withdraw({reserveId: daiReserveId, amount: daiCollAmount, to: bob}); // todo: resolve precision, should be 1
   }
 
   /// @dev cannot withdraw an amount if HF < 1 due to interest, if multiple colls for same debt
-  function test_withdraw_revertsWith_HealthFactorLowerThanLiquidationThreshold_multiple_colls_with_interest()
+  function test_withdraw_revertsWith_HealthFactorLowerThanCollateralFactor_multiple_colls_with_interest()
     public
   {
     // weth/dai collateral
@@ -2063,17 +2057,17 @@ contract SpokeWithdrawTest is SpokeBase {
 
     // withdrawing weth will result in HF < threshold
     vm.prank(bob);
-    vm.expectRevert(ISpoke.HealthFactorLowerThanLiquidationThreshold.selector);
+    vm.expectRevert(ISpoke.HealthFactorLowerThanCollateralFactor.selector);
     spoke1.withdraw({reserveId: wethReserveId, amount: wethCollAmount, to: bob}); // todo: resolve precision, should be 1
 
     // withdrawing dai will result in HF < threshold
     vm.prank(bob);
-    vm.expectRevert(ISpoke.HealthFactorLowerThanLiquidationThreshold.selector);
+    vm.expectRevert(ISpoke.HealthFactorLowerThanCollateralFactor.selector);
     spoke1.withdraw({reserveId: daiReserveId, amount: daiCollAmount, to: bob}); // todo: resolve precision, should be 1
   }
 
   /// @dev cannot withdraw an amount if HF < 1 due to interest, if multiple colls for same debt
-  function test_withdraw_fuzz_revertsWith_HealthFactorLowerThanLiquidationThreshold_multiple_colls_with_interest(
+  function test_withdraw_fuzz_revertsWith_HealthFactorLowerThanCollateralFactor_multiple_colls_with_interest(
     uint256 usdxDebtAmountWeth,
     uint256 usdxDebtAmountDai
   ) public {
@@ -2127,17 +2121,17 @@ contract SpokeWithdrawTest is SpokeBase {
 
     // withdrawing some nontrivial amount of weth will result in HF < threshold
     vm.prank(bob);
-    vm.expectRevert(ISpoke.HealthFactorLowerThanLiquidationThreshold.selector);
+    vm.expectRevert(ISpoke.HealthFactorLowerThanCollateralFactor.selector);
     spoke1.withdraw({reserveId: wethReserveId, amount: 1, to: bob});
 
     // withdrawing some nontrivial amount of weth will result in HF < threshold
     vm.prank(bob);
-    vm.expectRevert(ISpoke.HealthFactorLowerThanLiquidationThreshold.selector);
+    vm.expectRevert(ISpoke.HealthFactorLowerThanCollateralFactor.selector);
     spoke1.withdraw({reserveId: daiReserveId, amount: 1, to: bob});
   }
 
   /// @dev cannot withdraw an amount if HF < 1 due to price drop, if multiple colls for same debt
-  function test_withdraw_revertsWith_HealthFactorLowerThanLiquidationThreshold_multiple_colls_price_drop_weth()
+  function test_withdraw_revertsWith_HealthFactorLowerThanCollateralFactor_multiple_colls_price_drop_weth()
     public
   {
     // weth/dai collateral
@@ -2188,17 +2182,17 @@ contract SpokeWithdrawTest is SpokeBase {
 
     // withdrawing weth will result in HF < threshold
     vm.prank(bob);
-    vm.expectRevert(ISpoke.HealthFactorLowerThanLiquidationThreshold.selector);
+    vm.expectRevert(ISpoke.HealthFactorLowerThanCollateralFactor.selector);
     spoke1.withdraw({reserveId: wethReserveId, amount: wethCollAmount, to: bob}); // todo: resolve precision, should be 1
 
     // withdrawing dai will result in HF < threshold
     vm.prank(bob);
-    vm.expectRevert(ISpoke.HealthFactorLowerThanLiquidationThreshold.selector);
+    vm.expectRevert(ISpoke.HealthFactorLowerThanCollateralFactor.selector);
     spoke1.withdraw({reserveId: daiReserveId, amount: daiCollAmount, to: bob}); // todo: resolve precision, should be 1
   }
 
   /// @dev fuzz - cannot withdraw an amount if HF < 1 due to price drop, if multiple colls for same debt
-  function test_withdraw_fuzz_revertsWith_HealthFactorLowerThanLiquidationThreshold_multiple_colls_price_drop_weth(
+  function test_withdraw_fuzz_revertsWith_HealthFactorLowerThanCollateralFactor_multiple_colls_price_drop_weth(
     uint256 usdxDebtAmountWeth,
     uint256 usdxDebtAmountDai,
     uint256 newPrice
@@ -2255,17 +2249,17 @@ contract SpokeWithdrawTest is SpokeBase {
 
     // withdrawing some nontrivial amount of weth will result in HF < threshold
     vm.prank(bob);
-    vm.expectRevert(ISpoke.HealthFactorLowerThanLiquidationThreshold.selector);
+    vm.expectRevert(ISpoke.HealthFactorLowerThanCollateralFactor.selector);
     spoke1.withdraw({reserveId: wethReserveId, amount: 1, to: bob});
 
     // withdrawing some nontrivial amount of weth will result in HF < threshold
     vm.prank(bob);
-    vm.expectRevert(ISpoke.HealthFactorLowerThanLiquidationThreshold.selector);
+    vm.expectRevert(ISpoke.HealthFactorLowerThanCollateralFactor.selector);
     spoke1.withdraw({reserveId: daiReserveId, amount: 1, to: bob});
   }
 
   /// @dev cannot withdraw an amount if HF < 1 due to price drop, if multiple colls for same debt
-  function test_withdraw_revertsWith_HealthFactorLowerThanLiquidationThreshold_multiple_colls_price_drop_dai()
+  function test_withdraw_revertsWith_HealthFactorLowerThanCollateralFactor_multiple_colls_price_drop_dai()
     public
   {
     // weth/dai collateral
@@ -2316,17 +2310,17 @@ contract SpokeWithdrawTest is SpokeBase {
 
     // withdrawing weth will result in HF < threshold
     vm.prank(bob);
-    vm.expectRevert(ISpoke.HealthFactorLowerThanLiquidationThreshold.selector);
+    vm.expectRevert(ISpoke.HealthFactorLowerThanCollateralFactor.selector);
     spoke1.withdraw({reserveId: wethReserveId, amount: wethCollAmount, to: bob}); // todo: resolve precision, should be 1
 
     // withdrawing dai will result in HF < threshold
     vm.prank(bob);
-    vm.expectRevert(ISpoke.HealthFactorLowerThanLiquidationThreshold.selector);
+    vm.expectRevert(ISpoke.HealthFactorLowerThanCollateralFactor.selector);
     spoke1.withdraw({reserveId: daiReserveId, amount: daiCollAmount, to: bob}); // todo: resolve precision, should be 1
   }
 
   /// @dev fuzz - cannot withdraw an amount if HF < 1 due to price drop, if multiple colls for same debt
-  function test_withdraw_fuzz_revertsWith_HealthFactorLowerThanLiquidationThreshold_multiple_colls_price_drop_dai(
+  function test_withdraw_fuzz_revertsWith_HealthFactorLowerThanCollateralFactor_multiple_colls_price_drop_dai(
     uint256 usdxDebtAmountWeth,
     uint256 usdxDebtAmountDai,
     uint256 newPrice
@@ -2383,14 +2377,20 @@ contract SpokeWithdrawTest is SpokeBase {
 
     // withdrawing some nontrivial amount of weth will result in HF < threshold
     vm.prank(bob);
-    vm.expectRevert(ISpoke.HealthFactorLowerThanLiquidationThreshold.selector);
+    vm.expectRevert(ISpoke.HealthFactorLowerThanCollateralFactor.selector);
     spoke1.withdraw({reserveId: wethReserveId, amount: 1, to: bob});
 
     // withdrawing some nontrivial amount of weth will result in HF < threshold
     vm.prank(bob);
-    vm.expectRevert(ISpoke.HealthFactorLowerThanLiquidationThreshold.selector);
+    vm.expectRevert(ISpoke.HealthFactorLowerThanCollateralFactor.selector);
     spoke1.withdraw({reserveId: daiReserveId, amount: 1, to: bob});
   }
 
   // TODO: tests with other combos of collateral/debt, particularly with different units
+  // - 2 colls, 1e18/1e6, with 1 debt, 1e0
+  // - 2 colls, 1e18/1e0, with 1 debt, 1e6
+  // - 2 colls, 1e6/1e0, with 1 debt, 1e18
+  // - 1 coll, 1e0, with 2 debts, 1e18/1e6
+  // - 1 coll, 1e6, with 2 debts, 1e18/1e0
+  // - 1 coll, 1e18, with 2 debts, 1e6/1e0
 }

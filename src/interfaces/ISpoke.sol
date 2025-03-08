@@ -35,7 +35,7 @@ interface ISpoke {
   error InvalidCollateralFactor();
   error InvalidLiquidationBonus();
   error InvalidReserveDecimals();
-  error HealthFactorLowerThanLiquidationThreshold();
+  error HealthFactorLowerThanCollateralFactor();
 
   function addReserve(
     uint256 assetId,
