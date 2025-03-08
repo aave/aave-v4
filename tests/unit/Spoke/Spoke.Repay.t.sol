@@ -528,7 +528,7 @@ contract SpokeRepayTest is SpokeBase {
     vm.expectEmit(address(spoke1));
     emit ISpoke.Repaid(daiReserveId(spoke1), bob, fullDebt);
 
-    // Bob repays using the max value to signal full repayment
+    // Bob repays using a value gt full debt to signal full repayment
     vm.prank(bob);
     spoke1.repay(daiReserveId(spoke1), fullDebt + 1);
 
