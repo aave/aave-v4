@@ -352,7 +352,7 @@ contract Spoke is ISpoke {
     view
     returns (
       uint256 userRiskPremium,
-      uint256 avgLiquidationThreshold,
+      uint256 avgCollateralFactor,
       uint256 healthFactor,
       uint256 totalCollateralInBaseCurrency,
       uint256 totalDebtInBaseCurrency
@@ -360,7 +360,7 @@ contract Spoke is ISpoke {
   {
     (
       userRiskPremium,
-      avgLiquidationThreshold,
+      avgCollateralFactor,
       healthFactor,
       totalCollateralInBaseCurrency,
       totalDebtInBaseCurrency
@@ -521,7 +521,7 @@ contract Spoke is ISpoke {
   }
 
   /// @return userRiskPremium
-  /// @return avgLiquidationThreshold
+  /// @return avgCollateralFactor
   /// @return healthFactor
   /// @return totalCollateralInBaseCurrency
   /// @return totalDebtInBaseCurrency
@@ -614,7 +614,7 @@ contract Spoke is ISpoke {
       ? type(uint256).max
       : vars.avgCollateralFactor.wadDiv(vars.totalDebtInBaseCurrency).fromBps(); // HF of 1 -> 1e18
 
-    // divide by total collateral to get avg LT in BPS
+    // divide by total collateral to get avg collateral factor in BPS
     vars.avgCollateralFactor = vars.totalCollateralInBaseCurrency == 0
       ? 0
       : vars.avgCollateralFactor / vars.totalCollateralInBaseCurrency;
