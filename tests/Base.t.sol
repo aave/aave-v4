@@ -266,7 +266,7 @@ abstract contract Base is Test {
       paused: false,
       collateralFactor: 75_00,
       liquidationBonus: 0,
-      liquidityPremium: 50_00,
+      liquidityPremium: 5_00,
       borrowable: true,
       collateral: true
     });
