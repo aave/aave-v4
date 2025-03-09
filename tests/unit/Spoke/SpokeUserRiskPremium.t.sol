@@ -507,12 +507,12 @@ contract SpokeUserRiskPremiumTest is SpokeBase {
   ) public {
     uint256 totalBorrowAmount = MAX_SUPPLY_AMOUNT / 2;
 
-    newUsdxPrice = bound(newUsdxPrice, 0, 1e12);
+    newUsdxPrice = bound(newUsdxPrice, 0, 1e16);
 
-    daiSupplyAmount = bound(daiSupplyAmount, 0, MAX_SUPPLY_AMOUNT);
-    wethSupplyAmount = bound(wethSupplyAmount, 0, MAX_SUPPLY_AMOUNT);
-    usdxSupplyAmount = bound(usdxSupplyAmount, 0, MAX_SUPPLY_AMOUNT);
-    wbtcSupplyAmount = bound(wbtcSupplyAmount, 0, MAX_SUPPLY_AMOUNT);
+    daiSupplyAmount = bound(daiSupplyAmount, 0, MAX_SUPPLY_AMOUNT_DAI);
+    wethSupplyAmount = bound(wethSupplyAmount, 0, MAX_SUPPLY_AMOUNT_WETH);
+    usdxSupplyAmount = bound(usdxSupplyAmount, 0, MAX_SUPPLY_AMOUNT_USDX);
+    wbtcSupplyAmount = bound(wbtcSupplyAmount, 0, MAX_SUPPLY_AMOUNT_WBTC);
 
     borrowAmount = bound(borrowAmount, 0, totalBorrowAmount);
 
@@ -705,10 +705,10 @@ contract SpokeUserRiskPremiumTest is SpokeBase {
     ReserveInfoLocal memory usdxInfo,
     ReserveInfoLocal memory wbtcInfo
   ) public {
-    daiInfo.supplyAmount = bound(daiInfo.supplyAmount, 0, MAX_SUPPLY_AMOUNT);
-    wethInfo.supplyAmount = bound(wethInfo.supplyAmount, 0, MAX_SUPPLY_AMOUNT);
-    usdxInfo.supplyAmount = bound(usdxInfo.supplyAmount, 0, MAX_SUPPLY_AMOUNT);
-    wbtcInfo.supplyAmount = bound(wbtcInfo.supplyAmount, 0, MAX_SUPPLY_AMOUNT);
+    daiInfo.supplyAmount = bound(daiInfo.supplyAmount, 0, MAX_SUPPLY_AMOUNT_DAI);
+    wethInfo.supplyAmount = bound(wethInfo.supplyAmount, 0, MAX_SUPPLY_AMOUNT_WETH);
+    usdxInfo.supplyAmount = bound(usdxInfo.supplyAmount, 0, MAX_SUPPLY_AMOUNT_USDX);
+    wbtcInfo.supplyAmount = bound(wbtcInfo.supplyAmount, 0, MAX_SUPPLY_AMOUNT_WBTC);
 
     daiInfo.borrowAmount = bound(daiInfo.borrowAmount, 0, daiInfo.supplyAmount / 2);
     wethInfo.borrowAmount = bound(wethInfo.borrowAmount, 0, wethInfo.supplyAmount / 2);
@@ -730,10 +730,10 @@ contract SpokeUserRiskPremiumTest is SpokeBase {
         MAX_SUPPLY_AMOUNT / 2
     );
 
-    daiInfo.price = bound(daiInfo.price, 0, 1e12);
-    wethInfo.price = bound(wethInfo.price, 0, 1e12);
-    usdxInfo.price = bound(usdxInfo.price, 0, 1e12);
-    wbtcInfo.price = bound(wbtcInfo.price, 0, 1e12);
+    daiInfo.price = bound(daiInfo.price, 0, 1e16);
+    wethInfo.price = bound(wethInfo.price, 0, 1e16);
+    usdxInfo.price = bound(usdxInfo.price, 0, 1e16);
+    wbtcInfo.price = bound(wbtcInfo.price, 0, 1e16);
 
     daiInfo.lp = bound(daiInfo.lp, 0, 1000_00);
     wethInfo.lp = bound(wethInfo.lp, 0, 1000_00);
