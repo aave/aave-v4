@@ -905,11 +905,6 @@ contract SpokeBorrowTest is SpokeBase {
     // valid HF
     assertEq(spoke1.getHealthFactor(bob), spoke1.HEALTH_FACTOR_LIQUIDATION_THRESHOLD());
 
-    // cannot borrow more dai
-    vm.prank(bob);
-    vm.expectRevert(ISpoke.HealthFactorBelowThreshold.selector);
-    spoke1.borrow(usdxReserveId, 1, bob);
-
     // cannot borrow more usdx
     vm.prank(bob);
     vm.expectRevert(ISpoke.HealthFactorBelowThreshold.selector);
