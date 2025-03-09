@@ -437,7 +437,7 @@ contract SpokeUserRiskPremiumTest is SpokeBase {
     usdxInfo.reserveId = _usdxReserveId(spoke2);
     wethInfo.reserveId = _wethReserveId(spoke2);
     wbtcInfo.reserveId = _wbtcReserveId(spoke2);
-    dai2Info.reserveId = dai2ReserveId(spoke2);
+    dai2Info.reserveId = _dai2ReserveId(spoke2);
 
     daiInfo.supplyAmount = daiSupplyAmount;
     wethInfo.supplyAmount = wethSupplyAmount;
@@ -526,7 +526,7 @@ contract SpokeUserRiskPremiumTest is SpokeBase {
     wethInfo.reserveId = _wethReserveId(spoke2);
     usdxInfo.reserveId = _usdxReserveId(spoke2);
     wbtcInfo.reserveId = _wbtcReserveId(spoke2);
-    dai2Info.reserveId = dai2ReserveId(spoke2);
+    dai2Info.reserveId = _dai2ReserveId(spoke2);
 
     daiInfo.supplyAmount = daiSupplyAmount;
     wethInfo.supplyAmount = wethSupplyAmount;
@@ -627,7 +627,7 @@ contract SpokeUserRiskPremiumTest is SpokeBase {
     wethInfo.reserveId = _wethReserveId(spoke2);
     usdxInfo.reserveId = _usdxReserveId(spoke2);
     wbtcInfo.reserveId = _wbtcReserveId(spoke2);
-    dai2Info.reserveId = dai2ReserveId(spoke2);
+    dai2Info.reserveId = _dai2ReserveId(spoke2);
 
     daiInfo.supplyAmount = daiSupplyAmount;
     wethInfo.supplyAmount = wethSupplyAmount;

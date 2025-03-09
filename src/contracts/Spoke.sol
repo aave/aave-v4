@@ -614,10 +614,10 @@ contract Spoke is ISpoke {
       ? type(uint256).max
       : vars.avgCollateralFactor.wadDiv(vars.totalDebtInBaseCurrency).fromBps(); // HF of 1 -> 1e18
 
-    // divide by total collateral to get avg collateral factor in BPS
+    // divide by total collateral to get avg collateral factor in wad
     vars.avgCollateralFactor = vars.totalCollateralInBaseCurrency == 0
       ? 0
-      : vars.avgCollateralFactor / vars.totalCollateralInBaseCurrency;
+      : vars.avgCollateralFactor.wadDiv(vars.totalCollateralInBaseCurrency).fromBps();
 
     vars.debtCounterInBaseCurrency = vars.totalDebtInBaseCurrency;
 
@@ -625,7 +625,6 @@ contract Spoke is ISpoke {
     vars.i = 0;
     // @dev from this point onwards, `collateralCounterInBaseCurrency` represents running collateral
     // value used in risk premium, `debtCounterInBaseCurrency` represents running outstanding debt
-    vars.collateralCounterInBaseCurrency = 0;
     while (vars.i < vars.collateralReserveCount && vars.debtCounterInBaseCurrency > 0) {
       if (vars.debtCounterInBaseCurrency == 0) break;
       (vars.liquidityPremium, vars.userCollateralInBaseCurrency) = list.get(vars.i);
@@ -768,10 +767,7 @@ contract Spoke is ISpoke {
 
   function _validateHealthFactor(address userAddress) internal view {
     (, , uint256 healthFactor, , ) = _calculateUserAccountData(userAddress);
-    require(
-      healthFactor >= HEALTH_FACTOR_LIQUIDATION_THRESHOLD,
-      HealthFactorLowerThanCollateralFactor()
-    );
+    require(healthFactor >= HEALTH_FACTOR_LIQUIDATION_THRESHOLD, HealthFactorBelowThreshold());
   }
 
   function _validateReserveConfig(DataTypes.ReserveConfig calldata config) internal view {

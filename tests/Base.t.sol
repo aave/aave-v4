@@ -623,7 +623,7 @@ abstract contract Base is Test {
   }
 
   // assumes spoke has dai2 supported
-  function dai2ReserveId(ISpoke spoke) internal view returns (uint256) {
+  function _dai2ReserveId(ISpoke spoke) internal view returns (uint256) {
     return spokeInfo[spoke].dai2.reserveId;
   }
 
@@ -701,11 +701,9 @@ abstract contract Base is Test {
     return spoke.getUserSuppliedAmount(reserveId, user);
   }
 
-  // from AaveV3
-  // https://github.com/aave-dao/aave-v3-origin/blob/main/tests/utils/TestnetProcedures.sol#L356-L360
-  function _calcPrice(uint256 price, uint256 percent) public pure returns (uint256) {
+  /// @dev Helper function to calculate a new price based on a percentage change
+  function calcNewPrice(uint256 price, uint256 percent) public pure returns (uint256) {
     if (percent == 0) return price;
-    uint256 result = price.percentMul(percent);
-    return result > price ? result - price : price - result;
+    return price.percentMul(percent);
   }
 }

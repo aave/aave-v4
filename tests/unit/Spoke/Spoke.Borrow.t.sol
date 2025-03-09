@@ -4,10 +4,6 @@ pragma solidity ^0.8.0;
 import 'tests/unit/Spoke/SpokeBase.t.sol';
 
 contract SpokeBorrowTest is SpokeBase {
-  // WETH: $2000, 1e18 units
-  // USDX: $1, 1e6 units
-  // DAI: $1, 1e18 units
-
   function test_borrow_revertsWith_ReserveNotBorrowable() public {
     uint256 daiReserveId = _daiReserveId(spoke1);
 
@@ -44,7 +40,6 @@ contract SpokeBorrowTest is SpokeBase {
 
   function test_borrow_revertsWith_ReservePaused() public {
     uint256 daiReserveId = _daiReserveId(spoke1);
-    uint256 amount = 100e18;
 
     updateReservePausedFlag(spoke1, daiReserveId, true);
     assertTrue(spoke1.getReserve(daiReserveId).config.paused);
@@ -58,7 +53,6 @@ contract SpokeBorrowTest is SpokeBase {
 
   function test_borrow_revertsWith_ReserveFrozen() public {
     uint256 daiReserveId = _daiReserveId(spoke1);
-    uint256 amount = 100e18;
 
     updateReserveFrozenFlag(spoke1, daiReserveId, true);
     assertTrue(spoke1.getReserve(daiReserveId).config.frozen);
@@ -434,7 +428,7 @@ contract SpokeBorrowTest is SpokeBase {
   }
 
   /// @dev basic case, cannot borrow an amount that leads to HF < 1
-  function test_borrow_revertsWith_HealthFactorLowerThanCollateralFactor() public {
+  function test_borrow_revertsWith_HealthFactorBelowThreshold() public {
     uint256 daiReserveId = _daiReserveId(spoke1);
     uint256 wethReserveId = _wethReserveId(spoke1);
 
@@ -462,12 +456,12 @@ contract SpokeBorrowTest is SpokeBase {
 
     // cannot borrow a non trivial amount that brings HF below threshold
     vm.prank(bob);
-    vm.expectRevert(ISpoke.HealthFactorLowerThanCollateralFactor.selector);
+    vm.expectRevert(ISpoke.HealthFactorBelowThreshold.selector);
     spoke1.borrow(daiReserveId, 1e4, bob); // TODO: update with exact amount, resolve precision
   }
 
   /// @dev cannot borrow any amount after interest has brought HF already < 1
-  function test_borrow_revertsWith_HealthFactorLowerThanCollateralFactor_with_interest() public {
+  function test_borrow_revertsWith_HealthFactorBelowThreshold_with_interest() public {
     uint256 daiReserveId = _daiReserveId(spoke1);
     uint256 wethReserveId = _wethReserveId(spoke1);
 
@@ -499,12 +493,12 @@ contract SpokeBorrowTest is SpokeBase {
     assertLt(spoke1.getHealthFactor(bob), spoke1.HEALTH_FACTOR_LIQUIDATION_THRESHOLD());
 
     vm.prank(bob);
-    vm.expectRevert(ISpoke.HealthFactorLowerThanCollateralFactor.selector);
+    vm.expectRevert(ISpoke.HealthFactorBelowThreshold.selector);
     spoke1.borrow(daiReserveId, 1, bob);
   }
 
   /// @dev fuzz - cannot borrow any amount after interest has brought HF already < 1
-  function test_borrow_fuzz_revertsWith_HealthFactorLowerThanCollateralFactor_with_interest(
+  function test_borrow_fuzz_revertsWith_HealthFactorBelowThreshold_with_interest(
     uint256 skipTime
   ) public {
     skipTime = bound(skipTime, 1, MAX_SKIP_TIME);
@@ -536,12 +530,12 @@ contract SpokeBorrowTest is SpokeBase {
     skip(skipTime);
 
     vm.prank(bob);
-    vm.expectRevert(ISpoke.HealthFactorLowerThanCollateralFactor.selector);
+    vm.expectRevert(ISpoke.HealthFactorBelowThreshold.selector);
     spoke1.borrow(daiReserveId, 1, bob);
   }
 
   /// @dev cannot borrow an amount that brings HF < 1 with multiple debts for same collateral
-  function test_borrow_revertsWith_HealthFactorLowerThanCollateralFactor_multiple_debts() public {
+  function test_borrow_revertsWith_HealthFactorBelowThreshold_multiple_debts() public {
     // weth collateral
     uint256 wethReserveId = _wethReserveId(spoke1);
     // dai/usdx debt
@@ -584,17 +578,17 @@ contract SpokeBorrowTest is SpokeBase {
 
     // cannot borrow more dai
     vm.prank(bob);
-    vm.expectRevert(ISpoke.HealthFactorLowerThanCollateralFactor.selector);
+    vm.expectRevert(ISpoke.HealthFactorBelowThreshold.selector);
     spoke1.borrow(daiReserveId, 1e12, bob); // todo: update with exact amount, resolve precision
 
     // cannot borrow more usdx
     vm.prank(bob);
-    vm.expectRevert(ISpoke.HealthFactorLowerThanCollateralFactor.selector);
+    vm.expectRevert(ISpoke.HealthFactorBelowThreshold.selector);
     spoke1.borrow(usdxReserveId, 1, bob); // todo: update with exact amount, resolve precision
   }
 
   /// @dev fuzz - cannot borrow an amount that brings HF < 1 with multiple debts for same collateral
-  function test_borrow_fuzz_revertsWith_HealthFactorLowerThanCollateralFactor_multiple_debts(
+  function test_borrow_fuzz_revertsWith_HealthFactorBelowThreshold_multiple_debts(
     uint256 wethCollAmountDai,
     uint256 wethCollAmountUsdx
   ) public {
@@ -649,17 +643,17 @@ contract SpokeBorrowTest is SpokeBase {
 
     // cannot borrow more dai
     vm.prank(bob);
-    vm.expectRevert(ISpoke.HealthFactorLowerThanCollateralFactor.selector);
+    vm.expectRevert(ISpoke.HealthFactorBelowThreshold.selector);
     spoke1.borrow(daiReserveId, daiFailedBorrowAmount, bob);
 
     // cannot borrow more usdx
     vm.prank(bob);
-    vm.expectRevert(ISpoke.HealthFactorLowerThanCollateralFactor.selector);
+    vm.expectRevert(ISpoke.HealthFactorBelowThreshold.selector);
     spoke1.borrow(usdxReserveId, usdxFailedBorrowAmount, bob); // todo: update with exact amount, resolve precision
   }
 
   /// @dev cannot borrow any amount if HF < 1 due to interest growth (multiple debts for same collateral)
-  function test_borrow_revertsWith_HealthFactorLowerThanCollateralFactor_multiple_debts_with_interest()
+  function test_borrow_revertsWith_HealthFactorBelowThreshold_multiple_debts_with_interest()
     public
   {
     // weth collateral
@@ -709,17 +703,17 @@ contract SpokeBorrowTest is SpokeBase {
 
     // cannot borrow more dai
     vm.prank(bob);
-    vm.expectRevert(ISpoke.HealthFactorLowerThanCollateralFactor.selector);
+    vm.expectRevert(ISpoke.HealthFactorBelowThreshold.selector);
     spoke1.borrow(daiReserveId, 1, bob);
 
     // cannot borrow more usdx
     vm.prank(bob);
-    vm.expectRevert(ISpoke.HealthFactorLowerThanCollateralFactor.selector);
+    vm.expectRevert(ISpoke.HealthFactorBelowThreshold.selector);
     spoke1.borrow(usdxReserveId, 1, bob);
   }
 
   /// @dev fuzz - cannot borrow any amount if HF < 1 due to interest growth (multiple debts for same collateral)
-  function test_borrow_fuzz_revertsWith_HealthFactorLowerThanCollateralFactor_multiple_debts_with_interest(
+  function test_borrow_fuzz_revertsWith_HealthFactorBelowThreshold_multiple_debts_with_interest(
     uint256 wethCollForDai,
     uint256 wethCollForUsdx,
     uint256 skipTime
@@ -773,17 +767,17 @@ contract SpokeBorrowTest is SpokeBase {
 
     // cannot borrow more dai
     vm.prank(bob);
-    vm.expectRevert(ISpoke.HealthFactorLowerThanCollateralFactor.selector);
+    vm.expectRevert(ISpoke.HealthFactorBelowThreshold.selector);
     spoke1.borrow(daiReserveId, 1, bob);
 
     // cannot borrow more usdx
     vm.prank(bob);
-    vm.expectRevert(ISpoke.HealthFactorLowerThanCollateralFactor.selector);
+    vm.expectRevert(ISpoke.HealthFactorBelowThreshold.selector);
     spoke1.borrow(usdxReserveId, 1, bob);
   }
 
   /// @dev if HF drops below threshold due to price drop, user cannot borrow more
-  function test_borrow_revertsWith_HealthFactorLowerThanCollateralFactor_price_drop_weth() public {
+  function test_borrow_revertsWith_HealthFactorBelowThreshold_price_drop_weth() public {
     uint256 daiReserveId = _daiReserveId(spoke1); // debt
     uint256 wethReserveId = _wethReserveId(spoke1); // collateral
 
@@ -809,17 +803,17 @@ contract SpokeBorrowTest is SpokeBase {
     assertEq(spoke1.getHealthFactor(bob), spoke1.HEALTH_FACTOR_LIQUIDATION_THRESHOLD());
 
     // collateral price drop by half so that bob is undercollateralized
-    uint256 newPrice = _calcPrice(oracle.getAssetPrice(wethAssetId), 50_00); // 50% price drop
+    uint256 newPrice = calcNewPrice(oracle.getAssetPrice(wethAssetId), 50_00); // 50% price drop
     oracle.setAssetPrice(wethAssetId, newPrice);
     assertLt(spoke1.getHealthFactor(bob), spoke1.HEALTH_FACTOR_LIQUIDATION_THRESHOLD());
 
     vm.prank(bob);
-    vm.expectRevert(ISpoke.HealthFactorLowerThanCollateralFactor.selector);
+    vm.expectRevert(ISpoke.HealthFactorBelowThreshold.selector);
     spoke1.borrow(daiReserveId, 1, bob);
   }
 
   /// @dev fuzz - if HF drops below threshold due to price drop, user cannot borrow more
-  function test_borrow_fuzz_revertsWith_HealthFactorLowerThanCollateralFactor_price_drop(
+  function test_borrow_fuzz_revertsWith_HealthFactorBelowThreshold_price_drop(
     uint256 wethSupplyAmount,
     uint256 newPrice
   ) public {
@@ -859,12 +853,12 @@ contract SpokeBorrowTest is SpokeBase {
     assertLt(spoke1.getHealthFactor(bob), spoke1.HEALTH_FACTOR_LIQUIDATION_THRESHOLD());
 
     vm.prank(bob);
-    vm.expectRevert(ISpoke.HealthFactorLowerThanCollateralFactor.selector);
+    vm.expectRevert(ISpoke.HealthFactorBelowThreshold.selector);
     spoke1.borrow(daiReserveId, 1, bob);
   }
 
   /// @dev cannot borrow an amount that brings HF < 1 with multiple colls for same debt
-  function test_borrow_revertsWith_HealthFactorLowerThanCollateralFactor_multiple_colls() public {
+  function test_borrow_revertsWith_HealthFactorBelowThreshold_multiple_colls() public {
     // weth/dai collateral
     uint256 wethReserveId = _wethReserveId(spoke1);
     uint256 daiReserveId = _daiReserveId(spoke1);
@@ -913,17 +907,17 @@ contract SpokeBorrowTest is SpokeBase {
 
     // cannot borrow more dai
     vm.prank(bob);
-    vm.expectRevert(ISpoke.HealthFactorLowerThanCollateralFactor.selector);
+    vm.expectRevert(ISpoke.HealthFactorBelowThreshold.selector);
     spoke1.borrow(usdxReserveId, 1, bob);
 
     // cannot borrow more usdx
     vm.prank(bob);
-    vm.expectRevert(ISpoke.HealthFactorLowerThanCollateralFactor.selector);
+    vm.expectRevert(ISpoke.HealthFactorBelowThreshold.selector);
     spoke1.borrow(usdxReserveId, 1, bob);
   }
 
   /// @dev fuzz - cannot borrow an amount that brings HF < 1 with multiple colls for same debt
-  function test_borrow_fuzz_revertsWith_HealthFactorLowerThanCollateralFactor_multiple_colls(
+  function test_borrow_fuzz_revertsWith_HealthFactorBelowThreshold_multiple_colls(
     uint256 usdxDebtAmountWeth,
     uint256 usdxDebtAmountDai
   ) public {
@@ -978,12 +972,12 @@ contract SpokeBorrowTest is SpokeBase {
 
     // cannot borrow more usdx
     vm.prank(bob);
-    vm.expectRevert(ISpoke.HealthFactorLowerThanCollateralFactor.selector);
+    vm.expectRevert(ISpoke.HealthFactorBelowThreshold.selector);
     spoke1.borrow(usdxReserveId, 1, bob);
   }
 
   /// @dev cannot borrow any amount with multiple colls for same debt, once HF < 1 due to interest
-  function test_borrow_revertsWith_HealthFactorLowerThanCollateralFactor_multiple_colls_with_interest()
+  function test_borrow_revertsWith_HealthFactorBelowThreshold_multiple_colls_with_interest()
     public
   {
     // weth/dai collateral
@@ -1040,12 +1034,12 @@ contract SpokeBorrowTest is SpokeBase {
 
     // cannot borrow more usdx
     vm.prank(bob);
-    vm.expectRevert(ISpoke.HealthFactorLowerThanCollateralFactor.selector);
+    vm.expectRevert(ISpoke.HealthFactorBelowThreshold.selector);
     spoke1.borrow(usdxReserveId, 1, bob);
   }
 
   /// @dev fuzz - cannot borrow any amount with multiple colls for same debt, once HF < 1 due to interest
-  function test_borrow_fuzz_revertsWith_HealthFactorLowerThanCollateralFactor_multiple_colls_with_interest(
+  function test_borrow_fuzz_revertsWith_HealthFactorBelowThreshold_multiple_colls_with_interest(
     uint256 usdxDebtAmountWeth,
     uint256 usdxDebtAmountDai,
     uint256 skipTime
@@ -1103,12 +1097,12 @@ contract SpokeBorrowTest is SpokeBase {
 
     // cannot borrow more usdx
     vm.prank(bob);
-    vm.expectRevert(ISpoke.HealthFactorLowerThanCollateralFactor.selector);
+    vm.expectRevert(ISpoke.HealthFactorBelowThreshold.selector);
     spoke1.borrow(usdxReserveId, 1, bob);
   }
 
   /// @dev cannot borrow more with multiple colls for same debt, if HF drops below threshold due to price drop
-  function test_borrow_revertsWith_HealthFactorLowerThanCollateralFactor_multiple_colls_price_drop_weth()
+  function test_borrow_revertsWith_HealthFactorBelowThreshold_multiple_colls_price_drop_weth()
     public
   {
     // weth/dai collateral
@@ -1158,7 +1152,7 @@ contract SpokeBorrowTest is SpokeBase {
     assertEq(spoke1.getHealthFactor(bob), spoke1.HEALTH_FACTOR_LIQUIDATION_THRESHOLD());
 
     // collateral price drop by half so that bob is undercollateralized
-    uint256 newPrice = _calcPrice(oracle.getAssetPrice(wethAssetId), 50_00); // 50% price drop
+    uint256 newPrice = calcNewPrice(oracle.getAssetPrice(wethAssetId), 50_00); // 50% price drop
     oracle.setAssetPrice(wethAssetId, newPrice);
 
     // invalid HF
@@ -1166,12 +1160,12 @@ contract SpokeBorrowTest is SpokeBase {
 
     // cannot borrow more usdx
     vm.prank(bob);
-    vm.expectRevert(ISpoke.HealthFactorLowerThanCollateralFactor.selector);
+    vm.expectRevert(ISpoke.HealthFactorBelowThreshold.selector);
     spoke1.borrow(usdxReserveId, 1, bob);
   }
 
   /// @dev fuzz - cannot borrow more with multiple colls for same debt, if HF drops below threshold due to price drop
-  function test_fuzz_borrow_revertsWith_HealthFactorLowerThanCollateralFactor_multiple_colls_price_drop_weth(
+  function test_fuzz_borrow_revertsWith_HealthFactorBelowThreshold_multiple_colls_price_drop_weth(
     uint256 newPrice,
     uint256 usdxDebtAmountWeth,
     uint256 usdxDebtAmountDai
@@ -1228,7 +1222,7 @@ contract SpokeBorrowTest is SpokeBase {
     assertGe(spoke1.getHealthFactor(bob), spoke1.HEALTH_FACTOR_LIQUIDATION_THRESHOLD()); // can be GE due to edge cases
 
     // collateral price drop by half so that bob is undercollateralized
-    uint256 newPrice = _calcPrice(oracle.getAssetPrice(wethAssetId), 50_00); // 50% price drop
+    uint256 newPrice = calcNewPrice(oracle.getAssetPrice(wethAssetId), 50_00); // 50% price drop
     oracle.setAssetPrice(wethAssetId, newPrice);
 
     // invalid HF
@@ -1236,12 +1230,12 @@ contract SpokeBorrowTest is SpokeBase {
 
     // cannot borrow more usdx
     vm.prank(bob);
-    vm.expectRevert(ISpoke.HealthFactorLowerThanCollateralFactor.selector);
+    vm.expectRevert(ISpoke.HealthFactorBelowThreshold.selector);
     spoke1.borrow(usdxReserveId, 1, bob);
   }
 
   /// @dev cannot borrow more with multiple colls for same debt, if HF drops below threshold due to price drop
-  function test_borrow_revertsWith_HealthFactorLowerThanCollateralFactor_multiple_colls_price_drop_dai()
+  function test_borrow_revertsWith_HealthFactorBelowThreshold_multiple_colls_price_drop_dai()
     public
   {
     // weth/dai collateral
@@ -1291,7 +1285,7 @@ contract SpokeBorrowTest is SpokeBase {
     assertEq(spoke1.getHealthFactor(bob), spoke1.HEALTH_FACTOR_LIQUIDATION_THRESHOLD());
 
     // collateral price drop by half so that bob is undercollateralized
-    uint256 newPrice = _calcPrice(oracle.getAssetPrice(daiAssetId), 50_00); // 50% price drop
+    uint256 newPrice = calcNewPrice(oracle.getAssetPrice(daiAssetId), 50_00); // 50% price drop
     oracle.setAssetPrice(daiAssetId, newPrice);
 
     // invalid HF
@@ -1299,12 +1293,12 @@ contract SpokeBorrowTest is SpokeBase {
 
     // cannot borrow more usdx
     vm.prank(bob);
-    vm.expectRevert(ISpoke.HealthFactorLowerThanCollateralFactor.selector);
+    vm.expectRevert(ISpoke.HealthFactorBelowThreshold.selector);
     spoke1.borrow(usdxReserveId, 1, bob);
   }
 
   /// @dev fuzz - cannot borrow more with multiple colls for same debt, if HF drops below threshold due to price drop
-  function test_fuzz_borrow_revertsWith_HealthFactorLowerThanCollateralFactor_multiple_colls_price_drop_dai(
+  function test_fuzz_borrow_revertsWith_HealthFactorBelowThreshold_multiple_colls_price_drop_dai(
     uint256 newPrice,
     uint256 usdxDebtAmountWeth,
     uint256 usdxDebtAmountDai
@@ -1361,7 +1355,7 @@ contract SpokeBorrowTest is SpokeBase {
     assertGe(spoke1.getHealthFactor(bob), spoke1.HEALTH_FACTOR_LIQUIDATION_THRESHOLD()); // can be GE due to edge cases
 
     // collateral price drop by half so that bob is undercollateralized
-    uint256 newPrice = _calcPrice(oracle.getAssetPrice(daiAssetId), 50_00); // 50% price drop
+    uint256 newPrice = calcNewPrice(oracle.getAssetPrice(daiAssetId), 50_00); // 50% price drop
     oracle.setAssetPrice(daiAssetId, newPrice);
 
     // invalid HF
@@ -1369,7 +1363,7 @@ contract SpokeBorrowTest is SpokeBase {
 
     // cannot borrow more usdx
     vm.prank(bob);
-    vm.expectRevert(ISpoke.HealthFactorLowerThanCollateralFactor.selector);
+    vm.expectRevert(ISpoke.HealthFactorBelowThreshold.selector);
     spoke1.borrow(usdxReserveId, 1, bob);
   }
 
