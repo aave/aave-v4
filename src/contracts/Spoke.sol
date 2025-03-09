@@ -414,7 +414,6 @@ contract Spoke is ISpoke {
     require(!reserve.config.paused, ReservePaused());
     require(!reserve.config.frozen, ReserveFrozen());
     require(reserve.config.borrowable, ReserveNotBorrowable(reserve.reserveId));
-    _validateHealthFactor(userAddress);
   }
 
   // TODO: Place this and LH equivalent in a generic logic library
