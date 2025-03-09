@@ -501,6 +501,7 @@ contract LiquidityHub is ILiquidityHub {
       lastUpdateTimestamp: 0,
       config: config
     });
+
     emit SpokeAdded(assetId, spoke);
   }
 

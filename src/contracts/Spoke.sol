@@ -205,15 +205,21 @@ contract Spoke is ISpoke {
     emit Borrowed(reserveId, to, amount);
   }
 
+  /// Pass a value greater than the current debt to repay entire debt
   function repay(uint256 reserveId, uint256 amount) external {
-    // TODO: Be able to pass max(uint) as amount to restore all debt
-    // TODO: onBehalfOf
+    /// @dev TODO: onBehalfOf
     DataTypes.UserPosition storage userPosition = _userPositions[msg.sender][reserveId];
     DataTypes.Reserve storage reserve = _reserves[reserveId];
     DataTypes.UserData storage userData = _userData[msg.sender];
 
     _accrueInterest(reserve, userPosition, userData);
-    _validateRepay(reserve, userPosition, amount);
+
+    // User wants to repay all the debt
+    uint256 currentDebt = userPosition.baseDebt + userPosition.outstandingPremium;
+    if (amount > currentDebt) {
+      amount = currentDebt;
+    }
+    _validateRepay(reserve);
 
     // Repaid debt happens first from premium, then base
     uint256 baseDebtRestored = _deductFromOutstandingPremium(reserve, userPosition, amount);
@@ -412,16 +418,10 @@ contract Spoke is ISpoke {
   }
 
   // TODO: Place this and LH equivalent in a generic logic library
-  function _validateRepay(
-    DataTypes.Reserve storage reserve,
-    DataTypes.UserPosition storage userPosition,
-    uint256 amount
-  ) internal view {
+  function _validateRepay(DataTypes.Reserve storage reserve) internal view {
     require(reserve.asset != address(0), ReserveNotListed());
     require(reserve.config.active, ReserveNotActive());
     require(!reserve.config.paused, ReservePaused());
-    uint256 userDebt = userPosition.baseDebt + userPosition.outstandingPremium;
-    require(amount <= userDebt, RepayAmountExceedsDebt(userDebt));
   }
 
   function _deductFromOutstandingPremium(

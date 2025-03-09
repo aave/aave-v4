@@ -339,7 +339,7 @@ contract SpokeSupplyTest is SpokeBase {
 
     SupplyFuzzLocal memory state;
 
-    (state.assetId, state.asset) = getAssetInfo(spoke1, reserveId);
+    (state.assetId, state.asset) = getAssetByReserveId(spoke1, reserveId);
 
     state.expectedShares = hub.convertToShares(state.assetId, amount);
     vm.assume(state.expectedShares > 0);
@@ -494,7 +494,7 @@ contract SpokeSupplyTest is SpokeBase {
     reserveId = bound(reserveId, 0, spokeInfo[spoke1].MAX_RESERVE_ID);
     skipTime = bound(skipTime, 1, MAX_SKIP_TIME);
 
-    (uint256 assetId, IERC20 asset) = getAssetInfo(spoke1, reserveId);
+    (uint256 assetId, IERC20 asset) = getAssetByReserveId(spoke1, reserveId);
 
     // alice supplies usdx as collateral, borrows dai
     _executeSpokeSupplyAndBorrow({

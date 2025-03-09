@@ -2,10 +2,12 @@
 pragma solidity ^0.8.0;
 
 import 'tests/Base.t.sol';
+import {KeyValueListInMemory} from 'src/contracts/KeyValueListInMemory.sol';
 
 contract SpokeBase is Base {
   using PercentageMath for uint256;
   using WadRayMath for uint256;
+  using KeyValueListInMemory for KeyValueListInMemory.List;
 
   struct TestData {
     DataTypes.Reserve data;
@@ -74,7 +76,7 @@ contract SpokeBase is Base {
     borrow.supplyAmount = 100e18;
     borrow.borrowAmount = borrow.supplyAmount / 2;
 
-    (state.borrowReserveAssetId, ) = getAssetInfo(spoke, borrow.reserveId);
+    (state.borrowReserveAssetId, ) = getAssetByReserveId(spoke, borrow.reserveId);
     (state.collateralSupplyShares, state.borrowSupplyShares) = _executeSpokeSupplyAndBorrow({
       spoke: spoke,
       collateral: collateral,
@@ -120,8 +122,8 @@ contract SpokeBase is Base {
       );
     }
 
-    (state.collateralReserveAssetId, ) = getAssetInfo(spoke, collateral.reserveId);
-    (state.borrowReserveAssetId, ) = getAssetInfo(spoke, borrow.reserveId);
+    (state.collateralReserveAssetId, ) = getAssetByReserveId(spoke, collateral.reserveId);
+    (state.borrowReserveAssetId, ) = getAssetByReserveId(spoke, borrow.reserveId);
     state.collateralSupplyShares = hub.convertToShares(
       state.collateralReserveAssetId,
       collateral.supplyAmount
@@ -273,5 +275,77 @@ contract SpokeBase is Base {
     );
 
     return maxDebt > 1 ? maxDebt - 1 : maxDebt;
+  }
+
+  /// @dev Returns the USD value of the reserve normalized by it's decimals, in terms of WAD
+  function _getReserveValueInBaseCurrency(
+    uint256 assetId,
+    uint256 amount
+  ) internal view returns (uint256) {
+    return
+      (amount * oracle.getAssetPrice(assetId) * WadRayMath.WAD) /
+      (10 ** hub.getAssetConfig(assetId).decimals);
+  }
+
+  function _calculateExpectedUserRP(address user, ISpoke spoke) internal view returns (uint256) {
+    uint256 assetId;
+    uint256 totalDebt;
+    uint256 suppliedReservesCount;
+    uint256 userRP;
+    DataTypes.UserPosition memory userPosition;
+
+    // Find all reserves user has supplied, adding up total debt
+    for (uint256 reserveId; reserveId < spoke.reserveCount(); ++reserveId) {
+      if (spoke.getUsingAsCollateral(reserveId, user)) {
+        ++suppliedReservesCount;
+      }
+      (assetId, ) = getAssetByReserveId(spoke, reserveId);
+      totalDebt += _getReserveValueInBaseCurrency(
+        assetId,
+        spoke.getUserCumulativeDebt(reserveId, user)
+      );
+    }
+
+    if (totalDebt == 0) {
+      return 0;
+    }
+
+    // Gather up list of reserves as collateral to sort by LP
+    KeyValueListInMemory.List memory reserveLP = KeyValueListInMemory.init(suppliedReservesCount);
+    uint256 idx = 0;
+    for (uint256 reserveId; reserveId < spoke.reserveCount(); ++reserveId) {
+      if (spoke.getUsingAsCollateral(reserveId, user)) {
+        reserveLP.add(idx, spoke.getLiquidityPremium(reserveId), reserveId);
+        ++idx;
+      }
+    }
+
+    // Sort supplied reserves by LP
+    reserveLP.sortByKey();
+
+    // While user's normalized debt amount is non-zero, iterate through supplied reserves, and add up LP
+    idx = 0;
+    uint256 originalTotalDebt = totalDebt;
+    while (totalDebt > 0) {
+      (uint256 lp, uint256 reserveId) = reserveLP.get(idx);
+      userPosition = getUserInfo(spoke, user, reserveId);
+      (assetId, ) = getAssetByReserveId(spoke, reserveId);
+      uint256 supplyAmount = _getReserveValueInBaseCurrency(
+        assetId,
+        hub.convertToAssets(assetId, userPosition.suppliedShares)
+      );
+
+      if (supplyAmount >= totalDebt) {
+        userRP += totalDebt * lp;
+        break;
+      } else {
+        userRP += supplyAmount * lp;
+        totalDebt -= supplyAmount;
+      }
+
+      ++idx;
+    }
+
+    return userRP / originalTotalDebt;
   }
 }

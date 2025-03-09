@@ -320,7 +320,7 @@ contract SpokeWithdrawTest is SpokeBase {
       abi.encode(params.rate)
     );
 
-    (state.assetId, state.asset) = getAssetInfo(spoke1, params.reserveId);
+    (state.assetId, state.asset) = getAssetByReserveId(spoke1, params.reserveId);
 
     // alice supplies reserve
     Utils.spokeSupply({
@@ -634,7 +634,7 @@ contract SpokeWithdrawTest is SpokeBase {
     // don't borrow the collateral asset
     vm.assume(params.reserveId != _wbtcReserveId(spoke1));
 
-    (uint256 assetId, IERC20 asset) = getAssetInfo(spoke1, params.reserveId);
+    (uint256 assetId, IERC20 asset) = getAssetByReserveId(spoke1, params.reserveId);
 
     // set weth LP to 0 for no premium contribution
     updateLiquidityPremium({
@@ -899,7 +899,7 @@ contract SpokeWithdrawTest is SpokeBase {
 
     vm.assume(params.reserveId != _wbtcReserveId(spoke1)); // wbtc used as collateral
 
-    (uint256 assetId, IERC20 asset) = getAssetInfo(spoke1, params.reserveId);
+    (uint256 assetId, IERC20 asset) = getAssetByReserveId(spoke1, params.reserveId);
 
     TestState memory state;
     state.reserveId = params.reserveId;

@@ -267,7 +267,7 @@ abstract contract Base is Test {
       paused: false,
       collateralFactor: 75_00,
       liquidationBonus: 0,
-      liquidityPremium: 50_00,
+      liquidityPremium: 5_00,
       borrowable: true,
       collateral: true
     });
@@ -622,6 +622,11 @@ abstract contract Base is Test {
     return spokeInfo[spoke].wbtc.reserveId;
   }
 
+  // assumes spoke has dai2 supported
+  function dai2ReserveId(ISpoke spoke) internal view returns (uint256) {
+    return spokeInfo[spoke].dai2.reserveId;
+  }
+
   function updateDrawCap(
     ILiquidityHub hub,
     uint256 assetId,
@@ -652,16 +657,38 @@ abstract contract Base is Test {
     ISpoke spoke,
     uint256 reserveId
   ) internal view returns (DataTypes.Reserve memory) {
-    DataTypes.Reserve memory reserveData = spoke.getReserve(reserveId);
+    DataTypes.Reserve memory reserveData;
+    reserveData.reserveId = reserveId;
+    IERC20 asset;
+    (reserveData.assetId, asset) = getAssetByReserveId(spoke, reserveId);
+    reserveData.asset = address(asset);
     (reserveData.baseDebt, reserveData.outstandingPremium) = spoke.getReserveDebt(reserveId);
     reserveData.suppliedShares = spoke.getReserveSuppliedShares(reserveId);
     reserveData.riskPremium = spoke.getReserveRiskPremium(reserveId);
-    reserveData.lastUpdateTimestamp = reserveData.lastUpdateTimestamp;
-    reserveData.baseBorrowIndex = reserveData.baseBorrowIndex;
+    reserveData.lastUpdateTimestamp = spoke.getReserve(reserveId).lastUpdateTimestamp;
+    reserveData.baseBorrowIndex = spoke.getReserve(reserveId).baseBorrowIndex;
+    reserveData.config = spoke.getReserve(reserveId).config;
     return reserveData;
   }
 
-  function getAssetInfo(ISpoke spoke, uint256 reserveId) internal view returns (uint256, IERC20) {
+  function getAssetInfo(uint256 assetId) internal view returns (DataTypes.Asset memory) {
+    DataTypes.Asset memory asset;
+    asset.id = assetId;
+    asset.suppliedShares = hub.getAssetSuppliedShares(assetId);
+    asset.availableLiquidity = hub.getAvailableLiquidity(assetId);
+    (asset.baseDebt, asset.outstandingPremium) = hub.getAssetDebt(assetId);
+    asset.baseBorrowIndex = hub.getAsset(assetId).baseBorrowIndex;
+    asset.baseBorrowRate = hub.getBaseInterestRate(assetId);
+    asset.riskPremium = hub.getAssetRiskPremium(assetId);
+    asset.lastUpdateTimestamp = hub.getAsset(assetId).lastUpdateTimestamp;
+    asset.config = hub.getAssetConfig(assetId);
+    return asset;
+  }
+
+  function getAssetByReserveId(
+    ISpoke spoke,
+    uint256 reserveId
+  ) internal view returns (uint256, IERC20) {
     DataTypes.Reserve memory reserve = spoke.getReserve(reserveId);
     return (reserve.assetId, IERC20(reserve.asset));
   }
