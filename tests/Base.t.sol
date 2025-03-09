@@ -23,7 +23,6 @@ import {MockPriceOracle, IPriceOracle} from './mocks/MockPriceOracle.sol';
 // dependencies
 import {IERC20Errors} from 'src/dependencies/openzeppelin/IERC20Errors.sol';
 import {IERC20} from 'src/dependencies/openzeppelin/IERC20.sol';
-import {IERC20Metadata} from 'src/dependencies/openzeppelin/IERC20Metadata.sol';
 import {WETH9} from 'src/dependencies/weth/WETH9.sol';
 
 abstract contract Base is Test {
@@ -32,9 +31,9 @@ abstract contract Base is Test {
   using PercentageMath for uint256;
 
   uint256 internal constant MAX_SUPPLY_AMOUNT = 1e30;
-  uint256 internal constant MAX_ALLOWABLE_DECIMALS = 18;
+  uint256 internal constant MAX_TOKEN_DECIMALS_SUPPORTED = 18;
   uint256 internal constant MAX_SUPPLY_ASSET_UNITS =
-    MAX_SUPPLY_AMOUNT / 10 ** MAX_ALLOWABLE_DECIMALS;
+    MAX_SUPPLY_AMOUNT / 10 ** MAX_TOKEN_DECIMALS_SUPPORTED;
   uint256 internal MAX_SUPPLY_AMOUNT_USDX;
   uint256 internal MAX_SUPPLY_AMOUNT_DAI;
   uint256 internal MAX_SUPPLY_AMOUNT_WBTC;
@@ -153,18 +152,10 @@ abstract contract Base is Test {
     vm.label(address(tokenList.dai), 'DAI');
     vm.label(address(tokenList.wbtc), 'WBTC');
 
-    MAX_SUPPLY_AMOUNT_USDX =
-      MAX_SUPPLY_ASSET_UNITS *
-      10 ** IERC20Metadata(address(tokenList.usdx)).decimals();
-    MAX_SUPPLY_AMOUNT_WETH =
-      MAX_SUPPLY_ASSET_UNITS *
-      10 ** IERC20Metadata(address(tokenList.weth)).decimals();
-    MAX_SUPPLY_AMOUNT_DAI =
-      MAX_SUPPLY_ASSET_UNITS *
-      10 ** IERC20Metadata(address(tokenList.dai)).decimals();
-    MAX_SUPPLY_AMOUNT_WBTC =
-      MAX_SUPPLY_ASSET_UNITS *
-      10 ** IERC20Metadata(address(tokenList.wbtc)).decimals();
+    MAX_SUPPLY_AMOUNT_USDX = MAX_SUPPLY_ASSET_UNITS * 10 ** tokenList.usdx.decimals();
+    MAX_SUPPLY_AMOUNT_WETH = MAX_SUPPLY_ASSET_UNITS * 10 ** tokenList.weth.decimals();
+    MAX_SUPPLY_AMOUNT_DAI = MAX_SUPPLY_ASSET_UNITS * 10 ** tokenList.dai.decimals();
+    MAX_SUPPLY_AMOUNT_WBTC = MAX_SUPPLY_ASSET_UNITS * 10 ** tokenList.wbtc.decimals();
 
     address[3] memory users = [alice, bob, carol];
 
