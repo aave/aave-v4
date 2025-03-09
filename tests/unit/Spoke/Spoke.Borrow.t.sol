@@ -1172,8 +1172,8 @@ contract SpokeBorrowTest is SpokeBase {
   ) public {
     uint256 currPrice = oracle.getAssetPrice(wethAssetId);
     newPrice = bound(newPrice, 0, currPrice - 1);
-    usdxDebtAmountWeth = bound(usdxDebtAmountWeth, 1, MAX_SUPPLY_AMOUNT / 2);
-    usdxDebtAmountDai = bound(usdxDebtAmountDai, 1, MAX_SUPPLY_AMOUNT / 2);
+    usdxDebtAmountWeth = bound(usdxDebtAmountWeth, 1, MAX_SUPPLY_AMOUNT / 4);
+    usdxDebtAmountDai = bound(usdxDebtAmountDai, 1, MAX_SUPPLY_AMOUNT / 4);
 
     // weth/dai collateral
     uint256 wethReserveId = _wethReserveId(spoke1);
@@ -1206,13 +1206,7 @@ contract SpokeBorrowTest is SpokeBase {
     setUsingAsCollateral(spoke1, bob, daiReserveId, true);
 
     // Alice supply usdx
-    Utils.spokeSupply(
-      spoke1,
-      usdxReserveId,
-      alice,
-      (usdxDebtAmountWeth + usdxDebtAmountDai),
-      alice
-    ); // supply enough buffer for multiple borrows
+    Utils.spokeSupply(spoke1, usdxReserveId, alice, MAX_SUPPLY_AMOUNT, alice); // supply enough buffer for multiple borrows
 
     // Bob draw max allowed usdx debt
     vm.prank(bob);
@@ -1305,8 +1299,8 @@ contract SpokeBorrowTest is SpokeBase {
   ) public {
     uint256 currPrice = oracle.getAssetPrice(wethAssetId);
     newPrice = bound(newPrice, 0, currPrice - 1);
-    usdxDebtAmountWeth = bound(usdxDebtAmountWeth, 1, MAX_SUPPLY_AMOUNT / 2);
-    usdxDebtAmountDai = bound(usdxDebtAmountDai, 1, MAX_SUPPLY_AMOUNT / 2);
+    usdxDebtAmountWeth = bound(usdxDebtAmountWeth, 1, MAX_SUPPLY_AMOUNT / 4);
+    usdxDebtAmountDai = bound(usdxDebtAmountDai, 1, MAX_SUPPLY_AMOUNT / 4);
 
     // weth/dai collateral
     uint256 wethReserveId = _wethReserveId(spoke1);
@@ -1339,13 +1333,7 @@ contract SpokeBorrowTest is SpokeBase {
     setUsingAsCollateral(spoke1, bob, daiReserveId, true);
 
     // Alice supply usdx
-    Utils.spokeSupply(
-      spoke1,
-      usdxReserveId,
-      alice,
-      (usdxDebtAmountWeth + usdxDebtAmountDai),
-      alice
-    ); // supply enough buffer for multiple borrows
+    Utils.spokeSupply(spoke1, usdxReserveId, alice, MAX_SUPPLY_AMOUNT, alice); // supply enough buffer for multiple borrows
 
     // Bob draw max allowed usdx debt
     vm.prank(bob);
