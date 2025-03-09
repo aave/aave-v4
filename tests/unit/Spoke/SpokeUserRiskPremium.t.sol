@@ -42,6 +42,11 @@ contract SpokeUserRiskPremiumTest is SpokeBase {
     uint256 assetRiskPremium;
   }
 
+  struct TestAmounts {
+    uint256 supplyAmount;
+    uint256 borrowAmount;
+  }
+
   /// With no collateral supplied, user risk premium is 0.
   function test_getUserRiskPremium_no_collateral() public {
     // Assert Bob has no collateral
@@ -871,13 +876,6 @@ contract SpokeUserRiskPremiumTest is SpokeBase {
       'user risk premium after interest accrual'
     );
 
-    // Ensure the calculated risk premium would match
-    assertEq(
-      spoke3.getUserRiskPremium(bob),
-      _calculateExpectedUserRP(bob, spoke3),
-      'bob risk premium after time skip'
-    );
-
     // See if base debt of wbtc changes appropriately
     baseDebt = MathUtils.calculateLinearInterest(baseRate, uint40(startTime)).rayMul(baseDebt);
     (actualBaseDebt, actualPremium) = spoke3.getUserDebt(wbtcInfo.reserveId, bob);
@@ -900,6 +898,87 @@ contract SpokeUserRiskPremiumTest is SpokeBase {
     (uint256 assetDebt, uint256 assetPremium) = hub.getAssetDebt(wbtcAssetId);
     assertEq(assetDebt, baseDebt, 'hub asset base debt');
     assertEq(assetPremium, premiumDebt, 'hub asset outstanding premium');
+  }
+
+  /// Bob supplies and borrows varying amounts of 4 reserves. We fuzz prices and liquidity premiums, and wait arbitrary time.
+  /// We ensure risk premium is calculated correctly before and after the time passing
+  function test_getUserRiskPremium_fuzz_inflight_calcs(
+    TestAmounts memory daiAmounts,
+    TestAmounts memory wethAmounts,
+    TestAmounts memory usdxAmounts,
+    TestAmounts memory wbtcAmounts,
+    uint40 timeSkip
+  ) public {
+    daiAmounts.supplyAmount = bound(daiAmounts.supplyAmount, 0, MAX_SUPPLY_AMOUNT);
+    wethAmounts.supplyAmount = bound(wethAmounts.supplyAmount, 0, MAX_SUPPLY_AMOUNT);
+    usdxAmounts.supplyAmount = bound(usdxAmounts.supplyAmount, 0, MAX_SUPPLY_AMOUNT);
+    wbtcAmounts.supplyAmount = bound(wbtcAmounts.supplyAmount, 0, MAX_SUPPLY_AMOUNT);
+
+    daiAmounts.borrowAmount = bound(daiAmounts.borrowAmount, 0, daiAmounts.supplyAmount / 2);
+    wethAmounts.borrowAmount = bound(wethAmounts.borrowAmount, 0, wethAmounts.supplyAmount / 2);
+    usdxAmounts.borrowAmount = bound(usdxAmounts.borrowAmount, 0, usdxAmounts.supplyAmount / 2);
+    wbtcAmounts.borrowAmount = bound(wbtcAmounts.borrowAmount, 0, wbtcAmounts.supplyAmount / 2);
+
+    // Ensure supplied value is at least double borrowed value to pass hf checks
+    vm.assume(
+      _getReserveValueInBaseCurrency(daiAssetId, daiAmounts.supplyAmount) +
+        _getReserveValueInBaseCurrency(wethAssetId, wethAmounts.supplyAmount) +
+        _getReserveValueInBaseCurrency(usdxAssetId, usdxAmounts.supplyAmount) +
+        _getReserveValueInBaseCurrency(wbtcAssetId, wbtcAmounts.supplyAmount) >=
+        2 *
+          (_getReserveValueInBaseCurrency(daiAssetId, daiAmounts.borrowAmount) +
+            _getReserveValueInBaseCurrency(wethAssetId, wethAmounts.borrowAmount) +
+            _getReserveValueInBaseCurrency(usdxAssetId, usdxAmounts.borrowAmount) +
+            _getReserveValueInBaseCurrency(wbtcAssetId, wbtcAmounts.borrowAmount))
+    );
+
+    // Bob supplies and draws all assets on spoke1
+    if (daiAmounts.supplyAmount > 0) {
+      Utils.spokeSupply(spoke1, daiReserveId(spoke1), bob, daiAmounts.supplyAmount, bob);
+      setUsingAsCollateral(spoke1, bob, daiReserveId(spoke1), true);
+    }
+    if (wethAmounts.supplyAmount > 0) {
+      Utils.spokeSupply(spoke1, wethReserveId(spoke1), bob, wethAmounts.supplyAmount, bob);
+      setUsingAsCollateral(spoke1, bob, wethReserveId(spoke1), true);
+    }
+    if (usdxAmounts.supplyAmount > 0) {
+      Utils.spokeSupply(spoke1, usdxReserveId(spoke1), bob, usdxAmounts.supplyAmount, bob);
+      setUsingAsCollateral(spoke1, bob, usdxReserveId(spoke1), true);
+    }
+    if (wbtcAmounts.supplyAmount > 0) {
+      Utils.spokeSupply(spoke1, wbtcReserveId(spoke1), bob, wbtcAmounts.supplyAmount, bob);
+      setUsingAsCollateral(spoke1, bob, wbtcReserveId(spoke1), true);
+    }
+
+    if (daiAmounts.borrowAmount > 0) {
+      Utils.spokeBorrow(spoke1, daiReserveId(spoke1), bob, daiAmounts.borrowAmount, bob);
+    }
+    if (wethAmounts.borrowAmount > 0) {
+      Utils.spokeBorrow(spoke1, wethReserveId(spoke1), bob, wethAmounts.borrowAmount, bob);
+    }
+    if (usdxAmounts.borrowAmount > 0) {
+      Utils.spokeBorrow(spoke1, usdxReserveId(spoke1), bob, usdxAmounts.borrowAmount, bob);
+    }
+    if (wbtcAmounts.borrowAmount > 0) {
+      Utils.spokeBorrow(spoke1, wbtcReserveId(spoke1), bob, wbtcAmounts.borrowAmount, bob);
+    }
+
+    // Check bob's user risk premium
+    assertEq(
+      spoke1.getUserRiskPremium(bob),
+      _calculateExpectedUserRP(bob, spoke1),
+      'user risk premium'
+    );
+
+    // Now skip some time
+    skip(timeSkip);
+
+    // Recheck bob's user risk premium
+    assertEq(
+      spoke1.getUserRiskPremium(bob),
+      _calculateExpectedUserRP(bob, spoke1),
+      'user risk premium after time skip'
+    );
   }
 
   /// Bob supplies varying amounts of dai, weth, usdx, and max wbtc, then borrows varying wbtc and weth amounts.
@@ -1019,13 +1098,6 @@ contract SpokeUserRiskPremiumTest is SpokeBase {
       spoke3.getLastUsedUserRiskPremium(bob),
       expectedUserRiskPremium,
       'user risk premium after interest accrual'
-    );
-
-    // Ensure the calculated risk premium would match
-    assertEq(
-      spoke3.getUserRiskPremium(bob),
-      _calculateExpectedUserRP(bob, spoke3),
-      'bob risk premium after time skip'
     );
 
     // See if base debt of wbtc changes appropriately
@@ -1250,18 +1322,6 @@ contract SpokeUserRiskPremiumTest is SpokeBase {
       spoke1.getLastUsedUserRiskPremium(alice),
       aliceExpectedRiskPremium,
       'alice risk premium after interest accrual'
-    );
-
-    // Ensure the calculated risk premium would match
-    assertEq(
-      spoke1.getUserRiskPremium(bob),
-      _calculateExpectedUserRP(bob, spoke1),
-      'bob risk premium after time skip'
-    );
-    assertEq(
-      spoke1.getUserRiskPremium(alice),
-      _calculateExpectedUserRP(alice, spoke1),
-      'alice risk premium after time skip'
     );
 
     // See if Bob's base debt of dai changes appropriately
