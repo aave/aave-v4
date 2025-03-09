@@ -202,8 +202,7 @@ contract Spoke is ISpoke {
     emit Borrowed(reserveId, to, amount);
   }
 
-  /// 
-   * Pass a greater value than the current debt to repay the whole debt of the asset
+  /// Pass a value greater than the current debt to repay entire debt
   function repay(uint256 reserveId, uint256 amount) external {
     /// @dev TODO: onBehalfOf
     DataTypes.UserPosition storage userPosition = _userPositions[msg.sender][reserveId];
