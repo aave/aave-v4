@@ -449,7 +449,7 @@ contract SpokeRepayTest is SpokeBase {
 
     // Calculate full debt before repayment
     uint256 fullDebt = bobDaiDataBefore.baseDebt + bobDaiDataBefore.outstandingPremium;
-    uint256 repayAmount = bound(repayAmount, fullDebt + 1, type(uint256).max - 1);
+    uint256 repayAmount = bound(repayAmount, fullDebt + 1, type(uint256).max);
 
     vm.expectEmit(address(spoke1));
     emit ISpoke.Repaid(daiReserveId(spoke1), bob, fullDebt);

@@ -202,8 +202,8 @@ contract Spoke is ISpoke {
     emit Borrowed(reserveId, to, amount);
   }
 
+  /// @dev TODO: onBehalfOf
   function repay(uint256 reserveId, uint256 amount) external {
-    // TODO: onBehalfOf
     DataTypes.UserPosition storage userPosition = _userPositions[msg.sender][reserveId];
     DataTypes.Reserve storage reserve = _reserves[reserveId];
     DataTypes.UserData storage userData = _userData[msg.sender];

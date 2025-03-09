@@ -27,7 +27,6 @@ interface ISpoke {
   error InsufficientSupply(uint256 supply);
   error NotAvailableLiquidity(uint256 availableLiquidity);
   error ReserveNotBorrowable(uint256 reserveId);
-  error RepayAmountExceedsDebt(uint256 debt);
   error ReserveCannotBeUsedAsCollateral(uint256 reserveId);
   error ReserveNotActive();
   error ReservePaused();
