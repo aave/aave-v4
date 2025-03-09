@@ -60,9 +60,9 @@ library PercentageMath {
   }
 
   /**
-   * @notice Removes BPS factor from a value.
-   * @param value The value of which to convert from BPS.
-   * @return result value (stripped of BPS factor).
+   * @notice Truncates number from BPS precision.
+   * @param value The number in BPS precision.
+   * @return result (value / 1e4)
    */
   function fromBps(uint256 value) internal pure returns (uint256) {
     return value / PERCENTAGE_FACTOR;
