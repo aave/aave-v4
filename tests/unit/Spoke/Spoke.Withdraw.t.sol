@@ -7,12 +7,6 @@ contract SpokeWithdrawTest is SpokeBase {
   using WadRayMath for uint256;
   using PercentageMath for uint256;
 
-  function setUp() public override {
-    super.setUp();
-    // Set Weth LP to nonzero
-    updateLiquidityPremium(spoke1, wethReserveId(spoke1), 15_00);
-  }
-
   function test_withdraw_revertsWith_ReserveNotActive() public {
     uint256 daiReserveId = daiReserveId(spoke1);
     uint256 amount = 100e18;

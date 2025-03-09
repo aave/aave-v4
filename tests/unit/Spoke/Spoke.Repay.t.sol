@@ -6,12 +6,6 @@ import 'tests/unit/Spoke/SpokeBase.t.sol';
 contract SpokeRepayTest is SpokeBase {
   using PercentageMath for uint256;
 
-  function setUp() public override {
-    super.setUp();
-    // Set Weth LP to nonzero
-    updateLiquidityPremium(spoke1, wethReserveId(spoke1), 10_00);
-  }
-
   function test_repay_same_block() public {
     uint256 daiSupplyAmount = 100e18;
     uint256 wethSupplyAmount = 10e18;

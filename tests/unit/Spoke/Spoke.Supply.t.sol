@@ -6,12 +6,6 @@ import 'tests/unit/Spoke/SpokeBase.t.sol';
 contract SpokeSupplyTest is SpokeBase {
   using WadRayMath for uint256;
 
-  function setUp() public override {
-    super.setUp();
-    // Set Weth LP to nonzero
-    updateLiquidityPremium(spoke1, wethReserveId(spoke1), 10_00);
-  }
-
   function test_supply_revertsWith_ReserveNotListed() public {
     uint256 reserveId = spoke1.reserveCount() + 1; // invalid reserveId
     uint256 amount = 100e18;
