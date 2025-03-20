@@ -213,7 +213,6 @@ export function invariant_sumOfSuppliedShares() {
       diff
     );
     fail = true;
-    throw new Error('invariant_sumOfSuppliedShares failed');
   }
   if ((diff = absDiff(hubSuppliedShares, userSuppliedShares)) > PRECISION) {
     console.error(
@@ -223,7 +222,6 @@ export function invariant_sumOfSuppliedShares() {
       diff
     );
     fail = true;
-    throw new Error('invariant_sumOfSuppliedShares failed');
   }
 
   handleInvariantFailure(fail, 'invariant_sumOfSuppliedShares');
@@ -242,6 +240,35 @@ export function invariant_drawnGtSuppliedLiquidity() {
     );
     fail = true;
   }
+
+  const spokeTotalDebt = spokes.reduce((sum, spoke) => sum + spoke.getTotalDebt(), 0n);
+  const spokeTotalSuppliedLiquidity = spokes.reduce(
+    (sum, spoke) => sum + hub.toSupplyAssets(spoke.suppliedShares),
+    0n
+  );
+  if (spokeTotalDebt > spokeTotalSuppliedLiquidity) {
+    console.error(
+      'spokeTotalDebt <= spokeTotalSuppliedLiquidity',
+      f(spokeTotalDebt),
+      f(spokeTotalSuppliedLiquidity)
+    );
+    fail = true;
+  }
+
+  const userTotalDebt = users.reduce((sum, user) => sum + user.getTotalDebt(), 0n);
+  const userTotalSuppliedLiquidity = users.reduce(
+    (sum, user) => sum + hub.toSupplyAssets(user.suppliedShares),
+    0n
+  );
+  if (userTotalDebt > userTotalSuppliedLiquidity) {
+    console.error(
+      'userTotalDebt <= userTotalSuppliedLiquidity',
+      f(userTotalDebt),
+      f(userTotalSuppliedLiquidity)
+    );
+    fail = true;
+  }
+
   handleInvariantFailure(fail, 'invariant_drawnGtSuppliedLiquidity');
 }
 
@@ -267,6 +294,7 @@ export function invariant_hubSpokeAccounting() {
       }
     });
   });
+
   handleInvariantFailure(fail, 'invariant_hubSpokeAccountingMatch');
 }
 
