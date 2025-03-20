@@ -161,12 +161,14 @@ export class LiquidityHub {
   }
 
   log(spokes = false) {
+    const ghostDebt = this.toDebtAssets(this.ghostDrawnShares) - this.offset;
     console.log('--- Hub ---');
     console.log('hub.totalDrawnShares        ', f(this.totalDrawnShares));
     console.log('hub.totalDrawnAssets        ', f(this.totalDrawnAssets));
     console.log('hub.baseDrawnShares         ', f(this.baseDrawnShares));
     console.log('hub.ghostDrawnShares        ', f(this.ghostDrawnShares));
     console.log('hub.offset                  ', f(this.offset));
+    console.log('hub.ghostDebt               ', f(ghostDebt));
     console.log('hub.unrealisedPremium       ', f(this.unrealisedPremium));
 
     console.log('hub.totalSuppliedShares     ', f(this.totalSuppliedShares));
@@ -278,9 +280,8 @@ export class Spoke {
     const oldUserUnrealisedPremium = user.unrealisedPremium;
 
     user.ghostDrawnShares = percentMul(user.baseDrawnShares, user.riskPremium);
-    user.offset = this.hub.toDebtAssets(user.ghostDrawnShares, Rounding.CEIL);
-    user.unrealisedPremium +=
-      this.hub.toDebtAssets(oldUserGhostDrawnShares, Rounding.CEIL) - oldUserOffset;
+    user.offset = this.hub.toDebtAssets(user.ghostDrawnShares);
+    user.unrealisedPremium += this.hub.toDebtAssets(oldUserGhostDrawnShares) - oldUserOffset;
 
     this.refresh(
       user.baseDrawnShares - oldUserBaseDrawnShares,
@@ -295,7 +296,7 @@ export class Spoke {
 
   repay(amount: bigint, who: User) {
     const user = this.getUser(who);
-    const temp = this.hub.toDebtAssets(user.ghostDrawnShares, Rounding.CEIL) - user.offset;
+    const temp = this.hub.toDebtAssets(user.ghostDrawnShares) - user.offset;
 
     this.hub.accrue();
     const {baseDebtRestored, premiumDebtRestored} = this.deductFromPremium(amount, user);
@@ -471,10 +472,12 @@ export class Spoke {
   }
 
   log(hub = false, users = false) {
+    const ghostDebt = this.hub.toDebtAssets(this.ghostDrawnShares) - this.offset;
     console.log(`--- Spoke ${this.id} ---`);
     console.log('spoke.baseDrawnShares       ', f(this.baseDrawnShares));
     console.log('spoke.ghostDrawnShares      ', f(this.ghostDrawnShares));
     console.log('spoke.offset                ', f(this.offset));
+    console.log('spoke.ghostDebt             ', f(ghostDebt));
     console.log('spoke.unrealisedPremium     ', f(this.unrealisedPremium));
     console.log('spoke.suppliedShares        ', f(this.suppliedShares));
     console.log('spoke.getTotalDebt          ', f(this.getTotalDebt()));
@@ -544,10 +547,12 @@ export class User {
   }
 
   log(spoke = false, hub = false) {
+    const ghostDebt = this.hub.toDebtAssets(this.ghostDrawnShares) - this.offset;
     console.log(`--- User ${this.id} ---`);
     console.log('user.baseDrawnShares        ', f(this.baseDrawnShares));
     console.log('user.ghostDrawnShares       ', f(this.ghostDrawnShares));
     console.log('user.offset                 ', f(this.offset));
+    console.log('user.ghostDebt              ', f(ghostDebt));
     console.log('user.unrealisedPremium      ', f(this.unrealisedPremium));
     console.log('user.suppliedShares         ', f(this.suppliedShares));
     console.log('user.riskPremium            ', formatBps(this.riskPremium));
