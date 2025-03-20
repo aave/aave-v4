@@ -216,7 +216,7 @@ export class LiquidityHub {
             who.totalDrawnShares,
           ]
         : []),
-    ].reduce((_, v) => v < 0 || v > MAX_UINT, false);
+    ].reduce((flag, v) => flag || v < 0 || v > MAX_UINT, false);
     if (flag) {
       who.log();
       throw new Error('underflow/overflow');
