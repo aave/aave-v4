@@ -81,29 +81,6 @@ export class LiquidityHub {
 
   supply(amount: bigint, spoke: Spoke) {
     const suppliedShares = this.toSupplyShares(amount);
-    // info(
-    //   'supply',
-    //   'amount',
-    //   f(amount),
-    //   '\nsuppliedShares',
-    //   f(suppliedShares),
-    //   '\ntotalSuppliedShares',
-    //   f(this.totalSuppliedShares),
-    //   '\navailableLiquidity',
-    //   f(this.availableLiquidity),
-    //   '\ntotalOutstandingPremium',
-    //   f(this.totalOutstandingPremium()),
-    //   '\nghostDrawnShares',
-    //   f(this.ghostDrawnShares),
-    //   '\nghostDrawnAssets',
-    //   f(this.toDebtAssets(this.ghostDrawnShares)),
-    //   '\noffset',
-    //   f(this.offset),
-    //   '\nunrealisedPremium',
-    //   f(this.unrealisedPremium),
-    //   '\ntotalSupplyAssets',
-    //   f(this.totalSupplyAssets())
-    // );
     assertNonZero(suppliedShares);
 
     this.totalSuppliedShares += suppliedShares;
@@ -135,8 +112,6 @@ export class LiquidityHub {
     this.totalDrawnShares += drawnShares;
     this.totalDrawnAssets += amount;
 
-    // this.getSpoke(spoke).baseDrawnShares += drawnShares;
-
     return drawnShares;
   }
 
@@ -148,8 +123,6 @@ export class LiquidityHub {
 
     this.totalDrawnAssets -= baseAmount;
     this.totalDrawnShares -= baseDrawnSharesRestored;
-
-    // this.getSpoke(spoke).baseDrawnShares -= baseDrawnSharesRestored;
 
     return baseDrawnSharesRestored;
   }
