@@ -191,15 +191,15 @@ function invariant_sumOfPremiumDebt() {
     }
   });
 
-  // if (hubPremiumDebt === 0n && spokePremiumDebt + userPremiumDebt !== 0n) {
-  //   console.error(
-  //     'spoke & user dust premiumDebt remaining when hub premiumDebt is completely repaid',
-  //     'spokePremiumDebt %d, userPremiumDebt %d',
-  //     f(spokePremiumDebt),
-  //     f(userPremiumDebt)
-  //   );
-  //   fail = true;
-  // }
+  if (hubPremiumDebt === 0n && spokePremiumDebt + userPremiumDebt !== 0n) {
+    console.error(
+      'spoke & user dust premiumDebt remaining when hub premiumDebt is completely repaid',
+      'spokePremiumDebt %d, userPremiumDebt %d',
+      f(spokePremiumDebt),
+      f(userPremiumDebt)
+    );
+    fail = true;
+  }
 
   handleInvariantFailure(fail, 'invariant_sumOfPremiumDebt');
 }

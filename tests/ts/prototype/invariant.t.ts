@@ -1,9 +1,10 @@
 import {LiquidityHub, Spoke, User, skip} from './core';
 import {random, randomChance, absDiff, maxAbsDiff, f, PRECISION, MAX_UINT} from './utils';
 
-const NUM_SPOKES = 1;
-const NUM_USERS = 30;
-const DEPTH = 100;
+// todo make random deterministic, cache seed, actions list for failed runs for debugging
+const NUM_SPOKES = 3;
+const NUM_USERS = 300;
+const DEPTH = 1000;
 const hub = new LiquidityHub();
 const spokes = new Array(NUM_SPOKES).fill(0).map(() => new Spoke(hub));
 const users = new Array(NUM_USERS).fill(0).map(() => new User());
@@ -185,15 +186,15 @@ export function invariant_sumOfPremiumDebt() {
     }
   });
 
-  // if (hubPremiumDebt === 0n && spokePremiumDebt + userPremiumDebt !== 0n) {
-  //   console.error(
-  //     'spoke & user dust premiumDebt remaining when hub premiumDebt is completely repaid',
-  //     'spokePremiumDebt %d, userPremiumDebt %d',
-  //     f(spokePremiumDebt),
-  //     f(userPremiumDebt)
-  //   );
-  //   fail = true;
-  // }
+  if (hubPremiumDebt === 0n && spokePremiumDebt + userPremiumDebt !== 0n) {
+    console.error(
+      'spoke & user dust premiumDebt remaining when hub premiumDebt is completely repaid',
+      'spokePremiumDebt %d, userPremiumDebt %d',
+      f(spokePremiumDebt),
+      f(userPremiumDebt)
+    );
+    fail = true;
+  }
 
   handleInvariantFailure(fail, 'invariant_sumOfPremiumDebt');
 }
