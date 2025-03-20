@@ -350,7 +350,7 @@ export class Spoke {
 
     if (baseDebtRestored > baseDebt) {
       user.log(true, true);
-      console.log(
+      info(
         'baseDebtRestored, baseDebt, diff',
         baseDebtRestored,
         baseDebt,
@@ -416,11 +416,9 @@ export class Spoke {
   getDebt() {
     this.hub.accrue();
     return {
-      baseDebt: this.hub.toDebtAssets(this.baseDrawnShares, Rounding.CEIL),
+      baseDebt: this.hub.toDebtAssets(this.baseDrawnShares),
       premiumDebt:
-        this.hub.toDebtAssets(this.ghostDrawnShares, Rounding.CEIL) -
-        this.offset +
-        this.unrealisedPremium,
+        this.hub.toDebtAssets(this.ghostDrawnShares) - this.offset + this.unrealisedPremium,
     };
   }
 
@@ -428,11 +426,9 @@ export class Spoke {
     this.hub.accrue();
     const user = this.getUser(who);
     return {
-      baseDebt: this.hub.toDebtAssets(user.baseDrawnShares, Rounding.CEIL),
+      baseDebt: this.hub.toDebtAssets(user.baseDrawnShares),
       premiumDebt:
-        this.hub.toDebtAssets(user.ghostDrawnShares, Rounding.CEIL) -
-        user.offset +
-        user.unrealisedPremium,
+        this.hub.toDebtAssets(user.ghostDrawnShares) - user.offset + user.unrealisedPremium,
     };
   }
 
@@ -565,6 +561,6 @@ export class User {
 }
 
 export function skip(ms = 1n) {
-  if (DEBUG) console.info('skipping');
+  if (DEBUG) info('skipping');
   currentTime += ms;
 }
