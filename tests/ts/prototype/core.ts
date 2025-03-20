@@ -327,13 +327,7 @@ export class Spoke {
 
   deductFromPremium(amount: bigint, who: User) {
     const user = this.getUser(who);
-    // const {baseDebt, premiumDebt} = this.getUserDebt(who);
-    const baseDebt = this.hub.toDebtAssets(user.baseDrawnShares, Rounding.CEIL);
-    const premiumDebt =
-      this.hub.toDebtAssets(user.ghostDrawnShares, Rounding.CEIL) -
-      user.offset +
-      user.unrealisedPremium;
-
+    const {baseDebt, premiumDebt} = this.getUserDebt(who);
     if (amount === MAX_UINT) {
       amount = baseDebt + premiumDebt;
     }
