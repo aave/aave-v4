@@ -6,7 +6,6 @@ import {IERC20} from 'src/dependencies/openzeppelin/IERC20.sol';
 import {ILiquidityHub} from 'src/interfaces/ILiquidityHub.sol';
 import {DataTypes} from 'src/libraries/types/DataTypes.sol';
 import {AssetLogic} from 'src/contracts/AssetLogic.sol';
-import {SpokeDataLogic} from 'src/contracts/SpokeDataLogic.sol';
 import {WadRayMath} from 'src/contracts/WadRayMath.sol';
 import {SharesMath} from 'src/contracts/SharesMath.sol';
 import {MathUtils} from 'src/contracts/MathUtils.sol';
@@ -19,7 +18,6 @@ contract LiquidityHub is ILiquidityHub {
   using SharesMath for uint256;
   using PercentageMath for uint256;
   using AssetLogic for DataTypes.Asset;
-  using SpokeDataLogic for DataTypes.SpokeData;
 
   uint256 public constant MAX_ALLOWED_ASSET_DECIMALS = 18;
   uint256 public constant DEFAULT_ASSET_INDEX = WadRayMath.RAY;
@@ -44,12 +42,13 @@ contract LiquidityHub is ILiquidityHub {
       id: assetCount,
       suppliedShares: 0,
       availableLiquidity: 0,
-      baseDebt: 0,
-      outstandingPremium: 0,
-      baseBorrowIndex: DEFAULT_ASSET_INDEX,
+      drawnShares: 0,
+      premiumDrawnShares: 0,
+      premiumOffset: 0,
+      drawnAssets: 0,
+      totalPremium: 0,
       baseBorrowRate: 0,
       lastUpdateTimestamp: block.timestamp,
-      riskPremium: 0,
       config: DataTypes.AssetConfig({
         decimals: config.decimals,
         active: config.active,
@@ -114,12 +113,7 @@ contract LiquidityHub is ILiquidityHub {
   // /////
 
   /// @inheritdoc ILiquidityHub
-  function supply(
-    uint256 assetId,
-    uint256 amount,
-    uint32 riskPremium,
-    address supplier
-  ) external returns (uint256) {
+  function supply(uint256 assetId, uint256 amount, address supplier) external returns (uint256) {
     // TODO: authorization - only spokes
 
     DataTypes.Asset storage asset = _assets[assetId];
@@ -129,14 +123,6 @@ contract LiquidityHub is ILiquidityHub {
     _validateSupply(asset, spoke, amount);
 
     asset.updateBorrowRate({liquidityAdded: amount, liquidityTaken: 0});
-    _updateRiskPremiumAndBaseDebt({
-      asset: asset,
-      spoke: spoke,
-      newSpokeRiskPremium: _boundBps(riskPremium).rayify(),
-      baseDebtAdded: 0,
-      baseDebtTaken: 0
-    });
-
     // todo: Mitigate inflation attack (burn some amount if first supply)
     uint256 sharesAmount = asset.convertToSharesDown(amount);
     require(sharesAmount > 0, InvalidSharesAmount());
@@ -154,12 +140,7 @@ contract LiquidityHub is ILiquidityHub {
   }
 
   /// @inheritdoc ILiquidityHub
-  function withdraw(
-    uint256 assetId,
-    uint256 amount,
-    uint32 riskPremium,
-    address to
-  ) external returns (uint256) {
+  function withdraw(uint256 assetId, uint256 amount, address to) external returns (uint256) {
     // TODO: authorization - only spokes
 
     DataTypes.Asset storage asset = _assets[assetId];
@@ -169,14 +150,6 @@ contract LiquidityHub is ILiquidityHub {
     _validateWithdraw(asset, spoke, amount);
 
     asset.updateBorrowRate({liquidityAdded: 0, liquidityTaken: amount});
-    _updateRiskPremiumAndBaseDebt({
-      asset: asset,
-      spoke: spoke,
-      newSpokeRiskPremium: _boundBps(riskPremium).rayify(),
-      baseDebtAdded: 0,
-      baseDebtTaken: 0
-    });
-
     uint256 sharesAmount = asset.convertToSharesUp(amount);
     require(sharesAmount > 0, InvalidSharesAmount());
 
@@ -192,12 +165,7 @@ contract LiquidityHub is ILiquidityHub {
   }
 
   /// @inheritdoc ILiquidityHub
-  function draw(
-    uint256 assetId,
-    uint256 amount,
-    uint32 riskPremium,
-    address to
-  ) external returns (uint256) {
+  function draw(uint256 assetId, uint256 amount, address to) external returns (uint256) {
     // TODO: authorization - only spokes
 
     DataTypes.Asset storage asset = _assets[assetId];
@@ -207,15 +175,14 @@ contract LiquidityHub is ILiquidityHub {
     _validateDraw(asset, amount, spoke.config.drawCap);
 
     asset.updateBorrowRate({liquidityAdded: 0, liquidityTaken: amount});
-    _updateRiskPremiumAndBaseDebt({
-      asset: asset,
-      spoke: spoke,
-      newSpokeRiskPremium: _boundBps(riskPremium).rayify(),
-      baseDebtAdded: amount,
-      baseDebtTaken: 0
-    });
+    uint256 sharesAmount = asset.convertToDrawnSharesUp(amount);
+    // TODO assert sharesAmount > 0
 
+    asset.drawnAssets += amount;
     asset.availableLiquidity -= amount;
+
+    asset.drawnShares += sharesAmount;
+    spoke.baseDrawnShares += sharesAmount;
 
     assetsList[assetId].safeTransfer(to, amount);
 
@@ -228,7 +195,7 @@ contract LiquidityHub is ILiquidityHub {
   function restore(
     uint256 assetId,
     uint256 amount,
-    uint32 riskPremium,
+    uint256 premiumAmount,
     address repayer
   ) external returns (uint256) {
     // TODO: authorization - only spokes
@@ -237,19 +204,18 @@ contract LiquidityHub is ILiquidityHub {
     DataTypes.SpokeData storage spoke = _spokes[assetId][msg.sender];
 
     _accrueInterest(asset, spoke); // accrue interest before validating action
-    _validateRestore(asset, spoke, amount);
+    _validateRestore(asset, spoke, amount, premiumAmount);
 
     asset.updateBorrowRate({liquidityAdded: amount, liquidityTaken: 0});
-    uint256 baseDebtRestored = _deductFromOutstandingPremium(asset, spoke, amount);
-    _updateRiskPremiumAndBaseDebt({
-      asset: asset,
-      spoke: spoke,
-      newSpokeRiskPremium: _boundBps(riskPremium).rayify(),
-      baseDebtAdded: 0,
-      baseDebtTaken: baseDebtRestored
-    });
+    uint256 sharesAmount = asset.convertToDrawnSharesDown(amount);
+    // TODO assert sharesAmount > 0
 
+    asset.drawnAssets -= amount;
     asset.availableLiquidity += amount;
+    asset.totalPremium -= premiumAmount;
+
+    asset.drawnShares -= sharesAmount;
+    spoke.baseDrawnShares -= sharesAmount;
 
     assetsList[assetId].safeTransferFrom(repayer, address(this), amount);
 
@@ -259,29 +225,29 @@ contract LiquidityHub is ILiquidityHub {
   }
 
   /// @inheritdoc ILiquidityHub
-  function accrueInterest(uint256 assetId, uint32 riskPremium) external {
+  function accrueInterest(uint256 assetId) external {
     // TODO: authorization - only spokes
 
     DataTypes.Asset storage asset = _assets[assetId];
     DataTypes.SpokeData storage spoke = _spokes[assetId][msg.sender];
 
     _accrueInterest(asset, spoke);
-    _updateRiskPremiumAndBaseDebt({
-      asset: asset,
-      spoke: spoke,
-      newSpokeRiskPremium: _boundBps(riskPremium).rayify(),
-      baseDebtAdded: 0,
-      baseDebtTaken: 0
-    });
+  }
+
+  /// @inheritdoc ILiquidityHub
+  function refresh(
+    int256 userBaseDrawnSharesDelta,
+    int256 userPremiumDrawnSharesDelta,
+    int256 userPremiumOffsetDelta,
+    int256 userTotalPremium
+  ) external returns (uint256) {
+    // TODO: authorization - only spokes
+    // TODO accounting
   }
 
   //
   // public
   //
-
-  function previewNextBorrowIndex(uint256 assetId) public view returns (uint256) {
-    return _assets[assetId].previewNextBorrowIndex();
-  }
 
   function getAsset(uint256 assetId) external view returns (DataTypes.Asset memory) {
     return _assets[assetId];
@@ -323,26 +289,30 @@ contract LiquidityHub is ILiquidityHub {
 
   function getAssetDebt(uint256 assetId) external view returns (uint256, uint256) {
     (uint256 cumulatedBaseDebt, uint256 cumulatedOutstandingPremium) = _assets[assetId]
-      .previewInterest(_assets[assetId].previewNextBorrowIndex());
+      .previewInterest();
     return (cumulatedBaseDebt, cumulatedOutstandingPremium);
   }
 
   function getAssetCumulativeDebt(uint256 assetId) external view returns (uint256) {
     (uint256 cumulatedBaseDebt, uint256 cumulatedOutstandingPremium) = _assets[assetId]
-      .previewInterest(_assets[assetId].previewNextBorrowIndex());
+      .previewInterest();
     return cumulatedBaseDebt + cumulatedOutstandingPremium;
   }
 
   function getSpokeDebt(uint256 assetId, address spoke) external view returns (uint256, uint256) {
-    (uint256 cumulatedBaseDebt, uint256 cumulatedOutstandingPremium) = _spokes[assetId][spoke]
-      .previewInterest(_assets[assetId].previewNextBorrowIndex());
-    return (cumulatedBaseDebt, cumulatedOutstandingPremium);
+    // (uint256 cumulatedBaseDebt, uint256 cumulatedOutstandingPremium) = _spokes[assetId][spoke]
+    //   .previewInterest();
+    // return (cumulatedBaseDebt, cumulatedOutstandingPremium);
+    // TODO
+    return (0, 0);
   }
 
   function getSpokeCumulativeDebt(uint256 assetId, address spoke) external view returns (uint256) {
-    (uint256 cumulatedBaseDebt, uint256 cumulatedOutstandingPremium) = _spokes[assetId][spoke]
-      .previewInterest(_assets[assetId].previewNextBorrowIndex());
-    return cumulatedBaseDebt + cumulatedOutstandingPremium;
+    // (uint256 cumulatedBaseDebt, uint256 cumulatedOutstandingPremium) = _spokes[assetId][spoke]
+    //   .previewInterest();
+    // return cumulatedBaseDebt + cumulatedOutstandingPremium;
+    // TODO
+    return 0;
   }
 
   function getAssetSuppliedAmount(uint256 assetId) external view returns (uint256) {
@@ -359,14 +329,6 @@ contract LiquidityHub is ILiquidityHub {
 
   function getSpokeSuppliedShares(uint256 assetId, address spoke) external view returns (uint256) {
     return _spokes[assetId][spoke].suppliedShares;
-  }
-
-  function getAssetRiskPremium(uint256 assetId) external view returns (uint256) {
-    return _assets[assetId].riskPremium.derayify();
-  }
-
-  function getSpokeRiskPremium(uint256 assetId, address spoke) external view returns (uint256) {
-    return _spokes[assetId][spoke].riskPremium.derayify();
   }
 
   function getAvailableLiquidity(uint256 assetId) external view returns (uint256) {
@@ -422,7 +384,7 @@ contract LiquidityHub is ILiquidityHub {
     require(!asset.config.paused, AssetPaused());
     require(!asset.config.frozen, AssetFrozen());
     require(
-      drawCap == type(uint256).max || amount + asset.baseDebt <= drawCap,
+      drawCap == type(uint256).max || amount + asset.drawnAssets <= drawCap,
       DrawCapExceeded(drawCap)
     );
     require(amount <= asset.availableLiquidity, NotAvailableLiquidity(asset.availableLiquidity));
@@ -431,107 +393,41 @@ contract LiquidityHub is ILiquidityHub {
   function _validateRestore(
     DataTypes.Asset storage asset,
     DataTypes.SpokeData storage spoke,
-    uint256 amountRestored
+    uint256 amountRestored,
+    uint256 premiumRestored
   ) internal view {
     require(amountRestored > 0, InvalidRestoreAmount());
     require(asset.config.active, AssetNotActive());
     require(!asset.config.paused, AssetPaused());
     // Ensure spoke is not restoring more than accrued drawn
-    uint256 maxAllowedRestore = spoke.baseDebt + spoke.outstandingPremium;
-    require(amountRestored <= maxAllowedRestore, SurplusAmountRestored(maxAllowedRestore));
+    uint256 maxAllowedRestore = asset.convertToDrawnAssetsDown(spoke.baseDrawnShares);
+    require(
+      amountRestored <= maxAllowedRestore,
+      SurplusAmountRestored(maxAllowedRestore) // TODO: rename
+    );
+    require(premiumRestored <= spoke.totalPremium, SurplusAmountRestored(maxAllowedRestore)); // TODO: new error
   }
 
-  // @dev Utilizes existing asset & spoke: `baseBorrowIndex`, `riskPremium`
   function _accrueInterest(
     DataTypes.Asset storage asset,
     DataTypes.SpokeData storage spoke
   ) internal {
-    uint256 nextBaseBorrowIndex = asset.previewNextBorrowIndex();
-
-    asset.accrueInterest(nextBaseBorrowIndex);
-    spoke.accrueInterest(nextBaseBorrowIndex);
-  }
-
-  // @dev Expects both `asset.baseDebt` & `spoke.baseDebt` have been accrued
-  // @dev Does not update `outstandingPremium`
-  function _updateRiskPremiumAndBaseDebt(
-    DataTypes.Asset storage asset,
-    DataTypes.SpokeData storage spoke,
-    uint256 newSpokeRiskPremium,
-    uint256 baseDebtAdded,
-    uint256 baseDebtTaken
-  ) internal {
-    uint256 existingAssetDebt = asset.baseDebt;
-    uint256 existingSpokeDebt = spoke.baseDebt;
-
-    // weighted average risk premium of all spokes without current `spoke`
-    (uint256 assetRiskPremiumWithoutCurrent, uint256 assetDebtWithoutCurrent) = MathUtils
-      .subtractFromWeightedAverage(
-        asset.riskPremium,
-        existingAssetDebt,
-        spoke.riskPremium, // use current spoke risk premium
-        existingSpokeDebt
-      );
-
-    // This results in an underflow if more base debt than the total accounted is taken
-    uint256 newSpokeDebt = existingSpokeDebt + baseDebtAdded - baseDebtTaken;
-
-    (uint256 newAssetRiskPremium, uint256 newAssetDebt) = MathUtils.addToWeightedAverage(
-      assetRiskPremiumWithoutCurrent,
-      assetDebtWithoutCurrent,
-      newSpokeRiskPremium, // use new spoke risk premium
-      newSpokeDebt
-    );
-
-    asset.baseDebt = newAssetDebt;
-    spoke.baseDebt = newSpokeDebt;
-
-    asset.riskPremium = newAssetRiskPremium;
-    spoke.riskPremium = newSpokeRiskPremium;
+    asset.accrueInterest();
   }
 
   function _addSpoke(uint256 assetId, DataTypes.SpokeConfig memory config, address spoke) internal {
     require(spoke != address(0), InvalidSpoke());
     _spokes[assetId][spoke] = DataTypes.SpokeData({
       suppliedShares: 0,
-      baseDebt: 0,
-      outstandingPremium: 0,
-      baseBorrowIndex: DEFAULT_SPOKE_INDEX,
-      riskPremium: 0,
+      baseDrawnShares: 0,
+      premiumDrawnShares: 0,
+      premiumOffset: 0,
+      totalPremium: 0,
       lastUpdateTimestamp: 0,
       config: config
     });
 
     emit SpokeAdded(assetId, spoke);
-  }
-
-  // @dev `amount` can cover at most spoke's outstanding premium
-  function _deductFromOutstandingPremium(
-    DataTypes.Asset storage asset,
-    DataTypes.SpokeData storage spoke,
-    uint256 amount
-  ) internal returns (uint256) {
-    uint256 spokeOutstandingPremium = spoke.outstandingPremium;
-
-    uint256 baseDebtRestored;
-
-    if (amount > spokeOutstandingPremium) {
-      baseDebtRestored = amount - spokeOutstandingPremium;
-      spoke.outstandingPremium = 0;
-      // underflow not possible bc of invariant: asset.outstandingPremium >= spoke.outstandingPremium
-      asset.outstandingPremium -= spokeOutstandingPremium;
-    } else {
-      // no base debt is restored, only outstanding premium
-      spoke.outstandingPremium -= amount;
-      asset.outstandingPremium -= amount;
-    }
-
-    return baseDebtRestored;
-  }
-
-  function _boundBps(uint32 a) internal pure returns (uint256) {
-    require(a < 1000_00, InvalidRiskPremiumBps(a));
-    return uint256(a);
   }
 
   function _validateAssetConfig(

@@ -49,7 +49,6 @@ interface ILiquidityHub {
   error DrawCapExceeded(uint256 drawCap);
   error SurplusAmountRestored(uint256 maxAllowedRestore);
   error InvalidSpoke();
-  error InvalidRiskPremiumBps(uint256 bps);
   error AssetPaused();
   error AssetFrozen();
   error InvalidIrStrategy();
@@ -75,48 +74,30 @@ interface ILiquidityHub {
    * @dev Only callable by spokes.
    * @param assetId The asset id.
    * @param amount The amount of asset to supply.
-   * @param riskPremium The new aggregated risk premium (in bps) of the calling spoke.
    * @param supplier The address which we pull assets from (user).
    * @return The amount of shares supplied.
    */
-  function supply(
-    uint256 assetId,
-    uint256 amount,
-    uint32 riskPremium,
-    address supplier
-  ) external returns (uint256);
+  function supply(uint256 assetId, uint256 amount, address supplier) external returns (uint256);
 
   /**
    * @notice Withdraw supplied asset on behalf of user.
    * @dev Only callable by spokes.
    * @param assetId The asset id.
    * @param amount The amount of asset to withdraw.
-   * @param riskPremium The new aggregated risk premium (in bps) of the calling spoke.
    * @param to The address to transfer the assets to.
    * @return The amount of shares withdrawn.
    */
-  function withdraw(
-    uint256 assetId,
-    uint256 amount,
-    uint32 riskPremium,
-    address to
-  ) external returns (uint256);
+  function withdraw(uint256 assetId, uint256 amount, address to) external returns (uint256);
 
   /**
    * @notice Draw debt on behalf of user.
    * @dev Only callable by spokes.
    * @param assetId The asset id.
    * @param amount The amount of debt to draw.
-   * @param riskPremium The new aggregated risk premium (in bps) of the calling spoke.
    * @param to The address to transfer the underlying assets to.
    * @return The amount of debt drawn.
    */
-  function draw(
-    uint256 assetId,
-    uint256 amount,
-    uint32 riskPremium,
-    address to
-  ) external returns (uint256);
+  function draw(uint256 assetId, uint256 amount, address to) external returns (uint256);
 
   /**
    * @notice Repays debt on behalf of user.
@@ -124,19 +105,18 @@ interface ILiquidityHub {
    * @dev Interest is always paid off first from premium, then from base.
    * @param assetId The asset id.
    * @param amount The amount to repay.
-   * @param riskPremium The new aggregated risk premium (in bps) of the calling spoke.
+   * @param premiumAmount The premium amount to repay.
    * @param repayer The address to pull assets from.
    * @return The amount of debt restored.
    */
   function restore(
     uint256 assetId,
     uint256 amount,
-    uint32 riskPremium,
+    uint32 premiumAmount,
     address repayer
   ) external returns (uint256);
-  function accrueInterest(uint256 assetId, uint32 riskPremium) external;
+  function accrueInterest(uint256 assetId) external;
 
-  function previewNextBorrowIndex(uint256 assetId) external view returns (uint256);
   function getAsset(uint256 assetId) external view returns (DataTypes.Asset memory);
   function getSpoke(
     uint256 assetId,
@@ -160,8 +140,6 @@ interface ILiquidityHub {
   function getAssetSuppliedShares(uint256 assetId) external view returns (uint256);
   function getSpokeSuppliedAmount(uint256 assetId, address spoke) external view returns (uint256);
   function getSpokeSuppliedShares(uint256 assetId, address spoke) external view returns (uint256);
-  function getAssetRiskPremium(uint256 assetId) external view returns (uint256);
-  function getSpokeRiskPremium(uint256 assetId, address spoke) external view returns (uint256);
   function getAssetConfig(uint256 assetId) external view returns (DataTypes.AssetConfig memory);
   function getAvailableLiquidity(uint256 assetId) external view returns (uint256);
 

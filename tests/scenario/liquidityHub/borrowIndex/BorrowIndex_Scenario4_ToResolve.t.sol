@@ -164,7 +164,7 @@ contract BorrowIndex_Scenario4Test is BorrowIndexScenarioBaseTest {
       });
     } else if (stage == stages[6]) {
       // failing in this action during a restore for spoke4
-      // in LH - spoke4's spoke.baseDebt > asset.baseDebt
+      // in LH - spoke4's spoke.baseDebt > asset.drawnAssets
       // in LH - reverts due to underflow on _updateRiskPremiumAndBaseDebt -> MathUtils.subtractFromWeightedAverage
       Utils.restore({
         hub: hub,

@@ -47,7 +47,7 @@ abstract contract BorrowIndexScenarioBaseTest is LiquidityHubScenarioBaseTest {
 
     // Asset
     console.log('Asset borrow index %27e', assets[state.assetId].t_i[t].baseBorrowIndex);
-    console.log('Asset base debt %e', assets[state.assetId].t_i[t].baseDebt);
+    console.log('Asset base debt %e', assets[state.assetId].t_i[t].drawnAssets);
     console.log('Asset last update timestamp', assets[state.assetId].t_i[t].lastUpdateTimestamp);
 
     // Spoke1
@@ -66,7 +66,7 @@ abstract contract BorrowIndexScenarioBaseTest is LiquidityHubScenarioBaseTest {
 
     // Asset
     console.log('Asset borrow index %27e', assets[state.assetId].t_f[t].baseBorrowIndex);
-    console.log('Asset base debt %e', assets[state.assetId].t_f[t].baseDebt);
+    console.log('Asset base debt %e', assets[state.assetId].t_f[t].drawnAssets);
     console.log('Asset last update timestamp', assets[state.assetId].t_f[t].lastUpdateTimestamp);
 
     // Spoke1

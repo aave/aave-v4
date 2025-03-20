@@ -9,15 +9,11 @@ import {ILiquidityHub} from 'src/interfaces/ILiquidityHub.sol';
 import {ISpoke} from 'src/interfaces/ISpoke.sol';
 import {IPriceOracle} from 'src/interfaces/IPriceOracle.sol';
 import {DataTypes} from 'src/libraries/types/DataTypes.sol';
-import {ReserveLogic} from 'src/contracts/ReserveLogic.sol';
-import {UserPositionLogic} from 'src/contracts/UserPositionLogic.sol';
 
 contract Spoke is ISpoke {
   using WadRayMath for uint256;
   using PercentageMath for uint256;
   using KeyValueListInMemory for KeyValueListInMemory.List;
-  using ReserveLogic for DataTypes.Reserve;
-  using UserPositionLogic for DataTypes.UserPosition;
 
   uint256 public constant DEFAULT_SPOKE_INDEX = 0;
   // todo capitalize, oracle should be mutable?
@@ -55,12 +51,11 @@ contract Spoke is ISpoke {
       reserveId: _reserveCount,
       assetId: assetId,
       asset: asset,
-      baseDebt: 0,
-      outstandingPremium: 0,
       suppliedShares: 0,
-      baseBorrowIndex: DEFAULT_SPOKE_INDEX,
-      lastUpdateTimestamp: 0,
-      riskPremium: 0,
+      baseDrawnShares: 0,
+      premiumDrawnShares: 0,
+      premiumOffset: 0,
+      totalPremium: 0,
       config: DataTypes.ReserveConfig({
         decimals: config.decimals,
         active: config.active,
@@ -121,7 +116,6 @@ contract Spoke is ISpoke {
     DataTypes.UserPosition storage userPosition = _userPositions[msg.sender][reserveId];
     DataTypes.UserData storage userData = _userData[msg.sender];
 
-    _accrueInterest(reserve, userPosition, userData);
     _validateSupply(reserve, amount);
 
     (uint256 newReserveRiskPremium, uint256 newUserRiskPremium) = _updateRiskPremiumAndBaseDebt({
@@ -135,7 +129,6 @@ contract Spoke is ISpoke {
     uint256 suppliedShares = liquidityHub.supply(
       reserve.assetId,
       amount,
-      uint32(newReserveRiskPremium.derayify()),
       msg.sender // supplier
     );
     _notifyRiskPremiumUpdate(reserve.assetId, msg.sender, newUserRiskPremium);
@@ -152,7 +145,6 @@ contract Spoke is ISpoke {
     DataTypes.UserPosition storage userPosition = _userPositions[msg.sender][reserveId];
     DataTypes.UserData storage userData = _userData[msg.sender];
 
-    _accrueInterest(reserve, userPosition, userData);
     _validateWithdraw(reserve, userPosition, amount);
 
     // Update user's risk premium and wAvgRP across all users of spoke
@@ -164,12 +156,7 @@ contract Spoke is ISpoke {
       baseDebtAdded: 0,
       baseDebtTaken: 0
     });
-    uint256 withdrawnShares = liquidityHub.withdraw(
-      reserve.assetId,
-      amount,
-      uint32(newReserveRiskPremium.derayify()),
-      to
-    );
+    uint256 withdrawnShares = liquidityHub.withdraw(reserve.assetId, amount, to);
     _notifyRiskPremiumUpdate(reserve.assetId, msg.sender, newUserRiskPremium);
 
     userPosition.suppliedShares -= withdrawnShares;
@@ -187,7 +174,6 @@ contract Spoke is ISpoke {
     DataTypes.UserPosition storage userPosition = _userPositions[msg.sender][reserveId];
     DataTypes.UserData storage userData = _userData[msg.sender];
 
-    _accrueInterest(reserve, userPosition, userData);
     _validateBorrow(reserve, msg.sender);
 
     (uint256 newReserveRiskPremium, uint256 newUserRiskPremium) = _updateRiskPremiumAndBaseDebt({
@@ -198,7 +184,7 @@ contract Spoke is ISpoke {
       baseDebtAdded: amount,
       baseDebtTaken: 0
     });
-    liquidityHub.draw(reserve.assetId, amount, uint32(newReserveRiskPremium.derayify()), to);
+    liquidityHub.draw(reserve.assetId, amount, to);
     _validateHealthFactor(msg.sender);
     _notifyRiskPremiumUpdate(reserve.assetId, msg.sender, newUserRiskPremium);
 
@@ -211,8 +197,6 @@ contract Spoke is ISpoke {
     DataTypes.UserPosition storage userPosition = _userPositions[msg.sender][reserveId];
     DataTypes.Reserve storage reserve = _reserves[reserveId];
     DataTypes.UserData storage userData = _userData[msg.sender];
-
-    _accrueInterest(reserve, userPosition, userData);
 
     // User wants to repay all the debt
     uint256 currentDebt = userPosition.baseDebt + userPosition.outstandingPremium;
@@ -236,7 +220,7 @@ contract Spoke is ISpoke {
     liquidityHub.restore(
       reserve.assetId,
       amount,
-      uint32(newReserveRiskPremium.derayify()),
+      userPosition.outstandingPremium,
       msg.sender // repayer
     );
     _notifyRiskPremiumUpdate(reserve.assetId, msg.sender, newUserRiskPremium);
@@ -261,20 +245,14 @@ contract Spoke is ISpoke {
   function getUserDebt(uint256 reserveId, address user) external view returns (uint256, uint256) {
     (uint256 cumulatedBaseDebt, uint256 cumulatedOutstandingPremium) = _userPositions[user][
       reserveId
-    ].previewInterest(
-        _userData[user],
-        liquidityHub.previewNextBorrowIndex(_reserves[reserveId].assetId)
-      );
+    ].previewInterest(_userData[user]);
     return (cumulatedBaseDebt, cumulatedOutstandingPremium);
   }
 
   function getUserCumulativeDebt(uint256 reserveId, address user) external view returns (uint256) {
     (uint256 cumulatedBaseDebt, uint256 cumulatedOutstandingPremium) = _userPositions[user][
       reserveId
-    ].previewInterest(
-        _userData[user],
-        liquidityHub.previewNextBorrowIndex(_reserves[reserveId].assetId)
-      );
+    ].previewInterest(_userData[user]);
     return cumulatedBaseDebt + cumulatedOutstandingPremium;
   }
 
@@ -308,13 +286,13 @@ contract Spoke is ISpoke {
 
   function getReserveDebt(uint256 reserveId) external view returns (uint256, uint256) {
     (uint256 cumulatedBaseDebt, uint256 cumulatedOutstandingPremium) = _reserves[reserveId]
-      .previewInterest(liquidityHub.previewNextBorrowIndex(_reserves[reserveId].assetId));
+      .previewInterest();
     return (cumulatedBaseDebt, cumulatedOutstandingPremium);
   }
 
   function getReserveCumulativeDebt(uint256 reserveId) external view returns (uint256) {
     (uint256 cumulatedBaseDebt, uint256 cumulatedOutstandingPremium) = _reserves[reserveId]
-      .previewInterest(liquidityHub.previewNextBorrowIndex(_reserves[reserveId].assetId));
+      .previewInterest();
     return cumulatedBaseDebt + cumulatedOutstandingPremium;
   }
 
@@ -660,7 +638,7 @@ contract Spoke is ISpoke {
     uint256 assetUnit
   ) internal view returns (uint256) {
     (uint256 cumulativeBaseDebt, uint256 cumulativeOutstandingPremium) = userPosition
-      .previewInterest(userData, liquidityHub.previewNextBorrowIndex(assetId));
+      .previewInterest(userData);
     return ((cumulativeBaseDebt + cumulativeOutstandingPremium) * assetPrice).wadify() / assetUnit;
   }
 
@@ -673,17 +651,6 @@ contract Spoke is ISpoke {
     return
       (liquidityHub.convertToAssets(assetId, userPosition.suppliedShares) * assetPrice).wadify() /
       assetUnit;
-  }
-
-  function _accrueInterest(
-    DataTypes.Reserve storage reserve,
-    DataTypes.UserPosition storage userPosition,
-    DataTypes.UserData storage userData
-  ) internal {
-    uint256 nextBaseBorrowIndex = liquidityHub.previewNextBorrowIndex(reserve.assetId);
-
-    reserve.accrueInterest(nextBaseBorrowIndex);
-    userPosition.accrueInterest(userData, nextBaseBorrowIndex);
   }
 
   /**
@@ -710,14 +677,14 @@ contract Spoke is ISpoke {
       // todo keep borrowed assets in transient storage/pass through?
       if (_isBorrowing(userPosition) && assetId != assetIdToAvoid) {
         // this was accrued on the fly when calculating `newUserRiskPremium`, opt: decouple and commit before
-        _accrueInterest(reserve, userPosition, userData);
+        // _accrueInterest(reserve, userPosition, userData);
         uint256 newReserveRiskPremium = _refreshReserveRiskPremium({
           reserve: reserve,
           userPosition: userPosition,
           existingUserRiskPremium: existingUserRiskPremium,
           newUserRiskPremium: newUserRiskPremium
         });
-        liquidityHub.accrueInterest(assetId, uint32(newReserveRiskPremium.derayify()));
+        liquidityHub.accrueInterest(assetId);
       }
       unchecked {
         ++reserveId;

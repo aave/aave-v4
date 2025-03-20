@@ -101,7 +101,7 @@ contract LiquidityHubSupplyTest is LiquidityHubBase {
     // asset
     assertEq(assetData.suppliedShares, 0, 'asset total shares pre-supply');
     assertEq(assetData.availableLiquidity, 0, 'asset availableLiquidity pre-supply');
-    assertEq(assetData.baseDebt, 0, 'asset baseDebt pre-supply');
+    assertEq(assetData.drawnAssets, 0, 'asset baseDebt pre-supply');
     assertEq(assetData.outstandingPremium, 0, 'asset outstandingPremium pre-supply');
     assertEq(assetData.baseBorrowIndex, WadRayMath.RAY, 'asset baseBorrowIndex pre-supply');
     assertEq(assetData.baseBorrowRate, 0, 'asset baseBorrowRate pre-supply');
@@ -113,7 +113,7 @@ contract LiquidityHubSupplyTest is LiquidityHubBase {
     );
     // spoke
     assertEq(spokeData.suppliedShares, assetData.suppliedShares, 'spoke suppliedShares pre-supply');
-    assertEq(spokeData.baseDebt, assetData.baseDebt, 'spoke baseDebt pre-supply');
+    assertEq(spokeData.baseDebt, assetData.drawnAssets, 'spoke baseDebt pre-supply');
     assertEq(
       spokeData.outstandingPremium,
       assetData.outstandingPremium,
@@ -147,7 +147,7 @@ contract LiquidityHubSupplyTest is LiquidityHubBase {
       'asset suppliedShares post-supply'
     );
     assertEq(assetData.availableLiquidity, amount, 'asset availableLiquidity post-supply');
-    assertEq(assetData.baseDebt, 0, 'asset baseDebt post-supply');
+    assertEq(assetData.drawnAssets, 0, 'asset baseDebt post-supply');
     assertEq(assetData.outstandingPremium, 0, 'asset outstandingPremium post-supply');
     assertEq(assetData.baseBorrowIndex, WadRayMath.RAY, 'asset baseBorrowIndex post-supply');
     assertEq(
@@ -215,7 +215,7 @@ contract LiquidityHubSupplyTest is LiquidityHubBase {
       'asset suppliedShares post-supply'
     );
     assertEq(assetData.availableLiquidity, amount, 'asset availableLiquidity post-supply');
-    assertEq(assetData.baseDebt, 0, 'asset baseDebt post-supply');
+    assertEq(assetData.drawnAssets, 0, 'asset baseDebt post-supply');
     assertEq(assetData.outstandingPremium, 0, 'asset outstandingPremium post-supply');
     assertEq(assetData.baseBorrowIndex, WadRayMath.RAY, 'asset baseBorrowIndex post-supply');
     assertEq(
@@ -231,7 +231,7 @@ contract LiquidityHubSupplyTest is LiquidityHubBase {
       assetData.suppliedShares,
       'spoke suppliedShares post-supply'
     );
-    assertEq(spokeData.baseDebt, assetData.baseDebt, 'baseDebt post-supply');
+    assertEq(spokeData.baseDebt, assetData.drawnAssets, 'baseDebt post-supply');
     assertEq(
       spokeData.outstandingPremium,
       assetData.outstandingPremium,
@@ -301,7 +301,7 @@ contract LiquidityHubSupplyTest is LiquidityHubBase {
       'asset suppliedShares post-supply'
     );
     assertEq(assetData.availableLiquidity, amount, 'asset availableLiquidity post-supply');
-    assertEq(assetData.baseDebt, 0, 'asset baseDebt post-supply');
+    assertEq(assetData.drawnAssets, 0, 'asset baseDebt post-supply');
     assertEq(assetData.outstandingPremium, 0, 'asset outstandingPremium post-supply');
     assertEq(assetData.baseBorrowIndex, WadRayMath.RAY, 'asset baseBorrowIndex post-supply');
     assertEq(
@@ -317,7 +317,7 @@ contract LiquidityHubSupplyTest is LiquidityHubBase {
       assetData.suppliedShares,
       'spoke suppliedShares post-supply'
     );
-    assertEq(spokeData.baseDebt, assetData.baseDebt, 'baseDebt post-supply');
+    assertEq(spokeData.baseDebt, assetData.drawnAssets, 'baseDebt post-supply');
     assertEq(
       spokeData.outstandingPremium,
       assetData.outstandingPremium,
@@ -344,7 +344,7 @@ contract LiquidityHubSupplyTest is LiquidityHubBase {
       'asset2 suppliedShares post-supply'
     );
     assertEq(asset2Data.availableLiquidity, amount2, 'asset2 availableLiquidity post-supply');
-    assertEq(asset2Data.baseDebt, 0, 'asset2 baseDebt post-supply');
+    assertEq(asset2Data.drawnAssets, 0, 'asset2 baseDebt post-supply');
     assertEq(asset2Data.outstandingPremium, 0, 'asset2 outstandingPremium post-supply');
     assertEq(asset2Data.baseBorrowIndex, WadRayMath.RAY, 'asset2 baseBorrowIndex post-supply');
     assertEq(
@@ -360,7 +360,7 @@ contract LiquidityHubSupplyTest is LiquidityHubBase {
       asset2Data.suppliedShares,
       'spoke2 suppliedShares post-supply'
     );
-    assertEq(spoke2Data.baseDebt, asset2Data.baseDebt, 'baseDebt post-supply');
+    assertEq(spoke2Data.baseDebt, asset2Data.drawnAssets, 'baseDebt post-supply');
     assertEq(
       spoke2Data.outstandingPremium,
       asset2Data.outstandingPremium,
@@ -438,7 +438,7 @@ contract LiquidityHubSupplyTest is LiquidityHubBase {
     skip(365 days);
 
     DataTypes.Asset memory daiData = hub.getAsset(daiAssetId);
-    uint256 accruedBase = daiData.baseDebt.rayMul(rate);
+    uint256 accruedBase = daiData.drawnAssets.rayMul(rate);
     uint256 initialTotalAssets = daiAmount;
 
     uint256 supply2Amount = 10e18;
@@ -496,7 +496,7 @@ contract LiquidityHubSupplyTest is LiquidityHubBase {
     skip(365 days);
 
     DataTypes.Asset memory daiData = hub.getAsset(daiAssetId);
-    uint256 accruedBase = daiData.baseDebt.rayMul(rate);
+    uint256 accruedBase = daiData.drawnAssets.rayMul(rate);
     uint256 accruedPremium = accruedBase.percentMul(riskPremium);
     uint256 initialTotalAssets = daiAmount;
 
@@ -606,7 +606,7 @@ contract LiquidityHubSupplyTest is LiquidityHubBase {
       prevTotalAssets + spoke2SupplyAssets,
       'asset final availableLiquidity'
     );
-    assertEq(assetData.baseDebt, 0, 'asset final baseDebt');
+    assertEq(assetData.drawnAssets, 0, 'asset final baseDebt');
     assertEq(assetData.outstandingPremium, 0, 'asset final outstandingPremium');
     assertEq(
       assetData.baseBorrowIndex,
@@ -701,7 +701,7 @@ contract LiquidityHubSupplyTest is LiquidityHubBase {
       // asset
       assertEq(assetData.suppliedShares, p.suppliedShares, 'asset suppliedShares post-supply');
       assertEq(assetData.availableLiquidity, p.totalAssets, 'asset availableLiquidity post-supply');
-      assertEq(assetData.baseDebt, 0, 'asset baseDebt post-supply');
+      assertEq(assetData.drawnAssets, 0, 'asset baseDebt post-supply');
       assertEq(assetData.outstandingPremium, 0, 'asset outstandingPremium post-supply');
       assertEq(
         assetData.baseBorrowIndex,
@@ -786,7 +786,7 @@ contract LiquidityHubSupplyTest is LiquidityHubBase {
     // asset
     assertEq(assetData.suppliedShares, p.suppliedShares, 'asset suppliedShares post-supply');
     assertEq(assetData.availableLiquidity, p.totalAssets, 'asset availableLiquidity post-supply');
-    assertEq(assetData.baseDebt, 0, 'asset baseDebt post-supply');
+    assertEq(assetData.drawnAssets, 0, 'asset baseDebt post-supply');
     assertEq(assetData.outstandingPremium, 0, 'asset outstandingPremium post-supply');
     assertEq(
       assetData.baseBorrowIndex,

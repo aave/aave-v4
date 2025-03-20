@@ -688,7 +688,7 @@ abstract contract Base is Test {
     asset.id = assetId;
     asset.suppliedShares = hub.getAssetSuppliedShares(assetId);
     asset.availableLiquidity = hub.getAvailableLiquidity(assetId);
-    (asset.baseDebt, asset.outstandingPremium) = hub.getAssetDebt(assetId);
+    (asset.drawnAssets, asset.totalPremium) = hub.getAssetDebt(assetId);
     asset.baseBorrowIndex = hub.getAsset(assetId).baseBorrowIndex;
     asset.baseBorrowRate = hub.getBaseInterestRate(assetId);
     asset.riskPremium = hub.getAssetRiskPremium(assetId);

@@ -73,7 +73,7 @@ contract SpokeAccrueInterestTest is SpokeBase {
     assertEq(wethReserveInfo.outstandingPremium, 0, 'outstandingPremium');
 
     // LH checks
-    assertEq(wethAssetInfo.baseDebt, totalBase, 'asset base debt');
+    assertEq(wethAssetInfo.drawnAssets, totalBase, 'asset base debt');
     assertEq(wethAssetInfo.riskPremium, 0);
     assertEq(wethAssetInfo.outstandingPremium, 0);
     assertEq(wethAssetInfo.lastUpdateTimestamp, lastUpdate);
@@ -116,7 +116,7 @@ contract SpokeAccrueInterestTest is SpokeBase {
     assertEq(wethReserveInfo.outstandingPremium, 0, 'outstandingPremium');
 
     // LH checks
-    assertEq(wethAssetInfo.baseDebt, totalBase);
+    assertEq(wethAssetInfo.drawnAssets, totalBase);
     assertEq(wethAssetInfo.riskPremium, 0);
     assertEq(wethAssetInfo.outstandingPremium, 0);
     assertEq(wethAssetInfo.lastUpdateTimestamp, lastUpdate);

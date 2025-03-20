@@ -482,7 +482,7 @@ contract LiquidityHubRestoreTest is LiquidityHubBase {
       accruedPremium - restoreAmount,
       'hub dai outstandingPremium'
     );
-    assertEq(daiData.baseDebt, accruedBaseDebt + drawAmount, 'hub dai baseDebt');
+    assertEq(daiData.drawnAssets, accruedBaseDebt + drawAmount, 'hub dai baseDebt');
     assertEq(
       daiData.availableLiquidity,
       daiAmount - drawAmount + restoreAmount,
@@ -492,7 +492,7 @@ contract LiquidityHubRestoreTest is LiquidityHubBase {
 
     assertEq(
       daiDebtData.asset.cumulativeDebt,
-      daiData.baseDebt + daiData.outstandingPremium,
+      daiData.drawnAssets + daiData.outstandingPremium,
       'asset cumulativeDebt'
     );
     assertEq(daiDebtData.asset.baseDebt, accruedBaseDebt + drawAmount, 'asset baseDebt');
@@ -507,7 +507,7 @@ contract LiquidityHubRestoreTest is LiquidityHubBase {
       daiData.outstandingPremium,
       'hub spoke1 outstandingPremium'
     );
-    assertEq(spoke1DaiData.baseDebt, daiData.baseDebt, 'hub spoke1 baseDebt');
+    assertEq(spoke1DaiData.baseDebt, daiData.drawnAssets, 'hub spoke1 baseDebt');
     assertEq(
       spoke1DaiData.lastUpdateTimestamp,
       daiData.lastUpdateTimestamp,
@@ -515,7 +515,7 @@ contract LiquidityHubRestoreTest is LiquidityHubBase {
     );
     assertEq(
       daiDebtData.spoke[0].cumulativeDebt,
-      daiData.baseDebt + daiData.outstandingPremium,
+      daiData.drawnAssets + daiData.outstandingPremium,
       'spoke1 cumulativeDebt'
     );
     assertEq(daiDebtData.spoke[0].baseDebt, accruedBaseDebt + drawAmount, 'spoke1 baseDebt');
@@ -581,7 +581,7 @@ contract LiquidityHubRestoreTest is LiquidityHubBase {
       accruedPremium - restoreAmount,
       'hub dai outstandingPremium'
     );
-    assertEq(daiData.baseDebt, accruedBaseDebt + drawAmount, 'hub dai baseDebt');
+    assertEq(daiData.drawnAssets, accruedBaseDebt + drawAmount, 'hub dai baseDebt');
     assertEq(
       daiData.availableLiquidity,
       daiAmount - drawAmount + restoreAmount,
@@ -591,7 +591,7 @@ contract LiquidityHubRestoreTest is LiquidityHubBase {
 
     assertEq(
       daiDebtData.asset.cumulativeDebt,
-      daiData.baseDebt + daiData.outstandingPremium,
+      daiData.drawnAssets + daiData.outstandingPremium,
       'asset cumulativeDebt'
     );
     assertEq(daiDebtData.asset.baseDebt, accruedBaseDebt + drawAmount, 'asset baseDebt');
@@ -606,7 +606,7 @@ contract LiquidityHubRestoreTest is LiquidityHubBase {
       daiData.outstandingPremium,
       'hub spoke1 outstandingPremium'
     );
-    assertEq(spoke1DaiData.baseDebt, daiData.baseDebt, 'hub spoke1 baseDebt');
+    assertEq(spoke1DaiData.baseDebt, daiData.drawnAssets, 'hub spoke1 baseDebt');
     assertEq(
       spoke1DaiData.lastUpdateTimestamp,
       daiData.lastUpdateTimestamp,
@@ -614,7 +614,7 @@ contract LiquidityHubRestoreTest is LiquidityHubBase {
     );
     assertEq(
       daiDebtData.spoke[0].cumulativeDebt,
-      daiData.baseDebt + daiData.outstandingPremium,
+      daiData.drawnAssets + daiData.outstandingPremium,
       'spoke1 cumulativeDebt'
     );
     assertEq(daiDebtData.spoke[0].baseDebt, accruedBaseDebt + drawAmount, 'spoke1 baseDebt');
@@ -667,7 +667,7 @@ contract LiquidityHubRestoreTest is LiquidityHubBase {
       'hub dai total assets'
     );
     assertEq(daiData.outstandingPremium, 0, 'hub dai outstandingPremium');
-    assertEq(daiData.baseDebt, accruedBaseDebt + drawAmount - 1, 'hub dai baseDebt');
+    assertEq(daiData.drawnAssets, accruedBaseDebt + drawAmount - 1, 'hub dai baseDebt');
     assertEq(
       daiData.availableLiquidity,
       daiAmount - drawAmount + restoreAmount,
@@ -688,7 +688,7 @@ contract LiquidityHubRestoreTest is LiquidityHubBase {
       daiData.outstandingPremium,
       'hub spoke1 outstandingPremium'
     );
-    assertEq(spoke1DaiData.baseDebt, daiData.baseDebt, 'hub spoke1 baseDebt');
+    assertEq(spoke1DaiData.baseDebt, daiData.drawnAssets, 'hub spoke1 baseDebt');
     assertEq(
       spoke1DaiData.lastUpdateTimestamp,
       daiData.lastUpdateTimestamp,
@@ -759,7 +759,7 @@ contract LiquidityHubRestoreTest is LiquidityHubBase {
     );
     assertEq(daiData.outstandingPremium, 0, 'hub dai outstandingPremium');
     assertEq(
-      daiData.baseDebt,
+      daiData.drawnAssets,
       accruedBaseDebt + drawAmount - (restoreAmount - accruedPremium), // eat into base debt after premium is consumed
       'hub dai baseDebt'
     );
@@ -786,7 +786,7 @@ contract LiquidityHubRestoreTest is LiquidityHubBase {
       daiData.outstandingPremium,
       'hub spoke1 outstandingPremium'
     );
-    assertEq(spoke1DaiData.baseDebt, daiData.baseDebt, 'hub spoke1 baseDebt');
+    assertEq(spoke1DaiData.baseDebt, daiData.drawnAssets, 'hub spoke1 baseDebt');
     assertEq(
       spoke1DaiData.lastUpdateTimestamp,
       daiData.lastUpdateTimestamp,
@@ -883,7 +883,11 @@ contract LiquidityHubRestoreTest is LiquidityHubBase {
       daiAmount - drawAmount + restoreAmount,
       'hub dai availableLiquidity post-restore'
     );
-    assertEq(hubData.daiData.baseDebt, drawAmount - restoreAmount, 'hub dai baseDebt post-restore');
+    assertEq(
+      hubData.daiData.drawnAssets,
+      drawAmount - restoreAmount,
+      'hub dai baseDebt post-restore'
+    );
     assertEq(hubData.daiData.outstandingPremium, 0, 'hub dai outstandingPremium post-restore');
     assertEq(
       hubData.daiData.baseBorrowIndex,
@@ -911,7 +915,7 @@ contract LiquidityHubRestoreTest is LiquidityHubBase {
       wethAmount,
       'hub weth availableLiquidity post-restore'
     );
-    assertEq(hubData.wethData.baseDebt, 0, 'hub weth baseDebt post-restore');
+    assertEq(hubData.wethData.drawnAssets, 0, 'hub weth baseDebt post-restore');
     assertEq(hubData.wethData.outstandingPremium, 0, 'hub weth outstandingPremium post-restore');
     assertEq(
       hubData.wethData.baseBorrowIndex,
@@ -931,7 +935,11 @@ contract LiquidityHubRestoreTest is LiquidityHubBase {
       hubData.wethData.suppliedShares,
       'spoke1 total weth shares post-restore'
     );
-    assertEq(hubData.spoke1WethData.baseDebt, hubData.wethData.baseDebt, 'spoke1 base weth debt');
+    assertEq(
+      hubData.spoke1WethData.baseDebt,
+      hubData.wethData.drawnAssets,
+      'spoke1 base weth debt'
+    );
     assertEq(
       hubData.spoke1WethData.outstandingPremium,
       hubData.wethData.outstandingPremium,
@@ -952,7 +960,7 @@ contract LiquidityHubRestoreTest is LiquidityHubBase {
     assertEq(hubData.spoke1DaiData.suppliedShares, 0, 'spoke1 total dai shares post-restore');
     assertEq(
       hubData.spoke1DaiData.baseDebt,
-      hubData.daiData.baseDebt,
+      hubData.daiData.drawnAssets,
       'spoke1 base dai debt post-restore'
     );
     assertEq(
@@ -1107,7 +1115,7 @@ contract LiquidityHubRestoreTest is LiquidityHubBase {
     DebtData memory daiDebtData = _getDebt(daiAssetId);
 
     // asset
-    assertEq(daiData.baseDebt, 0, 'asset baseDebt');
+    assertEq(daiData.drawnAssets, 0, 'asset baseDebt');
     assertEq(daiData.outstandingPremium, 0, 'asset outstandingPremium');
     assertEq(daiDebtData.asset.cumulativeDebt, 0, 'asset cumulativeDebt');
     assertEq(daiDebtData.asset.baseDebt, 0, 'asset baseDebt');
@@ -1204,7 +1212,7 @@ contract LiquidityHubRestoreTest is LiquidityHubBase {
     DebtData memory daiDebtData = _getDebt(daiAssetId);
 
     // asset
-    assertEq(daiData.baseDebt, 0, 'asset baseDebt');
+    assertEq(daiData.drawnAssets, 0, 'asset baseDebt');
     assertEq(daiData.outstandingPremium, 0, 'asset outstandingPremium');
     assertEq(daiDebtData.asset.cumulativeDebt, 0, 'asset cumulativeDebt');
     assertEq(daiDebtData.asset.baseDebt, 0, 'asset baseDebt');
@@ -1304,7 +1312,7 @@ contract LiquidityHubRestoreTest is LiquidityHubBase {
     DebtData memory daiDebtData = _getDebt(daiAssetId);
 
     // asset
-    assertEq(daiData.baseDebt, 0, 'asset baseDebt');
+    assertEq(daiData.drawnAssets, 0, 'asset baseDebt');
     assertEq(daiData.outstandingPremium, 0, 'asset outstandingPremium');
     assertEq(daiDebtData.asset.cumulativeDebt, 0, 'asset cumulativeDebt');
     assertEq(daiDebtData.asset.baseDebt, 0, 'asset baseDebt');
@@ -1409,7 +1417,7 @@ contract LiquidityHubRestoreTest is LiquidityHubBase {
     DebtData memory daiDebtData = _getDebt(daiAssetId);
 
     // asset
-    assertEq(daiData.baseDebt, 0, 'asset baseDebt');
+    assertEq(daiData.drawnAssets, 0, 'asset baseDebt');
     assertEq(daiData.outstandingPremium, 0, 'asset outstandingPremium');
     assertEq(daiDebtData.asset.cumulativeDebt, 0, 'asset cumulativeDebt');
     assertEq(daiDebtData.asset.baseDebt, 0, 'asset baseDebt');

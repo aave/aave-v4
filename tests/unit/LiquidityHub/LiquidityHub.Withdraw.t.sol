@@ -35,7 +35,7 @@ contract LiquidityHubWithdrawTest is LiquidityHubBase {
       'asset total shares pre-withdraw'
     );
     assertEq(assetData.availableLiquidity, amount, 'asset availableLiquidity pre-withdraw');
-    assertEq(assetData.baseDebt, 0, 'asset baseDebt pre-withdraw');
+    assertEq(assetData.drawnAssets, 0, 'asset baseDebt pre-withdraw');
     assertEq(assetData.outstandingPremium, 0, 'asset outstandingPremium pre-withdraw');
     assertEq(assetData.baseBorrowIndex, WadRayMath.RAY, 'asset baseBorrowIndex pre-withdraw');
     assertEq(
@@ -51,7 +51,7 @@ contract LiquidityHubWithdrawTest is LiquidityHubBase {
       assetData.suppliedShares,
       'spoke suppliedShares pre-withdraw'
     );
-    assertEq(spokeData.baseDebt, assetData.baseDebt, 'spoke baseDebt pre-withdraw');
+    assertEq(spokeData.baseDebt, assetData.drawnAssets, 'spoke baseDebt pre-withdraw');
     assertEq(
       spokeData.outstandingPremium,
       assetData.outstandingPremium,
@@ -93,7 +93,7 @@ contract LiquidityHubWithdrawTest is LiquidityHubBase {
     // asset
     assertEq(assetData.suppliedShares, 0, 'asset total shares post-withdraw');
     assertEq(assetData.availableLiquidity, 0, 'asset availableLiquidity post-withdraw');
-    assertEq(assetData.baseDebt, 0, 'asset baseDebt post-withdraw');
+    assertEq(assetData.drawnAssets, 0, 'asset baseDebt post-withdraw');
     assertEq(assetData.outstandingPremium, 0, 'asset outstandingPremium post-withdraw');
     assertEq(assetData.baseBorrowIndex, WadRayMath.RAY, 'asset baseBorrowIndex post-withdraw');
     assertEq(
@@ -109,7 +109,7 @@ contract LiquidityHubWithdrawTest is LiquidityHubBase {
       assetData.suppliedShares,
       'spoke suppliedShares post-withdraw'
     );
-    assertEq(spokeData.baseDebt, assetData.baseDebt, 'spoke baseDebt post-withdraw');
+    assertEq(spokeData.baseDebt, assetData.drawnAssets, 'spoke baseDebt post-withdraw');
     assertEq(
       spokeData.outstandingPremium,
       assetData.outstandingPremium,
@@ -190,7 +190,7 @@ contract LiquidityHubWithdrawTest is LiquidityHubBase {
     // asset
     assertEq(assetData.suppliedShares, 0, 'asset total shares post-withdraw');
     assertEq(assetData.availableLiquidity, 0, 'asset availableLiquidity post-withdraw');
-    assertEq(assetData.baseDebt, 0, 'asset baseDebt post-withdraw');
+    assertEq(assetData.drawnAssets, 0, 'asset baseDebt post-withdraw');
     assertEq(assetData.outstandingPremium, 0, 'asset outstandingPremium post-withdraw');
     assertEq(assetData.baseBorrowIndex, WadRayMath.RAY, 'asset baseBorrowIndex post-withdraw');
     assertEq(
@@ -210,7 +210,7 @@ contract LiquidityHubWithdrawTest is LiquidityHubBase {
       assetData.suppliedShares,
       'spoke suppliedShares post-withdraw'
     );
-    assertEq(spokeData.baseDebt, assetData.baseDebt, 'spoke baseDebt post-withdraw');
+    assertEq(spokeData.baseDebt, assetData.drawnAssets, 'spoke baseDebt post-withdraw');
     assertEq(
       spokeData.outstandingPremium,
       assetData.outstandingPremium,
@@ -233,7 +233,7 @@ contract LiquidityHubWithdrawTest is LiquidityHubBase {
       assetData.suppliedShares,
       'spoke suppliedShares post-withdraw'
     );
-    assertEq(spoke2Data.baseDebt, assetData.baseDebt, 'spoke baseDebt post-withdraw');
+    assertEq(spoke2Data.baseDebt, assetData.drawnAssets, 'spoke baseDebt post-withdraw');
     assertEq(
       spoke2Data.outstandingPremium,
       assetData.outstandingPremium,
@@ -287,7 +287,7 @@ contract LiquidityHubWithdrawTest is LiquidityHubBase {
       'asset total shares pre-withdraw'
     );
     assertEq(assetData.availableLiquidity, amount, 'asset availableLiquidity pre-withdraw');
-    assertEq(assetData.baseDebt, 0, 'asset baseDebt pre-withdraw');
+    assertEq(assetData.drawnAssets, 0, 'asset baseDebt pre-withdraw');
     assertEq(assetData.outstandingPremium, 0, 'asset outstandingPremium pre-withdraw');
     assertEq(assetData.baseBorrowIndex, WadRayMath.RAY, 'asset baseBorrowIndex pre-withdraw');
     assertEq(
@@ -303,7 +303,7 @@ contract LiquidityHubWithdrawTest is LiquidityHubBase {
       assetData.suppliedShares,
       'spoke suppliedShares pre-withdraw'
     );
-    assertEq(spokeData.baseDebt, assetData.baseDebt, 'spoke baseDebt pre-withdraw');
+    assertEq(spokeData.baseDebt, assetData.drawnAssets, 'spoke baseDebt pre-withdraw');
     assertEq(
       spokeData.outstandingPremium,
       assetData.outstandingPremium,
@@ -352,7 +352,7 @@ contract LiquidityHubWithdrawTest is LiquidityHubBase {
     // asset
     assertEq(assetData.suppliedShares, 0, 'asset total shares post-withdraw');
     assertEq(assetData.availableLiquidity, 0, 'asset availableLiquidity post-withdraw');
-    assertEq(assetData.baseDebt, 0, 'asset baseDebt post-withdraw');
+    assertEq(assetData.drawnAssets, 0, 'asset baseDebt post-withdraw');
     assertEq(assetData.outstandingPremium, 0, 'asset outstandingPremium post-withdraw');
     assertEq(assetData.baseBorrowIndex, WadRayMath.RAY, 'asset baseBorrowIndex post-withdraw');
     assertEq(
@@ -368,7 +368,7 @@ contract LiquidityHubWithdrawTest is LiquidityHubBase {
       assetData.suppliedShares,
       'spoke suppliedShares post-withdraw'
     );
-    assertEq(spokeData.baseDebt, assetData.baseDebt, 'spoke baseDebt post-withdraw');
+    assertEq(spokeData.baseDebt, assetData.drawnAssets, 'spoke baseDebt post-withdraw');
     assertEq(
       spokeData.outstandingPremium,
       assetData.outstandingPremium,
@@ -428,7 +428,7 @@ contract LiquidityHubWithdrawTest is LiquidityHubBase {
 
     hubData.daiData1 = hub.getAsset(daiAssetId);
 
-    uint256 restoreAmount = hubData.daiData1.baseDebt + hubData.daiData1.outstandingPremium;
+    uint256 restoreAmount = hubData.daiData1.drawnAssets + hubData.daiData1.outstandingPremium;
     uint256 newBaseBorrowIndex = WadRayMath.RAY +
       WadRayMath.RAY.rayMul(
         MathUtils.calculateLinearInterest(
@@ -471,7 +471,7 @@ contract LiquidityHubWithdrawTest is LiquidityHubBase {
     assertEq(hub.getTotalAssets(daiAssetId), 0, 'hub totalAssets');
     assertEq(hubData.daiData3.suppliedShares, 0, 'dai suppliedShares');
     assertEq(hubData.daiData3.availableLiquidity, 0, 'dai availableLiquidity');
-    assertEq(hubData.daiData3.baseDebt, 0, 'dai baseDebt');
+    assertEq(hubData.daiData3.drawnAssets, 0, 'dai baseDebt');
     assertEq(hubData.daiData3.outstandingPremium, 0, 'dai outstandingPremium');
     assertEq(hubData.daiData3.baseBorrowIndex, newBaseBorrowIndex, 'dai baseBorrowIndex');
     assertEq(hubData.daiData3.baseBorrowRate, rate, 'dai baseBorrowRate');
@@ -541,7 +541,7 @@ contract LiquidityHubWithdrawTest is LiquidityHubBase {
     HubData memory hubData;
     hubData.daiData = hub.getAsset(daiAssetId);
 
-    hubData.accruedBase = hubData.daiData.baseDebt.rayMul(rate);
+    hubData.accruedBase = hubData.daiData.drawnAssets.rayMul(rate);
     hubData.initialAvailableLiquidity = hubData.daiData.availableLiquidity;
     hubData.initialSupplyShares = hubData.daiData.suppliedShares;
 
@@ -564,7 +564,7 @@ contract LiquidityHubWithdrawTest is LiquidityHubBase {
 
     hubData.daiData = hub.getAsset(daiAssetId);
 
-    uint256 restoreAmount = hubData.daiData.baseDebt + hubData.daiData.outstandingPremium;
+    uint256 restoreAmount = hubData.daiData.drawnAssets + hubData.daiData.outstandingPremium;
     uint256 newBaseBorrowIndex = WadRayMath.RAY +
       WadRayMath.RAY.rayMul(
         MathUtils.calculateLinearInterest(
@@ -607,7 +607,7 @@ contract LiquidityHubWithdrawTest is LiquidityHubBase {
     assertEq(hub.getTotalAssets(daiAssetId), 0, 'hub totalAssets');
     assertEq(hubData.daiData.suppliedShares, 0, 'dai suppliedShares');
     assertEq(hubData.daiData.availableLiquidity, 0, 'dai availableLiquidity');
-    assertEq(hubData.daiData.baseDebt, 0, 'dai baseDebt');
+    assertEq(hubData.daiData.drawnAssets, 0, 'dai baseDebt');
     assertEq(hubData.daiData.outstandingPremium, 0, 'dai outstandingPremium');
     assertEq(hubData.daiData.baseBorrowIndex, newBaseBorrowIndex, 'dai baseBorrowIndex');
     assertEq(hubData.daiData.baseBorrowRate, rate, 'dai baseBorrowRate');

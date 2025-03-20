@@ -5,11 +5,10 @@ library DataTypes {
   // Liquidity Hub types
   struct SpokeData {
     uint256 suppliedShares; // share
-    uint256 baseDebt; // asset
-    uint256 outstandingPremium; // asset
-    uint256 baseBorrowIndex; // in ray
-    // rayified weighted average risk premium of all users drawing this asset
-    uint256 riskPremium;
+    uint256 baseDrawnShares; // share
+    uint256 premiumDrawnShares; // share
+    uint256 premiumOffset; // asset
+    uint256 totalPremium; // asset
     uint256 lastUpdateTimestamp;
     DataTypes.SpokeConfig config;
   }
@@ -18,12 +17,12 @@ library DataTypes {
     uint256 id;
     uint256 suppliedShares; // share
     uint256 availableLiquidity; // asset
-    uint256 baseDebt; // asset
-    uint256 outstandingPremium; // asset
-    uint256 baseBorrowIndex; // in ray
+    uint256 drawnShares; // share
+    uint256 premiumDrawnShares; // share
+    uint256 premiumOffset; // asset
+    uint256 drawnAssets; // asset
+    uint256 totalPremium; // asset
     uint256 baseBorrowRate; // in ray
-    // rayified weighted average risk premium of all spokes drawing this asset
-    uint256 riskPremium;
     uint256 lastUpdateTimestamp;
     DataTypes.AssetConfig config;
   }
@@ -47,7 +46,7 @@ library DataTypes {
     uint256 liquidityAdded;
     uint256 liquidityTaken;
     uint256 totalDebt;
-    uint256 reserveFactor; // likely not required
+    uint256 reserveFactor; // todo: likely not required
     uint256 assetId;
     uint256 virtualUnderlyingBalance;
   }
@@ -56,12 +55,11 @@ library DataTypes {
     uint256 reserveId;
     uint256 assetId;
     address asset;
-    uint256 baseDebt;
-    uint256 outstandingPremium;
-    uint256 suppliedShares;
-    uint256 baseBorrowIndex;
-    uint256 lastUpdateTimestamp;
-    uint256 riskPremium; // weighted average risk premium of all users with ray precision
+    uint256 suppliedShares; // share
+    uint256 baseDrawnShares; // share
+    uint256 premiumDrawnShares; // share
+    uint256 premiumOffset; // asset
+    uint256 totalPremium; // asset
     ReserveConfig config;
   }
 
@@ -79,12 +77,11 @@ library DataTypes {
 
   struct UserPosition {
     bool usingAsCollateral;
-    uint256 baseDebt;
-    uint256 outstandingPremium;
-    uint256 suppliedShares;
-    uint256 baseBorrowIndex;
-    uint256 riskPremium;
-    uint256 lastUpdateTimestamp;
+    uint256 suppliedShares; // share
+    uint256 baseDrawnShares; // share
+    uint256 premiumDrawnShares; // share
+    uint256 premiumOffset; // asset
+    uint256 totalPremium; // asset
   }
 
   struct UserData {

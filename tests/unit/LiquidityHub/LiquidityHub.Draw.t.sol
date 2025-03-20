@@ -57,7 +57,7 @@ contract LiquidityHubDrawTest is LiquidityHubBase {
       hub.convertToShares(wethAssetId, wethAmount),
       'hub weth suppliedShares post-draw'
     );
-    assertEq(wethData.baseDebt, 0, 'hub weth baseDebt post-draw');
+    assertEq(wethData.drawnAssets, 0, 'hub weth baseDebt post-draw');
     assertEq(wethData.outstandingPremium, 0, 'hub weth outstandingPremium post-draw');
     assertEq(wethData.baseBorrowIndex, WadRayMath.RAY, 'hub weth baseBorrowIndex post-draw');
     assertEq(wethData.riskPremium, 0, 'hub weth riskPremium post-draw');
@@ -72,7 +72,7 @@ contract LiquidityHubDrawTest is LiquidityHubBase {
       hub.convertToShares(daiAssetId, daiAmount),
       'hub dai suppliedShares post-draw'
     );
-    assertEq(daiData.baseDebt, drawAmount, 'hub dai baseDebt post-draw');
+    assertEq(daiData.drawnAssets, drawAmount, 'hub dai baseDebt post-draw');
     assertEq(daiData.outstandingPremium, 0, 'hub dai outstandingPremium post-draw');
     assertEq(daiData.baseBorrowIndex, WadRayMath.RAY, 'hub dai baseBorrowIndex post-draw');
     assertEq(daiData.riskPremium, 0, 'hub dai riskPremium post-draw');
@@ -90,7 +90,7 @@ contract LiquidityHubDrawTest is LiquidityHubBase {
       wethData.suppliedShares,
       'hub spoke1 suppliedShares post-draw'
     );
-    assertEq(spoke1WethData.baseDebt, wethData.baseDebt, 'hub spoke1 baseDebt post-draw');
+    assertEq(spoke1WethData.baseDebt, wethData.drawnAssets, 'hub spoke1 baseDebt post-draw');
     assertEq(
       spoke1WethData.outstandingPremium,
       wethData.outstandingPremium,
@@ -109,7 +109,7 @@ contract LiquidityHubDrawTest is LiquidityHubBase {
     );
     // spoke1 dai
     assertEq(spoke1DaiData.suppliedShares, 0, 'hub spoke1 suppliedShares post-draw');
-    assertEq(spoke1DaiData.baseDebt, daiData.baseDebt, 'hub spoke1 baseDebt post-draw');
+    assertEq(spoke1DaiData.baseDebt, daiData.drawnAssets, 'hub spoke1 baseDebt post-draw');
     assertEq(
       spoke1DaiData.outstandingPremium,
       daiData.outstandingPremium,
@@ -231,7 +231,7 @@ contract LiquidityHubDrawTest is LiquidityHubBase {
       hub.convertToShares(wethAssetId, wethAmount),
       'hub weth suppliedShares post-draw'
     );
-    assertEq(wethData.baseDebt, 0, 'hub weth baseDebt post-draw');
+    assertEq(wethData.drawnAssets, 0, 'hub weth baseDebt post-draw');
     assertEq(wethData.outstandingPremium, 0, 'hub weth outstandingPremium post-draw');
     assertEq(wethData.baseBorrowIndex, WadRayMath.RAY, 'hub weth baseBorrowIndex post-draw');
     assertEq(wethData.riskPremium, 0, 'hub weth riskPremium post-draw');
@@ -246,7 +246,7 @@ contract LiquidityHubDrawTest is LiquidityHubBase {
       hub.convertToShares(daiAssetId, daiAmount),
       'hub dai suppliedShares post-draw'
     );
-    assertEq(daiData.baseDebt, drawAmount, 'hub dai baseDebt post-draw');
+    assertEq(daiData.drawnAssets, drawAmount, 'hub dai baseDebt post-draw');
     assertEq(daiData.outstandingPremium, 0, 'hub dai outstandingPremium post-draw');
     assertEq(daiData.baseBorrowIndex, INIT_BASE_BORROW_INDEX, 'hub dai baseBorrowIndex post-draw');
     assertEq(daiData.riskPremium, 0, 'hub dai riskPremium post-draw');
@@ -264,7 +264,7 @@ contract LiquidityHubDrawTest is LiquidityHubBase {
       wethData.suppliedShares,
       'hub spoke1 suppliedShares post-draw'
     );
-    assertEq(spoke1WethData.baseDebt, wethData.baseDebt, 'hub spoke1 baseDebt post-draw');
+    assertEq(spoke1WethData.baseDebt, wethData.drawnAssets, 'hub spoke1 baseDebt post-draw');
     assertEq(
       spoke1WethData.outstandingPremium,
       wethData.outstandingPremium,
@@ -283,7 +283,7 @@ contract LiquidityHubDrawTest is LiquidityHubBase {
     );
     // spoke1 dai
     assertEq(spoke1DaiData.suppliedShares, 0, 'hub spoke1 suppliedShares post-draw');
-    assertEq(spoke1DaiData.baseDebt, daiData.baseDebt, 'hub spoke1 baseDebt post-draw');
+    assertEq(spoke1DaiData.baseDebt, daiData.drawnAssets, 'hub spoke1 baseDebt post-draw');
     assertEq(
       spoke1DaiData.outstandingPremium,
       daiData.outstandingPremium,

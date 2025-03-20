@@ -63,7 +63,7 @@ contract LiquidityHubBorrowIndex is Base {
     vm.prank(address(spoke1));
     hub.restore(wethAssetId, spoke1ExpectedDebt, 0, alice);
     assertEq(hub.getSpoke(wethAssetId, address(spoke1)).baseDebt, 0);
-    assertEq(hub.getAsset(wethAssetId).baseDebt, 0);
+    assertEq(hub.getAsset(wethAssetId).drawnAssets, 0);
 
     skip(delay);
 
@@ -116,7 +116,7 @@ contract LiquidityHubBorrowIndex is Base {
     vm.prank(address(spoke1));
     hub.restore(wethAssetId, spoke1ExpectedDebt, 0, alice);
     assertEq(hub.getSpoke(wethAssetId, address(spoke1)).baseDebt, 0);
-    assertEq(hub.getAsset(wethAssetId).baseDebt, 0);
+    assertEq(hub.getAsset(wethAssetId).drawnAssets, 0);
 
     skip(delay / 2);
     // no debt period
@@ -182,7 +182,7 @@ contract LiquidityHubBorrowIndex is Base {
     vm.prank(address(spoke1));
     hub.restore(wethAssetId, spoke1ExpectedDebt, 0, alice);
     assertEq(hub.getSpoke(wethAssetId, address(spoke1)).baseDebt, 0);
-    assertEq(hub.getAsset(wethAssetId).baseDebt, 0);
+    assertEq(hub.getAsset(wethAssetId).drawnAssets, 0);
 
     skip(delay);
 

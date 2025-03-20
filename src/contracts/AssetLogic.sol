@@ -15,19 +15,27 @@ library AssetLogic {
   using SharesMath for uint256;
   using WadRayMath for uint256;
 
-  // todo add remaining: accrue interest, previewNextBorrowIndex, validate*
+  // todo add remaining: accrue interest, validate*
 
   // todo: option for cached object
 
   function totalAssets(DataTypes.Asset storage asset) internal view returns (uint256) {
-    (uint256 baseDebt, uint256 outstandingPremium) = asset.previewInterest(
-      asset.previewNextBorrowIndex()
-    );
-    return asset.availableLiquidity + baseDebt + outstandingPremium;
+    // totalSupplyAssets = availableLiquidity + drawnAssets + totalPremium
+    (uint256 drawnAssets, uint256 totalPremium) = asset.previewInterest();
+    return asset.availableLiquidity + drawnAssets + totalPremium;
+  }
+
+  function getTotalDrawnAssets(DataTypes.Asset storage asset) internal view returns (uint256) {
+    (uint256 drawnAssets, ) = asset.previewInterest();
+    return drawnAssets;
   }
 
   function totalShares(DataTypes.Asset storage asset) internal view returns (uint256) {
     return asset.suppliedShares;
+  }
+
+  function getTotalDrawnShares(DataTypes.Asset storage asset) internal view returns (uint256) {
+    return asset.drawnShares;
   }
 
   // @dev So solc doesn't inline
@@ -63,12 +71,37 @@ library AssetLogic {
     return shares.toAssetsDown(asset.totalAssets(), asset.totalShares());
   }
 
+  function convertToDrawnSharesUp(
+    DataTypes.Asset storage asset,
+    uint256 assets
+  ) external view returns (uint256) {
+    return assets.toSharesUp(asset.getTotalDrawnAssets(), asset.getTotalDrawnShares());
+  }
+
+  function convertToDrawnSharesDown(
+    DataTypes.Asset storage asset,
+    uint256 assets
+  ) external view returns (uint256) {
+    return assets.toSharesDown(asset.getTotalDrawnAssets(), asset.getTotalDrawnShares());
+  }
+
+  function convertToDrawnAssetsUp(
+    DataTypes.Asset storage asset,
+    uint256 shares
+  ) external view returns (uint256) {
+    return shares.toAssetsUp(asset.getTotalDrawnAssets(), asset.getTotalDrawnShares());
+  }
+
+  function convertToDrawnAssetsDown(
+    DataTypes.Asset storage asset,
+    uint256 shares
+  ) external view returns (uint256) {
+    return shares.toAssetsDown(asset.getTotalDrawnAssets(), asset.getTotalDrawnShares());
+  }
+
   function getInterestRate(DataTypes.Asset storage asset) external view returns (uint256) {
     // @dev we truncate (ie `derayify()`) before `percentMul` as we only have accurate data until bps
-    return
-      asset.baseBorrowRate.percentMul(
-        PercentageMath.PERCENTAGE_FACTOR + asset.riskPremium.derayify()
-      );
+    return asset.baseBorrowRate;
   }
 
   function updateBorrowRate(
@@ -81,7 +114,7 @@ library AssetLogic {
         DataTypes.CalculateInterestRatesParams({
           liquidityAdded: liquidityAdded,
           liquidityTaken: liquidityTaken,
-          totalDebt: asset.baseDebt,
+          totalDebt: asset.drawnAssets,
           reserveFactor: 0, // TODO
           assetId: asset.id,
           virtualUnderlyingBalance: asset.availableLiquidity, // without current liquidity change
@@ -91,52 +124,26 @@ library AssetLogic {
     asset.baseBorrowRate = baseBorrowRate;
   }
 
-  // @dev Utilizes existing `asset.baseBorrowRate` & `asset.baseBorrowIndex`
-  // @return nextBaseBorrowIndex (in ray)
-  function previewNextBorrowIndex(DataTypes.Asset storage asset) internal view returns (uint256) {
-    uint256 lastUpdateTimestamp = asset.lastUpdateTimestamp;
-    if (lastUpdateTimestamp == block.timestamp) {
-      return asset.baseBorrowIndex;
-    }
+  function accrueInterest(DataTypes.Asset storage asset) internal {
+    (uint256 cumulatedBaseDebt, uint256 cumulatedOutstandingPremium) = asset.previewInterest();
 
-    uint256 cumulatedBaseInterest = MathUtils.calculateLinearInterest(
-      asset.baseBorrowRate,
-      uint40(lastUpdateTimestamp)
-    );
-    return cumulatedBaseInterest.rayMul(asset.baseBorrowIndex);
-  }
-
-  // @dev Utilizes existing `asset.baseBorrowIndex` & `asset.riskPremium`
-  function accrueInterest(DataTypes.Asset storage asset, uint256 nextBaseBorrowIndex) internal {
-    (uint256 cumulatedBaseDebt, uint256 cumulatedOutstandingPremium) = asset.previewInterest(
-      nextBaseBorrowIndex
-    );
-
-    asset.baseDebt = cumulatedBaseDebt;
-    asset.outstandingPremium = cumulatedOutstandingPremium;
-    asset.baseBorrowIndex = nextBaseBorrowIndex;
+    asset.drawnAssets = cumulatedBaseDebt;
+    asset.totalPremium = cumulatedOutstandingPremium;
     asset.lastUpdateTimestamp = block.timestamp;
   }
 
-  function previewInterest(
-    DataTypes.Asset storage asset,
-    uint256 nextBaseBorrowIndex
-  ) internal view returns (uint256, uint256) {
-    uint256 existingBaseDebt = asset.baseDebt;
-    uint256 existingOutstandingPremium = asset.outstandingPremium;
+  function previewInterest(DataTypes.Asset storage asset) internal view returns (uint256, uint256) {
+    uint256 existingBaseDebt = asset.drawnAssets;
+    uint256 existingOutstandingPremium = asset.totalPremium;
 
     if (existingBaseDebt == 0 || asset.lastUpdateTimestamp == block.timestamp) {
       return (existingBaseDebt, existingOutstandingPremium);
     }
 
-    uint256 cumulatedBaseDebt = existingBaseDebt.rayMul(nextBaseBorrowIndex).rayDiv(
-      asset.baseBorrowIndex
-    ); // precision loss avoidable
-
-    return (
-      cumulatedBaseDebt,
-      existingOutstandingPremium +
-        (cumulatedBaseDebt - existingBaseDebt).percentMul(asset.riskPremium.derayify())
+    uint256 cumulatedBaseDebt = existingBaseDebt.rayMul(
+      MathUtils.calculateLinearInterest(asset.baseBorrowRate, uint40(asset.lastUpdateTimestamp))
     );
+
+    return (cumulatedBaseDebt, existingOutstandingPremium);
   }
 }
