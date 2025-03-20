@@ -215,7 +215,7 @@ export class LiquidityHub {
             who.totalDrawnShares,
           ]
         : []),
-    ].reduce((flag, v) => flag || v < 0 || v > MAX_UINT, false);
+    ].reduce((flag, v) => flag || v < 0n || v > MAX_UINT, false);
     if (flag) {
       who.log();
       throw new Error('underflow/overflow');
@@ -286,7 +286,8 @@ export class Spoke {
       user.baseDrawnShares - oldUserBaseDrawnShares,
       user.ghostDrawnShares - oldUserGhostDrawnShares,
       user.offset - oldUserOffset,
-      user.unrealisedPremium - oldUserUnrealisedPremium
+      user.unrealisedPremium - oldUserUnrealisedPremium,
+      user
     );
 
     return drawnShares;
@@ -316,19 +317,21 @@ export class Spoke {
       user.baseDrawnShares - oldUserBaseDrawnShares,
       user.ghostDrawnShares - oldUserGhostDrawnShares,
       user.offset - oldUserOffset,
-      user.unrealisedPremium - oldUserUnrealisedPremium
+      user.unrealisedPremium - oldUserUnrealisedPremium,
+      user
     );
 
     return drawnShares;
   }
 
   deductFromPremium(amount: bigint, who: User) {
+    const user = this.getUser(who);
     // const {baseDebt, premiumDebt} = this.getUserDebt(who);
-    const baseDebt = this.hub.toDebtAssets(who.baseDrawnShares, Rounding.CEIL);
+    const baseDebt = this.hub.toDebtAssets(user.baseDrawnShares, Rounding.CEIL);
     const premiumDebt =
-      this.hub.toDebtAssets(who.ghostDrawnShares, Rounding.CEIL) -
-      who.offset +
-      who.unrealisedPremium;
+      this.hub.toDebtAssets(user.ghostDrawnShares, Rounding.CEIL) -
+      user.offset +
+      user.unrealisedPremium;
 
     if (amount === MAX_UINT) {
       amount = baseDebt + premiumDebt;
@@ -346,7 +349,7 @@ export class Spoke {
     }
 
     if (baseDebtRestored > baseDebt) {
-      who.log(true, true);
+      user.log(true, true);
       console.log(
         'baseDebtRestored, baseDebt, diff',
         baseDebtRestored,
@@ -359,7 +362,8 @@ export class Spoke {
     return {baseDebtRestored, premiumDebtRestored};
   }
 
-  updateUserRiskPremium(user: User) {
+  updateUserRiskPremium(who: User) {
+    const user = this.getUser(who);
     user.riskPremium = randomRiskPremium();
 
     const oldUserGhostDrawnShares = user.ghostDrawnShares;
@@ -376,7 +380,8 @@ export class Spoke {
       0n, // no change in base debt
       user.ghostDrawnShares - oldUserGhostDrawnShares,
       user.offset - oldUserOffset,
-      newUnrealisedPremium
+      newUnrealisedPremium,
+      user
     );
   }
 
@@ -384,8 +389,11 @@ export class Spoke {
     userBaseDrawnSharesDelta: bigint,
     userGhostDrawnSharesDelta: bigint,
     userOffsetDelta: bigint,
-    userUnrealisedPremiumDelta: bigint
+    userUnrealisedPremiumDelta: bigint,
+    user: User
   ) {
+    this.checkBounds(user);
+
     this.baseDrawnShares += userBaseDrawnSharesDelta;
     this.ghostDrawnShares += userGhostDrawnSharesDelta;
     this.offset += userOffsetDelta;
@@ -452,16 +460,16 @@ export class Spoke {
     return idx;
   }
 
-  checkBounds() {
+  checkBounds(who: Spoke | User = this) {
     const flag = [
-      this.baseDrawnShares,
-      this.ghostDrawnShares,
-      this.offset,
-      this.unrealisedPremium,
-      this.suppliedShares,
-    ].reduce((_, v) => v < 0 || v > MAX_UINT, false);
+      who.baseDrawnShares,
+      who.ghostDrawnShares,
+      who.offset,
+      who.unrealisedPremium,
+      who.suppliedShares,
+    ].reduce((_, v) => v < 0n || v > MAX_UINT, false);
     if (flag) {
-      this.log();
+      who.log();
       throw new Error('underflow/overflow');
     }
   }
