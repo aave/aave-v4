@@ -105,7 +105,6 @@ export class LiquidityHub {
   // @dev spoke data is *expected* to be updated on the `refresh` callback
   draw(amount: bigint, spoke: Spoke) {
     const drawnShares = this.toDebtShares(amount, Rounding.CEIL);
-    assertNonZero(drawnShares);
 
     this.availableLiquidity -= amount;
 
@@ -117,7 +116,7 @@ export class LiquidityHub {
 
   // @dev global premiumDebt (ghost, offset, unrealised) & spoke data is *expected* to be updated on the `refresh` callback
   restore(baseAmount: bigint, premiumAmount: bigint, spoke: Spoke) {
-    const baseDrawnSharesRestored = this.toDebtShares(baseAmount, Rounding.CEIL);
+    const baseDrawnSharesRestored = this.toDebtShares(baseAmount);
 
     this.availableLiquidity += baseAmount + premiumAmount;
 
