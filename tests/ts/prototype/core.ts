@@ -12,6 +12,7 @@ import {
   percentMul,
   Rounding,
   info,
+  formatRay
 } from './utils.ts';
 
 let spokeIdCounter = 0n;
@@ -36,6 +37,8 @@ export class LiquidityHub {
   public availableLiquidity = 0n;
 
   public totalSuppliedShares = 0n;
+
+  public lastIndex = 0n;
 
   // total drawn assets does not incl totalOutstandingPremium to accrue base rate separately
   toDebtAssets(shares: bigint, rounding = Rounding.FLOOR) {
@@ -76,7 +79,8 @@ export class LiquidityHub {
   accrue() {
     if (this.lastUpdateTimestamp === currentTime) return;
     this.lastUpdateTimestamp = currentTime;
-    this.totalDrawnAssets = (this.totalDrawnAssets * randomIndex()) / RAY;
+    this.lastIndex = randomIndex();
+    this.totalDrawnAssets = (this.totalDrawnAssets * this.lastIndex) / RAY;
   }
 
   supply(amount: bigint, spoke: Spoke) {
@@ -178,7 +182,7 @@ export class LiquidityHub {
     console.log('hub.getTotalDebt            ', f(this.getTotalDebt()));
     console.log('hub.getDebt: baseDebt       ', f(this.getDebt().baseDebt));
     console.log('hub.getDebt: premiumDebt    ', f(this.getDebt().premiumDebt));
-    console.log();
+    console.log('hub.lastIndex               ', formatRay(this.lastIndex));
 
     if (spokes) this.spokes.forEach((spoke) => spoke.log());
   }
@@ -295,7 +299,6 @@ export class Spoke {
 
   repay(amount: bigint, who: User) {
     const user = this.getUser(who);
-    const temp = this.hub.toDebtAssets(user.ghostDrawnShares, Rounding.CEIL) - user.offset;
 
     this.hub.accrue();
     const {baseDebtRestored, premiumDebtRestored} = this.deductFromPremium(amount, user);
@@ -311,7 +314,8 @@ export class Spoke {
 
     user.ghostDrawnShares = percentMul(user.baseDrawnShares, user.riskPremium);
     user.offset = this.hub.toDebtAssets(user.ghostDrawnShares);
-    user.unrealisedPremium = oldUserUnrealisedPremium + temp - premiumDebtRestored;
+    user.unrealisedPremium +=
+      this.hub.toDebtAssets(oldUserGhostDrawnShares, Rounding.CEIL) - oldUserOffset;
 
     this.refresh(
       user.baseDrawnShares - oldUserBaseDrawnShares,
@@ -561,6 +565,6 @@ export class User {
 }
 
 export function skip(ms = 1n) {
-  if (DEBUG) info('skipping');
+  if (DEBUG) info('\n >>>>>>>>>>>> skipping >>>>>>>>>>>>>> \n');
   currentTime += ms;
 }

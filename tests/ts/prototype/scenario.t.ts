@@ -79,20 +79,34 @@ assignSpokesToUsers();
 const amount1 = p('1000');
 alice.supply(amount1);
 alice.borrow(amount1);
-alice.repay(amount1);
 
 alice.log(true, true);
 
-const amount2 = p('1000');
-bob.borrow(amount2);
 skip();
 
-const amount3 = p('1000');
-bob.supply(amount3);
-bob.borrow(amount3);
-bob.repay(amount3);
+// alice.log(true, true);
 
-bob.log(true, true);
+alice.repay(amount1);
+alice.log(true, true);
+
+// const amount2 = p('1000');
+// bob.borrow(amount2);
+// skip();
+
+// const amount3 = p('1000');
+// bob.supply(amount3);
+// bob.borrow(amount3);
+// bob.repay(amount3);
+
+// bob.log(true, true);
+
+// skip();
+// const amount4 = p('700');
+// charlie.borrow(amount4);
+
+// charlie.log(true, true);
+// skip();
+// charlie.repay(amount4);
 
 runAmountInvariants();
 
@@ -102,6 +116,7 @@ function runAmountInvariants() {
   invariant_sumOfPremiumDebt();
   invariant_sumOfSuppliedShares();
   invariant_drawnGtSuppliedLiquidity();
+  invariant_positivePremiumDebt();
 }
 
 function assignSpokesToUsers() {
@@ -232,6 +247,25 @@ function invariant_sumOfSuppliedShares() {
   }
 
   handleInvariantFailure(fail, 'invariant_sumOfSuppliedShares');
+}
+
+function invariant_positivePremiumDebt() {
+  const hubPremiumDebt = hub.getDebt().premiumDebt;
+  const spokePremiumDebt = spokes.reduce((sum, spoke) => sum + spoke.getDebt().premiumDebt, 0n);
+  const userPremiumDebt = users.reduce((sum, user) => sum + user.getDebt().premiumDebt, 0n);
+  let fail = false;
+  if (hubPremiumDebt < 0n || spokePremiumDebt < 0n || userPremiumDebt < 0n) {
+    console.error(
+      'hubPremiumDebt || spokePremiumDebt || userPremiumDebt < 0',
+      f(hubPremiumDebt),
+      f(spokePremiumDebt),
+      f(userPremiumDebt)
+    );
+    fail = true;
+    throw new Error('invariant_positivePremiumDebt failed');
+  }
+
+  handleInvariantFailure(fail, 'invariant_positivePremiumDebt');
 }
 
 function invariant_drawnGtSuppliedLiquidity() {
