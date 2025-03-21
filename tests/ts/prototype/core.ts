@@ -53,13 +53,13 @@ export class LiquidityHub {
   }
 
   totalOutstandingPremium(rounding = Rounding.FLOOR) {
-    this.accrue();
     return (
       this.toDebtAssets(this.ghostDrawnShares, rounding) - this.offset + this.unrealisedPremium
     );
   }
 
   totalSupplyAssets(rounding = Rounding.FLOOR) {
+    this.accrue();
     return this.availableLiquidity + this.totalDrawnAssets + this.totalOutstandingPremium(rounding);
   }
 
