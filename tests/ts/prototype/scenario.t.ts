@@ -1,5 +1,5 @@
 import {LiquidityHub, Spoke, User, skip} from './core';
-import {absDiff, f, maxAbsDiff, p, PRECISION} from './utils';
+import {absDiff, f, maxAbsDiff, p, PRECISION, MAX_UINT} from './utils';
 
 const hub = new LiquidityHub();
 const spokes = [new Spoke(hub)];
@@ -76,6 +76,8 @@ assignSpokesToUsers();
 // action supply id 14n amount 8476748790.273548272476880897
 // action borrow id 14n amount 8476748790.273548272476880897
 // action repay id 14n amount 8476748790.273548272476880897
+
+
 const amount1 = p('1000');
 alice.supply(amount1);
 alice.borrow(amount1);
@@ -87,7 +89,7 @@ skip();
 // alice.log(true, true);
 
 alice.repay(amount1);
-alice.log(true, true);
+// alice.log(true, true);
 
 // const amount2 = p('1000');
 // bob.borrow(amount2);
@@ -107,6 +109,48 @@ alice.log(true, true);
 // charlie.log(true, true);
 // skip();
 // charlie.repay(amount4);
+
+
+
+// /// broken scenario
+// const amount1 = p('1000');
+// alice.supply(amount1);
+// alice.borrow(amount1);
+
+// alice.log(true, true);
+
+// skip();
+
+// alice.log(true, true);
+// alice.repay(MAX_UINT);
+// alice.log(true, true);
+
+// const amount2 = p('1000');
+// bob.borrow(amount2);
+// skip();
+
+// bob.log(true, true);
+// // const amount3 = p('1000');
+// // bob.supply(amount3);
+// // bob.borrow(amount3);
+// bob.repay(MAX_UINT);
+
+// // bob.log(true, true);
+
+// skip();
+// const amount4 = p('700');
+// charlie.borrow(amount4);
+
+
+// skip();
+// // charlie.log(true, true);
+// charlie.repay(amount4);
+// charlie.log(true, true);
+
+// skip();
+// // charlie.log(true, true);
+// charlie.repay(MAX_UINT);
+// charlie.log(true, true);
 
 runAmountInvariants();
 

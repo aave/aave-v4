@@ -317,6 +317,8 @@ export class Spoke {
     user.unrealisedPremium +=
       this.hub.toDebtAssets(oldUserGhostDrawnShares, Rounding.CEIL) - oldUserOffset - premiumDebtRestored;
 
+      console.log('premiumDebtRestored', premiumDebtRestored);
+
     this.refresh(
       user.baseDrawnShares - oldUserBaseDrawnShares,
       user.ghostDrawnShares - oldUserGhostDrawnShares,
