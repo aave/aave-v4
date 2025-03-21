@@ -119,7 +119,7 @@ contract LiquidityHub is ILiquidityHub {
     DataTypes.Asset storage asset = _assets[assetId];
     DataTypes.SpokeData storage spoke = _spokes[assetId][msg.sender];
 
-    _accrueInterest(asset, spoke);
+    asset.accrueInterest();
     _validateSupply(asset, spoke, amount);
 
     asset.updateBorrowRate({liquidityAdded: amount, liquidityTaken: 0});
@@ -146,7 +146,7 @@ contract LiquidityHub is ILiquidityHub {
     DataTypes.Asset storage asset = _assets[assetId];
     DataTypes.SpokeData storage spoke = _spokes[assetId][msg.sender];
 
-    _accrueInterest(asset, spoke); // accrue interest before validating action
+    asset.accrueInterest();
     _validateWithdraw(asset, spoke, amount);
 
     asset.updateBorrowRate({liquidityAdded: 0, liquidityTaken: amount});
@@ -171,7 +171,7 @@ contract LiquidityHub is ILiquidityHub {
     DataTypes.Asset storage asset = _assets[assetId];
     DataTypes.SpokeData storage spoke = _spokes[assetId][msg.sender];
 
-    _accrueInterest(asset, spoke); // accrue interest before validating action
+    asset.accrueInterest();
     _validateDraw(asset, amount, spoke.config.drawCap);
 
     asset.updateBorrowRate({liquidityAdded: 0, liquidityTaken: amount});
@@ -203,7 +203,7 @@ contract LiquidityHub is ILiquidityHub {
     DataTypes.Asset storage asset = _assets[assetId];
     DataTypes.SpokeData storage spoke = _spokes[assetId][msg.sender];
 
-    _accrueInterest(asset, spoke); // accrue interest before validating action
+    asset.accrueInterest();
     _validateRestore(asset, spoke, amount, premiumAmount);
 
     asset.updateBorrowRate({liquidityAdded: amount, liquidityTaken: 0});
@@ -227,11 +227,7 @@ contract LiquidityHub is ILiquidityHub {
   /// @inheritdoc ILiquidityHub
   function accrueInterest(uint256 assetId) external {
     // TODO: authorization - only spokes
-
-    DataTypes.Asset storage asset = _assets[assetId];
-    DataTypes.SpokeData storage spoke = _spokes[assetId][msg.sender];
-
-    _accrueInterest(asset, spoke);
+    _assets[assetId].accrueInterest();
   }
 
   /// @inheritdoc ILiquidityHub
