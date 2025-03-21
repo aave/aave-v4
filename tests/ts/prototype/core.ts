@@ -2,6 +2,7 @@ import {
   DEBUG,
   MAX_UINT,
   RAY,
+  Rounding,
   assertNonZero,
   absDiff,
   randomRiskPremium,
@@ -10,7 +11,6 @@ import {
   formatBps,
   mulDiv,
   percentMul,
-  Rounding,
   info,
 } from './utils.ts';
 
@@ -53,13 +53,13 @@ export class LiquidityHub {
   }
 
   totalOutstandingPremium(rounding = Rounding.FLOOR) {
+    this.accrue();
     return (
       this.toDebtAssets(this.ghostDrawnShares, rounding) - this.offset + this.unrealisedPremium
     );
   }
 
   totalSupplyAssets(rounding = Rounding.FLOOR) {
-    this.accrue();
     return this.availableLiquidity + this.totalDrawnAssets + this.totalOutstandingPremium(rounding);
   }
 
@@ -300,9 +300,9 @@ export class Spoke {
 
   repay(amount: bigint, who: User) {
     const user = this.getUser(who);
-    const {baseDebt, premiumDebt} = this.getUserDebt(who);
 
     this.hub.accrue();
+    const {baseDebt, premiumDebt} = this.getUserDebt(who);
     const {baseDebtRestored, premiumDebtRestored} = this.deductFromPremium(
       baseDebt,
       premiumDebt,
