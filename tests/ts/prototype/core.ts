@@ -25,13 +25,12 @@ export class LiquidityHub {
   public spokes: Spoke[] = [];
   public lastUpdateTimestamp = 0n;
 
-  public baseDrawnShares = 0n;
+  public baseDrawnShares = 0n; // aka totalDrawnShares
   public ghostDrawnShares = 0n;
   public offset = 0n;
   public unrealisedPremium = 0n;
 
   public totalDrawnAssets = 0n;
-  public totalDrawnShares = 0n;
 
   public availableLiquidity = 0n;
 
@@ -40,15 +39,15 @@ export class LiquidityHub {
   // total drawn assets does not incl totalOutstandingPremium to accrue base rate separately
   toDebtAssets(shares: bigint, rounding = Rounding.FLOOR) {
     this.accrue();
-    return this.totalDrawnShares
-      ? mulDiv(shares, this.totalDrawnAssets, this.totalDrawnShares, rounding)
+    return this.baseDrawnShares
+      ? mulDiv(shares, this.totalDrawnAssets, this.baseDrawnShares, rounding)
       : shares;
   }
 
   toDebtShares(assets: bigint, rounding = Rounding.FLOOR) {
     this.accrue();
     return this.totalDrawnAssets
-      ? mulDiv(assets, this.totalDrawnShares, this.totalDrawnAssets, rounding)
+      ? mulDiv(assets, this.baseDrawnShares, this.totalDrawnAssets, rounding)
       : assets;
   }
 
@@ -111,8 +110,10 @@ export class LiquidityHub {
 
     this.availableLiquidity -= amount;
 
-    this.totalDrawnShares += drawnShares;
+    this.baseDrawnShares += drawnShares;
     this.totalDrawnAssets += amount;
+
+    this.getSpoke(spoke).baseDrawnShares += drawnShares;
 
     return drawnShares;
   }
@@ -124,26 +125,29 @@ export class LiquidityHub {
     this.availableLiquidity += baseAmount + premiumAmount;
 
     this.totalDrawnAssets -= baseAmount;
-    this.totalDrawnShares -= baseDrawnSharesRestored;
+    this.baseDrawnShares -= baseDrawnSharesRestored;
+
+    this.getSpoke(spoke).baseDrawnShares -= baseDrawnSharesRestored;
 
     return baseDrawnSharesRestored;
   }
 
   refresh(
-    userBaseDrawnSharesDelta: bigint,
     userGhostDrawnSharesDelta: bigint,
     userOffsetDelta: bigint,
     userUnrealisedPremiumDelta: bigint,
     who: Spoke
   ) {
-    this.baseDrawnShares += userBaseDrawnSharesDelta;
+    // consider enforcing rp limit (per spoke) here using ghost/base (min and max cap)
+    // check: offset <= premiumDebt
+    // check that total debt is unchanged during this func context -> game-able only for premium stuff
+    // when we agree for -ve offset, then consider another configurable check for min limit offset
     this.ghostDrawnShares += userGhostDrawnSharesDelta;
     this.offset += userOffsetDelta;
     this.unrealisedPremium += userUnrealisedPremiumDelta;
     this.checkBounds(this);
 
     const spoke = this.getSpoke(who);
-    spoke.baseDrawnShares += userBaseDrawnSharesDelta;
     spoke.ghostDrawnShares += userGhostDrawnSharesDelta;
     spoke.offset += userOffsetDelta;
     spoke.unrealisedPremium += userUnrealisedPremiumDelta;
@@ -166,7 +170,6 @@ export class LiquidityHub {
   log(spokes = false) {
     const ghostDebt = this.toDebtAssets(this.ghostDrawnShares) - this.offset;
     console.log('--- Hub ---');
-    console.log('hub.totalDrawnShares        ', f(this.totalDrawnShares));
     console.log('hub.totalDrawnAssets        ', f(this.totalDrawnAssets));
     console.log('hub.baseDrawnShares         ', f(this.baseDrawnShares));
     console.log('hub.ghostDrawnShares        ', f(this.ghostDrawnShares));
@@ -217,7 +220,6 @@ export class LiquidityHub {
             who.totalOutstandingPremium(),
             who.availableLiquidity,
             who.totalDrawnAssets,
-            who.totalDrawnShares,
           ]
         : []),
     ].reduce((flag, v) => flag || v < 0n || v > MAX_UINT, false);
@@ -274,7 +276,7 @@ export class Spoke {
     this.hub.accrue();
     const drawnShares = this.hub.draw(amount, this);
 
-    const oldUserBaseDrawnShares = user.baseDrawnShares;
+    this.baseDrawnShares += drawnShares;
     user.baseDrawnShares += drawnShares;
     user.riskPremium = randomRiskPremium();
 
@@ -288,7 +290,6 @@ export class Spoke {
       this.hub.toDebtAssets(oldUserGhostDrawnShares, Rounding.CEIL) - oldUserOffset;
 
     this.refresh(
-      user.baseDrawnShares - oldUserBaseDrawnShares,
       user.ghostDrawnShares - oldUserGhostDrawnShares,
       user.offset - oldUserOffset,
       user.unrealisedPremium - oldUserUnrealisedPremium,
@@ -311,7 +312,7 @@ export class Spoke {
     );
     const drawnShares = this.hub.restore(baseDebtRestored, premiumDebtRestored, this);
 
-    const oldUserBaseDrawnShares = user.baseDrawnShares;
+    this.baseDrawnShares -= drawnShares;
     user.baseDrawnShares -= drawnShares;
     user.riskPremium = randomRiskPremium();
 
@@ -324,7 +325,6 @@ export class Spoke {
     user.unrealisedPremium = premiumDebt - premiumDebtRestored;
 
     this.refresh(
-      user.baseDrawnShares - oldUserBaseDrawnShares,
       user.ghostDrawnShares - oldUserGhostDrawnShares,
       user.offset - oldUserOffset,
       user.unrealisedPremium - oldUserUnrealisedPremium,
@@ -391,7 +391,6 @@ export class Spoke {
     user.unrealisedPremium += newUnrealisedPremium;
 
     this.refresh(
-      0n, // no change in base debt
       user.ghostDrawnShares - oldUserGhostDrawnShares,
       user.offset - oldUserOffset,
       newUnrealisedPremium,
@@ -400,7 +399,6 @@ export class Spoke {
   }
 
   refresh(
-    userBaseDrawnSharesDelta: bigint,
     userGhostDrawnSharesDelta: bigint,
     userOffsetDelta: bigint,
     userUnrealisedPremiumDelta: bigint,
@@ -408,19 +406,12 @@ export class Spoke {
   ) {
     this.checkBounds(user);
 
-    this.baseDrawnShares += userBaseDrawnSharesDelta;
     this.ghostDrawnShares += userGhostDrawnSharesDelta;
     this.offset += userOffsetDelta;
     this.unrealisedPremium += userUnrealisedPremiumDelta;
     this.checkBounds();
 
-    this.hub.refresh(
-      userBaseDrawnSharesDelta,
-      userGhostDrawnSharesDelta,
-      userOffsetDelta,
-      userUnrealisedPremiumDelta,
-      this
-    );
+    this.hub.refresh(userGhostDrawnSharesDelta, userOffsetDelta, userUnrealisedPremiumDelta, this);
   }
 
   getTotalDebt() {
@@ -524,22 +515,22 @@ export class User {
 
   supply(amount: bigint) {
     info('action supply', 'id', this.id, 'amount', f(amount));
-    this.spoke.supply(amount, this);
+    return this.spoke.supply(amount, this);
   }
 
   withdraw(amount: bigint) {
     info('action withdraw', 'id', this.id, 'amount', f(amount));
-    this.spoke.withdraw(amount, this);
+    return this.spoke.withdraw(amount, this);
   }
 
   borrow(amount: bigint) {
     info('action borrow', 'id', this.id, 'amount', f(amount));
-    this.spoke.borrow(amount, this);
+    return this.spoke.borrow(amount, this);
   }
 
   repay(amount: bigint) {
     info('action repay', 'id', this.id, 'amount', f(amount));
-    this.spoke.repay(amount, this);
+    return this.spoke.repay(amount, this);
   }
 
   updateRiskPremium() {
