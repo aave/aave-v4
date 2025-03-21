@@ -138,20 +138,25 @@ export class LiquidityHub {
     userUnrealisedPremiumDelta: bigint,
     who: Spoke
   ) {
-    // consider enforcing rp limit (per spoke) here using ghost/base (min and max cap)
     // check: offset <= premiumDebt
-    // check that total debt is unchanged during this func context -> game-able only for premium stuff
+    // consider enforcing rp limit (per spoke) here using ghost/base (min and max cap)
     // when we agree for -ve offset, then consider another configurable check for min limit offset
+
+    // check that total debt is unchanged during this func context -> game-able only for premium stuff
+    let totalDebtBefore = this.getTotalDebt();
     this.ghostDrawnShares += userGhostDrawnSharesDelta;
     this.offset += userOffsetDelta;
     this.unrealisedPremium += userUnrealisedPremiumDelta;
-    this.checkBounds(this);
+    this.checkBounds();
+    this.checkTotalDebt(totalDebtBefore);
 
     const spoke = this.getSpoke(who);
+    totalDebtBefore = spoke.getTotalDebt();
     spoke.ghostDrawnShares += userGhostDrawnSharesDelta;
     spoke.offset += userOffsetDelta;
     spoke.unrealisedPremium += userUnrealisedPremiumDelta;
     this.checkBounds(spoke);
+    this.checkTotalDebt(totalDebtBefore, spoke);
   }
 
   getSpoke(spoke: Spoke) {
@@ -226,6 +231,20 @@ export class LiquidityHub {
     if (fail) {
       who.log(true);
       throw new Error('underflow/overflow');
+    }
+  }
+
+  checkTotalDebt(totalDebtBefore: bigint, who: Spoke | LiquidityHub = this) {
+    const totalDebtAfter = who.getTotalDebt();
+    if (totalDebtBefore < totalDebtAfter) {
+      who.log(true);
+      console.error(
+        'totalDebtBefore < totalDebtAfter, diff',
+        f(totalDebtBefore),
+        f(totalDebtAfter),
+        totalDebtAfter - totalDebtBefore
+      );
+      throw new Error('totalDebt increased');
     }
   }
 }
@@ -406,10 +425,12 @@ export class Spoke {
   ) {
     this.checkBounds(user);
 
+    const totalDebtBefore = this.getTotalDebt();
     this.ghostDrawnShares += userGhostDrawnSharesDelta;
     this.offset += userOffsetDelta;
     this.unrealisedPremium += userUnrealisedPremiumDelta;
     this.checkBounds();
+    this.checkTotalDebt(totalDebtBefore);
 
     this.hub.refresh(userGhostDrawnSharesDelta, userOffsetDelta, userUnrealisedPremiumDelta, this);
   }
@@ -473,6 +494,20 @@ export class Spoke {
     if (fail) {
       who.log(true);
       throw new Error('underflow/overflow');
+    }
+  }
+
+  checkTotalDebt(totalDebtBefore: bigint, who = this) {
+    const totalDebtAfter = who.getTotalDebt();
+    if (totalDebtBefore < totalDebtAfter) {
+      who.log(true);
+      console.error(
+        'totalDebtBefore < totalDebtAfter, diff',
+        f(totalDebtBefore),
+        f(totalDebtAfter),
+        totalDebtAfter - totalDebtBefore
+      );
+      throw new Error('totalDebt increased');
     }
   }
 
