@@ -202,8 +202,8 @@ export class LiquidityHub {
   getDebt() {
     this.accrue();
     return {
-      baseDebt: this.toDebtAssets(this.baseDrawnShares, Rounding.CEIL),
-      premiumDebt: this.toDebtAssets(this.ghostDrawnShares, Rounding.CEIL) - this.offset + this.unrealisedPremium,
+      baseDebt: this.toDebtAssets(this.baseDrawnShares),
+      premiumDebt: this.toDebtAssets(this.ghostDrawnShares) - this.offset + this.unrealisedPremium,
     };
   }
 
