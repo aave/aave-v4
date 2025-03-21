@@ -71,7 +71,7 @@ export class LiquidityHub {
       : shares;
   }
 
-  toSupplyShares(assets: bigint, rounding = Rounding.FLOOR) {
+  toSupplyShares(assets: bigint, rounding = Rounding.CEIL) {
     const totalSupplyAssets = this.totalSupplyAssets(rounding);
     return totalSupplyAssets
       ? mulDiv(assets, this.totalSuppliedShares, totalSupplyAssets, rounding)
