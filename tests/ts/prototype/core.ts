@@ -302,7 +302,7 @@ export class Spoke {
     const user = this.getUser(who);
 
     this.hub.accrue();
-    const {baseDebt, premiumDebt} = this.getUserDebt(who);
+    const {baseDebt, premiumDebt} = this.getUserDebt(user);
     const {baseDebtRestored, premiumDebtRestored} = this.deductFromPremium(
       baseDebt,
       premiumDebt,
@@ -336,7 +336,7 @@ export class Spoke {
 
   deductFromPremium(baseDebt: bigint, premiumDebt: bigint, amount: bigint, user: User) {
     if (amount === MAX_UINT) {
-      amount = baseDebt + premiumDebt;
+      return {baseDebtRestored: baseDebt, premiumDebtRestored: premiumDebt};
     }
 
     let baseDebtRestored = 0n,
@@ -350,6 +350,7 @@ export class Spoke {
       premiumDebtRestored = premiumDebt;
     }
 
+    // sanity
     if (baseDebtRestored > baseDebt) {
       user.log(true, true);
       info(
@@ -383,9 +384,10 @@ export class Spoke {
     const oldUserOffset = user.offset;
 
     user.ghostDrawnShares = percentMul(user.baseDrawnShares, user.riskPremium);
-    user.offset = this.hub.toDebtAssets(user.ghostDrawnShares);
+    user.offset = this.hub.toDebtAssets(user.ghostDrawnShares, Rounding.CEIL);
 
-    const newUnrealisedPremium = this.hub.toDebtAssets(oldUserGhostDrawnShares) - oldUserOffset;
+    const newUnrealisedPremium =
+      this.hub.toDebtAssets(oldUserGhostDrawnShares, Rounding.CEIL) - oldUserOffset;
     user.unrealisedPremium += newUnrealisedPremium;
 
     this.refresh(
@@ -451,6 +453,7 @@ export class Spoke {
   addUser(user: User) {
     // store user reference since we don't back update since it's an eoa
     this.users.push(user);
+    user.assignSpoke(this);
   }
 
   getUser(user: User | number) {
