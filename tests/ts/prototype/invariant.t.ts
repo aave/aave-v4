@@ -65,7 +65,7 @@ function run() {
           user.supply(amount);
           user.borrow(amount);
           drawn += amount;
-          amount = MAX_UINT;
+          amount = random(1n, user.getTotalDebt());
           if (randomChance(0.5)) skip();
         }
         user.repay(amount);
