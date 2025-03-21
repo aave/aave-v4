@@ -20,12 +20,13 @@ function run() {
   for (let j = 0; j < DEPTH; j++) {
     if (randomChance(0.8)) skip();
     if (randomChance(0.25)) {
-      users.forEach((user) => user.repay(MAX_UINT));
+      users.forEach((user) => user.getTotalDebt() ?? user.repay(MAX_UINT));
       userDebt.clear();
+      runAmountInvariants();
     }
 
-    const action = actions[Math.floor(Math.random() * (actions.length - 1))];
-    const user = users[Math.floor(Math.random() * (users.length - 1))];
+    const action = actions[Math.floor(Math.random() * actions.length)];
+    const user = users[Math.floor(Math.random() * users.length)];
     let amount = random(1n, 10n ** 28n);
 
     switch (action) {
@@ -64,6 +65,8 @@ function run() {
           user.supply(amount);
           user.borrow(amount);
           drawn += amount;
+          amount = MAX_UINT;
+          if (randomChance(0.5)) skip();
         }
         user.repay(amount);
         userDebt.set(user, drawn - amount);
@@ -92,6 +95,7 @@ function run() {
 run();
 
 export function runAmountInvariants() {
+  invariant_valuesWithinBounds();
   invariant_hubSpokeAccounting();
   invariant_sumOfBaseDebt();
   invariant_sumOfPremiumDebt();
@@ -105,6 +109,22 @@ export function assignSpokesToUsers() {
     user.assignSpoke(spoke);
     spoke.addUser(user);
   });
+}
+
+export function invariant_valuesWithinBounds() {
+  let fail = false;
+  ['baseDrawnShares', 'ghostDrawnShares', 'offset', 'unrealisedPremium', 'suppliedShares'].forEach(
+    (key) => {
+      [hub, ...spokes, ...users].forEach((who) => {
+        if (who[key] < 0n || who[key] > MAX_UINT) {
+          who.log();
+          console.error(`${who}.${key} < 0 || > MAX_UINT`, f(who[key]));
+          fail = true;
+        }
+      });
+    }
+  );
+  handleInvariantFailure(fail, 'invariant_valuesWithinBounds');
 }
 
 export function invariant_sumOfBaseDebt() {
