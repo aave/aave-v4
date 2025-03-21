@@ -7,75 +7,111 @@ let hub;
 let spokes;
 let users;
 
-testScenario1();
-testScenario2();
-
+// Test Scenario 1
 // t0: supply/borrow
 // t1: repay principal
-function testScenario1() {
-  const [alice, , ,] = setUp("testScenario1");
+// addTest('Scenario1', () => {
+//   const [alice, , ,] = setUp();
+//   const amount = p('1000');
 
-  /// base scenario1
-  const amount1 = p('1000');
-  alice.supply(amount1);
-  alice.borrow(amount1);
+//   alice.supply(amount);
+//   alice.borrow(amount);
 
-  alice.log(true, true);
-  skip();
+//   alice.log(true, true);
 
-  alice.repay(amount1);
-  alice.log(true, true);
+//   alice.repay(amount);
+//   alice.log(true, true);
 
-  runAmountInvariants();
-}
+//   runAmountInvariants();
+// });
 
+// Test Scenario 2
 // t0: alice supply/borrow
 // t1: alice repay full; bob borrow
 // t2: bob repay full
 // t3: charlie borrow
 // t4: charlie repay full
-function testScenario2() {
-  const [alice, bob, charlie] = setUp("testScenario2");
+// addTest('Scenario2', () => {
+//   const [alice, bob, charlie] = setUp();
 
-  const amount1 = p('1000');
+//   const amount1 = p('1000');
+//   alice.supply(amount1);
+//   alice.borrow(amount1);
+
+//   alice.log(true, true);
+
+//   skip();
+
+//   alice.log(true, true);
+//   alice.repay(MAX_UINT);
+//   alice.log(true, true);
+
+//   const amount2 = p('1000');
+//   bob.borrow(amount2);
+//   skip();
+
+//   // bob.log(true, true);
+//   bob.repay(MAX_UINT);
+
+//   skip();
+//   const amount4 = p('700');
+//   charlie.borrow(amount4);
+
+//   skip();
+//   // charlie.log(true, true);
+//   charlie.repay(amount4);
+//   charlie.log(true, true);
+
+//   skip();
+//   // charlie.log(true, true);
+//   charlie.repay(MAX_UINT);
+//   // charlie.log(true, true);
+
+//   runAmountInvariants();
+// });
+
+addTest('Scenario3 - rounding issues', () => {
+  const [alice, bob, charlie] = setUp();
+
+  const amount1 = p('10000');
+  const amount2 = p('200');
+  const amount3 = p('700');
+
   alice.supply(amount1);
   alice.borrow(amount1);
 
-  alice.log(true, true);
-
   skip();
-
+  alice.repay(amount2);
   alice.log(true, true);
-  alice.repay(MAX_UINT);
-  alice.log(true, true);
-
-  const amount2 = p('1000');
   bob.borrow(amount2);
-  skip();
+  // alice.repay(MAX_UINT);
 
-  // bob.log(true, true);
-  bob.repay(MAX_UINT);
+  // skip();
 
-  skip();
-  const amount4 = p('700');
-  charlie.borrow(amount4);
+  // // bob.log(true, true);
+  // bob.repay(MAX_UINT);
 
-  skip();
-  // charlie.log(true, true);
-  charlie.repay(amount4);
-  charlie.log(true, true);
+  // skip();
 
-  skip();
-  // charlie.log(true, true);
-  charlie.repay(MAX_UINT);
-  // charlie.log(true, true);
+  // charlie.borrow(amount3);
+
+  // skip();
+  // // charlie.log(true, true);
+  // charlie.repay(amount3);
+  // // charlie.log(true, true);
+
+  // skip();
+  // // charlie.log(true, true);
+  // charlie.repay(MAX_UINT);
+  // // charlie.log(true, true);
 
   runAmountInvariants();
-}
+});
 
-function setUp(description) {
-  console.log("----- starting %s... ------ \n", description)
+// run all tests
+runAllTests();
 
+function setUp() {
   hub = new LiquidityHub();
   spokes = [new Spoke(hub)];
   users = [new User(), new User(), new User()];
@@ -83,6 +119,17 @@ function setUp(description) {
   assignSpokesToUsers();
 
   return users;
+}
+
+function addTest(name: string, test: () => void) {
+  tests.push({name, test});
+}
+
+function runAllTests() {
+  tests.forEach(({name, test}) => {
+    console.log(`\n--- Running Test: ${name} ---`);
+    test();
+  });
 }
 
 function assignSpokesToUsers() {
@@ -94,7 +141,7 @@ function assignSpokesToUsers() {
 }
 
 function runAmountInvariants() {
-  console.log('running invariants...');
+  console.log('...running invariants...');
   invariant_hubSpokeAccounting();
   invariant_sumOfBaseDebt();
   invariant_sumOfPremiumDebt();

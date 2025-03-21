@@ -12,7 +12,7 @@ import {
   mulDiv,
   percentMul,
   info,
-  formatRay
+  formatRay,
 } from './utils.ts';
 
 let spokeIdCounter = 0n;
@@ -518,27 +518,27 @@ export class User {
   }
 
   supply(amount: bigint) {
-    info('action supply', 'id', this.id, 'amount', f(amount));
+    info('> action supply', 'id', this.id, 'amount', f(amount));
     return this.spoke.supply(amount, this);
   }
 
   withdraw(amount: bigint) {
-    info('action withdraw', 'id', this.id, 'amount', f(amount));
+    info('> action withdraw', 'id', this.id, 'amount', f(amount));
     return this.spoke.withdraw(amount, this);
   }
 
   borrow(amount: bigint) {
-    info('action borrow', 'id', this.id, 'amount', f(amount));
+    info('> action borrow', 'id', this.id, 'amount', f(amount));
     return this.spoke.borrow(amount, this);
   }
 
   repay(amount: bigint) {
-    info('action repay', 'id', this.id, 'amount', f(amount));
+    info('> action repay', 'id', this.id, 'amount', f(amount));
     return this.spoke.repay(amount, this);
   }
 
   updateRiskPremium() {
-    info('action updateRiskPremium', 'id', this.id);
+    info('> action updateRiskPremium', 'id', this.id);
     this.spoke.updateUserRiskPremium(this);
   }
 
