@@ -42,13 +42,11 @@ export function random(min: bigint, max: bigint) {
 }
 
 export function randomRiskPremium() {
-  return 20_00n;
-  // return random(MIN_RP, MAX_RP);
+  return random(MIN_RP, MAX_RP);
 }
 
 export function randomIndex() {
-  return parseRay(1.1);
-  // return random(MIN_INDEX, MAX_INDEX);
+  return random(MIN_INDEX, MAX_INDEX);
 }
 
 export function randomChance(chance: number) {

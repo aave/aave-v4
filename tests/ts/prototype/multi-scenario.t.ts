@@ -10,20 +10,20 @@ let users;
 // Test Scenario 1
 // t0: supply/borrow
 // t1: repay principal
-// addTest('Scenario1', () => {
-//   const [alice, , ,] = setUp();
-//   const amount = p('1000');
+addTest('Scenario1', () => {
+  const [alice, , ,] = setUp();
+  const amount = p('1000');
 
-//   alice.supply(amount);
-//   alice.borrow(amount);
+  alice.supply(amount);
+  alice.borrow(amount);
 
-//   alice.log(true, true);
+  alice.log(true, true);
 
-//   alice.repay(amount);
-//   alice.log(true, true);
+  alice.repay(amount);
+  alice.log(true, true);
 
-//   runAmountInvariants();
-// });
+  runAmountInvariants();
+});
 
 // Test Scenario 2
 // t0: alice supply/borrow
@@ -31,44 +31,44 @@ let users;
 // t2: bob repay full
 // t3: charlie borrow
 // t4: charlie repay full
-// addTest('Scenario2', () => {
-//   const [alice, bob, charlie] = setUp();
+addTest('Scenario2', () => {
+  const [alice, bob, charlie] = setUp();
 
-//   const amount1 = p('1000');
-//   alice.supply(amount1);
-//   alice.borrow(amount1);
+  const amount1 = p('1000');
+  alice.supply(amount1);
+  alice.borrow(amount1);
 
-//   alice.log(true, true);
+  alice.log(true, true);
 
-//   skip();
+  skip();
 
-//   alice.log(true, true);
-//   alice.repay(MAX_UINT);
-//   alice.log(true, true);
+  alice.log(true, true);
+  alice.repay(MAX_UINT);
+  alice.log(true, true);
 
-//   const amount2 = p('1000');
-//   bob.borrow(amount2);
-//   skip();
+  const amount2 = p('1000');
+  bob.borrow(amount2);
+  skip();
 
-//   // bob.log(true, true);
-//   bob.repay(MAX_UINT);
+  // bob.log(true, true);
+  bob.repay(MAX_UINT);
 
-//   skip();
-//   const amount4 = p('700');
-//   charlie.borrow(amount4);
+  skip();
+  const amount4 = p('700');
+  charlie.borrow(amount4);
 
-//   skip();
-//   // charlie.log(true, true);
-//   charlie.repay(amount4);
-//   charlie.log(true, true);
+  skip();
+  // charlie.log(true, true);
+  charlie.repay(amount4);
+  charlie.log(true, true);
 
-//   skip();
-//   // charlie.log(true, true);
-//   charlie.repay(MAX_UINT);
-//   // charlie.log(true, true);
+  skip();
+  // charlie.log(true, true);
+  charlie.repay(MAX_UINT);
+  // charlie.log(true, true);
 
-//   runAmountInvariants();
-// });
+  runAmountInvariants();
+});
 
 addTest('Scenario3 - rounding issues', () => {
   const [alice, bob, charlie] = setUp();
