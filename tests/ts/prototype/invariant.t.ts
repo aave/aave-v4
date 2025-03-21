@@ -1,10 +1,10 @@
 import {LiquidityHub, Spoke, User, skip} from './core';
-import {random, randomChance, absDiff, maxAbsDiff, f, PRECISION, MAX_UINT} from './utils';
+import {random, randomChance, absDiff, maxAbsDiff, f, PRECISION, MAX_UINT, Rounding} from './utils';
 
 // todo make random deterministic, cache seed, actions list for failed runs for debugging
-const NUM_SPOKES = 3;
-const NUM_USERS = 300;
-const DEPTH = 1000;
+const NUM_SPOKES = 10;
+const NUM_USERS = 3000;
+const DEPTH = 100;
 const hub = new LiquidityHub();
 const spokes = new Array(NUM_SPOKES).fill(0).map(() => new Spoke(hub));
 const users = new Array(NUM_USERS).fill(0).map(() => new User());
@@ -23,6 +23,14 @@ function run() {
       users.forEach((user) => user.getTotalDebt() ?? user.repay(MAX_UINT));
       userDebt.clear();
       runAmountInvariants();
+    }
+    if (randomChance(0.25)) {
+      users.forEach(
+        (user) =>
+          user.suppliedShares ??
+          user.withdraw(user.hub.toSupplyAssets(user.suppliedShares, Rounding.CEIL))
+      );
+      userCollateral.clear();
     }
 
     const action = actions[Math.floor(Math.random() * actions.length)];
