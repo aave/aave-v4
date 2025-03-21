@@ -39,12 +39,14 @@ export class LiquidityHub {
 
   // total drawn assets does not incl totalOutstandingPremium to accrue base rate separately
   toDebtAssets(shares: bigint, rounding = Rounding.FLOOR) {
+    this.accrue();
     return this.totalDrawnShares
       ? mulDiv(shares, this.totalDrawnAssets, this.totalDrawnShares, rounding)
       : shares;
   }
 
   toDebtShares(assets: bigint, rounding = Rounding.FLOOR) {
+    this.accrue();
     return this.totalDrawnAssets
       ? mulDiv(assets, this.totalDrawnShares, this.totalDrawnAssets, rounding)
       : assets;
@@ -57,6 +59,7 @@ export class LiquidityHub {
   }
 
   totalSupplyAssets(rounding = Rounding.FLOOR) {
+    this.accrue();
     return this.availableLiquidity + this.totalDrawnAssets + this.totalOutstandingPremium(rounding);
   }
 
@@ -202,7 +205,7 @@ export class LiquidityHub {
   }
 
   checkBounds(who: Spoke | LiquidityHub = this) {
-    const flag = [
+    const fail = [
       who.baseDrawnShares,
       who.ghostDrawnShares,
       who.offset,
@@ -218,8 +221,8 @@ export class LiquidityHub {
           ]
         : []),
     ].reduce((flag, v) => flag || v < 0n || v > MAX_UINT, false);
-    if (flag) {
-      who.log();
+    if (fail) {
+      who.log(true);
       throw new Error('underflow/overflow');
     }
   }
@@ -280,8 +283,9 @@ export class Spoke {
     const oldUserUnrealisedPremium = user.unrealisedPremium;
 
     user.ghostDrawnShares = percentMul(user.baseDrawnShares, user.riskPremium);
-    user.offset = this.hub.toDebtAssets(user.ghostDrawnShares);
-    user.unrealisedPremium += this.hub.toDebtAssets(oldUserGhostDrawnShares) - oldUserOffset;
+    user.offset = this.hub.toDebtAssets(user.ghostDrawnShares, Rounding.CEIL);
+    user.unrealisedPremium +=
+      this.hub.toDebtAssets(oldUserGhostDrawnShares, Rounding.CEIL) - oldUserOffset;
 
     this.refresh(
       user.baseDrawnShares - oldUserBaseDrawnShares,
@@ -296,10 +300,15 @@ export class Spoke {
 
   repay(amount: bigint, who: User) {
     const user = this.getUser(who);
-    const temp = this.hub.toDebtAssets(user.ghostDrawnShares) - user.offset;
+    const {baseDebt, premiumDebt} = this.getUserDebt(who);
 
     this.hub.accrue();
-    const {baseDebtRestored, premiumDebtRestored} = this.deductFromPremium(amount, user);
+    const {baseDebtRestored, premiumDebtRestored} = this.deductFromPremium(
+      baseDebt,
+      premiumDebt,
+      amount,
+      user
+    );
     const drawnShares = this.hub.restore(baseDebtRestored, premiumDebtRestored, this);
 
     const oldUserBaseDrawnShares = user.baseDrawnShares;
@@ -312,7 +321,7 @@ export class Spoke {
 
     user.ghostDrawnShares = percentMul(user.baseDrawnShares, user.riskPremium);
     user.offset = this.hub.toDebtAssets(user.ghostDrawnShares);
-    user.unrealisedPremium = oldUserUnrealisedPremium + temp - premiumDebtRestored;
+    user.unrealisedPremium = premiumDebt - premiumDebtRestored;
 
     this.refresh(
       user.baseDrawnShares - oldUserBaseDrawnShares,
@@ -325,9 +334,7 @@ export class Spoke {
     return drawnShares;
   }
 
-  deductFromPremium(amount: bigint, who: User) {
-    const user = this.getUser(who);
-    const {baseDebt, premiumDebt} = this.getUserDebt(who);
+  deductFromPremium(baseDebt: bigint, premiumDebt: bigint, amount: bigint, user: User) {
     if (amount === MAX_UINT) {
       amount = baseDebt + premiumDebt;
     }
@@ -347,11 +354,22 @@ export class Spoke {
       user.log(true, true);
       info(
         'baseDebtRestored, baseDebt, diff',
-        baseDebtRestored,
-        baseDebt,
+        f(baseDebtRestored),
+        f(baseDebt),
         absDiff(baseDebtRestored, baseDebt)
       );
       throw new Error('baseDebtRestored exceeds baseDebt');
+    }
+
+    if (premiumDebtRestored > premiumDebt) {
+      user.log(true, true);
+      info(
+        'premiumDebtRestored, premiumDebt, diff',
+        f(premiumDebtRestored),
+        f(premiumDebt),
+        absDiff(premiumDebtRestored, premiumDebt)
+      );
+      throw new Error('premiumDebtRestored exceeds premiumDebt');
     }
 
     return {baseDebtRestored, premiumDebtRestored};
@@ -365,10 +383,9 @@ export class Spoke {
     const oldUserOffset = user.offset;
 
     user.ghostDrawnShares = percentMul(user.baseDrawnShares, user.riskPremium);
-    user.offset = this.hub.toDebtAssets(user.ghostDrawnShares, Rounding.CEIL);
+    user.offset = this.hub.toDebtAssets(user.ghostDrawnShares);
 
-    const newUnrealisedPremium =
-      this.hub.toDebtAssets(oldUserGhostDrawnShares, Rounding.CEIL) - oldUserOffset;
+    const newUnrealisedPremium = this.hub.toDebtAssets(oldUserGhostDrawnShares) - oldUserOffset;
     user.unrealisedPremium += newUnrealisedPremium;
 
     this.refresh(
@@ -452,15 +469,15 @@ export class Spoke {
   }
 
   checkBounds(who: Spoke | User = this) {
-    const flag = [
+    const fail = [
       who.baseDrawnShares,
       who.ghostDrawnShares,
       who.offset,
       who.unrealisedPremium,
       who.suppliedShares,
-    ].reduce((_, v) => v < 0n || v > MAX_UINT, false);
-    if (flag) {
-      who.log();
+    ].reduce((flag, v) => flag || v < 0n || v > MAX_UINT, false);
+    if (fail) {
+      who.log(true);
       throw new Error('underflow/overflow');
     }
   }
