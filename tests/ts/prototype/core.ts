@@ -143,20 +143,20 @@ export class LiquidityHub {
     // when we agree for -ve offset, then consider another configurable check for min limit offset
 
     // check that total debt is unchanged during this func context -> game-able only for premium stuff
-    let totalDebtBefore = this.getTotalDebt();
+    let totalDebtBefore = this.getTotalDebt(Rounding.CEIL);
     this.ghostDrawnShares += userGhostDrawnSharesDelta;
     this.offset += userOffsetDelta;
     this.unrealisedPremium += userUnrealisedPremiumDelta;
-    this.checkBounds();
-    this.checkTotalDebt(totalDebtBefore);
+    Utils.checkBounds(this);
+    Utils.checkTotalDebt(totalDebtBefore, this);
 
     const spoke = this.getSpoke(who);
-    totalDebtBefore = spoke.getTotalDebt();
+    totalDebtBefore = spoke.getTotalDebt(Rounding.CEIL);
     spoke.ghostDrawnShares += userGhostDrawnSharesDelta;
     spoke.offset += userOffsetDelta;
     spoke.unrealisedPremium += userUnrealisedPremiumDelta;
-    this.checkBounds(spoke);
-    this.checkTotalDebt(totalDebtBefore, spoke);
+    Utils.checkBounds(spoke);
+    Utils.checkTotalDebt(totalDebtBefore, spoke);
   }
 
   getSpoke(spoke: Spoke) {
@@ -196,56 +196,21 @@ export class LiquidityHub {
     if (spokes) this.spokes.forEach((spoke) => spoke.log());
   }
 
-  getTotalDebt() {
-    return Object.values(this.getDebt()).reduce((sum, debt) => sum + debt, 0n);
+  getTotalDebt(rounding = Rounding.FLOOR) {
+    return Object.values(this.getDebt(rounding)).reduce((sum, debt) => sum + debt, 0n);
   }
 
-  getDebt() {
+  getDebt(rounding = Rounding.FLOOR) {
     this.accrue();
     return {
-      baseDebt: this.toDebtAssets(this.baseDrawnShares),
-      premiumDebt: this.toDebtAssets(this.ghostDrawnShares) - this.offset + this.unrealisedPremium,
+      baseDebt: this.toDebtAssets(this.baseDrawnShares, rounding),
+      premiumDebt:
+        this.toDebtAssets(this.ghostDrawnShares, rounding) - this.offset + this.unrealisedPremium,
     };
   }
 
   addSpoke(who: Spoke) {
     this.spokes.push(new Spoke(this, who.id)); // clone to maintain independent accounting
-  }
-
-  checkBounds(who: Spoke | LiquidityHub = this) {
-    const fail = [
-      who.baseDrawnShares,
-      who.ghostDrawnShares,
-      who.offset,
-      who.unrealisedPremium,
-      ...(who instanceof LiquidityHub
-        ? [
-            who.totalSuppliedShares,
-            who.totalSupplyAssets(),
-            who.totalOutstandingPremium(),
-            who.availableLiquidity,
-            who.totalDrawnAssets,
-          ]
-        : []),
-    ].reduce((flag, v) => flag || v < 0n || v > MAX_UINT, false);
-    if (fail) {
-      who.log(true);
-      throw new Error('underflow/overflow');
-    }
-  }
-
-  checkTotalDebt(totalDebtBefore: bigint, who: Spoke | LiquidityHub = this) {
-    const totalDebtAfter = who.getTotalDebt();
-    if (totalDebtBefore < totalDebtAfter) {
-      who.log(true);
-      console.error(
-        'totalDebtBefore < totalDebtAfter, diff',
-        f(totalDebtBefore),
-        f(totalDebtAfter),
-        totalDebtAfter - totalDebtBefore
-      );
-      throw new Error('totalDebt increased');
-    }
   }
 }
 
@@ -423,43 +388,47 @@ export class Spoke {
     userUnrealisedPremiumDelta: bigint,
     user: User
   ) {
-    this.checkBounds(user);
+    Utils.checkBounds(user);
 
-    const totalDebtBefore = this.getTotalDebt();
+    const totalDebtBefore = this.getTotalDebt(Rounding.CEIL);
     this.ghostDrawnShares += userGhostDrawnSharesDelta;
     this.offset += userOffsetDelta;
     this.unrealisedPremium += userUnrealisedPremiumDelta;
-    this.checkBounds();
-    this.checkTotalDebt(totalDebtBefore);
+    Utils.checkBounds(this);
+    Utils.checkTotalDebt(totalDebtBefore, this);
 
     this.hub.refresh(userGhostDrawnSharesDelta, userOffsetDelta, userUnrealisedPremiumDelta, this);
   }
 
-  getTotalDebt() {
-    return Object.values(this.getDebt()).reduce((sum, debt) => sum + debt, 0n);
+  getTotalDebt(rounding = Rounding.FLOOR) {
+    return Object.values(this.getDebt(rounding)).reduce((sum, debt) => sum + debt, 0n);
   }
 
-  getDebt() {
+  getDebt(rounding = Rounding.FLOOR) {
     this.hub.accrue();
     return {
-      baseDebt: this.hub.toDebtAssets(this.baseDrawnShares),
+      baseDebt: this.hub.toDebtAssets(this.baseDrawnShares, rounding),
       premiumDebt:
-        this.hub.toDebtAssets(this.ghostDrawnShares) - this.offset + this.unrealisedPremium,
+        this.hub.toDebtAssets(this.ghostDrawnShares, rounding) -
+        this.offset +
+        this.unrealisedPremium,
     };
   }
 
-  getUserDebt(who: User) {
+  getUserDebt(who: User, rounding = Rounding.FLOOR) {
     this.hub.accrue();
     const user = this.getUser(who);
     return {
-      baseDebt: this.hub.toDebtAssets(user.baseDrawnShares),
+      baseDebt: this.hub.toDebtAssets(user.baseDrawnShares, rounding),
       premiumDebt:
-        this.hub.toDebtAssets(user.ghostDrawnShares) - user.offset + user.unrealisedPremium,
+        this.hub.toDebtAssets(user.ghostDrawnShares, rounding) -
+        user.offset +
+        user.unrealisedPremium,
     };
   }
 
-  getUserTotalDebt(who: User) {
-    return Object.values(this.getUserDebt(who)).reduce((sum, debt) => sum + debt, 0n);
+  getUserTotalDebt(who: User, rounding = Rounding.FLOOR) {
+    return Object.values(this.getUserDebt(who, rounding)).reduce((sum, debt) => sum + debt, 0n);
   }
 
   addUser(user: User) {
@@ -481,34 +450,6 @@ export class Spoke {
       return this.users.length - 1;
     }
     return idx;
-  }
-
-  checkBounds(who: Spoke | User = this) {
-    const fail = [
-      who.baseDrawnShares,
-      who.ghostDrawnShares,
-      who.offset,
-      who.unrealisedPremium,
-      who.suppliedShares,
-    ].reduce((flag, v) => flag || v < 0n || v > MAX_UINT, false);
-    if (fail) {
-      who.log(true);
-      throw new Error('underflow/overflow');
-    }
-  }
-
-  checkTotalDebt(totalDebtBefore: bigint, who = this) {
-    const totalDebtAfter = who.getTotalDebt();
-    if (totalDebtBefore < totalDebtAfter) {
-      who.log(true);
-      console.error(
-        'totalDebtBefore < totalDebtAfter, diff',
-        f(totalDebtBefore),
-        f(totalDebtAfter),
-        totalDebtAfter - totalDebtBefore
-      );
-      throw new Error('totalDebt increased');
-    }
   }
 
   log(hub = false, users = false) {
@@ -602,6 +543,44 @@ export class User {
     console.log();
     if (spoke) this.spoke.log();
     if (hub) this.hub.log();
+  }
+}
+
+class Utils {
+  static checkTotalDebt(totalDebtBefore: bigint, who: LiquidityHub | Spoke | User) {
+    const totalDebtAfter = who.getTotalDebt(Rounding.CEIL);
+    if (totalDebtBefore < totalDebtAfter) {
+      who.log(true);
+      console.error(
+        'totalDebtBefore < totalDebtAfter, diff',
+        f(totalDebtBefore),
+        f(totalDebtAfter),
+        totalDebtAfter - totalDebtBefore
+      );
+      throw new Error('totalDebt increased');
+    }
+  }
+
+  static checkBounds(who: LiquidityHub | Spoke | User) {
+    const fail = [
+      who.baseDrawnShares,
+      who.ghostDrawnShares,
+      who.offset,
+      who.unrealisedPremium,
+      ...(who instanceof LiquidityHub
+        ? [
+            who.totalSuppliedShares,
+            who.totalSupplyAssets(),
+            who.totalOutstandingPremium(),
+            who.availableLiquidity,
+            who.totalDrawnAssets,
+          ]
+        : []),
+    ].reduce((flag, v) => flag || v < 0n || v > MAX_UINT, false);
+    if (fail) {
+      who.log(true);
+      throw new Error('underflow/overflow');
+    }
   }
 }
 
