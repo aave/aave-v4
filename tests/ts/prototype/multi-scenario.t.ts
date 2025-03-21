@@ -85,21 +85,22 @@ function setUp(description) {
   return users;
 }
 
-function runAmountInvariants() {
-  invariant_hubSpokeAccounting();
-  invariant_sumOfBaseDebt();
-  invariant_sumOfPremiumDebt();
-  invariant_sumOfSuppliedShares();
-  invariant_drawnGtSuppliedLiquidity();
-  invariant_positivePremiumDebt();
-}
-
 function assignSpokesToUsers() {
   users.forEach((user) => {
     const spoke = spokes[Math.floor(Math.random() * spokes.length)];
     user.assignSpoke(spoke);
     spoke.addUser(user);
   });
+}
+
+function runAmountInvariants() {
+  console.log('running invariants...');
+  invariant_hubSpokeAccounting();
+  invariant_sumOfBaseDebt();
+  invariant_sumOfPremiumDebt();
+  invariant_sumOfSuppliedShares();
+  invariant_drawnGtSuppliedLiquidity();
+  invariant_positivePremiumDebt();
 }
 
 function invariant_sumOfBaseDebt() {
@@ -137,7 +138,6 @@ function invariant_sumOfBaseDebt() {
     fail = true;
   }
 
-  // handleInvariantFailure(fail, arguments.callee.name);
   handleInvariantFailure(fail, 'invariant_sumOfBaseDebt');
 }
 
