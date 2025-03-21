@@ -40,7 +40,7 @@ export class LiquidityHub {
   public lastIndex = 0n;
 
   // total drawn assets does not incl totalOutstandingPremium to accrue base rate separately
-  toDebtAssets(shares: bigint, rounding = Rounding.CEIL) {
+  toDebtAssets(shares: bigint, rounding = Rounding.FLOOR) {
     this.accrue();
     return this.baseDrawnShares
       ? mulDiv(shares, this.totalDrawnAssets, this.baseDrawnShares, rounding)
@@ -54,7 +54,7 @@ export class LiquidityHub {
       : assets;
   }
 
-  totalOutstandingPremium(rounding = Rounding.CEIL) {
+  totalOutstandingPremium(rounding = Rounding.FLOOR) {
     return (
       this.toDebtAssets(this.ghostDrawnShares, rounding) - this.offset + this.unrealisedPremium
     );
@@ -71,7 +71,7 @@ export class LiquidityHub {
       : shares;
   }
 
-  toSupplyShares(assets: bigint, rounding = Rounding.CEIL) {
+  toSupplyShares(assets: bigint, rounding = Rounding.FLOOR) {
     const totalSupplyAssets = this.totalSupplyAssets(rounding);
     return totalSupplyAssets
       ? mulDiv(assets, this.totalSuppliedShares, totalSupplyAssets, rounding)
@@ -202,8 +202,8 @@ export class LiquidityHub {
   getDebt() {
     this.accrue();
     return {
-      baseDebt: this.toDebtAssets(this.baseDrawnShares),
-      premiumDebt: this.toDebtAssets(this.ghostDrawnShares) - this.offset + this.unrealisedPremium,
+      baseDebt: this.toDebtAssets(this.baseDrawnShares, Rounding.CEIL),
+      premiumDebt: this.toDebtAssets(this.ghostDrawnShares, Rounding.CEIL) - this.offset + this.unrealisedPremium,
     };
   }
 
@@ -325,7 +325,7 @@ export class Spoke {
     const oldUserUnrealisedPremium = user.unrealisedPremium;
 
     user.ghostDrawnShares = percentMul(user.baseDrawnShares, user.riskPremium);
-    user.offset = this.hub.toDebtAssets(user.ghostDrawnShares, Rounding.FLOOR);
+    user.offset = this.hub.toDebtAssets(user.ghostDrawnShares);
     user.unrealisedPremium = premiumDebt - premiumDebtRestored;
 
     this.refresh(
@@ -435,9 +435,9 @@ export class Spoke {
     this.hub.accrue();
     const user = this.getUser(who);
     return {
-      baseDebt: this.hub.toDebtAssets(user.baseDrawnShares),
+      baseDebt: this.hub.toDebtAssets(user.baseDrawnShares, Rounding.CEIL),
       premiumDebt:
-        this.hub.toDebtAssets(user.ghostDrawnShares) - user.offset + user.unrealisedPremium,
+        this.hub.toDebtAssets(user.ghostDrawnShares, Rounding.CEIL) - user.offset + user.unrealisedPremium,
     };
   }
 
