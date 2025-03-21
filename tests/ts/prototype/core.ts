@@ -315,7 +315,7 @@ export class Spoke {
     user.ghostDrawnShares = percentMul(user.baseDrawnShares, user.riskPremium);
     user.offset = this.hub.toDebtAssets(user.ghostDrawnShares);
     user.unrealisedPremium +=
-      this.hub.toDebtAssets(oldUserGhostDrawnShares, Rounding.CEIL) - oldUserOffset;
+      this.hub.toDebtAssets(oldUserGhostDrawnShares, Rounding.CEIL) - oldUserOffset - premiumDebtRestored;
 
     this.refresh(
       user.baseDrawnShares - oldUserBaseDrawnShares,
