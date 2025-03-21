@@ -70,12 +70,20 @@ addTest('Scenario2', () => {
   runAmountInvariants();
 });
 
-addTest('Scenario3 - rounding issues', () => {
+// Test Scenario 3
+// t0: alice supply/borrow
+// t1: alice repay partial; bob borrow
+// t2: alice repay partial; charlie borrow; alice repay partial
+// t3: charlie borrow
+// t4: alice repay full
+// t5: charlie repay full
+// t6: bob repay full
+addTest('Scenario3 - high precision loss without CEIL rounding on debt', () => {
   const [alice, bob, charlie] = setUp();
 
   const amount1 = p('10000');
   const amount2 = p('200');
-  const amount3 = p('700');
+  const amount3 = p('500');
 
   alice.supply(amount1);
   alice.borrow(amount1);
@@ -84,26 +92,27 @@ addTest('Scenario3 - rounding issues', () => {
   alice.repay(amount2);
   alice.log(true, true);
   bob.borrow(amount2);
-  // alice.repay(MAX_UINT);
 
-  // skip();
+  skip();
+  alice.repay(amount3);
+  alice.log(true, true);
+  charlie.borrow(amount3);
+  alice.repay(amount3);
 
-  // // bob.log(true, true);
-  // bob.repay(MAX_UINT);
+  skip();
+  alice.log(true, true);
+  charlie.borrow(amount3);
 
-  // skip();
+  skip();
+  alice.repay(MAX_UINT);
+  alice.log(true, true);
 
-  // charlie.borrow(amount3);
+  skip();
+  charlie.repay(MAX_UINT);
 
-  // skip();
-  // // charlie.log(true, true);
-  // charlie.repay(amount3);
-  // // charlie.log(true, true);
-
-  // skip();
-  // // charlie.log(true, true);
-  // charlie.repay(MAX_UINT);
-  // // charlie.log(true, true);
+  skip();
+  bob.repay(MAX_UINT);
+  bob.log(true, true);
 
   runAmountInvariants();
 });

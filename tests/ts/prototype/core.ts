@@ -40,7 +40,7 @@ export class LiquidityHub {
   public lastIndex = 0n;
 
   // total drawn assets does not incl totalOutstandingPremium to accrue base rate separately
-  toDebtAssets(shares: bigint, rounding = Rounding.FLOOR) {
+  toDebtAssets(shares: bigint, rounding = Rounding.CEIL) {
     this.accrue();
     return this.baseDrawnShares
       ? mulDiv(shares, this.totalDrawnAssets, this.baseDrawnShares, rounding)
@@ -54,7 +54,7 @@ export class LiquidityHub {
       : assets;
   }
 
-  totalOutstandingPremium(rounding = Rounding.FLOOR) {
+  totalOutstandingPremium(rounding = Rounding.CEIL) {
     return (
       this.toDebtAssets(this.ghostDrawnShares, rounding) - this.offset + this.unrealisedPremium
     );
@@ -325,7 +325,7 @@ export class Spoke {
     const oldUserUnrealisedPremium = user.unrealisedPremium;
 
     user.ghostDrawnShares = percentMul(user.baseDrawnShares, user.riskPremium);
-    user.offset = this.hub.toDebtAssets(user.ghostDrawnShares);
+    user.offset = this.hub.toDebtAssets(user.ghostDrawnShares, Rounding.FLOOR);
     user.unrealisedPremium = premiumDebt - premiumDebtRestored;
 
     this.refresh(
