@@ -1,5 +1,5 @@
 import {LiquidityHub, Spoke, User, skip} from './core';
-import {absDiff, f, maxAbsDiff, p, PRECISION} from './utils';
+import {absDiff, f, MAX_UINT, maxAbsDiff, p, PRECISION} from './utils';
 
 const hub = new LiquidityHub();
 const spokes = [new Spoke(hub)];
@@ -7,92 +7,44 @@ const users = [new User(), new User(), new User()];
 const [alice, bob, charlie] = users;
 assignSpokesToUsers();
 
-// // action borrow user 39n amount 4734847151.618921234706726913
-// // action repay user 235n amount 9924500511.421444012921323521
+const amount1 = p('10000');
+const amount2 = p('200');
+const amount3 = p('500');
 
-// action updateRiskPremium id 441n
-// skipping
-// action supply id 660n amount 8564231494.874205585470914561
-// action borrow id 660n amount 8564231494.874205585470914561
-// skipping
-// action supply id 606n amount 7268599020.805897545012215809
-// action borrow id 606n amount 7268599020.805897545012215809
-// action repay id 606n amount 7268599020.805897545012215809
-
-// skipping
-// action supply id 1n amount 3801340823.527060698682097665
-// action borrow id 1n amount 3801340823.527060698682097665
-// action repay id 1n amount 3801340823.527060698682097665
-// skipping
-// action borrow id 1n amount 411790791.708231892134264833
-// skipping
-// action borrow id 1n amount 2971796614.986197131165958145
-// skipping
-// action supply id 2n amount 4557790560.204579436593414145
-// action borrow id 2n amount 4557790560.204579436593414145
-// action repay id 2n amount 4557790560.204579436593414145
-
-// skip();
-// const a1 = p('1000');
-// alice.supply(a1);
-// alice.borrow(a1);
-// alice.repay(a1);
-// skip();
-// const a2 = p('400');
-// alice.borrow(a2);
-// skip();
-// const a3 = p('600');
-// alice.borrow(a3);
-// skip();
-// const b1 = p('1000');
-// bob.supply(b1);
-// bob.borrow(b1);
-// // spokes[0].log(true, true);
-
-// console.log('bob debt', bob.getDebt());
-// bob.repay(b1);
-// logBaseAndPremiumDebt(bob);
-// skip();
-
-// spokes[0].log(true, true);
-
-// const amount = p(1000);
-// alice.supply(amount);
-// bob.borrow(amount / 2n);
-// skip();
-// alice.log(true);
-// bob.log(true);
-// hub.log();
-
-// skipping
-// skipping
-// skipping
-// action supply id 18n amount 6525501895.158505512462450689
-// action borrow id 18n amount 6525501895.158505512462450689
-// action repay id 18n amount 6525501895.158505512462450689
-// action borrow id 14n amount 1076810372.196269515648008193
-// skipping
-// skipping
-// action supply id 14n amount 8476748790.273548272476880897
-// action borrow id 14n amount 8476748790.273548272476880897
-// action repay id 14n amount 8476748790.273548272476880897
-const amount1 = p('1000');
 alice.supply(amount1);
 alice.borrow(amount1);
-alice.repay(amount1);
 
+skip();
+alice.repay(amount2);
+alice.log(true, true);
+bob.borrow(amount2);
+
+skip();
+alice.repay(amount3);
+alice.log(true, true);
+charlie.borrow(amount3);
+alice.repay(amount3);
+
+skip();
+alice.log(true, true);
+charlie.borrow(amount3);
+
+skip();
+alice.repay(MAX_UINT);
 alice.log(true, true);
 
-const amount2 = p('1000');
-bob.borrow(amount2);
 skip();
+charlie.repay(MAX_UINT);
 
-const amount3 = p('1000');
-bob.supply(amount3);
-bob.borrow(amount3);
-bob.repay(amount3);
-
+skip();
+bob.repay(MAX_UINT);
 bob.log(true, true);
+
+skip();
+alice.withdraw(hub.toSupplyAssets(alice.suppliedShares));
+bob.withdraw(hub.toSupplyAssets(bob.suppliedShares));
+
+hub.log(true, true);
 
 runAmountInvariants();
 
@@ -205,7 +157,7 @@ function invariant_sumOfPremiumDebt() {
 }
 
 function invariant_sumOfSuppliedShares() {
-  const hubSuppliedShares = hub.totalSuppliedShares;
+  const hubSuppliedShares = hub.suppliedShares;
   const spokeSuppliedShares = spokes.reduce((sum, spoke) => sum + spoke.suppliedShares, 0n);
   const userSuppliedShares = users.reduce((sum, user) => sum + user.suppliedShares, 0n);
   let fail = false,

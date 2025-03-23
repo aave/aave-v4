@@ -49,12 +49,16 @@ export class LiquidityHub {
   // total drawn assets does not incl totalOutstandingPremium to accrue base rate separately
   toDrawnAssets(shares: bigint, rounding = Rounding.FLOOR) {
     this.accrue();
-    return mulDiv(shares, this.totalDrawnAssets(), this.totalDrawnShares(), rounding);
+    return this.totalDrawnShares()
+      ? mulDiv(shares, this.totalDrawnAssets(), this.totalDrawnShares(), rounding)
+      : shares;
   }
 
   toDrawnShares(assets: bigint, rounding = Rounding.FLOOR) {
     this.accrue();
-    return mulDiv(assets, this.totalDrawnShares(), this.totalDrawnAssets(), rounding);
+    return this.totalDrawnAssets()
+      ? mulDiv(assets, this.totalDrawnShares(), this.totalDrawnAssets(), rounding)
+      : assets;
   }
 
   totalOutstandingPremium(rounding = Rounding.FLOOR) {
@@ -77,11 +81,15 @@ export class LiquidityHub {
   }
 
   toSupplyAssets(shares: bigint, rounding = Rounding.FLOOR) {
-    return mulDiv(shares, this.totalSupplyAssets(rounding), this.totalSupplyShares(), rounding);
+    return this.totalSupplyShares()
+      ? mulDiv(shares, this.totalSupplyAssets(rounding), this.totalSupplyShares(), rounding)
+      : shares;
   }
 
   toSupplyShares(assets: bigint, rounding = Rounding.FLOOR) {
-    return mulDiv(assets, this.totalSupplyShares(), this.totalSupplyAssets(rounding), rounding);
+    return this.totalSupplyAssets()
+      ? mulDiv(assets, this.totalSupplyShares(), this.totalSupplyAssets(rounding), rounding)
+      : assets;
   }
 
   accrue() {
@@ -181,8 +189,8 @@ export class LiquidityHub {
     return idx;
   }
 
-  log(spokes = false) {
-    const ghostDebt = this.toDrawnAssets(this.ghostDrawnShares) - this.offset;
+  log(spokes = false, users = false) {
+    const ghostDebt = this.toDrawnAssets(this.ghostDrawnShares, Rounding.CEIL) - this.offset;
     console.log('--- Hub ---');
     console.log('hub.drawnAssets             ', f(this.drawnAssets));
     console.log('hub.baseDrawnShares         ', f(this.baseDrawnShares));
@@ -202,7 +210,7 @@ export class LiquidityHub {
     console.log('hub.getDebt: premiumDebt    ', f(this.getDebt().premiumDebt));
     console.log();
 
-    if (spokes) this.spokes.forEach((spoke) => spoke.log());
+    if (spokes) this.spokes.forEach((spoke) => spoke.log(false, users));
   }
 
   getTotalDebt(rounding = Rounding.FLOOR) {
@@ -461,7 +469,7 @@ export class Spoke {
   }
 
   log(hub = false, users = false) {
-    const ghostDebt = this.hub.toDrawnAssets(this.ghostDrawnShares) - this.offset;
+    const ghostDebt = this.hub.toDrawnAssets(this.ghostDrawnShares, Rounding.CEIL) - this.offset;
     console.log(`--- Spoke ${this.id} ---`);
     console.log('spoke.baseDrawnShares       ', f(this.baseDrawnShares));
     console.log('spoke.ghostDrawnShares      ', f(this.ghostDrawnShares));
