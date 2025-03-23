@@ -55,11 +55,13 @@ export function randomChance(chance: number) {
 }
 
 export function randomAmount() {
-  if (randomChance(0.07)) return random(1n, 10n);
+  if (randomChance(0.15)) return random(1n, 10n);
   const whole = random(0n, 10n ** random(0n, 10n));
-  const units = random(0n, 18n);
-  const fractional = random(1n, 10n ** units);
-  return parseUnits(`${whole}.${fractional}`, Number(units));
+  const index = random(0n, 18n);
+  const paddedFractional = random(1n, 10n ** index)
+    .toString()
+    .padEnd(Number(index), '0');
+  return BigInt(whole) * 10n ** index + BigInt(paddedFractional.slice(0, Number(index)));
 }
 
 export function max(a: bigint, b: bigint, c: bigint) {
