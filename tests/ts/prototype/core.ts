@@ -153,11 +153,15 @@ export class LiquidityHub {
     userUnrealisedPremiumDelta: bigint,
     who: Spoke
   ) {
-    // check: offset <= premiumDebt
+    // add invariant: offset <= premiumDebt
     // consider enforcing rp limit (per spoke) here using ghost/base (min and max cap)
     // when we agree for -ve offset, then consider another configurable check for min limit offset
 
-    // check that total debt is unchanged during this func context -> game-able only for premium stuff
+    // check that total debt can only:
+    // - reduce until `premiumDebt` if called after a restore (tstore premiumDebt?)
+    // - remains unchanged on all other calls
+    // `refresh` is game-able only for premium stuff
+
     let totalDebtBefore = this.getTotalDebt(Rounding.CEIL);
     this.ghostDrawnShares += userGhostDrawnSharesDelta;
     this.offset += userOffsetDelta;
