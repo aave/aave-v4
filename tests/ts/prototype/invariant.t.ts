@@ -35,11 +35,7 @@ function run() {
       runAmountInvariants();
     }
     if (randomChance(0.25)) {
-      users.forEach(
-        (user) =>
-          user.suppliedShares ??
-          user.withdraw(user.hub.toSupplyAssets(user.suppliedShares, Rounding.CEIL))
-      );
+      users.forEach((user) => user.suppliedShares ?? user.withdraw(user.getSuppliedBalance()));
       userCollateral.clear();
     }
 
