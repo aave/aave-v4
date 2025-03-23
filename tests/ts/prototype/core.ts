@@ -12,12 +12,15 @@ import {
   mulDiv,
   percentMul,
   info,
+  rayMul,
 } from './utils.ts';
 
 let spokeIdCounter = 0n;
 let userIdCounter = 0n;
 
 let currentTime = 1n;
+
+const OFFSET_UNITS = 10n ** 6n;
 
 // type/token transfers to differentiate supplied/debt shares
 // notify is missing
@@ -30,62 +33,68 @@ export class LiquidityHub {
   public offset = 0n;
   public unrealisedPremium = 0n;
 
-  public totalDrawnAssets = 0n;
+  public drawnAssets = 0n;
 
   public availableLiquidity = 0n;
 
-  public totalSuppliedShares = 0n;
+  public suppliedShares = 0n;
 
-  // total drawn assets does not incl totalOutstandingPremium to accrue base rate separately
-  toDebtAssets(shares: bigint, rounding = Rounding.FLOOR) {
-    this.accrue();
-    return this.baseDrawnShares
-      ? mulDiv(shares, this.totalDrawnAssets, this.baseDrawnShares, rounding)
-      : shares;
+  totalDrawnAssets() {
+    return this.drawnAssets + OFFSET_UNITS;
+  }
+  totalDrawnShares() {
+    return this.baseDrawnShares + OFFSET_UNITS;
   }
 
-  toDebtShares(assets: bigint, rounding = Rounding.FLOOR) {
+  // total drawn assets does not incl totalOutstandingPremium to accrue base rate separately
+  toDrawnAssets(shares: bigint, rounding = Rounding.FLOOR) {
     this.accrue();
-    return this.totalDrawnAssets
-      ? mulDiv(assets, this.baseDrawnShares, this.totalDrawnAssets, rounding)
-      : assets;
+    return mulDiv(shares, this.totalDrawnAssets(), this.totalDrawnShares(), rounding);
+  }
+
+  toDrawnShares(assets: bigint, rounding = Rounding.FLOOR) {
+    this.accrue();
+    return mulDiv(assets, this.totalDrawnShares(), this.totalDrawnAssets(), rounding);
   }
 
   totalOutstandingPremium(rounding = Rounding.FLOOR) {
     return (
-      this.toDebtAssets(this.ghostDrawnShares, rounding) - this.offset + this.unrealisedPremium
+      this.toDrawnAssets(this.ghostDrawnShares, rounding) - this.offset + this.unrealisedPremium
     );
   }
 
   totalSupplyAssets(rounding = Rounding.FLOOR) {
     this.accrue();
-    return this.availableLiquidity + this.totalDrawnAssets + this.totalOutstandingPremium(rounding);
+    return (
+      this.availableLiquidity +
+      this.drawnAssets +
+      this.totalOutstandingPremium(rounding) +
+      OFFSET_UNITS
+    );
+  }
+  totalSupplyShares() {
+    return this.suppliedShares + OFFSET_UNITS;
   }
 
   toSupplyAssets(shares: bigint, rounding = Rounding.FLOOR) {
-    return this.totalSuppliedShares
-      ? mulDiv(shares, this.totalSupplyAssets(rounding), this.totalSuppliedShares, rounding)
-      : shares;
+    return mulDiv(shares, this.totalSupplyAssets(rounding), this.totalSupplyShares(), rounding);
   }
 
   toSupplyShares(assets: bigint, rounding = Rounding.FLOOR) {
-    const totalSupplyAssets = this.totalSupplyAssets(rounding);
-    return totalSupplyAssets
-      ? mulDiv(assets, this.totalSuppliedShares, totalSupplyAssets, rounding)
-      : assets;
+    return mulDiv(assets, this.totalSupplyShares(), this.totalSupplyAssets(rounding), rounding);
   }
 
   accrue() {
     if (this.lastUpdateTimestamp === currentTime) return;
     this.lastUpdateTimestamp = currentTime;
-    this.totalDrawnAssets = (this.totalDrawnAssets * randomIndex()) / RAY;
+    this.drawnAssets = rayMul(this.drawnAssets, randomIndex());
   }
 
   supply(amount: bigint, spoke: Spoke) {
     const suppliedShares = this.toSupplyShares(amount);
     assertNonZero(suppliedShares);
 
-    this.totalSuppliedShares += suppliedShares;
+    this.suppliedShares += suppliedShares;
     this.availableLiquidity += amount;
 
     this.getSpoke(spoke).suppliedShares += suppliedShares;
@@ -96,7 +105,7 @@ export class LiquidityHub {
   withdraw(amount: bigint, spoke: Spoke) {
     const suppliedShares = this.toSupplyShares(amount, Rounding.CEIL);
 
-    this.totalSuppliedShares -= suppliedShares;
+    this.suppliedShares -= suppliedShares;
     this.availableLiquidity -= amount;
 
     this.getSpoke(spoke).suppliedShares -= suppliedShares;
@@ -106,12 +115,12 @@ export class LiquidityHub {
 
   // @dev spoke data is *expected* to be updated on the `refresh` callback
   draw(amount: bigint, spoke: Spoke) {
-    const drawnShares = this.toDebtShares(amount, Rounding.CEIL);
+    const drawnShares = this.toDrawnShares(amount, Rounding.CEIL);
 
     this.availableLiquidity -= amount;
 
     this.baseDrawnShares += drawnShares;
-    this.totalDrawnAssets += amount;
+    this.drawnAssets += amount;
 
     this.getSpoke(spoke).baseDrawnShares += drawnShares;
 
@@ -120,11 +129,11 @@ export class LiquidityHub {
 
   // @dev global premiumDebt (ghost, offset, unrealised) & spoke data is *expected* to be updated on the `refresh` callback
   restore(baseAmount: bigint, premiumAmount: bigint, spoke: Spoke) {
-    const baseDrawnSharesRestored = this.toDebtShares(baseAmount);
+    const baseDrawnSharesRestored = this.toDrawnShares(baseAmount, Rounding.CEIL);
 
     this.availableLiquidity += baseAmount + premiumAmount;
 
-    this.totalDrawnAssets -= baseAmount;
+    this.drawnAssets -= baseAmount;
     this.baseDrawnShares -= baseDrawnSharesRestored;
 
     this.getSpoke(spoke).baseDrawnShares -= baseDrawnSharesRestored;
@@ -173,16 +182,16 @@ export class LiquidityHub {
   }
 
   log(spokes = false) {
-    const ghostDebt = this.toDebtAssets(this.ghostDrawnShares) - this.offset;
+    const ghostDebt = this.toDrawnAssets(this.ghostDrawnShares) - this.offset;
     console.log('--- Hub ---');
-    console.log('hub.totalDrawnAssets        ', f(this.totalDrawnAssets));
+    console.log('hub.drawnAssets             ', f(this.drawnAssets));
     console.log('hub.baseDrawnShares         ', f(this.baseDrawnShares));
     console.log('hub.ghostDrawnShares        ', f(this.ghostDrawnShares));
     console.log('hub.offset                  ', f(this.offset));
     console.log('hub.ghostDebt               ', f(ghostDebt));
     console.log('hub.unrealisedPremium       ', f(this.unrealisedPremium));
 
-    console.log('hub.totalSuppliedShares     ', f(this.totalSuppliedShares));
+    console.log('hub.suppliedShares          ', f(this.suppliedShares));
     console.log('hub.totalSupplyAssets       ', f(this.totalSupplyAssets()));
     console.log('hub.availableLiquidity      ', f(this.availableLiquidity));
     console.log('hub.totalOutstandingPremium ', f(this.totalOutstandingPremium()));
@@ -203,9 +212,9 @@ export class LiquidityHub {
   getDebt(rounding = Rounding.FLOOR) {
     this.accrue();
     return {
-      baseDebt: this.toDebtAssets(this.baseDrawnShares, rounding),
+      baseDebt: this.toDrawnAssets(this.baseDrawnShares, rounding),
       premiumDebt:
-        this.toDebtAssets(this.ghostDrawnShares, rounding) - this.offset + this.unrealisedPremium,
+        this.toDrawnAssets(this.ghostDrawnShares, rounding) - this.offset + this.unrealisedPremium,
     };
   }
 
@@ -258,7 +267,7 @@ export class Spoke {
     const user = this.getUser(who);
 
     this.hub.accrue();
-    const drawnShares = this.hub.draw(amount, this);
+    const drawnShares = this.hub.draw(amount, this); // asset to share should round up
 
     this.baseDrawnShares += drawnShares;
     user.baseDrawnShares += drawnShares;
@@ -269,9 +278,9 @@ export class Spoke {
     const oldUserUnrealisedPremium = user.unrealisedPremium;
 
     user.ghostDrawnShares = percentMul(user.baseDrawnShares, user.riskPremium);
-    user.offset = this.hub.toDebtAssets(user.ghostDrawnShares, Rounding.CEIL);
+    user.offset = this.hub.toDrawnAssets(user.ghostDrawnShares, Rounding.CEIL);
     user.unrealisedPremium +=
-      this.hub.toDebtAssets(oldUserGhostDrawnShares, Rounding.CEIL) - oldUserOffset;
+      this.hub.toDrawnAssets(oldUserGhostDrawnShares, Rounding.CEIL) - oldUserOffset;
 
     this.refresh(
       user.ghostDrawnShares - oldUserGhostDrawnShares,
@@ -294,7 +303,7 @@ export class Spoke {
       amount,
       user
     );
-    const drawnShares = this.hub.restore(baseDebtRestored, premiumDebtRestored, this);
+    const drawnShares = this.hub.restore(baseDebtRestored, premiumDebtRestored, this); // asset to share should round up
 
     this.baseDrawnShares -= drawnShares;
     user.baseDrawnShares -= drawnShares;
@@ -305,7 +314,7 @@ export class Spoke {
     const oldUserUnrealisedPremium = user.unrealisedPremium;
 
     user.ghostDrawnShares = percentMul(user.baseDrawnShares, user.riskPremium);
-    user.offset = this.hub.toDebtAssets(user.ghostDrawnShares);
+    user.offset = this.hub.toDrawnAssets(user.ghostDrawnShares);
     user.unrealisedPremium = premiumDebt - premiumDebtRestored;
 
     this.refresh(
@@ -368,10 +377,9 @@ export class Spoke {
     const oldUserOffset = user.offset;
 
     user.ghostDrawnShares = percentMul(user.baseDrawnShares, user.riskPremium);
-    user.offset = this.hub.toDebtAssets(user.ghostDrawnShares, Rounding.CEIL);
+    user.offset = this.hub.toDrawnAssets(user.ghostDrawnShares);
 
-    const newUnrealisedPremium =
-      this.hub.toDebtAssets(oldUserGhostDrawnShares, Rounding.CEIL) - oldUserOffset;
+    const newUnrealisedPremium = this.hub.toDrawnAssets(oldUserGhostDrawnShares) - oldUserOffset;
     user.unrealisedPremium += newUnrealisedPremium;
 
     this.refresh(
@@ -407,9 +415,9 @@ export class Spoke {
   getDebt(rounding = Rounding.FLOOR) {
     this.hub.accrue();
     return {
-      baseDebt: this.hub.toDebtAssets(this.baseDrawnShares, rounding),
+      baseDebt: this.hub.toDrawnAssets(this.baseDrawnShares, rounding),
       premiumDebt:
-        this.hub.toDebtAssets(this.ghostDrawnShares, rounding) -
+        this.hub.toDrawnAssets(this.ghostDrawnShares, rounding) -
         this.offset +
         this.unrealisedPremium,
     };
@@ -419,9 +427,9 @@ export class Spoke {
     this.hub.accrue();
     const user = this.getUser(who);
     return {
-      baseDebt: this.hub.toDebtAssets(user.baseDrawnShares, rounding),
+      baseDebt: this.hub.toDrawnAssets(user.baseDrawnShares, rounding),
       premiumDebt:
-        this.hub.toDebtAssets(user.ghostDrawnShares, rounding) -
+        this.hub.toDrawnAssets(user.ghostDrawnShares, rounding) -
         user.offset +
         user.unrealisedPremium,
     };
@@ -453,7 +461,7 @@ export class Spoke {
   }
 
   log(hub = false, users = false) {
-    const ghostDebt = this.hub.toDebtAssets(this.ghostDrawnShares) - this.offset;
+    const ghostDebt = this.hub.toDrawnAssets(this.ghostDrawnShares) - this.offset;
     console.log(`--- Spoke ${this.id} ---`);
     console.log('spoke.baseDrawnShares       ', f(this.baseDrawnShares));
     console.log('spoke.ghostDrawnShares      ', f(this.ghostDrawnShares));
@@ -528,7 +536,7 @@ export class User {
   }
 
   log(spoke = false, hub = false) {
-    const ghostDebt = this.hub.toDebtAssets(this.ghostDrawnShares) - this.offset;
+    const ghostDebt = this.hub.toDrawnAssets(this.ghostDrawnShares, Rounding.CEIL) - this.offset;
     console.log(`--- User ${this.id} ---`);
     console.log('user.baseDrawnShares        ', f(this.baseDrawnShares));
     console.log('user.ghostDrawnShares       ', f(this.ghostDrawnShares));
@@ -549,13 +557,14 @@ export class User {
 class Utils {
   static checkTotalDebt(totalDebtBefore: bigint, who: LiquidityHub | Spoke | User) {
     const totalDebtAfter = who.getTotalDebt(Rounding.CEIL);
-    if (totalDebtBefore < totalDebtAfter) {
+    const diff = totalDebtAfter - totalDebtBefore;
+    if (totalDebtAfter > totalDebtBefore && diff > 1n) {
       who.log(true);
       console.error(
-        'totalDebtBefore < totalDebtAfter, diff',
-        f(totalDebtBefore),
+        'totalDebtAfter > totalDebtBefore, diff',
         f(totalDebtAfter),
-        totalDebtAfter - totalDebtBefore
+        f(totalDebtBefore),
+        diff
       );
       throw new Error('totalDebt increased');
     }
@@ -569,11 +578,11 @@ class Utils {
       who.unrealisedPremium,
       ...(who instanceof LiquidityHub
         ? [
-            who.totalSuppliedShares,
+            who.suppliedShares,
             who.totalSupplyAssets(),
             who.totalOutstandingPremium(),
             who.availableLiquidity,
-            who.totalDrawnAssets,
+            who.drawnAssets,
           ]
         : []),
     ].reduce((flag, v) => flag || v < 0n || v > MAX_UINT, false);

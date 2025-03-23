@@ -1,5 +1,15 @@
 import {LiquidityHub, Spoke, User, skip} from './core';
-import {random, randomChance, absDiff, maxAbsDiff, f, PRECISION, MAX_UINT, Rounding} from './utils';
+import {
+  random,
+  randomChance,
+  absDiff,
+  maxAbsDiff,
+  f,
+  PRECISION,
+  MAX_UINT,
+  Rounding,
+  randomAmount,
+} from './utils';
 
 // todo make random deterministic, cache seed, actions list for failed runs for debugging
 const NUM_SPOKES = 10;
@@ -35,7 +45,7 @@ function run() {
 
     const action = actions[Math.floor(Math.random() * actions.length)];
     const user = users[Math.floor(Math.random() * users.length)];
-    let amount = random(1n, 10n ** 28n);
+    let amount = randomAmount();
 
     switch (action) {
       case 'supply': {
@@ -228,7 +238,7 @@ export function invariant_sumOfPremiumDebt() {
 }
 
 export function invariant_sumOfSuppliedShares() {
-  const hubSuppliedShares = hub.totalSuppliedShares;
+  const hubSuppliedShares = hub.suppliedShares;
   const spokeSuppliedShares = spokes.reduce((sum, spoke) => sum + spoke.suppliedShares, 0n);
   const userSuppliedShares = users.reduce((sum, user) => sum + user.suppliedShares, 0n);
   let fail = false,
