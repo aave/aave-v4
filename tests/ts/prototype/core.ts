@@ -13,6 +13,7 @@ import {
   percentMul,
   info,
   rayMul,
+  inverse,
 } from './utils.ts';
 
 let spokeIdCounter = 0n;
@@ -23,7 +24,7 @@ let currentTime = 1n;
 const OFFSET_UNITS = 10n ** 6n;
 
 // type/token transfers to differentiate supplied/debt shares
-// notify is missing
+// notify is unneeded since prototype assumes one asset on hub
 export class LiquidityHub {
   public spokes: Spoke[] = [];
   public lastUpdateTimestamp = 0n;
@@ -49,16 +50,12 @@ export class LiquidityHub {
   // total drawn assets does not incl totalOutstandingPremium to accrue base rate separately
   toDrawnAssets(shares: bigint, rounding = Rounding.FLOOR) {
     this.accrue();
-    return this.totalDrawnShares()
-      ? mulDiv(shares, this.totalDrawnAssets(), this.totalDrawnShares(), rounding)
-      : shares;
+    return mulDiv(shares, this.totalDrawnAssets(), this.totalDrawnShares(), rounding);
   }
 
   toDrawnShares(assets: bigint, rounding = Rounding.FLOOR) {
     this.accrue();
-    return this.totalDrawnAssets()
-      ? mulDiv(assets, this.totalDrawnShares(), this.totalDrawnAssets(), rounding)
-      : assets;
+    return mulDiv(assets, this.totalDrawnShares(), this.totalDrawnAssets(), rounding);
   }
 
   totalOutstandingPremium(rounding = Rounding.FLOOR) {
@@ -81,15 +78,16 @@ export class LiquidityHub {
   }
 
   toSupplyAssets(shares: bigint, rounding = Rounding.FLOOR) {
-    return this.totalSupplyShares()
-      ? mulDiv(shares, this.totalSupplyAssets(rounding), this.totalSupplyShares(), rounding)
-      : shares;
+    return mulDiv(shares, this.totalSupplyAssets(rounding), this.totalSupplyShares(), rounding);
   }
 
   toSupplyShares(assets: bigint, rounding = Rounding.FLOOR) {
-    return this.totalSupplyAssets()
-      ? mulDiv(assets, this.totalSupplyShares(), this.totalSupplyAssets(rounding), rounding)
-      : assets;
+    return mulDiv(
+      assets,
+      this.totalSupplyShares(),
+      this.totalSupplyAssets(inverse(rounding)),
+      rounding
+    );
   }
 
   accrue() {
@@ -541,6 +539,10 @@ export class User {
 
   getTotalDebt() {
     return this.spoke.getUserTotalDebt(this);
+  }
+
+  getSuppliedBalance() {
+    return this.hub.toSupplyAssets(this.suppliedShares);
   }
 
   log(spoke = false, hub = false) {

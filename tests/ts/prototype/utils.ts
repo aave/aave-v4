@@ -74,6 +74,12 @@ export function maxAbsDiff(a: bigint, b: bigint, c: bigint) {
   return max(absDiff(a, b), absDiff(b, c), absDiff(a, c));
 }
 
+export function inverse(rounding: Rounding) {
+  if (rounding === Rounding.FLOOR) return Rounding.CEIL;
+  if (rounding === Rounding.CEIL) return Rounding.FLOOR;
+  throw new Error('cannot inverse rounding');
+}
+
 export function parseEther(ether: string | bigint | number) {
   return parseUnits(ether, 18);
 }

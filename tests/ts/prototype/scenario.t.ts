@@ -41,10 +41,11 @@ bob.repay(MAX_UINT);
 bob.log(true, true);
 
 skip();
-alice.withdraw(hub.toSupplyAssets(alice.suppliedShares));
-bob.withdraw(hub.toSupplyAssets(bob.suppliedShares));
+alice.withdraw(amount2);
+skip();
+alice.withdraw(alice.getSuppliedBalance());
 
-hub.log(true, true);
+alice.log(true, true);
 
 runAmountInvariants();
 
