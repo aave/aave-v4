@@ -197,7 +197,7 @@ contract LiquidityHub is ILiquidityHub {
     address repayer
   ) external returns (uint256) {
     // TODO: authorization - only spokes
-    // global & spoke premiumDebt (ghost, offset, unrealised) is *expected* to be updated on the `refresh` callback
+    // global & spoke premiumDebt (ghost, offset, unrealised) is *expected* to be updated on the `refreshPremiumDebt` callback
 
     DataTypes.Asset storage asset = _assets[assetId];
     DataTypes.SpokeData storage spoke = _spokes[assetId][msg.sender];
@@ -222,19 +222,19 @@ contract LiquidityHub is ILiquidityHub {
     return baseDrawnSharesRestored;
   }
 
-  function refresh(
+  function refreshPremiumDebt(
     uint256 assetId,
     int256 premiumDrawnSharesDelta,
     int256 premiumOffsetDelta,
     int256 unrealisedPremiumDelta
   ) external {
     /**
-     * todo: `refresh` callback
+     * todo: `refreshPremiumDebt` callback
      * - only callable by spoke
      * - check that total debt can only:
      *   - reduce until `premiumDebt` if called after a restore (tstore premiumDebt?)
      *   - remains unchanged on all other calls
-     * `refresh` is game-able only for premium stuff
+     * `refreshPremiumDebt` is game-able only for premium stuff
      */
     DataTypes.Asset storage asset = _assets[assetId];
     DataTypes.SpokeData storage spoke = _spokes[assetId][msg.sender];
