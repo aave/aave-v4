@@ -3,7 +3,6 @@ pragma solidity ^0.8.0;
 
 import {WadRayMath} from 'src/contracts/WadRayMath.sol';
 import {PercentageMath} from 'src/contracts/PercentageMath.sol';
-import {MathUtils} from 'src/contracts/MathUtils.sol';
 import {KeyValueListInMemory} from 'src/contracts/KeyValueListInMemory.sol';
 import {ILiquidityHub} from 'src/interfaces/ILiquidityHub.sol';
 import {ISpoke} from 'src/interfaces/ISpoke.sol';
@@ -21,7 +20,6 @@ contract Spoke is ISpoke {
 
   mapping(address user => mapping(uint256 reserveId => DataTypes.UserPosition position))
     internal _userPositions;
-  mapping(address user => DataTypes.UserData data) internal _userData;
   mapping(uint256 reserveId => DataTypes.Reserve reserveData) internal _reserves;
 
   uint256[] public reservesList; // todo: rm, not needed
@@ -154,7 +152,6 @@ contract Spoke is ISpoke {
     // TODO: onBehalfOf with credit delegation
     DataTypes.Reserve storage reserve = _reserves[reserveId];
     DataTypes.UserPosition storage userPosition = _userPositions[msg.sender][reserveId];
-    DataTypes.UserData storage userData = _userData[msg.sender];
     uint256 assetId = reserve.assetId;
 
     _validateBorrow(reserve, msg.sender);
@@ -199,7 +196,6 @@ contract Spoke is ISpoke {
     /// @dev TODO: onBehalfOf
     DataTypes.UserPosition storage userPosition = _userPositions[msg.sender][reserveId];
     DataTypes.Reserve storage reserve = _reserves[reserveId];
-    DataTypes.UserData storage userData = _userData[msg.sender];
     uint256 assetId = reserve.assetId;
 
     (uint256 baseDebtRestored, uint256 premiumDebtRestored) = _calculateRestoreAmount(
@@ -413,7 +409,7 @@ contract Spoke is ISpoke {
     DataTypes.UserPosition storage userPosition,
     uint256 assetId,
     uint256 amount
-  ) internal returns (uint256, uint256) {
+  ) internal view returns (uint256, uint256) {
     (uint256 baseDebt, uint256 premiumDebt) = _getUserDebt(userPosition, assetId);
 
     if (amount == type(uint256).max) {
@@ -484,7 +480,6 @@ contract Spoke is ISpoke {
 
     while (vars.reserveId < reservesListLength) {
       DataTypes.UserPosition storage userPosition = _userPositions[userAddress][vars.reserveId];
-      DataTypes.UserData storage userData = _userData[userAddress];
 
       if (!_usingAsCollateralOrBorrowing(userPosition)) {
         unchecked {
@@ -509,7 +504,6 @@ contract Spoke is ISpoke {
       if (_isBorrowing(userPosition)) {
         vars.totalDebtInBaseCurrency += _getUserDebtInBaseCurrency(
           userPosition,
-          userData,
           vars.assetId,
           vars.assetPrice,
           vars.assetUnit
@@ -605,7 +599,6 @@ contract Spoke is ISpoke {
 
   function _getUserDebtInBaseCurrency(
     DataTypes.UserPosition storage userPosition,
-    DataTypes.UserData storage userData,
     uint256 assetId,
     uint256 assetPrice,
     uint256 assetUnit

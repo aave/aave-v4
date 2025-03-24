@@ -112,7 +112,7 @@ interface ILiquidityHub {
     address repayer
   ) external returns (uint256);
 
-  function refresh(
+  function refreshPremiumDebt(
     uint256 assetId,
     int256 premiumDrawnSharesDelta,
     int256 premiumOffsetDelta,

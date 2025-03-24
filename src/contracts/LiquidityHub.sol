@@ -319,18 +319,24 @@ contract LiquidityHub is ILiquidityHub {
     return asset.baseDebt() + asset.premiumDebt();
   }
 
-  function getSpokeDebt(uint256 assetId, address spoke) external view returns (uint256, uint256) {
+  function getSpokeDebt(
+    uint256 assetId,
+    address spokeAddress
+  ) external view returns (uint256, uint256) {
     DataTypes.Asset storage asset = _assets[assetId];
-    DataTypes.SpokeData storage spoke = _spokes[assetId][spoke];
+    DataTypes.SpokeData storage spoke = _spokes[assetId][spokeAddress];
     uint256 premiumDebt = asset.toDrawnAssetsUp(spoke.premiumDrawnShares) -
       spoke.premiumOffset +
       spoke.unrealisedPremium;
     return (asset.toDrawnAssetsUp(spoke.baseDrawnShares), premiumDebt);
   }
 
-  function getSpokeTotalDebt(uint256 assetId, address spoke) external view returns (uint256) {
+  function getSpokeTotalDebt(
+    uint256 assetId,
+    address spokeAddress
+  ) external view returns (uint256) {
     DataTypes.Asset storage asset = _assets[assetId];
-    DataTypes.SpokeData storage spoke = _spokes[assetId][spoke];
+    DataTypes.SpokeData storage spoke = _spokes[assetId][spokeAddress];
     uint256 premiumDebt = asset.toDrawnAssetsUp(spoke.premiumDrawnShares) -
       spoke.premiumOffset +
       spoke.unrealisedPremium; // cannot be -ve
