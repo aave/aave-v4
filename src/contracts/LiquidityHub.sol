@@ -8,7 +8,6 @@ import {DataTypes} from 'src/libraries/types/DataTypes.sol';
 import {AssetLogic} from 'src/contracts/AssetLogic.sol';
 import {WadRayMath} from 'src/contracts/WadRayMath.sol';
 import {SharesMath} from 'src/contracts/SharesMath.sol';
-import {MathUtils} from 'src/contracts/MathUtils.sol';
 import {PercentageMath} from 'src/contracts/PercentageMath.sol';
 
 // @dev Amounts are `asset` denominated by default unless specified otherwise with `share` suffix
@@ -148,6 +147,7 @@ contract LiquidityHub is ILiquidityHub {
 
     asset.updateBorrowRate({liquidityAdded: 0, liquidityTaken: amount});
 
+    // todo name withdrawnShares, to align with spoke?
     uint256 suppliedShares = asset.toSuppliedSharesUp(amount); // non zero since we round up
 
     asset.availableLiquidity -= amount;
@@ -222,7 +222,7 @@ contract LiquidityHub is ILiquidityHub {
     return baseDrawnSharesRestored;
   }
 
-  function restore(
+  function refresh(
     uint256 assetId,
     int256 premiumDrawnSharesDelta,
     int256 premiumOffsetDelta,
@@ -298,11 +298,11 @@ contract LiquidityHub is ILiquidityHub {
   }
 
   function convertToDrawnAssets(uint256 assetId, uint256 shares) external view returns (uint256) {
-    return _assets[assetId].toDrawnAssetsDown(shares);
+    return _assets[assetId].toDrawnAssetsUp(shares);
   }
 
   function convertToDrawnShares(uint256 assetId, uint256 assets) external view returns (uint256) {
-    return _assets[assetId].toDrawnSharesDown(assets);
+    return _assets[assetId].toDrawnSharesUp(assets);
   }
 
   function getBaseInterestRate(uint256 assetId) public view returns (uint256) {
@@ -311,30 +311,30 @@ contract LiquidityHub is ILiquidityHub {
 
   function getAssetDebt(uint256 assetId) external view returns (uint256, uint256) {
     DataTypes.Asset storage asset = _assets[assetId];
-    return (asset.previewBaseDrawn(), asset.premiumDebtDown());
+    return (asset.previewBaseDrawn(), asset.premiumDebtUp());
   }
 
   function getAssetTotalDebt(uint256 assetId) external view returns (uint256) {
     DataTypes.Asset storage asset = _assets[assetId];
-    return asset.previewBaseDrawn() + asset.premiumDebtDown();
+    return asset.previewBaseDrawn() + asset.premiumDebtUp();
   }
 
   function getSpokeDebt(uint256 assetId, address spoke) external view returns (uint256, uint256) {
     DataTypes.Asset storage asset = _assets[assetId];
     DataTypes.SpokeData storage spoke = _spokes[assetId][spoke];
-    uint256 premiumDebt = asset.toDrawnAssetsDown(spoke.premiumDrawnShares) -
+    uint256 premiumDebt = asset.toDrawnAssetsUp(spoke.premiumDrawnShares) -
       spoke.premiumOffset +
       spoke.unrealisedPremium;
-    return (asset.toDrawnAssetsDown(spoke.baseDrawnShares), premiumDebt);
+    return (asset.toDrawnAssetsUp(spoke.baseDrawnShares), premiumDebt);
   }
 
   function getSpokeTotalDebt(uint256 assetId, address spoke) external view returns (uint256) {
     DataTypes.Asset storage asset = _assets[assetId];
     DataTypes.SpokeData storage spoke = _spokes[assetId][spoke];
-    uint256 premiumDebt = asset.toDrawnAssetsDown(spoke.premiumDrawnShares) -
+    uint256 premiumDebt = asset.toDrawnAssetsUp(spoke.premiumDrawnShares) -
       spoke.premiumOffset +
       spoke.unrealisedPremium; // cannot be -ve
-    return asset.toDrawnAssetsDown(spoke.baseDrawnShares) + premiumDebt;
+    return asset.toDrawnAssetsUp(spoke.baseDrawnShares) + premiumDebt;
   }
 
   function getAssetSuppliedAmount(uint256 assetId) external view returns (uint256) {
@@ -448,7 +448,7 @@ contract LiquidityHub is ILiquidityHub {
     require(config.decimals <= MAX_ALLOWED_ASSET_DECIMALS, InvalidAssetDecimals());
   }
 
-  // handle underflow
+  // handles underflow
   function _add(uint256 a, int256 b) internal pure returns (uint256) {
     if (b > 0) return a + uint256(b);
     else return a - uint256(-b);

@@ -91,7 +91,7 @@ interface ILiquidityHub {
    * @param assetId The asset id.
    * @param amount The amount of debt to draw.
    * @param to The address to transfer the underlying assets to.
-   * @return The amount of debt drawn.
+   * @return The amount of base shares drawn.
    */
   function draw(uint256 assetId, uint256 amount, address to) external returns (uint256);
 
@@ -112,7 +112,25 @@ interface ILiquidityHub {
     address repayer
   ) external returns (uint256);
 
+  function refresh(
+    uint256 assetId,
+    int256 premiumDrawnSharesDelta,
+    int256 premiumOffsetDelta,
+    int256 unrealisedPremiumDelta
+  ) external;
+  function convertToDrawnAssets(uint256 assetId, uint256 shares) external view returns (uint256);
+  function convertToDrawnShares(uint256 assetId, uint256 assets) external view returns (uint256);
+  function convertToSuppliedAssets(uint256 assetId, uint256 shares) external view returns (uint256);
+  function convertToSuppliedShares(uint256 assetId, uint256 assets) external view returns (uint256);
   function getAsset(uint256 assetId) external view returns (DataTypes.Asset memory);
+  function getAssetConfig(uint256 assetId) external view returns (DataTypes.AssetConfig memory);
+  function getAssetDebt(uint256 assetId) external view returns (uint256, uint256);
+  function getAssetSuppliedAmount(uint256 assetId) external view returns (uint256);
+  function getAssetSuppliedShares(uint256 assetId) external view returns (uint256);
+  function getAssetTotalDebt(uint256 assetId) external view returns (uint256);
+  function getAvailableLiquidity(uint256 assetId) external view returns (uint256);
+  function getBaseInterestRate(uint256 assetId) external view returns (uint256);
+  function getDrawnAssets(uint256 assetId) external view returns (uint256, uint256);
   function getSpoke(
     uint256 assetId,
     address spoke
@@ -121,24 +139,11 @@ interface ILiquidityHub {
     uint256 assetId,
     address spoke
   ) external view returns (DataTypes.SpokeConfig memory);
-  // function getTotalAssets(uint256 assetId) external view returns (uint256);
-  // function convertToAssets(uint256 assetId, uint256 shares) external view returns (uint256);
-  // function convertToShares(uint256 assetId, uint256 assets) external view returns (uint256);
-  // function getBaseInterestRate(uint256 assetId) external view returns (uint256);
-  // function getInterestRate(uint256 assetId) external view returns (uint256);
-
-  // function getAssetDebt(uint256 assetId) external view returns (uint256, uint256);
-  // function getAssetCumulativeDebt(uint256 assetId) external view returns (uint256);
-  // function getSpokeDebt(uint256 assetId, address spoke) external view returns (uint256, uint256);
-  // function getSpokeCumulativeDebt(uint256 assetId, address spoke) external view returns (uint256);
-  // function getAssetSuppliedAmount(uint256 assetId) external view returns (uint256);
-  // function getAssetSuppliedShares(uint256 assetId) external view returns (uint256);
-  // function getSpokeSuppliedAmount(uint256 assetId, address spoke) external view returns (uint256);
-  // function getSpokeSuppliedShares(uint256 assetId, address spoke) external view returns (uint256);
-  // function getAssetRiskPremium(uint256 assetId) external view returns (uint256);
-  // function getSpokeRiskPremium(uint256 assetId, address spoke) external view returns (uint256);
-  // function getAssetConfig(uint256 assetId) external view returns (DataTypes.AssetConfig memory);
-  // function getAvailableLiquidity(uint256 assetId) external view returns (uint256);
+  function getSpokeDebt(uint256 assetId, address spoke) external view returns (uint256, uint256);
+  function getSpokeSuppliedAmount(uint256 assetId, address spoke) external view returns (uint256);
+  function getSpokeSuppliedShares(uint256 assetId, address spoke) external view returns (uint256);
+  function getSpokeTotalDebt(uint256 assetId, address spoke) external view returns (uint256);
+  function getSuppliedAssets(uint256 assetId) external view returns (uint256, uint256, uint256);
 
   function assetCount() external view returns (uint256);
   function assetsList(uint256 assetId) external view returns (IERC20);
