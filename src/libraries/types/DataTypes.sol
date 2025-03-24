@@ -58,9 +58,11 @@ library DataTypes {
     uint256 reserveId;
     uint256 assetId;
     address asset;
-    uint256 baseDebt;
-    uint256 outstandingPremium;
     uint256 suppliedShares;
+    uint256 baseDrawnShares;
+    uint256 premiumDrawnShares;
+    uint256 premiumOffset;
+    uint256 unrealisedPremium;
     ReserveConfig config;
   }
 
@@ -78,11 +80,11 @@ library DataTypes {
 
   struct UserPosition {
     bool usingAsCollateral;
-    uint256 baseDebt;
-    uint256 outstandingPremium;
     uint256 suppliedShares;
-    uint256 baseBorrowIndex;
-    uint256 riskPremium;
+    uint256 baseDrawnShares;
+    uint256 premiumDrawnShares;
+    uint256 premiumOffset;
+    uint256 unrealisedPremium;
     uint256 lastUpdateTimestamp;
   }
 
