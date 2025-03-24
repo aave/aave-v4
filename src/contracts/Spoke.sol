@@ -175,7 +175,7 @@ contract Spoke is ISpoke {
     userPosition.unrealisedPremium += _sub(
       liquidityHub.convertToDrawnAssets(assetId, uint256(oldUserPremiumDrawnShares)),
       oldUserPremiumOffset
-    );
+    ); // assets(premiumShares) - offset should never be < 0
 
     _validateHealthFactor(msg.sender);
     _refreshPremiumDebt(

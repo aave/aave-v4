@@ -55,8 +55,7 @@ library AssetLogic {
 
   function premiumDebt(DataTypes.Asset storage asset) internal view returns (uint256) {
     return
-      asset.toDrawnAssetsUp(asset.premiumDrawnShares) -
-      asset.premiumOffset +
+      (asset.toDrawnAssetsUp(asset.premiumDrawnShares) - asset.premiumOffset) +
       asset.unrealisedPremium;
   }
 
