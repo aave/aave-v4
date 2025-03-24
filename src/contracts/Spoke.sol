@@ -634,9 +634,8 @@ contract Spoke is ISpoke {
     DataTypes.Reserve storage reserve
   ) internal view returns (uint256, uint256) {
     uint256 assetId = reserve.assetId;
-    uint256 premiumDebt = liquidityHub.convertToDrawnAssets(assetId, reserve.premiumDrawnShares) +
-      reserve.premiumOffset -
-      reserve.unrealisedPremium;
+    uint256 premiumDebt = (liquidityHub.convertToDrawnAssets(assetId, reserve.premiumDrawnShares) -
+      reserve.premiumOffset) + reserve.unrealisedPremium;
     return (liquidityHub.convertToDrawnAssets(assetId, reserve.baseDrawnShares), premiumDebt);
   }
 
