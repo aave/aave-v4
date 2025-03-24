@@ -19,7 +19,7 @@ library AssetLogic {
   // todo: add virtual offset for inflation attack
   // only include base drawn assets
   function totalDrawnAssets(DataTypes.Asset storage asset) internal view returns (uint256) {
-    return asset.previewBaseDrawn();
+    return asset.baseDebt();
   }
 
   function totalDrawnShares(DataTypes.Asset storage asset) internal view returns (uint256) {
@@ -53,25 +53,15 @@ library AssetLogic {
     return assets.toSharesDown(asset.totalDrawnShares(), asset.totalDrawnAssets());
   }
 
-  // todo rounding struct for internal/global helpers
-  function premiumDebtUp(DataTypes.Asset storage asset) internal view returns (uint256) {
+  function premiumDebt(DataTypes.Asset storage asset) internal view returns (uint256) {
     return
       asset.toDrawnAssetsUp(asset.premiumDrawnShares) -
       asset.premiumOffset +
       asset.unrealisedPremium;
   }
-  function premiumDebtDown(DataTypes.Asset storage asset) internal view returns (uint256) {
-    return
-      asset.toDrawnAssetsDown(asset.premiumDrawnShares) -
-      asset.premiumOffset +
-      asset.unrealisedPremium;
-  }
 
-  function totalSuppliedAssetsUp(DataTypes.Asset storage asset) internal view returns (uint256) {
-    return asset.availableLiquidity + asset.previewBaseDrawn() + asset.premiumDebtUp();
-  }
-  function totalSuppliedAssetsDown(DataTypes.Asset storage asset) internal view returns (uint256) {
-    return asset.availableLiquidity + asset.previewBaseDrawn() + asset.premiumDebtDown();
+  function totalSuppliedAssets(DataTypes.Asset storage asset) internal view returns (uint256) {
+    return asset.availableLiquidity + asset.baseDebt() + asset.premiumDebt();
   }
 
   function totalSuppliedShares(DataTypes.Asset storage asset) internal view returns (uint256) {
@@ -82,32 +72,30 @@ library AssetLogic {
     DataTypes.Asset storage asset,
     uint256 shares
   ) internal view returns (uint256) {
-    // todo inverse total supplied rounding
-    return shares.toAssetsUp(asset.totalSuppliedAssetsUp(), asset.totalSuppliedShares());
+    return shares.toAssetsUp(asset.totalSuppliedAssets(), asset.totalSuppliedShares());
   }
   function toSuppliedAssetsDown(
     DataTypes.Asset storage asset,
     uint256 shares
   ) internal view returns (uint256) {
-    // todo inverse total supplied rounding
-    return shares.toAssetsUp(asset.totalSuppliedAssetsDown(), asset.totalSuppliedShares());
+    return shares.toAssetsDown(asset.totalSuppliedAssets(), asset.totalSuppliedShares());
   }
 
   function toSuppliedSharesUp(
     DataTypes.Asset storage asset,
     uint256 assets
   ) internal view returns (uint256) {
-    return assets.toSharesUp(asset.totalSuppliedShares(), asset.totalSuppliedAssetsUp());
+    return assets.toSharesUp(asset.totalSuppliedShares(), asset.totalSuppliedAssets());
   }
   function toSuppliedSharesDown(
     DataTypes.Asset storage asset,
     uint256 assets
   ) internal view returns (uint256) {
-    return assets.toSharesDown(asset.totalSuppliedShares(), asset.totalSuppliedAssetsDown());
+    return assets.toSharesDown(asset.totalSuppliedShares(), asset.totalSuppliedAssets());
   }
 
   // risk premium interest rate is calculated offchain
-  function getBaseBorrowRat(DataTypes.Asset storage asset) internal view returns (uint256) {
+  function getBaseBorrowRate(DataTypes.Asset storage asset) internal view returns (uint256) {
     return asset.baseBorrowRate;
   }
 
@@ -134,10 +122,10 @@ library AssetLogic {
 
   // @dev Utilizes existing `asset.baseBorrowRate`
   function accrue(DataTypes.Asset storage asset) internal {
-    asset.baseDrawnAssets = asset.previewBaseDrawn();
+    asset.baseDrawnAssets = asset.baseDebt();
   }
 
-  function previewBaseDrawn(DataTypes.Asset storage asset) internal view returns (uint256) {
+  function baseDebt(DataTypes.Asset storage asset) internal view returns (uint256) {
     uint256 baseDrawnAssets = asset.baseDrawnAssets;
     uint256 lastUpdateTimestamp = asset.lastUpdateTimestamp;
     if (baseDrawnAssets == 0 || lastUpdateTimestamp == block.timestamp) {
