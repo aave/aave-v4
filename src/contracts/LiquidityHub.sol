@@ -315,15 +315,13 @@ contract LiquidityHub is ILiquidityHub {
   }
 
   function getAssetDebt(uint256 assetId) external view returns (uint256, uint256) {
-    (uint256 cumulatedBaseDebt, uint256 cumulatedOutstandingPremium) = _assets[assetId]
-      .previewInterest();
-    return (cumulatedBaseDebt, cumulatedOutstandingPremium);
+    uint256 drawnAssets = _assets[assetId].previewInterest();
+    return (drawnAssets, _getTotalPremium(_assets[assetId]));
   }
 
   function getAssetCumulativeDebt(uint256 assetId) external view returns (uint256) {
-    (uint256 cumulatedBaseDebt, uint256 cumulatedOutstandingPremium) = _assets[assetId]
-      .previewInterest();
-    return cumulatedBaseDebt + cumulatedOutstandingPremium;
+    uint256 drawnAssets = _assets[assetId].previewInterest();
+    return drawnAssets + _getTotalPremium(_assets[assetId]);
   }
 
   function getSpokeDebt(uint256 assetId, address spoke) external view returns (uint256, uint256) {
@@ -440,6 +438,20 @@ contract LiquidityHub is ILiquidityHub {
     DataTypes.SpokeData storage spoke
   ) internal {
     asset.accrueInterest();
+  }
+
+  function _getTotalPremium(DataTypes.Asset storage asset) internal returns (uint256) {
+    return
+      asset.totalPremium +
+      _assets[assetId].convertToDrawnAssetsUp(_assets[assetId].premiumDrawnShares) -
+      _assets[assetId].premiumOffset;
+  }
+
+  function _getSpokeTotalPremium(DataTypes.SpokeData spokeData) internal returns (uint256) {
+    return
+      spokeData.totalPremium +
+      _assets[assetId].convertToDrawnAssetsUp(spokeData.premiumDrawnShares) -
+      spokeData.premiumOffset;
   }
 
   function _addSpoke(uint256 assetId, DataTypes.SpokeConfig memory config, address spoke) internal {

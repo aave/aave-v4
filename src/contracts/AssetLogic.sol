@@ -21,13 +21,12 @@ library AssetLogic {
 
   function totalAssets(DataTypes.Asset storage asset) internal view returns (uint256) {
     // totalSupplyAssets = availableLiquidity + drawnAssets + totalPremium
-    (uint256 drawnAssets, uint256 totalPremium) = asset.previewInterest();
+    uint256 drawnAssets = asset.previewInterest();
     return asset.availableLiquidity + drawnAssets + totalPremium;
   }
 
   function getTotalDrawnAssets(DataTypes.Asset storage asset) internal view returns (uint256) {
-    (uint256 drawnAssets, ) = asset.previewInterest();
-    return drawnAssets;
+    return asset.previewInterest();
   }
 
   function totalShares(DataTypes.Asset storage asset) internal view returns (uint256) {
@@ -125,25 +124,23 @@ library AssetLogic {
   }
 
   function accrueInterest(DataTypes.Asset storage asset) internal {
-    (uint256 cumulatedBaseDebt, uint256 cumulatedOutstandingPremium) = asset.previewInterest();
+    uint256 cumulatedDrawnAssets = asset.previewInterest();
 
-    asset.drawnAssets = cumulatedBaseDebt;
-    asset.totalPremium = cumulatedOutstandingPremium;
+    asset.drawnAssets = cumulatedDrawnAssets;
     asset.lastUpdateTimestamp = block.timestamp;
   }
 
-  function previewInterest(DataTypes.Asset storage asset) internal view returns (uint256, uint256) {
-    uint256 existingBaseDebt = asset.drawnAssets;
-    uint256 existingOutstandingPremium = asset.totalPremium;
+  function previewInterest(DataTypes.Asset storage asset) internal view returns (uint256) {
+    uint256 currentDrawnAssets = asset.drawnAssets;
 
-    if (existingBaseDebt == 0 || asset.lastUpdateTimestamp == block.timestamp) {
-      return (existingBaseDebt, existingOutstandingPremium);
+    if (currentDrawnAssets == 0 || asset.lastUpdateTimestamp == block.timestamp) {
+      return currentDrawnAssets;
     }
 
-    uint256 cumulatedBaseDebt = existingBaseDebt.rayMul(
+    uint256 currentDrawnAssets = currentDrawnAssets.rayMul(
       MathUtils.calculateLinearInterest(asset.baseBorrowRate, uint40(asset.lastUpdateTimestamp))
     );
 
-    return (cumulatedBaseDebt, existingOutstandingPremium);
+    return currentDrawnAssets;
   }
 }
