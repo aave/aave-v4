@@ -44,7 +44,7 @@ contract LiquidityHub is ILiquidityHub {
       premiumDrawnShares: 0,
       premiumOffset: 0,
       unrealisedPremium: 0,
-      drawnAssets: 0,
+      baseDrawnAssets: 0,
       lastUpdateTimestamp: block.timestamp,
       baseBorrowRate: 0, // todo check
       id: assetId, // todo rm
@@ -178,7 +178,7 @@ contract LiquidityHub is ILiquidityHub {
 
     asset.availableLiquidity -= amount;
     asset.baseDrawnShares += drawnShares;
-    asset.drawnAssets += amount;
+    asset.baseDrawnAssets += amount;
 
     spoke.baseDrawnShares += drawnShares;
 
@@ -210,6 +210,7 @@ contract LiquidityHub is ILiquidityHub {
     uint256 baseDrawnSharesRestored = asset.toDrawnSharesUp(baseAmount);
 
     asset.availableLiquidity += totalRestoredAmount;
+    asset.baseDrawnAssets += baseAmount;
     asset.baseDrawnShares -= baseDrawnSharesRestored;
 
     spoke.baseDrawnShares -= baseDrawnSharesRestored;
@@ -271,82 +272,94 @@ contract LiquidityHub is ILiquidityHub {
     return _spokes[assetId][spoke].config;
   }
 
-  // function getTotalAssets(uint256 assetId) external view returns (uint256) {
-  //   return _assets[assetId].getTotalAssets();
-  // }
+  // todo rethink these two getters depending of requirement
+  function getDrawnAssets(uint256 assetId) external view returns (uint256, uint256) {
+    DataTypes.Asset storage asset = _assets[assetId];
+    return (asset.previewBaseDrawn(), asset.premiumDrawnAssetsDown());
+  }
+  function getSuppliedAssets(uint256 assetId) external view returns (uint256, uint256, uint256) {
+    DataTypes.Asset storage asset = _assets[assetId];
+    return (asset.availableLiquidity, asset.previewBaseDrawn(), asset.premiumDrawnAssetsDown());
+  }
 
-  // function convertToAssets(uint256 assetId, uint256 shares) external view returns (uint256) {
-  //   return _assets[assetId].convertToAssetsDown(shares);
-  // }
+  // todo 4626 getter naming
+  function convertToSuppliedAssets(
+    uint256 assetId,
+    uint256 shares
+  ) external view returns (uint256) {
+    return _assets[assetId].toSuppliedAssetsDown(shares);
+  }
 
-  // function convertToShares(uint256 assetId, uint256 assets) external view returns (uint256) {
-  //   return _assets[assetId].convertToSharesDown(assets);
-  // }
+  function convertToSuppliedShares(
+    uint256 assetId,
+    uint256 assets
+  ) external view returns (uint256) {
+    return _assets[assetId].toSuppliedSharesDown(assets);
+  }
 
-  // function getBaseInterestRate(uint256 assetId) public view returns (uint256) {
-  //   return _assets[assetId].baseBorrowRate;
-  // }
+  function convertToDrawnAssets(uint256 assetId, uint256 shares) external view returns (uint256) {
+    return _assets[assetId].toDrawnAssetsDown(shares);
+  }
 
-  // function getInterestRate(uint256 assetId) public view returns (uint256) {
-  //   return _assets[assetId].getInterestRate();
-  // }
+  function convertToDrawnShares(uint256 assetId, uint256 assets) external view returns (uint256) {
+    return _assets[assetId].toDrawnSharesDown(assets);
+  }
 
-  // function getAssetDebt(uint256 assetId) external view returns (uint256, uint256) {
-  //   (uint256 cumulatedBaseDebt, uint256 cumulatedOutstandingPremium) = _assets[assetId]
-  //     .previewInterest(_assets[assetId].previewNextBorrowIndex());
-  //   return (cumulatedBaseDebt, cumulatedOutstandingPremium);
-  // }
+  function getBaseInterestRate(uint256 assetId) public view returns (uint256) {
+    return _assets[assetId].baseBorrowRate;
+  }
 
-  // function getAssetCumulativeDebt(uint256 assetId) external view returns (uint256) {
-  //   (uint256 cumulatedBaseDebt, uint256 cumulatedOutstandingPremium) = _assets[assetId]
-  //     .previewInterest(_assets[assetId].previewNextBorrowIndex());
-  //   return cumulatedBaseDebt + cumulatedOutstandingPremium;
-  // }
+  function getAssetDebt(uint256 assetId) external view returns (uint256, uint256) {
+    DataTypes.Asset storage asset = _assets[assetId];
+    return (asset.previewBaseDrawn(), asset.premiumDrawnAssetsDown());
+  }
 
-  // function getSpokeDebt(uint256 assetId, address spoke) external view returns (uint256, uint256) {
-  //   (uint256 cumulatedBaseDebt, uint256 cumulatedOutstandingPremium) = _spokes[assetId][spoke]
-  //     .previewInterest(_assets[assetId].previewNextBorrowIndex());
-  //   return (cumulatedBaseDebt, cumulatedOutstandingPremium);
-  // }
+  function getAssetTotalDebt(uint256 assetId) external view returns (uint256) {
+    DataTypes.Asset storage asset = _assets[assetId];
+    return asset.previewBaseDrawn() + asset.premiumDrawnAssetsDown();
+  }
 
-  // function getSpokeCumulativeDebt(uint256 assetId, address spoke) external view returns (uint256) {
-  //   (uint256 cumulatedBaseDebt, uint256 cumulatedOutstandingPremium) = _spokes[assetId][spoke]
-  //     .previewInterest(_assets[assetId].previewNextBorrowIndex());
-  //   return cumulatedBaseDebt + cumulatedOutstandingPremium;
-  // }
+  function getSpokeDebt(uint256 assetId, address spoke) external view returns (uint256, uint256) {
+    DataTypes.Asset storage asset = _assets[assetId];
+    DataTypes.SpokeData storage spoke = _spokes[assetId][spoke];
+    uint256 premiumDebt = asset.toDrawnAssetsDown(spoke.premiumDrawnShares) -
+      spoke.premiumOffset +
+      spoke.unrealisedPremium;
+    return (asset.toDrawnAssetsDown(spoke.baseDrawnShares), premiumDebt);
+  }
 
-  // function getAssetSuppliedAmount(uint256 assetId) external view returns (uint256) {
-  //   return _assets[assetId].convertToAssetsDown(_assets[assetId].suppliedShares);
-  // }
+  function getSpokeTotalDebt(uint256 assetId, address spoke) external view returns (uint256) {
+    DataTypes.Asset storage asset = _assets[assetId];
+    DataTypes.SpokeData storage spoke = _spokes[assetId][spoke];
+    uint256 premiumDebt = asset.toDrawnAssetsDown(spoke.premiumDrawnShares) -
+      spoke.premiumOffset +
+      spoke.unrealisedPremium; // cannot be -ve
+    return asset.toDrawnAssetsDown(spoke.baseDrawnShares) + premiumDebt;
+  }
 
-  // function getAssetSuppliedShares(uint256 assetId) external view returns (uint256) {
-  //   return _assets[assetId].suppliedShares;
-  // }
+  function getAssetSuppliedAmount(uint256 assetId) external view returns (uint256) {
+    return _assets[assetId].toSuppliedAssetsDown(_assets[assetId].suppliedShares);
+  }
 
-  // function getSpokeSuppliedAmount(uint256 assetId, address spoke) external view returns (uint256) {
-  //   return _assets[assetId].convertToAssetsDown(_spokes[assetId][spoke].suppliedShares);
-  // }
+  function getAssetSuppliedShares(uint256 assetId) external view returns (uint256) {
+    return _assets[assetId].suppliedShares;
+  }
 
-  // function getSpokeSuppliedShares(uint256 assetId, address spoke) external view returns (uint256) {
-  //   return _spokes[assetId][spoke].suppliedShares;
-  // }
+  function getSpokeSuppliedAmount(uint256 assetId, address spoke) external view returns (uint256) {
+    return _assets[assetId].toSuppliedAssetsDown(_spokes[assetId][spoke].suppliedShares);
+  }
 
-  // function getAssetRiskPremium(uint256 assetId) external view returns (uint256) {
-  //   return _assets[assetId].riskPremium.derayify();
-  // }
+  function getSpokeSuppliedShares(uint256 assetId, address spoke) external view returns (uint256) {
+    return _spokes[assetId][spoke].suppliedShares;
+  }
 
-  // function getSpokeRiskPremium(uint256 assetId, address spoke) external view returns (uint256) {
-  //   return _spokes[assetId][spoke].riskPremium.derayify();
-  // }
+  function getAvailableLiquidity(uint256 assetId) external view returns (uint256) {
+    return _assets[assetId].availableLiquidity;
+  }
 
-  // function getAvailableLiquidity(uint256 assetId) external view returns (uint256) {
-  //   return _assets[assetId].availableLiquidity;
-  // }
-
-  // /// @inheritdoc ILiquidityHub
-  // function getAssetConfig(uint256 assetId) external view returns (DataTypes.AssetConfig memory) {
-  //   return _assets[assetId].config;
-  // }
+  function getAssetConfig(uint256 assetId) external view returns (DataTypes.AssetConfig memory) {
+    return _assets[assetId].config;
+  }
 
   //
   // Internal

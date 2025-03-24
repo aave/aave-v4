@@ -23,7 +23,7 @@ library DataTypes {
     uint256 premiumDrawnShares;
     uint256 premiumOffset; // todo make signed
     uint256 unrealisedPremium;
-    uint256 drawnAssets;
+    uint256 baseDrawnAssets;
     uint256 baseBorrowRate;
     uint256 lastUpdateTimestamp;
     uint256 id; // todo remove
