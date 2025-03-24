@@ -15,7 +15,6 @@ library Utils {
     uint256 assetId,
     address spoke,
     uint256 amount,
-    uint32 riskPremium,
     address user,
     address to // todo: implement
   ) internal {
@@ -24,7 +23,7 @@ library Utils {
     vm.stopPrank();
 
     vm.prank(spoke);
-    hub.supply({assetId: assetId, amount: amount, riskPremium: riskPremium, supplier: user});
+    hub.supply(assetId, amount, user);
   }
 
   function draw(
@@ -33,11 +32,10 @@ library Utils {
     address spoke,
     address to,
     uint256 amount,
-    uint32 riskPremium,
     address onBehalfOf // todo: implement
   ) internal {
     vm.prank(spoke);
-    hub.draw(assetId, amount, riskPremium, to);
+    hub.draw(assetId, amount, to);
   }
 
   function withdraw(
@@ -45,19 +43,18 @@ library Utils {
     uint256 assetId,
     address spoke,
     uint256 amount,
-    uint32 riskPremium,
     address to
   ) internal {
     vm.prank(spoke);
-    hub.withdraw(assetId, amount, riskPremium, to);
+    hub.withdraw(assetId, amount, to);
   }
 
   function restore(
     ILiquidityHub hub,
     uint256 assetId,
     address spoke,
-    uint256 amount,
-    uint32 riskPremium,
+    uint256 baseAmount,
+    uint256 premiumAmount,
     address repayer
   ) internal {
     vm.startPrank(repayer);
@@ -65,7 +62,7 @@ library Utils {
     vm.stopPrank();
 
     vm.prank(spoke);
-    hub.restore(assetId, amount, riskPremium, repayer);
+    hub.restore(assetId, baseAmount, premiumAmount, repayer);
   }
 
   // spoke
@@ -78,6 +75,17 @@ library Utils {
   ) internal {
     vm.prank(user);
     spoke.supply(reserveId, amount);
+  }
+
+  function spokeWithdraw(
+    ISpoke spoke,
+    uint256 reserveId,
+    address user,
+    uint256 amount,
+    address onBehalfOf
+  ) internal {
+    vm.prank(user);
+    spoke.withdraw(reserveId, amount, user);
   }
 
   function spokeBorrow(
