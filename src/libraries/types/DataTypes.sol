@@ -1,36 +1,38 @@
 // SPDX-License-Identifier: BUSL-1.1
 pragma solidity ^0.8.10;
 
+import {IReserveInterestRateStrategy} from 'src/interfaces/IReserveInterestRateStrategy.sol';
+
 library DataTypes {
   // Liquidity Hub types
+  // todo pack
   struct SpokeData {
-    uint256 suppliedShares; // share
-    uint256 baseDebt; // asset
-    uint256 outstandingPremium; // asset
-    uint256 baseBorrowIndex; // in ray
-    // rayified weighted average risk premium of all users drawing this asset
-    uint256 riskPremium;
-    uint256 lastUpdateTimestamp;
+    uint256 suppliedShares;
+    uint256 baseDrawnShares;
+    uint256 premiumDrawnShares;
+    uint256 premiumOffset; // todo make signed
+    uint256 unrealisedPremium;
+    uint256 lastUpdateTimestamp; // todo: unneeded?
     DataTypes.SpokeConfig config;
   }
 
   struct Asset {
-    uint256 id;
-    uint256 suppliedShares; // share
-    uint256 availableLiquidity; // asset
-    uint256 baseDebt; // asset
-    uint256 outstandingPremium; // asset
-    uint256 baseBorrowIndex; // in ray
-    uint256 baseBorrowRate; // in ray
-    // rayified weighted average risk premium of all spokes drawing this asset
-    uint256 riskPremium;
+    uint256 suppliedShares;
+    uint256 availableLiquidity;
+    uint256 baseDrawnShares;
+    uint256 premiumDrawnShares;
+    uint256 premiumOffset; // todo make signed
+    uint256 unrealisedPremium;
+    uint256 drawnAssets;
+    uint256 baseBorrowRate;
     uint256 lastUpdateTimestamp;
+    uint256 id; // todo remove
     DataTypes.AssetConfig config;
   }
 
   struct SpokeConfig {
-    uint256 drawCap; // asset denominated
-    uint256 supplyCap; // asset denominated
+    uint256 drawCap;
+    uint256 supplyCap;
   }
 
   struct AssetConfig {
@@ -38,7 +40,7 @@ library DataTypes {
     bool frozen;
     bool paused;
     uint256 decimals;
-    address irStrategy; // todo use interface
+    IReserveInterestRateStrategy irStrategy;
   }
 
   // Spoke types
@@ -59,9 +61,6 @@ library DataTypes {
     uint256 baseDebt;
     uint256 outstandingPremium;
     uint256 suppliedShares;
-    uint256 baseBorrowIndex;
-    uint256 lastUpdateTimestamp;
-    uint256 riskPremium; // weighted average risk premium of all users with ray precision
     ReserveConfig config;
   }
 
