@@ -19,7 +19,7 @@ library AssetLogic {
   // todo: add virtual offset for inflation attack
   // only include base drawn assets
   function totalDrawnAssets(DataTypes.Asset storage asset) internal view returns (uint256) {
-    return asset.previewDrawn();
+    return asset.previewBaseDrawn();
   }
 
   function totalDrawnShares(DataTypes.Asset storage asset) internal view returns (uint256) {
@@ -53,18 +53,25 @@ library AssetLogic {
     return assets.toSharesDown(asset.totalDrawnShares(), asset.totalDrawnAssets());
   }
 
-  // todo rounding struct for internal/global
-  function totalSuppliedAssetsUp(DataTypes.Asset storage asset) internal view returns (uint256) {
-    uint256 premiumDebt = asset.toDrawnAssetsUp(asset.premiumDrawnShares) -
+  // todo rounding struct for internal/global helpers
+  function premiumDrawnAssetsUp(DataTypes.Asset storage asset) internal view returns (uint256) {
+    return
+      asset.toDrawnAssetsUp(asset.premiumDrawnShares) -
       asset.premiumOffset +
       asset.unrealisedPremium;
-    return asset.availableLiquidity + asset.previewDrawn() + premiumDebt;
+  }
+  function premiumDrawnAssetsDown(DataTypes.Asset storage asset) internal view returns (uint256) {
+    return
+      asset.toDrawnAssetsDown(asset.premiumDrawnShares) -
+      asset.premiumOffset +
+      asset.unrealisedPremium;
+  }
+
+  function totalSuppliedAssetsUp(DataTypes.Asset storage asset) internal view returns (uint256) {
+    return asset.availableLiquidity + asset.previewBaseDrawn() + asset.premiumDrawnAssetsUp();
   }
   function totalSuppliedAssetsDown(DataTypes.Asset storage asset) internal view returns (uint256) {
-    uint256 premiumDebt = asset.toDrawnAssetsDown(asset.premiumDrawnShares) -
-      asset.premiumOffset +
-      asset.unrealisedPremium;
-    return asset.availableLiquidity + asset.previewDrawn() + premiumDebt;
+    return asset.availableLiquidity + asset.previewBaseDrawn() + asset.premiumDrawnAssetsDown();
   }
 
   function totalSuppliedShares(DataTypes.Asset storage asset) internal view returns (uint256) {
@@ -104,7 +111,7 @@ library AssetLogic {
     return asset.baseBorrowRate;
   }
 
-  // expects accrued `drawnAssets`
+  // expects accrued `baseDrawnAssets`
   function updateBorrowRate(
     DataTypes.Asset storage asset,
     uint256 liquidityAdded,
@@ -114,7 +121,7 @@ library AssetLogic {
       DataTypes.CalculateInterestRatesParams({
         liquidityAdded: liquidityAdded,
         liquidityTaken: liquidityTaken,
-        totalDebt: asset.drawnAssets,
+        totalDebt: asset.baseDrawnAssets,
         reserveFactor: 0, // TODO
         assetId: asset.id,
         // todo + signedUnrealisedPremium
@@ -127,17 +134,17 @@ library AssetLogic {
 
   // @dev Utilizes existing `asset.baseBorrowRate`
   function accrue(DataTypes.Asset storage asset) internal {
-    asset.drawnAssets = asset.previewDrawn();
+    asset.baseDrawnAssets = asset.previewBaseDrawn();
   }
 
-  function previewDrawn(DataTypes.Asset storage asset) internal view returns (uint256) {
-    uint256 drawnAssets = asset.drawnAssets;
+  function previewBaseDrawn(DataTypes.Asset storage asset) internal view returns (uint256) {
+    uint256 baseDrawnAssets = asset.baseDrawnAssets;
     uint256 lastUpdateTimestamp = asset.lastUpdateTimestamp;
-    if (drawnAssets == 0 || lastUpdateTimestamp == block.timestamp) {
-      return drawnAssets;
+    if (baseDrawnAssets == 0 || lastUpdateTimestamp == block.timestamp) {
+      return baseDrawnAssets;
     }
     return
-      drawnAssets.rayMul(
+      baseDrawnAssets.rayMul(
         MathUtils.calculateLinearInterest(asset.baseBorrowRate, uint40(lastUpdateTimestamp))
       );
   }
