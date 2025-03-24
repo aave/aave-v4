@@ -238,7 +238,15 @@ contract LiquidityHub is ILiquidityHub {
     DataTypes.Asset storage asset = _assets[assetId];
     DataTypes.SpokeData storage spoke = _spokes[assetId][msg.sender];
 
-    // asset.premiumDrawnShares += premiumDrawnSharesDelta;
+    asset.premiumDrawnShares = _add(asset.premiumDrawnShares, premiumDrawnSharesDelta);
+    asset.premiumOffset = _add(asset.premiumOffset, premiumOffsetDelta);
+    asset.unrealisedPremium = _add(asset.unrealisedPremium, unrealisedPremiumDelta);
+
+    spoke.premiumDrawnShares = _add(spoke.premiumDrawnShares, premiumDrawnSharesDelta);
+    spoke.premiumOffset = _add(spoke.premiumOffset, premiumOffsetDelta);
+    spoke.unrealisedPremium = _add(spoke.unrealisedPremium, unrealisedPremiumDelta);
+
+    // todo check bounds
   }
 
   //
@@ -425,5 +433,11 @@ contract LiquidityHub is ILiquidityHub {
     require(asset != address(0), InvalidAssetAddress());
     require(address(config.irStrategy) != address(0), InvalidIrStrategy());
     require(config.decimals <= MAX_ALLOWED_ASSET_DECIMALS, InvalidAssetDecimals());
+  }
+
+  // handle underflow
+  function _add(uint256 a, int256 b) internal pure returns (uint256) {
+    if (b > 0) return a + uint256(b);
+    else return a - uint256(-b);
   }
 }
