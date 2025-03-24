@@ -60,8 +60,12 @@ library AssetLogic {
       asset.unrealisedPremium;
   }
 
+  function totalDebt(DataTypes.Asset storage asset) internal view returns (uint256) {
+    return asset.baseDebt() + asset.premiumDebt();
+  }
+
   function totalSuppliedAssets(DataTypes.Asset storage asset) internal view returns (uint256) {
-    return asset.availableLiquidity + asset.baseDebt() + asset.premiumDebt();
+    return asset.availableLiquidity + asset.totalDebt();
   }
 
   function totalSuppliedShares(DataTypes.Asset storage asset) internal view returns (uint256) {

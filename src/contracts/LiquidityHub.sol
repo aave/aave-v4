@@ -120,7 +120,7 @@ contract LiquidityHub is ILiquidityHub {
 
     // todo: Mitigate inflation attack (burn some amount if first supply)
     uint256 suppliedShares = asset.toSuppliedSharesDown(amount);
-    require(suppliedShares > 0, InvalidSharesAmount());
+    require(suppliedShares != 0, InvalidSharesAmount());
 
     asset.availableLiquidity += amount;
     asset.suppliedShares += suppliedShares;
@@ -203,8 +203,8 @@ contract LiquidityHub is ILiquidityHub {
     DataTypes.SpokeData storage spoke = _spokes[assetId][msg.sender];
 
     asset.accrue();
+    _validateRestore(asset, spoke, baseAmount, premiumAmount);
     uint256 totalRestoredAmount = baseAmount + premiumAmount;
-    _validateRestore(asset, spoke, totalRestoredAmount);
     asset.updateBorrowRate({liquidityAdded: totalRestoredAmount, liquidityTaken: 0});
 
     uint256 baseDrawnSharesRestored = asset.toDrawnSharesUp(baseAmount);
@@ -314,32 +314,19 @@ contract LiquidityHub is ILiquidityHub {
   }
 
   function getAssetTotalDebt(uint256 assetId) external view returns (uint256) {
-    DataTypes.Asset storage asset = _assets[assetId];
-    return asset.baseDebt() + asset.premiumDebt();
+    return _assets[assetId].totalDebt();
   }
 
-  function getSpokeDebt(
-    uint256 assetId,
-    address spokeAddress
-  ) external view returns (uint256, uint256) {
-    DataTypes.Asset storage asset = _assets[assetId];
-    DataTypes.SpokeData storage spoke = _spokes[assetId][spokeAddress];
-    uint256 premiumDebt = asset.toDrawnAssetsUp(spoke.premiumDrawnShares) -
-      spoke.premiumOffset +
-      spoke.unrealisedPremium;
-    return (asset.toDrawnAssetsUp(spoke.baseDrawnShares), premiumDebt);
+  function getSpokeDebt(uint256 assetId, address spoke) external view returns (uint256, uint256) {
+    return _getSpokeDebt(_assets[assetId], _spokes[assetId][spoke]);
   }
 
-  function getSpokeTotalDebt(
-    uint256 assetId,
-    address spokeAddress
-  ) external view returns (uint256) {
-    DataTypes.Asset storage asset = _assets[assetId];
-    DataTypes.SpokeData storage spoke = _spokes[assetId][spokeAddress];
-    uint256 premiumDebt = asset.toDrawnAssetsUp(spoke.premiumDrawnShares) -
-      spoke.premiumOffset +
-      spoke.unrealisedPremium; // cannot be -ve
-    return asset.toDrawnAssetsUp(spoke.baseDrawnShares) + premiumDebt;
+  function getSpokeTotalDebt(uint256 assetId, address spoke) external view returns (uint256) {
+    (uint256 baseDebt, uint256 premiumDebt) = _getSpokeDebt(
+      _assets[assetId],
+      _spokes[assetId][spoke]
+    );
+    return baseDebt + premiumDebt;
   }
 
   function getAssetSuppliedAmount(uint256 assetId) external view returns (uint256) {
@@ -375,16 +362,15 @@ contract LiquidityHub is ILiquidityHub {
     DataTypes.SpokeData storage spoke,
     uint256 amount
   ) internal view {
-    require(amount > 0, InvalidSupplyAmount());
     require(asset.config.active, AssetNotActive());
     require(!asset.config.paused, AssetPaused());
     require(!asset.config.frozen, AssetFrozen());
     require(assetsList[asset.id] != IERC20(address(0)), AssetNotListed());
-    // require(
-    //   spoke.config.supplyCap == type(uint256).max ||
-    //     asset.convertToAssetsDown(spoke.suppliedShares) + amount <= spoke.config.supplyCap,
-    //   SupplyCapExceeded(spoke.config.supplyCap)
-    // );
+    require(
+      spoke.config.supplyCap == type(uint256).max ||
+        asset.toSuppliedAssetsDown(spoke.suppliedShares) + amount <= spoke.config.supplyCap,
+      SupplyCapExceeded(spoke.config.supplyCap)
+    );
   }
 
   function _validateWithdraw(
@@ -392,11 +378,11 @@ contract LiquidityHub is ILiquidityHub {
     DataTypes.SpokeData storage spoke,
     uint256 amount
   ) internal view {
-    require(amount > 0, InvalidWithdrawAmount());
+    require(amount != 0, InvalidWithdrawAmount());
     require(asset.config.active, AssetNotActive());
     require(!asset.config.paused, AssetPaused());
-    // uint256 withdrawable = asset.convertToAssetsDown(spoke.suppliedShares);
-    // require(amount <= withdrawable, SuppliedAmountExceeded(withdrawable));
+    uint256 withdrawable = asset.toSuppliedAssetsUp(spoke.suppliedShares);
+    require(amount <= withdrawable, SuppliedAmountExceeded(withdrawable));
     require(amount <= asset.availableLiquidity, NotAvailableLiquidity(asset.availableLiquidity));
   }
 
@@ -409,24 +395,26 @@ contract LiquidityHub is ILiquidityHub {
     require(asset.config.active, AssetNotActive());
     require(!asset.config.paused, AssetPaused());
     require(!asset.config.frozen, AssetFrozen());
-    // require(
-    //   drawCap == type(uint256).max || amount + asset.baseDebt <= drawCap,
-    //   DrawCapExceeded(drawCap)
-    // );
+    require(
+      drawCap == type(uint256).max || amount + asset.totalDebt() <= drawCap,
+      DrawCapExceeded(drawCap)
+    );
     require(amount <= asset.availableLiquidity, NotAvailableLiquidity(asset.availableLiquidity));
   }
 
   function _validateRestore(
     DataTypes.Asset storage asset,
     DataTypes.SpokeData storage spoke,
-    uint256 amountRestored
-  ) internal view {
-    // require(amountRestored > 0, InvalidRestoreAmount());
+    uint256 baseAmountRestored,
+    uint256 premiumAmountRestored
+  ) internal {
+    require(baseAmountRestored + premiumAmountRestored != 0, InvalidRestoreAmount());
     require(asset.config.active, AssetNotActive());
     require(!asset.config.paused, AssetPaused());
-    // Ensure spoke is not restoring more than accrued drawn
-    // uint256 maxAllowedRestore = spoke.baseDebt + spoke.outstandingPremium;
-    // require(amountRestored <= maxAllowedRestore, SurplusAmountRestored(maxAllowedRestore));
+    // todo: rm this check?
+    (uint256 baseDebt, uint256 premiumDebt) = _getSpokeDebt(asset, spoke);
+    require(baseAmountRestored <= baseDebt, SurplusAmountRestored(baseDebt));
+    require(premiumAmountRestored <= premiumDebt, SurplusAmountRestored(premiumDebt));
   }
 
   function _addSpoke(uint256 assetId, DataTypes.SpokeConfig memory config, address spoke) internal {
@@ -453,9 +441,18 @@ contract LiquidityHub is ILiquidityHub {
     require(config.decimals <= MAX_ALLOWED_ASSET_DECIMALS, InvalidAssetDecimals());
   }
 
+  function _getSpokeDebt(
+    DataTypes.Asset storage asset,
+    DataTypes.SpokeData storage spoke
+  ) internal view returns (uint256, uint256) {
+    uint256 premiumDebt = (asset.toDrawnAssetsUp(spoke.premiumDrawnShares) - spoke.premiumOffset) +
+      spoke.unrealisedPremium;
+    return (asset.toDrawnAssetsUp(spoke.baseDrawnShares), premiumDebt);
+  }
+
   // handles underflow
   function _add(uint256 a, int256 b) internal pure returns (uint256) {
-    if (b > 0) return a + uint256(b);
-    else return a - uint256(-b);
+    if (b >= 0) return a + uint256(b);
+    return a - uint256(-b);
   }
 }

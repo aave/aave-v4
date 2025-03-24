@@ -403,6 +403,7 @@ contract Spoke is ISpoke {
     require(reserve.asset != address(0), ReserveNotListed());
     require(reserve.config.active, ReserveNotActive());
     require(!reserve.config.paused, ReservePaused());
+    // todo validate user not trying to repay more?
   }
 
   function _calculateRestoreAmount(
@@ -622,12 +623,10 @@ contract Spoke is ISpoke {
     DataTypes.UserPosition storage userPosition,
     uint256 assetId
   ) internal view returns (uint256, uint256) {
-    uint256 premiumDebt = liquidityHub.convertToDrawnAssets(
+    uint256 premiumDebt = (liquidityHub.convertToDrawnAssets(
       assetId,
       userPosition.premiumDrawnShares
-    ) +
-      userPosition.premiumOffset -
-      userPosition.unrealisedPremium;
+    ) - userPosition.premiumOffset) + userPosition.unrealisedPremium;
     return (liquidityHub.convertToDrawnAssets(assetId, userPosition.baseDrawnShares), premiumDebt);
   }
 
@@ -702,12 +701,12 @@ contract Spoke is ISpoke {
   // handles underflow
   function _add(uint256 a, int256 b) internal pure returns (uint256) {
     if (b >= 0) return a + uint256(b);
-    else return a - uint256(-b);
+    return a - uint256(-b);
   }
 
   // in usage, b is offset, always non zero for now
   function _sub(uint256 a, int256 b) internal pure returns (uint256) {
     if (b >= 0) return a - uint256(b);
-    else return a + uint256(-b);
+    return a + uint256(-b);
   }
 }
