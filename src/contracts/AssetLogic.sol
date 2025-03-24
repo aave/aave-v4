@@ -54,13 +54,13 @@ library AssetLogic {
   }
 
   // todo rounding struct for internal/global helpers
-  function premiumDrawnAssetsUp(DataTypes.Asset storage asset) internal view returns (uint256) {
+  function premiumDebtUp(DataTypes.Asset storage asset) internal view returns (uint256) {
     return
       asset.toDrawnAssetsUp(asset.premiumDrawnShares) -
       asset.premiumOffset +
       asset.unrealisedPremium;
   }
-  function premiumDrawnAssetsDown(DataTypes.Asset storage asset) internal view returns (uint256) {
+  function premiumDebtDown(DataTypes.Asset storage asset) internal view returns (uint256) {
     return
       asset.toDrawnAssetsDown(asset.premiumDrawnShares) -
       asset.premiumOffset +
@@ -68,10 +68,10 @@ library AssetLogic {
   }
 
   function totalSuppliedAssetsUp(DataTypes.Asset storage asset) internal view returns (uint256) {
-    return asset.availableLiquidity + asset.previewBaseDrawn() + asset.premiumDrawnAssetsUp();
+    return asset.availableLiquidity + asset.previewBaseDrawn() + asset.premiumDebtUp();
   }
   function totalSuppliedAssetsDown(DataTypes.Asset storage asset) internal view returns (uint256) {
-    return asset.availableLiquidity + asset.previewBaseDrawn() + asset.premiumDrawnAssetsDown();
+    return asset.availableLiquidity + asset.previewBaseDrawn() + asset.premiumDebtDown();
   }
 
   function totalSuppliedShares(DataTypes.Asset storage asset) internal view returns (uint256) {
