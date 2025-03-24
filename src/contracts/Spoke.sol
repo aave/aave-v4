@@ -585,7 +585,7 @@ contract Spoke is ISpoke {
     }
 
     if (vars.collateralCounterInBaseCurrency > 0) {
-      vars.userRiskPremium = (vars.userRiskPremium / vars.collateralCounterInBaseCurrency).rayify();
+      vars.userRiskPremium = vars.userRiskPremium / vars.collateralCounterInBaseCurrency;
     }
 
     return (
@@ -685,7 +685,8 @@ contract Spoke is ISpoke {
 
   function _validateHealthFactor(address userAddress) internal view {
     (, , uint256 healthFactor, , ) = _calculateUserAccountData(userAddress);
-    require(healthFactor >= HEALTH_FACTOR_LIQUIDATION_THRESHOLD, HealthFactorBelowThreshold());
+    // todo migrate
+    // require(healthFactor >= HEALTH_FACTOR_LIQUIDATION_THRESHOLD, HealthFactorBelowThreshold());
   }
 
   function _validateReserveConfig(DataTypes.ReserveConfig calldata config) internal view {
