@@ -119,6 +119,7 @@ export class LiquidityHub {
     return suppliedShares;
   }
 
+  // @dev spoke data is *expected* to be updated on the `refresh` callback
   draw(amount: bigint, spoke: Spoke) {
     const drawnShares = this.toDrawnShares(amount, Rounding.CEIL);
 
