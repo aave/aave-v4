@@ -10,7 +10,7 @@ evm_version = "cancun"
 optimizer = true
 optimizer_runs = 200
 bytecode_hash = "none"
-isolate = true
+# isolate = true
 
 [profile.ci]
 gas_snapshot_check = true
