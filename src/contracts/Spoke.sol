@@ -124,7 +124,6 @@ contract Spoke is ISpoke {
     userPosition.suppliedShares += suppliedShares;
     reserve.suppliedShares += suppliedShares;
 
-    // todo refresh
     emit Supplied(reserveId, msg.sender, amount); // todo emit suppliedShares
   }
 
@@ -172,14 +171,13 @@ contract Spoke is ISpoke {
     userPosition.premiumOffset = liquidityHub.convertToDrawnAssets(
       assetId,
       userPosition.premiumDrawnShares
-    ); // todo have this round up
+    );
     userPosition.unrealisedPremium += _sub(
       liquidityHub.convertToDrawnAssets(assetId, uint256(oldUserPremiumDrawnShares)),
       oldUserPremiumOffset
     );
 
     _validateHealthFactor(msg.sender);
-    // _notifyRiskPremiumUpdate(assetId, msg.sender, newUserRiskPremium);
     _refreshPremiumDebt(
       reserve,
       assetId,
@@ -187,6 +185,7 @@ contract Spoke is ISpoke {
       int256(userPosition.premiumOffset) - oldUserPremiumOffset,
       int256(userPosition.unrealisedPremium) - oldUserUnrealisedPremium
     );
+    _notifyRiskPremiumUpdate(assetId, msg.sender, newUserRiskPremium);
 
     emit Borrowed(reserveId, to, amount);
   }
@@ -233,7 +232,6 @@ contract Spoke is ISpoke {
     ); // assets(premiumShares) - offset should never be < 0
     // todo validate invariant^
 
-    // _notifyRiskPremiumUpdate(assetId, msg.sender, newUserRiskPremium);
     _refreshPremiumDebt(
       reserve,
       assetId,
@@ -241,6 +239,7 @@ contract Spoke is ISpoke {
       int256(userPosition.premiumOffset) - oldUserPremiumOffset,
       int256(userPosition.unrealisedPremium) - oldUserUnrealisedPremium
     );
+    _notifyRiskPremiumUpdate(assetId, msg.sender, newUserRiskPremium);
 
     emit Repaid(reserveId, msg.sender, amount);
   }
@@ -641,51 +640,59 @@ contract Spoke is ISpoke {
     return (liquidityHub.convertToDrawnAssets(assetId, reserve.baseDrawnShares), premiumDebt);
   }
 
-  // todo
+  // todo optimize, merge logic duped borrow/repay, rename
   /**
    * @dev Trigger risk premium update on all drawn reserves of `user` except the reserve's corresponding
    * to `assetIdToAvoid` as those are expected to be updated outside of this method.
    * We only update risk premium for drawn assets and not supplied bc user RP does not contribute to
    * the other two RPs (Asset, Spoke/Reserve) as by definition they're based on drawn assets only.
-   * @dev Also commits user's new risk premium to storage.
    */
-  //   function _notifyRiskPremiumUpdate(
-  //     uint256 assetIdToAvoid,
-  //     address userAddress,
-  //     uint256 newUserRiskPremium
-  //   ) internal {
-  //     uint256 reserveCount_ = reserveCount;
-  //     uint256 reserveId;
-  //     DataTypes.UserData storage userData = _userData[userAddress];
-  //     // _updateRiskPremiumAndBaseDebt does not update user risk premium, opt: pass this value in cached obj
-  //     uint256 existingUserRiskPremium = userData.riskPremium;
-  //     while (reserveId < reserveCount_) {
-  //       DataTypes.UserPosition storage userPosition = _userPositions[userAddress][reserveId];
-  //       DataTypes.Reserve storage reserve = _reserves[reserveId];
-  //       uint256 assetId = reserve.assetId;
-  //       // todo keep borrowed assets in transient storage/pass through?
-  //       if (_isBorrowing(userPosition) && assetId != assetIdToAvoid) {
-  //         // this was accrued on the fly when calculating `newUserRiskPremium`, opt: decouple and commit before
-  //         _accrueInterest(reserve, userPosition, userData);
-  //         uint256 newReserveRiskPremium = _refreshReserveRiskPremium({
-  //           reserve: reserve,
-  //           userPosition: userPosition,
-  //           existingUserRiskPremium: existingUserRiskPremium,
-  //           newUserRiskPremium: newUserRiskPremium
-  //         });
-  //         liquidityHub.accrueInterest(assetId, uint32(newReserveRiskPremium.derayify()));
-  //       }
-  //       unchecked {
-  //         ++reserveId;
-  //       }
-  //     }
-  //     userData.riskPremium = newUserRiskPremium;
-  //   }
+  function _notifyRiskPremiumUpdate(
+    uint256 assetIdToAvoid,
+    address userAddress,
+    uint256 newUserRiskPremium
+  ) internal {
+    uint256 reserveCount_ = reserveCount;
+    uint256 reserveId;
+    while (reserveId < reserveCount_) {
+      DataTypes.UserPosition storage userPosition = _userPositions[userAddress][reserveId];
+      DataTypes.Reserve storage reserve = _reserves[reserveId];
+      uint256 assetId = reserve.assetId;
+      // todo keep borrowed assets in transient storage/pass through?
+      if (_isBorrowing(userPosition) && assetId != assetIdToAvoid) {
+        int256 oldUserPremiumDrawnShares = int256(userPosition.premiumDrawnShares);
+        int256 oldUserPremiumOffset = int256(userPosition.premiumOffset);
+        int256 oldUserUnrealisedPremium = int256(userPosition.unrealisedPremium);
+
+        userPosition.premiumDrawnShares = userPosition.baseDrawnShares.percentMul(
+          newUserRiskPremium
+        );
+        userPosition.premiumOffset = liquidityHub.convertToDrawnAssets(
+          assetId,
+          userPosition.premiumDrawnShares
+        );
+        userPosition.unrealisedPremium += _sub(
+          liquidityHub.convertToDrawnAssets(assetId, uint256(oldUserPremiumDrawnShares)),
+          oldUserPremiumOffset
+        );
+
+        _refreshPremiumDebt(
+          reserve,
+          assetId,
+          int256(userPosition.premiumDrawnShares) - oldUserPremiumDrawnShares,
+          int256(userPosition.premiumOffset) - oldUserPremiumOffset,
+          int256(userPosition.unrealisedPremium) - oldUserUnrealisedPremium
+        );
+      }
+      unchecked {
+        ++reserveId;
+      }
+    }
+  }
 
   function _validateHealthFactor(address userAddress) internal view {
     (, , uint256 healthFactor, , ) = _calculateUserAccountData(userAddress);
-    // todo migrate
-    // require(healthFactor >= HEALTH_FACTOR_LIQUIDATION_THRESHOLD, HealthFactorBelowThreshold());
+    require(healthFactor >= HEALTH_FACTOR_LIQUIDATION_THRESHOLD, HealthFactorBelowThreshold());
   }
 
   function _validateReserveConfig(DataTypes.ReserveConfig calldata config) internal view {
