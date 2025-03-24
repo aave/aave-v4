@@ -188,7 +188,7 @@ contract LiquidityHub is ILiquidityHub {
 
     return drawnShares;
   }
-
+  event log(string, uint);
   /// @inheritdoc ILiquidityHub
   function restore(
     uint256 assetId,
@@ -208,11 +208,14 @@ contract LiquidityHub is ILiquidityHub {
     asset.updateBorrowRate({liquidityAdded: totalRestoredAmount, liquidityTaken: 0});
 
     uint256 baseDrawnSharesRestored = asset.toDrawnSharesUp(baseAmount);
+    emit log('baseDrawnSharesRestored', baseDrawnSharesRestored);
 
     asset.availableLiquidity += totalRestoredAmount;
+    emit log('asset.availableLiquidity', asset.availableLiquidity);
     asset.baseDrawnAssets += baseAmount;
+    emit log('asset.baseDrawnShares', asset.baseDrawnShares);
     asset.baseDrawnShares -= baseDrawnSharesRestored;
-
+    emit log('spoke.baseDrawnShares', spoke.baseDrawnShares);
     spoke.baseDrawnShares -= baseDrawnSharesRestored;
 
     assetsList[assetId].safeTransferFrom(repayer, address(this), totalRestoredAmount);
@@ -422,7 +425,7 @@ contract LiquidityHub is ILiquidityHub {
     DataTypes.SpokeData storage spoke,
     uint256 amountRestored
   ) internal view {
-    require(amountRestored > 0, InvalidRestoreAmount());
+    // require(amountRestored > 0, InvalidRestoreAmount());
     require(asset.config.active, AssetNotActive());
     require(!asset.config.paused, AssetPaused());
     // Ensure spoke is not restoring more than accrued drawn
