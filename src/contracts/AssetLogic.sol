@@ -22,7 +22,14 @@ library AssetLogic {
   function totalAssets(DataTypes.Asset storage asset) internal view returns (uint256) {
     // totalSupplyAssets = availableLiquidity + drawnAssets + totalPremium
     uint256 drawnAssets = asset.previewInterest();
-    return asset.availableLiquidity + drawnAssets + totalPremium;
+    return asset.availableLiquidity + drawnAssets + asset.getTotalPremium();
+  }
+
+  function getTotalPremium(DataTypes.Asset storage asset) internal view returns (uint256) {
+    return
+      asset.totalPremium +
+      asset.convertToDrawnAssetsUp(asset.premiumVirtualShares) -
+      asset.premiumVirtualOffset;
   }
 
   function getTotalDrawnAssets(DataTypes.Asset storage asset) internal view returns (uint256) {
@@ -99,7 +106,6 @@ library AssetLogic {
   }
 
   function getInterestRate(DataTypes.Asset storage asset) external view returns (uint256) {
-    // @dev we truncate (ie `derayify()`) before `percentMul` as we only have accurate data until bps
     return asset.baseBorrowRate;
   }
 

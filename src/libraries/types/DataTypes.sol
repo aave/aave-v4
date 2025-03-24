@@ -5,9 +5,9 @@ library DataTypes {
   // Liquidity Hub types
   struct SpokeData {
     uint256 suppliedShares; // share
-    uint256 baseDrawnShares; // share
-    uint256 premiumDrawnShares; // share
-    uint256 premiumOffset; // asset
+    uint256 drawnShares; // share
+    uint256 premiumVirtualShares; // share
+    uint256 premiumVirtualOffset; // asset
     uint256 totalPremium; // asset
     uint256 lastUpdateTimestamp;
     DataTypes.SpokeConfig config;
@@ -18,8 +18,8 @@ library DataTypes {
     uint256 suppliedShares; // share
     uint256 availableLiquidity; // asset
     uint256 drawnShares; // share
-    uint256 premiumDrawnShares; // share
-    uint256 premiumOffset; // asset
+    uint256 premiumVirtualShares; // share
+    uint256 premiumVirtualOffset; // asset
     uint256 drawnAssets; // asset
     uint256 totalPremium; // asset
     uint256 baseBorrowRate; // in ray
@@ -56,9 +56,9 @@ library DataTypes {
     uint256 assetId;
     address asset;
     uint256 suppliedShares; // share
-    uint256 baseDrawnShares; // share
-    uint256 premiumDrawnShares; // share
-    uint256 premiumOffset; // asset
+    uint256 drawnShares; // share
+    uint256 premiumVirtualShares; // share
+    uint256 premiumVirtualOffset; // asset
     uint256 totalPremium; // asset
     ReserveConfig config;
   }
@@ -78,9 +78,9 @@ library DataTypes {
   struct UserPosition {
     bool usingAsCollateral;
     uint256 suppliedShares; // share
-    uint256 baseDrawnShares; // share
-    uint256 premiumDrawnShares; // share
-    uint256 premiumOffset; // asset
+    uint256 drawnShares; // share
+    uint256 premiumVirtualShares; // share
+    uint256 premiumVirtualOffset; // asset
     uint256 totalPremium; // asset
   }
 

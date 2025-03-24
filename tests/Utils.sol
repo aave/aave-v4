@@ -15,7 +15,7 @@ library Utils {
     uint256 assetId,
     address spoke,
     uint256 amount,
-    uint32 riskPremium,
+    uint32 riskPremium, // todo: remove
     address user,
     address to // todo: implement
   ) internal {
@@ -24,7 +24,7 @@ library Utils {
     vm.stopPrank();
 
     vm.prank(spoke);
-    hub.supply({assetId: assetId, amount: amount, riskPremium: riskPremium, supplier: user});
+    hub.supply({assetId: assetId, amount: amount, supplier: user});
   }
 
   function draw(
@@ -33,11 +33,11 @@ library Utils {
     address spoke,
     address to,
     uint256 amount,
-    uint32 riskPremium,
+    uint32 riskPremium, // todo: remove
     address onBehalfOf // todo: implement
   ) internal {
     vm.prank(spoke);
-    hub.draw(assetId, amount, riskPremium, to);
+    hub.draw(assetId, amount, to);
   }
 
   function withdraw(
@@ -45,11 +45,11 @@ library Utils {
     uint256 assetId,
     address spoke,
     uint256 amount,
-    uint32 riskPremium,
+    uint32 riskPremium, // todo: remove
     address to
   ) internal {
     vm.prank(spoke);
-    hub.withdraw(assetId, amount, riskPremium, to);
+    hub.withdraw(assetId, amount, to);
   }
 
   function restore(
@@ -57,15 +57,16 @@ library Utils {
     uint256 assetId,
     address spoke,
     uint256 amount,
-    uint32 riskPremium,
+    uint32 riskPremium, // todo: remove
     address repayer
   ) internal {
+    uint256 premiumAmount; // todo: add param
     vm.startPrank(repayer);
     hub.assetsList(assetId).approve(address(hub), amount);
     vm.stopPrank();
 
     vm.prank(spoke);
-    hub.restore(assetId, amount, riskPremium, repayer);
+    hub.restore(assetId, amount, premiumAmount, repayer);
   }
 
   // spoke

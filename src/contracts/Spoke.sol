@@ -52,9 +52,9 @@ contract Spoke is ISpoke {
       assetId: assetId,
       asset: asset,
       suppliedShares: 0,
-      baseDrawnShares: 0,
-      premiumDrawnShares: 0,
-      premiumOffset: 0,
+      drawnShares: 0,
+      premiumVirtualShares: 0,
+      premiumVirtualOffset: 0,
       totalPremium: 0,
       config: DataTypes.ReserveConfig({
         decimals: config.decimals,

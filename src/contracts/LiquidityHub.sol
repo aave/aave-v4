@@ -43,8 +43,8 @@ contract LiquidityHub is ILiquidityHub {
       suppliedShares: 0,
       availableLiquidity: 0,
       drawnShares: 0,
-      premiumDrawnShares: 0,
-      premiumOffset: 0,
+      premiumVirtualShares: 0,
+      premiumVirtualOffset: 0,
       drawnAssets: 0,
       totalPremium: 0,
       baseBorrowRate: 0,
@@ -182,7 +182,7 @@ contract LiquidityHub is ILiquidityHub {
     asset.availableLiquidity -= amount;
 
     asset.drawnShares += sharesAmount;
-    spoke.baseDrawnShares += sharesAmount;
+    spoke.drawnShares += sharesAmount;
 
     assetsList[assetId].safeTransfer(to, amount);
 
@@ -216,7 +216,7 @@ contract LiquidityHub is ILiquidityHub {
     // asset.totalPremium -= premiumAmount;
 
     asset.drawnShares -= sharesAmount;
-    spoke.baseDrawnShares -= sharesAmount;
+    spoke.drawnShares -= sharesAmount;
 
     assetsList[assetId].safeTransferFrom(repayer, address(this), amount);
 
@@ -240,19 +240,19 @@ contract LiquidityHub is ILiquidityHub {
   ) external returns (uint256) {
     // TODO: authorization - only spokes
     if (newPremiumDrawnSharesDelta > 0) {
-      _assets[assetId].premiumDrawnShares += uint256(newPremiumDrawnSharesDelta);
-      _spokes[assetId][msg.sender].premiumDrawnShares += uint256(newPremiumDrawnSharesDelta);
+      _assets[assetId].premiumVirtualShares += uint256(newPremiumDrawnSharesDelta);
+      _spokes[assetId][msg.sender].premiumVirtualShares += uint256(newPremiumDrawnSharesDelta);
     } else {
-      _assets[assetId].premiumDrawnShares -= uint256(newPremiumDrawnSharesDelta);
-      _spokes[assetId][msg.sender].premiumDrawnShares -= uint256(newPremiumDrawnSharesDelta);
+      _assets[assetId].premiumVirtualShares -= uint256(newPremiumDrawnSharesDelta);
+      _spokes[assetId][msg.sender].premiumVirtualShares -= uint256(newPremiumDrawnSharesDelta);
     }
 
     if (newPremiumOffsetDelta > 0) {
-      _assets[assetId].premiumOffset += uint256(newPremiumOffsetDelta);
-      _spokes[assetId][msg.sender].premiumOffset += uint256(newPremiumOffsetDelta);
+      _assets[assetId].premiumVirtualOffset += uint256(newPremiumOffsetDelta);
+      _spokes[assetId][msg.sender].premiumVirtualOffset += uint256(newPremiumOffsetDelta);
     } else {
-      _assets[assetId].premiumOffset -= uint256(newPremiumOffsetDelta);
-      _spokes[assetId][msg.sender].premiumOffset -= uint256(newPremiumOffsetDelta);
+      _assets[assetId].premiumVirtualOffset -= uint256(newPremiumOffsetDelta);
+      _spokes[assetId][msg.sender].premiumVirtualOffset -= uint256(newPremiumOffsetDelta);
     }
 
     if (newTotalPremiumDelta > 0) {
@@ -315,29 +315,29 @@ contract LiquidityHub is ILiquidityHub {
   }
 
   function getAssetDebt(uint256 assetId) external view returns (uint256, uint256) {
-    uint256 drawnAssets = _assets[assetId].previewInterest();
-    return (drawnAssets, _getTotalPremium(_assets[assetId]));
+    // TODO opt: interest accrue twice
+    return (_assets[assetId].getTotalDrawnAssets(), _assets[assetId].getTotalPremium());
   }
 
   function getAssetCumulativeDebt(uint256 assetId) external view returns (uint256) {
-    uint256 drawnAssets = _assets[assetId].previewInterest();
-    return drawnAssets + _getTotalPremium(_assets[assetId]);
+    // TODO opt: interest accrue twice
+    return _assets[assetId].getTotalDrawnAssets() + _assets[assetId].getTotalPremium();
   }
 
   function getSpokeDebt(uint256 assetId, address spoke) external view returns (uint256, uint256) {
-    // (uint256 cumulatedBaseDebt, uint256 cumulatedOutstandingPremium) = _spokes[assetId][spoke]
-    //   .previewInterest();
-    // return (cumulatedBaseDebt, cumulatedOutstandingPremium);
-    // TODO
-    return (0, 0);
+    DataTypes.Asset storage assetData = _assets[assetId];
+    DataTypes.SpokeData storage spokeData = _spokes[assetId][spoke];
+    return (
+      _assets[assetId].convertToDrawnAssetsUp(spokeData.drawnShares),
+      _getSpokeTotalPremium(assetData, spokeData)
+    );
   }
 
   function getSpokeCumulativeDebt(uint256 assetId, address spoke) external view returns (uint256) {
-    // (uint256 cumulatedBaseDebt, uint256 cumulatedOutstandingPremium) = _spokes[assetId][spoke]
-    //   .previewInterest();
-    // return cumulatedBaseDebt + cumulatedOutstandingPremium;
-    // TODO
-    return 0;
+    DataTypes.SpokeData storage spokeData = _spokes[assetId][spoke];
+    return
+      _assets[assetId].convertToDrawnAssetsUp(spokeData.drawnShares) +
+      _getSpokeTotalPremium(_assets[assetId], spokeData);
   }
 
   function getAssetSuppliedAmount(uint256 assetId) external view returns (uint256) {
@@ -425,7 +425,7 @@ contract LiquidityHub is ILiquidityHub {
     require(asset.config.active, AssetNotActive());
     require(!asset.config.paused, AssetPaused());
     // Ensure spoke is not restoring more than accrued drawn
-    uint256 maxAllowedRestore = asset.convertToDrawnAssetsDown(spoke.baseDrawnShares);
+    uint256 maxAllowedRestore = asset.convertToDrawnAssetsDown(spoke.drawnShares);
     require(
       amountRestored <= maxAllowedRestore,
       SurplusAmountRestored(maxAllowedRestore) // TODO: rename
@@ -440,27 +440,23 @@ contract LiquidityHub is ILiquidityHub {
     asset.accrueInterest();
   }
 
-  function _getTotalPremium(DataTypes.Asset storage asset) internal returns (uint256) {
-    return
-      asset.totalPremium +
-      _assets[assetId].convertToDrawnAssetsUp(_assets[assetId].premiumDrawnShares) -
-      _assets[assetId].premiumOffset;
-  }
-
-  function _getSpokeTotalPremium(DataTypes.SpokeData spokeData) internal returns (uint256) {
+  function _getSpokeTotalPremium(
+    DataTypes.Asset storage assetData,
+    DataTypes.SpokeData storage spokeData
+  ) internal returns (uint256) {
     return
       spokeData.totalPremium +
-      _assets[assetId].convertToDrawnAssetsUp(spokeData.premiumDrawnShares) -
-      spokeData.premiumOffset;
+      assetData.convertToDrawnAssetsUp(spokeData.premiumVirtualShares) -
+      spokeData.premiumVirtualOffset;
   }
 
   function _addSpoke(uint256 assetId, DataTypes.SpokeConfig memory config, address spoke) internal {
     require(spoke != address(0), InvalidSpoke());
     _spokes[assetId][spoke] = DataTypes.SpokeData({
       suppliedShares: 0,
-      baseDrawnShares: 0,
-      premiumDrawnShares: 0,
-      premiumOffset: 0,
+      drawnShares: 0,
+      premiumVirtualShares: 0,
+      premiumVirtualOffset: 0,
       totalPremium: 0,
       lastUpdateTimestamp: 0,
       config: config
