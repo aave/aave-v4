@@ -188,7 +188,7 @@ contract LiquidityHub is ILiquidityHub {
 
     return drawnShares;
   }
-  event log(string, uint);
+
   /// @inheritdoc ILiquidityHub
   function restore(
     uint256 assetId,
@@ -208,14 +208,10 @@ contract LiquidityHub is ILiquidityHub {
     asset.updateBorrowRate({liquidityAdded: totalRestoredAmount, liquidityTaken: 0});
 
     uint256 baseDrawnSharesRestored = asset.toDrawnSharesUp(baseAmount);
-    emit log('baseDrawnSharesRestored', baseDrawnSharesRestored);
 
     asset.availableLiquidity += totalRestoredAmount;
-    emit log('asset.availableLiquidity', asset.availableLiquidity);
     asset.baseDrawnAssets += baseAmount;
-    emit log('asset.baseDrawnShares', asset.baseDrawnShares);
     asset.baseDrawnShares -= baseDrawnSharesRestored;
-    emit log('spoke.baseDrawnShares', spoke.baseDrawnShares);
     spoke.baseDrawnShares -= baseDrawnSharesRestored;
 
     assetsList[assetId].safeTransferFrom(repayer, address(this), totalRestoredAmount);
