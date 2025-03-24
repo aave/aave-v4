@@ -1,10 +1,20 @@
 import {LiquidityHub, Spoke, User, skip} from './core';
-import {random, randomChance, absDiff, maxAbsDiff, f, PRECISION, MAX_UINT} from './utils';
+import {
+  random,
+  randomChance,
+  absDiff,
+  maxAbsDiff,
+  f,
+  PRECISION,
+  MAX_UINT,
+  Rounding,
+  randomAmount,
+} from './utils';
 
 // todo make random deterministic, cache seed, actions list for failed runs for debugging
-const NUM_SPOKES = 3;
-const NUM_USERS = 300;
-const DEPTH = 1000;
+const NUM_SPOKES = 10;
+const NUM_USERS = 3000;
+const DEPTH = 100;
 const hub = new LiquidityHub();
 const spokes = new Array(NUM_SPOKES).fill(0).map(() => new Spoke(hub));
 const users = new Array(NUM_USERS).fill(0).map(() => new User());
@@ -24,10 +34,14 @@ function run() {
       userDebt.clear();
       runAmountInvariants();
     }
+    if (randomChance(0.25)) {
+      users.forEach((user) => user.suppliedShares ?? user.withdraw(user.getSuppliedBalance()));
+      userCollateral.clear();
+    }
 
     const action = actions[Math.floor(Math.random() * actions.length)];
     const user = users[Math.floor(Math.random() * users.length)];
-    let amount = random(1n, 10n ** 28n);
+    let amount = randomAmount();
 
     switch (action) {
       case 'supply': {
@@ -65,7 +79,7 @@ function run() {
           user.supply(amount);
           user.borrow(amount);
           drawn += amount;
-          amount = MAX_UINT;
+          amount = random(1n, user.getTotalDebt());
           if (randomChance(0.5)) skip();
         }
         user.repay(amount);
@@ -220,7 +234,7 @@ export function invariant_sumOfPremiumDebt() {
 }
 
 export function invariant_sumOfSuppliedShares() {
-  const hubSuppliedShares = hub.totalSuppliedShares;
+  const hubSuppliedShares = hub.suppliedShares;
   const spokeSuppliedShares = spokes.reduce((sum, spoke) => sum + spoke.suppliedShares, 0n);
   const userSuppliedShares = users.reduce((sum, user) => sum + user.suppliedShares, 0n);
   let fail = false,

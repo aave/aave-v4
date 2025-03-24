@@ -26,7 +26,7 @@ export function logBaseAndPremiumDebt(who: User | Spoke | LiquidityHub) {
     'debt: base %d + premium %d (ghost %d, offset %d, unrealised %d) = %d',
     f(who.getDebt().baseDebt),
     f(who.getDebt().premiumDebt),
-    f(hub.toDebtAssets(who.ghostDrawnShares)), // getters round down by 4626 convention, repay amount should round up
+    f(hub.toDrawnAssets(who.ghostDrawnShares)), // getters round down by 4626 convention, repay amount should round up
     f(who.offset),
     f(who.unrealisedPremium),
     f(who.getTotalDebt())
@@ -54,6 +54,16 @@ export function randomChance(chance: number) {
   return Math.random() < chance;
 }
 
+export function randomAmount() {
+  if (randomChance(0.15)) return random(1n, 10n);
+  const whole = random(0n, 10n ** random(0n, 10n));
+  const index = random(0n, 18n);
+  const paddedFractional = random(1n, 10n ** index)
+    .toString()
+    .padEnd(Number(index), '0');
+  return BigInt(whole) * 10n ** index + BigInt(paddedFractional.slice(0, Number(index)));
+}
+
 export function max(a: bigint, b: bigint, c: bigint) {
   return a > b ? (a > c ? a : c) : b > c ? b : c;
 }
@@ -64,6 +74,12 @@ export function absDiff(a: bigint, b: bigint) {
 
 export function maxAbsDiff(a: bigint, b: bigint, c: bigint) {
   return max(absDiff(a, b), absDiff(b, c), absDiff(a, c));
+}
+
+export function inverse(rounding: Rounding) {
+  if (rounding === Rounding.FLOOR) return Rounding.CEIL;
+  if (rounding === Rounding.CEIL) return Rounding.FLOOR;
+  throw new Error('cannot inverse rounding');
 }
 
 export function parseEther(ether: string | bigint | number) {
@@ -94,8 +110,12 @@ export function p(ether: string | bigint | number) {
   return parseEther(ether);
 }
 
-export function percentMul(a: bigint, b: bigint) {
-  return (a * b) / PERCENTAGE_FACTOR;
+export function percentMul(a: bigint, b: bigint, rounding = Rounding.FLOOR) {
+  return mulDiv(a, b, PERCENTAGE_FACTOR, rounding);
+}
+
+export function rayMul(a: bigint, b: bigint, rounding = Rounding.FLOOR) {
+  return mulDiv(a, b, RAY, rounding);
 }
 
 export function formatUnits(wei: bigint, index = 18): string {
