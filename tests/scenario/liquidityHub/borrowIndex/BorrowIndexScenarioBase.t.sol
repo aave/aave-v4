@@ -46,37 +46,37 @@ abstract contract BorrowIndexScenarioBaseTest is LiquidityHubScenarioBaseTest {
     super.printInitialLog(stage);
 
     // Asset
-    console.log('Asset borrow index %27e', assets[state.assetId].t_i[t].baseBorrowIndex);
-    console.log('Asset base debt %e', assets[state.assetId].t_i[t].baseDebt);
-    console.log('Asset last update timestamp', assets[state.assetId].t_i[t].lastUpdateTimestamp);
+    // console.log('Asset borrow index %27e', assets[state.assetId].t_i[t].baseBorrowIndex);
+    // console.log('Asset base debt %e', assets[state.assetId].t_i[t].baseDebt);
+    // console.log('Asset last update timestamp', assets[state.assetId].t_i[t].lastUpdateTimestamp);
 
-    // Spoke1
-    console.log('Spoke1 borrow index %27e', spokes[SPOKE1_INDEX].t_i[t].baseBorrowIndex);
-    console.log('Spoke1 base debt %e', spokes[SPOKE1_INDEX].t_i[t].baseDebt);
-    console.log('Spoke1 last update timestamp', spokes[SPOKE1_INDEX].t_i[t].lastUpdateTimestamp);
+    // // Spoke1
+    // console.log('Spoke1 borrow index %27e', spokes[SPOKE1_INDEX].t_i[t].baseBorrowIndex);
+    // console.log('Spoke1 base debt %e', spokes[SPOKE1_INDEX].t_i[t].baseDebt);
+    // console.log('Spoke1 last update timestamp', spokes[SPOKE1_INDEX].t_i[t].lastUpdateTimestamp);
 
-    // Spoke4
-    console.log('Spoke4 borrow index %27e', spokes[SPOKE4_INDEX].t_i[t].baseBorrowIndex);
-    console.log('Spoke4 base debt %e', spokes[SPOKE4_INDEX].t_i[t].baseDebt);
-    console.log('Spoke4 last update timestamp', spokes[SPOKE4_INDEX].t_i[t].lastUpdateTimestamp);
+    // // Spoke4
+    // console.log('Spoke4 borrow index %27e', spokes[SPOKE4_INDEX].t_i[t].baseBorrowIndex);
+    // console.log('Spoke4 base debt %e', spokes[SPOKE4_INDEX].t_i[t].baseDebt);
+    // console.log('Spoke4 last update timestamp', spokes[SPOKE4_INDEX].t_i[t].lastUpdateTimestamp);
   }
 
   function printFinalLog(Stage stage) internal virtual override {
     super.printFinalLog(stage);
 
     // Asset
-    console.log('Asset borrow index %27e', assets[state.assetId].t_f[t].baseBorrowIndex);
-    console.log('Asset base debt %e', assets[state.assetId].t_f[t].baseDebt);
-    console.log('Asset last update timestamp', assets[state.assetId].t_f[t].lastUpdateTimestamp);
+    // console.log('Asset borrow index %27e', assets[state.assetId].t_f[t].baseBorrowIndex);
+    // console.log('Asset base debt %e', assets[state.assetId].t_f[t].baseDebt);
+    // console.log('Asset last update timestamp', assets[state.assetId].t_f[t].lastUpdateTimestamp);
 
-    // Spoke1
-    console.log('Spoke1 borrow index %27e', spokes[SPOKE1_INDEX].t_f[t].baseBorrowIndex);
-    console.log('Spoke1 base debt %e', spokes[SPOKE1_INDEX].t_f[t].baseDebt);
-    console.log('Spoke1 last update timestamp', spokes[SPOKE1_INDEX].t_f[t].lastUpdateTimestamp);
+    // // Spoke1
+    // console.log('Spoke1 borrow index %27e', spokes[SPOKE1_INDEX].t_f[t].baseBorrowIndex);
+    // console.log('Spoke1 base debt %e', spokes[SPOKE1_INDEX].t_f[t].baseDebt);
+    // console.log('Spoke1 last update timestamp', spokes[SPOKE1_INDEX].t_f[t].lastUpdateTimestamp);
 
-    // Spoke4
-    console.log('Spoke4 borrow index %27e', spokes[SPOKE4_INDEX].t_f[t].baseBorrowIndex);
-    console.log('Spoke4 base debt %e', spokes[SPOKE4_INDEX].t_f[t].baseDebt);
-    console.log('Spoke4 last update timestamp', spokes[SPOKE4_INDEX].t_f[t].lastUpdateTimestamp);
+    // // Spoke4
+    // console.log('Spoke4 borrow index %27e', spokes[SPOKE4_INDEX].t_f[t].baseBorrowIndex);
+    // console.log('Spoke4 base debt %e', spokes[SPOKE4_INDEX].t_f[t].baseDebt);
+    // console.log('Spoke4 last update timestamp', spokes[SPOKE4_INDEX].t_f[t].lastUpdateTimestamp);
   }
 }

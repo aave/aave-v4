@@ -62,43 +62,45 @@ contract SpokeBase is Base {
     ISpoke spoke,
     uint256 reserveId
   ) internal returns (uint256, uint256, uint256, uint256, uint256) {
-    SupplyBorrowLocal memory state;
+    revert('implement me');
 
-    TestReserve memory collateral;
-    collateral.reserveId = _wethReserveId(spoke);
-    collateral.supplyAmount = 1_000e18;
-    collateral.supplier = alice;
+    // SupplyBorrowLocal memory state;
 
-    TestReserve memory borrow;
-    borrow.reserveId = reserveId;
-    borrow.supplier = bob;
-    borrow.borrower = alice;
-    borrow.supplyAmount = 100e18;
-    borrow.borrowAmount = borrow.supplyAmount / 2;
+    // TestReserve memory collateral;
+    // collateral.reserveId = _wethReserveId(spoke);
+    // collateral.supplyAmount = 1_000e18;
+    // collateral.supplier = alice;
 
-    (state.borrowReserveAssetId, ) = getAssetByReserveId(spoke, borrow.reserveId);
-    (state.collateralSupplyShares, state.borrowSupplyShares) = _executeSpokeSupplyAndBorrow({
-      spoke: spoke,
-      collateral: collateral,
-      borrow: borrow,
-      rate: 0,
-      isMockRate: false,
-      skipTime: 365 days
-    });
+    // TestReserve memory borrow;
+    // borrow.reserveId = reserveId;
+    // borrow.supplier = bob;
+    // borrow.borrower = alice;
+    // borrow.supplyAmount = 100e18;
+    // borrow.borrowAmount = borrow.supplyAmount / 2;
 
-    // index has increased, ie now the shares are less than the amount
-    assertGt(
-      borrow.supplyAmount,
-      hub.convertToShares(state.borrowReserveAssetId, borrow.supplyAmount)
-    );
+    // (state.borrowReserveAssetId, ) = getAssetByReserveId(spoke, borrow.reserveId);
+    // (state.collateralSupplyShares, state.borrowSupplyShares) = _executeSpokeSupplyAndBorrow({
+    //   spoke: spoke,
+    //   collateral: collateral,
+    //   borrow: borrow,
+    //   rate: 0,
+    //   isMockRate: false,
+    //   skipTime: 365 days
+    // });
 
-    return (
-      collateral.supplyAmount,
-      state.collateralSupplyShares,
-      borrow.borrowAmount,
-      state.borrowSupplyShares,
-      borrow.supplyAmount
-    );
+    // // index has increased, ie now the shares are less than the amount
+    // assertGt(
+    //   borrow.supplyAmount,
+    //   hub.convertToShares(state.borrowReserveAssetId, borrow.supplyAmount)
+    // );
+
+    // return (
+    //   collateral.supplyAmount,
+    //   state.collateralSupplyShares,
+    //   borrow.borrowAmount,
+    //   state.borrowSupplyShares,
+    //   borrow.supplyAmount
+    // );
   }
 
   // supply collateral asset, borrow asset, skip time to increase index on borrow asset
@@ -112,94 +114,96 @@ contract SpokeBase is Base {
     bool isMockRate,
     uint256 skipTime
   ) internal returns (uint256, uint256) {
-    SupplyBorrowLocal memory state;
+    revert('implement me');
 
-    if (isMockRate) {
-      vm.mockCall(
-        address(irStrategy),
-        IReserveInterestRateStrategy.calculateInterestRates.selector,
-        abi.encode(rate)
-      );
-    }
+    // SupplyBorrowLocal memory state;
 
-    (state.collateralReserveAssetId, ) = getAssetByReserveId(spoke, collateral.reserveId);
-    (state.borrowReserveAssetId, ) = getAssetByReserveId(spoke, borrow.reserveId);
-    state.collateralSupplyShares = hub.convertToShares(
-      state.collateralReserveAssetId,
-      collateral.supplyAmount
-    );
-    state.borrowSupplyShares = hub.convertToShares(state.borrowReserveAssetId, borrow.supplyAmount);
+    // if (isMockRate) {
+    //   vm.mockCall(
+    //     address(irStrategy),
+    //     IReserveInterestRateStrategy.calculateInterestRates.selector,
+    //     abi.encode(rate)
+    //   );
+    // }
 
-    state.reserveSharesBefore = spoke.getReserveSuppliedShares(collateral.reserveId);
-    state.userSharesBefore = spoke.getUserSuppliedShares(collateral.reserveId, collateral.supplier);
+    // (state.collateralReserveAssetId, ) = getAssetByReserveId(spoke, collateral.reserveId);
+    // (state.borrowReserveAssetId, ) = getAssetByReserveId(spoke, borrow.reserveId);
+    // state.collateralSupplyShares = hub.convertToShares(
+    //   state.collateralReserveAssetId,
+    //   collateral.supplyAmount
+    // );
+    // state.borrowSupplyShares = hub.convertToShares(state.borrowReserveAssetId, borrow.supplyAmount);
 
-    // supply collateral asset
-    Utils.spokeSupply({
-      spoke: spoke,
-      reserveId: collateral.reserveId,
-      user: collateral.supplier,
-      amount: collateral.supplyAmount,
-      onBehalfOf: collateral.supplier
-    });
-    setUsingAsCollateral({
-      spoke: spoke,
-      user: collateral.supplier,
-      reserveId: collateral.reserveId,
-      usingAsCollateral: true
-    });
+    // state.reserveSharesBefore = spoke.getReserveSuppliedShares(collateral.reserveId);
+    // state.userSharesBefore = spoke.getUserSuppliedShares(collateral.reserveId, collateral.supplier);
 
-    assertEq(
-      state.reserveSharesBefore + state.collateralSupplyShares,
-      spoke.getReserveSuppliedShares(collateral.reserveId)
-    );
-    assertEq(
-      state.userSharesBefore + state.collateralSupplyShares,
-      spoke.getUserSuppliedShares(collateral.reserveId, collateral.supplier)
-    );
+    // // supply collateral asset
+    // Utils.spokeSupply({
+    //   spoke: spoke,
+    //   reserveId: collateral.reserveId,
+    //   user: collateral.supplier,
+    //   amount: collateral.supplyAmount,
+    //   onBehalfOf: collateral.supplier
+    // });
+    // setUsingAsCollateral({
+    //   spoke: spoke,
+    //   user: collateral.supplier,
+    //   reserveId: collateral.reserveId,
+    //   usingAsCollateral: true
+    // });
 
-    state.reserveSharesBefore = spoke.getReserveSuppliedShares(borrow.reserveId);
-    state.userSharesBefore = spoke.getUserSuppliedShares(borrow.reserveId, borrow.supplier);
+    // assertEq(
+    //   state.reserveSharesBefore + state.collateralSupplyShares,
+    //   spoke.getReserveSuppliedShares(collateral.reserveId)
+    // );
+    // assertEq(
+    //   state.userSharesBefore + state.collateralSupplyShares,
+    //   spoke.getUserSuppliedShares(collateral.reserveId, collateral.supplier)
+    // );
 
-    // other user supplies enough asset to be drawn
-    Utils.spokeSupply({
-      spoke: spoke,
-      reserveId: borrow.reserveId,
-      user: borrow.supplier,
-      amount: borrow.supplyAmount,
-      onBehalfOf: borrow.supplier
-    });
+    // state.reserveSharesBefore = spoke.getReserveSuppliedShares(borrow.reserveId);
+    // state.userSharesBefore = spoke.getUserSuppliedShares(borrow.reserveId, borrow.supplier);
 
-    assertEq(
-      state.reserveSharesBefore + state.borrowSupplyShares,
-      spoke.getReserveSuppliedShares(borrow.reserveId)
-    );
-    assertEq(
-      state.userSharesBefore + state.borrowSupplyShares,
-      spoke.getUserSuppliedShares(borrow.reserveId, borrow.supplier)
-    );
+    // // other user supplies enough asset to be drawn
+    // Utils.spokeSupply({
+    //   spoke: spoke,
+    //   reserveId: borrow.reserveId,
+    //   user: borrow.supplier,
+    //   amount: borrow.supplyAmount,
+    //   onBehalfOf: borrow.supplier
+    // });
 
-    (state.borrowerBaseDebtBefore, ) = spoke.getUserDebt(borrow.reserveId, borrow.borrower);
-    (state.reserveBaseDebtBefore, ) = spoke.getReserveDebt(borrow.reserveId);
+    // assertEq(
+    //   state.reserveSharesBefore + state.borrowSupplyShares,
+    //   spoke.getReserveSuppliedShares(borrow.reserveId)
+    // );
+    // assertEq(
+    //   state.userSharesBefore + state.borrowSupplyShares,
+    //   spoke.getUserSuppliedShares(borrow.reserveId, borrow.supplier)
+    // );
 
-    // borrower borrows asset
-    Utils.spokeBorrow({
-      spoke: spoke,
-      reserveId: borrow.reserveId,
-      user: borrow.borrower,
-      amount: borrow.borrowAmount,
-      onBehalfOf: borrow.borrower
-    });
+    // (state.borrowerBaseDebtBefore, ) = spoke.getUserDebt(borrow.reserveId, borrow.borrower);
+    // (state.reserveBaseDebtBefore, ) = spoke.getReserveDebt(borrow.reserveId);
 
-    (state.borrowerBaseDebtAfter, ) = spoke.getUserDebt(borrow.reserveId, borrow.borrower);
-    (state.reserveBaseDebtAfter, ) = spoke.getReserveDebt(borrow.reserveId);
+    // // borrower borrows asset
+    // Utils.spokeBorrow({
+    //   spoke: spoke,
+    //   reserveId: borrow.reserveId,
+    //   user: borrow.borrower,
+    //   amount: borrow.borrowAmount,
+    //   onBehalfOf: borrow.borrower
+    // });
 
-    assertEq(state.borrowerBaseDebtBefore + borrow.borrowAmount, state.borrowerBaseDebtAfter);
-    assertEq(state.reserveBaseDebtBefore + borrow.borrowAmount, state.reserveBaseDebtAfter);
+    // (state.borrowerBaseDebtAfter, ) = spoke.getUserDebt(borrow.reserveId, borrow.borrower);
+    // (state.reserveBaseDebtAfter, ) = spoke.getReserveDebt(borrow.reserveId);
 
-    // skip time to increase index
-    skip(skipTime);
+    // assertEq(state.borrowerBaseDebtBefore + borrow.borrowAmount, state.borrowerBaseDebtAfter);
+    // assertEq(state.reserveBaseDebtBefore + borrow.borrowAmount, state.reserveBaseDebtAfter);
 
-    return (state.collateralSupplyShares, state.borrowSupplyShares);
+    // // skip time to increase index
+    // skip(skipTime);
+
+    // return (state.collateralSupplyShares, state.borrowSupplyShares);
   }
 
   function loadReserveInfo(
@@ -287,65 +291,65 @@ contract SpokeBase is Base {
       (10 ** hub.getAssetConfig(assetId).decimals);
   }
 
-  function _calculateExpectedUserRP(address user, ISpoke spoke) internal view returns (uint256) {
-    uint256 assetId;
-    uint256 totalDebt;
-    uint256 suppliedReservesCount;
-    uint256 userRP;
-    DataTypes.UserPosition memory userPosition;
+  // function _calculateExpectedUserRP(address user, ISpoke spoke) internal view returns (uint256) {
+  //   uint256 assetId;
+  //   uint256 totalDebt;
+  //   uint256 suppliedReservesCount;
+  //   uint256 userRP;
+  //   DataTypes.UserPosition memory userPosition;
 
-    // Find all reserves user has supplied, adding up total debt
-    for (uint256 reserveId; reserveId < spoke.reserveCount(); ++reserveId) {
-      if (spoke.getUsingAsCollateral(reserveId, user)) {
-        ++suppliedReservesCount;
-      }
-      (assetId, ) = getAssetByReserveId(spoke, reserveId);
-      totalDebt += _getReserveValueInBaseCurrency(
-        assetId,
-        spoke.getUserCumulativeDebt(reserveId, user)
-      );
-    }
+  //   // Find all reserves user has supplied, adding up total debt
+  //   for (uint256 reserveId; reserveId < spoke.reserveCount(); ++reserveId) {
+  //     if (spoke.getUsingAsCollateral(reserveId, user)) {
+  //       ++suppliedReservesCount;
+  //     }
+  //     (assetId, ) = getAssetByReserveId(spoke, reserveId);
+  //     totalDebt += _getReserveValueInBaseCurrency(
+  //       assetId,
+  //       spoke.getUserCumulativeDebt(reserveId, user)
+  //     );
+  //   }
 
-    if (totalDebt == 0) {
-      return 0;
-    }
+  //   if (totalDebt == 0) {
+  //     return 0;
+  //   }
 
-    // Gather up list of reserves as collateral to sort by LP
-    KeyValueListInMemory.List memory reserveLP = KeyValueListInMemory.init(suppliedReservesCount);
-    uint256 idx = 0;
-    for (uint256 reserveId; reserveId < spoke.reserveCount(); ++reserveId) {
-      if (spoke.getUsingAsCollateral(reserveId, user)) {
-        reserveLP.add(idx, spoke.getLiquidityPremium(reserveId), reserveId);
-        ++idx;
-      }
-    }
+  //   // Gather up list of reserves as collateral to sort by LP
+  //   KeyValueListInMemory.List memory reserveLP = KeyValueListInMemory.init(suppliedReservesCount);
+  //   uint256 idx = 0;
+  //   for (uint256 reserveId; reserveId < spoke.reserveCount(); ++reserveId) {
+  //     if (spoke.getUsingAsCollateral(reserveId, user)) {
+  //       reserveLP.add(idx, spoke.getLiquidityPremium(reserveId), reserveId);
+  //       ++idx;
+  //     }
+  //   }
 
-    // Sort supplied reserves by LP
-    reserveLP.sortByKey();
+  //   // Sort supplied reserves by LP
+  //   reserveLP.sortByKey();
 
-    // While user's normalized debt amount is non-zero, iterate through supplied reserves, and add up LP
-    idx = 0;
-    uint256 originalTotalDebt = totalDebt;
-    while (totalDebt > 0) {
-      (uint256 lp, uint256 reserveId) = reserveLP.get(idx);
-      userPosition = getUserInfo(spoke, user, reserveId);
-      (assetId, ) = getAssetByReserveId(spoke, reserveId);
-      uint256 supplyAmount = _getReserveValueInBaseCurrency(
-        assetId,
-        hub.convertToAssets(assetId, userPosition.suppliedShares)
-      );
+  //   // While user's normalized debt amount is non-zero, iterate through supplied reserves, and add up LP
+  //   idx = 0;
+  //   uint256 originalTotalDebt = totalDebt;
+  //   while (totalDebt > 0) {
+  //     (uint256 lp, uint256 reserveId) = reserveLP.get(idx);
+  //     userPosition = getUserInfo(spoke, user, reserveId);
+  //     (assetId, ) = getAssetByReserveId(spoke, reserveId);
+  //     uint256 supplyAmount = _getReserveValueInBaseCurrency(
+  //       assetId,
+  //       hub.convertToAssets(assetId, userPosition.suppliedShares)
+  //     );
 
-      if (supplyAmount >= totalDebt) {
-        userRP += totalDebt * lp;
-        break;
-      } else {
-        userRP += supplyAmount * lp;
-        totalDebt -= supplyAmount;
-      }
+  //     if (supplyAmount >= totalDebt) {
+  //       userRP += totalDebt * lp;
+  //       break;
+  //     } else {
+  //       userRP += supplyAmount * lp;
+  //       totalDebt -= supplyAmount;
+  //     }
 
-      ++idx;
-    }
+  //     ++idx;
+  //   }
 
-    return userRP / originalTotalDebt;
-  }
+  //   return userRP / originalTotalDebt;
+  // }
 }

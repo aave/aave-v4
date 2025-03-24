@@ -215,7 +215,7 @@ abstract contract Base is Test {
         active: true,
         paused: false,
         frozen: false,
-        irStrategy: address(irStrategy)
+        irStrategy: irStrategy
       }),
       address(tokenList.weth)
     );
@@ -228,7 +228,7 @@ abstract contract Base is Test {
         active: true,
         paused: false,
         frozen: false,
-        irStrategy: address(irStrategy)
+        irStrategy: irStrategy
       }),
       address(tokenList.usdx)
     );
@@ -241,7 +241,7 @@ abstract contract Base is Test {
         active: true,
         paused: false,
         frozen: false,
-        irStrategy: address(irStrategy)
+        irStrategy: irStrategy
       }),
       address(tokenList.dai)
     );
@@ -254,7 +254,7 @@ abstract contract Base is Test {
         active: true,
         paused: false,
         frozen: false,
-        irStrategy: address(irStrategy)
+        irStrategy: irStrategy
       }),
       address(tokenList.wbtc)
     );
@@ -447,7 +447,7 @@ abstract contract Base is Test {
         active: true,
         frozen: false,
         paused: false,
-        irStrategy: address(irStrategy)
+        irStrategy: irStrategy
       }),
       address(tokenList.dai)
     );
@@ -655,46 +655,51 @@ abstract contract Base is Test {
     address user,
     uint256 reserveId
   ) internal view returns (DataTypes.UserPosition memory) {
-    DataTypes.UserPosition memory userPosition;
-    userPosition.usingAsCollateral = spoke.getUsingAsCollateral(reserveId, user);
-    (userPosition.baseDebt, userPosition.outstandingPremium) = spoke.getUserDebt(reserveId, user);
-    userPosition.suppliedShares = spoke.getUserSuppliedShares(reserveId, user);
-    userPosition.baseBorrowIndex = spoke.getUserBaseBorrowIndex(reserveId, user);
-    userPosition.riskPremium = spoke.getUserRiskPremium(user);
-    userPosition.lastUpdateTimestamp = spoke.getUserPosition(reserveId, user).lastUpdateTimestamp;
-    return userPosition;
+    revert('implement me');
+    // DataTypes.UserPosition memory userPosition;
+    // userPosition.usingAsCollateral = spoke.getUsingAsCollateral(reserveId, user);
+    // (userPosition.baseDebt, userPosition.outstandingPremium) = spoke.getUserDebt(reserveId, user);
+    // userPosition.suppliedShares = spoke.getUserSuppliedShares(reserveId, user);
+    // userPosition.baseBorrowIndex = spoke.getUserBaseBorrowIndex(reserveId, user);
+    // userPosition.riskPremium = spoke.getUserRiskPremium(user);
+    // userPosition.lastUpdateTimestamp = spoke.getUserPosition(reserveId, user).lastUpdateTimestamp;
+    // return userPosition;
   }
 
   function getReserveInfo(
     ISpoke spoke,
     uint256 reserveId
   ) internal view returns (DataTypes.Reserve memory) {
-    DataTypes.Reserve memory reserveData;
-    reserveData.reserveId = reserveId;
-    IERC20 asset;
-    (reserveData.assetId, asset) = getAssetByReserveId(spoke, reserveId);
-    reserveData.asset = address(asset);
-    (reserveData.baseDebt, reserveData.outstandingPremium) = spoke.getReserveDebt(reserveId);
-    reserveData.suppliedShares = spoke.getReserveSuppliedShares(reserveId);
-    reserveData.riskPremium = spoke.getReserveRiskPremium(reserveId);
-    reserveData.lastUpdateTimestamp = spoke.getReserve(reserveId).lastUpdateTimestamp;
-    reserveData.baseBorrowIndex = spoke.getReserve(reserveId).baseBorrowIndex;
-    reserveData.config = spoke.getReserve(reserveId).config;
-    return reserveData;
+    revert('implement me');
+
+    // DataTypes.Reserve memory reserveData;
+    // reserveData.reserveId = reserveId;
+    // IERC20 asset;
+    // (reserveData.assetId, asset) = getAssetByReserveId(spoke, reserveId);
+    // reserveData.asset = address(asset);
+    // (reserveData.baseDebt, reserveData.outstandingPremium) = spoke.getReserveDebt(reserveId);
+    // reserveData.suppliedShares = spoke.getReserveSuppliedShares(reserveId);
+    // reserveData.riskPremium = spoke.getReserveRiskPremium(reserveId);
+    // reserveData.lastUpdateTimestamp = spoke.getReserve(reserveId).lastUpdateTimestamp;
+    // reserveData.baseBorrowIndex = spoke.getReserve(reserveId).baseBorrowIndex;
+    // reserveData.config = spoke.getReserve(reserveId).config;
+    // return reserveData;
   }
 
   function getAssetInfo(uint256 assetId) internal view returns (DataTypes.Asset memory) {
-    DataTypes.Asset memory asset;
-    asset.id = assetId;
-    asset.suppliedShares = hub.getAssetSuppliedShares(assetId);
-    asset.availableLiquidity = hub.getAvailableLiquidity(assetId);
-    (asset.baseDebt, asset.outstandingPremium) = hub.getAssetDebt(assetId);
-    asset.baseBorrowIndex = hub.getAsset(assetId).baseBorrowIndex;
-    asset.baseBorrowRate = hub.getBaseInterestRate(assetId);
-    asset.riskPremium = hub.getAssetRiskPremium(assetId);
-    asset.lastUpdateTimestamp = hub.getAsset(assetId).lastUpdateTimestamp;
-    asset.config = hub.getAssetConfig(assetId);
-    return asset;
+    revert('implement me');
+
+    // DataTypes.Asset memory asset;
+    // asset.id = assetId;
+    // asset.suppliedShares = hub.getAssetSuppliedShares(assetId);
+    // asset.availableLiquidity = hub.getAvailableLiquidity(assetId);
+    // (asset.baseDebt, asset.outstandingPremium) = hub.getAssetDebt(assetId);
+    // asset.baseBorrowIndex = hub.getAsset(assetId).baseBorrowIndex;
+    // asset.baseBorrowRate = hub.getBaseInterestRate(assetId);
+    // asset.riskPremium = hub.getAssetRiskPremium(assetId);
+    // asset.lastUpdateTimestamp = hub.getAsset(assetId).lastUpdateTimestamp;
+    // asset.config = hub.getAssetConfig(assetId);
+    // return asset;
   }
 
   function getAssetByReserveId(

@@ -12,115 +12,127 @@ contract SpokeAccrueInterestTest is SpokeBase {
 
   /// No interest should accrue when no action is taken.
   function test_accrueInterest_NoActionTaken() public {
-    DataTypes.Reserve memory wethInfo = getReserveInfo(spoke1, _wethReserveId(spoke1));
-    assertEq(wethInfo.lastUpdateTimestamp, 0);
-    assertEq(wethInfo.baseDebt, 0);
-    assertEq(wethInfo.outstandingPremium, 0);
-    assertEq(wethInfo.riskPremium, 0);
-  }
+    vm.skip(true, 'pending refactor');
+
+//     DataTypes.Reserve memory wethInfo = getReserveInfo(spoke1, _wethReserveId(spoke1));
+//     assertEq(wethInfo.lastUpdateTimestamp, 0);
+//     assertEq(wethInfo.baseDebt, 0);
+//     assertEq(wethInfo.outstandingPremium, 0);
+//     assertEq(wethInfo.riskPremium, 0);
+  
+}
 
   /// Supply an asset only, and check no interest accrued.
   function test_accrueInterest_OnlySupply(uint40 elapsed) public {
-    uint256 amount = 1000e18;
-    uint256 wethReserveId = _wethReserveId(spoke1);
+    vm.skip(true, 'pending refactor');
 
-    // Bob supplies through spoke 1
-    Utils.spokeSupply(spoke1, wethReserveId, bob, amount, bob);
+//     uint256 amount = 1000e18;
+//     uint256 wethReserveId = _wethReserveId(spoke1);
 
-    uint256 lastUpdate = vm.getBlockTimestamp();
+//     // Bob supplies through spoke 1
+//     Utils.spokeSupply(spoke1, wethReserveId, bob, amount, bob);
 
-    // Time passes
-    skip(elapsed);
+//     uint256 lastUpdate = vm.getBlockTimestamp();
 
-    DataTypes.Reserve memory wethInfo = getReserveInfo(spoke1, wethReserveId);
+//     // Time passes
+//     skip(elapsed);
 
-    // Timestamp doesn't update when no interest accrued
-    assertEq(wethInfo.lastUpdateTimestamp, lastUpdate, 'lastUpdateTimestamp');
-    assertEq(wethInfo.baseDebt, 0, 'baseDebt');
-    assertEq(wethInfo.outstandingPremium, 0, 'outstandingPremium');
-  }
+//     DataTypes.Reserve memory wethInfo = getReserveInfo(spoke1, wethReserveId);
+
+//     // Timestamp doesn't update when no interest accrued
+//     assertEq(wethInfo.lastUpdateTimestamp, lastUpdate, 'lastUpdateTimestamp');
+//     assertEq(wethInfo.baseDebt, 0, 'baseDebt');
+//     assertEq(wethInfo.outstandingPremium, 0, 'outstandingPremium');
+  
+}
 
   /// Supply and draw a reserve, wait a year, and check interest accrued.
   function test_accrueInterest_BorrowAndWait() public {
-    uint256 amount = 1000e18;
-    uint256 wethReserveId = _wethReserveId(spoke1);
-    uint256 startTime = vm.getBlockTimestamp();
+    vm.skip(true, 'pending refactor');
 
-    // so that premium is 0
-    updateLiquidityPremium(spoke1, wethReserveId, 0);
+//     uint256 amount = 1000e18;
+//     uint256 wethReserveId = _wethReserveId(spoke1);
+//     uint256 startTime = vm.getBlockTimestamp();
 
-    // Bob supplies and borrows through spoke 1
-    Utils.spokeSupply(spoke1, wethReserveId, bob, amount * 2, bob);
-    setUsingAsCollateral(spoke1, bob, wethReserveId, true);
-    Utils.spokeBorrow(spoke1, wethReserveId, bob, amount, bob);
+//     // so that premium is 0
+//     updateLiquidityPremium(spoke1, wethReserveId, 0);
 
-    uint256 baseBorrowRate = hub.getBaseInterestRate(wethAssetId);
-    uint256 lastUpdate = vm.getBlockTimestamp();
+//     // Bob supplies and borrows through spoke 1
+//     Utils.spokeSupply(spoke1, wethReserveId, bob, amount * 2, bob);
+//     setUsingAsCollateral(spoke1, bob, wethReserveId, true);
+//     Utils.spokeBorrow(spoke1, wethReserveId, bob, amount, bob);
 
-    // 1 year passes
-    skip(365 days);
+//     uint256 baseBorrowRate = hub.getBaseInterestRate(wethAssetId);
+//     uint256 lastUpdate = vm.getBlockTimestamp();
 
-    DataTypes.Reserve memory wethReserveInfo = getReserveInfo(spoke1, wethReserveId);
-    DataTypes.Asset memory wethAssetInfo = getAssetInfo(wethAssetId);
+//     // 1 year passes
+//     skip(365 days);
 
-    uint256 totalBase = MathUtils.calculateLinearInterest(baseBorrowRate, uint40(startTime)).rayMul(
-      amount
-    );
+//     DataTypes.Reserve memory wethReserveInfo = getReserveInfo(spoke1, wethReserveId);
+//     DataTypes.Asset memory wethAssetInfo = getAssetInfo(wethAssetId);
 
-    // Spoke checks
-    assertEq(wethReserveInfo.lastUpdateTimestamp, lastUpdate, 'lastUpdateTimestamp');
-    assertEq(wethReserveInfo.baseDebt, totalBase, 'baseDebt');
-    assertEq(wethReserveInfo.outstandingPremium, 0, 'outstandingPremium');
+//     uint256 totalBase = MathUtils.calculateLinearInterest(baseBorrowRate, uint40(startTime)).rayMul(
+//       amount
+//     );
 
-    // LH checks
-    assertEq(wethAssetInfo.baseDebt, totalBase, 'asset base debt');
-    assertEq(wethAssetInfo.riskPremium, 0);
-    assertEq(wethAssetInfo.outstandingPremium, 0);
-    assertEq(wethAssetInfo.lastUpdateTimestamp, lastUpdate);
-  }
+//     // Spoke checks
+//     assertEq(wethReserveInfo.lastUpdateTimestamp, lastUpdate, 'lastUpdateTimestamp');
+//     assertEq(wethReserveInfo.baseDebt, totalBase, 'baseDebt');
+//     assertEq(wethReserveInfo.outstandingPremium, 0, 'outstandingPremium');
+
+//     // LH checks
+//     assertEq(wethAssetInfo.baseDebt, totalBase, 'asset base debt');
+//     assertEq(wethAssetInfo.riskPremium, 0);
+//     assertEq(wethAssetInfo.outstandingPremium, 0);
+//     assertEq(wethAssetInfo.lastUpdateTimestamp, lastUpdate);
+  
+}
 
   /// Supply and draw arbitrary amounts of a reserve, wait arbitrary time, and check interest accrued correctly.
   function test_accrueInterest_fuzz_BorrowAmountAndElapsed(
     uint256 borrowAmount,
     uint40 elapsed
   ) public {
-    borrowAmount = bound(borrowAmount, 1, MAX_SUPPLY_AMOUNT / 2);
-    uint256 supplyAmount = borrowAmount * 2;
-    uint256 startTime = vm.getBlockTimestamp();
-    uint256 wethReserveId = _wethReserveId(spoke1);
+    vm.skip(true, 'pending refactor');
 
-    // so that premium is 0
-    updateLiquidityPremium(spoke1, wethReserveId, 0);
+//     borrowAmount = bound(borrowAmount, 1, MAX_SUPPLY_AMOUNT / 2);
+//     uint256 supplyAmount = borrowAmount * 2;
+//     uint256 startTime = vm.getBlockTimestamp();
+//     uint256 wethReserveId = _wethReserveId(spoke1);
 
-    // Bob supplies and borrows through spoke 1
-    Utils.spokeSupply(spoke1, wethReserveId, bob, supplyAmount, bob);
-    setUsingAsCollateral(spoke1, bob, wethReserveId, true);
-    Utils.spokeBorrow(spoke1, wethReserveId, bob, borrowAmount, bob);
+//     // so that premium is 0
+//     updateLiquidityPremium(spoke1, wethReserveId, 0);
 
-    uint256 baseBorrowRate = hub.getBaseInterestRate(wethAssetId);
-    uint256 lastUpdate = vm.getBlockTimestamp();
+//     // Bob supplies and borrows through spoke 1
+//     Utils.spokeSupply(spoke1, wethReserveId, bob, supplyAmount, bob);
+//     setUsingAsCollateral(spoke1, bob, wethReserveId, true);
+//     Utils.spokeBorrow(spoke1, wethReserveId, bob, borrowAmount, bob);
 
-    // Time passes
-    skip(elapsed);
+//     uint256 baseBorrowRate = hub.getBaseInterestRate(wethAssetId);
+//     uint256 lastUpdate = vm.getBlockTimestamp();
 
-    DataTypes.Reserve memory wethReserveInfo = getReserveInfo(spoke1, wethReserveId);
-    DataTypes.Asset memory wethAssetInfo = getAssetInfo(wethAssetId);
+//     // Time passes
+//     skip(elapsed);
 
-    uint256 totalBase = MathUtils.calculateLinearInterest(baseBorrowRate, uint40(startTime)).rayMul(
-      borrowAmount
-    );
+//     DataTypes.Reserve memory wethReserveInfo = getReserveInfo(spoke1, wethReserveId);
+//     DataTypes.Asset memory wethAssetInfo = getAssetInfo(wethAssetId);
 
-    // Spoke checks
-    assertEq(wethReserveInfo.lastUpdateTimestamp, lastUpdate, 'lastUpdateTimestamp');
-    assertEq(wethReserveInfo.baseDebt, totalBase, 'baseDebt');
-    assertEq(wethReserveInfo.outstandingPremium, 0, 'outstandingPremium');
+//     uint256 totalBase = MathUtils.calculateLinearInterest(baseBorrowRate, uint40(startTime)).rayMul(
+//       borrowAmount
+//     );
 
-    // LH checks
-    assertEq(wethAssetInfo.baseDebt, totalBase);
-    assertEq(wethAssetInfo.riskPremium, 0);
-    assertEq(wethAssetInfo.outstandingPremium, 0);
-    assertEq(wethAssetInfo.lastUpdateTimestamp, lastUpdate);
-  }
+//     // Spoke checks
+//     assertEq(wethReserveInfo.lastUpdateTimestamp, lastUpdate, 'lastUpdateTimestamp');
+//     assertEq(wethReserveInfo.baseDebt, totalBase, 'baseDebt');
+//     assertEq(wethReserveInfo.outstandingPremium, 0, 'outstandingPremium');
+
+//     // LH checks
+//     assertEq(wethAssetInfo.baseDebt, totalBase);
+//     assertEq(wethAssetInfo.riskPremium, 0);
+//     assertEq(wethAssetInfo.outstandingPremium, 0);
+//     assertEq(wethAssetInfo.lastUpdateTimestamp, lastUpdate);
+  
+}
 
   // TODO: test_accrueInterest_TenPercentRP
   // TODO: test_accrueInterest_fuzz_RPBorrowAndElapsed

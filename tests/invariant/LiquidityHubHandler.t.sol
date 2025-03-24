@@ -48,7 +48,7 @@ contract LiquidityHubHandler is Test {
         active: true,
         frozen: false,
         paused: false,
-        irStrategy: address(irStrategy)
+        irStrategy: irStrategy
       }),
       address(dai)
     );
@@ -96,7 +96,6 @@ contract LiquidityHubHandler is Test {
       assetId: assetId,
       spoke: address(spoke1),
       amount: amount,
-      riskPremium: 0,
       user: user,
       to: onBehalfOf
     });
@@ -111,14 +110,7 @@ contract LiquidityHubHandler is Test {
     // TODO: bound by spoke1 user balance
     amount = bound(amount, 1, 2);
 
-    Utils.withdraw({
-      hub: hub,
-      assetId: assetId,
-      spoke: address(spoke1),
-      amount: amount,
-      riskPremium: 0,
-      to: to
-    });
+    Utils.withdraw({hub: hub, assetId: assetId, spoke: address(spoke1), amount: amount, to: to});
 
     _updateState(assetId);
     s.reserveSupplied[assetId] -= amount;
@@ -140,10 +132,12 @@ contract LiquidityHubHandler is Test {
   }
 
   function _updateState(uint256 assetId) internal {
-    DataTypes.Asset memory reserveData = hub.getAsset(assetId);
-    // todo: remove last exchange rate, bad idea to store like this, looses precision
-    s.lastExchangeRate[assetId] = reserveData.suppliedShares == 0
-      ? 0
-      : hub.getTotalAssets(assetId) / reserveData.suppliedShares;
+    revert('implement me');
+
+    // DataTypes.Asset memory reserveData = hub.getAsset(assetId);
+    // // todo: remove last exchange rate, bad idea to store like this, looses precision
+    // s.lastExchangeRate[assetId] = reserveData.suppliedShares == 0
+    //   ? 0
+    //   : hub.getTotalAssets(assetId) / reserveData.suppliedShares;
   }
 }

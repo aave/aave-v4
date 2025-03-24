@@ -58,7 +58,7 @@ library Utils {
     address repayer
   ) internal {
     vm.startPrank(repayer);
-    hub.assetsList(assetId).approve(address(hub), amount);
+    hub.assetsList(assetId).approve(address(hub), (baseAmount + premiumAmount));
     vm.stopPrank();
 
     vm.prank(spoke);

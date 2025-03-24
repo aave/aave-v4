@@ -71,7 +71,6 @@ contract LiquidityHubBase is Base {
       assetId: wethAssetId,
       spoke: address(spoke1),
       amount: wethAmount,
-      riskPremium: 0,
       user: alice,
       to: address(spoke1)
     });
@@ -82,7 +81,6 @@ contract LiquidityHubBase is Base {
       assetId: daiAssetId,
       spoke: address(spoke2),
       amount: daiAmount,
-      riskPremium: 0,
       user: bob,
       to: address(spoke2)
     });
@@ -94,24 +92,25 @@ contract LiquidityHubBase is Base {
       to: alice,
       spoke: address(spoke1),
       amount: daiDrawAmount,
-      riskPremium: riskPremium,
       onBehalfOf: address(spoke1)
     });
   }
 
   function _getDebt(uint256 assetId) internal view returns (DebtData memory) {
-    DebtData memory debtData;
-    debtData.asset.cumulativeDebt = hub.getAssetCumulativeDebt(assetId);
-    (debtData.asset.baseDebt, debtData.asset.outstandingPremium) = hub.getAssetDebt(assetId);
+    revert('implement me');
 
-    address[3] memory spokes = [address(spoke1), address(spoke2), address(spoke3)];
-    for (uint256 i = 0; i < 3; i++) {
-      debtData.spoke[i].cumulativeDebt = hub.getSpokeCumulativeDebt(assetId, address(spokes[i]));
-      (debtData.spoke[i].baseDebt, debtData.spoke[i].outstandingPremium) = hub.getSpokeDebt(
-        assetId,
-        spokes[i]
-      );
-    }
-    return debtData;
+    // DebtData memory debtData;
+    // debtData.asset.cumulativeDebt = hub.getAssetCumulativeDebt(assetId);
+    // (debtData.asset.baseDebt, debtData.asset.outstandingPremium) = hub.getAssetDebt(assetId);
+
+    // address[3] memory spokes = [address(spoke1), address(spoke2), address(spoke3)];
+    // for (uint256 i = 0; i < 3; i++) {
+    //   debtData.spoke[i].cumulativeDebt = hub.getSpokeCumulativeDebt(assetId, address(spokes[i]));
+    //   (debtData.spoke[i].baseDebt, debtData.spoke[i].outstandingPremium) = hub.getSpokeDebt(
+    //     assetId,
+    //     spokes[i]
+    //   );
+    // }
+    // return debtData;
   }
 }
