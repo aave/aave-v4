@@ -44,13 +44,13 @@ library AssetLogic {
     DataTypes.Asset storage asset,
     uint256 assets
   ) internal view returns (uint256) {
-    return assets.toSharesUp(asset.totalDrawnShares(), asset.totalDrawnAssets());
+    return assets.toSharesUp(asset.totalDrawnAssets(), asset.totalDrawnShares());
   }
   function toDrawnSharesDown(
     DataTypes.Asset storage asset,
     uint256 assets
   ) internal view returns (uint256) {
-    return assets.toSharesDown(asset.totalDrawnShares(), asset.totalDrawnAssets());
+    return assets.toSharesDown(asset.totalDrawnAssets(), asset.totalDrawnShares());
   }
 
   function premiumDebt(DataTypes.Asset storage asset) internal view returns (uint256) {
@@ -85,13 +85,13 @@ library AssetLogic {
     DataTypes.Asset storage asset,
     uint256 assets
   ) internal view returns (uint256) {
-    return assets.toSharesUp(asset.totalSuppliedShares(), asset.totalSuppliedAssets());
+    return assets.toSharesUp(asset.totalSuppliedAssets(), asset.totalSuppliedShares());
   }
   function toSuppliedSharesDown(
     DataTypes.Asset storage asset,
     uint256 assets
   ) internal view returns (uint256) {
-    return assets.toSharesDown(asset.totalSuppliedShares(), asset.totalSuppliedAssets());
+    return assets.toSharesDown(asset.totalSuppliedAssets(), asset.totalSuppliedShares());
   }
 
   // risk premium interest rate is calculated offchain
