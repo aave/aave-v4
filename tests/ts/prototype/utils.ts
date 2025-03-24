@@ -13,12 +13,17 @@ export const WAD = 10n ** 18n;
 export const PERCENTAGE_FACTOR = 100_00n;
 export const MAX_UINT = 2n ** 256n - 1n;
 
+// export const MIN_RP = 0n;
+// export const MAX_RP = 0n;
+// export const MIN_INDEX = parseRay(1.1); // 1% interest
+// export const MAX_INDEX = parseRay(1.1); // 99% interest
+
 export const MIN_RP = 0n;
 export const MAX_RP = 1000_00n;
 export const MIN_INDEX = parseRay(1.01); // 1% interest
 export const MAX_INDEX = parseRay(1.99); // 99% interest
 
-export const PRECISION = 3n; // max abs delta allowed
+export const PRECISION = 3000n; // max abs delta allowed
 
 export function logBaseAndPremiumDebt(who: User | Spoke | LiquidityHub) {
   const hub = who instanceof LiquidityHub ? who : who.hub;
