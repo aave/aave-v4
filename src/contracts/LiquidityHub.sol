@@ -176,7 +176,7 @@ contract LiquidityHub is ILiquidityHub {
 
     asset.updateBorrowRate({liquidityAdded: 0, liquidityTaken: amount});
     uint256 sharesAmount = asset.convertToDrawnSharesUp(amount);
-    // TODO assert sharesAmount > 0
+    require(sharesAmount > 0, InvalidSharesAmount());
 
     asset.drawnAssets += amount;
     asset.availableLiquidity -= amount;
@@ -208,11 +208,12 @@ contract LiquidityHub is ILiquidityHub {
 
     asset.updateBorrowRate({liquidityAdded: amount, liquidityTaken: 0});
     uint256 sharesAmount = asset.convertToDrawnSharesDown(amount);
-    // TODO assert sharesAmount > 0
+    require(sharesAmount > 0, InvalidSharesAmount());
 
     asset.drawnAssets -= amount;
     asset.availableLiquidity += amount;
-    asset.totalPremium -= premiumAmount;
+    // premium amount change is applied in refresh
+    // asset.totalPremium -= premiumAmount;
 
     asset.drawnShares -= sharesAmount;
     spoke.baseDrawnShares -= sharesAmount;
@@ -232,13 +233,35 @@ contract LiquidityHub is ILiquidityHub {
 
   /// @inheritdoc ILiquidityHub
   function refresh(
-    int256 userBaseDrawnSharesDelta,
-    int256 userPremiumDrawnSharesDelta,
-    int256 userPremiumOffsetDelta,
-    int256 userTotalPremium
+    uint256 assetId,
+    int256 newPremiumDrawnSharesDelta,
+    int256 newPremiumOffsetDelta,
+    int256 newTotalPremiumDelta
   ) external returns (uint256) {
     // TODO: authorization - only spokes
-    // TODO accounting
+    if (newPremiumDrawnSharesDelta > 0) {
+      _assets[assetId].premiumDrawnShares += uint256(newPremiumDrawnSharesDelta);
+      _spokes[assetId][msg.sender].premiumDrawnShares += uint256(newPremiumDrawnSharesDelta);
+    } else {
+      _assets[assetId].premiumDrawnShares -= uint256(newPremiumDrawnSharesDelta);
+      _spokes[assetId][msg.sender].premiumDrawnShares -= uint256(newPremiumDrawnSharesDelta);
+    }
+
+    if (newPremiumOffsetDelta > 0) {
+      _assets[assetId].premiumOffset += uint256(newPremiumOffsetDelta);
+      _spokes[assetId][msg.sender].premiumOffset += uint256(newPremiumOffsetDelta);
+    } else {
+      _assets[assetId].premiumOffset -= uint256(newPremiumOffsetDelta);
+      _spokes[assetId][msg.sender].premiumOffset -= uint256(newPremiumOffsetDelta);
+    }
+
+    if (newTotalPremiumDelta > 0) {
+      _assets[assetId].totalPremium += uint256(newTotalPremiumDelta);
+      _spokes[assetId][msg.sender].totalPremium += uint256(newTotalPremiumDelta);
+    } else {
+      _assets[assetId].totalPremium -= uint256(newTotalPremiumDelta);
+      _spokes[assetId][msg.sender].totalPremium -= uint256(newTotalPremiumDelta);
+    }
   }
 
   //
@@ -273,6 +296,14 @@ contract LiquidityHub is ILiquidityHub {
 
   function convertToShares(uint256 assetId, uint256 assets) external view returns (uint256) {
     return _assets[assetId].convertToSharesDown(assets);
+  }
+
+  function convertToDrawnAssets(uint256 assetId, uint256 shares) external view returns (uint256) {
+    return _assets[assetId].convertToDrawnAssetsUp(shares);
+  }
+
+  function convertToDrawnShares(uint256 assetId, uint256 assets) external view returns (uint256) {
+    return _assets[assetId].convertToDrawnSharesDown(assets);
   }
 
   function getBaseInterestRate(uint256 assetId) public view returns (uint256) {

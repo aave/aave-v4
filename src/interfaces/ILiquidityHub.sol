@@ -56,13 +56,17 @@ interface ILiquidityHub {
   error InvalidAssetAddress();
 
   function addAsset(DataTypes.AssetConfig memory params, address asset) external;
+
   function updateAssetConfig(uint256 assetId, DataTypes.AssetConfig memory config) external;
+
   function addSpoke(uint256 assetId, DataTypes.SpokeConfig memory params, address spoke) external;
+
   function addSpokes(
     uint256[] calldata assetIds,
     DataTypes.SpokeConfig[] memory configs,
     address spoke
   ) external;
+
   function updateSpokeConfig(
     uint256 assetId,
     address spoke,
@@ -112,40 +116,68 @@ interface ILiquidityHub {
   function restore(
     uint256 assetId,
     uint256 amount,
-    uint32 premiumAmount,
+    uint256 premiumAmount,
     address repayer
   ) external returns (uint256);
+
   function accrueInterest(uint256 assetId) external;
 
+  function refresh(
+    uint256 assetId,
+    int256 newPremiumDrawnSharesDelta,
+    int256 newPremiumOffsetDelta,
+    int256 newTotalPremiumDelta
+  ) external returns (uint256);
+
   function getAsset(uint256 assetId) external view returns (DataTypes.Asset memory);
+
   function getSpoke(
     uint256 assetId,
     address spoke
   ) external view returns (DataTypes.SpokeData memory);
+
   function getSpokeConfig(
     uint256 assetId,
     address spoke
   ) external view returns (DataTypes.SpokeConfig memory);
+
   function getTotalAssets(uint256 assetId) external view returns (uint256);
+
   function convertToAssets(uint256 assetId, uint256 shares) external view returns (uint256);
+
   function convertToShares(uint256 assetId, uint256 assets) external view returns (uint256);
+
   function getBaseInterestRate(uint256 assetId) external view returns (uint256);
+
   function getInterestRate(uint256 assetId) external view returns (uint256);
 
   function getAssetDebt(uint256 assetId) external view returns (uint256, uint256);
+
   function getAssetCumulativeDebt(uint256 assetId) external view returns (uint256);
+
   function getSpokeDebt(uint256 assetId, address spoke) external view returns (uint256, uint256);
+
   function getSpokeCumulativeDebt(uint256 assetId, address spoke) external view returns (uint256);
+
   function getAssetSuppliedAmount(uint256 assetId) external view returns (uint256);
+
   function getAssetSuppliedShares(uint256 assetId) external view returns (uint256);
+
   function getSpokeSuppliedAmount(uint256 assetId, address spoke) external view returns (uint256);
+
   function getSpokeSuppliedShares(uint256 assetId, address spoke) external view returns (uint256);
+
   function getAssetConfig(uint256 assetId) external view returns (DataTypes.AssetConfig memory);
+
   function getAvailableLiquidity(uint256 assetId) external view returns (uint256);
 
   function assetCount() external view returns (uint256);
+
   function assetsList(uint256 assetId) external view returns (IERC20);
+
   function DEFAULT_ASSET_INDEX() external view returns (uint256);
+
   function DEFAULT_SPOKE_INDEX() external view returns (uint256);
+
   function MAX_ALLOWED_ASSET_DECIMALS() external view returns (uint256);
 }
