@@ -275,11 +275,11 @@ contract LiquidityHub is ILiquidityHub {
   // todo rethink these two getters depending of requirement
   function getDrawnAssets(uint256 assetId) external view returns (uint256, uint256) {
     DataTypes.Asset storage asset = _assets[assetId];
-    return (asset.previewBaseDrawn(), asset.premiumDebtDown());
+    return (asset.baseDebt(), asset.premiumDebt());
   }
   function getSuppliedAssets(uint256 assetId) external view returns (uint256, uint256, uint256) {
     DataTypes.Asset storage asset = _assets[assetId];
-    return (asset.availableLiquidity, asset.previewBaseDrawn(), asset.premiumDebtDown());
+    return (asset.availableLiquidity, asset.baseDebt(), asset.premiumDebt());
   }
 
   // todo 4626 getter naming
@@ -311,12 +311,12 @@ contract LiquidityHub is ILiquidityHub {
 
   function getAssetDebt(uint256 assetId) external view returns (uint256, uint256) {
     DataTypes.Asset storage asset = _assets[assetId];
-    return (asset.previewBaseDrawn(), asset.premiumDebtUp());
+    return (asset.baseDebt(), asset.premiumDebt());
   }
 
   function getAssetTotalDebt(uint256 assetId) external view returns (uint256) {
     DataTypes.Asset storage asset = _assets[assetId];
-    return asset.previewBaseDrawn() + asset.premiumDebtUp();
+    return asset.baseDebt() + asset.premiumDebt();
   }
 
   function getSpokeDebt(uint256 assetId, address spoke) external view returns (uint256, uint256) {
