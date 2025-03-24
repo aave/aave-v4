@@ -10,8 +10,9 @@ let users;
 // Test Scenario 1
 // t0: supply/borrow
 // t1: repay principal
+// t1: repay full
 addTest('Scenario1', () => {
-  const [alice, , ,] = setUp();
+  const [alice] = setUp();
   const amount = p('1000');
 
   alice.supply(amount);
@@ -22,7 +23,10 @@ addTest('Scenario1', () => {
   alice.repay(amount);
   alice.log(true, true);
 
+  alice.repay(MAX_UINT);
+
   runAmountInvariants();
+  assert_zeroRemainingDebt();
 });
 
 // Test Scenario 2
@@ -68,6 +72,7 @@ addTest('Scenario2', () => {
   // charlie.log(true, true);
 
   runAmountInvariants();
+  assert_zeroRemainingDebt();
 });
 
 // Test Scenario 3
@@ -78,7 +83,7 @@ addTest('Scenario2', () => {
 // t4: alice repay full
 // t5: charlie repay full
 // t6: bob repay full
-addTest('Scenario3 - high precision loss without CEIL rounding on debt', () => {
+addTest('Scenario3', () => {
   const [alice, bob, charlie] = setUp();
 
   const amount1 = p('10000');
@@ -115,6 +120,7 @@ addTest('Scenario3 - high precision loss without CEIL rounding on debt', () => {
   bob.log(true, true);
 
   runAmountInvariants();
+  assert_zeroRemainingDebt();
 });
 
 // run all tests
@@ -141,14 +147,6 @@ function runAllTests() {
   });
 }
 
-function assignSpokesToUsers() {
-  users.forEach((user) => {
-    const spoke = spokes[Math.floor(Math.random() * spokes.length)];
-    user.assignSpoke(spoke);
-    spoke.addUser(user);
-  });
-}
-
 function runAmountInvariants() {
   console.log('...running invariants...');
   invariant_hubSpokeAccounting();
@@ -157,6 +155,14 @@ function runAmountInvariants() {
   invariant_sumOfSuppliedShares();
   invariant_drawnGtSuppliedLiquidity();
   invariant_positivePremiumDebt();
+}
+
+function assignSpokesToUsers() {
+  users.forEach((user) => {
+    const spoke = spokes[Math.floor(Math.random() * spokes.length)];
+    user.assignSpoke(spoke);
+    spoke.addUser(user);
+  });
 }
 
 function invariant_sumOfBaseDebt() {
@@ -194,6 +200,7 @@ function invariant_sumOfBaseDebt() {
     fail = true;
   }
 
+  // handleInvariantFailure(fail, arguments.callee.name);
   handleInvariantFailure(fail, 'invariant_sumOfBaseDebt');
 }
 
@@ -251,7 +258,7 @@ function invariant_sumOfPremiumDebt() {
 }
 
 function invariant_sumOfSuppliedShares() {
-  const hubSuppliedShares = hub.totalSuppliedShares;
+  const hubSuppliedShares = hub.suppliedShares;
   const spokeSuppliedShares = spokes.reduce((sum, spoke) => sum + spoke.suppliedShares, 0n);
   const userSuppliedShares = users.reduce((sum, user) => sum + user.suppliedShares, 0n);
   let fail = false,
@@ -297,6 +304,46 @@ function invariant_positivePremiumDebt() {
   }
 
   handleInvariantFailure(fail, 'invariant_positivePremiumDebt');
+}
+
+
+function assert_zeroRemainingDebt() {
+  console.log('...assert zero remaining debt');
+
+  const hubPremiumDebt = hub.getDebt().premiumDebt;
+  const spokePremiumDebt = spokes.reduce((sum, spoke) => sum + spoke.getDebt().premiumDebt, 0n);
+  const userPremiumDebt = users.reduce((sum, user) => sum + user.getDebt().premiumDebt, 0n);
+
+  const hubBaseDebt = hub.getDebt().baseDebt;
+  const spokeBaseDebt = spokes.reduce((sum, spoke) => sum + spoke.getDebt().baseDebt, 0n);
+  const userBaseDebt = users.reduce((sum, user) => sum + user.getDebt().baseDebt, 0n);
+  let fail = false;
+
+  // premium debt should be exactly 0 
+  if (spokePremiumDebt > 0n || userPremiumDebt > 0n || hubPremiumDebt > 0n) {
+    console.error(
+      'hubPremiumDebt || spokePremiumDebt || userPremiumDebt > 0n',
+      f(hubPremiumDebt),
+      f(spokePremiumDebt),
+      f(userPremiumDebt)
+    );
+    fail = true;
+    throw new Error('assert_zeroRemainingDebt failed');
+  }
+
+  // base debt will be within precision due to offset from inflation mitigation
+  if (spokeBaseDebt > PRECISION || userBaseDebt > PRECISION || hubBaseDebt > PRECISION) {
+    console.error(
+      'hubPremiumDebt || spokePremiumDebt || userPremiumDebt > PRECISION',
+      f(hubPremiumDebt),
+      f(spokePremiumDebt),
+      f(userPremiumDebt)
+    );
+    fail = true;
+    throw new Error('assert_zeroRemainingDebt failed');
+  }
+
+  handleInvariantFailure(fail, 'assert_zeroRemainingDebt');
 }
 
 function invariant_drawnGtSuppliedLiquidity() {

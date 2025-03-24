@@ -95,7 +95,8 @@ export class LiquidityHub {
   accrue() {
     if (this.lastUpdateTimestamp === currentTime) return;
     this.lastUpdateTimestamp = currentTime;
-    this.drawnAssets = rayMul(this.drawnAssets, randomIndex());
+    this.lastIndex = randomIndex();
+    this.drawnAssets = rayMul(this.drawnAssets, this.lastIndex);
   }
 
   supply(amount: bigint, spoke: Spoke) {
@@ -123,7 +124,7 @@ export class LiquidityHub {
 
   // @dev spoke data is *expected* to be updated on the `refresh` callback
   draw(amount: bigint, spoke: Spoke) {
-    const drawnShares = this.toDrawnShares(amount, Rounding.CEIL);
+    const drawnShares = this.toDrawnShares(amount, Rounding.FLOOR);
 
     this.availableLiquidity -= amount;
 
@@ -209,9 +210,9 @@ export class LiquidityHub {
     console.log('hub.totalOutstandingPremium ', f(this.totalOutstandingPremium()));
     console.log('hub.lastUpdateTimestamp     ', this.lastUpdateTimestamp);
 
-    console.log('hub.getTotalDebt            ', f(this.getTotalDebt()));
-    console.log('hub.getDebt: baseDebt       ', f(this.getDebt().baseDebt));
-    console.log('hub.getDebt: premiumDebt    ', f(this.getDebt().premiumDebt));
+    console.log('hub.getTotalDebt            ', f(this.getTotalDebt(Rounding.CEIL)));
+    console.log('hub.getDebt: baseDebt       ', f(this.getDebt(Rounding.CEIL).baseDebt));
+    console.log('hub.getDebt: premiumDebt    ', f(this.getDebt(Rounding.CEIL).premiumDebt));
     console.log('hub.lastIndex               ', formatRay(this.lastIndex));
     console.log();
 
@@ -291,9 +292,9 @@ export class Spoke {
     const oldUserUnrealisedPremium = user.unrealisedPremium;
 
     user.ghostDrawnShares = percentMul(user.baseDrawnShares, user.riskPremium);
-    user.offset = this.hub.toDrawnAssets(user.ghostDrawnShares, Rounding.CEIL);
+    user.offset = this.hub.toDrawnAssets(user.ghostDrawnShares, Rounding.FLOOR);
     user.unrealisedPremium +=
-      this.hub.toDrawnAssets(oldUserGhostDrawnShares, Rounding.CEIL) - oldUserOffset;
+      this.hub.toDrawnAssets(oldUserGhostDrawnShares, Rounding.FLOOR) - oldUserOffset;
 
     this.refresh(
       user.ghostDrawnShares - oldUserGhostDrawnShares,
@@ -482,9 +483,9 @@ export class Spoke {
     console.log('spoke.ghostDebt             ', f(ghostDebt));
     console.log('spoke.unrealisedPremium     ', f(this.unrealisedPremium));
     console.log('spoke.suppliedShares        ', f(this.suppliedShares));
-    console.log('spoke.getTotalDebt          ', f(this.getTotalDebt()));
-    console.log('spoke.getDebt: baseDebt     ', f(this.getDebt().baseDebt));
-    console.log('spoke.getDebt: premiumDebt  ', f(this.getDebt().premiumDebt));
+    console.log('spoke.getTotalDebt          ', f(this.getTotalDebt(Rounding.CEIL)));
+    console.log('spoke.getDebt: baseDebt     ', f(this.getDebt(Rounding.CEIL).baseDebt));
+    console.log('spoke.getDebt: premiumDebt  ', f(this.getDebt(Rounding.CEIL).premiumDebt));
     console.log();
     if (hub) this.hub.log();
     if (users) this.users.forEach((user) => user.log());
@@ -511,27 +512,27 @@ export class User {
   }
 
   supply(amount: bigint) {
-    info('action supply', 'id', this.id, 'amount', f(amount));
+    info('> action supply', 'id', this.id, 'amount', f(amount));
     return this.spoke.supply(amount, this);
   }
 
   withdraw(amount: bigint) {
-    info('action withdraw', 'id', this.id, 'amount', f(amount));
+    info('> action withdraw', 'id', this.id, 'amount', f(amount));
     return this.spoke.withdraw(amount, this);
   }
 
   borrow(amount: bigint) {
-    info('action borrow', 'id', this.id, 'amount', f(amount));
+    info('> action borrow', 'id', this.id, 'amount', f(amount));
     return this.spoke.borrow(amount, this);
   }
 
   repay(amount: bigint) {
-    info('action repay', 'id', this.id, 'amount', f(amount));
+    info('> action repay', 'id', this.id, 'amount', f(amount));
     return this.spoke.repay(amount, this);
   }
 
   updateRiskPremium() {
-    info('action updateRiskPremium', 'id', this.id);
+    info('> action updateRiskPremium', 'id', this.id);
     this.spoke.updateUserRiskPremium(this);
   }
 
@@ -611,6 +612,6 @@ class Utils {
 }
 
 export function skip(ms = 1n) {
-  if (DEBUG) info('skipping');
+  if (DEBUG) info('\n>>>>>>>>>>>> skipping >>>>>>>>>>>>>>\n');
   currentTime += ms;
 }
