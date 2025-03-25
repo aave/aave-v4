@@ -463,10 +463,8 @@ contract Spoke is ISpoke {
   ) internal view {
     require(reserve.config.active, ReserveNotActive());
     require(!reserve.config.paused, ReservePaused());
-    require(
-      reserve.config.collateral || reserve.config.frozen,
-      ReserveCannotBeUsedAsCollateral(reserve.reserveId)
-    );
+    require(reserve.config.collateral, ReserveCannotBeUsedAsCollateral(reserve.reserveId));
+    require(!reserve.config.frozen, ReserveFrozen());
   }
 
   function _usingAsCollateral(
