@@ -401,7 +401,6 @@ contract LiquidityHub is ILiquidityHub {
     require(baseAmountRestored + premiumAmountRestored != 0, InvalidRestoreAmount());
     require(asset.config.active, AssetNotActive());
     require(!asset.config.paused, AssetPaused());
-    // todo: rm this check?
     (uint256 baseDebt, uint256 premiumDebt) = _getSpokeDebt(asset, spoke);
     require(baseAmountRestored <= baseDebt, SurplusAmountRestored(baseDebt));
     require(premiumAmountRestored <= premiumDebt, SurplusAmountRestored(premiumDebt));
