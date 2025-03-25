@@ -80,16 +80,17 @@ contract SpokeConfigTest is SpokeBase {
     ISpoke(spoke1).setUsingAsCollateral(daiReserveId, usingAsCollateral);
   }
 
-  function test_setUsingAsCollateral_revertsWith_ReserveCannotBeUsedAsCollateral_whenFrozen()
-    public
-  {
-    bool usingAsCollateral = true;
+  function test_setUsingAsCollateral_revertsWith_ReserveFrozen() public {
     uint256 daiReserveId = _daiReserveId(spoke1);
     updateReserveFrozenFlag(spoke1, daiReserveId, true);
+    vm.startPrank(SPOKE_ADMIN);
 
+    // disallow when activating
     vm.expectRevert(ISpoke.ReserveFrozen.selector);
-    vm.prank(SPOKE_ADMIN);
-    ISpoke(spoke1).setUsingAsCollateral(daiReserveId, usingAsCollateral);
+    ISpoke(spoke1).setUsingAsCollateral(daiReserveId, true);
+
+    // allow when deactivating
+    ISpoke(spoke1).setUsingAsCollateral(daiReserveId, false);
   }
 
   function test_setUsingAsCollateral_revertsWith_ReserveNotActive() public {
