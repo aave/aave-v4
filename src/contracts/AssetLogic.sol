@@ -98,7 +98,7 @@ library AssetLogic {
   }
 
   // risk premium interest rate is calculated offchain
-  function getBaseBorrowRate(DataTypes.Asset storage asset) internal view returns (uint256) {
+  function baseInterestRate(DataTypes.Asset storage asset) internal view returns (uint256) {
     return asset.baseBorrowRate;
   }
 
@@ -126,6 +126,7 @@ library AssetLogic {
   // @dev Utilizes existing `asset.baseBorrowRate`
   function accrue(DataTypes.Asset storage asset) internal {
     asset.baseDrawnAssets = asset.baseDebt();
+    asset.lastUpdateTimestamp = block.timestamp;
   }
 
   function baseDebt(DataTypes.Asset storage asset) internal view returns (uint256) {

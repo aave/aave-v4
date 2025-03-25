@@ -108,6 +108,7 @@ contract Spoke is ISpoke {
   // Users
   // /////
 
+  /// @inheritdoc ISpoke
   function supply(uint256 reserveId, uint256 amount) external {
     DataTypes.Reserve storage reserve = _reserves[reserveId];
     DataTypes.UserPosition storage userPosition = _userPositions[msg.sender][reserveId];
@@ -127,6 +128,7 @@ contract Spoke is ISpoke {
     emit Supplied(reserveId, msg.sender, amount); // todo emit suppliedShares
   }
 
+  /// @inheritdoc ISpoke
   function withdraw(uint256 reserveId, uint256 amount, address to) external {
     // TODO: Be able to pass max(uint) as amount to withdraw all supplied shares
     DataTypes.Reserve storage reserve = _reserves[reserveId];
@@ -146,6 +148,7 @@ contract Spoke is ISpoke {
     emit Withdrawn(reserveId, msg.sender, amount);
   }
 
+  /// @inheritdoc ISpoke
   function borrow(uint256 reserveId, uint256 amount, address to) external {
     // TODO: referral code
     // TODO: onBehalfOf with credit delegation
@@ -180,7 +183,6 @@ contract Spoke is ISpoke {
     _validateHealthFactor(msg.sender);
     _refreshPremiumDebt(
       reserve,
-      assetId,
       int256(userPosition.premiumDrawnShares) - oldUserPremiumDrawnShares,
       int256(userPosition.premiumOffset) - oldUserPremiumOffset,
       int256(userPosition.unrealisedPremium) - oldUserUnrealisedPremium
@@ -190,16 +192,16 @@ contract Spoke is ISpoke {
     emit Borrowed(reserveId, to, amount);
   }
 
-  /// Pass a value greater than the current debt to repay entire debt
+  /// @inheritdoc ISpoke
   function repay(uint256 reserveId, uint256 amount) external {
     /// @dev TODO: onBehalfOf
     DataTypes.UserPosition storage userPosition = _userPositions[msg.sender][reserveId];
     DataTypes.Reserve storage reserve = _reserves[reserveId];
-    uint256 assetId = reserve.assetId;
 
+    (uint256 baseDebt, uint256 premiumDebt) = _getUserDebt(userPosition, reserve.assetId);
     (uint256 baseDebtRestored, uint256 premiumDebtRestored) = _calculateRestoreAmount(
-      userPosition,
-      assetId,
+      baseDebt,
+      premiumDebt,
       amount
     );
     _validateRepay(reserve);
@@ -223,25 +225,21 @@ contract Spoke is ISpoke {
 
     userPosition.premiumDrawnShares = userPosition.baseDrawnShares.percentMul(newUserRiskPremium);
     userPosition.premiumOffset = liquidityHub.convertToDrawnAssets(
-      assetId,
+      reserve.assetId,
       userPosition.premiumDrawnShares
     );
-    userPosition.unrealisedPremium += _sub(
-      liquidityHub.convertToDrawnAssets(assetId, uint256(oldUserPremiumDrawnShares)),
-      oldUserPremiumOffset
-    ); // assets(premiumShares) - offset should never be < 0
-    // todo validate invariant^
+    userPosition.unrealisedPremium = premiumDebt - premiumDebtRestored;
 
     _refreshPremiumDebt(
       reserve,
-      assetId,
       int256(userPosition.premiumDrawnShares) - oldUserPremiumDrawnShares,
       int256(userPosition.premiumOffset) - oldUserPremiumOffset,
       int256(userPosition.unrealisedPremium) - oldUserUnrealisedPremium
     );
-    _notifyRiskPremiumUpdate(assetId, msg.sender, newUserRiskPremium);
 
-    emit Repaid(reserveId, msg.sender, amount);
+    _notifyRiskPremiumUpdate(reserve.assetId, msg.sender, newUserRiskPremium);
+
+    emit Repaid(reserveId, msg.sender, baseDebtRestored, premiumDebtRestored);
   }
 
   function setUsingAsCollateral(uint256 reserveId, bool usingAsCollateral) external {
@@ -406,24 +404,23 @@ contract Spoke is ISpoke {
   }
 
   function _calculateRestoreAmount(
-    DataTypes.UserPosition storage userPosition,
-    uint256 assetId,
+    uint256 baseDebt,
+    uint256 premiumDebt,
     uint256 amount
   ) internal view returns (uint256, uint256) {
-    (uint256 baseDebt, uint256 premiumDebt) = _getUserDebt(userPosition, assetId);
-
+    // todo allow passing a value greater than the current debt to also repay entire debt?
     if (amount == type(uint256).max) {
       return (baseDebt, premiumDebt);
     }
-    if (amount < premiumDebt) {
+    if (amount <= premiumDebt) {
       return (0, amount);
     }
+    // todo ensure `amount` is not greater than total debt?
     return (amount - premiumDebt, premiumDebt);
   }
 
   function _refreshPremiumDebt(
     DataTypes.Reserve storage reserve,
-    uint256 assetId,
     int256 premiumDrawnSharesDelta,
     int256 premiumOffsetDelta,
     int256 unrealisedPremiumDelta
@@ -433,7 +430,7 @@ contract Spoke is ISpoke {
     reserve.unrealisedPremium = _add(reserve.unrealisedPremium, unrealisedPremiumDelta);
 
     liquidityHub.refreshPremiumDebt(
-      assetId,
+      reserve.assetId,
       premiumDrawnSharesDelta,
       premiumOffsetDelta,
       unrealisedPremiumDelta
@@ -643,8 +640,6 @@ contract Spoke is ISpoke {
   /**
    * @dev Trigger risk premium update on all drawn reserves of `user` except the reserve's corresponding
    * to `assetIdToAvoid` as those are expected to be updated outside of this method.
-   * We only update risk premium for drawn assets and not supplied bc user RP does not contribute to
-   * the other two RPs (Asset, Spoke/Reserve) as by definition they're based on drawn assets only.
    */
   function _notifyRiskPremiumUpdate(
     uint256 assetIdToAvoid,
@@ -674,10 +669,10 @@ contract Spoke is ISpoke {
           liquidityHub.convertToDrawnAssets(assetId, uint256(oldUserPremiumDrawnShares)),
           oldUserPremiumOffset
         );
+        // asset(premiumDrawn) - offset should never be < 0
 
         _refreshPremiumDebt(
           reserve,
-          assetId,
           int256(userPosition.premiumDrawnShares) - oldUserPremiumDrawnShares,
           int256(userPosition.premiumOffset) - oldUserPremiumOffset,
           int256(userPosition.unrealisedPremium) - oldUserUnrealisedPremium

@@ -147,19 +147,18 @@ contract LiquidityHub is ILiquidityHub {
 
     asset.updateBorrowRate({liquidityAdded: 0, liquidityTaken: amount});
 
-    // todo name withdrawnShares, to align with spoke?
-    uint256 suppliedShares = asset.toSuppliedSharesUp(amount); // non zero since we round up
+    uint256 withdrawnShares = asset.toSuppliedSharesUp(amount); // non zero since we round up
 
     asset.availableLiquidity -= amount;
-    asset.suppliedShares -= suppliedShares;
+    asset.suppliedShares -= withdrawnShares;
 
-    spoke.suppliedShares -= suppliedShares;
+    spoke.suppliedShares -= withdrawnShares;
 
     assetsList[assetId].safeTransfer(to, amount);
 
     emit Withdraw(assetId, msg.sender, to, amount);
 
-    return suppliedShares;
+    return withdrawnShares;
   }
 
   /// @inheritdoc ILiquidityHub
@@ -203,14 +202,15 @@ contract LiquidityHub is ILiquidityHub {
     DataTypes.SpokeData storage spoke = _spokes[assetId][msg.sender];
 
     asset.accrue();
-    _validateRestore(asset, spoke, baseAmount, premiumAmount);
-    uint256 totalRestoredAmount = baseAmount + premiumAmount;
-    asset.updateBorrowRate({liquidityAdded: totalRestoredAmount, liquidityTaken: 0});
 
+    _validateRestore(asset, spoke, baseAmount, premiumAmount);
+    asset.updateBorrowRate({liquidityAdded: baseAmount, liquidityTaken: 0}); // both can be zero
+
+    uint256 totalRestoredAmount = baseAmount + premiumAmount;
     uint256 baseDrawnSharesRestored = asset.toDrawnSharesUp(baseAmount);
 
     asset.availableLiquidity += totalRestoredAmount;
-    asset.baseDrawnAssets += baseAmount;
+    asset.baseDrawnAssets -= baseAmount;
     asset.baseDrawnShares -= baseDrawnSharesRestored;
     spoke.baseDrawnShares -= baseDrawnSharesRestored;
 
@@ -305,7 +305,7 @@ contract LiquidityHub is ILiquidityHub {
   }
 
   function getBaseInterestRate(uint256 assetId) public view returns (uint256) {
-    return _assets[assetId].baseBorrowRate;
+    return _assets[assetId].baseInterestRate();
   }
 
   function getAssetDebt(uint256 assetId) external view returns (uint256, uint256) {
