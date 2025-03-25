@@ -150,73 +150,79 @@ contract SpokeSupplyTest is SpokeBase {
   }
 
   function test_supply_fuzz_amounts(uint256 amount) public {
-    vm.skip(true, 'pending refactor');
+    amount = bound(amount, 1, MAX_SUPPLY_AMOUNT);
 
-    //     amount = bound(amount, 1, MAX_SUPPLY_AMOUNT);
+    deal(address(tokenList.dai), bob, amount);
 
-    //     deal(address(tokenList.dai), bob, amount);
+    TestUserData[2] memory bobData;
+    TestData[2] memory daiData;
+    uint256 stage = 0;
 
-    //     TestUserData[2] memory bobData;
-    //     TestData[2] memory daiData;
-    //     uint256 stage = 0;
+    bobData[stage] = loadUserInfo(spoke1, _daiReserveId(spoke1), bob);
+    daiData[stage] = loadReserveInfo(spoke1, _daiReserveId(spoke1));
 
-    //     bobData[stage] = loadUserInfo(spoke1, _daiReserveId(spoke1), bob);
-    //     daiData[stage] = loadReserveInfo(spoke1, _daiReserveId(spoke1));
+    // dai balance
+    assertEq(tokenList.dai.balanceOf(bob), amount, 'user token balance pre-supply');
+    assertEq(tokenList.dai.balanceOf(address(hub)), 0, 'hub token balance pre-supply');
+    assertEq(tokenList.dai.balanceOf(address(spoke1)), 0, 'spoke token balance pre-supply');
+    // reserve
+    assertEq(daiData[stage].data.baseDrawnShares, 0, 'reserve baseDrawnShares pre-supply');
+    assertEq(daiData[stage].data.premiumDrawnShares, 0, 'reserve premiumDrawnShares pre-supply');
+    assertEq(daiData[stage].data.premiumOffset, 0, 'reserve premiumOffset pre-supply');
+    assertEq(daiData[stage].data.realizedPremium, 0, 'reserve realizedPremium pre-supply');
+    assertEq(daiData[stage].data.suppliedShares, 0, 'reserve suppliedShares pre-supply');
+    // user
+    assertEq(bobData[stage].data.baseDrawnShares, 0, 'user baseDrawnShares pre-supply');
+    assertEq(bobData[stage].data.premiumDrawnShares, 0, 'user premiumDrawnShares pre-supply');
+    assertEq(bobData[stage].data.premiumOffset, 0, 'user premiumOffset pre-supply');
+    assertEq(bobData[stage].data.realizedPremium, 0, 'user realizedPremium pre-supply');
+    assertEq(bobData[stage].data.suppliedShares, 0, 'user suppliedShares pre-supply');
 
-    //     // dai balance
-    //     assertEq(tokenList.dai.balanceOf(bob), amount, 'user token balance pre-supply');
-    //     assertEq(tokenList.dai.balanceOf(address(hub)), 0, 'hub token balance pre-supply');
-    //     assertEq(tokenList.dai.balanceOf(address(spoke1)), 0, 'spoke token balance pre-supply');
-    //     // reserve
-    //     assertEq(daiData[stage].data.baseDebt, 0, 'reserve baseDebt pre-supply');
-    //     assertEq(daiData[stage].data.outstandingPremium, 0, 'reserve outstandingPremium pre-supply');
-    //     assertEq(daiData[stage].data.suppliedShares, 0, 'reserve suppliedShares pre-supply');
-    //     assertEq(daiData[stage].data.lastUpdateTimestamp, 0, 'reserve lastUpdateTimestamp pre-supply');
-    //     // user
-    //     assertEq(bobData[stage].data.baseDebt, 0, 'user baseDebt pre-supply');
-    //     assertEq(bobData[stage].data.outstandingPremium, 0, 'user outstandingPremium pre-supply');
-    //     assertEq(bobData[stage].data.suppliedShares, 0, 'user suppliedShares pre-supply');
-    //     assertEq(bobData[stage].data.lastUpdateTimestamp, 0, 'user lastUpdateTimestamp pre-supply');
+    vm.expectEmit(address(spoke1));
+    emit ISpoke.Supplied(_daiReserveId(spoke1), bob, amount);
+    vm.prank(bob);
+    spoke1.supply(_daiReserveId(spoke1), amount);
 
-    //     vm.expectEmit(address(spoke1));
-    //     emit ISpoke.Supplied(_daiReserveId(spoke1), bob, amount);
-    //     vm.prank(bob);
-    //     spoke1.supply(_daiReserveId(spoke1), amount);
+    stage = 1;
+    bobData[stage] = loadUserInfo(spoke1, _daiReserveId(spoke1), bob);
+    daiData[stage] = loadReserveInfo(spoke1, _daiReserveId(spoke1));
 
-    //     stage = 1;
-    //     bobData[stage] = loadUserInfo(spoke1, _daiReserveId(spoke1), bob);
-    //     daiData[stage] = loadReserveInfo(spoke1, _daiReserveId(spoke1));
+    // dai balance
+    assertEq(tokenList.dai.balanceOf(bob), 0, 'user token balance post-supply');
+    assertEq(tokenList.dai.balanceOf(address(hub)), amount, 'hub token balance post-supply');
+    assertEq(tokenList.dai.balanceOf(address(spoke1)), 0, 'spoke token balance post-supply');
+    // reserve
+    assertEq(daiData[stage].data.baseDrawnShares, 0, 'reserve baseDrawnShares post-supply');
+    assertEq(daiData[stage].data.premiumDrawnShares, 0, 'reserve premiumDrawnShares post-supply');
+    assertEq(daiData[stage].data.premiumOffset, 0, 'reserve premiumOffset post-supply');
+    assertEq(daiData[stage].data.realizedPremium, 0, 'reserve realizedPremium post-supply');
+    assertEq(
+      daiData[stage].data.suppliedShares,
+      hub.convertToSuppliedShares(daiAssetId, amount),
+      'reserve suppliedShares post-supply'
+    );
+    assertEq(
+      amount,
+      hub.getSpokeSuppliedAmount(daiAssetId, address(spoke1)),
+      'spoke supplied amount post-supply'
+    );
+    assertEq(amount, hub.getAssetSuppliedAmount(daiAssetId), 'asset supplied amount post-supply');
 
-    //     // dai balance
-    //     assertEq(tokenList.dai.balanceOf(bob), 0, 'user token balance post-supply');
-    //     assertEq(tokenList.dai.balanceOf(address(hub)), amount, 'hub token balance post-supply');
-    //     assertEq(tokenList.dai.balanceOf(address(spoke1)), 0, 'spoke token balance post-supply');
-    //     // reserve
-    //     assertEq(daiData[stage].data.baseDebt, 0, 'reserve baseDebt post-supply');
-    //     assertEq(daiData[stage].data.outstandingPremium, 0, 'reserve outstandingPremium post-supply');
-    //     assertEq(
-    //       daiData[stage].data.suppliedShares,
-    //       hub.convertToShares(daiAssetId, amount),
-    //       'reserve suppliedShares post-supply'
-    //     );
-    //     assertEq(
-    //       daiData[stage].data.lastUpdateTimestamp,
-    //       vm.getBlockTimestamp(),
-    //       'reserve lastUpdateTimestamp post-supply'
-    //     );
-    //     // user
-    //     assertEq(bobData[stage].data.baseDebt, 0, 'user baseDebt post-supply');
-    //     assertEq(bobData[stage].data.outstandingPremium, 0, 'user outstandingPremium post-supply');
-    //     assertEq(
-    //       bobData[stage].data.suppliedShares,
-    //       hub.convertToShares(daiAssetId, amount),
-    //       'user suppliedShares post-supply'
-    //     );
-    //     assertEq(
-    //       bobData[stage].data.lastUpdateTimestamp,
-    //       vm.getBlockTimestamp(),
-    //       'user lastUpdateTimestamp post-supply'
-    //     );
+    // user
+    assertEq(bobData[stage].data.baseDrawnShares, 0, 'user baseDrawnShares post-supply');
+    assertEq(bobData[stage].data.premiumDrawnShares, 0, 'user premiumDrawnShares post-supply');
+    assertEq(bobData[stage].data.premiumOffset, 0, 'user premiumOffset post-supply');
+    assertEq(bobData[stage].data.realizedPremium, 0, 'user realizedPremium post-supply');
+    assertEq(
+      bobData[stage].data.suppliedShares,
+      hub.convertToSuppliedShares(daiAssetId, amount),
+      'user suppliedShares post-supply'
+    );
+    assertEq(
+      amount,
+      spoke1.getUserSuppliedAmount(_daiReserveId(spoke1), bob),
+      'user supplied amount post-supply'
+    );
   }
 
   function test_supply_index_increase_no_premium() public {
