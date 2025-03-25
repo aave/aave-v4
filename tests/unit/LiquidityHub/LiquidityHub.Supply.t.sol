@@ -164,10 +164,8 @@ contract LiquidityHubSupplyTest is LiquidityHubBase {
     hub.supply(daiAssetId, 1, alice); // cannot supply any additional amount
   }
 
-  function test_supply() public {
+  function test_supply_single_asset() public {
     uint256 amount = 100e18;
-
-    uint256 daiReserveId = _daiReserveId(spoke1);
     uint256 expectedSupplyShares = hub.convertToSuppliedShares(daiAssetId, amount);
 
     // hub
@@ -214,73 +212,42 @@ contract LiquidityHubSupplyTest is LiquidityHubBase {
   }
 
   /// @dev User makes a first supply, shares and assets amounts are correct, no precision loss
-  function test_supply_fuzz(uint256 assetId, uint256 amount, uint32 riskPremium) public {
-    vm.skip(true, 'pending refactor');
+  function test_supply_fuzz_single_asset(uint256 assetId, uint256 amount) public {
+    assetId = bound(assetId, 0, hub.assetCount() - 2); // Exclude duplicated DAI
+    amount = bound(amount, 1, MAX_SUPPLY_AMOUNT);
 
-    //     assetId = bound(assetId, 0, hub.assetCount() - 2); // Exclude duplicated DAI
-    //     amount = bound(amount, 1, MAX_SUPPLY_AMOUNT);
-    //     riskPremium %= MAX_RISK_PREMIUM_BPS; // no effect on supply
+    uint256 expectedSupplyShares = hub.convertToSuppliedShares(daiAssetId, amount);
+    IERC20 asset = hub.assetsList(assetId);
+    vm.expectEmit(address(asset));
+    emit IERC20.Transfer(alice, address(hub), amount);
+    vm.expectEmit(address(hub));
+    emit ILiquidityHub.Supply(assetId, address(spoke1), amount);
 
-    //     IERC20 asset = hub.assetsList(assetId);
+    vm.prank(address(spoke1));
+    hub.supply({assetId: assetId, amount: amount, supplier: alice});
 
-    //     vm.expectEmit(address(asset));
-    //     emit IERC20.Transfer(alice, address(hub), amount);
-    //     vm.expectEmit(address(hub));
-    //     emit ILiquidityHub.Supply(assetId, address(spoke1), amount);
-
-    //     vm.prank(address(spoke1));
-    //     hub.supply({assetId: assetId, amount: amount, riskPremium: riskPremium, supplier: alice});
-
-    //     uint256 timestamp = vm.getBlockTimestamp();
-
-    //     DataTypes.Asset memory assetData = hub.getAsset(assetId);
-    //     DataTypes.SpokeData memory spokeData = hub.getSpoke(assetId, address(spoke1));
-
-    //     // hub
-    //     assertEq(hub.getTotalAssets(assetId), amount, 'total assets post-supply');
-    //     // asset
-    //     assertEq(
-    //       assetData.suppliedShares,
-    //       hub.convertToShares(assetId, amount),
-    //       'asset suppliedShares post-supply'
-    //     );
-    //     assertEq(assetData.availableLiquidity, amount, 'asset availableLiquidity post-supply');
-    //     assertEq(assetData.baseDebt, 0, 'asset baseDebt post-supply');
-    //     assertEq(assetData.outstandingPremium, 0, 'asset outstandingPremium post-supply');
-    //     assertEq(assetData.baseBorrowIndex, WadRayMath.RAY, 'asset baseBorrowIndex post-supply');
-    //     assertEq(
-    //       assetData.baseBorrowRate,
-    //       uint256(5_00).bpsToRay(),
-    //       'asset baseBorrowRate post-supply'
-    //     );
-    //     assertEq(assetData.riskPremium, 0, 'asset riskPremium post-supply');
-    //     assertEq(assetData.lastUpdateTimestamp, timestamp, 'asset lastUpdateTimestamp post-supply');
-    //     // spoke
-    //     assertEq(
-    //       spokeData.suppliedShares,
-    //       assetData.suppliedShares,
-    //       'spoke suppliedShares post-supply'
-    //     );
-    //     assertEq(spokeData.baseDebt, assetData.baseDebt, 'baseDebt post-supply');
-    //     assertEq(
-    //       spokeData.outstandingPremium,
-    //       assetData.outstandingPremium,
-    //       'spoke outstandingPremium post-supply'
-    //     );
-    //     assertEq(
-    //       spokeData.baseBorrowIndex,
-    //       assetData.baseBorrowIndex,
-    //       'spoke baseBorrowIndex post-supply'
-    //     );
-    //     assertEq(spokeData.riskPremium.derayify(), riskPremium, 'spoke riskPremium post-supply');
-    //     assertEq(
-    //       spokeData.lastUpdateTimestamp,
-    //       assetData.lastUpdateTimestamp,
-    //       'spoke lastUpdateTimestamp post-supply'
-    //     );
-    //     assertEq(asset.balanceOf(alice), MAX_SUPPLY_AMOUNT - amount, 'user token balance post-supply');
-    //     assertEq(asset.balanceOf(address(spoke1)), 0, 'spoke token balance post-supply');
-    //     assertEq(asset.balanceOf(address(hub)), amount, 'hub token balance post-supply');
+    // hub
+    assertEq(hub.getAssetSuppliedAmount(assetId), amount, 'hub asset suppliedAmount after');
+    assertEq(
+      hub.getAssetSuppliedShares(assetId),
+      expectedSupplyShares,
+      'hub asset suppliedShares after'
+    );
+    assertEq(
+      hub.getSpokeSuppliedAmount(assetId, address(spoke1)),
+      amount,
+      'hub spoke suppliedAmount after'
+    );
+    assertEq(
+      hub.getSpokeSuppliedShares(assetId, address(spoke1)),
+      expectedSupplyShares,
+      'hub spoke suppliedShares after'
+    );
+    assertEq(hub.getAsset(assetId).lastUpdateTimestamp, vm.getBlockTimestamp());
+    // token balance
+    assertEq(asset.balanceOf(alice), MAX_SUPPLY_AMOUNT - amount, 'user token balance post-supply');
+    assertEq(asset.balanceOf(address(spoke1)), 0, 'spoke token balance post-supply');
+    assertEq(asset.balanceOf(address(hub)), amount, 'hub token balance post-supply');
   }
 
   /// @dev single user, 2 spokes, 2 assets, 2 amounts
