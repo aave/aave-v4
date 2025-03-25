@@ -52,7 +52,8 @@ contract LiquidityHubBase is Base {
   }
 
   /// @dev spoke1 (alice) supplies dai, spoke1 (alice) draws dai, skip time
-  function _increaseSupplyIndex(uint256 daiAmount) internal {
+  /// @return daiDrawAmount
+  function _increaseSupplyIndex(uint256 daiAmount) internal returns (uint256) {
     uint256 daiDrawAmount = daiAmount / 2;
 
     // spoke2 supply dai
@@ -77,6 +78,8 @@ contract LiquidityHubBase is Base {
     skip(365 days);
 
     assertTrue(hub.convertToSuppliedShares(daiAssetId, daiAmount) < daiAmount);
+
+    return daiDrawAmount;
   }
 
   /// @dev spoke2 (bob) supplies dai, spoke1 (alice) draws dai
