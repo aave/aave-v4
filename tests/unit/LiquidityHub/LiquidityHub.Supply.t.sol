@@ -82,53 +82,70 @@ contract LiquidityHubSupplyTest is LiquidityHubBase {
   }
 
   function test_supply_revertsWith_AssetFrozen() public {
-    vm.skip(true, 'pending refactor');
+    uint256 amount = 100e18;
 
-    //     uint256 amount = 100e18;
+    updateAssetFrozen(hub, daiAssetId, true);
+    assertTrue(hub.getAsset(daiAssetId).config.frozen);
 
-    //     updateAssetFrozen(hub, daiAssetId, true);
-    //     assertTrue(hub.getAsset(daiAssetId).config.frozen);
+    vm.expectRevert(ILiquidityHub.AssetFrozen.selector);
+    vm.prank(address(spoke1));
+    hub.supply(daiAssetId, amount, alice);
+  }
 
-    //     vm.expectRevert(ILiquidityHub.AssetFrozen.selector);
-    //     vm.prank(address(spoke1));
-    //     hub.supply(daiAssetId, amount, 0, alice);
+  function test_supply_revertsWith_AssetFrozen(uint256 amount) public {
+    amount = bound(amount, 1, MAX_SUPPLY_AMOUNT);
+
+    updateAssetFrozen(hub, daiAssetId, true);
+    assertTrue(hub.getAsset(daiAssetId).config.frozen);
+
+    vm.expectRevert(ILiquidityHub.AssetFrozen.selector);
+    vm.prank(address(spoke1));
+    hub.supply(daiAssetId, amount, alice);
   }
 
   function test_supply_revertsWith_supply_cap_exceeded() public {
-    vm.skip(true, 'pending refactor');
+    uint256 amount = 100e18;
 
-    //     uint256 amount = 100e18;
-    //     uint256 newSupplyCap = amount - 1;
-    //     _updateSupplyCap(daiAssetId, address(spoke1), newSupplyCap);
+    uint256 newSupplyCap = amount - 1;
+    _updateSupplyCap(daiAssetId, address(spoke1), newSupplyCap);
 
-    //     vm.expectRevert(abi.encodeWithSelector(ILiquidityHub.SupplyCapExceeded.selector, newSupplyCap));
-    //     vm.prank(address(spoke1));
-    //     hub.supply(daiAssetId, amount, 0, alice);
+    vm.expectRevert(abi.encodeWithSelector(ILiquidityHub.SupplyCapExceeded.selector, newSupplyCap));
+    vm.prank(address(spoke1));
+    hub.supply(daiAssetId, amount, alice);
+  }
+
+  function test_supply_fuzz_revertsWith_supply_cap_exceeded(uint256 amount) public {
+    amount = bound(amount, 1, MAX_SUPPLY_AMOUNT);
+
+    uint256 newSupplyCap = amount - 1;
+    _updateSupplyCap(daiAssetId, address(spoke1), newSupplyCap);
+
+    vm.expectRevert(abi.encodeWithSelector(ILiquidityHub.SupplyCapExceeded.selector, newSupplyCap));
+    vm.prank(address(spoke1));
+    hub.supply(daiAssetId, amount, alice);
   }
 
   function test_supply_revertsWith_supply_cap_exceeded_due_to_interest() public {
-    vm.skip(true, 'pending refactor');
+    uint256 daiAmount = 100e18;
+    uint256 wethAmount = 10e18;
+    uint256 drawAmount = daiAmount / 2;
+    uint256 newSupplyCap = daiAmount + 1;
+    uint256 rate = uint256(10_00).bpsToRay();
 
-    //     uint256 daiAmount = 100e18;
-    //     uint256 wethAmount = 10e18;
-    //     uint256 drawAmount = daiAmount / 2;
-    //     uint256 newSupplyCap = daiAmount + 1;
-    //     uint256 rate = uint256(10_00).bpsToRay();
+    _updateSupplyCap(daiAssetId, address(spoke2), newSupplyCap);
 
-    //     _updateSupplyCap(daiAssetId, address(spoke2), newSupplyCap);
+    _supplyAndDrawLiquidity({
+      daiAmount: daiAmount,
+      wethAmount: wethAmount,
+      daiDrawAmount: drawAmount,
+      riskPremium: 0,
+      rate: rate
+    });
+    skip(365 days);
 
-    //     _supplyAndDrawLiquidity({
-    //       daiAmount: daiAmount,
-    //       wethAmount: wethAmount,
-    //       daiDrawAmount: drawAmount,
-    //       riskPremium: 0,
-    //       rate: rate
-    //     });
-    //     skip(365 days);
-
-    //     vm.expectRevert(abi.encodeWithSelector(ILiquidityHub.SupplyCapExceeded.selector, newSupplyCap));
-    //     vm.prank(address(spoke2));
-    //     hub.supply(daiAssetId, 1, 0, alice);
+    vm.expectRevert(abi.encodeWithSelector(ILiquidityHub.SupplyCapExceeded.selector, newSupplyCap));
+    vm.prank(address(spoke2));
+    hub.supply(daiAssetId, 1, alice); // cannot supply any additional amount
   }
 
   function test_supply() public {
