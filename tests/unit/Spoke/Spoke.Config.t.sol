@@ -87,7 +87,7 @@ contract SpokeConfigTest is SpokeBase {
     uint256 daiReserveId = _daiReserveId(spoke1);
     updateReserveFrozenFlag(spoke1, daiReserveId, true);
 
-    vm.expectRevert(abi.encodeWithSelector(ISpoke.ReserveFrozen.selector, daiReserveId));
+    vm.expectRevert(ISpoke.ReserveFrozen.selector);
     vm.prank(SPOKE_ADMIN);
     ISpoke(spoke1).setUsingAsCollateral(daiReserveId, usingAsCollateral);
   }
