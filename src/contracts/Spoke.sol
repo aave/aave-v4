@@ -265,7 +265,7 @@ contract Spoke is ISpoke {
     DataTypes.Reserve storage reserve = _reserves[reserveId];
     DataTypes.UserPosition storage userPosition = _userPositions[msg.sender][reserveId];
 
-    _validateSetUsingAsCollateral(reserve, userPosition);
+    _validateSetUsingAsCollateral(reserve, userPosition, usingAsCollateral);
     userPosition.usingAsCollateral = usingAsCollateral;
 
     // consider updating user rp & notify here especially when deactivating collateral
@@ -459,12 +459,14 @@ contract Spoke is ISpoke {
 
   function _validateSetUsingAsCollateral(
     DataTypes.Reserve storage reserve,
-    DataTypes.UserPosition storage userPosition
+    DataTypes.UserPosition storage userPosition,
+    bool usingAsCollateral
   ) internal view {
     require(reserve.config.active, ReserveNotActive());
     require(!reserve.config.paused, ReservePaused());
     require(reserve.config.collateral, ReserveCannotBeUsedAsCollateral(reserve.reserveId));
-    require(!reserve.config.frozen, ReserveFrozen());
+    // deactivation should be allowed
+    require(!usingAsCollateral || !reserve.config.frozen, ReserveFrozen());
   }
 
   function _usingAsCollateral(
