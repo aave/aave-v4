@@ -120,7 +120,6 @@ contract Spoke is ISpoke {
       amount,
       msg.sender // supplier
     );
-    // todo _notifyRiskPremiumUpdate(reserve.assetId, msg.sender, newUserRiskPremium);
 
     userPosition.suppliedShares += suppliedShares;
     reserve.suppliedShares += suppliedShares;
@@ -268,6 +267,8 @@ contract Spoke is ISpoke {
 
     _validateSetUsingAsCollateral(reserve, userPosition);
     userPosition.usingAsCollateral = usingAsCollateral;
+
+    // consider updating user rp & notify here especially when deactivating collateral
 
     emit UsingAsCollateral(reserveId, msg.sender, usingAsCollateral);
   }

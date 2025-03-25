@@ -1,13 +1,13 @@
 {
-  "borrow": "480327",
-  "repay: full": "204908",
-  "repay: partial": "270992",
-  "supply: 0 debt, collateralDisabled": "169456",
-  "supply: 0 debt, collateralEnabled": "169432",
-  "supply: 1 debt": "169480",
-  "supply: 2 debt": "169491",
-  "supply: 3 debt": "169444",
+  "borrow": "480317",
+  "repay: full": "204900",
+  "repay: partial": "270982",
+  "supply: 0 debt, collateralDisabled": "169446",
+  "supply: 0 debt, collateralEnabled": "169422",
+  "supply: 1 debt": "169470",
+  "supply: 2 debt": "169481",
+  "supply: 3 debt": "169434",
   "usingAsCollateral": "50488",
-  "withdraw: full": "191238",
-  "withdraw: partial": "203101"
+  "withdraw: full": "191228",
+  "withdraw: partial": "203091"
 }
