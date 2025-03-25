@@ -435,8 +435,8 @@ contract LiquidityHub is ILiquidityHub {
     DataTypes.Asset storage asset,
     DataTypes.SpokeData storage spoke
   ) internal view returns (uint256, uint256) {
-    uint256 premiumDebt = (asset.toDrawnAssetsUp(spoke.premiumDrawnShares) - spoke.premiumOffset) +
-      spoke.realizedPremium;
+    uint256 premiumDebt = spoke.realizedPremium +
+      (asset.toDrawnAssetsUp(spoke.premiumDrawnShares) - spoke.premiumOffset);
     return (asset.toDrawnAssetsUp(spoke.baseDrawnShares), premiumDebt);
   }
 

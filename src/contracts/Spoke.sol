@@ -640,10 +640,9 @@ contract Spoke is ISpoke {
     DataTypes.UserPosition storage userPosition,
     uint256 assetId
   ) internal view returns (uint256, uint256) {
-    uint256 premiumDebt = (liquidityHub.convertToDrawnAssets(
-      assetId,
-      userPosition.premiumDrawnShares
-    ) - userPosition.premiumOffset) + userPosition.realizedPremium;
+    uint256 premiumDebt = userPosition.realizedPremium +
+      (liquidityHub.convertToDrawnAssets(assetId, userPosition.premiumDrawnShares) -
+        userPosition.premiumOffset);
     return (liquidityHub.convertToDrawnAssets(assetId, userPosition.baseDrawnShares), premiumDebt);
   }
 
@@ -652,8 +651,9 @@ contract Spoke is ISpoke {
     DataTypes.Reserve storage reserve
   ) internal view returns (uint256, uint256) {
     uint256 assetId = reserve.assetId;
-    uint256 premiumDebt = (liquidityHub.convertToDrawnAssets(assetId, reserve.premiumDrawnShares) -
-      reserve.premiumOffset) + reserve.realizedPremium;
+    uint256 premiumDebt = reserve.realizedPremium +
+      (liquidityHub.convertToDrawnAssets(assetId, reserve.premiumDrawnShares) -
+        reserve.premiumOffset);
     return (liquidityHub.convertToDrawnAssets(assetId, reserve.baseDrawnShares), premiumDebt);
   }
 
