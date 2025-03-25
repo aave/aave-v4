@@ -56,7 +56,7 @@ library AssetLogic {
   function premiumDebt(DataTypes.Asset storage asset) internal view returns (uint256) {
     return
       (asset.toDrawnAssetsUp(asset.premiumDrawnShares) - asset.premiumOffset) +
-      asset.unrealisedPremium;
+      asset.realizedPremium;
   }
 
   function totalDebt(DataTypes.Asset storage asset) internal view returns (uint256) {
@@ -115,7 +115,7 @@ library AssetLogic {
         totalDebt: asset.baseDrawnAssets,
         reserveFactor: 0, // TODO
         assetId: asset.id,
-        // todo + signedUnrealisedPremium
+        // todo + signedRealizedPremium
         virtualUnderlyingBalance: asset.availableLiquidity, // without current liquidity change
         usingVirtualBalance: true
       })

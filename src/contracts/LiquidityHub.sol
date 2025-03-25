@@ -42,7 +42,7 @@ contract LiquidityHub is ILiquidityHub {
       baseDrawnShares: 0, // offset in exchange ratio
       premiumDrawnShares: 0,
       premiumOffset: 0,
-      unrealisedPremium: 0,
+      realizedPremium: 0,
       baseDrawnAssets: 0,
       lastUpdateTimestamp: block.timestamp,
       baseBorrowRate: 0, // todo check
@@ -225,7 +225,7 @@ contract LiquidityHub is ILiquidityHub {
     uint256 assetId,
     int256 premiumDrawnSharesDelta,
     int256 premiumOffsetDelta,
-    int256 unrealisedPremiumDelta
+    int256 realizedPremiumDelta
   ) external {
     /**
      * todo: `refreshPremiumDebt` callback
@@ -240,11 +240,11 @@ contract LiquidityHub is ILiquidityHub {
 
     asset.premiumDrawnShares = _add(asset.premiumDrawnShares, premiumDrawnSharesDelta);
     asset.premiumOffset = _add(asset.premiumOffset, premiumOffsetDelta);
-    asset.unrealisedPremium = _add(asset.unrealisedPremium, unrealisedPremiumDelta);
+    asset.realizedPremium = _add(asset.realizedPremium, realizedPremiumDelta);
 
     spoke.premiumDrawnShares = _add(spoke.premiumDrawnShares, premiumDrawnSharesDelta);
     spoke.premiumOffset = _add(spoke.premiumOffset, premiumOffsetDelta);
-    spoke.unrealisedPremium = _add(spoke.unrealisedPremium, unrealisedPremiumDelta);
+    spoke.realizedPremium = _add(spoke.realizedPremium, realizedPremiumDelta);
 
     // todo check bounds
   }
@@ -424,7 +424,7 @@ contract LiquidityHub is ILiquidityHub {
       baseDrawnShares: 0,
       premiumDrawnShares: 0,
       premiumOffset: 0,
-      unrealisedPremium: 0,
+      realizedPremium: 0,
       lastUpdateTimestamp: 0,
       config: config
     });
@@ -446,7 +446,7 @@ contract LiquidityHub is ILiquidityHub {
     DataTypes.SpokeData storage spoke
   ) internal view returns (uint256, uint256) {
     uint256 premiumDebt = (asset.toDrawnAssetsUp(spoke.premiumDrawnShares) - spoke.premiumOffset) +
-      spoke.unrealisedPremium;
+      spoke.realizedPremium;
     return (asset.toDrawnAssetsUp(spoke.baseDrawnShares), premiumDebt);
   }
 

@@ -52,7 +52,7 @@ contract Spoke is ISpoke {
       baseDrawnShares: 0,
       premiumDrawnShares: 0,
       premiumOffset: 0,
-      unrealisedPremium: 0,
+      realizedPremium: 0,
       config: DataTypes.ReserveConfig({
         decimals: config.decimals,
         active: config.active,
@@ -168,14 +168,14 @@ contract Spoke is ISpoke {
     // todo add OZ safeCast, optimize
     int256 oldUserPremiumDrawnShares = int256(userPosition.premiumDrawnShares);
     int256 oldUserPremiumOffset = int256(userPosition.premiumOffset);
-    int256 oldUserUnrealisedPremium = int256(userPosition.unrealisedPremium);
+    int256 oldUserRealizedPremium = int256(userPosition.realizedPremium);
 
     userPosition.premiumDrawnShares = userPosition.baseDrawnShares.percentMul(newUserRiskPremium);
     userPosition.premiumOffset = liquidityHub.convertToDrawnAssets(
       assetId,
       userPosition.premiumDrawnShares
     );
-    userPosition.unrealisedPremium += _sub(
+    userPosition.realizedPremium += _sub(
       liquidityHub.convertToDrawnAssets(assetId, uint256(oldUserPremiumDrawnShares)),
       oldUserPremiumOffset
     ); // assets(premiumShares) - offset should never be < 0
@@ -185,7 +185,7 @@ contract Spoke is ISpoke {
       reserve,
       int256(userPosition.premiumDrawnShares) - oldUserPremiumDrawnShares,
       int256(userPosition.premiumOffset) - oldUserPremiumOffset,
-      int256(userPosition.unrealisedPremium) - oldUserUnrealisedPremium
+      int256(userPosition.realizedPremium) - oldUserRealizedPremium
     );
     _notifyRiskPremiumUpdate(assetId, msg.sender, newUserRiskPremium);
 
@@ -221,20 +221,20 @@ contract Spoke is ISpoke {
     // todo add OZ safeCast, optimize
     int256 oldUserPremiumDrawnShares = int256(userPosition.premiumDrawnShares);
     int256 oldUserPremiumOffset = int256(userPosition.premiumOffset);
-    int256 oldUserUnrealisedPremium = int256(userPosition.unrealisedPremium);
+    int256 oldUserRealizedPremium = int256(userPosition.realizedPremium);
 
     userPosition.premiumDrawnShares = userPosition.baseDrawnShares.percentMul(newUserRiskPremium);
     userPosition.premiumOffset = liquidityHub.convertToDrawnAssets(
       reserve.assetId,
       userPosition.premiumDrawnShares
     );
-    userPosition.unrealisedPremium = premiumDebt - premiumDebtRestored;
+    userPosition.realizedPremium = premiumDebt - premiumDebtRestored;
 
     _refreshPremiumDebt(
       reserve,
       int256(userPosition.premiumDrawnShares) - oldUserPremiumDrawnShares,
       int256(userPosition.premiumOffset) - oldUserPremiumOffset,
-      int256(userPosition.unrealisedPremium) - oldUserUnrealisedPremium
+      int256(userPosition.realizedPremium) - oldUserRealizedPremium
     );
 
     _notifyRiskPremiumUpdate(reserve.assetId, msg.sender, newUserRiskPremium);
@@ -423,17 +423,17 @@ contract Spoke is ISpoke {
     DataTypes.Reserve storage reserve,
     int256 premiumDrawnSharesDelta,
     int256 premiumOffsetDelta,
-    int256 unrealisedPremiumDelta
+    int256 realizedPremiumDelta
   ) internal {
     reserve.premiumDrawnShares = _add(reserve.premiumDrawnShares, premiumDrawnSharesDelta);
     reserve.premiumOffset = _add(reserve.premiumOffset, premiumOffsetDelta);
-    reserve.unrealisedPremium = _add(reserve.unrealisedPremium, unrealisedPremiumDelta);
+    reserve.realizedPremium = _add(reserve.realizedPremium, realizedPremiumDelta);
 
     liquidityHub.refreshPremiumDebt(
       reserve.assetId,
       premiumDrawnSharesDelta,
       premiumOffsetDelta,
-      unrealisedPremiumDelta
+      realizedPremiumDelta
     );
   }
 
@@ -622,7 +622,7 @@ contract Spoke is ISpoke {
     uint256 premiumDebt = (liquidityHub.convertToDrawnAssets(
       assetId,
       userPosition.premiumDrawnShares
-    ) - userPosition.premiumOffset) + userPosition.unrealisedPremium;
+    ) - userPosition.premiumOffset) + userPosition.realizedPremium;
     return (liquidityHub.convertToDrawnAssets(assetId, userPosition.baseDrawnShares), premiumDebt);
   }
 
@@ -632,7 +632,7 @@ contract Spoke is ISpoke {
   ) internal view returns (uint256, uint256) {
     uint256 assetId = reserve.assetId;
     uint256 premiumDebt = (liquidityHub.convertToDrawnAssets(assetId, reserve.premiumDrawnShares) -
-      reserve.premiumOffset) + reserve.unrealisedPremium;
+      reserve.premiumOffset) + reserve.realizedPremium;
     return (liquidityHub.convertToDrawnAssets(assetId, reserve.baseDrawnShares), premiumDebt);
   }
 
@@ -656,7 +656,7 @@ contract Spoke is ISpoke {
       if (_isBorrowing(userPosition) && assetId != assetIdToAvoid) {
         int256 oldUserPremiumDrawnShares = int256(userPosition.premiumDrawnShares);
         int256 oldUserPremiumOffset = int256(userPosition.premiumOffset);
-        int256 oldUserUnrealisedPremium = int256(userPosition.unrealisedPremium);
+        int256 oldUserRealizedPremium = int256(userPosition.realizedPremium);
 
         userPosition.premiumDrawnShares = userPosition.baseDrawnShares.percentMul(
           newUserRiskPremium
@@ -665,7 +665,7 @@ contract Spoke is ISpoke {
           assetId,
           userPosition.premiumDrawnShares
         );
-        userPosition.unrealisedPremium += _sub(
+        userPosition.realizedPremium += _sub(
           liquidityHub.convertToDrawnAssets(assetId, uint256(oldUserPremiumDrawnShares)),
           oldUserPremiumOffset
         );
@@ -675,7 +675,7 @@ contract Spoke is ISpoke {
           reserve,
           int256(userPosition.premiumDrawnShares) - oldUserPremiumDrawnShares,
           int256(userPosition.premiumOffset) - oldUserPremiumOffset,
-          int256(userPosition.unrealisedPremium) - oldUserUnrealisedPremium
+          int256(userPosition.realizedPremium) - oldUserRealizedPremium
         );
       }
       unchecked {

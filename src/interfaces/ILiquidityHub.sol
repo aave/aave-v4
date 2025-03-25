@@ -116,7 +116,7 @@ interface ILiquidityHub {
     uint256 assetId,
     int256 premiumDrawnSharesDelta,
     int256 premiumOffsetDelta,
-    int256 unrealisedPremiumDelta
+    int256 realizedPremiumDelta
   ) external;
   function convertToDrawnAssets(uint256 assetId, uint256 shares) external view returns (uint256);
   function convertToDrawnShares(uint256 assetId, uint256 assets) external view returns (uint256);

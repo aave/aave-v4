@@ -11,7 +11,7 @@ library DataTypes {
     uint256 baseDrawnShares;
     uint256 premiumDrawnShares;
     uint256 premiumOffset; // todo make signed
-    uint256 unrealisedPremium;
+    uint256 realizedPremium;
     uint256 lastUpdateTimestamp; // todo: unneeded?
     DataTypes.SpokeConfig config;
   }
@@ -22,7 +22,7 @@ library DataTypes {
     uint256 baseDrawnShares;
     uint256 premiumDrawnShares;
     uint256 premiumOffset; // todo make signed
-    uint256 unrealisedPremium;
+    uint256 realizedPremium;
     uint256 baseDrawnAssets;
     uint256 baseBorrowRate;
     uint256 lastUpdateTimestamp;
@@ -62,7 +62,7 @@ library DataTypes {
     uint256 baseDrawnShares;
     uint256 premiumDrawnShares;
     uint256 premiumOffset;
-    uint256 unrealisedPremium;
+    uint256 realizedPremium;
     ReserveConfig config;
   }
 
@@ -84,7 +84,7 @@ library DataTypes {
     uint256 baseDrawnShares;
     uint256 premiumDrawnShares;
     uint256 premiumOffset;
-    uint256 unrealisedPremium;
+    uint256 realizedPremium;
     uint256 lastUpdateTimestamp;
   }
 
