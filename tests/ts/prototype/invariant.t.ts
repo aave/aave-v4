@@ -115,6 +115,7 @@ export function runAmountInvariants() {
   invariant_sumOfPremiumDebt();
   invariant_sumOfSuppliedShares();
   invariant_drawnGtSuppliedLiquidity();
+  // todo invariant: both exchange ratio are always increasing with the offset fix
 }
 
 export function assignSpokesToUsers() {

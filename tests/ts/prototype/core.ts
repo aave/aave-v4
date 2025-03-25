@@ -1,7 +1,6 @@
 import {
   DEBUG,
   MAX_UINT,
-  RAY,
   Rounding,
   assertNonZero,
   absDiff,
@@ -14,7 +13,7 @@ import {
   info,
   rayMul,
   inverse,
-} from './utils.ts';
+} from './utils';
 
 let spokeIdCounter = 0n;
 let userIdCounter = 0n;
@@ -82,12 +81,7 @@ export class LiquidityHub {
   }
 
   toSupplyShares(assets: bigint, rounding = Rounding.FLOOR) {
-    return mulDiv(
-      assets,
-      this.totalSupplyShares(),
-      this.totalSupplyAssets(inverse(rounding)),
-      rounding
-    );
+    return mulDiv(assets, this.totalSupplyShares(), this.totalSupplyAssets(rounding), rounding);
   }
 
   accrue() {
@@ -277,25 +271,26 @@ export class Spoke {
     const user = this.getUser(who);
 
     this.hub.accrue();
+
+    const oldUserGhostDrawnShares = user.ghostDrawnShares;
+    const oldUserOffset = user.offset;
+    const accruedPremiumDebt =
+      this.hub.toDrawnAssets(oldUserGhostDrawnShares, Rounding.CEIL) - oldUserOffset;
+
     const drawnShares = this.hub.draw(amount, this); // asset to share should round up
 
     this.baseDrawnShares += drawnShares;
     user.baseDrawnShares += drawnShares;
     user.riskPremium = randomRiskPremium();
 
-    const oldUserGhostDrawnShares = user.ghostDrawnShares;
-    const oldUserOffset = user.offset;
-    const oldUserUnrealisedPremium = user.unrealisedPremium;
-
     user.ghostDrawnShares = percentMul(user.baseDrawnShares, user.riskPremium);
     user.offset = this.hub.toDrawnAssets(user.ghostDrawnShares, Rounding.CEIL);
-    user.unrealisedPremium +=
-      this.hub.toDrawnAssets(oldUserGhostDrawnShares, Rounding.CEIL) - oldUserOffset;
+    user.unrealisedPremium += accruedPremiumDebt;
 
     this.refresh(
       user.ghostDrawnShares - oldUserGhostDrawnShares,
       user.offset - oldUserOffset,
-      user.unrealisedPremium - oldUserUnrealisedPremium,
+      accruedPremiumDebt,
       user
     );
 
@@ -387,9 +382,10 @@ export class Spoke {
     const oldUserOffset = user.offset;
 
     user.ghostDrawnShares = percentMul(user.baseDrawnShares, user.riskPremium);
-    user.offset = this.hub.toDrawnAssets(user.ghostDrawnShares);
+    user.offset = this.hub.toDrawnAssets(user.ghostDrawnShares, Rounding.CEIL);
 
-    const newUnrealisedPremium = this.hub.toDrawnAssets(oldUserGhostDrawnShares) - oldUserOffset;
+    const newUnrealisedPremium =
+      this.hub.toDrawnAssets(oldUserGhostDrawnShares, Rounding.CEIL) - oldUserOffset;
     user.unrealisedPremium += newUnrealisedPremium;
 
     this.refresh(
