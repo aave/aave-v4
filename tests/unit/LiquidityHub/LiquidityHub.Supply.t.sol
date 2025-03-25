@@ -127,21 +127,37 @@ contract LiquidityHubSupplyTest is LiquidityHubBase {
 
   function test_supply_revertsWith_supply_cap_exceeded_due_to_interest() public {
     uint256 daiAmount = 100e18;
-    uint256 wethAmount = 10e18;
-    uint256 drawAmount = daiAmount / 2;
     uint256 newSupplyCap = daiAmount + 1;
-    uint256 rate = uint256(10_00).bpsToRay();
 
     _updateSupplyCap(daiAssetId, address(spoke2), newSupplyCap);
+    _increaseSupplyIndex(daiAmount);
 
+    vm.expectRevert(abi.encodeWithSelector(ILiquidityHub.SupplyCapExceeded.selector, newSupplyCap));
+    vm.prank(address(spoke2));
+    hub.supply(daiAssetId, 1, alice);
+  }
+
+  function test_supply_fuzz_revertsWith_supply_cap_exceeded_due_to_interest(
+    uint256 daiAmount,
+    uint256 drawAmount,
+    uint256 rate,
+    uint256 skipTime
+  ) public {
+    daiAmount = bound(daiAmount, 1, MAX_SUPPLY_AMOUNT);
+    drawAmount = bound(drawAmount, 1, daiAmount);
+    skipTime = bound(skipTime, 1, MAX_SKIP_TIME);
+
+    uint256 newSupplyCap = daiAmount + 1;
+    rate = bound(rate, 1, MAX_BORROW_RATE).bpsToRay(); // 0.01% to 1000%
+
+    _updateSupplyCap(daiAssetId, address(spoke2), newSupplyCap);
     _supplyAndDrawLiquidity({
       daiAmount: daiAmount,
-      wethAmount: wethAmount,
       daiDrawAmount: drawAmount,
-      riskPremium: 0,
-      rate: rate
+      rate: rate,
+      skipTime: skipTime
     });
-    skip(365 days);
+    vm.assume(hub.convertToSuppliedShares(daiAssetId, daiAmount) < daiAmount);
 
     vm.expectRevert(abi.encodeWithSelector(ILiquidityHub.SupplyCapExceeded.selector, newSupplyCap));
     vm.prank(address(spoke2));

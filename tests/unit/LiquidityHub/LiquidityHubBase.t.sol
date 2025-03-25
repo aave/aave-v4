@@ -51,7 +51,71 @@ contract LiquidityHubBase is Base {
     hub.updateSpokeConfig(assetId, spoke, spokeConfig);
   }
 
-  /// @dev spoke1 (alice) supplies dai, spoke2 (bob) supplies weth, spoke1 (alice) draws dai
+  /// @dev spoke1 (alice) supplies dai, spoke1 (alice) draws dai, skip time
+  function _increaseSupplyIndex(uint256 daiAmount) internal {
+    uint256 daiDrawAmount = daiAmount / 2;
+
+    // spoke2 supply dai
+    Utils.supply({
+      hub: hub,
+      assetId: daiAssetId,
+      spoke: address(spoke2),
+      amount: daiAmount,
+      user: bob,
+      to: address(spoke2)
+    });
+
+    // spoke1 draw dai liquidity on behalf of user
+    Utils.draw({
+      hub: hub,
+      assetId: daiAssetId,
+      to: alice,
+      spoke: address(spoke1),
+      amount: daiDrawAmount,
+      onBehalfOf: address(spoke1)
+    });
+    skip(365 days);
+
+    assertTrue(hub.convertToSuppliedShares(daiAssetId, daiAmount) < daiAmount);
+  }
+
+  /// @dev spoke2 (bob) supplies dai, spoke1 (alice) draws dai
+  function _supplyAndDrawLiquidity(
+    uint256 daiAmount,
+    uint256 daiDrawAmount,
+    uint256 rate,
+    uint256 skipTime
+  ) internal {
+    vm.mockCall(
+      address(irStrategy),
+      IReserveInterestRateStrategy.calculateInterestRates.selector,
+      abi.encode(rate)
+    );
+
+    // spoke2 supply dai
+    Utils.supply({
+      hub: hub,
+      assetId: daiAssetId,
+      spoke: address(spoke2),
+      amount: daiAmount,
+      user: bob,
+      to: address(spoke2)
+    });
+
+    // spoke1 draw dai liquidity on behalf of user
+    Utils.draw({
+      hub: hub,
+      assetId: daiAssetId,
+      to: alice,
+      spoke: address(spoke1),
+      amount: daiDrawAmount,
+      onBehalfOf: address(spoke1)
+    });
+
+    skip(skipTime);
+  }
+
+  /// @dev spoke1 (alice) supplies weth, spoke2 (bob) supplies dai, spoke1 (alice) draws dai
   function _supplyAndDrawLiquidity(
     uint256 daiAmount,
     uint256 wethAmount,
