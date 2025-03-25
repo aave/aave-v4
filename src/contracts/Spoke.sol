@@ -421,7 +421,7 @@ contract Spoke is ISpoke {
     require(reserve.asset != address(0), ReserveNotListed());
     require(reserve.config.active, ReserveNotActive());
     require(!reserve.config.paused, ReservePaused());
-    // todo validate user not trying to repay more?
+    // todo validate user not trying to repay more
   }
 
   function _calculateRestoreAmount(
@@ -429,7 +429,6 @@ contract Spoke is ISpoke {
     uint256 premiumDebt,
     uint256 amount
   ) internal view returns (uint256, uint256) {
-    // todo allow passing a value greater than the current debt to also repay entire debt?
     if (amount == type(uint256).max) {
       return (baseDebt, premiumDebt);
     }
@@ -464,7 +463,10 @@ contract Spoke is ISpoke {
   ) internal view {
     require(reserve.config.active, ReserveNotActive());
     require(!reserve.config.paused, ReservePaused());
-    require(reserve.config.collateral, ReserveCannotBeUsedAsCollateral(reserve.reserveId));
+    require(
+      reserve.config.collateral || reserve.config.frozen,
+      ReserveCannotBeUsedAsCollateral(reserve.reserveId)
+    );
   }
 
   function _usingAsCollateral(
