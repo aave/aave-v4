@@ -177,4 +177,27 @@ contract LiquidityHubBase is Base {
     // }
     // return debtData;
   }
+
+  // create premium debt on dai asset
+  function _createPremiumDebt(ISpoke spoke, uint256 daiAmount) internal returns (uint256) {
+    Utils.spokeSupply({
+      spoke: spoke,
+      reserveId: _daiReserveId(spoke1),
+      user: alice,
+      amount: daiAmount,
+      onBehalfOf: alice
+    });
+    setUsingAsCollateral(spoke, alice, _daiReserveId(spoke), true);
+    Utils.spokeBorrow({
+      spoke: spoke,
+      reserveId: _daiReserveId(spoke),
+      user: alice,
+      amount: daiAmount / 2,
+      onBehalfOf: alice
+    });
+    skip(365 days);
+
+    (, uint256 premiumDebt) = hub.getAssetDebt(daiAssetId);
+    assertGt(premiumDebt, 0); // non-zero premium debt
+  }
 }

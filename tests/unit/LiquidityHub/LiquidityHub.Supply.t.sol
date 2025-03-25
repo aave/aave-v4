@@ -397,7 +397,6 @@ contract LiquidityHubSupplyTest is LiquidityHubBase {
   function test_supply_revertsWith_InvalidSharesAmount_due_to_index() public {
     // inflate exchange rate
     uint256 daiAmount = 1e9 * 1e18;
-    uint256 wethAmount = 10e18;
     uint256 drawAmount = daiAmount;
     uint256 rate = uint256(MAX_BORROW_RATE).bpsToRay();
 
@@ -407,142 +406,119 @@ contract LiquidityHubSupplyTest is LiquidityHubBase {
       rate: rate,
       skipTime: 365 days * 10
     });
-
-    assertTrue(hub.convertToSuppliedAssets(daiAssetId, daiAmount) > daiAmount);
+    assertLt(hub.convertToSuppliedShares(daiAssetId, daiAmount), daiAmount); // index increased
 
     // supply < 1 share
     uint256 amount = 1;
-    assertTrue(hub.convertToSuppliedShares(daiAssetId, amount) < 1);
+    assertTrue(hub.convertToSuppliedShares(daiAssetId, amount) == 0);
 
     vm.expectRevert(ILiquidityHub.InvalidSharesAmount.selector);
     vm.prank(address(spoke1));
     hub.supply(daiAssetId, amount, alice);
   }
 
+  function test_supply_fuzz_revertsWith_InvalidSharesAmount_due_to_index(
+    uint256 daiAmount,
+    uint256 supplyAmount,
+    uint256 skipTime,
+    uint256 rate
+  ) public {
+    // inflate exchange rate using large values
+    daiAmount = bound(daiAmount, 1e20, MAX_SUPPLY_AMOUNT);
+    skipTime = bound(skipTime, 365 days, 100 * 365 days);
+    rate = bound(rate, MAX_BORROW_RATE / 10, MAX_BORROW_RATE).bpsToRay();
+
+    _supplyAndDrawLiquidity({
+      daiAmount: daiAmount,
+      daiDrawAmount: daiAmount,
+      rate: rate,
+      skipTime: skipTime
+    });
+
+    uint256 minAllowedSupplyAmount = hub.convertToSuppliedAssets(daiAssetId, 1);
+    vm.assume(minAllowedSupplyAmount > 1);
+
+    // supply < 1 share
+    supplyAmount = bound(supplyAmount, 1, minAllowedSupplyAmount - 1);
+
+    vm.expectRevert(ILiquidityHub.InvalidSharesAmount.selector);
+    vm.prank(address(spoke1));
+    hub.supply(daiAssetId, supplyAmount, alice);
+  }
+
   function test_supply_with_increased_index() public {
-    vm.skip(true, 'pending refactor');
+    uint256 daiAmount = 100e18;
+    _increaseSupplyIndex(daiAmount);
+    uint256 initialSuppliedAssets = hub.getAssetSuppliedAmount(daiAssetId);
+    uint256 initialSuppliedShares = hub.getAssetSuppliedShares(daiAssetId);
 
-    //     uint256 daiAmount = 100e18;
-    //     uint256 wethAmount = 10e18;
-    //     uint256 drawAmount = daiAmount / 2;
-    //     uint256 rate = uint256(10_00).bpsToRay();
+    uint256 supplyAmount = 10e18;
+    uint256 expectedSupplyShares = hub.convertToSuppliedShares(daiAssetId, supplyAmount);
 
-    //     _supplyAndDrawLiquidity({
-    //       daiAmount: daiAmount,
-    //       wethAmount: wethAmount,
-    //       daiDrawAmount: drawAmount,
-    //       riskPremium: 0,
-    //       rate: rate
-    //     });
-    //     skip(365 days);
+    (, uint256 premiumDebt) = hub.getAssetDebt(daiAssetId);
+    assertEq(premiumDebt, 0); // zero premium debt
 
-    //     DataTypes.Asset memory daiData = hub.getAsset(daiAssetId);
-    //     uint256 accruedBase = daiData.baseDebt.rayMul(rate);
-    //     uint256 initialTotalAssets = daiAmount;
+    Utils.supply({
+      hub: hub,
+      assetId: daiAssetId,
+      spoke: address(spoke2),
+      amount: supplyAmount,
+      user: bob,
+      to: address(spoke2)
+    });
 
-    //     uint256 supply2Amount = 10e18;
-    //     uint256 expectedSupply2Shares = supply2Amount.toSharesDown(
-    //       initialTotalAssets + accruedBase,
-    //       daiData.suppliedShares
-    //     );
-    //     uint256 initialSupplyShares = daiData.suppliedShares;
-
-    //     Utils.supply({
-    //       hub: hub,
-    //       assetId: daiAssetId,
-    //       spoke: address(spoke2),
-    //       amount: supply2Amount,
-    //       riskPremium: 0,
-    //       user: bob,
-    //       to: address(spoke2)
-    //     });
-
-    //     daiData = hub.getAsset(daiAssetId);
-    //     DataTypes.SpokeData memory spokeData = hub.getSpoke(daiAssetId, address(spoke2));
-
-    //     assertEq(
-    //       hub.getTotalAssets(daiAssetId),
-    //       initialTotalAssets + accruedBase + supply2Amount,
-    //       'hub totalAssets'
-    //     );
-    //     assertEq(
-    //       daiData.suppliedShares,
-    //       expectedSupply2Shares + initialSupplyShares,
-    //       'suppliedShares post-supply'
-    //     );
-    //     assertLt(
-    //       expectedSupply2Shares,
-    //       supply2Amount,
-    //       'increased index should lead to lower number of shares'
-    //     );
-    //     assertEq(spokeData.suppliedShares, daiData.suppliedShares, 'spoke suppliedShares post-supply');
+    assertEq(
+      hub.getAssetSuppliedAmount(daiAssetId),
+      initialSuppliedAssets + supplyAmount,
+      'hub suppliedAssets after'
+    );
+    assertEq(
+      hub.getAssetSuppliedShares(daiAssetId),
+      expectedSupplyShares + initialSuppliedShares,
+      'hub suppliedShares after'
+    );
+    assertEq(
+      hub.getAssetSuppliedShares(daiAssetId),
+      hub.getSpokeSuppliedShares(daiAssetId, address(spoke2)),
+      'spoke suppliedShares after'
+    );
   }
 
   function test_supply_with_increased_index_with_premium() public {
-    vm.skip(true, 'pending refactor');
+    uint256 daiAmount = 100e18;
+    _createPremiumDebt(spoke2, daiAmount);
+    assertLt(hub.convertToSuppliedShares(daiAssetId, daiAmount), daiAmount); // less shares than assets, index increased
 
-    //     uint256 daiAmount = 100e18;
-    //     uint256 wethAmount = 10e18;
-    //     uint256 drawAmount = daiAmount / 2;
-    //     uint32 riskPremium = 20_00;
-    //     uint256 rate = uint256(10_00).bpsToRay();
+    uint256 initialSuppliedAssets = hub.getAssetSuppliedAmount(daiAssetId);
+    uint256 initialSuppliedShares = hub.getAssetSuppliedShares(daiAssetId);
 
-    //     _supplyAndDrawLiquidity({
-    //       daiAmount: daiAmount,
-    //       wethAmount: wethAmount,
-    //       daiDrawAmount: drawAmount,
-    //       riskPremium: riskPremium,
-    //       rate: rate
-    //     });
-    //     skip(365 days);
+    uint256 supplyAmount = 10e18;
+    uint256 expectedSupplyShares = hub.convertToSuppliedShares(daiAssetId, supplyAmount);
 
-    //     DataTypes.Asset memory daiData = hub.getAsset(daiAssetId);
-    //     uint256 accruedBase = daiData.baseDebt.rayMul(rate);
-    //     uint256 accruedPremium = accruedBase.percentMul(riskPremium);
-    //     uint256 initialTotalAssets = daiAmount;
+    Utils.supply({
+      hub: hub,
+      assetId: daiAssetId,
+      spoke: address(spoke2),
+      amount: supplyAmount,
+      user: bob,
+      to: address(spoke2)
+    });
 
-    //     uint256 supply2Amount = 10e18;
-    //     uint256 expectedSupply2Shares = supply2Amount.toSharesDown(
-    //       initialTotalAssets + accruedBase + accruedPremium,
-    //       daiData.suppliedShares
-    //     );
-    //     uint256 initialSupplyShares = daiData.suppliedShares;
-
-    //     Utils.supply({
-    //       hub: hub,
-    //       assetId: daiAssetId,
-    //       spoke: address(spoke2),
-    //       amount: supply2Amount,
-    //       riskPremium: 0,
-    //       user: bob,
-    //       to: address(spoke2)
-    //     });
-
-    //     daiData = hub.getAsset(daiAssetId);
-    //     DataTypes.SpokeData memory spokeData = hub.getSpoke(daiAssetId, address(spoke2));
-
-    //     assertEq(
-    //       hub.getTotalAssets(daiAssetId),
-    //       initialTotalAssets + accruedBase + accruedPremium + supply2Amount,
-    //       'hub totalAssets'
-    //     );
-    //     assertApproxEqAbs(
-    //       daiData.suppliedShares,
-    //       expectedSupply2Shares + initialSupplyShares,
-    //       1,
-    //       'suppliedShares post-supply'
-    //     );
-    //     assertApproxEqAbs(
-    //       hub.convertToAssets(daiAssetId, expectedSupply2Shares),
-    //       supply2Amount,
-    //       1,
-    //       'assets to shares post-supply'
-    //     );
-    //     assertTrue(
-    //       expectedSupply2Shares < supply2Amount,
-    //       'increased index should lead to lower number of shares'
-    //     );
-    //     assertEq(spokeData.suppliedShares, daiData.suppliedShares, 'spoke suppliedShares post-supply');
+    assertEq(
+      hub.getAssetSuppliedAmount(daiAssetId),
+      initialSuppliedAssets + supplyAmount,
+      'hub suppliedAssets after'
+    );
+    assertEq(
+      hub.getAssetSuppliedShares(daiAssetId),
+      expectedSupplyShares + initialSuppliedShares,
+      'hub suppliedShares after'
+    );
+    assertEq(
+      hub.getAssetSuppliedShares(daiAssetId),
+      hub.getSpokeSuppliedShares(daiAssetId, address(spoke2)),
+      'spoke suppliedShares after'
+    );
   }
 
   function test_supply_multi_supply_minimal_shares() public {
