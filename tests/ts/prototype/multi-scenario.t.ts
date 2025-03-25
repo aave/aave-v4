@@ -1,4 +1,4 @@
-import {LiquidityHub, Spoke, User, skip} from './core';
+import {LiquidityHub, Spoke, User, skip, OFFSET_UNITS} from './core';
 import {absDiff, f, maxAbsDiff, p, PRECISION, MAX_UINT} from './utils';
 
 const tests: {name: string; test: () => void}[] = [];
@@ -121,6 +121,46 @@ addTest('Scenario3', () => {
 
   runAmountInvariants();
   assert_zeroRemainingDebt();
+});
+
+// Test Scenario 4 - withdraw
+// t0: alice supply/borrow
+// 
+addTest('Scenario4', () => {
+  const [alice, bob, charlie] = setUp();
+
+  const amount1 = p('10000');
+  const amount2 = p('200');
+  const amount3 = p('500');
+  const amount4 = p('800');
+
+  alice.supply(amount1);
+  
+  skip();
+  bob.borrow(amount2);
+  bob.supply(amount3);
+
+  skip();
+  charlie.supply(amount3);
+  charlie.borrow(amount2);
+
+  skip();
+  alice.withdraw(MAX_UINT);
+
+  skip();
+  bob.withdraw(MAX_UINT);
+
+  skip();
+  charlie.repay(MAX_UINT);
+  bob.repay(MAX_UINT);
+
+  skip();
+  charlie.withdraw(MAX_UINT);
+  bob.withdraw(MAX_UINT);
+  alice.withdraw(MAX_UINT);
+
+  runAmountInvariants();
+  assert_zeroRemainingSuppliedShares();
 });
 
 // run all tests
@@ -285,6 +325,28 @@ function invariant_sumOfSuppliedShares() {
   }
 
   handleInvariantFailure(fail, 'invariant_sumOfSuppliedShares');
+}
+
+function assert_zeroRemainingSuppliedShares() {
+  const hubSuppliedShares = hub.suppliedShares;
+  const spokeSuppliedShares = spokes.reduce((sum, spoke) => sum + spoke.suppliedShares, 0n);
+  const userSuppliedShares = users.reduce((sum, user) => sum + user.suppliedShares, 0n);
+  let fail = false;
+  const supplySharePrecision = hub.toSupplyShares(OFFSET_UNITS);
+
+  if (hubSuppliedShares > supplySharePrecision || spokeSuppliedShares > supplySharePrecision || userSuppliedShares > supplySharePrecision) {
+    console.error(
+      'non zero supplied shares',
+      f(hubSuppliedShares),
+      f(spokeSuppliedShares),
+      f(userSuppliedShares),
+      f(supplySharePrecision)
+    );
+    fail = true;
+    throw new Error('assert_zeroRemainingSuppliedShares failed');
+  }
+
+  handleInvariantFailure(fail, 'assert_zeroRemainingSuppliedShares');
 }
 
 function invariant_positivePremiumDebt() {

@@ -22,7 +22,7 @@ let userIdCounter = 0n;
 
 let currentTime = 1n;
 
-const OFFSET_UNITS = 10n ** 6n;
+export const OFFSET_UNITS = 10n ** 6n;
 
 // type/token transfers to differentiate supplied/debt shares
 // notify is unneeded since prototype assumes one asset on hub
@@ -112,8 +112,10 @@ export class LiquidityHub {
   }
 
   withdraw(amount: bigint, spoke: Spoke) {
-    const suppliedShares = this.toSupplyShares(amount, Rounding.CEIL);
-
+    // to withdraw all liquidity use MAX_UINT
+    amount = amount > this.availableLiquidity ? this.availableLiquidity : amount;
+    let suppliedShares = this.toSupplyShares(amount, Rounding.CEIL);
+    
     this.suppliedShares -= suppliedShares;
     this.availableLiquidity -= amount;
 
@@ -267,6 +269,9 @@ export class Spoke {
     const user = this.getUser(who);
 
     this.hub.accrue();
+    if (amount == MAX_UINT) {
+      amount = who.getSuppliedBalance();
+    }
     const suppliedShares = this.hub.withdraw(amount, this);
 
     this.suppliedShares -= suppliedShares;
@@ -551,6 +556,10 @@ export class User {
 
   getSuppliedBalance() {
     return this.hub.toSupplyAssets(this.suppliedShares);
+  }
+
+  getSuppliedShares() {
+    return this.suppliedShares;
   }
 
   log(spoke = false, hub = false) {
