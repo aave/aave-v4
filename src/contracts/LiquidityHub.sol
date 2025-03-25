@@ -271,16 +271,6 @@ contract LiquidityHub is ILiquidityHub {
     return _spokes[assetId][spoke].config;
   }
 
-  // todo rethink these two getters depending of requirement
-  function getDrawnAssets(uint256 assetId) external view returns (uint256, uint256) {
-    DataTypes.Asset storage asset = _assets[assetId];
-    return (asset.baseDebt(), asset.premiumDebt());
-  }
-  function getSuppliedAssets(uint256 assetId) external view returns (uint256, uint256, uint256) {
-    DataTypes.Asset storage asset = _assets[assetId];
-    return (asset.availableLiquidity, asset.baseDebt(), asset.premiumDebt());
-  }
-
   // todo 4626 getter naming
   function convertToSuppliedAssets(
     uint256 assetId,

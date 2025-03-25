@@ -133,17 +133,39 @@ contract Spoke is ISpoke {
     // TODO: Be able to pass max(uint) as amount to withdraw all supplied shares
     DataTypes.Reserve storage reserve = _reserves[reserveId];
     DataTypes.UserPosition storage userPosition = _userPositions[msg.sender][reserveId];
+    uint256 assetId = reserve.assetId;
 
     _validateWithdraw(reserve, userPosition, amount);
 
+    uint256 oldUserPremiumDrawnShares = userPosition.premiumDrawnShares;
+    uint256 oldUserPremiumOffset = userPosition.premiumOffset;
+    uint256 accruedUserPremium = liquidityHub.convertToDrawnAssets(
+      assetId,
+      oldUserPremiumDrawnShares
+    ) - oldUserPremiumOffset; // assets(premiumShares) - offset should never be < 0
+
     uint256 withdrawnShares = liquidityHub.withdraw(reserve.assetId, amount, to);
-    //todo _notifyRiskPremiumUpdate(reserve.assetId, msg.sender, newUserRiskPremium);
 
     userPosition.suppliedShares -= withdrawnShares;
     reserve.suppliedShares -= withdrawnShares;
 
-    // todo refresh
-    _validateHealthFactor(msg.sender);
+    // calc needs new user position, just updating base debt is enough
+    uint256 newUserRiskPremium = _validateUserPosition(msg.sender); // validates HF
+
+    userPosition.premiumDrawnShares = userPosition.baseDrawnShares.percentMul(newUserRiskPremium);
+    userPosition.premiumOffset = liquidityHub.convertToDrawnAssets(
+      assetId,
+      userPosition.premiumDrawnShares
+    );
+    userPosition.realizedPremium += accruedUserPremium;
+
+    _refreshPremiumDebt(
+      reserve,
+      _signedDiff(userPosition.premiumDrawnShares, oldUserPremiumDrawnShares),
+      _signedDiff(userPosition.premiumOffset, oldUserPremiumOffset), // update when -ve offset is introduced
+      int256(accruedUserPremium)
+    );
+    _notifyRiskPremiumUpdate(assetId, msg.sender, newUserRiskPremium);
 
     emit Withdrawn(reserveId, msg.sender, amount);
   }
@@ -171,7 +193,7 @@ contract Spoke is ISpoke {
     userPosition.baseDrawnShares += baseDrawnShares;
 
     // calc needs new user position, just updating base debt is enough
-    (uint256 newUserRiskPremium, , , , ) = _calculateUserAccountData(msg.sender);
+    uint256 newUserRiskPremium = _validateUserPosition(msg.sender); // validates HF
 
     userPosition.premiumDrawnShares = userPosition.baseDrawnShares.percentMul(newUserRiskPremium);
     userPosition.premiumOffset = liquidityHub.convertToDrawnAssets(
@@ -180,7 +202,6 @@ contract Spoke is ISpoke {
     );
     userPosition.realizedPremium += accruedUserPremium;
 
-    _validateHealthFactor(msg.sender);
     _refreshPremiumDebt(
       reserve,
       _signedDiff(userPosition.premiumDrawnShares, oldUserPremiumDrawnShares),
@@ -682,9 +703,10 @@ contract Spoke is ISpoke {
     }
   }
 
-  function _validateHealthFactor(address userAddress) internal view {
-    (, , uint256 healthFactor, , ) = _calculateUserAccountData(userAddress);
+  function _validateUserPosition(address userAddress) internal view returns (uint256) {
+    (uint256 userRiskPremium, , uint256 healthFactor, , ) = _calculateUserAccountData(userAddress);
     require(healthFactor >= HEALTH_FACTOR_LIQUIDATION_THRESHOLD, HealthFactorBelowThreshold());
+    return userRiskPremium;
   }
 
   function _validateReserveConfig(DataTypes.ReserveConfig calldata config) internal view {

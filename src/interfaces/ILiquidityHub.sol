@@ -130,7 +130,6 @@ interface ILiquidityHub {
   function getAssetTotalDebt(uint256 assetId) external view returns (uint256);
   function getAvailableLiquidity(uint256 assetId) external view returns (uint256);
   function getBaseInterestRate(uint256 assetId) external view returns (uint256);
-  function getDrawnAssets(uint256 assetId) external view returns (uint256, uint256);
   function getSpoke(
     uint256 assetId,
     address spoke
@@ -143,7 +142,6 @@ interface ILiquidityHub {
   function getSpokeSuppliedAmount(uint256 assetId, address spoke) external view returns (uint256);
   function getSpokeSuppliedShares(uint256 assetId, address spoke) external view returns (uint256);
   function getSpokeTotalDebt(uint256 assetId, address spoke) external view returns (uint256);
-  function getSuppliedAssets(uint256 assetId) external view returns (uint256, uint256, uint256);
 
   function assetCount() external view returns (uint256);
   function assetsList(uint256 assetId) external view returns (IERC20);
