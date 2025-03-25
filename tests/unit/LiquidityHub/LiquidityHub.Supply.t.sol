@@ -385,44 +385,38 @@ contract LiquidityHubSupplyTest is LiquidityHubBase {
     //     assertEq(asset2.balanceOf(address(hub)), amount2, 'hub token2 balance post-supply');
   }
 
-  function test_supply_revertsWith_invalid_amount() public {
-    vm.skip(true, 'pending refactor');
+  function test_supply_revertsWith_InvalidSharesAmount() public {
+    uint256 assetId = 0;
+    uint256 amount = 0;
 
-    //     uint256 assetId = 0;
-    //     uint256 amount = 0;
-
-    //     vm.expectRevert(ILiquidityHub.InvalidSupplyAmount.selector);
-    //     vm.prank(address(spoke1));
-    //     hub.supply(assetId, amount, 0, alice);
+    vm.expectRevert(ILiquidityHub.InvalidSharesAmount.selector);
+    vm.prank(address(spoke1));
+    hub.supply(assetId, amount, alice);
   }
 
-  function test_supply_revertsWith_invalid_shares_amount() public {
-    vm.skip(true, 'pending refactor');
+  function test_supply_revertsWith_InvalidSharesAmount_due_to_index() public {
+    // inflate exchange rate
+    uint256 daiAmount = 1e9 * 1e18;
+    uint256 wethAmount = 10e18;
+    uint256 drawAmount = daiAmount;
+    uint256 rate = uint256(MAX_BORROW_RATE).bpsToRay();
 
-    //     // inflate exchange rate
-    //     uint256 daiAmount = 1e9 * 1e18;
-    //     uint256 wethAmount = 10e18;
-    //     uint256 drawAmount = daiAmount;
-    //     uint256 rate = uint256(100_00).bpsToRay();
+    _supplyAndDrawLiquidity({
+      daiAmount: daiAmount,
+      daiDrawAmount: drawAmount,
+      rate: rate,
+      skipTime: 365 days * 10
+    });
 
-    //     _supplyAndDrawLiquidity({
-    //       daiAmount: daiAmount,
-    //       wethAmount: wethAmount,
-    //       daiDrawAmount: drawAmount,
-    //       riskPremium: 0,
-    //       rate: rate
-    //     });
-    //     skip(365 days * 10);
+    assertTrue(hub.convertToSuppliedAssets(daiAssetId, daiAmount) > daiAmount);
 
-    //     // trigger exchange rate update
-    //     vm.prank(address(spoke1));
-    //     hub.supply(daiAssetId, 1e18, 0, alice);
+    // supply < 1 share
+    uint256 amount = 1;
+    assertTrue(hub.convertToSuppliedShares(daiAssetId, amount) < 1);
 
-    //     // supply < 1 share
-    //     uint256 amount = 1;
-    //     vm.expectRevert(ILiquidityHub.InvalidSharesAmount.selector);
-    //     vm.prank(address(spoke1));
-    //     hub.supply(daiAssetId, amount, 0, alice);
+    vm.expectRevert(ILiquidityHub.InvalidSharesAmount.selector);
+    vm.prank(address(spoke1));
+    hub.supply(daiAssetId, amount, alice);
   }
 
   function test_supply_with_increased_index() public {
