@@ -9,21 +9,17 @@ contract LiquidityHubSupplyTest is LiquidityHubBase {
   using PercentageMath for uint256;
 
   function test_supply_revertsWith_ERC20InsufficientAllowance() public {
-    vm.skip(true, 'pending refactor');
-
-//     uint256 amount = 100e18;
-
-//     vm.expectRevert(
-//       abi.encodeWithSelector(
-//         IERC20Errors.ERC20InsufficientAllowance.selector,
-//         address(hub),
-//         0,
-//         amount
-//       )
-//     );
-//     vm.prank(address(spoke1));
-//     hub.supply(daiAssetId, amount, 0, address(spoke1));
-  
+    uint256 amount = 100e18;
+    vm.expectRevert(
+      abi.encodeWithSelector(
+        IERC20Errors.ERC20InsufficientAllowance.selector,
+        address(hub),
+        0,
+        amount
+      )
+    );
+    vm.prank(address(spoke1));
+    hub.supply(daiAssetId, amount, address(spoke1));
 }
 
   function test_supply_revertsWith_AssetNotActive() public {
