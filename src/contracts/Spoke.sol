@@ -124,7 +124,7 @@ contract Spoke is ISpoke {
     userPosition.suppliedShares += suppliedShares;
     reserve.suppliedShares += suppliedShares;
 
-    emit Supplied(reserveId, msg.sender, amount); // todo emit suppliedShares
+    emit Supplied(reserveId, msg.sender, suppliedShares);
   }
 
   /// @inheritdoc ISpoke
@@ -166,7 +166,7 @@ contract Spoke is ISpoke {
     );
     _notifyRiskPremiumUpdate(assetId, msg.sender, newUserRiskPremium);
 
-    emit Withdrawn(reserveId, msg.sender, amount);
+    emit Withdrawn(reserveId, to, withdrawnShares);
   }
 
   /// @inheritdoc ISpoke
@@ -209,7 +209,7 @@ contract Spoke is ISpoke {
     );
     _notifyRiskPremiumUpdate(assetId, msg.sender, newUserRiskPremium);
 
-    emit Borrowed(reserveId, to, amount);
+    emit Borrowed(reserveId, to, baseDrawnShares);
   }
 
   /// @inheritdoc ISpoke

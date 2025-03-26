@@ -20,15 +20,15 @@ interface ILiquidityHub {
     uint256 supplyCap
   );
 
-  event Supply(uint256 indexed assetId, address indexed spoke, uint256 amount);
-  event Withdraw(
+  event Supply(uint256 indexed assetId, address indexed spoke, uint256 shares);
+  event Withdraw(uint256 indexed assetId, address indexed spoke, uint256 shares);
+  event Draw(uint256 indexed assetId, address indexed spoke, uint256 shares);
+  event Restore(
     uint256 indexed assetId,
     address indexed spoke,
-    address indexed to,
-    uint256 amount
+    uint256 baseAmount,
+    uint256 premiumAmount
   );
-  event Draw(uint256 indexed assetId, address indexed spoke, address indexed to, uint256 amount);
-  event Restore(uint256 indexed assetId, address indexed spoke, uint256 amount);
 
   error MismatchedConfigs();
   error InvalidSharesAmount();
