@@ -109,17 +109,13 @@ contract Spoke is ISpoke {
   // /////
 
   /// @inheritdoc ISpoke
-  function supply(uint256 reserveId, uint256 amount) external {
+  function supply(uint256 reserveId, uint256 amount) public {
     DataTypes.Reserve storage reserve = _reserves[reserveId];
     DataTypes.UserPosition storage userPosition = _userPositions[msg.sender][reserveId];
 
     _validateSupply(reserve, amount);
 
-    uint256 suppliedShares = liquidityHub.supply(
-      reserve.assetId,
-      amount,
-      msg.sender // supplier
-    );
+    uint256 suppliedShares = liquidityHub.add(reserve.assetId, amount, msg.sender);
 
     userPosition.suppliedShares += suppliedShares;
     reserve.suppliedShares += suppliedShares;
@@ -143,7 +139,7 @@ contract Spoke is ISpoke {
       oldUserPremiumDrawnShares
     ) - oldUserPremiumOffset; // assets(premiumShares) - offset should never be < 0
 
-    uint256 withdrawnShares = liquidityHub.withdraw(reserve.assetId, amount, to);
+    uint256 withdrawnShares = liquidityHub.remove(reserve.assetId, amount, to);
 
     userPosition.suppliedShares -= withdrawnShares;
     reserve.suppliedShares -= withdrawnShares;
@@ -230,7 +226,7 @@ contract Spoke is ISpoke {
       reserve.assetId,
       baseDebtRestored,
       premiumDebtRestored,
-      msg.sender // repayer
+      msg.sender
     );
 
     reserve.baseDrawnShares -= restoredShares;
