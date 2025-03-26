@@ -325,14 +325,13 @@ contract Spoke is ISpoke {
 
   function getReserveRiskPremium(uint256 reserveId) external view returns (uint256) {
     DataTypes.Reserve storage reserve = _reserves[reserveId];
-    return reserve.premiumDrawnShares.rayDiv(reserve.baseDrawnShares);
+    return reserve.premiumDrawnShares.rayDiv(reserve.baseDrawnShares); // trailing
   }
 
-  // todo user rp trailing?
-  //   function getUserRiskPremium(address user) external view returns (uint256) {
-  //     (uint256 userRiskPremium, , , , ) = _calculateUserAccountData(user);
-  //     return userRiskPremium.derayify();
-  //   }
+  function getUserRiskPremium(address user) external view returns (uint256) {
+    (uint256 userRiskPremium, , , , ) = _calculateUserAccountData(user);
+    return userRiskPremium;
+  }
 
   function getHealthFactor(address user) external view returns (uint256) {
     (, , uint256 healthFactor, , ) = _calculateUserAccountData(user);
