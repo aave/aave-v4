@@ -89,7 +89,6 @@ contract LiquidityHubConfigTest is LiquidityHubBase {
 
   function test_updateAssetConfig_paused() public {
     DataTypes.AssetConfig memory config = hub.getAssetConfig(daiAssetId);
-    // initially not paused
     assertEq(config.paused, false);
 
     config.paused = true;
@@ -116,7 +115,6 @@ contract LiquidityHubConfigTest is LiquidityHubBase {
 
   function test_updateAssetConfig_frozen() public {
     DataTypes.AssetConfig memory config = hub.getAssetConfig(daiAssetId);
-    // initially not frozen
     assertEq(config.frozen, false);
 
     config.frozen = true;
@@ -143,7 +141,6 @@ contract LiquidityHubConfigTest is LiquidityHubBase {
 
   function test_updateAssetConfig_active() public {
     DataTypes.AssetConfig memory config = hub.getAssetConfig(daiAssetId);
-    // initially active
     assertEq(config.active, true);
 
     config.active = false;
