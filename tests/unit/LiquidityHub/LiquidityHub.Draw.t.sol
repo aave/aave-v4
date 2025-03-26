@@ -191,16 +191,141 @@ contract LiquidityHubDrawTest is LiquidityHubBase {
   function test_draw_revertsWith_NotAvailableLiquidity() public {
     uint256 drawAmount = 1;
 
+    assertTrue(hub.getAvailableLiquidity(daiAssetId) == 0);
+
     vm.expectRevert(abi.encodeWithSelector(ILiquidityHub.NotAvailableLiquidity.selector, 0));
     vm.prank(address(spoke1));
     hub.draw({assetId: daiAssetId, amount: drawAmount, to: address(spoke1)});
   }
 
-  // todo: test on not available liq bc all withdrawn
-  // toto: test on not available liq bc all drawn
-
   function test_draw_fuzz_revertsWith_NotAvailableLiquidity(uint256 drawAmount) public {
     drawAmount = bound(drawAmount, 1, MAX_SUPPLY_AMOUNT);
+
+    assertTrue(hub.getAvailableLiquidity(daiAssetId) == 0);
+
+    vm.expectRevert(abi.encodeWithSelector(ILiquidityHub.NotAvailableLiquidity.selector, 0));
+    vm.prank(address(spoke1));
+    hub.draw({assetId: daiAssetId, amount: drawAmount, to: address(spoke1)});
+  }
+
+  function test_draw_revertsWith_NotAvailableLiquidity_due_to_remove() public {
+    uint256 daiAmount = 100e18;
+
+    // spoke2, bob supply dai
+    Utils.supply({
+      hub: hub,
+      assetId: daiAssetId,
+      spoke: address(spoke2),
+      amount: daiAmount,
+      user: bob,
+      to: address(spoke2)
+    });
+    // withdraw all so no liquidity remains
+    Utils.withdraw({
+      hub: hub,
+      assetId: daiAssetId,
+      spoke: address(spoke2),
+      amount: daiAmount,
+      to: bob
+    });
+
+    assertTrue(hub.getAvailableLiquidity(daiAssetId) == 0);
+
+    uint256 drawAmount = 1;
+
+    vm.expectRevert(abi.encodeWithSelector(ILiquidityHub.NotAvailableLiquidity.selector, 0));
+    vm.prank(address(spoke1));
+    hub.draw({assetId: daiAssetId, amount: drawAmount, to: address(spoke1)});
+  }
+
+  function test_draw_fuzz_revertsWith_NotAvailableLiquidity_due_to_remove(
+    uint256 daiAmount
+  ) public {
+    daiAmount = bound(daiAmount, 1, MAX_SUPPLY_AMOUNT);
+
+    // spoke2, bob supply dai
+    Utils.supply({
+      hub: hub,
+      assetId: daiAssetId,
+      spoke: address(spoke2),
+      amount: daiAmount,
+      user: bob,
+      to: address(spoke2)
+    });
+    // withdraw all so no liquidity remains
+    Utils.withdraw({
+      hub: hub,
+      assetId: daiAssetId,
+      spoke: address(spoke2),
+      amount: daiAmount,
+      to: bob
+    });
+
+    assertTrue(hub.getAvailableLiquidity(daiAssetId) == 0);
+
+    uint256 drawAmount = 1;
+
+    vm.expectRevert(abi.encodeWithSelector(ILiquidityHub.NotAvailableLiquidity.selector, 0));
+    vm.prank(address(spoke1));
+    hub.draw({assetId: daiAssetId, amount: drawAmount, to: address(spoke1)});
+  }
+
+  function test_draw_revertsWith_NotAvailableLiquidity_due_to_draw() public {
+    uint256 daiAmount = 100e18;
+
+    // spoke2, bob supply dai
+    Utils.supply({
+      hub: hub,
+      assetId: daiAssetId,
+      spoke: address(spoke2),
+      amount: daiAmount,
+      user: bob,
+      to: address(spoke2)
+    });
+    // draw all so no liquidity remains
+    Utils.draw({
+      hub: hub,
+      assetId: daiAssetId,
+      spoke: address(spoke2),
+      amount: daiAmount,
+      to: bob,
+      onBehalfOf: bob
+    });
+
+    assertTrue(hub.getAvailableLiquidity(daiAssetId) == 0);
+
+    uint256 drawAmount = 1;
+
+    vm.expectRevert(abi.encodeWithSelector(ILiquidityHub.NotAvailableLiquidity.selector, 0));
+    vm.prank(address(spoke1));
+    hub.draw({assetId: daiAssetId, amount: drawAmount, to: address(spoke1)});
+  }
+
+  function test_draw_fuzz_revertsWith_NotAvailableLiquidity_due_to_draw(uint256 daiAmount) public {
+    daiAmount = bound(daiAmount, 1, MAX_SUPPLY_AMOUNT);
+
+    // spoke2, bob supply dai
+    Utils.supply({
+      hub: hub,
+      assetId: daiAssetId,
+      spoke: address(spoke2),
+      amount: daiAmount,
+      user: bob,
+      to: address(spoke2)
+    });
+    // draw all so no liquidity remains
+    Utils.draw({
+      hub: hub,
+      assetId: daiAssetId,
+      spoke: address(spoke2),
+      amount: daiAmount,
+      to: bob,
+      onBehalfOf: bob
+    });
+
+    assertTrue(hub.getAvailableLiquidity(daiAssetId) == 0);
+
+    uint256 drawAmount = 1;
 
     vm.expectRevert(abi.encodeWithSelector(ILiquidityHub.NotAvailableLiquidity.selector, 0));
     vm.prank(address(spoke1));
