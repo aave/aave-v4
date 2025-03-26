@@ -343,9 +343,36 @@ contract LiquidityHubDrawTest is LiquidityHubBase {
   function test_draw_revertsWith_DrawCapExceeded_due_to_interest() public {
     uint256 daiAmount = 100e18;
     uint256 drawCap = daiAmount;
-    uint256 wethAmount = 10e18;
     uint256 drawAmount = drawCap;
     uint256 rate = uint256(10_00).bpsToRay();
+
+    updateDrawCap(hub, daiAssetId, address(spoke1), drawCap);
+
+    _increaseExchangeRate(daiAmount);
+
+    (uint256 baseDebt, ) = hub.getAssetDebt(daiAssetId);
+    assertGt(baseDebt, drawCap);
+
+    // restore to provide liquidity
+    vm.startPrank(address(spoke1));
+    hub.restore({assetId: daiAssetId, baseAmount: 1, premiumAmount: 0, repayer: alice});
+
+    vm.expectRevert(abi.encodeWithSelector(ILiquidityHub.DrawCapExceeded.selector, drawCap));
+    hub.draw({assetId: daiAssetId, amount: 1, to: bob});
+    vm.stopPrank();
+  }
+
+  function test_draw_fuzz_revertsWith_DrawCapExceeded_due_to_interest(
+    uint256 daiAmount,
+    uint256 rate,
+    uint256 skipTime
+  ) public {
+    daiAmount = bound(daiAmount, 1, MAX_SUPPLY_AMOUNT);
+    rate = bound(rate, 1, MAX_BORROW_RATE).bpsToRay();
+    skipTime = bound(skipTime, 1, MAX_SKIP_TIME);
+
+    uint256 drawCap = daiAmount;
+    uint256 drawAmount = drawCap;
 
     updateDrawCap(hub, daiAssetId, address(spoke1), drawCap);
 
@@ -353,8 +380,11 @@ contract LiquidityHubDrawTest is LiquidityHubBase {
       daiAmount: daiAmount,
       daiDrawAmount: drawAmount,
       rate: rate,
-      skipTime: 365 days
+      skipTime: skipTime
     });
+
+    (uint256 baseDebt, ) = hub.getAssetDebt(daiAssetId);
+    vm.assume(baseDebt > drawCap);
 
     // restore to provide liquidity
     vm.startPrank(address(spoke1));
