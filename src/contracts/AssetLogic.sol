@@ -115,7 +115,6 @@ library AssetLogic {
         totalDebt: asset.baseDrawnAssets,
         reserveFactor: 0, // TODO
         assetId: asset.id,
-        // todo + signedRealizedPremium
         virtualUnderlyingBalance: asset.availableLiquidity, // without current liquidity change
         usingVirtualBalance: true
       })
