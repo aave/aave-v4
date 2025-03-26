@@ -251,4 +251,16 @@ contract LiquidityHubDrawTest is LiquidityHubBase {
     vm.prank(address(spoke1));
     hub.draw({assetId: daiAssetId, amount: drawAmount, to: address(spoke1)});
   }
+
+  function test_draw_fuzz_revertsWith_DrawCapExceeded(uint256 daiAmount) public {
+    daiAmount = bound(daiAmount, 1, MAX_SUPPLY_AMOUNT);
+    uint256 drawCap = daiAmount;
+    uint256 drawAmount = drawCap + 1;
+
+    updateDrawCap(hub, daiAssetId, address(spoke1), drawCap);
+
+    vm.expectRevert(abi.encodeWithSelector(ILiquidityHub.DrawCapExceeded.selector, drawCap));
+    vm.prank(address(spoke1));
+    hub.draw({assetId: daiAssetId, amount: drawAmount, to: address(spoke1)});
+  }
 }
