@@ -85,7 +85,7 @@ contract LiquidityHubBase is Base {
     });
     skip(365 days);
 
-    // ensure that supply exchange rate has increased 
+    // ensure that supply exchange rate has increased
     assertTrue(hub.convertToSuppliedShares(daiAssetId, daiAmount) < daiAmount);
 
     return (daiDrawAmount, suppliedShares);
