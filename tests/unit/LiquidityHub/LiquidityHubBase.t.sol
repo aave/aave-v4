@@ -126,51 +126,6 @@ contract LiquidityHubBase is Base {
     return (drawnShares, supplyShares);
   }
 
-  /// @dev spoke1 (alice) supplies weth, spoke2 (bob) supplies dai, spoke1 (alice) draws dai
-  function _supplyAndDrawLiquidity(
-    uint256 daiAmount,
-    uint256 wethAmount,
-    uint256 daiDrawAmount,
-    uint32 riskPremium,
-    uint256 rate
-  ) internal {
-    vm.mockCall(
-      address(irStrategy),
-      IReserveInterestRateStrategy.calculateInterestRates.selector,
-      abi.encode(rate)
-    );
-
-    // spoke1 supply weth
-    Utils.supply({
-      hub: hub,
-      assetId: wethAssetId,
-      spoke: address(spoke1),
-      amount: wethAmount,
-      user: alice,
-      to: address(spoke1)
-    });
-
-    // spoke2 supply dai
-    Utils.supply({
-      hub: hub,
-      assetId: daiAssetId,
-      spoke: address(spoke2),
-      amount: daiAmount,
-      user: bob,
-      to: address(spoke2)
-    });
-
-    // spoke1 draw dai liquidity on behalf of user
-    Utils.draw({
-      hub: hub,
-      assetId: daiAssetId,
-      to: alice,
-      spoke: address(spoke1),
-      amount: daiDrawAmount,
-      onBehalfOf: address(spoke1)
-    });
-  }
-
   function _getDebt(uint256 assetId) internal view returns (DebtData memory) {
     revert('implement me');
 
