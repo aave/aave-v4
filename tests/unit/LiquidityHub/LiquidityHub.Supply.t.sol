@@ -525,7 +525,7 @@ contract LiquidityHubSupplyTest is LiquidityHubBase {
     uint256 assetId = daiAssetId;
     uint256 amount = 100e18;
 
-    uint256 drawnAmount = _increaseSupplyIndex(amount);
+    (uint256 drawnAmount, ) = _increaseSupplyIndex(amount);
     uint256 initialSupplyAmount = hub.getAssetSuppliedAmount(assetId);
     uint256 initialSupplyShares = hub.getAssetSuppliedShares(assetId);
 
@@ -610,67 +610,78 @@ contract LiquidityHubSupplyTest is LiquidityHubBase {
     );
   }
 
-  function test_supply_fuzz_single_spoke_multi_supply(uint256 assetId, uint256 amount) public {
-    assetId = bound(assetId, 0, hub.assetCount() - 2); // Exclude duplicated DAI
-    amount = bound(amount, 1, MAX_SUPPLY_AMOUNT);
+  function test_supply_fuzz_single_spoke_multi_supply(
+    uint256 amount,
+    uint256 skipTime,
+    uint256 rate
+  ) public {
+    uint256 assetId = daiAssetId;
+    uint256 numSupplies = 5;
+    amount = bound(amount, hub.convertToDrawnAssets(assetId, 1), MAX_SUPPLY_AMOUNT / numSupplies);
+    skipTime = bound(skipTime, 1, MAX_SKIP_TIME);
+    rate = bound(rate, 1, MAX_BORROW_RATE).bpsToRay();
 
-    uint256 timestamp = vm.getBlockTimestamp();
+    TestSupplyParams memory params;
 
-    IERC20 asset = hub.assetsList(assetId);
-
-    Utils.supply({
-      hub: hub,
-      assetId: assetId,
-      spoke: address(spoke1),
-      amount: amount,
-      user: alice,
-      to: address(spoke1)
+    (params.drawnShares, params.assetSuppliedShares) = _supplyAndDrawLiquidity({
+      daiAmount: amount,
+      daiDrawAmount: amount,
+      rate: rate,
+      skipTime: skipTime
     });
+    vm.assume(hub.convertToSuppliedShares(assetId, amount) < amount);
 
-    // Time flies, no interest acc
-    skip(1e4);
+    params.drawnAmount = amount;
+    params.assetSuppliedAmount = hub.convertToSuppliedAssets(assetId, params.assetSuppliedShares);
+    params.availableLiq = amount - params.drawnAmount;
+    params.spoke2SuppliedShares = hub.getSpokeSuppliedShares(assetId, address(spoke2));
+    params.spoke2SuppliedAmount = hub.convertToSuppliedAssets(assetId, params.spoke2SuppliedShares);
+    params.aliceBalance = MAX_SUPPLY_AMOUNT + params.drawnAmount;
+    params.bobBalance = MAX_SUPPLY_AMOUNT - amount;
 
-    // supplied amount does not change because no interest acc yet
-    assertEq(hub.getAssetSuppliedAmount(assetId), amount);
-
-    for (uint256 i = 0; i < 5; i++) {
+    for (uint256 i = 0; i < numSupplies; i++) {
       uint256 supplyShares = 1; // minimum for 1 share
-      uint256 supplyAmount = hub.convertToSuppliedAssets(assetId, supplyShares);
-
+      uint256 supplyAmount = hub.convertToSuppliedAssets(assetId, supplyShares) + 1; // account for rounding down
       // bob supply minimal amount
       Utils.supply({
         hub: hub,
         assetId: assetId,
-        spoke: address(spoke2),
+        spoke: address(spoke1),
         amount: supplyAmount,
         user: bob,
-        to: address(spoke2)
+        to: address(spoke1)
       });
 
-      // no debt exists
       uint256 baseDebt;
-      uint256 premiumDebt;
-      (baseDebt, premiumDebt) = hub.getAssetDebt(assetId);
-      assertEq(baseDebt, 0);
-      assertEq(premiumDebt, 0);
-      (baseDebt, premiumDebt) = hub.getSpokeDebt(assetId, address(spoke1));
-      assertEq(baseDebt, 0);
-      assertEq(premiumDebt, 0);
+      (baseDebt, ) = hub.getAssetDebt(assetId);
+      assertGt(baseDebt, 0);
+      (baseDebt, ) = hub.getSpokeDebt(assetId, address(spoke1));
+      assertGt(baseDebt, 0);
+
+      params.availableLiq += supplyAmount;
+      params.assetSuppliedShares += supplyShares;
+      params.assetSuppliedAmount = hub.convertToSuppliedAssets(assetId, params.assetSuppliedShares);
+      params.spoke1SuppliedShares += supplyShares;
+      params.spoke1SuppliedAmount = hub.convertToSuppliedAssets(
+        assetId,
+        params.spoke1SuppliedShares
+      );
+      params.bobBalance -= supplyAmount;
 
       // hub
       assertEq(
         hub.getAssetSuppliedAmount(assetId),
-        amount + supplyAmount,
+        params.assetSuppliedAmount,
         'asset suppliedAmount after'
       );
       assertEq(
         hub.getAssetSuppliedShares(assetId),
-        amount + supplyShares,
+        params.assetSuppliedShares,
         'asset suppliedShares after'
       );
       assertEq(
         hub.getAvailableLiquidity(assetId),
-        amount + supplyAmount,
+        params.availableLiq,
         'asset availableLiquidity after'
       );
       assertEq(
@@ -681,197 +692,35 @@ contract LiquidityHubSupplyTest is LiquidityHubBase {
       // spoke1
       assertEq(
         hub.getSpokeSuppliedAmount(assetId, address(spoke1)),
-        amount,
+        hub.convertToSuppliedAssets(assetId, params.spoke1SuppliedShares),
         'spoke1 suppliedAmount after'
       );
       assertEq(
         hub.getSpokeSuppliedShares(assetId, address(spoke1)),
-        amount,
+        params.spoke1SuppliedShares,
         'spoke1 suppliedShares after'
       );
       // spoke2
       assertEq(
         hub.getSpokeSuppliedAmount(assetId, address(spoke2)),
-        supplyAmount,
+        hub.convertToSuppliedAssets(assetId, params.spoke2SuppliedShares),
         'spoke2 suppliedAmount after'
       );
       assertEq(
         hub.getSpokeSuppliedShares(assetId, address(spoke2)),
-        supplyShares,
+        params.spoke2SuppliedShares,
         'spoke2 suppliedShares after'
       );
       // token balance
-      assertEq(asset.balanceOf(address(hub)), supplyAmount + amount, 'hub token balance after');
-      assertEq(asset.balanceOf(alice), MAX_SUPPLY_AMOUNT - amount, 'alice token balance after');
-      assertEq(asset.balanceOf(bob), MAX_SUPPLY_AMOUNT - supplyAmount, 'bob token balance after');
+      assertEq(
+        tokenList.dai.balanceOf(address(hub)),
+        params.availableLiq,
+        'hub token balance after'
+      );
+      assertEq(tokenList.dai.balanceOf(alice), params.aliceBalance, 'alice token balance after');
+      assertEq(tokenList.dai.balanceOf(bob), params.bobBalance, 'bob token balance after');
+
+      skip(randomizer(1 days, 30 days, i));
     }
-
-    //     // initial supply
-    //     Utils.supply({
-    //       hub: hub,
-    //       assetId: assetId,
-    //       spoke: address(spoke1),
-    //       amount: amount,
-    //       riskPremium: 0,
-    //       user: alice,
-    //       to: address(spoke1)
-    //     });
-
-    //     TestSupplyUserParams memory p = TestSupplyUserParams({
-    //       totalAssets: amount,
-    //       suppliedShares: amount,
-    //       userAssets: 0,
-    //       userShares: 0
-    //     });
-    //     DataTypes.Asset memory assetData;
-    //     DataTypes.SpokeData memory spokeData;
-    //     DataTypes.Asset memory prevAssetData = hub.getAsset(assetId);
-
-    //     uint256 runningBalance = asset.balanceOf(alice);
-    //     uint256 cumulatedBaseInterest;
-
-    //     for (uint256 i = 0; i < 5; i++) {
-    //       assetData = hub.getAsset(assetId);
-    //       spokeData = hub.getSpoke(assetId, address(spoke1));
-
-    //       cumulatedBaseInterest = MathUtils.calculateLinearInterest(
-    //         prevAssetData.baseBorrowRate,
-    //         uint40(timestamp)
-    //       );
-
-    //       // hub
-    //       assertEq(hub.getTotalAssets(assetId), p.totalAssets, 'total assets post-supply');
-    //       // asset
-    //       assertEq(assetData.suppliedShares, p.suppliedShares, 'asset suppliedShares post-supply');
-    //       assertEq(assetData.availableLiquidity, p.totalAssets, 'asset availableLiquidity post-supply');
-    //       assertEq(assetData.baseDebt, 0, 'asset baseDebt post-supply');
-    //       assertEq(assetData.outstandingPremium, 0, 'asset outstandingPremium post-supply');
-    //       assertEq(
-    //         assetData.baseBorrowIndex,
-    //         prevAssetData.baseBorrowIndex.rayMul(cumulatedBaseInterest),
-    //         'asset baseBorrowIndex post-supply'
-    //       );
-    //       assertEq(
-    //         assetData.baseBorrowRate,
-    //         uint256(5_00).bpsToRay(),
-    //         'asset baseBorrowRate post-supply'
-    //       );
-    //       assertEq(assetData.riskPremium, 0, 'asset riskPremium post-supply');
-    //       assertEq(
-    //         assetData.lastUpdateTimestamp,
-    //         vm.getBlockTimestamp(),
-    //         'asset lastUpdateTimestamp post-supply'
-    //       );
-    //       // spoke
-    //       assertEq(
-    //         spokeData.suppliedShares,
-    //         assetData.suppliedShares,
-    //         'spoke suppliedShares post-supply'
-    //       );
-    //       assertEq(spokeData.baseDebt, 0, 'baseDebt post-supply');
-    //       assertEq(spokeData.outstandingPremium, 0, 'spoke outstandingPremium post-supply');
-    //       assertEq(
-    //         spokeData.baseBorrowIndex,
-    //         assetData.baseBorrowIndex,
-    //         'spoke baseBorrowIndex post-supply'
-    //       );
-    //       assertEq(spokeData.riskPremium, 0, 'spoke riskPremium post-supply');
-    //       assertEq(
-    //         spokeData.lastUpdateTimestamp,
-    //         assetData.lastUpdateTimestamp,
-    //         'spoke lastUpdateTimestamp post-supply'
-    //       );
-    //       assertEq(asset.balanceOf(address(spoke1)), 0, 'spoke token balance post-supply');
-    //       assertEq(
-    //         asset.balanceOf(address(hub)),
-    //         hub.getTotalAssets(assetId),
-    //         'hub token balance post-supply'
-    //       );
-    //       assertEq(asset.balanceOf(alice), runningBalance, 'user token balance post-supply');
-
-    //       timestamp = vm.getBlockTimestamp();
-    //       prevAssetData = assetData;
-
-    //       // time flies
-    //       uint256 elapsedTime = randomizer(1 days, 30 days, i);
-    //       skip(elapsedTime);
-
-    //       p.userShares = 1; // minimum for 1 share
-    //       p.userAssets = p.userShares.toAssetsUp(hub.getTotalAssets(assetId), assetData.suppliedShares);
-
-    //       p.totalAssets += p.userAssets;
-    //       p.suppliedShares += p.userShares;
-
-    //       // force update with action from separate user
-    //       Utils.supply({
-    //         hub: hub,
-    //         assetId: assetId,
-    //         spoke: address(spoke1),
-    //         amount: p.userAssets,
-    //         riskPremium: 0,
-    //         user: alice,
-    //         to: address(spoke1)
-    //       });
-
-    //       runningBalance -= p.userAssets;
-    //     }
-
-    //     assetData = hub.getAsset(assetId);
-    //     spokeData = hub.getSpoke(assetId, address(spoke1));
-
-    //     cumulatedBaseInterest = MathUtils.calculateLinearInterest(
-    //       prevAssetData.baseBorrowRate,
-    //       uint40(timestamp)
-    //     );
-
-    //     // hub
-    //     assertEq(hub.getTotalAssets(assetId), p.totalAssets, 'total assets post-supply');
-    //     // asset
-    //     assertEq(assetData.suppliedShares, p.suppliedShares, 'asset suppliedShares post-supply');
-    //     assertEq(assetData.availableLiquidity, p.totalAssets, 'asset availableLiquidity post-supply');
-    //     assertEq(assetData.baseDebt, 0, 'asset baseDebt post-supply');
-    //     assertEq(assetData.outstandingPremium, 0, 'asset outstandingPremium post-supply');
-    //     assertEq(
-    //       assetData.baseBorrowIndex,
-    //       prevAssetData.baseBorrowIndex.rayMul(cumulatedBaseInterest),
-    //       'asset baseBorrowIndex post-supply'
-    //     );
-    //     assertEq(
-    //       assetData.baseBorrowRate,
-    //       uint256(5_00).bpsToRay(),
-    //       'asset baseBorrowRate post-supply'
-    //     );
-    //     assertEq(assetData.riskPremium, 0, 'asset riskPremium post-supply');
-    //     assertEq(
-    //       assetData.lastUpdateTimestamp,
-    //       vm.getBlockTimestamp(),
-    //       'asset lastUpdateTimestamp post-supply'
-    //     );
-    //     // spoke
-    //     assertEq(
-    //       spokeData.suppliedShares,
-    //       assetData.suppliedShares,
-    //       'spoke suppliedShares post-supply'
-    //     );
-    //     assertEq(spokeData.baseDebt, 0, 'baseDebt post-supply');
-    //     assertEq(spokeData.outstandingPremium, 0, 'spoke outstandingPremium post-supply');
-    //     assertEq(
-    //       spokeData.baseBorrowIndex,
-    //       assetData.baseBorrowIndex,
-    //       'spoke baseBorrowIndex post-supply'
-    //     );
-    //     assertEq(spokeData.riskPremium, 0, 'spoke riskPremium post-supply');
-    //     assertEq(
-    //       spokeData.lastUpdateTimestamp,
-    //       assetData.lastUpdateTimestamp,
-    //       'spoke lastUpdateTimestamp post-supply'
-    //     );
-    //     assertEq(asset.balanceOf(address(spoke1)), 0, 'spoke token balance post-supply');
-    //     assertEq(
-    //       asset.balanceOf(address(hub)),
-    //       hub.getTotalAssets(assetId),
-    //       'hub token balance post-supply'
-    //     );
-    //     assertEq(asset.balanceOf(alice), runningBalance, 'user token balance post-supply');
   }
 }
