@@ -10,11 +10,18 @@ contract LiquidityHubBase is Base {
 
   uint256 internal constant INIT_BASE_BORROW_INDEX = WadRayMath.RAY;
 
-  struct TestSupplyUserParams {
-    uint256 totalAssets;
-    uint256 suppliedShares;
-    uint256 userAssets;
-    uint256 userShares;
+  struct TestSupplyParams {
+    uint256 drawnAmount;
+    uint256 drawnShares;
+    uint256 assetSuppliedAmount;
+    uint256 assetSuppliedShares;
+    uint256 spoke1SuppliedAmount;
+    uint256 spoke1SuppliedShares;
+    uint256 spoke2SuppliedAmount;
+    uint256 spoke2SuppliedShares;
+    uint256 availableLiq;
+    uint256 bobBalance;
+    uint256 aliceBalance;
   }
 
   struct HubData {
@@ -51,32 +58,13 @@ contract LiquidityHubBase is Base {
     hub.updateSpokeConfig(assetId, spoke, spokeConfig);
   }
 
-  /// @dev spoke1 (alice) supplies dai, spoke2 (bob) supplies weth, spoke1 (alice) draws dai
-  function _supplyAndDrawLiquidity(
-    uint256 daiAmount,
-    uint256 wethAmount,
-    uint256 daiDrawAmount,
-    uint32 riskPremium,
-    uint256 rate
-  ) internal {
-    vm.mockCall(
-      address(irStrategy),
-      IReserveInterestRateStrategy.calculateInterestRates.selector,
-      abi.encode(rate)
-    );
-
-    // spoke1 supply weth
-    Utils.supply({
-      hub: hub,
-      assetId: wethAssetId,
-      spoke: address(spoke1),
-      amount: wethAmount,
-      user: alice,
-      to: address(spoke1)
-    });
+  /// @dev spoke1 (alice) supplies dai, spoke1 (alice) draws dai, skip time
+  /// @return daiDrawAmount
+  function _increaseSupplyIndex(uint256 daiAmount) internal returns (uint256, uint256) {
+    uint256 daiDrawAmount = daiAmount;
 
     // spoke2 supply dai
-    Utils.supply({
+    uint256 suppliedShares = Utils.supply({
       hub: hub,
       assetId: daiAssetId,
       spoke: address(spoke2),
@@ -94,6 +82,48 @@ contract LiquidityHubBase is Base {
       amount: daiDrawAmount,
       onBehalfOf: address(spoke1)
     });
+    skip(365 days);
+
+    assertTrue(hub.convertToSuppliedShares(daiAssetId, daiAmount) < daiAmount);
+
+    return (daiDrawAmount, suppliedShares);
+  }
+
+  /// @dev spoke2 (bob) supplies dai, spoke1 (alice) draws dai
+  function _supplyAndDrawLiquidity(
+    uint256 daiAmount,
+    uint256 daiDrawAmount,
+    uint256 rate,
+    uint256 skipTime
+  ) internal returns (uint256, uint256) {
+    vm.mockCall(
+      address(irStrategy),
+      IReserveInterestRateStrategy.calculateInterestRates.selector,
+      abi.encode(rate)
+    );
+
+    // spoke2 supply dai
+    uint256 supplyShares = Utils.supply({
+      hub: hub,
+      assetId: daiAssetId,
+      spoke: address(spoke2),
+      amount: daiAmount,
+      user: bob,
+      to: address(spoke2)
+    });
+
+    // spoke1 draw dai liquidity on behalf of user
+    uint256 drawnShares = Utils.draw({
+      hub: hub,
+      assetId: daiAssetId,
+      to: alice,
+      spoke: address(spoke1),
+      amount: daiDrawAmount,
+      onBehalfOf: address(spoke1)
+    });
+
+    skip(skipTime);
+    return (drawnShares, supplyShares);
   }
 
   function _getDebt(uint256 assetId) internal view returns (DebtData memory) {
@@ -112,5 +142,28 @@ contract LiquidityHubBase is Base {
     //   );
     // }
     // return debtData;
+  }
+
+  // create premium debt on dai asset
+  function _createPremiumDebt(ISpoke spoke, uint256 daiAmount) internal returns (uint256) {
+    Utils.spokeSupply({
+      spoke: spoke,
+      reserveId: _daiReserveId(spoke1),
+      user: alice,
+      amount: daiAmount,
+      onBehalfOf: alice
+    });
+    setUsingAsCollateral(spoke, alice, _daiReserveId(spoke), true);
+    Utils.spokeBorrow({
+      spoke: spoke,
+      reserveId: _daiReserveId(spoke),
+      user: alice,
+      amount: daiAmount / 2,
+      onBehalfOf: alice
+    });
+    skip(365 days);
+
+    (, uint256 premiumDebt) = hub.getAssetDebt(daiAssetId);
+    assertGt(premiumDebt, 0); // non-zero premium debt
   }
 }
