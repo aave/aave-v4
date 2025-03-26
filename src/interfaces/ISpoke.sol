@@ -16,8 +16,18 @@ interface ISpoke {
   event LiquidityPremiumUpdated(uint256 indexed reserveId, uint256 liquidityPremium);
 
   event Supply(uint256 indexed reserveId, address indexed user, uint256 suppliedShares);
-  event Withdraw(uint256 indexed reserveId, address indexed user, uint256 suppliedShares);
-  event Borrow(uint256 indexed reserveId, address indexed user, uint256 drawnShares);
+  event Withdraw(
+    uint256 indexed reserveId,
+    address indexed user,
+    address indexed to,
+    uint256 suppliedShares
+  );
+  event Borrow(
+    uint256 indexed reserveId,
+    address indexed user,
+    address indexed to,
+    uint256 drawnShares
+  );
   event Repay(uint256 indexed reserveId, address indexed user, uint256 drawnShares);
   event UsingAsCollateral(uint256 indexed reserveId, address indexed user, bool usingAsCollateral);
   event RefreshPremiumDebt(
