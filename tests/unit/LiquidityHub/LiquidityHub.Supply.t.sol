@@ -130,7 +130,7 @@ contract LiquidityHubSupplyTest is LiquidityHubBase {
     uint256 newSupplyCap = daiAmount + 1;
 
     _updateSupplyCap(daiAssetId, address(spoke2), newSupplyCap);
-    _increaseSupplyIndex(daiAmount);
+    _increaseExchangeRate(daiAmount);
 
     vm.expectRevert(abi.encodeWithSelector(ILiquidityHub.SupplyCapExceeded.selector, newSupplyCap));
     vm.prank(address(spoke2));
@@ -401,7 +401,7 @@ contract LiquidityHubSupplyTest is LiquidityHubBase {
 
   function test_supply_with_increased_index() public {
     uint256 daiAmount = 100e18;
-    _increaseSupplyIndex(daiAmount);
+    _increaseExchangeRate(daiAmount);
     uint256 initialSuppliedAssets = hub.getAssetSuppliedAmount(daiAssetId);
     uint256 initialSuppliedShares = hub.getAssetSuppliedShares(daiAssetId);
 
@@ -479,7 +479,7 @@ contract LiquidityHubSupplyTest is LiquidityHubBase {
     uint256 assetId = daiAssetId;
     uint256 amount = 100e18;
 
-    (uint256 drawnAmount, ) = _increaseSupplyIndex(amount);
+    (uint256 drawnAmount, ) = _increaseExchangeRate(amount);
     uint256 initialSupplyAmount = hub.getAssetSuppliedAmount(assetId);
     uint256 initialSupplyShares = hub.getAssetSuppliedShares(assetId);
 
