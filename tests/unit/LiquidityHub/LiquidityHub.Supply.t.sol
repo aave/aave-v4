@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.0;
 
-import './LiquidityHubBase.t.sol';
+import 'tests/unit/LiquidityHub/LiquidityHubBase.t.sol';
 
 contract LiquidityHubSupplyTest is LiquidityHubBase {
   using SharesMath for uint256;
@@ -103,7 +103,7 @@ contract LiquidityHubSupplyTest is LiquidityHubBase {
     hub.supply(daiAssetId, amount, alice);
   }
 
-  function test_supply_revertsWith_supply_cap_exceeded() public {
+  function test_supply_revertsWith_SupplyCapExceeded() public {
     uint256 amount = 100e18;
 
     uint256 newSupplyCap = amount - 1;
@@ -114,7 +114,7 @@ contract LiquidityHubSupplyTest is LiquidityHubBase {
     hub.supply(daiAssetId, amount, alice);
   }
 
-  function test_supply_fuzz_revertsWith_supply_cap_exceeded(uint256 amount) public {
+  function test_supply_fuzz_revertsWith_SupplyCapExceeded(uint256 amount) public {
     amount = bound(amount, 1, MAX_SUPPLY_AMOUNT);
 
     uint256 newSupplyCap = amount - 1;
@@ -125,7 +125,7 @@ contract LiquidityHubSupplyTest is LiquidityHubBase {
     hub.supply(daiAssetId, amount, alice);
   }
 
-  function test_supply_revertsWith_supply_cap_exceeded_due_to_interest() public {
+  function test_supply_revertsWith_SupplyCapExceeded_due_to_interest() public {
     uint256 daiAmount = 100e18;
     uint256 newSupplyCap = daiAmount + 1;
 
@@ -137,7 +137,7 @@ contract LiquidityHubSupplyTest is LiquidityHubBase {
     hub.supply(daiAssetId, 1, alice);
   }
 
-  function test_supply_fuzz_revertsWith_supply_cap_exceeded_due_to_interest(
+  function test_supply_fuzz_revertsWith_SupplyCapExceeded_due_to_interest(
     uint256 daiAmount,
     uint256 drawAmount,
     uint256 rate,
@@ -672,7 +672,7 @@ contract LiquidityHubSupplyTest is LiquidityHubBase {
       assertEq(tokenList.dai.balanceOf(alice), params.aliceBalance, 'alice token balance after');
       assertEq(tokenList.dai.balanceOf(bob), params.bobBalance, 'bob token balance after');
 
-      skip(randomizer(1 days, 30 days, i));
+      skip(randomizer(1 days, 365 days, i));
     }
   }
 }

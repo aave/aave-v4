@@ -58,8 +58,9 @@ contract LiquidityHubBase is Base {
     hub.updateSpokeConfig(assetId, spoke, spokeConfig);
   }
 
-  /// @dev spoke1 (alice) supplies dai, spoke1 (alice) draws dai, skip time
+  /// @dev spoke1 (alice) supplies dai, spoke1 (alice) draws dai, skip 1 year
   /// @return daiDrawAmount
+  /// @return suppliedShares
   function _increaseSupplyIndex(uint256 daiAmount) internal returns (uint256, uint256) {
     uint256 daiDrawAmount = daiAmount;
 
@@ -84,6 +85,7 @@ contract LiquidityHubBase is Base {
     });
     skip(365 days);
 
+    // ensure that supply exchange rate has increased 
     assertTrue(hub.convertToSuppliedShares(daiAssetId, daiAmount) < daiAmount);
 
     return (daiDrawAmount, suppliedShares);
@@ -144,21 +146,23 @@ contract LiquidityHubBase is Base {
     // return debtData;
   }
 
-  // create premium debt on dai asset
+  // create premium debt on dai asset by supplying and borrowing dai through spoke
+  // triggers refresh to cache premium debt
   function _createPremiumDebt(ISpoke spoke, uint256 daiAmount) internal returns (uint256) {
+    uint256 daiReserveId = _daiReserveId(spoke);
     Utils.spokeSupply({
       spoke: spoke,
-      reserveId: _daiReserveId(spoke1),
+      reserveId: daiReserveId,
       user: alice,
       amount: daiAmount,
       onBehalfOf: alice
     });
-    setUsingAsCollateral(spoke, alice, _daiReserveId(spoke), true);
+    setUsingAsCollateral(spoke, alice, daiReserveId, true);
     Utils.spokeBorrow({
       spoke: spoke,
-      reserveId: _daiReserveId(spoke),
+      reserveId: daiReserveId,
       user: alice,
-      amount: daiAmount / 2,
+      amount: daiAmount / 2, // to ensure HF > 1
       onBehalfOf: alice
     });
     skip(365 days);
