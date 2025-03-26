@@ -246,7 +246,12 @@ contract LiquidityHub is ILiquidityHub {
     spoke.premiumOffset = _add(spoke.premiumOffset, premiumOffsetDelta);
     spoke.realizedPremium = _add(spoke.realizedPremium, realizedPremiumDelta);
 
-    emit Refresh(assetId, premiumDrawnSharesDelta, premiumOffsetDelta, realizedPremiumDelta);
+    emit RefreshPremiumDebt(
+      assetId,
+      premiumDrawnSharesDelta,
+      premiumOffsetDelta,
+      realizedPremiumDelta
+    );
 
     // todo check bounds
   }

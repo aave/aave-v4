@@ -15,16 +15,17 @@ interface ISpoke {
   event ReserveConfigUpdated(uint256 indexed reserveId, DataTypes.ReserveConfig config);
   event LiquidityPremiumUpdated(uint256 indexed reserveId, uint256 liquidityPremium);
 
-  event Supply(uint256 indexed reserveId, address indexed user, uint256 shares);
-  event Withdraw(uint256 indexed reserveId, address indexed user, uint256 shares);
-  event Borrow(uint256 indexed reserveId, address indexed user, uint256 shares);
-  event Repay(
-    uint256 indexed reserveId,
-    address indexed user,
-    uint256 baseAmount,
-    uint256 premiumAmount
-  );
+  event Supply(uint256 indexed reserveId, address indexed user, uint256 suppliedShares);
+  event Withdraw(uint256 indexed reserveId, address indexed user, uint256 suppliedShares);
+  event Borrow(uint256 indexed reserveId, address indexed user, uint256 drawnShares);
+  event Repay(uint256 indexed reserveId, address indexed user, uint256 drawnShares);
   event UsingAsCollateral(uint256 indexed reserveId, address indexed user, bool usingAsCollateral);
+  event RefreshPremiumDebt(
+    uint256 indexed reserveId,
+    int256 premiumDrawnSharesDelta,
+    int256 premiumOffsetDelta,
+    int256 realizedPremiumDelta
+  );
 
   error InvalidReserve();
   error ReserveNotListed();

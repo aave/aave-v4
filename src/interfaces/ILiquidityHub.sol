@@ -24,7 +24,7 @@ interface ILiquidityHub {
   event Remove(uint256 indexed assetId, address indexed spoke, uint256 suppliedShares);
   event Draw(uint256 indexed assetId, address indexed spoke, uint256 drawnShares);
   event Restore(uint256 indexed assetId, address indexed spoke, uint256 drawnShares);
-  event Refresh(
+  event RefreshPremiumDebt(
     uint256 indexed assetId,
     int256 premiumDrawnSharesDelta,
     int256 premiumOffsetDelta,

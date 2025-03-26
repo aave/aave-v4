@@ -222,15 +222,15 @@ contract Spoke is ISpoke {
     );
     _validateRepay(reserve);
 
-    uint256 restoredShares = liquidityHub.restore(
+    uint256 baseRestoredShares = liquidityHub.restore(
       reserve.assetId,
       baseDebtRestored,
       premiumDebtRestored,
       msg.sender
     );
 
-    reserve.baseDrawnShares -= restoredShares;
-    userPosition.baseDrawnShares -= restoredShares;
+    reserve.baseDrawnShares -= baseRestoredShares;
+    userPosition.baseDrawnShares -= baseRestoredShares;
 
     // calc needs new user position, just updating base debt is fine so far
     (uint256 newUserRiskPremium, , , , ) = _calculateUserAccountData(msg.sender);
@@ -254,7 +254,7 @@ contract Spoke is ISpoke {
 
     _notifyRiskPremiumUpdate(reserve.assetId, msg.sender, newUserRiskPremium);
 
-    emit Repay(reserveId, msg.sender, baseDebtRestored, premiumDebtRestored);
+    emit Repay(reserveId, msg.sender, baseRestoredShares);
   }
 
   function setUsingAsCollateral(uint256 reserveId, bool usingAsCollateral) external {
@@ -446,6 +446,13 @@ contract Spoke is ISpoke {
 
     liquidityHub.refreshPremiumDebt(
       reserve.assetId,
+      premiumDrawnSharesDelta,
+      premiumOffsetDelta,
+      realizedPremiumDelta
+    );
+
+    emit RefreshPremiumDebt(
+      reserve.reserveId,
       premiumDrawnSharesDelta,
       premiumOffsetDelta,
       realizedPremiumDelta
