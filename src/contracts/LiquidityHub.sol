@@ -352,6 +352,7 @@ contract LiquidityHub is ILiquidityHub {
     DataTypes.SpokeData storage spoke,
     uint256 amount
   ) internal view {
+    require(amount != 0, InvalidSupplyAmount());
     require(asset.config.active, AssetNotActive());
     require(!asset.config.paused, AssetPaused());
     require(!asset.config.frozen, AssetFrozen());
@@ -371,7 +372,7 @@ contract LiquidityHub is ILiquidityHub {
     require(amount != 0, InvalidWithdrawAmount());
     require(asset.config.active, AssetNotActive());
     require(!asset.config.paused, AssetPaused());
-    uint256 withdrawable = asset.toSuppliedAssetsUp(spoke.suppliedShares);
+    uint256 withdrawable = asset.toSuppliedAssetsDown(spoke.suppliedShares);
     require(amount <= withdrawable, SuppliedAmountExceeded(withdrawable));
     require(amount <= asset.availableLiquidity, NotAvailableLiquidity(asset.availableLiquidity));
   }
