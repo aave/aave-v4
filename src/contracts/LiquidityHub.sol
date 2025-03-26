@@ -248,6 +248,7 @@ contract LiquidityHub is ILiquidityHub {
 
     emit RefreshPremiumDebt(
       assetId,
+      msg.sender,
       premiumDrawnSharesDelta,
       premiumOffsetDelta,
       realizedPremiumDelta
