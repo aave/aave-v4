@@ -15,10 +15,10 @@ interface ISpoke {
   event ReserveConfigUpdated(uint256 indexed reserveId, DataTypes.ReserveConfig config);
   event LiquidityPremiumUpdated(uint256 indexed reserveId, uint256 liquidityPremium);
 
-  event Supplied(uint256 indexed reserveId, address indexed user, uint256 amount);
-  event Withdrawn(uint256 indexed reserveId, address indexed user, uint256 amount);
-  event Borrowed(uint256 indexed reserveId, address indexed user, uint256 amount);
-  event Repaid(
+  event Supply(uint256 indexed reserveId, address indexed user, uint256 shares);
+  event Withdraw(uint256 indexed reserveId, address indexed user, uint256 shares);
+  event Borrow(uint256 indexed reserveId, address indexed user, uint256 shares);
+  event Repay(
     uint256 indexed reserveId,
     address indexed user,
     uint256 baseAmount,

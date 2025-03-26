@@ -124,7 +124,7 @@ contract Spoke is ISpoke {
     userPosition.suppliedShares += suppliedShares;
     reserve.suppliedShares += suppliedShares;
 
-    emit Supplied(reserveId, msg.sender, suppliedShares);
+    emit Supply(reserveId, msg.sender, suppliedShares);
   }
 
   /// @inheritdoc ISpoke
@@ -166,7 +166,7 @@ contract Spoke is ISpoke {
     );
     _notifyRiskPremiumUpdate(assetId, msg.sender, newUserRiskPremium);
 
-    emit Withdrawn(reserveId, to, withdrawnShares);
+    emit Withdraw(reserveId, to, withdrawnShares);
   }
 
   /// @inheritdoc ISpoke
@@ -209,7 +209,7 @@ contract Spoke is ISpoke {
     );
     _notifyRiskPremiumUpdate(assetId, msg.sender, newUserRiskPremium);
 
-    emit Borrowed(reserveId, to, baseDrawnShares);
+    emit Borrow(reserveId, to, baseDrawnShares);
   }
 
   /// @inheritdoc ISpoke
@@ -258,7 +258,7 @@ contract Spoke is ISpoke {
 
     _notifyRiskPremiumUpdate(reserve.assetId, msg.sender, newUserRiskPremium);
 
-    emit Repaid(reserveId, msg.sender, baseDebtRestored, premiumDebtRestored);
+    emit Repay(reserveId, msg.sender, baseDebtRestored, premiumDebtRestored);
   }
 
   function setUsingAsCollateral(uint256 reserveId, bool usingAsCollateral) external {
