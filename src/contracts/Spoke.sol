@@ -109,7 +109,7 @@ contract Spoke is ISpoke {
   // /////
 
   /// @inheritdoc ISpoke
-  function supply(uint256 reserveId, uint256 amount) public {
+  function supply(uint256 reserveId, uint256 amount) external {
     DataTypes.Reserve storage reserve = _reserves[reserveId];
     DataTypes.UserPosition storage userPosition = _userPositions[msg.sender][reserveId];
 
