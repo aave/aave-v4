@@ -388,9 +388,10 @@ contract LiquidityHubSupplyTest is LiquidityHubBase {
     });
 
     uint256 minAllowedSupplyAmount = hub.convertToSuppliedAssets(daiAssetId, 1);
+    // 1 share converts to > 1 amount
     vm.assume(minAllowedSupplyAmount > 1);
 
-    // supply < 1 share
+    // supply < 1 share with an amount > 0
     supplyAmount = bound(supplyAmount, 1, minAllowedSupplyAmount - 1);
 
     vm.expectRevert(ILiquidityHub.InvalidSharesAmount.selector);
@@ -438,8 +439,9 @@ contract LiquidityHubSupplyTest is LiquidityHubBase {
 
   function test_supply_with_increased_index_with_premium() public {
     uint256 daiAmount = 100e18;
+
     _createPremiumDebt(spoke2, daiAmount);
-    assertLt(hub.convertToSuppliedShares(daiAssetId, daiAmount), daiAmount); // less shares than assets, index increased
+    assertLt(hub.convertToSuppliedShares(daiAssetId, daiAmount), daiAmount); // index increased, exch rate > 1
 
     uint256 initialSuppliedAssets = hub.getAssetSuppliedAmount(daiAssetId);
     uint256 initialSuppliedShares = hub.getAssetSuppliedShares(daiAssetId);
@@ -482,7 +484,10 @@ contract LiquidityHubSupplyTest is LiquidityHubBase {
     uint256 initialSupplyShares = hub.getAssetSuppliedShares(assetId);
 
     uint256 supplyShares = 1; // minimum for 1 share
-    uint256 supplyAmount = hub.convertToSuppliedAssets(assetId, supplyShares) + 1; // account for rounding down
+    uint256 supplyAmount = hub.convertToSuppliedAssets(assetId, supplyShares);
+    supplyAmount = hub.convertToSuppliedShares(assetId, supplyAmount) < 1
+      ? supplyAmount + 1
+      : supplyAmount; // account for rounding down on assets
     // bob supply minimal amount
     Utils.supply({
       hub: hub,
@@ -593,7 +598,10 @@ contract LiquidityHubSupplyTest is LiquidityHubBase {
 
     for (uint256 i = 0; i < numSupplies; i++) {
       uint256 supplyShares = 1; // minimum for 1 share
-      uint256 supplyAmount = hub.convertToSuppliedAssets(assetId, supplyShares) + 1; // account for rounding down
+      uint256 supplyAmount = hub.convertToSuppliedAssets(assetId, supplyShares);
+      supplyAmount = hub.convertToSuppliedShares(assetId, supplyAmount) < 1
+        ? supplyAmount + 1
+        : supplyAmount; // account for rounding down on assets
       // bob supply minimal amount
       Utils.supply({
         hub: hub,
