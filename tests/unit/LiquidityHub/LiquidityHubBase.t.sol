@@ -59,9 +59,10 @@ contract LiquidityHubBase is Base {
   }
 
   /// @dev spoke1 (alice) supplies dai, spoke1 (alice) draws dai, skip 1 year
+  /// increases supply and debt exchange rate
   /// @return daiDrawAmount
   /// @return suppliedShares
-  function _increaseSupplyIndex(uint256 daiAmount) internal returns (uint256, uint256) {
+  function _increaseExchangeRate(uint256 daiAmount) internal returns (uint256, uint256) {
     uint256 daiDrawAmount = daiAmount;
 
     // spoke2 supply dai
@@ -85,8 +86,9 @@ contract LiquidityHubBase is Base {
     });
     skip(365 days);
 
-    // ensure that supply exchange rate has increased
+    // ensure that exchange rate has increased
     assertTrue(hub.convertToSuppliedShares(daiAssetId, daiAmount) < daiAmount);
+    assertTrue(hub.convertToDrawnShares(daiAssetId, daiDrawAmount) < daiDrawAmount);
 
     return (daiDrawAmount, suppliedShares);
   }
