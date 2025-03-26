@@ -72,7 +72,7 @@ contract SpokeSupplyTest is SpokeBase {
   function test_supply_revertsWith_invalid_supply_amount() public {
     uint256 amount = 0;
 
-    vm.expectRevert(ILiquidityHub.InvalidSharesAmount.selector);
+    vm.expectRevert(ILiquidityHub.InvalidSupplyAmount.selector);
     vm.prank(bob);
     spoke1.supply(_daiReserveId(spoke1), amount);
   }
