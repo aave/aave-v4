@@ -574,7 +574,8 @@ contract LiquidityHubSupplyTest is LiquidityHubBase {
   ) public {
     uint256 assetId = daiAssetId;
     uint256 numSupplies = 5;
-    amount = bound(amount, hub.convertToDrawnAssets(assetId, 1), MAX_SUPPLY_AMOUNT / numSupplies);
+
+    amount = bound(amount, 1, MAX_SUPPLY_AMOUNT / numSupplies);
     skipTime = bound(skipTime, 1, MAX_SKIP_TIME);
     rate = bound(rate, 1, MAX_BORROW_RATE).bpsToRay();
 
