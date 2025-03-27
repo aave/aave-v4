@@ -71,17 +71,17 @@ interface ILiquidityHub {
    * @notice Add/Supply asset on behalf of user.
    * @dev Only callable by spokes.
    * @param assetId The asset id.
-   * @param amount The amount of asset liquidity to add or supply.
-   * @param supplier The address which we pull assets from (user).
+   * @param amount The amount of asset liquidity to add/supply.
+   * @param from The address which we pull assets from (user).
    * @return The amount of shares added or supplied.
    */
-  function add(uint256 assetId, uint256 amount, address supplier) external returns (uint256);
+  function add(uint256 assetId, uint256 amount, address from) external returns (uint256);
 
   /**
    * @notice Remove/Withdraw supplied asset on behalf of user.
    * @dev Only callable by spokes.
    * @param assetId The asset id.
-   * @param amount The amount of asset liquidity to remove or withdraw.
+   * @param amount The amount of asset liquidity to remove/withdraw.
    * @param to The address to transfer the assets to.
    * @return The amount of shares removed or withdrawn.
    */
@@ -104,14 +104,14 @@ interface ILiquidityHub {
    * @param assetId The asset id.
    * @param baseAmount The base debt to repay.
    * @param premiumAmount The premium debt to repay.
-   * @param repayer The address to pull assets from.
+   * @param from The address to pull assets from.
    * @return The amount of debt restored.
    */
   function restore(
     uint256 assetId,
     uint256 baseAmount,
     uint256 premiumAmount,
-    address repayer
+    address from
   ) external returns (uint256);
 
   function refreshPremiumDebt(
