@@ -212,9 +212,9 @@ contract Spoke is ISpoke {
     );
     _validateRepay(reserve);
 
-    uint256 oldUserPremiumDrawnShares = userPosition.premiumDrawnShares;
-    uint256 oldUserPremiumOffset = userPosition.premiumOffset;
-    uint256 oldUserRealizedPremium = userPosition.realizedPremium;
+    uint256 userPremiumDrawnShares = userPosition.premiumDrawnShares;
+    uint256 userPremiumOffset = userPosition.premiumOffset;
+    uint256 userRealizedPremium = userPosition.realizedPremium;
 
     userPosition.premiumDrawnShares = 0;
     userPosition.premiumOffset = 0;
@@ -222,9 +222,9 @@ contract Spoke is ISpoke {
 
     _refreshPremiumDebt(
       reserve,
-      _signedDiff(userPosition.premiumDrawnShares, oldUserPremiumDrawnShares),
-      _signedDiff(userPosition.premiumOffset, oldUserPremiumOffset),
-      _signedDiff(userPosition.realizedPremium, oldUserRealizedPremium)
+      _signedDiff(userPosition.premiumDrawnShares, userPremiumDrawnShares),
+      _signedDiff(userPosition.premiumOffset, userPremiumOffset),
+      _signedDiff(userPosition.realizedPremium, userRealizedPremium)
     ); // we settle premium debt here
     uint256 restoredShares = hub.restore(
       reserve.assetId,
@@ -236,23 +236,17 @@ contract Spoke is ISpoke {
     reserve.baseDrawnShares -= restoredShares;
     userPosition.baseDrawnShares -= restoredShares;
 
-    // calc needs new user position, just updating base debt is fine so far
     (uint256 newUserRiskPremium, , , , ) = _calculateUserAccountData(msg.sender);
-    oldUserPremiumDrawnShares = userPosition.premiumDrawnShares;
-    oldUserPremiumOffset = userPosition.premiumOffset;
 
-    userPosition.premiumDrawnShares = userPosition.baseDrawnShares.percentMul(newUserRiskPremium);
-    userPosition.premiumOffset = hub.convertToDrawnAssets(
+    userPremiumDrawnShares = userPosition.premiumDrawnShares = userPosition
+      .baseDrawnShares
+      .percentMul(newUserRiskPremium);
+    userPremiumOffset = userPosition.premiumOffset = hub.convertToDrawnAssets(
       reserve.assetId,
       userPosition.premiumDrawnShares
     );
 
-    _refreshPremiumDebt(
-      reserve,
-      _signedDiff(userPosition.premiumDrawnShares, oldUserPremiumDrawnShares),
-      _signedDiff(userPosition.premiumOffset, oldUserPremiumOffset),
-      0
-    );
+    _refreshPremiumDebt(reserve, int256(userPremiumDrawnShares), int256(userPremiumOffset), 0);
 
     _notifyRiskPremiumUpdate(reserve.assetId, msg.sender, newUserRiskPremium);
 
