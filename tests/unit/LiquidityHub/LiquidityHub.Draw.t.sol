@@ -25,7 +25,7 @@ contract LiquidityHubDrawTest is LiquidityHubBase {
     assertEq(premiumDebt, 0);
 
     // spoke2, bob supply dai
-    Utils.supply({
+    Utils.add({
       hub: hub,
       assetId: daiAssetId,
       spoke: address(spoke2),
@@ -79,7 +79,7 @@ contract LiquidityHubDrawTest is LiquidityHubBase {
     IERC20 asset = hub.assetsList(assetId);
 
     // spoke2, bob supply dai
-    Utils.supply({
+    Utils.add({
       hub: hub,
       assetId: assetId,
       spoke: address(spoke2),
@@ -125,18 +125,19 @@ contract LiquidityHubDrawTest is LiquidityHubBase {
 
     vm.expectRevert(ILiquidityHub.AssetNotActive.selector);
     vm.prank(address(spoke1));
-    hub.draw({assetId: daiAssetId, amount: drawAmount, to: address(spoke1)});
+    hub.draw(assetId,drawAmount, address(spoke1));
   }
 
-  function test_draw_fuzz_revertsWith_AssetNotActive(uint256 drawAmount) public {
+  function test_draw_fuzz_revertsWith_AssetNotActive(uint256 assetId, uint256 drawAmount) public {
     drawAmount = bound(drawAmount, 1, MAX_SUPPLY_AMOUNT);
-    updateAssetActive(hub, daiAssetId, false);
+    assetId = bound(assetId, 0, hub.assetCount() - 1);
+    updateAssetActive(hub, assetId, false);
 
-    assertFalse(hub.getAsset(daiAssetId).config.active);
+    assertFalse(hub.getAsset(assetId).config.active);
 
     vm.expectRevert(ILiquidityHub.AssetNotActive.selector);
     vm.prank(address(spoke1));
-    hub.draw({assetId: daiAssetId, amount: drawAmount, to: address(spoke1)});
+    hub.draw(assetId, drawAmount address(spoke1));
   }
 
   function test_draw_revertsWith_AssetPaused() public {
@@ -147,18 +148,19 @@ contract LiquidityHubDrawTest is LiquidityHubBase {
 
     vm.expectRevert(ILiquidityHub.AssetPaused.selector);
     vm.prank(address(spoke1));
-    hub.draw({assetId: daiAssetId, amount: drawAmount, to: address(spoke1)});
+    hub.draw(daiAssetId,drawAmount, address(spoke1));
   }
 
-  function test_draw_fuzz_revertsWith_AssetPaused(uint256 drawAmount) public {
+  function test_draw_fuzz_revertsWith_AssetPaused(uint256 assetId, uint256 drawAmount) public {
+    assetId = bound(assetId, 0, hub.assetCount() - 1);
     drawAmount = bound(drawAmount, 1, MAX_SUPPLY_AMOUNT);
-    updateAssetPaused(hub, daiAssetId, true);
+    updateAssetPaused(hub, assetId, true);
 
-    assertTrue(hub.getAsset(daiAssetId).config.paused);
+    assertTrue(hub.getAsset(assetId).config.paused);
 
     vm.expectRevert(ILiquidityHub.AssetPaused.selector);
     vm.prank(address(spoke1));
-    hub.draw({assetId: daiAssetId, amount: drawAmount, to: address(spoke1)});
+    hub.draw(assetId,drawAmount, address(spoke1));
   }
 
   function test_draw_revertsWith_AssetFrozen() public {
@@ -169,18 +171,19 @@ contract LiquidityHubDrawTest is LiquidityHubBase {
 
     vm.expectRevert(ILiquidityHub.AssetFrozen.selector);
     vm.prank(address(spoke1));
-    hub.draw({assetId: daiAssetId, amount: drawAmount, to: address(spoke1)});
+    hub.draw(daiAssetId, drawAmount, address(spoke1));
   }
 
-  function test_draw_fuzz_revertsWith_AssetFrozen(uint256 drawAmount) public {
+  function test_draw_fuzz_revertsWith_AssetFrozen(uint256 assetId, uint256 drawAmount) public {
+    assetId = bound(assetId, 0, hub.assetCount() - 1);
     drawAmount = bound(drawAmount, 1, MAX_SUPPLY_AMOUNT);
-    updateAssetFrozen(hub, daiAssetId, true);
+    updateAssetFrozen(hub, assetId, true);
 
-    assertTrue(hub.getAsset(daiAssetId).config.frozen);
+    assertTrue(hub.getAsset(assetId).config.frozen);
 
     vm.expectRevert(ILiquidityHub.AssetFrozen.selector);
     vm.prank(address(spoke1));
-    hub.draw({assetId: daiAssetId, amount: drawAmount, to: address(spoke1)});
+    hub.draw(assetId,  drawAmount, address(spoke1));
   }
 
   function test_draw_revertsWith_NotAvailableLiquidity() public {
@@ -190,24 +193,28 @@ contract LiquidityHubDrawTest is LiquidityHubBase {
 
     vm.expectRevert(abi.encodeWithSelector(ILiquidityHub.NotAvailableLiquidity.selector, 0));
     vm.prank(address(spoke1));
-    hub.draw({assetId: daiAssetId, amount: drawAmount, to: address(spoke1)});
+    hub.draw(daiAssetId,  drawAmount, address(spoke1));
   }
 
-  function test_draw_fuzz_revertsWith_NotAvailableLiquidity(uint256 drawAmount) public {
+  function test_draw_fuzz_revertsWith_NotAvailableLiquidity(
+    uint256 assetId,
+    uint256 drawAmount
+  ) public {
+    assetId = bound(assetId, 0, hub.assetCount() - 1);
     drawAmount = bound(drawAmount, 1, MAX_SUPPLY_AMOUNT);
 
-    assertTrue(hub.getAvailableLiquidity(daiAssetId) == 0);
+    assertTrue(hub.getAvailableLiquidity(assetId) == 0);
 
     vm.expectRevert(abi.encodeWithSelector(ILiquidityHub.NotAvailableLiquidity.selector, 0));
     vm.prank(address(spoke1));
-    hub.draw({assetId: daiAssetId, amount: drawAmount, to: address(spoke1)});
+    hub.draw(assetId,  drawAmount,  address(spoke1));
   }
 
   function test_draw_revertsWith_NotAvailableLiquidity_due_to_remove() public {
     uint256 daiAmount = 100e18;
 
     // spoke2, bob supply dai
-    Utils.supply({
+    Utils.add({
       hub: hub,
       assetId: daiAssetId,
       spoke: address(spoke2),
@@ -239,7 +246,7 @@ contract LiquidityHubDrawTest is LiquidityHubBase {
     daiAmount = bound(daiAmount, 1, MAX_SUPPLY_AMOUNT);
 
     // spoke2, bob supply dai
-    Utils.supply({
+    Utils.add({
       hub: hub,
       assetId: daiAssetId,
       spoke: address(spoke2),
@@ -269,7 +276,7 @@ contract LiquidityHubDrawTest is LiquidityHubBase {
     uint256 daiAmount = 100e18;
 
     // spoke2, bob supply dai
-    Utils.supply({
+    Utils.add({
       hub: hub,
       assetId: daiAssetId,
       spoke: address(spoke2),
@@ -300,7 +307,7 @@ contract LiquidityHubDrawTest is LiquidityHubBase {
     daiAmount = bound(daiAmount, 1, MAX_SUPPLY_AMOUNT);
 
     // spoke2, bob supply dai
-    Utils.supply({
+    Utils.add({
       hub: hub,
       assetId: daiAssetId,
       spoke: address(spoke2),
