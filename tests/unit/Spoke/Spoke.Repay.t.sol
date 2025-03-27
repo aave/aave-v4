@@ -58,9 +58,7 @@ contract SpokeRepayTest is SpokeBase {
     _assertUserRpUnchanged(_daiReserveId(spoke1), spoke1, bob);
     _assertUserRpUnchanged(_usdxReserveId(spoke1), spoke1, bob);
 
-    skip(123 days);
-
-    hub.getSpokeDebt(daiAssetId, address(spoke1));
+    skip(232 days);
 
     spoke1.repay(_daiReserveId(spoke1), 25e18);
     _assertUserRpUnchanged(_daiReserveId(spoke1), spoke1, bob);
