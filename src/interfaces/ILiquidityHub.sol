@@ -20,15 +20,17 @@ interface ILiquidityHub {
     uint256 supplyCap
   );
 
-  event Supply(uint256 indexed assetId, address indexed spoke, uint256 amount);
-  event Withdraw(
+  event Add(uint256 indexed assetId, address indexed spoke, uint256 suppliedShares);
+  event Remove(uint256 indexed assetId, address indexed spoke, uint256 suppliedShares);
+  event Draw(uint256 indexed assetId, address indexed spoke, uint256 drawnShares);
+  event Restore(uint256 indexed assetId, address indexed spoke, uint256 drawnShares);
+  event RefreshPremiumDebt(
     uint256 indexed assetId,
     address indexed spoke,
-    address indexed to,
-    uint256 amount
+    int256 premiumDrawnSharesDelta,
+    int256 premiumOffsetDelta,
+    int256 realizedPremiumDelta
   );
-  event Draw(uint256 indexed assetId, address indexed spoke, address indexed to, uint256 amount);
-  event Restore(uint256 indexed assetId, address indexed spoke, uint256 amount);
 
   error MismatchedConfigs();
   error InvalidSharesAmount();
@@ -66,27 +68,27 @@ interface ILiquidityHub {
   ) external;
 
   /**
-   * @notice Supply asset on behalf of user.
+   * @notice Add/Supply asset on behalf of user.
    * @dev Only callable by spokes.
    * @param assetId The asset id.
-   * @param amount The amount of asset to supply.
-   * @param supplier The address which we pull assets from (user).
-   * @return The amount of shares supplied.
+   * @param amount The amount of asset liquidity to add/supply.
+   * @param from The address which we pull assets from (user).
+   * @return The amount of shares added or supplied.
    */
-  function supply(uint256 assetId, uint256 amount, address supplier) external returns (uint256);
+  function add(uint256 assetId, uint256 amount, address from) external returns (uint256);
 
   /**
-   * @notice Withdraw supplied asset on behalf of user.
+   * @notice Remove/Withdraw supplied asset on behalf of user.
    * @dev Only callable by spokes.
    * @param assetId The asset id.
-   * @param amount The amount of asset to withdraw.
+   * @param amount The amount of asset liquidity to remove/withdraw.
    * @param to The address to transfer the assets to.
-   * @return The amount of shares withdrawn.
+   * @return The amount of shares removed or withdrawn.
    */
-  function withdraw(uint256 assetId, uint256 amount, address to) external returns (uint256);
+  function remove(uint256 assetId, uint256 amount, address to) external returns (uint256);
 
   /**
-   * @notice Draw debt on behalf of user.
+   * @notice Draw/Borrow debt on behalf of user.
    * @dev Only callable by spokes.
    * @param assetId The asset id.
    * @param amount The amount of debt to draw.
@@ -96,20 +98,20 @@ interface ILiquidityHub {
   function draw(uint256 assetId, uint256 amount, address to) external returns (uint256);
 
   /**
-   * @notice Repays debt on behalf of user.
+   * @notice Restores/Repays debt on behalf of user.
    * @dev Only callable by spokes.
    * @dev Interest is always paid off first from premium, then from base.
    * @param assetId The asset id.
    * @param baseAmount The base debt to repay.
    * @param premiumAmount The premium debt to repay.
-   * @param repayer The address to pull assets from.
+   * @param from The address to pull assets from.
    * @return The amount of debt restored.
    */
   function restore(
     uint256 assetId,
     uint256 baseAmount,
     uint256 premiumAmount,
-    address repayer
+    address from
   ) external returns (uint256);
 
   function refreshPremiumDebt(

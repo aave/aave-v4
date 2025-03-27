@@ -66,7 +66,7 @@ contract LiquidityHubBase is Base {
     );
 
     // spoke1 supply weth
-    Utils.supply({
+    Utils.add({
       hub: hub,
       assetId: wethAssetId,
       spoke: address(spoke1),
@@ -76,7 +76,7 @@ contract LiquidityHubBase is Base {
     });
 
     // spoke2 supply dai
-    Utils.supply({
+    Utils.add({
       hub: hub,
       assetId: daiAssetId,
       spoke: address(spoke2),

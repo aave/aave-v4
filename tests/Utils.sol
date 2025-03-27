@@ -10,7 +10,7 @@ library Utils {
   Vm internal constant vm = Vm(address(uint160(uint256(keccak256('hevm cheat code')))));
 
   // hub
-  function supply(
+  function add(
     ILiquidityHub hub,
     uint256 assetId,
     address spoke,
@@ -23,7 +23,7 @@ library Utils {
     vm.stopPrank();
 
     vm.prank(spoke);
-    hub.supply(assetId, amount, user);
+    hub.add(assetId, amount, user);
   }
 
   function draw(
@@ -38,7 +38,7 @@ library Utils {
     hub.draw(assetId, amount, to);
   }
 
-  function withdraw(
+  function remove(
     ILiquidityHub hub,
     uint256 assetId,
     address spoke,
@@ -46,7 +46,7 @@ library Utils {
     address to
   ) internal {
     vm.prank(spoke);
-    hub.withdraw(assetId, amount, to);
+    hub.remove(assetId, amount, to);
   }
 
   function restore(
