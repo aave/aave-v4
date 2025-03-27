@@ -2,8 +2,6 @@
 pragma solidity ^0.8.0;
 
 import {DataTypes} from 'src/libraries/types/DataTypes.sol';
-import {ILiquidityHub} from 'src/interfaces/ILiquidityHub.sol';
-import {IPriceOracle} from 'src/interfaces/IPriceOracle.sol';
 
 /**
  * @title ISpoke
@@ -19,14 +17,14 @@ interface ISpoke {
   event Withdraw(
     uint256 indexed reserveId,
     address indexed user,
-    address indexed to,
-    uint256 suppliedShares
+    uint256 suppliedShares,
+    address indexed to
   );
   event Borrow(
     uint256 indexed reserveId,
     address indexed user,
-    address indexed to,
-    uint256 drawnShares
+    uint256 drawnShares,
+    address indexed to
   );
   event Repay(uint256 indexed reserveId, address indexed user, uint256 drawnShares);
   event UsingAsCollateral(uint256 indexed reserveId, address indexed user, bool usingAsCollateral);
