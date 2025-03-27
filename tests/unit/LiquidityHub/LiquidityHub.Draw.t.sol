@@ -71,14 +71,17 @@ contract LiquidityHubDrawTest is LiquidityHubBase {
     assertEq(tokenList.dai.balanceOf(address(spoke2)), 0, 'spoke2 dai final balance');
   }
 
-  function test_draw_fuzz_amounts_same_block(uint256 daiAmount) public {
+  function test_draw_fuzz_amounts_same_block(uint256 assetId, uint256 daiAmount) public {
+    assetId = bound(assetId, 0, hub.assetCount() - 2); // Exclude duplicated DAI
     daiAmount = bound(daiAmount, 1, MAX_SUPPLY_AMOUNT);
     uint256 drawAmount = daiAmount;
+
+    IERC20 asset = hub.assetsList(assetId);
 
     // spoke2, bob supply dai
     Utils.supply({
       hub: hub,
-      assetId: daiAssetId,
+      assetId: assetId,
       spoke: address(spoke2),
       amount: daiAmount,
       user: bob,
@@ -87,39 +90,31 @@ contract LiquidityHubDrawTest is LiquidityHubBase {
 
     // spoke1 draw half of dai reserve liquidity
     vm.expectEmit(address(hub));
-    emit ILiquidityHub.Draw(daiAssetId, address(spoke1), alice, drawAmount);
+    emit ILiquidityHub.Draw(assetId, address(spoke1), alice, drawAmount);
     vm.prank(address(spoke1));
-    hub.draw({assetId: daiAssetId, amount: drawAmount, to: alice});
+    hub.draw({assetId: assetId, amount: drawAmount, to: alice});
 
     // hub
-    (uint256 baseDebt, uint256 premiumDebt) = hub.getAssetDebt(daiAssetId);
-    assertEq(hub.getAssetTotalDebt(daiAssetId), drawAmount, 'asset totalDebt after');
+    (uint256 baseDebt, uint256 premiumDebt) = hub.getAssetDebt(assetId);
+    assertEq(hub.getAssetTotalDebt(assetId), drawAmount, 'asset totalDebt after');
     assertEq(baseDebt, drawAmount, 'asset baseDebt after');
     assertEq(premiumDebt, 0, 'asset premiumDebt after');
-    assertEq(hub.getAvailableLiquidity(daiAssetId), 0, 'asset availableLiquidity after');
+    assertEq(hub.getAvailableLiquidity(assetId), 0, 'asset availableLiquidity after');
     assertEq(
-      hub.getAsset(daiAssetId).lastUpdateTimestamp,
+      hub.getAsset(assetId).lastUpdateTimestamp,
       vm.getBlockTimestamp(),
       'asset lastUpdateTimestamp after'
     );
     // spoke
-    (baseDebt, premiumDebt) = hub.getSpokeDebt(daiAssetId, address(spoke1));
-    assertEq(
-      hub.getSpokeTotalDebt(daiAssetId, address(spoke1)),
-      drawAmount,
-      'spoke totalDebt after'
-    );
+    (baseDebt, premiumDebt) = hub.getSpokeDebt(assetId, address(spoke1));
+    assertEq(hub.getSpokeTotalDebt(assetId, address(spoke1)), drawAmount, 'spoke totalDebt after');
     assertEq(baseDebt, drawAmount, 'spoke baseDebt after');
     assertEq(premiumDebt, 0, 'spoke premiumDebt after');
-    // dai balance
-    assertEq(
-      tokenList.dai.balanceOf(alice),
-      drawAmount + MAX_SUPPLY_AMOUNT,
-      'alice dai final balance'
-    );
-    assertEq(tokenList.dai.balanceOf(bob), MAX_SUPPLY_AMOUNT - daiAmount, 'bob dai final balance');
-    assertEq(tokenList.dai.balanceOf(address(spoke1)), 0, 'spoke1 dai final balance');
-    assertEq(tokenList.dai.balanceOf(address(spoke2)), 0, 'spoke2 dai final balance');
+    // token balance
+    assertEq(asset.balanceOf(alice), drawAmount + MAX_SUPPLY_AMOUNT, 'alice asset final balance');
+    assertEq(asset.balanceOf(bob), MAX_SUPPLY_AMOUNT - daiAmount, 'bob asset final balance');
+    assertEq(asset.balanceOf(address(spoke1)), 0, 'spoke1 asset final balance');
+    assertEq(asset.balanceOf(address(spoke2)), 0, 'spoke2 asset final balance');
   }
 
   function test_draw_revertsWith_AssetNotActive() public {
