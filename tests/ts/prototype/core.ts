@@ -308,26 +308,32 @@ export class Spoke {
       amount,
       user
     );
-    const drawnShares = this.hub.restore(baseDebtRestored, premiumDebtRestored, this); // asset to share should round up
+
+    let userGhostDrawnShares = user.ghostDrawnShares;
+    let userOffset = user.offset;
+    const userUnrealisedPremium = user.unrealisedPremium;
+    user.ghostDrawnShares = 0n;
+    user.offset = 0n;
+    user.unrealisedPremium = premiumDebt - premiumDebtRestored;
+    this.refresh(
+      user.ghostDrawnShares - userGhostDrawnShares,
+      user.offset - userOffset,
+      user.unrealisedPremium - userUnrealisedPremium,
+      user
+    ); // settle premium debt
+    const drawnShares = this.hub.restore(baseDebtRestored, premiumDebtRestored, this); // settle base debt
 
     this.baseDrawnShares -= drawnShares;
     user.baseDrawnShares -= drawnShares;
     user.riskPremium = randomRiskPremium();
 
-    const oldUserGhostDrawnShares = user.ghostDrawnShares;
-    const oldUserOffset = user.offset;
-    const oldUserUnrealisedPremium = user.unrealisedPremium;
-
-    user.ghostDrawnShares = percentMul(user.baseDrawnShares, user.riskPremium);
-    user.offset = this.hub.toDrawnAssets(user.ghostDrawnShares);
-    user.unrealisedPremium = premiumDebt - premiumDebtRestored;
-
-    this.refresh(
-      user.ghostDrawnShares - oldUserGhostDrawnShares,
-      user.offset - oldUserOffset,
-      user.unrealisedPremium - oldUserUnrealisedPremium,
-      user
+    userGhostDrawnShares = user.ghostDrawnShares = percentMul(
+      user.baseDrawnShares,
+      user.riskPremium
     );
+    userOffset = user.offset = this.hub.toDrawnAssets(user.ghostDrawnShares);
+
+    this.refresh(userGhostDrawnShares, userOffset, 0n, user);
 
     return drawnShares;
   }
