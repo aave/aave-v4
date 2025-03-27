@@ -1,8 +1,8 @@
 {
-  "draw": "141300",
-  "restore: full": "89022",
-  "restore: partial": "103498",
-  "supply": "184220",
-  "withdraw: full": "77776",
-  "withdraw: partial": "94176"
+  "add": "184265",
+  "draw": "140830",
+  "remove: full": "77381",
+  "remove: partial": "93781",
+  "restore: full": "88978",
+  "restore: partial": "103454"
 }

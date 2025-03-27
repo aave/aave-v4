@@ -655,35 +655,14 @@ abstract contract Base is Test {
     address user,
     uint256 reserveId
   ) internal view returns (DataTypes.UserPosition memory) {
-    revert('implement me');
-    // DataTypes.UserPosition memory userPosition;
-    // userPosition.usingAsCollateral = spoke.getUsingAsCollateral(reserveId, user);
-    // (userPosition.baseDebt, userPosition.outstandingPremium) = spoke.getUserDebt(reserveId, user);
-    // userPosition.suppliedShares = spoke.getUserSuppliedShares(reserveId, user);
-    // userPosition.baseBorrowIndex = spoke.getUserBaseBorrowIndex(reserveId, user);
-    // userPosition.riskPremium = spoke.getUserRiskPremium(user);
-    // userPosition.lastUpdateTimestamp = spoke.getUserPosition(reserveId, user).lastUpdateTimestamp;
-    // return userPosition;
+    return spoke.getUserPosition(reserveId, user);
   }
 
   function getReserveInfo(
     ISpoke spoke,
     uint256 reserveId
   ) internal view returns (DataTypes.Reserve memory) {
-    revert('implement me');
-
-    // DataTypes.Reserve memory reserveData;
-    // reserveData.reserveId = reserveId;
-    // IERC20 asset;
-    // (reserveData.assetId, asset) = getAssetByReserveId(spoke, reserveId);
-    // reserveData.asset = address(asset);
-    // (reserveData.baseDebt, reserveData.outstandingPremium) = spoke.getReserveDebt(reserveId);
-    // reserveData.suppliedShares = spoke.getReserveSuppliedShares(reserveId);
-    // reserveData.riskPremium = spoke.getReserveRiskPremium(reserveId);
-    // reserveData.lastUpdateTimestamp = spoke.getReserve(reserveId).lastUpdateTimestamp;
-    // reserveData.baseBorrowIndex = spoke.getReserve(reserveId).baseBorrowIndex;
-    // reserveData.config = spoke.getReserve(reserveId).config;
-    // return reserveData;
+    return spoke.getReserve(reserveId);
   }
 
   function getAssetInfo(uint256 assetId) internal view returns (DataTypes.Asset memory) {

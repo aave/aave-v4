@@ -107,7 +107,7 @@ contract LiquidityHub is ILiquidityHub {
   }
 
   /// @inheritdoc ILiquidityHub
-  function supply(uint256 assetId, uint256 amount, address supplier) external returns (uint256) {
+  function add(uint256 assetId, uint256 amount, address from) external returns (uint256) {
     // TODO: authorization - only spokes
 
     DataTypes.Asset storage asset = _assets[assetId];
@@ -128,15 +128,15 @@ contract LiquidityHub is ILiquidityHub {
     spoke.suppliedShares += suppliedShares;
 
     // TODO: fee-on-transfer
-    assetsList[assetId].safeTransferFrom(supplier, address(this), amount);
+    assetsList[assetId].safeTransferFrom(from, address(this), amount);
 
-    emit Supply(assetId, msg.sender, amount);
+    emit Add(assetId, msg.sender, suppliedShares);
 
     return suppliedShares;
   }
 
   /// @inheritdoc ILiquidityHub
-  function withdraw(uint256 assetId, uint256 amount, address to) external returns (uint256) {
+  function remove(uint256 assetId, uint256 amount, address to) external returns (uint256) {
     // TODO: authorization - only spokes
 
     DataTypes.Asset storage asset = _assets[assetId];
@@ -156,7 +156,7 @@ contract LiquidityHub is ILiquidityHub {
 
     assetsList[assetId].safeTransfer(to, amount);
 
-    emit Withdraw(assetId, msg.sender, to, amount);
+    emit Remove(assetId, msg.sender, withdrawnShares);
 
     return withdrawnShares;
   }
@@ -183,7 +183,7 @@ contract LiquidityHub is ILiquidityHub {
 
     assetsList[assetId].safeTransfer(to, amount);
 
-    emit Draw(assetId, msg.sender, to, amount);
+    emit Draw(assetId, msg.sender, drawnShares);
 
     return drawnShares;
   }
@@ -193,7 +193,7 @@ contract LiquidityHub is ILiquidityHub {
     uint256 assetId,
     uint256 baseAmount,
     uint256 premiumAmount,
-    address repayer
+    address from
   ) external returns (uint256) {
     // TODO: authorization - only spokes
     // global & spoke premiumDebt (ghost, offset, unrealised) is *expected* to be updated on the `refreshPremiumDebt` callback
@@ -214,9 +214,9 @@ contract LiquidityHub is ILiquidityHub {
     asset.baseDrawnShares -= baseDrawnSharesRestored;
     spoke.baseDrawnShares -= baseDrawnSharesRestored;
 
-    assetsList[assetId].safeTransferFrom(repayer, address(this), totalRestoredAmount);
+    assetsList[assetId].safeTransferFrom(from, address(this), totalRestoredAmount);
 
-    emit Restore(assetId, msg.sender, totalRestoredAmount);
+    emit Restore(assetId, msg.sender, baseDrawnSharesRestored);
 
     return baseDrawnSharesRestored;
   }
@@ -245,6 +245,14 @@ contract LiquidityHub is ILiquidityHub {
     spoke.premiumDrawnShares = _add(spoke.premiumDrawnShares, premiumDrawnSharesDelta);
     spoke.premiumOffset = _add(spoke.premiumOffset, premiumOffsetDelta);
     spoke.realizedPremium = _add(spoke.realizedPremium, realizedPremiumDelta);
+
+    emit RefreshPremiumDebt(
+      assetId,
+      msg.sender,
+      premiumDrawnSharesDelta,
+      premiumOffsetDelta,
+      realizedPremiumDelta
+    );
 
     // todo check bounds
   }

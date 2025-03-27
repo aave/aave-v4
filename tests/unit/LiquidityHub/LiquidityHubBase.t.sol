@@ -66,7 +66,7 @@ contract LiquidityHubBase is Base {
     uint256 daiDrawAmount = daiAmount;
 
     // spoke2 supply dai
-    uint256 suppliedShares = Utils.supply({
+    uint256 suppliedShares = Utils.add({
       hub: hub,
       assetId: daiAssetId,
       spoke: address(spoke2),
@@ -107,7 +107,7 @@ contract LiquidityHubBase is Base {
     );
 
     // spoke2 supply dai
-    uint256 supplyShares = Utils.supply({
+    uint256 supplyShares = Utils.add({
       hub: hub,
       assetId: daiAssetId,
       spoke: address(spoke2),
