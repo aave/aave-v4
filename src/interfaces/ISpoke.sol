@@ -19,14 +19,14 @@ interface ISpoke {
   event Withdraw(
     uint256 indexed reserveId,
     address indexed user,
-    address indexed to,
-    uint256 suppliedShares
+    uint256 suppliedShares,
+    address indexed to
   );
   event Borrow(
     uint256 indexed reserveId,
     address indexed user,
-    address indexed to,
-    uint256 drawnShares
+    uint256 drawnShares,
+    address indexed to
   );
   event Repay(uint256 indexed reserveId, address indexed user, uint256 drawnShares);
   event UsingAsCollateral(uint256 indexed reserveId, address indexed user, bool usingAsCollateral);

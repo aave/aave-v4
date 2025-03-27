@@ -157,7 +157,7 @@ contract Spoke is ISpoke {
     );
     _notifyRiskPremiumUpdate(assetId, msg.sender, newUserRiskPremium);
 
-    emit Withdraw(reserveId, msg.sender, to, withdrawnShares);
+    emit Withdraw(reserveId, msg.sender, withdrawnShares, to);
   }
 
   /// @inheritdoc ISpoke
@@ -195,7 +195,7 @@ contract Spoke is ISpoke {
     );
     _notifyRiskPremiumUpdate(assetId, msg.sender, newUserRiskPremium);
 
-    emit Borrow(reserveId, msg.sender, to, baseDrawnShares);
+    emit Borrow(reserveId, msg.sender, baseDrawnShares, to);
   }
 
   /// @inheritdoc ISpoke
