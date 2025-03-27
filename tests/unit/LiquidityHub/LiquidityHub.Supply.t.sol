@@ -20,7 +20,7 @@ contract LiquidityHubSupplyTest is LiquidityHubBase {
       )
     );
     vm.prank(address(spoke1));
-    hub.supply(daiAssetId, amount, address(spoke1));
+    hub.add(daiAssetId, amount, address(spoke1));
   }
 
   function test_supply_fuzz_revertsWith_ERC20InsufficientAllowance(uint256 amount) public {
@@ -34,7 +34,7 @@ contract LiquidityHubSupplyTest is LiquidityHubBase {
       )
     );
     vm.prank(address(spoke1));
-    hub.supply(daiAssetId, amount, address(spoke1));
+    hub.add(daiAssetId, amount, address(spoke1));
   }
 
   function test_supply_revertsWith_AssetNotActive() public {
@@ -45,7 +45,7 @@ contract LiquidityHubSupplyTest is LiquidityHubBase {
 
     vm.expectRevert(ILiquidityHub.AssetNotActive.selector);
     vm.prank(address(spoke1));
-    hub.supply(daiAssetId, amount, alice);
+    hub.add(daiAssetId, amount, alice);
   }
 
   function test_supply_fuzz_revertsWith_AssetNotActive(uint256 amount) public {
@@ -56,7 +56,7 @@ contract LiquidityHubSupplyTest is LiquidityHubBase {
 
     vm.expectRevert(ILiquidityHub.AssetNotActive.selector);
     vm.prank(address(spoke1));
-    hub.supply(daiAssetId, amount, alice);
+    hub.add(daiAssetId, amount, alice);
   }
 
   function test_supply_revertsWith_AssetPaused() public {
@@ -67,7 +67,7 @@ contract LiquidityHubSupplyTest is LiquidityHubBase {
 
     vm.expectRevert(ILiquidityHub.AssetPaused.selector);
     vm.prank(address(spoke1));
-    hub.supply(daiAssetId, amount, alice);
+    hub.add(daiAssetId, amount, alice);
   }
 
   function test_supply_fuzz_revertsWith_AssetPaused(uint256 amount) public {
@@ -78,7 +78,7 @@ contract LiquidityHubSupplyTest is LiquidityHubBase {
 
     vm.expectRevert(ILiquidityHub.AssetPaused.selector);
     vm.prank(address(spoke1));
-    hub.supply(daiAssetId, amount, alice);
+    hub.add(daiAssetId, amount, alice);
   }
 
   function test_supply_revertsWith_AssetFrozen() public {
@@ -89,7 +89,7 @@ contract LiquidityHubSupplyTest is LiquidityHubBase {
 
     vm.expectRevert(ILiquidityHub.AssetFrozen.selector);
     vm.prank(address(spoke1));
-    hub.supply(daiAssetId, amount, alice);
+    hub.add(daiAssetId, amount, alice);
   }
 
   function test_supply_revertsWith_AssetFrozen(uint256 amount) public {
@@ -100,7 +100,7 @@ contract LiquidityHubSupplyTest is LiquidityHubBase {
 
     vm.expectRevert(ILiquidityHub.AssetFrozen.selector);
     vm.prank(address(spoke1));
-    hub.supply(daiAssetId, amount, alice);
+    hub.add(daiAssetId, amount, alice);
   }
 
   function test_supply_revertsWith_SupplyCapExceeded() public {
@@ -109,9 +109,9 @@ contract LiquidityHubSupplyTest is LiquidityHubBase {
     uint256 newSupplyCap = amount - 1;
     _updateSupplyCap(daiAssetId, address(spoke1), newSupplyCap);
 
-    vm.expectRevert(abi.encodeWithSelector(ILiquidityHub.SupplyCapExceeded.selector, newSupplyCap));
+    vm.expectRevert(abi.encodeWithSelector(ILiquidityhub.addCapExceeded.selector, newSupplyCap));
     vm.prank(address(spoke1));
-    hub.supply(daiAssetId, amount, alice);
+    hub.add(daiAssetId, amount, alice);
   }
 
   function test_supply_fuzz_revertsWith_SupplyCapExceeded(uint256 amount) public {
@@ -120,9 +120,9 @@ contract LiquidityHubSupplyTest is LiquidityHubBase {
     uint256 newSupplyCap = amount - 1;
     _updateSupplyCap(daiAssetId, address(spoke1), newSupplyCap);
 
-    vm.expectRevert(abi.encodeWithSelector(ILiquidityHub.SupplyCapExceeded.selector, newSupplyCap));
+    vm.expectRevert(abi.encodeWithSelector(ILiquidityhub.addCapExceeded.selector, newSupplyCap));
     vm.prank(address(spoke1));
-    hub.supply(daiAssetId, amount, alice);
+    hub.add(daiAssetId, amount, alice);
   }
 
   function test_supply_revertsWith_SupplyCapExceeded_due_to_interest() public {
@@ -132,9 +132,9 @@ contract LiquidityHubSupplyTest is LiquidityHubBase {
     _updateSupplyCap(daiAssetId, address(spoke2), newSupplyCap);
     _increaseExchangeRate(daiAmount);
 
-    vm.expectRevert(abi.encodeWithSelector(ILiquidityHub.SupplyCapExceeded.selector, newSupplyCap));
+    vm.expectRevert(abi.encodeWithSelector(ILiquidityhub.addCapExceeded.selector, newSupplyCap));
     vm.prank(address(spoke2));
-    hub.supply(daiAssetId, 1, alice);
+    hub.add(daiAssetId, 1, alice);
   }
 
   function test_supply_fuzz_revertsWith_SupplyCapExceeded_due_to_interest(
@@ -159,9 +159,9 @@ contract LiquidityHubSupplyTest is LiquidityHubBase {
     });
     vm.assume(hub.convertToSuppliedShares(daiAssetId, daiAmount) < daiAmount);
 
-    vm.expectRevert(abi.encodeWithSelector(ILiquidityHub.SupplyCapExceeded.selector, newSupplyCap));
+    vm.expectRevert(abi.encodeWithSelector(ILiquidityhub.addCapExceeded.selector, newSupplyCap));
     vm.prank(address(spoke2));
-    hub.supply(daiAssetId, 1, alice); // cannot supply any additional amount
+    hub.add(daiAssetId, 1, alice); // cannot supply any additional amount
   }
 
   function test_supply_single_asset() public {
@@ -179,9 +179,9 @@ contract LiquidityHubSupplyTest is LiquidityHubBase {
     assertEq(tokenList.dai.balanceOf(address(hub)), 0);
 
     vm.expectEmit(address(hub));
-    emit ILiquidityHub.Supply(daiAssetId, address(spoke1), amount);
+    emit ILiquidityhub.add(daiAssetId, address(spoke1), amount);
     vm.prank(address(spoke1));
-    hub.supply(daiAssetId, amount, alice);
+    hub.add(daiAssetId, amount, alice);
 
     // hub
     assertEq(hub.getAssetSuppliedAmount(daiAssetId), amount, 'hub asset suppliedAmount after');
@@ -221,10 +221,10 @@ contract LiquidityHubSupplyTest is LiquidityHubBase {
     vm.expectEmit(address(asset));
     emit IERC20.Transfer(alice, address(hub), amount);
     vm.expectEmit(address(hub));
-    emit ILiquidityHub.Supply(assetId, address(spoke1), amount);
+    emit ILiquidityhub.add(assetId, address(spoke1), amount);
 
     vm.prank(address(spoke1));
-    hub.supply({assetId: assetId, amount: amount, supplier: alice});
+    hub.add({assetId: assetId, amount: amount, supplier: alice});
 
     // hub
     assertEq(hub.getAssetSuppliedAmount(assetId), amount, 'hub asset suppliedAmount after');
@@ -269,18 +269,18 @@ contract LiquidityHubSupplyTest is LiquidityHubBase {
     vm.expectEmit(address(asset));
     emit IERC20.Transfer(alice, address(hub), amount);
     vm.expectEmit(address(hub));
-    emit ILiquidityHub.Supply(assetId, address(spoke1), amount);
+    emit ILiquidityhub.add(assetId, address(spoke1), amount);
 
     vm.prank(address(spoke1));
-    hub.supply(assetId, amount, alice);
+    hub.add(assetId, amount, alice);
 
     vm.expectEmit(address(asset2));
     emit IERC20.Transfer(alice, address(hub), amount2);
     vm.expectEmit(address(hub));
-    emit ILiquidityHub.Supply(assetId2, address(spoke2), amount2);
+    emit ILiquidityhub.add(assetId2, address(spoke2), amount2);
 
     vm.prank(address(spoke2));
-    hub.supply(assetId2, amount2, alice);
+    hub.add(assetId2, amount2, alice);
 
     uint256 timestamp = vm.getBlockTimestamp();
 
@@ -343,7 +343,7 @@ contract LiquidityHubSupplyTest is LiquidityHubBase {
 
     vm.expectRevert(ILiquidityHub.InvalidSupplyAmount.selector);
     vm.prank(address(spoke1));
-    hub.supply(assetId, amount, alice);
+    hub.add(assetId, amount, alice);
   }
 
   function test_supply_revertsWith_InvalidSharesAmount() public {
@@ -366,7 +366,7 @@ contract LiquidityHubSupplyTest is LiquidityHubBase {
 
     vm.expectRevert(ILiquidityHub.InvalidSharesAmount.selector);
     vm.prank(address(spoke1));
-    hub.supply(daiAssetId, amount, alice);
+    hub.add(daiAssetId, amount, alice);
   }
 
   function test_supply_fuzz_revertsWith_InvalidSharesAmount_due_to_index(
@@ -396,7 +396,7 @@ contract LiquidityHubSupplyTest is LiquidityHubBase {
 
     vm.expectRevert(ILiquidityHub.InvalidSharesAmount.selector);
     vm.prank(address(spoke1));
-    hub.supply(daiAssetId, supplyAmount, alice);
+    hub.add(daiAssetId, supplyAmount, alice);
   }
 
   function test_supply_with_increased_index() public {

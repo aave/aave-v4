@@ -9,29 +9,29 @@ contract LiquidityHubOperations_Gas_Tests is Base {
     initEnvironment();
   }
 
-  function test_supply() public {
+  function test_add() public {
     vm.prank(address(spoke1));
-    hub.supply(usdxAssetId, 1000e6, alice);
-    vm.snapshotGasLastCall('Hub.Operations', 'supply');
+    hub.add(usdxAssetId, 1000e6, alice);
+    vm.snapshotGasLastCall('Hub.Operations', 'add');
   }
 
-  function test_withdraw() public {
+  function test_remove() public {
     vm.startPrank(address(spoke1));
-    hub.supply(usdxAssetId, 1000e6, alice);
-    hub.withdraw(usdxAssetId, 500e6, alice);
-    vm.snapshotGasLastCall('Hub.Operations', 'withdraw: partial');
+    hub.add(usdxAssetId, 1000e6, alice);
+    hub.remove(usdxAssetId, 500e6, alice);
+    vm.snapshotGasLastCall('Hub.Operations', 'remove: partial');
     skip(100);
-    hub.withdraw(usdxAssetId, 500e6, alice);
-    vm.snapshotGasLastCall('Hub.Operations', 'withdraw: full');
+    hub.remove(usdxAssetId, 500e6, alice);
+    vm.snapshotGasLastCall('Hub.Operations', 'remove: full');
     vm.stopPrank();
   }
 
   function test_draw() public {
     vm.prank(address(spoke2));
-    hub.supply(daiAssetId, 1000e18, alice);
+    hub.add(daiAssetId, 1000e18, alice);
 
     vm.startPrank(address(spoke1));
-    hub.supply(usdxAssetId, 1000e6, alice);
+    hub.add(usdxAssetId, 1000e6, alice);
 
     skip(100);
 
@@ -45,10 +45,10 @@ contract LiquidityHubOperations_Gas_Tests is Base {
     uint256 baseDebtRemaining;
     uint256 premiumDebtRemaining;
     vm.prank(address(spoke2));
-    hub.supply(daiAssetId, 1000e18, bob);
+    hub.add(daiAssetId, 1000e18, bob);
 
     vm.startPrank(address(spoke1));
-    hub.supply(usdxAssetId, 1000e6, alice);
+    hub.add(usdxAssetId, 1000e6, alice);
     hub.draw(daiAssetId, 500e18, alice);
     // todo: do refresh call to fully encapsulate a `hub.restore` call & add premium debt
 
@@ -71,7 +71,7 @@ contract LiquidityHubOperations_Gas_Tests is Base {
   function test_accrueInterest() public {
     vm.skip(true, 'to be replaced with refreshRiskPremium');
     // vm.startPrank(address(spoke2));
-    // hub.supply(daiAssetId, 1000e18, bob);
+    // hub.add(daiAssetId, 1000e18, bob);
     // hub.draw(daiAssetId, 500e18, bob);
     // vm.stopPrank();
     // vm.prank(address(spoke1));
