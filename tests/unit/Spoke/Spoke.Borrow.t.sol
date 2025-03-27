@@ -79,48 +79,79 @@ contract SpokeBorrowTest is SpokeBase {
   }
 
   function test_borrow_revertsWith_ReservePaused() public {
-    vm.skip(true, 'pending refactor');
+    uint256 daiReserveId = _daiReserveId(spoke1);
 
-    //     uint256 daiReserveId = _daiReserveId(spoke1);
+    updateReservePausedFlag(spoke1, daiReserveId, true);
+    assertTrue(spoke1.getReserve(daiReserveId).config.paused);
 
-    //     updateReservePausedFlag(spoke1, daiReserveId, true);
-    //     assertTrue(spoke1.getReserve(daiReserveId).config.paused);
+    // Bob try to draw some dai
+    vm.expectRevert(ISpoke.ReservePaused.selector);
+    vm.prank(bob);
+    spoke1.borrow(daiReserveId, 1, bob);
+  }
 
-    //     // Bob try to draw some dai
+  function test_borrow_fuzz_revertsWith_ReservePaused(uint256 reserveId, uint256 amount) public {
+    reserveId = bound(reserveId, 0, spoke1.reserveCount() - 1);
+    amount = bound(amount, 1, MAX_SUPPLY_AMOUNT);
 
-    //     vm.expectRevert(ISpoke.ReservePaused.selector);
-    //     vm.prank(bob);
-    //     spoke1.borrow(daiReserveId, 1, bob);
+    updateReservePausedFlag(spoke1, reserveId, true);
+    assertTrue(spoke1.getReserve(reserveId).config.paused);
+
+    // Bob try to draw
+    vm.expectRevert(ISpoke.ReservePaused.selector);
+    vm.prank(bob);
+    spoke1.borrow(reserveId, 1, bob);
   }
 
   function test_borrow_revertsWith_ReserveFrozen() public {
-    vm.skip(true, 'pending refactor');
+    uint256 daiReserveId = _daiReserveId(spoke1);
 
-    //     uint256 daiReserveId = _daiReserveId(spoke1);
+    updateReserveFrozenFlag(spoke1, daiReserveId, true);
+    assertTrue(spoke1.getReserve(daiReserveId).config.frozen);
 
-    //     updateReserveFrozenFlag(spoke1, daiReserveId, true);
-    //     assertTrue(spoke1.getReserve(daiReserveId).config.frozen);
-
-    //     // Bob try to draw some dai
-
-    //     vm.expectRevert(ISpoke.ReserveFrozen.selector);
-    //     vm.prank(bob);
-    //     spoke1.borrow(daiReserveId, 1, bob);
+    // Bob try to draw some dai
+    vm.expectRevert(ISpoke.ReserveFrozen.selector);
+    vm.prank(bob);
+    spoke1.borrow(daiReserveId, 1, bob);
   }
 
-  function test_borrow_revertsWith_asset_not_active() public {
-    vm.skip(true, 'pending refactor');
+  function test_borrow_fuzz_revertsWith_ReserveFrozen(uint256 reserveId, uint256 amount) public {
+    reserveId = bound(reserveId, 0, spoke1.reserveCount() - 1);
+    amount = bound(amount, 1, MAX_SUPPLY_AMOUNT);
 
-    //     uint256 daiReserveId = _daiReserveId(spoke1);
+    updateReserveFrozenFlag(spoke1, reserveId, true);
+    assertTrue(spoke1.getReserve(reserveId).config.frozen);
 
-    //     // set asset not active
-    //     updateAssetActive(hub, daiAssetId, false);
+    // Bob try to draw
+    vm.expectRevert(ISpoke.ReserveFrozen.selector);
+    vm.prank(bob);
+    spoke1.borrow(reserveId, 1, bob);
+  }
 
-    //     // Bob try to draw some dai
+  function test_borrow_revertsWith_AssetNotActive() public {
+    uint256 daiReserveId = _daiReserveId(spoke1);
 
-    //     vm.expectRevert(ILiquidityHub.AssetNotActive.selector);
-    //     vm.prank(bob);
-    //     spoke1.borrow(daiReserveId, 1, bob);
+    // set asset not active
+    updateAssetActive(hub, daiAssetId, false);
+
+    // Bob try to draw some dai
+
+    vm.expectRevert(ILiquidityHub.AssetNotActive.selector);
+    vm.prank(bob);
+    spoke1.borrow(daiReserveId, 1, bob);
+  }
+
+  function test_borrow_fuzz_revertsWith_AssetNotActive(uint256 reserveId, uint256 amount) public {
+    reserveId = bound(reserveId, 0, spoke1.reserveCount() - 1);
+    amount = bound(amount, 1, MAX_SUPPLY_AMOUNT);
+
+    // set asset not active
+    updateAssetActive(hub, spoke1.getReserve(reserveId).assetId, false);
+
+    // Bob try to draw
+    vm.expectRevert(ILiquidityHub.AssetNotActive.selector);
+    vm.prank(bob);
+    spoke1.borrow(reserveId, 1, bob);
   }
 
   function test_borrow() public {
