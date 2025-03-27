@@ -212,27 +212,12 @@ contract Spoke is ISpoke {
     );
     _validateRepay(reserve);
 
-    uint256 baseRestoredShares = hub.restore(
-      reserve.assetId,
-      baseDebtRestored,
-      premiumDebtRestored,
-      msg.sender
-    );
-
-    reserve.baseDrawnShares -= baseRestoredShares;
-    userPosition.baseDrawnShares -= baseRestoredShares;
-
-    // calc needs new user position, just updating base debt is fine so far
-    (uint256 newUserRiskPremium, , , , ) = _calculateUserAccountData(msg.sender);
     uint256 oldUserPremiumDrawnShares = userPosition.premiumDrawnShares;
     uint256 oldUserPremiumOffset = userPosition.premiumOffset;
     uint256 oldUserRealizedPremium = userPosition.realizedPremium;
 
-    userPosition.premiumDrawnShares = userPosition.baseDrawnShares.percentMul(newUserRiskPremium);
-    userPosition.premiumOffset = hub.convertToDrawnAssets(
-      reserve.assetId,
-      userPosition.premiumDrawnShares
-    );
+    userPosition.premiumDrawnShares = 0;
+    userPosition.premiumOffset = 0;
     userPosition.realizedPremium = premiumDebt - premiumDebtRestored;
 
     _refreshPremiumDebt(
@@ -240,11 +225,38 @@ contract Spoke is ISpoke {
       _signedDiff(userPosition.premiumDrawnShares, oldUserPremiumDrawnShares),
       _signedDiff(userPosition.premiumOffset, oldUserPremiumOffset),
       _signedDiff(userPosition.realizedPremium, oldUserRealizedPremium)
+    ); // we settle premium debt here
+    uint256 restoredShares = hub.restore(
+      reserve.assetId,
+      baseDebtRestored,
+      premiumDebtRestored,
+      msg.sender
+    ); // we settle base debt here
+
+    reserve.baseDrawnShares -= restoredShares;
+    userPosition.baseDrawnShares -= restoredShares;
+
+    // calc needs new user position, just updating base debt is fine so far
+    (uint256 newUserRiskPremium, , , , ) = _calculateUserAccountData(msg.sender);
+    oldUserPremiumDrawnShares = userPosition.premiumDrawnShares;
+    oldUserPremiumOffset = userPosition.premiumOffset;
+
+    userPosition.premiumDrawnShares = userPosition.baseDrawnShares.percentMul(newUserRiskPremium);
+    userPosition.premiumOffset = hub.convertToDrawnAssets(
+      reserve.assetId,
+      userPosition.premiumDrawnShares
+    );
+
+    _refreshPremiumDebt(
+      reserve,
+      _signedDiff(userPosition.premiumDrawnShares, oldUserPremiumDrawnShares),
+      _signedDiff(userPosition.premiumOffset, oldUserPremiumOffset),
+      0
     );
 
     _notifyRiskPremiumUpdate(reserve.assetId, msg.sender, newUserRiskPremium);
 
-    emit Repay(reserveId, msg.sender, baseRestoredShares);
+    emit Repay(reserveId, msg.sender, restoredShares);
   }
 
   function setUsingAsCollateral(uint256 reserveId, bool usingAsCollateral) external {
