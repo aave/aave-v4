@@ -347,38 +347,33 @@ contract SpokeBorrowTest is SpokeBase {
     userPos.premiumOffset = hub.convertToDrawnAssets(assetId, userPos.premiumDrawnShares);
   }
 
-  function test_borrow_revertsWith_not_available_liquidity() public {
-    vm.skip(true, 'pending refactor');
+  function test_borrow_revertsWith_NotAvailableLiquidity() public {
+    uint256 daiReserveId = _daiReserveId(spoke1);
+    uint256 wethReserveId = _wethReserveId(spoke1);
 
-    //     uint256 daiReserveId = _daiReserveId(spoke1);
-    //     uint256 wethReserveId = _wethReserveId(spoke1);
+    uint256 daiAmount = 100e18;
+    uint256 wethAmount = 10e18;
 
-    //     uint256 daiAmount = 100e18;
-    //     uint256 wethAmount = 10e18;
+    // Bob supply weth
+    Utils.spokeSupply(spoke1, wethReserveId, bob, wethAmount, bob);
 
-    //     // Bob supply weth
-    //     Utils.spokeSupply(spoke1, wethReserveId, bob, wethAmount, bob);
+    // Alice supply dai
+    Utils.spokeSupply(spoke1, daiReserveId, alice, daiAmount, alice);
 
-    //     // Alice supply dai
-    //     Utils.spokeSupply(spoke1, daiReserveId, alice, daiAmount, alice);
-
-    //     // Bob draw more than supplied dai amount
-
-    //     vm.expectRevert(
-    //       abi.encodeWithSelector(ILiquidityHub.NotAvailableLiquidity.selector, daiAmount)
-    //     );
-    //     vm.prank(bob);
-    //     spoke1.borrow(daiReserveId, daiAmount + 1, bob);
+    // Bob draw more than supplied dai amount
+    vm.expectRevert(
+      abi.encodeWithSelector(ILiquidityHub.NotAvailableLiquidity.selector, daiAmount)
+    );
+    vm.prank(bob);
+    spoke1.borrow(daiReserveId, daiAmount + 1, bob);
   }
 
-  function test_borrow_revertsWith_invalid_draw_amount() public {
-    vm.skip(true, 'pending refactor');
+  function test_borrow_revertsWith_InvalidDrawAmount() public {
+    // Bob draw 0 dai
 
-    //     // Bob draw 0 dai
-
-    //     vm.expectRevert(ILiquidityHub.InvalidDrawAmount.selector);
-    //     vm.prank(bob);
-    //     spoke1.borrow(_daiReserveId(spoke1), 0, bob);
+    vm.expectRevert(ILiquidityHub.InvalidDrawAmount.selector);
+    vm.prank(bob);
+    spoke1.borrow(_daiReserveId(spoke1), 0, bob);
   }
 
   function test_borrow_fuzz_amounts(uint256 wethSupplyAmount, uint256 daiBorrowAmount) public {
@@ -466,20 +461,33 @@ contract SpokeBorrowTest is SpokeBase {
     //     assertEq(tokenList.dai.balanceOf(alice), aliceDaiBalanceBefore, 'alice dai final balance');
   }
 
-  function test_borrow_revertsWith_draw_cap_exceeded() public {
-    vm.skip(true, 'pending refactor');
+  function test_borrow_revertsWith_DrawCapExceeded() public {
+    uint256 daiReserveId = _daiReserveId(spoke1);
+    uint256 drawCap = 100e18;
+    uint256 drawAmount = drawCap + 1;
 
-    //     uint256 daiReserveId = _daiReserveId(spoke1);
-    //     uint256 drawCap = 100e18;
-    //     uint256 drawAmount = drawCap + 1;
+    updateDrawCap(hub, daiAssetId, address(spoke1), drawCap);
 
-    //     updateDrawCap(hub, daiAssetId, address(spoke1), drawCap);
+    // Bob borrow dai amount exceeding draw cap
+    vm.expectRevert(abi.encodeWithSelector(ILiquidityHub.DrawCapExceeded.selector, drawCap));
+    vm.prank(bob);
+    spoke1.borrow(daiReserveId, drawAmount, bob);
+  }
 
-    //     // Bob borrow dai amount exceeding draw cap
+  function test_borrow_fuzz_revertsWith_DrawCapExceeded(uint256 reserveId, uint256 drawCap) public {
+    reserveId = bound(reserveId, 0, spoke1.reserveCount() - 1);
+    drawCap = bound(drawCap, 1, MAX_SUPPLY_AMOUNT);
 
-    //     vm.expectRevert(abi.encodeWithSelector(ILiquidityHub.DrawCapExceeded.selector, drawCap));
-    //     vm.prank(bob);
-    //     spoke1.borrow(daiReserveId, drawAmount, bob);
+    uint256 drawAmount = drawCap + 1;
+
+    uint256 assetId = spoke1.getReserve(reserveId).assetId;
+    updateDrawCap(hub, assetId, address(spoke1), drawCap);
+    assertEq(hub.getSpoke(assetId, address(spoke1)).config.drawCap, drawCap);
+
+    // Bob borrow dai amount exceeding draw cap
+    vm.expectRevert(abi.encodeWithSelector(ILiquidityHub.DrawCapExceeded.selector, drawCap));
+    vm.prank(bob);
+    spoke1.borrow(reserveId, drawAmount, bob);
   }
 
   function test_borrow_revertsWith_draw_cap_exceeded_due_to_interest() public {
