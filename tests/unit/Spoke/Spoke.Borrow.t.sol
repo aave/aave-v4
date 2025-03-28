@@ -538,6 +538,27 @@ contract SpokeBorrowTest is SpokeBase {
       state.aliceWethBalanceAfter,
       'alice weth balance after'
     );
+
+    DebtData memory debtData;
+    (debtData.reserveBaseDebt, debtData.reservePremiumDebt) = spoke1.getReserveDebt(
+      state.daiReserveId
+    );
+    (debtData.bobBaseDebt, debtData.bobPremiumDebt) = spoke1.getUserDebt(state.daiReserveId, bob);
+
+    assertEq(
+      debtData.bobBaseDebt,
+      hub.convertToDrawnAssets(daiAssetId, state.bobDaiData.baseDrawnShares),
+      'bob base debt'
+    );
+    assertEq(
+      debtData.bobPremiumDebt,
+      state.bobDaiData.realizedPremium +
+        hub.convertToDrawnAssets(daiAssetId, state.bobDaiData.premiumDrawnShares) -
+        state.bobDaiData.premiumOffset,
+      'bob premium debt'
+    );
+    assertEq(debtData.reserveBaseDebt, debtData.bobBaseDebt, 'base debt');
+    assertEq(debtData.reservePremiumDebt, debtData.bobPremiumDebt, 'premium debt');
   }
 
   function test_borrow_revertsWith_NotAvailableLiquidity() public {
