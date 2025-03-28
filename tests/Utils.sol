@@ -23,7 +23,7 @@ library Utils {
     vm.stopPrank();
 
     vm.prank(spoke);
-    hub.add(assetId, amount, user);
+    return hub.add(assetId, amount, user);
   }
 
   function draw(

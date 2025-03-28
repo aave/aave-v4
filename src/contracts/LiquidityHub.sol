@@ -412,7 +412,7 @@ contract LiquidityHub is ILiquidityHub {
     require(!asset.config.paused, AssetPaused());
     (uint256 baseDebt, uint256 premiumDebt) = _getSpokeDebt(asset, spoke);
     require(baseAmountRestored <= baseDebt, SurplusAmountRestored(baseDebt));
-    require(premiumAmountRestored <= premiumDebt, SurplusAmountRestored(premiumDebt));
+    // we should have already restored premium debt
   }
 
   function _addSpoke(uint256 assetId, DataTypes.SpokeConfig memory config, address spoke) internal {

@@ -2,8 +2,6 @@
 pragma solidity ^0.8.0;
 
 import {DataTypes} from 'src/libraries/types/DataTypes.sol';
-import {ILiquidityHub} from 'src/interfaces/ILiquidityHub.sol';
-import {IPriceOracle} from 'src/interfaces/IPriceOracle.sol';
 
 /**
  * @title ISpoke
