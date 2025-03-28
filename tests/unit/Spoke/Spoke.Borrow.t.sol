@@ -6,6 +6,32 @@ import 'tests/unit/Spoke/SpokeBase.t.sol';
 contract SpokeBorrowTest is SpokeBase {
   using PercentageMath for uint256;
 
+  struct BorrowTestData {
+    DataTypes.UserPosition bobDaiData;
+    DataTypes.UserPosition bobWethData;
+    DataTypes.UserPosition bobUsdxData;
+    DataTypes.UserPosition bobWbtcData;
+    DataTypes.UserPosition aliceDaiData;
+    DataTypes.UserPosition aliceWethData;
+    DataTypes.UserPosition bobDaiDataCalc;
+    DataTypes.UserPosition bobWethDataCalc;
+    DataTypes.UserPosition bobUsdxDataCalc;
+    DataTypes.UserPosition bobWbtcDataCalc;
+    uint256 daiReserveId;
+    uint256 wethReserveId;
+    uint256 daiSupplyAmount;
+    uint256 wethSupplyAmount;
+    uint256 daiBorrowAmount;
+    uint256 bobDaiBalanceBefore;
+    uint256 bobWethBalanceBefore;
+    uint256 aliceDaiBalanceBefore;
+    uint256 aliceWethBalanceBefore;
+    uint256 bobDaiBalanceAfter;
+    uint256 bobWethBalanceAfter;
+    uint256 aliceDaiBalanceAfter;
+    uint256 aliceWethBalanceAfter;
+  }
+
   function test_borrow_revertsWith_ReserveNotBorrowable() public {
     uint256 daiReserveId = _daiReserveId(spoke1);
 
@@ -154,32 +180,6 @@ contract SpokeBorrowTest is SpokeBase {
     vm.expectRevert(ILiquidityHub.AssetNotActive.selector);
     vm.prank(bob);
     spoke1.borrow(reserveId, 1, bob);
-  }
-
-  struct BorrowTestData {
-    uint256 daiReserveId;
-    uint256 wethReserveId;
-    uint256 daiSupplyAmount;
-    uint256 wethSupplyAmount;
-    uint256 daiBorrowAmount;
-    DataTypes.UserPosition bobDaiData;
-    DataTypes.UserPosition bobWethData;
-    DataTypes.UserPosition bobUsdxData;
-    DataTypes.UserPosition bobWbtcData;
-    DataTypes.UserPosition aliceDaiData;
-    DataTypes.UserPosition aliceWethData;
-    uint256 bobDaiBalanceBefore;
-    uint256 bobWethBalanceBefore;
-    uint256 aliceDaiBalanceBefore;
-    uint256 aliceWethBalanceBefore;
-    uint256 bobDaiBalanceAfter;
-    uint256 bobWethBalanceAfter;
-    uint256 aliceDaiBalanceAfter;
-    uint256 aliceWethBalanceAfter;
-    DataTypes.UserPosition bobDaiDataCalc;
-    DataTypes.UserPosition bobWethDataCalc;
-    DataTypes.UserPosition bobUsdxDataCalc;
-    DataTypes.UserPosition bobWbtcDataCalc;
   }
 
   function test_borrow() public {
@@ -335,21 +335,6 @@ contract SpokeBorrowTest is SpokeBase {
       state.aliceWethBalanceAfter,
       'alice weth balance after'
     );
-  }
-
-  function _calcExpectedDebtAccounting(
-    ISpoke spoke,
-    address user,
-    uint256 assetId,
-    uint256 borrowAmount
-  ) internal view returns (DataTypes.UserPosition memory userPos) {
-    (uint256 riskPremium, , , , ) = spoke.getUserAccountData(user);
-
-    userPos.baseDrawnShares = hub.convertToDrawnShares(assetId, borrowAmount);
-    userPos.premiumDrawnShares = hub.convertToDrawnShares(assetId, borrowAmount).percentMul(
-      riskPremium
-    );
-    userPos.premiumOffset = hub.convertToDrawnAssets(assetId, userPos.premiumDrawnShares);
   }
 
   function test_borrow_fuzz_amounts(uint256 wethSupplyAmount, uint256 daiBorrowAmount) public {
@@ -1709,6 +1694,21 @@ contract SpokeBorrowTest is SpokeBase {
     vm.prank(bob);
     vm.expectRevert(ISpoke.HealthFactorBelowThreshold.selector);
     spoke1.borrow(usdxReserveId, 1, bob);
+  }
+
+  function _calcExpectedDebtAccounting(
+    ISpoke spoke,
+    address user,
+    uint256 assetId,
+    uint256 borrowAmount
+  ) internal view returns (DataTypes.UserPosition memory userPos) {
+    (uint256 riskPremium, , , , ) = spoke.getUserAccountData(user);
+
+    userPos.baseDrawnShares = hub.convertToDrawnShares(assetId, borrowAmount);
+    userPos.premiumDrawnShares = hub.convertToDrawnShares(assetId, borrowAmount).percentMul(
+      riskPremium
+    );
+    userPos.premiumOffset = hub.convertToDrawnAssets(assetId, userPos.premiumDrawnShares);
   }
 
   // TODO: tests with other combos of collateral/debt, particularly with different units
