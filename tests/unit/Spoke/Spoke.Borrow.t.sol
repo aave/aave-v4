@@ -49,6 +49,8 @@ contract SpokeBorrowTest is SpokeBase {
   struct DebtData {
     uint256 reserveBaseDebt;
     uint256 reservePremiumDebt;
+    uint256 userBaseDebt;
+    uint256 userPremiumDebt;
     uint256 bobBaseDebt;
     uint256 bobPremiumDebt;
     uint256 reserveDaiBaseDebt;
@@ -386,26 +388,7 @@ contract SpokeBorrowTest is SpokeBase {
       'spoke weth suppliedShares'
     );
 
-    DebtData memory debtData;
-    (debtData.reserveBaseDebt, debtData.reservePremiumDebt) = spoke1.getReserveDebt(
-      state.daiReserveId
-    );
-    (debtData.bobBaseDebt, debtData.bobPremiumDebt) = spoke1.getUserDebt(state.daiReserveId, bob);
-
-    assertEq(
-      debtData.bobBaseDebt,
-      hub.convertToDrawnAssets(daiAssetId, state.bobDaiData.baseDrawnShares),
-      'bob base debt'
-    );
-    assertEq(
-      debtData.bobPremiumDebt,
-      state.bobDaiData.realizedPremium +
-        hub.convertToDrawnAssets(daiAssetId, state.bobDaiData.premiumDrawnShares) -
-        state.bobDaiData.premiumOffset,
-      'bob premium debt'
-    );
-    assertEq(debtData.reserveBaseDebt, debtData.bobBaseDebt, 'base debt');
-    assertEq(debtData.reservePremiumDebt, debtData.bobPremiumDebt, 'premium debt');
+    _assertUserAndReserveDebt(spoke1, state.daiReserveId, bob);
   }
 
   function test_borrow_fuzz_amounts(uint256 wethSupplyAmount, uint256 daiBorrowAmount) public {
@@ -919,7 +902,7 @@ contract SpokeBorrowTest is SpokeBase {
       'bob weth base debt'
     );
     assertEq(
-      debtData.bobPremiumDebt,
+      debtData.bobWethPremiumDebt,
       state.bobWethData.realizedPremium +
         hub.convertToDrawnAssets(wethAssetId, state.bobWethData.premiumDrawnShares) -
         state.bobWethData.premiumOffset,
@@ -942,7 +925,7 @@ contract SpokeBorrowTest is SpokeBase {
       'bob usdx base debt'
     );
     assertEq(
-      debtData.bobPremiumDebt,
+      debtData.bobUsdxPremiumDebt,
       state.bobUsdxData.realizedPremium +
         hub.convertToDrawnAssets(usdxAssetId, state.bobUsdxData.premiumDrawnShares) -
         state.bobUsdxData.premiumOffset,
@@ -1297,6 +1280,35 @@ contract SpokeBorrowTest is SpokeBase {
       'bob usdx premiumOffset after'
     );
     assertEq(state.bobUsdxData2Final.realizedPremium, 0, 'bob usdx realizedPremium after');
+
+    _assertUserAndReserveDebt(spoke1, daiReserveId, bob);
+    _assertUserAndReserveDebt(spoke1, usdxReserveId, bob);
+    _assertUserAndReserveDebt(spoke2, daiReserveId2, bob);
+    _assertUserAndReserveDebt(spoke2, usdxReserveId2, bob);
+  }
+
+  function _assertUserAndReserveDebt(ISpoke spoke, uint256 reserveId, address user) internal {
+    DebtData memory debtData;
+    DataTypes.UserPosition memory userData = spoke.getUserPosition(reserveId, user);
+
+    uint256 assetId = spoke.getReserve(reserveId).assetId;
+
+    (debtData.reserveBaseDebt, debtData.reservePremiumDebt) = spoke.getReserveDebt(reserveId);
+    (debtData.userBaseDebt, debtData.userPremiumDebt) = spoke.getUserDebt(reserveId, user);
+    assertEq(
+      debtData.userBaseDebt,
+      hub.convertToDrawnAssets(assetId, userData.baseDrawnShares),
+      'user base debt'
+    );
+    assertEq(
+      debtData.userPremiumDebt,
+      userData.realizedPremium +
+        hub.convertToDrawnAssets(assetId, userData.premiumDrawnShares) -
+        userData.premiumOffset,
+      'user premium debt'
+    );
+    assertEq(debtData.reserveBaseDebt, debtData.userBaseDebt, 'base debt');
+    assertEq(debtData.reservePremiumDebt, debtData.userPremiumDebt, 'premium debt');
   }
 
   /// @dev basic case, cannot borrow an amount that leads to HF < 1
