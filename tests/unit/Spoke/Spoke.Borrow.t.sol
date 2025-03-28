@@ -1185,94 +1185,118 @@ contract SpokeBorrowTest is SpokeBase {
     );
     assertEq(state.bobUsdxData2.realizedPremium, 0, 'bob usdx realizedPremium after');
 
-    // state.lastUpdateTimestamp = vm.getBlockTimestamp();
+    state.lastUpdateTimestamp = vm.getBlockTimestamp();
 
-    // skip(skipTime);
+    skip(skipTime);
 
-    // state.cumulatedInterest = MathUtils.calculateLinearInterest(
-    //   hub.getAsset(daiAssetId).baseBorrowRate,
-    //   uint40(state.lastUpdateTimestamp)
-    // );
+    // spoke1
+    state.bobDaiDataFinal = getUserInfo(spoke1, bob, daiReserveId);
+    state.bobUsdxDataFinal = getUserInfo(spoke1, bob, usdxReserveId);
+    // spoke2
+    state.bobDaiData2Final = getUserInfo(spoke2, bob, daiReserveId2);
+    state.bobUsdxData2Final = getUserInfo(spoke2, bob, usdxReserveId2);
 
-    // // spoke1
-    // state.bobDaiDataFinal = getUserInfo(spoke1, bob, daiReserveId);
-    // state.bobUsdxDataFinal = getUserInfo(spoke1, bob, usdxReserveId);
-    // state.bobDaiDataCalc = _calcExpectedDebtAccounting(
-    //   spoke1,
-    //   bob,
-    //   daiAssetId,
-    //   daiBorrowAmount.rayMul(state.cumulatedInterest),
-    //   state.userRp
-    // );
-    // state.bobUsdxDataCalc = _calcExpectedDebtAccounting(
-    //   spoke1,
-    //   bob,
-    //   usdxAssetId,
-    //   usdxBorrowAmount.rayMul(state.cumulatedInterest),
-    //   state.userRp
-    // );
+    // spoke1
+    // dai
+    assertEq(
+      state.bobDaiDataFinal.suppliedShares,
+      state.bobDaiData.suppliedShares,
+      'bob dai suppliedShares after'
+    );
+    assertEq(
+      state.bobDaiDataFinal.baseDrawnShares,
+      state.bobDaiData.baseDrawnShares,
+      'bob dai baseDrawnShares after'
+    );
+    assertEq(
+      state.bobDaiDataFinal.baseDrawnShares,
+      state.bobDaiData.baseDrawnShares,
+      'bob dai baseDrawnShares after'
+    );
+    assertEq(
+      state.bobDaiDataFinal.premiumDrawnShares,
+      state.bobDaiData.premiumDrawnShares,
+      'bob dai premiumDrawnShares after'
+    );
+    assertEq(
+      state.bobDaiDataFinal.premiumOffset,
+      state.bobDaiData.premiumOffset,
+      'bob dai premiumOffset after'
+    );
+    assertEq(state.bobDaiDataFinal.realizedPremium, 0, 'bob dai realizedPremium after');
+    // usdx
+    assertEq(
+      state.bobUsdxDataFinal.suppliedShares,
+      state.bobUsdxData.suppliedShares,
+      'bob usdx suppliedShares after'
+    );
+    assertEq(
+      state.bobUsdxDataFinal.baseDrawnShares,
+      state.bobUsdxData.baseDrawnShares,
+      'bob usdx baseDrawnShares after'
+    );
+    assertEq(
+      state.bobUsdxDataFinal.premiumDrawnShares,
+      state.bobUsdxData.premiumDrawnShares,
+      'bob usdx premiumDrawnShares after'
+    );
+    assertEq(
+      state.bobUsdxDataFinal.premiumOffset,
+      state.bobUsdxData.premiumOffset,
+      'bob usdx premiumOffset after'
+    );
+    assertEq(state.bobUsdxDataFinal.realizedPremium, 0, 'bob usdx realizedPremium after');
 
-    // // // spoke2
-    // // state.bobDaiData2 = getUserInfo(spoke2, bob, daiReserveId2);
-    // // state.bobUsdxData2 = getUserInfo(spoke2, bob, usdxReserveId2);
-    // // state.bobDaiDataCalc2 = _calcExpectedDebtAccounting(spoke2, bob, daiAssetId, daiBorrowAmount2);
-    // // state.bobUsdxDataCalc2 = _calcExpectedDebtAccounting(
-    // //   spoke2,
-    // //   bob,
-    // //   usdxAssetId,
-    // //   usdxBorrowAmount2
-    // // );
-
-    // // spoke1
-    // // dai
-    // assertEq(
-    //   state.bobDaiDataFinal.suppliedShares,
-    //   state.bobDaiData.suppliedShares,
-    //   'bob dai suppliedShares after'
-    // );
-    // assertEq(
-    //   state.bobDaiDataFinal.baseDrawnShares,
-    //   state.bobDaiData.baseDrawnShares,
-    //   'bob dai baseDrawnShares after'
-    // );
-    // assertEq(
-    //   state.bobDaiData.baseDrawnShares,
-    //   state.bobDaiData.baseDrawnShares,
-    //   'bob dai baseDrawnShares after'
-    // );
-    // assertEq(
-    //   state.bobDaiDataFinal.premiumDrawnShares,
-    //   state.bobDaiData.premiumDrawnShares,
-    //   'bob dai premiumDrawnShares after'
-    // );
-    // assertEq(
-    //   state.bobDaiDataFinal.premiumOffset,
-    //   state.bobDaiData.premiumOffset,
-    //   'bob dai premiumOffset after'
-    // );
-    // assertEq(state.bobDaiDataFinal.realizedPremium, 0, 'bob dai realizedPremium after');
-    // // usdx
-    // assertEq(
-    //   state.bobUsdxDataFinal.suppliedShares,
-    //   state.bobUsdxData.suppliedShares,
-    //   'bob usdx suppliedShares after'
-    // );
-    // assertEq(
-    //   state.bobUsdxDataFinal.baseDrawnShares,
-    //   state.bobUsdxData.baseDrawnShares,
-    //   'bob usdx baseDrawnShares after'
-    // );
-    // assertEq(
-    //   state.bobUsdxDataFinal.premiumDrawnShares,
-    //   state.bobUsdxData.premiumDrawnShares,
-    //   'bob usdx premiumDrawnShares after'
-    // );
-    // assertEq(
-    //   state.bobUsdxDataFinal.premiumOffset,
-    //   state.bobUsdxData.premiumOffset,
-    //   'bob usdx premiumOffset after'
-    // );
-    // assertEq(state.bobUsdxDataFinal.realizedPremium, 0, 'bob usdx realizedPremium after');
+    // spoke2
+    // dai
+    assertEq(
+      state.bobDaiData2Final.suppliedShares,
+      state.bobDaiData2.suppliedShares,
+      'bob dai suppliedShares after'
+    );
+    assertEq(
+      state.bobDaiData2Final.baseDrawnShares,
+      state.bobDaiData2.baseDrawnShares,
+      'bob dai baseDrawnShares after'
+    );
+    assertEq(
+      state.bobDaiData2Final.baseDrawnShares,
+      state.bobDaiData2.baseDrawnShares,
+      'bob dai baseDrawnShares after'
+    );
+    assertEq(
+      state.bobDaiData2Final.premiumDrawnShares,
+      state.bobDaiData2.premiumDrawnShares,
+      'bob dai premiumDrawnShares after'
+    );
+    assertEq(
+      state.bobDaiData2Final.premiumOffset,
+      state.bobDaiData2.premiumOffset,
+      'bob dai premiumOffset after'
+    );
+    assertEq(state.bobDaiData2Final.realizedPremium, 0, 'bob dai realizedPremium after');
+    // usdx
+    assertEq(
+      state.bobUsdxData2Final.suppliedShares,
+      state.bobUsdxData2.suppliedShares,
+      'bob usdx suppliedShares after'
+    );
+    assertEq(
+      state.bobUsdxData2Final.baseDrawnShares,
+      state.bobUsdxData2.baseDrawnShares,
+      'bob usdx baseDrawnShares after'
+    );
+    assertEq(
+      state.bobUsdxData2Final.premiumDrawnShares,
+      state.bobUsdxData2.premiumDrawnShares,
+      'bob usdx premiumDrawnShares after'
+    );
+    assertEq(
+      state.bobUsdxData2Final.premiumOffset,
+      state.bobUsdxData2.premiumOffset,
+      'bob usdx premiumOffset after'
+    );
+    assertEq(state.bobUsdxData2Final.realizedPremium, 0, 'bob usdx realizedPremium after');
   }
 
   /// @dev basic case, cannot borrow an amount that leads to HF < 1
