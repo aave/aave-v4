@@ -259,6 +259,126 @@ contract SpokeWithdrawTest is SpokeBase {
     assertEq(tokenList.dai.balanceOf(bob), MAX_SUPPLY_AMOUNT, 'bob dai balance post-withdraw');
   }
 
+  function test_withdraw_all_liquidity() public {
+    uint256 supplyAmount = 5000e18;
+    Utils.spokeSupply({
+      spoke: spoke1,
+      reserveId: _daiReserveId(spoke1),
+      user: bob,
+      amount: supplyAmount,
+      onBehalfOf: bob
+    });
+
+    _checkSuppliedAmounts(
+      daiAssetId,
+      _daiReserveId(spoke1),
+      spoke1,
+      bob,
+      supplyAmount,
+      'after supply'
+    );
+
+    // Withdraw all supplied assets
+    Utils.spokeWithdraw({
+      spoke: spoke1,
+      reserveId: _daiReserveId(spoke1),
+      user: bob,
+      amount: type(uint256).max,
+      onBehalfOf: bob
+    });
+
+    _checkSuppliedAmounts(daiAssetId, _daiReserveId(spoke1), spoke1, bob, 0, 'after withdraw');
+  }
+
+  function test_withdraw_fuzz_suppliedAmount(uint256 supplyAmount) public {
+    supplyAmount = bound(supplyAmount, 1, MAX_SUPPLY_AMOUNT);
+    Utils.spokeSupply({
+      spoke: spoke1,
+      reserveId: _daiReserveId(spoke1),
+      user: bob,
+      amount: supplyAmount,
+      onBehalfOf: bob
+    });
+
+    _checkSuppliedAmounts(
+      daiAssetId,
+      _daiReserveId(spoke1),
+      spoke1,
+      bob,
+      supplyAmount,
+      'after supply'
+    );
+
+    // Withdraw all supplied assets
+    Utils.spokeWithdraw({
+      spoke: spoke1,
+      reserveId: _daiReserveId(spoke1),
+      user: bob,
+      amount: type(uint256).max,
+      onBehalfOf: bob
+    });
+
+    _checkSuppliedAmounts(daiAssetId, _daiReserveId(spoke1), spoke1, bob, 0, 'after withdraw');
+  }
+
+  function test_withdraw_fuzz_all_with_interest(uint256 supplyAmount, uint256 borrowAmount) public {
+    supplyAmount = bound(supplyAmount, 1000, MAX_SUPPLY_AMOUNT);
+    borrowAmount = bound(borrowAmount, 500, supplyAmount / 2);
+
+    Utils.spokeSupply({
+      spoke: spoke1,
+      reserveId: _daiReserveId(spoke1),
+      user: bob,
+      amount: supplyAmount,
+      onBehalfOf: bob
+    });
+    setUsingAsCollateral(spoke1, bob, _daiReserveId(spoke1), true);
+
+    _checkSuppliedAmounts(
+      daiAssetId,
+      _daiReserveId(spoke1),
+      spoke1,
+      bob,
+      supplyAmount,
+      'after supply'
+    );
+
+    // Bob borrows dai
+    Utils.spokeBorrow({
+      spoke: spoke1,
+      reserveId: _daiReserveId(spoke1),
+      user: bob,
+      amount: borrowAmount,
+      onBehalfOf: bob
+    });
+
+    // Wait a year to accrue interest
+    skip(365 days);
+
+    assertGt(hub.getAssetSuppliedAmount(daiAssetId), supplyAmount, 'asset grows with interest');
+
+    // Give Bob enough dai to repay
+    uint256 repayAmount = spoke1.getReserveTotalDebt(_daiReserveId(spoke1));
+    deal(address(tokenList.dai), bob, repayAmount);
+
+    Utils.spokeRepay({
+      spoke: spoke1,
+      reserveId: _daiReserveId(spoke1),
+      user: bob,
+      amount: type(uint256).max
+    });
+
+    Utils.spokeWithdraw({
+      spoke: spoke1,
+      reserveId: _daiReserveId(spoke1),
+      user: bob,
+      amount: type(uint256).max,
+      onBehalfOf: bob
+    });
+
+    _checkSuppliedAmounts(daiAssetId, _daiReserveId(spoke1), spoke1, bob, 0, 'after withdraw');
+  }
+
   struct MultiUserTestState {
     IERC20 asset;
     uint256 assetId;
