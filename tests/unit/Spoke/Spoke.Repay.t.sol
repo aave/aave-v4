@@ -6,6 +6,12 @@ import 'tests/unit/Spoke/SpokeBase.t.sol';
 contract SpokeRepayTest is SpokeBase {
   using PercentageMath for uint256;
 
+  struct Debts {
+    uint256 baseDebt;
+    uint256 premiumDebt;
+    uint256 totalDebt;
+  }
+
   function test_repay_all_with_accruals() public {
     vm.startPrank(bob);
 
@@ -75,363 +81,397 @@ contract SpokeRepayTest is SpokeBase {
   }
 
   function test_repay_same_block() public {
-    vm.skip(true, 'pending refactor');
+    uint256 daiSupplyAmount = 100e18;
+    uint256 wethSupplyAmount = 10e18;
+    uint256 daiBorrowAmount = daiSupplyAmount / 2;
+    uint256 daiRepayAmount = daiSupplyAmount / 4;
 
-    //     uint256 daiSupplyAmount = 100e18;
-    //     uint256 wethSupplyAmount = 10e18;
-    //     uint256 daiBorrowAmount = daiSupplyAmount / 2;
-    //     uint256 daiRepayAmount = daiSupplyAmount / 4;
+    // Bob supply weth
+    Utils.spokeSupply(spoke1, _wethReserveId(spoke1), bob, wethSupplyAmount, bob);
+    setUsingAsCollateral(spoke1, bob, _wethReserveId(spoke1), true);
 
-    //     // Bob supply weth
-    //     Utils.spokeSupply(spoke1, _wethReserveId(spoke1), bob, wethSupplyAmount, bob);
-    //     setUsingAsCollateral(spoke1, bob, _wethReserveId(spoke1), true);
+    // Alice supply dai
+    Utils.spokeSupply(spoke1, _daiReserveId(spoke1), alice, daiSupplyAmount, alice);
 
-    //     // Alice supply dai
-    //     Utils.spokeSupply(spoke1, _daiReserveId(spoke1), alice, daiSupplyAmount, alice);
+    // Bob borrow dai
+    Utils.spokeBorrow(spoke1, _daiReserveId(spoke1), bob, daiBorrowAmount, bob);
 
-    //     // Bob borrow dai
-    //     Utils.spokeBorrow(spoke1, _daiReserveId(spoke1), bob, daiBorrowAmount, bob);
+    DataTypes.UserPosition memory bobDaiDataBefore = getUserInfo(
+      spoke1,
+      bob,
+      _daiReserveId(spoke1)
+    );
+    DataTypes.UserPosition memory bobWethDataBefore = getUserInfo(
+      spoke1,
+      bob,
+      _wethReserveId(spoke1)
+    );
+    uint256 bobDaiBalanceBefore = tokenList.dai.balanceOf(bob);
+    uint256 bobWethBalanceBefore = tokenList.weth.balanceOf(bob);
+    uint256 bobTotalDebt = spoke1.getUserTotalDebt(_daiReserveId(spoke1), bob);
+    (uint256 bobWethBaseDebtBefore, uint256 bobWethPremiumDebtBefore) = spoke1.getUserDebt(
+      _wethReserveId(spoke1),
+      bob
+    );
 
-    //     DataTypes.UserPosition memory bobDaiDataBefore = getUserInfo(
-    //       spoke1,
-    //       bob,
-    //       _daiReserveId(spoke1)
-    //     );
-    //     DataTypes.UserPosition memory bobWethDataBefore = getUserInfo(
-    //       spoke1,
-    //       bob,
-    //       _wethReserveId(spoke1)
-    //     );
-    //     uint256 bobDaiBalanceBefore = tokenList.dai.balanceOf(bob);
-    //     uint256 bobWethBalanceBefore = tokenList.weth.balanceOf(bob);
+    assertEq(bobDaiDataBefore.suppliedShares, 0);
+    assertEq(bobTotalDebt, daiBorrowAmount, 'bob dai debt before');
+    assertEq(
+      bobWethDataBefore.suppliedShares,
+      hub.convertToSuppliedShares(wethAssetId, wethSupplyAmount)
+    );
+    assertEq(bobWethBaseDebtBefore, 0, 'bob weth base debt before');
+    assertEq(bobWethPremiumDebtBefore, 0, 'bob weth premium debt before');
 
-    //     assertEq(bobDaiDataBefore.suppliedShares, 0);
-    //     assertEq(
-    //       bobDaiDataBefore.baseDebt + bobDaiDataBefore.outstandingPremium,
-    //       daiBorrowAmount,
-    //       'bob dai debt before'
-    //     );
-    //     assertEq(bobWethDataBefore.suppliedShares, hub.convertToShares(wethAssetId, wethSupplyAmount));
-    //     assertEq(bobWethDataBefore.baseDebt, 0);
+    // Bob repays half of principal debt
+    vm.expectEmit(address(spoke1));
+    emit ISpoke.Repay(_daiReserveId(spoke1), bob, daiRepayAmount);
+    vm.prank(bob);
+    spoke1.repay(_daiReserveId(spoke1), daiRepayAmount);
 
-    //     // Bob repays half of principal debt
-    //     vm.expectEmit(address(spoke1));
-    //     emit ISpoke.Repaid(_daiReserveId(spoke1), bob, daiRepayAmount);
-    //     vm.prank(bob);
-    //     spoke1.repay(_daiReserveId(spoke1), daiRepayAmount);
+    DataTypes.UserPosition memory bobDaiDataAfter = getUserInfo(spoke1, bob, _daiReserveId(spoke1));
+    DataTypes.UserPosition memory bobWethDataAfter = getUserInfo(
+      spoke1,
+      bob,
+      _wethReserveId(spoke1)
+    );
+    (uint256 bobWethBaseDebtAfter, uint256 bobWethPremiumDebtAfter) = spoke1.getUserDebt(
+      _wethReserveId(spoke1),
+      bob
+    );
 
-    //     DataTypes.UserPosition memory bobDaiDataAfter = getUserInfo(spoke1, bob, _daiReserveId(spoke1));
-    //     DataTypes.UserPosition memory bobWethDataAfter = getUserInfo(
-    //       spoke1,
-    //       bob,
-    //       _wethReserveId(spoke1)
-    //     );
+    assertEq(bobDaiDataAfter.suppliedShares, bobDaiDataBefore.suppliedShares);
+    assertEq(
+      spoke1.getUserTotalDebt(_daiReserveId(spoke1), bob),
+      bobTotalDebt - daiRepayAmount,
+      'bob dai debt final balance'
+    );
+    assertEq(bobWethDataAfter.suppliedShares, bobWethDataBefore.suppliedShares);
+    assertEq(bobWethBaseDebtAfter, bobWethBaseDebtBefore);
+    assertEq(bobWethPremiumDebtAfter, bobWethPremiumDebtBefore);
 
-    //     assertEq(bobDaiDataAfter.suppliedShares, bobDaiDataBefore.suppliedShares);
-    //     assertEq(
-    //       bobDaiDataAfter.baseDebt + bobDaiDataAfter.outstandingPremium,
-    //       bobDaiDataBefore.baseDebt + bobDaiDataBefore.outstandingPremium - daiRepayAmount,
-    //       'bob dai debt final balance'
-    //     );
-    //     assertEq(bobWethDataAfter.suppliedShares, bobWethDataBefore.suppliedShares);
-    //     assertEq(bobWethDataAfter.baseDebt, bobWethDataBefore.baseDebt);
-
-    //     assertEq(
-    //       tokenList.dai.balanceOf(bob),
-    //       bobDaiBalanceBefore - daiRepayAmount,
-    //       'bob dai final balance'
-    //     );
-    //     assertEq(tokenList.weth.balanceOf(bob), bobWethBalanceBefore);
+    assertEq(
+      tokenList.dai.balanceOf(bob),
+      bobDaiBalanceBefore - daiRepayAmount,
+      'bob dai final balance'
+    );
+    assertEq(tokenList.weth.balanceOf(bob), bobWethBalanceBefore);
   }
 
   function test_repay() public {
-    vm.skip(true, 'pending refactor');
+    uint256 daiSupplyAmount = 100e18;
+    uint256 wethSupplyAmount = 10e18;
+    uint256 daiBorrowAmount = daiSupplyAmount / 2;
+    uint256 daiRepayAmount = daiSupplyAmount / 4;
 
-    //     uint256 daiSupplyAmount = 100e18;
-    //     uint256 wethSupplyAmount = 10e18;
-    //     uint256 daiBorrowAmount = daiSupplyAmount / 2;
-    //     uint256 daiRepayAmount = daiSupplyAmount / 4;
+    // Bob supply weth
+    Utils.spokeSupply(spoke1, _wethReserveId(spoke1), bob, wethSupplyAmount, bob);
+    setUsingAsCollateral(spoke1, bob, _wethReserveId(spoke1), true);
 
-    //     // Bob supply weth
-    //     Utils.spokeSupply(spoke1, _wethReserveId(spoke1), bob, wethSupplyAmount, bob);
-    //     setUsingAsCollateral(spoke1, bob, _wethReserveId(spoke1), true);
+    // Alice supply dai
+    Utils.spokeSupply(spoke1, _daiReserveId(spoke1), alice, daiSupplyAmount, alice);
 
-    //     // Alice supply dai
-    //     Utils.spokeSupply(spoke1, _daiReserveId(spoke1), alice, daiSupplyAmount, alice);
+    // Bob borrow dai
+    Utils.spokeBorrow(spoke1, _daiReserveId(spoke1), bob, daiBorrowAmount, bob);
 
-    //     // Bob borrow dai
-    //     Utils.spokeBorrow(spoke1, _daiReserveId(spoke1), bob, daiBorrowAmount, bob);
+    DataTypes.UserPosition memory bobDaiDataBefore = getUserInfo(
+      spoke1,
+      bob,
+      _daiReserveId(spoke1)
+    );
+    DataTypes.UserPosition memory bobWethDataBefore = getUserInfo(
+      spoke1,
+      bob,
+      _wethReserveId(spoke1)
+    );
+    Debts memory bobDaiBefore;
+    Debts memory bobWethBefore;
+    bobWethBefore.totalDebt = spoke1.getUserTotalDebt(_wethReserveId(spoke1), bob);
+    bobDaiBefore.totalDebt = spoke1.getUserTotalDebt(_daiReserveId(spoke1), bob);
 
-    //     DataTypes.UserPosition memory bobDaiDataBefore = getUserInfo(
-    //       spoke1,
-    //       bob,
-    //       _daiReserveId(spoke1)
-    //     );
-    //     DataTypes.UserPosition memory bobWethDataBefore = getUserInfo(
-    //       spoke1,
-    //       bob,
-    //       _wethReserveId(spoke1)
-    //     );
-    //     uint256 bobDaiBalanceBefore = tokenList.dai.balanceOf(bob);
-    //     uint256 bobWethBalanceBefore = tokenList.weth.balanceOf(bob);
+    uint256 bobDaiBalanceBefore = tokenList.dai.balanceOf(bob);
+    uint256 bobWethBalanceBefore = tokenList.weth.balanceOf(bob);
 
-    //     assertEq(bobDaiDataBefore.suppliedShares, 0);
-    //     assertEq(
-    //       bobDaiDataBefore.baseDebt + bobDaiDataBefore.outstandingPremium,
-    //       daiBorrowAmount,
-    //       'bob dai debt before'
-    //     );
-    //     assertEq(bobWethDataBefore.suppliedShares, hub.convertToShares(wethAssetId, wethSupplyAmount));
-    //     assertEq(bobWethDataBefore.baseDebt, 0);
+    assertEq(bobDaiDataBefore.suppliedShares, 0);
+    assertEq(bobDaiBefore.totalDebt, daiBorrowAmount, 'bob dai debt before');
+    assertEq(
+      bobWethDataBefore.suppliedShares,
+      hub.convertToSuppliedShares(wethAssetId, wethSupplyAmount)
+    );
+    assertEq(bobWethBefore.totalDebt, 0);
 
-    //     // Time passes
-    //     skip(10 days);
+    // Time passes
+    skip(10 days);
 
-    //     bobDaiDataBefore = getUserInfo(spoke1, bob, _daiReserveId(spoke1));
-    //     assertGe(
-    //       bobDaiDataBefore.baseDebt + bobDaiDataBefore.outstandingPremium,
-    //       daiBorrowAmount,
-    //       'bob dai debt before'
-    //     );
+    bobDaiDataBefore = getUserInfo(spoke1, bob, _daiReserveId(spoke1));
+    bobDaiBefore.totalDebt = spoke1.getUserTotalDebt(_daiReserveId(spoke1), bob);
+    (bobDaiBefore.baseDebt, bobDaiBefore.premiumDebt) = spoke1.getUserDebt(
+      _daiReserveId(spoke1),
+      bob
+    );
+    assertGe(bobDaiBefore.baseDebt, daiBorrowAmount, 'bob dai debt before');
 
-    //     // Bob repays half of principal debt
-    //     vm.expectEmit(address(spoke1));
-    //     emit ISpoke.Repaid(_daiReserveId(spoke1), bob, daiRepayAmount);
-    //     vm.prank(bob);
-    //     spoke1.repay(_daiReserveId(spoke1), daiRepayAmount);
+    (uint256 baseRestored, uint256 premiumRestored) = _calculateRestoreAmount(
+      bobDaiBefore.baseDebt,
+      bobDaiBefore.premiumDebt,
+      daiRepayAmount
+    );
 
-    //     DataTypes.UserPosition memory bobDaiDataAfter = getUserInfo(spoke1, bob, _daiReserveId(spoke1));
-    //     DataTypes.UserPosition memory bobWethDataAfter = getUserInfo(
-    //       spoke1,
-    //       bob,
-    //       _wethReserveId(spoke1)
-    //     );
+    // Bob repays half of principal debt
+    vm.expectEmit(address(spoke1));
+    emit ISpoke.Repay(
+      _daiReserveId(spoke1),
+      bob,
+      hub.convertToDrawnShares(daiAssetId, baseRestored)
+    );
+    vm.prank(bob);
+    spoke1.repay(_daiReserveId(spoke1), daiRepayAmount);
 
-    //     assertEq(bobDaiDataAfter.suppliedShares, bobDaiDataBefore.suppliedShares);
-    //     assertEq(
-    //       bobDaiDataAfter.baseDebt + bobDaiDataAfter.outstandingPremium,
-    //       bobDaiDataBefore.baseDebt + bobDaiDataBefore.outstandingPremium - daiRepayAmount,
-    //       'bob dai debt final balance'
-    //     );
-    //     assertEq(bobWethDataAfter.suppliedShares, bobWethDataBefore.suppliedShares);
-    //     assertEq(bobWethDataAfter.baseDebt, bobWethDataBefore.baseDebt);
+    DataTypes.UserPosition memory bobDaiDataAfter = getUserInfo(spoke1, bob, _daiReserveId(spoke1));
+    DataTypes.UserPosition memory bobWethDataAfter = getUserInfo(
+      spoke1,
+      bob,
+      _wethReserveId(spoke1)
+    );
 
-    //     assertEq(
-    //       tokenList.dai.balanceOf(bob),
-    //       bobDaiBalanceBefore - daiRepayAmount,
-    //       'bob dai final balance'
-    //     );
-    //     assertEq(tokenList.weth.balanceOf(bob), bobWethBalanceBefore);
+    assertEq(bobDaiDataAfter.suppliedShares, bobDaiDataBefore.suppliedShares);
+    assertEq(
+      spoke1.getUserTotalDebt(_daiReserveId(spoke1), bob),
+      bobDaiBefore.baseDebt + bobDaiBefore.premiumDebt - daiRepayAmount,
+      'bob dai debt final balance'
+    );
+    assertEq(bobWethDataAfter.suppliedShares, bobWethDataBefore.suppliedShares);
+    assertEq(bobWethBefore.totalDebt, spoke1.getUserTotalDebt(_wethReserveId(spoke1), bob));
+
+    assertEq(
+      tokenList.dai.balanceOf(bob),
+      bobDaiBalanceBefore - daiRepayAmount,
+      'bob dai final balance'
+    );
+    assertEq(tokenList.weth.balanceOf(bob), bobWethBalanceBefore);
   }
 
   function test_repay_revertsWith_ReserveNotActive() public {
-    vm.skip(true, 'pending refactor');
+    uint256 daiReserveId = _daiReserveId(spoke1);
+    uint256 amount = 100e18;
 
-    //     uint256 daiReserveId = _daiReserveId(spoke1);
-    //     uint256 amount = 100e18;
+    updateReserveActiveFlag(spoke1, daiReserveId, false);
+    assertFalse(spoke1.getReserve(daiReserveId).config.active);
 
-    //     updateReserveActiveFlag(spoke1, daiReserveId, false);
-    //     assertFalse(spoke1.getReserve(daiReserveId).config.active);
-
-    //     vm.expectRevert(ISpoke.ReserveNotActive.selector);
-    //     vm.prank(bob);
-    //     spoke1.repay(daiReserveId, amount);
+    vm.expectRevert(ISpoke.ReserveNotActive.selector);
+    vm.prank(bob);
+    spoke1.repay(daiReserveId, amount);
   }
 
   function test_repay_revertsWith_ReservePaused() public {
-    vm.skip(true, 'pending refactor');
+    uint256 daiReserveId = _daiReserveId(spoke1);
+    uint256 amount = 100e18;
 
-    //     uint256 daiReserveId = _daiReserveId(spoke1);
-    //     uint256 amount = 100e18;
+    updateReservePausedFlag(spoke1, daiReserveId, true);
+    assertTrue(spoke1.getReserve(daiReserveId).config.paused);
 
-    //     updateReservePausedFlag(spoke1, daiReserveId, true);
-    //     assertTrue(spoke1.getReserve(daiReserveId).config.paused);
-
-    //     vm.expectRevert(ISpoke.ReservePaused.selector);
-    //     vm.prank(bob);
-    //     spoke1.repay(daiReserveId, amount);
+    vm.expectRevert(ISpoke.ReservePaused.selector);
+    vm.prank(bob);
+    spoke1.repay(daiReserveId, amount);
   }
 
   function test_repay_revertsWith_ReserveNotListed() public {
-    vm.skip(true, 'pending refactor');
+    uint256 reserveId = spoke1.reserveCount() + 1; // invalid reserveId
+    uint256 amount = 100e18;
 
-    //     uint256 reserveId = spoke1.reserveCount() + 1; // invalid reserveId
-    //     uint256 amount = 100e18;
-
-    //     vm.expectRevert(ISpoke.ReserveNotListed.selector);
-    //     vm.prank(bob);
-    //     spoke1.repay(reserveId, amount);
+    vm.expectRevert(ISpoke.ReserveNotListed.selector);
+    vm.prank(bob);
+    spoke1.repay(reserveId, amount);
   }
 
   /// repay all debt interest
   function test_repay_only_interest() public {
-    vm.skip(true, 'pending refactor');
+    uint256 daiSupplyAmount = 100e18;
+    uint256 wethSupplyAmount = 10e18;
+    uint256 daiBorrowAmount = daiSupplyAmount / 2;
 
-    //     uint256 daiSupplyAmount = 100e18;
-    //     uint256 wethSupplyAmount = 10e18;
-    //     uint256 daiBorrowAmount = daiSupplyAmount / 2;
+    // Bob supply weth
+    Utils.spokeSupply(spoke1, _wethReserveId(spoke1), bob, wethSupplyAmount, bob);
+    setUsingAsCollateral(spoke1, bob, _wethReserveId(spoke1), true);
 
-    //     // Bob supply weth
-    //     Utils.spokeSupply(spoke1, _wethReserveId(spoke1), bob, wethSupplyAmount, bob);
-    //     setUsingAsCollateral(spoke1, bob, _wethReserveId(spoke1), true);
+    // Alice supply dai
+    Utils.spokeSupply(spoke1, _daiReserveId(spoke1), alice, daiSupplyAmount, alice);
 
-    //     // Alice supply dai
-    //     Utils.spokeSupply(spoke1, _daiReserveId(spoke1), alice, daiSupplyAmount, alice);
+    // Bob borrow dai
+    Utils.spokeBorrow(spoke1, _daiReserveId(spoke1), bob, daiBorrowAmount, bob);
 
-    //     // Bob borrow dai
-    //     Utils.spokeBorrow(spoke1, _daiReserveId(spoke1), bob, daiBorrowAmount, bob);
+    DataTypes.UserPosition memory bobDaiDataBefore = getUserInfo(
+      spoke1,
+      bob,
+      _daiReserveId(spoke1)
+    );
+    DataTypes.UserPosition memory bobWethDataBefore = getUserInfo(
+      spoke1,
+      bob,
+      _wethReserveId(spoke1)
+    );
+    Debts memory bobDaiBefore;
+    Debts memory bobWethBefore;
 
-    //     DataTypes.UserPosition memory bobDaiDataBefore = getUserInfo(
-    //       spoke1,
-    //       bob,
-    //       _daiReserveId(spoke1)
-    //     );
-    //     DataTypes.UserPosition memory bobWethDataBefore = getUserInfo(
-    //       spoke1,
-    //       bob,
-    //       _wethReserveId(spoke1)
-    //     );
-    //     uint256 bobDaiBalanceBefore = tokenList.dai.balanceOf(bob);
-    //     uint256 bobWethBalanceBefore = tokenList.weth.balanceOf(bob);
+    uint256 bobDaiBalanceBefore = tokenList.dai.balanceOf(bob);
+    uint256 bobWethBalanceBefore = tokenList.weth.balanceOf(bob);
+    bobDaiBefore.totalDebt = spoke1.getUserTotalDebt(_daiReserveId(spoke1), bob);
+    (bobDaiBefore.baseDebt, bobDaiBefore.premiumDebt) = spoke1.getUserDebt(
+      _daiReserveId(spoke1),
+      bob
+    );
+    bobWethBefore.totalDebt = spoke1.getUserTotalDebt(_wethReserveId(spoke1), bob);
 
-    //     assertEq(bobDaiDataBefore.suppliedShares, 0);
-    //     assertEq(
-    //       bobDaiDataBefore.baseDebt + bobDaiDataBefore.outstandingPremium,
-    //       daiBorrowAmount,
-    //       'bob dai debt before'
-    //     );
-    //     assertEq(bobWethDataBefore.suppliedShares, hub.convertToShares(wethAssetId, wethSupplyAmount));
-    //     assertEq(bobWethDataBefore.baseDebt, 0);
+    assertEq(bobDaiDataBefore.suppliedShares, 0);
+    assertEq(bobDaiBefore.totalDebt, daiBorrowAmount, 'bob dai debt before');
+    assertEq(
+      bobWethDataBefore.suppliedShares,
+      hub.convertToSuppliedShares(wethAssetId, wethSupplyAmount)
+    );
+    assertEq(bobWethBefore.totalDebt, 0);
 
-    //     // Time passes
-    //     skip(10 days);
+    // Time passes
+    skip(10 days);
 
-    //     bobDaiDataBefore = getUserInfo(spoke1, bob, _daiReserveId(spoke1));
-    //     assertGt(
-    //       bobDaiDataBefore.baseDebt + bobDaiDataBefore.outstandingPremium,
-    //       daiBorrowAmount,
-    //       'bob dai debt before'
-    //     );
+    bobDaiDataBefore = getUserInfo(spoke1, bob, _daiReserveId(spoke1));
+    bobDaiBefore.totalDebt = spoke1.getUserTotalDebt(_daiReserveId(spoke1), bob);
+    (bobDaiBefore.baseDebt, bobDaiBefore.premiumDebt) = spoke1.getUserDebt(
+      _daiReserveId(spoke1),
+      bob
+    );
+    assertGt(bobDaiBefore.totalDebt, daiBorrowAmount, 'bob dai debt before');
 
-    //     // Bob repays interest
-    //     uint256 daiRepayAmount = bobDaiDataBefore.baseDebt +
-    //       bobDaiDataBefore.outstandingPremium -
-    //       daiBorrowAmount;
-    //     assertGt(daiRepayAmount, 0); // interest is not zero
+    // Bob repays interest
+    uint256 daiRepayAmount = bobDaiBefore.baseDebt + bobDaiBefore.premiumDebt - daiBorrowAmount;
+    assertGt(daiRepayAmount, 0); // interest is not zero
 
-    //     vm.expectEmit(address(spoke1));
-    //     emit ISpoke.Repaid(_daiReserveId(spoke1), bob, daiRepayAmount);
-    //     vm.prank(bob);
-    //     spoke1.repay(_daiReserveId(spoke1), daiRepayAmount);
+    (uint256 baseRestored, uint256 premiumRestored) = _calculateRestoreAmount(
+      bobDaiBefore.baseDebt,
+      bobDaiBefore.premiumDebt,
+      daiRepayAmount
+    );
 
-    //     DataTypes.UserPosition memory bobDaiDataAfter = getUserInfo(spoke1, bob, _daiReserveId(spoke1));
-    //     DataTypes.UserPosition memory bobWethDataAfter = getUserInfo(
-    //       spoke1,
-    //       bob,
-    //       _wethReserveId(spoke1)
-    //     );
+    vm.expectEmit(address(spoke1));
+    emit ISpoke.Repay(
+      _daiReserveId(spoke1),
+      bob,
+      hub.convertToDrawnShares(daiAssetId, baseRestored)
+    );
+    vm.prank(bob);
+    spoke1.repay(_daiReserveId(spoke1), daiRepayAmount);
 
-    //     assertEq(bobDaiDataAfter.suppliedShares, bobDaiDataBefore.suppliedShares);
-    //     assertEq(bobDaiDataAfter.outstandingPremium, 0, 'bob dai outstanding premium final balance');
-    //     assertEq(bobDaiDataAfter.baseDebt, daiBorrowAmount, 'bob dai base debt final balance');
-    //     assertEq(
-    //       bobDaiDataAfter.baseDebt + bobDaiDataAfter.outstandingPremium,
-    //       daiBorrowAmount,
-    //       'bob dai debt final balance'
-    //     );
-    //     assertEq(bobWethDataAfter.suppliedShares, bobWethDataBefore.suppliedShares);
-    //     assertEq(bobWethDataAfter.baseDebt, bobWethDataBefore.baseDebt);
+    DataTypes.UserPosition memory bobDaiDataAfter = getUserInfo(spoke1, bob, _daiReserveId(spoke1));
+    DataTypes.UserPosition memory bobWethDataAfter = getUserInfo(
+      spoke1,
+      bob,
+      _wethReserveId(spoke1)
+    );
+    Debts memory bobDaiAfter;
 
-    //     assertEq(
-    //       tokenList.dai.balanceOf(bob),
-    //       bobDaiBalanceBefore - daiRepayAmount,
-    //       'bob dai final balance'
-    //     );
-    //     assertEq(tokenList.weth.balanceOf(bob), bobWethBalanceBefore);
+    (bobDaiAfter.baseDebt, bobDaiAfter.premiumDebt) = spoke1.getUserDebt(
+      _daiReserveId(spoke1),
+      bob
+    );
+
+    assertEq(bobDaiDataAfter.suppliedShares, bobDaiDataBefore.suppliedShares);
+    assertEq(bobDaiAfter.premiumDebt, 0, 'bob dai outstanding premium final balance');
+    assertEq(bobDaiAfter.baseDebt, daiBorrowAmount, 'bob dai base debt final balance');
+    assertEq(
+      spoke1.getUserTotalDebt(_daiReserveId(spoke1), bob),
+      daiBorrowAmount,
+      'bob dai debt final balance'
+    );
+    assertEq(bobWethDataAfter.suppliedShares, bobWethDataBefore.suppliedShares);
+    assertEq(bobWethBefore.totalDebt, spoke1.getUserTotalDebt(_wethReserveId(spoke1), bob));
+
+    assertEq(
+      tokenList.dai.balanceOf(bob),
+      bobDaiBalanceBefore - daiRepayAmount,
+      'bob dai final balance'
+    );
+    assertEq(tokenList.weth.balanceOf(bob), bobWethBalanceBefore);
   }
 
   /// repay all outstanding premium debt
   function test_repay_only_premium() public {
-    vm.skip(true, 'pending refactor');
+    uint256 daiSupplyAmount = 100e18;
+    uint256 wethSupplyAmount = 10e18;
+    uint256 daiBorrowAmount = daiSupplyAmount / 2;
 
-    //     uint256 daiSupplyAmount = 100e18;
-    //     uint256 wethSupplyAmount = 10e18;
-    //     uint256 daiBorrowAmount = daiSupplyAmount / 2;
+    // Bob supply weth
+    Utils.spokeSupply(spoke1, _wethReserveId(spoke1), bob, wethSupplyAmount, bob);
+    setUsingAsCollateral(spoke1, bob, _wethReserveId(spoke1), true);
 
-    //     // Bob supply weth
-    //     Utils.spokeSupply(spoke1, _wethReserveId(spoke1), bob, wethSupplyAmount, bob);
-    //     setUsingAsCollateral(spoke1, bob, _wethReserveId(spoke1), true);
+    // Alice supply dai
+    Utils.spokeSupply(spoke1, _daiReserveId(spoke1), alice, daiSupplyAmount, alice);
 
-    //     // Alice supply dai
-    //     Utils.spokeSupply(spoke1, _daiReserveId(spoke1), alice, daiSupplyAmount, alice);
+    // Bob borrow dai
+    Utils.spokeBorrow(spoke1, _daiReserveId(spoke1), bob, daiBorrowAmount, bob);
 
-    //     // Bob borrow dai
-    //     Utils.spokeBorrow(spoke1, _daiReserveId(spoke1), bob, daiBorrowAmount, bob);
+    DataTypes.UserPosition memory bobDaiDataBefore = getUserInfo(
+      spoke1,
+      bob,
+      _daiReserveId(spoke1)
+    );
+    DataTypes.UserPosition memory bobWethDataBefore = getUserInfo(
+      spoke1,
+      bob,
+      _wethReserveId(spoke1)
+    );
+    uint256 bobDaiBalanceBefore = tokenList.dai.balanceOf(bob);
+    uint256 bobWethBalanceBefore = tokenList.weth.balanceOf(bob);
+    uint256 bobDaiDebtBefore = spoke1.getUserTotalDebt(_daiReserveId(spoke1), bob);
+    uint256 bobWethDebtBefore = spoke1.getUserTotalDebt(_wethReserveId(spoke1), bob);
 
-    //     DataTypes.UserPosition memory bobDaiDataBefore = getUserInfo(
-    //       spoke1,
-    //       bob,
-    //       _daiReserveId(spoke1)
-    //     );
-    //     DataTypes.UserPosition memory bobWethDataBefore = getUserInfo(
-    //       spoke1,
-    //       bob,
-    //       _wethReserveId(spoke1)
-    //     );
-    //     uint256 bobDaiBalanceBefore = tokenList.dai.balanceOf(bob);
-    //     uint256 bobWethBalanceBefore = tokenList.weth.balanceOf(bob);
+    assertEq(bobDaiDataBefore.suppliedShares, 0);
+    assertEq(bobDaiDebtBefore, daiBorrowAmount, 'bob dai debt before');
+    assertEq(
+      bobWethDataBefore.suppliedShares,
+      hub.convertToSuppliedShares(wethAssetId, wethSupplyAmount)
+    );
+    assertEq(bobWethDebtBefore, 0);
 
-    //     assertEq(bobDaiDataBefore.suppliedShares, 0);
-    //     assertEq(
-    //       bobDaiDataBefore.baseDebt + bobDaiDataBefore.outstandingPremium,
-    //       daiBorrowAmount,
-    //       'bob dai debt before'
-    //     );
-    //     assertEq(bobWethDataBefore.suppliedShares, hub.convertToShares(wethAssetId, wethSupplyAmount));
-    //     assertEq(bobWethDataBefore.baseDebt, 0);
+    // Time passes
+    skip(10 days);
 
-    //     // Time passes
-    //     skip(10 days);
+    bobDaiDataBefore = getUserInfo(spoke1, bob, _daiReserveId(spoke1));
+    bobDaiDebtBefore = spoke1.getUserTotalDebt(_daiReserveId(spoke1), bob);
+    (uint256 bobDaiBaseDebtBefore, ) = spoke1.getUserDebt(_daiReserveId(spoke1), bob);
+    assertGt(bobDaiDebtBefore, daiBorrowAmount, 'bob dai debt before');
 
-    //     bobDaiDataBefore = getUserInfo(spoke1, bob, _daiReserveId(spoke1));
-    //     assertGt(
-    //       bobDaiDataBefore.baseDebt + bobDaiDataBefore.outstandingPremium,
-    //       daiBorrowAmount,
-    //       'bob dai debt before'
-    //     );
+    // Bob repays premium
+    (, uint256 daiRepayAmount) = spoke1.getUserDebt(_daiReserveId(spoke1), bob);
+    assertGt(daiRepayAmount, 0); // interest is not zero
 
-    //     // Bob repays premium
-    //     uint256 daiRepayAmount = bobDaiDataBefore.outstandingPremium;
-    //     assertGt(daiRepayAmount, 0); // interest is not zero
+    vm.expectEmit(address(spoke1));
+    emit ISpoke.Repay(_daiReserveId(spoke1), bob, 0);
+    vm.prank(bob);
+    spoke1.repay(_daiReserveId(spoke1), daiRepayAmount);
 
-    //     vm.expectEmit(address(spoke1));
-    //     emit ISpoke.Repaid(_daiReserveId(spoke1), bob, daiRepayAmount);
-    //     vm.prank(bob);
-    //     spoke1.repay(_daiReserveId(spoke1), daiRepayAmount);
+    DataTypes.UserPosition memory bobDaiDataAfter = getUserInfo(spoke1, bob, _daiReserveId(spoke1));
+    DataTypes.UserPosition memory bobWethDataAfter = getUserInfo(
+      spoke1,
+      bob,
+      _wethReserveId(spoke1)
+    );
 
-    //     DataTypes.UserPosition memory bobDaiDataAfter = getUserInfo(spoke1, bob, _daiReserveId(spoke1));
-    //     DataTypes.UserPosition memory bobWethDataAfter = getUserInfo(
-    //       spoke1,
-    //       bob,
-    //       _wethReserveId(spoke1)
-    //     );
+    assertEq(bobDaiDataAfter.suppliedShares, bobDaiDataBefore.suppliedShares);
+    assertEq(
+      spoke1.getUserTotalDebt(_daiReserveId(spoke1), bob),
+      bobDaiBaseDebtBefore,
+      'bob dai debt final balance'
+    );
+    (, uint256 bobDaiPremiumDebtAfter) = spoke1.getUserDebt(_daiReserveId(spoke1), bob);
+    assertEq(bobDaiPremiumDebtAfter, 0, 'bob dai outstanding premium final balance');
+    assertEq(bobWethDataAfter.suppliedShares, bobWethDataBefore.suppliedShares);
+    assertEq(bobWethDebtBefore, spoke1.getUserTotalDebt(_wethReserveId(spoke1), bob));
 
-    //     assertEq(bobDaiDataAfter.suppliedShares, bobDaiDataBefore.suppliedShares);
-    //     assertEq(
-    //       bobDaiDataAfter.baseDebt + bobDaiDataAfter.outstandingPremium,
-    //       bobDaiDataBefore.baseDebt,
-    //       'bob dai debt final balance'
-    //     );
-    //     assertEq(bobDaiDataAfter.outstandingPremium, 0, 'bob dai outstanding premium final balance');
-    //     assertEq(bobWethDataAfter.suppliedShares, bobWethDataBefore.suppliedShares);
-    //     assertEq(bobWethDataAfter.baseDebt, bobWethDataBefore.baseDebt);
-
-    //     assertEq(
-    //       tokenList.dai.balanceOf(bob),
-    //       bobDaiBalanceBefore - daiRepayAmount,
-    //       'bob dai final balance'
-    //     );
-    //     assertEq(tokenList.weth.balanceOf(bob), bobWethBalanceBefore);
+    assertEq(
+      tokenList.dai.balanceOf(bob),
+      bobDaiBalanceBefore - daiRepayAmount,
+      'bob dai final balance'
+    );
+    assertEq(tokenList.weth.balanceOf(bob), bobWethBalanceBefore);
   }
 
   function test_repay_max() public {
@@ -714,7 +754,7 @@ contract SpokeRepayTest is SpokeBase {
     //       daiBorrowAmount,
     //       'bob dai debt before'
     //     );
-    //     assertEq(bobWethDataBefore.suppliedShares, hub.convertToShares(wethAssetId, wethSupplyAmount));
+    //     assertEq(bobWethDataBefore.suppliedShares, hub.convertToSuppliedShares(wethAssetId, wethSupplyAmount));
     //     assertEq(bobWethDataBefore.baseDebt, 0);
 
     //     // Time passes
@@ -805,7 +845,7 @@ contract SpokeRepayTest is SpokeBase {
     //       daiBorrowAmount,
     //       'bob dai debt before'
     //     );
-    //     assertEq(bobWethDataBefore.suppliedShares, hub.convertToShares(wethAssetId, wethSupplyAmount));
+    //     assertEq(bobWethDataBefore.suppliedShares, hub.convertToSuppliedShares(wethAssetId, wethSupplyAmount));
     //     assertEq(bobWethDataBefore.baseDebt, 0);
 
     //     // Time passes
@@ -850,14 +890,11 @@ contract SpokeRepayTest is SpokeBase {
   }
 
   function test_repay_revertsWith_amount_exceeds_debt() public {
-    vm.skip(true, 'pending refactor');
+    assertEq(spoke1.getUserTotalDebt(_daiReserveId(spoke1), bob), 0, 'bob dai debt before');
 
-    //     DataTypes.UserPosition memory bobDaiData = getUserInfo(spoke1, bob, _daiReserveId(spoke1));
-    //     assertEq(bobDaiData.baseDebt + bobDaiData.outstandingPremium, 0, 'bob dai debt before');
-
-    //     vm.expectRevert(ILiquidityHub.InvalidRestoreAmount.selector);
-    //     vm.prank(bob);
-    //     spoke1.repay(_daiReserveId(spoke1), 1);
+    vm.expectRevert(abi.encodeWithSelector(ILiquidityHub.SurplusAmountRestored.selector, 0));
+    vm.prank(bob);
+    spoke1.repay(_daiReserveId(spoke1), 1);
   }
 
   /// repay all or a portion of total debt in same block
@@ -907,7 +944,7 @@ contract SpokeRepayTest is SpokeBase {
     //       daiBorrowAmount,
     //       'bob dai debt before'
     //     );
-    //     assertEq(bobWethDataBefore.suppliedShares, hub.convertToShares(wethAssetId, wethSupplyAmount));
+    //     assertEq(bobWethDataBefore.suppliedShares, hub.convertToSuppliedShares(wethAssetId, wethSupplyAmount));
     //     assertEq(bobWethDataBefore.baseDebt, 0);
 
     //     // Bob repays
@@ -988,7 +1025,7 @@ contract SpokeRepayTest is SpokeBase {
     //       daiBorrowAmount,
     //       'bob dai debt before'
     //     );
-    //     assertEq(bobWethDataBefore.suppliedShares, hub.convertToShares(wethAssetId, wethSupplyAmount));
+    //     assertEq(bobWethDataBefore.suppliedShares, hub.convertToSuppliedShares(wethAssetId, wethSupplyAmount));
     //     assertEq(bobWethDataBefore.baseDebt, 0);
 
     //     // Time passes
@@ -1077,7 +1114,7 @@ contract SpokeRepayTest is SpokeBase {
     //       daiBorrowAmount,
     //       'bob dai debt before'
     //     );
-    //     assertEq(bobWethDataBefore.suppliedShares, hub.convertToShares(wethAssetId, wethSupplyAmount));
+    //     assertEq(bobWethDataBefore.suppliedShares, hub.convertToSuppliedShares(wethAssetId, wethSupplyAmount));
     //     assertEq(bobWethDataBefore.baseDebt, 0);
 
     //     // Time passes
@@ -1185,7 +1222,7 @@ contract SpokeRepayTest is SpokeBase {
     //       daiBorrowAmount,
     //       'bob dai debt before'
     //     );
-    //     assertEq(bobWethDataBefore.suppliedShares, hub.convertToShares(wethAssetId, wethSupplyAmount));
+    //     assertEq(bobWethDataBefore.suppliedShares, hub.convertToSuppliedShares(wethAssetId, wethSupplyAmount));
     //     assertEq(bobWethDataBefore.baseDebt, 0);
 
     //     // Time passes
@@ -1301,7 +1338,7 @@ contract SpokeRepayTest is SpokeBase {
     //       daiBorrowAmount,
     //       'bob dai debt before'
     //     );
-    //     assertEq(bobWethDataBefore.suppliedShares, hub.convertToShares(wethAssetId, wethSupplyAmount));
+    //     assertEq(bobWethDataBefore.suppliedShares, hub.convertToSuppliedShares(wethAssetId, wethSupplyAmount));
     //     assertEq(bobWethDataBefore.baseDebt, 0);
 
     //     // Time passes
@@ -1427,7 +1464,7 @@ contract SpokeRepayTest is SpokeBase {
     //       daiBorrowAmount,
     //       'bob dai debt before'
     //     );
-    //     assertEq(bobWethDataBefore.suppliedShares, hub.convertToShares(wethAssetId, wethSupplyAmount));
+    //     assertEq(bobWethDataBefore.suppliedShares, hub.convertToSuppliedShares(wethAssetId, wethSupplyAmount));
     //     assertEq(bobWethDataBefore.baseDebt, 0);
 
     //     // Time passes
@@ -1676,6 +1713,21 @@ contract SpokeRepayTest is SpokeBase {
     //       wbtcInfo.posBefore.baseDebt + wbtcInfo.posBefore.outstandingPremium - wbtcInfo.repayAmount,
     //       'bob wbtc debt final balance'
     //     );
+  }
+
+  function _calculateRestoreAmount(
+    uint256 baseDebt,
+    uint256 premiumDebt,
+    uint256 amount
+  ) internal view returns (uint256, uint256) {
+    if (amount == type(uint256).max) {
+      return (baseDebt, premiumDebt);
+    }
+    if (amount <= premiumDebt) {
+      return (0, amount);
+    }
+    // todo ensure `amount` is not greater than total debt?
+    return (amount - premiumDebt, premiumDebt);
   }
 
   /// todo: borrow, repay, borrow more, repay
