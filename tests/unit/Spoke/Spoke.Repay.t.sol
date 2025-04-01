@@ -1132,12 +1132,6 @@ contract SpokeRepayTest is SpokeBase {
       daiRepayAmount
     );
 
-    console.log('Base debt: ', bobDaiBefore.baseDebt);
-    console.log('Premium debt: ', bobDaiBefore.premiumDebt);
-
-    console.log('Base restored: ', baseRestored);
-    console.log('Premium restored: ', premiumRestored);
-
     // Bob repays
     vm.expectEmit(address(spoke1));
     emit ISpoke.Repay(
@@ -1160,9 +1154,6 @@ contract SpokeRepayTest is SpokeBase {
       _daiReserveId(spoke1),
       bob
     );
-
-    console.log('bobDaiAfter.baseDebt: ', bobDaiAfter.baseDebt);
-    console.log('bobDaiAfter.premiumDebt: ', bobDaiAfter.premiumDebt);
 
     assertEq(bobDaiDataAfter.suppliedShares, bobDaiDataBefore.suppliedShares);
     assertEq(
