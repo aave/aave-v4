@@ -276,65 +276,62 @@ contract SpokeBase is Base {
       (10 ** hub.getAssetConfig(assetId).decimals);
   }
 
-  // function _calculateExpectedUserRP(address user, ISpoke spoke) internal view returns (uint256) {
-  //   uint256 assetId;
-  //   uint256 totalDebt;
-  //   uint256 suppliedReservesCount;
-  //   uint256 userRP;
-  //   DataTypes.UserPosition memory userPosition;
+  function _calculateExpectedUserRP(address user, ISpoke spoke) internal view returns (uint256) {
+    uint256 assetId;
+    uint256 totalDebt;
+    uint256 suppliedReservesCount;
+    uint256 userRP;
+    DataTypes.UserPosition memory userPosition;
 
-  //   // Find all reserves user has supplied, adding up total debt
-  //   for (uint256 reserveId; reserveId < spoke.reserveCount(); ++reserveId) {
-  //     if (spoke.getUsingAsCollateral(reserveId, user)) {
-  //       ++suppliedReservesCount;
-  //     }
-  //     (assetId, ) = getAssetByReserveId(spoke, reserveId);
-  //     totalDebt += _getReserveValueInBaseCurrency(
-  //       assetId,
-  //       spoke.getUserCumulativeDebt(reserveId, user)
-  //     );
-  //   }
+    // Find all reserves user has supplied, adding up total debt
+    for (uint256 reserveId; reserveId < spoke.reserveCount(); ++reserveId) {
+      if (spoke.getUsingAsCollateral(reserveId, user)) {
+        ++suppliedReservesCount;
+      }
+      (assetId, ) = getAssetByReserveId(spoke, reserveId);
+      totalDebt += _getReserveValueInBaseCurrency(assetId, spoke.getUserTotalDebt(reserveId, user));
+    }
 
-  //   if (totalDebt == 0) {
-  //     return 0;
-  //   }
+    if (totalDebt == 0) {
+      return 0;
+    }
 
-  //   // Gather up list of reserves as collateral to sort by LP
-  //   KeyValueListInMemory.List memory reserveLP = KeyValueListInMemory.init(suppliedReservesCount);
-  //   uint256 idx = 0;
-  //   for (uint256 reserveId; reserveId < spoke.reserveCount(); ++reserveId) {
-  //     if (spoke.getUsingAsCollateral(reserveId, user)) {
-  //       reserveLP.add(idx, spoke.getLiquidityPremium(reserveId), reserveId);
-  //       ++idx;
-  //     }
-  //   }
+    // Gather up list of reserves as collateral to sort by LP
+    KeyValueListInMemory.List memory reserveLP = KeyValueListInMemory.init(suppliedReservesCount);
+    uint256 idx = 0;
+    for (uint256 reserveId; reserveId < spoke.reserveCount(); ++reserveId) {
+      if (spoke.getUsingAsCollateral(reserveId, user)) {
+        reserveLP.add(idx, spoke.getLiquidityPremium(reserveId), reserveId);
+        ++idx;
+      }
+    }
 
-  //   // Sort supplied reserves by LP
-  //   reserveLP.sortByKey();
+    // Sort supplied reserves by LP
+    reserveLP.sortByKey();
 
-  //   // While user's normalized debt amount is non-zero, iterate through supplied reserves, and add up LP
-  //   idx = 0;
-  //   uint256 originalTotalDebt = totalDebt;
-  //   while (totalDebt > 0) {
-  //     (uint256 lp, uint256 reserveId) = reserveLP.get(idx);
-  //     userPosition = getUserInfo(spoke, user, reserveId);
-  //     (assetId, ) = getAssetByReserveId(spoke, reserveId);
-  //     uint256 supplyAmount = _getReserveValueInBaseCurrency(
-  //       assetId,
-  //       hub.convertToAssets(assetId, userPosition.suppliedShares)
-  //     );
+    // While user's normalized debt amount is non-zero, iterate through supplied reserves, and add up LP
+    idx = 0;
+    uint256 originalTotalDebt = totalDebt;
+    while (totalDebt > 0) {
+      (uint256 lp, uint256 reserveId) = reserveLP.get(idx);
+      userPosition = getUserInfo(spoke, user, reserveId);
+      (assetId, ) = getAssetByReserveId(spoke, reserveId);
+      uint256 supplyAmount = _getReserveValueInBaseCurrency(
+        assetId,
+        hub.convertToSuppliedAssets(assetId, userPosition.suppliedShares)
+      );
 
-  //     if (supplyAmount >= totalDebt) {
-  //       userRP += totalDebt * lp;
-  //       break;
-  //     } else {
-  //       userRP += supplyAmount * lp;
-  //       totalDebt -= supplyAmount;
-  //     }
+      if (supplyAmount >= totalDebt) {
+        userRP += totalDebt * lp;
+        break;
+      } else {
+        userRP += supplyAmount * lp;
+        totalDebt -= supplyAmount;
+      }
 
-  //     ++idx;
-  //   }
+      ++idx;
+    }
 
-  //   return userRP / originalTotalDebt;
-  // }
+    return userRP / originalTotalDebt;
+  }
 }
