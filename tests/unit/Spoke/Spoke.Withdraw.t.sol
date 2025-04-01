@@ -355,8 +355,8 @@ contract SpokeWithdrawTest is SpokeBase {
     // Wait a year to accrue interest
     skip(365 days);
 
+    // Ensure interest has accrued
     vm.assume(hub.getAssetSuppliedAmount(daiAssetId) > supplyAmount);
-    assertGt(hub.getAssetSuppliedAmount(daiAssetId), supplyAmount, 'asset grows with interest');
 
     // Give Bob enough dai to repay
     uint256 repayAmount = spoke1.getReserveTotalDebt(_daiReserveId(spoke1));
@@ -418,8 +418,8 @@ contract SpokeWithdrawTest is SpokeBase {
     // Wait some time to accrue interest
     skip(elapsed);
 
+    // Ensure interest has accrued
     vm.assume(hub.getAssetSuppliedAmount(daiAssetId) > supplyAmount);
-    assertGt(hub.getAssetSuppliedAmount(daiAssetId), supplyAmount, 'asset grows with interest');
 
     // Give Bob enough dai to repay
     uint256 repayAmount = spoke1.getReserveTotalDebt(_daiReserveId(spoke1));
@@ -431,6 +431,95 @@ contract SpokeWithdrawTest is SpokeBase {
       user: bob,
       amount: type(uint256).max
     });
+
+    Utils.spokeWithdraw({
+      spoke: spoke1,
+      reserveId: _daiReserveId(spoke1),
+      user: bob,
+      amount: type(uint256).max,
+      onBehalfOf: bob
+    });
+
+    _checkSuppliedAmounts(daiAssetId, _daiReserveId(spoke1), spoke1, bob, 0, 'after withdraw');
+  }
+
+  function test_withdraw_fuzz_partial_full_with_interest(
+    uint256 supplyAmount,
+    uint256 borrowAmount,
+    uint256 partialWithdrawAmount,
+    uint40 elapsed
+  ) public {
+    supplyAmount = bound(supplyAmount, 2, MAX_SUPPLY_AMOUNT);
+    borrowAmount = bound(borrowAmount, 1, supplyAmount / 2);
+    partialWithdrawAmount = bound(partialWithdrawAmount, 1, supplyAmount - 1);
+
+    Utils.spokeSupply({
+      spoke: spoke1,
+      reserveId: _daiReserveId(spoke1),
+      user: bob,
+      amount: supplyAmount,
+      onBehalfOf: bob
+    });
+    setUsingAsCollateral(spoke1, bob, _daiReserveId(spoke1), true);
+
+    _checkSuppliedAmounts(
+      daiAssetId,
+      _daiReserveId(spoke1),
+      spoke1,
+      bob,
+      supplyAmount,
+      'after supply'
+    );
+
+    // Bob borrows dai
+    Utils.spokeBorrow({
+      spoke: spoke1,
+      reserveId: _daiReserveId(spoke1),
+      user: bob,
+      amount: borrowAmount,
+      onBehalfOf: bob
+    });
+
+    // Wait some time to accrue interest
+    skip(elapsed);
+
+    // Ensure interest has accrued
+    vm.assume(hub.getAssetSuppliedAmount(daiAssetId) > supplyAmount);
+    uint256 interestAccrued = hub.getAssetSuppliedAmount(daiAssetId) - supplyAmount;
+
+    // Give Bob enough dai to repay
+    uint256 repayAmount = spoke1.getReserveTotalDebt(_daiReserveId(spoke1));
+    deal(address(tokenList.dai), bob, repayAmount);
+
+    Utils.spokeRepay({
+      spoke: spoke1,
+      reserveId: _daiReserveId(spoke1),
+      user: bob,
+      amount: type(uint256).max
+    });
+
+    uint256 totalSupplied = supplyAmount + interestAccrued;
+    assertEq(
+      totalSupplied,
+      spoke1.getUserSuppliedAmount(_daiReserveId(spoke1), bob),
+      'total supplied'
+    );
+
+    // Withdraw partial supplied assets
+    Utils.spokeWithdraw({
+      spoke: spoke1,
+      reserveId: _daiReserveId(spoke1),
+      user: bob,
+      amount: partialWithdrawAmount,
+      onBehalfOf: bob
+    });
+
+    uint256 expectedSupplied = totalSupplied - partialWithdrawAmount;
+    assertEq(
+      expectedSupplied,
+      spoke1.getUserSuppliedAmount(_daiReserveId(spoke1), bob),
+      'expected supplied'
+    );
 
     Utils.spokeWithdraw({
       spoke: spoke1,
