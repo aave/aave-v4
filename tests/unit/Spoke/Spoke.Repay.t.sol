@@ -1586,113 +1586,127 @@ contract SpokeRepayTest is SpokeBase {
     uint256 daiRepayAmount,
     uint40 skipTime
   ) public {
-    vm.skip(true, 'pending refactor');
+    daiBorrowAmount = bound(daiBorrowAmount, 1, MAX_SUPPLY_AMOUNT / 2);
 
-    //     daiBorrowAmount = bound(daiBorrowAmount, 1, MAX_SUPPLY_AMOUNT / 2);
+    // update liquidity premium to zero
+    updateLiquidityPremium(spoke1, _wethReserveId(spoke1), 0);
 
-    //     // update liquidity premium to zero
-    //     updateLiquidityPremium(spoke1, _wethReserveId(spoke1), 0);
+    // calculate weth collateral
+    uint256 wethSupplyAmount = _calcMinimumCollAmount(
+      spoke1,
+      _wethReserveId(spoke1),
+      _daiReserveId(spoke1),
+      daiBorrowAmount
+    );
 
-    //     // calculate weth collateral
-    //     uint256 wethSupplyAmount = _calcMinimumCollAmount(
-    //       spoke1,
-    //       _wethReserveId(spoke1),
-    //       _daiReserveId(spoke1),
-    //       daiBorrowAmount
-    //     );
+    // Bob supply weth
+    Utils.spokeSupply(spoke1, _wethReserveId(spoke1), bob, wethSupplyAmount, bob);
+    setUsingAsCollateral(spoke1, bob, _wethReserveId(spoke1), true);
 
-    //     // Bob supply weth
-    //     Utils.spokeSupply(spoke1, _wethReserveId(spoke1), bob, wethSupplyAmount, bob);
-    //     setUsingAsCollateral(spoke1, bob, _wethReserveId(spoke1), true);
+    // Alice supply dai
+    Utils.spokeSupply(spoke1, _daiReserveId(spoke1), alice, daiBorrowAmount, alice);
 
-    //     // Alice supply dai
-    //     Utils.spokeSupply(spoke1, _daiReserveId(spoke1), alice, daiBorrowAmount, alice);
+    // Bob borrow dai
+    Utils.spokeBorrow(spoke1, _daiReserveId(spoke1), bob, daiBorrowAmount, bob);
 
-    //     // Bob borrow dai
-    //     Utils.spokeBorrow(spoke1, _daiReserveId(spoke1), bob, daiBorrowAmount, bob);
+    DataTypes.UserPosition memory bobDaiDataBefore = getUserInfo(
+      spoke1,
+      bob,
+      _daiReserveId(spoke1)
+    );
+    DataTypes.UserPosition memory bobWethDataBefore = getUserInfo(
+      spoke1,
+      bob,
+      _wethReserveId(spoke1)
+    );
+    Debts memory bobDaiBefore;
+    bobDaiBefore.totalDebt = spoke1.getUserTotalDebt(_daiReserveId(spoke1), bob);
+    (bobDaiBefore.baseDebt, bobDaiBefore.premiumDebt) = spoke1.getUserDebt(
+      _daiReserveId(spoke1),
+      bob
+    );
+    uint256 bobWethBalanceBefore = tokenList.weth.balanceOf(bob);
 
-    //     DataTypes.UserPosition memory bobDaiDataBefore = getUserInfo(
-    //       spoke1,
-    //       bob,
-    //       _daiReserveId(spoke1)
-    //     );
-    //     DataTypes.UserPosition memory bobWethDataBefore = getUserInfo(
-    //       spoke1,
-    //       bob,
-    //       _wethReserveId(spoke1)
-    //     );
-    //     uint256 bobWethBalanceBefore = tokenList.weth.balanceOf(bob);
+    assertEq(bobDaiDataBefore.suppliedShares, 0);
+    assertEq(bobDaiBefore.totalDebt, daiBorrowAmount, 'bob dai debt before');
+    assertEq(
+      bobWethDataBefore.suppliedShares,
+      hub.convertToSuppliedShares(wethAssetId, wethSupplyAmount)
+    );
+    assertEq(spoke1.getUserTotalDebt(_wethReserveId(spoke1), bob), 0);
 
-    //     assertEq(bobDaiDataBefore.suppliedShares, 0);
-    //     assertEq(
-    //       bobDaiDataBefore.baseDebt + bobDaiDataBefore.outstandingPremium,
-    //       daiBorrowAmount,
-    //       'bob dai debt before'
-    //     );
-    //     assertEq(bobWethDataBefore.suppliedShares, hub.convertToSuppliedShares(wethAssetId, wethSupplyAmount));
-    //     assertEq(bobWethDataBefore.baseDebt, 0);
+    // Time passes
+    skip(skipTime);
 
-    //     // Time passes
-    //     skip(skipTime);
+    bobDaiDataBefore = getUserInfo(spoke1, bob, _daiReserveId(spoke1));
+    bobDaiBefore.totalDebt = spoke1.getUserTotalDebt(_daiReserveId(spoke1), bob);
+    (bobDaiBefore.baseDebt, bobDaiBefore.premiumDebt) = spoke1.getUserDebt(
+      _daiReserveId(spoke1),
+      bob
+    );
+    assertGe(bobDaiBefore.totalDebt, daiBorrowAmount, 'bob dai debt before');
+    assertEq(bobDaiBefore.premiumDebt, 0, 'bob dai outstanding premium before');
 
-    //     bobDaiDataBefore = getUserInfo(spoke1, bob, _daiReserveId(spoke1));
-    //     assertGe(
-    //       bobDaiDataBefore.baseDebt + bobDaiDataBefore.outstandingPremium,
-    //       daiBorrowAmount,
-    //       'bob dai debt before'
-    //     );
-    //     assertEq(bobDaiDataBefore.outstandingPremium, 0, 'bob dai outstanding premium before');
+    // Bob repays
+    uint256 bobDaiBaseDebt = bobDaiBefore.baseDebt - daiBorrowAmount;
+    if (bobDaiBaseDebt == 0) {
+      // not enough time travel for interest accrual
+      daiRepayAmount = 0;
+      vm.expectRevert(ILiquidityHub.InvalidRestoreAmount.selector);
+      vm.prank(bob);
+      spoke1.repay(_daiReserveId(spoke1), daiRepayAmount);
+    } else {
+      // interest is at least 1
+      daiRepayAmount = bound(daiRepayAmount, 1, bobDaiBaseDebt);
+      deal(address(tokenList.dai), bob, daiRepayAmount);
 
-    //     // Bob repays
-    //     uint256 bobDaiBaseDebt = bobDaiDataBefore.baseDebt - daiBorrowAmount;
-    //     if (bobDaiBaseDebt == 0) {
-    //       // not enough time travel for premium accrual
-    //       daiRepayAmount = 0;
-    //       vm.expectRevert(ILiquidityHub.InvalidRestoreAmount.selector);
-    //       vm.prank(bob);
-    //       spoke1.repay(_daiReserveId(spoke1), daiRepayAmount);
-    //     } else {
-    //       // interest is at least 1
-    //       daiRepayAmount = bound(daiRepayAmount, 1, bobDaiBaseDebt);
-    //       deal(address(tokenList.dai), bob, daiRepayAmount);
+      vm.expectEmit(address(spoke1));
+      emit ISpoke.Repay(
+        _daiReserveId(spoke1),
+        bob,
+        hub.convertToDrawnShares(daiAssetId, daiRepayAmount)
+      );
+      vm.prank(bob);
+      spoke1.repay(_daiReserveId(spoke1), daiRepayAmount);
 
-    //       vm.expectEmit(address(spoke1));
-    //       emit ISpoke.Repaid(_daiReserveId(spoke1), bob, daiRepayAmount);
-    //       vm.prank(bob);
-    //       spoke1.repay(_daiReserveId(spoke1), daiRepayAmount);
+      DataTypes.UserPosition memory bobDaiDataAfter = getUserInfo(
+        spoke1,
+        bob,
+        _daiReserveId(spoke1)
+      );
+      DataTypes.UserPosition memory bobWethDataAfter = getUserInfo(
+        spoke1,
+        bob,
+        _wethReserveId(spoke1)
+      );
+      Debts memory bobDaiAfter;
+      bobDaiAfter.totalDebt = spoke1.getUserTotalDebt(_daiReserveId(spoke1), bob);
+      (bobDaiAfter.baseDebt, bobDaiAfter.premiumDebt) = spoke1.getUserDebt(
+        _daiReserveId(spoke1),
+        bob
+      );
 
-    //       DataTypes.UserPosition memory bobDaiDataAfter = getUserInfo(
-    //         spoke1,
-    //         bob,
-    //         _daiReserveId(spoke1)
-    //       );
-    //       DataTypes.UserPosition memory bobWethDataAfter = getUserInfo(
-    //         spoke1,
-    //         bob,
-    //         _wethReserveId(spoke1)
-    //       );
+      assertEq(bobDaiDataAfter.suppliedShares, bobDaiDataBefore.suppliedShares);
+      assertEq(
+        bobDaiAfter.baseDebt,
+        bobDaiBefore.baseDebt - daiRepayAmount,
+        'bob dai base debt final balance'
+      );
+      assertEq(bobDaiAfter.premiumDebt, 0, 'bob dai premium debt final balance');
+      assertEq(
+        bobDaiAfter.totalDebt,
+        bobDaiBefore.totalDebt - daiRepayAmount,
+        'bob dai debt final balance'
+      );
+      assertEq(bobWethDataAfter.suppliedShares, bobWethDataBefore.suppliedShares);
+      assertEq(spoke1.getUserTotalDebt(_wethReserveId(spoke1), bob), 0);
 
-    //       assertEq(bobDaiDataAfter.suppliedShares, bobDaiDataBefore.suppliedShares);
-    //       assertEq(
-    //         bobDaiDataAfter.baseDebt,
-    //         bobDaiDataBefore.baseDebt - daiRepayAmount,
-    //         'bob dai base debt final balance'
-    //       );
-    //       assertEq(bobDaiDataAfter.outstandingPremium, 0, 'bob dai outstanding premium final balance');
-    //       assertEq(
-    //         bobDaiDataAfter.baseDebt + bobDaiDataAfter.outstandingPremium,
-    //         bobDaiDataBefore.baseDebt + bobDaiDataBefore.outstandingPremium - daiRepayAmount,
-    //         'bob dai debt final balance'
-    //       );
-    //       assertEq(bobWethDataAfter.suppliedShares, bobWethDataBefore.suppliedShares);
-    //       assertEq(bobWethDataAfter.baseDebt, bobWethDataBefore.baseDebt);
+      assertEq(tokenList.dai.balanceOf(bob), 0, 'bob dai final balance');
+      assertEq(tokenList.weth.balanceOf(bob), bobWethBalanceBefore);
 
-    //       assertEq(tokenList.dai.balanceOf(bob), 0, 'bob dai final balance');
-    //       assertEq(tokenList.weth.balanceOf(bob), bobWethBalanceBefore);
-
-    //       // repays only base debt
-    //       assertGe(bobDaiDataAfter.baseDebt, daiBorrowAmount);
-    //     }
+      // repays only base debt
+      assertGe(bobDaiAfter.baseDebt, daiBorrowAmount);
+    }
   }
 
   struct RepayMultipleLocal {
@@ -1711,173 +1725,223 @@ contract SpokeRepayTest is SpokeBase {
     uint256 repayPortion,
     uint256 skipTime
   ) public {
-    vm.skip(true, 'pending refactor');
+    RepayMultipleLocal memory daiInfo;
+    RepayMultipleLocal memory wethInfo;
+    RepayMultipleLocal memory usdxInfo;
+    RepayMultipleLocal memory wbtcInfo;
 
-    //     RepayMultipleLocal memory daiInfo;
-    //     RepayMultipleLocal memory wethInfo;
-    //     RepayMultipleLocal memory usdxInfo;
-    //     RepayMultipleLocal memory wbtcInfo;
+    daiInfo.borrowAmount = bound(daiBorrowAmount, 1, MAX_SUPPLY_AMOUNT / 2);
+    wethInfo.borrowAmount = bound(wethBorrowAmount, 1, MAX_SUPPLY_AMOUNT / 2);
+    usdxInfo.borrowAmount = bound(usdxBorrowAmount, 1, MAX_SUPPLY_AMOUNT / 2);
+    wbtcInfo.borrowAmount = bound(wbtcBorrowAmount, 1, MAX_SUPPLY_AMOUNT / 2);
+    repayPortion = bound(repayPortion, 0, PercentageMath.PERCENTAGE_FACTOR);
+    skipTime = bound(skipTime, 1, MAX_SKIP_TIME);
 
-    //     daiInfo.borrowAmount = bound(daiBorrowAmount, 1, MAX_SUPPLY_AMOUNT / 2);
-    //     wethInfo.borrowAmount = bound(wethBorrowAmount, 1, MAX_SUPPLY_AMOUNT / 2);
-    //     usdxInfo.borrowAmount = bound(usdxBorrowAmount, 1, MAX_SUPPLY_AMOUNT / 2);
-    //     wbtcInfo.borrowAmount = bound(wbtcBorrowAmount, 1, MAX_SUPPLY_AMOUNT / 2);
-    //     repayPortion = bound(repayPortion, 0, PercentageMath.PERCENTAGE_FACTOR);
-    //     skipTime = bound(skipTime, 1, MAX_SKIP_TIME);
+    daiInfo.repayAmount = daiInfo.borrowAmount.percentMul(repayPortion);
+    wethInfo.repayAmount = wethInfo.borrowAmount.percentMul(repayPortion);
+    usdxInfo.repayAmount = usdxInfo.borrowAmount.percentMul(repayPortion);
+    wbtcInfo.repayAmount = wbtcInfo.borrowAmount.percentMul(repayPortion);
 
-    //     daiInfo.repayAmount = daiInfo.borrowAmount.percentMul(repayPortion);
-    //     wethInfo.repayAmount = wethInfo.borrowAmount.percentMul(repayPortion);
-    //     usdxInfo.repayAmount = usdxInfo.borrowAmount.percentMul(repayPortion);
-    //     wbtcInfo.repayAmount = wbtcInfo.borrowAmount.percentMul(repayPortion);
+    // weth collateral for dai and usdx
+    // wbtc collateral for weth and wbtc
+    // calculate weth collateral
+    // calculate wbtc collateral
+    {
+      uint256 wethSupplyAmount = _calcMinimumCollAmount(
+        spoke1,
+        _wethReserveId(spoke1),
+        _daiReserveId(spoke1),
+        daiInfo.borrowAmount
+      ) +
+        _calcMinimumCollAmount(
+          spoke1,
+          _wethReserveId(spoke1),
+          _usdxReserveId(spoke1),
+          usdxInfo.borrowAmount
+        );
+      uint256 wbtcSupplyAmount = _calcMinimumCollAmount(
+        spoke1,
+        _wbtcReserveId(spoke1),
+        _wethReserveId(spoke1),
+        wethInfo.borrowAmount
+      ) +
+        _calcMinimumCollAmount(
+          spoke1,
+          _wbtcReserveId(spoke1),
+          _wbtcReserveId(spoke1),
+          wbtcInfo.borrowAmount
+        );
 
-    //     // weth collateral for dai and usdx
-    //     // wbtc collateral for weth and wbtc
-    //     // calculate weth collateral
-    //     // calculate wbtc collateral
-    //     {
-    //       uint256 wethSupplyAmount = _calcMinimumCollAmount(
-    //         spoke1,
-    //         _wethReserveId(spoke1),
-    //         _daiReserveId(spoke1),
-    //         daiInfo.borrowAmount
-    //       ) +
-    //         _calcMinimumCollAmount(
-    //           spoke1,
-    //           _wethReserveId(spoke1),
-    //           _usdxReserveId(spoke1),
-    //           usdxInfo.borrowAmount
-    //         );
-    //       uint256 wbtcSupplyAmount = _calcMinimumCollAmount(
-    //         spoke1,
-    //         _wbtcReserveId(spoke1),
-    //         _wethReserveId(spoke1),
-    //         wethInfo.borrowAmount
-    //       ) +
-    //         _calcMinimumCollAmount(
-    //           spoke1,
-    //           _wbtcReserveId(spoke1),
-    //           _wbtcReserveId(spoke1),
-    //           wbtcInfo.borrowAmount
-    //         );
+      // Bob supply weth and wbtc
+      deal(address(tokenList.weth), bob, wethSupplyAmount);
+      Utils.spokeSupply(spoke1, _wethReserveId(spoke1), bob, wethSupplyAmount, bob);
+      setUsingAsCollateral(spoke1, bob, _wethReserveId(spoke1), true);
+      deal(address(tokenList.wbtc), bob, wbtcSupplyAmount);
+      Utils.spokeSupply(spoke1, _wbtcReserveId(spoke1), bob, wbtcSupplyAmount, bob);
+      setUsingAsCollateral(spoke1, bob, _wbtcReserveId(spoke1), true);
+    }
 
-    //       // Bob supply weth and wbtc
-    //       deal(address(tokenList.weth), bob, wethSupplyAmount);
-    //       Utils.spokeSupply(spoke1, _wethReserveId(spoke1), bob, wethSupplyAmount, bob);
-    //       setUsingAsCollateral(spoke1, bob, _wethReserveId(spoke1), true);
-    //       deal(address(tokenList.wbtc), bob, wbtcSupplyAmount);
-    //       Utils.spokeSupply(spoke1, _wbtcReserveId(spoke1), bob, wbtcSupplyAmount, bob);
-    //       setUsingAsCollateral(spoke1, bob, _wbtcReserveId(spoke1), true);
-    //     }
+    // Alice supply liquidity
+    Utils.spokeSupply(spoke1, _daiReserveId(spoke1), alice, daiInfo.borrowAmount, alice);
+    Utils.spokeSupply(spoke1, _wethReserveId(spoke1), alice, wethInfo.borrowAmount, alice);
+    Utils.spokeSupply(spoke1, _usdxReserveId(spoke1), alice, usdxInfo.borrowAmount, alice);
+    Utils.spokeSupply(spoke1, _wbtcReserveId(spoke1), alice, wbtcInfo.borrowAmount, alice);
 
-    //     // Alice supply liquidity
-    //     Utils.spokeSupply(spoke1, _daiReserveId(spoke1), alice, daiInfo.borrowAmount, alice);
-    //     Utils.spokeSupply(spoke1, _wethReserveId(spoke1), alice, wethInfo.borrowAmount, alice);
-    //     Utils.spokeSupply(spoke1, _usdxReserveId(spoke1), alice, usdxInfo.borrowAmount, alice);
-    //     Utils.spokeSupply(spoke1, _wbtcReserveId(spoke1), alice, wbtcInfo.borrowAmount, alice);
+    // Bob borrows
+    Utils.spokeBorrow(spoke1, _daiReserveId(spoke1), bob, daiInfo.borrowAmount, bob);
+    Utils.spokeBorrow(spoke1, _wethReserveId(spoke1), bob, wethInfo.borrowAmount, bob);
+    Utils.spokeBorrow(spoke1, _usdxReserveId(spoke1), bob, usdxInfo.borrowAmount, bob);
+    Utils.spokeBorrow(spoke1, _wbtcReserveId(spoke1), bob, wbtcInfo.borrowAmount, bob);
 
-    //     // Bob borrows
-    //     Utils.spokeBorrow(spoke1, _daiReserveId(spoke1), bob, daiInfo.borrowAmount, bob);
-    //     Utils.spokeBorrow(spoke1, _wethReserveId(spoke1), bob, wethInfo.borrowAmount, bob);
-    //     Utils.spokeBorrow(spoke1, _usdxReserveId(spoke1), bob, usdxInfo.borrowAmount, bob);
-    //     Utils.spokeBorrow(spoke1, _wbtcReserveId(spoke1), bob, wbtcInfo.borrowAmount, bob);
+    daiInfo.posBefore = getUserInfo(spoke1, bob, _daiReserveId(spoke1));
+    wethInfo.posBefore = getUserInfo(spoke1, bob, _wethReserveId(spoke1));
+    usdxInfo.posBefore = getUserInfo(spoke1, bob, _usdxReserveId(spoke1));
+    wbtcInfo.posBefore = getUserInfo(spoke1, bob, _wbtcReserveId(spoke1));
 
-    //     daiInfo.posBefore = getUserInfo(spoke1, bob, _daiReserveId(spoke1));
-    //     wethInfo.posBefore = getUserInfo(spoke1, bob, _wethReserveId(spoke1));
-    //     usdxInfo.posBefore = getUserInfo(spoke1, bob, _usdxReserveId(spoke1));
-    //     wbtcInfo.posBefore = getUserInfo(spoke1, bob, _wbtcReserveId(spoke1));
+    Debts memory bobDaiBefore;
+    Debts memory bobWethBefore;
+    Debts memory bobUsdxBefore;
+    Debts memory bobWbtcBefore;
 
-    //     assertEq(
-    //       daiInfo.posBefore.baseDebt + daiInfo.posBefore.outstandingPremium,
-    //       daiInfo.borrowAmount
-    //     );
-    //     assertEq(
-    //       wethInfo.posBefore.baseDebt + wethInfo.posBefore.outstandingPremium,
-    //       wethInfo.borrowAmount
-    //     );
-    //     assertEq(
-    //       wbtcInfo.posBefore.baseDebt + wbtcInfo.posBefore.outstandingPremium,
-    //       wbtcInfo.borrowAmount
-    //     );
-    //     assertEq(
-    //       usdxInfo.posBefore.baseDebt + usdxInfo.posBefore.outstandingPremium,
-    //       usdxInfo.borrowAmount
-    //     );
+    bobDaiBefore.totalDebt = spoke1.getUserTotalDebt(_daiReserveId(spoke1), bob);
+    bobWethBefore.totalDebt = spoke1.getUserTotalDebt(_wethReserveId(spoke1), bob);
+    bobUsdxBefore.totalDebt = spoke1.getUserTotalDebt(_usdxReserveId(spoke1), bob);
+    bobWbtcBefore.totalDebt = spoke1.getUserTotalDebt(_wbtcReserveId(spoke1), bob);
 
-    //     // Time passes
-    //     skip(skipTime);
+    (bobDaiBefore.baseDebt, bobDaiBefore.premiumDebt) = spoke1.getUserDebt(
+      _daiReserveId(spoke1),
+      bob
+    );
+    (bobWethBefore.baseDebt, bobWethBefore.premiumDebt) = spoke1.getUserDebt(
+      _wethReserveId(spoke1),
+      bob
+    );
+    (bobUsdxBefore.baseDebt, bobUsdxBefore.premiumDebt) = spoke1.getUserDebt(
+      _usdxReserveId(spoke1),
+      bob
+    );
+    (bobWbtcBefore.baseDebt, bobWbtcBefore.premiumDebt) = spoke1.getUserDebt(
+      _wbtcReserveId(spoke1),
+      bob
+    );
 
-    //     daiInfo.posBefore = getUserInfo(spoke1, bob, _daiReserveId(spoke1));
-    //     wethInfo.posBefore = getUserInfo(spoke1, bob, _wethReserveId(spoke1));
-    //     usdxInfo.posBefore = getUserInfo(spoke1, bob, _usdxReserveId(spoke1));
-    //     wbtcInfo.posBefore = getUserInfo(spoke1, bob, _wbtcReserveId(spoke1));
+    assertEq(bobDaiBefore.totalDebt, daiInfo.borrowAmount);
+    assertEq(bobWethBefore.totalDebt, wethInfo.borrowAmount);
+    assertEq(bobWbtcBefore.totalDebt, wbtcInfo.borrowAmount);
+    assertEq(bobUsdxBefore.totalDebt, usdxInfo.borrowAmount);
 
-    //     assertGe(
-    //       daiInfo.posBefore.baseDebt + daiInfo.posBefore.outstandingPremium,
-    //       daiInfo.borrowAmount
-    //     );
-    //     assertGe(
-    //       wethInfo.posBefore.baseDebt + wethInfo.posBefore.outstandingPremium,
-    //       wethInfo.borrowAmount
-    //     );
-    //     assertGe(
-    //       wbtcInfo.posBefore.baseDebt + wbtcInfo.posBefore.outstandingPremium,
-    //       wbtcInfo.borrowAmount
-    //     );
-    //     assertGe(
-    //       usdxInfo.posBefore.baseDebt + usdxInfo.posBefore.outstandingPremium,
-    //       usdxInfo.borrowAmount
-    //     );
+    // Time passes
+    skip(skipTime);
 
-    //     // Repayments
-    //     if (daiInfo.repayAmount > 0) {
-    //       deal(address(tokenList.dai), bob, daiInfo.repayAmount);
-    //       Utils.spokeRepay(spoke1, _daiReserveId(spoke1), bob, daiInfo.repayAmount);
-    //     }
-    //     if (wethInfo.repayAmount > 0) {
-    //       deal(address(tokenList.weth), bob, wethInfo.repayAmount);
-    //       Utils.spokeRepay(spoke1, _wethReserveId(spoke1), bob, wethInfo.repayAmount);
-    //     }
-    //     if (wbtcInfo.repayAmount > 0) {
-    //       deal(address(tokenList.wbtc), bob, wbtcInfo.repayAmount);
-    //       Utils.spokeRepay(spoke1, _wbtcReserveId(spoke1), bob, wbtcInfo.repayAmount);
-    //     }
-    //     if (usdxInfo.repayAmount > 0) {
-    //       deal(address(tokenList.usdx), bob, usdxInfo.repayAmount);
-    //       Utils.spokeRepay(spoke1, _usdxReserveId(spoke1), bob, usdxInfo.repayAmount);
-    //     }
+    daiInfo.posBefore = getUserInfo(spoke1, bob, _daiReserveId(spoke1));
+    wethInfo.posBefore = getUserInfo(spoke1, bob, _wethReserveId(spoke1));
+    usdxInfo.posBefore = getUserInfo(spoke1, bob, _usdxReserveId(spoke1));
+    wbtcInfo.posBefore = getUserInfo(spoke1, bob, _wbtcReserveId(spoke1));
 
-    //     daiInfo.posAfter = getUserInfo(spoke1, bob, _daiReserveId(spoke1));
-    //     wethInfo.posAfter = getUserInfo(spoke1, bob, _wethReserveId(spoke1));
-    //     usdxInfo.posAfter = getUserInfo(spoke1, bob, _usdxReserveId(spoke1));
-    //     wbtcInfo.posAfter = getUserInfo(spoke1, bob, _wbtcReserveId(spoke1));
+    bobDaiBefore.totalDebt = spoke1.getUserTotalDebt(_daiReserveId(spoke1), bob);
+    bobWethBefore.totalDebt = spoke1.getUserTotalDebt(_wethReserveId(spoke1), bob);
+    bobUsdxBefore.totalDebt = spoke1.getUserTotalDebt(_usdxReserveId(spoke1), bob);
+    bobWbtcBefore.totalDebt = spoke1.getUserTotalDebt(_wbtcReserveId(spoke1), bob);
 
-    //     // collateral remains the same
-    //     assertEq(daiInfo.posAfter.suppliedShares, daiInfo.posBefore.suppliedShares);
-    //     assertEq(wethInfo.posAfter.suppliedShares, wethInfo.posBefore.suppliedShares);
-    //     assertEq(usdxInfo.posAfter.suppliedShares, usdxInfo.posBefore.suppliedShares);
-    //     assertEq(wbtcInfo.posAfter.suppliedShares, wbtcInfo.posBefore.suppliedShares);
+    (bobDaiBefore.baseDebt, bobDaiBefore.premiumDebt) = spoke1.getUserDebt(
+      _daiReserveId(spoke1),
+      bob
+    );
+    (bobWethBefore.baseDebt, bobWethBefore.premiumDebt) = spoke1.getUserDebt(
+      _wethReserveId(spoke1),
+      bob
+    );
+    (bobUsdxBefore.baseDebt, bobUsdxBefore.premiumDebt) = spoke1.getUserDebt(
+      _usdxReserveId(spoke1),
+      bob
+    );
+    (bobWbtcBefore.baseDebt, bobWbtcBefore.premiumDebt) = spoke1.getUserDebt(
+      _wbtcReserveId(spoke1),
+      bob
+    );
 
-    //     // debt
-    //     assertEq(
-    //       daiInfo.posAfter.baseDebt + daiInfo.posAfter.outstandingPremium,
-    //       daiInfo.posBefore.baseDebt + daiInfo.posBefore.outstandingPremium - daiInfo.repayAmount,
-    //       'bob dai debt final balance'
-    //     );
-    //     assertEq(
-    //       wethInfo.posAfter.baseDebt + wethInfo.posAfter.outstandingPremium,
-    //       wethInfo.posBefore.baseDebt + wethInfo.posBefore.outstandingPremium - wethInfo.repayAmount,
-    //       'bob weth debt final balance'
-    //     );
-    //     assertEq(
-    //       usdxInfo.posAfter.baseDebt + usdxInfo.posAfter.outstandingPremium,
-    //       usdxInfo.posBefore.baseDebt + usdxInfo.posBefore.outstandingPremium - usdxInfo.repayAmount,
-    //       'bob usdx debt final balance'
-    //     );
-    //     assertEq(
-    //       wbtcInfo.posAfter.baseDebt + wbtcInfo.posAfter.outstandingPremium,
-    //       wbtcInfo.posBefore.baseDebt + wbtcInfo.posBefore.outstandingPremium - wbtcInfo.repayAmount,
-    //       'bob wbtc debt final balance'
-    //     );
+    assertGe(bobDaiBefore.totalDebt, daiInfo.borrowAmount);
+    assertGe(bobWethBefore.totalDebt, wethInfo.borrowAmount);
+    assertGe(bobWbtcBefore.totalDebt, wbtcInfo.borrowAmount);
+    assertGe(bobUsdxBefore.totalDebt, usdxInfo.borrowAmount);
+
+    // Repayments
+    if (daiInfo.repayAmount > 0) {
+      deal(address(tokenList.dai), bob, daiInfo.repayAmount);
+      Utils.spokeRepay(spoke1, _daiReserveId(spoke1), bob, daiInfo.repayAmount);
+    }
+    if (wethInfo.repayAmount > 0) {
+      deal(address(tokenList.weth), bob, wethInfo.repayAmount);
+      Utils.spokeRepay(spoke1, _wethReserveId(spoke1), bob, wethInfo.repayAmount);
+    }
+    if (wbtcInfo.repayAmount > 0) {
+      deal(address(tokenList.wbtc), bob, wbtcInfo.repayAmount);
+      Utils.spokeRepay(spoke1, _wbtcReserveId(spoke1), bob, wbtcInfo.repayAmount);
+    }
+    if (usdxInfo.repayAmount > 0) {
+      deal(address(tokenList.usdx), bob, usdxInfo.repayAmount);
+      Utils.spokeRepay(spoke1, _usdxReserveId(spoke1), bob, usdxInfo.repayAmount);
+    }
+
+    daiInfo.posAfter = getUserInfo(spoke1, bob, _daiReserveId(spoke1));
+    wethInfo.posAfter = getUserInfo(spoke1, bob, _wethReserveId(spoke1));
+    usdxInfo.posAfter = getUserInfo(spoke1, bob, _usdxReserveId(spoke1));
+    wbtcInfo.posAfter = getUserInfo(spoke1, bob, _wbtcReserveId(spoke1));
+
+    Debts memory bobDaiAfter;
+    Debts memory bobWethAfter;
+    Debts memory bobUsdxAfter;
+    Debts memory bobWbtcAfter;
+
+    bobDaiAfter.totalDebt = spoke1.getUserTotalDebt(_daiReserveId(spoke1), bob);
+    bobWethAfter.totalDebt = spoke1.getUserTotalDebt(_wethReserveId(spoke1), bob);
+    bobUsdxAfter.totalDebt = spoke1.getUserTotalDebt(_usdxReserveId(spoke1), bob);
+    bobWbtcAfter.totalDebt = spoke1.getUserTotalDebt(_wbtcReserveId(spoke1), bob);
+
+    (bobDaiAfter.baseDebt, bobDaiAfter.premiumDebt) = spoke1.getUserDebt(
+      _daiReserveId(spoke1),
+      bob
+    );
+    (bobWethAfter.baseDebt, bobWethAfter.premiumDebt) = spoke1.getUserDebt(
+      _wethReserveId(spoke1),
+      bob
+    );
+    (bobUsdxAfter.baseDebt, bobUsdxAfter.premiumDebt) = spoke1.getUserDebt(
+      _usdxReserveId(spoke1),
+      bob
+    );
+    (bobWbtcAfter.baseDebt, bobWbtcAfter.premiumDebt) = spoke1.getUserDebt(
+      _wbtcReserveId(spoke1),
+      bob
+    );
+
+    // collateral remains the same
+    assertEq(daiInfo.posAfter.suppliedShares, daiInfo.posBefore.suppliedShares);
+    assertEq(wethInfo.posAfter.suppliedShares, wethInfo.posBefore.suppliedShares);
+    assertEq(usdxInfo.posAfter.suppliedShares, usdxInfo.posBefore.suppliedShares);
+    assertEq(wbtcInfo.posAfter.suppliedShares, wbtcInfo.posBefore.suppliedShares);
+
+    // debt
+    assertEq(
+      bobDaiAfter.totalDebt,
+      bobDaiBefore.totalDebt - daiInfo.repayAmount,
+      'bob dai debt final balance'
+    );
+    assertEq(
+      bobWethAfter.totalDebt,
+      bobWethBefore.totalDebt - wethInfo.repayAmount,
+      'bob weth debt final balance'
+    );
+    assertEq(
+      bobUsdxAfter.totalDebt,
+      bobUsdxBefore.totalDebt - usdxInfo.repayAmount,
+      'bob usdx debt final balance'
+    );
+    assertEq(
+      bobWbtcAfter.totalDebt,
+      bobWbtcBefore.totalDebt - wbtcInfo.repayAmount,
+      'bob wbtc debt final balance'
+    );
   }
 
   function _calculateRestoreAmount(
