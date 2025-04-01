@@ -33,49 +33,9 @@ contract SpokeBase is Base {
   }
 
   struct DebtData {
-    uint256 reserveBaseDebt;
-    uint256 reservePremiumDebt;
-    uint256 userBaseDebt;
-    uint256 userPremiumDebt;
-  }
-
-  struct BorrowTestData {
-    DataTypes.UserPosition bobDaiData;
-    DataTypes.UserPosition bobWethData;
-    DataTypes.UserPosition bobUsdxData;
-    DataTypes.UserPosition bobWbtcData;
-    DataTypes.UserPosition bobDaiData2;
-    DataTypes.UserPosition bobUsdxData2;
-    DataTypes.UserPosition bobDaiDataFinal;
-    DataTypes.UserPosition bobUsdxDataFinal;
-    DataTypes.UserPosition bobDaiData2Final;
-    DataTypes.UserPosition bobUsdxData2Final;
-    DataTypes.UserPosition aliceDaiData;
-    DataTypes.UserPosition aliceWethData;
-    DataTypes.UserPosition bobDaiDataCalc;
-    DataTypes.UserPosition bobWethDataCalc;
-    DataTypes.UserPosition bobUsdxDataCalc;
-    DataTypes.UserPosition bobWbtcDataCalc;
-    DataTypes.UserPosition bobDaiDataCalc2;
-    DataTypes.UserPosition bobUsdxDataCalc2;
-    uint256 daiReserveId;
-    uint256 wethReserveId;
-    uint256 daiSupplyAmount;
-    uint256 daiSupplyAmount2;
-    uint256 usdxSupplyAmount;
-    uint256 usdxSupplyAmount2;
-    uint256 wethSupplyAmount;
-    uint256 daiBorrowAmount;
-    uint256 bobDaiBalanceBefore;
-    uint256 bobWethBalanceBefore;
-    uint256 aliceDaiBalanceBefore;
-    uint256 aliceWethBalanceBefore;
-    uint256 bobDaiBalanceAfter;
-    uint256 bobWethBalanceAfter;
-    uint256 aliceDaiBalanceAfter;
-    uint256 aliceWethBalanceAfter;
-    uint256 lastUpdateTimestamp;
-    uint256 cumulatedInterest;
+    uint256 totalDebt;
+    uint256 baseDebt;
+    uint256 premiumDebt;
   }
 
   function setUp() public virtual override {
@@ -361,25 +321,26 @@ contract SpokeBase is Base {
     uint256 reserveId,
     address user
   ) internal view {
-    DebtData memory debtData;
+    DebtData memory reserveDebt;
+    DebtData memory userDebt;
     uint256 assetId = spoke.getReserve(reserveId).assetId;
 
-    (debtData.reserveBaseDebt, debtData.reservePremiumDebt) = spoke.getReserveDebt(reserveId);
-    (debtData.userBaseDebt, debtData.userPremiumDebt) = spoke.getUserDebt(reserveId, user);
+    (reserveDebt.baseDebt, reserveDebt.premiumDebt) = spoke.getReserveDebt(reserveId);
+    (userDebt.baseDebt, userDebt.premiumDebt) = spoke.getUserDebt(reserveId, user);
     assertEq(
-      debtData.userBaseDebt,
+      userDebt.baseDebt,
       hub.convertToDrawnAssets(assetId, userData.baseDrawnShares),
       'user base debt'
     );
     assertEq(
-      debtData.userPremiumDebt,
+      userDebt.premiumDebt,
       userData.realizedPremium +
         hub.convertToDrawnAssets(assetId, userData.premiumDrawnShares) -
         userData.premiumOffset,
       'user premium debt'
     );
-    assertEq(debtData.reserveBaseDebt, debtData.userBaseDebt, 'base debt');
-    assertEq(debtData.reservePremiumDebt, debtData.userPremiumDebt, 'premium debt');
+    assertEq(reserveDebt.baseDebt, userDebt.baseDebt, 'base debt');
+    assertEq(reserveDebt.premiumDebt, userDebt.premiumDebt, 'premium debt');
   }
 
   // function _calculateExpectedUserRP(address user, ISpoke spoke) internal view returns (uint256) {

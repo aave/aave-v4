@@ -4,6 +4,43 @@ pragma solidity ^0.8.0;
 import 'tests/unit/Spoke/SpokeBase.t.sol';
 
 contract SpokeBorrowTest is SpokeBase {
+  struct BorrowTestData {
+    DataTypes.UserPosition bobDaiData;
+    DataTypes.UserPosition bobWethData;
+    DataTypes.UserPosition bobUsdxData;
+    DataTypes.UserPosition bobWbtcData;
+    DataTypes.UserPosition bobDaiData2;
+    DataTypes.UserPosition bobUsdxData2;
+    DataTypes.UserPosition bobDaiDataFinal;
+    DataTypes.UserPosition bobUsdxDataFinal;
+    DataTypes.UserPosition bobDaiData2Final;
+    DataTypes.UserPosition bobUsdxData2Final;
+    DataTypes.UserPosition aliceDaiData;
+    DataTypes.UserPosition aliceWethData;
+    DataTypes.UserPosition bobDaiDataCalc;
+    DataTypes.UserPosition bobWethDataCalc;
+    DataTypes.UserPosition bobUsdxDataCalc;
+    DataTypes.UserPosition bobWbtcDataCalc;
+    DataTypes.UserPosition bobDaiDataCalc2;
+    DataTypes.UserPosition bobUsdxDataCalc2;
+    uint256 daiReserveId;
+    uint256 wethReserveId;
+    uint256 daiSupplyAmount;
+    uint256 daiSupplyAmount2;
+    uint256 usdxSupplyAmount;
+    uint256 usdxSupplyAmount2;
+    uint256 wethSupplyAmount;
+    uint256 daiBorrowAmount;
+    uint256 bobDaiBalanceBefore;
+    uint256 bobWethBalanceBefore;
+    uint256 aliceDaiBalanceBefore;
+    uint256 aliceWethBalanceBefore;
+    uint256 bobDaiBalanceAfter;
+    uint256 bobWethBalanceAfter;
+    uint256 aliceDaiBalanceAfter;
+    uint256 aliceWethBalanceAfter;
+    uint256 lastUpdateTimestamp;
+  }
   function test_borrow_revertsWith_ReserveNotBorrowable() public {
     uint256 daiReserveId = _daiReserveId(spoke1);
 
@@ -152,6 +189,96 @@ contract SpokeBorrowTest is SpokeBase {
     vm.expectRevert(ILiquidityHub.AssetNotActive.selector);
     vm.prank(bob);
     spoke1.borrow(reserveId, 1, bob);
+  }
+
+  function test_borrow_revertsWith_NotAvailableLiquidity() public {
+    uint256 daiReserveId = _daiReserveId(spoke1);
+    uint256 wethReserveId = _wethReserveId(spoke1);
+
+    uint256 daiAmount = 100e18;
+    uint256 wethAmount = 10e18;
+
+    // Bob supply weth
+    Utils.spokeSupply(spoke1, wethReserveId, bob, wethAmount, bob);
+
+    // Alice supply dai
+    Utils.spokeSupply(spoke1, daiReserveId, alice, daiAmount, alice);
+
+    // Bob draw more than supplied dai amount
+    vm.expectRevert(
+      abi.encodeWithSelector(ILiquidityHub.NotAvailableLiquidity.selector, daiAmount)
+    );
+    vm.prank(bob);
+    spoke1.borrow(daiReserveId, daiAmount + 1, bob);
+  }
+
+  function test_borrow_revertsWith_InvalidDrawAmount() public {
+    // Bob draw 0 dai
+
+    vm.expectRevert(ILiquidityHub.InvalidDrawAmount.selector);
+    vm.prank(bob);
+    spoke1.borrow(_daiReserveId(spoke1), 0, bob);
+  }
+
+  function test_borrow_revertsWith_DrawCapExceeded() public {
+    uint256 daiReserveId = _daiReserveId(spoke1);
+    uint256 drawCap = 100e18;
+    uint256 drawAmount = drawCap + 1;
+
+    updateDrawCap(hub, daiAssetId, address(spoke1), drawCap);
+
+    // Bob borrow dai amount exceeding draw cap
+    vm.expectRevert(abi.encodeWithSelector(ILiquidityHub.DrawCapExceeded.selector, drawCap));
+    vm.prank(bob);
+    spoke1.borrow(daiReserveId, drawAmount, bob);
+  }
+
+  function test_borrow_fuzz_revertsWith_DrawCapExceeded(uint256 reserveId, uint256 drawCap) public {
+    reserveId = bound(reserveId, 0, spoke1.reserveCount() - 1);
+    drawCap = bound(drawCap, 1, MAX_SUPPLY_AMOUNT);
+
+    uint256 drawAmount = drawCap + 1;
+
+    uint256 assetId = spoke1.getReserve(reserveId).assetId;
+    updateDrawCap(hub, assetId, address(spoke1), drawCap);
+    assertEq(hub.getSpoke(assetId, address(spoke1)).config.drawCap, drawCap);
+
+    // Bob borrow dai amount exceeding draw cap
+    vm.expectRevert(abi.encodeWithSelector(ILiquidityHub.DrawCapExceeded.selector, drawCap));
+    vm.prank(bob);
+    spoke1.borrow(reserveId, drawAmount, bob);
+  }
+
+  function test_borrow_revertsWith_DrawCapExceeded_due_to_interest() public {
+    uint256 daiReserveId = _daiReserveId(spoke1);
+    uint256 wethReserveId = _wethReserveId(spoke1);
+
+    uint256 daiAmount = 100e18;
+    uint256 drawCap = daiAmount;
+    uint256 wethSupplyAmount = 10e18;
+    uint256 drawAmount = drawCap - 1;
+
+    updateDrawCap(hub, daiAssetId, address(spoke1), drawCap);
+
+    // Bob supply weth
+    Utils.spokeSupply(spoke1, wethReserveId, bob, wethSupplyAmount, bob);
+    setUsingAsCollateral(spoke1, bob, wethReserveId, true);
+
+    // Alice supply dai
+    Utils.spokeSupply(spoke1, daiReserveId, alice, daiAmount, alice);
+
+    // Bob draw dai
+    Utils.spokeBorrow(spoke1, daiReserveId, bob, drawAmount, bob);
+
+    assertGt(spoke1.getHealthFactor(bob), spoke1.HEALTH_FACTOR_LIQUIDATION_THRESHOLD());
+
+    skip(365 days);
+
+    // Additional supply to accrue interest
+    Utils.spokeSupply(spoke1, daiReserveId, bob, 1e18, bob);
+
+    vm.expectRevert(abi.encodeWithSelector(ILiquidityHub.DrawCapExceeded.selector, drawCap));
+    Utils.spokeBorrow(spoke1, daiReserveId, bob, 1, bob);
   }
 
   function test_borrow() public {
@@ -436,96 +563,7 @@ contract SpokeBorrowTest is SpokeBase {
     _assertUserAndReserveDebt(spoke1, state.bobDaiData, state.daiReserveId, bob);
   }
 
-  function test_borrow_revertsWith_NotAvailableLiquidity() public {
-    uint256 daiReserveId = _daiReserveId(spoke1);
-    uint256 wethReserveId = _wethReserveId(spoke1);
-
-    uint256 daiAmount = 100e18;
-    uint256 wethAmount = 10e18;
-
-    // Bob supply weth
-    Utils.spokeSupply(spoke1, wethReserveId, bob, wethAmount, bob);
-
-    // Alice supply dai
-    Utils.spokeSupply(spoke1, daiReserveId, alice, daiAmount, alice);
-
-    // Bob draw more than supplied dai amount
-    vm.expectRevert(
-      abi.encodeWithSelector(ILiquidityHub.NotAvailableLiquidity.selector, daiAmount)
-    );
-    vm.prank(bob);
-    spoke1.borrow(daiReserveId, daiAmount + 1, bob);
-  }
-
-  function test_borrow_revertsWith_InvalidDrawAmount() public {
-    // Bob draw 0 dai
-
-    vm.expectRevert(ILiquidityHub.InvalidDrawAmount.selector);
-    vm.prank(bob);
-    spoke1.borrow(_daiReserveId(spoke1), 0, bob);
-  }
-
-  function test_borrow_revertsWith_DrawCapExceeded() public {
-    uint256 daiReserveId = _daiReserveId(spoke1);
-    uint256 drawCap = 100e18;
-    uint256 drawAmount = drawCap + 1;
-
-    updateDrawCap(hub, daiAssetId, address(spoke1), drawCap);
-
-    // Bob borrow dai amount exceeding draw cap
-    vm.expectRevert(abi.encodeWithSelector(ILiquidityHub.DrawCapExceeded.selector, drawCap));
-    vm.prank(bob);
-    spoke1.borrow(daiReserveId, drawAmount, bob);
-  }
-
-  function test_borrow_fuzz_revertsWith_DrawCapExceeded(uint256 reserveId, uint256 drawCap) public {
-    reserveId = bound(reserveId, 0, spoke1.reserveCount() - 1);
-    drawCap = bound(drawCap, 1, MAX_SUPPLY_AMOUNT);
-
-    uint256 drawAmount = drawCap + 1;
-
-    uint256 assetId = spoke1.getReserve(reserveId).assetId;
-    updateDrawCap(hub, assetId, address(spoke1), drawCap);
-    assertEq(hub.getSpoke(assetId, address(spoke1)).config.drawCap, drawCap);
-
-    // Bob borrow dai amount exceeding draw cap
-    vm.expectRevert(abi.encodeWithSelector(ILiquidityHub.DrawCapExceeded.selector, drawCap));
-    vm.prank(bob);
-    spoke1.borrow(reserveId, drawAmount, bob);
-  }
-
-  function test_borrow_revertsWith_DrawCapExceeded_due_to_interest() public {
-    uint256 daiReserveId = _daiReserveId(spoke1);
-    uint256 wethReserveId = _wethReserveId(spoke1);
-
-    uint256 daiAmount = 100e18;
-    uint256 drawCap = daiAmount;
-    uint256 wethSupplyAmount = 10e18;
-    uint256 drawAmount = drawCap - 1;
-
-    updateDrawCap(hub, daiAssetId, address(spoke1), drawCap);
-
-    // Bob supply weth
-    Utils.spokeSupply(spoke1, wethReserveId, bob, wethSupplyAmount, bob);
-    setUsingAsCollateral(spoke1, bob, wethReserveId, true);
-
-    // Alice supply dai
-    Utils.spokeSupply(spoke1, daiReserveId, alice, daiAmount, alice);
-
-    // Bob draw dai
-    Utils.spokeBorrow(spoke1, daiReserveId, bob, drawAmount, bob);
-
-    assertGt(spoke1.getHealthFactor(bob), spoke1.HEALTH_FACTOR_LIQUIDATION_THRESHOLD());
-
-    skip(365 days);
-
-    // Additional supply to accrue interest
-    Utils.spokeSupply(spoke1, daiReserveId, bob, 1e18, bob);
-
-    vm.expectRevert(abi.encodeWithSelector(ILiquidityHub.DrawCapExceeded.selector, drawCap));
-    Utils.spokeBorrow(spoke1, daiReserveId, bob, 1, bob);
-  }
-
+  /// fuzz - 1 user borrowing 4 assets from a 1 single spoke
   function test_borrow_fuzz_single_spoke_multi_reserves(
     uint256 daiBorrowAmount,
     uint256 wethBorrowAmount,
@@ -668,7 +706,7 @@ contract SpokeBorrowTest is SpokeBase {
     _assertUserAndReserveDebt(spoke2, state.bobWbtcData, wbtcReserveId, bob);
   }
 
-  /// @dev 1 user borrowing 2 assets across 2 different spokes
+  /// 1 user borrowing 2 assets across 2 different spokes
   function test_borrow_fuzz_multi_spoke_multi_reserves_with_accrual(
     uint256 daiBorrowAmount,
     uint256 usdxBorrowAmount,
@@ -1003,7 +1041,7 @@ contract SpokeBorrowTest is SpokeBase {
     _assertUserAndReserveDebt(spoke2, state.bobUsdxData2Final, usdxReserveId2, bob);
   }
 
-  /// @dev basic case, cannot borrow an amount that leads to HF < 1
+  /// basic case, cannot borrow an amount that leads to HF < 1
   function test_borrow_revertsWith_HealthFactorBelowThreshold() public {
     uint256 daiReserveId = _daiReserveId(spoke1);
     uint256 wethReserveId = _wethReserveId(spoke1);
@@ -1036,7 +1074,7 @@ contract SpokeBorrowTest is SpokeBase {
     spoke1.borrow(daiReserveId, 1e4, bob); // TODO: update with exact amount, resolve precision
   }
 
-  /// @dev cannot borrow any amount after interest has brought HF already < 1
+  /// cannot borrow any amount after interest has brought HF already < 1
   function test_borrow_revertsWith_HealthFactorBelowThreshold_with_interest() public {
     uint256 daiReserveId = _daiReserveId(spoke1);
     uint256 wethReserveId = _wethReserveId(spoke1);
@@ -1073,7 +1111,7 @@ contract SpokeBorrowTest is SpokeBase {
     spoke1.borrow(daiReserveId, 1, bob);
   }
 
-  /// @dev fuzz - cannot borrow any amount after interest has brought HF already < 1
+  /// fuzz - cannot borrow any amount after interest has brought HF already < 1
   function test_borrow_fuzz_revertsWith_HealthFactorBelowThreshold_with_interest(
     uint256 skipTime
   ) public {
@@ -1110,7 +1148,7 @@ contract SpokeBorrowTest is SpokeBase {
     spoke1.borrow(daiReserveId, 1, bob);
   }
 
-  /// @dev cannot borrow an amount that brings HF < 1 with multiple debts for same collateral
+  /// cannot borrow an amount that brings HF < 1 with multiple debts for same collateral
   function test_borrow_revertsWith_HealthFactorBelowThreshold_multiple_debts() public {
     // weth collateral
     uint256 wethReserveId = _wethReserveId(spoke1);
@@ -1163,7 +1201,7 @@ contract SpokeBorrowTest is SpokeBase {
     spoke1.borrow(usdxReserveId, 1, bob); // todo: update with exact amount, resolve precision
   }
 
-  /// @dev fuzz - cannot borrow an amount that brings HF < 1 with multiple debts for same collateral
+  /// fuzz - cannot borrow an amount that brings HF < 1 with multiple debts for same collateral
   function test_borrow_fuzz_revertsWith_HealthFactorBelowThreshold_multiple_debts(
     uint256 wethCollAmountDai,
     uint256 wethCollAmountUsdx
@@ -1228,7 +1266,7 @@ contract SpokeBorrowTest is SpokeBase {
     spoke1.borrow(usdxReserveId, usdxFailedBorrowAmount, bob); // todo: update with exact amount, resolve precision
   }
 
-  /// @dev cannot borrow any amount if HF < 1 due to interest growth (multiple debts for same collateral)
+  /// cannot borrow any amount if HF < 1 due to interest growth (multiple debts for same collateral)
   function test_borrow_revertsWith_HealthFactorBelowThreshold_multiple_debts_with_interest()
     public
   {
@@ -1288,7 +1326,7 @@ contract SpokeBorrowTest is SpokeBase {
     spoke1.borrow(usdxReserveId, 1, bob);
   }
 
-  /// @dev fuzz - cannot borrow any amount if HF < 1 due to interest growth (multiple debts for same collateral)
+  /// fuzz - cannot borrow any amount if HF < 1 due to interest growth (multiple debts for same collateral)
   function test_borrow_fuzz_revertsWith_HealthFactorBelowThreshold_multiple_debts_with_interest(
     uint256 wethCollForDai,
     uint256 wethCollForUsdx,
@@ -1352,7 +1390,7 @@ contract SpokeBorrowTest is SpokeBase {
     spoke1.borrow(usdxReserveId, 1, bob);
   }
 
-  /// @dev if HF drops below threshold due to price drop, user cannot borrow more
+  /// if HF drops below threshold due to price drop, user cannot borrow more
   function test_borrow_revertsWith_HealthFactorBelowThreshold_price_drop_weth() public {
     uint256 daiReserveId = _daiReserveId(spoke1); // debt
     uint256 wethReserveId = _wethReserveId(spoke1); // collateral
@@ -1388,7 +1426,7 @@ contract SpokeBorrowTest is SpokeBase {
     spoke1.borrow(daiReserveId, 1, bob);
   }
 
-  /// @dev fuzz - if HF drops below threshold due to price drop, user cannot borrow more
+  /// fuzz - if HF drops below threshold due to price drop, user cannot borrow more
   function test_borrow_fuzz_revertsWith_HealthFactorBelowThreshold_price_drop(
     uint256 wethSupplyAmount,
     uint256 newPrice
@@ -1433,7 +1471,7 @@ contract SpokeBorrowTest is SpokeBase {
     spoke1.borrow(daiReserveId, 1, bob);
   }
 
-  /// @dev cannot borrow an amount that brings HF < 1 with multiple colls for same debt
+  /// cannot borrow an amount that brings HF < 1 with multiple colls for same debt
   function test_borrow_revertsWith_HealthFactorBelowThreshold_multiple_colls() public {
     // weth/dai collateral
     uint256 wethReserveId = _wethReserveId(spoke1);
@@ -1487,7 +1525,7 @@ contract SpokeBorrowTest is SpokeBase {
     spoke1.borrow(usdxReserveId, 1, bob);
   }
 
-  /// @dev fuzz - cannot borrow an amount that brings HF < 1 with multiple colls for same debt
+  /// fuzz - cannot borrow an amount that brings HF < 1 with multiple colls for same debt
   function test_borrow_fuzz_revertsWith_HealthFactorBelowThreshold_multiple_colls(
     uint256 usdxDebtAmountWeth,
     uint256 usdxDebtAmountDai
@@ -1547,7 +1585,7 @@ contract SpokeBorrowTest is SpokeBase {
     spoke1.borrow(usdxReserveId, 1, bob);
   }
 
-  /// @dev cannot borrow any amount with multiple colls for same debt, once HF < 1 due to interest
+  /// cannot borrow any amount with multiple colls for same debt, once HF < 1 due to interest
   function test_borrow_revertsWith_HealthFactorBelowThreshold_multiple_colls_with_interest()
     public
   {
@@ -1609,7 +1647,7 @@ contract SpokeBorrowTest is SpokeBase {
     spoke1.borrow(usdxReserveId, 1, bob);
   }
 
-  /// @dev fuzz - cannot borrow any amount with multiple colls for same debt, once HF < 1 due to interest
+  /// fuzz - cannot borrow any amount with multiple colls for same debt, once HF < 1 due to interest
   function test_borrow_fuzz_revertsWith_HealthFactorBelowThreshold_multiple_colls_with_interest(
     uint256 usdxDebtAmountWeth,
     uint256 usdxDebtAmountDai,
@@ -1672,7 +1710,7 @@ contract SpokeBorrowTest is SpokeBase {
     spoke1.borrow(usdxReserveId, 1, bob);
   }
 
-  /// @dev cannot borrow more with multiple colls for same debt, if HF drops below threshold due to price drop
+  /// cannot borrow more with multiple colls for same debt, if HF drops below threshold due to price drop
   function test_borrow_revertsWith_HealthFactorBelowThreshold_multiple_colls_price_drop_weth()
     public
   {
@@ -1735,7 +1773,7 @@ contract SpokeBorrowTest is SpokeBase {
     spoke1.borrow(usdxReserveId, 1, bob);
   }
 
-  /// @dev fuzz - cannot borrow more with multiple colls for same debt, if HF drops below threshold due to price drop
+  /// fuzz - cannot borrow more with multiple colls for same debt, if HF drops below threshold due to price drop
   function test_fuzz_borrow_revertsWith_HealthFactorBelowThreshold_multiple_colls_price_drop_weth(
     uint256 newPrice,
     uint256 usdxDebtAmountWeth,
@@ -1799,7 +1837,7 @@ contract SpokeBorrowTest is SpokeBase {
     spoke1.borrow(usdxReserveId, 1, bob);
   }
 
-  /// @dev cannot borrow more with multiple colls for same debt, if HF drops below threshold due to price drop
+  /// cannot borrow more with multiple colls for same debt, if HF drops below threshold due to price drop
   function test_borrow_revertsWith_HealthFactorBelowThreshold_multiple_colls_price_drop_dai()
     public
   {
@@ -1862,7 +1900,7 @@ contract SpokeBorrowTest is SpokeBase {
     spoke1.borrow(usdxReserveId, 1, bob);
   }
 
-  /// @dev fuzz - cannot borrow more with multiple colls for same debt, if HF drops below threshold due to price drop
+  /// fuzz - cannot borrow more with multiple colls for same debt, if HF drops below threshold due to price drop
   function test_fuzz_borrow_revertsWith_HealthFactorBelowThreshold_multiple_colls_price_drop_dai(
     uint256 newPrice,
     uint256 usdxDebtAmountWeth,
