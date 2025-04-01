@@ -1121,6 +1121,11 @@ contract SpokeRepayTest is SpokeBase {
     );
     assertGe(bobDaiBefore.totalDebt, daiBorrowAmount, 'bob dai debt before');
 
+    // Calculate minimum repay amount
+    if (hub.convertToDrawnShares(_daiReserveId(spoke1), daiRepayAmount) == 0) {
+      daiRepayAmount = hub.convertToDrawnAssets(_daiReserveId(spoke1), 1);
+    }
+
     (uint256 baseRestored, uint256 premiumRestored) = _calculateRestoreAmount(
       bobDaiBefore.baseDebt,
       bobDaiBefore.premiumDebt,

@@ -196,7 +196,7 @@ contract LiquidityHub is ILiquidityHub {
     address from
   ) external returns (uint256) {
     // TODO: authorization - only spokes
-    // global & spoke premiumDebt (ghost, offset, unrealised) is *expected* to be updated on the `refreshPremiumDebt` callback
+    // global & spoke premiumDebt (ghost, offset, unrealized) is *expected* to be updated on the `refreshPremiumDebt` callback
 
     DataTypes.Asset storage asset = _assets[assetId];
     DataTypes.SpokeData storage spoke = _spokes[assetId][msg.sender];
@@ -207,7 +207,8 @@ contract LiquidityHub is ILiquidityHub {
     asset.updateBorrowRate({liquidityAdded: baseAmount, liquidityTaken: 0}); // both can be zero
 
     uint256 totalRestoredAmount = baseAmount + premiumAmount;
-    uint256 baseDrawnSharesRestored = asset.toDrawnSharesUp(baseAmount);
+    uint256 baseDrawnSharesRestored = asset.toDrawnSharesDown(baseAmount);
+    require(premiumAmount > 0 || baseDrawnSharesRestored != 0, InvalidSharesAmount());
 
     asset.availableLiquidity += totalRestoredAmount;
     asset.baseDrawnAssets -= baseAmount;
@@ -299,7 +300,7 @@ contract LiquidityHub is ILiquidityHub {
   }
 
   function convertToDrawnShares(uint256 assetId, uint256 assets) external view returns (uint256) {
-    return _assets[assetId].toDrawnSharesUp(assets);
+    return _assets[assetId].toDrawnSharesDown(assets);
   }
 
   function getBaseInterestRate(uint256 assetId) public view returns (uint256) {
