@@ -1093,8 +1093,6 @@ contract SpokeRepayTest is SpokeBase {
       _wethReserveId(spoke1)
     );
     Debts memory bobDaiBefore;
-    Debts memory bobWethBefore;
-    bobWethBefore.totalDebt = spoke1.getUserTotalDebt(_wethReserveId(spoke1), bob);
     bobDaiBefore.totalDebt = spoke1.getUserTotalDebt(_daiReserveId(spoke1), bob);
     (bobDaiBefore.baseDebt, bobDaiBefore.premiumDebt) = spoke1.getUserDebt(
       _daiReserveId(spoke1),
@@ -1110,7 +1108,7 @@ contract SpokeRepayTest is SpokeBase {
       bobWethDataBefore.suppliedShares,
       hub.convertToSuppliedShares(wethAssetId, wethSupplyAmount)
     );
-    assertEq(bobWethBefore.totalDebt, 0);
+    assertEq(spoke1.getUserTotalDebt(_wethReserveId(spoke1), bob), 0);
 
     // Time passes
     skip(skipTime);
@@ -1152,8 +1150,6 @@ contract SpokeRepayTest is SpokeBase {
       _wethReserveId(spoke1)
     );
     Debts memory bobDaiAfter;
-    Debts memory bobWethAfter;
-    bobWethAfter.totalDebt = spoke1.getUserTotalDebt(_wethReserveId(spoke1), bob);
     bobDaiAfter.totalDebt = spoke1.getUserTotalDebt(_daiReserveId(spoke1), bob);
     (bobDaiAfter.baseDebt, bobDaiAfter.premiumDebt) = spoke1.getUserDebt(
       _daiReserveId(spoke1),
@@ -1170,7 +1166,7 @@ contract SpokeRepayTest is SpokeBase {
       'bob dai debt final balance'
     );
     assertEq(bobWethDataAfter.suppliedShares, bobWethDataBefore.suppliedShares);
-    assertEq(bobWethAfter.totalDebt, bobWethBefore.totalDebt);
+    assertEq(spoke1.getUserTotalDebt(_wethReserveId(spoke1), bob), 0);
 
     assertEq(
       tokenList.dai.balanceOf(bob),
