@@ -279,13 +279,8 @@ contract SpokeWithdrawTest is SpokeBase {
     );
 
     // Withdraw all supplied assets
-    Utils.spokeWithdraw({
-      spoke: spoke1,
-      reserveId: _daiReserveId(spoke1),
-      user: bob,
-      amount: type(uint256).max,
-      onBehalfOf: bob
-    });
+    vm.prank(bob);
+    spoke1.withdraw(_daiReserveId(spoke1), type(uint256).max, bob);
 
     _checkSuppliedAmounts(daiAssetId, _daiReserveId(spoke1), spoke1, bob, 0, 'after withdraw');
   }
@@ -310,13 +305,8 @@ contract SpokeWithdrawTest is SpokeBase {
     );
 
     // Withdraw all supplied assets
-    Utils.spokeWithdraw({
-      spoke: spoke1,
-      reserveId: _daiReserveId(spoke1),
-      user: bob,
-      amount: type(uint256).max,
-      onBehalfOf: bob
-    });
+    vm.prank(bob);
+    spoke1.withdraw(_daiReserveId(spoke1), type(uint256).max, bob);
 
     _checkSuppliedAmounts(daiAssetId, _daiReserveId(spoke1), spoke1, bob, 0, 'after withdraw');
   }
@@ -369,13 +359,8 @@ contract SpokeWithdrawTest is SpokeBase {
       amount: type(uint256).max
     });
 
-    Utils.spokeWithdraw({
-      spoke: spoke1,
-      reserveId: _daiReserveId(spoke1),
-      user: bob,
-      amount: type(uint256).max,
-      onBehalfOf: bob
-    });
+    vm.prank(bob);
+    spoke1.withdraw(_daiReserveId(spoke1), type(uint256).max, bob);
 
     _checkSuppliedAmounts(daiAssetId, _daiReserveId(spoke1), spoke1, bob, 0, 'after withdraw');
   }
@@ -432,13 +417,8 @@ contract SpokeWithdrawTest is SpokeBase {
       amount: type(uint256).max
     });
 
-    Utils.spokeWithdraw({
-      spoke: spoke1,
-      reserveId: _daiReserveId(spoke1),
-      user: bob,
-      amount: type(uint256).max,
-      onBehalfOf: bob
-    });
+    vm.prank(bob);
+    spoke1.withdraw(_daiReserveId(spoke1), type(uint256).max, bob);
 
     _checkSuppliedAmounts(daiAssetId, _daiReserveId(spoke1), spoke1, bob, 0, 'after withdraw');
   }
@@ -506,13 +486,8 @@ contract SpokeWithdrawTest is SpokeBase {
     );
 
     // Withdraw partial supplied assets
-    Utils.spokeWithdraw({
-      spoke: spoke1,
-      reserveId: _daiReserveId(spoke1),
-      user: bob,
-      amount: partialWithdrawAmount,
-      onBehalfOf: bob
-    });
+    vm.startPrank(bob);
+    spoke1.withdraw(_daiReserveId(spoke1), partialWithdrawAmount, bob);
 
     uint256 expectedSupplied = totalSupplied - partialWithdrawAmount;
     assertEq(
@@ -521,13 +496,8 @@ contract SpokeWithdrawTest is SpokeBase {
       'expected supplied'
     );
 
-    Utils.spokeWithdraw({
-      spoke: spoke1,
-      reserveId: _daiReserveId(spoke1),
-      user: bob,
-      amount: type(uint256).max,
-      onBehalfOf: bob
-    });
+    // Withdraw all supplied assets
+    spoke1.withdraw(_daiReserveId(spoke1), type(uint256).max, bob);
 
     _checkSuppliedAmounts(daiAssetId, _daiReserveId(spoke1), spoke1, bob, 0, 'after withdraw');
   }
