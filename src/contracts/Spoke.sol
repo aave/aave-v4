@@ -320,6 +320,20 @@ contract Spoke is ISpoke {
     return reserve.premiumDrawnShares.rayDiv(reserve.baseDrawnShares); // trailing
   }
 
+  /// @dev Reverts if user is not borrowing reserveId
+  function getUserPreviousRiskPremium(
+    uint256 reserveId,
+    address user
+  ) external view returns (uint256) {
+    if (!_isBorrowing(_userPositions[user][reserveId])) {
+      revert UserNotBorrowingReserve(reserveId);
+    }
+    return
+      _userPositions[user][reserveId].premiumDrawnShares.rayDiv(
+        _userPositions[user][reserveId].baseDrawnShares
+      ) / 1e23;
+  }
+
   function getUserRiskPremium(address user) external view returns (uint256) {
     (uint256 userRiskPremium, , , , ) = _calculateUserAccountData(user);
     return userRiskPremium;
