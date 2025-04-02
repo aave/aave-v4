@@ -125,11 +125,14 @@ contract Spoke is ISpoke {
 
   /// @inheritdoc ISpoke
   function withdraw(uint256 reserveId, uint256 amount, address to) external {
-    // TODO: Be able to pass max(uint) as amount to withdraw all supplied shares
     DataTypes.Reserve storage reserve = _reserves[reserveId];
     DataTypes.UserPosition storage userPosition = _userPositions[msg.sender][reserveId];
     uint256 assetId = reserve.assetId;
 
+    // If uint256.max is passed, withdraw all user's supplied assets
+    if (amount == type(uint256).max) {
+      amount = hub.convertToSuppliedAssets(assetId, userPosition.suppliedShares);
+    }
     _validateWithdraw(reserve, userPosition, amount);
 
     uint256 oldUserPremiumDrawnShares = userPosition.premiumDrawnShares;

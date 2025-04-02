@@ -702,4 +702,56 @@ abstract contract Base is Test {
     if (percent == 0) return price;
     return price.percentMul(percent);
   }
+
+  /// @dev Helper function to check consistent supplied amounts within accounting
+  function _checkSuppliedAmounts(
+    uint256 assetId,
+    uint256 reserveId,
+    ISpoke spoke,
+    address user,
+    uint256 expectedSuppliedAmount,
+    string memory when
+  ) internal {
+    uint256 expectedSuppliedShares = hub.convertToSuppliedShares(assetId, expectedSuppliedAmount);
+    assertEq(
+      hub.getAssetSuppliedShares(assetId),
+      expectedSuppliedShares,
+      string(abi.encodePacked('asset supplied shares ', when))
+    );
+    assertEq(
+      hub.getAssetSuppliedAmount(assetId),
+      expectedSuppliedAmount,
+      string(abi.encodePacked('asset supplied amount ', when))
+    );
+    assertEq(
+      hub.getSpokeSuppliedShares(assetId, address(spoke)),
+      expectedSuppliedShares,
+      string(abi.encodePacked('spoke supplied shares ', when))
+    );
+    assertEq(
+      hub.getSpokeSuppliedAmount(assetId, address(spoke)),
+      expectedSuppliedAmount,
+      string(abi.encodePacked('spoke supplied amount ', when))
+    );
+    assertEq(
+      spoke.getReserveSuppliedShares(reserveId),
+      expectedSuppliedShares,
+      string(abi.encodePacked('reserve supplied shares ', when))
+    );
+    assertEq(
+      spoke.getReserveSuppliedAmount(reserveId),
+      expectedSuppliedAmount,
+      string(abi.encodePacked('reserve supplied amount ', when))
+    );
+    assertEq(
+      spoke.getUserSuppliedShares(reserveId, user),
+      expectedSuppliedShares,
+      string(abi.encodePacked('user supplied shares ', when))
+    );
+    assertEq(
+      spoke.getUserSuppliedAmount(reserveId, user),
+      expectedSuppliedAmount,
+      string(abi.encodePacked('user supplied amount ', when))
+    );
+  }
 }
