@@ -563,6 +563,261 @@ contract SpokeRepayTest is SpokeBase {
     assertEq(lhAssetDebt, 0);
   }
 
+  function test_repay_partial_then_max() public {
+    uint256 daiSupplyAmount = 100e18;
+    uint256 wethSupplyAmount = 10e18;
+    uint256 daiBorrowAmount = daiSupplyAmount / 2;
+
+    // Bob supplies WETH as collateral
+    Utils.spokeSupply(spoke1, _wethReserveId(spoke1), bob, wethSupplyAmount, bob);
+    setUsingAsCollateral(spoke1, bob, _wethReserveId(spoke1), true);
+
+    // Alice supplies DAI
+    Utils.spokeSupply(spoke1, _daiReserveId(spoke1), alice, daiSupplyAmount, alice);
+
+    // Bob borrows DAI
+    Utils.spokeBorrow(spoke1, _daiReserveId(spoke1), bob, daiBorrowAmount, bob);
+
+    DataTypes.UserPosition memory bobDaiDataBefore = getUserInfo(
+      spoke1,
+      bob,
+      _daiReserveId(spoke1)
+    );
+    Debts memory bobDaiBefore;
+    Debts memory bobWethBefore;
+    bobDaiBefore.totalDebt = spoke1.getUserTotalDebt(_daiReserveId(spoke1), bob);
+    (bobDaiBefore.baseDebt, bobDaiBefore.premiumDebt) = spoke1.getUserDebt(
+      _daiReserveId(spoke1),
+      bob
+    );
+    bobWethBefore.totalDebt = spoke1.getUserTotalDebt(_wethReserveId(spoke1), bob);
+
+    uint256 bobDaiBalanceBefore = tokenList.dai.balanceOf(bob);
+
+    assertEq(bobDaiDataBefore.suppliedShares, 0);
+    assertEq(bobDaiBefore.totalDebt, daiBorrowAmount, 'Initial bob dai debt');
+
+    // Time passes so that interest accrues
+    skip(10 days);
+
+    bobDaiDataBefore = getUserInfo(spoke1, bob, _daiReserveId(spoke1));
+    bobDaiBefore.totalDebt = spoke1.getUserTotalDebt(_daiReserveId(spoke1), bob);
+    (bobDaiBefore.baseDebt, bobDaiBefore.premiumDebt) = spoke1.getUserDebt(
+      _daiReserveId(spoke1),
+      bob
+    );
+    // Bob's debt (base debt + premium) is greater than the original borrow amount
+    assertGt(bobDaiBefore.totalDebt, daiBorrowAmount, 'Accrued interest increased bob dai debt');
+
+    // Calculate full debt before repayment
+    uint256 fullDebt = bobDaiBefore.baseDebt + bobDaiBefore.premiumDebt;
+    uint256 partialRepayAmount = fullDebt / 2;
+
+    (uint256 baseRestored, ) = _calculateRestoreAmount(
+      bobDaiBefore.baseDebt,
+      bobDaiBefore.premiumDebt,
+      partialRepayAmount
+    );
+
+    // Partial repay
+    vm.expectEmit(address(spoke1));
+    emit ISpoke.Repay(
+      _daiReserveId(spoke1),
+      bob,
+      hub.convertToDrawnShares(daiAssetId, baseRestored)
+    );
+
+    vm.prank(bob);
+    spoke1.repay(_daiReserveId(spoke1), partialRepayAmount);
+
+    DataTypes.UserPosition memory bobDaiDataAfter = getUserInfo(spoke1, bob, _daiReserveId(spoke1));
+    Debts memory bobDaiAfter;
+    bobDaiAfter.totalDebt = spoke1.getUserTotalDebt(_daiReserveId(spoke1), bob);
+    (bobDaiAfter.baseDebt, bobDaiAfter.premiumDebt) = spoke1.getUserDebt(
+      _daiReserveId(spoke1),
+      bob
+    );
+    uint256 bobDaiBalanceAfter = tokenList.dai.balanceOf(bob);
+
+    // Verify that Bob's debt is reduced after partial repayment
+    assertEq(
+      bobDaiAfter.totalDebt,
+      fullDebt - partialRepayAmount,
+      "Bob's dai debt should be reduced"
+    );
+    // Verify that his DAI balance was reduced by the partial debt amount
+    assertEq(
+      bobDaiBalanceAfter,
+      bobDaiBalanceBefore - partialRepayAmount,
+      "Bob's dai balance decreased by partial debt repaid"
+    );
+    // Verify reserve debt was decreased by partial repayment
+    assertEq(spoke1.getReserveTotalDebt(_daiReserveId(spoke1)), fullDebt - partialRepayAmount);
+
+    // verify LH asset debt is decreased by partial repayment
+    assertEq(hub.getAssetTotalDebt(_daiReserveId(spoke1)), fullDebt - partialRepayAmount);
+
+    (baseRestored, ) = _calculateRestoreAmount(
+      bobDaiAfter.baseDebt,
+      bobDaiAfter.premiumDebt,
+      bobDaiAfter.totalDebt
+    );
+
+    // Full repay
+    vm.expectEmit(address(spoke1));
+    emit ISpoke.Repay(
+      _daiReserveId(spoke1),
+      bob,
+      hub.convertToDrawnShares(daiAssetId, baseRestored)
+    );
+
+    // Bob repays using the max value to signal full repayment
+    vm.prank(bob);
+    spoke1.repay(_daiReserveId(spoke1), type(uint256).max);
+
+    bobDaiDataAfter = getUserInfo(spoke1, bob, _daiReserveId(spoke1));
+    bobDaiAfter.totalDebt = spoke1.getUserTotalDebt(_daiReserveId(spoke1), bob);
+    (bobDaiAfter.baseDebt, bobDaiAfter.premiumDebt) = spoke1.getUserDebt(
+      _daiReserveId(spoke1),
+      bob
+    );
+    bobDaiBalanceAfter = tokenList.dai.balanceOf(bob);
+
+    // Verify that Bob's debt is fully cleared after repayment
+    assertEq(bobDaiAfter.totalDebt, 0, "Bob's dai debt should be cleared");
+
+    // Verify that his DAI balance was reduced by the full debt amount
+    assertEq(
+      bobDaiBalanceAfter,
+      bobDaiBalanceBefore - fullDebt,
+      "Bob's dai balance decreased by full debt repaid"
+    );
+
+    // Verify reserve debt is 0
+    (uint256 baseDaiDebt, uint256 premiumDaiDebt) = spoke1.getReserveDebt(_daiReserveId(spoke1));
+    assertEq(baseDaiDebt, 0);
+    assertEq(premiumDaiDebt, 0);
+
+    // verify LH asset debt is 0
+    assertEq(hub.getAssetTotalDebt(_daiReserveId(spoke1)), 0);
+  }
+
+  function test_repay_less_than_share() public {
+    // Accrue interest and ensure it's less than 1 share and pay it off
+    uint256 daiSupplyAmount = 100e18;
+    uint256 wethSupplyAmount = 10e18;
+    uint256 daiBorrowAmount = 100;
+
+    // Bob supplies WETH as collateral
+    Utils.spokeSupply(spoke1, _wethReserveId(spoke1), bob, wethSupplyAmount, bob);
+    setUsingAsCollateral(spoke1, bob, _wethReserveId(spoke1), true);
+
+    // Alice supplies DAI
+    Utils.spokeSupply(spoke1, _daiReserveId(spoke1), alice, daiSupplyAmount, alice);
+
+    // Bob borrows DAI
+    Utils.spokeBorrow(spoke1, _daiReserveId(spoke1), bob, daiBorrowAmount, bob);
+
+    DataTypes.UserPosition memory bobDaiDataBefore = getUserInfo(
+      spoke1,
+      bob,
+      _daiReserveId(spoke1)
+    );
+    DataTypes.UserPosition memory bobWethDataBefore = getUserInfo(
+      spoke1,
+      bob,
+      _wethReserveId(spoke1)
+    );
+    Debts memory bobDaiBefore;
+    Debts memory bobWethBefore;
+
+    bobDaiBefore.totalDebt = spoke1.getUserTotalDebt(_daiReserveId(spoke1), bob);
+    (bobDaiBefore.baseDebt, bobDaiBefore.premiumDebt) = spoke1.getUserDebt(
+      _daiReserveId(spoke1),
+      bob
+    );
+    bobWethBefore.totalDebt = spoke1.getUserTotalDebt(_wethReserveId(spoke1), bob);
+    uint256 bobDaiBalanceBefore = tokenList.dai.balanceOf(bob);
+    uint256 bobWethBalanceBefore = tokenList.weth.balanceOf(bob);
+
+    assertEq(bobDaiDataBefore.suppliedShares, 0);
+    assertEq(bobDaiBefore.totalDebt, daiBorrowAmount, 'Initial bob dai debt');
+    assertEq(
+      bobWethBefore.totalDebt,
+      spoke1.getUserTotalDebt(_wethReserveId(spoke1), bob),
+      'Initial bob weth debt'
+    );
+    assertEq(
+      bobWethBefore.totalDebt,
+      spoke1.getUserTotalDebt(_wethReserveId(spoke1), bob),
+      'Initial bob weth debt'
+    );
+    assertEq(
+      bobWethDataBefore.suppliedShares,
+      hub.convertToSuppliedShares(wethAssetId, wethSupplyAmount)
+    );
+    assertEq(bobWethBefore.totalDebt, 0);
+
+    // Time passes so that interest accrues
+    skip(55 days);
+
+    bobDaiDataBefore = getUserInfo(spoke1, bob, _daiReserveId(spoke1));
+    bobDaiBefore.totalDebt = spoke1.getUserTotalDebt(_daiReserveId(spoke1), bob);
+    (bobDaiBefore.baseDebt, bobDaiBefore.premiumDebt) = spoke1.getUserDebt(
+      _daiReserveId(spoke1),
+      bob
+    );
+    assertGt(bobDaiBefore.totalDebt, daiBorrowAmount, 'Accrued interest increased bob dai debt');
+
+    uint256 repayAmount = 1;
+
+    // Ensure that the repay amount is less than 1 share
+    assertEq(hub.convertToDrawnShares(daiAssetId, repayAmount), 0, 'Shares nonzero');
+
+    (uint256 repaidBase, ) = _calculateRestoreAmount(
+      bobDaiBefore.baseDebt,
+      bobDaiBefore.premiumDebt,
+      repayAmount
+    );
+
+    // Repay
+    vm.expectEmit(address(spoke1));
+    emit ISpoke.Repay(_daiReserveId(spoke1), bob, hub.convertToDrawnShares(daiAssetId, repaidBase));
+
+    vm.prank(bob);
+    spoke1.repay(_daiReserveId(spoke1), repayAmount);
+
+    DataTypes.UserPosition memory bobDaiDataAfter = getUserInfo(spoke1, bob, _daiReserveId(spoke1));
+    DataTypes.UserPosition memory bobWethDataAfter = getUserInfo(
+      spoke1,
+      bob,
+      _wethReserveId(spoke1)
+    );
+    Debts memory bobDaiAfter;
+    bobDaiAfter.totalDebt = spoke1.getUserTotalDebt(_daiReserveId(spoke1), bob);
+    (bobDaiAfter.baseDebt, bobDaiAfter.premiumDebt) = spoke1.getUserDebt(
+      _daiReserveId(spoke1),
+      bob
+    );
+
+    assertEq(bobDaiDataAfter.suppliedShares, bobDaiDataBefore.suppliedShares);
+    assertEq(
+      spoke1.getUserTotalDebt(_daiReserveId(spoke1), bob),
+      bobDaiBefore.totalDebt - repayAmount,
+      'bob dai debt final balance'
+    );
+    assertEq(bobDaiAfter.premiumDebt, 0, 'bob dai outstanding premium final balance');
+
+    assertEq(bobWethDataAfter.suppliedShares, bobWethDataBefore.suppliedShares);
+    assertEq(bobWethBefore.totalDebt, spoke1.getUserTotalDebt(_wethReserveId(spoke1), bob));
+    assertEq(
+      tokenList.dai.balanceOf(bob),
+      bobDaiBalanceBefore - repayAmount,
+      'bob dai final balance'
+    );
+    assertEq(tokenList.weth.balanceOf(bob), bobWethBalanceBefore);
+  }
+
   function test_repay_fuzz_max_amount_gt_current_debt(uint256 repayAmount) public {
     uint256 daiSupplyAmount = 100e18;
     uint256 wethSupplyAmount = 10e18;
@@ -608,7 +863,16 @@ contract SpokeRepayTest is SpokeBase {
     assertGt(bobDaiBefore.totalDebt, daiBorrowAmount, 'Accrued interest increased bob dai debt');
 
     // Calculate full debt before repayment
-    uint256 repayAmount = bobDaiBefore.totalDebt;
+    uint256 fullDebt = bobDaiBefore.totalDebt;
+    uint256 repayAmount = bound(repayAmount, fullDebt + 1, type(uint256).max);
+
+    // How much will actually be repaid
+    (uint256 repaidBase, uint256 repaidPremium) = _calculateRestoreAmount(
+      bobDaiBefore.baseDebt,
+      bobDaiBefore.premiumDebt,
+      repayAmount
+    );
+    uint256 repaidAmount = repaidBase + repaidPremium;
 
     vm.expectEmit(address(spoke1));
     emit ISpoke.Repay(
@@ -631,7 +895,7 @@ contract SpokeRepayTest is SpokeBase {
     assertEq(bobDaiAfter.totalDebt, 0, "Bob's dai debt should be cleared");
     assertEq(
       bobDaiBalanceAfter,
-      bobDaiBalanceBefore - repayAmount,
+      bobDaiBalanceBefore - repaidAmount,
       "Bob's dai balance decreased by full debt repaid"
     );
 
@@ -699,9 +963,9 @@ contract SpokeRepayTest is SpokeBase {
       bob,
       hub.convertToDrawnShares(daiAssetId, bobDaiBefore.baseDebt)
     );
-    // Bob repays using max uint256 to signal full repayment
+    // Bob repays using a value gt full debt to signal full repayment
     vm.prank(bob);
-    spoke1.repay(_daiReserveId(spoke1), type(uint256).max);
+    spoke1.repay(_daiReserveId(spoke1), fullDebt + 1);
 
     DataTypes.UserPosition memory bobDaiDataAfter = getUserInfo(spoke1, bob, _daiReserveId(spoke1));
     Debts memory bobDaiAfter;
@@ -942,14 +1206,6 @@ contract SpokeRepayTest is SpokeBase {
       'bob dai final balance'
     );
     assertEq(tokenList.weth.balanceOf(bob), bobWethBalanceBefore);
-  }
-
-  function test_repay_revertsWith_amount_exceeds_debt() public {
-    assertEq(spoke1.getUserTotalDebt(_daiReserveId(spoke1), bob), 0, 'bob dai debt before');
-
-    vm.expectRevert(abi.encodeWithSelector(ILiquidityHub.SurplusAmountRestored.selector, 0));
-    vm.prank(bob);
-    spoke1.repay(_daiReserveId(spoke1), 1);
   }
 
   /// repay all or a portion of total debt in same block
@@ -1945,13 +2201,12 @@ contract SpokeRepayTest is SpokeBase {
     uint256 premiumDebt,
     uint256 amount
   ) internal view returns (uint256, uint256) {
-    if (amount == type(uint256).max) {
+    if (amount >= baseDebt + premiumDebt) {
       return (baseDebt, premiumDebt);
     }
     if (amount <= premiumDebt) {
       return (0, amount);
     }
-    // todo ensure `amount` is not greater than total debt?
     return (amount - premiumDebt, premiumDebt);
   }
 
