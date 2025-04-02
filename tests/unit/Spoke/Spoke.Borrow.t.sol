@@ -982,57 +982,38 @@ contract SpokeBorrowTest is SpokeBase {
     setUsingAsCollateral(spoke2, bob, daiReserveId, true);
     setUsingAsCollateral(spoke2, bob, usdxReserveId, true);
 
-    state.bobDaiData = getUserInfo(spoke1, bob, daiReserveId);
-    state.bobUsdxData = getUserInfo(spoke1, bob, usdxReserveId);
-    state.bobDaiData2 = getUserInfo(spoke2, bob, daiReserveId);
-    state.bobUsdxData2 = getUserInfo(spoke2, bob, usdxReserveId);
-
-    // bob - spoke1
-    // dai
-    assertEq(
-      state.bobDaiData.suppliedShares,
-      hub.convertToSuppliedShares(daiAssetId, state.daiSupplyAmount),
-      'bob dai suppliedShares before'
+    _assertUserDebtAndSuppliedShares(
+      spoke1,
+      daiReserveId,
+      bob,
+      0,
+      state.daiSupplyAmount,
+      'spoke1 dai before'
     );
-    assertEq(state.bobDaiData.baseDrawnShares, 0, 'bob dai baseDrawnShares before');
-    assertEq(state.bobDaiData.premiumDrawnShares, 0, 'bob dai premiumDrawnShares before');
-    assertEq(state.bobDaiData.premiumOffset, 0, 'bob dai premiumOffset before');
-    assertEq(state.bobDaiData.realizedPremium, 0, 'bob dai realizedPremium before');
-    assertTrue(state.bobDaiData.usingAsCollateral, 'bob dai usingAsCollateral before');
-    // usdx
-    assertEq(
-      state.bobUsdxData.suppliedShares,
-      hub.convertToSuppliedShares(usdxAssetId, state.usdxSupplyAmount),
-      'bob usdx suppliedShares before'
+    _assertUserDebtAndSuppliedShares(
+      spoke1,
+      usdxReserveId,
+      bob,
+      0,
+      state.usdxSupplyAmount,
+      'spoke1 usdx before'
     );
-    assertEq(state.bobUsdxData.baseDrawnShares, 0, 'bob usdx baseDrawnShares before');
-    assertEq(state.bobUsdxData.premiumDrawnShares, 0, 'bob usdx premiumDrawnShares before');
-    assertEq(state.bobUsdxData.premiumOffset, 0, 'bob usdx premiumOffset before');
-    assertEq(state.bobUsdxData.realizedPremium, 0, 'bob usdx realizedPremium before');
-    assertTrue(state.bobUsdxData.usingAsCollateral, 'bob usdx usingAsCollateral before');
-    // bob - spoke2
-    // dai
-    assertEq(
-      state.bobDaiData2.suppliedShares,
-      hub.convertToSuppliedShares(daiAssetId, state.daiSupplyAmount2),
-      'bob dai suppliedShares before'
+    _assertUserDebtAndSuppliedShares(
+      spoke2,
+      daiReserveId2,
+      bob,
+      0,
+      state.daiSupplyAmount2,
+      'spoke2 dai before'
     );
-    assertEq(state.bobDaiData2.baseDrawnShares, 0, 'bob dai baseDrawnShares before');
-    assertEq(state.bobDaiData2.premiumDrawnShares, 0, 'bob dai premiumDrawnShares before');
-    assertEq(state.bobDaiData2.premiumOffset, 0, 'bob dai premiumOffset before');
-    assertEq(state.bobDaiData2.realizedPremium, 0, 'bob dai realizedPremium before');
-    assertTrue(state.bobDaiData2.usingAsCollateral, 'bob dai usingAsCollateral before');
-    // usdx
-    assertEq(
-      state.bobUsdxData2.suppliedShares,
-      hub.convertToSuppliedShares(usdxAssetId, state.usdxSupplyAmount2),
-      'bob usdx suppliedShares before'
+    _assertUserDebtAndSuppliedShares(
+      spoke2,
+      usdxReserveId2,
+      bob,
+      0,
+      state.usdxSupplyAmount2,
+      'spoke2 usdx before'
     );
-    assertEq(state.bobUsdxData2.baseDrawnShares, 0, 'bob usdx baseDrawnShares before');
-    assertEq(state.bobUsdxData2.premiumDrawnShares, 0, 'bob usdx premiumDrawnShares before');
-    assertEq(state.bobUsdxData2.premiumOffset, 0, 'bob usdx premiumOffset before');
-    assertEq(state.bobUsdxData2.realizedPremium, 0, 'bob usdx realizedPremium before');
-    assertTrue(state.bobUsdxData2.usingAsCollateral, 'bob usdx usingAsCollateral before');
 
     // Bob borrow all reserves
     if (daiBorrowAmount > 0) {
