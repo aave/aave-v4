@@ -407,7 +407,9 @@ contract SpokeBorrowTest is SpokeBase {
       'spoke weth suppliedShares'
     );
 
-    _assertUserAndReserveDebt(spoke1, state.daiReserveId, bob, 'bob dai after');
+    address[] memory user = new address[](1);
+    user[0] = bob;
+    _assertUsersAndReserveDebt(spoke1, state.daiReserveId, user, 'bob dai after');
   }
 
   function test_borrow_fuzz_amounts(uint256 wethSupplyAmount, uint256 daiBorrowAmount) public {
@@ -528,7 +530,9 @@ contract SpokeBorrowTest is SpokeBase {
       label: 'alice weth data after'
     });
 
-    _assertUserAndReserveDebt(spoke1, state.daiReserveId, bob, 'bob dai after');
+    address[] memory user = new address[](1);
+    user[0] = bob;
+    _assertUsersAndReserveDebt(spoke1, state.daiReserveId, user, 'bob dai after');
   }
 
   /// fuzz - 2 users borrowing 2 assets from 1 spoke
@@ -773,10 +777,13 @@ contract SpokeBorrowTest is SpokeBase {
       label: 'bob wbtc data after'
     });
 
-    _assertUserAndReserveDebt(spoke2, daiReserveId, bob, 'bob dai after');
-    _assertUserAndReserveDebt(spoke2, wethReserveId, bob, 'bob weth after');
-    _assertUserAndReserveDebt(spoke2, usdxReserveId, bob, 'bob usdx after');
-    _assertUserAndReserveDebt(spoke2, wbtcReserveId, bob, 'bob wbtc after');
+    address[] memory user = new address[](1);
+    user[0] = bob;
+
+    _assertUsersAndReserveDebt(spoke2, daiReserveId, user, 'bob dai after');
+    _assertUsersAndReserveDebt(spoke2, wethReserveId, user, 'bob weth after');
+    _assertUsersAndReserveDebt(spoke2, usdxReserveId, user, 'bob usdx after');
+    _assertUsersAndReserveDebt(spoke2, wbtcReserveId, user, 'bob wbtc after');
   }
 
   // TODO: delete
@@ -912,11 +919,14 @@ contract SpokeBorrowTest is SpokeBase {
       'spoke2 usdx after'
     );
 
+    address[] memory user = new address[](1);
+    user[0] = bob;
+
     // user accounting should match reserve accounting
-    _assertUserAndReserveDebt(spoke1, daiReserveId, bob, 'spoke1 bob dai after');
-    _assertUserAndReserveDebt(spoke1, usdxReserveId, bob, 'spoke1 bob usdx after');
-    _assertUserAndReserveDebt(spoke2, daiReserveId2, bob, 'spoke2 bob dai after');
-    _assertUserAndReserveDebt(spoke2, usdxReserveId2, bob, 'spoke2 bob usdx after');
+    _assertUsersAndReserveDebt(spoke1, daiReserveId, user, 'spoke1 bob dai after');
+    _assertUsersAndReserveDebt(spoke1, usdxReserveId, user, 'spoke1 bob usdx after');
+    _assertUsersAndReserveDebt(spoke2, daiReserveId2, user, 'spoke2 bob dai after');
+    _assertUsersAndReserveDebt(spoke2, usdxReserveId2, user, 'spoke2 bob usdx after');
   }
 
   /// basic case, cannot borrow an amount that leads to HF < 1
