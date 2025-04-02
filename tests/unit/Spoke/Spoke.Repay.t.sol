@@ -1695,7 +1695,16 @@ contract SpokeRepayTest is SpokeBase {
     uint256 daiRepayAmount,
     uint40 skipTime
   ) public {
-    daiBorrowAmount = bound(daiBorrowAmount, 1, MAX_SUPPLY_AMOUNT / 2);
+    daiBorrowAmount = bound(
+      daiBorrowAmount,
+      hub.convertToDrawnAssets(daiAssetId, 1),
+      MAX_SUPPLY_AMOUNT / 2
+    );
+    // Borrow amount needs to be in whole shares amounts
+    daiBorrowAmount = hub.convertToDrawnAssets(
+      daiAssetId,
+      hub.convertToDrawnShares(daiAssetId, daiBorrowAmount)
+    );
 
     // calculate weth collateral
     uint256 wethSupplyAmount = _calcMinimumCollAmount(
@@ -1780,7 +1789,10 @@ contract SpokeRepayTest is SpokeBase {
       spoke1.repay(_daiReserveId(spoke1), daiRepayAmount);
     } else {
       // interest is at least 1
-      daiRepayAmount = bound(daiRepayAmount, 1, bobDaiBaseDebt);
+      uint256 singleShareAmount = hub.convertToDrawnAssets(daiAssetId, 1);
+      daiRepayAmount = bobDaiBaseDebt >= singleShareAmount
+        ? bound(daiRepayAmount, singleShareAmount, bobDaiBaseDebt)
+        : singleShareAmount;
       deal(address(tokenList.dai), bob, daiRepayAmount);
 
       vm.expectEmit(address(spoke1));
@@ -1812,13 +1824,13 @@ contract SpokeRepayTest is SpokeBase {
       assertEq(bobDaiDataAfter.suppliedShares, bobDaiDataBefore.suppliedShares);
       assertEq(
         bobDaiAfter.baseDebt,
-        bobDaiBefore.baseDebt - daiRepayAmount,
+        daiRepayAmount >= bobDaiBefore.baseDebt ? 0 : bobDaiBefore.baseDebt - daiRepayAmount,
         'bob dai base debt final balance'
       );
       assertEq(bobDaiAfter.premiumDebt, 0, 'bob dai outstanding premium final balance');
       assertEq(
         bobDaiAfter.totalDebt,
-        bobDaiBefore.totalDebt - daiRepayAmount,
+        daiRepayAmount >= bobDaiBefore.totalDebt ? 0 : bobDaiBefore.totalDebt - daiRepayAmount,
         'bob dai debt final balance'
       );
       assertEq(bobWethDataAfter.suppliedShares, bobWethDataBefore.suppliedShares);
@@ -1828,7 +1840,11 @@ contract SpokeRepayTest is SpokeBase {
       assertEq(tokenList.weth.balanceOf(bob), bobWethBalanceBefore);
 
       // repays only base debt
-      assertGe(bobDaiAfter.baseDebt, daiBorrowAmount);
+      assertEq(
+        bobDaiAfter.baseDebt,
+        daiRepayAmount >= bobDaiBefore.baseDebt ? 0 : bobDaiBefore.baseDebt - daiRepayAmount,
+        'bob dai base debt final balance'
+      );
     }
   }
 
@@ -1838,7 +1854,16 @@ contract SpokeRepayTest is SpokeBase {
     uint256 daiRepayAmount,
     uint40 skipTime
   ) public {
-    daiBorrowAmount = bound(daiBorrowAmount, 1, MAX_SUPPLY_AMOUNT / 2);
+    daiBorrowAmount = bound(
+      daiBorrowAmount,
+      hub.convertToDrawnAssets(daiAssetId, 1),
+      MAX_SUPPLY_AMOUNT / 2
+    );
+    // Borrow amount needs to be in whole shares amounts
+    daiBorrowAmount = hub.convertToDrawnAssets(
+      daiAssetId,
+      hub.convertToDrawnShares(daiAssetId, daiBorrowAmount)
+    );
 
     // update liquidity premium to zero
     updateLiquidityPremium(spoke1, _wethReserveId(spoke1), 0);
@@ -1909,7 +1934,10 @@ contract SpokeRepayTest is SpokeBase {
       spoke1.repay(_daiReserveId(spoke1), daiRepayAmount);
     } else {
       // interest is at least 1
-      daiRepayAmount = bound(daiRepayAmount, 1, bobDaiBaseDebt);
+      uint256 singleShareAmount = hub.convertToDrawnAssets(daiAssetId, 1);
+      daiRepayAmount = bobDaiBaseDebt >= singleShareAmount
+        ? bound(daiRepayAmount, singleShareAmount, bobDaiBaseDebt)
+        : singleShareAmount;
       deal(address(tokenList.dai), bob, daiRepayAmount);
 
       vm.expectEmit(address(spoke1));
@@ -1941,13 +1969,13 @@ contract SpokeRepayTest is SpokeBase {
       assertEq(bobDaiDataAfter.suppliedShares, bobDaiDataBefore.suppliedShares);
       assertEq(
         bobDaiAfter.baseDebt,
-        bobDaiBefore.baseDebt - daiRepayAmount,
+        daiRepayAmount >= bobDaiBefore.baseDebt ? 0 : bobDaiBefore.baseDebt - daiRepayAmount,
         'bob dai base debt final balance'
       );
       assertEq(bobDaiAfter.premiumDebt, 0, 'bob dai premium debt final balance');
       assertEq(
         bobDaiAfter.totalDebt,
-        bobDaiBefore.totalDebt - daiRepayAmount,
+        daiRepayAmount >= bobDaiBefore.totalDebt ? 0 : bobDaiBefore.totalDebt - daiRepayAmount,
         'bob dai debt final balance'
       );
       assertEq(bobWethDataAfter.suppliedShares, bobWethDataBefore.suppliedShares);
@@ -1957,7 +1985,11 @@ contract SpokeRepayTest is SpokeBase {
       assertEq(tokenList.weth.balanceOf(bob), bobWethBalanceBefore);
 
       // repays only base debt
-      assertGe(bobDaiAfter.baseDebt, daiBorrowAmount);
+      assertGe(
+        bobDaiAfter.baseDebt,
+        daiRepayAmount >= bobDaiBefore.baseDebt ? 0 : bobDaiBefore.baseDebt - daiRepayAmount,
+        'bob dai base debt final balance'
+      );
     }
   }
 
