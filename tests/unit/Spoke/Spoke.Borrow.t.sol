@@ -929,6 +929,69 @@ contract SpokeBorrowTest is SpokeBase {
     _assertUsersAndReserveDebt(spoke2, usdxReserveId2, user, 'spoke2 bob usdx after');
   }
 
+  /// inflated exch rate, it's better for user to borrow 1 big amount than 2 small amounts due to rounding up
+  function test_borrow_with_rounding() public {
+    // inflate debt exchange rate on dai
+    Utils.spokeSupply({
+      spoke: spoke1,
+      reserveId: _wethReserveId(spoke1),
+      user: alice,
+      amount: 100e18,
+      onBehalfOf: alice
+    });
+    setUsingAsCollateral(spoke1, alice, _wethReserveId(spoke1), true);
+    Utils.spokeSupply({
+      spoke: spoke1,
+      reserveId: _wethReserveId(spoke1),
+      user: carol,
+      amount: 100e18,
+      onBehalfOf: carol
+    });
+    setUsingAsCollateral(spoke1, carol, _wethReserveId(spoke1), true);
+    Utils.spokeSupply({
+      spoke: spoke1,
+      reserveId: _wethReserveId(spoke1),
+      user: bob,
+      amount: 100e18,
+      onBehalfOf: bob
+    });
+    setUsingAsCollateral(spoke1, bob, _wethReserveId(spoke1), true);
+    // bob supplies dai
+    Utils.spokeSupply({
+      spoke: spoke1,
+      reserveId: _daiReserveId(spoke1),
+      user: bob,
+      amount: 1000e18,
+      onBehalfOf: bob
+    });
+    Utils.spokeBorrow({
+      spoke: spoke1,
+      reserveId: _daiReserveId(spoke1),
+      user: alice,
+      amount: 100e18,
+      onBehalfOf: alice
+    });
+    skip(365 days * 100);
+
+    // carol borrows 1e18 dai
+    vm.startPrank(carol);
+    spoke1.borrow(_daiReserveId(spoke1), 7, carol);
+    spoke1.borrow(_daiReserveId(spoke1), 7, carol);
+    vm.stopPrank();
+
+    vm.startPrank(bob);
+    spoke1.borrow(_daiReserveId(spoke1), 14, bob);
+    vm.stopPrank();
+
+    console.log('carol %e', spoke1.getUserPosition(_daiReserveId(spoke1), carol).baseDrawnShares);
+    console.log('bob %e', spoke1.getUserPosition(_daiReserveId(spoke1), bob).baseDrawnShares);
+
+    console.log(
+      spoke1.getUserPosition(_daiReserveId(spoke1), carol).baseDrawnShares >
+        spoke1.getUserPosition(_daiReserveId(spoke1), bob).baseDrawnShares
+    );
+  }
+
   /// basic case, cannot borrow an amount that leads to HF < 1
   function test_borrow_revertsWith_HealthFactorBelowThreshold() public {
     uint256 daiReserveId = _daiReserveId(spoke1);
