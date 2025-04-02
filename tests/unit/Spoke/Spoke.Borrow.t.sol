@@ -6,29 +6,7 @@ import 'tests/unit/Spoke/SpokeBase.t.sol';
 contract SpokeBorrowTest is SpokeBase {
   using SharesMath for uint256;
 
-  // TODO: clean up unneeded vars
   struct BorrowTestData {
-    DataTypes.UserPosition bobDaiData;
-    DataTypes.UserPosition bobWethData;
-    DataTypes.UserPosition bobUsdxData;
-    DataTypes.UserPosition bobWbtcData;
-    DataTypes.UserPosition bobDaiData2;
-    DataTypes.UserPosition bobUsdxData2;
-    DataTypes.UserPosition bobDaiDataFinal;
-    DataTypes.UserPosition bobUsdxDataFinal;
-    DataTypes.UserPosition bobDaiData2Final;
-    DataTypes.UserPosition bobUsdxData2Final;
-    DataTypes.UserPosition aliceDaiData;
-    DataTypes.UserPosition aliceWethData;
-    DataTypes.UserPosition aliceUsdxData;
-    DataTypes.UserPosition aliceDaiDataCalc;
-    DataTypes.UserPosition aliceUsdxDataCalc;
-    DataTypes.UserPosition bobDaiDataCalc;
-    DataTypes.UserPosition bobWethDataCalc;
-    DataTypes.UserPosition bobUsdxDataCalc;
-    DataTypes.UserPosition bobWbtcDataCalc;
-    DataTypes.UserPosition bobDaiDataCalc2;
-    DataTypes.UserPosition bobUsdxDataCalc2;
     uint256 daiReserveId;
     uint256 wethReserveId;
     uint256 daiSupplyAmount;
@@ -928,7 +906,7 @@ contract SpokeBorrowTest is SpokeBase {
 
   /// inflated exch rate, it's better for user to borrow 1 big amount than 2 small amounts due to rounding up
   function test_borrow_with_rounding() public {
-    // inflate debt exchange rate on dai
+    // all users supply enough weth for high collateral factor
     Utils.spokeSupply({
       spoke: spoke1,
       reserveId: _wethReserveId(spoke1),
@@ -961,6 +939,7 @@ contract SpokeBorrowTest is SpokeBase {
       amount: 1000e18,
       onBehalfOf: bob
     });
+    // alice borrows dai to inflate exch rate
     Utils.spokeBorrow({
       spoke: spoke1,
       reserveId: _daiReserveId(spoke1),
@@ -970,68 +949,46 @@ contract SpokeBorrowTest is SpokeBase {
     });
     skip(365 days * 100);
 
-    // carol borrows two smaller amounts
     uint256 amount1 = 8;
     uint256 amount2 = 8;
-
-    uint256 exchRate = hub.convertToDrawnAssets(daiAssetId, 1);
 
     uint256 carolDaiBefore = tokenList.dai.balanceOf(carol);
     uint256 bobDaiBefore = tokenList.dai.balanceOf(bob);
 
+    // carol borrows 2 smaller amounts in 2 actions
     vm.startPrank(carol);
     spoke1.borrow(_daiReserveId(spoke1), amount1, carol);
     spoke1.borrow(_daiReserveId(spoke1), amount2, carol);
     vm.stopPrank();
 
+    // bob borrows whole amount at once
     vm.prank(bob);
     spoke1.borrow(_daiReserveId(spoke1), amount1 + amount2, bob);
 
-    console.log(amount1 % exchRate > 0, amount2 % exchRate > 0, (amount1 + amount2) % exchRate > 0);
-
-    console.log('carol %e', spoke1.getUserPosition(_daiReserveId(spoke1), carol).baseDrawnShares);
-    console.log('bob %e', spoke1.getUserPosition(_daiReserveId(spoke1), bob).baseDrawnShares);
-
-    console.log('carol %e', spoke1.getUserTotalDebt(_daiReserveId(spoke1), carol));
-    console.log('bob %e', spoke1.getUserTotalDebt(_daiReserveId(spoke1), bob));
-
-    console.log(
-      spoke1.getUserPosition(_daiReserveId(spoke1), carol).baseDrawnShares >
-        spoke1.getUserPosition(_daiReserveId(spoke1), bob).baseDrawnShares
-    );
-
-    console.log('1 asset = share ', hub.convertToDrawnShares(daiAssetId, 1));
-    console.log('1 share = asset ', hub.convertToDrawnAssets(daiAssetId, 1));
-
-    console.log('1 asset = share %e', hub.convertToDrawnShares(daiAssetId, 1e18));
-
-    console.log('balance bob', tokenList.dai.balanceOf(bob) - bobDaiBefore);
-    console.log('balance carol', tokenList.dai.balanceOf(carol) - carolDaiBefore);
-
+    // bob benefits by having less debt shares than carol
     assertLt(
       spoke1.getUserPosition(_daiReserveId(spoke1), bob).baseDrawnShares,
       spoke1.getUserPosition(_daiReserveId(spoke1), carol).baseDrawnShares,
       'bob should have < debt shares than carol'
     );
-  }
-
-  // TODO: delete
-  function test_y() public {
-    // test_borrow_fuzz_multi_spoke_multi_reserves(82512, 1000000000001, 2708, 10526, 21927);
-    test_borrow_fuzz_with_rounding(
-      82871941895252394463715072125,
-      82318213518811399850424978257,
-      862818461
+    // but both users have the same amount of drawn asset
+    assertEq(
+      tokenList.dai.balanceOf(bob) - bobDaiBefore,
+      tokenList.dai.balanceOf(carol) - carolDaiBefore,
+      'drawn assets should match'
     );
   }
+
+  /// fuzz - given an inflated ex rate, it's better for the user to borrow 1 big amount than 2 small amounts due to rounding(up)
   function test_borrow_fuzz_with_rounding(
     uint256 amount1,
     uint256 amount2,
     uint256 skipTime
   ) public {
-    amount1 = bound(amount1, 0, MAX_SUPPLY_AMOUNT_DAI / 1e4); // bound to lower amounts to account for precision loss
-    amount2 = bound(amount2, 0, MAX_SUPPLY_AMOUNT_DAI / 1e4);
-    skipTime = bound(skipTime, 5 * 365 days, MAX_SKIP_TIME); // bound with higher elapsed time to inflate exch rate
+    // to account for precision loss from shares conversion in vm.assume calc
+    amount1 = bound(amount1, 0, MAX_SUPPLY_AMOUNT_DAI / 1e6);
+    amount2 = bound(amount2, 0, MAX_SUPPLY_AMOUNT_DAI / 1e6);
+    skipTime = bound(skipTime, 365 days, MAX_SKIP_TIME); // bound with higher elapsed time to inflate exch rate
 
     // inflate debt exchange rate on dai
     // alice supplies max weth for high collateral factor
@@ -1090,75 +1047,35 @@ contract SpokeBorrowTest is SpokeBase {
 
     (uint256 baseDebt, ) = hub.getAssetDebt(daiAssetId);
 
-    // uint256 exchRate = uint256(1).toAssetsUp(baseDebt, hub.getAsset(daiAssetId).baseDrawnShares);
-
+    // ensure inflated exch rate
     vm.assume(hub.convertToDrawnAssets(daiAssetId, 1) > 1);
-    // vm.assume(
-    //   amount1 % exchRate > 0 && amount2 % exchRate > 0 && (amount1 + amount2) % exchRate > 0
-    // );
-
+    // ensure that shares conversion of smaller amounts individually are greater than shares of total sum
     vm.assume(
       amount1.toSharesUp(baseDebt, hub.getAsset(daiAssetId).baseDrawnShares) +
         amount2.toSharesUp(baseDebt, hub.getAsset(daiAssetId).baseDrawnShares) >
         (amount1 + amount2).toSharesUp(baseDebt, hub.getAsset(daiAssetId).baseDrawnShares)
     );
 
-    // console.log(amount1 % exchRate > 0, amount2 % exchRate > 0, (amount1 + amount2) % exchRate > 0);
-
-    // console.log('exchRate %e', hub.convertToDrawnAssets(daiAssetId, 1e27));
-    console.log(
-      'sh %e %e %e',
-      amount1.toSharesUp(baseDebt, hub.getAsset(daiAssetId).baseDrawnShares) +
-        amount2.toSharesUp(baseDebt, hub.getAsset(daiAssetId).baseDrawnShares),
-      (amount1 + amount2).toSharesUp(baseDebt, hub.getAsset(daiAssetId).baseDrawnShares)
-    );
-    // assertTrue(exchRate > 1);
-    // assertTrue(
-    //   amount1 % exchRate > 0 && amount2 % exchRate > 0 && (amount1 + amount2) % exchRate > 0
-    // );
-
     uint256 carolDaiBefore = tokenList.dai.balanceOf(carol);
     uint256 bobDaiBefore = tokenList.dai.balanceOf(bob);
 
-    // carol borrows two smaller amounts
+    // carol borrows 2 smaller amounts in 2 actions
     vm.startPrank(carol);
     spoke1.borrow(_daiReserveId(spoke1), amount1, carol);
     spoke1.borrow(_daiReserveId(spoke1), amount2, carol);
     vm.stopPrank();
 
+    // bob borrows whole amount at once
     vm.prank(bob);
     spoke1.borrow(_daiReserveId(spoke1), amount1 + amount2, bob);
 
-    // console.log('balance bob', tokenList.dai.balanceOf(bob) - bobDaiBefore);
-    // console.log('balance carol', tokenList.dai.balanceOf(carol) - carolDaiBefore);
-
-    // console.log(
-    //   'carol sh %e    ',
-    //   spoke1.getUserPosition(_daiReserveId(spoke1), carol).baseDrawnShares
-    // );
-    // console.log(
-    //   'bob sh %e      ',
-    //   spoke1.getUserPosition(_daiReserveId(spoke1), bob).baseDrawnShares
-    // );
-
-    // // console.log('carol %e', spoke1.getUserTotalDebt(_daiReserveId(spoke1), carol));
-    // // console.log('bob %e', spoke1.getUserTotalDebt(_daiReserveId(spoke1), bob));
-
-    // // console.log(
-    // //   spoke1.getUserPosition(_daiReserveId(spoke1), carol).baseDrawnShares >
-    // //     spoke1.getUserPosition(_daiReserveId(spoke1), bob).baseDrawnShares
-    // // );
-
-    // // console.log('1 asset = share ', hub.convertToDrawnShares(daiAssetId, 1));
-    // // console.log('1 share = asset ', hub.convertToDrawnAssets(daiAssetId, 1));
-
-    // // console.log('1 asset = share %e', hub.convertToDrawnShares(daiAssetId, 1e18));
-
+    // bob benefits by having less debt shares than carol
     assertLt(
       spoke1.getUserPosition(_daiReserveId(spoke1), bob).baseDrawnShares,
       spoke1.getUserPosition(_daiReserveId(spoke1), carol).baseDrawnShares,
       'bob should have < debt shares than carol'
     );
+    // but both users have the same amount of drawn asset
     assertEq(
       tokenList.dai.balanceOf(bob) - bobDaiBefore,
       tokenList.dai.balanceOf(carol) - carolDaiBefore,

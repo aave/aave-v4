@@ -282,6 +282,7 @@ contract SpokeBase is Base {
       (10 ** hub.getAssetConfig(assetId).decimals);
   }
 
+  // assert that user debt and supplied shares match expected values
   function _assertUserDebtAndSuppliedShares(
     ISpoke spoke,
     uint256 reserveId,
@@ -349,6 +350,7 @@ contract SpokeBase is Base {
     );
   }
 
+  // calculate expected debt accounting values using latest risk premium
   function _calcExpectedDebtAccounting(
     ISpoke spoke,
     address user,
@@ -363,64 +365,6 @@ contract SpokeBase is Base {
     );
     userPos.premiumOffset = hub.convertToDrawnAssets(assetId, userPos.premiumDrawnShares);
   }
-
-  // TODO: assert reserve debt matches hub debt
-  // function _assertReservesAndHubDebt(
-  //   ISpoke[] memory spokes,
-  //   uint256 reserveId,
-  //   string memory label
-  // ) internal view {
-  //   DebtData memory assetDebt;
-  //   DebtData memory reserveDebt;
-  //   DebtData memory spokeDebt;
-
-  //   for (uint256 i = 0; i < spokes.length; ++i) {
-  //     uint256 assetId = spokes[i].getReserve(reserveId).assetId;
-
-  //     DebtData memory assetDebtTemp;
-  //   DebtData memory reserveDebtTemp;
-  //   DebtData memory spokeDebtTemp;
-
-  //     spokeDebtTemp.totalDebt = hub.getSpokeTotalDebt(assetId, address(spokes[i]));
-  //     (spokeDebtTemp.baseDebt, spokeDebtTemp.premiumDebt) = hub.getSpokeDebt(assetId, address(spokes[i]));
-
-  //     reserveDebtTemp.otalDebt = spokes[i].getReserveTotalDebt(reserveId);
-  //     (uint256 spokeBaseDebt, uint256 spokePremiumDebt) = hub.getSpokeDebt(reserveId);
-
-  //     assetDebtTemp.totalDebt = hub.getAssetTotalDebt(assetId);
-  //     (assetDebtTemp.baseDebt, assetDebtTemp.premiumDebt) = hub.getAssetDebt(assetId);
-
-  //     spokeDebt.totalDebt += spokeTotalDebt;
-  //     spokeDebt.baseDebt += baseDebt;
-  //     spokeDebt.premiumDebt += premiumDebt;
-
-  //     assetDebt.totalDebt += assetTotalDebt;
-  //     assetDebt.baseDebt += assetBaseDebt;
-  //     assetDebt.premiumDebt += assetPremiumDebt;
-
-  //   }
-
-  //   // reserveDebt.totalDebt = spoke.getReserveTotalDebt(reserveId);
-  //   // (reserveDebt.baseDebt, reserveDebt.premiumDebt) = spoke.getReserveDebt(reserveId);
-  //   // spokeDebt.totalDebt = spoke.getSpokeTotalDebt(reserveId);
-  //   // (spokeDebt.baseDebt, spokeDebt.premiumDebt) = spoke.getSpokeDebt(reserveId);
-
-  //   // assertEq(
-  //   //   reserveDebt.baseDebt,
-  //   //   spokeDebt.baseDebt,
-  //   //   string(abi.encodePacked('reserve base debt ', label))
-  //   // );
-  //   // assertEq(
-  //   //   reserveDebt.premiumDebt,
-  //   //   spokeDebt.premiumDebt,
-  //   //   string(abi.encodePacked('reserve premium debt ', label))
-  //   // );
-  //   // assertEq(
-  //   //   reserveDebt.totalDebt,
-  //   //   spokeDebt.totalDebt,
-  //   //   string(abi.encodePacked('reserve total debt ', label))
-  //   // );
-  // }
 
   /// assert that sum across User storage debt matches Reserve storage debt
   function _assertUsersAndReserveDebt(
