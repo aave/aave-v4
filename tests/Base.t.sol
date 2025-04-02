@@ -2,6 +2,7 @@
 pragma solidity ^0.8.0;
 
 import {Test} from 'forge-std/Test.sol';
+import {stdError} from 'forge-std/StdError.sol';
 import {console2 as console} from 'forge-std/console2.sol';
 
 import {LiquidityHub, ILiquidityHub} from 'src/contracts/LiquidityHub.sol';
@@ -321,17 +322,6 @@ abstract contract Base is Test {
     hub.addSpoke(usdxAssetId, spokeConfig, address(spoke1));
 
     // Spoke 2 reserve configs
-    wbtcConfig = DataTypes.ReserveConfig({
-      decimals: 8,
-      active: true,
-      frozen: false,
-      paused: false,
-      collateralFactor: 80_00,
-      liquidationBonus: 0,
-      liquidityPremium: 0,
-      borrowable: true,
-      collateral: true
-    });
     wethConfig = DataTypes.ReserveConfig({
       decimals: 18,
       active: true,
@@ -340,6 +330,17 @@ abstract contract Base is Test {
       collateralFactor: 76_00,
       liquidationBonus: 0,
       liquidityPremium: 10_00,
+      borrowable: true,
+      collateral: true
+    });
+    wbtcConfig = DataTypes.ReserveConfig({
+      decimals: 8,
+      active: true,
+      frozen: false,
+      paused: false,
+      collateralFactor: 80_00,
+      liquidationBonus: 0,
+      liquidityPremium: 0,
       borrowable: true,
       collateral: true
     });

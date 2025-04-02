@@ -227,6 +227,7 @@ contract LiquidityHub is ILiquidityHub {
     int256 premiumOffsetDelta,
     int256 realizedPremiumDelta
   ) external {
+    _validateRefresh(assetId);
     /**
      * todo: `refreshPremiumDebt` callback
      * - only callable by spoke
@@ -413,6 +414,10 @@ contract LiquidityHub is ILiquidityHub {
     (uint256 baseDebt, uint256 premiumDebt) = _getSpokeDebt(asset, spoke);
     require(baseAmountRestored <= baseDebt, SurplusAmountRestored(baseDebt));
     // we should have already restored premium debt
+  }
+
+  function _validateRefresh(uint256 assetId) internal {
+    require(assetId < assetCount, AssetNotListed());
   }
 
   function _addSpoke(uint256 assetId, DataTypes.SpokeConfig memory config, address spoke) internal {
