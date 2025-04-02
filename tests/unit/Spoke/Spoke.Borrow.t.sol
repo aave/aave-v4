@@ -566,58 +566,38 @@ contract SpokeBorrowTest is SpokeBase {
     setUsingAsCollateral(spoke1, bob, daiReserveId, true);
     setUsingAsCollateral(spoke1, bob, usdxReserveId, true);
 
-    state.aliceDaiData = getUserInfo(spoke1, alice, daiReserveId);
-    state.aliceUsdxData = getUserInfo(spoke1, alice, usdxReserveId);
-    state.bobDaiData = getUserInfo(spoke1, bob, daiReserveId);
-    state.bobUsdxData = getUserInfo(spoke1, bob, usdxReserveId);
-
-    // alice - spoke1
-    // dai
-    assertEq(
-      state.aliceDaiData.suppliedShares,
-      hub.convertToSuppliedShares(daiAssetId, state.daiSupplyAmount),
-      'alice dai suppliedShares before'
-    );
-    assertEq(state.aliceDaiData.baseDrawnShares, 0, 'alice dai baseDrawnShares before');
-    assertEq(state.aliceDaiData.premiumDrawnShares, 0, 'alice dai premiumDrawnShares before');
-    assertEq(state.aliceDaiData.premiumOffset, 0, 'alice dai premiumOffset before');
-    assertEq(state.aliceDaiData.realizedPremium, 0, 'alice dai realizedPremium before');
-    assertTrue(state.aliceDaiData.usingAsCollateral, 'alice dai usingAsCollateral before');
-    // usdx
-    assertEq(
-      state.aliceUsdxData.suppliedShares,
-      hub.convertToSuppliedShares(usdxAssetId, state.usdxSupplyAmount),
-      'alice usdx suppliedShares before'
-    );
-    assertEq(state.aliceUsdxData.baseDrawnShares, 0, 'alice usdx baseDrawnShares before');
-    assertEq(state.aliceUsdxData.premiumDrawnShares, 0, 'alice usdx premiumDrawnShares before');
-    assertEq(state.aliceUsdxData.premiumOffset, 0, 'alice usdx premiumOffset before');
-    assertEq(state.aliceUsdxData.realizedPremium, 0, 'alice usdx realizedPremium before');
-    assertTrue(state.aliceUsdxData.usingAsCollateral, 'alice usdx usingAsCollateral before');
-
-    // bob - spoke1
-    // dai
-    assertEq(
-      state.bobDaiData.suppliedShares,
-      hub.convertToSuppliedShares(daiAssetId, state.daiSupplyAmount2),
-      'bob dai suppliedShares before'
-    );
-    assertEq(state.bobDaiData.baseDrawnShares, 0, 'bob dai baseDrawnShares before');
-    assertEq(state.bobDaiData.premiumDrawnShares, 0, 'bob dai premiumDrawnShares before');
-    assertEq(state.bobDaiData.premiumOffset, 0, 'bob dai premiumOffset before');
-    assertEq(state.bobDaiData.realizedPremium, 0, 'bob dai realizedPremium before');
-    assertTrue(state.bobDaiData.usingAsCollateral, 'bob dai usingAsCollateral before');
-    // usdx
-    assertEq(
-      state.bobUsdxData.suppliedShares,
-      hub.convertToSuppliedShares(usdxAssetId, state.usdxSupplyAmount2),
-      'bob usdx suppliedShares before'
-    );
-    assertEq(state.bobUsdxData.baseDrawnShares, 0, 'bob usdx baseDrawnShares before');
-    assertEq(state.bobUsdxData.premiumDrawnShares, 0, 'bob usdx premiumDrawnShares before');
-    assertEq(state.bobUsdxData.premiumOffset, 0, 'bob usdx premiumOffset before');
-    assertEq(state.bobUsdxData.realizedPremium, 0, 'bob usdx realizedPremium before');
-    assertTrue(state.bobUsdxData.usingAsCollateral, 'bob usdx usingAsCollateral before');
+    _assertUserDebtAndSuppliedShares({
+      spoke: spoke1,
+      reserveId: daiReserveId,
+      user: alice,
+      borrowAmount: 0,
+      suppliedAmount: state.daiSupplyAmount,
+      label: 'alice dai data before'
+    });
+    _assertUserDebtAndSuppliedShares({
+      spoke: spoke1,
+      reserveId: usdxReserveId,
+      user: alice,
+      borrowAmount: 0,
+      suppliedAmount: state.usdxSupplyAmount,
+      label: 'alice usdx data before'
+    });
+    _assertUserDebtAndSuppliedShares({
+      spoke: spoke1,
+      reserveId: daiReserveId,
+      user: bob,
+      borrowAmount: 0,
+      suppliedAmount: state.daiSupplyAmount2,
+      label: 'bob dai data before'
+    });
+    _assertUserDebtAndSuppliedShares({
+      spoke: spoke1,
+      reserveId: usdxReserveId,
+      user: bob,
+      borrowAmount: 0,
+      suppliedAmount: state.usdxSupplyAmount2,
+      label: 'bob usdx data before'
+    });
 
     // Alice borrow all reserves
     if (daiBorrowAmount > 0) {
@@ -638,128 +618,48 @@ contract SpokeBorrowTest is SpokeBase {
       Utils.spokeBorrow(spoke1, usdxReserveId, bob, usdxBorrowAmount2, bob);
     }
 
-    // Alice
-    state.aliceDaiData = getUserInfo(spoke1, alice, daiReserveId);
-    state.aliceUsdxData = getUserInfo(spoke1, alice, usdxReserveId);
-    state.aliceDaiDataCalc = _calcExpectedDebtAccounting(
-      spoke1,
-      alice,
-      daiAssetId,
-      daiBorrowAmount
-    );
-    state.aliceUsdxDataCalc = _calcExpectedDebtAccounting(
-      spoke1,
-      alice,
-      usdxAssetId,
-      usdxBorrowAmount
-    );
+    _assertUserDebtAndSuppliedShares({
+      spoke: spoke1,
+      reserveId: daiReserveId,
+      user: alice,
+      borrowAmount: daiBorrowAmount,
+      suppliedAmount: state.daiSupplyAmount,
+      label: 'alice dai data after'
+    });
+    _assertUserDebtAndSuppliedShares({
+      spoke: spoke1,
+      reserveId: usdxReserveId,
+      user: alice,
+      borrowAmount: usdxBorrowAmount,
+      suppliedAmount: state.usdxSupplyAmount,
+      label: 'alice usdx data after'
+    });
+    _assertUserDebtAndSuppliedShares({
+      spoke: spoke1,
+      reserveId: daiReserveId,
+      user: bob,
+      borrowAmount: daiBorrowAmount2,
+      suppliedAmount: state.daiSupplyAmount2,
+      label: 'bob dai data after'
+    });
+    _assertUserDebtAndSuppliedShares({
+      spoke: spoke1,
+      reserveId: usdxReserveId,
+      user: bob,
+      borrowAmount: usdxBorrowAmount2,
+      suppliedAmount: state.usdxSupplyAmount2,
+      label: 'bob usdx data after'
+    });
 
-    // Bob
-    state.bobDaiData = getUserInfo(spoke1, bob, daiReserveId);
-    state.bobUsdxData = getUserInfo(spoke1, bob, usdxReserveId);
-    state.bobDaiDataCalc = _calcExpectedDebtAccounting(spoke1, bob, daiAssetId, daiBorrowAmount2);
-    state.bobUsdxDataCalc = _calcExpectedDebtAccounting(
-      spoke1,
-      bob,
-      usdxAssetId,
-      usdxBorrowAmount2
-    );
-
-    // Bob
-    // dai
-    assertEq(
-      state.bobDaiData.suppliedShares,
-      hub.convertToSuppliedShares(daiAssetId, state.daiSupplyAmount),
-      'bob dai suppliedShares after'
-    );
-    assertEq(
-      state.bobDaiData.baseDrawnShares,
-      state.bobDaiDataCalc.baseDrawnShares,
-      'bob dai baseDrawnShares after'
-    );
-    assertEq(
-      state.bobDaiData.premiumDrawnShares,
-      state.bobDaiDataCalc.premiumDrawnShares,
-      'bob dai premiumDrawnShares after'
-    );
-    assertEq(
-      state.bobDaiData.premiumOffset,
-      state.bobDaiDataCalc.premiumOffset,
-      'bob dai premiumOffset after'
-    );
-    assertEq(state.bobDaiData.realizedPremium, 0, 'bob dai realizedPremium after');
-    // usdx
-    assertEq(
-      state.bobUsdxData.suppliedShares,
-      hub.convertToSuppliedShares(usdxAssetId, state.usdxSupplyAmount),
-      'bob usdx suppliedShares after'
-    );
-    assertEq(
-      state.bobUsdxData.baseDrawnShares,
-      state.bobUsdxDataCalc.baseDrawnShares,
-      'bob usdx baseDrawnShares after'
-    );
-    assertEq(
-      state.bobUsdxData.premiumDrawnShares,
-      state.bobUsdxDataCalc.premiumDrawnShares,
-      'bob usdx premiumDrawnShares after'
-    );
-    assertEq(
-      state.bobUsdxData.premiumOffset,
-      state.bobUsdxDataCalc.premiumOffset,
-      'bob usdx premiumOffset after'
-    );
-    assertEq(state.bobUsdxData.realizedPremium, 0, 'bob usdx realizedPremium after');
-
-    // Alice
-    // dai
-    assertEq(
-      state.aliceDaiData.suppliedShares,
-      hub.convertToSuppliedShares(daiAssetId, state.daiSupplyAmount),
-      'alice dai suppliedShares after'
-    );
-    assertEq(
-      state.aliceDaiData.baseDrawnShares,
-      state.aliceDaiDataCalc.baseDrawnShares,
-      'alice dai baseDrawnShares after'
-    );
-    assertEq(
-      state.aliceDaiData.premiumDrawnShares,
-      state.aliceDaiDataCalc.premiumDrawnShares,
-      'alice dai premiumDrawnShares after'
-    );
-    assertEq(
-      state.aliceDaiData.premiumOffset,
-      state.aliceDaiDataCalc.premiumOffset,
-      'alice dai premiumOffset after'
-    );
-    assertEq(state.aliceDaiData.realizedPremium, 0, 'alice dai realizedPremium after');
-    // usdx
-    assertEq(
-      state.aliceUsdxData.suppliedShares,
-      hub.convertToSuppliedShares(usdxAssetId, state.usdxSupplyAmount),
-      'alice usdx suppliedShares after'
-    );
-    assertEq(
-      state.aliceUsdxData.baseDrawnShares,
-      state.aliceUsdxDataCalc.baseDrawnShares,
-      'alice usdx baseDrawnShares after'
-    );
-    assertEq(
-      state.aliceUsdxData.premiumDrawnShares,
-      state.aliceUsdxDataCalc.premiumDrawnShares,
-      'alice usdx premiumDrawnShares after'
-    );
-    assertEq(
-      state.aliceUsdxData.premiumOffset,
-      state.aliceUsdxDataCalc.premiumOffset,
-      'alice usdx premiumOffset after'
-    );
-    assertEq(state.aliceUsdxData.realizedPremium, 0, 'alice usdx realizedPremium after');
+    // TODO: assert sum across 2 users
+    // _assertUserAndReserveDebt(spoke1, daiReserveId, alice, 'alice dai after');
+    // _assertUserAndReserveDebt(spoke1, usdxReserveId, alice, 'alice usdx after');
+    // _assertUserAndReserveDebt(spoke1, daiReserveId, bob, 'bob dai after');
+    // _assertUserAndReserveDebt(spoke1, usdxReserveId, bob, 'bob usdx after');
   }
 
   /// fuzz - 1 user borrowing 4 assets from 1 spoke
-  function test_borrow_fuzz_single_spoke_multi_reservesf(
+  function test_borrow_fuzz_single_spoke_multi_reserves(
     uint256 daiBorrowAmount,
     uint256 wethBorrowAmount,
     uint256 usdxBorrowAmount,
