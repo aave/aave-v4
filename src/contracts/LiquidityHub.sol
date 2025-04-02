@@ -208,7 +208,7 @@ contract LiquidityHub is ILiquidityHub {
 
     uint256 totalRestoredAmount = baseAmount + premiumAmount;
     uint256 baseDrawnSharesRestored = asset.toDrawnSharesDown(baseAmount);
-    require(totalRestoredAmount > 0 || baseDrawnSharesRestored != 0, InvalidSharesAmount());
+    require(premiumAmount > 0 || baseDrawnSharesRestored != 0, InvalidSharesAmount());
 
     asset.availableLiquidity += totalRestoredAmount;
     asset.baseDrawnAssets -= baseAmount;
