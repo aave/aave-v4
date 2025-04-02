@@ -282,43 +282,6 @@ contract SpokeBase is Base {
       (10 ** hub.getAssetConfig(assetId).decimals);
   }
 
-  // TODO: DELETE THIS
-  function _assertCalcDebt(
-    ISpoke spoke,
-    uint256 reserveId,
-    address user,
-    uint256 borrowAmount
-  ) internal view {
-    DataTypes.UserPosition memory calcDebt = _calcExpectedDebtAccounting(
-      spoke,
-      user,
-      reserveId,
-      borrowAmount
-    );
-    DataTypes.UserPosition memory userData = getUserInfo(spoke, user, reserveId);
-
-    assertEq(userData.baseDrawnShares, calcDebt.baseDrawnShares, 'user baseDrawnShares');
-    assertEq(userData.premiumDrawnShares, calcDebt.premiumDrawnShares, 'user premiumDrawnShares');
-    assertEq(userData.premiumOffset, calcDebt.premiumOffset, 'user premiumOffset');
-    assertEq(userData.realizedPremium, 0, 'user realized premium');
-
-    uint256 assetId = spoke.getReserve(reserveId).assetId;
-    uint256 expectedPremiumDebt = calcDebt.realizedPremium +
-      (hub.convertToDrawnAssets(assetId, calcDebt.premiumDrawnShares) - calcDebt.premiumOffset);
-
-    DebtData memory userDebt;
-    userDebt.totalDebt = spoke.getUserTotalDebt(reserveId, user);
-    (userDebt.baseDebt, userDebt.premiumDebt) = spoke.getUserDebt(reserveId, user);
-
-    assertEq(
-      userDebt.baseDebt,
-      hub.convertToDrawnAssets(assetId, calcDebt.baseDrawnShares),
-      'user base debt'
-    );
-    assertEq(userDebt.premiumDebt, expectedPremiumDebt, 'user premium debt');
-    assertEq(userDebt.totalDebt, userDebt.baseDebt + userDebt.premiumDebt, 'user total debt');
-  }
-
   function _assertUserDebtAndSuppliedShares(
     ISpoke spoke,
     uint256 reserveId,
@@ -443,9 +406,43 @@ contract SpokeBase is Base {
     assertEq(
       reserveDebt.totalDebt,
       userDebt.totalDebt,
-      string(abi.encodePacked('reservetotal debt ', label))
+      string(abi.encodePacked('reserve total debt ', label))
     );
   }
+
+  // function _assertReserveAndSpokeDebt(
+  //   ISpoke spoke,
+  //   uint256 reserveId,
+  //   string memory label
+  // ) internal view {
+  //   uint256 assetId = spoke.getReserve(reserveId).assetId;
+
+  //   hub.getSpokeTotalDebt(reserveId);
+
+  //   DebtData memory reserveDebt;
+  //   DebtData memory spokeDebt;
+
+  //   reserveDebt.totalDebt = spoke.getReserveTotalDebt(reserveId);
+  //   (reserveDebt.baseDebt, reserveDebt.premiumDebt) = spoke.getReserveDebt(reserveId);
+  //   spokeDebt.totalDebt = spoke.getSpokeTotalDebt(reserveId);
+  //   (spokeDebt.baseDebt, spokeDebt.premiumDebt) = spoke.getSpokeDebt(reserveId);
+
+  //   assertEq(
+  //     reserveDebt.baseDebt,
+  //     spokeDebt.baseDebt,
+  //     string(abi.encodePacked('reserve base debt ', label))
+  //   );
+  //   assertEq(
+  //     reserveDebt.premiumDebt,
+  //     spokeDebt.premiumDebt,
+  //     string(abi.encodePacked('reserve premium debt ', label))
+  //   );
+  //   assertEq(
+  //     reserveDebt.totalDebt,
+  //     spokeDebt.totalDebt,
+  //     string(abi.encodePacked('reserve total debt ', label))
+  //   );
+  // }
 
   /// assert that sum across User storage debt matches Reserve storage debt
   function _assertUsersAndReserveDebt(
@@ -454,50 +451,49 @@ contract SpokeBase is Base {
     address[] memory users,
     string memory label
   ) internal view {
-    DataTypes.UserPosition memory userData;
-    //  = getUserInfo(spoke, user, reserveId);
-
     DebtData memory reserveDebt;
-    DebtData memory userDebt;
+    DebtData memory usersDebt;
     uint256 assetId = spoke.getReserve(reserveId).assetId;
 
     reserveDebt.totalDebt = spoke.getReserveTotalDebt(reserveId);
     (reserveDebt.baseDebt, reserveDebt.premiumDebt) = spoke.getReserveDebt(reserveId);
 
     for (uint256 i = 0; i < users.length; ++i) {
-      userDebt.totalDebt += spoke.getUserTotalDebt(reserveId, users[i]);
-
+      DataTypes.UserPosition memory userData = getUserInfo(spoke, users[i], reserveId);
+      usersDebt.totalDebt += spoke.getUserTotalDebt(reserveId, users[i]);
       (uint256 baseDebt, uint256 premiumDebt) = spoke.getUserDebt(reserveId, users[i]);
-      userDebt.baseDebt += baseDebt;
-      userDebt.premiumDebt += premiumDebt;
+
+      usersDebt.baseDebt += baseDebt;
+      usersDebt.premiumDebt += premiumDebt;
+
+      assertEq(
+        baseDebt,
+        hub.convertToDrawnAssets(assetId, userData.baseDrawnShares),
+        string(abi.encodePacked('user ', i, ' base debt ', label))
+      );
+      assertEq(
+        premiumDebt,
+        userData.realizedPremium +
+          hub.convertToDrawnAssets(assetId, userData.premiumDrawnShares) -
+          userData.premiumOffset,
+        string(abi.encodePacked('user ', i, ' premium debt ', label))
+      );
     }
 
     assertEq(
-      userDebt.baseDebt,
-      hub.convertToDrawnAssets(assetId, userData.baseDrawnShares),
-      string(abi.encodePacked('users base debt ', label))
-    );
-    assertEq(
-      userDebt.premiumDebt,
-      userData.realizedPremium +
-        hub.convertToDrawnAssets(assetId, userData.premiumDrawnShares) -
-        userData.premiumOffset,
-      string(abi.encodePacked('users premium debt ', label))
-    );
-    assertEq(
       reserveDebt.baseDebt,
-      userDebt.baseDebt,
-      string(abi.encodePacked('reserve base debt ', label))
+      usersDebt.baseDebt,
+      string(abi.encodePacked('reserve vs sum users base debt ', label))
     );
     assertEq(
       reserveDebt.premiumDebt,
-      userDebt.premiumDebt,
-      string(abi.encodePacked('reserve premium debt ', label))
+      usersDebt.premiumDebt,
+      string(abi.encodePacked('reserve vs sum users premium debt ', label))
     );
     assertEq(
       reserveDebt.totalDebt,
-      userDebt.totalDebt,
-      string(abi.encodePacked('reservetotal debt ', label))
+      usersDebt.totalDebt,
+      string(abi.encodePacked('reserve vs sum users total debt ', label))
     );
   }
 

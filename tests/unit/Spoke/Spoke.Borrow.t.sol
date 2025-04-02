@@ -651,11 +651,12 @@ contract SpokeBorrowTest is SpokeBase {
       label: 'bob usdx data after'
     });
 
-    // TODO: assert sum across 2 users
-    // _assertUserAndReserveDebt(spoke1, daiReserveId, alice, 'alice dai after');
-    // _assertUserAndReserveDebt(spoke1, usdxReserveId, alice, 'alice usdx after');
-    // _assertUserAndReserveDebt(spoke1, daiReserveId, bob, 'bob dai after');
-    // _assertUserAndReserveDebt(spoke1, usdxReserveId, bob, 'bob usdx after');
+    address[] memory users = new address[](2);
+    users[0] = alice;
+    users[1] = bob;
+
+    _assertUsersAndReserveDebt(spoke1, daiReserveId, users, 'dai total after');
+    _assertUsersAndReserveDebt(spoke1, usdxReserveId, users, 'usdx total after');
   }
 
   /// fuzz - 1 user borrowing 4 assets from 1 spoke
