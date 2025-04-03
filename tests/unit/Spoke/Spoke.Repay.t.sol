@@ -1378,8 +1378,8 @@ contract SpokeRepayTest is SpokeBase {
     assertGe(bobDaiBefore.totalDebt, daiBorrowAmount, 'bob dai debt before');
 
     // Calculate minimum repay amount
-    if (hub.convertToDrawnShares(_daiReserveId(spoke1), daiRepayAmount) == 0) {
-      daiRepayAmount = hub.convertToDrawnAssets(_daiReserveId(spoke1), 1);
+    if (hub.convertToDrawnShares(daiAssetId, daiRepayAmount) == 0) {
+      daiRepayAmount = hub.convertToDrawnAssets(daiAssetId, 1);
     }
 
     (uint256 baseRestored, uint256 premiumRestored) = _calculateRestoreAmount(
@@ -1434,7 +1434,16 @@ contract SpokeRepayTest is SpokeBase {
     uint256 daiRepayAmount,
     uint40 skipTime
   ) public {
-    daiBorrowAmount = bound(daiBorrowAmount, 1, MAX_SUPPLY_AMOUNT / 2);
+    daiBorrowAmount = bound(
+      daiBorrowAmount,
+      hub.convertToDrawnAssets(daiAssetId, 1),
+      MAX_SUPPLY_AMOUNT / 2
+    );
+    // Borrow amount must be in shares
+    daiBorrowAmount = hub.convertToDrawnAssets(
+      daiAssetId,
+      hub.convertToDrawnShares(daiAssetId, daiBorrowAmount)
+    );
 
     // calculate weth collateral
     uint256 wethSupplyAmount = _calcMinimumCollAmount(
@@ -1500,11 +1509,13 @@ contract SpokeRepayTest is SpokeBase {
       vm.prank(bob);
       spoke1.repay(_daiReserveId(spoke1), daiRepayAmount);
     } else {
-      // interest is at least 1
-      daiRepayAmount = bound(daiRepayAmount, 1, bobDaiInterest);
+      // Assume interest is at least 1 share
+      uint256 singleShareAmount = hub.convertToDrawnAssets(daiAssetId, 1);
+      vm.assume(bobDaiInterest >= singleShareAmount);
+      daiRepayAmount = bound(daiRepayAmount, singleShareAmount, bobDaiInterest);
       deal(address(tokenList.dai), bob, daiRepayAmount);
 
-      (uint256 baseRepaid, uint256 premiumRepaid) = _calculateRestoreAmount(
+      (uint256 baseRepaid, ) = _calculateRestoreAmount(
         bobDaiBefore.baseDebt,
         bobDaiBefore.premiumDebt,
         daiRepayAmount
@@ -1539,7 +1550,7 @@ contract SpokeRepayTest is SpokeBase {
       assertEq(bobDaiDataAfter.suppliedShares, bobDaiDataBefore.suppliedShares);
       assertEq(
         bobDaiAfter.totalDebt,
-        bobDaiBefore.totalDebt - daiRepayAmount,
+        daiRepayAmount >= bobDaiBefore.totalDebt ? 0 : bobDaiBefore.totalDebt - daiRepayAmount,
         'bob dai debt final balance'
       );
       assertEq(bobWethDataAfter.suppliedShares, bobWethDataBefore.suppliedShares);
@@ -2014,10 +2025,26 @@ contract SpokeRepayTest is SpokeBase {
     RepayMultipleLocal memory usdxInfo;
     RepayMultipleLocal memory wbtcInfo;
 
-    daiInfo.borrowAmount = bound(daiBorrowAmount, 1, MAX_SUPPLY_AMOUNT / 2);
-    wethInfo.borrowAmount = bound(wethBorrowAmount, 1, MAX_SUPPLY_AMOUNT / 2);
-    usdxInfo.borrowAmount = bound(usdxBorrowAmount, 1, MAX_SUPPLY_AMOUNT / 2);
-    wbtcInfo.borrowAmount = bound(wbtcBorrowAmount, 1, MAX_SUPPLY_AMOUNT / 2);
+    daiInfo.borrowAmount = bound(
+      daiBorrowAmount,
+      hub.convertToDrawnAssets(daiAssetId, 1),
+      MAX_SUPPLY_AMOUNT / 2
+    );
+    wethInfo.borrowAmount = bound(
+      wethBorrowAmount,
+      hub.convertToDrawnAssets(wethAssetId, 1),
+      MAX_SUPPLY_AMOUNT / 2
+    );
+    usdxInfo.borrowAmount = bound(
+      usdxBorrowAmount,
+      hub.convertToDrawnAssets(usdxAssetId, 1),
+      MAX_SUPPLY_AMOUNT / 2
+    );
+    wbtcInfo.borrowAmount = bound(
+      wbtcBorrowAmount,
+      hub.convertToDrawnAssets(wbtcAssetId, 1),
+      MAX_SUPPLY_AMOUNT / 2
+    );
     repayPortion = bound(repayPortion, 0, PercentageMath.PERCENTAGE_FACTOR);
     skipTime = bound(skipTime, 1, MAX_SKIP_TIME);
 
@@ -2025,6 +2052,24 @@ contract SpokeRepayTest is SpokeBase {
     wethInfo.repayAmount = wethInfo.borrowAmount.percentMul(repayPortion);
     usdxInfo.repayAmount = usdxInfo.borrowAmount.percentMul(repayPortion);
     wbtcInfo.repayAmount = wbtcInfo.borrowAmount.percentMul(repayPortion);
+
+    // Ensure borrow amounts are in whole shares
+    daiInfo.borrowAmount = hub.convertToDrawnAssets(
+      daiAssetId,
+      hub.convertToDrawnShares(daiAssetId, daiInfo.borrowAmount)
+    );
+    wethInfo.borrowAmount = hub.convertToDrawnAssets(
+      wethAssetId,
+      hub.convertToDrawnShares(wethAssetId, wethInfo.borrowAmount)
+    );
+    usdxInfo.borrowAmount = hub.convertToDrawnAssets(
+      usdxAssetId,
+      hub.convertToDrawnShares(usdxAssetId, usdxInfo.borrowAmount)
+    );
+    wbtcInfo.borrowAmount = hub.convertToDrawnAssets(
+      wbtcAssetId,
+      hub.convertToDrawnShares(wbtcAssetId, wbtcInfo.borrowAmount)
+    );
 
     // weth collateral for dai and usdx
     // wbtc collateral for weth and wbtc
@@ -2148,6 +2193,24 @@ contract SpokeRepayTest is SpokeBase {
     assertGe(bobWethBefore.totalDebt, wethInfo.borrowAmount);
     assertGe(bobWbtcBefore.totalDebt, wbtcInfo.borrowAmount);
     assertGe(bobUsdxBefore.totalDebt, usdxInfo.borrowAmount);
+
+    // Ensure repay amounts are in whole shares
+    daiInfo.repayAmount = hub.convertToDrawnAssets(
+      daiAssetId,
+      hub.convertToDrawnShares(daiAssetId, daiInfo.repayAmount)
+    );
+    wethInfo.repayAmount = hub.convertToDrawnAssets(
+      wethAssetId,
+      hub.convertToDrawnShares(wethAssetId, wethInfo.repayAmount)
+    );
+    usdxInfo.repayAmount = hub.convertToDrawnAssets(
+      usdxAssetId,
+      hub.convertToDrawnShares(usdxAssetId, usdxInfo.repayAmount)
+    );
+    wbtcInfo.repayAmount = hub.convertToDrawnAssets(
+      wbtcAssetId,
+      hub.convertToDrawnShares(wbtcAssetId, wbtcInfo.repayAmount)
+    );
 
     // Repayments
     if (daiInfo.repayAmount > 0) {
