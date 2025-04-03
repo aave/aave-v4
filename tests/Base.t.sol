@@ -702,4 +702,14 @@ abstract contract Base is Test {
     if (percent == 0) return price;
     return price.percentMul(percent);
   }
+
+  /// @dev Helper function to calculate asset amount corresponding to single drawn share
+  function minimumAssetsPerDrawnShare(uint256 assetId) internal view returns (uint256) {
+    return hub.convertToDrawnAssets(assetId, 1);
+  }
+
+  /// @dev Helper function to calculate asset amount corresponding to single supplied share
+  function minimumAssetsPerSuppliedShare(uint256 assetId) internal view returns (uint256) {
+    return hub.convertToSuppliedAssets(assetId, 1);
+  }
 }
