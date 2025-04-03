@@ -715,7 +715,7 @@ contract SpokeRepayTest is SpokeBase {
     assertEq(hub.getAssetTotalDebt(_daiReserveId(spoke1)), 0);
   }
 
-  function test_repay_revertsWith_InvalidSharesAmount_repay_less_than_share() public {
+  function test_repay_less_than_share_revertsWith_InvalidSharesAmount() public {
     // update liquidity premium to zero
     updateLiquidityPremium(spoke1, _wethReserveId(spoke1), 0);
 
@@ -1741,7 +1741,7 @@ contract SpokeRepayTest is SpokeBase {
       deal(address(tokenList.dai), bob, daiRepayAmount);
 
       vm.expectEmit(address(spoke1));
-      emit ISpoke.Repay(_daiReserveId(spoke1), bob, hub.convertToDrawnShares(daiAssetId, 0));
+      emit ISpoke.Repay(_daiReserveId(spoke1), bob, 0);
       vm.prank(bob);
       spoke1.repay(_daiReserveId(spoke1), daiRepayAmount);
 
@@ -2574,4 +2574,6 @@ contract SpokeRepayTest is SpokeBase {
   }
 
   /// todo: multiple users repay different reserves
+  /// todo: multiple users repay same reserve
+  /// todo: borrow x amount, get y base debt shares, repay x and burn y base debt
 }
