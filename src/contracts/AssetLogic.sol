@@ -54,9 +54,12 @@ library AssetLogic {
   }
 
   function premiumDebt(DataTypes.Asset storage asset) internal view returns (uint256) {
-    return
-      asset.realizedPremium +
-      (asset.toDrawnAssetsUp(asset.premiumDrawnShares) - asset.premiumOffset);
+    // underflow protection: conversion of `premiumDrawnShares` into assets is accurate to 1 wei precision
+    uint256 premiumDrawnAssets = asset.toDrawnAssetsUp(asset.premiumDrawnShares);
+    uint256 accrued = premiumDrawnAssets < asset.premiumOffset
+      ? 0
+      : premiumDrawnAssets - asset.premiumOffset;
+    return asset.realizedPremium + accrued;
   }
 
   function totalDebt(DataTypes.Asset storage asset) internal view returns (uint256) {
