@@ -639,12 +639,9 @@ contract Spoke is ISpoke {
     DataTypes.UserPosition storage userPosition,
     uint256 assetId
   ) internal view returns (uint256, uint256) {
-    // underflow protection: conversion of `premiumDrawnShares` into assets is accurate to 1 wei precision
-    uint256 premiumDrawnAssets = hub.convertToDrawnAssets(assetId, userPosition.premiumDrawnShares);
-    uint256 accrued = premiumDrawnAssets < userPosition.premiumOffset
-      ? 0
-      : premiumDrawnAssets - userPosition.premiumOffset;
-    uint256 premiumDebt = userPosition.realizedPremium + accrued;
+    uint256 premiumDebt = userPosition.realizedPremium +
+      (hub.convertToDrawnAssets(assetId, userPosition.premiumDrawnShares) -
+        userPosition.premiumOffset);
     return (hub.convertToDrawnAssets(assetId, userPosition.baseDrawnShares), premiumDebt);
   }
 
