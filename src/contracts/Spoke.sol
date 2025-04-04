@@ -646,9 +646,6 @@ contract Spoke is ISpoke {
       : premiumDrawnAssets - userPosition.premiumOffset;
     uint256 premiumDebt = userPosition.realizedPremium + accrued;
 
-    uint256 premiumDebt = userPosition.realizedPremium +
-      (hub.convertToDrawnAssets(assetId, userPosition.premiumDrawnShares) -
-        userPosition.premiumOffset);
     return (hub.convertToDrawnAssets(assetId, userPosition.baseDrawnShares), premiumDebt);
   }
 
