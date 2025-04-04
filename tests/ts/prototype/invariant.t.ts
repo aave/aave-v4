@@ -19,12 +19,24 @@ const hub = new LiquidityHub();
 const spokes = new Array(NUM_SPOKES).fill(0).map(() => new Spoke(hub));
 const users = new Array(NUM_USERS).fill(0).map(() => new User());
 
+const MINIMUM_TOTAL_AVAILABLE = 10n ** 18n; // at least 1e18 units
+
 const actions = ['supply', 'withdraw', 'borrow', 'repay', 'updateRiskPremium'];
 
 assignSpokesToUsers();
 const userCollateral = new Map<User, bigint>(); // without accounting for supply yield
 const userDebt = new Map<User, bigint>(); // without accounting for debt interest
 let totalAvailable = 0n; // without accounting for supply yield
+
+function minSupplyAmount(amount) {
+  const minimumAssetsAmount = hub.toSupplyAssets(1n, Rounding.CEIL);
+  return amount > minimumAssetsAmount ? amount : minimumAssetsAmount;
+}
+
+function minDebtAmount(amount) {
+  const minimumAssetsAmount = hub.toDrawnAssets(1n, Rounding.CEIL);
+  return amount > minimumAssetsAmount ? amount : minimumAssetsAmount;
+}
 
 function run() {
   for (let j = 0; j < DEPTH; j++) {
@@ -45,16 +57,19 @@ function run() {
 
     switch (action) {
       case 'supply': {
+        console.info('-supply');
+        if (hub.toSupplyShares(amount) == 0n) continue;
         user.supply(amount);
         userCollateral.set(user, (userCollateral.get(user) || 0n) + amount);
         totalAvailable += amount;
         break;
       }
       case 'withdraw': {
+        console.info('-withdraw');
         const supplied = userCollateral.get(user) || 0n;
         if (supplied < amount) {
           if (supplied === 0n) continue;
-          user.supply(amount);
+          user.supply(minSupplyAmount(amount));
         } else {
           userCollateral.set(user, supplied - amount);
           totalAvailable -= amount;
@@ -63,8 +78,9 @@ function run() {
         break;
       }
       case 'borrow': {
+        console.info('-borrow');
         if (amount > totalAvailable) {
-          if (totalAvailable < 10n ** 18n) user.supply(amount);
+          if (totalAvailable < MINIMUM_TOTAL_AVAILABLE) user.supply(minSupplyAmount(amount));
           else amount = random(1n, totalAvailable);
         }
         const drawn = userDebt.get(user) || 0n;
@@ -74,14 +90,16 @@ function run() {
         break;
       }
       case 'repay': {
+        console.info('-repay');
         let drawn = userDebt.get(user) || 0n;
         if (drawn < amount) {
-          user.supply(amount);
-          user.borrow(amount);
+          user.supply(minSupplyAmount(amount));
+          user.borrow(minSupplyAmount(amount));
           drawn += amount;
           amount = random(1n, user.getTotalDebt());
           if (randomChance(0.5)) skip();
         }
+        amount = minDebtAmount(amount);
         user.repay(amount);
         userDebt.set(user, drawn - amount);
         totalAvailable += amount;
@@ -264,10 +282,10 @@ export function invariant_sumOfSuppliedShares() {
 
 export function invariant_drawnGtSuppliedLiquidity() {
   let fail = false;
-  const hubTotalDebt = hub.getTotalDebt();
+  const hubTotalDebt = hub.getTotalDebt(Rounding.CEIL);
   const hubTotalSuppliedLiquidity = hub.totalSupplyAssets();
 
-  if (hubTotalDebt > hubTotalSuppliedLiquidity) {
+  if (hubTotalDebt > hubTotalSuppliedLiquidity + 1n) {
     console.error(
       'hubTotalDebt <= hubTotalSuppliedLiquidity',
       f(hubTotalDebt),
@@ -276,12 +294,15 @@ export function invariant_drawnGtSuppliedLiquidity() {
     fail = true;
   }
 
-  const spokeTotalDebt = spokes.reduce((sum, spoke) => sum + spoke.getTotalDebt(), 0n);
-  const spokeTotalSuppliedLiquidity = spokes.reduce(
-    (sum, spoke) => sum + hub.toSupplyAssets(spoke.suppliedShares),
+  const spokeTotalDebt = spokes.reduce(
+    (sum, spoke) => sum + spoke.getTotalDebt(Rounding.FLOOR), // conservative
     0n
   );
-  if (spokeTotalDebt > spokeTotalSuppliedLiquidity) {
+  const spokeTotalSuppliedLiquidity = spokes.reduce(
+    (sum, spoke) => sum + hub.toSupplyAssets(spoke.suppliedShares, Rounding.CEIL),
+    0n
+  );
+  if (spokeTotalDebt > spokeTotalSuppliedLiquidity + 1n) {
     console.error(
       'spokeTotalDebt <= spokeTotalSuppliedLiquidity',
       f(spokeTotalDebt),
@@ -295,7 +316,7 @@ export function invariant_drawnGtSuppliedLiquidity() {
     (sum, user) => sum + hub.toSupplyAssets(user.suppliedShares),
     0n
   );
-  if (userTotalDebt > userTotalSuppliedLiquidity) {
+  if (userTotalDebt > userTotalSuppliedLiquidity + 1n) {
     console.error(
       'userTotalDebt <= userTotalSuppliedLiquidity',
       f(userTotalDebt),

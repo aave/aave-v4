@@ -20,7 +20,7 @@ let userIdCounter = 0n;
 
 let currentTime = 1n;
 
-const OFFSET_UNITS = 10n ** 6n;
+const OFFSET_UNITS = 0n ** 6n;
 
 // type/token transfers to differentiate supplied/debt shares
 // notify is unneeded since prototype assumes one asset on hub
@@ -49,11 +49,13 @@ export class LiquidityHub {
   // total drawn assets does not incl totalOutstandingPremium to accrue base rate separately
   toDrawnAssets(shares: bigint, rounding = Rounding.FLOOR) {
     this.accrue();
+    if (this.totalDrawnShares() == 0n) return shares;
     return mulDiv(shares, this.totalDrawnAssets(), this.totalDrawnShares(), rounding);
   }
 
   toDrawnShares(assets: bigint, rounding = Rounding.FLOOR) {
     this.accrue();
+    if (this.totalDrawnAssets() == 0n) return assets;
     return mulDiv(assets, this.totalDrawnShares(), this.totalDrawnAssets(), rounding);
   }
 
@@ -77,10 +79,12 @@ export class LiquidityHub {
   }
 
   toSupplyAssets(shares: bigint, rounding = Rounding.FLOOR) {
+    if (this.totalSupplyShares() == 0n) return shares;
     return mulDiv(shares, this.totalSupplyAssets(rounding), this.totalSupplyShares(), rounding);
   }
 
   toSupplyShares(assets: bigint, rounding = Rounding.FLOOR) {
+    if (this.totalSupplyAssets(rounding) == 0n) return assets;
     return mulDiv(assets, this.totalSupplyShares(), this.totalSupplyAssets(rounding), rounding);
   }
 
@@ -129,7 +133,8 @@ export class LiquidityHub {
 
   // @dev global & spoke premiumDebt (ghost, offset, unrealised) is *expected* to be updated on the `refresh` callback
   restore(baseAmount: bigint, premiumAmount: bigint, spoke: Spoke) {
-    const baseDrawnSharesRestored = this.toDrawnShares(baseAmount, Rounding.CEIL);
+    const baseDrawnSharesRestored = this.toDrawnShares(baseAmount, Rounding.FLOOR);
+    if (premiumAmount == 0n && baseDrawnSharesRestored === 0n) throw new Error('got zero');
 
     this.availableLiquidity += baseAmount + premiumAmount;
 
@@ -248,7 +253,7 @@ export class Spoke {
     this.suppliedShares += suppliedShares;
     user.suppliedShares += suppliedShares;
 
-    this.updateUserRiskPremium(user);
+    // this.updateUserRiskPremium(user);
 
     return suppliedShares;
   }
@@ -544,7 +549,7 @@ export class User {
   }
 
   getTotalDebt() {
-    return this.spoke.getUserTotalDebt(this);
+    return this.spoke.getUserTotalDebt(this, Rounding.CEIL);
   }
 
   getSuppliedBalance() {
