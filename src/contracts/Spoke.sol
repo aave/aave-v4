@@ -16,7 +16,7 @@ contract Spoke is ISpoke {
 
   // todo capitalize, oracle should be mutable?
   ILiquidityHub public immutable hub;
-  IPriceOracle public immutable oracle;
+  IPriceOracle public oracle;
 
   mapping(address user => mapping(uint256 reserveId => DataTypes.UserPosition position))
     internal _userPositions;
@@ -25,15 +25,39 @@ contract Spoke is ISpoke {
   uint256[] public reservesList; // todo: rm, not needed
   uint256 public reserveCount;
   uint256 public constant HEALTH_FACTOR_LIQUIDATION_THRESHOLD = WadRayMath.WAD; // todo configurable
+  uint256 public healthFactorRecoveryTarget;
 
-  constructor(address hubAddress, address oracleAddress) {
+  constructor(address hubAddress, address oracleAddress, uint256 healthFactorRecoveryTargetValue) {
+    require(hubAddress != address(0), InvalidHubAddress());
+    require(oracleAddress != address(0), InvalidOracleAddress());
+    require(
+      healthFactorRecoveryTarget > HEALTH_FACTOR_LIQUIDATION_THRESHOLD,
+      InvalidHealthFactorRecoveryTarget()
+    );
+
     hub = ILiquidityHub(hubAddress);
     oracle = IPriceOracle(oracleAddress);
+    healthFactorRecoveryTarget = healthFactorRecoveryTargetValue;
   }
 
   // /////
   // Governance
   // /////
+
+  function updateOracle(address oracleAddress) public {
+    // TODO: AccessControl
+    require(oracleAddress != address(0), InvalidOracleAddress());
+    oracle = IPriceOracle(oracleAddress);
+
+    emit OracleUpdated(oracleAddress);
+  }
+
+  function updateHealthFactorRecoveryTarget(uint256 healthFactorRecoveryTargetValue) public {
+    // TODO: AccessControl
+
+    healthFactorRecoveryTarget = healthFactorRecoveryTargetValue;
+    emit HealthFactorRecoveryTargetUpdated(healthFactorRecoveryTargetValue);
+  }
 
   function addReserve(
     uint256 assetId,
