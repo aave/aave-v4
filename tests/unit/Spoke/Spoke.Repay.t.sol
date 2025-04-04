@@ -2792,7 +2792,6 @@ contract SpokeRepayTest is SpokeBase {
     // Each user supplies collateral and borrows
     for (uint256 i = 0; i < usersInfo.length; i++) {
       address user = usersInfo[i].user;
-      console.log('USERSUPPLY', i, user);
 
       // Calculate needed collateral for this user
       uint256 wethCollateralNeeded = 0;
@@ -2906,8 +2905,6 @@ contract SpokeRepayTest is SpokeBase {
 
       uint256 totalWbtcDebt = spoke1.getUserTotalDebt(_wbtcReserveId(spoke1), user);
       assertEq(totalWbtcDebt, usersInfo[i].wbtcInfo.borrowAmount, 'Initial WBTC debt incorrect');
-
-      console.log('USERSUPPLYEND', i, user);
     }
 
     // Time passes, interest accrues
@@ -2918,8 +2915,6 @@ contract SpokeRepayTest is SpokeBase {
     // [dai, weth, usdx, wbtc] order
     for (uint256 i = 0; i < usersInfo.length; i++) {
       address user = usersInfo[i].user;
-
-      console.log('USERFETCH', i, user);
 
       // Get updated positions after interest accrual
       usersInfo[i].daiInfo.posBefore = getUserInfo(spoke1, user, _daiReserveId(spoke1));
@@ -2973,15 +2968,12 @@ contract SpokeRepayTest is SpokeBase {
         usersInfo[i].wbtcInfo.borrowAmount,
         'WBTC debt should accrue interest'
       );
-
-      console.log('USERFETCHEND', i, user);
     }
 
     // Repayments
     for (uint256 i = 0; i < usersInfo.length; i++) {
       address user = usersInfo[i].user;
 
-      console.log('USERREPAY', i, user);
       // DAI repayment
       (uint256 baseRestored, uint256 premiumRestored) = _calculateRestoreAmount(
         debtsBefore[i][0].baseDebt,
@@ -3039,7 +3031,6 @@ contract SpokeRepayTest is SpokeBase {
       usersInfo[i].wethInfo.posAfter = getUserInfo(spoke1, user, _wethReserveId(spoke1));
       usersInfo[i].usdxInfo.posAfter = getUserInfo(spoke1, user, _usdxReserveId(spoke1));
       usersInfo[i].wbtcInfo.posAfter = getUserInfo(spoke1, user, _wbtcReserveId(spoke1));
-      console.log('USERREPAYEND', i, user);
     }
 
     // // Verify final state for each user
