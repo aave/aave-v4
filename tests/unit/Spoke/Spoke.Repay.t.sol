@@ -17,12 +17,21 @@ contract SpokeRepayTest is SpokeBase {
     uint256 repayAmount;
     DataTypes.UserPosition posBefore; // positionBefore
     DataTypes.UserPosition posAfter; // positionAfter
+    uint256 premiumRestored;
   }
 
   struct Action {
     uint256 borrowAmount;
     uint256 repayAmount;
     uint40 skipTime;
+  }
+
+  struct UserAssetInfo {
+    RepayMultipleLocal daiInfo;
+    RepayMultipleLocal wethInfo;
+    RepayMultipleLocal usdxInfo;
+    RepayMultipleLocal wbtcInfo;
+    address user;
   }
 
   function test_repay_all_with_accruals() public {
@@ -2559,6 +2568,602 @@ contract SpokeRepayTest is SpokeBase {
   }
   */
 
+  // Borrow X amount, receive Y Shares. Repay all, ensure Y shares repaid
+  function test_repay_x_y_shares(uint256 borrowAmount, uint40 skipTime) public {
+    borrowAmount = bound(borrowAmount, 1, MAX_SUPPLY_AMOUNT / 2);
+    skipTime = uint40(bound(skipTime, 1, MAX_SKIP_TIME));
+
+    // calculate weth collateral
+    uint256 wethSupplyAmount = _calcMinimumCollAmount(
+      spoke1,
+      _wethReserveId(spoke1),
+      _daiReserveId(spoke1),
+      borrowAmount
+    );
+
+    uint256 bobDaiBalanceBefore = tokenList.dai.balanceOf(bob);
+
+    // Bob supply weth
+    Utils.spokeSupply(spoke1, _wethReserveId(spoke1), bob, wethSupplyAmount, bob);
+    setUsingAsCollateral(spoke1, bob, _wethReserveId(spoke1), true);
+
+    // Alice supply dai
+    Utils.spokeSupply(spoke1, _daiReserveId(spoke1), alice, borrowAmount, alice);
+
+    uint256 expectedDrawnShares = hub.convertToDrawnShares(daiAssetId, borrowAmount);
+
+    // Bob borrow dai
+    Utils.spokeBorrow(spoke1, _daiReserveId(spoke1), bob, borrowAmount, bob);
+
+    DataTypes.UserPosition memory bobDaiDataBefore = getUserInfo(
+      spoke1,
+      bob,
+      _daiReserveId(spoke1)
+    );
+    assertEq(bobDaiDataBefore.baseDrawnShares, expectedDrawnShares, 'bob drawn shares');
+    assertEq(
+      tokenList.dai.balanceOf(bob),
+      bobDaiBalanceBefore + borrowAmount,
+      'bob dai balance after borrow'
+    );
+
+    // Time passes
+    skip(skipTime);
+
+    // Bob should still have same number of drawn shares
+    assertEq(
+      spoke1.getUserPosition(_daiReserveId(spoke1), bob).baseDrawnShares,
+      expectedDrawnShares,
+      'bob drawn shares after time passed'
+    );
+    // Bob's debt might have grown or stayed the same
+    assertGe(
+      spoke1.getUserTotalDebt(_daiReserveId(spoke1), bob),
+      borrowAmount,
+      'bob total debt after time passed'
+    );
+
+    // Bob repays all
+    (uint256 baseRestored, uint256 premiumRestored) = spoke1.getUserDebt(
+      _daiReserveId(spoke1),
+      bob
+    );
+
+    vm.expectEmit(address(spoke1));
+    emit ISpoke.Repay(
+      _daiReserveId(spoke1),
+      bob,
+      hub.convertToDrawnShares(daiAssetId, baseRestored)
+    );
+    vm.prank(bob);
+    spoke1.repay(_daiReserveId(spoke1), type(uint256).max);
+
+    // Bob should have 0 drawn shares
+    assertEq(
+      spoke1.getUserPosition(_daiReserveId(spoke1), bob).baseDrawnShares,
+      0,
+      'bob drawn shares after repay'
+    );
+    // Bob's debt should be 0
+    assertEq(spoke1.getUserTotalDebt(_daiReserveId(spoke1), bob), 0, 'bob total debt after repay');
+  }
+
+  /*
+  function test_repay_multiple_users_multiple_assets(
+    UserAssetInfo memory bobInfo,
+    UserAssetInfo memory aliceInfo,
+    UserAssetInfo memory carolInfo,
+    uint40 skipTime
+  ) public {
+    skipTime = uint40(bound(skipTime, 1, MAX_SKIP_TIME));
+
+    bobInfo.daiInfo.borrowAmount = bound(bobInfo.daiInfo.borrowAmount, 1, MAX_SUPPLY_AMOUNT / 8);
+    bobInfo.wethInfo.borrowAmount = bound(bobInfo.wethInfo.borrowAmount, 1, MAX_SUPPLY_AMOUNT / 8);
+    bobInfo.usdxInfo.borrowAmount = bound(bobInfo.usdxInfo.borrowAmount, 1, MAX_SUPPLY_AMOUNT / 8);
+    bobInfo.wbtcInfo.borrowAmount = bound(bobInfo.wbtcInfo.borrowAmount, 1, MAX_SUPPLY_AMOUNT / 8);
+
+    aliceInfo.daiInfo.borrowAmount = bound(
+      aliceInfo.daiInfo.borrowAmount,
+      0,
+      MAX_SUPPLY_AMOUNT / 8
+    );
+    aliceInfo.wethInfo.borrowAmount = bound(
+      aliceInfo.wethInfo.borrowAmount,
+      0,
+      MAX_SUPPLY_AMOUNT / 8
+    );
+    aliceInfo.usdxInfo.borrowAmount = bound(
+      aliceInfo.usdxInfo.borrowAmount,
+      0,
+      MAX_SUPPLY_AMOUNT / 8
+    );
+    aliceInfo.wbtcInfo.borrowAmount = bound(
+      aliceInfo.wbtcInfo.borrowAmount,
+      0,
+      MAX_SUPPLY_AMOUNT / 8
+    );
+
+    carolInfo.daiInfo.borrowAmount = bound(
+      carolInfo.daiInfo.borrowAmount,
+      0,
+      MAX_SUPPLY_AMOUNT / 8
+    );
+    carolInfo.wethInfo.borrowAmount = bound(
+      carolInfo.wethInfo.borrowAmount,
+      0,
+      MAX_SUPPLY_AMOUNT / 8
+    );
+    carolInfo.usdxInfo.borrowAmount = bound(
+      carolInfo.usdxInfo.borrowAmount,
+      0,
+      MAX_SUPPLY_AMOUNT / 8
+    );
+    carolInfo.wbtcInfo.borrowAmount = bound(
+      carolInfo.wbtcInfo.borrowAmount,
+      0,
+      MAX_SUPPLY_AMOUNT / 8
+    );
+
+    // Bound repay amounts
+    bobInfo.daiInfo.repayAmount = bound(
+      bobInfo.daiInfo.repayAmount,
+      0,
+      bobInfo.daiInfo.borrowAmount
+    );
+    bobInfo.wethInfo.repayAmount = bound(
+      bobInfo.wethInfo.repayAmount,
+      0,
+      bobInfo.wethInfo.borrowAmount
+    );
+    bobInfo.usdxInfo.repayAmount = bound(
+      bobInfo.usdxInfo.repayAmount,
+      0,
+      bobInfo.usdxInfo.borrowAmount
+    );
+    bobInfo.wbtcInfo.repayAmount = bound(
+      bobInfo.wbtcInfo.repayAmount,
+      0,
+      bobInfo.wbtcInfo.borrowAmount
+    );
+
+    aliceInfo.daiInfo.repayAmount = bound(
+      aliceInfo.daiInfo.repayAmount,
+      0,
+      aliceInfo.daiInfo.borrowAmount
+    );
+    aliceInfo.wethInfo.repayAmount = bound(
+      aliceInfo.wethInfo.repayAmount,
+      0,
+      aliceInfo.wethInfo.borrowAmount
+    );
+    aliceInfo.usdxInfo.repayAmount = bound(
+      aliceInfo.usdxInfo.repayAmount,
+      0,
+      aliceInfo.usdxInfo.borrowAmount
+    );
+    aliceInfo.wbtcInfo.repayAmount = bound(
+      aliceInfo.wbtcInfo.repayAmount,
+      0,
+      aliceInfo.wbtcInfo.borrowAmount
+    );
+
+    carolInfo.daiInfo.repayAmount = bound(
+      carolInfo.daiInfo.repayAmount,
+      0,
+      carolInfo.daiInfo.borrowAmount
+    );
+    carolInfo.wethInfo.repayAmount = bound(
+      carolInfo.wethInfo.repayAmount,
+      0,
+      carolInfo.wethInfo.borrowAmount
+    );
+    carolInfo.usdxInfo.repayAmount = bound(
+      carolInfo.usdxInfo.repayAmount,
+      0,
+      carolInfo.usdxInfo.borrowAmount
+    );
+    carolInfo.wbtcInfo.repayAmount = bound(
+      carolInfo.wbtcInfo.repayAmount,
+      0,
+      carolInfo.wbtcInfo.borrowAmount
+    );
+
+    // Assign user addresses to the structs
+    bobInfo.user = bob;
+    aliceInfo.user = alice;
+    carolInfo.user = carol;
+
+    // Put structs into array
+    UserAssetInfo[3] memory usersInfo = [bobInfo, aliceInfo, carolInfo];
+
+    // Calculate needed supply for each asset
+    uint256 totalDaiNeeded = 0;
+    uint256 totalWethNeeded = 0;
+    uint256 totalUsdxNeeded = 0;
+    uint256 totalWbtcNeeded = 0;
+
+    for (uint256 i = 0; i < usersInfo.length; i++) {
+      totalDaiNeeded += usersInfo[i].daiInfo.borrowAmount;
+      totalWethNeeded += usersInfo[i].wethInfo.borrowAmount;
+      totalUsdxNeeded += usersInfo[i].usdxInfo.borrowAmount;
+      totalWbtcNeeded += usersInfo[i].wbtcInfo.borrowAmount;
+    }
+
+    // Dave supplies needed assets
+    Utils.spokeSupply(spoke1, _daiReserveId(spoke1), dave, totalDaiNeeded, dave);
+    Utils.spokeSupply(spoke1, _wethReserveId(spoke1), dave, totalWethNeeded, dave);
+    Utils.spokeSupply(spoke1, _usdxReserveId(spoke1), dave, totalUsdxNeeded, dave);
+    Utils.spokeSupply(spoke1, _wbtcReserveId(spoke1), dave, totalWbtcNeeded, dave);
+
+    // Each user supplies collateral and borrows
+    for (uint256 i = 0; i < usersInfo.length; i++) {
+      address user = usersInfo[i].user;
+
+      // Calculate needed collateral for this user
+      uint256 wethCollateralNeeded = 0;
+      uint256 wbtcCollateralNeeded = 0;
+
+      if (usersInfo[i].daiInfo.borrowAmount > 0) {
+        wethCollateralNeeded += _calcMinimumCollAmount(
+          spoke1,
+          _wethReserveId(spoke1),
+          _daiReserveId(spoke1),
+          usersInfo[i].daiInfo.borrowAmount
+        );
+      }
+
+      if (usersInfo[i].usdxInfo.borrowAmount > 0) {
+        wethCollateralNeeded += _calcMinimumCollAmount(
+          spoke1,
+          _wethReserveId(spoke1),
+          _usdxReserveId(spoke1),
+          usersInfo[i].usdxInfo.borrowAmount
+        );
+      }
+
+      if (usersInfo[i].wethInfo.borrowAmount > 0) {
+        wbtcCollateralNeeded += _calcMinimumCollAmount(
+          spoke1,
+          _wbtcReserveId(spoke1),
+          _wethReserveId(spoke1),
+          usersInfo[i].wethInfo.borrowAmount
+        );
+      }
+
+      if (usersInfo[i].wbtcInfo.borrowAmount > 0) {
+        wbtcCollateralNeeded += _calcMinimumCollAmount(
+          spoke1,
+          _wbtcReserveId(spoke1),
+          _wbtcReserveId(spoke1),
+          usersInfo[i].wbtcInfo.borrowAmount
+        );
+      }
+
+      // Supply weth and wbtc as collateral
+      if (wethCollateralNeeded > 0) {
+        deal(address(tokenList.weth), user, wethCollateralNeeded);
+        Utils.spokeSupply(spoke1, _wethReserveId(spoke1), user, wethCollateralNeeded, user);
+        setUsingAsCollateral(spoke1, user, _wethReserveId(spoke1), true);
+      }
+
+      if (wbtcCollateralNeeded > 0) {
+        deal(address(tokenList.wbtc), user, wbtcCollateralNeeded);
+        Utils.spokeSupply(spoke1, _wbtcReserveId(spoke1), user, wbtcCollateralNeeded, user);
+        setUsingAsCollateral(spoke1, user, _wbtcReserveId(spoke1), true);
+      }
+
+      // Borrow assets based on fuzzed amounts
+      if (usersInfo[i].daiInfo.borrowAmount > 0) {
+        Utils.spokeBorrow(
+          spoke1,
+          _daiReserveId(spoke1),
+          user,
+          usersInfo[i].daiInfo.borrowAmount,
+          user
+        );
+      }
+
+      if (usersInfo[i].wethInfo.borrowAmount > 0) {
+        Utils.spokeBorrow(
+          spoke1,
+          _wethReserveId(spoke1),
+          user,
+          usersInfo[i].wethInfo.borrowAmount,
+          user
+        );
+      }
+
+      if (usersInfo[i].usdxInfo.borrowAmount > 0) {
+        Utils.spokeBorrow(
+          spoke1,
+          _usdxReserveId(spoke1),
+          user,
+          usersInfo[i].usdxInfo.borrowAmount,
+          user
+        );
+      }
+
+      if (usersInfo[i].wbtcInfo.borrowAmount > 0) {
+        Utils.spokeBorrow(
+          spoke1,
+          _wbtcReserveId(spoke1),
+          user,
+          usersInfo[i].wbtcInfo.borrowAmount,
+          user
+        );
+      }
+
+      // Store positions before time skipping
+      usersInfo[i].daiInfo.posBefore = getUserInfo(spoke1, user, _daiReserveId(spoke1));
+      usersInfo[i].wethInfo.posBefore = getUserInfo(spoke1, user, _wethReserveId(spoke1));
+      usersInfo[i].usdxInfo.posBefore = getUserInfo(spoke1, user, _usdxReserveId(spoke1));
+      usersInfo[i].wbtcInfo.posBefore = getUserInfo(spoke1, user, _wbtcReserveId(spoke1));
+
+      // Verify initial borrowing state
+      uint256 totalDaiDebt = spoke1.getUserTotalDebt(_daiReserveId(spoke1), user);
+      assertEq(totalDaiDebt, usersInfo[i].daiInfo.borrowAmount, 'Initial DAI debt incorrect');
+
+      uint256 totalWethDebt = spoke1.getUserTotalDebt(_wethReserveId(spoke1), user);
+      assertEq(totalWethDebt, usersInfo[i].wethInfo.borrowAmount, 'Initial WETH debt incorrect');
+
+      uint256 totalUsdxDebt = spoke1.getUserTotalDebt(_usdxReserveId(spoke1), user);
+      assertEq(totalUsdxDebt, usersInfo[i].usdxInfo.borrowAmount, 'Initial USDX debt incorrect');
+
+      uint256 totalWbtcDebt = spoke1.getUserTotalDebt(_wbtcReserveId(spoke1), user);
+      assertEq(totalWbtcDebt, usersInfo[i].wbtcInfo.borrowAmount, 'Initial WBTC debt incorrect');
+    }
+
+    // Time passes, interest accrues
+    skip(skipTime);
+
+    // Fetch current debts before repayment
+    Debts[4][3] memory debtsBefore;
+    for (uint256 i = 0; i < usersInfo.length; i++) {
+      address user = usersInfo[i].user;
+
+      // Get updated positions after interest accrual
+      usersInfo[i].daiInfo.posBefore = getUserInfo(spoke1, user, _daiReserveId(spoke1));
+      usersInfo[i].wethInfo.posBefore = getUserInfo(spoke1, user, _wethReserveId(spoke1));
+      usersInfo[i].usdxInfo.posBefore = getUserInfo(spoke1, user, _usdxReserveId(spoke1));
+      usersInfo[i].wbtcInfo.posBefore = getUserInfo(spoke1, user, _wbtcReserveId(spoke1));
+
+      // Store debts before repayment
+      debtsBefore[i][0].totalDebt = spoke1.getUserTotalDebt(_daiReserveId(spoke1), user);
+      (debtsBefore[i][0].baseDebt, debtsBefore[i][0].premiumDebt) = spoke1.getUserDebt(
+        _daiReserveId(spoke1),
+        user
+      );
+      debtsBefore[i][1].totalDebt = spoke1.getUserTotalDebt(_wethReserveId(spoke1), user);
+      (debtsBefore[i][1].baseDebt, debtsBefore[i][1].premiumDebt) = spoke1.getUserDebt(
+        _wethReserveId(spoke1),
+        user
+      );
+      debtsBefore[i][2].totalDebt = spoke1.getUserTotalDebt(_usdxReserveId(spoke1), user);
+      (debtsBefore[i][2].baseDebt, debtsBefore[i][2].premiumDebt) = spoke1.getUserDebt(
+        _usdxReserveId(spoke1),
+        user
+      );
+      debtsBefore[i][3].totalDebt = spoke1.getUserTotalDebt(_wbtcReserveId(spoke1), user);
+      (debtsBefore[i][3].baseDebt, debtsBefore[i][3].premiumDebt) = spoke1.getUserDebt(
+        _wbtcReserveId(spoke1),
+        user
+      );
+
+      // Verify interest accrual
+      assertGe(
+        debtsBefore[i][0].totalDebt,
+        usersInfo[i].daiInfo.borrowAmount,
+        'DAI debt should accrue interest'
+      );
+
+      assertGe(
+        debtsBefore[i][1].totalDebt,
+        usersInfo[i].wethInfo.borrowAmount,
+        'WETH debt should accrue interest'
+      );
+
+      assertGe(
+        debtsBefore[i][2].totalDebt,
+        usersInfo[i].usdxInfo.borrowAmount,
+        'USDX debt should accrue interest'
+      );
+
+      assertGe(
+        debtsBefore[i][3].totalDebt,
+        usersInfo[i].wbtcInfo.borrowAmount,
+        'WBTC debt should accrue interest'
+      );
+    }
+
+    // Repayments
+    for (uint256 i = 0; i < usersInfo.length; i++) {
+      address user = usersInfo[i].user;
+
+      // DAI repayment
+      (uint256 baseRestored, uint256 premiumRestored) = _calculateRestoreAmount(
+        debtsBefore[i][0].baseDebt,
+        debtsBefore[i][0].premiumDebt,
+        usersInfo[i].daiInfo.repayAmount
+      );
+      usersInfo[i].daiInfo.premiumRestored = premiumRestored;
+      if (
+        usersInfo[i].daiInfo.repayAmount >= minimumAssetsPerDrawnShare(daiAssetId) ||
+        premiumRestored > 0
+      ) {
+        deal(address(tokenList.dai), user, usersInfo[i].daiInfo.repayAmount);
+        vm.prank(user);
+        spoke1.repay(_daiReserveId(spoke1), usersInfo[i].daiInfo.repayAmount);
+      }
+
+      // WETH repayment
+      (baseRestored, premiumRestored) = _calculateRestoreAmount(
+        debtsBefore[i][1].baseDebt,
+        debtsBefore[i][1].premiumDebt,
+        usersInfo[i].wethInfo.repayAmount
+      );
+      usersInfo[i].wethInfo.premiumRestored = premiumRestored;
+      if (
+        usersInfo[i].wethInfo.repayAmount >= minimumAssetsPerDrawnShare(wethAssetId) ||
+        premiumRestored > 0
+      ) {
+        deal(address(tokenList.weth), user, usersInfo[i].wethInfo.repayAmount);
+        vm.prank(user);
+        spoke1.repay(_wethReserveId(spoke1), usersInfo[i].wethInfo.repayAmount);
+      }
+
+      // USDX repayment
+      (baseRestored, premiumRestored) = _calculateRestoreAmount(
+        debtsBefore[i][2].baseDebt,
+        debtsBefore[i][2].premiumDebt,
+        usersInfo[i].usdxInfo.repayAmount
+      );
+      usersInfo[i].usdxInfo.premiumRestored = premiumRestored;
+      if (
+        usersInfo[i].usdxInfo.repayAmount >= minimumAssetsPerDrawnShare(usdxAssetId) ||
+        premiumRestored > 0
+      ) {
+        deal(address(tokenList.usdx), user, usersInfo[i].usdxInfo.repayAmount);
+        vm.prank(user);
+        spoke1.repay(_usdxReserveId(spoke1), usersInfo[i].usdxInfo.repayAmount);
+      }
+
+      // WBTC repayment
+      (baseRestored, premiumRestored) = _calculateRestoreAmount(
+        debtsBefore[i][3].baseDebt,
+        debtsBefore[i][3].premiumDebt,
+        usersInfo[i].wbtcInfo.repayAmount
+      );
+      usersInfo[i].wbtcInfo.premiumRestored = premiumRestored;
+      if (
+        usersInfo[i].wbtcInfo.repayAmount >= minimumAssetsPerDrawnShare(wbtcAssetId) ||
+        premiumRestored > 0
+      ) {
+        deal(address(tokenList.wbtc), user, usersInfo[i].wbtcInfo.repayAmount);
+        vm.prank(user);
+        spoke1.repay(_wbtcReserveId(spoke1), usersInfo[i].wbtcInfo.repayAmount);
+      }
+
+      // Capture final positions
+      usersInfo[i].daiInfo.posAfter = getUserInfo(spoke1, user, _daiReserveId(spoke1));
+      usersInfo[i].wethInfo.posAfter = getUserInfo(spoke1, user, _wethReserveId(spoke1));
+      usersInfo[i].usdxInfo.posAfter = getUserInfo(spoke1, user, _usdxReserveId(spoke1));
+      usersInfo[i].wbtcInfo.posAfter = getUserInfo(spoke1, user, _wbtcReserveId(spoke1));
+    }
+
+    // Verify final state for each user
+    for (uint256 i = 0; i < usersInfo.length; i++) {
+      address user = usersInfo[i].user;
+
+      // Verify repayments have been applied correctly
+      if (
+        usersInfo[i].daiInfo.repayAmount >= minimumAssetsPerDrawnShare(daiAssetId) ||
+        usersInfo[i].daiInfo.premiumRestored > 0
+      ) {
+        uint256 expectedDaiDebt = debtsBefore[i][0].totalDebt - usersInfo[i].daiInfo.repayAmount;
+        uint256 actualDaiDebt = spoke1.getUserTotalDebt(_daiReserveId(spoke1), user);
+        assertEq(actualDaiDebt, expectedDaiDebt, 'DAI debt not reduced correctly');
+      }
+
+      if (
+        usersInfo[i].wethInfo.repayAmount >= minimumAssetsPerDrawnShare(wethAssetId) ||
+        usersInfo[i].wethInfo.premiumRestored > 0
+      ) {
+        uint256 expectedWethDebt = debtsBefore[i][1].totalDebt - usersInfo[i].wethInfo.repayAmount;
+        uint256 actualWethDebt = spoke1.getUserTotalDebt(_wethReserveId(spoke1), user);
+        assertEq(actualWethDebt, expectedWethDebt, 'WETH debt not reduced correctly');
+      }
+
+      if (
+        usersInfo[i].usdxInfo.repayAmount >= minimumAssetsPerDrawnShare(usdxAssetId) ||
+        usersInfo[i].usdxInfo.premiumRestored > 0
+      ) {
+        uint256 expectedUsdxDebt = debtsBefore[i][2].totalDebt - usersInfo[i].usdxInfo.repayAmount;
+        uint256 actualUsdxDebt = spoke1.getUserTotalDebt(_usdxReserveId(spoke1), user);
+        assertEq(actualUsdxDebt, expectedUsdxDebt, 'USDX debt not reduced correctly');
+      }
+
+      if (
+        usersInfo[i].wbtcInfo.repayAmount >= minimumAssetsPerDrawnShare(wbtcAssetId) ||
+        usersInfo[i].wbtcInfo.premiumRestored > 0
+      ) {
+        uint256 expectedWbtcDebt = debtsBefore[i][3].totalDebt - usersInfo[i].wbtcInfo.repayAmount;
+        uint256 actualWbtcDebt = spoke1.getUserTotalDebt(_wbtcReserveId(spoke1), user);
+        assertEq(actualWbtcDebt, expectedWbtcDebt, 'WBTC debt not reduced correctly');
+      }
+
+      // Verify collateral positions remain unchanged
+      assertEq(
+        usersInfo[i].daiInfo.posAfter.suppliedShares,
+        usersInfo[i].daiInfo.posBefore.suppliedShares,
+        'DAI supplied shares should remain unchanged'
+      );
+      assertEq(
+        usersInfo[i].wethInfo.posAfter.suppliedShares,
+        usersInfo[i].wethInfo.posBefore.suppliedShares,
+        'WETH supplied shares should remain unchanged'
+      );
+      assertEq(
+        usersInfo[i].usdxInfo.posAfter.suppliedShares,
+        usersInfo[i].usdxInfo.posBefore.suppliedShares,
+        'USDX supplied shares should remain unchanged'
+      );
+      assertEq(
+        usersInfo[i].wbtcInfo.posAfter.suppliedShares,
+        usersInfo[i].wbtcInfo.posBefore.suppliedShares,
+        'WBTC supplied shares should remain unchanged'
+      );
+    }
+
+    // Check protocol accounting
+    {
+      // Calculate total debt across all users (after repayments)
+      uint256 totalDaiDebtActual = 0;
+      uint256 totalWethDebtActual = 0;
+      uint256 totalUsdxDebtActual = 0;
+      uint256 totalWbtcDebtActual = 0;
+
+      for (uint256 i = 0; i < usersInfo.length; i++) {
+        address user = usersInfo[i].user;
+        totalDaiDebtActual += spoke1.getUserTotalDebt(_daiReserveId(spoke1), user);
+        totalWethDebtActual += spoke1.getUserTotalDebt(_wethReserveId(spoke1), user);
+        totalUsdxDebtActual += spoke1.getUserTotalDebt(_usdxReserveId(spoke1), user);
+        totalWbtcDebtActual += spoke1.getUserTotalDebt(_wbtcReserveId(spoke1), user);
+      }
+
+      // Check reserve debts match sum of user debts
+      assertEq(
+        spoke1.getReserveTotalDebt(_daiReserveId(spoke1)),
+        totalDaiDebtActual,
+        'dai reserve debt'
+      );
+
+      assertEq(
+        spoke1.getReserveTotalDebt(_wethReserveId(spoke1)),
+        totalWethDebtActual,
+        'weth reserve debt'
+      );
+
+      assertEq(
+        spoke1.getReserveTotalDebt(_usdxReserveId(spoke1)),
+        totalUsdxDebtActual,
+        'usdx reserve debt'
+      );
+
+      assertEq(
+        spoke1.getReserveTotalDebt(_wbtcReserveId(spoke1)),
+        totalWbtcDebtActual,
+        'wbtc reserve debt'
+      );
+
+      // Check hub debts match sum of user debts
+      assertEq(hub.getAssetTotalDebt(daiAssetId), totalDaiDebtActual, 'dai asset debt');
+      assertEq(hub.getAssetTotalDebt(wethAssetId), totalWethDebtActual, 'weth asset debt');
+      assertEq(hub.getAssetTotalDebt(usdxAssetId), totalUsdxDebtActual, 'usdx asset debt');
+      assertEq(hub.getAssetTotalDebt(wbtcAssetId), totalWbtcDebtActual, 'wbtc asset debt');
+    }
+  }
+  */
+
   function _calculateRestoreAmount(
     uint256 baseDebt,
     uint256 premiumDebt,
@@ -2573,7 +3178,5 @@ contract SpokeRepayTest is SpokeBase {
     return (amount - premiumDebt, premiumDebt);
   }
 
-  /// todo: multiple users repay different reserves
   /// todo: multiple users repay same reserve
-  /// todo: borrow x amount, get y base debt shares, repay x and burn y base debt
 }
