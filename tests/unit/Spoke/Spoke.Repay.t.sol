@@ -2682,11 +2682,11 @@ contract SpokeRepayTest is SpokeBase {
       totalWbtcNeeded += usersInfo[i].wbtcInfo.borrowAmount;
     }
 
-    // Dave supplies needed assets
-    Utils.spokeSupply(spoke1, _daiReserveId(spoke1), dave, totalDaiNeeded, dave);
-    Utils.spokeSupply(spoke1, _wethReserveId(spoke1), dave, totalWethNeeded, dave);
-    Utils.spokeSupply(spoke1, _usdxReserveId(spoke1), dave, totalUsdxNeeded, dave);
-    Utils.spokeSupply(spoke1, _wbtcReserveId(spoke1), dave, totalWbtcNeeded, dave);
+    // Derl supplies needed assets
+    Utils.spokeSupply(spoke1, _daiReserveId(spoke1), derl, totalDaiNeeded, derl);
+    Utils.spokeSupply(spoke1, _wethReserveId(spoke1), derl, totalWethNeeded, derl);
+    Utils.spokeSupply(spoke1, _usdxReserveId(spoke1), derl, totalUsdxNeeded, derl);
+    Utils.spokeSupply(spoke1, _wbtcReserveId(spoke1), derl, totalWbtcNeeded, derl);
 
     // Each user supplies collateral and borrows
     for (uint256 i = 0; i < usersInfo.length; i++) {
@@ -3069,20 +3069,6 @@ contract SpokeRepayTest is SpokeBase {
       assertEq(hub.getAssetTotalDebt(usdxAssetId), totalUsdxDebtActual, 'usdx asset debt');
       assertEq(hub.getAssetTotalDebt(wbtcAssetId), totalWbtcDebtActual, 'wbtc asset debt');
     }
-  }
-
-  function _calculateRestoreAmount(
-    uint256 baseDebt,
-    uint256 premiumDebt,
-    uint256 amount
-  ) internal view returns (uint256, uint256) {
-    if (amount >= baseDebt + premiumDebt) {
-      return (baseDebt, premiumDebt);
-    }
-    if (amount <= premiumDebt) {
-      return (0, amount);
-    }
-    return (amount - premiumDebt, premiumDebt);
   }
 
   function _bound(UserAssetInfo memory info) internal pure returns (UserAssetInfo memory) {

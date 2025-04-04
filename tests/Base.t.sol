@@ -64,7 +64,7 @@ abstract contract Base is Test {
   address internal alice = makeAddr('alice');
   address internal bob = makeAddr('bob');
   address internal carol = makeAddr('carol');
-  address internal dave = makeAddr('dave');
+  address internal derl = makeAddr('derl');
 
   address internal HUB_ADMIN = makeAddr('HUB_ADMIN');
   address internal SPOKE_ADMIN = makeAddr('SPOKE_ADMIN');
@@ -158,7 +158,7 @@ abstract contract Base is Test {
     MAX_SUPPLY_AMOUNT_DAI = MAX_SUPPLY_ASSET_UNITS * 10 ** tokenList.dai.decimals();
     MAX_SUPPLY_AMOUNT_WBTC = MAX_SUPPLY_ASSET_UNITS * 10 ** tokenList.wbtc.decimals();
 
-    address[4] memory users = [alice, bob, carol, dave];
+    address[4] memory users = [alice, bob, carol, derl];
 
     for (uint256 x; x < users.length; ++x) {
       tokenList.usdx.mint(users[x], mintAmount_USDX);
@@ -712,5 +712,20 @@ abstract contract Base is Test {
   /// @dev Helper function to calculate asset amount corresponding to single supplied share
   function minimumAssetsPerSuppliedShare(uint256 assetId) internal view returns (uint256) {
     return hub.convertToSuppliedAssets(assetId, 1);
+  }
+
+  /// @dev Helper function to calculate the amount of base and premium debt to restore
+  function _calculateRestoreAmount(
+    uint256 baseDebt,
+    uint256 premiumDebt,
+    uint256 amount
+  ) internal view returns (uint256, uint256) {
+    if (amount >= baseDebt + premiumDebt) {
+      return (baseDebt, premiumDebt);
+    }
+    if (amount <= premiumDebt) {
+      return (0, amount);
+    }
+    return (amount - premiumDebt, premiumDebt);
   }
 }
