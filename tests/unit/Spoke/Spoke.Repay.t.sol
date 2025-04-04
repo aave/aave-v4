@@ -2650,31 +2650,15 @@ contract SpokeRepayTest is SpokeBase {
     assertEq(spoke1.getUserTotalDebt(_daiReserveId(spoke1), bob), 0, 'bob total debt after repay');
   }
 
-  function bound(UserAssetInfo memory info) public returns (UserAssetInfo memory) {
-    // Bound borrow amounts
-    info.daiInfo.borrowAmount = bound(info.daiInfo.borrowAmount, 1, MAX_SUPPLY_AMOUNT / 8);
-    info.wethInfo.borrowAmount = bound(info.wethInfo.borrowAmount, 1, MAX_SUPPLY_AMOUNT / 8);
-    info.usdxInfo.borrowAmount = bound(info.usdxInfo.borrowAmount, 1, MAX_SUPPLY_AMOUNT / 8);
-    info.wbtcInfo.borrowAmount = bound(info.wbtcInfo.borrowAmount, 1, MAX_SUPPLY_AMOUNT / 8);
-
-    // Bound repay amounts
-    info.daiInfo.repayAmount = bound(info.daiInfo.repayAmount, 0, info.daiInfo.borrowAmount);
-    info.wethInfo.repayAmount = bound(info.wethInfo.repayAmount, 0, info.wethInfo.borrowAmount);
-    info.usdxInfo.repayAmount = bound(info.usdxInfo.repayAmount, 0, info.usdxInfo.borrowAmount);
-    info.wbtcInfo.repayAmount = bound(info.wbtcInfo.repayAmount, 0, info.wbtcInfo.borrowAmount);
-
-    return info;
-  }
-
   function test_repay_multiple_users_multiple_assets(
     UserAssetInfo memory bobInfo,
     UserAssetInfo memory aliceInfo,
     UserAssetInfo memory carolInfo,
     uint40 skipTime
   ) public {
-    bobInfo = bound(bobInfo);
-    aliceInfo = bound(aliceInfo);
-    carolInfo = bound(carolInfo);
+    bobInfo = _bound(bobInfo);
+    aliceInfo = _bound(aliceInfo);
+    carolInfo = _bound(carolInfo);
     skipTime = uint40(bound(skipTime, 1, MAX_SKIP_TIME));
 
     // Assign user addresses to the structs
@@ -3099,6 +3083,22 @@ contract SpokeRepayTest is SpokeBase {
       return (0, amount);
     }
     return (amount - premiumDebt, premiumDebt);
+  }
+
+  function _bound(UserAssetInfo memory info) internal pure returns (UserAssetInfo memory) {
+    // Bound borrow amounts
+    info.daiInfo.borrowAmount = bound(info.daiInfo.borrowAmount, 1, MAX_SUPPLY_AMOUNT / 8);
+    info.wethInfo.borrowAmount = bound(info.wethInfo.borrowAmount, 1, MAX_SUPPLY_AMOUNT / 8);
+    info.usdxInfo.borrowAmount = bound(info.usdxInfo.borrowAmount, 1, MAX_SUPPLY_AMOUNT / 8);
+    info.wbtcInfo.borrowAmount = bound(info.wbtcInfo.borrowAmount, 1, MAX_SUPPLY_AMOUNT / 8);
+
+    // Bound repay amounts
+    info.daiInfo.repayAmount = bound(info.daiInfo.repayAmount, 1, type(uint256).max);
+    info.wethInfo.repayAmount = bound(info.wethInfo.repayAmount, 1, type(uint256).max);
+    info.usdxInfo.repayAmount = bound(info.usdxInfo.repayAmount, 1, type(uint256).max);
+    info.wbtcInfo.repayAmount = bound(info.wbtcInfo.repayAmount, 1, type(uint256).max);
+
+    return info;
   }
 
   /// todo: multiple users repay same reserve
