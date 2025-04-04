@@ -5,6 +5,7 @@ import {SafeERC20} from 'src/dependencies/openzeppelin/SafeERC20.sol';
 import {IERC20} from 'src/dependencies/openzeppelin/IERC20.sol';
 import {ILiquidityHub} from 'src/interfaces/ILiquidityHub.sol';
 import {DataTypes} from 'src/libraries/types/DataTypes.sol';
+import {PremiumHelper} from 'src/libraries/PremiumHelper.sol';
 import {AssetLogic} from 'src/contracts/AssetLogic.sol';
 import {WadRayMath} from 'src/contracts/WadRayMath.sol';
 import {SharesMath} from 'src/contracts/SharesMath.sol';
@@ -446,9 +447,10 @@ contract LiquidityHub is ILiquidityHub {
   ) internal view returns (uint256, uint256) {
     // underflow protection: conversion of `premiumDrawnShares` into assets is accurate to 1 wei precision
     uint256 premiumDrawnAssets = asset.toDrawnAssetsUp(spoke.premiumDrawnShares);
-    uint256 accrued = premiumDrawnAssets < spoke.premiumOffset
-      ? 0
-      : premiumDrawnAssets - spoke.premiumOffset;
+    uint256 accrued = PremiumHelper.calculateAccruedPremium(
+      premiumDrawnAssets,
+      spoke.premiumOffset
+    );
     uint256 premiumDebt = spoke.realizedPremium + accrued;
     return (asset.toDrawnAssetsUp(spoke.baseDrawnShares), premiumDebt);
   }

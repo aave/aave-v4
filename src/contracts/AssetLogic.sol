@@ -7,6 +7,7 @@ import {MathUtils} from 'src/contracts/MathUtils.sol';
 import {SharesMath} from 'src/contracts/SharesMath.sol';
 import {PercentageMath} from 'src/contracts/PercentageMath.sol';
 import {WadRayMath} from 'src/contracts/WadRayMath.sol';
+import {PremiumHelper} from 'src/libraries/PremiumHelper.sol';
 
 library AssetLogic {
   using AssetLogic for DataTypes.Asset;
@@ -56,9 +57,10 @@ library AssetLogic {
   function premiumDebt(DataTypes.Asset storage asset) internal view returns (uint256) {
     // underflow protection: conversion of `premiumDrawnShares` into assets is accurate to 1 wei precision
     uint256 premiumDrawnAssets = asset.toDrawnAssetsUp(asset.premiumDrawnShares);
-    uint256 accrued = premiumDrawnAssets < asset.premiumOffset
-      ? 0
-      : premiumDrawnAssets - asset.premiumOffset;
+    uint256 accrued = PremiumHelper.calculateAccruedPremium(
+      premiumDrawnAssets,
+      asset.premiumOffset
+    );
     return asset.realizedPremium + accrued;
   }
 

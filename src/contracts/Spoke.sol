@@ -8,6 +8,7 @@ import {ILiquidityHub} from 'src/interfaces/ILiquidityHub.sol';
 import {ISpoke} from 'src/interfaces/ISpoke.sol';
 import {IPriceOracle} from 'src/interfaces/IPriceOracle.sol';
 import {DataTypes} from 'src/libraries/types/DataTypes.sol';
+import {PremiumHelper} from 'src/libraries/PremiumHelper.sol';
 
 contract Spoke is ISpoke {
   using WadRayMath for uint256;
@@ -641,9 +642,10 @@ contract Spoke is ISpoke {
   ) internal view returns (uint256, uint256) {
     // underflow protection: conversion of `premiumDrawnShares` into assets is accurate to 1 wei precision
     uint256 premiumDrawnAssets = hub.convertToDrawnAssets(assetId, userPosition.premiumDrawnShares);
-    uint256 accrued = premiumDrawnAssets < userPosition.premiumOffset
-      ? 0
-      : premiumDrawnAssets - userPosition.premiumOffset;
+    uint256 accrued = PremiumHelper.calculateAccruedPremium(
+      premiumDrawnAssets,
+      userPosition.premiumOffset
+    );
     uint256 premiumDebt = userPosition.realizedPremium + accrued;
 
     return (hub.convertToDrawnAssets(assetId, userPosition.baseDrawnShares), premiumDebt);
