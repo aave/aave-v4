@@ -181,8 +181,8 @@ contract Spoke is ISpoke {
 
     _refreshPremiumDebt(
       reserve,
-      _signedDiff(userPosition.premiumDrawnShares, userPremiumDrawnShares),
-      _signedDiff(userPosition.premiumOffset, userPremiumOffset),
+      -int256(userPremiumDrawnShares),
+      -int256(userPremiumOffset),
       int256(accruedPremium)
     );
     uint256 baseDrawnShares = hub.draw(assetId, amount, to);
@@ -231,8 +231,8 @@ contract Spoke is ISpoke {
 
     _refreshPremiumDebt(
       reserve,
-      _signedDiff(userPosition.premiumDrawnShares, userPremiumDrawnShares),
-      _signedDiff(userPosition.premiumOffset, userPremiumOffset),
+      -int256(userPremiumDrawnShares),
+      -int256(userPremiumOffset),
       _signedDiff(userPosition.realizedPremium, userRealizedPremium)
     ); // we settle premium debt here
     uint256 restoredShares = hub.restore(
