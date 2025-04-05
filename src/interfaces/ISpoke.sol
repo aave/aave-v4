@@ -52,7 +52,7 @@ interface ISpoke {
   error InvalidReserveDecimals();
   error HealthFactorBelowThreshold();
   error InvalidCloseFactor();
-  error InvalidOracleAddress();
+  error InvalidOracle();
   error InvalidHubAddress();
 
   function addReserve(

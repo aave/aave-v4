@@ -119,6 +119,24 @@ contract SpokeConfigTest is SpokeBase {
     assertEq(config.decimals, oldDecimals, 'wrong decimals');
   }
 
+  function test_updateReserveConfig_fuzz_cannot_update_decimals(uint256 newDecimals) public {
+    uint256 daiReserveId = _daiReserveId(spoke1);
+    DataTypes.ReserveConfig memory config = spoke1.getReserve(daiReserveId).config;
+
+    uint256 oldDecimals = config.decimals;
+    newDecimals = bound(newDecimals, 0, hub.MAX_ALLOWED_ASSET_DECIMALS());
+    vm.assume(newDecimals != oldDecimals);
+
+    // decimals should not update
+    config.decimals = newDecimals;
+
+    vm.prank(SPOKE_ADMIN);
+    spoke1.updateReserveConfig(daiReserveId, config);
+
+    config = spoke1.getReserve(daiReserveId).config;
+    assertEq(config.decimals, oldDecimals, 'wrong decimals');
+  }
+
   function test_setUsingAsCollateral_revertsWith_ReserveCannotBeUsedAsCollateral() public {
     bool newCollateralFlag = false;
     bool usingAsCollateral = true;
@@ -229,6 +247,16 @@ contract SpokeConfigTest is SpokeBase {
     spoke1.updateReserveConfig(daiReserveId, config);
   }
 
+  function test_updateReserveConfig_revertsWith_InvalidOracle() public {
+    uint256 daiReserveId = _daiReserveId(spoke1);
+    DataTypes.ReserveConfig memory config = spoke1.getReserve(daiReserveId).config;
+    config.oracle = IPriceOracle(address(0));
+
+    vm.expectRevert(ISpoke.InvalidOracle.selector);
+    vm.prank(SPOKE_ADMIN);
+    spoke1.updateReserveConfig(daiReserveId, config);
+  }
+
   function test_addReserve() public {
     uint256 reserveId = spoke1.reserveCount();
     DataTypes.ReserveConfig memory newReserveConfig = DataTypes.ReserveConfig({
@@ -304,6 +332,26 @@ contract SpokeConfigTest is SpokeBase {
     });
 
     vm.expectRevert(ISpoke.InvalidReserveDecimals.selector);
+    vm.prank(SPOKE_ADMIN);
+    spoke1.addReserve(reserveId, newReserveConfig);
+  }
+
+  function test_addReserve_revertsWith_InvalidOracle() public {
+    uint256 reserveId = spoke1.reserveCount();
+    DataTypes.ReserveConfig memory newReserveConfig = DataTypes.ReserveConfig({
+      decimals: hub.MAX_ALLOWED_ASSET_DECIMALS(),
+      active: true,
+      frozen: true,
+      paused: true,
+      collateralFactor: 10_00,
+      liquidationBonus: 10_00,
+      liquidityPremium: 10_00,
+      borrowable: true,
+      collateral: true,
+      oracle: IPriceOracle(address(0)) // invalid oracle
+    });
+
+    vm.expectRevert(ISpoke.InvalidOracle.selector);
     vm.prank(SPOKE_ADMIN);
     spoke1.addReserve(reserveId, newReserveConfig);
   }
