@@ -41,6 +41,8 @@ abstract contract Base is Test {
   uint32 internal constant MAX_RISK_PREMIUM_BPS = 1000_00;
   uint256 internal constant MAX_BORROW_RATE = 1000_00; // matches DefaultReserveInterestRateStrategy
   uint256 internal constant MAX_SKIP_TIME = 10_000 days;
+  uint256 internal constant MAX_LIQUIDATION_BONUS = PercentageMath.PERCENTAGE_FACTOR; // 100%
+  uint256 internal constant MAX_LIQUIDATION_BONUS_FACTOR = PercentageMath.PERCENTAGE_FACTOR; // 100%
 
   IERC20 internal usdc;
   IERC20 internal dai;

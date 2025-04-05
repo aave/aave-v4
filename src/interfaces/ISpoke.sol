@@ -36,6 +36,7 @@ interface ISpoke {
   );
   event OracleUpdated(uint256 indexed reserveId, address oracle);
   event CloseFactorUpdated(uint256 closeFactor);
+  event VariableLiquidationBonusConfigUpdated(DataTypes.VariableLiquidationBonusConfig config);
 
   error InvalidReserve();
   error ReserveNotListed();
@@ -54,6 +55,8 @@ interface ISpoke {
   error InvalidCloseFactor();
   error InvalidOracle();
   error InvalidHubAddress();
+  error InvalidHealthFactorBonusThreshold();
+  error InvalidLiquidationBonusFactor();
 
   function addReserve(
     uint256 assetId,
@@ -131,4 +134,15 @@ interface ISpoke {
   function reservesList(uint256) external view returns (uint256);
   function closeFactor() external view returns (uint256);
   function HEALTH_FACTOR_LIQUIDATION_THRESHOLD() external view returns (uint256);
+  function getVariableLiquidationBonus(
+    uint256 reserveId,
+    uint256 healthFactor
+  ) external view returns (uint256);
+  function updateVariableLiquidationBonusConfig(
+    DataTypes.VariableLiquidationBonusConfig calldata config
+  ) external;
+  function getVariableLiquidationBonusConfig()
+    external
+    view
+    returns (DataTypes.VariableLiquidationBonusConfig memory);
 }

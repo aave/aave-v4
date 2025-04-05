@@ -26,6 +26,7 @@ contract Spoke is ISpoke {
     internal _userPositions;
   mapping(uint256 reserveId => DataTypes.Reserve reserveData) internal _reserves;
 
+  DataTypes.VariableLiquidationBonusConfig internal _variableLiquidationBonusConfig;
   uint256[] public reservesList; // todo: rm, not needed
   uint256 public reserveCount;
   uint256 public closeFactor;
@@ -42,11 +43,19 @@ contract Spoke is ISpoke {
   // Governance
   // /////
 
-  function updateCloseFactor(uint256 newCloseFactor) public {
+  function updateCloseFactor(uint256 newCloseFactor) external {
     // TODO: AccessControl
     _validateCloseFactor(newCloseFactor);
     closeFactor = newCloseFactor;
     emit CloseFactorUpdated(newCloseFactor);
+  }
+
+  function updateVariableLiquidationBonusConfig(
+    DataTypes.VariableLiquidationBonusConfig calldata variableLiquidationBonusConfig
+  ) external {
+    _validateVariableLiquidationBonusConfig(variableLiquidationBonusConfig);
+    _variableLiquidationBonusConfig = variableLiquidationBonusConfig;
+    emit VariableLiquidationBonusConfigUpdated(variableLiquidationBonusConfig);
   }
 
   function addReserve(
@@ -349,6 +358,31 @@ contract Spoke is ISpoke {
 
   function getCollateralFactor(uint256 reserveId) public view returns (uint256) {
     return _reserves[reserveId].config.collateralFactor;
+  }
+
+  function getVariableLiquidationBonus(
+    uint256 reserveId,
+    uint256 healthFactor
+  ) public view returns (uint256) {
+    uint256 liquidationBonus = _reserves[reserveId].config.liquidationBonus;
+    // if not defined, returned base liquidationBonus
+    if (_variableLiquidationBonusConfig.healthFactorBonusThreshold == 0) {
+      return liquidationBonus;
+    }
+    return
+      healthFactor.calculateVariableLiquidationBonus(
+        _variableLiquidationBonusConfig,
+        HEALTH_FACTOR_LIQUIDATION_THRESHOLD,
+        liquidationBonus
+      );
+  }
+
+  function getVariableLiquidationBonusConfig()
+    external
+    view
+    returns (DataTypes.VariableLiquidationBonusConfig memory)
+  {
+    return _variableLiquidationBonusConfig;
   }
 
   function getUserAccountData(
@@ -742,5 +776,19 @@ contract Spoke is ISpoke {
 
   function _validateCloseFactor(uint256 closeFactor) internal view {
     require(closeFactor >= HEALTH_FACTOR_LIQUIDATION_THRESHOLD, InvalidCloseFactor());
+  }
+
+  function _validateVariableLiquidationBonusConfig(
+    DataTypes.VariableLiquidationBonusConfig calldata config
+  ) internal view {
+    require(
+      config.healthFactorBonusThreshold > 0 &&
+        config.healthFactorBonusThreshold < HEALTH_FACTOR_LIQUIDATION_THRESHOLD,
+      InvalidHealthFactorBonusThreshold()
+    );
+    require(
+      config.liquidationBonusFactor <= PercentageMath.PERCENTAGE_FACTOR,
+      InvalidLiquidationBonusFactor()
+    );
   }
 }

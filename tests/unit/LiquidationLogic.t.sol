@@ -7,12 +7,10 @@ import {LiquidationLogic} from 'src/libraries/logic/LiquidationLogic.sol';
 import {DataTypes} from 'src/libraries/types/DataTypes.sol';
 import {WadRayMath} from 'src/libraries/math/WadRayMath.sol';
 import {PercentageMath} from 'src/libraries/math/PercentageMath.sol';
+import {Base} from 'tests/Base.t.sol';
 
-contract LiquidationLogicTest is Test {
+contract LiquidationLogicTest is Base {
   using PercentageMath for uint256;
-
-  uint256 internal constant MAX_LIQUIDATION_BONUS = 100_00; // 100%
-  uint256 internal constant MAX_LIQUIDATION_BONUS_FACTOR = 100_00; // 100%
 
   /// when < healthFactorBonusThreshold, return liquidationBonus
   function testCalculateVariableLiquidationBonus_lt_bonusThreshold() public {
