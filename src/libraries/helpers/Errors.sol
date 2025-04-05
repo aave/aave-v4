@@ -1,6 +1,8 @@
 // SPDX-License-Identifier: BUSL-1.1
 pragma solidity ^0.8.0;
 
+// TODO: delete file, use custom errors
+
 /**
  * @title Errors library
  * @author Aave Labs

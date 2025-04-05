@@ -1,20 +1,25 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.0;
-import {console2 as console} from 'forge-std/console2.sol';
+
+// libraries
 import {WadRayMath} from 'src/contracts/WadRayMath.sol';
 import {PercentageMath} from 'src/contracts/PercentageMath.sol';
 import {KeyValueListInMemory} from 'src/contracts/KeyValueListInMemory.sol';
+import {DataTypes} from 'src/libraries/types/DataTypes.sol';
+import {LiquidationLogic} from 'src/libraries/logic/LiquidationLogic.sol';
+
+// interfaces
 import {ILiquidityHub} from 'src/interfaces/ILiquidityHub.sol';
 import {ISpoke} from 'src/interfaces/ISpoke.sol';
 import {IPriceOracle} from 'src/interfaces/IPriceOracle.sol';
-import {DataTypes} from 'src/libraries/types/DataTypes.sol';
 
 contract Spoke is ISpoke {
   using WadRayMath for uint256;
   using PercentageMath for uint256;
   using KeyValueListInMemory for KeyValueListInMemory.List;
+  using LiquidationLogic for uint256;
 
-  // todo capitalize, oracle should be mutable?
+  uint256 public constant HEALTH_FACTOR_LIQUIDATION_THRESHOLD = WadRayMath.WAD; // todo configurable
   ILiquidityHub public immutable hub;
 
   mapping(address user => mapping(uint256 reserveId => DataTypes.UserPosition position))
@@ -23,7 +28,6 @@ contract Spoke is ISpoke {
 
   uint256[] public reservesList; // todo: rm, not needed
   uint256 public reserveCount;
-  uint256 public constant HEALTH_FACTOR_LIQUIDATION_THRESHOLD = WadRayMath.WAD; // todo configurable
   uint256 public closeFactor;
 
   constructor(address hubAddress, uint256 closeFactorValue) {
@@ -44,14 +48,6 @@ contract Spoke is ISpoke {
     closeFactor = newCloseFactor;
     emit CloseFactorUpdated(newCloseFactor);
   }
-
-  // function getLiquidationBonus(uint256 reserveId, uint256 healthFactor) public view returns (uint256) {
-  //   uint256 liquidationBonus = _reserves[reserveId].config.liquidationBonus;
-  //   if (healthFactor > HEALTH_FACTOR_LIQUIDATION_THRESHOLD) {
-  //     return
-  //   }
-  //   return 0;
-  // }
 
   function addReserve(
     uint256 assetId,
@@ -730,7 +726,6 @@ contract Spoke is ISpoke {
       InvalidLiquidityPremium()
     ); // max 1000.00%
     require(config.decimals <= hub.MAX_ALLOWED_ASSET_DECIMALS(), InvalidReserveDecimals());
-    console.log('sp', address(config.oracle));
     require(address(config.oracle) != address(0), InvalidOracle());
   }
 

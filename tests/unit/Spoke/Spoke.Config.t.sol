@@ -7,6 +7,17 @@ contract SpokeConfigTest is SpokeBase {
   using SharesMath for uint256;
   using WadRayMath for uint256;
 
+  function test_spoke_deploy_revertsWith_InvalidHubAddress() public {
+    vm.expectRevert(ISpoke.InvalidHubAddress.selector);
+    ISpoke(new Spoke(address(0), WadRayMath.WAD));
+  }
+
+  function test_spoke_deploy_revertsWith_InvalidCloseFactor() public {
+    uint256 invalidCloseFactor = WadRayMath.WAD - 1;
+    vm.expectRevert(ISpoke.InvalidCloseFactor.selector);
+    ISpoke(new Spoke(address(hub), invalidCloseFactor));
+  }
+
   function test_updateReserveConfig() public {
     uint256 daiReserveId = _daiReserveId(spoke1);
     DataTypes.Reserve memory reserveData = spoke1.getReserve(daiReserveId);
