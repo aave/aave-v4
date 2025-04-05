@@ -9,11 +9,11 @@ contract SpokeConfigTest is SpokeBase {
 
   function test_spoke_deploy_revertsWith_InvalidHubAddress() public {
     vm.expectRevert(ISpoke.InvalidHubAddress.selector);
-    ISpoke(new Spoke(address(0), WadRayMath.WAD));
+    ISpoke(new Spoke(address(0), HEALTH_FACTOR_LIQUIDATION_THRESHOLD));
   }
 
   function test_spoke_deploy_revertsWith_InvalidCloseFactor() public {
-    uint256 invalidCloseFactor = WadRayMath.WAD - 1;
+    uint256 invalidCloseFactor = HEALTH_FACTOR_LIQUIDATION_THRESHOLD - 1;
     vm.expectRevert(ISpoke.InvalidCloseFactor.selector);
     ISpoke(new Spoke(address(hub), invalidCloseFactor));
   }
@@ -463,7 +463,7 @@ contract SpokeConfigTest is SpokeBase {
   }
 
   function test_updateCloseFactor() public {
-    uint256 newCloseFactor = WadRayMath.WAD + 1;
+    uint256 newCloseFactor = HEALTH_FACTOR_LIQUIDATION_THRESHOLD + 1;
     vm.expectEmit(address(spoke1));
     emit ISpoke.CloseFactorUpdated(newCloseFactor);
     vm.prank(SPOKE_ADMIN);
@@ -473,7 +473,7 @@ contract SpokeConfigTest is SpokeBase {
   }
 
   function test_updateCloseFactor_fuzz(uint256 newCloseFactor) public {
-    newCloseFactor = bound(newCloseFactor, WadRayMath.WAD, type(uint256).max);
+    newCloseFactor = bound(newCloseFactor, HEALTH_FACTOR_LIQUIDATION_THRESHOLD, type(uint256).max);
     vm.expectEmit(address(spoke1));
     emit ISpoke.CloseFactorUpdated(newCloseFactor);
     vm.prank(SPOKE_ADMIN);

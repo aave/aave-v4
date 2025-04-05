@@ -43,6 +43,7 @@ abstract contract Base is Test {
   uint256 internal constant MAX_SKIP_TIME = 10_000 days;
   uint256 internal constant MAX_LIQUIDATION_BONUS = PercentageMath.PERCENTAGE_FACTOR; // 100%
   uint256 internal constant MAX_LIQUIDATION_BONUS_FACTOR = PercentageMath.PERCENTAGE_FACTOR; // 100%
+  uint256 internal constant HEALTH_FACTOR_LIQUIDATION_THRESHOLD = WadRayMath.WAD;
 
   IERC20 internal usdc;
   IERC20 internal dai;
@@ -122,9 +123,9 @@ abstract contract Base is Test {
     creditLineIRStrategy = new DefaultReserveInterestRateStrategy(mockAddressesProvider);
     irStrategy = new DefaultReserveInterestRateStrategy(mockAddressesProvider);
     hub = new LiquidityHub();
-    spoke1 = ISpoke(new Spoke(address(hub), WadRayMath.WAD));
-    spoke2 = ISpoke(new Spoke(address(hub), WadRayMath.WAD));
-    spoke3 = ISpoke(new Spoke(address(hub), WadRayMath.WAD));
+    spoke1 = ISpoke(new Spoke(address(hub), HEALTH_FACTOR_LIQUIDATION_THRESHOLD));
+    spoke2 = ISpoke(new Spoke(address(hub), HEALTH_FACTOR_LIQUIDATION_THRESHOLD));
+    spoke3 = ISpoke(new Spoke(address(hub), HEALTH_FACTOR_LIQUIDATION_THRESHOLD));
     dai = new MockERC20();
     eth = new MockERC20();
     usdc = new MockERC20();
