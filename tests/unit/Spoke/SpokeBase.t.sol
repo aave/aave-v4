@@ -38,9 +38,28 @@ contract SpokeBase is Base {
     uint256 premiumDebt;
   }
 
-  function setUp() public virtual override {
-    super.setUp();
-    initEnvironment();
+  struct UserActionData {
+    uint256 supplyAmount;
+    uint256 borrowAmount;
+    uint256 repayAmount;
+    uint256 userBalanceBefore;
+    uint256 userBalanceAfter;
+    DataTypes.UserPosition userPosBefore;
+  }
+
+  struct BorrowTestData {
+    uint256 daiReserveId;
+    uint256 wethReserveId;
+    uint256 usdxReserveId;
+    uint256 wbtcReserveId;
+    UserActionData daiAlice;
+    UserActionData wethAlice;
+    UserActionData usdxAlice;
+    UserActionData wbtcAlice;
+    UserActionData daiBob;
+    UserActionData wethBob;
+    UserActionData usdxBob;
+    UserActionData wbtcBob;
   }
 
   struct SupplyBorrowLocal {
@@ -54,6 +73,31 @@ contract SpokeBase is Base {
     uint256 reserveBaseDebtBefore;
     uint256 borrowerBaseDebtAfter;
     uint256 reserveBaseDebtAfter;
+  }
+
+  function setUp() public virtual override {
+    super.setUp();
+    initEnvironment();
+  }
+
+  // supply MAX_SUPPLY_AMOUNT liquidity to reserve from a temporary user
+  function _supplyAvailableLiquidity(ISpoke spoke, uint256 reserveId, uint256 amount) public {
+    address tempUser = makeAddr('tempUser');
+    IERC20 asset = IERC20(spoke.getReserve(reserveId).asset);
+    deal(address(asset), tempUser, amount);
+
+    vm.prank(tempUser);
+    asset.approve(address(hub), type(uint256).max);
+
+    Utils.supply({
+      spoke: spoke,
+      reserveId: reserveId,
+      user: tempUser,
+      amount: amount,
+      onBehalfOf: tempUser
+    });
+
+    assertGe(hub.getAvailableLiquidity(spoke.getReserve(reserveId).assetId), amount);
   }
 
   // increase share conversion index on given reserve
@@ -139,18 +183,12 @@ contract SpokeBase is Base {
     state.reserveSharesBefore = spoke.getReserveSuppliedShares(collateral.reserveId);
     state.userSharesBefore = spoke.getUserSuppliedShares(collateral.reserveId, collateral.supplier);
     // supply collateral asset
-    Utils.spokeSupply({
+    Utils.supplyCollateral({
       spoke: spoke,
       reserveId: collateral.reserveId,
       user: collateral.supplier,
       amount: collateral.supplyAmount,
       onBehalfOf: collateral.supplier
-    });
-    setUsingAsCollateral({
-      spoke: spoke,
-      user: collateral.supplier,
-      reserveId: collateral.reserveId,
-      usingAsCollateral: true
     });
     assertEq(
       state.reserveSharesBefore + state.collateralSupplyShares,
@@ -163,7 +201,7 @@ contract SpokeBase is Base {
     state.reserveSharesBefore = spoke.getReserveSuppliedShares(borrow.reserveId);
     state.userSharesBefore = spoke.getUserSuppliedShares(borrow.reserveId, borrow.supplier);
     // other user supplies enough asset to be drawn
-    Utils.spokeSupply({
+    Utils.supply({
       spoke: spoke,
       reserveId: borrow.reserveId,
       user: borrow.supplier,
@@ -181,7 +219,7 @@ contract SpokeBase is Base {
     (state.borrowerBaseDebtBefore, ) = spoke.getUserDebt(borrow.reserveId, borrow.borrower);
     (state.reserveBaseDebtBefore, ) = spoke.getReserveDebt(borrow.reserveId);
     // borrower borrows asset
-    Utils.spokeBorrow({
+    Utils.borrow({
       spoke: spoke,
       reserveId: borrow.reserveId,
       user: borrow.borrower,
@@ -272,7 +310,7 @@ contract SpokeBase is Base {
     return maxDebt > 1 ? maxDebt - 1 : maxDebt;
   }
 
-  /// @dev Returns the USD value of the reserve normalized by it's decimals, in terms of WAD
+  /// returns the USD value of the reserve normalized by it's decimals, in terms of WAD
   function _getReserveValueInBaseCurrency(
     uint256 assetId,
     uint256 amount
@@ -282,88 +320,135 @@ contract SpokeBase is Base {
       (10 ** hub.getAssetConfig(assetId).decimals);
   }
 
-  // assert that user debt and supplied shares match expected values
-  function _assertUserDebtAndSuppliedShares(
+  // assert that user's position and debt accounting matches expected
+  function _assertUserPositionAndDebt(
     ISpoke spoke,
     uint256 reserveId,
     address user,
-    uint256 borrowAmount,
+    uint256 debtAmount,
     uint256 suppliedAmount,
+    uint256 expectedRealizedPremium,
     string memory label
   ) internal view {
-    DataTypes.UserPosition memory calcDebt = _calcExpectedDebtAccounting(
+    uint256 assetId = spoke.getReserve(reserveId).assetId;
+
+    // user position
+    DataTypes.UserPosition memory userPos = getUserInfo(spoke, user, reserveId);
+    DataTypes.UserPosition memory expectedUserPos = _calcUserPositionBySuppliedAndDebtAmount(
       spoke,
       user,
-      reserveId,
-      borrowAmount
-    );
-    DataTypes.UserPosition memory userData = getUserInfo(spoke, user, reserveId);
-
-    assertEq(
-      userData.suppliedShares,
-      hub.convertToSuppliedShares(daiAssetId, suppliedAmount),
-      string(abi.encodePacked('user supplied shares ', label))
-    );
-    assertEq(
-      userData.baseDrawnShares,
-      calcDebt.baseDrawnShares,
-      string(abi.encodePacked('user baseDrawnShares ', label))
-    );
-    assertEq(
-      userData.premiumDrawnShares,
-      calcDebt.premiumDrawnShares,
-      string(abi.encodePacked('user premiumDrawnShares ', label))
-    );
-    assertEq(
-      userData.premiumOffset,
-      calcDebt.premiumOffset,
-      string(abi.encodePacked('user premiumOffset ', label))
-    );
-    assertEq(
-      userData.realizedPremium,
-      0,
-      string(abi.encodePacked('user realized premium ', label))
+      expectedRealizedPremium,
+      assetId,
+      debtAmount,
+      suppliedAmount
     );
 
-    uint256 assetId = spoke.getReserve(reserveId).assetId;
-    uint256 expectedPremiumDebt = calcDebt.realizedPremium +
-      (hub.convertToDrawnAssets(assetId, calcDebt.premiumDrawnShares) - calcDebt.premiumOffset);
-
+    // user debt
+    DebtData memory expectedUserDebt = _calcExpectedUserDebt(assetId, expectedUserPos);
     DebtData memory userDebt;
     userDebt.totalDebt = spoke.getUserTotalDebt(reserveId, user);
     (userDebt.baseDebt, userDebt.premiumDebt) = spoke.getUserDebt(reserveId, user);
 
+    // assertions
+    _assertUserPosition(userPos, expectedUserPos, label);
+    _assertUserDebt(userDebt, expectedUserDebt, label);
+  }
+
+  function _calcExpectedUserDebt(
+    uint256 assetId,
+    DataTypes.UserPosition memory userPos
+  ) internal view returns (DebtData memory userDebt) {
+    userDebt.premiumDebt =
+      userPos.realizedPremium +
+      (hub.convertToDrawnAssets(assetId, userPos.premiumDrawnShares) - userPos.premiumOffset);
+    userDebt.baseDebt = hub.convertToDrawnAssets(assetId, userPos.baseDrawnShares);
+    userDebt.totalDebt = userDebt.baseDebt + userDebt.premiumDebt;
+  }
+
+  // assert that user position matches expected
+  function _assertUserPosition(
+    DataTypes.UserPosition memory userPos,
+    DataTypes.UserPosition memory expectedUserPos,
+    string memory label
+  ) internal pure {
+    assertEq(
+      userPos.suppliedShares,
+      expectedUserPos.suppliedShares,
+      string(abi.encodePacked('user supplied shares ', label))
+    );
+    assertEq(
+      userPos.baseDrawnShares,
+      expectedUserPos.baseDrawnShares,
+      string(abi.encodePacked('user baseDrawnShares ', label))
+    );
+    assertEq(
+      userPos.premiumDrawnShares,
+      expectedUserPos.premiumDrawnShares,
+      string(abi.encodePacked('user premiumDrawnShares ', label))
+    );
+    assertEq(
+      userPos.premiumOffset,
+      expectedUserPos.premiumOffset,
+      string(abi.encodePacked('user premiumOffset ', label))
+    );
+    assertEq(
+      userPos.realizedPremium,
+      expectedUserPos.realizedPremium,
+      string(abi.encodePacked('user realized premium ', label))
+    );
+  }
+
+  function _assertUserDebt(
+    DebtData memory userDebt,
+    DebtData memory expectedUserDebt,
+    string memory label
+  ) internal pure {
     assertEq(
       userDebt.baseDebt,
-      hub.convertToDrawnAssets(assetId, calcDebt.baseDrawnShares),
+      expectedUserDebt.baseDebt,
       string(abi.encodePacked('user base debt ', label))
     );
     assertEq(
       userDebt.premiumDebt,
-      expectedPremiumDebt,
+      expectedUserDebt.premiumDebt,
       string(abi.encodePacked('user premium debt ', label))
     );
     assertEq(
       userDebt.totalDebt,
-      userDebt.baseDebt + userDebt.premiumDebt,
+      expectedUserDebt.totalDebt,
       string(abi.encodePacked('user total debt ', label))
     );
   }
 
-  // calculate expected debt accounting values using latest risk premium
-  function _calcExpectedDebtAccounting(
+  // calculate expected user position using latest risk premium
+  function _calcUserPositionBySuppliedAndDebtAmount(
     ISpoke spoke,
     address user,
+    uint256 expectedRealizedPremium,
     uint256 assetId,
-    uint256 borrowAmount
+    uint256 debtAmount,
+    uint256 suppliedAmount
   ) internal view returns (DataTypes.UserPosition memory userPos) {
     (uint256 riskPremium, , , , ) = spoke.getUserAccountData(user);
 
-    userPos.baseDrawnShares = hub.convertToDrawnShares(assetId, borrowAmount);
-    userPos.premiumDrawnShares = hub.convertToDrawnShares(assetId, borrowAmount).percentMul(
+    userPos.baseDrawnShares = hub.convertToDrawnShares(assetId, debtAmount);
+    userPos.premiumDrawnShares = hub.convertToDrawnShares(assetId, debtAmount).percentMul(
       riskPremium
     );
     userPos.premiumOffset = hub.convertToDrawnAssets(assetId, userPos.premiumDrawnShares);
+    userPos.realizedPremium = expectedRealizedPremium;
+    userPos.suppliedShares = hub.convertToSuppliedShares(assetId, suppliedAmount);
+  }
+
+  /// calculated expected realized premium. MUST be called prior to user action to utilize prior exch rate
+  function _calculateExpectedRealizedPremium(
+    ISpoke spoke,
+    uint256 reserveId,
+    address user
+  ) internal returns (uint256) {
+    uint256 assetId = spoke.getReserve(reserveId).assetId;
+    DataTypes.UserPosition memory userPos = getUserInfo(spoke, user, assetId);
+    return hub.convertToDrawnAssets(assetId, userPos.premiumDrawnShares) - userPos.premiumOffset;
   }
 
   /// assert that sum across User storage debt matches Reserve storage debt
