@@ -25,19 +25,16 @@ contract Spoke is ISpoke {
   uint256[] public reservesList; // todo: rm, not needed
   uint256 public reserveCount;
   uint256 public constant HEALTH_FACTOR_LIQUIDATION_THRESHOLD = WadRayMath.WAD; // todo configurable
-  uint256 public healthFactorRecoveryTarget;
+  uint256 public closeFactor;
 
-  constructor(address hubAddress, address oracleAddress, uint256 healthFactorRecoveryTargetValue) {
+  constructor(address hubAddress, address oracleAddress, uint256 closeFactorValue) {
     require(hubAddress != address(0), InvalidHubAddress());
     require(oracleAddress != address(0), InvalidOracleAddress());
-    require(
-      healthFactorRecoveryTarget > HEALTH_FACTOR_LIQUIDATION_THRESHOLD,
-      InvalidHealthFactorRecoveryTarget()
-    );
+    _validateCloseFactor(closeFactorValue);
 
     hub = ILiquidityHub(hubAddress);
     oracle = IPriceOracle(oracleAddress);
-    healthFactorRecoveryTarget = healthFactorRecoveryTargetValue;
+    closeFactor = closeFactorValue;
   }
 
   // /////
@@ -52,12 +49,20 @@ contract Spoke is ISpoke {
     emit OracleUpdated(oracleAddress);
   }
 
-  function updateHealthFactorRecoveryTarget(uint256 healthFactorRecoveryTargetValue) public {
+  function updateCloseFactor(uint256 newCloseFactor) public {
     // TODO: AccessControl
-
-    healthFactorRecoveryTarget = healthFactorRecoveryTargetValue;
-    emit HealthFactorRecoveryTargetUpdated(healthFactorRecoveryTargetValue);
+    _validateCloseFactor(newCloseFactor);
+    closeFactor = newCloseFactor;
+    emit closeFactorUpdated(newCloseFactor);
   }
+
+  // function getLiquidationBonus(uint256 reserveId, uint256 healthFactor) public view returns (uint256) {
+  //   uint256 liquidationBonus = _reserves[reserveId].config.liquidationBonus;
+  //   if (healthFactor > HEALTH_FACTOR_LIQUIDATION_THRESHOLD) {
+  //     return
+  //   }
+  //   return 0;
+  // }
 
   function addReserve(
     uint256 assetId,
@@ -753,5 +758,9 @@ contract Spoke is ISpoke {
   // todo move to MathUtils
   function _signedDiff(uint256 a, uint256 b) internal pure returns (int256) {
     return int256(a) - int256(b); // todo use safeCast when amounts packed to uint112/uint128
+  }
+
+  function _validateCloseFactor(uint256 closeFactor) internal view {
+    require(closeFactor >= HEALTH_FACTOR_LIQUIDATION_THRESHOLD, InvalidCloseFactor());
   }
 }
