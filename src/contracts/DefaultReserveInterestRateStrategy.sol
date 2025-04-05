@@ -1,12 +1,12 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.10;
 
-import {WadRayMath} from './WadRayMath.sol';
-import {DataTypes} from '../libraries/types/DataTypes.sol';
-import {Errors} from '../libraries/helpers/Errors.sol';
-import {IDefaultInterestRateStrategy} from '../interfaces/IDefaultInterestRateStrategy.sol';
-import {IReserveInterestRateStrategy} from '../interfaces/IReserveInterestRateStrategy.sol';
-import {WadRayMath} from './WadRayMath.sol';
+import {WadRayMath} from 'src/libraries/math/WadRayMath.sol';
+import {DataTypes} from 'src/libraries/types/DataTypes.sol';
+import {Errors} from 'src/libraries/helpers/Errors.sol';
+import {IDefaultInterestRateStrategy} from 'src/interfaces/IDefaultInterestRateStrategy.sol';
+import {IReserveInterestRateStrategy} from 'src/interfaces/IReserveInterestRateStrategy.sol';
+import {WadRayMath} from 'src/libraries/math/WadRayMath.sol';
 
 // TODO: update this contract to based on DefaultReserveInterestRateStrategyV2 in aave-v3-origin
 

@@ -4,8 +4,8 @@ pragma solidity ^0.8.0;
 import {Test} from 'forge-std/Test.sol';
 
 import {EnumerableSet} from 'src/dependencies/openzeppelin/EnumerableSet.sol';
-import {MathUtils} from 'src/contracts/MathUtils.sol';
-import {WadRayMath} from 'src/contracts/WadRayMath.sol';
+import {MathUtils} from 'src/libraries/math/MathUtils.sol';
+import {WadRayMath} from 'src/libraries/math/WadRayMath.sol';
 
 /// forge-config: default.allow_internal_expect_revert = true
 contract MathUtilsWeightedAverage is Test {

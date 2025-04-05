@@ -5,8 +5,8 @@ import {Test} from 'forge-std/Test.sol';
 
 import {LiquidationLogic} from 'src/libraries/logic/LiquidationLogic.sol';
 import {DataTypes} from 'src/libraries/types/DataTypes.sol';
-import {WadRayMath} from 'src/contracts/WadRayMath.sol';
-import {PercentageMath} from 'src/contracts/PercentageMath.sol';
+import {WadRayMath} from 'src/libraries/math/WadRayMath.sol';
+import {PercentageMath} from 'src/libraries/math/PercentageMath.sol';
 
 contract LiquidationLogicTest is Test {
   using PercentageMath for uint256;

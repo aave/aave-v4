@@ -6,10 +6,10 @@ import {console2 as console} from 'forge-std/console2.sol';
 
 import {LiquidityHub, ILiquidityHub} from 'src/contracts/LiquidityHub.sol';
 import {Spoke, ISpoke} from 'src/contracts/Spoke.sol';
-import {PercentageMath} from 'src/contracts/PercentageMath.sol';
-import {WadRayMath} from 'src/contracts/WadRayMath.sol';
-import {SharesMath} from 'src/contracts/SharesMath.sol';
-import {MathUtils} from 'src/contracts/MathUtils.sol';
+import {PercentageMath} from 'src/libraries/math/PercentageMath.sol';
+import {WadRayMath} from 'src/libraries/math/WadRayMath.sol';
+import {SharesMath} from 'src/libraries/math/SharesMath.sol';
+import {MathUtils} from 'src/libraries/math/MathUtils.sol';
 import {DefaultReserveInterestRateStrategy, IDefaultInterestRateStrategy, IReserveInterestRateStrategy} from 'src/contracts/DefaultReserveInterestRateStrategy.sol';
 import {ISpoke} from 'src/interfaces/ISpoke.sol';
 import {DataTypes} from 'src/libraries/types/DataTypes.sol';

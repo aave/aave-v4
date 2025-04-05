@@ -2,9 +2,9 @@
 pragma solidity ^0.8.0;
 
 // libraries
-import {WadRayMath} from 'src/contracts/WadRayMath.sol';
-import {PercentageMath} from 'src/contracts/PercentageMath.sol';
-import {KeyValueListInMemory} from 'src/contracts/KeyValueListInMemory.sol';
+import {WadRayMath} from 'src/libraries/math/WadRayMath.sol';
+import {PercentageMath} from 'src/libraries/math/PercentageMath.sol';
+import {KeyValueListInMemory} from 'src/libraries/helpers/KeyValueListInMemory.sol';
 import {DataTypes} from 'src/libraries/types/DataTypes.sol';
 import {LiquidationLogic} from 'src/libraries/logic/LiquidationLogic.sol';
 
