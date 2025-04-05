@@ -60,7 +60,7 @@ interface ISpoke {
     DataTypes.ReserveConfig memory params
   ) external returns (uint256);
   function updateReserveConfig(uint256 reserveId, DataTypes.ReserveConfig calldata params) external;
-  function updateLiquidityPremium(uint256 reserveId, uint256 liquidityPremium) external;
+  function updateCloseFactor(uint256 closeFactor) external;
 
   /**
    * @notice Supply an amount of underlying asset of the specified reserve.
@@ -129,4 +129,5 @@ interface ISpoke {
   function getUsingAsCollateral(uint256 reserveId, address user) external view returns (bool);
   function reserveCount() external view returns (uint256);
   function reservesList(uint256) external view returns (uint256);
+  function closeFactor() external view returns (uint256);
 }

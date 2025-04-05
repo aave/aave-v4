@@ -364,10 +364,57 @@ contract SpokeConfigTest is SpokeBase {
     spoke1.addReserve(assetId, newReserveConfig);
   }
 
+  function test_addReserve_fuzz_reverts_invalid_assetId(uint256 assetId) public {
+    assetId = bound(assetId, hub.assetCount(), type(uint256).max); // invalid assetId
+
+    uint256 reserveId = spoke1.reserveCount();
+    DataTypes.ReserveConfig memory newReserveConfig = DataTypes.ReserveConfig({
+      decimals: 18,
+      active: true,
+      frozen: true,
+      paused: true,
+      collateralFactor: 10_00,
+      liquidationBonus: 10_00,
+      liquidityPremium: 10_00,
+      borrowable: true,
+      collateral: true,
+      oracle: oracle
+    });
+
+    vm.expectRevert(); // error from LH in reading invalid index from assetList array
+    vm.prank(SPOKE_ADMIN);
+    spoke1.addReserve(assetId, newReserveConfig);
+  }
+
   function test_addReserve_revertsWith_InvalidReserveDecimals() public {
     uint256 reserveId = spoke1.reserveCount();
     DataTypes.ReserveConfig memory newReserveConfig = DataTypes.ReserveConfig({
       decimals: hub.MAX_ALLOWED_ASSET_DECIMALS() + 1, // invalid decimals
+      active: true,
+      frozen: true,
+      paused: true,
+      collateralFactor: 10_00,
+      liquidationBonus: 10_00,
+      liquidityPremium: 10_00,
+      borrowable: true,
+      collateral: true,
+      oracle: oracle
+    });
+
+    vm.expectRevert(ISpoke.InvalidReserveDecimals.selector);
+    vm.prank(SPOKE_ADMIN);
+    spoke1.addReserve(reserveId, newReserveConfig);
+  }
+
+  function test_addReserve_fuzz_revertsWith_InvalidReserveDecimals(
+    uint256 reserveId,
+    uint256 decimals
+  ) public {
+    decimals = bound(decimals, hub.MAX_ALLOWED_ASSET_DECIMALS() + 1, type(uint256).max); // invalid decimals
+    reserveId = bound(reserveId, 0, spoke1.reserveCount());
+
+    DataTypes.ReserveConfig memory newReserveConfig = DataTypes.ReserveConfig({
+      decimals: decimals,
       active: true,
       frozen: true,
       paused: true,
@@ -402,5 +449,25 @@ contract SpokeConfigTest is SpokeBase {
     vm.expectRevert(ISpoke.InvalidOracle.selector);
     vm.prank(SPOKE_ADMIN);
     spoke1.addReserve(reserveId, newReserveConfig);
+  }
+
+  function test_updateCloseFactor() public {
+    uint256 newCloseFactor = WadRayMath.WAD + 1;
+    vm.expectEmit(address(spoke1));
+    emit ISpoke.CloseFactorUpdated(newCloseFactor);
+    vm.prank(SPOKE_ADMIN);
+    spoke1.updateCloseFactor(newCloseFactor);
+
+    assertEq(spoke1.closeFactor(), newCloseFactor, 'wrong close factor');
+  }
+
+  function test_updateCloseFactor_fuzz(uint256 newCloseFactor) public {
+    newCloseFactor = bound(newCloseFactor, WadRayMath.WAD, type(uint256).max);
+    vm.expectEmit(address(spoke1));
+    emit ISpoke.CloseFactorUpdated(newCloseFactor);
+    vm.prank(SPOKE_ADMIN);
+    spoke1.updateCloseFactor(newCloseFactor);
+
+    assertEq(spoke1.closeFactor(), newCloseFactor, 'wrong close factor');
   }
 }

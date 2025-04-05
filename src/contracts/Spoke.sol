@@ -115,15 +115,6 @@ contract Spoke is ISpoke {
     emit ReserveConfigUpdated(reserveId, config);
   }
 
-  // todo: access control, general setter like maker's dss, flag engine like v3
-  function updateLiquidityPremium(uint256 reserveId, uint256 liquidityPremium) external {
-    require(_reserves[reserveId].asset != address(0), InvalidReserve());
-    require(liquidityPremium <= PercentageMath.PERCENTAGE_FACTOR * 10, InvalidLiquidityPremium());
-    _reserves[reserveId].config.liquidityPremium = liquidityPremium;
-
-    emit LiquidityPremiumUpdated(reserveId, liquidityPremium);
-  }
-
   // /////
   // Users
   // /////
