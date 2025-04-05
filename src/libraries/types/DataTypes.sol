@@ -109,7 +109,7 @@ library DataTypes {
   }
 
   struct VariableLiquidationBonusConfig {
-    uint256 healthFactorThreshold;
+    uint256 healthFactorBonusThreshold;
     uint256 liquidationBonusFactor; // BPS
   }
 }

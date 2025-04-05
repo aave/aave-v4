@@ -12,12 +12,12 @@ library LiquidationLogic {
     uint256 healthFactor,
     DataTypes.VariableLiquidationBonusConfig memory config,
     uint256 healthFactorLiquidationThreshold,
-    uint256 maxLiquidationBonus
+    uint256 liquidationBonus
   ) internal pure returns (uint256) {
-    if (healthFactor < config.healthFactorThreshold) {
-      return maxLiquidationBonus;
+    if (healthFactor < config.healthFactorBonusThreshold) {
+      return liquidationBonus;
     }
-    uint256 minLiquidationBonus = maxLiquidationBonus.percentMul(config.liquidationBonusFactor);
+    uint256 minLiquidationBonus = liquidationBonus.percentMul(config.liquidationBonusFactor);
 
     if (healthFactor >= healthFactorLiquidationThreshold) {
       return minLiquidationBonus;
@@ -25,8 +25,8 @@ library LiquidationLogic {
 
     return
       minLiquidationBonus +
-      ((maxLiquidationBonus - minLiquidationBonus) *
+      ((liquidationBonus - minLiquidationBonus) *
         (healthFactorLiquidationThreshold - healthFactor)) /
-      (healthFactorLiquidationThreshold - config.healthFactorThreshold);
+      (healthFactorLiquidationThreshold - config.healthFactorBonusThreshold);
   }
 }
