@@ -98,7 +98,6 @@ contract Spoke is ISpoke {
     _validateReserveConfig(config);
     DataTypes.Reserve storage reserve = _reserves[reserveId];
     require(reserve.asset != address(0), InvalidReserve());
-    require(address(config.oracle) != address(0), InvalidOracle());
     // TODO: AccessControl
     reserve.config = DataTypes.ReserveConfig({
       decimals: reserve.config.decimals, // decimals remains existing value

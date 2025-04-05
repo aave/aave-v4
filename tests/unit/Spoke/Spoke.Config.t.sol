@@ -218,6 +218,25 @@ contract SpokeConfigTest is SpokeBase {
     spoke1.updateReserveConfig(daiReserveId, config);
   }
 
+  function test_updateReserveConfig_fuzz_revertsWith_InvalidLiquidityPremium(
+    uint256 liquidityPremium
+  ) public {
+    liquidityPremium = bound(
+      liquidityPremium,
+      PercentageMath.PERCENTAGE_FACTOR * 10 + 1,
+      type(uint256).max
+    );
+
+    uint256 daiReserveId = _daiReserveId(spoke1);
+    DataTypes.ReserveConfig memory config = spoke1.getReserve(daiReserveId).config;
+
+    config.liquidityPremium = liquidityPremium;
+
+    vm.expectRevert(ISpoke.InvalidLiquidityPremium.selector);
+    vm.prank(SPOKE_ADMIN);
+    spoke1.updateReserveConfig(daiReserveId, config);
+  }
+
   function test_updateReserveConfig_revertsWith_InvalidReserve() public {
     uint256 invalidReserveId = spoke1.reserveCount();
     DataTypes.ReserveConfig memory config;
