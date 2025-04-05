@@ -240,10 +240,21 @@ contract SpokeConfigTest is SpokeBase {
   function test_updateReserveConfig_revertsWith_InvalidReserve() public {
     uint256 invalidReserveId = spoke1.reserveCount();
     DataTypes.ReserveConfig memory config;
+    config.oracle = IPriceOracle(makeAddr('newOracle'));
 
     vm.expectRevert(ISpoke.InvalidReserve.selector);
     vm.prank(SPOKE_ADMIN);
     spoke1.updateReserveConfig(invalidReserveId, config);
+  }
+
+  function test_updateReserveConfig_fuzz_revertsWith_InvalidReserve(uint256 reserveId) public {
+    reserveId = bound(reserveId, spoke1.reserveCount() + 1, type(uint256).max);
+    DataTypes.ReserveConfig memory config;
+    config.oracle = IPriceOracle(makeAddr('newOracle'));
+
+    vm.expectRevert(ISpoke.InvalidReserve.selector);
+    vm.prank(SPOKE_ADMIN);
+    spoke1.updateReserveConfig(reserveId, config);
   }
 
   function test_updateReserveConfig_revertsWith_InvalidCollateralFactor() public {

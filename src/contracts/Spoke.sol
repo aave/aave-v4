@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.0;
-
+import {console2 as console} from 'forge-std/console2.sol';
 import {WadRayMath} from 'src/contracts/WadRayMath.sol';
 import {PercentageMath} from 'src/contracts/PercentageMath.sol';
 import {KeyValueListInMemory} from 'src/contracts/KeyValueListInMemory.sol';
@@ -739,6 +739,7 @@ contract Spoke is ISpoke {
       InvalidLiquidityPremium()
     ); // max 1000.00%
     require(config.decimals <= hub.MAX_ALLOWED_ASSET_DECIMALS(), InvalidReserveDecimals());
+    console.log('sp', address(config.oracle));
     require(address(config.oracle) != address(0), InvalidOracle());
   }
 
