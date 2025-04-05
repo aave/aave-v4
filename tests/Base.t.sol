@@ -120,9 +120,9 @@ abstract contract Base is Test {
     creditLineIRStrategy = new DefaultReserveInterestRateStrategy(mockAddressesProvider);
     irStrategy = new DefaultReserveInterestRateStrategy(mockAddressesProvider);
     hub = new LiquidityHub();
-    spoke1 = ISpoke(new Spoke(address(hub), address(oracle)));
-    spoke2 = ISpoke(new Spoke(address(hub), address(oracle)));
-    spoke3 = ISpoke(new Spoke(address(hub), address(oracle)));
+    spoke1 = ISpoke(new Spoke(address(hub), WadRayMath.WAD));
+    spoke2 = ISpoke(new Spoke(address(hub), WadRayMath.WAD));
+    spoke3 = ISpoke(new Spoke(address(hub), WadRayMath.WAD));
     dai = new MockERC20();
     eth = new MockERC20();
     usdc = new MockERC20();
@@ -270,7 +270,8 @@ abstract contract Base is Test {
       liquidationBonus: 0,
       liquidityPremium: 15_00,
       borrowable: true,
-      collateral: true
+      collateral: true,
+      oracle: oracle
     });
     DataTypes.ReserveConfig memory wbtcConfig = DataTypes.ReserveConfig({
       decimals: 8,
@@ -281,7 +282,8 @@ abstract contract Base is Test {
       liquidationBonus: 0,
       liquidityPremium: 5_00,
       borrowable: true,
-      collateral: true
+      collateral: true,
+      oracle: oracle
     });
     DataTypes.ReserveConfig memory daiConfig = DataTypes.ReserveConfig({
       decimals: 18,
@@ -292,7 +294,8 @@ abstract contract Base is Test {
       liquidationBonus: 0,
       liquidityPremium: 20_00,
       borrowable: true,
-      collateral: true
+      collateral: true,
+      oracle: oracle
     });
     DataTypes.ReserveConfig memory usdxConfig = DataTypes.ReserveConfig({
       decimals: 6,
@@ -303,7 +306,8 @@ abstract contract Base is Test {
       liquidationBonus: 0,
       liquidityPremium: 50_00,
       borrowable: true,
-      collateral: true
+      collateral: true,
+      oracle: oracle
     });
 
     spokeInfo[spoke1].weth.reserveId = spoke1.addReserve(wethAssetId, wethConfig);
@@ -330,7 +334,8 @@ abstract contract Base is Test {
       liquidationBonus: 0,
       liquidityPremium: 0,
       borrowable: true,
-      collateral: true
+      collateral: true,
+      oracle: oracle
     });
     wethConfig = DataTypes.ReserveConfig({
       decimals: 18,
@@ -341,7 +346,8 @@ abstract contract Base is Test {
       liquidationBonus: 0,
       liquidityPremium: 10_00,
       borrowable: true,
-      collateral: true
+      collateral: true,
+      oracle: oracle
     });
     daiConfig = DataTypes.ReserveConfig({
       decimals: 18,
@@ -352,7 +358,8 @@ abstract contract Base is Test {
       liquidationBonus: 0,
       liquidityPremium: 20_00,
       borrowable: true,
-      collateral: true
+      collateral: true,
+      oracle: oracle
     });
     usdxConfig = DataTypes.ReserveConfig({
       decimals: 6,
@@ -363,7 +370,8 @@ abstract contract Base is Test {
       liquidationBonus: 0,
       liquidityPremium: 50_00,
       borrowable: true,
-      collateral: true
+      collateral: true,
+      oracle: oracle
     });
 
     spokeInfo[spoke2].wbtc.reserveId = spoke2.addReserve(wbtcAssetId, wbtcConfig);
@@ -390,7 +398,8 @@ abstract contract Base is Test {
       liquidationBonus: 0,
       liquidityPremium: 0,
       borrowable: true,
-      collateral: true
+      collateral: true,
+      oracle: oracle
     });
     usdxConfig = DataTypes.ReserveConfig({
       decimals: 6,
@@ -401,7 +410,8 @@ abstract contract Base is Test {
       liquidationBonus: 0,
       liquidityPremium: 10_00,
       borrowable: true,
-      collateral: true
+      collateral: true,
+      oracle: oracle
     });
     wethConfig = DataTypes.ReserveConfig({
       decimals: 18,
@@ -412,7 +422,8 @@ abstract contract Base is Test {
       liquidationBonus: 0,
       liquidityPremium: 20_00,
       borrowable: true,
-      collateral: true
+      collateral: true,
+      oracle: oracle
     });
     wbtcConfig = DataTypes.ReserveConfig({
       decimals: 8,
@@ -423,7 +434,8 @@ abstract contract Base is Test {
       liquidationBonus: 0,
       liquidityPremium: 50_00,
       borrowable: true,
-      collateral: true
+      collateral: true,
+      oracle: oracle
     });
 
     spokeInfo[spoke3].dai.reserveId = spoke3.addReserve(daiAssetId, daiConfig);
@@ -461,7 +473,8 @@ abstract contract Base is Test {
       liquidationBonus: 0,
       liquidityPremium: 100_00,
       borrowable: true,
-      collateral: true
+      collateral: true,
+      oracle: oracle
     });
     spokeInfo[spoke2].dai2.reserveId = spoke2.addReserve(dai2AssetId, daiConfig);
     spokeInfo[spoke2].dai2.liquidityPremium = daiConfig.liquidityPremium;

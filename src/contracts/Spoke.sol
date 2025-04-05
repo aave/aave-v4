@@ -16,7 +16,6 @@ contract Spoke is ISpoke {
 
   // todo capitalize, oracle should be mutable?
   ILiquidityHub public immutable hub;
-  IPriceOracle public oracle;
 
   mapping(address user => mapping(uint256 reserveId => DataTypes.UserPosition position))
     internal _userPositions;
@@ -27,13 +26,11 @@ contract Spoke is ISpoke {
   uint256 public constant HEALTH_FACTOR_LIQUIDATION_THRESHOLD = WadRayMath.WAD; // todo configurable
   uint256 public closeFactor;
 
-  constructor(address hubAddress, address oracleAddress, uint256 closeFactorValue) {
+  constructor(address hubAddress, uint256 closeFactorValue) {
     require(hubAddress != address(0), InvalidHubAddress());
-    require(oracleAddress != address(0), InvalidOracleAddress());
     _validateCloseFactor(closeFactorValue);
 
     hub = ILiquidityHub(hubAddress);
-    oracle = IPriceOracle(oracleAddress);
     closeFactor = closeFactorValue;
   }
 
@@ -41,19 +38,11 @@ contract Spoke is ISpoke {
   // Governance
   // /////
 
-  function updateOracle(address oracleAddress) public {
-    // TODO: AccessControl
-    require(oracleAddress != address(0), InvalidOracleAddress());
-    oracle = IPriceOracle(oracleAddress);
-
-    emit OracleUpdated(oracleAddress);
-  }
-
   function updateCloseFactor(uint256 newCloseFactor) public {
     // TODO: AccessControl
     _validateCloseFactor(newCloseFactor);
     closeFactor = newCloseFactor;
-    emit closeFactorUpdated(newCloseFactor);
+    emit CloseFactorUpdated(newCloseFactor);
   }
 
   // function getLiquidationBonus(uint256 reserveId, uint256 healthFactor) public view returns (uint256) {
@@ -91,7 +80,8 @@ contract Spoke is ISpoke {
         liquidationBonus: config.liquidationBonus,
         liquidityPremium: config.liquidityPremium,
         borrowable: config.borrowable,
-        collateral: config.collateral
+        collateral: config.collateral,
+        oracle: config.oracle
       })
     });
 
@@ -108,6 +98,7 @@ contract Spoke is ISpoke {
     _validateReserveConfig(config);
     DataTypes.Reserve storage reserve = _reserves[reserveId];
     require(reserve.asset != address(0), InvalidReserve());
+    require(address(config.oracle) != address(0), InvalidOracleAddress());
     // TODO: AccessControl
     reserve.config = DataTypes.ReserveConfig({
       decimals: reserve.config.decimals, // decimals remains existing value
@@ -118,7 +109,8 @@ contract Spoke is ISpoke {
       liquidationBonus: config.liquidationBonus,
       liquidityPremium: config.liquidityPremium,
       borrowable: config.borrowable,
-      collateral: config.collateral
+      collateral: config.collateral,
+      oracle: config.oracle
     });
 
     emit ReserveConfigUpdated(reserveId, config);
@@ -362,7 +354,7 @@ contract Spoke is ISpoke {
     return healthFactor;
   }
   function getReservePrice(uint256 reserveId) public view returns (uint256) {
-    return oracle.getAssetPrice(_reserves[reserveId].assetId);
+    return _reserves[reserveId].config.oracle.getAssetPrice(_reserves[reserveId].assetId);
   }
 
   function getLiquidityPremium(uint256 reserveId) public view returns (uint256) {
@@ -537,9 +529,10 @@ contract Spoke is ISpoke {
         }
         continue;
       }
-      vars.assetId = _reserves[vars.reserveId].assetId;
+      DataTypes.Reserve memory reserve = _reserves[vars.reserveId];
+      vars.assetId = reserve.assetId;
 
-      vars.assetPrice = oracle.getAssetPrice(vars.assetId);
+      vars.assetPrice = reserve.config.oracle.getAssetPrice(vars.assetId);
       unchecked {
         vars.assetUnit = 10 ** hub.getAssetConfig(vars.assetId).decimals;
       }
@@ -575,7 +568,7 @@ contract Spoke is ISpoke {
       if (_usingAsCollateral(userPosition)) {
         vars.assetId = reserve.assetId;
         vars.liquidityPremium = reserve.config.liquidityPremium;
-        vars.assetPrice = oracle.getAssetPrice(vars.assetId);
+        vars.assetPrice = reserve.config.oracle.getAssetPrice(vars.assetId);
         unchecked {
           vars.assetUnit = 10 ** hub.getAssetConfig(vars.assetId).decimals;
         }
@@ -747,6 +740,7 @@ contract Spoke is ISpoke {
       InvalidLiquidityPremium()
     ); // max 1000.00%
     require(config.decimals <= hub.MAX_ALLOWED_ASSET_DECIMALS(), InvalidReserveDecimals());
+    require(address(config.oracle) != address(0), InvalidOracleAddress());
   }
 
   // handles underflow

@@ -34,6 +34,8 @@ interface ISpoke {
     int256 premiumOffsetDelta,
     int256 realizedPremiumDelta
   );
+  event OracleUpdated(uint256 indexed reserveId, address oracle);
+  event CloseFactorUpdated(uint256 closeFactor);
 
   error InvalidReserve();
   error ReserveNotListed();
@@ -49,6 +51,9 @@ interface ISpoke {
   error InvalidLiquidationBonus();
   error InvalidReserveDecimals();
   error HealthFactorBelowThreshold();
+  error InvalidCloseFactor();
+  error InvalidOracleAddress();
+  error InvalidHubAddress();
 
   function addReserve(
     uint256 assetId,

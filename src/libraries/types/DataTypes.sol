@@ -2,7 +2,7 @@
 pragma solidity ^0.8.10;
 
 import {IReserveInterestRateStrategy} from 'src/interfaces/IReserveInterestRateStrategy.sol';
-
+import {IPriceOracle} from 'src/interfaces/IPriceOracle.sol';
 library DataTypes {
   // Liquidity Hub types
   // todo pack
@@ -76,6 +76,7 @@ library DataTypes {
     uint256 collateralFactor; // BPS
     uint256 liquidationBonus; // TODO: liquidationProtocolFee
     uint256 liquidityPremium; // BPS
+    IPriceOracle oracle;
   }
 
   struct UserPosition {

@@ -20,7 +20,8 @@ contract SpokeConfigTest is SpokeBase {
       liquidationBonus: reserveData.config.liquidationBonus + 1,
       liquidityPremium: reserveData.config.liquidityPremium + 1,
       borrowable: !reserveData.config.borrowable,
-      collateral: !reserveData.config.collateral
+      collateral: !reserveData.config.collateral,
+      oracle: IPriceOracle(makeAddr('newOracle'))
     });
     vm.expectEmit(address(spoke1));
     emit ISpoke.ReserveConfigUpdated(daiReserveId, newReserveConfig);
@@ -46,6 +47,57 @@ contract SpokeConfigTest is SpokeBase {
     );
     assertEq(reserveData.config.borrowable, newReserveConfig.borrowable, 'wrong borrowable');
     assertEq(reserveData.config.collateral, newReserveConfig.collateral, 'wrong collateral');
+    assertEq(address(reserveData.config.oracle), address(newReserveConfig.oracle), 'wrong oracle');
+  }
+
+  function test_updateReserveConfig_fuzz(DataTypes.ReserveConfig memory newReserveConfig) public {
+    newReserveConfig.collateralFactor = bound(
+      newReserveConfig.collateralFactor,
+      0,
+      PercentageMath.PERCENTAGE_FACTOR
+    );
+    newReserveConfig.liquidationBonus = bound(
+      newReserveConfig.liquidationBonus,
+      0,
+      PercentageMath.PERCENTAGE_FACTOR
+    );
+    newReserveConfig.liquidityPremium = bound(
+      newReserveConfig.liquidityPremium,
+      0,
+      PercentageMath.PERCENTAGE_FACTOR * 10
+    );
+    vm.assume(address(newReserveConfig.oracle) != address(0));
+
+    uint256 daiReserveId = _daiReserveId(spoke1);
+    DataTypes.Reserve memory reserveData = spoke1.getReserve(daiReserveId);
+
+    newReserveConfig.decimals = reserveData.config.decimals; // decimals won't get updated
+
+    vm.expectEmit(address(spoke1));
+    emit ISpoke.ReserveConfigUpdated(daiReserveId, newReserveConfig);
+    vm.prank(SPOKE_ADMIN);
+    spoke1.updateReserveConfig(daiReserveId, newReserveConfig);
+
+    reserveData = spoke1.getReserve(daiReserveId);
+
+    assertEq(
+      reserveData.config.collateralFactor,
+      newReserveConfig.collateralFactor,
+      'wrong collateralFactor'
+    );
+    assertEq(
+      reserveData.config.liquidationBonus,
+      newReserveConfig.liquidationBonus,
+      'wrong liquidationBonus'
+    );
+    assertEq(
+      reserveData.config.liquidityPremium,
+      newReserveConfig.liquidityPremium,
+      'wrong liquidityPremium'
+    );
+    assertEq(reserveData.config.borrowable, newReserveConfig.borrowable, 'wrong borrowable');
+    assertEq(reserveData.config.collateral, newReserveConfig.collateral, 'wrong collateral');
+    assertEq(address(reserveData.config.oracle), address(newReserveConfig.oracle), 'wrong oracle');
   }
 
   function test_updateReserveConfig_cannot_update_decimals() public {
@@ -188,7 +240,8 @@ contract SpokeConfigTest is SpokeBase {
       liquidationBonus: 10_00,
       liquidityPremium: 10_00,
       borrowable: true,
-      collateral: true
+      collateral: true,
+      oracle: oracle
     });
 
     vm.expectEmit(address(spoke1));
@@ -226,7 +279,8 @@ contract SpokeConfigTest is SpokeBase {
       liquidationBonus: 10_00,
       liquidityPremium: 10_00,
       borrowable: true,
-      collateral: true
+      collateral: true,
+      oracle: oracle
     });
 
     vm.expectRevert(); // error from LH in reading invalid index from assetList array
@@ -245,7 +299,8 @@ contract SpokeConfigTest is SpokeBase {
       liquidationBonus: 10_00,
       liquidityPremium: 10_00,
       borrowable: true,
-      collateral: true
+      collateral: true,
+      oracle: oracle
     });
 
     vm.expectRevert(ISpoke.InvalidReserveDecimals.selector);
