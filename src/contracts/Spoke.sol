@@ -17,7 +17,7 @@ contract Spoke is ISpoke {
   using WadRayMath for uint256;
   using PercentageMath for uint256;
   using KeyValueListInMemory for KeyValueListInMemory.List;
-  using LiquidationLogic for uint256;
+  using LiquidationLogic for DataTypes.VariableLiquidationBonusConfig;
 
   uint256 public constant HEALTH_FACTOR_LIQUIDATION_THRESHOLD = WadRayMath.WAD; // todo configurable
   ILiquidityHub public immutable hub;
@@ -370,8 +370,8 @@ contract Spoke is ISpoke {
       return liquidationBonus;
     }
     return
-      healthFactor.calculateVariableLiquidationBonus(
-        _variableLiquidationBonusConfig,
+      _variableLiquidationBonusConfig.calculateVariableLiquidationBonus(
+        healthFactor,
         HEALTH_FACTOR_LIQUIDATION_THRESHOLD,
         liquidationBonus
       );

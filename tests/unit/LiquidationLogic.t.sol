@@ -12,6 +12,8 @@ import {Base} from 'tests/Base.t.sol';
 contract LiquidationLogicTest is Base {
   using PercentageMath for uint256;
 
+  DataTypes.VariableLiquidationBonusConfig internal _config;
+
   /// when < healthFactorBonusThreshold, return liquidationBonus
   function testCalculateVariableLiquidationBonus_lt_bonusThreshold() public {
     uint256 healthFactor = 0.8e18;
@@ -19,15 +21,14 @@ contract LiquidationLogicTest is Base {
     uint256 liquidationBonus = 20_00; // 20%
     uint256 liquidationBonusFactor = 40_00; // 40%
 
-    DataTypes.VariableLiquidationBonusConfig memory config = DataTypes
-      .VariableLiquidationBonusConfig({
-        healthFactorBonusThreshold: 0.9e18,
-        liquidationBonusFactor: liquidationBonusFactor
-      });
+    _config = DataTypes.VariableLiquidationBonusConfig({
+      healthFactorBonusThreshold: 0.9e18,
+      liquidationBonusFactor: liquidationBonusFactor
+    });
 
     uint256 result = LiquidationLogic.calculateVariableLiquidationBonus(
+      _config,
       healthFactor,
-      config,
       healthFactorLiquidationThreshold,
       liquidationBonus
     );
@@ -44,15 +45,14 @@ contract LiquidationLogicTest is Base {
     uint256 liquidationBonus = 20_00; // 20%
     uint256 liquidationBonusFactor = 40_00; // 40%
 
-    DataTypes.VariableLiquidationBonusConfig memory config = DataTypes
-      .VariableLiquidationBonusConfig({
-        healthFactorBonusThreshold: healthFactorBonusThreshold,
-        liquidationBonusFactor: liquidationBonusFactor
-      });
+    _config = DataTypes.VariableLiquidationBonusConfig({
+      healthFactorBonusThreshold: healthFactorBonusThreshold,
+      liquidationBonusFactor: liquidationBonusFactor
+    });
 
     uint256 result = LiquidationLogic.calculateVariableLiquidationBonus(
+      _config,
       healthFactor,
-      config,
       healthFactorLiquidationThreshold,
       liquidationBonus
     );
@@ -79,15 +79,14 @@ contract LiquidationLogicTest is Base {
     );
     healthFactor = bound(healthFactor, 0, healthFactorBonusThreshold - 1);
 
-    DataTypes.VariableLiquidationBonusConfig memory config = DataTypes
-      .VariableLiquidationBonusConfig({
-        healthFactorBonusThreshold: healthFactorBonusThreshold,
-        liquidationBonusFactor: liquidationBonusFactor
-      });
+    _config = DataTypes.VariableLiquidationBonusConfig({
+      healthFactorBonusThreshold: healthFactorBonusThreshold,
+      liquidationBonusFactor: liquidationBonusFactor
+    });
 
     uint256 result = LiquidationLogic.calculateVariableLiquidationBonus(
+      _config,
       healthFactor,
-      config,
       healthFactorLiquidationThreshold,
       liquidationBonus
     );
@@ -103,15 +102,14 @@ contract LiquidationLogicTest is Base {
     uint256 liquidationBonus = 20_00; // 20%
     uint256 liquidationBonusFactor = 40_00; // 40%
 
-    DataTypes.VariableLiquidationBonusConfig memory config = DataTypes
-      .VariableLiquidationBonusConfig({
-        healthFactorBonusThreshold: 0.9e18,
-        liquidationBonusFactor: liquidationBonusFactor
-      });
+    _config = DataTypes.VariableLiquidationBonusConfig({
+      healthFactorBonusThreshold: 0.9e18,
+      liquidationBonusFactor: liquidationBonusFactor
+    });
 
     uint256 result = LiquidationLogic.calculateVariableLiquidationBonus(
+      _config,
       healthFactor,
-      config,
       healthFactorLiquidationThreshold,
       liquidationBonus
     );
@@ -143,15 +141,14 @@ contract LiquidationLogicTest is Base {
     );
     vm.assume(healthFactor > healthFactorLiquidationThreshold);
 
-    DataTypes.VariableLiquidationBonusConfig memory config = DataTypes
-      .VariableLiquidationBonusConfig({
-        healthFactorBonusThreshold: healthFactorBonusThreshold,
-        liquidationBonusFactor: liquidationBonusFactor
-      });
+    _config = DataTypes.VariableLiquidationBonusConfig({
+      healthFactorBonusThreshold: healthFactorBonusThreshold,
+      liquidationBonusFactor: liquidationBonusFactor
+    });
 
     uint256 result = LiquidationLogic.calculateVariableLiquidationBonus(
+      _config,
       healthFactor,
-      config,
       healthFactorLiquidationThreshold,
       liquidationBonus
     );
@@ -172,15 +169,14 @@ contract LiquidationLogicTest is Base {
     uint256 liquidationBonusFactor = 40_00; // 40%
     uint256 healthFactorBonusThreshold = 0.9e18;
 
-    DataTypes.VariableLiquidationBonusConfig memory config = DataTypes
-      .VariableLiquidationBonusConfig({
-        healthFactorBonusThreshold: healthFactorBonusThreshold,
-        liquidationBonusFactor: liquidationBonusFactor
-      });
+    _config = DataTypes.VariableLiquidationBonusConfig({
+      healthFactorBonusThreshold: healthFactorBonusThreshold,
+      liquidationBonusFactor: liquidationBonusFactor
+    });
 
     uint256 result = LiquidationLogic.calculateVariableLiquidationBonus(
+      _config,
       healthFactor,
-      config,
       healthFactorLiquidationThreshold,
       liquidationBonus
     );
@@ -189,7 +185,7 @@ contract LiquidationLogicTest is Base {
       result,
       _calculateVariableLiquidationBonus(
         healthFactor,
-        config.healthFactorBonusThreshold,
+        _config.healthFactorBonusThreshold,
         liquidationBonusFactor,
         healthFactorLiquidationThreshold,
         liquidationBonus
@@ -244,15 +240,14 @@ contract LiquidationLogicTest is Base {
       healthFactorLiquidationThreshold
     );
 
-    DataTypes.VariableLiquidationBonusConfig memory config = DataTypes
-      .VariableLiquidationBonusConfig({
-        healthFactorBonusThreshold: healthFactorBonusThreshold,
-        liquidationBonusFactor: liquidationBonusFactor
-      });
+    _config = DataTypes.VariableLiquidationBonusConfig({
+      healthFactorBonusThreshold: healthFactorBonusThreshold,
+      liquidationBonusFactor: liquidationBonusFactor
+    });
 
     uint256 result = LiquidationLogic.calculateVariableLiquidationBonus(
+      _config,
       healthFactor,
-      config,
       healthFactorLiquidationThreshold,
       liquidationBonus
     );
@@ -261,7 +256,7 @@ contract LiquidationLogicTest is Base {
       result,
       _calculateVariableLiquidationBonus(
         healthFactor,
-        config.healthFactorBonusThreshold,
+        _config.healthFactorBonusThreshold,
         liquidationBonusFactor,
         healthFactorLiquidationThreshold,
         liquidationBonus

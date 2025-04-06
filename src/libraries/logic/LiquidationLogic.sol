@@ -9,20 +9,23 @@ library LiquidationLogic {
   using PercentageMath for uint256;
 
   function calculateVariableLiquidationBonus(
+    DataTypes.VariableLiquidationBonusConfig storage config,
     uint256 healthFactor,
-    DataTypes.VariableLiquidationBonusConfig memory config,
     uint256 healthFactorLiquidationThreshold,
     uint256 liquidationBonus
-  ) internal pure returns (uint256) {
+  ) internal view returns (uint256) {
+    // if HF < healthFactorBonusThreshold, liquidation bonus is max
     if (healthFactor < config.healthFactorBonusThreshold) {
       return liquidationBonus;
     }
     uint256 minLiquidationBonus = liquidationBonus.percentMul(config.liquidationBonusFactor);
 
+    // if HF > healthFactorLiquidationThreshold, liquidation bonus is min
     if (healthFactor >= healthFactorLiquidationThreshold) {
       return minLiquidationBonus;
     }
 
+    // otherwise, linearly interpolate between min and max
     return
       minLiquidationBonus +
       ((liquidationBonus - minLiquidationBonus) *
