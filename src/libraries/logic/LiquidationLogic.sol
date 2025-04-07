@@ -32,4 +32,6 @@ library LiquidationLogic {
         (healthFactorLiquidationThreshold - healthFactor)) /
       (healthFactorLiquidationThreshold - config.healthFactorBonusThreshold);
   }
+
+  function executeLiquidationCall() internal {}
 }

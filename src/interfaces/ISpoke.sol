@@ -56,6 +56,9 @@ interface ISpoke {
   error InvalidHubAddress();
   error InvalidHealthFactorBonusThreshold();
   error InvalidLiquidationBonusFactor();
+  error HealthFactorNotBelowThreshold();
+  error CollateralCannotBeLiquidated();
+  error SpecifiedCurrencyNotBorrowedByUser();
 
   function addReserve(
     uint256 assetId,
@@ -95,6 +98,13 @@ interface ISpoke {
    * @param amount The amount to repay.
    */
   function repay(uint256 reserveId, uint256 amount) external;
+
+  function liquidationCall(
+    uint256 collateralReserveId,
+    uint256 debtReserveId,
+    address user,
+    uint256 debtToCover
+  ) external;
 
   function setUsingAsCollateral(uint256 reserveId, bool usingAsCollateral) external;
 

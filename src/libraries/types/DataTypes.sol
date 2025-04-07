@@ -117,4 +117,16 @@ library DataTypes {
     uint256 healthFactorBonusThreshold; // health factor under which liquidation bonus is max
     uint256 liquidationBonusFactor; // BPS
   }
+
+  struct LiquidationCallLocalVars {
+    uint256 actualCollateralToLiquidate;
+    uint256 actualDebtToLiquidate;
+    uint256 liquidationProtocolFeeAmount;
+    uint256 userCollateralBalance;
+    uint256 healthFactor;
+    uint256 totalCollateralInBaseCurrency;
+    uint256 totalDebtInBaseCurrency;
+    uint256 avgLiquidationThreshold;
+    uint256 debtAssetPrice;
+  }
 }

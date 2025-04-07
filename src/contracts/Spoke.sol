@@ -265,6 +265,97 @@ contract Spoke is ISpoke {
     emit Repay(reserveId, msg.sender, restoredShares);
   }
 
+  function liquidationCall(
+    uint256 collateralReserveId,
+    uint256 debtReserveId,
+    address user,
+    uint256 debtToCover
+  ) external {
+    DataTypes.LiquidationCallLocalVars memory vars;
+
+    DataTypes.UserPosition storage userPosition = _userPositions[msg.sender][debtReserveId];
+
+    DataTypes.Reserve storage collateralReserve = _reserves[collateralReserveId];
+    DataTypes.Reserve storage debtReserve = _reserves[debtReserveId];
+
+    // (uint256 baseDebt, uint256 premiumDebt) = _getUserDebt(userPosition, reserve.assetId);
+    // require(debtToCover > 0, 'INVALID_DEBT_TO_COVER');
+
+    (
+      ,
+      vars.avgLiquidationThreshold,
+      vars.healthFactor,
+      vars.totalCollateralInBaseCurrency,
+      vars.totalDebtInBaseCurrency
+    ) = _calculateUserAccountData(user);
+
+    _validateLiquidationCall(collateralReserve, debtReserve, user, vars.healthFactor);
+
+    // vars.debtAssetPrice = IPriceOracle(oracle).getAssetPrice(debtAssetId);
+    // vars.actualDebtToLiquidate = _calculateActualDebtToLiquidate(
+    //   collateralReserve,
+    //   debtToCover,
+    //   user,
+    //   debtAssetId,
+    //   vars.totalCollateralInBaseCurrency,
+    //   vars.totalDebtInBaseCurrency,
+    //   vars.avgLiquidationThreshold,
+    //   vars.debtAssetPrice
+    // );
+
+    // vars.userCollateralBalance = getUserSupplyInAssets(collateralAssetId, user);
+
+    // (
+    //   vars.actualCollateralToLiquidate,
+    //   vars.actualDebtToLiquidate,
+    //   vars.liquidationProtocolFeeAmount
+    // ) = _calculateAvailableCollateralToLiquidate(
+    //   collateralReserve,
+    //   debtReserve,
+    //   vars.actualDebtToLiquidate,
+    //   vars.userCollateralBalance,
+    //   vars.debtAssetPrice
+    // );
+
+    // if (
+    //   vars.actualCollateralToLiquidate + vars.liquidationProtocolFeeAmount ==
+    //   vars.userCollateralBalance
+    // ) {
+    //   _setUsingAsCollateral(user, collateralReserve.id, false);
+    // }
+
+    // (, uint256 newAggregatedRiskPremium) = _refreshRiskPremium();
+
+    // // accounting
+    // users[collateralAssetId][user].supplyShares -= userCollateralShares;
+    // users[debtAssetId][user].debtShares -= userDebtShares;
+
+    // TODO: risk premium needs to be updated again bc collateral/debt has been updated?
+
+    // // repay debt
+    // uint256 userDebtShares = ILiquidityHub(liquidityHub).restore(
+    //   debtAssetId,
+    //   vars.actualDebtToLiquidate,
+    //   newAggregatedRiskPremium
+    // );
+    // // liquidate collateral
+    // uint256 userCollateralShares = ILiquidityHub(liquidityHub).withdraw(
+    //   collateralAssetId,
+    //   address(this),
+    //   vars.actualCollateralToLiquidate + vars.liquidationProtocolFeeAmount,
+    //   newAggregatedRiskPremium
+    // );
+
+    // emit LiquidationCall(
+    //   collateralAssetId,
+    //   debtAssetId,
+    //   user,
+    //   vars.actualDebtToLiquidate,
+    //   vars.actualCollateralToLiquidate,
+    //   msg.sender
+    // );
+  }
+
   function setUsingAsCollateral(uint256 reserveId, bool usingAsCollateral) external {
     DataTypes.Reserve storage reserve = _reserves[reserveId];
     DataTypes.UserPosition storage userPosition = _userPositions[msg.sender][reserveId];
@@ -285,7 +376,7 @@ contract Spoke is ISpoke {
     return _getUserDebt(_userPositions[user][reserveId], _reserves[reserveId].assetId);
   }
 
-  function getUserTotalDebt(uint256 reserveId, address user) external view returns (uint256) {
+  function getUserTotalDebt(uint256 reserveId, address user) public view returns (uint256) {
     (uint256 baseDebt, uint256 premiumDebt) = _getUserDebt(
       _userPositions[user][reserveId],
       _reserves[reserveId].assetId
@@ -448,6 +539,86 @@ contract Spoke is ISpoke {
     // todo validate user not trying to repay more
   }
 
+  function _validateSetUsingAsCollateral(
+    DataTypes.Reserve storage reserve,
+    DataTypes.UserPosition storage userPosition,
+    bool usingAsCollateral
+  ) internal view {
+    require(reserve.config.active, ReserveNotActive());
+    require(!reserve.config.paused, ReservePaused());
+    require(reserve.config.collateral, ReserveCannotBeUsedAsCollateral(reserve.reserveId));
+    // deactivation should be allowed
+    require(!usingAsCollateral || !reserve.config.frozen, ReserveFrozen());
+  }
+
+  function _validateUserPosition(address userAddress) internal view returns (uint256) {
+    (uint256 userRiskPremium, , uint256 healthFactor, , ) = _calculateUserAccountData(userAddress);
+    require(healthFactor >= HEALTH_FACTOR_LIQUIDATION_THRESHOLD, HealthFactorBelowThreshold());
+    return userRiskPremium;
+  }
+
+  function _validateReserveConfig(DataTypes.ReserveConfig calldata config) internal view {
+    require(config.collateralFactor <= PercentageMath.PERCENTAGE_FACTOR, InvalidCollateralFactor()); // max 100.00%
+    require(config.liquidationBonus <= PercentageMath.PERCENTAGE_FACTOR, InvalidLiquidationBonus()); // max 100.00%
+    require(
+      config.liquidityPremium <= PercentageMath.PERCENTAGE_FACTOR * 10,
+      InvalidLiquidityPremium()
+    ); // max 1000.00%
+    require(config.decimals <= HUB.MAX_ALLOWED_ASSET_DECIMALS(), InvalidReserveDecimals());
+    require(address(config.oracle) != address(0), InvalidOracle());
+  }
+
+  function _validateLiquidationConfig(DataTypes.LiquidationConfig calldata config) internal view {
+    _validateCloseFactor(config.closeFactor);
+    _validateVariableLiquidationBonusConfig(config.variableLiquidationBonusConfig);
+  }
+
+  function _validateCloseFactor(uint256 closeFactor) internal view {
+    require(closeFactor >= HEALTH_FACTOR_LIQUIDATION_THRESHOLD, InvalidCloseFactor());
+  }
+
+  function _validateVariableLiquidationBonusConfig(
+    DataTypes.VariableLiquidationBonusConfig calldata config
+  ) internal view {
+    // if liquidationBonusFactor == 0, then variable liquidation bonus will not be applied
+    require(
+      config.liquidationBonusFactor <= PercentageMath.PERCENTAGE_FACTOR,
+      InvalidLiquidationBonusFactor()
+    );
+    // if healthFactorBonusThreshold == HEALTH_FACTOR_LIQUIDATION_THRESHOLD, then calculateVariableLiquidationBonus will be undefined
+    require(
+      config.healthFactorBonusThreshold < HEALTH_FACTOR_LIQUIDATION_THRESHOLD,
+      InvalidHealthFactorBonusThreshold()
+    );
+  }
+
+  function _validateLiquidationCall(
+    DataTypes.Reserve storage collateralReserve,
+    DataTypes.Reserve storage debtReserve,
+    address user,
+    uint256 healthFactor
+  ) internal view {
+    // reserve validation
+    require(collateralReserve.config.active && debtReserve.config.active, ReserveNotActive());
+    require(!collateralReserve.config.paused && !debtReserve.config.paused, ReservePaused());
+
+    // bool isCollateralEnabled = _usingAsCollateral(collateralReserveId, user) &&
+    //   getCollateralFactor(collateralReserveId) != 0;
+    // require(healthFactor < HEALTH_FACTOR_LIQUIDATION_THRESHOLD, HealthFactorNotBelowThreshold());
+    // require(isCollateralEnabled, CollateralCannotBeLiquidated());
+    // require(getUserTotalDebt(debtReserveId, user) > 0, SpecifiedCurrencyNotBorrowedByUser());
+  }
+
+  //   Asset Active (general on/off switch, enforce 0 suppliers when turning off)
+
+  // no liquidations possible
+  // Asset Paused (if paused, no more actions, meant to be temporary)
+
+  // no liquidations possible
+  // Asset Freeze (if frozen, no more supply or borrow)
+
+  // liq possible
+
   function _calculateRestoreAmount(
     uint256 baseDebt,
     uint256 premiumDebt,
@@ -486,18 +657,6 @@ contract Spoke is ISpoke {
       premiumOffsetDelta,
       realizedPremiumDelta
     );
-  }
-
-  function _validateSetUsingAsCollateral(
-    DataTypes.Reserve storage reserve,
-    DataTypes.UserPosition storage userPosition,
-    bool usingAsCollateral
-  ) internal view {
-    require(reserve.config.active, ReserveNotActive());
-    require(!reserve.config.paused, ReservePaused());
-    require(reserve.config.collateral, ReserveCannotBeUsedAsCollateral(reserve.reserveId));
-    // deactivation should be allowed
-    require(!usingAsCollateral || !reserve.config.frozen, ReserveFrozen());
   }
 
   function _usingAsCollateral(
@@ -735,23 +894,6 @@ contract Spoke is ISpoke {
     }
   }
 
-  function _validateUserPosition(address userAddress) internal view returns (uint256) {
-    (uint256 userRiskPremium, , uint256 healthFactor, , ) = _calculateUserAccountData(userAddress);
-    require(healthFactor >= HEALTH_FACTOR_LIQUIDATION_THRESHOLD, HealthFactorBelowThreshold());
-    return userRiskPremium;
-  }
-
-  function _validateReserveConfig(DataTypes.ReserveConfig calldata config) internal view {
-    require(config.collateralFactor <= PercentageMath.PERCENTAGE_FACTOR, InvalidCollateralFactor()); // max 100.00%
-    require(config.liquidationBonus <= PercentageMath.PERCENTAGE_FACTOR, InvalidLiquidationBonus()); // max 100.00%
-    require(
-      config.liquidityPremium <= PercentageMath.PERCENTAGE_FACTOR * 10,
-      InvalidLiquidityPremium()
-    ); // max 1000.00%
-    require(config.decimals <= HUB.MAX_ALLOWED_ASSET_DECIMALS(), InvalidReserveDecimals());
-    require(address(config.oracle) != address(0), InvalidOracle());
-  }
-
   // handles underflow
   function _add(uint256 a, int256 b) internal pure returns (uint256) {
     if (b >= 0) return a + uint256(b);
@@ -761,29 +903,5 @@ contract Spoke is ISpoke {
   // todo move to MathUtils
   function _signedDiff(uint256 a, uint256 b) internal pure returns (int256) {
     return int256(a) - int256(b); // todo use safeCast when amounts packed to uint112/uint128
-  }
-
-  function _validateLiquidationConfig(DataTypes.LiquidationConfig calldata config) internal view {
-    _validateCloseFactor(config.closeFactor);
-    _validateVariableLiquidationBonusConfig(config.variableLiquidationBonusConfig);
-  }
-
-  function _validateCloseFactor(uint256 closeFactor) internal view {
-    require(closeFactor >= HEALTH_FACTOR_LIQUIDATION_THRESHOLD, InvalidCloseFactor());
-  }
-
-  function _validateVariableLiquidationBonusConfig(
-    DataTypes.VariableLiquidationBonusConfig calldata config
-  ) internal view {
-    // if liquidationBonusFactor == 0, then variable liquidation bonus will not be applied
-    require(
-      config.liquidationBonusFactor <= PercentageMath.PERCENTAGE_FACTOR,
-      InvalidLiquidationBonusFactor()
-    );
-    // if healthFactorBonusThreshold == HEALTH_FACTOR_LIQUIDATION_THRESHOLD, then calculateVariableLiquidationBonus will be undefined
-    require(
-      config.healthFactorBonusThreshold < HEALTH_FACTOR_LIQUIDATION_THRESHOLD,
-      InvalidHealthFactorBonusThreshold()
-    );
   }
 }
