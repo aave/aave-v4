@@ -9,13 +9,13 @@ contract SpokeConfigTest is SpokeBase {
 
   function test_spoke_deploy_revertsWith_InvalidHubAddress() public {
     vm.expectRevert(ISpoke.InvalidHubAddress.selector);
-    ISpoke(new Spoke(address(0), HEALTH_FACTOR_LIQUIDATION_THRESHOLD));
+    new Spoke(address(0), HEALTH_FACTOR_LIQUIDATION_THRESHOLD);
   }
 
   function test_spoke_deploy_revertsWith_InvalidCloseFactor() public {
     uint256 invalidCloseFactor = HEALTH_FACTOR_LIQUIDATION_THRESHOLD - 1;
     vm.expectRevert(ISpoke.InvalidCloseFactor.selector);
-    ISpoke(new Spoke(address(hub), invalidCloseFactor));
+    new Spoke(address(hub), invalidCloseFactor);
   }
 
   function test_updateReserveConfig() public {
@@ -462,170 +462,144 @@ contract SpokeConfigTest is SpokeBase {
     spoke1.addReserve(reserveId, newReserveConfig);
   }
 
-  function test_updateCloseFactor() public {
+  function test_updateLiquidationConfig_closeFactor() public {
     uint256 newCloseFactor = HEALTH_FACTOR_LIQUIDATION_THRESHOLD + 1;
-    vm.expectEmit(address(spoke1));
-    emit ISpoke.CloseFactorUpdated(newCloseFactor);
-    vm.prank(SPOKE_ADMIN);
-    spoke1.updateCloseFactor(newCloseFactor);
 
-    assertEq(spoke1.closeFactor(), newCloseFactor, 'wrong close factor');
+    test_updateLiquidationConfig_fuzz_closeFactor(newCloseFactor);
   }
 
-  function test_updateCloseFactor_fuzz(uint256 newCloseFactor) public {
+  function test_updateLiquidationConfig_fuzz_closeFactor(uint256 newCloseFactor) public {
     newCloseFactor = bound(newCloseFactor, HEALTH_FACTOR_LIQUIDATION_THRESHOLD, type(uint256).max);
-    vm.expectEmit(address(spoke1));
-    emit ISpoke.CloseFactorUpdated(newCloseFactor);
-    vm.prank(SPOKE_ADMIN);
-    spoke1.updateCloseFactor(newCloseFactor);
 
-    assertEq(spoke1.closeFactor(), newCloseFactor, 'wrong close factor');
-  }
-
-  function test_updateVariableLiquidationBonusConfig() public {
-    DataTypes.VariableLiquidationBonusConfig memory newConfig = DataTypes
-      .VariableLiquidationBonusConfig({
-        healthFactorBonusThreshold: 0.9e18,
-        liquidationBonusFactor: 10_00
-      });
+    DataTypes.LiquidationConfig memory liquidationConfig;
+    liquidationConfig.closeFactor = newCloseFactor;
 
     vm.expectEmit(address(spoke1));
-    emit ISpoke.VariableLiquidationBonusConfigUpdated(newConfig);
+    emit ISpoke.LiquidationConfigUpdated(liquidationConfig);
     vm.prank(SPOKE_ADMIN);
-    spoke1.updateVariableLiquidationBonusConfig(newConfig);
+    spoke1.updateLiquidationConfig(liquidationConfig);
 
-    assertEq(
-      spoke1.getVariableLiquidationBonusConfig().healthFactorBonusThreshold,
-      newConfig.healthFactorBonusThreshold,
-      'wrong healthFactorBonusThreshold'
-    );
-    assertEq(
-      spoke1.getVariableLiquidationBonusConfig().liquidationBonusFactor,
-      newConfig.liquidationBonusFactor,
-      'wrong liquidationBonusFactor'
-    );
+    assertEq(spoke1.getLiquidationConfig().closeFactor, newCloseFactor, 'wrong close factor');
   }
 
-  function test_updateVariableLiquidationBonusConfig_fuzz(
-    uint256 healthFactorBonusThreshold,
-    uint256 liquidationBonusFactor
+  function test_updateLiquidationConfig_variableLiquidationBonusConfig() public {
+    DataTypes.LiquidationConfig memory liquidationConfig;
+    liquidationConfig.closeFactor = HEALTH_FACTOR_LIQUIDATION_THRESHOLD;
+    liquidationConfig.variableLiquidationBonusConfig = DataTypes.VariableLiquidationBonusConfig({
+      healthFactorBonusThreshold: 0.9e18,
+      liquidationBonusFactor: 10_00
+    });
+
+    test_updateLiquidationConfig_fuzz_variableLiquidationBonusConfig(liquidationConfig);
+  }
+
+  function test_updateLiquidationConfig_fuzz_variableLiquidationBonusConfig(
+    DataTypes.LiquidationConfig memory liquidationConfig
   ) public {
-    healthFactorBonusThreshold = bound(
-      healthFactorBonusThreshold,
+    liquidationConfig.variableLiquidationBonusConfig.healthFactorBonusThreshold = bound(
+      liquidationConfig.variableLiquidationBonusConfig.healthFactorBonusThreshold,
       0,
-      spoke1.HEALTH_FACTOR_LIQUIDATION_THRESHOLD()
+      spoke1.HEALTH_FACTOR_LIQUIDATION_THRESHOLD() - 1
     );
-    liquidationBonusFactor = bound(liquidationBonusFactor, 0, MAX_LIQUIDATION_BONUS_FACTOR);
-
-    DataTypes.VariableLiquidationBonusConfig memory newConfig = DataTypes
-      .VariableLiquidationBonusConfig({
-        healthFactorBonusThreshold: 0.9e18,
-        liquidationBonusFactor: 10_00
-      });
-
-    vm.expectEmit(address(spoke1));
-    emit ISpoke.VariableLiquidationBonusConfigUpdated(newConfig);
-    vm.prank(SPOKE_ADMIN);
-    spoke1.updateVariableLiquidationBonusConfig(newConfig);
-
-    assertEq(
-      spoke1.getVariableLiquidationBonusConfig().healthFactorBonusThreshold,
-      newConfig.healthFactorBonusThreshold,
-      'wrong healthFactorBonusThreshold'
+    liquidationConfig.variableLiquidationBonusConfig.liquidationBonusFactor = bound(
+      liquidationConfig.variableLiquidationBonusConfig.liquidationBonusFactor,
+      0,
+      MAX_LIQUIDATION_BONUS_FACTOR
     );
-    assertEq(
-      spoke1.getVariableLiquidationBonusConfig().liquidationBonusFactor,
-      newConfig.liquidationBonusFactor,
-      'wrong liquidationBonusFactor'
-    );
-  }
-
-  function test_updateVariableLiquidationBonusConfig_revertsWith_InvalidHealthFactorBonusThreshold()
-    public
-  {
-    DataTypes.VariableLiquidationBonusConfig memory newConfig = DataTypes
-      .VariableLiquidationBonusConfig({
-        healthFactorBonusThreshold: spoke1.HEALTH_FACTOR_LIQUIDATION_THRESHOLD(),
-        liquidationBonusFactor: 10_00
-      });
-
-    vm.expectRevert(ISpoke.InvalidHealthFactorBonusThreshold.selector);
-    vm.prank(SPOKE_ADMIN);
-    spoke1.updateVariableLiquidationBonusConfig(newConfig);
-  }
-
-  function test_updateVariableLiquidationBonusConfig_fuzz_revertsWith_InvalidHealthFactorBonusThreshold(
-    uint256 healthFactorBonusThreshold,
-    uint256 liquidationBonusFactor
-  ) public {
-    liquidationBonusFactor = bound(liquidationBonusFactor, 0, MAX_LIQUIDATION_BONUS_FACTOR);
-    healthFactorBonusThreshold = bound(
-      healthFactorBonusThreshold,
+    liquidationConfig.closeFactor = bound(
+      liquidationConfig.closeFactor,
       spoke1.HEALTH_FACTOR_LIQUIDATION_THRESHOLD(),
       type(uint256).max
     );
 
-    DataTypes.VariableLiquidationBonusConfig memory newConfig = DataTypes
-      .VariableLiquidationBonusConfig({
-        healthFactorBonusThreshold: healthFactorBonusThreshold,
-        liquidationBonusFactor: liquidationBonusFactor
-      });
-
-    vm.expectRevert(ISpoke.InvalidHealthFactorBonusThreshold.selector);
+    vm.expectEmit(address(spoke1));
+    emit ISpoke.LiquidationConfigUpdated(liquidationConfig);
     vm.prank(SPOKE_ADMIN);
-    spoke1.updateVariableLiquidationBonusConfig(newConfig);
+    spoke1.updateLiquidationConfig(liquidationConfig);
+
+    assertEq(
+      spoke1.getLiquidationConfig().variableLiquidationBonusConfig.healthFactorBonusThreshold,
+      liquidationConfig.variableLiquidationBonusConfig.healthFactorBonusThreshold,
+      'wrong healthFactorBonusThreshold'
+    );
+    assertEq(
+      spoke1.getLiquidationConfig().variableLiquidationBonusConfig.liquidationBonusFactor,
+      liquidationConfig.variableLiquidationBonusConfig.liquidationBonusFactor,
+      'wrong liquidationBonusFactor'
+    );
   }
 
-  function test_updateVariableLiquidationBonusConfig_fuzz_revertsWith_InvalidHealthFactorBonusThreshold_zero(
-    uint256 liquidationBonusFactor
+  function test_updateLiquidationConfig_revertsWith_InvalidHealthFactorBonusThreshold() public {
+    DataTypes.LiquidationConfig memory liquidationConfig;
+    liquidationConfig.closeFactor = spoke1.HEALTH_FACTOR_LIQUIDATION_THRESHOLD();
+    liquidationConfig.variableLiquidationBonusConfig = DataTypes.VariableLiquidationBonusConfig({
+      healthFactorBonusThreshold: spoke1.HEALTH_FACTOR_LIQUIDATION_THRESHOLD(),
+      liquidationBonusFactor: 10_00
+    });
+    test_updateLiquidationConfig_fuzz_revertsWith_InvalidHealthFactorBonusThreshold(
+      liquidationConfig
+    );
+  }
+
+  function test_updateLiquidationConfig_fuzz_revertsWith_InvalidHealthFactorBonusThreshold(
+    DataTypes.LiquidationConfig memory liquidationConfig
   ) public {
-    liquidationBonusFactor = bound(liquidationBonusFactor, 0, MAX_LIQUIDATION_BONUS_FACTOR);
-    uint256 healthFactorBonusThreshold = 0;
-
-    DataTypes.VariableLiquidationBonusConfig memory newConfig = DataTypes
-      .VariableLiquidationBonusConfig({
-        healthFactorBonusThreshold: healthFactorBonusThreshold,
-        liquidationBonusFactor: liquidationBonusFactor
-      });
+    liquidationConfig.variableLiquidationBonusConfig.healthFactorBonusThreshold = bound(
+      liquidationConfig.variableLiquidationBonusConfig.healthFactorBonusThreshold,
+      spoke1.HEALTH_FACTOR_LIQUIDATION_THRESHOLD(),
+      type(uint256).max
+    );
+    liquidationConfig.variableLiquidationBonusConfig.liquidationBonusFactor = bound(
+      liquidationConfig.variableLiquidationBonusConfig.liquidationBonusFactor,
+      0,
+      MAX_LIQUIDATION_BONUS_FACTOR
+    );
+    liquidationConfig.closeFactor = bound(
+      liquidationConfig.closeFactor,
+      spoke1.HEALTH_FACTOR_LIQUIDATION_THRESHOLD(),
+      type(uint256).max
+    ); // valid values
 
     vm.expectRevert(ISpoke.InvalidHealthFactorBonusThreshold.selector);
     vm.prank(SPOKE_ADMIN);
-    spoke1.updateVariableLiquidationBonusConfig(newConfig);
+    spoke1.updateLiquidationConfig(liquidationConfig);
   }
 
-  function test_updateVariableLiquidationBonusConfig_revertsWith_InvalidLiquidationBonusFactor()
-    public
-  {
-    DataTypes.VariableLiquidationBonusConfig memory newConfig = DataTypes
-      .VariableLiquidationBonusConfig({
-        healthFactorBonusThreshold: spoke1.HEALTH_FACTOR_LIQUIDATION_THRESHOLD() - 1,
-        liquidationBonusFactor: MAX_LIQUIDATION_BONUS_FACTOR + 1
-      });
+  function test_updateLiquidationConfig_revertsWith_InvalidLiquidationBonusFactor() public {
+    DataTypes.LiquidationConfig memory liquidationConfig;
+    liquidationConfig.variableLiquidationBonusConfig = DataTypes.VariableLiquidationBonusConfig({
+      healthFactorBonusThreshold: spoke1.HEALTH_FACTOR_LIQUIDATION_THRESHOLD(),
+      liquidationBonusFactor: 10_00
+    });
 
-    vm.expectRevert(ISpoke.InvalidLiquidationBonusFactor.selector);
-    vm.prank(SPOKE_ADMIN);
-    spoke1.updateVariableLiquidationBonusConfig(newConfig);
+    test_updateVariableLiquidationBonusConfig_fuzz_revertsWith_InvalidLiquidationBonusFactor(
+      liquidationConfig
+    );
   }
 
   function test_updateVariableLiquidationBonusConfig_fuzz_revertsWith_InvalidLiquidationBonusFactor(
-    uint256 healthFactorBonusThreshold,
-    uint256 liquidationBonusFactor
+    DataTypes.LiquidationConfig memory liquidationConfig
   ) public {
-    healthFactorBonusThreshold = bound(
-      healthFactorBonusThreshold,
-      1,
-      spoke1.HEALTH_FACTOR_LIQUIDATION_THRESHOLD() - 1
+    liquidationConfig.variableLiquidationBonusConfig.healthFactorBonusThreshold = bound(
+      liquidationConfig.variableLiquidationBonusConfig.healthFactorBonusThreshold,
+      0,
+      spoke1.HEALTH_FACTOR_LIQUIDATION_THRESHOLD()
     );
-    vm.assume(liquidationBonusFactor > MAX_LIQUIDATION_BONUS_FACTOR);
-
-    DataTypes.VariableLiquidationBonusConfig memory newConfig = DataTypes
-      .VariableLiquidationBonusConfig({
-        healthFactorBonusThreshold: healthFactorBonusThreshold,
-        liquidationBonusFactor: liquidationBonusFactor
-      });
+    liquidationConfig.variableLiquidationBonusConfig.liquidationBonusFactor = bound(
+      liquidationConfig.variableLiquidationBonusConfig.liquidationBonusFactor,
+      MAX_LIQUIDATION_BONUS_FACTOR + 1,
+      type(uint256).max
+    );
+    liquidationConfig.closeFactor = bound(
+      liquidationConfig.closeFactor,
+      spoke1.HEALTH_FACTOR_LIQUIDATION_THRESHOLD(),
+      type(uint256).max
+    ); // valid values
 
     vm.expectRevert(ISpoke.InvalidLiquidationBonusFactor.selector);
     vm.prank(SPOKE_ADMIN);
-    spoke1.updateVariableLiquidationBonusConfig(newConfig);
+    spoke1.updateLiquidationConfig(liquidationConfig);
   }
+
+  // TODO: tests for separate oracle, with different asset prices
 }

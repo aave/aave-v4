@@ -54,12 +54,12 @@ contract DefaultReserveInterestRateStrategy is IDefaultInterestRateStrategy {
     require(
       rateData.optimalUsageRatio <= MAX_OPTIMAL_POINT &&
         rateData.optimalUsageRatio >= MIN_OPTIMAL_POINT,
-      Errors.INVALID_OPTIMAL_USAGE_RATIO
+      Errors.INVALID_OPTIMAL_USAGE_RATIO()
     );
 
     require(
       rateData.variableRateSlope1 <= rateData.variableRateSlope2,
-      Errors.SLOPE_2_MUST_BE_GTE_SLOPE_1
+      Errors.SLOPE_2_MUST_BE_GTE_SLOPE_1()
     );
 
     // The maximum rate should not be above certain threshold
@@ -68,7 +68,7 @@ contract DefaultReserveInterestRateStrategy is IDefaultInterestRateStrategy {
         uint256(rateData.variableRateSlope1) +
         uint256(rateData.variableRateSlope2) <=
         MAX_BORROW_RATE,
-      Errors.INVALID_MAX_RATE
+      Errors.INVALID_MAX_RATE()
     );
 
     _interestRateData[assetId] = rateData;

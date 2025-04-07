@@ -108,6 +108,11 @@ library DataTypes {
     uint256 healthFactor;
   }
 
+  struct LiquidationConfig {
+    uint256 closeFactor; // BPS, HF value to restore to during a liquidation
+    VariableLiquidationBonusConfig variableLiquidationBonusConfig;
+  }
+
   struct VariableLiquidationBonusConfig {
     uint256 healthFactorBonusThreshold; // health factor under which liquidation bonus is max
     uint256 liquidationBonusFactor; // BPS
