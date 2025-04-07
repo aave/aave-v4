@@ -77,8 +77,9 @@ contract SpokeRepayTest is SpokeBase {
   }
 
   function test_riskPremium_postActions() public {
-    vm.prank(alice);
+    vm.startPrank(alice);
     spoke1.supply(_daiReserveId(spoke1), 1000e18);
+    vm.stopPrank();
 
     vm.startPrank(bob);
     spoke1.setUsingAsCollateral(_daiReserveId(spoke1), true);
@@ -164,8 +165,9 @@ contract SpokeRepayTest is SpokeBase {
     // Bob repays half of principal debt
     vm.expectEmit(address(spoke1));
     emit ISpoke.Repay(_daiReserveId(spoke1), bob, daiRepayAmount);
-    vm.prank(bob);
+    vm.startPrank(bob);
     spoke1.repay(_daiReserveId(spoke1), daiRepayAmount);
+    vm.stopPrank();
 
     DataTypes.UserPosition memory bobDaiDataAfter = getUserInfo(spoke1, bob, _daiReserveId(spoke1));
     DataTypes.UserPosition memory bobWethDataAfter = getUserInfo(
@@ -262,8 +264,9 @@ contract SpokeRepayTest is SpokeBase {
       bob,
       hub.convertToDrawnShares(daiAssetId, baseRestored)
     );
-    vm.prank(bob);
+    vm.startPrank(bob);
     spoke1.repay(_daiReserveId(spoke1), daiRepayAmount);
+    vm.stopPrank();
 
     DataTypes.UserPosition memory bobDaiDataAfter = getUserInfo(spoke1, bob, _daiReserveId(spoke1));
     DataTypes.UserPosition memory bobWethDataAfter = getUserInfo(
@@ -297,8 +300,9 @@ contract SpokeRepayTest is SpokeBase {
     assertFalse(spoke1.getReserve(daiReserveId).config.active);
 
     vm.expectRevert(ISpoke.ReserveNotActive.selector);
-    vm.prank(bob);
+    vm.startPrank(bob);
     spoke1.repay(daiReserveId, amount);
+    vm.stopPrank();
   }
 
   function test_repay_revertsWith_ReservePaused() public {
@@ -309,8 +313,9 @@ contract SpokeRepayTest is SpokeBase {
     assertTrue(spoke1.getReserve(daiReserveId).config.paused);
 
     vm.expectRevert(ISpoke.ReservePaused.selector);
-    vm.prank(bob);
+    vm.startPrank(bob);
     spoke1.repay(daiReserveId, amount);
+    vm.stopPrank();
   }
 
   function test_repay_revertsWith_ReserveNotListed() public {
@@ -318,8 +323,9 @@ contract SpokeRepayTest is SpokeBase {
     uint256 amount = 100e18;
 
     vm.expectRevert(ISpoke.ReserveNotListed.selector);
-    vm.prank(bob);
+    vm.startPrank(bob);
     spoke1.repay(reserveId, amount);
+    vm.stopPrank();
   }
 
   /// repay all debt interest
@@ -395,8 +401,9 @@ contract SpokeRepayTest is SpokeBase {
       bob,
       hub.convertToDrawnShares(daiAssetId, baseRestored)
     );
-    vm.prank(bob);
+    vm.startPrank(bob);
     spoke1.repay(_daiReserveId(spoke1), daiRepayAmount);
+    vm.stopPrank();
 
     DataTypes.UserPosition memory bobDaiDataAfter = getUserInfo(spoke1, bob, _daiReserveId(spoke1));
     DataTypes.UserPosition memory bobWethDataAfter = getUserInfo(
@@ -483,8 +490,9 @@ contract SpokeRepayTest is SpokeBase {
 
     vm.expectEmit(address(spoke1));
     emit ISpoke.Repay(_daiReserveId(spoke1), bob, 0);
-    vm.prank(bob);
+    vm.startPrank(bob);
     spoke1.repay(_daiReserveId(spoke1), daiRepayAmount);
+    vm.stopPrank();
 
     DataTypes.UserPosition memory bobDaiDataAfter = getUserInfo(spoke1, bob, _daiReserveId(spoke1));
     DataTypes.UserPosition memory bobWethDataAfter = getUserInfo(
@@ -569,8 +577,9 @@ contract SpokeRepayTest is SpokeBase {
     );
 
     // Bob repays using the max value to signal full repayment
-    vm.prank(bob);
+    vm.startPrank(bob);
     spoke1.repay(_daiReserveId(spoke1), type(uint256).max);
+    vm.stopPrank();
 
     DataTypes.UserPosition memory bobDaiDataAfter = getUserInfo(spoke1, bob, _daiReserveId(spoke1));
     Debts memory bobDaiAfter;
@@ -665,8 +674,9 @@ contract SpokeRepayTest is SpokeBase {
       hub.convertToDrawnShares(daiAssetId, baseRestored)
     );
 
-    vm.prank(bob);
+    vm.startPrank(bob);
     spoke1.repay(_daiReserveId(spoke1), partialRepayAmount);
+    vm.stopPrank();
 
     DataTypes.UserPosition memory bobDaiDataAfter = getUserInfo(spoke1, bob, _daiReserveId(spoke1));
     Debts memory bobDaiAfter;
@@ -710,8 +720,9 @@ contract SpokeRepayTest is SpokeBase {
     );
 
     // Bob repays using the max value to signal full repayment
-    vm.prank(bob);
+    vm.startPrank(bob);
     spoke1.repay(_daiReserveId(spoke1), type(uint256).max);
+    vm.stopPrank();
 
     bobDaiDataAfter = getUserInfo(spoke1, bob, _daiReserveId(spoke1));
     bobDaiAfter.totalDebt = spoke1.getUserTotalDebt(_daiReserveId(spoke1), bob);
@@ -910,8 +921,9 @@ contract SpokeRepayTest is SpokeBase {
     vm.expectEmit(address(spoke1));
     emit ISpoke.Repay(_daiReserveId(spoke1), bob, 0);
 
-    vm.prank(bob);
+    vm.startPrank(bob);
     spoke1.repay(_daiReserveId(spoke1), repayAmount);
+    vm.stopPrank();
 
     DataTypes.UserPosition memory bobDaiDataAfter = getUserInfo(spoke1, bob, _daiReserveId(spoke1));
     DataTypes.UserPosition memory bobWethDataAfter = getUserInfo(
@@ -1016,8 +1028,9 @@ contract SpokeRepayTest is SpokeBase {
       hub.convertToDrawnShares(daiAssetId, bobDaiBefore.baseDebt)
     );
     // Bob repays using repay Amount > full debt
-    vm.prank(bob);
+    vm.startPrank(bob);
     spoke1.repay(_daiReserveId(spoke1), repayAmount);
+    vm.stopPrank();
 
     Debts memory bobDaiAfter;
     uint256 bobDaiBalanceAfter = tokenList.dai.balanceOf(bob);
@@ -1095,8 +1108,9 @@ contract SpokeRepayTest is SpokeBase {
       hub.convertToDrawnShares(daiAssetId, bobDaiBefore.baseDebt)
     );
     // Bob repays using a value gt full debt to signal full repayment
-    vm.prank(bob);
+    vm.startPrank(bob);
     spoke1.repay(_daiReserveId(spoke1), fullDebt + 1);
+    vm.stopPrank();
 
     DataTypes.UserPosition memory bobDaiDataAfter = getUserInfo(spoke1, bob, _daiReserveId(spoke1));
     Debts memory bobDaiAfter;
@@ -1183,8 +1197,9 @@ contract SpokeRepayTest is SpokeBase {
     assertGt(bobDaiBefore.totalDebt, daiBorrowAmount, 'bob dai debt before');
 
     // Bob repays premium
-    vm.prank(bob);
+    vm.startPrank(bob);
     spoke1.repay(_daiReserveId(spoke1), bobDaiBefore.premiumDebt);
+    vm.stopPrank();
 
     bobDaiDataBefore = getUserInfo(spoke1, bob, _daiReserveId(spoke1));
     bobDaiBalanceBefore = tokenList.dai.balanceOf(bob);
@@ -1206,8 +1221,9 @@ contract SpokeRepayTest is SpokeBase {
       bob,
       hub.convertToDrawnShares(daiAssetId, daiRepayAmount)
     );
-    vm.prank(bob);
+    vm.startPrank(bob);
     spoke1.repay(_daiReserveId(spoke1), daiRepayAmount);
+    vm.stopPrank();
 
     DataTypes.UserPosition memory bobDaiDataAfter = getUserInfo(spoke1, bob, _daiReserveId(spoke1));
     DataTypes.UserPosition memory bobWethDataAfter = getUserInfo(
@@ -1307,8 +1323,9 @@ contract SpokeRepayTest is SpokeBase {
       bob,
       hub.convertToDrawnShares(daiAssetId, daiRepayAmount)
     );
-    vm.prank(bob);
+    vm.startPrank(bob);
     spoke1.repay(_daiReserveId(spoke1), daiRepayAmount);
+    vm.stopPrank();
 
     DataTypes.UserPosition memory bobDaiDataAfter = getUserInfo(spoke1, bob, _daiReserveId(spoke1));
     DataTypes.UserPosition memory bobWethDataAfter = getUserInfo(
@@ -1407,8 +1424,9 @@ contract SpokeRepayTest is SpokeBase {
       bob,
       hub.convertToDrawnShares(daiAssetId, baseRestored)
     );
-    vm.prank(bob);
+    vm.startPrank(bob);
     spoke1.repay(_daiReserveId(spoke1), daiRepayAmount);
+    vm.stopPrank();
 
     DataTypes.UserPosition memory bobDaiDataAfter = getUserInfo(spoke1, bob, _daiReserveId(spoke1));
     DataTypes.UserPosition memory bobWethDataAfter = getUserInfo(
@@ -1526,8 +1544,9 @@ contract SpokeRepayTest is SpokeBase {
       bob,
       hub.convertToDrawnShares(daiAssetId, baseRestored)
     );
-    vm.prank(bob);
+    vm.startPrank(bob);
     spoke1.repay(_daiReserveId(spoke1), daiRepayAmount);
+    vm.stopPrank();
 
     DataTypes.UserPosition memory bobDaiDataAfter = getUserInfo(spoke1, bob, _daiReserveId(spoke1));
     DataTypes.UserPosition memory bobWethDataAfter = getUserInfo(
@@ -1638,8 +1657,9 @@ contract SpokeRepayTest is SpokeBase {
       } else {
         vm.expectRevert(ILiquidityHub.InvalidSharesAmount.selector);
       }
-      vm.prank(bob);
+      vm.startPrank(bob);
       spoke1.repay(_daiReserveId(spoke1), daiRepayAmount);
+      vm.stopPrank();
     } else {
       deal(address(tokenList.dai), bob, daiRepayAmount);
 
@@ -1649,8 +1669,9 @@ contract SpokeRepayTest is SpokeBase {
         bob,
         hub.convertToDrawnShares(daiAssetId, baseRepaid)
       );
-      vm.prank(bob);
+      vm.startPrank(bob);
       spoke1.repay(_daiReserveId(spoke1), daiRepayAmount);
+      vm.stopPrank();
 
       DataTypes.UserPosition memory bobDaiDataAfter = getUserInfo(
         spoke1,
@@ -1760,8 +1781,9 @@ contract SpokeRepayTest is SpokeBase {
       // not enough time travel for premium accrual
       daiRepayAmount = 0;
       vm.expectRevert(ILiquidityHub.InvalidRestoreAmount.selector);
-      vm.prank(bob);
+      vm.startPrank(bob);
       spoke1.repay(_daiReserveId(spoke1), daiRepayAmount);
+      vm.stopPrank();
     } else {
       // interest is at least 1
       daiRepayAmount = bound(daiRepayAmount, 1, bobDaiPremium);
@@ -1769,8 +1791,9 @@ contract SpokeRepayTest is SpokeBase {
 
       vm.expectEmit(address(spoke1));
       emit ISpoke.Repay(_daiReserveId(spoke1), bob, 0);
-      vm.prank(bob);
+      vm.startPrank(bob);
       spoke1.repay(_daiReserveId(spoke1), daiRepayAmount);
+      vm.stopPrank();
 
       DataTypes.UserPosition memory bobDaiDataAfter = getUserInfo(
         spoke1,
@@ -1879,8 +1902,9 @@ contract SpokeRepayTest is SpokeBase {
     // Bob repays premium first if any
     if (bobDaiBefore.premiumDebt > 0) {
       deal(address(tokenList.dai), bob, bobDaiBefore.premiumDebt);
-      vm.prank(bob);
+      vm.startPrank(bob);
       spoke1.repay(_daiReserveId(spoke1), bobDaiBefore.premiumDebt);
+      vm.stopPrank();
     }
 
     bobDaiDataBefore = getUserInfo(spoke1, bob, _daiReserveId(spoke1));
@@ -1903,8 +1927,9 @@ contract SpokeRepayTest is SpokeBase {
       } else {
         vm.expectRevert(ILiquidityHub.InvalidSharesAmount.selector);
       }
-      vm.prank(bob);
+      vm.startPrank(bob);
       spoke1.repay(_daiReserveId(spoke1), daiRepayAmount);
+      vm.stopPrank();
     } else {
       deal(address(tokenList.dai), bob, daiRepayAmount);
 
@@ -1914,8 +1939,9 @@ contract SpokeRepayTest is SpokeBase {
         bob,
         hub.convertToDrawnShares(daiAssetId, daiRepayAmount)
       );
-      vm.prank(bob);
+      vm.startPrank(bob);
       spoke1.repay(_daiReserveId(spoke1), daiRepayAmount);
+      vm.stopPrank();
 
       DataTypes.UserPosition memory bobDaiDataAfter = getUserInfo(
         spoke1,
@@ -2038,8 +2064,9 @@ contract SpokeRepayTest is SpokeBase {
       } else {
         vm.expectRevert(ILiquidityHub.InvalidSharesAmount.selector);
       }
-      vm.prank(bob);
+      vm.startPrank(bob);
       spoke1.repay(_daiReserveId(spoke1), daiRepayAmount);
+      vm.stopPrank();
     } else {
       deal(address(tokenList.dai), bob, daiRepayAmount);
 
@@ -2049,8 +2076,9 @@ contract SpokeRepayTest is SpokeBase {
         bob,
         hub.convertToDrawnShares(daiAssetId, daiRepayAmount)
       );
-      vm.prank(bob);
+      vm.startPrank(bob);
       spoke1.repay(_daiReserveId(spoke1), daiRepayAmount);
+      vm.stopPrank();
 
       DataTypes.UserPosition memory bobDaiDataAfter = getUserInfo(
         spoke1,
@@ -2428,8 +2456,9 @@ contract SpokeRepayTest is SpokeBase {
       } else {
         vm.expectRevert(ILiquidityHub.InvalidSharesAmount.selector);
       }
-      vm.prank(bob);
+      vm.startPrank(bob);
       spoke1.repay(_daiReserveId(spoke1), action1.repayAmount);
+      vm.stopPrank();
       action1.repayAmount = 0; // no repayment indeed
     } else {
       vm.expectEmit(address(spoke1));
@@ -2438,8 +2467,9 @@ contract SpokeRepayTest is SpokeBase {
         bob,
         hub.convertToDrawnShares(daiAssetId, baseRestored)
       );
-      vm.prank(bob);
+      vm.startPrank(bob);
       spoke1.repay(_daiReserveId(spoke1), action1.repayAmount);
+      vm.stopPrank();
     }
 
     DataTypes.UserPosition memory bobDaiDataAfter = getUserInfo(spoke1, bob, _daiReserveId(spoke1));
@@ -2541,8 +2571,9 @@ contract SpokeRepayTest is SpokeBase {
       } else {
         vm.expectRevert(ILiquidityHub.InvalidSharesAmount.selector);
       }
-      vm.prank(bob);
+      vm.startPrank(bob);
       spoke1.repay(_daiReserveId(spoke1), action2.repayAmount);
+      vm.stopPrank();
       action2.repayAmount = 0; // no repayment indeed
     } else {
       vm.expectEmit(address(spoke1));
@@ -2551,8 +2582,9 @@ contract SpokeRepayTest is SpokeBase {
         bob,
         hub.convertToDrawnShares(daiAssetId, baseRestored)
       );
-      vm.prank(bob);
+      vm.startPrank(bob);
       spoke1.repay(_daiReserveId(spoke1), action2.repayAmount);
+      vm.stopPrank();
     }
 
     bobDaiDataAfter = getUserInfo(spoke1, bob, _daiReserveId(spoke1));
@@ -2645,8 +2677,9 @@ contract SpokeRepayTest is SpokeBase {
       bob,
       hub.convertToDrawnShares(daiAssetId, baseRestored)
     );
-    vm.prank(bob);
+    vm.startPrank(bob);
     spoke1.repay(_daiReserveId(spoke1), type(uint256).max);
+    vm.stopPrank();
 
     // Bob should have 0 drawn shares
     assertEq(
@@ -2914,8 +2947,9 @@ contract SpokeRepayTest is SpokeBase {
       usersInfo[i].daiInfo.premiumRestored = premiumRestored;
       if (baseRestored >= minimumAssetsPerDrawnShare(daiAssetId) || premiumRestored > 0) {
         deal(address(tokenList.dai), user, usersInfo[i].daiInfo.repayAmount);
-        vm.prank(user);
+        vm.startPrank(user);
         spoke1.repay(_daiReserveId(spoke1), usersInfo[i].daiInfo.repayAmount);
+        vm.stopPrank();
       }
 
       // WETH repayment
@@ -2927,8 +2961,9 @@ contract SpokeRepayTest is SpokeBase {
       usersInfo[i].wethInfo.premiumRestored = premiumRestored;
       if (baseRestored >= minimumAssetsPerDrawnShare(wethAssetId) || premiumRestored > 0) {
         deal(address(tokenList.weth), user, usersInfo[i].wethInfo.repayAmount);
-        vm.prank(user);
+        vm.startPrank(user);
         spoke1.repay(_wethReserveId(spoke1), usersInfo[i].wethInfo.repayAmount);
+        vm.stopPrank();
       }
 
       // USDX repayment
@@ -2940,8 +2975,9 @@ contract SpokeRepayTest is SpokeBase {
       usersInfo[i].usdxInfo.premiumRestored = premiumRestored;
       if (baseRestored >= minimumAssetsPerDrawnShare(usdxAssetId) || premiumRestored > 0) {
         deal(address(tokenList.usdx), user, usersInfo[i].usdxInfo.repayAmount);
-        vm.prank(user);
+        vm.startPrank(user);
         spoke1.repay(_usdxReserveId(spoke1), usersInfo[i].usdxInfo.repayAmount);
+        vm.stopPrank();
       }
 
       // WBTC repayment
@@ -2953,8 +2989,9 @@ contract SpokeRepayTest is SpokeBase {
       usersInfo[i].wbtcInfo.premiumRestored = premiumRestored;
       if (baseRestored >= minimumAssetsPerDrawnShare(wbtcAssetId) || premiumRestored > 0) {
         deal(address(tokenList.wbtc), user, usersInfo[i].wbtcInfo.repayAmount);
-        vm.prank(user);
+        vm.startPrank(user);
         spoke1.repay(_wbtcReserveId(spoke1), usersInfo[i].wbtcInfo.repayAmount);
+        vm.stopPrank();
       }
     }
 
@@ -3284,8 +3321,9 @@ contract SpokeRepayTest is SpokeBase {
       usersInfo[i].daiInfo.premiumRestored = premiumRestored;
       if (baseRestored >= minimumAssetsPerDrawnShare(daiAssetId) || premiumRestored > 0) {
         deal(address(tokenList.dai), user, usersInfo[i].daiInfo.repayAmount);
-        vm.prank(user);
+        vm.startPrank(user);
         spoke1.repay(_daiReserveId(spoke1), usersInfo[i].daiInfo.repayAmount);
+        vm.stopPrank();
       }
 
       // WETH repayment
@@ -3297,8 +3335,9 @@ contract SpokeRepayTest is SpokeBase {
       usersInfo[i].wethInfo.premiumRestored = premiumRestored;
       if (baseRestored >= minimumAssetsPerDrawnShare(wethAssetId) || premiumRestored > 0) {
         deal(address(tokenList.weth), user, usersInfo[i].wethInfo.repayAmount);
-        vm.prank(user);
+        vm.startPrank(user);
         spoke1.repay(_wethReserveId(spoke1), usersInfo[i].wethInfo.repayAmount);
+        vm.stopPrank();
       }
 
       // USDX repayment
@@ -3310,8 +3349,9 @@ contract SpokeRepayTest is SpokeBase {
       usersInfo[i].usdxInfo.premiumRestored = premiumRestored;
       if (baseRestored >= minimumAssetsPerDrawnShare(usdxAssetId) || premiumRestored > 0) {
         deal(address(tokenList.usdx), user, usersInfo[i].usdxInfo.repayAmount);
-        vm.prank(user);
+        vm.startPrank(user);
         spoke1.repay(_usdxReserveId(spoke1), usersInfo[i].usdxInfo.repayAmount);
+        vm.stopPrank();
       }
 
       // WBTC repayment
@@ -3323,8 +3363,9 @@ contract SpokeRepayTest is SpokeBase {
       usersInfo[i].wbtcInfo.premiumRestored = premiumRestored;
       if (baseRestored >= minimumAssetsPerDrawnShare(wbtcAssetId) || premiumRestored > 0) {
         deal(address(tokenList.wbtc), user, usersInfo[i].wbtcInfo.repayAmount);
-        vm.prank(user);
+        vm.startPrank(user);
         spoke1.repay(_wbtcReserveId(spoke1), usersInfo[i].wbtcInfo.repayAmount);
+        vm.stopPrank();
       }
     }
 
@@ -3492,8 +3533,9 @@ contract SpokeRepayTest is SpokeBase {
       usersInfo[i].premiumRestored = premiumRestored;
       if (baseRestored >= minimumAssetsPerDrawnShare(daiAssetId) || premiumRestored > 0) {
         deal(address(tokenList.dai), user, usersInfo[i].repayAmount);
-        vm.prank(user);
+        vm.startPrank(user);
         spoke1.repay(_daiReserveId(spoke1), usersInfo[i].repayAmount);
+        vm.stopPrank();
       }
     }
 
@@ -3610,8 +3652,9 @@ contract SpokeRepayTest is SpokeBase {
       usersInfo[i].premiumRestored = premiumRestored;
       if (baseRestored >= minimumAssetsPerDrawnShare(daiAssetId) || premiumRestored > 0) {
         deal(address(tokenList.dai), user, usersInfo[i].repayAmount);
-        vm.prank(user);
+        vm.startPrank(user);
         spoke1.repay(_daiReserveId(spoke1), usersInfo[i].repayAmount);
+        vm.stopPrank();
       }
     }
 
