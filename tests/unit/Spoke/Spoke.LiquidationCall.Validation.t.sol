@@ -222,7 +222,7 @@ contract LiquidationCallValidationTest is SpokeBase {
     _deployLiquidity(spoke1, daiReserveId, daiAmount);
 
     Utils.supplyCollateral(spoke1, wethReserveId, alice, wethAmount, alice);
-    Utils.spokeBorrow(spoke1, daiReserveId, alice, daiAmount, alice);
+    Utils.borrow(spoke1, daiReserveId, alice, daiAmount, alice);
 
     // collateral value drop, so that HF < threshold
     oracle.setAssetPrice(wethAssetId, 0);

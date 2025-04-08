@@ -591,7 +591,7 @@ contract Spoke is ISpoke {
 
   function _validateLiquidationConfig(DataTypes.LiquidationConfig calldata config) internal view {
     _validateCloseFactor(config.closeFactor);
-    _validateVariableLiquidationBonusConfig(config.variableLiquidationBonusConfig);
+    _validateVariableLiquidationBonusConfig(config.liqBonusConfig);
   }
 
   function _validateCloseFactor(uint256 closeFactor) internal view {
@@ -929,29 +929,5 @@ contract Spoke is ISpoke {
   // todo move to MathUtils
   function _signedDiff(uint256 a, uint256 b) internal pure returns (int256) {
     return int256(a) - int256(b); // todo use safeCast when amounts packed to uint112/uint128
-  }
-
-  function _validateLiquidationConfig(DataTypes.LiquidationConfig calldata config) internal view {
-    _validateCloseFactor(config.closeFactor);
-    _validateLiqBonusConfig(config.liqBonusConfig);
-  }
-
-  function _validateCloseFactor(uint256 closeFactor) internal view {
-    require(closeFactor >= HEALTH_FACTOR_LIQUIDATION_THRESHOLD, InvalidCloseFactor());
-  }
-
-  function _validateLiqBonusConfig(
-    DataTypes.VariableLiquidationBonusConfig calldata config
-  ) internal view {
-    // if liquidationBonusFactor == 0, then variable liquidation bonus will not be applied
-    require(
-      config.liquidationBonusFactor <= PercentageMath.PERCENTAGE_FACTOR,
-      InvalidLiquidationBonusFactor()
-    );
-    // if healthFactorBonusThreshold == HEALTH_FACTOR_LIQUIDATION_THRESHOLD, then calculate will be undefined
-    require(
-      config.healthFactorBonusThreshold < HEALTH_FACTOR_LIQUIDATION_THRESHOLD,
-      InvalidHealthFactorBonusThreshold()
-    );
   }
 }
