@@ -128,14 +128,14 @@ contract SpokeRepayTest is SpokeBase {
     uint256 daiRepayAmount = daiSupplyAmount / 4;
 
     // Bob supply weth
-    Utils.spokeSupply(spoke1, _wethReserveId(spoke1), bob, wethSupplyAmount, bob);
+    Utils.supply(spoke1, _wethReserveId(spoke1), bob, wethSupplyAmount, bob);
     setUsingAsCollateral(spoke1, bob, _wethReserveId(spoke1), true);
 
     // Alice supply dai
-    Utils.spokeSupply(spoke1, _daiReserveId(spoke1), alice, daiSupplyAmount, alice);
+    Utils.supply(spoke1, _daiReserveId(spoke1), alice, daiSupplyAmount, alice);
 
     // Bob borrow dai
-    Utils.spokeBorrow(spoke1, _daiReserveId(spoke1), bob, daiBorrowAmount, bob);
+    Utils.borrow(spoke1, _daiReserveId(spoke1), bob, daiBorrowAmount, bob);
 
     DataTypes.UserPosition memory bobDaiDataBefore = getUserInfo(
       spoke1,
@@ -207,14 +207,14 @@ contract SpokeRepayTest is SpokeBase {
     uint256 daiRepayAmount = daiSupplyAmount / 4;
 
     // Bob supply weth
-    Utils.spokeSupply(spoke1, _wethReserveId(spoke1), bob, wethSupplyAmount, bob);
+    Utils.supply(spoke1, _wethReserveId(spoke1), bob, wethSupplyAmount, bob);
     setUsingAsCollateral(spoke1, bob, _wethReserveId(spoke1), true);
 
     // Alice supply dai
-    Utils.spokeSupply(spoke1, _daiReserveId(spoke1), alice, daiSupplyAmount, alice);
+    Utils.supply(spoke1, _daiReserveId(spoke1), alice, daiSupplyAmount, alice);
 
     // Bob borrow dai
-    Utils.spokeBorrow(spoke1, _daiReserveId(spoke1), bob, daiBorrowAmount, bob);
+    Utils.borrow(spoke1, _daiReserveId(spoke1), bob, daiBorrowAmount, bob);
 
     DataTypes.UserPosition memory bobDaiDataBefore = getUserInfo(
       spoke1,
@@ -337,14 +337,14 @@ contract SpokeRepayTest is SpokeBase {
     uint256 daiBorrowAmount = daiSupplyAmount / 2;
 
     // Bob supply weth
-    Utils.spokeSupply(spoke1, _wethReserveId(spoke1), bob, wethSupplyAmount, bob);
+    Utils.supply(spoke1, _wethReserveId(spoke1), bob, wethSupplyAmount, bob);
     setUsingAsCollateral(spoke1, bob, _wethReserveId(spoke1), true);
 
     // Alice supply dai
-    Utils.spokeSupply(spoke1, _daiReserveId(spoke1), alice, daiSupplyAmount, alice);
+    Utils.supply(spoke1, _daiReserveId(spoke1), alice, daiSupplyAmount, alice);
 
     // Bob borrow dai
-    Utils.spokeBorrow(spoke1, _daiReserveId(spoke1), bob, daiBorrowAmount, bob);
+    Utils.borrow(spoke1, _daiReserveId(spoke1), bob, daiBorrowAmount, bob);
 
     DataTypes.UserPosition memory bobDaiDataBefore = getUserInfo(
       spoke1,
@@ -451,14 +451,14 @@ contract SpokeRepayTest is SpokeBase {
     skipTime = uint40(bound(skipTime, 1, MAX_SKIP_TIME));
 
     // Bob supply weth as collateral
-    Utils.spokeSupply(spoke1, _wethReserveId(spoke1), bob, wethSupplyAmount, bob);
+    Utils.supply(spoke1, _wethReserveId(spoke1), bob, wethSupplyAmount, bob);
     setUsingAsCollateral(spoke1, bob, _wethReserveId(spoke1), true);
 
     // Alice supply dai for Bob to borrow
-    Utils.spokeSupply(spoke1, _daiReserveId(spoke1), alice, daiBorrowAmount, alice);
+    Utils.supply(spoke1, _daiReserveId(spoke1), alice, daiBorrowAmount, alice);
 
     // Bob borrow dai
-    Utils.spokeBorrow(spoke1, _daiReserveId(spoke1), bob, daiBorrowAmount, bob);
+    Utils.borrow(spoke1, _daiReserveId(spoke1), bob, daiBorrowAmount, bob);
 
     DataTypes.UserPosition memory bobDaiDataBefore = getUserInfo(
       spoke1,
@@ -540,14 +540,14 @@ contract SpokeRepayTest is SpokeBase {
     uint256 daiBorrowAmount = daiSupplyAmount / 2;
 
     // Bob supplies WETH as collateral
-    Utils.spokeSupply(spoke1, _wethReserveId(spoke1), bob, wethSupplyAmount, bob);
+    Utils.supply(spoke1, _wethReserveId(spoke1), bob, wethSupplyAmount, bob);
     setUsingAsCollateral(spoke1, bob, _wethReserveId(spoke1), true);
 
     // Alice supplies DAI
-    Utils.spokeSupply(spoke1, _daiReserveId(spoke1), alice, daiSupplyAmount, alice);
+    Utils.supply(spoke1, _daiReserveId(spoke1), alice, daiSupplyAmount, alice);
 
     // Bob borrows DAI
-    Utils.spokeBorrow(spoke1, _daiReserveId(spoke1), bob, daiBorrowAmount, bob);
+    Utils.borrow(spoke1, _daiReserveId(spoke1), bob, daiBorrowAmount, bob);
 
     DataTypes.UserPosition memory bobDaiDataBefore = getUserInfo(
       spoke1,
@@ -630,14 +630,14 @@ contract SpokeRepayTest is SpokeBase {
     uint256 daiBorrowAmount = daiSupplyAmount / 2;
 
     // Bob supplies WETH as collateral
-    Utils.spokeSupply(spoke1, _wethReserveId(spoke1), bob, wethSupplyAmount, bob);
+    Utils.supply(spoke1, _wethReserveId(spoke1), bob, wethSupplyAmount, bob);
     setUsingAsCollateral(spoke1, bob, _wethReserveId(spoke1), true);
 
     // Alice supplies DAI
-    Utils.spokeSupply(spoke1, _daiReserveId(spoke1), alice, daiSupplyAmount, alice);
+    Utils.supply(spoke1, _daiReserveId(spoke1), alice, daiSupplyAmount, alice);
 
     // Bob borrows DAI
-    Utils.spokeBorrow(spoke1, _daiReserveId(spoke1), bob, daiBorrowAmount, bob);
+    Utils.borrow(spoke1, _daiReserveId(spoke1), bob, daiBorrowAmount, bob);
 
     DataTypes.UserPosition memory bobDaiDataBefore = getUserInfo(
       spoke1,
@@ -775,14 +775,14 @@ contract SpokeRepayTest is SpokeBase {
     uint256 daiBorrowAmount = 100e18;
 
     // Bob supplies WETH as collateral
-    Utils.spokeSupply(spoke1, _wethReserveId(spoke1), bob, wethSupplyAmount, bob);
+    Utils.supply(spoke1, _wethReserveId(spoke1), bob, wethSupplyAmount, bob);
     setUsingAsCollateral(spoke1, bob, _wethReserveId(spoke1), true);
 
     // Alice supplies DAI
-    Utils.spokeSupply(spoke1, _daiReserveId(spoke1), alice, daiSupplyAmount, alice);
+    Utils.supply(spoke1, _daiReserveId(spoke1), alice, daiSupplyAmount, alice);
 
     // Bob borrows DAI
-    Utils.spokeBorrow(spoke1, _daiReserveId(spoke1), bob, daiBorrowAmount, bob);
+    Utils.borrow(spoke1, _daiReserveId(spoke1), bob, daiBorrowAmount, bob);
 
     DataTypes.UserPosition memory bobDaiDataBefore = getUserInfo(
       spoke1,
@@ -860,14 +860,14 @@ contract SpokeRepayTest is SpokeBase {
     uint256 daiBorrowAmount = 100;
 
     // Bob supplies WETH as collateral
-    Utils.spokeSupply(spoke1, _wethReserveId(spoke1), bob, wethSupplyAmount, bob);
+    Utils.supply(spoke1, _wethReserveId(spoke1), bob, wethSupplyAmount, bob);
     setUsingAsCollateral(spoke1, bob, _wethReserveId(spoke1), true);
 
     // Alice supplies DAI
-    Utils.spokeSupply(spoke1, _daiReserveId(spoke1), alice, daiSupplyAmount, alice);
+    Utils.supply(spoke1, _daiReserveId(spoke1), alice, daiSupplyAmount, alice);
 
     // Bob borrows DAI
-    Utils.spokeBorrow(spoke1, _daiReserveId(spoke1), bob, daiBorrowAmount, bob);
+    Utils.borrow(spoke1, _daiReserveId(spoke1), bob, daiBorrowAmount, bob);
 
     DataTypes.UserPosition memory bobDaiDataBefore = getUserInfo(
       spoke1,
@@ -981,14 +981,14 @@ contract SpokeRepayTest is SpokeBase {
     uint256 daiBorrowAmount = daiSupplyAmount / 2;
 
     // Bob supply weth
-    Utils.spokeSupply(spoke1, _wethReserveId(spoke1), bob, wethSupplyAmount, bob);
+    Utils.supply(spoke1, _wethReserveId(spoke1), bob, wethSupplyAmount, bob);
     setUsingAsCollateral(spoke1, bob, _wethReserveId(spoke1), true);
 
     // Alice supply dai
-    Utils.spokeSupply(spoke1, _daiReserveId(spoke1), alice, daiSupplyAmount, alice);
+    Utils.supply(spoke1, _daiReserveId(spoke1), alice, daiSupplyAmount, alice);
 
     // Bob borrow dai
-    Utils.spokeBorrow(spoke1, _daiReserveId(spoke1), bob, daiBorrowAmount, bob);
+    Utils.borrow(spoke1, _daiReserveId(spoke1), bob, daiBorrowAmount, bob);
 
     DataTypes.UserPosition memory bobDaiDataBefore = getUserInfo(
       spoke1,
@@ -1097,14 +1097,14 @@ contract SpokeRepayTest is SpokeBase {
     uint256 daiBorrowAmount = daiSupplyAmount / 2;
 
     // Bob supply weth
-    Utils.spokeSupply(spoke1, _wethReserveId(spoke1), bob, wethSupplyAmount, bob);
+    Utils.supply(spoke1, _wethReserveId(spoke1), bob, wethSupplyAmount, bob);
     setUsingAsCollateral(spoke1, bob, _wethReserveId(spoke1), true);
 
     // Alice supply dai
-    Utils.spokeSupply(spoke1, _daiReserveId(spoke1), alice, daiSupplyAmount, alice);
+    Utils.supply(spoke1, _daiReserveId(spoke1), alice, daiSupplyAmount, alice);
 
     // Bob borrow dai
-    Utils.spokeBorrow(spoke1, _daiReserveId(spoke1), bob, daiBorrowAmount, bob);
+    Utils.borrow(spoke1, _daiReserveId(spoke1), bob, daiBorrowAmount, bob);
 
     DataTypes.UserPosition memory bobDaiDataBefore = getUserInfo(
       spoke1,
@@ -1207,14 +1207,14 @@ contract SpokeRepayTest is SpokeBase {
     );
 
     // Bob supply weth
-    Utils.spokeSupply(spoke1, _wethReserveId(spoke1), bob, wethSupplyAmount, bob);
+    Utils.supply(spoke1, _wethReserveId(spoke1), bob, wethSupplyAmount, bob);
     setUsingAsCollateral(spoke1, bob, _wethReserveId(spoke1), true);
 
     // Alice supply dai
-    Utils.spokeSupply(spoke1, _daiReserveId(spoke1), alice, daiBorrowAmount, alice);
+    Utils.supply(spoke1, _daiReserveId(spoke1), alice, daiBorrowAmount, alice);
 
     // Bob borrow dai
-    Utils.spokeBorrow(spoke1, _daiReserveId(spoke1), bob, daiBorrowAmount, bob);
+    Utils.borrow(spoke1, _daiReserveId(spoke1), bob, daiBorrowAmount, bob);
 
     DataTypes.UserPosition memory bobDaiDataBefore = getUserInfo(
       spoke1,
@@ -1312,14 +1312,14 @@ contract SpokeRepayTest is SpokeBase {
     );
 
     // Bob supply weth
-    Utils.spokeSupply(spoke1, _wethReserveId(spoke1), bob, wethSupplyAmount, bob);
+    Utils.supply(spoke1, _wethReserveId(spoke1), bob, wethSupplyAmount, bob);
     setUsingAsCollateral(spoke1, bob, _wethReserveId(spoke1), true);
 
     // Alice supply dai
-    Utils.spokeSupply(spoke1, _daiReserveId(spoke1), alice, daiBorrowAmount, alice);
+    Utils.supply(spoke1, _daiReserveId(spoke1), alice, daiBorrowAmount, alice);
 
     // Bob borrow dai
-    Utils.spokeBorrow(spoke1, _daiReserveId(spoke1), bob, daiBorrowAmount, bob);
+    Utils.borrow(spoke1, _daiReserveId(spoke1), bob, daiBorrowAmount, bob);
 
     DataTypes.UserPosition memory bobDaiDataBefore = getUserInfo(
       spoke1,
@@ -1435,14 +1435,14 @@ contract SpokeRepayTest is SpokeBase {
     );
 
     // Bob supply weth
-    Utils.spokeSupply(spoke1, _wethReserveId(spoke1), bob, wethSupplyAmount, bob);
+    Utils.supply(spoke1, _wethReserveId(spoke1), bob, wethSupplyAmount, bob);
     setUsingAsCollateral(spoke1, bob, _wethReserveId(spoke1), true);
 
     // Alice supply dai
-    Utils.spokeSupply(spoke1, _daiReserveId(spoke1), alice, daiBorrowAmount, alice);
+    Utils.supply(spoke1, _daiReserveId(spoke1), alice, daiBorrowAmount, alice);
 
     // Bob borrow dai
-    Utils.spokeBorrow(spoke1, _daiReserveId(spoke1), bob, daiBorrowAmount, bob);
+    Utils.borrow(spoke1, _daiReserveId(spoke1), bob, daiBorrowAmount, bob);
 
     DataTypes.UserPosition memory bobDaiDataBefore = getUserInfo(
       spoke1,
@@ -1553,14 +1553,14 @@ contract SpokeRepayTest is SpokeBase {
     );
 
     // Bob supply weth
-    Utils.spokeSupply(spoke1, _wethReserveId(spoke1), bob, wethSupplyAmount, bob);
+    Utils.supply(spoke1, _wethReserveId(spoke1), bob, wethSupplyAmount, bob);
     setUsingAsCollateral(spoke1, bob, _wethReserveId(spoke1), true);
 
     // Alice supply dai
-    Utils.spokeSupply(spoke1, _daiReserveId(spoke1), alice, daiBorrowAmount, alice);
+    Utils.supply(spoke1, _daiReserveId(spoke1), alice, daiBorrowAmount, alice);
 
     // Bob borrow dai
-    Utils.spokeBorrow(spoke1, _daiReserveId(spoke1), bob, daiBorrowAmount, bob);
+    Utils.borrow(spoke1, _daiReserveId(spoke1), bob, daiBorrowAmount, bob);
 
     DataTypes.UserPosition memory bobDaiDataBefore = getUserInfo(
       spoke1,
@@ -1674,14 +1674,14 @@ contract SpokeRepayTest is SpokeBase {
     );
 
     // Bob supply weth
-    Utils.spokeSupply(spoke1, _wethReserveId(spoke1), bob, wethSupplyAmount, bob);
+    Utils.supply(spoke1, _wethReserveId(spoke1), bob, wethSupplyAmount, bob);
     setUsingAsCollateral(spoke1, bob, _wethReserveId(spoke1), true);
 
     // Alice supply dai
-    Utils.spokeSupply(spoke1, _daiReserveId(spoke1), alice, daiBorrowAmount, alice);
+    Utils.supply(spoke1, _daiReserveId(spoke1), alice, daiBorrowAmount, alice);
 
     // Bob borrow dai
-    Utils.spokeBorrow(spoke1, _daiReserveId(spoke1), bob, daiBorrowAmount, bob);
+    Utils.borrow(spoke1, _daiReserveId(spoke1), bob, daiBorrowAmount, bob);
 
     DataTypes.UserPosition memory bobDaiDataBefore = getUserInfo(
       spoke1,
@@ -1817,14 +1817,14 @@ contract SpokeRepayTest is SpokeBase {
     );
 
     // Bob supply weth
-    Utils.spokeSupply(spoke1, _wethReserveId(spoke1), bob, wethSupplyAmount, bob);
+    Utils.supply(spoke1, _wethReserveId(spoke1), bob, wethSupplyAmount, bob);
     setUsingAsCollateral(spoke1, bob, _wethReserveId(spoke1), true);
 
     // Alice supply dai
-    Utils.spokeSupply(spoke1, _daiReserveId(spoke1), alice, daiBorrowAmount, alice);
+    Utils.supply(spoke1, _daiReserveId(spoke1), alice, daiBorrowAmount, alice);
 
     // Bob borrow dai
-    Utils.spokeBorrow(spoke1, _daiReserveId(spoke1), bob, daiBorrowAmount, bob);
+    Utils.borrow(spoke1, _daiReserveId(spoke1), bob, daiBorrowAmount, bob);
 
     DataTypes.UserPosition memory bobDaiDataBefore = getUserInfo(
       spoke1,
@@ -1982,24 +1982,24 @@ contract SpokeRepayTest is SpokeBase {
 
       // Bob supply weth and wbtc
       deal(address(tokenList.weth), bob, wethSupplyAmount);
-      Utils.spokeSupply(spoke1, _wethReserveId(spoke1), bob, wethSupplyAmount, bob);
+      Utils.supply(spoke1, _wethReserveId(spoke1), bob, wethSupplyAmount, bob);
       setUsingAsCollateral(spoke1, bob, _wethReserveId(spoke1), true);
       deal(address(tokenList.wbtc), bob, wbtcSupplyAmount);
-      Utils.spokeSupply(spoke1, _wbtcReserveId(spoke1), bob, wbtcSupplyAmount, bob);
+      Utils.supply(spoke1, _wbtcReserveId(spoke1), bob, wbtcSupplyAmount, bob);
       setUsingAsCollateral(spoke1, bob, _wbtcReserveId(spoke1), true);
     }
 
     // Alice supply liquidity
-    Utils.spokeSupply(spoke1, _daiReserveId(spoke1), alice, daiInfo.borrowAmount, alice);
-    Utils.spokeSupply(spoke1, _wethReserveId(spoke1), alice, wethInfo.borrowAmount, alice);
-    Utils.spokeSupply(spoke1, _usdxReserveId(spoke1), alice, usdxInfo.borrowAmount, alice);
-    Utils.spokeSupply(spoke1, _wbtcReserveId(spoke1), alice, wbtcInfo.borrowAmount, alice);
+    Utils.supply(spoke1, _daiReserveId(spoke1), alice, daiInfo.borrowAmount, alice);
+    Utils.supply(spoke1, _wethReserveId(spoke1), alice, wethInfo.borrowAmount, alice);
+    Utils.supply(spoke1, _usdxReserveId(spoke1), alice, usdxInfo.borrowAmount, alice);
+    Utils.supply(spoke1, _wbtcReserveId(spoke1), alice, wbtcInfo.borrowAmount, alice);
 
     // Bob borrows
-    Utils.spokeBorrow(spoke1, _daiReserveId(spoke1), bob, daiInfo.borrowAmount, bob);
-    Utils.spokeBorrow(spoke1, _wethReserveId(spoke1), bob, wethInfo.borrowAmount, bob);
-    Utils.spokeBorrow(spoke1, _usdxReserveId(spoke1), bob, usdxInfo.borrowAmount, bob);
-    Utils.spokeBorrow(spoke1, _wbtcReserveId(spoke1), bob, wbtcInfo.borrowAmount, bob);
+    Utils.borrow(spoke1, _daiReserveId(spoke1), bob, daiInfo.borrowAmount, bob);
+    Utils.borrow(spoke1, _wethReserveId(spoke1), bob, wethInfo.borrowAmount, bob);
+    Utils.borrow(spoke1, _usdxReserveId(spoke1), bob, usdxInfo.borrowAmount, bob);
+    Utils.borrow(spoke1, _wbtcReserveId(spoke1), bob, wbtcInfo.borrowAmount, bob);
 
     daiInfo.posBefore = getUserInfo(spoke1, bob, _daiReserveId(spoke1));
     wethInfo.posBefore = getUserInfo(spoke1, bob, _wethReserveId(spoke1));
@@ -2191,11 +2191,11 @@ contract SpokeRepayTest is SpokeBase {
       _daiReserveId(spoke1),
       action1.borrowAmount
     );
-    Utils.spokeSupply(spoke1, _wethReserveId(spoke1), bob, action1.supplyAmount, bob);
+    Utils.supply(spoke1, _wethReserveId(spoke1), bob, action1.supplyAmount, bob);
     setUsingAsCollateral(spoke1, bob, _wethReserveId(spoke1), true);
 
     // Alice supply dai
-    Utils.spokeSupply(
+    Utils.supply(
       spoke1,
       _daiReserveId(spoke1),
       alice,
@@ -2204,7 +2204,7 @@ contract SpokeRepayTest is SpokeBase {
     );
 
     // Bob borrow dai
-    Utils.spokeBorrow(spoke1, _daiReserveId(spoke1), bob, action1.borrowAmount, bob);
+    Utils.borrow(spoke1, _daiReserveId(spoke1), bob, action1.borrowAmount, bob);
 
     DataTypes.UserPosition memory bobDaiDataBefore = getUserInfo(
       spoke1,
@@ -2302,7 +2302,7 @@ contract SpokeRepayTest is SpokeBase {
         ? 0
         : totalCollateral - action1.supplyAmount;
       if (action2.supplyAmount > 0) {
-        Utils.spokeSupply(spoke1, _wethReserveId(spoke1), bob, action2.supplyAmount, bob);
+        Utils.supply(spoke1, _wethReserveId(spoke1), bob, action2.supplyAmount, bob);
       }
     }
 
@@ -2310,7 +2310,7 @@ contract SpokeRepayTest is SpokeBase {
     bobDaiBefore.totalDebt = spoke1.getUserTotalDebt(_daiReserveId(spoke1), bob);
 
     // Bob borrows more dai
-    Utils.spokeBorrow(spoke1, _daiReserveId(spoke1), bob, action2.borrowAmount, bob);
+    Utils.borrow(spoke1, _daiReserveId(spoke1), bob, action2.borrowAmount, bob);
 
     assertEq(
       spoke1.getUserTotalDebt(_daiReserveId(spoke1), bob),
@@ -2410,16 +2410,16 @@ contract SpokeRepayTest is SpokeBase {
     uint256 bobDaiBalanceBefore = tokenList.dai.balanceOf(bob);
 
     // Bob supply weth
-    Utils.spokeSupply(spoke1, _wethReserveId(spoke1), bob, wethSupplyAmount, bob);
+    Utils.supply(spoke1, _wethReserveId(spoke1), bob, wethSupplyAmount, bob);
     setUsingAsCollateral(spoke1, bob, _wethReserveId(spoke1), true);
 
     // Alice supply dai
-    Utils.spokeSupply(spoke1, _daiReserveId(spoke1), alice, borrowAmount, alice);
+    Utils.supply(spoke1, _daiReserveId(spoke1), alice, borrowAmount, alice);
 
     uint256 expectedDrawnShares = hub.convertToDrawnShares(daiAssetId, borrowAmount);
 
     // Bob borrow dai
-    Utils.spokeBorrow(spoke1, _daiReserveId(spoke1), bob, borrowAmount, bob);
+    Utils.borrow(spoke1, _daiReserveId(spoke1), bob, borrowAmount, bob);
 
     DataTypes.UserPosition memory bobDaiDataBefore = getUserInfo(
       spoke1,
@@ -2509,10 +2509,10 @@ contract SpokeRepayTest is SpokeBase {
     }
 
     // Derl supplies needed assets
-    Utils.spokeSupply(spoke1, _daiReserveId(spoke1), derl, totalDaiNeeded, derl);
-    Utils.spokeSupply(spoke1, _wethReserveId(spoke1), derl, totalWethNeeded, derl);
-    Utils.spokeSupply(spoke1, _usdxReserveId(spoke1), derl, totalUsdxNeeded, derl);
-    Utils.spokeSupply(spoke1, _wbtcReserveId(spoke1), derl, totalWbtcNeeded, derl);
+    Utils.supply(spoke1, _daiReserveId(spoke1), derl, totalDaiNeeded, derl);
+    Utils.supply(spoke1, _wethReserveId(spoke1), derl, totalWethNeeded, derl);
+    Utils.supply(spoke1, _usdxReserveId(spoke1), derl, totalUsdxNeeded, derl);
+    Utils.supply(spoke1, _wbtcReserveId(spoke1), derl, totalWbtcNeeded, derl);
 
     // Each user supplies collateral and borrows
     for (uint256 i = 0; i < usersInfo.length; i++) {
@@ -2561,29 +2561,23 @@ contract SpokeRepayTest is SpokeBase {
       // Supply weth and wbtc as collateral
       if (wethCollateralNeeded > 0) {
         deal(address(tokenList.weth), user, wethCollateralNeeded);
-        Utils.spokeSupply(spoke1, _wethReserveId(spoke1), user, wethCollateralNeeded, user);
+        Utils.supply(spoke1, _wethReserveId(spoke1), user, wethCollateralNeeded, user);
         setUsingAsCollateral(spoke1, user, _wethReserveId(spoke1), true);
       }
 
       if (wbtcCollateralNeeded > 0) {
         deal(address(tokenList.wbtc), user, wbtcCollateralNeeded);
-        Utils.spokeSupply(spoke1, _wbtcReserveId(spoke1), user, wbtcCollateralNeeded, user);
+        Utils.supply(spoke1, _wbtcReserveId(spoke1), user, wbtcCollateralNeeded, user);
         setUsingAsCollateral(spoke1, user, _wbtcReserveId(spoke1), true);
       }
 
       // Borrow assets based on fuzzed amounts
       if (usersInfo[i].daiInfo.borrowAmount > 0) {
-        Utils.spokeBorrow(
-          spoke1,
-          _daiReserveId(spoke1),
-          user,
-          usersInfo[i].daiInfo.borrowAmount,
-          user
-        );
+        Utils.borrow(spoke1, _daiReserveId(spoke1), user, usersInfo[i].daiInfo.borrowAmount, user);
       }
 
       if (usersInfo[i].wethInfo.borrowAmount > 0) {
-        Utils.spokeBorrow(
+        Utils.borrow(
           spoke1,
           _wethReserveId(spoke1),
           user,
@@ -2593,7 +2587,7 @@ contract SpokeRepayTest is SpokeBase {
       }
 
       if (usersInfo[i].usdxInfo.borrowAmount > 0) {
-        Utils.spokeBorrow(
+        Utils.borrow(
           spoke1,
           _usdxReserveId(spoke1),
           user,
@@ -2603,7 +2597,7 @@ contract SpokeRepayTest is SpokeBase {
       }
 
       if (usersInfo[i].wbtcInfo.borrowAmount > 0) {
-        Utils.spokeBorrow(
+        Utils.borrow(
           spoke1,
           _wbtcReserveId(spoke1),
           user,
@@ -2884,10 +2878,10 @@ contract SpokeRepayTest is SpokeBase {
     }
 
     // Derl supplies needed assets
-    Utils.spokeSupply(spoke1, _daiReserveId(spoke1), derl, totalDaiNeeded, derl);
-    Utils.spokeSupply(spoke1, _wethReserveId(spoke1), derl, totalWethNeeded, derl);
-    Utils.spokeSupply(spoke1, _usdxReserveId(spoke1), derl, totalUsdxNeeded, derl);
-    Utils.spokeSupply(spoke1, _wbtcReserveId(spoke1), derl, totalWbtcNeeded, derl);
+    Utils.supply(spoke1, _daiReserveId(spoke1), derl, totalDaiNeeded, derl);
+    Utils.supply(spoke1, _wethReserveId(spoke1), derl, totalWethNeeded, derl);
+    Utils.supply(spoke1, _usdxReserveId(spoke1), derl, totalUsdxNeeded, derl);
+    Utils.supply(spoke1, _wbtcReserveId(spoke1), derl, totalWbtcNeeded, derl);
 
     // Each user supplies collateral and borrows
     for (uint256 i = 0; i < usersInfo.length; i++) {
@@ -2936,29 +2930,23 @@ contract SpokeRepayTest is SpokeBase {
       // Supply weth and wbtc as collateral
       if (wethCollateralNeeded > 0) {
         deal(address(tokenList.weth), user, wethCollateralNeeded);
-        Utils.spokeSupply(spoke1, _wethReserveId(spoke1), user, wethCollateralNeeded, user);
+        Utils.supply(spoke1, _wethReserveId(spoke1), user, wethCollateralNeeded, user);
         setUsingAsCollateral(spoke1, user, _wethReserveId(spoke1), true);
       }
 
       if (wbtcCollateralNeeded > 0) {
         deal(address(tokenList.wbtc), user, wbtcCollateralNeeded);
-        Utils.spokeSupply(spoke1, _wbtcReserveId(spoke1), user, wbtcCollateralNeeded, user);
+        Utils.supply(spoke1, _wbtcReserveId(spoke1), user, wbtcCollateralNeeded, user);
         setUsingAsCollateral(spoke1, user, _wbtcReserveId(spoke1), true);
       }
 
       // Borrow assets based on fuzzed amounts
       if (usersInfo[i].daiInfo.borrowAmount > 0) {
-        Utils.spokeBorrow(
-          spoke1,
-          _daiReserveId(spoke1),
-          user,
-          usersInfo[i].daiInfo.borrowAmount,
-          user
-        );
+        Utils.borrow(spoke1, _daiReserveId(spoke1), user, usersInfo[i].daiInfo.borrowAmount, user);
       }
 
       if (usersInfo[i].wethInfo.borrowAmount > 0) {
-        Utils.spokeBorrow(
+        Utils.borrow(
           spoke1,
           _wethReserveId(spoke1),
           user,
@@ -2968,7 +2956,7 @@ contract SpokeRepayTest is SpokeBase {
       }
 
       if (usersInfo[i].usdxInfo.borrowAmount > 0) {
-        Utils.spokeBorrow(
+        Utils.borrow(
           spoke1,
           _usdxReserveId(spoke1),
           user,
@@ -2978,7 +2966,7 @@ contract SpokeRepayTest is SpokeBase {
       }
 
       if (usersInfo[i].wbtcInfo.borrowAmount > 0) {
-        Utils.spokeBorrow(
+        Utils.borrow(
           spoke1,
           _wbtcReserveId(spoke1),
           user,
@@ -3254,7 +3242,7 @@ contract SpokeRepayTest is SpokeBase {
     uint256 totalDaiNeeded = bobInfo.borrowAmount + aliceInfo.borrowAmount + carolInfo.borrowAmount;
 
     // Derl supplies needed DAI
-    Utils.spokeSupply(spoke1, _daiReserveId(spoke1), derl, totalDaiNeeded, derl);
+    Utils.supply(spoke1, _daiReserveId(spoke1), derl, totalDaiNeeded, derl);
 
     // Each user supplies needed collateral and borrows
     for (uint256 i = 0; i < usersInfo.length; i++) {
@@ -3270,13 +3258,13 @@ contract SpokeRepayTest is SpokeBase {
 
       // Supply WETH as collateral
       deal(address(tokenList.weth), user, wethCollateralNeeded);
-      Utils.spokeSupply(spoke1, _wethReserveId(spoke1), user, wethCollateralNeeded, user);
+      Utils.supply(spoke1, _wethReserveId(spoke1), user, wethCollateralNeeded, user);
       setUsingAsCollateral(spoke1, user, _wethReserveId(spoke1), true);
 
       usersInfo[i].suppliedShares = spoke1.getUserSuppliedShares(_wethReserveId(spoke1), user);
 
       // Borrow DAI based on fuzzed amounts
-      Utils.spokeBorrow(spoke1, _daiReserveId(spoke1), user, usersInfo[i].borrowAmount, user);
+      Utils.borrow(spoke1, _daiReserveId(spoke1), user, usersInfo[i].borrowAmount, user);
 
       // Verify initial borrowing state
       uint256 totalDaiDebt = spoke1.getUserTotalDebt(_daiReserveId(spoke1), user);
@@ -3374,7 +3362,7 @@ contract SpokeRepayTest is SpokeBase {
     uint256 totalDaiNeeded = bobInfo.borrowAmount + aliceInfo.borrowAmount;
 
     // Derl supplies needed DAI
-    Utils.spokeSupply(spoke1, _daiReserveId(spoke1), derl, totalDaiNeeded, derl);
+    Utils.supply(spoke1, _daiReserveId(spoke1), derl, totalDaiNeeded, derl);
 
     // Each user supplies needed collateral and borrows
     for (uint256 i = 0; i < usersInfo.length; i++) {
@@ -3390,13 +3378,13 @@ contract SpokeRepayTest is SpokeBase {
 
       // Supply WETH as collateral
       deal(address(tokenList.weth), user, wethCollateralNeeded);
-      Utils.spokeSupply(spoke1, _wethReserveId(spoke1), user, wethCollateralNeeded, user);
+      Utils.supply(spoke1, _wethReserveId(spoke1), user, wethCollateralNeeded, user);
       setUsingAsCollateral(spoke1, user, _wethReserveId(spoke1), true);
 
       usersInfo[i].suppliedShares = spoke1.getUserSuppliedShares(_wethReserveId(spoke1), user);
 
       // Borrow DAI based on fuzzed amounts
-      Utils.spokeBorrow(spoke1, _daiReserveId(spoke1), user, usersInfo[i].borrowAmount, user);
+      Utils.borrow(spoke1, _daiReserveId(spoke1), user, usersInfo[i].borrowAmount, user);
 
       // Verify initial borrowing state
       uint256 totalDaiDebt = spoke1.getUserTotalDebt(_daiReserveId(spoke1), user);
