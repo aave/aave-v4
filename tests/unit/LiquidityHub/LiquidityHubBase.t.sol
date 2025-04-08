@@ -152,15 +152,14 @@ contract LiquidityHubBase is Base {
   // triggers refresh to cache premium debt
   function _createPremiumDebt(ISpoke spoke, uint256 daiAmount) internal returns (uint256) {
     uint256 daiReserveId = _daiReserveId(spoke);
-    Utils.spokeSupply({
+    Utils.supplyCollateral({
       spoke: spoke,
       reserveId: daiReserveId,
       user: alice,
       amount: daiAmount,
       onBehalfOf: alice
     });
-    setUsingAsCollateral(spoke, alice, daiReserveId, true);
-    Utils.spokeBorrow({
+    Utils.borrow({
       spoke: spoke,
       reserveId: daiReserveId,
       user: alice,

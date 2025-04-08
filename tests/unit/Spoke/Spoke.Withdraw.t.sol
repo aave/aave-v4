@@ -66,7 +66,7 @@ contract SpokeWithdrawTest is SpokeBase {
     uint256 reserveId = _daiReserveId(spoke1);
 
     // User spoke supply
-    Utils.spokeSupply({
+    Utils.supply({
       spoke: spoke1,
       reserveId: reserveId,
       user: alice,
@@ -98,7 +98,7 @@ contract SpokeWithdrawTest is SpokeBase {
     uint256 reserveId = _daiReserveId(spoke1);
 
     // Alice supplies dai
-    Utils.spokeSupply({
+    Utils.supply({
       spoke: spoke1,
       reserveId: reserveId,
       user: alice,
@@ -108,7 +108,7 @@ contract SpokeWithdrawTest is SpokeBase {
     setUsingAsCollateral(spoke1, alice, reserveId, true);
 
     // Alice borrows dai
-    Utils.spokeBorrow({
+    Utils.borrow({
       spoke: spoke1,
       reserveId: reserveId,
       user: alice,
@@ -153,7 +153,7 @@ contract SpokeWithdrawTest is SpokeBase {
     );
 
     // Alice supply
-    Utils.spokeSupply({
+    Utils.supply({
       spoke: spoke1,
       reserveId: reserveId,
       user: alice,
@@ -162,7 +162,7 @@ contract SpokeWithdrawTest is SpokeBase {
     });
     setUsingAsCollateral(spoke1, alice, reserveId, true);
     // Alice borrows dai
-    Utils.spokeBorrow({
+    Utils.borrow({
       spoke: spoke1,
       reserveId: reserveId,
       user: alice,
@@ -196,7 +196,7 @@ contract SpokeWithdrawTest is SpokeBase {
     uint256 expectedSupplyShares = hub.convertToSuppliedShares(daiAssetId, amount);
 
     // Bob supplies DAI
-    Utils.spokeSupply({
+    Utils.supply({
       spoke: spoke1,
       reserveId: _daiReserveId(spoke1),
       user: bob,
@@ -261,7 +261,7 @@ contract SpokeWithdrawTest is SpokeBase {
 
   function test_withdraw_all_liquidity() public {
     uint256 supplyAmount = 5000e18;
-    Utils.spokeSupply({
+    Utils.supply({
       spoke: spoke1,
       reserveId: _daiReserveId(spoke1),
       user: bob,
@@ -287,7 +287,7 @@ contract SpokeWithdrawTest is SpokeBase {
 
   function test_withdraw_fuzz_suppliedAmount(uint256 supplyAmount) public {
     supplyAmount = bound(supplyAmount, 1, MAX_SUPPLY_AMOUNT);
-    Utils.spokeSupply({
+    Utils.supply({
       spoke: spoke1,
       reserveId: _daiReserveId(spoke1),
       user: bob,
@@ -315,7 +315,7 @@ contract SpokeWithdrawTest is SpokeBase {
     supplyAmount = bound(supplyAmount, 2, MAX_SUPPLY_AMOUNT);
     borrowAmount = bound(borrowAmount, 1, supplyAmount / 2);
 
-    Utils.spokeSupply({
+    Utils.supply({
       spoke: spoke1,
       reserveId: _daiReserveId(spoke1),
       user: bob,
@@ -334,7 +334,7 @@ contract SpokeWithdrawTest is SpokeBase {
     );
 
     // Bob borrows dai
-    Utils.spokeBorrow({
+    Utils.borrow({
       spoke: spoke1,
       reserveId: _daiReserveId(spoke1),
       user: bob,
@@ -352,7 +352,7 @@ contract SpokeWithdrawTest is SpokeBase {
     uint256 repayAmount = spoke1.getReserveTotalDebt(_daiReserveId(spoke1));
     deal(address(tokenList.dai), bob, repayAmount);
 
-    Utils.spokeRepay({
+    Utils.repay({
       spoke: spoke1,
       reserveId: _daiReserveId(spoke1),
       user: bob,
@@ -373,7 +373,7 @@ contract SpokeWithdrawTest is SpokeBase {
     supplyAmount = bound(supplyAmount, 2, MAX_SUPPLY_AMOUNT);
     borrowAmount = bound(borrowAmount, 1, supplyAmount / 2);
 
-    Utils.spokeSupply({
+    Utils.supply({
       spoke: spoke1,
       reserveId: _daiReserveId(spoke1),
       user: bob,
@@ -392,7 +392,7 @@ contract SpokeWithdrawTest is SpokeBase {
     );
 
     // Bob borrows dai
-    Utils.spokeBorrow({
+    Utils.borrow({
       spoke: spoke1,
       reserveId: _daiReserveId(spoke1),
       user: bob,
@@ -410,7 +410,7 @@ contract SpokeWithdrawTest is SpokeBase {
     uint256 repayAmount = spoke1.getReserveTotalDebt(_daiReserveId(spoke1));
     deal(address(tokenList.dai), bob, repayAmount);
 
-    Utils.spokeRepay({
+    Utils.repay({
       spoke: spoke1,
       reserveId: _daiReserveId(spoke1),
       user: bob,
@@ -433,7 +433,7 @@ contract SpokeWithdrawTest is SpokeBase {
     borrowAmount = bound(borrowAmount, 1, supplyAmount / 2);
     partialWithdrawAmount = bound(partialWithdrawAmount, 1, supplyAmount - 1);
 
-    Utils.spokeSupply({
+    Utils.supply({
       spoke: spoke1,
       reserveId: _daiReserveId(spoke1),
       user: bob,
@@ -452,7 +452,7 @@ contract SpokeWithdrawTest is SpokeBase {
     );
 
     // Bob borrows dai
-    Utils.spokeBorrow({
+    Utils.borrow({
       spoke: spoke1,
       reserveId: _daiReserveId(spoke1),
       user: bob,
@@ -471,7 +471,7 @@ contract SpokeWithdrawTest is SpokeBase {
     uint256 repayAmount = spoke1.getReserveTotalDebt(_daiReserveId(spoke1));
     deal(address(tokenList.dai), bob, repayAmount);
 
-    Utils.spokeRepay({
+    Utils.repay({
       spoke: spoke1,
       reserveId: _daiReserveId(spoke1),
       user: bob,
@@ -548,7 +548,7 @@ contract SpokeWithdrawTest is SpokeBase {
     //     (state.assetId, state.asset) = getAssetByReserveId(spoke1, params.reserveId);
 
     //     // alice supplies reserve
-    //     Utils.spokeSupply({
+    //     Utils.supply({
     //       spoke: spoke1,
     //       reserveId: params.reserveId,
     //       user: alice,
@@ -556,7 +556,7 @@ contract SpokeWithdrawTest is SpokeBase {
     //       onBehalfOf: alice
     //     });
     //     // bob supplies reserve
-    //     Utils.spokeSupply({
+    //     Utils.supply({
     //       spoke: spoke1,
     //       reserveId: params.reserveId,
     //       user: bob,
@@ -565,7 +565,7 @@ contract SpokeWithdrawTest is SpokeBase {
     //     });
 
     //     // carol borrows in order to increase index
-    //     Utils.spokeSupply({
+    //     Utils.supply({
     //       spoke: spoke1,
     //       reserveId: _wbtcReserveId(spoke1),
     //       user: carol,
@@ -573,7 +573,7 @@ contract SpokeWithdrawTest is SpokeBase {
     //       onBehalfOf: carol
     //     });
     //     setUsingAsCollateral(spoke1, carol, _wbtcReserveId(spoke1), true);
-    //     Utils.spokeBorrow({
+    //     Utils.borrow({
     //       spoke: spoke1,
     //       reserveId: params.reserveId,
     //       user: carol,
@@ -1278,7 +1278,7 @@ contract SpokeWithdrawTest is SpokeBase {
     //     });
 
     //     // Alice supplies weth as collateral
-    //     Utils.spokeSupply({
+    //     Utils.supply({
     //       spoke: spoke1,
     //       reserveId: collReserveId,
     //       user: alice,
@@ -1288,7 +1288,7 @@ contract SpokeWithdrawTest is SpokeBase {
     //     setUsingAsCollateral(spoke1, alice, collReserveId, true);
 
     //     // Bob supplies dai
-    //     Utils.spokeSupply({
+    //     Utils.supply({
     //       spoke: spoke1,
     //       reserveId: debtReserveId,
     //       user: bob,
@@ -1297,7 +1297,7 @@ contract SpokeWithdrawTest is SpokeBase {
     //     });
 
     //     // Alice borrows dai
-    //     Utils.spokeBorrow({
+    //     Utils.borrow({
     //       spoke: spoke1,
     //       reserveId: debtReserveId,
     //       user: alice,
@@ -1333,7 +1333,7 @@ contract SpokeWithdrawTest is SpokeBase {
     //     vm.assume(collAmount < MAX_SUPPLY_AMOUNT && collAmount > 1);
 
     //     // Alice supplies weth as collateral
-    //     Utils.spokeSupply({
+    //     Utils.supply({
     //       spoke: spoke1,
     //       reserveId: collReserveId,
     //       user: alice,
@@ -1343,7 +1343,7 @@ contract SpokeWithdrawTest is SpokeBase {
     //     setUsingAsCollateral(spoke1, alice, collReserveId, true);
 
     //     // Bob supplies dai
-    //     Utils.spokeSupply({
+    //     Utils.supply({
     //       spoke: spoke1,
     //       reserveId: debtReserveId,
     //       user: bob,
@@ -1352,7 +1352,7 @@ contract SpokeWithdrawTest is SpokeBase {
     //     });
 
     //     // Alice borrows dai
-    //     Utils.spokeBorrow({
+    //     Utils.borrow({
     //       spoke: spoke1,
     //       reserveId: debtReserveId,
     //       user: alice,
@@ -1384,7 +1384,7 @@ contract SpokeWithdrawTest is SpokeBase {
     //     });
 
     //     // Alice supplies weth as collateral
-    //     Utils.spokeSupply({
+    //     Utils.supply({
     //       spoke: spoke1,
     //       reserveId: collReserveId,
     //       user: alice,
@@ -1394,7 +1394,7 @@ contract SpokeWithdrawTest is SpokeBase {
     //     setUsingAsCollateral(spoke1, alice, collReserveId, true);
 
     //     // Bob supplies dai
-    //     Utils.spokeSupply({
+    //     Utils.supply({
     //       spoke: spoke1,
     //       reserveId: debtReserveId,
     //       user: bob,
@@ -1403,7 +1403,7 @@ contract SpokeWithdrawTest is SpokeBase {
     //     });
 
     //     // Alice borrows dai
-    //     Utils.spokeBorrow({
+    //     Utils.borrow({
     //       spoke: spoke1,
     //       reserveId: debtReserveId,
     //       user: alice,
@@ -1448,7 +1448,7 @@ contract SpokeWithdrawTest is SpokeBase {
     //     vm.assume(maxDebtAmount < MAX_SUPPLY_AMOUNT && maxDebtAmount > 1);
 
     //     // Alice supplies weth as collateral
-    //     Utils.spokeSupply({
+    //     Utils.supply({
     //       spoke: spoke1,
     //       reserveId: collReserveId,
     //       user: alice,
@@ -1458,7 +1458,7 @@ contract SpokeWithdrawTest is SpokeBase {
     //     setUsingAsCollateral(spoke1, alice, collReserveId, true);
 
     //     // Bob supplies dai
-    //     Utils.spokeSupply({
+    //     Utils.supply({
     //       spoke: spoke1,
     //       reserveId: debtReserveId,
     //       user: bob,
@@ -1467,7 +1467,7 @@ contract SpokeWithdrawTest is SpokeBase {
     //     });
 
     //     // Alice borrows dai
-    //     Utils.spokeBorrow({
+    //     Utils.borrow({
     //       spoke: spoke1,
     //       reserveId: debtReserveId,
     //       user: alice,
@@ -1504,7 +1504,7 @@ contract SpokeWithdrawTest is SpokeBase {
     //     });
 
     //     // Alice supplies weth as collateral
-    //     Utils.spokeSupply({
+    //     Utils.supply({
     //       spoke: spoke1,
     //       reserveId: collReserveId,
     //       user: alice,
@@ -1514,7 +1514,7 @@ contract SpokeWithdrawTest is SpokeBase {
     //     setUsingAsCollateral(spoke1, alice, collReserveId, true);
 
     //     // Bob supplies dai
-    //     Utils.spokeSupply({
+    //     Utils.supply({
     //       spoke: spoke1,
     //       reserveId: debtReserveId,
     //       user: bob,
@@ -1523,7 +1523,7 @@ contract SpokeWithdrawTest is SpokeBase {
     //     });
 
     //     // Alice borrows dai
-    //     Utils.spokeBorrow({
+    //     Utils.borrow({
     //       spoke: spoke1,
     //       reserveId: debtReserveId,
     //       user: alice,
@@ -1566,7 +1566,7 @@ contract SpokeWithdrawTest is SpokeBase {
     //     vm.assume(maxDebtAmount < MAX_SUPPLY_AMOUNT && maxDebtAmount > 1);
 
     //     // Alice supplies weth as collateral
-    //     Utils.spokeSupply({
+    //     Utils.supply({
     //       spoke: spoke1,
     //       reserveId: collReserveId,
     //       user: alice,
@@ -1576,7 +1576,7 @@ contract SpokeWithdrawTest is SpokeBase {
     //     setUsingAsCollateral(spoke1, alice, collReserveId, true);
 
     //     // Bob supplies dai
-    //     Utils.spokeSupply({
+    //     Utils.supply({
     //       spoke: spoke1,
     //       reserveId: debtReserveId,
     //       user: bob,
@@ -1585,7 +1585,7 @@ contract SpokeWithdrawTest is SpokeBase {
     //     });
 
     //     // Alice borrows dai
-    //     Utils.spokeBorrow({
+    //     Utils.borrow({
     //       spoke: spoke1,
     //       reserveId: debtReserveId,
     //       user: alice,
@@ -1634,7 +1634,7 @@ contract SpokeWithdrawTest is SpokeBase {
     //     });
 
     //     // Alice supplies weth as collateral
-    //     Utils.spokeSupply({
+    //     Utils.supply({
     //       spoke: spoke1,
     //       reserveId: wethReserveId,
     //       user: alice,
@@ -1644,7 +1644,7 @@ contract SpokeWithdrawTest is SpokeBase {
     //     setUsingAsCollateral(spoke1, alice, wethReserveId, true);
 
     //     // Bob supplies dai
-    //     Utils.spokeSupply({
+    //     Utils.supply({
     //       spoke: spoke1,
     //       reserveId: daiReserveId,
     //       user: bob,
@@ -1652,7 +1652,7 @@ contract SpokeWithdrawTest is SpokeBase {
     //       onBehalfOf: bob
     //     });
     //     // Alice borrows dai
-    //     Utils.spokeBorrow({
+    //     Utils.borrow({
     //       spoke: spoke1,
     //       reserveId: daiReserveId,
     //       user: alice,
@@ -1661,7 +1661,7 @@ contract SpokeWithdrawTest is SpokeBase {
     //     });
 
     //     // Bob supplies usdx
-    //     Utils.spokeSupply({
+    //     Utils.supply({
     //       spoke: spoke1,
     //       reserveId: usdxReserveId,
     //       user: bob,
@@ -1669,7 +1669,7 @@ contract SpokeWithdrawTest is SpokeBase {
     //       onBehalfOf: bob
     //     });
     //     // Alice borrows usdx
-    //     Utils.spokeBorrow({
+    //     Utils.borrow({
     //       spoke: spoke1,
     //       reserveId: usdxReserveId,
     //       user: alice,
@@ -1725,7 +1725,7 @@ contract SpokeWithdrawTest is SpokeBase {
     //     );
 
     //     // Alice supplies weth as collateral
-    //     Utils.spokeSupply({
+    //     Utils.supply({
     //       spoke: spoke1,
     //       reserveId: wethReserveId,
     //       user: alice,
@@ -1735,7 +1735,7 @@ contract SpokeWithdrawTest is SpokeBase {
     //     setUsingAsCollateral(spoke1, alice, wethReserveId, true);
 
     //     // Bob supplies dai
-    //     Utils.spokeSupply({
+    //     Utils.supply({
     //       spoke: spoke1,
     //       reserveId: daiReserveId,
     //       user: bob,
@@ -1743,7 +1743,7 @@ contract SpokeWithdrawTest is SpokeBase {
     //       onBehalfOf: bob
     //     });
     //     // Alice borrows dai
-    //     Utils.spokeBorrow({
+    //     Utils.borrow({
     //       spoke: spoke1,
     //       reserveId: daiReserveId,
     //       user: alice,
@@ -1752,7 +1752,7 @@ contract SpokeWithdrawTest is SpokeBase {
     //     });
 
     //     // Bob supplies usdx
-    //     Utils.spokeSupply({
+    //     Utils.supply({
     //       spoke: spoke1,
     //       reserveId: usdxReserveId,
     //       user: bob,
@@ -1760,7 +1760,7 @@ contract SpokeWithdrawTest is SpokeBase {
     //       onBehalfOf: bob
     //     });
     //     // Alice borrows usdx
-    //     Utils.spokeBorrow({
+    //     Utils.borrow({
     //       spoke: spoke1,
     //       reserveId: usdxReserveId,
     //       user: alice,
@@ -1808,7 +1808,7 @@ contract SpokeWithdrawTest is SpokeBase {
     //     });
 
     //     // Alice supplies weth as collateral
-    //     Utils.spokeSupply({
+    //     Utils.supply({
     //       spoke: spoke1,
     //       reserveId: wethReserveId,
     //       user: alice,
@@ -1818,7 +1818,7 @@ contract SpokeWithdrawTest is SpokeBase {
     //     setUsingAsCollateral(spoke1, alice, wethReserveId, true);
 
     //     // Bob supplies dai
-    //     Utils.spokeSupply({
+    //     Utils.supply({
     //       spoke: spoke1,
     //       reserveId: daiReserveId,
     //       user: bob,
@@ -1826,7 +1826,7 @@ contract SpokeWithdrawTest is SpokeBase {
     //       onBehalfOf: bob
     //     });
     //     // Alice borrows dai
-    //     Utils.spokeBorrow({
+    //     Utils.borrow({
     //       spoke: spoke1,
     //       reserveId: daiReserveId,
     //       user: alice,
@@ -1835,7 +1835,7 @@ contract SpokeWithdrawTest is SpokeBase {
     //     });
 
     //     // Bob supplies usdx
-    //     Utils.spokeSupply({
+    //     Utils.supply({
     //       spoke: spoke1,
     //       reserveId: usdxReserveId,
     //       user: bob,
@@ -1843,7 +1843,7 @@ contract SpokeWithdrawTest is SpokeBase {
     //       onBehalfOf: bob
     //     });
     //     // Alice borrows usdx
-    //     Utils.spokeBorrow({
+    //     Utils.borrow({
     //       spoke: spoke1,
     //       reserveId: usdxReserveId,
     //       user: alice,
@@ -1908,7 +1908,7 @@ contract SpokeWithdrawTest is SpokeBase {
     //     );
 
     //     // Alice supplies weth as collateral
-    //     Utils.spokeSupply({
+    //     Utils.supply({
     //       spoke: spoke1,
     //       reserveId: wethReserveId,
     //       user: alice,
@@ -1918,7 +1918,7 @@ contract SpokeWithdrawTest is SpokeBase {
     //     setUsingAsCollateral(spoke1, alice, wethReserveId, true);
 
     //     // Bob supplies dai
-    //     Utils.spokeSupply({
+    //     Utils.supply({
     //       spoke: spoke1,
     //       reserveId: daiReserveId,
     //       user: bob,
@@ -1926,7 +1926,7 @@ contract SpokeWithdrawTest is SpokeBase {
     //       onBehalfOf: bob
     //     });
     //     // Alice borrows dai
-    //     Utils.spokeBorrow({
+    //     Utils.borrow({
     //       spoke: spoke1,
     //       reserveId: daiReserveId,
     //       user: alice,
@@ -1935,7 +1935,7 @@ contract SpokeWithdrawTest is SpokeBase {
     //     });
 
     //     // Bob supplies usdx
-    //     Utils.spokeSupply({
+    //     Utils.supply({
     //       spoke: spoke1,
     //       reserveId: usdxReserveId,
     //       user: bob,
@@ -1943,7 +1943,7 @@ contract SpokeWithdrawTest is SpokeBase {
     //       onBehalfOf: bob
     //     });
     //     // Alice borrows usdx
-    //     Utils.spokeBorrow({
+    //     Utils.borrow({
     //       spoke: spoke1,
     //       reserveId: usdxReserveId,
     //       user: alice,
@@ -1993,7 +1993,7 @@ contract SpokeWithdrawTest is SpokeBase {
     //     });
 
     //     // Alice supplies weth as collateral
-    //     Utils.spokeSupply({
+    //     Utils.supply({
     //       spoke: spoke1,
     //       reserveId: wethReserveId,
     //       user: alice,
@@ -2003,7 +2003,7 @@ contract SpokeWithdrawTest is SpokeBase {
     //     setUsingAsCollateral(spoke1, alice, wethReserveId, true);
 
     //     // Bob supplies dai
-    //     Utils.spokeSupply({
+    //     Utils.supply({
     //       spoke: spoke1,
     //       reserveId: daiReserveId,
     //       user: bob,
@@ -2011,7 +2011,7 @@ contract SpokeWithdrawTest is SpokeBase {
     //       onBehalfOf: bob
     //     });
     //     // Alice borrows dai
-    //     Utils.spokeBorrow({
+    //     Utils.borrow({
     //       spoke: spoke1,
     //       reserveId: daiReserveId,
     //       user: alice,
@@ -2020,7 +2020,7 @@ contract SpokeWithdrawTest is SpokeBase {
     //     });
 
     //     // Bob supplies usdx
-    //     Utils.spokeSupply({
+    //     Utils.supply({
     //       spoke: spoke1,
     //       reserveId: usdxReserveId,
     //       user: bob,
@@ -2028,7 +2028,7 @@ contract SpokeWithdrawTest is SpokeBase {
     //       onBehalfOf: bob
     //     });
     //     // Alice borrows usdx
-    //     Utils.spokeBorrow({
+    //     Utils.borrow({
     //       spoke: spoke1,
     //       reserveId: usdxReserveId,
     //       user: alice,
@@ -2092,7 +2092,7 @@ contract SpokeWithdrawTest is SpokeBase {
     //     );
 
     //     // Alice supplies weth as collateral
-    //     Utils.spokeSupply({
+    //     Utils.supply({
     //       spoke: spoke1,
     //       reserveId: wethReserveId,
     //       user: alice,
@@ -2102,7 +2102,7 @@ contract SpokeWithdrawTest is SpokeBase {
     //     setUsingAsCollateral(spoke1, alice, wethReserveId, true);
 
     //     // Bob supplies dai
-    //     Utils.spokeSupply({
+    //     Utils.supply({
     //       spoke: spoke1,
     //       reserveId: daiReserveId,
     //       user: bob,
@@ -2110,7 +2110,7 @@ contract SpokeWithdrawTest is SpokeBase {
     //       onBehalfOf: bob
     //     });
     //     // Alice borrows dai
-    //     Utils.spokeBorrow({
+    //     Utils.borrow({
     //       spoke: spoke1,
     //       reserveId: daiReserveId,
     //       user: alice,
@@ -2119,7 +2119,7 @@ contract SpokeWithdrawTest is SpokeBase {
     //     });
 
     //     // Bob supplies usdx
-    //     Utils.spokeSupply({
+    //     Utils.supply({
     //       spoke: spoke1,
     //       reserveId: usdxReserveId,
     //       user: bob,
@@ -2127,7 +2127,7 @@ contract SpokeWithdrawTest is SpokeBase {
     //       onBehalfOf: bob
     //     });
     //     // Alice borrows usdx
-    //     Utils.spokeBorrow({
+    //     Utils.borrow({
     //       spoke: spoke1,
     //       reserveId: usdxReserveId,
     //       user: alice,
@@ -2174,15 +2174,15 @@ contract SpokeWithdrawTest is SpokeBase {
     //     });
 
     //     // Bob supply weth collateral
-    //     Utils.spokeSupply(spoke1, wethReserveId, bob, wethCollAmount, bob);
+    //     Utils.supply(spoke1, wethReserveId, bob, wethCollAmount, bob);
     //     setUsingAsCollateral(spoke1, bob, wethReserveId, true);
 
     //     // Bob supply dai collateral
-    //     Utils.spokeSupply(spoke1, daiReserveId, bob, daiCollAmount, bob);
+    //     Utils.supply(spoke1, daiReserveId, bob, daiCollAmount, bob);
     //     setUsingAsCollateral(spoke1, bob, daiReserveId, true);
 
     //     // Alice supply usdx
-    //     Utils.spokeSupply(spoke1, usdxReserveId, alice, usdxDebtAmountWeth + usdxDebtAmountDai, alice); // supply enough buffer for multiple borrows
+    //     Utils.supply(spoke1, usdxReserveId, alice, usdxDebtAmountWeth + usdxDebtAmountDai, alice); // supply enough buffer for multiple borrows
 
     //     // Bob draw max allowed usdx debt
     //     vm.prank(bob);
@@ -2235,15 +2235,15 @@ contract SpokeWithdrawTest is SpokeBase {
     //     vm.assume(daiCollAmount < MAX_SUPPLY_AMOUNT && daiCollAmount > 0);
 
     //     // Bob supply weth collateral
-    //     Utils.spokeSupply(spoke1, wethReserveId, bob, wethCollAmount, bob);
+    //     Utils.supply(spoke1, wethReserveId, bob, wethCollAmount, bob);
     //     setUsingAsCollateral(spoke1, bob, wethReserveId, true);
 
     //     // Bob supply dai collateral
-    //     Utils.spokeSupply(spoke1, daiReserveId, bob, daiCollAmount, bob);
+    //     Utils.supply(spoke1, daiReserveId, bob, daiCollAmount, bob);
     //     setUsingAsCollateral(spoke1, bob, daiReserveId, true);
 
     //     // Alice supply usdx
-    //     Utils.spokeSupply(spoke1, usdxReserveId, alice, usdxDebtAmountWeth + usdxDebtAmountDai, alice); // supply enough buffer for multiple borrows
+    //     Utils.supply(spoke1, usdxReserveId, alice, usdxDebtAmountWeth + usdxDebtAmountDai, alice); // supply enough buffer for multiple borrows
 
     //     // Bob draw max allowed usdx debt
     //     vm.prank(bob);
@@ -2292,15 +2292,15 @@ contract SpokeWithdrawTest is SpokeBase {
     //     });
 
     //     // Bob supply weth collateral
-    //     Utils.spokeSupply(spoke1, wethReserveId, bob, wethCollAmount, bob);
+    //     Utils.supply(spoke1, wethReserveId, bob, wethCollAmount, bob);
     //     setUsingAsCollateral(spoke1, bob, wethReserveId, true);
 
     //     // Bob supply dai collateral
-    //     Utils.spokeSupply(spoke1, daiReserveId, bob, daiCollAmount, bob);
+    //     Utils.supply(spoke1, daiReserveId, bob, daiCollAmount, bob);
     //     setUsingAsCollateral(spoke1, bob, daiReserveId, true);
 
     //     // Alice supply usdx
-    //     Utils.spokeSupply(spoke1, usdxReserveId, alice, usdxDebtAmountWeth + usdxDebtAmountDai, alice); // supply enough buffer for multiple borrows
+    //     Utils.supply(spoke1, usdxReserveId, alice, usdxDebtAmountWeth + usdxDebtAmountDai, alice); // supply enough buffer for multiple borrows
 
     //     // Bob draw max allowed usdx debt
     //     vm.prank(bob);
@@ -2358,15 +2358,15 @@ contract SpokeWithdrawTest is SpokeBase {
     //     vm.assume(daiCollAmount < MAX_SUPPLY_AMOUNT && daiCollAmount > 0);
 
     //     // Bob supply weth collateral
-    //     Utils.spokeSupply(spoke1, wethReserveId, bob, wethCollAmount, bob);
+    //     Utils.supply(spoke1, wethReserveId, bob, wethCollAmount, bob);
     //     setUsingAsCollateral(spoke1, bob, wethReserveId, true);
 
     //     // Bob supply dai collateral
-    //     Utils.spokeSupply(spoke1, daiReserveId, bob, daiCollAmount, bob);
+    //     Utils.supply(spoke1, daiReserveId, bob, daiCollAmount, bob);
     //     setUsingAsCollateral(spoke1, bob, daiReserveId, true);
 
     //     // Alice supply usdx
-    //     Utils.spokeSupply(spoke1, usdxReserveId, alice, usdxDebtAmountWeth + usdxDebtAmountDai, alice); // supply enough buffer for multiple borrows
+    //     Utils.supply(spoke1, usdxReserveId, alice, usdxDebtAmountWeth + usdxDebtAmountDai, alice); // supply enough buffer for multiple borrows
 
     //     // Bob draw max allowed usdx debt
     //     vm.prank(bob);
@@ -2420,15 +2420,15 @@ contract SpokeWithdrawTest is SpokeBase {
     //     });
 
     //     // Bob supply weth collateral
-    //     Utils.spokeSupply(spoke1, wethReserveId, bob, wethCollAmount, bob);
+    //     Utils.supply(spoke1, wethReserveId, bob, wethCollAmount, bob);
     //     setUsingAsCollateral(spoke1, bob, wethReserveId, true);
 
     //     // Bob supply dai collateral
-    //     Utils.spokeSupply(spoke1, daiReserveId, bob, daiCollAmount, bob);
+    //     Utils.supply(spoke1, daiReserveId, bob, daiCollAmount, bob);
     //     setUsingAsCollateral(spoke1, bob, daiReserveId, true);
 
     //     // Alice supply usdx
-    //     Utils.spokeSupply(spoke1, usdxReserveId, alice, usdxDebtAmountWeth + usdxDebtAmountDai, alice); // supply enough buffer for multiple borrows
+    //     Utils.supply(spoke1, usdxReserveId, alice, usdxDebtAmountWeth + usdxDebtAmountDai, alice); // supply enough buffer for multiple borrows
 
     //     // Bob draw max allowed usdx debt
     //     vm.prank(bob);
@@ -2490,15 +2490,15 @@ contract SpokeWithdrawTest is SpokeBase {
     //     vm.assume(daiCollAmount < MAX_SUPPLY_AMOUNT && daiCollAmount > 0);
 
     //     // Bob supply weth collateral
-    //     Utils.spokeSupply(spoke1, wethReserveId, bob, wethCollAmount, bob);
+    //     Utils.supply(spoke1, wethReserveId, bob, wethCollAmount, bob);
     //     setUsingAsCollateral(spoke1, bob, wethReserveId, true);
 
     //     // Bob supply dai collateral
-    //     Utils.spokeSupply(spoke1, daiReserveId, bob, daiCollAmount, bob);
+    //     Utils.supply(spoke1, daiReserveId, bob, daiCollAmount, bob);
     //     setUsingAsCollateral(spoke1, bob, daiReserveId, true);
 
     //     // Alice supply usdx
-    //     Utils.spokeSupply(spoke1, usdxReserveId, alice, usdxDebtAmountWeth + usdxDebtAmountDai, alice); // supply enough buffer for multiple borrows
+    //     Utils.supply(spoke1, usdxReserveId, alice, usdxDebtAmountWeth + usdxDebtAmountDai, alice); // supply enough buffer for multiple borrows
 
     //     // Bob draw max allowed usdx debt
     //     vm.prank(bob);
@@ -2552,15 +2552,15 @@ contract SpokeWithdrawTest is SpokeBase {
     //     });
 
     //     // Bob supply weth collateral
-    //     Utils.spokeSupply(spoke1, wethReserveId, bob, wethCollAmount, bob);
+    //     Utils.supply(spoke1, wethReserveId, bob, wethCollAmount, bob);
     //     setUsingAsCollateral(spoke1, bob, wethReserveId, true);
 
     //     // Bob supply dai collateral
-    //     Utils.spokeSupply(spoke1, daiReserveId, bob, daiCollAmount, bob);
+    //     Utils.supply(spoke1, daiReserveId, bob, daiCollAmount, bob);
     //     setUsingAsCollateral(spoke1, bob, daiReserveId, true);
 
     //     // Alice supply usdx
-    //     Utils.spokeSupply(spoke1, usdxReserveId, alice, usdxDebtAmountWeth + usdxDebtAmountDai, alice); // supply enough buffer for multiple borrows
+    //     Utils.supply(spoke1, usdxReserveId, alice, usdxDebtAmountWeth + usdxDebtAmountDai, alice); // supply enough buffer for multiple borrows
 
     //     // Bob draw max allowed usdx debt
     //     vm.prank(bob);
@@ -2622,15 +2622,15 @@ contract SpokeWithdrawTest is SpokeBase {
     //     vm.assume(daiCollAmount < MAX_SUPPLY_AMOUNT && daiCollAmount > 0);
 
     //     // Bob supply weth collateral
-    //     Utils.spokeSupply(spoke1, wethReserveId, bob, wethCollAmount, bob);
+    //     Utils.supply(spoke1, wethReserveId, bob, wethCollAmount, bob);
     //     setUsingAsCollateral(spoke1, bob, wethReserveId, true);
 
     //     // Bob supply dai collateral
-    //     Utils.spokeSupply(spoke1, daiReserveId, bob, daiCollAmount, bob);
+    //     Utils.supply(spoke1, daiReserveId, bob, daiCollAmount, bob);
     //     setUsingAsCollateral(spoke1, bob, daiReserveId, true);
 
     //     // Alice supply usdx
-    //     Utils.spokeSupply(spoke1, usdxReserveId, alice, usdxDebtAmountWeth + usdxDebtAmountDai, alice); // supply enough buffer for multiple borrows
+    //     Utils.supply(spoke1, usdxReserveId, alice, usdxDebtAmountWeth + usdxDebtAmountDai, alice); // supply enough buffer for multiple borrows
 
     //     // Bob draw max allowed usdx debt
     //     vm.prank(bob);
