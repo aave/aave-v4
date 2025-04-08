@@ -32,7 +32,7 @@ contract LiquidityHub is ILiquidityHub {
   // /////
 
   function addAsset(DataTypes.AssetConfig calldata config, address asset) external {
-    // TODO: AccessControl
+    // TODO: AccessControl, prevent dup entry
     _validateAssetConfig(config, asset);
     assetsList.push(IERC20(asset));
     uint256 assetId = assetCount++;
@@ -48,7 +48,7 @@ contract LiquidityHub is ILiquidityHub {
       baseBorrowRate: 0, // todo check
       id: assetId, // todo rm
       config: DataTypes.AssetConfig({
-        decimals: config.decimals,
+        decimals: config.decimals, // todo fetch decimals from token
         active: config.active,
         frozen: config.frozen,
         paused: config.paused,
@@ -208,7 +208,6 @@ contract LiquidityHub is ILiquidityHub {
 
     uint256 totalRestoredAmount = baseAmount + premiumAmount;
     uint256 baseDrawnSharesRestored = asset.toDrawnSharesDown(baseAmount);
-    require(premiumAmount > 0 || baseDrawnSharesRestored != 0, InvalidSharesAmount());
 
     asset.availableLiquidity += totalRestoredAmount;
     asset.baseDrawnAssets -= baseAmount;

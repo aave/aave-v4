@@ -135,11 +135,20 @@ contract Spoke is ISpoke {
     }
     _validateWithdraw(reserve, userPosition, amount);
 
-    uint256 oldUserPremiumDrawnShares = userPosition.premiumDrawnShares;
-    uint256 oldUserPremiumOffset = userPosition.premiumOffset;
-    uint256 accruedUserPremium = hub.convertToDrawnAssets(assetId, oldUserPremiumDrawnShares) -
-      oldUserPremiumOffset; // assets(premiumShares) - offset should never be < 0
+    uint256 userPremiumDrawnShares = userPosition.premiumDrawnShares;
+    uint256 userPremiumOffset = userPosition.premiumOffset;
+    uint256 accruedPremium = hub.convertToDrawnAssets(assetId, userPremiumDrawnShares) -
+      userPremiumOffset; // assets(premiumShares) - offset should never be < 0
+    userPosition.premiumDrawnShares = 0;
+    userPosition.premiumOffset = 0;
+    userPosition.realizedPremium += accruedPremium;
 
+    _refreshPremiumDebt(
+      reserve,
+      -int256(userPremiumDrawnShares),
+      -int256(userPremiumOffset),
+      int256(accruedPremium)
+    ); // unnecessary but we settle premium debt here
     uint256 withdrawnShares = hub.remove(reserve.assetId, amount, to);
 
     userPosition.suppliedShares -= withdrawnShares;
@@ -148,16 +157,15 @@ contract Spoke is ISpoke {
     // calc needs new user position, just updating base debt is enough
     uint256 newUserRiskPremium = _validateUserPosition(msg.sender); // validates HF
 
-    userPosition.premiumDrawnShares = userPosition.baseDrawnShares.percentMul(newUserRiskPremium);
-    userPosition.premiumOffset = hub.convertToDrawnAssets(assetId, userPosition.premiumDrawnShares);
-    userPosition.realizedPremium += accruedUserPremium;
-
-    _refreshPremiumDebt(
-      reserve,
-      _signedDiff(userPosition.premiumDrawnShares, oldUserPremiumDrawnShares),
-      _signedDiff(userPosition.premiumOffset, oldUserPremiumOffset), // update when -ve offset is introduced
-      int256(accruedUserPremium)
+    userPremiumDrawnShares = userPosition.premiumDrawnShares = userPosition
+      .baseDrawnShares
+      .percentMul(newUserRiskPremium);
+    userPremiumOffset = userPosition.premiumOffset = hub.convertToDrawnAssets(
+      reserve.assetId,
+      userPosition.premiumDrawnShares
     );
+
+    _refreshPremiumDebt(reserve, int256(userPremiumDrawnShares), int256(userPremiumOffset), 0);
     _notifyRiskPremiumUpdate(assetId, msg.sender, newUserRiskPremium);
 
     emit Withdraw(reserveId, msg.sender, withdrawnShares, to);
@@ -173,11 +181,20 @@ contract Spoke is ISpoke {
 
     _validateBorrow(reserve, msg.sender);
 
-    uint256 oldUserPremiumDrawnShares = userPosition.premiumDrawnShares;
-    uint256 oldUserPremiumOffset = userPosition.premiumOffset;
-    uint256 accruedUserPremium = hub.convertToDrawnAssets(assetId, oldUserPremiumDrawnShares) -
-      oldUserPremiumOffset; // assets(premiumShares) - offset should never be < 0
+    uint256 userPremiumDrawnShares = userPosition.premiumDrawnShares;
+    uint256 userPremiumOffset = userPosition.premiumOffset;
+    uint256 accruedPremium = hub.convertToDrawnAssets(assetId, userPremiumDrawnShares) -
+      userPremiumOffset; // assets(premiumShares) - offset should never be < 0
+    userPosition.premiumDrawnShares = 0;
+    userPosition.premiumOffset = 0;
+    userPosition.realizedPremium += accruedPremium;
 
+    _refreshPremiumDebt(
+      reserve,
+      -int256(userPremiumDrawnShares),
+      -int256(userPremiumOffset),
+      int256(accruedPremium)
+    ); // unnecessary but we settle premium debt here
     uint256 baseDrawnShares = hub.draw(assetId, amount, to);
 
     reserve.baseDrawnShares += baseDrawnShares;
@@ -186,16 +203,15 @@ contract Spoke is ISpoke {
     // calc needs new user position, just updating base debt is enough
     uint256 newUserRiskPremium = _validateUserPosition(msg.sender); // validates HF
 
-    userPosition.premiumDrawnShares = userPosition.baseDrawnShares.percentMul(newUserRiskPremium);
-    userPosition.premiumOffset = hub.convertToDrawnAssets(assetId, userPosition.premiumDrawnShares);
-    userPosition.realizedPremium += accruedUserPremium;
-
-    _refreshPremiumDebt(
-      reserve,
-      _signedDiff(userPosition.premiumDrawnShares, oldUserPremiumDrawnShares),
-      _signedDiff(userPosition.premiumOffset, oldUserPremiumOffset), // update when -ve offset is introduced
-      int256(accruedUserPremium)
+    userPremiumDrawnShares = userPosition.premiumDrawnShares = userPosition
+      .baseDrawnShares
+      .percentMul(newUserRiskPremium);
+    userPremiumOffset = userPosition.premiumOffset = hub.convertToDrawnAssets(
+      reserve.assetId,
+      userPosition.premiumDrawnShares
     );
+
+    _refreshPremiumDebt(reserve, int256(userPremiumDrawnShares), int256(userPremiumOffset), 0);
     _notifyRiskPremiumUpdate(assetId, msg.sender, newUserRiskPremium);
 
     emit Borrow(reserveId, msg.sender, baseDrawnShares, to);
@@ -225,8 +241,8 @@ contract Spoke is ISpoke {
 
     _refreshPremiumDebt(
       reserve,
-      _signedDiff(userPosition.premiumDrawnShares, userPremiumDrawnShares),
-      _signedDiff(userPosition.premiumOffset, userPremiumOffset),
+      -int256(userPremiumDrawnShares),
+      -int256(userPremiumOffset),
       _signedDiff(userPosition.realizedPremium, userRealizedPremium)
     ); // we settle premium debt here
     uint256 restoredShares = hub.restore(
