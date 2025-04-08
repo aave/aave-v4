@@ -81,7 +81,10 @@ contract SpokeBase is Base {
   }
 
   // supply MAX_SUPPLY_AMOUNT liquidity to reserve from a temporary user
-  function _supplyAvailableLiquidity(ISpoke spoke, uint256 reserveId, uint256 amount) public {
+  function _deployLiquidity(ISpoke spoke, uint256 reserveId, uint256 amount) public {
+    uint256 assetId = spoke.getReserve(reserveId).assetId;
+    uint256 initialLiq = hub.getAvailableLiquidity(assetId);
+
     address tempUser = makeAddr('tempUser');
     IERC20 asset = IERC20(spoke.getReserve(reserveId).asset);
     deal(address(asset), tempUser, amount);
@@ -97,7 +100,7 @@ contract SpokeBase is Base {
       onBehalfOf: tempUser
     });
 
-    assertGe(hub.getAvailableLiquidity(spoke.getReserve(reserveId).assetId), amount);
+    assertEq(hub.getAvailableLiquidity(assetId), initialLiq + amount);
   }
 
   // increase share conversion index on given reserve
@@ -374,27 +377,27 @@ contract SpokeBase is Base {
     assertEq(
       userPos.suppliedShares,
       expectedUserPos.suppliedShares,
-      string(abi.encodePacked('user supplied shares ', label))
+      string.concat('user supplied shares ', label)
     );
     assertEq(
       userPos.baseDrawnShares,
       expectedUserPos.baseDrawnShares,
-      string(abi.encodePacked('user baseDrawnShares ', label))
+      string.concat('user baseDrawnShares ', label)
     );
     assertEq(
       userPos.premiumDrawnShares,
       expectedUserPos.premiumDrawnShares,
-      string(abi.encodePacked('user premiumDrawnShares ', label))
+      string.concat('user premiumDrawnShares ', label)
     );
     assertEq(
       userPos.premiumOffset,
       expectedUserPos.premiumOffset,
-      string(abi.encodePacked('user premiumOffset ', label))
+      string.concat('user premiumOffset ', label)
     );
     assertEq(
       userPos.realizedPremium,
       expectedUserPos.realizedPremium,
-      string(abi.encodePacked('user realized premium ', label))
+      string.concat('user realized premium ', label)
     );
   }
 
@@ -403,20 +406,16 @@ contract SpokeBase is Base {
     DebtData memory expectedUserDebt,
     string memory label
   ) internal pure {
-    assertEq(
-      userDebt.baseDebt,
-      expectedUserDebt.baseDebt,
-      string(abi.encodePacked('user base debt ', label))
-    );
+    assertEq(userDebt.baseDebt, expectedUserDebt.baseDebt, string.concat('user base debt ', label));
     assertEq(
       userDebt.premiumDebt,
       expectedUserDebt.premiumDebt,
-      string(abi.encodePacked('user premium debt ', label))
+      string.concat('user premium debt ', label)
     );
     assertEq(
       userDebt.totalDebt,
       expectedUserDebt.totalDebt,
-      string(abi.encodePacked('user total debt ', label))
+      string.concat('user total debt ', label)
     );
   }
 
@@ -440,15 +439,38 @@ contract SpokeBase is Base {
     userPos.suppliedShares = hub.convertToSuppliedShares(assetId, suppliedAmount);
   }
 
-  /// calculated expected realized premium. MUST be called prior to user action to utilize prior exch rate
+  /// calculated expected realized premium
+  /// MUST be called prior to user action to utilize prior exch rate
   function _calculateExpectedRealizedPremium(
     ISpoke spoke,
     uint256 reserveId,
     address user
-  ) internal returns (uint256) {
+  ) internal view returns (uint256) {
     uint256 assetId = spoke.getReserve(reserveId).assetId;
     DataTypes.UserPosition memory userPos = getUserInfo(spoke, user, assetId);
     return hub.convertToDrawnAssets(assetId, userPos.premiumDrawnShares) - userPos.premiumOffset;
+  }
+
+  /// assert that realized premium matches naively calculated value
+  function _assertRealizedPremiumCalcMatchesNaive(
+    ISpoke spoke,
+    uint256 reserveId,
+    uint256 prevBaseDebt,
+    DataTypes.UserPosition memory userPos,
+    uint40 lastTimestamp
+  ) internal view returns (uint256) {
+    uint256 assetId = spoke.getReserve(reserveId).assetId;
+    uint256 accruedBase = MathUtils
+      .calculateLinearInterest(hub.getAsset(assetId).baseBorrowRate, lastTimestamp)
+      .rayMul(prevBaseDebt);
+
+    // equivalent to multiplying by risk premium (RP = premium drawn shares / base drawn shares)
+    assertApproxEqAbs(
+      userPos.realizedPremium,
+      ((accruedBase - prevBaseDebt) * (userPos.premiumDrawnShares)) / (userPos.baseDrawnShares),
+      1, // precision loss due to calcs in asset amount and conversion to
+      'realized premium naive calc'
+    );
   }
 
   /// assert that sum across User storage debt matches Reserve storage debt
@@ -467,11 +489,11 @@ contract SpokeBase is Base {
 
     for (uint256 i = 0; i < users.length; ++i) {
       DataTypes.UserPosition memory userData = getUserInfo(spoke, users[i], reserveId);
-      usersDebt.totalDebt += spoke.getUserTotalDebt(reserveId, users[i]);
       (uint256 baseDebt, uint256 premiumDebt) = spoke.getUserDebt(reserveId, users[i]);
 
       usersDebt.baseDebt += baseDebt;
       usersDebt.premiumDebt += premiumDebt;
+      usersDebt.totalDebt += baseDebt + premiumDebt;
 
       assertEq(
         baseDebt,
@@ -490,17 +512,17 @@ contract SpokeBase is Base {
     assertEq(
       reserveDebt.baseDebt,
       usersDebt.baseDebt,
-      string(abi.encodePacked('reserve vs sum users base debt ', label))
+      string.concat('reserve vs sum users base debt ', label)
     );
     assertEq(
       reserveDebt.premiumDebt,
       usersDebt.premiumDebt,
-      string(abi.encodePacked('reserve vs sum users premium debt ', label))
+      string.concat('reserve vs sum users premium debt ', label)
     );
     assertEq(
       reserveDebt.totalDebt,
       usersDebt.totalDebt,
-      string(abi.encodePacked('reserve vs sum users total debt ', label))
+      string.concat('reserve vs sum users total debt ', label)
     );
   }
 

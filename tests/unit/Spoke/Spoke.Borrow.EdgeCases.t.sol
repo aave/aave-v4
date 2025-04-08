@@ -76,7 +76,7 @@ contract SpokeBorrowEdgeCasesTest is SpokeBase {
   }
 
   /// fuzz - given an inflated ex rate, it's better for the user to borrow 1 big amount than 2 small amounts due to rounding(up)
-  function test_borrow_fuzz_rounding_effect_multiple_actions(
+  function test_borrow_fuzz_rounding_effect_inflated_ex_rate(
     uint256 amount1,
     uint256 amount2,
     uint256 skipTime
@@ -103,7 +103,7 @@ contract SpokeBorrowEdgeCasesTest is SpokeBase {
       onBehalfOf: carol
     });
 
-    _supplyAvailableLiquidity(spoke1, _daiReserveId(spoke1), MAX_SUPPLY_AMOUNT_DAI);
+    _deployLiquidity(spoke1, _daiReserveId(spoke1), MAX_SUPPLY_AMOUNT_DAI);
 
     TestReserve memory collateral;
     collateral.reserveId = _wethReserveId(spoke1);
@@ -165,7 +165,7 @@ contract SpokeBorrowEdgeCasesTest is SpokeBase {
   }
 
   /// base exch rate, it's the same for user to borrow 1 big amount vs 2 small amounts
-  function test_borrow_fuzz_rounding_effect_base_ex_rate(uint256 amount1, uint256 amount2) public {
+  function test_borrow_fuzz_rounding_effect(uint256 amount1, uint256 amount2) public {
     amount1 = bound(amount1, 1, MAX_SUPPLY_AMOUNT_DAI / 4);
     amount2 = bound(amount2, 1, MAX_SUPPLY_AMOUNT_DAI / 4);
 
@@ -190,7 +190,7 @@ contract SpokeBorrowEdgeCasesTest is SpokeBase {
     collateral.supplier = alice;
     collateral.supplyAmount = 100e18;
 
-    _supplyAvailableLiquidity(spoke1, _daiReserveId(spoke1), MAX_SUPPLY_AMOUNT_DAI);
+    _deployLiquidity(spoke1, _daiReserveId(spoke1), MAX_SUPPLY_AMOUNT_DAI);
 
     uint256 carolDaiBefore = tokenList.dai.balanceOf(carol);
     uint256 bobDaiBefore = tokenList.dai.balanceOf(bob);

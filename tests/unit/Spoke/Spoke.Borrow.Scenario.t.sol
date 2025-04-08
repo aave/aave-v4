@@ -11,14 +11,12 @@ contract SpokeBorrowScenarioTest is SpokeBase {
     uint256 daiBorrowAmount,
     uint256 usdxBorrowAmount,
     uint256 daiBorrowAmount2,
-    uint256 usdxBorrowAmount2,
-    uint256 skipTime
+    uint256 usdxBorrowAmount2
   ) public {
     daiBorrowAmount = bound(daiBorrowAmount, 0, MAX_SUPPLY_AMOUNT / 4);
     usdxBorrowAmount = bound(usdxBorrowAmount, 0, MAX_SUPPLY_AMOUNT / 4);
     daiBorrowAmount2 = bound(daiBorrowAmount2, 0, MAX_SUPPLY_AMOUNT / 4);
     usdxBorrowAmount2 = bound(usdxBorrowAmount2, 0, MAX_SUPPLY_AMOUNT / 4);
-    skipTime = bound(skipTime, 0, MAX_SKIP_TIME);
 
     BorrowTestData memory state;
 
@@ -61,12 +59,8 @@ contract SpokeBorrowScenarioTest is SpokeBase {
     Utils.supplyCollateral(spoke1, state.wbtcReserveId, bob, state.wbtcBob.supplyAmount, bob);
 
     // supply enough available liquidity, at least >= 1
-    _supplyAvailableLiquidity(spoke1, state.daiReserveId, daiBorrowAmount + daiBorrowAmount2 + 1);
-    _supplyAvailableLiquidity(
-      spoke1,
-      state.usdxReserveId,
-      usdxBorrowAmount + usdxBorrowAmount2 + 1
-    );
+    _deployLiquidity(spoke1, state.daiReserveId, daiBorrowAmount + daiBorrowAmount2 + 1);
+    _deployLiquidity(spoke1, state.usdxReserveId, usdxBorrowAmount + usdxBorrowAmount2 + 1);
 
     _assertUserPositionAndDebt({
       spoke: spoke1,
@@ -487,71 +481,7 @@ contract SpokeBorrowScenarioTest is SpokeBase {
   }
 
   function test_borrow_skip_borrow() public {
-    BorrowTestData memory state;
-
-    state.wethReserveId = _wethReserveId(spoke1);
-    state.daiReserveId = _daiReserveId(spoke1);
-    state.wethBob.supplyAmount = MAX_SUPPLY_AMOUNT / 2;
-    state.daiBob.userPosBefore.realizedPremium = _calculateExpectedRealizedPremium(
-      spoke1,
-      state.daiReserveId,
-      bob
-    );
-
-    uint256 borrowAmount1 = 10e18;
-    uint256 borrowAmount2 = 10e18;
-
-    address[] memory users = new address[](1);
-    users[0] = bob;
-
-    _supplyAvailableLiquidity(spoke1, state.daiReserveId, MAX_SUPPLY_AMOUNT_DAI);
-
-    // Bob supply weth as collateral
-    Utils.supplyCollateral(spoke1, state.wethReserveId, bob, state.wethBob.supplyAmount, bob);
-
-    // Bob borrow all reserves
-    vm.prank(bob);
-    spoke1.borrow(state.daiReserveId, borrowAmount1, bob);
-
-    _assertUsersAndReserveDebt(spoke1, state.daiReserveId, users, 'spoke1 bob dai after');
-    _assertUserPositionAndDebt({
-      spoke: spoke1,
-      reserveId: state.daiReserveId,
-      user: bob,
-      debtAmount: borrowAmount1,
-      suppliedAmount: 0,
-      expectedRealizedPremium: state.daiBob.userPosBefore.realizedPremium,
-      label: 'bob dai data after borrow1'
-    });
-
-    uint40 lastTimestamp = uint40(vm.getBlockTimestamp());
-
-    skip(365 days);
-
-    state.daiBob.userPosBefore.realizedPremium = _calculateExpectedRealizedPremium(
-      spoke1,
-      state.daiReserveId,
-      bob
-    );
-
-    vm.prank(bob);
-    spoke1.borrow(state.daiReserveId, borrowAmount2, bob);
-
-    uint256 cumulatedInterest = MathUtils.calculateLinearInterest(
-      hub.getAsset(daiAssetId).baseBorrowRate,
-      lastTimestamp
-    );
-    uint256 expectedBaseDebt = cumulatedInterest.rayMul(borrowAmount1) + borrowAmount2;
-    _assertUsersAndReserveDebt(spoke1, state.daiReserveId, users, 'spoke1 bob dai after');
-    _assertUserPositionAndDebt({
-      spoke: spoke1,
-      reserveId: state.daiReserveId,
-      user: bob,
-      debtAmount: expectedBaseDebt,
-      suppliedAmount: state.daiBob.supplyAmount,
-      expectedRealizedPremium: state.daiBob.userPosBefore.realizedPremium,
-      label: 'bob dai data after'
-    });
+    test_borrow_fuzz_skip_borrow(10e18, 20e18, 365 days);
   }
 
   function test_borrow_fuzz_skip_borrow(
@@ -577,7 +507,7 @@ contract SpokeBorrowScenarioTest is SpokeBase {
     address[] memory users = new address[](1);
     users[0] = bob;
 
-    _supplyAvailableLiquidity(spoke1, state.daiReserveId, MAX_SUPPLY_AMOUNT_DAI);
+    _deployLiquidity(spoke1, state.daiReserveId, MAX_SUPPLY_AMOUNT_DAI);
 
     // Bob supply weth as collateral
     Utils.supplyCollateral(spoke1, state.wethReserveId, bob, state.wethBob.supplyAmount, bob);
@@ -598,7 +528,9 @@ contract SpokeBorrowScenarioTest is SpokeBase {
       label: 'bob dai data after borrow1'
     });
 
+    state.daiBob.userPosBefore = spoke1.getUserPosition(state.daiReserveId, bob);
     uint40 lastTimestamp = uint40(vm.getBlockTimestamp());
+    (uint256 baseDebt, ) = spoke1.getUserDebt(state.daiReserveId, bob);
 
     skip(skipTime);
 
@@ -613,6 +545,13 @@ contract SpokeBorrowScenarioTest is SpokeBase {
       spoke1,
       state.daiReserveId,
       bob
+    );
+    _assertRealizedPremiumCalcMatchesNaive(
+      spoke1,
+      state.daiReserveId,
+      baseDebt,
+      state.daiBob.userPosBefore,
+      lastTimestamp
     );
 
     // Bob borrow more dai
