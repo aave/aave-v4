@@ -720,7 +720,7 @@ abstract contract Base is Test {
     uint256 premiumDebt,
     uint256 amount
   ) internal view returns (uint256, uint256) {
-    if (amount >= baseDebt + premiumDebt) {
+    if (amount == type(uint256).max) {
       return (baseDebt, premiumDebt);
     }
     if (amount <= premiumDebt) {
