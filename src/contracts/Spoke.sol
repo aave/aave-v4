@@ -933,14 +933,14 @@ contract Spoke is ISpoke {
 
   function _validateLiquidationConfig(DataTypes.LiquidationConfig calldata config) internal view {
     _validateCloseFactor(config.closeFactor);
-    _validateVariableLiquidationBonusConfig(config.liqBonusConfig);
+    _validateLiqBonusConfig(config.liqBonusConfig);
   }
 
   function _validateCloseFactor(uint256 closeFactor) internal view {
     require(closeFactor >= HEALTH_FACTOR_LIQUIDATION_THRESHOLD, InvalidCloseFactor());
   }
 
-  function _validateVariableLiquidationBonusConfig(
+  function _validateLiqBonusConfig(
     DataTypes.VariableLiquidationBonusConfig calldata config
   ) internal view {
     // if liquidationBonusFactor == 0, then variable liquidation bonus will not be applied
