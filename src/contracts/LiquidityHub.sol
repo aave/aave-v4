@@ -32,7 +32,7 @@ contract LiquidityHub is ILiquidityHub {
   // /////
 
   function addAsset(DataTypes.AssetConfig calldata config, address asset) external {
-    // TODO: AccessControl
+    // TODO: AccessControl, prevent dup entry
     _validateAssetConfig(config, asset);
     assetsList.push(IERC20(asset));
     uint256 assetId = assetCount++;
