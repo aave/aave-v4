@@ -110,7 +110,7 @@ library DataTypes {
 
   struct LiquidationConfig {
     uint256 closeFactor; // BPS, HF value to restore to during a liquidation
-    VariableLiquidationBonusConfig variableLiquidationBonusConfig;
+    VariableLiquidationBonusConfig liqBonusConfig;
   }
 
   struct VariableLiquidationBonusConfig {

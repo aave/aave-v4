@@ -359,11 +359,11 @@ contract Spoke is ISpoke {
   ) public view returns (uint256) {
     uint256 liquidationBonus = _reserves[reserveId].config.liquidationBonus;
     // if healthFactorBonusThreshold == 0, always return base liquidationBonus
-    if (_liquidationConfig.variableLiquidationBonusConfig.healthFactorBonusThreshold == 0) {
+    if (_liquidationConfig.liqBonusConfig.healthFactorBonusThreshold == 0) {
       return liquidationBonus;
     }
     return
-      _liquidationConfig.variableLiquidationBonusConfig.calculateVariableLiquidationBonus(
+      _liquidationConfig.liqBonusConfig.calculate(
         healthFactor,
         HEALTH_FACTOR_LIQUIDATION_THRESHOLD,
         liquidationBonus
@@ -765,7 +765,7 @@ contract Spoke is ISpoke {
 
   function _validateLiquidationConfig(DataTypes.LiquidationConfig calldata config) internal view {
     _validateCloseFactor(config.closeFactor);
-    _validateVariableLiquidationBonusConfig(config.variableLiquidationBonusConfig);
+    _validateVariableLiquidationBonusConfig(config.liqBonusConfig);
   }
 
   function _validateCloseFactor(uint256 closeFactor) internal view {
@@ -780,7 +780,7 @@ contract Spoke is ISpoke {
       config.liquidationBonusFactor <= PercentageMath.PERCENTAGE_FACTOR,
       InvalidLiquidationBonusFactor()
     );
-    // if healthFactorBonusThreshold == HEALTH_FACTOR_LIQUIDATION_THRESHOLD, then calculateVariableLiquidationBonus will be undefined
+    // if healthFactorBonusThreshold == HEALTH_FACTOR_LIQUIDATION_THRESHOLD, then calculate will be undefined
     require(
       config.healthFactorBonusThreshold < HEALTH_FACTOR_LIQUIDATION_THRESHOLD,
       InvalidHealthFactorBonusThreshold()

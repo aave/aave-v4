@@ -34,7 +34,7 @@ interface ISpoke {
     int256 premiumOffsetDelta,
     int256 realizedPremiumDelta
   );
-  event OracleUpdated(uint256 indexed reserveId, address oracle);
+  event OracleUpdated(uint256 indexed reserveId, address indexed oracle);
   event LiquidationConfigUpdated(DataTypes.LiquidationConfig config);
 
   error InvalidReserve();
