@@ -606,6 +606,10 @@ contract Spoke is ISpoke {
   ) internal view {
     require(debtToCover > 0, InvalidDebtToCover());
     // reserve validation
+    require(
+      collateralReserve.asset != address(0) && debtReserve.asset != address(0),
+      ReserveNotListed()
+    );
     require(collateralReserve.config.active && debtReserve.config.active, ReserveNotActive());
     require(!collateralReserve.config.paused && !debtReserve.config.paused, ReservePaused());
     bool isCollateralEnabled = _usingAsCollateral(userPosition) &&

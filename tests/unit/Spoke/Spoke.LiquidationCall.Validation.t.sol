@@ -5,12 +5,12 @@ import 'tests/unit/Spoke/SpokeBase.t.sol';
 
 contract LiquidationCallValidationTest is SpokeBase {
   function test_liquidationCall_revertsWith_ReserveNotActive_collateralReserve() public {
-    uint256 wethAssetId = _wethReserveId(spoke1);
+    uint256 wethReserveId = _wethReserveId(spoke1);
     uint256 daiReserveId = _daiReserveId(spoke1);
     uint256 debtToCover = 1;
 
     test_liquidationCall_fuzz_revertsWith_ReserveNotActive_collateralReserve(
-      wethAssetId,
+      wethReserveId,
       daiReserveId,
       debtToCover
     );
@@ -39,12 +39,12 @@ contract LiquidationCallValidationTest is SpokeBase {
   }
 
   function test_liquidationCall_revertsWith_ReserveNotActive_debtReserve() public {
-    uint256 wethAssetId = _wethReserveId(spoke1);
+    uint256 wethReserveId = _wethReserveId(spoke1);
     uint256 daiReserveId = _daiReserveId(spoke1);
     uint256 debtToCover = 1;
 
     test_liquidationCall_fuzz_revertsWith_ReserveNotActive_debtReserve(
-      wethAssetId,
+      wethReserveId,
       daiReserveId,
       debtToCover
     );
@@ -73,12 +73,12 @@ contract LiquidationCallValidationTest is SpokeBase {
   }
 
   function test_liquidationCall_revertsWith_ReservePaused_collateralReserve() public {
-    uint256 wethAssetId = _wethReserveId(spoke1);
+    uint256 wethReserveId = _wethReserveId(spoke1);
     uint256 daiReserveId = _daiReserveId(spoke1);
     uint256 debtToCover = 1;
 
     test_liquidationCall_fuzz_revertsWith_ReservePaused_collateralReserve(
-      wethAssetId,
+      wethReserveId,
       daiReserveId,
       debtToCover
     );
@@ -106,12 +106,12 @@ contract LiquidationCallValidationTest is SpokeBase {
     spoke1.liquidationCall(collateralReserveId, debtReserveId, alice, debtToCover);
   }
   function test_liquidationCall_revertsWith_ReservePaused_debtReserve() public {
-    uint256 wethAssetId = _wethReserveId(spoke1);
+    uint256 wethReserveId = _wethReserveId(spoke1);
     uint256 daiReserveId = _daiReserveId(spoke1);
     uint256 debtToCover = 1;
 
     test_liquidationCall_fuzz_revertsWith_ReservePaused_debtReserve(
-      wethAssetId,
+      wethReserveId,
       daiReserveId,
       debtToCover
     );
@@ -140,10 +140,10 @@ contract LiquidationCallValidationTest is SpokeBase {
   }
 
   function test_liquidationCall_revertsWith_InvalidDebtToCover() public {
-    uint256 wethAssetId = _wethReserveId(spoke1);
+    uint256 wethReserveId = _wethReserveId(spoke1);
     uint256 daiReserveId = _daiReserveId(spoke1);
 
-    test_liquidationCall_fuzz_revertsWith_InvalidDebtToCover(wethAssetId, daiReserveId);
+    test_liquidationCall_fuzz_revertsWith_InvalidDebtToCover(wethReserveId, daiReserveId);
   }
 
   function test_liquidationCall_fuzz_revertsWith_InvalidDebtToCover(
@@ -161,6 +161,39 @@ contract LiquidationCallValidationTest is SpokeBase {
       : (reserveId2, reserveId1);
 
     vm.expectRevert(ISpoke.InvalidDebtToCover.selector);
+    spoke1.liquidationCall(collateralReserveId, debtReserveId, alice, debtToCover);
+  }
+
+  function test_liquidationCall_revertsWith_HealthFactorNotBelowThreshold_no_supply() public {
+    uint256 wethReserveId = _wethReserveId(spoke1);
+    uint256 daiReserveId = _daiReserveId(spoke1);
+    uint256 debtToCover = 1;
+
+    // vm.expectRevert(ISpoke.HealthFactorNotBelowThreshold.selector);
+    // spoke1.liquidationCall(wethReserveId, daiReserveId, alice, debtToCover);
+    test_liquidationCall_fuzz_revertsWith_HealthFactorNotBelowThreshold_no_supply_(
+      wethReserveId,
+      daiReserveId,
+      debtToCover
+    );
+  }
+
+  function test_liquidationCall_fuzz_revertsWith_HealthFactorNotBelowThreshold_no_supply_(
+    uint256 reserveId1,
+    uint256 reserveId2,
+    uint256 debtToCover
+  ) public {
+    reserveId1 = bound(reserveId1, 0, spoke1.reserveCount() - 1);
+    reserveId2 = bound(reserveId2, 0, spoke1.reserveCount() - 1);
+    uint256 debtToCover = bound(debtToCover, 1, MAX_SUPPLY_AMOUNT);
+
+    // if even, reserveId1 is collateral, reserveId2 is debt
+    // if odd, reserveId1 is debt, reserveId2 is collateral
+    (uint256 collateralReserveId, uint256 debtReserveId) = vm.randomUint() % 2 == 0
+      ? (reserveId1, reserveId2)
+      : (reserveId2, reserveId1);
+
+    vm.expectRevert(ISpoke.HealthFactorNotBelowThreshold.selector);
     spoke1.liquidationCall(collateralReserveId, debtReserveId, alice, debtToCover);
   }
 }
