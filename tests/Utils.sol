@@ -17,13 +17,13 @@ library Utils {
     uint256 amount,
     address user,
     address to // todo: implement
-  ) internal {
+  ) internal returns (uint256) {
     vm.startPrank(user);
     hub.assetsList(assetId).approve(address(hub), amount);
     vm.stopPrank();
 
     vm.prank(spoke);
-    hub.add(assetId, amount, user);
+    return hub.add(assetId, amount, user);
   }
 
   function draw(
@@ -33,7 +33,7 @@ library Utils {
     address to,
     uint256 amount,
     address onBehalfOf // todo: implement
-  ) internal {
+  ) internal returns (uint256) {
     vm.prank(spoke);
     hub.draw(assetId, amount, to);
   }
