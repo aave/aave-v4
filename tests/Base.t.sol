@@ -272,6 +272,7 @@ abstract contract Base is Test {
       collateralFactor: 80_00,
       liquidationBonus: 0,
       liquidityPremium: 15_00,
+      liquidationProtocolFeePercentage: 0,
       borrowable: true,
       collateral: true,
       oracle: oracle
@@ -284,6 +285,7 @@ abstract contract Base is Test {
       collateralFactor: 75_00,
       liquidationBonus: 0,
       liquidityPremium: 5_00,
+      liquidationProtocolFeePercentage: 0,
       borrowable: true,
       collateral: true,
       oracle: oracle
@@ -296,6 +298,7 @@ abstract contract Base is Test {
       collateralFactor: 78_00,
       liquidationBonus: 0,
       liquidityPremium: 20_00,
+      liquidationProtocolFeePercentage: 0,
       borrowable: true,
       collateral: true,
       oracle: oracle
@@ -308,6 +311,7 @@ abstract contract Base is Test {
       collateralFactor: 78_00,
       liquidationBonus: 0,
       liquidityPremium: 50_00,
+      liquidationProtocolFeePercentage: 0,
       borrowable: true,
       collateral: true,
       oracle: oracle
@@ -336,6 +340,7 @@ abstract contract Base is Test {
       collateralFactor: 80_00,
       liquidationBonus: 0,
       liquidityPremium: 0,
+      liquidationProtocolFeePercentage: 0,
       borrowable: true,
       collateral: true,
       oracle: oracle
@@ -348,6 +353,7 @@ abstract contract Base is Test {
       collateralFactor: 76_00,
       liquidationBonus: 0,
       liquidityPremium: 10_00,
+      liquidationProtocolFeePercentage: 0,
       borrowable: true,
       collateral: true,
       oracle: oracle
@@ -360,6 +366,7 @@ abstract contract Base is Test {
       collateralFactor: 72_00,
       liquidationBonus: 0,
       liquidityPremium: 20_00,
+      liquidationProtocolFeePercentage: 0,
       borrowable: true,
       collateral: true,
       oracle: oracle
@@ -372,6 +379,7 @@ abstract contract Base is Test {
       collateralFactor: 72_00,
       liquidationBonus: 0,
       liquidityPremium: 50_00,
+      liquidationProtocolFeePercentage: 0,
       borrowable: true,
       collateral: true,
       oracle: oracle
@@ -400,6 +408,7 @@ abstract contract Base is Test {
       collateralFactor: 75_00,
       liquidationBonus: 0,
       liquidityPremium: 0,
+      liquidationProtocolFeePercentage: 0,
       borrowable: true,
       collateral: true,
       oracle: oracle
@@ -412,6 +421,7 @@ abstract contract Base is Test {
       collateralFactor: 75_00,
       liquidationBonus: 0,
       liquidityPremium: 10_00,
+      liquidationProtocolFeePercentage: 0,
       borrowable: true,
       collateral: true,
       oracle: oracle
@@ -424,6 +434,7 @@ abstract contract Base is Test {
       collateralFactor: 79_00,
       liquidationBonus: 0,
       liquidityPremium: 20_00,
+      liquidationProtocolFeePercentage: 0,
       borrowable: true,
       collateral: true,
       oracle: oracle
@@ -436,6 +447,7 @@ abstract contract Base is Test {
       collateralFactor: 77_00,
       liquidationBonus: 0,
       liquidityPremium: 50_00,
+      liquidationProtocolFeePercentage: 0,
       borrowable: true,
       collateral: true,
       oracle: oracle
@@ -475,6 +487,7 @@ abstract contract Base is Test {
       collateralFactor: 70_00,
       liquidationBonus: 0,
       liquidityPremium: 100_00,
+      liquidationProtocolFeePercentage: 0,
       borrowable: true,
       collateral: true,
       oracle: oracle
@@ -717,6 +730,18 @@ abstract contract Base is Test {
   function calcNewPrice(uint256 price, uint256 percent) public pure returns (uint256) {
     if (percent == 0) return price;
     return price.percentMul(percent);
+  }
+
+  /// @param percentChange percent change in bps, e.g. 90_00 is updating asset price to 90% of before
+  function _setPriceChange(
+    MockPriceOracle oracle,
+    uint256 assetId,
+    uint256 percentChange
+  ) internal returns (uint256) {
+    uint256 newPrice = calcNewPrice(oracle.getAssetPrice(assetId), percentChange);
+    oracle.setAssetPrice(assetId, newPrice);
+
+    return newPrice;
   }
 
   /// @dev Helper function to check consistent supplied amounts within accounting

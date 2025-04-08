@@ -79,6 +79,7 @@ contract Spoke is ISpoke {
         collateralFactor: config.collateralFactor,
         liquidationBonus: config.liquidationBonus,
         liquidityPremium: config.liquidityPremium,
+        liquidationProtocolFeePercentage: config.liquidationProtocolFeePercentage,
         borrowable: config.borrowable,
         collateral: config.collateral,
         oracle: config.oracle
@@ -107,6 +108,7 @@ contract Spoke is ISpoke {
       collateralFactor: config.collateralFactor,
       liquidationBonus: config.liquidationBonus,
       liquidityPremium: config.liquidityPremium,
+      liquidationProtocolFeePercentage: 0,
       borrowable: config.borrowable,
       collateral: config.collateral,
       oracle: config.oracle
@@ -293,43 +295,55 @@ contract Spoke is ISpoke {
     DataTypes.Reserve storage collateralReserve = _reserves[collateralReserveId];
     DataTypes.Reserve storage debtReserve = _reserves[debtReserveId];
 
-    // (uint256 baseDebt, uint256 premiumDebt) = _getUserDebt(userPosition, reserve.assetId);
+    vars.totalDebt = getUserTotalDebt(debtReserveId, user);
 
     (
       ,
-      vars.avgLiquidationThreshold,
+      vars.avgCollateralFactor,
       vars.healthFactor,
       vars.totalCollateralInBaseCurrency,
       vars.totalDebtInBaseCurrency
     ) = _calculateUserAccountData(user);
 
-    _validateLiquidationCall(collateralReserve, debtReserve, user, debtToCover, vars.healthFactor);
+    _validateLiquidationCall(
+      collateralReserve,
+      debtReserve,
+      user,
+      debtToCover,
+      vars.totalDebt,
+      vars.healthFactor
+    );
 
-    // vars.debtAssetPrice = IPriceOracle(oracle).getAssetPrice(debtAssetId);
-    // vars.actualDebtToLiquidate = _calculateActualDebtToLiquidate(
-    //   collateralReserve,
-    //   debtToCover,
-    //   user,
-    //   debtAssetId,
-    //   vars.totalCollateralInBaseCurrency,
-    //   vars.totalDebtInBaseCurrency,
-    //   vars.avgLiquidationThreshold,
-    //   vars.debtAssetPrice
-    // );
+    vars.debtAssetPrice = IPriceOracle(debtReserve.config.oracle).getAssetPrice(
+      debtReserve.assetId
+    );
+    vars.actualDebtToLiquidate = _calculateActualDebtToLiquidate({
+      collateralReserve: collateralReserve,
+      debtToCover: debtToCover,
+      user: user,
+      debtReserveId: debtReserve.reserveId,
+      params: vars
+      // totalCollateralInBaseCurrency: vars.totalCollateralInBaseCurrency,
+      // totalDebtInBaseCurrency: vars.totalDebtInBaseCurrency,
+      // avgCollateralFactor: vars.avgCollateralFactor,
+      // debtAssetPrice: vars.debtAssetPrice,
+      // totalDebt: vars.totalDebt,
+      // healthFactor: vars.healthFactor
+    });
 
-    // vars.userCollateralBalance = getUserSupplyInAssets(collateralAssetId, user);
+    vars.userCollateralBalance = getUserSuppliedAmount(collateralReserve.reserveId, user);
 
-    // (
-    //   vars.actualCollateralToLiquidate,
-    //   vars.actualDebtToLiquidate,
-    //   vars.liquidationProtocolFeeAmount
-    // ) = _calculateAvailableCollateralToLiquidate(
-    //   collateralReserve,
-    //   debtReserve,
-    //   vars.actualDebtToLiquidate,
-    //   vars.userCollateralBalance,
-    //   vars.debtAssetPrice
-    // );
+    (
+      vars.actualCollateralToLiquidate,
+      vars.actualDebtToLiquidate,
+      vars.liquidationProtocolFeeAmount
+    ) = _calculateAvailableCollateralToLiquidate(
+      collateralReserve,
+      debtReserve,
+      vars.actualDebtToLiquidate,
+      vars.userCollateralBalance,
+      vars.debtAssetPrice
+    );
 
     // if (
     //   vars.actualCollateralToLiquidate + vars.liquidationProtocolFeeAmount ==
@@ -410,7 +424,7 @@ contract Spoke is ISpoke {
     return _reserves[reserveId].suppliedShares;
   }
 
-  function getUserSuppliedAmount(uint256 reserveId, address user) external view returns (uint256) {
+  function getUserSuppliedAmount(uint256 reserveId, address user) public view returns (uint256) {
     return
       HUB.convertToSuppliedAssets(
         _reserves[reserveId].assetId,
@@ -611,6 +625,7 @@ contract Spoke is ISpoke {
     DataTypes.Reserve storage debtReserve,
     address user,
     uint256 debtToCover,
+    uint256 totalDebt,
     uint256 healthFactor
   ) internal view {
     uint256 collateralReserveId = collateralReserve.reserveId;
@@ -625,10 +640,7 @@ contract Spoke is ISpoke {
     bool isCollateralEnabled = _usingAsCollateral(_userPositions[user][collateralReserveId]) &&
       getCollateralFactor(collateralReserveId) != 0;
     require(isCollateralEnabled, CollateralCannotBeLiquidated());
-    require(
-      getUserTotalDebt(debtReserve.reserveId, user) > 0,
-      SpecifiedCurrencyNotBorrowedByUser()
-    );
+    require(totalDebt > 0, SpecifiedCurrencyNotBorrowedByUser());
   }
 
   function _calculateRestoreAmount(
@@ -915,5 +927,134 @@ contract Spoke is ISpoke {
   // todo move to MathUtils
   function _signedDiff(uint256 a, uint256 b) internal pure returns (int256) {
     return int256(a) - int256(b); // todo use safeCast when amounts packed to uint112/uint128
+  }
+
+  function _calculateActualDebtToLiquidate(
+    DataTypes.Reserve storage collateralReserve,
+    uint256 debtToCover,
+    address user,
+    uint256 debtReserveId,
+    DataTypes.LiquidationCallLocalVars memory params
+  )
+    internal
+    view
+    returns (
+      // uint256 totalCollateralInBaseCurrency,
+      // uint256 totalDebtInBaseCurrency,
+      // uint256 avgCollateralFactor,
+      // uint256 debtAssetPrice,
+      // uint256 totalDebt,
+      // uint256 healthFactor
+      uint256
+    )
+  {
+    DataTypes.CalculateActualDebtToLiquidateLocalVars memory vars;
+    vars.maxLiquidatableDebt = params.totalDebt;
+    vars.closeFactor = _liquidationConfig.closeFactor;
+
+    vars.hfScaledDebt = vars.closeFactor.wadMul(params.totalDebtInBaseCurrency);
+    vars.weightedCollateral = params
+      .totalCollateralInBaseCurrency
+      .wadMul(params.avgCollateralFactor)
+      .fromBps();
+
+    // amount of user debt that returns HF to closeFactor, in base currency
+    vars.liquidationRecoveryDebt = vars.hfScaledDebt > vars.weightedCollateral
+      ? (vars.hfScaledDebt - vars.weightedCollateral).wadDiv(
+        vars.closeFactor -
+          (getVariableLiquidationBonus(collateralReserve.reserveId, params.healthFactor).bpsToWad())
+            .percentMul(collateralReserve.config.collateralFactor) // convert BPS to WAD
+      )
+      : 0;
+
+    // console.log(
+    //   'var lb %e',
+    //   getVariableLiquidationBonus(collateralReserve.reserveId, params.healthFactor)
+    // );
+
+    // console.log(
+    //   'vars.liquidationRecoveryDebt %e %e %e',
+    //   params.totalDebtInBaseCurrency,
+    //   vars.liquidationRecoveryDebt,
+    //   vars.liquidationRecoveryDebt / params.debtAssetPrice
+    // );
+
+    // convert from base currency to amount
+    vars.liquidationRecoveryDebt = params.debtAssetPrice == 0
+      ? type(uint256).max
+      : vars.liquidationRecoveryDebt / params.debtAssetPrice;
+    vars.maxLiquidatableDebt = vars.maxLiquidatableDebt > vars.liquidationRecoveryDebt
+      ? vars.liquidationRecoveryDebt
+      : vars.maxLiquidatableDebt;
+    vars.actualDebtToLiquidate = debtToCover > vars.maxLiquidatableDebt
+      ? vars.maxLiquidatableDebt
+      : debtToCover;
+
+    // console.log('vars.actualDebtToLiquidate %e', vars.actualDebtToLiquidate);
+    return vars.actualDebtToLiquidate;
+  }
+
+  /**
+   * @return The maximum collateral amount that is possible to liquidate given all the liquidation config.
+   * @return The debt amount to repay with the liquidation.
+   * @return The fee taken from the liquidation bonus amount to be paid to the protocol.
+   */
+  function _calculateAvailableCollateralToLiquidate(
+    DataTypes.Reserve memory collateralReserve,
+    DataTypes.Reserve memory debtReserve,
+    uint256 actualDebtToLiquidate,
+    uint256 userCollateralBalance,
+    uint256 debtAssetPrice
+  ) internal view returns (uint256, uint256, uint256) {
+    DataTypes.AvailableCollateralToLiquidateLocalVars memory vars;
+
+    vars.collateralAssetPrice = collateralReserve.config.oracle.getAssetPrice(
+      collateralReserve.reserveId
+    );
+
+    vars.collateralAssetUnit = 10 ** collateralReserve.config.decimals;
+    vars.debtAssetUnit = 10 ** debtReserve.config.decimals;
+
+    vars.liquidationProtocolFeePercentage = collateralReserve
+      .config
+      .liquidationProtocolFeePercentage;
+
+    // // find collateral amount that corresponds to the debt to cover
+    // vars.baseCollateral =
+    //   (debtAssetPrice * actualDebtToLiquidate * vars.collateralAssetUnit) /
+    //   (vars.collateralAssetPrice * vars.debtAssetUnit);
+
+    // vars.maxCollateralToLiquidate = vars.baseCollateral.percentMul(collateralReserve.config.lb);
+
+    // if (vars.maxCollateralToLiquidate > userCollateralBalance) {
+    //   // back calculate debt amount needed to cover the max allowed collateral
+    //   vars.collateralAmount = userCollateralBalance;
+    //   vars.debtAmountNeeded = ((vars.collateralAssetPrice *
+    //     vars.collateralAmount *
+    //     vars.debtAssetUnit) / (debtAssetPrice * vars.collateralAssetUnit)).percentDiv(
+    //       collateralReserve.config.lb
+    //     );
+    // } else {
+    //   vars.collateralAmount = vars.maxCollateralToLiquidate;
+    //   vars.debtAmountNeeded = actualDebtToLiquidate;
+    // }
+
+    // if (vars.liquidationProtocolFeePercentage != 0) {
+    //   vars.bonusCollateral =
+    //     vars.collateralAmount -
+    //     vars.collateralAmount.percentDiv(collateralReserve.config.lb);
+
+    //   vars.liquidationProtocolFeeAmount = vars.bonusCollateral.percentMul(
+    //     vars.liquidationProtocolFeePercentage
+    //   );
+
+    //   return (
+    //     vars.collateralAmount - vars.liquidationProtocolFeeAmount,
+    //     vars.debtAmountNeeded,
+    //     vars.liquidationProtocolFeeAmount
+    //   );
+    // } else {
+    //   return (vars.collateralAmount, vars.debtAmountNeeded, 0);
+    // }
   }
 }

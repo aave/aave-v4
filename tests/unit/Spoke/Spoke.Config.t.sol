@@ -30,6 +30,7 @@ contract SpokeConfigTest is SpokeBase {
       collateralFactor: reserveData.config.collateralFactor + 1,
       liquidationBonus: reserveData.config.liquidationBonus + 1,
       liquidityPremium: reserveData.config.liquidityPremium + 1,
+      liquidationProtocolFeePercentage: 0,
       borrowable: !reserveData.config.borrowable,
       collateral: !reserveData.config.collateral,
       oracle: IPriceOracle(makeAddr('newOracle'))
@@ -327,6 +328,7 @@ contract SpokeConfigTest is SpokeBase {
       collateralFactor: 10_00,
       liquidationBonus: 10_00,
       liquidityPremium: 10_00,
+      liquidationProtocolFeePercentage: 0,
       borrowable: true,
       collateral: true,
       oracle: oracle
@@ -366,6 +368,7 @@ contract SpokeConfigTest is SpokeBase {
       collateralFactor: 10_00,
       liquidationBonus: 10_00,
       liquidityPremium: 10_00,
+      liquidationProtocolFeePercentage: 0,
       borrowable: true,
       collateral: true,
       oracle: oracle
@@ -388,6 +391,7 @@ contract SpokeConfigTest is SpokeBase {
       collateralFactor: 10_00,
       liquidationBonus: 10_00,
       liquidityPremium: 10_00,
+      liquidationProtocolFeePercentage: 0,
       borrowable: true,
       collateral: true,
       oracle: oracle
@@ -408,6 +412,7 @@ contract SpokeConfigTest is SpokeBase {
       collateralFactor: 10_00,
       liquidationBonus: 10_00,
       liquidityPremium: 10_00,
+      liquidationProtocolFeePercentage: 0,
       borrowable: true,
       collateral: true,
       oracle: oracle
@@ -433,6 +438,7 @@ contract SpokeConfigTest is SpokeBase {
       collateralFactor: 10_00,
       liquidationBonus: 10_00,
       liquidityPremium: 10_00,
+      liquidationProtocolFeePercentage: 0,
       borrowable: true,
       collateral: true,
       oracle: oracle
@@ -453,6 +459,7 @@ contract SpokeConfigTest is SpokeBase {
       collateralFactor: 10_00,
       liquidationBonus: 10_00,
       liquidityPremium: 10_00,
+      liquidationProtocolFeePercentage: 0,
       borrowable: true,
       collateral: true,
       oracle: IPriceOracle(address(0)) // invalid oracle

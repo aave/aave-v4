@@ -74,8 +74,9 @@ library DataTypes {
     bool collateral;
     uint256 decimals;
     uint256 collateralFactor; // BPS
-    uint256 liquidationBonus; // TODO: liquidationProtocolFee
+    uint256 liquidationBonus;
     uint256 liquidityPremium; // BPS
+    uint256 liquidationProtocolFeePercentage; // BPS
     IPriceOracle oracle;
   }
 
@@ -125,7 +126,31 @@ library DataTypes {
     uint256 healthFactor;
     uint256 totalCollateralInBaseCurrency;
     uint256 totalDebtInBaseCurrency;
-    uint256 avgLiquidationThreshold;
+    uint256 avgCollateralFactor;
     uint256 debtAssetPrice;
+    uint256 totalDebt;
+  }
+
+  struct CalculateActualDebtToLiquidateLocalVars {
+    uint256 closeFactor;
+    uint256 liquidationRecoveryDebt;
+    uint256 maxLiquidatableDebt;
+    uint256 hfScaledDebt;
+    uint256 weightedCollateral;
+    uint256 actualDebtToLiquidate;
+  }
+
+  struct AvailableCollateralToLiquidateLocalVars {
+    uint256 collateralAssetPrice;
+    uint256 debtAssetPrice;
+    uint256 maxCollateralToLiquidate;
+    uint256 baseCollateral;
+    uint256 bonusCollateral;
+    uint256 collateralAssetUnit;
+    uint256 debtAssetUnit;
+    uint256 collateralAmount;
+    uint256 debtAmountNeeded;
+    uint256 liquidationProtocolFeePercentage;
+    uint256 liquidationProtocolFeeAmount;
   }
 }

@@ -9,6 +9,37 @@ contract LiquidationCallTest is SpokeBase {
   using WadRayMath for uint256;
   using PercentageMath for uint256;
 
+  function _createDebtPosition(
+    ISpoke spoke,
+    address user,
+    uint256 collReserveId,
+    uint256 debtReserveId,
+    uint256 debtAmount
+  ) internal {
+    _deployLiquidity(spoke, debtReserveId, debtAmount * 10);
+
+    uint256 collAmount = _calcMinimumCollAmount(spoke, collReserveId, debtReserveId, debtAmount);
+    Utils.supplyCollateral(spoke, collReserveId, user, collAmount, user);
+    Utils.borrow(spoke, debtReserveId, user, debtAmount, user);
+  }
+
+  function test_liquidationCall_initial() public {
+    uint256 wethReserveId = _wethReserveId(spoke1);
+    uint256 daiReserveId = _daiReserveId(spoke1);
+    uint256 daiDebtAmount = 100e18;
+
+    _createDebtPosition(spoke1, alice, wethReserveId, daiReserveId, daiDebtAmount);
+    console.log(spoke1.getHealthFactor(alice));
+
+    _setPriceChange(oracle, wethAssetId, 90_00); // 10% drop
+    console.log(spoke1.getHealthFactor(alice));
+
+    // skip(365 days);
+
+    vm.prank(bob);
+    spoke1.liquidationCall(wethReserveId, daiReserveId, alice, daiDebtAmount);
+  }
+
   //   MockSpokeExposedMethods mockSpoke1;
   //   MockSpokeExposedMethods mockSpoke2;
 

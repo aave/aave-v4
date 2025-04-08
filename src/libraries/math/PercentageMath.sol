@@ -67,4 +67,17 @@ library PercentageMath {
   function fromBps(uint256 value) internal pure returns (uint256) {
     return value / PERCENTAGE_FACTOR;
   }
+
+  /**
+   * @notice Converts BPS number to WAD precision.
+   * @param value The number in WAD precision.
+   * @return result (value * 1e14)
+   */
+  function bpsToWad(uint256 value) internal pure returns (uint256) {
+    if (value > type(uint256).max / 1e14) revert();
+
+    unchecked {
+      return value * 1e14;
+    }
+  }
 }
