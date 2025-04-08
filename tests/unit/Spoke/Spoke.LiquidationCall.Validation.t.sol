@@ -138,4 +138,29 @@ contract LiquidationCallValidationTest is SpokeBase {
     vm.expectRevert(ISpoke.ReservePaused.selector);
     spoke1.liquidationCall(collateralReserveId, debtReserveId, alice, debtToCover);
   }
+
+  function test_liquidationCall_revertsWith_InvalidDebtToCover() public {
+    uint256 wethAssetId = _wethReserveId(spoke1);
+    uint256 daiReserveId = _daiReserveId(spoke1);
+
+    test_liquidationCall_fuzz_revertsWith_InvalidDebtToCover(wethAssetId, daiReserveId);
+  }
+
+  function test_liquidationCall_fuzz_revertsWith_InvalidDebtToCover(
+    uint256 reserveId1,
+    uint256 reserveId2
+  ) public {
+    reserveId1 = bound(reserveId1, 0, spoke1.reserveCount() - 1);
+    reserveId2 = bound(reserveId2, 0, spoke1.reserveCount() - 1);
+    uint256 debtToCover = 0;
+
+    // if even, reserveId1 is collateral, reserveId2 is debt
+    // if odd, reserveId1 is debt, reserveId2 is collateral
+    (uint256 collateralReserveId, uint256 debtReserveId) = vm.randomUint() % 2 == 0
+      ? (reserveId1, reserveId2)
+      : (reserveId2, reserveId1);
+
+    vm.expectRevert(ISpoke.InvalidDebtToCover.selector);
+    spoke1.liquidationCall(collateralReserveId, debtReserveId, alice, debtToCover);
+  }
 }

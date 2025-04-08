@@ -59,6 +59,7 @@ interface ISpoke {
   error HealthFactorNotBelowThreshold();
   error CollateralCannotBeLiquidated();
   error SpecifiedCurrencyNotBorrowedByUser();
+  error InvalidDebtToCover();
 
   function addReserve(
     uint256 assetId,

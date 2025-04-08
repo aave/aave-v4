@@ -279,7 +279,6 @@ contract Spoke is ISpoke {
     DataTypes.Reserve storage debtReserve = _reserves[debtReserveId];
 
     // (uint256 baseDebt, uint256 premiumDebt) = _getUserDebt(userPosition, reserve.assetId);
-    // require(debtToCover > 0, 'INVALID_DEBT_TO_COVER');
 
     (
       ,
@@ -289,7 +288,13 @@ contract Spoke is ISpoke {
       vars.totalDebtInBaseCurrency
     ) = _calculateUserAccountData(user);
 
-    _validateLiquidationCall(collateralReserve, debtReserve, user, vars.healthFactor);
+    _validateLiquidationCall(
+      collateralReserve,
+      debtReserve,
+      userPosition,
+      debtToCover,
+      vars.healthFactor
+    );
 
     // vars.debtAssetPrice = IPriceOracle(oracle).getAssetPrice(debtAssetId);
     // vars.actualDebtToLiquidate = _calculateActualDebtToLiquidate(
@@ -595,16 +600,17 @@ contract Spoke is ISpoke {
   function _validateLiquidationCall(
     DataTypes.Reserve storage collateralReserve,
     DataTypes.Reserve storage debtReserve,
-    address user,
+    DataTypes.UserPosition storage userPosition,
+    uint256 debtToCover,
     uint256 healthFactor
   ) internal view {
+    require(debtToCover > 0, InvalidDebtToCover());
     // reserve validation
     require(collateralReserve.config.active && debtReserve.config.active, ReserveNotActive());
     require(!collateralReserve.config.paused && !debtReserve.config.paused, ReservePaused());
-
-    // bool isCollateralEnabled = _usingAsCollateral(collateralReserveId, user) &&
-    //   getCollateralFactor(collateralReserveId) != 0;
-    // require(healthFactor < HEALTH_FACTOR_LIQUIDATION_THRESHOLD, HealthFactorNotBelowThreshold());
+    bool isCollateralEnabled = _usingAsCollateral(userPosition) &&
+      getCollateralFactor(collateralReserve.reserveId) != 0;
+    require(healthFactor < HEALTH_FACTOR_LIQUIDATION_THRESHOLD, HealthFactorNotBelowThreshold());
     // require(isCollateralEnabled, CollateralCannotBeLiquidated());
     // require(getUserTotalDebt(debtReserveId, user) > 0, SpecifiedCurrencyNotBorrowedByUser());
   }
