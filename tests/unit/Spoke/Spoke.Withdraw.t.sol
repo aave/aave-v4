@@ -261,7 +261,7 @@ contract SpokeWithdrawTest is SpokeBase {
 
   function test_withdraw_all_liquidity() public {
     uint256 supplyAmount = 5000e18;
-    Utils.spokeSupply({
+    Utils.supply({
       spoke: spoke1,
       reserveId: _daiReserveId(spoke1),
       user: bob,
@@ -287,7 +287,7 @@ contract SpokeWithdrawTest is SpokeBase {
 
   function test_withdraw_fuzz_suppliedAmount(uint256 supplyAmount) public {
     supplyAmount = bound(supplyAmount, 1, MAX_SUPPLY_AMOUNT);
-    Utils.spokeSupply({
+    Utils.supply({
       spoke: spoke1,
       reserveId: _daiReserveId(spoke1),
       user: bob,
@@ -315,7 +315,7 @@ contract SpokeWithdrawTest is SpokeBase {
     supplyAmount = bound(supplyAmount, 2, MAX_SUPPLY_AMOUNT);
     borrowAmount = bound(borrowAmount, 1, supplyAmount / 2);
 
-    Utils.spokeSupply({
+    Utils.supply({
       spoke: spoke1,
       reserveId: _daiReserveId(spoke1),
       user: bob,
@@ -334,7 +334,7 @@ contract SpokeWithdrawTest is SpokeBase {
     );
 
     // Bob borrows dai
-    Utils.spokeBorrow({
+    Utils.borrow({
       spoke: spoke1,
       reserveId: _daiReserveId(spoke1),
       user: bob,
@@ -352,7 +352,7 @@ contract SpokeWithdrawTest is SpokeBase {
     uint256 repayAmount = spoke1.getReserveTotalDebt(_daiReserveId(spoke1));
     deal(address(tokenList.dai), bob, repayAmount);
 
-    Utils.spokeRepay({
+    Utils.repay({
       spoke: spoke1,
       reserveId: _daiReserveId(spoke1),
       user: bob,
@@ -373,7 +373,7 @@ contract SpokeWithdrawTest is SpokeBase {
     supplyAmount = bound(supplyAmount, 2, MAX_SUPPLY_AMOUNT);
     borrowAmount = bound(borrowAmount, 1, supplyAmount / 2);
 
-    Utils.spokeSupply({
+    Utils.supply({
       spoke: spoke1,
       reserveId: _daiReserveId(spoke1),
       user: bob,
@@ -392,7 +392,7 @@ contract SpokeWithdrawTest is SpokeBase {
     );
 
     // Bob borrows dai
-    Utils.spokeBorrow({
+    Utils.borrow({
       spoke: spoke1,
       reserveId: _daiReserveId(spoke1),
       user: bob,
@@ -410,7 +410,7 @@ contract SpokeWithdrawTest is SpokeBase {
     uint256 repayAmount = spoke1.getReserveTotalDebt(_daiReserveId(spoke1));
     deal(address(tokenList.dai), bob, repayAmount);
 
-    Utils.spokeRepay({
+    Utils.repay({
       spoke: spoke1,
       reserveId: _daiReserveId(spoke1),
       user: bob,
@@ -433,7 +433,7 @@ contract SpokeWithdrawTest is SpokeBase {
     borrowAmount = bound(borrowAmount, 1, supplyAmount / 2);
     partialWithdrawAmount = bound(partialWithdrawAmount, 1, supplyAmount - 1);
 
-    Utils.spokeSupply({
+    Utils.supply({
       spoke: spoke1,
       reserveId: _daiReserveId(spoke1),
       user: bob,
@@ -452,7 +452,7 @@ contract SpokeWithdrawTest is SpokeBase {
     );
 
     // Bob borrows dai
-    Utils.spokeBorrow({
+    Utils.borrow({
       spoke: spoke1,
       reserveId: _daiReserveId(spoke1),
       user: bob,
@@ -471,7 +471,7 @@ contract SpokeWithdrawTest is SpokeBase {
     uint256 repayAmount = spoke1.getReserveTotalDebt(_daiReserveId(spoke1));
     deal(address(tokenList.dai), bob, repayAmount);
 
-    Utils.spokeRepay({
+    Utils.repay({
       spoke: spoke1,
       reserveId: _daiReserveId(spoke1),
       user: bob,
