@@ -86,7 +86,6 @@ library DataTypes {
     uint256 premiumDrawnShares;
     uint256 premiumOffset;
     uint256 realizedPremium;
-    uint256 lastUpdateTimestamp;
   }
 
   struct CalculateUserAccountDataVars {
@@ -110,7 +109,7 @@ library DataTypes {
 
   struct LiquidationConfig {
     uint256 closeFactor; // BPS, HF value to restore to during a liquidation
-    VariableLiquidationBonusConfig variableLiquidationBonusConfig;
+    VariableLiquidationBonusConfig liqBonusConfig;
   }
 
   struct VariableLiquidationBonusConfig {

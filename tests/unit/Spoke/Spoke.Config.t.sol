@@ -173,6 +173,7 @@ contract SpokeConfigTest is SpokeBase {
 
     // allow when deactivating
     spoke1.setUsingAsCollateral(daiReserveId, false);
+    vm.stopPrank();
   }
 
   function test_setUsingAsCollateral_revertsWith_ReserveNotActive() public {
@@ -207,7 +208,7 @@ contract SpokeConfigTest is SpokeBase {
 
     // Bob supply dai into spoke1
     deal(address(tokenList.dai), bob, daiAmount);
-    Utils.spokeSupply(spoke1, daiReserveId, bob, daiAmount, bob);
+    Utils.supply(spoke1, daiReserveId, bob, daiAmount, bob);
 
     vm.prank(bob);
     vm.expectEmit(address(spoke1));
@@ -482,27 +483,27 @@ contract SpokeConfigTest is SpokeBase {
     assertEq(spoke1.getLiquidationConfig().closeFactor, newCloseFactor, 'wrong close factor');
   }
 
-  function test_updateLiquidationConfig_variableLiquidationBonusConfig() public {
+  function test_updateLiquidationConfig_liqBonusConfig() public {
     DataTypes.LiquidationConfig memory liquidationConfig;
     liquidationConfig.closeFactor = HEALTH_FACTOR_LIQUIDATION_THRESHOLD;
-    liquidationConfig.variableLiquidationBonusConfig = DataTypes.VariableLiquidationBonusConfig({
+    liquidationConfig.liqBonusConfig = DataTypes.VariableLiquidationBonusConfig({
       healthFactorBonusThreshold: 0.9e18,
       liquidationBonusFactor: 10_00
     });
 
-    test_updateLiquidationConfig_fuzz_variableLiquidationBonusConfig(liquidationConfig);
+    test_updateLiquidationConfig_fuzz_liqBonusConfig(liquidationConfig);
   }
 
-  function test_updateLiquidationConfig_fuzz_variableLiquidationBonusConfig(
+  function test_updateLiquidationConfig_fuzz_liqBonusConfig(
     DataTypes.LiquidationConfig memory liquidationConfig
   ) public {
-    liquidationConfig.variableLiquidationBonusConfig.healthFactorBonusThreshold = bound(
-      liquidationConfig.variableLiquidationBonusConfig.healthFactorBonusThreshold,
+    liquidationConfig.liqBonusConfig.healthFactorBonusThreshold = bound(
+      liquidationConfig.liqBonusConfig.healthFactorBonusThreshold,
       0,
       spoke1.HEALTH_FACTOR_LIQUIDATION_THRESHOLD() - 1
     );
-    liquidationConfig.variableLiquidationBonusConfig.liquidationBonusFactor = bound(
-      liquidationConfig.variableLiquidationBonusConfig.liquidationBonusFactor,
+    liquidationConfig.liqBonusConfig.liquidationBonusFactor = bound(
+      liquidationConfig.liqBonusConfig.liquidationBonusFactor,
       0,
       MAX_LIQUIDATION_BONUS_FACTOR
     );
@@ -518,13 +519,13 @@ contract SpokeConfigTest is SpokeBase {
     spoke1.updateLiquidationConfig(liquidationConfig);
 
     assertEq(
-      spoke1.getLiquidationConfig().variableLiquidationBonusConfig.healthFactorBonusThreshold,
-      liquidationConfig.variableLiquidationBonusConfig.healthFactorBonusThreshold,
+      spoke1.getLiquidationConfig().liqBonusConfig.healthFactorBonusThreshold,
+      liquidationConfig.liqBonusConfig.healthFactorBonusThreshold,
       'wrong healthFactorBonusThreshold'
     );
     assertEq(
-      spoke1.getLiquidationConfig().variableLiquidationBonusConfig.liquidationBonusFactor,
-      liquidationConfig.variableLiquidationBonusConfig.liquidationBonusFactor,
+      spoke1.getLiquidationConfig().liqBonusConfig.liquidationBonusFactor,
+      liquidationConfig.liqBonusConfig.liquidationBonusFactor,
       'wrong liquidationBonusFactor'
     );
   }
@@ -532,7 +533,7 @@ contract SpokeConfigTest is SpokeBase {
   function test_updateLiquidationConfig_revertsWith_InvalidHealthFactorBonusThreshold() public {
     DataTypes.LiquidationConfig memory liquidationConfig;
     liquidationConfig.closeFactor = spoke1.HEALTH_FACTOR_LIQUIDATION_THRESHOLD();
-    liquidationConfig.variableLiquidationBonusConfig = DataTypes.VariableLiquidationBonusConfig({
+    liquidationConfig.liqBonusConfig = DataTypes.VariableLiquidationBonusConfig({
       healthFactorBonusThreshold: spoke1.HEALTH_FACTOR_LIQUIDATION_THRESHOLD(),
       liquidationBonusFactor: 10_00
     });
@@ -544,13 +545,13 @@ contract SpokeConfigTest is SpokeBase {
   function test_updateLiquidationConfig_fuzz_revertsWith_InvalidHealthFactorBonusThreshold(
     DataTypes.LiquidationConfig memory liquidationConfig
   ) public {
-    liquidationConfig.variableLiquidationBonusConfig.healthFactorBonusThreshold = bound(
-      liquidationConfig.variableLiquidationBonusConfig.healthFactorBonusThreshold,
+    liquidationConfig.liqBonusConfig.healthFactorBonusThreshold = bound(
+      liquidationConfig.liqBonusConfig.healthFactorBonusThreshold,
       spoke1.HEALTH_FACTOR_LIQUIDATION_THRESHOLD(),
       type(uint256).max
     );
-    liquidationConfig.variableLiquidationBonusConfig.liquidationBonusFactor = bound(
-      liquidationConfig.variableLiquidationBonusConfig.liquidationBonusFactor,
+    liquidationConfig.liqBonusConfig.liquidationBonusFactor = bound(
+      liquidationConfig.liqBonusConfig.liquidationBonusFactor,
       0,
       MAX_LIQUIDATION_BONUS_FACTOR
     );
@@ -567,7 +568,7 @@ contract SpokeConfigTest is SpokeBase {
 
   function test_updateLiquidationConfig_revertsWith_InvalidLiquidationBonusFactor() public {
     DataTypes.LiquidationConfig memory liquidationConfig;
-    liquidationConfig.variableLiquidationBonusConfig = DataTypes.VariableLiquidationBonusConfig({
+    liquidationConfig.liqBonusConfig = DataTypes.VariableLiquidationBonusConfig({
       healthFactorBonusThreshold: spoke1.HEALTH_FACTOR_LIQUIDATION_THRESHOLD(),
       liquidationBonusFactor: 10_00
     });
@@ -580,13 +581,13 @@ contract SpokeConfigTest is SpokeBase {
   function test_updateVariableLiquidationBonusConfig_fuzz_revertsWith_InvalidLiquidationBonusFactor(
     DataTypes.LiquidationConfig memory liquidationConfig
   ) public {
-    liquidationConfig.variableLiquidationBonusConfig.healthFactorBonusThreshold = bound(
-      liquidationConfig.variableLiquidationBonusConfig.healthFactorBonusThreshold,
+    liquidationConfig.liqBonusConfig.healthFactorBonusThreshold = bound(
+      liquidationConfig.liqBonusConfig.healthFactorBonusThreshold,
       0,
       spoke1.HEALTH_FACTOR_LIQUIDATION_THRESHOLD()
     );
-    liquidationConfig.variableLiquidationBonusConfig.liquidationBonusFactor = bound(
-      liquidationConfig.variableLiquidationBonusConfig.liquidationBonusFactor,
+    liquidationConfig.liqBonusConfig.liquidationBonusFactor = bound(
+      liquidationConfig.liqBonusConfig.liquidationBonusFactor,
       MAX_LIQUIDATION_BONUS_FACTOR + 1,
       type(uint256).max
     );

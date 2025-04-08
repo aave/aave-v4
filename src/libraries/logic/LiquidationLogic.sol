@@ -8,7 +8,7 @@ import {ISpoke} from 'src/interfaces/ISpoke.sol';
 library LiquidationLogic {
   using PercentageMath for uint256;
 
-  function calculateVariableLiquidationBonus(
+  function calculate(
     DataTypes.VariableLiquidationBonusConfig storage config,
     uint256 healthFactor,
     uint256 healthFactorLiquidationThreshold,
