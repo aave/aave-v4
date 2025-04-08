@@ -615,7 +615,7 @@ contract Spoke is ISpoke {
     bool isCollateralEnabled = _usingAsCollateral(userPosition) &&
       getCollateralFactor(collateralReserve.reserveId) != 0;
     require(healthFactor < HEALTH_FACTOR_LIQUIDATION_THRESHOLD, HealthFactorNotBelowThreshold());
-    // require(isCollateralEnabled, CollateralCannotBeLiquidated());
+    require(isCollateralEnabled, CollateralCannotBeLiquidated());
     // require(getUserTotalDebt(debtReserveId, user) > 0, SpecifiedCurrencyNotBorrowedByUser());
   }
 

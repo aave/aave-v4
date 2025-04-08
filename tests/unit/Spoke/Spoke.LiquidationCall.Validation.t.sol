@@ -169,16 +169,14 @@ contract LiquidationCallValidationTest is SpokeBase {
     uint256 daiReserveId = _daiReserveId(spoke1);
     uint256 debtToCover = 1;
 
-    // vm.expectRevert(ISpoke.HealthFactorNotBelowThreshold.selector);
-    // spoke1.liquidationCall(wethReserveId, daiReserveId, alice, debtToCover);
-    test_liquidationCall_fuzz_revertsWith_HealthFactorNotBelowThreshold_no_supply_(
+    test_liquidationCall_fuzz_revertsWith_HealthFactorNotBelowThreshold_no_supply(
       wethReserveId,
       daiReserveId,
       debtToCover
     );
   }
 
-  function test_liquidationCall_fuzz_revertsWith_HealthFactorNotBelowThreshold_no_supply_(
+  function test_liquidationCall_fuzz_revertsWith_HealthFactorNotBelowThreshold_no_supply(
     uint256 reserveId1,
     uint256 reserveId2,
     uint256 debtToCover
@@ -196,4 +194,42 @@ contract LiquidationCallValidationTest is SpokeBase {
     vm.expectRevert(ISpoke.HealthFactorNotBelowThreshold.selector);
     spoke1.liquidationCall(collateralReserveId, debtReserveId, alice, debtToCover);
   }
+
+  function test_liquidationCall_revertsWith_CollateralCannotBeLiquidated() public {
+    uint256 debtToCover = 1;
+    uint256 wethAmount = 10e18;
+    uint256 daiAmount = 10_000e18;
+
+    test_liquidationCall_fuzz_revertsWith_CollateralCannotBeLiquidated(
+      debtToCover,
+      wethAmount,
+      daiAmount
+    );
+  }
+
+  function test_liquidationCall_fuzz_revertsWith_CollateralCannotBeLiquidated(
+    uint256 debtToCover,
+    uint256 wethAmount,
+    uint256 daiAmount
+  ) public {
+    debtToCover = bound(debtToCover, 1, MAX_SUPPLY_AMOUNT);
+    wethAmount = bound(wethAmount, 1, MAX_SUPPLY_AMOUNT / 10);
+    daiAmount = wethAmount * 10; // ensure enough collateral to borrow
+
+    uint256 daiReserveId = _daiReserveId(spoke1);
+    uint256 wethReserveId = _wethReserveId(spoke1);
+
+    _deployLiquidity(spoke1, daiReserveId, daiAmount);
+
+    Utils.supplyCollateral(spoke1, wethReserveId, alice, wethAmount, alice);
+    Utils.spokeBorrow(spoke1, daiReserveId, alice, daiAmount, alice);
+
+    // collateral value drop, so that HF < threshold
+    oracle.setAssetPrice(wethAssetId, 0);
+
+    vm.expectRevert(ISpoke.CollateralCannotBeLiquidated.selector);
+    spoke1.liquidationCall(wethReserveId, daiReserveId, alice, debtToCover);
+  }
+
+  // TODO: HF drop due to interest
 }

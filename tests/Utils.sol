@@ -77,6 +77,18 @@ library Utils {
     spoke.supply(reserveId, amount);
   }
 
+  function supplyCollateral(
+    ISpoke spoke,
+    uint256 reserveId,
+    address user,
+    uint256 amount,
+    address onBehalfOf
+  ) internal {
+    spokeSupply(spoke, reserveId, user, amount, onBehalfOf);
+    vm.prank(user);
+    spoke.setUsingAsCollateral(reserveId, true);
+  }
+
   function spokeWithdraw(
     ISpoke spoke,
     uint256 reserveId,

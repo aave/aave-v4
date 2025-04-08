@@ -337,4 +337,27 @@ contract SpokeBase is Base {
 
   //   return userRP / originalTotalDebt;
   // }
+
+  // supply MAX_SUPPLY_AMOUNT liquidity to reserve from a temporary user
+  function _deployLiquidity(ISpoke spoke, uint256 reserveId, uint256 amount) public {
+    uint256 assetId = spoke.getReserve(reserveId).assetId;
+    uint256 initialLiq = hub.getAvailableLiquidity(assetId);
+
+    address tempUser = makeAddr('tempUser');
+    IERC20 asset = IERC20(spoke.getReserve(reserveId).asset);
+    deal(address(asset), tempUser, amount);
+
+    vm.prank(tempUser);
+    asset.approve(address(hub), type(uint256).max);
+
+    Utils.spokeSupply({
+      spoke: spoke,
+      reserveId: reserveId,
+      user: tempUser,
+      amount: amount,
+      onBehalfOf: tempUser
+    });
+
+    assertEq(hub.getAvailableLiquidity(assetId), initialLiq + amount);
+  }
 }
