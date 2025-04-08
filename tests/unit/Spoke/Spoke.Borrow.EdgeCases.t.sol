@@ -185,11 +185,6 @@ contract SpokeBorrowEdgeCasesTest is SpokeBase {
       onBehalfOf: bob
     });
 
-    TestReserve memory collateral;
-    collateral.reserveId = _wethReserveId(spoke1);
-    collateral.supplier = alice;
-    collateral.supplyAmount = 100e18;
-
     _deployLiquidity(spoke1, _daiReserveId(spoke1), MAX_SUPPLY_AMOUNT_DAI);
 
     uint256 carolDaiBefore = tokenList.dai.balanceOf(carol);
@@ -216,6 +211,65 @@ contract SpokeBorrowEdgeCasesTest is SpokeBase {
       tokenList.dai.balanceOf(bob) - bobDaiBefore,
       tokenList.dai.balanceOf(carol) - carolDaiBefore,
       'drawn assets should match'
+    );
+  }
+
+  /// base exch rate, assert that user receives debt shares with correct rounding
+  function test_borrow_rounding_effect_shares() public {
+    test_borrow_fuzz_rounding_effect_shares(5e18, 365 days * 3);
+  }
+
+  /// fuzz - base exch rate, assert that user receives debt shares with correct rounding
+  function test_borrow_fuzz_rounding_effect_shares(uint256 amount1, uint256 skipTime) public {
+    amount1 = bound(amount1, 1, MAX_SUPPLY_AMOUNT_DAI / 4);
+    skipTime = bound(skipTime, 365 days, MAX_SKIP_TIME);
+
+    Utils.supplyCollateral({
+      spoke: spoke1,
+      reserveId: _wethReserveId(spoke1),
+      user: bob,
+      amount: MAX_SUPPLY_AMOUNT,
+      onBehalfOf: bob
+    });
+
+    TestReserve memory collateral;
+    collateral.reserveId = _wethReserveId(spoke1);
+    collateral.supplier = alice;
+    collateral.supplyAmount = MAX_SUPPLY_AMOUNT;
+
+    _deployLiquidity(spoke1, _daiReserveId(spoke1), MAX_SUPPLY_AMOUNT_DAI);
+
+    // execute supply and borrow to inflate the exchange rate
+    _executeSpokeSupplyAndBorrow({
+      spoke: spoke1,
+      collateral: collateral,
+      borrow: TestReserve({
+        reserveId: _daiReserveId(spoke1),
+        supplier: bob,
+        borrower: alice,
+        supplyAmount: MAX_SUPPLY_AMOUNT_DAI,
+        borrowAmount: MAX_SUPPLY_AMOUNT_DAI
+      }),
+      rate: 0,
+      isMockRate: false,
+      skipTime: skipTime
+    });
+
+    (uint256 baseDebt, ) = hub.getAssetDebt(daiAssetId);
+
+    // drawn shares are rounded up
+    uint256 expectedDebtShares = amount1.toSharesUp(
+      baseDebt,
+      hub.getAsset(daiAssetId).baseDrawnShares
+    );
+
+    vm.prank(bob);
+    spoke1.borrow(_daiReserveId(spoke1), amount1, bob);
+
+    assertEq(
+      expectedDebtShares,
+      spoke1.getUserPosition(_daiReserveId(spoke1), bob).baseDrawnShares,
+      'base drawn shares'
     );
   }
 }

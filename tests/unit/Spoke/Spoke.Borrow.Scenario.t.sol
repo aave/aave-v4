@@ -558,6 +558,10 @@ contract SpokeBorrowScenarioTest is SpokeBase {
     vm.prank(bob);
     spoke1.borrow(state.daiReserveId, borrowAmount2, bob);
 
+    (baseDebt, ) = spoke1.getUserDebt(state.daiReserveId, bob);
+    // check that accrued base debt matches expected
+    assertEq(baseDebt, expectedBaseDebt, 'base debt after borrow2');
+
     // assertions for 2nd borrow
     _assertUsersAndReserveDebt(spoke1, state.daiReserveId, users, 'spoke1 bob dai after');
     _assertUserPositionAndDebt({
