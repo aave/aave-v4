@@ -66,7 +66,7 @@ library Utils {
   }
 
   // spoke
-  function spokeSupply(
+  function supply(
     ISpoke spoke,
     uint256 reserveId,
     address user,
@@ -77,7 +77,19 @@ library Utils {
     spoke.supply(reserveId, amount);
   }
 
-  function spokeWithdraw(
+  function supplyCollateral(
+    ISpoke spoke,
+    uint256 reserveId,
+    address user,
+    uint256 amount,
+    address onBehalfOf
+  ) internal {
+    supply(spoke, reserveId, user, amount, onBehalfOf);
+    vm.prank(user);
+    spoke.setUsingAsCollateral(reserveId, true);
+  }
+
+  function withdraw(
     ISpoke spoke,
     uint256 reserveId,
     address user,
@@ -88,7 +100,7 @@ library Utils {
     spoke.withdraw(reserveId, amount, user);
   }
 
-  function spokeBorrow(
+  function borrow(
     ISpoke spoke,
     uint256 reserveId,
     address user,
@@ -99,7 +111,7 @@ library Utils {
     spoke.borrow(reserveId, amount, user);
   }
 
-  function spokeRepay(ISpoke spoke, uint256 reserveId, address user, uint256 amount) internal {
+  function repay(ISpoke spoke, uint256 reserveId, address user, uint256 amount) internal {
     vm.prank(user);
     spoke.repay(reserveId, amount);
   }

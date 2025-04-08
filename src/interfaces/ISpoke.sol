@@ -124,4 +124,5 @@ interface ISpoke {
   function getUsingAsCollateral(uint256 reserveId, address user) external view returns (bool);
   function reserveCount() external view returns (uint256);
   function reservesList(uint256) external view returns (uint256);
+  function HEALTH_FACTOR_LIQUIDATION_THRESHOLD() external view returns (uint256);
 }

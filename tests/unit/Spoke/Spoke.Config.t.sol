@@ -92,6 +92,7 @@ contract SpokeConfigTest is SpokeBase {
 
     // allow when deactivating
     ISpoke(spoke1).setUsingAsCollateral(daiReserveId, false);
+    vm.stopPrank();
   }
 
   function test_setUsingAsCollateral_revertsWith_ReserveNotActive() public {
@@ -126,7 +127,7 @@ contract SpokeConfigTest is SpokeBase {
 
     // Bob supply dai into spoke1
     deal(address(tokenList.dai), bob, daiAmount);
-    Utils.spokeSupply(spoke1, daiReserveId, bob, daiAmount, bob);
+    Utils.supply(spoke1, daiReserveId, bob, daiAmount, bob);
 
     vm.prank(bob);
     vm.expectEmit(address(spoke1));
