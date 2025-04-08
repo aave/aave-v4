@@ -1,6 +1,8 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.0;
 
+import {console2 as console} from 'forge-std/console2.sol';
+
 // libraries
 import {WadRayMath} from 'src/libraries/math/WadRayMath.sol';
 import {PercentageMath} from 'src/libraries/math/PercentageMath.sol';
@@ -288,9 +290,6 @@ contract Spoke is ISpoke {
     uint256 debtToCover
   ) external {
     DataTypes.LiquidationCallLocalVars memory vars;
-
-    DataTypes.UserPosition storage userPosition = _userPositions[msg.sender][debtReserveId];
-
     DataTypes.Reserve storage collateralReserve = _reserves[collateralReserveId];
     DataTypes.Reserve storage debtReserve = _reserves[debtReserveId];
 
@@ -304,13 +303,7 @@ contract Spoke is ISpoke {
       vars.totalDebtInBaseCurrency
     ) = _calculateUserAccountData(user);
 
-    _validateLiquidationCall(
-      collateralReserve,
-      debtReserve,
-      userPosition,
-      debtToCover,
-      vars.healthFactor
-    );
+    _validateLiquidationCall(collateralReserve, debtReserve, user, debtToCover, vars.healthFactor);
 
     // vars.debtAssetPrice = IPriceOracle(oracle).getAssetPrice(debtAssetId);
     // vars.actualDebtToLiquidate = _calculateActualDebtToLiquidate(
@@ -616,34 +609,27 @@ contract Spoke is ISpoke {
   function _validateLiquidationCall(
     DataTypes.Reserve storage collateralReserve,
     DataTypes.Reserve storage debtReserve,
-    DataTypes.UserPosition storage userPosition,
+    address user,
     uint256 debtToCover,
     uint256 healthFactor
   ) internal view {
+    uint256 collateralReserveId = collateralReserve.reserveId;
     require(debtToCover > 0, InvalidDebtToCover());
-    // reserve validation
     require(
       collateralReserve.asset != address(0) && debtReserve.asset != address(0),
       ReserveNotListed()
     );
     require(collateralReserve.config.active && debtReserve.config.active, ReserveNotActive());
     require(!collateralReserve.config.paused && !debtReserve.config.paused, ReservePaused());
-    bool isCollateralEnabled = _usingAsCollateral(userPosition) &&
-      getCollateralFactor(collateralReserve.reserveId) != 0;
     require(healthFactor < HEALTH_FACTOR_LIQUIDATION_THRESHOLD, HealthFactorNotBelowThreshold());
+    bool isCollateralEnabled = _usingAsCollateral(_userPositions[user][collateralReserveId]) &&
+      getCollateralFactor(collateralReserveId) != 0;
     require(isCollateralEnabled, CollateralCannotBeLiquidated());
-    // require(getUserTotalDebt(debtReserveId, user) > 0, SpecifiedCurrencyNotBorrowedByUser());
+    require(
+      getUserTotalDebt(debtReserve.reserveId, user) > 0,
+      SpecifiedCurrencyNotBorrowedByUser()
+    );
   }
-
-  //   Asset Active (general on/off switch, enforce 0 suppliers when turning off)
-
-  // no liquidations possible
-  // Asset Paused (if paused, no more actions, meant to be temporary)
-
-  // no liquidations possible
-  // Asset Freeze (if frozen, no more supply or borrow)
-
-  // liq possible
 
   function _calculateRestoreAmount(
     uint256 baseDebt,

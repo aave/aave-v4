@@ -195,26 +195,32 @@ contract LiquidationCallValidationTest is SpokeBase {
     spoke1.liquidationCall(collateralReserveId, debtReserveId, alice, debtToCover);
   }
 
-  function test_liquidationCall_revertsWith_CollateralCannotBeLiquidated() public {
+  function test_liquidationCall_revertsWith_CollateralCannotBeLiquidated_not_using_as_collateral()
+    public
+  {
     uint256 debtToCover = 1;
     uint256 wethAmount = 10e18;
     uint256 daiAmount = 10_000e18;
+    uint256 newWethPrice = 1e8;
 
-    test_liquidationCall_fuzz_revertsWith_CollateralCannotBeLiquidated(
+    test_liquidationCall_fuzz_revertsWith_CollateralCannotBeLiquidated_not_using_as_collateral(
       debtToCover,
       wethAmount,
-      daiAmount
+      daiAmount,
+      newWethPrice
     );
   }
 
-  function test_liquidationCall_fuzz_revertsWith_CollateralCannotBeLiquidated(
+  function test_liquidationCall_fuzz_revertsWith_CollateralCannotBeLiquidated_not_using_as_collateral(
     uint256 debtToCover,
     uint256 wethAmount,
-    uint256 daiAmount
+    uint256 daiAmount,
+    uint256 newWethPrice
   ) public {
     debtToCover = bound(debtToCover, 1, MAX_SUPPLY_AMOUNT);
     wethAmount = bound(wethAmount, 1, MAX_SUPPLY_AMOUNT / 10);
     daiAmount = wethAmount * 10; // ensure enough collateral to borrow
+    newWethPrice = bound(newWethPrice, 0, oracle.getAssetPrice(wethAssetId));
 
     uint256 daiReserveId = _daiReserveId(spoke1);
     uint256 wethReserveId = _wethReserveId(spoke1);
@@ -224,8 +230,58 @@ contract LiquidationCallValidationTest is SpokeBase {
     Utils.supplyCollateral(spoke1, wethReserveId, alice, wethAmount, alice);
     Utils.borrow(spoke1, daiReserveId, alice, daiAmount, alice);
 
-    // collateral value drop, so that HF < threshold
+    // collateral value drop, make sure that HF < threshold and position is liquidatable
     oracle.setAssetPrice(wethAssetId, 0);
+    vm.assume(spoke1.getHealthFactor(alice) < spoke1.HEALTH_FACTOR_LIQUIDATION_THRESHOLD());
+
+    // no longer set asset as collateral
+    setUsingAsCollateral(spoke1, alice, wethReserveId, false);
+    assertFalse(spoke1.getUsingAsCollateral(wethReserveId, alice));
+
+    vm.expectRevert(ISpoke.CollateralCannotBeLiquidated.selector);
+    spoke1.liquidationCall(wethReserveId, daiReserveId, alice, debtToCover);
+  }
+
+  function test_liquidationCall_revertsWith_CollateralCannotBeLiquidated_collateralFactor() public {
+    uint256 debtToCover = 1;
+    uint256 wethAmount = 10e18;
+    uint256 daiAmount = 10_000e18;
+    uint256 newWethPrice = 1e8;
+
+    test_liquidationCall_fuzz_revertsWith_CollateralCannotBeLiquidated_collateralFactor(
+      debtToCover,
+      wethAmount,
+      daiAmount,
+      newWethPrice
+    );
+  }
+
+  function test_liquidationCall_fuzz_revertsWith_CollateralCannotBeLiquidated_collateralFactor(
+    uint256 debtToCover,
+    uint256 wethAmount,
+    uint256 daiAmount,
+    uint256 newWethPrice
+  ) public {
+    debtToCover = bound(debtToCover, 1, MAX_SUPPLY_AMOUNT);
+    wethAmount = bound(wethAmount, 1, MAX_SUPPLY_AMOUNT / 10);
+    daiAmount = wethAmount * 10; // ensure enough collateral to borrow
+    newWethPrice = bound(newWethPrice, 0, oracle.getAssetPrice(wethAssetId));
+
+    uint256 daiReserveId = _daiReserveId(spoke1);
+    uint256 wethReserveId = _wethReserveId(spoke1);
+
+    _deployLiquidity(spoke1, daiReserveId, daiAmount);
+
+    Utils.supplyCollateral(spoke1, wethReserveId, alice, wethAmount, alice);
+    Utils.borrow(spoke1, daiReserveId, alice, daiAmount, alice);
+
+    // collateral value drop, make sure that HF < threshold and position is liquidatable
+    oracle.setAssetPrice(wethAssetId, 0);
+    vm.assume(spoke1.getHealthFactor(alice) < spoke1.HEALTH_FACTOR_LIQUIDATION_THRESHOLD());
+
+    // update collateral factor to 0
+    updateCollateralFactor(spoke1, wethReserveId, 0);
+    assertEq(spoke1.getReserve(wethReserveId).config.collateralFactor, 0);
 
     vm.expectRevert(ISpoke.CollateralCannotBeLiquidated.selector);
     spoke1.liquidationCall(wethReserveId, daiReserveId, alice, debtToCover);
