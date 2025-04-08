@@ -445,6 +445,7 @@ contract Spoke is ISpoke {
     if (amount <= premiumDebt) {
       return (0, amount);
     }
+    // todo ensure `amount` is not greater than total debt?
     return (amount - premiumDebt, premiumDebt);
   }
 

@@ -73,6 +73,15 @@ contract SpokeRepayTest is SpokeBase {
 
     spoke1.repay(_daiReserveId(spoke1), type(uint256).max);
 
+    pos = spoke1.getUserPosition(_daiReserveId(spoke1), bob);
+    assertEq(pos.baseDrawnShares, 0, 'user baseDrawnShares after full repay');
+    assertEq(hub.convertToDrawnAssets(daiAssetId, pos.baseDrawnShares), 0, 'user baseDrawnAssets');
+    assertEq(
+      spoke1.getUserTotalDebt(_daiReserveId(spoke1), bob),
+      0,
+      'user total debt after full repay'
+    );
+
     vm.stopPrank();
   }
 
@@ -430,18 +439,23 @@ contract SpokeRepayTest is SpokeBase {
     assertEq(tokenList.weth.balanceOf(bob), bobWethBalanceBefore);
   }
 
-  /// repay all premium debt
-  function test_repay_only_premium() public {
-    uint256 daiSupplyAmount = 100e18;
-    uint256 wethSupplyAmount = 10e18;
-    uint256 daiBorrowAmount = daiSupplyAmount / 2;
+  /// repay partial or full premium debt, but no base debt
+  function test_repay_only_premium(uint256 daiBorrowAmount, uint40 skipTime) public {
+    uint256 daiBorrowAmount = bound(daiBorrowAmount, 1, MAX_SUPPLY_AMOUNT / 2);
+    uint256 wethSupplyAmount = _calcMinimumCollAmount(
+      spoke1,
+      _wethReserveId(spoke1),
+      _daiReserveId(spoke1),
+      daiBorrowAmount
+    );
+    skipTime = uint40(bound(skipTime, 1, MAX_SKIP_TIME));
 
-    // Bob supply weth
+    // Bob supply weth as collateral
     Utils.spokeSupply(spoke1, _wethReserveId(spoke1), bob, wethSupplyAmount, bob);
     setUsingAsCollateral(spoke1, bob, _wethReserveId(spoke1), true);
 
-    // Alice supply dai
-    Utils.spokeSupply(spoke1, _daiReserveId(spoke1), alice, daiSupplyAmount, alice);
+    // Alice supply dai for Bob to borrow
+    Utils.spokeSupply(spoke1, _daiReserveId(spoke1), alice, daiBorrowAmount, alice);
 
     // Bob borrow dai
     Utils.spokeBorrow(spoke1, _daiReserveId(spoke1), bob, daiBorrowAmount, bob);
@@ -470,16 +484,19 @@ contract SpokeRepayTest is SpokeBase {
     assertEq(bobWethDebtBefore, 0);
 
     // Time passes
-    skip(10 days);
+    skip(skipTime);
 
     bobDaiDataBefore = getUserInfo(spoke1, bob, _daiReserveId(spoke1));
     bobDaiDebtBefore = spoke1.getUserTotalDebt(_daiReserveId(spoke1), bob);
-    (uint256 bobDaiBaseDebtBefore, ) = spoke1.getUserDebt(_daiReserveId(spoke1), bob);
-    assertGt(bobDaiDebtBefore, daiBorrowAmount, 'bob dai debt before');
+    (uint256 bobDaiBaseDebtBefore, uint256 bobDaiPremiumDebtBefore) = spoke1.getUserDebt(
+      _daiReserveId(spoke1),
+      bob
+    );
+    vm.assume(bobDaiPremiumDebtBefore > 0); // assume time passes enough to accrue premium debt
 
-    // Bob repays premium
-    (, uint256 daiRepayAmount) = spoke1.getUserDebt(_daiReserveId(spoke1), bob);
-    assertGt(daiRepayAmount, 0); // interest is not zero
+    // Bob repays any amount of premium debt
+    uint256 daiRepayAmount;
+    daiRepayAmount = bound(daiRepayAmount, 1, bobDaiPremiumDebtBefore);
 
     vm.expectEmit(address(spoke1));
     emit ISpoke.Repay(_daiReserveId(spoke1), bob, 0);
@@ -497,11 +514,15 @@ contract SpokeRepayTest is SpokeBase {
     assertEq(bobDaiDataAfter.suppliedShares, bobDaiDataBefore.suppliedShares);
     assertEq(
       spoke1.getUserTotalDebt(_daiReserveId(spoke1), bob),
-      bobDaiBaseDebtBefore,
+      bobDaiBaseDebtBefore + bobDaiPremiumDebtBefore - daiRepayAmount,
       'bob dai debt final balance'
     );
     (, uint256 bobDaiPremiumDebtAfter) = spoke1.getUserDebt(_daiReserveId(spoke1), bob);
-    assertEq(bobDaiPremiumDebtAfter, 0, 'bob dai premium debt final balance');
+    assertEq(
+      bobDaiPremiumDebtAfter,
+      bobDaiPremiumDebtBefore - daiRepayAmount,
+      'bob dai premium debt final balance'
+    );
     assertEq(bobWethDataAfter.suppliedShares, bobWethDataBefore.suppliedShares);
     assertEq(bobWethDebtBefore, spoke1.getUserTotalDebt(_wethReserveId(spoke1), bob));
 
@@ -1273,7 +1294,7 @@ contract SpokeRepayTest is SpokeBase {
     assertEq(tokenList.weth.balanceOf(bob), bobWethBalanceBefore);
   }
 
-  /// repay all or a portion of total debt
+  /// repay all or a portion of total debt - handles partial base debt repay case
   function test_repay_fuzz_amountsAndWait(
     uint256 daiBorrowAmount,
     uint256 daiRepayAmount,
@@ -1380,6 +1401,12 @@ contract SpokeRepayTest is SpokeBase {
       bobDaiBefore.totalDebt - daiRepayAmount,
       'bob dai debt final balance'
     );
+
+    // If any base debt was repaid, then premium debt must be zero
+    if (baseRestored > 0) {
+      assertEq(bobDaiAfter.premiumDebt, 0, 'bob dai premium debt final balance when base repaid');
+    }
+
     assertEq(bobWethDataAfter.suppliedShares, bobWethDataBefore.suppliedShares);
     assertEq(spoke1.getUserTotalDebt(_wethReserveId(spoke1), bob), 0);
 
@@ -2454,7 +2481,7 @@ contract SpokeRepayTest is SpokeBase {
     UserAssetInfo memory carolInfo,
     uint40 skipTime
   ) public {
-    vm.skip(true, 'Pending fix for this test');
+    vm.skip(true, 'Pending fix for underflow issue');
     bobInfo = _bound(bobInfo);
     aliceInfo = _bound(aliceInfo);
     carolInfo = _bound(carolInfo);
@@ -2831,7 +2858,7 @@ contract SpokeRepayTest is SpokeBase {
     UserAssetInfo memory aliceInfo,
     uint40 skipTime
   ) public {
-    vm.skip(true, 'Pending fix for this test');
+    vm.skip(true, 'Pending fix for underflow issue');
     bobInfo = _bound(bobInfo);
     aliceInfo = _bound(aliceInfo);
     skipTime = uint40(bound(skipTime, 1, MAX_SKIP_TIME));
@@ -3207,7 +3234,7 @@ contract SpokeRepayTest is SpokeBase {
     UserAction memory carolInfo,
     uint256 skipTime
   ) public {
-    vm.skip(true, 'Pending fix for this test');
+    vm.skip(true, 'Pending fix for underflow issue');
     // Bound borrow and repay amounts
     bobInfo = _boundUserAction(bobInfo);
     aliceInfo = _boundUserAction(aliceInfo);
@@ -3329,7 +3356,7 @@ contract SpokeRepayTest is SpokeBase {
     UserAction memory aliceInfo,
     uint256 skipTime
   ) public {
-    vm.skip(true, 'Pending fix for this test');
+    vm.skip(true, 'Pending fix for underflow issue');
     // Bound borrow and repay amounts
     bobInfo = _boundUserAction(bobInfo);
     aliceInfo = _boundUserAction(aliceInfo);
