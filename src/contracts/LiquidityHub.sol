@@ -48,7 +48,7 @@ contract LiquidityHub is ILiquidityHub {
       baseBorrowRate: 0, // todo check
       id: assetId, // todo rm
       config: DataTypes.AssetConfig({
-        decimals: config.decimals,
+        decimals: config.decimals, // todo fetch decimals from token
         active: config.active,
         frozen: config.frozen,
         paused: config.paused,
