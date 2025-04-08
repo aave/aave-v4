@@ -30,7 +30,7 @@ contract SpokeConfigTest is SpokeBase {
       collateralFactor: reserveData.config.collateralFactor + 1,
       liquidationBonus: reserveData.config.liquidationBonus + 1,
       liquidityPremium: reserveData.config.liquidityPremium + 1,
-      liquidationProtocolFeePercentage: 0,
+      liquidationProtocolFeePercentage: reserveData.config.liquidationProtocolFeePercentage + 1,
       borrowable: !reserveData.config.borrowable,
       collateral: !reserveData.config.collateral,
       oracle: IPriceOracle(makeAddr('newOracle'))
@@ -78,38 +78,26 @@ contract SpokeConfigTest is SpokeBase {
       0,
       PercentageMath.PERCENTAGE_FACTOR * 10
     );
+    newReserveConfig.liquidationProtocolFeePercentage = bound(
+      newReserveConfig.liquidationProtocolFeePercentage,
+      0,
+      PercentageMath.PERCENTAGE_FACTOR
+    );
     vm.assume(address(newReserveConfig.oracle) != address(0));
 
     uint256 daiReserveId = _daiReserveId(spoke1);
-    DataTypes.Reserve memory reserveData = spoke1.getReserve(daiReserveId);
+    DataTypes.ReserveConfig memory reserveData = spoke1.getReserve(daiReserveId).config;
 
-    newReserveConfig.decimals = reserveData.config.decimals; // decimals won't get updated
+    newReserveConfig.decimals = reserveData.decimals; // decimals won't get updated
 
     vm.expectEmit(address(spoke1));
     emit ISpoke.ReserveConfigUpdated(daiReserveId, newReserveConfig);
     vm.prank(SPOKE_ADMIN);
     spoke1.updateReserveConfig(daiReserveId, newReserveConfig);
 
-    reserveData = spoke1.getReserve(daiReserveId);
+    reserveData = spoke1.getReserve(daiReserveId).config;
 
-    assertEq(
-      reserveData.config.collateralFactor,
-      newReserveConfig.collateralFactor,
-      'wrong collateralFactor'
-    );
-    assertEq(
-      reserveData.config.liquidationBonus,
-      newReserveConfig.liquidationBonus,
-      'wrong liquidationBonus'
-    );
-    assertEq(
-      reserveData.config.liquidityPremium,
-      newReserveConfig.liquidityPremium,
-      'wrong liquidityPremium'
-    );
-    assertEq(reserveData.config.borrowable, newReserveConfig.borrowable, 'wrong borrowable');
-    assertEq(reserveData.config.collateral, newReserveConfig.collateral, 'wrong collateral');
-    assertEq(address(reserveData.config.oracle), address(newReserveConfig.oracle), 'wrong oracle');
+    _assertReserveConfig(reserveData, newReserveConfig);
   }
 
   function test_updateReserveConfig_cannot_update_decimals() public {
@@ -221,14 +209,9 @@ contract SpokeConfigTest is SpokeBase {
   }
 
   function test_updateReserveConfig_revertsWith_InvalidLiquidityPremium() public {
-    uint256 daiReserveId = _daiReserveId(spoke1);
-    DataTypes.ReserveConfig memory config = spoke1.getReserve(daiReserveId).config;
+    uint256 liquidityPremium = PercentageMath.PERCENTAGE_FACTOR * 10 + 1;
 
-    config.liquidityPremium = PercentageMath.PERCENTAGE_FACTOR * 10 + 1;
-
-    vm.expectRevert(ISpoke.InvalidLiquidityPremium.selector);
-    vm.prank(SPOKE_ADMIN);
-    spoke1.updateReserveConfig(daiReserveId, config);
+    test_updateReserveConfig_fuzz_revertsWith_InvalidLiquidityPremium(liquidityPremium);
   }
 
   function test_updateReserveConfig_fuzz_revertsWith_InvalidLiquidityPremium(
@@ -252,12 +235,7 @@ contract SpokeConfigTest is SpokeBase {
 
   function test_updateReserveConfig_revertsWith_InvalidReserve() public {
     uint256 invalidReserveId = spoke1.reserveCount();
-    DataTypes.ReserveConfig memory config;
-    config.oracle = IPriceOracle(makeAddr('newOracle'));
-
-    vm.expectRevert(ISpoke.InvalidReserve.selector);
-    vm.prank(SPOKE_ADMIN);
-    spoke1.updateReserveConfig(invalidReserveId, config);
+    test_updateReserveConfig_fuzz_revertsWith_InvalidReserve(invalidReserveId);
   }
 
   function test_updateReserveConfig_fuzz_revertsWith_InvalidReserve(uint256 reserveId) public {
@@ -271,13 +249,9 @@ contract SpokeConfigTest is SpokeBase {
   }
 
   function test_updateReserveConfig_revertsWith_InvalidCollateralFactor() public {
-    uint256 daiReserveId = _daiReserveId(spoke1);
-    DataTypes.ReserveConfig memory config = spoke1.getReserve(daiReserveId).config;
-    config.collateralFactor = PercentageMath.PERCENTAGE_FACTOR + 1;
+    uint256 collateralFactor = PercentageMath.PERCENTAGE_FACTOR + 1;
 
-    vm.expectRevert(ISpoke.InvalidCollateralFactor.selector);
-    vm.prank(SPOKE_ADMIN);
-    spoke1.updateReserveConfig(daiReserveId, config);
+    test_updateReserveConfig_fuzz_revertsWith_InvalidCollateralFactor(collateralFactor);
   }
 
   function test_updateReserveConfig_fuzz_revertsWith_InvalidCollateralFactor(
@@ -299,9 +273,22 @@ contract SpokeConfigTest is SpokeBase {
   }
 
   function test_updateReserveConfig_revertsWith_InvalidLiquidationBonus() public {
+    uint256 liquidationBonus = PercentageMath.PERCENTAGE_FACTOR + 1;
+    test_updateReserveConfig_fuzz_revertsWith_InvalidLiquidationBonus(liquidationBonus);
+  }
+
+  function test_updateReserveConfig_fuzz_revertsWith_InvalidLiquidationBonus(
+    uint256 liquidationBonus
+  ) public {
+    liquidationBonus = bound(
+      liquidationBonus,
+      PercentageMath.PERCENTAGE_FACTOR + 1,
+      type(uint256).max
+    );
+
     uint256 daiReserveId = _daiReserveId(spoke1);
     DataTypes.ReserveConfig memory config = spoke1.getReserve(daiReserveId).config;
-    config.liquidationBonus = PercentageMath.PERCENTAGE_FACTOR + 1;
+    config.liquidationBonus = liquidationBonus;
 
     vm.expectRevert(ISpoke.InvalidLiquidationBonus.selector);
     vm.prank(SPOKE_ADMIN);
@@ -328,7 +315,7 @@ contract SpokeConfigTest is SpokeBase {
       collateralFactor: 10_00,
       liquidationBonus: 10_00,
       liquidityPremium: 10_00,
-      liquidationProtocolFeePercentage: 0,
+      liquidationProtocolFeePercentage: 10_00,
       borrowable: true,
       collateral: true,
       oracle: oracle
@@ -339,21 +326,9 @@ contract SpokeConfigTest is SpokeBase {
     vm.prank(SPOKE_ADMIN);
     spoke1.addReserve(wethAssetId, newReserveConfig);
 
-    DataTypes.Reserve memory reserveData = spoke1.getReserve(reserveId);
+    DataTypes.ReserveConfig memory reserveData = spoke1.getReserve(reserveId).config;
 
-    assertEq(
-      reserveData.config.collateralFactor,
-      newReserveConfig.collateralFactor,
-      'wrong collateralFactor'
-    );
-    assertEq(reserveData.config.liquidationBonus, newReserveConfig.liquidationBonus, 'wrong lb');
-    assertEq(
-      reserveData.config.liquidityPremium,
-      newReserveConfig.liquidityPremium,
-      'wrong liquidityPremium'
-    );
-    assertEq(reserveData.config.borrowable, newReserveConfig.borrowable, 'wrong borrowable');
-    assertEq(reserveData.config.collateral, newReserveConfig.collateral, 'wrong collateral');
+    _assertReserveConfig(reserveData, newReserveConfig);
   }
 
   function test_addReserve_reverts_invalid_assetId() public {
@@ -610,4 +585,33 @@ contract SpokeConfigTest is SpokeBase {
   }
 
   // TODO: tests for separate oracle, with different asset prices
+
+  function _assertReserveConfig(
+    DataTypes.ReserveConfig memory reserveConfig,
+    DataTypes.ReserveConfig memory newReserveConfig
+  ) internal {
+    assertEq(
+      reserveConfig.collateralFactor,
+      newReserveConfig.collateralFactor,
+      'wrong collateralFactor'
+    );
+    assertEq(
+      reserveConfig.liquidationBonus,
+      newReserveConfig.liquidationBonus,
+      'wrong liquidationBonus'
+    );
+    assertEq(
+      reserveConfig.liquidityPremium,
+      newReserveConfig.liquidityPremium,
+      'wrong liquidityPremium'
+    );
+    assertEq(
+      reserveConfig.liquidationProtocolFeePercentage,
+      newReserveConfig.liquidationProtocolFeePercentage,
+      'wrong liquidationProtocolFeePercentage'
+    );
+    assertEq(reserveConfig.borrowable, newReserveConfig.borrowable, 'wrong borrowable');
+    assertEq(reserveConfig.collateral, newReserveConfig.collateral, 'wrong collateral');
+    assertEq(address(reserveConfig.oracle), address(newReserveConfig.oracle), 'wrong oracle');
+  }
 }

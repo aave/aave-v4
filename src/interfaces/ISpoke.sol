@@ -60,6 +60,7 @@ interface ISpoke {
   error CollateralCannotBeLiquidated();
   error SpecifiedCurrencyNotBorrowedByUser();
   error InvalidDebtToCover();
+  error InvalidLiquidationProtocolFeePercentage();
 
   function addReserve(
     uint256 assetId,
