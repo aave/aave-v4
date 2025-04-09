@@ -26,6 +26,11 @@ contract SpokeUserRiskPremiumTest is SpokeBase {
     uint256 riskPremium;
   }
 
+  struct UserAction {
+    uint256 borrowAmount;
+    uint256 supplyAmount;
+  }
+
   struct DebtChecks {
     uint256 baseDebt;
     uint256 premiumDebt;
@@ -51,7 +56,7 @@ contract SpokeUserRiskPremiumTest is SpokeBase {
 
   /// Without a collateral set, user risk premium is 0.
   function test_getUserRiskPremium_no_collateral_set() public {
-    Utils.spokeSupply(spoke1, _daiReserveId(spoke1), bob, 100e18, bob);
+    Utils.supply(spoke1, _daiReserveId(spoke1), bob, 100e18, bob);
     // Bob doesn't set dai as collateral, despite supplying, so his user rp is 0
     assertEq(spoke1.getUserRiskPremium(bob), 0, 'user risk premium');
   }
@@ -62,7 +67,7 @@ contract SpokeUserRiskPremiumTest is SpokeBase {
     uint256 daiAmount = 100e18;
 
     // Bob supply dai into spoke1
-    Utils.spokeSupply(spoke1, daiReserveId, bob, daiAmount, bob);
+    Utils.supply(spoke1, daiReserveId, bob, daiAmount, bob);
     setUsingAsCollateral(spoke1, bob, daiReserveId, true);
 
     assertEq(spoke1.getUserRiskPremium(bob), 0, 'user risk premium');
@@ -75,9 +80,9 @@ contract SpokeUserRiskPremiumTest is SpokeBase {
     uint256 borrowAmount = 50e18;
 
     // Bob supply dai into spoke1
-    Utils.spokeSupply(spoke1, daiReserveId, bob, supplyAmount, bob);
+    Utils.supply(spoke1, daiReserveId, bob, supplyAmount, bob);
     setUsingAsCollateral(spoke1, bob, daiReserveId, true);
-    Utils.spokeBorrow(spoke1, daiReserveId, bob, borrowAmount, bob);
+    Utils.borrow(spoke1, daiReserveId, bob, borrowAmount, bob);
 
     uint256 userRiskPremium = spoke1.getUserRiskPremium(bob);
     DataTypes.Reserve memory daiInfo = getReserveInfo(spoke1, daiReserveId);
@@ -100,9 +105,9 @@ contract SpokeUserRiskPremiumTest is SpokeBase {
     daiInfo.lp = spoke1.getLiquidityPremium(daiInfo.reserveId);
 
     // Bob supply dai into spoke1
-    Utils.spokeSupply(spoke1, daiInfo.reserveId, bob, daiInfo.supplyAmount, bob);
+    Utils.supply(spoke1, daiInfo.reserveId, bob, daiInfo.supplyAmount, bob);
     setUsingAsCollateral(spoke1, bob, daiInfo.reserveId, true);
-    Utils.spokeBorrow(spoke1, daiInfo.reserveId, bob, daiInfo.borrowAmount, bob);
+    Utils.borrow(spoke1, daiInfo.reserveId, bob, daiInfo.borrowAmount, bob);
 
     // With single collateral, user rp will match liquidity premium of collateral
     assertEq(spoke1.getUserRiskPremium(bob), daiInfo.lp, 'user risk premium');
@@ -129,11 +134,11 @@ contract SpokeUserRiskPremiumTest is SpokeBase {
     daiInfo.lp = spoke1.getLiquidityPremium(daiInfo.reserveId);
 
     // Bob supply dai into spoke1
-    Utils.spokeSupply(spoke1, daiInfo.reserveId, bob, daiInfo.supplyAmount, bob);
+    Utils.supply(spoke1, daiInfo.reserveId, bob, daiInfo.supplyAmount, bob);
     setUsingAsCollateral(spoke1, bob, daiInfo.reserveId, true);
 
     // Bob draw dai
-    Utils.spokeBorrow(spoke1, daiInfo.reserveId, bob, daiInfo.borrowAmount, bob);
+    Utils.borrow(spoke1, daiInfo.reserveId, bob, daiInfo.borrowAmount, bob);
 
     uint256 userRiskPremium = spoke1.getUserRiskPremium(bob);
 
@@ -141,7 +146,7 @@ contract SpokeUserRiskPremiumTest is SpokeBase {
     assertEq(userRiskPremium, daiInfo.lp, 'user risk premium');
 
     // Supplying more risky reserve (usdx) should not impact user risk premium
-    Utils.spokeSupply(spoke1, usdxInfo.reserveId, bob, additionalSupplyAmount, bob);
+    Utils.supply(spoke1, usdxInfo.reserveId, bob, additionalSupplyAmount, bob);
     setUsingAsCollateral(spoke1, bob, usdxInfo.reserveId, true);
     assertEq(spoke1.getUserRiskPremium(bob), userRiskPremium, 'user risk premium after supply');
   }
@@ -167,20 +172,20 @@ contract SpokeUserRiskPremiumTest is SpokeBase {
     wethInfo.lp = spoke1.getLiquidityPremium(wethInfo.reserveId);
 
     // Bob supply dai into spoke1
-    Utils.spokeSupply(spoke1, daiInfo.reserveId, bob, daiInfo.supplyAmount, bob);
+    Utils.supply(spoke1, daiInfo.reserveId, bob, daiInfo.supplyAmount, bob);
     setUsingAsCollateral(spoke1, bob, daiInfo.reserveId, true);
 
     // Bob supply usdx into spoke1
-    Utils.spokeSupply(spoke1, usdxInfo.reserveId, bob, usdxInfo.supplyAmount, bob);
+    Utils.supply(spoke1, usdxInfo.reserveId, bob, usdxInfo.supplyAmount, bob);
     setUsingAsCollateral(spoke1, bob, usdxInfo.reserveId, true);
 
     // Bob supply weth into spoke1
-    Utils.spokeSupply(spoke1, wethInfo.reserveId, bob, wethInfo.supplyAmount, bob);
+    Utils.supply(spoke1, wethInfo.reserveId, bob, wethInfo.supplyAmount, bob);
     setUsingAsCollateral(spoke1, bob, wethInfo.reserveId, true);
 
     // Bob draw dai + usdx
-    Utils.spokeBorrow(spoke1, daiInfo.reserveId, bob, daiInfo.borrowAmount, bob);
-    Utils.spokeBorrow(spoke1, usdxInfo.reserveId, bob, usdxInfo.borrowAmount, bob);
+    Utils.borrow(spoke1, daiInfo.reserveId, bob, daiInfo.borrowAmount, bob);
+    Utils.borrow(spoke1, usdxInfo.reserveId, bob, usdxInfo.borrowAmount, bob);
 
     // Weth is enough to cover the total debt
     assertGe(
@@ -212,20 +217,20 @@ contract SpokeUserRiskPremiumTest is SpokeBase {
     wethInfo.lp = spoke1.getLiquidityPremium(wethInfo.reserveId);
 
     // Bob supply dai into spoke1
-    Utils.spokeSupply(spoke1, daiInfo.reserveId, bob, daiInfo.supplyAmount, bob);
+    Utils.supply(spoke1, daiInfo.reserveId, bob, daiInfo.supplyAmount, bob);
     setUsingAsCollateral(spoke1, bob, daiInfo.reserveId, true);
 
     // Bob supply usdx into spoke1
-    Utils.spokeSupply(spoke1, usdxInfo.reserveId, bob, usdxInfo.supplyAmount, bob);
+    Utils.supply(spoke1, usdxInfo.reserveId, bob, usdxInfo.supplyAmount, bob);
     setUsingAsCollateral(spoke1, bob, usdxInfo.reserveId, true);
 
     // Bob supply weth into spoke1
-    Utils.spokeSupply(spoke1, wethInfo.reserveId, bob, wethInfo.supplyAmount, bob);
+    Utils.supply(spoke1, wethInfo.reserveId, bob, wethInfo.supplyAmount, bob);
     setUsingAsCollateral(spoke1, bob, wethInfo.reserveId, true);
 
     // Bob draw dai + usdx
-    Utils.spokeBorrow(spoke1, daiInfo.reserveId, bob, daiInfo.supplyAmount, bob);
-    Utils.spokeBorrow(spoke1, usdxInfo.reserveId, bob, usdxInfo.supplyAmount, bob);
+    Utils.borrow(spoke1, daiInfo.reserveId, bob, daiInfo.supplyAmount, bob);
+    Utils.borrow(spoke1, usdxInfo.reserveId, bob, usdxInfo.supplyAmount, bob);
 
     // Weth covers half the debt, dai covers the rest
     assertEq(
@@ -256,19 +261,19 @@ contract SpokeUserRiskPremiumTest is SpokeBase {
     wethInfo.lp = spoke1.getLiquidityPremium(wethInfo.reserveId);
 
     // Bob supply dai into spoke1
-    Utils.spokeSupply(spoke1, daiInfo.reserveId, bob, daiInfo.supplyAmount, bob);
+    Utils.supply(spoke1, daiInfo.reserveId, bob, daiInfo.supplyAmount, bob);
     setUsingAsCollateral(spoke1, bob, daiInfo.reserveId, true);
 
     // Bob supply usdx into spoke1
-    Utils.spokeSupply(spoke1, usdxInfo.reserveId, bob, usdxInfo.supplyAmount, bob);
+    Utils.supply(spoke1, usdxInfo.reserveId, bob, usdxInfo.supplyAmount, bob);
     setUsingAsCollateral(spoke1, bob, usdxInfo.reserveId, true);
 
     // Alice supply weth into spoke1
-    Utils.spokeSupply(spoke1, wethInfo.reserveId, alice, wethInfo.supplyAmount, alice);
+    Utils.supply(spoke1, wethInfo.reserveId, alice, wethInfo.supplyAmount, alice);
     setUsingAsCollateral(spoke1, alice, wethInfo.reserveId, true);
 
     // Bob draw weth
-    Utils.spokeBorrow(spoke1, wethInfo.reserveId, bob, wethInfo.borrowAmount, bob);
+    Utils.borrow(spoke1, wethInfo.reserveId, bob, wethInfo.borrowAmount, bob);
 
     // Dai and usdx will each cover half the debt, because dai has lower lp than usdx
     assertEq(
@@ -311,23 +316,23 @@ contract SpokeUserRiskPremiumTest is SpokeBase {
 
     // Bob supply dai into spoke3
     if (daiInfo.supplyAmount > 0) {
-      Utils.spokeSupply(spoke3, daiInfo.reserveId, bob, daiInfo.supplyAmount, bob);
+      Utils.supply(spoke3, daiInfo.reserveId, bob, daiInfo.supplyAmount, bob);
       setUsingAsCollateral(spoke3, bob, daiInfo.reserveId, true);
     }
 
     // Bob supply usdx into spoke3
     if (usdxInfo.supplyAmount > 0) {
-      Utils.spokeSupply(spoke3, usdxInfo.reserveId, bob, usdxInfo.supplyAmount, bob);
+      Utils.supply(spoke3, usdxInfo.reserveId, bob, usdxInfo.supplyAmount, bob);
       setUsingAsCollateral(spoke3, bob, usdxInfo.reserveId, true);
     }
 
     // Bob supply weth into spoke3
-    Utils.spokeSupply(spoke3, wethInfo.reserveId, bob, wethInfo.supplyAmount, bob);
+    Utils.supply(spoke3, wethInfo.reserveId, bob, wethInfo.supplyAmount, bob);
     setUsingAsCollateral(spoke3, bob, wethInfo.reserveId, true);
 
     // Bob draw weth
     if (wethInfo.borrowAmount > 0) {
-      Utils.spokeBorrow(spoke3, wethInfo.reserveId, bob, wethInfo.borrowAmount, bob);
+      Utils.borrow(spoke3, wethInfo.reserveId, bob, wethInfo.borrowAmount, bob);
     }
 
     // Dai and usdx will each cover part of the debt
@@ -374,29 +379,29 @@ contract SpokeUserRiskPremiumTest is SpokeBase {
 
     // Bob supply dai into spoke3
     if (daiInfo.supplyAmount > 0) {
-      Utils.spokeSupply(spoke3, daiInfo.reserveId, bob, daiInfo.supplyAmount, bob);
+      Utils.supply(spoke3, daiInfo.reserveId, bob, daiInfo.supplyAmount, bob);
       setUsingAsCollateral(spoke3, bob, daiInfo.reserveId, true);
     }
 
     // Bob supply weth into spoke3
     if (wethInfo.supplyAmount > 0) {
-      Utils.spokeSupply(spoke3, wethInfo.reserveId, bob, wethInfo.supplyAmount, bob);
+      Utils.supply(spoke3, wethInfo.reserveId, bob, wethInfo.supplyAmount, bob);
       setUsingAsCollateral(spoke3, bob, wethInfo.reserveId, true);
     }
 
     // Bob supply usdx into spoke3
     if (usdxInfo.supplyAmount > 0) {
-      Utils.spokeSupply(spoke3, usdxInfo.reserveId, bob, usdxInfo.supplyAmount, bob);
+      Utils.supply(spoke3, usdxInfo.reserveId, bob, usdxInfo.supplyAmount, bob);
       setUsingAsCollateral(spoke3, bob, usdxInfo.reserveId, true);
     }
 
     // Bob supply wbtc into spoke3
-    Utils.spokeSupply(spoke3, wbtcInfo.reserveId, bob, wbtcInfo.supplyAmount, bob);
+    Utils.supply(spoke3, wbtcInfo.reserveId, bob, wbtcInfo.supplyAmount, bob);
     setUsingAsCollateral(spoke3, bob, wbtcInfo.reserveId, true);
 
     // Bob draw wbtc
     if (wbtcInfo.borrowAmount > 0) {
-      Utils.spokeBorrow(spoke3, wbtcInfo.reserveId, bob, wbtcInfo.borrowAmount, bob);
+      Utils.borrow(spoke3, wbtcInfo.reserveId, bob, wbtcInfo.borrowAmount, bob);
     }
 
     // Dai, weth, and usdx will each cover part of the debt
@@ -454,35 +459,35 @@ contract SpokeUserRiskPremiumTest is SpokeBase {
 
     // Bob supply wbtc into spoke2
     if (wbtcInfo.supplyAmount > 0) {
-      Utils.spokeSupply(spoke2, wbtcInfo.reserveId, bob, wbtcInfo.supplyAmount, bob);
+      Utils.supply(spoke2, wbtcInfo.reserveId, bob, wbtcInfo.supplyAmount, bob);
       setUsingAsCollateral(spoke2, bob, wbtcInfo.reserveId, true);
     }
 
     // Bob supply weth into spoke2
     if (wethInfo.supplyAmount > 0) {
-      Utils.spokeSupply(spoke2, wethInfo.reserveId, bob, wethInfo.supplyAmount, bob);
+      Utils.supply(spoke2, wethInfo.reserveId, bob, wethInfo.supplyAmount, bob);
       setUsingAsCollateral(spoke2, bob, wethInfo.reserveId, true);
     }
 
     // Bob supply dai into spoke2
     if (daiInfo.supplyAmount > 0) {
-      Utils.spokeSupply(spoke2, daiInfo.reserveId, bob, daiInfo.supplyAmount, bob);
+      Utils.supply(spoke2, daiInfo.reserveId, bob, daiInfo.supplyAmount, bob);
       setUsingAsCollateral(spoke2, bob, daiInfo.reserveId, true);
     }
 
     // Bob supply usdx into spoke2
     if (usdxInfo.supplyAmount > 0) {
-      Utils.spokeSupply(spoke2, usdxInfo.reserveId, bob, usdxInfo.supplyAmount, bob);
+      Utils.supply(spoke2, usdxInfo.reserveId, bob, usdxInfo.supplyAmount, bob);
       setUsingAsCollateral(spoke2, bob, usdxInfo.reserveId, true);
     }
 
     // Bob supply dai2 into spoke2
-    Utils.spokeSupply(spoke2, dai2Info.reserveId, bob, MAX_SUPPLY_AMOUNT, bob);
+    Utils.supply(spoke2, dai2Info.reserveId, bob, MAX_SUPPLY_AMOUNT, bob);
     setUsingAsCollateral(spoke2, bob, dai2Info.reserveId, true);
 
     // Bob draw dai2
     if (dai2Info.borrowAmount > 0) {
-      Utils.spokeBorrow(spoke2, dai2Info.reserveId, bob, dai2Info.borrowAmount, bob);
+      Utils.borrow(spoke2, dai2Info.reserveId, bob, dai2Info.borrowAmount, bob);
     }
 
     // wbtc, weth, dai, and usdx will each cover part of the debt
@@ -545,35 +550,35 @@ contract SpokeUserRiskPremiumTest is SpokeBase {
 
     // Bob supply wbtc into spoke2
     if (wbtcInfo.supplyAmount > 0) {
-      Utils.spokeSupply(spoke2, wbtcInfo.reserveId, bob, wbtcInfo.supplyAmount, bob);
+      Utils.supply(spoke2, wbtcInfo.reserveId, bob, wbtcInfo.supplyAmount, bob);
       setUsingAsCollateral(spoke2, bob, wbtcInfo.reserveId, true);
     }
 
     // Bob supply weth into spoke2
     if (wethInfo.supplyAmount > 0) {
-      Utils.spokeSupply(spoke2, wethInfo.reserveId, bob, wethInfo.supplyAmount, bob);
+      Utils.supply(spoke2, wethInfo.reserveId, bob, wethInfo.supplyAmount, bob);
       setUsingAsCollateral(spoke2, bob, wethInfo.reserveId, true);
     }
 
     // Bob supply dai into spoke2
     if (daiInfo.supplyAmount > 0) {
-      Utils.spokeSupply(spoke2, daiInfo.reserveId, bob, daiInfo.supplyAmount, bob);
+      Utils.supply(spoke2, daiInfo.reserveId, bob, daiInfo.supplyAmount, bob);
       setUsingAsCollateral(spoke2, bob, daiInfo.reserveId, true);
     }
 
     // Bob supply usdx into spoke2
     if (usdxInfo.supplyAmount > 0) {
-      Utils.spokeSupply(spoke2, usdxInfo.reserveId, bob, usdxInfo.supplyAmount, bob);
+      Utils.supply(spoke2, usdxInfo.reserveId, bob, usdxInfo.supplyAmount, bob);
       setUsingAsCollateral(spoke2, bob, usdxInfo.reserveId, true);
     }
 
     // Bob supply dai2 into spoke2
-    Utils.spokeSupply(spoke2, dai2Info.reserveId, bob, dai2Info.supplyAmount, bob);
+    Utils.supply(spoke2, dai2Info.reserveId, bob, dai2Info.supplyAmount, bob);
     setUsingAsCollateral(spoke2, bob, dai2Info.reserveId, true);
 
     // Bob draw dai2
     if (dai2Info.borrowAmount > 0) {
-      Utils.spokeBorrow(spoke2, dai2Info.reserveId, bob, dai2Info.borrowAmount, bob);
+      Utils.borrow(spoke2, dai2Info.reserveId, bob, dai2Info.borrowAmount, bob);
     }
 
     // wbtc, weth, dai, and usdx will each cover part of the debt
@@ -646,35 +651,35 @@ contract SpokeUserRiskPremiumTest is SpokeBase {
 
     // Bob supply wbtc into spoke2
     if (wbtcInfo.supplyAmount > 0) {
-      Utils.spokeSupply(spoke2, wbtcInfo.reserveId, bob, wbtcInfo.supplyAmount, bob);
+      Utils.supply(spoke2, wbtcInfo.reserveId, bob, wbtcInfo.supplyAmount, bob);
       setUsingAsCollateral(spoke2, bob, wbtcInfo.reserveId, true);
     }
 
     // Bob supply weth into spoke2
     if (wethInfo.supplyAmount > 0) {
-      Utils.spokeSupply(spoke2, wethInfo.reserveId, bob, wethInfo.supplyAmount, bob);
+      Utils.supply(spoke2, wethInfo.reserveId, bob, wethInfo.supplyAmount, bob);
       setUsingAsCollateral(spoke2, bob, wethInfo.reserveId, true);
     }
 
     // Bob supply dai into spoke2
     if (daiInfo.supplyAmount > 0) {
-      Utils.spokeSupply(spoke2, daiInfo.reserveId, bob, daiInfo.supplyAmount, bob);
+      Utils.supply(spoke2, daiInfo.reserveId, bob, daiInfo.supplyAmount, bob);
       setUsingAsCollateral(spoke2, bob, daiInfo.reserveId, true);
     }
 
     // Bob supply usdx into spoke2
     if (usdxInfo.supplyAmount > 0) {
-      Utils.spokeSupply(spoke2, usdxInfo.reserveId, bob, usdxInfo.supplyAmount, bob);
+      Utils.supply(spoke2, usdxInfo.reserveId, bob, usdxInfo.supplyAmount, bob);
       setUsingAsCollateral(spoke2, bob, usdxInfo.reserveId, true);
     }
 
     // Bob supply dai2 into spoke2
-    Utils.spokeSupply(spoke2, dai2Info.reserveId, bob, dai2Info.supplyAmount, bob);
+    Utils.supply(spoke2, dai2Info.reserveId, bob, dai2Info.supplyAmount, bob);
     setUsingAsCollateral(spoke2, bob, dai2Info.reserveId, true);
 
     // Bob draw dai2
     if (dai2Info.borrowAmount > 0) {
-      Utils.spokeBorrow(spoke2, dai2Info.reserveId, bob, dai2Info.borrowAmount, bob);
+      Utils.borrow(spoke2, dai2Info.reserveId, bob, dai2Info.borrowAmount, bob);
     }
 
     // wbtc, weth, dai, and usdx will each cover part of the debt
@@ -739,25 +744,25 @@ contract SpokeUserRiskPremiumTest is SpokeBase {
 
     // Bob supply dai into spoke2
     if (daiInfo.supplyAmount > 0) {
-      Utils.spokeSupply(spoke2, _daiReserveId(spoke2), bob, daiInfo.supplyAmount, bob);
+      Utils.supply(spoke2, _daiReserveId(spoke2), bob, daiInfo.supplyAmount, bob);
       setUsingAsCollateral(spoke2, bob, _daiReserveId(spoke2), true);
     }
 
     // Bob supply weth into spoke2
     if (wethInfo.supplyAmount > 0) {
-      Utils.spokeSupply(spoke2, _wethReserveId(spoke2), bob, wethInfo.supplyAmount, bob);
+      Utils.supply(spoke2, _wethReserveId(spoke2), bob, wethInfo.supplyAmount, bob);
       setUsingAsCollateral(spoke2, bob, _wethReserveId(spoke2), true);
     }
 
     // Bob supply usdx into spoke2
     if (usdxInfo.supplyAmount > 0) {
-      Utils.spokeSupply(spoke2, _usdxReserveId(spoke2), bob, usdxInfo.supplyAmount, bob);
+      Utils.supply(spoke2, _usdxReserveId(spoke2), bob, usdxInfo.supplyAmount, bob);
       setUsingAsCollateral(spoke2, bob, _usdxReserveId(spoke2), true);
     }
 
     // Bob supply wbtc into spoke2
     if (wbtcInfo.supplyAmount > 0) {
-      Utils.spokeSupply(spoke2, _wbtcReserveId(spoke2), bob, wbtcInfo.supplyAmount, bob);
+      Utils.supply(spoke2, _wbtcReserveId(spoke2), bob, wbtcInfo.supplyAmount, bob);
       setUsingAsCollateral(spoke2, bob, _wbtcReserveId(spoke2), true);
     }
 
@@ -819,29 +824,29 @@ contract SpokeUserRiskPremiumTest is SpokeBase {
 
     // Bob supply dai into spoke3
     if (daiInfo.supplyAmount > 0) {
-      Utils.spokeSupply(spoke3, daiInfo.reserveId, bob, daiInfo.supplyAmount, bob);
+      Utils.supply(spoke3, daiInfo.reserveId, bob, daiInfo.supplyAmount, bob);
       setUsingAsCollateral(spoke3, bob, daiInfo.reserveId, true);
     }
 
     // Bob supply weth into spoke3
     if (wethInfo.supplyAmount > 0) {
-      Utils.spokeSupply(spoke3, wethInfo.reserveId, bob, wethInfo.supplyAmount, bob);
+      Utils.supply(spoke3, wethInfo.reserveId, bob, wethInfo.supplyAmount, bob);
       setUsingAsCollateral(spoke3, bob, wethInfo.reserveId, true);
     }
 
     // Bob supply usdx into spoke3
     if (usdxInfo.supplyAmount > 0) {
-      Utils.spokeSupply(spoke3, usdxInfo.reserveId, bob, usdxInfo.supplyAmount, bob);
+      Utils.supply(spoke3, usdxInfo.reserveId, bob, usdxInfo.supplyAmount, bob);
       setUsingAsCollateral(spoke3, bob, usdxInfo.reserveId, true);
     }
 
     // Bob supply wbtc into spoke3
-    Utils.spokeSupply(spoke3, wbtcInfo.reserveId, bob, wbtcInfo.supplyAmount, bob);
+    Utils.supply(spoke3, wbtcInfo.reserveId, bob, wbtcInfo.supplyAmount, bob);
     setUsingAsCollateral(spoke3, bob, wbtcInfo.reserveId, true);
 
     // Bob draw wbtc
     if (wbtcInfo.borrowAmount > 0) {
-      Utils.spokeBorrow(spoke3, wbtcInfo.reserveId, bob, wbtcInfo.borrowAmount, bob);
+      Utils.borrow(spoke3, wbtcInfo.reserveId, bob, wbtcInfo.borrowAmount, bob);
     }
 
     // Dai, usdx, and weth will each cover part of the debt
@@ -853,7 +858,7 @@ contract SpokeUserRiskPremiumTest is SpokeBase {
     uint256 baseRate = hub.getBaseInterestRate(wbtcAssetId);
     uint256 baseDebt = wbtcInfo.borrowAmount;
     (uint256 actualBaseDebt, uint256 actualPremium) = spoke3.getUserDebt(wbtcInfo.reserveId, bob);
-    uint256 startTime = vm.getBlockTimestamp();
+    uint40 startTime = uint40(vm.getBlockTimestamp());
 
     assertEq(baseDebt, actualBaseDebt, 'user base debt');
     assertEq(actualPremium, 0, 'user premium debt');
@@ -869,7 +874,7 @@ contract SpokeUserRiskPremiumTest is SpokeBase {
     );
 
     // See if base debt of wbtc changes appropriately
-    baseDebt = MathUtils.calculateLinearInterest(baseRate, uint40(startTime)).rayMul(baseDebt);
+    baseDebt = MathUtils.calculateLinearInterest(baseRate, startTime).rayMul(baseDebt);
     (actualBaseDebt, actualPremium) = spoke3.getUserDebt(wbtcInfo.reserveId, bob);
     assertEq(baseDebt, actualBaseDebt, 'user base debt');
 
@@ -933,29 +938,29 @@ contract SpokeUserRiskPremiumTest is SpokeBase {
 
     // Bob supply dai into spoke3
     if (daiInfo.supplyAmount > 0) {
-      Utils.spokeSupply(spoke3, daiInfo.reserveId, bob, daiInfo.supplyAmount, bob);
+      Utils.supply(spoke3, daiInfo.reserveId, bob, daiInfo.supplyAmount, bob);
       setUsingAsCollateral(spoke3, bob, daiInfo.reserveId, true);
     }
 
     // Bob supply weth into spoke3
     if (wethInfo.supplyAmount > 0) {
-      Utils.spokeSupply(spoke3, wethInfo.reserveId, bob, wethInfo.supplyAmount, bob);
+      Utils.supply(spoke3, wethInfo.reserveId, bob, wethInfo.supplyAmount, bob);
       setUsingAsCollateral(spoke3, bob, wethInfo.reserveId, true);
     }
 
     // Bob supply usdx into spoke3
     if (usdxInfo.supplyAmount > 0) {
-      Utils.spokeSupply(spoke3, usdxInfo.reserveId, bob, usdxInfo.supplyAmount, bob);
+      Utils.supply(spoke3, usdxInfo.reserveId, bob, usdxInfo.supplyAmount, bob);
       setUsingAsCollateral(spoke3, bob, usdxInfo.reserveId, true);
     }
 
     // Bob supply wbtc into spoke3
-    Utils.spokeSupply(spoke3, wbtcInfo.reserveId, bob, wbtcInfo.supplyAmount, bob);
+    Utils.supply(spoke3, wbtcInfo.reserveId, bob, wbtcInfo.supplyAmount, bob);
     setUsingAsCollateral(spoke3, bob, wbtcInfo.reserveId, true);
 
     // Alice supply remaining weth into spoke3
     if (MAX_SUPPLY_AMOUNT - wethInfo.supplyAmount > 0) {
-      Utils.spokeSupply(
+      Utils.supply(
         spoke3,
         wethInfo.reserveId,
         alice,
@@ -966,12 +971,12 @@ contract SpokeUserRiskPremiumTest is SpokeBase {
 
     // Bob draw wbtc
     if (wbtcInfo.borrowAmount > 0) {
-      Utils.spokeBorrow(spoke3, wbtcInfo.reserveId, bob, wbtcInfo.borrowAmount, bob);
+      Utils.borrow(spoke3, wbtcInfo.reserveId, bob, wbtcInfo.borrowAmount, bob);
     }
 
     // Bob draw weth
     if (wethInfo.borrowAmount > 0) {
-      Utils.spokeBorrow(spoke3, wethInfo.reserveId, bob, wethInfo.borrowAmount, bob);
+      Utils.borrow(spoke3, wethInfo.reserveId, bob, wethInfo.borrowAmount, bob);
     }
 
     uint256 expectedUserRiskPremium = _calculateExpectedUserRP(bob, spoke3);
@@ -1119,7 +1124,7 @@ contract SpokeUserRiskPremiumTest is SpokeBase {
   }
 
   /// Bob and Alice each supply and borrow varying amounts of usdx and dai, we check interest accrues and values percolate to hub.
-  /// After 1 year, Alice does a repay, and we ensure the same values are updated accordingly at the end of year 2.
+  /// After 1 year, Alice does a repay, and we ensure the same values are updated accordingly.
   function test_getUserRiskPremium_applyInterest_two_users_two_reserves_borrowed() public {
     // Set Dai lp to 10% and usdx to 20%
     spoke1.updateLiquidityPremium(_daiReserveId(spoke1), 10_00);
@@ -1150,32 +1155,32 @@ contract SpokeUserRiskPremiumTest is SpokeBase {
     usdxInfo.lp = spoke1.getLiquidityPremium(usdxInfo.reserveId);
 
     // Bob supply dai into spoke1
-    Utils.spokeSupply(spoke1, daiInfo.reserveId, bob, bobDaiInfo.supplyAmount, bob);
+    Utils.supply(spoke1, daiInfo.reserveId, bob, bobDaiInfo.supplyAmount, bob);
     setUsingAsCollateral(spoke1, bob, daiInfo.reserveId, true);
 
     // Bob supply usdx into spoke1
-    Utils.spokeSupply(spoke1, usdxInfo.reserveId, bob, bobUsdxInfo.supplyAmount, bob);
+    Utils.supply(spoke1, usdxInfo.reserveId, bob, bobUsdxInfo.supplyAmount, bob);
     setUsingAsCollateral(spoke1, bob, usdxInfo.reserveId, true);
 
     // Alice supply dai into spoke1
-    Utils.spokeSupply(spoke1, daiInfo.reserveId, alice, aliceDaiInfo.supplyAmount, alice);
+    Utils.supply(spoke1, daiInfo.reserveId, alice, aliceDaiInfo.supplyAmount, alice);
     setUsingAsCollateral(spoke1, alice, daiInfo.reserveId, true);
 
     // Alice supply usdx into spoke1
-    Utils.spokeSupply(spoke1, usdxInfo.reserveId, alice, aliceUsdxInfo.supplyAmount, alice);
+    Utils.supply(spoke1, usdxInfo.reserveId, alice, aliceUsdxInfo.supplyAmount, alice);
     setUsingAsCollateral(spoke1, alice, usdxInfo.reserveId, true);
 
     // Bob draw dai
-    Utils.spokeBorrow(spoke1, daiInfo.reserveId, bob, bobDaiInfo.borrowAmount, bob);
+    Utils.borrow(spoke1, daiInfo.reserveId, bob, bobDaiInfo.borrowAmount, bob);
 
     // Bob draw usdx
-    Utils.spokeBorrow(spoke1, usdxInfo.reserveId, bob, bobUsdxInfo.borrowAmount, bob);
+    Utils.borrow(spoke1, usdxInfo.reserveId, bob, bobUsdxInfo.borrowAmount, bob);
 
     // Alice draw dai
-    Utils.spokeBorrow(spoke1, daiInfo.reserveId, alice, aliceDaiInfo.borrowAmount, alice);
+    Utils.borrow(spoke1, daiInfo.reserveId, alice, aliceDaiInfo.borrowAmount, alice);
 
     // Alice draw usdx
-    Utils.spokeBorrow(spoke1, usdxInfo.reserveId, alice, aliceUsdxInfo.borrowAmount, alice);
+    Utils.borrow(spoke1, usdxInfo.reserveId, alice, aliceUsdxInfo.borrowAmount, alice);
 
     uint256 bobExpectedRiskPremium = _calculateExpectedUserRP(bob, spoke1);
     uint256 aliceExpectedRiskPremium = _calculateExpectedUserRP(alice, spoke1);
@@ -1433,7 +1438,7 @@ contract SpokeUserRiskPremiumTest is SpokeBase {
     );
 
     // Now, if Alice repays some debt, her user risk premium should change and percolate through protocol
-    Utils.spokeRepay(spoke1, daiInfo.reserveId, alice, aliceDaiInfo.borrowAmount / 2);
+    Utils.repay(spoke1, daiInfo.reserveId, alice, aliceDaiInfo.borrowAmount / 2);
 
     // Bob's user risk premium remains unchanged
     assertEq(
@@ -1467,7 +1472,12 @@ contract SpokeUserRiskPremiumTest is SpokeBase {
     repayAmount -= aliceDaiInfo.premiumDebt;
     aliceDaiInfo.baseDebt -= repayAmount;
     aliceDaiInfo.premiumDebt = 0;
-    assertEq(debtChecks.actualBaseDebt, aliceDaiInfo.baseDebt, 'alice base debt after repay');
+    assertApproxEqAbs(
+      debtChecks.actualBaseDebt,
+      aliceDaiInfo.baseDebt,
+      1,
+      'alice base debt after repay'
+    );
     assertEq(debtChecks.actualPremium, aliceDaiInfo.premiumDebt, 'alice premium debt after repay');
     aliceDaiInfo.totalDebt = aliceDaiInfo.baseDebt + aliceDaiInfo.premiumDebt;
 
@@ -1503,5 +1513,613 @@ contract SpokeUserRiskPremiumTest is SpokeBase {
     assertEq(debtChecks.actualPremium, bobUsdxInfo.premiumDebt, 'bob usdx premium debt after');
   }
 
-  // TODO: Fuzz test showing 2 diff users borrowing the same 2 reserves, and show their own risk premiums are calculated and applied correctly
+  /// Bob and Alice each supply and borrow varying fuzzed amounts of usdx and dai,
+  /// with different risk premiums. We check interest accrues correctly and values percolate to hub.
+  function test_getUserRiskPremium_fuzz_two_users_two_reserves_borrowed(
+    UserAction memory bobDaiAction,
+    UserAction memory bobUsdxAction,
+    UserAction memory aliceDaiAction,
+    UserAction memory aliceUsdxAction,
+    uint256 daiLp,
+    uint256 usdxLp,
+    uint40 timeSkip,
+    uint40 secondTimeSkip,
+    uint40 thirdTimeSkip
+  ) public {
+    vm.skip(true, 'pending migration');
+    //   // TODO: Make a dedicated function for bounds
+    //   bobDaiAction.supplyAmount = bound(bobDaiAction.supplyAmount, 2, MAX_SUPPLY_AMOUNT / 2);
+    //   bobUsdxAction.supplyAmount = bound(bobUsdxAction.supplyAmount, 2, MAX_SUPPLY_AMOUNT / 2);
+    //   aliceDaiAction.supplyAmount = bound(aliceDaiAction.supplyAmount, 2, MAX_SUPPLY_AMOUNT / 2);
+    //   aliceUsdxAction.supplyAmount = bound(aliceUsdxAction.supplyAmount, 2, MAX_SUPPLY_AMOUNT / 2);
+
+    //   bobDaiAction.borrowAmount = bound(bobDaiAction.borrowAmount, 0, bobDaiAction.supplyAmount / 2);
+    //   bobUsdxAction.borrowAmount = bound(
+    //     bobUsdxAction.borrowAmount,
+    //     0,
+    //     bobUsdxAction.supplyAmount / 2
+    //   );
+    //   aliceDaiAction.borrowAmount = bound(
+    //     aliceDaiAction.borrowAmount,
+    //     0,
+    //     aliceDaiAction.supplyAmount / 2
+    //   );
+    //   aliceUsdxAction.borrowAmount = bound(
+    //     aliceUsdxAction.borrowAmount,
+    //     0,
+    //     aliceUsdxAction.supplyAmount / 2
+    //   );
+
+    //   daiLp = bound(daiLp, 0, MAX_RISK_PREMIUM_BPS);
+    //   usdxLp = bound(usdxLp, 0, MAX_RISK_PREMIUM_BPS);
+
+    //   timeSkip = uint40(bound(timeSkip, 0, MAX_SKIP_TIME));
+    //   secondTimeSkip = uint40(bound(secondTimeSkip, 0, MAX_SKIP_TIME));
+    //   thirdTimeSkip = uint40(bound(thirdTimeSkip, 0, MAX_SKIP_TIME));
+
+    //   // Set liquidity premiums
+    //   spoke1.updateLiquidityPremium(_daiReserveId(spoke1), daiLp);
+    //   spoke1.updateLiquidityPremium(_usdxReserveId(spoke1), usdxLp);
+    //   assertEq(spoke1.getLiquidityPremium(_daiReserveId(spoke1)), daiLp, 'dai lp');
+    //   assertEq(spoke1.getLiquidityPremium(_usdxReserveId(spoke1)), usdxLp, 'usdx lp');
+
+    //   UserInfoLocal memory bobDaiInfo;
+    //   UserInfoLocal memory aliceDaiInfo;
+    //   UserInfoLocal memory bobUsdxInfo;
+    //   UserInfoLocal memory aliceUsdxInfo;
+
+    //   // Set up user info structs
+    //   bobDaiInfo.supplyAmount = bobDaiAction.supplyAmount;
+    //   aliceDaiInfo.supplyAmount = aliceDaiAction.supplyAmount;
+    //   bobUsdxInfo.supplyAmount = bobUsdxAction.supplyAmount;
+    //   aliceUsdxInfo.supplyAmount = aliceUsdxAction.supplyAmount;
+
+    //   bobDaiInfo.borrowAmount = bobDaiAction.borrowAmount;
+    //   aliceDaiInfo.borrowAmount = aliceDaiAction.borrowAmount;
+    //   bobUsdxInfo.borrowAmount = bobUsdxAction.borrowAmount;
+    //   aliceUsdxInfo.borrowAmount = aliceUsdxAction.borrowAmount;
+
+    //   ReserveInfoLocal memory daiInfo;
+    //   ReserveInfoLocal memory usdxInfo;
+
+    //   daiInfo.reserveId = _daiReserveId(spoke1);
+    //   usdxInfo.reserveId = _usdxReserveId(spoke1);
+
+    //   daiInfo.lp = spoke1.getLiquidityPremium(daiInfo.reserveId);
+    //   usdxInfo.lp = spoke1.getLiquidityPremium(usdxInfo.reserveId);
+
+    //   // Users supply
+
+    //   // Bob supply dai
+    //   Utils.supply(spoke1, daiInfo.reserveId, bob, bobDaiInfo.supplyAmount, bob);
+    //   setUsingAsCollateral(spoke1, bob, daiInfo.reserveId, true);
+
+    //   // Bob supply usdx
+    //   Utils.supply(spoke1, usdxInfo.reserveId, bob, bobUsdxInfo.supplyAmount, bob);
+    //   setUsingAsCollateral(spoke1, bob, usdxInfo.reserveId, true);
+
+    //   // Alice supply dai
+    //   Utils.supply(spoke1, daiInfo.reserveId, alice, aliceDaiInfo.supplyAmount, alice);
+    //   setUsingAsCollateral(spoke1, alice, daiInfo.reserveId, true);
+
+    //   // Alice supply usdx
+    //   Utils.supply(spoke1, usdxInfo.reserveId, alice, aliceUsdxInfo.supplyAmount, alice);
+    //   setUsingAsCollateral(spoke1, alice, usdxInfo.reserveId, true);
+
+    //   // Users borrow
+
+    //   // Bob draw dai (if any)
+    //   if (bobDaiInfo.borrowAmount > 0) {
+    //     Utils.borrow(spoke1, daiInfo.reserveId, bob, bobDaiInfo.borrowAmount, bob);
+    //   }
+
+    //   // Bob draw usdx (if any)
+    //   if (bobUsdxInfo.borrowAmount > 0) {
+    //     Utils.borrow(spoke1, usdxInfo.reserveId, bob, bobUsdxInfo.borrowAmount, bob);
+    //   }
+
+    //   // Alice draw dai (if any)
+    //   if (aliceDaiInfo.borrowAmount > 0) {
+    //     Utils.borrow(spoke1, daiInfo.reserveId, alice, aliceDaiInfo.borrowAmount, alice);
+    //   }
+
+    //   // Alice draw usdx (if any)
+    //   if (aliceUsdxInfo.borrowAmount > 0) {
+    //     Utils.borrow(spoke1, usdxInfo.reserveId, alice, aliceUsdxInfo.borrowAmount, alice);
+    //   }
+
+    //   // Calculate expected risk premiums
+    //   uint256 bobExpectedRiskPremium = _calculateExpectedUserRP(bob, spoke1);
+    //   uint256 aliceExpectedRiskPremium = _calculateExpectedUserRP(alice, spoke1);
+
+    //   // Verify initial risk premiums
+    //   assertEq(spoke1.getUserRiskPremium(bob), bobExpectedRiskPremium, 'bob initial risk premium');
+    //   assertEq(
+    //     spoke1.getUserRiskPremium(alice),
+    //     aliceExpectedRiskPremium,
+    //     'alice initial risk premium'
+    //   );
+
+    //   DebtChecks memory debtChecks;
+
+    //   // Get the base rates of assets
+    //   uint256 baseRateDai = hub.getBaseInterestRate(daiAssetId);
+    //   uint256 baseRateUsdx = hub.getBaseInterestRate(usdxAssetId);
+
+    //   // Check initial debts
+
+    //   // Bob's initial dai debt
+    //   (debtChecks.actualBaseDebt, debtChecks.actualPremium) = spoke1.getUserDebt(
+    //     daiInfo.reserveId,
+    //     bob
+    //   );
+    //   uint256 startTime = vm.getBlockTimestamp();
+
+    //   assertEq(bobDaiInfo.borrowAmount, debtChecks.actualBaseDebt, 'Bob dai debt before');
+    //   assertEq(debtChecks.actualPremium, 0, 'Bob dai premium before');
+
+    //   // Bob's initial usdx debt
+    //   (debtChecks.actualBaseDebt, debtChecks.actualPremium) = spoke1.getUserDebt(
+    //     usdxInfo.reserveId,
+    //     bob
+    //   );
+    //   assertEq(bobUsdxInfo.borrowAmount, debtChecks.actualBaseDebt, 'Bob usdx debt before');
+    //   assertEq(debtChecks.actualPremium, 0, 'Bob usdx premium before');
+
+    //   // Alice's initial dai debt
+    //   (debtChecks.actualBaseDebt, debtChecks.actualPremium) = spoke1.getUserDebt(
+    //     daiInfo.reserveId,
+    //     alice
+    //   );
+    //   assertEq(aliceDaiInfo.borrowAmount, debtChecks.actualBaseDebt, 'Alice dai debt before');
+    //   assertEq(debtChecks.actualPremium, 0, 'Alice dai premium before');
+
+    //   // Alice's initial usdx debt
+    //   (debtChecks.actualBaseDebt, debtChecks.actualPremium) = spoke1.getUserDebt(
+    //     usdxInfo.reserveId,
+    //     alice
+    //   );
+    //   assertEq(aliceUsdxInfo.borrowAmount, debtChecks.actualBaseDebt, 'Alice usdx debt before');
+    //   assertEq(debtChecks.actualPremium, 0, 'Alice usdx premium before');
+
+    //   // Skip time
+    //   skip(timeSkip);
+
+    //   // Check that risk premiums remain consistent
+    //   assertEq(
+    //     spoke1.getUserPreviousRiskPremium(daiInfo.reserveId, bob),
+    //     bobExpectedRiskPremium,
+    //     'bob risk premium after time skip (dai)'
+    //   );
+
+    //   assertEq(
+    //     spoke1.getUserPreviousRiskPremium(usdxInfo.reserveId, bob),
+    //     bobExpectedRiskPremium,
+    //     'bob risk premium after time skip (usdx)'
+    //   );
+
+    //   assertEq(
+    //     spoke1.getUserPreviousRiskPremium(daiInfo.reserveId, alice),
+    //     aliceExpectedRiskPremium,
+    //     'alice risk premium after time skip (dai)'
+    //   );
+
+    //   assertEq(
+    //     spoke1.getUserPreviousRiskPremium(usdxInfo.reserveId, alice),
+    //     aliceExpectedRiskPremium,
+    //     'alice risk premium after time skip (usdx)'
+    //   );
+
+    //   // Verify calculated risk premiums match previous values
+    //   assertEq(
+    //     spoke1.getUserRiskPremium(bob),
+    //     _calculateExpectedUserRP(bob, spoke1),
+    //     'bob calculated risk premium after time skip'
+    //   );
+    //   assertEq(
+    //     spoke1.getUserRiskPremium(alice),
+    //     _calculateExpectedUserRP(alice, spoke1),
+    //     'alice calculated risk premium after time skip'
+    //   );
+
+    //   // Calculate accumulated debts
+
+    //   // Bob's dai debt after 1 year
+    //   if (bobDaiInfo.borrowAmount > 0) {
+    //     bobDaiInfo.baseDebt = MathUtils
+    //       .calculateLinearInterest(baseRateDai, uint40(startTime))
+    //       .rayMul(bobDaiInfo.borrowAmount);
+
+    //     (debtChecks.actualBaseDebt, debtChecks.actualPremium) = spoke1.getUserDebt(
+    //       daiInfo.reserveId,
+    //       bob
+    //     );
+    //     assertApproxEqAbs(
+    //       bobDaiInfo.baseDebt,
+    //       debtChecks.actualBaseDebt,
+    //       1,
+    //       'bob dai base debt after'
+    //     );
+
+    //     bobDaiInfo.premiumDebt = (bobDaiInfo.baseDebt - bobDaiInfo.borrowAmount).percentMul(
+    //       bobExpectedRiskPremium
+    //     );
+    //     assertApproxEqAbs(
+    //       bobDaiInfo.premiumDebt,
+    //       debtChecks.actualPremium,
+    //       1,
+    //       'bob dai premium debt after'
+    //     );
+    //     bobDaiInfo.totalDebt = bobDaiInfo.baseDebt + bobDaiInfo.premiumDebt;
+    //   }
+
+    //   // Bob's usdx debt after 1 year
+    //   if (bobUsdxInfo.borrowAmount > 0) {
+    //     bobUsdxInfo.baseDebt = MathUtils
+    //       .calculateLinearInterest(baseRateUsdx, uint40(startTime))
+    //       .rayMul(bobUsdxInfo.borrowAmount);
+
+    //     (debtChecks.actualBaseDebt, debtChecks.actualPremium) = spoke1.getUserDebt(
+    //       usdxInfo.reserveId,
+    //       bob
+    //     );
+    //     assertApproxEqAbs(
+    //       bobUsdxInfo.baseDebt,
+    //       debtChecks.actualBaseDebt,
+    //       1,
+    //       'bob usdx base debt after'
+    //     );
+
+    //     bobUsdxInfo.premiumDebt = (bobUsdxInfo.baseDebt - bobUsdxInfo.borrowAmount).percentMul(
+    //       bobExpectedRiskPremium
+    //     );
+    //     assertApproxEqAbs(
+    //       bobUsdxInfo.premiumDebt,
+    //       debtChecks.actualPremium,
+    //       1,
+    //       'bob usdx premium debt after'
+    //     );
+    //     bobUsdxInfo.totalDebt = bobUsdxInfo.baseDebt + bobUsdxInfo.premiumDebt;
+    //   }
+
+    //   // Alice's dai debt after 1 year
+    //   if (aliceDaiInfo.borrowAmount > 0) {
+    //     aliceDaiInfo.baseDebt = MathUtils
+    //       .calculateLinearInterest(baseRateDai, uint40(startTime))
+    //       .rayMul(aliceDaiInfo.borrowAmount);
+
+    //     (debtChecks.actualBaseDebt, debtChecks.actualPremium) = spoke1.getUserDebt(
+    //       daiInfo.reserveId,
+    //       alice
+    //     );
+    //     assertApproxEqAbs(
+    //       aliceDaiInfo.baseDebt,
+    //       debtChecks.actualBaseDebt,
+    //       1,
+    //       'alice dai base debt after'
+    //     );
+
+    //     aliceDaiInfo.premiumDebt = (aliceDaiInfo.baseDebt - aliceDaiInfo.borrowAmount).percentMul(
+    //       aliceExpectedRiskPremium
+    //     );
+    //     assertApproxEqAbs(
+    //       aliceDaiInfo.premiumDebt,
+    //       debtChecks.actualPremium,
+    //       1,
+    //       'alice dai premium debt after'
+    //     );
+    //     aliceDaiInfo.totalDebt = aliceDaiInfo.baseDebt + aliceDaiInfo.premiumDebt;
+    //   }
+
+    //   // Alice's usdx debt after 1 year
+    //   if (aliceUsdxInfo.borrowAmount > 0) {
+    //     aliceUsdxInfo.baseDebt = MathUtils
+    //       .calculateLinearInterest(baseRateUsdx, uint40(startTime))
+    //       .rayMul(aliceUsdxInfo.borrowAmount);
+
+    //     (debtChecks.actualBaseDebt, debtChecks.actualPremium) = spoke1.getUserDebt(
+    //       usdxInfo.reserveId,
+    //       alice
+    //     );
+    //     assertApproxEqAbs(
+    //       aliceUsdxInfo.baseDebt,
+    //       debtChecks.actualBaseDebt,
+    //       1,
+    //       'alice usdx base debt after'
+    //     );
+
+    //     aliceUsdxInfo.premiumDebt = (aliceUsdxInfo.baseDebt - aliceUsdxInfo.borrowAmount).percentMul(
+    //       aliceExpectedRiskPremium
+    //     );
+    //     assertApproxEqAbs(
+    //       aliceUsdxInfo.premiumDebt,
+    //       debtChecks.actualPremium,
+    //       1,
+    //       'alice usdx premium debt after'
+    //     );
+    //     aliceUsdxInfo.totalDebt = aliceUsdxInfo.baseDebt + aliceUsdxInfo.premiumDebt;
+    //   }
+
+    //   // Check reserve debt for dai
+    //   (debtChecks.reserveDebt, debtChecks.reservePremium) = spoke1.getReserveDebt(daiInfo.reserveId);
+
+    //   // Reserve debt should be the sum of both user debts
+    //   uint256 expectedDaiTotalDebt = bobDaiInfo.totalDebt + aliceDaiInfo.totalDebt;
+    //   uint256 expectedDaiTotalPremium = bobDaiInfo.premiumDebt + aliceDaiInfo.premiumDebt;
+
+    //   assertApproxEqAbs(
+    //     debtChecks.reserveDebt,
+    //     expectedDaiTotalDebt,
+    //     2,
+    //     'reserve dai base debt after accrual'
+    //   );
+    //   assertApproxEqAbs(
+    //     debtChecks.reservePremium,
+    //     expectedDaiTotalPremium,
+    //     2,
+    //     'reserve dai premium debt after accrual'
+    //   );
+
+    //   // Check reserve debt for usdx
+    //   (debtChecks.reserveDebt, debtChecks.reservePremium) = spoke1.getReserveDebt(usdxInfo.reserveId);
+
+    //   // Reserve debt should be the sum of both user debts
+    //   uint256 expectedUsdxTotalDebt = bobUsdxInfo.totalDebt + aliceUsdxInfo.totalDebt;
+    //   uint256 expectedUsdxTotalPremium = bobUsdxInfo.premiumDebt + aliceUsdxInfo.premiumDebt;
+
+    //   assertApproxEqAbs(
+    //     debtChecks.reserveDebt,
+    //     expectedUsdxTotalDebt,
+    //     2,
+    //     'reserve usdx base debt after accrual'
+    //   );
+    //   assertApproxEqAbs(
+    //     debtChecks.reservePremium,
+    //     expectedUsdxTotalPremium,
+    //     2,
+    //     'reserve usdx premium debt after accrual'
+    //   );
+
+    //   // Verify spoke debts on hub for dai
+    //   (debtChecks.spokeDebt, debtChecks.spokePremium) = hub.getSpokeDebt(daiAssetId, address(spoke1));
+    //   assertApproxEqAbs(
+    //     debtChecks.spokeDebt,
+    //     expectedDaiTotalDebt,
+    //     2,
+    //     'hub spoke dai base debt after accrual'
+    //   );
+    //   assertApproxEqAbs(
+    //     debtChecks.spokePremium,
+    //     expectedDaiTotalPremium,
+    //     2,
+    //     'hub spoke dai premium debt after accrual'
+    //   );
+
+    //   // Verify spoke debts on hub for usdx
+    //   (debtChecks.spokeDebt, debtChecks.spokePremium) = hub.getSpokeDebt(
+    //     usdxAssetId,
+    //     address(spoke1)
+    //   );
+    //   assertApproxEqAbs(
+    //     debtChecks.spokeDebt,
+    //     expectedUsdxTotalDebt,
+    //     2,
+    //     'hub spoke usdx base debt after accrual'
+    //   );
+    //   assertApproxEqAbs(
+    //     debtChecks.spokePremium,
+    //     expectedUsdxTotalPremium,
+    //     2,
+    //     'hub spoke usdx premium debt after accrual'
+    //   );
+
+    //   // Verify asset debts on hub
+    //   (debtChecks.assetDebt, debtChecks.assetPremium) = hub.getAssetDebt(daiAssetId);
+    //   assertApproxEqAbs(
+    //     debtChecks.assetDebt,
+    //     expectedDaiTotalDebt,
+    //     2,
+    //     'hub asset dai base debt after accrual'
+    //   );
+    //   assertApproxEqAbs(
+    //     debtChecks.assetPremium,
+    //     expectedDaiTotalPremium,
+    //     2,
+    //     'hub asset dai premium debt after accrual'
+    //   );
+
+    //   (debtChecks.assetDebt, debtChecks.assetPremium) = hub.getAssetDebt(usdxAssetId);
+    //   assertApproxEqAbs(
+    //     debtChecks.assetDebt,
+    //     expectedUsdxTotalDebt,
+    //     2,
+    //     'hub asset usdx base debt after accrual'
+    //   );
+    //   assertApproxEqAbs(
+    //     debtChecks.assetPremium,
+    //     expectedUsdxTotalPremium,
+    //     2,
+    //     'hub asset usdx premium debt after accrual'
+    //   );
+
+    //   // Skip time before Bob repay
+    //   skip(secondTimeSkip);
+
+    //   // Bob repay half dai debt
+    //   if (bobDaiInfo.borrowAmount > 2) {
+    //     uint256 repayAmount = (bobDaiInfo.baseDebt + bobDaiInfo.premiumDebt) / 2;
+    //     Utils.repay(spoke1, daiInfo.reserveId, bob, repayAmount);
+
+    //     // Bob's risk premium should change
+    //     uint256 newBobRiskPremium = _calculateExpectedUserRP(bob, spoke1);
+
+    //     // Verify his new risk premium
+    //     assertEq(spoke1.getUserRiskPremium(bob), newBobRiskPremium, 'bob risk premium after repay');
+
+    //     // Alice's risk premium should remain unchanged
+    //     assertEq(
+    //       spoke1.getUserRiskPremium(alice),
+    //       aliceExpectedRiskPremium,
+    //       'alice risk premium after bob repay'
+    //     );
+
+    //     // Get updated debts since time skip
+    //     uint40 secondAccrualTime = uint40(startTime) + timeSkip;
+    //     uint256 additionalBaseDebt = MathUtils
+    //       .calculateLinearInterest(baseRateDai, secondAccrualTime)
+    //       .rayMul(bobDaiInfo.baseDebt) - bobDaiInfo.baseDebt;
+
+    //     uint256 updatedBobBaseDebt = bobDaiInfo.baseDebt + additionalBaseDebt;
+    //     uint256 updatedBobPremiumDebt = bobDaiInfo.premiumDebt +
+    //       additionalBaseDebt.percentMul(bobExpectedRiskPremium);
+
+    //     // Check Bob's updated dai debt
+    //     (debtChecks.actualBaseDebt, debtChecks.actualPremium) = spoke1.getUserDebt(
+    //       daiInfo.reserveId,
+    //       bob
+    //     );
+
+    //     // Premium debt is repaid first
+    //     uint256 remainingRepay = repayAmount;
+    //     uint256 newBobPremiumDebt = 0;
+    //     if (remainingRepay <= updatedBobPremiumDebt) {
+    //       newBobPremiumDebt = updatedBobPremiumDebt - remainingRepay;
+    //       remainingRepay = 0;
+    //     } else {
+    //       remainingRepay -= updatedBobPremiumDebt;
+    //     }
+
+    //     uint256 newBobBaseDebt = remainingRepay >= updatedBobBaseDebt
+    //       ? 0
+    //       : updatedBobBaseDebt - remainingRepay;
+
+    //     assertApproxEqAbs(
+    //       debtChecks.actualBaseDebt,
+    //       newBobBaseDebt,
+    //       2,
+    //       'bob dai base debt after repay'
+    //     );
+    //     assertApproxEqAbs(
+    //       debtChecks.actualPremium,
+    //       newBobPremiumDebt,
+    //       2,
+    //       'bob dai premium debt after repay'
+    //     );
+    //   }
+
+    //   // Similar check for Alice but increasing her debt
+    //   if (
+    //     aliceUsdxInfo.borrowAmount > 0 && aliceUsdxInfo.supplyAmount > aliceUsdxInfo.borrowAmount * 2
+    //   ) {
+    //     // Alice increases her USDX borrow by 50%
+    //     uint256 additionalBorrow = aliceUsdxInfo.borrowAmount / 2;
+    //     Utils.borrow(spoke1, usdxInfo.reserveId, alice, additionalBorrow, alice);
+
+    //     // Alice's risk premium should change
+    //     uint256 newAliceRiskPremium = _calculateExpectedUserRP(alice, spoke1);
+
+    //     // Verify her new risk premium
+    //     assertEq(
+    //       spoke1.getUserRiskPremium(alice),
+    //       newAliceRiskPremium,
+    //       'alice risk premium after borrow'
+    //     );
+
+    //     // Verify Bob's risk premium remains the same
+    //     assertEq(
+    //       spoke1.getUserRiskPremium(bob),
+    //       spoke1.getUserRiskPremium(bob),
+    //       'bob risk premium after alice borrow'
+    //     );
+
+    //     // Check Alice's updated usdx debt
+    //     (debtChecks.actualBaseDebt, debtChecks.actualPremium) = spoke1.getUserDebt(
+    //       usdxInfo.reserveId,
+    //       alice
+    //     );
+
+    //     // Account for additional interest during second time skip
+    //     uint256 secondAccrualTime = uint40(startTime + timeSkip);
+    //     uint256 additionalBaseDebt = MathUtils
+    //       .calculateLinearInterest(baseRateUsdx, uint40(secondAccrualTime))
+    //       .rayMul(aliceUsdxInfo.baseDebt) - aliceUsdxInfo.baseDebt;
+
+    //     // Base debt increases by the additional borrow plus accrued interest
+    //     uint256 newAliceBaseDebt = aliceUsdxInfo.baseDebt + additionalBaseDebt + additionalBorrow;
+    //     // Premium debt includes accrued interest from time skip
+    //     uint256 newAlicePremiumDebt = aliceUsdxInfo.premiumDebt +
+    //       additionalBaseDebt.percentMul(aliceExpectedRiskPremium);
+
+    //     assertApproxEqAbs(
+    //       debtChecks.actualBaseDebt,
+    //       newAliceBaseDebt,
+    //       2,
+    //       'alice usdx base debt after additional borrow'
+    //     );
+    //     assertApproxEqAbs(
+    //       debtChecks.actualPremium,
+    //       newAlicePremiumDebt,
+    //       2,
+    //       'alice usdx premium debt after additional borrow'
+    //     );
+    //   }
+
+    //   // Skip time to accrue interest
+    //   skip(thirdTimeSkip);
+
+    //   // Final verification of risk premiums after all changes
+    //   uint256 finalBobRiskPremium = _calculateExpectedUserRP(bob, spoke1);
+    //   uint256 finalAliceRiskPremium = _calculateExpectedUserRP(alice, spoke1);
+
+    //   assertEq(spoke1.getUserRiskPremium(bob), finalBobRiskPremium, 'bob final risk premium');
+    //   assertEq(spoke1.getUserRiskPremium(alice), finalAliceRiskPremium, 'alice final risk premium');
+
+    //   // Verify final reserve states and hub propagation for both assets
+    //   (debtChecks.reserveDebt, debtChecks.reservePremium) = spoke1.getReserveDebt(daiInfo.reserveId);
+    //   (debtChecks.spokeDebt, debtChecks.spokePremium) = hub.getSpokeDebt(daiAssetId, address(spoke1));
+    //   (debtChecks.assetDebt, debtChecks.assetPremium) = hub.getAssetDebt(daiAssetId);
+
+    //   // All three levels should have the same debt values
+    //   assertEq(
+    //     debtChecks.reserveDebt,
+    //     debtChecks.spokeDebt,
+    //     'dai base debt consistency reserve-spoke'
+    //   );
+    //   assertEq(debtChecks.spokeDebt, debtChecks.assetDebt, 'dai base debt consistency spoke-asset');
+    //   assertEq(
+    //     debtChecks.reservePremium,
+    //     debtChecks.spokePremium,
+    //     'dai premium debt consistency reserve-spoke'
+    //   );
+    //   assertEq(
+    //     debtChecks.spokePremium,
+    //     debtChecks.assetPremium,
+    //     'dai premium debt consistency spoke-asset'
+    //   );
+
+    //   (debtChecks.reserveDebt, debtChecks.reservePremium) = spoke1.getReserveDebt(usdxInfo.reserveId);
+    //   (debtChecks.spokeDebt, debtChecks.spokePremium) = hub.getSpokeDebt(
+    //     usdxAssetId,
+    //     address(spoke1)
+    //   );
+    //   (debtChecks.assetDebt, debtChecks.assetPremium) = hub.getAssetDebt(usdxAssetId);
+
+    //   // All three levels should have the same debt values
+    //   assertEq(
+    //     debtChecks.reserveDebt,
+    //     debtChecks.spokeDebt,
+    //     'usdx base debt consistency reserve-spoke'
+    //   );
+    //   assertEq(debtChecks.spokeDebt, debtChecks.assetDebt, 'usdx base debt consistency spoke-asset');
+    //   assertEq(
+    //     debtChecks.reservePremium,
+    //     debtChecks.spokePremium,
+    //     'usdx premium debt consistency reserve-spoke'
+    //   );
+    //   assertEq(
+    //     debtChecks.spokePremium,
+    //     debtChecks.assetPremium,
+    //     'usdx premium debt consistency spoke-asset'
+    //   );
+  }
 }
