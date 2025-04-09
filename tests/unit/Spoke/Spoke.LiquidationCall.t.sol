@@ -29,24 +29,31 @@ contract LiquidationCallTest is SpokeBase {
     uint256 wbtcReserveId = _wbtcReserveId(spoke1);
     // uint256 daiDebtAmount = 100e18;
 
-    uint256 borrowAmount = 1 * 10 ** tokenList.wbtc.decimals(); // 1 wbtc, $50k
+    uint256 borrowAmount = 20 * 10 ** tokenList.weth.decimals(); // 20 eth, $40k
+    // coll
+    uint256 wbtcAmount = 1 * 10 ** tokenList.wbtc.decimals(); // $50k wbtc
+    uint256 daiAmount = 10_000 * 10 ** tokenList.dai.decimals(); // $10k dai
 
     // _createDebtPosition(spoke1, alice, wethReserveId, daiReserveId, daiDebtAmount);
 
     _updateCloseFactor(spoke1, 1.05e18);
 
-    _deployLiquidity(spoke1, wbtcReserveId, borrowAmount * 10);
-    Utils.supplyCollateral(spoke1, wethReserveId, alice, 20e18, alice); // $40k eth
-    Utils.supplyCollateral(spoke1, daiReserveId, alice, 40_000e18, alice); // $40k dai
-    Utils.borrow(spoke1, wbtcReserveId, alice, borrowAmount, alice);
+    _deployLiquidity(spoke1, wethReserveId, borrowAmount * 10);
+    Utils.supplyCollateral(spoke1, wbtcReserveId, alice, wbtcAmount, alice);
+    Utils.supplyCollateral(spoke1, daiReserveId, alice, daiAmount, alice);
+    Utils.borrow(spoke1, wethReserveId, alice, borrowAmount, alice);
 
     console.log(spoke1.getHealthFactor(alice));
 
-    console.log(' coll %e', spoke1.getUserSuppliedAmount(wethReserveId, alice));
-    console.log(' debt %e', spoke1.getUserTotalDebt(wbtcReserveId, alice));
+    console.log(
+      ' coll wbtc %e, dai %e',
+      spoke1.getUserSuppliedAmount(wbtcReserveId, alice),
+      spoke1.getUserSuppliedAmount(daiReserveId, alice)
+    );
+    console.log(' debt %e', spoke1.getUserTotalDebt(wethReserveId, alice));
     console.log(' hf %e', spoke1.getHealthFactor(alice));
 
-    oracle.setAssetPrice(wethAssetId, 800e8);
+    oracle.setAssetPrice(wbtcAssetId, 20_000e8);
 
     console.log(' hf %e', spoke1.getHealthFactor(alice));
 
@@ -56,13 +63,17 @@ contract LiquidationCallTest is SpokeBase {
     // skip(365 days);
 
     vm.prank(bob);
-    spoke1.liquidationCall(daiReserveId, wbtcReserveId, alice, borrowAmount);
+    spoke1.liquidationCall(daiReserveId, wethReserveId, alice, borrowAmount);
 
     // console.log('final asset coll %e', hub.getAssetSuppliedAmount(wethAssetId));
     // console.log('final asset debt %e', hub.getAssetTotalDebt(daiAssetId));
 
-    // console.log('final coll %e', spoke1.getUserSuppliedAmount(wethReserveId, alice));
-    // console.log('final debt %e', spoke1.getUserTotalDebt(daiReserveId, alice));
+    console.log(
+      'final coll wbtc %e, dai %e',
+      spoke1.getUserSuppliedAmount(wbtcReserveId, alice),
+      spoke1.getUserSuppliedAmount(daiReserveId, alice)
+    );
+    console.log('final debt %e', spoke1.getUserTotalDebt(wethReserveId, alice));
     console.log('final hf %e', spoke1.getHealthFactor(alice));
   }
 

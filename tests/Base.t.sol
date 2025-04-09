@@ -38,6 +38,7 @@ abstract contract Base is Test {
   uint256 internal MAX_SUPPLY_AMOUNT_DAI;
   uint256 internal MAX_SUPPLY_AMOUNT_WBTC;
   uint256 internal MAX_SUPPLY_AMOUNT_WETH;
+  uint256 internal MAX_SUPPLY_AMOUNT_USDY;
   uint32 internal constant MAX_RISK_PREMIUM_BPS = 1000_00;
   uint256 internal constant MAX_BORROW_RATE = 1000_00; // matches DefaultReserveInterestRateStrategy
   uint256 internal constant MAX_SKIP_TIME = 10_000 days;
@@ -78,18 +79,21 @@ abstract contract Base is Test {
   uint256 internal daiAssetId = 2;
   uint256 internal wbtcAssetId = 3;
   uint256 internal dai2AssetId = 4;
+  uint256 internal usdyAssetId = 5;
 
   uint256 internal mintAmount_WETH = MAX_SUPPLY_AMOUNT;
   uint256 internal mintAmount_USDX = MAX_SUPPLY_AMOUNT;
   uint256 internal mintAmount_DAI = MAX_SUPPLY_AMOUNT;
   uint256 internal mintAmount_WBTC = MAX_SUPPLY_AMOUNT;
+  uint256 internal mintAmount_USDY = MAX_SUPPLY_AMOUNT;
 
-  Decimals internal decimals = Decimals({usdx: 18, dai: 6, wbtc: 8});
+  Decimals internal decimals = Decimals({usdx: 6, usdy: 8, dai: 18, wbtc: 8});
 
   struct Decimals {
     uint8 usdx;
     uint8 dai;
     uint8 wbtc;
+    uint8 usdy;
   }
 
   struct TokenList {
@@ -97,6 +101,7 @@ abstract contract Base is Test {
     TestnetERC20 usdx;
     TestnetERC20 dai;
     TestnetERC20 wbtc;
+    TestnetERC20 usdy;
   }
 
   struct SpokeInfo {
@@ -104,6 +109,7 @@ abstract contract Base is Test {
     ReserveInfo wbtc;
     ReserveInfo dai;
     ReserveInfo usdx;
+    ReserveInfo usdy;
     ReserveInfo dai2; // Special case: dai listed twice on hub and spoke2 (unique assetIds)
     uint256 MAX_RESERVE_ID;
   }
@@ -156,18 +162,21 @@ abstract contract Base is Test {
       new WETH9(),
       new TestnetERC20('USDX', 'USDX', decimals.usdx),
       new TestnetERC20('DAI', 'DAI', decimals.dai),
-      new TestnetERC20('WBTC', 'WBTC', decimals.wbtc)
+      new TestnetERC20('WBTC', 'WBTC', decimals.wbtc),
+      new TestnetERC20('USDY', 'USDY', decimals.usdy)
     );
 
     vm.label(address(tokenList.weth), 'WETH');
     vm.label(address(tokenList.usdx), 'USDX');
     vm.label(address(tokenList.dai), 'DAI');
     vm.label(address(tokenList.wbtc), 'WBTC');
+    vm.label(address(tokenList.usdy), 'USDY');
 
     MAX_SUPPLY_AMOUNT_USDX = MAX_SUPPLY_ASSET_UNITS * 10 ** tokenList.usdx.decimals();
     MAX_SUPPLY_AMOUNT_WETH = MAX_SUPPLY_ASSET_UNITS * 10 ** tokenList.weth.decimals();
     MAX_SUPPLY_AMOUNT_DAI = MAX_SUPPLY_ASSET_UNITS * 10 ** tokenList.dai.decimals();
     MAX_SUPPLY_AMOUNT_WBTC = MAX_SUPPLY_ASSET_UNITS * 10 ** tokenList.wbtc.decimals();
+    MAX_SUPPLY_AMOUNT_USDY = MAX_SUPPLY_ASSET_UNITS * 10 ** tokenList.usdy.decimals();
 
     address[3] memory users = [alice, bob, carol];
 
@@ -176,21 +185,24 @@ abstract contract Base is Test {
       tokenList.dai.mint(users[x], mintAmount_DAI);
       tokenList.wbtc.mint(users[x], mintAmount_WBTC);
       deal(address(tokenList.weth), users[x], mintAmount_WETH);
+      tokenList.usdy.mint(users[x], mintAmount_USDY);
 
       vm.startPrank(users[x]);
       tokenList.weth.approve(address(hub), type(uint256).max);
       tokenList.usdx.approve(address(hub), type(uint256).max);
       tokenList.dai.approve(address(hub), type(uint256).max);
       tokenList.wbtc.approve(address(hub), type(uint256).max);
+      tokenList.usdy.approve(address(hub), type(uint256).max);
       vm.stopPrank();
     }
   }
 
   function spokeMintAndApprove() internal {
-    uint256 spokeMintAmount_USDX = 100_000e6;
+    uint256 spokeMintAmount_USDX = 100e6 * 10 ** tokenList.usdx.decimals();
     uint256 spokeMintAmount_DAI = 1e60;
-    uint256 spokeMintAmount_WBTC = 100e8;
-    uint256 spokeMintAmount_WETH = 100e18;
+    uint256 spokeMintAmount_WBTC = 100e6 * 10 ** tokenList.wbtc.decimals();
+    uint256 spokeMintAmount_WETH = 100e6 * 10 ** tokenList.weth.decimals();
+    uint256 spokeMintAmount_USDY = 100e6 * 10 ** tokenList.usdy.decimals();
     address[3] memory spokes = [address(spoke1), address(spoke2), address(spoke3)];
 
     for (uint256 x; x < spokes.length; ++x) {
@@ -198,12 +210,14 @@ abstract contract Base is Test {
       tokenList.dai.mint(spokes[x], spokeMintAmount_DAI);
       tokenList.wbtc.mint(spokes[x], spokeMintAmount_WBTC);
       deal(address(tokenList.weth), spokes[x], spokeMintAmount_WETH);
+      tokenList.usdy.mint(spokes[x], spokeMintAmount_USDY);
 
       vm.startPrank(spokes[x]);
       tokenList.weth.approve(address(hub), type(uint256).max);
       tokenList.usdx.approve(address(hub), type(uint256).max);
       tokenList.dai.approve(address(hub), type(uint256).max);
       tokenList.wbtc.approve(address(hub), type(uint256).max);
+      tokenList.usdy.approve(address(hub), type(uint256).max);
       vm.stopPrank();
     }
   }
