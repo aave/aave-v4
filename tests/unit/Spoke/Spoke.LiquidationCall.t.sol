@@ -9,32 +9,17 @@ contract LiquidationCallTest is SpokeBase {
   using WadRayMath for uint256;
   using PercentageMath for uint256;
 
-  function _createDebtPosition(
-    ISpoke spoke,
-    address user,
-    uint256 collReserveId,
-    uint256 debtReserveId,
-    uint256 debtAmount
-  ) internal {
-    _deployLiquidity(spoke, debtReserveId, debtAmount * 10);
-
-    uint256 collAmount = _calcMinimumCollAmount(spoke, collReserveId, debtReserveId, debtAmount);
-    Utils.supplyCollateral(spoke, collReserveId, user, collAmount, user);
-    Utils.borrow(spoke, debtReserveId, user, debtAmount, user);
-  }
-
-  function test_liquidationCall_initial() public {
+  /// scenario where fully liquidating a collateral still does not improve a position to close factor
+  function test_liquidationCall_full_collateral_liquidation() public {
     uint256 wethReserveId = _wethReserveId(spoke1);
     uint256 daiReserveId = _daiReserveId(spoke1);
     uint256 wbtcReserveId = _wbtcReserveId(spoke1);
-    // uint256 daiDebtAmount = 100e18;
 
-    uint256 borrowAmount = 20 * 10 ** tokenList.weth.decimals(); // 20 eth, $40k
-    // coll
+    // collateral: wbtc/dai
     uint256 wbtcAmount = 1 * 10 ** tokenList.wbtc.decimals(); // $50k wbtc
     uint256 daiAmount = 10_000 * 10 ** tokenList.dai.decimals(); // $10k dai
-
-    // _createDebtPosition(spoke1, alice, wethReserveId, daiReserveId, daiDebtAmount);
+    // debt: weth
+    uint256 borrowAmount = 20 * 10 ** tokenList.weth.decimals(); // 20 eth, $40k
 
     _updateCloseFactor(spoke1, 1.05e18);
 
@@ -53,152 +38,163 @@ contract LiquidationCallTest is SpokeBase {
     console.log(' debt %e', spoke1.getUserTotalDebt(wethReserveId, alice));
     console.log(' hf %e', spoke1.getHealthFactor(alice));
 
+    // wbtc collateral value drop to reduce HF < 1
     oracle.setAssetPrice(wbtcAssetId, 20_000e8);
 
-    console.log(' hf %e', spoke1.getHealthFactor(alice));
-
-    // _setPriceChange(oracle, wethAssetId, 90_00); // 10% drop
-    // console.log(spoke1.getHealthFactor(alice));
-
-    // skip(365 days);
-
+    // bob liquidates alice
     vm.prank(bob);
-    spoke1.liquidationCall(daiReserveId, wethReserveId, alice, borrowAmount);
-
-    // console.log('final asset coll %e', hub.getAssetSuppliedAmount(wethAssetId));
-    // console.log('final asset debt %e', hub.getAssetTotalDebt(daiAssetId));
+    spoke1.liquidationCall({
+      collateralReserveId: wbtcReserveId,
+      debtReserveId: wethReserveId,
+      user: alice,
+      debtToCover: borrowAmount
+    });
 
     console.log(
       'final coll wbtc %e, dai %e',
       spoke1.getUserSuppliedAmount(wbtcReserveId, alice),
       spoke1.getUserSuppliedAmount(daiReserveId, alice)
     );
-    console.log('final debt %e', spoke1.getUserTotalDebt(wethReserveId, alice));
+    console.log('final weth debt %e', spoke1.getUserTotalDebt(wethReserveId, alice));
     console.log('final hf %e', spoke1.getHealthFactor(alice));
   }
 
-  // working with usdx=6, dai=18, weth=18
-  function test_liquidationCall_base2() public {
+  // working correctly with usdx=6, dai=18, weth=18, but HF < 1 after
+  function test_liquidationCall_precision_loss() public {
     uint256 wethReserveId = _wethReserveId(spoke1);
     uint256 daiReserveId = _daiReserveId(spoke1);
     uint256 usdxReserveId = _usdxReserveId(spoke1);
-    // uint256 daiDebtAmount = 100e18;
 
-    uint256 borrowAmount = 15_000 * 10 ** tokenList.usdx.decimals();
-
-    // _createDebtPosition(spoke1, alice, wethReserveId, daiReserveId, daiDebtAmount);
-
-    // _updateCloseFactor(spoke1, 1.05e18);
+    // collateral: weth/dai
+    uint256 wethAmount = 10 * 10 ** tokenList.weth.decimals(); // $20k wbtc
+    uint256 daiAmount = 10_000 * 10 ** tokenList.dai.decimals(); // $10k dai
+    // debt: usdy
+    uint256 borrowAmount = 15_000 * 10 ** tokenList.usdx.decimals(); // $15k usdy
 
     _deployLiquidity(spoke1, usdxReserveId, borrowAmount * 10);
     Utils.supplyCollateral(spoke1, wethReserveId, alice, 10e18, alice);
     Utils.supplyCollateral(spoke1, daiReserveId, alice, 10_000e18, alice);
     Utils.borrow(spoke1, usdxReserveId, alice, borrowAmount, alice);
 
-    console.log(spoke1.getHealthFactor(alice));
-
-    console.log(' coll %e', spoke1.getUserSuppliedAmount(wethReserveId, alice));
-    console.log(' debt %e', spoke1.getUserTotalDebt(usdxReserveId, alice));
-    console.log(' hf %e', spoke1.getHealthFactor(alice));
-
     oracle.setAssetPrice(wethAssetId, 800e8);
-
-    console.log(' hf %e', spoke1.getHealthFactor(alice));
-
-    // _setPriceChange(oracle, wethAssetId, 90_00); // 10% drop
-    // console.log(spoke1.getHealthFactor(alice));
-
-    // skip(365 days);
 
     vm.prank(bob);
     spoke1.liquidationCall(daiReserveId, usdxReserveId, alice, borrowAmount * 2);
 
-    // console.log('final asset coll %e', hub.getAssetSuppliedAmount(wethAssetId));
-    // console.log('final asset debt %e', hub.getAssetTotalDebt(daiAssetId));
-
-    // console.log('final coll %e', spoke1.getUserSuppliedAmount(wethReserveId, alice));
-    // console.log('final debt %e', spoke1.getUserTotalDebt(daiReserveId, alice));
-    console.log('final hf %e', spoke1.getHealthFactor(alice));
+    assertLt(spoke1.getHealthFactor(alice), 1e18, 'health factor precision loss < 1 ');
   }
 
-  // test with different decimals
-  function test_liquidationCall_case1() public {
+  function test_liquidationCall_exact() public {
     uint256 wethReserveId = _wethReserveId(spoke1);
     uint256 daiReserveId = _daiReserveId(spoke1);
-    uint256 usdxReserveId = _usdxReserveId(spoke1);
-    // uint256 daiDebtAmount = 100e18;
-
-    uint256 borrowAmount = 15_000 * 10 ** tokenList.usdx.decimals();
-
-    uint256 wethAmount = 10 * 10 ** tokenList.weth.decimals();
-    uint256 daiAmount = 10_000 * 10 ** tokenList.dai.decimals();
-
-    console.log('tests coll: dai %e, weth %e', daiAmount, wethAmount);
-    console.log('tests usdx %e', borrowAmount);
-
-    // _createDebtPosition(spoke1, alice, wethReserveId, daiReserveId, daiDebtAmount);
-
-    // _updateCloseFactor(spoke1, 1.05e18);
-
-    _deployLiquidity(spoke1, usdxReserveId, borrowAmount * 10);
+    uint256 usdyReserveId = _usdyReserveId(spoke1);
+    // collateral: weth/dai
+    uint256 wethAmount = 10 * 10 ** tokenList.weth.decimals(); // $20k wbtc
+    uint256 daiAmount = 10_000 * 10 ** tokenList.dai.decimals(); // $10k dai
+    // debt: usdy
+    uint256 borrowAmount = 15_000 * 10 ** tokenList.usdy.decimals(); // $15k usdy
+    _deployLiquidity(spoke1, usdyReserveId, borrowAmount);
     Utils.supplyCollateral(spoke1, wethReserveId, alice, wethAmount, alice);
     Utils.supplyCollateral(spoke1, daiReserveId, alice, daiAmount, alice);
-    Utils.borrow(spoke1, usdxReserveId, alice, borrowAmount, alice);
-
+    Utils.borrow(spoke1, usdyReserveId, alice, borrowAmount, alice);
     console.log(spoke1.getHealthFactor(alice));
-
     console.log(' coll %e', spoke1.getUserSuppliedAmount(wethReserveId, alice));
-    console.log(' debt %e', spoke1.getUserTotalDebt(usdxReserveId, alice));
+    console.log(' debt %e', spoke1.getUserTotalDebt(usdyReserveId, alice));
     console.log(' hf %e', spoke1.getHealthFactor(alice));
-
     oracle.setAssetPrice(wethAssetId, 800e8);
-
     console.log(' hf %e', spoke1.getHealthFactor(alice));
-
     // _setPriceChange(oracle, wethAssetId, 90_00); // 10% drop
     // console.log(spoke1.getHealthFactor(alice));
-
     // skip(365 days);
-
     vm.prank(bob);
-    spoke1.liquidationCall(daiReserveId, usdxReserveId, alice, borrowAmount * 2);
-
+    spoke1.liquidationCall(daiReserveId, usdyReserveId, alice, borrowAmount);
     // console.log('final asset coll %e', hub.getAssetSuppliedAmount(wethAssetId));
     // console.log('final asset debt %e', hub.getAssetTotalDebt(daiAssetId));
-
     // console.log('final coll %e', spoke1.getUserSuppliedAmount(wethReserveId, alice));
     // console.log('final debt %e', spoke1.getUserTotalDebt(daiReserveId, alice));
-    console.log('final hf %e', spoke1.getHealthFactor(alice));
+    console.log('final hf - exact %e', spoke1.getHealthFactor(alice));
+
+    assertEq(spoke1.getHealthFactor(alice), 1e18, 'health factor should be exactly 1');
   }
 
-  function test_liquidationCall_default() public {
-    uint256 wethReserveId = _wethReserveId(spoke1);
-    uint256 daiReserveId = _daiReserveId(spoke1);
-    uint256 daiDebtAmount = 100e18;
+  // // test with different decimals
+  // function test_liquidationCall_case1() public {
+  //   uint256 wethReserveId = _wethReserveId(spoke1);
+  //   uint256 daiReserveId = _daiReserveId(spoke1);
+  //   uint256 usdxReserveId = _usdxReserveId(spoke1);
+  //   // uint256 daiDebtAmount = 100e18;
 
-    _createDebtPosition(spoke1, alice, wethReserveId, daiReserveId, daiDebtAmount);
+  //   uint256 borrowAmount = 15_000 * 10 ** tokenList.usdx.decimals();
 
-    console.log(spoke1.getHealthFactor(alice));
+  //   uint256 wethAmount = 10 * 10 ** tokenList.weth.decimals();
+  //   uint256 daiAmount = 10_000 * 10 ** tokenList.dai.decimals();
 
-    console.log(' coll %e', spoke1.getUserSuppliedAmount(wethReserveId, alice));
-    console.log(' debt %e', spoke1.getUserTotalDebt(daiReserveId, alice));
-    console.log(' hf %e', spoke1.getHealthFactor(alice));
+  //   console.log('tests coll: dai %e, weth %e', daiAmount, wethAmount);
+  //   console.log('tests usdx %e', borrowAmount);
 
-    _setPriceChange(oracle, wethAssetId, 90_00); // 10% drop
-    console.log(spoke1.getHealthFactor(alice));
+  //   // _createDebtPosition(spoke1, alice, wethReserveId, daiReserveId, daiDebtAmount);
 
-    // skip(365 days);
+  //   // _updateCloseFactor(spoke1, 1.05e18);
 
-    vm.prank(bob);
-    spoke1.liquidationCall(wethReserveId, daiReserveId, alice, daiDebtAmount);
+  //   _deployLiquidity(spoke1, usdxReserveId, borrowAmount * 10);
+  //   Utils.supplyCollateral(spoke1, wethReserveId, alice, wethAmount, alice);
+  //   Utils.supplyCollateral(spoke1, daiReserveId, alice, daiAmount, alice);
+  //   Utils.borrow(spoke1, usdxReserveId, alice, borrowAmount, alice);
 
-    console.log('final asset coll %e', hub.getAssetSuppliedAmount(wethAssetId));
-    console.log('final asset debt %e', hub.getAssetTotalDebt(daiAssetId));
+  //   console.log(spoke1.getHealthFactor(alice));
 
-    console.log('final coll %e', spoke1.getUserSuppliedAmount(wethReserveId, alice));
-    console.log('final debt %e', spoke1.getUserTotalDebt(daiReserveId, alice));
-    console.log('final hf %e', spoke1.getHealthFactor(alice));
-  }
+  //   console.log(' coll %e', spoke1.getUserSuppliedAmount(wethReserveId, alice));
+  //   console.log(' debt %e', spoke1.getUserTotalDebt(usdxReserveId, alice));
+  //   console.log(' hf %e', spoke1.getHealthFactor(alice));
+
+  //   oracle.setAssetPrice(wethAssetId, 800e8);
+
+  //   console.log(' hf %e', spoke1.getHealthFactor(alice));
+
+  //   // _setPriceChange(oracle, wethAssetId, 90_00); // 10% drop
+  //   // console.log(spoke1.getHealthFactor(alice));
+
+  //   // skip(365 days);
+
+  //   vm.prank(bob);
+  //   spoke1.liquidationCall(daiReserveId, usdxReserveId, alice, borrowAmount * 2);
+
+  //   // console.log('final asset coll %e', hub.getAssetSuppliedAmount(wethAssetId));
+  //   // console.log('final asset debt %e', hub.getAssetTotalDebt(daiAssetId));
+
+  //   // console.log('final coll %e', spoke1.getUserSuppliedAmount(wethReserveId, alice));
+  //   // console.log('final debt %e', spoke1.getUserTotalDebt(daiReserveId, alice));
+  //   console.log('final hf %e', spoke1.getHealthFactor(alice));
+  // }
+
+  // function test_liquidationCall_default() public {
+  //   uint256 wethReserveId = _wethReserveId(spoke1);
+  //   uint256 daiReserveId = _daiReserveId(spoke1);
+  //   uint256 daiDebtAmount = 100e18;
+
+  //   _createMinCollateralPosition(spoke1, alice, wethReserveId, daiReserveId, daiDebtAmount);
+
+  //   console.log(spoke1.getHealthFactor(alice));
+
+  //   console.log(' coll %e', spoke1.getUserSuppliedAmount(wethReserveId, alice));
+  //   console.log(' debt %e', spoke1.getUserTotalDebt(daiReserveId, alice));
+  //   console.log(' hf %e', spoke1.getHealthFactor(alice));
+
+  //   _setPriceChange(oracle, wethAssetId, 90_00); // 10% drop
+  //   console.log(spoke1.getHealthFactor(alice));
+
+  //   // skip(365 days);
+
+  //   vm.prank(bob);
+  //   spoke1.liquidationCall(wethReserveId, daiReserveId, alice, daiDebtAmount);
+
+  //   console.log('final asset coll %e', hub.getAssetSuppliedAmount(wethAssetId));
+  //   console.log('final asset debt %e', hub.getAssetTotalDebt(daiAssetId));
+
+  //   console.log('final coll %e', spoke1.getUserSuppliedAmount(wethReserveId, alice));
+  //   console.log('final debt %e', spoke1.getUserTotalDebt(daiReserveId, alice));
+  //   console.log('final hf %e', spoke1.getHealthFactor(alice));
+  // }
 
   //   MockSpokeExposedMethods mockSpoke1;
   //   MockSpokeExposedMethods mockSpoke2;
@@ -3000,4 +2996,18 @@ contract LiquidationCallTest is SpokeBase {
   //       'Unexpected RESERVE_TREASURY_ADDRESS collateral asset balance (protocol fee)'
   //     );
   //   }
+
+  function _createMinCollateralPosition(
+    ISpoke spoke,
+    address user,
+    uint256 collReserveId,
+    uint256 debtReserveId,
+    uint256 debtAmount
+  ) internal {
+    _deployLiquidity(spoke, debtReserveId, debtAmount * 10);
+
+    uint256 collAmount = _calcMinimumCollAmount(spoke, collReserveId, debtReserveId, debtAmount);
+    Utils.supplyCollateral(spoke, collReserveId, user, collAmount, user);
+    Utils.borrow(spoke, debtReserveId, user, debtAmount, user);
+  }
 }

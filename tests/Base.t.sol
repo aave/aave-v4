@@ -78,8 +78,8 @@ abstract contract Base is Test {
   uint256 internal usdxAssetId = 1;
   uint256 internal daiAssetId = 2;
   uint256 internal wbtcAssetId = 3;
-  uint256 internal dai2AssetId = 4;
-  uint256 internal usdyAssetId = 5;
+  uint256 internal usdyAssetId = 4;
+  uint256 internal dai2AssetId = 5;
 
   uint256 internal mintAmount_WETH = MAX_SUPPLY_AMOUNT;
   uint256 internal mintAmount_USDX = MAX_SUPPLY_AMOUNT;
@@ -87,7 +87,7 @@ abstract contract Base is Test {
   uint256 internal mintAmount_WBTC = MAX_SUPPLY_AMOUNT;
   uint256 internal mintAmount_USDY = MAX_SUPPLY_AMOUNT;
 
-  Decimals internal decimals = Decimals({usdx: 6, usdy: 8, dai: 18, wbtc: 8});
+  Decimals internal decimals = Decimals({usdx: 6, usdy: 18, dai: 18, wbtc: 8});
 
   struct Decimals {
     uint8 usdx;
@@ -286,6 +286,19 @@ abstract contract Base is Test {
     );
     oracle.setAssetPrice(wbtcAssetId, 50_000e8);
 
+    // add USDY
+    hub.addAsset(
+      DataTypes.AssetConfig({
+        decimals: tokenList.usdy.decimals(),
+        active: true,
+        paused: false,
+        frozen: false,
+        irStrategy: irStrategy
+      }),
+      address(tokenList.usdy)
+    );
+    oracle.setAssetPrice(usdyAssetId, 1e8);
+
     // Spoke 1 reserve configs
     DataTypes.ReserveConfig memory wethConfig = DataTypes.ReserveConfig({
       decimals: tokenList.weth.decimals(),
@@ -339,6 +352,19 @@ abstract contract Base is Test {
       collateral: true,
       oracle: oracle
     });
+    DataTypes.ReserveConfig memory usdyConfig = DataTypes.ReserveConfig({
+      decimals: tokenList.usdy.decimals(),
+      active: true,
+      frozen: false,
+      paused: false,
+      collateralFactor: 78_00,
+      liquidationBonus: 0,
+      liquidityPremium: 50_00,
+      liquidationProtocolFeePercentage: 0,
+      borrowable: true,
+      collateral: true,
+      oracle: oracle
+    });
 
     spokeInfo[spoke1].weth.reserveId = spoke1.addReserve(wethAssetId, wethConfig);
     spokeInfo[spoke1].weth.liquidityPremium = wethConfig.liquidityPremium;
@@ -348,11 +374,14 @@ abstract contract Base is Test {
     spokeInfo[spoke1].dai.liquidityPremium = daiConfig.liquidityPremium;
     spokeInfo[spoke1].usdx.reserveId = spoke1.addReserve(usdxAssetId, usdxConfig);
     spokeInfo[spoke1].usdx.liquidityPremium = usdxConfig.liquidityPremium;
+    spokeInfo[spoke1].usdy.reserveId = spoke1.addReserve(usdyAssetId, usdyConfig);
+    spokeInfo[spoke1].usdy.liquidityPremium = usdyConfig.liquidityPremium;
 
     hub.addSpoke(wethAssetId, spokeConfig, address(spoke1));
     hub.addSpoke(wbtcAssetId, spokeConfig, address(spoke1));
     hub.addSpoke(daiAssetId, spokeConfig, address(spoke1));
     hub.addSpoke(usdxAssetId, spokeConfig, address(spoke1));
+    hub.addSpoke(usdyAssetId, spokeConfig, address(spoke1));
 
     // Spoke 2 reserve configs
     wbtcConfig = DataTypes.ReserveConfig({
@@ -564,6 +593,15 @@ abstract contract Base is Test {
         variableRateSlope2: 5_00 // 5.00%
       })
     );
+    irStrategy.setInterestRateParams(
+      usdyAssetId,
+      IDefaultInterestRateStrategy.InterestRateData({
+        optimalUsageRatio: 90_00, // 90.00%
+        baseVariableBorrowRate: 5_00, // 5.00%
+        variableRateSlope1: 5_00, // 5.00%
+        variableRateSlope2: 5_00 // 5.00%
+      })
+    );
     vm.stopPrank();
   }
 
@@ -677,6 +715,11 @@ abstract contract Base is Test {
   // assumes spoke has usdx supported
   function _usdxReserveId(ISpoke spoke) internal view returns (uint256) {
     return spokeInfo[spoke].usdx.reserveId;
+  }
+
+  // assumes spoke has usdx supported
+  function _usdyReserveId(ISpoke spoke) internal view returns (uint256) {
+    return spokeInfo[spoke].usdy.reserveId;
   }
 
   // assumes spoke has dai supported
