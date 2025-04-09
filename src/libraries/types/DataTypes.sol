@@ -129,6 +129,7 @@ library DataTypes {
     uint256 totalDebtInBaseCurrency;
     uint256 avgCollateralFactor;
     uint256 debtAssetPrice;
+    uint256 debtAssetUnit;
     uint256 totalDebt;
     uint256 baseDebt;
     uint256 premiumDebt;
@@ -145,6 +146,7 @@ library DataTypes {
     uint256 hfScaledDebt;
     uint256 weightedCollateral;
     uint256 actualDebtToLiquidate;
+    uint256 scaledLiqBonus;
   }
 
   struct AvailableCollateralToLiquidateLocalVars {

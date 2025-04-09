@@ -84,7 +84,7 @@ abstract contract Base is Test {
   uint256 internal mintAmount_DAI = MAX_SUPPLY_AMOUNT;
   uint256 internal mintAmount_WBTC = MAX_SUPPLY_AMOUNT;
 
-  Decimals internal decimals = Decimals({usdx: 18, dai: 18, wbtc: 8});
+  Decimals internal decimals = Decimals({usdx: 6, dai: 18, wbtc: 8});
 
   struct Decimals {
     uint8 usdx;
@@ -318,7 +318,7 @@ abstract contract Base is Test {
       frozen: false,
       paused: false,
       collateralFactor: 78_00,
-      liquidationBonus: 5_00,
+      liquidationBonus: 0,
       liquidityPremium: 50_00,
       liquidationProtocolFeePercentage: 0,
       borrowable: true,
