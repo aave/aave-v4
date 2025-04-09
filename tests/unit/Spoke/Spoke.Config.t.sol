@@ -295,6 +295,32 @@ contract SpokeConfigTest is SpokeBase {
     spoke1.updateReserveConfig(daiReserveId, config);
   }
 
+  function test_updateReserveConfig_revertsWith_InvalidLiquidationProtocolFeePercentage() public {
+    uint256 liquidationProtocolFeePercentage = PercentageMath.PERCENTAGE_FACTOR + 1;
+
+    test_updateReserveConfig_fuzz_revertsWith_InvalidLiquidationProtocolFeePercentage(
+      liquidationProtocolFeePercentage
+    );
+  }
+
+  function test_updateReserveConfig_fuzz_revertsWith_InvalidLiquidationProtocolFeePercentage(
+    uint256 liquidationProtocolFeePercentage
+  ) public {
+    liquidationProtocolFeePercentage = bound(
+      liquidationProtocolFeePercentage,
+      PercentageMath.PERCENTAGE_FACTOR + 1,
+      type(uint256).max
+    );
+
+    uint256 daiReserveId = _daiReserveId(spoke1);
+    DataTypes.ReserveConfig memory config = spoke1.getReserve(daiReserveId).config;
+    config.liquidationProtocolFeePercentage = liquidationProtocolFeePercentage;
+
+    vm.expectRevert(ISpoke.InvalidLiquidationProtocolFeePercentage.selector);
+    vm.prank(SPOKE_ADMIN);
+    spoke1.updateReserveConfig(daiReserveId, config);
+  }
+
   function test_updateReserveConfig_revertsWith_InvalidOracle() public {
     uint256 daiReserveId = _daiReserveId(spoke1);
     DataTypes.ReserveConfig memory config = spoke1.getReserve(daiReserveId).config;
