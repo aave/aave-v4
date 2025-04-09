@@ -1172,6 +1172,8 @@ contract Spoke is ISpoke {
         params.debtAssetUnit) / (params.debtAssetPrice * vars.collateralAssetUnit)).percentDiv(
           params.liquidationBonus
         );
+
+      console.log('vars.maxCollateralToLiquidate > params.userCollateralBalance');
     } else {
       vars.collateralAmount = vars.maxCollateralToLiquidate;
       vars.debtAmountNeeded = params.actualDebtToLiquidate;
@@ -1194,7 +1196,7 @@ contract Spoke is ISpoke {
         vars.liquidationProtocolFeeAmount
       );
     } else {
-      console.log('%e %e', vars.collateralAmount, vars.debtAmountNeeded);
+      console.log('lpfp = 0, %e %e', vars.collateralAmount, vars.debtAmountNeeded);
       return (vars.collateralAmount, vars.debtAmountNeeded, 0);
     }
   }
