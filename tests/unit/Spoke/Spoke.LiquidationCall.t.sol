@@ -26,10 +26,56 @@ contract LiquidationCallTest is SpokeBase {
   function test_liquidationCall_initial() public {
     uint256 wethReserveId = _wethReserveId(spoke1);
     uint256 daiReserveId = _daiReserveId(spoke1);
+    uint256 usdxReserveId = _usdxReserveId(spoke1);
+    // uint256 daiDebtAmount = 100e18;
+
+    // _createDebtPosition(spoke1, alice, wethReserveId, daiReserveId, daiDebtAmount);
+
+    _updateCloseFactor(spoke1, 1.05e18);
+
+    _deployLiquidity(spoke1, usdxReserveId, 15_000e18 * 10);
+    Utils.supplyCollateral(spoke1, wethReserveId, alice, 10e18, alice);
+    Utils.supplyCollateral(spoke1, daiReserveId, alice, 10_000e18, alice);
+    Utils.borrow(spoke1, usdxReserveId, alice, 15_000e18, alice);
+
+    console.log(spoke1.getHealthFactor(alice));
+
+    console.log(' coll %e', spoke1.getUserSuppliedAmount(wethReserveId, alice));
+    console.log(' debt %e', spoke1.getUserTotalDebt(daiReserveId, alice));
+    console.log(' hf %e', spoke1.getHealthFactor(alice));
+
+    oracle.setAssetPrice(wethAssetId, 800e8);
+
+    console.log(' hf %e', spoke1.getHealthFactor(alice));
+
+    // _setPriceChange(oracle, wethAssetId, 90_00); // 10% drop
+    // console.log(spoke1.getHealthFactor(alice));
+
+    // skip(365 days);
+
+    vm.prank(bob);
+    spoke1.liquidationCall(daiReserveId, usdxReserveId, alice, 15_000e18);
+
+    // console.log('final asset coll %e', hub.getAssetSuppliedAmount(wethAssetId));
+    // console.log('final asset debt %e', hub.getAssetTotalDebt(daiAssetId));
+
+    // console.log('final coll %e', spoke1.getUserSuppliedAmount(wethReserveId, alice));
+    // console.log('final debt %e', spoke1.getUserTotalDebt(daiReserveId, alice));
+    console.log('final hf %e', spoke1.getHealthFactor(alice));
+  }
+
+  function test_liquidationCall_ini() public {
+    uint256 wethReserveId = _wethReserveId(spoke1);
+    uint256 daiReserveId = _daiReserveId(spoke1);
     uint256 daiDebtAmount = 100e18;
 
     _createDebtPosition(spoke1, alice, wethReserveId, daiReserveId, daiDebtAmount);
+
     console.log(spoke1.getHealthFactor(alice));
+
+    console.log(' coll %e', spoke1.getUserSuppliedAmount(wethReserveId, alice));
+    console.log(' debt %e', spoke1.getUserTotalDebt(daiReserveId, alice));
+    console.log(' hf %e', spoke1.getHealthFactor(alice));
 
     _setPriceChange(oracle, wethAssetId, 90_00); // 10% drop
     console.log(spoke1.getHealthFactor(alice));
@@ -39,7 +85,12 @@ contract LiquidationCallTest is SpokeBase {
     vm.prank(bob);
     spoke1.liquidationCall(wethReserveId, daiReserveId, alice, daiDebtAmount);
 
-    console.log(spoke1.getHealthFactor(alice));
+    console.log('final asset coll %e', hub.getAssetSuppliedAmount(wethAssetId));
+    console.log('final asset debt %e', hub.getAssetTotalDebt(daiAssetId));
+
+    console.log('final coll %e', spoke1.getUserSuppliedAmount(wethReserveId, alice));
+    console.log('final debt %e', spoke1.getUserTotalDebt(daiReserveId, alice));
+    console.log('final hf %e', spoke1.getHealthFactor(alice));
   }
 
   //   MockSpokeExposedMethods mockSpoke1;

@@ -45,6 +45,7 @@ abstract contract Base is Test {
   uint256 internal constant MAX_LIQUIDATION_BONUS_FACTOR = PercentageMath.PERCENTAGE_FACTOR; // 100%
   uint256 internal constant HEALTH_FACTOR_LIQUIDATION_THRESHOLD = WadRayMath.WAD;
 
+  // TODO: remove after migrating to token list
   IERC20 internal usdc;
   IERC20 internal dai;
   IERC20 internal usdt;
@@ -82,6 +83,14 @@ abstract contract Base is Test {
   uint256 internal mintAmount_USDX = MAX_SUPPLY_AMOUNT;
   uint256 internal mintAmount_DAI = MAX_SUPPLY_AMOUNT;
   uint256 internal mintAmount_WBTC = MAX_SUPPLY_AMOUNT;
+
+  Decimals internal decimals = Decimals({usdx: 18, dai: 18, wbtc: 8});
+
+  struct Decimals {
+    uint8 usdx;
+    uint8 dai;
+    uint8 wbtc;
+  }
 
   struct TokenList {
     WETH9 weth;
@@ -145,9 +154,9 @@ abstract contract Base is Test {
   function deployMintAndApproveTokenList() internal {
     tokenList = TokenList(
       new WETH9(),
-      new TestnetERC20('USDX', 'USDX', 6),
-      new TestnetERC20('DAI', 'DAI', 18),
-      new TestnetERC20('WBTC', 'WBTC', 8)
+      new TestnetERC20('USDX', 'USDX', decimals.usdx),
+      new TestnetERC20('DAI', 'DAI', decimals.dai),
+      new TestnetERC20('WBTC', 'WBTC', decimals.wbtc)
     );
 
     vm.label(address(tokenList.weth), 'WETH');
@@ -214,7 +223,7 @@ abstract contract Base is Test {
     // add WETH
     hub.addAsset(
       DataTypes.AssetConfig({
-        decimals: 18,
+        decimals: tokenList.weth.decimals(),
         active: true,
         paused: false,
         frozen: false,
@@ -227,7 +236,7 @@ abstract contract Base is Test {
     // add USDX
     hub.addAsset(
       DataTypes.AssetConfig({
-        decimals: 6,
+        decimals: tokenList.usdx.decimals(),
         active: true,
         paused: false,
         frozen: false,
@@ -240,7 +249,7 @@ abstract contract Base is Test {
     // add DAI
     hub.addAsset(
       DataTypes.AssetConfig({
-        decimals: 18,
+        decimals: tokenList.weth.decimals(),
         active: true,
         paused: false,
         frozen: false,
@@ -253,7 +262,7 @@ abstract contract Base is Test {
     // add WBTC
     hub.addAsset(
       DataTypes.AssetConfig({
-        decimals: 8,
+        decimals: tokenList.wbtc.decimals(),
         active: true,
         paused: false,
         frozen: false,
@@ -265,7 +274,7 @@ abstract contract Base is Test {
 
     // Spoke 1 reserve configs
     DataTypes.ReserveConfig memory wethConfig = DataTypes.ReserveConfig({
-      decimals: 18,
+      decimals: tokenList.weth.decimals(),
       active: true,
       frozen: false,
       paused: false,
@@ -278,7 +287,7 @@ abstract contract Base is Test {
       oracle: oracle
     });
     DataTypes.ReserveConfig memory wbtcConfig = DataTypes.ReserveConfig({
-      decimals: 8,
+      decimals: tokenList.wbtc.decimals(),
       active: true,
       frozen: false,
       paused: false,
@@ -291,12 +300,12 @@ abstract contract Base is Test {
       oracle: oracle
     });
     DataTypes.ReserveConfig memory daiConfig = DataTypes.ReserveConfig({
-      decimals: 18,
+      decimals: tokenList.dai.decimals(),
       active: true,
       frozen: false,
       paused: false,
-      collateralFactor: 78_00,
-      liquidationBonus: 0,
+      collateralFactor: 75_00,
+      liquidationBonus: 5_00,
       liquidityPremium: 20_00,
       liquidationProtocolFeePercentage: 0,
       borrowable: true,
@@ -304,12 +313,12 @@ abstract contract Base is Test {
       oracle: oracle
     });
     DataTypes.ReserveConfig memory usdxConfig = DataTypes.ReserveConfig({
-      decimals: 6,
+      decimals: tokenList.usdx.decimals(),
       active: true,
       frozen: false,
       paused: false,
       collateralFactor: 78_00,
-      liquidationBonus: 0,
+      liquidationBonus: 5_00,
       liquidityPremium: 50_00,
       liquidationProtocolFeePercentage: 0,
       borrowable: true,
@@ -333,12 +342,12 @@ abstract contract Base is Test {
 
     // Spoke 2 reserve configs
     wbtcConfig = DataTypes.ReserveConfig({
-      decimals: 8,
+      decimals: tokenList.wbtc.decimals(),
       active: true,
       frozen: false,
       paused: false,
       collateralFactor: 80_00,
-      liquidationBonus: 102_00,
+      liquidationBonus: 0,
       liquidityPremium: 0,
       liquidationProtocolFeePercentage: 0,
       borrowable: true,
@@ -346,12 +355,12 @@ abstract contract Base is Test {
       oracle: oracle
     });
     wethConfig = DataTypes.ReserveConfig({
-      decimals: 18,
+      decimals: tokenList.weth.decimals(),
       active: true,
       frozen: false,
       paused: false,
       collateralFactor: 76_00,
-      liquidationBonus: 105_00,
+      liquidationBonus: 0,
       liquidityPremium: 10_00,
       liquidationProtocolFeePercentage: 0,
       borrowable: true,
@@ -359,12 +368,12 @@ abstract contract Base is Test {
       oracle: oracle
     });
     daiConfig = DataTypes.ReserveConfig({
-      decimals: 18,
+      decimals: tokenList.dai.decimals(),
       active: true,
       frozen: false,
       paused: false,
       collateralFactor: 72_00,
-      liquidationBonus: 110_00,
+      liquidationBonus: 0,
       liquidityPremium: 20_00,
       liquidationProtocolFeePercentage: 0,
       borrowable: true,
@@ -372,12 +381,12 @@ abstract contract Base is Test {
       oracle: oracle
     });
     usdxConfig = DataTypes.ReserveConfig({
-      decimals: 6,
+      decimals: tokenList.usdx.decimals(),
       active: true,
       frozen: false,
       paused: false,
       collateralFactor: 72_00,
-      liquidationBonus: 104_00,
+      liquidationBonus: 0,
       liquidityPremium: 50_00,
       liquidationProtocolFeePercentage: 0,
       borrowable: true,
@@ -401,12 +410,12 @@ abstract contract Base is Test {
 
     // Spoke 3 reserve configs
     daiConfig = DataTypes.ReserveConfig({
-      decimals: 18,
+      decimals: tokenList.dai.decimals(),
       active: true,
       frozen: false,
       paused: false,
       collateralFactor: 75_00,
-      liquidationBonus: 100_00,
+      liquidationBonus: 0,
       liquidityPremium: 0,
       liquidationProtocolFeePercentage: 0,
       borrowable: true,
@@ -414,12 +423,12 @@ abstract contract Base is Test {
       oracle: oracle
     });
     usdxConfig = DataTypes.ReserveConfig({
-      decimals: 6,
+      decimals: tokenList.usdx.decimals(),
       active: true,
       frozen: false,
       paused: false,
       collateralFactor: 75_00,
-      liquidationBonus: 100_00,
+      liquidationBonus: 0,
       liquidityPremium: 10_00,
       liquidationProtocolFeePercentage: 0,
       borrowable: true,
@@ -427,12 +436,12 @@ abstract contract Base is Test {
       oracle: oracle
     });
     wethConfig = DataTypes.ReserveConfig({
-      decimals: 18,
+      decimals: tokenList.weth.decimals(),
       active: true,
       frozen: false,
       paused: false,
       collateralFactor: 79_00,
-      liquidationBonus: 100_00,
+      liquidationBonus: 0,
       liquidityPremium: 20_00,
       liquidationProtocolFeePercentage: 0,
       borrowable: true,
@@ -440,12 +449,12 @@ abstract contract Base is Test {
       oracle: oracle
     });
     wbtcConfig = DataTypes.ReserveConfig({
-      decimals: 8,
+      decimals: tokenList.wbtc.decimals(),
       active: true,
       frozen: false,
       paused: false,
       collateralFactor: 77_00,
-      liquidationBonus: 100_00,
+      liquidationBonus: 0,
       liquidityPremium: 50_00,
       liquidationProtocolFeePercentage: 0,
       borrowable: true,
@@ -470,7 +479,7 @@ abstract contract Base is Test {
     // Spoke 2 to have an extra dai reserve
     hub.addAsset(
       DataTypes.AssetConfig({
-        decimals: 18,
+        decimals: tokenList.dai.decimals(),
         active: true,
         frozen: false,
         paused: false,
@@ -480,7 +489,7 @@ abstract contract Base is Test {
     );
     oracle.setAssetPrice(dai2AssetId, 1e8);
     daiConfig = DataTypes.ReserveConfig({
-      decimals: 18,
+      decimals: tokenList.dai.decimals(),
       active: true,
       frozen: false,
       paused: false,
@@ -636,6 +645,14 @@ abstract contract Base is Test {
     DataTypes.ReserveConfig memory reserveConfig = spoke.getReserve(reserveId).config;
     reserveConfig.liquidityPremium = newLiquidityPremium;
     spoke.updateReserveConfig(reserveId, reserveConfig);
+  }
+
+  function _updateCloseFactor(ISpoke spoke, uint256 newCloseFactor) internal {
+    DataTypes.LiquidationConfig memory liqConfig = spoke.getLiquidationConfig();
+    liqConfig.closeFactor = newCloseFactor;
+    spoke.updateLiquidationConfig(liqConfig);
+
+    assertEq(spoke.getLiquidationConfig().closeFactor, newCloseFactor);
   }
 
   /// @dev pseudo random randomizer
