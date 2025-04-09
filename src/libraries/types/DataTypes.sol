@@ -119,16 +119,23 @@ library DataTypes {
   }
 
   struct LiquidationCallLocalVars {
+    uint256 collateralReserveId;
+    uint256 debtReserveId;
     uint256 actualCollateralToLiquidate;
     uint256 actualDebtToLiquidate;
     uint256 liquidationProtocolFeeAmount;
     uint256 userCollateralBalance;
-    uint256 healthFactor;
     uint256 totalCollateralInBaseCurrency;
     uint256 totalDebtInBaseCurrency;
     uint256 avgCollateralFactor;
     uint256 debtAssetPrice;
     uint256 totalDebt;
+    uint256 baseDebt;
+    uint256 premiumDebt;
+    uint256 healthFactor;
+    uint256 liquidationBonus;
+    uint256 baseDebtToLiquidate;
+    uint256 premiumDebtToLiquidate;
   }
 
   struct CalculateActualDebtToLiquidateLocalVars {

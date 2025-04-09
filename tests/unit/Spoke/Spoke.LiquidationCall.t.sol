@@ -38,6 +38,8 @@ contract LiquidationCallTest is SpokeBase {
 
     vm.prank(bob);
     spoke1.liquidationCall(wethReserveId, daiReserveId, alice, daiDebtAmount);
+
+    console.log(spoke1.getHealthFactor(alice));
   }
 
   //   MockSpokeExposedMethods mockSpoke1;
