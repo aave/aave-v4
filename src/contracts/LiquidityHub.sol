@@ -196,7 +196,7 @@ contract LiquidityHub is ILiquidityHub {
     address from
   ) external returns (uint256) {
     // TODO: authorization - only spokes
-    // global & spoke premiumDebt (ghost, offset, unrealised) is *expected* to be updated on the `refreshPremiumDebt` callback
+    // global & spoke premiumDebt (ghost, offset, realized) is *expected* to be updated on the `refreshPremiumDebt` callback
 
     DataTypes.Asset storage asset = _assets[assetId];
     DataTypes.SpokeData storage spoke = _spokes[assetId][msg.sender];

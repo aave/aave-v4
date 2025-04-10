@@ -69,6 +69,7 @@ abstract contract Base is Test {
   address internal alice = makeAddr('alice');
   address internal bob = makeAddr('bob');
   address internal carol = makeAddr('carol');
+  address internal derl = makeAddr('derl');
 
   address internal HUB_ADMIN = makeAddr('HUB_ADMIN');
   address internal SPOKE_ADMIN = makeAddr('SPOKE_ADMIN');
@@ -178,7 +179,7 @@ abstract contract Base is Test {
     MAX_SUPPLY_AMOUNT_WBTC = MAX_SUPPLY_ASSET_UNITS * 10 ** tokenList.wbtc.decimals();
     MAX_SUPPLY_AMOUNT_USDY = MAX_SUPPLY_ASSET_UNITS * 10 ** tokenList.usdy.decimals();
 
-    address[3] memory users = [alice, bob, carol];
+    address[4] memory users = [alice, bob, carol, derl];
 
     for (uint256 x; x < users.length; ++x) {
       tokenList.usdx.mint(users[x], mintAmount_USDX);
@@ -816,6 +817,31 @@ abstract contract Base is Test {
     oracle.setAssetPrice(assetId, newPrice);
 
     return newPrice;
+  }
+
+  /// @dev Helper function to calculate asset amount corresponding to single drawn share
+  function minimumAssetsPerDrawnShare(uint256 assetId) internal view returns (uint256) {
+    return hub.convertToDrawnAssets(assetId, 1);
+  }
+
+  /// @dev Helper function to calculate asset amount corresponding to single supplied share
+  function minimumAssetsPerSuppliedShare(uint256 assetId) internal view returns (uint256) {
+    return hub.convertToSuppliedAssets(assetId, 1);
+  }
+
+  /// @dev Helper function to calculate the amount of base and premium debt to restore
+  function _calculateRestoreAmount(
+    uint256 baseDebt,
+    uint256 premiumDebt,
+    uint256 amount
+  ) internal view returns (uint256, uint256) {
+    if (amount == type(uint256).max) {
+      return (baseDebt, premiumDebt);
+    }
+    if (amount <= premiumDebt) {
+      return (0, amount);
+    }
+    return (amount - premiumDebt, premiumDebt);
   }
 
   /// @dev Helper function to check consistent supplied amounts within accounting
