@@ -9,25 +9,27 @@ library LiquidationLogic {
   using PercentageMath for uint256;
 
   function calculate(
-    DataTypes.VariableLiquidationBonusConfig storage config,
+    DataTypes.LiquidationConfig storage config,
     uint256 healthFactor,
-    uint256 healthFactorLiquidationThreshold,
-    uint256 liquidationBonus
+    uint256 liquidationBonus,
+    uint256 healthFactorLiquidationThreshold
   ) internal view returns (uint256) {
-    // if HF <= healthFactorBonusThreshold, liquidation bonus is max
-    if (healthFactor <= config.healthFactorBonusThreshold) {
-      return PercentageMath.PERCENTAGE_FACTOR + liquidationBonus;
+    // if healthFactorBonusThreshold == 0 or  HF <= healthFactorBonusThreshold, return base liquidationBonus
+    if (
+      config.healthFactorBonusThreshold == 0 || healthFactor <= config.healthFactorBonusThreshold
+    ) {
+      return liquidationBonus;
     }
-    uint256 minLiquidationBonus = liquidationBonus.percentMul(config.liquidationBonusFactor);
-
+    uint256 minLiquidationBonus = (liquidationBonus - PercentageMath.PERCENTAGE_FACTOR).percentMul(
+      config.liquidationBonusFactor
+    ) + PercentageMath.PERCENTAGE_FACTOR;
     // if HF >= healthFactorLiquidationThreshold, liquidation bonus is min
     if (healthFactor >= healthFactorLiquidationThreshold) {
-      return PercentageMath.PERCENTAGE_FACTOR + minLiquidationBonus;
+      return minLiquidationBonus;
     }
 
     // otherwise, linearly interpolate between min and max
     return
-      PercentageMath.PERCENTAGE_FACTOR +
       minLiquidationBonus +
       ((liquidationBonus - minLiquidationBonus) *
         (healthFactorLiquidationThreshold - healthFactor)) /

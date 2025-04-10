@@ -6,24 +6,28 @@ import {DataTypes} from 'src/libraries/types/DataTypes.sol';
 import {WadRayMath} from 'src/libraries/math/WadRayMath.sol';
 import {PercentageMath} from 'src/libraries/math/PercentageMath.sol';
 import {Base} from 'tests/Base.t.sol';
+import {console2 as console} from 'forge-std/console2.sol';
 
 contract LiquidationLogicTest is Base {
   using PercentageMath for uint256;
 
-  DataTypes.VariableLiquidationBonusConfig internal _config;
+  DataTypes.LiquidationConfig internal _config;
 
   /// when hf < healthFactorBonusThreshold, return liquidationBonus
   function testCalculate_lt_bonusThreshold() public {
     uint256 healthFactorBonusThreshold = 0.9e18;
     uint256 healthFactor = healthFactorBonusThreshold - 1;
-    uint256 liquidationBonus = 20_00; // 20%
+    uint256 liquidationBonus = 120_00; // 20% bonus
     uint256 liquidationBonusFactor = 40_00; // 40%
 
     testCalculate_fuzz_lte_bonusThreshold(
+      DataTypes.LiquidationConfig({
+        closeFactor: 0,
+        healthFactorBonusThreshold: healthFactorBonusThreshold,
+        liquidationBonusFactor: liquidationBonusFactor
+      }),
       healthFactor,
-      healthFactorBonusThreshold,
-      liquidationBonus,
-      liquidationBonusFactor
+      liquidationBonus
     );
   }
 
@@ -31,44 +35,47 @@ contract LiquidationLogicTest is Base {
   function testCalculate_eq_bonusThreshold() public {
     uint256 healthFactorBonusThreshold = 0.9e18;
     uint256 healthFactor = healthFactorBonusThreshold;
-    uint256 liquidationBonus = 20_00; // 20%
+    uint256 liquidationBonus = 120_00; // 20% bonus
     uint256 liquidationBonusFactor = 40_00; // 40%
 
     testCalculate_fuzz_lte_bonusThreshold(
+      DataTypes.LiquidationConfig({
+        closeFactor: 0,
+        healthFactorBonusThreshold: healthFactorBonusThreshold,
+        liquidationBonusFactor: liquidationBonusFactor
+      }),
       healthFactor,
-      healthFactorBonusThreshold,
-      liquidationBonus,
-      liquidationBonusFactor
+      liquidationBonus
     );
   }
 
   /// fuzz - when hf <= healthFactorBonusThreshold, return liquidationBonus
   function testCalculate_fuzz_lte_bonusThreshold(
+    DataTypes.LiquidationConfig memory config,
     uint256 healthFactor,
-    uint256 healthFactorBonusThreshold,
-    uint256 liquidationBonus,
-    uint256 liquidationBonusFactor
+    uint256 liquidationBonus
   ) public {
-    liquidationBonus = bound(liquidationBonus, 0, MAX_LIQUIDATION_BONUS); // BPS
-    liquidationBonusFactor = bound(liquidationBonusFactor, 0, MAX_LIQUIDATION_BONUS_FACTOR); // BPS
-
-    healthFactorBonusThreshold = bound(
-      healthFactorBonusThreshold,
+    liquidationBonus = bound(liquidationBonus, MIN_LIQUIDATION_BONUS, MAX_LIQUIDATION_BONUS); // BPS
+    config.healthFactorBonusThreshold = bound(
+      config.healthFactorBonusThreshold,
       0,
       HEALTH_FACTOR_LIQUIDATION_THRESHOLD - 1
     );
-    healthFactor = bound(healthFactor, 0, healthFactorBonusThreshold);
 
-    _config = DataTypes.VariableLiquidationBonusConfig({
-      healthFactorBonusThreshold: healthFactorBonusThreshold,
-      liquidationBonusFactor: liquidationBonusFactor
-    });
+    healthFactor = bound(healthFactor, 0, config.healthFactorBonusThreshold);
+    config.liquidationBonusFactor = bound(
+      config.liquidationBonusFactor,
+      0,
+      MAX_LIQUIDATION_BONUS_FACTOR
+    ); // BPS
+
+    _config = config;
 
     uint256 result = LiquidationLogic.calculate(
       _config,
       healthFactor,
-      HEALTH_FACTOR_LIQUIDATION_THRESHOLD,
-      liquidationBonus
+      liquidationBonus,
+      HEALTH_FACTOR_LIQUIDATION_THRESHOLD
     );
 
     assertEq(result, liquidationBonus, 'should be liquidationBonus');
@@ -77,7 +84,7 @@ contract LiquidationLogicTest is Base {
   /// when == HEALTH_FACTOR_LIQUIDATION_THRESHOLD, return minLiquidationBonus
   function testCalculate_eq_liquidationThreshold() public {
     uint256 healthFactor = HEALTH_FACTOR_LIQUIDATION_THRESHOLD;
-    uint256 liquidationBonus = 20_00; // 20%
+    uint256 liquidationBonus = 120_00; // 20%
     uint256 liquidationBonusFactor = 40_00; // 40%
     uint256 healthFactorBonusThreshold = 0.9e18;
 
@@ -92,7 +99,7 @@ contract LiquidationLogicTest is Base {
   /// when > HEALTH_FACTOR_LIQUIDATION_THRESHOLD, return minLiquidationBonus
   function testCalculate_gt_liquidationThreshold() public {
     uint256 healthFactor = HEALTH_FACTOR_LIQUIDATION_THRESHOLD + 1;
-    uint256 liquidationBonus = 20_00; // 20%
+    uint256 liquidationBonus = 120_00; // 20%
     uint256 liquidationBonusFactor = 40_00; // 40%
     uint256 healthFactorBonusThreshold = 0.9e18;
 
@@ -111,9 +118,8 @@ contract LiquidationLogicTest is Base {
     uint256 liquidationBonus,
     uint256 liquidationBonusFactor
   ) public {
-    liquidationBonus = bound(liquidationBonus, 0, MAX_LIQUIDATION_BONUS); // BPS
+    liquidationBonus = bound(liquidationBonus, MIN_LIQUIDATION_BONUS, MAX_LIQUIDATION_BONUS); // BPS
     liquidationBonusFactor = bound(liquidationBonusFactor, 0, MAX_LIQUIDATION_BONUS_FACTOR); // BPS
-
     healthFactorBonusThreshold = bound(
       healthFactorBonusThreshold,
       1,
@@ -121,7 +127,8 @@ contract LiquidationLogicTest is Base {
     );
     healthFactor = bound(healthFactor, HEALTH_FACTOR_LIQUIDATION_THRESHOLD + 1, type(uint256).max);
 
-    _config = DataTypes.VariableLiquidationBonusConfig({
+    _config = DataTypes.LiquidationConfig({
+      closeFactor: WadRayMath.WAD,
       healthFactorBonusThreshold: healthFactorBonusThreshold,
       liquidationBonusFactor: liquidationBonusFactor
     });
@@ -129,23 +136,23 @@ contract LiquidationLogicTest is Base {
     uint256 result = LiquidationLogic.calculate(
       _config,
       healthFactor,
-      HEALTH_FACTOR_LIQUIDATION_THRESHOLD,
-      liquidationBonus
+      liquidationBonus,
+      HEALTH_FACTOR_LIQUIDATION_THRESHOLD
     );
 
     assertEq(
       result,
-      liquidationBonus.percentMul(liquidationBonusFactor),
+      _calculateMinLiqBonus(liquidationBonus, liquidationBonusFactor),
       'should be minLiquidationBonus'
     );
   }
 
   /// when healthFactorBonusThreshold <= healthFactor <= healthFactorLiquidationThreshold
   function testCalculate_intermediateValue() public {
-    uint256 healthFactor = HEALTH_FACTOR_LIQUIDATION_THRESHOLD - 1;
-    uint256 liquidationBonus = 20_00; // 20%
+    uint256 liquidationBonus = 120_00; // 20% bonus
     uint256 liquidationBonusFactor = 40_00; // 40%
     uint256 healthFactorBonusThreshold = 0.9e18;
+    uint256 healthFactor = (HEALTH_FACTOR_LIQUIDATION_THRESHOLD + healthFactorBonusThreshold) / 2; // hf is halfway through
 
     testCalculate_fuzz_intermediateValue(
       healthFactor,
@@ -162,7 +169,7 @@ contract LiquidationLogicTest is Base {
     uint256 liquidationBonus,
     uint256 liquidationBonusFactor
   ) public {
-    liquidationBonus = bound(liquidationBonus, 0, MAX_LIQUIDATION_BONUS); // BPS
+    liquidationBonus = bound(liquidationBonus, MIN_LIQUIDATION_BONUS, MAX_LIQUIDATION_BONUS); // BPS
     liquidationBonusFactor = bound(liquidationBonusFactor, 0, MAX_LIQUIDATION_BONUS_FACTOR); // BPS
 
     healthFactorBonusThreshold = bound(
@@ -176,7 +183,8 @@ contract LiquidationLogicTest is Base {
       HEALTH_FACTOR_LIQUIDATION_THRESHOLD
     );
 
-    _config = DataTypes.VariableLiquidationBonusConfig({
+    _config = DataTypes.LiquidationConfig({
+      closeFactor: 0,
       healthFactorBonusThreshold: healthFactorBonusThreshold,
       liquidationBonusFactor: liquidationBonusFactor
     });
@@ -184,8 +192,8 @@ contract LiquidationLogicTest is Base {
     uint256 result = LiquidationLogic.calculate(
       _config,
       healthFactor,
-      HEALTH_FACTOR_LIQUIDATION_THRESHOLD,
-      liquidationBonus
+      liquidationBonus,
+      HEALTH_FACTOR_LIQUIDATION_THRESHOLD
     );
 
     assertEq(
@@ -194,32 +202,46 @@ contract LiquidationLogicTest is Base {
         healthFactor,
         _config.healthFactorBonusThreshold,
         liquidationBonusFactor,
-        HEALTH_FACTOR_LIQUIDATION_THRESHOLD,
-        liquidationBonus
+        liquidationBonus,
+        HEALTH_FACTOR_LIQUIDATION_THRESHOLD
       ),
       'should be linear interpolation'
     );
+    assertGe(
+      result,
+      _calculateMinLiqBonus(liquidationBonus, liquidationBonusFactor),
+      'should be >= min liquidationBonus'
+    );
+    assertLe(result, liquidationBonus, 'should be =< max liquidationBonus');
   }
 
   function _calculate(
     uint256 healthFactor,
     uint256 healthFactorBonusThreshold,
     uint256 liquidationBonusFactor,
-    uint256 healthFactorLiquidationThreshold,
-    uint256 liquidationBonus
+    uint256 liquidationBonus,
+    uint256 healthFactorLiquidationThreshold
   ) internal pure returns (uint256) {
     if (healthFactor <= healthFactorBonusThreshold) {
       return liquidationBonus;
     }
-    uint256 minLiquidationBonus = liquidationBonus.percentMul(liquidationBonusFactor);
+    uint256 minLiquidationBonus = _calculateMinLiqBonus(liquidationBonus, liquidationBonusFactor);
     if (healthFactor >= healthFactorLiquidationThreshold) {
       return minLiquidationBonus;
     }
-
     return
       minLiquidationBonus +
       ((liquidationBonus - minLiquidationBonus) *
         (healthFactorLiquidationThreshold - healthFactor)) /
       (healthFactorLiquidationThreshold - healthFactorBonusThreshold);
+  }
+
+  function _calculateMinLiqBonus(
+    uint256 liquidationBonus,
+    uint256 liquidationBonusFactor
+  ) internal pure returns (uint256) {
+    return
+      (liquidationBonus - PercentageMath.PERCENTAGE_FACTOR).percentMul(liquidationBonusFactor) +
+      PercentageMath.PERCENTAGE_FACTOR;
   }
 }
