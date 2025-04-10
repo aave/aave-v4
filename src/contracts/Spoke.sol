@@ -322,7 +322,7 @@ contract Spoke is ISpoke {
       debtReserve.assetId,
       baseDebtToLiquidate,
       premiumDebtToLiquidate,
-      user
+      msg.sender
     );
     // liquidate collateral
     uint256 withdrawnShares = HUB.remove(
@@ -340,19 +340,22 @@ contract Spoke is ISpoke {
     userDebtPosition.baseDrawnShares -= restoredShares;
     debtReserve.baseDrawnShares -= restoredShares;
 
-    // transfer to liquidator
-    IERC20(collateralReserve.asset).safeTransfer(msg.sender, collateralToLiquidate);
-    // transfer to treasury
-    IERC20(collateralReserve.asset).safeTransfer(msg.sender, liquidationProtocolFeeAmount);
+    address collateralAsset = collateralReserve.asset;
+    address debtAsset = debtReserve.asset;
 
-    // emit LiquidationCall(
-    //   collateralAssetId,
-    //   debtAssetId,
-    //   user,
-    //   debtToLiquidate,
-    //   collateralToLiquidate,
-    //   msg.sender
-    // );
+    // transfer to liquidator
+    IERC20(collateralAsset).safeTransfer(msg.sender, collateralToLiquidate);
+    // transfer to treasury
+    IERC20(debtAsset).safeTransfer(msg.sender, liquidationProtocolFeeAmount);
+
+    emit LiquidationCall(
+      collateralAsset,
+      debtAsset,
+      user,
+      baseDebtToLiquidate + premiumDebtToLiquidate,
+      collateralToLiquidate,
+      msg.sender
+    );
   }
 
   /// @return actualCollateralToLiquidate The amount of collateral to liquidate.

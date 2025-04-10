@@ -37,6 +37,24 @@ interface ISpoke {
   event OracleUpdated(uint256 indexed reserveId, address indexed oracle);
   event LiquidationConfigUpdated(DataTypes.LiquidationConfig config);
 
+  /**
+   * @dev Emitted when a borrower is liquidated.
+   * @param collateralAsset The address of the underlying asset used as collateral, to receive as result of the liquidation.
+   * @param debtAsset The address of the underlying borrowed asset to be repaid with the liquidation.
+   * @param user The address of the borrower getting liquidated.
+   * @param debtToCover The debt amount of borrowed `asset` the liquidator wants to cover.
+   * @param liquidatedCollateralAmount The amount of collateral received by the liquidator.
+   * @param liquidator The address of the liquidator.
+   */
+  event LiquidationCall(
+    address indexed collateralAsset,
+    address indexed debtAsset,
+    address indexed user,
+    uint256 debtToCover,
+    uint256 liquidatedCollateralAmount,
+    address liquidator
+  );
+
   error InvalidReserve();
   error ReserveNotListed();
   error InvalidLiquidityPremium();

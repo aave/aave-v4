@@ -9,8 +9,23 @@ contract LiquidationCallTest is SpokeBase {
   using WadRayMath for uint256;
   using PercentageMath for uint256;
 
+  struct UserTokenBalance {
+    TokenBalance alice;
+    TokenBalance bob;
+    TokenBalance treasury;
+  }
+
+  struct TokenBalance {
+    uint256 wbtc;
+    uint256 weth;
+    uint256 dai;
+    uint256 usdx;
+    uint256 usdy;
+  }
+
   /// scenario where fully liquidating a collateral still does not improve a position to close factor
-  function test_liquidationCall_full_collateral_liquidation() public {
+  /// default close factor of 1
+  function test_liquidationCall_all_collateral_default_close_factor_() public {
     uint256 wethReserveId = _wethReserveId(spoke1);
     uint256 daiReserveId = _daiReserveId(spoke1);
     uint256 wbtcReserveId = _wbtcReserveId(spoke1);
@@ -21,25 +36,27 @@ contract LiquidationCallTest is SpokeBase {
     // debt: weth
     uint256 borrowAmount = 20 * 10 ** tokenList.weth.decimals(); // 20 eth, $40k
 
-    _updateCloseFactor(spoke1, 1.05e18);
-
     _deployLiquidity(spoke1, wethReserveId, borrowAmount * 10);
     Utils.supplyCollateral(spoke1, wbtcReserveId, alice, wbtcAmount, alice);
     Utils.supplyCollateral(spoke1, daiReserveId, alice, daiAmount, alice);
     Utils.borrow(spoke1, wethReserveId, alice, borrowAmount, alice);
 
-    console.log(spoke1.getHealthFactor(alice));
+    // console.log(spoke1.getHealthFactor(alice));
 
-    console.log(
-      ' coll wbtc %e, dai %e',
-      spoke1.getUserSuppliedAmount(wbtcReserveId, alice),
-      spoke1.getUserSuppliedAmount(daiReserveId, alice)
-    );
-    console.log(' debt %e', spoke1.getUserTotalDebt(wethReserveId, alice));
-    console.log(' hf %e', spoke1.getHealthFactor(alice));
+    // console.log(
+    //   ' coll wbtc %e, dai %e',
+    //   spoke1.getUserSuppliedAmount(wbtcReserveId, alice),
+    //   spoke1.getUserSuppliedAmount(daiReserveId, alice)
+    // );
+    // console.log(' debt %e', spoke1.getUserTotalDebt(wethReserveId, alice));
+    // console.log(' hf %e', spoke1.getHealthFactor(alice));
 
     // wbtc collateral value drop to reduce HF < 1
     oracle.setAssetPrice(wbtcAssetId, 20_000e8);
+
+    assertLt(spoke1.getHealthFactor(alice), HEALTH_FACTOR_LIQUIDATION_THRESHOLD);
+
+    UserTokenBalance memory balancesBefore = _loadUserBalances();
 
     // bob liquidates alice
     vm.prank(bob);
@@ -50,13 +67,183 @@ contract LiquidationCallTest is SpokeBase {
       debtToCover: borrowAmount
     });
 
-    console.log(
-      'final coll wbtc %e, dai %e',
-      spoke1.getUserSuppliedAmount(wbtcReserveId, alice),
-      spoke1.getUserSuppliedAmount(daiReserveId, alice)
+    UserTokenBalance memory balancesAfter = _loadUserBalances();
+    UserTokenBalance memory balanceChanges = _calculateBalanceChanges(
+      balancesBefore,
+      balancesAfter
     );
-    console.log('final weth debt %e', spoke1.getUserTotalDebt(wethReserveId, alice));
-    console.log('final hf %e', spoke1.getHealthFactor(alice));
+
+    // console.log(
+    //   'final coll wbtc %e, dai %e',
+    //   spoke1.getUserSuppliedAmount(wbtcReserveId, alice),
+    //   spoke1.getUserSuppliedAmount(daiReserveId, alice)
+    // );
+    // console.log('final weth debt %e', spoke1.getUserTotalDebt(wethReserveId, alice));
+    // console.log('final hf %e', spoke1.getHealthFactor(alice));
+
+    // console.log('bob change %e', balances.bob.post.wbtc - balances.bob.pre.wbtc);
+    // console.log('treasury change %e', balances.treasury.post.wbtc - balances.treasury.pre.wbtc);
+
+    // dai collateral
+    assertEq(
+      spoke1.getUserSuppliedAmount(daiReserveId, alice),
+      daiAmount,
+      'alice dai coll unchanged'
+    );
+    assertEq(balanceChanges.alice.dai, 0, 'alice has no dai change');
+    assertEq(balanceChanges.bob.dai, 0, 'bob receives 0 dai coll');
+    assertEq(balanceChanges.treasury.dai, 0, 'treasury receives 0 dai coll');
+
+    // wbtc collateral
+    assertEq(spoke1.getUserSuppliedAmount(wbtcReserveId, alice), 0, 'alice wbtc coll liquidated');
+    assertEq(balanceChanges.alice.wbtc, 0, 'alice has no wbtc change');
+    assertEq(balanceChanges.bob.wbtc, wbtcAmount, 'bob receives all wbtc coll');
+    assertEq(balanceChanges.treasury.wbtc, 0, 'treasury receives 0 wbtc coll');
+
+    // weth debt
+    // assertEq(spoke1.getUserTotalDebt(wethReserveId, alice), 0, 'alice weth debt repaid');
+    assertEq(balanceChanges.alice.weth, 0, 'alice has no weth change');
+    // assertEq(balanceChanges.bob.weth, 0, 'bob pays all weth debt');
+    assertEq(balanceChanges.treasury.weth, 0, 'treasury has no weth change');
+  }
+
+  function _loadUserBalances() internal returns (UserTokenBalance memory userBalances) {
+    userBalances.alice.wbtc = tokenList.wbtc.balanceOf(alice);
+    userBalances.alice.dai = tokenList.dai.balanceOf(alice);
+    userBalances.alice.usdx = tokenList.usdx.balanceOf(alice);
+    userBalances.alice.usdy = tokenList.usdy.balanceOf(alice);
+    userBalances.alice.weth = tokenList.weth.balanceOf(alice);
+
+    userBalances.bob.wbtc = tokenList.wbtc.balanceOf(bob);
+    userBalances.bob.dai = tokenList.dai.balanceOf(bob);
+    userBalances.bob.usdx = tokenList.usdx.balanceOf(bob);
+    userBalances.bob.usdy = tokenList.usdy.balanceOf(bob);
+    userBalances.bob.weth = tokenList.weth.balanceOf(bob);
+
+    userBalances.treasury.wbtc = tokenList.wbtc.balanceOf(TREASURY);
+    userBalances.treasury.dai = tokenList.dai.balanceOf(TREASURY);
+    userBalances.treasury.usdx = tokenList.usdx.balanceOf(TREASURY);
+    userBalances.treasury.usdy = tokenList.usdy.balanceOf(TREASURY);
+    userBalances.treasury.weth = tokenList.weth.balanceOf(TREASURY);
+  }
+
+  function _calculateBalanceChanges(
+    UserTokenBalance memory userBalancesBefore,
+    UserTokenBalance memory userBalacesAfter
+  ) internal returns (UserTokenBalance memory balanceChanges) {
+    balanceChanges.alice.wbtc = userBalacesAfter.alice.wbtc > userBalancesBefore.alice.wbtc
+      ? userBalacesAfter.alice.wbtc - userBalancesBefore.alice.wbtc
+      : userBalancesBefore.alice.wbtc - userBalacesAfter.alice.wbtc;
+    balanceChanges.alice.dai = userBalacesAfter.alice.dai > userBalancesBefore.alice.dai
+      ? userBalacesAfter.alice.dai - userBalancesBefore.alice.dai
+      : userBalancesBefore.alice.dai - userBalacesAfter.alice.dai;
+    balanceChanges.alice.usdx = userBalacesAfter.alice.usdx > userBalancesBefore.alice.usdx
+      ? userBalacesAfter.alice.usdx - userBalancesBefore.alice.usdx
+      : userBalancesBefore.alice.usdx - userBalacesAfter.alice.usdx;
+    balanceChanges.alice.usdy = userBalacesAfter.alice.usdy > userBalancesBefore.alice.usdy
+      ? userBalacesAfter.alice.usdy - userBalancesBefore.alice.usdy
+      : userBalancesBefore.alice.usdy - userBalacesAfter.alice.usdy;
+    balanceChanges.alice.weth = userBalacesAfter.alice.weth > userBalancesBefore.alice.weth
+      ? userBalacesAfter.alice.weth - userBalancesBefore.alice.weth
+      : userBalancesBefore.alice.weth - userBalacesAfter.alice.weth;
+
+    balanceChanges.bob.wbtc = userBalacesAfter.bob.wbtc > userBalancesBefore.bob.wbtc
+      ? userBalacesAfter.bob.wbtc - userBalancesBefore.bob.wbtc
+      : userBalancesBefore.bob.wbtc - userBalacesAfter.bob.wbtc;
+    balanceChanges.bob.dai = userBalacesAfter.bob.dai > userBalancesBefore.bob.dai
+      ? userBalacesAfter.bob.dai - userBalancesBefore.bob.dai
+      : userBalancesBefore.bob.dai - userBalacesAfter.bob.dai;
+    balanceChanges.bob.usdx = userBalacesAfter.bob.usdx > userBalancesBefore.bob.usdx
+      ? userBalacesAfter.bob.usdx - userBalancesBefore.bob.usdx
+      : userBalancesBefore.bob.usdx - userBalacesAfter.bob.usdx;
+    balanceChanges.bob.usdy = userBalacesAfter.bob.usdy > userBalancesBefore.bob.usdy
+      ? userBalacesAfter.bob.usdy - userBalancesBefore.bob.usdy
+      : userBalancesBefore.bob.usdy - userBalacesAfter.bob.usdy;
+    balanceChanges.bob.weth = userBalacesAfter.bob.weth > userBalancesBefore.bob.weth
+      ? userBalacesAfter.bob.weth - userBalancesBefore.bob.weth
+      : userBalancesBefore.bob.weth - userBalacesAfter.bob.weth;
+
+    balanceChanges.treasury.wbtc = userBalacesAfter.treasury.wbtc > userBalancesBefore.treasury.wbtc
+      ? userBalacesAfter.treasury.wbtc - userBalancesBefore.treasury.wbtc
+      : userBalancesBefore.treasury.wbtc - userBalacesAfter.treasury.wbtc;
+    balanceChanges.treasury.dai = userBalacesAfter.treasury.dai > userBalancesBefore.treasury.dai
+      ? userBalacesAfter.treasury.dai - userBalancesBefore.treasury.dai
+      : userBalancesBefore.treasury.dai - userBalacesAfter.treasury.dai;
+    balanceChanges.treasury.usdx = userBalacesAfter.treasury.usdx > userBalancesBefore.treasury.usdx
+      ? userBalacesAfter.treasury.usdx - userBalancesBefore.treasury.usdx
+      : userBalancesBefore.treasury.usdx - userBalacesAfter.treasury.usdx;
+    balanceChanges.treasury.usdy = userBalacesAfter.treasury.usdy > userBalancesBefore.treasury.usdy
+      ? userBalacesAfter.treasury.usdy - userBalancesBefore.treasury.usdy
+      : userBalancesBefore.treasury.usdy - userBalacesAfter.treasury.usdy;
+    balanceChanges.treasury.weth = userBalacesAfter.treasury.weth > userBalancesBefore.treasury.weth
+      ? userBalacesAfter.treasury.weth - userBalancesBefore.treasury.weth
+      : userBalancesBefore.treasury.weth - userBalacesAfter.treasury.weth;
+  }
+
+  /// scenario where fully liquidating a collateral still does not improve a position to close factor
+  function test_liquidationCall_full_collateral_liquidation_newCloseFactor() public {
+    // UserTokenBalance memory balances;
+    // uint256 wethReserveId = _wethReserveId(spoke1);
+    // uint256 daiReserveId = _daiReserveId(spoke1);
+    // uint256 wbtcReserveId = _wbtcReserveId(spoke1);
+    // // collateral: wbtc/dai
+    // uint256 wbtcAmount = 1 * 10 ** tokenList.wbtc.decimals(); // $50k wbtc
+    // uint256 daiAmount = 10_000 * 10 ** tokenList.dai.decimals(); // $10k dai
+    // // debt: weth
+    // uint256 borrowAmount = 20 * 10 ** tokenList.weth.decimals(); // 20 eth, $40k
+    // _updateCloseFactor(spoke1, 1.05e18);
+    // _deployLiquidity(spoke1, wethReserveId, borrowAmount * 10);
+    // Utils.supplyCollateral(spoke1, wbtcReserveId, alice, wbtcAmount, alice);
+    // Utils.supplyCollateral(spoke1, daiReserveId, alice, daiAmount, alice);
+    // Utils.borrow(spoke1, wethReserveId, alice, borrowAmount, alice);
+    // console.log(spoke1.getHealthFactor(alice));
+    // console.log(
+    //   ' coll wbtc %e, dai %e',
+    //   spoke1.getUserSuppliedAmount(wbtcReserveId, alice),
+    //   spoke1.getUserSuppliedAmount(daiReserveId, alice)
+    // );
+    // console.log(' debt %e', spoke1.getUserTotalDebt(wethReserveId, alice));
+    // console.log(' hf %e', spoke1.getHealthFactor(alice));
+    // // wbtc collateral value drop to reduce HF < 1
+    // oracle.setAssetPrice(wbtcAssetId, 20_000e8);
+    // balances.bob.pre.wbtc = tokenList.wbtc.balanceOf(bob);
+    // balances.treasury.pre.wbtc = tokenList.wbtc.balanceOf(TREASURY);
+    // // bob liquidates alice
+    // vm.prank(bob);
+    // spoke1.liquidationCall({
+    //   collateralReserveId: wbtcReserveId,
+    //   debtReserveId: wethReserveId,
+    //   user: alice,
+    //   debtToCover: borrowAmount
+    // });
+    // balances.bob.wbtc.post = tokenList.wbtc.balanceOf(bob);
+    // balances.treasury.wbtc.post = tokenList.wbtc.balanceOf(TREASURY);
+    // console.log(
+    //   'final coll wbtc %e, dai %e',
+    //   spoke1.getUserSuppliedAmount(wbtcReserveId, alice),
+    //   spoke1.getUserSuppliedAmount(daiReserveId, alice)
+    // );
+    // console.log('final weth debt %e', spoke1.getUserTotalDebt(wethReserveId, alice));
+    // console.log('final hf %e', spoke1.getHealthFactor(alice));
+    // console.log('bob change %e', balances.bob.wbtc.post - balances.bob.wbtc.pre);
+    // console.log('treasury change %e', balances.treasury.wbtc.post - balances.treasury.wbtc.pre);
+    // // dai collateral
+    // assertEq(
+    //   spoke1.getUserSuppliedAmount(daiReserveId, alice),
+    //   daiAmount,
+    //   'alice dai coll unchanged'
+    // );
+    // // wbtc collateral
+    // assertEq(
+    //   balances.bob.wbtc.post - balances.bob.wbtc.pre,
+    //   wbtcAmount,
+    //   'bob receives all wbtc coll'
+    // );
+    // assertEq(
+    //   balances.treasury.wbtc.post - balances.treasury.wbtc.pre,
+    //   0,
+    //   'treasury receives 0 fee'
+    // );
   }
 
   // working correctly with usdx=6, dai=18, weth=18, but HF < 1 after
