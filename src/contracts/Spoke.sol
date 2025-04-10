@@ -17,7 +17,7 @@ contract Spoke is ISpoke {
   using WadRayMath for uint256;
   using PercentageMath for uint256;
   using KeyValueListInMemory for KeyValueListInMemory.List;
-  using LiquidationLogic for DataTypes.VariableLiquidationBonusConfig;
+  using LiquidationLogic for DataTypes.LiquidationConfig;
 
   uint256 public constant HEALTH_FACTOR_LIQUIDATION_THRESHOLD = WadRayMath.WAD; // todo configurable?
   ILiquidityHub public immutable HUB;
@@ -374,11 +374,11 @@ contract Spoke is ISpoke {
     uint256 healthFactor
   ) public view returns (uint256) {
     return
-      _liquidationConfig.liqBonusConfig.calculate(
+      _liquidationConfig.calculate(
         healthFactor,
         HEALTH_FACTOR_LIQUIDATION_THRESHOLD,
         _reserves[reserveId].config.liquidationBonus
-      ) + PercentageMath.PERCENTAGE_FACTOR;
+      );
   }
 
   function getLiquidationConfig() external view returns (DataTypes.LiquidationConfig memory) {
@@ -754,7 +754,7 @@ contract Spoke is ISpoke {
 
   function _validateReserveConfig(DataTypes.ReserveConfig calldata config) internal view {
     require(config.collateralFactor <= PercentageMath.PERCENTAGE_FACTOR, InvalidCollateralFactor()); // max 100.00%
-    require(config.liquidationBonus <= PercentageMath.PERCENTAGE_FACTOR, InvalidLiquidationBonus()); // max 100.00%
+    require(config.liquidationBonus >= PercentageMath.PERCENTAGE_FACTOR, InvalidLiquidationBonus()); // min 100.00%
     require(
       config.liquidityPremium <= PercentageMath.PERCENTAGE_FACTOR * 10,
       InvalidLiquidityPremium()
@@ -776,16 +776,6 @@ contract Spoke is ISpoke {
 
   function _validateLiquidationConfig(DataTypes.LiquidationConfig calldata config) internal view {
     _validateCloseFactor(config.closeFactor);
-    _validateVariableLiquidationBonusConfig(config.liqBonusConfig);
-  }
-
-  function _validateCloseFactor(uint256 closeFactor) internal view {
-    require(closeFactor >= HEALTH_FACTOR_LIQUIDATION_THRESHOLD, InvalidCloseFactor());
-  }
-
-  function _validateVariableLiquidationBonusConfig(
-    DataTypes.VariableLiquidationBonusConfig calldata config
-  ) internal view {
     // if liquidationBonusFactor == 0, then variable liquidation bonus will not be applied
     require(
       config.liquidationBonusFactor <= PercentageMath.PERCENTAGE_FACTOR,
@@ -796,5 +786,9 @@ contract Spoke is ISpoke {
       config.healthFactorBonusThreshold < HEALTH_FACTOR_LIQUIDATION_THRESHOLD,
       InvalidHealthFactorBonusThreshold()
     );
+  }
+
+  function _validateCloseFactor(uint256 closeFactor) internal view {
+    require(closeFactor >= HEALTH_FACTOR_LIQUIDATION_THRESHOLD, InvalidCloseFactor());
   }
 }

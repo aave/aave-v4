@@ -66,8 +66,8 @@ contract SpokeConfigTest is SpokeBase {
     );
     newReserveConfig.liquidationBonus = bound(
       newReserveConfig.liquidationBonus,
-      0,
-      PercentageMath.PERCENTAGE_FACTOR
+      MIN_LIQUIDATION_BONUS,
+      MAX_LIQUIDATION_BONUS
     );
     newReserveConfig.liquidityPremium = bound(
       newReserveConfig.liquidityPremium,
@@ -249,6 +249,7 @@ contract SpokeConfigTest is SpokeBase {
   function test_updateReserveConfig_revertsWith_InvalidReserve() public {
     uint256 invalidReserveId = spoke1.reserveCount();
     DataTypes.ReserveConfig memory config;
+    config.liquidationBonus = PercentageMath.PERCENTAGE_FACTOR;
     config.oracle = IPriceOracle(makeAddr('newOracle'));
 
     vm.expectRevert(ISpoke.InvalidReserve.selector);
@@ -256,9 +257,15 @@ contract SpokeConfigTest is SpokeBase {
     spoke1.updateReserveConfig(invalidReserveId, config);
   }
 
-  function test_updateReserveConfig_fuzz_revertsWith_InvalidReserve(uint256 reserveId) public {
+  function test_updateReserveConfig_fuzz_revertsWith_InvalidReserve(
+    uint256 reserveId,
+    uint256 liquidationBonus
+  ) public {
     reserveId = bound(reserveId, spoke1.reserveCount() + 1, type(uint256).max);
+    liquidationBonus = bound(liquidationBonus, MIN_LIQUIDATION_BONUS, MAX_LIQUIDATION_BONUS);
+
     DataTypes.ReserveConfig memory config;
+    config.liquidationBonus = liquidationBonus;
     config.oracle = IPriceOracle(makeAddr('newOracle'));
 
     vm.expectRevert(ISpoke.InvalidReserve.selector);
@@ -297,7 +304,20 @@ contract SpokeConfigTest is SpokeBase {
   function test_updateReserveConfig_revertsWith_InvalidLiquidationBonus() public {
     uint256 daiReserveId = _daiReserveId(spoke1);
     DataTypes.ReserveConfig memory config = spoke1.getReserve(daiReserveId).config;
-    config.liquidationBonus = PercentageMath.PERCENTAGE_FACTOR + 1;
+    config.liquidationBonus = PercentageMath.PERCENTAGE_FACTOR - 1;
+
+    vm.expectRevert(ISpoke.InvalidLiquidationBonus.selector);
+    vm.prank(SPOKE_ADMIN);
+    spoke1.updateReserveConfig(daiReserveId, config);
+  }
+
+  function test_updateReserveConfig_fuzz_revertsWith_InvalidLiquidationBonus(
+    uint256 liquidationBonus
+  ) public {
+    liquidationBonus = bound(liquidationBonus, 0, PercentageMath.PERCENTAGE_FACTOR - 1);
+    uint256 daiReserveId = _daiReserveId(spoke1);
+    DataTypes.ReserveConfig memory config = spoke1.getReserve(daiReserveId).config;
+    config.liquidationBonus = liquidationBonus;
 
     vm.expectRevert(ISpoke.InvalidLiquidationBonus.selector);
     vm.prank(SPOKE_ADMIN);
@@ -322,7 +342,7 @@ contract SpokeConfigTest is SpokeBase {
       frozen: true,
       paused: true,
       collateralFactor: 10_00,
-      liquidationBonus: 10_00,
+      liquidationBonus: 110_00,
       liquidityPremium: 10_00,
       borrowable: true,
       collateral: true,
@@ -361,7 +381,7 @@ contract SpokeConfigTest is SpokeBase {
       frozen: true,
       paused: true,
       collateralFactor: 10_00,
-      liquidationBonus: 10_00,
+      liquidationBonus: 110_00,
       liquidityPremium: 10_00,
       borrowable: true,
       collateral: true,
@@ -383,7 +403,7 @@ contract SpokeConfigTest is SpokeBase {
       frozen: true,
       paused: true,
       collateralFactor: 10_00,
-      liquidationBonus: 10_00,
+      liquidationBonus: 110_00,
       liquidityPremium: 10_00,
       borrowable: true,
       collateral: true,
@@ -403,7 +423,7 @@ contract SpokeConfigTest is SpokeBase {
       frozen: true,
       paused: true,
       collateralFactor: 10_00,
-      liquidationBonus: 10_00,
+      liquidationBonus: 110_00,
       liquidityPremium: 10_00,
       borrowable: true,
       collateral: true,
@@ -428,7 +448,7 @@ contract SpokeConfigTest is SpokeBase {
       frozen: true,
       paused: true,
       collateralFactor: 10_00,
-      liquidationBonus: 10_00,
+      liquidationBonus: 110_00,
       liquidityPremium: 10_00,
       borrowable: true,
       collateral: true,
@@ -448,7 +468,7 @@ contract SpokeConfigTest is SpokeBase {
       frozen: true,
       paused: true,
       collateralFactor: 10_00,
-      liquidationBonus: 10_00,
+      liquidationBonus: 110_00,
       liquidityPremium: 10_00,
       borrowable: true,
       collateral: true,
@@ -481,26 +501,24 @@ contract SpokeConfigTest is SpokeBase {
   }
 
   function test_updateLiquidationConfig_liqBonusConfig() public {
-    DataTypes.LiquidationConfig memory liquidationConfig;
-    liquidationConfig.closeFactor = HEALTH_FACTOR_LIQUIDATION_THRESHOLD;
-    liquidationConfig.liqBonusConfig = DataTypes.VariableLiquidationBonusConfig({
+    DataTypes.LiquidationConfig memory liquidationConfig = DataTypes.LiquidationConfig({
+      closeFactor: HEALTH_FACTOR_LIQUIDATION_THRESHOLD,
       healthFactorBonusThreshold: 0.9e18,
       liquidationBonusFactor: 10_00
     });
-
     test_updateLiquidationConfig_fuzz_liqBonusConfig(liquidationConfig);
   }
 
   function test_updateLiquidationConfig_fuzz_liqBonusConfig(
     DataTypes.LiquidationConfig memory liquidationConfig
   ) public {
-    liquidationConfig.liqBonusConfig.healthFactorBonusThreshold = bound(
-      liquidationConfig.liqBonusConfig.healthFactorBonusThreshold,
+    liquidationConfig.healthFactorBonusThreshold = bound(
+      liquidationConfig.healthFactorBonusThreshold,
       0,
       spoke1.HEALTH_FACTOR_LIQUIDATION_THRESHOLD() - 1
     );
-    liquidationConfig.liqBonusConfig.liquidationBonusFactor = bound(
-      liquidationConfig.liqBonusConfig.liquidationBonusFactor,
+    liquidationConfig.liquidationBonusFactor = bound(
+      liquidationConfig.liquidationBonusFactor,
       0,
       MAX_LIQUIDATION_BONUS_FACTOR
     );
@@ -516,24 +534,24 @@ contract SpokeConfigTest is SpokeBase {
     spoke1.updateLiquidationConfig(liquidationConfig);
 
     assertEq(
-      spoke1.getLiquidationConfig().liqBonusConfig.healthFactorBonusThreshold,
-      liquidationConfig.liqBonusConfig.healthFactorBonusThreshold,
+      spoke1.getLiquidationConfig().healthFactorBonusThreshold,
+      liquidationConfig.healthFactorBonusThreshold,
       'wrong healthFactorBonusThreshold'
     );
     assertEq(
-      spoke1.getLiquidationConfig().liqBonusConfig.liquidationBonusFactor,
-      liquidationConfig.liqBonusConfig.liquidationBonusFactor,
+      spoke1.getLiquidationConfig().liquidationBonusFactor,
+      liquidationConfig.liquidationBonusFactor,
       'wrong liquidationBonusFactor'
     );
   }
 
   function test_updateLiquidationConfig_revertsWith_InvalidHealthFactorBonusThreshold() public {
-    DataTypes.LiquidationConfig memory liquidationConfig;
-    liquidationConfig.closeFactor = spoke1.HEALTH_FACTOR_LIQUIDATION_THRESHOLD();
-    liquidationConfig.liqBonusConfig = DataTypes.VariableLiquidationBonusConfig({
-      healthFactorBonusThreshold: spoke1.HEALTH_FACTOR_LIQUIDATION_THRESHOLD(),
+    DataTypes.LiquidationConfig memory liquidationConfig = DataTypes.LiquidationConfig({
+      closeFactor: HEALTH_FACTOR_LIQUIDATION_THRESHOLD,
+      healthFactorBonusThreshold: HEALTH_FACTOR_LIQUIDATION_THRESHOLD,
       liquidationBonusFactor: 10_00
     });
+
     test_updateLiquidationConfig_fuzz_revertsWith_InvalidHealthFactorBonusThreshold(
       liquidationConfig
     );
@@ -542,13 +560,13 @@ contract SpokeConfigTest is SpokeBase {
   function test_updateLiquidationConfig_fuzz_revertsWith_InvalidHealthFactorBonusThreshold(
     DataTypes.LiquidationConfig memory liquidationConfig
   ) public {
-    liquidationConfig.liqBonusConfig.healthFactorBonusThreshold = bound(
-      liquidationConfig.liqBonusConfig.healthFactorBonusThreshold,
+    liquidationConfig.healthFactorBonusThreshold = bound(
+      liquidationConfig.healthFactorBonusThreshold,
       spoke1.HEALTH_FACTOR_LIQUIDATION_THRESHOLD(),
       type(uint256).max
     );
-    liquidationConfig.liqBonusConfig.liquidationBonusFactor = bound(
-      liquidationConfig.liqBonusConfig.liquidationBonusFactor,
+    liquidationConfig.liquidationBonusFactor = bound(
+      liquidationConfig.liquidationBonusFactor,
       0,
       MAX_LIQUIDATION_BONUS_FACTOR
     );
@@ -564,10 +582,10 @@ contract SpokeConfigTest is SpokeBase {
   }
 
   function test_updateLiquidationConfig_revertsWith_InvalidLiquidationBonusFactor() public {
-    DataTypes.LiquidationConfig memory liquidationConfig;
-    liquidationConfig.liqBonusConfig = DataTypes.VariableLiquidationBonusConfig({
-      healthFactorBonusThreshold: spoke1.HEALTH_FACTOR_LIQUIDATION_THRESHOLD(),
-      liquidationBonusFactor: 10_00
+    DataTypes.LiquidationConfig memory liquidationConfig = DataTypes.LiquidationConfig({
+      closeFactor: HEALTH_FACTOR_LIQUIDATION_THRESHOLD,
+      healthFactorBonusThreshold: 0.9e18,
+      liquidationBonusFactor: MAX_LIQUIDATION_BONUS_FACTOR + 1
     });
 
     test_updateVariableLiquidationBonusConfig_fuzz_revertsWith_InvalidLiquidationBonusFactor(
@@ -578,13 +596,13 @@ contract SpokeConfigTest is SpokeBase {
   function test_updateVariableLiquidationBonusConfig_fuzz_revertsWith_InvalidLiquidationBonusFactor(
     DataTypes.LiquidationConfig memory liquidationConfig
   ) public {
-    liquidationConfig.liqBonusConfig.healthFactorBonusThreshold = bound(
-      liquidationConfig.liqBonusConfig.healthFactorBonusThreshold,
+    liquidationConfig.healthFactorBonusThreshold = bound(
+      liquidationConfig.healthFactorBonusThreshold,
       0,
       spoke1.HEALTH_FACTOR_LIQUIDATION_THRESHOLD()
     );
-    liquidationConfig.liqBonusConfig.liquidationBonusFactor = bound(
-      liquidationConfig.liqBonusConfig.liquidationBonusFactor,
+    liquidationConfig.liquidationBonusFactor = bound(
+      liquidationConfig.liquidationBonusFactor,
       MAX_LIQUIDATION_BONUS_FACTOR + 1,
       type(uint256).max
     );

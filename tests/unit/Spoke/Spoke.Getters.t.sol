@@ -5,9 +5,9 @@ import 'tests/unit/Spoke/SpokeBase.t.sol';
 import {LiquidationLogic} from 'src/libraries/logic/LiquidationLogic.sol';
 
 contract SpokeGettersTest is SpokeBase {
-  using LiquidationLogic for DataTypes.VariableLiquidationBonusConfig;
+  using LiquidationLogic for DataTypes.LiquidationConfig;
 
-  DataTypes.VariableLiquidationBonusConfig internal _config;
+  DataTypes.LiquidationConfig internal _config;
   function test_getVariableLiquidationBonus_notConfigured() public {
     uint256 reserveId = _daiReserveId(spoke1);
     uint256 healthFactor = WadRayMath.WAD;
@@ -22,7 +22,7 @@ contract SpokeGettersTest is SpokeBase {
     healthFactor = bound(healthFactor, 0, spoke1.HEALTH_FACTOR_LIQUIDATION_THRESHOLD());
     uint256 liqBonus = spoke1.getVariableLiquidationBonus(reserveId, healthFactor);
 
-    _config = spoke1.getLiquidationConfig().liqBonusConfig;
+    _config = spoke1.getLiquidationConfig();
 
     assertEq(
       liqBonus,
@@ -31,7 +31,7 @@ contract SpokeGettersTest is SpokeBase {
         healthFactor,
         spoke1.HEALTH_FACTOR_LIQUIDATION_THRESHOLD(),
         spoke1.getReserve(reserveId).config.liquidationBonus
-      ) + PercentageMath.PERCENTAGE_FACTOR,
+      ),
       'calc should match'
     );
   }
@@ -59,13 +59,11 @@ contract SpokeGettersTest is SpokeBase {
 
     DataTypes.LiquidationConfig memory config = DataTypes.LiquidationConfig({
       closeFactor: WadRayMath.WAD,
-      liqBonusConfig: DataTypes.VariableLiquidationBonusConfig({
-        healthFactorBonusThreshold: healthFactorBonusThreshold,
-        liquidationBonusFactor: liquidationBonusFactor
-      })
+      healthFactorBonusThreshold: healthFactorBonusThreshold,
+      liquidationBonusFactor: liquidationBonusFactor
     });
     spoke1.updateLiquidationConfig(config);
-    _config = spoke1.getLiquidationConfig().liqBonusConfig;
+    _config = spoke1.getLiquidationConfig();
 
     uint256 liqBonus = spoke1.getVariableLiquidationBonus(reserveId, healthFactor);
 
@@ -76,7 +74,7 @@ contract SpokeGettersTest is SpokeBase {
         healthFactor,
         spoke1.HEALTH_FACTOR_LIQUIDATION_THRESHOLD(),
         spoke1.getReserve(reserveId).config.liquidationBonus
-      ) + PercentageMath.PERCENTAGE_FACTOR,
+      ),
       'calc should match'
     );
   }
