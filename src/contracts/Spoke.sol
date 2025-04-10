@@ -424,12 +424,12 @@ contract Spoke is ISpoke {
       vars
     );
 
-    console.log(
-      'debt/coll/fee %e %e %e',
-      vars.actualDebtToLiquidate,
-      vars.actualCollateralToLiquidate,
-      vars.liquidationProtocolFeeAmount
-    );
+    // console.log(
+    //   'debt/coll/fee %e %e %e',
+    //   vars.actualDebtToLiquidate,
+    //   vars.actualCollateralToLiquidate,
+    //   vars.liquidationProtocolFeeAmount
+    // );
 
     if (
       vars.actualCollateralToLiquidate + vars.liquidationProtocolFeeAmount ==
@@ -1053,12 +1053,12 @@ contract Spoke is ISpoke {
       params.totalCollateralInBaseCurrency.wadMul(params.avgCollateralFactor)
     ).fromBps(); // base curr
 
-    console.log(
-      'scaled/weighted %e %e %e',
-      vars.hfScaledDebt,
-      vars.weightedCollateral,
-      params.avgCollateralFactor
-    );
+    // console.log(
+    //   'scaled/weighted %e %e %e',
+    //   vars.hfScaledDebt,
+    //   vars.weightedCollateral,
+    //   params.avgCollateralFactor
+    // );
 
     vars.scaledLiqBonus = (params.liquidationBonus.wadify())
       .percentMul(collateralReserve.config.collateralFactor)
@@ -1070,14 +1070,14 @@ contract Spoke is ISpoke {
         (vars.closeFactor - vars.scaledLiqBonus)
       : 0;
 
-    console.log('try %e  %e', collateralReserve.config.collateralFactor);
+    // console.log('try %e  %e', collateralReserve.config.collateralFactor);
 
-    console.log(
-      'vars.totalDebtInBaseCurrency %e %e %e',
-      vars.closeFactor,
-      params.totalDebtInBaseCurrency,
-      params.totalCollateralInBaseCurrency
-    );
+    // console.log(
+    //   'vars.totalDebtInBaseCurrency %e %e %e',
+    //   vars.closeFactor,
+    //   params.totalDebtInBaseCurrency,
+    //   params.totalCollateralInBaseCurrency
+    // );
 
     // console.log(
     //   '_calculateActualDebtToLiquidate %e %e %e',
@@ -1109,14 +1109,14 @@ contract Spoke is ISpoke {
       ? type(uint256).max
       : ((vars.liquidationRecoveryDebt) / params.debtAssetPrice);
 
-    console.log('vars.liquidationRecoveryDebt %e', vars.liquidationRecoveryDebt);
-    console.log('vars.maxLiquidatableDebt %e', vars.maxLiquidatableDebt);
+    // console.log('vars.liquidationRecoveryDebt %e', vars.liquidationRecoveryDebt);
+    // console.log('vars.maxLiquidatableDebt %e', vars.maxLiquidatableDebt);
 
     vars.maxLiquidatableDebt = vars.maxLiquidatableDebt > vars.liquidationRecoveryDebt
       ? vars.liquidationRecoveryDebt
       : vars.maxLiquidatableDebt;
 
-    console.log('vars.maxLiquidatableDebt %e', vars.maxLiquidatableDebt);
+    // console.log('vars.maxLiquidatableDebt %e', vars.maxLiquidatableDebt);
 
     vars.actualDebtToLiquidate = debtToCover > vars.maxLiquidatableDebt
       ? vars.maxLiquidatableDebt
@@ -1173,13 +1173,13 @@ contract Spoke is ISpoke {
           params.liquidationBonus
         );
 
-      console.log('vars.maxCollateralToLiquidate > params.userCollateralBalance');
+      // console.log('vars.maxCollateralToLiquidate > params.userCollateralBalance');
     } else {
       vars.collateralAmount = vars.maxCollateralToLiquidate;
       vars.debtAmountNeeded = params.actualDebtToLiquidate;
     }
 
-    console.log('baseCollateral %e', vars.baseCollateral, params.liquidationBonus);
+    // console.log('baseCollateral %e', vars.baseCollateral, params.liquidationBonus);
 
     if (vars.liquidationProtocolFeePercentage != 0) {
       vars.bonusCollateral =
@@ -1196,7 +1196,7 @@ contract Spoke is ISpoke {
         vars.liquidationProtocolFeeAmount
       );
     } else {
-      console.log('lpfp = 0, %e %e', vars.collateralAmount, vars.debtAmountNeeded);
+      // console.log('lpfp = 0, %e %e', vars.collateralAmount, vars.debtAmountNeeded);
       return (vars.collateralAmount, vars.debtAmountNeeded, 0);
     }
   }
