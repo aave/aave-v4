@@ -6,13 +6,20 @@ import 'tests/unit/Spoke/SpokeBase.t.sol';
 contract SpokeConfigTest is SpokeBase {
   function test_spoke_deploy_revertsWith_InvalidHubAddress() public {
     vm.expectRevert(ISpoke.InvalidHubAddress.selector);
-    new Spoke(address(0), HEALTH_FACTOR_LIQUIDATION_THRESHOLD);
+    new Spoke(address(0), TREASURY, HEALTH_FACTOR_LIQUIDATION_THRESHOLD);
   }
 
   function test_spoke_deploy_revertsWith_InvalidCloseFactor() public {
     uint256 invalidCloseFactor = HEALTH_FACTOR_LIQUIDATION_THRESHOLD - 1;
     vm.expectRevert(ISpoke.InvalidCloseFactor.selector);
-    new Spoke(address(hub), invalidCloseFactor);
+    new Spoke(address(hub), TREASURY, invalidCloseFactor);
+  }
+
+  function test_spoke_deploy_revertsWith_InvalidTreasuryAddress() public {
+    address invalidTreasury = address(0);
+    uint256 closeFactor = HEALTH_FACTOR_LIQUIDATION_THRESHOLD + 1;
+    vm.expectRevert(ISpoke.InvalidTreasuryAddress.selector);
+    new Spoke(address(hub), invalidTreasury, closeFactor);
   }
 
   function test_updateReserveConfig() public {
@@ -507,7 +514,7 @@ contract SpokeConfigTest is SpokeBase {
     liquidationConfig.healthFactorBonusThreshold = bound(
       liquidationConfig.healthFactorBonusThreshold,
       0,
-      spoke1.HEALTH_FACTOR_LIQUIDATION_THRESHOLD() - 1
+      HEALTH_FACTOR_LIQUIDATION_THRESHOLD - 1
     );
     liquidationConfig.liquidationBonusFactor = bound(
       liquidationConfig.liquidationBonusFactor,
@@ -516,7 +523,7 @@ contract SpokeConfigTest is SpokeBase {
     );
     liquidationConfig.closeFactor = bound(
       liquidationConfig.closeFactor,
-      spoke1.HEALTH_FACTOR_LIQUIDATION_THRESHOLD(),
+      HEALTH_FACTOR_LIQUIDATION_THRESHOLD,
       type(uint256).max
     );
 
@@ -554,7 +561,7 @@ contract SpokeConfigTest is SpokeBase {
   ) public {
     liquidationConfig.healthFactorBonusThreshold = bound(
       liquidationConfig.healthFactorBonusThreshold,
-      spoke1.HEALTH_FACTOR_LIQUIDATION_THRESHOLD(),
+      HEALTH_FACTOR_LIQUIDATION_THRESHOLD,
       type(uint256).max
     );
     liquidationConfig.liquidationBonusFactor = bound(
@@ -564,7 +571,7 @@ contract SpokeConfigTest is SpokeBase {
     );
     liquidationConfig.closeFactor = bound(
       liquidationConfig.closeFactor,
-      spoke1.HEALTH_FACTOR_LIQUIDATION_THRESHOLD(),
+      HEALTH_FACTOR_LIQUIDATION_THRESHOLD,
       type(uint256).max
     ); // valid values
 
@@ -591,7 +598,7 @@ contract SpokeConfigTest is SpokeBase {
     liquidationConfig.healthFactorBonusThreshold = bound(
       liquidationConfig.healthFactorBonusThreshold,
       0,
-      spoke1.HEALTH_FACTOR_LIQUIDATION_THRESHOLD()
+      HEALTH_FACTOR_LIQUIDATION_THRESHOLD
     );
     liquidationConfig.liquidationBonusFactor = bound(
       liquidationConfig.liquidationBonusFactor,
@@ -600,7 +607,7 @@ contract SpokeConfigTest is SpokeBase {
     );
     liquidationConfig.closeFactor = bound(
       liquidationConfig.closeFactor,
-      spoke1.HEALTH_FACTOR_LIQUIDATION_THRESHOLD(),
+      HEALTH_FACTOR_LIQUIDATION_THRESHOLD,
       type(uint256).max
     ); // valid values
 

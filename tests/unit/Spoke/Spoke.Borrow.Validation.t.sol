@@ -224,7 +224,7 @@ contract SpokeBorrowValidationTest is SpokeBase {
     Utils.supply(spoke1, daiReserveId, bob, 1e18, bob);
 
     // Bob should be able to borrow 1 dai
-    assertGt(spoke1.getHealthFactor(bob), spoke1.HEALTH_FACTOR_LIQUIDATION_THRESHOLD());
+    assertGt(spoke1.getHealthFactor(bob), HEALTH_FACTOR_LIQUIDATION_THRESHOLD);
 
     vm.expectRevert(abi.encodeWithSelector(ILiquidityHub.DrawCapExceeded.selector, drawCap));
     Utils.borrow(spoke1, daiReserveId, bob, 1, bob);

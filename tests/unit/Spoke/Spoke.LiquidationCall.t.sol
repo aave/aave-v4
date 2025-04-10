@@ -657,7 +657,7 @@ contract LiquidationCallTest is SpokeBase {
 
   //     vars.hf0 = mockSpoke1.getHealthFactor(USER1);
   //     assertTrue(
-  //       vars.hf0 > mockSpoke1.HEALTH_FACTOR_LIQUIDATION_THRESHOLD(),
+  //       vars.hf0 > mockHEALTH_FACTOR_LIQUIDATION_THRESHOLD,
   //       'Unexpected T1 health factor'
   //     );
 
@@ -905,7 +905,7 @@ contract LiquidationCallTest is SpokeBase {
 
   //     vars.hf0 = mockSpoke1.getHealthFactor(USER1);
   //     assertTrue(
-  //       vars.hf0 > mockSpoke1.HEALTH_FACTOR_LIQUIDATION_THRESHOLD(),
+  //       vars.hf0 > mockHEALTH_FACTOR_LIQUIDATION_THRESHOLD,
   //       'Unexpected T1 health factor'
   //     );
 
@@ -1160,7 +1160,7 @@ contract LiquidationCallTest is SpokeBase {
   //     vars.hf0 = mockSpoke1.getHealthFactor(USER1);
 
   //     assertTrue(
-  //       vars.hf0 > mockSpoke1.HEALTH_FACTOR_LIQUIDATION_THRESHOLD(),
+  //       vars.hf0 > mockHEALTH_FACTOR_LIQUIDATION_THRESHOLD,
   //       'Unexpected T1 health factor'
   //     );
 
@@ -1422,7 +1422,7 @@ contract LiquidationCallTest is SpokeBase {
   //     vars.hf0 = mockSpoke1.getHealthFactor(USER1);
 
   //     assertTrue(
-  //       vars.hf0 > mockSpoke1.HEALTH_FACTOR_LIQUIDATION_THRESHOLD(),
+  //       vars.hf0 > mockHEALTH_FACTOR_LIQUIDATION_THRESHOLD,
   //       'Unexpected T1 health factor'
   //     );
 
@@ -1682,7 +1682,7 @@ contract LiquidationCallTest is SpokeBase {
   //     vars.hf0 = mockSpoke1.getHealthFactor(USER1);
 
   //     assertTrue(
-  //       vars.hf0 > mockSpoke1.HEALTH_FACTOR_LIQUIDATION_THRESHOLD(),
+  //       vars.hf0 > mockHEALTH_FACTOR_LIQUIDATION_THRESHOLD,
   //       'Unexpected T1 health factor'
   //     );
 
@@ -1691,7 +1691,7 @@ contract LiquidationCallTest is SpokeBase {
 
   //     vars.hf1 = mockSpoke1.getHealthFactor(USER1);
   //     assertTrue(
-  //       vars.hf1 < mockSpoke1.HEALTH_FACTOR_LIQUIDATION_THRESHOLD(),
+  //       vars.hf1 < mockHEALTH_FACTOR_LIQUIDATION_THRESHOLD,
   //       'Unexpected T1 health factor'
   //     );
   //     assertTrue(vars.hf1 < vars.hf0, 'Unexpected T1 increase in health factor');
@@ -1942,7 +1942,7 @@ contract LiquidationCallTest is SpokeBase {
   //     Utils.borrow(vm, mockSpoke1, vars.usdcAssetId, USER1, usdcBorrowAmount, USER1);
   //     vars.hf0 = mockSpoke1.getHealthFactor(USER1);
   //     assertTrue(
-  //       vars.hf0 > mockSpoke1.HEALTH_FACTOR_LIQUIDATION_THRESHOLD(),
+  //       vars.hf0 > mockHEALTH_FACTOR_LIQUIDATION_THRESHOLD,
   //       'Unexpected T0 health factor'
   //     );
 
@@ -2189,7 +2189,7 @@ contract LiquidationCallTest is SpokeBase {
   //     vars.hf0 = mockSpoke1.getHealthFactor(USER1);
 
   //     assertTrue(
-  //       vars.hf0 > mockSpoke1.HEALTH_FACTOR_LIQUIDATION_THRESHOLD(),
+  //       vars.hf0 > mockHEALTH_FACTOR_LIQUIDATION_THRESHOLD,
   //       'Unexpected T1 health factor'
   //     );
 
@@ -2455,7 +2455,7 @@ contract LiquidationCallTest is SpokeBase {
   //     vars.hf0 = mockSpoke1.getHealthFactor(USER1);
 
   //     assertTrue(
-  //       vars.hf0 > mockSpoke1.HEALTH_FACTOR_LIQUIDATION_THRESHOLD(),
+  //       vars.hf0 > mockHEALTH_FACTOR_LIQUIDATION_THRESHOLD,
   //       'Unexpected T1 health factor'
   //     );
 
@@ -2764,7 +2764,7 @@ contract LiquidationCallTest is SpokeBase {
   //     vars.hf0 = mockSpoke1.getHealthFactor(USER1);
 
   //     assertTrue(
-  //       vars.hf0 > mockSpoke1.HEALTH_FACTOR_LIQUIDATION_THRESHOLD(),
+  //       vars.hf0 > mockHEALTH_FACTOR_LIQUIDATION_THRESHOLD,
   //       'Unexpected T1 health factor'
   //     );
 

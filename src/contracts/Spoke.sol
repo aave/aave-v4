@@ -3,26 +3,29 @@ pragma solidity ^0.8.0;
 
 import {console2 as console} from 'forge-std/console2.sol';
 
+import {SafeERC20} from 'src/dependencies/openzeppelin/SafeERC20.sol';
+import {IERC20} from 'src/dependencies/openzeppelin/IERC20.sol';
 // libraries
 import {WadRayMath} from 'src/libraries/math/WadRayMath.sol';
 import {PercentageMath} from 'src/libraries/math/PercentageMath.sol';
 import {KeyValueListInMemory} from 'src/libraries/helpers/KeyValueListInMemory.sol';
 import {DataTypes} from 'src/libraries/types/DataTypes.sol';
 import {LiquidationLogic} from 'src/libraries/logic/LiquidationLogic.sol';
-
 // interfaces
 import {ILiquidityHub} from 'src/interfaces/ILiquidityHub.sol';
 import {ISpoke} from 'src/interfaces/ISpoke.sol';
 import {IPriceOracle} from 'src/interfaces/IPriceOracle.sol';
 
 contract Spoke is ISpoke {
+  using SafeERC20 for IERC20;
   using WadRayMath for uint256;
   using PercentageMath for uint256;
   using KeyValueListInMemory for KeyValueListInMemory.List;
   using LiquidationLogic for DataTypes.LiquidationConfig;
 
-  uint256 public constant HEALTH_FACTOR_LIQUIDATION_THRESHOLD = WadRayMath.WAD; // todo configurable?
+  uint256 public constant HEALTH_FACTOR_LIQUIDATION_THRESHOLD = WadRayMath.WAD;
   ILiquidityHub public immutable HUB;
+  address internal _treasury;
 
   mapping(address user => mapping(uint256 reserveId => DataTypes.UserPosition position))
     internal _userPositions;
@@ -31,13 +34,15 @@ contract Spoke is ISpoke {
   uint256[] public reservesList; // todo: rm, not needed
   uint256 public reserveCount;
 
-  constructor(address hubAddress, uint256 closeFactorValue) {
+  constructor(address hubAddress, address treasury, uint256 closeFactorValue) {
     require(hubAddress != address(0), InvalidHubAddress());
+    require(treasury != address(0), InvalidTreasuryAddress());
     // close factor is required, but variable liquidation bonus config is not
     _validateCloseFactor(closeFactorValue);
 
     HUB = ILiquidityHub(hubAddress);
     _liquidationConfig.closeFactor = closeFactorValue;
+    _treasury = treasury;
   }
 
   // /////
@@ -312,8 +317,6 @@ contract Spoke is ISpoke {
         debtToCover
       );
 
-    // TODO: risk premium needs to be updated again bc collateral/debt has been updated?
-
     // repay debt
     uint256 restoredShares = HUB.restore(
       debtReserve.assetId,
@@ -327,7 +330,8 @@ contract Spoke is ISpoke {
       collateralToLiquidate + liquidationProtocolFeeAmount,
       address(this)
     );
-    // todo: transfer funds to liquidator/treasury separately
+
+    // TODO: risk premium needs to be updated again bc collateral/debt has been updated?
 
     // accounting
     userCollateralPosition.suppliedShares -= withdrawnShares;
@@ -335,6 +339,11 @@ contract Spoke is ISpoke {
 
     userDebtPosition.baseDrawnShares -= restoredShares;
     debtReserve.baseDrawnShares -= restoredShares;
+
+    // transfer to liquidator
+    IERC20(collateralReserve.asset).safeTransfer(msg.sender, collateralToLiquidate);
+    // transfer to treasury
+    IERC20(collateralReserve.asset).safeTransfer(msg.sender, liquidationProtocolFeeAmount);
 
     // emit LiquidationCall(
     //   collateralAssetId,
@@ -591,6 +600,10 @@ contract Spoke is ISpoke {
       totalCollateralInBaseCurrency,
       totalDebtInBaseCurrency
     ) = _calculateUserAccountData(user);
+  }
+
+  function RESERVE_TREASURY_ADDRESS() external view returns (address) {
+    return _treasury;
   }
 
   // public

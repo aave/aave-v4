@@ -232,7 +232,7 @@ contract LiquidationCallValidationTest is SpokeBase {
 
     // collateral value drop, make sure that HF < threshold and position is liquidatable
     oracle.setAssetPrice(wethAssetId, 0);
-    vm.assume(spoke1.getHealthFactor(alice) < spoke1.HEALTH_FACTOR_LIQUIDATION_THRESHOLD());
+    vm.assume(spoke1.getHealthFactor(alice) < HEALTH_FACTOR_LIQUIDATION_THRESHOLD);
 
     // no longer set asset as collateral
     setUsingAsCollateral(spoke1, alice, wethReserveId, false);
@@ -277,7 +277,7 @@ contract LiquidationCallValidationTest is SpokeBase {
 
     // collateral value drop, make sure that HF < threshold and position is liquidatable
     oracle.setAssetPrice(wethAssetId, 0);
-    vm.assume(spoke1.getHealthFactor(alice) < spoke1.HEALTH_FACTOR_LIQUIDATION_THRESHOLD());
+    vm.assume(spoke1.getHealthFactor(alice) < HEALTH_FACTOR_LIQUIDATION_THRESHOLD);
 
     // update collateral factor to 0
     updateCollateralFactor(spoke1, wethReserveId, 0);

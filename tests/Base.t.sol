@@ -74,6 +74,7 @@ abstract contract Base is Test {
 
   address internal HUB_ADMIN = makeAddr('HUB_ADMIN');
   address internal SPOKE_ADMIN = makeAddr('SPOKE_ADMIN');
+  address internal TREASURY = makeAddr('TREASURY');
 
   TokenList internal tokenList;
   uint256 internal wethAssetId = 0;
@@ -140,9 +141,9 @@ abstract contract Base is Test {
     creditLineIRStrategy = new DefaultReserveInterestRateStrategy(mockAddressesProvider);
     irStrategy = new DefaultReserveInterestRateStrategy(mockAddressesProvider);
     hub = new LiquidityHub();
-    spoke1 = ISpoke(new Spoke(address(hub), HEALTH_FACTOR_LIQUIDATION_THRESHOLD));
-    spoke2 = ISpoke(new Spoke(address(hub), HEALTH_FACTOR_LIQUIDATION_THRESHOLD));
-    spoke3 = ISpoke(new Spoke(address(hub), HEALTH_FACTOR_LIQUIDATION_THRESHOLD));
+    spoke1 = ISpoke(new Spoke(address(hub), TREASURY, HEALTH_FACTOR_LIQUIDATION_THRESHOLD));
+    spoke2 = ISpoke(new Spoke(address(hub), TREASURY, HEALTH_FACTOR_LIQUIDATION_THRESHOLD));
+    spoke3 = ISpoke(new Spoke(address(hub), TREASURY, HEALTH_FACTOR_LIQUIDATION_THRESHOLD));
     dai = new MockERC20();
     eth = new MockERC20();
     usdc = new MockERC20();

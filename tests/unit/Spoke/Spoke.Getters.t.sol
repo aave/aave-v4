@@ -19,7 +19,7 @@ contract SpokeGettersTest is SpokeBase {
     uint256 healthFactor
   ) public {
     reserveId = bound(reserveId, 0, spoke1.reserveCount() - 1);
-    healthFactor = bound(healthFactor, 0, spoke1.HEALTH_FACTOR_LIQUIDATION_THRESHOLD());
+    healthFactor = bound(healthFactor, 0, HEALTH_FACTOR_LIQUIDATION_THRESHOLD);
     uint256 liqBonus = spoke1.getVariableLiquidationBonus(reserveId, healthFactor);
 
     _config = spoke1.getLiquidationConfig();
@@ -30,7 +30,7 @@ contract SpokeGettersTest is SpokeBase {
         _config,
         healthFactor,
         spoke1.getReserve(reserveId).config.liquidationBonus,
-        spoke1.HEALTH_FACTOR_LIQUIDATION_THRESHOLD()
+        HEALTH_FACTOR_LIQUIDATION_THRESHOLD
       ),
       'calc should match'
     );
@@ -49,12 +49,12 @@ contract SpokeGettersTest is SpokeBase {
     uint256 healthFactorBonusThreshold
   ) public {
     reserveId = bound(reserveId, 0, spoke1.reserveCount() - 1);
-    healthFactor = bound(healthFactor, 0, spoke1.HEALTH_FACTOR_LIQUIDATION_THRESHOLD());
+    healthFactor = bound(healthFactor, 0, HEALTH_FACTOR_LIQUIDATION_THRESHOLD);
     liquidationBonusFactor = bound(liquidationBonusFactor, 0, PercentageMath.PERCENTAGE_FACTOR);
     healthFactorBonusThreshold = bound(
       healthFactorBonusThreshold,
       0,
-      spoke1.HEALTH_FACTOR_LIQUIDATION_THRESHOLD() - 1
+      HEALTH_FACTOR_LIQUIDATION_THRESHOLD - 1
     );
 
     DataTypes.LiquidationConfig memory config = DataTypes.LiquidationConfig({
@@ -73,7 +73,7 @@ contract SpokeGettersTest is SpokeBase {
         _config,
         healthFactor,
         spoke1.getReserve(reserveId).config.liquidationBonus,
-        spoke1.HEALTH_FACTOR_LIQUIDATION_THRESHOLD()
+        HEALTH_FACTOR_LIQUIDATION_THRESHOLD
       ),
       'calc should match'
     );

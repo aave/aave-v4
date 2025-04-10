@@ -61,6 +61,7 @@ interface ISpoke {
   error SpecifiedCurrencyNotBorrowedByUser();
   error InvalidDebtToCover();
   error InvalidLiquidationProtocolFeePercentage();
+  error InvalidTreasuryAddress();
 
   function addReserve(
     uint256 assetId,
@@ -143,7 +144,7 @@ interface ISpoke {
   function getUsingAsCollateral(uint256 reserveId, address user) external view returns (bool);
   function reserveCount() external view returns (uint256);
   function reservesList(uint256) external view returns (uint256);
-  function HEALTH_FACTOR_LIQUIDATION_THRESHOLD() external view returns (uint256);
+  function RESERVE_TREASURY_ADDRESS() external view returns (address);
   function getVariableLiquidationBonus(
     uint256 reserveId,
     uint256 healthFactor
