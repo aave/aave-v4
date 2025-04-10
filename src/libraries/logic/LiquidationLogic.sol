@@ -14,12 +14,13 @@ library LiquidationLogic {
     uint256 healthFactorLiquidationThreshold,
     uint256 liquidationBonus
   ) internal view returns (uint256) {
-    // if HF <= healthFactorBonusThreshold, liquidation bonus is max
-    if (healthFactor <= config.healthFactorBonusThreshold) {
+    // if healthFactorBonusThreshold == 0 or  HF <= healthFactorBonusThreshold, return base liquidationBonus
+    if (
+      config.healthFactorBonusThreshold == 0 || healthFactor <= config.healthFactorBonusThreshold
+    ) {
       return liquidationBonus;
     }
     uint256 minLiquidationBonus = liquidationBonus.percentMul(config.liquidationBonusFactor);
-
     // if HF >= healthFactorLiquidationThreshold, liquidation bonus is min
     if (healthFactor >= healthFactorLiquidationThreshold) {
       return minLiquidationBonus;

@@ -4,9 +4,6 @@ pragma solidity ^0.8.0;
 import 'tests/unit/Spoke/SpokeBase.t.sol';
 
 contract SpokeConfigTest is SpokeBase {
-  using SharesMath for uint256;
-  using WadRayMath for uint256;
-
   function test_spoke_deploy_revertsWith_InvalidHubAddress() public {
     vm.expectRevert(ISpoke.InvalidHubAddress.selector);
     new Spoke(address(0), HEALTH_FACTOR_LIQUIDATION_THRESHOLD);

@@ -373,17 +373,12 @@ contract Spoke is ISpoke {
     uint256 reserveId,
     uint256 healthFactor
   ) public view returns (uint256) {
-    uint256 liquidationBonus = _reserves[reserveId].config.liquidationBonus;
-    // if healthFactorBonusThreshold == 0, always return base liquidationBonus
-    if (_liquidationConfig.liqBonusConfig.healthFactorBonusThreshold == 0) {
-      return liquidationBonus;
-    }
     return
       _liquidationConfig.liqBonusConfig.calculate(
         healthFactor,
         HEALTH_FACTOR_LIQUIDATION_THRESHOLD,
-        liquidationBonus
-      );
+        _reserves[reserveId].config.liquidationBonus
+      ) + PercentageMath.PERCENTAGE_FACTOR;
   }
 
   function getLiquidationConfig() external view returns (DataTypes.LiquidationConfig memory) {
