@@ -327,6 +327,7 @@ contract Spoke is ISpoke {
       collateralToLiquidate + liquidationProtocolFeeAmount,
       address(this)
     );
+    // todo: transfer funds to liquidator/treasury separately
 
     // accounting
     userCollateralPosition.suppliedShares -= withdrawnShares;
@@ -1048,10 +1049,13 @@ contract Spoke is ISpoke {
     vars.maxLiquidatableDebt = params.totalDebt;
     vars.closeFactor = _liquidationConfig.closeFactor;
 
-    vars.hfScaledDebt = params.totalDebtInBaseCurrency.wadMul(vars.closeFactor); // base curr
+    vars.hfScaledDebt = params.totalDebtInBaseCurrency.wadMul(vars.closeFactor); // base currency
+    // vars.weightedCollateral = (
+    //   params.totalCollateralInBaseCurrency.wadMul(params.avgCollateralFactor)
+    // ).fromBps(); // base currency
     vars.weightedCollateral = (
-      params.totalCollateralInBaseCurrency.wadMul(params.avgCollateralFactor)
-    ).fromBps(); // base curr
+      params.totalCollateralInBaseCurrency.percentMul(params.avgCollateralFactor.dewadify())
+    ); // base currency
 
     // console.log(
     //   'scaled/weighted %e %e %e',
@@ -1107,7 +1111,7 @@ contract Spoke is ISpoke {
     // convert from base currency to amount
     vars.liquidationRecoveryDebt = params.debtAssetPrice == 0
       ? type(uint256).max
-      : ((vars.liquidationRecoveryDebt) / params.debtAssetPrice);
+      : vars.liquidationRecoveryDebt / params.debtAssetPrice;
 
     // console.log('vars.liquidationRecoveryDebt %e', vars.liquidationRecoveryDebt);
     // console.log('vars.maxLiquidatableDebt %e', vars.maxLiquidatableDebt);
@@ -1116,13 +1120,17 @@ contract Spoke is ISpoke {
       ? vars.liquidationRecoveryDebt
       : vars.maxLiquidatableDebt;
 
-    // console.log('vars.maxLiquidatableDebt %e', vars.maxLiquidatableDebt);
+    console.log(
+      'debtToCover, vars.maxLiquidatableDebt %e %e',
+      debtToCover,
+      vars.maxLiquidatableDebt
+    );
 
     vars.actualDebtToLiquidate = debtToCover > vars.maxLiquidatableDebt
       ? vars.maxLiquidatableDebt
       : debtToCover;
 
-    // console.log('vars.actualDebtToLiquidate %e', vars.actualDebtToLiquidate);
+    console.log('vars.actualDebtToLiquidate', vars.actualDebtToLiquidate == debtToCover);
     return vars.actualDebtToLiquidate;
   }
 

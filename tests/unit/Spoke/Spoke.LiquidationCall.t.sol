@@ -76,11 +76,12 @@ contract LiquidationCallTest is SpokeBase {
     Utils.supplyCollateral(spoke1, daiReserveId, alice, daiAmount, alice);
     Utils.borrow(spoke1, usdxReserveId, alice, borrowAmount, alice);
 
-    oracle.setAssetPrice(wethAssetId, 800e8);
+    oracle.setAssetPrice(wethAssetId, 400e8);
 
     vm.prank(bob);
     spoke1.liquidationCall(daiReserveId, usdxReserveId, alice, borrowAmount);
 
+    console.log('final hf %e', spoke1.getHealthFactor(alice));
     assertLt(spoke1.getHealthFactor(alice), 1e18, 'health factor precision loss < 1 ');
   }
 
@@ -106,6 +107,7 @@ contract LiquidationCallTest is SpokeBase {
     vm.prank(bob);
     spoke1.liquidationCall(usdxReserveId, daiReserveId, alice, borrowAmount);
 
+    console.log('final hf %e', spoke1.getHealthFactor(alice));
     assertGt(spoke1.getHealthFactor(alice), 1e18, 'health factor precision loss > 1 ');
   }
 
