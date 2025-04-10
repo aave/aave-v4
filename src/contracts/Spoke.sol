@@ -376,8 +376,8 @@ contract Spoke is ISpoke {
     return
       _liquidationConfig.calculate(
         healthFactor,
-        HEALTH_FACTOR_LIQUIDATION_THRESHOLD,
-        _reserves[reserveId].config.liquidationBonus
+        _reserves[reserveId].config.liquidationBonus,
+        HEALTH_FACTOR_LIQUIDATION_THRESHOLD
       );
   }
 
