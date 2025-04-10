@@ -389,6 +389,7 @@ contract Spoke is ISpoke {
       vars.collateralReserveId,
       vars.healthFactor
     );
+    console.log('vars.liquidationBonus %e', vars.liquidationBonus);
 
     vars.actualDebtToLiquidate = _calculateActualDebtToLiquidate({
       collateralReserve: collateralReserve,
@@ -561,8 +562,8 @@ contract Spoke is ISpoke {
     return
       _liquidationConfig.calculate(
         healthFactor,
-        HEALTH_FACTOR_LIQUIDATION_THRESHOLD,
-        _reserves[reserveId].config.liquidationBonus
+        _reserves[reserveId].config.liquidationBonus,
+        HEALTH_FACTOR_LIQUIDATION_THRESHOLD
       );
   }
 
@@ -689,21 +690,6 @@ contract Spoke is ISpoke {
 
   function _validateCloseFactor(uint256 closeFactor) internal view {
     require(closeFactor >= HEALTH_FACTOR_LIQUIDATION_THRESHOLD, InvalidCloseFactor());
-  }
-
-  function _validateVariableLiquidationBonusConfig(
-    DataTypes.VariableLiquidationBonusConfig calldata config
-  ) internal view {
-    // if liquidationBonusFactor == 0, then variable liquidation bonus will not be applied
-    require(
-      config.liquidationBonusFactor <= PercentageMath.PERCENTAGE_FACTOR,
-      InvalidLiquidationBonusFactor()
-    );
-    // if healthFactorBonusThreshold == HEALTH_FACTOR_LIQUIDATION_THRESHOLD, then calculateVariableLiquidationBonus will be undefined
-    require(
-      config.healthFactorBonusThreshold < HEALTH_FACTOR_LIQUIDATION_THRESHOLD,
-      InvalidHealthFactorBonusThreshold()
-    );
   }
 
   function _validateLiquidationCall(
@@ -1058,6 +1044,12 @@ contract Spoke is ISpoke {
     ); // base currency
 
     // console.log(
+    //   'vars.weightedCollateral %e %e %e',
+    //   vars.weightedCollateral,
+    //   params.totalCollateralInBaseCurrency.wadMul(params.avgCollateralFactor).dewadify()
+    // );
+
+    // console.log(
     //   'scaled/weighted %e %e %e',
     //   vars.hfScaledDebt,
     //   vars.weightedCollateral,
@@ -1067,6 +1059,14 @@ contract Spoke is ISpoke {
     vars.scaledLiqBonus = (params.liquidationBonus.wadify())
       .percentMul(collateralReserve.config.collateralFactor)
       .fromBps(); // convert BPS to WAD;
+
+    console.log(
+      'vars.scaledLiqBonus %e %e %e',
+      vars.scaledLiqBonus,
+      collateralReserve.config.collateralFactor,
+      params.liquidationBonus
+    );
+    // console.log('vars.scaledLiqBonus %e', vars.scaledLiqBonus);
 
     // amount of user debt that returns HF to closeFactor, in base currency
     vars.liquidationRecoveryDebt = vars.closeFactor > vars.scaledLiqBonus
@@ -1090,7 +1090,7 @@ contract Spoke is ISpoke {
     //   vars.maxLiquidatableDebt
     // );
 
-    // console.log('vars.liquidationRecoveryDebt %e', vars.liquidationRecoveryDebt);
+    console.log('vars.liquidationRecoveryDebt %e', vars.liquidationRecoveryDebt);
 
     // console.log(
     //   'var lb %e',
@@ -1123,7 +1123,8 @@ contract Spoke is ISpoke {
     console.log(
       'debtToCover, vars.maxLiquidatableDebt %e %e',
       debtToCover,
-      vars.maxLiquidatableDebt
+      vars.maxLiquidatableDebt,
+      params.totalDebt
     );
 
     vars.actualDebtToLiquidate = debtToCover > vars.maxLiquidatableDebt
