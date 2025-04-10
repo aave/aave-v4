@@ -343,6 +343,10 @@ contract LiquidityHubDrawTest is LiquidityHubBase {
   }
 
   function test_draw_revertsWith_DrawCapExceeded_due_to_interest() public {
+    // Set liquidity premium of dai to 0
+    updateLiquidityPremium(spoke1, _daiReserveId(spoke1), 0);
+    assertEq(spoke1.getLiquidityPremium(_daiReserveId(spoke1)), 0);
+
     uint256 daiAmount = 100e18;
     uint256 drawCap = daiAmount;
     uint256 drawAmount = drawCap;
@@ -356,8 +360,14 @@ contract LiquidityHubDrawTest is LiquidityHubBase {
     assertGt(baseDebt, drawCap);
 
     // restore to provide liquidity
+    // Must repay at least one full share
     vm.startPrank(address(spoke1));
-    hub.restore({assetId: daiAssetId, baseAmount: 1, premiumAmount: 0, from: alice});
+    hub.restore({
+      assetId: daiAssetId,
+      baseAmount: minimumAssetsPerDrawnShare(daiAssetId),
+      premiumAmount: 0,
+      from: alice
+    });
 
     vm.expectRevert(abi.encodeWithSelector(ILiquidityHub.DrawCapExceeded.selector, drawCap));
     hub.draw({assetId: daiAssetId, amount: 1, to: bob});
@@ -386,11 +396,19 @@ contract LiquidityHubDrawTest is LiquidityHubBase {
     });
 
     (uint256 baseDebt, ) = hub.getAssetDebt(daiAssetId);
-    vm.assume(baseDebt > drawCap);
+    uint256 singleShareInAssets = minimumAssetsPerDrawnShare(daiAssetId);
+    // Need the baseDebt to be greater than the drawCap from interest, past the share we restore
+    vm.assume(baseDebt > drawCap + singleShareInAssets);
 
     // restore to provide liquidity
+    // Must repay at least one full share;
     vm.startPrank(address(spoke1));
-    hub.restore({assetId: daiAssetId, baseAmount: 1, premiumAmount: 0, from: alice});
+    hub.restore({
+      assetId: daiAssetId,
+      baseAmount: singleShareInAssets,
+      premiumAmount: 0,
+      from: alice
+    });
 
     vm.expectRevert(abi.encodeWithSelector(ILiquidityHub.DrawCapExceeded.selector, drawCap));
     hub.draw({assetId: daiAssetId, amount: 1, to: bob});
