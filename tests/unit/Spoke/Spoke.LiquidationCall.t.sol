@@ -124,6 +124,7 @@ contract LiquidationCallTest is SpokeBase {
     Utils.supplyCollateral(spoke1, wethReserveId, alice, wethAmount, alice);
     Utils.supplyCollateral(spoke1, daiReserveId, alice, daiAmount, alice);
     Utils.borrow(spoke1, usdyReserveId, alice, borrowAmount, alice);
+
     console.log(spoke1.getHealthFactor(alice));
     console.log(' coll %e', spoke1.getUserSuppliedAmount(wethReserveId, alice));
     console.log(' debt %e', spoke1.getUserTotalDebt(usdyReserveId, alice));
@@ -3037,4 +3038,10 @@ contract LiquidationCallTest is SpokeBase {
     Utils.supplyCollateral(spoke, collReserveId, user, collAmount, user);
     Utils.borrow(spoke, debtReserveId, user, debtAmount, user);
   }
+
+  // todo: test on if denom is negative, ie HF < LB * CF
+  // todo: test w diff combos of decimals
+  // test with user's new risk premium
+  // test w HF due to debt interest growing
+  // test w HF due to debt asset price drop
 }

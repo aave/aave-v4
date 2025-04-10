@@ -389,7 +389,7 @@ contract Spoke is ISpoke {
       vars.collateralReserveId,
       vars.healthFactor
     );
-    console.log('vars.liquidationBonus %e', vars.liquidationBonus);
+    // console.log('vars.liquidationBonus %e', vars.liquidationBonus);
 
     vars.actualDebtToLiquidate = _calculateActualDebtToLiquidate({
       collateralReserve: collateralReserve,
@@ -1069,10 +1069,11 @@ contract Spoke is ISpoke {
     // console.log('vars.scaledLiqBonus %e', vars.scaledLiqBonus);
 
     // amount of user debt that returns HF to closeFactor, in base currency
+    // numerator cannot be negative if CF > liq threshold
     vars.liquidationRecoveryDebt = vars.closeFactor > vars.scaledLiqBonus
       ? ((vars.hfScaledDebt - vars.weightedCollateral) * params.debtAssetUnit) /
         (vars.closeFactor - vars.scaledLiqBonus)
-      : 0;
+      : params.totalDebtInBaseCurrency;
 
     // console.log('try %e  %e', collateralReserve.config.collateralFactor);
 
