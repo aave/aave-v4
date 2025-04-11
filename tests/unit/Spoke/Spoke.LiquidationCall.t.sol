@@ -321,10 +321,17 @@ contract LiquidationCallTest is SpokeBase {
     // debt: weth
     state.debts[0].weth = 20 * 10 ** tokenList.weth.decimals(); // 20 eth, $40k
 
+    // calculate liquidation bonus threshold that results in negative denominator, scaledLiqBonus > closeFactor
     state.collateralFactor = 75_00;
     state.closeFactor = 1.05e18;
     state.liqBonus = _calculateLiqBonusThreshold(state.closeFactor, state.collateralFactor);
 
+    // set spoke params
+    updateLiquidationBonus(spoke1, state.wbtcReserveId, state.liqBonus);
+    updateCollateralFactor(spoke1, state.wbtcReserveId, state.collateralFactor);
+    updateCloseFactor(spoke1, state.closeFactor);
+
+    // create debt position
     _deployLiquidity(spoke1, state.wethReserveId, state.debts[0].weth);
     Utils.supplyCollateral(spoke1, state.wbtcReserveId, alice, state.colls[0].wbtc, alice);
     Utils.supplyCollateral(spoke1, state.daiReserveId, alice, state.colls[0].dai, alice);
@@ -332,14 +339,11 @@ contract LiquidationCallTest is SpokeBase {
 
     // wbtc collateral value drop to reduce HF < 1
     oracle.setAssetPrice(wbtcAssetId, 20_000e8);
-    updateLiquidationBonus(spoke1, state.wbtcReserveId, state.liqBonus);
-    updateCollateralFactor(spoke1, state.wbtcReserveId, state.collateralFactor);
-    updateCloseFactor(spoke1, state.closeFactor);
 
+    // position is liquidatable
     assertLt(spoke1.getHealthFactor(alice), HEALTH_FACTOR_LIQUIDATION_THRESHOLD);
 
     UserTokenBalance memory balancesBefore = _loadUserBalances();
-
     state.initialDebt = spoke1.getUserTotalDebt(state.wethReserveId, alice);
     state.liquidatedDebt = _convertAssetAmount(wbtcAssetId, state.colls[0].wbtc, wethAssetId)
       .percentDiv(state.liqBonus);
