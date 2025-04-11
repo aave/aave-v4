@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.0;
 
-import {PercentageMath} from 'src/contracts/PercentageMath.sol';
+import {PercentageMath} from 'src/libraries/math/PercentageMath.sol';
 
 /**
  * @title WadRayMath library

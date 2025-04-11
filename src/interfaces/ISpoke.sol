@@ -34,6 +34,8 @@ interface ISpoke {
     int256 premiumOffsetDelta,
     int256 realizedPremiumDelta
   );
+  event OracleUpdated(uint256 indexed reserveId, address indexed oracle);
+  event LiquidationConfigUpdated(DataTypes.LiquidationConfig config);
 
   error InvalidReserve();
   error ReserveNotListed();
@@ -49,13 +51,18 @@ interface ISpoke {
   error InvalidLiquidationBonus();
   error InvalidReserveDecimals();
   error HealthFactorBelowThreshold();
+  error InvalidCloseFactor();
+  error InvalidOracleAddress();
+  error InvalidHubAddress();
+  error InvalidHealthFactorBonusThreshold();
+  error InvalidLiquidationBonusFactor();
 
   function addReserve(
     uint256 assetId,
     DataTypes.ReserveConfig memory params
   ) external returns (uint256);
   function updateReserveConfig(uint256 reserveId, DataTypes.ReserveConfig calldata params) external;
-  function updateLiquidityPremium(uint256 reserveId, uint256 liquidityPremium) external;
+  function updateLiquidationConfig(DataTypes.LiquidationConfig calldata config) external;
 
   /**
    * @notice Supply an amount of underlying asset of the specified reserve.
@@ -125,4 +132,9 @@ interface ISpoke {
   function reserveCount() external view returns (uint256);
   function reservesList(uint256) external view returns (uint256);
   function HEALTH_FACTOR_LIQUIDATION_THRESHOLD() external view returns (uint256);
+  function getVariableLiquidationBonus(
+    uint256 reserveId,
+    uint256 healthFactor
+  ) external view returns (uint256);
+  function getLiquidationConfig() external view returns (DataTypes.LiquidationConfig memory);
 }

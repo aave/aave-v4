@@ -5,10 +5,10 @@ import {SafeERC20} from 'src/dependencies/openzeppelin/SafeERC20.sol';
 import {IERC20} from 'src/dependencies/openzeppelin/IERC20.sol';
 import {ILiquidityHub} from 'src/interfaces/ILiquidityHub.sol';
 import {DataTypes} from 'src/libraries/types/DataTypes.sol';
-import {AssetLogic} from 'src/contracts/AssetLogic.sol';
-import {WadRayMath} from 'src/contracts/WadRayMath.sol';
-import {SharesMath} from 'src/contracts/SharesMath.sol';
-import {PercentageMath} from 'src/contracts/PercentageMath.sol';
+import {AssetLogic} from 'src/libraries/logic/AssetLogic.sol';
+import {WadRayMath} from 'src/libraries/math/WadRayMath.sol';
+import {SharesMath} from 'src/libraries/math/SharesMath.sol';
+import {PercentageMath} from 'src/libraries/math/PercentageMath.sol';
 
 // @dev Amounts are `asset` denominated by default unless specified otherwise with `share` suffix
 contract LiquidityHub is ILiquidityHub {

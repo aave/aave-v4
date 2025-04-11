@@ -66,16 +66,17 @@ library DataTypes {
     ReserveConfig config;
   }
 
+  // TODO: liquidationProtocolFee
   struct ReserveConfig {
     bool active;
     bool frozen;
     bool paused;
     bool borrowable;
     bool collateral;
-    uint256 decimals;
-    uint256 collateralFactor; // BPS
-    uint256 liquidationBonus; // TODO: liquidationProtocolFee
-    uint256 liquidityPremium; // BPS
+    uint256 decimals; // TODO: use smaller uint8
+    uint256 collateralFactor; // BPS TODO: use smaller uint
+    uint256 liquidationBonus; // BPS, 100_00 represent a 0% bonus TODO: use smaller uint
+    uint256 liquidityPremium; // BPS TODO: use smaller uint
   }
 
   struct UserPosition {
@@ -104,5 +105,11 @@ library DataTypes {
     uint256 avgCollateralFactor;
     uint256 userRiskPremium;
     uint256 healthFactor;
+  }
+
+  struct LiquidationConfig {
+    uint256 closeFactor; // BPS, HF value to restore to during a liquidation, TODO: use smaller uint
+    uint256 healthFactorBonusThreshold; // health factor under which liquidation bonus is max, TODO: use smaller uint
+    uint256 liquidationBonusFactor; // BPS, as a percentage of effective lb, TODO: use smaller uint
   }
 }

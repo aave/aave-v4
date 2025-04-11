@@ -6,12 +6,11 @@ import {console2 as console} from 'forge-std/console2.sol';
 
 import {LiquidityHub, ILiquidityHub} from 'src/contracts/LiquidityHub.sol';
 import {Spoke, ISpoke} from 'src/contracts/Spoke.sol';
-import {PercentageMath} from 'src/contracts/PercentageMath.sol';
-import {WadRayMath} from 'src/contracts/WadRayMath.sol';
-import {SharesMath} from 'src/contracts/SharesMath.sol';
-import {MathUtils} from 'src/contracts/MathUtils.sol';
+import {PercentageMath} from 'src/libraries/math/PercentageMath.sol';
+import {WadRayMath} from 'src/libraries/math/WadRayMath.sol';
+import {SharesMath} from 'src/libraries/math/SharesMath.sol';
+import {MathUtils} from 'src/libraries/math/MathUtils.sol';
 import {DefaultReserveInterestRateStrategy, IDefaultInterestRateStrategy, IReserveInterestRateStrategy} from 'src/contracts/DefaultReserveInterestRateStrategy.sol';
-import {ISpoke} from 'src/interfaces/ISpoke.sol';
 import {DataTypes} from 'src/libraries/types/DataTypes.sol';
 import {Utils} from './Utils.sol';
 
@@ -41,6 +40,10 @@ abstract contract Base is Test {
   uint32 internal constant MAX_RISK_PREMIUM_BPS = 1000_00;
   uint256 internal constant MAX_BORROW_RATE = 1000_00; // matches DefaultReserveInterestRateStrategy
   uint256 internal constant MAX_SKIP_TIME = 10_000 days;
+  uint256 internal constant MIN_LIQUIDATION_BONUS = PercentageMath.PERCENTAGE_FACTOR; // 100% == 0% bonus
+  uint256 internal constant MAX_LIQUIDATION_BONUS = PercentageMath.PERCENTAGE_FACTOR * 10; // 1000% -> 90% bonus
+  uint256 internal constant MAX_LIQUIDATION_BONUS_FACTOR = PercentageMath.PERCENTAGE_FACTOR; // 100%
+  uint256 internal constant HEALTH_FACTOR_LIQUIDATION_THRESHOLD = WadRayMath.WAD;
 
   IERC20 internal usdc;
   IERC20 internal dai;
@@ -121,9 +124,9 @@ abstract contract Base is Test {
     creditLineIRStrategy = new DefaultReserveInterestRateStrategy(mockAddressesProvider);
     irStrategy = new DefaultReserveInterestRateStrategy(mockAddressesProvider);
     hub = new LiquidityHub();
-    spoke1 = ISpoke(new Spoke(address(hub), address(oracle)));
-    spoke2 = ISpoke(new Spoke(address(hub), address(oracle)));
-    spoke3 = ISpoke(new Spoke(address(hub), address(oracle)));
+    spoke1 = ISpoke(new Spoke(address(hub), address(oracle), HEALTH_FACTOR_LIQUIDATION_THRESHOLD));
+    spoke2 = ISpoke(new Spoke(address(hub), address(oracle), HEALTH_FACTOR_LIQUIDATION_THRESHOLD));
+    spoke3 = ISpoke(new Spoke(address(hub), address(oracle), HEALTH_FACTOR_LIQUIDATION_THRESHOLD));
     dai = new MockERC20();
     eth = new MockERC20();
     usdc = new MockERC20();
@@ -268,7 +271,7 @@ abstract contract Base is Test {
       frozen: false,
       paused: false,
       collateralFactor: 80_00,
-      liquidationBonus: 0,
+      liquidationBonus: 100_00,
       liquidityPremium: 15_00,
       borrowable: true,
       collateral: true
@@ -279,7 +282,7 @@ abstract contract Base is Test {
       frozen: false,
       paused: false,
       collateralFactor: 75_00,
-      liquidationBonus: 0,
+      liquidationBonus: 100_00,
       liquidityPremium: 5_00,
       borrowable: true,
       collateral: true
@@ -290,7 +293,7 @@ abstract contract Base is Test {
       frozen: false,
       paused: false,
       collateralFactor: 78_00,
-      liquidationBonus: 0,
+      liquidationBonus: 100_00,
       liquidityPremium: 20_00,
       borrowable: true,
       collateral: true
@@ -301,7 +304,7 @@ abstract contract Base is Test {
       frozen: false,
       paused: false,
       collateralFactor: 78_00,
-      liquidationBonus: 0,
+      liquidationBonus: 100_00,
       liquidityPremium: 50_00,
       borrowable: true,
       collateral: true
@@ -328,7 +331,7 @@ abstract contract Base is Test {
       frozen: false,
       paused: false,
       collateralFactor: 80_00,
-      liquidationBonus: 0,
+      liquidationBonus: 100_00,
       liquidityPremium: 0,
       borrowable: true,
       collateral: true
@@ -339,7 +342,7 @@ abstract contract Base is Test {
       frozen: false,
       paused: false,
       collateralFactor: 76_00,
-      liquidationBonus: 0,
+      liquidationBonus: 100_00,
       liquidityPremium: 10_00,
       borrowable: true,
       collateral: true
@@ -350,7 +353,7 @@ abstract contract Base is Test {
       frozen: false,
       paused: false,
       collateralFactor: 72_00,
-      liquidationBonus: 0,
+      liquidationBonus: 100_00,
       liquidityPremium: 20_00,
       borrowable: true,
       collateral: true
@@ -361,7 +364,7 @@ abstract contract Base is Test {
       frozen: false,
       paused: false,
       collateralFactor: 72_00,
-      liquidationBonus: 0,
+      liquidationBonus: 100_00,
       liquidityPremium: 50_00,
       borrowable: true,
       collateral: true
@@ -388,7 +391,7 @@ abstract contract Base is Test {
       frozen: false,
       paused: false,
       collateralFactor: 75_00,
-      liquidationBonus: 0,
+      liquidationBonus: 100_00,
       liquidityPremium: 0,
       borrowable: true,
       collateral: true
@@ -399,7 +402,7 @@ abstract contract Base is Test {
       frozen: false,
       paused: false,
       collateralFactor: 75_00,
-      liquidationBonus: 0,
+      liquidationBonus: 100_00,
       liquidityPremium: 10_00,
       borrowable: true,
       collateral: true
@@ -410,7 +413,7 @@ abstract contract Base is Test {
       frozen: false,
       paused: false,
       collateralFactor: 79_00,
-      liquidationBonus: 0,
+      liquidationBonus: 100_00,
       liquidityPremium: 20_00,
       borrowable: true,
       collateral: true
@@ -421,7 +424,7 @@ abstract contract Base is Test {
       frozen: false,
       paused: false,
       collateralFactor: 77_00,
-      liquidationBonus: 0,
+      liquidationBonus: 100_00,
       liquidityPremium: 50_00,
       borrowable: true,
       collateral: true
@@ -459,7 +462,7 @@ abstract contract Base is Test {
       frozen: false,
       paused: false,
       collateralFactor: 70_00,
-      liquidationBonus: 0,
+      liquidationBonus: 100_00,
       liquidityPremium: 100_00,
       borrowable: true,
       collateral: true

@@ -2,7 +2,7 @@
 pragma solidity ^0.8.0;
 
 import 'tests/Base.t.sol';
-import {KeyValueListInMemory} from 'src/contracts/KeyValueListInMemory.sol';
+import {KeyValueListInMemory} from 'src/libraries/helpers/KeyValueListInMemory.sol';
 
 contract SpokeBase is Base {
   using PercentageMath for uint256;

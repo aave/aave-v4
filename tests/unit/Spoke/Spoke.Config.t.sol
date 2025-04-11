@@ -4,8 +4,21 @@ pragma solidity ^0.8.0;
 import 'tests/unit/Spoke/SpokeBase.t.sol';
 
 contract SpokeConfigTest is SpokeBase {
-  using SharesMath for uint256;
-  using WadRayMath for uint256;
+  function test_spoke_deploy_revertsWith_InvalidHubAddress() public {
+    vm.expectRevert(ISpoke.InvalidHubAddress.selector);
+    new Spoke(address(0), address(oracle), HEALTH_FACTOR_LIQUIDATION_THRESHOLD);
+  }
+
+  function test_spoke_deploy_revertsWith_InvalidCloseFactor() public {
+    uint256 invalidCloseFactor = HEALTH_FACTOR_LIQUIDATION_THRESHOLD - 1;
+    vm.expectRevert(ISpoke.InvalidCloseFactor.selector);
+    new Spoke(address(hub), address(oracle), invalidCloseFactor);
+  }
+
+  function test_spoke_deploy_revertsWith_InvalidOracleAddress() public {
+    vm.expectRevert(ISpoke.InvalidOracleAddress.selector);
+    new Spoke(address(hub), address(0), HEALTH_FACTOR_LIQUIDATION_THRESHOLD);
+  }
 
   function test_updateReserveConfig() public {
     uint256 daiReserveId = _daiReserveId(spoke1);
@@ -22,6 +35,54 @@ contract SpokeConfigTest is SpokeBase {
       borrowable: !reserveData.config.borrowable,
       collateral: !reserveData.config.collateral
     });
+    vm.expectEmit(address(spoke1));
+    emit ISpoke.ReserveConfigUpdated(daiReserveId, newReserveConfig);
+    vm.prank(SPOKE_ADMIN);
+    spoke1.updateReserveConfig(daiReserveId, newReserveConfig);
+
+    reserveData = spoke1.getReserve(daiReserveId);
+
+    assertEq(
+      reserveData.config.collateralFactor,
+      newReserveConfig.collateralFactor,
+      'wrong collateralFactor'
+    );
+    assertEq(
+      reserveData.config.liquidationBonus,
+      newReserveConfig.liquidationBonus,
+      'wrong liquidationBonus'
+    );
+    assertEq(
+      reserveData.config.liquidityPremium,
+      newReserveConfig.liquidityPremium,
+      'wrong liquidityPremium'
+    );
+    assertEq(reserveData.config.borrowable, newReserveConfig.borrowable, 'wrong borrowable');
+    assertEq(reserveData.config.collateral, newReserveConfig.collateral, 'wrong collateral');
+  }
+
+  function test_updateReserveConfig_fuzz(DataTypes.ReserveConfig memory newReserveConfig) public {
+    newReserveConfig.collateralFactor = bound(
+      newReserveConfig.collateralFactor,
+      0,
+      PercentageMath.PERCENTAGE_FACTOR
+    );
+    newReserveConfig.liquidationBonus = bound(
+      newReserveConfig.liquidationBonus,
+      MIN_LIQUIDATION_BONUS,
+      MAX_LIQUIDATION_BONUS
+    );
+    newReserveConfig.liquidityPremium = bound(
+      newReserveConfig.liquidityPremium,
+      0,
+      PercentageMath.PERCENTAGE_FACTOR * 10
+    );
+
+    uint256 daiReserveId = _daiReserveId(spoke1);
+    DataTypes.Reserve memory reserveData = spoke1.getReserve(daiReserveId);
+
+    newReserveConfig.decimals = reserveData.config.decimals; // decimals won't get updated
+
     vm.expectEmit(address(spoke1));
     emit ISpoke.ReserveConfigUpdated(daiReserveId, newReserveConfig);
     vm.prank(SPOKE_ADMIN);
@@ -67,6 +128,24 @@ contract SpokeConfigTest is SpokeBase {
     assertEq(config.decimals, oldDecimals, 'wrong decimals');
   }
 
+  function test_updateReserveConfig_fuzz_cannot_update_decimals(uint256 newDecimals) public {
+    uint256 daiReserveId = _daiReserveId(spoke1);
+    DataTypes.ReserveConfig memory config = spoke1.getReserve(daiReserveId).config;
+
+    uint256 oldDecimals = config.decimals;
+    newDecimals = bound(newDecimals, 0, hub.MAX_ALLOWED_ASSET_DECIMALS());
+    vm.assume(newDecimals != oldDecimals);
+
+    // decimals should not update
+    config.decimals = newDecimals;
+
+    vm.prank(SPOKE_ADMIN);
+    spoke1.updateReserveConfig(daiReserveId, config);
+
+    config = spoke1.getReserve(daiReserveId).config;
+    assertEq(config.decimals, oldDecimals, 'wrong decimals');
+  }
+
   function test_setUsingAsCollateral_revertsWith_ReserveCannotBeUsedAsCollateral() public {
     bool newCollateralFlag = false;
     bool usingAsCollateral = true;
@@ -77,7 +156,7 @@ contract SpokeConfigTest is SpokeBase {
       abi.encodeWithSelector(ISpoke.ReserveCannotBeUsedAsCollateral.selector, daiReserveId)
     );
     vm.prank(SPOKE_ADMIN);
-    ISpoke(spoke1).setUsingAsCollateral(daiReserveId, usingAsCollateral);
+    spoke1.setUsingAsCollateral(daiReserveId, usingAsCollateral);
   }
 
   function test_setUsingAsCollateral_revertsWith_ReserveFrozen() public {
@@ -88,10 +167,10 @@ contract SpokeConfigTest is SpokeBase {
 
     // disallow when activating
     vm.expectRevert(ISpoke.ReserveFrozen.selector);
-    ISpoke(spoke1).setUsingAsCollateral(daiReserveId, true);
+    spoke1.setUsingAsCollateral(daiReserveId, true);
 
     // allow when deactivating
-    ISpoke(spoke1).setUsingAsCollateral(daiReserveId, false);
+    spoke1.setUsingAsCollateral(daiReserveId, false);
     vm.stopPrank();
   }
 
@@ -102,7 +181,7 @@ contract SpokeConfigTest is SpokeBase {
 
     vm.expectRevert(ISpoke.ReserveNotActive.selector);
     vm.prank(SPOKE_ADMIN);
-    ISpoke(spoke1).setUsingAsCollateral(daiReserveId, true);
+    spoke1.setUsingAsCollateral(daiReserveId, true);
   }
 
   function test_setUsingAsCollateral_revertsWith_ReservePaused() public {
@@ -112,7 +191,7 @@ contract SpokeConfigTest is SpokeBase {
 
     vm.expectRevert(ISpoke.ReservePaused.selector);
     vm.prank(SPOKE_ADMIN);
-    ISpoke(spoke1).setUsingAsCollateral(daiReserveId, true);
+    spoke1.setUsingAsCollateral(daiReserveId, true);
   }
 
   function test_setUsingAsCollateral() public {
@@ -132,7 +211,7 @@ contract SpokeConfigTest is SpokeBase {
     vm.prank(bob);
     vm.expectEmit(address(spoke1));
     emit ISpoke.UsingAsCollateral(daiReserveId, bob, usingAsCollateral);
-    ISpoke(spoke1).setUsingAsCollateral(daiReserveId, usingAsCollateral);
+    spoke1.setUsingAsCollateral(daiReserveId, usingAsCollateral);
 
     DataTypes.UserPosition memory userData = spoke1.getUserPosition(daiReserveId, bob);
     assertEq(userData.usingAsCollateral, usingAsCollateral, 'wrong usingAsCollateral');
@@ -149,13 +228,48 @@ contract SpokeConfigTest is SpokeBase {
     spoke1.updateReserveConfig(daiReserveId, config);
   }
 
+  function test_updateReserveConfig_fuzz_revertsWith_InvalidLiquidityPremium(
+    uint256 liquidityPremium
+  ) public {
+    liquidityPremium = bound(
+      liquidityPremium,
+      PercentageMath.PERCENTAGE_FACTOR * 10 + 1,
+      type(uint256).max
+    );
+
+    uint256 daiReserveId = _daiReserveId(spoke1);
+    DataTypes.ReserveConfig memory config = spoke1.getReserve(daiReserveId).config;
+
+    config.liquidityPremium = liquidityPremium;
+
+    vm.expectRevert(ISpoke.InvalidLiquidityPremium.selector);
+    vm.prank(SPOKE_ADMIN);
+    spoke1.updateReserveConfig(daiReserveId, config);
+  }
+
   function test_updateReserveConfig_revertsWith_InvalidReserve() public {
     uint256 invalidReserveId = spoke1.reserveCount();
     DataTypes.ReserveConfig memory config;
+    config.liquidationBonus = PercentageMath.PERCENTAGE_FACTOR;
 
     vm.expectRevert(ISpoke.InvalidReserve.selector);
     vm.prank(SPOKE_ADMIN);
     spoke1.updateReserveConfig(invalidReserveId, config);
+  }
+
+  function test_updateReserveConfig_fuzz_revertsWith_InvalidReserve(
+    uint256 reserveId,
+    uint256 liquidationBonus
+  ) public {
+    reserveId = bound(reserveId, spoke1.reserveCount() + 1, type(uint256).max);
+    liquidationBonus = bound(liquidationBonus, MIN_LIQUIDATION_BONUS, MAX_LIQUIDATION_BONUS);
+
+    DataTypes.ReserveConfig memory config;
+    config.liquidationBonus = liquidationBonus;
+
+    vm.expectRevert(ISpoke.InvalidReserve.selector);
+    vm.prank(SPOKE_ADMIN);
+    spoke1.updateReserveConfig(reserveId, config);
   }
 
   function test_updateReserveConfig_revertsWith_InvalidCollateralFactor() public {
@@ -168,10 +282,41 @@ contract SpokeConfigTest is SpokeBase {
     spoke1.updateReserveConfig(daiReserveId, config);
   }
 
+  function test_updateReserveConfig_fuzz_revertsWith_InvalidCollateralFactor(
+    uint256 collateralFactor
+  ) public {
+    collateralFactor = bound(
+      collateralFactor,
+      PercentageMath.PERCENTAGE_FACTOR + 1,
+      type(uint256).max
+    );
+
+    uint256 daiReserveId = _daiReserveId(spoke1);
+    DataTypes.ReserveConfig memory config = spoke1.getReserve(daiReserveId).config;
+    config.collateralFactor = collateralFactor;
+
+    vm.expectRevert(ISpoke.InvalidCollateralFactor.selector);
+    vm.prank(SPOKE_ADMIN);
+    spoke1.updateReserveConfig(daiReserveId, config);
+  }
+
   function test_updateReserveConfig_revertsWith_InvalidLiquidationBonus() public {
     uint256 daiReserveId = _daiReserveId(spoke1);
     DataTypes.ReserveConfig memory config = spoke1.getReserve(daiReserveId).config;
-    config.liquidationBonus = PercentageMath.PERCENTAGE_FACTOR + 1;
+    config.liquidationBonus = PercentageMath.PERCENTAGE_FACTOR - 1;
+
+    vm.expectRevert(ISpoke.InvalidLiquidationBonus.selector);
+    vm.prank(SPOKE_ADMIN);
+    spoke1.updateReserveConfig(daiReserveId, config);
+  }
+
+  function test_updateReserveConfig_fuzz_revertsWith_InvalidLiquidationBonus(
+    uint256 liquidationBonus
+  ) public {
+    liquidationBonus = bound(liquidationBonus, 0, PercentageMath.PERCENTAGE_FACTOR - 1);
+    uint256 daiReserveId = _daiReserveId(spoke1);
+    DataTypes.ReserveConfig memory config = spoke1.getReserve(daiReserveId).config;
+    config.liquidationBonus = liquidationBonus;
 
     vm.expectRevert(ISpoke.InvalidLiquidationBonus.selector);
     vm.prank(SPOKE_ADMIN);
@@ -186,7 +331,7 @@ contract SpokeConfigTest is SpokeBase {
       frozen: true,
       paused: true,
       collateralFactor: 10_00,
-      liquidationBonus: 10_00,
+      liquidationBonus: 110_00,
       liquidityPremium: 10_00,
       borrowable: true,
       collateral: true
@@ -224,7 +369,28 @@ contract SpokeConfigTest is SpokeBase {
       frozen: true,
       paused: true,
       collateralFactor: 10_00,
-      liquidationBonus: 10_00,
+      liquidationBonus: 110_00,
+      liquidityPremium: 10_00,
+      borrowable: true,
+      collateral: true
+    });
+
+    vm.expectRevert(); // error from LH in reading invalid index from assetList array
+    vm.prank(SPOKE_ADMIN);
+    spoke1.addReserve(assetId, newReserveConfig);
+  }
+
+  function test_addReserve_fuzz_reverts_invalid_assetId(uint256 assetId) public {
+    assetId = bound(assetId, hub.assetCount(), type(uint256).max); // invalid assetId
+
+    uint256 reserveId = spoke1.reserveCount();
+    DataTypes.ReserveConfig memory newReserveConfig = DataTypes.ReserveConfig({
+      decimals: 18,
+      active: true,
+      frozen: true,
+      paused: true,
+      collateralFactor: 10_00,
+      liquidationBonus: 110_00,
       liquidityPremium: 10_00,
       borrowable: true,
       collateral: true
@@ -243,7 +409,7 @@ contract SpokeConfigTest is SpokeBase {
       frozen: true,
       paused: true,
       collateralFactor: 10_00,
-      liquidationBonus: 10_00,
+      liquidationBonus: 110_00,
       liquidityPremium: 10_00,
       borrowable: true,
       collateral: true
@@ -253,4 +419,167 @@ contract SpokeConfigTest is SpokeBase {
     vm.prank(SPOKE_ADMIN);
     spoke1.addReserve(reserveId, newReserveConfig);
   }
+
+  function test_addReserve_fuzz_revertsWith_InvalidReserveDecimals(
+    uint256 reserveId,
+    uint256 decimals
+  ) public {
+    decimals = bound(decimals, hub.MAX_ALLOWED_ASSET_DECIMALS() + 1, type(uint256).max); // invalid decimals
+    reserveId = bound(reserveId, 0, spoke1.reserveCount());
+
+    DataTypes.ReserveConfig memory newReserveConfig = DataTypes.ReserveConfig({
+      decimals: decimals,
+      active: true,
+      frozen: true,
+      paused: true,
+      collateralFactor: 10_00,
+      liquidationBonus: 110_00,
+      liquidityPremium: 10_00,
+      borrowable: true,
+      collateral: true
+    });
+
+    vm.expectRevert(ISpoke.InvalidReserveDecimals.selector);
+    vm.prank(SPOKE_ADMIN);
+    spoke1.addReserve(reserveId, newReserveConfig);
+  }
+
+  function test_updateLiquidationConfig_closeFactor() public {
+    uint256 newCloseFactor = HEALTH_FACTOR_LIQUIDATION_THRESHOLD + 1;
+
+    test_updateLiquidationConfig_fuzz_closeFactor(newCloseFactor);
+  }
+
+  function test_updateLiquidationConfig_fuzz_closeFactor(uint256 newCloseFactor) public {
+    newCloseFactor = bound(newCloseFactor, HEALTH_FACTOR_LIQUIDATION_THRESHOLD, type(uint256).max);
+
+    DataTypes.LiquidationConfig memory liquidationConfig;
+    liquidationConfig.closeFactor = newCloseFactor;
+
+    vm.expectEmit(address(spoke1));
+    emit ISpoke.LiquidationConfigUpdated(liquidationConfig);
+    vm.prank(SPOKE_ADMIN);
+    spoke1.updateLiquidationConfig(liquidationConfig);
+
+    assertEq(spoke1.getLiquidationConfig().closeFactor, newCloseFactor, 'wrong close factor');
+  }
+
+  function test_updateLiquidationConfig_liqBonusConfig() public {
+    DataTypes.LiquidationConfig memory liquidationConfig = DataTypes.LiquidationConfig({
+      closeFactor: HEALTH_FACTOR_LIQUIDATION_THRESHOLD,
+      healthFactorBonusThreshold: 0.9e18,
+      liquidationBonusFactor: 10_00
+    });
+    test_updateLiquidationConfig_fuzz_liqBonusConfig(liquidationConfig);
+  }
+
+  function test_updateLiquidationConfig_fuzz_liqBonusConfig(
+    DataTypes.LiquidationConfig memory liquidationConfig
+  ) public {
+    liquidationConfig.healthFactorBonusThreshold = bound(
+      liquidationConfig.healthFactorBonusThreshold,
+      0,
+      spoke1.HEALTH_FACTOR_LIQUIDATION_THRESHOLD() - 1
+    );
+    liquidationConfig.liquidationBonusFactor = bound(
+      liquidationConfig.liquidationBonusFactor,
+      0,
+      MAX_LIQUIDATION_BONUS_FACTOR
+    );
+    liquidationConfig.closeFactor = bound(
+      liquidationConfig.closeFactor,
+      spoke1.HEALTH_FACTOR_LIQUIDATION_THRESHOLD(),
+      type(uint256).max
+    );
+
+    vm.expectEmit(address(spoke1));
+    emit ISpoke.LiquidationConfigUpdated(liquidationConfig);
+    vm.prank(SPOKE_ADMIN);
+    spoke1.updateLiquidationConfig(liquidationConfig);
+
+    assertEq(
+      spoke1.getLiquidationConfig().healthFactorBonusThreshold,
+      liquidationConfig.healthFactorBonusThreshold,
+      'wrong healthFactorBonusThreshold'
+    );
+    assertEq(
+      spoke1.getLiquidationConfig().liquidationBonusFactor,
+      liquidationConfig.liquidationBonusFactor,
+      'wrong liquidationBonusFactor'
+    );
+  }
+
+  function test_updateLiquidationConfig_revertsWith_InvalidHealthFactorBonusThreshold() public {
+    DataTypes.LiquidationConfig memory liquidationConfig = DataTypes.LiquidationConfig({
+      closeFactor: HEALTH_FACTOR_LIQUIDATION_THRESHOLD,
+      healthFactorBonusThreshold: HEALTH_FACTOR_LIQUIDATION_THRESHOLD,
+      liquidationBonusFactor: 10_00
+    });
+
+    test_updateLiquidationConfig_fuzz_revertsWith_InvalidHealthFactorBonusThreshold(
+      liquidationConfig
+    );
+  }
+
+  function test_updateLiquidationConfig_fuzz_revertsWith_InvalidHealthFactorBonusThreshold(
+    DataTypes.LiquidationConfig memory liquidationConfig
+  ) public {
+    liquidationConfig.healthFactorBonusThreshold = bound(
+      liquidationConfig.healthFactorBonusThreshold,
+      spoke1.HEALTH_FACTOR_LIQUIDATION_THRESHOLD(),
+      type(uint256).max
+    );
+    liquidationConfig.liquidationBonusFactor = bound(
+      liquidationConfig.liquidationBonusFactor,
+      0,
+      MAX_LIQUIDATION_BONUS_FACTOR
+    );
+    liquidationConfig.closeFactor = bound(
+      liquidationConfig.closeFactor,
+      spoke1.HEALTH_FACTOR_LIQUIDATION_THRESHOLD(),
+      type(uint256).max
+    ); // valid values
+
+    vm.expectRevert(ISpoke.InvalidHealthFactorBonusThreshold.selector);
+    vm.prank(SPOKE_ADMIN);
+    spoke1.updateLiquidationConfig(liquidationConfig);
+  }
+
+  function test_updateLiquidationConfig_revertsWith_InvalidLiquidationBonusFactor() public {
+    DataTypes.LiquidationConfig memory liquidationConfig = DataTypes.LiquidationConfig({
+      closeFactor: HEALTH_FACTOR_LIQUIDATION_THRESHOLD,
+      healthFactorBonusThreshold: 0.9e18,
+      liquidationBonusFactor: MAX_LIQUIDATION_BONUS_FACTOR + 1
+    });
+
+    test_updateVariableLiquidationBonusConfig_fuzz_revertsWith_InvalidLiquidationBonusFactor(
+      liquidationConfig
+    );
+  }
+
+  function test_updateVariableLiquidationBonusConfig_fuzz_revertsWith_InvalidLiquidationBonusFactor(
+    DataTypes.LiquidationConfig memory liquidationConfig
+  ) public {
+    liquidationConfig.healthFactorBonusThreshold = bound(
+      liquidationConfig.healthFactorBonusThreshold,
+      0,
+      spoke1.HEALTH_FACTOR_LIQUIDATION_THRESHOLD()
+    );
+    liquidationConfig.liquidationBonusFactor = bound(
+      liquidationConfig.liquidationBonusFactor,
+      MAX_LIQUIDATION_BONUS_FACTOR + 1,
+      type(uint256).max
+    );
+    liquidationConfig.closeFactor = bound(
+      liquidationConfig.closeFactor,
+      spoke1.HEALTH_FACTOR_LIQUIDATION_THRESHOLD(),
+      type(uint256).max
+    ); // valid values
+
+    vm.expectRevert(ISpoke.InvalidLiquidationBonusFactor.selector);
+    vm.prank(SPOKE_ADMIN);
+    spoke1.updateLiquidationConfig(liquidationConfig);
+  }
+
+  // TODO: tests for separate oracle, with different asset prices
 }
