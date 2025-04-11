@@ -29,8 +29,8 @@ contract SpokeGettersTest is SpokeBase {
       LiquidationLogic.calculate(
         _config,
         healthFactor,
-        spoke1.HEALTH_FACTOR_LIQUIDATION_THRESHOLD(),
-        spoke1.getReserve(reserveId).config.liquidationBonus
+        spoke1.getReserve(reserveId).config.liquidationBonus,
+        spoke1.HEALTH_FACTOR_LIQUIDATION_THRESHOLD()
       ),
       'calc should match'
     );
@@ -72,8 +72,8 @@ contract SpokeGettersTest is SpokeBase {
       LiquidationLogic.calculate(
         _config,
         healthFactor,
-        spoke1.HEALTH_FACTOR_LIQUIDATION_THRESHOLD(),
-        spoke1.getReserve(reserveId).config.liquidationBonus
+        spoke1.getReserve(reserveId).config.liquidationBonus,
+        spoke1.HEALTH_FACTOR_LIQUIDATION_THRESHOLD()
       ),
       'calc should match'
     );
