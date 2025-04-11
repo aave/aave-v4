@@ -258,4 +258,115 @@ contract SpokeWithdrawScenarioTest is SpokeBase {
       'bob balance'
     );
   }
+
+  /// Let protocol have some funds initially. User deposits, immediately withdraws, check delta on share amounts
+  function test_withdraw_round_trip_deposit_withdraw(
+    uint256 reserveId,
+    uint256 protocolStartingBalance,
+    address caller,
+    uint256 assets
+  ) public {
+    vm.assume(caller != address(0));
+    reserveId = bound(reserveId, 0, spoke1.reserveCount() - 1);
+    protocolStartingBalance = bound(protocolStartingBalance, 1, MAX_SUPPLY_AMOUNT - 1); // Allow some buffer from supply cap
+    assets = bound(assets, 1, MAX_SUPPLY_AMOUNT - protocolStartingBalance);
+
+    // Set up initial state of the vault by having derl supply some starting balance
+    Utils.supply({
+      spoke: spoke1,
+      reserveId: reserveId,
+      user: derl,
+      amount: protocolStartingBalance,
+      onBehalfOf: derl
+    });
+
+    DataTypes.Reserve memory reserve = spoke1.getReserve(reserveId);
+
+    // Deal caller the balance to deposit, and approve hub
+    deal(reserve.asset, caller, assets);
+    vm.prank(caller);
+    IERC20(reserve.asset).approve(address(hub), assets);
+
+    // Supply and confirm share amount from event emission
+    uint256 shares1 = hub.convertToSuppliedShares(reserve.assetId, assets);
+    vm.expectEmit(address(spoke1));
+    emit ISpoke.Supply(reserveId, caller, shares1);
+    vm.prank(caller);
+    spoke1.supply(reserveId, assets);
+
+    // Withdraw and confirm share amount from event emission
+    uint256 shares2 = hub.convertToSuppliedShares(reserve.assetId, assets);
+    vm.expectEmit(address(spoke1));
+    emit ISpoke.Withdraw(reserveId, caller, shares2, caller);
+    vm.prank(caller);
+    spoke1.withdraw(reserveId, assets, caller);
+
+    // Check for delta of 0
+    uint256 delta = 0;
+    assertApproxGeAbs(shares2, shares1, delta);
+  }
+
+  /// Let protocol have some funds initially. Assume user has a nonzero balance to withdraw.
+  /// User withdraws, then immediately deposits. Check delta on share amounts.
+  function test_withdraw_round_trip_withdraw_deposit(
+    uint256 reserveId,
+    uint256 protocolStartingBalance,
+    uint256 callerStartingBalance,
+    address caller,
+    uint256 assets
+  ) public {
+    vm.assume(caller != address(0));
+    reserveId = bound(reserveId, 0, spoke1.reserveCount() - 1);
+    protocolStartingBalance = bound(protocolStartingBalance, 1, MAX_SUPPLY_AMOUNT - 1); // Allow some buffer from supply cap
+    assets = bound(assets, 1, MAX_SUPPLY_AMOUNT - protocolStartingBalance);
+    // Caller starting balance must be at least the amount they will withdraw during test
+    callerStartingBalance = bound(
+      callerStartingBalance,
+      assets,
+      MAX_SUPPLY_AMOUNT - protocolStartingBalance
+    );
+
+    // Set up initial state of the vault by having derl supply some starting balance
+    Utils.supply({
+      spoke: spoke1,
+      reserveId: reserveId,
+      user: derl,
+      amount: protocolStartingBalance,
+      onBehalfOf: derl
+    });
+
+    DataTypes.Reserve memory reserve = spoke1.getReserve(reserveId);
+
+    // Deal caller the balance they will supply, and approve hub
+    deal(reserve.asset, caller, callerStartingBalance);
+    vm.prank(caller);
+    IERC20(reserve.asset).approve(address(hub), type(uint256).max);
+
+    // Set up initial state of caller by supplying their starting balance
+    Utils.supply({
+      spoke: spoke1,
+      reserveId: reserveId,
+      user: caller,
+      amount: callerStartingBalance,
+      onBehalfOf: caller
+    });
+
+    // Withdraw and confirm share amount from event emission
+    uint256 shares1 = hub.convertToSuppliedShares(reserve.assetId, assets);
+    vm.expectEmit(address(spoke1));
+    emit ISpoke.Withdraw(reserveId, caller, shares1, caller);
+    vm.prank(caller);
+    spoke1.withdraw(reserveId, assets, caller);
+
+    // Supply and confirm share amount from event emission
+    uint256 shares2 = hub.convertToSuppliedShares(reserve.assetId, assets);
+    vm.expectEmit(address(spoke1));
+    emit ISpoke.Supply(reserveId, caller, shares2);
+    vm.prank(caller);
+    spoke1.supply(reserveId, assets);
+
+    // Check for delta of 0
+    uint256 delta = 0;
+    assertApproxGeAbs(shares2, shares1, delta);
+  }
 }

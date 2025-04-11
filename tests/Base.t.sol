@@ -714,6 +714,21 @@ abstract contract Base is Test {
     return hub.convertToSuppliedAssets(assetId, 1);
   }
 
+  /// @dev Helper from ERC4626 prop tests: https://github.com/a16z/erc4626-tests/blob/main/ERC4626.prop.sol#L377-L389
+  function assertApproxGeAbs(uint a, uint b, uint maxDelta) internal {
+    if (!(a >= b)) {
+      uint dt = b - a;
+      if (dt > maxDelta) {
+        emit log('Error: a >=~ b not satisfied [uint]');
+        emit log_named_uint('   Value a', a);
+        emit log_named_uint('   Value b', b);
+        emit log_named_uint(' Max Delta', maxDelta);
+        emit log_named_uint('     Delta', dt);
+        fail();
+      }
+    }
+  }
+
   /// @dev Helper function to calculate the amount of base and premium debt to restore
   function _calculateRestoreAmount(
     uint256 baseDebt,
