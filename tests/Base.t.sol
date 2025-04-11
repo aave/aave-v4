@@ -11,7 +11,6 @@ import {WadRayMath} from 'src/libraries/math/WadRayMath.sol';
 import {SharesMath} from 'src/libraries/math/SharesMath.sol';
 import {MathUtils} from 'src/libraries/math/MathUtils.sol';
 import {DefaultReserveInterestRateStrategy, IDefaultInterestRateStrategy, IReserveInterestRateStrategy} from 'src/contracts/DefaultReserveInterestRateStrategy.sol';
-import {ISpoke} from 'src/interfaces/ISpoke.sol';
 import {DataTypes} from 'src/libraries/types/DataTypes.sol';
 import {Utils} from './Utils.sol';
 
@@ -272,7 +271,7 @@ abstract contract Base is Test {
       frozen: false,
       paused: false,
       collateralFactor: 80_00,
-      liquidationBonus: 10_000,
+      liquidationBonus: 100_00,
       liquidityPremium: 15_00,
       borrowable: true,
       collateral: true,

@@ -6,7 +6,6 @@ import {DataTypes} from 'src/libraries/types/DataTypes.sol';
 import {WadRayMath} from 'src/libraries/math/WadRayMath.sol';
 import {PercentageMath} from 'src/libraries/math/PercentageMath.sol';
 import {Base} from 'tests/Base.t.sol';
-import {console2 as console} from 'forge-std/console2.sol';
 
 contract LiquidationLogicTest is Base {
   using PercentageMath for uint256;
