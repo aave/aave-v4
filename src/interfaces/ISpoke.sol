@@ -80,6 +80,10 @@ interface ISpoke {
   error InvalidDebtToCover();
   error InvalidLiquidationProtocolFeePercentage();
   error InvalidTreasuryAddress();
+  error InvalidOracleAddress();
+  error InvalidHubAddress();
+  error InvalidHealthFactorBonusThreshold();
+  error InvalidLiquidationBonusFactor();
 
   function addReserve(
     uint256 assetId,

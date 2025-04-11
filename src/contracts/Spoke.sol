@@ -26,6 +26,7 @@ contract Spoke is ISpoke {
   uint256 public constant HEALTH_FACTOR_LIQUIDATION_THRESHOLD = WadRayMath.WAD;
   ILiquidityHub public immutable HUB;
   address internal _treasury;
+  IPriceOracle public immutable oracle;
 
   mapping(address user => mapping(uint256 reserveId => DataTypes.UserPosition position))
     internal _userPositions;
@@ -34,15 +35,22 @@ contract Spoke is ISpoke {
   uint256[] public reservesList; // todo: rm, not needed
   uint256 public reserveCount;
 
-  constructor(address hubAddress, address treasury, uint256 closeFactorValue) {
+  constructor(
+    address hubAddress,
+    address oracleAddress,
+    address treasury,
+    uint256 closeFactorValue
+  ) {
     require(hubAddress != address(0), InvalidHubAddress());
     require(treasury != address(0), InvalidTreasuryAddress());
+    require(oracleAddress != address(0), InvalidOracleAddress());
     // close factor is required, but variable liquidation bonus config is not
     _validateCloseFactor(closeFactorValue);
 
     HUB = ILiquidityHub(hubAddress);
     _liquidationConfig.closeFactor = closeFactorValue;
     _treasury = treasury;
+    oracle = IPriceOracle(oracleAddress);
   }
 
   // /////
