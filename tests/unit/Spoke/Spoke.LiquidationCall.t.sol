@@ -113,6 +113,8 @@ contract LiquidationCallTest is SpokeBase {
     // debt: weth
     uint256 borrowAmount = 20 * 10 ** tokenList.weth.decimals(); // 20 eth, $40k
 
+    uint256 liqBonus = spoke1.getReserve(wbtcReserveId).config.liquidationBonus;
+
     _deployLiquidity(spoke1, wethReserveId, borrowAmount);
     Utils.supplyCollateral(spoke1, wbtcReserveId, alice, wbtcAmount, alice);
     Utils.supplyCollateral(spoke1, daiReserveId, alice, daiAmount, alice);
@@ -126,7 +128,9 @@ contract LiquidationCallTest is SpokeBase {
     UserTokenBalance memory balancesBefore = _loadUserBalances();
 
     uint256 initialDebt = spoke1.getUserTotalDebt(wethReserveId, alice);
-    uint256 liquidatedDebt = _convertAssetAmount(wbtcAssetId, wbtcAmount, wethAssetId);
+    uint256 liquidatedDebt = _convertAssetAmount(wbtcAssetId, wbtcAmount, wethAssetId).percentDiv(
+      liqBonus
+    );
 
     // bob liquidates alice
     vm.expectEmit(address(spoke1));
@@ -191,7 +195,6 @@ contract LiquidationCallTest is SpokeBase {
     uint256 amount,
     uint256 toAssetId
   ) internal returns (uint256) {
-    console.log('%e %e', oracle.getAssetPrice(toAssetId), oracle.getAssetPrice(assetId));
     return
       (amount * oracle.getAssetPrice(assetId) * 10 ** hub.getAsset(toAssetId).config.decimals) /
       (oracle.getAssetPrice(toAssetId) * 10 ** hub.getAsset(assetId).config.decimals);
@@ -268,6 +271,135 @@ contract LiquidationCallTest is SpokeBase {
     balanceChanges.treasury.weth = userBalacesAfter.treasury.weth > userBalancesBefore.treasury.weth
       ? userBalacesAfter.treasury.weth - userBalancesBefore.treasury.weth
       : userBalancesBefore.treasury.weth - userBalacesAfter.treasury.weth;
+  }
+
+  /// calc threshold at which LB equals close factor
+  function _calculateLiqBonusThreshold(
+    uint256 closeFactor,
+    uint256 collateralFactor
+  ) internal returns (uint256) {
+    return (closeFactor * PercentageMath.PERCENTAGE_FACTOR).percentDiv(collateralFactor).dewadify();
+  }
+
+  struct LiqTestData {
+    uint256 daiReserveId;
+    uint256 wethReserveId;
+    uint256 usdxReserveId;
+    uint256 wbtcReserveId;
+    Amount[5] colls;
+    Amount[5] debts;
+    uint256 collateralFactor;
+    uint256 closeFactor;
+    uint256 liqBonus;
+    uint256 initialDebt;
+    uint256 liquidatedDebt;
+  }
+
+  struct Amount {
+    uint256 wbtc;
+    uint256 weth;
+    uint256 dai;
+    uint256 usdx;
+  }
+
+  // no liquidationProtocolFeePercentage
+
+  /// scenario where fully liquidating a collateral still does not improve a position to close factor
+  /// default close factor of 1; multiple collaterals
+  function test_liquidationCall_all_collateral_default_close_factor_multi_coll_max_scaledLiqBonus()
+    public
+  {
+    LiqTestData memory state;
+
+    state.wethReserveId = _wethReserveId(spoke1);
+    state.daiReserveId = _daiReserveId(spoke1);
+    state.wbtcReserveId = _wbtcReserveId(spoke1);
+
+    // collateral: wbtc/dai
+    state.colls[0].wbtc = 1 * 10 ** tokenList.wbtc.decimals(); // $50k wbtc
+    state.colls[0].dai = 10_000 * 10 ** tokenList.dai.decimals(); // $10k dai
+    // debt: weth
+    state.debts[0].weth = 20 * 10 ** tokenList.weth.decimals(); // 20 eth, $40k
+
+    state.collateralFactor = 75_00;
+    state.closeFactor = 1.05e18;
+    state.liqBonus = _calculateLiqBonusThreshold(state.closeFactor, state.collateralFactor);
+
+    _deployLiquidity(spoke1, state.wethReserveId, state.debts[0].weth);
+    Utils.supplyCollateral(spoke1, state.wbtcReserveId, alice, state.colls[0].wbtc, alice);
+    Utils.supplyCollateral(spoke1, state.daiReserveId, alice, state.colls[0].dai, alice);
+    Utils.borrow(spoke1, state.wethReserveId, alice, state.debts[0].weth, alice);
+
+    // wbtc collateral value drop to reduce HF < 1
+    oracle.setAssetPrice(wbtcAssetId, 20_000e8);
+    updateLiquidationBonus(spoke1, state.wbtcReserveId, state.liqBonus);
+    updateCollateralFactor(spoke1, state.wbtcReserveId, state.collateralFactor);
+    updateCloseFactor(spoke1, state.closeFactor);
+
+    assertLt(spoke1.getHealthFactor(alice), HEALTH_FACTOR_LIQUIDATION_THRESHOLD);
+
+    UserTokenBalance memory balancesBefore = _loadUserBalances();
+
+    state.initialDebt = spoke1.getUserTotalDebt(state.wethReserveId, alice);
+    state.liquidatedDebt = _convertAssetAmount(wbtcAssetId, state.colls[0].wbtc, wethAssetId)
+      .percentDiv(state.liqBonus);
+
+    // bob liquidates alice
+    vm.expectEmit(address(spoke1));
+    emit ISpoke.LiquidationCall(
+      address(tokenList.wbtc),
+      address(tokenList.weth),
+      alice,
+      state.liquidatedDebt,
+      state.colls[0].wbtc,
+      bob
+    );
+    vm.prank(bob);
+    spoke1.liquidationCall({
+      collateralReserveId: state.wbtcReserveId,
+      debtReserveId: state.wethReserveId,
+      user: alice,
+      debtToCover: state.debts[0].weth
+    });
+
+    UserTokenBalance memory balancesAfter = _loadUserBalances();
+    UserTokenBalance memory balanceChanges = _calculateBalanceChanges(
+      balancesBefore,
+      balancesAfter
+    );
+
+    // dai collateral
+    assertEq(
+      spoke1.getUserSuppliedAmount(state.daiReserveId, alice),
+      state.colls[0].dai,
+      'alice dai coll unchanged'
+    );
+    assertEq(balanceChanges.alice.dai, 0, 'alice has no dai change');
+    assertEq(balanceChanges.bob.dai, 0, 'bob receives 0 dai coll');
+    assertEq(balanceChanges.treasury.dai, 0, 'treasury receives 0 dai coll');
+
+    // wbtc collateral
+    assertEq(
+      spoke1.getUserSuppliedAmount(state.wbtcReserveId, alice),
+      0,
+      'alice wbtc coll liquidated'
+    );
+    assertEq(balanceChanges.alice.wbtc, 0, 'alice has no wbtc change');
+    assertEq(balanceChanges.bob.wbtc, state.colls[0].wbtc, 'bob receives all wbtc coll');
+    assertEq(balanceChanges.treasury.wbtc, 0, 'treasury receives 0 wbtc coll');
+
+    // weth debt
+    assertEq(
+      state.initialDebt - spoke1.getUserTotalDebt(state.wethReserveId, alice),
+      state.liquidatedDebt,
+      'alice weth debt repaid'
+    );
+    assertEq(balanceChanges.alice.weth, 0, 'alice has no weth change');
+    assertEq(balanceChanges.bob.weth, state.liquidatedDebt, 'bob pays all weth debt');
+    assertEq(balanceChanges.treasury.weth, 0, 'treasury has no weth change');
+
+    // hf < 1 after
+    assertLt(spoke1.getHealthFactor(alice), HEALTH_FACTOR_LIQUIDATION_THRESHOLD);
   }
 
   /// scenario where fully liquidating a collateral still does not improve a position to close factor
@@ -3319,7 +3451,10 @@ contract LiquidationCallTest is SpokeBase {
 
   // todo: test on if denom is negative, ie HF < LB * CF
   // todo: test w diff combos of decimals
-  // test with user's new risk premium
+  // test with user's new risk premium post-liquidation
   // test w HF due to debt interest growing
   // test w HF due to debt asset price drop
+  // tests with Liq Threshold == close factor
+  // tests with Liq Threshold < close factor
+  // variable liquidation bonus
 }

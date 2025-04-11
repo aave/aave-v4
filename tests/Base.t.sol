@@ -48,7 +48,8 @@ abstract contract Base is Test {
   uint256 internal constant MIN_LIQUIDATION_BONUS = PercentageMath.PERCENTAGE_FACTOR; // 100% == 0% bonus
   uint256 internal constant MAX_LIQUIDATION_BONUS = PercentageMath.PERCENTAGE_FACTOR * 10; // 1000% -> 90% bonus
   uint256 internal constant MAX_LIQUIDATION_BONUS_FACTOR = PercentageMath.PERCENTAGE_FACTOR; // 100%
-  uint256 internal constant HEALTH_FACTOR_LIQUIDATION_THRESHOLD = WadRayMath.WAD;
+  uint256 internal constant HEALTH_FACTOR_LIQUIDATION_THRESHOLD = 1e18;
+  uint256 internal constant MAX_CLOSE_FACTOR = 1.5e18;
 
   // TODO: remove after migrating to token list
   IERC20 internal usdc;
@@ -342,7 +343,7 @@ abstract contract Base is Test {
       frozen: false,
       paused: false,
       collateralFactor: 75_00,
-      liquidationBonus: 105_00,
+      liquidationBonus: 100_00,
       liquidityPremium: 20_00,
       liquidationProtocolFeePercentage: 0,
       borrowable: true,
@@ -652,6 +653,18 @@ abstract contract Base is Test {
     spoke.updateReserveConfig(reserveId, config);
   }
 
+  function updateLiquidationBonus(
+    ISpoke spoke,
+    uint256 reserveId,
+    uint256 newLiquidationBonus
+  ) internal {
+    DataTypes.ReserveConfig memory config = spoke.getReserve(reserveId).config;
+    config.liquidationBonus = newLiquidationBonus;
+
+    vm.prank(SPOKE_ADMIN);
+    spoke.updateReserveConfig(reserveId, config);
+  }
+
   function setUsingAsCollateral(
     ISpoke spoke,
     address user,
@@ -698,7 +711,7 @@ abstract contract Base is Test {
     spoke.updateReserveConfig(reserveId, reserveConfig);
   }
 
-  function _updateCloseFactor(ISpoke spoke, uint256 newCloseFactor) internal {
+  function updateCloseFactor(ISpoke spoke, uint256 newCloseFactor) internal {
     DataTypes.LiquidationConfig memory liqConfig = spoke.getLiquidationConfig();
     liqConfig.closeFactor = newCloseFactor;
     spoke.updateLiquidationConfig(liqConfig);

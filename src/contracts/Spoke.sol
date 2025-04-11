@@ -23,7 +23,7 @@ contract Spoke is ISpoke {
   using KeyValueListInMemory for KeyValueListInMemory.List;
   using LiquidationLogic for DataTypes.LiquidationConfig;
 
-  uint256 public constant HEALTH_FACTOR_LIQUIDATION_THRESHOLD = WadRayMath.WAD;
+  uint256 public constant HEALTH_FACTOR_LIQUIDATION_THRESHOLD = 1e18;
   ILiquidityHub public immutable HUB;
   address internal _treasury;
   IPriceOracle public immutable oracle;
@@ -354,6 +354,11 @@ contract Spoke is ISpoke {
     // transfer to treasury
     IERC20(debtAsset).safeTransfer(msg.sender, liquidationProtocolFeeAmount);
 
+    console.log(
+      'emit LC: debt %e coll %e',
+      baseDebtToLiquidate + premiumDebtToLiquidate,
+      collateralToLiquidate
+    );
     emit LiquidationCall(
       collateralAsset,
       debtAsset,
