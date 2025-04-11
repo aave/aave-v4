@@ -27,6 +27,83 @@ contract LiquidationCallTest is SpokeBase {
   /// default close factor of 1
   function test_liquidationCall_all_collateral_default_close_factor() public {
     uint256 wethReserveId = _wethReserveId(spoke1);
+    uint256 wbtcReserveId = _wbtcReserveId(spoke1);
+
+    // // collateral: wbtc/dai
+    // uint256 wbtcAmount = 1 * 10 ** tokenList.wbtc.decimals(); // $50k wbtc
+    // debt: weth
+    uint256 borrowAmount = 20 * 10 ** tokenList.weth.decimals(); // 20 eth, $40k
+
+    uint256 wbtcAmount = _createMinCollateralPosition(
+      spoke1,
+      alice,
+      wbtcReserveId,
+      wethReserveId,
+      borrowAmount
+    );
+
+    // wbtc collateral value drop to reduce HF < 1
+    oracle.setAssetPrice(wbtcAssetId, 20_000e8);
+
+    assertLt(spoke1.getHealthFactor(alice), HEALTH_FACTOR_LIQUIDATION_THRESHOLD);
+
+    UserTokenBalance memory balancesBefore = _loadUserBalances();
+
+    uint256 initialDebt = spoke1.getUserTotalDebt(wethReserveId, alice);
+    uint256 liquidatedDebt = _convertAssetAmount(wbtcAssetId, wbtcAmount, wethAssetId);
+
+    // bob liquidates alice
+    vm.expectEmit(address(spoke1));
+    emit ISpoke.LiquidationCall(
+      address(tokenList.wbtc),
+      address(tokenList.weth),
+      alice,
+      liquidatedDebt,
+      wbtcAmount,
+      bob
+    );
+    vm.prank(bob);
+    spoke1.liquidationCall({
+      collateralReserveId: wbtcReserveId,
+      debtReserveId: wethReserveId,
+      user: alice,
+      debtToCover: borrowAmount
+    });
+
+    UserTokenBalance memory balancesAfter = _loadUserBalances();
+    UserTokenBalance memory balanceChanges = _calculateBalanceChanges(
+      balancesBefore,
+      balancesAfter
+    );
+
+    // wbtc collateral
+    assertEq(spoke1.getUserSuppliedAmount(wbtcReserveId, alice), 0, 'alice wbtc coll liquidated');
+    assertEq(balanceChanges.alice.wbtc, 0, 'alice has no wbtc change');
+    assertEq(balanceChanges.bob.wbtc, wbtcAmount, 'bob receives all wbtc coll');
+    assertEq(balanceChanges.treasury.wbtc, 0, 'treasury receives 0 wbtc coll');
+
+    // weth debt
+    assertEq(
+      initialDebt - spoke1.getUserTotalDebt(wethReserveId, alice),
+      _convertAssetAmount(wbtcAssetId, wbtcAmount, wethAssetId),
+      'alice weth debt repaid'
+    );
+    assertEq(balanceChanges.alice.weth, 0, 'alice has no weth change');
+    assertEq(
+      balanceChanges.bob.weth,
+      _convertAssetAmount(wbtcAssetId, wbtcAmount, wethAssetId),
+      'bob pays all weth debt'
+    );
+    assertEq(balanceChanges.treasury.weth, 0, 'treasury has no weth change');
+
+    // hf < 1 after
+    assertLt(spoke1.getHealthFactor(alice), HEALTH_FACTOR_LIQUIDATION_THRESHOLD);
+  }
+
+  /// scenario where fully liquidating a collateral still does not improve a position to close factor
+  /// default close factor of 1; multiple collaterals
+  function test_liquidationCall_all_collateral_default_close_factor_multi_coll() public {
+    uint256 wethReserveId = _wethReserveId(spoke1);
     uint256 daiReserveId = _daiReserveId(spoke1);
     uint256 wbtcReserveId = _wbtcReserveId(spoke1);
 
@@ -104,6 +181,9 @@ contract LiquidationCallTest is SpokeBase {
       'bob pays all weth debt'
     );
     assertEq(balanceChanges.treasury.weth, 0, 'treasury has no weth change');
+
+    // hf < 1 after
+    assertLt(spoke1.getHealthFactor(alice), HEALTH_FACTOR_LIQUIDATION_THRESHOLD);
   }
 
   function _convertAssetAmount(
@@ -3229,10 +3309,10 @@ contract LiquidationCallTest is SpokeBase {
     uint256 collReserveId,
     uint256 debtReserveId,
     uint256 debtAmount
-  ) internal {
+  ) internal returns (uint256 collAmount) {
     _deployLiquidity(spoke, debtReserveId, debtAmount * 10);
 
-    uint256 collAmount = _calcMinimumCollAmount(spoke, collReserveId, debtReserveId, debtAmount);
+    collAmount = _calcMinimumCollAmount(spoke, collReserveId, debtReserveId, debtAmount);
     Utils.supplyCollateral(spoke, collReserveId, user, collAmount, user);
     Utils.borrow(spoke, debtReserveId, user, debtAmount, user);
   }
