@@ -2,7 +2,6 @@
 pragma solidity ^0.8.10;
 
 import {IReserveInterestRateStrategy} from 'src/interfaces/IReserveInterestRateStrategy.sol';
-import {IPriceOracle} from 'src/interfaces/IPriceOracle.sol';
 
 library DataTypes {
   // Liquidity Hub types
@@ -78,7 +77,6 @@ library DataTypes {
     uint256 collateralFactor; // BPS TODO: use smaller uint
     uint256 liquidationBonus; // BPS, 100_00 represent a 0% bonus TODO: use smaller uint
     uint256 liquidityPremium; // BPS TODO: use smaller uint
-    IPriceOracle oracle;
   }
 
   struct UserPosition {

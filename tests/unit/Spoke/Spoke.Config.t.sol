@@ -6,13 +6,18 @@ import 'tests/unit/Spoke/SpokeBase.t.sol';
 contract SpokeConfigTest is SpokeBase {
   function test_spoke_deploy_revertsWith_InvalidHubAddress() public {
     vm.expectRevert(ISpoke.InvalidHubAddress.selector);
-    new Spoke(address(0), HEALTH_FACTOR_LIQUIDATION_THRESHOLD);
+    new Spoke(address(0), address(oracle), HEALTH_FACTOR_LIQUIDATION_THRESHOLD);
   }
 
   function test_spoke_deploy_revertsWith_InvalidCloseFactor() public {
     uint256 invalidCloseFactor = HEALTH_FACTOR_LIQUIDATION_THRESHOLD - 1;
     vm.expectRevert(ISpoke.InvalidCloseFactor.selector);
-    new Spoke(address(hub), invalidCloseFactor);
+    new Spoke(address(hub), address(oracle), invalidCloseFactor);
+  }
+
+  function test_spoke_deploy_revertsWith_InvalidOracleAddress() public {
+    vm.expectRevert(ISpoke.InvalidOracleAddress.selector);
+    new Spoke(address(hub), address(0), HEALTH_FACTOR_LIQUIDATION_THRESHOLD);
   }
 
   function test_updateReserveConfig() public {
@@ -28,8 +33,7 @@ contract SpokeConfigTest is SpokeBase {
       liquidationBonus: reserveData.config.liquidationBonus + 1,
       liquidityPremium: reserveData.config.liquidityPremium + 1,
       borrowable: !reserveData.config.borrowable,
-      collateral: !reserveData.config.collateral,
-      oracle: IPriceOracle(makeAddr('newOracle'))
+      collateral: !reserveData.config.collateral
     });
     vm.expectEmit(address(spoke1));
     emit ISpoke.ReserveConfigUpdated(daiReserveId, newReserveConfig);
@@ -55,7 +59,6 @@ contract SpokeConfigTest is SpokeBase {
     );
     assertEq(reserveData.config.borrowable, newReserveConfig.borrowable, 'wrong borrowable');
     assertEq(reserveData.config.collateral, newReserveConfig.collateral, 'wrong collateral');
-    assertEq(address(reserveData.config.oracle), address(newReserveConfig.oracle), 'wrong oracle');
   }
 
   function test_updateReserveConfig_fuzz(DataTypes.ReserveConfig memory newReserveConfig) public {
@@ -74,7 +77,6 @@ contract SpokeConfigTest is SpokeBase {
       0,
       PercentageMath.PERCENTAGE_FACTOR * 10
     );
-    vm.assume(address(newReserveConfig.oracle) != address(0));
 
     uint256 daiReserveId = _daiReserveId(spoke1);
     DataTypes.Reserve memory reserveData = spoke1.getReserve(daiReserveId);
@@ -105,7 +107,6 @@ contract SpokeConfigTest is SpokeBase {
     );
     assertEq(reserveData.config.borrowable, newReserveConfig.borrowable, 'wrong borrowable');
     assertEq(reserveData.config.collateral, newReserveConfig.collateral, 'wrong collateral');
-    assertEq(address(reserveData.config.oracle), address(newReserveConfig.oracle), 'wrong oracle');
   }
 
   function test_updateReserveConfig_cannot_update_decimals() public {
@@ -250,7 +251,6 @@ contract SpokeConfigTest is SpokeBase {
     uint256 invalidReserveId = spoke1.reserveCount();
     DataTypes.ReserveConfig memory config;
     config.liquidationBonus = PercentageMath.PERCENTAGE_FACTOR;
-    config.oracle = IPriceOracle(makeAddr('newOracle'));
 
     vm.expectRevert(ISpoke.InvalidReserve.selector);
     vm.prank(SPOKE_ADMIN);
@@ -266,7 +266,6 @@ contract SpokeConfigTest is SpokeBase {
 
     DataTypes.ReserveConfig memory config;
     config.liquidationBonus = liquidationBonus;
-    config.oracle = IPriceOracle(makeAddr('newOracle'));
 
     vm.expectRevert(ISpoke.InvalidReserve.selector);
     vm.prank(SPOKE_ADMIN);
@@ -324,16 +323,6 @@ contract SpokeConfigTest is SpokeBase {
     spoke1.updateReserveConfig(daiReserveId, config);
   }
 
-  function test_updateReserveConfig_revertsWith_InvalidOracle() public {
-    uint256 daiReserveId = _daiReserveId(spoke1);
-    DataTypes.ReserveConfig memory config = spoke1.getReserve(daiReserveId).config;
-    config.oracle = IPriceOracle(address(0));
-
-    vm.expectRevert(ISpoke.InvalidOracle.selector);
-    vm.prank(SPOKE_ADMIN);
-    spoke1.updateReserveConfig(daiReserveId, config);
-  }
-
   function test_addReserve() public {
     uint256 reserveId = spoke1.reserveCount();
     DataTypes.ReserveConfig memory newReserveConfig = DataTypes.ReserveConfig({
@@ -345,8 +334,7 @@ contract SpokeConfigTest is SpokeBase {
       liquidationBonus: 110_00,
       liquidityPremium: 10_00,
       borrowable: true,
-      collateral: true,
-      oracle: oracle
+      collateral: true
     });
 
     vm.expectEmit(address(spoke1));
@@ -384,8 +372,7 @@ contract SpokeConfigTest is SpokeBase {
       liquidationBonus: 110_00,
       liquidityPremium: 10_00,
       borrowable: true,
-      collateral: true,
-      oracle: oracle
+      collateral: true
     });
 
     vm.expectRevert(); // error from LH in reading invalid index from assetList array
@@ -406,8 +393,7 @@ contract SpokeConfigTest is SpokeBase {
       liquidationBonus: 110_00,
       liquidityPremium: 10_00,
       borrowable: true,
-      collateral: true,
-      oracle: oracle
+      collateral: true
     });
 
     vm.expectRevert(); // error from LH in reading invalid index from assetList array
@@ -426,8 +412,7 @@ contract SpokeConfigTest is SpokeBase {
       liquidationBonus: 110_00,
       liquidityPremium: 10_00,
       borrowable: true,
-      collateral: true,
-      oracle: oracle
+      collateral: true
     });
 
     vm.expectRevert(ISpoke.InvalidReserveDecimals.selector);
@@ -451,31 +436,10 @@ contract SpokeConfigTest is SpokeBase {
       liquidationBonus: 110_00,
       liquidityPremium: 10_00,
       borrowable: true,
-      collateral: true,
-      oracle: oracle
+      collateral: true
     });
 
     vm.expectRevert(ISpoke.InvalidReserveDecimals.selector);
-    vm.prank(SPOKE_ADMIN);
-    spoke1.addReserve(reserveId, newReserveConfig);
-  }
-
-  function test_addReserve_revertsWith_InvalidOracle() public {
-    uint256 reserveId = spoke1.reserveCount();
-    DataTypes.ReserveConfig memory newReserveConfig = DataTypes.ReserveConfig({
-      decimals: hub.MAX_ALLOWED_ASSET_DECIMALS(),
-      active: true,
-      frozen: true,
-      paused: true,
-      collateralFactor: 10_00,
-      liquidationBonus: 110_00,
-      liquidityPremium: 10_00,
-      borrowable: true,
-      collateral: true,
-      oracle: IPriceOracle(address(0)) // invalid oracle
-    });
-
-    vm.expectRevert(ISpoke.InvalidOracle.selector);
     vm.prank(SPOKE_ADMIN);
     spoke1.addReserve(reserveId, newReserveConfig);
   }

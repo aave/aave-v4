@@ -21,6 +21,7 @@ contract Spoke is ISpoke {
 
   uint256 public constant HEALTH_FACTOR_LIQUIDATION_THRESHOLD = WadRayMath.WAD;
   ILiquidityHub public immutable HUB;
+  IPriceOracle public immutable oracle;
 
   mapping(address user => mapping(uint256 reserveId => DataTypes.UserPosition position))
     internal _userPositions;
@@ -29,12 +30,14 @@ contract Spoke is ISpoke {
   uint256[] public reservesList; // todo: rm, not needed
   uint256 public reserveCount;
 
-  constructor(address hubAddress, uint256 closeFactorValue) {
+  constructor(address hubAddress, address oracleAddress, uint256 closeFactorValue) {
     require(hubAddress != address(0), InvalidHubAddress());
+    require(oracleAddress != address(0), InvalidOracleAddress());
     // close factor is required, but variable liquidation bonus config is not
     _validateCloseFactor(closeFactorValue);
 
     HUB = ILiquidityHub(hubAddress);
+    oracle = IPriceOracle(oracleAddress);
     _liquidationConfig.closeFactor = closeFactorValue;
   }
 
@@ -78,8 +81,7 @@ contract Spoke is ISpoke {
         liquidationBonus: config.liquidationBonus,
         liquidityPremium: config.liquidityPremium,
         borrowable: config.borrowable,
-        collateral: config.collateral,
-        oracle: config.oracle
+        collateral: config.collateral
       })
     });
 
@@ -106,8 +108,7 @@ contract Spoke is ISpoke {
       liquidationBonus: config.liquidationBonus,
       liquidityPremium: config.liquidityPremium,
       borrowable: config.borrowable,
-      collateral: config.collateral,
-      oracle: config.oracle
+      collateral: config.collateral
     });
 
     emit ReserveConfigUpdated(reserveId, config);
@@ -358,7 +359,7 @@ contract Spoke is ISpoke {
     return healthFactor;
   }
   function getReservePrice(uint256 reserveId) public view returns (uint256) {
-    return _reserves[reserveId].config.oracle.getAssetPrice(_reserves[reserveId].assetId);
+    return oracle.getAssetPrice(_reserves[reserveId].assetId);
   }
 
   function getLiquidityPremium(uint256 reserveId) public view returns (uint256) {
@@ -552,7 +553,7 @@ contract Spoke is ISpoke {
       DataTypes.Reserve memory reserve = _reserves[vars.reserveId];
       vars.assetId = reserve.assetId;
 
-      vars.assetPrice = reserve.config.oracle.getAssetPrice(vars.assetId);
+      vars.assetPrice = oracle.getAssetPrice(vars.assetId);
       unchecked {
         vars.assetUnit = 10 ** HUB.getAssetConfig(vars.assetId).decimals;
       }
@@ -588,7 +589,7 @@ contract Spoke is ISpoke {
       if (_usingAsCollateral(userPosition)) {
         vars.assetId = reserve.assetId;
         vars.liquidityPremium = reserve.config.liquidityPremium;
-        vars.assetPrice = reserve.config.oracle.getAssetPrice(vars.assetId);
+        vars.assetPrice = oracle.getAssetPrice(vars.assetId);
         unchecked {
           vars.assetUnit = 10 ** HUB.getAssetConfig(vars.assetId).decimals;
         }
@@ -760,7 +761,6 @@ contract Spoke is ISpoke {
       InvalidLiquidityPremium()
     ); // max 1000.00%
     require(config.decimals <= HUB.MAX_ALLOWED_ASSET_DECIMALS(), InvalidReserveDecimals());
-    require(address(config.oracle) != address(0), InvalidOracle());
   }
 
   // handles underflow
