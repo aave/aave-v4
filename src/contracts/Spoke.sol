@@ -94,8 +94,7 @@ contract Spoke is ISpoke {
         liquidityPremium: config.liquidityPremium,
         liquidationProtocolFeePercentage: config.liquidationProtocolFeePercentage,
         borrowable: config.borrowable,
-        collateral: config.collateral,
-        oracle: config.oracle
+        collateral: config.collateral
       })
     });
 
@@ -123,8 +122,7 @@ contract Spoke is ISpoke {
       liquidityPremium: config.liquidityPremium,
       liquidationProtocolFeePercentage: config.liquidationProtocolFeePercentage,
       borrowable: config.borrowable,
-      collateral: config.collateral,
-      oracle: config.oracle
+      collateral: config.collateral
     });
 
     emit ReserveConfigUpdated(reserveId, config);
@@ -401,9 +399,7 @@ contract Spoke is ISpoke {
       vars.healthFactor
     );
 
-    vars.debtAssetPrice = IPriceOracle(debtReserve.config.oracle).getAssetPrice(
-      debtReserve.assetId
-    );
+    vars.debtAssetPrice = IPriceOracle(oracle).getAssetPrice(debtReserve.assetId);
     vars.debtAssetUnit = 10 ** debtReserve.config.decimals;
     vars.liquidationBonus = getVariableLiquidationBonus(
       vars.collateralReserveId,
@@ -564,7 +560,7 @@ contract Spoke is ISpoke {
     return healthFactor;
   }
   function getReservePrice(uint256 reserveId) public view returns (uint256) {
-    return _reserves[reserveId].config.oracle.getAssetPrice(_reserves[reserveId].assetId);
+    return oracle.getAssetPrice(_reserves[reserveId].assetId);
   }
 
   function getLiquidityPremium(uint256 reserveId) public view returns (uint256) {
@@ -699,7 +695,6 @@ contract Spoke is ISpoke {
       config.liquidationProtocolFeePercentage <= PercentageMath.PERCENTAGE_FACTOR,
       InvalidLiquidationProtocolFeePercentage()
     );
-    require(address(config.oracle) != address(0), InvalidOracle());
   }
 
   function _validateLiquidationConfig(DataTypes.LiquidationConfig calldata config) internal view {
@@ -824,7 +819,7 @@ contract Spoke is ISpoke {
       DataTypes.Reserve memory reserve = _reserves[vars.reserveId];
       vars.assetId = reserve.assetId;
 
-      vars.assetPrice = reserve.config.oracle.getAssetPrice(vars.assetId);
+      vars.assetPrice = oracle.getAssetPrice(vars.assetId);
       unchecked {
         vars.assetUnit = 10 ** HUB.getAssetConfig(vars.assetId).decimals;
       }
@@ -860,7 +855,7 @@ contract Spoke is ISpoke {
       if (_usingAsCollateral(userPosition)) {
         vars.assetId = reserve.assetId;
         vars.liquidityPremium = reserve.config.liquidityPremium;
-        vars.assetPrice = reserve.config.oracle.getAssetPrice(vars.assetId);
+        vars.assetPrice = oracle.getAssetPrice(vars.assetId);
         unchecked {
           vars.assetUnit = 10 ** HUB.getAssetConfig(vars.assetId).decimals;
         }
@@ -1186,9 +1181,7 @@ contract Spoke is ISpoke {
     )
   {
     DataTypes.AvailableCollateralToLiquidateLocalVars memory vars;
-    vars.collateralAssetPrice = collateralReserve.config.oracle.getAssetPrice(
-      collateralReserve.assetId
-    );
+    vars.collateralAssetPrice = oracle.getAssetPrice(collateralReserve.assetId);
     vars.collateralAssetUnit = 10 ** collateralReserve.config.decimals;
     // vars.debtAssetUnit = 10 ** debtReserve.config.decimals;
     vars.liquidationProtocolFeePercentage = collateralReserve

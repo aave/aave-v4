@@ -40,8 +40,7 @@ contract SpokeConfigTest is SpokeBase {
       liquidityPremium: reserveData.config.liquidityPremium + 1,
       liquidationProtocolFeePercentage: reserveData.config.liquidationProtocolFeePercentage + 1,
       borrowable: !reserveData.config.borrowable,
-      collateral: !reserveData.config.collateral,
-      oracle: IPriceOracle(makeAddr('newOracle'))
+      collateral: !reserveData.config.collateral
     });
     vm.expectEmit(address(spoke1));
     emit ISpoke.ReserveConfigUpdated(daiReserveId, newReserveConfig);
@@ -67,7 +66,6 @@ contract SpokeConfigTest is SpokeBase {
     );
     assertEq(reserveData.config.borrowable, newReserveConfig.borrowable, 'wrong borrowable');
     assertEq(reserveData.config.collateral, newReserveConfig.collateral, 'wrong collateral');
-    assertEq(address(reserveData.config.oracle), address(newReserveConfig.oracle), 'wrong oracle');
   }
 
   function test_updateReserveConfig_fuzz(DataTypes.ReserveConfig memory newReserveConfig) public {
@@ -91,7 +89,6 @@ contract SpokeConfigTest is SpokeBase {
       0,
       PercentageMath.PERCENTAGE_FACTOR
     );
-    vm.assume(address(newReserveConfig.oracle) != address(0));
 
     uint256 daiReserveId = _daiReserveId(spoke1);
     DataTypes.ReserveConfig memory reserveData = spoke1.getReserve(daiReserveId).config;
@@ -108,102 +105,6 @@ contract SpokeConfigTest is SpokeBase {
     _assertReserveConfig(reserveData, newReserveConfig);
   }
 
-  function test_updateReserveConfig_fuzz(DataTypes.ReserveConfig memory newReserveConfig) public {
-    newReserveConfig.collateralFactor = bound(
-      newReserveConfig.collateralFactor,
-      0,
-      PercentageMath.PERCENTAGE_FACTOR
-    );
-    newReserveConfig.liquidationBonus = bound(
-      newReserveConfig.liquidationBonus,
-      MIN_LIQUIDATION_BONUS,
-      MAX_LIQUIDATION_BONUS
-    );
-    newReserveConfig.liquidityPremium = bound(
-      newReserveConfig.liquidityPremium,
-      0,
-      PercentageMath.PERCENTAGE_FACTOR * 10
-    );
-
-    uint256 daiReserveId = _daiReserveId(spoke1);
-    DataTypes.Reserve memory reserveData = spoke1.getReserve(daiReserveId);
-
-    newReserveConfig.decimals = reserveData.config.decimals; // decimals won't get updated
-
-    vm.expectEmit(address(spoke1));
-    emit ISpoke.ReserveConfigUpdated(daiReserveId, newReserveConfig);
-    vm.prank(SPOKE_ADMIN);
-    spoke1.updateReserveConfig(daiReserveId, newReserveConfig);
-
-    reserveData = spoke1.getReserve(daiReserveId);
-
-    assertEq(
-      reserveData.config.collateralFactor,
-      newReserveConfig.collateralFactor,
-      'wrong collateralFactor'
-    );
-    assertEq(
-      reserveData.config.liquidationBonus,
-      newReserveConfig.liquidationBonus,
-      'wrong liquidationBonus'
-    );
-    assertEq(
-      reserveData.config.liquidityPremium,
-      newReserveConfig.liquidityPremium,
-      'wrong liquidityPremium'
-    );
-    assertEq(reserveData.config.borrowable, newReserveConfig.borrowable, 'wrong borrowable');
-    assertEq(reserveData.config.collateral, newReserveConfig.collateral, 'wrong collateral');
-  }
-
-  function test_updateReserveConfig_fuzz(DataTypes.ReserveConfig memory newReserveConfig) public {
-    newReserveConfig.collateralFactor = bound(
-      newReserveConfig.collateralFactor,
-      0,
-      PercentageMath.PERCENTAGE_FACTOR
-    );
-    newReserveConfig.liquidationBonus = bound(
-      newReserveConfig.liquidationBonus,
-      MIN_LIQUIDATION_BONUS,
-      MAX_LIQUIDATION_BONUS
-    );
-    newReserveConfig.liquidityPremium = bound(
-      newReserveConfig.liquidityPremium,
-      0,
-      PercentageMath.PERCENTAGE_FACTOR * 10
-    );
-
-    uint256 daiReserveId = _daiReserveId(spoke1);
-    DataTypes.Reserve memory reserveData = spoke1.getReserve(daiReserveId);
-
-    newReserveConfig.decimals = reserveData.config.decimals; // decimals won't get updated
-
-    vm.expectEmit(address(spoke1));
-    emit ISpoke.ReserveConfigUpdated(daiReserveId, newReserveConfig);
-    vm.prank(SPOKE_ADMIN);
-    spoke1.updateReserveConfig(daiReserveId, newReserveConfig);
-
-    reserveData = spoke1.getReserve(daiReserveId);
-
-    assertEq(
-      reserveData.config.collateralFactor,
-      newReserveConfig.collateralFactor,
-      'wrong collateralFactor'
-    );
-    assertEq(
-      reserveData.config.liquidationBonus,
-      newReserveConfig.liquidationBonus,
-      'wrong liquidationBonus'
-    );
-    assertEq(
-      reserveData.config.liquidityPremium,
-      newReserveConfig.liquidityPremium,
-      'wrong liquidityPremium'
-    );
-    assertEq(reserveData.config.borrowable, newReserveConfig.borrowable, 'wrong borrowable');
-    assertEq(reserveData.config.collateral, newReserveConfig.collateral, 'wrong collateral');
-  }
-
   function test_updateReserveConfig_cannot_update_decimals() public {
     uint256 daiReserveId = _daiReserveId(spoke1);
     DataTypes.ReserveConfig memory config = spoke1.getReserve(daiReserveId).config;
@@ -212,24 +113,6 @@ contract SpokeConfigTest is SpokeBase {
     uint256 newDecimals = 12;
     // new decimals value attempted
     assertNotEq(oldDecimals, newDecimals);
-
-    // decimals should not update
-    config.decimals = newDecimals;
-
-    vm.prank(SPOKE_ADMIN);
-    spoke1.updateReserveConfig(daiReserveId, config);
-
-    config = spoke1.getReserve(daiReserveId).config;
-    assertEq(config.decimals, oldDecimals, 'wrong decimals');
-  }
-
-  function test_updateReserveConfig_fuzz_cannot_update_decimals(uint256 newDecimals) public {
-    uint256 daiReserveId = _daiReserveId(spoke1);
-    DataTypes.ReserveConfig memory config = spoke1.getReserve(daiReserveId).config;
-
-    uint256 oldDecimals = config.decimals;
-    newDecimals = bound(newDecimals, 0, hub.MAX_ALLOWED_ASSET_DECIMALS());
-    vm.assume(newDecimals != oldDecimals);
 
     // decimals should not update
     config.decimals = newDecimals;
@@ -332,46 +215,7 @@ contract SpokeConfigTest is SpokeBase {
 
   function test_updateReserveConfig_revertsWith_InvalidLiquidityPremium() public {
     uint256 liquidityPremium = PercentageMath.PERCENTAGE_FACTOR * 10 + 1;
-
     test_updateReserveConfig_fuzz_revertsWith_InvalidLiquidityPremium(liquidityPremium);
-  }
-
-  function test_updateReserveConfig_fuzz_revertsWith_InvalidLiquidityPremium(
-    uint256 liquidityPremium
-  ) public {
-    liquidityPremium = bound(
-      liquidityPremium,
-      PercentageMath.PERCENTAGE_FACTOR * 10 + 1,
-      type(uint256).max
-    );
-
-    uint256 daiReserveId = _daiReserveId(spoke1);
-    DataTypes.ReserveConfig memory config = spoke1.getReserve(daiReserveId).config;
-
-    config.liquidityPremium = liquidityPremium;
-
-    vm.expectRevert(ISpoke.InvalidLiquidityPremium.selector);
-    vm.prank(SPOKE_ADMIN);
-    spoke1.updateReserveConfig(daiReserveId, config);
-  }
-
-  function test_updateReserveConfig_fuzz_revertsWith_InvalidLiquidityPremium(
-    uint256 liquidityPremium
-  ) public {
-    liquidityPremium = bound(
-      liquidityPremium,
-      PercentageMath.PERCENTAGE_FACTOR * 10 + 1,
-      type(uint256).max
-    );
-
-    uint256 daiReserveId = _daiReserveId(spoke1);
-    DataTypes.ReserveConfig memory config = spoke1.getReserve(daiReserveId).config;
-
-    config.liquidityPremium = liquidityPremium;
-
-    vm.expectRevert(ISpoke.InvalidLiquidityPremium.selector);
-    vm.prank(SPOKE_ADMIN);
-    spoke1.updateReserveConfig(daiReserveId, config);
   }
 
   function test_updateReserveConfig_fuzz_revertsWith_InvalidLiquidityPremium(
@@ -416,76 +260,9 @@ contract SpokeConfigTest is SpokeBase {
     spoke1.updateReserveConfig(reserveId, config);
   }
 
-  function test_updateReserveConfig_fuzz_revertsWith_InvalidReserve(
-    uint256 reserveId,
-    uint256 liquidationBonus
-  ) public {
-    reserveId = bound(reserveId, spoke1.reserveCount() + 1, type(uint256).max);
-    liquidationBonus = bound(liquidationBonus, MIN_LIQUIDATION_BONUS, MAX_LIQUIDATION_BONUS);
-
-    DataTypes.ReserveConfig memory config;
-    config.liquidationBonus = liquidationBonus;
-
-    vm.expectRevert(ISpoke.InvalidReserve.selector);
-    vm.prank(SPOKE_ADMIN);
-    spoke1.updateReserveConfig(reserveId, config);
-  }
-
-  function test_updateReserveConfig_fuzz_revertsWith_InvalidReserve(
-    uint256 reserveId,
-    uint256 liquidationBonus
-  ) public {
-    reserveId = bound(reserveId, spoke1.reserveCount() + 1, type(uint256).max);
-    liquidationBonus = bound(liquidationBonus, MIN_LIQUIDATION_BONUS, MAX_LIQUIDATION_BONUS);
-
-    DataTypes.ReserveConfig memory config;
-    config.liquidationBonus = liquidationBonus;
-
-    vm.expectRevert(ISpoke.InvalidReserve.selector);
-    vm.prank(SPOKE_ADMIN);
-    spoke1.updateReserveConfig(reserveId, config);
-  }
-
   function test_updateReserveConfig_revertsWith_InvalidCollateralFactor() public {
     uint256 collateralFactor = PercentageMath.PERCENTAGE_FACTOR + 1;
-
     test_updateReserveConfig_fuzz_revertsWith_InvalidCollateralFactor(collateralFactor);
-  }
-
-  function test_updateReserveConfig_fuzz_revertsWith_InvalidCollateralFactor(
-    uint256 collateralFactor
-  ) public {
-    collateralFactor = bound(
-      collateralFactor,
-      PercentageMath.PERCENTAGE_FACTOR + 1,
-      type(uint256).max
-    );
-
-    uint256 daiReserveId = _daiReserveId(spoke1);
-    DataTypes.ReserveConfig memory config = spoke1.getReserve(daiReserveId).config;
-    config.collateralFactor = collateralFactor;
-
-    vm.expectRevert(ISpoke.InvalidCollateralFactor.selector);
-    vm.prank(SPOKE_ADMIN);
-    spoke1.updateReserveConfig(daiReserveId, config);
-  }
-
-  function test_updateReserveConfig_fuzz_revertsWith_InvalidCollateralFactor(
-    uint256 collateralFactor
-  ) public {
-    collateralFactor = bound(
-      collateralFactor,
-      PercentageMath.PERCENTAGE_FACTOR + 1,
-      type(uint256).max
-    );
-
-    uint256 daiReserveId = _daiReserveId(spoke1);
-    DataTypes.ReserveConfig memory config = spoke1.getReserve(daiReserveId).config;
-    config.collateralFactor = collateralFactor;
-
-    vm.expectRevert(ISpoke.InvalidCollateralFactor.selector);
-    vm.prank(SPOKE_ADMIN);
-    spoke1.updateReserveConfig(daiReserveId, config);
   }
 
   function test_updateReserveConfig_fuzz_revertsWith_InvalidCollateralFactor(
@@ -524,19 +301,6 @@ contract SpokeConfigTest is SpokeBase {
     spoke1.updateReserveConfig(daiReserveId, config);
   }
 
-  function test_updateReserveConfig_fuzz_revertsWith_InvalidLiquidationBonus(
-    uint256 liquidationBonus
-  ) public {
-    liquidationBonus = bound(liquidationBonus, 0, PercentageMath.PERCENTAGE_FACTOR - 1);
-    uint256 daiReserveId = _daiReserveId(spoke1);
-    DataTypes.ReserveConfig memory config = spoke1.getReserve(daiReserveId).config;
-    config.liquidationBonus = liquidationBonus;
-
-    vm.expectRevert(ISpoke.InvalidLiquidationBonus.selector);
-    vm.prank(SPOKE_ADMIN);
-    spoke1.updateReserveConfig(daiReserveId, config);
-  }
-
   function test_updateReserveConfig_revertsWith_InvalidLiquidationProtocolFeePercentage() public {
     uint256 liquidationProtocolFeePercentage = PercentageMath.PERCENTAGE_FACTOR + 1;
 
@@ -563,16 +327,6 @@ contract SpokeConfigTest is SpokeBase {
     spoke1.updateReserveConfig(daiReserveId, config);
   }
 
-  function test_updateReserveConfig_revertsWith_InvalidOracle() public {
-    uint256 daiReserveId = _daiReserveId(spoke1);
-    DataTypes.ReserveConfig memory config = spoke1.getReserve(daiReserveId).config;
-    config.oracle = IPriceOracle(address(0));
-
-    vm.expectRevert(ISpoke.InvalidOracle.selector);
-    vm.prank(SPOKE_ADMIN);
-    spoke1.updateReserveConfig(daiReserveId, config);
-  }
-
   function test_addReserve() public {
     uint256 reserveId = spoke1.reserveCount();
     DataTypes.ReserveConfig memory newReserveConfig = DataTypes.ReserveConfig({
@@ -585,8 +339,7 @@ contract SpokeConfigTest is SpokeBase {
       liquidityPremium: 10_00,
       liquidationProtocolFeePercentage: 10_00,
       borrowable: true,
-      collateral: true,
-      oracle: oracle
+      collateral: true
     });
 
     vm.expectEmit(address(spoke1));
@@ -610,6 +363,7 @@ contract SpokeConfigTest is SpokeBase {
       paused: true,
       collateralFactor: 10_00,
       liquidationBonus: 110_00,
+      liquidationProtocolFeePercentage: 0,
       liquidityPremium: 10_00,
       borrowable: true,
       collateral: true
@@ -634,8 +388,7 @@ contract SpokeConfigTest is SpokeBase {
       liquidityPremium: 10_00,
       liquidationProtocolFeePercentage: 0,
       borrowable: true,
-      collateral: true,
-      oracle: oracle
+      collateral: true
     });
 
     vm.expectRevert(); // error from LH in reading invalid index from assetList array
@@ -653,6 +406,7 @@ contract SpokeConfigTest is SpokeBase {
       collateralFactor: 10_00,
       liquidationBonus: 110_00,
       liquidityPremium: 10_00,
+      liquidationProtocolFeePercentage: 0,
       borrowable: true,
       collateral: true
     });
@@ -679,8 +433,7 @@ contract SpokeConfigTest is SpokeBase {
       liquidityPremium: 10_00,
       liquidationProtocolFeePercentage: 0,
       borrowable: true,
-      collateral: true,
-      oracle: oracle
+      collateral: true
     });
 
     vm.expectRevert(ISpoke.InvalidReserveDecimals.selector);
@@ -723,7 +476,7 @@ contract SpokeConfigTest is SpokeBase {
     liquidationConfig.healthFactorBonusThreshold = bound(
       liquidationConfig.healthFactorBonusThreshold,
       0,
-      spoke1.HEALTH_FACTOR_LIQUIDATION_THRESHOLD() - 1
+      HEALTH_FACTOR_LIQUIDATION_THRESHOLD - 1
     );
     liquidationConfig.liquidationBonusFactor = bound(
       liquidationConfig.liquidationBonusFactor,
@@ -732,7 +485,7 @@ contract SpokeConfigTest is SpokeBase {
     );
     liquidationConfig.closeFactor = bound(
       liquidationConfig.closeFactor,
-      spoke1.HEALTH_FACTOR_LIQUIDATION_THRESHOLD(),
+      HEALTH_FACTOR_LIQUIDATION_THRESHOLD,
       type(uint256).max
     );
 
@@ -770,7 +523,7 @@ contract SpokeConfigTest is SpokeBase {
   ) public {
     liquidationConfig.healthFactorBonusThreshold = bound(
       liquidationConfig.healthFactorBonusThreshold,
-      spoke1.HEALTH_FACTOR_LIQUIDATION_THRESHOLD(),
+      HEALTH_FACTOR_LIQUIDATION_THRESHOLD,
       type(uint256).max
     );
     liquidationConfig.liquidationBonusFactor = bound(
@@ -780,7 +533,7 @@ contract SpokeConfigTest is SpokeBase {
     );
     liquidationConfig.closeFactor = bound(
       liquidationConfig.closeFactor,
-      spoke1.HEALTH_FACTOR_LIQUIDATION_THRESHOLD(),
+      HEALTH_FACTOR_LIQUIDATION_THRESHOLD,
       type(uint256).max
     ); // valid values
 
@@ -807,7 +560,7 @@ contract SpokeConfigTest is SpokeBase {
     liquidationConfig.healthFactorBonusThreshold = bound(
       liquidationConfig.healthFactorBonusThreshold,
       0,
-      spoke1.HEALTH_FACTOR_LIQUIDATION_THRESHOLD()
+      HEALTH_FACTOR_LIQUIDATION_THRESHOLD
     );
     liquidationConfig.liquidationBonusFactor = bound(
       liquidationConfig.liquidationBonusFactor,
@@ -816,7 +569,7 @@ contract SpokeConfigTest is SpokeBase {
     );
     liquidationConfig.closeFactor = bound(
       liquidationConfig.closeFactor,
-      spoke1.HEALTH_FACTOR_LIQUIDATION_THRESHOLD(),
+      HEALTH_FACTOR_LIQUIDATION_THRESHOLD,
       type(uint256).max
     ); // valid values
 
@@ -825,5 +578,31 @@ contract SpokeConfigTest is SpokeBase {
     spoke1.updateLiquidationConfig(liquidationConfig);
   }
 
-  // TODO: tests for separate oracle, with different asset prices
+  function _assertReserveConfig(
+    DataTypes.ReserveConfig memory reserveConfig,
+    DataTypes.ReserveConfig memory newReserveConfig
+  ) internal {
+    assertEq(
+      reserveConfig.collateralFactor,
+      newReserveConfig.collateralFactor,
+      'wrong collateralFactor'
+    );
+    assertEq(
+      reserveConfig.liquidationBonus,
+      newReserveConfig.liquidationBonus,
+      'wrong liquidationBonus'
+    );
+    assertEq(
+      reserveConfig.liquidityPremium,
+      newReserveConfig.liquidityPremium,
+      'wrong liquidityPremium'
+    );
+    assertEq(
+      reserveConfig.liquidationProtocolFeePercentage,
+      newReserveConfig.liquidationProtocolFeePercentage,
+      'wrong liquidationProtocolFeePercentage'
+    );
+    assertEq(reserveConfig.borrowable, newReserveConfig.borrowable, 'wrong borrowable');
+    assertEq(reserveConfig.collateral, newReserveConfig.collateral, 'wrong collateral');
+  }
 }

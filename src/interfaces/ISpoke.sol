@@ -70,7 +70,6 @@ interface ISpoke {
   error InvalidReserveDecimals();
   error HealthFactorBelowThreshold();
   error InvalidCloseFactor();
-  error InvalidOracle();
   error InvalidHubAddress();
   error InvalidHealthFactorBonusThreshold();
   error InvalidLiquidationBonusFactor();
@@ -81,9 +80,6 @@ interface ISpoke {
   error InvalidLiquidationProtocolFeePercentage();
   error InvalidTreasuryAddress();
   error InvalidOracleAddress();
-  error InvalidHubAddress();
-  error InvalidHealthFactorBonusThreshold();
-  error InvalidLiquidationBonusFactor();
 
   function addReserve(
     uint256 assetId,
