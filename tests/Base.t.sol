@@ -725,7 +725,7 @@ abstract contract Base is Test {
     uint256 newRate,
     bool allWithdrawn,
     string memory when
-  ) internal {
+  ) internal pure {
     if (!allWithdrawn) {
       assertGe(
         newRate,
