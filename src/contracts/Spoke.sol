@@ -687,6 +687,10 @@ contract Spoke is ISpoke {
       InvalidLiquidityPremium()
     ); // max 1000.00%
     require(config.decimals <= HUB.MAX_ALLOWED_ASSET_DECIMALS(), InvalidReserveDecimals());
+    require(
+      config.liquidationProtocolFeePercentage <= PercentageMath.PERCENTAGE_FACTOR,
+      InvalidLiquidationProtocolFeePercentage()
+    );
     require(address(config.oracle) != address(0), InvalidOracle());
   }
 
