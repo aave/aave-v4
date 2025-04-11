@@ -714,18 +714,24 @@ abstract contract Base is Test {
     return hub.convertToSuppliedAssets(assetId, 1);
   }
 
-  /// @dev Helper from ERC4626 prop tests: https://github.com/a16z/erc4626-tests/blob/main/ERC4626.prop.sol#L377-L389
-  function assertApproxGeAbs(uint a, uint b, uint maxDelta) internal {
-    if (!(a >= b)) {
-      uint dt = b - a;
-      if (dt > maxDelta) {
-        emit log('Error: a >=~ b not satisfied [uint]');
-        emit log_named_uint('   Value a', a);
-        emit log_named_uint('   Value b', b);
-        emit log_named_uint(' Max Delta', maxDelta);
-        emit log_named_uint('     Delta', dt);
-        fail();
-      }
+  function getSupplyExRate(uint256 assetId) internal view returns (uint256) {
+    return hub.convertToSuppliedAssets(assetId, 1e30);
+  }
+
+  /// TODO: Once inflation protection implemented, can remove boolean param since rate should always monotonically increase
+  /// @dev Helper function to ensure supply exchange rate is monotonically increasing
+  function _checkSupplyRateIncreasing(
+    uint256 oldRate,
+    uint256 newRate,
+    bool allWithdrawn,
+    string memory when
+  ) internal {
+    if (!allWithdrawn) {
+      assertGe(
+        newRate,
+        oldRate,
+        string(abi.encodePacked('supply rate monotonically increasing ', when))
+      );
     }
   }
 

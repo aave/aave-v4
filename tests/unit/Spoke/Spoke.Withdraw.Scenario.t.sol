@@ -85,6 +85,9 @@ contract SpokeWithdrawScenarioTest is SpokeBase {
       'total supplied'
     );
 
+    // Fetch supply exchange rate before partial withdraw
+    uint256 supplyExRateBefore = getSupplyExRate(daiAssetId);
+
     // Withdraw partial supplied assets
     vm.startPrank(bob);
     spoke1.withdraw(_daiReserveId(spoke1), partialWithdrawAmount, bob);
@@ -96,10 +99,29 @@ contract SpokeWithdrawScenarioTest is SpokeBase {
       'expected supplied'
     );
 
+    // Check supply rate monotonically increasing after partial withdraw
+    _checkSupplyRateIncreasing(
+      supplyExRateBefore,
+      getSupplyExRate(daiAssetId),
+      false,
+      'after partial withdraw'
+    );
+
+    // Fetch supply exchange rate before withdraw
+    supplyExRateBefore = getSupplyExRate(daiAssetId);
+
     // Withdraw all supplied assets
     spoke1.withdraw(_daiReserveId(spoke1), type(uint256).max, bob);
 
     _checkSuppliedAmounts(daiAssetId, _daiReserveId(spoke1), spoke1, bob, 0, 'after withdraw');
+
+    // Check supply rate monotonically increasing after withdraw
+    _checkSupplyRateIncreasing(
+      supplyExRateBefore,
+      getSupplyExRate(daiAssetId),
+      true,
+      'after withdraw'
+    );
   }
 
   // multiple users, same asset
@@ -182,6 +204,7 @@ contract SpokeWithdrawScenarioTest is SpokeBase {
     aliceData[state.stage] = loadUserInfo(spoke1, params.reserveId, alice);
     bobData[state.stage] = loadUserInfo(spoke1, params.reserveId, bob);
     tokenData[state.stage] = getTokenBalances(state.asset, address(spoke1));
+    uint256 supplyExRate = getSupplyExRate(state.assetId);
 
     // make sure alice has a share to withdraw
     vm.assume(
@@ -197,6 +220,13 @@ contract SpokeWithdrawScenarioTest is SpokeBase {
       to: alice
     });
 
+    _checkSupplyRateIncreasing(
+      supplyExRate,
+      getSupplyExRate(state.assetId),
+      false,
+      'after alice withdraw'
+    );
+
     // skip time to accrue interest for bob
     skip(params.skipTime[1]);
 
@@ -205,6 +235,7 @@ contract SpokeWithdrawScenarioTest is SpokeBase {
     aliceData[state.stage] = loadUserInfo(spoke1, params.reserveId, alice);
     bobData[state.stage] = loadUserInfo(spoke1, params.reserveId, bob);
     tokenData[state.stage] = getTokenBalances(state.asset, address(spoke1));
+    supplyExRate = getSupplyExRate(state.assetId);
 
     // make sure bob has a share to withdraw
     vm.assume(
@@ -219,6 +250,13 @@ contract SpokeWithdrawScenarioTest is SpokeBase {
       amount: bobData[state.stage].suppliedAmount,
       to: bob
     });
+
+    _checkSupplyRateIncreasing(
+      supplyExRate,
+      getSupplyExRate(state.assetId),
+      true,
+      'after bob withdraw'
+    );
 
     state.stage = 2;
     reserveData[state.stage] = loadReserveInfo(spoke1, params.reserveId);
@@ -301,9 +339,7 @@ contract SpokeWithdrawScenarioTest is SpokeBase {
     vm.prank(caller);
     spoke1.withdraw(reserveId, assets, caller);
 
-    // Check for delta of 0
-    uint256 delta = 0;
-    assertApproxGeAbs(shares2, shares1, delta);
+    assertEq(shares2, shares1, 'supplied and withdrawn shares');
   }
 
   /// Let protocol have some funds initially. Assume user has a nonzero balance to withdraw.
@@ -365,8 +401,6 @@ contract SpokeWithdrawScenarioTest is SpokeBase {
     vm.prank(caller);
     spoke1.supply(reserveId, assets);
 
-    // Check for delta of 0
-    uint256 delta = 0;
-    assertApproxGeAbs(shares2, shares1, delta);
+    assertEq(shares2, shares1, 'supplied and withdrawn shares');
   }
 }
