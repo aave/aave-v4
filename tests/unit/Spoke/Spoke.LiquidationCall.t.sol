@@ -25,7 +25,7 @@ contract LiquidationCallTest is SpokeBase {
 
   /// scenario where fully liquidating a collateral still does not improve a position to close factor
   /// default close factor of 1
-  function test_liquidationCall_all_collateral_default_close_factor_() public {
+  function test_liquidationCall_all_collateral_default_close_factor() public {
     uint256 wethReserveId = _wethReserveId(spoke1);
     uint256 daiReserveId = _daiReserveId(spoke1);
     uint256 wbtcReserveId = _wbtcReserveId(spoke1);
@@ -36,20 +36,10 @@ contract LiquidationCallTest is SpokeBase {
     // debt: weth
     uint256 borrowAmount = 20 * 10 ** tokenList.weth.decimals(); // 20 eth, $40k
 
-    _deployLiquidity(spoke1, wethReserveId, borrowAmount * 10);
+    _deployLiquidity(spoke1, wethReserveId, borrowAmount);
     Utils.supplyCollateral(spoke1, wbtcReserveId, alice, wbtcAmount, alice);
     Utils.supplyCollateral(spoke1, daiReserveId, alice, daiAmount, alice);
     Utils.borrow(spoke1, wethReserveId, alice, borrowAmount, alice);
-
-    // console.log(spoke1.getHealthFactor(alice));
-
-    // console.log(
-    //   ' coll wbtc %e, dai %e',
-    //   spoke1.getUserSuppliedAmount(wbtcReserveId, alice),
-    //   spoke1.getUserSuppliedAmount(daiReserveId, alice)
-    // );
-    // console.log(' debt %e', spoke1.getUserTotalDebt(wethReserveId, alice));
-    // console.log(' hf %e', spoke1.getHealthFactor(alice));
 
     // wbtc collateral value drop to reduce HF < 1
     oracle.setAssetPrice(wbtcAssetId, 20_000e8);
@@ -58,7 +48,19 @@ contract LiquidationCallTest is SpokeBase {
 
     UserTokenBalance memory balancesBefore = _loadUserBalances();
 
+    uint256 initialDebt = spoke1.getUserTotalDebt(wethReserveId, alice);
+    uint256 liquidatedDebt = _convertAssetAmount(wbtcAssetId, wbtcAmount, wethAssetId);
+
     // bob liquidates alice
+    vm.expectEmit(address(spoke1));
+    emit ISpoke.LiquidationCall(
+      address(tokenList.wbtc),
+      address(tokenList.weth),
+      alice,
+      liquidatedDebt,
+      wbtcAmount,
+      bob
+    );
     vm.prank(bob);
     spoke1.liquidationCall({
       collateralReserveId: wbtcReserveId,
@@ -72,17 +74,6 @@ contract LiquidationCallTest is SpokeBase {
       balancesBefore,
       balancesAfter
     );
-
-    // console.log(
-    //   'final coll wbtc %e, dai %e',
-    //   spoke1.getUserSuppliedAmount(wbtcReserveId, alice),
-    //   spoke1.getUserSuppliedAmount(daiReserveId, alice)
-    // );
-    // console.log('final weth debt %e', spoke1.getUserTotalDebt(wethReserveId, alice));
-    // console.log('final hf %e', spoke1.getHealthFactor(alice));
-
-    // console.log('bob change %e', balances.bob.post.wbtc - balances.bob.pre.wbtc);
-    // console.log('treasury change %e', balances.treasury.post.wbtc - balances.treasury.pre.wbtc);
 
     // dai collateral
     assertEq(
@@ -101,10 +92,29 @@ contract LiquidationCallTest is SpokeBase {
     assertEq(balanceChanges.treasury.wbtc, 0, 'treasury receives 0 wbtc coll');
 
     // weth debt
-    // assertEq(spoke1.getUserTotalDebt(wethReserveId, alice), 0, 'alice weth debt repaid');
+    assertEq(
+      initialDebt - spoke1.getUserTotalDebt(wethReserveId, alice),
+      _convertAssetAmount(wbtcAssetId, wbtcAmount, wethAssetId),
+      'alice weth debt repaid'
+    );
     assertEq(balanceChanges.alice.weth, 0, 'alice has no weth change');
-    // assertEq(balanceChanges.bob.weth, 0, 'bob pays all weth debt');
+    assertEq(
+      balanceChanges.bob.weth,
+      _convertAssetAmount(wbtcAssetId, wbtcAmount, wethAssetId),
+      'bob pays all weth debt'
+    );
     assertEq(balanceChanges.treasury.weth, 0, 'treasury has no weth change');
+  }
+
+  function _convertAssetAmount(
+    uint256 assetId,
+    uint256 amount,
+    uint256 toAssetId
+  ) internal returns (uint256) {
+    console.log('%e %e', oracle.getAssetPrice(toAssetId), oracle.getAssetPrice(assetId));
+    return
+      (amount * oracle.getAssetPrice(assetId) * 10 ** hub.getAsset(toAssetId).config.decimals) /
+      (oracle.getAssetPrice(toAssetId) * 10 ** hub.getAsset(assetId).config.decimals);
   }
 
   function _loadUserBalances() internal returns (UserTokenBalance memory userBalances) {
