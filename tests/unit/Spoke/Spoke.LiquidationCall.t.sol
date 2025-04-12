@@ -25,7 +25,7 @@ contract LiquidationCallTest is SpokeBase {
 
   /// scenario where fully liquidating a collateral still does not improve a position to close factor
   /// default close factor of 1
-  function test_liquidationCall_all_collateral_default_close_factor() public {
+  function test_liquidationCall_all_collateral_default_close_factory() public {
     uint256 wethReserveId = _wethReserveId(spoke1);
     uint256 wbtcReserveId = _wbtcReserveId(spoke1);
 
@@ -96,8 +96,8 @@ contract LiquidationCallTest is SpokeBase {
     );
     assertEq(balanceChanges.treasury.weth, 0, 'treasury has no weth change');
 
-    // hf < 1 after
-    assertLt(spoke1.getHealthFactor(alice), HEALTH_FACTOR_LIQUIDATION_THRESHOLD);
+    // all collateral is seized, therefore hf == 0
+    assertEq(spoke1.getHealthFactor(alice), 0, 'HF should be 0');
   }
 
   /// scenario where fully liquidating a collateral still does not improve a position to close factor

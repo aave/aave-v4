@@ -308,21 +308,22 @@ contract Spoke is ISpoke {
       uint256 collateralToLiquidate,
       uint256 liquidationProtocolFeeAmount
     ) = _executeLiquidation(collateralReserveId, debtReserveId, user, debtToCover);
-    // // transfer to liquidator
-    // IERC20(collateralAsset).safeTransfer(msg.sender, collateralToLiquidate);
-    // // transfer to treasury
-    // if (liquidationProtocolFeeAmount > 0) {
-    //   IERC20(collateralAsset).safeTransfer(_treasury, liquidationProtocolFeeAmount);
-    // }
+
+    // transfer to liquidator
+    IERC20(collateralAsset).safeTransfer(msg.sender, collateralToLiquidate);
+    // transfer to treasury
+    if (liquidationProtocolFeeAmount > 0) {
+      IERC20(collateralAsset).safeTransfer(_treasury, liquidationProtocolFeeAmount);
+    }
     // console.log('emit LC: debt %e coll %e', totalDebtToLiquidate, collateralToLiquidate);
-    // emit LiquidationCall(
-    //   collateralAsset,
-    //   debtAsset,
-    //   user,
-    //   totalDebtToLiquidate,
-    //   collateralToLiquidate,
-    //   msg.sender
-    // );
+    emit LiquidationCall(
+      collateralAsset,
+      debtAsset,
+      user,
+      totalDebtToLiquidate,
+      collateralToLiquidate,
+      msg.sender
+    );
   }
 
   /// @return collateralAsset The address of the underlying asset used as collateral, to receive as result of the liquidation.
@@ -363,6 +364,22 @@ contract Spoke is ISpoke {
       vars.premiumDebt
     );
 
+    // settle debt reserve's premium debt
+    vars.userPremiumDrawnShares = userDebtPosition.premiumDrawnShares;
+    vars.userPremiumOffset = userDebtPosition.premiumOffset;
+    vars.userRealizedPremium = userDebtPosition.realizedPremium;
+
+    userDebtPosition.premiumDrawnShares = 0;
+    userDebtPosition.premiumOffset = 0;
+    userDebtPosition.realizedPremium = vars.premiumDebt - vars.premiumDebtToLiquidate;
+
+    _refreshPremiumDebt(
+      debtReserve,
+      -int256(vars.userPremiumDrawnShares),
+      -int256(vars.userPremiumOffset),
+      _signedDiff(userDebtPosition.realizedPremium, vars.userRealizedPremium)
+    );
+
     // repay debt
     vars.restoredShares = HUB.restore(
       vars.debtAssetId,
@@ -377,22 +394,6 @@ contract Spoke is ISpoke {
       address(this)
     );
 
-    // // settle debt reserve's premium debt
-    // vars.userPremiumDrawnShares = userDebtPosition.premiumDrawnShares;
-    // vars.userPremiumOffset = userDebtPosition.premiumOffset;
-    // vars.userRealizedPremium = userDebtPosition.realizedPremium;
-
-    // userDebtPosition.premiumDrawnShares = 0;
-    // userDebtPosition.premiumOffset = 0;
-    // userDebtPosition.realizedPremium = vars.premiumDebt - vars.premiumDebtToLiquidate;
-
-    // _refreshPremiumDebt(
-    //   debtReserve,
-    //   -int256(vars.userPremiumDrawnShares),
-    //   -int256(vars.userPremiumOffset),
-    //   _signedDiff(userDebtPosition.realizedPremium, vars.userRealizedPremium)
-    // );
-
     // accounting
     userCollateralPosition.suppliedShares -= vars.withdrawnShares;
     collateralReserve.suppliedShares -= vars.withdrawnShares;
@@ -400,42 +401,45 @@ contract Spoke is ISpoke {
     userDebtPosition.baseDrawnShares -= vars.restoredShares;
     debtReserve.baseDrawnShares -= vars.restoredShares;
 
+    uint256 hf;
     // // refresh premium debt
-    // vars.newUserRiskPremium = _validateUserPosition(user); // validates HF
-    // vars.userPremiumDrawnShares = userDebtPosition.premiumDrawnShares = userDebtPosition
-    //   .baseDrawnShares
-    //   .percentMul(vars.newUserRiskPremium);
-    // vars.userPremiumOffset = userDebtPosition.premiumOffset = HUB.convertToDrawnAssets(
-    //   vars.debtAssetId,
-    //   userDebtPosition.premiumDrawnShares
-    // );
-
-    // _refreshPremiumDebt(
-    //   debtReserve,
-    //   int256(vars.userPremiumDrawnShares),
-    //   int256(vars.userPremiumOffset),
-    //   0
-    // );
-    // _notifyRiskPremiumUpdate(vars.debtAssetId, user, vars.newUserRiskPremium);
-
-    address collateralAsset = collateralReserve.asset;
-    address debtAsset = debtReserve.asset;
-
-    // transfer to liquidator
-    IERC20(collateralAsset).safeTransfer(msg.sender, vars.collateralToLiquidate);
-    // transfer to treasury
-    if (vars.liquidationProtocolFeeAmount > 0) {
-      IERC20(debtAsset).safeTransfer(_treasury, vars.liquidationProtocolFeeAmount);
-    }
-
-    emit LiquidationCall(
-      collateralAsset,
-      debtAsset,
-      user,
-      vars.baseDebtToLiquidate + vars.premiumDebtToLiquidate,
-      vars.collateralToLiquidate,
-      msg.sender
+    (vars.newUserRiskPremium, , hf, , ) = _calculateUserAccountData(user);
+    // console.log('user rp %e', vars.newUserRiskPremium);
+    console.log('sp hf after %e', hf);
+    vars.userPremiumDrawnShares = userDebtPosition.premiumDrawnShares = userDebtPosition
+      .baseDrawnShares
+      .percentMul(vars.newUserRiskPremium);
+    vars.userPremiumOffset = userDebtPosition.premiumOffset = HUB.convertToDrawnAssets(
+      vars.debtAssetId,
+      userDebtPosition.premiumDrawnShares
     );
+
+    _refreshPremiumDebt(
+      debtReserve,
+      int256(vars.userPremiumDrawnShares),
+      int256(vars.userPremiumOffset),
+      0
+    );
+    _notifyRiskPremiumUpdate(vars.debtAssetId, user, vars.newUserRiskPremium);
+
+    // address collateralAsset = collateralReserve.asset;
+    // address debtAsset = debtReserve.asset;
+
+    // // transfer to liquidator
+    // IERC20(collateralAsset).safeTransfer(msg.sender, vars.collateralToLiquidate);
+    // // transfer to treasury
+    // if (vars.liquidationProtocolFeeAmount > 0) {
+    //   IERC20(debtAsset).safeTransfer(_treasury, vars.liquidationProtocolFeeAmount);
+    // }
+
+    // emit LiquidationCall(
+    //   collateralAsset,
+    //   debtAsset,
+    //   user,
+    //   vars.baseDebtToLiquidate + vars.premiumDebtToLiquidate,
+    //   vars.collateralToLiquidate,
+    //   msg.sender
+    // );
 
     console.log(
       'emit LC: debt %e coll %e',
@@ -973,6 +977,13 @@ contract Spoke is ISpoke {
         ++vars.reserveId;
       }
     }
+
+    console.log(
+      'total debt %e | avg CF %e | total coll %e',
+      vars.totalDebtInBaseCurrency,
+      vars.avgCollateralFactor,
+      vars.totalCollateralInBaseCurrency
+    );
 
     // at this point avgCollateralFactor is a weighted sum of collateral scaled by collateralFactor
     // (avgCollateralFactor / totalCollateral) * totalCollateral can be simplified to avgCollateralFactor
