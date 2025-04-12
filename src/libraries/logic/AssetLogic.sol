@@ -2,11 +2,10 @@
 pragma solidity ^0.8.0;
 
 import {DataTypes} from 'src/libraries/types/DataTypes.sol';
-
-import {MathUtils} from 'src/contracts/MathUtils.sol';
-import {SharesMath} from 'src/contracts/SharesMath.sol';
-import {PercentageMath} from 'src/contracts/PercentageMath.sol';
-import {WadRayMath} from 'src/contracts/WadRayMath.sol';
+import {MathUtils} from 'src/libraries/math/MathUtils.sol';
+import {SharesMath} from 'src/libraries/math/SharesMath.sol';
+import {PercentageMath} from 'src/libraries/math/PercentageMath.sol';
+import {WadRayMath} from 'src/libraries/math/WadRayMath.sol';
 
 library AssetLogic {
   using AssetLogic for DataTypes.Asset;

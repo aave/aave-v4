@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.0;
 
-import {Math} from '../dependencies/openzeppelin/Math.sol';
+import {Math} from 'src/dependencies/openzeppelin/Math.sol';
 
 library SharesMath {
   using Math for uint256;

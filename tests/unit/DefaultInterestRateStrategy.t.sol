@@ -4,7 +4,7 @@ pragma solidity ^0.8.10;
 import 'forge-std/Test.sol';
 
 import 'src/contracts/DefaultReserveInterestRateStrategy.sol';
-import {WadRayMath} from 'src/contracts/WadRayMath.sol';
+import {WadRayMath} from 'src/libraries/math/WadRayMath.sol';
 
 contract DefaultReserveInterestRateStrategyTest is Test {
   using WadRayMath for uint256;
