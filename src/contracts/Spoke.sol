@@ -401,11 +401,11 @@ contract Spoke is ISpoke {
     userDebtPosition.baseDrawnShares -= vars.restoredShares;
     debtReserve.baseDrawnShares -= vars.restoredShares;
 
-    uint256 hf;
+    // uint256 hf;
     // // refresh premium debt
-    (vars.newUserRiskPremium, , hf, , ) = _calculateUserAccountData(user);
+    (vars.newUserRiskPremium, , , , ) = _calculateUserAccountData(user);
     // console.log('user rp %e', vars.newUserRiskPremium);
-    console.log('sp hf after %e', hf);
+    // console.log('sp hf after %e', hf);
     vars.userPremiumDrawnShares = userDebtPosition.premiumDrawnShares = userDebtPosition
       .baseDrawnShares
       .percentMul(vars.newUserRiskPremium);
@@ -978,12 +978,12 @@ contract Spoke is ISpoke {
       }
     }
 
-    console.log(
-      'total debt %e | avg CF %e | total coll %e',
-      vars.totalDebtInBaseCurrency,
-      vars.avgCollateralFactor,
-      vars.totalCollateralInBaseCurrency
-    );
+    // console.log(
+    //   'total debt %e | avg CF %e | total coll %e',
+    //   vars.totalDebtInBaseCurrency,
+    //   vars.avgCollateralFactor,
+    //   vars.totalCollateralInBaseCurrency
+    // );
 
     // at this point avgCollateralFactor is a weighted sum of collateral scaled by collateralFactor
     // (avgCollateralFactor / totalCollateral) * totalCollateral can be simplified to avgCollateralFactor

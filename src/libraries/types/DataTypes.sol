@@ -174,5 +174,10 @@ library DataTypes {
     uint256 userPremiumOffset;
     uint256 userRealizedPremium;
     uint256 newUserRiskPremium;
+    uint256 userRiskPremium;
+    uint256 avgCollateralFactor;
+    uint256 healthFactor;
+    uint256 totalCollateralInBaseCurrency;
+    uint256 totalDebtInBaseCurrency;
   }
 }
