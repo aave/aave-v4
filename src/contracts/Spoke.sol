@@ -498,10 +498,18 @@ contract Spoke is ISpoke {
       vars.collateralReserveId,
       vars.healthFactor
     );
+    vars.closeFactor = _liquidationConfig.closeFactor;
+    vars.collateralFactor = collateralReserve.config.collateralFactor;
     // console.log('vars.liquidationBonus %e', vars.liquidationBonus);
+    vars.collateralAssetPrice = oracle.getAssetPrice(collateralReserve.assetId);
+    vars.collateralAssetUnit = 10 ** collateralReserve.config.decimals;
+    // vars.debtAssetUnit = 10 ** debtReserve.config.decimals;
+    vars.liquidationProtocolFeePercentage = collateralReserve
+      .config
+      .liquidationProtocolFeePercentage;
 
     vars.actualDebtToLiquidate = _calculateActualDebtToLiquidate({
-      collateralReserve: collateralReserve,
+      // collateralReserve: collateralReserve,
       debtToCover: debtToCover,
       user: user,
       debtReserveId: vars.debtReserveId,
@@ -527,8 +535,8 @@ contract Spoke is ISpoke {
       vars.actualDebtToLiquidate,
       vars.liquidationProtocolFeeAmount
     ) = _calculateAvailableCollateralToLiquidate(
-      collateralReserve,
-      debtReserve,
+      // collateralReserve,
+      // debtReserve,
       // vars.actualDebtToLiquidate,
       // vars.userCollateralBalance,
       // vars.debtAssetPrice
@@ -1139,7 +1147,7 @@ contract Spoke is ISpoke {
   }
 
   function _calculateActualDebtToLiquidate(
-    DataTypes.Reserve storage collateralReserve,
+    // DataTypes.Reserve storage collateralReserve, // TODO: extract collateralFactor into params
     uint256 debtToCover,
     address user,
     uint256 debtReserveId,
@@ -1159,9 +1167,9 @@ contract Spoke is ISpoke {
   {
     DataTypes.CalculateActualDebtToLiquidateLocalVars memory vars;
     vars.maxLiquidatableDebt = params.totalDebt;
-    vars.closeFactor = _liquidationConfig.closeFactor;
+    // vars.closeFactor = _liquidationConfig.closeFactor;
 
-    vars.hfScaledDebt = params.totalDebtInBaseCurrency.wadMul(vars.closeFactor); // base currency
+    vars.hfScaledDebt = params.totalDebtInBaseCurrency.wadMul(params.closeFactor); // base currency
     // vars.weightedCollateral = (
     //   params.totalCollateralInBaseCurrency.wadMul(params.avgCollateralFactor)
     // ).fromBps(); // base currency
@@ -1183,13 +1191,13 @@ contract Spoke is ISpoke {
     // );
 
     vars.scaledLiqBonus = (params.liquidationBonus.wadify())
-      .percentMul(collateralReserve.config.collateralFactor)
+      .percentMul(params.collateralFactor)
       .fromBps(); // convert BPS to WAD;
 
     console.log(
       'vars.scaledLiqBonus %e %e %e',
       vars.scaledLiqBonus,
-      collateralReserve.config.collateralFactor,
+      params.collateralFactor,
       params.liquidationBonus
     );
     // console.log('vars.scaledLiqBonus %e', vars.scaledLiqBonus);
@@ -1268,8 +1276,8 @@ contract Spoke is ISpoke {
    * @return The fee amount taken from the liquidation bonus amount to be paid to the protocol.
    */
   function _calculateAvailableCollateralToLiquidate(
-    DataTypes.Reserve memory collateralReserve,
-    DataTypes.Reserve memory debtReserve,
+    // DataTypes.Reserve memory collateralReserve,
+    // DataTypes.Reserve memory debtReserve,
     DataTypes.LiquidationCallLocalVars memory params
   )
     internal
@@ -1284,26 +1292,26 @@ contract Spoke is ISpoke {
     )
   {
     DataTypes.AvailableCollateralToLiquidateLocalVars memory vars;
-    vars.collateralAssetPrice = oracle.getAssetPrice(collateralReserve.assetId);
-    vars.collateralAssetUnit = 10 ** collateralReserve.config.decimals;
+    // vars.collateralAssetPrice = oracle.getAssetPrice(collateralReserve.assetId);
+    // vars.collateralAssetUnit = 10 ** collateralReserve.config.decimals;
     // vars.debtAssetUnit = 10 ** debtReserve.config.decimals;
-    vars.liquidationProtocolFeePercentage = collateralReserve
-      .config
-      .liquidationProtocolFeePercentage;
+    // vars.liquidationProtocolFeePercentage = collateralReserve
+    //   .config
+    //   .liquidationProtocolFeePercentage;
 
     // find collateral amount that corresponds to the debt to cover
     vars.baseCollateral =
-      (params.debtAssetPrice * params.actualDebtToLiquidate * vars.collateralAssetUnit) /
-      (vars.collateralAssetPrice * params.debtAssetUnit);
+      (params.debtAssetPrice * params.actualDebtToLiquidate * params.collateralAssetUnit) /
+      (params.collateralAssetPrice * params.debtAssetUnit);
 
     vars.maxCollateralToLiquidate = vars.baseCollateral.percentMul(params.liquidationBonus);
 
     if (vars.maxCollateralToLiquidate > params.userCollateralBalance) {
       // back calculate debt amount needed to cover the max allowed collateral
       vars.collateralAmount = params.userCollateralBalance;
-      vars.debtAmountNeeded = ((vars.collateralAssetPrice *
+      vars.debtAmountNeeded = ((params.collateralAssetPrice *
         vars.collateralAmount *
-        params.debtAssetUnit) / (params.debtAssetPrice * vars.collateralAssetUnit)).percentDiv(
+        params.debtAssetUnit) / (params.debtAssetPrice * params.collateralAssetUnit)).percentDiv(
           params.liquidationBonus
         );
 
@@ -1315,13 +1323,13 @@ contract Spoke is ISpoke {
 
     // console.log('baseCollateral %e', vars.baseCollateral, params.liquidationBonus);
 
-    if (vars.liquidationProtocolFeePercentage != 0) {
+    if (params.liquidationProtocolFeePercentage != 0) {
       vars.bonusCollateral =
         vars.collateralAmount -
         vars.collateralAmount.percentDiv(params.liquidationBonus);
 
       vars.liquidationProtocolFeeAmount = vars.bonusCollateral.percentMul(
-        vars.liquidationProtocolFeePercentage
+        params.liquidationProtocolFeePercentage
       );
 
       return (

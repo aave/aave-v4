@@ -134,6 +134,11 @@ library DataTypes {
     uint256 liquidationBonus;
     uint256 baseDebtToLiquidate;
     uint256 premiumDebtToLiquidate;
+    uint256 closeFactor;
+    uint256 collateralFactor;
+    uint256 collateralAssetPrice;
+    uint256 collateralAssetUnit;
+    uint256 liquidationProtocolFeePercentage;
   }
 
   struct CalculateActualDebtToLiquidateLocalVars {

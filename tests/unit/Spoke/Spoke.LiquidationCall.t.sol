@@ -204,7 +204,6 @@ contract LiquidationCallTest is SpokeBase {
       spoke1.getReserve(state.daiReserveId).config.collateralFactor,
       'avg coll factor matches dai coll factor'
     );
-    console.log('final %e %e', avgCollFactor, userRP);
   }
 
   function _convertAssetAmount(
