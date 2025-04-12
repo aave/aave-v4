@@ -853,6 +853,27 @@ abstract contract Base is Test {
     return hub.convertToSuppliedAssets(assetId, 1);
   }
 
+  function getSupplyExRate(uint256 assetId) internal view returns (uint256) {
+    return hub.convertToSuppliedAssets(assetId, 1e30);
+  }
+
+  /// TODO: Once inflation protection implemented, can remove boolean param since rate should always monotonically increase
+  /// @dev Helper function to ensure supply exchange rate is monotonically increasing
+  function _checkSupplyRateIncreasing(
+    uint256 oldRate,
+    uint256 newRate,
+    bool allWithdrawn,
+    string memory when
+  ) internal pure {
+    if (!allWithdrawn) {
+      assertGe(
+        newRate,
+        oldRate,
+        string(abi.encodePacked('supply rate monotonically increasing ', when))
+      );
+    }
+  }
+
   /// @dev Helper function to calculate the amount of base and premium debt to restore
   function _calculateRestoreAmount(
     uint256 baseDebt,
