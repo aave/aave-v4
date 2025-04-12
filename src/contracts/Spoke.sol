@@ -442,9 +442,10 @@ contract Spoke is ISpoke {
     // );
 
     console.log(
-      'emit LC: debt %e coll %e',
+      'emit LC: debt %e coll %e fee %e',
       vars.baseDebtToLiquidate + vars.premiumDebtToLiquidate,
-      vars.collateralToLiquidate
+      vars.collateralToLiquidate,
+      vars.liquidationProtocolFeeAmount
     );
     return (
       collateralReserve.asset,
@@ -471,6 +472,7 @@ contract Spoke is ISpoke {
     DataTypes.LiquidationCallLocalVars memory vars;
     vars.collateralReserveId = collateralReserve.reserveId;
     vars.debtReserveId = debtReserve.reserveId;
+    vars.userCollateralBalance = getUserSuppliedAmount(vars.collateralReserveId, user);
 
     // (vars.baseDebt, vars.premiumDebt) = _getUserDebt(userDebtPosition, debtReserve.assetId);
     vars.totalDebt = baseDebt + premiumDebt;
@@ -521,8 +523,6 @@ contract Spoke is ISpoke {
       // totalDebt: vars.totalDebt,
       // healthFactor: vars.healthFactor
     });
-
-    vars.userCollateralBalance = getUserSuppliedAmount(vars.collateralReserveId, user);
 
     // console.log(
     //   'userCollateralBalance %e %e %e',
@@ -1332,6 +1332,12 @@ contract Spoke is ISpoke {
         params.liquidationProtocolFeePercentage
       );
 
+      console.log(
+        'lpfp != 0, %e %e %e',
+        vars.collateralAmount,
+        vars.debtAmountNeeded,
+        vars.liquidationProtocolFeeAmount
+      );
       return (
         vars.collateralAmount - vars.liquidationProtocolFeeAmount,
         vars.debtAmountNeeded,

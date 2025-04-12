@@ -666,6 +666,18 @@ abstract contract Base is Test {
     spoke.updateReserveConfig(reserveId, config);
   }
 
+  function updateLiquidationProtocolFeePercentage(
+    ISpoke spoke,
+    uint256 reserveId,
+    uint256 newLiquidationProtocolFeePercentage
+  ) internal {
+    DataTypes.ReserveConfig memory config = spoke.getReserve(reserveId).config;
+    config.liquidationProtocolFeePercentage = newLiquidationProtocolFeePercentage;
+
+    vm.prank(SPOKE_ADMIN);
+    spoke.updateReserveConfig(reserveId, config);
+  }
+
   function setUsingAsCollateral(
     ISpoke spoke,
     address user,
