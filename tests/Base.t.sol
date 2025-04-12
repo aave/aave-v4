@@ -50,6 +50,7 @@ abstract contract Base is Test {
   uint256 internal constant MAX_LIQUIDATION_BONUS_FACTOR = PercentageMath.PERCENTAGE_FACTOR; // 100%
   uint256 internal constant HEALTH_FACTOR_LIQUIDATION_THRESHOLD = 1e18;
   uint256 internal constant MAX_CLOSE_FACTOR = 1.5e18;
+  uint256 internal constant MAX_COLLATERAL_FACTOR = 100_00;
 
   // TODO: remove after migrating to token list
   IERC20 internal usdc;
@@ -342,7 +343,7 @@ abstract contract Base is Test {
       active: true,
       frozen: false,
       paused: false,
-      collateralFactor: 75_00,
+      collateralFactor: 78_00,
       liquidationBonus: 100_00,
       liquidityPremium: 20_00,
       liquidationProtocolFeePercentage: 0,

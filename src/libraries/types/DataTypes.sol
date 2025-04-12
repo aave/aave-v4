@@ -114,6 +114,7 @@ library DataTypes {
     uint256 liquidationBonusFactor; // BPS, as a percentage of effective lb, TODO: use smaller uint
   }
 
+  // todo: delete unneeded fields
   struct LiquidationCallLocalVars {
     uint256 collateralReserveId;
     uint256 debtReserveId;
@@ -157,5 +158,21 @@ library DataTypes {
     uint256 debtAmountNeeded;
     uint256 liquidationProtocolFeePercentage;
     uint256 liquidationProtocolFeeAmount;
+  }
+
+  struct ExecuteLiquidationLocalVars {
+    uint256 debtAssetId;
+    uint256 baseDebt;
+    uint256 premiumDebt;
+    uint256 collateralToLiquidate;
+    uint256 liquidationProtocolFeeAmount;
+    uint256 baseDebtToLiquidate;
+    uint256 premiumDebtToLiquidate;
+    uint256 restoredShares;
+    uint256 withdrawnShares;
+    uint256 userPremiumDrawnShares;
+    uint256 userPremiumOffset;
+    uint256 userRealizedPremium;
+    uint256 newUserRiskPremium;
   }
 }

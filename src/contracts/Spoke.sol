@@ -290,7 +290,6 @@ contract Spoke is ISpoke {
     );
 
     _refreshPremiumDebt(reserve, int256(userPremiumDrawnShares), int256(userPremiumOffset), 0);
-
     _notifyRiskPremiumUpdate(reserve.assetId, msg.sender, newUserRiskPremium);
 
     emit Repay(reserveId, msg.sender, restoredShares);
@@ -302,6 +301,41 @@ contract Spoke is ISpoke {
     address user,
     uint256 debtToCover
   ) external {
+    (
+      address collateralAsset,
+      address debtAsset,
+      uint256 totalDebtToLiquidate,
+      uint256 collateralToLiquidate,
+      uint256 liquidationProtocolFeeAmount
+    ) = _executeLiquidation(collateralReserveId, debtReserveId, user, debtToCover);
+    // // transfer to liquidator
+    // IERC20(collateralAsset).safeTransfer(msg.sender, collateralToLiquidate);
+    // // transfer to treasury
+    // if (liquidationProtocolFeeAmount > 0) {
+    //   IERC20(collateralAsset).safeTransfer(_treasury, liquidationProtocolFeeAmount);
+    // }
+    // console.log('emit LC: debt %e coll %e', totalDebtToLiquidate, collateralToLiquidate);
+    // emit LiquidationCall(
+    //   collateralAsset,
+    //   debtAsset,
+    //   user,
+    //   totalDebtToLiquidate,
+    //   collateralToLiquidate,
+    //   msg.sender
+    // );
+  }
+
+  /// @return collateralAsset The address of the underlying asset used as collateral, to receive as result of the liquidation.
+  /// @return debtAsset The address of the underlying borrowed asset to be repaid with the liquidation.
+  /// @return totalDebtToLiquidate The total amount of debt to be repaid.
+  /// @return collateralToLiquidate The amount of collateral to liquidate.
+  /// @return liquidationProtocolFeeAmount The amount of protocol fee to liquidate.
+  function _executeLiquidation(
+    uint256 collateralReserveId,
+    uint256 debtReserveId,
+    address user,
+    uint256 debtToCover
+  ) internal returns (address, address, uint256, uint256, uint256) {
     DataTypes.Reserve storage collateralReserve = _reserves[collateralReserveId];
     DataTypes.Reserve storage debtReserve = _reserves[debtReserveId];
     DataTypes.UserPosition storage userCollateralPosition = _userPositions[user][
@@ -309,63 +343,111 @@ contract Spoke is ISpoke {
     ];
     DataTypes.UserPosition storage userDebtPosition = _userPositions[user][debtReserveId];
 
-    // (uint256 baseDebt, uint256 premiumDebt) = _getUserDebt(userPosition, debtReserve.assetId);
+    DataTypes.ExecuteLiquidationLocalVars memory vars;
+    vars.debtAssetId = debtReserve.assetId;
+
+    (vars.baseDebt, vars.premiumDebt) = _getUserDebt(userDebtPosition, vars.debtAssetId);
+
     (
-      uint256 collateralToLiquidate,
-      uint256 liquidationProtocolFeeAmount,
-      uint256 baseDebtToLiquidate,
-      uint256 premiumDebtToLiquidate
-    ) = _executeLiquidationCall(
-        collateralReserve,
-        debtReserve,
-        userDebtPosition,
-        user,
-        debtToCover
-      );
+      vars.collateralToLiquidate,
+      vars.liquidationProtocolFeeAmount,
+      vars.baseDebtToLiquidate,
+      vars.premiumDebtToLiquidate
+    ) = _calculateLiquidationParameters(
+      collateralReserve,
+      debtReserve,
+      // userDebtPosition,
+      user,
+      debtToCover,
+      vars.baseDebt,
+      vars.premiumDebt
+    );
 
     // repay debt
-    uint256 restoredShares = HUB.restore(
-      debtReserve.assetId,
-      baseDebtToLiquidate,
-      premiumDebtToLiquidate,
+    vars.restoredShares = HUB.restore(
+      vars.debtAssetId,
+      vars.baseDebtToLiquidate,
+      vars.premiumDebtToLiquidate,
       msg.sender
     );
     // liquidate collateral
-    uint256 withdrawnShares = HUB.remove(
+    vars.withdrawnShares = HUB.remove(
       collateralReserve.assetId,
-      collateralToLiquidate + liquidationProtocolFeeAmount,
+      vars.collateralToLiquidate + vars.liquidationProtocolFeeAmount,
       address(this)
     );
 
-    // TODO: risk premium needs to be updated again bc collateral/debt has been updated?
+    // // settle debt reserve's premium debt
+    // vars.userPremiumDrawnShares = userDebtPosition.premiumDrawnShares;
+    // vars.userPremiumOffset = userDebtPosition.premiumOffset;
+    // vars.userRealizedPremium = userDebtPosition.realizedPremium;
+
+    // userDebtPosition.premiumDrawnShares = 0;
+    // userDebtPosition.premiumOffset = 0;
+    // userDebtPosition.realizedPremium = vars.premiumDebt - vars.premiumDebtToLiquidate;
+
+    // _refreshPremiumDebt(
+    //   debtReserve,
+    //   -int256(vars.userPremiumDrawnShares),
+    //   -int256(vars.userPremiumOffset),
+    //   _signedDiff(userDebtPosition.realizedPremium, vars.userRealizedPremium)
+    // );
 
     // accounting
-    userCollateralPosition.suppliedShares -= withdrawnShares;
-    collateralReserve.suppliedShares -= withdrawnShares;
+    userCollateralPosition.suppliedShares -= vars.withdrawnShares;
+    collateralReserve.suppliedShares -= vars.withdrawnShares;
 
-    userDebtPosition.baseDrawnShares -= restoredShares;
-    debtReserve.baseDrawnShares -= restoredShares;
+    userDebtPosition.baseDrawnShares -= vars.restoredShares;
+    debtReserve.baseDrawnShares -= vars.restoredShares;
+
+    // // refresh premium debt
+    // vars.newUserRiskPremium = _validateUserPosition(user); // validates HF
+    // vars.userPremiumDrawnShares = userDebtPosition.premiumDrawnShares = userDebtPosition
+    //   .baseDrawnShares
+    //   .percentMul(vars.newUserRiskPremium);
+    // vars.userPremiumOffset = userDebtPosition.premiumOffset = HUB.convertToDrawnAssets(
+    //   vars.debtAssetId,
+    //   userDebtPosition.premiumDrawnShares
+    // );
+
+    // _refreshPremiumDebt(
+    //   debtReserve,
+    //   int256(vars.userPremiumDrawnShares),
+    //   int256(vars.userPremiumOffset),
+    //   0
+    // );
+    // _notifyRiskPremiumUpdate(vars.debtAssetId, user, vars.newUserRiskPremium);
 
     address collateralAsset = collateralReserve.asset;
     address debtAsset = debtReserve.asset;
 
     // transfer to liquidator
-    IERC20(collateralAsset).safeTransfer(msg.sender, collateralToLiquidate);
+    IERC20(collateralAsset).safeTransfer(msg.sender, vars.collateralToLiquidate);
     // transfer to treasury
-    IERC20(debtAsset).safeTransfer(msg.sender, liquidationProtocolFeeAmount);
+    if (vars.liquidationProtocolFeeAmount > 0) {
+      IERC20(debtAsset).safeTransfer(_treasury, vars.liquidationProtocolFeeAmount);
+    }
 
-    console.log(
-      'emit LC: debt %e coll %e',
-      baseDebtToLiquidate + premiumDebtToLiquidate,
-      collateralToLiquidate
-    );
     emit LiquidationCall(
       collateralAsset,
       debtAsset,
       user,
-      baseDebtToLiquidate + premiumDebtToLiquidate,
-      collateralToLiquidate,
+      vars.baseDebtToLiquidate + vars.premiumDebtToLiquidate,
+      vars.collateralToLiquidate,
       msg.sender
+    );
+
+    console.log(
+      'emit LC: debt %e coll %e',
+      vars.baseDebtToLiquidate + vars.premiumDebtToLiquidate,
+      vars.collateralToLiquidate
+    );
+    return (
+      collateralReserve.asset,
+      debtReserve.asset,
+      vars.baseDebtToLiquidate + vars.premiumDebtToLiquidate,
+      vars.collateralToLiquidate,
+      vars.liquidationProtocolFeeAmount
     );
   }
 
@@ -373,19 +455,21 @@ contract Spoke is ISpoke {
   /// @return liquidationProtocolFeeAmount The amount of protocol fee to liquidate.
   /// @return actualBaseDebtToLiquidate The amount of base debt to liquidate.
   /// @return actualPremiumDebtToLiquidate The amount of premium debt to liquidate.
-  function _executeLiquidationCall(
+  function _calculateLiquidationParameters(
     DataTypes.Reserve storage collateralReserve,
     DataTypes.Reserve storage debtReserve,
-    DataTypes.UserPosition storage userDebtPosition,
+    // DataTypes.UserPosition storage userDebtPosition,
     address user,
-    uint256 debtToCover
+    uint256 debtToCover,
+    uint256 baseDebt,
+    uint256 premiumDebt
   ) internal returns (uint256, uint256, uint256, uint256) {
     DataTypes.LiquidationCallLocalVars memory vars;
     vars.collateralReserveId = collateralReserve.reserveId;
     vars.debtReserveId = debtReserve.reserveId;
 
-    (vars.baseDebt, vars.premiumDebt) = _getUserDebt(userDebtPosition, debtReserve.assetId);
-    vars.totalDebt = vars.baseDebt + vars.premiumDebt;
+    // (vars.baseDebt, vars.premiumDebt) = _getUserDebt(userDebtPosition, debtReserve.assetId);
+    vars.totalDebt = baseDebt + premiumDebt;
 
     (
       ,
@@ -684,6 +768,9 @@ contract Spoke is ISpoke {
 
   function _validateUserPosition(address userAddress) internal view returns (uint256) {
     (uint256 userRiskPremium, , uint256 healthFactor, , ) = _calculateUserAccountData(userAddress);
+
+    console.log('sp healthFactor %e', healthFactor);
+
     require(healthFactor >= HEALTH_FACTOR_LIQUIDATION_THRESHOLD, HealthFactorBelowThreshold());
     return userRiskPremium;
   }
