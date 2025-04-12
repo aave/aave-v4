@@ -38,6 +38,7 @@ interface ISpoke {
   event LiquidationConfigUpdated(DataTypes.LiquidationConfig config);
 
   error InvalidReserve();
+  error UserNotBorrowingReserve(uint256 reserveId);
   error ReserveNotListed();
   error InvalidLiquidityPremium();
   error InsufficientSupply(uint256 supply);

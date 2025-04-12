@@ -690,7 +690,7 @@ contract SpokeUserRiskPremiumTest is SpokeBase {
     );
 
     // Change the liquidity premium of wbtc
-    spoke2.updateLiquidityPremium(wbtcInfo.reserveId, newLpValue);
+    updateLiquidityPremium(spoke2, wbtcInfo.reserveId, newLpValue);
 
     assertEq(
       spoke2.getUserRiskPremium(bob),
@@ -773,10 +773,10 @@ contract SpokeUserRiskPremiumTest is SpokeBase {
     oracle.setAssetPrice(wbtcAssetId, wbtcInfo.price);
 
     // Update LPs
-    spoke2.updateLiquidityPremium(_daiReserveId(spoke2), daiInfo.lp);
-    spoke2.updateLiquidityPremium(_wethReserveId(spoke2), wethInfo.lp);
-    spoke2.updateLiquidityPremium(_usdxReserveId(spoke2), usdxInfo.lp);
-    spoke2.updateLiquidityPremium(_wbtcReserveId(spoke2), wbtcInfo.lp);
+    updateLiquidityPremium(spoke2, _daiReserveId(spoke2), daiInfo.lp);
+    updateLiquidityPremium(spoke2, _wethReserveId(spoke2), wethInfo.lp);
+    updateLiquidityPremium(spoke2, _usdxReserveId(spoke2), usdxInfo.lp);
+    updateLiquidityPremium(spoke2, _wbtcReserveId(spoke2), wbtcInfo.lp);
 
     // Check user risk premium
     assertEq(
@@ -1127,8 +1127,8 @@ contract SpokeUserRiskPremiumTest is SpokeBase {
   /// After 1 year, Alice does a repay, and we ensure the same values are updated accordingly.
   function test_getUserRiskPremium_applyInterest_two_users_two_reserves_borrowed() public {
     // Set Dai lp to 10% and usdx to 20%
-    spoke1.updateLiquidityPremium(_daiReserveId(spoke1), 10_00);
-    spoke1.updateLiquidityPremium(_usdxReserveId(spoke1), 20_00);
+    updateLiquidityPremium(spoke1, _daiReserveId(spoke1), 10_00);
+    updateLiquidityPremium(spoke1, _usdxReserveId(spoke1), 20_00);
 
     UserInfoLocal memory bobDaiInfo;
     UserInfoLocal memory aliceDaiInfo;
@@ -1558,8 +1558,8 @@ contract SpokeUserRiskPremiumTest is SpokeBase {
     //   thirdTimeSkip = uint40(bound(thirdTimeSkip, 0, MAX_SKIP_TIME));
 
     //   // Set liquidity premiums
-    //   spoke1.updateLiquidityPremium(_daiReserveId(spoke1), daiLp);
-    //   spoke1.updateLiquidityPremium(_usdxReserveId(spoke1), usdxLp);
+    //   updateLiquidityPremium(spoke1, _daiReserveId(spoke1), daiLp);
+    //   updateLiquidityPremium(spoke1, _usdxReserveId(spoke1), usdxLp);
     //   assertEq(spoke1.getLiquidityPremium(_daiReserveId(spoke1)), daiLp, 'dai lp');
     //   assertEq(spoke1.getLiquidityPremium(_usdxReserveId(spoke1)), usdxLp, 'usdx lp');
 
