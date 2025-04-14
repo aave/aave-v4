@@ -23,6 +23,58 @@ contract LiquidationCallTest is SpokeBase {
     uint256 usdy;
   }
 
+  function test_liqCall_premium() public {
+    LiqTestData memory state;
+
+    state.wethReserveId = _wethReserveId(spoke1);
+    state.daiReserveId = _daiReserveId(spoke1);
+    state.wbtcReserveId = _wbtcReserveId(spoke1);
+
+    // collateral: wbtc/dai
+    state.colls[0].wbtc = 1 * 10 ** tokenList.wbtc.decimals(); // $50k wbtc
+    state.colls[0].dai = 10_000 * 10 ** tokenList.dai.decimals(); // $10k dai
+    // debt: weth
+    state.debts[0].weth = 20 * 10 ** tokenList.weth.decimals(); // 20 eth, $40k
+
+    state.liqBonus = spoke1.getReserve(state.wbtcReserveId).config.liquidationBonus;
+
+    _deployLiquidity(spoke1, state.wethReserveId, state.debts[0].weth);
+    Utils.supplyCollateral(spoke1, state.wbtcReserveId, alice, state.colls[0].wbtc, alice);
+    Utils.supplyCollateral(spoke1, state.daiReserveId, alice, state.colls[0].dai, alice);
+    Utils.borrow(spoke1, state.wethReserveId, alice, state.debts[0].weth, alice);
+
+    skip(365 days);
+
+    // wbtc collateral value drop to reduce HF < 1
+    oracle.setAssetPrice(wbtcAssetId, 20_000e8);
+
+    assertLt(spoke1.getHealthFactor(alice), HEALTH_FACTOR_LIQUIDATION_THRESHOLD);
+
+    // UserTokenBalance memory balancesBefore = _loadUserBalances();
+
+    // state.initialDebt = spoke1.getUserTotalDebt(state.wethReserveId, alice);
+    // state.liquidatedDebt = _convertAssetAmount(wbtcAssetId, state.colls[0].wbtc, wethAssetId)
+    //   .percentDiv(state.liqBonus);
+
+    // bob liquidates alice
+    // vm.expectEmit(address(spoke1));
+    // emit ISpoke.LiquidationCall(
+    //   address(tokenList.wbtc),
+    //   address(tokenList.weth),
+    //   alice,
+    //   state.liquidatedDebt,
+    //   state.colls[0].wbtc,
+    //   bob
+    // );
+    vm.prank(bob);
+    spoke1.liquidationCall({
+      collateralReserveId: state.wbtcReserveId,
+      debtReserveId: state.wethReserveId,
+      user: alice,
+      debtToCover: state.debts[0].weth
+    });
+  }
+
   /// scenario where fully liquidating a collateral still does not improve a position to close factor
   /// default close factor of 1
   function test_liquidationCall_all_collateral_default_close_factor() public {

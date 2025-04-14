@@ -167,6 +167,7 @@ library DataTypes {
 
   struct ExecuteLiquidationLocalVars {
     uint256 debtAssetId;
+    uint256 collateralAssetId;
     uint256 baseDebt;
     uint256 premiumDebt;
     uint256 collateralToLiquidate;
@@ -175,14 +176,25 @@ library DataTypes {
     uint256 premiumDebtToLiquidate;
     uint256 restoredShares;
     uint256 withdrawnShares;
-    uint256 userPremiumDrawnShares;
-    uint256 userPremiumOffset;
-    uint256 userRealizedPremium;
     uint256 newUserRiskPremium;
-    uint256 userRiskPremium;
+    // uint256 userRiskPremium;
     uint256 avgCollateralFactor;
     uint256 healthFactor;
     uint256 totalCollateralInBaseCurrency;
     uint256 totalDebtInBaseCurrency;
+    uint256 userDebtPremiumDrawnShares;
+    uint256 userDebtPremiumOffset;
+    uint256 userDebtRealizedPremium;
+    uint256 userCollateralPremiumDrawnShares;
+    uint256 userCollateralPremiumOffset;
+    uint256 userCollateralRealizedPremium;
+    uint256 accruedCollateralPremium;
+  }
+
+  struct TempDebug {
+    uint256 rBaseDebt;
+    uint256 rPremiumDebt;
+    uint256 assetBaseDebt;
+    uint256 assetPremiumDebt;
   }
 }
