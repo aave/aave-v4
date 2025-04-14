@@ -93,18 +93,13 @@ library LiquidationLogic {
     // - penalty exceeds or equals the close factor, ie liquidation cannot restore solvency efficiently (negative denominator)
     // - debt asset price is 0
     if (params.closeFactor <= effectiveLiquidationPenalty || params.debtAssetPrice == 0) {
-      console.log('LL here if');
       return type(uint256).max;
     }
-
-    // console.log('LL here', params.totalDebtInBaseCurrency.wadMul(params.closeFactor));
 
     uint256 closeFactorDebt = ((params.totalDebtInBaseCurrency.wadMul(params.closeFactor) -
       params.totalCollateralInBaseCurrency.percentMul(params.avgCollateralFactor.dewadify())) *
       params.debtAssetUnit) /
       ((params.closeFactor - effectiveLiquidationPenalty) * params.debtAssetPrice);
-
-    // console.log('LL closeFactorDebt %e', closeFactorDebt);
 
     // convert into amount
     return closeFactorDebt;

@@ -14,14 +14,72 @@ contract LiquidationLogicCloseFactorDebtTest is Base {
   // (debt * assetPrice).wadify() / assetUnit
   uint256 internal constant MAX_TOTAL_DEBT_IN_BASE_CURRENCY = 1e58;
 
-  function testDebug() public {
-    // testCalculateActualDebtToLiquidate_debtToCover_debtAssetUnitZero(
-    //   11961,
-    //   1,
-    //   171795365432138209828527811341376943971965603010912721569924835186674,
-    //   77432463920181804,
-    //   1999999999999999999
-    // );
+  struct FieldsToSkip {
+    uint256 flags;
+  }
+
+  uint256 constant SKIP_NONE = 0;
+  uint256 constant SKIP_LIQUIDATION_BONUS = 1 << 0;
+  uint256 constant SKIP_COLLATERAL_FACTOR = 1 << 1;
+  uint256 constant SKIP_AVG_COLLATERAL_FACT = 1 << 2;
+  uint256 constant SKIP_TOTAL_DEBT = 1 << 3;
+  uint256 constant SKIP_DEBT_ASSET_PRICE = 1 << 4;
+  uint256 constant SKIP_CLOSE_FACTOR = 1 << 5;
+  uint256 constant SKIP_DEBT_ASSET_UNIT = 1 << 6;
+
+  function _isSkipped(FieldsToSkip memory skip, uint256 field) internal pure returns (bool) {
+    return (skip.flags & field) != 0;
+  }
+
+  function _skipOnly(uint256 flags) internal pure returns (FieldsToSkip memory) {
+    return FieldsToSkip({flags: flags});
+  }
+
+  function _bound(
+    TestCloseFactorDebtParams memory params,
+    FieldsToSkip memory skip
+  ) internal returns (TestCloseFactorDebtParams memory) {
+    if (!_isSkipped(skip, SKIP_LIQUIDATION_BONUS)) {
+      params.liquidationBonus = bound(
+        params.liquidationBonus,
+        MIN_LIQUIDATION_BONUS,
+        MAX_LIQUIDATION_BONUS
+      );
+    }
+
+    if (!_isSkipped(skip, SKIP_COLLATERAL_FACTOR)) {
+      params.collateralFactor = bound(params.collateralFactor, 1, MAX_COLLATERAL_FACTOR);
+    }
+
+    if (!_isSkipped(skip, SKIP_AVG_COLLATERAL_FACT)) {
+      params.avgCollateralFactor = bound(params.avgCollateralFactor, 1, MAX_COLLATERAL_FACTOR);
+    }
+
+    if (!_isSkipped(skip, SKIP_TOTAL_DEBT)) {
+      params.totalDebtInBaseCurrency = bound(
+        params.totalDebtInBaseCurrency,
+        1,
+        MAX_TOTAL_DEBT_IN_BASE_CURRENCY
+      );
+    }
+
+    if (!_isSkipped(skip, SKIP_DEBT_ASSET_PRICE)) {
+      params.debtAssetPrice = bound(params.debtAssetPrice, 1, MAX_DEBT_ASSET_PRICE);
+    }
+
+    if (!_isSkipped(skip, SKIP_CLOSE_FACTOR)) {
+      params.closeFactor = bound(
+        params.closeFactor,
+        _calculateCloseFactorThreshold(params.liquidationBonus, params.collateralFactor),
+        MAX_CLOSE_FACTOR
+      );
+    }
+
+    if (!_isSkipped(skip, SKIP_DEBT_ASSET_UNIT)) {
+      params.debtAssetUnit = bound(params.debtAssetUnit, 1, 10 ** MAX_TOKEN_DECIMALS_SUPPORTED);
+    }
+
+    return params;
   }
 
   struct TestCloseFactorDebtParams {
@@ -34,30 +92,30 @@ contract LiquidationLogicCloseFactorDebtTest is Base {
     uint256 debtAssetUnit;
   }
 
-  function _bound(
-    TestCloseFactorDebtParams memory params
-  ) internal returns (TestCloseFactorDebtParams memory) {
-    params.liquidationBonus = bound(
-      params.liquidationBonus,
-      MIN_LIQUIDATION_BONUS,
-      MAX_LIQUIDATION_BONUS
-    );
-    params.collateralFactor = bound(params.collateralFactor, 1, MAX_COLLATERAL_FACTOR);
-    params.avgCollateralFactor = bound(params.avgCollateralFactor, 1, MAX_COLLATERAL_FACTOR);
-    params.totalDebtInBaseCurrency = bound(
-      params.totalDebtInBaseCurrency,
-      1,
-      MAX_TOTAL_DEBT_IN_BASE_CURRENCY
-    );
-    params.debtAssetPrice = bound(params.debtAssetPrice, 1, MAX_DEBT_ASSET_PRICE);
-    params.closeFactor = bound(
-      params.closeFactor,
-      _calculateCloseFactorThreshold(params.liquidationBonus, params.collateralFactor),
-      MAX_CLOSE_FACTOR
-    );
+  // function _bound(
+  //   TestCloseFactorDebtParams memory params
+  // ) internal returns (TestCloseFactorDebtParams memory) {
+  //   params.liquidationBonus = bound(
+  //     params.liquidationBonus,
+  //     MIN_LIQUIDATION_BONUS,
+  //     MAX_LIQUIDATION_BONUS
+  //   );
+  //   params.collateralFactor = bound(params.collateralFactor, 1, MAX_COLLATERAL_FACTOR);
+  //   params.avgCollateralFactor = bound(params.avgCollateralFactor, 1, MAX_COLLATERAL_FACTOR);
+  //   params.totalDebtInBaseCurrency = bound(
+  //     params.totalDebtInBaseCurrency,
+  //     1,
+  //     MAX_TOTAL_DEBT_IN_BASE_CURRENCY
+  //   );
+  //   params.debtAssetPrice = bound(params.debtAssetPrice, 1, MAX_DEBT_ASSET_PRICE);
+  //   params.closeFactor = bound(
+  //     params.closeFactor,
+  //     _calculateCloseFactorThreshold(params.liquidationBonus, params.collateralFactor),
+  //     MAX_CLOSE_FACTOR
+  //   );
 
-    return params;
-  }
+  //   return params;
+  // }
 
   function _setFunctionArgs(
     TestCloseFactorDebtParams memory params
@@ -71,11 +129,18 @@ contract LiquidationLogicCloseFactorDebtTest is Base {
     result.debtAssetUnit = params.debtAssetUnit;
   }
 
+  function testDebug() public {
+    TestCloseFactorDebtParams memory params;
+    testCalculateActualDebtToLiquidate_debtAssetUnit_zero(params);
+  }
+
   /// if debtAssetUnit == 0, then result is 0 (should not happen in practice as unit is 10**decimals)
   function testCalculateActualDebtToLiquidate_debtAssetUnit_zero(
     TestCloseFactorDebtParams memory params
   ) public {
-    params = _bound(params);
+    // params = _bound(params);
+    FieldsToSkip memory skips = _skipOnly(SKIP_DEBT_ASSET_UNIT);
+    TestCloseFactorDebtParams memory bounded = _bound(params, skips);
     DataTypes.LiquidationCallLocalVars memory args = _setFunctionArgs(params);
 
     // units is 0
