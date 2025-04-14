@@ -24,40 +24,79 @@ contract LiquidationLogicCloseFactorDebtTest is Base {
     // );
   }
 
-  /// if debtAssetUnit == 0, then result is 0 (should not happen in practice as unit is 10**decimals)
-  function testCalculateActualDebtToLiquidate_debtToCover_debtAssetUnitZero(
-    uint256 liquidationBonus,
-    uint256 collateralFactor,
-    uint256 closeFactor,
-    uint256 totalDebtInBaseCurrency,
-    uint256 debtAssetPrice,
-    uint256 avgCollateralFactor
-  ) public {
-    liquidationBonus = bound(liquidationBonus, MIN_LIQUIDATION_BONUS, MAX_LIQUIDATION_BONUS);
-    collateralFactor = bound(collateralFactor, 1, MAX_COLLATERAL_FACTOR);
-    avgCollateralFactor = bound(avgCollateralFactor, 1, MAX_COLLATERAL_FACTOR);
-    totalDebtInBaseCurrency = bound(totalDebtInBaseCurrency, 1, MAX_TOTAL_DEBT_IN_BASE_CURRENCY);
-    debtAssetPrice = bound(debtAssetPrice, 1, MAX_DEBT_ASSET_PRICE);
-    closeFactor = bound(
-      closeFactor,
-      _calculateCloseFactorThreshold(liquidationBonus, collateralFactor),
+  struct TestCloseFactorDebtParams {
+    uint256 liquidationBonus;
+    uint256 collateralFactor;
+    uint256 closeFactor;
+    uint256 totalDebtInBaseCurrency;
+    uint256 debtAssetPrice;
+    uint256 avgCollateralFactor;
+    uint256 debtAssetUnit;
+  }
+
+  function _bound(
+    TestCloseFactorDebtParams memory params
+  ) internal returns (TestCloseFactorDebtParams memory) {
+    params.liquidationBonus = bound(
+      params.liquidationBonus,
+      MIN_LIQUIDATION_BONUS,
+      MAX_LIQUIDATION_BONUS
+    );
+    params.collateralFactor = bound(params.collateralFactor, 1, MAX_COLLATERAL_FACTOR);
+    params.avgCollateralFactor = bound(params.avgCollateralFactor, 1, MAX_COLLATERAL_FACTOR);
+    params.totalDebtInBaseCurrency = bound(
+      params.totalDebtInBaseCurrency,
+      1,
+      MAX_TOTAL_DEBT_IN_BASE_CURRENCY
+    );
+    params.debtAssetPrice = bound(params.debtAssetPrice, 1, MAX_DEBT_ASSET_PRICE);
+    params.closeFactor = bound(
+      params.closeFactor,
+      _calculateCloseFactorThreshold(params.liquidationBonus, params.collateralFactor),
       MAX_CLOSE_FACTOR
     );
 
-    DataTypes.LiquidationCallLocalVars memory params;
-    params.liquidationBonus = liquidationBonus;
-    params.collateralFactor = collateralFactor;
-    params.closeFactor = closeFactor;
-    params.totalDebtInBaseCurrency = totalDebtInBaseCurrency;
-    params.debtAssetPrice = debtAssetPrice;
-    params.avgCollateralFactor = avgCollateralFactor;
-
-    // units is 0
-    params.debtAssetUnit = 0;
-
-    assertEq(LiquidationLogic.calculateCloseFactorDebt(params), 0, 'closeFactorDebt is 0');
+    return params;
   }
 
+  function _setFunctionArgs(
+    TestCloseFactorDebtParams memory params
+  ) internal returns (DataTypes.LiquidationCallLocalVars memory result) {
+    result.liquidationBonus = params.liquidationBonus;
+    result.collateralFactor = params.collateralFactor;
+    result.closeFactor = params.closeFactor;
+    result.totalDebtInBaseCurrency = params.totalDebtInBaseCurrency;
+    result.debtAssetPrice = params.debtAssetPrice;
+    result.avgCollateralFactor = params.avgCollateralFactor;
+    result.debtAssetUnit = params.debtAssetUnit;
+  }
+
+  /// if debtAssetUnit == 0, then result is 0 (should not happen in practice as unit is 10**decimals)
+  function testCalculateActualDebtToLiquidate_debtAssetUnit_zero(
+    TestCloseFactorDebtParams memory params
+  ) public {
+    params = _bound(params);
+    DataTypes.LiquidationCallLocalVars memory args = _setFunctionArgs(params);
+
+    // units is 0
+    args.debtAssetUnit = 0;
+
+    assertEq(LiquidationLogic.calculateCloseFactorDebt(args), 0, 'closeFactorDebt is 0');
+  }
+
+  // /// if debtAssetUnit == 0, then result is 0 (should not happen in practice as unit is 10**decimals)
+  // function testCalculateActualDebtToLiquidate_avgCollateralFactor_zero(
+  //   TestCloseFactorDebtParams memory params
+  // ) public {
+  //   params = _bound(params, FieldsToSkip.AvgCollateralFactor);
+  //   DataTypes.LiquidationCallLocalVars memory args = _setFunctionArgs(params);
+
+  //   args.avgCollateralFactor = 0;
+
+  //   assertEq(LiquidationLogic.calculateCloseFactorDebt(args), 0, 'closeFactorDebt is 0');
+  // }
+
+  // for close factor > effectiveLiquidationPenalty, and positive denominator in calc
   function _calculateCloseFactorThreshold(
     uint256 liquidationBonus,
     uint256 collateralFactor
