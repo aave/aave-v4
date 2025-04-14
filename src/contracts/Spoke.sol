@@ -569,8 +569,6 @@ contract Spoke is ISpoke {
 
     vars.actualDebtToLiquidate = LiquidationLogic.calculateActualDebtToLiquidate({
       debtToCover: debtToCover,
-      user: user,
-      debtReserveId: vars.debtReserveId,
       params: vars
     });
 
@@ -1162,130 +1160,130 @@ contract Spoke is ISpoke {
     emit UsingAsCollateral(reserveId, user, usingAsCollateral);
   }
 
-  function _calculateActualDebtToLiquidate(
-    // DataTypes.Reserve storage collateralReserve, // TODO: extract collateralFactor into params
-    uint256 debtToCover,
-    address user,
-    uint256 debtReserveId,
-    DataTypes.LiquidationCallLocalVars memory params
-  )
-    internal
-    view
-    returns (
-      // uint256 totalCollateralInBaseCurrency,
-      // uint256 totalDebtInBaseCurrency,
-      // uint256 avgCollateralFactor,
-      // uint256 debtAssetPrice,
-      // uint256 totalDebt,
-      // uint256 healthFactor
-      uint256
-    )
-  {
-    DataTypes.CalculateActualDebtToLiquidateLocalVars memory vars;
-    vars.maxLiquidatableDebt = params.totalDebt;
-    // vars.closeFactor = _liquidationConfig.closeFactor;
+  // function _calculateActualDebtToLiquidate(
+  //   // DataTypes.Reserve storage collateralReserve, // TODO: extract collateralFactor into params
+  //   uint256 debtToCover,
+  //   address user,
+  //   uint256 debtReserveId,
+  //   DataTypes.LiquidationCallLocalVars memory params
+  // )
+  //   internal
+  //   view
+  //   returns (
+  //     // uint256 totalCollateralInBaseCurrency,
+  //     // uint256 totalDebtInBaseCurrency,
+  //     // uint256 avgCollateralFactor,
+  //     // uint256 debtAssetPrice,
+  //     // uint256 totalDebt,
+  //     // uint256 healthFactor
+  //     uint256
+  //   )
+  // {
+  //   DataTypes.CalculateActualDebtToLiquidateLocalVars memory vars;
+  //   vars.maxLiquidatableDebt = params.totalDebt;
+  //   // vars.closeFactor = _liquidationConfig.closeFactor;
 
-    // vars.hfScaledDebt = params.totalDebtInBaseCurrency.wadMul(params.closeFactor); // base currency
-    // vars.weightedCollateral = (
-    //   params.totalCollateralInBaseCurrency.wadMul(params.avgCollateralFactor)
-    // ).fromBps(); // base currency, exact result
-    // vars.weightedCollateral = (
-    //   params.totalCollateralInBaseCurrency.percentMul(params.avgCollateralFactor.dewadify())
-    // ); // base currency, with rounding
+  //   // vars.hfScaledDebt = params.totalDebtInBaseCurrency.wadMul(params.closeFactor); // base currency
+  //   // vars.weightedCollateral = (
+  //   //   params.totalCollateralInBaseCurrency.wadMul(params.avgCollateralFactor)
+  //   // ).fromBps(); // base currency, exact result
+  //   // vars.weightedCollateral = (
+  //   //   params.totalCollateralInBaseCurrency.percentMul(params.avgCollateralFactor.dewadify())
+  //   // ); // base currency, with rounding
 
-    // console.log(
-    //   'vars.weightedCollateral %e %e %e',
-    //   vars.weightedCollateral,
-    //   params.totalCollateralInBaseCurrency.wadMul(params.avgCollateralFactor).dewadify()
-    // );
+  //   // console.log(
+  //   //   'vars.weightedCollateral %e %e %e',
+  //   //   vars.weightedCollateral,
+  //   //   params.totalCollateralInBaseCurrency.wadMul(params.avgCollateralFactor).dewadify()
+  //   // );
 
-    // console.log(
-    //   'scaled/weighted %e %e %e',
-    //   vars.hfScaledDebt,
-    //   vars.weightedCollateral,
-    //   params.avgCollateralFactor
-    // );
+  //   // console.log(
+  //   //   'scaled/weighted %e %e %e',
+  //   //   vars.hfScaledDebt,
+  //   //   vars.weightedCollateral,
+  //   //   params.avgCollateralFactor
+  //   // );
 
-    vars.liquidationBonusProduct = (params.liquidationBonus.wadify())
-      .percentMul(params.collateralFactor)
-      .fromBps(); // convert BPS to WAD;
+  //   vars.liquidationBonusProduct = (params.liquidationBonus.wadify())
+  //     .percentMul(params.collateralFactor)
+  //     .fromBps(); // convert BPS to WAD;
 
-    console.log(
-      'vars.liquidationBonusProduct %e %e %e',
-      vars.liquidationBonusProduct,
-      params.collateralFactor,
-      params.liquidationBonus
-    );
+  //   console.log(
+  //     'vars.liquidationBonusProduct %e %e %e',
+  //     vars.liquidationBonusProduct,
+  //     params.collateralFactor,
+  //     params.liquidationBonus
+  //   );
 
-    // amount of user debt that returns HF to closeFactor, in base currency
-    // numerator cannot be negative if CF > liq threshold
-    // check if denominator is negative
-    vars.liquidationRecoveryDebt = vars.closeFactor > vars.liquidationBonusProduct
-      ? ((params.totalDebtInBaseCurrency.wadMul(params.closeFactor) -
-        params.totalCollateralInBaseCurrency.percentMul(params.avgCollateralFactor.dewadify())) *
-        params.debtAssetUnit) / (vars.closeFactor - vars.liquidationBonusProduct)
-      : params.totalDebtInBaseCurrency;
+  //   // amount of user debt that returns HF to closeFactor, in base currency
+  //   // numerator cannot be negative if CF > liq threshold
+  //   // check if denominator is negative
+  //   vars.liquidationRecoveryDebt = params.closeFactor > vars.liquidationBonusProduct
+  //     ? ((params.totalDebtInBaseCurrency.wadMul(params.closeFactor) -
+  //       params.totalCollateralInBaseCurrency.percentMul(params.avgCollateralFactor.dewadify())) *
+  //       params.debtAssetUnit) / (params.closeFactor - vars.liquidationBonusProduct)
+  //     : params.totalDebtInBaseCurrency;
 
-    // console.log('try %e  %e', collateralReserve.config.collateralFactor);
+  //   // console.log('try %e  %e', collateralReserve.config.collateralFactor);
 
-    // console.log(
-    //   'vars.totalDebtInBaseCurrency %e %e %e',
-    //   vars.closeFactor,
-    //   params.totalDebtInBaseCurrency,
-    //   params.totalCollateralInBaseCurrency
-    // );
+  //   // console.log(
+  //   //   'vars.totalDebtInBaseCurrency %e %e %e',
+  //   //   vars.closeFactor,
+  //   //   params.totalDebtInBaseCurrency,
+  //   //   params.totalCollateralInBaseCurrency
+  //   // );
 
-    // console.log(
-    //   '_calculateActualDebtToLiquidate %e %e %e',
-    //   vars.hfScaledDebt,
-    //   vars.weightedCollateral,
-    //   vars.maxLiquidatableDebt
-    // );
+  //   // console.log(
+  //   //   'hfScaledDebt  %e, weightedCollateral %e, maxLiquidatableDebt %e',
+  //   //   vars.hfScaledDebt,
+  //   //   vars.weightedCollateral,
+  //   //   vars.maxLiquidatableDebt
+  //   // );
 
-    console.log('vars.liquidationRecoveryDebt %e', vars.liquidationRecoveryDebt);
+  //   console.log('vars.liquidationRecoveryDebt %e', vars.liquidationRecoveryDebt);
 
-    // console.log(
-    //   'var lb %e',
-    //   getVariableLiquidationBonus(collateralReserve.reserveId, params.healthFactor)
-    // );
+  //   // console.log(
+  //   //   'var lb %e',
+  //   //   getVariableLiquidationBonus(collateralReserve.reserveId, params.healthFactor)
+  //   // );
 
-    // console.log(
-    //   'vars.liquidationRecoveryDebt %e %e %e',
-    //   params.totalDebtInBaseCurrency,
-    //   vars.liquidationRecoveryDebt,
-    //   vars.liquidationRecoveryDebt / params.debtAssetPrice
-    // );
+  //   // console.log(
+  //   //   'vars.liquidationRecoveryDebt %e %e %e',
+  //   //   params.totalDebtInBaseCurrency,
+  //   //   vars.liquidationRecoveryDebt,
+  //   //   vars.liquidationRecoveryDebt / params.debtAssetPrice
+  //   // );
 
-    // if liq recovery debt is bigger, then HF gets bigger, bc more debt is removed.
-    // more debt removed, so less debt remains
-    // so in HF denom is lower, making HF calc higher
+  //   // if liq recovery debt is bigger, then HF gets bigger, bc more debt is removed.
+  //   // more debt removed, so less debt remains
+  //   // so in HF denom is lower, making HF calc higher
 
-    // convert from base currency to amount
-    vars.liquidationRecoveryDebt = params.debtAssetPrice == 0
-      ? type(uint256).max
-      : vars.liquidationRecoveryDebt / params.debtAssetPrice;
+  //   // convert from base currency to amount
+  //   vars.liquidationRecoveryDebt = params.debtAssetPrice == 0
+  //     ? type(uint256).max
+  //     : vars.liquidationRecoveryDebt / params.debtAssetPrice;
 
-    // console.log('vars.liquidationRecoveryDebt %e', vars.liquidationRecoveryDebt);
-    // console.log('vars.maxLiquidatableDebt %e', vars.maxLiquidatableDebt);
+  //   // console.log('vars.liquidationRecoveryDebt %e', vars.liquidationRecoveryDebt);
+  //   // console.log('vars.maxLiquidatableDebt %e', vars.maxLiquidatableDebt);
 
-    vars.maxLiquidatableDebt = vars.maxLiquidatableDebt > vars.liquidationRecoveryDebt
-      ? vars.liquidationRecoveryDebt
-      : vars.maxLiquidatableDebt;
+  //   vars.maxLiquidatableDebt = vars.maxLiquidatableDebt > vars.liquidationRecoveryDebt
+  //     ? vars.liquidationRecoveryDebt
+  //     : vars.maxLiquidatableDebt;
 
-    console.log(
-      'debtToCover, vars.maxLiquidatableDebt %e %e',
-      debtToCover,
-      vars.maxLiquidatableDebt,
-      params.totalDebt
-    );
+  //   console.log(
+  //     'debtToCover, vars.maxLiquidatableDebt %e %e',
+  //     debtToCover,
+  //     vars.maxLiquidatableDebt,
+  //     params.totalDebt
+  //   );
 
-    vars.actualDebtToLiquidate = debtToCover > vars.maxLiquidatableDebt
-      ? vars.maxLiquidatableDebt
-      : debtToCover;
+  //   vars.actualDebtToLiquidate = debtToCover > vars.maxLiquidatableDebt
+  //     ? vars.maxLiquidatableDebt
+  //     : debtToCover;
 
-    console.log('vars.actualDebtToLiquidate', vars.actualDebtToLiquidate == debtToCover);
-    return vars.actualDebtToLiquidate;
-  }
+  //   console.log('vars.actualDebtToLiquidate', vars.actualDebtToLiquidate == debtToCover);
+  //   return vars.actualDebtToLiquidate;
+  // }
 
   /**
    * @return The maximum collateral amount that is possible to liquidate given all the liquidation config.

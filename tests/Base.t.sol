@@ -732,6 +732,11 @@ abstract contract Base is Test {
     assertEq(spoke.getLiquidationConfig().closeFactor, newCloseFactor);
   }
 
+  function getCloseFactor(ISpoke spoke) internal returns (uint256) {
+    DataTypes.LiquidationConfig memory liqConfig = spoke.getLiquidationConfig();
+    return liqConfig.closeFactor;
+  }
+
   /// @dev pseudo random randomizer
   function randomizer(uint256 min, uint256 max, uint256) internal returns (uint256) {
     return vm.randomUint(min, max);

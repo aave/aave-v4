@@ -42,36 +42,63 @@ library LiquidationLogic {
 
   function calculateActualDebtToLiquidate(
     uint256 debtToCover,
-    address user,
-    uint256 debtReserveId,
     DataTypes.LiquidationCallLocalVars memory params
-  ) internal view returns (uint256) {
+  ) internal returns (uint256) {
     DataTypes.CalculateActualDebtToLiquidateLocalVars memory vars;
-    vars.maxLiquidatableDebt = params.totalDebt;
+    vars.maxLiquidatableDebt = params.totalDebt; // for current debt asset
 
-    vars.liquidationBonusProduct = (params.liquidationBonus.wadify())
-      .percentMul(params.collateralFactor)
-      .fromBps(); // convert BPS to WAD;
+    // vars.liquidationBonusProduct = (params.liquidationBonus.wadify())
+    //   .percentMul(params.collateralFactor)
+    //   .fromBps(); // convert BPS to WAD;
 
     // amount of user debt that returns HF to closeFactor, in base currency
     // numerator cannot be negative if CF > liq threshold
     // check if denominator is negative
-    vars.liquidationRecoveryDebt = vars.closeFactor > vars.liquidationBonusProduct
-      ? ((params.totalDebtInBaseCurrency.wadMul(params.closeFactor) -
-        params.totalCollateralInBaseCurrency.percentMul(params.avgCollateralFactor.dewadify())) *
-        params.debtAssetUnit) / (vars.closeFactor - vars.liquidationBonusProduct)
-      : params.totalDebtInBaseCurrency;
+    // vars.closeFactorDebt = params.closeFactor > vars.liquidationBonusProduct
+    //   ? ((params.totalDebtInBaseCurrency.wadMul(params.closeFactor) -
+    //     params.totalCollateralInBaseCurrency.percentMul(params.avgCollateralFactor.dewadify())) *
+    //     params.debtAssetUnit) / (params.closeFactor - vars.liquidationBonusProduct)
+    //   : params.totalDebtInBaseCurrency;
+    vars.closeFactorDebt = calculateCloseFactorDebt(params);
 
-    // convert from base currency to amount
-    vars.liquidationRecoveryDebt = params.debtAssetPrice == 0
-      ? type(uint256).max
-      : vars.liquidationRecoveryDebt / params.debtAssetPrice;
-
-    vars.maxLiquidatableDebt = vars.maxLiquidatableDebt > vars.liquidationRecoveryDebt
-      ? vars.liquidationRecoveryDebt
+    vars.maxLiquidatableDebt = vars.maxLiquidatableDebt > vars.closeFactorDebt
+      ? vars.closeFactorDebt
       : vars.maxLiquidatableDebt;
 
     return debtToCover > vars.maxLiquidatableDebt ? vars.maxLiquidatableDebt : debtToCover;
+  }
+
+  /// @notice Calculates the repayable amount of debt required to restore a user's health factor to the close factor.
+  /// @dev If the effective liquidation penalty exceeds or equals the close factor, liquidation cannot improve the user position.
+  /// @dev Function defaults to returning the full debt value.
+  /// @param params Struct containing inputs such as collateral and debt values, configuration factors, and prices.
+  /// @return repayableDebt The amount of debt to repay.
+  function calculateCloseFactorDebt(
+    DataTypes.LiquidationCallLocalVars memory params
+  ) internal returns (uint256 repayableDebt) {
+    // Multiply the liquidation bonus by the collateral factor.
+    // This represents the effective value loss from the user's collateral per unit of debt repaid.
+    // Acts like an “effective penalty” from the user’s point of view.
+    uint256 liquidationPenalty = (params.liquidationBonus.wadify())
+      .percentMul(params.collateralFactor)
+      .fromBps();
+
+    uint256 closeFactorDebt;
+
+    // If penalty exceeds or equals the close factor, liquidation cannot restore solvency efficiently.
+    if (params.closeFactor <= liquidationPenalty) {
+      // Fallback - if denominator <= 0, assume entire debt must be repaid to prevent under-liquidation.
+      closeFactorDebt = params.totalDebtInBaseCurrency * params.debtAssetUnit;
+    } else {
+      closeFactorDebt =
+        ((params.totalDebtInBaseCurrency.wadMul(params.closeFactor) -
+          params.totalCollateralInBaseCurrency.percentMul(params.avgCollateralFactor.dewadify())) *
+          params.debtAssetUnit) /
+        (params.closeFactor - liquidationPenalty);
+    }
+
+    // convert into amount
+    return params.debtAssetPrice == 0 ? type(uint256).max : closeFactorDebt / params.debtAssetPrice;
   }
 
   /**
