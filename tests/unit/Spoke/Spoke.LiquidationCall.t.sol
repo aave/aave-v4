@@ -73,6 +73,48 @@ contract LiquidationCallTest is SpokeBase {
       user: alice,
       debtToCover: state.debts[0].weth
     });
+
+    (uint256 userRp, , uint256 hf, , ) = spoke1.getUserAccountData(alice);
+    console.log('healthFactor %e', spoke1.getHealthFactor(alice));
+    console.log('userRp %e %e', userRp, _getUserRP(spoke1, state.wethReserveId, alice));
+
+    console.log(
+      'spoke wbtc',
+      spoke1.getReserve(state.wbtcReserveId).premiumDrawnShares,
+      spoke1.getReserve(state.wbtcReserveId).premiumOffset
+    );
+    console.log(
+      'spoke dai',
+      spoke1.getReserve(state.daiReserveId).premiumDrawnShares,
+      spoke1.getReserve(state.daiReserveId).premiumOffset
+    );
+
+    console.log(
+      'spoke weth %e %e',
+      spoke1.getReserve(state.wethReserveId).premiumDrawnShares,
+      spoke1.getReserve(state.wethReserveId).premiumOffset
+    );
+    console.log(
+      'alice weth %e %e',
+      spoke1.getUserPosition(state.wethReserveId, alice).premiumDrawnShares,
+      spoke1.getUserPosition(state.wethReserveId, alice).premiumOffset
+    );
+
+    console.log(
+      'spoke total debt, %e %e',
+      spoke1.getUserTotalDebt(state.wethReserveId, alice),
+      spoke1.getReserveTotalDebt(state.wethReserveId)
+    );
+    console.log(
+      'hub total debt, %e %e',
+      hub.getSpokeTotalDebt(wethAssetId, address(spoke1)),
+      hub.getAssetTotalDebt(wethAssetId)
+    );
+  }
+
+  function _getUserRP(ISpoke spoke, uint256 reserveId, address user) internal returns (uint256) {
+    DataTypes.UserPosition memory userPosition = spoke.getUserPosition(reserveId, user);
+    return userPosition.premiumDrawnShares.percentDiv(userPosition.baseDrawnShares);
   }
 
   /// scenario where fully liquidating a collateral still does not improve a position to close factor

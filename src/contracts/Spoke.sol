@@ -349,13 +349,20 @@ contract Spoke is ISpoke {
     vars.debtAssetId = debtReserve.assetId;
     (vars.baseDebt, vars.premiumDebt) = _getUserDebt(userDebtPosition, vars.debtAssetId);
 
-    // DataTypes.TempDebug memory temp;
-    // (temp.rBaseDebt, temp.rPremiumDebt) = _getReserveDebt(debtReserve);
-    // (temp.assetBaseDebt, temp.assetPremiumDebt) = _getReserveDebt(debtReserve);
+    DataTypes.TempDebug memory debt;
+    (debt.rBaseDebt, debt.rPremiumDebt) = _getReserveDebt(debtReserve);
+    (debt.assetBaseDebt, debt.assetPremiumDebt) = _getReserveDebt(debtReserve);
 
-    // console.log('sp: initial debt %e %e', vars.baseDebt, vars.premiumDebt);
-    // console.log('sp: init debt reserve %e %e %e %e', temp.rBaseDebt, temp.rPremiumDebt);
-    // console.log('sp: init asset debt %e %e %e %e', temp.assetBaseDebt, temp.assetPremiumDebt);
+    console.log('sp: initial debt %e %e', vars.baseDebt, vars.premiumDebt);
+    console.log('sp: init debt reserve %e %e %e %e', debt.rBaseDebt, debt.rPremiumDebt);
+    console.log('sp: init asset debt %e %e %e %e', debt.assetBaseDebt, debt.assetPremiumDebt);
+
+    // DataTypes.TempDebug memory coll;
+    // (coll.rBaseDebt, coll.rPremiumDebt) = _getReserveDebt(debtReserve);
+    // (coll.assetBaseDebt, coll.assetPremiumDebt) = _getReserveDebt(debtReserve);
+
+    // console.log('sp: init debt reserve %e %e %e %e', coll.rBaseDebt, debt.rPremiumDebt);
+    // console.log('sp: init asset debt %e %e %e %e', debt.assetBaseDebt, debt.assetPremiumDebt);
 
     (
       vars.collateralToLiquidate,
@@ -409,11 +416,11 @@ contract Spoke is ISpoke {
     // (vars.baseDebt, vars.premiumDebt) = _getUserDebt(userDebtPosition, vars.debtAssetId);
     // console.log('sp: debt reserve, after refresh debt %e %e', vars.baseDebt, vars.premiumDebt);
 
-    // (temp.rBaseDebt, temp.rPremiumDebt) = _getReserveDebt(debtReserve);
-    // (temp.assetBaseDebt, temp.assetPremiumDebt) = _getReserveDebt(debtReserve);
+    // (debt.rBaseDebt, debt.rPremiumDebt) = _getReserveDebt(debtReserve);
+    // (debt.assetBaseDebt, debt.assetPremiumDebt) = _getReserveDebt(debtReserve);
 
-    // console.log('sp: after debt reserve %e %e %e %e', temp.rBaseDebt, temp.rPremiumDebt);
-    // console.log('sp: after asset debt %e %e %e %e', temp.assetBaseDebt, temp.assetPremiumDebt);
+    // console.log('sp: after debt reserve %e %e %e %e', debt.rBaseDebt, debt.rPremiumDebt);
+    // console.log('sp: after asset debt %e %e %e %e', debt.assetBaseDebt, debt.assetPremiumDebt);
 
     // repay debt
     vars.restoredShares = HUB.restore(
