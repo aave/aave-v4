@@ -26,7 +26,7 @@ contract SpokeGettersTest is SpokeBase {
 
     assertEq(
       liqBonus,
-      LiquidationLogic.calculate(
+      LiquidationLogic.calculateVariableLiquidationBonus(
         _config,
         healthFactor,
         spoke1.getReserve(reserveId).config.liquidationBonus,
@@ -69,7 +69,7 @@ contract SpokeGettersTest is SpokeBase {
 
     assertEq(
       liqBonus,
-      LiquidationLogic.calculate(
+      LiquidationLogic.calculateVariableLiquidationBonus(
         _config,
         healthFactor,
         spoke1.getReserve(reserveId).config.liquidationBonus,

@@ -12,7 +12,7 @@ library LiquidationLogic {
   using PercentageMath for uint256;
   using WadRayMath for uint256;
 
-  function calculate(
+  function calculateVariableLiquidationBonus(
     DataTypes.LiquidationConfig storage config,
     uint256 healthFactor,
     uint256 liquidationBonus,

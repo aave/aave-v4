@@ -686,7 +686,7 @@ contract Spoke is ISpoke {
     uint256 healthFactor
   ) public view returns (uint256) {
     return
-      _liquidationConfig.calculate(
+      _liquidationConfig.calculateVariableLiquidationBonus(
         healthFactor,
         _reserves[reserveId].config.liquidationBonus,
         HEALTH_FACTOR_LIQUIDATION_THRESHOLD

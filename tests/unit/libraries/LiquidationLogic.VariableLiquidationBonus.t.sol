@@ -7,7 +7,7 @@ import {WadRayMath} from 'src/libraries/math/WadRayMath.sol';
 import {PercentageMath} from 'src/libraries/math/PercentageMath.sol';
 import {Base} from 'tests/Base.t.sol';
 
-contract LiquidationLogicTest is Base {
+contract LiquidationLogicVariableLiquidationBonusTest is Base {
   using PercentageMath for uint256;
 
   DataTypes.LiquidationConfig internal _config;
@@ -70,7 +70,7 @@ contract LiquidationLogicTest is Base {
 
     _config = config;
 
-    uint256 result = LiquidationLogic.calculate(
+    uint256 result = LiquidationLogic.calculateVariableLiquidationBonus(
       _config,
       healthFactor,
       liquidationBonus,
@@ -132,7 +132,7 @@ contract LiquidationLogicTest is Base {
       liquidationBonusFactor: liquidationBonusFactor
     });
 
-    uint256 result = LiquidationLogic.calculate(
+    uint256 result = LiquidationLogic.calculateVariableLiquidationBonus(
       _config,
       healthFactor,
       liquidationBonus,
@@ -188,7 +188,7 @@ contract LiquidationLogicTest is Base {
       liquidationBonusFactor: liquidationBonusFactor
     });
 
-    uint256 result = LiquidationLogic.calculate(
+    uint256 result = LiquidationLogic.calculateVariableLiquidationBonus(
       _config,
       healthFactor,
       liquidationBonus,
