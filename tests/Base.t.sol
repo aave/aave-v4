@@ -46,11 +46,12 @@ abstract contract Base is Test {
   uint256 internal constant MAX_BORROW_RATE = 1000_00; // matches DefaultReserveInterestRateStrategy
   uint256 internal constant MAX_SKIP_TIME = 10_000 days;
   uint256 internal constant MIN_LIQUIDATION_BONUS = PercentageMath.PERCENTAGE_FACTOR; // 100% == 0% bonus
-  uint256 internal constant MAX_LIQUIDATION_BONUS = PercentageMath.PERCENTAGE_FACTOR * 10; // 1000% -> 90% bonus
+  uint256 internal constant MAX_LIQUIDATION_BONUS = PercentageMath.PERCENTAGE_FACTOR * 2 - 1; // 199.99%
   uint256 internal constant MAX_LIQUIDATION_BONUS_FACTOR = PercentageMath.PERCENTAGE_FACTOR; // 100%
   uint256 internal constant HEALTH_FACTOR_LIQUIDATION_THRESHOLD = 1e18;
-  uint256 internal constant MAX_CLOSE_FACTOR = 1.5e18;
+  uint256 internal constant MAX_CLOSE_FACTOR = 2e18;
   uint256 internal constant MAX_COLLATERAL_FACTOR = 100_00;
+  uint256 internal constant MAX_DEBT_ASSET_PRICE = 1e8 * 10 ** 9; // $1B per token
 
   // TODO: remove after migrating to token list
   IERC20 internal usdc;

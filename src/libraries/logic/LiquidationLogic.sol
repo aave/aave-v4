@@ -68,37 +68,46 @@ library LiquidationLogic {
     return debtToCover > vars.maxLiquidatableDebt ? vars.maxLiquidatableDebt : debtToCover;
   }
 
-  /// @notice Calculates the repayable amount of debt required to restore a user's health factor to the close factor.
+  /// @notice Calculates the repayable amount of debt required to restore a user health factor to the close factor.
   /// @dev If the effective liquidation penalty exceeds or equals the close factor, liquidation cannot improve the user position.
-  /// @dev Function defaults to returning the full debt value.
-  /// @param params Struct containing inputs such as collateral and debt values, configuration factors, and prices.
-  /// @return repayableDebt The amount of debt to repay.
+  /// @dev Function defaults to returning uint max.
+  /// @param params LiquidationCallLocalVars params struct.
+  /// @return The amount of debt to repay.
   function calculateCloseFactorDebt(
     DataTypes.LiquidationCallLocalVars memory params
-  ) internal returns (uint256 repayableDebt) {
+  ) internal returns (uint256) {
     // Multiply the liquidation bonus by the collateral factor.
     // This represents the effective value loss from the user's collateral per unit of debt repaid.
     // Acts like an “effective penalty” from the user’s point of view.
-    uint256 liquidationPenalty = (params.liquidationBonus.wadify())
+    uint256 effectiveLiquidationPenalty = (params.liquidationBonus.wadify())
       .percentMul(params.collateralFactor)
       .fromBps();
 
-    uint256 closeFactorDebt;
+    console.log(
+      'LL effeLiqPen',
+      params.closeFactor <= effectiveLiquidationPenalty,
+      params.debtAssetPrice == 0
+    );
 
-    // If penalty exceeds or equals the close factor, liquidation cannot restore solvency efficiently.
-    if (params.closeFactor <= liquidationPenalty) {
-      // Fallback - if denominator <= 0, assume entire debt must be repaid to prevent under-liquidation.
-      closeFactorDebt = params.totalDebtInBaseCurrency * params.debtAssetUnit;
-    } else {
-      closeFactorDebt =
-        ((params.totalDebtInBaseCurrency.wadMul(params.closeFactor) -
-          params.totalCollateralInBaseCurrency.percentMul(params.avgCollateralFactor.dewadify())) *
-          params.debtAssetUnit) /
-        (params.closeFactor - liquidationPenalty);
+    // Return default max uint if:
+    // - penalty exceeds or equals the close factor, ie liquidation cannot restore solvency efficiently (negative denominator)
+    // - debt asset price is 0
+    if (params.closeFactor <= effectiveLiquidationPenalty || params.debtAssetPrice == 0) {
+      console.log('LL here if');
+      return type(uint256).max;
     }
 
+    console.log('LL here', params.totalDebtInBaseCurrency.wadMul(params.closeFactor));
+
+    uint256 closeFactorDebt = ((params.totalDebtInBaseCurrency.wadMul(params.closeFactor) -
+      params.totalCollateralInBaseCurrency.percentMul(params.avgCollateralFactor.dewadify())) *
+      params.debtAssetUnit) /
+      ((params.closeFactor - effectiveLiquidationPenalty) * params.debtAssetPrice);
+
+    console.log('LL closeFactorDebt %e', closeFactorDebt);
+
     // convert into amount
-    return params.debtAssetPrice == 0 ? type(uint256).max : closeFactorDebt / params.debtAssetPrice;
+    return closeFactorDebt;
   }
 
   /**

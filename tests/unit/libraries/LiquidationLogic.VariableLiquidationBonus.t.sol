@@ -5,7 +5,7 @@ import {LiquidationLogic} from 'src/libraries/logic/LiquidationLogic.sol';
 import {DataTypes} from 'src/libraries/types/DataTypes.sol';
 import {WadRayMath} from 'src/libraries/math/WadRayMath.sol';
 import {PercentageMath} from 'src/libraries/math/PercentageMath.sol';
-import {Base} from 'tests/Base.t.sol';
+import 'tests/Base.t.sol';
 
 contract LiquidationLogicVariableLiquidationBonusTest is Base {
   using PercentageMath for uint256;
