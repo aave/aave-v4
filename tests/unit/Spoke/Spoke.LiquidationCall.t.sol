@@ -1200,6 +1200,70 @@ contract LiquidationCallTest is SpokeBase {
     console.log('final hf %e', spoke1.getHealthFactor(alice));
   }
 
+  function test_liquidationCall_restore_cf() public {
+    uint256 wethReserveId = _wethReserveId(spoke1);
+    uint256 usdxReserveId = _usdxReserveId(spoke1);
+    uint256 daiReserveId = _daiReserveId(spoke1);
+
+    // collateral: weth/usdx
+    uint256 wethAmount = 10 * 10 ** tokenList.weth.decimals(); // $20k wbtc
+    uint256 usdxAmount = 10_000 * 10 ** tokenList.usdx.decimals(); // $10k usdx
+    // debt: dai
+    uint256 borrowAmount = 15_000 * 10 ** tokenList.dai.decimals(); // $15k dai
+
+    uint256 closeFactor = 1.05e18;
+
+    updateCloseFactor(spoke1, closeFactor);
+
+    _deployLiquidity(spoke1, daiReserveId, borrowAmount);
+    Utils.supplyCollateral(spoke1, wethReserveId, alice, wethAmount, alice);
+    Utils.supplyCollateral(spoke1, usdxReserveId, alice, usdxAmount, alice);
+    Utils.borrow(spoke1, daiReserveId, alice, borrowAmount, alice);
+
+    oracle.setAssetPrice(wethAssetId, 800e8);
+
+    vm.prank(bob);
+    spoke1.liquidationCall(usdxReserveId, daiReserveId, alice, borrowAmount);
+
+    console.log('final hf %e', spoke1.getHealthFactor(alice));
+    assertGe(spoke1.getHealthFactor(alice), closeFactor, 'health factor precision loss > 1 ');
+  }
+
+  // LB = 0, LPFP > 0, still treasury gets 0
+  function test_liquidationCall_restore_cf_lpfp_zeroLB() public {
+    uint256 wethReserveId = _wethReserveId(spoke1);
+    uint256 usdxReserveId = _usdxReserveId(spoke1);
+    uint256 daiReserveId = _daiReserveId(spoke1);
+
+    // collateral: weth/usdx
+    uint256 wethAmount = 10 * 10 ** tokenList.weth.decimals(); // $20k wbtc
+    uint256 usdxAmount = 10_000 * 10 ** tokenList.usdx.decimals(); // $10k usdx
+    // debt: dai
+    uint256 borrowAmount = 15_000 * 10 ** tokenList.dai.decimals(); // $15k dai
+
+    uint256 treasuryBalanceBefore = tokenList.usdx.balanceOf(TREASURY);
+
+    uint256 closeFactor = 1.05e18;
+
+    updateCloseFactor(spoke1, closeFactor);
+    updateLiquidationProtocolFeePercentage(spoke1, usdxReserveId, 5_00);
+
+    _deployLiquidity(spoke1, daiReserveId, borrowAmount);
+    Utils.supplyCollateral(spoke1, wethReserveId, alice, wethAmount, alice);
+    Utils.supplyCollateral(spoke1, usdxReserveId, alice, usdxAmount, alice);
+    Utils.borrow(spoke1, daiReserveId, alice, borrowAmount, alice);
+
+    oracle.setAssetPrice(wethAssetId, 800e8);
+
+    vm.prank(bob);
+    spoke1.liquidationCall(usdxReserveId, daiReserveId, alice, borrowAmount);
+
+    console.log('final hf %e', spoke1.getHealthFactor(alice));
+    assertGt(spoke1.getHealthFactor(alice), closeFactor, 'health factor precision loss > 1 ');
+
+    assertEq(tokenList.usdx.balanceOf(TREASURY) - treasuryBalanceBefore, 0, 'fee is 0');
+  }
+
   // function test_liquidationCall_default() public {
   //   uint256 wethReserveId = _wethReserveId(spoke1);
   //   uint256 daiReserveId = _daiReserveId(spoke1);

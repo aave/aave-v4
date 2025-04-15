@@ -64,9 +64,9 @@ library LiquidationLogic {
     //   : params.totalDebtInBaseCurrency;
     vars.closeFactorDebt = params.calculateCloseFactorDebt();
 
-    console.log('LL closeFactorDebt %e', vars.closeFactorDebt);
-    console.log('LL maxLiquidatableDebt %e', vars.maxLiquidatableDebt);
-    console.log('LL debtToCover %e', vars.maxLiquidatableDebt);
+    // console.log('LL closeFactorDebt %e', vars.closeFactorDebt);
+    // console.log('LL maxLiquidatableDebt %e', vars.maxLiquidatableDebt);
+    // console.log('LL debtToCover %e', vars.maxLiquidatableDebt);
 
     vars.maxLiquidatableDebt = vars.maxLiquidatableDebt > vars.closeFactorDebt
       ? vars.closeFactorDebt
@@ -155,6 +155,13 @@ library LiquidationLogic {
       vars.liquidationProtocolFeeAmount = vars.bonusCollateral.percentMul(
         params.liquidationProtocolFeePercentage
       );
+      console.log(
+        'lpfp %e',
+        params.liquidationProtocolFeePercentage,
+        params.liquidationBonus,
+        vars.liquidationProtocolFeeAmount
+      );
+
       return (
         vars.collateralAmount - vars.liquidationProtocolFeeAmount,
         vars.debtAmountNeeded,

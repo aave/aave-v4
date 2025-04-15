@@ -54,6 +54,8 @@ abstract contract Base is Test {
   uint256 internal constant MAX_CLOSE_FACTOR = 2e18;
   uint256 internal constant MAX_COLLATERAL_FACTOR = 100_00;
   uint256 internal constant MAX_DEBT_ASSET_PRICE = 1e8 * 10 ** 9; // $1B per token
+  uint256 internal constant MAX_LIQUIDATION_PROTOCOL_FEE_PERCENTAGE =
+    PercentageMath.PERCENTAGE_FACTOR;
 
   // TODO: remove after migrating to token list
   IERC20 internal usdc;
@@ -667,6 +669,8 @@ abstract contract Base is Test {
 
     vm.prank(SPOKE_ADMIN);
     spoke.updateReserveConfig(reserveId, config);
+
+    assertEq(spoke.getReserve(reserveId).config.liquidationBonus, newLiquidationBonus);
   }
 
   function updateLiquidationProtocolFeePercentage(
@@ -679,6 +683,11 @@ abstract contract Base is Test {
 
     vm.prank(SPOKE_ADMIN);
     spoke.updateReserveConfig(reserveId, config);
+
+    assertEq(
+      spoke.getReserve(reserveId).config.liquidationProtocolFeePercentage,
+      newLiquidationProtocolFeePercentage
+    );
   }
 
   function setUsingAsCollateral(

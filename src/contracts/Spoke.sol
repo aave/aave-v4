@@ -24,6 +24,7 @@ contract Spoke is ISpoke {
   using PercentageMath for uint256;
   using KeyValueListInMemory for KeyValueListInMemory.List;
   using LiquidationLogic for DataTypes.LiquidationConfig;
+  using LiquidationLogic for DataTypes.LiquidationCallLocalVars;
 
   uint256 public constant HEALTH_FACTOR_LIQUIDATION_THRESHOLD = 1e18;
   ILiquidityHub public immutable HUB;
@@ -578,7 +579,7 @@ contract Spoke is ISpoke {
       vars.actualCollateralToLiquidate,
       vars.actualDebtToLiquidate,
       vars.liquidationProtocolFeeAmount
-    ) = LiquidationLogic.calculateAvailableCollateralToLiquidate(vars);
+    ) = vars.calculateAvailableCollateralToLiquidate();
 
     if (
       vars.actualCollateralToLiquidate + vars.liquidationProtocolFeeAmount ==

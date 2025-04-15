@@ -34,6 +34,7 @@ contract LiquidationLogicBaseTest is Base {
     uint256 avgCollateralFactor;
     uint256 debtAssetUnit;
   }
+
   function _calcCloseFactorDebtZeroAvgCollateralFactor(
     TestCloseFactorDebtParams memory params
   ) internal returns (uint256) {
