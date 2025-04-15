@@ -520,28 +520,40 @@ abstract contract Base is Test {
     vm.stopPrank();
   }
 
-  function updateAssetActive(ILiquidityHub hub, uint256 assetId, bool newActiveFlag) internal {
-    DataTypes.AssetConfig memory assetConfig = hub.getAsset(assetId).config;
+  function updateAssetActive(
+    ILiquidityHub liquidityHub,
+    uint256 assetId,
+    bool newActiveFlag
+  ) internal {
+    DataTypes.AssetConfig memory assetConfig = liquidityHub.getAsset(assetId).config;
     assetConfig.active = newActiveFlag;
 
     vm.prank(HUB_ADMIN);
-    hub.updateAssetConfig(assetId, assetConfig);
+    liquidityHub.updateAssetConfig(assetId, assetConfig);
   }
 
-  function updateAssetPaused(ILiquidityHub hub, uint256 assetId, bool newPausedFlag) internal {
-    DataTypes.AssetConfig memory assetConfig = hub.getAsset(assetId).config;
+  function updateAssetPaused(
+    ILiquidityHub liquidityHub,
+    uint256 assetId,
+    bool newPausedFlag
+  ) internal {
+    DataTypes.AssetConfig memory assetConfig = liquidityHub.getAsset(assetId).config;
     assetConfig.paused = newPausedFlag;
 
     vm.prank(HUB_ADMIN);
-    hub.updateAssetConfig(assetId, assetConfig);
+    liquidityHub.updateAssetConfig(assetId, assetConfig);
   }
 
-  function updateAssetFrozen(ILiquidityHub hub, uint256 assetId, bool newFrozenFlag) internal {
-    DataTypes.AssetConfig memory assetConfig = hub.getAsset(assetId).config;
+  function updateAssetFrozen(
+    ILiquidityHub liquidityHub,
+    uint256 assetId,
+    bool newFrozenFlag
+  ) internal {
+    DataTypes.AssetConfig memory assetConfig = liquidityHub.getAsset(assetId).config;
     assetConfig.frozen = newFrozenFlag;
 
     vm.prank(HUB_ADMIN);
-    hub.updateAssetConfig(assetId, assetConfig);
+    liquidityHub.updateAssetConfig(assetId, assetConfig);
   }
 
   function updateReserveFrozenFlag(ISpoke spoke, uint256 reserveId, bool newFrozenFlag) internal {
@@ -762,7 +774,7 @@ abstract contract Base is Test {
     address user,
     uint256 expectedSuppliedAmount,
     string memory when
-  ) internal {
+  ) internal view {
     uint256 expectedSuppliedShares = hub.convertToSuppliedShares(assetId, expectedSuppliedAmount);
     assertEq(
       hub.getAssetSuppliedShares(assetId),
