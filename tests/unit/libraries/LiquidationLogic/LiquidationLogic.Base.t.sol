@@ -5,10 +5,9 @@ import {LiquidationLogic} from 'src/libraries/logic/LiquidationLogic.sol';
 import {DataTypes} from 'src/libraries/types/DataTypes.sol';
 import 'tests/Base.t.sol';
 
-contract LiquidationLogicCloseFactorDebtTest is Base {
+contract LiquidationLogicBaseTest is Base {
   using PercentageMath for uint256;
   using WadRayMath for uint256;
-  using WadRayMathExtended for uint256;
 
   // (debt * assetPrice).wadify() / assetUnit
   uint256 internal constant MAX_TOTAL_DEBT_IN_BASE_CURRENCY = 1e58;
@@ -35,117 +34,6 @@ contract LiquidationLogicCloseFactorDebtTest is Base {
     uint256 avgCollateralFactor;
     uint256 debtAssetUnit;
   }
-
-  // function _bound(
-  //   TestCloseFactorDebtParams memory params
-  // ) internal returns (TestCloseFactorDebtParams memory) {
-  //   params.liquidationBonus = bound(
-  //     params.liquidationBonus,
-  //     MIN_LIQUIDATION_BONUS,
-  //     MAX_LIQUIDATION_BONUS
-  //   );
-  //   params.collateralFactor = bound(params.collateralFactor, 1, MAX_COLLATERAL_FACTOR);
-  //   params.avgCollateralFactor = bound(params.avgCollateralFactor, 1, MAX_COLLATERAL_FACTOR);
-  //   params.totalDebtInBaseCurrency = bound(
-  //     params.totalDebtInBaseCurrency,
-  //     1,
-  //     MAX_TOTAL_DEBT_IN_BASE_CURRENCY
-  //   );
-  //   params.debtAssetPrice = bound(params.debtAssetPrice, 1, MAX_DEBT_ASSET_PRICE);
-  //   params.closeFactor = bound(
-  //     params.closeFactor,
-  //     _calculateCloseFactorThreshold(params.liquidationBonus, params.collateralFactor),
-  //     MAX_CLOSE_FACTOR
-  //   );
-
-  //   return params;
-  // }
-
-  function testCalculateCloseFactorDebt_non_negative(
-    TestCloseFactorDebtParams memory params
-  ) public {
-    FieldsToSkip memory skips = _skipOnly(SKIP_NONE);
-    TestCloseFactorDebtParams memory params = _bound(params, skips);
-    DataTypes.LiquidationCallLocalVars memory args = _setFunctionArgs(params);
-
-    assertGe(
-      LiquidationLogic.calculateCloseFactorDebt(args),
-      0,
-      'closeFactorDebt cannot underflow'
-    );
-  }
-
-  /// if debtAssetUnit == 0, then result is 0 (should not happen in practice as unit is 10**decimals)
-  function testCalculateCloseFactorDebt_debtAssetUnit_zero(
-    TestCloseFactorDebtParams memory params
-  ) public {
-    // params = _bound(params);
-    FieldsToSkip memory skips = _skipOnly(SKIP_DEBT_ASSET_UNIT);
-    TestCloseFactorDebtParams memory params = _bound(params, skips);
-    DataTypes.LiquidationCallLocalVars memory args = _setFunctionArgs(params);
-
-    args.debtAssetUnit = 0;
-
-    assertEq(LiquidationLogic.calculateCloseFactorDebt(args), 0, 'closeFactorDebt is 0');
-  }
-
-  function testCalculateCloseFactorDebt_debtAssetPrice_zero(
-    TestCloseFactorDebtParams memory params
-  ) public {
-    FieldsToSkip memory skips = _skipOnly(SKIP_DEBT_ASSET_PRICE);
-    TestCloseFactorDebtParams memory params = _bound(params, skips);
-    DataTypes.LiquidationCallLocalVars memory args = _setFunctionArgs(params);
-
-    args.debtAssetPrice = 0;
-
-    assertEq(
-      LiquidationLogic.calculateCloseFactorDebt(args),
-      type(uint256).max,
-      'closeFactorDebt is 0'
-    );
-  }
-
-  function testDebug() public {
-    TestCloseFactorDebtParams memory params;
-    testCalculateCloseFactorDebt_debtAssetUnit_zero(params);
-  }
-
-  /// if denom is ever negative, default to uint max
-  function testCalculateCloseFactorDebt_closeFactor_lte_effectiveLiquidationPenalty_zero(
-    TestCloseFactorDebtParams memory params
-  ) public {
-    FieldsToSkip memory skips = _skipOnly(SKIP_CLOSE_FACTOR);
-    TestCloseFactorDebtParams memory params = _bound(params, skips);
-    params.closeFactor = bound(
-      params.closeFactor,
-      1, // in practice CF >= 1e18
-      _calculateCloseFactorThreshold(params.liquidationBonus, params.collateralFactor) - 1
-    );
-    DataTypes.LiquidationCallLocalVars memory args = _setFunctionArgs(params);
-
-    assertEq(
-      LiquidationLogic.calculateCloseFactorDebt(args),
-      type(uint256).max,
-      'closeFactorDebt is max uint'
-    );
-  }
-
-  function testCalculateCloseFactorDebt_avgCollateralFactor_zero(
-    TestCloseFactorDebtParams memory params
-  ) public {
-    FieldsToSkip memory skips = _skipOnly(SKIP_AVG_COLLATERAL_FACTOR);
-    params = _bound(params, skips);
-
-    params.avgCollateralFactor = 0;
-    DataTypes.LiquidationCallLocalVars memory args = _setFunctionArgs(params);
-
-    assertEq(
-      LiquidationLogic.calculateCloseFactorDebt(args),
-      _calcCloseFactorDebtZeroAvgCollateralFactor(params),
-      'closeFactorDebt is incorrect'
-    );
-  }
-
   function _calcCloseFactorDebtZeroAvgCollateralFactor(
     TestCloseFactorDebtParams memory params
   ) internal returns (uint256) {

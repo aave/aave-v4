@@ -13,6 +13,7 @@ library LiquidationLogic {
   using PercentageMath for uint256;
   using WadRayMath for uint256;
   using WadRayMathExtended for uint256;
+  using LiquidationLogic for DataTypes.LiquidationCallLocalVars;
 
   function calculateVariableLiquidationBonus(
     DataTypes.LiquidationConfig storage config,
@@ -45,9 +46,9 @@ library LiquidationLogic {
   function calculateActualDebtToLiquidate(
     uint256 debtToCover,
     DataTypes.LiquidationCallLocalVars memory params
-  ) internal returns (uint256) {
+  ) internal pure returns (uint256) {
     DataTypes.CalculateActualDebtToLiquidateLocalVars memory vars;
-    vars.maxLiquidatableDebt = params.totalDebt; // for current debt asset
+    vars.maxLiquidatableDebt = params.totalDebt; // for current debt asset, in amount
 
     // vars.liquidationBonusProduct = (params.liquidationBonus.wadify())
     //   .percentMul(params.collateralFactor)
@@ -61,7 +62,11 @@ library LiquidationLogic {
     //     params.totalCollateralInBaseCurrency.percentMul(params.avgCollateralFactor.dewadify())) *
     //     params.debtAssetUnit) / (params.closeFactor - vars.liquidationBonusProduct)
     //   : params.totalDebtInBaseCurrency;
-    vars.closeFactorDebt = calculateCloseFactorDebt(params);
+    vars.closeFactorDebt = params.calculateCloseFactorDebt();
+
+    console.log('LL closeFactorDebt %e', vars.closeFactorDebt);
+    console.log('LL maxLiquidatableDebt %e', vars.maxLiquidatableDebt);
+    console.log('LL debtToCover %e', vars.maxLiquidatableDebt);
 
     vars.maxLiquidatableDebt = vars.maxLiquidatableDebt > vars.closeFactorDebt
       ? vars.closeFactorDebt

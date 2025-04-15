@@ -2,12 +2,9 @@
 pragma solidity ^0.8.0;
 
 import {LiquidationLogic} from 'src/libraries/logic/LiquidationLogic.sol';
-import {DataTypes} from 'src/libraries/types/DataTypes.sol';
-import {WadRayMath} from 'src/libraries/math/WadRayMath.sol';
-import {PercentageMath} from 'src/libraries/math/PercentageMath.sol';
-import 'tests/Base.t.sol';
+import 'tests/unit/libraries/LiquidationLogic/LiquidationLogic.Base.t.sol';
 
-contract LiquidationLogicVariableLiquidationBonusTest is Base {
+contract LiquidationLogicVariableLiquidationBonusTest is LiquidationLogicBaseTest {
   using PercentageMath for uint256;
 
   DataTypes.LiquidationConfig internal _config;
