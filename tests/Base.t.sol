@@ -657,14 +657,14 @@ abstract contract Base is Test {
   }
 
   function updateDrawCap(
-    ILiquidityHub hub,
+    ILiquidityHub liquidityHub,
     uint256 assetId,
     address spoke,
     uint256 newDrawCap
   ) internal {
-    DataTypes.SpokeConfig memory spokeConfig = hub.getSpokeConfig(assetId, spoke);
+    DataTypes.SpokeConfig memory spokeConfig = liquidityHub.getSpokeConfig(assetId, spoke);
     spokeConfig.drawCap = newDrawCap;
-    hub.updateSpokeConfig(assetId, spoke, spokeConfig);
+    liquidityHub.updateSpokeConfig(assetId, spoke, spokeConfig);
   }
 
   function getUserInfo(
