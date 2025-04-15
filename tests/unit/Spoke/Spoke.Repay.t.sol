@@ -1177,7 +1177,7 @@ contract SpokeRepayTest is SpokeBase {
   }
 
   /// repay all or a portion of total debt in same block
-  function test_repay_same_block_fuzz_amounts(
+  function test_fuzz_repay_same_block_fuzz_amounts(
     uint256 daiBorrowAmount,
     uint256 daiRepayAmount
   ) public {
@@ -1399,7 +1399,7 @@ contract SpokeRepayTest is SpokeBase {
   }
 
   /// repay all or a portion of debt interest
-  function test_repay_fuzz_amounts_only_interest(
+  function test_fuzz_repay_amounts_only_interest(
     uint256 daiBorrowAmount,
     uint256 daiRepayAmount,
     uint40 skipTime
@@ -1514,7 +1514,7 @@ contract SpokeRepayTest is SpokeBase {
   }
 
   /// repay all or a portion of premium debt
-  function test_repay_fuzz_amounts_only_premium(
+  function test_fuzz_amounts_repay_only_premium(
     uint256 daiBorrowAmount,
     uint256 daiRepayAmount,
     uint40 skipTime
@@ -2059,7 +2059,7 @@ contract SpokeRepayTest is SpokeBase {
   }
 
   /// Borrow, repay, borrow more, repay
-  function test_repay_borrow_twice_repay_twice(
+  function test_fuzz_repay_borrow_twice_repay_twice(
     Action memory action1,
     Action memory action2
   ) public {
@@ -2278,7 +2278,7 @@ contract SpokeRepayTest is SpokeBase {
   }
 
   // Borrow X amount, receive Y Shares. Repay all, ensure Y shares repaid
-  function test_repay_x_y_shares(uint256 borrowAmount, uint40 skipTime) public {
+  function test_fuzz_repay_x_y_shares(uint256 borrowAmount, uint40 skipTime) public {
     borrowAmount = bound(borrowAmount, 1, MAX_SUPPLY_AMOUNT / 2);
     skipTime = uint40(bound(skipTime, 1, MAX_SKIP_TIME));
 
@@ -2357,7 +2357,7 @@ contract SpokeRepayTest is SpokeBase {
     assertEq(spoke1.getUserTotalDebt(_daiReserveId(spoke1), bob), 0, 'bob total debt after repay');
   }
 
-  function test_repay_multiple_users_multiple_assets(
+  function test_repay_fuzz_multiple_users_multiple_assets(
     UserAssetInfo memory bobInfo,
     UserAssetInfo memory aliceInfo,
     UserAssetInfo memory carolInfo,
@@ -2719,7 +2719,7 @@ contract SpokeRepayTest is SpokeBase {
     }
   }
 
-  function test_repay_two_users_multiple_assets(
+  function test_repay_fuzz_two_users_multiple_assets(
     UserAssetInfo memory bobInfo,
     UserAssetInfo memory aliceInfo,
     uint40 skipTime
@@ -3095,7 +3095,7 @@ contract SpokeRepayTest is SpokeBase {
     }
   }
 
-  function test_repay_multiple_users_repay_same_reserve(
+  function test_fuzz_repay_multiple_users_repay_same_reserve(
     UserAction memory bobInfo,
     UserAction memory aliceInfo,
     UserAction memory carolInfo,
@@ -3330,6 +3330,65 @@ contract SpokeRepayTest is SpokeBase {
         'WETH supplied shares should remain unchanged'
       );
     }
+  }
+
+  /// repay partial premium, base & full debt, with no interest accrual (no time pass)
+  /// supply ex rate can increase while debt ex rate should remain the same
+  function test_fuzz_repay_effect_on_ex_rates(uint256 daiBorrowAmount) public {
+    daiBorrowAmount = bound(daiBorrowAmount, 1, MAX_SUPPLY_AMOUNT / 2);
+    uint256 wethSupplyAmount = _calcMinimumCollAmount(
+      spoke1,
+      _wethReserveId(spoke1),
+      _daiReserveId(spoke1),
+      daiBorrowAmount
+    );
+
+    // Bob supply weth as collateral
+    Utils.supply(spoke1, _wethReserveId(spoke1), bob, wethSupplyAmount, bob);
+    setUsingAsCollateral(spoke1, bob, _wethReserveId(spoke1), true);
+    Utils.supply(spoke1, _daiReserveId(spoke1), alice, daiBorrowAmount, alice);
+    Utils.borrow(spoke1, _daiReserveId(spoke1), bob, daiBorrowAmount, bob);
+    skip(365 days); // initial increase in index, no time passes for subsequent checks
+
+    Debts memory bobDebt = getUserDebt(spoke1, bob, _daiReserveId(spoke1));
+    uint256 supplyExchangeRatioBefore = hub.convertToSuppliedAssets(daiAssetId, 1e30);
+    uint256 debtExchangeRatio = hub.convertToDrawnAssets(daiAssetId, 1e30);
+
+    // repay partial premium debt
+    spoke1.getUserPosition(_daiReserveId(spoke1), bob);
+    vm.assume(bobDebt.premiumDebt > 1);
+    uint256 daiRepayAmount = bound(vm.randomUint(), 1, bobDebt.premiumDebt - 1);
+
+    vm.expectEmit(address(spoke1));
+    emit ISpoke.Repay(_daiReserveId(spoke1), bob, 0);
+    vm.prank(bob);
+    spoke1.repay(_daiReserveId(spoke1), daiRepayAmount);
+
+    uint256 supplyExchangeRatioAfter = hub.convertToSuppliedAssets(daiAssetId, 1e30);
+    assertGe(supplyExchangeRatioAfter, supplyExchangeRatioBefore);
+    assertEq(hub.convertToDrawnAssets(daiAssetId, 1e30), debtExchangeRatio);
+
+    bobDebt = getUserDebt(spoke1, bob, _daiReserveId(spoke1));
+    // repay partial base debt
+    daiRepayAmount = bobDebt.premiumDebt + bound(vm.randomUint(), 1, bobDebt.baseDebt - 1);
+    supplyExchangeRatioBefore = supplyExchangeRatioAfter;
+
+    vm.prank(bob);
+    spoke1.repay(_daiReserveId(spoke1), daiRepayAmount);
+
+    supplyExchangeRatioAfter = hub.convertToSuppliedAssets(daiAssetId, 1e30);
+    assertGe(supplyExchangeRatioAfter, supplyExchangeRatioBefore);
+    assertEq(hub.convertToDrawnAssets(daiAssetId, 1e30), debtExchangeRatio);
+
+    supplyExchangeRatioBefore = supplyExchangeRatioAfter;
+
+    vm.prank(bob);
+    spoke1.repay(_daiReserveId(spoke1), type(uint256).max);
+
+    supplyExchangeRatioAfter = hub.convertToSuppliedAssets(daiAssetId, 1e30);
+    assertGe(supplyExchangeRatioAfter, supplyExchangeRatioBefore);
+    supplyExchangeRatioBefore = supplyExchangeRatioAfter;
+    assertEq(hub.convertToDrawnAssets(daiAssetId, 1e30), debtExchangeRatio);
   }
 
   function _assertUserRpUnchanged(uint256 reserveId, ISpoke spoke, address user) internal view {
