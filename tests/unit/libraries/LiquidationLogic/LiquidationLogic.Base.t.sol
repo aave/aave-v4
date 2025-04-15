@@ -111,7 +111,7 @@ contract LiquidationLogicBaseTest is Base {
     }
 
     if (!_isSkipped(skip, SKIP_DEBT_ASSET_PRICE)) {
-      params.debtAssetPrice = bound(params.debtAssetPrice, 1, MAX_DEBT_ASSET_PRICE);
+      params.debtAssetPrice = bound(params.debtAssetPrice, 1, MAX_ASSET_PRICE);
     }
 
     if (!_isSkipped(skip, SKIP_CLOSE_FACTOR)) {

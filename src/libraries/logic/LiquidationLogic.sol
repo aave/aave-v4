@@ -127,6 +127,11 @@ library LiquidationLogic {
     DataTypes.LiquidationCallLocalVars memory params
   ) internal pure returns (uint256, uint256, uint256) {
     DataTypes.CalculateAvailableCollateralToLiquidateLocalVars memory vars;
+
+    if (params.collateralAssetPrice == 0) {
+      return (0, 0, 0);
+    }
+
     // find collateral amount that corresponds to the debt to cover
     vars.baseCollateral =
       (params.debtAssetPrice * params.actualDebtToLiquidate * params.collateralAssetUnit) /
@@ -154,12 +159,6 @@ library LiquidationLogic {
 
       vars.liquidationProtocolFeeAmount = vars.bonusCollateral.percentMul(
         params.liquidationProtocolFeePercentage
-      );
-      console.log(
-        'lpfp %e',
-        params.liquidationProtocolFeePercentage,
-        params.liquidationBonus,
-        vars.liquidationProtocolFeeAmount
       );
 
       return (
