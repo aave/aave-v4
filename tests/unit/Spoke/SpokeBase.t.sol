@@ -10,6 +10,12 @@ contract SpokeBase is Base {
   using WadRayMathExtended for uint256;
   using KeyValueListInMemory for KeyValueListInMemory.List;
 
+  struct Debts {
+    uint256 baseDebt;
+    uint256 premiumDebt;
+    uint256 totalDebt;
+  }
+
   struct TestData {
     DataTypes.Reserve data;
     uint256 suppliedAmount;
@@ -526,6 +532,22 @@ contract SpokeBase is Base {
       usersDebt.totalDebt,
       string.concat('reserve vs sum users total debt ', label)
     );
+  }
+
+  function getUserDebt(
+    ISpoke spoke,
+    address user,
+    uint256 reserveId
+  ) internal view returns (Debts memory data) {
+    (data.baseDebt, data.premiumDebt) = spoke.getUserDebt(reserveId, user);
+    data.totalDebt = data.baseDebt + data.premiumDebt;
+  }
+
+  function assertEq(Debts memory a, Debts memory b) internal pure {
+    assertEq(a.baseDebt, b.baseDebt, 'base debt');
+    assertEq(a.premiumDebt, b.premiumDebt, 'premium debt');
+    assertEq(a.totalDebt, b.totalDebt, 'total debt');
+    assertEq(keccak256(abi.encode(a)), keccak256(abi.encode(b)), 'debt data'); // sanity
   }
 
   // function _calculateExpectedUserRP(address user, ISpoke spoke) internal view returns (uint256) {

@@ -752,18 +752,24 @@ abstract contract Base is Test {
   }
 
   /// @dev Helper function to calculate the amount of base and premium debt to restore
-  function _calculateRestoreAmount(
+  // @return baseDebtRestored amount of base debt to restore
+  // @return premiumDebtRestored amount of premium debt to restore
+  function _calculateExactRestoreAmount(
     uint256 baseDebt,
     uint256 premiumDebt,
-    uint256 amount
+    uint256 restoreAmount,
+    uint256 assetId
   ) internal view returns (uint256, uint256) {
-    if (amount == type(uint256).max) {
-      return (baseDebt, premiumDebt);
+    if (restoreAmount <= premiumDebt) {
+      return (0, restoreAmount);
     }
-    if (amount <= premiumDebt) {
-      return (0, amount);
-    }
-    return (amount - premiumDebt, premiumDebt);
+    uint256 baseDebtRestored = _min(baseDebt, restoreAmount - premiumDebt);
+    // round base debt to nearest whole share
+    baseDebtRestored = hub.convertToDrawnAssets(
+      assetId,
+      hub.convertToDrawnShares(assetId, baseDebtRestored)
+    );
+    return (baseDebtRestored, premiumDebt);
   }
 
   /// @dev Helper function to check consistent supplied amounts within accounting
@@ -816,5 +822,9 @@ abstract contract Base is Test {
       expectedSuppliedAmount,
       string(abi.encodePacked('user supplied amount ', when))
     );
+  }
+
+  function _min(uint256 a, uint256 b) internal pure returns (uint256) {
+    return a < b ? a : b;
   }
 }
