@@ -7,6 +7,7 @@ import {SafeERC20} from 'src/dependencies/openzeppelin/SafeERC20.sol';
 import {IERC20} from 'src/dependencies/openzeppelin/IERC20.sol';
 // libraries
 import {WadRayMath} from 'src/libraries/math/WadRayMath.sol';
+import {WadRayMathExtended} from 'src/libraries/math/WadRayMathExtended.sol';
 import {PercentageMath} from 'src/libraries/math/PercentageMath.sol';
 import {KeyValueListInMemory} from 'src/libraries/helpers/KeyValueListInMemory.sol';
 import {DataTypes} from 'src/libraries/types/DataTypes.sol';
@@ -19,6 +20,7 @@ import {IPriceOracle} from 'src/interfaces/IPriceOracle.sol';
 contract Spoke is ISpoke {
   using SafeERC20 for IERC20;
   using WadRayMath for uint256;
+  using WadRayMathExtended for uint256;
   using PercentageMath for uint256;
   using KeyValueListInMemory for KeyValueListInMemory.List;
   using LiquidationLogic for DataTypes.LiquidationConfig;
@@ -1007,10 +1009,19 @@ contract Spoke is ISpoke {
       ? type(uint256).max
       : vars.avgCollateralFactor.wadDiv(vars.totalDebtInBaseCurrency).fromBps(); // HF of 1 -> 1e18
 
+    // console.log(
+    //   'hf %e %e',
+    //   vars.healthFactor,
+    //   vars.avgCollateralFactor / (vars.totalDebtInBaseCurrency.dewadify())
+    // );
+
+    // console.log('Sp: avgCF %e', vars.avgCollateralFactor);
     // divide by total collateral to get avg collateral factor in wad
     vars.avgCollateralFactor = vars.totalCollateralInBaseCurrency == 0
       ? 0
-      : vars.avgCollateralFactor.wadDiv(vars.totalCollateralInBaseCurrency);
+      : vars.avgCollateralFactor.wadDivUp(vars.totalCollateralInBaseCurrency);
+
+    // console.log('Sp: avgCF %e', vars.avgCollateralFactor);
 
     vars.debtCounterInBaseCurrency = vars.totalDebtInBaseCurrency;
 

@@ -7,10 +7,12 @@ import {DataTypes} from 'src/libraries/types/DataTypes.sol';
 import {PercentageMath} from 'src/libraries/math/PercentageMath.sol';
 import {ISpoke} from 'src/interfaces/ISpoke.sol';
 import {WadRayMath} from 'src/libraries/math/WadRayMath.sol';
+import {WadRayMathExtended} from 'src/libraries/math/WadRayMathExtended.sol';
 
 library LiquidationLogic {
   using PercentageMath for uint256;
   using WadRayMath for uint256;
+  using WadRayMathExtended for uint256;
 
   function calculateVariableLiquidationBonus(
     DataTypes.LiquidationConfig storage config,
@@ -100,6 +102,12 @@ library LiquidationLogic {
       params.totalCollateralInBaseCurrency.percentMul(params.avgCollateralFactor.dewadify())) *
       params.debtAssetUnit) /
       ((params.closeFactor - effectiveLiquidationPenalty) * params.debtAssetPrice);
+
+    // console.log(
+    //   'cmp %e %e %e',
+    //   params.totalCollateralInBaseCurrency.percentMul(params.avgCollateralFactor).dewadify(),
+    //   params.totalCollateralInBaseCurrency.dewadify().percentMul(params.avgCollateralFactor)
+    // );
 
     // convert into amount
     return closeFactorDebt;
