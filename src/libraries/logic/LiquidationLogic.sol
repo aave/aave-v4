@@ -83,11 +83,11 @@ library LiquidationLogic {
       .percentMul(params.collateralFactor)
       .fromBps();
 
-    console.log(
-      'LL effeLiqPen',
-      params.closeFactor <= effectiveLiquidationPenalty,
-      params.debtAssetPrice == 0
-    );
+    // console.log(
+    //   'LL effeLiqPen',
+    //   params.closeFactor <= effectiveLiquidationPenalty,
+    //   params.debtAssetPrice == 0
+    // );
 
     // Return default max uint if:
     // - penalty exceeds or equals the close factor, ie liquidation cannot restore solvency efficiently (negative denominator)
