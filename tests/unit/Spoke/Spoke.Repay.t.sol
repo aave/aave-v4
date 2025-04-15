@@ -870,6 +870,9 @@ contract SpokeRepayTest is SpokeBase {
 
   // repay less than 1 share of base debt, but nonzero premium debt
   function test_repay_zero_shares_nonzero_premium_debt() public {
+    // update liquidity premium of weth to 20%
+    updateLiquidityPremium(spoke1, _wethReserveId(spoke1), 20_00);
+
     // Accrue interest and ensure it's less than 1 share and pay it off
     uint256 daiSupplyAmount = 100e18;
     uint256 wethSupplyAmount = 10e18;
@@ -926,7 +929,7 @@ contract SpokeRepayTest is SpokeBase {
     assertEq(bobWethBefore.totalDebt, 0);
 
     // Time passes so that interest accrues
-    skip(55 days);
+    skip(365 days);
 
     bobDaiDataBefore = getUserInfo(spoke1, bob, _daiReserveId(spoke1));
     bobDaiBefore.totalDebt = spoke1.getUserTotalDebt(_daiReserveId(spoke1), bob);
@@ -947,7 +950,7 @@ contract SpokeRepayTest is SpokeBase {
       repayAmount
     );
 
-    // If repay amount is less than 1 share, then it must all be premium debt
+    // Ensure we are repaying only premium debt, not base debt
     assertEq(repaidBase, 0, 'Base debt nonzero');
     assertGt(repaidPremium, 0, 'Premium debt zero');
 
