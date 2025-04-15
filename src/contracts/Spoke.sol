@@ -702,8 +702,8 @@ contract Spoke is ISpoke {
     DataTypes.Reserve storage reserve
   ) internal view returns (uint256, uint256) {
     uint256 assetId = reserve.assetId;
-    uint256 accruedPremium = (HUB.convertToPremiumDrawnAssets(assetId, reserve.premiumDrawnShares) -
-      reserve.premiumOffset);
+    uint256 accruedPremium = HUB.convertToPremiumDrawnAssets(assetId, reserve.premiumDrawnShares) -
+      reserve.premiumOffset;
     return (
       HUB.convertToDrawnAssets(assetId, reserve.baseDrawnShares),
       reserve.realizedPremium + accruedPremium
