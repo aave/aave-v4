@@ -520,28 +520,40 @@ abstract contract Base is Test {
     vm.stopPrank();
   }
 
-  function updateAssetActive(ILiquidityHub hub, uint256 assetId, bool newActiveFlag) internal {
-    DataTypes.AssetConfig memory assetConfig = hub.getAsset(assetId).config;
+  function updateAssetActive(
+    ILiquidityHub liquidityHub,
+    uint256 assetId,
+    bool newActiveFlag
+  ) internal {
+    DataTypes.AssetConfig memory assetConfig = liquidityHub.getAsset(assetId).config;
     assetConfig.active = newActiveFlag;
 
     vm.prank(HUB_ADMIN);
-    hub.updateAssetConfig(assetId, assetConfig);
+    liquidityHub.updateAssetConfig(assetId, assetConfig);
   }
 
-  function updateAssetPaused(ILiquidityHub hub, uint256 assetId, bool newPausedFlag) internal {
-    DataTypes.AssetConfig memory assetConfig = hub.getAsset(assetId).config;
+  function updateAssetPaused(
+    ILiquidityHub liquidityHub,
+    uint256 assetId,
+    bool newPausedFlag
+  ) internal {
+    DataTypes.AssetConfig memory assetConfig = liquidityHub.getAsset(assetId).config;
     assetConfig.paused = newPausedFlag;
 
     vm.prank(HUB_ADMIN);
-    hub.updateAssetConfig(assetId, assetConfig);
+    liquidityHub.updateAssetConfig(assetId, assetConfig);
   }
 
-  function updateAssetFrozen(ILiquidityHub hub, uint256 assetId, bool newFrozenFlag) internal {
-    DataTypes.AssetConfig memory assetConfig = hub.getAsset(assetId).config;
+  function updateAssetFrozen(
+    ILiquidityHub liquidityHub,
+    uint256 assetId,
+    bool newFrozenFlag
+  ) internal {
+    DataTypes.AssetConfig memory assetConfig = liquidityHub.getAsset(assetId).config;
     assetConfig.frozen = newFrozenFlag;
 
     vm.prank(HUB_ADMIN);
-    hub.updateAssetConfig(assetId, assetConfig);
+    liquidityHub.updateAssetConfig(assetId, assetConfig);
   }
 
   function updateReserveFrozenFlag(ISpoke spoke, uint256 reserveId, bool newFrozenFlag) internal {
@@ -645,14 +657,14 @@ abstract contract Base is Test {
   }
 
   function updateDrawCap(
-    ILiquidityHub hub,
+    ILiquidityHub liquidityHub,
     uint256 assetId,
     address spoke,
     uint256 newDrawCap
   ) internal {
-    DataTypes.SpokeConfig memory spokeConfig = hub.getSpokeConfig(assetId, spoke);
+    DataTypes.SpokeConfig memory spokeConfig = liquidityHub.getSpokeConfig(assetId, spoke);
     spokeConfig.drawCap = newDrawCap;
-    hub.updateSpokeConfig(assetId, spoke, spokeConfig);
+    liquidityHub.updateSpokeConfig(assetId, spoke, spokeConfig);
   }
 
   function getUserInfo(
@@ -740,18 +752,24 @@ abstract contract Base is Test {
   }
 
   /// @dev Helper function to calculate the amount of base and premium debt to restore
-  function _calculateRestoreAmount(
+  // @return baseDebtRestored amount of base debt to restore
+  // @return premiumDebtRestored amount of premium debt to restore
+  function _calculateExactRestoreAmount(
     uint256 baseDebt,
     uint256 premiumDebt,
-    uint256 amount
+    uint256 restoreAmount,
+    uint256 assetId
   ) internal view returns (uint256, uint256) {
-    if (amount == type(uint256).max) {
-      return (baseDebt, premiumDebt);
+    if (restoreAmount <= premiumDebt) {
+      return (0, restoreAmount);
     }
-    if (amount <= premiumDebt) {
-      return (0, amount);
-    }
-    return (amount - premiumDebt, premiumDebt);
+    uint256 baseDebtRestored = _min(baseDebt, restoreAmount - premiumDebt);
+    // round base debt to nearest whole share
+    baseDebtRestored = hub.convertToDrawnAssets(
+      assetId,
+      hub.convertToDrawnShares(assetId, baseDebtRestored)
+    );
+    return (baseDebtRestored, premiumDebt);
   }
 
   /// @dev Helper function to check consistent supplied amounts within accounting
@@ -762,7 +780,7 @@ abstract contract Base is Test {
     address user,
     uint256 expectedSuppliedAmount,
     string memory when
-  ) internal {
+  ) internal view {
     uint256 expectedSuppliedShares = hub.convertToSuppliedShares(assetId, expectedSuppliedAmount);
     assertEq(
       hub.getAssetSuppliedShares(assetId),
@@ -804,5 +822,9 @@ abstract contract Base is Test {
       expectedSuppliedAmount,
       string(abi.encodePacked('user supplied amount ', when))
     );
+  }
+
+  function _min(uint256 a, uint256 b) internal pure returns (uint256) {
+    return a < b ? a : b;
   }
 }

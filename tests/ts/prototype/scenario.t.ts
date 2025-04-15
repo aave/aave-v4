@@ -216,7 +216,7 @@ it('index')((ctx) => {
   const index = randomIndex(); // 1645169034437660970422632448n, 1370571970449003121502846976n
   console.log('index', index);
   const scale = (amount: bigint) => rayDiv(amount, index, Rounding.CEIL);
-  const unscale = (scaled: bigint) => rayMul(scaled, index); // toggle
+  const unscale = (scaled: bigint) => rayMul(scaled, index, Rounding.CEIL); // toggle
 
   const amountA = 23232n;
   const scaledA = scale(amountA);
@@ -254,10 +254,8 @@ it('repay deduction')((ctx) => {
 
   const aliceDebtBefore = alice.getTotalDebt();
   alice.repay(amount / 2n);
-  const aliceDebtAfter = alice.getTotalDebt();
-  console.log('alice debt before', f(aliceDebtBefore));
-  console.log('alice debt after', f(aliceDebtAfter));
-  console.log('diff', f(absDiff(aliceDebtBefore, aliceDebtAfter)), 'repaid', f(amount / 2n));
+  const delta = aliceDebtBefore - alice.getTotalDebt();
+  console.log('restored actual', f(delta), 'expected', f(amount / 2n), 'diff', delta - amount / 2n);
 });
 
 runScenarios();

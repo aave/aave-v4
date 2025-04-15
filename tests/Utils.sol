@@ -35,7 +35,7 @@ library Utils {
     address onBehalfOf // todo: implement
   ) internal returns (uint256) {
     vm.prank(spoke);
-    hub.draw(assetId, amount, to);
+    return hub.draw(assetId, amount, to);
   }
 
   function remove(

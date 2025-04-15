@@ -1,7 +1,6 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.0;
 
-import {Math} from 'src/dependencies/openzeppelin/Math.sol';
 import {WadRayMathExtended} from 'src/libraries/math/WadRayMathExtended.sol';
 import {DataTypes} from 'src/libraries/types/DataTypes.sol';
 import {MathUtils} from 'src/libraries/math/MathUtils.sol';
@@ -13,21 +12,11 @@ library AssetLogic {
   using PercentageMath for uint256;
   using SharesMath for uint256;
   using WadRayMathExtended for uint256;
-  using Math for uint256;
 
   // todo: option for cached object
-
   // todo: add virtual offset for inflation attack
-  // only include base drawn assets
-  function totalDrawnAssets(DataTypes.Asset storage asset) internal view returns (uint256) {
-    return asset.baseDebt();
-  }
 
-  function totalDrawnShares(DataTypes.Asset storage asset) internal view returns (uint256) {
-    return asset.baseDrawnShares;
-  }
-
-  // total drawn assets does not incl totalOutstandingPremium to accrue base rate separately
+  // debt exchange rate does not incl premiumDebt to accrue base rate separately
   function toDrawnAssetsUp(
     DataTypes.Asset storage asset,
     uint256 shares
@@ -52,6 +41,10 @@ library AssetLogic {
     uint256 assets
   ) internal view returns (uint256) {
     return assets.rayDivDown(asset.previewIndex());
+  }
+
+  function baseDebt(DataTypes.Asset storage asset) internal view returns (uint256) {
+    return asset.baseDrawnShares.rayMulUp(asset.previewIndex());
   }
 
   function premiumDebt(DataTypes.Asset storage asset) internal view returns (uint256) {
@@ -104,7 +97,6 @@ library AssetLogic {
     return asset.baseBorrowRate;
   }
 
-  // expects accrued `baseDebt`
   function updateBorrowRate(
     DataTypes.Asset storage asset,
     uint256 liquidityAdded,
@@ -139,9 +131,5 @@ library AssetLogic {
       baseDebtIndex.rayMulUp(
         MathUtils.calculateLinearInterest(asset.baseBorrowRate, uint40(lastUpdateTimestamp))
       );
-  }
-
-  function baseDebt(DataTypes.Asset storage asset) internal view returns (uint256) {
-    return asset.baseDrawnShares.rayMulUp(asset.previewIndex());
   }
 }

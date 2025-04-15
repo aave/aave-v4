@@ -460,19 +460,18 @@ contract Spoke is ISpoke {
     // todo validate user not trying to repay more
   }
 
+  // @dev allows donation on base debt
   function _calculateRestoreAmount(
     uint256 baseDebt,
     uint256 premiumDebt,
     uint256 amount
-  ) internal view returns (uint256, uint256) {
-    // if (amount == type(uint256).max) {
+  ) internal pure returns (uint256, uint256) {
     if (amount >= baseDebt + premiumDebt) {
       return (baseDebt, premiumDebt);
     }
     if (amount <= premiumDebt) {
       return (0, amount);
     }
-    // todo ensure `amount` is not greater than total debt?
     return (amount - premiumDebt, premiumDebt);
   }
 
@@ -702,8 +701,8 @@ contract Spoke is ISpoke {
     DataTypes.Reserve storage reserve
   ) internal view returns (uint256, uint256) {
     uint256 assetId = reserve.assetId;
-    uint256 accruedPremium = (HUB.convertToPremiumDrawnAssets(assetId, reserve.premiumDrawnShares) -
-      reserve.premiumOffset);
+    uint256 accruedPremium = HUB.convertToPremiumDrawnAssets(assetId, reserve.premiumDrawnShares) -
+      reserve.premiumOffset;
     return (
       HUB.convertToDrawnAssets(assetId, reserve.baseDrawnShares),
       reserve.realizedPremium + accruedPremium
