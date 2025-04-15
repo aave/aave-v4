@@ -131,12 +131,6 @@ export class LiquidityHub {
   // @dev global & spoke premiumDebt (ghost, offset, unrealised) is *expected* to be updated on the `refresh` callback
   restore(baseAmount: bigint, premiumAmount: bigint, spoke: Spoke) {
     const drawnShares = this.toDrawnShares(baseAmount);
-    // assertNonZero(drawnShares);
-    // if (drawnShares === 0n && baseAmount > 0n) {
-    //   console.log('drawnShares is 0, baseAmount', f(baseAmount));
-    //   this.log();
-    //   throw new Error('drawnShares is 0');
-    // }
 
     this.availableLiquidity += baseAmount + premiumAmount;
     this.baseDrawnShares -= drawnShares;

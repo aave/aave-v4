@@ -460,20 +460,18 @@ contract Spoke is ISpoke {
     // todo validate user not trying to repay more
   }
 
-  // @dev allows donation on base debt restored
+  // @dev allows donation on base debt
   function _calculateRestoreAmount(
     uint256 baseDebt,
     uint256 premiumDebt,
     uint256 amount
   ) internal pure returns (uint256, uint256) {
-    // if (amount == type(uint256).max) {
     if (amount >= baseDebt + premiumDebt) {
       return (baseDebt, premiumDebt);
     }
     if (amount <= premiumDebt) {
       return (0, amount);
     }
-    // todo ensure `amount` is not greater than total debt?
     return (amount - premiumDebt, premiumDebt);
   }
 
