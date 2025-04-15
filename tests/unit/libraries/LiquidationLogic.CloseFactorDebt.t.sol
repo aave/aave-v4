@@ -20,10 +20,10 @@ contract LiquidationLogicCloseFactorDebtTest is Base {
   uint256 constant SKIP_NONE = 0;
   uint256 constant SKIP_LIQUIDATION_BONUS = 1 << 0;
   uint256 constant SKIP_COLLATERAL_FACTOR = 1 << 1;
-  uint256 constant SKIP_AVG_COLLATERAL_FACTOR = 1 << 2;
+  uint256 constant SKIP_CLOSE_FACTOR = 1 << 2;
   uint256 constant SKIP_TOTAL_DEBT = 1 << 3;
   uint256 constant SKIP_DEBT_ASSET_PRICE = 1 << 4;
-  uint256 constant SKIP_CLOSE_FACTOR = 1 << 5;
+  uint256 constant SKIP_AVG_COLLATERAL_FACTOR = 1 << 5;
   uint256 constant SKIP_DEBT_ASSET_UNIT = 1 << 6;
 
   struct TestCloseFactorDebtParams {

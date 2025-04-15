@@ -77,7 +77,7 @@ library LiquidationLogic {
   /// @return The amount of debt to repay.
   function calculateCloseFactorDebt(
     DataTypes.LiquidationCallLocalVars memory params
-  ) internal returns (uint256) {
+  ) internal pure returns (uint256) {
     // Multiply the liquidation bonus by the collateral factor.
     // This represents the effective value loss from the user's collateral per unit of debt repaid.
     // Acts like an “effective penalty” from the user’s point of view.
@@ -120,7 +120,7 @@ library LiquidationLogic {
    */
   function calculateAvailableCollateralToLiquidate(
     DataTypes.LiquidationCallLocalVars memory params
-  ) internal view returns (uint256, uint256, uint256) {
+  ) internal pure returns (uint256, uint256, uint256) {
     DataTypes.CalculateAvailableCollateralToLiquidateLocalVars memory vars;
     // find collateral amount that corresponds to the debt to cover
     vars.baseCollateral =
