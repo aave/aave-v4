@@ -131,16 +131,16 @@ contract LiquidationLogicCloseFactorDebtTest is Base {
 
   function testDebug() public {
     TestCloseFactorDebtParams memory params;
-    testCalculateActualDebtToLiquidate_debtAssetUnit_zero(params);
+    testCalculateCloseFactorDebt_debtAssetUnit_zero(params);
   }
 
   /// if debtAssetUnit == 0, then result is 0 (should not happen in practice as unit is 10**decimals)
-  function testCalculateActualDebtToLiquidate_debtAssetUnit_zero(
+  function testCalculateCloseFactorDebt_debtAssetUnit_zero(
     TestCloseFactorDebtParams memory params
   ) public {
     // params = _bound(params);
     FieldsToSkip memory skips = _skipOnly(SKIP_DEBT_ASSET_UNIT);
-    TestCloseFactorDebtParams memory bounded = _bound(params, skips);
+    TestCloseFactorDebtParams memory params = _bound(params, skips);
     DataTypes.LiquidationCallLocalVars memory args = _setFunctionArgs(params);
 
     // units is 0
@@ -149,8 +149,49 @@ contract LiquidationLogicCloseFactorDebtTest is Base {
     assertEq(LiquidationLogic.calculateCloseFactorDebt(args), 0, 'closeFactorDebt is 0');
   }
 
+  function testCalculateCloseFactorDebt_debtAssetPrice_zero(
+    TestCloseFactorDebtParams memory params
+  ) public {
+    // params = _bound(params);
+    FieldsToSkip memory skips = _skipOnly(SKIP_DEBT_ASSET_PRICE);
+    TestCloseFactorDebtParams memory params = _bound(params, skips);
+    DataTypes.LiquidationCallLocalVars memory args = _setFunctionArgs(params);
+
+    // units is 0
+    args.debtAssetPrice = 0;
+
+    assertEq(
+      LiquidationLogic.calculateCloseFactorDebt(args),
+      type(uint256).max,
+      'closeFactorDebt is 0'
+    );
+  }
+
+  function testCalculateCloseFactorDebt_closeFactor_lte_effectiveLiquidationPenalty_zero(
+    TestCloseFactorDebtParams memory params
+  ) public {
+    // params = _bound(params);
+    FieldsToSkip memory skips = _skipOnly(SKIP_CLOSE_FACTOR);
+    TestCloseFactorDebtParams memory params = _bound(params, skips);
+    params.closeFactor = bound(
+      params.closeFactor,
+      1, // in practice CF >= 1e18
+      _calculateCloseFactorThreshold(params.liquidationBonus, params.collateralFactor)
+    );
+    DataTypes.LiquidationCallLocalVars memory args = _setFunctionArgs(params);
+
+    // units is 0
+    args.debtAssetPrice = 0;
+
+    assertEq(
+      LiquidationLogic.calculateCloseFactorDebt(args),
+      type(uint256).max,
+      'closeFactorDebt is max uint'
+    );
+  }
+
   // /// if debtAssetUnit == 0, then result is 0 (should not happen in practice as unit is 10**decimals)
-  // function testCalculateActualDebtToLiquidate_avgCollateralFactor_zero(
+  // function testCalculateCloseFactorDebt_avgCollateralFactor_zero(
   //   TestCloseFactorDebtParams memory params
   // ) public {
   //   params = _bound(params, FieldsToSkip.AvgCollateralFactor);
