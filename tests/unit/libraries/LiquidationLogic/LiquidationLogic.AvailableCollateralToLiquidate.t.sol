@@ -38,7 +38,7 @@ contract LiquidationAvailableCollateralToLiquidateTest is Base {
     uint256 liquidationProtocolFeeAmount;
   }
 
-  function testCalculateAvailableCollateralToLiquidate_collateralAssetPrice_zero(
+  function test_calculateAvailableCollateralToLiquidate_fuzz_collateralAssetPrice_zero(
     TestAvailableCollateralParams memory params
   ) public {
     FieldsToSkip memory skip = _skipOnly(SKIP_COLLATERAL_ASSET_PRICE);
@@ -59,7 +59,7 @@ contract LiquidationAvailableCollateralToLiquidateTest is Base {
     assertEq(res.liquidationProtocolFeeAmount, 0, 'liquidationProtocolFeeAmount');
   }
 
-  function testCalculateAvailableCollateralToLiquidate_debtAssetPrice_zero(
+  function test_calculateAvailableCollateralToLiquidate_fuzz_debtAssetPrice_zero(
     TestAvailableCollateralParams memory params
   ) public {
     FieldsToSkip memory skip = _skipOnly(SKIP_DEBT_ASSET_PRICE);
@@ -80,7 +80,7 @@ contract LiquidationAvailableCollateralToLiquidateTest is Base {
     assertEq(res.liquidationProtocolFeeAmount, 0, 'liquidationProtocolFeeAmount');
   }
 
-  function testCalculateAvailableCollateralToLiquidate_actualDebtToLiquidate_zero(
+  function test_calculateAvailableCollateralToLiquidate_fuzz_actualDebtToLiquidate_zero(
     TestAvailableCollateralParams memory params
   ) public {
     FieldsToSkip memory skip = _skipOnly(SKIP_NONE);
@@ -101,7 +101,7 @@ contract LiquidationAvailableCollateralToLiquidateTest is Base {
     assertEq(res.liquidationProtocolFeeAmount, 0, 'liquidationProtocolFeeAmount');
   }
 
-  function testCalculateAvailableCollateralToLiquidate_userCollateralBalance_lt_maxCollateralToLiquidate(
+  function test_calculateAvailableCollateralToLiquidate_fuzz_userCollateralBalance_lt_maxCollateralToLiquidate(
     TestAvailableCollateralParams memory params
   ) public {
     FieldsToSkip memory skip = _skipOnly(SKIP_USER_COLLATERAL_BALANCE);
@@ -258,4 +258,6 @@ contract LiquidationAvailableCollateralToLiquidateTest is Base {
       ((params.collateralAssetPrice * params.userCollateralBalance * params.debtAssetUnit) /
         (params.debtAssetPrice * params.collateralAssetUnit)).percentDiv(params.liquidationBonus);
   }
+
+  // TODO: unit test with specific numbers and expected output
 }

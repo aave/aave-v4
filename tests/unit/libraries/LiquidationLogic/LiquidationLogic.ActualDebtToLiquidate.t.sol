@@ -4,7 +4,7 @@ pragma solidity ^0.8.0;
 import 'tests/unit/libraries/LiquidationLogic/LiquidationLogic.Base.t.sol';
 
 contract LiquidationLogicActualDebtToLiquidateTest is LiquidationLogicBaseTest {
-  function testCalculateActualDebtToLiquidate_totalDebt_zero(
+  function test_calculateActualDebtToLiquidate_fuzz_totalDebt_zero(
     uint256 debtToCover,
     TestCloseFactorDebtParams memory params
   ) public {
@@ -25,7 +25,7 @@ contract LiquidationLogicActualDebtToLiquidateTest is LiquidationLogicBaseTest {
     assertEq(actualDebtToLiquidate, 0, 'if totalDebt == 0, actualDebtToLiquidate should be 0');
   }
 
-  function testCalculateActualDebtToLiquidate_debtToCover_zero(
+  function test_calculateActualDebtToLiquidate_fuzz_debtToCover_zero(
     uint256 totalDebt,
     TestCloseFactorDebtParams memory params
   ) public {
@@ -46,7 +46,7 @@ contract LiquidationLogicActualDebtToLiquidateTest is LiquidationLogicBaseTest {
     assertEq(actualDebtToLiquidate, 0, 'if debtToCover == 0, actualDebtToLiquidate should be 0');
   }
 
-  function testCalculateActualDebtToLiquidate_totalDebt_gt_closeFactorDebt(
+  function test_calculateActualDebtToLiquidate_fuzz_totalDebt_gt_closeFactorDebt(
     uint256 debtToCover,
     uint256 totalDebt,
     TestCloseFactorDebtParams memory params
@@ -81,7 +81,7 @@ contract LiquidationLogicActualDebtToLiquidateTest is LiquidationLogicBaseTest {
     }
   }
 
-  function testCalculateActualDebtToLiquidate_totalDebt_lte_closeFactorDebt(
+  function test_calculateActualDebtToLiquidate_fuzz_totalDebt_lte_closeFactorDebt(
     uint256 debtToCover,
     uint256 totalDebt,
     TestCloseFactorDebtParams memory params
@@ -117,7 +117,7 @@ contract LiquidationLogicActualDebtToLiquidateTest is LiquidationLogicBaseTest {
     }
   }
 
-  function testCalculateActualDebtToLiquidate_closeFactorDebt_zero(
+  function test_calculateActualDebtToLiquidate_fuzz_closeFactorDebt_zero(
     uint256 debtToCover,
     uint256 totalDebt,
     TestCloseFactorDebtParams memory params
@@ -138,4 +138,6 @@ contract LiquidationLogicActualDebtToLiquidateTest is LiquidationLogicBaseTest {
 
     assertEq(actualDebtToLiquidate, 0, 'closeFactorDebt == 0, should return 0');
   }
+
+  // TODO: unit test with specific numbers and expected output
 }

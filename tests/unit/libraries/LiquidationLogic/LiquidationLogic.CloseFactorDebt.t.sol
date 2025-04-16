@@ -8,7 +8,7 @@ contract LiquidationLogicCloseFactorDebtTest is LiquidationLogicBaseTest {
   using WadRayMath for uint256;
   using WadRayMathExtended for uint256;
 
-  function testCalculateCloseFactorDebt_non_negative(
+  function test_calculateCloseFactorDebt_fuzz_non_negative(
     TestCloseFactorDebtParams memory params
   ) public {
     FieldsToSkip memory skips = _skipOnly(SKIP_NONE);
@@ -23,7 +23,7 @@ contract LiquidationLogicCloseFactorDebtTest is LiquidationLogicBaseTest {
   }
 
   /// if debtAssetUnit == 0, then result is 0 (should not happen in practice as unit is 10**decimals)
-  function testCalculateCloseFactorDebt_debtAssetUnit_zero(
+  function test_calculateCloseFactorDebt_fuzz_debtAssetUnit_zero(
     TestCloseFactorDebtParams memory params
   ) public {
     // params = _bound(params);
@@ -36,7 +36,7 @@ contract LiquidationLogicCloseFactorDebtTest is LiquidationLogicBaseTest {
     assertEq(LiquidationLogic.calculateCloseFactorDebt(args), 0, 'closeFactorDebt is 0');
   }
 
-  function testCalculateCloseFactorDebt_debtAssetPrice_zero(
+  function test_calculateCloseFactorDebt_fuzz_debtAssetPrice_zero(
     TestCloseFactorDebtParams memory params
   ) public {
     FieldsToSkip memory skips = _skipOnly(SKIP_DEBT_ASSET_PRICE);
@@ -53,7 +53,7 @@ contract LiquidationLogicCloseFactorDebtTest is LiquidationLogicBaseTest {
   }
 
   /// if denom is ever negative, default to uint max
-  function testCalculateCloseFactorDebt_closeFactor_lte_effectiveLiquidationPenalty_zero(
+  function test_calculateCloseFactorDebt_fuzz_closeFactor_lte_effectiveLiquidationPenalty_zero(
     TestCloseFactorDebtParams memory params
   ) public {
     FieldsToSkip memory skips = _skipOnly(SKIP_CLOSE_FACTOR);
@@ -72,7 +72,7 @@ contract LiquidationLogicCloseFactorDebtTest is LiquidationLogicBaseTest {
     );
   }
 
-  function testCalculateCloseFactorDebt_avgCollateralFactor_zero(
+  function test_calculateCloseFactorDebt_fuzz_avgCollateralFactor_zero(
     TestCloseFactorDebtParams memory params
   ) public {
     FieldsToSkip memory skips = _skipOnly(SKIP_AVG_COLLATERAL_FACTOR);
@@ -87,4 +87,6 @@ contract LiquidationLogicCloseFactorDebtTest is LiquidationLogicBaseTest {
       'closeFactorDebt is incorrect'
     );
   }
+
+  // TODO: unit test with specific numbers and expected output
 }
