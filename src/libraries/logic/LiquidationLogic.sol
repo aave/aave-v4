@@ -90,12 +90,6 @@ library LiquidationLogic {
       .percentMul(params.collateralFactor)
       .fromBps();
 
-    // console.log(
-    //   'LL effeLiqPen',
-    //   params.closeFactor <= effectiveLiquidationPenalty,
-    //   params.debtAssetPrice == 0
-    // );
-
     // Return default max uint if:
     // - penalty exceeds or equals the close factor, ie liquidation cannot restore solvency efficiently (negative denominator)
     // - debt asset price is 0
@@ -107,12 +101,6 @@ library LiquidationLogic {
       params.totalCollateralInBaseCurrency.percentMul(params.avgCollateralFactor.dewadify())) *
       params.debtAssetUnit) /
       ((params.closeFactor - effectiveLiquidationPenalty) * params.debtAssetPrice);
-
-    // console.log(
-    //   'cmp %e %e %e',
-    //   params.totalCollateralInBaseCurrency.percentMul(params.avgCollateralFactor).dewadify(),
-    //   params.totalCollateralInBaseCurrency.dewadify().percentMul(params.avgCollateralFactor)
-    // );
 
     // convert into amount
     return closeFactorDebt;
