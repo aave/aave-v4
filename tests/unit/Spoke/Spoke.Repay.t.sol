@@ -3334,6 +3334,7 @@ contract SpokeRepayTest is SpokeBase {
 
   /// repay partial premium, base & full debt, with no interest accrual (no time pass)
   /// supply ex rate can increase while debt ex rate should remain the same
+  /// this is due to donation on available liquidity
   function test_fuzz_repay_effect_on_ex_rates(uint256 daiBorrowAmount) public {
     daiBorrowAmount = bound(daiBorrowAmount, 1, MAX_SUPPLY_AMOUNT / 2);
     uint256 wethSupplyAmount = _calcMinimumCollAmount(
@@ -3351,11 +3352,10 @@ contract SpokeRepayTest is SpokeBase {
     skip(365 days); // initial increase in index, no time passes for subsequent checks
 
     Debts memory bobDebt = getUserDebt(spoke1, bob, _daiReserveId(spoke1));
-    uint256 supplyExchangeRatioBefore = hub.convertToSuppliedAssets(daiAssetId, 1e30);
-    uint256 debtExchangeRatio = hub.convertToDrawnAssets(daiAssetId, 1e30);
+    uint256 supplyExchangeRatioBefore = hub.convertToSuppliedAssets(daiAssetId, MAX_SUPPLY_AMOUNT);
+    uint256 debtExchangeRatio = hub.convertToDrawnAssets(daiAssetId, MAX_SUPPLY_AMOUNT);
 
     // repay partial premium debt
-    spoke1.getUserPosition(_daiReserveId(spoke1), bob);
     vm.assume(bobDebt.premiumDebt > 1);
     uint256 daiRepayAmount = bound(vm.randomUint(), 1, bobDebt.premiumDebt - 1);
 
@@ -3364,9 +3364,9 @@ contract SpokeRepayTest is SpokeBase {
     vm.prank(bob);
     spoke1.repay(_daiReserveId(spoke1), daiRepayAmount);
 
-    uint256 supplyExchangeRatioAfter = hub.convertToSuppliedAssets(daiAssetId, 1e30);
+    uint256 supplyExchangeRatioAfter = hub.convertToSuppliedAssets(daiAssetId, MAX_SUPPLY_AMOUNT);
     assertGe(supplyExchangeRatioAfter, supplyExchangeRatioBefore);
-    assertEq(hub.convertToDrawnAssets(daiAssetId, 1e30), debtExchangeRatio);
+    assertEq(hub.convertToDrawnAssets(daiAssetId, MAX_SUPPLY_AMOUNT), debtExchangeRatio);
 
     bobDebt = getUserDebt(spoke1, bob, _daiReserveId(spoke1));
     // repay partial base debt
@@ -3376,19 +3376,18 @@ contract SpokeRepayTest is SpokeBase {
     vm.prank(bob);
     spoke1.repay(_daiReserveId(spoke1), daiRepayAmount);
 
-    supplyExchangeRatioAfter = hub.convertToSuppliedAssets(daiAssetId, 1e30);
+    supplyExchangeRatioAfter = hub.convertToSuppliedAssets(daiAssetId, MAX_SUPPLY_AMOUNT);
     assertGe(supplyExchangeRatioAfter, supplyExchangeRatioBefore);
-    assertEq(hub.convertToDrawnAssets(daiAssetId, 1e30), debtExchangeRatio);
+    assertEq(hub.convertToDrawnAssets(daiAssetId, MAX_SUPPLY_AMOUNT), debtExchangeRatio);
 
     supplyExchangeRatioBefore = supplyExchangeRatioAfter;
 
     vm.prank(bob);
     spoke1.repay(_daiReserveId(spoke1), type(uint256).max);
 
-    supplyExchangeRatioAfter = hub.convertToSuppliedAssets(daiAssetId, 1e30);
+    supplyExchangeRatioAfter = hub.convertToSuppliedAssets(daiAssetId, MAX_SUPPLY_AMOUNT);
     assertGe(supplyExchangeRatioAfter, supplyExchangeRatioBefore);
-    supplyExchangeRatioBefore = supplyExchangeRatioAfter;
-    assertEq(hub.convertToDrawnAssets(daiAssetId, 1e30), debtExchangeRatio);
+    assertEq(hub.convertToDrawnAssets(daiAssetId, MAX_SUPPLY_AMOUNT), debtExchangeRatio);
   }
 
   function _assertUserRpUnchanged(uint256 reserveId, ISpoke spoke, address user) internal view {

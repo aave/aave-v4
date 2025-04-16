@@ -583,4 +583,44 @@ contract SpokeSupplyTest is SpokeBase {
       'user suppliedShares after-supply'
     );
   }
+
+  /// supply an asset with existing debt, with no interest accrual the two ex rates
+  /// can increase due to rounding, with interest accrual should strictly increase
+  function test_fuzz_supply_effect_on_ex_rates(uint256 amount, uint256 delay) public {
+    delay = bound(delay, 1, MAX_SKIP_TIME);
+    amount = bound(amount, 1, MAX_SUPPLY_AMOUNT / 2);
+    uint256 wethSupplyAmount = _calcMinimumCollAmount(
+      spoke1,
+      _wethReserveId(spoke1),
+      _daiReserveId(spoke1),
+      amount
+    );
+    Utils.supply(spoke1, _daiReserveId(spoke1), bob, amount, bob);
+    Utils.supply(spoke1, _wethReserveId(spoke1), bob, wethSupplyAmount, bob); // bob collateral
+    setUsingAsCollateral(spoke1, bob, _wethReserveId(spoke1), true);
+    Utils.borrow(spoke1, _daiReserveId(spoke1), bob, amount, bob); // introduce debt
+
+    uint256 supplyExchangeRatio = hub.convertToSuppliedAssets(daiAssetId, MAX_SUPPLY_AMOUNT);
+    uint256 debtExchangeRatio = hub.convertToDrawnAssets(daiAssetId, MAX_SUPPLY_AMOUNT);
+
+    Utils.supply(spoke1, _daiReserveId(spoke1), alice, amount, alice);
+
+    assertGe(hub.convertToSuppliedAssets(daiAssetId, MAX_SUPPLY_AMOUNT), supplyExchangeRatio);
+    assertGe(hub.convertToDrawnAssets(daiAssetId, MAX_SUPPLY_AMOUNT), debtExchangeRatio);
+
+    skip(delay); // with interest accrual, both ex rates should strictly
+
+    assertGt(hub.convertToSuppliedAssets(daiAssetId, MAX_SUPPLY_AMOUNT), supplyExchangeRatio);
+    assertGt(hub.convertToDrawnAssets(daiAssetId, MAX_SUPPLY_AMOUNT), debtExchangeRatio);
+
+    if (hub.convertToSuppliedShares(daiAssetId, amount) > 0) {
+      supplyExchangeRatio = hub.convertToSuppliedAssets(daiAssetId, MAX_SUPPLY_AMOUNT);
+      debtExchangeRatio = hub.convertToDrawnAssets(daiAssetId, MAX_SUPPLY_AMOUNT);
+
+      Utils.supply(spoke1, _daiReserveId(spoke1), alice, amount, alice);
+
+      assertGe(hub.convertToSuppliedAssets(daiAssetId, MAX_SUPPLY_AMOUNT), supplyExchangeRatio);
+      assertGe(hub.convertToDrawnAssets(daiAssetId, MAX_SUPPLY_AMOUNT), debtExchangeRatio);
+    }
+  }
 }
