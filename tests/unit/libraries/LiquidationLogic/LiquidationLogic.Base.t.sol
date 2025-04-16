@@ -10,7 +10,7 @@ contract LiquidationLogicBaseTest is Base {
   using WadRayMath for uint256;
 
   // (debt * assetPrice).wadify() / assetUnit
-  uint256 internal constant MAX_TOTAL_DEBT_IN_BASE_CURRENCY = 1e58;
+  uint256 internal constant MAX_TOTAL_ASSET_IN_BASE_CURRENCY = 1e58;
 
   struct FieldsToSkip {
     uint256 flags;
@@ -24,6 +24,7 @@ contract LiquidationLogicBaseTest is Base {
   uint256 constant SKIP_DEBT_ASSET_PRICE = 1 << 4;
   uint256 constant SKIP_AVG_COLLATERAL_FACTOR = 1 << 5;
   uint256 constant SKIP_DEBT_ASSET_UNIT = 1 << 6;
+  uint256 constant SKIP_TOTAL_COLLATERAL = 1 << 7;
 
   struct TestCloseFactorDebtParams {
     uint256 liquidationBonus;
@@ -33,6 +34,12 @@ contract LiquidationLogicBaseTest is Base {
     uint256 debtAssetPrice;
     uint256 avgCollateralFactor;
     uint256 debtAssetUnit;
+    uint256 totalCollateralInBaseCurrency;
+  }
+
+  function setUp() public virtual override {
+    super.setUp();
+    initEnvironment();
   }
 
   function _calcCloseFactorDebtZeroAvgCollateralFactor(
@@ -106,7 +113,7 @@ contract LiquidationLogicBaseTest is Base {
       params.totalDebtInBaseCurrency = bound(
         params.totalDebtInBaseCurrency,
         1,
-        MAX_TOTAL_DEBT_IN_BASE_CURRENCY
+        MAX_TOTAL_ASSET_IN_BASE_CURRENCY
       );
     }
 
@@ -124,6 +131,14 @@ contract LiquidationLogicBaseTest is Base {
 
     if (!_isSkipped(skip, SKIP_DEBT_ASSET_UNIT)) {
       params.debtAssetUnit = bound(params.debtAssetUnit, 1, 10 ** MAX_TOKEN_DECIMALS_SUPPORTED);
+    }
+
+    if (!_isSkipped(skip, SKIP_TOTAL_COLLATERAL)) {
+      params.totalCollateralInBaseCurrency = bound(
+        params.totalCollateralInBaseCurrency,
+        1,
+        MAX_TOTAL_ASSET_IN_BASE_CURRENCY
+      );
     }
 
     return params;

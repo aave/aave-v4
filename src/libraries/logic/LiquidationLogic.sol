@@ -102,7 +102,12 @@ library LiquidationLogic {
       params.debtAssetUnit) /
       ((params.closeFactor - effectiveLiquidationPenalty) * params.debtAssetPrice);
 
-    // convert into amount
+    console.log('LL num1 %e', params.totalDebtInBaseCurrency.wadMul(params.closeFactor));
+    console.log(
+      'LL num2 %e',
+      params.totalCollateralInBaseCurrency.percentMul(params.avgCollateralFactor.dewadify())
+    );
+
     return closeFactorDebt;
   }
 
