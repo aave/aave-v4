@@ -147,7 +147,7 @@ contract Spoke is ISpoke {
 
     uint256 userPremiumDrawnShares = userPosition.premiumDrawnShares;
     uint256 userPremiumOffset = userPosition.premiumOffset;
-    uint256 accruedPremium = HUB.convertToPremiumDrawnAssets(assetId, userPremiumDrawnShares) -
+    uint256 accruedPremium = HUB.convertToDrawnAssets(assetId, userPremiumDrawnShares) -
       userPremiumOffset; // assets(premiumShares) - offset should never be < 0
     userPosition.premiumDrawnShares = 0;
     userPosition.premiumOffset = 0;
@@ -170,7 +170,7 @@ contract Spoke is ISpoke {
     userPremiumDrawnShares = userPosition.premiumDrawnShares = userPosition
       .baseDrawnShares
       .percentMul(newUserRiskPremium);
-    userPremiumOffset = userPosition.premiumOffset = HUB.convertToPremiumDrawnAssets(
+    userPremiumOffset = userPosition.premiumOffset = HUB.previewOffset(
       assetId,
       userPosition.premiumDrawnShares
     );
@@ -193,7 +193,7 @@ contract Spoke is ISpoke {
 
     uint256 userPremiumDrawnShares = userPosition.premiumDrawnShares;
     uint256 userPremiumOffset = userPosition.premiumOffset;
-    uint256 accruedPremium = HUB.convertToPremiumDrawnAssets(assetId, userPremiumDrawnShares) -
+    uint256 accruedPremium = HUB.convertToDrawnAssets(assetId, userPremiumDrawnShares) -
       userPremiumOffset; // assets(premiumShares) - offset should never be < 0
     userPosition.premiumDrawnShares = 0;
     userPosition.premiumOffset = 0;
@@ -216,7 +216,7 @@ contract Spoke is ISpoke {
     userPremiumDrawnShares = userPosition.premiumDrawnShares = userPosition
       .baseDrawnShares
       .percentMul(newUserRiskPremium);
-    userPremiumOffset = userPosition.premiumOffset = HUB.convertToPremiumDrawnAssets(
+    userPremiumOffset = userPosition.premiumOffset = HUB.previewOffset(
       assetId,
       userPosition.premiumDrawnShares
     );
@@ -270,7 +270,7 @@ contract Spoke is ISpoke {
     userPremiumDrawnShares = userPosition.premiumDrawnShares = userPosition
       .baseDrawnShares
       .percentMul(newUserRiskPremium);
-    userPremiumOffset = userPosition.premiumOffset = HUB.convertToPremiumDrawnAssets(
+    userPremiumOffset = userPosition.premiumOffset = HUB.previewOffset(
       reserve.assetId,
       userPosition.premiumDrawnShares
     );
@@ -686,10 +686,8 @@ contract Spoke is ISpoke {
     DataTypes.UserPosition storage userPosition,
     uint256 assetId
   ) internal view returns (uint256, uint256) {
-    uint256 accruedPremium = HUB.convertToPremiumDrawnAssets(
-      assetId,
-      userPosition.premiumDrawnShares
-    ) - userPosition.premiumOffset;
+    uint256 accruedPremium = HUB.convertToDrawnAssets(assetId, userPosition.premiumDrawnShares) -
+      userPosition.premiumOffset;
     return (
       HUB.convertToDrawnAssets(assetId, userPosition.baseDrawnShares),
       userPosition.realizedPremium + accruedPremium
@@ -701,7 +699,7 @@ contract Spoke is ISpoke {
     DataTypes.Reserve storage reserve
   ) internal view returns (uint256, uint256) {
     uint256 assetId = reserve.assetId;
-    uint256 accruedPremium = HUB.convertToPremiumDrawnAssets(assetId, reserve.premiumDrawnShares) -
+    uint256 accruedPremium = HUB.convertToDrawnAssets(assetId, reserve.premiumDrawnShares) -
       reserve.premiumOffset;
     return (
       HUB.convertToDrawnAssets(assetId, reserve.baseDrawnShares),
@@ -729,18 +727,13 @@ contract Spoke is ISpoke {
       if (_isBorrowing(userPosition) && assetId != assetIdToAvoid) {
         uint256 oldUserPremiumDrawnShares = userPosition.premiumDrawnShares;
         uint256 oldUserPremiumOffset = userPosition.premiumOffset;
-        uint256 accruedUserPremium = HUB.convertToPremiumDrawnAssets(
-          assetId,
-          oldUserPremiumDrawnShares
-        ) - oldUserPremiumOffset;
+        uint256 accruedUserPremium = HUB.convertToDrawnAssets(assetId, oldUserPremiumDrawnShares) -
+          oldUserPremiumOffset;
 
         userPosition.premiumDrawnShares = userPosition.baseDrawnShares.percentMul(
           newUserRiskPremium
         );
-        userPosition.premiumOffset = HUB.convertToPremiumDrawnAssets(
-          assetId,
-          userPosition.premiumDrawnShares
-        );
+        userPosition.premiumOffset = HUB.previewOffset(assetId, userPosition.premiumDrawnShares);
         userPosition.realizedPremium += accruedUserPremium;
 
         _refreshPremiumDebt(

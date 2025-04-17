@@ -301,10 +301,7 @@ contract LiquidityHub is ILiquidityHub {
     return _assets[assetId].toDrawnSharesDown(assets);
   }
 
-  function convertToPremiumDrawnAssets(
-    uint256 assetId,
-    uint256 shares
-  ) external view returns (uint256) {
+  function previewOffset(uint256 assetId, uint256 shares) external view returns (uint256) {
     return _assets[assetId].toDrawnAssetsDown(shares);
   }
 
