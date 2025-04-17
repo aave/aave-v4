@@ -100,13 +100,14 @@ abstract contract Base is Test {
   uint256 internal mintAmount_WBTC = MAX_SUPPLY_AMOUNT;
   uint256 internal mintAmount_USDY = MAX_SUPPLY_AMOUNT;
 
-  Decimals internal decimals = Decimals({usdx: 6, usdy: 18, dai: 18, wbtc: 8});
+  Decimals internal decimals = Decimals({usdx: 6, usdy: 18, dai: 18, wbtc: 8, weth: 18});
 
   struct Decimals {
     uint8 usdx;
     uint8 dai;
     uint8 wbtc;
     uint8 usdy;
+    uint8 weth;
   }
 
   struct TokenList {

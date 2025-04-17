@@ -32,10 +32,10 @@ contract LiquidationCallTest is SpokeBase {
     state.wbtcReserveId = _wbtcReserveId(spoke1);
 
     // collateral: wbtc/dai
-    state.colls[0].wbtc = 1 * 10 ** tokenList.wbtc.decimals(); // $50k wbtc
-    state.colls[0].dai = 10_000 * 10 ** tokenList.dai.decimals(); // $10k dai
+    state.colls[0].wbtc = 1 * 10 ** decimals.wbtc; // $50k wbtc
+    state.colls[0].dai = 10_000 * 10 ** decimals.dai; // $10k dai
     // debt: weth
-    state.debts[0].weth = 20 * 10 ** tokenList.weth.decimals(); // 20 eth, $40k
+    state.debts[0].weth = 20 * 10 ** decimals.weth; // 20 eth, $40k
 
     state.liqBonus = spoke1.getReserve(state.wbtcReserveId).config.liquidationBonus;
 
@@ -143,10 +143,10 @@ contract LiquidationCallTest is SpokeBase {
     state.wbtcReserveId = _wbtcReserveId(spoke1);
 
     // collateral: wbtc/dai
-    state.colls[0].wbtc = 1 * 10 ** tokenList.wbtc.decimals(); // $50k wbtc
-    state.colls[0].dai = 10_000 * 10 ** tokenList.dai.decimals(); // $10k dai
+    state.colls[0].wbtc = 1 * 10 ** decimals.wbtc; // $50k wbtc
+    state.colls[0].dai = 10_000 * 10 ** decimals.dai; // $10k dai
     // debt: weth
-    state.debts[0].weth = 20 * 10 ** tokenList.weth.decimals(); // 20 eth, $40k
+    state.debts[0].weth = 20 * 10 ** decimals.weth; // 20 eth, $40k
 
     state.liqBonus = spoke1.getReserve(state.wbtcReserveId).config.liquidationBonus;
 
@@ -237,9 +237,9 @@ contract LiquidationCallTest is SpokeBase {
     uint256 wbtcReserveId = _wbtcReserveId(spoke1);
 
     // // collateral: wbtc/dai
-    // uint256 wbtcAmount = 1 * 10 ** tokenList.wbtc.decimals(); // $50k wbtc
+    // uint256 wbtcAmount = 1 * 10 ** decimals.wbtc; // $50k wbtc
     // debt: weth
-    uint256 borrowAmount = 20 * 10 ** tokenList.weth.decimals(); // 20 eth, $40k
+    uint256 borrowAmount = 20 * 10 ** decimals.weth; // 20 eth, $40k
 
     uint256 wbtcAmount = _createMinCollateralPosition(
       spoke1,
@@ -319,10 +319,10 @@ contract LiquidationCallTest is SpokeBase {
     state.wbtcReserveId = _wbtcReserveId(spoke1);
 
     // collateral: wbtc/dai
-    state.colls[0].wbtc = 1 * 10 ** tokenList.wbtc.decimals(); // $50k wbtc
-    state.colls[0].dai = 10_000 * 10 ** tokenList.dai.decimals(); // $10k dai
+    state.colls[0].wbtc = 1 * 10 ** decimals.wbtc; // $50k wbtc
+    state.colls[0].dai = 10_000 * 10 ** decimals.dai; // $10k dai
     // debt: weth
-    state.debts[0].weth = 20 * 10 ** tokenList.weth.decimals(); // 20 eth, $40k
+    state.debts[0].weth = 20 * 10 ** decimals.weth; // 20 eth, $40k
 
     state.liqBonus = spoke1.getReserve(state.wbtcReserveId).config.liquidationBonus;
 
@@ -440,10 +440,10 @@ contract LiquidationCallTest is SpokeBase {
     state.usdxReserveId = _usdxReserveId(spoke1);
 
     // collateral: wbtc/dai
-    state.colls[0].usdx = 10_000 * 10 ** tokenList.usdx.decimals(); // $10k usdx
-    state.colls[0].dai = 20_000 * 10 ** tokenList.dai.decimals(); // $10k dai
+    state.colls[0].usdx = 10_000 * 10 ** decimals.usdx; // $10k usdx
+    state.colls[0].dai = 20_000 * 10 ** decimals.dai; // $10k dai
     // debt: weth
-    state.debts[0].weth = 8 * 10 ** tokenList.weth.decimals(); // $16k weth
+    state.debts[0].weth = 8 * 10 ** decimals.weth; // $16k weth
 
     state.liqBonus = spoke1.getReserve(state.wbtcReserveId).config.liquidationBonus;
 
@@ -664,10 +664,10 @@ contract LiquidationCallTest is SpokeBase {
     state.wbtcReserveId = _wbtcReserveId(spoke1);
 
     // collateral: wbtc/dai
-    state.colls[0].wbtc = 1 * 10 ** tokenList.wbtc.decimals(); // $50k wbtc
-    state.colls[0].dai = 10_000 * 10 ** tokenList.dai.decimals(); // $10k dai
+    state.colls[0].wbtc = 1 * 10 ** decimals.wbtc; // $50k wbtc
+    state.colls[0].dai = 10_000 * 10 ** decimals.dai; // $10k dai
     // debt: weth
-    state.debts[0].weth = 20 * 10 ** tokenList.weth.decimals(); // 20 eth, $40k
+    state.debts[0].weth = 20 * 10 ** decimals.weth; // 20 eth, $40k
 
     state.collateralFactor = 75_00;
     state.closeFactor = 1.05e18;
@@ -762,8 +762,8 @@ contract LiquidationCallTest is SpokeBase {
     // collReserveIds[1] = _daiReserveId(spoke1);
 
     // uint256[] memory collAmounts = new uint256[](2);
-    // collAmounts[0] = 1 * 10 ** tokenList.wbtc.decimals();
-    // collAmounts[1] = 10_000 * 10 ** tokenList.dai.decimals();
+    // collAmounts[0] = 1 * 10 ** decimals.wbtc;
+    // collAmounts[1] = 10_000 * 10 ** decimals.dai;
 
     // uint256 debtReserveId = _wethReserveId(spoke1);
     // _calcMaxDebtAmount(spoke1, collReserveIds, collAmounts, debtReserveId);
@@ -802,10 +802,10 @@ contract LiquidationCallTest is SpokeBase {
     updateCloseFactor(spoke1, state.closeFactor);
 
     // collateral: wbtc/dai
-    state.colls[0].wbtc = 1 * 10 ** tokenList.wbtc.decimals(); // $50k wbtc
-    state.colls[0].dai = 20_000 * 10 ** tokenList.dai.decimals(); // $55k dai
+    state.colls[0].wbtc = 1 * 10 ** decimals.wbtc; // $50k wbtc
+    state.colls[0].dai = 20_000 * 10 ** decimals.dai; // $55k dai
     // debt: weth
-    // state.debts[0].weth = 20 * 10 ** tokenList.weth.decimals(); // 20 eth, $40k
+    // state.debts[0].weth = 20 * 10 ** decimals.weth; // 20 eth, $40k
 
     uint256[] memory collReserveIds = new uint256[](2);
     collReserveIds[0] = state.wbtcReserveId;
@@ -906,10 +906,10 @@ contract LiquidationCallTest is SpokeBase {
     // uint256 daiReserveId = _daiReserveId(spoke1);
     // uint256 wbtcReserveId = _wbtcReserveId(spoke1);
     // // collateral: wbtc/dai
-    // uint256 wbtcAmount = 1 * 10 ** tokenList.wbtc.decimals(); // $50k wbtc
-    // uint256 daiAmount = 10_000 * 10 ** tokenList.dai.decimals(); // $10k dai
+    // uint256 wbtcAmount = 1 * 10 ** decimals.wbtc; // $50k wbtc
+    // uint256 daiAmount = 10_000 * 10 ** decimals.dai; // $10k dai
     // // debt: weth
-    // uint256 borrowAmount = 20 * 10 ** tokenList.weth.decimals(); // 20 eth, $40k
+    // uint256 borrowAmount = 20 * 10 ** decimals.weth; // 20 eth, $40k
     // _updateCloseFactor(spoke1, 1.05e18);
     // _deployLiquidity(spoke1, wethReserveId, borrowAmount * 10);
     // Utils.supplyCollateral(spoke1, wbtcReserveId, alice, wbtcAmount, alice);
@@ -972,10 +972,10 @@ contract LiquidationCallTest is SpokeBase {
     uint256 usdxReserveId = _usdxReserveId(spoke1);
 
     // collateral: weth/dai
-    uint256 wethAmount = 10 * 10 ** tokenList.weth.decimals(); // $20k wbtc
-    uint256 daiAmount = 10_000 * 10 ** tokenList.dai.decimals(); // $10k dai
+    uint256 wethAmount = 10 * 10 ** decimals.weth; // $20k wbtc
+    uint256 daiAmount = 10_000 * 10 ** decimals.dai; // $10k dai
     // debt: usdx
-    uint256 borrowAmount = 15_000 * 10 ** tokenList.usdx.decimals(); // $15k usdx
+    uint256 borrowAmount = 15_000 * 10 ** decimals.usdx; // $15k usdx
 
     _deployLiquidity(spoke1, usdxReserveId, borrowAmount);
     Utils.supplyCollateral(spoke1, wethReserveId, alice, wethAmount, alice);
@@ -998,10 +998,10 @@ contract LiquidationCallTest is SpokeBase {
     uint256 daiReserveId = _daiReserveId(spoke1);
 
     // collateral: weth/usdx
-    uint256 wethAmount = 10 * 10 ** tokenList.weth.decimals(); // $20k wbtc
-    uint256 usdxAmount = 10_000 * 10 ** tokenList.usdx.decimals(); // $10k usdx
+    uint256 wethAmount = 10 * 10 ** decimals.weth; // $20k wbtc
+    uint256 usdxAmount = 10_000 * 10 ** decimals.usdx; // $10k usdx
     // debt: dai
-    uint256 borrowAmount = 15_000 * 10 ** tokenList.dai.decimals(); // $15k dai
+    uint256 borrowAmount = 15_000 * 10 ** decimals.dai; // $15k dai
 
     uint256 closeFactor = getCloseFactor(spoke1);
 
@@ -1024,8 +1024,8 @@ contract LiquidationCallTest is SpokeBase {
     uint256 daiReserveId = _daiReserveId(spoke1);
     uint256 usdyReserveId = _usdyReserveId(spoke1);
     // collateral: weth/dai
-    uint256 wethAmount = 10 * 10 ** tokenList.weth.decimals(); // $20k wbtc
-    uint256 daiAmount = 10_000 * 10 ** tokenList.dai.decimals(); // $10k dai
+    uint256 wethAmount = 10 * 10 ** decimals.weth; // $20k wbtc
+    uint256 daiAmount = 10_000 * 10 ** decimals.dai; // $10k dai
     // debt: usdy
     uint256 borrowAmount = 15_000 * 10 ** tokenList.usdy.decimals(); // $15k usdy
     _deployLiquidity(spoke1, usdyReserveId, borrowAmount);
@@ -1064,10 +1064,10 @@ contract LiquidationCallTest is SpokeBase {
     state.wbtcReserveId = _wbtcReserveId(spoke1);
 
     // collateral: wbtc/dai
-    state.colls[0].wbtc = 1 * 10 ** tokenList.wbtc.decimals(); // $50k wbtc
-    state.colls[0].dai = 10_000 * 10 ** tokenList.dai.decimals(); // $10k dai
+    state.colls[0].wbtc = 1 * 10 ** decimals.wbtc; // $50k wbtc
+    state.colls[0].dai = 10_000 * 10 ** decimals.dai; // $10k dai
     // debt: weth
-    state.debts[0].weth = 20 * 10 ** tokenList.weth.decimals(); // 20 eth, $40k
+    state.debts[0].weth = 20 * 10 ** decimals.weth; // 20 eth, $40k
 
     state.collateralFactor = 75_00;
     state.closeFactor = 1.05e18;
@@ -1169,10 +1169,10 @@ contract LiquidationCallTest is SpokeBase {
     state.wbtcReserveId = _wbtcReserveId(spoke1);
 
     // collateral: wbtc/dai
-    state.colls[0].wbtc = 1 * 10 ** tokenList.wbtc.decimals(); // $50k wbtc
-    state.colls[0].dai = 10_000 * 10 ** tokenList.dai.decimals(); // $10k dai
+    state.colls[0].wbtc = 1 * 10 ** decimals.wbtc; // $50k wbtc
+    state.colls[0].dai = 10_000 * 10 ** decimals.dai; // $10k dai
     // debt: weth
-    state.debts[0].weth = 20 * 10 ** tokenList.weth.decimals(); // 20 eth, $40k
+    state.debts[0].weth = 20 * 10 ** decimals.weth; // 20 eth, $40k
 
     state.collateralFactor = 75_00;
     state.closeFactor = 1.05e18;
@@ -1276,10 +1276,10 @@ contract LiquidationCallTest is SpokeBase {
     uint256 usdxReserveId = _usdxReserveId(spoke1);
     // uint256 daiDebtAmount = 100e18;
 
-    uint256 borrowAmount = 15_000 * 10 ** tokenList.usdx.decimals(); // 15k, 6 decimals
+    uint256 borrowAmount = 15_000 * 10 ** decimals.usdx; // 15k, 6 decimals
 
-    uint256 wethAmount = 10 * 10 ** tokenList.weth.decimals(); // 20k Weth, 18 decimals
-    uint256 daiAmount = 10_000 * 10 ** tokenList.dai.decimals(); // 10k dai, 18 decimals
+    uint256 wethAmount = 10 * 10 ** decimals.weth; // 20k Weth, 18 decimals
+    uint256 daiAmount = 10_000 * 10 ** decimals.dai; // 10k dai, 18 decimals
 
     console.log('tests coll: dai %e, weth %e', daiAmount, wethAmount);
     console.log('tests usdx %e', borrowAmount);
@@ -1327,10 +1327,10 @@ contract LiquidationCallTest is SpokeBase {
     uint256 daiReserveId = _daiReserveId(spoke1);
 
     // collateral: weth/usdx
-    uint256 wethAmount = 10 * 10 ** tokenList.weth.decimals(); // $20k wbtc
-    uint256 usdxAmount = 10_000 * 10 ** tokenList.usdx.decimals(); // $10k usdx
+    uint256 wethAmount = 10 * 10 ** decimals.weth; // $20k wbtc
+    uint256 usdxAmount = 10_000 * 10 ** decimals.usdx; // $10k usdx
     // debt: dai
-    uint256 borrowAmount = 15_000 * 10 ** tokenList.dai.decimals(); // $15k dai
+    uint256 borrowAmount = 15_000 * 10 ** decimals.dai; // $15k dai
 
     uint256 closeFactor = 1.05e18;
 
@@ -1357,10 +1357,10 @@ contract LiquidationCallTest is SpokeBase {
     uint256 daiReserveId = _daiReserveId(spoke1);
 
     // collateral: weth/usdx
-    uint256 wethAmount = 10 * 10 ** tokenList.weth.decimals(); // $20k wbtc
-    uint256 usdxAmount = 10_000 * 10 ** tokenList.usdx.decimals(); // $10k usdx
+    uint256 wethAmount = 10 * 10 ** decimals.weth; // $20k wbtc
+    uint256 usdxAmount = 10_000 * 10 ** decimals.usdx; // $10k usdx
     // debt: dai
-    uint256 borrowAmount = 15_000 * 10 ** tokenList.dai.decimals(); // $15k dai
+    uint256 borrowAmount = 15_000 * 10 ** decimals.dai; // $15k dai
 
     uint256 treasuryBalanceBefore = tokenList.usdx.balanceOf(TREASURY);
 
