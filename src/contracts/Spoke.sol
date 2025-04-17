@@ -1017,7 +1017,12 @@ contract Spoke is ISpoke {
       ? 0
       : vars.avgCollateralFactor.wadDiv(vars.totalCollateralInBaseCurrency);
 
-    console.log('hf %e %e', vars.healthFactor, vars.avgCollateralFactor);
+    console.log(
+      'hf %e, avgCF: %e, debtBase: %e',
+      vars.healthFactor,
+      vars.avgCollateralFactor,
+      vars.totalDebtInBaseCurrency
+    );
 
     // console.log('Sp: avgCF %e', vars.avgCollateralFactor);
 

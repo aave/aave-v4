@@ -8,6 +8,7 @@ contract LiquidationCallVariableLiquidationBonusTest is SpokeBase {
   using SharesMath for uint256;
   using WadRayMath for uint256;
   using PercentageMath for uint256;
+  using PercentageMathExtended for uint256;
 
   DataTypes.LiquidationConfig internal _config;
 
@@ -69,7 +70,7 @@ contract LiquidationCallVariableLiquidationBonusTest is SpokeBase {
   }
 
   /// weth collateral / dai debt
-  function test_liquidationCall_fuzz_variableLB1(
+  function test_liquidationCall_fuzz_variable_PREV(
     DataTypes.LiquidationConfig memory liqConfig,
     uint256 liqBonus,
     uint256 supplyAmount,
@@ -157,7 +158,20 @@ contract LiquidationCallVariableLiquidationBonusTest is SpokeBase {
     // );
   }
 
-  function test_liquidationCall_fuzz_variableLB2(
+  function test_y() public {
+    test_liquidationCall_fuzz_variableLB2(
+      DataTypes.LiquidationConfig({
+        closeFactor: 1000000000000006192,
+        healthFactorBonusThreshold: 500000000000000250,
+        liquidationBonusFactor: 5182
+      }),
+      19_900,
+      4158717544,
+      900000000000021205
+    );
+  }
+
+  function test_liquidationCall_fuzz_variableLB1(
     DataTypes.LiquidationConfig memory liqConfig,
     uint256 liqBonus,
     uint256 supplyAmount,
@@ -168,18 +182,13 @@ contract LiquidationCallVariableLiquidationBonusTest is SpokeBase {
 
     LiquidationBalances memory balances;
     balances.collateralReserve = spoke1.getReserve(collateralReserveId);
+    balances.debtReserve = spoke1.getReserve(debtReserveId);
 
     // uint256 liqBonus = 105_00;
     liqConfig = _bound(liqConfig);
     liqBonus = bound(liqBonus, MIN_LIQUIDATION_BONUS, MAX_LIQUIDATION_BONUS);
-    supplyAmount = bound(
-      supplyAmount,
-      10 ** balances.collateralReserve.config.decimals / 1e11 + 1,
-      MAX_SUPPLY_AMOUNT / 1e4
-    );
+    supplyAmount = bound(supplyAmount, 1e8, MAX_SUPPLY_AMOUNT / 1e4); // bounds to ensure HF is below desiredHf within precision
     desiredHf = bound(desiredHf, 0.1e18, HEALTH_FACTOR_LIQUIDATION_THRESHOLD - 1);
-
-    // balances.debtReserve = spoke1.getReserve(debtReserveId);
 
     // balances.collateralAssetId = spoke1.getReserve(collateralReserveId).assetId;
     // balances.debtAssetId = spoke1.getReserve(debtReserveId).assetId;
@@ -224,11 +233,230 @@ contract LiquidationCallVariableLiquidationBonusTest is SpokeBase {
 
     // convert
     balances.collateralBaseDiff = _convertAmountToBaseCurrency(
-      wethAssetId,
+      balances.collateralReserve.assetId,
       balances.liquidator.balanceAfter - balances.liquidator.balanceBefore
     );
     balances.debtBaseDiff = _convertAmountToBaseCurrency(
-      daiAssetId,
+      balances.debtReserve.assetId,
+      balances.debt.balanceBefore - balances.debt.balanceAfter
+    );
+
+    _assertLiquidationBonusEarned(balances, 'test_liquidationCall_fuzz_variableLB');
+  }
+
+  function test_liquidationCall_fuzz_variableLB2(
+    DataTypes.LiquidationConfig memory liqConfig,
+    uint256 liqBonus,
+    uint256 supplyAmount,
+    uint256 desiredHf
+  ) public {
+    uint256 collateralReserveId = _wethReserveId(spoke1);
+    uint256 debtReserveId = _usdxReserveId(spoke1);
+
+    LiquidationBalances memory balances;
+    balances.collateralReserve = spoke1.getReserve(collateralReserveId);
+    balances.debtReserve = spoke1.getReserve(debtReserveId);
+
+    // uint256 liqBonus = 105_00;
+    liqConfig = _bound(liqConfig);
+    liqBonus = bound(liqBonus, MIN_LIQUIDATION_BONUS, MAX_LIQUIDATION_BONUS);
+    supplyAmount = bound(supplyAmount, 1e13, MAX_SUPPLY_AMOUNT / 1e4); // bounds to ensure HF is below desiredHf within precision
+    desiredHf = bound(desiredHf, 0.1e18, HEALTH_FACTOR_LIQUIDATION_THRESHOLD - 1);
+
+    // balances.collateralAssetId = spoke1.getReserve(collateralReserveId).assetId;
+    // balances.debtAssetId = spoke1.getReserve(debtReserveId).assetId;
+    // balances.collateralAsset = IERC20(balances.collateralReserve.asset);
+    // balances.debtAsset = IERC20(balances.debtReserve.asset);
+
+    _config = liqConfig;
+    spoke1.updateLiquidationConfig(_config);
+
+    updateLiquidationBonus(spoke1, collateralReserveId, liqBonus);
+    Utils.supplyCollateral({
+      spoke: spoke1,
+      reserveId: collateralReserveId,
+      user: alice,
+      amount: supplyAmount,
+      onBehalfOf: alice
+    });
+
+    (uint256 finalHf, uint256 requiredDebtAmount) = _borrowToBeBelowHf(
+      spoke1,
+      alice,
+      debtReserveId,
+      desiredHf
+    );
+    balances.liquidationBonus = _getVariableLiquidationBonus(spoke1, collateralReserveId, finalHf);
+
+    balances.debt.balanceBefore = spoke1.getUserTotalDebt(debtReserveId, alice);
+
+    balances.liquidator.balanceBefore = IERC20(balances.collateralReserve.asset).balanceOf(
+      LIQUIDATOR
+    );
+    balances.treasury.balanceBefore = IERC20(balances.collateralReserve.asset).balanceOf(TREASURY);
+
+    vm.prank(LIQUIDATOR);
+    spoke1.liquidationCall(collateralReserveId, debtReserveId, alice, requiredDebtAmount);
+
+    balances.liquidator.balanceAfter = IERC20(balances.collateralReserve.asset).balanceOf(
+      LIQUIDATOR
+    );
+    balances.treasury.balanceAfter = IERC20(balances.collateralReserve.asset).balanceOf(TREASURY);
+    balances.debt.balanceAfter = spoke1.getUserTotalDebt(debtReserveId, alice);
+
+    // convert
+    balances.collateralBaseDiff = _convertAmountToBaseCurrency(
+      balances.collateralReserve.assetId,
+      balances.liquidator.balanceAfter - balances.liquidator.balanceBefore
+    );
+    balances.debtBaseDiff = _convertAmountToBaseCurrency(
+      balances.debtReserve.assetId,
+      balances.debt.balanceBefore - balances.debt.balanceAfter
+    );
+
+    _assertLiquidationBonusEarned(balances, 'test_liquidationCall_fuzz_variableLB');
+  }
+
+  function test_liquidationCall_fuzz_variableLB3(
+    DataTypes.LiquidationConfig memory liqConfig,
+    uint256 liqBonus,
+    uint256 supplyAmount,
+    uint256 desiredHf
+  ) public {
+    uint256 collateralReserveId = _usdxReserveId(spoke1);
+    uint256 debtReserveId = _wethReserveId(spoke1);
+
+    LiquidationBalances memory balances;
+    balances.collateralReserve = spoke1.getReserve(collateralReserveId);
+    balances.debtReserve = spoke1.getReserve(debtReserveId);
+
+    // uint256 liqBonus = 105_00;
+    liqConfig = _bound(liqConfig);
+    liqBonus = bound(liqBonus, MIN_LIQUIDATION_BONUS, MAX_LIQUIDATION_BONUS);
+    supplyAmount = bound(supplyAmount, 1e6, MAX_SUPPLY_AMOUNT); // bounds to ensure HF is below desiredHf within precision
+    desiredHf = bound(desiredHf, 0.1e18, HEALTH_FACTOR_LIQUIDATION_THRESHOLD - 1);
+
+    // balances.collateralAssetId = spoke1.getReserve(collateralReserveId).assetId;
+    // balances.debtAssetId = spoke1.getReserve(debtReserveId).assetId;
+    // balances.collateralAsset = IERC20(balances.collateralReserve.asset);
+    // balances.debtAsset = IERC20(balances.debtReserve.asset);
+
+    _config = liqConfig;
+    spoke1.updateLiquidationConfig(_config);
+
+    updateLiquidationBonus(spoke1, collateralReserveId, liqBonus);
+    Utils.supplyCollateral({
+      spoke: spoke1,
+      reserveId: collateralReserveId,
+      user: alice,
+      amount: supplyAmount,
+      onBehalfOf: alice
+    });
+
+    (uint256 finalHf, uint256 requiredDebtAmount) = _borrowToBeBelowHf(
+      spoke1,
+      alice,
+      debtReserveId,
+      desiredHf
+    );
+    balances.liquidationBonus = _getVariableLiquidationBonus(spoke1, collateralReserveId, finalHf);
+
+    balances.debt.balanceBefore = spoke1.getUserTotalDebt(debtReserveId, alice);
+
+    balances.liquidator.balanceBefore = IERC20(balances.collateralReserve.asset).balanceOf(
+      LIQUIDATOR
+    );
+    balances.treasury.balanceBefore = IERC20(balances.collateralReserve.asset).balanceOf(TREASURY);
+
+    vm.prank(LIQUIDATOR);
+    spoke1.liquidationCall(collateralReserveId, debtReserveId, alice, requiredDebtAmount);
+
+    balances.liquidator.balanceAfter = IERC20(balances.collateralReserve.asset).balanceOf(
+      LIQUIDATOR
+    );
+    balances.treasury.balanceAfter = IERC20(balances.collateralReserve.asset).balanceOf(TREASURY);
+    balances.debt.balanceAfter = spoke1.getUserTotalDebt(debtReserveId, alice);
+
+    // convert
+    balances.collateralBaseDiff = _convertAmountToBaseCurrency(
+      balances.collateralReserve.assetId,
+      balances.liquidator.balanceAfter - balances.liquidator.balanceBefore
+    );
+    balances.debtBaseDiff = _convertAmountToBaseCurrency(
+      balances.debtReserve.assetId,
+      balances.debt.balanceBefore - balances.debt.balanceAfter
+    );
+
+    _assertLiquidationBonusEarned(balances, 'test_liquidationCall_fuzz_variableLB');
+  }
+
+  function test_liquidationCall_fuzz_variableLB4(
+    DataTypes.LiquidationConfig memory liqConfig,
+    uint256 liqBonus,
+    uint256 supplyAmount,
+    uint256 desiredHf
+  ) public {
+    uint256 collateralReserveId = _daiReserveId(spoke1);
+    uint256 debtReserveId = _usdxReserveId(spoke1);
+
+    LiquidationBalances memory balances;
+    balances.collateralReserve = spoke1.getReserve(collateralReserveId);
+    balances.debtReserve = spoke1.getReserve(debtReserveId);
+
+    // uint256 liqBonus = 105_00;
+    liqConfig = _bound(liqConfig);
+    liqBonus = bound(liqBonus, MIN_LIQUIDATION_BONUS, MAX_LIQUIDATION_BONUS);
+    supplyAmount = bound(supplyAmount, 1e16, MAX_SUPPLY_AMOUNT); // bounds to ensure HF is below desiredHf within precision
+    desiredHf = bound(desiredHf, 0.1e18, HEALTH_FACTOR_LIQUIDATION_THRESHOLD - 1);
+
+    // balances.collateralAssetId = spoke1.getReserve(collateralReserveId).assetId;
+    // balances.debtAssetId = spoke1.getReserve(debtReserveId).assetId;
+    // balances.collateralAsset = IERC20(balances.collateralReserve.asset);
+    // balances.debtAsset = IERC20(balances.debtReserve.asset);
+
+    _config = liqConfig;
+    spoke1.updateLiquidationConfig(_config);
+
+    updateLiquidationBonus(spoke1, collateralReserveId, liqBonus);
+    Utils.supplyCollateral({
+      spoke: spoke1,
+      reserveId: collateralReserveId,
+      user: alice,
+      amount: supplyAmount,
+      onBehalfOf: alice
+    });
+
+    (uint256 finalHf, uint256 requiredDebtAmount) = _borrowToBeBelowHf(
+      spoke1,
+      alice,
+      debtReserveId,
+      desiredHf
+    );
+    balances.liquidationBonus = _getVariableLiquidationBonus(spoke1, collateralReserveId, finalHf);
+
+    balances.debt.balanceBefore = spoke1.getUserTotalDebt(debtReserveId, alice);
+
+    balances.liquidator.balanceBefore = IERC20(balances.collateralReserve.asset).balanceOf(
+      LIQUIDATOR
+    );
+    balances.treasury.balanceBefore = IERC20(balances.collateralReserve.asset).balanceOf(TREASURY);
+
+    vm.prank(LIQUIDATOR);
+    spoke1.liquidationCall(collateralReserveId, debtReserveId, alice, requiredDebtAmount);
+
+    balances.liquidator.balanceAfter = IERC20(balances.collateralReserve.asset).balanceOf(
+      LIQUIDATOR
+    );
+    balances.treasury.balanceAfter = IERC20(balances.collateralReserve.asset).balanceOf(TREASURY);
+    balances.debt.balanceAfter = spoke1.getUserTotalDebt(debtReserveId, alice);
+
+    // convert
+    balances.collateralBaseDiff = _convertAmountToBaseCurrency(
+      balances.collateralReserve.assetId,
+      balances.liquidator.balanceAfter - balances.liquidator.balanceBefore
+    );
+    balances.debtBaseDiff = _convertAmountToBaseCurrency(
+      balances.debtReserve.assetId,
       balances.debt.balanceBefore - balances.debt.balanceAfter
     );
 
@@ -257,11 +485,11 @@ contract LiquidationCallVariableLiquidationBonusTest is SpokeBase {
     LiquidationBalances memory balances,
     string memory label
   ) internal {
-    // console.log(
-    //   'cmp %e %e',
-    //   balances.collateralBaseDiff,
-    //   balances.debtBaseDiff.percentMul(balances.liquidationBonus)
-    // );
+    console.log(
+      'cmp %e %e',
+      balances.collateralBaseDiff,
+      balances.debtBaseDiff.percentMul(balances.liquidationBonus)
+    );
 
     assertApproxEqRel(
       balances.collateralBaseDiff,
@@ -295,6 +523,8 @@ contract LiquidationCallVariableLiquidationBonusTest is SpokeBase {
     uint256 assetId = spoke.getReserve(reserveId).assetId;
     uint256 requiredDebtAmount = _convertBaseCurrencyToAmount(assetId, requiredDebtInBase);
 
+    console.log('requiredDebtAmount %e', requiredDebtAmount);
+
     vm.assume(requiredDebtAmount > 0 && requiredDebtAmount < MAX_SUPPLY_AMOUNT);
 
     vm.mockCall(
@@ -309,7 +539,7 @@ contract LiquidationCallVariableLiquidationBonusTest is SpokeBase {
     uint256 finalHf = spoke.getHealthFactor(user);
 
     assertLt(finalHf, desiredHf);
-    // console.log('hf after %e', spoke1.getHealthFactor(alice));
+    console.log('final hf %e, desired hf %e', finalHf, desiredHf);
 
     return (finalHf, requiredDebtAmount);
   }
@@ -321,7 +551,7 @@ contract LiquidationCallVariableLiquidationBonusTest is SpokeBase {
     ISpoke spoke,
     address user,
     uint256 desiredHf
-  ) internal view returns (uint256) {
+  ) internal view returns (uint256 requiredDebt) {
     (
       ,
       uint256 currentAvgCollateralFactor,
@@ -329,8 +559,31 @@ contract LiquidationCallVariableLiquidationBonusTest is SpokeBase {
       uint256 totalCollateralBase,
       uint256 totalDebtBase
     ) = spoke.getUserAccountData(user);
-    return
-      ((totalCollateralBase.percentMul(currentAvgCollateralFactor.dewadify() + 1) *
-        HEALTH_FACTOR_LIQUIDATION_THRESHOLD) / desiredHf) - totalDebtBase;
+
+    // console.log(
+    //   'original %e, calc %e',
+    //   ((totalCollateralBase.percentMul(currentAvgCollateralFactor.dewadify() + 1) *
+    //     HEALTH_FACTOR_LIQUIDATION_THRESHOLD) / desiredHf),
+    //   (
+    //     totalCollateralBase.wadMul(currentAvgCollateralFactor + 1).wadMul(
+    //       HEALTH_FACTOR_LIQUIDATION_THRESHOLD
+    //     )
+    //   ).wadDiv(desiredHf).fromBps()
+    // );
+    // 1.684421052631578947368421052631e30
+    // 1.6842105263157894736844210526315789e34
+
+    requiredDebt =
+      ((totalCollateralBase.percentMulUp(currentAvgCollateralFactor.dewadify() + 1) *
+        HEALTH_FACTOR_LIQUIDATION_THRESHOLD) / desiredHf) -
+      totalDebtBase +
+      1;
+    // requiredDebt =
+    //   (
+    //     totalCollateralBase.wadMul(currentAvgCollateralFactor + 1).wadMul(
+    //       HEALTH_FACTOR_LIQUIDATION_THRESHOLD
+    //     )
+    //   ).wadDiv(desiredHf).fromBps() -
+    //   totalDebtBase;
   }
 }
