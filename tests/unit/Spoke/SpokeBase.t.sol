@@ -82,6 +82,44 @@ contract SpokeBase is Base {
     uint256 reserveBaseDebtAfter;
   }
 
+  struct RepayMultipleLocal {
+    uint256 borrowAmount;
+    uint256 repayAmount;
+    DataTypes.UserPosition posBefore; // positionBefore
+    DataTypes.UserPosition posAfter; // positionAfter
+    uint256 premiumRestored;
+  }
+
+  struct Action {
+    uint256 supplyAmount;
+    uint256 borrowAmount;
+    uint256 repayAmount;
+    uint40 skipTime;
+  }
+
+  struct AssetInfo {
+    uint256 borrowAmount;
+    uint256 repayAmount;
+    uint256 premiumRestored;
+    uint256 suppliedShares;
+  }
+
+  struct UserAction {
+    uint256 suppliedShares;
+    uint256 borrowAmount;
+    uint256 repayAmount;
+    uint256 premiumRestored;
+    address user;
+  }
+
+  struct UserAssetInfo {
+    AssetInfo daiInfo;
+    AssetInfo wethInfo;
+    AssetInfo usdxInfo;
+    AssetInfo wbtcInfo;
+    address user;
+  }
+
   function setUp() public virtual override {
     super.setUp();
     initEnvironment();
@@ -532,6 +570,36 @@ contract SpokeBase is Base {
       usersDebt.totalDebt,
       string.concat('reserve vs sum users total debt ', label)
     );
+  }
+
+  function _assertUserRpUnchanged(uint256 reserveId, ISpoke spoke, address user) internal view {
+    DataTypes.UserPosition memory pos = spoke.getUserPosition(reserveId, user);
+    uint256 riskPremiumStored = pos.premiumDrawnShares.percentDiv(pos.baseDrawnShares);
+    (uint256 riskPremiumCurrent, , , , ) = spoke.getUserAccountData(user);
+    assertEq(riskPremiumCurrent, riskPremiumStored, 'user risk premium mismatch');
+  }
+
+  function _boundUserAction(UserAction memory action) internal pure returns (UserAction memory) {
+    action.borrowAmount = bound(action.borrowAmount, 1, MAX_SUPPLY_AMOUNT / 8);
+    action.repayAmount = bound(action.repayAmount, 1, type(uint256).max);
+
+    return action;
+  }
+
+  function _bound(UserAssetInfo memory info) internal pure returns (UserAssetInfo memory) {
+    // Bound borrow amounts
+    info.daiInfo.borrowAmount = bound(info.daiInfo.borrowAmount, 1, MAX_SUPPLY_AMOUNT / 8);
+    info.wethInfo.borrowAmount = bound(info.wethInfo.borrowAmount, 1, MAX_SUPPLY_AMOUNT / 8);
+    info.usdxInfo.borrowAmount = bound(info.usdxInfo.borrowAmount, 1, MAX_SUPPLY_AMOUNT / 8);
+    info.wbtcInfo.borrowAmount = bound(info.wbtcInfo.borrowAmount, 1, MAX_SUPPLY_AMOUNT / 8);
+
+    // Bound repay amounts
+    info.daiInfo.repayAmount = bound(info.daiInfo.repayAmount, 1, type(uint256).max);
+    info.wethInfo.repayAmount = bound(info.wethInfo.repayAmount, 1, type(uint256).max);
+    info.usdxInfo.repayAmount = bound(info.usdxInfo.repayAmount, 1, type(uint256).max);
+    info.wbtcInfo.repayAmount = bound(info.wbtcInfo.repayAmount, 1, type(uint256).max);
+
+    return info;
   }
 
   function getUserDebt(
