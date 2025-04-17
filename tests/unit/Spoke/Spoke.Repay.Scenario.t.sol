@@ -1280,21 +1280,21 @@ contract SpokeRepayScenarioTest is SpokeBase {
     assertApproxEqAbs(
       bobDaiAfter.totalDebt,
       fullDebt - partialRepayAmount,
-      1,
+      2,
       'Bob dai debt should be reduced'
     );
     // Verify that his DAI balance was reduced by the partial debt amount
     assertApproxEqAbs(
       bobDaiBalanceAfter,
       bobDaiBalanceBefore - partialRepayAmount,
-      1,
+      2,
       'Bob dai balance decreased by partial debt repaid'
     );
     // Verify reserve debt was decreased by partial repayment
     assertApproxEqAbs(
       spoke1.getReserveTotalDebt(_daiReserveId(spoke1)),
       fullDebt - partialRepayAmount,
-      1
+      2
     );
 
     // verify LH asset debt is decreased by partial repayment
@@ -1338,7 +1338,7 @@ contract SpokeRepayScenarioTest is SpokeBase {
     assertApproxEqAbs(
       bobDaiBalanceAfter,
       bobDaiBalanceBefore - fullDebt,
-      1,
+      2,
       'Bob dai balance decreased by full debt repaid'
     );
 

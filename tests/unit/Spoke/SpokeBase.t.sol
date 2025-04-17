@@ -87,6 +87,7 @@ contract SpokeBase is Base {
     uint256 repayAmount;
     DataTypes.UserPosition posBefore; // positionBefore
     DataTypes.UserPosition posAfter; // positionAfter
+    uint256 baseRestored;
     uint256 premiumRestored;
   }
 
