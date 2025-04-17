@@ -319,7 +319,7 @@ contract SpokeBase is Base {
     uint256 amount
   ) internal view returns (uint256) {
     return
-      (amount * oracle.getAssetPrice(assetId) * WadRayMath.WAD) /
+      (amount * oracle.getAssetPrice(assetId).wadify()) /
       (10 ** hub.getAssetConfig(assetId).decimals);
   }
 
