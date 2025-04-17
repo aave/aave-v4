@@ -85,6 +85,7 @@ abstract contract Base is Test {
   address internal HUB_ADMIN = makeAddr('HUB_ADMIN');
   address internal SPOKE_ADMIN = makeAddr('SPOKE_ADMIN');
   address internal TREASURY = makeAddr('TREASURY');
+  address internal LIQUIDATOR = makeAddr('LIQUIDATOR');
 
   TokenList internal tokenList;
   uint256 internal wethAssetId = 0;
@@ -198,7 +199,7 @@ abstract contract Base is Test {
     MAX_SUPPLY_AMOUNT_WBTC = MAX_SUPPLY_ASSET_UNITS * 10 ** tokenList.wbtc.decimals();
     MAX_SUPPLY_AMOUNT_USDY = MAX_SUPPLY_ASSET_UNITS * 10 ** tokenList.usdy.decimals();
 
-    address[4] memory users = [alice, bob, carol, derl];
+    address[5] memory users = [alice, bob, carol, derl, LIQUIDATOR];
 
     for (uint256 x; x < users.length; ++x) {
       tokenList.usdx.mint(users[x], mintAmount_USDX);
@@ -957,5 +958,45 @@ abstract contract Base is Test {
       expectedSuppliedAmount,
       string(abi.encodePacked('user supplied amount ', when))
     );
+  }
+
+  function _convertAmountToBaseCurrency(
+    uint256 assetId,
+    uint256 amount
+  ) internal view returns (uint256) {
+    return
+      _convertAmountToBaseCurrency(
+        amount,
+        oracle.getAssetPrice(assetId),
+        10 ** hub.getAsset(assetId).config.decimals
+      );
+  }
+
+  function _convertAmountToBaseCurrency(
+    uint256 amount,
+    uint256 assetPrice,
+    uint256 assetUnit
+  ) internal view returns (uint256) {
+    return (amount * assetPrice).wadify() / assetUnit;
+  }
+
+  function _convertBaseCurrencyToAmount(
+    uint256 assetId,
+    uint256 baseCurrencyAmount
+  ) internal view returns (uint256) {
+    return
+      _convertBaseCurrencyToAmount(
+        baseCurrencyAmount,
+        oracle.getAssetPrice(assetId),
+        10 ** hub.getAsset(assetId).config.decimals
+      );
+  }
+
+  function _convertBaseCurrencyToAmount(
+    uint256 amount,
+    uint256 assetPrice,
+    uint256 assetUnit
+  ) internal view returns (uint256) {
+    return ((amount * assetUnit) / assetPrice).dewadify();
   }
 }

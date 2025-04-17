@@ -560,6 +560,7 @@ contract Spoke is ISpoke {
       vars.collateralReserveId,
       vars.healthFactor
     );
+    console.log('var lb: %e, hf: %e', vars.liquidationBonus, vars.healthFactor);
     vars.closeFactor = _liquidationConfig.closeFactor;
     vars.collateralFactor = collateralReserve.config.collateralFactor;
     // console.log('vars.liquidationBonus %e', vars.liquidationBonus);

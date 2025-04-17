@@ -37,6 +37,8 @@ library LiquidationLogic {
       return minLiquidationBonus;
     }
 
+    console.log('linear var lb');
+
     // otherwise, linearly interpolate between min and max
     return
       minLiquidationBonus +

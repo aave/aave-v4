@@ -405,20 +405,4 @@ contract LiquidationLogicCloseFactorDebtScenarioTest is LiquidationLogicBaseTest
   function _approxRelFromBps(uint256 bps) internal returns (uint256) {
     return (bps * 1e18) / 100_00;
   }
-
-  function _convertAmountToBaseCurrency(
-    uint256 amount,
-    uint256 assetPrice,
-    uint256 assetUnit
-  ) internal view returns (uint256) {
-    return (amount * assetPrice).wadify() / assetUnit;
-  }
-
-  function _convertBaseCurrencyToAmount(
-    uint256 amount,
-    uint256 assetPrice,
-    uint256 assetUnit
-  ) internal view returns (uint256) {
-    return ((amount * assetUnit) / assetPrice).dewadify();
-  }
 }
