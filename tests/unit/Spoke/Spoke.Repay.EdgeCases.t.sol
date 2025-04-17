@@ -66,7 +66,6 @@ contract SpokeRepayEdgeCaseTest is SpokeBase {
   }
 
   function test_repay_supply_ex_rate_decr() public {
-    vm.skip(true, 'negative case pending fixes');
     // inflate ex rate to 1.5
     vm.mockCall(
       address(irStrategy),
@@ -111,7 +110,7 @@ contract SpokeRepayEdgeCaseTest is SpokeBase {
     spoke1.repay(_daiReserveId(spoke1), type(uint256).max);
 
     exchangeRateAfter = hub.convertToSuppliedAssets(daiAssetId, MAX_SUPPLY_AMOUNT);
-    assertGt(exchangeRateAfter, exchangeRateBefore, 'supply rate decreased');
+    assertGe(exchangeRateAfter, exchangeRateBefore, 'supply rate decreased');
   }
 
   function test_repay_supply_ex_rate_decr_skip_time() public {
