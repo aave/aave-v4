@@ -32,58 +32,17 @@ contract LiquidationCallVariableLiquidationBonusTest is SpokeLiquidationBase {
     uint256 collateralReserveId = _wethReserveId(spoke1);
     uint256 debtReserveId = _daiReserveId(spoke1);
 
-    LiquidationTestLocalParams memory state;
-    state.collateralReserve = spoke1.getReserve(collateralReserveId);
-    state.debtReserve = spoke1.getReserve(debtReserveId);
-
-    liqConfig = _bound(liqConfig);
-    liqBonus = bound(liqBonus, MIN_LIQUIDATION_BONUS, MAX_LIQUIDATION_BONUS);
     supplyAmount = bound(supplyAmount, 1e8, MAX_SUPPLY_AMOUNT / 1e4); // bounds to ensure HF is below desiredHf within precision
-    desiredHf = bound(desiredHf, 0.1e18, HEALTH_FACTOR_LIQUIDATION_THRESHOLD - 1);
 
-    _config = liqConfig;
-    spoke1.updateLiquidationConfig(_config);
-
-    updateLiquidationBonus(spoke1, collateralReserveId, liqBonus);
-    Utils.supplyCollateral({
-      spoke: spoke1,
-      reserveId: collateralReserveId,
-      user: alice,
-      amount: supplyAmount,
-      onBehalfOf: alice
-    });
-
-    (uint256 finalHf, uint256 requiredDebtAmount) = _borrowToBeBelowHf(
-      spoke1,
-      alice,
+    _fuzz_liqCall(
+      liqConfig,
+      liqBonus,
+      supplyAmount,
+      desiredHf,
+      collateralReserveId,
       debtReserveId,
-      desiredHf
+      'test_liquidationCall_fuzz_variableLB weth/dai'
     );
-    state.liquidationBonus = _getVariableLiquidationBonus(spoke1, collateralReserveId, finalHf);
-
-    state.debt.balanceBefore = spoke1.getUserTotalDebt(debtReserveId, alice);
-
-    state.liquidator.balanceBefore = IERC20(state.collateralReserve.asset).balanceOf(LIQUIDATOR);
-    state.treasury.balanceBefore = IERC20(state.collateralReserve.asset).balanceOf(TREASURY);
-
-    vm.prank(LIQUIDATOR);
-    spoke1.liquidationCall(collateralReserveId, debtReserveId, alice, requiredDebtAmount);
-
-    state.liquidator.balanceAfter = IERC20(state.collateralReserve.asset).balanceOf(LIQUIDATOR);
-    state.treasury.balanceAfter = IERC20(state.collateralReserve.asset).balanceOf(TREASURY);
-    state.debt.balanceAfter = spoke1.getUserTotalDebt(debtReserveId, alice);
-
-    // convert
-    state.collateralBaseDiff = _convertAmountToBaseCurrency(
-      state.collateralReserve.assetId,
-      state.liquidator.balanceAfter - state.liquidator.balanceBefore
-    );
-    state.debtBaseDiff = _convertAmountToBaseCurrency(
-      state.debtReserve.assetId,
-      state.debt.balanceBefore - state.debt.balanceAfter
-    );
-
-    _assertLiquidationBonusEarned(state, 'test_liquidationCall_fuzz_variable weth/dai');
   }
 
   /// weth collateral / usdx debt
@@ -96,58 +55,17 @@ contract LiquidationCallVariableLiquidationBonusTest is SpokeLiquidationBase {
     uint256 collateralReserveId = _wethReserveId(spoke1);
     uint256 debtReserveId = _usdxReserveId(spoke1);
 
-    LiquidationTestLocalParams memory state;
-    state.collateralReserve = spoke1.getReserve(collateralReserveId);
-    state.debtReserve = spoke1.getReserve(debtReserveId);
-
-    liqConfig = _bound(liqConfig);
-    liqBonus = bound(liqBonus, MIN_LIQUIDATION_BONUS, MAX_LIQUIDATION_BONUS);
     supplyAmount = bound(supplyAmount, 1e13, MAX_SUPPLY_AMOUNT / 1e4); // bounds to ensure HF is below desiredHf within precision
-    desiredHf = bound(desiredHf, 0.1e18, HEALTH_FACTOR_LIQUIDATION_THRESHOLD - 1);
 
-    _config = liqConfig;
-    spoke1.updateLiquidationConfig(_config);
-
-    updateLiquidationBonus(spoke1, collateralReserveId, liqBonus);
-    Utils.supplyCollateral({
-      spoke: spoke1,
-      reserveId: collateralReserveId,
-      user: alice,
-      amount: supplyAmount,
-      onBehalfOf: alice
-    });
-
-    (uint256 finalHf, uint256 requiredDebtAmount) = _borrowToBeBelowHf(
-      spoke1,
-      alice,
+    _fuzz_liqCall(
+      liqConfig,
+      liqBonus,
+      supplyAmount,
+      desiredHf,
+      collateralReserveId,
       debtReserveId,
-      desiredHf
+      'test_liquidationCall_fuzz_variableLB weth/usdx'
     );
-    state.liquidationBonus = _getVariableLiquidationBonus(spoke1, collateralReserveId, finalHf);
-
-    state.debt.balanceBefore = spoke1.getUserTotalDebt(debtReserveId, alice);
-
-    state.liquidator.balanceBefore = IERC20(state.collateralReserve.asset).balanceOf(LIQUIDATOR);
-    state.treasury.balanceBefore = IERC20(state.collateralReserve.asset).balanceOf(TREASURY);
-
-    vm.prank(LIQUIDATOR);
-    spoke1.liquidationCall(collateralReserveId, debtReserveId, alice, requiredDebtAmount);
-
-    state.liquidator.balanceAfter = IERC20(state.collateralReserve.asset).balanceOf(LIQUIDATOR);
-    state.treasury.balanceAfter = IERC20(state.collateralReserve.asset).balanceOf(TREASURY);
-    state.debt.balanceAfter = spoke1.getUserTotalDebt(debtReserveId, alice);
-
-    // convert
-    state.collateralBaseDiff = _convertAmountToBaseCurrency(
-      state.collateralReserve.assetId,
-      state.liquidator.balanceAfter - state.liquidator.balanceBefore
-    );
-    state.debtBaseDiff = _convertAmountToBaseCurrency(
-      state.debtReserve.assetId,
-      state.debt.balanceBefore - state.debt.balanceAfter
-    );
-
-    _assertLiquidationBonusEarned(state, 'test_liquidationCall_fuzz_variableLB weth/usdx');
   }
 
   /// usdx collateral / weth debt
@@ -160,58 +78,17 @@ contract LiquidationCallVariableLiquidationBonusTest is SpokeLiquidationBase {
     uint256 collateralReserveId = _usdxReserveId(spoke1);
     uint256 debtReserveId = _wethReserveId(spoke1);
 
-    LiquidationTestLocalParams memory state;
-    state.collateralReserve = spoke1.getReserve(collateralReserveId);
-    state.debtReserve = spoke1.getReserve(debtReserveId);
-
-    liqConfig = _bound(liqConfig);
-    liqBonus = bound(liqBonus, MIN_LIQUIDATION_BONUS, MAX_LIQUIDATION_BONUS);
     supplyAmount = bound(supplyAmount, 1e7, MAX_SUPPLY_AMOUNT); // bounds to ensure HF is below desiredHf within precision
-    desiredHf = bound(desiredHf, 0.1e18, HEALTH_FACTOR_LIQUIDATION_THRESHOLD - 1);
 
-    _config = liqConfig;
-    spoke1.updateLiquidationConfig(_config);
-
-    updateLiquidationBonus(spoke1, collateralReserveId, liqBonus);
-    Utils.supplyCollateral({
-      spoke: spoke1,
-      reserveId: collateralReserveId,
-      user: alice,
-      amount: supplyAmount,
-      onBehalfOf: alice
-    });
-
-    (uint256 finalHf, uint256 requiredDebtAmount) = _borrowToBeBelowHf(
-      spoke1,
-      alice,
+    _fuzz_liqCall(
+      liqConfig,
+      liqBonus,
+      supplyAmount,
+      desiredHf,
+      collateralReserveId,
       debtReserveId,
-      desiredHf
+      'test_liquidationCall_fuzz_variableLB usdx/weth'
     );
-    state.liquidationBonus = _getVariableLiquidationBonus(spoke1, collateralReserveId, finalHf);
-
-    state.debt.balanceBefore = spoke1.getUserTotalDebt(debtReserveId, alice);
-
-    state.liquidator.balanceBefore = IERC20(state.collateralReserve.asset).balanceOf(LIQUIDATOR);
-    state.treasury.balanceBefore = IERC20(state.collateralReserve.asset).balanceOf(TREASURY);
-
-    vm.prank(LIQUIDATOR);
-    spoke1.liquidationCall(collateralReserveId, debtReserveId, alice, requiredDebtAmount);
-
-    state.liquidator.balanceAfter = IERC20(state.collateralReserve.asset).balanceOf(LIQUIDATOR);
-    state.treasury.balanceAfter = IERC20(state.collateralReserve.asset).balanceOf(TREASURY);
-    state.debt.balanceAfter = spoke1.getUserTotalDebt(debtReserveId, alice);
-
-    // convert
-    state.collateralBaseDiff = _convertAmountToBaseCurrency(
-      state.collateralReserve.assetId,
-      state.liquidator.balanceAfter - state.liquidator.balanceBefore
-    );
-    state.debtBaseDiff = _convertAmountToBaseCurrency(
-      state.debtReserve.assetId,
-      state.debt.balanceBefore - state.debt.balanceAfter
-    );
-
-    _assertLiquidationBonusEarned(state, 'test_liquidationCall_fuzz_variableLB usdx/weth');
   }
 
   /// dai collateral / usdx debt
@@ -224,13 +101,34 @@ contract LiquidationCallVariableLiquidationBonusTest is SpokeLiquidationBase {
     uint256 collateralReserveId = _daiReserveId(spoke1);
     uint256 debtReserveId = _usdxReserveId(spoke1);
 
+    supplyAmount = bound(supplyAmount, 1e16, MAX_SUPPLY_AMOUNT); // bounds to ensure HF is below desiredHf within precision
+
+    _fuzz_liqCall(
+      liqConfig,
+      liqBonus,
+      supplyAmount,
+      desiredHf,
+      collateralReserveId,
+      debtReserveId,
+      'test_liquidationCall_fuzz_variableLB dai/usdx'
+    );
+  }
+
+  function _fuzz_liqCall(
+    DataTypes.LiquidationConfig memory liqConfig,
+    uint256 liqBonus,
+    uint256 supplyAmount,
+    uint256 desiredHf,
+    uint256 collateralReserveId,
+    uint256 debtReserveId,
+    string memory label
+  ) internal {
     LiquidationTestLocalParams memory state;
     state.collateralReserve = spoke1.getReserve(collateralReserveId);
     state.debtReserve = spoke1.getReserve(debtReserveId);
 
     liqConfig = _bound(liqConfig);
     liqBonus = bound(liqBonus, MIN_LIQUIDATION_BONUS, MAX_LIQUIDATION_BONUS);
-    supplyAmount = bound(supplyAmount, 1e16, MAX_SUPPLY_AMOUNT); // bounds to ensure HF is below desiredHf within precision
     desiredHf = bound(desiredHf, 0.1e18, HEALTH_FACTOR_LIQUIDATION_THRESHOLD - 1);
 
     _config = liqConfig;
@@ -275,7 +173,7 @@ contract LiquidationCallVariableLiquidationBonusTest is SpokeLiquidationBase {
       state.debt.balanceBefore - state.debt.balanceAfter
     );
 
-    _assertLiquidationBonusEarned(state, 'test_liquidationCall_fuzz_variableLB dai/usdx');
+    _assertLiquidationBonusEarned(state, label);
   }
 
   function _bound(
