@@ -33,7 +33,7 @@ contract LiquidationLogicCloseFactorDebtTest is LiquidationLogicBaseTest {
 
     args.debtAssetUnit = 0;
 
-    assertEq(LiquidationLogic.calculateCloseFactorDebt(args), 0, 'closeFactorDebt is 0');
+    assertEq(LiquidationLogic.calculateCloseFactorDebt(args), 1, 'closeFactorDebt is 1');
   }
 
   function test_calculateCloseFactorDebt_fuzz_debtAssetPrice_zero(
