@@ -17,13 +17,6 @@ contract LiquidationCallVariableLiquidationBonusTest is SpokeBase {
   function setUp() public virtual override {
     super.setUp();
     _addBorrowableLiquidity();
-
-    // _config = DataTypes.LiquidationConfig({
-    //   closeFactor: 1e18,
-    //   healthFactorBonusThreshold: 0.9e18,
-    //   liquidationBonusFactor: 70_00 // 40%
-    // });
-    // spoke1.updateLiquidationConfig(_config);
   }
 
   /// @notice Deploys borrowable liquidity for all reserves in spoke1
@@ -56,7 +49,7 @@ contract LiquidationCallVariableLiquidationBonusTest is SpokeBase {
     DataTypes.Reserve debtReserve;
   }
 
-  function test_liquidationCall_variableLB() public {
+  function test_liquidationCall_variableLB1() public {
     test_liquidationCall_fuzz_variableLB1(
       DataTypes.LiquidationConfig({
         closeFactor: 1e18,
@@ -70,107 +63,6 @@ contract LiquidationCallVariableLiquidationBonusTest is SpokeBase {
   }
 
   /// weth collateral / dai debt
-  function test_liquidationCall_fuzz_variable_PREV(
-    DataTypes.LiquidationConfig memory liqConfig,
-    uint256 liqBonus,
-    uint256 supplyAmount,
-    uint256 desiredHf
-  ) public {
-    // uint256 liqBonus = 105_00;
-    liqConfig = _bound(liqConfig);
-    liqBonus = bound(liqBonus, MIN_LIQUIDATION_BONUS, MAX_LIQUIDATION_BONUS);
-    supplyAmount = bound(supplyAmount, 1e8, MAX_SUPPLY_AMOUNT / 1e4);
-    desiredHf = bound(desiredHf, 0.1e18, HEALTH_FACTOR_LIQUIDATION_THRESHOLD - 1);
-
-    LiquidationBalances memory balances;
-
-    _config = liqConfig;
-    spoke1.updateLiquidationConfig(_config);
-
-    updateLiquidationBonus(spoke1, _wethReserveId(spoke1), liqBonus);
-    Utils.supplyCollateral({
-      spoke: spoke1,
-      reserveId: _wethReserveId(spoke1),
-      user: alice,
-      amount: supplyAmount,
-      onBehalfOf: alice
-    });
-
-    (uint256 finalHf, uint256 requiredDebtAmount) = _borrowToBeBelowHf(
-      spoke1,
-      alice,
-      _daiReserveId(spoke1),
-      desiredHf
-    );
-    balances.liquidationBonus = _getVariableLiquidationBonus(
-      spoke1,
-      _wethReserveId(spoke1),
-      finalHf
-    );
-
-    balances.debt.balanceBefore = spoke1.getUserTotalDebt(_daiReserveId(spoke1), alice);
-
-    balances.liquidator.balanceBefore = tokenList.weth.balanceOf(LIQUIDATOR);
-    balances.treasury.balanceBefore = tokenList.weth.balanceOf(TREASURY);
-
-    vm.prank(LIQUIDATOR);
-    spoke1.liquidationCall(
-      _wethReserveId(spoke1),
-      _daiReserveId(spoke1),
-      alice,
-      requiredDebtAmount
-    );
-
-    balances.liquidator.balanceAfter = tokenList.weth.balanceOf(LIQUIDATOR);
-    balances.treasury.balanceAfter = tokenList.weth.balanceOf(TREASURY);
-    balances.debt.balanceAfter = spoke1.getUserTotalDebt(_daiReserveId(spoke1), alice);
-
-    // convert
-    balances.collateralBaseDiff = _convertAmountToBaseCurrency(
-      wethAssetId,
-      balances.liquidator.balanceAfter - balances.liquidator.balanceBefore
-    );
-    balances.debtBaseDiff = _convertAmountToBaseCurrency(
-      daiAssetId,
-      balances.debt.balanceBefore - balances.debt.balanceAfter
-    );
-
-    _assertLiquidationBonusEarned(balances, 'test_liquidationCall_fuzz_variableLB');
-
-    // collateral should be LB.percentMul(debt)
-
-    // uint256 diff = _convertBaseCurrencyToAmount(
-    //   daiAssetId,
-    //   _convertAmountToBaseCurrency(
-    //     wethAssetId,
-    //     balances.liquidator.balanceAfter - balances.liquidator.balanceBefore
-    //   )
-    // );
-
-    // console.log('dai amount %e %e', diff, (debtBefore - debtAfter).percentMul(liquidationBonus));
-    // // console.log('debt diff %e', (debtBefore - debtAfter));
-
-    // assertEq(diff.fromBps(), (debtBefore - debtAfter).percentMul(liquidationBonus).fromBps());
-
-    // console.log(
-    //   'liq diff %e',
-    //   balances.liquidator.balanceAfter - balances.liquidator.balanceBefore
-    // );
-  }
-
-  function test_y() public {
-    test_liquidationCall_fuzz_variableLB2(
-      DataTypes.LiquidationConfig({
-        closeFactor: 1000000000000006192,
-        healthFactorBonusThreshold: 500000000000000250,
-        liquidationBonusFactor: 5182
-      }),
-      19_900,
-      4158717544,
-      900000000000021205
-    );
-  }
-
   function test_liquidationCall_fuzz_variableLB1(
     DataTypes.LiquidationConfig memory liqConfig,
     uint256 liqBonus,
@@ -184,16 +76,10 @@ contract LiquidationCallVariableLiquidationBonusTest is SpokeBase {
     balances.collateralReserve = spoke1.getReserve(collateralReserveId);
     balances.debtReserve = spoke1.getReserve(debtReserveId);
 
-    // uint256 liqBonus = 105_00;
     liqConfig = _bound(liqConfig);
     liqBonus = bound(liqBonus, MIN_LIQUIDATION_BONUS, MAX_LIQUIDATION_BONUS);
     supplyAmount = bound(supplyAmount, 1e8, MAX_SUPPLY_AMOUNT / 1e4); // bounds to ensure HF is below desiredHf within precision
     desiredHf = bound(desiredHf, 0.1e18, HEALTH_FACTOR_LIQUIDATION_THRESHOLD - 1);
-
-    // balances.collateralAssetId = spoke1.getReserve(collateralReserveId).assetId;
-    // balances.debtAssetId = spoke1.getReserve(debtReserveId).assetId;
-    // balances.collateralAsset = IERC20(balances.collateralReserve.asset);
-    // balances.debtAsset = IERC20(balances.debtReserve.asset);
 
     _config = liqConfig;
     spoke1.updateLiquidationConfig(_config);
@@ -241,9 +127,10 @@ contract LiquidationCallVariableLiquidationBonusTest is SpokeBase {
       balances.debt.balanceBefore - balances.debt.balanceAfter
     );
 
-    _assertLiquidationBonusEarned(balances, 'test_liquidationCall_fuzz_variableLB');
+    _assertLiquidationBonusEarned(balances, 'test_liquidationCall_fuzz_variable weth/dai');
   }
 
+  /// weth collateral / usdx debt
   function test_liquidationCall_fuzz_variableLB2(
     DataTypes.LiquidationConfig memory liqConfig,
     uint256 liqBonus,
@@ -257,16 +144,10 @@ contract LiquidationCallVariableLiquidationBonusTest is SpokeBase {
     balances.collateralReserve = spoke1.getReserve(collateralReserveId);
     balances.debtReserve = spoke1.getReserve(debtReserveId);
 
-    // uint256 liqBonus = 105_00;
     liqConfig = _bound(liqConfig);
     liqBonus = bound(liqBonus, MIN_LIQUIDATION_BONUS, MAX_LIQUIDATION_BONUS);
     supplyAmount = bound(supplyAmount, 1e13, MAX_SUPPLY_AMOUNT / 1e4); // bounds to ensure HF is below desiredHf within precision
     desiredHf = bound(desiredHf, 0.1e18, HEALTH_FACTOR_LIQUIDATION_THRESHOLD - 1);
-
-    // balances.collateralAssetId = spoke1.getReserve(collateralReserveId).assetId;
-    // balances.debtAssetId = spoke1.getReserve(debtReserveId).assetId;
-    // balances.collateralAsset = IERC20(balances.collateralReserve.asset);
-    // balances.debtAsset = IERC20(balances.debtReserve.asset);
 
     _config = liqConfig;
     spoke1.updateLiquidationConfig(_config);
@@ -314,9 +195,10 @@ contract LiquidationCallVariableLiquidationBonusTest is SpokeBase {
       balances.debt.balanceBefore - balances.debt.balanceAfter
     );
 
-    _assertLiquidationBonusEarned(balances, 'test_liquidationCall_fuzz_variableLB');
+    _assertLiquidationBonusEarned(balances, 'test_liquidationCall_fuzz_variableLB weth/usdx');
   }
 
+  /// usdx collateral / weth debt
   function test_liquidationCall_fuzz_variableLB3(
     DataTypes.LiquidationConfig memory liqConfig,
     uint256 liqBonus,
@@ -330,16 +212,10 @@ contract LiquidationCallVariableLiquidationBonusTest is SpokeBase {
     balances.collateralReserve = spoke1.getReserve(collateralReserveId);
     balances.debtReserve = spoke1.getReserve(debtReserveId);
 
-    // uint256 liqBonus = 105_00;
     liqConfig = _bound(liqConfig);
     liqBonus = bound(liqBonus, MIN_LIQUIDATION_BONUS, MAX_LIQUIDATION_BONUS);
-    supplyAmount = bound(supplyAmount, 1e6, MAX_SUPPLY_AMOUNT); // bounds to ensure HF is below desiredHf within precision
+    supplyAmount = bound(supplyAmount, 1e7, MAX_SUPPLY_AMOUNT); // bounds to ensure HF is below desiredHf within precision
     desiredHf = bound(desiredHf, 0.1e18, HEALTH_FACTOR_LIQUIDATION_THRESHOLD - 1);
-
-    // balances.collateralAssetId = spoke1.getReserve(collateralReserveId).assetId;
-    // balances.debtAssetId = spoke1.getReserve(debtReserveId).assetId;
-    // balances.collateralAsset = IERC20(balances.collateralReserve.asset);
-    // balances.debtAsset = IERC20(balances.debtReserve.asset);
 
     _config = liqConfig;
     spoke1.updateLiquidationConfig(_config);
@@ -387,9 +263,10 @@ contract LiquidationCallVariableLiquidationBonusTest is SpokeBase {
       balances.debt.balanceBefore - balances.debt.balanceAfter
     );
 
-    _assertLiquidationBonusEarned(balances, 'test_liquidationCall_fuzz_variableLB');
+    _assertLiquidationBonusEarned(balances, 'test_liquidationCall_fuzz_variableLB usdx/weth');
   }
 
+  /// dai collateral / usdx debt
   function test_liquidationCall_fuzz_variableLB4(
     DataTypes.LiquidationConfig memory liqConfig,
     uint256 liqBonus,
@@ -403,16 +280,10 @@ contract LiquidationCallVariableLiquidationBonusTest is SpokeBase {
     balances.collateralReserve = spoke1.getReserve(collateralReserveId);
     balances.debtReserve = spoke1.getReserve(debtReserveId);
 
-    // uint256 liqBonus = 105_00;
     liqConfig = _bound(liqConfig);
     liqBonus = bound(liqBonus, MIN_LIQUIDATION_BONUS, MAX_LIQUIDATION_BONUS);
     supplyAmount = bound(supplyAmount, 1e16, MAX_SUPPLY_AMOUNT); // bounds to ensure HF is below desiredHf within precision
     desiredHf = bound(desiredHf, 0.1e18, HEALTH_FACTOR_LIQUIDATION_THRESHOLD - 1);
-
-    // balances.collateralAssetId = spoke1.getReserve(collateralReserveId).assetId;
-    // balances.debtAssetId = spoke1.getReserve(debtReserveId).assetId;
-    // balances.collateralAsset = IERC20(balances.collateralReserve.asset);
-    // balances.debtAsset = IERC20(balances.debtReserve.asset);
 
     _config = liqConfig;
     spoke1.updateLiquidationConfig(_config);
@@ -460,7 +331,7 @@ contract LiquidationCallVariableLiquidationBonusTest is SpokeBase {
       balances.debt.balanceBefore - balances.debt.balanceAfter
     );
 
-    _assertLiquidationBonusEarned(balances, 'test_liquidationCall_fuzz_variableLB');
+    _assertLiquidationBonusEarned(balances, 'test_liquidationCall_fuzz_variableLB dai/usdx');
   }
 
   function _bound(
