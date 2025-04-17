@@ -53,7 +53,7 @@ contract LiquidationInternalCalculationTest is Base {
 
     // Spoke reserve configs
     DataTypes.ReserveConfig memory wethConfig = DataTypes.ReserveConfig({
-      decimals: tokenList.weth.decimals(),
+      decimals: decimals.weth,
       active: true,
       frozen: false,
       paused: false,
@@ -65,7 +65,7 @@ contract LiquidationInternalCalculationTest is Base {
       collateral: true
     });
     DataTypes.ReserveConfig memory wbtcConfig = DataTypes.ReserveConfig({
-      decimals: tokenList.wbtc.decimals(),
+      decimals: decimals.wbtc,
       active: true,
       frozen: false,
       paused: false,
@@ -77,7 +77,7 @@ contract LiquidationInternalCalculationTest is Base {
       collateral: true
     });
     DataTypes.ReserveConfig memory daiConfig = DataTypes.ReserveConfig({
-      decimals: tokenList.dai.decimals(),
+      decimals: decimals.dai,
       active: true,
       frozen: false,
       paused: false,
@@ -89,7 +89,7 @@ contract LiquidationInternalCalculationTest is Base {
       collateral: true
     });
     DataTypes.ReserveConfig memory usdxConfig = DataTypes.ReserveConfig({
-      decimals: tokenList.usdx.decimals(),
+      decimals: decimals.usdx,
       active: true,
       frozen: false,
       paused: false,
@@ -101,7 +101,7 @@ contract LiquidationInternalCalculationTest is Base {
       collateral: true
     });
     DataTypes.ReserveConfig memory usdyConfig = DataTypes.ReserveConfig({
-      decimals: tokenList.usdy.decimals(),
+      decimals: decimals.usdy,
       active: true,
       frozen: false,
       paused: false,
