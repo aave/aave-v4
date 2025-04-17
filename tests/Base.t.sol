@@ -999,4 +999,8 @@ abstract contract Base is Test {
   ) internal view returns (uint256) {
     return ((amount * assetUnit) / assetPrice).dewadify();
   }
+
+  function _approxRelFromBps(uint256 bps) internal returns (uint256) {
+    return (bps * 1e18) / 100_00;
+  }
 }

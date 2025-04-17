@@ -44,21 +44,24 @@ contract LiquidationCallVariableLiquidationBonusTest is SpokeBase {
     Balance user;
     Balance treasury;
     Balance debt;
-    uint256 collateralAmountDiff;
-    uint256 debtAmountDiff;
+    uint256 collateralBaseDiff;
+    uint256 debtBaseDiff;
     uint256 liquidationBonus;
   }
 
-  function test_liquidationCall_fuzz_variableLB() public {
-    uint256 liqBonus = 105_00;
+  function test_liquidationCall_fuzz_variableLB(
+    DataTypes.LiquidationConfig memory liqConfig,
+    uint256 liqBonus,
+    uint256 supplyAmount
+  ) public {
+    // uint256 liqBonus = 105_00;
+    liqConfig = _bound(liqConfig);
+    liqBonus = bound(liqBonus, MIN_LIQUIDATION_BONUS, MAX_LIQUIDATION_BONUS);
+    supplyAmount = bound(supplyAmount, 1e6, MAX_SUPPLY_AMOUNT / 1e4);
 
     LiquidationBalances memory balances;
 
-    _config = DataTypes.LiquidationConfig({
-      closeFactor: 1e18,
-      healthFactorBonusThreshold: 0.9e18,
-      liquidationBonusFactor: 70_00
-    });
+    _config = liqConfig;
     spoke1.updateLiquidationConfig(_config);
 
     updateLiquidationBonus(spoke1, _wethReserveId(spoke1), liqBonus);
@@ -66,7 +69,7 @@ contract LiquidationCallVariableLiquidationBonusTest is SpokeBase {
       spoke: spoke1,
       reserveId: _wethReserveId(spoke1),
       user: alice,
-      amount: 10e18,
+      amount: supplyAmount,
       onBehalfOf: alice
     });
 
@@ -90,14 +93,14 @@ contract LiquidationCallVariableLiquidationBonusTest is SpokeBase {
     balances.debt.balanceAfter = spoke1.getUserTotalDebt(_daiReserveId(spoke1), alice);
 
     // convert
-    balances.collateralAmountDiff = _convertBaseCurrencyToAmount(
-      daiAssetId,
-      _convertAmountToBaseCurrency(
-        wethAssetId,
-        balances.liquidator.balanceAfter - balances.liquidator.balanceBefore
-      )
+    balances.collateralBaseDiff = _convertAmountToBaseCurrency(
+      wethAssetId,
+      balances.liquidator.balanceAfter - balances.liquidator.balanceBefore
     );
-    balances.debtAmountDiff = (balances.debt.balanceBefore - balances.debt.balanceAfter);
+    balances.debtBaseDiff = _convertAmountToBaseCurrency(
+      daiAssetId,
+      balances.debt.balanceBefore - balances.debt.balanceAfter
+    );
 
     _assertLiquidationBonusEarned(balances, 'test_liquidationCall_fuzz_variableLB');
 
@@ -122,15 +125,39 @@ contract LiquidationCallVariableLiquidationBonusTest is SpokeBase {
     // );
   }
 
+  function _bound(
+    DataTypes.LiquidationConfig memory liqConfig
+  ) internal pure returns (DataTypes.LiquidationConfig memory) {
+    liqConfig.closeFactor = bound(
+      liqConfig.closeFactor,
+      HEALTH_FACTOR_LIQUIDATION_THRESHOLD,
+      MAX_CLOSE_FACTOR
+    );
+    liqConfig.healthFactorBonusThreshold = bound(
+      liqConfig.healthFactorBonusThreshold,
+      0.01e18,
+      HEALTH_FACTOR_LIQUIDATION_THRESHOLD - 1
+    );
+    liqConfig.liquidationBonusFactor = bound(liqConfig.liquidationBonusFactor, 0, 100_00);
+
+    return liqConfig;
+  }
+
   function _assertLiquidationBonusEarned(
     LiquidationBalances memory balances,
     string memory label
   ) internal {
-    // remove bps precision to compare
-    assertEq(
-      balances.collateralAmountDiff.fromBps(),
-      balances.debtAmountDiff.percentMul(balances.liquidationBonus).fromBps(),
-      string.concat('liquidationBonus earned', label)
+    // console.log(
+    //   'cmp %e %e',
+    //   balances.collateralBaseDiff,
+    //   balances.debtBaseDiff.percentMul(balances.liquidationBonus)
+    // );
+
+    assertApproxEqRel(
+      balances.collateralBaseDiff,
+      balances.debtBaseDiff.percentMul(balances.liquidationBonus),
+      _approxRelFromBps(1),
+      string.concat('liquidationBonus earned in base currency', label)
     );
   }
 
@@ -186,7 +213,6 @@ contract LiquidationCallVariableLiquidationBonusTest is SpokeBase {
     // );
   }
 
-  ///
   function _getVariableLiquidationBonus(
     ISpoke spoke,
     uint256 reserveId,
@@ -229,7 +255,7 @@ contract LiquidationCallVariableLiquidationBonusTest is SpokeBase {
   }
 
   /**
-   * @notice Returns the required debt amount in base currency to reach a certain health factor
+   * @notice Returns the required debt amount in base currency to ensure user position is below a certain health factor.
    */
   function _getRequiredDebtForLtHf(
     ISpoke spoke,

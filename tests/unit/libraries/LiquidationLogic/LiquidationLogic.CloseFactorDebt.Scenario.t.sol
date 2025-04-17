@@ -401,8 +401,4 @@ contract LiquidationLogicCloseFactorDebtScenarioTest is LiquidationLogicBaseTest
     healthFactor = totalCollateralFactor.wadDiv(params.totalDebtInBaseCurrency).fromBps();
     console.log('calc healthFactor %e', healthFactor);
   }
-
-  function _approxRelFromBps(uint256 bps) internal returns (uint256) {
-    return (bps * 1e18) / 100_00;
-  }
 }
