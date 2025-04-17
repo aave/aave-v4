@@ -97,16 +97,16 @@ library LiquidationLogic {
       return type(uint256).max;
     }
 
-    uint256 closeFactorDebt = ((params.totalDebtInBaseCurrency.wadMul(params.closeFactor) -
-      params.totalCollateralInBaseCurrency.percentMul(params.avgCollateralFactor.dewadify())) *
-      params.debtAssetUnit) /
-      ((params.closeFactor - effectiveLiquidationPenalty) * params.debtAssetPrice);
-
     console.log('LL num1 %e', params.totalDebtInBaseCurrency.wadMul(params.closeFactor));
     console.log(
       'LL num2 %e',
       params.totalCollateralInBaseCurrency.percentMul(params.avgCollateralFactor.dewadify())
     );
+
+    uint256 closeFactorDebt = ((params.totalDebtInBaseCurrency.wadMul(params.closeFactor) -
+      params.totalCollateralInBaseCurrency.percentMul(params.avgCollateralFactor.dewadify())) *
+      params.debtAssetUnit) /
+      ((params.closeFactor - effectiveLiquidationPenalty) * params.debtAssetPrice);
 
     return closeFactorDebt;
   }
