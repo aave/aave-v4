@@ -5,12 +5,14 @@ import {console2 as console} from 'forge-std/console2.sol';
 
 import {DataTypes} from 'src/libraries/types/DataTypes.sol';
 import {PercentageMath} from 'src/libraries/math/PercentageMath.sol';
+import {PercentageMathExtended} from 'src/libraries/math/PercentageMathExtended.sol';
 import {ISpoke} from 'src/interfaces/ISpoke.sol';
 import {WadRayMath} from 'src/libraries/math/WadRayMath.sol';
 import {WadRayMathExtended} from 'src/libraries/math/WadRayMathExtended.sol';
 
 library LiquidationLogic {
   using PercentageMath for uint256;
+  using PercentageMathExtended for uint256;
   using WadRayMath for uint256;
   using WadRayMathExtended for uint256;
   using LiquidationLogic for DataTypes.LiquidationCallLocalVars;
@@ -90,6 +92,12 @@ library LiquidationLogic {
       .percentMul(params.collateralFactor)
       .fromBps();
 
+    console.log(
+      'LL effectiveLiquidationPenalty %e %e',
+      effectiveLiquidationPenalty,
+      (params.liquidationBonus).percentMul(params.collateralFactor).wadify().fromBps()
+    );
+
     // Return default max uint if:
     // - penalty exceeds or equals the close factor, ie liquidation cannot restore solvency efficiently (negative denominator)
     // - debt asset price is 0
@@ -105,10 +113,15 @@ library LiquidationLogic {
     console.log('LL denom1 %e', params.closeFactor);
     console.log('LL denom2 %e', effectiveLiquidationPenalty);
 
+    console.log('LL units: %e price: %e', params.debtAssetUnit, params.debtAssetPrice);
+
     uint256 closeFactorDebt = ((params.totalDebtInBaseCurrency.wadMul(params.closeFactor) -
       params.totalCollateralInBaseCurrency.percentMul(params.avgCollateralFactor.dewadify())) *
       params.debtAssetUnit) /
-      ((params.closeFactor - effectiveLiquidationPenalty) * params.debtAssetPrice);
+      ((params.closeFactor - effectiveLiquidationPenalty) * params.debtAssetPrice) +
+      1; // add 1 to ensure HF > close factor
+
+    // console.log('new calc %e %e', newCalc, closeFactorDebt, newCalc > closeFactorDebt);
 
     return closeFactorDebt;
   }

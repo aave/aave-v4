@@ -417,6 +417,127 @@ contract LiquidationCallTest is SpokeBase {
     console.log('final hf %e', spoke1.getHealthFactor(alice));
   }
 
+  function setUpScenario2() internal {
+    updateCollateralFactor(spoke1, _daiReserveId(spoke1), 85_00);
+    updateCollateralFactor(spoke1, _usdxReserveId(spoke1), 74_00);
+    updateCollateralFactor(spoke1, _wethReserveId(spoke1), 78_00);
+
+    updateLiquidationBonus(spoke1, _daiReserveId(spoke1), 104_00);
+    updateLiquidationBonus(spoke1, _wethReserveId(spoke1), 106_00);
+    updateLiquidationBonus(spoke1, _usdxReserveId(spoke1), 108_00);
+  }
+
+  function test_liquidationCall_scenario2() public {
+    setUpScenario2();
+    // coll: $10k usdx, $10k dai
+    // debt: $16k weth
+    // liquidate usdx
+
+    LiqTestData memory state;
+
+    state.wethReserveId = _wethReserveId(spoke1);
+    state.daiReserveId = _daiReserveId(spoke1);
+    state.usdxReserveId = _usdxReserveId(spoke1);
+
+    // collateral: wbtc/dai
+    state.colls[0].usdx = 10_000 * 10 ** tokenList.usdx.decimals(); // $10k usdx
+    state.colls[0].dai = 20_000 * 10 ** tokenList.dai.decimals(); // $10k dai
+    // debt: weth
+    state.debts[0].weth = 8 * 10 ** tokenList.weth.decimals(); // $16k weth
+
+    state.liqBonus = spoke1.getReserve(state.wbtcReserveId).config.liquidationBonus;
+
+    _deployLiquidity(spoke1, state.wethReserveId, state.debts[0].weth);
+    Utils.supplyCollateral(spoke1, state.usdxReserveId, alice, state.colls[0].usdx, alice);
+    Utils.supplyCollateral(spoke1, state.daiReserveId, alice, state.colls[0].dai, alice);
+    Utils.borrow(spoke1, state.wethReserveId, alice, state.debts[0].weth, alice);
+
+    // dai price drops to $0.5
+    oracle.setAssetPrice(daiAssetId, 0.5e8);
+
+    assertLt(spoke1.getHealthFactor(alice), HEALTH_FACTOR_LIQUIDATION_THRESHOLD);
+
+    UserTokenBalance memory balancesBefore = _loadUserBalances();
+
+    state.initialDebt = spoke1.getUserTotalDebt(state.wethReserveId, alice);
+    state.liquidatedDebt = _convertAssetAmount(wbtcAssetId, state.colls[0].wbtc, wethAssetId)
+      .percentDiv(state.liqBonus);
+
+    // // bob liquidates alice
+    // vm.expectEmit(address(spoke1));
+    // emit ISpoke.LiquidationCall(
+    //   address(tokenList.wbtc),
+    //   address(tokenList.weth),
+    //   alice,
+    //   state.liquidatedDebt,
+    //   state.colls[0].wbtc,
+    //   bob
+    // );
+    vm.prank(bob);
+    spoke1.liquidationCall({
+      collateralReserveId: state.daiReserveId,
+      debtReserveId: state.wethReserveId,
+      user: alice,
+      debtToCover: state.debts[0].weth
+    });
+
+    UserTokenBalance memory balancesAfter = _loadUserBalances();
+    UserTokenBalance memory balanceChanges = _calculateBalanceChanges(
+      balancesBefore,
+      balancesAfter
+    );
+
+    // // dai collateral
+    // assertEq(
+    //   spoke1.getUserSuppliedAmount(state.daiReserveId, alice),
+    //   state.colls[0].dai,
+    //   'alice dai coll unchanged'
+    // );
+    // assertEq(balanceChanges.alice.dai, 0, 'alice has no dai change');
+    // assertEq(balanceChanges.bob.dai, 0, 'bob receives 0 dai coll');
+    // assertEq(balanceChanges.treasury.dai, 0, 'treasury receives 0 dai coll');
+
+    // // wbtc collateral
+    // assertEq(
+    //   spoke1.getUserSuppliedAmount(state.wbtcReserveId, alice),
+    //   0,
+    //   'alice wbtc coll liquidated'
+    // );
+    // assertEq(balanceChanges.alice.wbtc, 0, 'alice has no wbtc change');
+    // assertEq(balanceChanges.bob.wbtc, state.colls[0].wbtc, 'bob receives all wbtc coll');
+    // assertEq(balanceChanges.treasury.wbtc, 0, 'treasury receives 0 wbtc coll');
+
+    // // weth debt
+    // assertEq(
+    //   state.initialDebt - spoke1.getUserTotalDebt(state.wethReserveId, alice),
+    //   state.liquidatedDebt,
+    //   'alice weth debt repaid'
+    // );
+    // assertEq(balanceChanges.alice.weth, 0, 'alice has no weth change');
+    // assertEq(balanceChanges.bob.weth, state.liquidatedDebt, 'bob pays all weth debt');
+    // assertEq(balanceChanges.treasury.weth, 0, 'treasury has no weth change');
+
+    (uint256 userRP, uint256 avgCollFactor, uint256 healthFactor, , ) = spoke1.getUserAccountData(
+      alice
+    );
+
+    // hf >= 1 after
+    assertGe(healthFactor, HEALTH_FACTOR_LIQUIDATION_THRESHOLD);
+    // // final collateral factor and RP only depends on remaining dai collateral
+    // assertEq(
+    //   userRP,
+    //   spoke1.getReserve(state.daiReserveId).config.liquidityPremium,
+    //   'userRP matches lp of dai coll'
+    // );
+    // assertEq(
+    //   avgCollFactor.dewadify(),
+    //   spoke1.getReserve(state.daiReserveId).config.collateralFactor,
+    //   'avg coll factor matches dai coll factor'
+    // );
+
+    console.log('final hf %e', spoke1.getHealthFactor(alice));
+  }
+
   function _convertAssetAmount(
     uint256 assetId,
     uint256 amount,

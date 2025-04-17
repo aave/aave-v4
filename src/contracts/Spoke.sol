@@ -1010,17 +1010,13 @@ contract Spoke is ISpoke {
       ? type(uint256).max
       : vars.avgCollateralFactor.wadDiv(vars.totalDebtInBaseCurrency).fromBps(); // HF of 1 -> 1e18
 
-    // console.log(
-    //   'hf %e %e',
-    //   vars.healthFactor,
-    //   vars.avgCollateralFactor / (vars.totalDebtInBaseCurrency.dewadify())
-    // );
-
     // console.log('Sp: avgCF %e', vars.avgCollateralFactor);
     // divide by total collateral to get avg collateral factor in wad
     vars.avgCollateralFactor = vars.totalCollateralInBaseCurrency == 0
       ? 0
-      : vars.avgCollateralFactor.wadDivUp(vars.totalCollateralInBaseCurrency);
+      : vars.avgCollateralFactor.wadDiv(vars.totalCollateralInBaseCurrency);
+
+    console.log('hf %e %e', vars.healthFactor, vars.avgCollateralFactor);
 
     // console.log('Sp: avgCF %e', vars.avgCollateralFactor);
 
