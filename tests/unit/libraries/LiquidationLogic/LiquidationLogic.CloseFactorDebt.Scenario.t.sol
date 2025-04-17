@@ -26,6 +26,9 @@ contract LiquidationLogicCloseFactorDebtScenarioTest is LiquidationLogicBaseTest
     updateLiquidationBonus(spoke1, _usdxReserveId(spoke1), 104_00);
   }
 
+  // TODO: scenario 1 with bigger CF
+  // TODO: secnario 2 with bigger CF
+
   function test_calculateCloseFactorDebt_scenario1_unit1() public {
     // coll: $10k usdx, $8k weth
     // debt: $15k dai
@@ -34,11 +37,11 @@ contract LiquidationLogicCloseFactorDebtScenarioTest is LiquidationLogicBaseTest
     setUpScenario1();
 
     ReserveAmount[] memory collaterals = new ReserveAmount[](2);
-    collaterals[0] = ReserveAmount({reserveId: _usdxReserveId(spoke1), amount: 10e3 * usdxUnits});
+    collaterals[0] = ReserveAmount({reserveId: _usdxReserveId(spoke1), amount: 10_000 * usdxUnits});
     collaterals[1] = ReserveAmount({reserveId: _wethReserveId(spoke1), amount: 10 * wethUnits});
 
     ReserveAmount[] memory debts = new ReserveAmount[](1);
-    debts[0] = ReserveAmount({reserveId: _daiReserveId(spoke1), amount: 15e3 * daiUnits});
+    debts[0] = ReserveAmount({reserveId: _daiReserveId(spoke1), amount: 15_000 * daiUnits});
 
     DataTypes.LiquidationCallLocalVars memory params = _calcParams({
       spoke: spoke1,
@@ -69,11 +72,11 @@ contract LiquidationLogicCloseFactorDebtScenarioTest is LiquidationLogicBaseTest
     // debt: $15k usdx
 
     ReserveAmount[] memory collaterals = new ReserveAmount[](2);
-    collaterals[0] = ReserveAmount({reserveId: _daiReserveId(spoke1), amount: 10e3 * daiUnits});
+    collaterals[0] = ReserveAmount({reserveId: _daiReserveId(spoke1), amount: 10_000 * daiUnits});
     collaterals[1] = ReserveAmount({reserveId: _wethReserveId(spoke1), amount: 10 * wethUnits});
 
     ReserveAmount[] memory debts = new ReserveAmount[](1);
-    debts[0] = ReserveAmount({reserveId: _usdxReserveId(spoke1), amount: 15e3 * usdxUnits});
+    debts[0] = ReserveAmount({reserveId: _usdxReserveId(spoke1), amount: 15_000 * usdxUnits});
 
     DataTypes.LiquidationCallLocalVars memory params = _calcParams({
       spoke: spoke1,
@@ -104,11 +107,11 @@ contract LiquidationLogicCloseFactorDebtScenarioTest is LiquidationLogicBaseTest
     // debt: $15k usdx
 
     ReserveAmount[] memory collaterals = new ReserveAmount[](2);
-    collaterals[0] = ReserveAmount({reserveId: _daiReserveId(spoke1), amount: 10e3 * daiUnits});
+    collaterals[0] = ReserveAmount({reserveId: _daiReserveId(spoke1), amount: 10_000 * daiUnits});
     collaterals[1] = ReserveAmount({reserveId: _wethReserveId(spoke1), amount: 10 * wethUnits});
 
     ReserveAmount[] memory debts = new ReserveAmount[](1);
-    debts[0] = ReserveAmount({reserveId: _usdxReserveId(spoke1), amount: 15e3 * usdxUnits});
+    debts[0] = ReserveAmount({reserveId: _usdxReserveId(spoke1), amount: 15_000 * usdxUnits});
 
     DataTypes.LiquidationCallLocalVars memory params = _calcParams({
       spoke: spoke1,
@@ -153,8 +156,8 @@ contract LiquidationLogicCloseFactorDebtScenarioTest is LiquidationLogicBaseTest
     setUpScenario2();
 
     ReserveAmount[] memory collaterals = new ReserveAmount[](2);
-    collaterals[0] = ReserveAmount({reserveId: _daiReserveId(spoke1), amount: 20e3 * daiUnits});
-    collaterals[1] = ReserveAmount({reserveId: _usdxReserveId(spoke1), amount: 10e3 * usdxUnits});
+    collaterals[0] = ReserveAmount({reserveId: _daiReserveId(spoke1), amount: 20_000 * daiUnits});
+    collaterals[1] = ReserveAmount({reserveId: _usdxReserveId(spoke1), amount: 10_000 * usdxUnits});
 
     ReserveAmount[] memory debts = new ReserveAmount[](1);
     debts[0] = ReserveAmount({reserveId: _wethReserveId(spoke1), amount: 8 * wethUnits});
@@ -189,8 +192,8 @@ contract LiquidationLogicCloseFactorDebtScenarioTest is LiquidationLogicBaseTest
     setUpScenario2();
 
     ReserveAmount[] memory collaterals = new ReserveAmount[](2);
-    collaterals[0] = ReserveAmount({reserveId: _daiReserveId(spoke1), amount: 20e3 * daiUnits});
-    collaterals[1] = ReserveAmount({reserveId: _usdxReserveId(spoke1), amount: 10e3 * usdxUnits});
+    collaterals[0] = ReserveAmount({reserveId: _daiReserveId(spoke1), amount: 20_000 * daiUnits});
+    collaterals[1] = ReserveAmount({reserveId: _usdxReserveId(spoke1), amount: 10_000 * usdxUnits});
 
     ReserveAmount[] memory debts = new ReserveAmount[](1);
     debts[0] = ReserveAmount({reserveId: _wethReserveId(spoke1), amount: 8 * wethUnits});
@@ -206,6 +209,64 @@ contract LiquidationLogicCloseFactorDebtScenarioTest is LiquidationLogicBaseTest
 
     uint256 closeFactorDebt = LiquidationLogic.calculateCloseFactorDebt(params);
     // console.log('closeFactorDebt %e', closeFactorDebt);
+    assertCloseFactor({
+      spoke: spoke1,
+      params: params,
+      collaterals: collaterals,
+      collateralIndex: 1,
+      debts: debts,
+      debtIndex: 0,
+      closeFactorDebt: closeFactorDebt
+    });
+  }
+
+  function setUpScenario3() internal {
+    updateCollateralFactor(spoke1, _wbtcReserveId(spoke1), 85_00);
+    updateCollateralFactor(spoke1, _usdxReserveId(spoke1), 80_00);
+    updateCollateralFactor(spoke1, _wethReserveId(spoke1), 95_00);
+    updateCollateralFactor(spoke1, _daiReserveId(spoke1), 78_00);
+
+    // wbtc price drops to $40k
+    oracle.setAssetPrice(wbtcAssetId, 40_000e8);
+
+    updateLiquidationBonus(spoke1, _daiReserveId(spoke1), 108_00);
+    updateLiquidationBonus(spoke1, _wethReserveId(spoke1), 109_00);
+    updateLiquidationBonus(spoke1, _usdxReserveId(spoke1), 110_00);
+    updateLiquidationBonus(spoke1, _wbtcReserveId(spoke1), 110_00);
+  }
+
+  function test_calculateCloseFactorDebt_scenario3_unit1() public {
+    // coll: $50k wbtc, $20k dai
+    // debt: $30k weth, $40k usdx
+    // repay weth, liquidate wbtc
+
+    setUpScenario3();
+
+    ReserveAmount[] memory collaterals = new ReserveAmount[](2);
+    collaterals[0] = ReserveAmount({reserveId: _daiReserveId(spoke1), amount: 20_000 * daiUnits});
+    collaterals[1] = ReserveAmount({reserveId: _wbtcReserveId(spoke1), amount: 1 * wbtcUnits});
+
+    ReserveAmount[] memory debts = new ReserveAmount[](2);
+    debts[0] = ReserveAmount({reserveId: _wethReserveId(spoke1), amount: 5 * wethUnits});
+    debts[1] = ReserveAmount({reserveId: _usdxReserveId(spoke1), amount: 40_000 * usdxUnits});
+
+    DataTypes.LiquidationCallLocalVars memory params = _calcParams({
+      spoke: spoke1,
+      collaterals: collaterals,
+      collateralIndex: 1,
+      debts: debts,
+      debtIndex: 0
+    });
+    params.closeFactor = 1e18;
+
+    console.log(
+      'initial hf %e',
+      params.totalCollateralInBaseCurrency.percentMul(params.avgCollateralFactor) /
+        params.totalDebtInBaseCurrency
+    );
+
+    uint256 closeFactorDebt = LiquidationLogic.calculateCloseFactorDebt(params);
+
     assertCloseFactor({
       spoke: spoke1,
       params: params,
@@ -233,6 +294,8 @@ contract LiquidationLogicCloseFactorDebtScenarioTest is LiquidationLogicBaseTest
       params.debtAssetPrice,
       params.debtAssetUnit
     );
+
+    console.log('%e %e', closeFactorDebt, debts[debtIndex].amount);
 
     debts[debtIndex].amount -= closeFactorDebt;
     collaterals[collateralIndex].amount -= _convertBaseCurrencyToAmount(
@@ -294,7 +357,7 @@ contract LiquidationLogicCloseFactorDebtScenarioTest is LiquidationLogicBaseTest
       totalCollateralFactor += reserve.config.collateralFactor * amountInBase;
       totalAmount += amountInBase;
       console.log(
-        'amountInBase %e %e %e',
+        'amount: %e, price: %e, units: %e',
         collaterals[i].amount,
         oracle.getAssetPrice(reserve.assetId),
         10 ** reserve.config.decimals

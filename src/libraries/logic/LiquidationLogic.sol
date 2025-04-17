@@ -102,6 +102,8 @@ library LiquidationLogic {
       'LL num2 %e',
       params.totalCollateralInBaseCurrency.percentMul(params.avgCollateralFactor.dewadify())
     );
+    console.log('LL denom1 %e', params.closeFactor);
+    console.log('LL denom2 %e', effectiveLiquidationPenalty);
 
     uint256 closeFactorDebt = ((params.totalDebtInBaseCurrency.wadMul(params.closeFactor) -
       params.totalCollateralInBaseCurrency.percentMul(params.avgCollateralFactor.dewadify())) *
