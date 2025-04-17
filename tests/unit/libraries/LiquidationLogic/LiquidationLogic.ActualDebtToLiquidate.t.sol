@@ -117,7 +117,7 @@ contract LiquidationLogicActualDebtToLiquidateTest is LiquidationLogicBaseTest {
     }
   }
 
-  function test_calculateActualDebtToLiquidate_fuzz_closeFactorDebt_zero(
+  function test_calculateActualDebtToLiquidate_fuzz_closeFactorDebt_min(
     uint256 debtToCover,
     uint256 totalDebt,
     TestCloseFactorDebtParams memory params
@@ -127,7 +127,7 @@ contract LiquidationLogicActualDebtToLiquidateTest is LiquidationLogicBaseTest {
     DataTypes.LiquidationCallLocalVars memory args = _setFunctionArgs(params);
 
     uint256 closeFactorDebt = LiquidationLogic.calculateCloseFactorDebt(args);
-    vm.assume(closeFactorDebt == 0);
+    vm.assume(closeFactorDebt == 1);
 
     args.totalDebt = totalDebt;
 
@@ -136,7 +136,21 @@ contract LiquidationLogicActualDebtToLiquidateTest is LiquidationLogicBaseTest {
       args
     );
 
-    assertEq(actualDebtToLiquidate, 0, 'closeFactorDebt == 0, should return 0');
+    uint256 minAllowed = (totalDebt > closeFactorDebt) ? closeFactorDebt : totalDebt;
+
+    if (debtToCover < minAllowed) {
+      assertEq(
+        actualDebtToLiquidate,
+        debtToCover,
+        'debtToCover < minAllowed, should return lowest allowed debt'
+      );
+    } else {
+      assertEq(
+        actualDebtToLiquidate,
+        minAllowed,
+        'debtToCover >= minAllowed, should return lowest allowed debt'
+      );
+    }
   }
 
   // TODO: unit test with specific numbers and expected output

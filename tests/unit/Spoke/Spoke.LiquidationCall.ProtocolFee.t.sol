@@ -33,7 +33,7 @@ contract LiquidationCallVariableLiquidationBonusTest is SpokeBase {
     uint256 balanceAfter;
   }
 
-  struct LiquidationTestLocalParams {
+  struct LiquidationBalances {
     Balance liquidator;
     Balance user;
     Balance treasury;
@@ -43,6 +43,8 @@ contract LiquidationCallVariableLiquidationBonusTest is SpokeBase {
     uint256 liquidationBonus;
     uint256 collateralAssetId;
     uint256 debtAssetId;
+    IERC20 collateralAsset;
+    IERC20 debtAsset;
     DataTypes.Reserve collateralReserve;
     DataTypes.Reserve debtReserve;
   }
@@ -70,9 +72,9 @@ contract LiquidationCallVariableLiquidationBonusTest is SpokeBase {
     uint256 collateralReserveId = _wethReserveId(spoke1);
     uint256 debtReserveId = _daiReserveId(spoke1);
 
-    LiquidationTestLocalParams memory state;
-    state.collateralReserve = spoke1.getReserve(collateralReserveId);
-    state.debtReserve = spoke1.getReserve(debtReserveId);
+    LiquidationBalances memory balances;
+    balances.collateralReserve = spoke1.getReserve(collateralReserveId);
+    balances.debtReserve = spoke1.getReserve(debtReserveId);
 
     liqConfig = _bound(liqConfig);
     liqBonus = bound(liqBonus, MIN_LIQUIDATION_BONUS, MAX_LIQUIDATION_BONUS);
@@ -97,31 +99,35 @@ contract LiquidationCallVariableLiquidationBonusTest is SpokeBase {
       debtReserveId,
       desiredHf
     );
-    state.liquidationBonus = _getVariableLiquidationBonus(spoke1, collateralReserveId, finalHf);
+    balances.liquidationBonus = _getVariableLiquidationBonus(spoke1, collateralReserveId, finalHf);
 
-    state.debt.balanceBefore = spoke1.getUserTotalDebt(debtReserveId, alice);
+    balances.debt.balanceBefore = spoke1.getUserTotalDebt(debtReserveId, alice);
 
-    state.liquidator.balanceBefore = IERC20(state.collateralReserve.asset).balanceOf(LIQUIDATOR);
-    state.treasury.balanceBefore = IERC20(state.collateralReserve.asset).balanceOf(TREASURY);
+    balances.liquidator.balanceBefore = IERC20(balances.collateralReserve.asset).balanceOf(
+      LIQUIDATOR
+    );
+    balances.treasury.balanceBefore = IERC20(balances.collateralReserve.asset).balanceOf(TREASURY);
 
     vm.prank(LIQUIDATOR);
     spoke1.liquidationCall(collateralReserveId, debtReserveId, alice, requiredDebtAmount);
 
-    state.liquidator.balanceAfter = IERC20(state.collateralReserve.asset).balanceOf(LIQUIDATOR);
-    state.treasury.balanceAfter = IERC20(state.collateralReserve.asset).balanceOf(TREASURY);
-    state.debt.balanceAfter = spoke1.getUserTotalDebt(debtReserveId, alice);
+    balances.liquidator.balanceAfter = IERC20(balances.collateralReserve.asset).balanceOf(
+      LIQUIDATOR
+    );
+    balances.treasury.balanceAfter = IERC20(balances.collateralReserve.asset).balanceOf(TREASURY);
+    balances.debt.balanceAfter = spoke1.getUserTotalDebt(debtReserveId, alice);
 
     // convert
-    state.collateralBaseDiff = _convertAmountToBaseCurrency(
-      state.collateralReserve.assetId,
-      state.liquidator.balanceAfter - state.liquidator.balanceBefore
+    balances.collateralBaseDiff = _convertAmountToBaseCurrency(
+      balances.collateralReserve.assetId,
+      balances.liquidator.balanceAfter - balances.liquidator.balanceBefore
     );
-    state.debtBaseDiff = _convertAmountToBaseCurrency(
-      state.debtReserve.assetId,
-      state.debt.balanceBefore - state.debt.balanceAfter
+    balances.debtBaseDiff = _convertAmountToBaseCurrency(
+      balances.debtReserve.assetId,
+      balances.debt.balanceBefore - balances.debt.balanceAfter
     );
 
-    _assertLiquidationBonusEarned(state, 'test_liquidationCall_fuzz_variable weth/dai');
+    _assertLiquidationBonusEarned(balances, 'test_liquidationCall_fuzz_variable weth/dai');
   }
 
   /// weth collateral / usdx debt
@@ -134,9 +140,9 @@ contract LiquidationCallVariableLiquidationBonusTest is SpokeBase {
     uint256 collateralReserveId = _wethReserveId(spoke1);
     uint256 debtReserveId = _usdxReserveId(spoke1);
 
-    LiquidationTestLocalParams memory state;
-    state.collateralReserve = spoke1.getReserve(collateralReserveId);
-    state.debtReserve = spoke1.getReserve(debtReserveId);
+    LiquidationBalances memory balances;
+    balances.collateralReserve = spoke1.getReserve(collateralReserveId);
+    balances.debtReserve = spoke1.getReserve(debtReserveId);
 
     liqConfig = _bound(liqConfig);
     liqBonus = bound(liqBonus, MIN_LIQUIDATION_BONUS, MAX_LIQUIDATION_BONUS);
@@ -161,31 +167,35 @@ contract LiquidationCallVariableLiquidationBonusTest is SpokeBase {
       debtReserveId,
       desiredHf
     );
-    state.liquidationBonus = _getVariableLiquidationBonus(spoke1, collateralReserveId, finalHf);
+    balances.liquidationBonus = _getVariableLiquidationBonus(spoke1, collateralReserveId, finalHf);
 
-    state.debt.balanceBefore = spoke1.getUserTotalDebt(debtReserveId, alice);
+    balances.debt.balanceBefore = spoke1.getUserTotalDebt(debtReserveId, alice);
 
-    state.liquidator.balanceBefore = IERC20(state.collateralReserve.asset).balanceOf(LIQUIDATOR);
-    state.treasury.balanceBefore = IERC20(state.collateralReserve.asset).balanceOf(TREASURY);
+    balances.liquidator.balanceBefore = IERC20(balances.collateralReserve.asset).balanceOf(
+      LIQUIDATOR
+    );
+    balances.treasury.balanceBefore = IERC20(balances.collateralReserve.asset).balanceOf(TREASURY);
 
     vm.prank(LIQUIDATOR);
     spoke1.liquidationCall(collateralReserveId, debtReserveId, alice, requiredDebtAmount);
 
-    state.liquidator.balanceAfter = IERC20(state.collateralReserve.asset).balanceOf(LIQUIDATOR);
-    state.treasury.balanceAfter = IERC20(state.collateralReserve.asset).balanceOf(TREASURY);
-    state.debt.balanceAfter = spoke1.getUserTotalDebt(debtReserveId, alice);
+    balances.liquidator.balanceAfter = IERC20(balances.collateralReserve.asset).balanceOf(
+      LIQUIDATOR
+    );
+    balances.treasury.balanceAfter = IERC20(balances.collateralReserve.asset).balanceOf(TREASURY);
+    balances.debt.balanceAfter = spoke1.getUserTotalDebt(debtReserveId, alice);
 
     // convert
-    state.collateralBaseDiff = _convertAmountToBaseCurrency(
-      state.collateralReserve.assetId,
-      state.liquidator.balanceAfter - state.liquidator.balanceBefore
+    balances.collateralBaseDiff = _convertAmountToBaseCurrency(
+      balances.collateralReserve.assetId,
+      balances.liquidator.balanceAfter - balances.liquidator.balanceBefore
     );
-    state.debtBaseDiff = _convertAmountToBaseCurrency(
-      state.debtReserve.assetId,
-      state.debt.balanceBefore - state.debt.balanceAfter
+    balances.debtBaseDiff = _convertAmountToBaseCurrency(
+      balances.debtReserve.assetId,
+      balances.debt.balanceBefore - balances.debt.balanceAfter
     );
 
-    _assertLiquidationBonusEarned(state, 'test_liquidationCall_fuzz_variableLB weth/usdx');
+    _assertLiquidationBonusEarned(balances, 'test_liquidationCall_fuzz_variableLB weth/usdx');
   }
 
   /// usdx collateral / weth debt
@@ -198,9 +208,9 @@ contract LiquidationCallVariableLiquidationBonusTest is SpokeBase {
     uint256 collateralReserveId = _usdxReserveId(spoke1);
     uint256 debtReserveId = _wethReserveId(spoke1);
 
-    LiquidationTestLocalParams memory state;
-    state.collateralReserve = spoke1.getReserve(collateralReserveId);
-    state.debtReserve = spoke1.getReserve(debtReserveId);
+    LiquidationBalances memory balances;
+    balances.collateralReserve = spoke1.getReserve(collateralReserveId);
+    balances.debtReserve = spoke1.getReserve(debtReserveId);
 
     liqConfig = _bound(liqConfig);
     liqBonus = bound(liqBonus, MIN_LIQUIDATION_BONUS, MAX_LIQUIDATION_BONUS);
@@ -225,31 +235,35 @@ contract LiquidationCallVariableLiquidationBonusTest is SpokeBase {
       debtReserveId,
       desiredHf
     );
-    state.liquidationBonus = _getVariableLiquidationBonus(spoke1, collateralReserveId, finalHf);
+    balances.liquidationBonus = _getVariableLiquidationBonus(spoke1, collateralReserveId, finalHf);
 
-    state.debt.balanceBefore = spoke1.getUserTotalDebt(debtReserveId, alice);
+    balances.debt.balanceBefore = spoke1.getUserTotalDebt(debtReserveId, alice);
 
-    state.liquidator.balanceBefore = IERC20(state.collateralReserve.asset).balanceOf(LIQUIDATOR);
-    state.treasury.balanceBefore = IERC20(state.collateralReserve.asset).balanceOf(TREASURY);
+    balances.liquidator.balanceBefore = IERC20(balances.collateralReserve.asset).balanceOf(
+      LIQUIDATOR
+    );
+    balances.treasury.balanceBefore = IERC20(balances.collateralReserve.asset).balanceOf(TREASURY);
 
     vm.prank(LIQUIDATOR);
     spoke1.liquidationCall(collateralReserveId, debtReserveId, alice, requiredDebtAmount);
 
-    state.liquidator.balanceAfter = IERC20(state.collateralReserve.asset).balanceOf(LIQUIDATOR);
-    state.treasury.balanceAfter = IERC20(state.collateralReserve.asset).balanceOf(TREASURY);
-    state.debt.balanceAfter = spoke1.getUserTotalDebt(debtReserveId, alice);
+    balances.liquidator.balanceAfter = IERC20(balances.collateralReserve.asset).balanceOf(
+      LIQUIDATOR
+    );
+    balances.treasury.balanceAfter = IERC20(balances.collateralReserve.asset).balanceOf(TREASURY);
+    balances.debt.balanceAfter = spoke1.getUserTotalDebt(debtReserveId, alice);
 
     // convert
-    state.collateralBaseDiff = _convertAmountToBaseCurrency(
-      state.collateralReserve.assetId,
-      state.liquidator.balanceAfter - state.liquidator.balanceBefore
+    balances.collateralBaseDiff = _convertAmountToBaseCurrency(
+      balances.collateralReserve.assetId,
+      balances.liquidator.balanceAfter - balances.liquidator.balanceBefore
     );
-    state.debtBaseDiff = _convertAmountToBaseCurrency(
-      state.debtReserve.assetId,
-      state.debt.balanceBefore - state.debt.balanceAfter
+    balances.debtBaseDiff = _convertAmountToBaseCurrency(
+      balances.debtReserve.assetId,
+      balances.debt.balanceBefore - balances.debt.balanceAfter
     );
 
-    _assertLiquidationBonusEarned(state, 'test_liquidationCall_fuzz_variableLB usdx/weth');
+    _assertLiquidationBonusEarned(balances, 'test_liquidationCall_fuzz_variableLB usdx/weth');
   }
 
   /// dai collateral / usdx debt
@@ -262,9 +276,9 @@ contract LiquidationCallVariableLiquidationBonusTest is SpokeBase {
     uint256 collateralReserveId = _daiReserveId(spoke1);
     uint256 debtReserveId = _usdxReserveId(spoke1);
 
-    LiquidationTestLocalParams memory state;
-    state.collateralReserve = spoke1.getReserve(collateralReserveId);
-    state.debtReserve = spoke1.getReserve(debtReserveId);
+    LiquidationBalances memory balances;
+    balances.collateralReserve = spoke1.getReserve(collateralReserveId);
+    balances.debtReserve = spoke1.getReserve(debtReserveId);
 
     liqConfig = _bound(liqConfig);
     liqBonus = bound(liqBonus, MIN_LIQUIDATION_BONUS, MAX_LIQUIDATION_BONUS);
@@ -289,31 +303,35 @@ contract LiquidationCallVariableLiquidationBonusTest is SpokeBase {
       debtReserveId,
       desiredHf
     );
-    state.liquidationBonus = _getVariableLiquidationBonus(spoke1, collateralReserveId, finalHf);
+    balances.liquidationBonus = _getVariableLiquidationBonus(spoke1, collateralReserveId, finalHf);
 
-    state.debt.balanceBefore = spoke1.getUserTotalDebt(debtReserveId, alice);
+    balances.debt.balanceBefore = spoke1.getUserTotalDebt(debtReserveId, alice);
 
-    state.liquidator.balanceBefore = IERC20(state.collateralReserve.asset).balanceOf(LIQUIDATOR);
-    state.treasury.balanceBefore = IERC20(state.collateralReserve.asset).balanceOf(TREASURY);
+    balances.liquidator.balanceBefore = IERC20(balances.collateralReserve.asset).balanceOf(
+      LIQUIDATOR
+    );
+    balances.treasury.balanceBefore = IERC20(balances.collateralReserve.asset).balanceOf(TREASURY);
 
     vm.prank(LIQUIDATOR);
     spoke1.liquidationCall(collateralReserveId, debtReserveId, alice, requiredDebtAmount);
 
-    state.liquidator.balanceAfter = IERC20(state.collateralReserve.asset).balanceOf(LIQUIDATOR);
-    state.treasury.balanceAfter = IERC20(state.collateralReserve.asset).balanceOf(TREASURY);
-    state.debt.balanceAfter = spoke1.getUserTotalDebt(debtReserveId, alice);
+    balances.liquidator.balanceAfter = IERC20(balances.collateralReserve.asset).balanceOf(
+      LIQUIDATOR
+    );
+    balances.treasury.balanceAfter = IERC20(balances.collateralReserve.asset).balanceOf(TREASURY);
+    balances.debt.balanceAfter = spoke1.getUserTotalDebt(debtReserveId, alice);
 
     // convert
-    state.collateralBaseDiff = _convertAmountToBaseCurrency(
-      state.collateralReserve.assetId,
-      state.liquidator.balanceAfter - state.liquidator.balanceBefore
+    balances.collateralBaseDiff = _convertAmountToBaseCurrency(
+      balances.collateralReserve.assetId,
+      balances.liquidator.balanceAfter - balances.liquidator.balanceBefore
     );
-    state.debtBaseDiff = _convertAmountToBaseCurrency(
-      state.debtReserve.assetId,
-      state.debt.balanceBefore - state.debt.balanceAfter
+    balances.debtBaseDiff = _convertAmountToBaseCurrency(
+      balances.debtReserve.assetId,
+      balances.debt.balanceBefore - balances.debt.balanceAfter
     );
 
-    _assertLiquidationBonusEarned(state, 'test_liquidationCall_fuzz_variableLB dai/usdx');
+    _assertLiquidationBonusEarned(balances, 'test_liquidationCall_fuzz_variableLB dai/usdx');
   }
 
   function _bound(
@@ -335,18 +353,18 @@ contract LiquidationCallVariableLiquidationBonusTest is SpokeBase {
   }
 
   function _assertLiquidationBonusEarned(
-    LiquidationTestLocalParams memory state,
+    LiquidationBalances memory balances,
     string memory label
   ) internal {
     console.log(
       'cmp %e %e',
-      state.collateralBaseDiff,
-      state.debtBaseDiff.percentMul(state.liquidationBonus)
+      balances.collateralBaseDiff,
+      balances.debtBaseDiff.percentMul(balances.liquidationBonus)
     );
 
     assertApproxEqRel(
-      state.collateralBaseDiff,
-      state.debtBaseDiff.percentMul(state.liquidationBonus),
+      balances.collateralBaseDiff,
+      balances.debtBaseDiff.percentMul(balances.liquidationBonus),
       _approxRelFromBps(10),
       string.concat('liquidationBonus earned in base currency ', label)
     );

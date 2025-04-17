@@ -51,7 +51,8 @@ contract LiquidationLogicBaseTest is Base {
 
     return
       (params.totalDebtInBaseCurrency.wadMul(params.closeFactor) * params.debtAssetUnit) /
-      ((params.closeFactor - effectiveLiquidationPenalty) * params.debtAssetPrice);
+      ((params.closeFactor - effectiveLiquidationPenalty) * params.debtAssetPrice) +
+      1;
   }
 
   // for close factor > effectiveLiquidationPenalty, and positive denominator in calc
