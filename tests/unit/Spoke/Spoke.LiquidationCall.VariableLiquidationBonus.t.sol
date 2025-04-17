@@ -17,12 +17,12 @@ contract LiquidationCallVariableLiquidationBonusTest is SpokeBase {
     super.setUp();
     _addBorrowableLiquidity();
 
-    _config = DataTypes.LiquidationConfig({
-      closeFactor: 1e18,
-      healthFactorBonusThreshold: 0.9e18,
-      liquidationBonusFactor: 70_00 // 40%
-    });
-    spoke1.updateLiquidationConfig(_config);
+    // _config = DataTypes.LiquidationConfig({
+    //   closeFactor: 1e18,
+    //   healthFactorBonusThreshold: 0.9e18,
+    //   liquidationBonusFactor: 70_00 // 40%
+    // });
+    // spoke1.updateLiquidationConfig(_config);
   }
 
   /// @notice Deploys borrowable liquidity for all reserves in spoke1
@@ -45,7 +45,68 @@ contract LiquidationCallVariableLiquidationBonusTest is SpokeBase {
     Balance treasury;
   }
 
-  function test_required_debt() public {
+  function test_liquidationCall_fuzz_variableLB() public {
+    uint256 liqBonus = 105_00;
+
+    LiquidationBalances memory balances;
+
+    DataTypes.LiquidationConfig memory liqConfig = DataTypes.LiquidationConfig({
+      closeFactor: 1e18,
+      healthFactorBonusThreshold: 0.9e18,
+      liquidationBonusFactor: 70_00
+    });
+    spoke1.updateLiquidationConfig(liqConfig);
+
+    updateLiquidationBonus(spoke1, _wethReserveId(spoke1), liqBonus);
+    Utils.supplyCollateral({
+      spoke: spoke1,
+      reserveId: _wethReserveId(spoke1),
+      user: alice,
+      amount: 10e18,
+      onBehalfOf: alice
+    });
+
+    (uint256 finalHf, uint256 debtAmount) = _borrowToBeBelowHf(spoke1, alice, daiAssetId, 0.95e18);
+    uint256 liquidationBonus = _getVariableLiquidationBonus(
+      spoke1,
+      _wethReserveId(spoke1),
+      finalHf
+    );
+
+    uint256 debtBefore = spoke1.getUserTotalDebt(_daiReserveId(spoke1), alice);
+
+    balances.liquidator.balanceBefore = tokenList.weth.balanceOf(LIQUIDATOR);
+    balances.treasury.balanceBefore = tokenList.weth.balanceOf(TREASURY);
+
+    vm.prank(LIQUIDATOR);
+    spoke1.liquidationCall(_wethReserveId(spoke1), _daiReserveId(spoke1), alice, debtAmount);
+
+    balances.liquidator.balanceAfter = tokenList.weth.balanceOf(LIQUIDATOR);
+    balances.treasury.balanceAfter = tokenList.weth.balanceOf(TREASURY);
+
+    // collateral should be LB.percentMul(debt)
+
+    uint256 diff = _convertBaseCurrencyToAmount(
+      daiAssetId,
+      _convertAmountToBaseCurrency(
+        wethAssetId,
+        balances.liquidator.balanceAfter - balances.liquidator.balanceBefore
+      )
+    );
+    uint256 debtAfter = spoke1.getUserTotalDebt(_daiReserveId(spoke1), alice);
+
+    console.log('dai amount %e %e', diff, (debtBefore - debtAfter).percentMul(liquidationBonus));
+    // console.log('debt diff %e', (debtBefore - debtAfter));
+
+    assertEq(diff.fromBps(), (debtBefore - debtAfter).percentMul(liquidationBonus).fromBps());
+
+    // console.log(
+    //   'liq diff %e',
+    //   balances.liquidator.balanceAfter - balances.liquidator.balanceBefore
+    // );
+  }
+
+  function test_debt() public {
     LiquidationBalances memory balances;
 
     updateLiquidationBonus(spoke1, _wethReserveId(spoke1), 105_00);
@@ -64,6 +125,8 @@ contract LiquidationCallVariableLiquidationBonusTest is SpokeBase {
       finalHf
     );
 
+    uint256 debtBefore = spoke1.getUserTotalDebt(_daiReserveId(spoke1), alice);
+
     balances.liquidator.balanceBefore = tokenList.weth.balanceOf(LIQUIDATOR);
     balances.treasury.balanceBefore = tokenList.weth.balanceOf(TREASURY);
 
@@ -75,12 +138,19 @@ contract LiquidationCallVariableLiquidationBonusTest is SpokeBase {
 
     // collateral should be LB.percentMul(debt)
 
-    uint256 diff = balances.liquidator.balanceAfter - balances.liquidator.balanceBefore;
-
-    console.log(
-      'dai amount %e %e',
-      _convertBaseCurrencyToAmount(daiAssetId, _convertAmountToBaseCurrency(wethAssetId, diff))
+    uint256 diff = _convertBaseCurrencyToAmount(
+      daiAssetId,
+      _convertAmountToBaseCurrency(
+        wethAssetId,
+        balances.liquidator.balanceAfter - balances.liquidator.balanceBefore
+      )
     );
+    uint256 debtAfter = spoke1.getUserTotalDebt(_daiReserveId(spoke1), alice);
+
+    console.log('dai amount %e %e', diff, (debtBefore - debtAfter).percentMul(liquidationBonus));
+    // console.log('debt diff %e', (debtBefore - debtAfter));
+
+    assertEq(diff.fromBps(), (debtBefore - debtAfter).percentMul(liquidationBonus).fromBps());
 
     // console.log(
     //   'liq diff %e',
