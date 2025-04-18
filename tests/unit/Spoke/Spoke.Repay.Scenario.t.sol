@@ -1350,7 +1350,8 @@ contract SpokeRepayScenarioTest is SpokeBase {
   ) public {
     vm.assume(caller != address(0));
     reserveId = bound(reserveId, 0, spoke1.reserveCount() - 1);
-    userBorrowing = bound(userBorrowing, 0, MAX_SUPPLY_AMOUNT / 2 - 1); // Allow some buffer from supply cap
+    userBorrowing = bound(userBorrowing, 0, MAX_SUPPLY_AMOUNT / 2 - 1); // Allow some buffer from borrow cap
+    skipTime = uint40(bound(skipTime, 0, MAX_SKIP_TIME));
     assets = bound(assets, 1, MAX_SUPPLY_AMOUNT / 2 - userBorrowing);
 
     // Set up initial state of the vault by having derl borrow
@@ -1375,16 +1376,70 @@ contract SpokeRepayScenarioTest is SpokeBase {
 
     // Borrow
     uint256 shares1 = hub.convertToDrawnShares(reserve.assetId, assets);
-    vm.prank(caller);
+    vm.startPrank(caller);
     spoke1.borrow(reserveId, assets, caller);
 
     // Repay
-    deal(reserve.asset, caller, assets);
-    vm.prank(caller);
-    IERC20(reserve.asset).approve(address(hub), assets);
     uint256 shares2 = hub.convertToDrawnShares(reserve.assetId, assets);
-    vm.prank(caller);
+    deal(reserve.asset, caller, assets);
+    IERC20(reserve.asset).approve(address(hub), assets);
     spoke1.repay(reserveId, assets);
+    vm.stopPrank();
+
+    assertApproxEqAbs(shares2, shares1, 1, 'borrowed and repaid shares');
+  }
+
+  /// User repays, then immediately borrows, check delta on share amounts
+  /// @dev Assume another user borrowing, and skip time so debt ex ratio potentially nonzero
+  /// @dev Assume user already has a nonzero borrow position to repay
+  function test_repay_round_trip_repay_borrow(
+    uint256 reserveId,
+    uint256 userBorrowing,
+    uint256 callerStartingDebt,
+    uint40 skipTime,
+    address caller,
+    uint256 assets
+  ) public {
+    uint256 MAX_BORROW_AMOUNT = MAX_SUPPLY_AMOUNT / 2;
+    vm.assume(caller != address(0));
+    reserveId = bound(reserveId, 0, spoke1.reserveCount() - 1);
+    userBorrowing = bound(userBorrowing, 0, MAX_BORROW_AMOUNT - 2); // Allow some buffer from borrow cap
+    skipTime = uint40(bound(skipTime, 0, MAX_SKIP_TIME));
+    assets = bound(assets, 1, MAX_BORROW_AMOUNT - userBorrowing - 1); // Allow some buffer from borrow cap
+    callerStartingDebt = bound(callerStartingDebt, 1, MAX_BORROW_AMOUNT - userBorrowing - assets);
+
+    // Set up initial state of the vault by having derl borrow
+    uint256 supplyAmount = _calcMinimumCollAmount(spoke1, reserveId, reserveId, userBorrowing);
+    Utils.supply(spoke1, reserveId, derl, supplyAmount, derl);
+    setUsingAsCollateral(spoke1, derl, reserveId, true);
+    if (userBorrowing > 0) {
+      Utils.borrow(spoke1, reserveId, derl, userBorrowing, derl);
+    }
+
+    skip(skipTime);
+
+    DataTypes.Reserve memory reserve = spoke1.getReserve(reserveId);
+
+    // Set up caller initial debt position
+    supplyAmount = MAX_SUPPLY_AMOUNT - supplyAmount;
+    deal(reserve.asset, caller, supplyAmount);
+    vm.prank(caller);
+    IERC20(reserve.asset).approve(address(hub), supplyAmount);
+    Utils.supply(spoke1, reserveId, caller, supplyAmount, caller);
+    setUsingAsCollateral(spoke1, caller, reserveId, true);
+    Utils.borrow(spoke1, reserveId, caller, callerStartingDebt, caller);
+
+    // Repay
+    uint256 shares1 = hub.convertToDrawnShares(reserve.assetId, assets);
+    deal(reserve.asset, caller, assets);
+    vm.startPrank(caller);
+    IERC20(reserve.asset).approve(address(hub), assets);
+    spoke1.repay(reserveId, assets);
+
+    // Borrow
+    uint256 shares2 = hub.convertToDrawnShares(reserve.assetId, assets);
+    spoke1.borrow(reserveId, assets, caller);
+    vm.stopPrank();
 
     assertApproxEqAbs(shares2, shares1, 1, 'borrowed and repaid shares');
   }
