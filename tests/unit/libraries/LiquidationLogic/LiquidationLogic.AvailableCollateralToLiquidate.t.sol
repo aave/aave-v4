@@ -223,15 +223,6 @@ contract LiquidationAvailableCollateralToLiquidateTest is Base {
   function _calcMaxCollateralToLiquidate(
     TestAvailableCollateralParams memory params
   ) internal pure returns (uint256) {
-    // console.log('params.debtAssetUnit', params.debtAssetUnit);
-    console.log('params.collateralAssetPrice', params.actualDebtToLiquidate);
-    console.log(
-      'params.collateralAssetPrice',
-      (params.collateralAssetPrice * params.debtAssetUnit),
-      ((params.debtAssetPrice * params.actualDebtToLiquidate * params.collateralAssetUnit) /
-        (params.collateralAssetPrice * params.debtAssetUnit)),
-      params.liquidationBonus
-    );
     return
       ((params.debtAssetPrice * params.actualDebtToLiquidate * params.collateralAssetUnit) /
         (params.collateralAssetPrice * params.debtAssetUnit)).percentMul(params.liquidationBonus);

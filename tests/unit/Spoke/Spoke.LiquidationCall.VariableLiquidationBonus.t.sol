@@ -219,12 +219,6 @@ contract LiquidationCallVariableLiquidationBonusTest is SpokeLiquidationBase {
     LiquidationTestLocalParams memory state,
     string memory label
   ) internal {
-    console.log(
-      'cmp %e %e',
-      state.collateralBaseDiff,
-      state.debtBaseDiff.percentMul(state.liquidationBonus)
-    );
-
     assertApproxEqRel(
       state.collateralBaseDiff,
       state.debtBaseDiff.percentMul(state.liquidationBonus),

@@ -208,7 +208,6 @@ contract LiquidationLogicCloseFactorDebtScenarioTest is LiquidationLogicBaseTest
     params.closeFactor = 1e18;
 
     uint256 closeFactorDebt = LiquidationLogic.calculateCloseFactorDebt(params);
-    // console.log('closeFactorDebt %e', closeFactorDebt);
     assertCloseFactor({
       spoke: spoke1,
       params: params,
@@ -259,12 +258,6 @@ contract LiquidationLogicCloseFactorDebtScenarioTest is LiquidationLogicBaseTest
     });
     params.closeFactor = 1e18;
 
-    // console.log(
-    //   'initial hf %e',
-    //   params.totalCollateralInBaseCurrency.percentMul(params.avgCollateralFactor) /
-    //     params.totalDebtInBaseCurrency
-    // );
-
     uint256 closeFactorDebt = LiquidationLogic.calculateCloseFactorDebt(params);
 
     assertCloseFactor({
@@ -295,8 +288,6 @@ contract LiquidationLogicCloseFactorDebtScenarioTest is LiquidationLogicBaseTest
       params.debtAssetUnit
     );
 
-    // console.log('%e %e', closeFactorDebt, debts[debtIndex].amount);
-
     debts[debtIndex].amount -= closeFactorDebt;
     collaterals[collateralIndex].amount -= _convertBaseCurrencyToAmount(
       _convertDebtToCollAmount(params, debtBaseCurrencyRestored),
@@ -313,15 +304,6 @@ contract LiquidationLogicCloseFactorDebtScenarioTest is LiquidationLogicBaseTest
       debts,
       debtIndex
     );
-
-    // uint256 derivedHealthFactor = params.totalCollateralInBaseCurrency.percentMul(
-    //   params.avgCollateralFactor
-    // ) / params.totalDebtInBaseCurrency;
-
-    console.log('coll amount %e', collaterals[collateralIndex].amount);
-    console.log('debt amount %e', debts[debtIndex].amount);
-    console.log('avgCollateralFactor %e', params.avgCollateralFactor);
-    console.log('final hf %e', derivedHealthFactor);
 
     assertApproxEqRel(
       derivedHealthFactor,
@@ -363,12 +345,6 @@ contract LiquidationLogicCloseFactorDebtScenarioTest is LiquidationLogicBaseTest
       );
       totalCollateralFactor += reserve.config.collateralFactor * amountInBase;
       totalAmount += amountInBase;
-      console.log(
-        'amount: %e, price: %e, units: %e',
-        collaterals[i].amount,
-        oracle.getAssetPrice(reserve.assetId),
-        10 ** reserve.config.decimals
-      );
       if (collateralIndex == i) {
         params.liquidationBonus = reserve.config.liquidationBonus;
         params.collateralFactor = reserve.config.collateralFactor;
@@ -376,9 +352,6 @@ contract LiquidationLogicCloseFactorDebtScenarioTest is LiquidationLogicBaseTest
     }
     params.avgCollateralFactor = totalCollateralFactor.wadDiv(totalAmount);
     params.totalCollateralInBaseCurrency = totalAmount;
-
-    console.log('avgCF %e', params.avgCollateralFactor);
-    console.log('totalColl %e', params.totalCollateralInBaseCurrency);
 
     totalAmount = 0;
     for (uint256 i = 0; i < debts.length; i++) {
@@ -399,6 +372,5 @@ contract LiquidationLogicCloseFactorDebtScenarioTest is LiquidationLogicBaseTest
     params.totalDebtInBaseCurrency = totalAmount;
 
     healthFactor = totalCollateralFactor.wadDiv(params.totalDebtInBaseCurrency).fromBps();
-    console.log('calc healthFactor %e', healthFactor);
   }
 }

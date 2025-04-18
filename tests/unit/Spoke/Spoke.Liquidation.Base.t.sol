@@ -70,8 +70,6 @@ contract SpokeLiquidationBase is SpokeBase {
     uint256 assetId = spoke.getReserve(reserveId).assetId;
     uint256 requiredDebtAmount = _convertBaseCurrencyToAmount(assetId, requiredDebtInBase);
 
-    console.log('requiredDebtAmount %e', requiredDebtAmount);
-
     vm.assume(requiredDebtAmount > 0 && requiredDebtAmount < MAX_SUPPLY_AMOUNT);
 
     vm.mockCall(
@@ -86,8 +84,6 @@ contract SpokeLiquidationBase is SpokeBase {
     uint256 finalHf = spoke.getHealthFactor(user);
 
     assertLt(finalHf, desiredHf);
-    console.log('final hf %e, desired hf %e', finalHf, desiredHf);
-
     return (finalHf, requiredDebtAmount);
   }
 
@@ -107,31 +103,11 @@ contract SpokeLiquidationBase is SpokeBase {
       uint256 totalDebtBase
     ) = spoke.getUserAccountData(user);
 
-    // console.log(
-    //   'original %e, calc %e',
-    //   ((totalCollateralBase.percentMul(currentAvgCollateralFactor.dewadify() + 1) *
-    //     HEALTH_FACTOR_LIQUIDATION_THRESHOLD) / desiredHf),
-    //   (
-    //     totalCollateralBase.wadMul(currentAvgCollateralFactor + 1).wadMul(
-    //       HEALTH_FACTOR_LIQUIDATION_THRESHOLD
-    //     )
-    //   ).wadDiv(desiredHf).fromBps()
-    // );
-    // 1.684421052631578947368421052631e30
-    // 1.6842105263157894736844210526315789e34
-
     requiredDebt =
       ((totalCollateralBase.percentMulUp(currentAvgCollateralFactor.dewadify() + 1) *
         HEALTH_FACTOR_LIQUIDATION_THRESHOLD) / desiredHf) -
       totalDebtBase +
       1;
-    // requiredDebt =
-    //   (
-    //     totalCollateralBase.wadMul(currentAvgCollateralFactor + 1).wadMul(
-    //       HEALTH_FACTOR_LIQUIDATION_THRESHOLD
-    //     )
-    //   ).wadDiv(desiredHf).fromBps() -
-    //   totalDebtBase;
   }
 
   function _bound(

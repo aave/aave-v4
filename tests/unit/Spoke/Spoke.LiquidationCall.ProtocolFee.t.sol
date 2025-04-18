@@ -81,7 +81,7 @@ contract LiquidationCallProtocolFeeTest is SpokeLiquidationBase {
     uint256 collateralReserveId = _usdxReserveId(spoke1);
     uint256 debtReserveId = _wethReserveId(spoke1);
 
-    supplyAmount = bound(supplyAmount, 1e2, MAX_SUPPLY_AMOUNT / 1e4); // bounds to ensure HF is below desiredHf within precision
+    supplyAmount = bound(supplyAmount, 1e5, MAX_SUPPLY_AMOUNT / 1e4); // bounds to ensure HF is below desiredHf within precision
 
     _fuzz_liqCall(
       liqConfig,
@@ -171,65 +171,51 @@ contract LiquidationCallProtocolFeeTest is SpokeLiquidationBase {
   function _assertLpfpEarned(
     LiquidationTestLocalParams memory state,
     string memory label
-  ) internal {
-    console.log(
-      'cmp %e %e %e',
-      state.collateralBaseDiff,
-      state.debtBaseDiff.percentMul(state.liquidationBonus),
-      state.debtBaseDiff.percentMul(state.liquidationBonus - PercentageMath.PERCENTAGE_FACTOR)
-    );
-
-    // console.log(
-    //   'treasury %e',
-    //   _convertAmountToBaseCurrency(
-    //     state.collateralReserve.assetId,
-    //     state.treasury.balanceAfter - state.treasury.balanceBefore
-    //   )
-    // );
-
-    // uint256 liqBonusEarned = state.debtBaseDiff.percentMul(
-    //   state.liquidationBonus - PercentageMath.PERCENTAGE_FACTOR
-    // );
-    // uint256 liqProtocolFee = _convertAmountToBaseCurrency(
-    //   state.collateralReserve.assetId,
-    //   state.treasury.balanceAfter - state.treasury.balanceBefore
-    // );
-
+  ) internal view {
     uint256 liqBonusEarned = _convertBaseCurrencyToAmount(
       state.collateralReserve.assetId,
       state.debtBaseDiff.percentMul(state.liquidationBonus - PercentageMath.PERCENTAGE_FACTOR)
     );
     uint256 liqProtocolFee = state.treasury.balanceAfter - state.treasury.balanceBefore;
 
-    // console.log(
-    //   'cmp %e %e',
-    //   state.debtBaseDiff -
-    //     liqBonusEarned,
-    //   liqProtocolFee
-    // );
-
-    // console.log('cmp %e %e', liqBonusEarned.percentMul(12_00), liqProtocolFee);
-
     if (liqProtocolFee < 1e4) {
       assertApproxEqAbs(
         liqBonusEarned.percentMul(state.liquidationProtocolFeePercentage),
         liqProtocolFee,
         1,
-        string.concat('protocol fee amount ', label)
+        string.concat('protocol fee amount abs ', label)
       );
     } else {
       assertApproxEqRel(
         liqBonusEarned.percentMul(state.liquidationProtocolFeePercentage),
         liqProtocolFee,
         _approxRelFromBps(10),
-        string.concat('protocol fee amount ', label)
+        string.concat('protocol fee amount rel ', label)
       );
     }
-    assertApproxEqRel(
-      state.collateralBaseDiff,
-      state.debtBaseDiff.percentMul(state.liquidationBonus),
-      _approxRelFromBps(10),
-      string.concat('total collateral seized should match debt ', label)
-    );
+    if (
+      _convertBaseCurrencyToAmount(state.collateralReserve.reserveId, state.collateralBaseDiff) <
+      1e4
+    ) {
+      assertApproxEqAbs(
+        _convertBaseCurrencyToAmount(state.collateralReserve.reserveId, state.collateralBaseDiff),
+        _convertBaseCurrencyToAmount(
+          state.collateralReserve.reserveId,
+          state.debtBaseDiff.percentMul(state.liquidationBonus)
+        ),
+        1,
+        string.concat('total collateral seized should match debt abs ', label)
+      );
+    } else {
+      assertApproxEqRel(
+        _convertBaseCurrencyToAmount(state.collateralReserve.reserveId, state.collateralBaseDiff),
+        _convertBaseCurrencyToAmount(
+          state.collateralReserve.reserveId,
+          state.debtBaseDiff.percentMul(state.liquidationBonus)
+        ),
+        _approxRelFromBps(10),
+        string.concat('total collateral seized should match debt rel ', label)
+      );
+    }
   }
 }

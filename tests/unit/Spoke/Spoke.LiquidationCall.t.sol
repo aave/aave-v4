@@ -2,7 +2,8 @@
 pragma solidity ^0.8.0;
 
 import 'tests/unit/Spoke/SpokeBase.t.sol';
-// import '../mocks/MockSpokeExposedMethods.sol';
+
+// todo: tests with liquidator instead of bob
 
 contract LiquidationCallTest is SpokeBase {
   using SharesMath for uint256;

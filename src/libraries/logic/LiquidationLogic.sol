@@ -37,8 +37,6 @@ library LiquidationLogic {
       return minLiquidationBonus;
     }
 
-    console.log('linear var lb');
-
     // otherwise, linearly interpolate between min and max
     return
       minLiquidationBonus +
@@ -53,24 +51,7 @@ library LiquidationLogic {
   ) internal pure returns (uint256) {
     DataTypes.CalculateActualDebtToLiquidateLocalVars memory vars;
     vars.maxLiquidatableDebt = params.totalDebt; // for current debt asset, in amount
-
-    // vars.liquidationBonusProduct = (params.liquidationBonus.wadify())
-    //   .percentMul(params.collateralFactor)
-    //   .fromBps(); // convert BPS to WAD;
-
-    // amount of user debt that returns HF to closeFactor, in base currency
-    // numerator cannot be negative if CF > liq threshold
-    // check if denominator is negative
-    // vars.closeFactorDebt = params.closeFactor > vars.liquidationBonusProduct
-    //   ? ((params.totalDebtInBaseCurrency.wadMul(params.closeFactor) -
-    //     params.totalCollateralInBaseCurrency.percentMul(params.avgCollateralFactor.dewadify())) *
-    //     params.debtAssetUnit) / (params.closeFactor - vars.liquidationBonusProduct)
-    //   : params.totalDebtInBaseCurrency;
     vars.closeFactorDebt = params.calculateCloseFactorDebt();
-
-    // console.log('LL closeFactorDebt %e', vars.closeFactorDebt);
-    // console.log('LL maxLiquidatableDebt %e', vars.maxLiquidatableDebt);
-    // console.log('LL debtToCover %e', vars.maxLiquidatableDebt);
 
     vars.maxLiquidatableDebt = vars.maxLiquidatableDebt > vars.closeFactorDebt
       ? vars.closeFactorDebt
@@ -94,12 +75,6 @@ library LiquidationLogic {
       .percentMul(params.collateralFactor)
       .fromBps();
 
-    console.log(
-      'LL effectiveLiquidationPenalty %e %e',
-      effectiveLiquidationPenalty,
-      (params.liquidationBonus).percentMul(params.collateralFactor).wadify().fromBps()
-    );
-
     // Return default max uint if:
     // - penalty exceeds or equals the close factor, ie liquidation cannot restore solvency efficiently (negative denominator)
     // - debt asset price is 0
@@ -107,23 +82,11 @@ library LiquidationLogic {
       return type(uint256).max;
     }
 
-    console.log('LL num1 %e', params.totalDebtInBaseCurrency.wadMul(params.closeFactor));
-    console.log(
-      'LL num2 %e',
-      params.totalCollateralInBaseCurrency.percentMul(params.avgCollateralFactor.dewadify())
-    );
-    console.log('LL denom1 %e', params.closeFactor);
-    console.log('LL denom2 %e', effectiveLiquidationPenalty);
-
-    console.log('LL units: %e price: %e', params.debtAssetUnit, params.debtAssetPrice);
-
     uint256 closeFactorDebt = ((params.totalDebtInBaseCurrency.wadMul(params.closeFactor) -
       params.totalCollateralInBaseCurrency.percentMul(params.avgCollateralFactor.dewadify())) *
       params.debtAssetUnit) /
       ((params.closeFactor - effectiveLiquidationPenalty) * params.debtAssetPrice) +
       1; // add 1 to ensure HF > close factor
-
-    // console.log('new calc %e %e', newCalc, closeFactorDebt, newCalc > closeFactorDebt);
 
     return closeFactorDebt;
   }

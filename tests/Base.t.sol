@@ -745,7 +745,7 @@ abstract contract Base is Test {
     assertEq(spoke.getLiquidationConfig().closeFactor, newCloseFactor);
   }
 
-  function getCloseFactor(ISpoke spoke) internal returns (uint256) {
+  function getCloseFactor(ISpoke spoke) internal view returns (uint256) {
     DataTypes.LiquidationConfig memory liqConfig = spoke.getLiquidationConfig();
     return liqConfig.closeFactor;
   }
@@ -811,7 +811,7 @@ abstract contract Base is Test {
     return spoke.getReserve(reserveId);
   }
 
-  function getAssetInfo(uint256 assetId) internal view returns (DataTypes.Asset memory) {
+  function getAssetInfo(uint256 assetId) internal pure returns (DataTypes.Asset memory) {
     revert('implement me');
 
     // DataTypes.Asset memory asset;
@@ -897,7 +897,7 @@ abstract contract Base is Test {
     uint256 baseDebt,
     uint256 premiumDebt,
     uint256 amount
-  ) internal view returns (uint256, uint256) {
+  ) internal pure returns (uint256, uint256) {
     if (amount == type(uint256).max) {
       return (baseDebt, premiumDebt);
     }
@@ -915,7 +915,7 @@ abstract contract Base is Test {
     address user,
     uint256 expectedSuppliedAmount,
     string memory when
-  ) internal {
+  ) internal view {
     uint256 expectedSuppliedShares = hub.convertToSuppliedShares(assetId, expectedSuppliedAmount);
     assertEq(
       hub.getAssetSuppliedShares(assetId),
@@ -975,7 +975,7 @@ abstract contract Base is Test {
     uint256 amount,
     uint256 assetPrice,
     uint256 assetUnit
-  ) internal view returns (uint256) {
+  ) internal pure returns (uint256) {
     return (amount * assetPrice).wadify() / assetUnit;
   }
 
@@ -995,7 +995,7 @@ abstract contract Base is Test {
     uint256 amount,
     uint256 assetPrice,
     uint256 assetUnit
-  ) internal view returns (uint256) {
+  ) internal pure returns (uint256) {
     return ((amount * assetUnit) / assetPrice).dewadify();
   }
 
