@@ -9,7 +9,7 @@ contract LiquidationCallProtocolFeeTest is SpokeLiquidationBase {
   using PercentageMath for uint256;
   using PercentageMathExtended for uint256;
 
-  function test_lpfp() public {
+  function test_liquidationCall_protocolFee1() public {
     test_liquidationCall_fuzz_protocolFee1(
       DataTypes.LiquidationConfig({
         closeFactor: 1e18,
