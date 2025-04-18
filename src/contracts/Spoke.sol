@@ -373,8 +373,6 @@ contract Spoke is ISpoke {
         vars.premiumDebt
       );
 
-      console.log('debt liq', vars.baseDebtToLiquidate, vars.premiumDebtToLiquidate);
-
       // settle debt reserve's premium debt
       vars.userDebtPremiumDrawnShares = userDebtPosition.premiumDrawnShares;
       vars.userDebtPremiumOffset = userDebtPosition.premiumOffset;
@@ -384,7 +382,15 @@ contract Spoke is ISpoke {
       userDebtPosition.premiumOffset = 0;
       userDebtPosition.realizedPremium = vars.premiumDebt - vars.premiumDebtToLiquidate;
 
-      // settle collateral reserve's premium debt
+      _refreshPremiumDebt(
+        debtReserve,
+        -int256(vars.userDebtPremiumDrawnShares),
+        -int256(vars.userDebtPremiumOffset),
+        _signedDiff(userDebtPosition.realizedPremium, vars.userDebtRealizedPremium)
+      );
+
+      // todo: rm later to opt
+      // optional: settle collateral reserve's premium debt
       vars.userCollateralPremiumDrawnShares = userCollateralPosition.premiumDrawnShares;
       vars.userCollateralPremiumOffset = userCollateralPosition.premiumOffset;
       vars.accruedCollateralPremium =
@@ -397,20 +403,6 @@ contract Spoke is ISpoke {
       userCollateralPosition.premiumDrawnShares = 0;
       userCollateralPosition.premiumOffset = 0;
       userCollateralPosition.realizedPremium += vars.accruedCollateralPremium;
-
-      // finish first loop, can update spoke user internal accounting
-      // pass summed userDebtPremiumDrawnShares, userDebtPremiumOffset, user premium
-      // pass summed userCollateralPremiumDrawnShares, userCollateralPremiumOffset, user premium
-
-      // outside first loop to refresh for all users
-
-      // sum across an refresh once for debt reserve
-      _refreshPremiumDebt(
-        debtReserve,
-        -int256(vars.userDebtPremiumDrawnShares),
-        -int256(vars.userDebtPremiumOffset),
-        _signedDiff(userDebtPosition.realizedPremium, vars.userDebtRealizedPremium)
-      );
 
       _refreshPremiumDebt(
         collateralReserve,
@@ -432,6 +424,7 @@ contract Spoke is ISpoke {
       vars.totalRestoredShares += vars.restoredShares;
 
       // liquidate collateral
+      // todo: opt when treasury accounting is completed
       vars.withdrawnShares = HUB.remove(
         collateralReserve.assetId,
         vars.collateralToLiquidate + vars.liquidationProtocolFeeAmount,
@@ -464,10 +457,6 @@ contract Spoke is ISpoke {
           userCollateralPosition.premiumDrawnShares
         );
 
-      // need to return: maybe just send full vars struct
-      // - new user rp. not needed, can only calc outside of the method
-      // - enough info to refresh premium debt
-
       _notifyRiskPremiumUpdate(vars.debtAssetId, users[vars.i], vars.newUserRiskPremium);
 
       vars.totalUserDebtPremiumDrawnShares += int256(vars.userDebtPremiumDrawnShares);
@@ -482,9 +471,6 @@ contract Spoke is ISpoke {
         ++vars.i;
       }
     }
-
-    // console.log('debtReserve', debtReserve.baseDrawnShares, vars.totalRestoredShares);
-    // console.log('collateralReserve', collateralReserve.suppliedShares, vars.totalWithdrawnShares);
 
     // rm when dupe reserve accounting is rm
     debtReserve.baseDrawnShares -= vars.totalRestoredShares;
