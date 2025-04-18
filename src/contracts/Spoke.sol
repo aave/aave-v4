@@ -351,9 +351,7 @@ contract Spoke is ISpoke {
     vars.debtAssetId = debtReserve.assetId;
     (vars.baseDebt, vars.premiumDebt) = _getUserDebt(userDebtPosition, vars.debtAssetId);
 
-    DataTypes.TempDebug memory debt;
-    (debt.rBaseDebt, debt.rPremiumDebt) = _getReserveDebt(debtReserve);
-    (debt.assetBaseDebt, debt.assetPremiumDebt) = _getReserveDebt(debtReserve);
+    console.log('debt', vars.baseDebt, vars.premiumDebt);
 
     (
       vars.collateralToLiquidate,
@@ -368,6 +366,8 @@ contract Spoke is ISpoke {
       vars.baseDebt,
       vars.premiumDebt
     );
+
+    console.log('debt liq', vars.baseDebtToLiquidate, vars.premiumDebtToLiquidate);
 
     // settle debt reserve's premium debt
     vars.userDebtPremiumDrawnShares = userDebtPosition.premiumDrawnShares;
@@ -389,7 +389,10 @@ contract Spoke is ISpoke {
     vars.userCollateralPremiumDrawnShares = userCollateralPosition.premiumDrawnShares;
     vars.userCollateralPremiumOffset = userCollateralPosition.premiumOffset;
     vars.accruedCollateralPremium =
-      HUB.convertToDrawnAssets(vars.collateralAssetId, vars.userCollateralPremiumDrawnShares) -
+      HUB.convertToPremiumDrawnAssets(
+        vars.collateralAssetId,
+        vars.userCollateralPremiumDrawnShares
+      ) -
       vars.userCollateralPremiumOffset; // assets(premiumShares) - offset should never be < 0
 
     userCollateralPosition.premiumDrawnShares = 0;
@@ -432,7 +435,7 @@ contract Spoke is ISpoke {
     vars.userDebtPremiumDrawnShares = userDebtPosition.premiumDrawnShares = userDebtPosition
       .baseDrawnShares
       .percentMul(vars.newUserRiskPremium);
-    vars.userDebtPremiumOffset = userDebtPosition.premiumOffset = HUB.convertToDrawnAssets(
+    vars.userDebtPremiumOffset = userDebtPosition.premiumOffset = HUB.convertToPremiumDrawnAssets(
       vars.debtAssetId,
       userDebtPosition.premiumDrawnShares
     );
@@ -449,14 +452,17 @@ contract Spoke is ISpoke {
       vars.newUserRiskPremium
     );
     vars.userCollateralPremiumOffset = userCollateralPosition.premiumOffset = HUB
-      .convertToDrawnAssets(vars.collateralAssetId, userCollateralPosition.premiumDrawnShares);
+      .convertToPremiumDrawnAssets(
+        vars.collateralAssetId,
+        userCollateralPosition.premiumDrawnShares
+      );
     _refreshPremiumDebt(
       collateralReserve,
       int256(vars.userCollateralPremiumDrawnShares),
       int256(vars.userCollateralPremiumOffset),
       0
     );
-
+    // duplicates update for collateralAssetId
     _notifyRiskPremiumUpdate(vars.debtAssetId, user, vars.newUserRiskPremium);
 
     return (
@@ -536,8 +542,8 @@ contract Spoke is ISpoke {
     }
 
     (vars.baseDebtToLiquidate, vars.premiumDebtToLiquidate) = _calculateRestoreAmount(
-      vars.baseDebt,
-      vars.premiumDebt,
+      baseDebt,
+      premiumDebt,
       vars.actualDebtToLiquidate
     );
 

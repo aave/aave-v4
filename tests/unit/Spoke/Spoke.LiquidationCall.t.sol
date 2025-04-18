@@ -51,6 +51,8 @@ contract LiquidationCallTest is SpokeBase {
       spoke1.getReserveTotalDebt(state.wethReserveId)
     );
 
+    (uint256 baseDebt, uint256 premDebt) = spoke1.getUserDebt(state.wethReserveId, alice);
+
     // interest accrual
     skip(365 days);
 
@@ -4313,10 +4315,11 @@ contract LiquidationCallTest is SpokeBase {
   // todo: test w diff combos of decimals
   // test with user's new risk premium post-liquidation
   // ie time accruing so premium debt accrues
+  // accrual with settled premium debt
+  // accrual without settled premium debt
   // test w HF due to debt interest growing
   // test w HF due to debt asset price drop
   // tests with Liq Threshold == close factor
   // tests with Liq Threshold < close factor
-  // variable liquidation bonus
   // test for same asset supplied/borrowed
 }

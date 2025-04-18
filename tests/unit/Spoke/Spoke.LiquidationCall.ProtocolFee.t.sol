@@ -165,7 +165,7 @@ contract LiquidationCallProtocolFeeTest is SpokeLiquidationBase {
       state.debt.balanceBefore - state.debt.balanceAfter
     );
 
-    _assertLpfpEarned(state, 'test');
+    _assertLpfpEarned(state, label);
   }
 
   function _assertLpfpEarned(
