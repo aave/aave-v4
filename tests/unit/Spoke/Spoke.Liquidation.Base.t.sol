@@ -25,6 +25,7 @@ contract SpokeLiquidationBase is SpokeBase {
     uint256 liquidationBonus;
     uint256 collateralAssetId;
     uint256 debtAssetId;
+    uint256 liquidationProtocolFeePercentage;
     DataTypes.Reserve collateralReserve;
     DataTypes.Reserve debtReserve;
   }
@@ -131,5 +132,23 @@ contract SpokeLiquidationBase is SpokeBase {
     //     )
     //   ).wadDiv(desiredHf).fromBps() -
     //   totalDebtBase;
+  }
+
+  function _bound(
+    DataTypes.LiquidationConfig memory liqConfig
+  ) internal pure returns (DataTypes.LiquidationConfig memory) {
+    liqConfig.closeFactor = bound(
+      liqConfig.closeFactor,
+      HEALTH_FACTOR_LIQUIDATION_THRESHOLD,
+      MAX_CLOSE_FACTOR
+    );
+    liqConfig.healthFactorBonusThreshold = bound(
+      liqConfig.healthFactorBonusThreshold,
+      0.5e18,
+      HEALTH_FACTOR_LIQUIDATION_THRESHOLD - 1
+    );
+    liqConfig.liquidationBonusFactor = bound(liqConfig.liquidationBonusFactor, 0, 100_00);
+
+    return liqConfig;
   }
 }

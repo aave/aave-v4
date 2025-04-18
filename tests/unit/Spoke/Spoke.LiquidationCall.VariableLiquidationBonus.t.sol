@@ -215,24 +215,6 @@ contract LiquidationCallVariableLiquidationBonusTest is SpokeLiquidationBase {
     _assertLiquidationBonusEarned(state, label);
   }
 
-  function _bound(
-    DataTypes.LiquidationConfig memory liqConfig
-  ) internal pure returns (DataTypes.LiquidationConfig memory) {
-    liqConfig.closeFactor = bound(
-      liqConfig.closeFactor,
-      HEALTH_FACTOR_LIQUIDATION_THRESHOLD,
-      MAX_CLOSE_FACTOR
-    );
-    liqConfig.healthFactorBonusThreshold = bound(
-      liqConfig.healthFactorBonusThreshold,
-      0.5e18,
-      HEALTH_FACTOR_LIQUIDATION_THRESHOLD - 1
-    );
-    liqConfig.liquidationBonusFactor = bound(liqConfig.liquidationBonusFactor, 0, 100_00);
-
-    return liqConfig;
-  }
-
   function _assertLiquidationBonusEarned(
     LiquidationTestLocalParams memory state,
     string memory label
