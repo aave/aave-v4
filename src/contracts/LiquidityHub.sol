@@ -228,10 +228,11 @@ contract LiquidityHub is ILiquidityHub {
     int256 realizedPremiumDelta
   ) external {
     // todo only spoke
-    uint256 totalDebt = _assets[assetId].totalDebt();
+    (uint256 baseDebt, uint256 premiumDebt) = _assets[assetId].debt();
     _refresh(assetId, msg.sender, premiumDrawnShareDelta, premiumOffsetDelta, realizedPremiumDelta);
-    uint256 totalDebtAfter = _assets[assetId].totalDebt();
-    require(totalDebtAfter >= totalDebt && totalDebtAfter - totalDebt <= 2, InvalidDebtChange()); // can increase due to precision
+    (uint256 baseDebtAfter, uint256 premiumDebtAfter) = _assets[assetId].debt();
+    // can increase due to precision loss on premium debt (base unchanged)
+    require(baseDebtAfter == baseDebt && premiumDebtAfter - premiumDebt <= 2, InvalidDebtChange());
   }
 
   /// @inheritdoc ILiquidityHub
@@ -242,6 +243,7 @@ contract LiquidityHub is ILiquidityHub {
     int256 realizedPremiumDelta
   ) external {
     // todo: merge with repay and validate total debt only goes down by `premiumDebtRestored`
+    // which ensures reduced assets are added to available liquidity
     // todo: only spoke
     uint256 baseDebt = _assets[assetId].baseDebt();
     _refresh(assetId, msg.sender, premiumDrawnShareDelta, premiumOffsetDelta, realizedPremiumDelta);

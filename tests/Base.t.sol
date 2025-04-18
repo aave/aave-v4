@@ -743,11 +743,7 @@ abstract contract Base is Test {
     string memory when
   ) internal pure {
     if (!allWithdrawn) {
-      assertGe(
-        newRate,
-        oldRate,
-        string(abi.encodePacked('supply rate monotonically increasing ', when))
-      );
+      assertGe(newRate, oldRate, string.concat('supply rate monotonically increasing ', when));
     }
   }
 
