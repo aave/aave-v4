@@ -373,7 +373,7 @@ contract LiquidityHub is ILiquidityHub {
     require(assetsList[asset.id] != IERC20(address(0)), AssetNotListed());
     require(
       spoke.config.supplyCap == type(uint256).max ||
-        asset.toSuppliedAssetsDown(spoke.suppliedShares) + amount <= spoke.config.supplyCap,
+        asset.toSuppliedAssetsUp(spoke.suppliedShares) + amount <= spoke.config.supplyCap,
       SupplyCapExceeded(spoke.config.supplyCap)
     );
   }
