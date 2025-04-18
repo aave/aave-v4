@@ -639,6 +639,8 @@ contract SpokeRepayTest is SpokeBase {
       'bob dai final balance'
     );
     assertEq(tokenList.weth.balanceOf(bob), bobWethBalanceBefore);
+
+    _repayAll(spoke1, _daiReserveId);
   }
 
   /// repay all or a portion of total debt - handles partial base debt repay case
@@ -766,6 +768,8 @@ contract SpokeRepayTest is SpokeBase {
     );
     assertGe(daiRepayAmount, baseRestored + premiumRestored); // excess amount donated
     assertEq(tokenList.weth.balanceOf(bob), bobWethBalanceBefore);
+
+    _repayAll(spoke1, _daiReserveId);
   }
 
   /// repay all or a portion of debt interest
@@ -1477,6 +1481,12 @@ contract SpokeRepayTest is SpokeBase {
     } else {
       assertApproxEqAbs(bobWbtcAfter.totalDebt, bobWbtcBefore.totalDebt, 3);
     }
+    vm.stopPrank();
+
+    _repayAll(spoke1, _daiReserveId);
+    _repayAll(spoke1, _wethReserveId);
+    _repayAll(spoke1, _usdxReserveId);
+    _repayAll(spoke1, _wbtcReserveId);
   }
 
   // Borrow X amount, receive Y Shares. Repay all, ensure Y shares repaid

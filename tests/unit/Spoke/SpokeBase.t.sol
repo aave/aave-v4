@@ -284,6 +284,36 @@ contract SpokeBase is Base {
     return (state.collateralSupplyShares, state.borrowSupplyShares);
   }
 
+  function _repayAll(
+    ISpoke spoke,
+    function(ISpoke) view returns (uint256) _assetReserveId
+  ) internal {
+    uint256 reserveId = _assetReserveId(spoke);
+    uint256 assetId = spoke.getReserve(reserveId).assetId;
+    uint256 assetDebtWithoutSpoke = hub.getAssetTotalDebt(assetId) -
+      hub.getSpokeTotalDebt(assetId, address(spoke));
+
+    address[4] memory users = [alice, bob, carol, derl];
+    for (uint256 i; i < users.length; ++i) {
+      address user = users[i];
+      uint256 debt = spoke.getUserTotalDebt(reserveId, user);
+      if (debt > 0) {
+        deal(address(hub.assetsList(assetId)), user, debt);
+        vm.prank(user);
+        spoke.repay(reserveId, debt);
+        assertEq(spoke.getUserTotalDebt(reserveId, user), 0, 'user debt not zero');
+      }
+    }
+
+    assertEq(spoke.getReserveTotalDebt(reserveId), 0, 'reserve total debt not zero');
+    assertEq(hub.getSpokeTotalDebt(assetId, address(spoke)), 0, 'hub spoke total debt not zero');
+    assertEq(
+      hub.getAssetTotalDebt(assetId),
+      assetDebtWithoutSpoke,
+      'hub asset total debt not settled'
+    );
+  }
+
   function loadReserveInfo(
     ISpoke spoke,
     uint256 reserveId

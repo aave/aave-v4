@@ -853,6 +853,8 @@ contract SpokeRepayScenarioTest is SpokeBase {
         'WETH supplied shares should remain unchanged'
       );
     }
+
+    _repayAll(spoke1, _daiReserveId);
   }
 
   function test_repay_two_users_repay_same_reserve(
@@ -970,6 +972,8 @@ contract SpokeRepayScenarioTest is SpokeBase {
         'WETH supplied shares should remain unchanged'
       );
     }
+
+    _repayAll(spoke1, _daiReserveId);
   }
 
   /// Borrow, repay, borrow more, repay
@@ -1184,6 +1188,8 @@ contract SpokeRepayScenarioTest is SpokeBase {
     assertEq(spoke1.getUserTotalDebt(_wethReserveId(spoke1), bob), 0);
 
     assertEq(tokenList.weth.balanceOf(bob), bobWethBalanceBefore);
+
+    _repayAll(spoke1, _daiReserveId);
   }
 
   function test_repay_partial_then_max() public {
