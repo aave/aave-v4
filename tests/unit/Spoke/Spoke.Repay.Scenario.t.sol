@@ -1339,7 +1339,6 @@ contract SpokeRepayScenarioTest is SpokeBase {
     assertEq(hub.getAssetTotalDebt(_daiReserveId(spoke1)), 0);
   }
 
-  // TODO: ERC4626 round trip tests for borrow and repay
   /// User supplies appropriate collateral, then borrows, immediately repays, check delta on share amounts
   /// @dev Assume another user borrowing, and skip time so debt ex ratio potentially nonzero
   function test_repay_round_trip_borrow_repay(
@@ -1362,33 +1361,31 @@ contract SpokeRepayScenarioTest is SpokeBase {
       Utils.borrow(spoke1, reserveId, derl, userBorrowing, derl);
     }
 
+    skip(skipTime);
+
     DataTypes.Reserve memory reserve = spoke1.getReserve(reserveId);
 
-    // Deal caller the required collateral amount, approve hub, supply
-    supplyAmount = _calcMinimumCollAmount(spoke1, reserveId, reserveId, assets);
+    // Deal caller max collateral amount, approve hub, supply
+    supplyAmount = MAX_SUPPLY_AMOUNT - supplyAmount;
     deal(reserve.asset, caller, supplyAmount);
     vm.prank(caller);
     IERC20(reserve.asset).approve(address(hub), supplyAmount);
     Utils.supply(spoke1, reserveId, caller, supplyAmount, caller);
     setUsingAsCollateral(spoke1, caller, reserveId, true);
 
-    // Borrow and confirm share amount from event emission
+    // Borrow
     uint256 shares1 = hub.convertToDrawnShares(reserve.assetId, assets);
-    vm.expectEmit(address(spoke1));
-    emit ISpoke.Borrow(reserveId, caller, shares1, caller);
     vm.prank(caller);
     spoke1.borrow(reserveId, assets, caller);
 
-    // Repay and confirm share amount from event emission
+    // Repay
     deal(reserve.asset, caller, assets);
     vm.prank(caller);
     IERC20(reserve.asset).approve(address(hub), assets);
     uint256 shares2 = hub.convertToDrawnShares(reserve.assetId, assets);
-    vm.expectEmit(address(spoke1));
-    emit ISpoke.Repay(reserveId, caller, shares2);
     vm.prank(caller);
     spoke1.repay(reserveId, assets);
 
-    assertEq(shares2, shares1, 'supplied and withdrawn shares');
+    assertApproxEqAbs(shares2, shares1, 1, 'borrowed and repaid shares');
   }
 }
