@@ -171,7 +171,7 @@ contract LiquidationAvailableCollateralToLiquidateTest is Base {
 
   function _setFunctionArgs(
     TestAvailableCollateralParams memory params
-  ) internal returns (DataTypes.LiquidationCallLocalVars memory result) {
+  ) internal pure returns (DataTypes.LiquidationCallLocalVars memory result) {
     result.debtAssetPrice = params.debtAssetPrice;
     result.actualDebtToLiquidate = params.actualDebtToLiquidate;
     result.collateralAssetUnit = params.collateralAssetUnit;
@@ -185,7 +185,7 @@ contract LiquidationAvailableCollateralToLiquidateTest is Base {
   function _bound(
     TestAvailableCollateralParams memory params,
     FieldsToSkip memory skip
-  ) internal returns (TestAvailableCollateralParams memory) {
+  ) internal pure returns (TestAvailableCollateralParams memory) {
     if (!_isSkipped(skip, SKIP_DEBT_ASSET_PRICE)) {
       params.debtAssetPrice = bound(params.debtAssetPrice, 1, MAX_ASSET_PRICE);
     }
@@ -244,7 +244,7 @@ contract LiquidationAvailableCollateralToLiquidateTest is Base {
   function _calcLiquidationProtocolFeeAmount(
     TestAvailableCollateralParams memory params,
     uint256 collateralAmount
-  ) internal returns (uint256, uint256) {
+  ) internal pure returns (uint256, uint256) {
     uint256 bonusCollateral = collateralAmount -
       collateralAmount.percentDiv(params.liquidationBonus);
 
@@ -257,7 +257,7 @@ contract LiquidationAvailableCollateralToLiquidateTest is Base {
 
   function _calcDebtAmountNeeded(
     TestAvailableCollateralParams memory params
-  ) internal returns (uint256) {
+  ) internal pure returns (uint256) {
     return
       ((params.collateralAssetPrice * params.userCollateralBalance * params.debtAssetUnit) /
         (params.debtAssetPrice * params.collateralAssetUnit)).percentDiv(params.liquidationBonus);

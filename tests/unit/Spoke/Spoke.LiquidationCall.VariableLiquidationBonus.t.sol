@@ -47,7 +47,7 @@ contract LiquidationCallVariableLiquidationBonusTest is SpokeLiquidationBase {
 
     supplyAmount = bound(supplyAmount, 1e8, MAX_SUPPLY_AMOUNT / 1e4); // bounds to ensure HF is below desiredHf within precision
 
-    LiquidationTestLocalParams memory state = _fuzz_liqCall(
+    LiquidationTestLocalParams memory state = _execLiqCallTest(
       liqConfig,
       liqBonus,
       supplyAmount,
@@ -98,7 +98,7 @@ contract LiquidationCallVariableLiquidationBonusTest is SpokeLiquidationBase {
 
     supplyAmount = bound(supplyAmount, 1e13, MAX_SUPPLY_AMOUNT / 1e4); // bounds to ensure HF is below desiredHf within precision
 
-    LiquidationTestLocalParams memory state = _fuzz_liqCall(
+    LiquidationTestLocalParams memory state = _execLiqCallTest(
       liqConfig,
       liqBonus,
       supplyAmount,
@@ -123,7 +123,7 @@ contract LiquidationCallVariableLiquidationBonusTest is SpokeLiquidationBase {
 
     supplyAmount = bound(supplyAmount, 1e7, MAX_SUPPLY_AMOUNT); // bounds to ensure HF is below desiredHf within precision
 
-    LiquidationTestLocalParams memory state = _fuzz_liqCall(
+    LiquidationTestLocalParams memory state = _execLiqCallTest(
       liqConfig,
       liqBonus,
       supplyAmount,
@@ -148,7 +148,7 @@ contract LiquidationCallVariableLiquidationBonusTest is SpokeLiquidationBase {
 
     supplyAmount = bound(supplyAmount, 1e16, MAX_SUPPLY_AMOUNT); // bounds to ensure HF is below desiredHf within precision
 
-    LiquidationTestLocalParams memory state = _fuzz_liqCall(
+    LiquidationTestLocalParams memory state = _execLiqCallTest(
       liqConfig,
       liqBonus,
       supplyAmount,
@@ -160,68 +160,6 @@ contract LiquidationCallVariableLiquidationBonusTest is SpokeLiquidationBase {
 
     _assertLiquidationBonusEarned(state, 'test_liquidationCall_fuzz_variableLB dai/usdx');
   }
-
-  // function _fuzz_liqCall(
-  //   DataTypes.LiquidationConfig memory liqConfig,
-  //   uint256 liqBonus,
-  //   uint256 supplyAmount,
-  //   uint256 desiredHf,
-  //   uint256 collateralReserveId,
-  //   uint256 debtReserveId,
-  //   string memory label
-  // ) internal {
-  //   LiquidationTestLocalParams memory state;
-  //   state.collateralReserve = spoke1.getReserve(collateralReserveId);
-  //   state.debtReserve = spoke1.getReserve(debtReserveId);
-
-  //   liqConfig = _bound(liqConfig);
-  //   liqBonus = bound(liqBonus, MIN_LIQUIDATION_BONUS, MAX_LIQUIDATION_BONUS);
-  //   desiredHf = bound(desiredHf, 0.1e18, HEALTH_FACTOR_LIQUIDATION_THRESHOLD - 1);
-
-  //   _config = liqConfig;
-  //   spoke1.updateLiquidationConfig(_config);
-
-  //   updateLiquidationBonus(spoke1, collateralReserveId, liqBonus);
-  //   Utils.supplyCollateral({
-  //     spoke: spoke1,
-  //     reserveId: collateralReserveId,
-  //     user: alice,
-  //     amount: supplyAmount,
-  //     onBehalfOf: alice
-  //   });
-
-  //   (uint256 finalHf, uint256 requiredDebtAmount) = _borrowToBeBelowHf(
-  //     spoke1,
-  //     alice,
-  //     debtReserveId,
-  //     desiredHf
-  //   );
-  //   state.liquidationBonus = _getVariableLiquidationBonus(spoke1, collateralReserveId, finalHf);
-
-  //   state.debt.balanceBefore = spoke1.getUserTotalDebt(debtReserveId, alice);
-
-  //   state.liquidator.balanceBefore = IERC20(state.collateralReserve.asset).balanceOf(LIQUIDATOR);
-  //   state.treasury.balanceBefore = IERC20(state.collateralReserve.asset).balanceOf(TREASURY);
-
-  //   vm.prank(LIQUIDATOR);
-  //   spoke1.liquidationCall(collateralReserveId, debtReserveId, alice, requiredDebtAmount);
-
-  //   state.liquidator.balanceAfter = IERC20(state.collateralReserve.asset).balanceOf(LIQUIDATOR);
-  //   state.treasury.balanceAfter = IERC20(state.collateralReserve.asset).balanceOf(TREASURY);
-  //   state.debt.balanceAfter = spoke1.getUserTotalDebt(debtReserveId, alice);
-
-  //   // convert
-  //   state.collateralBaseDiff = _convertAmountToBaseCurrency(
-  //     state.collateralReserve.assetId,
-  //     state.liquidator.balanceAfter - state.liquidator.balanceBefore
-  //   );
-  //   state.debtBaseDiff = _convertAmountToBaseCurrency(
-  //     state.debtReserve.assetId,
-  //     state.debt.balanceBefore - state.debt.balanceAfter
-  //   );
-
-  //   _assertLiquidationBonusEarned(state, label);
-  // }
 
   function _assertLiquidationBonusEarned(
     LiquidationTestLocalParams memory state,

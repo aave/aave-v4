@@ -140,7 +140,7 @@ contract Spoke is ISpoke {
     DataTypes.Reserve storage reserve = _reserves[reserveId];
     DataTypes.UserPosition storage userPosition = _userPositions[msg.sender][reserveId];
 
-    _validateSupply(reserve, amount);
+    _validateSupply(reserve);
 
     uint256 suppliedShares = HUB.add(reserve.assetId, amount, msg.sender);
 
@@ -724,7 +724,7 @@ contract Spoke is ISpoke {
   }
 
   // internal
-  function _validateSupply(DataTypes.Reserve storage reserve, uint256 amount) internal view {
+  function _validateSupply(DataTypes.Reserve storage reserve) internal view {
     require(reserve.asset != address(0), ReserveNotListed());
     require(reserve.config.active, ReserveNotActive());
     require(!reserve.config.paused, ReservePaused());
@@ -783,7 +783,7 @@ contract Spoke is ISpoke {
     );
   }
 
-  function _validateLiquidationConfig(DataTypes.LiquidationConfig calldata config) internal view {
+  function _validateLiquidationConfig(DataTypes.LiquidationConfig calldata config) internal pure {
     _validateCloseFactor(config.closeFactor);
     // if liquidationBonusFactor == 0, then variable liquidation bonus will not be applied
     require(
@@ -797,7 +797,7 @@ contract Spoke is ISpoke {
     );
   }
 
-  function _validateCloseFactor(uint256 closeFactor) internal view {
+  function _validateCloseFactor(uint256 closeFactor) internal pure {
     require(closeFactor >= HEALTH_FACTOR_LIQUIDATION_THRESHOLD, InvalidCloseFactor());
   }
 
@@ -826,7 +826,7 @@ contract Spoke is ISpoke {
 
   function _validateSetUsingAsCollateral(
     DataTypes.Reserve storage reserve,
-    DataTypes.UserPosition storage userPosition,
+    DataTypes.UserPosition storage userPosition, // todo: rm
     bool usingAsCollateral
   ) internal view {
     require(reserve.config.active, ReserveNotActive());

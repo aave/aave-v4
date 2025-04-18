@@ -128,7 +128,7 @@ contract SpokeLiquidationBase is SpokeBase {
     return liqConfig;
   }
 
-  function _fuzz_liqCall(
+  function _execLiqCallTest(
     DataTypes.LiquidationConfig memory liqConfig,
     uint256 liqBonus,
     uint256 supplyAmount,

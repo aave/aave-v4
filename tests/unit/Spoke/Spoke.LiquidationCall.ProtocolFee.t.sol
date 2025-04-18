@@ -9,6 +9,8 @@ contract LiquidationCallProtocolFeeTest is SpokeLiquidationBase {
   using PercentageMath for uint256;
   using PercentageMathExtended for uint256;
 
+  // todo: update tests to when treasury accounting is done
+  // check treasury accounting of fees instead of by token balance
   function test_liquidationCall_protocolFee1() public {
     test_liquidationCall_fuzz_protocolFee1(
       DataTypes.LiquidationConfig({
@@ -35,7 +37,7 @@ contract LiquidationCallProtocolFeeTest is SpokeLiquidationBase {
 
     supplyAmount = bound(supplyAmount, 1e11, MAX_SUPPLY_AMOUNT / 1e4); // bounds to ensure HF is below desiredHf within precision
 
-    LiquidationTestLocalParams memory state = _fuzz_liqCall(
+    LiquidationTestLocalParams memory state = _execLiqCallTest(
       liqConfig,
       liqBonus,
       supplyAmount,
@@ -60,7 +62,7 @@ contract LiquidationCallProtocolFeeTest is SpokeLiquidationBase {
 
     supplyAmount = bound(supplyAmount, 1e14, MAX_SUPPLY_AMOUNT / 1e4); // bounds to ensure HF is below desiredHf within precision
 
-    LiquidationTestLocalParams memory state = _fuzz_liqCall(
+    LiquidationTestLocalParams memory state = _execLiqCallTest(
       liqConfig,
       liqBonus,
       supplyAmount,
@@ -85,7 +87,7 @@ contract LiquidationCallProtocolFeeTest is SpokeLiquidationBase {
 
     supplyAmount = bound(supplyAmount, 1e5, MAX_SUPPLY_AMOUNT / 1e4); // bounds to ensure HF is below desiredHf within precision
 
-    LiquidationTestLocalParams memory state = _fuzz_liqCall(
+    LiquidationTestLocalParams memory state = _execLiqCallTest(
       liqConfig,
       liqBonus,
       supplyAmount,
@@ -97,78 +99,6 @@ contract LiquidationCallProtocolFeeTest is SpokeLiquidationBase {
 
     _assertLpfpEarned(state, 'test_liquidationCall_fuzz_protocolFee usdx/weth');
   }
-
-  // function _fuzz_liqCall(
-  //   DataTypes.LiquidationConfig memory liqConfig,
-  //   uint256 liqBonus,
-  //   uint256 supplyAmount,
-  //   uint256 desiredHf,
-  //   uint256 collateralReserveId,
-  //   uint256 debtReserveId,
-  //   uint256 liquidationProtocolFeePercentage
-  // ) internal returns (LiquidationTestLocalParams memory) {
-  //   LiquidationTestLocalParams memory state;
-  //   state.collateralReserve = spoke1.getReserve(collateralReserveId);
-  //   state.debtReserve = spoke1.getReserve(debtReserveId);
-
-  //   liqConfig = _bound(liqConfig);
-  //   liqBonus = bound(liqBonus, MIN_LIQUIDATION_BONUS, MAX_LIQUIDATION_BONUS);
-  //   desiredHf = bound(desiredHf, 0.1e18, HEALTH_FACTOR_LIQUIDATION_THRESHOLD - 1);
-  //   liquidationProtocolFeePercentage = bound(liquidationProtocolFeePercentage, 0, 100_00);
-
-  //   state.liquidationProtocolFeePercentage = liquidationProtocolFeePercentage;
-
-  //   _config = liqConfig;
-  //   spoke1.updateLiquidationConfig(_config);
-  //   updateLiquidationBonus(spoke1, collateralReserveId, liqBonus);
-  //   updateLiquidationProtocolFeePercentage(
-  //     spoke1,
-  //     collateralReserveId,
-  //     state.liquidationProtocolFeePercentage
-  //   );
-
-  //   Utils.supplyCollateral({
-  //     spoke: spoke1,
-  //     reserveId: collateralReserveId,
-  //     user: alice,
-  //     amount: supplyAmount,
-  //     onBehalfOf: alice
-  //   });
-
-  //   (uint256 finalHf, uint256 requiredDebtAmount) = _borrowToBeBelowHf(
-  //     spoke1,
-  //     alice,
-  //     debtReserveId,
-  //     desiredHf
-  //   );
-  //   state.liquidationBonus = _getVariableLiquidationBonus(spoke1, collateralReserveId, finalHf);
-
-  //   state.debt.balanceBefore = spoke1.getUserTotalDebt(debtReserveId, alice);
-  //   state.liquidator.balanceBefore = IERC20(state.collateralReserve.asset).balanceOf(LIQUIDATOR);
-  //   state.treasury.balanceBefore = IERC20(state.collateralReserve.asset).balanceOf(TREASURY);
-
-  //   vm.prank(LIQUIDATOR);
-  //   spoke1.liquidationCall(collateralReserveId, debtReserveId, alice, requiredDebtAmount);
-
-  //   state.liquidator.balanceAfter = IERC20(state.collateralReserve.asset).balanceOf(LIQUIDATOR);
-  //   state.debt.balanceAfter = spoke1.getUserTotalDebt(debtReserveId, alice);
-  //   state.treasury.balanceAfter = IERC20(state.collateralReserve.asset).balanceOf(TREASURY);
-
-  //   // convert
-  //   state.collateralBaseDiff = _convertAmountToBaseCurrency(
-  //     state.collateralReserve.assetId,
-  //     state.liquidator.balanceAfter -
-  //       state.liquidator.balanceBefore +
-  //       state.treasury.balanceAfter -
-  //       state.treasury.balanceBefore
-  //   );
-  //   state.debtBaseDiff = _convertAmountToBaseCurrency(
-  //     state.debtReserve.assetId,
-  //     state.debt.balanceBefore - state.debt.balanceAfter
-  //   );
-
-  //   return state;
-  // }
 
   function _assertLpfpEarned(
     LiquidationTestLocalParams memory state,

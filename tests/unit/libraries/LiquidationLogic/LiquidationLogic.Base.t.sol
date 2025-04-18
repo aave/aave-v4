@@ -44,7 +44,7 @@ contract LiquidationLogicBaseTest is Base {
 
   function _calcCloseFactorDebtZeroAvgCollateralFactor(
     TestCloseFactorDebtParams memory params
-  ) internal returns (uint256) {
+  ) internal pure returns (uint256) {
     uint256 effectiveLiquidationPenalty = (params.liquidationBonus.wadify())
       .percentMul(params.collateralFactor)
       .fromBps();
@@ -59,14 +59,14 @@ contract LiquidationLogicBaseTest is Base {
   function _calculateCloseFactorThreshold(
     uint256 liquidationBonus,
     uint256 collateralFactor
-  ) internal returns (uint256) {
+  ) internal pure returns (uint256) {
     return _calculateEffectiveLiquidationPenaltyThreshold(liquidationBonus, collateralFactor) + 1;
   }
 
   function _calculateEffectiveLiquidationPenaltyThreshold(
     uint256 liquidationBonus,
     uint256 collateralFactor
-  ) internal returns (uint256) {
+  ) internal pure returns (uint256) {
     return (liquidationBonus.wadify()).percentMul(collateralFactor).fromBps();
   }
 
@@ -80,7 +80,7 @@ contract LiquidationLogicBaseTest is Base {
 
   function _setFunctionArgs(
     TestCloseFactorDebtParams memory params
-  ) internal returns (DataTypes.LiquidationCallLocalVars memory result) {
+  ) internal pure returns (DataTypes.LiquidationCallLocalVars memory result) {
     result.liquidationBonus = params.liquidationBonus;
     result.collateralFactor = params.collateralFactor;
     result.closeFactor = params.closeFactor;
