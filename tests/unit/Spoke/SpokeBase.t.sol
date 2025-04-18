@@ -7,7 +7,14 @@ import {KeyValueListInMemory} from 'src/libraries/helpers/KeyValueListInMemory.s
 contract SpokeBase is Base {
   using PercentageMath for uint256;
   using WadRayMath for uint256;
+  using WadRayMathExtended for uint256;
   using KeyValueListInMemory for KeyValueListInMemory.List;
+
+  struct Debts {
+    uint256 baseDebt;
+    uint256 premiumDebt;
+    uint256 totalDebt;
+  }
 
   struct TestData {
     DataTypes.Reserve data;
@@ -73,6 +80,44 @@ contract SpokeBase is Base {
     uint256 reserveBaseDebtBefore;
     uint256 borrowerBaseDebtAfter;
     uint256 reserveBaseDebtAfter;
+  }
+
+  struct RepayMultipleLocal {
+    uint256 borrowAmount;
+    uint256 repayAmount;
+    DataTypes.UserPosition posBefore; // positionBefore
+    DataTypes.UserPosition posAfter; // positionAfter
+    uint256 premiumRestored;
+  }
+
+  struct Action {
+    uint256 supplyAmount;
+    uint256 borrowAmount;
+    uint256 repayAmount;
+    uint40 skipTime;
+  }
+
+  struct AssetInfo {
+    uint256 borrowAmount;
+    uint256 repayAmount;
+    uint256 premiumRestored;
+    uint256 suppliedShares;
+  }
+
+  struct UserAction {
+    uint256 suppliedShares;
+    uint256 borrowAmount;
+    uint256 repayAmount;
+    uint256 premiumRestored;
+    address user;
+  }
+
+  struct UserAssetInfo {
+    AssetInfo daiInfo;
+    AssetInfo wethInfo;
+    AssetInfo usdxInfo;
+    AssetInfo wbtcInfo;
+    address user;
   }
 
   function setUp() public virtual override {
@@ -361,9 +406,9 @@ contract SpokeBase is Base {
     uint256 assetId,
     DataTypes.UserPosition memory userPos
   ) internal view returns (DebtData memory userDebt) {
-    userDebt.premiumDebt =
-      userPos.realizedPremium +
-      (hub.convertToDrawnAssets(assetId, userPos.premiumDrawnShares) - userPos.premiumOffset);
+    uint256 accruedPremium = hub.convertToPremiumDrawnAssets(assetId, userPos.premiumDrawnShares) -
+      userPos.premiumOffset;
+    userDebt.premiumDebt = userPos.realizedPremium + accruedPremium;
     userDebt.baseDebt = hub.convertToDrawnAssets(assetId, userPos.baseDrawnShares);
     userDebt.totalDebt = userDebt.baseDebt + userDebt.premiumDebt;
   }
@@ -434,7 +479,7 @@ contract SpokeBase is Base {
     userPos.premiumDrawnShares = hub.convertToDrawnShares(assetId, debtAmount).percentMul(
       riskPremium
     );
-    userPos.premiumOffset = hub.convertToDrawnAssets(assetId, userPos.premiumDrawnShares);
+    userPos.premiumOffset = hub.convertToPremiumDrawnAssets(assetId, userPos.premiumDrawnShares);
     userPos.realizedPremium = expectedRealizedPremium;
     userPos.suppliedShares = hub.convertToSuppliedShares(assetId, suppliedAmount);
   }
@@ -448,7 +493,8 @@ contract SpokeBase is Base {
   ) internal view returns (uint256) {
     uint256 assetId = spoke.getReserve(reserveId).assetId;
     DataTypes.UserPosition memory userPos = getUserInfo(spoke, user, assetId);
-    return hub.convertToDrawnAssets(assetId, userPos.premiumDrawnShares) - userPos.premiumOffset;
+    return
+      hub.convertToPremiumDrawnAssets(assetId, userPos.premiumDrawnShares) - userPos.premiumOffset;
   }
 
   /// assert that realized premium matches naively calculated value
@@ -462,13 +508,13 @@ contract SpokeBase is Base {
     uint256 assetId = spoke.getReserve(reserveId).assetId;
     uint256 accruedBase = MathUtils
       .calculateLinearInterest(hub.getAsset(assetId).baseBorrowRate, lastTimestamp)
-      .rayMul(prevBaseDebt);
+      .rayMulUp(prevBaseDebt);
 
     // equivalent to multiplying by risk premium (RP = premium drawn shares / base drawn shares)
     assertApproxEqAbs(
       userPos.realizedPremium,
       ((accruedBase - prevBaseDebt) * (userPos.premiumDrawnShares)) / (userPos.baseDrawnShares),
-      1, // precision loss due to calcs in asset amount and conversion to
+      3, // precision loss due to calcs in asset amount and conversion to
       'realized premium naive calc'
     );
   }
@@ -498,14 +544,14 @@ contract SpokeBase is Base {
       assertEq(
         baseDebt,
         hub.convertToDrawnAssets(assetId, userData.baseDrawnShares),
-        string(abi.encodePacked('user ', i, ' base debt ', label))
+        string.concat('user ', vm.toString(i), ' base debt ', label)
       );
       assertEq(
         premiumDebt,
         userData.realizedPremium +
-          hub.convertToDrawnAssets(assetId, userData.premiumDrawnShares) -
+          hub.convertToPremiumDrawnAssets(assetId, userData.premiumDrawnShares) -
           userData.premiumOffset,
-        string(abi.encodePacked('user ', i, ' premium debt ', label))
+        string.concat('user ', vm.toString(i), ' premium debt ', label)
       );
     }
 
@@ -524,6 +570,52 @@ contract SpokeBase is Base {
       usersDebt.totalDebt,
       string.concat('reserve vs sum users total debt ', label)
     );
+  }
+
+  function _assertUserRpUnchanged(uint256 reserveId, ISpoke spoke, address user) internal view {
+    DataTypes.UserPosition memory pos = spoke.getUserPosition(reserveId, user);
+    uint256 riskPremiumStored = pos.premiumDrawnShares.percentDiv(pos.baseDrawnShares);
+    (uint256 riskPremiumCurrent, , , , ) = spoke.getUserAccountData(user);
+    assertEq(riskPremiumCurrent, riskPremiumStored, 'user risk premium mismatch');
+  }
+
+  function _boundUserAction(UserAction memory action) internal pure returns (UserAction memory) {
+    action.borrowAmount = bound(action.borrowAmount, 1, MAX_SUPPLY_AMOUNT / 8);
+    action.repayAmount = bound(action.repayAmount, 1, type(uint256).max);
+
+    return action;
+  }
+
+  function _bound(UserAssetInfo memory info) internal pure returns (UserAssetInfo memory) {
+    // Bound borrow amounts
+    info.daiInfo.borrowAmount = bound(info.daiInfo.borrowAmount, 1, MAX_SUPPLY_AMOUNT / 8);
+    info.wethInfo.borrowAmount = bound(info.wethInfo.borrowAmount, 1, MAX_SUPPLY_AMOUNT / 8);
+    info.usdxInfo.borrowAmount = bound(info.usdxInfo.borrowAmount, 1, MAX_SUPPLY_AMOUNT / 8);
+    info.wbtcInfo.borrowAmount = bound(info.wbtcInfo.borrowAmount, 1, MAX_SUPPLY_AMOUNT / 8);
+
+    // Bound repay amounts
+    info.daiInfo.repayAmount = bound(info.daiInfo.repayAmount, 1, type(uint256).max);
+    info.wethInfo.repayAmount = bound(info.wethInfo.repayAmount, 1, type(uint256).max);
+    info.usdxInfo.repayAmount = bound(info.usdxInfo.repayAmount, 1, type(uint256).max);
+    info.wbtcInfo.repayAmount = bound(info.wbtcInfo.repayAmount, 1, type(uint256).max);
+
+    return info;
+  }
+
+  function getUserDebt(
+    ISpoke spoke,
+    address user,
+    uint256 reserveId
+  ) internal view returns (Debts memory data) {
+    (data.baseDebt, data.premiumDebt) = spoke.getUserDebt(reserveId, user);
+    data.totalDebt = data.baseDebt + data.premiumDebt;
+  }
+
+  function assertEq(Debts memory a, Debts memory b) internal pure {
+    assertEq(a.baseDebt, b.baseDebt, 'base debt');
+    assertEq(a.premiumDebt, b.premiumDebt, 'premium debt');
+    assertEq(a.totalDebt, b.totalDebt, 'total debt');
+    assertEq(keccak256(abi.encode(a)), keccak256(abi.encode(b)), 'debt data'); // sanity
   }
 
   // function _calculateExpectedUserRP(address user, ISpoke spoke) internal view returns (uint256) {

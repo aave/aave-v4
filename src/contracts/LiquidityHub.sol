@@ -43,7 +43,7 @@ contract LiquidityHub is ILiquidityHub {
       premiumDrawnShares: 0,
       premiumOffset: 0,
       realizedPremium: 0,
-      baseDrawnAssets: 0,
+      baseDebtIndex: WadRayMath.RAY,
       lastUpdateTimestamp: block.timestamp,
       baseBorrowRate: 0, // todo check
       id: assetId, // todo rm
@@ -118,7 +118,7 @@ contract LiquidityHub is ILiquidityHub {
 
     asset.updateBorrowRate({liquidityAdded: amount, liquidityTaken: 0});
 
-    // todo: Mitigate inflation attack (burn some amount if first supply)
+    // todo: Mitigate inflation attack
     uint256 suppliedShares = asset.toSuppliedSharesDown(amount);
     require(suppliedShares != 0, InvalidSharesAmount());
 
@@ -177,7 +177,6 @@ contract LiquidityHub is ILiquidityHub {
 
     asset.availableLiquidity -= amount;
     asset.baseDrawnShares += drawnShares;
-    asset.baseDrawnAssets += amount;
 
     spoke.baseDrawnShares += drawnShares;
 
@@ -210,8 +209,8 @@ contract LiquidityHub is ILiquidityHub {
     uint256 baseDrawnSharesRestored = asset.toDrawnSharesDown(baseAmount);
 
     asset.availableLiquidity += totalRestoredAmount;
-    asset.baseDrawnAssets -= baseAmount;
     asset.baseDrawnShares -= baseDrawnSharesRestored;
+
     spoke.baseDrawnShares -= baseDrawnSharesRestored;
 
     assetsList[assetId].safeTransferFrom(from, address(this), totalRestoredAmount);
@@ -300,6 +299,13 @@ contract LiquidityHub is ILiquidityHub {
 
   function convertToDrawnShares(uint256 assetId, uint256 assets) external view returns (uint256) {
     return _assets[assetId].toDrawnSharesDown(assets);
+  }
+
+  function convertToPremiumDrawnAssets(
+    uint256 assetId,
+    uint256 shares
+  ) external view returns (uint256) {
+    return _assets[assetId].toDrawnAssetsDown(shares);
   }
 
   function getBaseInterestRate(uint256 assetId) public view returns (uint256) {
@@ -406,11 +412,11 @@ contract LiquidityHub is ILiquidityHub {
     DataTypes.SpokeData storage spoke,
     uint256 baseAmountRestored,
     uint256 premiumAmountRestored
-  ) internal {
+  ) internal view {
     require(baseAmountRestored + premiumAmountRestored != 0, InvalidRestoreAmount());
     require(asset.config.active, AssetNotActive());
     require(!asset.config.paused, AssetPaused());
-    (uint256 baseDebt, uint256 premiumDebt) = _getSpokeDebt(asset, spoke);
+    (uint256 baseDebt, ) = _getSpokeDebt(asset, spoke);
     require(baseAmountRestored <= baseDebt, SurplusAmountRestored(baseDebt));
     // we should have already restored premium debt
   }
@@ -443,9 +449,10 @@ contract LiquidityHub is ILiquidityHub {
     DataTypes.Asset storage asset,
     DataTypes.SpokeData storage spoke
   ) internal view returns (uint256, uint256) {
-    uint256 premiumDebt = spoke.realizedPremium +
-      (asset.toDrawnAssetsUp(spoke.premiumDrawnShares) - spoke.premiumOffset);
-    return (asset.toDrawnAssetsUp(spoke.baseDrawnShares), premiumDebt);
+    // sanity: utilize solc underflow check
+    uint256 accruedPremium = asset.toDrawnAssetsDown(spoke.premiumDrawnShares) -
+      spoke.premiumOffset;
+    return (asset.toDrawnAssetsUp(spoke.baseDrawnShares), spoke.realizedPremium + accruedPremium);
   }
 
   // handles underflow

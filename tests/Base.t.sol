@@ -7,11 +7,9 @@ import {console2 as console} from 'forge-std/console2.sol';
 import {LiquidityHub, ILiquidityHub} from 'src/contracts/LiquidityHub.sol';
 import {Spoke, ISpoke} from 'src/contracts/Spoke.sol';
 import {PercentageMath} from 'src/libraries/math/PercentageMath.sol';
-import {WadRayMath} from 'src/libraries/math/WadRayMath.sol';
-import {WadRayMathExtended} from 'src/libraries/math/WadRayMathExtended.sol'; // TODO: rm when merged from base
 import {PercentageMathExtended} from 'src/libraries/math/PercentageMathExtended.sol';
-import {SharesMath} from 'src/libraries/math/SharesMath.sol';
-import {MathUtils} from 'src/libraries/math/MathUtils.sol';
+import {WadRayMath} from 'src/libraries/math/WadRayMath.sol';
+import {WadRayMathExtended} from 'src/libraries/math/WadRayMathExtended.sol';
 import {SharesMath} from 'src/libraries/math/SharesMath.sol';
 import {MathUtils} from 'src/libraries/math/MathUtils.sol';
 import {DefaultReserveInterestRateStrategy, IDefaultInterestRateStrategy, IReserveInterestRateStrategy} from 'src/contracts/DefaultReserveInterestRateStrategy.sol';
@@ -612,28 +610,40 @@ abstract contract Base is Test {
     vm.stopPrank();
   }
 
-  function updateAssetActive(ILiquidityHub hub, uint256 assetId, bool newActiveFlag) internal {
-    DataTypes.AssetConfig memory assetConfig = hub.getAsset(assetId).config;
+  function updateAssetActive(
+    ILiquidityHub liquidityHub,
+    uint256 assetId,
+    bool newActiveFlag
+  ) internal {
+    DataTypes.AssetConfig memory assetConfig = liquidityHub.getAsset(assetId).config;
     assetConfig.active = newActiveFlag;
 
     vm.prank(HUB_ADMIN);
-    hub.updateAssetConfig(assetId, assetConfig);
+    liquidityHub.updateAssetConfig(assetId, assetConfig);
   }
 
-  function updateAssetPaused(ILiquidityHub hub, uint256 assetId, bool newPausedFlag) internal {
-    DataTypes.AssetConfig memory assetConfig = hub.getAsset(assetId).config;
+  function updateAssetPaused(
+    ILiquidityHub liquidityHub,
+    uint256 assetId,
+    bool newPausedFlag
+  ) internal {
+    DataTypes.AssetConfig memory assetConfig = liquidityHub.getAsset(assetId).config;
     assetConfig.paused = newPausedFlag;
 
     vm.prank(HUB_ADMIN);
-    hub.updateAssetConfig(assetId, assetConfig);
+    liquidityHub.updateAssetConfig(assetId, assetConfig);
   }
 
-  function updateAssetFrozen(ILiquidityHub hub, uint256 assetId, bool newFrozenFlag) internal {
-    DataTypes.AssetConfig memory assetConfig = hub.getAsset(assetId).config;
+  function updateAssetFrozen(
+    ILiquidityHub liquidityHub,
+    uint256 assetId,
+    bool newFrozenFlag
+  ) internal {
+    DataTypes.AssetConfig memory assetConfig = liquidityHub.getAsset(assetId).config;
     assetConfig.frozen = newFrozenFlag;
 
     vm.prank(HUB_ADMIN);
-    hub.updateAssetConfig(assetId, assetConfig);
+    liquidityHub.updateAssetConfig(assetId, assetConfig);
   }
 
   function updateReserveFrozenFlag(ISpoke spoke, uint256 reserveId, bool newFrozenFlag) internal {
@@ -786,14 +796,14 @@ abstract contract Base is Test {
   }
 
   function updateDrawCap(
-    ILiquidityHub hub,
+    ILiquidityHub liquidityHub,
     uint256 assetId,
     address spoke,
     uint256 newDrawCap
   ) internal {
-    DataTypes.SpokeConfig memory spokeConfig = hub.getSpokeConfig(assetId, spoke);
+    DataTypes.SpokeConfig memory spokeConfig = liquidityHub.getSpokeConfig(assetId, spoke);
     spokeConfig.drawCap = newDrawCap;
-    hub.updateSpokeConfig(assetId, spoke, spokeConfig);
+    liquidityHub.updateSpokeConfig(assetId, spoke, spokeConfig);
   }
 
   function getUserInfo(
@@ -893,18 +903,24 @@ abstract contract Base is Test {
   }
 
   /// @dev Helper function to calculate the amount of base and premium debt to restore
-  function _calculateRestoreAmount(
+  // @return baseDebtRestored amount of base debt to restore
+  // @return premiumDebtRestored amount of premium debt to restore
+  function _calculateExactRestoreAmount(
     uint256 baseDebt,
     uint256 premiumDebt,
-    uint256 amount
-  ) internal pure returns (uint256, uint256) {
-    if (amount == type(uint256).max) {
-      return (baseDebt, premiumDebt);
+    uint256 restoreAmount,
+    uint256 assetId
+  ) internal view returns (uint256, uint256) {
+    if (restoreAmount <= premiumDebt) {
+      return (0, restoreAmount);
     }
-    if (amount <= premiumDebt) {
-      return (0, amount);
-    }
-    return (amount - premiumDebt, premiumDebt);
+    uint256 baseDebtRestored = _min(baseDebt, restoreAmount - premiumDebt);
+    // round base debt to nearest whole share
+    baseDebtRestored = hub.convertToDrawnAssets(
+      assetId,
+      hub.convertToDrawnShares(assetId, baseDebtRestored)
+    );
+    return (baseDebtRestored, premiumDebt);
   }
 
   /// @dev Helper function to check consistent supplied amounts within accounting
@@ -1001,5 +1017,9 @@ abstract contract Base is Test {
 
   function _approxRelFromBps(uint256 bps) internal pure returns (uint256) {
     return (bps * 1e18) / 100_00;
+  }
+
+  function _min(uint256 a, uint256 b) internal pure returns (uint256) {
+    return a < b ? a : b;
   }
 }

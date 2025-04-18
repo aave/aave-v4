@@ -1,61 +1,57 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.0;
 
+import {WadRayMathExtended} from 'src/libraries/math/WadRayMathExtended.sol';
 import {DataTypes} from 'src/libraries/types/DataTypes.sol';
 import {MathUtils} from 'src/libraries/math/MathUtils.sol';
 import {SharesMath} from 'src/libraries/math/SharesMath.sol';
 import {PercentageMath} from 'src/libraries/math/PercentageMath.sol';
-import {WadRayMath} from 'src/libraries/math/WadRayMath.sol';
 
 library AssetLogic {
   using AssetLogic for DataTypes.Asset;
   using PercentageMath for uint256;
   using SharesMath for uint256;
-  using WadRayMath for uint256;
+  using WadRayMathExtended for uint256;
 
   // todo: option for cached object
-
   // todo: add virtual offset for inflation attack
-  // only include base drawn assets
-  function totalDrawnAssets(DataTypes.Asset storage asset) internal view returns (uint256) {
-    return asset.baseDebt();
-  }
 
-  function totalDrawnShares(DataTypes.Asset storage asset) internal view returns (uint256) {
-    return asset.baseDrawnShares;
-  }
-
-  // total drawn assets does not incl totalOutstandingPremium to accrue base rate separately
+  // debt exchange rate does not incl premiumDebt to accrue base rate separately
   function toDrawnAssetsUp(
     DataTypes.Asset storage asset,
     uint256 shares
   ) internal view returns (uint256) {
-    return shares.toAssetsUp(asset.totalDrawnAssets(), asset.totalDrawnShares());
+    return shares.rayMulUp(asset.previewIndex());
   }
   function toDrawnAssetsDown(
     DataTypes.Asset storage asset,
     uint256 shares
   ) internal view returns (uint256) {
-    return shares.toAssetsDown(asset.totalDrawnAssets(), asset.totalDrawnShares());
+    return shares.rayMulDown(asset.previewIndex());
   }
 
   function toDrawnSharesUp(
     DataTypes.Asset storage asset,
     uint256 assets
   ) internal view returns (uint256) {
-    return assets.toSharesUp(asset.totalDrawnAssets(), asset.totalDrawnShares());
+    return assets.rayDivUp(asset.previewIndex());
   }
   function toDrawnSharesDown(
     DataTypes.Asset storage asset,
     uint256 assets
   ) internal view returns (uint256) {
-    return assets.toSharesDown(asset.totalDrawnAssets(), asset.totalDrawnShares());
+    return assets.rayDivDown(asset.previewIndex());
+  }
+
+  function baseDebt(DataTypes.Asset storage asset) internal view returns (uint256) {
+    return asset.baseDrawnShares.rayMulUp(asset.previewIndex());
   }
 
   function premiumDebt(DataTypes.Asset storage asset) internal view returns (uint256) {
-    return
-      asset.realizedPremium +
-      (asset.toDrawnAssetsUp(asset.premiumDrawnShares) - asset.premiumOffset);
+    // sanity: utilize solc underflow check
+    uint256 accruedPremium = asset.toDrawnAssetsDown(asset.premiumDrawnShares) -
+      asset.premiumOffset;
+    return asset.realizedPremium + accruedPremium;
   }
 
   function totalDebt(DataTypes.Asset storage asset) internal view returns (uint256) {
@@ -101,7 +97,6 @@ library AssetLogic {
     return asset.baseBorrowRate;
   }
 
-  // expects accrued `baseDrawnAssets`
   function updateBorrowRate(
     DataTypes.Asset storage asset,
     uint256 liquidityAdded,
@@ -111,7 +106,7 @@ library AssetLogic {
       DataTypes.CalculateInterestRatesParams({
         liquidityAdded: liquidityAdded,
         liquidityTaken: liquidityTaken,
-        totalDebt: asset.baseDrawnAssets,
+        totalDebt: asset.baseDebt(),
         reserveFactor: 0, // TODO
         assetId: asset.id,
         virtualUnderlyingBalance: asset.availableLiquidity, // without current liquidity change
@@ -122,18 +117,18 @@ library AssetLogic {
 
   // @dev Utilizes existing `asset.baseBorrowRate`
   function accrue(DataTypes.Asset storage asset) internal {
-    asset.baseDrawnAssets = asset.baseDebt();
+    asset.baseDebtIndex = asset.previewIndex();
     asset.lastUpdateTimestamp = block.timestamp;
   }
 
-  function baseDebt(DataTypes.Asset storage asset) internal view returns (uint256) {
-    uint256 baseDrawnAssets = asset.baseDrawnAssets;
+  function previewIndex(DataTypes.Asset storage asset) internal view returns (uint256) {
+    uint256 baseDebtIndex = asset.baseDebtIndex;
     uint256 lastUpdateTimestamp = asset.lastUpdateTimestamp;
-    if (baseDrawnAssets == 0 || lastUpdateTimestamp == block.timestamp) {
-      return baseDrawnAssets;
+    if (lastUpdateTimestamp == block.timestamp) {
+      return baseDebtIndex;
     }
     return
-      baseDrawnAssets.rayMul(
+      baseDebtIndex.rayMulUp(
         MathUtils.calculateLinearInterest(asset.baseBorrowRate, uint40(lastUpdateTimestamp))
       );
   }
