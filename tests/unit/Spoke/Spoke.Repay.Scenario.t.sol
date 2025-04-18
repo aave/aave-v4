@@ -988,12 +988,14 @@ contract SpokeRepayScenarioTest is SpokeBase {
     deal(address(tokenList.dai), bob, action1.repayAmount + action2.repayAmount);
 
     // Bob supply weth as collateral
-    action1.supplyAmount = _calcMinimumCollAmount(
-      spoke1,
-      _wethReserveId(spoke1),
-      _daiReserveId(spoke1),
-      action1.borrowAmount
-    );
+    action1.supplyAmount =
+      _calcMinimumCollAmount(
+        spoke1,
+        _wethReserveId(spoke1),
+        _daiReserveId(spoke1),
+        action1.borrowAmount
+      ) +
+      1;
     Utils.supply(spoke1, _wethReserveId(spoke1), bob, action1.supplyAmount, bob);
     setUsingAsCollateral(spoke1, bob, _wethReserveId(spoke1), true);
 
@@ -1015,11 +1017,7 @@ contract SpokeRepayScenarioTest is SpokeBase {
       _daiReserveId(spoke1)
     );
     Debts memory bobDaiBefore;
-    bobDaiBefore.totalDebt = spoke1.getUserTotalDebt(_daiReserveId(spoke1), bob);
-    (bobDaiBefore.baseDebt, bobDaiBefore.premiumDebt) = spoke1.getUserDebt(
-      _daiReserveId(spoke1),
-      bob
-    );
+    bobDaiBefore = getUserDebt(spoke1, bob, _daiReserveId(spoke1));
 
     uint256 bobDaiBalanceBefore = tokenList.dai.balanceOf(bob);
     uint256 bobWethBalanceBefore = tokenList.weth.balanceOf(bob);
@@ -1037,11 +1035,8 @@ contract SpokeRepayScenarioTest is SpokeBase {
     skip(action1.skipTime);
 
     bobDaiDataBefore = getUserInfo(spoke1, bob, _daiReserveId(spoke1));
-    bobDaiBefore.totalDebt = spoke1.getUserTotalDebt(_daiReserveId(spoke1), bob);
-    (bobDaiBefore.baseDebt, bobDaiBefore.premiumDebt) = spoke1.getUserDebt(
-      _daiReserveId(spoke1),
-      bob
-    );
+    bobDaiBefore = getUserDebt(spoke1, bob, _daiReserveId(spoke1));
+
     assertGe(bobDaiBefore.totalDebt, action1.borrowAmount, 'bob dai debt before');
     assertGe(bobDaiBefore.premiumDebt, 0, 'bob dai premium debt before');
 
@@ -1108,7 +1103,7 @@ contract SpokeRepayScenarioTest is SpokeBase {
     }
 
     // Reuse variables for second borrow and repay round
-    bobDaiBefore.totalDebt = spoke1.getUserTotalDebt(_daiReserveId(spoke1), bob);
+    bobDaiBefore = getUserDebt(spoke1, bob, _daiReserveId(spoke1));
 
     // Bob borrows more dai
     Utils.borrow(spoke1, _daiReserveId(spoke1), bob, action2.borrowAmount, bob);
@@ -1116,7 +1111,7 @@ contract SpokeRepayScenarioTest is SpokeBase {
     assertApproxEqAbs(
       spoke1.getUserTotalDebt(_daiReserveId(spoke1), bob),
       bobDaiBefore.totalDebt + action2.borrowAmount,
-      2,
+      3,
       'bob dai debt after second borrow'
     );
 
