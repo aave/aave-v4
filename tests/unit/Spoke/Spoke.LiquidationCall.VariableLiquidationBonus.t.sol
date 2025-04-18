@@ -9,10 +9,23 @@ contract LiquidationCallVariableLiquidationBonusTest is SpokeLiquidationBase {
   using PercentageMath for uint256;
   using PercentageMathExtended for uint256;
 
-  function test_liquidationCall_variableLB1() public {
+  function test_liquidationCall_variableLB1_unit1() public {
     test_liquidationCall_fuzz_variableLB1(
       DataTypes.LiquidationConfig({
         closeFactor: 1e18,
+        healthFactorBonusThreshold: 0.9e18,
+        liquidationBonusFactor: 70_00
+      }),
+      105_00,
+      10e18,
+      0.95e18
+    );
+  }
+
+  function test_liquidationCall_variableLB1_unit2() public {
+    test_liquidationCall_fuzz_variableLB1(
+      DataTypes.LiquidationConfig({
+        closeFactor: 1.03e18,
         healthFactorBonusThreshold: 0.9e18,
         liquidationBonusFactor: 70_00
       }),
@@ -42,6 +55,32 @@ contract LiquidationCallVariableLiquidationBonusTest is SpokeLiquidationBase {
       collateralReserveId,
       debtReserveId,
       'test_liquidationCall_fuzz_variableLB weth/dai'
+    );
+  }
+
+  function test_liquidationCall_variableLB2_unit1() public {
+    test_liquidationCall_fuzz_variableLB2(
+      DataTypes.LiquidationConfig({
+        closeFactor: 1e18,
+        healthFactorBonusThreshold: 0.88e18,
+        liquidationBonusFactor: 70_00
+      }),
+      107_00,
+      1e18,
+      0.93e18
+    );
+  }
+
+  function test_liquidationCall_variableLB2_unit2() public {
+    test_liquidationCall_fuzz_variableLB2(
+      DataTypes.LiquidationConfig({
+        closeFactor: 1.04e18,
+        healthFactorBonusThreshold: 0.88e18,
+        liquidationBonusFactor: 83_00
+      }),
+      107_00,
+      1e18,
+      0.93e18
     );
   }
 
