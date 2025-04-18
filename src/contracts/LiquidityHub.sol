@@ -220,40 +220,59 @@ contract LiquidityHub is ILiquidityHub {
     return baseDrawnSharesRestored;
   }
 
+  /// @inheritdoc ILiquidityHub
   function refreshPremiumDebt(
     uint256 assetId,
-    int256 premiumDrawnSharesDelta,
+    int256 premiumDrawnShareDelta,
     int256 premiumOffsetDelta,
     int256 realizedPremiumDelta
   ) external {
-    /**
-     * todo: `refreshPremiumDebt` callback
-     * - only callable by spoke
-     * - check that total debt can only:
-     *   - reduce until `premiumDebt` if called after a restore (tstore premiumDebt?)
-     *   - remains unchanged on all other calls
-     * `refreshPremiumDebt` is game-able only for premium stuff
-     */
-    DataTypes.Asset storage asset = _assets[assetId];
-    DataTypes.SpokeData storage spoke = _spokes[assetId][msg.sender];
+    // todo only spoke
+    uint256 totalDebt = _assets[assetId].totalDebt();
+    _refresh(assetId, msg.sender, premiumDrawnShareDelta, premiumOffsetDelta, realizedPremiumDelta);
+    uint256 totalDebtAfter = _assets[assetId].totalDebt();
+    require(totalDebtAfter >= totalDebt && totalDebtAfter - totalDebt <= 2, InvalidDebtChange()); // can increase due to precision
+  }
 
-    asset.premiumDrawnShares = _add(asset.premiumDrawnShares, premiumDrawnSharesDelta);
+  /// @inheritdoc ILiquidityHub
+  function settlePremiumDebt(
+    uint256 assetId,
+    int256 premiumDrawnShareDelta,
+    int256 premiumOffsetDelta,
+    int256 realizedPremiumDelta
+  ) external {
+    // todo: merge with repay and validate total debt only goes down by `premiumDebtRestored`
+    // todo: only spoke
+    uint256 baseDebt = _assets[assetId].baseDebt();
+    _refresh(assetId, msg.sender, premiumDrawnShareDelta, premiumOffsetDelta, realizedPremiumDelta);
+    require(_assets[assetId].baseDebt() == baseDebt, InvalidDebtChange());
+  }
+
+  function _refresh(
+    uint256 assetId,
+    address spokeAddress,
+    int256 premiumDrawnShareDelta,
+    int256 premiumOffsetDelta,
+    int256 realizedPremiumDelta
+  ) internal {
+    DataTypes.Asset storage asset = _assets[assetId];
+    DataTypes.SpokeData storage spoke = _spokes[assetId][spokeAddress];
+
+    asset.premiumDrawnShares = _add(asset.premiumDrawnShares, premiumDrawnShareDelta);
     asset.premiumOffset = _add(asset.premiumOffset, premiumOffsetDelta);
     asset.realizedPremium = _add(asset.realizedPremium, realizedPremiumDelta);
 
-    spoke.premiumDrawnShares = _add(spoke.premiumDrawnShares, premiumDrawnSharesDelta);
+    spoke.premiumDrawnShares = _add(spoke.premiumDrawnShares, premiumDrawnShareDelta);
     spoke.premiumOffset = _add(spoke.premiumOffset, premiumOffsetDelta);
     spoke.realizedPremium = _add(spoke.realizedPremium, realizedPremiumDelta);
 
     emit RefreshPremiumDebt(
       assetId,
-      msg.sender,
-      premiumDrawnSharesDelta,
+      spokeAddress,
+      premiumDrawnShareDelta,
       premiumOffsetDelta,
       realizedPremiumDelta
     );
-
-    // todo check bounds
   }
 
   //

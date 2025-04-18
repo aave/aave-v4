@@ -52,6 +52,7 @@ interface ILiquidityHub {
   error InvalidIrStrategy();
   error InvalidAssetDecimals();
   error InvalidAssetAddress();
+  error InvalidDebtChange();
 
   function addAsset(DataTypes.AssetConfig memory params, address asset) external;
   function updateAssetConfig(uint256 assetId, DataTypes.AssetConfig memory config) external;
@@ -114,12 +115,39 @@ interface ILiquidityHub {
     address from
   ) external returns (uint256);
 
+  /**
+   * @notice Refresh premium debt to be called when moving accrued premium to realized premium.
+   * @dev Only callable by spokes.
+   * @dev Total debt is not allowed to change, reverts with `InvalidDebtChange` when violated.
+   * @param assetId The asset id.
+   * @param premiumDrawnSharesDelta The change in premium drawn shares.
+   * @param premiumOffsetDelta The change in premium offset.
+   * @param realizedPremiumDelta The change in realized premium.
+   */
   function refreshPremiumDebt(
     uint256 assetId,
     int256 premiumDrawnSharesDelta,
     int256 premiumOffsetDelta,
     int256 realizedPremiumDelta
   ) external;
+
+  /**
+   * @notice Settle premium debt to be called in conjunction with repay to pay premium debt.
+   * @dev Only callable by spokes.
+   * @dev Base debt is not allowed to change, reverts with `InvalidDebtChange` when violated,
+   * premium debt can only decrease by at most the amount of premium restored.
+   * @param assetId The asset id.
+   * @param premiumDrawnSharesDelta The change in premium drawn shares.
+   * @param premiumOffsetDelta The change in premium offset.
+   * @param realizedPremiumDelta The change in realized premium.
+   */
+  function settlePremiumDebt(
+    uint256 assetId,
+    int256 premiumDrawnSharesDelta,
+    int256 premiumOffsetDelta,
+    int256 realizedPremiumDelta
+  ) external;
+
   function convertToDrawnAssets(uint256 assetId, uint256 shares) external view returns (uint256);
   function convertToDrawnShares(uint256 assetId, uint256 assets) external view returns (uint256);
   function convertToSuppliedAssets(uint256 assetId, uint256 shares) external view returns (uint256);
