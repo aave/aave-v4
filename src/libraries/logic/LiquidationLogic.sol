@@ -23,7 +23,6 @@ library LiquidationLogic {
     uint256 liquidationBonus,
     uint256 healthFactorLiquidationThreshold
   ) internal view returns (uint256) {
-    // if healthFactorBonusThreshold == 0 or  HF <= healthFactorBonusThreshold, return base liquidationBonus
     if (
       config.healthFactorBonusThreshold == 0 || healthFactor <= config.healthFactorBonusThreshold
     ) {
@@ -100,10 +99,6 @@ library LiquidationLogic {
     DataTypes.LiquidationCallLocalVars memory params
   ) internal pure returns (uint256, uint256, uint256) {
     DataTypes.CalculateAvailableCollateralToLiquidateLocalVars memory vars;
-
-    if (params.collateralAssetPrice == 0) {
-      return (0, 0, 0);
-    }
 
     // find collateral amount that corresponds to the debt to cover
     vars.baseCollateral =

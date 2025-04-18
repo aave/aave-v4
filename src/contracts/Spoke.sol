@@ -28,13 +28,13 @@ contract Spoke is ISpoke {
 
   uint256 public constant HEALTH_FACTOR_LIQUIDATION_THRESHOLD = 1e18;
   ILiquidityHub public immutable HUB;
-  address internal _treasury;
   IPriceOracle public immutable oracle;
 
   mapping(address user => mapping(uint256 reserveId => DataTypes.UserPosition position))
     internal _userPositions;
   mapping(uint256 reserveId => DataTypes.Reserve reserveData) internal _reserves;
   DataTypes.LiquidationConfig internal _liquidationConfig;
+  address internal _treasury;
   uint256[] public reservesList; // todo: rm, not needed
   uint256 public reserveCount;
 
@@ -312,12 +312,19 @@ contract Spoke is ISpoke {
       uint256 liquidationProtocolFeeAmount
     ) = _executeLiquidation(collateralReserveId, debtReserveId, user, debtToCover);
 
+    // settle premium debt
+    // refresh
+    // restore/withdraw
+    // refresh
+    // notify
+
     // transfer to liquidator
     IERC20(collateralAsset).safeTransfer(msg.sender, collateralToLiquidate);
     // transfer to treasury
-    if (liquidationProtocolFeeAmount > 0) {
-      IERC20(collateralAsset).safeTransfer(_treasury, liquidationProtocolFeeAmount);
-    }
+    // TODO: move liquidationProtocolFeeAmount to treasury, maybe in hub
+    // if (liquidationProtocolFeeAmount > 0) {
+    //   IERC20(collateralAsset).safeTransfer(_treasury, liquidationProtocolFeeAmount);
+    // }
     emit LiquidationCall(
       collateralAsset,
       debtAsset,
@@ -351,8 +358,6 @@ contract Spoke is ISpoke {
     vars.debtAssetId = debtReserve.assetId;
     (vars.baseDebt, vars.premiumDebt) = _getUserDebt(userDebtPosition, vars.debtAssetId);
 
-    console.log('debt', vars.baseDebt, vars.premiumDebt);
-
     (
       vars.collateralToLiquidate,
       vars.liquidationProtocolFeeAmount,
@@ -385,6 +390,15 @@ contract Spoke is ISpoke {
       _signedDiff(userDebtPosition.realizedPremium, vars.userDebtRealizedPremium)
     );
 
+    // move restore/withdraw outside of this method to do it once
+    // repay debt
+    vars.restoredShares = HUB.restore(
+      vars.debtAssetId,
+      vars.baseDebtToLiquidate,
+      vars.premiumDebtToLiquidate,
+      msg.sender
+    );
+
     // settle collateral reserve's premium debt
     vars.userCollateralPremiumDrawnShares = userCollateralPosition.premiumDrawnShares;
     vars.userCollateralPremiumOffset = userCollateralPosition.premiumOffset;
@@ -405,14 +419,6 @@ contract Spoke is ISpoke {
       -int256(vars.userCollateralPremiumOffset),
       int256(vars.accruedCollateralPremium)
     ); // unnecessary but we settle premium debt here for consistency
-
-    // repay debt
-    vars.restoredShares = HUB.restore(
-      vars.debtAssetId,
-      vars.baseDebtToLiquidate,
-      vars.premiumDebtToLiquidate,
-      msg.sender
-    );
 
     // debt accounting
     userDebtPosition.baseDrawnShares -= vars.restoredShares;
