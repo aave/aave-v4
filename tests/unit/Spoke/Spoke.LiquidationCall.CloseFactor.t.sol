@@ -8,4 +8,6 @@ contract LiquidationCallCloseFactorTest is SpokeLiquidationBase {
   using WadRayMath for uint256;
   using PercentageMath for uint256;
   using PercentageMathExtended for uint256;
+
+  function test_liquidationCall_closeFactor1() public {}
 }
