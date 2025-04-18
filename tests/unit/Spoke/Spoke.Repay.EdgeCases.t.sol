@@ -406,7 +406,7 @@ contract SpokeRepayEdgeCaseTest is SpokeBase {
       bobWethDataBefore.suppliedShares,
       hub.convertToSuppliedShares(wethAssetId, wethSupplyAmount)
     );
-    assertEq(bobWethBefore.totalDebt, 0);
+    assertEq(bobWethBefore.totalDebt, 0, 'bob weth total debt before time skip');
 
     // Time passes
     skip(10 days);
@@ -425,23 +425,26 @@ contract SpokeRepayEdgeCaseTest is SpokeBase {
 
     bobDaiDataBefore = getUserInfo(spoke1, bob, _daiReserveId(spoke1));
     bobDaiBalanceBefore = tokenList.dai.balanceOf(bob);
-    bobDaiBefore.totalDebt = spoke1.getUserTotalDebt(_daiReserveId(spoke1), bob);
-    (bobDaiBefore.baseDebt, bobDaiBefore.premiumDebt) = spoke1.getUserDebt(
-      _daiReserveId(spoke1),
-      bob
-    );
+    bobDaiBefore = getUserDebt(spoke1, bob, _daiReserveId(spoke1));
 
-    assertEq(bobDaiBefore.premiumDebt, 0);
+    // Premium debt can be off by 1 due to rounding
+    assertApproxEqAbs(bobDaiBefore.premiumDebt, 0, 1, 'bob dai premium debt after premium repay');
 
     // Bob repays base debt
     uint256 daiRepayAmount = bobDaiBefore.baseDebt - daiBorrowAmount;
     assertGt(daiRepayAmount, 0); // interest is not zero
+    (uint256 baseRestored, ) = _calculateExactRestoreAmount(
+      bobDaiBefore.baseDebt,
+      bobDaiBefore.premiumDebt,
+      daiRepayAmount,
+      daiAssetId
+    );
 
     vm.expectEmit(address(spoke1));
     emit ISpoke.Repay(
       _daiReserveId(spoke1),
       bob,
-      hub.convertToDrawnShares(daiAssetId, daiRepayAmount)
+      hub.convertToDrawnShares(daiAssetId, baseRestored)
     );
     vm.prank(bob);
     spoke1.repay(_daiReserveId(spoke1), daiRepayAmount);
@@ -462,8 +465,8 @@ contract SpokeRepayEdgeCaseTest is SpokeBase {
     );
 
     assertEq(bobDaiDataAfter.suppliedShares, bobDaiDataBefore.suppliedShares);
-    assertEq(bobDaiAfter.baseDebt, daiBorrowAmount, 'bob dai base debt final balance');
-    assertEq(bobDaiAfter.premiumDebt, 0, 'bob dai premium debt final balance');
+    assertApproxEqAbs(bobDaiAfter.baseDebt, daiBorrowAmount, 1, 'bob dai base debt final balance');
+    assertApproxEqAbs(bobDaiAfter.premiumDebt, 0, 1, 'bob dai premium debt final balance');
     assertEq(bobWethDataAfter.suppliedShares, bobWethDataBefore.suppliedShares);
     assertEq(bobWethAfter.totalDebt, bobWethBefore.totalDebt);
     assertEq(

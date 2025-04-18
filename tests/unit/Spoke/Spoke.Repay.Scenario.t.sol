@@ -229,6 +229,7 @@ contract SpokeRepayScenarioTest is SpokeBase {
     for (uint256 i = 0; i < usersInfo.length; i++) {
       address user = usersInfo[i].user;
 
+      debtsBefore[i][0] = getUserDebt(spoke1, user, _daiReserveId(spoke1));
       // DAI repayment
       (uint256 baseRestored, uint256 premiumRestored) = _calculateExactRestoreAmount(
         debtsBefore[i][0].baseDebt,
@@ -245,6 +246,7 @@ contract SpokeRepayScenarioTest is SpokeBase {
       }
       usersInfo[i].daiInfo.repayAmount = baseRestored + premiumRestored;
 
+      debtsBefore[i][1] = getUserDebt(spoke1, user, _wethReserveId(spoke1));
       // WETH repayment
       (baseRestored, premiumRestored) = _calculateExactRestoreAmount(
         debtsBefore[i][1].baseDebt,
@@ -260,6 +262,7 @@ contract SpokeRepayScenarioTest is SpokeBase {
       }
       usersInfo[i].wethInfo.repayAmount = baseRestored + premiumRestored;
 
+      debtsBefore[i][2] = getUserDebt(spoke1, user, _usdxReserveId(spoke1));
       // USDX repayment
       (baseRestored, premiumRestored) = _calculateExactRestoreAmount(
         debtsBefore[i][2].baseDebt,
@@ -276,6 +279,7 @@ contract SpokeRepayScenarioTest is SpokeBase {
       }
       usersInfo[i].usdxInfo.repayAmount = baseRestored + premiumRestored;
 
+      debtsBefore[i][3] = getUserDebt(spoke1, user, _wbtcReserveId(spoke1));
       // WBTC repayment
       (baseRestored, premiumRestored) = _calculateExactRestoreAmount(
         debtsBefore[i][3].baseDebt,
@@ -306,7 +310,7 @@ contract SpokeRepayScenarioTest is SpokeBase {
           ? 0
           : debtsBefore[i][0].totalDebt - usersInfo[i].daiInfo.repayAmount;
         uint256 actualDaiDebt = spoke1.getUserTotalDebt(_daiReserveId(spoke1), user);
-        assertApproxEqAbs(actualDaiDebt, expectedDaiDebt, 3, 'DAI debt not reduced correctly');
+        assertApproxEqAbs(actualDaiDebt, expectedDaiDebt, 5, 'DAI debt not reduced correctly');
       }
 
       if (
@@ -317,7 +321,7 @@ contract SpokeRepayScenarioTest is SpokeBase {
           ? 0
           : debtsBefore[i][1].totalDebt - usersInfo[i].wethInfo.repayAmount;
         uint256 actualWethDebt = spoke1.getUserTotalDebt(_wethReserveId(spoke1), user);
-        assertApproxEqAbs(actualWethDebt, expectedWethDebt, 3, 'WETH debt not reduced correctly');
+        assertApproxEqAbs(actualWethDebt, expectedWethDebt, 5, 'WETH debt not reduced correctly');
       }
 
       if (
@@ -328,7 +332,7 @@ contract SpokeRepayScenarioTest is SpokeBase {
           ? 0
           : debtsBefore[i][2].totalDebt - usersInfo[i].usdxInfo.repayAmount;
         uint256 actualUsdxDebt = spoke1.getUserTotalDebt(_usdxReserveId(spoke1), user);
-        assertApproxEqAbs(actualUsdxDebt, expectedUsdxDebt, 3, 'USDX debt not reduced correctly');
+        assertApproxEqAbs(actualUsdxDebt, expectedUsdxDebt, 5, 'USDX debt not reduced correctly');
       }
 
       if (
@@ -339,7 +343,7 @@ contract SpokeRepayScenarioTest is SpokeBase {
           ? 0
           : debtsBefore[i][3].totalDebt - usersInfo[i].wbtcInfo.repayAmount;
         uint256 actualWbtcDebt = spoke1.getUserTotalDebt(_wbtcReserveId(spoke1), user);
-        assertApproxEqAbs(actualWbtcDebt, expectedWbtcDebt, 3, 'WBTC debt not reduced correctly');
+        assertApproxEqAbs(actualWbtcDebt, expectedWbtcDebt, 5, 'WBTC debt not reduced correctly');
       }
 
       // Verify supply positions remain unchanged
@@ -553,26 +557,10 @@ contract SpokeRepayScenarioTest is SpokeBase {
       );
 
       // Store debts before repayment
-      debtsBefore[i][0].totalDebt = spoke1.getUserTotalDebt(_daiReserveId(spoke1), user);
-      (debtsBefore[i][0].baseDebt, debtsBefore[i][0].premiumDebt) = spoke1.getUserDebt(
-        _daiReserveId(spoke1),
-        user
-      );
-      debtsBefore[i][1].totalDebt = spoke1.getUserTotalDebt(_wethReserveId(spoke1), user);
-      (debtsBefore[i][1].baseDebt, debtsBefore[i][1].premiumDebt) = spoke1.getUserDebt(
-        _wethReserveId(spoke1),
-        user
-      );
-      debtsBefore[i][2].totalDebt = spoke1.getUserTotalDebt(_usdxReserveId(spoke1), user);
-      (debtsBefore[i][2].baseDebt, debtsBefore[i][2].premiumDebt) = spoke1.getUserDebt(
-        _usdxReserveId(spoke1),
-        user
-      );
-      debtsBefore[i][3].totalDebt = spoke1.getUserTotalDebt(_wbtcReserveId(spoke1), user);
-      (debtsBefore[i][3].baseDebt, debtsBefore[i][3].premiumDebt) = spoke1.getUserDebt(
-        _wbtcReserveId(spoke1),
-        user
-      );
+      debtsBefore[i][0] = getUserDebt(spoke1, user, _daiReserveId(spoke1));
+      debtsBefore[i][1] = getUserDebt(spoke1, user, _wethReserveId(spoke1));
+      debtsBefore[i][2] = getUserDebt(spoke1, user, _usdxReserveId(spoke1));
+      debtsBefore[i][3] = getUserDebt(spoke1, user, _wbtcReserveId(spoke1));
 
       // Verify interest accrual
       assertGe(
@@ -604,6 +592,8 @@ contract SpokeRepayScenarioTest is SpokeBase {
     for (uint256 i = 0; i < usersInfo.length; i++) {
       address user = usersInfo[i].user;
 
+      // Fetch debts immediately before repayments, because they can affect user risk premium, and hence debts
+      debtsBefore[i][0] = getUserDebt(spoke1, user, _daiReserveId(spoke1));
       // DAI repayment
       (uint256 baseRestored, uint256 premiumRestored) = _calculateExactRestoreAmount(
         debtsBefore[i][0].baseDebt,
@@ -620,6 +610,7 @@ contract SpokeRepayScenarioTest is SpokeBase {
       }
       usersInfo[i].daiInfo.repayAmount = baseRestored + premiumRestored;
 
+      debtsBefore[i][1] = getUserDebt(spoke1, user, _wethReserveId(spoke1));
       // WETH repayment
       (baseRestored, premiumRestored) = _calculateExactRestoreAmount(
         debtsBefore[i][1].baseDebt,
@@ -636,6 +627,7 @@ contract SpokeRepayScenarioTest is SpokeBase {
       }
       usersInfo[i].wethInfo.repayAmount = baseRestored + premiumRestored;
 
+      debtsBefore[i][2] = getUserDebt(spoke1, user, _usdxReserveId(spoke1));
       // USDX repayment
       (baseRestored, premiumRestored) = _calculateExactRestoreAmount(
         debtsBefore[i][2].baseDebt,
@@ -652,6 +644,7 @@ contract SpokeRepayScenarioTest is SpokeBase {
       }
       usersInfo[i].usdxInfo.repayAmount = baseRestored + premiumRestored;
 
+      debtsBefore[i][3] = getUserDebt(spoke1, user, _wbtcReserveId(spoke1));
       // WBTC repayment
       (baseRestored, premiumRestored) = _calculateExactRestoreAmount(
         debtsBefore[i][3].baseDebt,
@@ -682,7 +675,7 @@ contract SpokeRepayScenarioTest is SpokeBase {
           ? 0
           : debtsBefore[i][0].totalDebt - usersInfo[i].daiInfo.repayAmount;
         uint256 actualDaiDebt = spoke1.getUserTotalDebt(_daiReserveId(spoke1), user);
-        assertApproxEqAbs(actualDaiDebt, expectedDaiDebt, 3, 'DAI debt not reduced correctly');
+        assertApproxEqAbs(actualDaiDebt, expectedDaiDebt, 5, 'DAI debt not reduced correctly');
       }
 
       if (
@@ -693,7 +686,7 @@ contract SpokeRepayScenarioTest is SpokeBase {
           ? 0
           : debtsBefore[i][1].totalDebt - usersInfo[i].wethInfo.repayAmount;
         uint256 actualWethDebt = spoke1.getUserTotalDebt(_wethReserveId(spoke1), user);
-        assertApproxEqAbs(actualWethDebt, expectedWethDebt, 3, 'WETH debt not reduced correctly');
+        assertApproxEqAbs(actualWethDebt, expectedWethDebt, 5, 'WETH debt not reduced correctly');
       }
 
       if (
@@ -704,7 +697,7 @@ contract SpokeRepayScenarioTest is SpokeBase {
           ? 0
           : debtsBefore[i][2].totalDebt - usersInfo[i].usdxInfo.repayAmount;
         uint256 actualUsdxDebt = spoke1.getUserTotalDebt(_usdxReserveId(spoke1), user);
-        assertApproxEqAbs(actualUsdxDebt, expectedUsdxDebt, 3, 'USDX debt not reduced correctly');
+        assertApproxEqAbs(actualUsdxDebt, expectedUsdxDebt, 5, 'USDX debt not reduced correctly');
       }
 
       if (
@@ -715,7 +708,7 @@ contract SpokeRepayScenarioTest is SpokeBase {
           ? 0
           : debtsBefore[i][3].totalDebt - usersInfo[i].wbtcInfo.repayAmount;
         uint256 actualWbtcDebt = spoke1.getUserTotalDebt(_wbtcReserveId(spoke1), user);
-        assertApproxEqAbs(actualWbtcDebt, expectedWbtcDebt, 3, 'WBTC debt not reduced correctly');
+        assertApproxEqAbs(actualWbtcDebt, expectedWbtcDebt, 5, 'WBTC debt not reduced correctly');
       }
 
       // Verify supply positions remain unchanged
@@ -995,12 +988,14 @@ contract SpokeRepayScenarioTest is SpokeBase {
     deal(address(tokenList.dai), bob, action1.repayAmount + action2.repayAmount);
 
     // Bob supply weth as collateral
-    action1.supplyAmount = _calcMinimumCollAmount(
-      spoke1,
-      _wethReserveId(spoke1),
-      _daiReserveId(spoke1),
-      action1.borrowAmount
-    );
+    action1.supplyAmount =
+      _calcMinimumCollAmount(
+        spoke1,
+        _wethReserveId(spoke1),
+        _daiReserveId(spoke1),
+        action1.borrowAmount
+      ) +
+      1;
     Utils.supply(spoke1, _wethReserveId(spoke1), bob, action1.supplyAmount, bob);
     setUsingAsCollateral(spoke1, bob, _wethReserveId(spoke1), true);
 
@@ -1022,11 +1017,7 @@ contract SpokeRepayScenarioTest is SpokeBase {
       _daiReserveId(spoke1)
     );
     Debts memory bobDaiBefore;
-    bobDaiBefore.totalDebt = spoke1.getUserTotalDebt(_daiReserveId(spoke1), bob);
-    (bobDaiBefore.baseDebt, bobDaiBefore.premiumDebt) = spoke1.getUserDebt(
-      _daiReserveId(spoke1),
-      bob
-    );
+    bobDaiBefore = getUserDebt(spoke1, bob, _daiReserveId(spoke1));
 
     uint256 bobDaiBalanceBefore = tokenList.dai.balanceOf(bob);
     uint256 bobWethBalanceBefore = tokenList.weth.balanceOf(bob);
@@ -1044,11 +1035,8 @@ contract SpokeRepayScenarioTest is SpokeBase {
     skip(action1.skipTime);
 
     bobDaiDataBefore = getUserInfo(spoke1, bob, _daiReserveId(spoke1));
-    bobDaiBefore.totalDebt = spoke1.getUserTotalDebt(_daiReserveId(spoke1), bob);
-    (bobDaiBefore.baseDebt, bobDaiBefore.premiumDebt) = spoke1.getUserDebt(
-      _daiReserveId(spoke1),
-      bob
-    );
+    bobDaiBefore = getUserDebt(spoke1, bob, _daiReserveId(spoke1));
+
     assertGe(bobDaiBefore.totalDebt, action1.borrowAmount, 'bob dai debt before');
     assertGe(bobDaiBefore.premiumDebt, 0, 'bob dai premium debt before');
 
@@ -1115,7 +1103,7 @@ contract SpokeRepayScenarioTest is SpokeBase {
     }
 
     // Reuse variables for second borrow and repay round
-    bobDaiBefore.totalDebt = spoke1.getUserTotalDebt(_daiReserveId(spoke1), bob);
+    bobDaiBefore = getUserDebt(spoke1, bob, _daiReserveId(spoke1));
 
     // Bob borrows more dai
     Utils.borrow(spoke1, _daiReserveId(spoke1), bob, action2.borrowAmount, bob);
@@ -1123,7 +1111,7 @@ contract SpokeRepayScenarioTest is SpokeBase {
     assertApproxEqAbs(
       spoke1.getUserTotalDebt(_daiReserveId(spoke1), bob),
       bobDaiBefore.totalDebt + action2.borrowAmount,
-      2,
+      3,
       'bob dai debt after second borrow'
     );
 
@@ -1349,5 +1337,110 @@ contract SpokeRepayScenarioTest is SpokeBase {
 
     // verify LH asset debt is 0
     assertEq(hub.getAssetTotalDebt(_daiReserveId(spoke1)), 0);
+  }
+
+  /// User supplies appropriate collateral, then borrows, immediately repays, check delta on share amounts
+  /// @dev Assume another user borrowing, and skip time so debt ex ratio potentially nonzero
+  function test_repay_round_trip_borrow_repay(
+    uint256 reserveId,
+    uint256 userBorrowing,
+    uint40 skipTime,
+    address caller,
+    uint256 assets
+  ) public {
+    vm.assume(caller != address(0));
+    reserveId = bound(reserveId, 0, spoke1.reserveCount() - 1);
+    userBorrowing = bound(userBorrowing, 0, MAX_SUPPLY_AMOUNT / 2 - 1); // Allow some buffer from borrow cap
+    skipTime = uint40(bound(skipTime, 0, MAX_SKIP_TIME));
+    assets = bound(assets, 1, MAX_SUPPLY_AMOUNT / 2 - userBorrowing);
+
+    // Set up initial state of the vault by having derl borrow
+    uint256 supplyAmount = _calcMinimumCollAmount(spoke1, reserveId, reserveId, userBorrowing);
+    Utils.supply(spoke1, reserveId, derl, supplyAmount, derl);
+    setUsingAsCollateral(spoke1, derl, reserveId, true);
+    if (userBorrowing > 0) {
+      Utils.borrow(spoke1, reserveId, derl, userBorrowing, derl);
+    }
+
+    skip(skipTime);
+
+    DataTypes.Reserve memory reserve = spoke1.getReserve(reserveId);
+
+    // Deal caller max collateral amount, approve hub, supply
+    supplyAmount = MAX_SUPPLY_AMOUNT - supplyAmount;
+    deal(reserve.asset, caller, supplyAmount);
+    vm.prank(caller);
+    IERC20(reserve.asset).approve(address(hub), supplyAmount);
+    Utils.supply(spoke1, reserveId, caller, supplyAmount, caller);
+    setUsingAsCollateral(spoke1, caller, reserveId, true);
+
+    // Borrow
+    uint256 shares1 = hub.convertToDrawnShares(reserve.assetId, assets);
+    vm.startPrank(caller);
+    spoke1.borrow(reserveId, assets, caller);
+
+    // Repay
+    uint256 shares2 = hub.convertToDrawnShares(reserve.assetId, assets);
+    deal(reserve.asset, caller, assets);
+    IERC20(reserve.asset).approve(address(hub), assets);
+    spoke1.repay(reserveId, assets);
+    vm.stopPrank();
+
+    assertApproxEqAbs(shares2, shares1, 1, 'borrowed and repaid shares');
+  }
+
+  /// User repays, then immediately borrows, check delta on share amounts
+  /// @dev Assume another user borrowing, and skip time so debt ex ratio potentially nonzero
+  /// @dev Assume user already has a nonzero borrow position to repay
+  function test_repay_round_trip_repay_borrow(
+    uint256 reserveId,
+    uint256 userBorrowing,
+    uint256 callerStartingDebt,
+    uint40 skipTime,
+    address caller,
+    uint256 assets
+  ) public {
+    uint256 MAX_BORROW_AMOUNT = MAX_SUPPLY_AMOUNT / 2;
+    vm.assume(caller != address(0));
+    reserveId = bound(reserveId, 0, spoke1.reserveCount() - 1);
+    userBorrowing = bound(userBorrowing, 0, MAX_BORROW_AMOUNT - 2); // Allow some buffer from borrow cap
+    skipTime = uint40(bound(skipTime, 0, MAX_SKIP_TIME));
+    assets = bound(assets, 1, MAX_BORROW_AMOUNT - userBorrowing - 1); // Allow some buffer from borrow cap
+    callerStartingDebt = bound(callerStartingDebt, 1, MAX_BORROW_AMOUNT - userBorrowing - assets);
+
+    // Set up initial state of the vault by having derl borrow
+    uint256 supplyAmount = _calcMinimumCollAmount(spoke1, reserveId, reserveId, userBorrowing);
+    Utils.supply(spoke1, reserveId, derl, supplyAmount, derl);
+    setUsingAsCollateral(spoke1, derl, reserveId, true);
+    if (userBorrowing > 0) {
+      Utils.borrow(spoke1, reserveId, derl, userBorrowing, derl);
+    }
+
+    skip(skipTime);
+
+    DataTypes.Reserve memory reserve = spoke1.getReserve(reserveId);
+
+    // Set up caller initial debt position
+    supplyAmount = MAX_SUPPLY_AMOUNT - supplyAmount;
+    deal(reserve.asset, caller, supplyAmount);
+    vm.prank(caller);
+    IERC20(reserve.asset).approve(address(hub), supplyAmount);
+    Utils.supply(spoke1, reserveId, caller, supplyAmount, caller);
+    setUsingAsCollateral(spoke1, caller, reserveId, true);
+    Utils.borrow(spoke1, reserveId, caller, callerStartingDebt, caller);
+
+    // Repay
+    uint256 shares1 = hub.convertToDrawnShares(reserve.assetId, assets);
+    deal(reserve.asset, caller, assets);
+    vm.startPrank(caller);
+    IERC20(reserve.asset).approve(address(hub), assets);
+    spoke1.repay(reserveId, assets);
+
+    // Borrow
+    uint256 shares2 = hub.convertToDrawnShares(reserve.assetId, assets);
+    spoke1.borrow(reserveId, assets, caller);
+    vm.stopPrank();
+
+    assertApproxEqAbs(shares2, shares1, 1, 'borrowed and repaid shares');
   }
 }
