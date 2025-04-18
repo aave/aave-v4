@@ -114,6 +114,29 @@ contract LiquidityHubSupplyTest is LiquidityHubBase {
     hub.add(daiAssetId, amount, alice);
   }
 
+  function test_supply_revertsWith_SupplyCapExceeded_due_to_rounding() public {
+    uint256 amount = 100e18;
+    _increaseExchangeRate(amount);
+
+    uint256 sharePrice = hub.convertToSuppliedAssets(daiAssetId, 1e18);
+    assertLt(1e18, sharePrice);
+    assertLt(sharePrice, 2e18);
+
+    // spoke 1 supplies 2 dai (1 share)
+    vm.prank(address(spoke1));
+    hub.add(daiAssetId, 2, alice);
+
+    // set cap of spoke1 to 3 assets
+    uint256 newSupplyCap = 3;
+    _updateSupplyCap(daiAssetId, address(spoke1), newSupplyCap);
+
+    // spoke1 already supplied 1 share, which rounded up is 2 assets
+    // supplying 2 more assets will exceed the cap
+    vm.expectRevert(abi.encodeWithSelector(ILiquidityHub.SupplyCapExceeded.selector, newSupplyCap));
+    vm.prank(address(spoke1));
+    hub.add(daiAssetId, 2, alice);
+  }
+
   function test_supply_fuzz_revertsWith_SupplyCapExceeded(uint256 amount) public {
     amount = bound(amount, 1, MAX_SUPPLY_AMOUNT);
 
@@ -162,6 +185,35 @@ contract LiquidityHubSupplyTest is LiquidityHubBase {
     vm.expectRevert(abi.encodeWithSelector(ILiquidityHub.SupplyCapExceeded.selector, newSupplyCap));
     vm.prank(address(spoke2));
     hub.add(daiAssetId, 1, alice); // cannot supply any additional amount
+  }
+
+  // touching supply cap but not exceeding it
+  function test_supply_SupplyCapReachedButNotExceeded() public {
+    uint256 amount = 100e18;
+    _increaseExchangeRate(amount);
+
+    uint256 sharePrice = hub.convertToSuppliedAssets(daiAssetId, 1e18);
+    assertLt(1e18, sharePrice);
+    assertLt(sharePrice, 2e18);
+
+    // spoke 1 supplies 2 dai (1 share)
+    vm.prank(address(spoke1));
+    hub.add(daiAssetId, 2, alice);
+
+    // spoke 1 supplies 2 dai (1 share)
+    vm.prank(address(spoke1));
+    hub.add(daiAssetId, 2, alice);
+
+    // set cap of spoke1 to 5 assets
+    uint256 newSupplyCap = 5;
+    _updateSupplyCap(daiAssetId, address(spoke1), newSupplyCap);
+
+    // spoke1 already supplied 2 shares, which rounded up is 3 assets
+    // supplying 2 more assets will reach the cap, but not exceed it
+    // note that actual supplied assets is 6, but 1 share was lost
+    // due to rounding errors on suppliedShares
+    vm.prank(address(spoke1));
+    hub.add(daiAssetId, 2, alice);
   }
 
   function test_supply_single_asset() public {
