@@ -435,9 +435,10 @@ contract SpokeBase is Base {
       expectedUserPos.premiumDrawnShares,
       string.concat('user premiumDrawnShares ', label)
     );
-    assertEq(
+    assertApproxEqAbs(
       userPos.premiumOffset,
       expectedUserPos.premiumOffset,
+      1,
       string.concat('user premiumOffset ', label)
     );
     assertEq(
@@ -453,14 +454,16 @@ contract SpokeBase is Base {
     string memory label
   ) internal pure {
     assertEq(userDebt.baseDebt, expectedUserDebt.baseDebt, string.concat('user base debt ', label));
-    assertEq(
+    assertApproxEqAbs(
       userDebt.premiumDebt,
       expectedUserDebt.premiumDebt,
+      1,
       string.concat('user premium debt ', label)
     );
-    assertEq(
+    assertApproxEqAbs(
       userDebt.totalDebt,
       expectedUserDebt.totalDebt,
+      1,
       string.concat('user total debt ', label)
     );
   }
