@@ -1338,4 +1338,57 @@ contract SpokeRepayScenarioTest is SpokeBase {
     // verify LH asset debt is 0
     assertEq(hub.getAssetTotalDebt(_daiReserveId(spoke1)), 0);
   }
+
+  // TODO: ERC4626 round trip tests for borrow and repay
+  /// User supplies appropriate collateral, then borrows, immediately repays, check delta on share amounts
+  /// @dev Assume another user borrowing, and skip time so debt ex ratio potentially nonzero
+  function test_repay_round_trip_borrow_repay(
+    uint256 reserveId,
+    uint256 userBorrowing,
+    uint40 skipTime,
+    address caller,
+    uint256 assets
+  ) public {
+    vm.assume(caller != address(0));
+    reserveId = bound(reserveId, 0, spoke1.reserveCount() - 1);
+    userBorrowing = bound(userBorrowing, 0, MAX_SUPPLY_AMOUNT / 2 - 1); // Allow some buffer from supply cap
+    assets = bound(assets, 1, MAX_SUPPLY_AMOUNT / 2 - userBorrowing);
+
+    // Set up initial state of the vault by having derl borrow
+    uint256 supplyAmount = _calcMinimumCollAmount(spoke1, reserveId, reserveId, userBorrowing);
+    Utils.supply(spoke1, reserveId, derl, supplyAmount, derl);
+    setUsingAsCollateral(spoke1, derl, reserveId, true);
+    if (userBorrowing > 0) {
+      Utils.borrow(spoke1, reserveId, derl, userBorrowing, derl);
+    }
+
+    DataTypes.Reserve memory reserve = spoke1.getReserve(reserveId);
+
+    // Deal caller the required collateral amount, approve hub, supply
+    supplyAmount = _calcMinimumCollAmount(spoke1, reserveId, reserveId, assets);
+    deal(reserve.asset, caller, supplyAmount);
+    vm.prank(caller);
+    IERC20(reserve.asset).approve(address(hub), supplyAmount);
+    Utils.supply(spoke1, reserveId, caller, supplyAmount, caller);
+    setUsingAsCollateral(spoke1, caller, reserveId, true);
+
+    // Borrow and confirm share amount from event emission
+    uint256 shares1 = hub.convertToDrawnShares(reserve.assetId, assets);
+    vm.expectEmit(address(spoke1));
+    emit ISpoke.Borrow(reserveId, caller, shares1, caller);
+    vm.prank(caller);
+    spoke1.borrow(reserveId, assets, caller);
+
+    // Repay and confirm share amount from event emission
+    deal(reserve.asset, caller, assets);
+    vm.prank(caller);
+    IERC20(reserve.asset).approve(address(hub), assets);
+    uint256 shares2 = hub.convertToDrawnShares(reserve.assetId, assets);
+    vm.expectEmit(address(spoke1));
+    emit ISpoke.Repay(reserveId, caller, shares2);
+    vm.prank(caller);
+    spoke1.repay(reserveId, assets);
+
+    assertEq(shares2, shares1, 'supplied and withdrawn shares');
+  }
 }
