@@ -101,6 +101,7 @@ contract SpokeBase is Base {
   struct AssetInfo {
     uint256 borrowAmount;
     uint256 repayAmount;
+    uint256 baseRestored;
     uint256 premiumRestored;
     uint256 suppliedShares;
   }
