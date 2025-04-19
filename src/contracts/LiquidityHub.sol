@@ -232,6 +232,7 @@ contract LiquidityHub is ILiquidityHub {
     _refresh(assetId, msg.sender, premiumDrawnShareDelta, premiumOffsetDelta, realizedPremiumDelta);
     (uint256 baseDebtAfter, uint256 premiumDebtAfter) = _assets[assetId].debt();
     // can increase due to precision loss on premium debt (base unchanged)
+    // todo mathematically find premium diff ceiling and replace the `2`
     require(baseDebtAfter == baseDebt && premiumDebtAfter - premiumDebt <= 2, InvalidDebtChange());
   }
 
