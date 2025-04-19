@@ -1223,26 +1223,24 @@ contract SpokeRepayScenarioTest is SpokeBase {
       bob
     );
     uint256 bobDaiBalanceAfter = tokenList.dai.balanceOf(bob);
-    partialRepayAmount = baseRestored + premiumRestored;
 
     // Verify that Bob's debt is reduced after partial repayment
     assertApproxEqAbs(
       bobDaiAfter.totalDebt,
-      fullDebt - partialRepayAmount,
+      fullDebt - baseRestored - premiumRestored,
       2,
       'Bob dai debt should be reduced'
     );
-    // Verify that his DAI balance was reduced by the partial debt amount
-    assertApproxEqAbs(
+    // Verify that his DAI balance was reduced by the partial repay amount
+    assertEq(
       bobDaiBalanceAfter,
       bobDaiBalanceBefore - partialRepayAmount,
-      2,
-      'Bob dai balance decreased by partial debt repaid'
+      'Bob dai balance decreased by partial repay amount'
     );
     // Verify reserve debt was decreased by partial repayment
     assertApproxEqAbs(
       spoke1.getReserveTotalDebt(_daiReserveId(spoke1)),
-      fullDebt - partialRepayAmount,
+      fullDebt - baseRestored - premiumRestored,
       2
     );
 
@@ -1253,10 +1251,11 @@ contract SpokeRepayScenarioTest is SpokeBase {
       1
     );
 
-    (baseRestored, ) = _calculateExactRestoreAmount(
+    uint256 restoreAmount = bobDaiAfter.totalDebt;
+    (baseRestored, premiumRestored) = _calculateExactRestoreAmount(
       bobDaiAfter.baseDebt,
       bobDaiAfter.premiumDebt,
-      bobDaiAfter.totalDebt,
+      restoreAmount,
       daiAssetId
     );
 
