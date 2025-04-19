@@ -373,6 +373,18 @@ contract Spoke is ISpoke {
         vars.premiumDebt
       );
 
+      console.log(
+        'sp: user debt %e user coll %e',
+        getUserTotalDebt(debtReserve.reserveId, users[vars.i]),
+        getUserSuppliedAmount(collateralReserve.reserveId, users[vars.i])
+      );
+
+      console.log(
+        'sp collateralToLiquidate: %e baseDebtToLiquidate: %e',
+        vars.collateralToLiquidate,
+        vars.baseDebtToLiquidate
+      );
+
       // settle debt reserve's premium debt
       vars.userDebtPremiumDrawnShares = userDebtPosition.premiumDrawnShares;
       vars.userDebtPremiumOffset = userDebtPosition.premiumOffset;
@@ -561,6 +573,8 @@ contract Spoke is ISpoke {
       debtToCover: debtToCover,
       params: vars
     });
+
+    console.log('actualDebtToLiquidate %e %e', vars.actualDebtToLiquidate, debtToCover);
 
     (
       vars.actualCollateralToLiquidate,

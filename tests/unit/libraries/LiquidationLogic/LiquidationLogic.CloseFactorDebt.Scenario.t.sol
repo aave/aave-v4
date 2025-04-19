@@ -8,11 +8,6 @@ contract LiquidationLogicCloseFactorDebtScenarioTest is LiquidationLogicBaseTest
   using WadRayMath for uint256;
   using WadRayMathExtended for uint256;
 
-  uint256 daiUnits = 1e18;
-  uint256 usdxUnits = 1e6;
-  uint256 wethUnits = 1e18;
-  uint256 wbtcUnits = 1e8;
-
   function setUpScenario1() internal {
     updateCollateralFactor(spoke1, _daiReserveId(spoke1), 75_00);
     updateCollateralFactor(spoke1, _wethReserveId(spoke1), 80_00);

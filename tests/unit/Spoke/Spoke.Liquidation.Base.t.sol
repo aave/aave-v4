@@ -112,7 +112,7 @@ contract SpokeLiquidationBase is SpokeBase {
 
   function _bound(
     DataTypes.LiquidationConfig memory liqConfig
-  ) internal pure returns (DataTypes.LiquidationConfig memory) {
+  ) internal pure virtual returns (DataTypes.LiquidationConfig memory) {
     liqConfig.closeFactor = bound(
       liqConfig.closeFactor,
       HEALTH_FACTOR_LIQUIDATION_THRESHOLD,
@@ -165,13 +165,17 @@ contract SpokeLiquidationBase is SpokeBase {
       onBehalfOf: alice
     });
 
-    (uint256 finalHf, uint256 requiredDebtAmount) = _borrowToBeBelowHf(
+    (uint256 hfAfterBorrow, uint256 requiredDebtAmount) = _borrowToBeBelowHf(
       spoke1,
       alice,
       debtReserveId,
       desiredHf
     );
-    state.liquidationBonus = _getVariableLiquidationBonus(spoke1, collateralReserveId, finalHf);
+    state.liquidationBonus = _getVariableLiquidationBonus(
+      spoke1,
+      collateralReserveId,
+      hfAfterBorrow
+    );
 
     state.debt.balanceBefore = spoke1.getUserTotalDebt(debtReserveId, alice);
     state.liquidator.balanceBefore = IERC20(state.collateralReserve.asset).balanceOf(LIQUIDATOR);

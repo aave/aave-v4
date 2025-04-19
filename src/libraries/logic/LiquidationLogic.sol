@@ -44,6 +44,7 @@ library LiquidationLogic {
       (healthFactorLiquidationThreshold - config.healthFactorBonusThreshold);
   }
 
+  /// @return The amount of debt to repay in the liquidation, in amount
   function calculateActualDebtToLiquidate(
     uint256 debtToCover,
     DataTypes.LiquidationCallLocalVars memory params
@@ -52,9 +53,18 @@ library LiquidationLogic {
     vars.maxLiquidatableDebt = params.totalDebt; // for current debt asset, in amount
     vars.closeFactorDebt = params.calculateCloseFactorDebt();
 
+    console.log('LL params.totalDebt %e %e', vars.maxLiquidatableDebt, params.totalDebt);
+
     vars.maxLiquidatableDebt = vars.maxLiquidatableDebt > vars.closeFactorDebt
       ? vars.closeFactorDebt
       : vars.maxLiquidatableDebt;
+
+    console.log(
+      'LL params.totalDebt %e %e %e',
+      vars.maxLiquidatableDebt,
+      params.totalDebt,
+      vars.closeFactorDebt
+    );
 
     return debtToCover > vars.maxLiquidatableDebt ? vars.maxLiquidatableDebt : debtToCover;
   }
@@ -81,11 +91,22 @@ library LiquidationLogic {
       return type(uint256).max;
     }
 
+    console.log('params.closeFactor', params.closeFactor);
+
     uint256 closeFactorDebt = ((params.totalDebtInBaseCurrency.wadMul(params.closeFactor) -
       params.totalCollateralInBaseCurrency.percentMul(params.avgCollateralFactor.dewadify())) *
       params.debtAssetUnit) /
       ((params.closeFactor - effectiveLiquidationPenalty) * params.debtAssetPrice) +
       1; // add 1 to ensure HF > close factor
+
+    console.log(
+      'num %e %e',
+      params.totalDebtInBaseCurrency.wadMul(params.closeFactor),
+      params.totalCollateralInBaseCurrency.percentMul(params.avgCollateralFactor.dewadify())
+    );
+
+    console.log('denom %e %e', params.closeFactor, effectiveLiquidationPenalty);
+    console.log('LL closeFactorDebt %e', closeFactorDebt);
 
     return closeFactorDebt;
   }
@@ -112,10 +133,8 @@ library LiquidationLogic {
       (params.debtAssetPrice * params.actualDebtToLiquidate * params.collateralAssetUnit),
       (params.collateralAssetPrice * params.debtAssetUnit)
     );
-    console.log('LL %e %e', vars.maxCollateralToLiquidate, params.userCollateralBalance);
 
     if (vars.maxCollateralToLiquidate > params.userCollateralBalance) {
-      console.log('maxCollateralToLiquidate > userCollateralBalance');
       // back calculate debt amount needed to cover the max allowed collateral
       vars.collateralAmount = params.userCollateralBalance;
       vars.debtAmountNeeded = ((params.collateralAssetPrice *

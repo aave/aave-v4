@@ -12,10 +12,6 @@ contract LiquidationLogicBaseTest is Base {
   // (debt * assetPrice).wadify() / assetUnit
   uint256 internal constant MAX_TOTAL_ASSET_IN_BASE_CURRENCY = 1e58;
 
-  struct FieldsToSkip {
-    uint256 flags;
-  }
-
   uint256 constant SKIP_NONE = 0;
   uint256 constant SKIP_LIQUIDATION_BONUS = 1 << 0;
   uint256 constant SKIP_COLLATERAL_FACTOR = 1 << 1;
@@ -25,6 +21,15 @@ contract LiquidationLogicBaseTest is Base {
   uint256 constant SKIP_AVG_COLLATERAL_FACTOR = 1 << 5;
   uint256 constant SKIP_DEBT_ASSET_UNIT = 1 << 6;
   uint256 constant SKIP_TOTAL_COLLATERAL = 1 << 7;
+
+  struct FieldsToSkip {
+    uint256 flags;
+  }
+
+  uint256 internal daiUnits = 1e18;
+  uint256 internal usdxUnits = 1e6;
+  uint256 internal wethUnits = 1e18;
+  uint256 internal wbtcUnits = 1e8;
 
   struct TestCloseFactorDebtParams {
     uint256 liquidationBonus;
