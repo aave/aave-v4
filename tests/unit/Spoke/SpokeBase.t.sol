@@ -110,6 +110,7 @@ contract SpokeBase is Base {
     uint256 suppliedShares;
     uint256 borrowAmount;
     uint256 repayAmount;
+    uint256 baseRestored;
     uint256 premiumRestored;
     address user;
   }
