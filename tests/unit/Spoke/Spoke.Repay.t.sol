@@ -1193,10 +1193,11 @@ contract SpokeRepayTest is SpokeBase {
 
     // Bob repays
     uint256 bobDaiBaseDebt = bobDaiBefore.baseDebt - daiBorrowAmount;
-    (daiRepayAmount, ) = _calculateExactRestoreAmount(
+    daiRepayAmount = bound(daiRepayAmount, 0, bobDaiBaseDebt);
+    (uint256 baseRestored, uint256 premiumRestored) = _calculateExactRestoreAmount(
       bobDaiBaseDebt,
       0,
-      bound(daiRepayAmount, 0, bobDaiBaseDebt),
+      daiRepayAmount,
       daiAssetId
     );
     deal(address(tokenList.dai), bob, daiRepayAmount);
@@ -1208,7 +1209,7 @@ contract SpokeRepayTest is SpokeBase {
       emit ISpoke.Repay(
         _daiReserveId(spoke1),
         bob,
-        hub.convertToDrawnShares(daiAssetId, daiRepayAmount)
+        hub.convertToDrawnShares(daiAssetId, baseRestored)
       );
     }
 
@@ -1226,15 +1227,17 @@ contract SpokeRepayTest is SpokeBase {
     assertEq(bobDaiDataAfter.suppliedShares, bobDaiDataBefore.suppliedShares);
     assertApproxEqAbs(
       bobDaiAfter.baseDebt,
-      daiRepayAmount >= bobDaiBefore.baseDebt ? 0 : bobDaiBefore.baseDebt - daiRepayAmount,
-      3,
+      daiRepayAmount >= bobDaiBefore.baseDebt ? 0 : bobDaiBefore.baseDebt - baseRestored,
+      1,
       'bob dai base debt final balance'
     );
     assertEq(bobDaiAfter.premiumDebt, 0, 'bob dai premium debt final balance');
     assertApproxEqAbs(
       bobDaiAfter.totalDebt,
-      daiRepayAmount >= bobDaiBefore.totalDebt ? 0 : bobDaiBefore.totalDebt - daiRepayAmount,
-      3,
+      daiRepayAmount >= bobDaiBefore.totalDebt
+        ? 0
+        : bobDaiBefore.totalDebt - (baseRestored + premiumRestored),
+      1,
       'bob dai debt final balance'
     );
     assertEq(bobWethDataAfter.suppliedShares, bobWethDataBefore.suppliedShares);
@@ -1361,6 +1364,8 @@ contract SpokeRepayTest is SpokeBase {
       deal(address(tokenList.dai), bob, daiInfo.repayAmount);
       spoke1.repay(_daiReserveId(spoke1), daiInfo.repayAmount);
     }
+    Debts memory bobDaiAfter = getUserDebt(spoke1, bob, _daiReserveId(spoke1));
+
     wethInfo.posBefore = getUserInfo(spoke1, bob, _wethReserveId(spoke1));
     bobWethBefore = getUserDebt(spoke1, bob, _wethReserveId(spoke1));
     assertGe(bobWethBefore.totalDebt, wethInfo.borrowAmount);
@@ -1374,6 +1379,8 @@ contract SpokeRepayTest is SpokeBase {
       deal(address(tokenList.weth), bob, wethInfo.repayAmount);
       spoke1.repay(_wethReserveId(spoke1), wethInfo.repayAmount);
     }
+    Debts memory bobWethAfter = getUserDebt(spoke1, bob, _wethReserveId(spoke1));
+
     wbtcInfo.posBefore = getUserInfo(spoke1, bob, _wbtcReserveId(spoke1));
     bobWbtcBefore = getUserDebt(spoke1, bob, _wbtcReserveId(spoke1));
     assertGe(bobWbtcBefore.totalDebt, wbtcInfo.borrowAmount);
@@ -1387,6 +1394,8 @@ contract SpokeRepayTest is SpokeBase {
       deal(address(tokenList.wbtc), bob, wbtcInfo.repayAmount);
       spoke1.repay(_wbtcReserveId(spoke1), wbtcInfo.repayAmount);
     }
+    Debts memory bobWbtcAfter = getUserDebt(spoke1, bob, _wbtcReserveId(spoke1));
+
     usdxInfo.posBefore = getUserInfo(spoke1, bob, _usdxReserveId(spoke1));
     bobUsdxBefore = getUserDebt(spoke1, bob, _usdxReserveId(spoke1));
     assertGe(bobUsdxBefore.totalDebt, usdxInfo.borrowAmount);
@@ -1400,16 +1409,12 @@ contract SpokeRepayTest is SpokeBase {
       deal(address(tokenList.usdx), bob, usdxInfo.repayAmount);
       spoke1.repay(_usdxReserveId(spoke1), usdxInfo.repayAmount);
     }
+    Debts memory bobUsdxAfter = getUserDebt(spoke1, bob, _usdxReserveId(spoke1));
 
     daiInfo.posAfter = getUserInfo(spoke1, bob, _daiReserveId(spoke1));
     wethInfo.posAfter = getUserInfo(spoke1, bob, _wethReserveId(spoke1));
     usdxInfo.posAfter = getUserInfo(spoke1, bob, _usdxReserveId(spoke1));
     wbtcInfo.posAfter = getUserInfo(spoke1, bob, _wbtcReserveId(spoke1));
-
-    Debts memory bobDaiAfter = getUserDebt(spoke1, bob, _daiReserveId(spoke1));
-    Debts memory bobWethAfter = getUserDebt(spoke1, bob, _wethReserveId(spoke1));
-    Debts memory bobUsdxAfter = getUserDebt(spoke1, bob, _usdxReserveId(spoke1));
-    Debts memory bobWbtcAfter = getUserDebt(spoke1, bob, _wbtcReserveId(spoke1));
 
     // collateral remains the same
     assertEq(daiInfo.posAfter.suppliedShares, daiInfo.posBefore.suppliedShares);
@@ -1422,23 +1427,23 @@ contract SpokeRepayTest is SpokeBase {
       assertApproxEqAbs(
         bobDaiAfter.baseDebt,
         bobDaiBefore.baseDebt - daiInfo.baseRestored,
-        5,
+        1,
         'bob dai base debt final balance'
       );
       assertApproxEqAbs(
         bobDaiAfter.premiumDebt,
         bobDaiBefore.premiumDebt - daiInfo.premiumRestored,
-        5,
+        1,
         'bob dai premium debt final balance'
       );
     } else {
-      assertApproxEqAbs(bobDaiAfter.totalDebt, bobDaiBefore.totalDebt, 3);
+      assertApproxEqAbs(bobDaiAfter.totalDebt, bobDaiBefore.totalDebt, 1);
     }
     if (wethInfo.repayAmount > 0) {
       assertApproxEqAbs(
         bobWethAfter.baseDebt,
         bobWethBefore.baseDebt - wethInfo.baseRestored,
-        5,
+        1,
         'bob weth base debt final balance'
       );
       assertApproxEqAbs(
@@ -1446,11 +1451,11 @@ contract SpokeRepayTest is SpokeBase {
         wethInfo.premiumRestored >= bobWethBefore.premiumDebt
           ? 0
           : bobWethBefore.premiumDebt - wethInfo.premiumRestored,
-        5,
+        1,
         'bob weth premium debt final balance'
       );
     } else {
-      assertApproxEqAbs(bobWethAfter.totalDebt, bobWethBefore.totalDebt, 3);
+      assertApproxEqAbs(bobWethAfter.totalDebt, bobWethBefore.totalDebt, 1);
     }
     if (usdxInfo.repayAmount > 0) {
       assertApproxEqAbs(
@@ -1458,17 +1463,17 @@ contract SpokeRepayTest is SpokeBase {
         usdxInfo.baseRestored >= bobUsdxBefore.baseDebt
           ? 0
           : bobUsdxBefore.baseDebt - usdxInfo.baseRestored,
-        5,
+        1,
         'bob usdx base debt final balance'
       );
       assertApproxEqAbs(
         bobUsdxAfter.premiumDebt,
         bobUsdxBefore.premiumDebt - usdxInfo.premiumRestored,
-        5,
+        1,
         'bob usdx premium debt final balance'
       );
     } else {
-      assertApproxEqAbs(bobUsdxAfter.totalDebt, bobUsdxBefore.totalDebt, 3);
+      assertApproxEqAbs(bobUsdxAfter.totalDebt, bobUsdxBefore.totalDebt, 1);
     }
     if (wbtcInfo.repayAmount > 0) {
       assertApproxEqAbs(
@@ -1476,7 +1481,7 @@ contract SpokeRepayTest is SpokeBase {
         wbtcInfo.baseRestored >= bobWbtcBefore.baseDebt
           ? 0
           : bobWbtcBefore.baseDebt - wbtcInfo.baseRestored,
-        5,
+        1,
         'bob wbtc base debt final balance'
       );
       assertApproxEqAbs(
@@ -1484,11 +1489,11 @@ contract SpokeRepayTest is SpokeBase {
         wbtcInfo.premiumRestored >= bobWbtcBefore.premiumDebt
           ? 0
           : bobWbtcBefore.premiumDebt - wbtcInfo.premiumRestored,
-        5,
+        1,
         'bob wbtc premium debt final balance'
       );
     } else {
-      assertApproxEqAbs(bobWbtcAfter.totalDebt, bobWbtcBefore.totalDebt, 3);
+      assertApproxEqAbs(bobWbtcAfter.totalDebt, bobWbtcBefore.totalDebt, 1);
     }
     vm.stopPrank();
 
