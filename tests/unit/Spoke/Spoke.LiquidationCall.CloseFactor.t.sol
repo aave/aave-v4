@@ -26,10 +26,11 @@ contract LiquidationCallCloseFactorTest is SpokeLiquidationBase {
     });
     uint256 liquidationProtocolFeePercentage = 0;
     uint256 liqBonus = 100_00;
-    uint256 supplyAmount = 1.5e18;
+    uint256 supplyAmount = 1.5e18; // vary in fuzz test
     uint256 desiredHf = uint256(1e18).percentMul(
       spoke1.getCollateralFactor(collateralReserveId) + 1
     ); // max achievable hf in order to achieve close factor
+    // anything lower than this value will make it impossible to get to close factor
 
     console.log(spoke1.getCollateralFactor(collateralReserveId));
 
