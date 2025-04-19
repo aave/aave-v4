@@ -116,9 +116,10 @@ interface ILiquidityHub {
   ) external returns (uint256);
 
   /**
-   * @notice Refresh premium debt to be called when moving accrued premium to realized premium.
+   * @notice Refreshes premium debt accounting.
+   * @dev To be called when moving accrued premium to realized premium.
    * @dev Only callable by spokes.
-   * @dev Total debt is not allowed to change, reverts with `InvalidDebtChange` when violated.
+   * @dev Total debt should not change, reverts with `InvalidDebtChange` when violated.
    * @param assetId The asset id.
    * @param premiumDrawnSharesDelta The change in premium drawn shares.
    * @param premiumOffsetDelta The change in premium offset.
@@ -132,10 +133,12 @@ interface ILiquidityHub {
   ) external;
 
   /**
-   * @notice Settle premium debt to be called in conjunction with repay to pay premium debt.
+   * @notice Settles premium debt restored.
+   * @dev To be called in conjunction with repay to pay premium debt, restore must account for
+   * the premium restored in the available liquidity.
    * @dev Only callable by spokes.
-   * @dev Base debt is not allowed to change, reverts with `InvalidDebtChange` when violated,
-   * premium debt can only decrease by at most the amount of premium restored.
+   * @dev Base debt should not change, reverts with `InvalidDebtChange` when violated, and
+   * premium debt can only decrease by at most the amount of premium restored on restore.
    * @param assetId The asset id.
    * @param premiumDrawnSharesDelta The change in premium drawn shares.
    * @param premiumOffsetDelta The change in premium offset.
