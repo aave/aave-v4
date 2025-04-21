@@ -37,7 +37,7 @@ contract LiquidationCallProtocolFeeTest is SpokeLiquidationBase {
 
     supplyAmount = bound(supplyAmount, 1e11, MAX_SUPPLY_AMOUNT / 1e4); // bounds to ensure HF is below desiredHf within precision
 
-    LiquidationTestLocalParams memory state = _execLiqCallTest(
+    LiquidationTestLocalParams memory state = _execLiqCallFuzzTest(
       liqConfig,
       liqBonus,
       supplyAmount,
@@ -62,7 +62,7 @@ contract LiquidationCallProtocolFeeTest is SpokeLiquidationBase {
 
     supplyAmount = bound(supplyAmount, 1e14, MAX_SUPPLY_AMOUNT / 1e4); // bounds to ensure HF is below desiredHf within precision
 
-    LiquidationTestLocalParams memory state = _execLiqCallTest(
+    LiquidationTestLocalParams memory state = _execLiqCallFuzzTest(
       liqConfig,
       liqBonus,
       supplyAmount,
@@ -87,7 +87,7 @@ contract LiquidationCallProtocolFeeTest is SpokeLiquidationBase {
 
     supplyAmount = bound(supplyAmount, 1e5, MAX_SUPPLY_AMOUNT / 1e4); // bounds to ensure HF is below desiredHf within precision
 
-    LiquidationTestLocalParams memory state = _execLiqCallTest(
+    LiquidationTestLocalParams memory state = _execLiqCallFuzzTest(
       liqConfig,
       liqBonus,
       supplyAmount,

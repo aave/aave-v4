@@ -47,7 +47,7 @@ contract LiquidationCallVariableLiquidationBonusTest is SpokeLiquidationBase {
 
     supplyAmount = bound(supplyAmount, 1e8, MAX_SUPPLY_AMOUNT / 1e4); // bounds to ensure HF is below desiredHf within precision
 
-    LiquidationTestLocalParams memory state = _execLiqCallTest(
+    LiquidationTestLocalParams memory state = _execLiqCallFuzzTest(
       liqConfig,
       liqBonus,
       supplyAmount,
@@ -57,7 +57,7 @@ contract LiquidationCallVariableLiquidationBonusTest is SpokeLiquidationBase {
       0
     );
 
-    // _assertLiquidationBonusEarned(state, 'test_liquidationCall_fuzz_variableLB weth/dai');
+    _assertLiquidationBonusEarned(state, 'test_liquidationCall_fuzz_variableLB weth/dai');
   }
 
   function test_liquidationCall_variableLB2_unit1() public {
@@ -98,7 +98,7 @@ contract LiquidationCallVariableLiquidationBonusTest is SpokeLiquidationBase {
 
     supplyAmount = bound(supplyAmount, 1e13, MAX_SUPPLY_AMOUNT / 1e4); // bounds to ensure HF is below desiredHf within precision
 
-    LiquidationTestLocalParams memory state = _execLiqCallTest(
+    LiquidationTestLocalParams memory state = _execLiqCallFuzzTest(
       liqConfig,
       liqBonus,
       supplyAmount,
@@ -123,7 +123,7 @@ contract LiquidationCallVariableLiquidationBonusTest is SpokeLiquidationBase {
 
     supplyAmount = bound(supplyAmount, 1e7, MAX_SUPPLY_AMOUNT); // bounds to ensure HF is below desiredHf within precision
 
-    LiquidationTestLocalParams memory state = _execLiqCallTest(
+    LiquidationTestLocalParams memory state = _execLiqCallFuzzTest(
       liqConfig,
       liqBonus,
       supplyAmount,
@@ -148,7 +148,7 @@ contract LiquidationCallVariableLiquidationBonusTest is SpokeLiquidationBase {
 
     supplyAmount = bound(supplyAmount, 1e16, MAX_SUPPLY_AMOUNT); // bounds to ensure HF is below desiredHf within precision
 
-    LiquidationTestLocalParams memory state = _execLiqCallTest(
+    LiquidationTestLocalParams memory state = _execLiqCallFuzzTest(
       liqConfig,
       liqBonus,
       supplyAmount,
