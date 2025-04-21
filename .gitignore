@@ -21,3 +21,6 @@ broadcast/
 lcov*
 
 report/
+
+# certora internal artifacts
+.certora_internal/
