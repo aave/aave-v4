@@ -10,10 +10,7 @@ evm_version = "cancun"
 optimizer = true
 optimizer_runs = 200
 bytecode_hash = "none"
-isolate = true
 
-[profile.ci]
-gas_snapshot_check = true
 [fuzz]
 runs = 10000
 

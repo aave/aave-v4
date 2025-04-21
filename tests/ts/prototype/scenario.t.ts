@@ -1,238 +1,261 @@
-import {LiquidityHub, Spoke, User, skip} from './core';
-import {absDiff, f, MAX_UINT, maxAbsDiff, p, PRECISION} from './utils';
+import {skip} from './core';
+import {
+  f,
+  MAX_UINT,
+  p,
+  it,
+  runScenarios,
+  randomIndex,
+  rayDiv,
+  rayMul,
+  Rounding,
+  absDiff,
+} from './utils';
 
-const hub = new LiquidityHub();
-const spokes = [new Spoke(hub)];
-const users = [new User(), new User(), new User()];
-const [alice, bob, charlie] = users;
-assignSpokesToUsers();
+it()((ctx) => {
+  const [alice, bob, charlie] = ctx.users;
+  const amount1 = p('10000');
+  const amount2 = p('200');
+  const amount3 = p('500');
 
-const amount1 = p('10000');
-const amount2 = p('200');
-const amount3 = p('500');
+  alice.supply(amount1);
+  alice.borrow(amount1);
+  skip();
+  alice.repay(amount2);
+  bob.borrow(amount2);
+  skip();
+  alice.repay(amount3);
+  charlie.borrow(amount3);
+  alice.repay(amount3);
+  skip();
+  charlie.borrow(amount3);
+  skip();
+  alice.repay(MAX_UINT);
+  skip();
+  charlie.repay(MAX_UINT);
+  skip();
+  bob.repay(MAX_UINT);
+  skip();
+  alice.withdraw(amount2);
+  skip();
+  alice.withdraw(alice.getSuppliedBalance());
 
-alice.supply(amount1);
-alice.borrow(amount1);
+  alice.log(true, true);
+});
 
-skip();
-alice.repay(amount2);
-alice.log(true, true);
-bob.borrow(amount2);
+it()((ctx) => {
+  const [alice] = ctx.users;
+  const amount = p(1000);
 
-skip();
-alice.repay(amount3);
-alice.log(true, true);
-charlie.borrow(amount3);
-alice.repay(amount3);
+  alice.supply(amount);
+  alice.borrow(amount);
 
-skip();
-alice.log(true, true);
-charlie.borrow(amount3);
+  alice.log(true, true);
 
-skip();
-alice.repay(MAX_UINT);
-alice.log(true, true);
+  alice.repay(amount);
+  alice.log(true, true);
 
-skip();
-charlie.repay(MAX_UINT);
+  alice.repay(MAX_UINT);
+});
 
-skip();
-bob.repay(MAX_UINT);
-bob.log(true, true);
+it()((ctx) => {
+  const [alice, bob, charlie] = ctx.users;
 
-skip();
-alice.withdraw(amount2);
-skip();
-alice.withdraw(alice.getSuppliedBalance());
+  const amount1 = p('1000');
+  alice.supply(amount1);
+  alice.borrow(amount1);
 
-alice.log(true, true);
+  skip();
 
-runAmountInvariants();
+  alice.log(true, true);
+  alice.repay(MAX_UINT);
+  alice.log(true, true);
 
-function runAmountInvariants() {
-  invariant_hubSpokeAccounting();
-  invariant_sumOfBaseDebt();
-  invariant_sumOfPremiumDebt();
-  invariant_sumOfSuppliedShares();
-  invariant_drawnGtSuppliedLiquidity();
-}
+  const amount2 = p('1000');
+  bob.borrow(amount2);
+  skip();
 
-function assignSpokesToUsers() {
-  users.forEach((user) => {
-    const spoke = spokes[Math.floor(Math.random() * spokes.length)];
-    user.assignSpoke(spoke);
-    spoke.addUser(user);
-  });
-}
+  bob.repay(MAX_UINT);
 
-function invariant_sumOfBaseDebt() {
-  let fail = false,
-    diff = 0n;
-  const hubBaseDebt = hub.getDebt().baseDebt;
-  const spokeBaseDebt = spokes.reduce((sum, spoke) => sum + spoke.getDebt().baseDebt, 0n);
-  const userBaseDebt = users.reduce((sum, user) => sum + user.getDebt().baseDebt, 0n);
-  if ((diff = absDiff(hubBaseDebt, spokeBaseDebt)) > PRECISION) {
-    console.error('hubBaseDebt !== spokeBaseDebt, diff', f(hubBaseDebt), f(spokeBaseDebt), diff);
-    fail = true;
+  skip();
+  const amount4 = p('700');
+  charlie.borrow(amount4);
+
+  skip();
+  charlie.repay(amount4);
+  charlie.log(true, true);
+
+  skip();
+  // charlie.log(true, true);
+  charlie.repay(MAX_UINT);
+  // charlie.log(true, true);
+});
+
+it()((ctx) => {
+  const [alice, bob, charlie] = ctx.users;
+
+  const amount1 = p('10000');
+  const amount2 = p('200');
+  const amount3 = p('500');
+
+  alice.supply(amount1);
+  alice.borrow(amount1);
+
+  skip();
+  alice.repay(amount2);
+  bob.borrow(amount2);
+
+  alice.updateRiskPremium();
+
+  skip();
+  alice.repay(amount3);
+  charlie.borrow(amount3);
+  alice.repay(amount3);
+
+  skip();
+  charlie.borrow(amount3);
+
+  skip();
+  alice.repay(MAX_UINT);
+
+  skip();
+  charlie.repay(MAX_UINT);
+
+  skip();
+  bob.repay(MAX_UINT);
+});
+
+it()((ctx) => {
+  const [alice, bob, charlie] = ctx.users;
+
+  const amount1 = p('10000');
+  const amount2 = p('200');
+  const amount3 = p('500');
+
+  alice.supply(amount1);
+
+  skip();
+  bob.borrow(amount2);
+  bob.supply(amount3);
+
+  skip();
+  charlie.supply(amount3);
+  charlie.borrow(amount2);
+
+  skip();
+  charlie.repay(MAX_UINT);
+  bob.repay(MAX_UINT);
+
+  skip();
+  charlie.withdraw(MAX_UINT);
+  bob.withdraw(MAX_UINT);
+  alice.withdraw(MAX_UINT);
+
+  alice.supply(amount1);
+
+  skip();
+  bob.borrow(amount2);
+  bob.supply(amount3);
+
+  skip();
+  charlie.supply(amount3);
+  charlie.borrow(amount2);
+
+  skip();
+  charlie.repay(MAX_UINT);
+  bob.repay(MAX_UINT);
+
+  skip();
+  charlie.withdraw(MAX_UINT);
+  bob.withdraw(MAX_UINT);
+  alice.withdraw(MAX_UINT);
+});
+
+it('6 supply yields -1 bc of index').skip((ctx) => {
+  const [alice, bob] = ctx.users;
+  const amount = p(100);
+  const amount2 = p(500);
+
+  bob.supply(amount2);
+  // skip();
+  bob.withdraw(amount2 / 2n);
+  // skip();
+  bob.borrow(amount2 / 2n);
+
+  alice.supply(amount);
+  // skip();
+  console.log('alice supplied amount', f(alice.getSuppliedBalance()), f(amount));
+  try {
+    alice.withdraw(amount);
+  } catch (e) {
+    if (!e.message.includes('suppliedShares < 0 || > MAX_UINT')) throw e;
   }
-  if ((diff = absDiff(spokeBaseDebt, userBaseDebt)) > PRECISION) {
-    console.error('spokeBaseDebt !== userBaseDebt, diff', f(spokeBaseDebt), f(userBaseDebt), diff);
-    fail = true;
+  // alice.withdraw(alice.getSuppliedBalance());
+});
+
+it('7 underflow bc sum of scaled may not to equate to individual scaled when all are unscaled')(
+  (ctx) => {
+    const [alice, bob, carol] = ctx.users;
+    alice.supply(47168n);
+
+    bob.borrow(22592n);
+    alice.borrow(12739n);
+
+    carol.borrow(11837n);
+
+    skip();
+
+    bob.repay(1714n);
+    alice.repay(9n);
+
+    carol.repay(1255n);
   }
-  if ((diff = maxAbsDiff(hubBaseDebt, spokeBaseDebt, userBaseDebt)) > PRECISION) {
-    console.error(
-      'maxAbsDiff(hubBaseDebt, spokeBaseDebt, userBaseDebt) > PRECISION, diff',
-      f(hubBaseDebt),
-      f(spokeBaseDebt),
-      f(userBaseDebt),
-      diff
-    );
-    fail = true;
-  }
+);
 
-  if (hubBaseDebt === 0n && spokeBaseDebt + userBaseDebt !== 0n) {
-    console.error(
-      'spoke & user dust baseDebt remaining when hub baseDebt is completely repaid',
-      'spokeBaseDebt %d, userBaseDebt %d',
-      f(spokeBaseDebt),
-      f(userBaseDebt)
-    );
-    fail = true;
-  }
+it('index')((ctx) => {
+  const index = randomIndex(); // 1645169034437660970422632448n, 1370571970449003121502846976n
+  console.log('index', index);
+  const scale = (amount: bigint) => rayDiv(amount, index, Rounding.CEIL);
+  const unscale = (scaled: bigint) => rayMul(scaled, index, Rounding.CEIL); // toggle
 
-  // handleInvariantFailure(fail, arguments.callee.name);
-  handleInvariantFailure(fail, 'invariant_sumOfBaseDebt');
-}
+  const amountA = 23232n;
+  const scaledA = scale(amountA);
+  console.log('unscaled A     ', unscale(scaledA), amountA);
 
-function invariant_sumOfPremiumDebt() {
-  let fail = false,
-    diff = 0n;
-  const hubPremiumDebt = hub.getDebt().premiumDebt;
-  const spokePremiumDebt = spokes.reduce((sum, spoke) => sum + spoke.getDebt().premiumDebt, 0n);
-  const userPremiumDebt = users.reduce((sum, user) => sum + user.getDebt().premiumDebt, 0n);
-  if ((diff = absDiff(hubPremiumDebt, spokePremiumDebt)) > PRECISION) {
-    console.error(
-      'hubPremiumDebt !== spokePremiumDebt, diff',
-      f(hubPremiumDebt),
-      f(spokePremiumDebt),
-      diff
-    );
-    fail = true;
-  }
-  if ((diff = absDiff(spokePremiumDebt, userPremiumDebt)) > PRECISION) {
-    console.error(
-      'spokePremiumDebt !== userPremiumDebt, diff',
-      f(spokePremiumDebt),
-      f(userPremiumDebt),
-      diff
-    );
-    fail = true;
-  }
+  const amountB = 3243n;
+  const scaledB = scale(amountB);
+  console.log('unscaled B     ', unscale(scaledB), amountB);
 
-  // validate internal premium vars
-  ['ghostDrawnShares', 'offset', 'unrealisedPremium'].forEach((key) => {
-    const hubKey = hub[key];
-    const spokeKey = spokes.reduce((sum, spoke) => sum + spoke[key], 0n);
-    const userKey = users.reduce((sum, user) => sum + user[key], 0n);
-    if ((diff = absDiff(hubKey, spokeKey)) > PRECISION) {
-      console.error(`hub.${key} !== spoke.${key}, diff`, f(hubKey), f(spokeKey), diff);
-      fail = true;
-    }
-    if ((diff = absDiff(spokeKey, userKey)) > PRECISION) {
-      console.error(`spoke.${key} !== user.${key}, diff`, f(spokeKey), f(userKey), diff);
-      fail = true;
-    }
-  });
+  console.log('unscaled global', unscale(scaledA + scaledB), amountA + amountB);
+  console.log('unscaled sum   ', unscale(scaledA) + unscale(scaledB), amountA + amountB);
+});
 
-  if (hubPremiumDebt === 0n && spokePremiumDebt + userPremiumDebt !== 0n) {
-    console.error(
-      'spoke & user dust premiumDebt remaining when hub premiumDebt is completely repaid',
-      'spokePremiumDebt %d, userPremiumDebt %d',
-      f(spokePremiumDebt),
-      f(userPremiumDebt)
-    );
-    fail = true;
-  }
+it().skip((ctx) => {
+  const [alice, bob] = ctx.users;
+  const amount = p('0.176772459072625441');
+  alice.supply(amount);
+  alice.borrow(amount);
 
-  handleInvariantFailure(fail, 'invariant_sumOfPremiumDebt');
-}
+  skip();
 
-function invariant_sumOfSuppliedShares() {
-  const hubSuppliedShares = hub.suppliedShares;
-  const spokeSuppliedShares = spokes.reduce((sum, spoke) => sum + spoke.suppliedShares, 0n);
-  const userSuppliedShares = users.reduce((sum, user) => sum + user.suppliedShares, 0n);
-  let fail = false,
-    diff = 0n;
-  if ((diff = absDiff(hubSuppliedShares, spokeSuppliedShares)) > PRECISION) {
-    console.error(
-      'hubSuppliedShares !== spokeSuppliedShares, diff',
-      f(hubSuppliedShares),
-      f(spokeSuppliedShares),
-      diff
-    );
-    fail = true;
-    throw new Error('invariant_sumOfSuppliedShares failed');
-  }
-  if ((diff = absDiff(hubSuppliedShares, userSuppliedShares)) > PRECISION) {
-    console.error(
-      'hubSuppliedShares !== userSuppliedShares, diff',
-      f(hubSuppliedShares),
-      f(userSuppliedShares),
-      diff
-    );
-    fail = true;
-    throw new Error('invariant_sumOfSuppliedShares failed');
-  }
+  alice.repay(p('0.021185397759087569'));
 
-  handleInvariantFailure(fail, 'invariant_sumOfSuppliedShares');
-}
+  console.log('alice balance', f(alice.getSuppliedBalance()));
+  alice.withdraw(p('0.437902789221420415'));
+});
 
-function invariant_drawnGtSuppliedLiquidity() {
-  let fail = false;
-  const hubTotalDebt = hub.getTotalDebt();
-  const hubTotalSuppliedLiquidity = hub.totalSupplyAssets();
+it('repay deduction')((ctx) => {
+  const [alice] = ctx.users;
+  const amount = p('0.000000001620580722');
+  alice.supply(amount);
+  alice.borrow(amount);
 
-  if (hubTotalDebt > hubTotalSuppliedLiquidity) {
-    console.error(
-      'hubTotalDebt <= hubTotalSuppliedLiquidity',
-      f(hubTotalDebt),
-      f(hubTotalSuppliedLiquidity)
-    );
-    fail = true;
-  }
-  handleInvariantFailure(fail, 'invariant_drawnGtSuppliedLiquidity');
-}
+  skip();
 
-function invariant_hubSpokeAccounting() {
-  let fail = false;
+  const aliceDebtBefore = alice.getTotalDebt();
+  alice.repay(amount / 2n);
+  const delta = aliceDebtBefore - alice.getTotalDebt();
+  console.log('restored actual', f(delta), 'expected', f(amount / 2n), 'diff', delta - amount / 2n);
+});
 
-  spokes.forEach((spoke) => {
-    const spokeOnHub = hub.getSpoke(spoke);
-    [
-      'baseDrawnShares',
-      'ghostDrawnShares',
-      'offset',
-      'unrealisedPremium',
-      'suppliedShares',
-    ].forEach((key) => {
-      if (spoke[key] !== spokeOnHub[key]) {
-        console.error(
-          `spoke(${spoke.id}).${key} ${f(spoke[key])} !== hub.spokes[${hub.idx(spoke)}].${key} ${f(
-            spokeOnHub[key]
-          )}`
-        );
-        fail = true;
-      }
-    });
-  });
-  handleInvariantFailure(fail, 'invariant_hubSpokeAccountingMatch');
-}
-
-function handleInvariantFailure(fail: boolean, invariant: string) {
-  if (fail) {
-    // hub.log(true);
-    // spokes.forEach((spoke) => spoke.log());
-    // users.forEach((user) => user.log());
-    throw new Error(`${invariant} failed`);
-  }
-}
+runScenarios();

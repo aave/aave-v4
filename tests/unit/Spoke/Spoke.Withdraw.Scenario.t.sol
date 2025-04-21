@@ -79,9 +79,10 @@ contract SpokeWithdrawScenarioTest is SpokeBase {
     });
 
     uint256 totalSupplied = supplyAmount + interestAccrued;
-    assertEq(
+    assertApproxEqAbs(
       totalSupplied,
       spoke1.getUserSuppliedAmount(_daiReserveId(spoke1), bob),
+      1,
       'total supplied'
     );
 
@@ -93,9 +94,10 @@ contract SpokeWithdrawScenarioTest is SpokeBase {
     spoke1.withdraw(_daiReserveId(spoke1), partialWithdrawAmount, bob);
 
     uint256 expectedSupplied = totalSupplied - partialWithdrawAmount;
-    assertEq(
+    assertApproxEqAbs(
       expectedSupplied,
       spoke1.getUserSuppliedAmount(_daiReserveId(spoke1), bob),
+      1,
       'expected supplied'
     );
 

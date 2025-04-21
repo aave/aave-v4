@@ -773,4 +773,43 @@ contract SpokeWithdrawTest is SpokeBase {
     uint256 supplyExRateAfter = getSupplyExRate(assetId); // caching to avoid stack too deep
     _checkSupplyRateIncreasing(supplyExRateBefore, supplyExRateAfter, true, 'after withdraw');
   }
+
+  /// withdraw an asset with existing debt, with no interest accrual the two ex rates
+  /// can increase due to rounding, with interest accrual should strictly increase
+  function test_fuzz_withdraw_effect_on_ex_rates(uint256 amount, uint256 delay) public {
+    delay = bound(delay, 1, MAX_SKIP_TIME);
+    amount = bound(amount, 2, MAX_SUPPLY_AMOUNT / 2);
+    uint256 wethSupplyAmount = _calcMinimumCollAmount(
+      spoke1,
+      _wethReserveId(spoke1),
+      _daiReserveId(spoke1),
+      amount
+    );
+    Utils.supply(spoke1, _daiReserveId(spoke1), bob, amount, bob);
+    Utils.supply(spoke1, _wethReserveId(spoke1), bob, wethSupplyAmount, bob); // bob collateral
+    setUsingAsCollateral(spoke1, bob, _wethReserveId(spoke1), true);
+    Utils.borrow(spoke1, _daiReserveId(spoke1), bob, amount / 2, bob); // introduce debt
+    Utils.supply(spoke1, _daiReserveId(spoke1), alice, amount, alice); // alice supply
+
+    uint256 supplyExchangeRatio = hub.convertToSuppliedAssets(daiAssetId, MAX_SUPPLY_AMOUNT);
+    uint256 debtExchangeRatio = hub.convertToDrawnAssets(daiAssetId, MAX_SUPPLY_AMOUNT);
+
+    Utils.withdraw(spoke1, _daiReserveId(spoke1), alice, amount / 2, alice);
+
+    assertGe(hub.convertToSuppliedAssets(daiAssetId, MAX_SUPPLY_AMOUNT), supplyExchangeRatio);
+    assertGe(hub.convertToDrawnAssets(daiAssetId, MAX_SUPPLY_AMOUNT), debtExchangeRatio);
+
+    skip(delay); // with interest accrual, both ex rates should strictly
+
+    assertGt(hub.convertToSuppliedAssets(daiAssetId, MAX_SUPPLY_AMOUNT), supplyExchangeRatio);
+    assertGt(hub.convertToDrawnAssets(daiAssetId, MAX_SUPPLY_AMOUNT), debtExchangeRatio);
+
+    supplyExchangeRatio = hub.convertToSuppliedAssets(daiAssetId, MAX_SUPPLY_AMOUNT);
+    debtExchangeRatio = hub.convertToDrawnAssets(daiAssetId, MAX_SUPPLY_AMOUNT);
+
+    Utils.withdraw(spoke1, _daiReserveId(spoke1), alice, amount / 2, alice);
+
+    assertGe(hub.convertToSuppliedAssets(daiAssetId, MAX_SUPPLY_AMOUNT), supplyExchangeRatio);
+    assertGe(hub.convertToDrawnAssets(daiAssetId, MAX_SUPPLY_AMOUNT), debtExchangeRatio);
+  }
 }

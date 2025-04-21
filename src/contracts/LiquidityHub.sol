@@ -43,7 +43,7 @@ contract LiquidityHub is ILiquidityHub {
       premiumDrawnShares: 0,
       premiumOffset: 0,
       realizedPremium: 0,
-      baseDrawnAssets: 0,
+      baseDebtIndex: WadRayMath.RAY,
       lastUpdateTimestamp: block.timestamp,
       baseBorrowRate: 0, // todo check
       id: assetId, // todo rm
@@ -118,7 +118,7 @@ contract LiquidityHub is ILiquidityHub {
 
     asset.updateBorrowRate({liquidityAdded: amount, liquidityTaken: 0});
 
-    // todo: Mitigate inflation attack (burn some amount if first supply)
+    // todo: Mitigate inflation attack
     uint256 suppliedShares = asset.toSuppliedSharesDown(amount);
     require(suppliedShares != 0, InvalidSharesAmount());
 
@@ -177,7 +177,6 @@ contract LiquidityHub is ILiquidityHub {
 
     asset.availableLiquidity -= amount;
     asset.baseDrawnShares += drawnShares;
-    asset.baseDrawnAssets += amount;
 
     spoke.baseDrawnShares += drawnShares;
 
@@ -210,8 +209,8 @@ contract LiquidityHub is ILiquidityHub {
     uint256 baseDrawnSharesRestored = asset.toDrawnSharesDown(baseAmount);
 
     asset.availableLiquidity += totalRestoredAmount;
-    asset.baseDrawnAssets -= baseAmount;
     asset.baseDrawnShares -= baseDrawnSharesRestored;
+
     spoke.baseDrawnShares -= baseDrawnSharesRestored;
 
     assetsList[assetId].safeTransferFrom(from, address(this), totalRestoredAmount);
@@ -221,40 +220,62 @@ contract LiquidityHub is ILiquidityHub {
     return baseDrawnSharesRestored;
   }
 
+  /// @inheritdoc ILiquidityHub
   function refreshPremiumDebt(
     uint256 assetId,
-    int256 premiumDrawnSharesDelta,
+    int256 premiumDrawnShareDelta,
     int256 premiumOffsetDelta,
     int256 realizedPremiumDelta
   ) external {
-    /**
-     * todo: `refreshPremiumDebt` callback
-     * - only callable by spoke
-     * - check that total debt can only:
-     *   - reduce until `premiumDebt` if called after a restore (tstore premiumDebt?)
-     *   - remains unchanged on all other calls
-     * `refreshPremiumDebt` is game-able only for premium stuff
-     */
-    DataTypes.Asset storage asset = _assets[assetId];
-    DataTypes.SpokeData storage spoke = _spokes[assetId][msg.sender];
+    // todo only spoke
+    (uint256 baseDebt, uint256 premiumDebt) = _assets[assetId].debt();
+    _refresh(assetId, msg.sender, premiumDrawnShareDelta, premiumOffsetDelta, realizedPremiumDelta);
+    (uint256 baseDebtAfter, uint256 premiumDebtAfter) = _assets[assetId].debt();
+    // can increase due to precision loss on premium debt (base unchanged)
+    // todo mathematically find premium diff ceiling and replace the `2`
+    require(baseDebtAfter == baseDebt && premiumDebtAfter - premiumDebt <= 2, InvalidDebtChange());
+  }
 
-    asset.premiumDrawnShares = _add(asset.premiumDrawnShares, premiumDrawnSharesDelta);
+  /// @inheritdoc ILiquidityHub
+  function settlePremiumDebt(
+    uint256 assetId,
+    int256 premiumDrawnShareDelta,
+    int256 premiumOffsetDelta,
+    int256 realizedPremiumDelta
+  ) external {
+    // todo: merge with repay and validate total debt only goes down by `premiumDebtRestored`
+    // which ensures reduced assets are added to available liquidity
+    // todo: only spoke
+    uint256 baseDebt = _assets[assetId].baseDebt();
+    _refresh(assetId, msg.sender, premiumDrawnShareDelta, premiumOffsetDelta, realizedPremiumDelta);
+    require(_assets[assetId].baseDebt() == baseDebt, InvalidDebtChange());
+  }
+
+  function _refresh(
+    uint256 assetId,
+    address spokeAddress,
+    int256 premiumDrawnShareDelta,
+    int256 premiumOffsetDelta,
+    int256 realizedPremiumDelta
+  ) internal {
+    DataTypes.Asset storage asset = _assets[assetId];
+    DataTypes.SpokeData storage spoke = _spokes[assetId][spokeAddress];
+
+    asset.premiumDrawnShares = _add(asset.premiumDrawnShares, premiumDrawnShareDelta);
     asset.premiumOffset = _add(asset.premiumOffset, premiumOffsetDelta);
     asset.realizedPremium = _add(asset.realizedPremium, realizedPremiumDelta);
 
-    spoke.premiumDrawnShares = _add(spoke.premiumDrawnShares, premiumDrawnSharesDelta);
+    spoke.premiumDrawnShares = _add(spoke.premiumDrawnShares, premiumDrawnShareDelta);
     spoke.premiumOffset = _add(spoke.premiumOffset, premiumOffsetDelta);
     spoke.realizedPremium = _add(spoke.realizedPremium, realizedPremiumDelta);
 
     emit RefreshPremiumDebt(
       assetId,
-      msg.sender,
-      premiumDrawnSharesDelta,
+      spokeAddress,
+      premiumDrawnShareDelta,
       premiumOffsetDelta,
       realizedPremiumDelta
     );
-
-    // todo check bounds
   }
 
   //
@@ -300,6 +321,10 @@ contract LiquidityHub is ILiquidityHub {
 
   function convertToDrawnShares(uint256 assetId, uint256 assets) external view returns (uint256) {
     return _assets[assetId].toDrawnSharesDown(assets);
+  }
+
+  function previewOffset(uint256 assetId, uint256 shares) external view returns (uint256) {
+    return _assets[assetId].toDrawnAssetsDown(shares);
   }
 
   function getBaseInterestRate(uint256 assetId) public view returns (uint256) {
@@ -406,11 +431,11 @@ contract LiquidityHub is ILiquidityHub {
     DataTypes.SpokeData storage spoke,
     uint256 baseAmountRestored,
     uint256 premiumAmountRestored
-  ) internal {
+  ) internal view {
     require(baseAmountRestored + premiumAmountRestored != 0, InvalidRestoreAmount());
     require(asset.config.active, AssetNotActive());
     require(!asset.config.paused, AssetPaused());
-    (uint256 baseDebt, uint256 premiumDebt) = _getSpokeDebt(asset, spoke);
+    (uint256 baseDebt, ) = _getSpokeDebt(asset, spoke);
     require(baseAmountRestored <= baseDebt, SurplusAmountRestored(baseDebt));
     // we should have already restored premium debt
   }
@@ -443,9 +468,10 @@ contract LiquidityHub is ILiquidityHub {
     DataTypes.Asset storage asset,
     DataTypes.SpokeData storage spoke
   ) internal view returns (uint256, uint256) {
-    uint256 premiumDebt = spoke.realizedPremium +
-      (asset.toDrawnAssetsUp(spoke.premiumDrawnShares) - spoke.premiumOffset);
-    return (asset.toDrawnAssetsUp(spoke.baseDrawnShares), premiumDebt);
+    // sanity: utilize solc underflow check
+    uint256 accruedPremium = asset.toDrawnAssetsDown(spoke.premiumDrawnShares) -
+      spoke.premiumOffset;
+    return (asset.toDrawnAssetsUp(spoke.baseDrawnShares), spoke.realizedPremium + accruedPremium);
   }
 
   // handles underflow

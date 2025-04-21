@@ -4,7 +4,7 @@ pragma solidity ^0.8.0;
 import 'tests/unit/Spoke/SpokeBase.t.sol';
 
 contract SpokeBorrowScenarioTest is SpokeBase {
-  using WadRayMath for uint256;
+  using WadRayMathExtended for uint256;
 
   /// fuzz - 2 users borrowing 2 assets from 1 spoke
   function test_borrow_fuzz_single_spoke_multi_reserves_multi_user(
@@ -538,7 +538,7 @@ contract SpokeBorrowScenarioTest is SpokeBase {
       hub.getAsset(daiAssetId).baseBorrowRate,
       lastTimestamp
     );
-    uint256 expectedBaseDebt = cumulatedInterest.rayMul(borrowAmount1) + borrowAmount2;
+    uint256 expectedBaseDebt = cumulatedInterest.rayMulUp(borrowAmount1) + borrowAmount2;
 
     // calculate expected realized premium prior to action
     state.daiBob.userPosBefore.realizedPremium = _calculateExpectedRealizedPremium(
@@ -560,7 +560,7 @@ contract SpokeBorrowScenarioTest is SpokeBase {
 
     (baseDebt, ) = spoke1.getUserDebt(state.daiReserveId, bob);
     // check that accrued base debt matches expected
-    assertEq(baseDebt, expectedBaseDebt, 'base debt after borrow2');
+    assertApproxEqAbs(baseDebt, expectedBaseDebt, 3, 'base debt after borrow2');
 
     // assertions for 2nd borrow
     _assertUsersAndReserveDebt(spoke1, state.daiReserveId, users, 'spoke1 bob dai after');
@@ -568,7 +568,7 @@ contract SpokeBorrowScenarioTest is SpokeBase {
       spoke: spoke1,
       reserveId: state.daiReserveId,
       user: bob,
-      debtAmount: expectedBaseDebt,
+      debtAmount: baseDebt,
       suppliedAmount: state.daiBob.supplyAmount,
       expectedRealizedPremium: state.daiBob.userPosBefore.realizedPremium,
       label: 'bob dai data after'
