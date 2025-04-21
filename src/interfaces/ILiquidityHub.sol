@@ -52,6 +52,7 @@ interface ILiquidityHub {
   error InvalidIrStrategy();
   error InvalidAssetDecimals();
   error InvalidAssetAddress();
+  error InvalidDebtChange();
 
   function addAsset(DataTypes.AssetConfig memory params, address asset) external;
   function updateAssetConfig(uint256 assetId, DataTypes.AssetConfig memory config) external;
@@ -114,20 +115,47 @@ interface ILiquidityHub {
     address from
   ) external returns (uint256);
 
+  /**
+   * @notice Refreshes premium debt accounting.
+   * @dev To be called when moving accrued premium to realized premium.
+   * @dev Only callable by spokes.
+   * @dev Total debt should not change, reverts with `InvalidDebtChange` when violated.
+   * @param assetId The asset id.
+   * @param premiumDrawnSharesDelta The change in premium drawn shares.
+   * @param premiumOffsetDelta The change in premium offset.
+   * @param realizedPremiumDelta The change in realized premium.
+   */
   function refreshPremiumDebt(
     uint256 assetId,
     int256 premiumDrawnSharesDelta,
     int256 premiumOffsetDelta,
     int256 realizedPremiumDelta
   ) external;
+
+  /**
+   * @notice Settles premium debt restored.
+   * @dev To be called in conjunction with repay to pay premium debt, restore must account for
+   * the premium restored in the available liquidity.
+   * @dev Only callable by spokes.
+   * @dev Base debt should not change, reverts with `InvalidDebtChange` when violated, and
+   * premium debt can only decrease by at most the amount of premium restored on restore.
+   * @param assetId The asset id.
+   * @param premiumDrawnSharesDelta The change in premium drawn shares.
+   * @param premiumOffsetDelta The change in premium offset.
+   * @param realizedPremiumDelta The change in realized premium.
+   */
+  function settlePremiumDebt(
+    uint256 assetId,
+    int256 premiumDrawnSharesDelta,
+    int256 premiumOffsetDelta,
+    int256 realizedPremiumDelta
+  ) external;
+
   function convertToDrawnAssets(uint256 assetId, uint256 shares) external view returns (uint256);
   function convertToDrawnShares(uint256 assetId, uint256 assets) external view returns (uint256);
   function convertToSuppliedAssets(uint256 assetId, uint256 shares) external view returns (uint256);
   function convertToSuppliedShares(uint256 assetId, uint256 assets) external view returns (uint256);
-  function convertToPremiumDrawnAssets(
-    uint256 assetId,
-    uint256 shares
-  ) external view returns (uint256);
+  function previewOffset(uint256 assetId, uint256 shares) external view returns (uint256);
   function getAsset(uint256 assetId) external view returns (DataTypes.Asset memory);
   function getAssetConfig(uint256 assetId) external view returns (DataTypes.AssetConfig memory);
   function getAssetDebt(uint256 assetId) external view returns (uint256, uint256);

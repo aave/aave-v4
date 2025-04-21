@@ -54,6 +54,10 @@ library AssetLogic {
     return asset.realizedPremium + accruedPremium;
   }
 
+  function debt(DataTypes.Asset storage asset) internal view returns (uint256, uint256) {
+    return (asset.baseDebt(), asset.premiumDebt());
+  }
+
   function totalDebt(DataTypes.Asset storage asset) internal view returns (uint256) {
     return asset.baseDebt() + asset.premiumDebt();
   }
