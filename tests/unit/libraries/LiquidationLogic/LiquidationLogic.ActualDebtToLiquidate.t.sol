@@ -16,7 +16,7 @@ contract LiquidationLogicActualDebtToLiquidateTest is LiquidationLogicBaseTest {
     uint256 totalDebt = 0;
     args.totalDebt = totalDebt;
 
-    uint256 closeFactorDebt = LiquidationLogic.calculateCloseFactorDebt(args);
+    uint256 closeFactorDebt = LiquidationLogic.calculateDebtToRestoreCloseFactor(args);
     uint256 actualDebtToLiquidate = LiquidationLogic.calculateActualDebtToLiquidate(
       debtToCover,
       args
@@ -37,7 +37,7 @@ contract LiquidationLogicActualDebtToLiquidateTest is LiquidationLogicBaseTest {
     uint256 debtToCover = 0;
     args.totalDebt = totalDebt;
 
-    uint256 closeFactorDebt = LiquidationLogic.calculateCloseFactorDebt(args);
+    uint256 closeFactorDebt = LiquidationLogic.calculateDebtToRestoreCloseFactor(args);
     uint256 actualDebtToLiquidate = LiquidationLogic.calculateActualDebtToLiquidate(
       debtToCover,
       args
@@ -55,7 +55,7 @@ contract LiquidationLogicActualDebtToLiquidateTest is LiquidationLogicBaseTest {
     TestCloseFactorDebtParams memory params = _bound(params, skips);
     DataTypes.LiquidationCallLocalVars memory args = _setFunctionArgs(params);
 
-    uint256 closeFactorDebt = LiquidationLogic.calculateCloseFactorDebt(args);
+    uint256 closeFactorDebt = LiquidationLogic.calculateDebtToRestoreCloseFactor(args);
 
     // totalDebt > closeFactorDebt
     totalDebt = bound(totalDebt, closeFactorDebt + 1, type(uint256).max);
@@ -90,7 +90,7 @@ contract LiquidationLogicActualDebtToLiquidateTest is LiquidationLogicBaseTest {
     TestCloseFactorDebtParams memory params = _bound(params, skips);
     DataTypes.LiquidationCallLocalVars memory args = _setFunctionArgs(params);
 
-    uint256 closeFactorDebt = LiquidationLogic.calculateCloseFactorDebt(args);
+    uint256 closeFactorDebt = LiquidationLogic.calculateDebtToRestoreCloseFactor(args);
     vm.assume(closeFactorDebt > 0);
 
     // totalDebt <= closeFactorDebt
@@ -126,7 +126,7 @@ contract LiquidationLogicActualDebtToLiquidateTest is LiquidationLogicBaseTest {
     TestCloseFactorDebtParams memory params = _bound(params, skips);
     DataTypes.LiquidationCallLocalVars memory args = _setFunctionArgs(params);
 
-    uint256 closeFactorDebt = LiquidationLogic.calculateCloseFactorDebt(args);
+    uint256 closeFactorDebt = LiquidationLogic.calculateDebtToRestoreCloseFactor(args);
     vm.assume(closeFactorDebt == 1);
 
     args.totalDebt = totalDebt;

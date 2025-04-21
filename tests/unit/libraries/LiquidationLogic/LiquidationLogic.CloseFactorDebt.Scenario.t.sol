@@ -24,7 +24,7 @@ contract LiquidationLogicCloseFactorDebtScenarioTest is LiquidationLogicBaseTest
   // TODO: scenario 1 with bigger CF
   // TODO: secnario 2 with bigger CF
 
-  function test_calculateCloseFactorDebt_scenario1_unit1() public {
+  function test_calculateDebtToRestoreCloseFactor_scenario1_unit1() public {
     // coll: $10k usdx, $8k weth
     // debt: $15k dai
     // liquidate usdx
@@ -47,7 +47,7 @@ contract LiquidationLogicCloseFactorDebtScenarioTest is LiquidationLogicBaseTest
     });
     params.closeFactor = 1e18;
 
-    uint256 closeFactorDebt = LiquidationLogic.calculateCloseFactorDebt(params);
+    uint256 closeFactorDebt = LiquidationLogic.calculateDebtToRestoreCloseFactor(params);
 
     assertCloseFactor({
       spoke: spoke1,
@@ -60,7 +60,7 @@ contract LiquidationLogicCloseFactorDebtScenarioTest is LiquidationLogicBaseTest
     });
   }
 
-  function test_calculateCloseFactorDebt_scenario1_unit2() public {
+  function test_calculateDebtToRestoreCloseFactor_scenario1_unit2() public {
     setUpScenario1();
 
     // coll: $10k dai, $8k weth
@@ -82,7 +82,7 @@ contract LiquidationLogicCloseFactorDebtScenarioTest is LiquidationLogicBaseTest
     });
     params.closeFactor = 1e18;
 
-    uint256 closeFactorDebt = LiquidationLogic.calculateCloseFactorDebt(params);
+    uint256 closeFactorDebt = LiquidationLogic.calculateDebtToRestoreCloseFactor(params);
 
     assertCloseFactor({
       spoke: spoke1,
@@ -95,7 +95,7 @@ contract LiquidationLogicCloseFactorDebtScenarioTest is LiquidationLogicBaseTest
     });
   }
 
-  function test_calculateCloseFactorDebt_scenario1_unit3() public {
+  function test_calculateDebtToRestoreCloseFactor_scenario1_unit3() public {
     setUpScenario1();
 
     // coll: $10k dai, $8k weth
@@ -117,7 +117,7 @@ contract LiquidationLogicCloseFactorDebtScenarioTest is LiquidationLogicBaseTest
     });
     params.closeFactor = 1e18;
 
-    uint256 closeFactorDebt = LiquidationLogic.calculateCloseFactorDebt(params);
+    uint256 closeFactorDebt = LiquidationLogic.calculateDebtToRestoreCloseFactor(params);
 
     assertCloseFactor({
       spoke: spoke1,
@@ -143,7 +143,7 @@ contract LiquidationLogicCloseFactorDebtScenarioTest is LiquidationLogicBaseTest
     updateLiquidationBonus(spoke1, _usdxReserveId(spoke1), 108_00);
   }
 
-  function test_calculateCloseFactorDebt_scenario2_unit1() public {
+  function test_calculateDebtToRestoreCloseFactor_scenario2_unit1() public {
     // coll: $10k usdx, $20k dai
     // debt: $16k weth
     // liquidate usdx
@@ -166,7 +166,7 @@ contract LiquidationLogicCloseFactorDebtScenarioTest is LiquidationLogicBaseTest
     });
     params.closeFactor = 1e18;
 
-    uint256 closeFactorDebt = LiquidationLogic.calculateCloseFactorDebt(params);
+    uint256 closeFactorDebt = LiquidationLogic.calculateDebtToRestoreCloseFactor(params);
 
     assertCloseFactor({
       spoke: spoke1,
@@ -179,7 +179,7 @@ contract LiquidationLogicCloseFactorDebtScenarioTest is LiquidationLogicBaseTest
     });
   }
 
-  function test_calculateCloseFactorDebt_scenario2_unit2() public {
+  function test_calculateDebtToRestoreCloseFactor_scenario2_unit2() public {
     // coll: $10k usdx, $10k dai
     // debt: $16k weth
     // liquidate usdx
@@ -202,7 +202,7 @@ contract LiquidationLogicCloseFactorDebtScenarioTest is LiquidationLogicBaseTest
     });
     params.closeFactor = 1e18;
 
-    uint256 closeFactorDebt = LiquidationLogic.calculateCloseFactorDebt(params);
+    uint256 closeFactorDebt = LiquidationLogic.calculateDebtToRestoreCloseFactor(params);
     assertCloseFactor({
       spoke: spoke1,
       params: params,
@@ -229,7 +229,7 @@ contract LiquidationLogicCloseFactorDebtScenarioTest is LiquidationLogicBaseTest
     updateLiquidationBonus(spoke1, _wbtcReserveId(spoke1), 110_00);
   }
 
-  function test_calculateCloseFactorDebt_scenario3_unit1() public {
+  function test_calculateDebtToRestoreCloseFactor_scenario3_unit1() public {
     // coll: $50k wbtc, $20k dai
     // debt: $30k weth, $40k usdx
     // repay weth, liquidate wbtc
@@ -253,7 +253,7 @@ contract LiquidationLogicCloseFactorDebtScenarioTest is LiquidationLogicBaseTest
     });
     params.closeFactor = 1e18;
 
-    uint256 closeFactorDebt = LiquidationLogic.calculateCloseFactorDebt(params);
+    uint256 closeFactorDebt = LiquidationLogic.calculateDebtToRestoreCloseFactor(params);
 
     assertCloseFactor({
       spoke: spoke1,

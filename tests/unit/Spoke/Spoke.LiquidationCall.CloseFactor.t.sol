@@ -290,8 +290,6 @@ contract LiquidationCallCloseFactorTest is SpokeLiquidationBase {
       liquidationProtocolFeePercentage
     );
 
-    // vm.assume(spoke1.getUserTotalDebt(debtReserveId, alice) > 1e4);
-
     _assertHealthFactor(spoke1);
   }
 

@@ -8,7 +8,7 @@ contract LiquidationLogicCloseFactorDebtTest is LiquidationLogicBaseTest {
   using WadRayMath for uint256;
   using WadRayMathExtended for uint256;
 
-  function test_calculateCloseFactorDebt_fuzz_non_negative(
+  function test_calculateDebtToRestoreCloseFactor_fuzz_non_negative(
     TestCloseFactorDebtParams memory params
   ) public {
     FieldsToSkip memory skips = _skipOnly(SKIP_NONE);
@@ -16,14 +16,14 @@ contract LiquidationLogicCloseFactorDebtTest is LiquidationLogicBaseTest {
     DataTypes.LiquidationCallLocalVars memory args = _setFunctionArgs(params);
 
     assertGe(
-      LiquidationLogic.calculateCloseFactorDebt(args),
+      LiquidationLogic.calculateDebtToRestoreCloseFactor(args),
       0,
       'closeFactorDebt cannot underflow'
     );
   }
 
   /// if debtAssetUnit == 0, then result is 0 (should not happen in practice as unit is 10**decimals)
-  function test_calculateCloseFactorDebt_fuzz_debtAssetUnit_zero(
+  function test_calculateDebtToRestoreCloseFactor_fuzz_debtAssetUnit_zero(
     TestCloseFactorDebtParams memory params
   ) public {
     // params = _bound(params);
@@ -33,14 +33,16 @@ contract LiquidationLogicCloseFactorDebtTest is LiquidationLogicBaseTest {
 
     args.debtAssetUnit = 0;
 
-    assertEq(LiquidationLogic.calculateCloseFactorDebt(args), 0, 'closeFactorDebt is 0');
+    assertEq(LiquidationLogic.calculateDebtToRestoreCloseFactor(args), 0, 'closeFactorDebt is 0');
   }
 
-  function calculateCloseFactorDebt(DataTypes.LiquidationCallLocalVars memory params) public pure {
-    LiquidationLogic.calculateCloseFactorDebt(params);
+  function calculateDebtToRestoreCloseFactor(
+    DataTypes.LiquidationCallLocalVars memory params
+  ) public pure {
+    LiquidationLogic.calculateDebtToRestoreCloseFactor(params);
   }
 
-  function test_calculateCloseFactorDebt_fuzz_debtAssetPrice_zero(
+  function test_calculateDebtToRestoreCloseFactor_fuzz_debtAssetPrice_zero(
     TestCloseFactorDebtParams memory params
   ) public {
     FieldsToSkip memory skips = _skipOnly(SKIP_DEBT_ASSET_PRICE);
@@ -50,11 +52,11 @@ contract LiquidationLogicCloseFactorDebtTest is LiquidationLogicBaseTest {
     args.debtAssetPrice = 0;
 
     vm.expectRevert(stdError.divisionError);
-    this.calculateCloseFactorDebt(args);
+    this.calculateDebtToRestoreCloseFactor(args);
   }
 
   /// if denom is ever negative, default to uint max
-  function test_calculateCloseFactorDebt_fuzz_closeFactor_lte_effectiveLiquidationPenalty_zero(
+  function test_calculateDebtToRestoreCloseFactor_fuzz_closeFactor_lte_effectiveLiquidationPenalty_zero(
     TestCloseFactorDebtParams memory params
   ) public {
     FieldsToSkip memory skips = _skipOnly(SKIP_CLOSE_FACTOR);
@@ -77,13 +79,13 @@ contract LiquidationLogicCloseFactorDebtTest is LiquidationLogicBaseTest {
     // );
 
     assertEq(
-      LiquidationLogic.calculateCloseFactorDebt(args),
+      LiquidationLogic.calculateDebtToRestoreCloseFactor(args),
       type(uint256).max,
       'closeFactorDebt is max uint'
     );
   }
 
-  function test_calculateCloseFactorDebt_fuzz_avgCollateralFactor_zero(
+  function test_calculateDebtToRestoreCloseFactor_fuzz_avgCollateralFactor_zero(
     TestCloseFactorDebtParams memory params
   ) public {
     FieldsToSkip memory skips = _skipOnly(SKIP_AVG_COLLATERAL_FACTOR);
@@ -93,6 +95,6 @@ contract LiquidationLogicCloseFactorDebtTest is LiquidationLogicBaseTest {
     DataTypes.LiquidationCallLocalVars memory args = _setFunctionArgs(params);
 
     vm.expectRevert(stdError.arithmeticError);
-    this.calculateCloseFactorDebt(args);
+    this.calculateDebtToRestoreCloseFactor(args);
   }
 }

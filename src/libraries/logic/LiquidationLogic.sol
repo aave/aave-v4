@@ -51,7 +51,7 @@ library LiquidationLogic {
   ) internal pure returns (uint256) {
     DataTypes.CalculateActualDebtToLiquidateLocalVars memory vars;
     vars.maxLiquidatableDebt = params.totalDebt; // for current debt asset, in amount
-    vars.closeFactorDebt = params.calculateCloseFactorDebt();
+    vars.closeFactorDebt = params.calculateDebtToRestoreCloseFactor();
 
     vars.maxLiquidatableDebt = vars.maxLiquidatableDebt > vars.closeFactorDebt
       ? vars.closeFactorDebt
@@ -65,7 +65,7 @@ library LiquidationLogic {
   /// @dev Function defaults to returning uint max.
   /// @param params LiquidationCallLocalVars params struct.
   /// @return The amount of debt to repay.
-  function calculateCloseFactorDebt(
+  function calculateDebtToRestoreCloseFactor(
     DataTypes.LiquidationCallLocalVars memory params
   ) internal pure returns (uint256) {
     // Multiply the liquidation bonus by the collateral factor.
@@ -81,14 +81,14 @@ library LiquidationLogic {
       return type(uint256).max;
     }
 
-    uint256 closeFactorDebtToLiquidate = ((params.totalDebtInBaseCurrency.wadMul(
+    uint256 closeFactorDebtAmountToLiquidate = ((params.totalDebtInBaseCurrency.wadMul(
       params.closeFactor
     ) - params.totalCollateralInBaseCurrency.percentMul(params.avgCollateralFactor).dewadify()) *
       params.debtAssetUnit) /
       ((params.closeFactor - effectiveLiquidationPenalty) * params.debtAssetPrice) +
       1; // add rounding to ensure HF > close factor
 
-    return closeFactorDebtToLiquidate;
+    return closeFactorDebtAmountToLiquidate;
   }
 
   /**
