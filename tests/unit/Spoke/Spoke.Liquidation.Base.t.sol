@@ -72,6 +72,7 @@ contract SpokeLiquidationBase is SpokeBase {
 
     vm.assume(requiredDebtAmount > 0 && requiredDebtAmount < MAX_SUPPLY_AMOUNT);
 
+    // mock price to 0 to circumvent borrow validation
     vm.mockCall(
       address(oracle),
       abi.encodeWithSelector(IPriceOracle.getAssetPrice.selector, assetId),
@@ -104,10 +105,13 @@ contract SpokeLiquidationBase is SpokeBase {
     ) = spoke.getUserAccountData(user);
 
     requiredDebt =
-      ((totalCollateralBase.percentMulUp(currentAvgCollateralFactor.dewadify() + 1) *
-        HEALTH_FACTOR_LIQUIDATION_THRESHOLD) / desiredHf) -
-      totalDebtBase +
-      1;
+      (
+        (totalCollateralBase.percentMul(currentAvgCollateralFactor.dewadify() + 1))
+          .wadMul(HEALTH_FACTOR_LIQUIDATION_THRESHOLD)
+          .wadDiv(desiredHf)
+      ) -
+      totalDebtBase;
+    // add rounding to num/denom to round debt up (ie making sure resultant HF is less than desired)
   }
 
   function _bound(

@@ -9,41 +9,20 @@ contract LiquidationCallCloseFactorTest is SpokeLiquidationBase {
   using PercentageMath for uint256;
   using PercentageMathExtended for uint256;
 
-  function testUnit() public {
-    // test_liquidationCall_fuzz_closeFactor1({
-    //   liqConfig: DataTypes.LiquidationConfig({
-    //     closeFactor: 12e18,
-    //     liquidationBonusFactor: 0,
-    //     healthFactorBonusThreshold: 0
-    //   }),
-    //   liqBonus: 105_00,
-    //   supplyAmount: 1.5e18,
-    //   liquidationProtocolFeePercentage: 0
-    // });
-
-    // test_liquidationCall_fuzz_closeFactor1({
-    //   liqConfig: DataTypes.LiquidationConfig({
-    //     closeFactor: 9.783398447710474924e18,
-    //     liquidationBonusFactor: 4.945e3,
-    //     healthFactorBonusThreshold: 5.00000000000000003e17
-    //   }),
-    //   liqBonus: 1e4,
-    //   supplyAmount: 1.1276892461193349e16,
-    //   liquidationProtocolFeePercentage: 0
-    // });
-
-    test_liquidationCall_fuzz_closeFactor_scenario1_defaultCloseFactor({
+  function test_liquidationCall_closeFactor_scenario1() public {
+    test_liquidationCall_fuzz_closeFactor_scenario1({
       liqConfig: DataTypes.LiquidationConfig({
-        closeFactor: 9.783398447710474924e18,
-        liquidationBonusFactor: 4.945e3,
-        healthFactorBonusThreshold: 5.00000000000000003e17
+        closeFactor: 1.5e18,
+        liquidationBonusFactor: 0,
+        healthFactorBonusThreshold: 0
       }),
-      liqBonus: 1e4,
-      supplyAmount: 1.1276892461193349e16,
-      liquidationProtocolFeePercentage: 0
+      liqBonus: 105_00,
+      supplyAmount: 1.5e18,
+      liquidationProtocolFeePercentage: 5_00
     });
   }
 
+  /// coll: weth / debt: dai
   function test_liquidationCall_fuzz_closeFactor_scenario1(
     DataTypes.LiquidationConfig memory liqConfig,
     uint256 liqBonus,
@@ -55,7 +34,7 @@ contract LiquidationCallCloseFactorTest is SpokeLiquidationBase {
 
     supplyAmount = bound(supplyAmount, 1e8, MAX_SUPPLY_AMOUNT / 1e4); // bounds to ensure HF is below desiredHf within precision
 
-    LiquidationTestLocalParams memory state = _execLiqCallCloseFactorTest(
+    _execLiqCallCloseFactorTest(
       liqConfig,
       liqBonus,
       supplyAmount,
@@ -63,21 +42,6 @@ contract LiquidationCallCloseFactorTest is SpokeLiquidationBase {
       debtReserveId,
       liquidationProtocolFeePercentage
     );
-
-    console.log(
-      'debt amt remaining %e | base %e',
-      spoke1.getUserTotalDebt(debtReserveId, alice),
-      _convertAmountToBaseCurrency(daiAssetId, spoke1.getUserTotalDebt(debtReserveId, alice))
-    );
-    console.log(
-      'collateral amt remaining %e | base %e',
-      spoke1.getUserSuppliedAmount(collateralReserveId, alice),
-      _convertAmountToBaseCurrency(
-        wethAssetId,
-        spoke1.getUserSuppliedAmount(collateralReserveId, alice)
-      )
-    );
-
     _assertHealthFactor(spoke1);
   }
 
@@ -88,13 +52,273 @@ contract LiquidationCallCloseFactorTest is SpokeLiquidationBase {
     uint256 liquidationProtocolFeePercentage
   ) public {
     liqConfig.closeFactor = HEALTH_FACTOR_LIQUIDATION_THRESHOLD;
-
     test_liquidationCall_fuzz_closeFactor_scenario1(
       liqConfig,
       liqBonus,
       supplyAmount,
       liquidationProtocolFeePercentage
     );
+  }
+
+  function test_liquidationCall_closeFactor_scenario2() public {
+    test_liquidationCall_fuzz_closeFactor_scenario2({
+      liqConfig: DataTypes.LiquidationConfig({
+        closeFactor: 1.5e18,
+        liquidationBonusFactor: 0,
+        healthFactorBonusThreshold: 0
+      }),
+      liqBonus: 105_00,
+      supplyAmount: 1.5e18,
+      liquidationProtocolFeePercentage: 5_00
+    });
+  }
+
+  /// coll: weth / debt: usdx
+  function test_liquidationCall_fuzz_closeFactor_scenario2(
+    DataTypes.LiquidationConfig memory liqConfig,
+    uint256 liqBonus,
+    uint256 supplyAmount,
+    uint256 liquidationProtocolFeePercentage
+  ) public {
+    uint256 collateralReserveId = _wethReserveId(spoke1);
+    uint256 debtReserveId = _usdxReserveId(spoke1);
+
+    supplyAmount = bound(supplyAmount, 1e15, MAX_SUPPLY_AMOUNT / 1e4); // bounds to ensure HF is below desiredHf within precision
+
+    _execLiqCallCloseFactorTest(
+      liqConfig,
+      liqBonus,
+      supplyAmount,
+      collateralReserveId,
+      debtReserveId,
+      liquidationProtocolFeePercentage
+    );
+    _assertHealthFactor(spoke1);
+  }
+
+  function test_liquidationCall_fuzz_closeFactor_scenario2_defaultCloseFactor(
+    DataTypes.LiquidationConfig memory liqConfig,
+    uint256 liqBonus,
+    uint256 supplyAmount,
+    uint256 liquidationProtocolFeePercentage
+  ) public {
+    liqConfig.closeFactor = HEALTH_FACTOR_LIQUIDATION_THRESHOLD;
+    test_liquidationCall_fuzz_closeFactor_scenario2(
+      liqConfig,
+      liqBonus,
+      supplyAmount,
+      liquidationProtocolFeePercentage
+    );
+  }
+
+  function test_liquidationCall_closeFactor_scenario3() public {
+    test_liquidationCall_fuzz_closeFactor_scenario3({
+      liqConfig: DataTypes.LiquidationConfig({
+        closeFactor: 1.5e18,
+        liquidationBonusFactor: 0,
+        healthFactorBonusThreshold: 0
+      }),
+      liqBonus: 105_00,
+      supplyAmount: 10e6,
+      liquidationProtocolFeePercentage: 5_00
+    });
+  }
+
+  /// coll: usdx / debt: weth
+  function test_liquidationCall_fuzz_closeFactor_scenario3(
+    DataTypes.LiquidationConfig memory liqConfig,
+    uint256 liqBonus,
+    uint256 supplyAmount,
+    uint256 liquidationProtocolFeePercentage
+  ) public {
+    uint256 collateralReserveId = _usdxReserveId(spoke1);
+    uint256 debtReserveId = _wethReserveId(spoke1);
+
+    supplyAmount = bound(supplyAmount, 1e4, MAX_SUPPLY_AMOUNT / 1e4); // bounds to ensure HF is below desiredHf within precision
+
+    _execLiqCallCloseFactorTest(
+      liqConfig,
+      liqBonus,
+      supplyAmount,
+      collateralReserveId,
+      debtReserveId,
+      liquidationProtocolFeePercentage
+    );
+
+    _assertHealthFactor(spoke1);
+  }
+
+  function test_liquidationCall_fuzz_closeFactor_scenario3_defaultCloseFactor(
+    DataTypes.LiquidationConfig memory liqConfig,
+    uint256 liqBonus,
+    uint256 supplyAmount,
+    uint256 liquidationProtocolFeePercentage
+  ) public {
+    liqConfig.closeFactor = HEALTH_FACTOR_LIQUIDATION_THRESHOLD;
+    test_liquidationCall_fuzz_closeFactor_scenario3(
+      liqConfig,
+      liqBonus,
+      supplyAmount,
+      liquidationProtocolFeePercentage
+    );
+  }
+
+  /// coll: usdx / debt: dai
+  function test_liquidationCall_fuzz_closeFactor_scenario4(
+    DataTypes.LiquidationConfig memory liqConfig,
+    uint256 liqBonus,
+    uint256 supplyAmount,
+    uint256 liquidationProtocolFeePercentage
+  ) public {
+    uint256 collateralReserveId = _usdxReserveId(spoke1);
+    uint256 debtReserveId = _daiReserveId(spoke1);
+
+    supplyAmount = bound(supplyAmount, 1e6, MAX_SUPPLY_AMOUNT / 1e4); // bounds to ensure HF is below desiredHf within precision
+
+    _execLiqCallCloseFactorTest(
+      liqConfig,
+      liqBonus,
+      supplyAmount,
+      collateralReserveId,
+      debtReserveId,
+      liquidationProtocolFeePercentage
+    );
+
+    _assertHealthFactor(spoke1);
+  }
+
+  function test_liquidationCall_fuzz_closeFactor_scenario4_defaultCloseFactor(
+    DataTypes.LiquidationConfig memory liqConfig,
+    uint256 liqBonus,
+    uint256 supplyAmount,
+    uint256 liquidationProtocolFeePercentage
+  ) public {
+    liqConfig.closeFactor = HEALTH_FACTOR_LIQUIDATION_THRESHOLD;
+    test_liquidationCall_fuzz_closeFactor_scenario4(
+      liqConfig,
+      liqBonus,
+      supplyAmount,
+      liquidationProtocolFeePercentage
+    );
+  }
+
+  function test_liquidationCall_closeFactor_scenario4() public {
+    test_liquidationCall_fuzz_closeFactor_scenario4({
+      liqConfig: DataTypes.LiquidationConfig({
+        closeFactor: 1.5e18,
+        liquidationBonusFactor: 0,
+        healthFactorBonusThreshold: 0
+      }),
+      liqBonus: 105_00,
+      supplyAmount: 10e6,
+      liquidationProtocolFeePercentage: 5_00
+    });
+  }
+
+  /// coll: dai / debt: weth
+  function test_liquidationCall_fuzz_closeFactor_scenario5(
+    DataTypes.LiquidationConfig memory liqConfig,
+    uint256 liqBonus,
+    uint256 supplyAmount,
+    uint256 liquidationProtocolFeePercentage
+  ) public {
+    uint256 collateralReserveId = _daiReserveId(spoke1);
+    uint256 debtReserveId = _wethReserveId(spoke1);
+
+    supplyAmount = bound(supplyAmount, 1e13, MAX_SUPPLY_AMOUNT / 1e4); // bounds to ensure HF is below desiredHf within precision
+
+    _execLiqCallCloseFactorTest(
+      liqConfig,
+      liqBonus,
+      supplyAmount,
+      collateralReserveId,
+      debtReserveId,
+      liquidationProtocolFeePercentage
+    );
+
+    _assertHealthFactor(spoke1);
+  }
+
+  function test_liquidationCall_fuzz_closeFactor_scenario5_defaultCloseFactor(
+    DataTypes.LiquidationConfig memory liqConfig,
+    uint256 liqBonus,
+    uint256 supplyAmount,
+    uint256 liquidationProtocolFeePercentage
+  ) public {
+    liqConfig.closeFactor = HEALTH_FACTOR_LIQUIDATION_THRESHOLD;
+    test_liquidationCall_fuzz_closeFactor_scenario5(
+      liqConfig,
+      liqBonus,
+      supplyAmount,
+      liquidationProtocolFeePercentage
+    );
+  }
+
+  function test_liquidationCall_closeFactor_scenario5() public {
+    test_liquidationCall_fuzz_closeFactor_scenario5({
+      liqConfig: DataTypes.LiquidationConfig({
+        closeFactor: 1.5e18,
+        liquidationBonusFactor: 0,
+        healthFactorBonusThreshold: 0
+      }),
+      liqBonus: 105_00,
+      supplyAmount: 1_000e6,
+      liquidationProtocolFeePercentage: 5_00
+    });
+  }
+
+  /// coll: dai / debt: usdx
+  function test_liquidationCall_fuzz_closeFactor_scenario6(
+    DataTypes.LiquidationConfig memory liqConfig,
+    uint256 liqBonus,
+    uint256 supplyAmount,
+    uint256 liquidationProtocolFeePercentage
+  ) public {
+    uint256 collateralReserveId = _daiReserveId(spoke1);
+    uint256 debtReserveId = _usdxReserveId(spoke1);
+
+    supplyAmount = bound(supplyAmount, 1e13, MAX_SUPPLY_AMOUNT / 1e4); // bounds to ensure HF is below desiredHf within precision
+
+    _execLiqCallCloseFactorTest(
+      liqConfig,
+      liqBonus,
+      supplyAmount,
+      collateralReserveId,
+      debtReserveId,
+      liquidationProtocolFeePercentage
+    );
+
+    vm.assume(spoke1.getUserTotalDebt(debtReserveId, alice) > 1e4);
+
+    _assertHealthFactor(spoke1);
+  }
+
+  function test_liquidationCall_fuzz_closeFactor_scenario6_defaultCloseFactor(
+    DataTypes.LiquidationConfig memory liqConfig,
+    uint256 liqBonus,
+    uint256 supplyAmount,
+    uint256 liquidationProtocolFeePercentage
+  ) public {
+    liqConfig.closeFactor = HEALTH_FACTOR_LIQUIDATION_THRESHOLD;
+    test_liquidationCall_fuzz_closeFactor_scenario6(
+      liqConfig,
+      liqBonus,
+      supplyAmount,
+      liquidationProtocolFeePercentage
+    );
+  }
+
+  function test_liquidationCall_closeFactor_scenario6() public {
+    test_liquidationCall_fuzz_closeFactor_scenario5({
+      liqConfig: DataTypes.LiquidationConfig({
+        closeFactor: 1.5e18,
+        liquidationBonusFactor: 0,
+        healthFactorBonusThreshold: 0
+      }),
+      liqBonus: 105_00,
+      supplyAmount: 1_000e6,
+      liquidationProtocolFeePercentage: 5_00
+    });
   }
 
   function _assertHealthFactor(ISpoke spoke) internal view {
@@ -111,7 +335,7 @@ contract LiquidationCallCloseFactorTest is SpokeLiquidationBase {
     liqConfig.closeFactor = bound(
       liqConfig.closeFactor,
       HEALTH_FACTOR_LIQUIDATION_THRESHOLD,
-      20e18
+      10e18
     );
     liqConfig.healthFactorBonusThreshold = bound(
       liqConfig.healthFactorBonusThreshold,
@@ -158,7 +382,7 @@ contract LiquidationCallCloseFactorTest is SpokeLiquidationBase {
       state.liquidationProtocolFeePercentage
     );
 
-    uint256 desiredHf = _calcMaxAchievableHf(debtReserveId, collateralReserveId, liqBonus);
+    uint256 desiredHf = _calcMaxAchievableHf(collateralReserveId, liqBonus);
     vm.assume(desiredHf < HEALTH_FACTOR_LIQUIDATION_THRESHOLD);
 
     Utils.supplyCollateral({
@@ -176,7 +400,7 @@ contract LiquidationCallCloseFactorTest is SpokeLiquidationBase {
       desiredHf
     );
 
-    console.log('hf after borrow %e | debt: %e', hfAfterBorrow, requiredDebtAmount);
+    console.log('hf after borrow %e | borrowed amt: %e', hfAfterBorrow, requiredDebtAmount);
 
     state.liquidationBonus = _getVariableLiquidationBonus(
       spoke1,
@@ -208,12 +432,26 @@ contract LiquidationCallCloseFactorTest is SpokeLiquidationBase {
       state.debt.balanceBefore - state.debt.balanceAfter
     );
 
+    console.log(
+      'debt amt remaining %e | base %e',
+      spoke1.getUserTotalDebt(debtReserveId, alice),
+      _convertAmountToBaseCurrency(daiAssetId, spoke1.getUserTotalDebt(debtReserveId, alice))
+    );
+    console.log(
+      'collateral amt remaining %e | base %e',
+      spoke1.getUserSuppliedAmount(collateralReserveId, alice),
+      _convertAmountToBaseCurrency(
+        wethAssetId,
+        spoke1.getUserSuppliedAmount(collateralReserveId, alice)
+      )
+    );
+
     return state;
   }
 
   /// @notice Calculate the maximum achievable health factor after liquidation
+  /// @param liquidationBonus in BPS
   function _calcMaxAchievableHf(
-    uint256 debtReserveId,
     uint256 collateralReserveId,
     uint256 liquidationBonus
   ) internal view returns (uint256 healthFactor) {
@@ -224,5 +462,3 @@ contract LiquidationCallCloseFactorTest is SpokeLiquidationBase {
       .percentMul(liquidationBonus + 1);
   }
 }
-
-// 1.6429736644435e13

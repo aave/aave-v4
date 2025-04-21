@@ -100,6 +100,31 @@ contract LiquidationCallProtocolFeeTest is SpokeLiquidationBase {
     _assertLpfpEarned(state, 'test_liquidationCall_fuzz_protocolFee usdx/weth');
   }
 
+  function test_liquidationCall_fuzz_protocolFee_scenario4(
+    DataTypes.LiquidationConfig memory liqConfig,
+    uint256 liqBonus,
+    uint256 supplyAmount,
+    uint256 desiredHf,
+    uint256 liquidationProtocolFeePercentage
+  ) public {
+    uint256 collateralReserveId = _daiReserveId(spoke1);
+    uint256 debtReserveId = _wethReserveId(spoke1);
+
+    supplyAmount = bound(supplyAmount, 1e16, MAX_SUPPLY_AMOUNT / 1e4); // bounds to ensure HF is below desiredHf within precision
+
+    LiquidationTestLocalParams memory state = _execLiqCallFuzzTest(
+      liqConfig,
+      liqBonus,
+      supplyAmount,
+      desiredHf,
+      collateralReserveId,
+      debtReserveId,
+      liquidationProtocolFeePercentage
+    );
+
+    _assertLpfpEarned(state, 'test_liquidationCall_fuzz_protocolFee usdx/weth');
+  }
+
   function _assertLpfpEarned(
     LiquidationTestLocalParams memory state,
     string memory label
