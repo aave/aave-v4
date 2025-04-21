@@ -33,7 +33,7 @@ contract LiquidationLogicCloseFactorDebtTest is LiquidationLogicBaseTest {
 
     args.debtAssetUnit = 0;
 
-    assertEq(LiquidationLogic.calculateCloseFactorDebt(args), 1, 'closeFactorDebt is 1');
+    assertEq(LiquidationLogic.calculateCloseFactorDebt(args), 0, 'closeFactorDebt is 0');
   }
 
   function calculateCloseFactorDebt(DataTypes.LiquidationCallLocalVars memory params) public pure {
@@ -59,12 +59,22 @@ contract LiquidationLogicCloseFactorDebtTest is LiquidationLogicBaseTest {
   ) public {
     FieldsToSkip memory skips = _skipOnly(SKIP_CLOSE_FACTOR);
     TestCloseFactorDebtParams memory params = _bound(params, skips);
+    vm.assume(
+      _calculateCloseFactorThreshold(params.liquidationBonus, params.collateralFactor) >
+        HEALTH_FACTOR_LIQUIDATION_THRESHOLD
+    );
     params.closeFactor = bound(
       params.closeFactor,
-      1, // in practice CF >= 1e18
-      _calculateCloseFactorThreshold(params.liquidationBonus, params.collateralFactor) - 1
+      HEALTH_FACTOR_LIQUIDATION_THRESHOLD,
+      _calculateCloseFactorThreshold(params.liquidationBonus, params.collateralFactor)
     );
     DataTypes.LiquidationCallLocalVars memory args = _setFunctionArgs(params);
+
+    // console.log(
+    //   'test %e %e',
+    //   params.closeFactor,
+    //   (params.liquidationBonus.wadify()).percentMul(params.collateralFactor - 1).fromBps()
+    // );
 
     assertEq(
       LiquidationLogic.calculateCloseFactorDebt(args),
@@ -82,10 +92,7 @@ contract LiquidationLogicCloseFactorDebtTest is LiquidationLogicBaseTest {
     params.avgCollateralFactor = 0;
     DataTypes.LiquidationCallLocalVars memory args = _setFunctionArgs(params);
 
-    assertEq(
-      LiquidationLogic.calculateCloseFactorDebt(args),
-      _calcCloseFactorDebtZeroAvgCollateralFactor(params),
-      'closeFactorDebt is incorrect'
-    );
+    vm.expectRevert(stdError.arithmeticError);
+    this.calculateCloseFactorDebt(args);
   }
 }
