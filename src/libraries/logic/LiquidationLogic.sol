@@ -53,18 +53,9 @@ library LiquidationLogic {
     vars.maxLiquidatableDebt = params.totalDebt; // for current debt asset, in amount
     vars.closeFactorDebt = params.calculateCloseFactorDebt();
 
-    console.log('LL params.totalDebt %e %e', vars.maxLiquidatableDebt, params.totalDebt);
-
     vars.maxLiquidatableDebt = vars.maxLiquidatableDebt > vars.closeFactorDebt
       ? vars.closeFactorDebt
       : vars.maxLiquidatableDebt;
-
-    console.log(
-      'LL params.totalDebt %e %e %e',
-      vars.maxLiquidatableDebt,
-      params.totalDebt,
-      vars.closeFactorDebt
-    );
 
     return debtToCover > vars.maxLiquidatableDebt ? vars.maxLiquidatableDebt : debtToCover;
   }
@@ -90,13 +81,14 @@ library LiquidationLogic {
       return type(uint256).max;
     }
 
-    uint256 closeFactorDebt = ((params.totalDebtInBaseCurrency.wadMul(params.closeFactor + 1) -
-      params.totalCollateralInBaseCurrency.percentMul((params.avgCollateralFactor).dewadify())) *
+    uint256 closeFactorDebtToLiquidate = ((params.totalDebtInBaseCurrency.wadMul(
+      params.closeFactor
+    ) - params.totalCollateralInBaseCurrency.percentMul(params.avgCollateralFactor).dewadify()) *
       params.debtAssetUnit) /
       ((params.closeFactor - effectiveLiquidationPenalty) * params.debtAssetPrice) +
       1; // add rounding to ensure HF > close factor
 
-    return closeFactorDebt;
+    return closeFactorDebtToLiquidate;
   }
 
   /**

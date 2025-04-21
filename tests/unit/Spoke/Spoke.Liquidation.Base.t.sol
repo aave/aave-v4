@@ -70,7 +70,7 @@ contract SpokeLiquidationBase is SpokeBase {
     uint256 assetId = spoke.getReserve(reserveId).assetId;
     uint256 requiredDebtAmount = _convertBaseCurrencyToAmount(assetId, requiredDebtInBase) + 1;
 
-    vm.assume(requiredDebtAmount > 1 && requiredDebtAmount < MAX_SUPPLY_AMOUNT);
+    vm.assume(requiredDebtAmount < MAX_SUPPLY_AMOUNT);
 
     // mock price to 0 to circumvent borrow validation
     vm.mockCall(
