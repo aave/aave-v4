@@ -60,13 +60,13 @@ contract LiquidationLogicCloseFactorDebtTest is LiquidationLogicBaseTest {
     FieldsToSkip memory skips = _skipOnly(SKIP_CLOSE_FACTOR);
     TestCloseFactorDebtParams memory params = _bound(params, skips);
     vm.assume(
-      _calculateCloseFactorThreshold(params.liquidationBonus, params.collateralFactor) >
+      _calculateCloseFactorThreshold(params.liquidationBonus, params.collateralFactor) - 1 >=
         HEALTH_FACTOR_LIQUIDATION_THRESHOLD
     );
     params.closeFactor = bound(
       params.closeFactor,
       HEALTH_FACTOR_LIQUIDATION_THRESHOLD,
-      _calculateCloseFactorThreshold(params.liquidationBonus, params.collateralFactor)
+      _calculateCloseFactorThreshold(params.liquidationBonus, params.collateralFactor) - 1
     );
     DataTypes.LiquidationCallLocalVars memory args = _setFunctionArgs(params);
 
