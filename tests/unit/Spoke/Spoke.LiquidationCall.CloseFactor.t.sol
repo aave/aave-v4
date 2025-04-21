@@ -53,7 +53,7 @@ contract LiquidationCallCloseFactorTest is SpokeLiquidationBase {
     uint256 collateralReserveId = _wethReserveId(spoke1);
     uint256 debtReserveId = _daiReserveId(spoke1);
 
-    supplyAmount = bound(supplyAmount, 1e11, MAX_SUPPLY_AMOUNT / 1e4); // bounds to ensure HF is below desiredHf within precision
+    supplyAmount = bound(supplyAmount, 1e8, MAX_SUPPLY_AMOUNT / 1e4); // bounds to ensure HF is below desiredHf within precision
 
     LiquidationTestLocalParams memory state = _execLiqCallCloseFactorTest(
       liqConfig,
@@ -219,11 +219,9 @@ contract LiquidationCallCloseFactorTest is SpokeLiquidationBase {
   ) internal view returns (uint256 healthFactor) {
     // calc max achievable hf in order to to be able to repay all debt and have remaining collateral
     // allows close factor to be up to max uint
-    healthFactor =
-      uint256(1e18).percentMul(spoke1.getCollateralFactor(collateralReserveId) + 1).percentMul(
-        liquidationBonus + 1
-      ) +
-      1e15;
+    healthFactor = uint256(1e18)
+      .percentMul(spoke1.getCollateralFactor(collateralReserveId) + 1)
+      .percentMul(liquidationBonus + 1);
   }
 }
 
