@@ -416,13 +416,13 @@ contract Spoke is ISpoke {
       userDebtPosition.premiumOffset = 0;
       userDebtPosition.realizedPremium = vars.premiumDebt - vars.premiumDebtToLiquidate;
 
-      _refreshPremiumDebt(
+      _settlePremiumDebt(
         debtReserve,
         vars.debtAssetId,
         -int256(vars.userDebtPremiumDrawnShares),
         -int256(vars.userDebtPremiumOffset),
         _signedDiff(userDebtPosition.realizedPremium, vars.userDebtRealizedPremium)
-      );
+      ); // we settle premium debt here
 
       // todo: rm later to opt
       // optional: settle collateral reserve's premium debt
@@ -474,7 +474,7 @@ contract Spoke is ISpoke {
       vars.userDebtPremiumDrawnShares = userDebtPosition.premiumDrawnShares = userDebtPosition
         .baseDrawnShares
         .percentMul(vars.newUserRiskPremium);
-      vars.userDebtPremiumOffset = userDebtPosition.premiumOffset = HUB.convertToDrawnAssets(
+      vars.userDebtPremiumOffset = userDebtPosition.premiumOffset = HUB.previewOffset(
         vars.debtAssetId,
         userDebtPosition.premiumDrawnShares
       );
