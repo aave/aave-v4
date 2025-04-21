@@ -93,11 +93,10 @@ library LiquidationLogic {
 
     console.log('params.closeFactor', params.closeFactor);
 
-    uint256 closeFactorDebt = ((params.totalDebtInBaseCurrency.wadMul(params.closeFactor) -
+    uint256 closeFactorDebt = ((params.totalDebtInBaseCurrency.wadMul(params.closeFactor + 1) -
       params.totalCollateralInBaseCurrency.percentMul(params.avgCollateralFactor.dewadify())) *
       params.debtAssetUnit) /
-      ((params.closeFactor - effectiveLiquidationPenalty) * params.debtAssetPrice) +
-      1; // add 1 to ensure HF > close factor
+      ((params.closeFactor - effectiveLiquidationPenalty) * params.debtAssetPrice); // add 1 to ensure HF > close factor
 
     console.log(
       'num %e %e',

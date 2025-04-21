@@ -1,11 +1,11 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.0;
 
-import 'tests/unit/Spoke/SpokeBase.t.sol';
+import 'tests/unit/Spoke/Spoke.Liquidation.Base.t.sol';
 
 // todo: tests with liquidator instead of bob
 
-contract LiquidationCallTest is SpokeBase {
+contract LiquidationCallTest is SpokeLiquidationBase {
   using SharesMath for uint256;
   using WadRayMath for uint256;
   using PercentageMath for uint256;
@@ -100,42 +100,42 @@ contract LiquidationCallTest is SpokeBase {
       debtToCover: state.debts[0].weth
     });
 
-    // (uint256 userRp, , uint256 hf, , ) = spoke1.getUserAccountData(alice);
-    // console.log('healthFactor %e', spoke1.getHealthFactor(alice));
-    // console.log('userRp %e %e', userRp, _getUserRP(spoke1, state.wethReserveId, alice));
+    (uint256 userRp, , uint256 hf, , ) = spoke1.getUserAccountData(alice);
+    console.log('healthFactor %e', spoke1.getHealthFactor(alice));
+    console.log('userRp %e %e', userRp, _getUserRP(spoke1, state.wethReserveId, alice));
 
-    // console.log(
-    //   'spoke wbtc',
-    //   spoke1.getReserve(state.wbtcReserveId).premiumDrawnShares,
-    //   spoke1.getReserve(state.wbtcReserveId).premiumOffset
-    // );
-    // console.log(
-    //   'spoke dai',
-    //   spoke1.getReserve(state.daiReserveId).premiumDrawnShares,
-    //   spoke1.getReserve(state.daiReserveId).premiumOffset
-    // );
+    console.log(
+      'spoke wbtc',
+      spoke1.getReserve(state.wbtcReserveId).premiumDrawnShares,
+      spoke1.getReserve(state.wbtcReserveId).premiumOffset
+    );
+    console.log(
+      'spoke dai',
+      spoke1.getReserve(state.daiReserveId).premiumDrawnShares,
+      spoke1.getReserve(state.daiReserveId).premiumOffset
+    );
 
-    // console.log(
-    //   'spoke weth %e %e',
-    //   spoke1.getReserve(state.wethReserveId).premiumDrawnShares,
-    //   spoke1.getReserve(state.wethReserveId).premiumOffset
-    // );
-    // console.log(
-    //   'alice weth %e %e',
-    //   spoke1.getUserPosition(state.wethReserveId, alice).premiumDrawnShares,
-    //   spoke1.getUserPosition(state.wethReserveId, alice).premiumOffset
-    // );
+    console.log(
+      'spoke weth %e %e',
+      spoke1.getReserve(state.wethReserveId).premiumDrawnShares,
+      spoke1.getReserve(state.wethReserveId).premiumOffset
+    );
+    console.log(
+      'alice weth %e %e',
+      spoke1.getUserPosition(state.wethReserveId, alice).premiumDrawnShares,
+      spoke1.getUserPosition(state.wethReserveId, alice).premiumOffset
+    );
 
-    // console.log(
-    //   'spoke total debt, %e %e',
-    //   spoke1.getUserTotalDebt(state.wethReserveId, alice),
-    //   spoke1.getReserveTotalDebt(state.wethReserveId)
-    // );
-    // console.log(
-    //   'hub total debt, %e %e',
-    //   hub.getSpokeTotalDebt(wethAssetId, address(spoke1)),
-    //   hub.getAssetTotalDebt(wethAssetId)
-    // );
+    console.log(
+      'spoke total debt, %e %e',
+      spoke1.getUserTotalDebt(state.wethReserveId, alice),
+      spoke1.getReserveTotalDebt(state.wethReserveId)
+    );
+    console.log(
+      'hub total debt, %e %e',
+      hub.getSpokeTotalDebt(wethAssetId, address(spoke1)),
+      hub.getAssetTotalDebt(wethAssetId)
+    );
   }
 
   function test_liquidationCall_debt_with_interest() public {
@@ -309,7 +309,12 @@ contract LiquidationCallTest is SpokeBase {
     // all collateral is seized, therefore hf == 0
     assertEq(spoke1.getHealthFactor(alice), 0, 'HF should be 0');
 
-    console.log('final hf %e', spoke1.getHealthFactor(alice));
+    console.log(
+      'final hf %e | closeFactor %e | percentDiff %e',
+      spoke1.getHealthFactor(alice),
+      _getCloseFactor(spoke1),
+      _percentDiff(_getCloseFactor(spoke1), spoke1.getHealthFactor(alice))
+    );
   }
 
   /// scenario where fully liquidating a collateral still does not improve a position to close factor
@@ -417,7 +422,12 @@ contract LiquidationCallTest is SpokeBase {
       'avg coll factor matches dai coll factor'
     );
 
-    console.log('final hf %e', spoke1.getHealthFactor(alice));
+    console.log(
+      'final hf %e | closeFactor %e | percentDiff %e',
+      spoke1.getHealthFactor(alice),
+      _getCloseFactor(spoke1),
+      _percentDiff(_getCloseFactor(spoke1), spoke1.getHealthFactor(alice))
+    );
   }
 
   function setUpScenario2() internal {
@@ -538,7 +548,12 @@ contract LiquidationCallTest is SpokeBase {
     //   'avg coll factor matches dai coll factor'
     // );
 
-    console.log('final hf %e', spoke1.getHealthFactor(alice));
+    console.log(
+      'final hf %e | closeFactor %e | percentDiff %e',
+      spoke1.getHealthFactor(alice),
+      _getCloseFactor(spoke1),
+      _percentDiff(_getCloseFactor(spoke1), spoke1.getHealthFactor(alice))
+    );
   }
 
   function _convertAssetAmount(
@@ -756,7 +771,12 @@ contract LiquidationCallTest is SpokeBase {
     // hf < 1 after
     assertLt(spoke1.getHealthFactor(alice), HEALTH_FACTOR_LIQUIDATION_THRESHOLD);
 
-    console.log('final hf %e', spoke1.getHealthFactor(alice));
+    console.log(
+      'final hf %e | closeFactor %e | percentDiff %e',
+      spoke1.getHealthFactor(alice),
+      _getCloseFactor(spoke1),
+      _percentDiff(_getCloseFactor(spoke1), spoke1.getHealthFactor(alice))
+    );
   }
 
   function testy() public {
@@ -990,7 +1010,12 @@ contract LiquidationCallTest is SpokeBase {
     vm.prank(bob);
     spoke1.liquidationCall(daiReserveId, usdxReserveId, alice, borrowAmount);
 
-    console.log('final hf %e', spoke1.getHealthFactor(alice));
+    console.log(
+      'final hf %e | closeFactor %e | percentDiff %e',
+      spoke1.getHealthFactor(alice),
+      _getCloseFactor(spoke1),
+      _percentDiff(_getCloseFactor(spoke1), spoke1.getHealthFactor(alice))
+    );
     assertLt(spoke1.getHealthFactor(alice), 1e18, 'health factor precision loss < 1 ');
   }
 
@@ -1018,7 +1043,12 @@ contract LiquidationCallTest is SpokeBase {
     vm.prank(bob);
     spoke1.liquidationCall(usdxReserveId, daiReserveId, alice, borrowAmount);
 
-    console.log('final hf %e', spoke1.getHealthFactor(alice));
+    console.log(
+      'final hf %e | closeFactor %e | percentDiff %e',
+      spoke1.getHealthFactor(alice),
+      _getCloseFactor(spoke1),
+      _percentDiff(_getCloseFactor(spoke1), spoke1.getHealthFactor(alice))
+    );
     assertGt(spoke1.getHealthFactor(alice), closeFactor, 'health factor precision loss > 1 ');
   }
 
@@ -1051,7 +1081,12 @@ contract LiquidationCallTest is SpokeBase {
     // console.log('final asset debt %e', hub.getAssetTotalDebt(daiAssetId));
     // console.log('final coll %e', spoke1.getUserSuppliedAmount(wethReserveId, alice));
     // console.log('final debt %e', spoke1.getUserTotalDebt(daiReserveId, alice));
-    console.log('final hf - exact %e', spoke1.getHealthFactor(alice));
+    console.log(
+      'final hf %e | closeFactor %e | percentDiff %e',
+      spoke1.getHealthFactor(alice),
+      _getCloseFactor(spoke1),
+      _percentDiff(_getCloseFactor(spoke1), spoke1.getHealthFactor(alice))
+    );
     // 1.000140890169708613e18
     // 1.000140890157372828e18
 
@@ -1161,7 +1196,12 @@ contract LiquidationCallTest is SpokeBase {
     // hf < 1 after
     assertLt(spoke1.getHealthFactor(alice), HEALTH_FACTOR_LIQUIDATION_THRESHOLD);
 
-    console.log('final hf %e', spoke1.getHealthFactor(alice));
+    console.log(
+      'final hf %e | closeFactor %e | percentDiff %e',
+      spoke1.getHealthFactor(alice),
+      _getCloseFactor(spoke1),
+      _percentDiff(_getCloseFactor(spoke1), spoke1.getHealthFactor(alice))
+    );
   }
 
   function test_liquidationCall_all_collateral_nonzero_lpfp() public {
@@ -1269,7 +1309,12 @@ contract LiquidationCallTest is SpokeBase {
     // hf < 1 after
     assertLt(spoke1.getHealthFactor(alice), HEALTH_FACTOR_LIQUIDATION_THRESHOLD);
 
-    console.log('final hf %e', spoke1.getHealthFactor(alice));
+    console.log(
+      'final hf %e | closeFactor %e | percentDiff %e',
+      spoke1.getHealthFactor(alice),
+      _getCloseFactor(spoke1),
+      _percentDiff(_getCloseFactor(spoke1), spoke1.getHealthFactor(alice))
+    );
   }
 
   // test with different decimals
@@ -1321,7 +1366,12 @@ contract LiquidationCallTest is SpokeBase {
 
     // console.log('final coll %e', spoke1.getUserSuppliedAmount(wethReserveId, alice));
     // console.log('final debt %e', spoke1.getUserTotalDebt(daiReserveId, alice));
-    console.log('final hf %e', spoke1.getHealthFactor(alice));
+    console.log(
+      'final hf %e | closeFactor %e | percentDiff %e',
+      spoke1.getHealthFactor(alice),
+      _getCloseFactor(spoke1),
+      _percentDiff(_getCloseFactor(spoke1), spoke1.getHealthFactor(alice))
+    );
   }
 
   function test_liquidationCall_restore_cf() public {
@@ -1349,7 +1399,12 @@ contract LiquidationCallTest is SpokeBase {
     vm.prank(bob);
     spoke1.liquidationCall(usdxReserveId, daiReserveId, alice, borrowAmount);
 
-    console.log('final hf %e', spoke1.getHealthFactor(alice));
+    console.log(
+      'final hf %e | closeFactor %e | percentDiff %e',
+      spoke1.getHealthFactor(alice),
+      _getCloseFactor(spoke1),
+      _percentDiff(_getCloseFactor(spoke1), spoke1.getHealthFactor(alice))
+    );
     assertGe(spoke1.getHealthFactor(alice), closeFactor, 'health factor precision loss > 1 ');
   }
 
@@ -1382,7 +1437,12 @@ contract LiquidationCallTest is SpokeBase {
     vm.prank(bob);
     spoke1.liquidationCall(usdxReserveId, daiReserveId, alice, borrowAmount);
 
-    console.log('final hf %e', spoke1.getHealthFactor(alice));
+    console.log(
+      'final hf %e | closeFactor %e | percentDiff %e',
+      spoke1.getHealthFactor(alice),
+      _getCloseFactor(spoke1),
+      _percentDiff(_getCloseFactor(spoke1), spoke1.getHealthFactor(alice))
+    );
     assertGt(spoke1.getHealthFactor(alice), closeFactor, 'health factor precision loss > 1 ');
 
     assertEq(tokenList.usdx.balanceOf(TREASURY) - treasuryBalanceBefore, 0, 'fee is 0');

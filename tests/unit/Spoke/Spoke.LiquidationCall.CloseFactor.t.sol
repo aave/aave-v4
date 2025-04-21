@@ -9,30 +9,34 @@ contract LiquidationCallCloseFactorTest is SpokeLiquidationBase {
   using PercentageMath for uint256;
   using PercentageMathExtended for uint256;
 
-  function test_liquidationCall_closeFactor1()
-    public
-  // DataTypes.LiquidationConfig memory liqConfig,
-  // uint256 liqBonus,
-  // uint256 supplyAmount,
+  function testUnit() public {
+    test_liquidationCall_closeFactor1(
+      DataTypes.LiquidationConfig({
+        closeFactor: 12e18,
+        liquidationBonusFactor: 0,
+        healthFactorBonusThreshold: 0
+      })
+    );
+  }
+
+  function test_liquidationCall_closeFactor1(
+    DataTypes.LiquidationConfig memory liqConfig // DataTypes.LiquidationConfig memory liqConfig,
+    // uint256 liqBonus,
+  ) public // uint256 supplyAmount,
   // uint256 desiredHf,
   // uint256 liquidationProtocolFeePercentage
   {
     uint256 collateralReserveId = _wethReserveId(spoke1);
     uint256 debtReserveId = _daiReserveId(spoke1);
-    DataTypes.LiquidationConfig memory liqConfig = DataTypes.LiquidationConfig({
-      closeFactor: 12e18, // todo: vary in fuzz test
-      liquidationBonusFactor: 0,
-      healthFactorBonusThreshold: 0
-    });
+    // DataTypes.LiquidationConfig memory liqConfig = DataTypes.LiquidationConfig({
+    //   closeFactor: 12e18, // todo: vary in fuzz test
+    //   liquidationBonusFactor: 0,
+    //   healthFactorBonusThreshold: 0
+    // });
     uint256 liquidationProtocolFeePercentage = 0;
-    uint256 liqBonus = 100_00;
+    uint256 liqBonus = 105_00;
     uint256 supplyAmount = 1.5e18; // vary in fuzz test
-    uint256 desiredHf = uint256(1e18).percentMul(
-      spoke1.getCollateralFactor(collateralReserveId) + 1
-    ); // max achievable hf in order to achieve close factor
-    // anything lower than this value will make it impossible to get to close factor
-
-    console.log(spoke1.getCollateralFactor(collateralReserveId));
+    uint256 desiredHf = _calcMaxAchievableHf(debtReserveId, collateralReserveId, liqBonus);
 
     // supplyAmount = bound(supplyAmount, 1e11, MAX_SUPPLY_AMOUNT / 1e4); // bounds to ensure HF is below desiredHf within precision
 
@@ -65,13 +69,19 @@ contract LiquidationCallCloseFactorTest is SpokeLiquidationBase {
   function _bound(
     DataTypes.LiquidationConfig memory liqConfig
   ) internal pure virtual override returns (DataTypes.LiquidationConfig memory) {
-    // liqConfig.closeFactor = bound(
-    //   liqConfig.closeFactor,
-    //   HEALTH_FACTOR_LIQUIDATION_THRESHOLD,
-    //   1.2e18
-    // );
-    liqConfig.healthFactorBonusThreshold = 0;
-    liqConfig.liquidationBonusFactor = 0;
+    liqConfig.closeFactor = bound(
+      liqConfig.closeFactor,
+      HEALTH_FACTOR_LIQUIDATION_THRESHOLD,
+      10e18
+    );
+    liqConfig.healthFactorBonusThreshold = bound(
+      liqConfig.healthFactorBonusThreshold,
+      0.5e18,
+      HEALTH_FACTOR_LIQUIDATION_THRESHOLD - 1
+    );
+    liqConfig.liquidationBonusFactor = bound(liqConfig.liquidationBonusFactor, 0, 100_00);
+
+    console.log('close factor %e', liqConfig.closeFactor);
 
     return liqConfig;
   }
@@ -128,8 +138,6 @@ contract LiquidationCallCloseFactorTest is SpokeLiquidationBase {
       hfAfterBorrow
     );
 
-    console.log('do-able?', _calcMaxAchievableHf(hfAfterBorrow, state.liquidationBonus));
-
     state.debt.balanceBefore = spoke1.getUserTotalDebt(debtReserveId, alice);
     state.liquidator.balanceBefore = IERC20(state.collateralReserve.asset).balanceOf(LIQUIDATOR);
     state.treasury.balanceBefore = IERC20(state.collateralReserve.asset).balanceOf(TREASURY);
@@ -157,26 +165,16 @@ contract LiquidationCallCloseFactorTest is SpokeLiquidationBase {
     return state;
   }
 
+  /// @notice Calculate the maximum achievable health factor after liquidation
   function _calcMaxAchievableHf(
-    uint256 hfAfterBorrow,
+    uint256 debtReserveId,
+    uint256 collateralReserveId,
     uint256 liquidationBonus
-  ) internal returns (bool) {
-    // all collateral gets liquidated
-
-    (
-      ,
-      uint256 currentAvgCollateralFactor,
-      ,
-      uint256 totalCollateralBase,
-      uint256 totalDebtBase
-    ) = spoke1.getUserAccountData(alice);
-
-    uint256 maxBaseCollateralToLiquidate = totalDebtBase.percentMul(liquidationBonus);
-    maxBaseCollateralToLiquidate = maxBaseCollateralToLiquidate > totalCollateralBase
-      ? totalCollateralBase
-      : maxBaseCollateralToLiquidate;
-    uint256 maxDebtToLiq = maxBaseCollateralToLiquidate.percentDiv(liquidationBonus);
-
-    return totalDebtBase >= maxDebtToLiq;
+  ) internal view returns (uint256 healthFactor) {
+    // calc max achievable hf in order to to be able to repay all debt and have remaining collateral
+    // allows close factor to be up to max uint
+    healthFactor = uint256(1e18)
+      .percentMul(spoke1.getCollateralFactor(collateralReserveId) + 1)
+      .percentMul(liquidationBonus + 1);
   }
 }

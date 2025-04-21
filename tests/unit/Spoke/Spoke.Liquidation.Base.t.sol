@@ -82,7 +82,7 @@ contract SpokeLiquidationBase is SpokeBase {
     vm.clearMockedCalls();
 
     uint256 finalHf = spoke.getHealthFactor(user);
-
+    console.log('final hf', finalHf, desiredHf);
     assertLt(finalHf, desiredHf);
     return (finalHf, requiredDebtAmount);
   }
@@ -202,5 +202,14 @@ contract SpokeLiquidationBase is SpokeBase {
     );
 
     return state;
+  }
+
+  function _getCloseFactor(ISpoke spoke) internal view returns (uint256) {
+    return spoke.getLiquidationConfig().closeFactor;
+  }
+
+  function _percentDiff(uint256 a, uint256 b) internal returns (uint256) {
+    uint256 diff = a > b ? (a - b) : b - a;
+    return a != 0 ? (diff * PercentageMath.PERCENTAGE_FACTOR) / a : type(uint256).max;
   }
 }
