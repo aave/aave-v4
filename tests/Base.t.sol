@@ -2,6 +2,7 @@
 pragma solidity ^0.8.0;
 
 import {Test} from 'forge-std/Test.sol';
+import {stdError} from 'forge-std/StdError.sol';
 import {console2 as console} from 'forge-std/console2.sol';
 
 import {LiquidityHub, ILiquidityHub} from 'src/contracts/LiquidityHub.sol';

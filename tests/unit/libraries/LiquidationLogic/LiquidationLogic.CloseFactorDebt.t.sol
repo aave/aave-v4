@@ -36,6 +36,10 @@ contract LiquidationLogicCloseFactorDebtTest is LiquidationLogicBaseTest {
     assertEq(LiquidationLogic.calculateCloseFactorDebt(args), 1, 'closeFactorDebt is 1');
   }
 
+  function calculateCloseFactorDebt(DataTypes.LiquidationCallLocalVars memory params) public pure {
+    LiquidationLogic.calculateCloseFactorDebt(params);
+  }
+
   function test_calculateCloseFactorDebt_fuzz_debtAssetPrice_zero(
     TestCloseFactorDebtParams memory params
   ) public {
@@ -45,11 +49,8 @@ contract LiquidationLogicCloseFactorDebtTest is LiquidationLogicBaseTest {
 
     args.debtAssetPrice = 0;
 
-    assertEq(
-      LiquidationLogic.calculateCloseFactorDebt(args),
-      type(uint256).max,
-      'closeFactorDebt is 0'
-    );
+    vm.expectRevert(stdError.divisionError);
+    this.calculateCloseFactorDebt(args);
   }
 
   /// if denom is ever negative, default to uint max

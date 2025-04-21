@@ -1,7 +1,6 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.0;
 
-import {stdError} from 'forge-std/StdError.sol';
 import {LiquidationLogic} from 'src/libraries/logic/LiquidationLogic.sol';
 import 'tests/Base.t.sol';
 

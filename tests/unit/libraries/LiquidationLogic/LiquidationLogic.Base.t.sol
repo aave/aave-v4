@@ -112,7 +112,8 @@ contract LiquidationLogicBaseTest is Base {
     }
 
     if (!_isSkipped(skip, SKIP_AVG_COLLATERAL_FACTOR)) {
-      params.avgCollateralFactor = bound(params.avgCollateralFactor, 1, MAX_COLLATERAL_FACTOR);
+      params.avgCollateralFactor = bound(params.avgCollateralFactor, 1, MAX_COLLATERAL_FACTOR)
+        .wadify();
     }
 
     if (!_isSkipped(skip, SKIP_TOTAL_DEBT)) {

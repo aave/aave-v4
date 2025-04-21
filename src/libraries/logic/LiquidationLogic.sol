@@ -91,13 +91,11 @@ library LiquidationLogic {
     }
 
     console.log('params.closeFactor', params.closeFactor);
-
-    uint256 closeFactorDebt = ((params.totalDebtInBaseCurrency.wadMul(params.closeFactor) -
-      params.totalCollateralInBaseCurrency.percentMul(
-        (params.avgCollateralFactor).dewadify() - 1
-      )) * params.debtAssetUnit) /
-      ((params.closeFactor - effectiveLiquidationPenalty) * params.debtAssetPrice); // add 1 to ensure HF > close factor
-
+    console.log(
+      'totalCollateralInBaseCurrency %e %e',
+      params.totalCollateralInBaseCurrency,
+      params.avgCollateralFactor
+    );
     console.log(
       'num %e %e',
       params.totalDebtInBaseCurrency.wadMul(params.closeFactor),
@@ -105,6 +103,13 @@ library LiquidationLogic {
     );
 
     console.log('denom %e %e', params.closeFactor, effectiveLiquidationPenalty);
+
+    uint256 closeFactorDebt = ((params.totalDebtInBaseCurrency.wadMul(params.closeFactor) -
+      params.totalCollateralInBaseCurrency.percentMul(
+        (params.avgCollateralFactor).dewadify() - 1
+      )) * params.debtAssetUnit) /
+      ((params.closeFactor - effectiveLiquidationPenalty) * params.debtAssetPrice); // add 1 to ensure HF > close factor
+
     // 2.2520925449097828312e19
     // 2.2520674388376725213e19
     console.log('LL closeFactorDebt %e', closeFactorDebt);
