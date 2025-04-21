@@ -81,21 +81,21 @@ library LiquidationLogic {
     // This represents the effective value loss from the user's collateral per unit of debt repaid.
     // Acts like an “effective penalty” from the user’s point of view.
     uint256 effectiveLiquidationPenalty = (params.liquidationBonus.wadify())
-      .percentMul(params.collateralFactor)
+      .percentMul(params.collateralFactor - 1)
       .fromBps();
 
     // Return default max uint if:
     // - penalty exceeds or equals the close factor, ie liquidation cannot restore solvency efficiently (negative denominator)
-    // - debt asset price is 0
-    if (params.closeFactor <= effectiveLiquidationPenalty || params.debtAssetPrice == 0) {
+    if (params.closeFactor <= effectiveLiquidationPenalty) {
       return type(uint256).max;
     }
 
     console.log('params.closeFactor', params.closeFactor);
 
-    uint256 closeFactorDebt = ((params.totalDebtInBaseCurrency.wadMul(params.closeFactor + 1) -
-      params.totalCollateralInBaseCurrency.percentMul(params.avgCollateralFactor.dewadify())) *
-      params.debtAssetUnit) /
+    uint256 closeFactorDebt = ((params.totalDebtInBaseCurrency.wadMul(params.closeFactor) -
+      params.totalCollateralInBaseCurrency.percentMul(
+        (params.avgCollateralFactor).dewadify() - 1
+      )) * params.debtAssetUnit) /
       ((params.closeFactor - effectiveLiquidationPenalty) * params.debtAssetPrice); // add 1 to ensure HF > close factor
 
     console.log(
@@ -105,6 +105,8 @@ library LiquidationLogic {
     );
 
     console.log('denom %e %e', params.closeFactor, effectiveLiquidationPenalty);
+    // 2.2520925449097828312e19
+    // 2.2520674388376725213e19
     console.log('LL closeFactorDebt %e', closeFactorDebt);
 
     return closeFactorDebt;
