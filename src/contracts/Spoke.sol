@@ -379,9 +379,9 @@ contract Spoke is ISpoke {
       revert UserNotBorrowingReserve(reserveId);
     }
     return
-      _userPositions[user][reserveId].premiumDrawnShares.rayDiv(
+      _userPositions[user][reserveId].premiumDrawnShares.percentDiv(
         _userPositions[user][reserveId].baseDrawnShares
-      ) / 1e23;
+      );
   }
 
   function getUserRiskPremium(address user) external view returns (uint256) {

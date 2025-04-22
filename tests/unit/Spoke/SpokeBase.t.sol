@@ -107,8 +107,9 @@ contract SpokeBase is Base {
   }
 
   struct UserAction {
-    uint256 suppliedShares;
+    uint256 supplyAmount;
     uint256 borrowAmount;
+    uint256 suppliedShares;
     uint256 repayAmount;
     uint256 baseRestored;
     uint256 premiumRestored;
@@ -614,7 +615,9 @@ contract SpokeBase is Base {
     assertEq(riskPremiumCurrent, riskPremiumStored, 'user risk premium mismatch');
   }
 
-  function _boundUserAction(UserAction memory action) internal pure returns (UserAction memory) {
+  function _boundUserAction(
+    UserAction memory action
+  ) internal pure virtual returns (UserAction memory) {
     action.borrowAmount = bound(action.borrowAmount, 1, MAX_SUPPLY_AMOUNT / 8);
     action.repayAmount = bound(action.repayAmount, 1, type(uint256).max);
 
@@ -676,7 +679,7 @@ contract SpokeBase is Base {
     // Gather up list of reserves as collateral to sort by LP
     KeyValueListInMemory.List memory reserveLP = KeyValueListInMemory.init(suppliedReservesCount);
     uint256 idx = 0;
-    for (uint256 reserveId; reserveId < spoke.reserveCount(); ++reserveId) {
+    for (uint256 reserveId; reserveId < spoke.reserveCount(); reserveId++) {
       if (spoke.getUsingAsCollateral(reserveId, user)) {
         reserveLP.add(idx, spoke.getLiquidityPremium(reserveId), reserveId);
         ++idx;
@@ -688,8 +691,8 @@ contract SpokeBase is Base {
 
     // While user's normalized debt amount is non-zero, iterate through supplied reserves, and add up LP
     idx = 0;
-    uint256 originalTotalDebt = totalDebt;
-    while (totalDebt > 0) {
+    uint256 utilizedSupply = 0;
+    while (totalDebt > 0 && idx < reserveLP.length()) {
       (uint256 lp, uint256 reserveId) = reserveLP.get(idx);
       userPosition = getUserInfo(spoke, user, reserveId);
       (assetId, ) = getAssetByReserveId(spoke, reserveId);
@@ -700,15 +703,18 @@ contract SpokeBase is Base {
 
       if (supplyAmount >= totalDebt) {
         userRP += totalDebt * lp;
+        utilizedSupply += totalDebt;
+        totalDebt = 0;
         break;
       } else {
         userRP += supplyAmount * lp;
+        utilizedSupply += supplyAmount;
         totalDebt -= supplyAmount;
       }
 
       ++idx;
     }
 
-    return userRP / originalTotalDebt;
+    return userRP / utilizedSupply;
   }
 }

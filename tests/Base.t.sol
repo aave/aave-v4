@@ -823,4 +823,11 @@ abstract contract Base is Test {
   function _min(uint256 a, uint256 b) internal pure returns (uint256) {
     return a < b ? a : b;
   }
+
+  function _roundDownToWholeSharesAmt(
+    uint256 assetId,
+    uint256 amount
+  ) internal view returns (uint256) {
+    return hub.convertToSuppliedAssets(assetId, hub.convertToSuppliedShares(assetId, amount));
+  }
 }
