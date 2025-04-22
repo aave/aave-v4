@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.0;
 
-import 'tests/unit/Spoke/Spoke.Liquidation.Base.t.sol';
+import 'tests/unit/Spoke/Liquidations/Spoke.Liquidation.Base.t.sol';
 
 contract LiquidationCallVariableLiquidationBonusTest is SpokeLiquidationBase {
   using SharesMath for uint256;

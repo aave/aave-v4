@@ -91,7 +91,8 @@ library LiquidationLogic {
     return
       (params.totalDebtInBaseCurrency.wadMulUp(params.closeFactor - params.healthFactor) *
         params.debtAssetUnit) /
-      ((params.closeFactor - effectiveLiquidationPenalty) * params.debtAssetPrice);
+      ((params.closeFactor - effectiveLiquidationPenalty) * params.debtAssetPrice) +
+      1;
   }
 
   /**

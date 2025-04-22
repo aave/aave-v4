@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.0;
 
-import 'tests/unit/Spoke/Spoke.Liquidation.Base.t.sol';
+import 'tests/unit/Spoke/Liquidations/Spoke.Liquidation.Base.t.sol';
 
 contract LiquidationCallCloseFactorTest is SpokeLiquidationBase {
   using SharesMath for uint256;
@@ -9,7 +9,7 @@ contract LiquidationCallCloseFactorTest is SpokeLiquidationBase {
   using PercentageMath for uint256;
   using PercentageMathExtended for uint256;
 
-  uint256 minSupplyInBaseCurrency = 1e27; // $10 -> 10e6 * 1e8 (price) * 1e18 (wadify) / 1e6 (units)
+  uint256 minSupplyInBaseCurrency = 10e26; // 1e26 base currency units
 
   function test_liquidationCall_closeFactor_scenario1() public {
     test_liquidationCall_fuzz_closeFactor_scenario1({
@@ -335,6 +335,43 @@ contract LiquidationCallCloseFactorTest is SpokeLiquidationBase {
     _assertHealthFactor(spoke1);
   }
 
+  function test_liquidationCall_fuzz_closeFactor_general(
+    uint256 collateralReserveId,
+    uint256 debtReserveId,
+    DataTypes.LiquidationConfig memory liqConfig,
+    uint256 liqBonus,
+    uint256 supplyAmount,
+    uint256 liquidationProtocolFeePercentage
+  ) public {
+    // uint256 collateralReserveId = _daiReserveId(spoke1);
+    // uint256 debtReserveId = _usdxReserveId(spoke1);
+
+    collateralReserveId = bound(collateralReserveId, 0, spoke1.reserveCount() - 1);
+    debtReserveId = bound(debtReserveId, 0, spoke1.reserveCount() - 1);
+
+    console.log(_wethReserveId(spoke1), _wbtcReserveId(spoke1));
+
+    // supplyAmount = bound(
+    //   supplyAmount,
+    //   _convertBaseCurrencyToAmount(
+    //     spoke1.getReserve(collateralReserveId).assetId,
+    //     minSupplyInBaseCurrency
+    //   ),
+    //   MAX_SUPPLY_AMOUNT / 1e4
+    // ); // bounds to ensure HF is below desiredHf within precision
+
+    _execLiqCallCloseFactorTestNew(
+      liqConfig,
+      liqBonus,
+      supplyAmount,
+      collateralReserveId,
+      debtReserveId,
+      liquidationProtocolFeePercentage
+    );
+
+    _assertHealthFactor(spoke1);
+  }
+
   function test_liquidationCall_fuzz_closeFactor_scenario6_defaultCloseFactor(
     DataTypes.LiquidationConfig memory liqConfig,
     uint256 liqBonus,
@@ -387,12 +424,119 @@ contract LiquidationCallCloseFactorTest is SpokeLiquidationBase {
     console.log('liqConfig.closeFactor %e', liqConfig.closeFactor);
     liqConfig.healthFactorBonusThreshold = bound(
       liqConfig.healthFactorBonusThreshold,
-      0.5e18,
+      1,
       HEALTH_FACTOR_LIQUIDATION_THRESHOLD - 1
     );
     liqConfig.liquidationBonusFactor = bound(liqConfig.liquidationBonusFactor, 0, 100_00);
 
     return liqConfig;
+  }
+
+  function _execLiqCallCloseFactorTestNew(
+    DataTypes.LiquidationConfig memory liqConfig,
+    uint256 liqBonus,
+    uint256 supplyAmount,
+    uint256 collateralReserveId,
+    uint256 debtReserveId,
+    uint256 liquidationProtocolFeePercentage
+  ) internal returns (LiquidationTestLocalParams memory) {
+    LiquidationTestLocalParams memory state;
+    state.collateralReserve = spoke1.getReserve(collateralReserveId);
+    state.debtReserve = spoke1.getReserve(debtReserveId);
+
+    liqConfig = _bound(liqConfig);
+    liqBonus = bound(liqBonus, MIN_LIQUIDATION_BONUS, 110_00);
+    liquidationProtocolFeePercentage = bound(liquidationProtocolFeePercentage, 0, 100_00);
+    supplyAmount = bound(
+      supplyAmount,
+      _convertBaseCurrencyToAmount(state.collateralReserve.assetId, minSupplyInBaseCurrency),
+      MAX_SUPPLY_AMOUNT / 1e4
+    ); // bounds to ensure HF is below desiredHf within precision
+
+    state.liquidationProtocolFeePercentage = liquidationProtocolFeePercentage;
+
+    _config = liqConfig;
+    spoke1.updateLiquidationConfig(_config);
+    updateLiquidationBonus(spoke1, collateralReserveId, liqBonus);
+    updateLiquidationProtocolFeePercentage(
+      spoke1,
+      collateralReserveId,
+      state.liquidationProtocolFeePercentage
+    );
+
+    uint256 desiredHf = _calcMaxAchievableHf(collateralReserveId, liqBonus).percentMul(105_00); // add buffer so that not all debt is liquidated
+    // vm.assume(desiredHf < HEALTH_FACTOR_LIQUIDATION_THRESHOLD);
+
+    Utils.supplyCollateral({
+      spoke: spoke1,
+      reserveId: collateralReserveId,
+      user: alice,
+      amount: supplyAmount,
+      onBehalfOf: alice
+    });
+
+    (uint256 hfAfterBorrow, uint256 requiredDebtAmount) = _borrowToBeBelowHf(
+      spoke1,
+      alice,
+      debtReserveId,
+      desiredHf
+    );
+
+    console.log('hf after borrow %e | borrowed amt: %e', hfAfterBorrow, requiredDebtAmount);
+
+    state.liquidationBonus = _getVariableLiquidationBonus(
+      spoke1,
+      collateralReserveId,
+      hfAfterBorrow
+    );
+
+    state.debt.balanceBefore = spoke1.getUserTotalDebt(debtReserveId, alice);
+    state.liquidator.balanceBefore = IERC20(state.collateralReserve.asset).balanceOf(LIQUIDATOR);
+    state.treasury.balanceBefore = IERC20(state.collateralReserve.asset).balanceOf(TREASURY);
+
+    vm.prank(LIQUIDATOR);
+    spoke1.liquidationCall(collateralReserveId, debtReserveId, alice, requiredDebtAmount);
+
+    state.liquidator.balanceAfter = IERC20(state.collateralReserve.asset).balanceOf(LIQUIDATOR);
+    state.debt.balanceAfter = spoke1.getUserTotalDebt(debtReserveId, alice);
+    state.treasury.balanceAfter = IERC20(state.collateralReserve.asset).balanceOf(TREASURY);
+
+    // require remaining debt to be > $1
+    vm.assume(
+      _convertAmountToBaseCurrency(state.debtReserve.assetId, state.debt.balanceAfter) > 1e26
+    );
+
+    // convert
+    state.collateralBaseDiff = _convertAmountToBaseCurrency(
+      state.collateralReserve.assetId,
+      state.liquidator.balanceAfter -
+        state.liquidator.balanceBefore +
+        state.treasury.balanceAfter -
+        state.treasury.balanceBefore
+    );
+    state.debtBaseDiff = _convertAmountToBaseCurrency(
+      state.debtReserve.assetId,
+      state.debt.balanceBefore - state.debt.balanceAfter
+    );
+
+    console.log(
+      'after liq: debt amt remaining %e | base %e',
+      spoke1.getUserTotalDebt(debtReserveId, alice),
+      _convertAmountToBaseCurrency(
+        state.debtReserve.assetId,
+        spoke1.getUserTotalDebt(debtReserveId, alice)
+      )
+    );
+    console.log(
+      'after liq: collateral amt remaining %e | base %e',
+      spoke1.getUserSuppliedAmount(collateralReserveId, alice),
+      _convertAmountToBaseCurrency(
+        state.collateralReserve.assetId,
+        spoke1.getUserSuppliedAmount(collateralReserveId, alice)
+      )
+    );
+
+    return state;
   }
 
   function _execLiqCallCloseFactorTest(
