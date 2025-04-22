@@ -81,6 +81,13 @@ library LiquidationLogic {
       return type(uint256).max;
     }
 
+    console.log(
+      'LL %e %e %e',
+      params.totalDebtInBaseCurrency,
+      params.closeFactor,
+      params.healthFactor
+    );
+
     uint256 closeFactorDebtAmountToLiquidate = (params.totalDebtInBaseCurrency.wadMulUp(
       params.closeFactor - params.healthFactor
     ) * params.debtAssetUnit) /
