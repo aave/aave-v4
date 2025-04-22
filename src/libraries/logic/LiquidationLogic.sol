@@ -88,12 +88,10 @@ library LiquidationLogic {
       params.healthFactor
     );
 
-    uint256 closeFactorDebtAmountToLiquidate = (params.totalDebtInBaseCurrency.wadMulUp(
-      params.closeFactor - params.healthFactor
-    ) * params.debtAssetUnit) /
+    return
+      (params.totalDebtInBaseCurrency.wadMulUp(params.closeFactor - params.healthFactor) *
+        params.debtAssetUnit) /
       ((params.closeFactor - effectiveLiquidationPenalty) * params.debtAssetPrice);
-
-    return closeFactorDebtAmountToLiquidate;
   }
 
   /**

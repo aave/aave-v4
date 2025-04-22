@@ -3,7 +3,7 @@ pragma solidity ^0.8.0;
 
 import 'tests/unit/libraries/LiquidationLogic/LiquidationLogic.Base.t.sol';
 
-contract LiquidationLogicCloseFactorDebtScenarioTest is LiquidationLogicBaseTest {
+contract LiquidationLogicDebtToRestoreCloseFactorScenarioTest is LiquidationLogicBaseTest {
   using PercentageMath for uint256;
   using WadRayMath for uint256;
   using WadRayMathExtended for uint256;

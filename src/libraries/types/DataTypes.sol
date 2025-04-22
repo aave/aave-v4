@@ -2,7 +2,7 @@
 pragma solidity ^0.8.10;
 
 import {IReserveInterestRateStrategy} from 'src/interfaces/IReserveInterestRateStrategy.sol';
-import {IPriceOracle} from 'src/interfaces/IPriceOracle.sol';
+
 library DataTypes {
   // Liquidity Hub types
   // todo pack
