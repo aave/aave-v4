@@ -213,7 +213,10 @@ contract SpokeLiquidationBase is SpokeBase {
   }
 
   function _percentDiff(uint256 a, uint256 b) internal pure returns (uint256) {
-    uint256 diff = a > b ? (a - b) : b - a;
-    return a != 0 ? (diff * PercentageMath.PERCENTAGE_FACTOR) / a : type(uint256).max;
+    return a != 0 ? (_absDiff(a, b) * PercentageMath.PERCENTAGE_FACTOR) / a : type(uint256).max;
+  }
+
+  function _absDiff(uint256 a, uint256 b) internal pure returns (uint256) {
+    return a > b ? (a - b) : b - a;
   }
 }

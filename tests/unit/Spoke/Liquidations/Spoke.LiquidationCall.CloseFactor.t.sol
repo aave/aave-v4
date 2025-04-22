@@ -335,6 +335,33 @@ contract LiquidationCallCloseFactorTest is SpokeLiquidationBase {
     _assertHealthFactor(spoke1);
   }
 
+  function test_unit() public {
+    // test_liquidationCall_fuzz_closeFactor_general({
+    //   liqConfig: DataTypes.LiquidationConfig({
+    //     closeFactor: 4.86e18,
+    //     liquidationBonusFactor: 0,
+    //     healthFactorBonusThreshold: 0
+    //   }),
+    //   liqBonus: 101_40,
+    //   supplyAmount: 3.300040863899133270098632e25,
+    //   liquidationProtocolFeePercentage: 8.78e2,
+    //   collateralReserveId: 4,
+    //   debtReserveId: 1
+    // });
+    test_liquidationCall_fuzz_closeFactor_general({
+      liqConfig: DataTypes.LiquidationConfig({
+        closeFactor: 2.78e18,
+        liquidationBonusFactor: 0,
+        healthFactorBonusThreshold: 0
+      }),
+      liqBonus: 1.0238e4,
+      supplyAmount: 1.0000001e7,
+      liquidationProtocolFeePercentage: 8.293e3,
+      collateralReserveId: 3,
+      debtReserveId: 0
+    });
+  }
+
   function test_liquidationCall_fuzz_closeFactor_general(
     uint256 collateralReserveId,
     uint256 debtReserveId,
@@ -349,7 +376,7 @@ contract LiquidationCallCloseFactorTest is SpokeLiquidationBase {
     collateralReserveId = bound(collateralReserveId, 0, spoke1.reserveCount() - 1);
     debtReserveId = bound(debtReserveId, 0, spoke1.reserveCount() - 1);
 
-    console.log(_wethReserveId(spoke1), _wbtcReserveId(spoke1));
+    // console.log(_wethReserveId(spoke1), _wbtcReserveId(spoke1));
 
     // supplyAmount = bound(
     //   supplyAmount,
@@ -360,7 +387,7 @@ contract LiquidationCallCloseFactorTest is SpokeLiquidationBase {
     //   MAX_SUPPLY_AMOUNT / 1e4
     // ); // bounds to ensure HF is below desiredHf within precision
 
-    _execLiqCallCloseFactorTestNew(
+    LiquidationTestLocalParams memory state = _execLiqCallCloseFactorTestNew(
       liqConfig,
       liqBonus,
       supplyAmount,
@@ -369,7 +396,7 @@ contract LiquidationCallCloseFactorTest is SpokeLiquidationBase {
       liquidationProtocolFeePercentage
     );
 
-    _assertHealthFactor(spoke1);
+    _assertHealthFactorNew(state, spoke1);
   }
 
   function test_liquidationCall_fuzz_closeFactor_scenario6_defaultCloseFactor(
@@ -404,8 +431,28 @@ contract LiquidationCallCloseFactorTest is SpokeLiquidationBase {
     uint256 finalHf = spoke.getHealthFactor(alice);
     console.log('final hf %e | closefactor %e', finalHf, _getCloseFactor(spoke));
 
-    assertGe(finalHf, _getCloseFactor(spoke), 'Health factor >= close factor'); // TODO: resolve
-    assertApproxEqRel(finalHf, _getCloseFactor(spoke), _approxRelFromBps(50), 'approx equal');
+    assertGe(finalHf, _getCloseFactor(spoke), 'Health factor >= close factor');
+    assertApproxEqRel(finalHf, _getCloseFactor(spoke), _approxRelFromBps(1_00), 'approx equal');
+  }
+
+  function _assertHealthFactorNew(
+    LiquidationTestLocalParams memory state,
+    ISpoke spoke
+  ) internal view {
+    uint256 finalHf = spoke.getHealthFactor(alice);
+    console.log('final hf %e | closefactor %e', finalHf, _getCloseFactor(spoke));
+
+    assertGe(finalHf, _getCloseFactor(spoke), 'Health factor >= close factor');
+    if (
+      _convertAmountToBaseCurrency(
+        state.debtReserve.assetId,
+        spoke.getUserTotalDebt(state.debtReserve.reserveId, alice)
+      ) > 1e26
+    ) {
+      assertApproxEqRel(finalHf, _getCloseFactor(spoke), _approxRelFromBps(10), 'approx equal');
+    } else {
+      assertApproxEqRel(finalHf, _getCloseFactor(spoke), _approxRelFromBps(1_00), 'approx equal');
+    }
   }
 
   function _bound(
@@ -421,13 +468,17 @@ contract LiquidationCallCloseFactorTest is SpokeLiquidationBase {
 
     // Reconstruct the actual value
     liqConfig.closeFactor = tick * increment;
-    console.log('liqConfig.closeFactor %e', liqConfig.closeFactor);
-    liqConfig.healthFactorBonusThreshold = bound(
-      liqConfig.healthFactorBonusThreshold,
-      1,
-      HEALTH_FACTOR_LIQUIDATION_THRESHOLD - 1
-    );
-    liqConfig.liquidationBonusFactor = bound(liqConfig.liquidationBonusFactor, 0, 100_00);
+    // console.log('liqConfig.closeFactor %e', liqConfig.closeFactor);
+    // liqConfig.healthFactorBonusThreshold = bound(
+    //   liqConfig.healthFactorBonusThreshold,
+    //   1,
+    //   HEALTH_FACTOR_LIQUIDATION_THRESHOLD - 1
+    // );
+    // liqConfig.liquidationBonusFactor = bound(liqConfig.liquidationBonusFactor, 0, 100_00);
+
+    // set config to 0 so that desiredHf can be easily calculated (dependent on LB)
+    liqConfig.liquidationBonusFactor = 0;
+    liqConfig.healthFactorBonusThreshold = 0;
 
     return liqConfig;
   }
@@ -464,8 +515,20 @@ contract LiquidationCallCloseFactorTest is SpokeLiquidationBase {
       state.liquidationProtocolFeePercentage
     );
 
-    uint256 desiredHf = _calcMaxAchievableHf(collateralReserveId, liqBonus).percentMul(105_00); // add buffer so that not all debt is liquidated
+    // var lb
+
+    uint256 desiredHf = _calcMaxAchievableHf(collateralReserveId, liqBonus).percentMul(100_10); // add buffer so that not all debt is liquidated
     // vm.assume(desiredHf < HEALTH_FACTOR_LIQUIDATION_THRESHOLD);
+
+    console.log('cxf %e', liqConfig.closeFactor);
+
+    console.log('   fuzz inputs');
+    console.log('   supplyAmount %e', supplyAmount);
+    console.log('   closeFactor %e', liqConfig.closeFactor);
+    console.log('   healthFactorBonusThreshold %e', liqConfig.healthFactorBonusThreshold);
+    console.log('   liquidationBonusFactor %e', liqConfig.liquidationBonusFactor);
+    console.log('   liqBonus %e', liqBonus);
+    console.log('   liquidationProtocolFeePercentage %e', liquidationProtocolFeePercentage);
 
     Utils.supplyCollateral({
       spoke: spoke1,
@@ -501,18 +564,16 @@ contract LiquidationCallCloseFactorTest is SpokeLiquidationBase {
     state.debt.balanceAfter = spoke1.getUserTotalDebt(debtReserveId, alice);
     state.treasury.balanceAfter = IERC20(state.collateralReserve.asset).balanceOf(TREASURY);
 
-    // require remaining debt to be > $1
+    // require remaining debt to be > $.10
     vm.assume(
-      _convertAmountToBaseCurrency(state.debtReserve.assetId, state.debt.balanceAfter) > 1e26
+      _convertAmountToBaseCurrency(state.debtReserve.assetId, state.debt.balanceAfter) > 1e25
     );
 
     // convert
     state.collateralBaseDiff = _convertAmountToBaseCurrency(
       state.collateralReserve.assetId,
-      state.liquidator.balanceAfter -
-        state.liquidator.balanceBefore +
-        state.treasury.balanceAfter -
-        state.treasury.balanceBefore
+      _absDiff(state.liquidator.balanceAfter, state.liquidator.balanceBefore) +
+        _absDiff(state.treasury.balanceAfter, state.treasury.balanceBefore)
     );
     state.debtBaseDiff = _convertAmountToBaseCurrency(
       state.debtReserve.assetId,

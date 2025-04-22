@@ -1030,12 +1030,37 @@ contract Spoke is ISpoke {
     // strip BPS factor from result, because running avgCollateralFactor sum has been scaled by collateralFactor (in BPS) above
     vars.healthFactor = vars.totalDebtInBaseCurrency == 0
       ? type(uint256).max
-      : vars.avgCollateralFactor.wadDiv(vars.totalDebtInBaseCurrency).fromBps(); // HF of 1 -> 1e18
+      : vars.avgCollateralFactor.wadDivUp(vars.totalDebtInBaseCurrency).fromBps(); // HF of 1 -> 1e18
+
+    if (vars.totalDebtInBaseCurrency > 0) {
+      // console.log(
+      //   'Sp debt %e | collxCF %e | hf %e',
+      //   vars.totalDebtInBaseCurrency,
+      //   vars.avgCollateralFactor,
+      //   vars.healthFactor
+      // );
+      // console.log('sp calc %e', vars.avgCollateralFactor.rayDiv(vars.totalDebtInBaseCurrency));
+    }
+
+    uint256 tmp = vars.avgCollateralFactor;
 
     // divide by total collateral to get avg collateral factor in wad
     vars.avgCollateralFactor = vars.totalCollateralInBaseCurrency == 0
       ? 0
       : vars.avgCollateralFactor.wadDiv(vars.totalCollateralInBaseCurrency);
+
+    // console.log(
+    //   'Sp avgCF %e %e %e',
+    //   tmp,
+    //   vars.avgCollateralFactor,
+    //   vars.totalCollateralInBaseCurrency
+    // );
+
+    // console.log(
+    //   'Sp avgCF %e %e',
+    //   vars.avgCollateralFactor,
+    //   tmp.rayDiv(vars.totalCollateralInBaseCurrency)
+    // );
 
     vars.debtCounterInBaseCurrency = vars.totalDebtInBaseCurrency;
 

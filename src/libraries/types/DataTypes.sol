@@ -122,6 +122,7 @@ library DataTypes {
     uint256 actualDebtToLiquidate;
     uint256 liquidationProtocolFeeAmount;
     uint256 userCollateralBalance;
+    uint256 userCollateralBalanceinBaseCurrency;
     uint256 totalCollateralInBaseCurrency;
     uint256 totalDebtInBaseCurrency;
     uint256 avgCollateralFactor;

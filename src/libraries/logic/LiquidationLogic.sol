@@ -72,7 +72,7 @@ library LiquidationLogic {
     // This represents the effective value loss from the user's collateral per unit of debt repaid.
     // Acts like an “effective penalty” from the user’s point of view.
     uint256 effectiveLiquidationPenalty = (params.liquidationBonus.wadify())
-      .percentMul(params.collateralFactor + 1)
+      .percentMul(params.collateralFactor)
       .fromBps();
 
     // Return default max uint if:
@@ -81,18 +81,53 @@ library LiquidationLogic {
       return type(uint256).max;
     }
 
-    console.log(
-      'LL %e %e %e',
-      params.totalDebtInBaseCurrency,
-      params.closeFactor,
-      params.healthFactor
-    );
+    // console.log(
+    //   'LL totalDebtInBaseCurrency %e closeFactor %e healthFactor %e',
+    //   params.totalDebtInBaseCurrency,
+    //   params.closeFactor,
+    //   params.healthFactor
+    // );
+
+    // console.log(
+    //   'LL collateralFactor %e liquidationBonus %e effectiveLiquidationPenalty %e',
+    //   params.collateralFactor,
+    //   params.liquidationBonus,
+    //   effectiveLiquidationPenalty
+    // );
+
+    // console.log(
+    //   'LL num %e, den %e',
+    //   params.totalDebtInBaseCurrency.wadMulUp(params.closeFactor - params.healthFactor),
+    //   (params.closeFactor - effectiveLiquidationPenalty)
+    // );
+
+    // console.log(
+    //   'LL debt to liq %e %e',
+    //   (params.totalDebtInBaseCurrency.wadMulUp(params.closeFactor - params.healthFactor) *
+    //     params.debtAssetUnit) /
+    //     ((params.closeFactor - effectiveLiquidationPenalty) * params.debtAssetPrice),
+    //   ((
+    //     (params.totalDebtInBaseCurrency.wadMulUp(params.closeFactor - params.healthFactor) *
+    //       params.debtAssetUnit).wadify()
+    //   ) / ((params.closeFactor - effectiveLiquidationPenalty) * params.debtAssetPrice)).dewadify()
+    // );
+
+    // console.log(
+    //   'debt amt %e',
+    //   params.totalDebt.wadMulUp(params.closeFactor - params.healthFactor + 1e5).wadDiv(
+    //     params.closeFactor - effectiveLiquidationPenalty
+    //   )
+    // );
+
+    // return
+    //   (params.totalDebtInBaseCurrency.wadMulUp(params.closeFactor - params.healthFactor) *
+    //     params.debtAssetUnit) /
+    //   ((params.closeFactor - effectiveLiquidationPenalty) * params.debtAssetPrice);
 
     return
-      (params.totalDebtInBaseCurrency.wadMulUp(params.closeFactor - params.healthFactor) *
-        params.debtAssetUnit) /
-      ((params.closeFactor - effectiveLiquidationPenalty) * params.debtAssetPrice) +
-      1;
+      params.totalDebt.wadMulUp(params.closeFactor - params.healthFactor).wadDivUp(
+        params.closeFactor - effectiveLiquidationPenalty
+      );
   }
 
   /**
@@ -105,14 +140,20 @@ library LiquidationLogic {
   ) internal pure returns (uint256, uint256, uint256) {
     DataTypes.CalculateAvailableCollateralToLiquidateLocalVars memory vars;
 
-    // find collateral amount that corresponds to the debt to cover
+    // convert collateral to base currency
+    params.userCollateralBalanceinBaseCurrency =
+      (params.userCollateralBalance * params.collateralAssetPrice).wadify() /
+      params.collateralAssetUnit;
+
+    // find collateral amount that corresponds to the debt to cover in base currency
     vars.baseCollateral =
-      (params.debtAssetPrice * params.actualDebtToLiquidate * params.collateralAssetUnit) /
-      (params.collateralAssetPrice * params.debtAssetUnit);
+      (params.actualDebtToLiquidate * params.debtAssetPrice).wadify() /
+      params.debtAssetUnit;
 
     vars.maxCollateralToLiquidate = vars.baseCollateral.percentMul(params.liquidationBonus);
 
-    if (vars.maxCollateralToLiquidate > params.userCollateralBalance) {
+    if (vars.maxCollateralToLiquidate > params.userCollateralBalanceinBaseCurrency) {
+      console.log('maxCollateralToLiquidate > userCollateralBalance');
       // back calculate debt amount needed to cover the max allowed collateral
       vars.collateralAmount = params.userCollateralBalance;
       vars.debtAmountNeeded = ((params.collateralAssetPrice *
@@ -121,9 +162,17 @@ library LiquidationLogic {
           params.liquidationBonus
         );
     } else {
-      vars.collateralAmount = vars.maxCollateralToLiquidate;
+      console.log('maxCollateralToLiquidate <= userCollateralBalance');
+      vars.collateralAmount = ((vars.maxCollateralToLiquidate * params.collateralAssetUnit) /
+        params.collateralAssetPrice).dewadify();
       vars.debtAmountNeeded = params.actualDebtToLiquidate;
     }
+
+    console.log(
+      'LL availColl: coll %e debtamt needed %e',
+      vars.collateralAmount,
+      vars.debtAmountNeeded
+    );
 
     if (params.liquidationProtocolFeePercentage != 0) {
       vars.bonusCollateral =
