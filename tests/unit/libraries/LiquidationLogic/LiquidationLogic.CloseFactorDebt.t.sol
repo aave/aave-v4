@@ -28,14 +28,15 @@ contract LiquidationLogicCloseFactorDebtTest is LiquidationLogicBaseTest {
   ) public {
     FieldsToSkip memory skips = _skipOnly(SKIP_DEBT_ASSET_UNIT);
     TestCloseFactorDebtParams memory params = _bound(params, skips);
-    DataTypes.LiquidationCallLocalVars memory args = _setFunctionArgs(params);
-
-    args.debtAssetUnit = 0;
     // so that default uint max is not returned
     vm.assume(
       (params.liquidationBonus.wadify()).percentMul(params.collateralFactor + 1).fromBps() <
         params.closeFactor
     );
+
+    DataTypes.LiquidationCallLocalVars memory args = _setFunctionArgs(params);
+
+    args.debtAssetUnit = 0;
 
     assertEq(LiquidationLogic.calculateDebtToRestoreCloseFactor(args), 0, 'closeFactorDebt is 0');
   }
@@ -51,6 +52,11 @@ contract LiquidationLogicCloseFactorDebtTest is LiquidationLogicBaseTest {
   ) public {
     FieldsToSkip memory skips = _skipOnly(SKIP_DEBT_ASSET_PRICE);
     TestCloseFactorDebtParams memory params = _bound(params, skips);
+    // so that default uint max is not returned
+    vm.assume(
+      (params.liquidationBonus.wadify()).percentMul(params.collateralFactor + 1).fromBps() <
+        params.closeFactor
+    );
     DataTypes.LiquidationCallLocalVars memory args = _setFunctionArgs(params);
 
     args.debtAssetPrice = 0;
