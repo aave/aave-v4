@@ -44,7 +44,7 @@ library AssetLogic {
   }
 
   function baseDebt(DataTypes.Asset storage asset) internal view returns (uint256) {
-    return asset.baseDrawnShares.rayMulUp(asset.previewIndex());
+    return asset.toDrawnAssetsUp(asset.baseDrawnShares);
   }
 
   function premiumDebt(DataTypes.Asset storage asset) internal view returns (uint256) {
