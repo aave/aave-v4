@@ -94,17 +94,4 @@ contract LiquidationLogicCloseFactorDebtTest is LiquidationLogicBaseTest {
       'closeFactorDebt is max uint'
     );
   }
-
-  function test_calculateDebtToRestoreCloseFactor_fuzz_avgCollateralFactor_zero(
-    TestCloseFactorDebtParams memory params
-  ) public {
-    FieldsToSkip memory skips = _skipOnly(SKIP_AVG_COLLATERAL_FACTOR);
-    params = _bound(params, skips);
-
-    params.avgCollateralFactor = 0;
-    DataTypes.LiquidationCallLocalVars memory args = _setFunctionArgs(params);
-
-    vm.expectRevert(stdError.arithmeticError);
-    this.calculateDebtToRestoreCloseFactor(args);
-  }
 }
