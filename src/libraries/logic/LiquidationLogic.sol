@@ -72,7 +72,7 @@ library LiquidationLogic {
     // This represents the effective value loss from the user's collateral per unit of debt repaid.
     // Acts like an “effective penalty” from the user’s point of view.
     uint256 effectiveLiquidationPenalty = (params.liquidationBonus.wadify())
-      .percentMul(params.collateralFactor)
+      .percentMul(params.collateralFactor + 1)
       .fromBps();
 
     // Return default max uint if:
@@ -81,12 +81,10 @@ library LiquidationLogic {
       return type(uint256).max;
     }
 
-    uint256 closeFactorDebtAmountToLiquidate = ((params.totalDebtInBaseCurrency.wadMul(
-      params.closeFactor
-    ) - params.totalCollateralInBaseCurrency.percentMul(params.avgCollateralFactor).dewadify()) *
-      params.debtAssetUnit) /
-      ((params.closeFactor - effectiveLiquidationPenalty) * params.debtAssetPrice) +
-      1; // add rounding to ensure HF > close factor
+    uint256 closeFactorDebtAmountToLiquidate = (params.totalDebtInBaseCurrency.wadMulUp(
+      params.closeFactor - params.healthFactor
+    ) * params.debtAssetUnit) /
+      ((params.closeFactor - effectiveLiquidationPenalty) * params.debtAssetPrice);
 
     return closeFactorDebtAmountToLiquidate;
   }

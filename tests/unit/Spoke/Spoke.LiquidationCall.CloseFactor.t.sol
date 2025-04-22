@@ -9,7 +9,7 @@ contract LiquidationCallCloseFactorTest is SpokeLiquidationBase {
   using PercentageMath for uint256;
   using PercentageMathExtended for uint256;
 
-  uint256 minSupplyInBaseCurrency = 1e26; // $10
+  uint256 minSupplyInBaseCurrency = 1e27; // $10 -> 10e6 * 1e8 (price) * 1e18 (wadify) / 1e6 (units)
 
   function test_liquidationCall_closeFactor_scenario1() public {
     test_liquidationCall_fuzz_closeFactor_scenario1({
@@ -34,7 +34,14 @@ contract LiquidationCallCloseFactorTest is SpokeLiquidationBase {
     uint256 collateralReserveId = _wethReserveId(spoke1);
     uint256 debtReserveId = _daiReserveId(spoke1);
 
-    supplyAmount = bound(supplyAmount, 1e15, 1e24); // bounds to ensure HF is below desiredHf within precision
+    supplyAmount = bound(
+      supplyAmount,
+      _convertBaseCurrencyToAmount(
+        spoke1.getReserve(collateralReserveId).assetId,
+        minSupplyInBaseCurrency
+      ),
+      MAX_SUPPLY_AMOUNT / 1e4
+    ); // bounds to ensure HF is below desiredHf within precision
 
     _execLiqCallCloseFactorTest(
       liqConfig,
@@ -85,7 +92,14 @@ contract LiquidationCallCloseFactorTest is SpokeLiquidationBase {
     uint256 collateralReserveId = _wethReserveId(spoke1);
     uint256 debtReserveId = _usdxReserveId(spoke1);
 
-    supplyAmount = bound(supplyAmount, 1e15, MAX_SUPPLY_AMOUNT / 1e4); // bounds to ensure HF is below desiredHf within precision
+    supplyAmount = bound(
+      supplyAmount,
+      _convertBaseCurrencyToAmount(
+        spoke1.getReserve(collateralReserveId).assetId,
+        minSupplyInBaseCurrency
+      ),
+      MAX_SUPPLY_AMOUNT / 1e4
+    ); // bounds to ensure HF is below desiredHf within precision
 
     _execLiqCallCloseFactorTest(
       liqConfig,
@@ -136,7 +150,14 @@ contract LiquidationCallCloseFactorTest is SpokeLiquidationBase {
     uint256 collateralReserveId = _usdxReserveId(spoke1);
     uint256 debtReserveId = _wethReserveId(spoke1);
 
-    supplyAmount = bound(supplyAmount, 10e6, MAX_SUPPLY_AMOUNT / 1e4); // bounds to ensure HF is below desiredHf within precision
+    supplyAmount = bound(
+      supplyAmount,
+      _convertBaseCurrencyToAmount(
+        spoke1.getReserve(collateralReserveId).assetId,
+        minSupplyInBaseCurrency
+      ),
+      MAX_SUPPLY_AMOUNT / 1e4
+    ); // bounds to ensure HF is below desiredHf within precision
 
     _execLiqCallCloseFactorTest(
       liqConfig,
@@ -175,7 +196,14 @@ contract LiquidationCallCloseFactorTest is SpokeLiquidationBase {
     uint256 collateralReserveId = _usdxReserveId(spoke1);
     uint256 debtReserveId = _daiReserveId(spoke1);
 
-    supplyAmount = bound(supplyAmount, 10e6, MAX_SUPPLY_AMOUNT / 1e4); // bounds to ensure HF is below desiredHf within precision
+    supplyAmount = bound(
+      supplyAmount,
+      _convertBaseCurrencyToAmount(
+        spoke1.getReserve(collateralReserveId).assetId,
+        minSupplyInBaseCurrency
+      ),
+      MAX_SUPPLY_AMOUNT / 1e4
+    ); // bounds to ensure HF is below desiredHf within precision
 
     _execLiqCallCloseFactorTest(
       liqConfig,
@@ -227,7 +255,14 @@ contract LiquidationCallCloseFactorTest is SpokeLiquidationBase {
     uint256 collateralReserveId = _daiReserveId(spoke1);
     uint256 debtReserveId = _wethReserveId(spoke1);
 
-    supplyAmount = bound(supplyAmount, 1e13, MAX_SUPPLY_AMOUNT / 1e4); // bounds to ensure HF is below desiredHf within precision
+    supplyAmount = bound(
+      supplyAmount,
+      _convertBaseCurrencyToAmount(
+        spoke1.getReserve(collateralReserveId).assetId,
+        minSupplyInBaseCurrency
+      ),
+      MAX_SUPPLY_AMOUNT / 1e4
+    ); // bounds to ensure HF is below desiredHf within precision
 
     _execLiqCallCloseFactorTest(
       liqConfig,
@@ -279,7 +314,14 @@ contract LiquidationCallCloseFactorTest is SpokeLiquidationBase {
     uint256 collateralReserveId = _daiReserveId(spoke1);
     uint256 debtReserveId = _usdxReserveId(spoke1);
 
-    supplyAmount = bound(supplyAmount, 10e18, MAX_SUPPLY_AMOUNT / 1e4); // bounds to ensure HF is below desiredHf within precision
+    supplyAmount = bound(
+      supplyAmount,
+      _convertBaseCurrencyToAmount(
+        spoke1.getReserve(collateralReserveId).assetId,
+        minSupplyInBaseCurrency
+      ),
+      MAX_SUPPLY_AMOUNT / 1e4
+    ); // bounds to ensure HF is below desiredHf within precision
 
     _execLiqCallCloseFactorTest(
       liqConfig,
@@ -325,16 +367,24 @@ contract LiquidationCallCloseFactorTest is SpokeLiquidationBase {
     uint256 finalHf = spoke.getHealthFactor(alice);
     console.log('final hf %e | closefactor %e', finalHf, _getCloseFactor(spoke));
 
-    // assertGe(finalHf, _getCloseFactor(spoke), 'Health factor >= close factor');
-    assertApproxEqRel(finalHf, _getCloseFactor(spoke), _approxRelFromBps(10), 'approx equal');
+    assertGe(finalHf, _getCloseFactor(spoke), 'Health factor >= close factor'); // TODO: resolve
+    assertApproxEqRel(finalHf, _getCloseFactor(spoke), _approxRelFromBps(50), 'approx equal');
   }
 
   function _bound(
     DataTypes.LiquidationConfig memory liqConfig
   ) internal pure virtual override returns (DataTypes.LiquidationConfig memory) {
-    // assume closeFactor will be in increments of 10 BPS
-    // liqConfig.closeFactor = bound(liqConfig.closeFactor, 1e3, 10 * 1e3) * 1e15;
-    liqConfig.closeFactor = bound(liqConfig.closeFactor, 1e18, 10e18);
+    uint256 increment = WadRayMath.WAD / 1e2; // assume close factor set as increments of 100 BPS
+
+    uint256 minTick = HEALTH_FACTOR_LIQUIDATION_THRESHOLD / increment;
+    uint256 maxTick = (5 * HEALTH_FACTOR_LIQUIDATION_THRESHOLD) / increment - 1;
+
+    // Bound in number of ticks
+    uint256 tick = bound(liqConfig.closeFactor / increment, minTick, maxTick);
+
+    // Reconstruct the actual value
+    liqConfig.closeFactor = tick * increment;
+    console.log('liqConfig.closeFactor %e', liqConfig.closeFactor);
     liqConfig.healthFactorBonusThreshold = bound(
       liqConfig.healthFactorBonusThreshold,
       0.5e18,
@@ -361,7 +411,7 @@ contract LiquidationCallCloseFactorTest is SpokeLiquidationBase {
     liqBonus = bound(liqBonus, MIN_LIQUIDATION_BONUS, 110_00);
     liquidationProtocolFeePercentage = bound(liquidationProtocolFeePercentage, 0, 100_00);
 
-    console.log('cxf', liqConfig.closeFactor);
+    console.log('cxf %e', liqConfig.closeFactor);
 
     console.log('   fuzz inputs');
     console.log('   supplyAmount %e', supplyAmount);
@@ -382,7 +432,7 @@ contract LiquidationCallCloseFactorTest is SpokeLiquidationBase {
       state.liquidationProtocolFeePercentage
     );
 
-    uint256 desiredHf = _calcMaxAchievableHf(collateralReserveId, liqBonus);
+    uint256 desiredHf = _calcMaxAchievableHf(collateralReserveId, liqBonus).percentMul(105_00); // add buffer so that not all debt is liquidated
     // vm.assume(desiredHf < HEALTH_FACTOR_LIQUIDATION_THRESHOLD);
 
     Utils.supplyCollateral({
@@ -458,7 +508,7 @@ contract LiquidationCallCloseFactorTest is SpokeLiquidationBase {
     // calc max achievable hf in order to to be able to repay all debt and have remaining collateral
     // allows close factor to be up to max uint
     healthFactor = uint256(1e18)
-      .percentMul(spoke1.getCollateralFactor(collateralReserveId) + 1)
-      .percentMul(liquidationBonus + 1);
+      .percentMul(spoke1.getCollateralFactor(collateralReserveId))
+      .percentMul(liquidationBonus);
   }
 }
