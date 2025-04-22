@@ -37,7 +37,6 @@ contract LiquidationLogicActualDebtToLiquidateTest is LiquidationLogicBaseTest {
     uint256 debtToCover = 0;
     args.totalDebt = totalDebt;
 
-    uint256 closeFactorDebt = LiquidationLogic.calculateDebtToRestoreCloseFactor(args);
     uint256 actualDebtToLiquidate = LiquidationLogic.calculateActualDebtToLiquidate(
       debtToCover,
       args
@@ -58,7 +57,7 @@ contract LiquidationLogicActualDebtToLiquidateTest is LiquidationLogicBaseTest {
     uint256 closeFactorDebt = LiquidationLogic.calculateDebtToRestoreCloseFactor(args);
 
     // totalDebt > closeFactorDebt
-    totalDebt = bound(totalDebt, closeFactorDebt + 1, type(uint256).max);
+    totalDebt = bound(totalDebt, closeFactorDebt, type(uint256).max);
     args.totalDebt = totalDebt;
 
     uint256 actualDebtToLiquidate = LiquidationLogic.calculateActualDebtToLiquidate(
