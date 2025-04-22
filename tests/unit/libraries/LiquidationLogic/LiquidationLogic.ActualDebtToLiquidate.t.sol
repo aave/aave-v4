@@ -127,7 +127,7 @@ contract LiquidationLogicActualDebtToLiquidateTest is LiquidationLogicBaseTest {
     DataTypes.LiquidationCallLocalVars memory args = _setFunctionArgs(params);
 
     uint256 closeFactorDebt = LiquidationLogic.calculateDebtToRestoreCloseFactor(args);
-    vm.assume(closeFactorDebt == 1);
+    vm.assume(closeFactorDebt == 0);
 
     args.totalDebt = totalDebt;
 
