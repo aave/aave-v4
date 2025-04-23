@@ -124,10 +124,26 @@ library LiquidationLogic {
     //     params.debtAssetUnit) /
     //   ((params.closeFactor - effectiveLiquidationPenalty) * params.debtAssetPrice);
 
-    return
+    console.log(
+      'newCalc %e %e',
+      (params.totalDebtInBaseCurrency.wadMulUp(params.closeFactor - params.healthFactor) *
+        params.debtAssetUnit) /
+        (((params.closeFactor - effectiveLiquidationPenalty) * params.debtAssetPrice)),
       params.totalDebt.wadMulUp(params.closeFactor - params.healthFactor).wadDivUp(
         params.closeFactor - effectiveLiquidationPenalty
-      );
+      )
+    );
+
+    return
+      (params.totalDebtInBaseCurrency.wadMulUp(params.closeFactor - params.healthFactor) *
+        params.debtAssetUnit) /
+      (((params.closeFactor - effectiveLiquidationPenalty) * params.debtAssetPrice)) +
+      1;
+
+    // return
+    //   params.totalDebt.wadMulUp(params.closeFactor - params.healthFactor).wadDivUp(
+    //     params.closeFactor - effectiveLiquidationPenalty
+    //   );
   }
 
   /**

@@ -172,6 +172,8 @@ contract LiquidationCallCloseFactorTest is SpokeLiquidationBase {
   ) internal view {
     uint256 finalHf = spoke.getHealthFactor(alice);
 
+    console.log('hf %e cf %e', finalHf, _getCloseFactor(spoke));
+
     // ensure HF is above close factor
     assertGe(finalHf, _getCloseFactor(spoke), 'Health factor >= close factor');
     // at low amounts of coll/debt, HF can diverge from close factor due to rounding/precision
@@ -187,6 +189,9 @@ contract LiquidationCallCloseFactorTest is SpokeLiquidationBase {
         _approxRelFromBps(10),
         'HF matches closeFactor within 0.1%'
       );
+
+      // 2.79304204108631032637e21
+      // 2.793042041086310326368e21
     }
   }
 

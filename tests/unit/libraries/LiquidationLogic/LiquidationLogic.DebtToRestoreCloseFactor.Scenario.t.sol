@@ -46,7 +46,6 @@ contract LiquidationLogicDebtToRestoreCloseFactorScenarioTest is LiquidationLogi
       debtIndex: 0
     });
     params.closeFactor = 1e18;
-
     uint256 closeFactorDebt = LiquidationLogic.calculateDebtToRestoreCloseFactor(params);
 
     assertCloseFactor({
@@ -165,7 +164,6 @@ contract LiquidationLogicDebtToRestoreCloseFactorScenarioTest is LiquidationLogi
       debtIndex: 0
     });
     params.closeFactor = 1e18;
-
     uint256 closeFactorDebt = LiquidationLogic.calculateDebtToRestoreCloseFactor(params);
 
     assertCloseFactor({
@@ -293,13 +291,15 @@ contract LiquidationLogicDebtToRestoreCloseFactorScenarioTest is LiquidationLogi
     // recalculate params
     params = _calcLiqTestParams(spoke, collaterals, collateralIndex, debts, debtIndex);
 
+    console.log('hf %e cf %e', params.healthFactor, closeFactor);
+
+    assertGe(params.healthFactor, closeFactor, 'hf must be >= close factor');
     assertApproxEqRel(
       params.healthFactor,
       closeFactor,
-      _approxRelFromBps(1_00), // 1% tolerance
+      _approxRelFromBps(1), // 1% tolerance
       'hf not matching close factor'
     );
-    assertGe(params.healthFactor, closeFactor, 'hf must be >= close factor');
   }
 
   function _convertDebtToCollAmount(
@@ -355,9 +355,17 @@ contract LiquidationLogicDebtToRestoreCloseFactorScenarioTest is LiquidationLogi
       if (debtIndex == i) {
         params.debtAssetUnit = debtAssetUnit;
         params.debtAssetPrice = debtAssetPrice;
+        params.totalDebt += debts[i].amount;
       }
     }
     params.totalDebtInBaseCurrency = totalAmount;
-    params.healthFactor = totalCollateralFactor.wadDiv(params.totalDebtInBaseCurrency).fromBps();
+
+    params.healthFactor = totalCollateralFactor.wadDivUp(params.totalDebtInBaseCurrency).fromBps();
+    console.log(
+      'params.totalDebtInBaseCurrency %e %e %e',
+      params.totalDebtInBaseCurrency,
+      totalCollateralFactor,
+      params.healthFactor
+    );
   }
 }
