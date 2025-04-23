@@ -310,16 +310,21 @@ contract LiquidationCallCloseFactorTest is SpokeLiquidationBase {
   function _bound(
     DataTypes.LiquidationConfig memory liqConfig
   ) internal pure virtual override returns (DataTypes.LiquidationConfig memory) {
-    uint256 increment = WadRayMath.WAD / 1e2; // assume close factor set as increments of 100 BPS
+    liqConfig.closeFactor = bound(
+      liqConfig.closeFactor,
+      MIN_CLOSE_FACTOR,
+      HEALTH_FACTOR_LIQUIDATION_THRESHOLD * 10
+    );
+    // uint256 increment = WadRayMath.WAD / 1e2; // assume close factor set as increments of 100 BPS
 
-    uint256 minTick = HEALTH_FACTOR_LIQUIDATION_THRESHOLD / increment;
-    uint256 maxTick = (5 * HEALTH_FACTOR_LIQUIDATION_THRESHOLD) / increment - 1;
+    // uint256 minTick = HEALTH_FACTOR_LIQUIDATION_THRESHOLD / increment;
+    // uint256 maxTick = (5 * HEALTH_FACTOR_LIQUIDATION_THRESHOLD) / increment - 1;
 
-    // Bound in number of ticks
-    uint256 tick = bound(liqConfig.closeFactor / increment, minTick, maxTick);
+    // // Bound in number of ticks
+    // uint256 tick = bound(liqConfig.closeFactor / increment, minTick, maxTick);
 
     // Reconstruct the actual value
-    liqConfig.closeFactor = tick * increment;
+    // liqConfig.closeFactor = tick * increment;
     // console.log('liqConfig.closeFactor %e', liqConfig.closeFactor);
     // liqConfig.healthFactorBonusThreshold = bound(
     //   liqConfig.healthFactorBonusThreshold,
