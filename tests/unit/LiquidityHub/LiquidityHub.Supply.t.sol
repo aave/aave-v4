@@ -118,23 +118,41 @@ contract LiquidityHubSupplyTest is LiquidityHubBase {
     uint256 amount = 100e18;
     _increaseExchangeRate(amount);
 
-    uint256 sharePrice = hub.convertToSuppliedAssets(daiAssetId, 1e18);
-    assertLt(1e18, sharePrice);
-    assertLt(sharePrice, 2e18);
+    uint256 availableLiquidity = hub.getAvailableLiquidity(daiAssetId);
+    uint256 totalDebt = hub.getAssetTotalDebt(daiAssetId);
 
-    // spoke 1 supplies 2 dai (1 share)
+    uint256 totalSuppliedAssets = availableLiquidity + totalDebt;
+    uint256 totalSuppliedShares = hub.getAssetSuppliedShares(daiAssetId);
+
+    assertNotEq(
+      totalSuppliedAssets % totalSuppliedShares,
+      0,
+      'totalSuppliedAssets % totalSuppliedShares is zero'
+    );
+
+    // spoke1 supplies 1 share worth of assets (rounded down) + 1
+    // the supplied share is 1, which rounded up is equal to the
+    // amount of assets supplied
     vm.prank(address(spoke1));
-    hub.add(daiAssetId, 2, alice);
+    hub.add(daiAssetId, totalSuppliedAssets / totalSuppliedShares + 1, alice);
 
-    // set cap of spoke1 to 3 assets
-    uint256 newSupplyCap = 3;
+    // set supply cap to amount of assets supplied * 2 - 1, given
+    // that the same asset amount is provided again below
+    uint256 newSupplyCap = (2 * totalSuppliedAssets) / totalSuppliedShares + 1;
     _updateSupplyCap(daiAssetId, address(spoke1), newSupplyCap);
 
-    // spoke1 already supplied 1 share, which rounded up is 2 assets
-    // supplying 2 more assets will exceed the cap
+    // this cap will be exceeded only if the existing supplied
+    // shares are rounded up
     vm.expectRevert(abi.encodeWithSelector(ILiquidityHub.SupplyCapExceeded.selector, newSupplyCap));
     vm.prank(address(spoke1));
-    hub.add(daiAssetId, 2, alice);
+    hub.add(daiAssetId, totalSuppliedAssets / totalSuppliedShares + 1, alice);
+
+    // check that supply cap is not exceeded if assets are rounded down
+    uint256 suppliedAssetsRoundedDown = hub.getSpokeSuppliedAmount(daiAssetId, address(spoke1));
+    assertEq(
+      suppliedAssetsRoundedDown + totalSuppliedAssets / totalSuppliedShares + 1,
+      newSupplyCap
+    );
   }
 
   function test_supply_fuzz_revertsWith_SupplyCapExceeded(uint256 amount) public {
