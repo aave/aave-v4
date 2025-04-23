@@ -149,10 +149,26 @@ contract SpokeLiquidationBase is SpokeBase {
 
     liqConfig = _bound(liqConfig);
     liqBonus = bound(liqBonus, MIN_LIQUIDATION_BONUS, MAX_LIQUIDATION_BONUS);
-    desiredHf = bound(desiredHf, 0.1e18, HEALTH_FACTOR_LIQUIDATION_THRESHOLD - 1);
+    desiredHf = bound(desiredHf, 0.1e18, HEALTH_FACTOR_LIQUIDATION_THRESHOLD - 0.1e18); // enough buffer so that collateral to be liquidated is not dust
     liquidationProtocolFeePercentage = bound(liquidationProtocolFeePercentage, 0, 100_00);
+    supplyAmount = bound(
+      supplyAmount,
+      _convertBaseCurrencyToAmount(state.collateralReserve.assetId, 1e26),
+      MAX_SUPPLY_AMOUNT / 1e4
+    );
 
     state.liquidationProtocolFeePercentage = liquidationProtocolFeePercentage;
+
+    console.log('   fuzz inputs');
+    console.log('   collateralReserveId %e', collateralReserveId);
+    console.log('   debtReserveId %e', debtReserveId);
+    console.log('   supplyAmount %e', supplyAmount);
+    console.log('   closeFactor %e', liqConfig.closeFactor);
+    console.log('   healthFactorBonusThreshold %e', liqConfig.healthFactorBonusThreshold);
+    console.log('   liquidationBonusFactor %e', liqConfig.liquidationBonusFactor);
+    console.log('   liqBonus %e', liqBonus);
+    console.log('   liquidationProtocolFeePercentage %e', liquidationProtocolFeePercentage);
+    console.log('   desiredHf %e', desiredHf);
 
     _config = liqConfig;
     spoke1.updateLiquidationConfig(_config);
@@ -183,28 +199,72 @@ contract SpokeLiquidationBase is SpokeBase {
       hfAfterBorrow
     );
 
+    console.log('   state.liquidationBonus %e', state.liquidationBonus);
+
     state.debt.balanceBefore = spoke1.getUserTotalDebt(debtReserveId, alice);
     state.liquidator.balanceBefore = IERC20(state.collateralReserve.asset).balanceOf(LIQUIDATOR);
-    state.treasury.balanceBefore = IERC20(state.collateralReserve.asset).balanceOf(TREASURY);
+    state.supply.balanceBefore = spoke1.getUserSuppliedAmount(collateralReserveId, alice);
+
+    console.log(
+      'before liq: debt amt remaining %e | base %e',
+      spoke1.getUserTotalDebt(state.debtReserve.reserveId, alice),
+      _convertAmountToBaseCurrency(
+        state.debtReserve.assetId,
+        spoke1.getUserTotalDebt(state.debtReserve.reserveId, alice)
+      )
+    );
+    console.log(
+      'before liq: collateral amt remaining %e | base %e',
+      spoke1.getUserSuppliedAmount(state.collateralReserve.reserveId, alice),
+      _convertAmountToBaseCurrency(
+        state.collateralReserve.assetId,
+        spoke1.getUserSuppliedAmount(state.collateralReserve.reserveId, alice)
+      )
+    );
 
     vm.prank(LIQUIDATOR);
     spoke1.liquidationCall(collateralReserveId, debtReserveId, alice, requiredDebtAmount);
 
+    console.log(
+      'after liq: debt amt remaining %e | base %e',
+      spoke1.getUserTotalDebt(state.debtReserve.reserveId, alice),
+      _convertAmountToBaseCurrency(
+        state.debtReserve.assetId,
+        spoke1.getUserTotalDebt(state.debtReserve.reserveId, alice)
+      )
+    );
+    console.log(
+      'after liq: collateral amt remaining %e | base %e',
+      spoke1.getUserSuppliedAmount(state.collateralReserve.reserveId, alice),
+      _convertAmountToBaseCurrency(
+        state.collateralReserve.assetId,
+        spoke1.getUserSuppliedAmount(state.collateralReserve.reserveId, alice)
+      )
+    );
+
     state.liquidator.balanceAfter = IERC20(state.collateralReserve.asset).balanceOf(LIQUIDATOR);
     state.debt.balanceAfter = spoke1.getUserTotalDebt(debtReserveId, alice);
-    state.treasury.balanceAfter = IERC20(state.collateralReserve.asset).balanceOf(TREASURY);
+    state.supply.balanceAfter = spoke1.getUserSuppliedAmount(collateralReserveId, alice);
+
+    state.liquidator.balanceChange = _absDiff(
+      state.liquidator.balanceAfter,
+      state.liquidator.balanceBefore
+    );
+    state.supply.balanceChange = _absDiff(state.supply.balanceAfter, state.supply.balanceBefore);
+    state.debt.balanceChange = _absDiff(state.debt.balanceAfter, state.debt.balanceBefore);
 
     // convert
-    state.collateral.baseChange = _convertAmountToBaseCurrency(
+    state.liquidator.baseChange = _convertAmountToBaseCurrency(
       state.collateralReserve.assetId,
-      state.liquidator.balanceAfter -
-        state.liquidator.balanceBefore +
-        state.treasury.balanceAfter -
-        state.treasury.balanceBefore
+      state.liquidator.balanceChange
+    );
+    state.supply.baseChange = _convertAmountToBaseCurrency(
+      state.collateralReserve.assetId,
+      state.supply.balanceChange
     );
     state.debt.baseChange = _convertAmountToBaseCurrency(
       state.debtReserve.assetId,
-      state.debt.balanceBefore - state.debt.balanceAfter
+      state.debt.balanceChange
     );
 
     return state;

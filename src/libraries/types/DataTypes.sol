@@ -122,7 +122,7 @@ library DataTypes {
     uint256 actualDebtToLiquidate;
     uint256 liquidationProtocolFeeAmount;
     uint256 userCollateralBalance;
-    uint256 userCollateralBalanceinBaseCurrency;
+    // uint256 userCollateralBalanceinBaseCurrency;
     uint256 totalCollateralInBaseCurrency;
     uint256 totalDebtInBaseCurrency;
     uint256 avgCollateralFactor;
@@ -165,6 +165,7 @@ library DataTypes {
     uint256 debtAmountNeeded;
     uint256 liquidationProtocolFeePercentage;
     uint256 liquidationProtocolFeeAmount;
+    uint256 userCollateralBalanceinBaseCurrency;
   }
 
   struct ExecuteLiquidationLocalVars {

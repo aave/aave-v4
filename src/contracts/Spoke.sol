@@ -396,8 +396,9 @@ contract Spoke is ISpoke {
       );
 
       console.log(
-        'sp: coll to liq %e debt to liq %e',
+        'sp: coll to liq %e | fee %e | debt to liq %e',
         vars.collateralToLiquidate,
+        vars.liquidationProtocolFeeAmount,
         vars.baseDebtToLiquidate
       );
 
@@ -520,10 +521,11 @@ contract Spoke is ISpoke {
     // TODO: move liquidationProtocolFeeAmount to treasury accounting
     // do not transfer directly to treasury
     if (vars.totalLiquidationProtocolFeeAmount > 0) {
-      IERC20(collateralReserve.asset).safeTransfer(
-        _treasury,
-        vars.totalLiquidationProtocolFeeAmount
-      );
+      console.log('sp: liq fee %e', vars.totalLiquidationProtocolFeeAmount);
+      // IERC20(collateralReserve.asset).safeTransfer(
+      //   _treasury,
+      //   vars.totalLiquidationProtocolFeeAmount
+      // );
     }
 
     return (
