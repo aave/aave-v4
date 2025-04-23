@@ -756,7 +756,7 @@ abstract contract Base is Test {
   }
 
   /// @dev pseudo random randomizer
-  function randomizer(uint256 min, uint256 max, uint256) internal returns (uint256) {
+  function randomizer(uint256 min, uint256 max) internal returns (uint256) {
     return vm.randomUint(min, max);
   }
 

@@ -81,69 +81,11 @@ library LiquidationLogic {
       return type(uint256).max;
     }
 
-    // console.log(
-    //   'LL totalDebtInBaseCurrency %e closeFactor %e healthFactor %e',
-    //   params.totalDebtInBaseCurrency,
-    //   params.closeFactor,
-    //   params.healthFactor
-    // );
-
-    // console.log(
-    //   'LL collateralFactor %e liquidationBonus %e effectiveLiquidationPenalty %e',
-    //   params.collateralFactor,
-    //   params.liquidationBonus,
-    //   effectiveLiquidationPenalty
-    // );
-
-    // console.log(
-    //   'LL num %e, den %e',
-    //   params.totalDebtInBaseCurrency.wadMulUp(params.closeFactor - params.healthFactor),
-    //   (params.closeFactor - effectiveLiquidationPenalty)
-    // );
-
-    // console.log(
-    //   'LL debt to liq %e %e',
-    //   (params.totalDebtInBaseCurrency.wadMulUp(params.closeFactor - params.healthFactor) *
-    //     params.debtAssetUnit) /
-    //     ((params.closeFactor - effectiveLiquidationPenalty) * params.debtAssetPrice),
-    //   ((
-    //     (params.totalDebtInBaseCurrency.wadMulUp(params.closeFactor - params.healthFactor) *
-    //       params.debtAssetUnit).wadify()
-    //   ) / ((params.closeFactor - effectiveLiquidationPenalty) * params.debtAssetPrice)).dewadify()
-    // );
-
-    // console.log(
-    //   'debt amt %e',
-    //   params.totalDebt.wadMulUp(params.closeFactor - params.healthFactor + 1e5).wadDiv(
-    //     params.closeFactor - effectiveLiquidationPenalty
-    //   )
-    // );
-
-    // return
-    //   (params.totalDebtInBaseCurrency.wadMulUp(params.closeFactor - params.healthFactor) *
-    //     params.debtAssetUnit) /
-    //   ((params.closeFactor - effectiveLiquidationPenalty) * params.debtAssetPrice);
-
-    // console.log(
-    //   'newCalc %e %e',
-    //   (params.totalDebtInBaseCurrency.wadMulUp(params.closeFactor - params.healthFactor) *
-    //     params.debtAssetUnit) /
-    //     (((params.closeFactor - effectiveLiquidationPenalty) * params.debtAssetPrice)),
-    //   params.totalDebt.wadMulUp(params.closeFactor - params.healthFactor).wadDivUp(
-    //     params.closeFactor - effectiveLiquidationPenalty
-    //   )
-    // );
-
     return
       (params.totalDebtInBaseCurrency.wadMulUp(params.closeFactor - params.healthFactor) *
         params.debtAssetUnit) /
       (((params.closeFactor - effectiveLiquidationPenalty) * params.debtAssetPrice)) +
       1;
-
-    // return
-    //   params.totalDebt.wadMulUp(params.closeFactor - params.healthFactor).wadDivUp(
-    //     params.closeFactor - effectiveLiquidationPenalty
-    //   );
   }
 
   /**
@@ -206,7 +148,7 @@ library LiquidationLogic {
       );
 
       console.log(
-        'LL protocol fee %e %e',
+        'LL protocol fee %e lpfp: %e',
         vars.liquidationProtocolFeeAmount,
         params.liquidationProtocolFeePercentage
       );

@@ -12,8 +12,6 @@ contract LiquidationCallCloseFactorTest is SpokeLiquidationBase {
   uint256 minSupplyInBaseCurrency = 10e26; // $10 in base currency
   uint256 remainingBaseCurrencyBound = 1e26; // $1 in base currency units
 
-  // todo: multi coll/debt
-
   /// coll: weth / debt: dai
   function test_liquidationCall_closeFactor_scenario1() public {
     uint256 collateralReserveId = _wethReserveId(spoke1);
@@ -438,15 +436,133 @@ contract LiquidationCallCloseFactorTest is SpokeLiquidationBase {
     return state;
   }
 
+  function _execLiqCallCloseFactorTestMulti(
+    DataTypes.LiquidationConfig memory liqConfig,
+    uint256 liqBonus,
+    uint256 supplyAmount,
+    uint256[] memory collateralReserveIds,
+    uint256[] memory debtReserveIds,
+    uint256 collateralReserveIndex,
+    uint256 debtReserveIndex,
+    uint256 liquidationProtocolFeePercentage
+  ) internal returns (LiquidationTestLocalParams memory) {
+    LiquidationTestLocalParams memory state;
+    state.collateralReserves = new DataTypes.Reserve[](collateralReserveIds.length);
+    state.debtReserves = new DataTypes.Reserve[](debtReserveIds.length);
+
+    for (uint256 i = 0; i < collateralReserveIds.length; i++) {
+      state.collateralReserves[i] = spoke1.getReserve(collateralReserveIds[i]);
+    }
+    for (uint256 i = 0; i < debtReserveIds.length; i++) {
+      state.debtReserves[i] = spoke1.getReserve(debtReserveIds[i]);
+    }
+    liqConfig = _bound(liqConfig);
+    liqBonus = bound(
+      liqBonus,
+      MIN_LIQUIDATION_BONUS,
+      PercentageMath
+        .PERCENTAGE_FACTOR
+        .percentDiv(state.collateralReserves[collateralReserveIndex].config.collateralFactor)
+        .percentMul(90_00) // add 10% buffer so that not all debt is liquidated
+    );
+    liquidationProtocolFeePercentage = bound(liquidationProtocolFeePercentage, 0, 100_00);
+    supplyAmount = bound(
+      supplyAmount,
+      _convertBaseCurrencyToAmount(state.collateralReserve.assetId, 1e25),
+      MAX_SUPPLY_AMOUNT / 1e4
+    );
+    state.liquidationProtocolFeePercentage = liquidationProtocolFeePercentage;
+
+    uint256 collateralReserveId = collateralReserveIds[collateralReserveIndex];
+    uint256 debtReserveId = debtReserveIds[debtReserveIndex];
+
+    _config = liqConfig;
+    spoke1.updateLiquidationConfig(_config);
+    updateLiquidationBonus(spoke1, collateralReserveId, liqBonus);
+    updateLiquidationProtocolFeePercentage(
+      spoke1,
+      collateralReserveId,
+      state.liquidationProtocolFeePercentage
+    );
+    uint256 desiredHf = _calcMaxAchievableHf(collateralReserveId, liqBonus).percentMul(101_00); // add 1% buffer so that not all debt is liquidated
+
+    for (uint256 i = 0; i < collateralReserveIds.length; i++) {
+      Utils.supplyCollateral({
+        spoke: spoke1,
+        reserveId: collateralReserveIds[i],
+        user: alice,
+        amount: supplyAmount,
+        onBehalfOf: alice
+      });
+    }
+
+    (uint256 hfAfterBorrow, uint256 requiredDebtAmount) = _borrowToBeBelowHf(
+      spoke1,
+      alice,
+      debtReserveId,
+      desiredHf
+    );
+
+    state.liquidationBonus = _getVariableLiquidationBonus(
+      spoke1,
+      collateralReserveId,
+      hfAfterBorrow
+    );
+
+    // state.debt.balanceBefore = spoke1.getUserTotalDebt(debtReserveId, alice);
+    // state.liquidator.balanceBefore = IERC20(state.collateralReserve.asset).balanceOf(LIQUIDATOR);
+    // state.treasury.balanceBefore = IERC20(state.collateralReserve.asset).balanceOf(TREASURY);
+    // state.supply.balanceBefore = spoke1.getUserSuppliedAmount(collateralReserveId, alice);
+
+    // vm.prank(LIQUIDATOR);
+    // spoke1.liquidationCall(collateralReserveId, debtReserveId, alice, requiredDebtAmount);
+
+    // state.liquidator.balanceAfter = IERC20(state.collateralReserve.asset).balanceOf(LIQUIDATOR);
+    // state.debt.balanceAfter = spoke1.getUserTotalDebt(debtReserveId, alice);
+    // state.treasury.balanceAfter = IERC20(state.collateralReserve.asset).balanceOf(TREASURY);
+    // state.supply.balanceAfter = spoke1.getUserSuppliedAmount(collateralReserveId, alice);
+
+    // vm.assume(state.supply.balanceAfter > 0 && state.debt.balanceAfter > 0);
+
+    // // convert
+    // state.liquidator.baseChange = _convertAmountToBaseCurrency(
+    //   state.collateralReserve.assetId,
+    //   _absDiff(state.liquidator.balanceAfter, state.liquidator.balanceBefore)
+    // );
+    // state.treasury.baseChange = _convertAmountToBaseCurrency(
+    //   state.collateralReserve.assetId,
+    //   _absDiff(state.treasury.balanceAfter, state.treasury.balanceBefore)
+    // );
+    // state.debt.baseChange = _convertAmountToBaseCurrency(
+    //   state.debtReserve.assetId,
+    //   _absDiff(state.debt.balanceBefore, state.debt.balanceAfter)
+    // );
+    // state.supply.baseChange = _convertAmountToBaseCurrency(
+    //   state.collateralReserve.assetId,
+    //   _absDiff(state.supply.balanceBefore, state.supply.balanceAfter)
+    // );
+
+    return state;
+  }
+
   /// @notice Calc max achievable hf to be able to repay all debt and have remaining collateral
   /// allows close factor to be up to max uint
-  /// @param healthFactor in WAD
+  /// @return healthFactor in WAD
   function _calcMaxAchievableHf(
     uint256 collateralReserveId,
     uint256 liquidationBonus
+  ) internal view returns (uint256) {
+    return
+      _calcMaxAchievableHfFromCollateralFactor(
+        spoke1.getCollateralFactor(collateralReserveId),
+        liquidationBonus
+      );
+  }
+
+  function _calcMaxAchievableHfFromCollateralFactor(
+    uint256 collateralFactor,
+    uint256 liquidationBonus
   ) internal view returns (uint256 healthFactor) {
-    healthFactor = uint256(1e18)
-      .percentMul(spoke1.getCollateralFactor(collateralReserveId))
-      .percentMul(liquidationBonus + 1);
+    healthFactor = uint256(1e18).percentMul(collateralFactor).percentMul(liquidationBonus + 1);
   }
 }

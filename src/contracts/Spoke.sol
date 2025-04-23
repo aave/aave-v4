@@ -520,6 +520,9 @@ contract Spoke is ISpoke {
       // );
     }
 
+    console.log('Sp: remaining coll %e', getUserSuppliedAmount(collateralReserveId, users[0]));
+    console.log('Sp: remaining debt %e', getUserTotalDebt(debtReserveId, users[0]));
+
     return (
       collateralReserve.asset,
       debtReserve.asset,

@@ -30,6 +30,8 @@ contract SpokeLiquidationBase is SpokeBase {
     uint256 liquidationProtocolFeePercentage;
     DataTypes.Reserve collateralReserve;
     DataTypes.Reserve debtReserve;
+    DataTypes.Reserve[] collateralReserves;
+    DataTypes.Reserve[] debtReserves;
   }
 
   DataTypes.LiquidationConfig internal _config;
