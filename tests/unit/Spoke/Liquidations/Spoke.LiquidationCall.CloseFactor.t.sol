@@ -12,6 +12,8 @@ contract LiquidationCallCloseFactorTest is SpokeLiquidationBase {
   uint256 minSupplyInBaseCurrency = 10e26; // $10 in base currency
   uint256 remainingBaseCurrencyBound = 1e26; // $1 in base currency units
 
+  // todo: multi coll/debt
+
   /// coll: weth / debt: dai
   function test_liquidationCall_closeFactor_scenario1() public {
     uint256 collateralReserveId = _wethReserveId(spoke1);
@@ -19,6 +21,24 @@ contract LiquidationCallCloseFactorTest is SpokeLiquidationBase {
     test_liquidationCall_fuzz_closeFactor({
       liqConfig: DataTypes.LiquidationConfig({
         closeFactor: 1.5e18,
+        liquidationBonusFactor: 0,
+        healthFactorBonusThreshold: 0
+      }),
+      liqBonus: 105_00,
+      supplyAmount: 1.5e18,
+      liquidationProtocolFeePercentage: 5_00,
+      collateralReserveId: collateralReserveId,
+      debtReserveId: debtReserveId
+    });
+  }
+
+  /// coll: weth / debt: dai with default value of close factor
+  function test_liquidationCall_closeFactor_defaultValue_scenario1() public {
+    uint256 collateralReserveId = _wethReserveId(spoke1);
+    uint256 debtReserveId = _daiReserveId(spoke1);
+    test_liquidationCall_fuzz_closeFactor({
+      liqConfig: DataTypes.LiquidationConfig({
+        closeFactor: 1e18,
         liquidationBonusFactor: 0,
         healthFactorBonusThreshold: 0
       }),
@@ -49,6 +69,25 @@ contract LiquidationCallCloseFactorTest is SpokeLiquidationBase {
     });
   }
 
+  /// coll: weth / debt: usdx with default value of close factor
+  function test_liquidationCall_closeFactor_defaultValue_scenario2() public {
+    uint256 collateralReserveId = _wethReserveId(spoke1);
+    uint256 debtReserveId = _usdxReserveId(spoke1);
+
+    test_liquidationCall_fuzz_closeFactor({
+      liqConfig: DataTypes.LiquidationConfig({
+        closeFactor: 1e18,
+        liquidationBonusFactor: 0,
+        healthFactorBonusThreshold: 0
+      }),
+      liqBonus: 105_00,
+      supplyAmount: 1.5e18,
+      liquidationProtocolFeePercentage: 5_00,
+      collateralReserveId: collateralReserveId,
+      debtReserveId: debtReserveId
+    });
+  }
+
   /// coll: usdx / debt: weth
   function test_liquidationCall_closeFactor_scenario3() public {
     uint256 collateralReserveId = _usdxReserveId(spoke1);
@@ -57,6 +96,25 @@ contract LiquidationCallCloseFactorTest is SpokeLiquidationBase {
     test_liquidationCall_fuzz_closeFactor({
       liqConfig: DataTypes.LiquidationConfig({
         closeFactor: 1.5e18,
+        liquidationBonusFactor: 0,
+        healthFactorBonusThreshold: 0
+      }),
+      liqBonus: 105_00,
+      supplyAmount: 10e6,
+      liquidationProtocolFeePercentage: 5_00,
+      collateralReserveId: collateralReserveId,
+      debtReserveId: debtReserveId
+    });
+  }
+
+  /// coll: usdx / debt: weth with default value of close factor
+  function test_liquidationCall_closeFactor_defaultValue_scenario3() public {
+    uint256 collateralReserveId = _usdxReserveId(spoke1);
+    uint256 debtReserveId = _wethReserveId(spoke1);
+
+    test_liquidationCall_fuzz_closeFactor({
+      liqConfig: DataTypes.LiquidationConfig({
+        closeFactor: 1e18,
         liquidationBonusFactor: 0,
         healthFactorBonusThreshold: 0
       }),
@@ -86,6 +144,24 @@ contract LiquidationCallCloseFactorTest is SpokeLiquidationBase {
     });
   }
 
+  /// coll: usdx / debt: dai with default value of close factor
+  function test_liquidationCall_closeFactor_defaultValue_scenario4() public {
+    uint256 collateralReserveId = _usdxReserveId(spoke1);
+    uint256 debtReserveId = _daiReserveId(spoke1);
+    test_liquidationCall_fuzz_closeFactor({
+      liqConfig: DataTypes.LiquidationConfig({
+        closeFactor: 1e18,
+        liquidationBonusFactor: 0,
+        healthFactorBonusThreshold: 0
+      }),
+      liqBonus: 105_00,
+      supplyAmount: 10e6,
+      liquidationProtocolFeePercentage: 5_00,
+      collateralReserveId: collateralReserveId,
+      debtReserveId: debtReserveId
+    });
+  }
+
   /// coll: dai / debt: weth
   function test_liquidationCall_closeFactor_scenario5() public {
     uint256 collateralReserveId = _daiReserveId(spoke1);
@@ -104,6 +180,24 @@ contract LiquidationCallCloseFactorTest is SpokeLiquidationBase {
     });
   }
 
+  /// coll: dai / debt: weth with default value of close factor
+  function test_liquidationCall_closeFactor_defaultValue_scenario5() public {
+    uint256 collateralReserveId = _daiReserveId(spoke1);
+    uint256 debtReserveId = _wethReserveId(spoke1);
+    test_liquidationCall_fuzz_closeFactor({
+      liqConfig: DataTypes.LiquidationConfig({
+        closeFactor: 1e18,
+        liquidationBonusFactor: 0,
+        healthFactorBonusThreshold: 0
+      }),
+      liqBonus: 105_00,
+      supplyAmount: 1_000e6,
+      liquidationProtocolFeePercentage: 5_00,
+      collateralReserveId: collateralReserveId,
+      debtReserveId: debtReserveId
+    });
+  }
+
   /// coll: dai / debt: usdx
   function test_liquidationCall_closeFactor_scenario6() public {
     uint256 collateralReserveId = _daiReserveId(spoke1);
@@ -111,6 +205,24 @@ contract LiquidationCallCloseFactorTest is SpokeLiquidationBase {
     test_liquidationCall_fuzz_closeFactor({
       liqConfig: DataTypes.LiquidationConfig({
         closeFactor: 1.5e18,
+        liquidationBonusFactor: 0,
+        healthFactorBonusThreshold: 0
+      }),
+      liqBonus: 105_00,
+      supplyAmount: 1_000e6,
+      liquidationProtocolFeePercentage: 5_00,
+      collateralReserveId: collateralReserveId,
+      debtReserveId: debtReserveId
+    });
+  }
+
+  /// coll: dai / debt: usdx with default value of close factor
+  function test_liquidationCall_closeFactor_defaultValue_scenario6() public {
+    uint256 collateralReserveId = _daiReserveId(spoke1);
+    uint256 debtReserveId = _usdxReserveId(spoke1);
+    test_liquidationCall_fuzz_closeFactor({
+      liqConfig: DataTypes.LiquidationConfig({
+        closeFactor: 1e18,
         liquidationBonusFactor: 0,
         healthFactorBonusThreshold: 0
       }),
