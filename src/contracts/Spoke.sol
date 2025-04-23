@@ -34,25 +34,17 @@ contract Spoke is ISpoke {
     internal _userPositions;
   mapping(uint256 reserveId => DataTypes.Reserve reserveData) internal _reserves;
   DataTypes.LiquidationConfig internal _liquidationConfig;
-  address internal _treasury;
   uint256[] public reservesList; // todo: rm, not needed
   uint256 public reserveCount;
 
-  constructor(
-    address hubAddress,
-    address oracleAddress,
-    address treasury,
-    uint256 closeFactorValue
-  ) {
+  constructor(address hubAddress, address oracleAddress, uint256 closeFactorValue) {
     require(hubAddress != address(0), InvalidHubAddress());
-    require(treasury != address(0), InvalidTreasuryAddress());
     require(oracleAddress != address(0), InvalidOracleAddress());
     // close factor is required, but variable liquidation bonus config is not
     _validateCloseFactor(closeFactorValue);
 
     HUB = ILiquidityHub(hubAddress);
     _liquidationConfig.closeFactor = closeFactorValue;
-    _treasury = treasury;
     oracle = IPriceOracle(oracleAddress);
   }
 
@@ -733,10 +725,6 @@ contract Spoke is ISpoke {
       totalCollateralInBaseCurrency,
       totalDebtInBaseCurrency
     ) = _calculateUserAccountData(user);
-  }
-
-  function RESERVE_TREASURY_ADDRESS() external view returns (address) {
-    return _treasury;
   }
 
   // public
