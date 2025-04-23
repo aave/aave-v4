@@ -3948,4 +3948,6 @@ contract LiquidationCallTest is SpokeLiquidationBase {
   // tests with Liq Threshold == close factor
   // tests with Liq Threshold < close factor
   // test for same asset supplied/borrowed
+
+  // todo: check on user total debt as expected
 }

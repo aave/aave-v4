@@ -152,6 +152,8 @@ library LiquidationLogic {
 
     vars.maxCollateralToLiquidate = vars.baseCollateral.percentMul(params.liquidationBonus);
 
+    console.log('LL eq', vars.maxCollateralToLiquidate == vars.baseCollateral);
+
     if (vars.maxCollateralToLiquidate > params.userCollateralBalanceinBaseCurrency) {
       console.log('maxCollateralToLiquidate > userCollateralBalance');
       // back calculate debt amount needed to cover the max allowed collateral
@@ -189,6 +191,7 @@ library LiquidationLogic {
         vars.liquidationProtocolFeeAmount
       );
     } else {
+      console.log('LL coll amt %e | debt amt %e', vars.collateralAmount, vars.debtAmountNeeded);
       return (vars.collateralAmount, vars.debtAmountNeeded, 0);
     }
   }

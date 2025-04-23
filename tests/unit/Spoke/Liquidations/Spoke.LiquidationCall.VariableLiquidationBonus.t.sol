@@ -166,8 +166,8 @@ contract LiquidationCallVariableLiquidationBonusTest is SpokeLiquidationBase {
     string memory label
   ) internal pure {
     assertApproxEqRel(
-      state.collateralBaseDiff,
-      state.debtBaseDiff.percentMul(state.liquidationBonus),
+      state.collateral.baseChange,
+      state.debt.baseChange.percentMul(state.liquidationBonus),
       _approxRelFromBps(10),
       string.concat('liquidationBonus earned in base currency ', label)
     );

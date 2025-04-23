@@ -131,7 +131,7 @@ contract LiquidationCallProtocolFeeTest is SpokeLiquidationBase {
   ) internal view {
     uint256 liqBonusEarned = _convertBaseCurrencyToAmount(
       state.collateralReserve.assetId,
-      state.debtBaseDiff.percentMul(state.liquidationBonus - PercentageMath.PERCENTAGE_FACTOR)
+      state.debt.baseChange.percentMul(state.liquidationBonus - PercentageMath.PERCENTAGE_FACTOR)
     );
     uint256 liqProtocolFee = state.treasury.balanceAfter - state.treasury.balanceBefore;
 
@@ -151,24 +151,30 @@ contract LiquidationCallProtocolFeeTest is SpokeLiquidationBase {
       );
     }
     if (
-      _convertBaseCurrencyToAmount(state.collateralReserve.reserveId, state.collateralBaseDiff) <
+      _convertBaseCurrencyToAmount(state.collateralReserve.reserveId, state.collateral.baseChange) <
       1e4
     ) {
       assertApproxEqAbs(
-        _convertBaseCurrencyToAmount(state.collateralReserve.reserveId, state.collateralBaseDiff),
         _convertBaseCurrencyToAmount(
           state.collateralReserve.reserveId,
-          state.debtBaseDiff.percentMul(state.liquidationBonus)
+          state.collateral.baseChange
+        ),
+        _convertBaseCurrencyToAmount(
+          state.collateralReserve.reserveId,
+          state.debt.baseChange.percentMul(state.liquidationBonus)
         ),
         1,
         string.concat('total collateral seized should match debt abs ', label)
       );
     } else {
       assertApproxEqRel(
-        _convertBaseCurrencyToAmount(state.collateralReserve.reserveId, state.collateralBaseDiff),
         _convertBaseCurrencyToAmount(
           state.collateralReserve.reserveId,
-          state.debtBaseDiff.percentMul(state.liquidationBonus)
+          state.collateral.baseChange
+        ),
+        _convertBaseCurrencyToAmount(
+          state.collateralReserve.reserveId,
+          state.debt.baseChange.percentMul(state.liquidationBonus)
         ),
         _approxRelFromBps(10),
         string.concat('total collateral seized should match debt rel ', label)

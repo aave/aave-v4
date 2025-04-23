@@ -13,15 +13,17 @@ contract SpokeLiquidationBase is SpokeBase {
   struct Balance {
     uint256 balanceBefore;
     uint256 balanceAfter;
+    uint256 balanceChange;
+    uint256 baseChange;
   }
 
   struct LiquidationTestLocalParams {
     Balance liquidator;
     Balance user;
     Balance treasury;
+    Balance collateral;
     Balance debt;
-    uint256 collateralBaseDiff;
-    uint256 debtBaseDiff;
+    Balance supply;
     uint256 liquidationBonus;
     uint256 collateralAssetId;
     uint256 debtAssetId;
@@ -193,19 +195,39 @@ contract SpokeLiquidationBase is SpokeBase {
     state.treasury.balanceAfter = IERC20(state.collateralReserve.asset).balanceOf(TREASURY);
 
     // convert
-    state.collateralBaseDiff = _convertAmountToBaseCurrency(
+    state.collateral.baseChange = _convertAmountToBaseCurrency(
       state.collateralReserve.assetId,
       state.liquidator.balanceAfter -
         state.liquidator.balanceBefore +
         state.treasury.balanceAfter -
         state.treasury.balanceBefore
     );
-    state.debtBaseDiff = _convertAmountToBaseCurrency(
+    state.debt.baseChange = _convertAmountToBaseCurrency(
       state.debtReserve.assetId,
       state.debt.balanceBefore - state.debt.balanceAfter
     );
 
     return state;
+  }
+
+  function _assertAccounting(
+    LiquidationTestLocalParams memory state,
+    ISpoke spoke,
+    uint256 remainingBaseCurrencyBound
+  ) internal view {
+    // at low amounts of coll/debt, HF can diverge from close factor due to rounding/precision
+    if (
+      _convertAmountToBaseCurrency(state.debtReserve.assetId, state.debt.balanceAfter) >
+      remainingBaseCurrencyBound &&
+      _convertAmountToBaseCurrency(state.collateralReserve.assetId, state.supply.balanceAfter) >
+      remainingBaseCurrencyBound
+    ) {
+      assertEq(
+        state.supply.baseChange.percentDiv(state.debt.baseChange),
+        state.liquidationBonus,
+        'liquidationBonus'
+      );
+    }
   }
 
   function _getCloseFactor(ISpoke spoke) internal view returns (uint256) {

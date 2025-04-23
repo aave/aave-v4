@@ -395,6 +395,12 @@ contract Spoke is ISpoke {
         vars.premiumDebt
       );
 
+      console.log(
+        'sp: coll to liq %e debt to liq %e',
+        vars.collateralToLiquidate,
+        vars.baseDebtToLiquidate
+      );
+
       // settle debt reserve's premium debt
       vars.userDebtPremiumDrawnShares = userDebtPosition.premiumDrawnShares;
       vars.userDebtPremiumOffset = userDebtPosition.premiumOffset;
