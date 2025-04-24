@@ -9,8 +9,7 @@ contract LiquidationCallCloseFactorMultiReserveTest is SpokeLiquidationBase {
   using PercentageMath for uint256;
   using PercentageMathExtended for uint256;
 
-  /// coll: weth / debt: dai
-  function test_liquidationCall_closeFactor_multi_coll_scenario1() public {
+  function test_liquidationCall_closeFactor_multi_reserve_scenario1() public {
     uint256[] memory collateralReserveIds = new uint256[](2);
     uint256[] memory debtReserveIds = new uint256[](2);
 
@@ -38,7 +37,63 @@ contract LiquidationCallCloseFactorMultiReserveTest is SpokeLiquidationBase {
     assertLe(spoke1.getHealthFactor(alice), _getCloseFactor(spoke1), 'HF <= close factor');
   }
 
-  function test_liquidationCall_closeFactor_fuzz_multi_coll(
+  function test_liquidationCall_closeFactor_multi_reserve_scenario2() public {
+    uint256[] memory collateralReserveIds = new uint256[](2);
+    uint256[] memory debtReserveIds = new uint256[](2);
+
+    collateralReserveIds[0] = _wethReserveId(spoke1);
+    collateralReserveIds[1] = _wbtcReserveId(spoke1);
+
+    debtReserveIds[0] = _usdyReserveId(spoke1);
+    debtReserveIds[1] = _usdxReserveId(spoke1);
+
+    _execLiqCallCloseFactorTestMulti({
+      liqConfig: DataTypes.LiquidationConfig({
+        closeFactor: 1.1e18,
+        liquidationBonusFactor: 0,
+        healthFactorBonusThreshold: 0
+      }),
+      liqBonus: 105_00,
+      supplyAmountInBase: 10_000e26,
+      liquidationProtocolFeePercentage: 5_00,
+      collateralReserveIds: collateralReserveIds,
+      debtReserveIds: debtReserveIds,
+      collateralReserveIndex: 0,
+      debtReserveIndex: 1
+    });
+
+    assertLe(spoke1.getHealthFactor(alice), _getCloseFactor(spoke1), 'HF <= close factor');
+  }
+
+  function test_liquidationCall_closeFactor_multi_reserve_scenario3() public {
+    uint256[] memory collateralReserveIds = new uint256[](2);
+    uint256[] memory debtReserveIds = new uint256[](2);
+
+    collateralReserveIds[0] = _daiReserveId(spoke1);
+    collateralReserveIds[1] = _usdyReserveId(spoke1);
+
+    debtReserveIds[0] = _usdxReserveId(spoke1);
+    debtReserveIds[1] = _wbtcReserveId(spoke1);
+
+    _execLiqCallCloseFactorTestMulti({
+      liqConfig: DataTypes.LiquidationConfig({
+        closeFactor: 1.1e18,
+        liquidationBonusFactor: 0,
+        healthFactorBonusThreshold: 0
+      }),
+      liqBonus: 105_00,
+      supplyAmountInBase: 10_000_000e26,
+      liquidationProtocolFeePercentage: 5_00,
+      collateralReserveIds: collateralReserveIds,
+      debtReserveIds: debtReserveIds,
+      collateralReserveIndex: 0,
+      debtReserveIndex: 1
+    });
+
+    assertLe(spoke1.getHealthFactor(alice), _getCloseFactor(spoke1), 'HF <= close factor');
+  }
+
+  function test_liquidationCall_closeFactor_fuzz_multi_reserve(
     DataTypes.LiquidationConfig memory liqConfig,
     uint256 liqBonus,
     uint256 collateralReserveId1,
@@ -50,14 +105,16 @@ contract LiquidationCallCloseFactorMultiReserveTest is SpokeLiquidationBase {
     uint256 supplyAmountInBase,
     uint256 closeFactor
   ) public {
-    collateralReserveId1 = bound(collateralReserveId1, 0, spoke1.reserveCount() - 2);
-    debtReserveId1 = bound(debtReserveId1, 0, spoke1.reserveCount() - 2);
+    collateralReserveId1 = bound(collateralReserveId1, 0, spoke1.reserveCount() - 1);
+    collateralReserveId2 = bound(collateralReserveId2, 0, spoke1.reserveCount() - 1);
+    debtReserveId1 = bound(debtReserveId1, 0, spoke1.reserveCount() - 1);
+    debtReserveId2 = bound(debtReserveId2, 0, spoke1.reserveCount() - 1);
 
     collateralReserveIndex = bound(collateralReserveIndex, 0, 1);
     debtReserveIndex = bound(debtReserveIndex, 0, 1);
 
-    collateralReserveId2 = collateralReserveId1 + 1; // ensure different collateral assets
-    debtReserveId2 = debtReserveId1 + 1; // ensure different debt assets
+    // simplify borrowing under HF by different mix of coll/debt
+    vm.assume(collateralReserveId1 != collateralReserveId2 && debtReserveId1 != debtReserveId2);
 
     uint256[] memory collateralReserveIds = new uint256[](2);
     uint256[] memory debtReserveIds = new uint256[](2);
@@ -229,14 +286,11 @@ contract LiquidationCallCloseFactorMultiReserveTest is SpokeLiquidationBase {
   ) internal returns (uint256 finalHf, uint256[] memory requiredDebts) {
     requiredDebts = new uint256[](reserveIds.length);
 
-    uint256 requiredDebtInBase = _getRequiredDebtForLtHf(spoke, user, desiredHf);
+    // extra debt to ensure HF below desired
+    uint256 requiredDebtInBase = _getRequiredDebtForLtHf(spoke, user, desiredHf).percentMul(100_01);
 
     uint256 remaining = requiredDebtInBase;
     uint256 dustInBase = 10e26;
-
-    console.log('requiredDebtInBase %e', requiredDebtInBase);
-
-    console.log('reserveIds.length', reserveIds.length);
 
     vm.startPrank(user);
     for (uint256 i = 0; i < reserveIds.length; i++) {
@@ -276,13 +330,13 @@ contract LiquidationCallCloseFactorMultiReserveTest is SpokeLiquidationBase {
       remaining -= amountInBase;
       requiredDebts[i] = amount;
     }
-    vm.stopPrank();
     vm.clearMockedCalls();
+    vm.stopPrank();
 
     // console.log('heref');
 
     finalHf = spoke.getHealthFactor(user);
-    // console.log('final hf %e | desired hf %e', finalHf, desiredHf);
+    console.log('final hf %e | desired hf %e', finalHf, desiredHf);
     assertLt(finalHf, desiredHf);
   }
 }
