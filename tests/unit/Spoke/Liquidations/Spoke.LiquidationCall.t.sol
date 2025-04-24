@@ -25,7 +25,7 @@ contract LiquidationCallTest is SpokeLiquidationBase {
   }
 
   // todo: test with interest and cached premium
-  function test_liquidationCall_debt_with_cached_interest() public {
+  function test_liquidationCall_debt_realized_premium() public {
     LiqTestData memory state;
 
     state.wethReserveId = _wethReserveId(spoke1);

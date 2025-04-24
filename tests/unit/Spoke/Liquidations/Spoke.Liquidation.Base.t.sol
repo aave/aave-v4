@@ -40,6 +40,9 @@ contract SpokeLiquidationBase is SpokeBase {
     DataTypes.Reserve debtReserve;
     DataTypes.Reserve[] collateralReserves;
     DataTypes.Reserve[] debtReserves;
+    uint256 collateralReserveId;
+    uint256 debtReserveId;
+    uint256 desiredHf;
   }
 
   DataTypes.LiquidationConfig internal _config;
