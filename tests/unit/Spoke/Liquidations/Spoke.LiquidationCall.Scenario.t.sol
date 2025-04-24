@@ -5,7 +5,7 @@ import 'tests/unit/Spoke/Liquidations/Spoke.Liquidation.Base.t.sol';
 
 // todo: tests with liquidator instead of bob
 
-contract LiquidationCallTest is SpokeLiquidationBase {
+contract LiquidationCallScenarioTest is SpokeLiquidationBase {
   using SharesMath for uint256;
   using WadRayMath for uint256;
   using PercentageMath for uint256;
@@ -24,7 +24,6 @@ contract LiquidationCallTest is SpokeLiquidationBase {
     uint256 usdy;
   }
 
-  // todo: test with interest and cached premium
   function test_liquidationCall_debt_realized_premium() public {
     LiqTestData memory state;
 
@@ -44,12 +43,6 @@ contract LiquidationCallTest is SpokeLiquidationBase {
     Utils.supplyCollateral(spoke1, state.wbtcReserveId, alice, state.colls[0].wbtc, alice);
     Utils.supplyCollateral(spoke1, state.daiReserveId, alice, state.colls[0].dai, alice);
     Utils.borrow(spoke1, state.wethReserveId, alice, state.debts[0].weth, alice);
-
-    console.log(
-      'spoke total debt, %e %e',
-      spoke1.getUserTotalDebt(state.wethReserveId, alice),
-      spoke1.getReserveTotalDebt(state.wethReserveId)
-    );
 
     (uint256 baseDebt, uint256 premDebt) = spoke1.getUserDebt(state.wethReserveId, alice);
 
