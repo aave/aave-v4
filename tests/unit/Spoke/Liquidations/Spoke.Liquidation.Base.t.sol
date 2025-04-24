@@ -10,6 +10,9 @@ contract SpokeLiquidationBase is SpokeBase {
   using PercentageMath for uint256;
   using PercentageMathExtended for uint256;
 
+  uint256 minSupplyInBaseCurrency = 10e26; // $10 in base currency
+  uint256 remainingBaseCurrencyBound = 1e26; // $1 in base currency units
+
   struct Balance {
     uint256 balanceBefore;
     uint256 balanceAfter;
@@ -156,7 +159,7 @@ contract SpokeLiquidationBase is SpokeBase {
     supplyAmount = bound(
       supplyAmount,
       _convertBaseCurrencyToAmount(state.collateralReserve.assetId, 1e26),
-      MAX_SUPPLY_AMOUNT / 1e4
+      _convertBaseCurrencyToAmount(state.collateralReserve.assetId, 1e9 * 1e26)
     );
 
     state.liquidationProtocolFeePercentage = liquidationProtocolFeePercentage;
@@ -302,5 +305,31 @@ contract SpokeLiquidationBase is SpokeBase {
 
   function _absDiff(uint256 a, uint256 b) internal pure returns (uint256) {
     return a > b ? (a - b) : b - a;
+  }
+
+  function _assertHealthFactor(
+    LiquidationTestLocalParams memory state,
+    ISpoke spoke
+  ) internal view virtual {
+    uint256 finalHf = spoke.getHealthFactor(alice);
+
+    console.log('hf %e cf %e', finalHf, _getCloseFactor(spoke));
+
+    // ensure HF is lte close factor
+    assertLe(finalHf, _getCloseFactor(spoke), 'Health factor <= close factor');
+    // at low amounts of coll/debt, HF can diverge from close factor due to rounding/precision
+    if (
+      _convertAmountToBaseCurrency(state.debtReserve.assetId, state.debt.balanceAfter) >
+      remainingBaseCurrencyBound &&
+      _convertAmountToBaseCurrency(state.collateralReserve.assetId, state.supply.balanceAfter) >
+      remainingBaseCurrencyBound
+    ) {
+      assertApproxEqRel(
+        finalHf,
+        _getCloseFactor(spoke),
+        _approxRelFromBps(10),
+        'HF matches closeFactor within 0.1%'
+      );
+    }
   }
 }

@@ -9,9 +9,6 @@ contract LiquidationCallCloseFactorMultiReserveTest is SpokeLiquidationBase {
   using PercentageMath for uint256;
   using PercentageMathExtended for uint256;
 
-  uint256 minSupplyInBaseCurrency = 10e26; // $10 in base currency
-  uint256 remainingBaseCurrencyBound = 1e26; // $1 in base currency units
-
   // todo: multi coll/debt
 
   /// coll: weth / debt: dai
@@ -44,7 +41,7 @@ contract LiquidationCallCloseFactorMultiReserveTest is SpokeLiquidationBase {
   function _assertHealthFactor(
     LiquidationTestLocalParams memory state,
     ISpoke spoke
-  ) internal view {
+  ) internal view override {
     uint256 finalHf = spoke.getHealthFactor(alice);
 
     console.log('hf %e cf %e', finalHf, _getCloseFactor(spoke));

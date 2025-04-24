@@ -68,6 +68,9 @@ library LiquidationLogic {
   function calculateDebtToRestoreCloseFactor(
     DataTypes.LiquidationCallLocalVars memory params
   ) internal pure returns (uint256) {
+    // params.closeFactor -= 1e17;
+    // params.closeFactor = params.closeFactor.percentMul(99_99);
+
     // Multiply the liquidation bonus by the collateral factor.
     // This represents the effective value loss from the user's collateral per unit of debt repaid.
     // Acts like an “effective penalty” from the user’s point of view.
@@ -75,17 +78,47 @@ library LiquidationLogic {
       .percentMul(params.collateralFactor)
       .fromBps();
 
+    console.log(
+      'SP: LB %e | CF %e',
+      params.liquidationBonus,
+      params.collateralFactor,
+      params.healthFactor
+    );
+
     // Return default max uint if:
     // - penalty exceeds or equals the close factor, ie liquidation cannot restore solvency efficiently (negative denominator)
-    if (params.closeFactor <= effectiveLiquidationPenalty) {
+    if (params.closeFactor < effectiveLiquidationPenalty) {
       return type(uint256).max;
     }
 
-    return
-      (params.totalDebtInBaseCurrency.wadMulUp(params.closeFactor - params.healthFactor) *
-        params.debtAssetUnit) /
-      (((params.closeFactor - effectiveLiquidationPenalty) * params.debtAssetPrice)) +
-      1;
+    params.totalDebtInBaseCurrency =
+      (params.totalDebtInBaseCurrency.dewadify() * params.debtAssetUnit) /
+      params.debtAssetPrice;
+
+    // effectiveLiquidationPenalty = (params.liquidationBonus.percentMul(params.collateralFactor) - 1)
+    //   .wadify()
+    //   .fromBps();
+
+    // console.log(
+    //   'effectiveLiquidationPenalty',
+    //   effectiveLiquidationPenalty,
+    //   (params.liquidationBonus.percentMul(params.collateralFactor)).wadify().fromBps()
+    // );
+
+    uint256 closeFactorDebt = params.totalDebtInBaseCurrency.wadMulDown(
+      ((params.closeFactor - params.healthFactor)).wadDivDown(
+        (params.closeFactor - effectiveLiquidationPenalty + 1)
+      )
+    );
+
+    // uint prev = (params.totalDebtInBaseCurrency.wadMulUp(params.closeFactor - params.healthFactor) *
+    //   params.debtAssetUnit) /
+    //   (((params.closeFactor - effectiveLiquidationPenalty) * params.debtAssetPrice)) +
+    //   1;
+
+    // console.log('LL after cmp prev %e new %e', prev, closeFactorDebt);
+
+    return closeFactorDebt;
   }
 
   /**
@@ -121,12 +154,17 @@ library LiquidationLogic {
       console.log('maxCollateralToLiquidate > userCollateralBalance');
       // back calculate debt amount needed to cover the max allowed collateral
       vars.collateralAmount = params.userCollateralBalance;
-      vars.debtAmountNeeded = ((params.debtAssetUnit * vars.userCollateralBalanceinBaseCurrency) /
-        (params.debtAssetPrice)).dewadify().percentDiv(params.liquidationBonus);
+      vars.debtAmountNeeded = ((params.debtAssetUnit *
+        vars.userCollateralBalanceinBaseCurrency.dewadify()) / (params.debtAssetPrice)).percentDiv(
+          params.liquidationBonus
+        );
     } else {
       console.log('maxCollateralToLiquidate <= userCollateralBalance');
-      vars.collateralAmount = ((vars.maxCollateralToLiquidate * params.collateralAssetUnit) /
-        params.collateralAssetPrice).dewadify();
+
+      vars.collateralAmount =
+        ((vars.maxCollateralToLiquidate * params.collateralAssetUnit) / params.collateralAssetPrice)
+          .dewadify() +
+        1;
       vars.debtAmountNeeded = params.actualDebtToLiquidate;
     }
 
@@ -163,4 +201,48 @@ library LiquidationLogic {
       return (vars.collateralAmount, vars.debtAmountNeeded, 0);
     }
   }
+
+  // function calculateAvailableCollateralToLiquidate(
+  //   DataTypes.LiquidationCallLocalVars memory params
+  // ) internal pure returns (uint256, uint256, uint256) {
+  //   DataTypes.CalculateAvailableCollateralToLiquidateLocalVars memory vars;
+
+  //   // find collateral amount that corresponds to the debt to cover
+  //   vars.baseCollateral =
+  //     (params.debtAssetPrice * params.actualDebtToLiquidate * params.collateralAssetUnit) /
+  //     (params.collateralAssetPrice * params.debtAssetUnit);
+
+  //   vars.maxCollateralToLiquidate = vars.baseCollateral.percentMul(params.liquidationBonus);
+
+  //   if (vars.maxCollateralToLiquidate > params.userCollateralBalance) {
+  //     // back calculate debt amount needed to cover the max allowed collateral
+  //     vars.collateralAmount = params.userCollateralBalance;
+  //     vars.debtAmountNeeded = ((params.collateralAssetPrice *
+  //       vars.collateralAmount *
+  //       params.debtAssetUnit) / (params.debtAssetPrice * params.collateralAssetUnit)).percentDiv(
+  //         params.liquidationBonus
+  //       );
+  //   } else {
+  //     vars.collateralAmount = vars.maxCollateralToLiquidate;
+  //     vars.debtAmountNeeded = params.actualDebtToLiquidate;
+  //   }
+
+  //   if (params.liquidationProtocolFeePercentage != 0) {
+  //     vars.bonusCollateral =
+  //       vars.collateralAmount -
+  //       vars.collateralAmount.percentDiv(params.liquidationBonus);
+
+  //     vars.liquidationProtocolFeeAmount = vars.bonusCollateral.percentMul(
+  //       params.liquidationProtocolFeePercentage
+  //     );
+
+  //     return (
+  //       vars.collateralAmount - vars.liquidationProtocolFeeAmount,
+  //       vars.debtAmountNeeded,
+  //       vars.liquidationProtocolFeeAmount
+  //     );
+  //   } else {
+  //     return (vars.collateralAmount, vars.debtAmountNeeded, 0);
+  //   }
+  // }
 }

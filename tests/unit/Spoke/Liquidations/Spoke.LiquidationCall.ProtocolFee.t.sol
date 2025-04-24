@@ -181,6 +181,7 @@ contract LiquidationCallProtocolFeeTest is SpokeLiquidationBase {
     );
 
     _assertLpfpEarned(state, 'test_liquidationCall_fuzz_protocolFee');
+    _assertHealthFactor(state, spoke1);
   }
 
   // function test_liquidationCall_fuzz_protocolFee1(
