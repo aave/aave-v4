@@ -13,6 +13,9 @@ contract LiquidationLogicDebtToRestoreCloseFactorScenarioTest is LiquidationLogi
     uint256 amount;
   }
 
+  // TODO: scenario 1 with bigger CF
+  // TODO: secnario 2 with bigger CF
+
   function setUpScenario1() internal {
     updateCollateralFactor(spoke1, _daiReserveId(spoke1), 75_00);
     updateCollateralFactor(spoke1, _wethReserveId(spoke1), 80_00);
@@ -26,10 +29,7 @@ contract LiquidationLogicDebtToRestoreCloseFactorScenarioTest is LiquidationLogi
     updateLiquidationBonus(spoke1, _usdxReserveId(spoke1), 104_00);
   }
 
-  // TODO: scenario 1 with bigger CF
-  // TODO: secnario 2 with bigger CF
-
-  function test_calculateDebtToRestoreCloseFactor_scenario1_unit1() public {
+  function test_calculateDebtToRestoreCloseFactor_setup1_scenario1() public {
     // coll: $10k usdx, $8k weth
     // debt: $15k dai
     // liquidate usdx
@@ -64,7 +64,7 @@ contract LiquidationLogicDebtToRestoreCloseFactorScenarioTest is LiquidationLogi
     });
   }
 
-  function test_calculateDebtToRestoreCloseFactor_scenario1_unit2() public {
+  function test_calculateDebtToRestoreCloseFactor_setup1_scenario2() public {
     setUpScenario1();
 
     // coll: $10k dai, $8k weth
@@ -99,7 +99,7 @@ contract LiquidationLogicDebtToRestoreCloseFactorScenarioTest is LiquidationLogi
     });
   }
 
-  function test_calculateDebtToRestoreCloseFactor_scenario1_unit3() public {
+  function test_calculateDebtToRestoreCloseFactor_setup1_scenario3() public {
     setUpScenario1();
 
     // coll: $10k dai, $8k weth
@@ -147,7 +147,7 @@ contract LiquidationLogicDebtToRestoreCloseFactorScenarioTest is LiquidationLogi
     updateLiquidationBonus(spoke1, _usdxReserveId(spoke1), 108_00);
   }
 
-  function test_calculateDebtToRestoreCloseFactor_scenario2_unit1() public {
+  function test_calculateDebtToRestoreCloseFactor_setup2_scenario1() public {
     // coll: $10k usdx, $20k dai
     // debt: $16k weth
     // liquidate usdx
@@ -182,7 +182,7 @@ contract LiquidationLogicDebtToRestoreCloseFactorScenarioTest is LiquidationLogi
     });
   }
 
-  function test_calculateDebtToRestoreCloseFactor_scenario2_unit2() public {
+  function test_calculateDebtToRestoreCloseFactor_setup2_scenario2() public {
     // coll: $10k usdx, $10k dai
     // debt: $16k weth
     // liquidate usdx
@@ -232,7 +232,7 @@ contract LiquidationLogicDebtToRestoreCloseFactorScenarioTest is LiquidationLogi
     updateLiquidationBonus(spoke1, _wbtcReserveId(spoke1), 110_00);
   }
 
-  function test_calculateDebtToRestoreCloseFactor_scenario3_unit1() public {
+  function test_calculateDebtToRestoreCloseFactor_setup3_scenario1() public {
     // coll: $50k wbtc, $20k dai
     // debt: $30k weth, $40k usdx
     // repay weth, liquidate wbtc
@@ -269,14 +269,14 @@ contract LiquidationLogicDebtToRestoreCloseFactorScenarioTest is LiquidationLogi
     });
   }
 
-  //
+  /// assert expected resultant health factor vs close factor after liquidation
   function assertCloseFactor(
     ISpoke spoke,
     DataTypes.LiquidationCallLocalVars memory params,
     ReserveAmount[] memory collaterals,
     uint256 collateralIndex, // index of collateral to seize
     ReserveAmount[] memory debts,
-    uint256 debtIndex, // index of debt to repay,
+    uint256 debtIndex, // index of debt to repay
     uint256 closeFactorDebt
   ) internal view {
     uint256 closeFactor = params.closeFactor;
@@ -289,12 +289,12 @@ contract LiquidationLogicDebtToRestoreCloseFactorScenarioTest is LiquidationLogi
 
     debts[debtIndex].amount -= closeFactorDebt;
     collaterals[collateralIndex].amount -= _convertBaseCurrencyToAmount(
-      _convertDebtToCollAmount(params, debtBaseCurrencyRestored),
+      _convertDebtToCollAmount(params.liquidationBonus, debtBaseCurrencyRestored),
       oracle.getAssetPrice(spoke1.getReserve(collaterals[collateralIndex].reserveId).assetId),
       10 ** spoke1.getReserve(collaterals[collateralIndex].reserveId).config.decimals
     );
 
-    // recalculate params
+    // recalculate params assuming liquidated debt/coll
     params = _calcExpectedUserAccountData(spoke, collaterals, collateralIndex, debts, debtIndex);
 
     console.log('hf %e cf %e', params.healthFactor, closeFactor);
@@ -309,10 +309,10 @@ contract LiquidationLogicDebtToRestoreCloseFactorScenarioTest is LiquidationLogi
   }
 
   function _convertDebtToCollAmount(
-    DataTypes.LiquidationCallLocalVars memory params,
+    uint256 liquidationBonus,
     uint256 debtBaseCurrencyRestored
   ) internal pure returns (uint256) {
-    return debtBaseCurrencyRestored.percentMul(params.liquidationBonus);
+    return debtBaseCurrencyRestored.percentMul(liquidationBonus);
   }
 
   /// test helper to derive
