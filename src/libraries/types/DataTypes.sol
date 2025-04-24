@@ -150,7 +150,8 @@ library DataTypes {
     uint256 weightedCollateral;
     uint256 actualDebtToLiquidate;
     // uint256 liquidationBonusProduct;
-    uint256 closeFactorDebt;
+    // uint256 closeFactorDebt;
+    uint256 debtToRestoreCloseFactor;
   }
 
   struct CalculateAvailableCollateralToLiquidateLocalVars {

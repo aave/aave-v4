@@ -37,14 +37,14 @@ contract Spoke is ISpoke {
   uint256[] public reservesList; // todo: rm, not needed
   uint256 public reserveCount;
 
-  constructor(address hubAddress, address oracleAddress, uint256 closeFactorValue) {
+  constructor(address hubAddress, address oracleAddress, uint256 closeFactor) {
     require(hubAddress != address(0), InvalidHubAddress());
     require(oracleAddress != address(0), InvalidOracleAddress());
     // close factor is required, but variable liquidation bonus config is not
-    _validateCloseFactor(closeFactorValue);
+    _validateCloseFactor(closeFactor);
 
     HUB = ILiquidityHub(hubAddress);
-    _liquidationConfig.closeFactor = closeFactorValue;
+    _liquidationConfig.closeFactor = closeFactor;
     oracle = IPriceOracle(oracleAddress);
   }
 
@@ -558,7 +558,7 @@ contract Spoke is ISpoke {
 
     (
       ,
-      vars.avgCollateralFactor,
+      ,
       vars.healthFactor,
       vars.totalCollateralInBaseCurrency,
       vars.totalDebtInBaseCurrency
@@ -1038,17 +1038,15 @@ contract Spoke is ISpoke {
       ? type(uint256).max
       : vars.avgCollateralFactor.wadDivUp(vars.totalDebtInBaseCurrency).fromBps(); // HF of 1 -> 1e18
 
-    if (vars.totalDebtInBaseCurrency > 0) {
-      // console.log(
-      //   'Sp debt %e | collxCF %e | hf %e',
-      //   vars.totalDebtInBaseCurrency,
-      //   vars.avgCollateralFactor,
-      //   vars.healthFactor
-      // );
-      // console.log('sp calc %e', vars.avgCollateralFactor.rayDiv(vars.totalDebtInBaseCurrency));
-    }
-
-    uint256 tmp = vars.avgCollateralFactor;
+    // if (vars.totalDebtInBaseCurrency > 0) {
+    //   // console.log(
+    //   //   'Sp debt %e | collxCF %e | hf %e',
+    //   //   vars.totalDebtInBaseCurrency,
+    //   //   vars.avgCollateralFactor,
+    //   //   vars.healthFactor
+    //   // );
+    //   // console.log('sp calc %e', vars.avgCollateralFactor.rayDiv(vars.totalDebtInBaseCurrency));
+    // }
 
     // divide by total collateral to get avg collateral factor in wad
     vars.avgCollateralFactor = vars.totalCollateralInBaseCurrency == 0

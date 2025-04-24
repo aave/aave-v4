@@ -250,6 +250,21 @@ contract SpokeLiquidationBase is SpokeBase {
       )
     );
 
+    (uint256 collToLiq, uint256 debtToLiq) = _calcDebtAndCollateralToLiquidate(
+      spoke1,
+      state,
+      requiredDebtAmount
+    );
+
+    vm.expectEmit(address(spoke1));
+    emit ISpoke.LiquidationCall(
+      state.collateralReserve.asset,
+      state.debtReserve.asset,
+      alice,
+      debtToLiq,
+      collToLiq,
+      LIQUIDATOR
+    );
     vm.prank(LIQUIDATOR);
     spoke1.liquidationCall(collateralReserveId, debtReserveId, alice, requiredDebtAmount);
 
@@ -552,5 +567,86 @@ contract SpokeLiquidationBase is SpokeBase {
         string.concat('liquidationBonus earned in base currency ', label)
       );
     }
+  }
+
+  function _calcDebtAndCollateralToLiquidate(
+    ISpoke spoke,
+    LiquidationTestLocalParams memory state,
+    uint256 debtToCover
+  ) internal returns (uint256 actualDebtToLiquidate, uint256 collateralToLiquidate) {
+    (actualDebtToLiquidate, collateralToLiquidate, ) = _calculateAvailableCollateralToLiquidate(
+      spoke,
+      state,
+      debtToCover
+    );
+    console.log(
+      '_calcDebtAndCollateralToLiquidate: coll %e debt %e',
+      actualDebtToLiquidate,
+      collateralToLiquidate
+    );
+  }
+
+  function _calculateAvailableCollateralToLiquidate(
+    ISpoke spoke,
+    LiquidationTestLocalParams memory state,
+    uint256 debtToCover
+  )
+    internal
+    returns (
+      uint256 actualCollateralToLiquidate,
+      uint256 actualDebtToLiquidate,
+      uint256 liquidationProtocolFeeAmount
+    )
+  {
+    DataTypes.LiquidationCallLocalVars memory params;
+
+    params.userCollateralBalance = spoke.getUserSuppliedAmount(
+      state.collateralReserve.reserveId,
+      alice
+    );
+    params.collateralAssetUnit = 10 ** state.collateralReserve.config.decimals;
+    params.collateralReserveId = state.collateralReserve.reserveId;
+    params.collateralAssetPrice = oracle.getAssetPrice(state.collateralReserve.assetId);
+
+    params.debtAssetUnit = 10 ** state.debtReserve.config.decimals;
+    params.debtReserveId = state.debtReserve.reserveId;
+    params.debtAssetPrice = oracle.getAssetPrice(state.debtReserve.assetId);
+
+    params.liquidationBonus = state.liquidationBonus;
+    params.liquidationProtocolFeePercentage = state.liquidationProtocolFeePercentage;
+
+    params.actualDebtToLiquidate = _calculateActualDebtToLiquidate(spoke, state, debtToCover);
+
+    return LiquidationLogic.calculateAvailableCollateralToLiquidate(params);
+  }
+
+  function _calculateActualDebtToLiquidate(
+    ISpoke spoke,
+    LiquidationTestLocalParams memory state,
+    uint256 debtToCover
+  ) internal returns (uint256 actualDebtToLiquidate) {
+    // find minimum between user's totalDebt of debt asset, debtToCover, and debtToRestoreCloseFactor
+    uint256 userTotalDebt = state.debt.balanceBefore;
+    uint256 debtToRestoreCloseFactor = _calcDebtToRestoreCloseFactor(spoke, state);
+
+    return _min(_min(userTotalDebt, debtToCover), debtToRestoreCloseFactor);
+  }
+
+  function _calcDebtToRestoreCloseFactor(
+    ISpoke spoke,
+    LiquidationTestLocalParams memory state
+  ) internal returns (uint256 debtToRestoreCloseFactor) {
+    DataTypes.LiquidationCallLocalVars memory params;
+
+    params.liquidationBonus = state.liquidationBonus;
+    params.collateralFactor = state.collateralReserve.config.collateralFactor;
+    params.closeFactor = _getCloseFactor(spoke);
+
+    params.debtAssetUnit = 10 ** state.debtReserve.config.decimals;
+    params.debtAssetPrice = oracle.getAssetPrice(state.debtReserve.assetId);
+
+    (, , params.healthFactor, , params.totalDebtInBaseCurrency) = spoke.getUserAccountData(alice);
+
+    return LiquidationLogic.calculateDebtToRestoreCloseFactor(params);
   }
 }
