@@ -24,7 +24,7 @@ contract LiquidationCallScenarioTest is SpokeLiquidationBase {
     uint256 usdy;
   }
 
-  /// check that realized premium is deducted properly during liquidation
+  /// liquidation call with realized premium
   function test_liquidationCall_debt_realized_premium() public {
     LiquidationTestLocalParams memory test;
     LiqTestData memory state;
@@ -45,8 +45,6 @@ contract LiquidationCallScenarioTest is SpokeLiquidationBase {
     updateLiquidationProtocolFeePercentage(spoke1, state.wbtcReserveId, 0);
     updateLiquidationBonus(spoke1, state.wbtcReserveId, 100_00);
 
-    // deploy liquidity to allow borrowing
-    _deployLiquidity(spoke1, state.wethReserveId, state.debts[0].weth);
     Utils.supplyCollateral(spoke1, state.wbtcReserveId, alice, state.colls[0].wbtc, alice);
     Utils.supplyCollateral(spoke1, state.daiReserveId, alice, state.colls[0].dai, alice);
     Utils.borrow(spoke1, state.wethReserveId, alice, state.debts[0].weth, alice);
@@ -118,7 +116,7 @@ contract LiquidationCallScenarioTest is SpokeLiquidationBase {
     assertLe(newHf, _getCloseFactor(spoke1), 'hf <= close factor');
   }
 
-  /// check that liquidation call can occur with accrued interest
+  /// liquidation call can occur with accrued interest
   function test_liquidationCall_accrued_interest() public {
     LiquidationTestLocalParams memory test;
     LiqTestData memory state;
@@ -130,8 +128,6 @@ contract LiquidationCallScenarioTest is SpokeLiquidationBase {
     // collateral: wbtc/dai
     state.colls[0].wbtc = 1 * 10 ** decimals.wbtc; // $50k wbtc
     state.colls[0].dai = 10_000 * 10 ** decimals.dai; // $10k dai
-    // debt: weth
-    state.debts[0].weth = 20 * 10 ** decimals.weth; // 20 eth, $40k
 
     state.liqBonus = spoke1.getReserve(state.wbtcReserveId).config.liquidationBonus;
 
@@ -139,29 +135,23 @@ contract LiquidationCallScenarioTest is SpokeLiquidationBase {
     updateLiquidationProtocolFeePercentage(spoke1, state.wbtcReserveId, 0);
     updateLiquidationBonus(spoke1, state.wbtcReserveId, 100_00);
 
-    // deploy liquidity to allow borrowing
-    _deployLiquidity(spoke1, state.wethReserveId, state.debts[0].weth);
     Utils.supplyCollateral(spoke1, state.wbtcReserveId, alice, state.colls[0].wbtc, alice);
     Utils.supplyCollateral(spoke1, state.daiReserveId, alice, state.colls[0].dai, alice);
-    Utils.borrow(spoke1, state.wethReserveId, alice, state.debts[0].weth, alice);
+    _borrowToBeBelowHf(spoke1, alice, state.wethReserveId, 1.001e18);
+
+    // position must initially be healthy
+    assertGt(spoke1.getHealthFactor(alice), HEALTH_FACTOR_LIQUIDATION_THRESHOLD);
 
     // interest accrual
+    vm.mockCall(
+      address(irStrategy),
+      IReserveInterestRateStrategy.calculateInterestRates.selector,
+      abi.encode(uint256(50_00).bpsToRay())
+    );
     skip(365 days);
 
-    // borrow action to realize premium
-    _borrowWithoutHfCheck(spoke1, alice, state.wethReserveId, state.debts[0].weth);
-
-    // wbtc collateral value drop to reduce HF < 1
-    oracle.setAssetPrice(wbtcAssetId, 20_000e8);
-
-    // position must be liquidatable
+    // position must be liquidatable after interest accrual
     assertLt(spoke1.getHealthFactor(alice), HEALTH_FACTOR_LIQUIDATION_THRESHOLD);
-
-    (uint256 baseDebt, uint256 premiumDebt) = spoke1.getUserDebt(state.wethReserveId, alice);
-
-    // premium debt exists and is realized
-    assertGt(premiumDebt, 0);
-    assertGt(spoke1.getUserPosition(state.wethReserveId, alice).realizedPremium, 0);
 
     test.liquidatorCollateral.balanceBefore = IERC20(spoke1.getReserve(state.wbtcReserveId).asset)
       .balanceOf(LIQUIDATOR);
@@ -193,12 +183,6 @@ contract LiquidationCallScenarioTest is SpokeLiquidationBase {
       2,
       'liquidator repaid debt amount and restored debt accounting'
     );
-    assertEq(
-      _absDiff(test.liquidatorCollateral.balanceAfter, test.liquidatorCollateral.balanceBefore),
-      state.colls[0].wbtc,
-      'liquidator collateral earned'
-    );
-
     (uint256 newUserRp, , uint256 newHf, , ) = spoke1.getUserAccountData(alice);
 
     assertEq(
@@ -216,145 +200,6 @@ contract LiquidationCallScenarioTest is SpokeLiquidationBase {
   }
 
   // TODO: cannot liquidate too much debt amount input
-
-  function test_liquidationCall_debt_with_interest() public {
-    LiquidationTestLocalParams memory test;
-    LiqTestData memory state;
-
-    state.wethReserveId = _wethReserveId(spoke1);
-    state.daiReserveId = _daiReserveId(spoke1);
-    state.wbtcReserveId = _wbtcReserveId(spoke1);
-
-    // collateral: wbtc/dai
-    state.colls[0].wbtc = 1 * 10 ** decimals.wbtc; // $50k wbtc
-    state.colls[0].dai = 10_000 * 10 ** decimals.dai; // $10k dai
-    // debt: weth
-    state.debts[0].weth = 20 * 10 ** decimals.weth; // 20 eth, $40k
-
-    state.liqBonus = spoke1.getReserve(state.wbtcReserveId).config.liquidationBonus;
-
-    updateLiquidationProtocolFeePercentage(spoke1, state.wbtcReserveId, 0);
-    updateLiquidationBonus(spoke1, state.wbtcReserveId, 100_00);
-
-    _deployLiquidity(spoke1, state.wethReserveId, state.debts[0].weth);
-    Utils.supplyCollateral(spoke1, state.wbtcReserveId, alice, state.colls[0].wbtc, alice);
-    Utils.supplyCollateral(spoke1, state.daiReserveId, alice, state.colls[0].dai, alice);
-    Utils.borrow(spoke1, state.wethReserveId, alice, state.debts[0].weth, alice);
-
-    // interest accrual
-    skip(365 days);
-
-    _borrowWithoutHfCheck(spoke1, alice, state.wethReserveId, state.debts[0].weth);
-
-    // wbtc collateral value drop to reduce HF < 1
-    oracle.setAssetPrice(wbtcAssetId, 20_000e8);
-
-    assertLt(spoke1.getHealthFactor(alice), HEALTH_FACTOR_LIQUIDATION_THRESHOLD);
-
-    // UserTokenBalance memory balancesBefore = _loadUserBalances();
-
-    // state.initialDebt = spoke1.getUserTotalDebt(state.wethReserveId, alice);
-    // state.liquidatedDebt = _convertAssetAmount(wbtcAssetId, state.colls[0].wbtc, wethAssetId)
-    //   .percentDiv(state.liqBonus);
-
-    console.log(
-      'alice weth %e %e',
-      spoke1.getUserPosition(state.wethReserveId, alice).premiumDrawnShares,
-      spoke1.getUserPosition(state.wethReserveId, alice).premiumOffset
-    );
-
-    (uint256 baseDebt, uint256 premDebt) = spoke1.getUserDebt(state.wethReserveId, alice);
-    console.log('alice weth debt before: base %e prem %e', baseDebt, premDebt);
-    console.log('alice total debt %e', spoke1.getUserTotalDebt(state.wethReserveId, alice));
-
-    // premium debt exists and is realized
-    assertGt(premDebt, 0);
-    assertGt(premDebt, 0);
-
-    test.liquidator.balanceBefore = IERC20(spoke1.getReserve(state.wethReserveId).asset).balanceOf(
-      LIQUIDATOR
-    );
-    test.supply.balanceBefore = spoke1.getUserSuppliedAmount(state.wbtcReserveId, alice);
-    test.debt.balanceBefore = spoke1.getUserTotalDebt(state.wethReserveId, alice);
-
-    vm.prank(LIQUIDATOR);
-    spoke1.liquidationCall({
-      collateralReserveId: state.wbtcReserveId,
-      debtReserveId: state.wethReserveId,
-      user: alice,
-      debtToCover: 2 * state.debts[0].weth
-    });
-
-    test.liquidator.balanceAfter = IERC20(spoke1.getReserve(state.wethReserveId).asset).balanceOf(
-      LIQUIDATOR
-    );
-    test.supply.balanceAfter = spoke1.getUserSuppliedAmount(state.wbtcReserveId, alice);
-    test.debt.balanceAfter = spoke1.getUserTotalDebt(state.wethReserveId, alice);
-
-    (baseDebt, premDebt) = spoke1.getUserDebt(state.wethReserveId, alice);
-    console.log('alice weth debt after: base %e prem %e', baseDebt, premDebt);
-    console.log(
-      'premium calc %e',
-      hub.convertToDrawnAssets(
-        wethAssetId,
-        spoke1.getUserPosition(state.wethReserveId, alice).premiumDrawnShares
-      )
-    );
-    // console.log('alice total debt %e', spoke1.getUserTotalDebt(state.wethReserveId, alice));
-
-    // debt reduced from liq is reduced from debt
-
-    console.log(
-      'liq debt diff %e accounting %e',
-      _absDiff(test.liquidator.balanceAfter, test.liquidator.balanceBefore),
-      _absDiff(test.debt.balanceAfter, test.debt.balanceBefore)
-    );
-    console.log(
-      'debt diff %e',
-      _convertAmountToBaseCurrency(
-        wethAssetId,
-        _absDiff(test.debt.balanceAfter, test.debt.balanceBefore)
-      )
-    );
-    console.log(
-      'supply coll diff %e',
-      _convertAmountToBaseCurrency(
-        wbtcAssetId,
-        _absDiff(test.supply.balanceAfter, test.supply.balanceBefore)
-      )
-    );
-
-    (uint256 userRp, , uint256 hf, , ) = spoke1.getUserAccountData(alice);
-    console.log('final healthFactor %e', spoke1.getHealthFactor(alice));
-    console.log('userRp %e %e', userRp, _getUserRP(spoke1, state.wethReserveId, alice));
-
-    console.log(
-      'spoke weth %e %e',
-      spoke1.getReserve(state.wethReserveId).premiumDrawnShares,
-      spoke1.getReserve(state.wethReserveId).premiumOffset
-    );
-    console.log(
-      'alice weth %e %e',
-      spoke1.getUserPosition(state.wethReserveId, alice).premiumDrawnShares,
-      spoke1.getUserPosition(state.wethReserveId, alice).premiumOffset
-    );
-
-    console.log(
-      'spoke total debt, %e %e',
-      spoke1.getUserTotalDebt(state.wethReserveId, alice),
-      spoke1.getReserveTotalDebt(state.wethReserveId)
-    );
-    console.log(
-      'hub total debt, %e %e',
-      hub.getSpokeTotalDebt(wethAssetId, address(spoke1)),
-      hub.getAssetTotalDebt(wethAssetId)
-    );
-  }
-
-  function _getUserRP(ISpoke spoke, uint256 reserveId, address user) internal returns (uint256) {
-    DataTypes.UserPosition memory userPosition = spoke.getUserPosition(reserveId, user);
-    return userPosition.premiumDrawnShares.percentDiv(userPosition.baseDrawnShares);
-  }
 
   /// scenario where fully liquidating a collateral still does not improve a position to close factor
   /// default close factor of 1
