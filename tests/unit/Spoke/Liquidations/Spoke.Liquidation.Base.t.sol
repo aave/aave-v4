@@ -100,6 +100,24 @@ contract SpokeLiquidationBase is SpokeBase {
     return (finalHf, requiredDebtAmount);
   }
 
+  function _borrowWithoutHfCheck(
+    ISpoke spoke,
+    address user,
+    uint256 reserveId,
+    uint256 debtAmount
+  ) internal returns (uint256, uint256) {
+    uint256 assetId = spoke.getReserve(reserveId).assetId;
+    // mock price to 0 to circumvent borrow validation
+    vm.mockCall(
+      address(oracle),
+      abi.encodeWithSelector(IPriceOracle.getAssetPrice.selector, assetId),
+      abi.encode(0)
+    );
+    vm.prank(user);
+    spoke.borrow(reserveId, debtAmount, user);
+    vm.clearMockedCalls();
+  }
+
   /**
    * @notice Returns the required debt amount in base currency to ensure user position is below a certain health factor.
    */

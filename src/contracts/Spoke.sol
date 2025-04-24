@@ -388,7 +388,7 @@ contract Spoke is ISpoke {
       );
 
       console.log(
-        'sp: coll to liq %e | fee %e | debt to liq %e',
+        'sp: amt - coll to liq %e | fee %e | debt to liq %e',
         vars.collateralToLiquidate,
         vars.liquidationProtocolFeeAmount,
         vars.baseDebtToLiquidate
@@ -430,6 +430,13 @@ contract Spoke is ISpoke {
         -int256(vars.userCollateralPremiumOffset),
         int256(vars.accruedCollateralPremium)
       ); // unnecessary but we settle premium debt here for consistency
+
+      console.log(
+        'debt to restore %e base %e prem %e',
+        vars.baseDebtToLiquidate + vars.premiumDebtToLiquidate,
+        vars.baseDebtToLiquidate,
+        vars.premiumDebtToLiquidate
+      );
 
       // repay debt
       vars.restoredShares = HUB.restore(
