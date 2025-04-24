@@ -6,6 +6,7 @@ import 'tests/unit/Spoke/SpokeBase.t.sol';
 contract SpokeRiskPremiumScenarioTest is SpokeBase {
   using SharesMath for uint256;
   using WadRayMath for uint256;
+  using WadRayMathExtended for uint256;
   using PercentageMath for uint256;
 
   struct GeneralLocalVars {
@@ -74,8 +75,6 @@ contract SpokeRiskPremiumScenarioTest is SpokeBase {
    * +-----------+------------+------------------+--------+----------+
    */
   function test_riskPremiumPropagatesCorrectly_singleBorrow() public {
-    vm.skip(true, 'still debugging');
-
     GeneralLocalVars memory vars;
     vars.usdxSupplyAmount = 1500e6; // 1500 usd, 50 lp
     vars.wethSupplyAmount = 5e18; // 10_000 usd, 15 lp
@@ -87,7 +86,7 @@ contract SpokeRiskPremiumScenarioTest is SpokeBase {
     assertEq(spoke1.getLiquidityPremium(_wethReserveId(spoke1)), 15_00, 'weth lp');
     assertEq(spoke1.getLiquidityPremium(_daiReserveId(spoke1)), 20_00, 'dai lp');
 
-    // set LT to 1 for Alice collateral
+    // Set LT to 1 for Alice collateral
     updateCollateralFactor(spoke1, _wethReserveId(spoke1), 10_000);
     updateCollateralFactor(spoke1, _usdxReserveId(spoke1), 10_000);
 
@@ -108,7 +107,7 @@ contract SpokeRiskPremiumScenarioTest is SpokeBase {
     uint256 wethLiquidityPremium = spoke1.getLiquidityPremium(_wethReserveId(spoke1));
     assertLt(wethLiquidityPremium, usdxLiquidityPremium);
 
-    // weth is enough to cover debt, both stored & calc value match
+    // Weth is enough to cover debt, both stored & calc value match
     assertEq(spoke1.getUserRiskPremium(alice), wethLiquidityPremium, 'user rp: weth covers debt');
     assertEq(
       spoke1.getUserPreviousRiskPremium(_daiReserveId(spoke1), alice),
@@ -120,7 +119,7 @@ contract SpokeRiskPremiumScenarioTest is SpokeBase {
     uint40 startTime = vars.lastUpdateTimestamp;
     skip(vars.delay);
 
-    // since only DAI is borrowed in the system, supply interest is accrued only on it
+    // Since only DAI is borrowed in the system, supply interest is accrued only on it
     assertEq(
       spoke1.getUserSuppliedAmount(_usdxReserveId(spoke1), alice),
       vars.usdxSupplyAmount,
@@ -145,11 +144,9 @@ contract SpokeRiskPremiumScenarioTest is SpokeBase {
       alice
     );
     assertEq(baseDaiDebt, vars.daiBorrowAmount + accruedDaiDebt, 'dai base debt');
-    console.log('dai base debt after first delay', baseDaiDebt);
     assertEq(daiPremiumDebt, expectedPremiumDebt, 'dai premium debt');
-    vars.daiBorrowAmount += accruedDaiDebt;
 
-    // now since debt has grown, weth supply is not enough to cover debt, hence rp changes
+    // Now since debt has grown, weth supply is not enough to cover debt, hence rp changes
     uint256 remainingDaiDebt = accruedDaiDebt + daiPremiumDebt;
     // usdx is enough to cover remaining debt
     assertLt(
@@ -157,66 +154,54 @@ contract SpokeRiskPremiumScenarioTest is SpokeBase {
       _getValueInBaseCurrency(usdxAssetId, vars.usdxSupplyAmount)
     );
 
-    uint256 newLiquidityPremium = (_getValueInBaseCurrency(wethAssetId, vars.wethSupplyAmount) *
-      wethLiquidityPremium +
-      _getValueInBaseCurrency(daiAssetId, remainingDaiDebt) *
-      usdxLiquidityPremium) /
-      (_getValueInBaseCurrency(wethAssetId, vars.wethSupplyAmount) +
-        _getValueInBaseCurrency(daiAssetId, remainingDaiDebt));
+    uint256 expectedUserRiskPremium = _calculateExpectedUserRP(alice, spoke1);
 
     assertEq(
       spoke1.getUserRiskPremium(alice),
-      newLiquidityPremium,
+      expectedUserRiskPremium,
       'user risk premium after accrual'
     );
-    // last stored remains the same
-    assertEq(
-      spoke1.getUserPreviousRiskPremium(_daiReserveId(spoke1), alice),
-      wethLiquidityPremium,
-      'user previous risk premium after accrual'
-    );
 
-    // we supply more usdx
+    // Alice supplies more usdx
     vm.prank(alice);
     spoke1.supply(_usdxReserveId(spoke1), 500e6);
 
     assertEq(
       spoke1.getUserRiskPremium(alice),
-      newLiquidityPremium,
+      expectedUserRiskPremium,
       'user risk premium after supply'
     );
 
-    console.log('alice liquidity premium', newLiquidityPremium);
+    // Store alice's position before timeskip to calc expected premium debt
+    DataTypes.UserPosition memory alicePosition = spoke1.getUserPosition(
+      _daiReserveId(spoke1),
+      alice
+    );
 
     vars.lastUpdateTimestamp = uint40(vm.getBlockTimestamp());
     skip(vars.delay);
 
-    // now we supply more weth such that new total debt from now on is covered by weth
+    // Now we supply more weth such that new total debt from now on is covered by weth
     vm.prank(alice);
     spoke1.supply(_wethReserveId(spoke1), vars.wethSupplyAmount);
 
-    accruedDaiDebt = vars.daiBorrowAmount.rayMul(
+    accruedDaiDebt = vars.daiBorrowAmount.rayMulUp(
       MathUtils.calculateLinearInterest(
         hub.getBaseInterestRate(daiAssetId), // note: IR strategy has a pending fix
         startTime
       ) - WadRayMath.RAY
     );
-    console.log('accrued dai debt', accruedDaiDebt);
-    console.log('share amount', hub.convertToDrawnShares(daiAssetId, 1e30));
-    // round accrued dai debt to nearest share
-    accruedDaiDebt = _roundDownToWholeSharesAmt(daiAssetId, accruedDaiDebt);
-    expectedPremiumDebt += accruedDaiDebt.percentMul(newLiquidityPremium);
+
+    expectedPremiumDebt =
+      hub.convertToDrawnAssets(daiAssetId, alicePosition.premiumDrawnShares) -
+      alicePosition.premiumOffset;
 
     (baseDaiDebt, daiPremiumDebt) = spoke1.getUserDebt(_daiReserveId(spoke1), alice);
-    console.log('dai borrow amount', vars.daiBorrowAmount);
-    console.log('dai base debt', baseDaiDebt);
-    console.log('dai premium debt', daiPremiumDebt);
-    console.log('dai total debt', baseDaiDebt + daiPremiumDebt);
-    console.log('borrowed amount + accrued', vars.daiBorrowAmount + accruedDaiDebt);
 
     assertEq(baseDaiDebt, vars.daiBorrowAmount + accruedDaiDebt, 'dai base debt after weth supply');
     assertEq(daiPremiumDebt, expectedPremiumDebt, 'dai premium debt after weth supply');
 
+    // Alice repays everything
     vm.prank(alice);
     spoke1.repay(_daiReserveId(spoke1), baseDaiDebt + daiPremiumDebt);
 
@@ -231,7 +216,6 @@ contract SpokeRiskPremiumScenarioTest is SpokeBase {
     assertEq(daiPremiumDebt, 0);
 
     assertEq(spoke1.getUserRiskPremium(alice), 0);
-    assertEq(spoke1.getUserPreviousRiskPremium(_daiReserveId(spoke1), alice), 0);
   }
 
   /// Bob and Alice each supply and borrow varying amounts of usdx and dai, we check interest accrues and values percolate to hub.
@@ -801,7 +785,13 @@ contract SpokeRiskPremiumScenarioTest is SpokeBase {
       );
     }
 
-    _verifyProtocolDebts(bobDaiInfo, aliceDaiInfo, bobUsdxInfo, aliceUsdxInfo, 'after accrual');
+    _verifyProtocolDebtShares(
+      bobDaiInfo,
+      aliceDaiInfo,
+      bobUsdxInfo,
+      aliceUsdxInfo,
+      'after accrual'
+    );
 
     // Skip time before Bob repay
     skip(timeSkip[1]);
@@ -858,7 +848,6 @@ contract SpokeRiskPremiumScenarioTest is SpokeBase {
         'alice risk premium after borrow'
       );
 
-      // TODO: Why is this off by 2?
       // Verify Bob's risk premium remains the same
       assertApproxEqAbs(
         spoke1.getUserRiskPremium(bob),
@@ -892,7 +881,7 @@ contract SpokeRiskPremiumScenarioTest is SpokeBase {
     (aliceUsdxInfo.baseDebt, ) = spoke1.getUserDebt(_usdxReserveId(spoke1), alice);
 
     // Verify final reserve states and hub propagation for both assets
-    _verifyProtocolDebts(bobDaiInfo, aliceDaiInfo, bobUsdxInfo, aliceUsdxInfo, 'final');
+    _verifyProtocolDebtShares(bobDaiInfo, aliceDaiInfo, bobUsdxInfo, aliceUsdxInfo, 'final');
   }
 
   function _getValueInBaseCurrency(
@@ -1038,7 +1027,7 @@ contract SpokeRiskPremiumScenarioTest is SpokeBase {
     );
   }
 
-  function _verifyProtocolDebts(
+  function _verifyProtocolDebtShares(
     UserInfoLocal memory bobDaiInfo,
     UserInfoLocal memory aliceDaiInfo,
     UserInfoLocal memory bobUsdxInfo,
