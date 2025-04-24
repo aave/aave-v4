@@ -351,7 +351,9 @@ contract LiquidationCallCloseFactorTest is SpokeLiquidationBase {
       collateralReserveId,
       state.liquidationProtocolFeePercentage
     );
-    uint256 desiredHf = _calcMaxAchievableHf(collateralReserveId, liqBonus).percentMul(101_00); // add 1% buffer so that not all debt is liquidated
+    uint256 desiredHf = _calcMaxAchievableHfWithinColl(collateralReserveId, liqBonus).percentMul(
+      101_00
+    ); // add 1% buffer so that not all debt is liquidated
 
     Utils.supplyCollateral({
       spoke: spoke1,
@@ -419,26 +421,5 @@ contract LiquidationCallCloseFactorTest is SpokeLiquidationBase {
     );
 
     return state;
-  }
-
-  /// @notice Calc max achievable hf to be able to repay all debt and have remaining collateral
-  /// allows close factor to be up to max uint
-  /// @return healthFactor in WAD
-  function _calcMaxAchievableHf(
-    uint256 collateralReserveId,
-    uint256 liquidationBonus
-  ) internal view returns (uint256) {
-    return
-      _calcMaxAchievableHfFromCollateralFactor(
-        spoke1.getCollateralFactor(collateralReserveId),
-        liquidationBonus
-      );
-  }
-
-  function _calcMaxAchievableHfFromCollateralFactor(
-    uint256 collateralFactor,
-    uint256 liquidationBonus
-  ) internal view returns (uint256 healthFactor) {
-    healthFactor = uint256(1e18).percentMul(collateralFactor).percentMul(liquidationBonus + 1);
   }
 }

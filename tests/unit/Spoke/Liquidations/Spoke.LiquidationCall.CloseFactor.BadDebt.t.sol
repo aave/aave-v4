@@ -3,11 +3,52 @@ pragma solidity ^0.8.0;
 
 import 'tests/unit/Spoke/Liquidations/Spoke.Liquidation.Base.t.sol';
 
+/// tests where liquidation of all collateral is insufficient to cover all debt
 contract LiquidationCallCloseFactorBadDebtTest is SpokeLiquidationBase {
   using SharesMath for uint256;
   using WadRayMath for uint256;
   using PercentageMath for uint256;
   using PercentageMathExtended for uint256;
+
+  /// variable close factor > HEALTH_FACTOR_LIQUIDATION_THRESHOLD
+  function test_liquidationCall_fuzz_closeFactor_badDebt(
+    uint256 collateralReserveId,
+    uint256 debtReserveId,
+    DataTypes.LiquidationConfig memory liqConfig,
+    uint256 liqBonus,
+    uint256 supplyAmount,
+    uint256 liquidationProtocolFeePercentage
+  ) public {
+    collateralReserveId = bound(collateralReserveId, 0, spoke1.reserveCount() - 1);
+    debtReserveId = bound(debtReserveId, 0, spoke1.reserveCount() - 1);
+
+    LiquidationTestLocalParams memory state = _execLiqCallCloseFactorBadDebtTest(
+      liqConfig,
+      liqBonus,
+      supplyAmount,
+      collateralReserveId,
+      debtReserveId,
+      liquidationProtocolFeePercentage
+    );
+
+    string memory label = 'test_liquidationCall_fuzz_closeFactor';
+    _assertHealthFactor(state, spoke1, label);
+    // _assertAccounting(state, spoke1, remainingBaseCurrencyBound);
+    _assertProtocolFeeEarned(state, label);
+    _assertLiquidationBonusEarned(state, label);
+
+    // with no collateral remaining collateral should be disabled as collateral
+    assertFalse(
+      spoke1.getUsingAsCollateral(state.collateralReserve.reserveId, alice),
+      'isUsingAsCollateral should be false with no collateral'
+    );
+    assertTrue(
+      spoke1.getUserSuppliedAmount(collateralReserveId, alice) == 0,
+      'remaining supplied collateral should be 0'
+    );
+    assertTrue(spoke1.getUserTotalDebt(debtReserveId, alice) > 0, 'remaining bad debt remains');
+    assertEq(spoke1.getHealthFactor(alice), 0, 'health factor should be max after liquidation');
+  }
 
   /// fuzz tests with close factor == HEALTH_FACTOR_LIQUIDATION_THRESHOLD
   function test_liquidationCall_fuzz_closeFactor_badDebt_defaultCloseFactor(
@@ -26,39 +67,6 @@ contract LiquidationCallCloseFactorBadDebtTest is SpokeLiquidationBase {
       liqBonus,
       supplyAmount,
       liquidationProtocolFeePercentage
-    );
-  }
-
-  /// variable close factor > HEALTH_FACTOR_LIQUIDATION_THRESHOLD
-  function test_liquidationCall_fuzz_closeFactor_badDebt(
-    uint256 collateralReserveId,
-    uint256 debtReserveId,
-    DataTypes.LiquidationConfig memory liqConfig,
-    uint256 liqBonus,
-    uint256 supplyAmount,
-    uint256 liquidationProtocolFeePercentage
-  ) public {
-    collateralReserveId = bound(collateralReserveId, 0, spoke1.reserveCount() - 1);
-    debtReserveId = bound(debtReserveId, 0, spoke1.reserveCount() - 1);
-
-    LiquidationTestLocalParams memory state = _execLiqCallCloseFactorTest(
-      liqConfig,
-      liqBonus,
-      supplyAmount,
-      collateralReserveId,
-      debtReserveId,
-      liquidationProtocolFeePercentage
-    );
-
-    string memory label = 'test_liquidationCall_fuzz_closeFactor';
-    _assertHealthFactor(state, spoke1, label);
-    // _assertAccounting(state, spoke1, remainingBaseCurrencyBound);
-    _assertProtocolFeeEarned(state, label);
-    _assertLiquidationBonusEarned(state, label);
-
-    assertFalse(
-      spoke1.getUsingAsCollateral(state.collateralReserve.reserveId, alice),
-      'isUsingAsCollateral should be false with no collateral'
     );
   }
 
@@ -317,7 +325,7 @@ contract LiquidationCallCloseFactorBadDebtTest is SpokeLiquidationBase {
   }
 
   /// fuzz tests with
-  function _execLiqCallCloseFactorTest(
+  function _execLiqCallCloseFactorBadDebtTest(
     DataTypes.LiquidationConfig memory liqConfig,
     uint256 liqBonus,
     uint256 supplyAmount,
@@ -353,7 +361,10 @@ contract LiquidationCallCloseFactorBadDebtTest is SpokeLiquidationBase {
       collateralReserveId,
       state.liquidationProtocolFeePercentage
     );
-    uint256 desiredHf = _calcMaxAchievableHf(collateralReserveId, liqBonus).percentMul(99_00); // make sure all collateral is liquidated by borrowing under HF
+    // make sure all collateral is liquidated by borrowing under max HF
+    uint256 desiredHf = _calcMaxAchievableHfWithinColl(collateralReserveId, liqBonus).percentMul(
+      99_00
+    );
 
     Utils.supplyCollateral({
       spoke: spoke1,
@@ -419,26 +430,5 @@ contract LiquidationCallCloseFactorBadDebtTest is SpokeLiquidationBase {
     );
 
     return state;
-  }
-
-  /// @notice Calc max achievable hf to be able to repay all debt and have remaining collateral
-  /// allows close factor to be up to max uint
-  /// @return healthFactor in WAD
-  function _calcMaxAchievableHf(
-    uint256 collateralReserveId,
-    uint256 liquidationBonus
-  ) internal view returns (uint256) {
-    return
-      _calcMaxAchievableHfFromCollateralFactor(
-        spoke1.getCollateralFactor(collateralReserveId),
-        liquidationBonus
-      );
-  }
-
-  function _calcMaxAchievableHfFromCollateralFactor(
-    uint256 collateralFactor,
-    uint256 liquidationBonus
-  ) internal view returns (uint256 healthFactor) {
-    healthFactor = uint256(1e18).percentMul(collateralFactor).percentMul(liquidationBonus + 1);
   }
 }

@@ -577,7 +577,7 @@ contract SpokeLiquidationBase is SpokeBase {
     address user,
     LiquidationTestLocalParams memory state,
     string memory label
-  ) internal {
+  ) internal view {
     if (state.supply.balanceAfter == 0) {
       assertFalse(
         spoke.getUsingAsCollateral(state.collateralReserve.reserveId, user),
@@ -670,5 +670,26 @@ contract SpokeLiquidationBase is SpokeBase {
     (, , params.healthFactor, , params.totalDebtInBaseCurrency) = spoke.getUserAccountData(alice);
 
     return LiquidationLogic.calculateDebtToRestoreCloseFactor(params);
+  }
+
+  /// @notice Calc max achievable hf to be able to repay all debt and have remaining collateral
+  /// allows close factor to be up to max uint
+  /// @return healthFactor in WAD
+  function _calcMaxAchievableHfWithinColl(
+    uint256 collateralReserveId,
+    uint256 liquidationBonus
+  ) internal view returns (uint256) {
+    return
+      _calcMaxAchievableHfFromCollateralFactor(
+        spoke1.getCollateralFactor(collateralReserveId),
+        liquidationBonus
+      );
+  }
+
+  function _calcMaxAchievableHfFromCollateralFactor(
+    uint256 collateralFactor,
+    uint256 liquidationBonus
+  ) internal view returns (uint256 healthFactor) {
+    healthFactor = uint256(1e18).percentMul(collateralFactor).percentMul(liquidationBonus + 1);
   }
 }
