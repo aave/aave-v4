@@ -375,9 +375,7 @@ contract Spoke is ISpoke {
     uint256 reserveId,
     address user
   ) external view returns (uint256) {
-    if (!_isBorrowing(_userPositions[user][reserveId])) {
-      revert UserNotBorrowingReserve(reserveId);
-    }
+    require(_isBorrowing(_userPositions[user][reserveId]), UserNotBorrowingReserve(reserveId));
     return
       _userPositions[user][reserveId].premiumDrawnShares.percentDiv(
         _userPositions[user][reserveId].baseDrawnShares
@@ -590,6 +588,7 @@ contract Spoke is ISpoke {
     return _usingAsCollateral(userPosition) || _isBorrowing(userPosition);
   }
 
+  /// @dev If user collateral value is less than debt value, user rp calc terminates early
   /// @return userRiskPremium
   /// @return avgCollateralFactor
   /// @return healthFactor

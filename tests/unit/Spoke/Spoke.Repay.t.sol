@@ -135,42 +135,6 @@ contract SpokeRepayTest is SpokeBase {
     vm.stopPrank();
   }
 
-  // todo move to risk premium tests
-  function test_riskPremium_postActions() public {
-    vm.prank(alice);
-    spoke1.supply(_daiReserveId(spoke1), 1000e18);
-
-    vm.startPrank(bob);
-    spoke1.setUsingAsCollateral(_daiReserveId(spoke1), true);
-    spoke1.setUsingAsCollateral(_usdxReserveId(spoke1), true);
-
-    spoke1.supply(_daiReserveId(spoke1), 1000e18);
-    spoke1.supply(_usdxReserveId(spoke1), 1000e6);
-
-    spoke1.borrow(_daiReserveId(spoke1), 500e18, bob);
-    _assertUserRpUnchanged(_daiReserveId(spoke1), spoke1, bob);
-    spoke1.borrow(_usdxReserveId(spoke1), 750e6, bob);
-    _assertUserRpUnchanged(_usdxReserveId(spoke1), spoke1, bob);
-
-    skip(123 days);
-
-    spoke1.withdraw(_daiReserveId(spoke1), 0.01e18, bob);
-    _assertUserRpUnchanged(_daiReserveId(spoke1), spoke1, bob);
-    _assertUserRpUnchanged(_usdxReserveId(spoke1), spoke1, bob);
-
-    spoke1.withdraw(_usdxReserveId(spoke1), 0.01e6, bob);
-    _assertUserRpUnchanged(_daiReserveId(spoke1), spoke1, bob);
-    _assertUserRpUnchanged(_usdxReserveId(spoke1), spoke1, bob);
-
-    skip(232 days);
-
-    spoke1.repay(_daiReserveId(spoke1), 25e18);
-    _assertUserRpUnchanged(_daiReserveId(spoke1), spoke1, bob);
-    _assertUserRpUnchanged(_usdxReserveId(spoke1), spoke1, bob);
-
-    vm.stopPrank();
-  }
-
   function test_repay_same_block() public {
     uint256 daiSupplyAmount = 100e18;
     uint256 wethSupplyAmount = 10e18;

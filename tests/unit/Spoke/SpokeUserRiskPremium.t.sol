@@ -137,6 +137,41 @@ contract SpokeUserRiskPremiumTest is SpokeBase {
     assertEq(spoke1.getUserRiskPremium(bob), userRiskPremium, 'user risk premium after supply');
   }
 
+  function test_riskPremium_postActions() public {
+    vm.prank(alice);
+    spoke1.supply(_daiReserveId(spoke1), 1000e18);
+
+    vm.startPrank(bob);
+    spoke1.setUsingAsCollateral(_daiReserveId(spoke1), true);
+    spoke1.setUsingAsCollateral(_usdxReserveId(spoke1), true);
+
+    spoke1.supply(_daiReserveId(spoke1), 1000e18);
+    spoke1.supply(_usdxReserveId(spoke1), 1000e6);
+
+    spoke1.borrow(_daiReserveId(spoke1), 500e18, bob);
+    _assertUserRpUnchanged(_daiReserveId(spoke1), spoke1, bob);
+    spoke1.borrow(_usdxReserveId(spoke1), 750e6, bob);
+    _assertUserRpUnchanged(_usdxReserveId(spoke1), spoke1, bob);
+
+    skip(123 days);
+
+    spoke1.withdraw(_daiReserveId(spoke1), 0.01e18, bob);
+    _assertUserRpUnchanged(_daiReserveId(spoke1), spoke1, bob);
+    _assertUserRpUnchanged(_usdxReserveId(spoke1), spoke1, bob);
+
+    spoke1.withdraw(_usdxReserveId(spoke1), 0.01e6, bob);
+    _assertUserRpUnchanged(_daiReserveId(spoke1), spoke1, bob);
+    _assertUserRpUnchanged(_usdxReserveId(spoke1), spoke1, bob);
+
+    skip(232 days);
+
+    spoke1.repay(_daiReserveId(spoke1), 25e18);
+    _assertUserRpUnchanged(_daiReserveId(spoke1), spoke1, bob);
+    _assertUserRpUnchanged(_usdxReserveId(spoke1), spoke1, bob);
+
+    vm.stopPrank();
+  }
+
   /// Supply 3 reserves, borrow 2, such that 1 reserve fully covers the debt, then check user risk premium calc.
   function test_getUserRiskPremium_multi_reserve_collateral() public {
     ReserveInfoLocal memory daiInfo;
