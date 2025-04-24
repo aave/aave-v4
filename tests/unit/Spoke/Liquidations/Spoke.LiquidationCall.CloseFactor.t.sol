@@ -9,8 +9,6 @@ contract LiquidationCallCloseFactorTest is SpokeLiquidationBase {
   using PercentageMath for uint256;
   using PercentageMathExtended for uint256;
 
-  function testUnit() public {}
-
   /// coll: weth / debt: dai
   function test_liquidationCall_closeFactor_scenario1() public {
     uint256 collateralReserveId = _wethReserveId(spoke1);
@@ -231,7 +229,7 @@ contract LiquidationCallCloseFactorTest is SpokeLiquidationBase {
     });
   }
 
-  // close factor == HEALTH_FACTOR_LIQUIDATION_THRESHOLD
+  /// fuzz tests with close factor == HEALTH_FACTOR_LIQUIDATION_THRESHOLD
   function test_liquidationCall_fuzz_closeFactor_defaultCloseFactor(
     uint256 collateralReserveId,
     uint256 debtReserveId,
@@ -251,6 +249,7 @@ contract LiquidationCallCloseFactorTest is SpokeLiquidationBase {
     );
   }
 
+  /// variable close factor > HEALTH_FACTOR_LIQUIDATION_THRESHOLD
   function test_liquidationCall_fuzz_closeFactor(
     uint256 collateralReserveId,
     uint256 debtReserveId,
@@ -273,8 +272,11 @@ contract LiquidationCallCloseFactorTest is SpokeLiquidationBase {
 
     _assertHealthFactor(state, spoke1);
     _assertAccounting(state, spoke1, remainingBaseCurrencyBound);
+    _assertProtocolFeeEarned(state, 'test_liquidationCall_fuzz_variableLB');
+    _assertLiquidationBonusEarned(state, 'test_liquidationCall_fuzz_variableLB weth/dai');
   }
 
+  /// constant liquidation bonus to simplify calcs for desiredHf
   function _bound(
     DataTypes.LiquidationConfig memory liqConfig
   ) internal pure virtual override returns (DataTypes.LiquidationConfig memory) {
@@ -308,6 +310,7 @@ contract LiquidationCallCloseFactorTest is SpokeLiquidationBase {
     return liqConfig;
   }
 
+  /// fuzz tests with
   function _execLiqCallCloseFactorTest(
     DataTypes.LiquidationConfig memory liqConfig,
     uint256 liqBonus,
@@ -389,139 +392,30 @@ contract LiquidationCallCloseFactorTest is SpokeLiquidationBase {
     vm.prank(LIQUIDATOR);
     spoke1.liquidationCall(collateralReserveId, debtReserveId, alice, requiredDebtAmount);
 
-    // state.liquidator.balanceAfter = IERC20(state.collateralReserve.asset).balanceOf(LIQUIDATOR);
-    // state.debt.balanceAfter = spoke1.getUserTotalDebt(debtReserveId, alice);
-    // state.treasury.balanceAfter = IERC20(state.collateralReserve.asset).balanceOf(TREASURY);
-    // state.supply.balanceAfter = spoke1.getUserSuppliedAmount(collateralReserveId, alice);
+    state.liquidator.balanceAfter = IERC20(state.collateralReserve.asset).balanceOf(LIQUIDATOR);
+    state.debt.balanceAfter = spoke1.getUserTotalDebt(debtReserveId, alice);
+    state.treasury.balanceAfter = IERC20(state.collateralReserve.asset).balanceOf(TREASURY);
+    state.supply.balanceAfter = spoke1.getUserSuppliedAmount(collateralReserveId, alice);
 
-    // vm.assume(state.supply.balanceAfter > 0 && state.debt.balanceAfter > 0);
+    vm.assume(state.supply.balanceAfter > 0 && state.debt.balanceAfter > 0);
 
-    // // convert
-    // state.liquidator.baseChange = _convertAmountToBaseCurrency(
-    //   state.collateralReserve.assetId,
-    //   _absDiff(state.liquidator.balanceAfter, state.liquidator.balanceBefore)
-    // );
-    // state.treasury.baseChange = _convertAmountToBaseCurrency(
-    //   state.collateralReserve.assetId,
-    //   _absDiff(state.treasury.balanceAfter, state.treasury.balanceBefore)
-    // );
-    // state.debt.baseChange = _convertAmountToBaseCurrency(
-    //   state.debtReserve.assetId,
-    //   _absDiff(state.debt.balanceBefore, state.debt.balanceAfter)
-    // );
-    // state.supply.baseChange = _convertAmountToBaseCurrency(
-    //   state.collateralReserve.assetId,
-    //   _absDiff(state.supply.balanceBefore, state.supply.balanceAfter)
-    // );
-
-    return state;
-  }
-
-  function _execLiqCallCloseFactorTestMulti(
-    DataTypes.LiquidationConfig memory liqConfig,
-    uint256 liqBonus,
-    uint256 supplyAmount,
-    uint256[] memory collateralReserveIds,
-    uint256[] memory debtReserveIds,
-    uint256 collateralReserveIndex,
-    uint256 debtReserveIndex,
-    uint256 liquidationProtocolFeePercentage
-  ) internal returns (LiquidationTestLocalParams memory) {
-    LiquidationTestLocalParams memory state;
-    state.collateralReserves = new DataTypes.Reserve[](collateralReserveIds.length);
-    state.debtReserves = new DataTypes.Reserve[](debtReserveIds.length);
-
-    for (uint256 i = 0; i < collateralReserveIds.length; i++) {
-      state.collateralReserves[i] = spoke1.getReserve(collateralReserveIds[i]);
-    }
-    for (uint256 i = 0; i < debtReserveIds.length; i++) {
-      state.debtReserves[i] = spoke1.getReserve(debtReserveIds[i]);
-    }
-    liqConfig = _bound(liqConfig);
-    liqBonus = bound(
-      liqBonus,
-      MIN_LIQUIDATION_BONUS,
-      PercentageMath
-        .PERCENTAGE_FACTOR
-        .percentDiv(state.collateralReserves[collateralReserveIndex].config.collateralFactor)
-        .percentMul(90_00) // add 10% buffer so that not all debt is liquidated
+    // convert
+    state.liquidator.baseChange = _convertAmountToBaseCurrency(
+      state.collateralReserve.assetId,
+      _absDiff(state.liquidator.balanceAfter, state.liquidator.balanceBefore)
     );
-    liquidationProtocolFeePercentage = bound(liquidationProtocolFeePercentage, 0, 100_00);
-    supplyAmount = bound(
-      supplyAmount,
-      _convertBaseCurrencyToAmount(state.collateralReserve.assetId, 1e25),
-      MAX_SUPPLY_AMOUNT / 1e4
+    state.treasury.baseChange = _convertAmountToBaseCurrency(
+      state.collateralReserve.assetId,
+      _absDiff(state.treasury.balanceAfter, state.treasury.balanceBefore)
     );
-    state.liquidationProtocolFeePercentage = liquidationProtocolFeePercentage;
-
-    uint256 collateralReserveId = collateralReserveIds[collateralReserveIndex];
-    uint256 debtReserveId = debtReserveIds[debtReserveIndex];
-
-    _config = liqConfig;
-    spoke1.updateLiquidationConfig(_config);
-    updateLiquidationBonus(spoke1, collateralReserveId, liqBonus);
-    updateLiquidationProtocolFeePercentage(
-      spoke1,
-      collateralReserveId,
-      state.liquidationProtocolFeePercentage
+    state.debt.baseChange = _convertAmountToBaseCurrency(
+      state.debtReserve.assetId,
+      _absDiff(state.debt.balanceBefore, state.debt.balanceAfter)
     );
-    uint256 desiredHf = _calcMaxAchievableHf(collateralReserveId, liqBonus).percentMul(101_00); // add 1% buffer so that not all debt is liquidated
-
-    for (uint256 i = 0; i < collateralReserveIds.length; i++) {
-      Utils.supplyCollateral({
-        spoke: spoke1,
-        reserveId: collateralReserveIds[i],
-        user: alice,
-        amount: supplyAmount,
-        onBehalfOf: alice
-      });
-    }
-
-    (uint256 hfAfterBorrow, uint256 requiredDebtAmount) = _borrowToBeBelowHf(
-      spoke1,
-      alice,
-      debtReserveId,
-      desiredHf
+    state.supply.baseChange = _convertAmountToBaseCurrency(
+      state.collateralReserve.assetId,
+      _absDiff(state.supply.balanceBefore, state.supply.balanceAfter)
     );
-
-    state.liquidationBonus = _getVariableLiquidationBonus(
-      spoke1,
-      collateralReserveId,
-      hfAfterBorrow
-    );
-
-    // state.debt.balanceBefore = spoke1.getUserTotalDebt(debtReserveId, alice);
-    // state.liquidator.balanceBefore = IERC20(state.collateralReserve.asset).balanceOf(LIQUIDATOR);
-    // state.treasury.balanceBefore = IERC20(state.collateralReserve.asset).balanceOf(TREASURY);
-    // state.supply.balanceBefore = spoke1.getUserSuppliedAmount(collateralReserveId, alice);
-
-    // vm.prank(LIQUIDATOR);
-    // spoke1.liquidationCall(collateralReserveId, debtReserveId, alice, requiredDebtAmount);
-
-    // state.liquidator.balanceAfter = IERC20(state.collateralReserve.asset).balanceOf(LIQUIDATOR);
-    // state.debt.balanceAfter = spoke1.getUserTotalDebt(debtReserveId, alice);
-    // state.treasury.balanceAfter = IERC20(state.collateralReserve.asset).balanceOf(TREASURY);
-    // state.supply.balanceAfter = spoke1.getUserSuppliedAmount(collateralReserveId, alice);
-
-    // vm.assume(state.supply.balanceAfter > 0 && state.debt.balanceAfter > 0);
-
-    // // convert
-    // state.liquidator.baseChange = _convertAmountToBaseCurrency(
-    //   state.collateralReserve.assetId,
-    //   _absDiff(state.liquidator.balanceAfter, state.liquidator.balanceBefore)
-    // );
-    // state.treasury.baseChange = _convertAmountToBaseCurrency(
-    //   state.collateralReserve.assetId,
-    //   _absDiff(state.treasury.balanceAfter, state.treasury.balanceBefore)
-    // );
-    // state.debt.baseChange = _convertAmountToBaseCurrency(
-    //   state.debtReserve.assetId,
-    //   _absDiff(state.debt.balanceBefore, state.debt.balanceAfter)
-    // );
-    // state.supply.baseChange = _convertAmountToBaseCurrency(
-    //   state.collateralReserve.assetId,
-    //   _absDiff(state.supply.balanceBefore, state.supply.balanceAfter)
-    // );
 
     return state;
   }

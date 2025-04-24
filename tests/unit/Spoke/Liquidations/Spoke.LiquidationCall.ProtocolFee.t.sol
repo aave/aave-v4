@@ -9,13 +9,44 @@ contract LiquidationCallProtocolFeeTest is SpokeLiquidationBase {
   using PercentageMath for uint256;
   using PercentageMathExtended for uint256;
 
-  struct ConvertedValues {
-    uint256 base;
-    uint256 amount;
-  }
-
   // todo: update tests to when treasury accounting is done
   // check treasury accounting of fees instead of by token balance
+
+  /// fuzz tests with liquidationProtocolFeePercentage = 0
+  function test_liquidationCall_fuzz_protocolFee(
+    uint256 collateralReserveId,
+    uint256 debtReserveId,
+    DataTypes.LiquidationConfig memory liqConfig,
+    uint256 liqBonus,
+    uint256 supplyAmount,
+    uint256 desiredHf,
+    uint256 liquidationProtocolFeePercentage
+  ) public {
+    // uint256 collateralReserveId = _wethReserveId(spoke1);
+    // uint256 debtReserveId = _daiReserveId(spoke1);
+    collateralReserveId = bound(collateralReserveId, 0, spoke1.reserveCount() - 1);
+    debtReserveId = bound(debtReserveId, 0, spoke1.reserveCount() - 1);
+
+    // supplyAmount = bound(
+    //   supplyAmount,
+    //   _convertBaseCurrencyToAmount(spoke1.getReserve(collateralReserveId).assetId, 1e26),
+    //   MAX_SUPPLY_AMOUNT / 1e4
+    // ); // bounds to ensure HF is below desiredHf within precision
+
+    LiquidationTestLocalParams memory state = _execLiqCallFuzzTest(
+      liqConfig,
+      liqBonus,
+      supplyAmount,
+      desiredHf,
+      collateralReserveId,
+      debtReserveId,
+      liquidationProtocolFeePercentage
+    );
+
+    _assertLiquidationBonusEarned(state, 'test_liquidationCall_fuzz_variableLB weth/dai');
+    _assertProtocolFeeEarned(state, 'test_liquidationCall_fuzz_protocolFee');
+    _assertHealthFactor(state, spoke1);
+  }
 
   /// coll: weth / debt: dai
   function test_liquidationCall_protocolFee_scenario1() public {
@@ -150,40 +181,6 @@ contract LiquidationCallProtocolFeeTest is SpokeLiquidationBase {
   //   });
   // }
 
-  function test_liquidationCall_fuzz_protocolFee(
-    uint256 collateralReserveId,
-    uint256 debtReserveId,
-    DataTypes.LiquidationConfig memory liqConfig,
-    uint256 liqBonus,
-    uint256 supplyAmount,
-    uint256 desiredHf,
-    uint256 liquidationProtocolFeePercentage
-  ) public {
-    // uint256 collateralReserveId = _wethReserveId(spoke1);
-    // uint256 debtReserveId = _daiReserveId(spoke1);
-    collateralReserveId = bound(collateralReserveId, 0, spoke1.reserveCount() - 1);
-    debtReserveId = bound(debtReserveId, 0, spoke1.reserveCount() - 1);
-
-    // supplyAmount = bound(
-    //   supplyAmount,
-    //   _convertBaseCurrencyToAmount(spoke1.getReserve(collateralReserveId).assetId, 1e26),
-    //   MAX_SUPPLY_AMOUNT / 1e4
-    // ); // bounds to ensure HF is below desiredHf within precision
-
-    LiquidationTestLocalParams memory state = _execLiqCallFuzzTest(
-      liqConfig,
-      liqBonus,
-      supplyAmount,
-      desiredHf,
-      collateralReserveId,
-      debtReserveId,
-      liquidationProtocolFeePercentage
-    );
-
-    _assertLpfpEarned(state, 'test_liquidationCall_fuzz_protocolFee');
-    _assertHealthFactor(state, spoke1);
-  }
-
   // function test_liquidationCall_fuzz_protocolFee1(
   //   DataTypes.LiquidationConfig memory liqConfig,
   //   uint256 liqBonus,
@@ -206,7 +203,7 @@ contract LiquidationCallProtocolFeeTest is SpokeLiquidationBase {
   //     liquidationProtocolFeePercentage
   //   );
 
-  //   _assertLpfpEarned(state, 'test_liquidationCall_fuzz_protocolFee weth/dai');
+  //   _assertProtocolFeeEarned(state, 'test_liquidationCall_fuzz_protocolFee weth/dai');
   // }
 
   // function test_liquidationCall_fuzz_protocolFee2(
@@ -231,7 +228,7 @@ contract LiquidationCallProtocolFeeTest is SpokeLiquidationBase {
   //     liquidationProtocolFeePercentage
   //   );
 
-  //   _assertLpfpEarned(state, 'test_liquidationCall_fuzz_protocolFee weth/usdx');
+  //   _assertProtocolFeeEarned(state, 'test_liquidationCall_fuzz_protocolFee weth/usdx');
   // }
 
   // function test_liquidationCall_fuzz_protocolFee3(
@@ -256,7 +253,7 @@ contract LiquidationCallProtocolFeeTest is SpokeLiquidationBase {
   //     liquidationProtocolFeePercentage
   //   );
 
-  //   _assertLpfpEarned(state, 'test_liquidationCall_fuzz_protocolFee usdx/weth');
+  //   _assertProtocolFeeEarned(state, 'test_liquidationCall_fuzz_protocolFee usdx/weth');
   // }
 
   // function test_liquidationCall_fuzz_protocolFee_scenario4(
@@ -281,172 +278,172 @@ contract LiquidationCallProtocolFeeTest is SpokeLiquidationBase {
   //     liquidationProtocolFeePercentage
   //   );
 
-  //   _assertLpfpEarned(state, 'test_liquidationCall_fuzz_protocolFee usdx/weth');
+  //   _assertProtocolFeeEarned(state, 'test_liquidationCall_fuzz_protocolFee usdx/weth');
   // }
 
-  function _assertLpfpEarned(
-    LiquidationTestLocalParams memory state,
-    string memory label
-  ) internal view {
-    ConvertedValues memory liqBonusEarned;
-    ConvertedValues memory liqProtocolFee;
+  // function _assertProtocolFeeEarned(
+  //   LiquidationTestLocalParams memory state,
+  //   string memory label
+  // ) internal view {
+  //   ConvertedValues memory liqBonusEarned;
+  //   ConvertedValues memory liqProtocolFee;
 
-    liqBonusEarned.base = state.debt.baseChange.percentMul(
-      state.liquidationBonus - PercentageMath.PERCENTAGE_FACTOR
-    );
-    liqBonusEarned.amount = _convertBaseCurrencyToAmount(
-      state.collateralReserve.assetId,
-      liqBonusEarned.base
-    );
+  //   liqBonusEarned.base = state.debt.baseChange.percentMul(
+  //     state.liquidationBonus - PercentageMath.PERCENTAGE_FACTOR
+  //   );
+  //   liqBonusEarned.amount = _convertBaseCurrencyToAmount(
+  //     state.collateralReserve.assetId,
+  //     liqBonusEarned.base
+  //   );
 
-    console.log('lb % %e', state.liquidationBonus - PercentageMath.PERCENTAGE_FACTOR);
+  //   console.log('lb % %e', state.liquidationBonus - PercentageMath.PERCENTAGE_FACTOR);
 
-    if (state.collateralReserve.assetId == state.debtReserve.assetId) {
-      // when collateral and debt are the same asset, protocol fee is calculated as
-      liqProtocolFee.base = _absDiff(
-        _absDiff(state.supply.baseChange, state.debt.baseChange),
-        state.liquidator.baseChange
-      );
-    } else {
-      liqProtocolFee.base = _absDiff(state.supply.baseChange, state.liquidator.baseChange);
-    }
-    liqProtocolFee.amount = _convertBaseCurrencyToAmount(
-      state.collateralReserve.assetId,
-      liqProtocolFee.base
-    );
+  //   if (state.collateralReserve.assetId == state.debtReserve.assetId) {
+  //     // when collateral and debt are the same asset, protocol fee is calculated as
+  //     liqProtocolFee.base = _absDiff(
+  //       _absDiff(state.supply.baseChange, state.debt.baseChange),
+  //       state.liquidator.baseChange
+  //     );
+  //   } else {
+  //     liqProtocolFee.base = _absDiff(state.supply.baseChange, state.liquidator.baseChange);
+  //   }
+  //   liqProtocolFee.amount = _convertBaseCurrencyToAmount(
+  //     state.collateralReserve.assetId,
+  //     liqProtocolFee.base
+  //   );
 
-    console.log(
-      'amount diff liquidator: %e | supplyvsDebt %e',
-      _convertBaseCurrencyToAmount(state.collateralReserve.assetId, state.liquidator.baseChange),
-      _convertBaseCurrencyToAmount(
-        state.collateralReserve.assetId,
-        _absDiff(state.supply.baseChange, state.debt.baseChange)
-      )
-    );
+  //   console.log(
+  //     'amount diff liquidator: %e | supplyvsDebt %e',
+  //     _convertBaseCurrencyToAmount(state.collateralReserve.assetId, state.liquidator.baseChange),
+  //     _convertBaseCurrencyToAmount(
+  //       state.collateralReserve.assetId,
+  //       _absDiff(state.supply.baseChange, state.debt.baseChange)
+  //     )
+  //   );
 
-    console.log('liqBonusEarned amt: %e base: %e', liqBonusEarned.amount, liqBonusEarned.base);
-    console.log('liqProtocolFee amt: %e base: %e', liqProtocolFee.amount, liqProtocolFee.base);
-    // console.log(
-    //   'liqProtocolFee %e',
-    //   _convertBaseCurrencyToAmount(
-    //     state.collateralReserve.assetId,
-    //     _absDiff(state.supply.baseChange, state.liquidator.baseChange)
-    //   )
-    // );
+  //   console.log('liqBonusEarned amt: %e base: %e', liqBonusEarned.amount, liqBonusEarned.base);
+  //   console.log('liqProtocolFee amt: %e base: %e', liqProtocolFee.amount, liqProtocolFee.base);
+  //   // console.log(
+  //   //   'liqProtocolFee %e',
+  //   //   _convertBaseCurrencyToAmount(
+  //   //     state.collateralReserve.assetId,
+  //   //     _absDiff(state.supply.baseChange, state.liquidator.baseChange)
+  //   //   )
+  //   // );
 
-    console.log('final hf %e', spoke1.getHealthFactor(alice));
+  //   console.log('final hf %e', spoke1.getHealthFactor(alice));
 
-    // constrain due to rounding/precisio
-    if (liqProtocolFee.amount < 1e4) {
-      // at low amounts, abs diff is greater than rel
-      assertApproxEqAbs(
-        liqBonusEarned.amount.percentMul(state.liquidationProtocolFeePercentage),
-        liqProtocolFee.amount,
-        5,
-        string.concat('protocol fee amount abs ', label)
-      );
-      assertApproxEqRel(
-        _convertBaseCurrencyToAmount(state.collateralAssetId, state.supply.baseChange),
-        _convertBaseCurrencyToAmount(
-          state.collateralAssetId,
-          state.debt.baseChange.percentMul(state.liquidationBonus)
-        ),
-        _approxRelFromBps(1_00),
-        string.concat('total collateral seized should match debt rel ', label)
-      );
-    } else {
-      assertApproxEqRel(
-        liqBonusEarned.amount.percentMul(state.liquidationProtocolFeePercentage),
-        liqProtocolFee.amount,
-        _approxRelFromBps(10),
-        string.concat('protocol fee amount rel ', label)
-      );
-      assertApproxEqRel(
-        _convertBaseCurrencyToAmount(state.collateralAssetId, state.supply.baseChange),
-        _convertBaseCurrencyToAmount(
-          state.collateralAssetId,
-          state.debt.baseChange.percentMul(state.liquidationBonus)
-        ),
-        _approxRelFromBps(10),
-        string.concat('total collateral seized should match debt rel ', label)
-      );
-    }
+  //   // constrain due to rounding/precisio
+  //   if (liqProtocolFee.amount < 1e4) {
+  //     // at low amounts, abs diff is greater than rel
+  //     assertApproxEqAbs(
+  //       liqBonusEarned.amount.percentMul(state.liquidationProtocolFeePercentage),
+  //       liqProtocolFee.amount,
+  //       5,
+  //       string.concat('protocol fee amount abs ', label)
+  //     );
+  //     assertApproxEqRel(
+  //       _convertBaseCurrencyToAmount(state.collateralAssetId, state.supply.baseChange),
+  //       _convertBaseCurrencyToAmount(
+  //         state.collateralAssetId,
+  //         state.debt.baseChange.percentMul(state.liquidationBonus)
+  //       ),
+  //       _approxRelFromBps(1_00),
+  //       string.concat('total collateral seized should match debt rel ', label)
+  //     );
+  //   } else {
+  //     assertApproxEqRel(
+  //       liqBonusEarned.amount.percentMul(state.liquidationProtocolFeePercentage),
+  //       liqProtocolFee.amount,
+  //       _approxRelFromBps(10),
+  //       string.concat('protocol fee amount rel ', label)
+  //     );
+  //     assertApproxEqRel(
+  //       _convertBaseCurrencyToAmount(state.collateralAssetId, state.supply.baseChange),
+  //       _convertBaseCurrencyToAmount(
+  //         state.collateralAssetId,
+  //         state.debt.baseChange.percentMul(state.liquidationBonus)
+  //       ),
+  //       _approxRelFromBps(10),
+  //       string.concat('total collateral seized should match debt rel ', label)
+  //     );
+  //   }
 
-    // if (state.supply.balanceChange > 1e4) {
-    //   assertApproxEqRel(
-    //     _convertBaseCurrencyToAmount(state.collateralAssetId, state.supply.baseChange),
-    //     _convertBaseCurrencyToAmount(
-    //       state.collateralAssetId,
-    //       state.debt.baseChange.percentMul(state.liquidationBonus)
-    //     ),
-    //     _approxRelFromBps(10),
-    //     string.concat('total collateral seized should match debt rel ', label)
-    //   );
-    // } else {
-    //   assertApproxEqRel(
-    //     _convertBaseCurrencyToAmount(state.collateralAssetId, state.supply.baseChange),
-    //     _convertBaseCurrencyToAmount(
-    //       state.collateralAssetId,
-    //       state.debt.baseChange.percentMul(state.liquidationBonus)
-    //     ),
-    //     _approxRelFromBps(1_00),
-    //     string.concat('total collateral seized should match debt rel ', label)
-    //   );
-    // }
+  //   // if (state.supply.balanceChange > 1e4) {
+  //   //   assertApproxEqRel(
+  //   //     _convertBaseCurrencyToAmount(state.collateralAssetId, state.supply.baseChange),
+  //   //     _convertBaseCurrencyToAmount(
+  //   //       state.collateralAssetId,
+  //   //       state.debt.baseChange.percentMul(state.liquidationBonus)
+  //   //     ),
+  //   //     _approxRelFromBps(10),
+  //   //     string.concat('total collateral seized should match debt rel ', label)
+  //   //   );
+  //   // } else {
+  //   //   assertApproxEqRel(
+  //   //     _convertBaseCurrencyToAmount(state.collateralAssetId, state.supply.baseChange),
+  //   //     _convertBaseCurrencyToAmount(
+  //   //       state.collateralAssetId,
+  //   //       state.debt.baseChange.percentMul(state.liquidationBonus)
+  //   //     ),
+  //   //     _approxRelFromBps(1_00),
+  //   //     string.concat('total collateral seized should match debt rel ', label)
+  //   //   );
+  //   // }
 
-    // console.log('coll change %e', state.collateral.baseChange);
-    // console.log('debt change %e', state.debt.baseChange);
+  //   // console.log('coll change %e', state.collateral.baseChange);
+  //   // console.log('debt change %e', state.debt.baseChange);
 
-    // console.log('coll bal change %e', state.supply.balanceChange);
-    // console.log('debt bal change %e', state.debt.balanceChange);
+  //   // console.log('coll bal change %e', state.supply.balanceChange);
+  //   // console.log('debt bal change %e', state.debt.balanceChange);
 
-    // console.log(
-    //   'expected coll/debt %e %e',
-    //   state.debt.baseChange.percentMul(state.liquidationBonus),
-    //   state.supply.balanceChange
-    // );
+  //   // console.log(
+  //   //   'expected coll/debt %e %e',
+  //   //   state.debt.baseChange.percentMul(state.liquidationBonus),
+  //   //   state.supply.balanceChange
+  //   // );
 
-    // console.log(
-    //   'bonus %e %e',
-    //   _absDiff(
-    //     state.liquidator.baseChange,
-    //     state.debt.baseChange.percentMul(state.liquidationBonus - 100_00)
-    //   ),
-    //   _convertBaseCurrencyToAmount(
-    //     state.collateralReserve.assetId,
-    //     _absDiff(state.liquidator.baseChange, state.supply.baseChange - state.debt.baseChange)
-    //   )
-    // );
+  //   // console.log(
+  //   //   'bonus %e %e',
+  //   //   _absDiff(
+  //   //     state.liquidator.baseChange,
+  //   //     state.debt.baseChange.percentMul(state.liquidationBonus - 100_00)
+  //   //   ),
+  //   //   _convertBaseCurrencyToAmount(
+  //   //     state.collateralReserve.assetId,
+  //   //     _absDiff(state.liquidator.baseChange, state.supply.baseChange - state.debt.baseChange)
+  //   //   )
+  //   // );
 
-    // if (
-    //   _convertBaseCurrencyToAmount(state.collateralReserve.reserveId, state.collateral.baseChange) <
-    //   1e4
-    // ) {
-    //   assertApproxEqAbs(
-    //     _convertBaseCurrencyToAmount(
-    //       state.collateralReserve.reserveId,
-    //       state.collateral.baseChange
-    //     ),
-    //     _convertBaseCurrencyToAmount(
-    //       state.collateralReserve.reserveId,
-    //       state.debt.baseChange.percentMul(state.liquidationBonus)
-    //     ),
-    //     1,
-    //     string.concat('total collateral seized should match debt abs ', label)
-    //   );
-    // } else {
-    //   assertApproxEqRel(
-    //     _convertBaseCurrencyToAmount(
-    //       state.collateralReserve.reserveId,
-    //       state.collateral.baseChange
-    //     ),
-    //     _convertBaseCurrencyToAmount(
-    //       state.debtReserve.reserveId,
-    //       state.debt.baseChange.percentMul(state.liquidationBonus)
-    //     ),
-    //     _approxRelFromBps(10),
-    //     string.concat('total collateral seized should match debt rel ', label)
-    //   );
-    // }
-  }
+  //   // if (
+  //   //   _convertBaseCurrencyToAmount(state.collateralReserve.reserveId, state.collateral.baseChange) <
+  //   //   1e4
+  //   // ) {
+  //   //   assertApproxEqAbs(
+  //   //     _convertBaseCurrencyToAmount(
+  //   //       state.collateralReserve.reserveId,
+  //   //       state.collateral.baseChange
+  //   //     ),
+  //   //     _convertBaseCurrencyToAmount(
+  //   //       state.collateralReserve.reserveId,
+  //   //       state.debt.baseChange.percentMul(state.liquidationBonus)
+  //   //     ),
+  //   //     1,
+  //   //     string.concat('total collateral seized should match debt abs ', label)
+  //   //   );
+  //   // } else {
+  //   //   assertApproxEqRel(
+  //   //     _convertBaseCurrencyToAmount(
+  //   //       state.collateralReserve.reserveId,
+  //   //       state.collateral.baseChange
+  //   //     ),
+  //   //     _convertBaseCurrencyToAmount(
+  //   //       state.debtReserve.reserveId,
+  //   //       state.debt.baseChange.percentMul(state.liquidationBonus)
+  //   //     ),
+  //   //     _approxRelFromBps(10),
+  //   //     string.concat('total collateral seized should match debt rel ', label)
+  //   //   );
+  //   // }
+  // }
 }

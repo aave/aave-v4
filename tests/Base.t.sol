@@ -1002,7 +1002,7 @@ abstract contract Base is Test {
     uint256 amount,
     uint256 assetPrice,
     uint256 assetUnit
-  ) internal pure returns (uint256) {
+  ) internal view returns (uint256) {
     return ((amount * assetUnit) / assetPrice).dewadify();
   }
 

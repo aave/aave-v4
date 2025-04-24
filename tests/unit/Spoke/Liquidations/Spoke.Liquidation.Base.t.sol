@@ -20,6 +20,11 @@ contract SpokeLiquidationBase is SpokeBase {
     uint256 baseChange;
   }
 
+  struct ConvertedValues {
+    uint256 base;
+    uint256 amount;
+  }
+
   struct LiquidationTestLocalParams {
     Balance liquidator;
     Balance user;
@@ -315,8 +320,6 @@ contract SpokeLiquidationBase is SpokeBase {
 
     console.log('hf %e cf %e', finalHf, _getCloseFactor(spoke));
 
-    // ensure HF is lte close factor
-    assertLe(finalHf, _getCloseFactor(spoke), 'Health factor <= close factor');
     // at low amounts of coll/debt, HF can diverge from close factor due to rounding/precision
     if (
       _convertAmountToBaseCurrency(state.debtReserve.assetId, state.debt.balanceAfter) >
@@ -324,11 +327,211 @@ contract SpokeLiquidationBase is SpokeBase {
       _convertAmountToBaseCurrency(state.collateralReserve.assetId, state.supply.balanceAfter) >
       remainingBaseCurrencyBound
     ) {
+      // ensure HF is lte close factor
+      assertLe(finalHf, _getCloseFactor(spoke), 'Health factor <= close factor');
       assertApproxEqRel(
         finalHf,
         _getCloseFactor(spoke),
         _approxRelFromBps(10),
         'HF matches closeFactor within 0.1%'
+      );
+    } else if (state.supply.balanceAfter == 0 && state.debt.balanceAfter > 0) {
+      assertEq(finalHf, 0, 'HF = 0 if all debt liquidated');
+    } else if (state.supply.balanceAfter > 0 && state.debt.balanceAfter == 0) {
+      assertEq(finalHf, type(uint256).max, 'HF = max uint if all debt liquidated');
+    } else {
+      // ensure HF is lte close factor
+      assertLe(finalHf, _getCloseFactor(spoke), 'Health factor <= close factor');
+    }
+  }
+
+  function _assertProtocolFeeEarned(
+    LiquidationTestLocalParams memory state,
+    string memory label
+  ) internal view {
+    ConvertedValues memory liqBonusEarned;
+    ConvertedValues memory liqProtocolFee;
+
+    liqBonusEarned.base = state.debt.baseChange.percentMul(
+      state.liquidationBonus - PercentageMath.PERCENTAGE_FACTOR
+    );
+    liqBonusEarned.amount = _convertBaseCurrencyToAmount(
+      state.collateralReserve.assetId,
+      liqBonusEarned.base
+    );
+
+    console.log('lb % %e', state.liquidationBonus - PercentageMath.PERCENTAGE_FACTOR);
+
+    if (state.collateralReserve.assetId == state.debtReserve.assetId) {
+      // when collateral and debt are the same asset, protocol fee is calculated as
+      liqProtocolFee.base = _absDiff(
+        _absDiff(state.supply.baseChange, state.debt.baseChange),
+        state.liquidator.baseChange
+      );
+    } else {
+      liqProtocolFee.base = _absDiff(state.supply.baseChange, state.liquidator.baseChange);
+    }
+    liqProtocolFee.amount = _convertBaseCurrencyToAmount(
+      state.collateralReserve.assetId,
+      liqProtocolFee.base
+    );
+
+    console.log(
+      'amount diff liquidator: %e | supplyvsDebt %e',
+      _convertBaseCurrencyToAmount(state.collateralReserve.assetId, state.liquidator.baseChange),
+      _convertBaseCurrencyToAmount(
+        state.collateralReserve.assetId,
+        _absDiff(state.supply.baseChange, state.debt.baseChange)
+      )
+    );
+
+    console.log('liqBonusEarned amt: %e base: %e', liqBonusEarned.amount, liqBonusEarned.base);
+    console.log('liqProtocolFee amt: %e base: %e', liqProtocolFee.amount, liqProtocolFee.base);
+    // console.log(
+    //   'liqProtocolFee %e',
+    //   _convertBaseCurrencyToAmount(
+    //     state.collateralReserve.assetId,
+    //     _absDiff(state.supply.baseChange, state.liquidator.baseChange)
+    //   )
+    // );
+
+    console.log('final hf %e', spoke1.getHealthFactor(alice));
+
+    // constrain due to rounding/precisio
+    if (liqProtocolFee.amount < 1e4) {
+      // at low amounts, abs diff is greater than rel
+      assertApproxEqAbs(
+        liqBonusEarned.amount.percentMul(state.liquidationProtocolFeePercentage),
+        liqProtocolFee.amount,
+        5,
+        string.concat('protocol fee amount abs ', label)
+      );
+      assertApproxEqRel(
+        _convertBaseCurrencyToAmount(state.collateralAssetId, state.supply.baseChange),
+        _convertBaseCurrencyToAmount(
+          state.collateralAssetId,
+          state.debt.baseChange.percentMul(state.liquidationBonus)
+        ),
+        _approxRelFromBps(1_00),
+        string.concat('total collateral seized should match debt rel ', label)
+      );
+    } else {
+      assertApproxEqRel(
+        liqBonusEarned.amount.percentMul(state.liquidationProtocolFeePercentage),
+        liqProtocolFee.amount,
+        _approxRelFromBps(10),
+        string.concat('protocol fee amount rel ', label)
+      );
+      assertApproxEqRel(
+        _convertBaseCurrencyToAmount(state.collateralAssetId, state.supply.baseChange),
+        _convertBaseCurrencyToAmount(
+          state.collateralAssetId,
+          state.debt.baseChange.percentMul(state.liquidationBonus)
+        ),
+        _approxRelFromBps(10),
+        string.concat('total collateral seized should match debt rel ', label)
+      );
+    }
+
+    // if (state.supply.balanceChange > 1e4) {
+    //   assertApproxEqRel(
+    //     _convertBaseCurrencyToAmount(state.collateralAssetId, state.supply.baseChange),
+    //     _convertBaseCurrencyToAmount(
+    //       state.collateralAssetId,
+    //       state.debt.baseChange.percentMul(state.liquidationBonus)
+    //     ),
+    //     _approxRelFromBps(10),
+    //     string.concat('total collateral seized should match debt rel ', label)
+    //   );
+    // } else {
+    //   assertApproxEqRel(
+    //     _convertBaseCurrencyToAmount(state.collateralAssetId, state.supply.baseChange),
+    //     _convertBaseCurrencyToAmount(
+    //       state.collateralAssetId,
+    //       state.debt.baseChange.percentMul(state.liquidationBonus)
+    //     ),
+    //     _approxRelFromBps(1_00),
+    //     string.concat('total collateral seized should match debt rel ', label)
+    //   );
+    // }
+
+    // console.log('coll change %e', state.collateral.baseChange);
+    // console.log('debt change %e', state.debt.baseChange);
+
+    // console.log('coll bal change %e', state.supply.balanceChange);
+    // console.log('debt bal change %e', state.debt.balanceChange);
+
+    // console.log(
+    //   'expected coll/debt %e %e',
+    //   state.debt.baseChange.percentMul(state.liquidationBonus),
+    //   state.supply.balanceChange
+    // );
+
+    // console.log(
+    //   'bonus %e %e',
+    //   _absDiff(
+    //     state.liquidator.baseChange,
+    //     state.debt.baseChange.percentMul(state.liquidationBonus - 100_00)
+    //   ),
+    //   _convertBaseCurrencyToAmount(
+    //     state.collateralReserve.assetId,
+    //     _absDiff(state.liquidator.baseChange, state.supply.baseChange - state.debt.baseChange)
+    //   )
+    // );
+
+    // if (
+    //   _convertBaseCurrencyToAmount(state.collateralReserve.reserveId, state.collateral.baseChange) <
+    //   1e4
+    // ) {
+    //   assertApproxEqAbs(
+    //     _convertBaseCurrencyToAmount(
+    //       state.collateralReserve.reserveId,
+    //       state.collateral.baseChange
+    //     ),
+    //     _convertBaseCurrencyToAmount(
+    //       state.collateralReserve.reserveId,
+    //       state.debt.baseChange.percentMul(state.liquidationBonus)
+    //     ),
+    //     1,
+    //     string.concat('total collateral seized should match debt abs ', label)
+    //   );
+    // } else {
+    //   assertApproxEqRel(
+    //     _convertBaseCurrencyToAmount(
+    //       state.collateralReserve.reserveId,
+    //       state.collateral.baseChange
+    //     ),
+    //     _convertBaseCurrencyToAmount(
+    //       state.debtReserve.reserveId,
+    //       state.debt.baseChange.percentMul(state.liquidationBonus)
+    //     ),
+    //     _approxRelFromBps(10),
+    //     string.concat('total collateral seized should match debt rel ', label)
+    //   );
+    // }
+  }
+
+  function _assertLiquidationBonusEarned(
+    LiquidationTestLocalParams memory state,
+    string memory label
+  ) internal view {
+    if (
+      _convertBaseCurrencyToAmount(state.collateralReserve.assetId, state.supply.balanceAfter) >
+      1e26
+    ) {
+      assertApproxEqRel(
+        state.supply.baseChange,
+        state.debt.baseChange.percentMul(state.liquidationBonus),
+        _approxRelFromBps(10),
+        string.concat('liquidationBonus earned in base currency ', label)
+      );
+    } else {
+      console.log('state.liquidationBonus %e', state.liquidationBonus);
+      assertApproxEqRel(
+        state.supply.baseChange,
+        state.debt.baseChange.percentMul(state.liquidationBonus),
+        _approxRelFromBps(1_00),
+        string.concat('liquidationBonus earned in base currency ', label)
       );
     }
   }
