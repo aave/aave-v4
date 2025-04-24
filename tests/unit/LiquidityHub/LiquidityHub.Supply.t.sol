@@ -137,8 +137,14 @@ contract LiquidityHubSupplyTest is LiquidityHubBase {
     // amount of assets supplied
     uint256 assetAmount = totalSuppliedAssets / totalSuppliedShares + 1;
 
-    vm.prank(address(spoke1));
-    hub.add(daiAssetId, assetAmount, alice);
+    Utils.add({
+      hub: hub,
+      assetId: daiAssetId,
+      spoke: address(spoke1),
+      amount: assetAmount,
+      user: alice,
+      to: address(spoke1)
+    });
 
     // set supply cap to amount of assets supplied * 2 - 1, given
     // that the same asset amount is provided again below
@@ -236,8 +242,14 @@ contract LiquidityHubSupplyTest is LiquidityHubBase {
     // assets (`assetAmount * 101`) by at least one asset. Supplying 101 times
     // accounts for all share prices where the fractional part is <= 0.99.
     for (uint256 i = 0; i < 101; i += 1) {
-      vm.prank(address(spoke1));
-      hub.add(daiAssetId, assetAmount, alice);
+      Utils.add({
+        hub: hub,
+        assetId: daiAssetId,
+        spoke: address(spoke1),
+        amount: assetAmount,
+        user: alice,
+        to: address(spoke1)
+      });
     }
 
     uint256 spokeSuppliedShares = hub.getSpokeSuppliedShares(daiAssetId, address(spoke1));
@@ -256,8 +268,14 @@ contract LiquidityHubSupplyTest is LiquidityHubBase {
     uint256 newSupplyCap = spokeSuppliedAssetsRoundedUp + assetAmount;
     _updateSupplyCap(daiAssetId, address(spoke1), newSupplyCap);
 
-    vm.prank(address(spoke1));
-    hub.add(daiAssetId, assetAmount, alice);
+    Utils.add({
+      hub: hub,
+      assetId: daiAssetId,
+      spoke: address(spoke1),
+      amount: assetAmount,
+      user: alice,
+      to: address(spoke1)
+    });
   }
 
   function test_supply_single_asset() public {
