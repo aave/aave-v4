@@ -36,9 +36,10 @@ contract LiquidationCallVariableLiquidationBonusTest is SpokeLiquidationBase {
       liquidationProtocolFeePercentage: 0
     });
 
-    _assertProtocolFeeEarned(state, 'test_liquidationCall_fuzz_variableLB');
-    _assertLiquidationBonusEarned(state, 'test_liquidationCall_fuzz_variableLB weth/dai');
-    _assertHealthFactor(state, spoke1);
+    string memory label = 'liquidationCall_fuzz_variableLB';
+    _assertProtocolFeeEarned(state, label);
+    _assertLiquidationBonusEarned(state, label);
+    _assertHealthFactor(state, spoke1, label);
   }
 
   /// coll: weth / debt: dai

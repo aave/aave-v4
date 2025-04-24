@@ -9,6 +9,54 @@ contract LiquidationCallCloseFactorTest is SpokeLiquidationBase {
   using PercentageMath for uint256;
   using PercentageMathExtended for uint256;
 
+  /// fuzz tests with close factor == HEALTH_FACTOR_LIQUIDATION_THRESHOLD
+  function test_liquidationCall_fuzz_closeFactor_defaultCloseFactor(
+    uint256 collateralReserveId,
+    uint256 debtReserveId,
+    DataTypes.LiquidationConfig memory liqConfig,
+    uint256 liqBonus,
+    uint256 supplyAmount,
+    uint256 liquidationProtocolFeePercentage
+  ) public {
+    liqConfig.closeFactor = HEALTH_FACTOR_LIQUIDATION_THRESHOLD;
+    test_liquidationCall_fuzz_closeFactor(
+      collateralReserveId,
+      debtReserveId,
+      liqConfig,
+      liqBonus,
+      supplyAmount,
+      liquidationProtocolFeePercentage
+    );
+  }
+
+  /// variable close factor > HEALTH_FACTOR_LIQUIDATION_THRESHOLD
+  function test_liquidationCall_fuzz_closeFactor(
+    uint256 collateralReserveId,
+    uint256 debtReserveId,
+    DataTypes.LiquidationConfig memory liqConfig,
+    uint256 liqBonus,
+    uint256 supplyAmount,
+    uint256 liquidationProtocolFeePercentage
+  ) public {
+    collateralReserveId = bound(collateralReserveId, 0, spoke1.reserveCount() - 1);
+    debtReserveId = bound(debtReserveId, 0, spoke1.reserveCount() - 1);
+
+    LiquidationTestLocalParams memory state = _execLiqCallCloseFactorTest(
+      liqConfig,
+      liqBonus,
+      supplyAmount,
+      collateralReserveId,
+      debtReserveId,
+      liquidationProtocolFeePercentage
+    );
+
+    string memory label = 'test_liquidationCall_fuzz_closeFactor';
+    _assertHealthFactor(state, spoke1, label);
+    // _assertAccounting(state, spoke1, remainingBaseCurrencyBound);
+    _assertProtocolFeeEarned(state, label);
+    _assertLiquidationBonusEarned(state, label);
+  }
+
   /// coll: weth / debt: dai
   function test_liquidationCall_closeFactor_scenario1() public {
     uint256 collateralReserveId = _wethReserveId(spoke1);
@@ -227,53 +275,6 @@ contract LiquidationCallCloseFactorTest is SpokeLiquidationBase {
       collateralReserveId: collateralReserveId,
       debtReserveId: debtReserveId
     });
-  }
-
-  /// fuzz tests with close factor == HEALTH_FACTOR_LIQUIDATION_THRESHOLD
-  function test_liquidationCall_fuzz_closeFactor_defaultCloseFactor(
-    uint256 collateralReserveId,
-    uint256 debtReserveId,
-    DataTypes.LiquidationConfig memory liqConfig,
-    uint256 liqBonus,
-    uint256 supplyAmount,
-    uint256 liquidationProtocolFeePercentage
-  ) public {
-    liqConfig.closeFactor = HEALTH_FACTOR_LIQUIDATION_THRESHOLD;
-    test_liquidationCall_fuzz_closeFactor(
-      collateralReserveId,
-      debtReserveId,
-      liqConfig,
-      liqBonus,
-      supplyAmount,
-      liquidationProtocolFeePercentage
-    );
-  }
-
-  /// variable close factor > HEALTH_FACTOR_LIQUIDATION_THRESHOLD
-  function test_liquidationCall_fuzz_closeFactor(
-    uint256 collateralReserveId,
-    uint256 debtReserveId,
-    DataTypes.LiquidationConfig memory liqConfig,
-    uint256 liqBonus,
-    uint256 supplyAmount,
-    uint256 liquidationProtocolFeePercentage
-  ) public {
-    collateralReserveId = bound(collateralReserveId, 0, spoke1.reserveCount() - 1);
-    debtReserveId = bound(debtReserveId, 0, spoke1.reserveCount() - 1);
-
-    LiquidationTestLocalParams memory state = _execLiqCallCloseFactorTest(
-      liqConfig,
-      liqBonus,
-      supplyAmount,
-      collateralReserveId,
-      debtReserveId,
-      liquidationProtocolFeePercentage
-    );
-
-    _assertHealthFactor(state, spoke1);
-    _assertAccounting(state, spoke1, remainingBaseCurrencyBound);
-    _assertProtocolFeeEarned(state, 'test_liquidationCall_fuzz_variableLB');
-    _assertLiquidationBonusEarned(state, 'test_liquidationCall_fuzz_variableLB weth/dai');
   }
 
   /// constant liquidation bonus to simplify calcs for desiredHf

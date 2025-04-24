@@ -1013,4 +1013,16 @@ abstract contract Base is Test {
   function _min(uint256 a, uint256 b) internal pure returns (uint256) {
     return a < b ? a : b;
   }
+
+  function _getCloseFactor(ISpoke spoke) internal view returns (uint256) {
+    return spoke.getLiquidationConfig().closeFactor;
+  }
+
+  function _percentDiff(uint256 a, uint256 b) internal pure returns (uint256) {
+    return a != 0 ? (_absDiff(a, b) * PercentageMath.PERCENTAGE_FACTOR) / a : type(uint256).max;
+  }
+
+  function _absDiff(uint256 a, uint256 b) internal pure returns (uint256) {
+    return a > b ? (a - b) : b - a;
+  }
 }

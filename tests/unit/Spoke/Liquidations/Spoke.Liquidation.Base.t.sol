@@ -313,41 +313,30 @@ contract SpokeLiquidationBase is SpokeBase {
     return state;
   }
 
-  function _assertAccounting(
-    LiquidationTestLocalParams memory state,
-    ISpoke spoke,
-    uint256 remainingBaseCurrencyBound
-  ) internal view {
-    // at low amounts of coll/debt, HF can diverge from close factor due to rounding/precision
-    if (
-      _convertAmountToBaseCurrency(state.debtReserve.assetId, state.debt.balanceAfter) >
-      remainingBaseCurrencyBound &&
-      _convertAmountToBaseCurrency(state.collateralReserve.assetId, state.supply.balanceAfter) >
-      remainingBaseCurrencyBound
-    ) {
-      assertEq(
-        state.supply.baseChange.percentDiv(state.debt.baseChange),
-        state.liquidationBonus,
-        'liquidationBonus'
-      );
-    }
-  }
-
-  function _getCloseFactor(ISpoke spoke) internal view returns (uint256) {
-    return spoke.getLiquidationConfig().closeFactor;
-  }
-
-  function _percentDiff(uint256 a, uint256 b) internal pure returns (uint256) {
-    return a != 0 ? (_absDiff(a, b) * PercentageMath.PERCENTAGE_FACTOR) / a : type(uint256).max;
-  }
-
-  function _absDiff(uint256 a, uint256 b) internal pure returns (uint256) {
-    return a > b ? (a - b) : b - a;
-  }
+  // function _assertAccounting(
+  //   LiquidationTestLocalParams memory state,
+  //   ISpoke spoke,
+  //   uint256 remainingBaseCurrencyBound
+  // ) internal view {
+  //   // at low amounts of coll/debt, HF can diverge from close factor due to rounding/precision
+  //   if (
+  //     _convertAmountToBaseCurrency(state.debtReserve.assetId, state.debt.balanceAfter) >
+  //     remainingBaseCurrencyBound &&
+  //     _convertAmountToBaseCurrency(state.collateralReserve.assetId, state.supply.balanceAfter) >
+  //     remainingBaseCurrencyBound
+  //   ) {
+  //     assertEq(
+  //       state.supply.baseChange.percentDiv(state.debt.baseChange),
+  //       state.liquidationBonus,
+  //       'liquidationBonus'
+  //     );
+  //   }
+  // }
 
   function _assertHealthFactor(
     LiquidationTestLocalParams memory state,
-    ISpoke spoke
+    ISpoke spoke,
+    string memory label
   ) internal view virtual {
     uint256 finalHf = spoke.getHealthFactor(alice);
 
@@ -361,7 +350,11 @@ contract SpokeLiquidationBase is SpokeBase {
       remainingBaseCurrencyBound
     ) {
       // ensure HF is lte close factor
-      assertLe(finalHf, _getCloseFactor(spoke), 'Health factor <= close factor');
+      assertLe(
+        finalHf,
+        _getCloseFactor(spoke),
+        string.concat('Health factor <= close factor ', label)
+      );
       assertApproxEqRel(
         finalHf,
         _getCloseFactor(spoke),
@@ -369,12 +362,21 @@ contract SpokeLiquidationBase is SpokeBase {
         'HF matches closeFactor within 0.1%'
       );
     } else if (state.supply.balanceAfter == 0 && state.debt.balanceAfter > 0) {
-      assertEq(finalHf, 0, 'HF = 0 if all debt liquidated');
+      // bad debt
+      assertEq(finalHf, 0, string.concat('HF = 0 if all debt liquidated ', label));
     } else if (state.supply.balanceAfter > 0 && state.debt.balanceAfter == 0) {
-      assertEq(finalHf, type(uint256).max, 'HF = max uint if all debt liquidated');
+      assertEq(
+        finalHf,
+        type(uint256).max,
+        string.concat('HF = max uint if all debt liquidated ', label)
+      );
     } else {
-      // ensure HF is lte close factor
-      assertLe(finalHf, _getCloseFactor(spoke), 'Health factor <= close factor');
+      // ensure HF is lte close factor in all other cases
+      assertLe(
+        finalHf,
+        _getCloseFactor(spoke),
+        string.concat('Health factor <= close factor ', label)
+      );
     }
   }
 

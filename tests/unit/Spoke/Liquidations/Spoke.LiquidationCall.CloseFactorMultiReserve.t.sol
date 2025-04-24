@@ -41,7 +41,7 @@ contract LiquidationCallCloseFactorMultiReserveTest is SpokeLiquidationBase {
   function _assertHealthFactor(
     LiquidationTestLocalParams memory state,
     ISpoke spoke
-  ) internal view override {
+  ) internal view {
     uint256 finalHf = spoke.getHealthFactor(alice);
 
     console.log('hf %e cf %e', finalHf, _getCloseFactor(spoke));
