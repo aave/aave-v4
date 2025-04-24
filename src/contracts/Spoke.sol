@@ -451,7 +451,6 @@ contract Spoke is ISpoke {
       vars.totalRestoredShares += vars.restoredShares;
 
       // liquidate collateral
-      // todo: opt when treasury accounting is completed
       vars.withdrawnShares = HUB.remove(
         vars.collateralAssetId,
         vars.collateralToLiquidate + vars.liquidationProtocolFeeAmount,
@@ -515,17 +514,9 @@ contract Spoke is ISpoke {
       0
     );
 
-    // transfer to liquidator
+    // transfer seized collateral to liquidator
     IERC20(collateralReserve.asset).safeTransfer(msg.sender, vars.totalCollateralToLiquidate);
-    // TODO: move liquidationProtocolFeeAmount to treasury accounting
-    // do not transfer directly to treasury
-    if (vars.totalLiquidationProtocolFeeAmount > 0) {
-      console.log('sp: liq fee %e', vars.totalLiquidationProtocolFeeAmount);
-      // IERC20(collateralReserve.asset).safeTransfer(
-      //   _treasury,
-      //   vars.totalLiquidationProtocolFeeAmount
-      // );
-    }
+    // TODO: treasury accounting for protocol fee
 
     console.log('Sp: remaining coll %e', getUserSuppliedAmount(collateralReserveId, users[0]));
     console.log('Sp: remaining debt %e', getUserTotalDebt(debtReserveId, users[0]));

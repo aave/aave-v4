@@ -27,6 +27,7 @@ contract SpokeLiquidationBase is SpokeBase {
 
   struct LiquidationTestLocalParams {
     Balance liquidator;
+    Balance liquidatorCollateral;
     Balance user;
     Balance treasury;
     Balance collateral;
