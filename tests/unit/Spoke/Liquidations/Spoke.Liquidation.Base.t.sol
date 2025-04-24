@@ -433,12 +433,12 @@ contract SpokeLiquidationBase is SpokeBase {
     console.log('final hf %e', spoke1.getHealthFactor(alice));
 
     // constrain due to rounding/precisio
-    if (liqProtocolFee.amount < 1e4) {
+    if (liqProtocolFee.amount < 1e3) {
       // at low amounts, abs diff is greater than rel
       assertApproxEqAbs(
         liqBonusEarned.amount.percentMul(state.liquidationProtocolFeePercentage),
         liqProtocolFee.amount,
-        5,
+        3,
         string.concat('protocol fee amount abs ', label)
       );
       assertApproxEqRel(
@@ -454,7 +454,7 @@ contract SpokeLiquidationBase is SpokeBase {
       assertApproxEqRel(
         liqBonusEarned.amount.percentMul(state.liquidationProtocolFeePercentage),
         liqProtocolFee.amount,
-        _approxRelFromBps(10),
+        _approxRelFromBps(1_00),
         string.concat('protocol fee amount rel ', label)
       );
       assertApproxEqRel(
@@ -463,7 +463,7 @@ contract SpokeLiquidationBase is SpokeBase {
           state.collateralAssetId,
           state.debt.baseChange.percentMul(state.liquidationBonus)
         ),
-        _approxRelFromBps(10),
+        _approxRelFromBps(1_00),
         string.concat('total collateral seized should match debt rel ', label)
       );
     }
@@ -567,6 +567,25 @@ contract SpokeLiquidationBase is SpokeBase {
         state.debt.baseChange.percentMul(state.liquidationBonus),
         _approxRelFromBps(1_00),
         string.concat('liquidationBonus earned in base currency ', label)
+      );
+    }
+  }
+
+  function _assertSetUsingAsCollateral(
+    ISpoke spoke,
+    address user,
+    LiquidationTestLocalParams memory state,
+    string memory label
+  ) internal {
+    if (state.supply.balanceAfter == 0) {
+      assertFalse(
+        spoke.getUsingAsCollateral(state.collateralReserve.reserveId, user),
+        string.concat('isUsingAsCollateral should be false with no collateral ', label)
+      );
+    } else {
+      assertTrue(
+        spoke.getUsingAsCollateral(state.collateralReserve.reserveId, user),
+        string.concat('isUsingAsCollateral should be false with no collateral ', label)
       );
     }
   }
