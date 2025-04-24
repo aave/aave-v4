@@ -364,7 +364,7 @@ contract SpokeLiquidationBase is SpokeBase {
     } else if (state.supply.balanceAfter == 0 && state.debt.balanceAfter > 0) {
       // bad debt
       assertEq(finalHf, 0, string.concat('HF = 0 if all debt liquidated ', label));
-    } else if (state.supply.balanceAfter > 0 && state.debt.balanceAfter == 0) {
+    } else if (state.debt.balanceAfter == 0) {
       assertEq(
         finalHf,
         type(uint256).max,
@@ -372,6 +372,7 @@ contract SpokeLiquidationBase is SpokeBase {
       );
     } else {
       // ensure HF is lte close factor in all other cases
+      console.log('here');
       assertLe(
         finalHf,
         _getCloseFactor(spoke),
