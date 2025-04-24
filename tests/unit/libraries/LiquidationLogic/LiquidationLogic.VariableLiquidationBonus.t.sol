@@ -9,6 +9,38 @@ contract LiquidationLogicVariableLiquidationBonusTest is LiquidationLogicBaseTes
 
   DataTypes.LiquidationConfig internal _config;
 
+  /// if liquidation bonus is set to 0%, it should return always return 0%
+  function testCalculate_fuzz_zero_liquidationBonus(
+    uint256 healthFactor,
+    uint256 healthFactorBonusThreshold,
+    uint256 liquidationBonus,
+    uint256 liquidationBonusFactor
+  ) public {
+    liquidationBonus = MIN_LIQUIDATION_BONUS;
+    liquidationBonusFactor = bound(liquidationBonusFactor, 0, MAX_LIQUIDATION_BONUS_FACTOR); // BPS
+    healthFactorBonusThreshold = bound(
+      healthFactorBonusThreshold,
+      1,
+      HEALTH_FACTOR_LIQUIDATION_THRESHOLD
+    );
+    healthFactor = bound(healthFactor, 0, type(uint256).max);
+
+    _config = DataTypes.LiquidationConfig({
+      closeFactor: WadRayMath.WAD,
+      healthFactorBonusThreshold: healthFactorBonusThreshold,
+      liquidationBonusFactor: liquidationBonusFactor
+    });
+
+    uint256 result = LiquidationLogic.calculateVariableLiquidationBonus(
+      _config,
+      healthFactor,
+      liquidationBonus,
+      HEALTH_FACTOR_LIQUIDATION_THRESHOLD
+    );
+
+    assertEq(result, liquidationBonus, 'should be liquidationBonus');
+  }
+
   /// when hf < healthFactorBonusThreshold, return liquidationBonus
   function testCalculate_lt_bonusThreshold() public {
     uint256 healthFactorBonusThreshold = 0.9e18;
