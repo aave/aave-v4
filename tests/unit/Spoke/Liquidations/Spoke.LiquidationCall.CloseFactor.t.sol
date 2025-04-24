@@ -51,7 +51,7 @@ contract LiquidationCallCloseFactorTest is SpokeLiquidationBase {
     );
 
     string memory label = 'test_liquidationCall_fuzz_closeFactor';
-    _assertHealthFactor(state, spoke1, label);
+    _assertUserAccountData(state, spoke1, label);
     // _assertAccounting(state, spoke1, remainingBaseCurrencyBound);
     _assertProtocolFeeEarned(state, label);
     _assertLiquidationBonusEarned(state, label);

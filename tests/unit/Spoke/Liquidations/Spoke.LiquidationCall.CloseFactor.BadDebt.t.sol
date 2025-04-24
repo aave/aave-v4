@@ -32,7 +32,7 @@ contract LiquidationCallCloseFactorBadDebtTest is SpokeLiquidationBase {
     );
 
     string memory label = 'test_liquidationCall_fuzz_closeFactor';
-    _assertHealthFactor(state, spoke1, label);
+    _assertUserAccountData(state, spoke1, label);
     // _assertAccounting(state, spoke1, remainingBaseCurrencyBound);
     _assertProtocolFeeEarned(state, label);
     _assertLiquidationBonusEarned(state, label);
@@ -49,7 +49,10 @@ contract LiquidationCallCloseFactorBadDebtTest is SpokeLiquidationBase {
     );
     // bad debt remains
     assertTrue(spoke1.getUserTotalDebt(debtReserveId, alice) > 0, 'remaining bad debt remains');
-    assertEq(spoke1.getHealthFactor(alice), 0, 'health factor should be max after liquidation');
+
+    (uint256 userRp, , uint256 healthFactor, , ) = spoke1.getUserAccountData(alice);
+    assertEq(healthFactor, 0, 'health factor should be max after liquidation');
+    assertEq(userRp, 0, 'user rp = 0 with no coll');
   }
 
   /// fuzz tests with close factor == HEALTH_FACTOR_LIQUIDATION_THRESHOLD

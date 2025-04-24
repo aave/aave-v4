@@ -39,7 +39,7 @@ contract LiquidationCallVariableLiquidationBonusTest is SpokeLiquidationBase {
     string memory label = 'liquidationCall_fuzz_variableLB';
     _assertProtocolFeeEarned(state, label);
     _assertLiquidationBonusEarned(state, label);
-    _assertHealthFactor(state, spoke1, label);
+    _assertUserAccountData(state, spoke1, label);
   }
 
   /// coll: weth / debt: dai

@@ -46,7 +46,7 @@ contract LiquidationCallProtocolFeeTest is SpokeLiquidationBase {
     string memory label = 'test_liquidationCall_fuzz_protocolFee';
     _assertLiquidationBonusEarned(state, label);
     _assertProtocolFeeEarned(state, label);
-    _assertHealthFactor(state, spoke1, label);
+    _assertUserAccountData(state, spoke1, label);
   }
 
   /// coll: weth / debt: dai

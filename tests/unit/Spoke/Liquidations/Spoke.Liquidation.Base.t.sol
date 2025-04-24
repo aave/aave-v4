@@ -336,12 +336,12 @@ contract SpokeLiquidationBase is SpokeBase {
   //   }
   // }
 
-  function _assertHealthFactor(
+  function _assertUserAccountData(
     LiquidationTestLocalParams memory state,
     ISpoke spoke,
     string memory label
   ) internal view virtual {
-    uint256 finalHf = spoke.getHealthFactor(alice);
+    (uint256 userRp, , uint256 finalHf, , ) = spoke1.getUserAccountData(alice);
 
     console.log('hf %e cf %e', finalHf, _getCloseFactor(spoke));
 
@@ -366,16 +366,25 @@ contract SpokeLiquidationBase is SpokeBase {
       );
     } else if (state.supply.balanceAfter == 0 && state.debt.balanceAfter > 0) {
       // bad debt
-      assertEq(finalHf, 0, string.concat('HF = 0 if all debt liquidated ', label));
+      assertEq(finalHf, 0, string.concat('HF = 0 if bad debt ', label));
+      assertEq(userRp, 0, string.concat('userRp = 0 if bad debt ', label));
     } else if (state.debt.balanceAfter == 0) {
       assertEq(
         finalHf,
         type(uint256).max,
         string.concat('HF = max uint if all debt liquidated ', label)
       );
+      if (state.supply.balanceAfter > 0) {
+        assertEq(
+          userRp,
+          state.collateralReserve.config.collateralFactor,
+          string.concat('userRp = coll factor of remaining coll ', label)
+        );
+      } else {
+        // debt == 0, coll == 0
+        assertEq(userRp, 0, string.concat('userRp = 0 if user debt and coll are 0 ', label));
+      }
     } else {
-      // ensure HF is lte close factor in all other cases
-      console.log('here');
       assertLe(
         finalHf,
         _getCloseFactor(spoke),
