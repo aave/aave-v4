@@ -114,9 +114,11 @@ contract LiquidityHubSupplyTest is LiquidityHubBase {
     hub.add(daiAssetId, amount, alice);
   }
 
+  // Tests that the supply cap is enforced by rounding up the conversion
+  // of supplied shares into assets. Also verifies that rounding down
+  // would fail to enforce the cap.
   function test_supply_revertsWith_SupplyCapExceeded_due_to_rounding() public {
-    uint256 amount = 100e18;
-    _increaseExchangeRate(amount);
+    _increaseExchangeRate(100e18);
 
     uint256 availableLiquidity = hub.getAvailableLiquidity(daiAssetId);
     uint256 totalDebt = hub.getAssetTotalDebt(daiAssetId);
@@ -130,29 +132,28 @@ contract LiquidityHubSupplyTest is LiquidityHubBase {
       'totalSuppliedAssets % totalSuppliedShares is zero'
     );
 
-    // spoke1 supplies 1 share worth of assets (rounded down) + 1
-    // the supplied share is 1, which rounded up is equal to the
+    // The asset amount is 1 share worth of assets (rounded down) + 1
+    // The supplied share is 1, which rounded up is equal to the
     // amount of assets supplied
+    uint256 assetAmount = totalSuppliedAssets / totalSuppliedShares + 1;
+
     vm.prank(address(spoke1));
-    hub.add(daiAssetId, totalSuppliedAssets / totalSuppliedShares + 1, alice);
+    hub.add(daiAssetId, assetAmount, alice);
 
     // set supply cap to amount of assets supplied * 2 - 1, given
     // that the same asset amount is provided again below
-    uint256 newSupplyCap = (2 * totalSuppliedAssets) / totalSuppliedShares + 1;
+    uint256 newSupplyCap = 2 * assetAmount - 1;
     _updateSupplyCap(daiAssetId, address(spoke1), newSupplyCap);
 
     // this cap will be exceeded only if the existing supplied
     // shares are rounded up
     vm.expectRevert(abi.encodeWithSelector(ILiquidityHub.SupplyCapExceeded.selector, newSupplyCap));
     vm.prank(address(spoke1));
-    hub.add(daiAssetId, totalSuppliedAssets / totalSuppliedShares + 1, alice);
+    hub.add(daiAssetId, assetAmount, alice);
 
     // check that supply cap is not exceeded if assets are rounded down
     uint256 suppliedAssetsRoundedDown = hub.getSpokeSuppliedAmount(daiAssetId, address(spoke1));
-    assertEq(
-      suppliedAssetsRoundedDown + totalSuppliedAssets / totalSuppliedShares + 1,
-      newSupplyCap
-    );
+    assertEq(suppliedAssetsRoundedDown + assetAmount, newSupplyCap);
   }
 
   function test_supply_fuzz_revertsWith_SupplyCapExceeded(uint256 amount) public {
@@ -205,33 +206,58 @@ contract LiquidityHubSupplyTest is LiquidityHubBase {
     hub.add(daiAssetId, 1, alice); // cannot supply any additional amount
   }
 
-  // touching supply cap but not exceeding it
+  // Tests that the supply cap is reached, but not exceeded.
+  // It also highlights the fact that the sum of supplied
+  // assets (converted from supplied shares by rounding up)
+  // and the newly supplied assets can fall behind the actual
+  // supplied assets due to rounding errors (by at least one asset).
   function test_supply_SupplyCapReachedButNotExceeded() public {
-    uint256 amount = 100e18;
-    _increaseExchangeRate(amount);
+    _increaseExchangeRate(100e18);
 
-    uint256 sharePrice = hub.convertToSuppliedAssets(daiAssetId, 1e18);
-    assertLt(1e18, sharePrice);
-    assertLt(sharePrice, 2e18);
+    uint256 availableLiquidity = hub.getAvailableLiquidity(daiAssetId);
+    uint256 totalDebt = hub.getAssetTotalDebt(daiAssetId);
 
-    // spoke 1 supplies 2 dai (1 share)
-    vm.prank(address(spoke1));
-    hub.add(daiAssetId, 2, alice);
+    uint256 totalSuppliedAssets = availableLiquidity + totalDebt;
+    uint256 totalSuppliedShares = hub.getAssetSuppliedShares(daiAssetId);
 
-    // spoke 1 supplies 2 dai (1 share)
-    vm.prank(address(spoke1));
-    hub.add(daiAssetId, 2, alice);
+    assertNotEq(
+      totalSuppliedAssets % totalSuppliedShares,
+      0,
+      'totalSuppliedAssets % totalSuppliedShares is zero'
+    );
 
-    // set cap of spoke1 to 5 assets
-    uint256 newSupplyCap = 5;
+    // The asset amount is 1 share worth of assets (rounded down) + 1
+    // The supplied share is 1, which rounded up is equal to the
+    // amount of assets supplied
+    uint256 assetAmount = totalSuppliedAssets / totalSuppliedShares + 1;
+
+    // Supply assetAmount 101 times, to make the supplied assets (converted
+    // from supplied shares by rounding up) fall short of the actual supplied
+    // assets (`assetAmount * 101`) by at least one asset. Supplying 101 times
+    // accounts for all share prices where the fractional part is <= 0.99.
+    for (uint256 i = 0; i < 101; i += 1) {
+      vm.prank(address(spoke1));
+      hub.add(daiAssetId, assetAmount, alice);
+    }
+
+    uint256 spokeSuppliedShares = hub.getSpokeSuppliedShares(daiAssetId, address(spoke1));
+    uint256 spokeSuppliedAssetsRoundedUp = spokeSuppliedShares.toAssetsUp(
+      totalSuppliedAssets,
+      totalSuppliedShares
+    );
+
+    assertLt(spokeSuppliedAssetsRoundedUp, assetAmount * 101);
+
+    // set supply cap to amount of asset supplied (as perceived by the hub,
+    // which converts supplied shares to assets by rounding up), plus the
+    // asset amount that will be provided below. This new cap is actually
+    // lower than the actual supplied assets (`assetAmount * 102`), but
+    // the hub lost track of at least one share due to roundings.
+    uint256 newSupplyCap = spokeSuppliedAssetsRoundedUp + assetAmount;
     _updateSupplyCap(daiAssetId, address(spoke1), newSupplyCap);
 
-    // spoke1 already supplied 2 shares, which rounded up is 3 assets
-    // supplying 2 more assets will reach the cap, but not exceed it
-    // note that actual supplied assets is 6, but 1 share was lost
-    // due to rounding errors on suppliedShares
     vm.prank(address(spoke1));
-    hub.add(daiAssetId, 2, alice);
+    hub.add(daiAssetId, assetAmount, alice);
   }
 
   function test_supply_single_asset() public {
