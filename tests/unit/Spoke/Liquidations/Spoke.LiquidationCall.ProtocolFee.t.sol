@@ -21,7 +21,7 @@ contract LiquidationCallProtocolFeeTest is SpokeLiquidationBase {
     uint256 supplyAmount,
     uint256 desiredHf,
     uint256 liquidationProtocolFeePercentage
-  ) public {
+  ) public returns (LiquidationTestLocalParams memory) {
     // uint256 collateralReserveId = _wethReserveId(spoke1);
     // uint256 debtReserveId = _daiReserveId(spoke1);
     collateralReserveId = bound(collateralReserveId, 0, spoke1.reserveCount() - 1);
@@ -47,6 +47,8 @@ contract LiquidationCallProtocolFeeTest is SpokeLiquidationBase {
     _assertLiquidationBonusEarned(state, label);
     _assertProtocolFeeEarned(state, label);
     _assertUserAccountData(state, spoke1, label);
+
+    return state;
   }
 
   /// coll: weth / debt: dai
@@ -149,6 +151,28 @@ contract LiquidationCallProtocolFeeTest is SpokeLiquidationBase {
       desiredHf: 0.95e18,
       liquidationProtocolFeePercentage: 12_00
     });
+  }
+
+  /// with 0 liquidation bonus, the protocol fee should also be 0
+  function test_liquidationCall_fuzz_protocolFee_lb_zero(
+    uint256 liquidationProtocolFeePercentage
+  ) public {
+    LiquidationTestLocalParams memory state = test_liquidationCall_fuzz_protocolFee({
+      collateralReserveId: _daiReserveId(spoke1),
+      debtReserveId: _usdxReserveId(spoke1),
+      liqConfig: DataTypes.LiquidationConfig({
+        closeFactor: 1e18,
+        healthFactorBonusThreshold: 0.9e18,
+        liquidationBonusFactor: 70_00
+      }),
+      liqBonus: 100_00, // 0% LB
+      supplyAmount: 10_000e18,
+      desiredHf: 0.95e18,
+      liquidationProtocolFeePercentage: liquidationProtocolFeePercentage
+    });
+
+    uint256 liqProtocolFee = _absDiff(state.supply.baseChange, state.liquidator.baseChange);
+    assertEq(liqProtocolFee, 0, 'liqProtocolFee = 0');
   }
 
   // function test_liquidationCall_protocolFeeDefault() public {
