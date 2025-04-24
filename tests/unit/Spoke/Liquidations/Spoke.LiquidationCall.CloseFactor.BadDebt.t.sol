@@ -42,10 +42,12 @@ contract LiquidationCallCloseFactorBadDebtTest is SpokeLiquidationBase {
       spoke1.getUsingAsCollateral(state.collateralReserve.reserveId, alice),
       'isUsingAsCollateral should be false with no collateral'
     );
+    // all collateral is seized
     assertTrue(
       spoke1.getUserSuppliedAmount(collateralReserveId, alice) == 0,
       'remaining supplied collateral should be 0'
     );
+    // bad debt remains
     assertTrue(spoke1.getUserTotalDebt(debtReserveId, alice) > 0, 'remaining bad debt remains');
     assertEq(spoke1.getHealthFactor(alice), 0, 'health factor should be max after liquidation');
   }

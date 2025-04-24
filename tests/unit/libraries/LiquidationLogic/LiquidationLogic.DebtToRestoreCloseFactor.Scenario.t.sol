@@ -288,18 +288,20 @@ contract LiquidationLogicDebtToRestoreCloseFactorScenarioTest is LiquidationLogi
     );
 
     debts[debtIndex].amount -= closeFactorDebt;
-    collaterals[collateralIndex].amount -= _convertBaseCurrencyToAmount(
-      _convertDebtToCollAmount(params.liquidationBonus, debtBaseCurrencyRestored),
-      oracle.getAssetPrice(spoke1.getReserve(collaterals[collateralIndex].reserveId).assetId),
-      10 ** spoke1.getReserve(collaterals[collateralIndex].reserveId).config.decimals
-    );
+    collaterals[collateralIndex].amount -=
+      _convertBaseCurrencyToAmount(
+        _convertDebtToCollAmount(params.liquidationBonus, debtBaseCurrencyRestored),
+        oracle.getAssetPrice(spoke1.getReserve(collaterals[collateralIndex].reserveId).assetId),
+        10 ** spoke1.getReserve(collaterals[collateralIndex].reserveId).config.decimals
+      ) +
+      1; // add 1 to round up coll seized as in LiquidationLogic calculateAvailableCollateralToLiquidate
 
     // recalculate params assuming liquidated debt/coll
     params = _calcExpectedUserAccountData(spoke, collaterals, collateralIndex, debts, debtIndex);
 
     console.log('hf %e cf %e', params.healthFactor, closeFactor);
 
-    assertGe(params.healthFactor, closeFactor, 'hf must be >= close factor');
+    assertLe(params.healthFactor, closeFactor, 'hf must be <= close factor');
     assertApproxEqRel(
       params.healthFactor,
       closeFactor,
