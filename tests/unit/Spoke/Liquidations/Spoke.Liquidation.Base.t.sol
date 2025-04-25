@@ -705,4 +705,12 @@ contract SpokeLiquidationBase is SpokeBase {
   ) internal view returns (uint256 healthFactor) {
     healthFactor = uint256(1e18).percentMul(collateralFactor).percentMul(liquidationBonus + 1);
   }
+
+  function _convertAssetAmount(
+    uint256 assetId,
+    uint256 amount,
+    uint256 toAssetId
+  ) internal returns (uint256) {
+    return _convertBaseCurrencyToAmount(toAssetId, _convertAmountToBaseCurrency(assetId, amount));
+  }
 }
