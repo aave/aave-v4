@@ -456,7 +456,7 @@ contract SpokeLiquidationBase is SpokeBase {
     ISpoke spoke,
     LiquidationTestLocalParams memory state,
     uint256 debtToCover
-  ) internal returns (uint256 actualDebtToLiquidate) {
+  ) internal view returns (uint256 actualDebtToLiquidate) {
     // find minimum between user's totalDebt of debt asset, debtToCover, and debtToRestoreCloseFactor
     uint256 userTotalDebt = state.debt.balanceBefore;
     uint256 debtToRestoreCloseFactor = _calcDebtToRestoreCloseFactor(spoke, state);

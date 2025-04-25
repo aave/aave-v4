@@ -9,12 +9,10 @@ contract LiquidationLogicActualDebtToLiquidateTest is LiquidationLogicBaseTest {
     TestDebtToRestoreCloseFactorParams memory params
   ) public {
     TestDebtToRestoreCloseFactorParams memory params = _bound(params);
+    // zero total debt; should be reverted by validation in practice
+    params.totalDebt = 0;
     DataTypes.LiquidationCallLocalVars memory args = _setStructFields(params);
 
-    // zero total debt; should be reverted by validation in practice
-    args.totalDebt = 0;
-
-    uint256 debtToRestoreCloseFactor = LiquidationLogic.calculateDebtToRestoreCloseFactor(args);
     uint256 actualDebtToLiquidate = LiquidationLogic.calculateActualDebtToLiquidate(
       debtToCover,
       args
