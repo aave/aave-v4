@@ -55,9 +55,8 @@ contract LiquidationLogicDebtToRestoreCloseFactorTest is LiquidationLogicBaseTes
       (params.liquidationBonus.wadify()).percentMul(params.collateralFactor + 1).fromBps() <
         params.closeFactor
     );
+    params.debtAssetPrice = 0;
     DataTypes.LiquidationCallLocalVars memory args = _setFunctionArgs(params);
-
-    args.debtAssetPrice = 0;
 
     vm.expectRevert(stdError.divisionError);
     this.calculateDebtToRestoreCloseFactor(args);
@@ -77,6 +76,23 @@ contract LiquidationLogicDebtToRestoreCloseFactorTest is LiquidationLogicBaseTes
     DataTypes.LiquidationCallLocalVars memory args = _setFunctionArgs(params);
 
     assertEq(LiquidationLogic.calculateDebtToRestoreCloseFactor(args), 0, 'closeFactorDebt is 0');
+  }
+
+  function test_calculateDebtToRestoreCloseFactor_cf_lt_hf(
+    TestCloseFactorDebtParams memory params
+  ) public {
+    FieldsToSkip memory skips = _skipOnly(SKIP_NONE);
+    TestCloseFactorDebtParams memory params = _bound(params, skips);
+    params.healthFactor = params.closeFactor + 1;
+    // so that default uint max is not returned
+    vm.assume(
+      (params.liquidationBonus.wadify()).percentMul(params.collateralFactor + 1).fromBps() <
+        params.closeFactor
+    );
+    DataTypes.LiquidationCallLocalVars memory args = _setFunctionArgs(params);
+
+    vm.expectRevert(stdError.arithmeticError);
+    this.calculateDebtToRestoreCloseFactor(args);
   }
 
   /// if denom is ever negative, default to uint max
