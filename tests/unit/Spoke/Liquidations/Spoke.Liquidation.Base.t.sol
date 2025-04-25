@@ -480,7 +480,7 @@ contract SpokeLiquidationBase is SpokeBase {
   function _calcDebtToRestoreCloseFactor(
     ISpoke spoke,
     LiquidationTestLocalParams memory state
-  ) internal returns (uint256 debtToRestoreCloseFactor) {
+  ) internal view returns (uint256 debtToRestoreCloseFactor) {
     DataTypes.LiquidationCallLocalVars memory params;
 
     params.liquidationBonus = state.liquidationBonus;
@@ -513,7 +513,7 @@ contract SpokeLiquidationBase is SpokeBase {
   function _calcMaxAchievableHfFromCollateralFactor(
     uint256 collateralFactor,
     uint256 liquidationBonus
-  ) internal view returns (uint256 healthFactor) {
+  ) internal pure returns (uint256 healthFactor) {
     healthFactor = uint256(HEALTH_FACTOR_LIQUIDATION_THRESHOLD)
       .percentMul(collateralFactor)
       .percentMul(liquidationBonus);
@@ -524,7 +524,7 @@ contract SpokeLiquidationBase is SpokeBase {
     uint256 assetId,
     uint256 amount,
     uint256 toAssetId
-  ) internal returns (uint256) {
+  ) internal view returns (uint256) {
     return _convertBaseCurrencyToAmount(toAssetId, _convertAmountToBaseCurrency(assetId, amount));
   }
 }

@@ -95,15 +95,13 @@ contract LiquidationCallCloseFactorMultiReserveTest is SpokeLiquidationBase {
 
   function test_liquidationCall_closeFactor_fuzz_multi_reserve(
     DataTypes.LiquidationConfig memory liqConfig,
-    uint256 liqBonus,
     uint256 collateralReserveId1,
     uint256 collateralReserveId2,
     uint256 debtReserveId1,
     uint256 debtReserveId2,
     uint256 collateralReserveIndex,
     uint256 debtReserveIndex,
-    uint256 supplyAmountInBase,
-    uint256 closeFactor
+    uint256 supplyAmountInBase
   ) public {
     collateralReserveId1 = bound(collateralReserveId1, 0, spoke1.reserveCount() - 1);
     collateralReserveId2 = bound(collateralReserveId2, 0, spoke1.reserveCount() - 1);
@@ -215,10 +213,12 @@ contract LiquidationCallCloseFactorMultiReserveTest is SpokeLiquidationBase {
       });
     }
 
-    (
-      uint256 hfAfterBorrow,
-      uint256[] memory requiredDebtAmounts
-    ) = _borrowMultipleReservesToBeBelowHf(spoke1, alice, debtReserveIds, state.desiredHf);
+    (, uint256[] memory requiredDebtAmounts) = _borrowMultipleReservesToBeBelowHf(
+      spoke1,
+      alice,
+      debtReserveIds,
+      state.desiredHf
+    );
 
     for (uint256 i = 0; i < debtReserveIds.length; i++) {
       assertLt(spoke1.getHealthFactor(alice), HEALTH_FACTOR_LIQUIDATION_THRESHOLD);
