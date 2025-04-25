@@ -70,7 +70,7 @@ contract LiquidationLogicDebtToRestoreCloseFactorTest is LiquidationLogicBaseTes
     params.healthFactor = params.closeFactor;
     // so that default uint max is not returned
     vm.assume(
-      (params.liquidationBonus.wadify()).percentMul(params.collateralFactor + 1).fromBps() <
+      (params.liquidationBonus.wadify()).percentMul(params.collateralFactor).fromBps() <
         params.closeFactor
     );
     DataTypes.LiquidationCallLocalVars memory args = _setFunctionArgs(params);

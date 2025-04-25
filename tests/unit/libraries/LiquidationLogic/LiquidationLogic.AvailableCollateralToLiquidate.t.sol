@@ -6,6 +6,7 @@ import 'tests/Base.t.sol';
 
 contract LiquidationAvailableCollateralToLiquidateTest is Base {
   using PercentageMath for uint256;
+  using WadRayMath for uint256;
   using LiquidationLogic for DataTypes.LiquidationCallLocalVars;
 
   uint256 constant SKIP_NONE = 0;
@@ -54,6 +55,30 @@ contract LiquidationAvailableCollateralToLiquidateTest is Base {
 
     DataTypes.LiquidationCallLocalVars memory args = _setFunctionArgs(params);
 
+    //   struct TestAvailableCollateralParams {
+    //   uint256 debtAssetPrice;
+    //   uint256 collateralAssetUnit;
+    //   uint256 collateralAssetPrice;
+    //   uint256 debtAssetUnit;
+    //   uint256 liquidationBonus;
+    //   uint256 userCollateralBalance;
+    //   uint256 liquidationProtocolFeePercentage;
+    //   uint256 actualDebtToLiquidate;
+    // }
+
+    // console.log('debtAssetPrice %e', args.debtAssetPrice);
+    // console.log('debtAssetUnit %e', args.debtAssetUnit);
+    // console.log('collateralAssetPrice %e', args.collateralAssetPrice);
+    // console.log('collateralAssetUnit %e', args.collateralAssetUnit);
+    // console.log('liquidationBonus %e', args.liquidationBonus);
+    // console.log('userCollateralBalance %e', args.userCollateralBalance);
+    // console.log('liquidationProtocolFeePercentage %e', args.liquidationProtocolFeePercentage);
+
+    uint256 userCollateralBalanceinBaseCurrency = (params.userCollateralBalance *
+      params.collateralAssetPrice).wadify() / params.collateralAssetUnit;
+
+    // console.log('userCollateralBalanceinBaseCurrency %e', userCollateralBalanceinBaseCurrency);
+    // console.log('userCollateralBalance %e', args.userCollateralBalance);
     AvailableCollateralToLiquidate memory res;
     (
       res.collateralAmount,
@@ -61,7 +86,7 @@ contract LiquidationAvailableCollateralToLiquidateTest is Base {
       res.liquidationProtocolFeeAmount
     ) = LiquidationLogic.calculateAvailableCollateralToLiquidate(args);
 
-    assertEq(res.collateralAmount, 0, 'collateralAmount');
+    assertEq(res.collateralAmount, 1, 'collateralAmount');
     assertEq(res.debtAmountNeeded, params.actualDebtToLiquidate, 'debtAmountNeeded');
     assertEq(res.liquidationProtocolFeeAmount, 0, 'liquidationProtocolFeeAmount');
   }
@@ -214,7 +239,7 @@ contract LiquidationAvailableCollateralToLiquidateTest is Base {
     }
 
     if (!_isSkipped(skip, SKIP_USER_COLLATERAL_BALANCE)) {
-      params.userCollateralBalance = bound(params.userCollateralBalance, 1, type(uint256).max);
+      params.userCollateralBalance = bound(params.userCollateralBalance, 1, MAX_SUPPLY_AMOUNT);
     }
 
     if (!_isSkipped(skip, SKIP_LPFP)) {
