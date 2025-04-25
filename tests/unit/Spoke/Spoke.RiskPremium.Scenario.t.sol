@@ -542,18 +542,18 @@ contract SpokeRiskPremiumScenarioTest is SpokeBase {
   /// with different risk premiums. We check interest accrues correctly and values percolate to hub.
   /// @dev We don't store user risk premium directly, so compare calculated premiumDrawnShares as proxy for expected risk premium
   function test_getUserRiskPremium_fuzz_two_users_two_reserves_borrowed(
-    UserAction memory bobDaiAction,
-    UserAction memory bobUsdxAction,
-    UserAction memory aliceDaiAction,
-    UserAction memory aliceUsdxAction,
+    UserBorrowAction memory bobDaiAction,
+    UserBorrowAction memory bobUsdxAction,
+    UserBorrowAction memory aliceDaiAction,
+    UserBorrowAction memory aliceUsdxAction,
     uint256 daiLp,
     uint256 usdxLp,
     uint40[3] memory timeSkip
   ) public {
-    bobDaiAction = _boundUserAction(bobDaiAction);
-    bobUsdxAction = _boundUserAction(bobUsdxAction);
-    aliceDaiAction = _boundUserAction(aliceDaiAction);
-    aliceUsdxAction = _boundUserAction(aliceUsdxAction);
+    bobDaiAction = _boundUserBorrowAction(bobDaiAction);
+    bobUsdxAction = _boundUserBorrowAction(bobUsdxAction);
+    aliceDaiAction = _boundUserBorrowAction(aliceDaiAction);
+    aliceUsdxAction = _boundUserBorrowAction(aliceUsdxAction);
 
     daiLp = bound(daiLp, 0, MAX_RISK_PREMIUM_BPS);
     usdxLp = bound(usdxLp, 0, MAX_RISK_PREMIUM_BPS);
@@ -902,9 +902,9 @@ contract SpokeRiskPremiumScenarioTest is SpokeBase {
       10 ** hub.getAsset(assetId).config.decimals;
   }
 
-  function _boundUserAction(
-    UserAction memory action
-  ) internal pure override returns (UserAction memory) {
+  function _boundUserBorrowAction(
+    UserBorrowAction memory action
+  ) internal pure returns (UserBorrowAction memory) {
     action.supplyAmount = bound(action.supplyAmount, 2, MAX_SUPPLY_AMOUNT / 2);
     action.borrowAmount = bound(action.borrowAmount, 1, action.supplyAmount / 2);
     return action;

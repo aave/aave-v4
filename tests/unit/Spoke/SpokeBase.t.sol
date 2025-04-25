@@ -116,6 +116,11 @@ contract SpokeBase is Base {
     address user;
   }
 
+  struct UserBorrowAction {
+    uint256 supplyAmount;
+    uint256 borrowAmount;
+  }
+
   struct UserAssetInfo {
     AssetInfo daiInfo;
     AssetInfo wethInfo;
@@ -615,9 +620,7 @@ contract SpokeBase is Base {
     assertEq(riskPremiumCurrent, riskPremiumStored, 'user risk premium mismatch');
   }
 
-  function _boundUserAction(
-    UserAction memory action
-  ) internal pure virtual returns (UserAction memory) {
+  function _boundUserAction(UserAction memory action) internal pure returns (UserAction memory) {
     action.borrowAmount = bound(action.borrowAmount, 1, MAX_SUPPLY_AMOUNT / 8);
     action.repayAmount = bound(action.repayAmount, 1, type(uint256).max);
 
