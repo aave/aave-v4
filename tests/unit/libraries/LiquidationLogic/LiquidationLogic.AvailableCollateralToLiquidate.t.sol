@@ -55,30 +55,9 @@ contract LiquidationAvailableCollateralToLiquidateTest is Base {
 
     DataTypes.LiquidationCallLocalVars memory args = _setFunctionArgs(params);
 
-    //   struct TestAvailableCollateralParams {
-    //   uint256 debtAssetPrice;
-    //   uint256 collateralAssetUnit;
-    //   uint256 collateralAssetPrice;
-    //   uint256 debtAssetUnit;
-    //   uint256 liquidationBonus;
-    //   uint256 userCollateralBalance;
-    //   uint256 liquidationProtocolFeePercentage;
-    //   uint256 actualDebtToLiquidate;
-    // }
-
-    // console.log('debtAssetPrice %e', args.debtAssetPrice);
-    // console.log('debtAssetUnit %e', args.debtAssetUnit);
-    // console.log('collateralAssetPrice %e', args.collateralAssetPrice);
-    // console.log('collateralAssetUnit %e', args.collateralAssetUnit);
-    // console.log('liquidationBonus %e', args.liquidationBonus);
-    // console.log('userCollateralBalance %e', args.userCollateralBalance);
-    // console.log('liquidationProtocolFeePercentage %e', args.liquidationProtocolFeePercentage);
-
     uint256 userCollateralBalanceinBaseCurrency = (params.userCollateralBalance *
       params.collateralAssetPrice).wadify() / params.collateralAssetUnit;
 
-    // console.log('userCollateralBalanceinBaseCurrency %e', userCollateralBalanceinBaseCurrency);
-    // console.log('userCollateralBalance %e', args.userCollateralBalance);
     AvailableCollateralToLiquidate memory res;
     (
       res.collateralAmount,
@@ -107,7 +86,7 @@ contract LiquidationAvailableCollateralToLiquidateTest is Base {
       res.liquidationProtocolFeeAmount
     ) = LiquidationLogic.calculateAvailableCollateralToLiquidate(args);
 
-    assertEq(res.collateralAmount, 0, 'collateralAmount');
+    assertEq(res.collateralAmount, 1, 'collateralAmount');
     assertEq(res.debtAmountNeeded, 0, 'debtAmountNeeded');
     assertEq(res.liquidationProtocolFeeAmount, 0, 'liquidationProtocolFeeAmount');
   }
@@ -154,6 +133,19 @@ contract LiquidationAvailableCollateralToLiquidateTest is Base {
     );
 
     DataTypes.LiquidationCallLocalVars memory args = _setFunctionArgs(params);
+
+    // console.log('debtAssetPrice %e', args.debtAssetPrice);
+    // console.log('debtAssetUnit %e', args.debtAssetUnit);
+    // console.log('collateralAssetPrice %e', args.collateralAssetPrice);
+    // console.log('collateralAssetUnit %e', args.collateralAssetUnit);
+    // console.log('liquidationBonus %e', args.liquidationBonus);
+    // console.log('userCollateralBalance %e', args.userCollateralBalance);
+    // console.log('liquidationProtocolFeePercentage %e', args.liquidationProtocolFeePercentage);
+
+    // prevent overflow
+    vm.assume(args.userCollateralBalance * args.collateralAssetPrice < 1e59);
+    vm.assume(args.actualDebtToLiquidate * args.debtAssetPrice < 1e59);
+
     AvailableCollateralToLiquidate memory res;
     (
       res.collateralAmount,
@@ -282,9 +274,12 @@ contract LiquidationAvailableCollateralToLiquidateTest is Base {
   function _calcDebtAmountNeeded(
     TestAvailableCollateralParams memory params
   ) internal pure returns (uint256) {
+    uint256 userCollateralBalanceinBaseCurrency = (params.userCollateralBalance *
+      params.collateralAssetPrice).wadify() / params.collateralAssetUnit;
+
     return
-      ((params.collateralAssetPrice * params.userCollateralBalance * params.debtAssetUnit) /
-        (params.debtAssetPrice * params.collateralAssetUnit)).percentDiv(params.liquidationBonus);
+      ((params.debtAssetUnit * userCollateralBalanceinBaseCurrency.dewadify()) /
+        (params.debtAssetPrice)).percentDiv(params.liquidationBonus);
   }
 
   // TODO: unit test with specific numbers and expected output

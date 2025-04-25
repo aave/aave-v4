@@ -119,10 +119,16 @@ library LiquidationLogic {
   ) internal pure returns (uint256, uint256, uint256) {
     DataTypes.CalculateAvailableCollateralToLiquidateLocalVars memory vars;
 
+    console.log('here0');
+
+    console.log('%e', params.userCollateralBalance * params.collateralAssetPrice);
+
     // convert collateral to base currency
     vars.userCollateralBalanceinBaseCurrency =
       (params.userCollateralBalance * params.collateralAssetPrice).wadify() /
       params.collateralAssetUnit;
+
+    console.log('here1');
 
     // find collateral in base currency that corresponds to the debt to cover
     vars.baseCollateral =
