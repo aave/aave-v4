@@ -11,8 +11,7 @@ contract LiquidationLogicDebtToRestoreCloseFactorTest is LiquidationLogicBaseTes
   function test_calculateDebtToRestoreCloseFactor_fuzz_non_negative(
     TestDebtToRestoreCloseFactorParams memory params
   ) public {
-    FieldsToSkip memory skips = _skipOnly(SKIP_NONE);
-    TestDebtToRestoreCloseFactorParams memory params = _bound(params, skips);
+    TestDebtToRestoreCloseFactorParams memory params = _bound(params);
     DataTypes.LiquidationCallLocalVars memory args = _setFunctionArgs(params);
 
     // cannot revert if all params are constrained
@@ -23,8 +22,7 @@ contract LiquidationLogicDebtToRestoreCloseFactorTest is LiquidationLogicBaseTes
   function test_calculateDebtToRestoreCloseFactor_fuzz_debtAssetUnit_zero(
     TestDebtToRestoreCloseFactorParams memory params
   ) public {
-    FieldsToSkip memory skips = _skipOnly(SKIP_DEBT_ASSET_UNIT);
-    TestDebtToRestoreCloseFactorParams memory params = _bound(params, skips);
+    TestDebtToRestoreCloseFactorParams memory params = _bound(params);
     // so that default uint max is not returned
     vm.assume(
       (params.liquidationBonus.wadify()).percentMul(params.collateralFactor + 1).fromBps() <
@@ -38,18 +36,11 @@ contract LiquidationLogicDebtToRestoreCloseFactorTest is LiquidationLogicBaseTes
     assertEq(LiquidationLogic.calculateDebtToRestoreCloseFactor(args), 0, 'closeFactorDebt is 0');
   }
 
-  function calculateDebtToRestoreCloseFactor(
-    DataTypes.LiquidationCallLocalVars memory params
-  ) public pure {
-    LiquidationLogic.calculateDebtToRestoreCloseFactor(params);
-  }
-
   /// should not happen in practice
   function test_calculateDebtToRestoreCloseFactor_fuzz_debtAssetPrice_zero(
     TestDebtToRestoreCloseFactorParams memory params
   ) public {
-    FieldsToSkip memory skips = _skipOnly(SKIP_DEBT_ASSET_PRICE);
-    TestDebtToRestoreCloseFactorParams memory params = _bound(params, skips);
+    TestDebtToRestoreCloseFactorParams memory params = _bound(params);
     // so that default uint max is not returned
     vm.assume(
       (params.liquidationBonus.wadify()).percentMul(params.collateralFactor + 1).fromBps() <
@@ -65,8 +56,7 @@ contract LiquidationLogicDebtToRestoreCloseFactorTest is LiquidationLogicBaseTes
   function test_calculateDebtToRestoreCloseFactor_cf_eq_hf(
     TestDebtToRestoreCloseFactorParams memory params
   ) public {
-    FieldsToSkip memory skips = _skipOnly(SKIP_NONE);
-    TestDebtToRestoreCloseFactorParams memory params = _bound(params, skips);
+    TestDebtToRestoreCloseFactorParams memory params = _bound(params);
     params.healthFactor = params.closeFactor;
     // so that default uint max is not returned
     vm.assume(
@@ -81,8 +71,7 @@ contract LiquidationLogicDebtToRestoreCloseFactorTest is LiquidationLogicBaseTes
   function test_calculateDebtToRestoreCloseFactor_cf_lt_hf(
     TestDebtToRestoreCloseFactorParams memory params
   ) public {
-    FieldsToSkip memory skips = _skipOnly(SKIP_NONE);
-    TestDebtToRestoreCloseFactorParams memory params = _bound(params, skips);
+    TestDebtToRestoreCloseFactorParams memory params = _bound(params);
     params.healthFactor = params.closeFactor + 1;
     // so that default uint max is not returned
     vm.assume(
@@ -99,8 +88,7 @@ contract LiquidationLogicDebtToRestoreCloseFactorTest is LiquidationLogicBaseTes
   function test_calculateDebtToRestoreCloseFactor_fuzz_closeFactor_lte_effectiveLiquidationPenalty_zero(
     TestDebtToRestoreCloseFactorParams memory params
   ) public {
-    FieldsToSkip memory skips = _skipOnly(SKIP_CLOSE_FACTOR);
-    TestDebtToRestoreCloseFactorParams memory params = _bound(params, skips);
+    TestDebtToRestoreCloseFactorParams memory params = _bound(params);
     vm.assume(
       _calculateCloseFactorThreshold(params.liquidationBonus, params.collateralFactor) - 1 >=
         HEALTH_FACTOR_LIQUIDATION_THRESHOLD
@@ -117,5 +105,11 @@ contract LiquidationLogicDebtToRestoreCloseFactorTest is LiquidationLogicBaseTes
       type(uint256).max,
       'closeFactorDebt is max uint'
     );
+  }
+
+  function calculateDebtToRestoreCloseFactor(
+    DataTypes.LiquidationCallLocalVars memory params
+  ) public pure {
+    LiquidationLogic.calculateDebtToRestoreCloseFactor(params);
   }
 }

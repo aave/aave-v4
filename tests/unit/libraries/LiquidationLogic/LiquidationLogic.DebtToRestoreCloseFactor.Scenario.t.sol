@@ -13,19 +13,6 @@ contract LiquidationLogicDebtToRestoreCloseFactorScenarioTest is LiquidationLogi
     uint256 amount;
   }
 
-  function setUpScenario1() internal {
-    updateCollateralFactor(spoke1, _daiReserveId(spoke1), 75_00);
-    updateCollateralFactor(spoke1, _wethReserveId(spoke1), 80_00);
-    updateCollateralFactor(spoke1, _usdxReserveId(spoke1), 70_00);
-
-    // weth price drops to $800
-    oracle.setAssetPrice(wethAssetId, 800e8); // $800
-
-    updateLiquidationBonus(spoke1, _daiReserveId(spoke1), 105_00);
-    updateLiquidationBonus(spoke1, _wethReserveId(spoke1), 103_00);
-    updateLiquidationBonus(spoke1, _usdxReserveId(spoke1), 104_00);
-  }
-
   function test_calculateDebtToRestoreCloseFactor_setup1_scenario1() public {
     // coll: $10k usdx, $8k weth
     // debt: $15k dai
@@ -129,19 +116,6 @@ contract LiquidationLogicDebtToRestoreCloseFactorScenarioTest is LiquidationLogi
       debtIndex: 0,
       closeFactorDebt: closeFactorDebt
     });
-  }
-
-  function setUpScenario2() internal {
-    updateCollateralFactor(spoke1, _daiReserveId(spoke1), 85_00);
-    updateCollateralFactor(spoke1, _usdxReserveId(spoke1), 74_00);
-    updateCollateralFactor(spoke1, _wethReserveId(spoke1), 78_00);
-
-    // dai price drops to $0.5
-    oracle.setAssetPrice(daiAssetId, 0.5e8);
-
-    updateLiquidationBonus(spoke1, _daiReserveId(spoke1), 104_00);
-    updateLiquidationBonus(spoke1, _wethReserveId(spoke1), 106_00);
-    updateLiquidationBonus(spoke1, _usdxReserveId(spoke1), 108_00);
   }
 
   function test_calculateDebtToRestoreCloseFactor_setup2_scenario1() public {
@@ -266,7 +240,7 @@ contract LiquidationLogicDebtToRestoreCloseFactorScenarioTest is LiquidationLogi
     });
   }
 
-  /// assert expected resultant health factor vs close factor after liquidation
+  /// assert expected derived health factor vs close factor after liquidation
   function assertCloseFactor(
     ISpoke spoke,
     DataTypes.LiquidationCallLocalVars memory params,
@@ -287,7 +261,7 @@ contract LiquidationLogicDebtToRestoreCloseFactorScenarioTest is LiquidationLogi
     debts[debtIndex].amount -= closeFactorDebt;
     collaterals[collateralIndex].amount -=
       _convertBaseCurrencyToAmount(
-        _convertDebtToCollAmount(params.liquidationBonus, debtBaseCurrencyRestored),
+        _convertDebtToCollBaseCurrency(params.liquidationBonus, debtBaseCurrencyRestored),
         oracle.getAssetPrice(spoke1.getReserve(collaterals[collateralIndex].reserveId).assetId),
         10 ** spoke1.getReserve(collaterals[collateralIndex].reserveId).config.decimals
       ) +
@@ -305,7 +279,9 @@ contract LiquidationLogicDebtToRestoreCloseFactorScenarioTest is LiquidationLogi
     );
   }
 
-  function _convertDebtToCollAmount(
+  /// convert debt in base currency to collateral in base currency
+  /// scaled by a factor of liquidation bonus
+  function _convertDebtToCollBaseCurrency(
     uint256 liquidationBonus,
     uint256 debtBaseCurrencyRestored
   ) internal pure returns (uint256) {
@@ -358,5 +334,31 @@ contract LiquidationLogicDebtToRestoreCloseFactorScenarioTest is LiquidationLogi
     }
     params.totalDebtInBaseCurrency = totalAmount;
     params.healthFactor = totalCollateralFactor.wadDivUp(params.totalDebtInBaseCurrency).fromBps();
+  }
+
+  function setUpScenario1() internal {
+    updateCollateralFactor(spoke1, _daiReserveId(spoke1), 75_00);
+    updateCollateralFactor(spoke1, _wethReserveId(spoke1), 80_00);
+    updateCollateralFactor(spoke1, _usdxReserveId(spoke1), 70_00);
+
+    // weth price drops to $800
+    oracle.setAssetPrice(wethAssetId, 800e8); // $800
+
+    updateLiquidationBonus(spoke1, _daiReserveId(spoke1), 105_00);
+    updateLiquidationBonus(spoke1, _wethReserveId(spoke1), 103_00);
+    updateLiquidationBonus(spoke1, _usdxReserveId(spoke1), 104_00);
+  }
+
+  function setUpScenario2() internal {
+    updateCollateralFactor(spoke1, _daiReserveId(spoke1), 85_00);
+    updateCollateralFactor(spoke1, _usdxReserveId(spoke1), 74_00);
+    updateCollateralFactor(spoke1, _wethReserveId(spoke1), 78_00);
+
+    // dai price drops to $0.5
+    oracle.setAssetPrice(daiAssetId, 0.5e8);
+
+    updateLiquidationBonus(spoke1, _daiReserveId(spoke1), 104_00);
+    updateLiquidationBonus(spoke1, _wethReserveId(spoke1), 106_00);
+    updateLiquidationBonus(spoke1, _usdxReserveId(spoke1), 108_00);
   }
 }

@@ -9,7 +9,7 @@ contract LiquidationLogicVariableLiquidationBonusTest is LiquidationLogicBaseTes
 
   DataTypes.LiquidationConfig internal _config;
 
-  /// if liquidation bonus is set to 0%, it should return always return 0%
+  /// if liquidation bonus is set to 0%, liq bonus should always be 0% regardless of the health factor
   function testCalculate_fuzz_zero_liquidationBonus(
     uint256 healthFactor,
     uint256 healthFactorBonusThreshold,
@@ -17,7 +17,7 @@ contract LiquidationLogicVariableLiquidationBonusTest is LiquidationLogicBaseTes
     uint256 liquidationBonusFactor
   ) public {
     liquidationBonus = MIN_LIQUIDATION_BONUS;
-    liquidationBonusFactor = bound(liquidationBonusFactor, 0, MAX_LIQUIDATION_BONUS_FACTOR); // BPS
+    liquidationBonusFactor = bound(liquidationBonusFactor, 0, MAX_LIQUIDATION_BONUS_FACTOR);
     healthFactorBonusThreshold = bound(
       healthFactorBonusThreshold,
       1,
