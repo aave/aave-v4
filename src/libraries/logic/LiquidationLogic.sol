@@ -150,7 +150,7 @@ library LiquidationLogic {
       vars.collateralAmount = params.userCollateralBalance;
       // back calculate debt amount needed to cover the max allowed collateral
       vars.debtAmountNeeded = ((params.debtAssetUnit *
-        vars.userCollateralBalanceinBaseCurrency.dewadify()) / (params.debtAssetPrice)).percentDiv(
+        vars.userCollateralBalanceinBaseCurrency.dewadify()) / params.debtAssetPrice).percentDiv(
           params.liquidationBonus
         );
     } else {

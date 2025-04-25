@@ -113,8 +113,24 @@ contract LiquidationAvailableCollateralToLiquidateTest is Base {
 
     DataTypes.LiquidationCallLocalVars memory args = _setFunctionArgs(params);
 
-    vm.expectRevert(stdError.divisionError);
-    this.calculateAvailableCollateralToLiquidate(args);
+    AvailableCollateralToLiquidate memory res;
+    (
+      res.collateralAmount,
+      res.debtAmountNeeded,
+      res.liquidationProtocolFeeAmount
+    ) = LiquidationLogic.calculateAvailableCollateralToLiquidate(args);
+
+    (uint256 collateralAmount, uint256 protocolLiquidationFee) = _calcLiquidationProtocolFeeAmount(
+      params,
+      params.userCollateralBalance
+    );
+    assertEq(res.collateralAmount, collateralAmount, 'collateralAmount');
+    assertEq(res.debtAmountNeeded, 0, 'debtAmountNeeded');
+    assertEq(
+      res.liquidationProtocolFeeAmount,
+      protocolLiquidationFee,
+      'liquidationProtocolFeeAmount'
+    );
   }
 
   function test_calculateAvailableCollateralToLiquidate_fuzz_userCollateralBalance_lt_maxCollateralToLiquidate(
