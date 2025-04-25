@@ -293,7 +293,7 @@ contract LiquidationCallCloseFactorTest is SpokeLiquidationBase {
     return liqConfig;
   }
 
-  /// fuzz tests with
+  /// fuzz tests where liquidation results in health factor = close factor
   function _execLiqCallCloseFactorTest(
     DataTypes.LiquidationConfig memory liqConfig,
     uint256 liqBonus,
@@ -313,7 +313,7 @@ contract LiquidationCallCloseFactorTest is SpokeLiquidationBase {
       PercentageMath
         .PERCENTAGE_FACTOR
         .percentDiv(state.collateralReserve.config.collateralFactor)
-        .percentMul(90_00) // add buffer so that position is liquidatable
+        .percentMul(95_00) // add buffer so that amount to restore is > 0
     );
 
     liquidationProtocolFeePercentage = bound(liquidationProtocolFeePercentage, 0, 100_00);
@@ -370,7 +370,7 @@ contract LiquidationCallCloseFactorTest is SpokeLiquidationBase {
     state.treasury.balanceAfter = IERC20(state.collateralReserve.asset).balanceOf(TREASURY);
     state.supply.balanceAfter = spoke1.getUserSuppliedAmount(collateralReserveId, alice);
 
-    // convert
+    // convert amount to base currency
     state.liquidator.baseChange = _convertAmountToBaseCurrency(
       state.collateralReserve.assetId,
       _absDiff(state.liquidator.balanceAfter, state.liquidator.balanceBefore)

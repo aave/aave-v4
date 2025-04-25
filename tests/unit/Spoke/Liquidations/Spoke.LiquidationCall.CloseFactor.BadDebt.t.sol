@@ -3,7 +3,7 @@ pragma solidity ^0.8.0;
 
 import 'tests/unit/Spoke/Liquidations/Spoke.Liquidation.Base.t.sol';
 
-/// tests where liquidation of all collateral is insufficient to cover all debt
+/// tests where liquidation results in bad debt (debt > 0, collateral = 0)
 contract LiquidationCallCloseFactorBadDebtTest is SpokeLiquidationBase {
   using SharesMath for uint256;
   using WadRayMath for uint256;

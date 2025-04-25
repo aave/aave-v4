@@ -234,7 +234,7 @@ contract LiquidationCallCloseFactorMultiReserveTest is SpokeLiquidationBase {
     return state;
   }
 
-  /// @notice Borrow multiple reserves to ensure the health factor is below the desired level.
+  /// @notice Borrow random amounts from multiple reserves to ensure the health factor is below the desired level.
   function _borrowMultipleReservesToBeBelowHf(
     ISpoke spoke,
     address user,

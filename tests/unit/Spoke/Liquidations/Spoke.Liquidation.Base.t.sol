@@ -424,6 +424,7 @@ contract SpokeLiquidationBase is SpokeBase {
     uint256 debtToCover
   )
     internal
+    view
     returns (
       uint256 actualCollateralToLiquidate,
       uint256 actualDebtToLiquidate,
