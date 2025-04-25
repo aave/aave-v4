@@ -91,29 +91,20 @@ library LiquidationLogic {
     uint256 totalDebtAmount = (params.totalDebtInBaseCurrency.dewadify() * params.debtAssetUnit) /
       params.debtAssetPrice;
 
-    // effectiveLiquidationPenalty = (params.liquidationBonus.percentMul(params.collateralFactor) - 1)
-    //   .wadify()
-    //   .fromBps();
-
     // console.log(
-    //   'effectiveLiquidationPenalty',
-    //   effectiveLiquidationPenalty,
-    //   (params.liquidationBonus.percentMul(params.collateralFactor)).wadify().fromBps()
+    //   'here %e %e',
+    //   params.closeFactor,
+    //   params.healthFactor,
+    //   params.closeFactor - effectiveLiquidationPenalty + 1
     // );
 
+    // console.log('asddfsad', params.closeFactor - params.healthFactor);
+
     // add 1 to denominator to round down, ensuring HF is always <= close factor
-    uint256 debtToRestoreCloseFactor = totalDebtAmount.wadMulDown(
-      ((params.closeFactor - params.healthFactor)).wadDivDown(
-        (params.closeFactor - effectiveLiquidationPenalty + 1)
-      )
-    );
-
-    // uint prev = (params.totalDebtInBaseCurrency.wadMulUp(params.closeFactor - params.healthFactor) *
-    //   params.debtAssetUnit) /
-    //   (((params.closeFactor - effectiveLiquidationPenalty) * params.debtAssetPrice)) +
-    //   1;
-
-    // console.log('LL after cmp prev %e new %e', prev, closeFactorDebt);
+    uint256 debtToRestoreCloseFactor = totalDebtAmount
+      .wadMulDown(params.closeFactor - params.healthFactor)
+      .wadDivDown((params.closeFactor - effectiveLiquidationPenalty + 1));
+    console.log('here %e %e', debtToRestoreCloseFactor);
 
     return debtToRestoreCloseFactor;
   }

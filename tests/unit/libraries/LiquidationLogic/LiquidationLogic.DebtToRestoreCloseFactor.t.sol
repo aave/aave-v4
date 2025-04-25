@@ -15,11 +15,8 @@ contract LiquidationLogicDebtToRestoreCloseFactorTest is LiquidationLogicBaseTes
     TestCloseFactorDebtParams memory params = _bound(params, skips);
     DataTypes.LiquidationCallLocalVars memory args = _setFunctionArgs(params);
 
-    assertGe(
-      LiquidationLogic.calculateDebtToRestoreCloseFactor(args),
-      0,
-      'closeFactorDebt cannot underflow'
-    );
+    // cannot revert if all params are constrained
+    LiquidationLogic.calculateDebtToRestoreCloseFactor(args);
   }
 
   /// if debtAssetUnit == 0, then result is 0 (should not happen in practice as unit is 10**decimals)

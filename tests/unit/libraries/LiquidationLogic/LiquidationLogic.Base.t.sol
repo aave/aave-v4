@@ -18,9 +18,8 @@ contract LiquidationLogicBaseTest is Base {
   uint256 constant SKIP_CLOSE_FACTOR = 1 << 2;
   uint256 constant SKIP_TOTAL_DEBT = 1 << 3;
   uint256 constant SKIP_DEBT_ASSET_PRICE = 1 << 4;
-  uint256 constant SKIP_AVG_COLLATERAL_FACTOR = 1 << 5;
-  uint256 constant SKIP_DEBT_ASSET_UNIT = 1 << 6;
-  uint256 constant SKIP_TOTAL_COLLATERAL = 1 << 7;
+  uint256 constant SKIP_DEBT_ASSET_UNIT = 1 << 5;
+  uint256 constant SKIP_HF = 1 << 6;
 
   struct FieldsToSkip {
     uint256 flags;
@@ -37,9 +36,8 @@ contract LiquidationLogicBaseTest is Base {
     uint256 closeFactor;
     uint256 totalDebtInBaseCurrency;
     uint256 debtAssetPrice;
-    uint256 avgCollateralFactor;
     uint256 debtAssetUnit;
-    uint256 totalCollateralInBaseCurrency;
+    uint256 healthFactor;
   }
 
   function setUp() public virtual override {
@@ -91,8 +89,8 @@ contract LiquidationLogicBaseTest is Base {
     result.closeFactor = params.closeFactor;
     result.totalDebtInBaseCurrency = params.totalDebtInBaseCurrency;
     result.debtAssetPrice = params.debtAssetPrice;
-    result.avgCollateralFactor = params.avgCollateralFactor;
     result.debtAssetUnit = params.debtAssetUnit;
+    result.healthFactor = params.healthFactor;
   }
 
   function _bound(
@@ -109,11 +107,6 @@ contract LiquidationLogicBaseTest is Base {
 
     if (!_isSkipped(skip, SKIP_COLLATERAL_FACTOR)) {
       params.collateralFactor = bound(params.collateralFactor, 1, MAX_COLLATERAL_FACTOR);
-    }
-
-    if (!_isSkipped(skip, SKIP_AVG_COLLATERAL_FACTOR)) {
-      params.avgCollateralFactor = bound(params.avgCollateralFactor, 1, MAX_COLLATERAL_FACTOR)
-        .wadify();
     }
 
     if (!_isSkipped(skip, SKIP_TOTAL_DEBT)) {
@@ -136,16 +129,10 @@ contract LiquidationLogicBaseTest is Base {
       );
     }
 
+    params.healthFactor = bound(params.healthFactor, 0, params.closeFactor);
+
     if (!_isSkipped(skip, SKIP_DEBT_ASSET_UNIT)) {
       params.debtAssetUnit = bound(params.debtAssetUnit, 1, 10 ** MAX_TOKEN_DECIMALS_SUPPORTED);
-    }
-
-    if (!_isSkipped(skip, SKIP_TOTAL_COLLATERAL)) {
-      params.totalCollateralInBaseCurrency = bound(
-        params.totalCollateralInBaseCurrency,
-        1,
-        MAX_TOTAL_ASSET_IN_BASE_CURRENCY
-      );
     }
 
     return params;
