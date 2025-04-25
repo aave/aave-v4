@@ -210,8 +210,6 @@ contract LiquidationCallScenarioTest is SpokeLiquidationBase {
     state.supply.balanceBefore = spoke1.getUserSuppliedAmount(state.wbtcReserveId, alice);
     state.debt.balanceBefore = spoke1.getUserTotalDebt(state.wethReserveId, alice);
 
-    console.log('total debt before', state.debt.balanceBefore);
-
     vm.prank(LIQUIDATOR);
     spoke1.liquidationCall({
       collateralReserveId: state.wbtcReserveId,
@@ -260,7 +258,6 @@ contract LiquidationCallScenarioTest is SpokeLiquidationBase {
 
   /// liquidation call with HF < 1 due to accrued interest
   function test_liquidationCall_accrued_interest() public {
-    LiquidationTestLocalParams memory test;
     LiqScenarioTestData memory state;
 
     state.wethReserveId = _wethReserveId(spoke1);
@@ -295,13 +292,13 @@ contract LiquidationCallScenarioTest is SpokeLiquidationBase {
     // position must be liquidatable after interest accrual
     assertLt(spoke1.getHealthFactor(alice), HEALTH_FACTOR_LIQUIDATION_THRESHOLD);
 
-    test.liquidatorCollateral.balanceBefore = IERC20(spoke1.getReserve(state.wbtcReserveId).asset)
+    state.liquidatorCollateral.balanceBefore = IERC20(spoke1.getReserve(state.wbtcReserveId).asset)
       .balanceOf(LIQUIDATOR);
-    test.liquidator.balanceBefore = IERC20(spoke1.getReserve(state.wethReserveId).asset).balanceOf(
+    state.liquidator.balanceBefore = IERC20(spoke1.getReserve(state.wethReserveId).asset).balanceOf(
       LIQUIDATOR
     );
-    test.supply.balanceBefore = spoke1.getUserSuppliedAmount(state.wbtcReserveId, alice);
-    test.debt.balanceBefore = spoke1.getUserTotalDebt(state.wethReserveId, alice);
+    state.supply.balanceBefore = spoke1.getUserSuppliedAmount(state.wbtcReserveId, alice);
+    state.debt.balanceBefore = spoke1.getUserTotalDebt(state.wethReserveId, alice);
 
     vm.prank(LIQUIDATOR);
     spoke1.liquidationCall({
@@ -311,34 +308,124 @@ contract LiquidationCallScenarioTest is SpokeLiquidationBase {
       debtToCover: MAX_SUPPLY_AMOUNT
     });
 
-    test.liquidatorCollateral.balanceAfter = IERC20(spoke1.getReserve(state.wbtcReserveId).asset)
+    state.liquidatorCollateral.balanceAfter = IERC20(spoke1.getReserve(state.wbtcReserveId).asset)
       .balanceOf(LIQUIDATOR);
-    test.liquidator.balanceAfter = IERC20(spoke1.getReserve(state.wethReserveId).asset).balanceOf(
+    state.liquidator.balanceAfter = IERC20(spoke1.getReserve(state.wethReserveId).asset).balanceOf(
       LIQUIDATOR
     );
-    test.supply.balanceAfter = spoke1.getUserSuppliedAmount(state.wbtcReserveId, alice);
-    test.debt.balanceAfter = spoke1.getUserTotalDebt(state.wethReserveId, alice);
+    state.supply.balanceAfter = spoke1.getUserSuppliedAmount(state.wbtcReserveId, alice);
+    state.debt.balanceAfter = spoke1.getUserTotalDebt(state.wethReserveId, alice);
 
     assertApproxEqAbs(
-      _absDiff(test.liquidator.balanceAfter, test.liquidator.balanceBefore),
-      _absDiff(test.debt.balanceAfter, test.debt.balanceBefore),
+      _absDiff(state.liquidator.balanceAfter, state.liquidator.balanceBefore),
+      _absDiff(state.debt.balanceAfter, state.debt.balanceBefore),
       2,
       'liquidator repaid debt amount and restored debt accounting'
     );
-    (uint256 newUserRp, , uint256 newHf, , ) = spoke1.getUserAccountData(alice);
+
+    state.wbtcPosition = spoke1.getUserPosition(state.wbtcReserveId, alice);
+    state.wethPosition = spoke1.getUserPosition(state.wethReserveId, alice);
+    (state.userRp, , state.healthFactor, , ) = spoke1.getUserAccountData(alice);
 
     assertEq(
-      spoke1.getUserPosition(state.wbtcReserveId, alice).baseDrawnShares.percentMul(newUserRp),
-      spoke1.getUserPosition(state.wbtcReserveId, alice).premiumDrawnShares,
+      state.wbtcPosition.baseDrawnShares.percentMul(state.userRp),
+      state.wbtcPosition.premiumDrawnShares,
       'collateral reserve accounting refresh'
     );
     assertEq(
-      spoke1.getUserPosition(state.wethReserveId, alice).baseDrawnShares.percentMul(newUserRp),
-      spoke1.getUserPosition(state.wethReserveId, alice).premiumDrawnShares,
+      state.wethPosition.baseDrawnShares.percentMul(state.userRp),
+      state.wethPosition.premiumDrawnShares,
       'debt reserve accounting is refresh'
     );
 
-    assertLe(newHf, _getCloseFactor(spoke1), 'hf <= close factor');
+    assertLe(state.healthFactor, _getCloseFactor(spoke1), 'hf <= close factor');
+  }
+
+  /// liquidation call with HF < 1 due to accrued interest
+  function test_liquidationCall_fuzz_accrued_interest(uint256 skipTime) public {
+    skipTime = bound(skipTime, 1, MAX_SKIP_TIME);
+
+    LiqScenarioTestData memory state;
+
+    state.wethReserveId = _wethReserveId(spoke1);
+    state.daiReserveId = _daiReserveId(spoke1);
+    state.wbtcReserveId = _wbtcReserveId(spoke1);
+
+    // collateral: wbtc/dai
+    state.collAmount.wbtc = 1 * 10 ** decimals.wbtc; // $50k wbtc
+    state.collAmount.dai = 10_000 * 10 ** decimals.dai; // $10k dai
+
+    state.liqBonus = spoke1.getReserve(state.wbtcReserveId).config.liquidationBonus;
+
+    // simplify accounting checks with no fee or bonus
+    updateLiquidationProtocolFeePercentage(spoke1, state.wbtcReserveId, 0);
+    updateLiquidationBonus(spoke1, state.wbtcReserveId, 100_00);
+
+    Utils.supplyCollateral(spoke1, state.wbtcReserveId, alice, state.collAmount.wbtc, alice);
+    Utils.supplyCollateral(spoke1, state.daiReserveId, alice, state.collAmount.dai, alice);
+    _borrowToBeBelowHf(spoke1, alice, state.wethReserveId, 1.001e18);
+
+    // position must initially be healthy
+    assertGt(spoke1.getHealthFactor(alice), HEALTH_FACTOR_LIQUIDATION_THRESHOLD);
+
+    // interest accrual
+    vm.mockCall(
+      address(irStrategy),
+      IReserveInterestRateStrategy.calculateInterestRates.selector,
+      abi.encode(uint256(50_00).bpsToRay())
+    );
+    skip(skipTime);
+
+    // position must be liquidatable after interest accrual
+    vm.assume(spoke1.getHealthFactor(alice) < HEALTH_FACTOR_LIQUIDATION_THRESHOLD);
+
+    state.liquidatorCollateral.balanceBefore = IERC20(spoke1.getReserve(state.wbtcReserveId).asset)
+      .balanceOf(LIQUIDATOR);
+    state.liquidator.balanceBefore = IERC20(spoke1.getReserve(state.wethReserveId).asset).balanceOf(
+      LIQUIDATOR
+    );
+    state.supply.balanceBefore = spoke1.getUserSuppliedAmount(state.wbtcReserveId, alice);
+    state.debt.balanceBefore = spoke1.getUserTotalDebt(state.wethReserveId, alice);
+
+    vm.prank(LIQUIDATOR);
+    spoke1.liquidationCall({
+      collateralReserveId: state.wbtcReserveId,
+      debtReserveId: state.wethReserveId,
+      user: alice,
+      debtToCover: MAX_SUPPLY_AMOUNT
+    });
+
+    state.liquidatorCollateral.balanceAfter = IERC20(spoke1.getReserve(state.wbtcReserveId).asset)
+      .balanceOf(LIQUIDATOR);
+    state.liquidator.balanceAfter = IERC20(spoke1.getReserve(state.wethReserveId).asset).balanceOf(
+      LIQUIDATOR
+    );
+    state.supply.balanceAfter = spoke1.getUserSuppliedAmount(state.wbtcReserveId, alice);
+    state.debt.balanceAfter = spoke1.getUserTotalDebt(state.wethReserveId, alice);
+
+    assertApproxEqAbs(
+      _absDiff(state.liquidator.balanceAfter, state.liquidator.balanceBefore),
+      _absDiff(state.debt.balanceAfter, state.debt.balanceBefore),
+      4, // max delta too large?
+      'liquidator repaid debt amount and restored debt accounting'
+    );
+
+    state.wbtcPosition = spoke1.getUserPosition(state.wbtcReserveId, alice);
+    state.wethPosition = spoke1.getUserPosition(state.wethReserveId, alice);
+    (state.userRp, , state.healthFactor, , ) = spoke1.getUserAccountData(alice);
+
+    assertEq(
+      state.wbtcPosition.baseDrawnShares.percentMul(state.userRp),
+      state.wbtcPosition.premiumDrawnShares,
+      'collateral reserve accounting refresh'
+    );
+    assertEq(
+      state.wethPosition.baseDrawnShares.percentMul(state.userRp),
+      state.wethPosition.premiumDrawnShares,
+      'debt reserve accounting is refresh'
+    );
+
+    assertLe(state.healthFactor, _getCloseFactor(spoke1), 'hf <= close factor');
   }
 
   /// liquidation call does not allow arbitrarily large debtToCover
