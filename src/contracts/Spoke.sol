@@ -822,7 +822,7 @@ contract Spoke is ISpoke {
 
   function _validateSetUsingAsCollateral(
     DataTypes.Reserve storage reserve,
-    DataTypes.UserPosition storage userPosition, // todo: rm
+    DataTypes.UserPosition storage userPosition,
     bool usingAsCollateral
   ) internal view {
     require(reserve.config.active, ReserveNotActive());
