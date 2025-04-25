@@ -296,8 +296,6 @@ contract LiquidationLogicDebtToRestoreCloseFactorScenarioTest is LiquidationLogi
     // recalculate params assuming liquidated debt/coll
     params = _calcExpectedUserAccountData(spoke, collaterals, collateralIndex, debts, debtIndex);
 
-    console.log('hf %e cf %e', params.healthFactor, closeFactor);
-
     assertLe(params.healthFactor, closeFactor, 'hf must be <= close factor');
     assertApproxEqRel(
       params.healthFactor,
@@ -360,13 +358,6 @@ contract LiquidationLogicDebtToRestoreCloseFactorScenarioTest is LiquidationLogi
       }
     }
     params.totalDebtInBaseCurrency = totalAmount;
-
     params.healthFactor = totalCollateralFactor.wadDivUp(params.totalDebtInBaseCurrency).fromBps();
-    console.log(
-      'params.totalDebtInBaseCurrency %e %e %e',
-      params.totalDebtInBaseCurrency,
-      totalCollateralFactor,
-      params.healthFactor
-    );
   }
 }

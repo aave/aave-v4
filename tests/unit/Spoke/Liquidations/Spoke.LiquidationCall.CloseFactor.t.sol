@@ -286,23 +286,6 @@ contract LiquidationCallCloseFactorTest is SpokeLiquidationBase {
       MIN_CLOSE_FACTOR,
       HEALTH_FACTOR_LIQUIDATION_THRESHOLD * 10
     );
-    // uint256 increment = WadRayMath.WAD / 1e2; // assume close factor set as increments of 100 BPS
-
-    // uint256 minTick = HEALTH_FACTOR_LIQUIDATION_THRESHOLD / increment;
-    // uint256 maxTick = (5 * HEALTH_FACTOR_LIQUIDATION_THRESHOLD) / increment - 1;
-
-    // // Bound in number of ticks
-    // uint256 tick = bound(liqConfig.closeFactor / increment, minTick, maxTick);
-
-    // Reconstruct the actual value
-    // liqConfig.closeFactor = tick * increment;
-    // console.log('liqConfig.closeFactor %e', liqConfig.closeFactor);
-    // liqConfig.healthFactorBonusThreshold = bound(
-    //   liqConfig.healthFactorBonusThreshold,
-    //   1,
-    //   HEALTH_FACTOR_LIQUIDATION_THRESHOLD - 1
-    // );
-    // liqConfig.liquidationBonusFactor = bound(liqConfig.liquidationBonusFactor, 0, 100_00);
 
     // set config to 0 so that desiredHf can be easily calculated (dependent on LB)
     liqConfig.liquidationBonusFactor = 0;
@@ -375,17 +358,6 @@ contract LiquidationCallCloseFactorTest is SpokeLiquidationBase {
       collateralReserveId,
       hfAfterBorrow
     );
-
-    console.log('   fuzz inputs');
-    console.log('   collateralReserveId %e', collateralReserveId);
-    console.log('   debtReserveId %e', debtReserveId);
-    console.log('   supplyAmount %e', supplyAmount);
-    console.log('   closeFactor %e', liqConfig.closeFactor);
-    console.log('   healthFactorBonusThreshold %e', liqConfig.healthFactorBonusThreshold);
-    console.log('   liquidationBonusFactor %e', liqConfig.liquidationBonusFactor);
-    console.log('   liqBonus %e', liqBonus);
-    console.log('   liquidationProtocolFeePercentage %e', liquidationProtocolFeePercentage);
-    console.log('   desiredHf %e', desiredHf);
 
     state.debt.balanceBefore = spoke1.getUserTotalDebt(debtReserveId, alice);
     state.liquidator.balanceBefore = IERC20(state.collateralReserve.asset).balanceOf(LIQUIDATOR);

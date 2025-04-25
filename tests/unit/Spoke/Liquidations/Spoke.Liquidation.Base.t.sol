@@ -99,7 +99,6 @@ contract SpokeLiquidationBase is SpokeBase {
     vm.clearMockedCalls();
 
     uint256 finalHf = spoke.getHealthFactor(user);
-    console.log('final hf %e | desired hf %e', finalHf, desiredHf);
     assertLt(finalHf, desiredHf);
     return (finalHf, requiredDebtAmount);
   }
@@ -191,17 +190,6 @@ contract SpokeLiquidationBase is SpokeBase {
 
     state.liquidationProtocolFeePercentage = liquidationProtocolFeePercentage;
 
-    console.log('   fuzz inputs');
-    console.log('   collateralReserveId %e', collateralReserveId);
-    console.log('   debtReserveId %e', debtReserveId);
-    console.log('   supplyAmount %e', supplyAmount);
-    console.log('   closeFactor %e', liqConfig.closeFactor);
-    console.log('   healthFactorBonusThreshold %e', liqConfig.healthFactorBonusThreshold);
-    console.log('   liquidationBonusFactor %e', liqConfig.liquidationBonusFactor);
-    console.log('   liqBonus %e', liqBonus);
-    console.log('   liquidationProtocolFeePercentage %e', liquidationProtocolFeePercentage);
-    console.log('   desiredHf %e', desiredHf);
-
     _config = liqConfig;
     spoke1.updateLiquidationConfig(_config);
     updateLiquidationBonus(spoke1, collateralReserveId, liqBonus);
@@ -231,28 +219,9 @@ contract SpokeLiquidationBase is SpokeBase {
       hfAfterBorrow
     );
 
-    console.log('   state.liquidationBonus %e', state.liquidationBonus);
-
     state.debt.balanceBefore = spoke1.getUserTotalDebt(debtReserveId, alice);
     state.liquidator.balanceBefore = IERC20(state.collateralReserve.asset).balanceOf(LIQUIDATOR);
     state.supply.balanceBefore = spoke1.getUserSuppliedAmount(collateralReserveId, alice);
-
-    console.log(
-      'before liq: debt amt remaining %e | base %e',
-      spoke1.getUserTotalDebt(state.debtReserve.reserveId, alice),
-      _convertAmountToBaseCurrency(
-        state.debtReserve.assetId,
-        spoke1.getUserTotalDebt(state.debtReserve.reserveId, alice)
-      )
-    );
-    console.log(
-      'before liq: collateral amt remaining %e | base %e',
-      spoke1.getUserSuppliedAmount(state.collateralReserve.reserveId, alice),
-      _convertAmountToBaseCurrency(
-        state.collateralReserve.assetId,
-        spoke1.getUserSuppliedAmount(state.collateralReserve.reserveId, alice)
-      )
-    );
 
     (uint256 collToLiq, uint256 debtToLiq) = _calcDebtAndCollateralToLiquidate(
       spoke1,
@@ -271,23 +240,6 @@ contract SpokeLiquidationBase is SpokeBase {
     );
     vm.prank(LIQUIDATOR);
     spoke1.liquidationCall(collateralReserveId, debtReserveId, alice, requiredDebtAmount);
-
-    console.log(
-      'after liq: debt amt remaining %e | base %e',
-      spoke1.getUserTotalDebt(state.debtReserve.reserveId, alice),
-      _convertAmountToBaseCurrency(
-        state.debtReserve.assetId,
-        spoke1.getUserTotalDebt(state.debtReserve.reserveId, alice)
-      )
-    );
-    console.log(
-      'after liq: collateral amt remaining %e | base %e',
-      spoke1.getUserSuppliedAmount(state.collateralReserve.reserveId, alice),
-      _convertAmountToBaseCurrency(
-        state.collateralReserve.assetId,
-        spoke1.getUserSuppliedAmount(state.collateralReserve.reserveId, alice)
-      )
-    );
 
     state.liquidator.balanceAfter = IERC20(state.collateralReserve.asset).balanceOf(LIQUIDATOR);
     state.debt.balanceAfter = spoke1.getUserTotalDebt(debtReserveId, alice);
@@ -320,34 +272,12 @@ contract SpokeLiquidationBase is SpokeBase {
     return state;
   }
 
-  // function _assertAccounting(
-  //   LiquidationTestLocalParams memory state,
-  //   ISpoke spoke,
-  //   uint256 remainingBaseCurrencyBound
-  // ) internal view {
-  //   // at low amounts of coll/debt, HF can diverge from close factor due to rounding/precision
-  //   if (
-  //     _convertAmountToBaseCurrency(state.debtReserve.assetId, state.debt.balanceAfter) >
-  //     remainingBaseCurrencyBound &&
-  //     _convertAmountToBaseCurrency(state.collateralReserve.assetId, state.supply.balanceAfter) >
-  //     remainingBaseCurrencyBound
-  //   ) {
-  //     assertEq(
-  //       state.supply.baseChange.percentDiv(state.debt.baseChange),
-  //       state.liquidationBonus,
-  //       'liquidationBonus'
-  //     );
-  //   }
-  // }
-
   function _assertUserAccountData(
     LiquidationTestLocalParams memory state,
     ISpoke spoke,
     string memory label
   ) internal view virtual {
     (uint256 userRp, , uint256 finalHf, , ) = spoke1.getUserAccountData(alice);
-
-    console.log('hf %e cf %e', finalHf, _getCloseFactor(spoke));
 
     // at low amounts of coll/debt, HF can diverge from close factor due to rounding/precision
     if (
@@ -396,8 +326,6 @@ contract SpokeLiquidationBase is SpokeBase {
       liqBonusEarned.base
     );
 
-    console.log('lb % %e', state.liquidationBonus - PercentageMath.PERCENTAGE_FACTOR);
-
     if (state.collateralReserve.assetId == state.debtReserve.assetId) {
       // when collateral and debt are the same asset, protocol fee is calculated as
       liqProtocolFee.base = _absDiff(
@@ -411,27 +339,6 @@ contract SpokeLiquidationBase is SpokeBase {
       state.collateralReserve.assetId,
       liqProtocolFee.base
     );
-
-    console.log(
-      'amount diff liquidator: %e | supplyvsDebt %e',
-      _convertBaseCurrencyToAmount(state.collateralReserve.assetId, state.liquidator.baseChange),
-      _convertBaseCurrencyToAmount(
-        state.collateralReserve.assetId,
-        _absDiff(state.supply.baseChange, state.debt.baseChange)
-      )
-    );
-
-    console.log('liqBonusEarned amt: %e base: %e', liqBonusEarned.amount, liqBonusEarned.base);
-    console.log('liqProtocolFee amt: %e base: %e', liqProtocolFee.amount, liqProtocolFee.base);
-    // console.log(
-    //   'liqProtocolFee %e',
-    //   _convertBaseCurrencyToAmount(
-    //     state.collateralReserve.assetId,
-    //     _absDiff(state.supply.baseChange, state.liquidator.baseChange)
-    //   )
-    // );
-
-    console.log('final hf %e', spoke1.getHealthFactor(alice));
 
     // constrain due to rounding/precisio
     if (liqProtocolFee.amount < 1e3) {
@@ -468,83 +375,6 @@ contract SpokeLiquidationBase is SpokeBase {
         string.concat('total collateral seized should match debt rel ', label)
       );
     }
-
-    // if (state.supply.balanceChange > 1e4) {
-    //   assertApproxEqRel(
-    //     _convertBaseCurrencyToAmount(state.collateralAssetId, state.supply.baseChange),
-    //     _convertBaseCurrencyToAmount(
-    //       state.collateralAssetId,
-    //       state.debt.baseChange.percentMul(state.liquidationBonus)
-    //     ),
-    //     _approxRelFromBps(10),
-    //     string.concat('total collateral seized should match debt rel ', label)
-    //   );
-    // } else {
-    //   assertApproxEqRel(
-    //     _convertBaseCurrencyToAmount(state.collateralAssetId, state.supply.baseChange),
-    //     _convertBaseCurrencyToAmount(
-    //       state.collateralAssetId,
-    //       state.debt.baseChange.percentMul(state.liquidationBonus)
-    //     ),
-    //     _approxRelFromBps(1_00),
-    //     string.concat('total collateral seized should match debt rel ', label)
-    //   );
-    // }
-
-    // console.log('coll change %e', state.collateral.baseChange);
-    // console.log('debt change %e', state.debt.baseChange);
-
-    // console.log('coll bal change %e', state.supply.balanceChange);
-    // console.log('debt bal change %e', state.debt.balanceChange);
-
-    // console.log(
-    //   'expected coll/debt %e %e',
-    //   state.debt.baseChange.percentMul(state.liquidationBonus),
-    //   state.supply.balanceChange
-    // );
-
-    // console.log(
-    //   'bonus %e %e',
-    //   _absDiff(
-    //     state.liquidator.baseChange,
-    //     state.debt.baseChange.percentMul(state.liquidationBonus - 100_00)
-    //   ),
-    //   _convertBaseCurrencyToAmount(
-    //     state.collateralReserve.assetId,
-    //     _absDiff(state.liquidator.baseChange, state.supply.baseChange - state.debt.baseChange)
-    //   )
-    // );
-
-    // if (
-    //   _convertBaseCurrencyToAmount(state.collateralReserve.reserveId, state.collateral.baseChange) <
-    //   1e4
-    // ) {
-    //   assertApproxEqAbs(
-    //     _convertBaseCurrencyToAmount(
-    //       state.collateralReserve.reserveId,
-    //       state.collateral.baseChange
-    //     ),
-    //     _convertBaseCurrencyToAmount(
-    //       state.collateralReserve.reserveId,
-    //       state.debt.baseChange.percentMul(state.liquidationBonus)
-    //     ),
-    //     1,
-    //     string.concat('total collateral seized should match debt abs ', label)
-    //   );
-    // } else {
-    //   assertApproxEqRel(
-    //     _convertBaseCurrencyToAmount(
-    //       state.collateralReserve.reserveId,
-    //       state.collateral.baseChange
-    //     ),
-    //     _convertBaseCurrencyToAmount(
-    //       state.debtReserve.reserveId,
-    //       state.debt.baseChange.percentMul(state.liquidationBonus)
-    //     ),
-    //     _approxRelFromBps(10),
-    //     string.concat('total collateral seized should match debt rel ', label)
-    //   );
-    // }
   }
 
   function _assertLiquidationBonusEarned(
@@ -562,7 +392,6 @@ contract SpokeLiquidationBase is SpokeBase {
         string.concat('liquidationBonus earned in base currency ', label)
       );
     } else {
-      console.log('state.liquidationBonus %e', state.liquidationBonus);
       assertApproxEqRel(
         state.supply.baseChange,
         state.debt.baseChange.percentMul(state.liquidationBonus),
@@ -600,11 +429,6 @@ contract SpokeLiquidationBase is SpokeBase {
       spoke,
       state,
       debtToCover
-    );
-    console.log(
-      '_calcDebtAndCollateralToLiquidate: coll %e debt %e',
-      actualDebtToLiquidate,
-      collateralToLiquidate
     );
   }
 

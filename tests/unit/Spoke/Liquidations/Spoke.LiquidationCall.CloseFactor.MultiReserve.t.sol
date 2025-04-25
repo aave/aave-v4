@@ -147,23 +147,6 @@ contract LiquidationCallCloseFactorMultiReserveTest is SpokeLiquidationBase {
       MIN_CLOSE_FACTOR,
       HEALTH_FACTOR_LIQUIDATION_THRESHOLD * 10
     );
-    // uint256 increment = WadRayMath.WAD / 1e2; // assume close factor set as increments of 100 BPS
-
-    // uint256 minTick = HEALTH_FACTOR_LIQUIDATION_THRESHOLD / increment;
-    // uint256 maxTick = (5 * HEALTH_FACTOR_LIQUIDATION_THRESHOLD) / increment - 1;
-
-    // // Bound in number of ticks
-    // uint256 tick = bound(liqConfig.closeFactor / increment, minTick, maxTick);
-
-    // Reconstruct the actual value
-    // liqConfig.closeFactor = tick * increment;
-    // console.log('liqConfig.closeFactor %e', liqConfig.closeFactor);
-    // liqConfig.healthFactorBonusThreshold = bound(
-    //   liqConfig.healthFactorBonusThreshold,
-    //   1,
-    //   HEALTH_FACTOR_LIQUIDATION_THRESHOLD - 1
-    // );
-    // liqConfig.liquidationBonusFactor = bound(liqConfig.liquidationBonusFactor, 0, 100_00);
 
     // set variable bonus config to 0 for simplicity
     liqConfig.liquidationBonusFactor = 0;
@@ -232,34 +215,10 @@ contract LiquidationCallCloseFactorMultiReserveTest is SpokeLiquidationBase {
       });
     }
 
-    console.log('   fuzz inputs');
-    console.log('   collateralReserveIds %e', collateralReserveIds[0], collateralReserveIds[1]);
-    console.log('   debtReserveIds %e', debtReserveIds[0], debtReserveIds[1]);
-    console.log('   supplyAmountInBase %e', supplyAmountInBase);
-    console.log('   closeFactor %e', liqConfig.closeFactor);
-    console.log('   healthFactorBonusThreshold %e', liqConfig.healthFactorBonusThreshold);
-    console.log('   liquidationBonusFactor %e', liqConfig.liquidationBonusFactor);
-    console.log('   liqBonus %e', liqBonus);
-    console.log('   liquidationProtocolFeePercentage %e', liquidationProtocolFeePercentage);
-    console.log('   desiredHf %e', state.desiredHf);
-
     (
       uint256 hfAfterBorrow,
       uint256[] memory requiredDebtAmounts
     ) = _borrowMultipleReservesToBeBelowHf(spoke1, alice, debtReserveIds, state.desiredHf);
-
-    // state.liquidationBonus = _getVariableLiquidationBonus(
-    //   spoke1,
-    //   state.collateralReserveId,
-    //   hfAfterBorrow
-    // );
-
-    // // state.debt.balanceBefore = spoke1.getUserTotalDebt(debtReserveId, alice);
-    // // state.liquidator.balanceBefore = IERC20(state.collateralReserve.asset).balanceOf(LIQUIDATOR);
-    // // state.treasury.balanceBefore = IERC20(state.collateralReserve.asset).balanceOf(TREASURY);
-    // // state.supply.balanceBefore = spoke1.getUserSuppliedAmount(collateralReserveId, alice);
-
-    // console.log('debt amts: %e %e', requiredDebtAmounts[0], requiredDebtAmounts[1]);
 
     for (uint256 i = 0; i < debtReserveIds.length; i++) {
       assertLt(spoke1.getHealthFactor(alice), HEALTH_FACTOR_LIQUIDATION_THRESHOLD);
@@ -273,11 +232,10 @@ contract LiquidationCallCloseFactorMultiReserveTest is SpokeLiquidationBase {
       );
     }
 
-    // console.log('final hf %e %e', spoke1.getHealthFactor(alice), liqConfig.closeFactor);
-
     return state;
   }
 
+  /// @notice Borrow multiple reserves to ensure the health factor is below the desired level.
   function _borrowMultipleReservesToBeBelowHf(
     ISpoke spoke,
     address user,
@@ -290,32 +248,23 @@ contract LiquidationCallCloseFactorMultiReserveTest is SpokeLiquidationBase {
     uint256 requiredDebtInBase = _getRequiredDebtForLtHf(spoke, user, desiredHf).percentMul(100_01);
 
     uint256 remaining = requiredDebtInBase;
-    uint256 dustInBase = 10e26;
+    uint256 dustInBase = 10e26; // $10 in base currency
 
     vm.startPrank(user);
     for (uint256 i = 0; i < reserveIds.length; i++) {
       uint256 assetId = spoke.getReserve(reserveIds[i]).assetId;
 
       uint256 amountInBase;
-      // randomly find how much of each reserve to borrow
+      // randomly distribute total required debt across debt reserves
       if (i == reserveIds.length - 1) {
-        // Last iteration gets whatever is left
+        // Last iteration, borrow remaining amount
         amountInBase = remaining;
       } else {
         amountInBase = randomizer(dustInBase, remaining - dustInBase * (reserveIds.length - i - 1));
       }
 
-      console.log('here borrow  %e %e', amountInBase, requiredDebtInBase, reserveIds[i]);
       uint256 amount = _convertBaseCurrencyToAmount(assetId, amountInBase);
       vm.assume(amount < MAX_SUPPLY_AMOUNT);
-      // console.log(
-      //   'amountInBase %e %e',
-      //   amountInBase,
-      //   _convertBaseCurrencyToAmount(assetId, amountInBase),
-      //   assetId
-      // );
-
-      // console.log('final hf %e', finalHf);
 
       // mock price to 0 to circumvent borrow validation
       vm.mockCall(
@@ -325,18 +274,13 @@ contract LiquidationCallCloseFactorMultiReserveTest is SpokeLiquidationBase {
       );
       spoke.borrow(reserveIds[i], amount, user);
 
-      // console.log('final hf %e', finalHf);
-
       remaining -= amountInBase;
       requiredDebts[i] = amount;
     }
     vm.clearMockedCalls();
     vm.stopPrank();
 
-    // console.log('heref');
-
     finalHf = spoke.getHealthFactor(user);
-    console.log('final hf %e | desired hf %e', finalHf, desiredHf);
     assertLt(finalHf, desiredHf);
   }
 }
