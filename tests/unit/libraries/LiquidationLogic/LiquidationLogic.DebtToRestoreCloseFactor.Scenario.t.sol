@@ -337,7 +337,6 @@ contract LiquidationLogicDebtToRestoreCloseFactorScenarioTest is LiquidationLogi
         params.collateralFactor = reserve.config.collateralFactor;
       }
     }
-    params.avgCollateralFactor = totalCollateralFactor.wadDiv(totalAmount);
     params.totalCollateralInBaseCurrency = totalAmount;
 
     totalAmount = 0;

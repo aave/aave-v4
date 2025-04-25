@@ -122,15 +122,11 @@ library DataTypes {
     uint256 actualDebtToLiquidate;
     uint256 liquidationProtocolFeeAmount;
     uint256 userCollateralBalance;
-    // uint256 userCollateralBalanceinBaseCurrency;
     uint256 totalCollateralInBaseCurrency;
     uint256 totalDebtInBaseCurrency;
-    uint256 avgCollateralFactor;
     uint256 debtAssetPrice;
     uint256 debtAssetUnit;
     uint256 totalDebt;
-    uint256 baseDebt;
-    uint256 premiumDebt;
     uint256 healthFactor;
     uint256 liquidationBonus;
     uint256 baseDebtToLiquidate;
@@ -143,16 +139,11 @@ library DataTypes {
   }
 
   struct CalculateAvailableCollateralToLiquidateLocalVars {
-    uint256 collateralAssetPrice;
-    uint256 debtAssetPrice;
     uint256 maxCollateralToLiquidate;
     uint256 baseCollateral;
     uint256 bonusCollateral;
-    uint256 collateralAssetUnit;
-    uint256 debtAssetUnit;
     uint256 collateralAmount;
     uint256 debtAmountNeeded;
-    uint256 liquidationProtocolFeePercentage;
     uint256 liquidationProtocolFeeAmount;
     uint256 userCollateralBalanceinBaseCurrency;
   }
