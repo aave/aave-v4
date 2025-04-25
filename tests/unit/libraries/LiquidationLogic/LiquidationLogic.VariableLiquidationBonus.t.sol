@@ -226,7 +226,7 @@ contract LiquidationLogicVariableLiquidationBonusTest is LiquidationLogicBaseTes
 
     assertEq(
       result,
-      _calculate(
+      _calculateLiqBonus(
         healthFactor,
         _config.healthFactorBonusThreshold,
         liquidationBonusFactor,
@@ -243,7 +243,7 @@ contract LiquidationLogicVariableLiquidationBonusTest is LiquidationLogicBaseTes
     assertLe(result, liquidationBonus, 'should be =< max liquidationBonus');
   }
 
-  function _calculate(
+  function _calculateLiqBonus(
     uint256 healthFactor,
     uint256 healthFactorBonusThreshold,
     uint256 liquidationBonusFactor,
@@ -264,6 +264,7 @@ contract LiquidationLogicVariableLiquidationBonusTest is LiquidationLogicBaseTes
       (healthFactorLiquidationThreshold - healthFactorBonusThreshold);
   }
 
+  /// @notice Calculates the minimum liquidation bonus based on the liquidation bonus and the liquidation bonus factor
   function _calculateMinLiqBonus(
     uint256 liquidationBonus,
     uint256 liquidationBonusFactor

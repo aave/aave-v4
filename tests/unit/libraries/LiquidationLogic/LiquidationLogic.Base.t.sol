@@ -9,7 +9,6 @@ contract LiquidationLogicBaseTest is Base {
   using PercentageMath for uint256;
   using WadRayMath for uint256;
 
-  // (debt * assetPrice).wadify() / assetUnit
   uint256 internal constant MAX_TOTAL_ASSET_IN_BASE_CURRENCY = 1e58;
 
   uint256 constant SKIP_NONE = 0;

@@ -151,6 +151,4 @@ contract LiquidationLogicActualDebtToLiquidateTest is LiquidationLogicBaseTest {
       );
     }
   }
-
-  // TODO: unit test with specific numbers and expected output
 }

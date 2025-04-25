@@ -34,7 +34,7 @@ library LiquidationLogic {
       return minLiquidationBonus;
     }
 
-    // otherwise, linearly interpolate between min and max
+    // otherwise linearly interpolate between min and max
     return
       minLiquidationBonus +
       ((liquidationBonus - minLiquidationBonus) *
@@ -47,15 +47,14 @@ library LiquidationLogic {
     uint256 debtToCover,
     DataTypes.LiquidationCallLocalVars memory params
   ) internal pure returns (uint256) {
-    DataTypes.CalculateActualDebtToLiquidateLocalVars memory vars;
-    vars.maxLiquidatableDebt = params.totalDebt; // for current debt asset, in amount
-    vars.debtToRestoreCloseFactor = params.calculateDebtToRestoreCloseFactor();
+    uint256 maxLiquidatableDebt = params.totalDebt; // for current debt asset, in amount
+    uint256 debtToRestoreCloseFactor = params.calculateDebtToRestoreCloseFactor();
 
-    vars.maxLiquidatableDebt = vars.maxLiquidatableDebt > vars.debtToRestoreCloseFactor
-      ? vars.debtToRestoreCloseFactor
-      : vars.maxLiquidatableDebt;
+    maxLiquidatableDebt = maxLiquidatableDebt > debtToRestoreCloseFactor
+      ? debtToRestoreCloseFactor
+      : maxLiquidatableDebt;
 
-    return debtToCover > vars.maxLiquidatableDebt ? vars.maxLiquidatableDebt : debtToCover;
+    return debtToCover > maxLiquidatableDebt ? maxLiquidatableDebt : debtToCover;
   }
 
   /// @notice Calculates the repayable amount of debt required to restore a user health factor to the close factor.

@@ -13,9 +13,6 @@ contract LiquidationLogicDebtToRestoreCloseFactorScenarioTest is LiquidationLogi
     uint256 amount;
   }
 
-  // TODO: scenario 1 with bigger CF
-  // TODO: secnario 2 with bigger CF
-
   function setUpScenario1() internal {
     updateCollateralFactor(spoke1, _daiReserveId(spoke1), 75_00);
     updateCollateralFactor(spoke1, _wethReserveId(spoke1), 80_00);

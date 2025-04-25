@@ -218,15 +218,6 @@ contract LiquidationAvailableCollateralToLiquidateTest is Base {
     );
 
     DataTypes.LiquidationCallLocalVars memory args = _setFunctionArgs(params);
-
-    // console.log('debtAssetPrice %e', args.debtAssetPrice);
-    // console.log('debtAssetUnit %e', args.debtAssetUnit);
-    // console.log('collateralAssetPrice %e', args.collateralAssetPrice);
-    // console.log('collateralAssetUnit %e', args.collateralAssetUnit);
-    // console.log('liquidationBonus %e', args.liquidationBonus);
-    // console.log('userCollateralBalance %e', args.userCollateralBalance);
-    // console.log('liquidationProtocolFeePercentage %e', args.liquidationProtocolFeePercentage);
-
     AvailableCollateralToLiquidate memory res;
     (
       res.actualCollateralToLiquidate,

@@ -112,12 +112,6 @@ contract LiquidationLogicDebtToRestoreCloseFactorTest is LiquidationLogicBaseTes
     );
     DataTypes.LiquidationCallLocalVars memory args = _setFunctionArgs(params);
 
-    // console.log(
-    //   'test %e %e',
-    //   params.closeFactor,
-    //   (params.liquidationBonus.wadify()).percentMul(params.collateralFactor - 1).fromBps()
-    // );
-
     assertEq(
       LiquidationLogic.calculateDebtToRestoreCloseFactor(args),
       type(uint256).max,

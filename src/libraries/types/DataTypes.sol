@@ -142,18 +142,6 @@ library DataTypes {
     uint256 liquidationProtocolFeePercentage;
   }
 
-  struct CalculateActualDebtToLiquidateLocalVars {
-    uint256 closeFactor;
-    // uint256 liquidationRecoveryDebt;
-    uint256 maxLiquidatableDebt;
-    // uint256 hfScaledDebt;
-    uint256 weightedCollateral;
-    uint256 actualDebtToLiquidate;
-    // uint256 liquidationBonusProduct;
-    // uint256 closeFactorDebt;
-    uint256 debtToRestoreCloseFactor;
-  }
-
   struct CalculateAvailableCollateralToLiquidateLocalVars {
     uint256 collateralAssetPrice;
     uint256 debtAssetPrice;
