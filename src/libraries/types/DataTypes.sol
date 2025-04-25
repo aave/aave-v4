@@ -167,21 +167,14 @@ library DataTypes {
     uint256 liquidationProtocolFeeAmount;
     uint256 baseDebtToLiquidate;
     uint256 premiumDebtToLiquidate;
-    uint256 combinedDebtToLiquidate;
     uint256 restoredShares;
     uint256 withdrawnShares;
     uint256 newUserRiskPremium;
-    // uint256 userRiskPremium;
-    uint256 avgCollateralFactor;
-    uint256 healthFactor;
-    uint256 totalCollateralInBaseCurrency;
-    uint256 totalDebtInBaseCurrency;
     uint256 userDebtPremiumDrawnShares;
     uint256 userDebtPremiumOffset;
     uint256 userDebtRealizedPremium;
     uint256 userCollateralPremiumDrawnShares;
     uint256 userCollateralPremiumOffset;
-    uint256 userCollateralRealizedPremium;
     uint256 accruedCollateralPremium;
     uint256 totalRestoredShares;
     uint256 totalWithdrawnShares;
@@ -192,12 +185,5 @@ library DataTypes {
     int256 totalUserCollateralPremiumDrawnShares;
     int256 totalUserCollateralPremiumOffset;
     uint256 totalDebtToLiquidate;
-  }
-
-  struct TempDebug {
-    uint256 rBaseDebt;
-    uint256 rPremiumDebt;
-    uint256 assetBaseDebt;
-    uint256 assetPremiumDebt;
   }
 }
