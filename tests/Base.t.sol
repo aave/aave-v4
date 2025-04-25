@@ -854,18 +854,6 @@ abstract contract Base is Test {
     return price.percentMul(percent);
   }
 
-  /// @param percentChange percent change in bps, e.g. 90_00 is updating asset price to 90% of before
-  function _setPriceChange(
-    MockPriceOracle oracle,
-    uint256 assetId,
-    uint256 percentChange
-  ) internal returns (uint256) {
-    uint256 newPrice = calcNewPrice(oracle.getAssetPrice(assetId), percentChange);
-    oracle.setAssetPrice(assetId, newPrice);
-
-    return newPrice;
-  }
-
   /// @dev Helper function to calculate asset amount corresponding to single drawn share
   function minimumAssetsPerDrawnShare(uint256 assetId) internal view returns (uint256) {
     return hub.convertToDrawnAssets(assetId, 1);

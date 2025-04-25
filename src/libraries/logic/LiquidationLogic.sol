@@ -3,14 +3,12 @@ pragma solidity ^0.8.0;
 
 import {DataTypes} from 'src/libraries/types/DataTypes.sol';
 import {PercentageMath} from 'src/libraries/math/PercentageMath.sol';
-import {PercentageMathExtended} from 'src/libraries/math/PercentageMathExtended.sol';
 import {ISpoke} from 'src/interfaces/ISpoke.sol';
 import {WadRayMath} from 'src/libraries/math/WadRayMath.sol';
 import {WadRayMathExtended} from 'src/libraries/math/WadRayMathExtended.sol';
 
 library LiquidationLogic {
   using PercentageMath for uint256;
-  using PercentageMathExtended for uint256;
   using WadRayMath for uint256;
   using WadRayMathExtended for uint256;
   using LiquidationLogic for DataTypes.LiquidationCallLocalVars;
@@ -64,7 +62,7 @@ library LiquidationLogic {
   }
 
   /**
-   * @notice Calculates the repayable amount of debt required to restore a user health factor to the close factor.
+   * @notice Calculates the amount of debt to liquidate to restore a user's health factor to the close factor.
    * @param params LiquidationCallLocalVars params struct.
    * @return The amount of debt asset to repay to restore health factor.
    */
