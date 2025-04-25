@@ -5,10 +5,8 @@ import 'tests/unit/Spoke/SpokeBase.t.sol';
 import {LiquidationLogic} from 'src/libraries/logic/LiquidationLogic.sol';
 
 contract SpokeLiquidationBase is SpokeBase {
-  // using SharesMath for uint256;
   using WadRayMath for uint256;
   using PercentageMath for uint256;
-  // using PercentageMathExtended for uint256;
 
   struct Balance {
     uint256 balanceBefore;
@@ -43,8 +41,6 @@ contract SpokeLiquidationBase is SpokeBase {
     uint256 desiredHf;
   }
 
-  DataTypes.LiquidationConfig internal _config;
-
   function setUp() public virtual override {
     super.setUp();
     _addBorrowableLiquidity();
@@ -64,13 +60,7 @@ contract SpokeLiquidationBase is SpokeBase {
     uint256 reserveId,
     uint256 healthFactor
   ) internal view returns (uint256) {
-    return
-      LiquidationLogic.calculateVariableLiquidationBonus(
-        _config,
-        healthFactor,
-        spoke.getReserve(reserveId).config.liquidationBonus,
-        HEALTH_FACTOR_LIQUIDATION_THRESHOLD
-      );
+    return spoke.getVariableLiquidationBonus(reserveId, healthFactor);
   }
 
   function _borrowToBeBelowHf(
@@ -187,8 +177,7 @@ contract SpokeLiquidationBase is SpokeBase {
 
     state.liquidationProtocolFeePercentage = liquidationProtocolFeePercentage;
 
-    _config = liqConfig;
-    spoke1.updateLiquidationConfig(_config);
+    spoke1.updateLiquidationConfig(liqConfig);
     updateLiquidationBonus(spoke1, collateralReserveId, liqBonus);
     updateLiquidationProtocolFeePercentage(
       spoke1,

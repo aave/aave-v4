@@ -189,8 +189,7 @@ contract LiquidationCallCloseFactorMultiReserveTest is SpokeLiquidationBase {
     state.collateralReserveId = collateralReserveIds[collateralReserveIndex];
     state.debtReserveId = debtReserveIds[debtReserveIndex];
 
-    _config = liqConfig;
-    spoke1.updateLiquidationConfig(_config);
+    spoke1.updateLiquidationConfig(liqConfig);
     updateLiquidationBonus(spoke1, state.collateralReserveId, liqBonus);
     updateLiquidationProtocolFeePercentage(
       spoke1,
