@@ -266,7 +266,9 @@ contract LiquidationCallScenarioTest is SpokeLiquidationBase {
 
     // collateral: wbtc/dai
     state.collAmount.wbtc = 1 * 10 ** decimals.wbtc; // $50k wbtc
-    state.collAmount.dai = 10_000 * 10 ** decimals.dai; // $10k dai
+    state.collAmount.dai = 10_000 * 10 ** decimals.dai; // $50k dai
+    // debt: weth
+    state.debtAmount.weth = 20 * 10 ** decimals.weth; // 20 eth, $40k
 
     state.liqBonus = spoke1.getReserve(state.wbtcReserveId).config.liquidationBonus;
 
@@ -276,18 +278,13 @@ contract LiquidationCallScenarioTest is SpokeLiquidationBase {
 
     Utils.supplyCollateral(spoke1, state.wbtcReserveId, alice, state.collAmount.wbtc, alice);
     Utils.supplyCollateral(spoke1, state.daiReserveId, alice, state.collAmount.dai, alice);
-    _borrowToBeBelowHf(spoke1, alice, state.wethReserveId, 1.001e18);
+    Utils.borrow(spoke1, state.wethReserveId, alice, state.debtAmount.weth, alice);
 
     // position must initially be healthy
     assertGt(spoke1.getHealthFactor(alice), HEALTH_FACTOR_LIQUIDATION_THRESHOLD);
 
-    // interest accrual
-    vm.mockCall(
-      address(irStrategy),
-      IReserveInterestRateStrategy.calculateInterestRates.selector,
-      abi.encode(uint256(50_00).bpsToRay())
-    );
-    skip(365 days);
+    // wbtc collateral value drop to reduce HF < 1
+    oracle.setAssetPrice(wbtcAssetId, 20_000e8);
 
     // position must be liquidatable after interest accrual
     assertLt(spoke1.getHealthFactor(alice), HEALTH_FACTOR_LIQUIDATION_THRESHOLD);
@@ -305,7 +302,7 @@ contract LiquidationCallScenarioTest is SpokeLiquidationBase {
       collateralReserveId: state.wbtcReserveId,
       debtReserveId: state.wethReserveId,
       user: alice,
-      debtToCover: MAX_SUPPLY_AMOUNT
+      debtToCover: state.debt.balanceBefore
     });
 
     state.liquidatorCollateral.balanceAfter = IERC20(spoke1.getReserve(state.wbtcReserveId).asset)
@@ -430,20 +427,19 @@ contract LiquidationCallScenarioTest is SpokeLiquidationBase {
 
   /// liquidation call does not allow arbitrarily large debtToCover
   function test_liquidationCall_maxDebtToCover() public {
-    LiquidationTestLocalParams memory test;
-    LiqTestData memory state;
+    LiqScenarioTestData memory state;
 
     state.wethReserveId = _wethReserveId(spoke1);
     state.daiReserveId = _daiReserveId(spoke1);
     state.wbtcReserveId = _wbtcReserveId(spoke1);
 
     // collateral: wbtc/dai
-    state.colls[0].wbtc = 1 * 10 ** decimals.wbtc; // $50k wbtc
-    state.colls[0].dai = 10_000 * 10 ** decimals.dai; // $10k dai
+    state.collAmount.wbtc = 1 * 10 ** decimals.wbtc; // $50k wbtc
+    state.collAmount.dai = 10_000 * 10 ** decimals.dai; // $10k dai
 
-    Utils.supplyCollateral(spoke1, state.wbtcReserveId, alice, state.colls[0].wbtc, alice);
-    Utils.supplyCollateral(spoke1, state.daiReserveId, alice, state.colls[0].dai, alice);
-    _borrowToBeBelowHf(spoke1, alice, state.wethReserveId, 1.001e18);
+    Utils.supplyCollateral(spoke1, state.wbtcReserveId, alice, state.collAmount.wbtc, alice);
+    Utils.supplyCollateral(spoke1, state.daiReserveId, alice, state.collAmount.dai, alice);
+    _borrowToBeBelowHf(spoke1, alice, state.wethReserveId, 1.001e18); // user position is initially healthy
 
     // position must initially be healthy
     assertGt(spoke1.getHealthFactor(alice), HEALTH_FACTOR_LIQUIDATION_THRESHOLD);
@@ -459,36 +455,36 @@ contract LiquidationCallScenarioTest is SpokeLiquidationBase {
     // position must be liquidatable after interest accrual
     assertLt(spoke1.getHealthFactor(alice), HEALTH_FACTOR_LIQUIDATION_THRESHOLD);
 
-    test.liquidatorCollateral.balanceBefore = IERC20(spoke1.getReserve(state.wbtcReserveId).asset)
+    state.liquidatorCollateral.balanceBefore = IERC20(spoke1.getReserve(state.wbtcReserveId).asset)
       .balanceOf(LIQUIDATOR);
-    test.liquidator.balanceBefore = IERC20(spoke1.getReserve(state.wethReserveId).asset).balanceOf(
+    state.liquidator.balanceBefore = IERC20(spoke1.getReserve(state.wethReserveId).asset).balanceOf(
       LIQUIDATOR
     );
-    test.supply.balanceBefore = spoke1.getUserSuppliedAmount(state.wbtcReserveId, alice);
-    test.debt.balanceBefore = spoke1.getUserTotalDebt(state.wethReserveId, alice);
+    state.supply.balanceBefore = spoke1.getUserSuppliedAmount(state.wbtcReserveId, alice);
+    state.debt.balanceBefore = spoke1.getUserTotalDebt(state.wethReserveId, alice);
 
     vm.prank(LIQUIDATOR);
     spoke1.liquidationCall({
       collateralReserveId: state.wbtcReserveId,
       debtReserveId: state.wethReserveId,
       user: alice,
-      debtToCover: MAX_SUPPLY_AMOUNT
+      debtToCover: state.debt.balanceBefore + 1
     });
 
-    test.liquidator.balanceAfter = IERC20(spoke1.getReserve(state.wethReserveId).asset).balanceOf(
+    state.liquidator.balanceAfter = IERC20(spoke1.getReserve(state.wethReserveId).asset).balanceOf(
       LIQUIDATOR
     );
-    test.debt.balanceAfter = spoke1.getUserTotalDebt(state.wethReserveId, alice);
+    state.debt.balanceAfter = spoke1.getUserTotalDebt(state.wethReserveId, alice);
 
     assertApproxEqAbs(
-      _absDiff(test.liquidator.balanceAfter, test.liquidator.balanceBefore),
-      _absDiff(test.debt.balanceAfter, test.debt.balanceBefore),
+      _absDiff(state.liquidator.balanceAfter, state.liquidator.balanceBefore),
+      _absDiff(state.debt.balanceAfter, state.debt.balanceBefore),
       2,
       'liquidator repaid debt amount and restored debt accounting'
     );
-    assertLt(
-      _absDiff(test.liquidator.balanceAfter, test.liquidator.balanceBefore),
-      MAX_SUPPLY_AMOUNT,
+    assertLe(
+      _absDiff(state.liquidator.balanceAfter, state.liquidator.balanceBefore),
+      state.debt.balanceBefore,
       'liquidator can only liquidate enough debt to cover position'
     );
     assertLe(spoke1.getHealthFactor(alice), _getCloseFactor(spoke1), 'hf <= close factor');

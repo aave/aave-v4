@@ -420,6 +420,9 @@ contract LiquidationCallCloseFactorTest is SpokeLiquidationBase {
       _absDiff(state.supply.balanceBefore, state.supply.balanceAfter)
     );
 
+    // with a close factor, it is impossible to liquidate all debt
+    assertTrue(_absDiff(state.debt.balanceAfter, state.debt.balanceBefore) < requiredDebtAmount);
+
     return state;
   }
 }

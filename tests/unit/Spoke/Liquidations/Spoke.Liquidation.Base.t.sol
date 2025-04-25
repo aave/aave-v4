@@ -314,6 +314,9 @@ contract SpokeLiquidationBase is SpokeBase {
       state.debt.balanceChange
     );
 
+    // with a close factor, it is impossible to liquidate all debt
+    assertTrue(_absDiff(state.debt.balanceAfter, state.debt.balanceBefore) < requiredDebtAmount);
+
     return state;
   }
 
@@ -369,22 +372,6 @@ contract SpokeLiquidationBase is SpokeBase {
       // bad debt
       assertEq(finalHf, 0, string.concat('HF = 0 if bad debt ', label));
       assertEq(userRp, 0, string.concat('userRp = 0 if bad debt ', label));
-    } else if (state.debt.balanceAfter == 0) {
-      assertEq(
-        finalHf,
-        type(uint256).max,
-        string.concat('HF = max uint if all debt liquidated ', label)
-      );
-      if (state.supply.balanceAfter > 0) {
-        assertEq(
-          userRp,
-          state.collateralReserve.config.collateralFactor,
-          string.concat('userRp = coll factor of remaining coll ', label)
-        );
-      } else {
-        // debt == 0, coll == 0
-        assertEq(userRp, 0, string.concat('userRp = 0 if user debt and coll are 0 ', label));
-      }
     } else {
       assertLe(
         finalHf,
