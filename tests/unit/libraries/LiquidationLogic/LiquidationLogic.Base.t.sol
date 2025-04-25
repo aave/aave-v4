@@ -37,6 +37,7 @@ contract LiquidationLogicBaseTest is Base {
     uint256 debtAssetPrice;
     uint256 debtAssetUnit;
     uint256 healthFactor;
+    uint256 totalDebt;
   }
 
   function setUp() public virtual override {
@@ -95,7 +96,7 @@ contract LiquidationLogicBaseTest is Base {
   function _bound(
     TestDebtToRestoreCloseFactorParams memory params,
     FieldsToSkip memory skip
-  ) internal returns (TestDebtToRestoreCloseFactorParams memory) {
+  ) internal virtual returns (TestDebtToRestoreCloseFactorParams memory) {
     if (!_isSkipped(skip, SKIP_LIQUIDATION_BONUS)) {
       params.liquidationBonus = bound(
         params.liquidationBonus,

@@ -16,7 +16,7 @@ contract LiquidationLogicActualDebtToLiquidateTest is LiquidationLogicBaseTest {
     uint256 totalDebt = 0;
     args.totalDebt = totalDebt;
 
-    uint256 closeFactorDebt = LiquidationLogic.calculateDebtToRestoreCloseFactor(args);
+    uint256 debtToRestoreCloseFactor = LiquidationLogic.calculateDebtToRestoreCloseFactor(args);
     uint256 actualDebtToLiquidate = LiquidationLogic.calculateActualDebtToLiquidate(
       debtToCover,
       args
@@ -45,7 +45,7 @@ contract LiquidationLogicActualDebtToLiquidateTest is LiquidationLogicBaseTest {
     assertEq(actualDebtToLiquidate, 0, 'if debtToCover == 0, actualDebtToLiquidate should be 0');
   }
 
-  function test_calculateActualDebtToLiquidate_fuzz_totalDebt_gt_closeFactorDebt(
+  function test_calculateActualDebtToLiquidate_fuzz_totalDebt_gt_debtToRestoreCloseFactor(
     uint256 debtToCover,
     uint256 totalDebt,
     TestDebtToRestoreCloseFactorParams memory params
@@ -54,10 +54,10 @@ contract LiquidationLogicActualDebtToLiquidateTest is LiquidationLogicBaseTest {
     TestDebtToRestoreCloseFactorParams memory params = _bound(params, skips);
     DataTypes.LiquidationCallLocalVars memory args = _setFunctionArgs(params);
 
-    uint256 closeFactorDebt = LiquidationLogic.calculateDebtToRestoreCloseFactor(args);
+    uint256 debtToRestoreCloseFactor = LiquidationLogic.calculateDebtToRestoreCloseFactor(args);
 
-    // totalDebt > closeFactorDebt
-    totalDebt = bound(totalDebt, closeFactorDebt, type(uint256).max);
+    // totalDebt > debtToRestoreCloseFactor
+    totalDebt = bound(totalDebt, debtToRestoreCloseFactor, type(uint256).max);
     args.totalDebt = totalDebt;
 
     uint256 actualDebtToLiquidate = LiquidationLogic.calculateActualDebtToLiquidate(
@@ -65,22 +65,22 @@ contract LiquidationLogicActualDebtToLiquidateTest is LiquidationLogicBaseTest {
       args
     );
 
-    if (debtToCover > closeFactorDebt) {
+    if (debtToCover > debtToRestoreCloseFactor) {
       assertEq(
         actualDebtToLiquidate,
-        closeFactorDebt,
-        'debtToCover > closeFactorDebt, should return closeFactorDebt'
+        debtToRestoreCloseFactor,
+        'debtToCover > debtToRestoreCloseFactor, should return debtToRestoreCloseFactor'
       );
     } else {
       assertEq(
         actualDebtToLiquidate,
         debtToCover,
-        'debtToCover <= closeFactorDebt, should return debtToCover'
+        'debtToCover <= debtToRestoreCloseFactor, should return debtToCover'
       );
     }
   }
 
-  function test_calculateActualDebtToLiquidate_fuzz_totalDebt_lte_closeFactorDebt(
+  function test_calculateActualDebtToLiquidate_fuzz_debtToRestoreCloseFactor_gt_maxLiquidatableDebt(
     uint256 debtToCover,
     uint256 totalDebt,
     TestDebtToRestoreCloseFactorParams memory params
@@ -89,34 +89,24 @@ contract LiquidationLogicActualDebtToLiquidateTest is LiquidationLogicBaseTest {
     TestDebtToRestoreCloseFactorParams memory params = _bound(params, skips);
     DataTypes.LiquidationCallLocalVars memory args = _setFunctionArgs(params);
 
-    uint256 closeFactorDebt = LiquidationLogic.calculateDebtToRestoreCloseFactor(args);
-    vm.assume(closeFactorDebt > 0);
-
-    // totalDebt <= closeFactorDebt
-    totalDebt = bound(totalDebt, 1, closeFactorDebt);
-    args.totalDebt = totalDebt;
+    uint256 debtToRestoreCloseFactor = LiquidationLogic.calculateDebtToRestoreCloseFactor(args);
+    vm.assume(debtToRestoreCloseFactor <= args.totalDebt);
 
     uint256 actualDebtToLiquidate = LiquidationLogic.calculateActualDebtToLiquidate(
       debtToCover,
       args
     );
 
-    if (debtToCover > totalDebt) {
-      assertEq(
-        actualDebtToLiquidate,
-        totalDebt,
-        'debtToCover > totalDebt, should return totalDebt'
-      );
-    } else {
-      assertEq(
-        actualDebtToLiquidate,
-        debtToCover,
-        'debtToCover <= maxLiquidatableDebt, should return debtToCover'
-      );
-    }
+    uint256 maxLiquidatableDebt = _min(debtToRestoreCloseFactor, args.totalDebt);
+
+    assertEq(
+      actualDebtToLiquidate,
+      _min(debtToCover, maxLiquidatableDebt),
+      'debtToCover > totalDebt, should return totalDebt'
+    );
   }
 
-  function test_calculateActualDebtToLiquidate_fuzz_closeFactorDebt_min(
+  function test_calculateActualDebtToLiquidate_fuzz_debtToRestoreCloseFactor_zero(
     uint256 debtToCover,
     uint256 totalDebt,
     TestDebtToRestoreCloseFactorParams memory params
@@ -125,8 +115,8 @@ contract LiquidationLogicActualDebtToLiquidateTest is LiquidationLogicBaseTest {
     TestDebtToRestoreCloseFactorParams memory params = _bound(params, skips);
     DataTypes.LiquidationCallLocalVars memory args = _setFunctionArgs(params);
 
-    uint256 closeFactorDebt = LiquidationLogic.calculateDebtToRestoreCloseFactor(args);
-    vm.assume(closeFactorDebt == 0);
+    uint256 debtToRestoreCloseFactor = LiquidationLogic.calculateDebtToRestoreCloseFactor(args);
+    vm.assume(debtToRestoreCloseFactor == 0);
 
     args.totalDebt = totalDebt;
 
@@ -135,20 +125,28 @@ contract LiquidationLogicActualDebtToLiquidateTest is LiquidationLogicBaseTest {
       args
     );
 
-    uint256 minAllowed = (totalDebt > closeFactorDebt) ? closeFactorDebt : totalDebt;
+    assertEq(actualDebtToLiquidate, 0, 'actualDebtToLiquidate should be 0');
+  }
 
-    if (debtToCover < minAllowed) {
-      assertEq(
-        actualDebtToLiquidate,
-        debtToCover,
-        'debtToCover < minAllowed, should return lowest allowed debt'
-      );
-    } else {
-      assertEq(
-        actualDebtToLiquidate,
-        minAllowed,
-        'debtToCover >= minAllowed, should return lowest allowed debt'
-      );
-    }
+  function test_calculateActualDebtToLiquidate_fuzz_debtToRestoreCloseFactor_min(
+    uint256 debtToCover,
+    uint256 totalDebt,
+    TestDebtToRestoreCloseFactorParams memory params
+  ) public {
+    FieldsToSkip memory skips = _skipOnly(SKIP_NONE);
+    TestDebtToRestoreCloseFactorParams memory params = _bound(params, skips);
+    DataTypes.LiquidationCallLocalVars memory args = _setFunctionArgs(params);
+
+    uint256 debtToRestoreCloseFactor = LiquidationLogic.calculateDebtToRestoreCloseFactor(args);
+    vm.assume(debtToRestoreCloseFactor == 0);
+
+    args.totalDebt = totalDebt;
+
+    uint256 actualDebtToLiquidate = LiquidationLogic.calculateActualDebtToLiquidate(
+      debtToCover,
+      args
+    );
+
+    assertEq(actualDebtToLiquidate, 0, 'actualDebtToLiquidate should be min allowed debt');
   }
 }

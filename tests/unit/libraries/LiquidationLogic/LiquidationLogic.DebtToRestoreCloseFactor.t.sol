@@ -8,6 +8,19 @@ contract LiquidationLogicDebtToRestoreCloseFactorTest is LiquidationLogicBaseTes
   using WadRayMath for uint256;
   using WadRayMathExtended for uint256;
 
+  function _bound(
+    TestDebtToRestoreCloseFactorParams memory params,
+    FieldsToSkip memory skip
+  ) internal override returns (TestDebtToRestoreCloseFactorParams memory) {
+    params = super._bound(params, skip);
+    params.totalDebt = bound(
+      params.totalDebt,
+      1,
+      MAX_TOTAL_ASSET_IN_BASE_CURRENCY / params.debtAssetUnit
+    );
+    return params;
+  }
+
   function test_calculateDebtToRestoreCloseFactor_fuzz_non_negative(
     TestDebtToRestoreCloseFactorParams memory params
   ) public {
