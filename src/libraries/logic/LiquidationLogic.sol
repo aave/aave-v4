@@ -97,7 +97,7 @@ library LiquidationLogic {
   /**
    * @notice Calculates the maximum amount of collateral that can be liquidated.
    * @param params LiquidationCallLocalVars params struct.
-   * @return The maximum collateral amount that can be seized.
+   * @return The maximum collateral amount that can be liquidated.
    * @return The corresponding debt amount to liquidate.
    * @return The protocol liquidation fee amount.
    */

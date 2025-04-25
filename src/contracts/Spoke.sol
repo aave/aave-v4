@@ -349,17 +349,15 @@ contract Spoke is ISpoke {
     address[] memory users,
     uint256[] memory debtsToCover
   ) internal returns (address, address, uint256, uint256) {
-    require(users.length == debtsToCover.length, UsersAndDebtLengthMismatch());
+    uint256 usersLength = users.length;
+    require(usersLength == debtsToCover.length, UsersAndDebtLengthMismatch());
 
     DataTypes.Reserve storage collateralReserve = _reserves[collateralReserveId];
     DataTypes.Reserve storage debtReserve = _reserves[debtReserveId];
 
     DataTypes.ExecuteLiquidationLocalVars memory vars;
 
-    // first loop, over users to calc each liq param
-    // sum up total amounts
-
-    for (vars.i; vars.i < users.length; ) {
+    while (vars.i < usersLength) {
       DataTypes.UserPosition storage userCollateralPosition = _userPositions[users[vars.i]][
         collateralReserveId
       ];
@@ -400,7 +398,7 @@ contract Spoke is ISpoke {
         -int256(vars.userDebtPremiumDrawnShares),
         -int256(vars.userDebtPremiumOffset),
         _signedDiff(userDebtPosition.realizedPremium, vars.userDebtRealizedPremium)
-      ); // we settle premium debt here
+      ); // settle premium debt
 
       // todo: rm later to opt
       // optional: settle collateral reserve's premium debt
@@ -420,7 +418,7 @@ contract Spoke is ISpoke {
         -int256(vars.userCollateralPremiumDrawnShares),
         -int256(vars.userCollateralPremiumOffset),
         int256(vars.accruedCollateralPremium)
-      ); // unnecessary but we settle premium debt here for consistency
+      ); // unnecessary but settle premium debt here for consistency
 
       // repay debt
       vars.restoredShares = HUB.restore(
@@ -498,7 +496,7 @@ contract Spoke is ISpoke {
       0
     );
 
-    // transfer seized collateral to liquidator
+    // transfer total liquidated collateral to liquidator
     IERC20(collateralReserve.asset).safeTransfer(msg.sender, vars.totalCollateralToLiquidate);
     // TODO: treasury accounting for protocol fee
 
@@ -511,9 +509,9 @@ contract Spoke is ISpoke {
   }
 
   /// @return actualCollateralToLiquidate The amount of collateral to liquidate.
-  /// @return liquidationProtocolFeeAmount The amount of protocol fee to liquidate.
-  /// @return actualBaseDebtToLiquidate The amount of base debt to liquidate.
-  /// @return actualPremiumDebtToLiquidate The amount of premium debt to liquidate.
+  /// @return liquidationProtocolFeeAmount The amount of protocol fee.
+  /// @return baseDebtToLiquidate The amount of base debt to repay.
+  /// @return premiumDebtToLiquidate The amount of premium debt to repay.
   function _calculateLiquidationParameters(
     DataTypes.Reserve storage collateralReserve,
     DataTypes.Reserve storage debtReserve,
