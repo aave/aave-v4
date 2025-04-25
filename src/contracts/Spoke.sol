@@ -1,8 +1,6 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.0;
 
-import {console2 as console} from 'forge-std/console2.sol';
-
 import {SafeERC20} from 'src/dependencies/openzeppelin/SafeERC20.sol';
 import {IERC20} from 'src/dependencies/openzeppelin/IERC20.sol';
 // libraries
@@ -387,13 +385,6 @@ contract Spoke is ISpoke {
         vars.premiumDebt
       );
 
-      console.log(
-        'sp: amt - coll to liq %e | fee %e | debt to liq %e',
-        vars.collateralToLiquidate,
-        vars.liquidationProtocolFeeAmount,
-        vars.baseDebtToLiquidate
-      );
-
       // settle debt reserve's premium debt
       vars.userDebtPremiumDrawnShares = userDebtPosition.premiumDrawnShares;
       vars.userDebtPremiumOffset = userDebtPosition.premiumOffset;
@@ -430,13 +421,6 @@ contract Spoke is ISpoke {
         -int256(vars.userCollateralPremiumOffset),
         int256(vars.accruedCollateralPremium)
       ); // unnecessary but we settle premium debt here for consistency
-
-      console.log(
-        'debt to restore %e base %e prem %e',
-        vars.baseDebtToLiquidate + vars.premiumDebtToLiquidate,
-        vars.baseDebtToLiquidate,
-        vars.premiumDebtToLiquidate
-      );
 
       // repay debt
       vars.restoredShares = HUB.restore(
@@ -517,9 +501,6 @@ contract Spoke is ISpoke {
     // transfer seized collateral to liquidator
     IERC20(collateralReserve.asset).safeTransfer(msg.sender, vars.totalCollateralToLiquidate);
     // TODO: treasury accounting for protocol fee
-
-    console.log('Sp: remaining coll %e', getUserSuppliedAmount(collateralReserveId, users[0]));
-    console.log('Sp: remaining debt %e', getUserTotalDebt(debtReserveId, users[0]));
 
     return (
       collateralReserve.asset,
@@ -1029,33 +1010,10 @@ contract Spoke is ISpoke {
       ? type(uint256).max
       : vars.avgCollateralFactor.wadDiv(vars.totalDebtInBaseCurrency).fromBps(); // HF of 1 -> 1e18
 
-    // if (vars.totalDebtInBaseCurrency > 0) {
-    //   // console.log(
-    //   //   'Sp debt %e | collxCF %e | hf %e',
-    //   //   vars.totalDebtInBaseCurrency,
-    //   //   vars.avgCollateralFactor,
-    //   //   vars.healthFactor
-    //   // );
-    //   // console.log('sp calc %e', vars.avgCollateralFactor.rayDiv(vars.totalDebtInBaseCurrency));
-    // }
-
     // divide by total collateral to get avg collateral factor in wad
     vars.avgCollateralFactor = vars.totalCollateralInBaseCurrency == 0
       ? 0
       : vars.avgCollateralFactor.wadDiv(vars.totalCollateralInBaseCurrency);
-
-    // console.log(
-    //   'Sp avgCF %e %e %e',
-    //   tmp,
-    //   vars.avgCollateralFactor,
-    //   vars.totalCollateralInBaseCurrency
-    // );
-
-    // console.log(
-    //   'Sp avgCF %e %e',
-    //   vars.avgCollateralFactor,
-    //   tmp.rayDiv(vars.totalCollateralInBaseCurrency)
-    // );
 
     vars.debtCounterInBaseCurrency = vars.totalDebtInBaseCurrency;
 
