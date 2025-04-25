@@ -266,9 +266,7 @@ contract LiquidationCallScenarioTest is SpokeLiquidationBase {
 
     // collateral: wbtc/dai
     state.collAmount.wbtc = 1 * 10 ** decimals.wbtc; // $50k wbtc
-    state.collAmount.dai = 10_000 * 10 ** decimals.dai; // $50k dai
-    // debt: weth
-    state.debtAmount.weth = 20 * 10 ** decimals.weth; // 20 eth, $40k
+    state.collAmount.dai = 10_000 * 10 ** decimals.dai; // $10k dai
 
     state.liqBonus = spoke1.getReserve(state.wbtcReserveId).config.liquidationBonus;
 
@@ -278,13 +276,13 @@ contract LiquidationCallScenarioTest is SpokeLiquidationBase {
 
     Utils.supplyCollateral(spoke1, state.wbtcReserveId, alice, state.collAmount.wbtc, alice);
     Utils.supplyCollateral(spoke1, state.daiReserveId, alice, state.collAmount.dai, alice);
-    Utils.borrow(spoke1, state.wethReserveId, alice, state.debtAmount.weth, alice);
+    _borrowToBeBelowHf(spoke1, alice, state.wethReserveId, 1.001e18);
 
     // position must initially be healthy
     assertGt(spoke1.getHealthFactor(alice), HEALTH_FACTOR_LIQUIDATION_THRESHOLD);
 
-    // wbtc collateral value drop to reduce HF < 1
-    oracle.setAssetPrice(wbtcAssetId, 20_000e8);
+    // interest accrual
+    skip(365 days);
 
     // position must be liquidatable after interest accrual
     assertLt(spoke1.getHealthFactor(alice), HEALTH_FACTOR_LIQUIDATION_THRESHOLD);
@@ -302,7 +300,7 @@ contract LiquidationCallScenarioTest is SpokeLiquidationBase {
       collateralReserveId: state.wbtcReserveId,
       debtReserveId: state.wethReserveId,
       user: alice,
-      debtToCover: state.debt.balanceBefore
+      debtToCover: state.debt.balanceBefore + 1
     });
 
     state.liquidatorCollateral.balanceAfter = IERC20(spoke1.getReserve(state.wbtcReserveId).asset)
