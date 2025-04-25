@@ -33,7 +33,6 @@ contract LiquidationCallCloseFactorBadDebtTest is SpokeLiquidationBase {
 
     string memory label = 'test_liquidationCall_fuzz_closeFactor';
     _assertUserAccountData(state, spoke1, label);
-    // _assertAccounting(state, spoke1, remainingBaseCurrencyBound);
     _assertProtocolFeeEarned(state, label);
     _assertLiquidationBonusEarned(state, label);
 
@@ -312,7 +311,7 @@ contract LiquidationCallCloseFactorBadDebtTest is SpokeLiquidationBase {
     return liqConfig;
   }
 
-  /// fuzz tests with
+  /// fuzz tests to make sure bad debt remains after liquidation
   function _execLiqCallCloseFactorBadDebtTest(
     DataTypes.LiquidationConfig memory liqConfig,
     uint256 liqBonus,
@@ -350,9 +349,8 @@ contract LiquidationCallCloseFactorBadDebtTest is SpokeLiquidationBase {
       state.liquidationProtocolFeePercentage
     );
     // make sure all collateral is liquidated by borrowing under max HF
-    uint256 desiredHf = _calcMaxAchievableHfWithinColl(collateralReserveId, liqBonus).percentMul(
-      99_00
-    );
+    uint256 desiredHf = _calcMaxAchievableHfToRestoreCloseFactor(collateralReserveId, liqBonus)
+      .percentMul(99_00);
 
     Utils.supplyCollateral({
       spoke: spoke1,
@@ -406,6 +404,7 @@ contract LiquidationCallCloseFactorBadDebtTest is SpokeLiquidationBase {
       _absDiff(state.supply.balanceBefore, state.supply.balanceAfter)
     );
 
+    assertTrue(state.supply.balanceAfter == 0);
     // with a close factor, it is impossible to liquidate all debt
     assertTrue(_absDiff(state.debt.balanceAfter, state.debt.balanceBefore) < requiredDebtAmount);
 

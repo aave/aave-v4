@@ -199,7 +199,7 @@ contract LiquidationCallCloseFactorMultiReserveTest is SpokeLiquidationBase {
       state.collateralReserveId,
       state.liquidationProtocolFeePercentage
     );
-    state.desiredHf = _calcMaxAchievableHfWithinColl(state.collateralReserveId, liqBonus)
+    state.desiredHf = _calcMaxAchievableHfToRestoreCloseFactor(state.collateralReserveId, liqBonus)
       .percentMul(101_00); // add 1% buffer so that not all debt is liquidated
 
     for (uint256 i = 0; i < collateralReserveIds.length; i++) {

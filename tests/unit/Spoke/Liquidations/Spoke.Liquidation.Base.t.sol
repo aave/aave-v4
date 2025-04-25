@@ -11,7 +11,6 @@ contract SpokeLiquidationBase is SpokeBase {
   using PercentageMathExtended for uint256;
 
   uint256 minSupplyInBaseCurrency = 10e26; // $10 in base currency
-  uint256 remainingBaseCurrencyBound = 1e26; // $1 in base currency units
 
   struct Balance {
     uint256 balanceBefore;
@@ -281,10 +280,9 @@ contract SpokeLiquidationBase is SpokeBase {
 
     // at low amounts of coll/debt, HF can diverge from close factor due to rounding/precision
     if (
-      _convertAmountToBaseCurrency(state.debtReserve.assetId, state.debt.balanceAfter) >
-      remainingBaseCurrencyBound &&
+      _convertAmountToBaseCurrency(state.debtReserve.assetId, state.debt.balanceAfter) > 1e26 &&
       _convertAmountToBaseCurrency(state.collateralReserve.assetId, state.supply.balanceAfter) >
-      remainingBaseCurrencyBound
+      1e26
     ) {
       // ensure HF is lte close factor
       assertLe(
@@ -311,6 +309,7 @@ contract SpokeLiquidationBase is SpokeBase {
     }
   }
 
+  // todo: utilize treasury accounting to assert protocol fee
   function _assertProtocolFeeEarned(
     LiquidationTestLocalParams memory state,
     string memory label
@@ -340,7 +339,7 @@ contract SpokeLiquidationBase is SpokeBase {
       liqProtocolFee.base
     );
 
-    // constrain due to rounding/precisio
+    // constrain due to rounding/precision diff when converting between base currency / amount
     if (liqProtocolFee.amount < 1e3) {
       // at low amounts, abs diff is greater than rel
       assertApproxEqAbs(
@@ -496,10 +495,9 @@ contract SpokeLiquidationBase is SpokeBase {
     return LiquidationLogic.calculateDebtToRestoreCloseFactor(params);
   }
 
-  /// @notice Calc max achievable hf to be able to repay all debt and have remaining collateral
-  /// allows close factor to be up to max uint
+  /// @notice Calc max achievable health factor to restore HF to close factor
   /// @return healthFactor in WAD
-  function _calcMaxAchievableHfWithinColl(
+  function _calcMaxAchievableHfToRestoreCloseFactor(
     uint256 collateralReserveId,
     uint256 liquidationBonus
   ) internal view returns (uint256) {
@@ -510,13 +508,18 @@ contract SpokeLiquidationBase is SpokeBase {
       );
   }
 
+  /// calc max achievable health factor to liquidate max debt
+  /// given collateral factor and liquidation bonus
   function _calcMaxAchievableHfFromCollateralFactor(
     uint256 collateralFactor,
     uint256 liquidationBonus
   ) internal view returns (uint256 healthFactor) {
-    healthFactor = uint256(1e18).percentMul(collateralFactor).percentMul(liquidationBonus + 1);
+    healthFactor = uint256(HEALTH_FACTOR_LIQUIDATION_THRESHOLD)
+      .percentMul(collateralFactor)
+      .percentMul(liquidationBonus);
   }
 
+  // convert 1 asset amount to equivalent amount in another asset
   function _convertAssetAmount(
     uint256 assetId,
     uint256 amount,

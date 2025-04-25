@@ -999,11 +999,11 @@ abstract contract Base is Test {
   }
 
   function _convertBaseCurrencyToAmount(
-    uint256 amount,
+    uint256 baseCurrencyAmount,
     uint256 assetPrice,
     uint256 assetUnit
   ) internal view returns (uint256) {
-    return ((amount * assetUnit) / assetPrice).dewadify();
+    return ((baseCurrencyAmount * assetUnit) / assetPrice).dewadify();
   }
 
   function _approxRelFromBps(uint256 bps) internal pure returns (uint256) {

@@ -62,7 +62,7 @@ contract LiquidationCallCloseFactorTest is SpokeLiquidationBase {
     uint256 debtReserveId = _daiReserveId(spoke1);
     test_liquidationCall_fuzz_closeFactor({
       liqConfig: DataTypes.LiquidationConfig({
-        closeFactor: 1.5e18,
+        closeFactor: 2e18,
         liquidationBonusFactor: 0,
         healthFactorBonusThreshold: 0
       }),
@@ -313,7 +313,7 @@ contract LiquidationCallCloseFactorTest is SpokeLiquidationBase {
       PercentageMath
         .PERCENTAGE_FACTOR
         .percentDiv(state.collateralReserve.config.collateralFactor)
-        .percentMul(90_00) // add 10% buffer so that not all debt is liquidated
+        .percentMul(90_00) // add buffer so that position is liquidatable
     );
 
     liquidationProtocolFeePercentage = bound(liquidationProtocolFeePercentage, 0, 100_00);
@@ -333,9 +333,8 @@ contract LiquidationCallCloseFactorTest is SpokeLiquidationBase {
       collateralReserveId,
       state.liquidationProtocolFeePercentage
     );
-    uint256 desiredHf = _calcMaxAchievableHfWithinColl(collateralReserveId, liqBonus).percentMul(
-      101_00
-    ); // add 1% buffer so that not all debt is liquidated
+    uint256 desiredHf = _calcMaxAchievableHfToRestoreCloseFactor(collateralReserveId, liqBonus)
+      .percentMul(101_00); // add buffer so that not all collateral is seized
 
     Utils.supplyCollateral({
       spoke: spoke1,
@@ -345,6 +344,7 @@ contract LiquidationCallCloseFactorTest is SpokeLiquidationBase {
       onBehalfOf: alice
     });
 
+    // borrow enough to be below desiredHf
     (uint256 hfAfterBorrow, uint256 requiredDebtAmount) = _borrowToBeBelowHf(
       spoke1,
       alice,
@@ -371,8 +371,6 @@ contract LiquidationCallCloseFactorTest is SpokeLiquidationBase {
     state.treasury.balanceAfter = IERC20(state.collateralReserve.asset).balanceOf(TREASURY);
     state.supply.balanceAfter = spoke1.getUserSuppliedAmount(collateralReserveId, alice);
 
-    vm.assume(state.supply.balanceAfter > 0 && state.debt.balanceAfter > 0);
-
     // convert
     state.liquidator.baseChange = _convertAmountToBaseCurrency(
       state.collateralReserve.assetId,
@@ -391,7 +389,7 @@ contract LiquidationCallCloseFactorTest is SpokeLiquidationBase {
       _absDiff(state.supply.balanceBefore, state.supply.balanceAfter)
     );
 
-    // with a close factor, it is impossible to liquidate all debt
+    // with close factor, it is impossible to liquidate all debt
     assertTrue(_absDiff(state.debt.balanceAfter, state.debt.balanceBefore) < requiredDebtAmount);
 
     return state;
