@@ -146,7 +146,11 @@ library LiquidationLogic {
     );
 
     if (vars.maxCollateralToLiquidate > vars.userCollateralBalanceinBaseCurrency) {
-      console.log('maxCollateralToLiquidate > userCollateralBalance');
+      console.log(
+        'maxCollateralToLiquidate > userCollateralBalance %e %e',
+        vars.maxCollateralToLiquidate,
+        vars.userCollateralBalanceinBaseCurrency
+      );
       vars.collateralAmount = params.userCollateralBalance;
       // back calculate debt amount needed to cover the max allowed collateral
       vars.debtAmountNeeded = ((params.debtAssetUnit *
