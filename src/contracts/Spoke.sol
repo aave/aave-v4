@@ -601,7 +601,7 @@ contract Spoke is ISpoke {
     return _getUserDebt(_userPositions[user][reserveId], _reserves[reserveId].assetId);
   }
 
-  function getUserTotalDebt(uint256 reserveId, address user) public view returns (uint256) {
+  function getUserTotalDebt(uint256 reserveId, address user) external view returns (uint256) {
     (uint256 baseDebt, uint256 premiumDebt) = _getUserDebt(
       _userPositions[user][reserveId],
       _reserves[reserveId].assetId
