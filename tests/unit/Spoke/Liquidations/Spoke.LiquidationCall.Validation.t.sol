@@ -1,9 +1,9 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.0;
 
-import 'tests/unit/Spoke/SpokeBase.t.sol';
+import 'tests/unit/Spoke/Liquidations/Spoke.Liquidation.Base.t.sol';
 
-contract LiquidationCallValidationTest is SpokeBase {
+contract LiquidationCallValidationTest is SpokeLiquidationBase {
   function test_liquidationCall_revertsWith_ReserveNotActive_collateralReserve() public {
     uint256 wethReserveId = _wethReserveId(spoke1);
     uint256 daiReserveId = _daiReserveId(spoke1);

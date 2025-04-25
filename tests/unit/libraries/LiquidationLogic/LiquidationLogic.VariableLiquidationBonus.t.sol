@@ -1,7 +1,6 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.0;
 
-import {LiquidationLogic} from 'src/libraries/logic/LiquidationLogic.sol';
 import 'tests/unit/libraries/LiquidationLogic/LiquidationLogic.Base.t.sol';
 
 contract LiquidationLogicVariableLiquidationBonusTest is LiquidationLogicBaseTest {

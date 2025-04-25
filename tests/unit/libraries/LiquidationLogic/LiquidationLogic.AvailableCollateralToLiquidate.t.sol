@@ -1,10 +1,9 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.0;
 
-import {LiquidationLogic} from 'src/libraries/logic/LiquidationLogic.sol';
-import 'tests/Base.t.sol';
+import 'tests/unit/libraries/LiquidationLogic/LiquidationLogic.Base.t.sol';
 
-contract LiquidationAvailableCollateralToLiquidateTest is Base {
+contract LiquidationAvailableCollateralToLiquidateTest is LiquidationLogicBaseTest {
   using PercentageMath for uint256;
   using WadRayMath for uint256;
   using LiquidationLogic for DataTypes.LiquidationCallLocalVars;
