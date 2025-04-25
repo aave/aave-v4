@@ -4,20 +4,6 @@ pragma solidity ^0.8.0;
 import 'tests/unit/libraries/LiquidationLogic/LiquidationLogic.Base.t.sol';
 
 contract LiquidationLogicActualDebtToLiquidateTest is LiquidationLogicBaseTest {
-  function _bound(
-    TestDebtToRestoreCloseFactorParams memory params
-  ) internal returns (TestDebtToRestoreCloseFactorParams memory) {
-    FieldsToSkip memory skips = _skipOnly(SKIP_NONE);
-
-    params = _bound(params, skips);
-    params.totalDebt = bound(
-      params.totalDebt,
-      1,
-      MAX_TOTAL_ASSET_IN_BASE_CURRENCY / params.debtAssetUnit
-    );
-    return params;
-  }
-
   function test_calculateActualDebtToLiquidate_fuzz_totalDebt_zero(
     uint256 debtToCover,
     TestDebtToRestoreCloseFactorParams memory params
@@ -141,5 +127,19 @@ contract LiquidationLogicActualDebtToLiquidateTest is LiquidationLogicBaseTest {
     );
 
     assertEq(actualDebtToLiquidate, 0, 'actualDebtToLiquidate should be min allowed debt');
+  }
+
+  function _bound(
+    TestDebtToRestoreCloseFactorParams memory params
+  ) internal returns (TestDebtToRestoreCloseFactorParams memory) {
+    FieldsToSkip memory skips = _skipOnly(SKIP_NONE);
+
+    params = _bound(params, skips);
+    params.totalDebt = bound(
+      params.totalDebt,
+      1,
+      MAX_TOTAL_ASSET_IN_BASE_CURRENCY / params.debtAssetUnit
+    );
+    return params;
   }
 }
