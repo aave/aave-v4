@@ -831,8 +831,11 @@ contract SpokeRiskPremiumScenarioTest is SpokeBase {
       spoke1.getUserTotalDebt(_usdxReserveId(spoke1), alice) * 3 &&
       spoke1.getHealthFactor(alice) > WadRayMath.WAD
     ) {
-      // Store Bob old risk premium before Alice's borrow
-      bobExpectedRiskPremium = spoke1.getUserRiskPremium(bob);
+      // Store Bob old premium drawn shares before Alice borrow
+      bobPosition = spoke1.getUserPosition(_usdxReserveId(spoke1), bob);
+      bobUsdxInfo.premiumDrawnShares = bobPosition.premiumDrawnShares;
+      bobPosition = spoke1.getUserPosition(_daiReserveId(spoke1), bob);
+      bobDaiInfo.premiumDrawnShares = bobPosition.premiumDrawnShares;
 
       // Alice increases her USDX borrow by 50%
       uint256 additionalBorrow = aliceUsdxInfo.borrowAmount / 2;
@@ -848,12 +851,18 @@ contract SpokeRiskPremiumScenarioTest is SpokeBase {
         'alice risk premium after borrow'
       );
 
-      // Verify Bob's risk premium remains the same
-      assertApproxEqAbs(
-        spoke1.getUserRiskPremium(bob),
-        bobExpectedRiskPremium,
-        2,
-        'bob risk premium after alice borrow'
+      // Verify Bob's risk premium remains the same by checking premium drawn shares
+      bobPosition = spoke1.getUserPosition(_usdxReserveId(spoke1), bob);
+      assertEq(
+        bobUsdxInfo.premiumDrawnShares,
+        bobPosition.premiumDrawnShares,
+        'bob dai premium drawn shares after alice borrow'
+      );
+      bobPosition = spoke1.getUserPosition(_daiReserveId(spoke1), bob);
+      assertEq(
+        bobDaiInfo.premiumDrawnShares,
+        bobPosition.premiumDrawnShares,
+        'bob usdx premium drawn shares after alice borrow'
       );
     }
 
