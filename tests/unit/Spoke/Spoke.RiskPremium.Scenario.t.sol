@@ -55,8 +55,8 @@ contract SpokeRiskPremiumScenarioTest is SpokeBase {
   }
 
   struct ExpectedUserRp {
-    uint256 bobExpectedRiskPremium;
-    uint256 aliceExpectedRiskPremium;
+    uint256 bobRiskPremium;
+    uint256 aliceRiskPremium;
   }
 
   struct Rates {
@@ -90,18 +90,13 @@ contract SpokeRiskPremiumScenarioTest is SpokeBase {
     updateCollateralFactor(spoke1, _wethReserveId(spoke1), 10_000);
     updateCollateralFactor(spoke1, _usdxReserveId(spoke1), 10_000);
 
-    vm.prank(bob);
-    spoke1.supply(_daiReserveId(spoke1), vars.daiBorrowAmount);
+    Utils.supply(spoke1, _daiReserveId(spoke1), bob, vars.daiBorrowAmount, bob);
 
-    vm.startPrank(alice);
-    spoke1.supply(_usdxReserveId(spoke1), vars.usdxSupplyAmount);
-    spoke1.setUsingAsCollateral(_usdxReserveId(spoke1), true);
+    Utils.supplyCollateral(spoke1, _usdxReserveId(spoke1), alice, vars.usdxSupplyAmount, alice);
 
-    spoke1.supply(_wethReserveId(spoke1), vars.wethSupplyAmount);
-    spoke1.setUsingAsCollateral(_wethReserveId(spoke1), true);
+    Utils.supplyCollateral(spoke1, _wethReserveId(spoke1), alice, vars.wethSupplyAmount, alice);
 
-    spoke1.borrow(_daiReserveId(spoke1), vars.daiBorrowAmount, alice);
-    vm.stopPrank();
+    Utils.borrow(spoke1, _daiReserveId(spoke1), alice, vars.daiBorrowAmount, alice);
 
     uint256 usdxLiquidityPremium = spoke1.getLiquidityPremium(_usdxReserveId(spoke1));
     uint256 wethLiquidityPremium = spoke1.getLiquidityPremium(_wethReserveId(spoke1));
@@ -163,8 +158,7 @@ contract SpokeRiskPremiumScenarioTest is SpokeBase {
     );
 
     // Alice supplies more usdx
-    vm.prank(alice);
-    spoke1.supply(_usdxReserveId(spoke1), 500e6);
+    Utils.supply(spoke1, _usdxReserveId(spoke1), alice, 500e6, alice);
 
     assertEq(
       spoke1.getUserRiskPremium(alice),
@@ -182,8 +176,7 @@ contract SpokeRiskPremiumScenarioTest is SpokeBase {
     skip(vars.delay);
 
     // Now we supply more weth such that new total debt from now on is covered by weth
-    vm.prank(alice);
-    spoke1.supply(_wethReserveId(spoke1), vars.wethSupplyAmount);
+    Utils.supply(spoke1, _wethReserveId(spoke1), alice, vars.wethSupplyAmount, alice);
 
     accruedDaiDebt = vars.daiBorrowAmount.rayMulUp(
       MathUtils.calculateLinearInterest(
@@ -202,20 +195,7 @@ contract SpokeRiskPremiumScenarioTest is SpokeBase {
     assertEq(daiPremiumDebt, expectedPremiumDebt, 'dai premium debt after weth supply');
 
     // Alice repays everything
-    vm.prank(alice);
-    spoke1.repay(_daiReserveId(spoke1), baseDaiDebt + daiPremiumDebt);
-
-    (baseDaiDebt, daiPremiumDebt) = spoke1.getUserDebt(_daiReserveId(spoke1), alice);
-    assertEq(baseDaiDebt, 0);
-    assertEq(daiPremiumDebt, 0);
-    (baseDaiDebt, daiPremiumDebt) = spoke1.getReserveDebt(_daiReserveId(spoke1));
-    assertEq(baseDaiDebt, 0);
-    assertEq(daiPremiumDebt, 0);
-    (baseDaiDebt, daiPremiumDebt) = hub.getSpokeDebt(daiAssetId, address(spoke1));
-    assertEq(baseDaiDebt, 0);
-    assertEq(daiPremiumDebt, 0);
-
-    assertEq(spoke1.getUserRiskPremium(alice), 0);
+    _repayAll(spoke1, _daiReserveId);
   }
 
   /// Bob and Alice each supply and borrow varying amounts of usdx and dai, we check interest accrues and values percolate to hub.
@@ -250,20 +230,16 @@ contract SpokeRiskPremiumScenarioTest is SpokeBase {
     usdxInfo.lp = spoke1.getLiquidityPremium(usdxInfo.reserveId);
 
     // Bob supply dai into spoke1
-    Utils.supply(spoke1, daiInfo.reserveId, bob, bobDaiInfo.supplyAmount, bob);
-    setUsingAsCollateral(spoke1, bob, daiInfo.reserveId, true);
+    Utils.supplyCollateral(spoke1, daiInfo.reserveId, bob, bobDaiInfo.supplyAmount, bob);
 
     // Bob supply usdx into spoke1
-    Utils.supply(spoke1, usdxInfo.reserveId, bob, bobUsdxInfo.supplyAmount, bob);
-    setUsingAsCollateral(spoke1, bob, usdxInfo.reserveId, true);
+    Utils.supplyCollateral(spoke1, usdxInfo.reserveId, bob, bobUsdxInfo.supplyAmount, bob);
 
     // Alice supply dai into spoke1
-    Utils.supply(spoke1, daiInfo.reserveId, alice, aliceDaiInfo.supplyAmount, alice);
-    setUsingAsCollateral(spoke1, alice, daiInfo.reserveId, true);
+    Utils.supplyCollateral(spoke1, daiInfo.reserveId, alice, aliceDaiInfo.supplyAmount, alice);
 
     // Alice supply usdx into spoke1
-    Utils.supply(spoke1, usdxInfo.reserveId, alice, aliceUsdxInfo.supplyAmount, alice);
-    setUsingAsCollateral(spoke1, alice, usdxInfo.reserveId, true);
+    Utils.supplyCollateral(spoke1, usdxInfo.reserveId, alice, aliceUsdxInfo.supplyAmount, alice);
 
     // Bob draw dai
     Utils.borrow(spoke1, daiInfo.reserveId, bob, bobDaiInfo.borrowAmount, bob);
@@ -278,17 +254,13 @@ contract SpokeRiskPremiumScenarioTest is SpokeBase {
     Utils.borrow(spoke1, usdxInfo.reserveId, alice, aliceUsdxInfo.borrowAmount, alice);
 
     ExpectedUserRp memory expectedUserRp;
-    expectedUserRp.bobExpectedRiskPremium = _calculateExpectedUserRP(bob, spoke1);
-    expectedUserRp.aliceExpectedRiskPremium = _calculateExpectedUserRP(alice, spoke1);
+    expectedUserRp.bobRiskPremium = _calculateExpectedUserRP(bob, spoke1);
+    expectedUserRp.aliceRiskPremium = _calculateExpectedUserRP(alice, spoke1);
 
-    assertEq(
-      spoke1.getUserRiskPremium(bob),
-      expectedUserRp.bobExpectedRiskPremium,
-      'bob risk premium'
-    );
+    assertEq(spoke1.getUserRiskPremium(bob), expectedUserRp.bobRiskPremium, 'bob risk premium');
     assertEq(
       spoke1.getUserRiskPremium(alice),
-      expectedUserRp.aliceExpectedRiskPremium,
+      expectedUserRp.aliceRiskPremium,
       'alice risk premium'
     );
 
@@ -344,12 +316,12 @@ contract SpokeRiskPremiumScenarioTest is SpokeBase {
     // User risk premium should remain the same when there is no action
     assertEq(
       spoke1.getUserPreviousRiskPremium(usdxInfo.reserveId, bob),
-      expectedUserRp.bobExpectedRiskPremium,
+      expectedUserRp.bobRiskPremium,
       'bob risk premium after interest accrual'
     );
     assertEq(
       spoke1.getUserPreviousRiskPremium(usdxInfo.reserveId, alice),
-      expectedUserRp.aliceExpectedRiskPremium,
+      expectedUserRp.aliceRiskPremium,
       'alice risk premium after interest accrual'
     );
 
@@ -377,7 +349,7 @@ contract SpokeRiskPremiumScenarioTest is SpokeBase {
 
     // See if Bob's dai premium debt changes proportionally to bob's risk premium
     bobDaiInfo.premiumDebt = (bobDaiInfo.baseDebt - bobDaiInfo.borrowAmount).percentMul(
-      expectedUserRp.bobExpectedRiskPremium
+      expectedUserRp.bobRiskPremium
     );
     assertEq(bobDaiInfo.premiumDebt, debtChecks.actualPremium, 'bob premium debt after accrual');
 
@@ -393,7 +365,7 @@ contract SpokeRiskPremiumScenarioTest is SpokeBase {
 
     // See if Bob's usdx premium debt changes proportionally to bob's risk premium
     bobUsdxInfo.premiumDebt = (bobUsdxInfo.baseDebt - bobUsdxInfo.borrowAmount).percentMul(
-      expectedUserRp.bobExpectedRiskPremium
+      expectedUserRp.bobRiskPremium
     );
     assertEq(bobUsdxInfo.premiumDebt, debtChecks.actualPremium, 'bob premium debt after accrual');
 
@@ -409,7 +381,7 @@ contract SpokeRiskPremiumScenarioTest is SpokeBase {
 
     // See if Alice's dai premium debt changes proportionally to alice's risk premium
     aliceDaiInfo.premiumDebt = (aliceDaiInfo.baseDebt - aliceDaiInfo.borrowAmount).percentMul(
-      expectedUserRp.aliceExpectedRiskPremium
+      expectedUserRp.aliceRiskPremium
     );
     assertEq(
       aliceDaiInfo.premiumDebt,
@@ -429,7 +401,7 @@ contract SpokeRiskPremiumScenarioTest is SpokeBase {
 
     // See if Alice's usdx premium debt changes proportionally to alice's risk premium
     aliceUsdxInfo.premiumDebt = (aliceUsdxInfo.baseDebt - aliceUsdxInfo.borrowAmount).percentMul(
-      expectedUserRp.aliceExpectedRiskPremium
+      expectedUserRp.aliceRiskPremium
     );
     assertEq(
       aliceUsdxInfo.premiumDebt,
@@ -459,20 +431,20 @@ contract SpokeRiskPremiumScenarioTest is SpokeBase {
     // Bob's user risk premium remains unchanged
     assertEq(
       spoke1.getUserPreviousRiskPremium(daiInfo.reserveId, bob),
-      expectedUserRp.bobExpectedRiskPremium,
+      expectedUserRp.bobRiskPremium,
       'bob risk premium after repay'
     );
 
     // Alice's user risk premium does change
     assertNotEq(
       spoke1.getUserPreviousRiskPremium(daiInfo.reserveId, alice),
-      expectedUserRp.aliceExpectedRiskPremium,
+      expectedUserRp.aliceRiskPremium,
       'alice rp after repay should not match'
     );
-    expectedUserRp.aliceExpectedRiskPremium = _calculateExpectedUserRP(alice, spoke1);
+    expectedUserRp.aliceRiskPremium = _calculateExpectedUserRP(alice, spoke1);
     assertEq(
       spoke1.getUserRiskPremium(alice),
-      expectedUserRp.aliceExpectedRiskPremium,
+      expectedUserRp.aliceRiskPremium,
       'alice risk premium after repay'
     );
 
@@ -587,20 +559,22 @@ contract SpokeRiskPremiumScenarioTest is SpokeBase {
     // Users supply
 
     // Bob supply dai
-    Utils.supply(spoke1, _daiReserveId(spoke1), bob, bobDaiInfo.supplyAmount, bob);
-    setUsingAsCollateral(spoke1, bob, _daiReserveId(spoke1), true);
+    Utils.supplyCollateral(spoke1, _daiReserveId(spoke1), bob, bobDaiInfo.supplyAmount, bob);
 
     // Bob supply usdx
-    Utils.supply(spoke1, _usdxReserveId(spoke1), bob, bobUsdxInfo.supplyAmount, bob);
-    setUsingAsCollateral(spoke1, bob, _usdxReserveId(spoke1), true);
+    Utils.supplyCollateral(spoke1, _usdxReserveId(spoke1), bob, bobUsdxInfo.supplyAmount, bob);
 
     // Alice supply dai
-    Utils.supply(spoke1, _daiReserveId(spoke1), alice, aliceDaiInfo.supplyAmount, alice);
-    setUsingAsCollateral(spoke1, alice, _daiReserveId(spoke1), true);
+    Utils.supplyCollateral(spoke1, _daiReserveId(spoke1), alice, aliceDaiInfo.supplyAmount, alice);
 
     // Alice supply usdx
-    Utils.supply(spoke1, _usdxReserveId(spoke1), alice, aliceUsdxInfo.supplyAmount, alice);
-    setUsingAsCollateral(spoke1, alice, _usdxReserveId(spoke1), true);
+    Utils.supplyCollateral(
+      spoke1,
+      _usdxReserveId(spoke1),
+      alice,
+      aliceUsdxInfo.supplyAmount,
+      alice
+    );
 
     // Users borrow
 
