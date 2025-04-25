@@ -42,7 +42,13 @@ library LiquidationLogic {
       (healthFactorLiquidationThreshold - config.healthFactorBonusThreshold);
   }
 
-  /// @return The amount of debt to repay in the liquidation, in amount
+  /**
+   * @notice Calculates the actual amount of debt possible to repay in the liquidation.
+   * @dev The amount of debt to repay is capped by the total debt of the user and the amount of debt
+   * @param debtToCover The amount of debt to cover.
+   * @param params LiquidationCallLocalVars params struct.
+   * @return The amount of debt to repay in the liquidation.
+   */
   function calculateActualDebtToLiquidate(
     uint256 debtToCover,
     DataTypes.LiquidationCallLocalVars memory params
@@ -57,11 +63,11 @@ library LiquidationLogic {
     return debtToCover > maxLiquidatableDebt ? maxLiquidatableDebt : debtToCover;
   }
 
-  /// @notice Calculates the repayable amount of debt required to restore a user health factor to the close factor.
-  /// @dev If the effective liquidation penalty exceeds or equals the close factor, liquidation cannot improve the user position.
-  /// @dev Function defaults to returning uint max.
-  /// @param params LiquidationCallLocalVars params struct.
-  /// @return The amount of debt to repay.
+  /**
+   * @notice Calculates the repayable amount of debt required to restore a user health factor to the close factor.
+   * @param params LiquidationCallLocalVars params struct.
+   * @return The amount of debt asset to repay to restore health factor.
+   */
   function calculateDebtToRestoreCloseFactor(
     DataTypes.LiquidationCallLocalVars memory params
   ) internal pure returns (uint256) {
@@ -71,8 +77,7 @@ library LiquidationLogic {
       .percentMul(params.collateralFactor)
       .fromBps();
 
-    // Return default max uint if:
-    // - penalty exceeds or equals the close factor, ie liquidation cannot restore solvency efficiently (negative denominator)
+    // prevent underflow in denominator
     if (params.closeFactor < effectiveLiquidationPenalty) {
       return type(uint256).max;
     }
@@ -90,16 +95,18 @@ library LiquidationLogic {
   }
 
   /**
-   * @return The maximum collateral amount that is possible to liquidate given all the liquidation config.
-   * @return The debt amount to repay with the liquidation.
-   * @return The fee amount taken from the liquidation bonus amount to be paid to the protocol.
+   * @notice Calculates the maximum amount of collateral that can be liquidated.
+   * @param params LiquidationCallLocalVars params struct.
+   * @return The maximum collateral amount that can be seized.
+   * @return The corresponding debt amount to liquidate.
+   * @return The protocol liquidation fee amount.
    */
   function calculateAvailableCollateralToLiquidate(
     DataTypes.LiquidationCallLocalVars memory params
   ) internal pure returns (uint256, uint256, uint256) {
     DataTypes.CalculateAvailableCollateralToLiquidateLocalVars memory vars;
 
-    // convert collateral to base currency
+    // convert existing collateral to base currency
     vars.userCollateralBalanceinBaseCurrency =
       (params.userCollateralBalance * params.collateralAssetPrice).wadify() /
       params.collateralAssetUnit;
@@ -114,13 +121,12 @@ library LiquidationLogic {
 
     if (vars.maxCollateralToLiquidate > vars.userCollateralBalanceinBaseCurrency) {
       vars.collateralAmount = params.userCollateralBalance;
-      // back calculate debt amount needed to cover the max allowed collateral
       vars.debtAmountNeeded = ((params.debtAssetUnit *
         vars.userCollateralBalanceinBaseCurrency.dewadify()) / params.debtAssetPrice).percentDiv(
           params.liquidationBonus
         );
     } else {
-      // add 1 to reduce remaining collateral to ensure HF is always <= close factor
+      // add 1 to round collateral amount up, ensuring HF is always <= close factor
       vars.collateralAmount =
         ((vars.maxCollateralToLiquidate * params.collateralAssetUnit) / params.collateralAssetPrice)
           .dewadify() +

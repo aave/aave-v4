@@ -66,7 +66,6 @@ library DataTypes {
     ReserveConfig config;
   }
 
-  // TODO: liquidationProtocolFee
   struct ReserveConfig {
     bool active;
     bool frozen;
