@@ -130,7 +130,7 @@ interface ISpoke {
   function getUserTotalDebt(uint256 reserveId, address user) external view returns (uint256);
   function getUsingAsCollateral(uint256 reserveId, address user) external view returns (bool);
   function reserveCount() external view returns (uint256);
-  function reservesList(uint256) external view returns (uint256);
+  function reserveRiskConfigs(uint256) external view returns (uint256,uint256,uint256,uint256);
   function HEALTH_FACTOR_LIQUIDATION_THRESHOLD() external view returns (uint256);
   function getVariableLiquidationBonus(
     uint256 reserveId,

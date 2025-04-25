@@ -79,6 +79,13 @@ library DataTypes {
     uint256 liquidityPremium; // BPS TODO: use smaller uint
   }
 
+  struct ReserveRiskConfig {
+    uint256 reserveId;
+    uint256 assetId;
+    uint256 collateralFactor;
+    uint256 liquidityPremium;
+  }
+
   struct UserPosition {
     bool usingAsCollateral;
     uint256 suppliedShares;
@@ -86,25 +93,6 @@ library DataTypes {
     uint256 premiumDrawnShares;
     uint256 premiumOffset;
     uint256 realizedPremium;
-  }
-
-  struct CalculateUserAccountDataVars {
-    uint256 i;
-    uint256 assetId;
-    uint256 assetPrice;
-    uint256 assetUnit;
-    uint256 reserveId;
-    uint256 reservePrice;
-    uint256 liquidityPremium;
-    uint256 collateralReserveCount;
-    uint256 userCollateralInBaseCurrency;
-    uint256 totalCollateralInBaseCurrency;
-    uint256 totalDebtInBaseCurrency;
-    uint256 debtCounterInBaseCurrency;
-    uint256 collateralCounterInBaseCurrency;
-    uint256 avgCollateralFactor;
-    uint256 userRiskPremium;
-    uint256 healthFactor;
   }
 
   struct LiquidationConfig {

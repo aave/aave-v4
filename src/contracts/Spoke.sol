@@ -4,7 +4,7 @@ pragma solidity ^0.8.0;
 // libraries
 import {WadRayMath} from 'src/libraries/math/WadRayMath.sol';
 import {PercentageMath} from 'src/libraries/math/PercentageMath.sol';
-import {KeyValueListInMemory} from 'src/libraries/helpers/KeyValueListInMemory.sol';
+import {OrderedReserveRiskArray} from 'src/libraries/helpers/OrderedReserveRiskArray.sol';
 import {DataTypes} from 'src/libraries/types/DataTypes.sol';
 import {LiquidationLogic} from 'src/libraries/logic/LiquidationLogic.sol';
 
@@ -16,7 +16,7 @@ import {IPriceOracle} from 'src/interfaces/IPriceOracle.sol';
 contract Spoke is ISpoke {
   using WadRayMath for uint256;
   using PercentageMath for uint256;
-  using KeyValueListInMemory for KeyValueListInMemory.List;
+  using OrderedReserveRiskArray for DataTypes.ReserveRiskConfig[];
   using LiquidationLogic for DataTypes.LiquidationConfig;
 
   uint256 public constant HEALTH_FACTOR_LIQUIDATION_THRESHOLD = WadRayMath.WAD;
@@ -27,7 +27,7 @@ contract Spoke is ISpoke {
     internal _userPositions;
   mapping(uint256 reserveId => DataTypes.Reserve reserveData) internal _reserves;
   DataTypes.LiquidationConfig internal _liquidationConfig;
-  uint256[] public reservesList; // todo: rm, not needed
+  DataTypes.ReserveRiskConfig[] public reserveRiskConfigs; // sorted in ascending order by liquidityPremium
   uint256 public reserveCount;
 
   constructor(address hubAddress, address oracleAddress, uint256 closeFactorValue) {
@@ -62,7 +62,14 @@ contract Spoke is ISpoke {
     address asset = address(HUB.assetsList(assetId)); // will revert on invalid assetId
     uint256 reserveId = reserveCount++;
     // TODO: AccessControl
-    reservesList.push(reserveId);
+    reserveRiskConfigs.insert(
+      DataTypes.ReserveRiskConfig({
+        reserveId: reserveId,
+        assetId: assetId,
+        collateralFactor: config.collateralFactor,
+        liquidityPremium: config.liquidityPremium
+      })
+    );
     _reserves[reserveId] = DataTypes.Reserve({
       reserveId: reserveId,
       assetId: assetId,
@@ -99,6 +106,14 @@ contract Spoke is ISpoke {
     DataTypes.Reserve storage reserve = _reserves[reserveId];
     require(reserve.asset != address(0), InvalidReserve());
     // TODO: AccessControl
+    reserveRiskConfigs.update(
+      DataTypes.ReserveRiskConfig({
+        reserveId: reserveId,
+        assetId: reserve.assetId,
+        collateralFactor: config.collateralFactor,
+        liquidityPremium: config.liquidityPremium
+      })
+    );
     reserve.config = DataTypes.ReserveConfig({
       decimals: reserve.config.decimals, // decimals remains existing value
       active: config.active,
@@ -379,6 +394,7 @@ contract Spoke is ISpoke {
     (, , uint256 healthFactor, , ) = _calculateUserAccountData(user);
     return healthFactor;
   }
+
   function getReservePrice(uint256 reserveId) public view returns (uint256) {
     return oracle.getAssetPrice(_reserves[reserveId].assetId);
   }
@@ -584,126 +600,95 @@ contract Spoke is ISpoke {
   function _calculateUserAccountData(
     address userAddress
   ) internal view returns (uint256, uint256, uint256, uint256, uint256) {
-    DataTypes.CalculateUserAccountDataVars memory vars;
-    uint256 reservesListLength = reservesList.length;
+    uint256 reserveRiskConfigsLength = reserveRiskConfigs.length;
 
-    while (vars.reserveId < reservesListLength) {
-      DataTypes.UserPosition storage userPosition = _userPositions[userAddress][vars.reserveId];
+    uint256 totalDebtInBaseCurrency;
+    uint256[] memory userCollateralInBaseCurrency = new uint256[](reserveRiskConfigsLength);
+
+    uint256 totalCollateralInBaseCurrency;
+    uint256 avgCollateralFactor;
+
+    for (uint256 i = 0; i < reserveRiskConfigsLength; i += 1) {
+      DataTypes.ReserveRiskConfig storage reserveRiskConfig = reserveRiskConfigs[i];
+      DataTypes.UserPosition storage userPosition = _userPositions[userAddress][
+        reserveRiskConfig.reserveId
+      ];
 
       if (!_usingAsCollateralOrBorrowing(userPosition)) {
-        unchecked {
-          ++vars.reserveId;
-        }
         continue;
       }
-      DataTypes.Reserve memory reserve = _reserves[vars.reserveId];
-      vars.assetId = reserve.assetId;
 
-      vars.assetPrice = oracle.getAssetPrice(vars.assetId);
+      uint256 assetId = reserveRiskConfig.assetId;
+      uint256 assetPrice = oracle.getAssetPrice(assetId);
+      uint256 assetUnit;
       unchecked {
-        vars.assetUnit = 10 ** HUB.getAssetConfig(vars.assetId).decimals;
-      }
-
-      if (_usingAsCollateral(userPosition)) {
-        // @dev opt: this can be extracted by counting number of set bits in a supplied (only) bitmap saving one loop
-        unchecked {
-          ++vars.collateralReserveCount;
-        }
+        assetUnit = 10 ** HUB.getAssetConfig(assetId).decimals;
       }
 
       if (_isBorrowing(userPosition)) {
-        vars.totalDebtInBaseCurrency += _getUserDebtInBaseCurrency(
+        totalDebtInBaseCurrency += _getUserDebtInBaseCurrency(
           userPosition,
-          vars.assetId,
-          vars.assetPrice,
-          vars.assetUnit
+          assetId,
+          assetPrice,
+          assetUnit
         );
       }
 
-      unchecked {
-        ++vars.reserveId;
-      }
-    }
-
-    // @dev only allocate required memory at the cost of an extra loop
-    KeyValueListInMemory.List memory list = KeyValueListInMemory.init(vars.collateralReserveCount);
-    vars.i = 0;
-    vars.reserveId = 0;
-    while (vars.reserveId < reservesListLength) {
-      DataTypes.UserPosition storage userPosition = _userPositions[userAddress][vars.reserveId];
-      DataTypes.Reserve storage reserve = _reserves[vars.reserveId];
       if (_usingAsCollateral(userPosition)) {
-        vars.assetId = reserve.assetId;
-        vars.liquidityPremium = reserve.config.liquidityPremium;
-        vars.assetPrice = oracle.getAssetPrice(vars.assetId);
-        unchecked {
-          vars.assetUnit = 10 ** HUB.getAssetConfig(vars.assetId).decimals;
-        }
-        vars.userCollateralInBaseCurrency = _getUserBalanceInBaseCurrency(
+        userCollateralInBaseCurrency[i] += _getUserBalanceInBaseCurrency(
           userPosition,
-          vars.assetId,
-          vars.assetPrice,
-          vars.assetUnit
+          assetId,
+          assetPrice,
+          assetUnit
         );
 
-        vars.totalCollateralInBaseCurrency += vars.userCollateralInBaseCurrency;
-        list.add(vars.i, vars.liquidityPremium, vars.userCollateralInBaseCurrency);
-        vars.avgCollateralFactor +=
-          vars.userCollateralInBaseCurrency *
-          reserve.config.collateralFactor;
+        totalCollateralInBaseCurrency += userCollateralInBaseCurrency[i];
 
-        unchecked {
-          ++vars.i;
-        }
-      }
-
-      unchecked {
-        ++vars.reserveId;
+        avgCollateralFactor += userCollateralInBaseCurrency[i] * reserveRiskConfig.collateralFactor;
       }
     }
 
     // at this point avgCollateralFactor is a weighted sum of collateral scaled by collateralFactor
     // (avgCollateralFactor / totalCollateral) * totalCollateral can be simplified to avgCollateralFactor
     // strip BPS factor from result, because running avgCollateralFactor sum has been scaled by collateralFactor (in BPS) above
-    vars.healthFactor = vars.totalDebtInBaseCurrency == 0
+    uint256 healthFactor = totalDebtInBaseCurrency == 0
       ? type(uint256).max
-      : vars.avgCollateralFactor.wadDiv(vars.totalDebtInBaseCurrency).fromBps(); // HF of 1 -> 1e18
+      : avgCollateralFactor.wadDiv(totalDebtInBaseCurrency).fromBps(); // HF of 1 -> 1e18
 
     // divide by total collateral to get avg collateral factor in wad
-    vars.avgCollateralFactor = vars.totalCollateralInBaseCurrency == 0
+    avgCollateralFactor = totalCollateralInBaseCurrency == 0
       ? 0
-      : vars.avgCollateralFactor.wadDiv(vars.totalCollateralInBaseCurrency).fromBps();
+      : avgCollateralFactor.wadDiv(totalCollateralInBaseCurrency).fromBps();
 
-    vars.debtCounterInBaseCurrency = vars.totalDebtInBaseCurrency;
+    uint256 collateralCoveredInBaseCurrency;
+    uint256 userRiskPremium;
+    for (
+      uint256 i = 0;
+      i < reserveRiskConfigsLength && collateralCoveredInBaseCurrency < totalDebtInBaseCurrency;
+      i += 1
+    ) {
+      DataTypes.ReserveRiskConfig storage reserveRiskConfig = reserveRiskConfigs[i];
 
-    list.sortByKey(); // sort by liquidity premium
-    vars.i = 0;
-    // @dev from this point onwards, `collateralCounterInBaseCurrency` represents running collateral
-    // value used in risk premium, `debtCounterInBaseCurrency` represents running outstanding debt
-    while (vars.i < vars.collateralReserveCount && vars.debtCounterInBaseCurrency > 0) {
-      if (vars.debtCounterInBaseCurrency == 0) break;
-      (vars.liquidityPremium, vars.userCollateralInBaseCurrency) = list.get(vars.i);
-      if (vars.userCollateralInBaseCurrency > vars.debtCounterInBaseCurrency) {
-        vars.userCollateralInBaseCurrency = vars.debtCounterInBaseCurrency;
+      if (
+        collateralCoveredInBaseCurrency + userCollateralInBaseCurrency[i] > totalDebtInBaseCurrency
+      ) {
+        userCollateralInBaseCurrency[i] = totalDebtInBaseCurrency - collateralCoveredInBaseCurrency;
       }
-      vars.userRiskPremium += vars.userCollateralInBaseCurrency * vars.liquidityPremium;
-      vars.collateralCounterInBaseCurrency += vars.userCollateralInBaseCurrency;
-      vars.debtCounterInBaseCurrency -= vars.userCollateralInBaseCurrency;
-      unchecked {
-        ++vars.i;
-      }
+
+      userRiskPremium += userCollateralInBaseCurrency[i] * reserveRiskConfig.liquidityPremium;
+      collateralCoveredInBaseCurrency += userCollateralInBaseCurrency[i];
     }
 
-    if (vars.collateralCounterInBaseCurrency > 0) {
-      vars.userRiskPremium = vars.userRiskPremium / vars.collateralCounterInBaseCurrency;
+    if (collateralCoveredInBaseCurrency > 0) {
+      userRiskPremium = userRiskPremium / collateralCoveredInBaseCurrency;
     }
 
     return (
-      vars.userRiskPremium,
-      vars.avgCollateralFactor,
-      vars.healthFactor,
-      vars.totalCollateralInBaseCurrency,
-      vars.totalDebtInBaseCurrency
+      userRiskPremium,
+      avgCollateralFactor,
+      healthFactor,
+      totalCollateralInBaseCurrency,
+      totalDebtInBaseCurrency
     );
   }
 
