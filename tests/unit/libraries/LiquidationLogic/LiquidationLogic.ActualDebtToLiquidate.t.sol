@@ -132,7 +132,7 @@ contract LiquidationLogicActualDebtToLiquidateTest is LiquidationLogicBaseTest {
   function _bound(
     TestDebtToRestoreCloseFactorParams memory params
   ) internal override returns (TestDebtToRestoreCloseFactorParams memory) {
-    params = _bound(params);
+    params = super._bound(params);
     params.totalDebt = bound(
       params.totalDebt,
       1,
