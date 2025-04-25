@@ -575,7 +575,7 @@ contract SpokeConfigTest is SpokeBase {
   function _assertReserveConfig(
     DataTypes.ReserveConfig memory reserveConfig,
     DataTypes.ReserveConfig memory newReserveConfig
-  ) internal {
+  ) internal pure {
     assertEq(
       reserveConfig.collateralFactor,
       newReserveConfig.collateralFactor,

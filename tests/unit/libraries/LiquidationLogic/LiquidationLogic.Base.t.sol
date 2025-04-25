@@ -60,7 +60,7 @@ contract LiquidationLogicBaseTest is Base {
     return (liquidationBonus.wadify()).percentMul(collateralFactor - 1).fromBps();
   }
 
-  function _setFunctionArgs(
+  function _setStructFields(
     TestDebtToRestoreCloseFactorParams memory params
   ) internal pure returns (DataTypes.LiquidationCallLocalVars memory result) {
     result.liquidationBonus = params.liquidationBonus;

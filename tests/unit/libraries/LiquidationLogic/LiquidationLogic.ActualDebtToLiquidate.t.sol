@@ -9,7 +9,7 @@ contract LiquidationLogicActualDebtToLiquidateTest is LiquidationLogicBaseTest {
     TestDebtToRestoreCloseFactorParams memory params
   ) public {
     TestDebtToRestoreCloseFactorParams memory params = _bound(params);
-    DataTypes.LiquidationCallLocalVars memory args = _setFunctionArgs(params);
+    DataTypes.LiquidationCallLocalVars memory args = _setStructFields(params);
 
     // zero total debt; should be reverted by validation in practice
     args.totalDebt = 0;
@@ -31,7 +31,7 @@ contract LiquidationLogicActualDebtToLiquidateTest is LiquidationLogicBaseTest {
     TestDebtToRestoreCloseFactorParams memory params
   ) public {
     TestDebtToRestoreCloseFactorParams memory params = _bound(params);
-    DataTypes.LiquidationCallLocalVars memory args = _setFunctionArgs(params);
+    DataTypes.LiquidationCallLocalVars memory args = _setStructFields(params);
 
     // zero debtToCover; should be reverted by validation in practice
     uint256 debtToCover = 0;
@@ -49,7 +49,7 @@ contract LiquidationLogicActualDebtToLiquidateTest is LiquidationLogicBaseTest {
     TestDebtToRestoreCloseFactorParams memory params
   ) public {
     TestDebtToRestoreCloseFactorParams memory params = _bound(params);
-    DataTypes.LiquidationCallLocalVars memory args = _setFunctionArgs(params);
+    DataTypes.LiquidationCallLocalVars memory args = _setStructFields(params);
 
     uint256 debtToRestoreCloseFactor = LiquidationLogic.calculateDebtToRestoreCloseFactor(args);
 
@@ -74,7 +74,7 @@ contract LiquidationLogicActualDebtToLiquidateTest is LiquidationLogicBaseTest {
     TestDebtToRestoreCloseFactorParams memory params
   ) public {
     TestDebtToRestoreCloseFactorParams memory params = _bound(params);
-    DataTypes.LiquidationCallLocalVars memory args = _setFunctionArgs(params);
+    DataTypes.LiquidationCallLocalVars memory args = _setStructFields(params);
 
     uint256 debtToRestoreCloseFactor = LiquidationLogic.calculateDebtToRestoreCloseFactor(args);
     vm.assume(debtToRestoreCloseFactor <= args.totalDebt);
@@ -98,7 +98,7 @@ contract LiquidationLogicActualDebtToLiquidateTest is LiquidationLogicBaseTest {
     TestDebtToRestoreCloseFactorParams memory params
   ) public {
     TestDebtToRestoreCloseFactorParams memory params = _bound(params);
-    DataTypes.LiquidationCallLocalVars memory args = _setFunctionArgs(params);
+    DataTypes.LiquidationCallLocalVars memory args = _setStructFields(params);
 
     uint256 debtToRestoreCloseFactor = LiquidationLogic.calculateDebtToRestoreCloseFactor(args);
     vm.assume(debtToRestoreCloseFactor == 0);
@@ -116,7 +116,7 @@ contract LiquidationLogicActualDebtToLiquidateTest is LiquidationLogicBaseTest {
     TestDebtToRestoreCloseFactorParams memory params
   ) public {
     TestDebtToRestoreCloseFactorParams memory params = _bound(params);
-    DataTypes.LiquidationCallLocalVars memory args = _setFunctionArgs(params);
+    DataTypes.LiquidationCallLocalVars memory args = _setStructFields(params);
 
     uint256 debtToRestoreCloseFactor = LiquidationLogic.calculateDebtToRestoreCloseFactor(args);
     vm.assume(debtToRestoreCloseFactor == 0);

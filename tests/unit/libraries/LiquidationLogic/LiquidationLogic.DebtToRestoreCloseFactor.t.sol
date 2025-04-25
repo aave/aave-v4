@@ -6,13 +6,12 @@ import 'tests/unit/libraries/LiquidationLogic/LiquidationLogic.Base.t.sol';
 contract LiquidationLogicDebtToRestoreCloseFactorTest is LiquidationLogicBaseTest {
   using PercentageMath for uint256;
   using WadRayMath for uint256;
-  using WadRayMathExtended for uint256;
 
   function test_calculateDebtToRestoreCloseFactor_fuzz_non_negative(
     TestDebtToRestoreCloseFactorParams memory params
   ) public {
     TestDebtToRestoreCloseFactorParams memory params = _bound(params);
-    DataTypes.LiquidationCallLocalVars memory args = _setFunctionArgs(params);
+    DataTypes.LiquidationCallLocalVars memory args = _setStructFields(params);
 
     // cannot revert if all params are constrained
     LiquidationLogic.calculateDebtToRestoreCloseFactor(args);
@@ -28,15 +27,13 @@ contract LiquidationLogicDebtToRestoreCloseFactorTest is LiquidationLogicBaseTes
       (params.liquidationBonus.wadify()).percentMul(params.collateralFactor + 1).fromBps() <
         params.closeFactor
     );
-
-    DataTypes.LiquidationCallLocalVars memory args = _setFunctionArgs(params);
-
-    args.debtAssetUnit = 0;
+    params.debtAssetUnit = 0;
+    DataTypes.LiquidationCallLocalVars memory args = _setStructFields(params);
 
     assertEq(LiquidationLogic.calculateDebtToRestoreCloseFactor(args), 0, 'closeFactorDebt is 0');
   }
 
-  /// should not happen in practice
+  /// debtAssetPrice = 0 should not happen in practice
   function test_calculateDebtToRestoreCloseFactor_fuzz_debtAssetPrice_zero(
     TestDebtToRestoreCloseFactorParams memory params
   ) public {
@@ -47,13 +44,14 @@ contract LiquidationLogicDebtToRestoreCloseFactorTest is LiquidationLogicBaseTes
         params.closeFactor
     );
     params.debtAssetPrice = 0;
-    DataTypes.LiquidationCallLocalVars memory args = _setFunctionArgs(params);
+    DataTypes.LiquidationCallLocalVars memory args = _setStructFields(params);
 
     vm.expectRevert(stdError.divisionError);
     this.calculateDebtToRestoreCloseFactor(args);
   }
 
-  function test_calculateDebtToRestoreCloseFactor_cf_eq_hf(
+  /// if close factor == HEALTH_FACTOR_LIQUIDATION_THRESHOLD, then result is 0
+  function test_calculateDebtToRestoreCloseFactor_closeFactor_eq_healthFactor(
     TestDebtToRestoreCloseFactorParams memory params
   ) public {
     TestDebtToRestoreCloseFactorParams memory params = _bound(params);
@@ -63,12 +61,14 @@ contract LiquidationLogicDebtToRestoreCloseFactorTest is LiquidationLogicBaseTes
       (params.liquidationBonus.wadify()).percentMul(params.collateralFactor).fromBps() <
         params.closeFactor
     );
-    DataTypes.LiquidationCallLocalVars memory args = _setFunctionArgs(params);
+    DataTypes.LiquidationCallLocalVars memory args = _setStructFields(params);
 
     assertEq(LiquidationLogic.calculateDebtToRestoreCloseFactor(args), 0, 'closeFactorDebt is 0');
   }
 
-  function test_calculateDebtToRestoreCloseFactor_cf_lt_hf(
+  /// when close factor is less than health factor
+  /// should not happen in practice
+  function test_calculateDebtToRestoreCloseFactor_closeFactor_lt_healthFactor(
     TestDebtToRestoreCloseFactorParams memory params
   ) public {
     TestDebtToRestoreCloseFactorParams memory params = _bound(params);
@@ -78,7 +78,7 @@ contract LiquidationLogicDebtToRestoreCloseFactorTest is LiquidationLogicBaseTes
       (params.liquidationBonus.wadify()).percentMul(params.collateralFactor + 1).fromBps() <
         params.closeFactor
     );
-    DataTypes.LiquidationCallLocalVars memory args = _setFunctionArgs(params);
+    DataTypes.LiquidationCallLocalVars memory args = _setStructFields(params);
 
     vm.expectRevert(stdError.arithmeticError);
     this.calculateDebtToRestoreCloseFactor(args);
@@ -98,7 +98,7 @@ contract LiquidationLogicDebtToRestoreCloseFactorTest is LiquidationLogicBaseTes
       HEALTH_FACTOR_LIQUIDATION_THRESHOLD,
       _calculateCloseFactorThreshold(params.liquidationBonus, params.collateralFactor) - 1
     );
-    DataTypes.LiquidationCallLocalVars memory args = _setFunctionArgs(params);
+    DataTypes.LiquidationCallLocalVars memory args = _setStructFields(params);
 
     assertEq(
       LiquidationLogic.calculateDebtToRestoreCloseFactor(args),

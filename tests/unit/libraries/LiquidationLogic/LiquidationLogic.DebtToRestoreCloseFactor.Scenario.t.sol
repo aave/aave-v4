@@ -6,7 +6,6 @@ import 'tests/unit/libraries/LiquidationLogic/LiquidationLogic.Base.t.sol';
 contract LiquidationLogicDebtToRestoreCloseFactorScenarioTest is LiquidationLogicBaseTest {
   using PercentageMath for uint256;
   using WadRayMath for uint256;
-  using WadRayMathExtended for uint256;
 
   struct ReserveAmount {
     uint256 reserveId;
@@ -333,7 +332,7 @@ contract LiquidationLogicDebtToRestoreCloseFactorScenarioTest is LiquidationLogi
       }
     }
     params.totalDebtInBaseCurrency = totalAmount;
-    params.healthFactor = totalCollateralFactor.wadDivUp(params.totalDebtInBaseCurrency).fromBps();
+    params.healthFactor = totalCollateralFactor.wadDiv(params.totalDebtInBaseCurrency).fromBps();
   }
 
   function setUpScenario1() internal {

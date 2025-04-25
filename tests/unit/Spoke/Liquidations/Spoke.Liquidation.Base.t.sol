@@ -5,12 +5,10 @@ import 'tests/unit/Spoke/SpokeBase.t.sol';
 import {LiquidationLogic} from 'src/libraries/logic/LiquidationLogic.sol';
 
 contract SpokeLiquidationBase is SpokeBase {
-  using SharesMath for uint256;
+  // using SharesMath for uint256;
   using WadRayMath for uint256;
   using PercentageMath for uint256;
-  using PercentageMathExtended for uint256;
-
-  uint256 minSupplyInBaseCurrency = 10e26; // $10 in base currency
+  // using PercentageMathExtended for uint256;
 
   struct Balance {
     uint256 balanceBefore;

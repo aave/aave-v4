@@ -28,7 +28,7 @@ contract LiquidationAvailableCollateralToLiquidateTest is Base {
 
   function test_calculateAvailableCollateralToLiquidate_fuzz_actualDebtToLiquidate_zero(
     TestAvailableCollateralParams memory params
-  ) public {
+  ) public pure {
     params = _bound(params);
     params.actualDebtToLiquidate = 0;
 
@@ -62,7 +62,7 @@ contract LiquidationAvailableCollateralToLiquidateTest is Base {
   /// debtAssetPrice should never be 0 in practice
   function test_calculateAvailableCollateralToLiquidate_fuzz_debtAssetPrice_zero(
     TestAvailableCollateralParams memory params
-  ) public {
+  ) public pure {
     params = _bound(params);
     params.debtAssetPrice = 0;
 
@@ -96,7 +96,7 @@ contract LiquidationAvailableCollateralToLiquidateTest is Base {
   /// collateralAssetPrice should never be 0 in practice
   function test_calculateAvailableCollateralToLiquidate_fuzz_collateralAssetPrice_zero(
     TestAvailableCollateralParams memory params
-  ) public {
+  ) public pure {
     params = _bound(params);
     params.collateralAssetPrice = 0;
 
@@ -124,7 +124,7 @@ contract LiquidationAvailableCollateralToLiquidateTest is Base {
 
   function test_calculateAvailableCollateralToLiquidate_fuzz_userCollateralBalance_lt_maxCollateralToLiquidate(
     TestAvailableCollateralParams memory params
-  ) public {
+  ) public pure {
     params = _bound(params);
     // prevent overflow
     vm.assume(params.userCollateralBalance * params.collateralAssetPrice < 1e59);
@@ -179,7 +179,7 @@ contract LiquidationAvailableCollateralToLiquidateTest is Base {
 
   function test_calculateAvailableCollateralToLiquidate_fuzz_userCollateralBalance_gte_maxCollateralToLiquidate(
     TestAvailableCollateralParams memory params
-  ) public {
+  ) public pure {
     params = _bound(params);
     // prevent overflow
     vm.assume(params.userCollateralBalance * params.collateralAssetPrice < 1e59);
