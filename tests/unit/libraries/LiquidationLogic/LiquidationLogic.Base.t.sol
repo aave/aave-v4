@@ -29,7 +29,7 @@ contract LiquidationLogicBaseTest is Base {
   uint256 internal wethUnits = 1e18;
   uint256 internal wbtcUnits = 1e8;
 
-  struct TestCloseFactorDebtParams {
+  struct TestDebtToRestoreCloseFactorParams {
     uint256 liquidationBonus;
     uint256 collateralFactor;
     uint256 closeFactor;
@@ -45,7 +45,7 @@ contract LiquidationLogicBaseTest is Base {
   }
 
   function _calcCloseFactorDebtZeroAvgCollateralFactor(
-    TestCloseFactorDebtParams memory params
+    TestDebtToRestoreCloseFactorParams memory params
   ) internal pure returns (uint256) {
     uint256 effectiveLiquidationPenalty = (params.liquidationBonus.wadify())
       .percentMul(params.collateralFactor)
@@ -81,7 +81,7 @@ contract LiquidationLogicBaseTest is Base {
   }
 
   function _setFunctionArgs(
-    TestCloseFactorDebtParams memory params
+    TestDebtToRestoreCloseFactorParams memory params
   ) internal pure returns (DataTypes.LiquidationCallLocalVars memory result) {
     result.liquidationBonus = params.liquidationBonus;
     result.collateralFactor = params.collateralFactor;
@@ -93,9 +93,9 @@ contract LiquidationLogicBaseTest is Base {
   }
 
   function _bound(
-    TestCloseFactorDebtParams memory params,
+    TestDebtToRestoreCloseFactorParams memory params,
     FieldsToSkip memory skip
-  ) internal returns (TestCloseFactorDebtParams memory) {
+  ) internal returns (TestDebtToRestoreCloseFactorParams memory) {
     if (!_isSkipped(skip, SKIP_LIQUIDATION_BONUS)) {
       params.liquidationBonus = bound(
         params.liquidationBonus,

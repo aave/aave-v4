@@ -9,10 +9,10 @@ contract LiquidationLogicDebtToRestoreCloseFactorTest is LiquidationLogicBaseTes
   using WadRayMathExtended for uint256;
 
   function test_calculateDebtToRestoreCloseFactor_fuzz_non_negative(
-    TestCloseFactorDebtParams memory params
+    TestDebtToRestoreCloseFactorParams memory params
   ) public {
     FieldsToSkip memory skips = _skipOnly(SKIP_NONE);
-    TestCloseFactorDebtParams memory params = _bound(params, skips);
+    TestDebtToRestoreCloseFactorParams memory params = _bound(params, skips);
     DataTypes.LiquidationCallLocalVars memory args = _setFunctionArgs(params);
 
     // cannot revert if all params are constrained
@@ -21,10 +21,10 @@ contract LiquidationLogicDebtToRestoreCloseFactorTest is LiquidationLogicBaseTes
 
   /// if debtAssetUnit == 0, then result is 0 (should not happen in practice as unit is 10**decimals)
   function test_calculateDebtToRestoreCloseFactor_fuzz_debtAssetUnit_zero(
-    TestCloseFactorDebtParams memory params
+    TestDebtToRestoreCloseFactorParams memory params
   ) public {
     FieldsToSkip memory skips = _skipOnly(SKIP_DEBT_ASSET_UNIT);
-    TestCloseFactorDebtParams memory params = _bound(params, skips);
+    TestDebtToRestoreCloseFactorParams memory params = _bound(params, skips);
     // so that default uint max is not returned
     vm.assume(
       (params.liquidationBonus.wadify()).percentMul(params.collateralFactor + 1).fromBps() <
@@ -46,10 +46,10 @@ contract LiquidationLogicDebtToRestoreCloseFactorTest is LiquidationLogicBaseTes
 
   /// should not happen in practice
   function test_calculateDebtToRestoreCloseFactor_fuzz_debtAssetPrice_zero(
-    TestCloseFactorDebtParams memory params
+    TestDebtToRestoreCloseFactorParams memory params
   ) public {
     FieldsToSkip memory skips = _skipOnly(SKIP_DEBT_ASSET_PRICE);
-    TestCloseFactorDebtParams memory params = _bound(params, skips);
+    TestDebtToRestoreCloseFactorParams memory params = _bound(params, skips);
     // so that default uint max is not returned
     vm.assume(
       (params.liquidationBonus.wadify()).percentMul(params.collateralFactor + 1).fromBps() <
@@ -63,10 +63,10 @@ contract LiquidationLogicDebtToRestoreCloseFactorTest is LiquidationLogicBaseTes
   }
 
   function test_calculateDebtToRestoreCloseFactor_cf_eq_hf(
-    TestCloseFactorDebtParams memory params
+    TestDebtToRestoreCloseFactorParams memory params
   ) public {
     FieldsToSkip memory skips = _skipOnly(SKIP_NONE);
-    TestCloseFactorDebtParams memory params = _bound(params, skips);
+    TestDebtToRestoreCloseFactorParams memory params = _bound(params, skips);
     params.healthFactor = params.closeFactor;
     // so that default uint max is not returned
     vm.assume(
@@ -79,10 +79,10 @@ contract LiquidationLogicDebtToRestoreCloseFactorTest is LiquidationLogicBaseTes
   }
 
   function test_calculateDebtToRestoreCloseFactor_cf_lt_hf(
-    TestCloseFactorDebtParams memory params
+    TestDebtToRestoreCloseFactorParams memory params
   ) public {
     FieldsToSkip memory skips = _skipOnly(SKIP_NONE);
-    TestCloseFactorDebtParams memory params = _bound(params, skips);
+    TestDebtToRestoreCloseFactorParams memory params = _bound(params, skips);
     params.healthFactor = params.closeFactor + 1;
     // so that default uint max is not returned
     vm.assume(
@@ -97,10 +97,10 @@ contract LiquidationLogicDebtToRestoreCloseFactorTest is LiquidationLogicBaseTes
 
   /// if denom is ever negative, default to uint max
   function test_calculateDebtToRestoreCloseFactor_fuzz_closeFactor_lte_effectiveLiquidationPenalty_zero(
-    TestCloseFactorDebtParams memory params
+    TestDebtToRestoreCloseFactorParams memory params
   ) public {
     FieldsToSkip memory skips = _skipOnly(SKIP_CLOSE_FACTOR);
-    TestCloseFactorDebtParams memory params = _bound(params, skips);
+    TestDebtToRestoreCloseFactorParams memory params = _bound(params, skips);
     vm.assume(
       _calculateCloseFactorThreshold(params.liquidationBonus, params.collateralFactor) - 1 >=
         HEALTH_FACTOR_LIQUIDATION_THRESHOLD
