@@ -77,4 +77,115 @@ contract SpokeRiskPremiumEdgeCasesTest is SpokeBase {
       'Risk premium should decrease or remain same after repaying higher lp asset'
     );
   }
+
+  /// Supply dai2 and dai as collateral, borrow dai2, then remove dai as collateral and risk premium should increase
+  function test_riskPremium_increasesAfterCollateralRemoval(
+    uint256 daiSupplyAmount,
+    uint256 borrowAmount
+  ) public {
+    uint256 dai2SupplyAmount = MAX_SUPPLY_AMOUNT;
+    daiSupplyAmount = bound(daiSupplyAmount, 1, MAX_SUPPLY_AMOUNT);
+    borrowAmount = bound(borrowAmount, 1, MAX_SUPPLY_AMOUNT / 2);
+
+    // Deal bob dai to cover dai and dai2 supply
+    deal(address(tokenList.dai), bob, MAX_SUPPLY_AMOUNT * 2);
+
+    // Bob supplies dai and dai2 collaterals
+    Utils.supplyCollateral({
+      spoke: spoke2,
+      reserveId: _dai2ReserveId(spoke2),
+      user: bob,
+      amount: dai2SupplyAmount,
+      onBehalfOf: bob
+    });
+    Utils.supplyCollateral({
+      spoke: spoke2,
+      reserveId: _daiReserveId(spoke2),
+      user: bob,
+      amount: daiSupplyAmount,
+      onBehalfOf: bob
+    });
+
+    // Bob borrows dai2
+    Utils.borrow({
+      spoke: spoke2,
+      reserveId: _dai2ReserveId(spoke2),
+      user: bob,
+      amount: borrowAmount,
+      onBehalfOf: bob
+    });
+
+    // Get Bob's risk premium
+    uint256 riskPremium = spoke2.getUserRiskPremium(bob);
+
+    // Now bob removes dai as collateral
+    setUsingAsCollateral({
+      spoke: spoke2,
+      user: bob,
+      reserveId: _daiReserveId(spoke2),
+      usingAsCollateral: false
+    });
+
+    assertGt(
+      spoke2.getUserRiskPremium(bob),
+      riskPremium,
+      'Risk premium should increase after removing collateral'
+    );
+  }
+
+  /// Supply dai2 and dai as collateral, borrow dai2, then withdraw dai as collateral and risk premium should increase
+  function test_riskPremium_increasesAfterWithdrawal(
+    uint256 daiSupplyAmount,
+    uint256 borrowAmount
+  ) public {
+    uint256 dai2SupplyAmount = MAX_SUPPLY_AMOUNT;
+    daiSupplyAmount = bound(daiSupplyAmount, 1, MAX_SUPPLY_AMOUNT);
+    borrowAmount = bound(borrowAmount, 1, MAX_SUPPLY_AMOUNT / 2);
+
+    // Deal bob dai to cover dai and dai2 supply
+    deal(address(tokenList.dai), bob, MAX_SUPPLY_AMOUNT * 2);
+
+    // Bob supplies dai and dai2 collaterals
+    Utils.supplyCollateral({
+      spoke: spoke2,
+      reserveId: _dai2ReserveId(spoke2),
+      user: bob,
+      amount: dai2SupplyAmount,
+      onBehalfOf: bob
+    });
+    Utils.supplyCollateral({
+      spoke: spoke2,
+      reserveId: _daiReserveId(spoke2),
+      user: bob,
+      amount: daiSupplyAmount,
+      onBehalfOf: bob
+    });
+
+    // Bob borrows dai2
+    Utils.borrow({
+      spoke: spoke2,
+      reserveId: _dai2ReserveId(spoke2),
+      user: bob,
+      amount: borrowAmount,
+      onBehalfOf: bob
+    });
+
+    // Get Bob's risk premium
+    uint256 riskPremium = spoke2.getUserRiskPremium(bob);
+
+    // Now bob withdraws dai
+    Utils.withdraw({
+      spoke: spoke2,
+      reserveId: _daiReserveId(spoke2),
+      user: bob,
+      amount: daiSupplyAmount,
+      onBehalfOf: bob
+    });
+
+    assertGt(
+      spoke2.getUserRiskPremium(bob),
+      riskPremium,
+      'Risk premium should increase after withdrawing collateral'
+    );
+  }
 }
