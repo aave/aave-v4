@@ -1,6 +1,8 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.0;
 
+import {console2 as console} from 'forge-std/console2.sol';
+
 // libraries
 import {WadRayMath} from 'src/libraries/math/WadRayMath.sol';
 import {PercentageMath} from 'src/libraries/math/PercentageMath.sol';
@@ -677,6 +679,13 @@ contract Spoke is ISpoke {
     vars.debtCounterInBaseCurrency = vars.totalDebtInBaseCurrency;
 
     list.sortByKey(); // sort by liquidity premium
+
+    // Check that list is properly sorted
+    for (uint256 i = 0; i < list.length(); i++) {
+      (vars.liquidityPremium, vars.userCollateralInBaseCurrency) = list.get(i);
+      console.log('liquidityPremium', vars.liquidityPremium);
+    }
+
     vars.i = 0;
     // @dev from this point onwards, `collateralCounterInBaseCurrency` represents running collateral
     // value used in risk premium, `debtCounterInBaseCurrency` represents running outstanding debt

@@ -125,6 +125,7 @@ interface ISpoke {
     uint256 reserveId,
     address user
   ) external view returns (DataTypes.UserPosition memory);
+  function getUserRiskPremium(address user) external view returns (uint256);
   function getUserSuppliedAmount(uint256 reserveId, address user) external view returns (uint256);
   function getUserSuppliedShares(uint256 reserveId, address user) external view returns (uint256);
   function getUserTotalDebt(uint256 reserveId, address user) external view returns (uint256);
