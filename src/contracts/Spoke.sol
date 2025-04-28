@@ -592,6 +592,113 @@ contract Spoke is ISpoke {
     return _usingAsCollateral(userPosition) || _isBorrowing(userPosition);
   }
 
+  struct Vars {
+    uint256 debtInBaseCurrency;
+    uint256 collateralInBaseCurrency;
+    uint256 collateralFactor;
+    uint256 assetId;
+    uint256 assetPrice;
+    uint256 assetUnit;
+    uint256 partialRightDebtInBaseCurrency;
+    uint256 partialRightCollateralInBaseCurrency;
+    uint256 partialRightAvgCollateralFactor;
+    uint256 partialRightRiskPremium;
+  }
+
+  function _calculateRisk(
+    address userAddress,
+    uint256 orderedReserveIndex,
+    uint256 partialLeftDebtInBaseCurrency,
+    uint256 partialLeftCollateralInBaseCurrency
+  ) internal view returns (uint256, uint256, uint256, uint256) {
+    if (orderedReserveIndex >= reserveRiskConfigs.length) {
+      return (0, 0, 0, 0);
+    }
+
+    DataTypes.ReserveRiskConfig storage reserveRiskConfig = reserveRiskConfigs[orderedReserveIndex];
+    DataTypes.UserPosition storage userPosition = _userPositions[userAddress][
+      reserveRiskConfig.reserveId
+    ];
+
+    if (!_usingAsCollateralOrBorrowing(userPosition)) {
+      return
+        _calculateRisk(
+          userAddress,
+          orderedReserveIndex + 1,
+          partialLeftDebtInBaseCurrency,
+          partialLeftCollateralInBaseCurrency
+        );
+    }
+
+    Vars memory vars;
+    vars.assetId = reserveRiskConfig.assetId;
+    vars.assetPrice = oracle.getAssetPrice(vars.assetId);
+    unchecked {
+      vars.assetUnit = 10 ** HUB.getAssetConfig(vars.assetId).decimals;
+    }
+
+    if (_isBorrowing(userPosition)) {
+      vars.debtInBaseCurrency = _getUserDebtInBaseCurrency(
+        userPosition,
+        vars.assetId,
+        vars.assetPrice,
+        vars.assetUnit
+      );
+    }
+
+    if (_usingAsCollateral(userPosition)) {
+      vars.collateralInBaseCurrency += _getUserBalanceInBaseCurrency(
+        userPosition,
+        vars.assetId,
+        vars.assetPrice,
+        vars.assetUnit
+      );
+
+      vars.collateralFactor = vars.collateralInBaseCurrency * reserveRiskConfig.collateralFactor;
+    }
+
+    (
+      vars.partialRightDebtInBaseCurrency,
+      vars.partialRightCollateralInBaseCurrency,
+      vars.partialRightAvgCollateralFactor,
+      vars.partialRightRiskPremium
+    ) = _calculateRisk(
+      userAddress,
+      orderedReserveIndex + 1,
+      partialLeftDebtInBaseCurrency + vars.debtInBaseCurrency,
+      partialLeftCollateralInBaseCurrency + vars.collateralInBaseCurrency
+    );
+
+    // include current element in partial right sums, and return them
+    vars.partialRightDebtInBaseCurrency += vars.debtInBaseCurrency;
+    vars.partialRightCollateralInBaseCurrency += vars.collateralInBaseCurrency;
+    vars.partialRightAvgCollateralFactor += vars.collateralFactor;
+
+    uint256 totalDebtInBaseCurrency = partialLeftDebtInBaseCurrency +
+      vars.partialRightDebtInBaseCurrency;
+    if (partialLeftCollateralInBaseCurrency < totalDebtInBaseCurrency) {
+      if (
+        partialLeftCollateralInBaseCurrency + vars.collateralInBaseCurrency >
+        totalDebtInBaseCurrency
+      ) {
+        vars.collateralInBaseCurrency =
+          totalDebtInBaseCurrency -
+          partialLeftCollateralInBaseCurrency;
+      }
+
+      vars.partialRightRiskPremium +=
+        vars.collateralInBaseCurrency *
+        reserveRiskConfig.liquidityPremium;
+    }
+
+    return (
+      vars.partialRightDebtInBaseCurrency,
+      vars.partialRightCollateralInBaseCurrency,
+      vars.partialRightAvgCollateralFactor,
+      vars.partialRightRiskPremium
+    );
+  }
+
   /// @return userRiskPremium
   /// @return avgCollateralFactor
   /// @return healthFactor
@@ -600,53 +707,12 @@ contract Spoke is ISpoke {
   function _calculateUserAccountData(
     address userAddress
   ) internal view returns (uint256, uint256, uint256, uint256, uint256) {
-    uint256 reserveRiskConfigsLength = reserveRiskConfigs.length;
-
-    uint256 totalDebtInBaseCurrency;
-    uint256[] memory userCollateralInBaseCurrency = new uint256[](reserveRiskConfigsLength);
-
-    uint256 totalCollateralInBaseCurrency;
-    uint256 avgCollateralFactor;
-
-    for (uint256 i = 0; i < reserveRiskConfigsLength; i += 1) {
-      DataTypes.ReserveRiskConfig storage reserveRiskConfig = reserveRiskConfigs[i];
-      DataTypes.UserPosition storage userPosition = _userPositions[userAddress][
-        reserveRiskConfig.reserveId
-      ];
-
-      if (!_usingAsCollateralOrBorrowing(userPosition)) {
-        continue;
-      }
-
-      uint256 assetId = reserveRiskConfig.assetId;
-      uint256 assetPrice = oracle.getAssetPrice(assetId);
-      uint256 assetUnit;
-      unchecked {
-        assetUnit = 10 ** HUB.getAssetConfig(assetId).decimals;
-      }
-
-      if (_isBorrowing(userPosition)) {
-        totalDebtInBaseCurrency += _getUserDebtInBaseCurrency(
-          userPosition,
-          assetId,
-          assetPrice,
-          assetUnit
-        );
-      }
-
-      if (_usingAsCollateral(userPosition)) {
-        userCollateralInBaseCurrency[i] += _getUserBalanceInBaseCurrency(
-          userPosition,
-          assetId,
-          assetPrice,
-          assetUnit
-        );
-
-        totalCollateralInBaseCurrency += userCollateralInBaseCurrency[i];
-
-        avgCollateralFactor += userCollateralInBaseCurrency[i] * reserveRiskConfig.collateralFactor;
-      }
-    }
+    (
+      uint256 totalDebtInBaseCurrency,
+      uint256 totalCollateralInBaseCurrency,
+      uint256 avgCollateralFactor,
+      uint256 userRiskPremium
+    ) = _calculateRisk(userAddress, 0, 0, 0);
 
     // at this point avgCollateralFactor is a weighted sum of collateral scaled by collateralFactor
     // (avgCollateralFactor / totalCollateral) * totalCollateral can be simplified to avgCollateralFactor
@@ -660,23 +726,9 @@ contract Spoke is ISpoke {
       ? 0
       : avgCollateralFactor.wadDiv(totalCollateralInBaseCurrency).fromBps();
 
-    uint256 collateralCoveredInBaseCurrency;
-    uint256 userRiskPremium;
-    for (
-      uint256 i = 0;
-      i < reserveRiskConfigsLength && collateralCoveredInBaseCurrency < totalDebtInBaseCurrency;
-      i += 1
-    ) {
-      DataTypes.ReserveRiskConfig storage reserveRiskConfig = reserveRiskConfigs[i];
-
-      if (
-        collateralCoveredInBaseCurrency + userCollateralInBaseCurrency[i] > totalDebtInBaseCurrency
-      ) {
-        userCollateralInBaseCurrency[i] = totalDebtInBaseCurrency - collateralCoveredInBaseCurrency;
-      }
-
-      userRiskPremium += userCollateralInBaseCurrency[i] * reserveRiskConfig.liquidityPremium;
-      collateralCoveredInBaseCurrency += userCollateralInBaseCurrency[i];
+    uint256 collateralCoveredInBaseCurrency = totalDebtInBaseCurrency;
+    if (totalCollateralInBaseCurrency < totalDebtInBaseCurrency) {
+      collateralCoveredInBaseCurrency = totalCollateralInBaseCurrency;
     }
 
     if (collateralCoveredInBaseCurrency > 0) {
