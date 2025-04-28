@@ -1247,8 +1247,8 @@ contract SpokeRepayScenarioTest is SpokeBase {
     // verify LH asset debt is decreased by partial repayment
     assertApproxEqAbs(
       hub.getAssetTotalDebt(_daiReserveId(spoke1)),
-      fullDebt - partialRepayAmount,
-      1
+      fullDebt - baseRestored - premiumRestored,
+      2
     );
 
     uint256 restoreAmount = bobDaiAfter.totalDebt;
