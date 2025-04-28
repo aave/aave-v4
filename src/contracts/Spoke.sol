@@ -596,7 +596,7 @@ contract Spoke is ISpoke {
         }
         continue;
       }
-      DataTypes.Reserve memory reserve = _reserves[vars.reserveId];
+      DataTypes.Reserve storage reserve = _reserves[vars.reserveId];
       vars.assetId = reserve.assetId;
 
       vars.assetPrice = oracle.getAssetPrice(vars.assetId);
