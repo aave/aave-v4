@@ -132,7 +132,7 @@ contract LiquidationAvailableCollateralToLiquidateTest is LiquidationLogicBaseTe
     uint256 maxCollateralToLiquidate = _calcMaxCollateralToLiquidate(params);
 
     vm.assume(maxCollateralToLiquidate < 1e59 / params.collateralAssetUnit);
-    // so that maxCollateralToLiquidate <= userCollateralBalanceinBaseCurrency
+    // so that maxCollateralToLiquidate <= userCollateralBalanceInBaseCurrency
     vm.assume(
       params.userCollateralBalance <=
         (maxCollateralToLiquidate * params.collateralAssetUnit).dewadify() /
@@ -187,7 +187,7 @@ contract LiquidationAvailableCollateralToLiquidateTest is LiquidationLogicBaseTe
     uint256 maxCollateralToLiquidate = _calcMaxCollateralToLiquidate(params);
 
     vm.assume(maxCollateralToLiquidate < 1e59 / params.collateralAssetUnit);
-    // so that maxCollateralToLiquidate > userCollateralBalanceinBaseCurrency
+    // so that maxCollateralToLiquidate > userCollateralBalanceInBaseCurrency
     vm.assume(
       params.userCollateralBalance >
         (maxCollateralToLiquidate * params.collateralAssetUnit).dewadify() /
@@ -305,11 +305,11 @@ contract LiquidationAvailableCollateralToLiquidateTest is LiquidationLogicBaseTe
   function _calcDebtAmountNeeded(
     TestAvailableCollateralParams memory params
   ) internal pure returns (uint256) {
-    uint256 userCollateralBalanceinBaseCurrency = (params.userCollateralBalance *
+    uint256 userCollateralBalanceInBaseCurrency = (params.userCollateralBalance *
       params.collateralAssetPrice).wadify() / params.collateralAssetUnit;
 
     return
-      ((params.debtAssetUnit * userCollateralBalanceinBaseCurrency) / (params.debtAssetPrice))
+      ((params.debtAssetUnit * userCollateralBalanceInBaseCurrency) / (params.debtAssetPrice))
         .percentDiv(params.liquidationBonus)
         .dewadify();
   }
