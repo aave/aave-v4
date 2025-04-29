@@ -80,14 +80,13 @@ library LiquidationLogic {
       return type(uint256).max;
     }
 
-    // convert total debt across all assets into amount of current debt asset
-    uint256 totalDebtAmount = (params.totalDebtInBaseCurrency.dewadify() * params.debtAssetUnit) /
-      params.debtAssetPrice;
-
     // add 1 to denominator to round down, ensuring HF is always <= close factor
-    uint256 debtToRestoreCloseFactor = totalDebtAmount
-      .wadMulDown(params.closeFactor - params.healthFactor)
-      .wadDivDown((params.closeFactor - effectiveLiquidationPenalty + 1));
+    uint256 debtToRestoreCloseFactor = (
+      (params.totalDebtInBaseCurrency * params.debtAssetUnit)
+        .dewadify()
+        .wadMulDown(params.closeFactor - params.healthFactor)
+        .wadDivDown(params.closeFactor - effectiveLiquidationPenalty + 1)
+    ) / params.debtAssetPrice;
 
     return debtToRestoreCloseFactor;
   }
@@ -105,7 +104,7 @@ library LiquidationLogic {
     DataTypes.CalculateAvailableCollateralToLiquidateLocalVars memory vars;
 
     // convert existing collateral to base currency
-    vars.userCollateralBalanceinBaseCurrency =
+    vars.userCollateralBalanceInBaseCurrency =
       (params.userCollateralBalance * params.collateralAssetPrice).wadify() /
       params.collateralAssetUnit;
 
@@ -117,12 +116,10 @@ library LiquidationLogic {
     // account for additional collateral required due to liquidation bonus
     vars.maxCollateralToLiquidate = vars.baseCollateral.percentMul(params.liquidationBonus);
 
-    if (vars.maxCollateralToLiquidate > vars.userCollateralBalanceinBaseCurrency) {
+    if (vars.maxCollateralToLiquidate > vars.userCollateralBalanceInBaseCurrency) {
       vars.collateralAmount = params.userCollateralBalance;
-      vars.debtAmountNeeded = ((params.debtAssetUnit *
-        vars.userCollateralBalanceinBaseCurrency.dewadify()) / params.debtAssetPrice).percentDiv(
-          params.liquidationBonus
-        );
+      vars.debtAmountNeeded = ((params.debtAssetUnit * vars.userCollateralBalanceInBaseCurrency)
+        .percentDiv(params.liquidationBonus) / params.debtAssetPrice).dewadify();
     } else {
       // add 1 to round collateral amount up, ensuring HF is always <= close factor
       vars.collateralAmount =

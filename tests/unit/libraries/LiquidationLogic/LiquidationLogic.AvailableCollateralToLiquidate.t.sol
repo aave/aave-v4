@@ -309,8 +309,9 @@ contract LiquidationAvailableCollateralToLiquidateTest is LiquidationLogicBaseTe
       params.collateralAssetPrice).wadify() / params.collateralAssetUnit;
 
     return
-      ((params.debtAssetUnit * userCollateralBalanceinBaseCurrency.dewadify()) /
-        (params.debtAssetPrice)).percentDiv(params.liquidationBonus);
+      ((params.debtAssetUnit * userCollateralBalanceinBaseCurrency) / (params.debtAssetPrice))
+        .percentDiv(params.liquidationBonus)
+        .dewadify();
   }
 
   // internal helper to trigger revert checks

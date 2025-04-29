@@ -197,8 +197,8 @@ abstract contract Base is Test {
       tokenList.usdx.mint(users[x], mintAmount_USDX);
       tokenList.dai.mint(users[x], mintAmount_DAI);
       tokenList.wbtc.mint(users[x], mintAmount_WBTC);
-      deal(address(tokenList.weth), users[x], mintAmount_WETH);
       tokenList.usdy.mint(users[x], mintAmount_USDY);
+      deal(address(tokenList.weth), users[x], mintAmount_WETH);
 
       vm.startPrank(users[x]);
       tokenList.weth.approve(address(hub), type(uint256).max);
@@ -212,7 +212,7 @@ abstract contract Base is Test {
 
   function spokeMintAndApprove() internal {
     uint256 spokeMintAmount_USDX = 100e6 * 10 ** tokenList.usdx.decimals();
-    uint256 spokeMintAmount_DAI = 1e60;
+    uint256 spokeMintAmount_DAI = 100e6 * 10 ** tokenList.dai.decimals();
     uint256 spokeMintAmount_WBTC = 100e6 * 10 ** tokenList.wbtc.decimals();
     uint256 spokeMintAmount_WETH = 100e6 * 10 ** tokenList.weth.decimals();
     uint256 spokeMintAmount_USDY = 100e6 * 10 ** tokenList.usdy.decimals();
@@ -222,8 +222,8 @@ abstract contract Base is Test {
       tokenList.usdx.mint(spokes[x], spokeMintAmount_USDX);
       tokenList.dai.mint(spokes[x], spokeMintAmount_DAI);
       tokenList.wbtc.mint(spokes[x], spokeMintAmount_WBTC);
-      deal(address(tokenList.weth), spokes[x], spokeMintAmount_WETH);
       tokenList.usdy.mint(spokes[x], spokeMintAmount_USDY);
+      deal(address(tokenList.weth), spokes[x], spokeMintAmount_WETH);
 
       vm.startPrank(spokes[x]);
       tokenList.weth.approve(address(hub), type(uint256).max);
@@ -984,6 +984,59 @@ abstract contract Base is Test {
         oracle.getAssetPrice(assetId),
         10 ** hub.getAsset(assetId).config.decimals
       );
+  }
+
+  /**
+   * @notice Returns the required debt amount in base currency to ensure user position is below a certain health factor.
+   */
+  function _getRequiredDebtForLtHf(
+    ISpoke spoke,
+    address user,
+    uint256 desiredHf
+  ) internal view returns (uint256 requiredDebt) {
+    (
+      ,
+      uint256 currentAvgCollateralFactor,
+      ,
+      uint256 totalCollateralBase,
+      uint256 totalDebtBase
+    ) = spoke.getUserAccountData(user);
+
+    requiredDebt =
+      (
+        (totalCollateralBase.percentMul(currentAvgCollateralFactor.dewadify() + 1))
+          .wadMul(HEALTH_FACTOR_LIQUIDATION_THRESHOLD)
+          .wadDiv(desiredHf)
+      ) -
+      totalDebtBase;
+    // add rounding to num/denom to round debt up (ie making sure resultant HF is less than desired)
+  }
+
+  function _borrowToBeBelowHf(
+    ISpoke spoke,
+    address user,
+    uint256 reserveId,
+    uint256 desiredHf
+  ) internal returns (uint256, uint256) {
+    uint256 requiredDebtInBase = _getRequiredDebtForLtHf(spoke, user, desiredHf);
+    uint256 assetId = spoke.getReserve(reserveId).assetId;
+    uint256 requiredDebtAmount = _convertBaseCurrencyToAmount(assetId, requiredDebtInBase) + 1;
+
+    vm.assume(requiredDebtAmount < MAX_SUPPLY_AMOUNT);
+
+    // mock price to 0 to circumvent borrow validation
+    vm.mockCall(
+      address(oracle),
+      abi.encodeWithSelector(IPriceOracle.getAssetPrice.selector, assetId),
+      abi.encode(0)
+    );
+    vm.prank(user);
+    spoke.borrow(reserveId, requiredDebtAmount, user);
+    vm.clearMockedCalls();
+
+    uint256 finalHf = spoke.getHealthFactor(user);
+    assertLt(finalHf, desiredHf);
+    return (finalHf, requiredDebtAmount);
   }
 
   function _convertBaseCurrencyToAmount(

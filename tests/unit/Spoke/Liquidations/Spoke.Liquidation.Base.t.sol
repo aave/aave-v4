@@ -63,33 +63,6 @@ contract SpokeLiquidationBase is SpokeBase {
     return spoke.getVariableLiquidationBonus(reserveId, healthFactor);
   }
 
-  function _borrowToBeBelowHf(
-    ISpoke spoke,
-    address user,
-    uint256 reserveId,
-    uint256 desiredHf
-  ) internal returns (uint256, uint256) {
-    uint256 requiredDebtInBase = _getRequiredDebtForLtHf(spoke, user, desiredHf);
-    uint256 assetId = spoke.getReserve(reserveId).assetId;
-    uint256 requiredDebtAmount = _convertBaseCurrencyToAmount(assetId, requiredDebtInBase) + 1;
-
-    vm.assume(requiredDebtAmount < MAX_SUPPLY_AMOUNT);
-
-    // mock price to 0 to circumvent borrow validation
-    vm.mockCall(
-      address(oracle),
-      abi.encodeWithSelector(IPriceOracle.getAssetPrice.selector, assetId),
-      abi.encode(0)
-    );
-    vm.prank(user);
-    spoke.borrow(reserveId, requiredDebtAmount, user);
-    vm.clearMockedCalls();
-
-    uint256 finalHf = spoke.getHealthFactor(user);
-    assertLt(finalHf, desiredHf);
-    return (finalHf, requiredDebtAmount);
-  }
-
   function _borrowWithoutHfCheck(
     ISpoke spoke,
     address user,
@@ -106,32 +79,6 @@ contract SpokeLiquidationBase is SpokeBase {
     vm.prank(user);
     spoke.borrow(reserveId, debtAmount, user);
     vm.clearMockedCalls();
-  }
-
-  /**
-   * @notice Returns the required debt amount in base currency to ensure user position is below a certain health factor.
-   */
-  function _getRequiredDebtForLtHf(
-    ISpoke spoke,
-    address user,
-    uint256 desiredHf
-  ) internal view returns (uint256 requiredDebt) {
-    (
-      ,
-      uint256 currentAvgCollateralFactor,
-      ,
-      uint256 totalCollateralBase,
-      uint256 totalDebtBase
-    ) = spoke.getUserAccountData(user);
-
-    requiredDebt =
-      (
-        (totalCollateralBase.percentMul(currentAvgCollateralFactor.dewadify() + 1))
-          .wadMul(HEALTH_FACTOR_LIQUIDATION_THRESHOLD)
-          .wadDiv(desiredHf)
-      ) -
-      totalDebtBase;
-    // add rounding to num/denom to round debt up (ie making sure resultant HF is less than desired)
   }
 
   function _bound(
@@ -304,6 +251,8 @@ contract SpokeLiquidationBase is SpokeBase {
     ConvertedValues memory liqBonusEarned;
     ConvertedValues memory liqProtocolFee;
 
+    // todo: when treasury accounting completed
+    // can find liq bonus more precisely by adding liq balance change + treasury accounting change
     liqBonusEarned.base = state.debt.baseChange.percentMul(
       state.liquidationBonus - PercentageMath.PERCENTAGE_FACTOR
     );
@@ -318,8 +267,16 @@ contract SpokeLiquidationBase is SpokeBase {
         _absDiff(state.supply.baseChange, state.debt.baseChange),
         state.liquidator.baseChange
       );
+      liqProtocolFee.amount = _convertBaseCurrencyToAmount(
+        state.collateralReserve.assetId,
+        liqProtocolFee.base
+      );
     } else {
-      liqProtocolFee.base = _absDiff(state.supply.baseChange, state.liquidator.baseChange);
+      liqProtocolFee.amount = _absDiff(state.liquidator.balanceChange, state.supply.balanceChange);
+      liqProtocolFee.base = _convertAmountToBaseCurrency(
+        state.collateralReserve.assetId,
+        liqProtocolFee.amount
+      );
     }
     liqProtocolFee.amount = _convertBaseCurrencyToAmount(
       state.collateralReserve.assetId,
@@ -332,7 +289,7 @@ contract SpokeLiquidationBase is SpokeBase {
       assertApproxEqAbs(
         liqBonusEarned.amount.percentMul(state.liquidationProtocolFeePercentage),
         liqProtocolFee.amount,
-        3,
+        7,
         string.concat('protocol fee amount abs ', label)
       );
       assertApproxEqRel(

@@ -359,7 +359,6 @@ contract LiquidationCallCloseFactorTest is SpokeLiquidationBase {
 
     state.debt.balanceBefore = spoke1.getUserTotalDebt(debtReserveId, alice);
     state.liquidator.balanceBefore = IERC20(state.collateralReserve.asset).balanceOf(LIQUIDATOR);
-    state.treasury.balanceBefore = IERC20(state.collateralReserve.asset).balanceOf(TREASURY);
     state.supply.balanceBefore = spoke1.getUserSuppliedAmount(collateralReserveId, alice);
 
     vm.prank(LIQUIDATOR);
@@ -367,25 +366,27 @@ contract LiquidationCallCloseFactorTest is SpokeLiquidationBase {
 
     state.liquidator.balanceAfter = IERC20(state.collateralReserve.asset).balanceOf(LIQUIDATOR);
     state.debt.balanceAfter = spoke1.getUserTotalDebt(debtReserveId, alice);
-    state.treasury.balanceAfter = IERC20(state.collateralReserve.asset).balanceOf(TREASURY);
     state.supply.balanceAfter = spoke1.getUserSuppliedAmount(collateralReserveId, alice);
+
+    state.liquidator.balanceChange = _absDiff(
+      state.liquidator.balanceAfter,
+      state.liquidator.balanceBefore
+    );
+    state.debt.balanceChange = _absDiff(state.debt.balanceAfter, state.debt.balanceBefore);
+    state.supply.balanceChange = _absDiff(state.supply.balanceAfter, state.supply.balanceBefore);
 
     // convert amount to base currency
     state.liquidator.baseChange = _convertAmountToBaseCurrency(
       state.collateralReserve.assetId,
-      _absDiff(state.liquidator.balanceAfter, state.liquidator.balanceBefore)
-    );
-    state.treasury.baseChange = _convertAmountToBaseCurrency(
-      state.collateralReserve.assetId,
-      _absDiff(state.treasury.balanceAfter, state.treasury.balanceBefore)
+      state.liquidator.balanceChange
     );
     state.debt.baseChange = _convertAmountToBaseCurrency(
       state.debtReserve.assetId,
-      _absDiff(state.debt.balanceBefore, state.debt.balanceAfter)
+      state.debt.balanceChange
     );
     state.supply.baseChange = _convertAmountToBaseCurrency(
       state.collateralReserve.assetId,
-      _absDiff(state.supply.balanceBefore, state.supply.balanceAfter)
+      state.supply.balanceChange
     );
 
     // with close factor, it is impossible to liquidate all debt
