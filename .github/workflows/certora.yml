@@ -39,7 +39,7 @@ jobs:
         with:
           # Add your configurations as lines, each line is separated.
           # Specify additional options for each configuration by adding them after the configuration.
-          configurations:   configurations: ${{ env.CONFIGS }}
+          configurations: ${{ env.CONFIGS }}
           solc-versions: 0.7.6 0.8.1
           job-name: "Verified Rules"
           certora-key: ${{ secrets.CERTORAKEY }}
