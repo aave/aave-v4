@@ -3,8 +3,8 @@ name: Certora Prover Workflow
 
 env:
   CONFIGS: |
-    certora/conf/LiquidityHubAccrueIntegrity.conf
-    certora/conf/Math.conf
+  certora/conf/LiquidityHubAccrueIntegrity.conf
+  certora/conf/Math.conf
 
 
 on:

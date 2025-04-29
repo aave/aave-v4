@@ -51,11 +51,19 @@ rule baseDebtIndexMin_accrue(){
     assert liquidityHub._assets[assetId].baseDebtIndex==0 || liquidityHub._assets[assetId].baseDebtIndex >= wadRayMath.RAY();
 
 }
+rule baseDebtIndex_increasing(uint256 assetId) {
+    require liquidityHub._assets[assetId].baseDebtIndex >= wadRayMath.RAY() &&
+            liquidityHub._assets[assetId].baseBorrowRate > 0;
+    uint256 before = liquidityHub._assets[assetId].baseDebtIndex;
+
+    env e;
+    require e.block.timestamp >  liquidityHub._assets[assetId].lastUpdateTimestamp;
+    accrueInterest(e,assetId);
+    assert liquidityHub._assets[assetId].baseDebtIndex > before;
+}
 
 rule supplyExchangeRateIsMonotonic_accrue(){
     uint256 assetId;
-
-    
 
     env e1; env e2; env e3;
     require e1.block.timestamp <= e2.block.timestamp && e2.block.timestamp <= e3.block.timestamp;
@@ -82,7 +90,7 @@ rule supplyExchangeRateIsMonotonic_accrue(){
     }
 
 
-rule towStepVsOneStep(uint256 assetId) { 
+rule twoStepVsOneStep(uint256 assetId) { 
     env e;
     env eNext;
     require eNext.block.timestamp > e.block.timestamp;
@@ -102,8 +110,7 @@ rule towStepVsOneStep(uint256 assetId) {
     
     accrueInterest(eNext,assetId) at init;
     
-    satisfy baseDebtIndex_afterTwoSteps < liquidityHub._assets[assetId].baseDebtIndex;
-    satisfy baseDebtIndex_afterTwoSteps > liquidityHub._assets[assetId].baseDebtIndex;
+    assert baseDebtIndex_afterTwoSteps <= liquidityHub._assets[assetId].baseDebtIndex;
     // only baseDebtIndex and lastUpdateTimestamp can change
     assert 
         baseDebtIndex_afterTwoSteps != liquidityHub._assets[assetId].baseDebtIndex ||
