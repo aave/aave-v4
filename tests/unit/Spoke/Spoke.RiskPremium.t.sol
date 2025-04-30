@@ -43,6 +43,10 @@ contract SpokeRiskPremiumTest is SpokeBase {
   /// Without a collateral set, user risk premium is 0.
   function test_getUserRiskPremium_no_collateral_set() public {
     Utils.supply(spoke1, _daiReserveId(spoke1), bob, 100e18, bob);
+    // Assert Bob has no collateral set
+    for (uint256 reserveId = 0; reserveId < spoke1.reserveCount(); reserveId++) {
+      assertEq(spoke1.getUsingAsCollateral(reserveId, bob), false, 'bob collateral set');
+    }
     // Bob doesn't set dai as collateral, despite supplying, so his user rp is 0
     assertEq(spoke1.getUserRiskPremium(bob), 0, 'user risk premium');
   }
@@ -96,6 +100,8 @@ contract SpokeRiskPremiumTest is SpokeBase {
     assertEq(spoke1.getUserRiskPremium(bob), daiInfo.lp, 'user risk premium');
   }
 
+  // TODO: Test the undercollateralized case where borrowed > supplied
+
   /// When supplying and borrowing one reserve each, user risk premium matches the liquidity premium of the collateral.
   /// An additional supply of a riskier collateral does not impact the user risk premium.
   function test_getUserRiskPremium_fuzz_supply_does_not_impact(
@@ -132,6 +138,7 @@ contract SpokeRiskPremiumTest is SpokeBase {
     assertEq(spoke1.getUserRiskPremium(bob), userRiskPremium, 'user risk premium after supply');
   }
 
+  /// After each spoke action, calculated and stored user RP should remain the same
   function test_riskPremium_postActions() public {
     Utils.supply(spoke1, _daiReserveId(spoke1), alice, 1000e18, alice);
 
@@ -926,13 +933,7 @@ contract SpokeRiskPremiumTest is SpokeBase {
 
     // Alice supply remaining weth into spoke3
     if (MAX_SUPPLY_AMOUNT - wethInfo.supplyAmount > 0) {
-      Utils.supply(
-        spoke3,
-        wethInfo.reserveId,
-        alice,
-        MAX_SUPPLY_AMOUNT - wethInfo.supplyAmount,
-        alice
-      );
+      _deployLiquidity(spoke3, wethInfo.reserveId, MAX_SUPPLY_AMOUNT - wethInfo.supplyAmount);
     }
 
     // Bob draw wbtc
