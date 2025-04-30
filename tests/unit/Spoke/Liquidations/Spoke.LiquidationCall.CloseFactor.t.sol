@@ -320,7 +320,10 @@ contract LiquidationCallCloseFactorTest is SpokeLiquidationBase {
     supplyAmount = bound(
       supplyAmount,
       _convertBaseCurrencyToAmount(state.collateralReserve.assetId, 1e25),
-      MAX_SUPPLY_AMOUNT / 1e4
+      _min(
+        _convertBaseCurrencyToAmount(state.collateralReserve.assetId, MAX_SUPPLY_IN_BASE_CURRENCY),
+        MAX_SUPPLY_AMOUNT
+      )
     );
 
     state.liquidationProtocolFeePercentage = liquidationProtocolFeePercentage;
@@ -358,27 +361,48 @@ contract LiquidationCallCloseFactorTest is SpokeLiquidationBase {
     );
 
     state.debt.balanceBefore = spoke1.getUserTotalDebt(debtReserveId, alice);
-    state.liquidator.balanceBefore = IERC20(state.collateralReserve.asset).balanceOf(LIQUIDATOR);
+    state.liquidatorCollateral.balanceBefore = IERC20(state.collateralReserve.asset).balanceOf(
+      LIQUIDATOR
+    );
+    state.liquidatorDebt.balanceBefore = IERC20(state.debtReserve.asset).balanceOf(LIQUIDATOR);
     state.supply.balanceBefore = spoke1.getUserSuppliedAmount(collateralReserveId, alice);
+
+    // logs to read protocol fee from tmp emitted event
+    // TODO: update when treasury accounting is done
+    vm.recordLogs();
 
     vm.prank(LIQUIDATOR);
     spoke1.liquidationCall(collateralReserveId, debtReserveId, alice, requiredDebtAmount);
 
-    state.liquidator.balanceAfter = IERC20(state.collateralReserve.asset).balanceOf(LIQUIDATOR);
+    // TODO: update when treasury accounting is done
+    state.treasury.balanceChange = _tmpGetProtocolFeeFromLiqEvent();
+
+    state.liquidatorCollateral.balanceAfter = IERC20(state.collateralReserve.asset).balanceOf(
+      LIQUIDATOR
+    );
+    state.liquidatorDebt.balanceAfter = IERC20(state.debtReserve.asset).balanceOf(LIQUIDATOR);
     state.debt.balanceAfter = spoke1.getUserTotalDebt(debtReserveId, alice);
     state.supply.balanceAfter = spoke1.getUserSuppliedAmount(collateralReserveId, alice);
 
-    state.liquidator.balanceChange = _absDiff(
-      state.liquidator.balanceAfter,
-      state.liquidator.balanceBefore
+    state.liquidatorCollateral.balanceChange = _absDiff(
+      state.liquidatorCollateral.balanceAfter,
+      state.liquidatorCollateral.balanceBefore
+    );
+    state.liquidatorDebt.balanceChange = _absDiff(
+      state.liquidatorDebt.balanceAfter,
+      state.liquidatorDebt.balanceBefore
     );
     state.debt.balanceChange = _absDiff(state.debt.balanceAfter, state.debt.balanceBefore);
     state.supply.balanceChange = _absDiff(state.supply.balanceAfter, state.supply.balanceBefore);
 
     // convert amount to base currency
-    state.liquidator.baseChange = _convertAmountToBaseCurrency(
+    state.liquidatorCollateral.baseChange = _convertAmountToBaseCurrency(
       state.collateralReserve.assetId,
-      state.liquidator.balanceChange
+      state.liquidatorCollateral.balanceChange
+    );
+    state.liquidatorDebt.baseChange = _convertAmountToBaseCurrency(
+      state.collateralReserve.assetId,
+      state.liquidatorDebt.balanceChange
     );
     state.debt.baseChange = _convertAmountToBaseCurrency(
       state.debtReserve.assetId,

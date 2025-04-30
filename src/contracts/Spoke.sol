@@ -24,7 +24,7 @@ contract Spoke is ISpoke {
   using LiquidationLogic for DataTypes.LiquidationConfig;
   using LiquidationLogic for DataTypes.LiquidationCallLocalVars;
 
-  uint256 public constant HEALTH_FACTOR_LIQUIDATION_THRESHOLD = 1e18;
+  uint256 public constant HEALTH_FACTOR_LIQUIDATION_THRESHOLD = WadRayMath.WAD;
   ILiquidityHub public immutable HUB;
   IPriceOracle public immutable oracle;
 
@@ -471,10 +471,12 @@ contract Spoke is ISpoke {
 
       _notifyRiskPremiumUpdate(vars.debtAssetId, users[vars.i], vars.newUserRiskPremium);
 
-      vars.totalUserDebtPremiumDrawnShares += int256(vars.userDebtPremiumDrawnShares);
-      vars.totalUserDebtPremiumOffset += int256(vars.userDebtPremiumOffset);
-      vars.totalUserCollateralPremiumDrawnShares += int256(vars.userCollateralPremiumDrawnShares);
-      vars.totalUserCollateralPremiumOffset += int256(vars.userCollateralPremiumOffset);
+      vars.totalUserDebtPremiumDrawnSharesDelta += int256(vars.userDebtPremiumDrawnShares);
+      vars.totalUserDebtPremiumOffsetDelta += int256(vars.userDebtPremiumOffset);
+      vars.totalUserCollateralPremiumDrawnSharesDelta += int256(
+        vars.userCollateralPremiumDrawnShares
+      );
+      vars.totalUserCollateralPremiumOffsetDelta += int256(vars.userCollateralPremiumOffset);
       vars.totalCollateralToLiquidate += vars.collateralToLiquidate;
       vars.totalLiquidationProtocolFeeAmount += vars.liquidationProtocolFeeAmount;
       vars.totalDebtToLiquidate += vars.baseDebtToLiquidate + vars.premiumDebtToLiquidate;
@@ -491,21 +493,23 @@ contract Spoke is ISpoke {
     _refreshPremiumDebt(
       debtReserve,
       vars.debtAssetId,
-      vars.totalUserDebtPremiumDrawnShares,
-      vars.totalUserDebtPremiumOffset,
+      vars.totalUserDebtPremiumDrawnSharesDelta,
+      vars.totalUserDebtPremiumOffsetDelta,
       0
     );
     _refreshPremiumDebt(
       collateralReserve,
       vars.collateralAssetId,
-      vars.totalUserCollateralPremiumDrawnShares,
-      vars.totalUserCollateralPremiumOffset,
+      vars.totalUserCollateralPremiumDrawnSharesDelta,
+      vars.totalUserCollateralPremiumOffsetDelta,
       0
     );
 
     // transfer total liquidated collateral to liquidator
     IERC20(collateralReserve.asset).safeTransfer(msg.sender, vars.totalCollateralToLiquidate);
     // TODO: treasury accounting for protocol fee
+    // TODO: rm temp event
+    emit TmpLiquidationFee(vars.totalLiquidationProtocolFeeAmount);
 
     return (
       collateralReserve.asset,
@@ -527,7 +531,7 @@ contract Spoke is ISpoke {
     uint256 debtToCover,
     uint256 baseDebt,
     uint256 premiumDebt
-  ) internal returns (uint256, uint256, uint256, uint256, bool) {
+  ) internal view returns (uint256, uint256, uint256, uint256, bool) {
     DataTypes.LiquidationCallLocalVars memory vars;
     vars.collateralReserveId = collateralReserve.reserveId;
     vars.debtReserveId = debtReserve.reserveId;

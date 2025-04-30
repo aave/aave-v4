@@ -183,7 +183,7 @@ contract LiquidationCallCloseFactorMultiReserveTest is SpokeLiquidationBase {
         .percentMul(90_00) // add 10% buffer so that not all debt is liquidated
     );
     liquidationProtocolFeePercentage = bound(liquidationProtocolFeePercentage, 0, 100_00);
-    supplyAmountInBase = bound(supplyAmountInBase, 1_00e26, 1_000_000e26); // $100 - $1M
+    supplyAmountInBase = bound(supplyAmountInBase, 1_00e26, MAX_SUPPLY_IN_BASE_CURRENCY / 10);
     state.liquidationProtocolFeePercentage = liquidationProtocolFeePercentage;
 
     state.collateralReserveId = collateralReserveIds[collateralReserveIndex];

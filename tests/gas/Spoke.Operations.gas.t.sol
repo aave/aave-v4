@@ -105,6 +105,8 @@ contract SpokeOperations_Gas_Tests is Base {
 
     _borrowToBeBelowHf(spoke1, alice, spokeInfo[spoke1].dai.reserveId, 0.9e18);
 
+    skip(365 days);
+
     vm.startPrank(bob);
     spoke1.liquidationCall(
       spokeInfo[spoke1].usdx.reserveId,
@@ -118,7 +120,7 @@ contract SpokeOperations_Gas_Tests is Base {
       spokeInfo[spoke1].usdx.reserveId,
       spokeInfo[spoke1].dai.reserveId,
       alice,
-      900e18
+      1000e18
     );
     vm.snapshotGasLastCall('Spoke.Operations', 'liquidationCall: full');
     vm.stopPrank();

@@ -174,10 +174,10 @@ library DataTypes {
     uint256 totalWithdrawnShares;
     uint256 totalCollateralToLiquidate;
     uint256 totalLiquidationProtocolFeeAmount;
-    int256 totalUserDebtPremiumDrawnShares;
-    int256 totalUserDebtPremiumOffset;
-    int256 totalUserCollateralPremiumDrawnShares;
-    int256 totalUserCollateralPremiumOffset;
+    int256 totalUserDebtPremiumDrawnSharesDelta;
+    int256 totalUserDebtPremiumOffsetDelta;
+    int256 totalUserCollateralPremiumDrawnSharesDelta;
+    int256 totalUserCollateralPremiumOffsetDelta;
     uint256 totalDebtToLiquidate;
     bool disableUsingAsCollateral;
   }

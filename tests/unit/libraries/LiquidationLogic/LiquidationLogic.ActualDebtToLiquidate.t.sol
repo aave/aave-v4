@@ -134,7 +134,11 @@ contract LiquidationLogicActualDebtToLiquidateTest is LiquidationLogicBaseTest {
     params.totalDebt = bound(
       params.totalDebt,
       1,
-      MAX_TOTAL_ASSET_IN_BASE_CURRENCY / params.debtAssetUnit
+      _convertBaseCurrencyToAmount(
+        MAX_SUPPLY_IN_BASE_CURRENCY,
+        params.debtAssetPrice,
+        params.debtAssetUnit
+      )
     );
     return params;
   }

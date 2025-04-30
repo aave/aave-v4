@@ -83,10 +83,9 @@ library LiquidationLogic {
     // add 1 to denominator to round down, ensuring HF is always <= close factor
     uint256 debtToRestoreCloseFactor = (
       (params.totalDebtInBaseCurrency * params.debtAssetUnit)
-        .dewadify()
         .wadMulDown(params.closeFactor - params.healthFactor)
         .wadDivDown(params.closeFactor - effectiveLiquidationPenalty + 1)
-    ) / params.debtAssetPrice;
+    ).dewadify() / params.debtAssetPrice;
 
     return debtToRestoreCloseFactor;
   }

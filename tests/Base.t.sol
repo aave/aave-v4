@@ -41,6 +41,7 @@ abstract contract Base is Test {
   uint256 internal MAX_SUPPLY_AMOUNT_WBTC;
   uint256 internal MAX_SUPPLY_AMOUNT_WETH;
   uint256 internal MAX_SUPPLY_AMOUNT_USDY;
+  uint256 internal constant MAX_SUPPLY_IN_BASE_CURRENCY = 1e39;
   uint32 internal constant MAX_RISK_PREMIUM_BPS = 1000_00;
   uint256 internal constant MAX_BORROW_RATE = 1000_00; // matches DefaultReserveInterestRateStrategy
   uint256 internal constant MAX_SKIP_TIME = 10_000 days;

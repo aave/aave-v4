@@ -42,18 +42,21 @@ interface ISpoke {
    * @param collateralAsset The address of the underlying asset used as collateral, to receive as result of the liquidation.
    * @param debtAsset The address of the underlying borrowed asset to be repaid with the liquidation.
    * @param user The address of the borrower getting liquidated.
-   * @param debtToLiquidate The debt amount of borrowed `asset` to be liquidated.
-   * @param collateralToLiquidate The amount of collateral received by the liquidator.
+   * @param liquidatedDebt The debt amount of borrowed asset to be liquidated.
+   * @param liquidatedCollateral The amount of collateral received by the liquidator.
    * @param liquidator The address of the liquidator.
    */
   event LiquidationCall(
     address indexed collateralAsset,
     address indexed debtAsset,
     address indexed user,
-    uint256 debtToLiquidate,
-    uint256 collateralToLiquidate,
+    uint256 liquidatedDebt,
+    uint256 liquidatedCollateral,
     address liquidator
   );
+
+  // TODO: rm when treasury accounting is done; indexing to read more easily
+  event TmpLiquidationFee(uint256 indexed tmpLiquidationFee);
 
   error InvalidReserve();
   error ReserveNotListed();

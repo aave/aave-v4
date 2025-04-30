@@ -162,7 +162,10 @@ contract LiquidationCallProtocolFeeTest is SpokeLiquidationBase {
       liquidationProtocolFeePercentage: liquidationProtocolFeePercentage
     });
 
-    uint256 liqProtocolFee = _absDiff(state.supply.baseChange, state.liquidator.baseChange);
+    uint256 liqProtocolFee = _absDiff(
+      state.supply.baseChange,
+      state.liquidatorCollateral.baseChange
+    );
     assertEq(liqProtocolFee, 0, 'liqProtocolFee = 0');
   }
 }

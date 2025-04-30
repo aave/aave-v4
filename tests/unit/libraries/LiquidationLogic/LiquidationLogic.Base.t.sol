@@ -9,8 +9,6 @@ contract LiquidationLogicBaseTest is Base {
   using PercentageMath for uint256;
   using WadRayMath for uint256;
 
-  uint256 internal constant MAX_TOTAL_ASSET_IN_BASE_CURRENCY = 1e58;
-
   uint256 internal daiUnits = 1e18;
   uint256 internal usdxUnits = 1e6;
   uint256 internal wethUnits = 1e18;
@@ -30,19 +28,6 @@ contract LiquidationLogicBaseTest is Base {
   function setUp() public virtual override {
     super.setUp();
     initEnvironment();
-  }
-
-  function _calcCloseFactorDebtZeroAvgCollateralFactor(
-    TestDebtToRestoreCloseFactorParams memory params
-  ) internal pure returns (uint256) {
-    uint256 effectiveLiquidationPenalty = (params.liquidationBonus.wadify())
-      .percentMul(params.collateralFactor)
-      .fromBps();
-
-    return
-      (params.totalDebtInBaseCurrency.wadMul(params.closeFactor) * params.debtAssetUnit) /
-      ((params.closeFactor - effectiveLiquidationPenalty) * params.debtAssetPrice) +
-      1;
   }
 
   // for close factor > effectiveLiquidationPenalty, and positive denominator in calc
@@ -84,7 +69,7 @@ contract LiquidationLogicBaseTest is Base {
     params.totalDebtInBaseCurrency = bound(
       params.totalDebtInBaseCurrency,
       1,
-      MAX_TOTAL_ASSET_IN_BASE_CURRENCY
+      MAX_SUPPLY_IN_BASE_CURRENCY
     );
     params.debtAssetPrice = bound(params.debtAssetPrice, 1, MAX_ASSET_PRICE);
     params.closeFactor = bound(
