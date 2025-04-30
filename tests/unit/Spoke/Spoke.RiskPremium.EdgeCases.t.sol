@@ -188,4 +188,13 @@ contract SpokeRiskPremiumEdgeCasesTest is SpokeBase {
       'Risk premium should increase after withdrawing collateral'
     );
   }
+
+  // TODO: user risk premium changes because of collateral accrual (no debt change)
+  // Here I can set up so that one collateral almost covers full debt, but it's actually 2. Then interest is enough to cover the debt
+
+  // TODO: user risk premium changes because of debt accrual (no collateral change)
+  // Same as above, but debt covered by 1 collateral, debt outgrows that collateral to be covered by 2
+
+  // TODO: user risk premium changes because of coll and debt accrual
+  // ?
 }
