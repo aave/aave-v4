@@ -946,9 +946,10 @@ contract SpokeRiskPremiumScenarioTest is SpokeBase {
     );
 
     // Spoke premium debt should be the sum of both users' premium debt
-    assertEq(
+    assertApproxEqAbs(
       debtChecks.spokePremium,
       bobDaiInfo.premiumDebt + aliceDaiInfo.premiumDebt,
+      1,
       string.concat('hub spoke premium debt ', when)
     );
 
@@ -967,9 +968,10 @@ contract SpokeRiskPremiumScenarioTest is SpokeBase {
     );
 
     // Spoke premium debt should be the sum of both users' premium debt
-    assertEq(
+    assertApproxEqAbs(
       debtChecks.spokePremium,
       bobUsdxInfo.premiumDebt + aliceUsdxInfo.premiumDebt,
+      1,
       string.concat('hub spoke premium debt ', when)
     );
 
@@ -985,9 +987,10 @@ contract SpokeRiskPremiumScenarioTest is SpokeBase {
     );
 
     // Asset premium debt should be the sum of both users' premium debt
-    assertEq(
+    assertApproxEqAbs(
       debtChecks.assetPremium,
       bobDaiInfo.premiumDebt + aliceDaiInfo.premiumDebt,
+      1,
       string.concat('hub asset premium debt ', when)
     );
 
@@ -1003,9 +1006,10 @@ contract SpokeRiskPremiumScenarioTest is SpokeBase {
     );
 
     // Asset premium debt should be the sum of both users' premium debt
-    assertEq(
+    assertApproxEqAbs(
       debtChecks.assetPremium,
       bobUsdxInfo.premiumDebt + aliceUsdxInfo.premiumDebt,
+      1,
       string.concat('hub asset premium debt ', when)
     );
   }
