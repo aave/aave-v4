@@ -211,6 +211,60 @@ contract SpokeRiskPremiumTest is SpokeBase {
     assertEq(spoke1.getUserRiskPremium(bob), expectedUserRiskPremium, 'user risk premium');
   }
 
+  /// Supply a high lp reserve which fully covers debt, but also supply lower lp reserves
+  /// Assert that user rp should be less than the high lp reserve
+  function test_getUserRiskPremium_multi_reserve_collateral_lower_rp_than_highest_lp() public {
+    ReserveInfoLocal memory daiInfo;
+    ReserveInfoLocal memory dai2Info;
+    ReserveInfoLocal memory usdxInfo;
+    ReserveInfoLocal memory wethInfo;
+
+    daiInfo.reserveId = _daiReserveId(spoke2);
+    dai2Info.reserveId = _dai2ReserveId(spoke2);
+    usdxInfo.reserveId = _usdxReserveId(spoke2);
+    wethInfo.reserveId = _wethReserveId(spoke2);
+
+    daiInfo.supplyAmount = 1000e18;
+    dai2Info.supplyAmount = 10000e18;
+    usdxInfo.supplyAmount = 1000e6;
+    wethInfo.supplyAmount = 1000e18;
+    daiInfo.borrowAmount = 10000e18;
+
+    // Supply the remaining liquidity desired to borrow
+    _deployLiquidity(spoke2, daiInfo.reserveId, daiInfo.borrowAmount - daiInfo.supplyAmount);
+
+    // Bob supply dai into spoke2
+    Utils.supplyCollateral(spoke2, daiInfo.reserveId, bob, daiInfo.supplyAmount, bob);
+
+    // Bob supply dai2 into spoke2
+    Utils.supplyCollateral(spoke2, dai2Info.reserveId, bob, dai2Info.supplyAmount, bob);
+
+    // Bob supply usdx into spoke2
+    Utils.supplyCollateral(spoke2, usdxInfo.reserveId, bob, usdxInfo.supplyAmount, bob);
+
+    // Bob supply weth into spoke2
+    Utils.supplyCollateral(spoke2, wethInfo.reserveId, bob, wethInfo.supplyAmount, bob);
+
+    // Bob draw dai + usdx
+    Utils.borrow(spoke2, daiInfo.reserveId, bob, daiInfo.borrowAmount, bob);
+
+    // Dai2 is enough to cover the total debt
+    assertGe(
+      _getReserveValueInBaseCurrency(dai2AssetId, dai2Info.supplyAmount),
+      _getReserveValueInBaseCurrency(daiAssetId, daiInfo.borrowAmount),
+      'dai2 supply covers debt'
+    );
+
+    // User risk premium is less than the liquidity premium of the highest lp reserve
+    uint256 expectedUserRiskPremium = _calculateExpectedUserRP(bob, spoke2);
+    assertLt(
+      expectedUserRiskPremium,
+      spoke2.getLiquidityPremium(dai2Info.reserveId),
+      'user risk premium is less than highest lp reserve'
+    );
+    assertEq(spoke2.getUserRiskPremium(bob), expectedUserRiskPremium, 'user risk premium');
+  }
+
   /// Supply 3 reserves, borrow 2, such that 2 reserves fully cover the debt, then check user risk premium calc.
   function test_getUserRiskPremium_multi_reserve_collateral_weth_partial_cover() public {
     ReserveInfoLocal memory daiInfo;
@@ -283,11 +337,9 @@ contract SpokeRiskPremiumTest is SpokeBase {
     Utils.borrow(spoke1, wethInfo.reserveId, bob, wethInfo.borrowAmount, bob);
 
     // Dai and usdx will each cover half the debt, because dai has lower lp than usdx
-    assertEq(
-      spoke1.getUserRiskPremium(bob),
-      _calculateExpectedUserRP(bob, spoke1),
-      'user risk premium'
-    );
+    uint256 expectedRiskPremium = _calculateExpectedUserRP(bob, spoke1);
+    assertEq(expectedRiskPremium, (daiInfo.lp + usdxInfo.lp) / 2, 'user risk premium');
+    assertEq(spoke1.getUserRiskPremium(bob), expectedRiskPremium, 'user risk premium');
   }
 
   /// Supply 2 reserves and borrow one. Check user risk premium calc.

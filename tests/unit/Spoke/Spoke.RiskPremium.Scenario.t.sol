@@ -105,7 +105,7 @@ contract SpokeRiskPremiumScenarioTest is SpokeBase {
     // Weth is enough to cover debt, both stored & calc value match
     assertEq(spoke1.getUserRiskPremium(alice), wethLiquidityPremium, 'user rp: weth covers debt');
     assertEq(
-      spoke1.getUserPreviousRiskPremium(_daiReserveId(spoke1), alice),
+      spoke1.getLastUserRiskPremium(_daiReserveId(spoke1), alice),
       wethLiquidityPremium,
       'stored rp calc matches'
     );
@@ -315,12 +315,12 @@ contract SpokeRiskPremiumScenarioTest is SpokeBase {
 
     // User risk premium should remain the same when there is no action
     assertEq(
-      spoke1.getUserPreviousRiskPremium(usdxInfo.reserveId, bob),
+      spoke1.getLastUserRiskPremium(usdxInfo.reserveId, bob),
       expectedUserRp.bobRiskPremium,
       'bob risk premium after interest accrual'
     );
     assertEq(
-      spoke1.getUserPreviousRiskPremium(usdxInfo.reserveId, alice),
+      spoke1.getLastUserRiskPremium(usdxInfo.reserveId, alice),
       expectedUserRp.aliceRiskPremium,
       'alice risk premium after interest accrual'
     );
@@ -430,14 +430,14 @@ contract SpokeRiskPremiumScenarioTest is SpokeBase {
 
     // Bob's user risk premium remains unchanged
     assertEq(
-      spoke1.getUserPreviousRiskPremium(daiInfo.reserveId, bob),
+      spoke1.getLastUserRiskPremium(daiInfo.reserveId, bob),
       expectedUserRp.bobRiskPremium,
       'bob risk premium after repay'
     );
 
     // Alice's user risk premium does change
     assertNotEq(
-      spoke1.getUserPreviousRiskPremium(daiInfo.reserveId, alice),
+      spoke1.getLastUserRiskPremium(daiInfo.reserveId, alice),
       expectedUserRp.aliceRiskPremium,
       'alice rp after repay should not match'
     );
