@@ -11,8 +11,20 @@ optimizer = true
 optimizer_runs = 200
 bytecode_hash = "none"
 
-[fuzz]
-runs = 10000
+[profile.default.fuzz]
+runs = 1000
+seed = "0x640"
+
+[profile.pr.fuzz]
+runs = 5000
+
+[profile.ci.fuzz]
+runs = 100000
+
+[profile.gas]
+isolate = true
+gas_snapshot_check = true
+test = 'tests/gas'
 
 [rpc_endpoints]
 mainnet = "${RPC_MAINNET}"
@@ -42,5 +54,3 @@ zkevm = { key = "${ETHERSCAN_API_KEY_ZKEVM}", chainId = 1101 }
 gnosis = { key = "${ETHERSCAN_API_KEY_GNOSIS}", chainId = 100 }
 bnb = { key = "${ETHERSCAN_API_KEY_BNB}", chainId = 56 }
 celo = { key = "${ETHERSCAN_API_KEY_CELO}", chainId = 42220 }
-
-# See more config options https://github.com/gakonst/foundry/tree/master/config
