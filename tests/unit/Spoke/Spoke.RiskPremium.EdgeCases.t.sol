@@ -189,8 +189,109 @@ contract SpokeRiskPremiumEdgeCasesTest is SpokeBase {
     );
   }
 
-  // TODO: user risk premium changes because of collateral accrual (no debt change)
-  // Here I can set up so that one collateral almost covers full debt, but it's actually 2. Then interest is enough to cover the debt
+  /// User risk premium changes because of collateral accrual (no debt change)
+  /// Debt is initially covered by 2 collaterals, then 1 collateral becomes enough to cover the debt due to interest accrual
+  function test_riskPremium_decreasesAfterCollateralAccrual() public {
+    uint256 wbtcSupplyAmount = 1e8;
+    uint256 wethSupplyAmount = 100e18;
+    uint256 daiBorrowAmount = 50500e18; // More than price of 1 wbtc
+
+    // Deploy liquidity for dai borrow
+    _deployLiquidity(spoke1, _daiReserveId(spoke1), daiBorrowAmount);
+
+    // Bob supplies wbtc and weth collaterals
+    Utils.supplyCollateral({
+      spoke: spoke1,
+      reserveId: _wbtcReserveId(spoke1),
+      user: bob,
+      amount: wbtcSupplyAmount,
+      onBehalfOf: bob
+    });
+    Utils.supplyCollateral({
+      spoke: spoke1,
+      reserveId: _wethReserveId(spoke1),
+      user: bob,
+      amount: wethSupplyAmount,
+      onBehalfOf: bob
+    });
+
+    // Bob borrows dai
+    Utils.borrow({
+      spoke: spoke1,
+      reserveId: _daiReserveId(spoke1),
+      user: bob,
+      amount: daiBorrowAmount,
+      onBehalfOf: bob
+    });
+
+    // Alice borrows wbtc to accrue interest
+    Utils.supplyCollateral({
+      spoke: spoke1,
+      reserveId: _wethReserveId(spoke1),
+      user: alice,
+      amount: wethSupplyAmount,
+      onBehalfOf: alice
+    });
+    Utils.borrow({
+      spoke: spoke1,
+      reserveId: _wbtcReserveId(spoke1),
+      user: alice,
+      amount: wbtcSupplyAmount,
+      onBehalfOf: alice
+    });
+
+    // Bob's current risk premium should be greater than liquidity premium of wbtc, since debt is not fully covered by it
+    assertGt(
+      spoke1.getUserRiskPremium(bob),
+      spoke1.getLiquidityPremium(_wbtcReserveId(spoke1)),
+      'Bob user rp after borrow'
+    );
+
+    // Mock calls to ensure dai debt does not does not grow due to interest
+    DataTypes.UserPosition memory bobPosition = spoke1.getUserPosition(_daiReserveId(spoke1), bob);
+    vm.mockCall(
+      address(hub),
+      abi.encodeWithSelector(
+        LiquidityHub.convertToDrawnAssets.selector,
+        daiAssetId,
+        bobPosition.baseDrawnShares
+      ),
+      abi.encode(daiBorrowAmount)
+    );
+    vm.mockCall(
+      address(hub),
+      abi.encodeWithSelector(
+        LiquidityHub.convertToDrawnAssets.selector,
+        daiAssetId,
+        bobPosition.premiumDrawnShares
+      ),
+      abi.encode(bobPosition.premiumOffset)
+    );
+
+    skip(365 days);
+
+    // Ensure Bob's debt amount does not change (we mocked calls to ensure it doesn't)
+    (uint256 bobBaseDebt, uint256 bobPremiumDebt) = spoke1.getUserDebt(_daiReserveId(spoke1), bob);
+    assertEq(bobBaseDebt, daiBorrowAmount, 'Bob base debt after 1 year');
+    assertEq(bobPremiumDebt, 0, 'Bob premium debt after 1 year');
+    uint256 bobDaiDebt = spoke1.getUserTotalDebt(_daiReserveId(spoke1), bob);
+    assertEq(bobDaiDebt, daiBorrowAmount, 'Bob dai total debt after 1 year');
+
+    // Check Bob's wbtc collateral amount is now enough to cover his debt
+    uint256 wbtcSupplied = spoke1.getUserSuppliedAmount(_wbtcReserveId(spoke1), bob);
+    assertGt(
+      _getReserveValueInBaseCurrency(wbtcAssetId, wbtcSupplied),
+      _getReserveValueInBaseCurrency(daiAssetId, bobDaiDebt),
+      'Bob wbtc collateral exceeds dai debt after 1 year'
+    );
+
+    // Now since wbtc is enough to cover the debt due to interest accrual, Bob's RP should equal LP of wbtc
+    assertEq(
+      spoke1.getUserRiskPremium(bob),
+      spoke1.getLiquidityPremium(_wbtcReserveId(spoke1)),
+      'Bob user risk premium after collateral accrual'
+    );
+  }
 
   // TODO: user risk premium changes because of debt accrual (no collateral change)
   // Same as above, but debt covered by 1 collateral, debt outgrows that collateral to be covered by 2

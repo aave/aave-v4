@@ -680,12 +680,6 @@ contract Spoke is ISpoke {
 
     list.sortByKey(); // sort by liquidity premium
 
-    // Check that list is properly sorted
-    for (uint256 i = 0; i < list.length(); i++) {
-      (vars.liquidityPremium, vars.userCollateralInBaseCurrency) = list.get(i);
-      console.log('liquidityPremium', vars.liquidityPremium);
-    }
-
     vars.i = 0;
     // @dev from this point onwards, `collateralCounterInBaseCurrency` represents running collateral
     // value used in risk premium, `debtCounterInBaseCurrency` represents running outstanding debt
