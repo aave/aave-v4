@@ -87,7 +87,7 @@ contract SpokeRiskPremiumScenarioTest is SpokeBase {
     assertEq(spoke1.getLiquidityPremium(_wethReserveId(spoke1)), 15_00, 'weth lp');
     assertEq(spoke1.getLiquidityPremium(_daiReserveId(spoke1)), 20_00, 'dai lp');
 
-    // Set CF to 100% for Alice collateral
+    // Set collateral factor to 100% for Alice collateral
     updateCollateralFactor(spoke1, _wethReserveId(spoke1), 100_00);
     updateCollateralFactor(spoke1, _usdxReserveId(spoke1), 100_00);
 
