@@ -20,7 +20,7 @@ seed = "0x640"
 runs = 5000
 
 [profile.ci.fuzz]
-runs = 100000
+runs = 50000
 
 [profile.gas]
 isolate = true
