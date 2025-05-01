@@ -17,8 +17,13 @@ contract SpokeRiskPremiumEdgeCasesTest is SpokeBase {
     uint256 borrowAmount,
     uint256 repayAmount
   ) public {
-    // Make usdx liquidity premium 10 so it's the lower lp asset
+    // Make usdx liquidity premium 10% so it's the lower lp reserve compared to dai
     updateLiquidityPremium(spoke2, _usdxReserveId(spoke2), 10_00);
+    assertLt(
+      spoke2.getLiquidityPremium(_usdxReserveId(spoke2)),
+      spoke2.getLiquidityPremium(_daiReserveId(spoke2)),
+      'Usdx lower lp than dai'
+    );
 
     daiSupplyAmount = bound(daiSupplyAmount, 4, MAX_SUPPLY_AMOUNT);
     borrowAmount = bound(borrowAmount, 3, MAX_SUPPLY_AMOUNT / 2);
@@ -118,7 +123,7 @@ contract SpokeRiskPremiumEdgeCasesTest is SpokeBase {
     // Get Bob's risk premium
     uint256 riskPremium = spoke2.getUserRiskPremium(bob);
 
-    // Now bob removes dai as collateral
+    // Now bob disables dai as collateral
     setUsingAsCollateral({
       spoke: spoke2,
       user: bob,
@@ -129,7 +134,7 @@ contract SpokeRiskPremiumEdgeCasesTest is SpokeBase {
     assertGt(
       spoke2.getUserRiskPremium(bob),
       riskPremium,
-      'Risk premium should increase after removing collateral'
+      'Risk premium should increase after disabling lower LP reserve as collateral'
     );
   }
 
@@ -185,7 +190,7 @@ contract SpokeRiskPremiumEdgeCasesTest is SpokeBase {
     assertGt(
       spoke2.getUserRiskPremium(bob),
       riskPremium,
-      'Risk premium should increase after withdrawing collateral'
+      'Risk premium should increase after withdrawing lower LP collateral'
     );
   }
 
