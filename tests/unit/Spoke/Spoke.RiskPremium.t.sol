@@ -138,6 +138,64 @@ contract SpokeRiskPremiumTest is SpokeBase {
     assertEq(spoke1.getUserRiskPremium(bob), userRiskPremium, 'user risk premium after supply');
   }
 
+  // Supply multiple collaterals, and borrow one reserve. Then change the price of debt reserve such that collaterals are insufficient to cover the debt
+  // User rp should be weighted sum of the collaterals
+  function test_riskPremium_collateral_insufficient_to_cover_debt() public {
+    uint256 wbtcSupplyAmount = 1e8;
+    uint256 daiSupplyAmount = 1000e18;
+    uint256 usdxSupplyAmount = 1000e6;
+    uint256 wethSupplyAmount = 1e18;
+    uint256 borrowAmount = 10000e18;
+
+    // Deploy liquidity to borrow
+    _deployLiquidity(spoke2, _dai2ReserveId(spoke2), borrowAmount);
+
+    // Bob supplies collaterals
+    Utils.supplyCollateral(spoke2, _wbtcReserveId(spoke2), bob, wbtcSupplyAmount, bob);
+    Utils.supplyCollateral(spoke2, _daiReserveId(spoke2), bob, daiSupplyAmount, bob);
+    Utils.supplyCollateral(spoke2, _usdxReserveId(spoke2), bob, usdxSupplyAmount, bob);
+    Utils.supplyCollateral(spoke2, _wethReserveId(spoke2), bob, wethSupplyAmount, bob);
+
+    // Bob borrows dai2
+    Utils.borrow(spoke2, _dai2ReserveId(spoke2), bob, borrowAmount, bob);
+
+    assertEq(
+      spoke2.getUserRiskPremium(bob),
+      _calculateExpectedUserRP(bob, spoke2),
+      'user risk premium'
+    );
+
+    // Change the price of dai2 via mock call
+    vm.mockCall(
+      address(oracle),
+      abi.encodeWithSelector(oracle.getAssetPrice.selector, dai2AssetId),
+      abi.encode(100000e8)
+    );
+
+    // Check that debt has outgrown collateral
+    uint256 collateralValue = _getValueInBaseCurrency(wbtcAssetId, wbtcSupplyAmount) +
+      _getValueInBaseCurrency(daiAssetId, daiSupplyAmount) +
+      _getValueInBaseCurrency(usdxAssetId, usdxSupplyAmount) +
+      _getValueInBaseCurrency(wethAssetId, wethSupplyAmount);
+    uint256 debtValue = _getValueInBaseCurrency(dai2AssetId, borrowAmount);
+    assertGt(debtValue, collateralValue, 'debt outgrows collateral');
+
+    // Now user rp should be weighted sum of the collaterals
+    uint256 expectedRiskPremium = (_getValueInBaseCurrency(daiAssetId, daiSupplyAmount) *
+      spoke2.getLiquidityPremium(_daiReserveId(spoke2)) +
+      _getValueInBaseCurrency(usdxAssetId, usdxSupplyAmount) *
+      spoke2.getLiquidityPremium(_usdxReserveId(spoke2)) +
+      _getValueInBaseCurrency(wbtcAssetId, wbtcSupplyAmount) *
+      spoke2.getLiquidityPremium(_wbtcReserveId(spoke2)) +
+      _getValueInBaseCurrency(wethAssetId, wethSupplyAmount) *
+      spoke2.getLiquidityPremium(_wethReserveId(spoke2))) / collateralValue;
+    assertEq(
+      spoke2.getUserRiskPremium(bob),
+      expectedRiskPremium,
+      'user risk premium matches weighted sum of collaterals'
+    );
+  }
+
   /// After each spoke action, calculated and stored user RP should remain the same
   function test_riskPremium_postActions() public {
     Utils.supply(spoke1, _daiReserveId(spoke1), alice, 1000e18, alice);
