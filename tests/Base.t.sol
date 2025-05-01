@@ -740,10 +740,10 @@ abstract contract Base is Test {
     uint256 oldRate,
     uint256 newRate,
     bool allWithdrawn,
-    string memory when
+    string memory label
   ) internal pure {
     if (!allWithdrawn) {
-      assertGe(newRate, oldRate, string.concat('supply rate monotonically increasing ', when));
+      assertGe(newRate, oldRate, string.concat('supply rate monotonically increasing ', label));
     }
   }
 
@@ -775,48 +775,48 @@ abstract contract Base is Test {
     ISpoke spoke,
     address user,
     uint256 expectedSuppliedAmount,
-    string memory when
+    string memory label
   ) internal view {
     uint256 expectedSuppliedShares = hub.convertToSuppliedShares(assetId, expectedSuppliedAmount);
     assertEq(
       hub.getAssetSuppliedShares(assetId),
       expectedSuppliedShares,
-      string(abi.encodePacked('asset supplied shares ', when))
+      string(abi.encodePacked('asset supplied shares ', label))
     );
     assertEq(
       hub.getAssetSuppliedAmount(assetId),
       expectedSuppliedAmount,
-      string(abi.encodePacked('asset supplied amount ', when))
+      string(abi.encodePacked('asset supplied amount ', label))
     );
     assertEq(
       hub.getSpokeSuppliedShares(assetId, address(spoke)),
       expectedSuppliedShares,
-      string(abi.encodePacked('spoke supplied shares ', when))
+      string(abi.encodePacked('spoke supplied shares ', label))
     );
     assertEq(
       hub.getSpokeSuppliedAmount(assetId, address(spoke)),
       expectedSuppliedAmount,
-      string(abi.encodePacked('spoke supplied amount ', when))
+      string(abi.encodePacked('spoke supplied amount ', label))
     );
     assertEq(
       spoke.getReserveSuppliedShares(reserveId),
       expectedSuppliedShares,
-      string(abi.encodePacked('reserve supplied shares ', when))
+      string(abi.encodePacked('reserve supplied shares ', label))
     );
     assertEq(
       spoke.getReserveSuppliedAmount(reserveId),
       expectedSuppliedAmount,
-      string(abi.encodePacked('reserve supplied amount ', when))
+      string(abi.encodePacked('reserve supplied amount ', label))
     );
     assertEq(
       spoke.getUserSuppliedShares(reserveId, user),
       expectedSuppliedShares,
-      string(abi.encodePacked('user supplied shares ', when))
+      string(abi.encodePacked('user supplied shares ', label))
     );
     assertEq(
       spoke.getUserSuppliedAmount(reserveId, user),
       expectedSuppliedAmount,
-      string(abi.encodePacked('user supplied amount ', when))
+      string(abi.encodePacked('user supplied amount ', label))
     );
   }
 

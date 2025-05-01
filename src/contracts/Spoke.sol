@@ -370,9 +370,11 @@ contract Spoke is ISpoke {
     return reserve.premiumDrawnShares.rayDiv(reserve.baseDrawnShares); // trailing
   }
 
-  /// @dev Reverts if user is not borrowing reserveId
+  /// @dev Should be called with a reserveId user is borrowing. Otherwise returns 0
   function getLastUserRiskPremium(uint256 reserveId, address user) external view returns (uint256) {
-    require(_isBorrowing(_userPositions[user][reserveId]), UserNotBorrowingReserve(reserveId));
+    if (!_isBorrowing(_userPositions[user][reserveId])) {
+      return 0;
+    }
     return
       _userPositions[user][reserveId].premiumDrawnShares.percentDiv(
         _userPositions[user][reserveId].baseDrawnShares

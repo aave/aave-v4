@@ -202,9 +202,9 @@ contract SpokeRiskPremiumTest is SpokeBase {
 
     // Weth is enough to cover the total debt
     assertGe(
-      _getReserveValueInBaseCurrency(wethAssetId, wethInfo.supplyAmount),
-      _getReserveValueInBaseCurrency(daiAssetId, daiInfo.borrowAmount) +
-        _getReserveValueInBaseCurrency(usdxAssetId, usdxInfo.borrowAmount),
+      _getValueInBaseCurrency(wethAssetId, wethInfo.supplyAmount),
+      _getValueInBaseCurrency(daiAssetId, daiInfo.borrowAmount) +
+        _getValueInBaseCurrency(usdxAssetId, usdxInfo.borrowAmount),
       'weth supply covers debt'
     );
     uint256 expectedUserRiskPremium = wethInfo.lp;
@@ -250,8 +250,8 @@ contract SpokeRiskPremiumTest is SpokeBase {
 
     // Dai2 is enough to cover the total debt
     assertGe(
-      _getReserveValueInBaseCurrency(dai2AssetId, dai2Info.supplyAmount),
-      _getReserveValueInBaseCurrency(daiAssetId, daiInfo.borrowAmount),
+      _getValueInBaseCurrency(dai2AssetId, dai2Info.supplyAmount),
+      _getValueInBaseCurrency(daiAssetId, daiInfo.borrowAmount),
       'dai2 supply covers debt'
     );
 

@@ -74,6 +74,7 @@ contract SpokeRiskPremiumScenarioTest is SpokeBase {
    * |         3 | usdx       | 50%              | 1      |        6 |
    * +-----------+------------+------------------+--------+----------+
    */
+  /// Borrow, skip, supply, skip, supply, ensure risk premium is correct and accounting updates accordingly throughout protocol
   function test_riskPremiumPropagatesCorrectly_singleBorrow() public {
     GeneralLocalVars memory vars;
     vars.usdxSupplyAmount = 1500e6; // 1500 usd, 50 lp
@@ -86,9 +87,9 @@ contract SpokeRiskPremiumScenarioTest is SpokeBase {
     assertEq(spoke1.getLiquidityPremium(_wethReserveId(spoke1)), 15_00, 'weth lp');
     assertEq(spoke1.getLiquidityPremium(_daiReserveId(spoke1)), 20_00, 'dai lp');
 
-    // Set LT to 1 for Alice collateral
-    updateCollateralFactor(spoke1, _wethReserveId(spoke1), 10_000);
-    updateCollateralFactor(spoke1, _usdxReserveId(spoke1), 10_000);
+    // Set CF to 100% for Alice collateral
+    updateCollateralFactor(spoke1, _wethReserveId(spoke1), 100_00);
+    updateCollateralFactor(spoke1, _usdxReserveId(spoke1), 100_00);
 
     Utils.supply(spoke1, _daiReserveId(spoke1), bob, vars.daiBorrowAmount, bob);
 
@@ -128,7 +129,7 @@ contract SpokeRiskPremiumScenarioTest is SpokeBase {
 
     uint256 accruedDaiDebt = vars.daiBorrowAmount.rayMul(
       MathUtils.calculateLinearInterest(
-        hub.getBaseInterestRate(daiAssetId), // note: IR strategy has a pending fix
+        hub.getBaseInterestRate(daiAssetId), // todo: IR strategy has a pending fix
         vars.lastUpdateTimestamp
       ) - WadRayMath.RAY
     );
@@ -180,7 +181,7 @@ contract SpokeRiskPremiumScenarioTest is SpokeBase {
 
     accruedDaiDebt = vars.daiBorrowAmount.rayMulUp(
       MathUtils.calculateLinearInterest(
-        hub.getBaseInterestRate(daiAssetId), // note: IR strategy has a pending fix
+        hub.getBaseInterestRate(daiAssetId), // todo: IR strategy has a pending fix
         startTime
       ) - WadRayMath.RAY
     );
@@ -512,7 +513,7 @@ contract SpokeRiskPremiumScenarioTest is SpokeBase {
 
   /// Bob and Alice each supply and borrow varying fuzzed amounts of usdx and dai,
   /// with different risk premiums. We check interest accrues correctly and values percolate to hub.
-  /// @dev We don't store user risk premium directly, so compare calculated premiumDrawnShares as proxy for expected risk premium
+  /// @dev We don't store user risk premium directly, so compare calculated premiumDrawnShares as proxy for expected previous risk premium
   function test_getUserRiskPremium_fuzz_two_users_two_reserves_borrowed(
     UserBorrowAction memory bobDaiAction,
     UserBorrowAction memory bobUsdxAction,
@@ -867,15 +868,6 @@ contract SpokeRiskPremiumScenarioTest is SpokeBase {
     _verifyProtocolDebtShares(bobDaiInfo, aliceDaiInfo, bobUsdxInfo, aliceUsdxInfo, 'final');
   }
 
-  function _getValueInBaseCurrency(
-    uint256 assetId,
-    uint256 amount
-  ) internal view returns (uint256) {
-    return
-      (amount * oracle.getAssetPrice(assetId)).wadify() /
-      10 ** hub.getAsset(assetId).config.decimals;
-  }
-
   function _boundUserBorrowAction(
     UserBorrowAction memory action
   ) internal pure returns (UserBorrowAction memory) {
@@ -889,7 +881,7 @@ contract SpokeRiskPremiumScenarioTest is SpokeBase {
     UserInfoLocal memory aliceDaiInfo,
     UserInfoLocal memory bobUsdxInfo,
     UserInfoLocal memory aliceUsdxInfo,
-    string memory when
+    string memory label
   ) internal view {
     DebtChecks memory debtChecks;
     // Check reserve debt for dai
@@ -902,7 +894,7 @@ contract SpokeRiskPremiumScenarioTest is SpokeBase {
       debtChecks.reserveDebt,
       bobDaiInfo.baseDebt + aliceDaiInfo.baseDebt,
       1,
-      string.concat('reserve base debt ', when)
+      string.concat('reserve base debt ', label)
     );
 
     // Reserve premium debt should be the sum of both users' premium debt
@@ -910,7 +902,7 @@ contract SpokeRiskPremiumScenarioTest is SpokeBase {
       debtChecks.reservePremium,
       bobDaiInfo.premiumDebt + aliceDaiInfo.premiumDebt,
       1,
-      string.concat('reserve premium debt ', when)
+      string.concat('reserve premium debt ', label)
     );
 
     // Check reserve debt for usdx
@@ -923,7 +915,7 @@ contract SpokeRiskPremiumScenarioTest is SpokeBase {
       debtChecks.reserveDebt,
       bobUsdxInfo.baseDebt + aliceUsdxInfo.baseDebt,
       1,
-      string.concat('reserve base debt ', when)
+      string.concat('reserve base debt ', label)
     );
 
     // Reserve premium debt should be the sum of both users' premium debt
@@ -931,7 +923,7 @@ contract SpokeRiskPremiumScenarioTest is SpokeBase {
       debtChecks.reservePremium,
       bobUsdxInfo.premiumDebt + aliceUsdxInfo.premiumDebt,
       1,
-      string.concat('reserve premium debt ', when)
+      string.concat('reserve premium debt ', label)
     );
 
     // Check spoke debt on hub for dai
@@ -942,7 +934,7 @@ contract SpokeRiskPremiumScenarioTest is SpokeBase {
       debtChecks.spokeDebt,
       bobDaiInfo.baseDebt + aliceDaiInfo.baseDebt,
       1,
-      string.concat('hub spoke base debt ', when)
+      string.concat('hub spoke base debt ', label)
     );
 
     // Spoke premium debt should be the sum of both users' premium debt
@@ -950,7 +942,7 @@ contract SpokeRiskPremiumScenarioTest is SpokeBase {
       debtChecks.spokePremium,
       bobDaiInfo.premiumDebt + aliceDaiInfo.premiumDebt,
       1,
-      string.concat('hub spoke premium debt ', when)
+      string.concat('hub spoke premium debt ', label)
     );
 
     // Check spoke debt on hub for usdx
@@ -964,7 +956,7 @@ contract SpokeRiskPremiumScenarioTest is SpokeBase {
       debtChecks.spokeDebt,
       bobUsdxInfo.baseDebt + aliceUsdxInfo.baseDebt,
       1,
-      string.concat('hub spoke base debt ', when)
+      string.concat('hub spoke base debt ', label)
     );
 
     // Spoke premium debt should be the sum of both users' premium debt
@@ -972,7 +964,7 @@ contract SpokeRiskPremiumScenarioTest is SpokeBase {
       debtChecks.spokePremium,
       bobUsdxInfo.premiumDebt + aliceUsdxInfo.premiumDebt,
       1,
-      string.concat('hub spoke premium debt ', when)
+      string.concat('hub spoke premium debt ', label)
     );
 
     // Check asset debt on hub for dai
@@ -983,7 +975,7 @@ contract SpokeRiskPremiumScenarioTest is SpokeBase {
       debtChecks.assetDebt,
       bobDaiInfo.baseDebt + aliceDaiInfo.baseDebt,
       1,
-      string.concat('hub asset base debt ', when)
+      string.concat('hub asset base debt ', label)
     );
 
     // Asset premium debt should be the sum of both users' premium debt
@@ -991,7 +983,7 @@ contract SpokeRiskPremiumScenarioTest is SpokeBase {
       debtChecks.assetPremium,
       bobDaiInfo.premiumDebt + aliceDaiInfo.premiumDebt,
       1,
-      string.concat('hub asset premium debt ', when)
+      string.concat('hub asset premium debt ', label)
     );
 
     // Check asset debt on hub for usdx
@@ -1002,7 +994,7 @@ contract SpokeRiskPremiumScenarioTest is SpokeBase {
       debtChecks.assetDebt,
       bobUsdxInfo.baseDebt + aliceUsdxInfo.baseDebt,
       1,
-      string.concat('hub asset base debt ', when)
+      string.concat('hub asset base debt ', label)
     );
 
     // Asset premium debt should be the sum of both users' premium debt
@@ -1010,7 +1002,7 @@ contract SpokeRiskPremiumScenarioTest is SpokeBase {
       debtChecks.assetPremium,
       bobUsdxInfo.premiumDebt + aliceUsdxInfo.premiumDebt,
       1,
-      string.concat('hub asset premium debt ', when)
+      string.concat('hub asset premium debt ', label)
     );
   }
 
@@ -1019,7 +1011,7 @@ contract SpokeRiskPremiumScenarioTest is SpokeBase {
     UserInfoLocal memory aliceDaiInfo,
     UserInfoLocal memory bobUsdxInfo,
     UserInfoLocal memory aliceUsdxInfo,
-    string memory when
+    string memory label
   ) internal view {
     // Check base drawn shares and premium drawn shares for dai
     DataTypes.Reserve memory reserve = spoke1.getReserve(_daiReserveId(spoke1));
@@ -1029,14 +1021,14 @@ contract SpokeRiskPremiumScenarioTest is SpokeBase {
       reserve.baseDrawnShares,
       hub.convertToDrawnShares(daiAssetId, bobDaiInfo.baseDebt + aliceDaiInfo.baseDebt),
       1,
-      string.concat('reserve dai base drawn shares ', when)
+      string.concat('reserve dai base drawn shares ', label)
     );
 
     // Reserve premium drawn shares should be the sum of both users' premium drawn shares
     assertEq(
       reserve.premiumDrawnShares,
       bobDaiInfo.premiumDrawnShares + aliceDaiInfo.premiumDrawnShares,
-      string.concat('reserve dai premium drawn shares ', when)
+      string.concat('reserve dai premium drawn shares ', label)
     );
 
     // Check base drawn shares and premium drawn shares for usdx
@@ -1047,14 +1039,14 @@ contract SpokeRiskPremiumScenarioTest is SpokeBase {
       reserve.baseDrawnShares,
       hub.convertToDrawnShares(usdxAssetId, bobUsdxInfo.baseDebt + aliceUsdxInfo.baseDebt),
       1,
-      string.concat('reserve usdx base drawn shares ', when)
+      string.concat('reserve usdx base drawn shares ', label)
     );
 
     // Reserve premium drawn shares should be the sum of both users' premium drawn shares
     assertEq(
       reserve.premiumDrawnShares,
       bobUsdxInfo.premiumDrawnShares + aliceUsdxInfo.premiumDrawnShares,
-      string.concat('reserve usdx premium drawn shares ', when)
+      string.concat('reserve usdx premium drawn shares ', label)
     );
 
     // Verify spoke debts on hub for dai
@@ -1063,12 +1055,12 @@ contract SpokeRiskPremiumScenarioTest is SpokeBase {
       spoke.baseDrawnShares,
       hub.convertToDrawnShares(daiAssetId, bobDaiInfo.baseDebt + aliceDaiInfo.baseDebt),
       1,
-      string.concat('hub spoke dai base debt ', when)
+      string.concat('hub spoke dai base debt ', label)
     );
     assertEq(
       spoke.premiumDrawnShares,
       bobDaiInfo.premiumDrawnShares + aliceDaiInfo.premiumDrawnShares,
-      string.concat('hub spoke dai premium debt ', when)
+      string.concat('hub spoke dai premium debt ', label)
     );
 
     // Verify spoke debts on hub for usdx
@@ -1077,12 +1069,12 @@ contract SpokeRiskPremiumScenarioTest is SpokeBase {
       spoke.baseDrawnShares,
       hub.convertToDrawnShares(usdxAssetId, bobUsdxInfo.baseDebt + aliceUsdxInfo.baseDebt),
       1,
-      string.concat('hub spoke usdx base debt ', when)
+      string.concat('hub spoke usdx base debt ', label)
     );
     assertEq(
       spoke.premiumDrawnShares,
       bobUsdxInfo.premiumDrawnShares + aliceUsdxInfo.premiumDrawnShares,
-      string.concat('hub spoke usdx premium debt ', when)
+      string.concat('hub spoke usdx premium debt ', label)
     );
 
     // Verify asset debts on hub
@@ -1091,12 +1083,12 @@ contract SpokeRiskPremiumScenarioTest is SpokeBase {
       asset.baseDrawnShares,
       hub.convertToDrawnShares(daiAssetId, bobDaiInfo.baseDebt + aliceDaiInfo.baseDebt),
       1,
-      string.concat('hub asset dai base debt ', when)
+      string.concat('hub asset dai base debt ', label)
     );
     assertEq(
       asset.premiumDrawnShares,
       bobDaiInfo.premiumDrawnShares + aliceDaiInfo.premiumDrawnShares,
-      string.concat('hub asset dai premium debt ', when)
+      string.concat('hub asset dai premium debt ', label)
     );
 
     asset = hub.getAsset(usdxAssetId);
@@ -1104,12 +1096,12 @@ contract SpokeRiskPremiumScenarioTest is SpokeBase {
       asset.baseDrawnShares,
       hub.convertToDrawnShares(usdxAssetId, bobUsdxInfo.baseDebt + aliceUsdxInfo.baseDebt),
       1,
-      string.concat('hub asset usdx base debt ', when)
+      string.concat('hub asset usdx base debt ', label)
     );
     assertEq(
       asset.premiumDrawnShares,
       bobUsdxInfo.premiumDrawnShares + aliceUsdxInfo.premiumDrawnShares,
-      string.concat('hub asset usdx premium debt ', when)
+      string.concat('hub asset usdx premium debt ', label)
     );
   }
 }

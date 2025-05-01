@@ -402,7 +402,7 @@ contract SpokeBase is Base {
   }
 
   /// returns the USD value of the reserve normalized by it's decimals, in terms of WAD
-  function _getReserveValueInBaseCurrency(
+  function _getValueInBaseCurrency(
     uint256 assetId,
     uint256 amount
   ) internal view returns (uint256) {
@@ -676,7 +676,7 @@ contract SpokeBase is Base {
         ++suppliedReservesCount;
       }
       (assetId, ) = getAssetByReserveId(spoke, reserveId);
-      totalDebt += _getReserveValueInBaseCurrency(assetId, spoke.getUserTotalDebt(reserveId, user));
+      totalDebt += _getValueInBaseCurrency(assetId, spoke.getUserTotalDebt(reserveId, user));
     }
 
     if (totalDebt == 0) {
@@ -703,7 +703,7 @@ contract SpokeBase is Base {
       (uint256 lp, uint256 reserveId) = reserveLP.get(idx);
       userPosition = getUserInfo(spoke, user, reserveId);
       (assetId, ) = getAssetByReserveId(spoke, reserveId);
-      uint256 supplyAmount = _getReserveValueInBaseCurrency(
+      uint256 supplyAmount = _getValueInBaseCurrency(
         assetId,
         hub.convertToSuppliedAssets(assetId, userPosition.suppliedShares)
       );
