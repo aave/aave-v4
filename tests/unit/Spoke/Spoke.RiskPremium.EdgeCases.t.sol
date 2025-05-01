@@ -285,8 +285,8 @@ contract SpokeRiskPremiumEdgeCasesTest is SpokeBase {
     // Check Bob's wbtc collateral amount is now enough to cover his debt
     uint256 wbtcSupplied = spoke1.getUserSuppliedAmount(_wbtcReserveId(spoke1), bob);
     assertGt(
-      _getReserveValueInBaseCurrency(wbtcAssetId, wbtcSupplied),
-      _getReserveValueInBaseCurrency(daiAssetId, bobDaiDebt),
+      _getValueInBaseCurrency(wbtcAssetId, wbtcSupplied),
+      _getValueInBaseCurrency(daiAssetId, bobDaiDebt),
       'Bob wbtc collateral exceeds dai debt after 1 year'
     );
 
@@ -334,8 +334,8 @@ contract SpokeRiskPremiumEdgeCasesTest is SpokeBase {
 
     // Bob's current risk premium should be equal to liquidity premium of wbtc, since debt is fully covered by it
     assertEq(
-      _getReserveValueInBaseCurrency(wbtcAssetId, wbtcSupplyAmount),
-      _getReserveValueInBaseCurrency(daiAssetId, daiBorrowAmount),
+      _getValueInBaseCurrency(wbtcAssetId, wbtcSupplyAmount),
+      _getValueInBaseCurrency(daiAssetId, daiBorrowAmount),
       'Bob wbtc collateral equals dai debt'
     );
     assertEq(
@@ -353,8 +353,8 @@ contract SpokeRiskPremiumEdgeCasesTest is SpokeBase {
     // Ensure debt has grown beyond wbtc collateral
     uint256 bobDebt = spoke1.getUserTotalDebt(_daiReserveId(spoke1), bob);
     assertGt(
-      _getReserveValueInBaseCurrency(daiAssetId, bobDebt),
-      _getReserveValueInBaseCurrency(wbtcAssetId, bobWbtcCollateral),
+      _getValueInBaseCurrency(daiAssetId, bobDebt),
+      _getValueInBaseCurrency(wbtcAssetId, bobWbtcCollateral),
       'Bob dai debt exceeds wbtc collateral after 1 year'
     );
 
@@ -399,8 +399,8 @@ contract SpokeRiskPremiumEdgeCasesTest is SpokeBase {
 
     // Bob's current risk premium should be equal to liquidity premium of weth, since debt is fully covered by it
     assertEq(
-      _getReserveValueInBaseCurrency(wethAssetId, wethSupplyAmount),
-      _getReserveValueInBaseCurrency(daiAssetId, daiBorrowAmount),
+      _getValueInBaseCurrency(wethAssetId, wethSupplyAmount),
+      _getValueInBaseCurrency(daiAssetId, daiBorrowAmount),
       'Bob weth collateral equals dai debt'
     );
     assertEq(
@@ -434,8 +434,8 @@ contract SpokeRiskPremiumEdgeCasesTest is SpokeBase {
     // Ensure debt has grown beyond weth collateral
     uint256 bobDebt = spoke1.getUserTotalDebt(_daiReserveId(spoke1), bob);
     assertGt(
-      _getReserveValueInBaseCurrency(daiAssetId, bobDebt),
-      _getReserveValueInBaseCurrency(wethAssetId, bobWethCollateral),
+      _getValueInBaseCurrency(daiAssetId, bobDebt),
+      _getValueInBaseCurrency(wethAssetId, bobWethCollateral),
       'Bob dai debt exceeds weth collateral after 1 year'
     );
 

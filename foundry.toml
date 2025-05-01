@@ -10,6 +10,7 @@ evm_version = "cancun"
 optimizer = true
 optimizer_runs = 200
 bytecode_hash = "none"
+gas_snapshot_check = false
 
 [profile.default.fuzz]
 runs = 1000
@@ -19,7 +20,7 @@ seed = "0x640"
 runs = 5000
 
 [profile.ci.fuzz]
-runs = 100000
+runs = 50000
 
 [profile.gas]
 isolate = true

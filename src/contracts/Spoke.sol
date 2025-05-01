@@ -370,6 +370,17 @@ contract Spoke is ISpoke {
     return reserve.premiumDrawnShares.rayDiv(reserve.baseDrawnShares); // trailing
   }
 
+  /// @dev Should be called with a reserveId user is borrowing. Otherwise returns 0
+  function getLastUserRiskPremium(uint256 reserveId, address user) external view returns (uint256) {
+    if (!_isBorrowing(_userPositions[user][reserveId])) {
+      return 0;
+    }
+    return
+      _userPositions[user][reserveId].premiumDrawnShares.percentDiv(
+        _userPositions[user][reserveId].baseDrawnShares
+      );
+  }
+
   function getUserRiskPremium(address user) external view returns (uint256) {
     (uint256 userRiskPremium, , , , ) = _calculateUserAccountData(user);
     return userRiskPremium;
@@ -576,6 +587,7 @@ contract Spoke is ISpoke {
     return _usingAsCollateral(userPosition) || _isBorrowing(userPosition);
   }
 
+  /// @dev User rp calc runs until the first of either debt or collateral is exhausted
   /// @return userRiskPremium
   /// @return avgCollateralFactor
   /// @return healthFactor
