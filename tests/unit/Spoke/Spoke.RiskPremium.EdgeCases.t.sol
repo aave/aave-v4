@@ -356,6 +356,132 @@ contract SpokeRiskPremiumEdgeCasesTest is SpokeBase {
     );
   }
 
+  /// Debt is initially covered by 2 collaterals (dai + dai2), then 1 collateral becomes enough to cover the debt due to interest accrual
+  function test_riskPremium_fuzz_nonIncreasesAfterCollateralAccrual(
+    uint256 daiSupplyAmount,
+    uint40 skipTime
+  ) public {
+    daiSupplyAmount = bound(daiSupplyAmount, 1e18, MAX_SUPPLY_AMOUNT / 2 - 2); // Leave some room to allow borrowing more than this supply, and for Alice borrow
+    uint256 daiBorrowAmount = daiSupplyAmount + 1; // Borrow more than dai supply amount so 2 collaterals cover debt
+    uint256 dai2SupplyAmount = MAX_SUPPLY_AMOUNT;
+    skipTime = uint40(bound(skipTime, 365 days, MAX_SKIP_TIME)); // At least skip one year to ensure sufficient accrual
+
+    // Deal bob dai to cover dai and dai2 supply
+    deal(address(tokenList.dai), bob, MAX_SUPPLY_AMOUNT * 2);
+
+    // Bob supplies dai and dai2 collaterals
+    Utils.supplyCollateral({
+      spoke: spoke2,
+      reserveId: _daiReserveId(spoke2),
+      user: bob,
+      amount: daiSupplyAmount,
+      onBehalfOf: bob
+    });
+    Utils.supplyCollateral({
+      spoke: spoke2,
+      reserveId: _dai2ReserveId(spoke2),
+      user: bob,
+      amount: dai2SupplyAmount,
+      onBehalfOf: bob
+    });
+
+    // Deploy liquidity for dai borrows
+    _deployLiquidity(spoke2, _daiReserveId(spoke2), MAX_SUPPLY_AMOUNT - daiBorrowAmount - 1);
+
+    // Bob borrows dai
+    Utils.borrow({
+      spoke: spoke2,
+      reserveId: _daiReserveId(spoke2),
+      user: bob,
+      amount: daiBorrowAmount,
+      onBehalfOf: bob
+    });
+
+    // Alice borrows dai to accrue interest
+    uint256 aliceCollateralAmount = _calcMinimumCollAmount(
+      spoke2,
+      _wethReserveId(spoke2),
+      _daiReserveId(spoke2),
+      daiBorrowAmount
+    );
+    Utils.supplyCollateral({
+      spoke: spoke2,
+      reserveId: _wethReserveId(spoke2),
+      user: alice,
+      amount: aliceCollateralAmount,
+      onBehalfOf: alice
+    });
+    Utils.borrow({
+      spoke: spoke2,
+      reserveId: _daiReserveId(spoke2),
+      user: alice,
+      amount: 1,
+      onBehalfOf: alice
+    });
+
+    // Bob's current risk premium should be greater than or equal liquidity premium of dai, since debt is not fully covered by it (and due to rounding)
+    assertGe(
+      spoke2.getUserRiskPremium(bob),
+      spoke2.getLiquidityPremium(_daiReserveId(spoke2)),
+      'Bob user rp after borrow'
+    );
+
+    // Mock calls to ensure dai debt does not does not grow due to interest
+    DataTypes.UserPosition memory bobPosition = spoke2.getUserPosition(_daiReserveId(spoke2), bob);
+    vm.mockCall(
+      address(hub),
+      abi.encodeWithSelector(
+        LiquidityHub.convertToDrawnAssets.selector,
+        daiAssetId,
+        bobPosition.baseDrawnShares
+      ),
+      abi.encode(daiBorrowAmount)
+    );
+    vm.mockCall(
+      address(hub),
+      abi.encodeWithSelector(
+        LiquidityHub.convertToDrawnAssets.selector,
+        daiAssetId,
+        bobPosition.premiumDrawnShares
+      ),
+      abi.encode(bobPosition.premiumOffset)
+    );
+
+    console.log(
+      'bob dai collateral before time skip',
+      spoke2.getUserSuppliedAmount(_daiReserveId(spoke2), bob)
+    );
+
+    skip(skipTime);
+
+    console.log(
+      'bob dai collateral after time skip',
+      spoke2.getUserSuppliedAmount(_daiReserveId(spoke2), bob)
+    );
+
+    // Ensure Bob's debt amount does not change (we mocked calls to ensure it doesn't)
+    (uint256 bobBaseDebt, uint256 bobPremiumDebt) = spoke2.getUserDebt(_daiReserveId(spoke2), bob);
+    assertEq(bobBaseDebt, daiBorrowAmount, 'Bob base debt after 1 year');
+    assertEq(bobPremiumDebt, 0, 'Bob premium debt after 1 year');
+    uint256 bobDaiDebt = spoke2.getUserTotalDebt(_daiReserveId(spoke2), bob);
+    assertEq(bobDaiDebt, daiBorrowAmount, 'Bob dai total debt after 1 year');
+
+    // Check Bob's dai collateral amount is now enough to cover his debt
+    uint256 daiSupplied = spoke2.getUserSuppliedAmount(_daiReserveId(spoke2), bob);
+    assertGt(
+      _getValueInBaseCurrency(daiAssetId, daiSupplied),
+      _getValueInBaseCurrency(daiAssetId, bobDaiDebt),
+      'Bob dai collateral exceeds dai debt after 1 year'
+    );
+
+    // Now since dai is enough to cover the debt due to interest accrual, Bob's RP should equal LP of dai
+    assertEq(
+      spoke2.getUserRiskPremium(bob),
+      spoke2.getLiquidityPremium(_daiReserveId(spoke2)),
+      'Bob user risk premium after collateral accrual'
+    );
+  }
+
   /// Bob's debt initially fully covered by wbtc collateral. Then interest accrues, so debt must be covered by 2 collaterals
   function test_riskPremium_increasesAfterDebtAccrual() public {
     uint256 wbtcSupplyAmount = 1e8;
@@ -424,7 +550,78 @@ contract SpokeRiskPremiumEdgeCasesTest is SpokeBase {
     );
   }
 
-  // Initially debt is covered by 1 collateral, both debt and collateral accrue at different rates, such that finally debt is covered by 2 collaterals
+  /// Bob's weth debt initially fully covered by dai collateral. Then interest accrues, so debt must be covered by 2 collaterals (dai + dai2)
+  function test_riskPremium_fuzz_increasesAfterDebtAccrual(
+    uint256 borrowAmount,
+    uint40 skipTime
+  ) public {
+    borrowAmount = bound(borrowAmount, 1e18, MAX_SUPPLY_AMOUNT / 4000); // Allow room for dai supply to cover weth debt (2000x)
+    uint256 daiSupplyAmount = borrowAmount * 2000; // Dai collateral will fully cover initial borrow (weth = 2000 dai)
+    uint256 dai2SupplyAmount = MAX_SUPPLY_AMOUNT;
+    skipTime = uint40(bound(skipTime, 365 days, MAX_SKIP_TIME)); // At least skip one year to ensure sufficient accrual
+
+    // Deal bob dai to cover dai and dai2 supply
+    deal(address(tokenList.dai), bob, MAX_SUPPLY_AMOUNT * 2);
+
+    // Bob supplies dai and dai2 collaterals
+    Utils.supplyCollateral({
+      spoke: spoke2,
+      reserveId: _daiReserveId(spoke2),
+      user: bob,
+      amount: daiSupplyAmount,
+      onBehalfOf: bob
+    });
+    Utils.supplyCollateral({
+      spoke: spoke2,
+      reserveId: _dai2ReserveId(spoke2),
+      user: bob,
+      amount: dai2SupplyAmount,
+      onBehalfOf: bob
+    });
+
+    // Deploy weth liquidity for borrow
+    _deployLiquidity(spoke2, _wethReserveId(spoke2), borrowAmount);
+
+    // Bob borrows weth
+    Utils.borrow({
+      spoke: spoke2,
+      reserveId: _wethReserveId(spoke2),
+      user: bob,
+      amount: borrowAmount,
+      onBehalfOf: bob
+    });
+
+    // Bob's current risk premium should be equal to liquidity premium of dai, since debt is fully covered by it
+    assertEq(
+      _getValueInBaseCurrency(daiAssetId, daiSupplyAmount),
+      _getValueInBaseCurrency(wethAssetId, borrowAmount),
+      'Bob dai collateral equals weth debt'
+    );
+    assertEq(
+      spoke2.getUserRiskPremium(bob),
+      spoke2.getLiquidityPremium(_daiReserveId(spoke2)),
+      'Bob user rp after borrow'
+    );
+
+    skip(skipTime);
+
+    // Ensure debt has grown beyond dai collateral
+    uint256 bobDebt = spoke2.getUserTotalDebt(_wethReserveId(spoke2), bob);
+    assertGt(
+      _getValueInBaseCurrency(wethAssetId, bobDebt),
+      _getValueInBaseCurrency(daiAssetId, spoke2.getUserSuppliedAmount(_daiReserveId(spoke2), bob)),
+      'Bob weth debt exceeds dai collateral after time skip'
+    );
+
+    // Now since Bob's dai collateral is less than debt due to interest accrual, Bob's RP is greater than LP of dai
+    assertGt(
+      spoke2.getUserRiskPremium(bob),
+      spoke2.getLiquidityPremium(_daiReserveId(spoke2)),
+      'Bob user risk premium after collateral accrual'
+    );
+  }
+
+  /// Initially debt is covered by 1 collateral, both debt and collateral accrue at different rates, such that finally debt is covered by 2 collaterals
   function test_riskPremium_changesAfterAccrual() public {
     uint256 wethSupplyAmount = 2e18;
     uint256 daiSupplyAmount = 10000e18;
@@ -505,6 +702,97 @@ contract SpokeRiskPremiumEdgeCasesTest is SpokeBase {
     );
   }
 
+  /// Initially debt (weth) is covered by 1 collateral (dai), both debt and collateral accrue at different rates, such that finally debt is covered by 2 collaterals
+  function test_riskPremium_fuzz_changesAfterAccrual(
+    uint256 wethBorrowAmount,
+    uint40 timeSkip
+  ) public {
+    uint256 dai2SupplyAmount = MAX_SUPPLY_AMOUNT;
+    wethBorrowAmount = bound(wethBorrowAmount, 1e18, MAX_SUPPLY_AMOUNT / 4000); // Allow room for dai supply to cover weth debt (2000x)
+    uint256 daiSupplyAmount = wethBorrowAmount * 2000; // Dai collateral will fully cover initial borrow (weth = 2000 dai)
+    timeSkip = uint40(bound(timeSkip, 365 days, MAX_SKIP_TIME)); // At least skip one year to ensure sufficient accrual
+
+    // Deal bob dai to cover dai and dai2 supply
+    deal(address(tokenList.dai), bob, MAX_SUPPLY_AMOUNT * 2);
+
+    // Bob supplies dai and dai2 collaterals
+    Utils.supplyCollateral({
+      spoke: spoke2,
+      reserveId: _daiReserveId(spoke2),
+      user: bob,
+      amount: daiSupplyAmount,
+      onBehalfOf: bob
+    });
+    Utils.supplyCollateral({
+      spoke: spoke2,
+      reserveId: _dai2ReserveId(spoke2),
+      user: bob,
+      amount: dai2SupplyAmount,
+      onBehalfOf: bob
+    });
+
+    // Deploy weth liquidity for borrow
+    _deployLiquidity(spoke2, _wethReserveId(spoke2), wethBorrowAmount);
+
+    // Bob borrows weth
+    Utils.borrow({
+      spoke: spoke2,
+      reserveId: _wethReserveId(spoke2),
+      user: bob,
+      amount: wethBorrowAmount,
+      onBehalfOf: bob
+    });
+
+    // Bob's current risk premium should be equal to liquidity premium of dai, since debt is fully covered by it
+    assertEq(
+      _getValueInBaseCurrency(daiAssetId, daiSupplyAmount),
+      _getValueInBaseCurrency(wethAssetId, wethBorrowAmount),
+      'Bob weth collateral equals dai debt'
+    );
+    assertEq(
+      spoke2.getUserRiskPremium(bob),
+      spoke2.getLiquidityPremium(_daiReserveId(spoke2)),
+      'Bob user rp after borrow'
+    );
+
+    // Alice borrows dai to accrue interest over the next year
+    Utils.supplyCollateral({
+      spoke: spoke2,
+      reserveId: _wbtcReserveId(spoke2),
+      user: alice,
+      amount: 1e8,
+      onBehalfOf: alice
+    });
+    Utils.borrow({
+      spoke: spoke2,
+      reserveId: _daiReserveId(spoke2),
+      user: alice,
+      amount: 1,
+      onBehalfOf: alice
+    });
+
+    skip(timeSkip);
+
+    // Ensure that Bob's collateral amount has changed
+    uint256 bobDaiCollateral = spoke2.getUserSuppliedAmount(_daiReserveId(spoke2), bob);
+    assertGt(bobDaiCollateral, daiSupplyAmount, 'Bob dai collateral after 1 year');
+
+    // Ensure Bob's weth debt has grown beyond dai collateral
+    uint256 bobDebt = spoke2.getUserTotalDebt(_wethReserveId(spoke2), bob);
+    assertGt(
+      _getValueInBaseCurrency(wethAssetId, bobDebt),
+      _getValueInBaseCurrency(daiAssetId, bobDaiCollateral),
+      'Bob weth debt exceeds dai collateral after 1 year'
+    );
+
+    // Now Bob's RP should be greater than LP of dai, since debt is not fully covered by it
+    assertGt(
+      spoke2.getUserRiskPremium(bob),
+      spoke2.getLiquidityPremium(_daiReserveId(spoke2)),
+      'Bob user risk premium after collateral accrual'
+    );
+  }
+
   /// Initially debt is covered by 1 collateral, then due to borrowing more, debt is covered by 2 collaterals
   function test_riskPremium_borrowingMoreIncreasesRP() public {
     uint256 wbtcSupplyAmount = 1e8;
@@ -576,8 +864,85 @@ contract SpokeRiskPremiumEdgeCasesTest is SpokeBase {
     );
   }
 
+  /// Initially debt is covered by 1 collateral (dai), then due to borrowing more, debt is covered by 2 collaterals (dai + dai2)
+  function test_riskPremium_fuzz_borrowingMoreNonDecreasesRP(
+    uint256 initialBorrowAmount,
+    uint256 additionalBorrowAmount
+  ) public {
+    initialBorrowAmount = bound(initialBorrowAmount, 1, MAX_SUPPLY_AMOUNT / 2 - 1); // leave some space for additional borrow
+    uint256 daiSupplyAmount = initialBorrowAmount; // Dai collateral will fully cover initial borrow
+    uint256 dai2SupplyAmount = MAX_SUPPLY_AMOUNT;
+    additionalBorrowAmount = bound(additionalBorrowAmount, 1, MAX_SUPPLY_AMOUNT / 2);
+
+    // Deal bob dai to cover dai and dai2 supply
+    deal(address(tokenList.dai), bob, MAX_SUPPLY_AMOUNT * 2);
+
+    // Bob supplies dai and dai2 collaterals
+    Utils.supplyCollateral({
+      spoke: spoke2,
+      reserveId: _daiReserveId(spoke2),
+      user: bob,
+      amount: daiSupplyAmount,
+      onBehalfOf: bob
+    });
+    Utils.supplyCollateral({
+      spoke: spoke2,
+      reserveId: _dai2ReserveId(spoke2),
+      user: bob,
+      amount: dai2SupplyAmount,
+      onBehalfOf: bob
+    });
+
+    // Bob borrows dai
+    Utils.borrow({
+      spoke: spoke2,
+      reserveId: _daiReserveId(spoke2),
+      user: bob,
+      amount: initialBorrowAmount,
+      onBehalfOf: bob
+    });
+
+    // Bob's current risk premium should be equal to liquidity premium of dai, since debt is fully covered by it
+    assertEq(
+      _getValueInBaseCurrency(daiAssetId, daiSupplyAmount),
+      _getValueInBaseCurrency(daiAssetId, initialBorrowAmount),
+      'Bob dai collateral equals dai debt'
+    );
+    assertEq(
+      spoke2.getUserRiskPremium(bob),
+      spoke2.getLiquidityPremium(_daiReserveId(spoke2)),
+      'Bob user rp after borrow'
+    );
+
+    // Deploy enough liquidity for additional borrow
+    _deployLiquidity(spoke2, _daiReserveId(spoke2), additionalBorrowAmount);
+
+    // Bob borrows more dai to increase debt position
+    Utils.borrow({
+      spoke: spoke2,
+      reserveId: _daiReserveId(spoke2),
+      user: bob,
+      amount: additionalBorrowAmount,
+      onBehalfOf: bob
+    });
+
+    // Now dai collateral is insufficient to cover the debt
+    assertLt(
+      _getValueInBaseCurrency(daiAssetId, daiSupplyAmount),
+      _getValueInBaseCurrency(daiAssetId, spoke2.getUserTotalDebt(_daiReserveId(spoke2), bob)),
+      'Bob wbtc collateral less than dai debt'
+    );
+
+    // So now risk premium has increased or remained same
+    assertGe(
+      spoke2.getUserRiskPremium(bob),
+      spoke2.getLiquidityPremium(_daiReserveId(spoke2)),
+      'Bob user risk premium after borrowing more'
+    );
+  }
+
   /// Initially 1 higher LP collateral covers debt, then supply lower LP collateral, and RP should decrease
-  function test_riskPremium_SupplyingLowerLPCollateral_decreasesRP() public {
+  function test_riskPremium_supplyingLowerLPCollateral_decreasesRP() public {
     uint256 wbtcSupplyAmount = 1e8;
     uint256 wethSupplyAmount = 10e18;
     uint256 daiBorrowAmount = 10000e18; // The price of 5 weth
@@ -626,6 +991,65 @@ contract SpokeRiskPremiumEdgeCasesTest is SpokeBase {
 
     // Now risk premium should be less than LP of weth
     assertLt(
+      spoke1.getUserRiskPremium(bob),
+      spoke1.getLiquidityPremium(_wethReserveId(spoke1)),
+      'Bob user risk premium after supplying lower LP collateral'
+    );
+  }
+
+  /// Supply max of higher LP collateral, borrow any amount, then supply any amount of lower LP collateral and RP should not increase
+  function test_riskPremium_fuzz_supplyingLowerLPCollateral_nonIncreasesRP(
+    uint256 wbtcSupplyAmount,
+    uint256 borrowAmount
+  ) public {
+    uint256 wethSupplyAmount = MAX_SUPPLY_AMOUNT;
+    wbtcSupplyAmount = bound(wbtcSupplyAmount, 1, MAX_SUPPLY_AMOUNT);
+    borrowAmount = bound(borrowAmount, 1, MAX_SUPPLY_AMOUNT / 2);
+
+    // Deploy liquidity for dai borrow
+    _deployLiquidity(spoke1, _daiReserveId(spoke1), borrowAmount);
+
+    // Bob supplies max weth collateral
+    Utils.supplyCollateral({
+      spoke: spoke1,
+      reserveId: _wethReserveId(spoke1),
+      user: bob,
+      amount: wethSupplyAmount,
+      onBehalfOf: bob
+    });
+
+    // Bob borrows dai
+    Utils.borrow({
+      spoke: spoke1,
+      reserveId: _daiReserveId(spoke1),
+      user: bob,
+      amount: borrowAmount,
+      onBehalfOf: bob
+    });
+
+    // Bob's current risk premium should be equal to liquidity premium of weth, since debt is fully covered by it
+    assertGt(
+      _getValueInBaseCurrency(wethAssetId, wethSupplyAmount),
+      _getValueInBaseCurrency(daiAssetId, borrowAmount),
+      'Bob weth collateral enough to cover dai debt'
+    );
+    assertEq(
+      spoke1.getUserRiskPremium(bob),
+      spoke1.getLiquidityPremium(_wethReserveId(spoke1)),
+      'Bob user rp after borrow matches weth lp'
+    );
+
+    // Bob supplies lower LP collateral (wbtc)
+    Utils.supplyCollateral({
+      spoke: spoke1,
+      reserveId: _wbtcReserveId(spoke1),
+      user: bob,
+      amount: wbtcSupplyAmount,
+      onBehalfOf: bob
+    });
+
+    // Now risk premium should be less than or equal to LP of weth
+    assertLe(
       spoke1.getUserRiskPremium(bob),
       spoke1.getLiquidityPremium(_wethReserveId(spoke1)),
       'Bob user risk premium after supplying lower LP collateral'
