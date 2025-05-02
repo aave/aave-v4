@@ -447,17 +447,7 @@ contract SpokeRiskPremiumEdgeCasesTest is SpokeBase {
       abi.encode(bobPosition.premiumOffset)
     );
 
-    console.log(
-      'bob dai collateral before time skip',
-      spoke2.getUserSuppliedAmount(_daiReserveId(spoke2), bob)
-    );
-
     skip(skipTime);
-
-    console.log(
-      'bob dai collateral after time skip',
-      spoke2.getUserSuppliedAmount(_daiReserveId(spoke2), bob)
-    );
 
     // Ensure Bob's debt amount does not change (we mocked calls to ensure it doesn't)
     (uint256 bobBaseDebt, uint256 bobPremiumDebt) = spoke2.getUserDebt(_daiReserveId(spoke2), bob);
@@ -705,12 +695,12 @@ contract SpokeRiskPremiumEdgeCasesTest is SpokeBase {
   /// Initially debt (weth) is covered by 1 collateral (dai), both debt and collateral accrue at different rates, such that finally debt is covered by 2 collaterals
   function test_riskPremium_fuzz_changesAfterAccrual(
     uint256 wethBorrowAmount,
-    uint40 timeSkip
+    uint40 skipTime
   ) public {
     uint256 dai2SupplyAmount = MAX_SUPPLY_AMOUNT;
     wethBorrowAmount = bound(wethBorrowAmount, 1e18, MAX_SUPPLY_AMOUNT / 4000); // Allow room for dai supply to cover weth debt (2000x)
     uint256 daiSupplyAmount = wethBorrowAmount * 2000; // Dai collateral will fully cover initial borrow (weth = 2000 dai)
-    timeSkip = uint40(bound(timeSkip, 365 days, MAX_SKIP_TIME)); // At least skip one year to ensure sufficient accrual
+    skipTime = uint40(bound(skipTime, 365 days, MAX_SKIP_TIME)); // At least skip one year to ensure sufficient accrual
 
     // Deal bob dai to cover dai and dai2 supply
     deal(address(tokenList.dai), bob, MAX_SUPPLY_AMOUNT * 2);
@@ -771,7 +761,7 @@ contract SpokeRiskPremiumEdgeCasesTest is SpokeBase {
       onBehalfOf: alice
     });
 
-    skip(timeSkip);
+    skip(skipTime);
 
     // Ensure that Bob's collateral amount has changed
     uint256 bobDaiCollateral = spoke2.getUserSuppliedAmount(_daiReserveId(spoke2), bob);
