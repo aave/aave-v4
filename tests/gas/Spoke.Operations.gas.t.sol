@@ -120,7 +120,7 @@ contract SpokeOperations_Gas_Tests is Base {
       spokeInfo[spoke1].usdx.reserveId,
       spokeInfo[spoke1].dai.reserveId,
       alice,
-      1000e18
+      type(uint256).max
     );
     vm.snapshotGasLastCall('Spoke.Operations', 'liquidationCall: full');
     vm.stopPrank();

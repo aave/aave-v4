@@ -9,14 +9,19 @@ contract LiquidationCallVariableLiquidationBonusTest is SpokeLiquidationBase {
   using PercentageMath for uint256;
   using PercentageMathExtended for uint256;
 
-  /// fuzz tests with liquidationProtocolFeePercentage = 0
+  /// fuzz tests with liquidationProtocolFeePercentage = 0, so all fees are paid to the liquidator
+  /// single debt reserve, single collateral reserve
+  /// user health factor position varies across possible desiredHf values
+  /// liquidation bonus varies
+  /// close factor = 1e18
   function test_liquidationCall_fuzz_variableLB(
     uint256 collateralReserveId,
     uint256 debtReserveId,
     DataTypes.LiquidationConfig memory liqConfig,
     uint256 liqBonus,
     uint256 supplyAmount,
-    uint256 desiredHf
+    uint256 desiredHf,
+    uint256 skipTime
   ) public {
     collateralReserveId = bound(collateralReserveId, 0, spoke1.reserveCount() - 1);
     debtReserveId = bound(debtReserveId, 0, spoke1.reserveCount() - 1);
@@ -28,13 +33,15 @@ contract LiquidationCallVariableLiquidationBonusTest is SpokeLiquidationBase {
       desiredHf: desiredHf,
       collateralReserveId: collateralReserveId,
       debtReserveId: debtReserveId,
-      liquidationProtocolFeePercentage: 0
+      liquidationProtocolFeePercentage: 0,
+      skipTime: skipTime
     });
 
     string memory label = 'liquidationCall_fuzz_variableLB';
+    _assertUserAccountData(state, spoke1, label);
     _assertProtocolFeeEarned(state, label);
     _assertLiquidationBonusEarned(state, label);
-    _assertUserAccountData(state, spoke1, label);
+    _assertSupplyExchangeRate(state, label);
   }
 
   /// coll: weth / debt: dai
@@ -52,7 +59,8 @@ contract LiquidationCallVariableLiquidationBonusTest is SpokeLiquidationBase {
       }),
       liqBonus: 105_00,
       supplyAmount: 10e18,
-      desiredHf: 0.95e18
+      desiredHf: 0.95e18,
+      skipTime: 365 days
     });
   }
 
@@ -71,7 +79,8 @@ contract LiquidationCallVariableLiquidationBonusTest is SpokeLiquidationBase {
       }),
       liqBonus: 105_00,
       supplyAmount: 10e18,
-      desiredHf: 0.95e18
+      desiredHf: 0.95e18,
+      skipTime: 365 days
     });
   }
 
@@ -90,7 +99,8 @@ contract LiquidationCallVariableLiquidationBonusTest is SpokeLiquidationBase {
       }),
       liqBonus: 105_00,
       supplyAmount: 10_000e6,
-      desiredHf: 0.95e18
+      desiredHf: 0.95e18,
+      skipTime: 365 days
     });
   }
 
@@ -109,7 +119,8 @@ contract LiquidationCallVariableLiquidationBonusTest is SpokeLiquidationBase {
       }),
       liqBonus: 105_00,
       supplyAmount: 10_000e6,
-      desiredHf: 0.95e18
+      desiredHf: 0.95e18,
+      skipTime: 365 days
     });
   }
 
@@ -128,7 +139,8 @@ contract LiquidationCallVariableLiquidationBonusTest is SpokeLiquidationBase {
       }),
       liqBonus: 105_00,
       supplyAmount: 10_000e18,
-      desiredHf: 0.95e18
+      desiredHf: 0.95e18,
+      skipTime: 365 days
     });
   }
 
@@ -147,7 +159,8 @@ contract LiquidationCallVariableLiquidationBonusTest is SpokeLiquidationBase {
       }),
       liqBonus: 105_00,
       supplyAmount: 10_000e18,
-      desiredHf: 0.95e18
+      desiredHf: 0.95e18,
+      skipTime: 365 days
     });
   }
 }

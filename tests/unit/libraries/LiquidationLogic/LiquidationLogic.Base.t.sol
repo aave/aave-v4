@@ -2,17 +2,16 @@
 pragma solidity ^0.8.0;
 
 import {LiquidationLogic} from 'src/libraries/logic/LiquidationLogic.sol';
-import {DataTypes} from 'src/libraries/types/DataTypes.sol';
 import 'tests/Base.t.sol';
 
 contract LiquidationLogicBaseTest is Base {
   using PercentageMath for uint256;
   using WadRayMath for uint256;
 
-  uint256 internal daiUnits = 1e18;
-  uint256 internal usdxUnits = 1e6;
-  uint256 internal wethUnits = 1e18;
-  uint256 internal wbtcUnits = 1e8;
+  uint256 internal daiUnits;
+  uint256 internal usdxUnits;
+  uint256 internal wethUnits;
+  uint256 internal wbtcUnits;
 
   struct TestDebtToRestoreCloseFactorParams {
     uint256 liquidationBonus;
@@ -25,17 +24,25 @@ contract LiquidationLogicBaseTest is Base {
     uint256 totalDebt;
   }
 
+  function _setTokenDecimals() internal {
+    daiUnits = 10 ** tokenList.dai.decimals();
+    usdxUnits = 10 ** tokenList.usdx.decimals();
+    wethUnits = 10 ** tokenList.weth.decimals();
+    wbtcUnits = 10 ** tokenList.wbtc.decimals();
+  }
+
   function setUp() public virtual override {
     super.setUp();
     initEnvironment();
+    _setTokenDecimals();
   }
 
-  // for close factor > effectiveLiquidationPenalty, and positive denominator in calc
+  // calculate threshold when close factor > effectiveLiquidationPenalty so that calculateDebtToRestoreCloseFactor denom is > 0
   function _calculateCloseFactorThreshold(
     uint256 liquidationBonus,
     uint256 collateralFactor
   ) internal pure returns (uint256) {
-    return _calculateEffectiveLiquidationPenaltyThreshold(liquidationBonus, collateralFactor) + 1;
+    return _calculateEffectiveLiquidationPenaltyThreshold(liquidationBonus, collateralFactor);
   }
 
   function _calculateEffectiveLiquidationPenaltyThreshold(

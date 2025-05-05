@@ -7,6 +7,7 @@ contract LiquidationLogicDebtToRestoreCloseFactorTest is LiquidationLogicBaseTes
   using PercentageMath for uint256;
   using WadRayMath for uint256;
 
+  /// fuzz test showing that the function does not revert when bounded properly
   function test_calculateDebtToRestoreCloseFactor_fuzz_non_negative(
     TestDebtToRestoreCloseFactorParams memory params
   ) public {
@@ -33,12 +34,14 @@ contract LiquidationLogicDebtToRestoreCloseFactorTest is LiquidationLogicBaseTes
     assertEq(LiquidationLogic.calculateDebtToRestoreCloseFactor(args), 0, 'closeFactorDebt is 0');
   }
 
+  /// if totalDebtInBaseCurrency == 0, then result is 0
   /// debtAssetPrice = 0 should not happen in practice
   function test_calculateDebtToRestoreCloseFactor_fuzz_debtAssetPrice_zero(
     TestDebtToRestoreCloseFactorParams memory params
   ) public {
     TestDebtToRestoreCloseFactorParams memory params = _bound(params);
     // so that default uint max is not returned
+    // ie params.closeFactor > effectiveLiquidationPenalty
     vm.assume(
       (params.liquidationBonus.wadify()).percentMul(params.collateralFactor + 1).fromBps() <
         params.closeFactor
@@ -56,17 +59,17 @@ contract LiquidationLogicDebtToRestoreCloseFactorTest is LiquidationLogicBaseTes
   ) public {
     TestDebtToRestoreCloseFactorParams memory params = _bound(params);
     params.healthFactor = params.closeFactor;
-    // so that default uint max is not returned
-    vm.assume(
-      (params.liquidationBonus.wadify()).percentMul(params.collateralFactor).fromBps() <
-        params.closeFactor
-    );
+    uint256 effectiveLiquidationPenalty = (params.liquidationBonus.wadify())
+      .percentMul(params.collateralFactor)
+      .fromBps();
+    // params.closeFactor >= effectiveLiquidationPenalty so that default uint max is not returned
+    vm.assume(effectiveLiquidationPenalty <= params.closeFactor);
     DataTypes.LiquidationCallLocalVars memory args = _setStructFields(params);
 
     assertEq(LiquidationLogic.calculateDebtToRestoreCloseFactor(args), 0, 'closeFactorDebt is 0');
   }
 
-  /// when close factor is less than health factor
+  /// when close factor is less than health factor, should revert
   /// should not happen in practice
   function test_calculateDebtToRestoreCloseFactor_closeFactor_lt_healthFactor(
     TestDebtToRestoreCloseFactorParams memory params
@@ -84,19 +87,20 @@ contract LiquidationLogicDebtToRestoreCloseFactorTest is LiquidationLogicBaseTes
     this.calculateDebtToRestoreCloseFactor(args);
   }
 
-  /// if denom is ever negative, default to uint max
+  /// if denom is ever negative (params.closeFactor < effectiveLiquidationPenalty), default to uint max
   function test_calculateDebtToRestoreCloseFactor_fuzz_closeFactor_lte_effectiveLiquidationPenalty_zero(
     TestDebtToRestoreCloseFactorParams memory params
   ) public {
     TestDebtToRestoreCloseFactorParams memory params = _bound(params);
+    //
     vm.assume(
-      _calculateCloseFactorThreshold(params.liquidationBonus, params.collateralFactor) - 1 >=
+      _calculateCloseFactorThreshold(params.liquidationBonus, params.collateralFactor) >=
         HEALTH_FACTOR_LIQUIDATION_THRESHOLD
     );
     params.closeFactor = bound(
       params.closeFactor,
       HEALTH_FACTOR_LIQUIDATION_THRESHOLD,
-      _calculateCloseFactorThreshold(params.liquidationBonus, params.collateralFactor) - 1
+      _calculateCloseFactorThreshold(params.liquidationBonus, params.collateralFactor)
     );
     DataTypes.LiquidationCallLocalVars memory args = _setStructFields(params);
 
@@ -107,6 +111,7 @@ contract LiquidationLogicDebtToRestoreCloseFactorTest is LiquidationLogicBaseTes
     );
   }
 
+  // internal helper to trigger revert checks
   function calculateDebtToRestoreCloseFactor(
     DataTypes.LiquidationCallLocalVars memory params
   ) public pure {

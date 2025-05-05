@@ -326,9 +326,11 @@ contract Spoke is ISpoke {
       address collateralAsset,
       address debtAsset,
       uint256 debtToLiquidate,
-      uint256 collateralToLiquidate
+      uint256 collateralToLiquidate,
+      uint256 liquidationProtocolFeeShares // TODO: emit in event
     ) = _executeLiquidationCall(collateralReserveId, debtReserveId, users, debtsToCover);
 
+    // TODO: emit liq protocol fee shares in event
     emit LiquidationCall(
       collateralAsset,
       debtAsset,
@@ -343,12 +345,13 @@ contract Spoke is ISpoke {
   /// @return debtAsset The address of the underlying borrowed asset to be repaid with the liquidation.
   /// @return totalDebtToLiquidate The total amount of debt to be repaid.
   /// @return collateralToLiquidate The amount of collateral to liquidate.
+  /// @return liquidationProtocolFeeAmount The amount of protocol fee.
   function _executeLiquidationCall(
     uint256 collateralReserveId,
     uint256 debtReserveId,
     address[] memory users,
     uint256[] memory debtsToCover
-  ) internal returns (address, address, uint256, uint256) {
+  ) internal returns (address, address, uint256, uint256, uint256) {
     uint256 usersLength = users.length;
     require(usersLength == debtsToCover.length, UsersAndDebtLengthMismatch());
 
@@ -448,6 +451,8 @@ contract Spoke is ISpoke {
       userCollateralPosition.suppliedShares -= vars.withdrawnShares;
       vars.totalWithdrawnShares += vars.withdrawnShares;
 
+      // TODO: realize bad debt
+
       (vars.newUserRiskPremium, , , , ) = _calculateUserAccountData(users[vars.i]);
 
       // refresh debt reserve premium
@@ -505,17 +510,23 @@ contract Spoke is ISpoke {
       0
     );
 
+    vars.totalLiquidationProtocolFeeShares = HUB.convertToSuppliedShares(
+      vars.collateralAssetId,
+      vars.totalLiquidationProtocolFeeAmount
+    );
+
     // transfer total liquidated collateral to liquidator
     IERC20(collateralReserve.asset).safeTransfer(msg.sender, vars.totalCollateralToLiquidate);
     // TODO: treasury accounting for protocol fee
     // TODO: rm temp event
-    emit TmpLiquidationFee(vars.totalLiquidationProtocolFeeAmount);
+    emit TmpLiquidationFee(vars.totalLiquidationProtocolFeeShares);
 
     return (
       collateralReserve.asset,
       debtReserve.asset,
       vars.totalDebtToLiquidate,
-      vars.totalCollateralToLiquidate
+      vars.totalCollateralToLiquidate,
+      vars.totalLiquidationProtocolFeeShares
     );
   }
 

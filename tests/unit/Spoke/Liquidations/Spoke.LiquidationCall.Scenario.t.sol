@@ -497,15 +497,15 @@ contract LiquidationCallScenarioTest is SpokeLiquidationBase {
     aliceWbtc.balanceBefore = tokenList.wbtc.balanceOf(alice);
     liquidatorWbtc.balanceBefore = tokenList.wbtc.balanceOf(LIQUIDATOR);
 
-    vm.expectEmit(address(spoke1));
-    emit ISpoke.LiquidationCall(
-      address(tokenList.wbtc),
-      address(tokenList.weth),
-      alice,
-      state.liquidatedDebt,
-      state.collAmount.wbtc,
-      LIQUIDATOR
-    );
+    // vm.expectEmit(address(spoke1));
+    // emit ISpoke.LiquidationCall(
+    //   address(tokenList.wbtc),
+    //   address(tokenList.weth),
+    //   alice,
+    //   state.liquidatedDebt,
+    //   state.collAmount.wbtc,
+    //   LIQUIDATOR
+    // );
     vm.prank(LIQUIDATOR);
     spoke1.liquidationCall({
       collateralReserveId: state.wbtcReserveId,

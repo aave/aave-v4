@@ -8,7 +8,7 @@ contract LiquidationLogicVariableLiquidationBonusTest is LiquidationLogicBaseTes
 
   DataTypes.LiquidationConfig internal _config;
 
-  /// if liquidation bonus is set to 0%, liq bonus should always be 0% regardless of the health factor
+  /// fuzz - if liquidation bonus is set to 0%, liq bonus should always be 0% regardless of the health factor
   function testCalculate_fuzz_zero_liquidationBonus(
     uint256 healthFactor,
     uint256 healthFactorBonusThreshold,
@@ -108,7 +108,7 @@ contract LiquidationLogicVariableLiquidationBonusTest is LiquidationLogicBaseTes
     assertEq(result, liquidationBonus, 'should be liquidationBonus');
   }
 
-  /// when == HEALTH_FACTOR_LIQUIDATION_THRESHOLD, return minLiquidationBonus
+  /// when HF == HEALTH_FACTOR_LIQUIDATION_THRESHOLD, return minLiquidationBonus
   function testCalculate_eq_liquidationThreshold() public {
     uint256 healthFactor = HEALTH_FACTOR_LIQUIDATION_THRESHOLD;
     uint256 liquidationBonus = 120_00; // 20%
@@ -123,7 +123,7 @@ contract LiquidationLogicVariableLiquidationBonusTest is LiquidationLogicBaseTes
     );
   }
 
-  /// when > HEALTH_FACTOR_LIQUIDATION_THRESHOLD, return minLiquidationBonus
+  /// when HF > HEALTH_FACTOR_LIQUIDATION_THRESHOLD, return minLiquidationBonus
   function testCalculate_gt_liquidationThreshold() public {
     uint256 healthFactor = HEALTH_FACTOR_LIQUIDATION_THRESHOLD + 1;
     uint256 liquidationBonus = 120_00; // 20%
@@ -242,6 +242,8 @@ contract LiquidationLogicVariableLiquidationBonusTest is LiquidationLogicBaseTes
     assertLe(result, liquidationBonus, 'should be =< max liquidationBonus');
   }
 
+  /// helper to calc the liquidation bonus based on the health factor, health factor bonus threshold,
+  /// liquidation bonus factor, liquidation bonus, and health factor liquidation threshold
   function _calculateLiqBonus(
     uint256 healthFactor,
     uint256 healthFactorBonusThreshold,
@@ -263,7 +265,7 @@ contract LiquidationLogicVariableLiquidationBonusTest is LiquidationLogicBaseTes
       (healthFactorLiquidationThreshold - healthFactorBonusThreshold);
   }
 
-  /// @notice Calculates the minimum liquidation bonus based on the liquidation bonus and the liquidation bonus factor
+  /// calc the minimum liquidation bonus based on the liquidation bonus and the liquidation bonus factor
   function _calculateMinLiqBonus(
     uint256 liquidationBonus,
     uint256 liquidationBonusFactor

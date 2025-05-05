@@ -12,12 +12,11 @@ contract LiquidationLogicDebtToRestoreCloseFactorScenarioTest is LiquidationLogi
     uint256 amount;
   }
 
-  function test_calculateDebtToRestoreCloseFactor_setup1_scenario1() public {
-    // coll: $10k usdx, $8k weth
-    // debt: $15k dai
-    // liquidate usdx
-
-    setUpScenario1();
+  /// coll: $10k usdx, $8k weth
+  /// debt: $15k dai
+  /// liquidate usdx
+  function test_calculateDebtToRestoreCloseFactor_setUp1_scenario1() public {
+    _setUp1();
 
     ReserveAmount[] memory collaterals = new ReserveAmount[](2);
     collaterals[0] = ReserveAmount({reserveId: _usdxReserveId(spoke1), amount: 10_000 * usdxUnits});
@@ -36,7 +35,8 @@ contract LiquidationLogicDebtToRestoreCloseFactorScenarioTest is LiquidationLogi
     params.closeFactor = 1e18;
     uint256 closeFactorDebt = LiquidationLogic.calculateDebtToRestoreCloseFactor(params);
 
-    assertCloseFactor({
+    // assert that final health factor is equal to close factor
+    _assertCloseFactor({
       spoke: spoke1,
       params: params,
       collaterals: collaterals,
@@ -47,11 +47,11 @@ contract LiquidationLogicDebtToRestoreCloseFactorScenarioTest is LiquidationLogi
     });
   }
 
-  function test_calculateDebtToRestoreCloseFactor_setup1_scenario2() public {
-    setUpScenario1();
-
-    // coll: $10k dai, $8k weth
-    // debt: $15k usdx
+  /// coll: $10k dai, $8k weth
+  /// debt: $15k dai
+  /// liquidate da'i
+  function test_calculateDebtToRestoreCloseFactor_setUp1_scenario2() public {
+    _setUp1();
 
     ReserveAmount[] memory collaterals = new ReserveAmount[](2);
     collaterals[0] = ReserveAmount({reserveId: _daiReserveId(spoke1), amount: 10_000 * daiUnits});
@@ -71,7 +71,8 @@ contract LiquidationLogicDebtToRestoreCloseFactorScenarioTest is LiquidationLogi
 
     uint256 closeFactorDebt = LiquidationLogic.calculateDebtToRestoreCloseFactor(params);
 
-    assertCloseFactor({
+    // assert that final health factor is equal to close factor
+    _assertCloseFactor({
       spoke: spoke1,
       params: params,
       collaterals: collaterals,
@@ -82,11 +83,11 @@ contract LiquidationLogicDebtToRestoreCloseFactorScenarioTest is LiquidationLogi
     });
   }
 
-  function test_calculateDebtToRestoreCloseFactor_setup1_scenario3() public {
-    setUpScenario1();
-
-    // coll: $10k dai, $8k weth
-    // debt: $15k usdx
+  // coll: $10k dai, $8k weth
+  // debt: $15k usdx
+  /// liquidate weth
+  function test_calculateDebtToRestoreCloseFactor_setUp1_scenario3() public {
+    _setUp1();
 
     ReserveAmount[] memory collaterals = new ReserveAmount[](2);
     collaterals[0] = ReserveAmount({reserveId: _daiReserveId(spoke1), amount: 10_000 * daiUnits});
@@ -106,7 +107,8 @@ contract LiquidationLogicDebtToRestoreCloseFactorScenarioTest is LiquidationLogi
 
     uint256 closeFactorDebt = LiquidationLogic.calculateDebtToRestoreCloseFactor(params);
 
-    assertCloseFactor({
+    // assert that final health factor is equal to close factor
+    _assertCloseFactor({
       spoke: spoke1,
       params: params,
       collaterals: collaterals,
@@ -117,11 +119,10 @@ contract LiquidationLogicDebtToRestoreCloseFactorScenarioTest is LiquidationLogi
     });
   }
 
+  // coll: $20k dai, $5k usdx
+  // debt: $16k weth
+  // liquidate dai
   function test_calculateDebtToRestoreCloseFactor_setup2_scenario1() public {
-    // coll: $10k usdx, $20k dai
-    // debt: $16k weth
-    // liquidate usdx
-
     setUpScenario2();
 
     ReserveAmount[] memory collaterals = new ReserveAmount[](2);
@@ -141,7 +142,7 @@ contract LiquidationLogicDebtToRestoreCloseFactorScenarioTest is LiquidationLogi
     params.closeFactor = 1e18;
     uint256 closeFactorDebt = LiquidationLogic.calculateDebtToRestoreCloseFactor(params);
 
-    assertCloseFactor({
+    _assertCloseFactor({
       spoke: spoke1,
       params: params,
       collaterals: collaterals,
@@ -152,11 +153,10 @@ contract LiquidationLogicDebtToRestoreCloseFactorScenarioTest is LiquidationLogi
     });
   }
 
+  // coll: $10k usdx, $20k dai
+  // debt: $16k weth
+  // liquidate usdx
   function test_calculateDebtToRestoreCloseFactor_setup2_scenario2() public {
-    // coll: $10k usdx, $10k dai
-    // debt: $16k weth
-    // liquidate usdx
-
     setUpScenario2();
 
     ReserveAmount[] memory collaterals = new ReserveAmount[](2);
@@ -176,7 +176,7 @@ contract LiquidationLogicDebtToRestoreCloseFactorScenarioTest is LiquidationLogi
     params.closeFactor = 1e18;
 
     uint256 closeFactorDebt = LiquidationLogic.calculateDebtToRestoreCloseFactor(params);
-    assertCloseFactor({
+    _assertCloseFactor({
       spoke: spoke1,
       params: params,
       collaterals: collaterals,
@@ -187,26 +187,10 @@ contract LiquidationLogicDebtToRestoreCloseFactorScenarioTest is LiquidationLogi
     });
   }
 
-  function setUpScenario3() internal {
-    updateCollateralFactor(spoke1, _wbtcReserveId(spoke1), 85_00);
-    updateCollateralFactor(spoke1, _usdxReserveId(spoke1), 80_00);
-    updateCollateralFactor(spoke1, _wethReserveId(spoke1), 95_00);
-    updateCollateralFactor(spoke1, _daiReserveId(spoke1), 78_00);
-
-    // wbtc price drops to $40k
-    oracle.setAssetPrice(wbtcAssetId, 40_000e8);
-
-    updateLiquidationBonus(spoke1, _daiReserveId(spoke1), 108_00);
-    updateLiquidationBonus(spoke1, _wethReserveId(spoke1), 109_00);
-    updateLiquidationBonus(spoke1, _usdxReserveId(spoke1), 110_00);
-    updateLiquidationBonus(spoke1, _wbtcReserveId(spoke1), 110_00);
-  }
-
+  // coll: $40k wbtc, $20k dai
+  // debt: $10k weth, $40k usdx
+  // liquidate wbtc, repay weth
   function test_calculateDebtToRestoreCloseFactor_setup3_scenario1() public {
-    // coll: $50k wbtc, $20k dai
-    // debt: $30k weth, $40k usdx
-    // repay weth, liquidate wbtc
-
     setUpScenario3();
 
     ReserveAmount[] memory collaterals = new ReserveAmount[](2);
@@ -228,7 +212,7 @@ contract LiquidationLogicDebtToRestoreCloseFactorScenarioTest is LiquidationLogi
 
     uint256 closeFactorDebt = LiquidationLogic.calculateDebtToRestoreCloseFactor(params);
 
-    assertCloseFactor({
+    _assertCloseFactor({
       spoke: spoke1,
       params: params,
       collaterals: collaterals,
@@ -240,7 +224,7 @@ contract LiquidationLogicDebtToRestoreCloseFactorScenarioTest is LiquidationLogi
   }
 
   /// assert expected derived health factor vs close factor after liquidation
-  function assertCloseFactor(
+  function _assertCloseFactor(
     ISpoke spoke,
     DataTypes.LiquidationCallLocalVars memory params,
     ReserveAmount[] memory collaterals,
@@ -251,6 +235,7 @@ contract LiquidationLogicDebtToRestoreCloseFactorScenarioTest is LiquidationLogi
   ) internal view {
     uint256 closeFactor = params.closeFactor;
 
+    // separately derive health factor to compare vs close factor
     uint256 debtBaseCurrencyRestored = _convertAmountToBaseCurrency(
       closeFactorDebt,
       params.debtAssetPrice,
@@ -273,7 +258,7 @@ contract LiquidationLogicDebtToRestoreCloseFactorScenarioTest is LiquidationLogi
     assertApproxEqRel(
       params.healthFactor,
       closeFactor,
-      _approxRelFromBps(1), // 1% tolerance
+      _approxRelFromBps(1), // 1 BPS tolerance
       'hf not matching close factor'
     );
   }
@@ -287,7 +272,7 @@ contract LiquidationLogicDebtToRestoreCloseFactorScenarioTest is LiquidationLogi
     return debtBaseCurrencyRestored.percentMul(liquidationBonus);
   }
 
-  /// test helper to derive
+  /// test helper to derive user account data
   function _calcExpectedUserAccountData(
     ISpoke spoke,
     ReserveAmount[] memory collaterals,
@@ -335,7 +320,8 @@ contract LiquidationLogicDebtToRestoreCloseFactorScenarioTest is LiquidationLogi
     params.healthFactor = totalCollateralFactor.wadDiv(params.totalDebtInBaseCurrency).fromBps();
   }
 
-  function setUpScenario1() internal {
+  /// set up collateral factors and liquidation bonuses with price drop for weth collateral
+  function _setUp1() internal {
     updateCollateralFactor(spoke1, _daiReserveId(spoke1), 75_00);
     updateCollateralFactor(spoke1, _wethReserveId(spoke1), 80_00);
     updateCollateralFactor(spoke1, _usdxReserveId(spoke1), 70_00);
@@ -348,6 +334,7 @@ contract LiquidationLogicDebtToRestoreCloseFactorScenarioTest is LiquidationLogi
     updateLiquidationBonus(spoke1, _usdxReserveId(spoke1), 104_00);
   }
 
+  /// set up collateral factors and liquidation bonuses with price drop for dai collateral
   function setUpScenario2() internal {
     updateCollateralFactor(spoke1, _daiReserveId(spoke1), 85_00);
     updateCollateralFactor(spoke1, _usdxReserveId(spoke1), 74_00);
@@ -359,5 +346,21 @@ contract LiquidationLogicDebtToRestoreCloseFactorScenarioTest is LiquidationLogi
     updateLiquidationBonus(spoke1, _daiReserveId(spoke1), 104_00);
     updateLiquidationBonus(spoke1, _wethReserveId(spoke1), 106_00);
     updateLiquidationBonus(spoke1, _usdxReserveId(spoke1), 108_00);
+  }
+
+  /// set up collateral factors and liquidation bonuses with price drop for wbtc collateral
+  function setUpScenario3() internal {
+    updateCollateralFactor(spoke1, _wbtcReserveId(spoke1), 85_00);
+    updateCollateralFactor(spoke1, _usdxReserveId(spoke1), 80_00);
+    updateCollateralFactor(spoke1, _wethReserveId(spoke1), 95_00);
+    updateCollateralFactor(spoke1, _daiReserveId(spoke1), 78_00);
+
+    // wbtc price drops to $40k
+    oracle.setAssetPrice(wbtcAssetId, 40_000e8);
+
+    updateLiquidationBonus(spoke1, _daiReserveId(spoke1), 108_00);
+    updateLiquidationBonus(spoke1, _wethReserveId(spoke1), 109_00);
+    updateLiquidationBonus(spoke1, _usdxReserveId(spoke1), 110_00);
+    updateLiquidationBonus(spoke1, _wbtcReserveId(spoke1), 110_00);
   }
 }

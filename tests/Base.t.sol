@@ -29,6 +29,7 @@ import {WETH9} from 'src/dependencies/weth/WETH9.sol';
 
 abstract contract Base is Test {
   using WadRayMath for uint256;
+  using WadRayMathExtended for uint256;
   using SharesMath for uint256;
   using PercentageMath for uint256;
 
@@ -49,7 +50,7 @@ abstract contract Base is Test {
   uint256 internal constant MAX_LIQUIDATION_BONUS = 150_00; // 50% bonus
   uint256 internal constant MAX_LIQUIDATION_BONUS_FACTOR = PercentageMath.PERCENTAGE_FACTOR; // 100%
   uint256 internal constant HEALTH_FACTOR_LIQUIDATION_THRESHOLD = 1e18;
-  uint256 internal constant MIN_CLOSE_FACTOR = 1e18 + 1;
+  uint256 internal constant MIN_CLOSE_FACTOR = 1e18;
   uint256 internal constant MAX_CLOSE_FACTOR = 2e18;
   uint256 internal constant MAX_COLLATERAL_FACTOR = 100_00;
   uint256 internal constant MAX_ASSET_PRICE = 1e8 * 1e8; // $100M per token
@@ -1004,13 +1005,11 @@ abstract contract Base is Test {
     ) = spoke.getUserAccountData(user);
 
     requiredDebt =
-      (
-        (totalCollateralBase.percentMul(currentAvgCollateralFactor.dewadify() + 1))
-          .wadMul(HEALTH_FACTOR_LIQUIDATION_THRESHOLD)
-          .wadDiv(desiredHf)
+      totalCollateralBase.percentMul(currentAvgCollateralFactor.dewadify() + 1).wadDivUp(
+        desiredHf
       ) -
       totalDebtBase;
-    // add rounding to num/denom to round debt up (ie making sure resultant HF is less than desired)
+    // add 1 to num to round debt up (ie making sure resultant debt creates HF that is less than desired)
   }
 
   function _borrowToBeBelowHf(
@@ -1036,7 +1035,7 @@ abstract contract Base is Test {
     vm.clearMockedCalls();
 
     uint256 finalHf = spoke.getHealthFactor(user);
-    assertLt(finalHf, desiredHf);
+    assertLt(finalHf, desiredHf, 'should borrow enough for HF to be below desiredHf');
     return (finalHf, requiredDebtAmount);
   }
 
@@ -1066,5 +1065,31 @@ abstract contract Base is Test {
 
   function _absDiff(uint256 a, uint256 b) internal pure returns (uint256) {
     return a > b ? (a - b) : b - a;
+  }
+
+  function _borrowWithoutHfCheck(
+    ISpoke spoke,
+    address user,
+    uint256 reserveId,
+    uint256 debtAmount
+  ) internal returns (uint256, uint256) {
+    uint256 assetId = spoke.getReserve(reserveId).assetId;
+    // mock price to 0 to circumvent borrow validation
+    vm.mockCall(
+      address(oracle),
+      abi.encodeWithSelector(IPriceOracle.getAssetPrice.selector, assetId),
+      abi.encode(0)
+    );
+    vm.prank(user);
+    spoke.borrow(reserveId, debtAmount, user);
+    vm.clearMockedCalls();
+  }
+
+  function _getVariableLiquidationBonus(
+    ISpoke spoke,
+    uint256 reserveId,
+    uint256 healthFactor
+  ) internal view returns (uint256) {
+    return spoke.getVariableLiquidationBonus(reserveId, healthFactor);
   }
 }

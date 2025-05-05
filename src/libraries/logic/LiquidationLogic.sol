@@ -6,11 +6,13 @@ import {PercentageMath} from 'src/libraries/math/PercentageMath.sol';
 import {ISpoke} from 'src/interfaces/ISpoke.sol';
 import {WadRayMath} from 'src/libraries/math/WadRayMath.sol';
 import {WadRayMathExtended} from 'src/libraries/math/WadRayMathExtended.sol';
+import {MathUtils} from 'src/libraries/math/MathUtils.sol';
 
 library LiquidationLogic {
   using PercentageMath for uint256;
   using WadRayMath for uint256;
   using WadRayMathExtended for uint256;
+  using MathUtils for uint256;
   using LiquidationLogic for DataTypes.LiquidationCallLocalVars;
 
   function calculateVariableLiquidationBonus(
@@ -53,12 +55,8 @@ library LiquidationLogic {
   ) internal pure returns (uint256) {
     uint256 maxLiquidatableDebt = params.totalDebt; // for current debt asset, in amount
     uint256 debtToRestoreCloseFactor = params.calculateDebtToRestoreCloseFactor();
-
-    maxLiquidatableDebt = maxLiquidatableDebt > debtToRestoreCloseFactor
-      ? debtToRestoreCloseFactor
-      : maxLiquidatableDebt;
-
-    return debtToCover > maxLiquidatableDebt ? maxLiquidatableDebt : debtToCover;
+    maxLiquidatableDebt = maxLiquidatableDebt.min(debtToRestoreCloseFactor);
+    return debtToCover.min(maxLiquidatableDebt);
   }
 
   /**
@@ -81,13 +79,11 @@ library LiquidationLogic {
     }
 
     // add 1 to denominator to round down, ensuring HF is always <= close factor
-    uint256 debtToRestoreCloseFactor = (
-      (params.totalDebtInBaseCurrency * params.debtAssetUnit)
-        .wadMulDown(params.closeFactor - params.healthFactor)
-        .wadDivDown(params.closeFactor - effectiveLiquidationPenalty + 1)
-    ).dewadify() / params.debtAssetPrice;
-
-    return debtToRestoreCloseFactor;
+    return
+      (((params.totalDebtInBaseCurrency * params.debtAssetUnit) *
+        (params.closeFactor - params.healthFactor)) /
+        ((params.closeFactor - effectiveLiquidationPenalty + 1) * params.debtAssetPrice))
+        .dewadify();
   }
 
   /**
@@ -132,11 +128,9 @@ library LiquidationLogic {
       vars.bonusCollateral =
         vars.collateralAmount -
         vars.collateralAmount.percentDiv(params.liquidationBonus);
-
       vars.liquidationProtocolFeeAmount = vars.bonusCollateral.percentMul(
         params.liquidationProtocolFeePercentage
       );
-
       return (
         vars.collateralAmount - vars.liquidationProtocolFeeAmount,
         vars.debtAmountNeeded,
