@@ -145,6 +145,23 @@ contract LiquidityHubAccrueInterestTest is Base {
       'supplyAmount'
     );
     assertEq(getAssetBaseDebt(daiAssetId), 0, 'baseDebt');
+
+    // Time passes
+    skip(elapsed);
+
+    // Spoke 2 does a supply to accrue interest
+    Utils.add(hub, daiAssetId, address(spoke2), supplyAmount2, address(spoke2), address(spoke2));
+
+    daiInfo = hub.getAsset(daiAssetId);
+
+    assertEq(daiInfo.lastUpdateTimestamp, vm.getBlockTimestamp(), 'lastUpdateTimestamp');
+    assertEq(daiInfo.baseDebtIndex, expectedDebtIndex2, 'baseDebtIndex2');
+    assertEq(
+      hub.getAssetSuppliedAmount(daiAssetId),
+      supplyAmount + supplyAmount2 * 2 + interest,
+      'supplyAmount'
+    );
+    assertEq(getAssetBaseDebt(daiAssetId), 0, 'baseDebt');
   }
 
   /// accrue interest after some time has passed
