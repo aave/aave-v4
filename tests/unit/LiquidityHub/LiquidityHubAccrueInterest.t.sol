@@ -78,7 +78,7 @@ contract LiquidityHubAccrueInterestTest is Base {
     assertEq(getAssetBaseDebt(daiAssetId), 0);
   }
 
-  /// no interest accrued when no debt
+  /// no interest accrued when no debt after repay
   function test_accrueInterest_NoInterest_NoDebt(uint40 elapsed) public {
     elapsed = uint40(bound(elapsed, 1, type(uint40).max / 3));
 

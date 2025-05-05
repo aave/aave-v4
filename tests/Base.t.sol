@@ -829,7 +829,7 @@ abstract contract Base is Test {
     uint256 initialDebtIndex,
     uint256 borrowRate,
     uint40 startTime
-  ) internal returns (uint256) {
+  ) internal view returns (uint256) {
     return initialDebtIndex.rayMulUp(MathUtils.calculateLinearInterest(borrowRate, startTime));
   }
 
@@ -839,7 +839,7 @@ abstract contract Base is Test {
     uint256 initialDebtIndex,
     uint256 borrowRate,
     uint40 startTime
-  ) internal returns (uint256 newDebtIndex, uint256 newBaseDebt) {
+  ) internal view returns (uint256 newDebtIndex, uint256 newBaseDebt) {
     newDebtIndex = calculateExpectedDebtIndex(initialDebtIndex, borrowRate, startTime);
     newBaseDebt = initialDrawnShares.rayMulUp(newDebtIndex);
   }
