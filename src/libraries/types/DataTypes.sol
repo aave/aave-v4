@@ -78,15 +78,19 @@ library DataTypes {
   }
 
   struct UserPosition {
-    bool usingAsCollateral;
     uint256 baseDebt;
     uint256 outstandingPremium;
     uint256 suppliedShares;
     uint256 baseBorrowIndex;
     uint256 riskPremium;
     uint256 lastUpdateTimestamp;
+    bool usingAsCollateral;
+    PositionStatus positionStatus;
   }
 
+  struct PositionStatus {
+    mapping(uint256 => uint256) map; 
+  }
   struct UserData {
     /**
      * ray-extended risk premium bps of user
