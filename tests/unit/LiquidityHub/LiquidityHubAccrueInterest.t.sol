@@ -250,10 +250,15 @@ contract LiquidityHubAccrueInterestTest is Base {
     spoke1Amounts.supply0 = borrowAmount * 2;
     timestamps.t0 = uint40(vm.getBlockTimestamp());
 
-    vm.startPrank(address(spoke1));
-    hub.add(daiAssetId, spoke1Amounts.supply0, address(spoke1));
-    hub.draw(daiAssetId, borrowAmount, address(spoke1));
-    vm.stopPrank();
+    Utils.add(
+      hub,
+      daiAssetId,
+      address(spoke1),
+      spoke1Amounts.supply0,
+      address(spoke1),
+      address(spoke1)
+    );
+    Utils.draw(hub, daiAssetId, address(spoke1), address(spoke1), borrowAmount, address(spoke1));
 
     assetData.t0 = hub.getAsset(daiAssetId);
 
