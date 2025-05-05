@@ -56,28 +56,101 @@ contract LiquidityHubAccrueInterestTest is Base {
     assertEq(getAssetBaseDebt(daiAssetId), 0);
   }
 
-  /// no interest accrued when no debt
-  function test_accrueInterest_OnlySupply(uint40 elapsed) public {
-    uint256 initialSupply = 1000e18;
-    Utils.add(hub, daiAssetId, address(spoke1), initialSupply, address(spoke1), address(spoke1));
+  /// no interest accrued with only supply
+  function test_accrueInterest_NoInterest_OnlySupply(uint40 elapsed) public {
+    elapsed = uint40(bound(elapsed, 1, type(uint40).max / 3));
+
+    uint256 supplyAmount = 1000e18;
+    Utils.add(hub, daiAssetId, address(spoke1), supplyAmount, address(spoke1), address(spoke1));
 
     // Time passes
     skip(elapsed);
 
     // Spoke 2 does a supply to accrue interest
-    Utils.add(hub, daiAssetId, address(spoke2), initialSupply, address(spoke2), address(spoke2));
+    Utils.add(hub, daiAssetId, address(spoke2), supplyAmount, address(spoke2), address(spoke2));
 
     DataTypes.Asset memory daiInfo = hub.getAsset(daiAssetId);
 
     // Timestamp does not update when no interest accrued
     assertEq(daiInfo.lastUpdateTimestamp, vm.getBlockTimestamp(), 'lastUpdateTimestamp');
     assertEq(daiInfo.baseDebtIndex, WadRayMath.RAY, 'baseDebtIndex');
-    assertEq(hub.getAssetSuppliedAmount(daiAssetId), initialSupply * 2);
+    assertEq(hub.getAssetSuppliedAmount(daiAssetId), supplyAmount * 2);
     assertEq(getAssetBaseDebt(daiAssetId), 0);
+  }
+
+  /// no interest accrued when no debt
+  function test_accrueInterest_NoInterest_NoDebt(uint40 elapsed) public {
+    elapsed = uint40(bound(elapsed, 1, type(uint40).max / 3));
+
+    uint256 supplyAmount = 1000e18;
+    uint256 supplyAmount2 = 100e18;
+    uint256 startTime = vm.getBlockTimestamp();
+    uint256 borrowAmount = 100e18;
+    uint256 initialDebtIndex = WadRayMath.RAY;
+
+    Utils.add(hub, daiAssetId, address(spoke1), supplyAmount, address(spoke1), address(spoke1));
+    Utils.draw(hub, daiAssetId, address(spoke1), address(spoke1), borrowAmount, address(spoke1));
+    uint256 baseBorrowRate = hub.getBaseInterestRate(daiAssetId);
+
+    // Time passes
+    skip(elapsed);
+
+    // Spoke 2 does a supply to accrue interest
+    Utils.add(hub, daiAssetId, address(spoke2), supplyAmount2, address(spoke2), address(spoke2));
+
+    DataTypes.Asset memory daiInfo = hub.getAsset(daiAssetId);
+
+    (uint256 expectedDebtIndex1, uint256 expectedBaseDebt1) = calculateExpectedDebt(
+      daiInfo.baseDrawnShares,
+      initialDebtIndex,
+      baseBorrowRate,
+      uint40(startTime)
+    );
+    uint256 interest = expectedBaseDebt1 - borrowAmount;
+
+    assertEq(elapsed, daiInfo.lastUpdateTimestamp - startTime);
+    assertEq(daiInfo.baseDebtIndex, expectedDebtIndex1, 'baseDebtIndex');
+    assertEq(
+      hub.getAssetSuppliedAmount(daiAssetId),
+      supplyAmount + supplyAmount2 + interest,
+      'supplyAmount'
+    );
+    assertEq(getAssetBaseDebt(daiAssetId), expectedBaseDebt1, 'baseDebt');
+
+    startTime = vm.getBlockTimestamp();
+    baseBorrowRate = hub.getBaseInterestRate(daiAssetId);
+
+    // calculate expected debt to repay
+    (uint256 expectedDebtIndex2, uint256 expectedBaseDebt2) = calculateExpectedDebt(
+      daiInfo.baseDrawnShares,
+      expectedDebtIndex1,
+      baseBorrowRate,
+      uint40(startTime)
+    );
+
+    // Full repayment, so back to zero debt
+    Utils.restore(hub, daiAssetId, address(spoke1), borrowAmount + interest, 0, address(spoke1));
+
+    assertEq(expectedDebtIndex2, expectedDebtIndex1, 'expectedDebtIndex');
+    assertEq(expectedBaseDebt2, expectedBaseDebt1, 'expectedBaseDebt');
+
+    daiInfo = hub.getAsset(daiAssetId);
+
+    // Timestamp does not update when no interest accrued
+    assertEq(daiInfo.lastUpdateTimestamp, vm.getBlockTimestamp(), 'lastUpdateTimestamp');
+    assertEq(daiInfo.baseDebtIndex, expectedDebtIndex2, 'baseDebtIndex2');
+    assertEq(
+      hub.getAssetSuppliedAmount(daiAssetId),
+      supplyAmount + supplyAmount2 + interest,
+      'supplyAmount'
+    );
+    assertEq(getAssetBaseDebt(daiAssetId), 0, 'baseDebt');
   }
 
   /// accrue interest after some time has passed
   function test_accrueInterest_fuzz_BorrowAndWait(uint40 elapsed) public {
+    elapsed = uint40(bound(elapsed, 1, type(uint40).max / 3));
+
     uint256 supplyAmount = 1000e18;
     uint256 supplyAmount2 = 100e18;
     uint256 startTime = vm.getBlockTimestamp();
@@ -120,6 +193,7 @@ contract LiquidityHubAccrueInterestTest is Base {
     uint40 elapsed
   ) public {
     borrowAmount = bound(borrowAmount, 1, MAX_SUPPLY_AMOUNT / 2);
+    elapsed = uint40(bound(elapsed, 1, type(uint40).max / 3));
 
     uint256 startTime = vm.getBlockTimestamp();
     uint256 supplyAmount = borrowAmount * 2;
