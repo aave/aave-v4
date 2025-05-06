@@ -4,8 +4,9 @@ pragma solidity ^0.8.0;
 import 'tests/unit/libraries/LiquidationLogic/LiquidationLogic.Base.t.sol';
 
 contract LiquidationLogicDebtToRestoreCloseFactorScenarioTest is LiquidationLogicBaseTest {
-  using PercentageMath for uint256;
   using WadRayMath for uint256;
+  using WadRayMathExtended for uint256;
+  using PercentageMathExtended for uint256;
 
   struct ReserveAmount {
     uint256 reserveId;
@@ -269,7 +270,7 @@ contract LiquidationLogicDebtToRestoreCloseFactorScenarioTest is LiquidationLogi
     uint256 liquidationBonus,
     uint256 debtBaseCurrencyRestored
   ) internal pure returns (uint256) {
-    return debtBaseCurrencyRestored.percentMul(liquidationBonus);
+    return debtBaseCurrencyRestored.percentMulUp(liquidationBonus);
   }
 
   /// test helper to derive user account data

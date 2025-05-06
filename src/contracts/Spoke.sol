@@ -7,6 +7,7 @@ import {IERC20} from 'src/dependencies/openzeppelin/IERC20.sol';
 import {WadRayMath} from 'src/libraries/math/WadRayMath.sol';
 import {WadRayMathExtended} from 'src/libraries/math/WadRayMathExtended.sol';
 import {PercentageMath} from 'src/libraries/math/PercentageMath.sol';
+import {PercentageMathExtended} from 'src/libraries/math/PercentageMathExtended.sol';
 import {KeyValueListInMemory} from 'src/libraries/helpers/KeyValueListInMemory.sol';
 import {DataTypes} from 'src/libraries/types/DataTypes.sol';
 import {LiquidationLogic} from 'src/libraries/logic/LiquidationLogic.sol';
@@ -20,6 +21,7 @@ contract Spoke is ISpoke {
   using WadRayMath for uint256;
   using WadRayMathExtended for uint256;
   using PercentageMath for uint256;
+  using PercentageMathExtended for uint256;
   using KeyValueListInMemory for KeyValueListInMemory.List;
   using LiquidationLogic for DataTypes.LiquidationConfig;
   using LiquidationLogic for DataTypes.LiquidationCallLocalVars;

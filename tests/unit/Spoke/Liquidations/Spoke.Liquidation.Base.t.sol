@@ -6,8 +6,8 @@ import 'tests/unit/Spoke/SpokeBase.t.sol';
 import {LiquidationLogic} from 'src/libraries/logic/LiquidationLogic.sol';
 
 contract SpokeLiquidationBase is SpokeBase {
-  using WadRayMath for uint256;
-  using PercentageMath for uint256;
+  using WadRayMathExtended for uint256;
+  using PercentageMathExtended for uint256;
 
   struct Balance {
     uint256 balanceBefore;
@@ -249,12 +249,12 @@ contract SpokeLiquidationBase is SpokeBase {
     string memory label
   ) internal view {
     uint256 totalLiqBonusAmount = state.supply.balanceChange -
-      state.supply.balanceChange.percentDiv(state.liquidationBonus);
+      state.supply.balanceChange.percentDivDown(state.liquidationBonus);
 
     uint256 totalCollateralSeized = (state.collToLiq + state.liqProtocolFee);
     // liquidationBonus == PERCENTAGE_FACTOR represents liq bonus being 0
     uint256 expectedLiqBonusAmount = state.liquidationBonus != PercentageMath.PERCENTAGE_FACTOR
-      ? totalCollateralSeized - totalCollateralSeized.percentDiv(state.liquidationBonus)
+      ? totalCollateralSeized - totalCollateralSeized.percentDivDown(state.liquidationBonus)
       : 0;
 
     assertApproxEqRel(
@@ -360,7 +360,7 @@ contract SpokeLiquidationBase is SpokeBase {
 
     // duplicated logic from LiquidationLogic.calculateDebtToRestoreCloseFactor
     uint256 effectiveLiquidationPenalty = (params.liquidationBonus.wadify())
-      .percentMul(params.collateralFactor)
+      .percentMulDown(params.collateralFactor)
       .fromBps();
     if (params.closeFactor < effectiveLiquidationPenalty) {
       return type(uint256).max;
@@ -392,8 +392,8 @@ contract SpokeLiquidationBase is SpokeBase {
     uint256 liquidationBonus
   ) internal pure returns (uint256 healthFactor) {
     healthFactor = uint256(HEALTH_FACTOR_LIQUIDATION_THRESHOLD)
-      .percentMul(collateralFactor)
-      .percentMul(liquidationBonus);
+      .percentMulUp(collateralFactor)
+      .percentMulUp(liquidationBonus);
   }
 
   /// @notice Convert 1 asset amount to equivalent amount in another asset.

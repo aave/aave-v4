@@ -4,10 +4,8 @@ pragma solidity ^0.8.0;
 import 'tests/unit/Spoke/Liquidations/Spoke.Liquidation.Base.t.sol';
 
 contract LiquidationCallCloseFactorMultiReserveTest is SpokeLiquidationBase {
-  using SharesMath for uint256;
-  using WadRayMath for uint256;
-  using PercentageMath for uint256;
   using PercentageMathExtended for uint256;
+  using WadRayMathExtended for uint256;
 
   uint256 internal dustInBase = 10e26; // $10 in base currency
 
@@ -197,10 +195,10 @@ contract LiquidationCallCloseFactorMultiReserveTest is SpokeLiquidationBase {
     liqBonus = bound(
       liqBonus,
       MIN_LIQUIDATION_BONUS,
-      PercentageMath
+      PercentageMathExtended
         .PERCENTAGE_FACTOR
-        .percentDiv(state.collateralReserves[collateralReserveIndex].config.collateralFactor)
-        .percentMul(90_00) // add 10% buffer so that not all debt is liquidated
+        .percentDivDown(state.collateralReserves[collateralReserveIndex].config.collateralFactor)
+        .percentMulDown(99_00) // add buffer so that not all debt is liquidated
     );
     liquidationProtocolFeePercentage = bound(liquidationProtocolFeePercentage, 0, 100_00);
     supplyAmountInBase = bound(
@@ -223,7 +221,7 @@ contract LiquidationCallCloseFactorMultiReserveTest is SpokeLiquidationBase {
       state.liquidationProtocolFeePercentage
     );
     state.desiredHf = _calcLowestHfToRestoreCloseFactor(state.collateralReserveId, liqBonus)
-      .percentMul(101_00); // add 1% buffer so that not all debt is liquidated
+      .percentMulDown(101_00); // add buffer so that not all debt is liquidated
 
     for (uint256 i = 0; i < collateralReserveIds.length; i++) {
       uint256 supplyAmount = _convertBaseCurrencyToAmount(

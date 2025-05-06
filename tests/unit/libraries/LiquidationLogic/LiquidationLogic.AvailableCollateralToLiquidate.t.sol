@@ -4,8 +4,8 @@ pragma solidity ^0.8.0;
 import 'tests/unit/libraries/LiquidationLogic/LiquidationLogic.Base.t.sol';
 
 contract LiquidationAvailableCollateralToLiquidateTest is LiquidationLogicBaseTest {
-  using PercentageMath for uint256;
-  using WadRayMath for uint256;
+  using WadRayMathExtended for uint256;
+  using PercentageMathExtended for uint256;
   using LiquidationLogic for DataTypes.LiquidationCallLocalVars;
 
   struct TestAvailableCollateralParams {
@@ -296,7 +296,7 @@ contract LiquidationAvailableCollateralToLiquidateTest is LiquidationLogicBaseTe
   ) internal pure returns (uint256) {
     return
       ((params.actualDebtToLiquidate * params.debtAssetPrice).wadify() / params.debtAssetUnit)
-        .percentMul(params.liquidationBonus);
+        .percentMulDown(params.liquidationBonus);
   }
 
   function _calcLiquidationProtocolFeeAmount(
@@ -304,9 +304,9 @@ contract LiquidationAvailableCollateralToLiquidateTest is LiquidationLogicBaseTe
     uint256 collateralAmount
   ) internal pure returns (uint256, uint256) {
     uint256 bonusCollateral = collateralAmount -
-      collateralAmount.percentDiv(params.liquidationBonus);
+      collateralAmount.percentDivUp(params.liquidationBonus);
 
-    uint256 liquidationProtocolFeeAmount = bonusCollateral.percentMul(
+    uint256 liquidationProtocolFeeAmount = bonusCollateral.percentMulUp(
       params.liquidationProtocolFeePercentage
     );
 
@@ -323,7 +323,7 @@ contract LiquidationAvailableCollateralToLiquidateTest is LiquidationLogicBaseTe
 
     return
       ((params.debtAssetUnit * userCollateralBalanceInBaseCurrency) / params.debtAssetPrice)
-        .percentDiv(params.liquidationBonus)
+        .percentDivDown(params.liquidationBonus)
         .dewadify();
   }
 

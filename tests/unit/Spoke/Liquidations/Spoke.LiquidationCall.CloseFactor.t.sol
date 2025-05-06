@@ -4,10 +4,9 @@ pragma solidity ^0.8.0;
 import 'tests/unit/Spoke/Liquidations/Spoke.Liquidation.Base.t.sol';
 
 contract LiquidationCallCloseFactorTest is SpokeLiquidationBase {
-  using SharesMath for uint256;
-  using WadRayMath for uint256;
   using PercentageMath for uint256;
   using PercentageMathExtended for uint256;
+  using WadRayMathExtended for uint256;
 
   /// fuzz tests with close factor == HEALTH_FACTOR_LIQUIDATION_THRESHOLD
   /// single debt reserve, single collateral reserve
@@ -400,7 +399,7 @@ contract LiquidationCallCloseFactorTest is SpokeLiquidationBase {
     liqBonus = bound(
       liqBonus,
       MIN_LIQUIDATION_BONUS,
-      PercentageMath
+      PercentageMathExtended
         .PERCENTAGE_FACTOR
         .percentDiv(state.collateralReserve.config.collateralFactor)
         .percentMul(95_00) // add buffer so that amount to restore is > 0

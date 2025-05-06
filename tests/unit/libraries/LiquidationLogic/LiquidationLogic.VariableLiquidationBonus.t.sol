@@ -4,7 +4,7 @@ pragma solidity ^0.8.0;
 import 'tests/unit/libraries/LiquidationLogic/LiquidationLogic.Base.t.sol';
 
 contract LiquidationLogicVariableLiquidationBonusTest is LiquidationLogicBaseTest {
-  using PercentageMath for uint256;
+  using PercentageMathExtended for uint256;
 
   DataTypes.LiquidationConfig internal _config;
 
@@ -271,7 +271,7 @@ contract LiquidationLogicVariableLiquidationBonusTest is LiquidationLogicBaseTes
     uint256 liquidationBonusFactor
   ) internal pure returns (uint256) {
     return
-      (liquidationBonus - PercentageMath.PERCENTAGE_FACTOR).percentMul(liquidationBonusFactor) +
+      (liquidationBonus - PercentageMath.PERCENTAGE_FACTOR).percentMulDown(liquidationBonusFactor) +
       PercentageMath.PERCENTAGE_FACTOR;
   }
 }

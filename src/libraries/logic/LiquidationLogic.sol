@@ -6,11 +6,11 @@ import {PercentageMath} from 'src/libraries/math/PercentageMath.sol';
 import {ISpoke} from 'src/interfaces/ISpoke.sol';
 import {WadRayMath} from 'src/libraries/math/WadRayMath.sol';
 import {WadRayMathExtended} from 'src/libraries/math/WadRayMathExtended.sol';
+import {PercentageMathExtended} from 'src/libraries/math/PercentageMathExtended.sol';
 import {MathUtils} from 'src/libraries/math/MathUtils.sol';
 
 library LiquidationLogic {
-  using PercentageMath for uint256;
-  using WadRayMath for uint256;
+  using PercentageMathExtended for uint256;
   using WadRayMathExtended for uint256;
   using MathUtils for uint256;
   using LiquidationLogic for DataTypes.LiquidationCallLocalVars;
@@ -26,9 +26,8 @@ library LiquidationLogic {
     ) {
       return liquidationBonus;
     }
-    uint256 minLiquidationBonus = (liquidationBonus - PercentageMath.PERCENTAGE_FACTOR).percentMul(
-      config.liquidationBonusFactor
-    ) + PercentageMath.PERCENTAGE_FACTOR;
+    uint256 minLiquidationBonus = (liquidationBonus - PercentageMathExtended.PERCENTAGE_FACTOR)
+      .percentMulDown(config.liquidationBonusFactor) + PercentageMathExtended.PERCENTAGE_FACTOR;
     // if HF >= healthFactorLiquidationThreshold, liquidation bonus is min
     if (healthFactor >= healthFactorLiquidationThreshold) {
       return minLiquidationBonus;
@@ -70,7 +69,7 @@ library LiquidationLogic {
     // represents the effective value loss from the collateral per unit of debt repaid
     // the greater the penalty, the more debt must be repaid to restore the user's health factor
     uint256 effectiveLiquidationPenalty = (params.liquidationBonus.wadify())
-      .percentMul(params.collateralFactor)
+      .percentMulDown(params.collateralFactor)
       .fromBps();
 
     // prevent underflow in denominator
@@ -109,12 +108,12 @@ library LiquidationLogic {
       params.debtAssetUnit;
 
     // account for additional collateral required due to liquidation bonus
-    vars.maxCollateralToLiquidate = vars.baseCollateral.percentMul(params.liquidationBonus);
+    vars.maxCollateralToLiquidate = vars.baseCollateral.percentMulDown(params.liquidationBonus);
 
     if (vars.maxCollateralToLiquidate > vars.userCollateralBalanceInBaseCurrency) {
       vars.collateralAmount = params.userCollateralBalance;
       vars.debtAmountNeeded = ((params.debtAssetUnit * vars.userCollateralBalanceInBaseCurrency)
-        .percentDiv(params.liquidationBonus) / params.debtAssetPrice).dewadify();
+        .percentDivDown(params.liquidationBonus) / params.debtAssetPrice).dewadify();
     } else {
       // add 1 to round collateral amount up, ensuring HF is always <= close factor
       vars.collateralAmount =
@@ -127,8 +126,8 @@ library LiquidationLogic {
     if (params.liquidationProtocolFeePercentage != 0) {
       vars.bonusCollateral =
         vars.collateralAmount -
-        vars.collateralAmount.percentDiv(params.liquidationBonus);
-      vars.liquidationProtocolFeeAmount = vars.bonusCollateral.percentMul(
+        vars.collateralAmount.percentDivUp(params.liquidationBonus);
+      vars.liquidationProtocolFeeAmount = vars.bonusCollateral.percentMulUp(
         params.liquidationProtocolFeePercentage
       );
       return (

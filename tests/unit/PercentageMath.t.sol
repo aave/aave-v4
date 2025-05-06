@@ -64,4 +64,9 @@ contract PercentageMathExtendedTests is Test {
     assertEq(w.percentDivUp(14.2515e18, 74_42), 19.150094060736361194e18);
     assertEq(w.percentDivUp(9087312e27, 13_33), 68171882970742685671417854463615904);
   }
+
+  function test_fromBps() public view {
+    assertEq(w.fromBps(1e18), 1e14);
+    assertEq(w.fromBps(1e3), 0);
+  }
 }
