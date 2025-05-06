@@ -257,22 +257,12 @@ contract SpokeLiquidationBase is SpokeBase {
       ? totalCollateralSeized - totalCollateralSeized.percentDiv(state.liquidationBonus)
       : 0;
 
-    if (_convertAmountToBaseCurrency(state.collateralReserve.assetId, totalLiqBonusAmount) > 1e26) {
-      assertApproxEqRel(
-        totalLiqBonusAmount,
-        expectedLiqBonusAmount,
-        _approxRelFromBps(20),
-        string.concat('liquidationBonus earned in base currency, rel 20 bps ', label)
-      );
-    } else {
-      // at low values for liq bonus, precision loss can occur in bonus calcs based on coll amount
-      assertApproxEqRel(
-        state.supply.baseChange,
-        state.debt.baseChange.percentMul(state.liquidationBonus),
-        _approxRelFromBps(2_00), // TODO: resolve precision vs expected liq bonus
-        string.concat('liquidationBonus earned in base currency, rel 200 bps ', label)
-      );
-    }
+    assertApproxEqRel(
+      totalLiqBonusAmount,
+      expectedLiqBonusAmount,
+      _approxRelFromBps(20),
+      string.concat('liquidationBonus earned in base currency, rel 20 bps ', label)
+    );
   }
 
   /// check that if user's supplied amount becomes 0, reserve is no longer set usingAsCollateral
