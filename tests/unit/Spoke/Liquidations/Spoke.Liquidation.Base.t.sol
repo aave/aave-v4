@@ -235,10 +235,16 @@ contract SpokeLiquidationBase is SpokeBase {
     LiquidationTestLocalParams memory state,
     string memory label
   ) internal view {
-    uint256 liqProtocolFeeShares = state.treasury.balanceChange;
-    assertEq(
-      liqProtocolFeeShares,
-      hub.convertToSuppliedShares(state.collateralReserve.assetId, state.liqProtocolFee),
+    uint256 totalLiqBonusAmount = state.supply.balanceChange -
+      state.supply.balanceChange.percentDivUp(state.liquidationBonus);
+    uint256 liqProtocolFeeAmount = hub.convertToSuppliedAssets(
+      state.collateralReserve.assetId,
+      state.treasury.balanceChange // actual protocol fee shares, from tmp emitted event
+    );
+    assertApproxEqAbs(
+      liqProtocolFeeAmount,
+      totalLiqBonusAmount.percentMulUp(state.liquidationProtocolFeePercentage),
+      2,
       string.concat('protocol fee amount ', label)
     );
   }
