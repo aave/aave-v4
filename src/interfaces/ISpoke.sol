@@ -59,6 +59,7 @@ interface ISpoke {
   event TmpLiquidationFee(uint256 indexed tmpLiquidationFee);
 
   error InvalidReserve();
+  error UserNotBorrowingReserve(uint256 reserveId);
   error ReserveNotListed();
   error InvalidLiquidityPremium();
   error InsufficientSupply(uint256 supply);
@@ -159,6 +160,8 @@ interface ISpoke {
     uint256 reserveId,
     address user
   ) external view returns (DataTypes.UserPosition memory);
+  function getLastUserRiskPremium(uint256 reserveId, address user) external view returns (uint256);
+  function getUserRiskPremium(address user) external view returns (uint256);
   function getUserSuppliedAmount(uint256 reserveId, address user) external view returns (uint256);
   function getUserSuppliedShares(uint256 reserveId, address user) external view returns (uint256);
   function getUserTotalDebt(uint256 reserveId, address user) external view returns (uint256);

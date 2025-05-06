@@ -1,11 +1,12 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.0;
 
-import 'tests/Base.t.sol';
+import 'tests/unit/Spoke/SpokeBase.t.sol';
 
-contract SpokeRiskPremiumScenarioTest is Base {
+contract SpokeRiskPremiumScenarioTest is SpokeBase {
   using SharesMath for uint256;
   using WadRayMath for uint256;
+  using WadRayMathExtended for uint256;
   using PercentageMath for uint256;
 
   struct GeneralLocalVars {
@@ -16,9 +17,51 @@ contract SpokeRiskPremiumScenarioTest is Base {
     uint256 delay;
   }
 
-  function setUp() public virtual override {
-    deployFixtures();
-    initEnvironment();
+  struct ReserveInfoLocal {
+    uint256 reserveId;
+    uint256 supplyAmount;
+    uint256 borrowAmount;
+    uint256 price;
+    uint256 lp;
+    uint256 riskPremium;
+  }
+
+  struct UserInfoLocal {
+    uint256 supplyAmount;
+    uint256 borrowAmount;
+    uint256 baseDebt;
+    uint256 premiumDebt;
+    uint256 premiumDrawnShares;
+    uint256 totalDebt;
+    uint256 riskPremium;
+  }
+
+  struct DebtChecks {
+    uint256 baseDebt;
+    uint256 premiumDebt;
+    uint256 actualBaseDebt;
+    uint256 actualPremium;
+    uint256 reserveDebt;
+    uint256 reservePremium;
+    uint256 spokeDebt;
+    uint256 spokePremium;
+    uint256 assetDebt;
+    uint256 assetPremium;
+  }
+
+  struct RestoredAmounts {
+    uint256 baseRestored;
+    uint256 premiumRestored;
+  }
+
+  struct ExpectedUserRp {
+    uint256 bobRiskPremium;
+    uint256 aliceRiskPremium;
+  }
+
+  struct Rates {
+    uint256 baseRateDai;
+    uint256 baseRateUsdx;
   }
 
   /** Spoke1 Init Config
@@ -31,149 +74,1034 @@ contract SpokeRiskPremiumScenarioTest is Base {
    * |         3 | usdx       | 50%              | 1      |        6 |
    * +-----------+------------+------------------+--------+----------+
    */
+  /// Borrow, skip, supply, skip, supply, ensure risk premium is correct and accounting updates accordingly throughout protocol
   function test_riskPremiumPropagatesCorrectly_singleBorrow() public {
-    vm.skip(true, 'pending refactor');
+    GeneralLocalVars memory vars;
+    vars.usdxSupplyAmount = 1500e6; // 1500 usd, 50 lp
+    vars.wethSupplyAmount = 5e18; // 10_000 usd, 15 lp
+    vars.daiBorrowAmount = 10_000e18; // 10_000 usd, 20 lp
+    vars.delay = 365 days;
 
-//     GeneralLocalVars memory vars;
-//     vars.usdxSupplyAmount = 1500e6; // 1500 usd, 50 lp
-//     vars.wethSupplyAmount = 5e18; // 10_000 usd, 15 lp
-//     vars.daiBorrowAmount = 10_000e18; // 10_000 usd, 20 lp
-//     vars.delay = 365 days;
+    // Validate liquidity premiums
+    assertEq(spoke1.getLiquidityPremium(_usdxReserveId(spoke1)), 50_00, 'usdx lp');
+    assertEq(spoke1.getLiquidityPremium(_wethReserveId(spoke1)), 15_00, 'weth lp');
+    assertEq(spoke1.getLiquidityPremium(_daiReserveId(spoke1)), 20_00, 'dai lp');
 
-//     // set LT to 1 for Alice collateral
-//     updateCollateralFactor(spoke1, _wethReserveId(spoke1), 10_000);
-//     updateCollateralFactor(spoke1, _usdxReserveId(spoke1), 10_000);
+    // Set collateral factor to 100% for Alice collateral
+    updateCollateralFactor(spoke1, _wethReserveId(spoke1), 100_00);
+    updateCollateralFactor(spoke1, _usdxReserveId(spoke1), 100_00);
 
-//     vm.prank(bob);
-//     spoke1.supply(_daiReserveId(spoke1), vars.daiBorrowAmount);
+    Utils.supply(spoke1, _daiReserveId(spoke1), bob, vars.daiBorrowAmount, bob);
 
-//     vm.startPrank(alice);
-//     spoke1.supply(_usdxReserveId(spoke1), vars.usdxSupplyAmount);
-//     spoke1.setUsingAsCollateral(_usdxReserveId(spoke1), true);
+    Utils.supplyCollateral(spoke1, _usdxReserveId(spoke1), alice, vars.usdxSupplyAmount, alice);
 
-//     spoke1.supply(_wethReserveId(spoke1), vars.wethSupplyAmount);
-//     spoke1.setUsingAsCollateral(_wethReserveId(spoke1), true);
+    Utils.supplyCollateral(spoke1, _wethReserveId(spoke1), alice, vars.wethSupplyAmount, alice);
 
-//     spoke1.borrow(_daiReserveId(spoke1), vars.daiBorrowAmount, alice);
-//     vm.stopPrank();
+    Utils.borrow(spoke1, _daiReserveId(spoke1), alice, vars.daiBorrowAmount, alice);
 
-//     uint256 usdxLiquidityPremium = spoke1
-//       .getReserve(_usdxReserveId(spoke1))
-//       .config
-//       .liquidityPremium;
-//     uint256 wethLiquidityPremium = spoke1
-//       .getReserve(_wethReserveId(spoke1))
-//       .config
-//       .liquidityPremium;
-//     assertLt(wethLiquidityPremium, usdxLiquidityPremium);
-//     // weth is enough to cover debt, both stored & calc value match
-//     assertEq(spoke1.getUserRiskPremium(alice), wethLiquidityPremium);
-//     assertEq(spoke1.getLastUsedUserRiskPremium(alice), wethLiquidityPremium);
+    uint256 usdxLiquidityPremium = spoke1.getLiquidityPremium(_usdxReserveId(spoke1));
+    uint256 wethLiquidityPremium = spoke1.getLiquidityPremium(_wethReserveId(spoke1));
+    assertLt(wethLiquidityPremium, usdxLiquidityPremium);
 
-//     // spoke risk premium should match since there is only 1 debt for dai
-//     assertEq(spoke1.getReserveRiskPremium(_daiReserveId(spoke1)), wethLiquidityPremium);
-//     // propagated correctly on hub, should match this spoke's reserve since it's the only
-//     // spoke drawing dai
-//     assertEq(hub.getSpokeRiskPremium(daiAssetId, address(spoke1)), wethLiquidityPremium);
+    // Weth is enough to cover debt, both stored & calc value match
+    assertEq(spoke1.getUserRiskPremium(alice), wethLiquidityPremium, 'user rp: weth covers debt');
+    assertEq(
+      spoke1.getLastUserRiskPremium(_daiReserveId(spoke1), alice),
+      wethLiquidityPremium,
+      'stored rp calc matches'
+    );
 
-//     vars.lastUpdateTimestamp = uint40(vm.getBlockTimestamp());
-//     skip(vars.delay);
+    vars.lastUpdateTimestamp = uint40(vm.getBlockTimestamp());
+    uint40 startTime = vars.lastUpdateTimestamp;
+    skip(vars.delay);
 
-//     // since only DAI is borrowed in the system, supply interest is accrued only on it
-//     assertEq(spoke1.getUserSuppliedAmount(_usdxReserveId(spoke1), alice), vars.usdxSupplyAmount);
-//     assertEq(spoke1.getUserSuppliedAmount(_wethReserveId(spoke1), alice), vars.wethSupplyAmount);
+    // Since only DAI is borrowed in the system, supply interest is accrued only on it
+    assertEq(
+      spoke1.getUserSuppliedAmount(_usdxReserveId(spoke1), alice),
+      vars.usdxSupplyAmount,
+      'supplied usdx'
+    );
+    assertEq(
+      spoke1.getUserSuppliedAmount(_wethReserveId(spoke1), alice),
+      vars.wethSupplyAmount,
+      'supplied weth'
+    );
 
-//     uint256 accruedDaiDebt = vars.daiBorrowAmount.rayMul(
-//       MathUtils.calculateLinearInterest(
-//         hub.getBaseInterestRate(daiAssetId), // note: IR strategy has a pending fix
-//         vars.lastUpdateTimestamp
-//       ) - WadRayMath.RAY
-//     );
-//     uint256 expectedOutstandingPremium = accruedDaiDebt.percentMul(wethLiquidityPremium);
+    uint256 accruedDaiDebt = vars.daiBorrowAmount.rayMul(
+      MathUtils.calculateLinearInterest(
+        hub.getBaseInterestRate(daiAssetId), // todo: IR strategy has a pending fix
+        vars.lastUpdateTimestamp
+      ) - WadRayMath.RAY
+    );
+    uint256 expectedPremiumDebt = accruedDaiDebt.percentMul(wethLiquidityPremium);
 
-//     (uint256 baseDaiDebt, uint256 outstandingDaiPremium) = spoke1.getUserDebt(
-//       _daiReserveId(spoke1),
-//       alice
-//     );
-//     assertEq(baseDaiDebt, vars.daiBorrowAmount + accruedDaiDebt);
-//     assertEq(outstandingDaiPremium, expectedOutstandingPremium);
-//     vars.daiBorrowAmount += accruedDaiDebt;
+    (uint256 baseDaiDebt, uint256 daiPremiumDebt) = spoke1.getUserDebt(
+      _daiReserveId(spoke1),
+      alice
+    );
+    assertEq(baseDaiDebt, vars.daiBorrowAmount + accruedDaiDebt, 'dai base debt');
+    assertEq(daiPremiumDebt, expectedPremiumDebt, 'dai premium debt');
 
-//     // now since debt has grown, weth supply is not enough to cover debt, hence rp changes
-//     uint256 remainingDaiDebt = accruedDaiDebt + outstandingDaiPremium;
-//     // usdx is enough to cover remaining debt
-//     assertLt(
-//       _getValueInBaseCurrency(daiAssetId, remainingDaiDebt),
-//       _getValueInBaseCurrency(usdxAssetId, vars.usdxSupplyAmount)
-//     );
+    // Now since debt has grown, weth supply is not enough to cover debt, hence rp changes
+    uint256 remainingDaiDebt = accruedDaiDebt + daiPremiumDebt;
+    // usdx is enough to cover remaining debt
+    assertLt(
+      _getValueInBaseCurrency(daiAssetId, remainingDaiDebt),
+      _getValueInBaseCurrency(usdxAssetId, vars.usdxSupplyAmount)
+    );
 
-//     uint256 newLiquidityPremium = (_getValueInBaseCurrency(wethAssetId, vars.wethSupplyAmount) *
-//       wethLiquidityPremium +
-//       _getValueInBaseCurrency(daiAssetId, remainingDaiDebt) *
-//       usdxLiquidityPremium) /
-//       (_getValueInBaseCurrency(wethAssetId, vars.wethSupplyAmount) +
-//         _getValueInBaseCurrency(daiAssetId, remainingDaiDebt));
+    uint256 expectedUserRiskPremium = _calculateExpectedUserRP(alice, spoke1);
 
-//     assertEq(spoke1.getUserRiskPremium(alice), newLiquidityPremium);
-//     // last stored remains the same
-//     assertEq(spoke1.getLastUsedUserRiskPremium(alice), wethLiquidityPremium);
+    assertEq(
+      spoke1.getUserRiskPremium(alice),
+      expectedUserRiskPremium,
+      'user risk premium after accrual'
+    );
 
-//     // we supply more usdx which should trigger stored value update for risk premium, *and accrue* dai debt
-//     // (this will be checked implicitly through having correct outstanding premium accrual after delay)
-//     vm.prank(alice);
-//     spoke1.supply(_usdxReserveId(spoke1), 500e6);
+    // Alice supplies more usdx
+    Utils.supply(spoke1, _usdxReserveId(spoke1), alice, 500e6, alice);
 
-//     assertEq(spoke1.getLastUsedUserRiskPremium(alice), newLiquidityPremium);
-//     assertEq(spoke1.getUserRiskPremium(alice), newLiquidityPremium);
-//     // spoke's risk premium should still match since we only have alice's debt in system
-//     assertEq(spoke1.getReserveRiskPremium(_daiReserveId(spoke1)), newLiquidityPremium);
-//     assertEq(hub.getSpokeRiskPremium(daiAssetId, address(spoke1)), newLiquidityPremium);
+    assertEq(
+      spoke1.getUserRiskPremium(alice),
+      expectedUserRiskPremium,
+      'user risk premium after supply'
+    );
 
-//     vars.lastUpdateTimestamp = uint40(vm.getBlockTimestamp());
-//     skip(vars.delay);
+    // Store alice's position before timeskip to calc expected premium debt
+    DataTypes.UserPosition memory alicePosition = spoke1.getUserPosition(
+      _daiReserveId(spoke1),
+      alice
+    );
 
-//     // now we supply more weth such that new total debt from now on is covered by weth
-//     vm.prank(alice);
-//     spoke1.supply(_wethReserveId(spoke1), vars.wethSupplyAmount);
+    vars.lastUpdateTimestamp = uint40(vm.getBlockTimestamp());
+    skip(vars.delay);
 
-//     accruedDaiDebt = vars.daiBorrowAmount.rayMul(
-//       MathUtils.calculateLinearInterest(
-//         hub.getBaseInterestRate(daiAssetId), // note: IR strategy has a pending fix
-//         vars.lastUpdateTimestamp
-//       ) - WadRayMath.RAY
-//     );
-//     expectedOutstandingPremium += accruedDaiDebt.percentMul(newLiquidityPremium);
+    // Now we supply more weth such that new total debt from now on is covered by weth
+    Utils.supply(spoke1, _wethReserveId(spoke1), alice, vars.wethSupplyAmount, alice);
 
-//     (baseDaiDebt, outstandingDaiPremium) = spoke1.getUserDebt(_daiReserveId(spoke1), alice);
-//     assertEq(baseDaiDebt, vars.daiBorrowAmount + accruedDaiDebt);
-//     assertEq(outstandingDaiPremium, expectedOutstandingPremium);
+    accruedDaiDebt = vars.daiBorrowAmount.rayMulUp(
+      MathUtils.calculateLinearInterest(
+        hub.getBaseInterestRate(daiAssetId), // todo: IR strategy has a pending fix
+        startTime
+      ) - WadRayMath.RAY
+    );
 
-//     vm.prank(alice);
-//     spoke1.repay(_daiReserveId(spoke1), baseDaiDebt + outstandingDaiPremium);
+    expectedPremiumDebt =
+      hub.convertToDrawnAssets(daiAssetId, alicePosition.premiumDrawnShares) -
+      alicePosition.premiumOffset;
 
-//     (baseDaiDebt, outstandingDaiPremium) = spoke1.getUserDebt(_daiReserveId(spoke1), alice);
-//     assertEq(baseDaiDebt, 0);
-//     assertEq(outstandingDaiPremium, 0);
-//     (baseDaiDebt, outstandingDaiPremium) = spoke1.getReserveDebt(_daiReserveId(spoke1));
-//     assertEq(baseDaiDebt, 0);
-//     assertEq(outstandingDaiPremium, 0);
-//     (baseDaiDebt, outstandingDaiPremium) = hub.getSpokeDebt(daiAssetId, address(spoke1));
-//     assertEq(baseDaiDebt, 0);
-//     assertEq(outstandingDaiPremium, 0);
+    (baseDaiDebt, daiPremiumDebt) = spoke1.getUserDebt(_daiReserveId(spoke1), alice);
 
-//     assertEq(spoke1.getUserRiskPremium(alice), 0);
-//     assertEq(spoke1.getLastUsedUserRiskPremium(alice), 0);
-//     assertEq(spoke1.getReserveRiskPremium(_daiReserveId(spoke1)), 0);
-//     assertEq(hub.getSpokeRiskPremium(daiAssetId, address(spoke1)), 0);
-  
-}
+    assertEq(baseDaiDebt, vars.daiBorrowAmount + accruedDaiDebt, 'dai base debt after weth supply');
+    assertEq(daiPremiumDebt, expectedPremiumDebt, 'dai premium debt after weth supply');
 
-  function _getValueInBaseCurrency(
-    uint256 assetId,
-    uint256 amount
-  ) internal view returns (uint256) {
-    return
-      (amount * oracle.getAssetPrice(assetId)).wadify() /
-      10 ** hub.getAsset(assetId).config.decimals;
+    // Alice repays everything
+    _repayAll(spoke1, _daiReserveId);
+  }
+
+  /// Bob and Alice each supply and borrow varying amounts of usdx and dai, we check interest accrues and values percolate to hub.
+  /// After 1 year, Alice does a repay, and we ensure the same values are updated accordingly.
+  function test_getUserRiskPremium_applyInterest_two_users_two_reserves_borrowed() public {
+    // Set Dai lp to 10% and usdx to 20%
+    updateLiquidityPremium(spoke1, _daiReserveId(spoke1), 10_00);
+    updateLiquidityPremium(spoke1, _usdxReserveId(spoke1), 20_00);
+
+    UserInfoLocal memory bobDaiInfo;
+    UserInfoLocal memory aliceDaiInfo;
+    UserInfoLocal memory bobUsdxInfo;
+    UserInfoLocal memory aliceUsdxInfo;
+
+    bobDaiInfo.supplyAmount = 1000e18;
+    aliceDaiInfo.supplyAmount = 2000e18;
+    bobUsdxInfo.supplyAmount = 5000e6;
+    aliceUsdxInfo.supplyAmount = 10000e6;
+
+    bobDaiInfo.borrowAmount = bobDaiInfo.supplyAmount / 2;
+    aliceDaiInfo.borrowAmount = aliceDaiInfo.supplyAmount / 2;
+    bobUsdxInfo.borrowAmount = bobUsdxInfo.supplyAmount / 2;
+    aliceUsdxInfo.borrowAmount = aliceUsdxInfo.supplyAmount / 2;
+
+    ReserveInfoLocal memory daiInfo;
+    ReserveInfoLocal memory usdxInfo;
+
+    daiInfo.reserveId = _daiReserveId(spoke1);
+    usdxInfo.reserveId = _usdxReserveId(spoke1);
+
+    daiInfo.lp = spoke1.getLiquidityPremium(daiInfo.reserveId);
+    usdxInfo.lp = spoke1.getLiquidityPremium(usdxInfo.reserveId);
+
+    // Bob supply dai into spoke1
+    Utils.supplyCollateral(spoke1, daiInfo.reserveId, bob, bobDaiInfo.supplyAmount, bob);
+
+    // Bob supply usdx into spoke1
+    Utils.supplyCollateral(spoke1, usdxInfo.reserveId, bob, bobUsdxInfo.supplyAmount, bob);
+
+    // Alice supply dai into spoke1
+    Utils.supplyCollateral(spoke1, daiInfo.reserveId, alice, aliceDaiInfo.supplyAmount, alice);
+
+    // Alice supply usdx into spoke1
+    Utils.supplyCollateral(spoke1, usdxInfo.reserveId, alice, aliceUsdxInfo.supplyAmount, alice);
+
+    // Bob draw dai
+    Utils.borrow(spoke1, daiInfo.reserveId, bob, bobDaiInfo.borrowAmount, bob);
+
+    // Bob draw usdx
+    Utils.borrow(spoke1, usdxInfo.reserveId, bob, bobUsdxInfo.borrowAmount, bob);
+
+    // Alice draw dai
+    Utils.borrow(spoke1, daiInfo.reserveId, alice, aliceDaiInfo.borrowAmount, alice);
+
+    // Alice draw usdx
+    Utils.borrow(spoke1, usdxInfo.reserveId, alice, aliceUsdxInfo.borrowAmount, alice);
+
+    ExpectedUserRp memory expectedUserRp;
+    expectedUserRp.bobRiskPremium = _calculateExpectedUserRP(bob, spoke1);
+    expectedUserRp.aliceRiskPremium = _calculateExpectedUserRP(alice, spoke1);
+
+    assertEq(spoke1.getUserRiskPremium(bob), expectedUserRp.bobRiskPremium, 'bob risk premium');
+    assertEq(
+      spoke1.getUserRiskPremium(alice),
+      expectedUserRp.aliceRiskPremium,
+      'alice risk premium'
+    );
+
+    DebtChecks memory debtChecks;
+    Rates memory rates;
+
+    // Get the base rate of dai
+    rates.baseRateDai = hub.getBaseInterestRate(daiAssetId);
+
+    // Check Bob's starting dai debt
+    (debtChecks.actualBaseDebt, debtChecks.actualPremium) = spoke1.getUserDebt(
+      daiInfo.reserveId,
+      bob
+    );
+    uint256 startTime = vm.getBlockTimestamp();
+
+    assertEq(bobDaiInfo.borrowAmount, debtChecks.actualBaseDebt, 'Bob dai debt before');
+    assertEq(debtChecks.actualPremium, 0, 'Bob dai premium before');
+
+    // Get the base rate of usdx
+    rates.baseRateUsdx = hub.getBaseInterestRate(usdxAssetId);
+
+    // Check Bob's starting usdx debt
+    (debtChecks.actualBaseDebt, debtChecks.actualPremium) = spoke1.getUserDebt(
+      usdxInfo.reserveId,
+      bob
+    );
+
+    assertEq(bobUsdxInfo.borrowAmount, debtChecks.actualBaseDebt, 'Bob usdx debt before');
+    assertEq(debtChecks.actualPremium, 0, 'Bob usdx premium before');
+
+    // Check Alice's starting dai debt
+    (debtChecks.actualBaseDebt, debtChecks.actualPremium) = spoke1.getUserDebt(
+      daiInfo.reserveId,
+      alice
+    );
+
+    assertEq(aliceDaiInfo.borrowAmount, debtChecks.actualBaseDebt, 'Alice dai debt before');
+    assertEq(debtChecks.actualPremium, 0, 'Alice dai premium before');
+
+    // Check Alice's starting usdx debt
+    (debtChecks.actualBaseDebt, debtChecks.actualPremium) = spoke1.getUserDebt(
+      usdxInfo.reserveId,
+      alice
+    );
+
+    assertEq(aliceUsdxInfo.borrowAmount, debtChecks.actualBaseDebt, 'Alice usdx debt before');
+    assertEq(debtChecks.actualPremium, 0, 'Alice usdx premium before');
+
+    // Wait a year
+    skip(365 days);
+
+    // User risk premium should remain the same when there is no action
+    assertEq(
+      spoke1.getLastUserRiskPremium(usdxInfo.reserveId, bob),
+      expectedUserRp.bobRiskPremium,
+      'bob risk premium after interest accrual'
+    );
+    assertEq(
+      spoke1.getLastUserRiskPremium(usdxInfo.reserveId, alice),
+      expectedUserRp.aliceRiskPremium,
+      'alice risk premium after interest accrual'
+    );
+
+    // Ensure the calculated risk premium would match
+    assertEq(
+      spoke1.getUserRiskPremium(bob),
+      _calculateExpectedUserRP(bob, spoke1),
+      'bob risk premium after time skip'
+    );
+    assertEq(
+      spoke1.getUserRiskPremium(alice),
+      _calculateExpectedUserRP(alice, spoke1),
+      'alice risk premium after time skip'
+    );
+
+    // See if Bob's base debt of dai changes appropriately
+    bobDaiInfo.baseDebt = MathUtils
+      .calculateLinearInterest(rates.baseRateDai, uint40(startTime))
+      .rayMul(bobDaiInfo.borrowAmount);
+    (debtChecks.actualBaseDebt, debtChecks.actualPremium) = spoke1.getUserDebt(
+      daiInfo.reserveId,
+      bob
+    );
+    assertApproxEqAbs(bobDaiInfo.baseDebt, debtChecks.actualBaseDebt, 1, 'bob dai base debt after');
+
+    // See if Bob's dai premium debt changes proportionally to bob's risk premium
+    bobDaiInfo.premiumDebt = (bobDaiInfo.baseDebt - bobDaiInfo.borrowAmount).percentMul(
+      expectedUserRp.bobRiskPremium
+    );
+    assertEq(bobDaiInfo.premiumDebt, debtChecks.actualPremium, 'bob premium debt after accrual');
+
+    // See if Bob's base debt of usdx changes appropriately
+    bobUsdxInfo.baseDebt = MathUtils
+      .calculateLinearInterest(rates.baseRateUsdx, uint40(startTime))
+      .rayMul(bobUsdxInfo.borrowAmount);
+    (debtChecks.actualBaseDebt, debtChecks.actualPremium) = spoke1.getUserDebt(
+      usdxInfo.reserveId,
+      bob
+    );
+    assertEq(bobUsdxInfo.baseDebt, debtChecks.actualBaseDebt, 'bob usdx base debt after');
+
+    // See if Bob's usdx premium debt changes proportionally to bob's risk premium
+    bobUsdxInfo.premiumDebt = (bobUsdxInfo.baseDebt - bobUsdxInfo.borrowAmount).percentMul(
+      expectedUserRp.bobRiskPremium
+    );
+    assertEq(bobUsdxInfo.premiumDebt, debtChecks.actualPremium, 'bob premium debt after accrual');
+
+    // See if Alice's base debt of dai changes appropriately
+    aliceDaiInfo.baseDebt = MathUtils
+      .calculateLinearInterest(rates.baseRateDai, uint40(startTime))
+      .rayMul(aliceDaiInfo.borrowAmount);
+    (debtChecks.actualBaseDebt, debtChecks.actualPremium) = spoke1.getUserDebt(
+      daiInfo.reserveId,
+      alice
+    );
+    assertEq(aliceDaiInfo.baseDebt, debtChecks.actualBaseDebt, 'alice dai base debt after');
+
+    // See if Alice's dai premium debt changes proportionally to alice's risk premium
+    aliceDaiInfo.premiumDebt = (aliceDaiInfo.baseDebt - aliceDaiInfo.borrowAmount).percentMul(
+      expectedUserRp.aliceRiskPremium
+    );
+    assertEq(
+      aliceDaiInfo.premiumDebt,
+      debtChecks.actualPremium,
+      'alice premium debt after accrual'
+    );
+
+    // See if Alice's base debt of usdx changes appropriately
+    aliceUsdxInfo.baseDebt = MathUtils
+      .calculateLinearInterest(rates.baseRateUsdx, uint40(startTime))
+      .rayMul(aliceUsdxInfo.borrowAmount);
+    (debtChecks.actualBaseDebt, debtChecks.actualPremium) = spoke1.getUserDebt(
+      usdxInfo.reserveId,
+      alice
+    );
+    assertEq(aliceUsdxInfo.baseDebt, debtChecks.actualBaseDebt, 'alice usdx base debt after');
+
+    // See if Alice's usdx premium debt changes proportionally to alice's risk premium
+    aliceUsdxInfo.premiumDebt = (aliceUsdxInfo.baseDebt - aliceUsdxInfo.borrowAmount).percentMul(
+      expectedUserRp.aliceRiskPremium
+    );
+    assertEq(
+      aliceUsdxInfo.premiumDebt,
+      debtChecks.actualPremium,
+      'alice premium debt after accrual'
+    );
+
+    _verifyProtocolDebtAmounts(
+      bobDaiInfo,
+      aliceDaiInfo,
+      bobUsdxInfo,
+      aliceUsdxInfo,
+      'after accrual'
+    );
+
+    RestoredAmounts memory restored;
+    (restored.baseRestored, restored.premiumRestored) = _calculateExactRestoreAmount(
+      aliceDaiInfo.baseDebt,
+      aliceDaiInfo.premiumDebt,
+      aliceDaiInfo.borrowAmount / 2,
+      daiAssetId
+    );
+
+    // Now, if Alice repays some debt, her user risk premium should change and percolate through protocol
+    Utils.repay(spoke1, daiInfo.reserveId, alice, aliceDaiInfo.borrowAmount / 2);
+
+    // Bob's user risk premium remains unchanged
+    assertEq(
+      spoke1.getLastUserRiskPremium(daiInfo.reserveId, bob),
+      expectedUserRp.bobRiskPremium,
+      'bob risk premium after repay'
+    );
+
+    // Alice's user risk premium does change
+    assertNotEq(
+      spoke1.getLastUserRiskPremium(daiInfo.reserveId, alice),
+      expectedUserRp.aliceRiskPremium,
+      'alice rp after repay should not match'
+    );
+    expectedUserRp.aliceRiskPremium = _calculateExpectedUserRP(alice, spoke1);
+    assertEq(
+      spoke1.getUserRiskPremium(alice),
+      expectedUserRp.aliceRiskPremium,
+      'alice risk premium after repay'
+    );
+
+    (debtChecks.actualBaseDebt, debtChecks.actualPremium) = spoke1.getUserDebt(
+      daiInfo.reserveId,
+      alice
+    );
+
+    // Only Alice's premium debt and base debt on dai should change due to repay
+    aliceDaiInfo.baseDebt -= restored.baseRestored;
+    aliceDaiInfo.premiumDebt -= restored.premiumRestored;
+    assertApproxEqAbs(
+      debtChecks.actualBaseDebt,
+      aliceDaiInfo.baseDebt,
+      1,
+      'alice base debt after repay here'
+    );
+    assertApproxEqAbs(
+      debtChecks.actualPremium,
+      aliceDaiInfo.premiumDebt,
+      1,
+      'alice premium debt after repay'
+    );
+    aliceDaiInfo.totalDebt = aliceDaiInfo.baseDebt + aliceDaiInfo.premiumDebt;
+
+    // Alice's debts on usdx should remain unchanged
+    (debtChecks.actualBaseDebt, debtChecks.actualPremium) = spoke1.getUserDebt(
+      usdxInfo.reserveId,
+      alice
+    );
+    assertEq(debtChecks.actualBaseDebt, aliceUsdxInfo.baseDebt, 'alice usdx base debt after');
+    assertEq(debtChecks.actualPremium, aliceUsdxInfo.premiumDebt, 'alice usdx premium debt after');
+    aliceUsdxInfo.totalDebt = aliceUsdxInfo.baseDebt + aliceUsdxInfo.premiumDebt;
+
+    // Bob's debts on dai should remain unchanged
+    (debtChecks.actualBaseDebt, debtChecks.actualPremium) = spoke1.getUserDebt(
+      daiInfo.reserveId,
+      bob
+    );
+    assertApproxEqAbs(debtChecks.actualBaseDebt, bobDaiInfo.baseDebt, 1, 'bob dai base debt after');
+    assertApproxEqAbs(
+      debtChecks.actualPremium,
+      bobDaiInfo.premiumDebt,
+      1,
+      'bob dai premium debt after'
+    );
+    bobDaiInfo.totalDebt = bobDaiInfo.baseDebt + bobDaiInfo.premiumDebt;
+
+    // Bob's debts on usdx should remain unchanged
+    (debtChecks.actualBaseDebt, debtChecks.actualPremium) = spoke1.getUserDebt(
+      usdxInfo.reserveId,
+      bob
+    );
+    assertEq(debtChecks.actualBaseDebt, bobUsdxInfo.baseDebt, 'bob usdx base debt after');
+    assertEq(debtChecks.actualPremium, bobUsdxInfo.premiumDebt, 'bob usdx premium debt after');
+
+    _verifyProtocolDebtAmounts(
+      bobDaiInfo,
+      aliceDaiInfo,
+      bobUsdxInfo,
+      aliceUsdxInfo,
+      'after alice repay'
+    );
+  }
+
+  /// Bob and Alice each supply and borrow varying fuzzed amounts of usdx and dai,
+  /// with different risk premiums. We check interest accrues correctly and values percolate to hub.
+  /// @dev We don't store user risk premium directly, so compare calculated premiumDrawnShares as proxy for expected previous risk premium
+  function test_getUserRiskPremium_fuzz_two_users_two_reserves_borrowed(
+    UserBorrowAction memory bobDaiAction,
+    UserBorrowAction memory bobUsdxAction,
+    UserBorrowAction memory aliceDaiAction,
+    UserBorrowAction memory aliceUsdxAction,
+    uint256 daiLp,
+    uint256 usdxLp,
+    uint40[3] memory timeSkip
+  ) public {
+    bobDaiAction = _boundUserBorrowAction(bobDaiAction);
+    bobUsdxAction = _boundUserBorrowAction(bobUsdxAction);
+    aliceDaiAction = _boundUserBorrowAction(aliceDaiAction);
+    aliceUsdxAction = _boundUserBorrowAction(aliceUsdxAction);
+
+    daiLp = bound(daiLp, 0, MAX_RISK_PREMIUM_BPS);
+    usdxLp = bound(usdxLp, 0, MAX_RISK_PREMIUM_BPS);
+
+    timeSkip[0] = uint40(bound(timeSkip[0], 0, MAX_SKIP_TIME));
+    timeSkip[1] = uint40(bound(timeSkip[1], 0, MAX_SKIP_TIME));
+    timeSkip[2] = uint40(bound(timeSkip[2], 0, MAX_SKIP_TIME));
+
+    // Set liquidity premiums
+    updateLiquidityPremium(spoke1, _daiReserveId(spoke1), daiLp);
+    updateLiquidityPremium(spoke1, _usdxReserveId(spoke1), usdxLp);
+    assertEq(spoke1.getLiquidityPremium(_daiReserveId(spoke1)), daiLp, 'dai lp');
+    assertEq(spoke1.getLiquidityPremium(_usdxReserveId(spoke1)), usdxLp, 'usdx lp');
+
+    UserInfoLocal memory bobDaiInfo;
+    UserInfoLocal memory aliceDaiInfo;
+    UserInfoLocal memory bobUsdxInfo;
+    UserInfoLocal memory aliceUsdxInfo;
+
+    // Set up user info structs
+    bobDaiInfo.supplyAmount = bobDaiAction.supplyAmount;
+    aliceDaiInfo.supplyAmount = aliceDaiAction.supplyAmount;
+    bobUsdxInfo.supplyAmount = bobUsdxAction.supplyAmount;
+    aliceUsdxInfo.supplyAmount = aliceUsdxAction.supplyAmount;
+
+    bobDaiInfo.borrowAmount = bobDaiAction.borrowAmount;
+    aliceDaiInfo.borrowAmount = aliceDaiAction.borrowAmount;
+    bobUsdxInfo.borrowAmount = bobUsdxAction.borrowAmount;
+    aliceUsdxInfo.borrowAmount = aliceUsdxAction.borrowAmount;
+
+    // Users supply
+
+    // Bob supply dai
+    Utils.supplyCollateral(spoke1, _daiReserveId(spoke1), bob, bobDaiInfo.supplyAmount, bob);
+
+    // Bob supply usdx
+    Utils.supplyCollateral(spoke1, _usdxReserveId(spoke1), bob, bobUsdxInfo.supplyAmount, bob);
+
+    // Alice supply dai
+    Utils.supplyCollateral(spoke1, _daiReserveId(spoke1), alice, aliceDaiInfo.supplyAmount, alice);
+
+    // Alice supply usdx
+    Utils.supplyCollateral(
+      spoke1,
+      _usdxReserveId(spoke1),
+      alice,
+      aliceUsdxInfo.supplyAmount,
+      alice
+    );
+
+    // Users borrow
+
+    // Bob draw dai (if any)
+    if (bobDaiInfo.borrowAmount > 0) {
+      Utils.borrow(spoke1, _daiReserveId(spoke1), bob, bobDaiInfo.borrowAmount, bob);
+    }
+
+    // Bob draw usdx (if any)
+    if (bobUsdxInfo.borrowAmount > 0) {
+      Utils.borrow(spoke1, _usdxReserveId(spoke1), bob, bobUsdxInfo.borrowAmount, bob);
+    }
+
+    // Alice draw dai (if any)
+    if (aliceDaiInfo.borrowAmount > 0) {
+      Utils.borrow(spoke1, _daiReserveId(spoke1), alice, aliceDaiInfo.borrowAmount, alice);
+    }
+
+    // Alice draw usdx (if any)
+    if (aliceUsdxInfo.borrowAmount > 0) {
+      Utils.borrow(spoke1, _usdxReserveId(spoke1), alice, aliceUsdxInfo.borrowAmount, alice);
+    }
+
+    // Calculate expected risk premiums
+    uint256 bobExpectedRiskPremium = _calculateExpectedUserRP(bob, spoke1);
+    uint256 aliceExpectedRiskPremium = _calculateExpectedUserRP(alice, spoke1);
+
+    // Verify initial risk premiums
+    assertEq(spoke1.getUserRiskPremium(bob), bobExpectedRiskPremium, 'bob initial risk premium');
+    assertEq(
+      spoke1.getUserRiskPremium(alice),
+      aliceExpectedRiskPremium,
+      'alice initial risk premium'
+    );
+
+    DebtChecks memory debtChecks;
+
+    // Check initial debts
+
+    // Bob's initial dai debt
+    (debtChecks.actualBaseDebt, debtChecks.actualPremium) = spoke1.getUserDebt(
+      _daiReserveId(spoke1),
+      bob
+    );
+
+    uint256 startTime = vm.getBlockTimestamp();
+
+    assertEq(bobDaiInfo.borrowAmount, debtChecks.actualBaseDebt, 'Bob dai debt before');
+    assertEq(debtChecks.actualPremium, 0, 'Bob dai premium before');
+
+    // Bob's initial usdx debt
+    (debtChecks.actualBaseDebt, debtChecks.actualPremium) = spoke1.getUserDebt(
+      _usdxReserveId(spoke1),
+      bob
+    );
+    assertEq(bobUsdxInfo.borrowAmount, debtChecks.actualBaseDebt, 'Bob usdx debt before');
+    assertEq(debtChecks.actualPremium, 0, 'Bob usdx premium before');
+
+    // Alice's initial dai debt
+    (debtChecks.actualBaseDebt, debtChecks.actualPremium) = spoke1.getUserDebt(
+      _daiReserveId(spoke1),
+      alice
+    );
+    assertEq(aliceDaiInfo.borrowAmount, debtChecks.actualBaseDebt, 'Alice dai debt before');
+    assertEq(debtChecks.actualPremium, 0, 'Alice dai premium before');
+
+    // Alice's initial usdx debt
+    (debtChecks.actualBaseDebt, debtChecks.actualPremium) = spoke1.getUserDebt(
+      _usdxReserveId(spoke1),
+      alice
+    );
+    assertEq(aliceUsdxInfo.borrowAmount, debtChecks.actualBaseDebt, 'Alice usdx debt before');
+    assertEq(debtChecks.actualPremium, 0, 'Alice usdx premium before');
+
+    // Skip time
+    skip(timeSkip[0]);
+
+    // Check that risk premiums remain consistent after time skip by checking premium drawn shares
+    DataTypes.UserPosition memory bobPosition = spoke1.getUserPosition(_daiReserveId(spoke1), bob);
+    uint256 expectedPremiumDrawnShares = bobPosition.baseDrawnShares.percentMul(
+      bobExpectedRiskPremium
+    );
+    assertEq(
+      expectedPremiumDrawnShares,
+      bobPosition.premiumDrawnShares,
+      'bob dai premium drawn shares after time skip'
+    );
+    bobDaiInfo.premiumDrawnShares = expectedPremiumDrawnShares;
+
+    bobPosition = spoke1.getUserPosition(_usdxReserveId(spoke1), bob);
+    expectedPremiumDrawnShares = bobPosition.baseDrawnShares.percentMul(bobExpectedRiskPremium);
+    assertEq(
+      expectedPremiumDrawnShares,
+      bobPosition.premiumDrawnShares,
+      'bob usdx premium drawn shares after time skip'
+    );
+    bobUsdxInfo.premiumDrawnShares = expectedPremiumDrawnShares;
+
+    DataTypes.UserPosition memory alicePosition = spoke1.getUserPosition(
+      _daiReserveId(spoke1),
+      alice
+    );
+    expectedPremiumDrawnShares = alicePosition.baseDrawnShares.percentMul(aliceExpectedRiskPremium);
+    assertEq(
+      expectedPremiumDrawnShares,
+      alicePosition.premiumDrawnShares,
+      'alice dai premium drawn shares after time skip'
+    );
+    aliceDaiInfo.premiumDrawnShares = expectedPremiumDrawnShares;
+
+    alicePosition = spoke1.getUserPosition(_usdxReserveId(spoke1), alice);
+    expectedPremiumDrawnShares = alicePosition.baseDrawnShares.percentMul(aliceExpectedRiskPremium);
+    assertEq(
+      expectedPremiumDrawnShares,
+      alicePosition.premiumDrawnShares,
+      'alice usdx premium drawn shares after time skip'
+    );
+    aliceUsdxInfo.premiumDrawnShares = expectedPremiumDrawnShares;
+
+    // Check base debt values
+
+    // Bob's dai debt after 1 year
+    if (bobDaiInfo.borrowAmount > 0) {
+      bobDaiInfo.baseDebt = MathUtils
+        .calculateLinearInterest(hub.getBaseInterestRate(daiAssetId), uint40(startTime))
+        .rayMul(bobDaiInfo.borrowAmount);
+
+      (debtChecks.actualBaseDebt, ) = spoke1.getUserDebt(_daiReserveId(spoke1), bob);
+      assertApproxEqAbs(
+        bobDaiInfo.baseDebt,
+        debtChecks.actualBaseDebt,
+        1,
+        'bob dai base debt after'
+      );
+    }
+
+    // Bob's usdx debt after 1 year
+    if (bobUsdxInfo.borrowAmount > 0) {
+      bobUsdxInfo.baseDebt = MathUtils
+        .calculateLinearInterest(hub.getBaseInterestRate(usdxAssetId), uint40(startTime))
+        .rayMul(bobUsdxInfo.borrowAmount);
+
+      (debtChecks.actualBaseDebt, ) = spoke1.getUserDebt(_usdxReserveId(spoke1), bob);
+      assertApproxEqAbs(
+        bobUsdxInfo.baseDebt,
+        debtChecks.actualBaseDebt,
+        1,
+        'bob usdx base debt after'
+      );
+    }
+
+    // Alice's dai debt after 1 year
+    if (aliceDaiInfo.borrowAmount > 0) {
+      aliceDaiInfo.baseDebt = MathUtils
+        .calculateLinearInterest(hub.getBaseInterestRate(daiAssetId), uint40(startTime))
+        .rayMul(aliceDaiInfo.borrowAmount);
+
+      (debtChecks.actualBaseDebt, ) = spoke1.getUserDebt(_daiReserveId(spoke1), alice);
+      assertApproxEqAbs(
+        aliceDaiInfo.baseDebt,
+        debtChecks.actualBaseDebt,
+        1,
+        'alice dai base debt after'
+      );
+    }
+
+    // Alice's usdx debt after 1 year
+    if (aliceUsdxInfo.borrowAmount > 0) {
+      aliceUsdxInfo.baseDebt = MathUtils
+        .calculateLinearInterest(hub.getBaseInterestRate(usdxAssetId), uint40(startTime))
+        .rayMul(aliceUsdxInfo.borrowAmount);
+
+      (debtChecks.actualBaseDebt, debtChecks.actualPremium) = spoke1.getUserDebt(
+        _usdxReserveId(spoke1),
+        alice
+      );
+      assertApproxEqAbs(
+        aliceUsdxInfo.baseDebt,
+        debtChecks.actualBaseDebt,
+        1,
+        'alice usdx base debt after'
+      );
+    }
+
+    _verifyProtocolDebtShares(
+      bobDaiInfo,
+      aliceDaiInfo,
+      bobUsdxInfo,
+      aliceUsdxInfo,
+      'after accrual'
+    );
+
+    // Skip time before Bob repay
+    skip(timeSkip[1]);
+
+    // Bob repay half dai debt
+    if (bobDaiInfo.borrowAmount > 2) {
+      uint256 repayAmount = (bobDaiInfo.baseDebt + bobDaiInfo.premiumDebt) / 2;
+      Utils.repay(spoke1, _daiReserveId(spoke1), bob, repayAmount);
+
+      // Bob's risk premium should change
+      bobExpectedRiskPremium = _calculateExpectedUserRP(bob, spoke1);
+
+      // Verify his new risk premium
+      assertEq(
+        spoke1.getUserRiskPremium(bob),
+        bobExpectedRiskPremium,
+        'bob risk premium after repay'
+      );
+
+      // Alice risk premium unchanged, check via premium drawn shares
+      assertEq(
+        aliceDaiInfo.premiumDrawnShares,
+        spoke1.getUserPosition(_daiReserveId(spoke1), alice).premiumDrawnShares,
+        'alice premium drawn shares after bob repay'
+      );
+      assertEq(
+        aliceUsdxInfo.premiumDrawnShares,
+        spoke1.getUserPosition(_usdxReserveId(spoke1), alice).premiumDrawnShares,
+        'alice usdx premium drawn shares after bob repay'
+      );
+    }
+
+    // Alice borrows more usdx and we check risk premiums
+    if (
+      aliceUsdxInfo.borrowAmount > 2 &&
+      spoke1.getUserSuppliedAmount(_usdxReserveId(spoke1), alice) >
+      spoke1.getUserTotalDebt(_usdxReserveId(spoke1), alice) * 3 &&
+      spoke1.getHealthFactor(alice) > WadRayMath.WAD
+    ) {
+      // Store Bob old premium drawn shares before Alice borrow
+      bobPosition = spoke1.getUserPosition(_usdxReserveId(spoke1), bob);
+      bobUsdxInfo.premiumDrawnShares = bobPosition.premiumDrawnShares;
+      bobPosition = spoke1.getUserPosition(_daiReserveId(spoke1), bob);
+      bobDaiInfo.premiumDrawnShares = bobPosition.premiumDrawnShares;
+
+      // Alice increases her USDX borrow by 50%
+      uint256 additionalBorrow = aliceUsdxInfo.borrowAmount / 2;
+      Utils.borrow(spoke1, _usdxReserveId(spoke1), alice, additionalBorrow, alice);
+
+      // Alice's risk premium should change
+      aliceExpectedRiskPremium = _calculateExpectedUserRP(alice, spoke1);
+
+      // Verify her new risk premium
+      assertEq(
+        spoke1.getUserRiskPremium(alice),
+        aliceExpectedRiskPremium,
+        'alice risk premium after borrow'
+      );
+
+      // Verify Bob's risk premium remains the same by checking premium drawn shares
+      bobPosition = spoke1.getUserPosition(_usdxReserveId(spoke1), bob);
+      assertEq(
+        bobUsdxInfo.premiumDrawnShares,
+        bobPosition.premiumDrawnShares,
+        'bob dai premium drawn shares after alice borrow'
+      );
+      bobPosition = spoke1.getUserPosition(_daiReserveId(spoke1), bob);
+      assertEq(
+        bobDaiInfo.premiumDrawnShares,
+        bobPosition.premiumDrawnShares,
+        'bob usdx premium drawn shares after alice borrow'
+      );
+    }
+
+    // Store user premiumDrawnShares before time skip (unchanged)
+    bobDaiInfo.premiumDrawnShares = spoke1
+      .getUserPosition(_daiReserveId(spoke1), bob)
+      .premiumDrawnShares;
+    bobUsdxInfo.premiumDrawnShares = spoke1
+      .getUserPosition(_usdxReserveId(spoke1), bob)
+      .premiumDrawnShares;
+    aliceDaiInfo.premiumDrawnShares = spoke1
+      .getUserPosition(_daiReserveId(spoke1), alice)
+      .premiumDrawnShares;
+    aliceUsdxInfo.premiumDrawnShares = spoke1
+      .getUserPosition(_usdxReserveId(spoke1), alice)
+      .premiumDrawnShares;
+
+    // Skip time to accrue interest
+    skip(timeSkip[2]);
+
+    // Get base debts after time skip (changed)
+    (bobDaiInfo.baseDebt, ) = spoke1.getUserDebt(_daiReserveId(spoke1), bob);
+    (bobUsdxInfo.baseDebt, ) = spoke1.getUserDebt(_usdxReserveId(spoke1), bob);
+    (aliceDaiInfo.baseDebt, ) = spoke1.getUserDebt(_daiReserveId(spoke1), alice);
+    (aliceUsdxInfo.baseDebt, ) = spoke1.getUserDebt(_usdxReserveId(spoke1), alice);
+
+    // Verify final reserve states and hub propagation for both assets
+    _verifyProtocolDebtShares(bobDaiInfo, aliceDaiInfo, bobUsdxInfo, aliceUsdxInfo, 'final');
+  }
+
+  function _boundUserBorrowAction(
+    UserBorrowAction memory action
+  ) internal pure returns (UserBorrowAction memory) {
+    action.supplyAmount = bound(action.supplyAmount, 2, MAX_SUPPLY_AMOUNT / 2);
+    action.borrowAmount = bound(action.borrowAmount, 1, action.supplyAmount / 2);
+    return action;
+  }
+
+  function _verifyProtocolDebtAmounts(
+    UserInfoLocal memory bobDaiInfo,
+    UserInfoLocal memory aliceDaiInfo,
+    UserInfoLocal memory bobUsdxInfo,
+    UserInfoLocal memory aliceUsdxInfo,
+    string memory label
+  ) internal view {
+    DebtChecks memory debtChecks;
+    // Check reserve debt for dai
+    (debtChecks.reserveDebt, debtChecks.reservePremium) = spoke1.getReserveDebt(
+      _daiReserveId(spoke1)
+    );
+
+    // Reserve debt should be the sum of both user debts
+    assertApproxEqAbs(
+      debtChecks.reserveDebt,
+      bobDaiInfo.baseDebt + aliceDaiInfo.baseDebt,
+      1,
+      string.concat('reserve base debt ', label)
+    );
+
+    // Reserve premium debt should be the sum of both users' premium debt
+    assertApproxEqAbs(
+      debtChecks.reservePremium,
+      bobDaiInfo.premiumDebt + aliceDaiInfo.premiumDebt,
+      1,
+      string.concat('reserve premium debt ', label)
+    );
+
+    // Check reserve debt for usdx
+    (debtChecks.reserveDebt, debtChecks.reservePremium) = spoke1.getReserveDebt(
+      _usdxReserveId(spoke1)
+    );
+
+    // Reserve debt should be the sum of both user debts
+    assertApproxEqAbs(
+      debtChecks.reserveDebt,
+      bobUsdxInfo.baseDebt + aliceUsdxInfo.baseDebt,
+      1,
+      string.concat('reserve base debt ', label)
+    );
+
+    // Reserve premium debt should be the sum of both users' premium debt
+    assertApproxEqAbs(
+      debtChecks.reservePremium,
+      bobUsdxInfo.premiumDebt + aliceUsdxInfo.premiumDebt,
+      1,
+      string.concat('reserve premium debt ', label)
+    );
+
+    // Check spoke debt on hub for dai
+    (debtChecks.spokeDebt, debtChecks.spokePremium) = hub.getSpokeDebt(daiAssetId, address(spoke1));
+
+    // Spoke debt should be the sum of both user debts
+    assertApproxEqAbs(
+      debtChecks.spokeDebt,
+      bobDaiInfo.baseDebt + aliceDaiInfo.baseDebt,
+      1,
+      string.concat('hub spoke base debt ', label)
+    );
+
+    // Spoke premium debt should be the sum of both users' premium debt
+    assertApproxEqAbs(
+      debtChecks.spokePremium,
+      bobDaiInfo.premiumDebt + aliceDaiInfo.premiumDebt,
+      1,
+      string.concat('hub spoke premium debt ', label)
+    );
+
+    // Check spoke debt on hub for usdx
+    (debtChecks.spokeDebt, debtChecks.spokePremium) = hub.getSpokeDebt(
+      usdxAssetId,
+      address(spoke1)
+    );
+
+    // Spoke debt should be the sum of both user debts
+    assertApproxEqAbs(
+      debtChecks.spokeDebt,
+      bobUsdxInfo.baseDebt + aliceUsdxInfo.baseDebt,
+      1,
+      string.concat('hub spoke base debt ', label)
+    );
+
+    // Spoke premium debt should be the sum of both users' premium debt
+    assertApproxEqAbs(
+      debtChecks.spokePremium,
+      bobUsdxInfo.premiumDebt + aliceUsdxInfo.premiumDebt,
+      1,
+      string.concat('hub spoke premium debt ', label)
+    );
+
+    // Check asset debt on hub for dai
+    (debtChecks.assetDebt, debtChecks.assetPremium) = hub.getAssetDebt(daiAssetId);
+
+    // Asset debt should be the sum of both user debts
+    assertApproxEqAbs(
+      debtChecks.assetDebt,
+      bobDaiInfo.baseDebt + aliceDaiInfo.baseDebt,
+      1,
+      string.concat('hub asset base debt ', label)
+    );
+
+    // Asset premium debt should be the sum of both users' premium debt
+    assertApproxEqAbs(
+      debtChecks.assetPremium,
+      bobDaiInfo.premiumDebt + aliceDaiInfo.premiumDebt,
+      1,
+      string.concat('hub asset premium debt ', label)
+    );
+
+    // Check asset debt on hub for usdx
+    (debtChecks.assetDebt, debtChecks.assetPremium) = hub.getAssetDebt(usdxAssetId);
+
+    // Asset debt should be the sum of both user debts
+    assertApproxEqAbs(
+      debtChecks.assetDebt,
+      bobUsdxInfo.baseDebt + aliceUsdxInfo.baseDebt,
+      1,
+      string.concat('hub asset base debt ', label)
+    );
+
+    // Asset premium debt should be the sum of both users' premium debt
+    assertApproxEqAbs(
+      debtChecks.assetPremium,
+      bobUsdxInfo.premiumDebt + aliceUsdxInfo.premiumDebt,
+      1,
+      string.concat('hub asset premium debt ', label)
+    );
+  }
+
+  function _verifyProtocolDebtShares(
+    UserInfoLocal memory bobDaiInfo,
+    UserInfoLocal memory aliceDaiInfo,
+    UserInfoLocal memory bobUsdxInfo,
+    UserInfoLocal memory aliceUsdxInfo,
+    string memory label
+  ) internal view {
+    // Check base drawn shares and premium drawn shares for dai
+    DataTypes.Reserve memory reserve = spoke1.getReserve(_daiReserveId(spoke1));
+
+    // Reserve base drawn shares should be the sum of both users' base drawn shares
+    assertApproxEqAbs(
+      reserve.baseDrawnShares,
+      hub.convertToDrawnShares(daiAssetId, bobDaiInfo.baseDebt + aliceDaiInfo.baseDebt),
+      1,
+      string.concat('reserve dai base drawn shares ', label)
+    );
+
+    // Reserve premium drawn shares should be the sum of both users' premium drawn shares
+    assertEq(
+      reserve.premiumDrawnShares,
+      bobDaiInfo.premiumDrawnShares + aliceDaiInfo.premiumDrawnShares,
+      string.concat('reserve dai premium drawn shares ', label)
+    );
+
+    // Check base drawn shares and premium drawn shares for usdx
+    reserve = spoke1.getReserve(_usdxReserveId(spoke1));
+
+    // Reserve base drawn shares should be the sum of both users' base drawn shares
+    assertApproxEqAbs(
+      reserve.baseDrawnShares,
+      hub.convertToDrawnShares(usdxAssetId, bobUsdxInfo.baseDebt + aliceUsdxInfo.baseDebt),
+      1,
+      string.concat('reserve usdx base drawn shares ', label)
+    );
+
+    // Reserve premium drawn shares should be the sum of both users' premium drawn shares
+    assertEq(
+      reserve.premiumDrawnShares,
+      bobUsdxInfo.premiumDrawnShares + aliceUsdxInfo.premiumDrawnShares,
+      string.concat('reserve usdx premium drawn shares ', label)
+    );
+
+    // Verify spoke debts on hub for dai
+    DataTypes.SpokeData memory spoke = hub.getSpoke(daiAssetId, address(spoke1));
+    assertApproxEqAbs(
+      spoke.baseDrawnShares,
+      hub.convertToDrawnShares(daiAssetId, bobDaiInfo.baseDebt + aliceDaiInfo.baseDebt),
+      1,
+      string.concat('hub spoke dai base debt ', label)
+    );
+    assertEq(
+      spoke.premiumDrawnShares,
+      bobDaiInfo.premiumDrawnShares + aliceDaiInfo.premiumDrawnShares,
+      string.concat('hub spoke dai premium debt ', label)
+    );
+
+    // Verify spoke debts on hub for usdx
+    spoke = hub.getSpoke(usdxAssetId, address(spoke1));
+    assertApproxEqAbs(
+      spoke.baseDrawnShares,
+      hub.convertToDrawnShares(usdxAssetId, bobUsdxInfo.baseDebt + aliceUsdxInfo.baseDebt),
+      1,
+      string.concat('hub spoke usdx base debt ', label)
+    );
+    assertEq(
+      spoke.premiumDrawnShares,
+      bobUsdxInfo.premiumDrawnShares + aliceUsdxInfo.premiumDrawnShares,
+      string.concat('hub spoke usdx premium debt ', label)
+    );
+
+    // Verify asset debts on hub
+    DataTypes.Asset memory asset = hub.getAsset(daiAssetId);
+    assertApproxEqAbs(
+      asset.baseDrawnShares,
+      hub.convertToDrawnShares(daiAssetId, bobDaiInfo.baseDebt + aliceDaiInfo.baseDebt),
+      1,
+      string.concat('hub asset dai base debt ', label)
+    );
+    assertEq(
+      asset.premiumDrawnShares,
+      bobDaiInfo.premiumDrawnShares + aliceDaiInfo.premiumDrawnShares,
+      string.concat('hub asset dai premium debt ', label)
+    );
+
+    asset = hub.getAsset(usdxAssetId);
+    assertApproxEqAbs(
+      asset.baseDrawnShares,
+      hub.convertToDrawnShares(usdxAssetId, bobUsdxInfo.baseDebt + aliceUsdxInfo.baseDebt),
+      1,
+      string.concat('hub asset usdx base debt ', label)
+    );
+    assertEq(
+      asset.premiumDrawnShares,
+      bobUsdxInfo.premiumDrawnShares + aliceUsdxInfo.premiumDrawnShares,
+      string.concat('hub asset usdx premium debt ', label)
+    );
   }
 }

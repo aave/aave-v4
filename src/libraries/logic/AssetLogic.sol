@@ -127,7 +127,7 @@ library AssetLogic {
   function previewIndex(DataTypes.Asset storage asset) internal view returns (uint256) {
     uint256 baseDebtIndex = asset.baseDebtIndex;
     uint256 lastUpdateTimestamp = asset.lastUpdateTimestamp;
-    if (lastUpdateTimestamp == block.timestamp) {
+    if (lastUpdateTimestamp == block.timestamp || asset.baseDrawnShares == 0) {
       return baseDebtIndex;
     }
     return

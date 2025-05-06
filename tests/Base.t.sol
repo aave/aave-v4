@@ -214,7 +214,7 @@ abstract contract Base is Test {
 
   function spokeMintAndApprove() internal {
     uint256 spokeMintAmount_USDX = 100e6 * 10 ** tokenList.usdx.decimals();
-    uint256 spokeMintAmount_DAI = 100e6 * 10 ** tokenList.dai.decimals();
+    uint256 spokeMintAmount_DAI = 1e60;
     uint256 spokeMintAmount_WBTC = 100e6 * 10 ** tokenList.wbtc.decimals();
     uint256 spokeMintAmount_WETH = 100e6 * 10 ** tokenList.weth.decimals();
     uint256 spokeMintAmount_USDY = 100e6 * 10 ** tokenList.usdy.decimals();
@@ -876,10 +876,10 @@ abstract contract Base is Test {
     uint256 oldRate,
     uint256 newRate,
     bool allWithdrawn,
-    string memory when
+    string memory label
   ) internal pure {
     if (!allWithdrawn) {
-      assertGe(newRate, oldRate, string.concat('supply rate monotonically increasing ', when));
+      assertGe(newRate, oldRate, string.concat('supply rate monotonically increasing ', label));
     }
   }
 
@@ -911,48 +911,48 @@ abstract contract Base is Test {
     ISpoke spoke,
     address user,
     uint256 expectedSuppliedAmount,
-    string memory when
+    string memory label
   ) internal view {
     uint256 expectedSuppliedShares = hub.convertToSuppliedShares(assetId, expectedSuppliedAmount);
     assertEq(
       hub.getAssetSuppliedShares(assetId),
       expectedSuppliedShares,
-      string(abi.encodePacked('asset supplied shares ', when))
+      string(abi.encodePacked('asset supplied shares ', label))
     );
     assertEq(
       hub.getAssetSuppliedAmount(assetId),
       expectedSuppliedAmount,
-      string(abi.encodePacked('asset supplied amount ', when))
+      string(abi.encodePacked('asset supplied amount ', label))
     );
     assertEq(
       hub.getSpokeSuppliedShares(assetId, address(spoke)),
       expectedSuppliedShares,
-      string(abi.encodePacked('spoke supplied shares ', when))
+      string(abi.encodePacked('spoke supplied shares ', label))
     );
     assertEq(
       hub.getSpokeSuppliedAmount(assetId, address(spoke)),
       expectedSuppliedAmount,
-      string(abi.encodePacked('spoke supplied amount ', when))
+      string(abi.encodePacked('spoke supplied amount ', label))
     );
     assertEq(
       spoke.getReserveSuppliedShares(reserveId),
       expectedSuppliedShares,
-      string(abi.encodePacked('reserve supplied shares ', when))
+      string(abi.encodePacked('reserve supplied shares ', label))
     );
     assertEq(
       spoke.getReserveSuppliedAmount(reserveId),
       expectedSuppliedAmount,
-      string(abi.encodePacked('reserve supplied amount ', when))
+      string(abi.encodePacked('reserve supplied amount ', label))
     );
     assertEq(
       spoke.getUserSuppliedShares(reserveId, user),
       expectedSuppliedShares,
-      string(abi.encodePacked('user supplied shares ', when))
+      string(abi.encodePacked('user supplied shares ', label))
     );
     assertEq(
       spoke.getUserSuppliedAmount(reserveId, user),
       expectedSuppliedAmount,
-      string(abi.encodePacked('user supplied amount ', when))
+      string(abi.encodePacked('user supplied amount ', label))
     );
   }
 
@@ -988,6 +988,101 @@ abstract contract Base is Test {
       );
   }
 
+  // /**
+  //  * @notice Returns the required debt amount in base currency to ensure user position is below a certain health factor.
+  //  */
+  // function _getRequiredDebtForLtHf(
+  //   ISpoke spoke,
+  //   address user,
+  //   uint256 desiredHf
+  // ) internal view returns (uint256 requiredDebt) {
+  //   (
+  //     ,
+  //     uint256 currentAvgCollateralFactor,
+  //     ,
+  //     uint256 totalCollateralBase,
+  //     uint256 totalDebtBase
+  //   ) = spoke.getUserAccountData(user);
+
+  //   requiredDebt =
+  //     totalCollateralBase.percentMul(currentAvgCollateralFactor.dewadify() + 1).wadDivUp(
+  //       desiredHf
+  //     ) -
+  //     totalDebtBase;
+  //   // add 1 to num to round debt up (ie making sure resultant debt creates HF that is less than desired)
+  // }
+
+  // function _borrowToBeBelowHf(
+  //   ISpoke spoke,
+  //   address user,
+  //   uint256 reserveId,
+  //   uint256 desiredHf
+  // ) internal returns (uint256, uint256) {
+  //   uint256 requiredDebtInBase = _getRequiredDebtForLtHf(spoke, user, desiredHf);
+  //   uint256 assetId = spoke.getReserve(reserveId).assetId;
+  //   uint256 requiredDebtAmount = _convertBaseCurrencyToAmount(assetId, requiredDebtInBase) + 1;
+
+  //   vm.assume(requiredDebtAmount < MAX_SUPPLY_AMOUNT);
+
+  //   // mock price to 0 to circumvent borrow validation
+  //   vm.mockCall(
+  //     address(oracle),
+  //     abi.encodeWithSelector(IPriceOracle.getAssetPrice.selector, assetId),
+  //     abi.encode(0)
+  //   );
+  //   vm.prank(user);
+  //   spoke.borrow(reserveId, requiredDebtAmount, user);
+  //   vm.clearMockedCalls();
+
+  //   uint256 finalHf = spoke.getHealthFactor(user);
+  //   assertLt(finalHf, desiredHf, 'should borrow enough for HF to be below desiredHf');
+  //   return (finalHf, requiredDebtAmount);
+  // }
+
+  // function _convertBaseCurrencyToAmount(
+  //   uint256 baseCurrencyAmount,
+  //   uint256 assetPrice,
+  //   uint256 assetUnit
+  // ) internal pure returns (uint256) {
+  //   return ((baseCurrencyAmount * assetUnit) / assetPrice).dewadify();
+  // }
+
+  // function _approxRelFromBps(uint256 bps) internal pure returns (uint256) {
+  //   return (bps * 1e18) / 100_00;
+  // }
+
+  // function _convertAmountToBaseCurrency(
+  //   uint256 assetId,
+  //   uint256 amount
+  // ) internal view returns (uint256) {
+  //   return
+  //     _convertAmountToBaseCurrency(
+  //       amount,
+  //       oracle.getAssetPrice(assetId),
+  //       10 ** hub.getAsset(assetId).config.decimals
+  //     );
+  // }
+
+  // function _convertAmountToBaseCurrency(
+  //   uint256 amount,
+  //   uint256 assetPrice,
+  //   uint256 assetUnit
+  // ) internal pure returns (uint256) {
+  //   return (amount * assetPrice).wadify() / assetUnit;
+  // }
+
+  // function _convertBaseCurrencyToAmount(
+  //   uint256 assetId,
+  //   uint256 baseCurrencyAmount
+  // ) internal view returns (uint256) {
+  //   return
+  //     _convertBaseCurrencyToAmount(
+  //       baseCurrencyAmount,
+  //       oracle.getAssetPrice(assetId),
+  //       10 ** hub.getAsset(assetId).config.decimals
+  //     );
+  // }
+
   /**
    * @notice Returns the required debt amount in base currency to ensure user position is below a certain health factor.
    */
@@ -1012,6 +1107,7 @@ abstract contract Base is Test {
     // add 1 to num to round debt up (ie making sure resultant debt creates HF that is less than desired)
   }
 
+  /// @dev Borrow to be below a certain health factor, without needing to check HF
   function _borrowToBeBelowHf(
     ISpoke spoke,
     address user,
@@ -1039,6 +1135,7 @@ abstract contract Base is Test {
     return (finalHf, requiredDebtAmount);
   }
 
+  /// @dev Convert base currency to asset amount
   function _convertBaseCurrencyToAmount(
     uint256 baseCurrencyAmount,
     uint256 assetPrice,
@@ -1067,6 +1164,7 @@ abstract contract Base is Test {
     return a > b ? (a - b) : b - a;
   }
 
+  /// @dev Helper function to borrow without health factor check
   function _borrowWithoutHfCheck(
     ISpoke spoke,
     address user,
@@ -1085,11 +1183,38 @@ abstract contract Base is Test {
     vm.clearMockedCalls();
   }
 
+  /// @dev Get the liquidation bonus for a given reserve at a user HF
   function _getVariableLiquidationBonus(
     ISpoke spoke,
     uint256 reserveId,
     uint256 healthFactor
   ) internal view returns (uint256) {
     return spoke.getVariableLiquidationBonus(reserveId, healthFactor);
+  }
+
+  /// @dev Calculate expected debt index based on input params
+  function calculateExpectedDebtIndex(
+    uint256 initialDebtIndex,
+    uint256 borrowRate,
+    uint40 startTime
+  ) internal view returns (uint256) {
+    return initialDebtIndex.rayMulUp(MathUtils.calculateLinearInterest(borrowRate, startTime));
+  }
+
+  /// @dev Calculate expected debt index and base debt based on input params
+  function calculateExpectedDebt(
+    uint256 initialDrawnShares,
+    uint256 initialDebtIndex,
+    uint256 borrowRate,
+    uint40 startTime
+  ) internal view returns (uint256 newDebtIndex, uint256 newBaseDebt) {
+    newDebtIndex = calculateExpectedDebtIndex(initialDebtIndex, borrowRate, startTime);
+    newBaseDebt = initialDrawnShares.rayMulUp(newDebtIndex);
+  }
+
+  /// @dev Helper function to get asset base debt
+  function getAssetBaseDebt(uint256 assetId) internal view returns (uint256) {
+    (uint256 baseDebt, ) = hub.getAssetDebt(assetId);
+    return baseDebt;
   }
 }

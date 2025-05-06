@@ -8,8 +8,6 @@ contract LiquidityHubInterestRateTest is Base {
   using WadRayMath for uint256;
   using PercentageMath for uint256;
 
-  uint256 public constant MAX_BPS = 999_99;
-
   function setUp() public override {
     super.setUp();
     initEnvironment();
