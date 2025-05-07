@@ -20,14 +20,30 @@ interface ILiquidityHub {
     uint256 supplyCap
   );
 
-  event Add(uint256 indexed assetId, address indexed spoke, uint256 suppliedAmount);
-  event Remove(uint256 indexed assetId, address indexed spoke, uint256 withdrawnAmount);
-  event Draw(uint256 indexed assetId, address indexed spoke, uint256 drawnAmount);
+  event DrawnIndexUpdate(uint256 indexed assetId, uint256 drawnIndex);
+  event Add(
+    uint256 indexed assetId,
+    address indexed spoke,
+    uint256 suppliedShares,
+    uint256 suppliedAmount
+  );
+  event Remove(
+    uint256 indexed assetId,
+    address indexed spoke,
+    uint256 withdrawnShares,
+    uint256 withdrawnAmount
+  );
+  event Draw(
+    uint256 indexed assetId,
+    address indexed spoke,
+    uint256 drawnShares,
+    uint256 drawnAmount
+  );
   event Restore(
     uint256 indexed assetId,
     address indexed spoke,
-    uint256 baseAmount,
-    uint256 premiumAmount
+    uint256 baseRestoredShares,
+    uint256 totalRestoredAmount
   );
   event RefreshPremiumDebt(
     uint256 indexed assetId,
