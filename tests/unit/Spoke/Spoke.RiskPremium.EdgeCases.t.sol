@@ -83,6 +83,12 @@ contract SpokeRiskPremiumEdgeCasesTest is SpokeBase {
       riskPremium,
       'Risk premium should decrease or remain same after repaying some debt'
     );
+
+    assertEq(
+      spoke2.getUserRiskPremium(bob),
+      _calculateExpectedUserRP(bob, spoke2),
+      'Bob user risk premium after repay'
+    );
   }
 
   /// Supply two collaterals, borrow, then remove lower LP collateral and risk premium should increase
@@ -140,6 +146,12 @@ contract SpokeRiskPremiumEdgeCasesTest is SpokeBase {
       spoke2.getUserRiskPremium(bob),
       riskPremium,
       'Risk premium should increase after disabling lower LP reserve as collateral'
+    );
+
+    assertEq(
+      spoke2.getUserRiskPremium(bob),
+      _calculateExpectedUserRP(bob, spoke2),
+      'Bob user risk premium after disabling collateral'
     );
   }
 
@@ -213,6 +225,12 @@ contract SpokeRiskPremiumEdgeCasesTest is SpokeBase {
       spoke2.getUserRiskPremium(bob),
       riskPremium,
       'Risk premium should increase or remain same after withdrawing fuzzed amount of lower LP collateral'
+    );
+
+    assertEq(
+      spoke2.getUserRiskPremium(bob),
+      _calculateExpectedUserRP(bob, spoke2),
+      'Bob user risk premium after withdrawing collateral'
     );
   }
 
@@ -300,7 +318,7 @@ contract SpokeRiskPremiumEdgeCasesTest is SpokeBase {
     vm.mockCall(
       address(irStrategy),
       abi.encodeWithSelector(IReserveInterestRateStrategy.calculateInterestRates.selector, params),
-      abi.encode(1000e27)
+      abi.encode(uint256(10_00).bpsToRay())
     );
 
     // Alice borrows dai to accrue interest
@@ -323,6 +341,11 @@ contract SpokeRiskPremiumEdgeCasesTest is SpokeBase {
       spoke2.getLiquidityPremium(_daiReserveId(spoke2)),
       'Bob user rp after borrow'
     );
+    assertEq(
+      spoke2.getUserRiskPremium(bob),
+      _calculateExpectedUserRP(bob, spoke2),
+      'Bob user risk premium after borrow matches expected'
+    );
 
     skip(skipTime);
 
@@ -340,6 +363,11 @@ contract SpokeRiskPremiumEdgeCasesTest is SpokeBase {
       spoke2.getUserRiskPremium(bob),
       spoke2.getLiquidityPremium(_daiReserveId(spoke2)),
       'Bob user risk premium after interest accrual'
+    );
+    assertEq(
+      spoke2.getUserRiskPremium(bob),
+      _calculateExpectedUserRP(bob, spoke2),
+      'Bob user risk premium after interest accrual matches expected'
     );
   }
 
@@ -410,6 +438,11 @@ contract SpokeRiskPremiumEdgeCasesTest is SpokeBase {
       spoke2.getLiquidityPremium(_daiReserveId(spoke2)),
       'Bob user rp after borrow'
     );
+    assertEq(
+      spoke2.getUserRiskPremium(bob),
+      _calculateExpectedUserRP(bob, spoke2),
+      'Bob user risk premium after borrow matches expected'
+    );
 
     skip(skipTime);
 
@@ -426,6 +459,12 @@ contract SpokeRiskPremiumEdgeCasesTest is SpokeBase {
       spoke2.getUserRiskPremium(bob),
       spoke2.getLiquidityPremium(_daiReserveId(spoke2)),
       'Bob user risk premium after collateral accrual'
+    );
+
+    assertEq(
+      spoke2.getUserRiskPremium(bob),
+      _calculateExpectedUserRP(bob, spoke2),
+      'Bob user risk premium after collateral accrual matches expected'
     );
   }
 
@@ -495,6 +534,11 @@ contract SpokeRiskPremiumEdgeCasesTest is SpokeBase {
       spoke2.getLiquidityPremium(_daiReserveId(spoke2)),
       'Bob user rp after borrow'
     );
+    assertEq(
+      spoke2.getUserRiskPremium(bob),
+      _calculateExpectedUserRP(bob, spoke2),
+      'Bob user risk premium after borrow matches expected'
+    );
 
     // Alice borrows dai to accrue interest over the next year
     Utils.supplyCollateral({
@@ -531,6 +575,12 @@ contract SpokeRiskPremiumEdgeCasesTest is SpokeBase {
       spoke2.getUserRiskPremium(bob),
       spoke2.getLiquidityPremium(_daiReserveId(spoke2)),
       'Bob user risk premium after collateral accrual'
+    );
+
+    assertEq(
+      spoke2.getUserRiskPremium(bob),
+      _calculateExpectedUserRP(bob, spoke2),
+      'Bob user risk premium after collateral accrual matches expected'
     );
   }
 
@@ -591,6 +641,11 @@ contract SpokeRiskPremiumEdgeCasesTest is SpokeBase {
       spoke2.getLiquidityPremium(_daiReserveId(spoke2)),
       'Bob user rp after borrow'
     );
+    assertEq(
+      spoke2.getUserRiskPremium(bob),
+      _calculateExpectedUserRP(bob, spoke2),
+      'Bob user risk premium after borrow matches expected'
+    );
 
     // Deploy enough liquidity for additional borrow
     _deployLiquidity(spoke2, _daiReserveId(spoke2), additionalBorrowAmount);
@@ -616,6 +671,12 @@ contract SpokeRiskPremiumEdgeCasesTest is SpokeBase {
       spoke2.getUserRiskPremium(bob),
       spoke2.getLiquidityPremium(_daiReserveId(spoke2)),
       'Bob user risk premium after borrowing more'
+    );
+
+    assertEq(
+      spoke2.getUserRiskPremium(bob),
+      _calculateExpectedUserRP(bob, spoke2),
+      'Bob user risk premium after borrowing more matches expected'
     );
   }
 
@@ -675,6 +736,11 @@ contract SpokeRiskPremiumEdgeCasesTest is SpokeBase {
       spoke1.getLiquidityPremium(_wethReserveId(spoke1)),
       'Bob user rp after borrow matches weth lp'
     );
+    assertEq(
+      spoke1.getUserRiskPremium(bob),
+      _calculateExpectedUserRP(bob, spoke1),
+      'Bob user risk premium after borrow matches expected'
+    );
 
     // Bob supplies lower LP collateral (wbtc)
     Utils.supplyCollateral({
@@ -690,6 +756,11 @@ contract SpokeRiskPremiumEdgeCasesTest is SpokeBase {
       spoke1.getUserRiskPremium(bob),
       spoke1.getLiquidityPremium(_wethReserveId(spoke1)),
       'Bob user risk premium after supplying lower LP collateral'
+    );
+    assertEq(
+      spoke1.getUserRiskPremium(bob),
+      _calculateExpectedUserRP(bob, spoke1),
+      'Bob user risk premium after supplying lower LP collateral matches expected'
     );
   }
 
@@ -745,6 +816,11 @@ contract SpokeRiskPremiumEdgeCasesTest is SpokeBase {
       spoke2.getLiquidityPremium(_daiReserveId(spoke2)),
       'Bob user rp greater than or equal dai lp'
     );
+    assertEq(
+      spoke2.getUserRiskPremium(bob),
+      _calculateExpectedUserRP(bob, spoke2),
+      'Bob user risk premium after borrow matches expected'
+    );
 
     // Now change the price of dai
     oracle.setAssetPrice(daiAssetId, newPrice);
@@ -759,6 +835,11 @@ contract SpokeRiskPremiumEdgeCasesTest is SpokeBase {
       spoke2.getUserRiskPremium(bob),
       spoke2.getLiquidityPremium(_daiReserveId(spoke2)),
       'Bob user risk premium matches dai lp after price change'
+    );
+    assertEq(
+      spoke2.getUserRiskPremium(bob),
+      _calculateExpectedUserRP(bob, spoke2),
+      'Bob user risk premium after price change matches expected'
     );
   }
 }
