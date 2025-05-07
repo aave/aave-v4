@@ -759,6 +759,7 @@ abstract contract Base is Test {
   }
 
   /// @dev Helper function to calculate the equivalent asset amount for a given asset
+  /// @dev If 1 wei of output asset is greater than the value of input, function will return 1
   function _calcEquivalentAssetAmount(
     uint256 inputAssetId,
     uint256 inputAssetAmount,
@@ -766,6 +767,11 @@ abstract contract Base is Test {
   ) internal view returns (uint256) {
     uint256 valueOfInputAsset = _getValueInBaseCurrency(inputAssetId, inputAssetAmount);
     uint256 valueOfWeiOutput = _getValueInBaseCurrency(outputAssetId, 1);
+    assertNotEq(valueOfInputAsset, 0, 'input asset value is 0');
+    assertNotEq(valueOfWeiOutput, 0, 'output asset wei value is 0');
+    if (valueOfWeiOutput > valueOfInputAsset) {
+      return 1;
+    }
     return valueOfInputAsset / valueOfWeiOutput;
   }
 
