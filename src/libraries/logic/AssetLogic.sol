@@ -126,8 +126,7 @@ library AssetLogic {
 
   // @dev Utilizes existing `asset.baseBorrowRate`
   function accrue(DataTypes.Asset storage asset) internal {
-    uint256 baseDebtIndex;
-    asset.baseDebtIndex = baseDebtIndex = asset.previewIndex();
+    uint256 baseDebtIndex = asset.baseDebtIndex = asset.previewIndex();
     asset.lastUpdateTimestamp = block.timestamp;
     emit ILiquidityHub.DrawnIndexUpdate(asset.id, baseDebtIndex);
   }
