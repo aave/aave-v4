@@ -82,7 +82,7 @@ contract SpokeRiskPremiumEdgeCasesTest is SpokeBase {
     );
   }
 
-  /// Supply dai2 and dai as collateral, borrow dai2, then remove dai as collateral and risk premium should increase
+  /// Supply two collaterals, borrow, then remove lower LP collateral and risk premium should increase
   function test_riskPremium_increasesAfterCollateralRemoval(
     uint256 daiSupplyAmount,
     uint256 borrowAmount
@@ -137,7 +137,7 @@ contract SpokeRiskPremiumEdgeCasesTest is SpokeBase {
     );
   }
 
-  /// Supply dai2 and dai as collateral, borrow dai2, then withdraw dai as collateral and risk premium should increase
+  /// Supply two collaterals, borrow, then withdraw lower LP collateral and risk premium should increase
   function test_riskPremium_increasesAfterWithdrawal(
     uint256 daiSupplyAmount,
     uint256 borrowAmount
@@ -193,7 +193,7 @@ contract SpokeRiskPremiumEdgeCasesTest is SpokeBase {
     );
   }
 
-  /// Supply dai2 and dai as collateral, borrow dai2, then fuzz withdraw dai as collateral and risk premium should increase or remain the same
+  /// Supply two collaterals, borrow, then fuzz withdraw lower LP collateral and risk premium should increase or remain the same
   function test_riskPremium_fuzz_nonDecreasingAfterWithdrawal(
     uint256 daiSupplyAmount,
     uint256 borrowAmount,
@@ -256,7 +256,11 @@ contract SpokeRiskPremiumEdgeCasesTest is SpokeBase {
   function test_riskPremium_decreasesAfterCollateralAccrual() public {
     uint256 wbtcSupplyAmount = 1e8;
     uint256 wethSupplyAmount = 100e18;
-    uint256 daiBorrowAmount = 50500e18; // More than price of 1 wbtc
+    uint256 daiBorrowAmount = _calcEquivalentAssetAmount(
+      wbtcAssetId,
+      wbtcSupplyAmount,
+      daiAssetId
+    ) + 500e18; // More than the value of wbtc collateral
 
     // Deploy liquidity for dai borrow
     _deployLiquidity(spoke1, _daiReserveId(spoke1), MAX_SUPPLY_AMOUNT);
@@ -353,16 +357,18 @@ contract SpokeRiskPremiumEdgeCasesTest is SpokeBase {
     );
   }
 
-  /// Debt (weth) is initially covered by 2 collaterals (dai + dai2), then 1 collateral becomes enough to cover the debt due to interest accrual
+  /// Debt is initially covered by 2 collaterals, then 1 collateral becomes enough to cover the debt due to interest accrual
   function test_riskPremium_fuzz_nonIncreasesAfterCollateralAccrual(
     uint256 daiSupplyAmount,
     uint40 skipTime
   ) public {
     daiSupplyAmount = bound(daiSupplyAmount, 1e18, MAX_SUPPLY_AMOUNT / 2 - 1); // Leave room for Alice to borrow 1 dai
     // Determine value of daiSupplyAmount in weth terms
-    uint256 valueOfSuppliedDai = _getValueInBaseCurrency(daiAssetId, daiSupplyAmount);
-    uint256 valueOfWeiWeth = _getValueInBaseCurrency(wethAssetId, 1);
-    uint256 wethBorrowAmount = (valueOfSuppliedDai / valueOfWeiWeth) + 1; // Borrow more than dai supply value so 2 collaterals cover debt
+    uint256 wethBorrowAmount = _calcEquivalentAssetAmount(
+      daiAssetId,
+      daiSupplyAmount,
+      wethAssetId
+    ) + 1; // Borrow more than dai supply value so 2 collaterals cover debt
     uint256 dai2SupplyAmount = MAX_SUPPLY_AMOUNT;
     skipTime = uint40(bound(skipTime, 365 days, MAX_SKIP_TIME)); // At least skip one year to ensure sufficient accrual
 
@@ -442,8 +448,8 @@ contract SpokeRiskPremiumEdgeCasesTest is SpokeBase {
     // Bob's current risk premium should be greater than or equal liquidity premium of dai, since debt is not fully covered by it (and due to rounding)
     assertGt(
       _getValueInBaseCurrency(wethAssetId, wethBorrowAmount),
-      valueOfSuppliedDai,
-      'Weth borrow amount'
+      _getValueInBaseCurrency(daiAssetId, daiSupplyAmount),
+      'Weth borrow amount greater than dai supply amount'
     );
     assertGe(
       spoke2.getUserRiskPremium(bob),
@@ -470,11 +476,11 @@ contract SpokeRiskPremiumEdgeCasesTest is SpokeBase {
     );
   }
 
-  /// Bob's debt initially fully covered by wbtc collateral. Then interest accrues, so debt must be covered by 2 collaterals
+  /// Bob's debt initially fully covered by one collateral. Then debt interest accrues, so debt must be covered by 2 collaterals
   function test_riskPremium_increasesAfterDebtAccrual() public {
     uint256 wbtcSupplyAmount = 1e8;
     uint256 wethSupplyAmount = 100e18;
-    uint256 daiBorrowAmount = 50000e18; // The price of 1 wbtc
+    uint256 daiBorrowAmount = _calcEquivalentAssetAmount(wbtcAssetId, wbtcSupplyAmount, daiAssetId); // Dai debt to equal wbtc supply value
 
     // Deploy liquidity for dai borrow
     _deployLiquidity(spoke1, _daiReserveId(spoke1), daiBorrowAmount);
@@ -538,13 +544,21 @@ contract SpokeRiskPremiumEdgeCasesTest is SpokeBase {
     );
   }
 
-  /// Bob's weth debt initially fully covered by dai collateral. Then interest accrues, so debt must be covered by 2 collaterals (dai + dai2)
+  /// Debt initially fully covered by one collateral. Then debt interest accrues, so debt must be covered by 2 collaterals
   function test_riskPremium_fuzz_increasesAfterDebtAccrual(
     uint256 borrowAmount,
     uint40 skipTime
   ) public {
-    borrowAmount = bound(borrowAmount, 1e18, MAX_SUPPLY_AMOUNT / 4000); // Allow room for dai supply to cover weth debt (2000x)
-    uint256 daiSupplyAmount = borrowAmount * 2000; // Dai collateral will fully cover initial borrow (weth = 2000 dai)
+    // Find max supply amount of dai in terms of weth
+    uint256 maxWethDebt = _calcEquivalentAssetAmount(daiAssetId, MAX_SUPPLY_AMOUNT, wethAssetId);
+    assertLt(
+      maxWethDebt,
+      MAX_SUPPLY_AMOUNT / 2,
+      'Max weth debt should be less than half max supply amount'
+    );
+    borrowAmount = bound(borrowAmount, 1e18, maxWethDebt); // Allow room for dai supply to cover weth debt
+    // Determine value of borrowAmount in dai terms so dai collateral can fully cover weth debt
+    uint256 daiSupplyAmount = _calcEquivalentAssetAmount(wethAssetId, borrowAmount, daiAssetId);
     uint256 dai2SupplyAmount = MAX_SUPPLY_AMOUNT;
     skipTime = uint40(bound(skipTime, 365 days, MAX_SKIP_TIME)); // At least skip one year to ensure sufficient accrual
 
@@ -613,7 +627,7 @@ contract SpokeRiskPremiumEdgeCasesTest is SpokeBase {
   function test_riskPremium_changesAfterAccrual() public {
     uint256 wethSupplyAmount = 2e18;
     uint256 daiSupplyAmount = 10000e18;
-    uint256 daiBorrowAmount = 4000e18; // The price of 2 eth
+    uint256 daiBorrowAmount = _calcEquivalentAssetAmount(wethAssetId, wethSupplyAmount, daiAssetId); // Dai debt to equal weth supply value
 
     // Bob supplies weth and dai collaterals
     Utils.supplyCollateral({
@@ -690,14 +704,21 @@ contract SpokeRiskPremiumEdgeCasesTest is SpokeBase {
     );
   }
 
-  /// Initially debt (weth) is covered by 1 collateral (dai), both debt and collateral accrue at different rates, such that finally debt is covered by 2 collaterals
+  /// Initially debt is covered by 1 collateral, both debt and collateral accrue at different rates, such that finally debt is covered by 2 collaterals
   function test_riskPremium_fuzz_changesAfterAccrual(
     uint256 wethBorrowAmount,
     uint40 skipTime
   ) public {
     uint256 dai2SupplyAmount = MAX_SUPPLY_AMOUNT;
-    wethBorrowAmount = bound(wethBorrowAmount, 1e18, MAX_SUPPLY_AMOUNT / 4000); // Allow room for dai supply to cover weth debt (2000x)
-    uint256 daiSupplyAmount = wethBorrowAmount * 2000; // Dai collateral will fully cover initial borrow (weth = 2000 dai)
+    // Find max supply amount of dai in terms of weth
+    uint256 maxWethDebt = _calcEquivalentAssetAmount(daiAssetId, MAX_SUPPLY_AMOUNT, wethAssetId);
+    assertLe(
+      maxWethDebt,
+      MAX_SUPPLY_AMOUNT / 2,
+      'Max weth debt should be less than half max supply amount'
+    );
+    wethBorrowAmount = bound(wethBorrowAmount, 1e18, maxWethDebt); // Allow room for dai supply to cover weth debt
+    uint256 daiSupplyAmount = _calcEquivalentAssetAmount(wethAssetId, wethBorrowAmount, daiAssetId); // Dai collateral will fully cover initial weth borrow
     skipTime = uint40(bound(skipTime, 365 days, MAX_SKIP_TIME)); // At least skip one year to ensure sufficient accrual
 
     // Deal bob dai to cover dai and dai2 supply
@@ -785,7 +806,7 @@ contract SpokeRiskPremiumEdgeCasesTest is SpokeBase {
   function test_riskPremium_borrowingMoreIncreasesRP() public {
     uint256 wbtcSupplyAmount = 1e8;
     uint256 wethSupplyAmount = 100e18;
-    uint256 daiBorrowAmount = 50000e18; // The price of 1 wbtc
+    uint256 daiBorrowAmount = _calcEquivalentAssetAmount(wbtcAssetId, wbtcSupplyAmount, daiAssetId); // Dai debt to equal wbtc supply value
     uint256 additionalDaiBorrowAmount = 1000e18;
 
     // Deploy liquidity for dai borrow
@@ -852,7 +873,7 @@ contract SpokeRiskPremiumEdgeCasesTest is SpokeBase {
     );
   }
 
-  /// Initially debt is covered by 1 collateral (dai), then due to borrowing more, debt is covered by 2 collaterals (dai + dai2)
+  /// Initially debt is covered by 1 collateral, then due to borrowing more, debt is covered by 2 collaterals
   function test_riskPremium_fuzz_borrowingMoreNonDecreasesRP(
     uint256 initialBorrowAmount,
     uint256 additionalBorrowAmount
@@ -933,7 +954,11 @@ contract SpokeRiskPremiumEdgeCasesTest is SpokeBase {
   function test_riskPremium_supplyingLowerLPCollateral_decreasesRP() public {
     uint256 wbtcSupplyAmount = 1e8;
     uint256 wethSupplyAmount = 10e18;
-    uint256 daiBorrowAmount = 10000e18; // The price of 5 weth
+    uint256 daiBorrowAmount = _calcEquivalentAssetAmount(
+      wethAssetId,
+      wethSupplyAmount / 2,
+      daiAssetId
+    ); // Half of the weth collateral value
 
     // Deploy liquidity for dai borrow
     _deployLiquidity(spoke1, _daiReserveId(spoke1), daiBorrowAmount);

@@ -747,6 +747,27 @@ abstract contract Base is Test {
     }
   }
 
+  /// returns the USD value of the reserve normalized by it's decimals, in terms of WAD
+  function _getValueInBaseCurrency(
+    uint256 assetId,
+    uint256 amount
+  ) internal view returns (uint256) {
+    return
+      (amount * oracle.getAssetPrice(assetId).wadify()) /
+      (10 ** hub.getAssetConfig(assetId).decimals);
+  }
+
+  /// @dev Helper function to calculate the equivalent asset amount for a given asset
+  function _calcEquivalentAssetAmount(
+    uint256 inputAssetId,
+    uint256 inputAssetAmount,
+    uint256 outputAssetId
+  ) internal view returns (uint256) {
+    uint256 valueOfInputAsset = _getValueInBaseCurrency(inputAssetId, inputAssetAmount);
+    uint256 valueOfWeiOutput = _getValueInBaseCurrency(outputAssetId, 1);
+    return valueOfInputAsset / valueOfWeiOutput;
+  }
+
   /// @dev Helper function to calculate the amount of base and premium debt to restore
   // @return baseDebtRestored amount of base debt to restore
   // @return premiumDebtRestored amount of premium debt to restore
