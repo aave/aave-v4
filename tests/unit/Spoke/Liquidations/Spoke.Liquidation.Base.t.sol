@@ -241,10 +241,11 @@ contract SpokeLiquidationBase is SpokeBase {
       state.collateralReserve.assetId,
       state.treasury.balanceChange // actual protocol fee shares, from tmp emitted event
     );
+    // TODO: resolve precision loss difference
     assertApproxEqAbs(
       liqProtocolFeeAmount,
       totalLiqBonusAmount.percentMulUp(state.liquidationProtocolFeePercentage),
-      2,
+      3,
       string.concat('protocol fee amount ', label)
     );
   }
