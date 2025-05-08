@@ -171,9 +171,9 @@ contract LiquidationCallProtocolFeeTest is SpokeLiquidationBase {
       skipTime: 365 days
     });
 
-    uint256 liqProtocolFee = _absDiff(
-      state.supply.baseChange,
-      state.liquidatorCollateral.baseChange
+    uint256 liqProtocolFee = hub.convertToSuppliedAssets(
+      state.collateralReserve.assetId,
+      state.treasury.balanceChange
     );
     assertEq(liqProtocolFee, 0, 'liqProtocolFee = 0');
   }
