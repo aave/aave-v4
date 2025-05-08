@@ -251,6 +251,11 @@ contract LiquidityHub is ILiquidityHub {
     require(_assets[assetId].baseDebt() == baseDebt, InvalidDebtChange());
   }
 
+  /// @inheritdoc ILiquidityHub
+  function addToDeficit() external {
+    // TODO: authorization - only spokes
+  }
+
   function _refresh(
     uint256 assetId,
     address spokeAddress,

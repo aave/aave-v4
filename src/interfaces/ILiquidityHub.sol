@@ -151,6 +151,8 @@ interface ILiquidityHub {
     int256 realizedPremiumDelta
   ) external;
 
+  function addToDeficit(uint256 assetId, uint256 amount) external;
+
   function convertToDrawnAssets(uint256 assetId, uint256 shares) external view returns (uint256);
   function convertToDrawnShares(uint256 assetId, uint256 assets) external view returns (uint256);
   function convertToSuppliedAssets(uint256 assetId, uint256 shares) external view returns (uint256);
