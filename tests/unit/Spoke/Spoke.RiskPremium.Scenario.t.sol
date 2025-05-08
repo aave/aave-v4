@@ -922,6 +922,85 @@ contract SpokeRiskPremiumScenarioTest is SpokeBase {
     _verifyProtocolDebtShares(bobDaiInfo, aliceDaiInfo, bobUsdxInfo, aliceUsdxInfo, 'final');
   }
 
+  /// Bob supplies and borrows varying amounts of 4 reserves. We fuzz prices and liquidity premiums, and wait arbitrary time.
+  /// We ensure risk premium is calculated correctly before and after the time passing
+  function test_getUserRiskPremium_fuzz_inflight_calcs(
+    UserBorrowAction memory daiAmounts,
+    UserBorrowAction memory wethAmounts,
+    UserBorrowAction memory usdxAmounts,
+    UserBorrowAction memory wbtcAmounts,
+    uint40 skipTime
+  ) public {
+    skipTime = uint40(bound(skipTime, 1, MAX_SKIP_TIME));
+
+    daiAmounts.supplyAmount = bound(daiAmounts.supplyAmount, 0, MAX_SUPPLY_AMOUNT);
+    wethAmounts.supplyAmount = bound(wethAmounts.supplyAmount, 0, MAX_SUPPLY_AMOUNT);
+    usdxAmounts.supplyAmount = bound(usdxAmounts.supplyAmount, 0, MAX_SUPPLY_AMOUNT);
+    wbtcAmounts.supplyAmount = bound(wbtcAmounts.supplyAmount, 0, MAX_SUPPLY_AMOUNT);
+
+    daiAmounts.borrowAmount = bound(daiAmounts.borrowAmount, 0, daiAmounts.supplyAmount / 2);
+    wethAmounts.borrowAmount = bound(wethAmounts.borrowAmount, 0, wethAmounts.supplyAmount / 2);
+    usdxAmounts.borrowAmount = bound(usdxAmounts.borrowAmount, 0, usdxAmounts.supplyAmount / 2);
+    wbtcAmounts.borrowAmount = bound(wbtcAmounts.borrowAmount, 0, wbtcAmounts.supplyAmount / 2);
+
+    // Ensure supplied value is at least double borrowed value to pass hf checks
+    vm.assume(
+      _getValueInBaseCurrency(daiAssetId, daiAmounts.supplyAmount) +
+        _getValueInBaseCurrency(wethAssetId, wethAmounts.supplyAmount) +
+        _getValueInBaseCurrency(usdxAssetId, usdxAmounts.supplyAmount) +
+        _getValueInBaseCurrency(wbtcAssetId, wbtcAmounts.supplyAmount) >=
+        2 *
+          (_getValueInBaseCurrency(daiAssetId, daiAmounts.borrowAmount) +
+            _getValueInBaseCurrency(wethAssetId, wethAmounts.borrowAmount) +
+            _getValueInBaseCurrency(usdxAssetId, usdxAmounts.borrowAmount) +
+            _getValueInBaseCurrency(wbtcAssetId, wbtcAmounts.borrowAmount))
+    );
+
+    // Bob supplies and draws all assets on spoke1
+    if (daiAmounts.supplyAmount > 0) {
+      Utils.supplyCollateral(spoke1, _daiReserveId(spoke1), bob, daiAmounts.supplyAmount, bob);
+    }
+    if (wethAmounts.supplyAmount > 0) {
+      Utils.supplyCollateral(spoke1, _wethReserveId(spoke1), bob, wethAmounts.supplyAmount, bob);
+    }
+    if (usdxAmounts.supplyAmount > 0) {
+      Utils.supplyCollateral(spoke1, _usdxReserveId(spoke1), bob, usdxAmounts.supplyAmount, bob);
+    }
+    if (wbtcAmounts.supplyAmount > 0) {
+      Utils.supplyCollateral(spoke1, _wbtcReserveId(spoke1), bob, wbtcAmounts.supplyAmount, bob);
+    }
+
+    if (daiAmounts.borrowAmount > 0) {
+      Utils.borrow(spoke1, _daiReserveId(spoke1), bob, daiAmounts.borrowAmount, bob);
+    }
+    if (wethAmounts.borrowAmount > 0) {
+      Utils.borrow(spoke1, _wethReserveId(spoke1), bob, wethAmounts.borrowAmount, bob);
+    }
+    if (usdxAmounts.borrowAmount > 0) {
+      Utils.borrow(spoke1, _usdxReserveId(spoke1), bob, usdxAmounts.borrowAmount, bob);
+    }
+    if (wbtcAmounts.borrowAmount > 0) {
+      Utils.borrow(spoke1, _wbtcReserveId(spoke1), bob, wbtcAmounts.borrowAmount, bob);
+    }
+
+    // Check bob's user risk premium
+    assertEq(
+      spoke1.getUserRiskPremium(bob),
+      _calculateExpectedUserRP(bob, spoke1),
+      'user risk premium'
+    );
+
+    // Now skip some time
+    skip(skipTime);
+
+    // Recheck bob's user risk premium
+    assertEq(
+      spoke1.getUserRiskPremium(bob),
+      _calculateExpectedUserRP(bob, spoke1),
+      'user risk premium after time skip'
+    );
+  }
+
   function _boundUserBorrowAction(
     UserBorrowAction memory action
   ) internal pure returns (UserBorrowAction memory) {
