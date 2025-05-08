@@ -104,7 +104,7 @@ contract SpokeLiquidationBase is SpokeBase {
 
     liqConfig = _bound(liqConfig);
     liqBonus = bound(liqBonus, MIN_LIQUIDATION_BONUS, MAX_LIQUIDATION_BONUS);
-    desiredHf = bound(desiredHf, 0.1e18, HEALTH_FACTOR_LIQUIDATION_THRESHOLD - 0.1e18);
+    desiredHf = bound(desiredHf, 0.1e18, HEALTH_FACTOR_LIQUIDATION_THRESHOLD - 0.01e18);
     liquidationProtocolFeePercentage = bound(liquidationProtocolFeePercentage, 0, 100_00);
     // bound supply amount to max supply amount
     supplyAmount = bound(
