@@ -27,7 +27,7 @@ library DataTypes {
     uint256 baseBorrowRate;
     uint256 lastUpdateTimestamp;
     uint256 id; // todo remove
-    // uint256 deficit;
+    uint256 deficit;
     DataTypes.AssetConfig config;
   }
 
@@ -139,6 +139,7 @@ library DataTypes {
     uint256 liquidationProtocolFeePercentage; // todo: use smaller uint
     bool disableUsingAsCollateral;
     uint256 collateralToLiquidateInBaseCurrency;
+    uint256 deficit;
   }
 
   // todo: pack struct
@@ -185,6 +186,7 @@ library DataTypes {
     uint256 totalDebtToLiquidate;
     bool disableUsingAsCollateral;
     uint256 usersLength;
+    uint256 deficit;
   }
 
   struct ExecuteRepayLocalVars {

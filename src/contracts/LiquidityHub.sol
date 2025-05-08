@@ -1,6 +1,8 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.0;
 
+import {console2 as console} from 'forge-std/console2.sol';
+
 import {SafeERC20} from 'src/dependencies/openzeppelin/SafeERC20.sol';
 import {IERC20} from 'src/dependencies/openzeppelin/IERC20.sol';
 import {ILiquidityHub} from 'src/interfaces/ILiquidityHub.sol';
@@ -47,6 +49,7 @@ contract LiquidityHub is ILiquidityHub {
       lastUpdateTimestamp: block.timestamp,
       baseBorrowRate: 0, // todo check
       id: assetId, // todo rm
+      deficit: 0,
       config: DataTypes.AssetConfig({
         decimals: config.decimals, // todo fetch decimals from token
         active: config.active,
@@ -203,18 +206,23 @@ contract LiquidityHub is ILiquidityHub {
 
     asset.accrue();
 
+    console.log('LH %e %e', deficitAmount);
+
     _validateRestore(asset, spoke, baseAmount, premiumAmount);
     asset.updateBorrowRate({liquidityAdded: baseAmount, liquidityTaken: 0}); // both can be zero
 
     uint256 totalRestoredAmount = baseAmount + premiumAmount;
     uint256 baseDrawnSharesRestored = asset.toDrawnSharesDown(baseAmount);
+    console.log('LH %e %e', totalRestoredAmount, deficitAmount);
+    uint256 actualRestoredAmount = totalRestoredAmount - deficitAmount;
 
-    asset.availableLiquidity += totalRestoredAmount;
+    asset.availableLiquidity += actualRestoredAmount;
+    asset.deficit += deficitAmount;
     asset.baseDrawnShares -= baseDrawnSharesRestored;
 
     spoke.baseDrawnShares -= baseDrawnSharesRestored;
 
-    assetsList[assetId].safeTransferFrom(from, address(this), totalRestoredAmount);
+    assetsList[assetId].safeTransferFrom(from, address(this), actualRestoredAmount);
 
     emit Restore(assetId, msg.sender, baseDrawnSharesRestored);
 

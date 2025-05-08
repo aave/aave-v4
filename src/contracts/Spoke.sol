@@ -1,6 +1,8 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.0;
 
+import {console2 as console} from 'forge-std/console2.sol';
+
 import {SafeERC20} from 'src/dependencies/openzeppelin/SafeERC20.sol';
 import {IERC20} from 'src/dependencies/openzeppelin/IERC20.sol';
 // libraries
@@ -467,6 +469,8 @@ contract Spoke is ISpoke {
       -int256(userPremiumOffset),
       _signedDiff(userPosition.realizedPremium, userRealizedPremium)
     ); // we settle premium debt here
+    console.log('deficitAmount %e', deficitAmount);
+    revert('deficit');
     uint256 restoredShares = HUB.restore(
       vars.assetId,
       vars.baseDebtRestored,
@@ -478,15 +482,20 @@ contract Spoke is ISpoke {
     reserve.baseDrawnShares -= restoredShares;
     userPosition.baseDrawnShares -= restoredShares;
 
-    (uint256 newUserRiskPremium, , , , ) = _calculateUserAccountData(user);
-
-    userPremiumDrawnShares = userPosition.premiumDrawnShares = userPosition
-      .baseDrawnShares
-      .percentMul(newUserRiskPremium);
-    userPremiumOffset = userPosition.premiumOffset = HUB.previewOffset(
-      vars.assetId,
-      userPosition.premiumDrawnShares
-    );
+    uint256 newUserRiskPremium;
+    if (deficitAmount == 0) {
+      (newUserRiskPremium, , , , ) = _calculateUserAccountData(user);
+      userPremiumDrawnShares = userPosition.premiumDrawnShares = userPosition
+        .baseDrawnShares
+        .percentMul(newUserRiskPremium);
+      userPremiumOffset = userPosition.premiumOffset = HUB.previewOffset(
+        vars.assetId,
+        userPosition.premiumDrawnShares
+      );
+    } else {
+      userPremiumDrawnShares = userPosition.premiumDrawnShares = 0;
+      userPremiumOffset = userPosition.premiumOffset = 0;
+    }
 
     _refreshPremiumDebt(
       reserve,
@@ -536,7 +545,8 @@ contract Spoke is ISpoke {
         vars.liquidationProtocolFeeAmount,
         vars.baseDebtToLiquidate,
         vars.premiumDebtToLiquidate,
-        vars.disableUsingAsCollateral
+        vars.disableUsingAsCollateral,
+        vars.deficit
       ) = _calculateLiquidationParameters(
         collateralReserve,
         debtReserve,
@@ -584,13 +594,25 @@ contract Spoke is ISpoke {
       ); // unnecessary but settle premium debt here for consistency
 
       // repay debt
-      vars.restoredShares = HUB.restore(
-        vars.debtAssetId,
-        vars.baseDebtToLiquidate,
-        vars.premiumDebtToLiquidate,
-        vars.disableUsingAsCollateral ? vars.baseDebtToLiquidate + vars.premiumDebtToLiquidate : 0,
-        msg.sender
-      );
+      if (vars.deficit == 0) {
+        // if no bad debt remains, restore debt normally
+        vars.restoredShares = HUB.restore(
+          vars.debtAssetId,
+          vars.baseDebtToLiquidate,
+          vars.premiumDebtToLiquidate,
+          0,
+          msg.sender
+        );
+      } else {
+        // if bad debt remains, restore full debt with deficit
+        vars.restoredShares = HUB.restore(
+          vars.debtAssetId,
+          vars.baseDebt,
+          vars.premiumDebt,
+          vars.deficit,
+          msg.sender
+        );
+      }
 
       // debt accounting
       userDebtPosition.baseDrawnShares -= vars.restoredShares;
@@ -609,10 +631,14 @@ contract Spoke is ISpoke {
 
       if (vars.disableUsingAsCollateral) {
         _setUsingAsCollateral(collateralReserveId, users[vars.i], false);
-        _settleRemainingDeficit(debtReserveId, users[vars.i]);
       }
 
-      (vars.newUserRiskPremium, , , , ) = _calculateUserAccountData(users[vars.i]);
+      if (vars.deficit > 0) {
+        _settleRemainingDeficit(debtReserveId, users[vars.i]);
+      } else {
+        // new user rp only needs to be calculated if no bad debt remains, otherwise it is 0
+        (vars.newUserRiskPremium, , , , ) = _calculateUserAccountData(users[vars.i]);
+      }
 
       // refresh debt reserve premium
       vars.userDebtPremiumDrawnShares = userDebtPosition.premiumDrawnShares = userDebtPosition
@@ -699,11 +725,14 @@ contract Spoke is ISpoke {
     while (reserveId < reserveCount_) {
       DataTypes.UserPosition storage userPosition = _userPositions[userAddress][reserveId];
       if (_isBorrowing(userPosition) && reserveId != reserveIdToAvoid) {
-        // _executeRepay(
-        //   reserveId,
-        //   userAddress,
-        //   0
-        // );
+        (uint256 baseDebt, uint256 premiumDebt) = _getUserDebt(userPosition, reserveId);
+        _executeRepay(
+          reserveId,
+          baseDebt + premiumDebt,
+          userAddress,
+          userPosition,
+          baseDebt + premiumDebt
+        );
       }
       unchecked {
         ++reserveId;
@@ -716,6 +745,7 @@ contract Spoke is ISpoke {
   /// @return baseDebtToLiquidate The amount of base debt to repay.
   /// @return premiumDebtToLiquidate The amount of premium debt to repay.
   /// @return disableUsingAsCollateral Whether the collateral asset should be disabled as collateral.
+  /// @return deficit The amount of bad debt remaining after liquidation.
   function _calculateLiquidationParameters(
     DataTypes.Reserve storage collateralReserve,
     DataTypes.Reserve storage debtReserve,
@@ -723,7 +753,7 @@ contract Spoke is ISpoke {
     uint256 debtToCover,
     uint256 baseDebt,
     uint256 premiumDebt
-  ) internal view returns (uint256, uint256, uint256, uint256, bool) {
+  ) internal view returns (uint256, uint256, uint256, uint256, bool, uint256) {
     DataTypes.LiquidationCallLocalVars memory vars;
     vars.collateralReserveId = collateralReserve.reserveId;
     vars.debtReserveId = debtReserve.reserveId;
@@ -786,12 +816,20 @@ contract Spoke is ISpoke {
       vars.actualDebtToLiquidate
     );
 
+    if (
+      vars.actualDebtToLiquidate < vars.totalDebt &&
+      vars.collateralToLiquidateInBaseCurrency == vars.totalCollateralInBaseCurrency
+    ) {
+      vars.deficit = vars.totalDebt - vars.actualDebtToLiquidate;
+    }
+
     return (
       vars.actualCollateralToLiquidate,
       vars.liquidationProtocolFeeAmount,
       vars.baseDebtToLiquidate,
       vars.premiumDebtToLiquidate,
-      vars.disableUsingAsCollateral
+      vars.disableUsingAsCollateral,
+      vars.deficit
     );
   }
 
