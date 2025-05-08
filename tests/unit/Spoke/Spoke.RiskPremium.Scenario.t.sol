@@ -103,12 +103,20 @@ contract SpokeRiskPremiumScenarioTest is SpokeBase {
     uint256 wethLiquidityPremium = spoke1.getLiquidityPremium(_wethReserveId(spoke1));
     assertLt(wethLiquidityPremium, usdxLiquidityPremium);
 
-    // Weth is enough to cover debt, both stored & calc value match
+    // Weth is enough to cover debt, both stored & calculated risk premiums match
     assertEq(spoke1.getUserRiskPremium(alice), wethLiquidityPremium, 'user rp: weth covers debt');
+    // Check stored risk premium via back-calculating premium drawn shares
+    DataTypes.UserPosition memory alicePosition = spoke1.getUserPosition(
+      _daiReserveId(spoke1),
+      alice
+    );
+    uint256 expectedPremiumDrawnShares = alicePosition.baseDrawnShares.percentMul(
+      wethLiquidityPremium
+    );
     assertEq(
-      spoke1.getLastUserRiskPremium(_daiReserveId(spoke1), alice),
-      wethLiquidityPremium,
-      'stored rp calc matches'
+      alicePosition.premiumDrawnShares,
+      expectedPremiumDrawnShares,
+      'premium drawn shares match expected'
     );
 
     vars.lastUpdateTimestamp = uint40(vm.getBlockTimestamp());
@@ -168,10 +176,7 @@ contract SpokeRiskPremiumScenarioTest is SpokeBase {
     );
 
     // Store alice's position before timeskip to calc expected premium debt
-    DataTypes.UserPosition memory alicePosition = spoke1.getUserPosition(
-      _daiReserveId(spoke1),
-      alice
-    );
+    alicePosition = spoke1.getUserPosition(_daiReserveId(spoke1), alice);
 
     vars.lastUpdateTimestamp = uint40(vm.getBlockTimestamp());
     skip(vars.delay);
@@ -311,19 +316,43 @@ contract SpokeRiskPremiumScenarioTest is SpokeBase {
     assertEq(aliceUsdxInfo.borrowAmount, debtChecks.actualBaseDebt, 'Alice usdx debt before');
     assertEq(debtChecks.actualPremium, 0, 'Alice usdx premium before');
 
+    // Store premium drawn shares for both users to check as proxy for risk premium
+    bobDaiInfo.premiumDrawnShares = spoke1
+      .getUserPosition(daiInfo.reserveId, bob)
+      .premiumDrawnShares;
+    aliceDaiInfo.premiumDrawnShares = spoke1
+      .getUserPosition(daiInfo.reserveId, alice)
+      .premiumDrawnShares;
+    bobUsdxInfo.premiumDrawnShares = spoke1
+      .getUserPosition(usdxInfo.reserveId, bob)
+      .premiumDrawnShares;
+    aliceUsdxInfo.premiumDrawnShares = spoke1
+      .getUserPosition(usdxInfo.reserveId, alice)
+      .premiumDrawnShares;
+
     // Wait a year
     skip(365 days);
 
-    // User risk premium should remain the same when there is no action
+    // User risk premium should remain the same when there is no action, use premium drawn shares as proxy for this check
     assertEq(
-      spoke1.getLastUserRiskPremium(usdxInfo.reserveId, bob),
-      expectedUserRp.bobRiskPremium,
-      'bob risk premium after interest accrual'
+      spoke1.getUserPosition(daiInfo.reserveId, bob).premiumDrawnShares,
+      bobDaiInfo.premiumDrawnShares,
+      'bob dai premium drawn shares after interest accrual'
     );
     assertEq(
-      spoke1.getLastUserRiskPremium(usdxInfo.reserveId, alice),
-      expectedUserRp.aliceRiskPremium,
-      'alice risk premium after interest accrual'
+      spoke1.getUserPosition(usdxInfo.reserveId, bob).premiumDrawnShares,
+      bobUsdxInfo.premiumDrawnShares,
+      'bob usdx premium drawn shares after interest accrual'
+    );
+    assertEq(
+      spoke1.getUserPosition(daiInfo.reserveId, alice).premiumDrawnShares,
+      aliceDaiInfo.premiumDrawnShares,
+      'alice dai premium drawn shares after interest accrual'
+    );
+    assertEq(
+      spoke1.getUserPosition(usdxInfo.reserveId, alice).premiumDrawnShares,
+      aliceUsdxInfo.premiumDrawnShares,
+      'alice usdx premium drawn shares after interest accrual'
     );
 
     // Ensure the calculated risk premium would match
@@ -426,22 +455,47 @@ contract SpokeRiskPremiumScenarioTest is SpokeBase {
       daiAssetId
     );
 
+    // Store premium drawn shares for both users to check as proxy for risk premium
+    bobDaiInfo.premiumDrawnShares = spoke1
+      .getUserPosition(daiInfo.reserveId, bob)
+      .premiumDrawnShares;
+    aliceDaiInfo.premiumDrawnShares = spoke1
+      .getUserPosition(daiInfo.reserveId, alice)
+      .premiumDrawnShares;
+    bobUsdxInfo.premiumDrawnShares = spoke1
+      .getUserPosition(usdxInfo.reserveId, bob)
+      .premiumDrawnShares;
+    aliceUsdxInfo.premiumDrawnShares = spoke1
+      .getUserPosition(usdxInfo.reserveId, alice)
+      .premiumDrawnShares;
+
     // Now, if Alice repays some debt, her user risk premium should change and percolate through protocol
     Utils.repay(spoke1, daiInfo.reserveId, alice, aliceDaiInfo.borrowAmount / 2);
 
     // Bob's user risk premium remains unchanged
     assertEq(
-      spoke1.getLastUserRiskPremium(daiInfo.reserveId, bob),
-      expectedUserRp.bobRiskPremium,
-      'bob risk premium after repay'
+      spoke1.getUserPosition(daiInfo.reserveId, bob).premiumDrawnShares,
+      bobDaiInfo.premiumDrawnShares,
+      'bob dai premium drawn shares after repay'
+    );
+    assertEq(
+      spoke1.getUserPosition(usdxInfo.reserveId, bob).premiumDrawnShares,
+      bobUsdxInfo.premiumDrawnShares,
+      'bob usdx premium drawn shares after repay'
     );
 
     // Alice's user risk premium does change
     assertNotEq(
-      spoke1.getLastUserRiskPremium(daiInfo.reserveId, alice),
-      expectedUserRp.aliceRiskPremium,
-      'alice rp after repay should not match'
+      spoke1.getUserPosition(daiInfo.reserveId, alice).premiumDrawnShares,
+      aliceDaiInfo.premiumDrawnShares,
+      'alice dai premium drawn shares after repay should not match'
     );
+    assertNotEq(
+      spoke1.getUserPosition(usdxInfo.reserveId, alice).premiumDrawnShares,
+      aliceUsdxInfo.premiumDrawnShares,
+      'alice usdx premium drawn shares after repay should not match'
+    );
+
     expectedUserRp.aliceRiskPremium = _calculateExpectedUserRP(alice, spoke1);
     assertEq(
       spoke1.getUserRiskPremium(alice),
@@ -866,6 +920,85 @@ contract SpokeRiskPremiumScenarioTest is SpokeBase {
 
     // Verify final reserve states and hub propagation for both assets
     _verifyProtocolDebtShares(bobDaiInfo, aliceDaiInfo, bobUsdxInfo, aliceUsdxInfo, 'final');
+  }
+
+  /// Bob supplies and borrows varying amounts of 4 reserves. We fuzz prices and liquidity premiums, and wait arbitrary time.
+  /// We ensure risk premium is calculated correctly before and after the time passing
+  function test_getUserRiskPremium_fuzz_inflight_calcs(
+    UserBorrowAction memory daiAmounts,
+    UserBorrowAction memory wethAmounts,
+    UserBorrowAction memory usdxAmounts,
+    UserBorrowAction memory wbtcAmounts,
+    uint40 skipTime
+  ) public {
+    skipTime = uint40(bound(skipTime, 1, MAX_SKIP_TIME));
+
+    daiAmounts.supplyAmount = bound(daiAmounts.supplyAmount, 0, MAX_SUPPLY_AMOUNT);
+    wethAmounts.supplyAmount = bound(wethAmounts.supplyAmount, 0, MAX_SUPPLY_AMOUNT);
+    usdxAmounts.supplyAmount = bound(usdxAmounts.supplyAmount, 0, MAX_SUPPLY_AMOUNT);
+    wbtcAmounts.supplyAmount = bound(wbtcAmounts.supplyAmount, 0, MAX_SUPPLY_AMOUNT);
+
+    daiAmounts.borrowAmount = bound(daiAmounts.borrowAmount, 0, daiAmounts.supplyAmount / 2);
+    wethAmounts.borrowAmount = bound(wethAmounts.borrowAmount, 0, wethAmounts.supplyAmount / 2);
+    usdxAmounts.borrowAmount = bound(usdxAmounts.borrowAmount, 0, usdxAmounts.supplyAmount / 2);
+    wbtcAmounts.borrowAmount = bound(wbtcAmounts.borrowAmount, 0, wbtcAmounts.supplyAmount / 2);
+
+    // Ensure supplied value is at least double borrowed value to pass hf checks
+    vm.assume(
+      _getValueInBaseCurrency(daiAssetId, daiAmounts.supplyAmount) +
+        _getValueInBaseCurrency(wethAssetId, wethAmounts.supplyAmount) +
+        _getValueInBaseCurrency(usdxAssetId, usdxAmounts.supplyAmount) +
+        _getValueInBaseCurrency(wbtcAssetId, wbtcAmounts.supplyAmount) >=
+        2 *
+          (_getValueInBaseCurrency(daiAssetId, daiAmounts.borrowAmount) +
+            _getValueInBaseCurrency(wethAssetId, wethAmounts.borrowAmount) +
+            _getValueInBaseCurrency(usdxAssetId, usdxAmounts.borrowAmount) +
+            _getValueInBaseCurrency(wbtcAssetId, wbtcAmounts.borrowAmount))
+    );
+
+    // Bob supplies and draws all assets on spoke1
+    if (daiAmounts.supplyAmount > 0) {
+      Utils.supplyCollateral(spoke1, _daiReserveId(spoke1), bob, daiAmounts.supplyAmount, bob);
+    }
+    if (wethAmounts.supplyAmount > 0) {
+      Utils.supplyCollateral(spoke1, _wethReserveId(spoke1), bob, wethAmounts.supplyAmount, bob);
+    }
+    if (usdxAmounts.supplyAmount > 0) {
+      Utils.supplyCollateral(spoke1, _usdxReserveId(spoke1), bob, usdxAmounts.supplyAmount, bob);
+    }
+    if (wbtcAmounts.supplyAmount > 0) {
+      Utils.supplyCollateral(spoke1, _wbtcReserveId(spoke1), bob, wbtcAmounts.supplyAmount, bob);
+    }
+
+    if (daiAmounts.borrowAmount > 0) {
+      Utils.borrow(spoke1, _daiReserveId(spoke1), bob, daiAmounts.borrowAmount, bob);
+    }
+    if (wethAmounts.borrowAmount > 0) {
+      Utils.borrow(spoke1, _wethReserveId(spoke1), bob, wethAmounts.borrowAmount, bob);
+    }
+    if (usdxAmounts.borrowAmount > 0) {
+      Utils.borrow(spoke1, _usdxReserveId(spoke1), bob, usdxAmounts.borrowAmount, bob);
+    }
+    if (wbtcAmounts.borrowAmount > 0) {
+      Utils.borrow(spoke1, _wbtcReserveId(spoke1), bob, wbtcAmounts.borrowAmount, bob);
+    }
+
+    // Check bob's user risk premium
+    assertEq(
+      spoke1.getUserRiskPremium(bob),
+      _calculateExpectedUserRP(bob, spoke1),
+      'user risk premium'
+    );
+
+    // Now skip some time
+    skip(skipTime);
+
+    // Recheck bob's user risk premium
+    assertEq(
+      spoke1.getUserRiskPremium(bob),
+      _calculateExpectedUserRP(bob, spoke1),
+      'user risk premium after time skip'
+    );
   }
 
   function _boundUserBorrowAction(

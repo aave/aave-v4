@@ -401,16 +401,6 @@ contract SpokeBase is Base {
     return maxDebt > 1 ? maxDebt - 1 : maxDebt;
   }
 
-  /// returns the USD value of the reserve normalized by it's decimals, in terms of WAD
-  function _getValueInBaseCurrency(
-    uint256 assetId,
-    uint256 amount
-  ) internal view returns (uint256) {
-    return
-      (amount * oracle.getAssetPrice(assetId).wadify()) /
-      (10 ** hub.getAssetConfig(assetId).decimals);
-  }
-
   // assert that user's position and debt accounting matches expected
   function _assertUserPositionAndDebt(
     ISpoke spoke,
