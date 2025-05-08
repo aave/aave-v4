@@ -206,14 +206,11 @@ contract LiquidityHub is ILiquidityHub {
 
     asset.accrue();
 
-    console.log('LH %e %e', deficitAmount);
-
     _validateRestore(asset, spoke, baseAmount, premiumAmount);
     asset.updateBorrowRate({liquidityAdded: baseAmount, liquidityTaken: 0}); // both can be zero
 
     uint256 totalRestoredAmount = baseAmount + premiumAmount;
     uint256 baseDrawnSharesRestored = asset.toDrawnSharesDown(baseAmount);
-    console.log('LH %e %e', totalRestoredAmount, deficitAmount);
     uint256 actualRestoredAmount = totalRestoredAmount - deficitAmount;
 
     asset.availableLiquidity += actualRestoredAmount;
