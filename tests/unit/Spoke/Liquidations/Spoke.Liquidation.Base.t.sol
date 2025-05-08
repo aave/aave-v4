@@ -161,7 +161,8 @@ contract SpokeLiquidationBase is SpokeBase {
     (
       state.collToLiq,
       state.debtToLiq,
-      state.liqProtocolFee
+      state.liqProtocolFee,
+
     ) = _calculateAvailableCollateralToLiquidate(spoke1, state, requiredDebtAmount);
 
     // logs to read protocol fee from tmp emitted event
@@ -309,7 +310,8 @@ contract SpokeLiquidationBase is SpokeBase {
     returns (
       uint256 actualCollateralToLiquidate,
       uint256 actualDebtToLiquidate,
-      uint256 liquidationProtocolFeeAmount
+      uint256 liquidationProtocolFeeAmount,
+      uint256 collateralToLiquidateInBaseCurrency
     )
   {
     DataTypes.LiquidationCallLocalVars memory params;

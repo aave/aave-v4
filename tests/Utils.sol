@@ -62,7 +62,7 @@ library Utils {
     vm.stopPrank();
 
     vm.prank(spoke);
-    hub.restore(assetId, baseAmount, premiumAmount, repayer);
+    hub.restore(assetId, baseAmount, premiumAmount, 0, repayer);
   }
 
   // spoke

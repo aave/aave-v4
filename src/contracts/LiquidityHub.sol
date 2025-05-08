@@ -192,6 +192,7 @@ contract LiquidityHub is ILiquidityHub {
     uint256 assetId,
     uint256 baseAmount,
     uint256 premiumAmount,
+    uint256 deficitAmount,
     address from
   ) external returns (uint256) {
     // TODO: authorization - only spokes
@@ -251,10 +252,13 @@ contract LiquidityHub is ILiquidityHub {
     require(_assets[assetId].baseDebt() == baseDebt, InvalidDebtChange());
   }
 
-  /// @inheritdoc ILiquidityHub
-  function addToDeficit() external {
-    // TODO: authorization - only spokes
-  }
+  // /// @inheritdoc ILiquidityHub
+  // function addToDeficit(uint256 assetId, uint256 baseDebt, premiumDebt) external {
+  //   // TODO: authorization - only spokes
+  //   // baseDrawnshares - def need
+  //   // premium drawn shares, premiumOffset - prob need
+  //   // realizedPremium
+  // }
 
   function _refresh(
     uint256 assetId,

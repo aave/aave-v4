@@ -91,10 +91,11 @@ library LiquidationLogic {
    * @return The maximum collateral amount that can be liquidated.
    * @return The corresponding debt amount to liquidate.
    * @return The protocol liquidation fee amount.
+   * @return The collateral amount to liquidate in the base currency used by the price feed.
    */
   function calculateAvailableCollateralToLiquidate(
     DataTypes.LiquidationCallLocalVars memory params
-  ) internal pure returns (uint256, uint256, uint256) {
+  ) internal pure returns (uint256, uint256, uint256, uint256) {
     DataTypes.CalculateAvailableCollateralToLiquidateLocalVars memory vars;
 
     // convert existing collateral to base currency
@@ -114,6 +115,7 @@ library LiquidationLogic {
       vars.collateralAmount = params.userCollateralBalance;
       vars.debtAmountNeeded = ((params.debtAssetUnit * vars.userCollateralBalanceInBaseCurrency)
         .percentDivDown(params.liquidationBonus) / params.debtAssetPrice).dewadify();
+      vars.collateralToLiquidateInBaseCurrency = vars.userCollateralBalanceInBaseCurrency;
     } else {
       // add 1 to round collateral amount up, ensuring HF is always <= close factor
       vars.collateralAmount =
@@ -121,6 +123,9 @@ library LiquidationLogic {
           .dewadify() +
         1;
       vars.debtAmountNeeded = params.actualDebtToLiquidate;
+      vars.collateralToLiquidateInBaseCurrency =
+        (vars.collateralAmount * params.collateralAssetPrice) /
+        params.collateralAssetUnit;
     }
 
     if (params.liquidationProtocolFeePercentage != 0) {
@@ -133,10 +138,16 @@ library LiquidationLogic {
       return (
         vars.collateralAmount - vars.liquidationProtocolFeeAmount,
         vars.debtAmountNeeded,
-        vars.liquidationProtocolFeeAmount
+        vars.liquidationProtocolFeeAmount,
+        vars.collateralToLiquidateInBaseCurrency
       );
     } else {
-      return (vars.collateralAmount, vars.debtAmountNeeded, 0);
+      return (
+        vars.collateralAmount,
+        vars.debtAmountNeeded,
+        0,
+        vars.collateralToLiquidateInBaseCurrency
+      );
     }
   }
 }

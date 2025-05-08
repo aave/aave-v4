@@ -127,6 +127,8 @@ contract LiquidationCallScenarioTest is SpokeLiquidationBase {
       'debt reserve accounting refresh'
     );
 
+    console.log('state.healthFactor', state.healthFactor);
+
     assertLe(state.healthFactor, _getCloseFactor(spoke1), 'hf <= close factor');
   }
 

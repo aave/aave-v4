@@ -105,6 +105,7 @@ interface ILiquidityHub {
    * @param assetId The asset id.
    * @param baseAmount The base debt to repay.
    * @param premiumAmount The premium debt to repay.
+   * @param deficitAmount The deficit amount to report.
    * @param from The address to pull assets from.
    * @return The amount of debt restored.
    */
@@ -112,6 +113,7 @@ interface ILiquidityHub {
     uint256 assetId,
     uint256 baseAmount,
     uint256 premiumAmount,
+    uint256 deficitAmount,
     address from
   ) external returns (uint256);
 
@@ -150,8 +152,6 @@ interface ILiquidityHub {
     int256 premiumOffsetDelta,
     int256 realizedPremiumDelta
   ) external;
-
-  function addToDeficit(uint256 assetId, uint256 amount) external;
 
   function convertToDrawnAssets(uint256 assetId, uint256 shares) external view returns (uint256);
   function convertToDrawnShares(uint256 assetId, uint256 assets) external view returns (uint256);

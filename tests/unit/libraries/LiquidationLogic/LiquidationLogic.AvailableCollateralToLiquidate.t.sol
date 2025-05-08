@@ -39,7 +39,8 @@ contract LiquidationAvailableCollateralToLiquidateTest is LiquidationLogicBaseTe
     (
       res.actualCollateralToLiquidate,
       res.actualDebtToLiquidate,
-      res.liquidationProtocolFeeAmount
+      res.liquidationProtocolFeeAmount,
+
     ) = LiquidationLogic.calculateAvailableCollateralToLiquidate(args);
 
     // actualCollateralToLiquidate is always >= 1
@@ -74,7 +75,8 @@ contract LiquidationAvailableCollateralToLiquidateTest is LiquidationLogicBaseTe
     (
       res.actualCollateralToLiquidate,
       res.actualDebtToLiquidate,
-      res.liquidationProtocolFeeAmount
+      res.liquidationProtocolFeeAmount,
+
     ) = LiquidationLogic.calculateAvailableCollateralToLiquidate(args);
 
     assertEq(res.actualCollateralToLiquidate, 1, 'actualCollateralToLiquidate');
@@ -108,7 +110,8 @@ contract LiquidationAvailableCollateralToLiquidateTest is LiquidationLogicBaseTe
     (
       res.actualCollateralToLiquidate,
       res.actualDebtToLiquidate,
-      res.liquidationProtocolFeeAmount
+      res.liquidationProtocolFeeAmount,
+
     ) = LiquidationLogic.calculateAvailableCollateralToLiquidate(args);
 
     (uint256 collateralAmount, uint256 protocolLiquidationFee) = _calcLiquidationProtocolFeeAmount(
@@ -157,7 +160,8 @@ contract LiquidationAvailableCollateralToLiquidateTest is LiquidationLogicBaseTe
     (
       res.actualCollateralToLiquidate,
       res.actualDebtToLiquidate,
-      res.liquidationProtocolFeeAmount
+      res.liquidationProtocolFeeAmount,
+
     ) = LiquidationLogic.calculateAvailableCollateralToLiquidate(args);
 
     if (params.liquidationProtocolFeePercentage == 0) {
@@ -211,7 +215,8 @@ contract LiquidationAvailableCollateralToLiquidateTest is LiquidationLogicBaseTe
     (
       res.actualCollateralToLiquidate,
       res.actualDebtToLiquidate,
-      res.liquidationProtocolFeeAmount
+      res.liquidationProtocolFeeAmount,
+
     ) = LiquidationLogic.calculateAvailableCollateralToLiquidate(args);
 
     uint256 collateralAmount = ((maxCollateralToLiquidate * params.collateralAssetUnit) /

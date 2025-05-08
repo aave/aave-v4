@@ -417,7 +417,8 @@ contract LiquidationCallCloseFactorBadDebtTest is SpokeLiquidationBase {
     (
       state.collToLiq,
       state.debtToLiq,
-      state.liqProtocolFee
+      state.liqProtocolFee,
+
     ) = _calculateAvailableCollateralToLiquidate(spoke1, state, requiredDebtAmount);
 
     // logs to read protocol fee from tmp emitted event
