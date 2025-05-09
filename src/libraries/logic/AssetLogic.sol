@@ -1,6 +1,8 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.0;
 
+import {ILiquidityHub} from 'src/interfaces/ILiquidityHub.sol';
+
 import {WadRayMathExtended} from 'src/libraries/math/WadRayMathExtended.sol';
 import {DataTypes} from 'src/libraries/types/DataTypes.sol';
 import {MathUtils} from 'src/libraries/math/MathUtils.sol';
@@ -23,6 +25,7 @@ library AssetLogic {
   ) internal view returns (uint256) {
     return shares.rayMulUp(asset.previewIndex());
   }
+
   function toDrawnAssetsDown(
     DataTypes.Asset storage asset,
     uint256 shares
@@ -36,6 +39,7 @@ library AssetLogic {
   ) internal view returns (uint256) {
     return assets.rayDivUp(asset.previewIndex());
   }
+
   function toDrawnSharesDown(
     DataTypes.Asset storage asset,
     uint256 assets
@@ -75,6 +79,7 @@ library AssetLogic {
   ) internal view returns (uint256) {
     return shares.toAssetsUp(asset.totalSuppliedAssets(), asset.totalSuppliedShares());
   }
+
   function toSuppliedAssetsDown(
     DataTypes.Asset storage asset,
     uint256 shares
@@ -88,6 +93,7 @@ library AssetLogic {
   ) internal view returns (uint256) {
     return assets.toSharesUp(asset.totalSuppliedAssets(), asset.totalSuppliedShares());
   }
+
   function toSuppliedSharesDown(
     DataTypes.Asset storage asset,
     uint256 assets
@@ -120,8 +126,9 @@ library AssetLogic {
 
   // @dev Utilizes existing `asset.baseBorrowRate`
   function accrue(DataTypes.Asset storage asset) internal {
-    asset.baseDebtIndex = asset.previewIndex();
+    uint256 baseDebtIndex = asset.baseDebtIndex = asset.previewIndex();
     asset.lastUpdateTimestamp = block.timestamp;
+    emit ILiquidityHub.DrawnIndexUpdate(asset.id, baseDebtIndex);
   }
 
   function previewIndex(DataTypes.Asset storage asset) internal view returns (uint256) {

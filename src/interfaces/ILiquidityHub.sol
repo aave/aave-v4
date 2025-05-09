@@ -20,10 +20,31 @@ interface ILiquidityHub {
     uint256 supplyCap
   );
 
-  event Add(uint256 indexed assetId, address indexed spoke, uint256 suppliedShares);
-  event Remove(uint256 indexed assetId, address indexed spoke, uint256 suppliedShares);
-  event Draw(uint256 indexed assetId, address indexed spoke, uint256 drawnShares);
-  event Restore(uint256 indexed assetId, address indexed spoke, uint256 drawnShares);
+  event DrawnIndexUpdate(uint256 indexed assetId, uint256 drawnIndex);
+  event Add(
+    uint256 indexed assetId,
+    address indexed spoke,
+    uint256 suppliedShares,
+    uint256 suppliedAmount
+  );
+  event Remove(
+    uint256 indexed assetId,
+    address indexed spoke,
+    uint256 withdrawnShares,
+    uint256 withdrawnAmount
+  );
+  event Draw(
+    uint256 indexed assetId,
+    address indexed spoke,
+    uint256 drawnShares,
+    uint256 drawnAmount
+  );
+  event Restore(
+    uint256 indexed assetId,
+    address indexed spoke,
+    uint256 baseRestoredShares,
+    uint256 totalRestoredAmount
+  );
   event RefreshPremiumDebt(
     uint256 indexed assetId,
     address indexed spoke,
@@ -55,13 +76,17 @@ interface ILiquidityHub {
   error InvalidDebtChange();
 
   function addAsset(DataTypes.AssetConfig memory params, address asset) external;
+
   function updateAssetConfig(uint256 assetId, DataTypes.AssetConfig memory config) external;
+
   function addSpoke(uint256 assetId, DataTypes.SpokeConfig memory params, address spoke) external;
+
   function addSpokes(
     uint256[] calldata assetIds,
     DataTypes.SpokeConfig[] memory configs,
     address spoke
   ) external;
+
   function updateSpokeConfig(
     uint256 assetId,
     address spoke,
@@ -152,32 +177,52 @@ interface ILiquidityHub {
   ) external;
 
   function convertToDrawnAssets(uint256 assetId, uint256 shares) external view returns (uint256);
+
   function convertToDrawnShares(uint256 assetId, uint256 assets) external view returns (uint256);
+
   function convertToSuppliedAssets(uint256 assetId, uint256 shares) external view returns (uint256);
+
   function convertToSuppliedShares(uint256 assetId, uint256 assets) external view returns (uint256);
+
   function previewOffset(uint256 assetId, uint256 shares) external view returns (uint256);
+
   function getAsset(uint256 assetId) external view returns (DataTypes.Asset memory);
+
   function getAssetConfig(uint256 assetId) external view returns (DataTypes.AssetConfig memory);
+
   function getAssetDebt(uint256 assetId) external view returns (uint256, uint256);
+
   function getAssetSuppliedAmount(uint256 assetId) external view returns (uint256);
+
   function getAssetSuppliedShares(uint256 assetId) external view returns (uint256);
+
   function getAssetTotalDebt(uint256 assetId) external view returns (uint256);
+
   function getAvailableLiquidity(uint256 assetId) external view returns (uint256);
+
   function getBaseInterestRate(uint256 assetId) external view returns (uint256);
+
   function getSpoke(
     uint256 assetId,
     address spoke
   ) external view returns (DataTypes.SpokeData memory);
+
   function getSpokeConfig(
     uint256 assetId,
     address spoke
   ) external view returns (DataTypes.SpokeConfig memory);
+
   function getSpokeDebt(uint256 assetId, address spoke) external view returns (uint256, uint256);
+
   function getSpokeSuppliedAmount(uint256 assetId, address spoke) external view returns (uint256);
+
   function getSpokeSuppliedShares(uint256 assetId, address spoke) external view returns (uint256);
+
   function getSpokeTotalDebt(uint256 assetId, address spoke) external view returns (uint256);
 
   function assetCount() external view returns (uint256);
+
   function assetsList(uint256 assetId) external view returns (IERC20);
+
   function MAX_ALLOWED_ASSET_DECIMALS() external view returns (uint256);
 }

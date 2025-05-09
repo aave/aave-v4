@@ -130,7 +130,7 @@ contract LiquidityHub is ILiquidityHub {
     // TODO: fee-on-transfer
     assetsList[assetId].safeTransferFrom(from, address(this), amount);
 
-    emit Add(assetId, msg.sender, suppliedShares);
+    emit Add(assetId, msg.sender, suppliedShares, amount);
 
     return suppliedShares;
   }
@@ -156,7 +156,7 @@ contract LiquidityHub is ILiquidityHub {
 
     assetsList[assetId].safeTransfer(to, amount);
 
-    emit Remove(assetId, msg.sender, withdrawnShares);
+    emit Remove(assetId, msg.sender, withdrawnShares, amount);
 
     return withdrawnShares;
   }
@@ -182,7 +182,7 @@ contract LiquidityHub is ILiquidityHub {
 
     assetsList[assetId].safeTransfer(to, amount);
 
-    emit Draw(assetId, msg.sender, drawnShares);
+    emit Draw(assetId, msg.sender, drawnShares, amount);
 
     return drawnShares;
   }
@@ -215,7 +215,7 @@ contract LiquidityHub is ILiquidityHub {
 
     assetsList[assetId].safeTransferFrom(from, address(this), totalRestoredAmount);
 
-    emit Restore(assetId, msg.sender, baseDrawnSharesRestored);
+    emit Restore(assetId, msg.sender, baseDrawnSharesRestored, totalRestoredAmount);
 
     return baseDrawnSharesRestored;
   }
