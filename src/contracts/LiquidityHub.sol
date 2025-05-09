@@ -206,7 +206,7 @@ contract LiquidityHub is ILiquidityHub {
 
     asset.accrue();
 
-    _validateRestore(asset, spoke, baseAmount, premiumAmount);
+    _validateRestore(asset, spoke, baseAmount, premiumAmount, deficitAmount);
     asset.updateBorrowRate({liquidityAdded: baseAmount, liquidityTaken: 0}); // both can be zero
 
     uint256 totalRestoredAmount = baseAmount + premiumAmount;
@@ -436,8 +436,10 @@ contract LiquidityHub is ILiquidityHub {
     DataTypes.Asset storage asset,
     DataTypes.SpokeData storage spoke,
     uint256 baseAmountRestored,
-    uint256 premiumAmountRestored
+    uint256 premiumAmountRestored,
+    uint256 deficitAmount
   ) internal view {
+    require(deficitAmount <= baseAmountRestored + premiumAmountRestored, InvalidDeficitAmount());
     require(baseAmountRestored + premiumAmountRestored != 0, InvalidRestoreAmount());
     require(asset.config.active, AssetNotActive());
     require(!asset.config.paused, AssetPaused());

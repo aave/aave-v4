@@ -447,12 +447,12 @@ contract Spoke is ISpoke {
     vars.assetId = reserve.assetId;
 
     (vars.baseDebt, vars.premiumDebt) = _getUserDebt(userPosition, vars.assetId);
+    _validateRepay(reserve);
     (vars.baseDebtRestored, vars.premiumDebtRestored) = _calculateRestoreAmount(
       vars.baseDebt,
       vars.premiumDebt,
       amount
     );
-    _validateRepay(reserve);
 
     uint256 userPremiumDrawnShares = userPosition.premiumDrawnShares;
     uint256 userPremiumOffset = userPosition.premiumOffset;
@@ -469,8 +469,6 @@ contract Spoke is ISpoke {
       -int256(userPremiumOffset),
       _signedDiff(userPosition.realizedPremium, userRealizedPremium)
     ); // we settle premium debt here
-    console.log('deficitAmount %e', deficitAmount);
-    revert('deficit');
     uint256 restoredShares = HUB.restore(
       vars.assetId,
       vars.baseDebtRestored,

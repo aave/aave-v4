@@ -53,6 +53,7 @@ interface ILiquidityHub {
   error InvalidAssetDecimals();
   error InvalidAssetAddress();
   error InvalidDebtChange();
+  error InvalidDeficitAmount();
 
   function addAsset(DataTypes.AssetConfig memory params, address asset) external;
   function updateAssetConfig(uint256 assetId, DataTypes.AssetConfig memory config) external;
