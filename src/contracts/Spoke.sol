@@ -633,11 +633,11 @@ contract Spoke is ISpoke {
         _setUsingAsCollateral(collateralReserveId, users[vars.i], false);
       }
 
-      if (vars.deficit > 0) {
-        _settleRemainingDeficit(debtReserveId, users[vars.i]);
-      } else {
+      if (vars.deficit == 0) {
         // new user rp only needs to be calculated if no bad debt remains, otherwise it is 0
         (vars.newUserRiskPremium, , , , ) = _calculateUserAccountData(users[vars.i]);
+      } else {
+        _settleRemainingDeficit(debtReserveId, users[vars.i]);
       }
 
       // refresh debt reserve premium
