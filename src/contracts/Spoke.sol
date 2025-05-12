@@ -1,6 +1,8 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.0;
 
+import {Multicall} from 'src/dependencies/openzeppelin/Multicall.sol';
+
 // libraries
 import {WadRayMath} from 'src/libraries/math/WadRayMath.sol';
 import {PercentageMath} from 'src/libraries/math/PercentageMath.sol';
@@ -13,7 +15,7 @@ import {ILiquidityHub} from 'src/interfaces/ILiquidityHub.sol';
 import {ISpoke} from 'src/interfaces/ISpoke.sol';
 import {IPriceOracle} from 'src/interfaces/IPriceOracle.sol';
 
-contract Spoke is ISpoke {
+contract Spoke is ISpoke, Multicall {
   using WadRayMath for uint256;
   using PercentageMath for uint256;
   using KeyValueListInMemory for KeyValueListInMemory.List;
