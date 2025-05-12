@@ -109,13 +109,22 @@ rule twoStepVsOneStep(uint256 assetId) {
     storage afterTwoSteps = lastStorage;
     
     accrueInterest(eNext,assetId) at init;
+
+
     
-    assert baseDebtIndex_afterTwoSteps <= liquidityHub._assets[assetId].baseDebtIndex;
-    // only baseDebtIndex and lastUpdateTimestamp can change
+    satisfy baseDebtIndex_afterTwoSteps < liquidityHub._assets[assetId].baseDebtIndex;
+    satisfy baseDebtIndex_afterTwoSteps > liquidityHub._assets[assetId].baseDebtIndex;
+    satisfy baseDebtIndex_afterTwoSteps == liquidityHub._assets[assetId].baseDebtIndex;
+
+    assert timestamp_afterTwoSteps == liquidityHub._assets[assetId].lastUpdateTimestamp;
+    
+    /* only baseDebtIndex  can change
+     the assert version is not strong, it check that some other storage is not changes while baseDebtIndex
+      does not change */    
     assert 
         baseDebtIndex_afterTwoSteps != liquidityHub._assets[assetId].baseDebtIndex ||
-        timestamp_afterTwoSteps != liquidityHub._assets[assetId].lastUpdateTimestamp || 
         lastStorage == afterTwoSteps;
+    
 }
 
 

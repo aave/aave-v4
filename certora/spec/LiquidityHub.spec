@@ -38,17 +38,17 @@ methods {
     function WadRayMathExtended.rayDivUp(uint256 a, uint256 b) internal returns (uint256) => 
         mulDivUpCVL(a,wadRayMath.RAY(),b);
 
-    // assume that borrowrate was already updated.
+    // assume that borrow rate was already updated.
     //rules concerning updateBorrowRate are in ...
   function AssetLogic.updateBorrowRate(
     DataTypes.Asset storage asset,
-    uint256 liquidityAdded,
-    uint256 liquidityTaken
+    uint256,
+    uint256
   ) internal => NONDET;
 
-  function AssetLogic.accrue(DataTypes.Asset storage asset) internal => NONDET;
+  function AssetLogic.accrue(DataTypes.Asset storage asset) internal => accrueCalled();
 
-  function   MathUtils.calculateLinearInterest(
+  function MathUtils.calculateLinearInterest(
     uint256 rate,
     uint40 lastUpdateTimestamp
   ) internal returns (uint256) => ghostLinearInterest(rate, lastUpdateTimestamp);
@@ -78,6 +78,7 @@ methods {
 
 }
 
+/************ Ghost Variables ************/
 
 ghost  ghostLinearInterest( uint256 /*rate*/, uint40 /*lastUpdateTimestamp*/) returns uint256; 
 
@@ -87,14 +88,59 @@ ghost mapping(address /*IERC20*/ => mathint ) sumAvailableLiquidity {
     init_state axiom forall address X. sumAvailableLiquidity[X] == 0;
 }
 
-
-
-/// hook on a complex data structure, a mapping to a struct with a dynamic array
-hook Sstore _assets[KEY uint256 assetId].availableLiquidity uint256 new_value (uint old_value) {
-    sumAvailableLiquidity[currentContract.assetsList[assetId]] = sumAvailableLiquidity[currentContract.assetsList[assetId]] + new_value - old_value;
+ghost mapping(uint256 /*assetId*/  => mapping(address /*spoke*/ => uint256 )) spokeSupplyPerAssetMirror {
+    init_state axiom forall uint256 X. forall address Y. spokeSupplyPerAssetMirror[X][Y] == 0 ;
+    init_state axiom forall uint256 X. (usum address a. spokeSupplyPerAssetMirror[X][a]) == 0; 
 }
 
 
+ghost bool accrueCalledOnAsset;
+//record accessed to debt fields before accrue
+ghost bool unsafeAccessBeforeAccrue;
+
+
+
+
+ghost mapping(uint256 /*assetId*/  => mapping(address /*spoke*/ => uint256 )) spokeBaseDrawnPerAssetMirror {
+    init_state axiom forall uint256 X. forall address Y. spokeBaseDrawnPerAssetMirror[X][Y] == 0 ;
+    init_state axiom forall uint256 X. (usum address a. spokeBaseDrawnPerAssetMirror[X][a]) == 0; 
+}
+
+/********** Function summary *****/
+function accrueCalled(uint256 assetId) {
+    accrueCalledOnAsset = true; 
+} 
+
+/************ Hooks  ************/
+/// Update sumAvailableLiquidity[t] on update to availableLiquidity of assetId for token t
+hook Sstore _assets[KEY uint256 assetId].availableLiquidity uint256 new_value (uint256 old_value) {
+    sumAvailableLiquidity[currentContract.assetsList[assetId]] = sumAvailableLiquidity[currentContract.assetsList[assetId]] + new_value - old_value;
+}
+
+hook Sstore _assets[KEY uint256 assetId].baseDebtIndex uint256 new_value (uint256 old_value) {
+    unsafeAccessBeforeAccrue = unsafeAccessBeforeAccrue || !accrueCalledOnAsset;
+}
+
+hook Sload uint256 value _assets[KEY uint256 assetId].baseDebtIndex  {
+    unsafeAccessBeforeAccrue = unsafeAccessBeforeAccrue || !accrueCalledOnAsset;
+}
+
+hook Sstore liquidityHub._spokes[KEY uint256 assetId][KEY address spoke].baseDrawnShares uint256 new_value (uint256 old_value) {
+    spokeBaseDrawnPerAssetMirror[assetId][spoke] = new_value;
+
+}
+
+hook Sload uint256 value liquidityHub._spokes[KEY uint256 assetId][KEY address spoke].baseDrawnShares {
+    require spokeBaseDrawnPerAssetMirror[assetId][spoke] == value;
+}
+
+hook Sstore liquidityHub._spokes[KEY uint256 assetId][KEY address spoke].suppliedShares uint256 new_value (uint256 old_value) {
+    spokeSupplyPerAssetMirror[assetId][spoke] = new_value;
+}
+
+hook Sload uint256 value liquidityHub._spokes[KEY uint256 assetId][KEY address spoke].suppliedShares {
+    require spokeSupplyPerAssetMirror[assetId][spoke] == value;
+}
 /**
 @title External balance is at least as internal accounting 
 https://prover.certora.com/output/40726/1223726233564eeabef3da5a94096d92/?anonymousKey=7a23564895baca924f339ac7720029b2aa50a758
@@ -121,14 +167,21 @@ invariant solvency_external(address asset )
 @title Internal accounting represents supplied minus debt
 @dev the require_uint that enforces suppliedShares to be >= baseDrawnShares is checked in baseDrawnSharesVsSuppliedShares
 **/ 
+/* not an invariant, it's a tuatology 
 invariant solvency_internal(uint256 assetId, env e)
-    liquidityHub._assets[assetId].availableLiquidity >= convertToSuppliedAssets(e, assetId, require_uint256( liquidityHub._assets[assetId].suppliedShares - liquidityHub._assets[assetId].baseDrawnShares)) - 
-    liquidityHub._assets[assetId].realizedPremium {
+    getAvailableLiquidity(e, assetId) >= getAssetSuppliedAmount(e, assetId) - getAssetTotalDebt(e, assetId)  {
         preserved with (env eInv) {
             //todo - need to prove time changing 
             require eInv.block.timestamp == e.block.timestamp;
             requireAllInvariants(assetId, e);
         }
+    }
+    */
+
+
+rule solvency_internal_tautology(uint256 assetId, env e) {
+//    requireAllInvariants(assetId, e);
+    assert getAvailableLiquidity(e, assetId) >= getAssetSuppliedAmount(e, assetId) - getAssetTotalDebt(e, assetId);
     }
 
 
@@ -203,7 +256,15 @@ rule noChangeToOtherSpoke(address spoke, uint256 assetId, address otherSpoke, me
 
 
 
+rule accrueWasCalled(uint256 assetId, method f) filtered { f-> !f.isView} {
+    env e;
+    require !unsafeAccessBeforeAccrue; 
+    calldataarg args;
+    f(e,args);
 
+    assert !unsafeAccessBeforeAccrue; 
+
+}
 /**** Valid State Rules *******/
 
 
@@ -230,36 +291,7 @@ invariant validAssetId(uint256 assetId)
     liquidityHub.assetsList.length == liquidityHub.assetCount;
 
 
-ghost mapping(uint256 /*assetId*/  => mapping(address /*spoke*/ => uint256 )) spokeSupplyPerAssetMirror {
-    init_state axiom forall uint256 X. forall address Y. spokeSupplyPerAssetMirror[X][Y] == 0 ;
-    init_state axiom forall uint256 X. (usum address a. spokeSupplyPerAssetMirror[X][a]) == 0; 
-}
 
-
-/// hook on a complex data structure, a mapping to a struct with a dynamic array
-hook Sstore liquidityHub._spokes[KEY uint256 assetId][KEY address spoke].suppliedShares uint256 new_value (uint old_value) {
-    spokeSupplyPerAssetMirror[assetId][spoke] = new_value;
-}
-
-hook Sload uint256 value liquidityHub._spokes[KEY uint256 assetId][KEY address spoke].suppliedShares {
-    require spokeSupplyPerAssetMirror[assetId][spoke] == value;
-}
-
-
-ghost mapping(uint256 /*assetId*/  => mapping(address /*spoke*/ => uint256 )) spokeBaseDrawnPerAssetMirror {
-    init_state axiom forall uint256 X. forall address Y. spokeBaseDrawnPerAssetMirror[X][Y] == 0 ;
-    init_state axiom forall uint256 X. (usum address a. spokeBaseDrawnPerAssetMirror[X][a]) == 0; 
-}
-
-
-/// hook on a complex data structure, a mapping to a struct with a dynamic array
-hook Sstore liquidityHub._spokes[KEY uint256 assetId][KEY address spoke].baseDrawnShares uint256 new_value (uint old_value) {
-    spokeBaseDrawnPerAssetMirror[assetId][spoke] = new_value;
-}
-
-hook Sload uint256 value liquidityHub._spokes[KEY uint256 assetId][KEY address spoke].baseDrawnShares {
-    require spokeBaseDrawnPerAssetMirror[assetId][spoke] == value;
-}
 
 /** @title the sum of  liquidityHub._spokes[assetId][spoke].suppliedShares for all spoke equals to liquidityHub._assets[assetId].suppliedShares
 @status fails on addSpoke and addSpokes as they can re-add an existing spoke 
@@ -292,6 +324,10 @@ invariant baseDebtIndexMin(uint256 assetId)
         }
     }
 
+
+
+
+
 // optimize the calls to certain function and save in ghost (global) variable) 
 ghost uint256 supplyAmountBefore; 
 ghost uint256 supplyShareBefore;
@@ -306,5 +342,5 @@ function requireAllInvariants(uint256 assetId, env e)  {
 
     requireInvariant sumOfSpokeDrawnShares(assetId);
     requireInvariant sumOfSpokeSupplyShares(assetId);
-    requireInvariant baseDebtIndexMin(assetId);
+    requireInvariant baseDebtIndexMin(assetId); 
 }
