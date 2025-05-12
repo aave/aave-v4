@@ -27,4 +27,161 @@ contract SpokeMulticall is SpokeBase {
     // Check the collateral
     assertEq(spoke1.getUsingAsCollateral(daiReserveId, bob), true, 'Bob using as collateral');
   }
+
+  /// Supply and update user risk premium using multicall
+  function test_multicall_supply_updateUserRp() public {
+    vm.skip(true, 'pending user rp update function');
+  }
+
+  /// Withdraw and update user risk premium using multicall
+  function test_multicall_withdraw_updateUserRp() public {
+    vm.skip(true, 'pending user rp update function');
+  }
+
+  /// Add multiple reserves using multicall
+  function test_multicall_addMultipleReserves() public {
+    uint256 reserveCountBefore = spoke1.reserveCount();
+    uint256 dai2ReserveId = reserveCountBefore;
+    uint256 dai3ReserveId = dai2ReserveId + 1;
+    DataTypes.ReserveConfig memory dai2Config = DataTypes.ReserveConfig({
+      decimals: 18,
+      active: true,
+      frozen: false,
+      paused: false,
+      collateralFactor: 88_00,
+      liquidationBonus: 100_00,
+      liquidityPremium: 10_00,
+      borrowable: true,
+      collateral: true
+    });
+    DataTypes.ReserveConfig memory dai3Config = DataTypes.ReserveConfig({
+      decimals: 18,
+      active: true,
+      frozen: false,
+      paused: false,
+      collateralFactor: 70_00,
+      liquidationBonus: 100_00,
+      liquidityPremium: 5_00,
+      borrowable: true,
+      collateral: true
+    });
+
+    DataTypes.Reserve memory dai2ReserveExpected = DataTypes.Reserve({
+      reserveId: dai2ReserveId,
+      assetId: daiAssetId,
+      asset: address(tokenList.dai),
+      suppliedShares: 0,
+      baseDrawnShares: 0,
+      premiumDrawnShares: 0,
+      premiumOffset: 0,
+      realizedPremium: 0,
+      config: dai2Config
+    });
+    DataTypes.Reserve memory dai3ReserveExpected = DataTypes.Reserve({
+      reserveId: dai3ReserveId,
+      assetId: daiAssetId,
+      asset: address(tokenList.dai),
+      suppliedShares: 0,
+      baseDrawnShares: 0,
+      premiumDrawnShares: 0,
+      premiumOffset: 0,
+      realizedPremium: 0,
+      config: dai3Config
+    });
+
+    // Set up the multicall
+    bytes[] memory calls = new bytes[](2);
+    calls[0] = abi.encodeWithSelector(ISpoke.addReserve.selector, daiAssetId, dai2Config);
+    calls[1] = abi.encodeWithSelector(ISpoke.addReserve.selector, daiAssetId, dai3Config);
+
+    // Execute the multicall
+    Multicall(address(spoke1)).multicall(calls);
+
+    // Check the reserves
+    assertEq(spoke1.reserveCount(), reserveCountBefore + 2, 'Reserve count should increase by 2');
+    DataTypes.Reserve memory dai2Reserve = spoke1.getReserve(dai2ReserveId);
+    DataTypes.Reserve memory dai3Reserve = spoke1.getReserve(dai3ReserveId);
+    _checkReserveInfo(dai2ReserveExpected, dai2Reserve);
+    _checkReserveInfo(dai3ReserveExpected, dai3Reserve);
+  }
+
+  /// Update multiple reserve configs using multicall
+  function test_multicall_updateMultipleReserveConfigs() public {
+    uint256 daiReserveId = _daiReserveId(spoke1);
+    uint256 usdxReserveId = _usdxReserveId(spoke1);
+
+    // Set up the new reserve configs
+    DataTypes.Reserve memory newDai = spoke1.getReserve(daiReserveId);
+    newDai.config.liquidityPremium += 1;
+    newDai.config.collateralFactor += 1;
+    newDai.config.liquidationBonus += 1;
+    newDai.config.collateralFactor += 1;
+    newDai.config.borrowable = false;
+    DataTypes.Reserve memory newUsdx = spoke1.getReserve(usdxReserveId);
+    newUsdx.config.liquidityPremium += 1;
+    newUsdx.config.collateralFactor += 1;
+    newUsdx.config.liquidationBonus += 1;
+    newUsdx.config.collateralFactor += 1;
+    newUsdx.config.collateral = false;
+
+    // Set up the multicall
+    bytes[] memory calls = new bytes[](2);
+    calls[0] = abi.encodeWithSelector(
+      ISpoke.updateReserveConfig.selector,
+      daiReserveId,
+      newDai.config
+    );
+    calls[1] = abi.encodeWithSelector(
+      ISpoke.updateReserveConfig.selector,
+      usdxReserveId,
+      newUsdx.config
+    );
+
+    // Execute the multicall
+    Multicall(address(spoke1)).multicall(calls);
+
+    // Check the reserve configs
+    DataTypes.Reserve memory daiReserve = spoke1.getReserve(daiReserveId);
+    DataTypes.Reserve memory usdxReserve = spoke1.getReserve(usdxReserveId);
+    _checkReserveInfo(newDai, daiReserve);
+    _checkReserveInfo(newUsdx, usdxReserve);
+  }
+
+  function _checkReserveInfo(
+    DataTypes.Reserve memory expected,
+    DataTypes.Reserve memory actual
+  ) internal pure {
+    assertEq(expected.reserveId, actual.reserveId, 'Reserve Ids should match');
+    assertEq(expected.assetId, actual.assetId, 'Asset Ids should match');
+    assertEq(expected.asset, actual.asset, 'Asset addresses should match');
+    assertEq(expected.config.active, actual.config.active, 'Active config should match');
+    assertEq(expected.config.frozen, actual.config.frozen, 'Frozen config should match');
+    assertEq(expected.config.paused, actual.config.paused, 'Paused config should match');
+    assertEq(
+      expected.config.borrowable,
+      actual.config.borrowable,
+      'Borrowable config should match'
+    );
+    assertEq(
+      expected.config.collateral,
+      actual.config.collateral,
+      'Collateral config should match'
+    );
+    assertEq(expected.config.decimals, actual.config.decimals, 'Decimals config should match');
+    assertEq(
+      expected.config.collateralFactor,
+      actual.config.collateralFactor,
+      'Collateral factor config should match'
+    );
+    assertEq(
+      expected.config.liquidationBonus,
+      actual.config.liquidationBonus,
+      'Liquidation bonus config should match'
+    );
+    assertEq(
+      expected.config.liquidityPremium,
+      actual.config.liquidityPremium,
+      'Liquidity premium config should match'
+    );
+  }
 }
