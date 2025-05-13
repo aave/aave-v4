@@ -12,8 +12,8 @@ contract SpokeMulticall is SpokeBase {
 
     // Set up the multicall
     bytes[] memory calls = new bytes[](2);
-    calls[0] = abi.encodeWithSignature('supply(uint256,uint256)', daiReserveId, supplyAmount);
-    calls[1] = abi.encodeWithSignature('setUsingAsCollateral(uint256,bool)', daiReserveId, true);
+    calls[0] = abi.encodeCall(ISpoke.supply, (daiReserveId, supplyAmount));
+    calls[1] = abi.encodeCall(ISpoke.setUsingAsCollateral, (daiReserveId, true));
 
     vm.expectEmit(address(spoke1));
     emit ISpoke.Supply(daiReserveId, bob, hub.convertToSuppliedShares(daiAssetId, supplyAmount));
@@ -71,33 +71,21 @@ contract SpokeMulticall is SpokeBase {
       collateral: true
     });
 
-    DataTypes.Reserve memory dai2ReserveExpected = DataTypes.Reserve({
-      reserveId: dai2ReserveId,
-      assetId: daiAssetId,
-      asset: address(tokenList.dai),
-      suppliedShares: 0,
-      baseDrawnShares: 0,
-      premiumDrawnShares: 0,
-      premiumOffset: 0,
-      realizedPremium: 0,
-      config: dai2Config
-    });
-    DataTypes.Reserve memory dai3ReserveExpected = DataTypes.Reserve({
-      reserveId: dai3ReserveId,
-      assetId: daiAssetId,
-      asset: address(tokenList.dai),
-      suppliedShares: 0,
-      baseDrawnShares: 0,
-      premiumDrawnShares: 0,
-      premiumOffset: 0,
-      realizedPremium: 0,
-      config: dai3Config
-    });
+    DataTypes.Reserve memory dai2ReserveExpected;
+    dai2ReserveExpected.reserveId = dai2ReserveId;
+    dai2ReserveExpected.assetId = daiAssetId;
+    dai2ReserveExpected.asset = address(tokenList.dai);
+    dai2ReserveExpected.config = dai2Config;
+    DataTypes.Reserve memory dai3ReserveExpected;
+    dai3ReserveExpected.reserveId = dai3ReserveId;
+    dai3ReserveExpected.assetId = daiAssetId;
+    dai3ReserveExpected.asset = address(tokenList.dai);
+    dai3ReserveExpected.config = dai3Config;
 
     // Set up the multicall
     bytes[] memory calls = new bytes[](2);
-    calls[0] = abi.encodeWithSelector(ISpoke.addReserve.selector, daiAssetId, dai2Config);
-    calls[1] = abi.encodeWithSelector(ISpoke.addReserve.selector, daiAssetId, dai3Config);
+    calls[0] = abi.encodeCall(ISpoke.addReserve, (daiAssetId, dai2Config));
+    calls[1] = abi.encodeCall(ISpoke.addReserve, (daiAssetId, dai3Config));
 
     vm.expectEmit(address(spoke1));
     emit ISpoke.ReserveAdded(dai2ReserveId, daiAssetId);
@@ -136,16 +124,8 @@ contract SpokeMulticall is SpokeBase {
 
     // Set up the multicall
     bytes[] memory calls = new bytes[](2);
-    calls[0] = abi.encodeWithSelector(
-      ISpoke.updateReserveConfig.selector,
-      daiReserveId,
-      newDai.config
-    );
-    calls[1] = abi.encodeWithSelector(
-      ISpoke.updateReserveConfig.selector,
-      usdxReserveId,
-      newUsdx.config
-    );
+    calls[0] = abi.encodeCall(ISpoke.updateReserveConfig, (daiReserveId, newDai.config));
+    calls[1] = abi.encodeCall(ISpoke.updateReserveConfig, (usdxReserveId, newUsdx.config));
 
     vm.expectEmit(address(spoke1));
     emit ISpoke.ReserveConfigUpdated(daiReserveId, newDai.config);
@@ -166,37 +146,29 @@ contract SpokeMulticall is SpokeBase {
     DataTypes.Reserve memory expected,
     DataTypes.Reserve memory actual
   ) internal pure {
-    assertEq(expected.reserveId, actual.reserveId, 'Reserve Ids should match');
-    assertEq(expected.assetId, actual.assetId, 'Asset Ids should match');
-    assertEq(expected.asset, actual.asset, 'Asset addresses should match');
-    assertEq(expected.config.active, actual.config.active, 'Active config should match');
-    assertEq(expected.config.frozen, actual.config.frozen, 'Frozen config should match');
-    assertEq(expected.config.paused, actual.config.paused, 'Paused config should match');
-    assertEq(
-      expected.config.borrowable,
-      actual.config.borrowable,
-      'Borrowable config should match'
-    );
-    assertEq(
-      expected.config.collateral,
-      actual.config.collateral,
-      'Collateral config should match'
-    );
-    assertEq(expected.config.decimals, actual.config.decimals, 'Decimals config should match');
+    assertEq(expected.reserveId, actual.reserveId, 'Reserve Ids mismatch');
+    assertEq(expected.assetId, actual.assetId, 'Asset Ids mismatch');
+    assertEq(expected.asset, actual.asset, 'Asset addresses mismatch');
+    assertEq(expected.config.active, actual.config.active, 'Active config mismatch');
+    assertEq(expected.config.frozen, actual.config.frozen, 'Frozen config mismatch');
+    assertEq(expected.config.paused, actual.config.paused, 'Paused config mismatch');
+    assertEq(expected.config.borrowable, actual.config.borrowable, 'Borrowable config mismatch');
+    assertEq(expected.config.collateral, actual.config.collateral, 'Collateral config mismatch');
+    assertEq(expected.config.decimals, actual.config.decimals, 'Decimals config mismatch');
     assertEq(
       expected.config.collateralFactor,
       actual.config.collateralFactor,
-      'Collateral factor config should match'
+      'Collateral factor config mismatch'
     );
     assertEq(
       expected.config.liquidationBonus,
       actual.config.liquidationBonus,
-      'Liquidation bonus config should match'
+      'Liquidation bonus config mismatch'
     );
     assertEq(
       expected.config.liquidityPremium,
       actual.config.liquidityPremium,
-      'Liquidity premium config should match'
+      'Liquidity premium config mismatch'
     );
   }
 }
