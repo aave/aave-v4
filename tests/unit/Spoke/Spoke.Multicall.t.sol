@@ -1,8 +1,8 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.0;
 
-import 'tests/unit/Spoke/SpokeBase.t.sol';
 import {Multicall} from 'src/dependencies/openzeppelin/Multicall.sol';
+import 'tests/unit/Spoke/SpokeBase.t.sol';
 
 contract SpokeMulticall is SpokeBase {
   /// Supply and set collateral using multicall
@@ -14,6 +14,11 @@ contract SpokeMulticall is SpokeBase {
     bytes[] memory calls = new bytes[](2);
     calls[0] = abi.encodeWithSignature('supply(uint256,uint256)', daiReserveId, supplyAmount);
     calls[1] = abi.encodeWithSignature('setUsingAsCollateral(uint256,bool)', daiReserveId, true);
+
+    vm.expectEmit(address(spoke1));
+    emit ISpoke.Supply(daiReserveId, bob, hub.convertToSuppliedShares(daiAssetId, supplyAmount));
+    vm.expectEmit(address(spoke1));
+    emit ISpoke.UsingAsCollateral(daiReserveId, bob, true);
 
     // Execute the multicall
     vm.startPrank(bob);
@@ -94,6 +99,11 @@ contract SpokeMulticall is SpokeBase {
     calls[0] = abi.encodeWithSelector(ISpoke.addReserve.selector, daiAssetId, dai2Config);
     calls[1] = abi.encodeWithSelector(ISpoke.addReserve.selector, daiAssetId, dai3Config);
 
+    vm.expectEmit(address(spoke1));
+    emit ISpoke.ReserveAdded(dai2ReserveId, daiAssetId);
+    vm.expectEmit(address(spoke1));
+    emit ISpoke.ReserveAdded(dai3ReserveId, daiAssetId);
+
     // Execute the multicall
     Multicall(address(spoke1)).multicall(calls);
 
@@ -136,6 +146,11 @@ contract SpokeMulticall is SpokeBase {
       usdxReserveId,
       newUsdx.config
     );
+
+    vm.expectEmit(address(spoke1));
+    emit ISpoke.ReserveConfigUpdated(daiReserveId, newDai.config);
+    vm.expectEmit(address(spoke1));
+    emit ISpoke.ReserveConfigUpdated(usdxReserveId, newUsdx.config);
 
     // Execute the multicall
     Multicall(address(spoke1)).multicall(calls);

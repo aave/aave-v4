@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.0;
 
+import {Multicall} from 'src/dependencies/openzeppelin/Multicall.sol';
 import {SafeERC20} from 'src/dependencies/openzeppelin/SafeERC20.sol';
 import {IERC20} from 'src/dependencies/openzeppelin/IERC20.sol';
 import {ILiquidityHub} from 'src/interfaces/ILiquidityHub.sol';
@@ -11,7 +12,7 @@ import {SharesMath} from 'src/libraries/math/SharesMath.sol';
 import {PercentageMath} from 'src/libraries/math/PercentageMath.sol';
 
 // @dev Amounts are `asset` denominated by default unless specified otherwise with `share` suffix
-contract LiquidityHub is ILiquidityHub {
+contract LiquidityHub is ILiquidityHub, Multicall {
   using SafeERC20 for IERC20;
   using WadRayMath for uint256;
   using SharesMath for uint256;
