@@ -17,75 +17,108 @@ contract LiquidityHubRestoreDeficitTest is LiquidityHubBase {
     vm.stopPrank();
   }
 
+  /// @dev Restore reverts with InvalidDeficitAmount when deficit amount is greater than the debt amount (no accrual)
   function test_restore_revertsWith_InvalidDeficitAmount_with_deficit() public {
-    uint256 drawnAmount = 10_000e6;
-    uint256 deficitAmountToRestore = drawnAmount + 1;
+    test_restore_fuzz_revertsWith_InvalidDeficitAmount_with_deficit_with_accrual({
+      drawnAmount: 10_000e6,
+      deficitAmountToRestore: 10_000e6 + 1,
+      skipTime: 0
+    });
+  }
+
+  /// @dev Fuzz - restore reverts with InvalidDeficitAmount when deficit amount is greater than the debt amount (no accrual)
+  function test_restore_fuzz_revertsWith_InvalidDeficitAmount_with_deficit(
+    uint256 drawnAmount,
+    uint256 deficitAmountToRestore
+  ) public {
+    test_restore_fuzz_revertsWith_InvalidDeficitAmount_with_deficit_with_accrual({
+      drawnAmount: drawnAmount,
+      deficitAmountToRestore: deficitAmountToRestore,
+      skipTime: 0
+    });
+  }
+
+  /// @dev Restore reverts with InvalidDeficitAmount when deficit amount is greater than the debt amount (with accrual)
+  function test_restore_revertsWith_InvalidDeficitAmount_with_deficit_with_accrual() public {
+    test_restore_fuzz_revertsWith_InvalidDeficitAmount_with_deficit_with_accrual({
+      drawnAmount: 10_000e6,
+      deficitAmountToRestore: 20_000e6,
+      skipTime: 365 days
+    });
+  }
+
+  /// @dev Fuzz - restore reverts with InvalidDeficitAmount when deficit amount is greater than the debt amount (with accrual)
+  function test_restore_fuzz_revertsWith_InvalidDeficitAmount_with_deficit_with_accrual(
+    uint256 drawnAmount,
+    uint256 deficitAmountToRestore,
+    uint256 skipTime
+  ) public {
+    skipTime = bound(skipTime, 1, MAX_SKIP_TIME);
+    drawnAmount = bound(drawnAmount, 1, MAX_SUPPLY_AMOUNT);
 
     // draw usdx liquidity to be restored
     Utils.draw(hub, usdxAssetId, address(spoke1), address(spoke1), drawnAmount, address(spoke1));
-    (uint256 baseAmount, uint256 premiumAmount) = hub.getSpokeDebt(usdxAssetId, address(spoke1));
+
+    // skip to accrue interest
+    skip(skipTime);
+
+    (uint256 baseDebt, uint256 premiumDebt) = hub.getSpokeDebt(usdxAssetId, address(spoke1));
+    deficitAmountToRestore = bound(
+      deficitAmountToRestore,
+      baseDebt + premiumDebt + 1,
+      type(uint256).max
+    );
 
     vm.expectRevert(ILiquidityHub.InvalidDeficitAmount.selector);
 
     vm.prank(address(spoke1));
-    hub.restore(usdxAssetId, baseAmount, premiumAmount, deficitAmountToRestore, address(spoke1));
+    hub.restore(usdxAssetId, baseDebt, premiumDebt, deficitAmountToRestore, address(spoke1));
   }
 
-  // function test_restore_revertsWith_InvalidDeficitAmount_with_deficit_no_premium() public {
-  //   uint256 drawnAmount = 10_000e6;
+  /// @dev Restore reverts with InvalidDeficitAmount when deficit amount is greater than the debt amount (with accrual)
+  function test_restore_revertsWith_InvalidDeficitAmount_with_deficit_with_premium() public {
+    test_restore_fuzz_revertsWith_InvalidDeficitAmount_with_deficit_with_premium({
+      drawnAmount: 10_000_000e6,
+      deficitAmountToRestore: 20_000_000e6,
+      skipTime: 365 days
+    });
+  }
 
-  //   // draw usdx liquidity to be restored
-  //   Utils.draw(hub, usdxAssetId, address(spoke1), address(spoke1), drawnAmount, address(spoke1));
-  //   skip(365 days);
+  function test_restore_fuzz_revertsWith_InvalidDeficitAmount_with_deficit_with_premium(
+    uint256 drawnAmount,
+    uint256 deficitAmountToRestore,
+    uint256 skipTime
+  ) public {
+    drawnAmount = bound(drawnAmount, 1, MAX_SUPPLY_AMOUNT);
+    skipTime = bound(skipTime, 1, 365 days);
 
-  //   (uint256 baseAmount, uint256 premiumAmount) = hub.getSpokeDebt(usdxAssetId, address(spoke1));
-  //   console.log('baseAmount: %e', baseAmount);
-  //   console.log('premiumAmount: %e', premiumAmount);
+    _createBorrowPositionWithPremium(spoke1, _usdxReserveId(spoke1), drawnAmount, 365 days);
 
-  //   uint256 deficitAmountToRestore = baseAmount + premiumAmount + 1;
-  //   uint256 deficitBefore = hub.getAsset(usdxAssetId).deficit;
-  //   uint256 supplyExchangeRateBefore = hub.convertToSuppliedAssets(
-  //     usdxAssetId,
-  //     WadRayMathExtended.RAY
-  //   );
+    (uint256 baseDebt, uint256 premiumDebt) = hub.getSpokeDebt(usdxAssetId, address(spoke1));
+    vm.assume(premiumDebt > 0);
 
-  //   vm.prank(address(spoke1));
-  //   hub.restore(usdxAssetId, baseAmount, premiumAmount, deficitAmountToRestore, address(spoke1));
-  // }
+    uint256 totalDebt = baseDebt + premiumDebt;
+    deficitAmountToRestore = bound(deficitAmountToRestore, totalDebt + 1, type(uint256).max);
 
-  // function test_restore_with_deficit_no_premium() public {
-  //   uint256 drawnAmount = 10_000e6;
+    vm.expectRevert(ILiquidityHub.InvalidDeficitAmount.selector);
 
-  //   // draw usdx liquidity to be restored
-  //   Utils.draw(hub, usdxAssetId, address(spoke1), address(spoke1), drawnAmount, address(spoke1));
-  //   skip(365 days);
+    vm.prank(address(spoke1));
+    hub.restore(usdxAssetId, baseDebt, premiumDebt, deficitAmountToRestore, address(spoke1));
+  }
 
-  //   (uint256 baseAmount, uint256 premiumAmount) = hub.getSpokeDebt(usdxAssetId, address(spoke1));
-  //   console.log('baseAmount: %e', baseAmount);
-  //   console.log('premiumAmount: %e', premiumAmount);
-
-  //   uint256 deficitAmountToRestore = baseAmount / 2;
-  //   uint256 deficitBefore = hub.getAsset(usdxAssetId).deficit;
-  //   uint256 supplyExchangeRateBefore = hub.convertToSuppliedAssets(
-  //     usdxAssetId,
-  //     WadRayMathExtended.RAY
-  //   );
-
-  //   // Set up the spoke to have a deficit
-  //   // Restore the deficit
-  //   vm.prank(address(spoke1));
-  //   hub.restore(usdxAssetId, baseAmount, premiumAmount, deficitAmountToRestore, address(spoke1));
-  //   // Check that the spoke's deficit has been restored
-
-  //   uint256 deficitAfter = hub.getAsset(usdxAssetId).deficit;
-  //   uint256 supplyExchangeRateAfter = hub.convertToSuppliedAssets(
-  //     usdxAssetId,
-  //     WadRayMathExtended.RAY
-  //   );
-
-  //   // console.log('supplyExchangeRateBefore: %e', supplyExchangeRateBefore);
-  //   // console.log('supplyExchangeRateAfter: %e', supplyExchangeRateAfter);
-
-  //   assertEq(deficitAfter, deficitBefore + deficitAmountToRestore);
-  // }
+  /// Create a borrow position thru user interaction with spoke, to accrue premium on spoke debt in hub
+  /// Bob supplies max wbtc collateral thru spoke
+  function _createBorrowPositionWithPremium(
+    ISpoke spoke,
+    uint256 reserveId,
+    uint256 borrowAmount,
+    uint256 skipTime
+  ) internal {
+    // Bob supplies collateral
+    Utils.supplyCollateral(spoke1, _wbtcReserveId(spoke1), bob, MAX_SUPPLY_AMOUNT, bob);
+    // Bob borrows reserve
+    Utils.borrow(spoke, reserveId, bob, borrowAmount, address(bob));
+    // skip to accrue interest
+    skip(skipTime);
+  }
 }
