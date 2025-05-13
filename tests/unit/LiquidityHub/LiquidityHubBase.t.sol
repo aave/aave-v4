@@ -47,7 +47,7 @@ contract LiquidityHubBase is Base {
     DebtAccounting[3] spoke;
   }
 
-  function setUp() public override {
+  function setUp() public virtual override {
     super.setUp();
     initEnvironment();
   }
@@ -93,6 +93,7 @@ contract LiquidityHubBase is Base {
     return (daiDrawAmount, suppliedShares);
   }
 
+  /// TODO: migrate to other _supplyAndDrawLiquidity method which is asset/spoke agnostic
   /// @dev spoke2 (bob) supplies dai, spoke1 (alice) draws dai
   function _supplyAndDrawLiquidity(
     uint256 daiAmount,
@@ -129,6 +130,45 @@ contract LiquidityHubBase is Base {
     skip(skipTime);
     return (drawnShares, supplyShares);
   }
+
+  /// @dev spoke2 (bob) supplies dai, spoke1 (alice) draws dai
+  // function _supplyAndDrawLiquidity(
+
+  //   uint256 assetId,
+  //   uint256 daiAmount,
+  //   uint256 daiDrawAmount,
+  //   uint256 rate,
+  //   uint256 skipTime
+  // ) internal returns (uint256, uint256) {
+  //   vm.mockCall(
+  //     address(irStrategy),
+  //     IReserveInterestRateStrategy.calculateInterestRates.selector,
+  //     abi.encode(rate)
+  //   );
+
+  //   // spoke2 supply dai
+  //   uint256 supplyShares = Utils.add({
+  //     hub: hub,
+  //     assetId: daiAssetId,
+  //     spoke: address(spoke2),
+  //     amount: daiAmount,
+  //     user: bob,
+  //     to: address(spoke2)
+  //   });
+
+  //   // spoke1 draw dai liquidity on behalf of user
+  //   uint256 drawnShares = Utils.draw({
+  //     hub: hub,
+  //     assetId: daiAssetId,
+  //     to: alice,
+  //     spoke: address(spoke1),
+  //     amount: daiDrawAmount,
+  //     onBehalfOf: address(spoke1)
+  //   });
+
+  //   skip(skipTime);
+  //   return (drawnShares, supplyShares);
+  // }
 
   function _getDebt(uint256 assetId) internal view returns (DebtData memory) {
     revert('implement me');
@@ -170,5 +210,20 @@ contract LiquidityHubBase is Base {
 
     (, uint256 premiumDebt) = hub.getAssetDebt(daiAssetId);
     assertGt(premiumDebt, 0); // non-zero premium debt
+  }
+
+  // supply MAX_SUPPLY_AMOUNT liquidity to hub asset from a temporary user
+  function _deployLiquidity(ISpoke spoke, uint256 assetId, uint256 amount) public {
+    uint256 initialLiq = hub.getAvailableLiquidity(assetId);
+    address tempUser = makeAddr('tempUser');
+    IERC20 asset = hub.assetsList(assetId);
+    deal(address(asset), tempUser, amount);
+
+    vm.prank(tempUser);
+    asset.approve(address(hub), type(uint256).max);
+
+    Utils.add(hub, assetId, address(spoke), amount, tempUser, address(0));
+
+    assertEq(hub.getAvailableLiquidity(assetId), initialLiq + amount);
   }
 }
