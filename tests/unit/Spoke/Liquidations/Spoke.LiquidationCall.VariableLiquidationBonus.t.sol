@@ -9,7 +9,7 @@ contract LiquidationCallVariableLiquidationBonusTest is SpokeLiquidationBase {
   /// user health factor position varies across possible desiredHf values
   /// liquidation bonus varies
   /// close factor = 1e18
-  function test_liquidationCall_fuzz_variableLB(
+  function test_liquidationCall_fuzz_variable_liqBonus(
     uint256 collateralReserveId,
     uint256 debtReserveId,
     DataTypes.LiquidationConfig memory liqConfig,
@@ -32,19 +32,15 @@ contract LiquidationCallVariableLiquidationBonusTest is SpokeLiquidationBase {
       skipTime: skipTime
     });
 
-    string memory label = 'liquidationCall_fuzz_variableLB';
-    _assertUserAccountData(state, spoke1, label);
-    _assertProtocolFeeEarned(state, label);
-    _assertLiquidationBonusEarned(state, label);
-    _assertSupplyExchangeRate(state, label);
+    _checkLiquidation(state, spoke1, 'liquidationCall_fuzz_variableLiqBonus');
   }
 
   /// coll: weth / debt: dai
-  function test_liquidationCall_variableLB_scenario1() public {
+  function test_liquidationCall_variable_liqBonus_scenario1() public {
     uint256 collateralReserveId = _wethReserveId(spoke1);
     uint256 debtReserveId = _daiReserveId(spoke1);
 
-    test_liquidationCall_fuzz_variableLB({
+    test_liquidationCall_fuzz_variable_liqBonus({
       collateralReserveId: collateralReserveId,
       debtReserveId: debtReserveId,
       liqConfig: DataTypes.LiquidationConfig({
@@ -60,11 +56,11 @@ contract LiquidationCallVariableLiquidationBonusTest is SpokeLiquidationBase {
   }
 
   /// coll: weth / debt: usdx
-  function test_liquidationCall_variableLB_scenario2() public {
+  function test_liquidationCall_variable_liqBonus_scenario2() public {
     uint256 collateralReserveId = _wethReserveId(spoke1);
     uint256 debtReserveId = _usdxReserveId(spoke1);
 
-    test_liquidationCall_fuzz_variableLB({
+    test_liquidationCall_fuzz_variable_liqBonus({
       collateralReserveId: collateralReserveId,
       debtReserveId: debtReserveId,
       liqConfig: DataTypes.LiquidationConfig({
@@ -80,11 +76,11 @@ contract LiquidationCallVariableLiquidationBonusTest is SpokeLiquidationBase {
   }
 
   /// coll: usdx / debt: weth
-  function test_liquidationCall_variableLB_scenario3() public {
+  function test_liquidationCall_variable_liqBonus_scenario3() public {
     uint256 collateralReserveId = _usdxReserveId(spoke1);
     uint256 debtReserveId = _wethReserveId(spoke1);
 
-    test_liquidationCall_fuzz_variableLB({
+    test_liquidationCall_fuzz_variable_liqBonus({
       collateralReserveId: collateralReserveId,
       debtReserveId: debtReserveId,
       liqConfig: DataTypes.LiquidationConfig({
@@ -100,11 +96,11 @@ contract LiquidationCallVariableLiquidationBonusTest is SpokeLiquidationBase {
   }
 
   /// coll: usdx / debt: dai
-  function test_liquidationCall_variableLB_scenario4() public {
+  function test_liquidationCall_variable_liqBonus_scenario4() public {
     uint256 collateralReserveId = _usdxReserveId(spoke1);
     uint256 debtReserveId = _daiReserveId(spoke1);
 
-    test_liquidationCall_fuzz_variableLB({
+    test_liquidationCall_fuzz_variable_liqBonus({
       collateralReserveId: collateralReserveId,
       debtReserveId: debtReserveId,
       liqConfig: DataTypes.LiquidationConfig({
@@ -120,11 +116,11 @@ contract LiquidationCallVariableLiquidationBonusTest is SpokeLiquidationBase {
   }
 
   /// coll: dai / debt: weth
-  function test_liquidationCall_variableLB_scenario5() public {
+  function test_liquidationCall_variable_liqBonus_scenario5() public {
     uint256 collateralReserveId = _daiReserveId(spoke1);
     uint256 debtReserveId = _wethReserveId(spoke1);
 
-    test_liquidationCall_fuzz_variableLB({
+    test_liquidationCall_fuzz_variable_liqBonus({
       collateralReserveId: collateralReserveId,
       debtReserveId: debtReserveId,
       liqConfig: DataTypes.LiquidationConfig({
@@ -140,11 +136,11 @@ contract LiquidationCallVariableLiquidationBonusTest is SpokeLiquidationBase {
   }
 
   /// coll: dai / debt: usdx
-  function test_liquidationCall_variableLB_scenario6() public {
+  function test_liquidationCall_variable_liqBonus_scenario6() public {
     uint256 collateralReserveId = _daiReserveId(spoke1);
     uint256 debtReserveId = _usdxReserveId(spoke1);
 
-    test_liquidationCall_fuzz_variableLB({
+    test_liquidationCall_fuzz_variable_liqBonus({
       collateralReserveId: collateralReserveId,
       debtReserveId: debtReserveId,
       liqConfig: DataTypes.LiquidationConfig({

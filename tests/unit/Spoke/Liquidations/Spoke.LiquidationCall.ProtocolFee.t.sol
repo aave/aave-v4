@@ -34,13 +34,7 @@ contract LiquidationCallProtocolFeeTest is SpokeLiquidationBase {
       liquidationProtocolFeePercentage,
       skipTime
     );
-
-    string memory label = 'test_liquidationCall_fuzz_protocolFee';
-    _assertUserAccountData(state, spoke1, label);
-    _assertProtocolFeeEarned(state, label);
-    _assertLiquidationBonusEarned(state, label);
-    _assertSupplyExchangeRate(state, label);
-
+    _checkLiquidation(state, spoke1, 'test_liquidationCall_fuzz_protocolFee');
     return state;
   }
 
@@ -153,7 +147,7 @@ contract LiquidationCallProtocolFeeTest is SpokeLiquidationBase {
   }
 
   /// with 0 liquidation bonus, the protocol fee should also be 0
-  function test_liquidationCall_fuzz_protocolFee_lb_zero(
+  function test_liquidationCall_fuzz_protocolFee_liqBonus_zero(
     uint256 liquidationProtocolFeePercentage
   ) public {
     LiquidationTestLocalParams memory state = test_liquidationCall_fuzz_protocolFee({

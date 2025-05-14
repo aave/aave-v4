@@ -58,10 +58,7 @@ contract LiquidationCallCloseFactorTest is SpokeLiquidationBase {
     );
 
     string memory label = 'test_liquidationCall_fuzz_closeFactor';
-    _assertUserAccountData(state, spoke1, label);
-    _assertProtocolFeeEarned(state, label);
-    _assertLiquidationBonusEarned(state, label);
-    _assertSupplyExchangeRate(state, label);
+    _checkLiquidation(state, spoke1, 'test_liquidationCall_fuzz_closeFactor');
   }
 
   /// coll: weth / debt: dai

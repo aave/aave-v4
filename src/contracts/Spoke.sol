@@ -379,8 +379,7 @@ contract Spoke is ISpoke {
         vars.collateralToLiquidate,
         vars.liquidationProtocolFeeAmount,
         vars.baseDebtToLiquidate,
-        vars.premiumDebtToLiquidate,
-        vars.disableUsingAsCollateral
+        vars.premiumDebtToLiquidate
       ) = _calculateLiquidationParameters(
         collateralReserve,
         debtReserve,
@@ -389,10 +388,6 @@ contract Spoke is ISpoke {
         vars.baseDebt,
         vars.premiumDebt
       );
-
-      if (vars.disableUsingAsCollateral) {
-        _setUsingAsCollateral(collateralReserveId, users[vars.i], false);
-      }
 
       // settle debt reserve's premium debt
       vars.userDebtPremiumDrawnShares = userDebtPosition.premiumDrawnShares;
@@ -451,11 +446,15 @@ contract Spoke is ISpoke {
       );
 
       // collateral accounting
-      userCollateralPosition.suppliedShares -= vars.withdrawnShares;
+      vars.newUserSuppliedShares = userCollateralPosition.suppliedShares - vars.withdrawnShares;
+      userCollateralPosition.suppliedShares = vars.newUserSuppliedShares;
       vars.totalWithdrawnShares += vars.withdrawnShares;
 
-      // TODO: realize bad debt
+      if (vars.newUserSuppliedShares == 0) {
+        _setUsingAsCollateral(collateralReserveId, users[vars.i], false);
+      }
 
+      // TODO: realize bad debt
       (vars.newUserRiskPremium, , , , ) = _calculateUserAccountData(users[vars.i]);
 
       // refresh debt reserve premium
@@ -537,7 +536,6 @@ contract Spoke is ISpoke {
   /// @return liquidationProtocolFeeAmount The amount of protocol fee.
   /// @return baseDebtToLiquidate The amount of base debt to repay.
   /// @return premiumDebtToLiquidate The amount of premium debt to repay.
-  /// @return disableUsingAsCollateral Whether the collateral asset should be disabled as collateral.
   function _calculateLiquidationParameters(
     DataTypes.Reserve storage collateralReserve,
     DataTypes.Reserve storage debtReserve,
@@ -545,7 +543,7 @@ contract Spoke is ISpoke {
     uint256 debtToCover,
     uint256 baseDebt,
     uint256 premiumDebt
-  ) internal view returns (uint256, uint256, uint256, uint256, bool) {
+  ) internal view returns (uint256, uint256, uint256, uint256) {
     DataTypes.LiquidationCallLocalVars memory vars;
     vars.collateralReserveId = collateralReserve.reserveId;
     vars.debtReserveId = debtReserve.reserveId;
@@ -594,13 +592,6 @@ contract Spoke is ISpoke {
       vars.liquidationProtocolFeeAmount
     ) = vars.calculateAvailableCollateralToLiquidate();
 
-    if (
-      vars.actualCollateralToLiquidate + vars.liquidationProtocolFeeAmount ==
-      vars.userCollateralBalance
-    ) {
-      vars.disableUsingAsCollateral = true;
-    }
-
     (vars.baseDebtToLiquidate, vars.premiumDebtToLiquidate) = _calculateRestoreAmount(
       baseDebt,
       premiumDebt,
@@ -611,8 +602,7 @@ contract Spoke is ISpoke {
       vars.actualCollateralToLiquidate,
       vars.liquidationProtocolFeeAmount,
       vars.baseDebtToLiquidate,
-      vars.premiumDebtToLiquidate,
-      vars.disableUsingAsCollateral
+      vars.premiumDebtToLiquidate
     );
   }
 
