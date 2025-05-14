@@ -317,6 +317,55 @@ contract Spoke is ISpoke, Multicall {
     emit UsingAsCollateral(reserveId, msg.sender, usingAsCollateral);
   }
 
+  /// @dev Must be called on a reserve user is already borrowing
+  /// @dev If called by user, reverts if user risk premium increases
+  function updateUserRiskPremium(uint256 reserveId, address user) external {
+    // TODO: With access control, allow DAO to update user risk premium in case of increase
+    DataTypes.Reserve storage reserve = _reserves[reserveId];
+    DataTypes.UserPosition storage userPosition = _userPositions[user][reserveId];
+    require(_isBorrowing(userPosition), UserNotBorrowingReserve(reserveId));
+    uint256 assetId = reserve.assetId;
+
+    uint256 userPremiumDrawnShares = userPosition.premiumDrawnShares;
+    uint256 userPremiumOffset = userPosition.premiumOffset;
+    uint256 accruedPremium = HUB.convertToDrawnAssets(assetId, userPremiumDrawnShares) -
+      userPremiumOffset; // assets(premiumShares) - offset should never be < 0
+    userPosition.premiumDrawnShares = 0;
+    userPosition.premiumOffset = 0;
+    userPosition.realizedPremium += accruedPremium;
+
+    _refreshPremiumDebt(
+      reserve,
+      assetId,
+      -int256(userPremiumDrawnShares),
+      -int256(userPremiumOffset),
+      int256(accruedPremium)
+    );
+
+    uint256 newUserRiskPremium = _validateUserPosition(user); // validates HF
+
+    uint256 newUserPremiumDrawnShares = userPosition.premiumDrawnShares = userPosition
+      .baseDrawnShares
+      .percentMul(newUserRiskPremium);
+    // Check new premium drawn shares as proxy for user risk premium
+    require(newUserPremiumDrawnShares < userPremiumDrawnShares, NoUserRiskPremiumDecrease());
+    userPremiumOffset = userPosition.premiumOffset = HUB.previewOffset(
+      assetId,
+      userPosition.premiumDrawnShares
+    );
+
+    _refreshPremiumDebt(
+      reserve,
+      assetId,
+      int256(newUserPremiumDrawnShares),
+      int256(userPremiumOffset),
+      0
+    );
+    _notifyRiskPremiumUpdate(assetId, user, newUserRiskPremium);
+
+    emit UserRiskPremiumUpdated(user, newUserRiskPremium);
+  }
+
   function getUsingAsCollateral(uint256 reserveId, address user) external view returns (bool) {
     return _userPositions[user][reserveId].usingAsCollateral;
   }

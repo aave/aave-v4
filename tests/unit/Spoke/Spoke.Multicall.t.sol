@@ -35,12 +35,49 @@ contract SpokeMulticall is SpokeBase {
 
   /// Supply and update user risk premium using multicall
   function test_multicall_supply_updateUserRp() public {
-    vm.skip(true, 'pending user rp update function');
-  }
+    // Deal bob dai for supplying dai and dai2
+    deal(address(tokenList.dai), bob, MAX_SUPPLY_AMOUNT * 2);
 
-  /// Withdraw and update user risk premium using multicall
-  function test_multicall_withdraw_updateUserRp() public {
-    vm.skip(true, 'pending user rp update function');
+    // Bob supplies dai2 and borrows half of it
+    Utils.supplyCollateral(spoke2, _dai2ReserveId(spoke2), bob, MAX_SUPPLY_AMOUNT, bob);
+    Utils.borrow(spoke2, _dai2ReserveId(spoke2), bob, 1000e18, bob);
+
+    // Check bob's premium drawn shares as proxy for user rp
+    uint256 bobPremiumDrawnSharesBefore = spoke2
+      .getUserPosition(_dai2ReserveId(spoke2), bob)
+      .premiumDrawnShares;
+
+    // Set up the multicall
+    bytes[] memory calls = new bytes[](3);
+    calls[0] = abi.encodeCall(ISpoke.supply, (_daiReserveId(spoke2), MAX_SUPPLY_AMOUNT));
+    calls[1] = abi.encodeCall(ISpoke.setUsingAsCollateral, (_daiReserveId(spoke2), true));
+    calls[2] = abi.encodeCall(ISpoke.updateUserRiskPremium, (_dai2ReserveId(spoke2), bob));
+
+    vm.expectEmit(address(spoke2));
+    emit ISpoke.Supply(
+      _daiReserveId(spoke2),
+      bob,
+      hub.convertToSuppliedShares(daiAssetId, MAX_SUPPLY_AMOUNT)
+    );
+    vm.expectEmit(address(spoke2));
+    emit ISpoke.UsingAsCollateral(_daiReserveId(spoke2), bob, true);
+    vm.expectEmit(address(spoke2));
+    emit ISpoke.UserRiskPremiumUpdated(bob, spoke2.getLiquidityPremium(_daiReserveId(spoke2)));
+
+    // Then he supplies dai and sets as collateral, so user rp should decrease
+    vm.startPrank(bob);
+    Multicall(address(spoke2)).multicall(calls);
+    vm.stopPrank();
+
+    uint256 bobPremiumDrawnSharesAfter = spoke2
+      .getUserPosition(_dai2ReserveId(spoke2), bob)
+      .premiumDrawnShares;
+
+    assertLt(
+      bobPremiumDrawnSharesAfter,
+      bobPremiumDrawnSharesBefore,
+      'Bob premium drawn shares should decrease'
+    );
   }
 
   /// Add multiple reserves using multicall
@@ -170,5 +207,6 @@ contract SpokeMulticall is SpokeBase {
       actual.config.liquidityPremium,
       'Liquidity premium config mismatch'
     );
+    assertEq(abi.encode(expected), abi.encode(actual), 'Encoded reserve mismatch'); // sanity check
   }
 }
