@@ -344,268 +344,6 @@ contract Spoke is ISpoke {
     );
   }
 
-  /// @return collateralAsset The address of the underlying asset used as collateral, to receive as result of the liquidation.
-  /// @return debtAsset The address of the underlying borrowed asset to be repaid with the liquidation.
-  /// @return totalDebtToLiquidate The total amount of debt to be repaid.
-  /// @return collateralToLiquidate The amount of collateral to liquidate.
-  /// @return liquidationProtocolFeeAmount The amount of protocol fee.
-  function _executeLiquidationCall(
-    uint256 collateralReserveId,
-    uint256 debtReserveId,
-    address[] memory users,
-    uint256[] memory debtsToCover
-  ) internal returns (address, address, uint256, uint256, uint256) {
-    uint256 usersLength = users.length;
-    require(usersLength == debtsToCover.length, UsersAndDebtLengthMismatch());
-
-    DataTypes.Reserve storage collateralReserve = _reserves[collateralReserveId];
-    DataTypes.Reserve storage debtReserve = _reserves[debtReserveId];
-
-    DataTypes.ExecuteLiquidationLocalVars memory vars;
-
-    while (vars.i < usersLength) {
-      DataTypes.UserPosition storage userCollateralPosition = _userPositions[users[vars.i]][
-        collateralReserveId
-      ];
-      DataTypes.UserPosition storage userDebtPosition = _userPositions[users[vars.i]][
-        debtReserveId
-      ];
-
-      vars.collateralAssetId = collateralReserve.assetId;
-      vars.debtAssetId = debtReserve.assetId;
-      (vars.baseDebt, vars.premiumDebt) = _getUserDebt(userDebtPosition, vars.debtAssetId);
-
-      (
-        vars.collateralToLiquidate,
-        vars.liquidationProtocolFeeAmount,
-        vars.baseDebtToLiquidate,
-        vars.premiumDebtToLiquidate
-      ) = _calculateLiquidationParameters(
-        collateralReserve,
-        debtReserve,
-        users[vars.i],
-        debtsToCover[vars.i],
-        vars.baseDebt,
-        vars.premiumDebt
-      );
-
-      // settle debt reserve's premium debt
-      vars.userDebtPremiumDrawnShares = userDebtPosition.premiumDrawnShares;
-      vars.userDebtPremiumOffset = userDebtPosition.premiumOffset;
-      vars.userDebtRealizedPremium = userDebtPosition.realizedPremium;
-
-      userDebtPosition.premiumDrawnShares = 0;
-      userDebtPosition.premiumOffset = 0;
-      userDebtPosition.realizedPremium = vars.premiumDebt - vars.premiumDebtToLiquidate;
-
-      _settlePremiumDebt(
-        debtReserve,
-        vars.debtAssetId,
-        -int256(vars.userDebtPremiumDrawnShares),
-        -int256(vars.userDebtPremiumOffset),
-        _signedDiff(userDebtPosition.realizedPremium, vars.userDebtRealizedPremium)
-      ); // settle premium debt
-
-      // todo: rm later to opt
-      // optional: settle collateral reserve's premium debt
-      vars.userCollateralPremiumDrawnShares = userCollateralPosition.premiumDrawnShares;
-      vars.userCollateralPremiumOffset = userCollateralPosition.premiumOffset;
-      vars.accruedCollateralPremium =
-        HUB.convertToDrawnAssets(vars.collateralAssetId, vars.userCollateralPremiumDrawnShares) -
-        vars.userCollateralPremiumOffset; // assets(premiumShares) - offset should never be < 0
-
-      userCollateralPosition.premiumDrawnShares = 0;
-      userCollateralPosition.premiumOffset = 0;
-      userCollateralPosition.realizedPremium += vars.accruedCollateralPremium;
-
-      _refreshPremiumDebt(
-        collateralReserve,
-        vars.collateralAssetId,
-        -int256(vars.userCollateralPremiumDrawnShares),
-        -int256(vars.userCollateralPremiumOffset),
-        int256(vars.accruedCollateralPremium)
-      ); // unnecessary but settle premium debt here for consistency
-
-      // repay debt
-      vars.restoredShares = HUB.restore(
-        vars.debtAssetId,
-        vars.baseDebtToLiquidate,
-        vars.premiumDebtToLiquidate,
-        msg.sender
-      );
-
-      // debt accounting
-      userDebtPosition.baseDrawnShares -= vars.restoredShares;
-      vars.totalRestoredShares += vars.restoredShares;
-
-      // liquidate collateral
-      vars.withdrawnShares = HUB.remove(
-        vars.collateralAssetId,
-        vars.collateralToLiquidate + vars.liquidationProtocolFeeAmount,
-        address(this) // must be sent to spoke first before distributing to treasury/liquidator
-      );
-
-      // collateral accounting
-      vars.newUserSuppliedShares = userCollateralPosition.suppliedShares - vars.withdrawnShares;
-      userCollateralPosition.suppliedShares = vars.newUserSuppliedShares;
-      vars.totalWithdrawnShares += vars.withdrawnShares;
-
-      if (vars.newUserSuppliedShares == 0) {
-        _setUsingAsCollateral(collateralReserveId, users[vars.i], false);
-      }
-
-      // TODO: realize bad debt
-      (vars.newUserRiskPremium, , , , ) = _calculateUserAccountData(users[vars.i]);
-
-      // refresh debt reserve premium
-      vars.userDebtPremiumDrawnShares = userDebtPosition.premiumDrawnShares = userDebtPosition
-        .baseDrawnShares
-        .percentMul(vars.newUserRiskPremium);
-      vars.userDebtPremiumOffset = userDebtPosition.premiumOffset = HUB.previewOffset(
-        vars.debtAssetId,
-        userDebtPosition.premiumDrawnShares
-      );
-
-      // refresh collateral reserve premium
-      vars.userCollateralPremiumDrawnShares = userCollateralPosition
-        .premiumDrawnShares = userCollateralPosition.baseDrawnShares.percentMul(
-        vars.newUserRiskPremium
-      );
-      vars.userCollateralPremiumOffset = userCollateralPosition.premiumOffset = HUB.previewOffset(
-        vars.collateralAssetId,
-        userCollateralPosition.premiumDrawnShares
-      );
-
-      _notifyRiskPremiumUpdate(vars.debtAssetId, users[vars.i], vars.newUserRiskPremium);
-
-      vars.totalUserDebtPremiumDrawnSharesDelta += int256(vars.userDebtPremiumDrawnShares);
-      vars.totalUserDebtPremiumOffsetDelta += int256(vars.userDebtPremiumOffset);
-      vars.totalUserCollateralPremiumDrawnSharesDelta += int256(
-        vars.userCollateralPremiumDrawnShares
-      );
-      vars.totalUserCollateralPremiumOffsetDelta += int256(vars.userCollateralPremiumOffset);
-      vars.totalCollateralToLiquidate += vars.collateralToLiquidate;
-      vars.totalLiquidationProtocolFeeAmount += vars.liquidationProtocolFeeAmount;
-      vars.totalDebtToLiquidate += vars.baseDebtToLiquidate + vars.premiumDebtToLiquidate;
-
-      unchecked {
-        ++vars.i;
-      }
-    }
-
-    // rm when dupe reserve accounting is rm
-    debtReserve.baseDrawnShares -= vars.totalRestoredShares;
-    collateralReserve.suppliedShares -= vars.totalWithdrawnShares;
-
-    _refreshPremiumDebt(
-      debtReserve,
-      vars.debtAssetId,
-      vars.totalUserDebtPremiumDrawnSharesDelta,
-      vars.totalUserDebtPremiumOffsetDelta,
-      0
-    );
-    _refreshPremiumDebt(
-      collateralReserve,
-      vars.collateralAssetId,
-      vars.totalUserCollateralPremiumDrawnSharesDelta,
-      vars.totalUserCollateralPremiumOffsetDelta,
-      0
-    );
-
-    vars.totalLiquidationProtocolFeeShares = HUB.convertToSuppliedShares(
-      vars.collateralAssetId,
-      vars.totalLiquidationProtocolFeeAmount
-    );
-
-    // transfer total liquidated collateral to liquidator
-    IERC20(collateralReserve.asset).safeTransfer(msg.sender, vars.totalCollateralToLiquidate);
-    // TODO: treasury accounting for protocol fee
-    // TODO: rm temp event
-    emit TmpLiquidationFee(vars.totalLiquidationProtocolFeeShares);
-
-    return (
-      collateralReserve.asset,
-      debtReserve.asset,
-      vars.totalDebtToLiquidate,
-      vars.totalCollateralToLiquidate,
-      vars.totalLiquidationProtocolFeeShares
-    );
-  }
-
-  /// @return actualCollateralToLiquidate The amount of collateral to liquidate.
-  /// @return liquidationProtocolFeeAmount The amount of protocol fee.
-  /// @return baseDebtToLiquidate The amount of base debt to repay.
-  /// @return premiumDebtToLiquidate The amount of premium debt to repay.
-  function _calculateLiquidationParameters(
-    DataTypes.Reserve storage collateralReserve,
-    DataTypes.Reserve storage debtReserve,
-    address user,
-    uint256 debtToCover,
-    uint256 baseDebt,
-    uint256 premiumDebt
-  ) internal view returns (uint256, uint256, uint256, uint256) {
-    DataTypes.LiquidationCallLocalVars memory vars;
-    vars.collateralReserveId = collateralReserve.reserveId;
-    vars.debtReserveId = debtReserve.reserveId;
-    vars.userCollateralBalance = getUserSuppliedAmount(vars.collateralReserveId, user);
-    vars.totalDebt = baseDebt + premiumDebt;
-
-    (
-      ,
-      ,
-      vars.healthFactor,
-      vars.totalCollateralInBaseCurrency,
-      vars.totalDebtInBaseCurrency
-    ) = _calculateUserAccountData(user);
-
-    _validateLiquidationCall(
-      collateralReserve,
-      debtReserve,
-      user,
-      debtToCover,
-      vars.totalDebt,
-      vars.healthFactor
-    );
-
-    vars.debtAssetPrice = IPriceOracle(oracle).getAssetPrice(debtReserve.assetId);
-    vars.debtAssetUnit = 10 ** debtReserve.config.decimals;
-    vars.liquidationBonus = getVariableLiquidationBonus(
-      vars.collateralReserveId,
-      vars.healthFactor
-    );
-    vars.closeFactor = _liquidationConfig.closeFactor;
-    vars.collateralFactor = collateralReserve.config.collateralFactor;
-    vars.collateralAssetPrice = oracle.getAssetPrice(collateralReserve.assetId);
-    vars.collateralAssetUnit = 10 ** collateralReserve.config.decimals;
-    vars.liquidationProtocolFeePercentage = collateralReserve
-      .config
-      .liquidationProtocolFeePercentage;
-
-    vars.actualDebtToLiquidate = LiquidationLogic.calculateActualDebtToLiquidate({
-      debtToCover: debtToCover,
-      params: vars
-    });
-
-    (
-      vars.actualCollateralToLiquidate,
-      vars.actualDebtToLiquidate,
-      vars.liquidationProtocolFeeAmount
-    ) = vars.calculateAvailableCollateralToLiquidate();
-
-    (vars.baseDebtToLiquidate, vars.premiumDebtToLiquidate) = _calculateRestoreAmount(
-      baseDebt,
-      premiumDebt,
-      vars.actualDebtToLiquidate
-    );
-
-    return (
-      vars.actualCollateralToLiquidate,
-      vars.liquidationProtocolFeeAmount,
-      vars.baseDebtToLiquidate,
-      vars.premiumDebtToLiquidate
-    );
-  }
-
   function setUsingAsCollateral(uint256 reserveId, bool usingAsCollateral) external {
     _setUsingAsCollateral(reserveId, msg.sender, usingAsCollateral);
   }
@@ -1154,6 +892,268 @@ contract Spoke is ISpoke {
         ++reserveId;
       }
     }
+  }
+
+  /// @return collateralAsset The address of the underlying asset used as collateral, to receive as result of the liquidation.
+  /// @return debtAsset The address of the underlying borrowed asset to be repaid with the liquidation.
+  /// @return totalDebtToLiquidate The total amount of debt to be repaid.
+  /// @return collateralToLiquidate The amount of collateral to liquidate.
+  /// @return liquidationProtocolFeeAmount The amount of protocol fee.
+  function _executeLiquidationCall(
+    uint256 collateralReserveId,
+    uint256 debtReserveId,
+    address[] memory users,
+    uint256[] memory debtsToCover
+  ) internal returns (address, address, uint256, uint256, uint256) {
+    uint256 usersLength = users.length;
+    require(usersLength == debtsToCover.length, UsersAndDebtLengthMismatch());
+
+    DataTypes.Reserve storage collateralReserve = _reserves[collateralReserveId];
+    DataTypes.Reserve storage debtReserve = _reserves[debtReserveId];
+
+    DataTypes.ExecuteLiquidationLocalVars memory vars;
+
+    while (vars.i < usersLength) {
+      DataTypes.UserPosition storage userCollateralPosition = _userPositions[users[vars.i]][
+        collateralReserveId
+      ];
+      DataTypes.UserPosition storage userDebtPosition = _userPositions[users[vars.i]][
+        debtReserveId
+      ];
+
+      vars.collateralAssetId = collateralReserve.assetId;
+      vars.debtAssetId = debtReserve.assetId;
+      (vars.baseDebt, vars.premiumDebt) = _getUserDebt(userDebtPosition, vars.debtAssetId);
+
+      (
+        vars.collateralToLiquidate,
+        vars.liquidationProtocolFeeAmount,
+        vars.baseDebtToLiquidate,
+        vars.premiumDebtToLiquidate
+      ) = _calculateLiquidationParameters(
+        collateralReserve,
+        debtReserve,
+        users[vars.i],
+        debtsToCover[vars.i],
+        vars.baseDebt,
+        vars.premiumDebt
+      );
+
+      // settle debt reserve's premium debt
+      vars.userDebtPremiumDrawnShares = userDebtPosition.premiumDrawnShares;
+      vars.userDebtPremiumOffset = userDebtPosition.premiumOffset;
+      vars.userDebtRealizedPremium = userDebtPosition.realizedPremium;
+
+      userDebtPosition.premiumDrawnShares = 0;
+      userDebtPosition.premiumOffset = 0;
+      userDebtPosition.realizedPremium = vars.premiumDebt - vars.premiumDebtToLiquidate;
+
+      _settlePremiumDebt(
+        debtReserve,
+        vars.debtAssetId,
+        -int256(vars.userDebtPremiumDrawnShares),
+        -int256(vars.userDebtPremiumOffset),
+        _signedDiff(userDebtPosition.realizedPremium, vars.userDebtRealizedPremium)
+      ); // settle premium debt
+
+      // todo: rm later to opt
+      // optional: settle collateral reserve's premium debt
+      vars.userCollateralPremiumDrawnShares = userCollateralPosition.premiumDrawnShares;
+      vars.userCollateralPremiumOffset = userCollateralPosition.premiumOffset;
+      vars.accruedCollateralPremium =
+        HUB.convertToDrawnAssets(vars.collateralAssetId, vars.userCollateralPremiumDrawnShares) -
+        vars.userCollateralPremiumOffset; // assets(premiumShares) - offset should never be < 0
+
+      userCollateralPosition.premiumDrawnShares = 0;
+      userCollateralPosition.premiumOffset = 0;
+      userCollateralPosition.realizedPremium += vars.accruedCollateralPremium;
+
+      _refreshPremiumDebt(
+        collateralReserve,
+        vars.collateralAssetId,
+        -int256(vars.userCollateralPremiumDrawnShares),
+        -int256(vars.userCollateralPremiumOffset),
+        int256(vars.accruedCollateralPremium)
+      ); // unnecessary but settle premium debt here for consistency
+
+      // repay debt
+      vars.restoredShares = HUB.restore(
+        vars.debtAssetId,
+        vars.baseDebtToLiquidate,
+        vars.premiumDebtToLiquidate,
+        msg.sender
+      );
+
+      // debt accounting
+      userDebtPosition.baseDrawnShares -= vars.restoredShares;
+      vars.totalRestoredShares += vars.restoredShares;
+
+      // liquidate collateral
+      vars.withdrawnShares = HUB.remove(
+        vars.collateralAssetId,
+        vars.collateralToLiquidate + vars.liquidationProtocolFeeAmount,
+        address(this) // must be sent to spoke first before distributing to treasury/liquidator
+      );
+
+      // collateral accounting
+      vars.newUserSuppliedShares = userCollateralPosition.suppliedShares - vars.withdrawnShares;
+      userCollateralPosition.suppliedShares = vars.newUserSuppliedShares;
+      vars.totalWithdrawnShares += vars.withdrawnShares;
+
+      if (vars.newUserSuppliedShares == 0) {
+        _setUsingAsCollateral(collateralReserveId, users[vars.i], false);
+      }
+
+      // TODO: realize bad debt
+      (vars.newUserRiskPremium, , , , ) = _calculateUserAccountData(users[vars.i]);
+
+      // refresh debt reserve premium
+      vars.userDebtPremiumDrawnShares = userDebtPosition.premiumDrawnShares = userDebtPosition
+        .baseDrawnShares
+        .percentMul(vars.newUserRiskPremium);
+      vars.userDebtPremiumOffset = userDebtPosition.premiumOffset = HUB.previewOffset(
+        vars.debtAssetId,
+        userDebtPosition.premiumDrawnShares
+      );
+
+      // refresh collateral reserve premium
+      vars.userCollateralPremiumDrawnShares = userCollateralPosition
+        .premiumDrawnShares = userCollateralPosition.baseDrawnShares.percentMul(
+        vars.newUserRiskPremium
+      );
+      vars.userCollateralPremiumOffset = userCollateralPosition.premiumOffset = HUB.previewOffset(
+        vars.collateralAssetId,
+        userCollateralPosition.premiumDrawnShares
+      );
+
+      _notifyRiskPremiumUpdate(vars.debtAssetId, users[vars.i], vars.newUserRiskPremium);
+
+      vars.totalUserDebtPremiumDrawnSharesDelta += int256(vars.userDebtPremiumDrawnShares);
+      vars.totalUserDebtPremiumOffsetDelta += int256(vars.userDebtPremiumOffset);
+      vars.totalUserCollateralPremiumDrawnSharesDelta += int256(
+        vars.userCollateralPremiumDrawnShares
+      );
+      vars.totalUserCollateralPremiumOffsetDelta += int256(vars.userCollateralPremiumOffset);
+      vars.totalCollateralToLiquidate += vars.collateralToLiquidate;
+      vars.totalLiquidationProtocolFeeAmount += vars.liquidationProtocolFeeAmount;
+      vars.totalDebtToLiquidate += vars.baseDebtToLiquidate + vars.premiumDebtToLiquidate;
+
+      unchecked {
+        ++vars.i;
+      }
+    }
+
+    // rm when dupe reserve accounting is rm
+    debtReserve.baseDrawnShares -= vars.totalRestoredShares;
+    collateralReserve.suppliedShares -= vars.totalWithdrawnShares;
+
+    _refreshPremiumDebt(
+      debtReserve,
+      vars.debtAssetId,
+      vars.totalUserDebtPremiumDrawnSharesDelta,
+      vars.totalUserDebtPremiumOffsetDelta,
+      0
+    );
+    _refreshPremiumDebt(
+      collateralReserve,
+      vars.collateralAssetId,
+      vars.totalUserCollateralPremiumDrawnSharesDelta,
+      vars.totalUserCollateralPremiumOffsetDelta,
+      0
+    );
+
+    vars.totalLiquidationProtocolFeeShares = HUB.convertToSuppliedShares(
+      vars.collateralAssetId,
+      vars.totalLiquidationProtocolFeeAmount
+    );
+
+    // transfer total liquidated collateral to liquidator
+    IERC20(collateralReserve.asset).safeTransfer(msg.sender, vars.totalCollateralToLiquidate);
+    // TODO: treasury accounting for protocol fee
+    // TODO: rm temp event
+    emit TmpLiquidationFee(vars.totalLiquidationProtocolFeeShares);
+
+    return (
+      collateralReserve.asset,
+      debtReserve.asset,
+      vars.totalDebtToLiquidate,
+      vars.totalCollateralToLiquidate,
+      vars.totalLiquidationProtocolFeeShares
+    );
+  }
+
+  /// @return actualCollateralToLiquidate The amount of collateral to liquidate.
+  /// @return liquidationProtocolFeeAmount The amount of protocol fee.
+  /// @return baseDebtToLiquidate The amount of base debt to repay.
+  /// @return premiumDebtToLiquidate The amount of premium debt to repay.
+  function _calculateLiquidationParameters(
+    DataTypes.Reserve storage collateralReserve,
+    DataTypes.Reserve storage debtReserve,
+    address user,
+    uint256 debtToCover,
+    uint256 baseDebt,
+    uint256 premiumDebt
+  ) internal view returns (uint256, uint256, uint256, uint256) {
+    DataTypes.LiquidationCallLocalVars memory vars;
+    vars.collateralReserveId = collateralReserve.reserveId;
+    vars.debtReserveId = debtReserve.reserveId;
+    vars.userCollateralBalance = getUserSuppliedAmount(vars.collateralReserveId, user);
+    vars.totalDebt = baseDebt + premiumDebt;
+
+    (
+      ,
+      ,
+      vars.healthFactor,
+      vars.totalCollateralInBaseCurrency,
+      vars.totalDebtInBaseCurrency
+    ) = _calculateUserAccountData(user);
+
+    _validateLiquidationCall(
+      collateralReserve,
+      debtReserve,
+      user,
+      debtToCover,
+      vars.totalDebt,
+      vars.healthFactor
+    );
+
+    vars.debtAssetPrice = IPriceOracle(oracle).getAssetPrice(debtReserve.assetId);
+    vars.debtAssetUnit = 10 ** debtReserve.config.decimals;
+    vars.liquidationBonus = getVariableLiquidationBonus(
+      vars.collateralReserveId,
+      vars.healthFactor
+    );
+    vars.closeFactor = _liquidationConfig.closeFactor;
+    vars.collateralFactor = collateralReserve.config.collateralFactor;
+    vars.collateralAssetPrice = oracle.getAssetPrice(collateralReserve.assetId);
+    vars.collateralAssetUnit = 10 ** collateralReserve.config.decimals;
+    vars.liquidationProtocolFeePercentage = collateralReserve
+      .config
+      .liquidationProtocolFeePercentage;
+
+    vars.actualDebtToLiquidate = LiquidationLogic.calculateActualDebtToLiquidate({
+      debtToCover: debtToCover,
+      params: vars
+    });
+
+    (
+      vars.actualCollateralToLiquidate,
+      vars.actualDebtToLiquidate,
+      vars.liquidationProtocolFeeAmount
+    ) = vars.calculateAvailableCollateralToLiquidate();
+
+    (vars.baseDebtToLiquidate, vars.premiumDebtToLiquidate) = _calculateRestoreAmount(
+      baseDebt,
+      premiumDebt,
+      vars.actualDebtToLiquidate
+    );
+
+    return (
+      vars.actualCollateralToLiquidate,
+      vars.liquidationProtocolFeeAmount,
+      vars.baseDebtToLiquidate,
+      vars.premiumDebtToLiquidate
+    );
   }
 
   // handles underflow
