@@ -33,11 +33,7 @@ contract LiquidationCallCloseFactorBadDebtTest is SpokeLiquidationBase {
       skipTime
     );
 
-    string memory label = 'test_liquidationCall_fuzz_closeFactor_badDebt';
-    _assertUserAccountData(state, spoke1, label);
-    _assertProtocolFeeEarned(state, label);
-    _assertLiquidationBonusEarned(state, label);
-    _assertSupplyExchangeRate(state, label);
+    _checkLiquidation(state, spoke1, 'test_liquidationCall_fuzz_closeFactor_badDebt');
 
     // with no collateral remaining collateral should be disabled as collateral
     assertFalse(

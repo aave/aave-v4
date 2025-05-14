@@ -28,7 +28,8 @@ contract Spoke is ISpoke {
   using LiquidationLogic for DataTypes.LiquidationConfig;
   using LiquidationLogic for DataTypes.LiquidationCallLocalVars;
 
-  uint256 public constant HEALTH_FACTOR_LIQUIDATION_THRESHOLD = WadRayMath.WAD;
+  uint256 public constant HEALTH_FACTOR_LIQUIDATION_THRESHOLD = WadRayMathExtended.WAD;
+  uint256 public constant MAX_LIQUIDITY_PREMIUM = PercentageMathExtended.PERCENTAGE_FACTOR * 10;
   ILiquidityHub public immutable HUB;
   IPriceOracle public immutable oracle;
 
@@ -543,7 +544,6 @@ contract Spoke is ISpoke {
         vars.liquidationProtocolFeeAmount,
         vars.baseDebtToLiquidate,
         vars.premiumDebtToLiquidate,
-        vars.disableUsingAsCollateral,
         vars.deficit
       ) = _calculateLiquidationParameters(
         collateralReserve,
@@ -624,10 +624,11 @@ contract Spoke is ISpoke {
       );
 
       // collateral accounting
-      userCollateralPosition.suppliedShares -= vars.withdrawnShares;
+      vars.newUserSuppliedShares = userCollateralPosition.suppliedShares - vars.withdrawnShares;
+      userCollateralPosition.suppliedShares = vars.newUserSuppliedShares;
       vars.totalWithdrawnShares += vars.withdrawnShares;
 
-      if (vars.disableUsingAsCollateral) {
+      if (vars.newUserSuppliedShares == 0) {
         _setUsingAsCollateral(collateralReserveId, users[vars.i], false);
       }
 
@@ -742,7 +743,6 @@ contract Spoke is ISpoke {
   /// @return liquidationProtocolFeeAmount The amount of protocol fee.
   /// @return baseDebtToLiquidate The amount of base debt to repay.
   /// @return premiumDebtToLiquidate The amount of premium debt to repay.
-  /// @return disableUsingAsCollateral Whether the collateral asset should be disabled as collateral.
   /// @return deficit The amount of bad debt remaining after liquidation.
   function _calculateLiquidationParameters(
     DataTypes.Reserve storage collateralReserve,
@@ -751,7 +751,7 @@ contract Spoke is ISpoke {
     uint256 debtToCover,
     uint256 baseDebt,
     uint256 premiumDebt
-  ) internal view returns (uint256, uint256, uint256, uint256, bool, uint256) {
+  ) internal view returns (uint256, uint256, uint256, uint256, uint256) {
     DataTypes.LiquidationCallLocalVars memory vars;
     vars.collateralReserveId = collateralReserve.reserveId;
     vars.debtReserveId = debtReserve.reserveId;
@@ -801,13 +801,6 @@ contract Spoke is ISpoke {
       vars.collateralToLiquidateInBaseCurrency
     ) = vars.calculateAvailableCollateralToLiquidate();
 
-    if (
-      vars.actualCollateralToLiquidate + vars.liquidationProtocolFeeAmount ==
-      vars.userCollateralBalance
-    ) {
-      vars.disableUsingAsCollateral = true;
-    }
-
     (vars.baseDebtToLiquidate, vars.premiumDebtToLiquidate) = _calculateRestoreAmount(
       baseDebt,
       premiumDebt,
@@ -826,7 +819,6 @@ contract Spoke is ISpoke {
       vars.liquidationProtocolFeeAmount,
       vars.baseDebtToLiquidate,
       vars.premiumDebtToLiquidate,
-      vars.disableUsingAsCollateral,
       vars.deficit
     );
   }
@@ -877,15 +869,18 @@ contract Spoke is ISpoke {
   }
 
   function _validateReserveConfig(DataTypes.ReserveConfig calldata config) internal view {
-    require(config.collateralFactor <= PercentageMath.PERCENTAGE_FACTOR, InvalidCollateralFactor()); // max 100.00%
-    require(config.liquidationBonus >= PercentageMath.PERCENTAGE_FACTOR, InvalidLiquidationBonus()); // min 100.00%
     require(
-      config.liquidityPremium <= PercentageMath.PERCENTAGE_FACTOR * 10,
-      InvalidLiquidityPremium()
-    ); // max 1000.00%
+      config.collateralFactor <= PercentageMathExtended.PERCENTAGE_FACTOR,
+      InvalidCollateralFactor()
+    ); // max 100.00%
+    require(
+      config.liquidationBonus >= PercentageMathExtended.PERCENTAGE_FACTOR,
+      InvalidLiquidationBonus()
+    ); // min 100.00%
+    require(config.liquidityPremium <= MAX_LIQUIDITY_PREMIUM, InvalidLiquidityPremium()); // max 1000.00%
     require(config.decimals <= HUB.MAX_ALLOWED_ASSET_DECIMALS(), InvalidReserveDecimals());
     require(
-      config.liquidationProtocolFeePercentage <= PercentageMath.PERCENTAGE_FACTOR,
+      config.liquidationProtocolFeePercentage <= PercentageMathExtended.PERCENTAGE_FACTOR,
       InvalidLiquidationProtocolFeePercentage()
     );
   }
@@ -894,7 +889,7 @@ contract Spoke is ISpoke {
     _validateCloseFactor(config.closeFactor);
     // if liquidationBonusFactor == 0, then variable liquidation bonus will not be applied
     require(
-      config.liquidationBonusFactor <= PercentageMath.PERCENTAGE_FACTOR,
+      config.liquidationBonusFactor <= PercentageMathExtended.PERCENTAGE_FACTOR,
       InvalidLiquidationBonusFactor()
     );
     // if healthFactorBonusThreshold == HEALTH_FACTOR_LIQUIDATION_THRESHOLD, then calculate will be undefined

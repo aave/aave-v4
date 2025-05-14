@@ -189,6 +189,18 @@ contract SpokeLiquidationBase is SpokeBase {
     return state;
   }
 
+  function _checkLiquidation(
+    LiquidationTestLocalParams memory state,
+    ISpoke spoke,
+    string memory label
+  ) internal view {
+    _assertUserAccountData(state, spoke, label);
+    _assertProtocolFeeEarned(state, label);
+    _assertLiquidationBonusEarned(state, label);
+    _assertSupplyExchangeRate(state, label);
+    _assertSetUsingAsCollateral(spoke, alice, state, label);
+  }
+
   /// assert that the user account data is correct after liquidation
   function _assertUserAccountData(
     LiquidationTestLocalParams memory state,
@@ -255,7 +267,7 @@ contract SpokeLiquidationBase is SpokeBase {
     LiquidationTestLocalParams memory state,
     // ConvertedValues memory totalLiqBonus,
     string memory label
-  ) internal view {
+  ) internal pure {
     uint256 totalLiqBonusAmount = state.supply.balanceChange -
       state.supply.balanceChange.percentDivDown(state.liquidationBonus);
 
@@ -504,11 +516,6 @@ contract SpokeLiquidationBase is SpokeBase {
     );
     state.debt.balanceChange = _absDiff(state.debt.balanceAfter, state.debt.balanceBefore);
     state.supply.balanceChange = _absDiff(state.supply.balanceAfter, state.supply.balanceBefore);
-
-    (uint256 baseDebt, uint256 premiumDebt) = spoke1.getUserDebt(
-      state.debtReserve.reserveId,
-      alice
-    );
 
     // convert amount to base currency
     state.liquidatorCollateral.baseChange = _convertAmountToBaseCurrency(

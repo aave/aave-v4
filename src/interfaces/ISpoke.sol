@@ -132,7 +132,6 @@ interface ISpoke {
   ) external;
 
   function setUsingAsCollateral(uint256 reserveId, bool usingAsCollateral) external;
-
   function getCollateralFactor(uint256 reserveId) external view returns (uint256);
   function getHealthFactor(address user) external view returns (uint256);
   function getLiquidityPremium(uint256 reserveId) external view returns (uint256);
@@ -160,7 +159,6 @@ interface ISpoke {
     uint256 reserveId,
     address user
   ) external view returns (DataTypes.UserPosition memory);
-  function getLastUserRiskPremium(uint256 reserveId, address user) external view returns (uint256);
   function getUserRiskPremium(address user) external view returns (uint256);
   function getUserSuppliedAmount(uint256 reserveId, address user) external view returns (uint256);
   function getUserSuppliedShares(uint256 reserveId, address user) external view returns (uint256);
@@ -173,4 +171,6 @@ interface ISpoke {
     uint256 healthFactor
   ) external view returns (uint256);
   function getLiquidationConfig() external view returns (DataTypes.LiquidationConfig memory);
+  function HEALTH_FACTOR_LIQUIDATION_THRESHOLD() external view returns (uint256);
+  function MAX_LIQUIDITY_PREMIUM() external view returns (uint256);
 }
