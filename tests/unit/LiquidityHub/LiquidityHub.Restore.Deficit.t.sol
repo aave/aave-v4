@@ -4,13 +4,25 @@ pragma solidity ^0.8.0;
 import './LiquidityHubBase.t.sol';
 
 contract LiquidityHubRestoreDeficitTest is LiquidityHubBase {
+  struct RestoreDeficitTestParams {
+    uint256 baseDebt;
+    uint256 premiumDebt;
+    uint256 actualAmountRestored;
+    uint256 deficitBefore;
+    uint256 deficitAfter;
+    uint256 supplyExchangeRateBefore;
+    uint256 supplyExchangeRateAfter;
+    uint256 availableLiquidityBefore;
+    uint256 availableLiquidityAfter;
+    uint256 balanceBefore;
+    uint256 balanceAfter;
+  }
   function setUp() public override {
     super.setUp();
 
     _deployLiquidity(spoke1, wethAssetId, MAX_SUPPLY_AMOUNT);
     _deployLiquidity(spoke1, usdxAssetId, MAX_SUPPLY_AMOUNT);
 
-    // IERC20 asset = hub.assetsList(wethAssetId);
     vm.startPrank(address(spoke1));
     hub.assetsList(wethAssetId).approve(address(hub), type(uint256).max);
     hub.assetsList(usdxAssetId).approve(address(hub), type(uint256).max);
@@ -145,48 +157,12 @@ contract LiquidityHubRestoreDeficitTest is LiquidityHubBase {
 
   function test_restore_with_deficit() public {
     uint256 drawnAmount = 10_000e6;
-
-    // draw usdx liquidity to be restored
-    Utils.draw(hub, usdxAssetId, address(spoke1), address(spoke1), drawnAmount, address(spoke1));
-
-    (uint256 baseDebt, uint256 premiumDebt) = hub.getSpokeDebt(usdxAssetId, address(spoke1));
-
-    uint256 baseDebtRestored = baseDebt;
-    uint256 premiumDebtRestored = premiumDebt;
-    // vm.assume(baseDebtRestored + premiumDebtRestored > 0);
-
-    console.log('baseDebt: %e', baseDebt);
-    console.log('premiumDebt: %e', premiumDebt);
-
-    uint256 deficitAmountRestored = baseDebt / 2;
-    uint256 deficitBefore = hub.getAsset(usdxAssetId).deficit;
-    uint256 supplyExchangeRateBefore = hub.convertToSuppliedAssets(
-      usdxAssetId,
-      WadRayMathExtended.RAY
-    );
-
-    // Set up the spoke to have a deficit
-    // Restore the deficit
-    vm.prank(address(spoke1));
-    hub.restore(
-      usdxAssetId,
-      baseDebtRestored,
-      premiumDebtRestored,
-      deficitAmountRestored,
-      address(spoke1)
-    );
-
-    uint256 deficitAfter = hub.getAsset(usdxAssetId).deficit;
-    uint256 supplyExchangeRateAfter = hub.convertToSuppliedAssets(
-      usdxAssetId,
-      WadRayMathExtended.RAY
-    );
-
-    console.log('supplyExchangeRateBefore: %e', supplyExchangeRateBefore);
-    console.log('supplyExchangeRateAfter: %e', supplyExchangeRateAfter);
-
-    assertEq(deficitAfter, deficitBefore + deficitAmountRestored, 'deficit accounting');
-    assertEq(supplyExchangeRateAfter, supplyExchangeRateBefore, 'supply exchange rate');
+    test_restore_fuzz_with_deficit({
+      drawnAmount: drawnAmount,
+      deficitAmountRestored: drawnAmount / 2,
+      baseDebtRestored: drawnAmount,
+      premiumDebtRestored: 0
+    });
   }
 
   function test_restore_fuzz_with_deficit(
@@ -197,24 +173,28 @@ contract LiquidityHubRestoreDeficitTest is LiquidityHubBase {
   ) public {
     drawnAmount = bound(drawnAmount, 1, MAX_SUPPLY_AMOUNT);
 
+    RestoreDeficitTestParams memory params;
+
     // draw usdx liquidity to be restored
     Utils.draw(hub, usdxAssetId, address(spoke1), address(spoke1), drawnAmount, address(spoke1));
 
-    (uint256 baseDebt, uint256 premiumDebt) = hub.getSpokeDebt(usdxAssetId, address(spoke1));
+    (params.baseDebt, params.premiumDebt) = hub.getSpokeDebt(usdxAssetId, address(spoke1));
 
-    baseDebtRestored = bound(baseDebtRestored, 0, baseDebt);
-    premiumDebtRestored = bound(premiumDebtRestored, 0, premiumDebt);
+    baseDebtRestored = bound(baseDebtRestored, 0, params.baseDebt);
+    premiumDebtRestored = bound(premiumDebtRestored, 0, params.premiumDebt);
     vm.assume(baseDebtRestored + premiumDebtRestored > 0);
 
     deficitAmountRestored = bound(deficitAmountRestored, 1, baseDebtRestored + premiumDebtRestored);
+    params.actualAmountRestored = baseDebtRestored + premiumDebtRestored - deficitAmountRestored;
 
-    uint256 deficitBefore = hub.getAsset(usdxAssetId).deficit;
-    uint256 supplyExchangeRateBefore = hub.convertToSuppliedAssets(
+    params.deficitBefore = hub.getDeficit(usdxAssetId);
+    params.supplyExchangeRateBefore = hub.convertToSuppliedAssets(
       usdxAssetId,
       WadRayMathExtended.RAY
     );
+    params.availableLiquidityBefore = hub.getAvailableLiquidity(usdxAssetId);
+    params.balanceBefore = hub.assetsList(usdxAssetId).balanceOf(address(spoke1));
 
-    // Set up the spoke to have a deficit
     // Restore the deficit
     vm.prank(address(spoke1));
     hub.restore(
@@ -225,14 +205,34 @@ contract LiquidityHubRestoreDeficitTest is LiquidityHubBase {
       address(spoke1)
     );
 
-    uint256 deficitAfter = hub.getAsset(usdxAssetId).deficit;
-    uint256 supplyExchangeRateAfter = hub.convertToSuppliedAssets(
+    params.deficitAfter = hub.getDeficit(usdxAssetId);
+    params.supplyExchangeRateAfter = hub.convertToSuppliedAssets(
       usdxAssetId,
       WadRayMathExtended.RAY
     );
+    params.availableLiquidityAfter = hub.getAvailableLiquidity(usdxAssetId);
+    params.balanceAfter = hub.assetsList(usdxAssetId).balanceOf(address(spoke1));
 
-    assertEq(deficitAfter, deficitBefore + deficitAmountRestored, 'deficit accounting');
-    assertEq(supplyExchangeRateAfter, supplyExchangeRateBefore, 'supply exchange rate');
+    assertEq(
+      params.balanceAfter + params.actualAmountRestored,
+      params.balanceBefore,
+      'balance change'
+    );
+    assertEq(
+      params.availableLiquidityAfter,
+      params.availableLiquidityBefore + params.actualAmountRestored,
+      'available liquidity'
+    );
+    assertEq(
+      params.deficitAfter,
+      params.deficitBefore + deficitAmountRestored,
+      'deficit accounting'
+    );
+    assertEq(
+      params.supplyExchangeRateAfter,
+      params.supplyExchangeRateBefore,
+      'supply exchange rate'
+    );
   }
 
   function test_restore_fuzz_with_deficit_with_accrual(
@@ -263,19 +263,24 @@ contract LiquidityHubRestoreDeficitTest is LiquidityHubBase {
 
     _createBorrowPositionWithPremium(spoke1, _usdxReserveId(spoke1), drawnAmount, skipTime);
 
-    (uint256 baseDebt, uint256 premiumDebt) = hub.getSpokeDebt(usdxAssetId, address(spoke1));
+    RestoreDeficitTestParams memory params;
 
-    baseDebtRestored = bound(baseDebtRestored, 0, baseDebt);
-    premiumDebtRestored = bound(premiumDebtRestored, 0, premiumDebt);
+    (params.baseDebt, params.premiumDebt) = hub.getSpokeDebt(usdxAssetId, address(spoke1));
+
+    baseDebtRestored = bound(baseDebtRestored, 0, params.baseDebt);
+    premiumDebtRestored = bound(premiumDebtRestored, 0, params.premiumDebt);
     vm.assume(baseDebtRestored + premiumDebtRestored > 0);
 
     deficitAmountRestored = bound(deficitAmountRestored, 1, baseDebtRestored + premiumDebtRestored);
+    params.actualAmountRestored = baseDebtRestored + premiumDebtRestored - deficitAmountRestored;
 
-    uint256 deficitBefore = hub.getAsset(usdxAssetId).deficit;
-    uint256 supplyExchangeRateBefore = hub.convertToSuppliedAssets(
+    params.deficitBefore = hub.getDeficit(usdxAssetId);
+    params.supplyExchangeRateBefore = hub.convertToSuppliedAssets(
       usdxAssetId,
       WadRayMathExtended.RAY
     );
+    params.availableLiquidityBefore = hub.getAvailableLiquidity(usdxAssetId);
+    params.balanceBefore = hub.assetsList(usdxAssetId).balanceOf(address(spoke1));
 
     // Restore with deficit
     vm.prank(address(spoke1));
@@ -287,14 +292,34 @@ contract LiquidityHubRestoreDeficitTest is LiquidityHubBase {
       address(spoke1)
     );
 
-    uint256 deficitAfter = hub.getAsset(usdxAssetId).deficit;
-    uint256 supplyExchangeRateAfter = hub.convertToSuppliedAssets(
+    params.deficitAfter = hub.getDeficit(usdxAssetId);
+    params.supplyExchangeRateAfter = hub.convertToSuppliedAssets(
       usdxAssetId,
       WadRayMathExtended.RAY
     );
+    params.availableLiquidityAfter = hub.getAvailableLiquidity(usdxAssetId);
+    params.balanceAfter = hub.assetsList(usdxAssetId).balanceOf(address(spoke1));
 
-    assertEq(deficitAfter, deficitBefore + deficitAmountRestored, 'deficit accounting');
-    assertGe(supplyExchangeRateAfter, supplyExchangeRateBefore, 'supply exchange rate ge');
+    assertEq(
+      params.balanceAfter + params.actualAmountRestored,
+      params.balanceBefore,
+      'balance change'
+    );
+    assertEq(
+      params.availableLiquidityAfter,
+      params.availableLiquidityBefore + params.actualAmountRestored,
+      'available liquidity'
+    );
+    assertEq(
+      params.deficitAfter,
+      params.deficitBefore + deficitAmountRestored,
+      'deficit accounting'
+    );
+    assertGe(
+      params.supplyExchangeRateAfter,
+      params.supplyExchangeRateBefore,
+      'supply exchange rate ge'
+    );
   }
 
   /// Create a borrow position thru user interaction with spoke, to accrue premium on spoke debt in hub
@@ -305,9 +330,8 @@ contract LiquidityHubRestoreDeficitTest is LiquidityHubBase {
     uint256 borrowAmount,
     uint256 skipTime
   ) internal {
-    // Bob supplies collateral
+    // Bob supplies max wbtc collateral and borrows
     Utils.supplyCollateral(spoke1, _wbtcReserveId(spoke1), bob, MAX_SUPPLY_AMOUNT, bob);
-    // Bob borrows reserve
     Utils.borrow(spoke, reserveId, bob, borrowAmount, address(bob));
     // skip to accrue interest
     skip(skipTime);

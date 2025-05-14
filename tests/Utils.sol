@@ -55,6 +55,7 @@ library Utils {
     address spoke,
     uint256 baseAmount,
     uint256 premiumAmount,
+    uint256 deficitAmount,
     address repayer
   ) internal {
     vm.startPrank(repayer);
@@ -62,7 +63,7 @@ library Utils {
     vm.stopPrank();
 
     vm.prank(spoke);
-    hub.restore(assetId, baseAmount, premiumAmount, 0, repayer);
+    hub.restore(assetId, baseAmount, premiumAmount, deficitAmount, repayer);
   }
 
   // spoke
