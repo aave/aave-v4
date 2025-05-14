@@ -277,8 +277,7 @@ contract LiquidityHubRestoreDeficitTest is LiquidityHubBase {
       WadRayMathExtended.RAY
     );
 
-    // Set up the spoke to have a deficit
-    // Restore the deficit
+    // Restore with deficit
     vm.prank(address(spoke1));
     hub.restore(
       usdxAssetId,
@@ -296,12 +295,6 @@ contract LiquidityHubRestoreDeficitTest is LiquidityHubBase {
 
     assertEq(deficitAfter, deficitBefore + deficitAmountRestored, 'deficit accounting');
     assertGe(supplyExchangeRateAfter, supplyExchangeRateBefore, 'supply exchange rate ge');
-    // TODO: resolve exact difference on ex rate increase
-    // assertApproxEqAbs(
-    //   supplyExchangeRateAfter,
-    //   supplyExchangeRateBefore,
-    //   'supply exchange rate approx eq'
-    // );
   }
 
   /// Create a borrow position thru user interaction with spoke, to accrue premium on spoke debt in hub
