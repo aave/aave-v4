@@ -242,52 +242,13 @@ contract LiquidityHubRestoreDeficitTest is LiquidityHubBase {
     uint256 premiumDebtRestored,
     uint256 skipTime
   ) public {
-    drawnAmount = bound(drawnAmount, 1, MAX_SUPPLY_AMOUNT);
-    skipTime = bound(skipTime, 1, MAX_SKIP_TIME);
-
-    // draw usdx liquidity to be restored
-    Utils.draw(hub, usdxAssetId, address(spoke1), address(spoke1), drawnAmount, address(spoke1));
-
-    skip(skipTime);
-
-    (uint256 baseDebt, uint256 premiumDebt) = hub.getSpokeDebt(usdxAssetId, address(spoke1));
-
-    baseDebtRestored = bound(baseDebtRestored, 0, baseDebt);
-    premiumDebtRestored = bound(premiumDebtRestored, 0, premiumDebt);
-    vm.assume(baseDebtRestored + premiumDebtRestored > 0);
-
-    deficitAmountRestored = bound(deficitAmountRestored, 1, baseDebtRestored + premiumDebtRestored);
-
-    uint256 deficitBefore = hub.getAsset(usdxAssetId).deficit;
-    uint256 supplyExchangeRateBefore = hub.convertToSuppliedAssets(
-      usdxAssetId,
-      WadRayMathExtended.RAY
-    );
-
-    // Restore with deficit
-    vm.prank(address(spoke1));
-    hub.restore(
-      usdxAssetId,
-      baseDebtRestored,
-      premiumDebtRestored,
-      deficitAmountRestored,
-      address(spoke1)
-    );
-
-    uint256 deficitAfter = hub.getAsset(usdxAssetId).deficit;
-    uint256 supplyExchangeRateAfter = hub.convertToSuppliedAssets(
-      usdxAssetId,
-      WadRayMathExtended.RAY
-    );
-
-    assertEq(deficitAfter, deficitBefore + deficitAmountRestored, 'deficit accounting');
-    assertGe(supplyExchangeRateAfter, supplyExchangeRateBefore, 'supply exchange rate ge');
-    assertApproxEqAbs(
-      supplyExchangeRateAfter,
-      supplyExchangeRateBefore,
-      1,
-      'supply exchange rate approx eq'
-    );
+    test_restore_fuzz_with_deficit_with_premium({
+      drawnAmount: drawnAmount,
+      deficitAmountRestored: deficitAmountRestored,
+      baseDebtRestored: baseDebtRestored,
+      premiumDebtRestored: premiumDebtRestored,
+      skipTime: 0
+    });
   }
 
   function test_restore_fuzz_with_deficit_with_premium(
