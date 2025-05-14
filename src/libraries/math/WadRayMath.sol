@@ -1,5 +1,7 @@
-// SPDX-License-Identifier: BUSL-1.1
+// SPDX-License-Identifier: MIT
 pragma solidity ^0.8.0;
+
+import {PercentageMath} from 'src/libraries/math/PercentageMath.sol';
 
 /**
  * @title WadRayMath library
@@ -181,10 +183,10 @@ library WadRayMath {
   }
 
   function bpsToRay(uint256 a) internal pure returns (uint256) {
-    return (a * RAY) / 100_00;
+    return (a * RAY) / PercentageMath.PERCENTAGE_FACTOR;
   }
 
   function rayToBps(uint256 a) internal pure returns (uint256) {
-    return (a * 100_00) / RAY;
+    return (a * PercentageMath.PERCENTAGE_FACTOR) / RAY;
   }
 }

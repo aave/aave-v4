@@ -18,8 +18,8 @@ contract LiquidityHubHandler is Test {
 
   IPriceOracle public oracle;
   LiquidityHub public hub;
-  Spoke public bm;
-  DefaultReserveInterestRateStrategy creditLineIRStrategy;
+  Spoke public spoke1;
+  DefaultReserveInterestRateStrategy irStrategy;
 
   address internal mockAddressesProvider = makeAddr('mockAddressesProvider');
 
@@ -33,29 +33,38 @@ contract LiquidityHubHandler is Test {
   State internal s;
 
   constructor() {
-    creditLineIRStrategy = new DefaultReserveInterestRateStrategy(mockAddressesProvider);
+    irStrategy = new DefaultReserveInterestRateStrategy(mockAddressesProvider);
     oracle = new MockPriceOracle();
     hub = new LiquidityHub();
-    bm = new Spoke(address(hub), address(oracle));
+    spoke1 = new Spoke(address(hub), address(oracle), WadRayMath.WAD);
     usdc = new MockERC20();
     dai = new MockERC20();
     usdt = new MockERC20();
 
     // Add dai
     hub.addAsset(
-      DataTypes.AssetConfig({decimals: 18, active: true, irStrategy: address(0)}),
+      DataTypes.AssetConfig({
+        decimals: 18,
+        active: true,
+        frozen: false,
+        paused: false,
+        irStrategy: irStrategy
+      }),
       address(dai)
     );
-    bm.addReserve(
+    spoke1.addReserve(
       0,
       DataTypes.ReserveConfig({
-        lt: 0,
-        lb: 0,
+        decimals: 18,
+        active: true,
+        frozen: false,
+        paused: false,
+        collateralFactor: 0,
+        liquidationBonus: 100_00,
         liquidityPremium: 0,
         borrowable: false,
         collateral: false
-      }),
-      address(dai)
+      })
     );
   }
 
@@ -82,12 +91,11 @@ contract LiquidityHubHandler is Test {
 
     IERC20 asset = hub.assetsList(assetId);
     deal(address(asset), user, amount);
-    Utils.supply({
+    Utils.add({
       hub: hub,
       assetId: assetId,
-      spoke: address(bm),
+      spoke: address(spoke1),
       amount: amount,
-      riskPremium: 0,
       user: user,
       to: onBehalfOf
     });
@@ -99,17 +107,10 @@ contract LiquidityHubHandler is Test {
 
   function withdraw(uint256 assetId, address user, uint256 amount, address to) public {
     assetId = bound(assetId, 0, hub.assetCount() - 1);
-    // TODO: bound by bm user balance
+    // TODO: bound by spoke1 user balance
     amount = bound(amount, 1, 2);
 
-    Utils.withdraw({
-      hub: hub,
-      assetId: assetId,
-      spoke: address(bm),
-      amount: amount,
-      riskPremium: 0,
-      to: to
-    });
+    Utils.remove({hub: hub, assetId: assetId, spoke: address(spoke1), amount: amount, to: to});
 
     _updateState(assetId);
     s.reserveSupplied[assetId] -= amount;
@@ -131,10 +132,12 @@ contract LiquidityHubHandler is Test {
   }
 
   function _updateState(uint256 assetId) internal {
-    DataTypes.Asset memory reserveData = hub.getAsset(assetId);
-    // todo: remove last exchange rate, bad idea to store like this, looses precision
-    s.lastExchangeRate[assetId] = reserveData.suppliedShares == 0
-      ? 0
-      : hub.getTotalAssets(assetId) / reserveData.suppliedShares;
+    revert('implement me');
+
+    // DataTypes.Asset memory reserveData = hub.getAsset(assetId);
+    // // todo: remove last exchange rate, bad idea to store like this, looses precision
+    // s.lastExchangeRate[assetId] = reserveData.suppliedShares == 0
+    //   ? 0
+    //   : hub.getTotalAssets(assetId) / reserveData.suppliedShares;
   }
 }

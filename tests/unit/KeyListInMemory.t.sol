@@ -2,7 +2,7 @@
 pragma solidity ^0.8.0;
 
 import {Test} from 'forge-std/Test.sol';
-import {KeyValueListInMemory} from 'src/contracts/KeyValueListInMemory.sol';
+import {KeyValueListInMemory} from 'src/libraries/helpers/KeyValueListInMemory.sol';
 
 contract KeyValueListInMemoryTest is Test {
   using KeyValueListInMemory for KeyValueListInMemory.List;

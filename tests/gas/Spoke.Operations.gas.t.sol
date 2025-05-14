@@ -9,17 +9,17 @@ contract SpokeOperations_Gas_Tests is Base {
     initEnvironment();
 
     vm.startPrank(address(spoke2));
-    hub.supply(daiAssetId, 1000e18, 20_09, bob);
-    hub.supply(wethAssetId, 1000e18, 0, bob);
-    hub.supply(usdxAssetId, 1000e6, 8_50, bob);
-    hub.supply(wbtcAssetId, 1000e8, 37_05, bob);
+    hub.add(daiAssetId, 1000e18, bob);
+    hub.add(wethAssetId, 1000e18, bob);
+    hub.add(usdxAssetId, 1000e6, bob);
+    hub.add(wbtcAssetId, 1000e8, bob);
     vm.stopPrank();
   }
 
   function test_supply() public {
     vm.startPrank(alice);
 
-    spoke1.supply(spokeInfo[spoke1].usdx.reserveId, 500e6);
+    spoke1.supply(spokeInfo[spoke1].usdx.reserveId, 5_000_000e6);
     vm.snapshotGasLastCall('Spoke.Operations', 'supply: 0 debt, collateralDisabled');
     spoke1.setUsingAsCollateral(spokeInfo[spoke1].usdx.reserveId, true);
 
@@ -33,7 +33,7 @@ contract SpokeOperations_Gas_Tests is Base {
     vm.snapshotGasLastCall('Spoke.Operations', 'supply: 2 debt');
     spoke1.setUsingAsCollateral(spokeInfo[spoke1].weth.reserveId, true);
 
-    spoke1.borrow(spokeInfo[spoke1].weth.reserveId, 400e18, alice);
+    spoke1.borrow(spokeInfo[spoke1].weth.reserveId, 4e18, alice);
     spoke1.supply(spokeInfo[spoke1].wbtc.reserveId, 500e8);
     vm.snapshotGasLastCall('Spoke.Operations', 'supply: 3 debt');
     vm.stopPrank();
@@ -53,12 +53,9 @@ contract SpokeOperations_Gas_Tests is Base {
     vm.startPrank(alice);
     spoke1.supply(spokeInfo[spoke1].usdx.reserveId, 1000e6);
     spoke1.setUsingAsCollateral(spokeInfo[spoke1].usdx.reserveId, true);
-
     spoke1.withdraw(spokeInfo[spoke1].usdx.reserveId, 500e6, alice);
     vm.snapshotGasLastCall('Spoke.Operations', 'withdraw: partial');
-
     skip(100);
-
     spoke1.withdraw(spokeInfo[spoke1].usdx.reserveId, 500e6, alice);
     vm.snapshotGasLastCall('Spoke.Operations', 'withdraw: full');
     vm.stopPrank();
@@ -92,11 +89,7 @@ contract SpokeOperations_Gas_Tests is Base {
     vm.snapshotGasLastCall('Spoke.Operations', 'repay: partial');
 
     skip(1000);
-    uint256 cumulativeDebtRemaining = spoke1.getUserCumulativeDebt(
-      spokeInfo[spoke1].dai.reserveId,
-      alice
-    );
-    spoke1.repay(spokeInfo[spoke1].dai.reserveId, cumulativeDebtRemaining);
+    spoke1.repay(spokeInfo[spoke1].dai.reserveId, type(uint256).max);
     vm.snapshotGasLastCall('Spoke.Operations', 'repay: full');
     vm.stopPrank();
   }

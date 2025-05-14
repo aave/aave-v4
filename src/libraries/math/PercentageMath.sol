@@ -1,4 +1,4 @@
-// SPDX-License-Identifier: BUSL-1.1
+// SPDX-License-Identifier: MIT
 pragma solidity ^0.8.0;
 
 /**
@@ -19,7 +19,7 @@ library PercentageMath {
    * @notice Executes a percentage multiplication
    * @dev assembly optimized for improved gas savings, see https://twitter.com/transmissions11/status/1451131036377571328
    * @param value The value of which the percentage needs to be calculated
-   * @param percentage The percentage of the value to be calculated
+   * @param percentage The percentage of the value to be calculated (in BPS)
    * @return result value percentmul percentage
    */
   function percentMul(uint256 value, uint256 percentage) internal pure returns (uint256 result) {
@@ -42,7 +42,7 @@ library PercentageMath {
    * @notice Executes a percentage division
    * @dev assembly optimized for improved gas savings, see https://twitter.com/transmissions11/status/1451131036377571328
    * @param value The value of which the percentage needs to be calculated
-   * @param percentage The percentage of the value to be calculated
+   * @param percentage The percentage of the value to be calculated (in BPS)
    * @return result value percentdiv percentage
    */
   function percentDiv(uint256 value, uint256 percentage) internal pure returns (uint256 result) {
@@ -57,5 +57,14 @@ library PercentageMath {
 
       result := div(add(mul(value, PERCENTAGE_FACTOR), div(percentage, 2)), percentage)
     }
+  }
+
+  /**
+   * @notice Truncates number from BPS precision.
+   * @param value The number in BPS precision.
+   * @return result (value / 1e4)
+   */
+  function fromBps(uint256 value) internal pure returns (uint256) {
+    return value / PERCENTAGE_FACTOR;
   }
 }
