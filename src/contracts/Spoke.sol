@@ -320,7 +320,6 @@ contract Spoke is ISpoke, Multicall {
   /// @dev Must be called on a reserve user is already borrowing
   /// @dev If called by user, reverts if user risk premium increases
   function updateUserRiskPremium(uint256 reserveId, address user) external {
-    // TODO: With access control, allow DAO to update user risk premium in case of increase
     DataTypes.Reserve storage reserve = _reserves[reserveId];
     DataTypes.UserPosition storage userPosition = _userPositions[user][reserveId];
     require(_isBorrowing(userPosition), UserNotBorrowingReserve(reserveId));
@@ -347,8 +346,12 @@ contract Spoke is ISpoke, Multicall {
     uint256 newUserPremiumDrawnShares = userPosition.premiumDrawnShares = userPosition
       .baseDrawnShares
       .percentMul(newUserRiskPremium);
+    // TODO: With access control, also allow DAO to update user risk premium in case of increase
     // Check new premium drawn shares as proxy for user risk premium
-    require(newUserPremiumDrawnShares < userPremiumDrawnShares, NoUserRiskPremiumDecrease());
+    require(
+      msg.sender == user || newUserPremiumDrawnShares < userPremiumDrawnShares,
+      NoUserRiskPremiumDecrease()
+    );
     userPremiumOffset = userPosition.premiumOffset = HUB.previewOffset(
       assetId,
       userPosition.premiumDrawnShares
