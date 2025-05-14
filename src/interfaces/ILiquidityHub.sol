@@ -179,7 +179,7 @@ interface ILiquidityHub {
   function getSpokeSuppliedAmount(uint256 assetId, address spoke) external view returns (uint256);
   function getSpokeSuppliedShares(uint256 assetId, address spoke) external view returns (uint256);
   function getSpokeTotalDebt(uint256 assetId, address spoke) external view returns (uint256);
-
+  function getDeficit(uint256 assetId) external view returns (uint256);
   function assetCount() external view returns (uint256);
   function assetsList(uint256 assetId) external view returns (IERC20);
   function MAX_ALLOWED_ASSET_DECIMALS() external view returns (uint256);
