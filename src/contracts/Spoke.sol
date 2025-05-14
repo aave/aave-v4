@@ -318,7 +318,7 @@ contract Spoke is ISpoke, Multicall {
   }
 
   /// @dev Must be called on a reserve user is already borrowing
-  /// @dev If called by user, reverts if user risk premium increases
+  /// @dev If not called by position owner or DAO, reverts if user risk premium increases
   function updateUserRiskPremium(uint256 reserveId, address user) external {
     DataTypes.Reserve storage reserve = _reserves[reserveId];
     DataTypes.UserPosition storage userPosition = _userPositions[user][reserveId];
