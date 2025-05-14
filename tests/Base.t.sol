@@ -843,6 +843,73 @@ abstract contract Base is Test {
     );
   }
 
+  function _checkDebts(
+    ISpoke spoke,
+    uint256 reserveId,
+    address user,
+    uint256 expectedBaseDebt,
+    uint256 expectedPremiumDebt,
+    string memory label
+  ) internal {
+    uint256 assetId = spoke.getReserve(reserveId).assetId;
+
+    // User position debts
+    DataTypes.UserPosition memory userPosition = getUserInfo(spoke, user, reserveId);
+    assertApproxEqAbs(
+      hub.convertToDrawnAssets(assetId, userPosition.baseDrawnShares),
+      expectedBaseDebt,
+      1,
+      string.concat('user base debt ', label)
+    );
+    assertEq(
+      hub.convertToDrawnAssets(assetId, userPosition.premiumDrawnShares),
+      expectedPremiumDebt,
+      string.concat('user premium debt ', label)
+    );
+
+    // Reserve debts
+    DataTypes.Reserve memory reserveInfo = getReserveInfo(spoke, reserveId);
+    assertApproxEqAbs(
+      hub.convertToDrawnAssets(assetId, reserveInfo.baseDrawnShares),
+      expectedBaseDebt,
+      1,
+      string.concat('reserve base debt ', label)
+    );
+    assertEq(
+      hub.convertToDrawnAssets(assetId, reserveInfo.premiumDrawnShares),
+      expectedPremiumDebt,
+      string.concat('reserve premium debt ', label)
+    );
+
+    // Spoke debts
+    DataTypes.SpokeData memory spokeInfo = getSpokeInfo(assetId, address(spoke));
+    assertApproxEqAbs(
+      hub.convertToDrawnAssets(assetId, spokeInfo.baseDrawnShares),
+      expectedBaseDebt,
+      1,
+      string.concat('spoke base debt ', label)
+    );
+    assertEq(
+      hub.convertToDrawnAssets(assetId, spokeInfo.premiumDrawnShares),
+      expectedPremiumDebt,
+      string.concat('spoke premium debt ', label)
+    );
+
+    // Asset debts
+    DataTypes.Asset memory assetInfo = getAssetInfo(assetId);
+    assertApproxEqAbs(
+      hub.convertToDrawnAssets(assetId, assetInfo.baseDrawnShares),
+      expectedBaseDebt,
+      1,
+      string.concat('asset base debt ', label)
+    );
+    assertEq(
+      hub.convertToDrawnAssets(assetId, assetInfo.premiumDrawnShares),
+      expectedPremiumDebt,
+      string.concat('asset premium debt ', label)
+    );
+  }
+
   function _min(uint256 a, uint256 b) internal pure returns (uint256) {
     return a < b ? a : b;
   }
