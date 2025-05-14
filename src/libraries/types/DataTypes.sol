@@ -88,7 +88,6 @@ library DataTypes {
     uint256 realizedPremium;
   }
 
-  // todo: pack struct
   struct CalculateUserAccountDataVars {
     uint256 i;
     uint256 assetId;
@@ -114,7 +113,6 @@ library DataTypes {
     uint256 liquidationBonusFactor; // BPS, as a percentage of effective lb, TODO: use smaller uint
   }
 
-  // todo: pack struct
   struct LiquidationCallLocalVars {
     uint256 collateralReserveId; // todo: use smaller int
     uint256 debtReserveId; // todo: use smaller int
@@ -139,7 +137,6 @@ library DataTypes {
     bool disableUsingAsCollateral;
   }
 
-  // todo: pack struct
   struct CalculateAvailableCollateralToLiquidateLocalVars {
     uint256 maxCollateralToLiquidate;
     uint256 baseCollateral;
@@ -150,7 +147,6 @@ library DataTypes {
     uint256 userCollateralBalanceInBaseCurrency;
   }
 
-  // todo: pack struct
   struct ExecuteLiquidationLocalVars {
     uint256 i;
     uint256 debtAssetId;

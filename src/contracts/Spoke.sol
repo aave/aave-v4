@@ -26,7 +26,8 @@ contract Spoke is ISpoke {
   using LiquidationLogic for DataTypes.LiquidationConfig;
   using LiquidationLogic for DataTypes.LiquidationCallLocalVars;
 
-  uint256 public constant HEALTH_FACTOR_LIQUIDATION_THRESHOLD = WadRayMath.WAD;
+  uint256 public constant HEALTH_FACTOR_LIQUIDATION_THRESHOLD = WadRayMathExtended.WAD;
+  uint256 public constant MAX_LIQUIDITY_PREMIUM = PercentageMathExtended.PERCENTAGE_FACTOR * 10;
   ILiquidityHub public immutable HUB;
   IPriceOracle public immutable oracle;
 
@@ -792,15 +793,18 @@ contract Spoke is ISpoke {
   }
 
   function _validateReserveConfig(DataTypes.ReserveConfig calldata config) internal view {
-    require(config.collateralFactor <= PercentageMath.PERCENTAGE_FACTOR, InvalidCollateralFactor()); // max 100.00%
-    require(config.liquidationBonus >= PercentageMath.PERCENTAGE_FACTOR, InvalidLiquidationBonus()); // min 100.00%
     require(
-      config.liquidityPremium <= PercentageMath.PERCENTAGE_FACTOR * 10,
-      InvalidLiquidityPremium()
-    ); // max 1000.00%
+      config.collateralFactor <= PercentageMathExtended.PERCENTAGE_FACTOR,
+      InvalidCollateralFactor()
+    ); // max 100.00%
+    require(
+      config.liquidationBonus >= PercentageMathExtended.PERCENTAGE_FACTOR,
+      InvalidLiquidationBonus()
+    ); // min 100.00%
+    require(config.liquidityPremium <= MAX_LIQUIDITY_PREMIUM, InvalidLiquidityPremium()); // max 1000.00%
     require(config.decimals <= HUB.MAX_ALLOWED_ASSET_DECIMALS(), InvalidReserveDecimals());
     require(
-      config.liquidationProtocolFeePercentage <= PercentageMath.PERCENTAGE_FACTOR,
+      config.liquidationProtocolFeePercentage <= PercentageMathExtended.PERCENTAGE_FACTOR,
       InvalidLiquidationProtocolFeePercentage()
     );
   }
@@ -809,7 +813,7 @@ contract Spoke is ISpoke {
     _validateCloseFactor(config.closeFactor);
     // if liquidationBonusFactor == 0, then variable liquidation bonus will not be applied
     require(
-      config.liquidationBonusFactor <= PercentageMath.PERCENTAGE_FACTOR,
+      config.liquidationBonusFactor <= PercentageMathExtended.PERCENTAGE_FACTOR,
       InvalidLiquidationBonusFactor()
     );
     // if healthFactorBonusThreshold == HEALTH_FACTOR_LIQUIDATION_THRESHOLD, then calculate will be undefined
