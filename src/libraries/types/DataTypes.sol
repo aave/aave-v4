@@ -180,7 +180,7 @@ library DataTypes {
     uint256 totalDebtToLiquidate;
     uint256 usersLength;
     uint256 newUserSuppliedShares;
-    uint256 remainingDebt;
+    uint256 outstandingDebt;
     bool hasDeficit;
   }
 

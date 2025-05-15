@@ -274,6 +274,8 @@ contract Spoke is ISpoke {
     uint256[] memory debtsToCover = new uint256[](1);
     debtsToCover[0] = debtToCover;
 
+    console.log('SP user debts %e %e', getUserTotalDebt(2, user), getUserTotalDebt(3, user));
+
     (
       address collateralAsset,
       address debtAsset,
@@ -305,7 +307,7 @@ contract Spoke is ISpoke {
     return _getUserDebt(_userPositions[user][reserveId], _reserves[reserveId].assetId);
   }
 
-  function getUserTotalDebt(uint256 reserveId, address user) external view returns (uint256) {
+  function getUserTotalDebt(uint256 reserveId, address user) public view returns (uint256) {
     (uint256 baseDebt, uint256 premiumDebt) = _getUserDebt(
       _userPositions[user][reserveId],
       _reserves[reserveId].assetId
@@ -952,7 +954,7 @@ contract Spoke is ISpoke {
         vars.liquidationProtocolFeeAmount,
         vars.baseDebtToLiquidate,
         vars.premiumDebtToLiquidate,
-        vars.remainingDebt
+        vars.outstandingDebt
       ) = _calculateLiquidationParameters(
         collateralReserve,
         debtReserve,
@@ -1013,7 +1015,7 @@ contract Spoke is ISpoke {
 
       if (vars.newUserSuppliedShares == 0) {
         _setUsingAsCollateral(collateralReserveId, users[vars.i], false);
-        if (vars.remainingDebt > 0) {
+        if (vars.outstandingDebt > 0) {
           vars.hasDeficit = true;
         }
       }
@@ -1021,17 +1023,17 @@ contract Spoke is ISpoke {
       // repay debt
       if (vars.hasDeficit) {
         console.log(
-          'sp has deficit baseDebt %e premDebt %e remainingDebt %e',
+          'sp has deficit baseDebt %e premDebt %e outstandingDebt %e',
           vars.baseDebt,
           vars.premiumDebt,
-          vars.remainingDebt
+          vars.outstandingDebt
         );
         // if bad debt remains, restore full debt with deficit
         vars.restoredShares = HUB.restore(
           vars.debtAssetId,
           vars.baseDebt,
           vars.premiumDebt,
-          vars.remainingDebt,
+          vars.outstandingDebt,
           msg.sender
         );
       } else {
@@ -1132,15 +1134,28 @@ contract Spoke is ISpoke {
   }
 
   /** @dev Settle deficit accounting for user's remaining debt assets except for
-   * `reserveIdToAvoid` as that is expected to be handled in liquidation
+   * `reserveIdToAvoid` as that is expected to be handled in liquidation.
    */
   function _settleRemainingDeficit(uint256 reserveIdToAvoid, address userAddress) internal {
+    console.log('sp _settleRemainingDeficit %e alice: ', reserveIdToAvoid, userAddress);
+    console.log(
+      'SP userAddress debts %e %e',
+      getUserTotalDebt(2, userAddress),
+      getUserTotalDebt(3, userAddress)
+    );
     // get all user's debt assets except assetToAvoid
     uint256 reserveCount_ = reserveCount;
     uint256 reserveId;
     while (reserveId < reserveCount_) {
       DataTypes.UserPosition storage userPosition = _userPositions[userAddress][reserveId];
+      console.log(
+        'sp reserveId isBorrowing drawnShares %e',
+        reserveId,
+        _isBorrowing(userPosition),
+        userPosition.baseDrawnShares
+      );
       if (_isBorrowing(userPosition) && reserveId != reserveIdToAvoid) {
+        console.log('sp _executeRepay %e', reserveId);
         (uint256 baseDebt, uint256 premiumDebt) = _getUserDebt(userPosition, reserveId);
         _executeRepay(
           reserveId,
@@ -1160,7 +1175,7 @@ contract Spoke is ISpoke {
   /// @return liquidationProtocolFeeAmount The amount of protocol fee.
   /// @return baseDebtToLiquidate The amount of base debt to repay.
   /// @return premiumDebtToLiquidate The amount of premium debt to repay.
-  /// @return remainingDebt The amount of remaining debt remaining after repay. Utilized if deficit remains.
+  /// @return outstandingDebt The amount of remaining debt remaining after repay. Utilized if deficit remains.
   function _calculateLiquidationParameters(
     DataTypes.Reserve storage collateralReserve,
     DataTypes.Reserve storage debtReserve,
