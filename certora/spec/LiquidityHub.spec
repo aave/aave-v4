@@ -75,6 +75,8 @@ methods {
     uint256 premiumAmountRestored
   ) internal => NONDET;
 
+    //envfree function
+    function getSpokeSuppliedShares(uint256 assetId, address spoke) external returns (uint256) envfree;
 
 }
 
@@ -107,7 +109,7 @@ ghost mapping(uint256 /*assetId*/  => mapping(address /*spoke*/ => uint256 )) sp
 }
 
 /********** Function summary *****/
-function accrueCalled(uint256 assetId) {
+function accrueCalled() {
     accrueCalledOnAsset = true; 
 } 
 
@@ -323,9 +325,6 @@ invariant baseDebtIndexMin(uint256 assetId)
             requireInvariant validAssetId(assetId);
         }
     }
-
-
-
 
 
 // optimize the calls to certain function and save in ghost (global) variable) 

@@ -5,12 +5,12 @@ env:
   CONFIGS: |
     certora/conf/LiquidityHubAccrueIntegrity.conf
     certora/conf/Math.conf
-
-
+    certora/conf/SharesMath.conf
 on:
   push:
     branches:
       - main
+      - certora/LiquidityHubVerification
   pull_request:
     branches:
       - main
