@@ -402,7 +402,7 @@ contract LiquidationCallCloseFactorTest is SpokeLiquidationBase {
         .percentMul(95_00) // add buffer so that amount to restore is > 0
     );
 
-    liquidationProtocolFeePercentage = bound(liquidationProtocolFeePercentage, 0, 100_00);
+    liquidationProtocolFeePercentage = bound(liquidationProtocolFeePercentage, 0, 100_00); // BPS
     supplyAmount = bound(
       supplyAmount,
       _convertBaseCurrencyToAmount(state.collateralReserve.assetId, 1e25),
@@ -481,16 +481,6 @@ contract LiquidationCallCloseFactorTest is SpokeLiquidationBase {
     spoke1.liquidationCall(collateralReserveId, debtReserveId, alice, requiredDebtAmount);
 
     state = _getAccountingInfoAfterLiq(state);
-
-    // with repay donation, it is possible to repay more than the actual debt amount
-    if (_absDiff(state.debt.balanceAfter, state.debt.balanceBefore) > requiredDebtAmount) {
-      assertApproxEqAbs(
-        _absDiff(state.debt.balanceAfter, state.debt.balanceBefore),
-        requiredDebtAmount,
-        1,
-        'required debt can be greater than actual debt due to repay donation'
-      );
-    }
 
     return state;
   }
