@@ -417,6 +417,7 @@ contract LiquidityHub is ILiquidityHub {
     require(!asset.config.paused, AssetPaused());
     uint256 withdrawable = asset.toSuppliedAssetsDown(spoke.suppliedShares);
     require(amount <= withdrawable, SuppliedAmountExceeded(withdrawable));
+    console.log('HUB amount %e, avail liq %e', amount, asset.availableLiquidity);
     require(amount <= asset.availableLiquidity, NotAvailableLiquidity(asset.availableLiquidity));
   }
 

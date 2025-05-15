@@ -1020,6 +1020,12 @@ contract Spoke is ISpoke {
 
       // repay debt
       if (vars.hasDeficit) {
+        console.log(
+          'sp has deficit baseDebt %e premDebt %e remainingDebt %e',
+          vars.baseDebt,
+          vars.premiumDebt,
+          vars.remainingDebt
+        );
         // if bad debt remains, restore full debt with deficit
         vars.restoredShares = HUB.restore(
           vars.debtAssetId,

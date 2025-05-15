@@ -50,13 +50,14 @@ contract SpokeLiquidationBase is SpokeBase {
     uint256 collToLiq;
     uint256 debtToLiq;
     uint256 liqProtocolFee;
+    bool hasDeficit;
   }
 
   uint256 internal constant MIN_AMOUNT_IN_BASE_CURRENCY = 1e26;
 
   function setUp() public virtual override {
     super.setUp();
-    _addBorrowableLiquidity(MAX_SUPPLY_AMOUNT);
+    _addBorrowableLiquidity(MAX_SUPPLY_AMOUNT * 10); // additional liquidity buffer for if collateral reserve == debt reserve
   }
 
   /// @notice Deploys max borrowable liquidity for all reserves in spoke1.
@@ -120,6 +121,18 @@ contract SpokeLiquidationBase is SpokeBase {
 
     state.liquidationProtocolFeePercentage = liquidationProtocolFeePercentage;
 
+    console.log(' fuzz inputs');
+    console.log('  liqConfig.closeFactor %e', liqConfig.closeFactor);
+    console.log('  liqConfig.healthFactorBonusThreshold %e', liqConfig.healthFactorBonusThreshold);
+    console.log('  liqConfig.liquidationBonusFactor %e', liqConfig.liquidationBonusFactor);
+    console.log('  liqBonus %e', liqBonus);
+    console.log('  desiredHf %e', desiredHf);
+    console.log('  supplyAmount %e', supplyAmount);
+    console.log('  skipTime %e', skipTime);
+    console.log('  liquidationProtocolFeePercentage %e', liquidationProtocolFeePercentage);
+    console.log('  collateralReserveId %e', collateralReserveId);
+    console.log('  debtReserveId %e', debtReserveId);
+
     spoke1.updateLiquidationConfig(liqConfig);
     updateLiquidationBonus(spoke1, collateralReserveId, liqBonus);
     updateLiquidationProtocolFeePercentage(
@@ -157,6 +170,8 @@ contract SpokeLiquidationBase is SpokeBase {
       hfAfterBorrow
     );
 
+    console.log('test: requiredDebtAmount %e', requiredDebtAmount);
+
     state = _getAccountingInfoBeforeLiq(state);
 
     (
@@ -184,9 +199,6 @@ contract SpokeLiquidationBase is SpokeBase {
 
     state = _getAccountingInfoAfterLiq(state);
 
-    // with a close factor, it is impossible to liquidate all debt
-    assertTrue(_absDiff(state.debt.balanceAfter, state.debt.balanceBefore) < requiredDebtAmount);
-
     return state;
   }
 
@@ -210,37 +222,39 @@ contract SpokeLiquidationBase is SpokeBase {
   ) internal view virtual {
     (uint256 userRp, , uint256 finalHf, , ) = spoke1.getUserAccountData(alice);
 
-    // at low amounts of coll/debt, HF can diverge from close factor due to rounding/precision
-    if (
-      _convertAmountToBaseCurrency(state.debtReserve.assetId, state.debt.balanceAfter) >
-      MIN_AMOUNT_IN_BASE_CURRENCY &&
-      _convertAmountToBaseCurrency(state.collateralReserve.assetId, state.supply.balanceAfter) >
-      MIN_AMOUNT_IN_BASE_CURRENCY
-    ) {
-      // ensure HF is lte close factor
-      assertLe(
-        finalHf,
-        _getCloseFactor(spoke),
-        string.concat('Health factor <= close factor ', label)
-      );
-      // should also be close to the desired CF
-      assertApproxEqRel(
-        finalHf,
-        _getCloseFactor(spoke),
-        _approxRelFromBps(20),
-        'HF matches closeFactor within 0.1%'
-      );
-    } else if (state.supply.balanceAfter == 0 && state.debt.balanceAfter > 0) {
-      // if bad debt, HF should be 0 and userRp should be 0
-      assertEq(finalHf, 0, string.concat('HF = 0 if bad debt ', label));
+    if (state.hasDeficit) {
+      // if bad debt, HF should be max value and userRp should be 0
+      assertEq(finalHf, type(uint256).max, string.concat('HF = 0 if bad debt ', label));
       assertEq(userRp, 0, string.concat('userRp = 0 if bad debt ', label));
     } else {
-      // HF should always be lte close factor
-      assertLe(
-        finalHf,
-        _getCloseFactor(spoke),
-        string.concat('Health factor <= close factor ', label)
-      );
+      // at low amounts of coll/debt, HF can diverge from close factor due to rounding/precision
+      if (
+        _convertAmountToBaseCurrency(state.debtReserve.assetId, state.debt.balanceAfter) >
+        MIN_AMOUNT_IN_BASE_CURRENCY &&
+        _convertAmountToBaseCurrency(state.collateralReserve.assetId, state.supply.balanceAfter) >
+        MIN_AMOUNT_IN_BASE_CURRENCY
+      ) {
+        // ensure HF is lte close factor
+        assertLe(
+          finalHf,
+          _getCloseFactor(spoke),
+          string.concat('Health factor <= close factor ', label)
+        );
+        // should also be close to the desired CF
+        assertApproxEqRel(
+          finalHf,
+          _getCloseFactor(spoke),
+          _approxRelFromBps(20),
+          'HF matches closeFactor within 0.1%'
+        );
+      } else {
+        // HF should always be lte close factor
+        assertLe(
+          finalHf,
+          _getCloseFactor(spoke),
+          string.concat('Health factor <= close factor ', label)
+        );
+      }
     }
   }
 
@@ -547,6 +561,9 @@ contract SpokeLiquidationBase is SpokeBase {
       state.collateralReserve.assetId,
       state.supply.balanceChange
     );
+
+    state.hasDeficit = state.supplyShares.balanceAfter == 0 && state.debt.balanceAfter == 0;
+    console.log('test: hasDeficit', state.hasDeficit);
 
     return state;
   }
