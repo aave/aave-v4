@@ -136,7 +136,6 @@ library DataTypes {
     uint256 collateralAssetUnit;
     uint256 liquidationProtocolFeePercentage; // todo: use smaller uint
     uint256 collateralToLiquidateInBaseCurrency;
-    uint256 deficit;
   }
 
   struct CalculateAvailableCollateralToLiquidateLocalVars {
@@ -181,7 +180,8 @@ library DataTypes {
     uint256 totalDebtToLiquidate;
     uint256 usersLength;
     uint256 newUserSuppliedShares;
-    uint256 deficit;
+    uint256 remainingDebt;
+    bool hasDeficit;
   }
 
   struct ExecuteRepayLocalVars {

@@ -544,7 +544,7 @@ contract Spoke is ISpoke {
         vars.liquidationProtocolFeeAmount,
         vars.baseDebtToLiquidate,
         vars.premiumDebtToLiquidate,
-        vars.deficit
+        vars.remainingDebt
       ) = _calculateLiquidationParameters(
         collateralReserve,
         debtReserve,
@@ -591,31 +591,6 @@ contract Spoke is ISpoke {
         int256(vars.accruedCollateralPremium)
       ); // unnecessary but settle premium debt here for consistency
 
-      // repay debt
-      if (vars.deficit == 0) {
-        // if no bad debt remains, restore debt normally
-        vars.restoredShares = HUB.restore(
-          vars.debtAssetId,
-          vars.baseDebtToLiquidate,
-          vars.premiumDebtToLiquidate,
-          0,
-          msg.sender
-        );
-      } else {
-        // if bad debt remains, restore full debt with deficit
-        vars.restoredShares = HUB.restore(
-          vars.debtAssetId,
-          vars.baseDebt,
-          vars.premiumDebt,
-          vars.deficit,
-          msg.sender
-        );
-      }
-
-      // debt accounting
-      userDebtPosition.baseDrawnShares -= vars.restoredShares;
-      vars.totalRestoredShares += vars.restoredShares;
-
       // liquidate collateral
       vars.withdrawnShares = HUB.remove(
         vars.collateralAssetId,
@@ -630,13 +605,41 @@ contract Spoke is ISpoke {
 
       if (vars.newUserSuppliedShares == 0) {
         _setUsingAsCollateral(collateralReserveId, users[vars.i], false);
+        if (vars.remainingDebt > 0) {
+          vars.hasDeficit = true;
+        }
       }
 
-      if (vars.deficit == 0) {
-        // new user rp only needs to be calculated if no bad debt remains, otherwise it is 0
-        (vars.newUserRiskPremium, , , , ) = _calculateUserAccountData(users[vars.i]);
+      // repay debt
+      if (vars.hasDeficit) {
+        // if bad debt remains, restore full debt with deficit
+        vars.restoredShares = HUB.restore(
+          vars.debtAssetId,
+          vars.baseDebt,
+          vars.premiumDebt,
+          vars.remainingDebt,
+          msg.sender
+        );
       } else {
+        // no bad debt
+        vars.restoredShares = HUB.restore(
+          vars.debtAssetId,
+          vars.baseDebtToLiquidate,
+          vars.premiumDebtToLiquidate,
+          0,
+          msg.sender
+        );
+      }
+
+      // debt accounting
+      userDebtPosition.baseDrawnShares -= vars.restoredShares;
+      vars.totalRestoredShares += vars.restoredShares;
+
+      if (vars.hasDeficit) {
         _settleRemainingDeficit(debtReserveId, users[vars.i]);
+      } else {
+        // new user rp only needs to be calculated if no bad debt remains, otherwise it is 0 given no collateral remains
+        (vars.newUserRiskPremium, , , , ) = _calculateUserAccountData(users[vars.i]);
       }
 
       // refresh debt reserve premium
@@ -743,7 +746,7 @@ contract Spoke is ISpoke {
   /// @return liquidationProtocolFeeAmount The amount of protocol fee.
   /// @return baseDebtToLiquidate The amount of base debt to repay.
   /// @return premiumDebtToLiquidate The amount of premium debt to repay.
-  /// @return deficit The amount of bad debt remaining after liquidation.
+  /// @return remainingDebt The amount of remaining debt remaining after repay. Utilized if deficit remains.
   function _calculateLiquidationParameters(
     DataTypes.Reserve storage collateralReserve,
     DataTypes.Reserve storage debtReserve,
@@ -807,19 +810,12 @@ contract Spoke is ISpoke {
       vars.actualDebtToLiquidate
     );
 
-    if (
-      vars.actualDebtToLiquidate < vars.totalDebt &&
-      vars.collateralToLiquidateInBaseCurrency == vars.totalCollateralInBaseCurrency
-    ) {
-      vars.deficit = vars.totalDebt - vars.actualDebtToLiquidate;
-    }
-
     return (
       vars.actualCollateralToLiquidate,
       vars.liquidationProtocolFeeAmount,
       vars.baseDebtToLiquidate,
       vars.premiumDebtToLiquidate,
-      vars.deficit
+      vars.totalDebt - vars.actualDebtToLiquidate
     );
   }
 
