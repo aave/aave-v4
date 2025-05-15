@@ -34,6 +34,7 @@ contract SpokeLiquidationBase is SpokeBase {
     Balance collateral;
     Balance debt;
     Balance supply;
+    Balance supplyShares;
     uint256 liquidationBonus;
     uint256 collateralAssetId;
     uint256 debtAssetId;
@@ -292,7 +293,7 @@ contract SpokeLiquidationBase is SpokeBase {
     LiquidationTestLocalParams memory state,
     string memory label
   ) internal view {
-    if (state.supply.balanceAfter == 0) {
+    if (state.supplyShares.balanceAfter == 0) {
       assertFalse(
         spoke.getUsingAsCollateral(state.collateralReserve.reserveId, user),
         string.concat('isUsingAsCollateral should be false with no collateral ', label)
@@ -470,6 +471,10 @@ contract SpokeLiquidationBase is SpokeBase {
       state.collateralReserve.reserveId,
       alice
     );
+    state.supplyShares.balanceBefore = spoke1.getUserSuppliedShares(
+      state.collateralReserve.reserveId,
+      alice
+    );
     state.rate.rateBefore = hub.convertToSuppliedAssets(
       state.collateralReserve.assetId,
       WadRayMathExtended.RAY
@@ -500,6 +505,10 @@ contract SpokeLiquidationBase is SpokeBase {
       state.collateralReserve.reserveId,
       alice
     );
+    state.supplyShares.balanceAfter = spoke1.getUserSuppliedShares(
+      state.collateralReserve.reserveId,
+      alice
+    );
     state.rate.rateAfter = hub.convertToSuppliedAssets(
       state.collateralReserve.assetId,
       WadRayMathExtended.RAY
@@ -516,6 +525,10 @@ contract SpokeLiquidationBase is SpokeBase {
     );
     state.debt.balanceChange = _absDiff(state.debt.balanceAfter, state.debt.balanceBefore);
     state.supply.balanceChange = _absDiff(state.supply.balanceAfter, state.supply.balanceBefore);
+    state.supplyShares.balanceChange = _absDiff(
+      state.supplyShares.balanceAfter,
+      state.supplyShares.balanceBefore
+    );
 
     // convert amount to base currency
     state.liquidatorCollateral.baseChange = _convertAmountToBaseCurrency(
