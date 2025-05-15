@@ -57,7 +57,6 @@ contract LiquidationCallCloseFactorTest is SpokeLiquidationBase {
       skipTime
     );
 
-    string memory label = 'test_liquidationCall_fuzz_closeFactor';
     _checkLiquidation(state, spoke1, 'test_liquidationCall_fuzz_closeFactor');
   }
 
