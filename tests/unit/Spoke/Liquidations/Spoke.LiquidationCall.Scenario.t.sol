@@ -30,6 +30,7 @@ contract LiquidationCallScenarioTest is SpokeLiquidationBase {
     uint256 closeFactor;
     uint256 liqBonus;
     uint256 initialDebt;
+    uint256 finalDebt;
     uint256 liquidatedDebt;
     uint256 healthFactor;
     uint256 userRp;
@@ -455,6 +456,7 @@ contract LiquidationCallScenarioTest is SpokeLiquidationBase {
   }
 
   /// scenario where fully liquidating all collateral still does not improve a position to close factor
+  /// results in bad debt
   function test_liquidationCall_all_collateral() public {
     LiqScenarioTestData memory state;
 
@@ -517,6 +519,8 @@ contract LiquidationCallScenarioTest is SpokeLiquidationBase {
       debtToCover: state.debtAmount.weth
     });
 
+    state.finalDebt = spoke1.getUserTotalDebt(state.wethReserveId, alice);
+
     aliceDai.balanceAfter = tokenList.dai.balanceOf(alice);
     liquidatorDai.balanceAfter = tokenList.dai.balanceOf(LIQUIDATOR);
 
@@ -557,11 +561,7 @@ contract LiquidationCallScenarioTest is SpokeLiquidationBase {
     );
 
     // weth debt
-    assertEq(
-      state.initialDebt - spoke1.getUserTotalDebt(state.wethReserveId, alice),
-      state.liquidatedDebt,
-      'alice weth debt repaid'
-    );
+    assertEq(state.finalDebt, 0, 'alice bad weth debt fully cleared');
     assertEq(
       _absDiff(aliceWeth.balanceAfter, aliceWeth.balanceBefore),
       0,
@@ -577,19 +577,13 @@ contract LiquidationCallScenarioTest is SpokeLiquidationBase {
       alice
     );
 
-    // final collateral factor and RP only depends on remaining dai collateral
-    assertEq(
-      userRP,
-      spoke1.getReserve(state.daiReserveId).config.liquidityPremium,
-      'userRP matches lp of dai coll'
-    );
+    assertEq(userRP, 0, 'bad debt results in user rp = 0');
     assertEq(
       avgCollFactor.dewadify(),
       spoke1.getReserve(state.daiReserveId).config.collateralFactor,
-      'avg coll factor matches dai coll factor'
+      'avg coll factor matches dai coll factor (only remaining coll)'
     );
-    // hf < 1 after
-    assertLt(healthFactor, HEALTH_FACTOR_LIQUIDATION_THRESHOLD);
+    assertEq(healthFactor, UINT256_MAX, 'health factor is max uint256');
   }
 
   /// liquidation call with multiple collaterals, full collateral liquidation
