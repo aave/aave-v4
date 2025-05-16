@@ -284,6 +284,9 @@ contract Spoke is ISpoke {
       uint256 liquidationProtocolFeeShares // TODO: emit in event
     ) = _executeLiquidationCall(collateralReserveId, debtReserveId, users, debtsToCover);
 
+    console.log('SP event', collateralAsset, debtAsset, user);
+    console.log('SP liquidation %e %e', debtToLiquidate, collateralToLiquidate, msg.sender);
+
     // TODO: emit liq protocol fee shares in event
     emit LiquidationCall(
       collateralAsset,
@@ -953,8 +956,7 @@ contract Spoke is ISpoke {
         vars.collateralToLiquidate,
         vars.liquidationProtocolFeeAmount,
         vars.baseDebtToLiquidate,
-        vars.premiumDebtToLiquidate,
-        vars.outstandingDebt
+        vars.premiumDebtToLiquidate
       ) = _calculateLiquidationParameters(
         collateralReserve,
         debtReserve,
@@ -964,23 +966,7 @@ contract Spoke is ISpoke {
         vars.premiumDebt
       );
 
-      // settle debt reserve's premium debt
-      vars.userDebtPremiumDrawnShares = userDebtPosition.premiumDrawnShares;
-      vars.userDebtPremiumOffset = userDebtPosition.premiumOffset;
-      vars.userDebtRealizedPremium = userDebtPosition.realizedPremium;
-
-      userDebtPosition.premiumDrawnShares = 0;
-      userDebtPosition.premiumOffset = 0;
-      userDebtPosition.realizedPremium = vars.premiumDebt - vars.premiumDebtToLiquidate;
-
-      _settlePremiumDebt(
-        debtReserve,
-        vars.debtAssetId,
-        -int256(vars.userDebtPremiumDrawnShares),
-        -int256(vars.userDebtPremiumOffset),
-        _signedDiff(userDebtPosition.realizedPremium, vars.userDebtRealizedPremium)
-      ); // settle premium debt
-
+      // perform collateral accounting first so that remaining supplied shares can determine if deficit remains
       // todo: rm later to opt
       // optional: settle collateral reserve's premium debt
       vars.userCollateralPremiumDrawnShares = userCollateralPosition.premiumDrawnShares;
@@ -1013,46 +999,66 @@ contract Spoke is ISpoke {
       userCollateralPosition.suppliedShares = vars.newUserSuppliedShares;
       vars.totalWithdrawnShares += vars.withdrawnShares;
 
+      // deficit accounting
       if (vars.newUserSuppliedShares == 0) {
         _setUsingAsCollateral(collateralReserveId, users[vars.i], false);
-        if (vars.outstandingDebt > 0) {
-          vars.hasDeficit = true;
+        uint256 outstandingDebt = vars.baseDebt +
+          vars.premiumDebt -
+          vars.baseDebtToLiquidate -
+          vars.premiumDebtToLiquidate;
+        if (outstandingDebt > 0) {
+          // console.log(
+          //   'SP bad debt %e %e %e',
+          //   vars.baseDebtToLiquidate,
+          //   vars.premiumDebtToLiquidate,
+          //   outstandingDebt
+          // );
+
+          vars.baseDebtToLiquidate = vars.baseDebt;
+          vars.premiumDebtToLiquidate = vars.premiumDebt;
+          vars.deficit = outstandingDebt;
+
+          // console.log(
+          //   'SP bad debt %e %e %e',
+          //   vars.baseDebtToLiquidate,
+          //   vars.premiumDebtToLiquidate,
+          //   vars.deficit
+          // );
         }
       }
 
+      // settle debt reserve's premium debt
+      vars.userDebtPremiumDrawnShares = userDebtPosition.premiumDrawnShares;
+      vars.userDebtPremiumOffset = userDebtPosition.premiumOffset;
+      vars.userDebtRealizedPremium = userDebtPosition.realizedPremium;
+
+      userDebtPosition.premiumDrawnShares = 0;
+      userDebtPosition.premiumOffset = 0;
+      userDebtPosition.realizedPremium = vars.premiumDebt - vars.premiumDebtToLiquidate;
+
+      _settlePremiumDebt(
+        debtReserve,
+        vars.debtAssetId,
+        -int256(vars.userDebtPremiumDrawnShares),
+        -int256(vars.userDebtPremiumOffset),
+        _signedDiff(userDebtPosition.realizedPremium, vars.userDebtRealizedPremium)
+      ); // settle premium debt
+
       // repay debt
-      if (vars.hasDeficit) {
-        console.log(
-          'sp has deficit baseDebt %e premDebt %e outstandingDebt %e',
-          vars.baseDebt,
-          vars.premiumDebt,
-          vars.outstandingDebt
-        );
-        // if bad debt remains, restore full debt with deficit
-        vars.restoredShares = HUB.restore(
-          vars.debtAssetId,
-          vars.baseDebt,
-          vars.premiumDebt,
-          vars.outstandingDebt,
-          msg.sender
-        );
-      } else {
-        // no bad debt
-        vars.restoredShares = HUB.restore(
-          vars.debtAssetId,
-          vars.baseDebtToLiquidate,
-          vars.premiumDebtToLiquidate,
-          0,
-          msg.sender
-        );
-      }
+      vars.restoredShares = HUB.restore(
+        vars.debtAssetId,
+        vars.baseDebtToLiquidate,
+        vars.premiumDebtToLiquidate,
+        vars.deficit,
+        msg.sender
+      );
 
       // debt accounting
       userDebtPosition.baseDrawnShares -= vars.restoredShares;
       vars.totalRestoredShares += vars.restoredShares;
 
-      if (vars.hasDeficit) {
-        _settleRemainingDeficit(debtReserveId, users[vars.i]);
+      if (vars.deficit > 0) {
+        // _settleRemainingDeficit(debtReserveId, users[vars.i]);
       } else {
         // new user rp only needs to be calculated if no bad debt remains, otherwise it is 0 given no collateral remains
         (vars.newUserRiskPremium, , , , ) = _calculateUserAccountData(users[vars.i]);
@@ -1087,12 +1093,23 @@ contract Spoke is ISpoke {
       vars.totalUserCollateralPremiumOffsetDelta += int256(vars.userCollateralPremiumOffset);
       vars.totalCollateralToLiquidate += vars.collateralToLiquidate;
       vars.totalLiquidationProtocolFeeAmount += vars.liquidationProtocolFeeAmount;
-      vars.totalDebtToLiquidate += vars.baseDebtToLiquidate + vars.premiumDebtToLiquidate;
+      // actual debt to liquidate is the net from deficit
+      vars.totalDebtToLiquidate +=
+        vars.baseDebtToLiquidate +
+        vars.premiumDebtToLiquidate -
+        vars.deficit;
 
       unchecked {
         ++vars.i;
       }
     }
+
+    // console.log(
+    //   'vars.totalDebtToLiquidate %e %e',
+    //   vars.totalDebtToLiquidate,
+    //   vars.baseDebtToLiquidate,
+    //   vars.premiumDebtToLiquidate
+    // );
 
     // rm when dupe reserve accounting is rm
     debtReserve.baseDrawnShares -= vars.totalRestoredShares;
@@ -1137,12 +1154,12 @@ contract Spoke is ISpoke {
    * `reserveIdToAvoid` as that is expected to be handled in liquidation.
    */
   function _settleRemainingDeficit(uint256 reserveIdToAvoid, address userAddress) internal {
-    console.log('sp _settleRemainingDeficit %e alice: ', reserveIdToAvoid, userAddress);
-    console.log(
-      'SP userAddress debts %e %e',
-      getUserTotalDebt(2, userAddress),
-      getUserTotalDebt(3, userAddress)
-    );
+    // console.log('sp _settleRemainingDeficit %e alice: ', reserveIdToAvoid, userAddress);
+    // console.log(
+    //   'SP userAddress debts %e %e',
+    //   getUserTotalDebt(2, userAddress),
+    //   getUserTotalDebt(3, userAddress)
+    // );
     // get all user's debt assets except assetToAvoid
     uint256 reserveCount_ = reserveCount;
     uint256 reserveId;
@@ -1175,7 +1192,6 @@ contract Spoke is ISpoke {
   /// @return liquidationProtocolFeeAmount The amount of protocol fee.
   /// @return baseDebtToLiquidate The amount of base debt to repay.
   /// @return premiumDebtToLiquidate The amount of premium debt to repay.
-  /// @return outstandingDebt The amount of remaining debt remaining after repay. Utilized if deficit remains.
   function _calculateLiquidationParameters(
     DataTypes.Reserve storage collateralReserve,
     DataTypes.Reserve storage debtReserve,
@@ -1183,7 +1199,7 @@ contract Spoke is ISpoke {
     uint256 debtToCover,
     uint256 baseDebt,
     uint256 premiumDebt
-  ) internal view returns (uint256, uint256, uint256, uint256, uint256) {
+  ) internal view returns (uint256, uint256, uint256, uint256) {
     DataTypes.LiquidationCallLocalVars memory vars;
     vars.collateralReserveId = collateralReserve.reserveId;
     vars.debtReserveId = debtReserve.reserveId;
@@ -1243,8 +1259,7 @@ contract Spoke is ISpoke {
       vars.actualCollateralToLiquidate,
       vars.liquidationProtocolFeeAmount,
       vars.baseDebtToLiquidate,
-      vars.premiumDebtToLiquidate,
-      vars.totalDebt - vars.actualDebtToLiquidate
+      vars.premiumDebtToLiquidate
     );
   }
 

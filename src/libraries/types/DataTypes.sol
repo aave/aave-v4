@@ -180,8 +180,7 @@ library DataTypes {
     uint256 totalDebtToLiquidate;
     uint256 usersLength;
     uint256 newUserSuppliedShares;
-    uint256 outstandingDebt;
-    bool hasDeficit;
+    uint256 deficit;
   }
 
   struct ExecuteRepayLocalVars {
