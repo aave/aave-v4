@@ -366,7 +366,7 @@ contract Spoke is ISpoke, Multicall {
     );
     _notifyRiskPremiumUpdate(assetId, user, newUserRiskPremium);
 
-    emit UserRiskPremiumUpdated(user, newUserRiskPremium);
+    emit UserRiskPremiumUpdate(user, newUserRiskPremium);
   }
 
   function getUsingAsCollateral(uint256 reserveId, address user) external view returns (bool) {

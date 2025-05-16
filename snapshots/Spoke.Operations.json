@@ -7,6 +7,8 @@
   "supply: 1 debt": "171564",
   "supply: 2 debt": "171575",
   "supply: 3 debt": "171528",
+  "updateUserRiskPremium": "185386",
+  "updateUserRiskPremium: after accrual": "286310",
   "usingAsCollateral": "50661",
   "withdraw: full": "216963",
   "withdraw: partial": "227914"

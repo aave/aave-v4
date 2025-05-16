@@ -36,7 +36,7 @@ interface ISpoke {
   );
   event OracleUpdated(uint256 indexed reserveId, address indexed oracle);
   event LiquidationConfigUpdated(DataTypes.LiquidationConfig config);
-  event UserRiskPremiumUpdated(address indexed user, uint256 riskPremium);
+  event UserRiskPremiumUpdate(address indexed user, uint256 riskPremium);
 
   error InvalidReserve();
   error UserNotBorrowingReserve(uint256 reserveId);
