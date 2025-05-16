@@ -31,10 +31,10 @@ contract SpokeLiquidationBase is SpokeBase {
     Balance liquidatorCollateral;
     Balance user;
     Balance treasury;
-    Balance collateral;
     Balance debt;
     Balance supply;
     Balance supplyShares;
+    Balance deficit;
     uint256 liquidationBonus;
     uint256 collateralAssetId;
     uint256 debtAssetId;
@@ -51,6 +51,7 @@ contract SpokeLiquidationBase is SpokeBase {
     uint256 debtToLiq;
     uint256 liqProtocolFee;
     bool hasDeficit;
+    uint256 outstandingDebt;
   }
 
   uint256 internal constant MIN_AMOUNT_IN_BASE_CURRENCY = 1e26;
@@ -206,12 +207,17 @@ contract SpokeLiquidationBase is SpokeBase {
     LiquidationTestLocalParams memory state,
     ISpoke spoke,
     string memory label
-  ) internal view {
+  ) internal {
     _assertUserAccountData(state, spoke, label);
     _assertProtocolFeeEarned(state, label);
     _assertLiquidationBonusEarned(state, label);
     _assertSupplyExchangeRate(state, label);
     _assertSetUsingAsCollateral(spoke, alice, state, label);
+    if (state.hasDeficit) {
+      _assertBadDebt(state, spoke, label);
+    } else {
+      _assertNoBadDebt(state, spoke, label);
+    }
   }
 
   /// assert that the user account data is correct after liquidation
@@ -318,6 +324,65 @@ contract SpokeLiquidationBase is SpokeBase {
         string.concat('isUsingAsCollateral should be true with remaining collateral ', label)
       );
     }
+  }
+
+  function _assertBadDebt(
+    LiquidationTestLocalParams memory state,
+    ISpoke spoke,
+    string memory label
+  ) internal {
+    // all collateral seized; all debt liquidated and moved to deficit
+    assertEq(
+      state.supplyShares.balanceAfter,
+      0,
+      string.concat('supply shares should be 0 ', label)
+    );
+    assertEq(state.debt.balanceAfter, 0, string.concat('debt amount should be 0 ', label));
+    assertTrue(state.hasDeficit, string.concat('supply shares & total debt should be 0 ', label));
+    // with no collateral remaining, collateral should be disabled as collateral
+    assertFalse(
+      spoke.getUsingAsCollateral(state.collateralReserve.reserveId, alice),
+      string.concat('isUsingAsCollateral should be false with no collateral ', label)
+    );
+    (uint256 userRp, , uint256 healthFactor, , ) = spoke.getUserAccountData(alice);
+    // with no coll/debt remaining, health factor should default to uint256 max
+    assertEq(
+      healthFactor,
+      UINT256_MAX,
+      string.concat('health factor should be max after liquidation ', label)
+    );
+    // with no collateral, user rp is 0
+    assertEq(userRp, 0, string.concat('user rp = 0 with no coll ', label));
+    // bad debt should be cleared from user position and moved to deficit
+    assertEq(
+      state.deficit.balanceChange,
+      state.outstandingDebt,
+      string.concat('deficit added to hub ', label)
+    );
+  }
+
+  function _assertNoBadDebt(
+    LiquidationTestLocalParams memory state,
+    ISpoke spoke,
+    string memory label
+  ) internal {
+    // debt and collateral must remain
+    assertGt(
+      state.supplyShares.balanceAfter,
+      0,
+      string.concat('supply shares should be > 0 ', label)
+    );
+    assertGt(state.debt.balanceAfter, 0, string.concat('debt amount should be > 0 ', label));
+    // usingAsCollateral should remain unchanged
+    assertTrue(
+      spoke.getUsingAsCollateral(state.collateralReserve.reserveId, alice),
+      string.concat('isUsingAsCollateral should be false with no collateral ', label)
+    );
+    (uint256 userRp, , uint256 healthFactor, , ) = spoke.getUserAccountData(alice);
+    // with collateral/debt remaining, user rp is not 0
+    assertNotEq(userRp, 0, string.concat('user rp = 0 with no coll ', label));
+    // deficit should remain unchanged
+    assertEq(state.deficit.balanceChange, 0, string.concat('deficit should be unchanged ', label));
   }
 
   /// @notice Calculate output from LiquidationLogic.calculateAvailableCollateralToLiquidate.
@@ -493,6 +558,7 @@ contract SpokeLiquidationBase is SpokeBase {
       state.collateralReserve.assetId,
       WadRayMathExtended.RAY
     );
+    state.deficit.balanceBefore = hub.getDeficit(state.debtReserve.assetId);
 
     return state;
   }
@@ -527,6 +593,7 @@ contract SpokeLiquidationBase is SpokeBase {
       state.collateralReserve.assetId,
       WadRayMathExtended.RAY
     );
+    state.deficit.balanceAfter = hub.getDeficit(state.debtReserve.assetId);
 
     // balance changes before/after liquidation
     state.liquidatorCollateral.balanceChange = _absDiff(
@@ -543,6 +610,7 @@ contract SpokeLiquidationBase is SpokeBase {
       state.supplyShares.balanceAfter,
       state.supplyShares.balanceBefore
     );
+    state.deficit.balanceChange = _absDiff(state.deficit.balanceAfter, state.deficit.balanceBefore);
 
     // convert amount to base currency
     state.liquidatorCollateral.baseChange = _convertAmountToBaseCurrency(
@@ -563,7 +631,7 @@ contract SpokeLiquidationBase is SpokeBase {
     );
 
     state.hasDeficit = state.supplyShares.balanceAfter == 0 && state.debt.balanceAfter == 0;
-    console.log('test: hasDeficit', state.hasDeficit);
+    state.outstandingDebt = state.debt.balanceBefore - state.debtToLiq;
 
     return state;
   }

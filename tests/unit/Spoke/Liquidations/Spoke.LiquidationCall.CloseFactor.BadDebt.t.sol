@@ -33,24 +33,9 @@ contract LiquidationCallCloseFactorBadDebtTest is SpokeLiquidationBase {
       skipTime
     );
 
-    _checkLiquidation(state, spoke1, 'test_liquidationCall_fuzz_closeFactor_badDebt');
-
-    // with no collateral remaining collateral should be disabled as collateral
-    assertFalse(
-      spoke1.getUsingAsCollateral(state.collateralReserve.reserveId, alice),
-      'isUsingAsCollateral should be false with no collateral'
-    );
-    // all collateral is seized
-    assertTrue(
-      spoke1.getUserSuppliedAmount(collateralReserveId, alice) == 0,
-      'remaining supplied collateral should be 0'
-    );
-    // TODO: bad debt should be cleared, removed from user but added to deficit
-    // assertTrue(spoke1.getUserTotalDebt(debtReserveId, alice) > 0, 'remaining bad debt remains');
-
-    (uint256 userRp, , uint256 healthFactor, , ) = spoke1.getUserAccountData(alice);
-    assertEq(healthFactor, 0, 'health factor should be max after liquidation');
-    assertEq(userRp, 0, 'user rp = 0 with no coll');
+    string memory label = 'test_liquidationCall_fuzz_closeFactor_badDebt';
+    _checkLiquidation(state, spoke1, label);
+    _assertBadDebt(state, spoke1, label);
   }
 
   /// fuzz tests with close factor == HEALTH_FACTOR_LIQUIDATION_THRESHOLD
@@ -339,8 +324,6 @@ contract LiquidationCallCloseFactorBadDebtTest is SpokeLiquidationBase {
     uint256 liquidationProtocolFeePercentage,
     uint256 skipTime
   ) internal returns (LiquidationTestLocalParams memory) {
-    vm.skip(true, 'pending deficit accounting');
-
     LiquidationTestLocalParams memory state;
     state.collateralReserve = spoke1.getReserve(collateralReserveId);
     state.debtReserve = spoke1.getReserve(debtReserveId);
@@ -351,7 +334,6 @@ contract LiquidationCallCloseFactorBadDebtTest is SpokeLiquidationBase {
       MIN_LIQUIDATION_BONUS,
       PercentageMath.PERCENTAGE_FACTOR.percentDiv(state.collateralReserve.config.collateralFactor)
     );
-
     liquidationProtocolFeePercentage = bound(liquidationProtocolFeePercentage, 0, 100_00);
     supplyAmount = bound(
       supplyAmount,
@@ -386,7 +368,6 @@ contract LiquidationCallCloseFactorBadDebtTest is SpokeLiquidationBase {
       amount: supplyAmount,
       onBehalfOf: alice
     });
-
     _increaseCollateralReserveSupplyExchangeRate(
       state.collateralReserve.assetId,
       collateralReserveId,
@@ -421,6 +402,12 @@ contract LiquidationCallCloseFactorBadDebtTest is SpokeLiquidationBase {
     // TODO: update when treasury accounting is done
     vm.recordLogs();
 
+    vm.expectEmit(address(hub));
+    emit ILiquidityHub.DeficitCreated(
+      address(spoke1),
+      state.debtReserve.assetId,
+      state.debt.balanceBefore - state.debtToLiq // outstanding debt which becomes bad debt reported as deficit
+    );
     vm.expectEmit(address(spoke1));
     emit ISpoke.LiquidationCall(
       state.collateralReserve.asset,
@@ -434,12 +421,6 @@ contract LiquidationCallCloseFactorBadDebtTest is SpokeLiquidationBase {
     spoke1.liquidationCall(collateralReserveId, debtReserveId, alice, requiredDebtAmount);
 
     state = _getAccountingInfoAfterLiq(state);
-
-    // if bad debt remains, supplied amount should be 0 after liquidation
-    // debt remaining should be > 0
-    assertTrue(state.supply.balanceAfter == 0 && state.debt.balanceAfter > 0);
-    // with a close factor, it is impossible to liquidate all debt
-    assertTrue(_absDiff(state.debt.balanceAfter, state.debt.balanceBefore) < requiredDebtAmount);
 
     return state;
   }

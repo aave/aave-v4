@@ -33,7 +33,6 @@ abstract contract Base is Test {
   using SharesMath for uint256;
   using PercentageMath for uint256;
 
-  uint256 internal constant MAX_UINT256 = type(uint256).max;
   uint256 internal constant MAX_SUPPLY_AMOUNT = 1e30;
   uint256 internal constant MAX_TOKEN_DECIMALS_SUPPORTED = 18;
   uint256 internal constant MAX_SUPPLY_ASSET_UNITS =
