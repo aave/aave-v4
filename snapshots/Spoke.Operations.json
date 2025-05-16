@@ -8,6 +8,8 @@
   "supply: 2 debt": "171575",
   "supply: 3 debt": "171528",
   "updateUserRiskPremium": "185386",
+  "updateUserRiskPremium: 2 collaterals": "216541",
+  "updateUserRiskPremium: 2 collaterals after accrual": "238953",
   "updateUserRiskPremium: after accrual": "286310",
   "usingAsCollateral": "50661",
   "withdraw: full": "216963",

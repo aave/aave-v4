@@ -96,10 +96,10 @@ contract SpokeOperations_Gas_Tests is Base {
 
   function test_updateRiskPremium() public {
     vm.prank(bob);
-    spoke1.supply(spokeInfo[spoke1].dai.reserveId, 1000e18);
+    spoke1.supply(spokeInfo[spoke1].dai.reserveId, 1500e18);
 
     vm.startPrank(alice);
-    spoke1.supply(spokeInfo[spoke1].usdx.reserveId, 1000e6);
+    spoke1.supply(spokeInfo[spoke1].usdx.reserveId, 2000e6);
     spoke1.setUsingAsCollateral(spokeInfo[spoke1].usdx.reserveId, true);
 
     spoke1.borrow(spokeInfo[spoke1].dai.reserveId, 500e18, alice);
@@ -111,6 +111,22 @@ contract SpokeOperations_Gas_Tests is Base {
 
     spoke1.updateUserRiskPremium(spokeInfo[spoke1].dai.reserveId, alice);
     vm.snapshotGasLastCall('Spoke.Operations', 'updateUserRiskPremium: after accrual');
+
+    spoke1.supply(spokeInfo[spoke1].dai.reserveId, 1000e18);
+    spoke1.setUsingAsCollateral(spokeInfo[spoke1].dai.reserveId, true);
+
+    spoke1.borrow(spokeInfo[spoke1].dai.reserveId, 1000e18, alice);
+
+    spoke1.updateUserRiskPremium(spokeInfo[spoke1].dai.reserveId, alice);
+    vm.snapshotGasLastCall('Spoke.Operations', 'updateUserRiskPremium: 2 collaterals');
+
+    skip(1000);
+
+    spoke1.updateUserRiskPremium(spokeInfo[spoke1].dai.reserveId, alice);
+    vm.snapshotGasLastCall(
+      'Spoke.Operations',
+      'updateUserRiskPremium: 2 collaterals after accrual'
+    );
     vm.stopPrank();
   }
 }
