@@ -5,13 +5,13 @@ import 'tests/unit/Spoke/Liquidations/Spoke.Liquidation.Base.t.sol';
 
 /// tests where liquidation results in bad debt (debt > 0, collateral = 0)
 /// TODO: realize bad debt into deficit when deficit accounting is implemented, resolve tests
-contract LiquidationCallCloseFactorBadDebtTest is SpokeLiquidationBase {
+contract LiquidationCallBadDebtTest is SpokeLiquidationBase {
   using WadRayMath for uint256;
   using PercentageMath for uint256;
   using PercentageMathExtended for uint256;
 
   /// variable close factor > HEALTH_FACTOR_LIQUIDATION_THRESHOLD
-  function test_liquidationCall_fuzz_closeFactor_badDebt(
+  function test_liquidationCall_fuzz_badDebt(
     uint256 collateralReserveId,
     uint256 debtReserveId,
     DataTypes.LiquidationConfig memory liqConfig,
@@ -33,13 +33,13 @@ contract LiquidationCallCloseFactorBadDebtTest is SpokeLiquidationBase {
       skipTime
     );
 
-    string memory label = 'test_liquidationCall_fuzz_closeFactor_badDebt';
+    string memory label = 'test_liquidationCall_fuzz_badDebt';
     _checkLiquidation(state, spoke1, label);
     _assertBadDebt(state, spoke1, label);
   }
 
   /// fuzz tests with close factor == HEALTH_FACTOR_LIQUIDATION_THRESHOLD
-  function test_liquidationCall_fuzz_closeFactor_badDebt_defaultCloseFactor(
+  function test_liquidationCall_fuzz_badDebt_defaultCloseFactor(
     uint256 collateralReserveId,
     uint256 debtReserveId,
     DataTypes.LiquidationConfig memory liqConfig,
@@ -49,7 +49,7 @@ contract LiquidationCallCloseFactorBadDebtTest is SpokeLiquidationBase {
     uint256 skipTime
   ) public {
     liqConfig.closeFactor = HEALTH_FACTOR_LIQUIDATION_THRESHOLD;
-    test_liquidationCall_fuzz_closeFactor_badDebt(
+    test_liquidationCall_fuzz_badDebt(
       collateralReserveId,
       debtReserveId,
       liqConfig,
@@ -61,10 +61,10 @@ contract LiquidationCallCloseFactorBadDebtTest is SpokeLiquidationBase {
   }
 
   /// coll: weth / debt: dai
-  function test_liquidationCall_closeFactor_badDebt_scenario1() public {
+  function test_liquidationCall_badDebt_scenario1() public {
     uint256 collateralReserveId = _wethReserveId(spoke1);
     uint256 debtReserveId = _daiReserveId(spoke1);
-    test_liquidationCall_fuzz_closeFactor_badDebt({
+    test_liquidationCall_fuzz_badDebt({
       liqConfig: DataTypes.LiquidationConfig({
         closeFactor: 1.5e18,
         liquidationBonusFactor: 0,
@@ -80,10 +80,10 @@ contract LiquidationCallCloseFactorBadDebtTest is SpokeLiquidationBase {
   }
 
   /// coll: weth / debt: dai with default value of close factor
-  function test_liquidationCall_closeFactor_badDebt_defaultValue_scenario1() public {
+  function test_liquidationCall_badDebt_defaultValue_scenario1() public {
     uint256 collateralReserveId = _wethReserveId(spoke1);
     uint256 debtReserveId = _daiReserveId(spoke1);
-    test_liquidationCall_fuzz_closeFactor_badDebt({
+    test_liquidationCall_fuzz_badDebt({
       liqConfig: DataTypes.LiquidationConfig({
         closeFactor: 1e18,
         liquidationBonusFactor: 0,
@@ -99,11 +99,11 @@ contract LiquidationCallCloseFactorBadDebtTest is SpokeLiquidationBase {
   }
 
   /// coll: weth / debt: usdx
-  function test_liquidationCall_closeFactor_badDebt_scenario2() public {
+  function test_liquidationCall_badDebt_scenario2() public {
     uint256 collateralReserveId = _wethReserveId(spoke1);
     uint256 debtReserveId = _usdxReserveId(spoke1);
 
-    test_liquidationCall_fuzz_closeFactor_badDebt({
+    test_liquidationCall_fuzz_badDebt({
       liqConfig: DataTypes.LiquidationConfig({
         closeFactor: 1.5e18,
         liquidationBonusFactor: 0,
@@ -119,11 +119,11 @@ contract LiquidationCallCloseFactorBadDebtTest is SpokeLiquidationBase {
   }
 
   /// coll: weth / debt: usdx with default value of close factor
-  function test_liquidationCall_closeFactor_badDebt_defaultValue_scenario2() public {
+  function test_liquidationCall_badDebt_defaultValue_scenario2() public {
     uint256 collateralReserveId = _wethReserveId(spoke1);
     uint256 debtReserveId = _usdxReserveId(spoke1);
 
-    test_liquidationCall_fuzz_closeFactor_badDebt({
+    test_liquidationCall_fuzz_badDebt({
       liqConfig: DataTypes.LiquidationConfig({
         closeFactor: 1e18,
         liquidationBonusFactor: 0,
@@ -139,11 +139,11 @@ contract LiquidationCallCloseFactorBadDebtTest is SpokeLiquidationBase {
   }
 
   /// coll: usdx / debt: weth
-  function test_liquidationCall_closeFactor_badDebt_scenario3() public {
+  function test_liquidationCall_badDebt_scenario3() public {
     uint256 collateralReserveId = _usdxReserveId(spoke1);
     uint256 debtReserveId = _wethReserveId(spoke1);
 
-    test_liquidationCall_fuzz_closeFactor_badDebt({
+    test_liquidationCall_fuzz_badDebt({
       liqConfig: DataTypes.LiquidationConfig({
         closeFactor: 1.5e18,
         liquidationBonusFactor: 0,
@@ -159,11 +159,11 @@ contract LiquidationCallCloseFactorBadDebtTest is SpokeLiquidationBase {
   }
 
   /// coll: usdx / debt: weth with default value of close factor
-  function test_liquidationCall_closeFactor_badDebt_defaultValue_scenario3() public {
+  function test_liquidationCall_badDebt_defaultValue_scenario3() public {
     uint256 collateralReserveId = _usdxReserveId(spoke1);
     uint256 debtReserveId = _wethReserveId(spoke1);
 
-    test_liquidationCall_fuzz_closeFactor_badDebt({
+    test_liquidationCall_fuzz_badDebt({
       liqConfig: DataTypes.LiquidationConfig({
         closeFactor: 1e18,
         liquidationBonusFactor: 0,
@@ -179,10 +179,10 @@ contract LiquidationCallCloseFactorBadDebtTest is SpokeLiquidationBase {
   }
 
   /// coll: usdx / debt: dai
-  function test_liquidationCall_closeFactor_badDebt_scenario4() public {
+  function test_liquidationCall_badDebt_scenario4() public {
     uint256 collateralReserveId = _usdxReserveId(spoke1);
     uint256 debtReserveId = _daiReserveId(spoke1);
-    test_liquidationCall_fuzz_closeFactor_badDebt({
+    test_liquidationCall_fuzz_badDebt({
       liqConfig: DataTypes.LiquidationConfig({
         closeFactor: 1.5e18,
         liquidationBonusFactor: 0,
@@ -198,10 +198,10 @@ contract LiquidationCallCloseFactorBadDebtTest is SpokeLiquidationBase {
   }
 
   /// coll: usdx / debt: dai with default value of close factor
-  function test_liquidationCall_closeFactor_badDebt_defaultValue_scenario4() public {
+  function test_liquidationCall_badDebt_defaultValue_scenario4() public {
     uint256 collateralReserveId = _usdxReserveId(spoke1);
     uint256 debtReserveId = _daiReserveId(spoke1);
-    test_liquidationCall_fuzz_closeFactor_badDebt({
+    test_liquidationCall_fuzz_badDebt({
       liqConfig: DataTypes.LiquidationConfig({
         closeFactor: 1e18,
         liquidationBonusFactor: 0,
@@ -217,10 +217,10 @@ contract LiquidationCallCloseFactorBadDebtTest is SpokeLiquidationBase {
   }
 
   /// coll: dai / debt: weth
-  function test_liquidationCall_closeFactor_badDebt_scenario5() public {
+  function test_liquidationCall_badDebt_scenario5() public {
     uint256 collateralReserveId = _daiReserveId(spoke1);
     uint256 debtReserveId = _wethReserveId(spoke1);
-    test_liquidationCall_fuzz_closeFactor_badDebt({
+    test_liquidationCall_fuzz_badDebt({
       liqConfig: DataTypes.LiquidationConfig({
         closeFactor: 1.5e18,
         liquidationBonusFactor: 0,
@@ -236,10 +236,10 @@ contract LiquidationCallCloseFactorBadDebtTest is SpokeLiquidationBase {
   }
 
   /// coll: dai / debt: weth with default value of close factor
-  function test_liquidationCall_closeFactor_badDebt_defaultValue_scenario5() public {
+  function test_liquidationCall_badDebt_defaultValue_scenario5() public {
     uint256 collateralReserveId = _daiReserveId(spoke1);
     uint256 debtReserveId = _wethReserveId(spoke1);
-    test_liquidationCall_fuzz_closeFactor_badDebt({
+    test_liquidationCall_fuzz_badDebt({
       liqConfig: DataTypes.LiquidationConfig({
         closeFactor: 1e18,
         liquidationBonusFactor: 0,
@@ -255,10 +255,10 @@ contract LiquidationCallCloseFactorBadDebtTest is SpokeLiquidationBase {
   }
 
   /// coll: dai / debt: usdx
-  function test_liquidationCall_closeFactor_badDebt_scenario6() public {
+  function test_liquidationCall_badDebt_scenario6() public {
     uint256 collateralReserveId = _daiReserveId(spoke1);
     uint256 debtReserveId = _usdxReserveId(spoke1);
-    test_liquidationCall_fuzz_closeFactor_badDebt({
+    test_liquidationCall_fuzz_badDebt({
       liqConfig: DataTypes.LiquidationConfig({
         closeFactor: 1.5e18,
         liquidationBonusFactor: 0,
@@ -274,10 +274,10 @@ contract LiquidationCallCloseFactorBadDebtTest is SpokeLiquidationBase {
   }
 
   /// coll: dai / debt: usdx with default value of close factor
-  function test_liquidationCall_closeFactor_badDebt_defaultValue_scenario6() public {
+  function test_liquidationCall_badDebt_defaultValue_scenario6() public {
     uint256 collateralReserveId = _daiReserveId(spoke1);
     uint256 debtReserveId = _usdxReserveId(spoke1);
-    test_liquidationCall_fuzz_closeFactor_badDebt({
+    test_liquidationCall_fuzz_badDebt({
       liqConfig: DataTypes.LiquidationConfig({
         closeFactor: 1e18,
         liquidationBonusFactor: 0,

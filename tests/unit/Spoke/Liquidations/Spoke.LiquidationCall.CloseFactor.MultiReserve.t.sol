@@ -229,8 +229,6 @@ contract LiquidationCallCloseFactorMultiReserveTest is SpokeLiquidationBase {
       state.collateralReserveId,
       state.liquidationProtocolFeePercentage
     );
-    state.desiredHf = _calcLowestHfToRestoreCloseFactor(state.collateralReserveId, liqBonus)
-      .percentMulDown(101_00); // add buffer so that not all debt is liquidated
 
     console.log('  liqConfig.closeFactor %e', liqConfig.closeFactor);
     console.log('  liqConfig.healthFactorBonusThreshold %e', liqConfig.healthFactorBonusThreshold);
@@ -246,7 +244,11 @@ contract LiquidationCallCloseFactorMultiReserveTest is SpokeLiquidationBase {
         state.collateralReserves[i].assetId,
         supplyAmountInBase
       );
-      console.log('  supplyAmount %e', supplyAmount);
+      console.log(
+        '  resId %s, supplyAmount %e',
+        state.collateralReserves[i].reserveId,
+        supplyAmount
+      );
 
       Utils.supplyCollateral({
         spoke: spoke1,
@@ -264,34 +266,68 @@ contract LiquidationCallCloseFactorMultiReserveTest is SpokeLiquidationBase {
       bob
     );
 
-    (, uint256[] memory requiredDebtAmounts) = _borrowMultipleReservesToBeBelowHf(
+    state.desiredHf = _calcLowestHfToRestoreCloseFactor(alice, liqBonus).percentMulUp(101_00); // add buffer so that not all debt is liquidated
+
+    (uint256 finalHf, uint256[] memory requiredDebtAmounts) = _borrowMultipleReservesToBeBelowHf(
       spoke1,
       alice,
       debtReserveIds,
       state.desiredHf
     );
 
-    console.log('alice', alice);
+    console.log('state.desiredHf %e %e', state.desiredHf, finalHf);
+
+    // console.log('alice', alice);
     console.log(
       'alice debts %e %e',
       spoke1.getUserTotalDebt(2, alice),
       spoke1.getUserTotalDebt(3, alice)
     );
+    console.log(
+      'alice supplied %e %e',
+      spoke1.getUserSuppliedAmount(collateralReserveIds[0], alice),
+      spoke1.getUserSuppliedAmount(collateralReserveIds[1], alice)
+    );
 
-    for (uint256 i = 0; i < debtReserveIds.length; i++) {
-      assertLt(spoke1.getHealthFactor(alice), HEALTH_FACTOR_LIQUIDATION_THRESHOLD);
+    // for (uint256 i = 0; i < debtReserveIds.length; i++) {
+    //   assertLt(spoke1.getHealthFactor(alice), HEALTH_FACTOR_LIQUIDATION_THRESHOLD);
 
-      console.log('liquidate ', debtReserveIds[i]);
-      vm.prank(LIQUIDATOR);
-      spoke1.liquidationCall(
-        collateralReserveIds[i],
-        debtReserveIds[i],
-        alice,
-        requiredDebtAmounts[i]
-      );
-    }
+    //   console.log('liquidate ', debtReserveIds[i]);
+    //   vm.prank(LIQUIDATOR);
+    //   spoke1.liquidationCall(
+    //     collateralReserveIds[i],
+    //     debtReserveIds[i],
+    //     alice,
+    //     requiredDebtAmounts[i]
+    //   );
+    // }
 
-    state.hasDeficit = true;
+    assertLt(spoke1.getHealthFactor(alice), HEALTH_FACTOR_LIQUIDATION_THRESHOLD);
+
+    console.log(
+      'liquidate %e %e',
+      debtReserveIds[debtReserveIndex],
+      requiredDebtAmounts[debtReserveIndex]
+    );
+    vm.prank(LIQUIDATOR);
+    spoke1.liquidationCall(
+      collateralReserveIds[collateralReserveIndex],
+      debtReserveIds[debtReserveIndex],
+      alice,
+      requiredDebtAmounts[debtReserveIndex]
+    );
+
+    console.log('hf after liq %e', spoke1.getHealthFactor(alice));
+    console.log(
+      'alice debts %e %e',
+      spoke1.getUserTotalDebt(2, alice),
+      spoke1.getUserTotalDebt(3, alice)
+    );
+    console.log(
+      'alice supplied %e %e',
+      spoke1.getUserSuppliedAmount(collateralReserveIds[0], alice),
+      spoke1.getUserSuppliedAmount(collateralReserveIds[1], alice)
+    );
 
     return state;
   }

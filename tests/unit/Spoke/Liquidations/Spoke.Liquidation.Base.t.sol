@@ -474,6 +474,22 @@ contract SpokeLiquidationBase is SpokeBase {
   }
 
   /// @notice Calc user's lowest possible health factor whereby a liqudation can still restore HF to close factor.
+  /// for multiple collateral assets
+  /// @return healthFactor in WAD
+  function _calcLowestHfToRestoreCloseFactor(
+    address user,
+    uint256 liquidationBonus
+  ) internal view returns (uint256) {
+    (, uint256 avgCollateralFactor, , , ) = spoke1.getUserAccountData(user);
+    return
+      _calcLowestHfForCloseFactorFromCollateralFactor(
+        avgCollateralFactor.dewadify(),
+        liquidationBonus
+      );
+  }
+
+  /// @notice Calc user's lowest possible health factor whereby a liqudation can still restore HF to close factor.
+  /// for a single collateral asset
   /// @return healthFactor in WAD
   function _calcLowestHfToRestoreCloseFactor(
     uint256 collateralReserveId,
