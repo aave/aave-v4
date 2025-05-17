@@ -1058,7 +1058,7 @@ contract Spoke is ISpoke {
       vars.totalRestoredShares += vars.restoredShares;
 
       if (vars.deficit > 0) {
-        // _settleRemainingDeficit(debtReserveId, users[vars.i]);
+        _settleRemainingDeficit(debtReserveId, users[vars.i]);
       } else {
         // new user rp only needs to be calculated if no bad debt remains, otherwise it is 0 given no collateral remains
         (vars.newUserRiskPremium, , , , ) = _calculateUserAccountData(users[vars.i]);

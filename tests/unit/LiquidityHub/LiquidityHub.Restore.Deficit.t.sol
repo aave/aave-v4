@@ -131,9 +131,12 @@ contract LiquidityHubRestoreDeficitTest is LiquidityHubBase {
     drawnAmount = bound(drawnAmount, 1, MAX_SUPPLY_AMOUNT);
     skipTime = bound(skipTime, 1, MAX_SKIP_TIME);
 
-    _createBorrowPositionWithPremium(spoke1, _usdxReserveId(spoke1), drawnAmount, skipTime);
-
-    (uint256 baseDebt, uint256 premiumDebt) = hub.getSpokeDebt(usdxAssetId, address(spoke1));
+    (uint256 baseDebt, uint256 premiumDebt) = _createBorrowPositionWithPremium(
+      spoke1,
+      _usdxReserveId(spoke1),
+      drawnAmount,
+      skipTime
+    );
     vm.assume(premiumDebt > 0);
 
     baseDebtRestored = bound(baseDebtRestored, 0, baseDebt);
@@ -261,16 +264,21 @@ contract LiquidityHubRestoreDeficitTest is LiquidityHubBase {
     drawnAmount = bound(drawnAmount, 1, MAX_SUPPLY_AMOUNT);
     skipTime = bound(skipTime, 1, MAX_SKIP_TIME);
 
-    _createBorrowPositionWithPremium(spoke1, _usdxReserveId(spoke1), drawnAmount, skipTime);
-
     RestoreDeficitTestParams memory params;
 
-    (params.baseDebt, params.premiumDebt) = hub.getSpokeDebt(usdxAssetId, address(spoke1));
+    (params.baseDebt, params.premiumDebt) = _createBorrowPositionWithPremium(
+      spoke1,
+      _usdxReserveId(spoke1),
+      drawnAmount,
+      skipTime
+    );
+    vm.assume(params.premiumDebt > 0);
 
     baseDebtRestored = bound(baseDebtRestored, 0, params.baseDebt);
     premiumDebtRestored = bound(premiumDebtRestored, 0, params.premiumDebt);
     vm.assume(baseDebtRestored + premiumDebtRestored > 0);
 
+    // restore deficit amount <= total debt amount restored
     deficitAmountRestored = bound(deficitAmountRestored, 1, baseDebtRestored + premiumDebtRestored);
     params.actualAmountRestored = baseDebtRestored + premiumDebtRestored - deficitAmountRestored;
 
@@ -281,6 +289,87 @@ contract LiquidityHubRestoreDeficitTest is LiquidityHubBase {
     );
     params.availableLiquidityBefore = hub.getAvailableLiquidity(usdxAssetId);
     params.balanceBefore = hub.assetsList(usdxAssetId).balanceOf(address(spoke1));
+
+    vm.expectEmit(address(hub));
+    emit ILiquidityHub.DeficitCreated(address(spoke1), usdxAssetId, deficitAmountRestored);
+
+    // Restore with deficit
+    vm.prank(address(spoke1));
+    hub.restore(
+      usdxAssetId,
+      baseDebtRestored,
+      premiumDebtRestored,
+      deficitAmountRestored,
+      address(spoke1)
+    );
+
+    params.deficitAfter = hub.getDeficit(usdxAssetId);
+    params.supplyExchangeRateAfter = hub.convertToSuppliedAssets(
+      usdxAssetId,
+      WadRayMathExtended.RAY
+    );
+    params.availableLiquidityAfter = hub.getAvailableLiquidity(usdxAssetId);
+    params.balanceAfter = hub.assetsList(usdxAssetId).balanceOf(address(spoke1));
+
+    assertEq(
+      params.balanceAfter + params.actualAmountRestored,
+      params.balanceBefore,
+      'balance change'
+    );
+    assertEq(
+      params.availableLiquidityAfter,
+      params.availableLiquidityBefore + params.actualAmountRestored,
+      'available liquidity'
+    );
+    assertEq(
+      params.deficitAfter,
+      params.deficitBefore + deficitAmountRestored,
+      'deficit accounting'
+    );
+    assertGe(
+      params.supplyExchangeRateAfter,
+      params.supplyExchangeRateBefore,
+      'supply exchange rate ge'
+    );
+  }
+
+  /// @dev Restore with deficit amount <= premium amount
+  function test_restore_fuzz_with_deficit_only_premium(
+    uint256 drawnAmount,
+    uint256 deficitAmountRestored,
+    uint256 baseDebtRestored,
+    uint256 premiumDebtRestored,
+    uint256 skipTime
+  ) public {
+    drawnAmount = bound(drawnAmount, 1, MAX_SUPPLY_AMOUNT);
+    skipTime = bound(skipTime, 1, MAX_SKIP_TIME);
+
+    RestoreDeficitTestParams memory params;
+    (params.baseDebt, params.premiumDebt) = _createBorrowPositionWithPremium(
+      spoke1,
+      _usdxReserveId(spoke1),
+      drawnAmount,
+      skipTime
+    );
+    vm.assume(params.premiumDebt > 0);
+
+    baseDebtRestored = bound(baseDebtRestored, 0, params.baseDebt);
+    premiumDebtRestored = bound(premiumDebtRestored, 1, params.premiumDebt);
+
+    // restore deficit amount <= premium amount
+    deficitAmountRestored = bound(deficitAmountRestored, 1, premiumDebtRestored);
+    params.actualAmountRestored = baseDebtRestored + premiumDebtRestored - deficitAmountRestored;
+
+    params.deficitBefore = hub.getDeficit(usdxAssetId);
+    params.supplyExchangeRateBefore = hub.convertToSuppliedAssets(
+      usdxAssetId,
+      WadRayMathExtended.RAY
+    );
+    params.availableLiquidityBefore = hub.getAvailableLiquidity(usdxAssetId);
+    params.balanceBefore = hub.assetsList(usdxAssetId).balanceOf(address(spoke1));
+
+    vm.expectEmit(address(hub));
+    emit ILiquidityHub.DeficitCreated(address(spoke1), usdxAssetId, deficitAmountRestored);
 
     // Restore with deficit
     vm.prank(address(spoke1));
@@ -329,11 +418,13 @@ contract LiquidityHubRestoreDeficitTest is LiquidityHubBase {
     uint256 reserveId,
     uint256 borrowAmount,
     uint256 skipTime
-  ) internal {
+  ) internal returns (uint256 baseDebt, uint256 premiumDebt) {
     // Bob supplies max wbtc collateral and borrows
     Utils.supplyCollateral(spoke1, _wbtcReserveId(spoke1), bob, MAX_SUPPLY_AMOUNT, bob);
     Utils.borrow(spoke, reserveId, bob, borrowAmount, address(bob));
     // skip to accrue interest
     skip(skipTime);
+
+    (baseDebt, premiumDebt) = spoke.getUserDebt(reserveId, bob);
   }
 }
