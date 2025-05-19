@@ -11,12 +11,10 @@ import {DataTypes} from '../types/DataTypes.sol';
 library PositionStatus {
   using PositionStatus for DataTypes.PositionStatus;
 
-
-
   error InvalidReserveIndex();
 
   //TODO: After we complete the data structures packing, this needs to be adjusted to the right size depending on the number of bits we will use to store the reserve index
-  uint256 internal constant MAX_RESERVES_COUNT = 1024;
+  uint256 public constant MAX_RESERVES_COUNT = 1024;
   uint256 internal constant BORROWING_MASK =
     0x5555555555555555555555555555555555555555555555555555555555555555;
   uint256 internal constant COLLATERAL_MASK =
@@ -35,7 +33,7 @@ library PositionStatus {
   ) internal {
       require(reserveIndex < MAX_RESERVES_COUNT, InvalidReserveIndex());
       unchecked {
-      uint256 bit = 1 << (reserveIndex << 1);
+      uint256 bit = 1 << ((reserveIndex % 128) << 1);
       if (borrowing) {
         self.map[reserveIndex >> 7] |= bit;
       } else {
@@ -57,7 +55,7 @@ library PositionStatus {
   ) internal {
     unchecked {
       require(reserveIndex < MAX_RESERVES_COUNT, InvalidReserveIndex());
-      uint256 bit = 1 << ((reserveIndex << 1) + 1);
+      uint256 bit = 1 << (((reserveIndex % 128) << 1) + 1);
       if (usingAsCollateral) {
         self.map[reserveIndex >> 7] |= bit;
       } else {
@@ -73,9 +71,9 @@ library PositionStatus {
    * @return True if the user has been using a reserve for borrowing or as collateral, false otherwise
    */
   function isUsingAsCollateralOrBorrowing(
-    DataTypes.PositionStatus memory self,
+    DataTypes.PositionStatus storage self,
     uint256 reserveIndex
-  ) internal pure returns (bool) {
+  ) internal view returns (bool) {
     unchecked {
       require(reserveIndex < MAX_RESERVES_COUNT, InvalidReserveIndex());
       return (_getMapSlot(self, reserveIndex) >> (reserveIndex << 1)) & 3 != 0;
@@ -88,12 +86,12 @@ library PositionStatus {
    * @return True if the user has been using a reserve for borrowing, false otherwise
    */
   function isBorrowing(
-    DataTypes.PositionStatus memory self,
+    DataTypes.PositionStatus storage self,
     uint256 reserveIndex
-  ) internal pure returns (bool) {
+  ) internal view returns (bool) {
     unchecked {
       require(reserveIndex < MAX_RESERVES_COUNT, InvalidReserveIndex());
-      return (_getMapSlot(self, reserveIndex) >> (reserveIndex << 1)) & 1 != 0;
+      return (_getMapSlot(self, reserveIndex) >> ((reserveIndex % 128) << 1)) & 1 != 0;
     }
   }
 
@@ -104,12 +102,12 @@ library PositionStatus {
    * @return True if the user has been using a reserve as collateral, false otherwise
    */
   function isUsingAsCollateral(
-    DataTypes.PositionStatus memory self,
+    DataTypes.PositionStatus storage self,
     uint256 reserveIndex
-  ) internal pure returns (bool) {
+  ) internal view returns (bool) {
     unchecked {
       require(reserveIndex < MAX_RESERVES_COUNT, InvalidReserveIndex());
-      return (_getMapSlot(self, reserveIndex) >> ((reserveIndex << 1) + 1)) & 1 != 0;
+      return (_getMapSlot(self, reserveIndex) >> (((reserveIndex % 128) << 1) + 1)) & 1 != 0;
     }
   }
 
@@ -140,7 +138,7 @@ library PositionStatus {
    * @param self The configuration object
    * @return the uint256 containing the state of the reserve
    */
-  function _getMapSlot( DataTypes.PositionStatus memory self,uint256 reserveIndex) internal pure returns(uint256){
+  function _getMapSlot( DataTypes.PositionStatus storage self,uint256 reserveIndex) internal view returns(uint256){
       return self.map[reserveIndex >> 7];
   }
 }

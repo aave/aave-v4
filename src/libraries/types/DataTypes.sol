@@ -85,7 +85,6 @@ library DataTypes {
     uint256 riskPremium;
     uint256 lastUpdateTimestamp;
     bool usingAsCollateral;
-    PositionStatus positionStatus;
   }
 
   struct PositionStatus {
