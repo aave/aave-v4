@@ -9,74 +9,76 @@ contract LiquidityHubOperations_Gas_Tests is Base {
     initEnvironment();
   }
 
-  function test_supply() public {
+  function test_add() public {
     vm.prank(address(spoke1));
-    hub.supply(usdxAssetId, 1000e6, 15_00, alice);
-    vm.snapshotGasLastCall('Hub.Operations', 'supply');
+    hub.add(usdxAssetId, 1000e6, alice);
+    vm.snapshotGasLastCall('Hub.Operations', 'add');
   }
 
-  function test_withdraw() public {
+  function test_remove() public {
     vm.startPrank(address(spoke1));
-    hub.supply(usdxAssetId, 1000e6, 15_00, alice);
-
-    hub.withdraw(usdxAssetId, 500e6, 18_12, alice);
-    vm.snapshotGasLastCall('Hub.Operations', 'withdraw: partial');
-
+    hub.add(usdxAssetId, 1000e6, alice);
+    hub.remove(usdxAssetId, 500e6, alice);
+    vm.snapshotGasLastCall('Hub.Operations', 'remove: partial');
     skip(100);
-
-    hub.withdraw(usdxAssetId, 500e6, 20_74, alice);
-    vm.snapshotGasLastCall('Hub.Operations', 'withdraw: full');
+    hub.remove(usdxAssetId, 500e6, alice);
+    vm.snapshotGasLastCall('Hub.Operations', 'remove: full');
     vm.stopPrank();
   }
 
   function test_draw() public {
     vm.prank(address(spoke2));
-    hub.supply(daiAssetId, 1000e18, 15_00, alice);
+    hub.add(daiAssetId, 1000e18, alice);
 
     vm.startPrank(address(spoke1));
-    hub.supply(usdxAssetId, 1000e6, 18_80, alice);
+    hub.add(usdxAssetId, 1000e6, alice);
 
     skip(100);
 
-    hub.draw(daiAssetId, 500e18, 19_00, alice);
+    hub.draw(daiAssetId, 500e18, alice);
+    // todo: do refresh call to fully encapsulate a `hub.restore` call
     vm.snapshotGasLastCall('Hub.Operations', 'draw');
     vm.stopPrank();
   }
 
   function test_restore() public {
+    uint256 baseDebtRemaining;
+    uint256 premiumDebtRemaining;
     vm.prank(address(spoke2));
-    hub.supply(daiAssetId, 1000e18, 20_00, bob);
+    hub.add(daiAssetId, 1000e18, bob);
 
     vm.startPrank(address(spoke1));
-    hub.supply(usdxAssetId, 1000e6, 15_00, alice);
-    hub.draw(daiAssetId, 500e18, 15_00, alice);
+    hub.add(usdxAssetId, 1000e6, alice);
+    hub.draw(daiAssetId, 500e18, alice);
+    // todo: do refresh call to fully encapsulate a `hub.restore` call & add premium debt
 
     skip(1000);
 
-    hub.restore(daiAssetId, 200e18, 21_09, alice);
+    (baseDebtRemaining, premiumDebtRemaining) = hub.getSpokeDebt(daiAssetId, address(spoke1));
+    hub.restore(daiAssetId, baseDebtRemaining / 2, premiumDebtRemaining, alice);
+    // todo: do refresh call to fully encapsulate a `hub.restore` call
     vm.snapshotGasLastCall('Hub.Operations', 'restore: partial');
 
     skip(100);
 
-    uint256 cumulativeDebtRemaining = hub.getSpokeCumulativeDebt(daiAssetId, address(spoke1));
-    hub.restore(daiAssetId, cumulativeDebtRemaining, 21_90, alice);
+    (baseDebtRemaining, premiumDebtRemaining) = hub.getSpokeDebt(daiAssetId, address(spoke1));
+    hub.restore(daiAssetId, baseDebtRemaining, premiumDebtRemaining, alice);
     vm.snapshotGasLastCall('Hub.Operations', 'restore: full');
     vm.stopPrank();
   }
 
+  // todo validate refresh since notify will now call `refreshRiskPremium`
   function test_accrueInterest() public {
-    vm.startPrank(address(spoke2));
-    hub.supply(daiAssetId, 1000e18, 20_09, bob);
-    hub.draw(daiAssetId, 500e18, 20_09, bob);
-    vm.stopPrank();
-
-    vm.prank(address(spoke1));
-    hub.draw(daiAssetId, 500e18, 15_00, alice);
-
-    skip(100);
-
-    vm.prank(address(spoke1));
-    hub.accrueInterest(daiAssetId, 21_09);
-    vm.snapshotGasLastCall('Hub.Operations', 'accrueInterest');
+    vm.skip(true, 'to be replaced with refreshRiskPremium');
+    // vm.startPrank(address(spoke2));
+    // hub.add(daiAssetId, 1000e18, bob);
+    // hub.draw(daiAssetId, 500e18, bob);
+    // vm.stopPrank();
+    // vm.prank(address(spoke1));
+    // hub.draw(daiAssetId, 500e18, alice);
+    // skip(100);
+    // vm.prank(address(spoke1));
+    // hub.accrueInterest(daiAssetId);
+    // vm.snapshotGasLastCall('Hub.Operations', 'accrueInterest');
   }
 }

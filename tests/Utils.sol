@@ -10,21 +10,20 @@ library Utils {
   Vm internal constant vm = Vm(address(uint160(uint256(keccak256('hevm cheat code')))));
 
   // hub
-  function supply(
+  function add(
     ILiquidityHub hub,
     uint256 assetId,
     address spoke,
     uint256 amount,
-    uint32 riskPremium,
     address user,
     address to // todo: implement
-  ) internal {
+  ) internal returns (uint256) {
     vm.startPrank(user);
     hub.assetsList(assetId).approve(address(hub), amount);
     vm.stopPrank();
 
     vm.prank(spoke);
-    hub.supply({assetId: assetId, amount: amount, riskPremium: riskPremium, supplier: user});
+    return hub.add(assetId, amount, user);
   }
 
   function draw(
@@ -33,43 +32,41 @@ library Utils {
     address spoke,
     address to,
     uint256 amount,
-    uint32 riskPremium,
     address onBehalfOf // todo: implement
-  ) internal {
+  ) internal returns (uint256) {
     vm.prank(spoke);
-    hub.draw(assetId, amount, riskPremium, to);
+    return hub.draw(assetId, amount, to);
   }
 
-  function withdraw(
+  function remove(
     ILiquidityHub hub,
     uint256 assetId,
     address spoke,
     uint256 amount,
-    uint32 riskPremium,
     address to
   ) internal {
     vm.prank(spoke);
-    hub.withdraw(assetId, amount, riskPremium, to);
+    hub.remove(assetId, amount, to);
   }
 
   function restore(
     ILiquidityHub hub,
     uint256 assetId,
     address spoke,
-    uint256 amount,
-    uint32 riskPremium,
+    uint256 baseAmount,
+    uint256 premiumAmount,
     address repayer
   ) internal {
     vm.startPrank(repayer);
-    hub.assetsList(assetId).approve(address(hub), amount);
+    hub.assetsList(assetId).approve(address(hub), (baseAmount + premiumAmount));
     vm.stopPrank();
 
     vm.prank(spoke);
-    hub.restore(assetId, amount, riskPremium, repayer);
+    hub.restore(assetId, baseAmount, premiumAmount, repayer);
   }
 
   // spoke
-  function spokeSupply(
+  function supply(
     ISpoke spoke,
     uint256 reserveId,
     address user,
@@ -80,7 +77,30 @@ library Utils {
     spoke.supply(reserveId, amount);
   }
 
-  function spokeBorrow(
+  function supplyCollateral(
+    ISpoke spoke,
+    uint256 reserveId,
+    address user,
+    uint256 amount,
+    address onBehalfOf
+  ) internal {
+    supply(spoke, reserveId, user, amount, onBehalfOf);
+    vm.prank(user);
+    spoke.setUsingAsCollateral(reserveId, true);
+  }
+
+  function withdraw(
+    ISpoke spoke,
+    uint256 reserveId,
+    address user,
+    uint256 amount,
+    address onBehalfOf
+  ) internal {
+    vm.prank(user);
+    spoke.withdraw(reserveId, amount, user);
+  }
+
+  function borrow(
     ISpoke spoke,
     uint256 reserveId,
     address user,
@@ -91,7 +111,7 @@ library Utils {
     spoke.borrow(reserveId, amount, user);
   }
 
-  function spokeRepay(ISpoke spoke, uint256 reserveId, address user, uint256 amount) internal {
+  function repay(ISpoke spoke, uint256 reserveId, address user, uint256 amount) internal {
     vm.prank(user);
     spoke.repay(reserveId, amount);
   }

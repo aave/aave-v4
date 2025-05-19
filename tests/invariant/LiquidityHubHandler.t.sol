@@ -36,7 +36,7 @@ contract LiquidityHubHandler is Test {
     irStrategy = new DefaultReserveInterestRateStrategy(mockAddressesProvider);
     oracle = new MockPriceOracle();
     hub = new LiquidityHub();
-    spoke1 = new Spoke(address(hub), address(oracle));
+    spoke1 = new Spoke(address(hub), address(oracle), WadRayMath.WAD);
     usdc = new MockERC20();
     dai = new MockERC20();
     usdt = new MockERC20();
@@ -48,7 +48,7 @@ contract LiquidityHubHandler is Test {
         active: true,
         frozen: false,
         paused: false,
-        irStrategy: address(irStrategy)
+        irStrategy: irStrategy
       }),
       address(dai)
     );
@@ -60,7 +60,7 @@ contract LiquidityHubHandler is Test {
         frozen: false,
         paused: false,
         collateralFactor: 0,
-        liquidationBonus: 0,
+        liquidationBonus: 100_00,
         liquidityPremium: 0,
         borrowable: false,
         collateral: false
@@ -91,12 +91,11 @@ contract LiquidityHubHandler is Test {
 
     IERC20 asset = hub.assetsList(assetId);
     deal(address(asset), user, amount);
-    Utils.supply({
+    Utils.add({
       hub: hub,
       assetId: assetId,
       spoke: address(spoke1),
       amount: amount,
-      riskPremium: 0,
       user: user,
       to: onBehalfOf
     });
@@ -111,14 +110,7 @@ contract LiquidityHubHandler is Test {
     // TODO: bound by spoke1 user balance
     amount = bound(amount, 1, 2);
 
-    Utils.withdraw({
-      hub: hub,
-      assetId: assetId,
-      spoke: address(spoke1),
-      amount: amount,
-      riskPremium: 0,
-      to: to
-    });
+    Utils.remove({hub: hub, assetId: assetId, spoke: address(spoke1), amount: amount, to: to});
 
     _updateState(assetId);
     s.reserveSupplied[assetId] -= amount;
@@ -140,10 +132,12 @@ contract LiquidityHubHandler is Test {
   }
 
   function _updateState(uint256 assetId) internal {
-    DataTypes.Asset memory reserveData = hub.getAsset(assetId);
-    // todo: remove last exchange rate, bad idea to store like this, looses precision
-    s.lastExchangeRate[assetId] = reserveData.suppliedShares == 0
-      ? 0
-      : hub.getTotalAssets(assetId) / reserveData.suppliedShares;
+    revert('implement me');
+
+    // DataTypes.Asset memory reserveData = hub.getAsset(assetId);
+    // // todo: remove last exchange rate, bad idea to store like this, looses precision
+    // s.lastExchangeRate[assetId] = reserveData.suppliedShares == 0
+    //   ? 0
+    //   : hub.getTotalAssets(assetId) / reserveData.suppliedShares;
   }
 }
