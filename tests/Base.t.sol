@@ -27,6 +27,7 @@ import {WETH9} from 'src/dependencies/weth/WETH9.sol';
 
 abstract contract Base is Test {
   using WadRayMath for uint256;
+  using WadRayMathExtended for uint256;
   using SharesMath for uint256;
   using PercentageMath for uint256;
 
@@ -740,15 +741,38 @@ abstract contract Base is Test {
     uint256 oldRate,
     uint256 newRate,
     bool allWithdrawn,
-    string memory when
+    string memory label
   ) internal pure {
     if (!allWithdrawn) {
-      assertGe(
-        newRate,
-        oldRate,
-        string(abi.encodePacked('supply rate monotonically increasing ', when))
-      );
+      assertGe(newRate, oldRate, string.concat('supply rate monotonically increasing ', label));
     }
+  }
+
+  /// returns the USD value of the reserve normalized by it's decimals, in terms of WAD
+  function _getValueInBaseCurrency(
+    uint256 assetId,
+    uint256 amount
+  ) internal view returns (uint256) {
+    return
+      (amount * oracle.getAssetPrice(assetId).wadify()) /
+      (10 ** hub.getAssetConfig(assetId).decimals);
+  }
+
+  /// @dev Helper function to calculate the equivalent asset amount for a given asset
+  /// @dev If 1 wei of output asset is greater than the value of input, function will return 1
+  function _calcEquivalentAssetAmount(
+    uint256 inputAssetId,
+    uint256 inputAssetAmount,
+    uint256 outputAssetId
+  ) internal view returns (uint256) {
+    uint256 valueOfInputAsset = _getValueInBaseCurrency(inputAssetId, inputAssetAmount);
+    uint256 valueOfWeiOutput = _getValueInBaseCurrency(outputAssetId, 1);
+    assertNotEq(valueOfInputAsset, 0, 'input asset value is 0');
+    assertNotEq(valueOfWeiOutput, 0, 'output asset wei value is 0');
+    if (valueOfWeiOutput > valueOfInputAsset) {
+      return 1;
+    }
+    return valueOfInputAsset / valueOfWeiOutput;
   }
 
   /// @dev Helper function to calculate the amount of base and premium debt to restore
@@ -779,52 +803,78 @@ abstract contract Base is Test {
     ISpoke spoke,
     address user,
     uint256 expectedSuppliedAmount,
-    string memory when
+    string memory label
   ) internal view {
     uint256 expectedSuppliedShares = hub.convertToSuppliedShares(assetId, expectedSuppliedAmount);
     assertEq(
       hub.getAssetSuppliedShares(assetId),
       expectedSuppliedShares,
-      string(abi.encodePacked('asset supplied shares ', when))
+      string(abi.encodePacked('asset supplied shares ', label))
     );
     assertEq(
       hub.getAssetSuppliedAmount(assetId),
       expectedSuppliedAmount,
-      string(abi.encodePacked('asset supplied amount ', when))
+      string(abi.encodePacked('asset supplied amount ', label))
     );
     assertEq(
       hub.getSpokeSuppliedShares(assetId, address(spoke)),
       expectedSuppliedShares,
-      string(abi.encodePacked('spoke supplied shares ', when))
+      string(abi.encodePacked('spoke supplied shares ', label))
     );
     assertEq(
       hub.getSpokeSuppliedAmount(assetId, address(spoke)),
       expectedSuppliedAmount,
-      string(abi.encodePacked('spoke supplied amount ', when))
+      string(abi.encodePacked('spoke supplied amount ', label))
     );
     assertEq(
       spoke.getReserveSuppliedShares(reserveId),
       expectedSuppliedShares,
-      string(abi.encodePacked('reserve supplied shares ', when))
+      string(abi.encodePacked('reserve supplied shares ', label))
     );
     assertEq(
       spoke.getReserveSuppliedAmount(reserveId),
       expectedSuppliedAmount,
-      string(abi.encodePacked('reserve supplied amount ', when))
+      string(abi.encodePacked('reserve supplied amount ', label))
     );
     assertEq(
       spoke.getUserSuppliedShares(reserveId, user),
       expectedSuppliedShares,
-      string(abi.encodePacked('user supplied shares ', when))
+      string(abi.encodePacked('user supplied shares ', label))
     );
     assertEq(
       spoke.getUserSuppliedAmount(reserveId, user),
       expectedSuppliedAmount,
-      string(abi.encodePacked('user supplied amount ', when))
+      string(abi.encodePacked('user supplied amount ', label))
     );
   }
 
   function _min(uint256 a, uint256 b) internal pure returns (uint256) {
     return a < b ? a : b;
+  }
+
+  /// @dev Calculate expected debt index based on input params
+  function calculateExpectedDebtIndex(
+    uint256 initialDebtIndex,
+    uint256 borrowRate,
+    uint40 startTime
+  ) internal view returns (uint256) {
+    return initialDebtIndex.rayMulUp(MathUtils.calculateLinearInterest(borrowRate, startTime));
+  }
+
+  /// @dev Calculate expected debt index and base debt based on input params
+  function calculateExpectedDebt(
+    uint256 initialDrawnShares,
+    uint256 initialDebtIndex,
+    uint256 borrowRate,
+    uint40 startTime
+  ) internal view returns (uint256 newDebtIndex, uint256 newBaseDebt) {
+    newDebtIndex = calculateExpectedDebtIndex(initialDebtIndex, borrowRate, startTime);
+    newBaseDebt = initialDrawnShares.rayMulUp(newDebtIndex);
+  }
+
+  /// @dev Helper function to get asset base debt
+  function getAssetBaseDebt(uint256 assetId) internal view returns (uint256) {
+    (uint256 baseDebt, ) = hub.getAssetDebt(assetId);
+    return baseDebt;
   }
 }

@@ -130,7 +130,7 @@ contract LiquidityHub is ILiquidityHub {
     // TODO: fee-on-transfer
     assetsList[assetId].safeTransferFrom(from, address(this), amount);
 
-    emit Add(assetId, msg.sender, suppliedShares);
+    emit Add(assetId, msg.sender, suppliedShares, amount);
 
     return suppliedShares;
   }
@@ -156,7 +156,7 @@ contract LiquidityHub is ILiquidityHub {
 
     assetsList[assetId].safeTransfer(to, amount);
 
-    emit Remove(assetId, msg.sender, withdrawnShares);
+    emit Remove(assetId, msg.sender, withdrawnShares, amount);
 
     return withdrawnShares;
   }
@@ -182,7 +182,7 @@ contract LiquidityHub is ILiquidityHub {
 
     assetsList[assetId].safeTransfer(to, amount);
 
-    emit Draw(assetId, msg.sender, drawnShares);
+    emit Draw(assetId, msg.sender, drawnShares, amount);
 
     return drawnShares;
   }
@@ -215,45 +215,67 @@ contract LiquidityHub is ILiquidityHub {
 
     assetsList[assetId].safeTransferFrom(from, address(this), totalRestoredAmount);
 
-    emit Restore(assetId, msg.sender, baseDrawnSharesRestored);
+    emit Restore(assetId, msg.sender, baseDrawnSharesRestored, totalRestoredAmount);
 
     return baseDrawnSharesRestored;
   }
 
+  /// @inheritdoc ILiquidityHub
   function refreshPremiumDebt(
     uint256 assetId,
-    int256 premiumDrawnSharesDelta,
+    int256 premiumDrawnShareDelta,
     int256 premiumOffsetDelta,
     int256 realizedPremiumDelta
   ) external {
-    /**
-     * todo: `refreshPremiumDebt` callback
-     * - only callable by spoke
-     * - check that total debt can only:
-     *   - reduce until `premiumDebt` if called after a restore (tstore premiumDebt?)
-     *   - remains unchanged on all other calls
-     * `refreshPremiumDebt` is game-able only for premium stuff
-     */
-    DataTypes.Asset storage asset = _assets[assetId];
-    DataTypes.SpokeData storage spoke = _spokes[assetId][msg.sender];
+    // todo only spoke
+    (uint256 baseDebt, uint256 premiumDebt) = _assets[assetId].debt();
+    _refresh(assetId, msg.sender, premiumDrawnShareDelta, premiumOffsetDelta, realizedPremiumDelta);
+    (uint256 baseDebtAfter, uint256 premiumDebtAfter) = _assets[assetId].debt();
+    // can increase due to precision loss on premium debt (base unchanged)
+    // todo mathematically find premium diff ceiling and replace the `2`
+    require(baseDebtAfter == baseDebt && premiumDebtAfter - premiumDebt <= 2, InvalidDebtChange());
+  }
 
-    asset.premiumDrawnShares = _add(asset.premiumDrawnShares, premiumDrawnSharesDelta);
+  /// @inheritdoc ILiquidityHub
+  function settlePremiumDebt(
+    uint256 assetId,
+    int256 premiumDrawnShareDelta,
+    int256 premiumOffsetDelta,
+    int256 realizedPremiumDelta
+  ) external {
+    // todo: merge with repay and validate total debt only goes down by `premiumDebtRestored`
+    // which ensures reduced assets are added to available liquidity
+    // todo: only spoke
+    uint256 baseDebt = _assets[assetId].baseDebt();
+    _refresh(assetId, msg.sender, premiumDrawnShareDelta, premiumOffsetDelta, realizedPremiumDelta);
+    require(_assets[assetId].baseDebt() == baseDebt, InvalidDebtChange());
+  }
+
+  function _refresh(
+    uint256 assetId,
+    address spokeAddress,
+    int256 premiumDrawnShareDelta,
+    int256 premiumOffsetDelta,
+    int256 realizedPremiumDelta
+  ) internal {
+    DataTypes.Asset storage asset = _assets[assetId];
+    DataTypes.SpokeData storage spoke = _spokes[assetId][spokeAddress];
+
+    asset.premiumDrawnShares = _add(asset.premiumDrawnShares, premiumDrawnShareDelta);
     asset.premiumOffset = _add(asset.premiumOffset, premiumOffsetDelta);
     asset.realizedPremium = _add(asset.realizedPremium, realizedPremiumDelta);
 
-    spoke.premiumDrawnShares = _add(spoke.premiumDrawnShares, premiumDrawnSharesDelta);
+    spoke.premiumDrawnShares = _add(spoke.premiumDrawnShares, premiumDrawnShareDelta);
     spoke.premiumOffset = _add(spoke.premiumOffset, premiumOffsetDelta);
     spoke.realizedPremium = _add(spoke.realizedPremium, realizedPremiumDelta);
 
     emit RefreshPremiumDebt(
       assetId,
-      msg.sender,
-      premiumDrawnSharesDelta,
+      spokeAddress,
+      premiumDrawnShareDelta,
       premiumOffsetDelta,
       realizedPremiumDelta
     );
-
-    // todo check bounds
   }
 
   //
@@ -301,10 +323,7 @@ contract LiquidityHub is ILiquidityHub {
     return _assets[assetId].toDrawnSharesDown(assets);
   }
 
-  function convertToPremiumDrawnAssets(
-    uint256 assetId,
-    uint256 shares
-  ) external view returns (uint256) {
+  function previewOffset(uint256 assetId, uint256 shares) external view returns (uint256) {
     return _assets[assetId].toDrawnAssetsDown(shares);
   }
 
@@ -450,8 +469,7 @@ contract LiquidityHub is ILiquidityHub {
     DataTypes.SpokeData storage spoke
   ) internal view returns (uint256, uint256) {
     // sanity: utilize solc underflow check
-    uint256 accruedPremium = asset.toDrawnAssetsDown(spoke.premiumDrawnShares) -
-      spoke.premiumOffset;
+    uint256 accruedPremium = asset.toDrawnAssetsUp(spoke.premiumDrawnShares) - spoke.premiumOffset;
     return (asset.toDrawnAssetsUp(spoke.baseDrawnShares), spoke.realizedPremium + accruedPremium);
   }
 

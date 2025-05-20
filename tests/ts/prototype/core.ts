@@ -61,7 +61,7 @@ export class LiquidityHub {
     return this.convertToDrawnAssets(this.baseDrawnShares);
   }
   premiumDebt() {
-    const accruedPremium = this.convertToPremiumDrawnAssets(this.ghostDrawnShares) - this.offset;
+    const accruedPremium = this.convertToDrawnAssets(this.ghostDrawnShares) - this.offset;
     assertGeZero(accruedPremium);
     return accruedPremium + this.realisedPremium;
   }
@@ -214,7 +214,7 @@ export class LiquidityHub {
 
   getDebt() {
     this.accrue();
-    const accruedPremium = this.convertToPremiumDrawnAssets(this.ghostDrawnShares) - this.offset;
+    const accruedPremium = this.convertToDrawnAssets(this.ghostDrawnShares) - this.offset;
     assertGeZero(accruedPremium);
     return {
       baseDebt: this.convertToDrawnAssets(this.baseDrawnShares),
@@ -236,7 +236,7 @@ export class LiquidityHub {
     return this.toDrawnShares(assets);
   }
 
-  convertToPremiumDrawnAssets(premiumDrawnShares: bigint) {
+  previewOffset(premiumDrawnShares: bigint) {
     return this.toDrawnAssets(premiumDrawnShares);
   }
 
@@ -304,7 +304,7 @@ export class Spoke {
 
     let userGhostDrawnShares = user.ghostDrawnShares;
     let userOffset = user.offset;
-    const accruedPremium = this.hub.convertToPremiumDrawnAssets(userGhostDrawnShares) - userOffset;
+    const accruedPremium = this.hub.convertToDrawnAssets(userGhostDrawnShares) - userOffset;
     assertGeZero(accruedPremium);
 
     user.ghostDrawnShares = 0n;
@@ -322,7 +322,7 @@ export class Spoke {
       user.baseDrawnShares,
       user.riskPremium
     );
-    userOffset = user.offset = this.hub.convertToPremiumDrawnAssets(user.ghostDrawnShares);
+    userOffset = user.offset = this.hub.previewOffset(user.ghostDrawnShares);
 
     this.refresh(userGhostDrawnShares, userOffset, 0n, user);
 
@@ -363,7 +363,7 @@ export class Spoke {
       user.baseDrawnShares,
       user.riskPremium
     );
-    userOffset = user.offset = this.hub.convertToPremiumDrawnAssets(user.ghostDrawnShares);
+    userOffset = user.offset = this.hub.previewOffset(user.ghostDrawnShares);
 
     this.refresh(userGhostDrawnShares, userOffset, 0n, user);
 
@@ -420,10 +420,10 @@ export class Spoke {
     const oldUserOffset = user.offset;
 
     user.ghostDrawnShares = percentMul(user.baseDrawnShares, user.riskPremium);
-    user.offset = this.hub.convertToPremiumDrawnAssets(user.ghostDrawnShares);
+    user.offset = this.hub.previewOffset(user.ghostDrawnShares);
 
     const accruedPremium =
-      this.hub.convertToPremiumDrawnAssets(oldUserGhostDrawnShares) - oldUserOffset;
+      this.hub.convertToDrawnAssets(oldUserGhostDrawnShares) - oldUserOffset;
     user.realisedPremium += accruedPremium;
 
     this.refresh(
@@ -459,7 +459,7 @@ export class Spoke {
   getDebt() {
     this.hub.accrue();
     const accruedPremium =
-      this.hub.convertToPremiumDrawnAssets(this.ghostDrawnShares) - this.offset;
+      this.hub.convertToDrawnAssets(this.ghostDrawnShares) - this.offset;
     assertGeZero(accruedPremium);
     return {
       baseDebt: this.hub.convertToDrawnAssets(this.baseDrawnShares),
@@ -471,7 +471,7 @@ export class Spoke {
     this.hub.accrue();
     const user = this.getUser(who);
     const accruedPremium =
-      this.hub.convertToPremiumDrawnAssets(user.ghostDrawnShares) - user.offset;
+      this.hub.convertToDrawnAssets(user.ghostDrawnShares) - user.offset;
     assertGeZero(accruedPremium);
     return {
       baseDebt: this.hub.convertToDrawnAssets(user.baseDrawnShares),
@@ -505,7 +505,7 @@ export class Spoke {
   }
 
   log(hub = false, users = false) {
-    const ghostDebt = this.hub.convertToPremiumDrawnAssets(this.ghostDrawnShares) - this.offset;
+    const ghostDebt = this.hub.convertToDrawnAssets(this.ghostDrawnShares) - this.offset;
     console.log(`--- Spoke ${this.id} ---`);
     console.log('spoke.baseDrawnShares       ', f(this.baseDrawnShares));
     console.log('spoke.ghostDrawnShares      ', f(this.ghostDrawnShares));

@@ -82,6 +82,53 @@ contract SpokeBase is Base {
     uint256 reserveBaseDebtAfter;
   }
 
+  struct RepayMultipleLocal {
+    uint256 borrowAmount;
+    uint256 repayAmount;
+    DataTypes.UserPosition posBefore; // positionBefore
+    DataTypes.UserPosition posAfter; // positionAfter
+    uint256 baseRestored;
+    uint256 premiumRestored;
+  }
+
+  struct Action {
+    uint256 supplyAmount;
+    uint256 borrowAmount;
+    uint256 repayAmount;
+    uint40 skipTime;
+  }
+
+  struct AssetInfo {
+    uint256 borrowAmount;
+    uint256 repayAmount;
+    uint256 baseRestored;
+    uint256 premiumRestored;
+    uint256 suppliedShares;
+  }
+
+  struct UserAction {
+    uint256 supplyAmount;
+    uint256 borrowAmount;
+    uint256 suppliedShares;
+    uint256 repayAmount;
+    uint256 baseRestored;
+    uint256 premiumRestored;
+    address user;
+  }
+
+  struct UserBorrowAction {
+    uint256 supplyAmount;
+    uint256 borrowAmount;
+  }
+
+  struct UserAssetInfo {
+    AssetInfo daiInfo;
+    AssetInfo wethInfo;
+    AssetInfo usdxInfo;
+    AssetInfo wbtcInfo;
+    address user;
+  }
+
   function setUp() public virtual override {
     super.setUp();
     initEnvironment();
@@ -245,6 +292,40 @@ contract SpokeBase is Base {
     return (state.collateralSupplyShares, state.borrowSupplyShares);
   }
 
+  function _repayAll(
+    ISpoke spoke,
+    function(ISpoke) view returns (uint256) _assetReserveId
+  ) internal {
+    uint256 reserveId = _assetReserveId(spoke);
+    uint256 assetId = spoke.getReserve(reserveId).assetId;
+    uint256 assetDebtWithoutSpoke = hub.getAssetTotalDebt(assetId) -
+      hub.getSpokeTotalDebt(assetId, address(spoke));
+
+    address[4] memory users = [alice, bob, carol, derl];
+    for (uint256 i; i < users.length; ++i) {
+      address user = users[i];
+      uint256 debt = spoke.getUserTotalDebt(reserveId, user);
+      if (debt > 0) {
+        deal(address(hub.assetsList(assetId)), user, debt);
+        vm.prank(user);
+        spoke.repay(reserveId, debt);
+        assertEq(spoke.getUserTotalDebt(reserveId, user), 0, 'user debt not zero');
+        // If the user has no debt in any asset (hf will be max), user risk premium should be zero
+        if (spoke.getHealthFactor(user) == type(uint256).max) {
+          assertEq(spoke.getUserRiskPremium(user), 0, 'user risk premium not zero');
+        }
+      }
+    }
+
+    assertEq(spoke.getReserveTotalDebt(reserveId), 0, 'reserve total debt not zero');
+    assertEq(hub.getSpokeTotalDebt(assetId, address(spoke)), 0, 'hub spoke total debt not zero');
+    assertEq(
+      hub.getAssetTotalDebt(assetId),
+      assetDebtWithoutSpoke,
+      'hub asset total debt not settled'
+    );
+  }
+
   function loadReserveInfo(
     ISpoke spoke,
     uint256 reserveId
@@ -320,16 +401,6 @@ contract SpokeBase is Base {
     return maxDebt > 1 ? maxDebt - 1 : maxDebt;
   }
 
-  /// returns the USD value of the reserve normalized by it's decimals, in terms of WAD
-  function _getReserveValueInBaseCurrency(
-    uint256 assetId,
-    uint256 amount
-  ) internal view returns (uint256) {
-    return
-      (amount * oracle.getAssetPrice(assetId) * WadRayMath.WAD) /
-      (10 ** hub.getAssetConfig(assetId).decimals);
-  }
-
   // assert that user's position and debt accounting matches expected
   function _assertUserPositionAndDebt(
     ISpoke spoke,
@@ -368,7 +439,7 @@ contract SpokeBase is Base {
     uint256 assetId,
     DataTypes.UserPosition memory userPos
   ) internal view returns (DebtData memory userDebt) {
-    uint256 accruedPremium = hub.convertToPremiumDrawnAssets(assetId, userPos.premiumDrawnShares) -
+    uint256 accruedPremium = hub.convertToDrawnAssets(assetId, userPos.premiumDrawnShares) -
       userPos.premiumOffset;
     userDebt.premiumDebt = userPos.realizedPremium + accruedPremium;
     userDebt.baseDebt = hub.convertToDrawnAssets(assetId, userPos.baseDrawnShares);
@@ -396,9 +467,10 @@ contract SpokeBase is Base {
       expectedUserPos.premiumDrawnShares,
       string.concat('user premiumDrawnShares ', label)
     );
-    assertEq(
+    assertApproxEqAbs(
       userPos.premiumOffset,
       expectedUserPos.premiumOffset,
+      1,
       string.concat('user premiumOffset ', label)
     );
     assertEq(
@@ -414,14 +486,16 @@ contract SpokeBase is Base {
     string memory label
   ) internal pure {
     assertEq(userDebt.baseDebt, expectedUserDebt.baseDebt, string.concat('user base debt ', label));
-    assertEq(
+    assertApproxEqAbs(
       userDebt.premiumDebt,
       expectedUserDebt.premiumDebt,
+      1,
       string.concat('user premium debt ', label)
     );
-    assertEq(
+    assertApproxEqAbs(
       userDebt.totalDebt,
       expectedUserDebt.totalDebt,
+      1,
       string.concat('user total debt ', label)
     );
   }
@@ -441,7 +515,7 @@ contract SpokeBase is Base {
     userPos.premiumDrawnShares = hub.convertToDrawnShares(assetId, debtAmount).percentMul(
       riskPremium
     );
-    userPos.premiumOffset = hub.convertToPremiumDrawnAssets(assetId, userPos.premiumDrawnShares);
+    userPos.premiumOffset = hub.convertToDrawnAssets(assetId, userPos.premiumDrawnShares);
     userPos.realizedPremium = expectedRealizedPremium;
     userPos.suppliedShares = hub.convertToSuppliedShares(assetId, suppliedAmount);
   }
@@ -455,8 +529,7 @@ contract SpokeBase is Base {
   ) internal view returns (uint256) {
     uint256 assetId = spoke.getReserve(reserveId).assetId;
     DataTypes.UserPosition memory userPos = getUserInfo(spoke, user, assetId);
-    return
-      hub.convertToPremiumDrawnAssets(assetId, userPos.premiumDrawnShares) - userPos.premiumOffset;
+    return hub.convertToDrawnAssets(assetId, userPos.premiumDrawnShares) - userPos.premiumOffset;
   }
 
   /// assert that realized premium matches naively calculated value
@@ -511,7 +584,7 @@ contract SpokeBase is Base {
       assertEq(
         premiumDebt,
         userData.realizedPremium +
-          hub.convertToPremiumDrawnAssets(assetId, userData.premiumDrawnShares) -
+          hub.convertToDrawnAssets(assetId, userData.premiumDrawnShares) -
           userData.premiumOffset,
         string.concat('user ', vm.toString(i), ' premium debt ', label)
       );
@@ -534,6 +607,36 @@ contract SpokeBase is Base {
     );
   }
 
+  function _assertUserRpUnchanged(uint256 reserveId, ISpoke spoke, address user) internal view {
+    DataTypes.UserPosition memory pos = spoke.getUserPosition(reserveId, user);
+    uint256 riskPremiumStored = pos.premiumDrawnShares.percentDiv(pos.baseDrawnShares);
+    (uint256 riskPremiumCurrent, , , , ) = spoke.getUserAccountData(user);
+    assertEq(riskPremiumCurrent, riskPremiumStored, 'user risk premium mismatch');
+  }
+
+  function _boundUserAction(UserAction memory action) internal pure returns (UserAction memory) {
+    action.borrowAmount = bound(action.borrowAmount, 1, MAX_SUPPLY_AMOUNT / 8);
+    action.repayAmount = bound(action.repayAmount, 1, type(uint256).max);
+
+    return action;
+  }
+
+  function _bound(UserAssetInfo memory info) internal pure returns (UserAssetInfo memory) {
+    // Bound borrow amounts
+    info.daiInfo.borrowAmount = bound(info.daiInfo.borrowAmount, 1, MAX_SUPPLY_AMOUNT / 8);
+    info.wethInfo.borrowAmount = bound(info.wethInfo.borrowAmount, 1, MAX_SUPPLY_AMOUNT / 8);
+    info.usdxInfo.borrowAmount = bound(info.usdxInfo.borrowAmount, 1, MAX_SUPPLY_AMOUNT / 8);
+    info.wbtcInfo.borrowAmount = bound(info.wbtcInfo.borrowAmount, 1, MAX_SUPPLY_AMOUNT / 8);
+
+    // Bound repay amounts
+    info.daiInfo.repayAmount = bound(info.daiInfo.repayAmount, 1, type(uint256).max);
+    info.wethInfo.repayAmount = bound(info.wethInfo.repayAmount, 1, type(uint256).max);
+    info.usdxInfo.repayAmount = bound(info.usdxInfo.repayAmount, 1, type(uint256).max);
+    info.wbtcInfo.repayAmount = bound(info.wbtcInfo.repayAmount, 1, type(uint256).max);
+
+    return info;
+  }
+
   function getUserDebt(
     ISpoke spoke,
     address user,
@@ -550,65 +653,65 @@ contract SpokeBase is Base {
     assertEq(keccak256(abi.encode(a)), keccak256(abi.encode(b)), 'debt data'); // sanity
   }
 
-  // function _calculateExpectedUserRP(address user, ISpoke spoke) internal view returns (uint256) {
-  //   uint256 assetId;
-  //   uint256 totalDebt;
-  //   uint256 suppliedReservesCount;
-  //   uint256 userRP;
-  //   DataTypes.UserPosition memory userPosition;
+  function _calculateExpectedUserRP(address user, ISpoke spoke) internal view returns (uint256) {
+    uint256 assetId;
+    uint256 totalDebt;
+    uint256 suppliedReservesCount;
+    uint256 userRP;
+    DataTypes.UserPosition memory userPosition;
 
-  //   // Find all reserves user has supplied, adding up total debt
-  //   for (uint256 reserveId; reserveId < spoke.reserveCount(); ++reserveId) {
-  //     if (spoke.getUsingAsCollateral(reserveId, user)) {
-  //       ++suppliedReservesCount;
-  //     }
-  //     (assetId, ) = getAssetByReserveId(spoke, reserveId);
-  //     totalDebt += _getReserveValueInBaseCurrency(
-  //       assetId,
-  //       spoke.getUserCumulativeDebt(reserveId, user)
-  //     );
-  //   }
+    // Find all reserves user has supplied, adding up total debt
+    for (uint256 reserveId; reserveId < spoke.reserveCount(); ++reserveId) {
+      if (spoke.getUsingAsCollateral(reserveId, user)) {
+        ++suppliedReservesCount;
+      }
+      (assetId, ) = getAssetByReserveId(spoke, reserveId);
+      totalDebt += _getValueInBaseCurrency(assetId, spoke.getUserTotalDebt(reserveId, user));
+    }
 
-  //   if (totalDebt == 0) {
-  //     return 0;
-  //   }
+    if (totalDebt == 0) {
+      return 0;
+    }
 
-  //   // Gather up list of reserves as collateral to sort by LP
-  //   KeyValueListInMemory.List memory reserveLP = KeyValueListInMemory.init(suppliedReservesCount);
-  //   uint256 idx = 0;
-  //   for (uint256 reserveId; reserveId < spoke.reserveCount(); ++reserveId) {
-  //     if (spoke.getUsingAsCollateral(reserveId, user)) {
-  //       reserveLP.add(idx, spoke.getLiquidityPremium(reserveId), reserveId);
-  //       ++idx;
-  //     }
-  //   }
+    // Gather up list of reserves as collateral to sort by LP
+    KeyValueListInMemory.List memory reserveLP = KeyValueListInMemory.init(suppliedReservesCount);
+    uint256 idx = 0;
+    for (uint256 reserveId; reserveId < spoke.reserveCount(); reserveId++) {
+      if (spoke.getUsingAsCollateral(reserveId, user)) {
+        reserveLP.add(idx, spoke.getLiquidityPremium(reserveId), reserveId);
+        ++idx;
+      }
+    }
 
-  //   // Sort supplied reserves by LP
-  //   reserveLP.sortByKey();
+    // Sort supplied reserves by LP
+    reserveLP.sortByKey();
 
-  //   // While user's normalized debt amount is non-zero, iterate through supplied reserves, and add up LP
-  //   idx = 0;
-  //   uint256 originalTotalDebt = totalDebt;
-  //   while (totalDebt > 0) {
-  //     (uint256 lp, uint256 reserveId) = reserveLP.get(idx);
-  //     userPosition = getUserInfo(spoke, user, reserveId);
-  //     (assetId, ) = getAssetByReserveId(spoke, reserveId);
-  //     uint256 supplyAmount = _getReserveValueInBaseCurrency(
-  //       assetId,
-  //       hub.convertToAssets(assetId, userPosition.suppliedShares)
-  //     );
+    // While user's normalized debt amount is non-zero, iterate through supplied reserves, and add up LP
+    idx = 0;
+    uint256 utilizedSupply = 0;
+    while (totalDebt > 0 && idx < reserveLP.length()) {
+      (uint256 lp, uint256 reserveId) = reserveLP.get(idx);
+      userPosition = getUserInfo(spoke, user, reserveId);
+      (assetId, ) = getAssetByReserveId(spoke, reserveId);
+      uint256 supplyAmount = _getValueInBaseCurrency(
+        assetId,
+        hub.convertToSuppliedAssets(assetId, userPosition.suppliedShares)
+      );
 
-  //     if (supplyAmount >= totalDebt) {
-  //       userRP += totalDebt * lp;
-  //       break;
-  //     } else {
-  //       userRP += supplyAmount * lp;
-  //       totalDebt -= supplyAmount;
-  //     }
+      if (supplyAmount >= totalDebt) {
+        userRP += totalDebt * lp;
+        utilizedSupply += totalDebt;
+        totalDebt = 0;
+        break;
+      } else {
+        userRP += supplyAmount * lp;
+        utilizedSupply += supplyAmount;
+        totalDebt -= supplyAmount;
+      }
 
-  //     ++idx;
-  //   }
+      ++idx;
+    }
 
-  //   return userRP / originalTotalDebt;
-  // }
+    return userRP / utilizedSupply;
+  }
 }
