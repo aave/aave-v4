@@ -128,7 +128,7 @@ library AssetLogic {
   function accrue(DataTypes.Asset storage asset) internal {
     uint256 baseDebtIndex = asset.baseDebtIndex = asset.previewIndex();
     asset.lastUpdateTimestamp = block.timestamp;
-    emit ILiquidityHub.DrawnIndexUpdate(asset.id, baseDebtIndex);
+    emit ILiquidityHub.DrawnIndexUpdate(asset.id, baseDebtIndex, block.timestamp);
   }
 
   function previewIndex(DataTypes.Asset storage asset) internal view returns (uint256) {

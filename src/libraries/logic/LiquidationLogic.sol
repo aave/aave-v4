@@ -113,7 +113,7 @@ library LiquidationLogic {
     // account for additional collateral required due to liquidation bonus
     vars.maxCollateralToLiquidate = vars.baseCollateral.percentMulDown(params.liquidationBonus);
 
-    if (vars.maxCollateralToLiquidate > vars.userCollateralBalanceInBaseCurrency) {
+    if (vars.maxCollateralToLiquidate >= vars.userCollateralBalanceInBaseCurrency) {
       vars.collateralAmount = params.userCollateralBalance;
       vars.debtAmountNeeded = ((params.debtAssetUnit * vars.userCollateralBalanceInBaseCurrency)
         .percentDivDown(params.liquidationBonus) / params.debtAssetPrice).dewadify();

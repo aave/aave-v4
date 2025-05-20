@@ -167,6 +167,7 @@ contract Spoke is ISpoke {
 
     _refreshPremiumDebt(
       reserve,
+      msg.sender,
       assetId,
       -int256(userPremiumDrawnShares),
       -int256(userPremiumOffset),
@@ -190,6 +191,7 @@ contract Spoke is ISpoke {
 
     _refreshPremiumDebt(
       reserve,
+      msg.sender,
       assetId,
       int256(userPremiumDrawnShares),
       int256(userPremiumOffset),
@@ -220,6 +222,7 @@ contract Spoke is ISpoke {
 
     _refreshPremiumDebt(
       reserve,
+      msg.sender,
       assetId,
       -int256(userPremiumDrawnShares),
       -int256(userPremiumOffset),
@@ -243,6 +246,7 @@ contract Spoke is ISpoke {
 
     _refreshPremiumDebt(
       reserve,
+      msg.sender,
       assetId,
       int256(userPremiumDrawnShares),
       int256(userPremiumOffset),
@@ -561,12 +565,19 @@ contract Spoke is ISpoke {
 
   function _refreshPremiumDebt(
     DataTypes.Reserve storage reserve,
+    address userAddress,
     uint256 assetId,
     int256 premiumDrawnSharesDelta,
     int256 premiumOffsetDelta,
     int256 realizedPremiumDelta
   ) internal {
-    _refresh(reserve, premiumDrawnSharesDelta, premiumOffsetDelta, realizedPremiumDelta);
+    _refresh(
+      reserve,
+      userAddress,
+      premiumDrawnSharesDelta,
+      premiumOffsetDelta,
+      realizedPremiumDelta
+    );
     HUB.refreshPremiumDebt(
       assetId,
       premiumDrawnSharesDelta,
@@ -577,12 +588,19 @@ contract Spoke is ISpoke {
 
   function _settlePremiumDebt(
     DataTypes.Reserve storage reserve,
+    address userAddress,
     uint256 assetId,
     int256 premiumDrawnSharesDelta,
     int256 premiumOffsetDelta,
     int256 realizedPremiumDelta
   ) internal {
-    _refresh(reserve, premiumDrawnSharesDelta, premiumOffsetDelta, realizedPremiumDelta);
+    _refresh(
+      reserve,
+      userAddress,
+      premiumDrawnSharesDelta,
+      premiumOffsetDelta,
+      realizedPremiumDelta
+    );
     HUB.settlePremiumDebt(
       assetId,
       premiumDrawnSharesDelta,
@@ -593,6 +611,7 @@ contract Spoke is ISpoke {
 
   function _refresh(
     DataTypes.Reserve storage reserve,
+    address userAddress,
     int256 premiumDrawnSharesDelta,
     int256 premiumOffsetDelta,
     int256 realizedPremiumDelta
@@ -603,6 +622,7 @@ contract Spoke is ISpoke {
 
     emit RefreshPremiumDebt(
       reserve.reserveId,
+      userAddress,
       premiumDrawnSharesDelta,
       premiumOffsetDelta,
       realizedPremiumDelta
@@ -836,6 +856,7 @@ contract Spoke is ISpoke {
 
         _refreshPremiumDebt(
           reserve,
+          userAddress,
           assetId,
           _signedDiff(userPosition.premiumDrawnShares, oldUserPremiumDrawnShares),
           _signedDiff(userPosition.premiumOffset, oldUserPremiumOffset),
@@ -878,6 +899,7 @@ contract Spoke is ISpoke {
 
     _settlePremiumDebt(
       reserve,
+      user,
       vars.assetId,
       -int256(userPremiumDrawnShares),
       -int256(userPremiumOffset),
@@ -911,6 +933,7 @@ contract Spoke is ISpoke {
 
     _refreshPremiumDebt(
       reserve,
+      user,
       vars.assetId,
       int256(userPremiumDrawnShares),
       int256(userPremiumOffset),
@@ -981,6 +1004,7 @@ contract Spoke is ISpoke {
 
       _refreshPremiumDebt(
         collateralReserve,
+        users[vars.i],
         vars.collateralAssetId,
         -int256(vars.userCollateralPremiumDrawnShares),
         -int256(vars.userCollateralPremiumOffset),
@@ -1038,6 +1062,7 @@ contract Spoke is ISpoke {
 
       _settlePremiumDebt(
         debtReserve,
+        users[vars.i],
         vars.debtAssetId,
         -int256(vars.userDebtPremiumDrawnShares),
         -int256(vars.userDebtPremiumOffset),
@@ -1083,6 +1108,21 @@ contract Spoke is ISpoke {
         userCollateralPosition.premiumDrawnShares
       );
 
+      _refresh(
+        debtReserve,
+        users[vars.i],
+        int256(vars.userDebtPremiumDrawnShares),
+        int256(vars.userDebtPremiumOffset),
+        0
+      );
+      _refresh(
+        collateralReserve,
+        users[vars.i],
+        int256(vars.userCollateralPremiumDrawnShares),
+        int256(vars.userCollateralPremiumOffset),
+        0
+      );
+
       _notifyRiskPremiumUpdate(vars.debtAssetId, users[vars.i], vars.newUserRiskPremium);
 
       vars.totalUserDebtPremiumDrawnSharesDelta += int256(vars.userDebtPremiumDrawnShares);
@@ -1115,21 +1155,18 @@ contract Spoke is ISpoke {
     debtReserve.baseDrawnShares -= vars.totalRestoredShares;
     collateralReserve.suppliedShares -= vars.totalWithdrawnShares;
 
-    _refreshPremiumDebt(
-      debtReserve,
+    HUB.refreshPremiumDebt(
       vars.debtAssetId,
       vars.totalUserDebtPremiumDrawnSharesDelta,
       vars.totalUserDebtPremiumOffsetDelta,
       0
     );
-    _refreshPremiumDebt(
-      collateralReserve,
+    HUB.refreshPremiumDebt(
       vars.collateralAssetId,
       vars.totalUserCollateralPremiumDrawnSharesDelta,
       vars.totalUserCollateralPremiumOffsetDelta,
       0
     );
-
     vars.totalLiquidationProtocolFeeShares = HUB.convertToSuppliedShares(
       vars.collateralAssetId,
       vars.totalLiquidationProtocolFeeAmount

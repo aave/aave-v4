@@ -104,7 +104,7 @@ contract LiquidationCallScenarioTest is SpokeLiquidationBase {
     assertApproxEqAbs(
       _absDiff(state.liquidator.balanceAfter, state.liquidator.balanceBefore),
       _absDiff(state.debt.balanceAfter, state.debt.balanceBefore),
-      2,
+      2, // should be due to repay donation
       'liquidator repaid debt amount and restored debt accounting'
     );
     assertEq(
@@ -201,7 +201,7 @@ contract LiquidationCallScenarioTest is SpokeLiquidationBase {
     assertApproxEqAbs(
       _absDiff(state.liquidator.balanceAfter, state.liquidator.balanceBefore),
       _absDiff(state.debt.balanceAfter, state.debt.balanceBefore),
-      4, // max delta too large?
+      4, // max delta too large? should be due to repay donation
       'liquidator repaid debt amount and restored debt accounting (donation)'
     );
     assertEq(
