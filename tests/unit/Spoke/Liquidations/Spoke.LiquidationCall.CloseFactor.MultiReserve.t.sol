@@ -37,29 +37,7 @@ contract LiquidationCallCloseFactorMultiReserveTest is SpokeLiquidationBase {
       debtReserveIndex: 1,
       skipTime: 365 days
     });
-
-    // if (state.hasDeficit) {
-    //   assertEq(
-    //     spoke1.getHealthFactor(alice),
-    //     UINT256_MAX,
-    //     'HF should be uint max with no coll/debt remaining'
-    //   );
-    // } else {
-    //   assertLe(spoke1.getHealthFactor(alice), _getCloseFactor(spoke1), 'HF <= close factor');
-    // }
     _checkLiquidation(state, spoke1, 'test_liquidationCall_closeFactor_multi_reserve_scenario1');
-    // string memory label = 'test_liquidationCall_closeFactor_multi_reserve_scenario1';
-
-    // _assertUserAccountData(state, spoke1, label);
-    // _assertProtocolFeeEarned(state, label);
-    // _assertLiquidationBonusEarned(state, label);
-    // _assertSupplyExchangeRate(state, label);
-    // _assertSetUsingAsCollateral(spoke1, alice, state, label);
-    // if (state.hasDeficit) {
-    //   _assertBadDebt(state, spoke1, label);
-    // } else {
-    //   _assertNoBadDebt(state, spoke1, label);
-    // }
   }
 
   /// wbtc/weth collateral
@@ -75,7 +53,7 @@ contract LiquidationCallCloseFactorMultiReserveTest is SpokeLiquidationBase {
     debtReserveIds[0] = _usdyReserveId(spoke1);
     debtReserveIds[1] = _usdxReserveId(spoke1);
 
-    _execLiqCallCloseFactorTestMulti({
+    LiquidationTestLocalParams memory state = _execLiqCallCloseFactorTestMulti({
       liqConfig: DataTypes.LiquidationConfig({
         closeFactor: 1.1e18,
         liquidationBonusFactor: 0,
@@ -91,7 +69,7 @@ contract LiquidationCallCloseFactorMultiReserveTest is SpokeLiquidationBase {
       skipTime: 365 days
     });
 
-    assertLe(spoke1.getHealthFactor(alice), _getCloseFactor(spoke1), 'HF <= close factor');
+    _checkLiquidation(state, spoke1, 'test_liquidationCall_closeFactor_multi_reserve_scenario2');
   }
 
   /// dai/usdy collateral
@@ -107,7 +85,7 @@ contract LiquidationCallCloseFactorMultiReserveTest is SpokeLiquidationBase {
     debtReserveIds[0] = _usdxReserveId(spoke1);
     debtReserveIds[1] = _wbtcReserveId(spoke1);
 
-    _execLiqCallCloseFactorTestMulti({
+    LiquidationTestLocalParams memory state = _execLiqCallCloseFactorTestMulti({
       liqConfig: DataTypes.LiquidationConfig({
         closeFactor: 1.1e18,
         liquidationBonusFactor: 0,
@@ -123,7 +101,7 @@ contract LiquidationCallCloseFactorMultiReserveTest is SpokeLiquidationBase {
       skipTime: 365 days
     });
 
-    assertLe(spoke1.getHealthFactor(alice), _getCloseFactor(spoke1), 'HF <= close factor');
+    _checkLiquidation(state, spoke1, 'test_liquidationCall_closeFactor_multi_reserve_scenario3');
   }
 
   function test_liquidationCall_closeFactor_fuzz_multi_reserve(
@@ -252,7 +230,7 @@ contract LiquidationCallCloseFactorMultiReserveTest is SpokeLiquidationBase {
     console.log('  liqConfig.healthFactorBonusThreshold %e', liqConfig.healthFactorBonusThreshold);
     console.log('  liqConfig.liquidationBonusFactor %e', liqConfig.liquidationBonusFactor);
     console.log('  liqBonus %e', liqBonus);
-    console.log('  desiredHf %e', state.desiredHf);
+    // console.log('  desiredHf %e', state.desiredHf);
 
     console.log('  skipTime %e', skipTime);
     console.log('  liquidationProtocolFeePercentage %e', liquidationProtocolFeePercentage);
