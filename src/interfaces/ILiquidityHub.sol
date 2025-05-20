@@ -23,7 +23,7 @@ interface ILiquidityHub {
   event DrawnIndexUpdate(
     uint256 indexed assetId, 
     uint256 drawnIndex,
-    uint256 updateTimestamp
+    uint256 lastUpdateTimestamp
   );
   event Add(
     uint256 indexed assetId,

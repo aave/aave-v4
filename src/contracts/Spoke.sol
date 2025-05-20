@@ -252,7 +252,7 @@ contract Spoke is ISpoke {
     DataTypes.Reserve storage reserve = _reserves[reserveId];
     uint256 assetId = reserve.assetId;
 
-    (uint256 baseDebt, uint256 premiumDebt) = _getUserDebt(userPosition, reserve.assetId);
+    (uint256 baseDebt, uint256 premiumDebt) = _getUserDebt(userPosition, assetId);
     (uint256 baseDebtRestored, uint256 premiumDebtRestored) = _calculateRestoreAmount(
       baseDebt,
       premiumDebt,
