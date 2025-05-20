@@ -354,7 +354,7 @@ contract LiquidityHubDrawTest is LiquidityHubBase {
 
     updateDrawCap(hub, daiAssetId, address(spoke1), drawCap);
 
-    _increaseExchangeRate(daiAmount);
+    _increaseExchangeRate(daiAssetId, daiAmount);
 
     (uint256 baseDebt, ) = hub.getAssetDebt(daiAssetId);
     assertGt(baseDebt, drawCap);
@@ -389,8 +389,9 @@ contract LiquidityHubDrawTest is LiquidityHubBase {
     updateDrawCap(hub, daiAssetId, address(spoke1), drawCap);
 
     _supplyAndDrawLiquidity({
-      daiAmount: daiAmount,
-      daiDrawAmount: drawAmount,
+      assetId: daiAssetId,
+      amount: daiAmount,
+      drawAmount: drawAmount,
       rate: rate,
       skipTime: skipTime
     });

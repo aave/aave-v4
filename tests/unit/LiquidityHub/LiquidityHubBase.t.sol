@@ -58,19 +58,19 @@ contract LiquidityHubBase is Base {
     hub.updateSpokeConfig(assetId, spoke, spokeConfig);
   }
 
-  /// @dev spoke1 (alice) supplies dai, spoke1 (alice) draws dai, skip 1 year
+  /// @dev spoke1 (alice) supplies asset, spoke1 (alice) draws asset, skip 1 year
   /// increases supply and debt exchange rate
-  /// @return daiDrawAmount
+  /// @return drawAmount
   /// @return suppliedShares
-  function _increaseExchangeRate(uint256 daiAmount) internal returns (uint256, uint256) {
-    uint256 daiDrawAmount = daiAmount;
+  function _increaseExchangeRate(uint256 assetId, uint256 amount) internal returns (uint256, uint256) {
+    uint256 drawAmount = amount;
 
-    // spoke2 supply dai
+    // spoke2 supply asset
     uint256 suppliedShares = Utils.add({
       hub: hub,
-      assetId: daiAssetId,
+      assetId: assetId,
       spoke: address(spoke2),
-      amount: daiAmount,
+      amount: amount,
       user: bob,
       to: address(spoke2)
     });
@@ -78,25 +78,26 @@ contract LiquidityHubBase is Base {
     // spoke1 draw dai liquidity on behalf of user
     Utils.draw({
       hub: hub,
-      assetId: daiAssetId,
+      assetId: assetId,
       to: alice,
       spoke: address(spoke1),
-      amount: daiDrawAmount,
+      amount: drawAmount,
       onBehalfOf: address(spoke1)
     });
     skip(365 days);
 
     // ensure that exchange rate has increased
-    assertTrue(hub.convertToSuppliedShares(daiAssetId, daiAmount) < daiAmount);
-    assertTrue(hub.convertToDrawnShares(daiAssetId, daiDrawAmount) < daiDrawAmount);
+    assertTrue(hub.convertToSuppliedShares(assetId, amount) < amount);
+    assertTrue(hub.convertToDrawnShares(assetId, drawAmount) < drawAmount);
 
-    return (daiDrawAmount, suppliedShares);
+    return (drawAmount, suppliedShares);
   }
 
-  /// @dev spoke2 (bob) supplies dai, spoke1 (alice) draws dai
+  /// @dev spoke2 (bob) supplies asset, spoke1 (alice) draws asset
   function _supplyAndDrawLiquidity(
-    uint256 daiAmount,
-    uint256 daiDrawAmount,
+    uint256 assetId,
+    uint256 amount,
+    uint256 drawAmount,
     uint256 rate,
     uint256 skipTime
   ) internal returns (uint256, uint256) {
@@ -109,9 +110,9 @@ contract LiquidityHubBase is Base {
     // spoke2 supply dai
     uint256 supplyShares = Utils.add({
       hub: hub,
-      assetId: daiAssetId,
+      assetId: assetId,
       spoke: address(spoke2),
-      amount: daiAmount,
+      amount: amount,
       user: bob,
       to: address(spoke2)
     });
@@ -119,10 +120,10 @@ contract LiquidityHubBase is Base {
     // spoke1 draw dai liquidity on behalf of user
     uint256 drawnShares = Utils.draw({
       hub: hub,
-      assetId: daiAssetId,
+      assetId: assetId,
       to: alice,
       spoke: address(spoke1),
-      amount: daiDrawAmount,
+      amount: drawAmount,
       onBehalfOf: address(spoke1)
     });
 

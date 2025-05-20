@@ -118,12 +118,9 @@ contract LiquidityHubSupplyTest is LiquidityHubBase {
   // of supplied shares into assets. Also verifies that rounding down
   // would fail to enforce the cap.
   function test_supply_revertsWith_SupplyCapExceeded_due_to_rounding() public {
-    _increaseExchangeRate(100e18);
+    _increaseExchangeRate(daiAssetId, 100e18);
 
-    uint256 availableLiquidity = hub.getAvailableLiquidity(daiAssetId);
-    uint256 totalDebt = hub.getAssetTotalDebt(daiAssetId);
-
-    uint256 totalSuppliedAssets = availableLiquidity + totalDebt;
+    uint256 totalSuppliedAssets = hub.getAvailableLiquidity(daiAssetId) + hub.getAssetTotalDebt(daiAssetId);
     uint256 totalSuppliedShares = hub.getAssetSuppliedShares(daiAssetId);
 
     assertNotEq(
@@ -178,7 +175,7 @@ contract LiquidityHubSupplyTest is LiquidityHubBase {
     uint256 newSupplyCap = daiAmount + 1;
 
     _updateSupplyCap(daiAssetId, address(spoke2), newSupplyCap);
-    _increaseExchangeRate(daiAmount);
+    _increaseExchangeRate(daiAssetId, daiAmount);
 
     vm.expectRevert(abi.encodeWithSelector(ILiquidityHub.SupplyCapExceeded.selector, newSupplyCap));
     vm.prank(address(spoke2));
@@ -200,8 +197,9 @@ contract LiquidityHubSupplyTest is LiquidityHubBase {
 
     _updateSupplyCap(daiAssetId, address(spoke2), newSupplyCap);
     _supplyAndDrawLiquidity({
-      daiAmount: daiAmount,
-      daiDrawAmount: drawAmount,
+      assetId: daiAssetId,
+      amount: daiAmount,
+      drawAmount: drawAmount,
       rate: rate,
       skipTime: skipTime
     });
@@ -218,7 +216,7 @@ contract LiquidityHubSupplyTest is LiquidityHubBase {
   // and the newly supplied assets can fall behind the actual
   // supplied assets due to rounding errors (by at least one asset).
   function test_supply_SupplyCapReachedButNotExceeded() public {
-    _increaseExchangeRate(100e18);
+    _increaseExchangeRate(daiAssetId, 100e18);
 
     uint256 availableLiquidity = hub.getAvailableLiquidity(daiAssetId);
     uint256 totalDebt = hub.getAssetTotalDebt(daiAssetId);
@@ -467,8 +465,9 @@ contract LiquidityHubSupplyTest is LiquidityHubBase {
     uint256 rate = uint256(MAX_BORROW_RATE).bpsToRay();
 
     _supplyAndDrawLiquidity({
-      daiAmount: daiAmount,
-      daiDrawAmount: drawAmount,
+      assetId: daiAssetId,
+      amount: daiAmount,
+      drawAmount: drawAmount,
       rate: rate,
       skipTime: 365 days * 10
     });
@@ -495,8 +494,9 @@ contract LiquidityHubSupplyTest is LiquidityHubBase {
     rate = bound(rate, MAX_BORROW_RATE / 10, MAX_BORROW_RATE).bpsToRay();
 
     _supplyAndDrawLiquidity({
-      daiAmount: daiAmount,
-      daiDrawAmount: daiAmount,
+      assetId: daiAssetId,
+      amount: daiAmount,
+      drawAmount: daiAmount,
       rate: rate,
       skipTime: skipTime
     });
@@ -515,7 +515,7 @@ contract LiquidityHubSupplyTest is LiquidityHubBase {
 
   function test_supply_with_increased_index() public {
     uint256 daiAmount = 100e18;
-    _increaseExchangeRate(daiAmount);
+    _increaseExchangeRate(daiAssetId, daiAmount);
     uint256 initialSuppliedAssets = hub.getAssetSuppliedAmount(daiAssetId);
     uint256 initialSuppliedShares = hub.getAssetSuppliedShares(daiAssetId);
 
@@ -593,7 +593,7 @@ contract LiquidityHubSupplyTest is LiquidityHubBase {
     uint256 assetId = daiAssetId;
     uint256 amount = 100e18;
 
-    (uint256 drawnAmount, ) = _increaseExchangeRate(amount);
+    (uint256 drawnAmount, ) = _increaseExchangeRate(assetId, amount);
     uint256 initialSupplyAmount = hub.getAssetSuppliedAmount(assetId);
     uint256 initialSupplyShares = hub.getAssetSuppliedShares(assetId);
 
@@ -696,8 +696,9 @@ contract LiquidityHubSupplyTest is LiquidityHubBase {
     TestSupplyParams memory params;
 
     (params.drawnShares, params.assetSuppliedShares) = _supplyAndDrawLiquidity({
-      daiAmount: amount,
-      daiDrawAmount: amount,
+      assetId: assetId,
+      amount: amount,
+      drawAmount: amount,
       rate: rate,
       skipTime: skipTime
     });
