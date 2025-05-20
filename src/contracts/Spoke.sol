@@ -1051,6 +1051,21 @@ contract Spoke is ISpoke {
         userCollateralPosition.premiumDrawnShares
       );
 
+      _refresh(
+        debtReserve,
+        users[vars.i],
+        int256(vars.userDebtPremiumDrawnShares),
+        int256(vars.userDebtPremiumOffset),
+        0
+      );
+      _refresh(
+        collateralReserve,
+        users[vars.i],
+        int256(vars.userCollateralPremiumDrawnShares),
+        int256(vars.userCollateralPremiumOffset),
+        0
+      );
+
       _notifyRiskPremiumUpdate(vars.debtAssetId, users[vars.i], vars.newUserRiskPremium);
 
       vars.totalUserDebtPremiumDrawnSharesDelta += int256(vars.userDebtPremiumDrawnShares);
@@ -1072,23 +1087,18 @@ contract Spoke is ISpoke {
     debtReserve.baseDrawnShares -= vars.totalRestoredShares;
     collateralReserve.suppliedShares -= vars.totalWithdrawnShares;
 
-    _refreshPremiumDebt(
-      debtReserve,
-      users[vars.i - 1], // TODO: resolve with proper user address
+    HUB.refreshPremiumDebt(
       vars.debtAssetId,
       vars.totalUserDebtPremiumDrawnSharesDelta,
       vars.totalUserDebtPremiumOffsetDelta,
       0
     );
-    _refreshPremiumDebt(
-      collateralReserve,
-      users[vars.i - 1], // TODO: resolve with proper user address
+    HUB.refreshPremiumDebt(
       vars.collateralAssetId,
       vars.totalUserCollateralPremiumDrawnSharesDelta,
       vars.totalUserCollateralPremiumOffsetDelta,
       0
     );
-
     vars.totalLiquidationProtocolFeeShares = HUB.convertToSuppliedShares(
       vars.collateralAssetId,
       vars.totalLiquidationProtocolFeeAmount
