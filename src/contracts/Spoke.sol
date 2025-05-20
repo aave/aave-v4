@@ -155,6 +155,7 @@ contract Spoke is ISpoke {
 
     _refreshPremiumDebt(
       reserve,
+      msg.sender,
       assetId,
       -int256(userPremiumDrawnShares),
       -int256(userPremiumOffset),
@@ -178,6 +179,7 @@ contract Spoke is ISpoke {
 
     _refreshPremiumDebt(
       reserve,
+      msg.sender,
       assetId,
       int256(userPremiumDrawnShares),
       int256(userPremiumOffset),
@@ -208,6 +210,7 @@ contract Spoke is ISpoke {
 
     _refreshPremiumDebt(
       reserve,
+      msg.sender,
       assetId,
       -int256(userPremiumDrawnShares),
       -int256(userPremiumOffset),
@@ -231,6 +234,7 @@ contract Spoke is ISpoke {
 
     _refreshPremiumDebt(
       reserve,
+      msg.sender,
       assetId,
       int256(userPremiumDrawnShares),
       int256(userPremiumOffset),
@@ -266,10 +270,11 @@ contract Spoke is ISpoke {
 
     _settlePremiumDebt(
       reserve,
+      msg.sender,
       assetId,
       -int256(userPremiumDrawnShares),
       -int256(userPremiumOffset),
-      _signedDiff(userPosition.realizedPremium, userRealizedPremium)
+      _signedDiff(premiumDebt - premiumDebtRestored, userRealizedPremium)
     ); // we settle premium debt here
     uint256 restoredShares = HUB.restore(
       assetId,
@@ -293,6 +298,7 @@ contract Spoke is ISpoke {
 
     _refreshPremiumDebt(
       reserve,
+      msg.sender,
       assetId,
       int256(userPremiumDrawnShares),
       int256(userPremiumOffset),
@@ -498,12 +504,13 @@ contract Spoke is ISpoke {
 
   function _refreshPremiumDebt(
     DataTypes.Reserve storage reserve,
+    address userAddress,
     uint256 assetId,
     int256 premiumDrawnSharesDelta,
     int256 premiumOffsetDelta,
     int256 realizedPremiumDelta
   ) internal {
-    _refresh(reserve, premiumDrawnSharesDelta, premiumOffsetDelta, realizedPremiumDelta);
+    _refresh(reserve, userAddress, premiumDrawnSharesDelta, premiumOffsetDelta, realizedPremiumDelta);
     HUB.refreshPremiumDebt(
       assetId,
       premiumDrawnSharesDelta,
@@ -514,12 +521,13 @@ contract Spoke is ISpoke {
 
   function _settlePremiumDebt(
     DataTypes.Reserve storage reserve,
+    address userAddress,
     uint256 assetId,
     int256 premiumDrawnSharesDelta,
     int256 premiumOffsetDelta,
     int256 realizedPremiumDelta
   ) internal {
-    _refresh(reserve, premiumDrawnSharesDelta, premiumOffsetDelta, realizedPremiumDelta);
+    _refresh(reserve, userAddress, premiumDrawnSharesDelta, premiumOffsetDelta, realizedPremiumDelta);
     HUB.settlePremiumDebt(
       assetId,
       premiumDrawnSharesDelta,
@@ -530,6 +538,7 @@ contract Spoke is ISpoke {
 
   function _refresh(
     DataTypes.Reserve storage reserve,
+    address userAddress,
     int256 premiumDrawnSharesDelta,
     int256 premiumOffsetDelta,
     int256 realizedPremiumDelta
@@ -540,6 +549,7 @@ contract Spoke is ISpoke {
 
     emit RefreshPremiumDebt(
       reserve.reserveId,
+      userAddress,
       premiumDrawnSharesDelta,
       premiumOffsetDelta,
       realizedPremiumDelta
@@ -785,6 +795,7 @@ contract Spoke is ISpoke {
 
         _refreshPremiumDebt(
           reserve,
+          userAddress,
           assetId,
           _signedDiff(userPosition.premiumDrawnShares, oldUserPremiumDrawnShares),
           _signedDiff(userPosition.premiumOffset, oldUserPremiumOffset),

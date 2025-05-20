@@ -30,6 +30,7 @@ interface ISpoke {
   event UsingAsCollateral(uint256 indexed reserveId, address indexed user, bool usingAsCollateral);
   event RefreshPremiumDebt(
     uint256 indexed reserveId,
+    address indexed user,
     int256 premiumDrawnSharesDelta,
     int256 premiumOffsetDelta,
     int256 realizedPremiumDelta

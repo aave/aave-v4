@@ -20,7 +20,11 @@ interface ILiquidityHub {
     uint256 supplyCap
   );
 
-  event DrawnIndexUpdate(uint256 indexed assetId, uint256 drawnIndex);
+  event DrawnIndexUpdate(
+    uint256 indexed assetId, 
+    uint256 drawnIndex,
+    uint256 updateTimestamp
+  );
   event Add(
     uint256 indexed assetId,
     address indexed spoke,
