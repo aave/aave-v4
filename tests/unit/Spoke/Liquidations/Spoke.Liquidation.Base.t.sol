@@ -52,6 +52,8 @@ contract SpokeLiquidationBase is SpokeBase {
     uint256 liqProtocolFee;
     bool hasDeficit;
     uint256 outstandingDebt;
+    uint256 finalHf;
+    uint256 userRp;
   }
 
   uint256 internal constant MIN_AMOUNT_IN_BASE_CURRENCY = 1e26;
@@ -119,7 +121,6 @@ contract SpokeLiquidationBase is SpokeBase {
       )
     );
     skipTime = bound(skipTime, 1, MAX_SKIP_TIME);
-
     state.liquidationProtocolFeePercentage = liquidationProtocolFeePercentage;
 
     console.log(' fuzz inputs');
@@ -226,12 +227,10 @@ contract SpokeLiquidationBase is SpokeBase {
     ISpoke spoke,
     string memory label
   ) internal view virtual {
-    (uint256 userRp, , uint256 finalHf, , ) = spoke1.getUserAccountData(alice);
-
     if (state.hasDeficit) {
       // if bad debt, HF should be max value and userRp should be 0
-      assertEq(finalHf, type(uint256).max, string.concat('HF = 0 if bad debt ', label));
-      assertEq(userRp, 0, string.concat('userRp = 0 if bad debt ', label));
+      assertEq(state.finalHf, type(uint256).max, string.concat('HF = 0 if bad debt ', label));
+      assertEq(state.userRp, 0, string.concat('userRp = 0 if bad debt ', label));
     } else {
       // at low amounts of coll/debt, HF can diverge from close factor due to rounding/precision
       if (
@@ -242,13 +241,13 @@ contract SpokeLiquidationBase is SpokeBase {
       ) {
         // ensure HF is lte close factor
         assertLe(
-          finalHf,
+          state.finalHf,
           _getCloseFactor(spoke),
           string.concat('Health factor <= close factor ', label)
         );
         // should also be close to the desired CF
         assertApproxEqRel(
-          finalHf,
+          state.finalHf,
           _getCloseFactor(spoke),
           _approxRelFromBps(20),
           'HF matches closeFactor within 0.1%'
@@ -256,7 +255,7 @@ contract SpokeLiquidationBase is SpokeBase {
       } else {
         // HF should always be lte close factor
         assertLe(
-          finalHf,
+          state.finalHf,
           _getCloseFactor(spoke),
           string.concat('Health factor <= close factor ', label)
         );
@@ -293,10 +292,16 @@ contract SpokeLiquidationBase is SpokeBase {
       state.supply.balanceChange.percentDivDown(state.liquidationBonus);
 
     uint256 totalCollateralSeized = (state.collToLiq + state.liqProtocolFee);
-    // liquidationBonus == PERCENTAGE_FACTOR represents liq bonus being 0
-    uint256 expectedLiqBonusAmount = state.liquidationBonus != PercentageMath.PERCENTAGE_FACTOR
-      ? totalCollateralSeized - totalCollateralSeized.percentDivDown(state.liquidationBonus)
-      : 0;
+    uint256 expectedLiqBonusAmount = totalCollateralSeized -
+      totalCollateralSeized.percentDivDown(state.liquidationBonus);
+
+    console.log(
+      'state.liquidationBonus %e state.supply.balanceChange %e',
+      state.liquidationBonus,
+      state.supply.balanceChange
+    );
+    console.log('totalLiqBonusAmount %e', totalLiqBonusAmount);
+    console.log('expectedLiqBonusAmount %e', expectedLiqBonusAmount);
 
     assertApproxEqRel(
       totalLiqBonusAmount,
@@ -648,6 +653,7 @@ contract SpokeLiquidationBase is SpokeBase {
 
     state.hasDeficit = state.supplyShares.balanceAfter == 0 && state.debt.balanceAfter == 0;
     state.outstandingDebt = state.debt.balanceBefore - state.debtToLiq;
+    (state.userRp, , state.finalHf, , ) = spoke1.getUserAccountData(alice);
 
     return state;
   }

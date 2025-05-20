@@ -38,13 +38,28 @@ contract LiquidationCallCloseFactorMultiReserveTest is SpokeLiquidationBase {
       skipTime: 365 days
     });
 
-    if (state.hasDeficit) {
-      assertEq(spoke1.getHealthFactor(alice), UINT256_MAX, 'HF <= close factor');
-    } else {
-      assertGt(spoke1.getHealthFactor(alice), _getCloseFactor(spoke1), 'HF > close factor');
-    }
+    // if (state.hasDeficit) {
+    //   assertEq(
+    //     spoke1.getHealthFactor(alice),
+    //     UINT256_MAX,
+    //     'HF should be uint max with no coll/debt remaining'
+    //   );
+    // } else {
+    //   assertLe(spoke1.getHealthFactor(alice), _getCloseFactor(spoke1), 'HF <= close factor');
+    // }
+    _checkLiquidation(state, spoke1, 'test_liquidationCall_closeFactor_multi_reserve_scenario1');
+    // string memory label = 'test_liquidationCall_closeFactor_multi_reserve_scenario1';
 
-    // _checkLiquidation(state, spoke1, 'test_liquidationCall_closeFactor_multi_reserve_scenario1');
+    // _assertUserAccountData(state, spoke1, label);
+    // _assertProtocolFeeEarned(state, label);
+    // _assertLiquidationBonusEarned(state, label);
+    // _assertSupplyExchangeRate(state, label);
+    // _assertSetUsingAsCollateral(spoke1, alice, state, label);
+    // if (state.hasDeficit) {
+    //   _assertBadDebt(state, spoke1, label);
+    // } else {
+    //   _assertNoBadDebt(state, spoke1, label);
+    // }
   }
 
   /// wbtc/weth collateral
@@ -219,7 +234,10 @@ contract LiquidationCallCloseFactorMultiReserveTest is SpokeLiquidationBase {
 
     state.liquidationProtocolFeePercentage = liquidationProtocolFeePercentage;
 
+    state.collateralReserve = state.collateralReserves[collateralReserveIndex];
     state.collateralReserveId = collateralReserveIds[collateralReserveIndex];
+
+    state.debtReserve = state.debtReserves[debtReserveIndex];
     state.debtReserveId = debtReserveIds[debtReserveIndex];
 
     spoke1.updateLiquidationConfig(liqConfig);
@@ -259,6 +277,7 @@ contract LiquidationCallCloseFactorMultiReserveTest is SpokeLiquidationBase {
       });
     }
 
+    // TODO: can just use inflate on normal coll reserve
     _increaseCollateralReservesSupplyExchangeRate(
       state.collateralReserves,
       supplyAmountInBase,
@@ -266,16 +285,20 @@ contract LiquidationCallCloseFactorMultiReserveTest is SpokeLiquidationBase {
       bob
     );
 
-    state.desiredHf = _calcLowestHfToRestoreCloseFactor(alice, liqBonus).percentMulUp(101_00); // add buffer so that not all debt is liquidated
+    state.desiredHf = _calcLowestHfToRestoreCloseFactor(alice, liqBonus).percentMulUp(101_00); // add buffer to have HF remain above lowest allowed HF
 
-    (uint256 finalHf, uint256[] memory requiredDebtAmounts) = _borrowMultipleReservesToBeBelowHf(
+    (
+      uint256 hfAfterBorrow,
+      uint256[] memory requiredDebtAmounts
+    ) = _borrowMultipleReservesToBeBelowHf(spoke1, alice, debtReserveIds, state.desiredHf);
+
+    state.liquidationBonus = _getVariableLiquidationBonus(
       spoke1,
-      alice,
-      debtReserveIds,
-      state.desiredHf
+      state.collateralReserve.reserveId,
+      hfAfterBorrow
     );
 
-    console.log('state.desiredHf %e %e', state.desiredHf, finalHf);
+    console.log('state.desiredHf %e %e', state.desiredHf, hfAfterBorrow);
 
     // console.log('alice', alice);
     console.log(
@@ -309,6 +332,24 @@ contract LiquidationCallCloseFactorMultiReserveTest is SpokeLiquidationBase {
       debtReserveIds[debtReserveIndex],
       requiredDebtAmounts[debtReserveIndex]
     );
+
+    _getAccountingInfoBeforeLiq(state);
+
+    (
+      state.collToLiq,
+      state.debtToLiq,
+      state.liqProtocolFee,
+
+    ) = _calculateAvailableCollateralToLiquidate(
+      spoke1,
+      state,
+      requiredDebtAmounts[debtReserveIndex]
+    );
+
+    // logs to read protocol fee from tmp emitted event
+    // TODO: update when treasury accounting is done
+    vm.recordLogs();
+
     vm.prank(LIQUIDATOR);
     spoke1.liquidationCall(
       collateralReserveIds[collateralReserveIndex],
@@ -316,6 +357,8 @@ contract LiquidationCallCloseFactorMultiReserveTest is SpokeLiquidationBase {
       alice,
       requiredDebtAmounts[debtReserveIndex]
     );
+
+    _getAccountingInfoAfterLiq(state);
 
     console.log('hf after liq %e', spoke1.getHealthFactor(alice));
     console.log(
