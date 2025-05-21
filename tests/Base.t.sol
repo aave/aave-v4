@@ -1039,7 +1039,32 @@ abstract contract Base is Test {
     // add 1 to num to round debt up (ie making sure resultant debt creates HF that is less than desired)
   }
 
+  /**
+   * @notice Returns the required debt amount in base currency to ensure user position is below a certain health factor.
+   */
+  function _getRequiredDebtForGtHf(
+    ISpoke spoke,
+    address user,
+    uint256 desiredHf
+  ) internal view returns (uint256 requiredDebt) {
+    (
+      ,
+      uint256 currentAvgCollateralFactor,
+      ,
+      uint256 totalCollateralBase,
+      uint256 totalDebtBase
+    ) = spoke.getUserAccountData(user);
+
+    requiredDebt =
+      totalCollateralBase.percentMul(currentAvgCollateralFactor.dewadify() - 1).wadDivDown(
+        desiredHf
+      ) -
+      totalDebtBase;
+    // sub 1 to num to round debt down (ie making sure resultant debt creates HF that is gt desired)
+  }
+
   /// @dev Borrow to be below a certain health factor, without needing to check HF
+  /// will cache user RP to 0 due to mocking price to 0
   function _borrowToBeBelowHf(
     ISpoke spoke,
     address user,
@@ -1064,6 +1089,31 @@ abstract contract Base is Test {
 
     uint256 finalHf = spoke.getHealthFactor(user);
     assertLt(finalHf, desiredHf, 'should borrow enough for HF to be below desiredHf');
+    return (finalHf, requiredDebtAmount);
+  }
+
+  /// @dev Borrow to be below a certain healthy health factor
+  /// This function validates HF and does not mock price, thus it will cache user RP properly
+  function _borrowToBeAboveHealthyHf(
+    ISpoke spoke,
+    address user,
+    uint256 reserveId,
+    uint256 desiredHf
+  ) internal returns (uint256, uint256) {
+    uint256 requiredDebtInBase = _getRequiredDebtForGtHf(spoke, user, desiredHf);
+    uint256 assetId = spoke.getReserve(reserveId).assetId;
+    uint256 requiredDebtAmount = _convertBaseCurrencyToAmount(assetId, requiredDebtInBase) - 1;
+
+    vm.assume(requiredDebtAmount < MAX_SUPPLY_AMOUNT);
+
+    console.log('requiredDebtAmount %e', requiredDebtAmount, reserveId);
+
+    vm.prank(user);
+    spoke.borrow(reserveId, requiredDebtAmount, user);
+
+    uint256 finalHf = spoke.getHealthFactor(user);
+    console.log('_borrowToBeAboveHealthyHf %e', finalHf);
+    assertGt(finalHf, desiredHf, 'should borrow so that HF is above desiredHf');
     return (finalHf, requiredDebtAmount);
   }
 
