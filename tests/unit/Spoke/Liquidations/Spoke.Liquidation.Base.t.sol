@@ -32,6 +32,8 @@ contract SpokeLiquidationBase is SpokeBase {
     Balance user;
     Balance treasury;
     Balance debt;
+    Balance baseDebt;
+    Balance premiumDebt;
     Balance supply;
     Balance supplyShares;
     Balance deficit;
@@ -320,12 +322,6 @@ contract SpokeLiquidationBase is SpokeBase {
     string memory label
   ) internal view {
     if (state.supplyShares.balanceAfter == 0) {
-      console.log(
-        'state.supplyShares.balanceAfter %e',
-        state.supplyShares.balanceAfter,
-        state.collateralReserve.reserveId,
-        state.usingAsCollateral
-      );
       assertFalse(
         state.usingAsCollateral,
         string.concat('isUsingAsCollateral should be false with no collateral ', label)
@@ -562,7 +558,11 @@ contract SpokeLiquidationBase is SpokeBase {
   function _getAccountingInfoBeforeLiq(
     LiquidationTestLocalParams memory state
   ) internal view returns (LiquidationTestLocalParams memory) {
-    state.debt.balanceBefore = spoke1.getUserTotalDebt(state.debtReserve.reserveId, alice);
+    (state.baseDebt.balanceBefore, state.premiumDebt.balanceBefore) = spoke1.getUserDebt(
+      state.debtReserve.reserveId,
+      alice
+    );
+    state.debt.balanceBefore = state.baseDebt.balanceBefore + state.premiumDebt.balanceBefore;
     state.liquidatorCollateral.balanceBefore = IERC20(state.collateralReserve.asset).balanceOf(
       LIQUIDATOR
     );
@@ -601,7 +601,11 @@ contract SpokeLiquidationBase is SpokeBase {
       LIQUIDATOR
     );
     state.liquidatorDebt.balanceAfter = IERC20(state.debtReserve.asset).balanceOf(LIQUIDATOR);
-    state.debt.balanceAfter = spoke1.getUserTotalDebt(state.debtReserve.reserveId, alice);
+    (state.baseDebt.balanceAfter, state.premiumDebt.balanceAfter) = spoke1.getUserDebt(
+      state.debtReserve.reserveId,
+      alice
+    );
+    state.debt.balanceAfter = state.baseDebt.balanceAfter + state.premiumDebt.balanceAfter;
     state.supply.balanceAfter = spoke1.getUserSuppliedAmount(
       state.collateralReserve.reserveId,
       alice
@@ -692,5 +696,32 @@ contract SpokeLiquidationBase is SpokeBase {
     });
     vm.clearMockedCalls();
     skip(skipTime);
+  }
+
+  function _logLiquidationTestLocalParams(LiquidationTestLocalParams memory state) internal {
+    console.log(' liquidationProtocolFeePercentage %e', state.liquidationProtocolFeePercentage);
+    console.log(' liquidationBonus %e', state.liquidationBonus);
+    console.log(' liqProtocolFee %e', state.liqProtocolFee);
+
+    console.log(' collateralReserveId', state.collateralReserve.reserveId);
+    console.log(' collateralReserveAssetId', state.collateralReserve.assetId);
+
+    console.log(' debtReserveId', state.debtReserve.reserveId);
+    console.log(' debtReserveAssetId', state.debtReserve.assetId);
+
+    console.log(' collToLiq %e', state.collToLiq);
+    console.log(' debtToLiq %e', state.debtToLiq);
+
+    console.log(' state.debt.balanceAfter %e', state.debt.balanceAfter);
+    console.log(' state.debt.balanceBefore %e', state.debt.balanceBefore);
+
+    console.log(' state.premiumDebt.balanceAfter %e', state.premiumDebt.balanceAfter);
+    console.log(' state.premiumDebt.balanceBefore %e', state.premiumDebt.balanceBefore);
+
+    console.log(' state.baseDebt.balanceAfter %e', state.baseDebt.balanceAfter);
+    console.log(' state.baseDebt.balanceBefore %e', state.baseDebt.balanceBefore);
+
+    console.log(' state.supply.balanceAfter %e', state.supply.balanceAfter);
+    console.log(' state.supply.balanceBefore %e', state.supply.balanceBefore);
   }
 }

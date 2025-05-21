@@ -1035,12 +1035,12 @@ contract Spoke is ISpoke {
           vars.baseDebtToLiquidate -
           vars.premiumDebtToLiquidate;
         if (outstandingDebt > 0 && vars.hasNoCollateralLeft) {
-          // console.log(
-          //   'SP bad debt %e %e %e',
-          //   vars.baseDebtToLiquidate,
-          //   vars.premiumDebtToLiquidate,
-          //   outstandingDebt
-          // );
+          console.log(
+            'SP bad debt %e %e %e',
+            vars.baseDebtToLiquidate,
+            vars.premiumDebtToLiquidate,
+            outstandingDebt
+          );
 
           vars.baseDebtToLiquidate = vars.baseDebt;
           vars.premiumDebtToLiquidate = vars.premiumDebt;
@@ -1072,6 +1072,13 @@ contract Spoke is ISpoke {
         -int256(vars.userDebtPremiumOffset),
         _signedDiff(userDebtPosition.realizedPremium, vars.userDebtRealizedPremium)
       ); // settle premium debt
+
+      console.log(
+        'SP restore %e %e %e',
+        vars.baseDebtToLiquidate,
+        vars.premiumDebtToLiquidate,
+        vars.deficit
+      );
 
       // repay debt
       vars.restoredShares = HUB.restore(

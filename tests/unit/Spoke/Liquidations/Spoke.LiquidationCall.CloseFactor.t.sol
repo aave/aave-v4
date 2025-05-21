@@ -477,7 +477,7 @@ contract LiquidationCallCloseFactorTest is SpokeLiquidationBase {
       LIQUIDATOR
     );
     vm.prank(LIQUIDATOR);
-    spoke1.liquidationCall(collateralReserveId, debtReserveId, alice, requiredDebtAmount);
+    spoke1.liquidationCall(collateralReserveId, debtReserveId, alice, UINT256_MAX);
 
     state = _getAccountingInfoAfterLiq(state);
 
