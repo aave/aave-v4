@@ -20,6 +20,8 @@ contract TestnetERC20 is IERC20Permit, ERC20 {
 
   bytes32 public DOMAIN_SEPARATOR;
 
+  uint8 private _decimals;
+
   constructor(string memory name, string memory symbol, uint8 decimals) ERC20(name, symbol) {
     uint256 chainId = block.chainid;
 
@@ -84,5 +86,20 @@ contract TestnetERC20 is IERC20Permit, ERC20 {
 
   function nonces(address owner) public view returns (uint256) {
     return _nonces[owner];
+  }
+
+  function decimals() public view virtual override returns (uint8) {
+    return _decimals;
+  }
+
+  /**
+   * @dev Sets {decimals} to a value other than the default one of 18.
+   *
+   * WARNING: This function should only be called from the constructor. Most
+   * applications that interact with token contracts will not expect
+   * {decimals} to ever change, and may work incorrectly if it does.
+   */
+  function _setupDecimals(uint8 decimals_) internal {
+    _decimals = decimals_;
   }
 }
