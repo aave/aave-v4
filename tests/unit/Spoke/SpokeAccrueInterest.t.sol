@@ -485,9 +485,328 @@ contract SpokeAccrueInterestTest is SpokeBase {
     );
   }
 
-  /*
-  // TODO: test_accrueInterest_fuzz_ChangingBorrowRate
+  // Fuzz a mix of borrowed and supplied assets for bob and rates, check his RP, ensure correct interest accrual
+  function test_accrueInterest_fuzz_RatesRPBorrowAndskipTime(
+    TestAmounts memory amounts,
+    Rates memory rates,
+    uint40 skipTime
+  ) public {
+    amounts.daiSupplyAmount = bound(amounts.daiSupplyAmount, 0, MAX_SUPPLY_AMOUNT);
+    amounts.wethSupplyAmount = bound(amounts.wethSupplyAmount, 0, MAX_SUPPLY_AMOUNT);
+    amounts.usdxSupplyAmount = bound(amounts.usdxSupplyAmount, 0, MAX_SUPPLY_AMOUNT);
+    amounts.wbtcSupplyAmount = bound(amounts.wbtcSupplyAmount, 0, MAX_SUPPLY_AMOUNT);
+    amounts.daiBorrowAmount = bound(amounts.daiBorrowAmount, 0, MAX_SUPPLY_AMOUNT / 2);
+    amounts.wethBorrowAmount = bound(amounts.wethBorrowAmount, 0, MAX_SUPPLY_AMOUNT / 2);
+    amounts.usdxBorrowAmount = bound(amounts.usdxBorrowAmount, 0, MAX_SUPPLY_AMOUNT / 2);
+    amounts.wbtcBorrowAmount = bound(amounts.wbtcBorrowAmount, 0, MAX_SUPPLY_AMOUNT / 2);
+    rates.daiBaseBorrowRate = bound(rates.daiBaseBorrowRate, 1, 100_00);
+    rates.wethBaseBorrowRate = bound(rates.wethBaseBorrowRate, 1, 100_00);
+    rates.usdxBaseBorrowRate = bound(rates.usdxBaseBorrowRate, 1, 100_00);
+    rates.wbtcBaseBorrowRate = bound(rates.wbtcBaseBorrowRate, 1, 100_00);
+    skipTime = uint40(bound(skipTime, 0, MAX_SKIP_TIME));
 
+    // Put rates in ray
+    rates.daiBaseBorrowRate = rates.daiBaseBorrowRate.bpsToRay();
+    rates.wethBaseBorrowRate = rates.wethBaseBorrowRate.bpsToRay();
+    rates.usdxBaseBorrowRate = rates.usdxBaseBorrowRate.bpsToRay();
+    rates.wbtcBaseBorrowRate = rates.wbtcBaseBorrowRate.bpsToRay();
+
+    // Ensure bob does not draw more than half his normalized supply value
+    vm.assume(
+      _getValueInBaseCurrency(daiAssetId, amounts.daiSupplyAmount) +
+        _getValueInBaseCurrency(wethAssetId, amounts.wethSupplyAmount) +
+        _getValueInBaseCurrency(usdxAssetId, amounts.usdxSupplyAmount) +
+        _getValueInBaseCurrency(wbtcAssetId, amounts.wbtcSupplyAmount) >
+        2 *
+          (_getValueInBaseCurrency(daiAssetId, amounts.daiBorrowAmount) +
+            _getValueInBaseCurrency(wethAssetId, amounts.wethBorrowAmount) +
+            _getValueInBaseCurrency(usdxAssetId, amounts.usdxBorrowAmount) +
+            _getValueInBaseCurrency(wbtcAssetId, amounts.wbtcBorrowAmount))
+    );
+
+    uint40 startTime = uint40(vm.getBlockTimestamp());
+
+    // Bob supply dai on spoke 1
+    if (amounts.daiSupplyAmount > 0) {
+      Utils.supplyCollateral(spoke1, _daiReserveId(spoke1), bob, amounts.daiSupplyAmount, bob);
+    }
+
+    // Bob supply weth on spoke 1
+    if (amounts.wethSupplyAmount > 0) {
+      Utils.supplyCollateral(spoke1, _wethReserveId(spoke1), bob, amounts.wethSupplyAmount, bob);
+    }
+
+    // Bob supply usdx on spoke 1
+    if (amounts.usdxSupplyAmount > 0) {
+      Utils.supplyCollateral(spoke1, _usdxReserveId(spoke1), bob, amounts.usdxSupplyAmount, bob);
+    }
+
+    // Bob supply wbtc on spoke 1
+    if (amounts.wbtcSupplyAmount > 0) {
+      Utils.supplyCollateral(spoke1, _wbtcReserveId(spoke1), bob, amounts.wbtcSupplyAmount, bob);
+    }
+
+    // Deploy remainder of liquidity
+    if (amounts.daiSupplyAmount < MAX_SUPPLY_AMOUNT) {
+      _deployLiquidity(spoke1, _daiReserveId(spoke1), MAX_SUPPLY_AMOUNT - amounts.daiSupplyAmount);
+    }
+    if (amounts.wethSupplyAmount < MAX_SUPPLY_AMOUNT) {
+      _deployLiquidity(
+        spoke1,
+        _wethReserveId(spoke1),
+        MAX_SUPPLY_AMOUNT - amounts.wethSupplyAmount
+      );
+    }
+    if (amounts.usdxSupplyAmount < MAX_SUPPLY_AMOUNT) {
+      _deployLiquidity(
+        spoke1,
+        _usdxReserveId(spoke1),
+        MAX_SUPPLY_AMOUNT - amounts.usdxSupplyAmount
+      );
+    }
+    if (amounts.wbtcSupplyAmount < MAX_SUPPLY_AMOUNT) {
+      _deployLiquidity(
+        spoke1,
+        _wbtcReserveId(spoke1),
+        MAX_SUPPLY_AMOUNT - amounts.wbtcSupplyAmount
+      );
+    }
+
+    // Bob borrows dai from spoke 1
+    if (amounts.daiBorrowAmount > 0) {
+      DataTypes.Asset memory asset = hub.getAsset(daiAssetId);
+      (uint256 baseDebt, ) = hub.getAssetDebt(daiAssetId);
+      DataTypes.CalculateInterestRatesParams memory params = DataTypes
+        .CalculateInterestRatesParams({
+          liquidityAdded: 0,
+          liquidityTaken: amounts.daiBorrowAmount,
+          totalDebt: baseDebt,
+          reserveFactor: 0,
+          assetId: daiAssetId,
+          virtualUnderlyingBalance: asset.availableLiquidity,
+          usingVirtualBalance: true
+        });
+      vm.mockCall(
+        address(irStrategy),
+        abi.encodeWithSelector(
+          IReserveInterestRateStrategy.calculateInterestRates.selector,
+          params
+        ),
+        abi.encode(rates.daiBaseBorrowRate)
+      );
+      Utils.borrow(spoke1, _daiReserveId(spoke1), bob, amounts.daiBorrowAmount, bob);
+    }
+
+    // Bob borrows weth from spoke 1
+    if (amounts.wethBorrowAmount > 0) {
+      DataTypes.Asset memory asset = hub.getAsset(wethAssetId);
+      (uint256 baseDebt, ) = hub.getAssetDebt(wethAssetId);
+      DataTypes.CalculateInterestRatesParams memory params = DataTypes
+        .CalculateInterestRatesParams({
+          liquidityAdded: 0,
+          liquidityTaken: amounts.wethBorrowAmount,
+          totalDebt: baseDebt,
+          reserveFactor: 0,
+          assetId: wethAssetId,
+          virtualUnderlyingBalance: asset.availableLiquidity,
+          usingVirtualBalance: true
+        });
+      vm.mockCall(
+        address(irStrategy),
+        abi.encodeWithSelector(
+          IReserveInterestRateStrategy.calculateInterestRates.selector,
+          params
+        ),
+        abi.encode(rates.wethBaseBorrowRate)
+      );
+      Utils.borrow(spoke1, _wethReserveId(spoke1), bob, amounts.wethBorrowAmount, bob);
+    }
+
+    // Bob borrows usdx from spoke 1
+    if (amounts.usdxBorrowAmount > 0) {
+      DataTypes.Asset memory asset = hub.getAsset(usdxAssetId);
+      (uint256 baseDebt, ) = hub.getAssetDebt(usdxAssetId);
+      DataTypes.CalculateInterestRatesParams memory params = DataTypes
+        .CalculateInterestRatesParams({
+          liquidityAdded: 0,
+          liquidityTaken: amounts.usdxBorrowAmount,
+          totalDebt: baseDebt,
+          reserveFactor: 0,
+          assetId: usdxAssetId,
+          virtualUnderlyingBalance: asset.availableLiquidity,
+          usingVirtualBalance: true
+        });
+      vm.mockCall(
+        address(irStrategy),
+        abi.encodeWithSelector(
+          IReserveInterestRateStrategy.calculateInterestRates.selector,
+          params
+        ),
+        abi.encode(rates.usdxBaseBorrowRate)
+      );
+      Utils.borrow(spoke1, _usdxReserveId(spoke1), bob, amounts.usdxBorrowAmount, bob);
+    }
+
+    // Bob borrows wbtc from spoke 1
+    if (amounts.wbtcBorrowAmount > 0) {
+      DataTypes.Asset memory asset = hub.getAsset(wbtcAssetId);
+      (uint256 baseDebt, ) = hub.getAssetDebt(wbtcAssetId);
+      DataTypes.CalculateInterestRatesParams memory params = DataTypes
+        .CalculateInterestRatesParams({
+          liquidityAdded: 0,
+          liquidityTaken: amounts.wbtcBorrowAmount,
+          totalDebt: baseDebt,
+          reserveFactor: 0,
+          assetId: wbtcAssetId,
+          virtualUnderlyingBalance: asset.availableLiquidity,
+          usingVirtualBalance: true
+        });
+      vm.mockCall(
+        address(irStrategy),
+        abi.encodeWithSelector(
+          IReserveInterestRateStrategy.calculateInterestRates.selector,
+          params
+        ),
+        abi.encode(rates.wbtcBaseBorrowRate)
+      );
+      Utils.borrow(spoke1, _wbtcReserveId(spoke1), bob, amounts.wbtcBorrowAmount, bob);
+    }
+
+    // Check Bob's risk premium
+    uint256 bobRp = spoke1.getUserRiskPremium(bob);
+    assertEq(bobRp, _calculateExpectedUserRP(bob, spoke1), 'user risk premium Before');
+
+    // Check bob's base debt and premium debt for all assets at user, reserve, spoke, and asset level
+    uint256 totalBase = MathUtils
+      .calculateLinearInterest(rates.daiBaseBorrowRate, startTime)
+      .rayMul(amounts.daiBorrowAmount);
+    uint256 expectedPremiumDrawnShares = hub
+      .convertToDrawnShares(daiAssetId, amounts.daiBorrowAmount)
+      .percentMul(bobRp);
+    uint256 expectedPremiumDebt = hub.convertToDrawnAssets(daiAssetId, expectedPremiumDrawnShares);
+    _checkDebts(
+      spoke1,
+      _daiReserveId(spoke1),
+      bob,
+      totalBase,
+      expectedPremiumDebt,
+      'dai before accrual'
+    );
+
+    totalBase = MathUtils.calculateLinearInterest(rates.wethBaseBorrowRate, startTime).rayMul(
+      amounts.wethBorrowAmount
+    );
+    expectedPremiumDrawnShares = hub
+      .convertToDrawnShares(wethAssetId, amounts.wethBorrowAmount)
+      .percentMul(bobRp);
+    expectedPremiumDebt = hub.convertToDrawnAssets(wethAssetId, expectedPremiumDrawnShares);
+    _checkDebts(
+      spoke1,
+      _wethReserveId(spoke1),
+      bob,
+      totalBase,
+      expectedPremiumDebt,
+      'weth before accrual'
+    );
+
+    totalBase = MathUtils.calculateLinearInterest(rates.usdxBaseBorrowRate, startTime).rayMul(
+      amounts.usdxBorrowAmount
+    );
+    expectedPremiumDrawnShares = hub
+      .convertToDrawnShares(usdxAssetId, amounts.usdxBorrowAmount)
+      .percentMul(bobRp);
+    expectedPremiumDebt = hub.convertToDrawnAssets(usdxAssetId, expectedPremiumDrawnShares);
+    _checkDebts(
+      spoke1,
+      _usdxReserveId(spoke1),
+      bob,
+      totalBase,
+      expectedPremiumDebt,
+      'usdx before accrual'
+    );
+
+    totalBase = MathUtils.calculateLinearInterest(rates.wbtcBaseBorrowRate, startTime).rayMul(
+      amounts.wbtcBorrowAmount
+    );
+    expectedPremiumDrawnShares = hub
+      .convertToDrawnShares(wbtcAssetId, amounts.wbtcBorrowAmount)
+      .percentMul(bobRp);
+    expectedPremiumDebt = hub.convertToDrawnAssets(wbtcAssetId, expectedPremiumDrawnShares);
+    _checkDebts(
+      spoke1,
+      _wbtcReserveId(spoke1),
+      bob,
+      totalBase,
+      expectedPremiumDebt,
+      'wbtc before accrual'
+    );
+
+    // Skip time to accrue interest
+    skip(skipTime);
+
+    // Check bob's base debt and premium debt for all assets at user, reserve, spoke, and asset level
+    DataTypes.Reserve memory reserve = getReserveInfo(spoke1, _daiReserveId(spoke1));
+    totalBase = MathUtils.calculateLinearInterest(rates.daiBaseBorrowRate, startTime).rayMul(
+      amounts.daiBorrowAmount
+    );
+    expectedPremiumDrawnShares = reserve.baseDrawnShares.percentMul(bobRp);
+    expectedPremiumDebt = hub.convertToDrawnAssets(daiAssetId, expectedPremiumDrawnShares);
+    _checkDebts(
+      spoke1,
+      _daiReserveId(spoke1),
+      bob,
+      totalBase,
+      expectedPremiumDebt,
+      'dai after accrual'
+    );
+
+    reserve = getReserveInfo(spoke1, _wethReserveId(spoke1));
+    totalBase = MathUtils.calculateLinearInterest(rates.wethBaseBorrowRate, startTime).rayMul(
+      amounts.wethBorrowAmount
+    );
+    expectedPremiumDrawnShares = reserve.baseDrawnShares.percentMul(bobRp);
+    expectedPremiumDebt = hub.convertToDrawnAssets(wethAssetId, expectedPremiumDrawnShares);
+    _checkDebts(
+      spoke1,
+      _wethReserveId(spoke1),
+      bob,
+      totalBase,
+      expectedPremiumDebt,
+      'weth after accrual'
+    );
+
+    reserve = getReserveInfo(spoke1, _usdxReserveId(spoke1));
+    totalBase = MathUtils.calculateLinearInterest(rates.usdxBaseBorrowRate, startTime).rayMul(
+      amounts.usdxBorrowAmount
+    );
+    expectedPremiumDrawnShares = reserve.baseDrawnShares.percentMul(bobRp);
+    expectedPremiumDebt = hub.convertToDrawnAssets(usdxAssetId, expectedPremiumDrawnShares);
+    _checkDebts(
+      spoke1,
+      _usdxReserveId(spoke1),
+      bob,
+      totalBase,
+      expectedPremiumDebt,
+      'usdx after accrual'
+    );
+
+    reserve = getReserveInfo(spoke1, _wbtcReserveId(spoke1));
+    totalBase = MathUtils.calculateLinearInterest(rates.wbtcBaseBorrowRate, startTime).rayMul(
+      amounts.wbtcBorrowAmount
+    );
+    expectedPremiumDrawnShares = reserve.baseDrawnShares.percentMul(bobRp);
+    expectedPremiumDebt = hub.convertToDrawnAssets(wbtcAssetId, expectedPremiumDrawnShares);
+    _checkDebts(
+      spoke1,
+      _wbtcReserveId(spoke1),
+      bob,
+      totalBase,
+      expectedPremiumDebt,
+      'wbtc after accrual'
+    );
+  }
+
+  /*
   // TODO: Second accrual after an action - which should update the user rp
   function test_accrueInterest_fuzz_RPBorrowAndskipTime_twoActions(
     TestAmounts memory amounts,
@@ -702,57 +1021,4 @@ contract SpokeAccrueInterestTest is SpokeBase {
     // TODO: Skip time for accrual, and then check that the interest accrual is correct for all assets at user, reserve, spoke, and asset level
   }
   */
-
-  /*
-  function _checkDebtAndRP(
-    address user,
-    ISpoke spoke,
-    uint256 reserveId,
-    uint256 assetId,
-    uint256 expectedBaseDebt,
-    uint256 expectedPremium,
-    uint256 expectedRiskPremium
-  ) internal {
-    DataTypes.UserPosition memory userPosition = getUserInfo(spoke, user, reserveId);
-    // User rp does not update until the next action
-    uint256 userRp = spoke.getLastUsedUserRiskPremium(user);
-
-    assertEq(userPosition.baseDebt, expectedBaseDebt, 'user base debt');
-    assertEq(userPosition.outstandingPremium, expectedPremium, 'user outstanding premium');
-    assertEq(userRp, expectedRiskPremium, 'user risk premium');
-
-    DataTypes.Reserve memory reserveInfo = getReserveInfo(spoke, reserveId);
-
-    assertEq(reserveInfo.baseDebt, expectedBaseDebt, 'reserve base debt');
-    assertEq(reserveInfo.outstandingPremium, expectedPremium, 'reserve outstanding premium');
-    if (expectedBaseDebt > 0) {
-      assertEq(reserveInfo.riskPremium, expectedRiskPremium, 'reserve risk premium');
-    } else {
-      assertEq(reserveInfo.riskPremium, 0, 'reserve risk premium');
-    }
-
-    DataTypes.SpokeData memory spokeInfo = getSpokeInfo(assetId, address(spoke));
-
-    assertEq(spokeInfo.baseDebt, expectedBaseDebt, 'spoke base debt');
-    assertEq(spokeInfo.outstandingPremium, expectedPremium, 'spoke outstanding premium');
-    if (expectedBaseDebt > 0) {
-      assertEq(spokeInfo.riskPremium, expectedRiskPremium, 'spoke risk premium');
-    } else {
-      assertEq(spokeInfo.riskPremium, 0, 'spoke risk premium');
-    }
-
-    DataTypes.Asset memory assetInfo = getAssetInfo(assetId);
-
-    assertEq(assetInfo.baseDebt, expectedBaseDebt, 'asset base debt');
-    assertEq(assetInfo.outstandingPremium, expectedPremium, 'asset outstanding premium');
-    if (expectedBaseDebt > 0) {
-      assertEq(assetInfo.riskPremium, expectedRiskPremium, 'asset risk premium');
-    } else {
-      assertEq(assetInfo.riskPremium, 0, 'asset risk premium');
-    }
-  }
-  */
-
-  // TODO: test_accrueInterest_fuzz_RPBorrowAndskipTime
-  // TODO: test_accrueInterest_fuzz_ChangingBorrowRate
 }
