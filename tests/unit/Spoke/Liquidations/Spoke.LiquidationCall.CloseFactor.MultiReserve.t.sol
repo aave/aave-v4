@@ -279,13 +279,15 @@ contract LiquidationCallCloseFactorMultiReserveTest is SpokeLiquidationBase {
     console.log('state.desiredHf %e %e', state.desiredHf, hfAfterBorrow);
 
     // console.log('alice', alice);
+    console.log(' debt id1 id2', debtReserveIds[0], debtReserveIds[1]);
+    console.log(' coll id1 id2', collateralReserveIds[0], collateralReserveIds[1]);
     console.log(
-      'alice debts %e %e',
-      spoke1.getUserTotalDebt(2, alice),
-      spoke1.getUserTotalDebt(3, alice)
+      ' alice initial debts %e %e',
+      spoke1.getUserTotalDebt(debtReserveIds[0], alice),
+      spoke1.getUserTotalDebt(debtReserveIds[1], alice)
     );
     console.log(
-      'alice supplied %e %e',
+      ' alice initial supplied %e %e',
       spoke1.getUserSuppliedAmount(collateralReserveIds[0], alice),
       spoke1.getUserSuppliedAmount(collateralReserveIds[1], alice)
     );
@@ -340,12 +342,12 @@ contract LiquidationCallCloseFactorMultiReserveTest is SpokeLiquidationBase {
 
     console.log('hf after liq %e', spoke1.getHealthFactor(alice));
     console.log(
-      'alice debts %e %e',
-      spoke1.getUserTotalDebt(2, alice),
-      spoke1.getUserTotalDebt(3, alice)
+      ' alice final debts id: %e %e',
+      spoke1.getUserTotalDebt(debtReserveIds[0], alice),
+      spoke1.getUserTotalDebt(debtReserveIds[1], alice)
     );
     console.log(
-      'alice supplied %e %e',
+      ' alice final supplied %e %e',
       spoke1.getUserSuppliedAmount(collateralReserveIds[0], alice),
       spoke1.getUserSuppliedAmount(collateralReserveIds[1], alice)
     );

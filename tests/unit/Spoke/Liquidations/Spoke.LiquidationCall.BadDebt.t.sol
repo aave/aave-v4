@@ -35,7 +35,6 @@ contract LiquidationCallBadDebtTest is SpokeLiquidationBase {
 
     string memory label = 'test_liquidationCall_fuzz_badDebt';
     _checkLiquidation(state, spoke1, label);
-    _assertBadDebt(state, spoke1, label);
   }
 
   /// fuzz tests with close factor == HEALTH_FACTOR_LIQUIDATION_THRESHOLD

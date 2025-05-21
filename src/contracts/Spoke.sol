@@ -979,7 +979,8 @@ contract Spoke is ISpoke {
         vars.collateralToLiquidate,
         vars.liquidationProtocolFeeAmount,
         vars.baseDebtToLiquidate,
-        vars.premiumDebtToLiquidate
+        vars.premiumDebtToLiquidate,
+        vars.hasNoCollateralLeft
       ) = _calculateLiquidationParameters(
         collateralReserve,
         debtReserve,
@@ -1023,14 +1024,17 @@ contract Spoke is ISpoke {
       userCollateralPosition.suppliedShares = vars.newUserSuppliedShares;
       vars.totalWithdrawnShares += vars.withdrawnShares;
 
+      // console.log('SP newUserSuppliedShares %e', vars.newUserSuppliedShares);
+
       // deficit accounting
       if (vars.newUserSuppliedShares == 0) {
+        console.log('SP _setUsingAsCollateral %e', collateralReserve.reserveId);
         _setUsingAsCollateral(collateralReserveId, users[vars.i], false);
         uint256 outstandingDebt = vars.baseDebt +
           vars.premiumDebt -
           vars.baseDebtToLiquidate -
           vars.premiumDebtToLiquidate;
-        if (outstandingDebt > 0) {
+        if (outstandingDebt > 0 && vars.hasNoCollateralLeft) {
           // console.log(
           //   'SP bad debt %e %e %e',
           //   vars.baseDebtToLiquidate,
@@ -1229,6 +1233,7 @@ contract Spoke is ISpoke {
   /// @return liquidationProtocolFeeAmount The amount of protocol fee.
   /// @return baseDebtToLiquidate The amount of base debt to repay.
   /// @return premiumDebtToLiquidate The amount of premium debt to repay.
+  /// @return hasNoCollateralLeft The flag representing if the user will have no collateral left after liquidation.
   function _calculateLiquidationParameters(
     DataTypes.Reserve storage collateralReserve,
     DataTypes.Reserve storage debtReserve,
@@ -1236,7 +1241,7 @@ contract Spoke is ISpoke {
     uint256 debtToCover,
     uint256 baseDebt,
     uint256 premiumDebt
-  ) internal view returns (uint256, uint256, uint256, uint256) {
+  ) internal view returns (uint256, uint256, uint256, uint256, bool) {
     DataTypes.LiquidationCallLocalVars memory vars;
     vars.collateralReserveId = collateralReserve.reserveId;
     vars.debtReserveId = debtReserve.reserveId;
@@ -1296,7 +1301,8 @@ contract Spoke is ISpoke {
       vars.actualCollateralToLiquidate,
       vars.liquidationProtocolFeeAmount,
       vars.baseDebtToLiquidate,
-      vars.premiumDebtToLiquidate
+      vars.premiumDebtToLiquidate,
+      vars.collateralToLiquidateInBaseCurrency == vars.totalCollateralInBaseCurrency
     );
   }
 

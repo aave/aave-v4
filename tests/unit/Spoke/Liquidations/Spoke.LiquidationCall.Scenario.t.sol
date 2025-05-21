@@ -455,8 +455,8 @@ contract LiquidationCallScenarioTest is SpokeLiquidationBase {
     assertLe(spoke1.getHealthFactor(alice), _getCloseFactor(spoke1), 'hf <= close factor');
   }
 
-  /// scenario where fully liquidating all collateral still does not improve a position to close factor
-  /// results in bad debt
+  /// scenario with multiple collaterals and a single debt asset
+  /// fully liquidating all of 1 collateral does not clear all debt
   function test_liquidationCall_all_collateral() public {
     LiqScenarioTestData memory state;
 
@@ -543,7 +543,7 @@ contract LiquidationCallScenarioTest is SpokeLiquidationBase {
       'liquidator receives 0 dai coll'
     );
 
-    // wbtc collateral
+    // wbtc collateral - fully liquidated
     assertEq(
       spoke1.getUserSuppliedAmount(state.wbtcReserveId, alice),
       0,
@@ -561,7 +561,11 @@ contract LiquidationCallScenarioTest is SpokeLiquidationBase {
     );
 
     // weth debt
-    assertEq(state.finalDebt, 0, 'alice bad weth debt fully cleared');
+    assertEq(
+      state.finalDebt,
+      state.initialDebt - state.liquidatedDebt,
+      'alice bad weth debt fully cleared'
+    );
     assertEq(
       _absDiff(aliceWeth.balanceAfter, aliceWeth.balanceBefore),
       0,
@@ -577,13 +581,12 @@ contract LiquidationCallScenarioTest is SpokeLiquidationBase {
       alice
     );
 
-    assertEq(userRP, 0, 'bad debt results in user rp = 0');
     assertEq(
-      avgCollFactor.dewadify(),
-      spoke1.getReserve(state.daiReserveId).config.collateralFactor,
-      'avg coll factor matches dai coll factor (only remaining coll)'
+      userRP,
+      spoke1.getReserve(state.daiReserveId).config.liquidityPremium,
+      'user rp is fully from remaining dai coll'
     );
-    assertEq(healthFactor, UINT256_MAX, 'health factor is max uint256');
+    assertLe(healthFactor, _getCloseFactor(spoke1), 'health factor is less than close factor');
   }
 
   /// liquidation call with multiple collaterals, full collateral liquidation

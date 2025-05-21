@@ -181,6 +181,7 @@ library DataTypes {
     uint256 usersLength;
     uint256 newUserSuppliedShares;
     uint256 deficit;
+    bool hasNoCollateralLeft;
   }
 
   struct ExecuteRepayLocalVars {
