@@ -1199,4 +1199,13 @@ abstract contract Base is Test {
     (uint256 baseDebt, ) = hub.getAssetDebt(assetId);
     return baseDebt;
   }
+
+  /// @param baseBorrowRate base borrow rate in bps
+  function mockBaseBorrowRate(uint256 baseBorrowRate) internal {
+    vm.mockCall(
+      address(irStrategy),
+      IReserveInterestRateStrategy.calculateInterestRates.selector,
+      abi.encode(baseBorrowRate.bpsToRay())
+    );
+  }
 }

@@ -58,7 +58,11 @@ contract SpokeLiquidationBase is SpokeBase {
     uint256 userRp;
     uint256 totalCollateralInBaseCurrency;
     uint256 totalDebtInBaseCurrency;
+    uint256 initialHf;
+    uint256 initialTotalCollateralInBaseCurrency;
+    uint256 initialTotalDebtInBaseCurrency;
     bool usingAsCollateral;
+    uint256 debtReserveIndex;
   }
 
   uint256 internal constant MIN_AMOUNT_IN_BASE_CURRENCY = 1e26;
@@ -580,6 +584,14 @@ contract SpokeLiquidationBase is SpokeBase {
       WadRayMathExtended.RAY
     );
     state.deficit.balanceBefore = hub.getDeficit(state.debtReserve.assetId);
+
+    (
+      ,
+      ,
+      state.initialHf,
+      state.initialTotalCollateralInBaseCurrency,
+      state.initialTotalDebtInBaseCurrency
+    ) = spoke1.getUserAccountData(alice);
 
     return state;
   }

@@ -221,6 +221,8 @@ contract LiquidityHub is ILiquidityHub {
 
     assetsList[assetId].safeTransferFrom(from, address(this), actualRestoredAmount);
 
+    console.log('actualRestoredAmount %e', actualRestoredAmount);
+
     emit Restore(assetId, msg.sender, baseDrawnSharesRestored, totalRestoredAmount);
     if (deficitAmount > 0) {
       console.log('HUB DeficitCreated amt: %e', deficitAmount);
