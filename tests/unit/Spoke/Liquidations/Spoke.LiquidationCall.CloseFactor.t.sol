@@ -412,18 +412,20 @@ contract LiquidationCallCloseFactorTest is SpokeLiquidationBase {
     );
     skipTime = bound(skipTime, 1, MAX_SKIP_TIME);
 
+    state.spoke = spoke1;
+    state.user = alice;
     state.liquidationProtocolFeePercentage = liquidationProtocolFeePercentage;
 
-    spoke1.updateLiquidationConfig(liqConfig);
-    updateLiquidationBonus(spoke1, collateralReserveId, liqBonus);
+    state.spoke.updateLiquidationConfig(liqConfig);
+    updateLiquidationBonus(state.spoke, collateralReserveId, liqBonus);
     updateLiquidationProtocolFeePercentage(
-      spoke1,
+      state.spoke,
       collateralReserveId,
       state.liquidationProtocolFeePercentage
     );
 
     Utils.supplyCollateral({
-      spoke: spoke1,
+      spoke: state.spoke,
       reserveId: collateralReserveId,
       user: alice,
       amount: supplyAmount,
@@ -431,11 +433,12 @@ contract LiquidationCallCloseFactorTest is SpokeLiquidationBase {
     });
 
     // TODO: fuzz test with desiredHf >= lowest and <= 1
-    uint256 desiredHf = _calcLowestHfToRestoreCloseFactor(spoke1, alice, liqBonus).percentMul(
+    uint256 desiredHf = _calcLowestHfToRestoreCloseFactor(state.spoke, alice, liqBonus).percentMul(
       101_00
     ); // add buffer so that not all collateral is seized
 
     _increaseCollateralReserveSupplyExchangeRate(
+      state.spoke,
       state.collateralReserve.assetId,
       collateralReserveId,
       supplyAmount / 2,
@@ -445,17 +448,17 @@ contract LiquidationCallCloseFactorTest is SpokeLiquidationBase {
 
     // borrow some amount of debt reserve to end up below hf threshold
     (uint256 hfAfterBorrow, uint256 requiredDebtAmount) = _borrowToBeBelowHf(
-      spoke1,
+      state.spoke,
       alice,
       debtReserveId,
       desiredHf
     );
 
-    console.log('cf %e', spoke1.getCollateralFactor(collateralReserveId));
+    console.log('cf %e', state.spoke.getCollateralFactor(collateralReserveId));
     console.log('test log %e %e', hfAfterBorrow, desiredHf);
 
     state.liquidationBonus = _getVariableLiquidationBonus(
-      spoke1,
+      state.spoke,
       collateralReserveId,
       hfAfterBorrow
     );
@@ -466,7 +469,7 @@ contract LiquidationCallCloseFactorTest is SpokeLiquidationBase {
       state.debtToLiq,
       state.liqProtocolFee,
 
-    ) = _calculateAvailableCollateralToLiquidate(spoke1, state, UINT256_MAX);
+    ) = _calculateAvailableCollateralToLiquidate(state.spoke, state, UINT256_MAX);
 
     console.log('test log coll to liq %e debt to liq %e', state.collToLiq, state.debtToLiq);
 
@@ -474,7 +477,7 @@ contract LiquidationCallCloseFactorTest is SpokeLiquidationBase {
     // TODO: update when treasury accounting is done
     vm.recordLogs();
 
-    vm.expectEmit(address(spoke1));
+    vm.expectEmit(address(state.spoke));
     emit ISpoke.LiquidationCall(
       state.collateralReserve.asset,
       state.debtReserve.asset,
@@ -484,7 +487,7 @@ contract LiquidationCallCloseFactorTest is SpokeLiquidationBase {
       LIQUIDATOR
     );
     vm.prank(LIQUIDATOR);
-    spoke1.liquidationCall(collateralReserveId, debtReserveId, alice, UINT256_MAX);
+    state.spoke.liquidationCall(collateralReserveId, debtReserveId, alice, UINT256_MAX);
 
     state = _getAccountingInfoAfterLiq(state);
 

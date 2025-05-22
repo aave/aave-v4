@@ -36,7 +36,7 @@ contract LiquidationCallEdgeCasesTest is SpokeLiquidationBase {
     // position is liquidatable
     assertLt(spoke1.getHealthFactor(alice), HEALTH_FACTOR_LIQUIDATION_THRESHOLD);
 
-    vm.prank(bob);
+    vm.prank(LIQUIDATOR);
     spoke1.liquidationCall(_usdxReserveId(spoke1), _usdyReserveId(spoke1), alice, UINT256_MAX);
 
     // all collateral liquidated without overflowing

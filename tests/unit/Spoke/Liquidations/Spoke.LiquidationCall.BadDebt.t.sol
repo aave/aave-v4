@@ -343,20 +343,21 @@ contract LiquidationCallBadDebtTest is SpokeLiquidationBase {
       )
     );
     skipTime = bound(skipTime, 1, MAX_SKIP_TIME);
-
+    state.spoke = spoke1;
+    state.user = alice;
     state.liquidationProtocolFeePercentage = liquidationProtocolFeePercentage;
 
     // set spoke liq config
-    spoke1.updateLiquidationConfig(liqConfig);
-    updateLiquidationBonus(spoke1, collateralReserveId, liqBonus);
+    state.spoke.updateLiquidationConfig(liqConfig);
+    updateLiquidationBonus(state.spoke, collateralReserveId, liqBonus);
     updateLiquidationProtocolFeePercentage(
-      spoke1,
+      state.spoke,
       collateralReserveId,
       state.liquidationProtocolFeePercentage
     );
 
     Utils.supplyCollateral({
-      spoke: spoke1,
+      spoke: state.spoke,
       reserveId: collateralReserveId,
       user: alice,
       amount: supplyAmount,
@@ -365,11 +366,12 @@ contract LiquidationCallBadDebtTest is SpokeLiquidationBase {
 
     // set user position under hf threshold so that there is invalid collateral to cover all debt
     // results in bad debt remaining (debt > 0, collateral = 0)
-    uint256 desiredHf = _calcLowestHfToRestoreCloseFactor(spoke1, alice, liqBonus).percentMul(
+    uint256 desiredHf = _calcLowestHfToRestoreCloseFactor(state.spoke, alice, liqBonus).percentMul(
       99_00
     );
 
     _increaseCollateralReserveSupplyExchangeRate(
+      state.spoke,
       state.collateralReserve.assetId,
       collateralReserveId,
       supplyAmount / 2,
@@ -379,14 +381,14 @@ contract LiquidationCallBadDebtTest is SpokeLiquidationBase {
 
     // borrow some amount of debt reserve to end up below hf threshold
     (uint256 hfAfterBorrow, uint256 requiredDebtAmount) = _borrowToBeBelowHf(
-      spoke1,
+      state.spoke,
       alice,
       debtReserveId,
       desiredHf
     );
 
     state.liquidationBonus = _getVariableLiquidationBonus(
-      spoke1,
+      state.spoke,
       collateralReserveId,
       hfAfterBorrow
     );
@@ -397,7 +399,7 @@ contract LiquidationCallBadDebtTest is SpokeLiquidationBase {
       state.debtToLiq,
       state.liqProtocolFee,
 
-    ) = _calculateAvailableCollateralToLiquidate(spoke1, state, requiredDebtAmount);
+    ) = _calculateAvailableCollateralToLiquidate(state.spoke, state, requiredDebtAmount);
 
     // logs to read protocol fee from tmp emitted event
     // TODO: update when treasury accounting is done
@@ -405,11 +407,11 @@ contract LiquidationCallBadDebtTest is SpokeLiquidationBase {
 
     vm.expectEmit(address(hub));
     emit ILiquidityHub.DeficitCreated(
-      address(spoke1),
+      address(state.spoke),
       state.debtReserve.assetId,
       state.debt.balanceBefore - state.debtToLiq // outstanding debt which becomes bad debt reported as deficit
     );
-    vm.expectEmit(address(spoke1));
+    vm.expectEmit(address(state.spoke));
     emit ISpoke.LiquidationCall(
       state.collateralReserve.asset,
       state.debtReserve.asset,
@@ -419,7 +421,7 @@ contract LiquidationCallBadDebtTest is SpokeLiquidationBase {
       LIQUIDATOR
     );
     vm.prank(LIQUIDATOR);
-    spoke1.liquidationCall(collateralReserveId, debtReserveId, alice, requiredDebtAmount);
+    state.spoke.liquidationCall(collateralReserveId, debtReserveId, alice, requiredDebtAmount);
 
     state = _getAccountingInfoAfterLiq(state);
 

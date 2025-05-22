@@ -214,19 +214,21 @@ contract LiquidationCallBadPremiumDebtTest is SpokeLiquidationBase {
     skipTime = bound(skipTime, 1, MAX_SKIP_TIME);
     skipTimeForPremiumAccrual = bound(skipTimeForPremiumAccrual, 5 * 365 days, MAX_SKIP_TIME); // enough time to accrue debt so that HF is liquidatable
 
+    state.spoke = spoke1;
+    state.user = alice;
     state.liquidationProtocolFeePercentage = liquidationProtocolFeePercentage;
 
     // set spoke liq config
-    spoke1.updateLiquidationConfig(liqConfig);
-    updateLiquidationBonus(spoke1, collateralReserveId, liqBonus);
+    state.spoke.updateLiquidationConfig(liqConfig);
+    updateLiquidationBonus(state.spoke, collateralReserveId, liqBonus);
     updateLiquidationProtocolFeePercentage(
-      spoke1,
+      state.spoke,
       collateralReserveId,
       state.liquidationProtocolFeePercentage
     );
 
     Utils.supplyCollateral({
-      spoke: spoke1,
+      spoke: state.spoke,
       reserveId: collateralReserveId,
       user: alice,
       amount: supplyAmount,
@@ -235,9 +237,10 @@ contract LiquidationCallBadPremiumDebtTest is SpokeLiquidationBase {
 
     // calculate lowest HF where there is sufficient collateral to cover debt
     // below this value results in bad debt
-    uint256 hfBadDebtThreshold = _calcLowestHfToRestoreCloseFactor(spoke1, alice, liqBonus);
+    uint256 hfBadDebtThreshold = _calcLowestHfToRestoreCloseFactor(state.spoke, alice, liqBonus);
 
     _increaseCollateralReserveSupplyExchangeRate(
+      state.spoke,
       state.collateralReserve.assetId,
       collateralReserveId,
       supplyAmount / 2,
@@ -247,24 +250,24 @@ contract LiquidationCallBadPremiumDebtTest is SpokeLiquidationBase {
 
     // borrow some amount of debt reserve to end up below hf threshold
     (uint256 hfAfterBorrow, uint256 requiredDebtAmount) = _borrowToBeAboveHealthyHf(
-      spoke1,
+      state.spoke,
       alice,
       debtReserveId,
       HEALTH_FACTOR_LIQUIDATION_THRESHOLD
     );
 
     state.liquidationBonus = _getVariableLiquidationBonus(
-      spoke1,
+      state.spoke,
       collateralReserveId,
       hfAfterBorrow
     );
 
     skip(skipTimeForPremiumAccrual);
     // ensure that debt accrued causes liquidatable position
-    vm.assume(spoke1.getHealthFactor(alice) < hfBadDebtThreshold);
+    vm.assume(state.spoke.getHealthFactor(alice) < hfBadDebtThreshold);
 
-    // (uint256 rp, , uint256 hf, , ) = spoke1.getUserAccountData(alice);
-    // (uint256 baseDebt, uint256 premiumDebt) = spoke1.getUserDebt(debtReserveId, alice);
+    // (uint256 rp, , uint256 hf, , ) = state.spoke.getUserAccountData(alice);
+    // (uint256 baseDebt, uint256 premiumDebt) = state.spoke.getUserDebt(debtReserveId, alice);
 
     // console.log('rp %e debt %e %e', rp, baseDebt, premiumDebt);
     // console.log('hf %e', hf);
@@ -279,7 +282,7 @@ contract LiquidationCallBadPremiumDebtTest is SpokeLiquidationBase {
       state.debtToLiq,
       state.liqProtocolFee,
 
-    ) = _calculateAvailableCollateralToLiquidate(spoke1, state, UINT256_MAX);
+    ) = _calculateAvailableCollateralToLiquidate(state.spoke, state, UINT256_MAX);
 
     // logs to read protocol fee from tmp emitted event
     // TODO: update when treasury accounting is done
@@ -287,18 +290,18 @@ contract LiquidationCallBadPremiumDebtTest is SpokeLiquidationBase {
 
     console.log(
       'emit deficit %s %s %e',
-      address(spoke1),
+      address(state.spoke),
       state.debtReserve.assetId,
       state.debt.balanceBefore - state.debtToLiq
     );
 
     vm.expectEmit(address(hub));
     emit ILiquidityHub.DeficitCreated(
-      address(spoke1),
+      address(state.spoke),
       state.debtReserve.assetId,
       state.debt.balanceBefore - state.debtToLiq // outstanding debt which becomes bad debt reported as deficit
     );
-    vm.expectEmit(address(spoke1));
+    vm.expectEmit(address(state.spoke));
     emit ISpoke.LiquidationCall(
       state.collateralReserve.asset,
       state.debtReserve.asset,
@@ -308,7 +311,7 @@ contract LiquidationCallBadPremiumDebtTest is SpokeLiquidationBase {
       LIQUIDATOR
     );
     vm.prank(LIQUIDATOR);
-    spoke1.liquidationCall(collateralReserveId, debtReserveId, alice, UINT256_MAX);
+    state.spoke.liquidationCall(collateralReserveId, debtReserveId, alice, UINT256_MAX);
 
     state = _getAccountingInfoAfterLiq(state);
     return state;

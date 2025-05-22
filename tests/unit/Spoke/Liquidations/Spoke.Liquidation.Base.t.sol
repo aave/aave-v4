@@ -27,9 +27,11 @@ contract SpokeLiquidationBase is SpokeBase {
   }
 
   struct LiquidationTestLocalParams {
+    ISpoke spoke;
+    address user;
     Balance liquidatorDebt;
     Balance liquidatorCollateral;
-    Balance user;
+    // Balance user;
     Balance treasury;
     Balance debt;
     Balance baseDebt;
@@ -132,6 +134,9 @@ contract SpokeLiquidationBase is SpokeBase {
       )
     );
     skipTime = bound(skipTime, 1, MAX_SKIP_TIME);
+
+    state.spoke = spoke1;
+    state.user = alice;
     state.liquidationProtocolFeePercentage = liquidationProtocolFeePercentage;
 
     console.log(' fuzz inputs');
@@ -146,16 +151,16 @@ contract SpokeLiquidationBase is SpokeBase {
     console.log('  collateralReserveId %e', collateralReserveId);
     console.log('  debtReserveId %e', debtReserveId);
 
-    spoke1.updateLiquidationConfig(liqConfig);
-    updateLiquidationBonus(spoke1, collateralReserveId, liqBonus);
+    state.spoke.updateLiquidationConfig(liqConfig);
+    updateLiquidationBonus(state.spoke, collateralReserveId, liqBonus);
     updateLiquidationProtocolFeePercentage(
-      spoke1,
+      state.spoke,
       collateralReserveId,
       state.liquidationProtocolFeePercentage
     );
 
     Utils.supplyCollateral({
-      spoke: spoke1,
+      spoke: state.spoke,
       reserveId: collateralReserveId,
       user: alice,
       amount: supplyAmount,
@@ -163,6 +168,7 @@ contract SpokeLiquidationBase is SpokeBase {
     });
 
     _increaseCollateralReserveSupplyExchangeRate(
+      state.spoke,
       state.collateralReserve.assetId,
       collateralReserveId,
       supplyAmount / 2,
@@ -172,13 +178,13 @@ contract SpokeLiquidationBase is SpokeBase {
 
     // borrow some amount of debt reserve to end up below hf threshold
     (uint256 hfAfterBorrow, uint256 requiredDebtAmount) = _borrowToBeBelowHf(
-      spoke1,
+      state.spoke,
       alice,
       debtReserveId,
       desiredHf
     );
     state.liquidationBonus = _getVariableLiquidationBonus(
-      spoke1,
+      state.spoke,
       collateralReserveId,
       hfAfterBorrow
     );
@@ -192,13 +198,13 @@ contract SpokeLiquidationBase is SpokeBase {
       state.debtToLiq,
       state.liqProtocolFee,
 
-    ) = _calculateAvailableCollateralToLiquidate(spoke1, state, requiredDebtAmount);
+    ) = _calculateAvailableCollateralToLiquidate(state.spoke, state, requiredDebtAmount);
 
     // logs to read protocol fee from tmp emitted event
     // TODO: update when treasury accounting is done
     vm.recordLogs();
 
-    vm.expectEmit(address(spoke1));
+    vm.expectEmit(address(state.spoke));
     emit ISpoke.LiquidationCall(
       state.collateralReserve.asset,
       state.debtReserve.asset,
@@ -208,7 +214,7 @@ contract SpokeLiquidationBase is SpokeBase {
       LIQUIDATOR
     );
     vm.prank(LIQUIDATOR);
-    spoke1.liquidationCall(collateralReserveId, debtReserveId, alice, requiredDebtAmount);
+    state.spoke.liquidationCall(collateralReserveId, debtReserveId, alice, requiredDebtAmount);
 
     state = _getAccountingInfoAfterLiq(state);
 
@@ -496,20 +502,6 @@ contract SpokeLiquidationBase is SpokeBase {
       );
   }
 
-  /// @notice Calc user's lowest possible health factor whereby a liqudation can still restore HF to close factor.
-  /// for a single collateral asset
-  /// @return healthFactor in WAD
-  // function _calcLowestHfToRestoreCloseFactor(
-  //   uint256 collateralReserveId,
-  //   uint256 liquidationBonus
-  // ) internal view returns (uint256) {
-  //   return
-  //     _calcLowestHfForCloseFactorFromCollateralFactor(
-  //       _getCollateralFactor(spoke1, collateralReserveId),
-  //       liquidationBonus
-  //     );
-  // }
-
   /// given collateral factor and liquidation bonus, calculate the lowest health factor possible
   /// whereby a liquidation can still restore HF to close factor
   function _calcLowestHfForCloseFactorFromCollateralFactor(
@@ -565,22 +557,22 @@ contract SpokeLiquidationBase is SpokeBase {
   function _getAccountingInfoBeforeLiq(
     LiquidationTestLocalParams memory state
   ) internal view returns (LiquidationTestLocalParams memory) {
-    (state.baseDebt.balanceBefore, state.premiumDebt.balanceBefore) = spoke1.getUserDebt(
+    (state.baseDebt.balanceBefore, state.premiumDebt.balanceBefore) = state.spoke.getUserDebt(
       state.debtReserve.reserveId,
-      alice
+      state.user
     );
     state.debt.balanceBefore = state.baseDebt.balanceBefore + state.premiumDebt.balanceBefore;
     state.liquidatorCollateral.balanceBefore = IERC20(state.collateralReserve.asset).balanceOf(
       LIQUIDATOR
     );
     state.liquidatorDebt.balanceBefore = IERC20(state.debtReserve.asset).balanceOf(LIQUIDATOR);
-    state.supply.balanceBefore = spoke1.getUserSuppliedAmount(
+    state.supply.balanceBefore = state.spoke.getUserSuppliedAmount(
       state.collateralReserve.reserveId,
-      alice
+      state.user
     );
-    state.supplyShares.balanceBefore = spoke1.getUserSuppliedShares(
+    state.supplyShares.balanceBefore = state.spoke.getUserSuppliedShares(
       state.collateralReserve.reserveId,
-      alice
+      state.user
     );
     state.rate.rateBefore = hub.convertToSuppliedAssets(
       state.collateralReserve.assetId,
@@ -594,16 +586,16 @@ contract SpokeLiquidationBase is SpokeBase {
       state.initialHf,
       state.initialTotalCollateralInBaseCurrency,
       state.initialTotalDebtInBaseCurrency
-    ) = spoke1.getUserAccountData(alice);
+    ) = state.spoke.getUserAccountData(state.user);
 
     // multi reserve accounting
     state.debts = new Balance[](state.debtReserves.length);
     state.deficits = new Balance[](state.debtReserves.length);
     for (uint256 i = 0; i < state.debtReserves.length; i++) {
       state.deficits[i].balanceBefore = hub.getDeficit(state.debtReserves[i].assetId);
-      state.debts[i].balanceBefore = spoke1.getUserTotalDebt(
+      state.debts[i].balanceBefore = state.spoke.getUserTotalDebt(
         state.debtReserves[i].reserveId,
-        alice
+        state.user
       );
     }
 
@@ -627,18 +619,18 @@ contract SpokeLiquidationBase is SpokeBase {
       LIQUIDATOR
     );
     state.liquidatorDebt.balanceAfter = IERC20(state.debtReserve.asset).balanceOf(LIQUIDATOR);
-    (state.baseDebt.balanceAfter, state.premiumDebt.balanceAfter) = spoke1.getUserDebt(
+    (state.baseDebt.balanceAfter, state.premiumDebt.balanceAfter) = state.spoke.getUserDebt(
       state.debtReserve.reserveId,
-      alice
+      state.user
     );
     state.debt.balanceAfter = state.baseDebt.balanceAfter + state.premiumDebt.balanceAfter;
-    state.supply.balanceAfter = spoke1.getUserSuppliedAmount(
+    state.supply.balanceAfter = state.spoke.getUserSuppliedAmount(
       state.collateralReserve.reserveId,
-      alice
+      state.user
     );
-    state.supplyShares.balanceAfter = spoke1.getUserSuppliedShares(
+    state.supplyShares.balanceAfter = state.spoke.getUserSuppliedShares(
       state.collateralReserve.reserveId,
-      alice
+      state.user
     );
     state.rate.rateAfter = hub.convertToSuppliedAssets(
       state.collateralReserve.assetId,
@@ -688,13 +680,16 @@ contract SpokeLiquidationBase is SpokeBase {
       state.finalHf,
       state.totalCollateralInBaseCurrency,
       state.totalDebtInBaseCurrency
-    ) = spoke1.getUserAccountData(alice);
+    ) = state.spoke.getUserAccountData(state.user);
 
     state.hasDeficit =
       state.totalCollateralInBaseCurrency == 0 &&
       state.totalDebtInBaseCurrency == 0;
 
-    state.usingAsCollateral = spoke1.getUsingAsCollateral(state.collateralReserve.reserveId, alice);
+    state.usingAsCollateral = state.spoke.getUsingAsCollateral(
+      state.collateralReserve.reserveId,
+      state.user
+    );
 
     // multi reserve accounting
     for (uint256 i = 0; i < state.debtReserves.length; i++) {
@@ -704,7 +699,10 @@ contract SpokeLiquidationBase is SpokeBase {
         state.deficits[i].balanceAfter -
         state.deficits[i].balanceBefore;
 
-      state.debts[i].balanceAfter = spoke1.getUserTotalDebt(state.debtReserves[i].reserveId, alice);
+      state.debts[i].balanceAfter = state.spoke.getUserTotalDebt(
+        state.debtReserves[i].reserveId,
+        state.user
+      );
       state.debts[i].balanceChange = _absDiff(
         state.debts[i].balanceAfter,
         state.debts[i].balanceBefore
@@ -715,6 +713,7 @@ contract SpokeLiquidationBase is SpokeBase {
   }
 
   function _increaseCollateralReserveSupplyExchangeRate(
+    ISpoke spoke,
     uint256 assetId,
     uint256 collateralReserveId,
     uint256 borrowAmount,
@@ -728,8 +727,9 @@ contract SpokeLiquidationBase is SpokeBase {
       abi.encode(0)
     );
     // user borrows some collateral reserve to inflate collateral supply ex rate
+    // due to mocked price, user's rp will be 0
     Utils.borrow({
-      spoke: spoke1,
+      spoke: spoke,
       reserveId: collateralReserveId,
       user: user,
       amount: borrowAmount,

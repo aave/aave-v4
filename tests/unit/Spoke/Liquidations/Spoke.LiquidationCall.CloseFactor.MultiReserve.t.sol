@@ -218,10 +218,13 @@ contract LiquidationCallCloseFactorMultiReserveTest is SpokeLiquidationBase {
     state.debtReserve = state.debtReserves[debtReserveIndex];
     state.debtReserveId = debtReserveIds[debtReserveIndex];
 
-    spoke1.updateLiquidationConfig(liqConfig);
-    updateLiquidationBonus(spoke1, state.collateralReserveId, liqBonus);
+    state.spoke = spoke1;
+    state.user = alice;
+
+    state.spoke.updateLiquidationConfig(liqConfig);
+    updateLiquidationBonus(state.spoke, state.collateralReserveId, liqBonus);
     updateLiquidationProtocolFeePercentage(
-      spoke1,
+      state.spoke,
       state.collateralReserveId,
       state.liquidationProtocolFeePercentage
     );
@@ -247,7 +250,7 @@ contract LiquidationCallCloseFactorMultiReserveTest is SpokeLiquidationBase {
       );
 
       Utils.supplyCollateral({
-        spoke: spoke1,
+        spoke: state.spoke,
         reserveId: collateralReserveIds[i],
         user: alice,
         amount: supplyAmount,
@@ -255,7 +258,7 @@ contract LiquidationCallCloseFactorMultiReserveTest is SpokeLiquidationBase {
       });
     }
 
-    state.desiredHf = _calcLowestHfToRestoreCloseFactor(spoke1, alice, liqBonus).percentMulUp(
+    state.desiredHf = _calcLowestHfToRestoreCloseFactor(state.spoke, alice, liqBonus).percentMulUp(
       101_00
     ); // add buffer to have HF remain above lowest allowed HF
 
@@ -270,10 +273,10 @@ contract LiquidationCallCloseFactorMultiReserveTest is SpokeLiquidationBase {
     (
       uint256 hfAfterBorrow,
       uint256[] memory requiredDebtAmounts
-    ) = _borrowMultipleReservesToBeBelowHf(spoke1, alice, debtReserveIds, state.desiredHf);
+    ) = _borrowMultipleReservesToBeBelowHf(state.spoke, alice, debtReserveIds, state.desiredHf);
 
     state.liquidationBonus = _getVariableLiquidationBonus(
-      spoke1,
+      state.spoke,
       state.collateralReserve.reserveId,
       hfAfterBorrow
     );
@@ -285,21 +288,21 @@ contract LiquidationCallCloseFactorMultiReserveTest is SpokeLiquidationBase {
     console.log(' coll id1 id2', collateralReserveIds[0], collateralReserveIds[1]);
     console.log(
       ' alice initial debts %e %e',
-      spoke1.getUserTotalDebt(debtReserveIds[0], alice),
-      spoke1.getUserTotalDebt(debtReserveIds[1], alice)
+      state.spoke.getUserTotalDebt(debtReserveIds[0], alice),
+      state.spoke.getUserTotalDebt(debtReserveIds[1], alice)
     );
     console.log(
       ' alice initial supplied %e %e',
-      spoke1.getUserSuppliedAmount(collateralReserveIds[0], alice),
-      spoke1.getUserSuppliedAmount(collateralReserveIds[1], alice)
+      state.spoke.getUserSuppliedAmount(collateralReserveIds[0], alice),
+      state.spoke.getUserSuppliedAmount(collateralReserveIds[1], alice)
     );
 
     // for (uint256 i = 0; i < debtReserveIds.length; i++) {
-    //   assertLt(spoke1.getHealthFactor(alice), HEALTH_FACTOR_LIQUIDATION_THRESHOLD);
+    //   assertLt(state.spoke.getHealthFactor(alice), HEALTH_FACTOR_LIQUIDATION_THRESHOLD);
 
     //   console.log('liquidate ', debtReserveIds[i]);
     //   vm.prank(LIQUIDATOR);
-    //   spoke1.liquidationCall(
+    //   state.spoke.liquidationCall(
     //     collateralReserveIds[i],
     //     debtReserveIds[i],
     //     alice,
@@ -307,7 +310,7 @@ contract LiquidationCallCloseFactorMultiReserveTest is SpokeLiquidationBase {
     //   );
     // }
 
-    assertLt(spoke1.getHealthFactor(alice), HEALTH_FACTOR_LIQUIDATION_THRESHOLD);
+    assertLt(state.spoke.getHealthFactor(alice), HEALTH_FACTOR_LIQUIDATION_THRESHOLD);
 
     console.log(
       'liquidate %e %e',
@@ -323,7 +326,7 @@ contract LiquidationCallCloseFactorMultiReserveTest is SpokeLiquidationBase {
       state.liqProtocolFee,
 
     ) = _calculateAvailableCollateralToLiquidate(
-      spoke1,
+      state.spoke,
       state,
       requiredDebtAmounts[debtReserveIndex]
     );
@@ -333,7 +336,7 @@ contract LiquidationCallCloseFactorMultiReserveTest is SpokeLiquidationBase {
     vm.recordLogs();
 
     vm.prank(LIQUIDATOR);
-    spoke1.liquidationCall(
+    state.spoke.liquidationCall(
       collateralReserveIds[collateralReserveIndex],
       debtReserveIds[debtReserveIndex],
       alice,
