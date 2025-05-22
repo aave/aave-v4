@@ -219,7 +219,7 @@ contract SpokeLiquidationBase is SpokeBase {
     LiquidationTestLocalParams memory state,
     ISpoke spoke,
     string memory label
-  ) internal {
+  ) internal view {
     _assertUserAccountData(spoke, state, label);
     _assertProtocolFeeEarned(state, label);
     _assertLiquidationBonusEarned(state, label);
@@ -326,7 +326,7 @@ contract SpokeLiquidationBase is SpokeBase {
     ISpoke spoke,
     LiquidationTestLocalParams memory state,
     string memory label
-  ) internal view {
+  ) internal pure {
     if (state.supplyShares.balanceAfter == 0) {
       assertFalse(
         state.usingAsCollateral,
@@ -344,7 +344,7 @@ contract SpokeLiquidationBase is SpokeBase {
     ISpoke spoke,
     LiquidationTestLocalParams memory state,
     string memory label
-  ) internal {
+  ) internal view {
     // all collateral seized; all debt liquidated and moved to deficit
     assertEq(
       state.supplyShares.balanceAfter,

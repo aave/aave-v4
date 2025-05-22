@@ -4,80 +4,15 @@ pragma solidity ^0.8.0;
 import 'tests/unit/Spoke/Liquidations/Spoke.Liquidation.Base.t.sol';
 
 contract LiquidationCallMultiReserveBadPremiumDebtTest is SpokeLiquidationBase {
-  using PercentageMath for uint256;
   using PercentageMathExtended for uint256;
 
-  /// tests where liquidation results in bad debt with premium debt > 0
-  function test_liquidationCall_fuzz_multi_reserve_badPremiumDebt_scenario1(
-    uint256 collateralReserveId,
-    DataTypes.LiquidationConfig memory liqConfig,
-    uint256 liqBonus,
-    uint256 supplyAmount,
-    uint256 liquidationProtocolFeePercentage,
-    uint256 skipTime,
-    uint256 skipTimeToAccruePremium
-  ) public {
-    collateralReserveId = bound(collateralReserveId, 0, spoke1.reserveCount() - 1);
-
-    uint256[] memory debtReserveIds = new uint256[](3);
-    // debtReserveIds must be in ascending order for event emission assertions
-    debtReserveIds[0] = _wbtcReserveId(spoke1);
-    debtReserveIds[1] = _daiReserveId(spoke1);
-    debtReserveIds[2] = _usdxReserveId(spoke1);
-
-    LiquidationTestLocalParams memory state = _execLiqCallCloseFactorBadPremiumDebtTest(
-      liqConfig,
-      liqBonus,
-      supplyAmount,
-      collateralReserveId,
-      debtReserveIds,
-      liquidationProtocolFeePercentage,
-      skipTime,
-      skipTimeToAccruePremium
-    );
-
-    string memory label = 'test_liquidationCall_fuzz_multi_reserve_badPremiumDebt';
-    _checkLiquidation(state, spoke1, label);
-    _checkDeficits(state, debtReserveIds, alice);
-    // for (uint256 i = 0; i < debtReserveIds.length; i++) {
-    //   assertEq(
-    //     spoke1.getUserTotalDebt(debtReserveIds[i], alice),
-    //     0,
-    //     'remaining debt should be 0 (reported as deficit)'
-    //   );
-    //   if (i != state.debtReserveIndex) {
-    //     assertEq(
-    //       state.deficits[i].balanceChange,
-    //       state.debts[i].balanceChange,
-    //       'for other debt assets, total debt should be reported as deficit'
-    //     );
-    //   }
-    //   // console.log(
-    //   //   ' deficit %e debt change %e',
-    //   //   state.deficits[i].balanceChange,
-    //   //   state.debts[i].balanceChange
-    //   // );
-    // }
-
-    // for (uint256 i = 0; i < state.deficits.length; i++) {
-    //   console.log(
-    //     ' id %s total debt %e',
-    //     debtReserveIds[i],
-    //     spoke1.getUserTotalDebt(debtReserveIds[i], alice)
-    //   );
-    //   console.log(
-    //     ' deficit %e debt change %e',
-    //     state.deficits[i].balanceChange,
-    //     state.debts[i].balanceChange
-    //   );
-    //   // assertEq(
-    //   //   ,
-    //   //   'bad debt should be moved to deficit'
-    //   // );
-    // }
+  struct BorrowMultipleReservesToBeAboveHealthyHf {
+    uint256 requiredDebtInBase;
+    uint256 remaining;
   }
 
   /// coll: weth
+  /// bad debt: wbtc, dai, usdx
   function test_liquidationCall_multi_reserve_badPremiumDebt_scenario1() public {
     uint256 collateralReserveId = _wethReserveId(spoke1);
 
@@ -96,9 +31,44 @@ contract LiquidationCallMultiReserveBadPremiumDebtTest is SpokeLiquidationBase {
     });
   }
 
-  // coll: weth
+  /// fuzz test - bad debt: wbtc, dai, usdx
+  function test_liquidationCall_fuzz_multi_reserve_badPremiumDebt_scenario1(
+    uint256 collateralReserveId,
+    DataTypes.LiquidationConfig memory liqConfig,
+    uint256 liqBonus,
+    uint256 supplyAmount,
+    uint256 liquidationProtocolFeePercentage,
+    uint256 skipTime,
+    uint256 skipTimeToAccruePremium
+  ) public {
+    collateralReserveId = bound(collateralReserveId, 0, spoke1.reserveCount() - 1);
+
+    uint256[] memory debtReserveIds = new uint256[](3);
+    // debtReserveIds must be in ascending order for event emission assertions
+    debtReserveIds[0] = _wbtcReserveId(spoke1);
+    debtReserveIds[1] = _daiReserveId(spoke1);
+    debtReserveIds[2] = _usdxReserveId(spoke1);
+
+    LiquidationTestLocalParams memory state = _execLiqCallCloseFactorMultiAssetBadPremiumDebtTest(
+      liqConfig,
+      liqBonus,
+      supplyAmount,
+      collateralReserveId,
+      debtReserveIds,
+      liquidationProtocolFeePercentage,
+      skipTime,
+      skipTimeToAccruePremium
+    );
+
+    string memory label = 'test_liquidationCall_fuzz_multi_reserve_badPremiumDebt_scenario1';
+    _checkLiquidation(state, spoke1, label);
+    _checkDeficits(state, debtReserveIds, alice);
+  }
+
+  /// coll: weth
+  /// bad debt: wbtc, dai, usdx
   function test_liquidationCall_multi_reserve_badPremiumDebt_scenario2() public {
-    uint256 collateralReserveId = _usdxReserveId(spoke1);
+    uint256 collateralReserveId = _wbtcReserveId(spoke1);
 
     test_liquidationCall_fuzz_multi_reserve_badPremiumDebt_scenario2({
       liqConfig: DataTypes.LiquidationConfig({
@@ -115,6 +85,7 @@ contract LiquidationCallMultiReserveBadPremiumDebtTest is SpokeLiquidationBase {
     });
   }
 
+  /// fuzz test - bad debt: weth, wbtc, usdy
   function test_liquidationCall_fuzz_multi_reserve_badPremiumDebt_scenario2(
     uint256 collateralReserveId,
     DataTypes.LiquidationConfig memory liqConfig,
@@ -132,7 +103,7 @@ contract LiquidationCallMultiReserveBadPremiumDebtTest is SpokeLiquidationBase {
     debtReserveIds[1] = _wbtcReserveId(spoke1);
     debtReserveIds[2] = _usdyReserveId(spoke1);
 
-    LiquidationTestLocalParams memory state = _execLiqCallCloseFactorBadPremiumDebtTest(
+    LiquidationTestLocalParams memory state = _execLiqCallCloseFactorMultiAssetBadPremiumDebtTest(
       liqConfig,
       liqBonus,
       supplyAmount,
@@ -143,119 +114,71 @@ contract LiquidationCallMultiReserveBadPremiumDebtTest is SpokeLiquidationBase {
       skipTimeToAccruePremium
     );
 
-    string memory label = 'test_liquidationCall_fuzz_multi_reserve_badPremiumDebt';
+    string memory label = 'test_liquidationCall_fuzz_multi_reserve_badPremiumDebt_scenario2';
     _checkLiquidation(state, spoke1, label);
     _checkDeficits(state, debtReserveIds, alice);
   }
 
-  // /// coll: usdx / debt: weth
-  // function test_liquidationCall_badPremiumDebt_scenario3() public {
-  //   uint256 collateralReserveId = _usdxReserveId(spoke1);
-  //   uint256 debtReserveId = _wethReserveId(spoke1);
+  /// coll: usdy
+  /// bad debt: dai, usdx, usdy
+  function test_liquidationCall_multi_reserve_badPremiumDebt_scenario3() public {
+    uint256 collateralReserveId = _usdyReserveId(spoke1);
 
-  //   test_liquidationCall_fuzz_badPremiumDebt({
-  //     liqConfig: DataTypes.LiquidationConfig({
-  //       closeFactor: 1.5e18,
-  //       liquidationBonusFactor: 0,
-  //       healthFactorBonusThreshold: 0
-  //     }),
-  //     liqBonus: 105_00,
-  //     supplyAmount: 10e6,
-  //     liquidationProtocolFeePercentage: 5_00,
-  //     collateralReserveId: collateralReserveId,
-  //     debtReserveId: debtReserveId,
-  //     skipTime: 365 days,
-  //     skipTimeToAccruePremium: 365 days * 4
-  //   });
-  // }
-
-  // /// coll: usdx / debt: dai
-  // function test_liquidationCall_badPremiumDebt_scenario4() public {
-  //   uint256 collateralReserveId = _usdxReserveId(spoke1);
-  //   uint256 debtReserveId = _daiReserveId(spoke1);
-
-  //   test_liquidationCall_fuzz_badPremiumDebt({
-  //     liqConfig: DataTypes.LiquidationConfig({
-  //       closeFactor: 1.5e18,
-  //       liquidationBonusFactor: 0,
-  //       healthFactorBonusThreshold: 0
-  //     }),
-  //     liqBonus: 105_00,
-  //     supplyAmount: 10e6,
-  //     liquidationProtocolFeePercentage: 5_00,
-  //     collateralReserveId: collateralReserveId,
-  //     debtReserveId: debtReserveId,
-  //     skipTime: 365 days,
-  //     skipTimeToAccruePremium: 365 days * 4
-  //   });
-  // }
-
-  // /// coll: dai / debt: weth
-  // function test_liquidationCall_badPremiumDebt_scenario5() public {
-  //   uint256 collateralReserveId = _daiReserveId(spoke1);
-  //   uint256 debtReserveId = _wethReserveId(spoke1);
-
-  //   test_liquidationCall_fuzz_badPremiumDebt({
-  //     liqConfig: DataTypes.LiquidationConfig({
-  //       closeFactor: 1.5e18,
-  //       liquidationBonusFactor: 0,
-  //       healthFactorBonusThreshold: 0
-  //     }),
-  //     liqBonus: 105_00,
-  //     supplyAmount: 1_000e6,
-  //     liquidationProtocolFeePercentage: 5_00,
-  //     collateralReserveId: collateralReserveId,
-  //     debtReserveId: debtReserveId,
-  //     skipTime: 365 days,
-  //     skipTimeToAccruePremium: 365 days * 4
-  //   });
-  // }
-
-  // /// coll: dai / debt: usdx
-  // function test_liquidationCall_badPremiumDebt_scenario6() public {
-  //   uint256 collateralReserveId = _daiReserveId(spoke1);
-  //   uint256 debtReserveId = _usdxReserveId(spoke1);
-
-  //   test_liquidationCall_fuzz_badPremiumDebt({
-  //     liqConfig: DataTypes.LiquidationConfig({
-  //       closeFactor: 1.5e18,
-  //       liquidationBonusFactor: 0,
-  //       healthFactorBonusThreshold: 0
-  //     }),
-  //     liqBonus: 105_00,
-  //     supplyAmount: 1_000e6,
-  //     liquidationProtocolFeePercentage: 5_00,
-  //     collateralReserveId: collateralReserveId,
-  //     debtReserveId: debtReserveId,
-  //     skipTime: 365 days,
-  //     skipTimeToAccruePremium: 365 days * 4
-  //   });
-  // }
-
-  /// bound liqConfig close factor, with static liquidation bonus
-  /// use constant liquidation bonus to simplify calcs for desiredHf
-  function _bound(
-    DataTypes.LiquidationConfig memory liqConfig
-  ) internal pure virtual override returns (DataTypes.LiquidationConfig memory) {
-    liqConfig.closeFactor = bound(
-      liqConfig.closeFactor,
-      MIN_CLOSE_FACTOR,
-      HEALTH_FACTOR_LIQUIDATION_THRESHOLD * 10
-    );
-
-    // set constant liquidation bonus to simplify calcs for desiredHf
-    liqConfig.liquidationBonusFactor = 0;
-    liqConfig.healthFactorBonusThreshold = 0;
-
-    return liqConfig;
+    test_liquidationCall_fuzz_multi_reserve_badPremiumDebt_scenario2({
+      liqConfig: DataTypes.LiquidationConfig({
+        closeFactor: 1.5e18,
+        liquidationBonusFactor: 0,
+        healthFactorBonusThreshold: 0
+      }),
+      liqBonus: 105_00,
+      supplyAmount: 1.5e18,
+      liquidationProtocolFeePercentage: 5_00,
+      collateralReserveId: collateralReserveId,
+      skipTime: 365 days,
+      skipTimeToAccruePremium: 365 days * 4
+    });
   }
 
-  /// fuzz tests to make sure bad debt remains after liquidation
-  /// single debt reserve, single collateral reserve
+  /// fuzz test - bad debt: dai, usdx, usdy
+  function test_liquidationCall_fuzz_multi_reserve_badPremiumDebt_scenario3(
+    uint256 collateralReserveId,
+    DataTypes.LiquidationConfig memory liqConfig,
+    uint256 liqBonus,
+    uint256 supplyAmount,
+    uint256 liquidationProtocolFeePercentage,
+    uint256 skipTime,
+    uint256 skipTimeToAccruePremium
+  ) public {
+    collateralReserveId = bound(collateralReserveId, 0, spoke1.reserveCount() - 1);
+
+    uint256[] memory debtReserveIds = new uint256[](3);
+    // debtReserveIds must be in ascending order for event emission assertions
+    debtReserveIds[0] = _daiReserveId(spoke1);
+    debtReserveIds[1] = _usdxReserveId(spoke1);
+    debtReserveIds[2] = _usdyReserveId(spoke1);
+
+    LiquidationTestLocalParams memory state = _execLiqCallCloseFactorMultiAssetBadPremiumDebtTest(
+      liqConfig,
+      liqBonus,
+      supplyAmount,
+      collateralReserveId,
+      debtReserveIds,
+      liquidationProtocolFeePercentage,
+      skipTime,
+      skipTimeToAccruePremium
+    );
+
+    string memory label = 'test_liquidationCall_fuzz_multi_reserve_badPremiumDebt_scenario3';
+    _checkLiquidation(state, spoke1, label);
+    _checkDeficits(state, debtReserveIds, alice);
+  }
+
+  /// execute fuzz tests with bad debt across multiple debt reserves
+  /// multiple debt reserves, single collateral reserve
   /// user health factor position is lower than threshold -> liquidating all collateral is insufficient to cover debt
   /// close factor varies across range of values
   /// constant liquidation bonus
-  function _execLiqCallCloseFactorBadPremiumDebtTest(
+  function _execLiqCallCloseFactorMultiAssetBadPremiumDebtTest(
     DataTypes.LiquidationConfig memory liqConfig,
     uint256 liqBonus,
     uint256 supplyAmount,
@@ -271,7 +194,6 @@ contract LiquidationCallMultiReserveBadPremiumDebtTest is SpokeLiquidationBase {
 
     for (uint256 i = 0; i < debtReserveIds.length; i++) {
       state.debtReserves[i] = spoke1.getReserve(debtReserveIds[i]);
-      console.log('  debtReserveId %e', debtReserveIds[i]);
     }
 
     state.debtReserve = state.debtReserves[0];
@@ -280,7 +202,9 @@ contract LiquidationCallMultiReserveBadPremiumDebtTest is SpokeLiquidationBase {
     liqBonus = bound(
       liqBonus,
       MIN_LIQUIDATION_BONUS,
-      PercentageMath.PERCENTAGE_FACTOR.percentDiv(state.collateralReserve.config.collateralFactor)
+      PercentageMath.PERCENTAGE_FACTOR.percentDivDown(
+        state.collateralReserve.config.collateralFactor
+      )
     );
     liquidationProtocolFeePercentage = bound(liquidationProtocolFeePercentage, 0, 100_00);
     supplyAmount = bound(
@@ -321,34 +245,22 @@ contract LiquidationCallMultiReserveBadPremiumDebtTest is SpokeLiquidationBase {
     );
 
     // borrow some amount of debt reserve to end up below hf threshold
-    (
-      uint256 hfAfterBorrow,
-      uint256[] memory requiredDebtAmounts
-    ) = _borrowMultipleReservesToBeAboveHealthyHf(
-        spoke1,
-        alice,
-        debtReserveIds,
-        HEALTH_FACTOR_LIQUIDATION_THRESHOLD
-      );
+    (uint256 hfAfterBorrow, ) = _borrowMultipleReservesToBeAboveHealthyHf(
+      spoke1,
+      alice,
+      debtReserveIds,
+      HEALTH_FACTOR_LIQUIDATION_THRESHOLD
+    );
+    // skip time to accrue premium debt
+    skip(skipTimeForPremiumAccrual);
+
+    state = _getAccountingInfoBeforeLiq(state);
 
     state.liquidationBonus = _getVariableLiquidationBonus(
       spoke1,
       collateralReserveId,
-      hfAfterBorrow
+      state.initialHf
     );
-
-    skip(skipTimeForPremiumAccrual);
-
-    // (uint256 rp, , uint256 hf, , ) = spoke1.getUserAccountData(alice);
-    // (uint256 baseDebt, uint256 premiumDebt) = spoke1.getUserDebt(debtReserveIds[0], alice);
-
-    // console.log('rp %e debt %e %e', rp, baseDebt, premiumDebt);
-    // (baseDebt, premiumDebt) = spoke1.getUserDebt(debtReserveIds[1], alice);
-    // console.log('debt %e %e', rp, baseDebt, premiumDebt);
-    // console.log('hf %e', hf);
-
-    // assertLt(hf, hfBadDebtThreshold, 'HF should result in bad debt');
-    state = _getAccountingInfoBeforeLiq(state);
 
     // ensure that debt accrued causes liquidatable position
     // and that the liquidated debt asset will fully cover the collateral
@@ -363,15 +275,6 @@ contract LiquidationCallMultiReserveBadPremiumDebtTest is SpokeLiquidationBase {
 
     assertGt(state.premiumDebt.balanceBefore, 0, 'premium debt should be > 0 before liquidation');
 
-    // console.log(
-    //   'requiredDebtAmounts %e %e',
-    //   _convertAmountToBaseCurrency(
-    //     state.debtReserves[state.debtReserveIndex].assetId,
-    //     spoke1.getUserTotalDebt(state.debtReserves[state.debtReserveIndex].reserveId, alice)
-    //   ),
-    //   state.initialTotalCollateralInBaseCurrency
-    // );
-
     (
       state.collToLiq,
       state.debtToLiq,
@@ -383,27 +286,6 @@ contract LiquidationCallMultiReserveBadPremiumDebtTest is SpokeLiquidationBase {
     // TODO: update when treasury accounting is done
     vm.recordLogs();
 
-    // console.log(
-    //   'emit deficit %s %s %e',
-    //   address(spoke1),
-    //   state.debtReserve.assetId,
-    //   state.debt.balanceBefore - state.debtToLiq
-    // );
-
-    // for (uint256 i = 0; i < debtReserveIds.length; i++) {
-    //   console.log(
-    //     ' id %s total debt %e',
-    //     debtReserveIds[i],
-    //     spoke1.getUserTotalDebt(debtReserveIds[i], alice)
-    //   );
-    // }
-
-    console.log(
-      ' liq debt id %s assetId %s total debt %e',
-      state.debtReserve.reserveId,
-      state.debtReserve.assetId,
-      state.debt.balanceBefore - state.debtToLiq
-    );
     vm.expectEmit(address(hub));
     emit ILiquidityHub.DeficitCreated(
       address(spoke1),
@@ -414,12 +296,6 @@ contract LiquidationCallMultiReserveBadPremiumDebtTest is SpokeLiquidationBase {
     // for remaining debt assets, total debt is reported as deficit
     for (uint256 i = 0; i < debtReserveIds.length; i++) {
       if (debtReserveIds[i] != state.debtReserve.reserveId) {
-        // console.log(
-        //   ' id %s assetId %s total debt %e',
-        //   debtReserveIds[i],
-        //   state.debtReserves[i].assetId,
-        //   spoke1.getUserTotalDebt(debtReserveIds[i], alice)
-        // );
         vm.expectEmit(address(hub));
         emit ILiquidityHub.DeficitCreated(
           address(spoke1),
@@ -447,37 +323,29 @@ contract LiquidationCallMultiReserveBadPremiumDebtTest is SpokeLiquidationBase {
 
     state = _getAccountingInfoAfterLiq(state);
 
-    console.log('supply balanceAfter %e', state.supplyShares.balanceAfter);
-
-    // for (uint256 i = 0; i < state.deficits.length; i++) {
-
-    //   console.log(
-    //     ' id %s total debt %e',
-    //     debtReserveIds[i],
-    //     spoke1.getUserTotalDebt(debtReserveIds[i], alice)
-    //   );
-    //   console.log(
-    //     ' deficit %e debt change %e',
-    //     state.deficits[i].balanceChange,
-    //     state.debts[i].balanceChange
-    //   );
-    //   // assertEq(
-    //   //   ,
-    //   //   'bad debt should be moved to deficit'
-    //   // );
-    // }
-
-    // revert('bad prem debt');
-
     return state;
   }
 
-  struct BorrowMultipleReservesToBeAboveHealthyHf {
-    uint256 requiredDebtInBase;
-    uint256 remaining;
+  /// bound liqConfig close factor, with static liquidation bonus
+  /// use constant liquidation bonus to simplify calcs for desiredHf
+  function _bound(
+    DataTypes.LiquidationConfig memory liqConfig
+  ) internal pure virtual override returns (DataTypes.LiquidationConfig memory) {
+    liqConfig.closeFactor = bound(
+      liqConfig.closeFactor,
+      MIN_CLOSE_FACTOR,
+      HEALTH_FACTOR_LIQUIDATION_THRESHOLD * 10
+    );
+
+    // set constant liquidation bonus to simplify calcs for desiredHf
+    liqConfig.liquidationBonusFactor = 0;
+    liqConfig.healthFactorBonusThreshold = 0;
+
+    return liqConfig;
   }
 
-  /// @notice Borrow random amounts from multiple reserves to ensure the health factor is above the desired level.
+  /// @notice Borrow random amounts from multiple reserves to ensure the health factor is above the desired HF
+  /// validates HF, therefore it must be a healthy HF
   function _borrowMultipleReservesToBeAboveHealthyHf(
     ISpoke spoke,
     address user,
@@ -515,20 +383,11 @@ contract LiquidationCallMultiReserveBadPremiumDebtTest is SpokeLiquidationBase {
       uint256 amount = _convertBaseCurrencyToAmount(assetId, amountInBase);
       vm.assume(amount < MAX_SUPPLY_AMOUNT);
 
-      // // mock price to 0 to circumvent borrow validation
-      // vm.mockCall(
-      //   address(oracle),
-      //   abi.encodeWithSelector(IPriceOracle.getAssetPrice.selector, assetId),
-      //   abi.encode(0)
-      // );
       spoke.borrow(reserveIds[i], amount, user);
-      // console.log('borrow %e %e', reserveIds[i], amount);
-      // console.log('borrowSh %e', spoke.getUserTotalDebt(reserveIds[i], user));
 
       vars.remaining -= amountInBase;
       requiredDebts[i] = amount;
     }
-    // vm.clearMockedCalls();
     vm.stopPrank();
 
     (, , finalHf, , ) = spoke.getUserAccountData(user);
