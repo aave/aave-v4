@@ -30,6 +30,7 @@ jobs:
         uses: bgd-labs/github-workflows/.github/actions/foundry-test@main
         with:
           FOUNDRY_PROFILE: gas
+          FORGE_SNAPSHOT_CHECK: true
 
       - name: Run Forge tests
         id: test
