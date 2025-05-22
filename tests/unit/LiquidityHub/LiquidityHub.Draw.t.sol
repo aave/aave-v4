@@ -350,11 +350,20 @@ contract LiquidityHubDrawTest is LiquidityHubBase {
     uint256 daiAmount = 100e18;
     uint256 drawCap = daiAmount;
     uint256 drawAmount = drawCap;
-    uint256 rate = uint256(10_00).bpsToRay();
 
     updateDrawCap(hub, daiAssetId, address(spoke1), drawCap);
 
-    _increaseExchangeRate(daiAssetId, daiAmount);
+    _supplyAndDrawLiquidity({
+      assetId: daiAssetId,
+      supplyUser: bob,
+      supplySpoke: address(spoke2),
+      supplyAmount: daiAmount,
+      drawUser: alice,
+      drawSpoke: address(spoke1),
+      drawAmount: drawAmount,
+      mockRate: SKIP_MOCK_RATE,
+      skipTime: 365 days
+    });
 
     (uint256 baseDebt, ) = hub.getAssetDebt(daiAssetId);
     assertGt(baseDebt, drawCap);
@@ -390,9 +399,13 @@ contract LiquidityHubDrawTest is LiquidityHubBase {
 
     _supplyAndDrawLiquidity({
       assetId: daiAssetId,
-      amount: daiAmount,
-      drawAmount: drawAmount,
-      rate: rate,
+      supplyUser: bob,
+      supplySpoke: address(spoke2),
+      supplyAmount: daiAmount,
+      drawUser: alice,
+      drawSpoke: address(spoke1),
+      drawAmount: daiAmount,
+      mockRate: rate,
       skipTime: skipTime
     });
 

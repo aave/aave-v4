@@ -203,10 +203,6 @@ abstract contract Base is Test {
   }
 
   function configureTokenList() internal {
-    address[] memory spokes = new address[](3);
-    spokes[0] = address(spoke1);
-    spokes[1] = address(spoke2);
-    spokes[2] = address(spoke3);
     DataTypes.SpokeConfig memory spokeConfig = DataTypes.SpokeConfig({
       supplyCap: type(uint256).max,
       drawCap: type(uint256).max

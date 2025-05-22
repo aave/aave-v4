@@ -170,9 +170,19 @@ contract LiquidityHubSupplyTest is LiquidityHubBase {
 
   function test_supply_revertsWith_SupplyCapExceeded_due_to_interest() public {
     uint256 daiAmount = 100e18;
-    uint256 newSupplyCap = daiAmount + 1;
 
+    Utils.add({
+      hub: hub,
+      assetId: daiAssetId,
+      spoke: address(spoke2),
+      amount: daiAmount,
+      user: alice,
+      to: address(spoke2)
+    });
+
+    uint256 newSupplyCap = daiAmount + 1;
     _updateSupplyCap(daiAssetId, address(spoke2), newSupplyCap);
+  
     _increaseExchangeRate(daiAssetId, daiAmount);
 
     vm.expectRevert(abi.encodeWithSelector(ILiquidityHub.SupplyCapExceeded.selector, newSupplyCap));
@@ -196,9 +206,13 @@ contract LiquidityHubSupplyTest is LiquidityHubBase {
     _updateSupplyCap(daiAssetId, address(spoke2), newSupplyCap);
     _supplyAndDrawLiquidity({
       assetId: daiAssetId,
-      amount: daiAmount,
+      supplyUser: bob,
+      supplySpoke: address(spoke2),
+      supplyAmount: daiAmount,
+      drawUser: alice,
+      drawSpoke: address(spoke1),
       drawAmount: drawAmount,
-      rate: rate,
+      mockRate: rate,
       skipTime: skipTime
     });
     vm.assume(hub.convertToSuppliedShares(daiAssetId, daiAmount) < daiAmount);
@@ -438,9 +452,13 @@ contract LiquidityHubSupplyTest is LiquidityHubBase {
 
     _supplyAndDrawLiquidity({
       assetId: daiAssetId,
-      amount: daiAmount,
+      supplyUser: bob,
+      supplySpoke: address(spoke2),
+      supplyAmount: daiAmount,
+      drawUser: alice,
+      drawSpoke: address(spoke1),
       drawAmount: drawAmount,
-      rate: rate,
+      mockRate: rate,
       skipTime: 365 days * 10
     });
     assertLt(hub.convertToSuppliedShares(daiAssetId, daiAmount), daiAmount); // index increased
@@ -467,9 +485,13 @@ contract LiquidityHubSupplyTest is LiquidityHubBase {
 
     _supplyAndDrawLiquidity({
       assetId: daiAssetId,
-      amount: daiAmount,
+      supplyUser: bob,
+      supplySpoke: address(spoke2),
+      supplyAmount: daiAmount,
+      drawUser: alice,
+      drawSpoke: address(spoke1),
       drawAmount: daiAmount,
-      rate: rate,
+      mockRate: rate,
       skipTime: skipTime
     });
 
@@ -487,7 +509,19 @@ contract LiquidityHubSupplyTest is LiquidityHubBase {
 
   function test_supply_with_increased_index() public {
     uint256 daiAmount = 100e18;
-    _increaseExchangeRate(daiAssetId, daiAmount);
+
+    _supplyAndDrawLiquidity({
+      assetId: daiAssetId,
+      supplyUser: bob,
+      supplySpoke: address(spoke2),
+      supplyAmount: daiAmount,
+      drawUser: alice,
+      drawSpoke: address(spoke1),
+      drawAmount: daiAmount,
+      mockRate: SKIP_MOCK_RATE,
+      skipTime: 365 days
+    });
+
     uint256 initialSuppliedAssets = hub.getAssetSuppliedAmount(daiAssetId);
     uint256 initialSuppliedShares = hub.getAssetSuppliedShares(daiAssetId);
 
@@ -565,7 +599,18 @@ contract LiquidityHubSupplyTest is LiquidityHubBase {
     uint256 assetId = daiAssetId;
     uint256 amount = 100e18;
 
-    (uint256 drawnAmount, ) = _increaseExchangeRate(assetId, amount);
+    (, uint256 drawnAmount) = _supplyAndDrawLiquidity({
+      assetId: assetId,
+      supplyUser: bob,
+      supplySpoke: address(spoke2),
+      supplyAmount: amount,
+      drawUser: alice,
+      drawSpoke: address(spoke1),
+      drawAmount: amount,
+      mockRate: SKIP_MOCK_RATE,
+      skipTime: 365 days
+    });
+
     uint256 initialSupplyAmount = hub.getAssetSuppliedAmount(assetId);
     uint256 initialSupplyShares = hub.getAssetSuppliedShares(assetId);
 
@@ -667,11 +712,15 @@ contract LiquidityHubSupplyTest is LiquidityHubBase {
 
     TestSupplyParams memory params;
 
-    (params.drawnShares, params.assetSuppliedShares) = _supplyAndDrawLiquidity({
+    (params.assetSuppliedShares, params.drawnShares) = _supplyAndDrawLiquidity({
       assetId: assetId,
-      amount: amount,
+      supplyUser: bob,
+      supplySpoke: address(spoke2),
+      supplyAmount: amount,
+      drawUser: alice,
+      drawSpoke: address(spoke1),
       drawAmount: amount,
-      rate: rate,
+      mockRate: rate,
       skipTime: skipTime
     });
     vm.assume(hub.convertToSuppliedShares(assetId, amount) < amount);
