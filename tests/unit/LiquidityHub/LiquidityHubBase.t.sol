@@ -58,7 +58,7 @@ contract LiquidityHubBase is Base {
     hub.updateSpokeConfig(assetId, spoke, spokeConfig);
   }
 
-  /// @dev spoke1 (alice) supplies asset, spoke1 (alice) draws asset, skip 1 year
+  /// @dev spoke2 (bob) supplies asset, spoke1 (alice) draws asset, skip 1 year
   /// increases supply and debt exchange rate
   /// @return drawAmount
   /// @return suppliedShares
