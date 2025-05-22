@@ -1,6 +1,8 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.0;
 
+import {Multicall} from 'src/dependencies/openzeppelin/Multicall.sol';
+
 import {SafeERC20} from 'src/dependencies/openzeppelin/SafeERC20.sol';
 import {IERC20} from 'src/dependencies/openzeppelin/IERC20.sol';
 // libraries
@@ -16,7 +18,7 @@ import {ILiquidityHub} from 'src/interfaces/ILiquidityHub.sol';
 import {ISpoke} from 'src/interfaces/ISpoke.sol';
 import {IPriceOracle} from 'src/interfaces/IPriceOracle.sol';
 
-contract Spoke is ISpoke {
+contract Spoke is ISpoke, Multicall {
   using SafeERC20 for IERC20;
   using WadRayMath for uint256;
   using WadRayMathExtended for uint256;
@@ -352,6 +354,60 @@ contract Spoke is ISpoke {
 
   function setUsingAsCollateral(uint256 reserveId, bool usingAsCollateral) external {
     _setUsingAsCollateral(reserveId, msg.sender, usingAsCollateral);
+  }
+
+  /// @dev Must be called on a reserve user is already borrowing
+  /// @dev If not called by position owner or DAO, reverts if user risk premium increases
+  function updateUserRiskPremium(uint256 reserveId, address user) external {
+    DataTypes.Reserve storage reserve = _reserves[reserveId];
+    DataTypes.UserPosition storage userPosition = _userPositions[user][reserveId];
+    require(_isBorrowing(userPosition), UserNotBorrowingReserve(reserveId));
+    uint256 assetId = reserve.assetId;
+
+    uint256 userPremiumDrawnShares = userPosition.premiumDrawnShares;
+    uint256 userPremiumOffset = userPosition.premiumOffset;
+    uint256 accruedPremium = HUB.convertToDrawnAssets(assetId, userPremiumDrawnShares) -
+      userPremiumOffset; // assets(premiumShares) - offset should never be < 0
+    userPosition.premiumDrawnShares = 0;
+    userPosition.premiumOffset = 0;
+    userPosition.realizedPremium += accruedPremium;
+
+    _refreshPremiumDebt(
+      reserve,
+      user,
+      assetId,
+      -int256(userPremiumDrawnShares),
+      -int256(userPremiumOffset),
+      int256(accruedPremium)
+    );
+
+    uint256 newUserRiskPremium = _validateUserPosition(user); // validates HF
+
+    uint256 newUserPremiumDrawnShares = userPosition.premiumDrawnShares = userPosition
+      .baseDrawnShares
+      .percentMul(newUserRiskPremium);
+    // TODO: With access control, also allow DAO to update user risk premium in case of increase
+    // Check new premium drawn shares as proxy for user risk premium
+    require(
+      msg.sender == user || newUserPremiumDrawnShares < userPremiumDrawnShares,
+      NoUserRiskPremiumDecrease()
+    );
+    userPremiumOffset = userPosition.premiumOffset = HUB.previewOffset(
+      assetId,
+      userPosition.premiumDrawnShares
+    );
+
+    _refreshPremiumDebt(
+      reserve,
+      user,
+      assetId,
+      int256(newUserPremiumDrawnShares),
+      int256(userPremiumOffset),
+      0
+    );
+    _notifyRiskPremiumUpdate(assetId, user, newUserRiskPremium);
+
+    emit UserRiskPremiumUpdate(user, newUserRiskPremium);
   }
 
   function getUsingAsCollateral(uint256 reserveId, address user) external view returns (bool) {

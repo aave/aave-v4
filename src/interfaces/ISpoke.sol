@@ -37,6 +37,7 @@ interface ISpoke {
   );
   event OracleUpdated(uint256 indexed reserveId, address indexed oracle);
   event LiquidationConfigUpdated(DataTypes.LiquidationConfig config);
+  event UserRiskPremiumUpdate(address indexed user, uint256 riskPremium);
 
   /**
    * @dev Emitted when a borrower is liquidated.
@@ -78,6 +79,7 @@ interface ISpoke {
   error InvalidHubAddress();
   error InvalidHealthFactorBonusThreshold();
   error InvalidLiquidationBonusFactor();
+  error NoUserRiskPremiumDecrease();
   error HealthFactorNotBelowThreshold();
   error CollateralCannotBeLiquidated();
   error SpecifiedCurrencyNotBorrowedByUser();
@@ -133,6 +135,8 @@ interface ISpoke {
   ) external;
 
   function setUsingAsCollateral(uint256 reserveId, bool usingAsCollateral) external;
+  function updateUserRiskPremium(uint256 reserveId, address user) external;
+
   function getCollateralFactor(uint256 reserveId) external view returns (uint256);
   function getHealthFactor(address user) external view returns (uint256);
   function getLiquidityPremium(uint256 reserveId) external view returns (uint256);
