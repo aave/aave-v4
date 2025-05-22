@@ -175,7 +175,7 @@ contract LiquidationCallMultiReserveBadPremiumDebtTest is SpokeLiquidationBase {
 
   /// execute fuzz tests with bad debt across multiple debt reserves
   /// multiple debt reserves, single collateral reserve
-  /// user health factor position is lower than threshold -> liquidating all collateral is insufficient to cover debt
+  /// liquidating all collateral is insufficient to cover debt, bad debt remains
   /// close factor varies across range of values
   /// constant liquidation bonus
   function _execLiqCallCloseFactorMultiAssetBadPremiumDebtTest(
@@ -196,7 +196,7 @@ contract LiquidationCallMultiReserveBadPremiumDebtTest is SpokeLiquidationBase {
       state.debtReserves[i] = spoke1.getReserve(debtReserveIds[i]);
     }
 
-    liqConfig = _bound(liqConfig);
+    liqConfig = _boundCloseFactor(liqConfig);
     liqBonus = bound(
       liqBonus,
       MIN_LIQUIDATION_BONUS,
@@ -332,24 +332,6 @@ contract LiquidationCallMultiReserveBadPremiumDebtTest is SpokeLiquidationBase {
     state = _getAccountingInfoAfterLiq(state);
 
     return state;
-  }
-
-  /// bound liqConfig close factor, with static liquidation bonus
-  /// use constant liquidation bonus to simplify calcs for desiredHf
-  function _bound(
-    DataTypes.LiquidationConfig memory liqConfig
-  ) internal pure virtual override returns (DataTypes.LiquidationConfig memory) {
-    liqConfig.closeFactor = bound(
-      liqConfig.closeFactor,
-      MIN_CLOSE_FACTOR,
-      HEALTH_FACTOR_LIQUIDATION_THRESHOLD * 10
-    );
-
-    // set constant liquidation bonus to simplify calcs for desiredHf
-    liqConfig.liquidationBonusFactor = 0;
-    liqConfig.healthFactorBonusThreshold = 0;
-
-    return liqConfig;
   }
 
   /// @notice Borrow random amounts from multiple reserves to ensure the health factor is above the desired HF

@@ -38,7 +38,7 @@ contract LiquidationCallScenarioTest is SpokeLiquidationBase {
     DataTypes.UserPosition wethPosition;
   }
 
-  /// liquidation with realized premium accounting
+  /// liquidation with realized premium debt
   function test_liquidationCall_debt_realized_premium() public {
     LiqScenarioTestData memory state;
 
@@ -90,7 +90,7 @@ contract LiquidationCallScenarioTest is SpokeLiquidationBase {
       collateralReserveId: state.wbtcReserveId,
       debtReserveId: state.wethReserveId,
       user: alice,
-      debtToCover: MAX_SUPPLY_AMOUNT
+      debtToCover: UINT256_MAX
     });
 
     state.liquidatorCollateral.balanceAfter = IERC20(spoke1.getReserve(state.wbtcReserveId).asset)

@@ -98,6 +98,24 @@ contract SpokeLiquidationBase is SpokeBase {
     return liqConfig;
   }
 
+  /// bound liqConfig close factor
+  /// set constant liquidation bonus to simplify calcs for desiredHf
+  function _boundCloseFactor(
+    DataTypes.LiquidationConfig memory liqConfig
+  ) internal pure virtual returns (DataTypes.LiquidationConfig memory) {
+    liqConfig.closeFactor = bound(
+      liqConfig.closeFactor,
+      MIN_CLOSE_FACTOR,
+      HEALTH_FACTOR_LIQUIDATION_THRESHOLD * 10
+    );
+
+    // set constant liquidation bonus to simplify calcs for desiredHf
+    liqConfig.liquidationBonusFactor = 0;
+    liqConfig.healthFactorBonusThreshold = 0;
+
+    return liqConfig;
+  }
+
   /// execute generic liquidation call fuzz test with a desired initial user health factor
   /// @param desiredHf Desired user health factor prior to liquidation.
   function _execLiqCallFuzzTest(

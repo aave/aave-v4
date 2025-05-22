@@ -290,24 +290,6 @@ contract LiquidationCallBadDebtTest is SpokeLiquidationBase {
     );
   }
 
-  /// bound liqConfig close factor
-  /// set constant liquidation bonus to simplify calcs for desiredHf
-  function _bound(
-    DataTypes.LiquidationConfig memory liqConfig
-  ) internal pure virtual override returns (DataTypes.LiquidationConfig memory) {
-    liqConfig.closeFactor = bound(
-      liqConfig.closeFactor,
-      MIN_CLOSE_FACTOR,
-      HEALTH_FACTOR_LIQUIDATION_THRESHOLD * 10
-    );
-
-    // set constant liquidation bonus to simplify calcs for desiredHf
-    liqConfig.liquidationBonusFactor = 0;
-    liqConfig.healthFactorBonusThreshold = 0;
-
-    return liqConfig;
-  }
-
   /// execute fuzz tests to ensure bad debt remains post-liquidation
   /// single debt reserve, single collateral reserve
   /// liquidating all collateral is insufficient to cover debt
@@ -327,7 +309,8 @@ contract LiquidationCallBadDebtTest is SpokeLiquidationBase {
     state.collateralReserves[state.collateralReserveIndex] = spoke1.getReserve(collateralReserveId);
     state.debtReserves[state.debtReserveIndex] = spoke1.getReserve(debtReserveId);
 
-    liqConfig = _bound(liqConfig);
+    // bound close factor, with a static liq bonus
+    liqConfig = _boundCloseFactor(liqConfig);
     liqBonus = bound(
       liqBonus,
       MIN_LIQUIDATION_BONUS,
