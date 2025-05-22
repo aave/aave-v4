@@ -84,7 +84,6 @@ library DataTypes {
     uint256 baseBorrowIndex;
     uint256 riskPremium;
     uint256 lastUpdateTimestamp;
-    bool usingAsCollateral;
     uint256 suppliedShares;
     uint256 baseDrawnShares;
     uint256 premiumDrawnShares;

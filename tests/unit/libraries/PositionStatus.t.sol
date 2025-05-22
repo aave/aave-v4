@@ -57,7 +57,8 @@ function test_setUseAsCollateral_slot0() public {
     positionStatus.setUsingAsCollateral( 127, true);
     assertEq(positionStatus.isUsingAsCollateral(127), true);
   
-  }
+}
+
 function test_setUseAsCollateral_slot1() public {
   
     positionStatus.setUsingAsCollateral( 128, true);
@@ -66,7 +67,6 @@ function test_setUseAsCollateral_slot1() public {
     assertEq(positionStatus.isUsingAsCollateral(255), true);
   
   }
-
 
   /// forge-config: default.allow_internal_expect_revert = true
   function test_fuzz_setUseAsCollateral(uint256 a, bool b) public {

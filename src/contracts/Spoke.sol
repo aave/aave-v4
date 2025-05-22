@@ -7,6 +7,7 @@ import {PercentageMath} from 'src/libraries/math/PercentageMath.sol';
 import {KeyValueListInMemory} from 'src/libraries/helpers/KeyValueListInMemory.sol';
 import {DataTypes} from 'src/libraries/types/DataTypes.sol';
 import {LiquidationLogic} from 'src/libraries/logic/LiquidationLogic.sol';
+import {PositionStatus} from 'src/libraries/configuration/PositionStatus.sol';
 
 // interfaces
 import {ILiquidityHub} from 'src/interfaces/ILiquidityHub.sol';
@@ -18,6 +19,7 @@ contract Spoke is ISpoke {
   using PercentageMath for uint256;
   using KeyValueListInMemory for KeyValueListInMemory.List;
   using LiquidationLogic for DataTypes.LiquidationConfig;
+  using PositionStatus for DataTypes.PositionStatus;
 
   uint256 public constant HEALTH_FACTOR_LIQUIDATION_THRESHOLD = WadRayMath.WAD;
   ILiquidityHub public immutable HUB;
@@ -25,6 +27,7 @@ contract Spoke is ISpoke {
 
   mapping(address user => mapping(uint256 reserveId => DataTypes.UserPosition position))
     internal _userPositions;
+  mapping(address user => DataTypes.PositionStatus positionStatus) internal _positionStatus;
   mapping(uint256 reserveId => DataTypes.Reserve reserveData) internal _reserves;
   DataTypes.LiquidationConfig internal _liquidationConfig;
   uint256[] public reservesList; // todo: rm, not needed
@@ -164,6 +167,13 @@ contract Spoke is ISpoke {
 
     userPosition.suppliedShares -= withdrawnShares;
     reserve.suppliedShares -= withdrawnShares;
+
+    if(userPosition.suppliedShares == 0) {
+      DataTypes.PositionStatus storage positionStatus = _positionStatus[msg.sender];
+      if(positionStatus.isUsingAsCollateral(reserveId)) {
+        positionStatus.setUsingAsCollateral(reserveId,false);
+      }
+    }
 
     // calc needs new user position, just updating base debt is enough
     uint256 newUserRiskPremium = _validateUserPosition(msg.sender); // validates HF
@@ -306,9 +316,10 @@ contract Spoke is ISpoke {
   function setUsingAsCollateral(uint256 reserveId, bool usingAsCollateral) external {
     DataTypes.Reserve storage reserve = _reserves[reserveId];
     DataTypes.UserPosition storage userPosition = _userPositions[msg.sender][reserveId];
+    DataTypes.PositionStatus storage positionStatus = _positionStatus[msg.sender];
 
     _validateSetUsingAsCollateral(reserve, userPosition, usingAsCollateral);
-    userPosition.usingAsCollateral = usingAsCollateral;
+    positionStatus.setUsingAsCollateral(reserveId, usingAsCollateral);
 
     // consider updating user rp & notify here especially when deactivating collateral
 
@@ -316,7 +327,7 @@ contract Spoke is ISpoke {
   }
 
   function getUsingAsCollateral(uint256 reserveId, address user) external view returns (bool) {
-    return _userPositions[user][reserveId].usingAsCollateral;
+    return _positionStatus[user].isUsingAsCollateral(reserveId);
   }
 
   function getUserDebt(uint256 reserveId, address user) external view returns (uint256, uint256) {
@@ -559,21 +570,23 @@ contract Spoke is ISpoke {
   }
 
   function _usingAsCollateral(
-    DataTypes.UserPosition storage userPosition
+    address user,
+    uint256 reserveId
   ) internal view returns (bool) {
-    return userPosition.usingAsCollateral;
+    return _positionStatus[user].isUsingAsCollateral(reserveId);
   }
 
   // todo opt: use bitmap
-  function _isBorrowing(DataTypes.UserPosition storage userPosition) internal view returns (bool) {
-    return userPosition.baseDrawnShares > 0;
+  function _isBorrowing(address user, uint256 reserveId) internal view returns (bool) {
+    return _positionStatus[user].isBorrowing(reserveId);
   }
 
   // todo opt: use bitmap
   function _usingAsCollateralOrBorrowing(
-    DataTypes.UserPosition storage userPosition
+    address user,
+    uint256 reserveId
   ) internal view returns (bool) {
-    return _usingAsCollateral(userPosition) || _isBorrowing(userPosition);
+    return _usingAsCollateral(user, reserveId) || _isBorrowing(user, reserveId);
   }
 
   /// @dev User rp calc runs until the first of either debt or collateral is exhausted
@@ -591,7 +604,7 @@ contract Spoke is ISpoke {
     while (vars.reserveId < reservesListLength) {
       DataTypes.UserPosition storage userPosition = _userPositions[userAddress][vars.reserveId];
 
-      if (!_usingAsCollateralOrBorrowing(userPosition)) {
+      if (!_usingAsCollateralOrBorrowing(userAddress, vars.reserveId)) {
         unchecked {
           ++vars.reserveId;
         }
@@ -605,14 +618,14 @@ contract Spoke is ISpoke {
         vars.assetUnit = 10 ** HUB.getAssetConfig(vars.assetId).decimals;
       }
 
-      if (_usingAsCollateral(userPosition)) {
+      if (_usingAsCollateral(userAddress, vars.reserveId)) {
         // @dev opt: this can be extracted by counting number of set bits in a supplied (only) bitmap saving one loop
         unchecked {
           ++vars.collateralReserveCount;
         }
       }
 
-      if (_isBorrowing(userPosition)) {
+      if (_isBorrowing(userAddress, vars.reserveId)) {
         vars.totalDebtInBaseCurrency += _getUserDebtInBaseCurrency(
           userPosition,
           vars.assetId,
@@ -633,7 +646,7 @@ contract Spoke is ISpoke {
     while (vars.reserveId < reservesListLength) {
       DataTypes.UserPosition storage userPosition = _userPositions[userAddress][vars.reserveId];
       DataTypes.Reserve storage reserve = _reserves[vars.reserveId];
-      if (_usingAsCollateral(userPosition)) {
+      if (_usingAsCollateral(userAddress, vars.reserveId)) {
         vars.assetId = reserve.assetId;
         vars.liquidityPremium = reserve.config.liquidityPremium;
         vars.assetPrice = oracle.getAssetPrice(vars.assetId);
@@ -771,7 +784,7 @@ contract Spoke is ISpoke {
       DataTypes.Reserve storage reserve = _reserves[reserveId];
       uint256 assetId = reserve.assetId;
       // todo keep borrowed assets in transient storage/pass through?
-      if (_isBorrowing(userPosition) && assetId != assetIdToAvoid) {
+      if (_isBorrowing(userAddress, reserveId) && assetId != assetIdToAvoid) {
         uint256 oldUserPremiumDrawnShares = userPosition.premiumDrawnShares;
         uint256 oldUserPremiumOffset = userPosition.premiumOffset;
         uint256 accruedUserPremium = HUB.convertToDrawnAssets(assetId, oldUserPremiumDrawnShares) -
