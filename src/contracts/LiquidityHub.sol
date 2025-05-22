@@ -251,12 +251,6 @@ contract LiquidityHub is ILiquidityHub {
     require(_assets[assetId].baseDebt() == baseDebt, InvalidDebtChange());
   }
 
-  // TODO: Remove after debugging
-  function getAssetIndex(uint256 assetId) public view returns (uint256) {
-    DataTypes.Asset storage asset = _assets[assetId];
-    return asset.previewIndex();
-  }
-
   function _refresh(
     uint256 assetId,
     address spokeAddress,

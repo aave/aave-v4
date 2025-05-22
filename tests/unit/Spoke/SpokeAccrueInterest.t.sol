@@ -746,22 +746,22 @@ contract SpokeAccrueInterestTest is SpokeBase {
 
     uint40 startTime = uint40(vm.getBlockTimestamp());
 
-    // Bob supply dai on spoke 1
+    // Bob supply dai on spoke 2
     if (amounts.daiSupplyAmount > 0) {
       Utils.supplyCollateral(spoke2, _daiReserveId(spoke2), bob, amounts.daiSupplyAmount, bob);
     }
 
-    // Bob supply weth on spoke 1
+    // Bob supply weth on spoke 2
     if (amounts.wethSupplyAmount > 0) {
       Utils.supplyCollateral(spoke2, _wethReserveId(spoke2), bob, amounts.wethSupplyAmount, bob);
     }
 
-    // Bob supply usdx on spoke 1
+    // Bob supply usdx on spoke 2
     if (amounts.usdxSupplyAmount > 0) {
       Utils.supplyCollateral(spoke2, _usdxReserveId(spoke2), bob, amounts.usdxSupplyAmount, bob);
     }
 
-    // Bob supply wbtc on spoke 1
+    // Bob supply wbtc on spoke 2
     if (amounts.wbtcSupplyAmount > 0) {
       Utils.supplyCollateral(spoke2, _wbtcReserveId(spoke2), bob, amounts.wbtcSupplyAmount, bob);
     }
@@ -792,22 +792,22 @@ contract SpokeAccrueInterestTest is SpokeBase {
       );
     }
 
-    // Bob borrows dai from spoke 1
+    // Bob borrows dai from spoke 2
     if (amounts.daiBorrowAmount > 0) {
       Utils.borrow(spoke2, _daiReserveId(spoke2), bob, amounts.daiBorrowAmount, bob);
     }
 
-    // Bob borrows weth from spoke 1
+    // Bob borrows weth from spoke 2
     if (amounts.wethBorrowAmount > 0) {
       Utils.borrow(spoke2, _wethReserveId(spoke2), bob, amounts.wethBorrowAmount, bob);
     }
 
-    // Bob borrows usdx from spoke 1
+    // Bob borrows usdx from spoke 2
     if (amounts.usdxBorrowAmount > 0) {
       Utils.borrow(spoke2, _usdxReserveId(spoke2), bob, amounts.usdxBorrowAmount, bob);
     }
 
-    // Bob borrows wbtc from spoke 1
+    // Bob borrows wbtc from spoke 2
     if (amounts.wbtcBorrowAmount > 0) {
       Utils.borrow(spoke2, _wbtcReserveId(spoke2), bob, amounts.wbtcBorrowAmount, bob);
     }
