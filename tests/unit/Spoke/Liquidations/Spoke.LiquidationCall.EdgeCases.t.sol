@@ -7,6 +7,7 @@ contract LiquidationCallEdgeCasesTest is SpokeLiquidationBase {
   using WadRayMathExtended for uint256;
   using PercentageMathExtended for uint256;
 
+  /// test that maximum amount of collateral for a given reserve is liquidated properly
   function test_liquidationCall_validMaxCollateralAmount() public {
     // set collateral factor of coll as 100%
     updateCollateralFactor(spoke1, _usdxReserveId(spoke1), 100_00);
@@ -47,6 +48,7 @@ contract LiquidationCallEdgeCasesTest is SpokeLiquidationBase {
     );
   }
 
+  /// fuzz - test that maximum amount of collateral for a given reserve is liquidated properly
   function test_liquidationCall_fuzz_validMaxCollateralAmount(uint256 supplyAmountInBase) public {
     supplyAmountInBase = bound(supplyAmountInBase, 10e26, 1e7 * 1e26); // $1 - $10M
 

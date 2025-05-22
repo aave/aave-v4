@@ -1285,6 +1285,12 @@ contract Spoke is ISpoke {
       vars.totalDebtInBaseCurrency
     ) = _calculateUserAccountData(user);
 
+    console.log(
+      'SP liq params %e %e',
+      vars.totalCollateralInBaseCurrency,
+      vars.totalDebtInBaseCurrency
+    );
+
     _validateLiquidationCall(
       collateralReserve,
       debtReserve,

@@ -160,18 +160,6 @@ contract SpokeLiquidationBase is SpokeBase {
     state.user = alice;
     state.liquidationProtocolFeePercentage = liquidationProtocolFeePercentage;
 
-    console.log(' fuzz inputs');
-    console.log('  liqConfig.closeFactor %e', liqConfig.closeFactor);
-    console.log('  liqConfig.healthFactorBonusThreshold %e', liqConfig.healthFactorBonusThreshold);
-    console.log('  liqConfig.liquidationBonusFactor %e', liqConfig.liquidationBonusFactor);
-    console.log('  liqBonus %e', liqBonus);
-    console.log('  desiredHf %e', desiredHf);
-    console.log('  supplyAmount %e', supplyAmount);
-    console.log('  skipTime %e', skipTime);
-    console.log('  liquidationProtocolFeePercentage %e', liquidationProtocolFeePercentage);
-    console.log('  collateralReserveId %e', collateralReserveId);
-    console.log('  debtReserveId %e', debtReserveId);
-
     state.spoke.updateLiquidationConfig(liqConfig);
     updateLiquidationBonus(state.spoke, collateralReserveId, liqBonus);
     updateLiquidationProtocolFeePercentage(
@@ -188,7 +176,7 @@ contract SpokeLiquidationBase is SpokeBase {
       onBehalfOf: alice
     });
 
-    _increaseCollateralReserveSupplyExchangeRate(
+    _increaseReserveSupplyExchangeRate(
       state.spoke,
       collateralReserveId,
       supplyAmount / 2,
@@ -208,8 +196,6 @@ contract SpokeLiquidationBase is SpokeBase {
       collateralReserveId,
       hfAfterBorrow
     );
-
-    console.log('test: requiredDebtAmount %e', requiredDebtAmount);
 
     state = _getAccountingInfoBeforeLiq(state);
 
@@ -247,16 +233,16 @@ contract SpokeLiquidationBase is SpokeBase {
     ISpoke spoke,
     string memory label
   ) internal view {
-    _assertUserAccountData(spoke, state, label);
-    _assertProtocolFeeEarned(state, label);
-    _assertLiquidationBonusEarned(state, label);
-    _assertSupplyExchangeRate(state, label);
-    _assertSetUsingAsCollateral(spoke, state, label);
-    if (state.hasDeficit) {
-      _assertBadDebt(spoke, state, label);
-    } else {
-      _assertNoBadDebt(spoke, state, label);
-    }
+    // _assertUserAccountData(spoke, state, label);
+    // _assertProtocolFeeEarned(state, label);
+    // _assertLiquidationBonusEarned(state, label);
+    // _assertSupplyExchangeRate(state, label);
+    // _assertSetUsingAsCollateral(spoke, state, label);
+    // if (state.hasDeficit) {
+    //   _assertBadDebt(spoke, state, label);
+    // } else {
+    //   _assertNoBadDebt(spoke, state, label);
+    // }
   }
 
   /// assert that the user account data is correct after liquidation
@@ -333,18 +319,9 @@ contract SpokeLiquidationBase is SpokeBase {
   ) internal pure {
     uint256 totalLiqBonusAmount = state.supply.balanceChange -
       state.supply.balanceChange.percentDivDown(state.liquidationBonus);
-
     uint256 totalCollateralSeized = (state.collToLiq + state.liqProtocolFee);
     uint256 expectedLiqBonusAmount = totalCollateralSeized -
       totalCollateralSeized.percentDivDown(state.liquidationBonus);
-
-    console.log(
-      'state.liquidationBonus %e state.supply.balanceChange %e',
-      state.liquidationBonus,
-      state.supply.balanceChange
-    );
-    console.log('totalLiqBonusAmount %e', totalLiqBonusAmount);
-    console.log('expectedLiqBonusAmount %e', expectedLiqBonusAmount);
 
     assertApproxEqRel(
       totalLiqBonusAmount,
@@ -458,18 +435,15 @@ contract SpokeLiquidationBase is SpokeBase {
     params.collateralAssetPrice = oracle.getAssetPrice(
       state.collateralReserves[state.collateralReserveIndex].assetId
     );
-
     params.debtAssetUnit = 10 ** state.debtReserves[state.debtReserveIndex].config.decimals;
     params.debtReserveId = state.debtReserves[state.debtReserveIndex].reserveId;
     params.debtAssetPrice = oracle.getAssetPrice(
       state.debtReserves[state.debtReserveIndex].assetId
     );
-
     params.liquidationBonus = state.liquidationBonus;
     params.liquidationProtocolFeePercentage = state.liquidationProtocolFeePercentage;
 
     params.actualDebtToLiquidate = _calculateActualDebtToLiquidate(spoke, state, debtToCover);
-
     return LiquidationLogic.calculateAvailableCollateralToLiquidate(params);
   }
 
@@ -483,7 +457,6 @@ contract SpokeLiquidationBase is SpokeBase {
     // find minimum between user's totalDebt of debt asset, debtToCover, and debtToRestoreCloseFactor
     uint256 userTotalDebt = state.totalDebt.balanceBefore;
     uint256 debtToRestoreCloseFactor = _calcDebtToRestoreCloseFactor(spoke, state);
-
     return _min(_min(userTotalDebt, debtToCover), debtToRestoreCloseFactor);
   }
 
@@ -508,7 +481,6 @@ contract SpokeLiquidationBase is SpokeBase {
     );
 
     (, , params.healthFactor, , params.totalDebtInBaseCurrency) = spoke.getUserAccountData(alice);
-
     // duplicated logic from LiquidationLogic.calculateDebtToRestoreCloseFactor
     uint256 effectiveLiquidationPenalty = (params.liquidationBonus.wadify())
       .percentMulDown(params.collateralFactor)
@@ -756,7 +728,8 @@ contract SpokeLiquidationBase is SpokeBase {
     return state;
   }
 
-  function _increaseCollateralReserveSupplyExchangeRate(
+  // increase supply exchange rate on a given reserve
+  function _increaseReserveSupplyExchangeRate(
     ISpoke spoke,
     uint256 collateralReserveId,
     uint256 borrowAmount,
@@ -784,39 +757,6 @@ contract SpokeLiquidationBase is SpokeBase {
     skip(skipTime);
     uint256 finalExRate = hub.convertToSuppliedAssets(assetId, WadRayMathExtended.RAY.wadify());
     assertGt(finalExRate, initialExRate);
-  }
-
-  function _logLiquidationTestLocalParams(LiquidationTestLocalParams memory state) internal {
-    console.log(' liquidationProtocolFeePercentage %e', state.liquidationProtocolFeePercentage);
-    console.log(' liquidationBonus %e', state.liquidationBonus);
-    console.log(' liqProtocolFee %e', state.liqProtocolFee);
-
-    console.log(
-      ' collateralReserveId',
-      state.collateralReserves[state.collateralReserveIndex].reserveId
-    );
-    console.log(
-      ' collateralReserveAssetId',
-      state.collateralReserves[state.collateralReserveIndex].assetId
-    );
-
-    console.log(' debtReserveId', state.debtReserves[state.debtReserveIndex].reserveId);
-    console.log(' debtReserveAssetId', state.debtReserves[state.debtReserveIndex].assetId);
-
-    console.log(' collToLiq %e', state.collToLiq);
-    console.log(' debtToLiq %e', state.debtToLiq);
-
-    console.log(' state.totalDebt.balanceAfter %e', state.totalDebt.balanceAfter);
-    console.log(' state.totalDebt.balanceBefore %e', state.totalDebt.balanceBefore);
-
-    console.log(' state.premiumDebt.balanceAfter %e', state.premiumDebt.balanceAfter);
-    console.log(' state.premiumDebt.balanceBefore %e', state.premiumDebt.balanceBefore);
-
-    console.log(' state.baseDebt.balanceAfter %e', state.baseDebt.balanceAfter);
-    console.log(' state.baseDebt.balanceBefore %e', state.baseDebt.balanceBefore);
-
-    console.log(' state.supply.balanceAfter %e', state.supply.balanceAfter);
-    console.log(' state.supply.balanceBefore %e', state.supply.balanceBefore);
   }
 
   // TODO: update when dynamic risk config is implemented

@@ -3,6 +3,7 @@ pragma solidity ^0.8.0;
 
 import 'tests/unit/Spoke/Liquidations/Spoke.Liquidation.Base.t.sol';
 
+/// tests with bad debt across multiple reserves that includes accrued premium debt
 contract LiquidationCallMultiReserveBadPremiumDebtTest is SpokeLiquidationBase {
   using PercentageMathExtended for uint256;
 
@@ -27,7 +28,8 @@ contract LiquidationCallMultiReserveBadPremiumDebtTest is SpokeLiquidationBase {
       liquidationProtocolFeePercentage: 5_00,
       collateralReserveId: collateralReserveId,
       skipTime: 365 days,
-      skipTimeToAccruePremium: 365 days * 4
+      skipTimeToAccruePremium: 365 days * 4,
+      debtReserveIndex: 0
     });
   }
 
@@ -39,7 +41,8 @@ contract LiquidationCallMultiReserveBadPremiumDebtTest is SpokeLiquidationBase {
     uint256 supplyAmount,
     uint256 liquidationProtocolFeePercentage,
     uint256 skipTime,
-    uint256 skipTimeToAccruePremium
+    uint256 skipTimeToAccruePremium,
+    uint256 debtReserveIndex
   ) public {
     collateralReserveId = bound(collateralReserveId, 0, spoke1.reserveCount() - 1);
 
@@ -55,6 +58,7 @@ contract LiquidationCallMultiReserveBadPremiumDebtTest is SpokeLiquidationBase {
       supplyAmount,
       collateralReserveId,
       debtReserveIds,
+      debtReserveIndex,
       liquidationProtocolFeePercentage,
       skipTime,
       skipTimeToAccruePremium
@@ -81,7 +85,8 @@ contract LiquidationCallMultiReserveBadPremiumDebtTest is SpokeLiquidationBase {
       liquidationProtocolFeePercentage: 5_00,
       collateralReserveId: collateralReserveId,
       skipTime: 365 days,
-      skipTimeToAccruePremium: 365 days * 4
+      skipTimeToAccruePremium: 365 days * 4,
+      debtReserveIndex: 0
     });
   }
 
@@ -93,7 +98,8 @@ contract LiquidationCallMultiReserveBadPremiumDebtTest is SpokeLiquidationBase {
     uint256 supplyAmount,
     uint256 liquidationProtocolFeePercentage,
     uint256 skipTime,
-    uint256 skipTimeToAccruePremium
+    uint256 skipTimeToAccruePremium,
+    uint256 debtReserveIndex
   ) public {
     collateralReserveId = bound(collateralReserveId, 0, spoke1.reserveCount() - 1);
 
@@ -109,6 +115,7 @@ contract LiquidationCallMultiReserveBadPremiumDebtTest is SpokeLiquidationBase {
       supplyAmount,
       collateralReserveId,
       debtReserveIds,
+      debtReserveIndex,
       liquidationProtocolFeePercentage,
       skipTime,
       skipTimeToAccruePremium
@@ -135,7 +142,8 @@ contract LiquidationCallMultiReserveBadPremiumDebtTest is SpokeLiquidationBase {
       liquidationProtocolFeePercentage: 5_00,
       collateralReserveId: collateralReserveId,
       skipTime: 365 days,
-      skipTimeToAccruePremium: 365 days * 4
+      skipTimeToAccruePremium: 365 days * 4,
+      debtReserveIndex: 0
     });
   }
 
@@ -147,7 +155,8 @@ contract LiquidationCallMultiReserveBadPremiumDebtTest is SpokeLiquidationBase {
     uint256 supplyAmount,
     uint256 liquidationProtocolFeePercentage,
     uint256 skipTime,
-    uint256 skipTimeToAccruePremium
+    uint256 skipTimeToAccruePremium,
+    uint256 debtReserveIndex
   ) public {
     collateralReserveId = bound(collateralReserveId, 0, spoke1.reserveCount() - 1);
 
@@ -163,6 +172,7 @@ contract LiquidationCallMultiReserveBadPremiumDebtTest is SpokeLiquidationBase {
       supplyAmount,
       collateralReserveId,
       debtReserveIds,
+      debtReserveIndex,
       liquidationProtocolFeePercentage,
       skipTime,
       skipTimeToAccruePremium
@@ -184,6 +194,7 @@ contract LiquidationCallMultiReserveBadPremiumDebtTest is SpokeLiquidationBase {
     uint256 supplyAmount,
     uint256 collateralReserveId,
     uint256[] memory debtReserveIds,
+    uint256 debtReserveIndex,
     uint256 liquidationProtocolFeePercentage,
     uint256 skipTime,
     uint256 skipTimeForPremiumAccrual
@@ -191,6 +202,7 @@ contract LiquidationCallMultiReserveBadPremiumDebtTest is SpokeLiquidationBase {
     LiquidationTestLocalParams memory state;
     state.collateralReserves = new DataTypes.Reserve[](1);
     state.collateralReserves[state.collateralReserveIndex] = spoke1.getReserve(collateralReserveId);
+    state.debtReserveIndex = bound(debtReserveIndex, 0, debtReserveIds.length - 1);
     state.debtReserves = new DataTypes.Reserve[](debtReserveIds.length);
     for (uint256 i = 0; i < debtReserveIds.length; i++) {
       state.debtReserves[i] = spoke1.getReserve(debtReserveIds[i]);
@@ -243,7 +255,7 @@ contract LiquidationCallMultiReserveBadPremiumDebtTest is SpokeLiquidationBase {
     // below this value results in bad debt
     uint256 hfBadDebtThreshold = _calcLowestHfForBadDebt(state.spoke, alice, liqBonus);
 
-    _increaseCollateralReserveSupplyExchangeRate(
+    _increaseReserveSupplyExchangeRate(
       state.spoke,
       collateralReserveId,
       supplyAmount / 2,
@@ -300,7 +312,8 @@ contract LiquidationCallMultiReserveBadPremiumDebtTest is SpokeLiquidationBase {
       state.totalDebt.balanceBefore - state.debtToLiq // outstanding debt which becomes bad debt reported as deficit
     );
 
-    // for remaining debt assets, total debt is reported as deficit
+    // for remaining debt assets, total debt should be reported as deficit
+    // emitted in order of ascending stored reserveId in spoke
     for (uint256 i = 0; i < debtReserveIds.length; i++) {
       if (debtReserveIds[i] != state.debtReserves[state.debtReserveIndex].reserveId) {
         vm.expectEmit(address(hub));
@@ -383,6 +396,7 @@ contract LiquidationCallMultiReserveBadPremiumDebtTest is SpokeLiquidationBase {
     assertGt(finalHf, desiredHf, 'should borrow enough for HF to be above desiredHf');
   }
 
+  /// @notice Check deficit accounting for all debt reserves
   function _checkDeficits(
     LiquidationTestLocalParams memory state,
     uint256[] memory debtReserveIds,
@@ -390,7 +404,7 @@ contract LiquidationCallMultiReserveBadPremiumDebtTest is SpokeLiquidationBase {
   ) internal view {
     for (uint256 i = 0; i < debtReserveIds.length; i++) {
       assertEq(
-        spoke1.getUserTotalDebt(debtReserveIds[i], user),
+        state.spoke.getUserTotalDebt(debtReserveIds[i], user),
         0,
         'remaining debt should be 0 (reported as deficit)'
       );

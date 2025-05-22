@@ -360,7 +360,7 @@ contract LiquidationCallBadDebtTest is SpokeLiquidationBase {
     uint256 desiredHf = _calcLowestHfForBadDebt(state.spoke, alice, liqBonus);
 
     // increase supply exchange rate of collateral reserve
-    _increaseCollateralReserveSupplyExchangeRate(
+    _increaseReserveSupplyExchangeRate(
       state.spoke,
       collateralReserveId,
       supplyAmount / 2,

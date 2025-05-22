@@ -3,6 +3,7 @@ pragma solidity ^0.8.0;
 
 import 'tests/unit/Spoke/Liquidations/Spoke.Liquidation.Base.t.sol';
 
+/// tests with bad debt with a single collateral/debt reserve that includes accrued premium debt
 contract LiquidationCallBadPremiumDebtTest is SpokeLiquidationBase {
   using PercentageMath for uint256;
   using PercentageMathExtended for uint256;
@@ -232,7 +233,7 @@ contract LiquidationCallBadPremiumDebtTest is SpokeLiquidationBase {
     // below this value results in bad debt
     uint256 hfBadDebtThreshold = _calcLowestHfForBadDebt(state.spoke, alice, liqBonus);
 
-    _increaseCollateralReserveSupplyExchangeRate(
+    _increaseReserveSupplyExchangeRate(
       state.spoke,
       collateralReserveId,
       supplyAmount / 2,
@@ -255,16 +256,10 @@ contract LiquidationCallBadPremiumDebtTest is SpokeLiquidationBase {
     );
 
     skip(skipTimeForPremiumAccrual);
-    // ensure that debt accrued causes liquidatable position
+    // ensure that debt accrued results in HF below bad debt threshold
+    // causes bad debt to remain
     vm.assume(state.spoke.getHealthFactor(alice) < hfBadDebtThreshold);
 
-    // (uint256 rp, , uint256 hf, , ) = state.spoke.getUserAccountData(alice);
-    // (uint256 baseDebt, uint256 premiumDebt) = state.spoke.getUserDebt(debtReserveId, alice);
-
-    // console.log('rp %e debt %e %e', rp, baseDebt, premiumDebt);
-    // console.log('hf %e', hf);
-
-    // assertLt(hf, hfBadDebtThreshold, 'HF should result in bad debt');
     state = _getAccountingInfoBeforeLiq(state);
 
     assertGt(state.premiumDebt.balanceBefore, 0, 'premium debt should be > 0 before liquidation');
@@ -279,13 +274,6 @@ contract LiquidationCallBadPremiumDebtTest is SpokeLiquidationBase {
     // logs to read protocol fee from tmp emitted event
     // TODO: update when treasury accounting is done
     vm.recordLogs();
-
-    console.log(
-      'emit deficit %s %s %e',
-      address(state.spoke),
-      state.debtReserves[state.debtReserveIndex].assetId,
-      state.totalDebt.balanceBefore - state.debtToLiq
-    );
 
     vm.expectEmit(address(hub));
     emit ILiquidityHub.DeficitCreated(
