@@ -10,7 +10,7 @@ evm_version = "cancun"
 optimizer = true
 optimizer_runs = 200
 bytecode_hash = "none"
-gas_snapshot_check = true
+gas_snapshot_check = false
 
 [profile.default.fuzz]
 runs = 1000
@@ -23,6 +23,7 @@ runs = 5000
 runs = 10000
 
 [profile.gas]
+gas_snapshot_check = true
 test = 'tests/gas'
 
 [rpc_endpoints]
