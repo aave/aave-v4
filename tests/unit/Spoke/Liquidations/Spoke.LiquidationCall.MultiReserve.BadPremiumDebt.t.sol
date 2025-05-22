@@ -42,18 +42,43 @@ contract LiquidationCallMultiReserveBadPremiumDebtTest is SpokeLiquidationBase {
       assertEq(
         spoke1.getUserTotalDebt(debtReserveIds[i], alice),
         0,
-        'bad debt should be moved to deficit'
+        'remaining debt should be 0 (reported as deficit)'
       );
+      if (i != state.debtReserveIndex) {
+        assertEq(
+          state.deficits[i].balanceChange,
+          state.debts[i].balanceChange,
+          'for other debt assets, total debt should be reported as deficit'
+        );
+      }
+      // console.log(
+      //   ' deficit %e debt change %e',
+      //   state.deficits[i].balanceChange,
+      //   state.debts[i].balanceChange
+      // );
     }
+
+    // for (uint256 i = 0; i < state.deficits.length; i++) {
+    //   console.log(
+    //     ' id %s total debt %e',
+    //     debtReserveIds[i],
+    //     spoke1.getUserTotalDebt(debtReserveIds[i], alice)
+    //   );
+    //   console.log(
+    //     ' deficit %e debt change %e',
+    //     state.deficits[i].balanceChange,
+    //     state.debts[i].balanceChange
+    //   );
+    //   // assertEq(
+    //   //   ,
+    //   //   'bad debt should be moved to deficit'
+    //   // );
+    // }
   }
 
-  /// coll: weth / debt: dai
+  /// coll: weth
   function test_liquidationCall_multi_reserve_badPremiumDebt_scenario1() public {
     uint256 collateralReserveId = _wethReserveId(spoke1);
-    // uint256[] memory debtReserveIds = new uint256[](3);
-    // debtReserveIds[0] = _daiReserveId(spoke1);
-    // debtReserveIds[1] = _usdxReserveId(spoke1);
-    // debtReserveIds[2] = _usdyReserveId(spoke1);
 
     test_liquidationCall_fuzz_multi_reserve_badPremiumDebt({
       liqConfig: DataTypes.LiquidationConfig({
@@ -65,7 +90,6 @@ contract LiquidationCallMultiReserveBadPremiumDebtTest is SpokeLiquidationBase {
       supplyAmount: 1.5e18,
       liquidationProtocolFeePercentage: 5_00,
       collateralReserveId: collateralReserveId,
-      // debtReserveIds: debtReserveIds,
       skipTime: 365 days,
       skipTimeToAccruePremium: 365 days * 4
     });
@@ -385,13 +409,23 @@ contract LiquidationCallMultiReserveBadPremiumDebtTest is SpokeLiquidationBase {
 
     console.log('supply balanceAfter %e', state.supplyShares.balanceAfter);
 
-    for (uint256 i = 0; i < debtReserveIds.length; i++) {
-      console.log(
-        ' id %s total debt %e',
-        debtReserveIds[i],
-        spoke1.getUserTotalDebt(debtReserveIds[i], alice)
-      );
-    }
+    // for (uint256 i = 0; i < state.deficits.length; i++) {
+
+    //   console.log(
+    //     ' id %s total debt %e',
+    //     debtReserveIds[i],
+    //     spoke1.getUserTotalDebt(debtReserveIds[i], alice)
+    //   );
+    //   console.log(
+    //     ' deficit %e debt change %e',
+    //     state.deficits[i].balanceChange,
+    //     state.debts[i].balanceChange
+    //   );
+    //   // assertEq(
+    //   //   ,
+    //   //   'bad debt should be moved to deficit'
+    //   // );
+    // }
 
     // revert('bad prem debt');
 

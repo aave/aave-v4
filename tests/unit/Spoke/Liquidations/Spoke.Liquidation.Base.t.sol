@@ -63,6 +63,8 @@ contract SpokeLiquidationBase is SpokeBase {
     uint256 initialTotalDebtInBaseCurrency;
     bool usingAsCollateral;
     uint256 debtReserveIndex;
+    Balance[] deficits;
+    Balance[] debts;
   }
 
   uint256 internal constant MIN_AMOUNT_IN_BASE_CURRENCY = 1e26;
@@ -593,6 +595,17 @@ contract SpokeLiquidationBase is SpokeBase {
       state.initialTotalDebtInBaseCurrency
     ) = spoke1.getUserAccountData(alice);
 
+    // multi reserve accounting
+    state.debts = new Balance[](state.debtReserves.length);
+    state.deficits = new Balance[](state.debtReserves.length);
+    for (uint256 i = 0; i < state.debtReserves.length; i++) {
+      state.deficits[i].balanceBefore = hub.getDeficit(state.debtReserves[i].assetId);
+      state.debts[i].balanceBefore = spoke1.getUserTotalDebt(
+        state.debtReserves[i].reserveId,
+        alice
+      );
+    }
+
     return state;
   }
 
@@ -681,6 +694,21 @@ contract SpokeLiquidationBase is SpokeBase {
       state.totalDebtInBaseCurrency == 0;
 
     state.usingAsCollateral = spoke1.getUsingAsCollateral(state.collateralReserve.reserveId, alice);
+
+    // multi reserve accounting
+    for (uint256 i = 0; i < state.debtReserves.length; i++) {
+      state.deficits[i].balanceAfter = hub.getDeficit(state.debtReserves[i].assetId);
+
+      state.deficits[i].balanceChange =
+        state.deficits[i].balanceAfter -
+        state.deficits[i].balanceBefore;
+
+      state.debts[i].balanceAfter = spoke1.getUserTotalDebt(state.debtReserves[i].reserveId, alice);
+      state.debts[i].balanceChange = _absDiff(
+        state.debts[i].balanceAfter,
+        state.debts[i].balanceBefore
+      );
+    }
 
     return state;
   }
