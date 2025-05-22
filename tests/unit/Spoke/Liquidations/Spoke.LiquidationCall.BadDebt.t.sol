@@ -356,12 +356,12 @@ contract LiquidationCallBadDebtTest is SpokeLiquidationBase {
     });
 
     // set user position under hf threshold so that there is invalid collateral to cover all debt
-    // results in bad debt remaining (debt > 0, collateral = 0)
-    uint256 desiredHf = _calcLowestHfForBadDebt(state.spoke, alice, liqBonus).percentMul(99_00);
+    // ensure 1% buffer under threshold
+    uint256 desiredHf = _calcLowestHfForBadDebt(state.spoke, alice, liqBonus);
 
+    // increase supply exchange rate of collateral reserve
     _increaseCollateralReserveSupplyExchangeRate(
       state.spoke,
-      state.collateralReserves[state.collateralReserveIndex].assetId,
       collateralReserveId,
       supplyAmount / 2,
       skipTime,
@@ -388,7 +388,7 @@ contract LiquidationCallBadDebtTest is SpokeLiquidationBase {
       state.debtToLiq,
       state.liqProtocolFee,
 
-    ) = _calculateAvailableCollateralToLiquidate(state.spoke, state, requiredDebtAmount);
+    ) = _calculateAvailableCollateralToLiquidate(state.spoke, state, UINT256_MAX);
 
     // logs to read protocol fee from tmp emitted event
     // TODO: update when treasury accounting is done
@@ -410,7 +410,7 @@ contract LiquidationCallBadDebtTest is SpokeLiquidationBase {
       LIQUIDATOR
     );
     vm.prank(LIQUIDATOR);
-    state.spoke.liquidationCall(collateralReserveId, debtReserveId, alice, requiredDebtAmount);
+    state.spoke.liquidationCall(collateralReserveId, debtReserveId, alice, UINT256_MAX);
 
     state = _getAccountingInfoAfterLiq(state);
 

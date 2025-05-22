@@ -190,7 +190,6 @@ contract SpokeLiquidationBase is SpokeBase {
 
     _increaseCollateralReserveSupplyExchangeRate(
       state.spoke,
-      state.collateralReserves[state.collateralReserveIndex].assetId,
       collateralReserveId,
       supplyAmount / 2,
       skipTime,
@@ -759,12 +758,13 @@ contract SpokeLiquidationBase is SpokeBase {
 
   function _increaseCollateralReserveSupplyExchangeRate(
     ISpoke spoke,
-    uint256 assetId,
     uint256 collateralReserveId,
     uint256 borrowAmount,
     uint256 skipTime,
     address user
   ) internal {
+    uint256 assetId = spoke.getReserve(collateralReserveId).assetId;
+    uint256 initialExRate = hub.convertToSuppliedAssets(assetId, WadRayMathExtended.RAY.wadify());
     // mock price to 0 to circumvent borrow validation
     vm.mockCall(
       address(oracle),
@@ -782,6 +782,8 @@ contract SpokeLiquidationBase is SpokeBase {
     });
     vm.clearMockedCalls();
     skip(skipTime);
+    uint256 finalExRate = hub.convertToSuppliedAssets(assetId, WadRayMathExtended.RAY.wadify());
+    assertGt(finalExRate, initialExRate);
   }
 
   function _logLiquidationTestLocalParams(LiquidationTestLocalParams memory state) internal {
