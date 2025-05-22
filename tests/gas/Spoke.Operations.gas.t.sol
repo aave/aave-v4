@@ -3,6 +3,7 @@ pragma solidity ^0.8.0;
 
 import {Base} from 'tests/Base.t.sol';
 
+/// forge-config: default.isolate = true
 contract SpokeOperations_Gas_Tests is Base {
   function setUp() public override {
     deployFixtures();
@@ -91,6 +92,26 @@ contract SpokeOperations_Gas_Tests is Base {
     skip(1000);
     spoke1.repay(spokeInfo[spoke1].dai.reserveId, type(uint256).max);
     vm.snapshotGasLastCall('Spoke.Operations', 'repay: full');
+    vm.stopPrank();
+  }
+
+  function test_updateRiskPremium() public {
+    vm.prank(bob);
+    spoke1.supply(spokeInfo[spoke1].dai.reserveId, 1000e18);
+
+    vm.startPrank(alice);
+    spoke1.supply(spokeInfo[spoke1].usdx.reserveId, 2000e6);
+    spoke1.setUsingAsCollateral(spokeInfo[spoke1].usdx.reserveId, true);
+
+    spoke1.borrow(spokeInfo[spoke1].dai.reserveId, 500e18, alice);
+
+    spoke1.updateUserRiskPremium(spokeInfo[spoke1].dai.reserveId, alice);
+    vm.snapshotGasLastCall('Spoke.Operations', 'updateUserRiskPremium');
+
+    spoke1.borrow(spokeInfo[spoke1].usdx.reserveId, 500e6, alice);
+
+    spoke1.updateUserRiskPremium(spokeInfo[spoke1].dai.reserveId, alice);
+    vm.snapshotGasLastCall('Spoke.Operations', 'updateUserRiskPremium: 2 debts');
     vm.stopPrank();
   }
 }
