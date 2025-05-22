@@ -171,19 +171,20 @@ contract LiquidityHubSupplyTest is LiquidityHubBase {
   function test_supply_revertsWith_SupplyCapExceeded_due_to_interest() public {
     uint256 daiAmount = 100e18;
 
-    Utils.add({
-      hub: hub,
-      assetId: daiAssetId,
-      spoke: address(spoke2),
-      amount: daiAmount,
-      user: alice,
-      to: address(spoke2)
-    });
-
     uint256 newSupplyCap = daiAmount + 1;
     _updateSupplyCap(daiAssetId, address(spoke2), newSupplyCap);
   
-    _increaseExchangeRate(daiAssetId, daiAmount);
+    _supplyAndDrawLiquidity({
+      assetId: daiAssetId,
+      supplyUser: bob,
+      supplySpoke: address(spoke2),
+      supplyAmount: daiAmount,
+      drawUser: alice,
+      drawSpoke: address(spoke1),
+      drawAmount: daiAmount,
+      mockRate: SKIP_MOCK_RATE,
+      skipTime: 365 days
+    });
 
     vm.expectRevert(abi.encodeWithSelector(ILiquidityHub.SupplyCapExceeded.selector, newSupplyCap));
     vm.prank(address(spoke2));
