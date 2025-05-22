@@ -3,61 +3,11 @@ pragma solidity ^0.8.0;
 
 import 'tests/unit/Spoke/Liquidations/Spoke.Liquidation.Base.t.sol';
 
-/// tests where liquidation results in bad debt (debt > 0, collateral = 0)
-/// TODO: realize bad debt into deficit when deficit accounting is implemented, resolve tests
+/// tests where liquidation results in bad debt (debt remaining > 0, collateral remaining = 0)
 contract LiquidationCallBadDebtTest is SpokeLiquidationBase {
   using WadRayMath for uint256;
   using PercentageMath for uint256;
   using PercentageMathExtended for uint256;
-
-  /// variable close factor > HEALTH_FACTOR_LIQUIDATION_THRESHOLD
-  function test_liquidationCall_fuzz_badDebt(
-    uint256 collateralReserveId,
-    uint256 debtReserveId,
-    DataTypes.LiquidationConfig memory liqConfig,
-    uint256 liqBonus,
-    uint256 supplyAmount,
-    uint256 liquidationProtocolFeePercentage,
-    uint256 skipTime
-  ) public {
-    collateralReserveId = bound(collateralReserveId, 0, spoke1.reserveCount() - 1);
-    debtReserveId = bound(debtReserveId, 0, spoke1.reserveCount() - 1);
-
-    LiquidationTestLocalParams memory state = _execLiqCallCloseFactorBadDebtTest(
-      liqConfig,
-      liqBonus,
-      supplyAmount,
-      collateralReserveId,
-      debtReserveId,
-      liquidationProtocolFeePercentage,
-      skipTime
-    );
-
-    string memory label = 'test_liquidationCall_fuzz_badDebt';
-    _checkLiquidation(state, spoke1, label);
-  }
-
-  /// fuzz tests with close factor == HEALTH_FACTOR_LIQUIDATION_THRESHOLD
-  function test_liquidationCall_fuzz_badDebt_defaultCloseFactor(
-    uint256 collateralReserveId,
-    uint256 debtReserveId,
-    DataTypes.LiquidationConfig memory liqConfig,
-    uint256 liqBonus,
-    uint256 supplyAmount,
-    uint256 liquidationProtocolFeePercentage,
-    uint256 skipTime
-  ) public {
-    liqConfig.closeFactor = HEALTH_FACTOR_LIQUIDATION_THRESHOLD;
-    test_liquidationCall_fuzz_badDebt(
-      collateralReserveId,
-      debtReserveId,
-      liqConfig,
-      liqBonus,
-      supplyAmount,
-      liquidationProtocolFeePercentage,
-      skipTime
-    );
-  }
 
   /// coll: weth / debt: dai
   function test_liquidationCall_badDebt_scenario1() public {
@@ -291,8 +241,57 @@ contract LiquidationCallBadDebtTest is SpokeLiquidationBase {
     });
   }
 
-  /// bound liqConfig close factor, with static liquidation bonus
-  /// use constant liquidation bonus to simplify calcs for desiredHf
+  /// variable close factor > HEALTH_FACTOR_LIQUIDATION_THRESHOLD
+  function test_liquidationCall_fuzz_badDebt(
+    uint256 collateralReserveId,
+    uint256 debtReserveId,
+    DataTypes.LiquidationConfig memory liqConfig,
+    uint256 liqBonus,
+    uint256 supplyAmount,
+    uint256 liquidationProtocolFeePercentage,
+    uint256 skipTime
+  ) public {
+    collateralReserveId = bound(collateralReserveId, 0, spoke1.reserveCount() - 1);
+    debtReserveId = bound(debtReserveId, 0, spoke1.reserveCount() - 1);
+
+    LiquidationTestLocalParams memory state = _execLiqCallCloseFactorBadDebtTest(
+      liqConfig,
+      liqBonus,
+      supplyAmount,
+      collateralReserveId,
+      debtReserveId,
+      liquidationProtocolFeePercentage,
+      skipTime
+    );
+
+    string memory label = 'test_liquidationCall_fuzz_badDebt';
+    _checkLiquidation(state, spoke1, label);
+  }
+
+  /// fuzz tests with close factor == HEALTH_FACTOR_LIQUIDATION_THRESHOLD
+  function test_liquidationCall_fuzz_badDebt_defaultCloseFactor(
+    uint256 collateralReserveId,
+    uint256 debtReserveId,
+    DataTypes.LiquidationConfig memory liqConfig,
+    uint256 liqBonus,
+    uint256 supplyAmount,
+    uint256 liquidationProtocolFeePercentage,
+    uint256 skipTime
+  ) public {
+    liqConfig.closeFactor = HEALTH_FACTOR_LIQUIDATION_THRESHOLD;
+    test_liquidationCall_fuzz_badDebt(
+      collateralReserveId,
+      debtReserveId,
+      liqConfig,
+      liqBonus,
+      supplyAmount,
+      liquidationProtocolFeePercentage,
+      skipTime
+    );
+  }
+
+  /// bound liqConfig close factor
+  /// set constant liquidation bonus to simplify calcs for desiredHf
   function _bound(
     DataTypes.LiquidationConfig memory liqConfig
   ) internal pure virtual override returns (DataTypes.LiquidationConfig memory) {
@@ -309,11 +308,9 @@ contract LiquidationCallBadDebtTest is SpokeLiquidationBase {
     return liqConfig;
   }
 
-  /// fuzz tests to make sure bad debt remains after liquidation
+  /// execute fuzz tests to ensure bad debt remains post-liquidation
   /// single debt reserve, single collateral reserve
-  /// user health factor position is lower than threshold -> liquidating all collateral is insufficient to cover debt
-  /// close factor varies across range of values
-  /// constant liquidation bonus
+  /// liquidating all collateral is insufficient to cover debt
   function _execLiqCallCloseFactorBadDebtTest(
     DataTypes.LiquidationConfig memory liqConfig,
     uint256 liqBonus,
@@ -377,9 +374,7 @@ contract LiquidationCallBadDebtTest is SpokeLiquidationBase {
 
     // set user position under hf threshold so that there is invalid collateral to cover all debt
     // results in bad debt remaining (debt > 0, collateral = 0)
-    uint256 desiredHf = _calcLowestHfToRestoreCloseFactor(state.spoke, alice, liqBonus).percentMul(
-      99_00
-    );
+    uint256 desiredHf = _calcLowestHfForBadDebt(state.spoke, alice, liqBonus).percentMul(99_00);
 
     _increaseCollateralReserveSupplyExchangeRate(
       state.spoke,

@@ -24,8 +24,8 @@ contract LiquidityHubRestoreDeficitTest is LiquidityHubBase {
     _deployLiquidity(spoke1, usdxAssetId, MAX_SUPPLY_AMOUNT);
 
     vm.startPrank(address(spoke1));
-    hub.assetsList(wethAssetId).approve(address(hub), type(uint256).max);
-    hub.assetsList(usdxAssetId).approve(address(hub), type(uint256).max);
+    hub.assetsList(wethAssetId).approve(address(hub), UINT256_MAX);
+    hub.assetsList(usdxAssetId).approve(address(hub), UINT256_MAX);
     vm.stopPrank();
 
     deal(address(tokenList.usdx), address(spoke1), 1e60);
@@ -91,11 +91,7 @@ contract LiquidityHubRestoreDeficitTest is LiquidityHubBase {
     premiumDebtRestored = bound(premiumDebtRestored, 0, premiumDebt);
     vm.assume(baseDebtRestored + premiumDebtRestored > 0);
 
-    deficitAmountRestored = bound(
-      deficitAmountRestored,
-      baseDebt + premiumDebt + 1,
-      type(uint256).max
-    );
+    deficitAmountRestored = bound(deficitAmountRestored, baseDebt + premiumDebt + 1, UINT256_MAX);
 
     vm.expectRevert(ILiquidityHub.InvalidDeficitAmount.selector);
 
@@ -144,7 +140,7 @@ contract LiquidityHubRestoreDeficitTest is LiquidityHubBase {
     vm.assume(baseDebtRestored + premiumDebtRestored > 0);
 
     uint256 totalDebt = baseDebt + premiumDebt;
-    deficitAmountRestored = bound(deficitAmountRestored, totalDebt + 1, type(uint256).max);
+    deficitAmountRestored = bound(deficitAmountRestored, totalDebt + 1, UINT256_MAX);
 
     vm.expectRevert(ILiquidityHub.InvalidDeficitAmount.selector);
 

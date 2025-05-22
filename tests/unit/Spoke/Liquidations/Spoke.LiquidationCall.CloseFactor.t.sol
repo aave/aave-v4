@@ -442,9 +442,7 @@ contract LiquidationCallCloseFactorTest is SpokeLiquidationBase {
     });
 
     // TODO: fuzz test with desiredHf >= lowest and <= 1
-    uint256 desiredHf = _calcLowestHfToRestoreCloseFactor(state.spoke, alice, liqBonus).percentMul(
-      101_00
-    ); // add buffer so that not all collateral is seized
+    uint256 desiredHf = _calcLowestHfForBadDebt(state.spoke, alice, liqBonus).percentMul(101_00); // add buffer so that not all collateral is seized
 
     _increaseCollateralReserveSupplyExchangeRate(
       state.spoke,

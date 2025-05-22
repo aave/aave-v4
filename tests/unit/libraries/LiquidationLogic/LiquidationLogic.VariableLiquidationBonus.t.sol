@@ -22,7 +22,7 @@ contract LiquidationLogicVariableLiquidationBonusTest is LiquidationLogicBaseTes
       1,
       HEALTH_FACTOR_LIQUIDATION_THRESHOLD
     );
-    healthFactor = bound(healthFactor, 0, type(uint256).max);
+    healthFactor = bound(healthFactor, 0, UINT256_MAX);
 
     _config = DataTypes.LiquidationConfig({
       closeFactor: WadRayMath.WAD,
@@ -152,7 +152,7 @@ contract LiquidationLogicVariableLiquidationBonusTest is LiquidationLogicBaseTes
       1,
       HEALTH_FACTOR_LIQUIDATION_THRESHOLD
     );
-    healthFactor = bound(healthFactor, HEALTH_FACTOR_LIQUIDATION_THRESHOLD + 1, type(uint256).max);
+    healthFactor = bound(healthFactor, HEALTH_FACTOR_LIQUIDATION_THRESHOLD + 1, UINT256_MAX);
 
     _config = DataTypes.LiquidationConfig({
       closeFactor: WadRayMath.WAD,

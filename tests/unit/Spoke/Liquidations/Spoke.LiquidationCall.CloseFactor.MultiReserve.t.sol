@@ -258,9 +258,7 @@ contract LiquidationCallCloseFactorMultiReserveTest is SpokeLiquidationBase {
       });
     }
 
-    state.desiredHf = _calcLowestHfToRestoreCloseFactor(state.spoke, alice, liqBonus).percentMulUp(
-      101_00
-    ); // add buffer to have HF remain above lowest allowed HF
+    state.desiredHf = _calcLowestHfForBadDebt(state.spoke, alice, liqBonus).percentMulUp(101_00); // add buffer to have HF remain above lowest allowed HF
 
     // TODO: can just use inflate on normal coll reserve
     _increaseCollateralReservesSupplyExchangeRate(
@@ -335,6 +333,15 @@ contract LiquidationCallCloseFactorMultiReserveTest is SpokeLiquidationBase {
     // TODO: update when treasury accounting is done
     vm.recordLogs();
 
+    vm.expectEmit(address(state.spoke));
+    emit ISpoke.LiquidationCall(
+      state.collateralReserves[state.collateralReserveIndex].asset,
+      state.debtReserves[state.debtReserveIndex].asset,
+      alice,
+      state.debtToLiq,
+      state.collToLiq,
+      LIQUIDATOR
+    );
     vm.prank(LIQUIDATOR);
     state.spoke.liquidationCall(
       collateralReserveIds[collateralReserveIndex],
@@ -417,16 +424,14 @@ contract LiquidationCallCloseFactorMultiReserveTest is SpokeLiquidationBase {
     uint256 skipTime,
     address user
   ) internal {
-    _addBorrowableLiquidity(borrowAmount * collateralReserves.length);
+    _deployBorrowableLiquidities(borrowAmount * collateralReserves.length);
 
     vm.startPrank(user);
     for (uint256 i = 0; i < collateralReserves.length; i++) {
-      uint256 assetId = collateralReserves[i].assetId;
-
       // mock price to 0 to circumvent borrow validation
       vm.mockCall(
         address(oracle),
-        abi.encodeWithSelector(IPriceOracle.getAssetPrice.selector, assetId),
+        abi.encodeWithSelector(IPriceOracle.getAssetPrice.selector, collateralReserves[i].assetId),
         abi.encode(0)
       );
       // user borrows some collateral reserve to inflate collateral supply ex rate

@@ -144,7 +144,7 @@ contract SpokeBase is Base {
     deal(address(asset), tempUser, amount);
 
     vm.prank(tempUser);
-    asset.approve(address(hub), type(uint256).max);
+    asset.approve(address(hub), UINT256_MAX);
 
     Utils.supply({
       spoke: spoke,
@@ -311,7 +311,7 @@ contract SpokeBase is Base {
         spoke.repay(reserveId, debt);
         assertEq(spoke.getUserTotalDebt(reserveId, user), 0, 'user debt not zero');
         // If the user has no debt in any asset (hf will be max), user risk premium should be zero
-        if (spoke.getHealthFactor(user) == type(uint256).max) {
+        if (spoke.getHealthFactor(user) == UINT256_MAX) {
           assertEq(spoke.getUserRiskPremium(user), 0, 'user risk premium not zero');
         }
       }
@@ -616,7 +616,7 @@ contract SpokeBase is Base {
 
   function _boundUserAction(UserAction memory action) internal pure returns (UserAction memory) {
     action.borrowAmount = bound(action.borrowAmount, 1, MAX_SUPPLY_AMOUNT / 8);
-    action.repayAmount = bound(action.repayAmount, 1, type(uint256).max);
+    action.repayAmount = bound(action.repayAmount, 1, UINT256_MAX);
 
     return action;
   }
@@ -629,10 +629,10 @@ contract SpokeBase is Base {
     info.wbtcInfo.borrowAmount = bound(info.wbtcInfo.borrowAmount, 1, MAX_SUPPLY_AMOUNT / 8);
 
     // Bound repay amounts
-    info.daiInfo.repayAmount = bound(info.daiInfo.repayAmount, 1, type(uint256).max);
-    info.wethInfo.repayAmount = bound(info.wethInfo.repayAmount, 1, type(uint256).max);
-    info.usdxInfo.repayAmount = bound(info.usdxInfo.repayAmount, 1, type(uint256).max);
-    info.wbtcInfo.repayAmount = bound(info.wbtcInfo.repayAmount, 1, type(uint256).max);
+    info.daiInfo.repayAmount = bound(info.daiInfo.repayAmount, 1, UINT256_MAX);
+    info.wethInfo.repayAmount = bound(info.wethInfo.repayAmount, 1, UINT256_MAX);
+    info.usdxInfo.repayAmount = bound(info.usdxInfo.repayAmount, 1, UINT256_MAX);
+    info.wbtcInfo.repayAmount = bound(info.wbtcInfo.repayAmount, 1, UINT256_MAX);
 
     return info;
   }

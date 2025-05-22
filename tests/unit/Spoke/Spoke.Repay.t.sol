@@ -121,7 +121,7 @@ contract SpokeRepayTest is SpokeBase {
     assertGt(pos.baseDrawnShares, 0, 'user baseDrawnShares after repay');
     assertGt(hub.convertToDrawnAssets(daiAssetId, pos.baseDrawnShares), 0, 'user baseDrawnAssets');
 
-    spoke1.repay(_daiReserveId(spoke1), type(uint256).max);
+    spoke1.repay(_daiReserveId(spoke1), UINT256_MAX);
 
     pos = spoke1.getUserPosition(_daiReserveId(spoke1), bob);
     assertEq(pos.baseDrawnShares, 0, 'user baseDrawnShares after full repay');
@@ -474,7 +474,7 @@ contract SpokeRepayTest is SpokeBase {
 
     // Bob repays using the max value to signal full repayment
     vm.prank(bob);
-    spoke1.repay(_daiReserveId(spoke1), type(uint256).max);
+    spoke1.repay(_daiReserveId(spoke1), UINT256_MAX);
 
     Debts memory bobDaiAfter;
     bobDaiAfter.totalDebt = spoke1.getUserTotalDebt(_daiReserveId(spoke1), bob);
@@ -1535,7 +1535,7 @@ contract SpokeRepayTest is SpokeBase {
       hub.convertToDrawnShares(daiAssetId, baseRestored)
     );
     vm.prank(bob);
-    spoke1.repay(_daiReserveId(spoke1), type(uint256).max);
+    spoke1.repay(_daiReserveId(spoke1), UINT256_MAX);
 
     // Bob should have 0 drawn shares
     assertEq(

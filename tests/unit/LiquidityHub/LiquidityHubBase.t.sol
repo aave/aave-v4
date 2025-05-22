@@ -220,7 +220,7 @@ contract LiquidityHubBase is Base {
     deal(address(asset), tempUser, amount);
 
     vm.prank(tempUser);
-    asset.approve(address(hub), type(uint256).max);
+    asset.approve(address(hub), UINT256_MAX);
 
     Utils.add(hub, assetId, address(spoke), amount, tempUser, address(0));
 

@@ -356,7 +356,7 @@ contract MathUtilsWeightedAverage is Test {
       Bound memory bound = bounds[i];
       assertLt(
         (bound.maxValue * bound.precision) * bound.maxWeight * bound.maxIterations,
-        type(uint256).max,
+        UINT256_MAX,
         'overflow'
       );
       assertLt(bound.maxWeight, bound.maxValue * bound.precision, 'precision');

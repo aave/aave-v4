@@ -25,7 +25,7 @@ contract WadRayMathTests is Test {
   }
 
   function test_wadMul_fuzz(uint256 a, uint256 b) public {
-    if ((b == 0 || (a > (type(uint256).max - w.HALF_WAD()) / b) == false) == false) {
+    if ((b == 0 || (a > (UINT256_MAX - w.HALF_WAD()) / b) == false) == false) {
       vm.expectRevert();
       w.wadMul(a, b);
       return;
@@ -35,7 +35,7 @@ contract WadRayMathTests is Test {
   }
 
   function test_wadDiv_fuzz(uint256 a, uint256 b) public {
-    if ((b == 0) || (((a > ((type(uint256).max - b / 2) / w.WAD())) == false) == false)) {
+    if ((b == 0) || (((a > ((UINT256_MAX - b / 2) / w.WAD())) == false) == false)) {
       vm.expectRevert();
       w.wadDiv(a, b);
       return;
@@ -148,7 +148,7 @@ contract WadRayMathExtendedDifferentialTests is Test {
 
   function test_fuzz_wadMul(uint256 a, uint256 b) public {
     // overflow case
-    if (!(b == 0 || !(a > type(uint256).max / b))) {
+    if (!(b == 0 || !(a > UINT256_MAX / b))) {
       vm.expectRevert();
       wExtended.wadMulDown(a, b);
       vm.expectRevert();
@@ -159,7 +159,7 @@ contract WadRayMathExtendedDifferentialTests is Test {
     }
 
     // check against current implementation
-    if (!(b == 0 || !(a > (type(uint256).max - w.HALF_WAD()) / b))) {
+    if (!(b == 0 || !(a > (UINT256_MAX - w.HALF_WAD()) / b))) {
       vm.expectRevert();
       w.wadMul(a, b);
     } else {
@@ -174,7 +174,7 @@ contract WadRayMathExtendedDifferentialTests is Test {
   }
 
   function test_fuzz_wadDiv(uint256 a, uint256 b) public {
-    if (b == 0 || (a > type(uint256).max / w.WAD())) {
+    if (b == 0 || (a > UINT256_MAX / w.WAD())) {
       vm.expectRevert();
       wExtended.wadDivDown(a, b);
       vm.expectRevert();
@@ -187,7 +187,7 @@ contract WadRayMathExtendedDifferentialTests is Test {
     assertEq(wExtended.wadDivUp(a, b), a == 0 ? 0 : (a * w.WAD() - 1) / b + 1);
 
     // check against current implementation
-    if (b == 0 || (a > (type(uint256).max - b / 2) / w.WAD())) {
+    if (b == 0 || (a > (UINT256_MAX - b / 2) / w.WAD())) {
       vm.expectRevert();
       w.wadDiv(a, b);
     } else {
@@ -203,7 +203,7 @@ contract WadRayMathExtendedDifferentialTests is Test {
 
   function test_fuzz_rayMul(uint256 a, uint256 b) public {
     // overflow case
-    if (!(b == 0 || !(a > type(uint256).max / b))) {
+    if (!(b == 0 || !(a > UINT256_MAX / b))) {
       vm.expectRevert();
       wExtended.rayMulDown(a, b);
       vm.expectRevert();
@@ -214,7 +214,7 @@ contract WadRayMathExtendedDifferentialTests is Test {
     }
 
     // check against current implementation
-    if (!(b == 0 || !(a > (type(uint256).max - w.HALF_RAY()) / b))) {
+    if (!(b == 0 || !(a > (UINT256_MAX - w.HALF_RAY()) / b))) {
       vm.expectRevert();
       w.rayMul(a, b);
     } else {
@@ -229,7 +229,7 @@ contract WadRayMathExtendedDifferentialTests is Test {
   }
 
   function test_fuzz_rayDiv(uint256 a, uint256 b) public {
-    if (b == 0 || (a > type(uint256).max / w.RAY())) {
+    if (b == 0 || (a > UINT256_MAX / w.RAY())) {
       vm.expectRevert();
       wExtended.rayDivDown(a, b);
       vm.expectRevert();
@@ -242,7 +242,7 @@ contract WadRayMathExtendedDifferentialTests is Test {
     assertEq(wExtended.rayDivUp(a, b), a == 0 ? 0 : (a * w.RAY() - 1) / b + 1);
 
     // check against current implementation
-    if (b == 0 || (a > (type(uint256).max - b / 2) / w.RAY())) {
+    if (b == 0 || (a > (UINT256_MAX - b / 2) / w.RAY())) {
       vm.expectRevert();
       w.rayDiv(a, b);
     } else {

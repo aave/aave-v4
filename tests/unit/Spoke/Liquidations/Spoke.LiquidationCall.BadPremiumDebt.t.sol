@@ -248,7 +248,7 @@ contract LiquidationCallBadPremiumDebtTest is SpokeLiquidationBase {
 
     // calculate lowest HF where there is sufficient collateral to cover debt
     // below this value results in bad debt
-    uint256 hfBadDebtThreshold = _calcLowestHfToRestoreCloseFactor(state.spoke, alice, liqBonus);
+    uint256 hfBadDebtThreshold = _calcLowestHfForBadDebt(state.spoke, alice, liqBonus);
 
     _increaseCollateralReserveSupplyExchangeRate(
       state.spoke,

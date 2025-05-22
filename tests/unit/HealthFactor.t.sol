@@ -18,7 +18,7 @@ contract HealthFactorTest_ToMigrate is Base {
 
     //     // without any supply/borrow, health factor should be max
     //     uint256 healthFactor = spoke1.getHealthFactor(USER1);
-    //     assertEq(healthFactor, type(uint256).max, 'wrong health factor');
+    //     assertEq(healthFactor, UINT256_MAX, 'wrong health factor');
   }
 
   function test_getHealthFactor_no_borrowed() public {
@@ -37,7 +37,7 @@ contract HealthFactorTest_ToMigrate is Base {
     //     setUsingAsCollateral(spoke1, USER1, spokeInfo[spoke1].dai.reserveId, usingAsCollateral);
 
     //     uint256 healthFactor = spoke1.getHealthFactor(USER1);
-    //     assertEq(healthFactor, type(uint256).max, 'wrong health factor');
+    //     assertEq(healthFactor, UINT256_MAX, 'wrong health factor');
   }
 
   function test_getHealthFactor_single_borrowed_asset() public {
@@ -166,7 +166,7 @@ contract HealthFactorTest_ToMigrate is Base {
     avgCollateralFactor = totalCollateral != 0 ? avgCollateralFactor / totalCollateral : 0;
     return
       totalDebt == 0
-        ? type(uint256).max
+        ? UINT256_MAX
         : (totalCollateral.percentMul(avgCollateralFactor)).wadDiv(totalDebt);
   }
 }

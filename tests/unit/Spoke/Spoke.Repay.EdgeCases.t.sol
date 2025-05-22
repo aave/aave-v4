@@ -58,7 +58,7 @@ contract SpokeRepayEdgeCaseTest is SpokeBase {
     supplyExchangeRatioBefore = supplyExchangeRatioAfter;
 
     vm.prank(bob);
-    spoke1.repay(_daiReserveId(spoke1), type(uint256).max);
+    spoke1.repay(_daiReserveId(spoke1), UINT256_MAX);
 
     supplyExchangeRatioAfter = hub.convertToSuppliedAssets(daiAssetId, MAX_SUPPLY_AMOUNT);
     assertGe(supplyExchangeRatioAfter, supplyExchangeRatioBefore);
@@ -107,7 +107,7 @@ contract SpokeRepayEdgeCaseTest is SpokeBase {
 
     // alice repays full
     vm.prank(alice);
-    spoke1.repay(_daiReserveId(spoke1), type(uint256).max);
+    spoke1.repay(_daiReserveId(spoke1), UINT256_MAX);
 
     exchangeRateAfter = hub.convertToSuppliedAssets(daiAssetId, MAX_SUPPLY_AMOUNT);
     assertGe(exchangeRateAfter, exchangeRateBefore, 'supply rate decreased');
@@ -156,7 +156,7 @@ contract SpokeRepayEdgeCaseTest is SpokeBase {
 
     // alice repays full
     vm.prank(alice);
-    spoke1.repay(_daiReserveId(spoke1), type(uint256).max);
+    spoke1.repay(_daiReserveId(spoke1), UINT256_MAX);
 
     exchangeRateAfter = hub.convertToSuppliedAssets(daiAssetId, MAX_SUPPLY_AMOUNT);
     assertGt(exchangeRateAfter, exchangeRateBefore, 'supply rate decreased');

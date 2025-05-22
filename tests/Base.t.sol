@@ -1065,8 +1065,8 @@ abstract contract Base is Test {
     // buffer to force debt lower (ie making sure resultant debt creates HF that is gt desired)
   }
 
-  /// @dev Borrow to be below a certain health factor, without needing to check HF
-  /// will cache user RP to 0 due to mocking price to 0
+  /// @dev Borrow to be below a certain health factor, without HF validation
+  /// user RP will be 0 due to mocking price to 0
   function _borrowToBeBelowHf(
     ISpoke spoke,
     address user,
@@ -1080,6 +1080,7 @@ abstract contract Base is Test {
     vm.assume(requiredDebtAmount < MAX_SUPPLY_AMOUNT);
 
     // mock price to 0 to circumvent borrow validation
+    // due to this, user RP will be 0 and premium debt will not accrue
     vm.mockCall(
       address(oracle),
       abi.encodeWithSelector(IPriceOracle.getAssetPrice.selector, assetId),

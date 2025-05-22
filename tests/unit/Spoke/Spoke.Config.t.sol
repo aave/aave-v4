@@ -218,7 +218,7 @@ contract SpokeConfigTest is SpokeBase {
     liquidityPremium = bound(
       liquidityPremium,
       PercentageMath.PERCENTAGE_FACTOR * 10 + 1,
-      type(uint256).max
+      UINT256_MAX
     );
 
     uint256 daiReserveId = _daiReserveId(spoke1);
@@ -243,7 +243,7 @@ contract SpokeConfigTest is SpokeBase {
     uint256 reserveId,
     uint256 liquidationBonus
   ) public {
-    reserveId = bound(reserveId, spoke1.reserveCount() + 1, type(uint256).max);
+    reserveId = bound(reserveId, spoke1.reserveCount() + 1, UINT256_MAX);
     liquidationBonus = bound(liquidationBonus, MIN_LIQUIDATION_BONUS, MAX_LIQUIDATION_BONUS);
 
     DataTypes.ReserveConfig memory config;
@@ -262,11 +262,7 @@ contract SpokeConfigTest is SpokeBase {
   function test_updateReserveConfig_fuzz_revertsWith_InvalidCollateralFactor(
     uint256 collateralFactor
   ) public {
-    collateralFactor = bound(
-      collateralFactor,
-      PercentageMath.PERCENTAGE_FACTOR + 1,
-      type(uint256).max
-    );
+    collateralFactor = bound(collateralFactor, PercentageMath.PERCENTAGE_FACTOR + 1, UINT256_MAX);
 
     uint256 daiReserveId = _daiReserveId(spoke1);
     DataTypes.ReserveConfig memory config = spoke1.getReserve(daiReserveId).config;
@@ -309,7 +305,7 @@ contract SpokeConfigTest is SpokeBase {
     liquidationProtocolFeePercentage = bound(
       liquidationProtocolFeePercentage,
       PercentageMath.PERCENTAGE_FACTOR + 1,
-      type(uint256).max
+      UINT256_MAX
     );
 
     uint256 daiReserveId = _daiReserveId(spoke1);
@@ -369,7 +365,7 @@ contract SpokeConfigTest is SpokeBase {
   }
 
   function test_addReserve_fuzz_reverts_invalid_assetId(uint256 assetId) public {
-    assetId = bound(assetId, hub.assetCount(), type(uint256).max); // invalid assetId
+    assetId = bound(assetId, hub.assetCount(), UINT256_MAX); // invalid assetId
 
     uint256 reserveId = spoke1.reserveCount();
     DataTypes.ReserveConfig memory newReserveConfig = DataTypes.ReserveConfig({
@@ -414,7 +410,7 @@ contract SpokeConfigTest is SpokeBase {
     uint256 reserveId,
     uint256 decimals
   ) public {
-    decimals = bound(decimals, hub.MAX_ALLOWED_ASSET_DECIMALS() + 1, type(uint256).max); // invalid decimals
+    decimals = bound(decimals, hub.MAX_ALLOWED_ASSET_DECIMALS() + 1, UINT256_MAX); // invalid decimals
     reserveId = bound(reserveId, 0, spoke1.reserveCount());
 
     DataTypes.ReserveConfig memory newReserveConfig = DataTypes.ReserveConfig({
@@ -442,7 +438,7 @@ contract SpokeConfigTest is SpokeBase {
   }
 
   function test_updateLiquidationConfig_fuzz_closeFactor(uint256 newCloseFactor) public {
-    newCloseFactor = bound(newCloseFactor, HEALTH_FACTOR_LIQUIDATION_THRESHOLD, type(uint256).max);
+    newCloseFactor = bound(newCloseFactor, HEALTH_FACTOR_LIQUIDATION_THRESHOLD, UINT256_MAX);
 
     DataTypes.LiquidationConfig memory liquidationConfig;
     liquidationConfig.closeFactor = newCloseFactor;
@@ -480,7 +476,7 @@ contract SpokeConfigTest is SpokeBase {
     liquidationConfig.closeFactor = bound(
       liquidationConfig.closeFactor,
       HEALTH_FACTOR_LIQUIDATION_THRESHOLD,
-      type(uint256).max
+      UINT256_MAX
     );
 
     vm.expectEmit(address(spoke1));
@@ -518,7 +514,7 @@ contract SpokeConfigTest is SpokeBase {
     liquidationConfig.healthFactorBonusThreshold = bound(
       liquidationConfig.healthFactorBonusThreshold,
       HEALTH_FACTOR_LIQUIDATION_THRESHOLD,
-      type(uint256).max
+      UINT256_MAX
     );
     liquidationConfig.liquidationBonusFactor = bound(
       liquidationConfig.liquidationBonusFactor,
@@ -528,7 +524,7 @@ contract SpokeConfigTest is SpokeBase {
     liquidationConfig.closeFactor = bound(
       liquidationConfig.closeFactor,
       HEALTH_FACTOR_LIQUIDATION_THRESHOLD,
-      type(uint256).max
+      UINT256_MAX
     ); // valid values
 
     vm.expectRevert(ISpoke.InvalidHealthFactorBonusThreshold.selector);
@@ -559,12 +555,12 @@ contract SpokeConfigTest is SpokeBase {
     liquidationConfig.liquidationBonusFactor = bound(
       liquidationConfig.liquidationBonusFactor,
       MAX_LIQUIDATION_BONUS_FACTOR + 1,
-      type(uint256).max
+      UINT256_MAX
     );
     liquidationConfig.closeFactor = bound(
       liquidationConfig.closeFactor,
       HEALTH_FACTOR_LIQUIDATION_THRESHOLD,
-      type(uint256).max
+      UINT256_MAX
     ); // valid values
 
     vm.expectRevert(ISpoke.InvalidLiquidationBonusFactor.selector);

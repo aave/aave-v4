@@ -71,12 +71,7 @@ contract SpokeWithdrawScenarioTest is SpokeBase {
     uint256 repayAmount = spoke1.getReserveTotalDebt(_daiReserveId(spoke1));
     deal(address(tokenList.dai), bob, repayAmount);
 
-    Utils.repay({
-      spoke: spoke1,
-      reserveId: _daiReserveId(spoke1),
-      user: bob,
-      amount: type(uint256).max
-    });
+    Utils.repay({spoke: spoke1, reserveId: _daiReserveId(spoke1), user: bob, amount: UINT256_MAX});
 
     uint256 totalSupplied = supplyAmount + interestAccrued;
     assertApproxEqAbs(
@@ -113,7 +108,7 @@ contract SpokeWithdrawScenarioTest is SpokeBase {
     supplyExRateBefore = getSupplyExRate(daiAssetId);
 
     // Withdraw all supplied assets
-    spoke1.withdraw(_daiReserveId(spoke1), type(uint256).max, bob);
+    spoke1.withdraw(_daiReserveId(spoke1), UINT256_MAX, bob);
 
     _checkSuppliedAmounts(daiAssetId, _daiReserveId(spoke1), spoke1, bob, 0, 'after withdraw');
 
@@ -378,7 +373,7 @@ contract SpokeWithdrawScenarioTest is SpokeBase {
     // Deal caller the balance they will supply, and approve hub
     deal(reserve.asset, caller, callerStartingBalance);
     vm.prank(caller);
-    IERC20(reserve.asset).approve(address(hub), type(uint256).max);
+    IERC20(reserve.asset).approve(address(hub), UINT256_MAX);
 
     // Set up initial state of caller by supplying their starting balance
     Utils.supply({

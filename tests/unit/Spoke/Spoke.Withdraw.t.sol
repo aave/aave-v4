@@ -132,7 +132,7 @@ contract SpokeWithdrawTest is SpokeBase {
 
     // Withdraw all supplied assets
     vm.prank(bob);
-    spoke1.withdraw(_daiReserveId(spoke1), type(uint256).max, bob);
+    spoke1.withdraw(_daiReserveId(spoke1), UINT256_MAX, bob);
 
     _checkSuppliedAmounts(daiAssetId, _daiReserveId(spoke1), spoke1, bob, 0, 'after withdraw');
     _checkSupplyRateIncreasing(supplyExRate, getSupplyExRate(daiAssetId), true, 'after withdraw');
@@ -161,7 +161,7 @@ contract SpokeWithdrawTest is SpokeBase {
 
     // Withdraw all supplied assets
     vm.prank(bob);
-    spoke1.withdraw(_daiReserveId(spoke1), type(uint256).max, bob);
+    spoke1.withdraw(_daiReserveId(spoke1), UINT256_MAX, bob);
 
     _checkSuppliedAmounts(daiAssetId, _daiReserveId(spoke1), spoke1, bob, 0, 'after withdraw');
     _checkSupplyRateIncreasing(supplyExRate, getSupplyExRate(daiAssetId), true, 'after withdraw');
@@ -208,17 +208,12 @@ contract SpokeWithdrawTest is SpokeBase {
     uint256 repayAmount = spoke1.getReserveTotalDebt(_daiReserveId(spoke1));
     deal(address(tokenList.dai), bob, repayAmount);
 
-    Utils.repay({
-      spoke: spoke1,
-      reserveId: _daiReserveId(spoke1),
-      user: bob,
-      amount: type(uint256).max
-    });
+    Utils.repay({spoke: spoke1, reserveId: _daiReserveId(spoke1), user: bob, amount: UINT256_MAX});
 
     uint256 supplyExRate = getSupplyExRate(daiAssetId);
 
     vm.prank(bob);
-    spoke1.withdraw(_daiReserveId(spoke1), type(uint256).max, bob);
+    spoke1.withdraw(_daiReserveId(spoke1), UINT256_MAX, bob);
 
     _checkSuppliedAmounts(daiAssetId, _daiReserveId(spoke1), spoke1, bob, 0, 'after withdraw');
     _checkSupplyRateIncreasing(supplyExRate, getSupplyExRate(daiAssetId), true, 'after withdraw');
@@ -269,17 +264,12 @@ contract SpokeWithdrawTest is SpokeBase {
     uint256 repayAmount = spoke1.getReserveTotalDebt(_daiReserveId(spoke1));
     deal(address(tokenList.dai), bob, repayAmount);
 
-    Utils.repay({
-      spoke: spoke1,
-      reserveId: _daiReserveId(spoke1),
-      user: bob,
-      amount: type(uint256).max
-    });
+    Utils.repay({spoke: spoke1, reserveId: _daiReserveId(spoke1), user: bob, amount: UINT256_MAX});
 
     uint256 supplyExRate = getSupplyExRate(daiAssetId);
 
     vm.prank(bob);
-    spoke1.withdraw(_daiReserveId(spoke1), type(uint256).max, bob);
+    spoke1.withdraw(_daiReserveId(spoke1), UINT256_MAX, bob);
 
     _checkSuppliedAmounts(daiAssetId, _daiReserveId(spoke1), spoke1, bob, 0, 'after withdraw');
     _checkSupplyRateIncreasing(supplyExRate, getSupplyExRate(daiAssetId), true, 'after withdraw');

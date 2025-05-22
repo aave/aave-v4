@@ -67,11 +67,11 @@ contract SpokeLiquidationBase is SpokeBase {
 
   function setUp() public virtual override {
     super.setUp();
-    _addBorrowableLiquidity(MAX_SUPPLY_AMOUNT * 10); // additional liquidity buffer for if collateral reserve == debt reserve
+    _deployBorrowableLiquidities(MAX_SUPPLY_AMOUNT * 10); // additional liquidity buffer for if collateral reserve == debt reserve
   }
 
   /// @notice Deploys max borrowable liquidity for all reserves in spoke1.
-  function _addBorrowableLiquidity(uint256 amount) public {
+  function _deployBorrowableLiquidities(uint256 amount) public {
     _deployLiquidity(spoke1, _daiReserveId(spoke1), amount);
     _deployLiquidity(spoke1, _wethReserveId(spoke1), amount);
     _deployLiquidity(spoke1, _wbtcReserveId(spoke1), amount);
@@ -224,6 +224,7 @@ contract SpokeLiquidationBase is SpokeBase {
     return state;
   }
 
+  /// post-liquidation checks
   function _checkLiquidation(
     LiquidationTestLocalParams memory state,
     ISpoke spoke,
@@ -249,7 +250,7 @@ contract SpokeLiquidationBase is SpokeBase {
   ) internal view virtual {
     if (state.hasDeficit) {
       // if bad debt, HF should be max value and userRp should be 0
-      assertEq(state.finalHf, type(uint256).max, string.concat('HF = 0 if bad debt ', label));
+      assertEq(state.finalHf, UINT256_MAX, string.concat('HF = 0 if bad debt ', label));
       assertEq(state.userRp, 0, string.concat('userRp = 0 if bad debt ', label));
     } else {
       // at low amounts of coll/debt, HF can diverge from close factor due to rounding/precision
@@ -496,7 +497,7 @@ contract SpokeLiquidationBase is SpokeBase {
       .percentMulDown(params.collateralFactor)
       .fromBps();
     if (params.closeFactor < effectiveLiquidationPenalty) {
-      return type(uint256).max;
+      return UINT256_MAX;
     }
     return
       (((params.totalDebtInBaseCurrency * params.debtAssetUnit) *
@@ -508,7 +509,7 @@ contract SpokeLiquidationBase is SpokeBase {
   /// @notice Calc user's lowest possible health factor whereby a liqudation can still restore HF to close factor.
   /// for multiple collateral assets
   /// @return healthFactor in WAD
-  function _calcLowestHfToRestoreCloseFactor(
+  function _calcLowestHfForBadDebt(
     ISpoke spoke,
     address user,
     uint256 liquidationBonus
