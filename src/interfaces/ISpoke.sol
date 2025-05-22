@@ -59,7 +59,7 @@ interface ISpoke {
   error InvalidHubAddress();
   error InvalidHealthFactorBonusThreshold();
   error InvalidLiquidationBonusFactor();
-  error Unauthorized();
+  error UnAuthorized();
 
   function addReserve(
     uint256 assetId,
@@ -112,8 +112,7 @@ interface ISpoke {
   /**
    * @notice Allows committing an updated risk premium on all user specified positions.
    * @dev If the risk premium has increased, the sender must be authorized or the owner of the positions,
-   * reverts with `Unauthorized` otherwise.
-   * @dev User account must be healthy to update the risk premium, reverts with `HealthFactorBelowThreshold` otherwise.
+   * reverts with `UnAuthorized` otherwise.
    * @param user The address of the user.
    */
   function updateUserRiskPremium(address user) external;

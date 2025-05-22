@@ -326,11 +326,11 @@ contract Spoke is ISpoke, Multicall {
 
   /// @inheritdoc ISpoke
   function updateUserRiskPremium(address user) external {
-    uint256 newUserRiskPremium = _validateUserPosition(user); // validates HF
-    bool premiumIncrease = _notifyRiskPremiumUpdate(type(uint256).max, user, newUserRiskPremium);
+    (uint256 userRiskPremium, , , , ) = _calculateUserAccountData(user);
+    bool premiumIncrease = _notifyRiskPremiumUpdate(type(uint256).max, user, userRiskPremium);
     // todo allow authorized caller to increase as well
-    require(msg.sender == user || premiumIncrease, Unauthorized());
-    emit UserRiskPremiumUpdate(user, newUserRiskPremium);
+    require(msg.sender == user || premiumIncrease, UnAuthorized());
+    emit UserRiskPremiumUpdate(user, userRiskPremium);
   }
 
   function getUsingAsCollateral(uint256 reserveId, address user) external view returns (bool) {
