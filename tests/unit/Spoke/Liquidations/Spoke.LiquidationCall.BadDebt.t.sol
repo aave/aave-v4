@@ -354,11 +354,6 @@ contract LiquidationCallBadDebtTest is SpokeLiquidationBase {
       collateralReserveId,
       state.liquidationProtocolFeePercentage
     );
-    // set user position under hf threshold so that there is invalid collateral to cover all debt
-    // results in bad debt remaining (debt > 0, collateral = 0)
-    uint256 desiredHf = _calcLowestHfToRestoreCloseFactor(collateralReserveId, liqBonus).percentMul(
-      99_00
-    );
 
     Utils.supplyCollateral({
       spoke: spoke1,
@@ -367,6 +362,13 @@ contract LiquidationCallBadDebtTest is SpokeLiquidationBase {
       amount: supplyAmount,
       onBehalfOf: alice
     });
+
+    // set user position under hf threshold so that there is invalid collateral to cover all debt
+    // results in bad debt remaining (debt > 0, collateral = 0)
+    uint256 desiredHf = _calcLowestHfToRestoreCloseFactor(spoke1, alice, liqBonus).percentMul(
+      99_00
+    );
+
     _increaseCollateralReserveSupplyExchangeRate(
       state.collateralReserve.assetId,
       collateralReserveId,

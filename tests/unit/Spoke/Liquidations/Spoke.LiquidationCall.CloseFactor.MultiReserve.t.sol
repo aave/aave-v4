@@ -255,6 +255,10 @@ contract LiquidationCallCloseFactorMultiReserveTest is SpokeLiquidationBase {
       });
     }
 
+    state.desiredHf = _calcLowestHfToRestoreCloseFactor(spoke1, alice, liqBonus).percentMulUp(
+      101_00
+    ); // add buffer to have HF remain above lowest allowed HF
+
     // TODO: can just use inflate on normal coll reserve
     _increaseCollateralReservesSupplyExchangeRate(
       state.collateralReserves,
@@ -262,8 +266,6 @@ contract LiquidationCallCloseFactorMultiReserveTest is SpokeLiquidationBase {
       skipTime,
       bob
     );
-
-    state.desiredHf = _calcLowestHfToRestoreCloseFactor(alice, liqBonus).percentMulUp(101_00); // add buffer to have HF remain above lowest allowed HF
 
     (
       uint256 hfAfterBorrow,

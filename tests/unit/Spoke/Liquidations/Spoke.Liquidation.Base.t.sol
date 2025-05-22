@@ -484,10 +484,11 @@ contract SpokeLiquidationBase is SpokeBase {
   /// for multiple collateral assets
   /// @return healthFactor in WAD
   function _calcLowestHfToRestoreCloseFactor(
+    ISpoke spoke,
     address user,
     uint256 liquidationBonus
   ) internal view returns (uint256) {
-    (, uint256 avgCollateralFactor, , , ) = spoke1.getUserAccountData(user);
+    (, uint256 avgCollateralFactor, , , ) = spoke.getUserAccountData(user);
     return
       _calcLowestHfForCloseFactorFromCollateralFactor(
         avgCollateralFactor.dewadify(),
@@ -498,16 +499,16 @@ contract SpokeLiquidationBase is SpokeBase {
   /// @notice Calc user's lowest possible health factor whereby a liqudation can still restore HF to close factor.
   /// for a single collateral asset
   /// @return healthFactor in WAD
-  function _calcLowestHfToRestoreCloseFactor(
-    uint256 collateralReserveId,
-    uint256 liquidationBonus
-  ) internal view returns (uint256) {
-    return
-      _calcLowestHfForCloseFactorFromCollateralFactor(
-        spoke1.getCollateralFactor(collateralReserveId),
-        liquidationBonus
-      );
-  }
+  // function _calcLowestHfToRestoreCloseFactor(
+  //   uint256 collateralReserveId,
+  //   uint256 liquidationBonus
+  // ) internal view returns (uint256) {
+  //   return
+  //     _calcLowestHfForCloseFactorFromCollateralFactor(
+  //       _getCollateralFactor(spoke1, collateralReserveId),
+  //       liquidationBonus
+  //     );
+  // }
 
   /// given collateral factor and liquidation bonus, calculate the lowest health factor possible
   /// whereby a liquidation can still restore HF to close factor
@@ -763,5 +764,14 @@ contract SpokeLiquidationBase is SpokeBase {
 
     console.log(' state.supply.balanceAfter %e', state.supply.balanceAfter);
     console.log(' state.supply.balanceBefore %e', state.supply.balanceBefore);
+  }
+
+  // TODO: update when dynamic risk config is implemented
+  function _getCollateralFactor(
+    ISpoke spoke,
+    uint256 reserveId,
+    address user
+  ) internal view returns (uint256) {
+    return spoke.getCollateralFactor(reserveId);
   }
 }

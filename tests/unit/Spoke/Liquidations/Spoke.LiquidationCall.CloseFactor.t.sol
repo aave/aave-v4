@@ -421,10 +421,6 @@ contract LiquidationCallCloseFactorTest is SpokeLiquidationBase {
       collateralReserveId,
       state.liquidationProtocolFeePercentage
     );
-    // TODO: fuzz test with desiredHf >= lowest and <= 1
-    uint256 desiredHf = _calcLowestHfToRestoreCloseFactor(collateralReserveId, liqBonus).percentMul(
-      101_00
-    ); // add buffer so that not all collateral is seized
 
     Utils.supplyCollateral({
       spoke: spoke1,
@@ -433,6 +429,11 @@ contract LiquidationCallCloseFactorTest is SpokeLiquidationBase {
       amount: supplyAmount,
       onBehalfOf: alice
     });
+
+    // TODO: fuzz test with desiredHf >= lowest and <= 1
+    uint256 desiredHf = _calcLowestHfToRestoreCloseFactor(spoke1, alice, liqBonus).percentMul(
+      101_00
+    ); // add buffer so that not all collateral is seized
 
     _increaseCollateralReserveSupplyExchangeRate(
       state.collateralReserve.assetId,
