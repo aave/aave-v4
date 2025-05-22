@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.0;
 
+import {IMulticall} from 'src/interfaces/IMulticall.sol';
 import {DataTypes} from 'src/libraries/types/DataTypes.sol';
 
 /**
@@ -8,7 +9,7 @@ import {DataTypes} from 'src/libraries/types/DataTypes.sol';
  * @author Aave Labs
  * @notice Basic interface for Spoke
  */
-interface ISpoke {
+interface ISpoke is IMulticall {
   event ReserveAdded(uint256 indexed reserveId, uint256 indexed assetId);
   event ReserveConfigUpdated(uint256 indexed reserveId, DataTypes.ReserveConfig config);
   event LiquidityPremiumUpdated(uint256 indexed reserveId, uint256 liquidityPremium);

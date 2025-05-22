@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.0;
 
-import {Multicall} from 'src/dependencies/openzeppelin/Multicall.sol';
+import {Multicall} from 'src/contracts/Multicall.sol';
 
 // libraries
 import {WadRayMath} from 'src/libraries/math/WadRayMath.sol';
