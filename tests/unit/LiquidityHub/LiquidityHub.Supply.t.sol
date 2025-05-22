@@ -114,9 +114,7 @@ contract LiquidityHubSupplyTest is LiquidityHubBase {
     hub.add(daiAssetId, amount, alice);
   }
 
-  // Tests that the supply cap is enforced by rounding up the conversion
-  // of supplied shares into assets. Also verifies that rounding down
-  // would fail to enforce the cap.
+  /// supply reverts if the cap is exceeded due to interest accrual, with proper rounding (up) applied to shares into assets conversion
   function test_supply_revertsWith_SupplyCapExceeded_due_to_rounding() public {
     _increaseExchangeRate(daiAssetId, 100e18);
 
