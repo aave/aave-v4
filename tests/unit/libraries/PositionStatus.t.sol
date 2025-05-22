@@ -4,7 +4,6 @@ pragma solidity ^0.8.10;
 import 'forge-std/Test.sol';
 
 import {PositionStatus} from 'src/libraries/configuration/PositionStatus.sol';
-import {WadRayMath} from 'src/contracts/WadRayMath.sol';
 import {DataTypes} from 'src/libraries/types/DataTypes.sol';
 
 contract PositionStatusTest is Test {
@@ -13,7 +12,6 @@ contract PositionStatusTest is Test {
     DataTypes.PositionStatus positionStatus;
 
   function setUp() public {
-
   }
 
   function test_setBorrowing_slot0() public {
@@ -27,7 +25,6 @@ contract PositionStatusTest is Test {
 
   function test_setBorrowing_slot1() public {
 
-    
     positionStatus.setBorrowing( 128, true);
     assertEq(positionStatus.isBorrowing(128), true);
 
@@ -42,16 +39,43 @@ contract PositionStatusTest is Test {
 
   }
 
+  /// forge-config: default.allow_internal_expect_revert = true
   function test_fuzz_setBorrowing(uint256 a, bool b) public {
     if(a >= PositionStatus.MAX_RESERVES_COUNT) {
         vm.expectRevert();
-        console.log("a is %d, b is %d", a, b);
-        positionStatus.setBorrowing(a, b);
+        positionStatus.setBorrowing( a, b);
         return;
     }
     positionStatus.setBorrowing(a, b);
     assertEq(positionStatus.isBorrowing(a), b);
   }
 
+function test_setUseAsCollateral_slot0() public {
+  
+    positionStatus.setUsingAsCollateral( 0, true);
+    assertEq(positionStatus.isUsingAsCollateral(0), true);
+    positionStatus.setUsingAsCollateral( 127, true);
+    assertEq(positionStatus.isUsingAsCollateral(127), true);
+  
+  }
+function test_setUseAsCollateral_slot1() public {
+  
+    positionStatus.setUsingAsCollateral( 128, true);
+    assertEq(positionStatus.isUsingAsCollateral(128), true);
+    positionStatus.setUsingAsCollateral( 255, true);
+    assertEq(positionStatus.isUsingAsCollateral(255), true);
+  
+  }
 
+
+  /// forge-config: default.allow_internal_expect_revert = true
+  function test_fuzz_setUseAsCollateral(uint256 a, bool b) public {
+    if(a >= PositionStatus.MAX_RESERVES_COUNT) {
+        vm.expectRevert();
+        positionStatus.setUsingAsCollateral( a, b);
+        return;
+    }
+    positionStatus.setUsingAsCollateral(a, b);
+    assertEq(positionStatus.isUsingAsCollateral(a), b);
+  }
 }

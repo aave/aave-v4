@@ -81,8 +81,6 @@ library DataTypes {
 
   struct UserPosition {
     uint256 baseDebt;
-    uint256 outstandingPremium;
-    uint256 suppliedShares;
     uint256 baseBorrowIndex;
     uint256 riskPremium;
     uint256 lastUpdateTimestamp;
