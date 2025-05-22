@@ -212,19 +212,26 @@ contract LiquidityHubSupplyTest is LiquidityHubBase {
   }
 
   /// @dev User makes a first supply, shares and assets amounts are correct, no precision loss
-  function test_supply_fuzz_single_asset(uint256 assetId, uint256 amount) public {
+  function test_supply_fuzz_single_asset(address user, uint256 assetId, uint256 amount) public {
+    vm.assume(user != address(0) && user != address(hub));
+  
     assetId = bound(assetId, 0, hub.assetCount() - 2); // Exclude duplicated DAI
     amount = bound(amount, 1, MAX_SUPPLY_AMOUNT);
 
     uint256 expectedSupplyShares = hub.convertToSuppliedShares(daiAssetId, amount);
     IERC20 asset = hub.assetsList(assetId);
+
+    deal(address(asset), user, MAX_SUPPLY_AMOUNT);
+    vm.prank(user);
+    asset.approve(address(hub), amount);
+
     vm.expectEmit(address(asset));
-    emit IERC20.Transfer(alice, address(hub), amount);
+    emit IERC20.Transfer(user, address(hub), amount);
     vm.expectEmit(address(hub));
     emit ILiquidityHub.Add(assetId, address(spoke1), amount, amount);
 
     vm.prank(address(spoke1));
-    hub.add(assetId, amount, alice);
+    hub.add(assetId, amount, user);
 
     // hub
     assertEq(hub.getAssetSuppliedAmount(assetId), amount, 'hub asset suppliedAmount after');
@@ -245,7 +252,7 @@ contract LiquidityHubSupplyTest is LiquidityHubBase {
     );
     assertEq(hub.getAsset(assetId).lastUpdateTimestamp, vm.getBlockTimestamp());
     // token balance
-    assertEq(asset.balanceOf(alice), MAX_SUPPLY_AMOUNT - amount, 'user token balance post-supply');
+    assertEq(asset.balanceOf(user), MAX_SUPPLY_AMOUNT - amount, 'user token balance post-supply');
     assertEq(asset.balanceOf(address(spoke1)), 0, 'spoke token balance post-supply');
     assertEq(asset.balanceOf(address(hub)), amount, 'hub token balance post-supply');
   }
