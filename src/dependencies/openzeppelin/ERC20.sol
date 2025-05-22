@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: MIT
-// OpenZeppelin Contracts (last updated v5.0.0) (token/ERC20/ERC20.sol)
+// OpenZeppelin Contracts (last updated v5.1.0) (token/ERC20/ERC20.sol)
 
 pragma solidity ^0.8.20;
 
@@ -23,13 +23,8 @@ import {IERC20Errors} from './IERC20Errors.sol';
  *
  * We have followed general OpenZeppelin Contracts guidelines: functions revert
  * instead returning `false` on failure. This behavior is nonetheless
- * conventional and does not conflict with the expectations of ERC20
+ * conventional and does not conflict with the expectations of ERC-20
  * applications.
- *
- * Additionally, an {Approval} event is emitted on calls to {transferFrom}.
- * This allows applications to reconstruct the allowance for all accounts just
- * by listening to said events. Other implementations of the EIP may not emit
- * these events, as it isn't required by the specification.
  */
 abstract contract ERC20 is Context, IERC20, IERC20Metadata, IERC20Errors {
   mapping(address account => uint256) private _balances;
@@ -40,7 +35,6 @@ abstract contract ERC20 is Context, IERC20, IERC20Metadata, IERC20Errors {
 
   string private _name;
   string private _symbol;
-  uint8 private _decimals;
 
   /**
    * @dev Sets the values for {name} and {symbol}.
@@ -51,7 +45,6 @@ abstract contract ERC20 is Context, IERC20, IERC20Metadata, IERC20Errors {
   constructor(string memory name_, string memory symbol_) {
     _name = name_;
     _symbol = symbol_;
-    _decimals = 18;
   }
 
   /**
@@ -83,7 +76,7 @@ abstract contract ERC20 is Context, IERC20, IERC20Metadata, IERC20Errors {
    * {IERC20-balanceOf} and {IERC20-transfer}.
    */
   function decimals() public view virtual returns (uint8) {
-    return _decimals;
+    return 18;
   }
 
   /**
@@ -140,8 +133,8 @@ abstract contract ERC20 is Context, IERC20, IERC20Metadata, IERC20Errors {
   /**
    * @dev See {IERC20-transferFrom}.
    *
-   * Emits an {Approval} event indicating the updated allowance. This is not
-   * required by the EIP. See the note at the beginning of {ERC20}.
+   * Skips emitting an {Approval} event indicating an allowance update. This is not
+   * required by the ERC. See {xref-ERC20-_approve-address-address-uint256-bool-}[_approve].
    *
    * NOTE: Does not update the allowance if the current allowance
    * is the maximum `uint256`.
@@ -158,17 +151,6 @@ abstract contract ERC20 is Context, IERC20, IERC20Metadata, IERC20Errors {
     _spendAllowance(from, spender, value);
     _transfer(from, to, value);
     return true;
-  }
-
-  /**
-   * @dev Sets {decimals} to a value other than the default one of 18.
-   *
-   * WARNING: This function should only be called from the constructor. Most
-   * applications that interact with token contracts will not expect
-   * {decimals} to ever change, and may work incorrectly if it does.
-   */
-  function _setupDecimals(uint8 decimals_) internal {
-    _decimals = decimals_;
   }
 
   /**
@@ -286,7 +268,8 @@ abstract contract ERC20 is Context, IERC20, IERC20Metadata, IERC20Errors {
    *
    * Anyone who wishes to continue emitting `Approval` events on the`transferFrom` operation can force the flag to
    * true using the following override:
-   * ```
+   *
+   * ```solidity
    * function _approve(address owner, address spender, uint256 value, bool) internal virtual override {
    *     super._approve(owner, spender, value, true);
    * }
