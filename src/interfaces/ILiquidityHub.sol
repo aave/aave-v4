@@ -20,11 +20,7 @@ interface ILiquidityHub {
     uint256 supplyCap
   );
 
-  event DrawnIndexUpdate(
-    uint256 indexed assetId, 
-    uint256 drawnIndex,
-    uint256 lastUpdateTimestamp
-  );
+  event DrawnIndexUpdate(uint256 indexed assetId, uint256 drawnIndex, uint256 lastUpdateTimestamp);
   event Add(
     uint256 indexed assetId,
     address indexed spoke,
@@ -60,7 +56,7 @@ interface ILiquidityHub {
   error MismatchedConfigs();
   error InvalidSharesAmount();
   error InvalidSupplyAmount();
-  error InvalidSelfAdd();
+  error InvalidAddFromHub();
   error AssetNotListed();
   error AssetNotActive();
   error SupplyCapExceeded(uint256 supplyCap);

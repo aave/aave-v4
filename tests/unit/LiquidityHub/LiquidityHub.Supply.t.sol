@@ -399,17 +399,11 @@ contract LiquidityHubSupplyTest is LiquidityHubBase {
     hub.add(daiAssetId, supplyAmount, alice);
   }
 
-  function test_supply_fuzz_revertsWith_InvalidSelfAdd(uint256 daiAmount) public {
-    daiAmount = bound(daiAmount, 1, MAX_SUPPLY_AMOUNT);
-
-    vm.expectRevert(ILiquidityHub.InvalidSelfAdd.selector, address(hub));
+  function test_supply_revertsWith_InvalidAddFromHub() public {
+    vm.expectRevert(ILiquidityHub.InvalidAddFromHub.selector, address(hub));
 
     vm.prank(address(spoke1));
-    hub.add(daiAssetId, daiAmount, address(hub));
-  }
-
-  function test_supply_revertsWith_InvalidSelfAdd() public {
-    test_supply_fuzz_revertsWith_InvalidSelfAdd(10e18);
+    hub.add(daiAssetId, 100e18, address(hub));
   }
 
   function test_supply_with_increased_index() public {

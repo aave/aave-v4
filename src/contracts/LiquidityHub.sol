@@ -387,7 +387,7 @@ contract LiquidityHub is ILiquidityHub {
     address from
   ) internal view {
     require(amount != 0, InvalidSupplyAmount());
-    require(from != address(this), InvalidSelfAdd());
+    require(from != address(this), InvalidAddFromHub());
     require(asset.config.active, AssetNotActive());
     require(!asset.config.paused, AssetPaused());
     require(!asset.config.frozen, AssetFrozen());
