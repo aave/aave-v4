@@ -244,7 +244,12 @@ contract SpokeAccrueInterestTest is SpokeBase {
       borrowAmount
     );
     uint256 expectedPremiumDrawnShares = usdxReserveInfo.baseDrawnShares.percentMul(riskPremium);
-    uint256 expectedPremiumDebt = hub.convertToDrawnAssets(usdxAssetId, expectedPremiumDrawnShares);
+    uint256 expectedPremiumDebt = hub.convertToDrawnAssets(
+      usdxAssetId,
+      expectedPremiumDrawnShares
+    ) -
+      usdxReserveInfo.premiumOffset +
+      usdxReserveInfo.realizedPremium;
 
     _checkDebts(spoke1, usdxReserveId, bob, expectedBaseDebt, expectedPremiumDebt, 'after accrual');
   }
@@ -353,66 +358,22 @@ contract SpokeAccrueInterestTest is SpokeBase {
     uint256 totalBase = MathUtils
       .calculateLinearInterest(rates.daiBaseBorrowRate, startTime)
       .rayMul(amounts.daiBorrowAmount);
-    uint256 expectedPremiumDrawnShares = hub
-      .convertToDrawnShares(daiAssetId, amounts.daiBorrowAmount)
-      .percentMul(bobRp);
-    uint256 expectedPremiumDebt = hub.convertToDrawnAssets(daiAssetId, expectedPremiumDrawnShares);
-    _checkDebts(
-      spoke1,
-      _daiReserveId(spoke1),
-      bob,
-      totalBase,
-      expectedPremiumDebt,
-      'dai before accrual'
-    );
+    _checkDebts(spoke1, _daiReserveId(spoke1), bob, totalBase, 0, 'dai before accrual');
 
     totalBase = MathUtils.calculateLinearInterest(rates.wethBaseBorrowRate, startTime).rayMul(
       amounts.wethBorrowAmount
     );
-    expectedPremiumDrawnShares = hub
-      .convertToDrawnShares(wethAssetId, amounts.wethBorrowAmount)
-      .percentMul(bobRp);
-    expectedPremiumDebt = hub.convertToDrawnAssets(wethAssetId, expectedPremiumDrawnShares);
-    _checkDebts(
-      spoke1,
-      _wethReserveId(spoke1),
-      bob,
-      totalBase,
-      expectedPremiumDebt,
-      'weth before accrual'
-    );
+    _checkDebts(spoke1, _wethReserveId(spoke1), bob, totalBase, 0, 'weth before accrual');
 
     totalBase = MathUtils.calculateLinearInterest(rates.usdxBaseBorrowRate, startTime).rayMul(
       amounts.usdxBorrowAmount
     );
-    expectedPremiumDrawnShares = hub
-      .convertToDrawnShares(usdxAssetId, amounts.usdxBorrowAmount)
-      .percentMul(bobRp);
-    expectedPremiumDebt = hub.convertToDrawnAssets(usdxAssetId, expectedPremiumDrawnShares);
-    _checkDebts(
-      spoke1,
-      _usdxReserveId(spoke1),
-      bob,
-      totalBase,
-      expectedPremiumDebt,
-      'usdx before accrual'
-    );
+    _checkDebts(spoke1, _usdxReserveId(spoke1), bob, totalBase, 0, 'usdx before accrual');
 
     totalBase = MathUtils.calculateLinearInterest(rates.wbtcBaseBorrowRate, startTime).rayMul(
       amounts.wbtcBorrowAmount
     );
-    expectedPremiumDrawnShares = hub
-      .convertToDrawnShares(wbtcAssetId, amounts.wbtcBorrowAmount)
-      .percentMul(bobRp);
-    expectedPremiumDebt = hub.convertToDrawnAssets(wbtcAssetId, expectedPremiumDrawnShares);
-    _checkDebts(
-      spoke1,
-      _wbtcReserveId(spoke1),
-      bob,
-      totalBase,
-      expectedPremiumDebt,
-      'wbtc before accrual'
-    );
+    _checkDebts(spoke1, _wbtcReserveId(spoke1), bob, totalBase, 0, 'wbtc before accrual');
 
     // Skip time to accrue interest
     skip(skipTime);
@@ -422,8 +383,10 @@ contract SpokeAccrueInterestTest is SpokeBase {
     totalBase = MathUtils.calculateLinearInterest(rates.daiBaseBorrowRate, startTime).rayMul(
       amounts.daiBorrowAmount
     );
-    expectedPremiumDrawnShares = reserve.baseDrawnShares.percentMul(bobRp);
-    expectedPremiumDebt = hub.convertToDrawnAssets(daiAssetId, expectedPremiumDrawnShares);
+    uint256 expectedPremiumDrawnShares = reserve.baseDrawnShares.percentMul(bobRp);
+    uint256 expectedPremiumDebt = hub.convertToDrawnAssets(daiAssetId, expectedPremiumDrawnShares) -
+      reserve.premiumOffset +
+      reserve.realizedPremium;
     _checkDebts(
       spoke1,
       _daiReserveId(spoke1),
@@ -438,7 +401,10 @@ contract SpokeAccrueInterestTest is SpokeBase {
       amounts.wethBorrowAmount
     );
     expectedPremiumDrawnShares = reserve.baseDrawnShares.percentMul(bobRp);
-    expectedPremiumDebt = hub.convertToDrawnAssets(wethAssetId, expectedPremiumDrawnShares);
+    expectedPremiumDebt =
+      hub.convertToDrawnAssets(wethAssetId, expectedPremiumDrawnShares) -
+      reserve.premiumOffset +
+      reserve.realizedPremium;
     _checkDebts(
       spoke1,
       _wethReserveId(spoke1),
@@ -453,7 +419,10 @@ contract SpokeAccrueInterestTest is SpokeBase {
       amounts.usdxBorrowAmount
     );
     expectedPremiumDrawnShares = reserve.baseDrawnShares.percentMul(bobRp);
-    expectedPremiumDebt = hub.convertToDrawnAssets(usdxAssetId, expectedPremiumDrawnShares);
+    expectedPremiumDebt =
+      hub.convertToDrawnAssets(usdxAssetId, expectedPremiumDrawnShares) -
+      reserve.premiumOffset +
+      reserve.realizedPremium;
     _checkDebts(
       spoke1,
       _usdxReserveId(spoke1),
@@ -468,7 +437,10 @@ contract SpokeAccrueInterestTest is SpokeBase {
       amounts.wbtcBorrowAmount
     );
     expectedPremiumDrawnShares = reserve.baseDrawnShares.percentMul(bobRp);
-    expectedPremiumDebt = hub.convertToDrawnAssets(wbtcAssetId, expectedPremiumDrawnShares);
+    expectedPremiumDebt =
+      hub.convertToDrawnAssets(wbtcAssetId, expectedPremiumDrawnShares) -
+      reserve.premiumOffset +
+      reserve.realizedPremium;
     _checkDebts(
       spoke1,
       _wbtcReserveId(spoke1),
@@ -658,66 +630,22 @@ contract SpokeAccrueInterestTest is SpokeBase {
     uint256 totalBase = MathUtils
       .calculateLinearInterest(rates.daiBaseBorrowRate, startTime)
       .rayMul(amounts.daiBorrowAmount);
-    uint256 expectedPremiumDrawnShares = hub
-      .convertToDrawnShares(daiAssetId, amounts.daiBorrowAmount)
-      .percentMul(bobRp);
-    uint256 expectedPremiumDebt = hub.convertToDrawnAssets(daiAssetId, expectedPremiumDrawnShares);
-    _checkDebts(
-      spoke1,
-      _daiReserveId(spoke1),
-      bob,
-      totalBase,
-      expectedPremiumDebt,
-      'dai before accrual'
-    );
+    _checkDebts(spoke1, _daiReserveId(spoke1), bob, totalBase, 0, 'dai before accrual');
 
     totalBase = MathUtils.calculateLinearInterest(rates.wethBaseBorrowRate, startTime).rayMul(
       amounts.wethBorrowAmount
     );
-    expectedPremiumDrawnShares = hub
-      .convertToDrawnShares(wethAssetId, amounts.wethBorrowAmount)
-      .percentMul(bobRp);
-    expectedPremiumDebt = hub.convertToDrawnAssets(wethAssetId, expectedPremiumDrawnShares);
-    _checkDebts(
-      spoke1,
-      _wethReserveId(spoke1),
-      bob,
-      totalBase,
-      expectedPremiumDebt,
-      'weth before accrual'
-    );
+    _checkDebts(spoke1, _wethReserveId(spoke1), bob, totalBase, 0, 'weth before accrual');
 
     totalBase = MathUtils.calculateLinearInterest(rates.usdxBaseBorrowRate, startTime).rayMul(
       amounts.usdxBorrowAmount
     );
-    expectedPremiumDrawnShares = hub
-      .convertToDrawnShares(usdxAssetId, amounts.usdxBorrowAmount)
-      .percentMul(bobRp);
-    expectedPremiumDebt = hub.convertToDrawnAssets(usdxAssetId, expectedPremiumDrawnShares);
-    _checkDebts(
-      spoke1,
-      _usdxReserveId(spoke1),
-      bob,
-      totalBase,
-      expectedPremiumDebt,
-      'usdx before accrual'
-    );
+    _checkDebts(spoke1, _usdxReserveId(spoke1), bob, totalBase, 0, 'usdx before accrual');
 
     totalBase = MathUtils.calculateLinearInterest(rates.wbtcBaseBorrowRate, startTime).rayMul(
       amounts.wbtcBorrowAmount
     );
-    expectedPremiumDrawnShares = hub
-      .convertToDrawnShares(wbtcAssetId, amounts.wbtcBorrowAmount)
-      .percentMul(bobRp);
-    expectedPremiumDebt = hub.convertToDrawnAssets(wbtcAssetId, expectedPremiumDrawnShares);
-    _checkDebts(
-      spoke1,
-      _wbtcReserveId(spoke1),
-      bob,
-      totalBase,
-      expectedPremiumDebt,
-      'wbtc before accrual'
-    );
+    _checkDebts(spoke1, _wbtcReserveId(spoke1), bob, totalBase, 0, 'wbtc before accrual');
 
     // Skip time to accrue interest
     skip(skipTime);
@@ -727,8 +655,10 @@ contract SpokeAccrueInterestTest is SpokeBase {
     totalBase = MathUtils.calculateLinearInterest(rates.daiBaseBorrowRate, startTime).rayMul(
       amounts.daiBorrowAmount
     );
-    expectedPremiumDrawnShares = reserve.baseDrawnShares.percentMul(bobRp);
-    expectedPremiumDebt = hub.convertToDrawnAssets(daiAssetId, expectedPremiumDrawnShares);
+    uint256 expectedPremiumDrawnShares = reserve.baseDrawnShares.percentMul(bobRp);
+    uint256 expectedPremiumDebt = hub.convertToDrawnAssets(daiAssetId, expectedPremiumDrawnShares) -
+      reserve.premiumOffset +
+      reserve.realizedPremium;
     _checkDebts(
       spoke1,
       _daiReserveId(spoke1),
@@ -743,7 +673,10 @@ contract SpokeAccrueInterestTest is SpokeBase {
       amounts.wethBorrowAmount
     );
     expectedPremiumDrawnShares = reserve.baseDrawnShares.percentMul(bobRp);
-    expectedPremiumDebt = hub.convertToDrawnAssets(wethAssetId, expectedPremiumDrawnShares);
+    expectedPremiumDebt =
+      hub.convertToDrawnAssets(wethAssetId, expectedPremiumDrawnShares) -
+      reserve.premiumOffset +
+      reserve.realizedPremium;
     _checkDebts(
       spoke1,
       _wethReserveId(spoke1),
@@ -758,7 +691,10 @@ contract SpokeAccrueInterestTest is SpokeBase {
       amounts.usdxBorrowAmount
     );
     expectedPremiumDrawnShares = reserve.baseDrawnShares.percentMul(bobRp);
-    expectedPremiumDebt = hub.convertToDrawnAssets(usdxAssetId, expectedPremiumDrawnShares);
+    expectedPremiumDebt =
+      hub.convertToDrawnAssets(usdxAssetId, expectedPremiumDrawnShares) -
+      reserve.premiumOffset +
+      reserve.realizedPremium;
     _checkDebts(
       spoke1,
       _usdxReserveId(spoke1),
@@ -773,7 +709,10 @@ contract SpokeAccrueInterestTest is SpokeBase {
       amounts.wbtcBorrowAmount
     );
     expectedPremiumDrawnShares = reserve.baseDrawnShares.percentMul(bobRp);
-    expectedPremiumDebt = hub.convertToDrawnAssets(wbtcAssetId, expectedPremiumDrawnShares);
+    expectedPremiumDebt =
+      hub.convertToDrawnAssets(wbtcAssetId, expectedPremiumDrawnShares) -
+      reserve.premiumOffset +
+      reserve.realizedPremium;
     _checkDebts(
       spoke1,
       _wbtcReserveId(spoke1),
