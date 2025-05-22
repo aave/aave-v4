@@ -854,58 +854,57 @@ abstract contract Base is Test {
     uint256 assetId = spoke.getReserve(reserveId).assetId;
 
     // User position debts
-    DataTypes.UserPosition memory userPosition = getUserInfo(spoke, user, reserveId);
+    (uint256 actualBaseDebt, uint256 actualPremiumDebt) = spoke.getUserDebt(reserveId, user);
+    assertApproxEqAbs(actualBaseDebt, expectedBaseDebt, 1, string.concat('user base debt ', label));
     assertApproxEqAbs(
-      hub.convertToDrawnAssets(assetId, userPosition.baseDrawnShares),
-      expectedBaseDebt,
-      1,
-      string.concat('user base debt ', label)
-    );
-    assertEq(
-      hub.convertToDrawnAssets(assetId, userPosition.premiumDrawnShares),
+      actualPremiumDebt,
       expectedPremiumDebt,
+      1,
       string.concat('user premium debt ', label)
     );
 
     // Reserve debts
-    DataTypes.Reserve memory reserveInfo = getReserveInfo(spoke, reserveId);
+    (actualBaseDebt, actualPremiumDebt) = spoke.getReserveDebt(reserveId);
     assertApproxEqAbs(
-      hub.convertToDrawnAssets(assetId, reserveInfo.baseDrawnShares),
+      actualBaseDebt,
       expectedBaseDebt,
       1,
       string.concat('reserve base debt ', label)
     );
-    assertEq(
-      hub.convertToDrawnAssets(assetId, reserveInfo.premiumDrawnShares),
+    assertApproxEqAbs(
+      actualPremiumDebt,
       expectedPremiumDebt,
+      1,
       string.concat('reserve premium debt ', label)
     );
 
     // Spoke debts
-    DataTypes.SpokeData memory spokeInfo = getSpokeInfo(assetId, address(spoke));
+    (actualBaseDebt, actualPremiumDebt) = hub.getSpokeDebt(assetId, address(spoke));
     assertApproxEqAbs(
-      hub.convertToDrawnAssets(assetId, spokeInfo.baseDrawnShares),
+      actualBaseDebt,
       expectedBaseDebt,
       1,
       string.concat('spoke base debt ', label)
     );
-    assertEq(
-      hub.convertToDrawnAssets(assetId, spokeInfo.premiumDrawnShares),
+    assertApproxEqAbs(
+      actualPremiumDebt,
       expectedPremiumDebt,
+      1,
       string.concat('spoke premium debt ', label)
     );
 
     // Asset debts
-    DataTypes.Asset memory assetInfo = getAssetInfo(assetId);
+    (actualBaseDebt, actualPremiumDebt) = hub.getAssetDebt(assetId);
     assertApproxEqAbs(
-      hub.convertToDrawnAssets(assetId, assetInfo.baseDrawnShares),
+      actualBaseDebt,
       expectedBaseDebt,
       1,
       string.concat('asset base debt ', label)
     );
-    assertEq(
-      hub.convertToDrawnAssets(assetId, assetInfo.premiumDrawnShares),
+    assertApproxEqAbs(
+      actualPremiumDebt,
       expectedPremiumDebt,
+      1,
       string.concat('asset premium debt ', label)
     );
   }

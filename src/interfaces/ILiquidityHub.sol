@@ -75,6 +75,9 @@ interface ILiquidityHub {
   error InvalidAssetAddress();
   error InvalidDebtChange();
 
+  // TODO: Remove after debugging
+  function getAssetIndex(uint256 assetId) external view returns (uint256);
+
   function addAsset(DataTypes.AssetConfig memory params, address asset) external;
 
   function updateAssetConfig(uint256 assetId, DataTypes.AssetConfig memory config) external;
