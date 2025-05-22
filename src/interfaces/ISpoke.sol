@@ -30,12 +30,14 @@ interface ISpoke {
   event UsingAsCollateral(uint256 indexed reserveId, address indexed user, bool usingAsCollateral);
   event RefreshPremiumDebt(
     uint256 indexed reserveId,
+    address indexed user,
     int256 premiumDrawnSharesDelta,
     int256 premiumOffsetDelta,
     int256 realizedPremiumDelta
   );
   event OracleUpdated(uint256 indexed reserveId, address indexed oracle);
   event LiquidationConfigUpdated(DataTypes.LiquidationConfig config);
+  event UserRiskPremiumUpdate(address indexed user, uint256 riskPremium);
 
   error InvalidReserve();
   error UserNotBorrowingReserve(uint256 reserveId);
@@ -57,6 +59,7 @@ interface ISpoke {
   error InvalidHubAddress();
   error InvalidHealthFactorBonusThreshold();
   error InvalidLiquidationBonusFactor();
+  error NoUserRiskPremiumDecrease();
 
   function addReserve(
     uint256 assetId,
@@ -98,6 +101,7 @@ interface ISpoke {
   function repay(uint256 reserveId, uint256 amount) external;
 
   function setUsingAsCollateral(uint256 reserveId, bool usingAsCollateral) external;
+  function updateUserRiskPremium(uint256 reserveId, address user) external;
 
   function getCollateralFactor(uint256 reserveId) external view returns (uint256);
   function getHealthFactor(address user) external view returns (uint256);
