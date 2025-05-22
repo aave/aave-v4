@@ -450,6 +450,9 @@ contract LiquidationCallCloseFactorTest is SpokeLiquidationBase {
       desiredHf
     );
 
+    console.log('cf %e', spoke1.getCollateralFactor(collateralReserveId));
+    console.log('test log %e %e', hfAfterBorrow, desiredHf);
+
     state.liquidationBonus = _getVariableLiquidationBonus(
       spoke1,
       collateralReserveId,
@@ -462,7 +465,9 @@ contract LiquidationCallCloseFactorTest is SpokeLiquidationBase {
       state.debtToLiq,
       state.liqProtocolFee,
 
-    ) = _calculateAvailableCollateralToLiquidate(spoke1, state, requiredDebtAmount);
+    ) = _calculateAvailableCollateralToLiquidate(spoke1, state, UINT256_MAX);
+
+    console.log('test log coll to liq %e debt to liq %e', state.collToLiq, state.debtToLiq);
 
     // logs to read protocol fee from tmp emitted event
     // TODO: update when treasury accounting is done

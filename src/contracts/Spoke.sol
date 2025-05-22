@@ -1022,12 +1022,14 @@ contract Spoke is ISpoke {
         address(this) // must be sent to spoke first before distributing to treasury/liquidator
       );
 
+      console.log('SP suppliedShares %e', userCollateralPosition.suppliedShares);
+
       // collateral accounting
       vars.newUserSuppliedShares = userCollateralPosition.suppliedShares - vars.withdrawnShares;
       userCollateralPosition.suppliedShares = vars.newUserSuppliedShares;
       vars.totalWithdrawnShares += vars.withdrawnShares;
 
-      // console.log('SP newUserSuppliedShares %e', vars.newUserSuppliedShares);
+      console.log('SP newUserSuppliedShares %e', vars.newUserSuppliedShares);
 
       console.log(
         'SP debt %e debt to liq %e',
