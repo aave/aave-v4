@@ -189,26 +189,32 @@ contract LiquidationCallMultiReserveBadPremiumDebtTest is SpokeLiquidationBase {
     uint256 skipTimeForPremiumAccrual
   ) internal returns (LiquidationTestLocalParams memory) {
     LiquidationTestLocalParams memory state;
-    state.collateralReserve = spoke1.getReserve(collateralReserveId);
+    state.collateralReserves = new DataTypes.Reserve[](1);
+    state.collateralReserves[state.collateralReserveIndex] = spoke1.getReserve(collateralReserveId);
     state.debtReserves = new DataTypes.Reserve[](debtReserveIds.length);
     for (uint256 i = 0; i < debtReserveIds.length; i++) {
       state.debtReserves[i] = spoke1.getReserve(debtReserveIds[i]);
     }
-    state.debtReserve = state.debtReserves[0];
 
     liqConfig = _bound(liqConfig);
     liqBonus = bound(
       liqBonus,
       MIN_LIQUIDATION_BONUS,
       PercentageMath.PERCENTAGE_FACTOR.percentDivDown(
-        state.collateralReserve.config.collateralFactor
+        state.collateralReserves[state.collateralReserveIndex].config.collateralFactor
       )
     );
     liquidationProtocolFeePercentage = bound(liquidationProtocolFeePercentage, 0, 100_00);
     supplyAmount = bound(
       supplyAmount,
-      _convertBaseCurrencyToAmount(state.collateralReserve.assetId, 10e26),
-      _convertBaseCurrencyToAmount(state.collateralReserve.assetId, 1e36)
+      _convertBaseCurrencyToAmount(
+        state.collateralReserves[state.collateralReserveIndex].assetId,
+        10e26
+      ),
+      _convertBaseCurrencyToAmount(
+        state.collateralReserves[state.collateralReserveIndex].assetId,
+        1e36
+      )
     );
     skipTime = bound(skipTime, 1, MAX_SKIP_TIME);
     skipTimeForPremiumAccrual = bound(skipTimeForPremiumAccrual, 5 * 365 days, MAX_SKIP_TIME); // enough time to accrue debt so that HF is liquidatable
@@ -239,7 +245,7 @@ contract LiquidationCallMultiReserveBadPremiumDebtTest is SpokeLiquidationBase {
 
     _increaseCollateralReserveSupplyExchangeRate(
       state.spoke,
-      state.collateralReserve.assetId,
+      state.collateralReserves[state.collateralReserveIndex].assetId,
       collateralReserveId,
       supplyAmount / 2,
       skipTime,
@@ -291,13 +297,13 @@ contract LiquidationCallMultiReserveBadPremiumDebtTest is SpokeLiquidationBase {
     vm.expectEmit(address(hub));
     emit ILiquidityHub.DeficitCreated(
       address(state.spoke),
-      state.debtReserve.assetId,
-      state.debt.balanceBefore - state.debtToLiq // outstanding debt which becomes bad debt reported as deficit
+      state.debtReserves[state.debtReserveIndex].assetId,
+      state.totalDebt.balanceBefore - state.debtToLiq // outstanding debt which becomes bad debt reported as deficit
     );
 
     // for remaining debt assets, total debt is reported as deficit
     for (uint256 i = 0; i < debtReserveIds.length; i++) {
-      if (debtReserveIds[i] != state.debtReserve.reserveId) {
+      if (debtReserveIds[i] != state.debtReserves[state.debtReserveIndex].reserveId) {
         vm.expectEmit(address(hub));
         emit ILiquidityHub.DeficitCreated(
           address(state.spoke),
@@ -308,8 +314,8 @@ contract LiquidationCallMultiReserveBadPremiumDebtTest is SpokeLiquidationBase {
     }
     vm.expectEmit(address(state.spoke));
     emit ISpoke.LiquidationCall(
-      state.collateralReserve.asset,
-      state.debtReserve.asset,
+      state.collateralReserves[state.collateralReserveIndex].asset,
+      state.debtReserves[state.debtReserveIndex].asset,
       alice,
       state.debtToLiq,
       state.collToLiq,

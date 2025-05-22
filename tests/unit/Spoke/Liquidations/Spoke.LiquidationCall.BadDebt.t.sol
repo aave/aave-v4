@@ -324,21 +324,32 @@ contract LiquidationCallBadDebtTest is SpokeLiquidationBase {
     uint256 skipTime
   ) internal returns (LiquidationTestLocalParams memory) {
     LiquidationTestLocalParams memory state;
-    state.collateralReserve = spoke1.getReserve(collateralReserveId);
-    state.debtReserve = spoke1.getReserve(debtReserveId);
+    state.collateralReserves = new DataTypes.Reserve[](1);
+    state.debtReserves = new DataTypes.Reserve[](1);
+
+    state.collateralReserves[state.collateralReserveIndex] = spoke1.getReserve(collateralReserveId);
+    state.debtReserves[state.debtReserveIndex] = spoke1.getReserve(debtReserveId);
 
     liqConfig = _bound(liqConfig);
     liqBonus = bound(
       liqBonus,
       MIN_LIQUIDATION_BONUS,
-      PercentageMath.PERCENTAGE_FACTOR.percentDiv(state.collateralReserve.config.collateralFactor)
+      PercentageMath.PERCENTAGE_FACTOR.percentDiv(
+        state.collateralReserves[state.collateralReserveIndex].config.collateralFactor
+      )
     );
     liquidationProtocolFeePercentage = bound(liquidationProtocolFeePercentage, 0, 100_00);
     supplyAmount = bound(
       supplyAmount,
-      _convertBaseCurrencyToAmount(state.collateralReserve.assetId, 1e25),
+      _convertBaseCurrencyToAmount(
+        state.collateralReserves[state.collateralReserveIndex].assetId,
+        1e25
+      ),
       _min(
-        _convertBaseCurrencyToAmount(state.collateralReserve.assetId, MAX_SUPPLY_IN_BASE_CURRENCY),
+        _convertBaseCurrencyToAmount(
+          state.collateralReserves[state.collateralReserveIndex].assetId,
+          MAX_SUPPLY_IN_BASE_CURRENCY
+        ),
         MAX_SUPPLY_AMOUNT
       )
     );
@@ -372,7 +383,7 @@ contract LiquidationCallBadDebtTest is SpokeLiquidationBase {
 
     _increaseCollateralReserveSupplyExchangeRate(
       state.spoke,
-      state.collateralReserve.assetId,
+      state.collateralReserves[state.collateralReserveIndex].assetId,
       collateralReserveId,
       supplyAmount / 2,
       skipTime,
@@ -408,13 +419,13 @@ contract LiquidationCallBadDebtTest is SpokeLiquidationBase {
     vm.expectEmit(address(hub));
     emit ILiquidityHub.DeficitCreated(
       address(state.spoke),
-      state.debtReserve.assetId,
-      state.debt.balanceBefore - state.debtToLiq // outstanding debt which becomes bad debt reported as deficit
+      state.debtReserves[state.debtReserveIndex].assetId,
+      state.totalDebt.balanceBefore - state.debtToLiq // outstanding debt which becomes bad debt reported as deficit
     );
     vm.expectEmit(address(state.spoke));
     emit ISpoke.LiquidationCall(
-      state.collateralReserve.asset,
-      state.debtReserve.asset,
+      state.collateralReserves[state.collateralReserveIndex].asset,
+      state.debtReserves[state.debtReserveIndex].asset,
       alice,
       state.debtToLiq,
       state.collToLiq,

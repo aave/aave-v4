@@ -183,6 +183,8 @@ contract LiquidationCallCloseFactorMultiReserveTest is SpokeLiquidationBase {
     LiquidationTestLocalParams memory state;
     state.collateralReserves = new DataTypes.Reserve[](collateralReserveIds.length);
     state.debtReserves = new DataTypes.Reserve[](debtReserveIds.length);
+    state.collateralReserveIndex = collateralReserveIndex;
+    state.debtReserveIndex = debtReserveIndex;
 
     console.log(' fuzz inputs');
     for (uint256 i = 0; i < collateralReserveIds.length; i++) {
@@ -212,20 +214,18 @@ contract LiquidationCallCloseFactorMultiReserveTest is SpokeLiquidationBase {
 
     state.liquidationProtocolFeePercentage = liquidationProtocolFeePercentage;
 
-    state.collateralReserve = state.collateralReserves[collateralReserveIndex];
-    state.collateralReserveId = collateralReserveIds[collateralReserveIndex];
-
-    state.debtReserve = state.debtReserves[debtReserveIndex];
-    state.debtReserveId = debtReserveIds[debtReserveIndex];
-
     state.spoke = spoke1;
     state.user = alice;
 
     state.spoke.updateLiquidationConfig(liqConfig);
-    updateLiquidationBonus(state.spoke, state.collateralReserveId, liqBonus);
+    updateLiquidationBonus(
+      state.spoke,
+      state.collateralReserves[collateralReserveIndex].reserveId,
+      liqBonus
+    );
     updateLiquidationProtocolFeePercentage(
       state.spoke,
-      state.collateralReserveId,
+      state.collateralReserves[collateralReserveIndex].reserveId,
       state.liquidationProtocolFeePercentage
     );
 
@@ -277,7 +277,7 @@ contract LiquidationCallCloseFactorMultiReserveTest is SpokeLiquidationBase {
 
     state.liquidationBonus = _getVariableLiquidationBonus(
       state.spoke,
-      state.collateralReserve.reserveId,
+      state.collateralReserves[collateralReserveIndex].reserveId,
       hfAfterBorrow
     );
 

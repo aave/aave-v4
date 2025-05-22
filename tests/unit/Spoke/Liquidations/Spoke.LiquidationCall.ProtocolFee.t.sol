@@ -166,7 +166,7 @@ contract LiquidationCallProtocolFeeTest is SpokeLiquidationBase {
     });
 
     uint256 liqProtocolFee = hub.convertToSuppliedAssets(
-      state.collateralReserve.assetId,
+      state.collateralReserves[state.collateralReserveIndex].assetId,
       state.treasury.balanceChange
     );
     assertEq(liqProtocolFee, 0, 'liqProtocolFee = 0');
