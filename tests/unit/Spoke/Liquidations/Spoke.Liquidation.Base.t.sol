@@ -61,6 +61,7 @@ contract SpokeLiquidationBase is SpokeBase {
     uint256 collateralReserveIndex;
     Balance[] deficits;
     Balance[] debts;
+    uint256 hfBadDebtThreshold;
   }
 
   uint256 internal constant MIN_AMOUNT_IN_BASE_CURRENCY = 1e26;
@@ -233,16 +234,16 @@ contract SpokeLiquidationBase is SpokeBase {
     ISpoke spoke,
     string memory label
   ) internal view {
-    // _assertUserAccountData(spoke, state, label);
-    // _assertProtocolFeeEarned(state, label);
-    // _assertLiquidationBonusEarned(state, label);
-    // _assertSupplyExchangeRate(state, label);
-    // _assertSetUsingAsCollateral(spoke, state, label);
-    // if (state.hasDeficit) {
-    //   _assertBadDebt(spoke, state, label);
-    // } else {
-    //   _assertNoBadDebt(spoke, state, label);
-    // }
+    _assertUserAccountData(spoke, state, label);
+    _assertProtocolFeeEarned(state, label);
+    _assertLiquidationBonusEarned(state, label);
+    _assertSupplyExchangeRate(state, label);
+    _assertSetUsingAsCollateral(spoke, state, label);
+    if (state.hasDeficit) {
+      _assertBadDebt(spoke, state, label);
+    } else {
+      _assertNoBadDebt(spoke, state, label);
+    }
   }
 
   /// assert that the user account data is correct after liquidation

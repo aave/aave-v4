@@ -79,6 +79,13 @@ library LiquidationLogic {
       return type(uint256).max;
     }
 
+    console.log(
+      'LL debt calc',
+      (((params.totalDebtInBaseCurrency * params.debtAssetUnit) *
+        (params.closeFactor - params.healthFactor)) /
+        ((params.closeFactor - effectiveLiquidationPenalty) * params.debtAssetPrice)).dewadify()
+    );
+
     // add 1 to denominator to round down, ensuring HF is always <= close factor
     return
       (((params.totalDebtInBaseCurrency * params.debtAssetUnit) *

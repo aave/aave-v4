@@ -35,9 +35,11 @@ contract LiquidationCallCloseFactorMultiReserveTest is SpokeLiquidationBase {
       debtReserveIds: debtReserveIds,
       collateralReserveIndex: 0,
       debtReserveIndex: 1,
-      skipTime: 365 days
+      skipTime: 365 days,
+      desiredHf: 0.95e18
     });
     _checkLiquidation(state, spoke1, 'test_liquidationCall_closeFactor_multi_reserve_scenario1');
+    assertFalse(state.hasDeficit, 'should not have deficit');
   }
 
   /// wbtc/weth collateral
@@ -66,10 +68,12 @@ contract LiquidationCallCloseFactorMultiReserveTest is SpokeLiquidationBase {
       debtReserveIds: debtReserveIds,
       collateralReserveIndex: 0,
       debtReserveIndex: 1,
-      skipTime: 365 days
+      skipTime: 365 days,
+      desiredHf: 0.95e18
     });
 
     _checkLiquidation(state, spoke1, 'test_liquidationCall_closeFactor_multi_reserve_scenario2');
+    assertFalse(state.hasDeficit, 'should not have deficit');
   }
 
   /// dai/usdy collateral
@@ -98,10 +102,12 @@ contract LiquidationCallCloseFactorMultiReserveTest is SpokeLiquidationBase {
       debtReserveIds: debtReserveIds,
       collateralReserveIndex: 0,
       debtReserveIndex: 1,
-      skipTime: 365 days
+      skipTime: 365 days,
+      desiredHf: 0.95e18
     });
 
     _checkLiquidation(state, spoke1, 'test_liquidationCall_closeFactor_multi_reserve_scenario3');
+    assertFalse(state.hasDeficit, 'should not have deficit');
   }
 
   function test_liquidationCall_closeFactor_fuzz_multi_reserve(
@@ -113,7 +119,8 @@ contract LiquidationCallCloseFactorMultiReserveTest is SpokeLiquidationBase {
     uint256 collateralReserveIndex,
     uint256 debtReserveIndex,
     uint256 supplyAmountInBase,
-    uint256 skipTime
+    uint256 skipTime,
+    uint256 desiredHf
   ) public {
     collateralReserveId1 = bound(collateralReserveId1, 0, spoke1.reserveCount() - 1);
     collateralReserveId2 = bound(collateralReserveId2, 0, spoke1.reserveCount() - 1);
@@ -146,26 +153,12 @@ contract LiquidationCallCloseFactorMultiReserveTest is SpokeLiquidationBase {
       debtReserveIds: debtReserveIds,
       collateralReserveIndex: collateralReserveIndex,
       debtReserveIndex: debtReserveIndex,
-      skipTime: skipTime
+      skipTime: skipTime,
+      desiredHf: desiredHf
     });
 
     _checkLiquidation(state, spoke1, 'test_liquidationCall_closeFactor_fuzz_multi_reserve');
-  }
-
-  function _bound(
-    DataTypes.LiquidationConfig memory liqConfig
-  ) internal pure virtual override returns (DataTypes.LiquidationConfig memory) {
-    liqConfig.closeFactor = bound(
-      liqConfig.closeFactor,
-      MIN_CLOSE_FACTOR,
-      HEALTH_FACTOR_LIQUIDATION_THRESHOLD * 10
-    );
-
-    // set variable bonus config to 0 for simplicity in calculating _borrowMultipleReservesToBeBelowHf
-    liqConfig.liquidationBonusFactor = 0;
-    liqConfig.healthFactorBonusThreshold = 0;
-
-    return liqConfig;
+    assertFalse(state.hasDeficit, 'should not have deficit');
   }
 
   /// fuzz test with multiple collateral/debt reserves
@@ -178,7 +171,8 @@ contract LiquidationCallCloseFactorMultiReserveTest is SpokeLiquidationBase {
     uint256 collateralReserveIndex,
     uint256 debtReserveIndex,
     uint256 liquidationProtocolFeePercentage,
-    uint256 skipTime
+    uint256 skipTime,
+    uint256 desiredHf
   ) internal returns (LiquidationTestLocalParams memory) {
     LiquidationTestLocalParams memory state;
     state.collateralReserves = new DataTypes.Reserve[](collateralReserveIds.length);
@@ -191,7 +185,7 @@ contract LiquidationCallCloseFactorMultiReserveTest is SpokeLiquidationBase {
     for (uint256 i = 0; i < debtReserveIds.length; i++) {
       state.debtReserves[i] = spoke1.getReserve(debtReserveIds[i]);
     }
-    liqConfig = _bound(liqConfig);
+    liqConfig = _boundCloseFactor(liqConfig);
     liqBonus = bound(
       liqBonus,
       MIN_LIQUIDATION_BONUS,
@@ -238,7 +232,15 @@ contract LiquidationCallCloseFactorMultiReserveTest is SpokeLiquidationBase {
       });
     }
 
-    state.desiredHf = _calcLowestHfForBadDebt(state.spoke, alice, liqBonus).percentMulUp(101_00); // add buffer to have HF remain above lowest allowed HF
+    state.hfBadDebtThreshold = _calcLowestHfForBadDebt(state.spoke, alice, liqBonus).percentMulUp(
+      101_00
+    ); // add buffer to have HF remain above lowest allowed HF
+    // desiredHF is within range of a liquidation that does not result in bad debt
+    state.desiredHf = bound(
+      desiredHf,
+      _min(state.hfBadDebtThreshold, HEALTH_FACTOR_LIQUIDATION_THRESHOLD),
+      HEALTH_FACTOR_LIQUIDATION_THRESHOLD
+    );
 
     _increaseReservesSupplyExchangeRate(
       state.spoke,
@@ -261,7 +263,6 @@ contract LiquidationCallCloseFactorMultiReserveTest is SpokeLiquidationBase {
 
     // ensure position is liquidatable
     assertLt(state.spoke.getHealthFactor(alice), HEALTH_FACTOR_LIQUIDATION_THRESHOLD);
-
     _getAccountingInfoBeforeLiq(state);
 
     (

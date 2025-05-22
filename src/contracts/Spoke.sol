@@ -289,7 +289,12 @@ contract Spoke is ISpoke {
     ) = _executeLiquidationCall(collateralReserveId, debtReserveId, users, debtsToCover);
 
     console.log('SP event', collateralAsset, debtAsset, user);
-    console.log('SP liquidation %e %e', debtToLiquidate, collateralToLiquidate, msg.sender);
+    console.log(
+      'SP liquidation debtToLiquidate %e collateralToLiquidate %e',
+      debtToLiquidate,
+      collateralToLiquidate,
+      msg.sender
+    );
 
     // TODO: emit liq protocol fee shares in event
     emit LiquidationCall(
@@ -976,7 +981,7 @@ contract Spoke is ISpoke {
       vars.debtAssetId = debtReserve.assetId;
       (vars.baseDebt, vars.premiumDebt) = _getUserDebt(userDebtPosition, vars.debtAssetId);
 
-      console.log(' SP initial debt %e %e %e', vars.baseDebt + vars.premiumDebt);
+      console.log(' SP initial baseDebt %e premiumDebt %e %e', vars.baseDebt + vars.premiumDebt);
 
       (
         vars.collateralToLiquidate,
@@ -1286,9 +1291,10 @@ contract Spoke is ISpoke {
     ) = _calculateUserAccountData(user);
 
     console.log(
-      'SP liq params %e %e',
+      'SP liq params totalCollateralInBaseCurrency %e totalDebtInBaseCurrency %e collAmount %e',
       vars.totalCollateralInBaseCurrency,
-      vars.totalDebtInBaseCurrency
+      vars.totalDebtInBaseCurrency,
+      vars.userCollateralBalance
     );
 
     _validateLiquidationCall(
@@ -1333,7 +1339,7 @@ contract Spoke is ISpoke {
     );
 
     console.log(
-      'SP: coll to liq %e %e',
+      'SP: coll to liq collateralToLiquidateInBaseCurrency %e totalCollateralInBaseCurrency %e',
       vars.collateralToLiquidateInBaseCurrency,
       vars.totalCollateralInBaseCurrency
     );

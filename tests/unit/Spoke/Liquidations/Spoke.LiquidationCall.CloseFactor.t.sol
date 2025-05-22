@@ -416,7 +416,7 @@ contract LiquidationCallCloseFactorTest is SpokeLiquidationBase {
       supplyAmount,
       _convertBaseCurrencyToAmount(
         state.collateralReserves[state.collateralReserveIndex].assetId,
-        1e25
+        1e26
       ),
       _min(
         _convertBaseCurrencyToAmount(
