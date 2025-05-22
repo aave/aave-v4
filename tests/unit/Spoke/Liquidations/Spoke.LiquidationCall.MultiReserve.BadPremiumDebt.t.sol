@@ -8,7 +8,7 @@ contract LiquidationCallMultiReserveBadPremiumDebtTest is SpokeLiquidationBase {
   using PercentageMathExtended for uint256;
 
   /// tests where liquidation results in bad debt with premium debt > 0
-  function test_liquidationCall_fuzz_multi_reserve_badPremiumDebt(
+  function test_liquidationCall_fuzz_multi_reserve_badPremiumDebt_scenario1(
     uint256 collateralReserveId,
     DataTypes.LiquidationConfig memory liqConfig,
     uint256 liqBonus,
@@ -20,9 +20,10 @@ contract LiquidationCallMultiReserveBadPremiumDebtTest is SpokeLiquidationBase {
     collateralReserveId = bound(collateralReserveId, 0, spoke1.reserveCount() - 1);
 
     uint256[] memory debtReserveIds = new uint256[](3);
-    debtReserveIds[0] = _daiReserveId(spoke1);
-    debtReserveIds[1] = _usdxReserveId(spoke1);
-    debtReserveIds[2] = _usdyReserveId(spoke1);
+    // debtReserveIds must be in ascending order for event emission assertions
+    debtReserveIds[0] = _wbtcReserveId(spoke1);
+    debtReserveIds[1] = _daiReserveId(spoke1);
+    debtReserveIds[2] = _usdxReserveId(spoke1);
 
     LiquidationTestLocalParams memory state = _execLiqCallCloseFactorBadPremiumDebtTest(
       liqConfig,
@@ -37,26 +38,26 @@ contract LiquidationCallMultiReserveBadPremiumDebtTest is SpokeLiquidationBase {
 
     string memory label = 'test_liquidationCall_fuzz_multi_reserve_badPremiumDebt';
     _checkLiquidation(state, spoke1, label);
-
-    for (uint256 i = 0; i < debtReserveIds.length; i++) {
-      assertEq(
-        spoke1.getUserTotalDebt(debtReserveIds[i], alice),
-        0,
-        'remaining debt should be 0 (reported as deficit)'
-      );
-      if (i != state.debtReserveIndex) {
-        assertEq(
-          state.deficits[i].balanceChange,
-          state.debts[i].balanceChange,
-          'for other debt assets, total debt should be reported as deficit'
-        );
-      }
-      // console.log(
-      //   ' deficit %e debt change %e',
-      //   state.deficits[i].balanceChange,
-      //   state.debts[i].balanceChange
-      // );
-    }
+    _checkDeficits(state, debtReserveIds, alice);
+    // for (uint256 i = 0; i < debtReserveIds.length; i++) {
+    //   assertEq(
+    //     spoke1.getUserTotalDebt(debtReserveIds[i], alice),
+    //     0,
+    //     'remaining debt should be 0 (reported as deficit)'
+    //   );
+    //   if (i != state.debtReserveIndex) {
+    //     assertEq(
+    //       state.deficits[i].balanceChange,
+    //       state.debts[i].balanceChange,
+    //       'for other debt assets, total debt should be reported as deficit'
+    //     );
+    //   }
+    //   // console.log(
+    //   //   ' deficit %e debt change %e',
+    //   //   state.deficits[i].balanceChange,
+    //   //   state.debts[i].balanceChange
+    //   // );
+    // }
 
     // for (uint256 i = 0; i < state.deficits.length; i++) {
     //   console.log(
@@ -80,7 +81,7 @@ contract LiquidationCallMultiReserveBadPremiumDebtTest is SpokeLiquidationBase {
   function test_liquidationCall_multi_reserve_badPremiumDebt_scenario1() public {
     uint256 collateralReserveId = _wethReserveId(spoke1);
 
-    test_liquidationCall_fuzz_multi_reserve_badPremiumDebt({
+    test_liquidationCall_fuzz_multi_reserve_badPremiumDebt_scenario1({
       liqConfig: DataTypes.LiquidationConfig({
         closeFactor: 1.5e18,
         liquidationBonusFactor: 0,
@@ -95,26 +96,57 @@ contract LiquidationCallMultiReserveBadPremiumDebtTest is SpokeLiquidationBase {
     });
   }
 
-  // /// coll: weth / debt: usdx
-  // function test_liquidationCall_badPremiumDebt_scenario2() public {
-  //   uint256 collateralReserveId = _wethReserveId(spoke1);
-  //   uint256 debtReserveId = _usdxReserveId(spoke1);
+  // coll: weth
+  function test_liquidationCall_multi_reserve_badPremiumDebt_scenario2() public {
+    uint256 collateralReserveId = _usdxReserveId(spoke1);
 
-  //   test_liquidationCall_fuzz_badPremiumDebt({
-  //     liqConfig: DataTypes.LiquidationConfig({
-  //       closeFactor: 1.5e18,
-  //       liquidationBonusFactor: 0,
-  //       healthFactorBonusThreshold: 0
-  //     }),
-  //     liqBonus: 105_00,
-  //     supplyAmount: 1.5e18,
-  //     liquidationProtocolFeePercentage: 5_00,
-  //     collateralReserveId: collateralReserveId,
-  //     debtReserveId: debtReserveId,
-  //     skipTime: 365 days,
-  //     skipTimeToAccruePremium: 365 days * 4
-  //   });
-  // }
+    test_liquidationCall_fuzz_multi_reserve_badPremiumDebt_scenario2({
+      liqConfig: DataTypes.LiquidationConfig({
+        closeFactor: 1.5e18,
+        liquidationBonusFactor: 0,
+        healthFactorBonusThreshold: 0
+      }),
+      liqBonus: 105_00,
+      supplyAmount: 1.5e18,
+      liquidationProtocolFeePercentage: 5_00,
+      collateralReserveId: collateralReserveId,
+      skipTime: 365 days,
+      skipTimeToAccruePremium: 365 days * 4
+    });
+  }
+
+  function test_liquidationCall_fuzz_multi_reserve_badPremiumDebt_scenario2(
+    uint256 collateralReserveId,
+    DataTypes.LiquidationConfig memory liqConfig,
+    uint256 liqBonus,
+    uint256 supplyAmount,
+    uint256 liquidationProtocolFeePercentage,
+    uint256 skipTime,
+    uint256 skipTimeToAccruePremium
+  ) public {
+    collateralReserveId = bound(collateralReserveId, 0, spoke1.reserveCount() - 1);
+
+    uint256[] memory debtReserveIds = new uint256[](3);
+    // debtReserveIds must be in ascending order for event emission assertions
+    debtReserveIds[0] = _wethReserveId(spoke1);
+    debtReserveIds[1] = _wbtcReserveId(spoke1);
+    debtReserveIds[2] = _usdyReserveId(spoke1);
+
+    LiquidationTestLocalParams memory state = _execLiqCallCloseFactorBadPremiumDebtTest(
+      liqConfig,
+      liqBonus,
+      supplyAmount,
+      collateralReserveId,
+      debtReserveIds,
+      liquidationProtocolFeePercentage,
+      skipTime,
+      skipTimeToAccruePremium
+    );
+
+    string memory label = 'test_liquidationCall_fuzz_multi_reserve_badPremiumDebt';
+    _checkLiquidation(state, spoke1, label);
+    _checkDeficits(state, debtReserveIds, alice);
+  }
 
   // /// coll: usdx / debt: weth
   // function test_liquidationCall_badPremiumDebt_scenario3() public {
@@ -366,20 +398,28 @@ contract LiquidationCallMultiReserveBadPremiumDebtTest is SpokeLiquidationBase {
     //   );
     // }
 
+    console.log(
+      ' liq debt id %s assetId %s total debt %e',
+      state.debtReserve.reserveId,
+      state.debtReserve.assetId,
+      state.debt.balanceBefore - state.debtToLiq
+    );
     vm.expectEmit(address(hub));
     emit ILiquidityHub.DeficitCreated(
       address(spoke1),
       state.debtReserve.assetId,
       state.debt.balanceBefore - state.debtToLiq // outstanding debt which becomes bad debt reported as deficit
     );
+
     // for remaining debt assets, total debt is reported as deficit
     for (uint256 i = 0; i < debtReserveIds.length; i++) {
-      console.log(
-        ' id %s total debt %e',
-        debtReserveIds[i],
-        spoke1.getUserTotalDebt(debtReserveIds[i], alice)
-      );
       if (debtReserveIds[i] != state.debtReserve.reserveId) {
+        // console.log(
+        //   ' id %s assetId %s total debt %e',
+        //   debtReserveIds[i],
+        //   state.debtReserves[i].assetId,
+        //   spoke1.getUserTotalDebt(debtReserveIds[i], alice)
+        // );
         vm.expectEmit(address(hub));
         emit ILiquidityHub.DeficitCreated(
           address(spoke1),
@@ -472,7 +512,7 @@ contract LiquidationCallMultiReserveBadPremiumDebtTest is SpokeLiquidationBase {
         );
       }
 
-      uint256 amount = _convertBaseCurrencyToAmount(assetId, amountInBase) + 1;
+      uint256 amount = _convertBaseCurrencyToAmount(assetId, amountInBase);
       vm.assume(amount < MAX_SUPPLY_AMOUNT);
 
       // // mock price to 0 to circumvent borrow validation
@@ -493,5 +533,26 @@ contract LiquidationCallMultiReserveBadPremiumDebtTest is SpokeLiquidationBase {
 
     (, , finalHf, , ) = spoke.getUserAccountData(user);
     assertGt(finalHf, desiredHf, 'should borrow enough for HF to be above desiredHf');
+  }
+
+  function _checkDeficits(
+    LiquidationTestLocalParams memory state,
+    uint256[] memory debtReserveIds,
+    address user
+  ) internal view {
+    for (uint256 i = 0; i < debtReserveIds.length; i++) {
+      assertEq(
+        spoke1.getUserTotalDebt(debtReserveIds[i], user),
+        0,
+        'remaining debt should be 0 (reported as deficit)'
+      );
+      if (i != state.debtReserveIndex) {
+        assertEq(
+          state.deficits[i].balanceChange,
+          state.debts[i].balanceChange,
+          'for other debt assets, total debt should be reported as deficit'
+        );
+      }
+    }
   }
 }

@@ -32,6 +32,7 @@ abstract contract Base is Test {
   using WadRayMathExtended for uint256;
   using SharesMath for uint256;
   using PercentageMath for uint256;
+  using PercentageMathExtended for uint256;
 
   uint256 internal constant MAX_SUPPLY_AMOUNT = 1e30;
   uint256 internal constant MAX_TOKEN_DECIMALS_SUPPORTED = 18;
@@ -1056,11 +1057,12 @@ abstract contract Base is Test {
     ) = spoke.getUserAccountData(user);
 
     requiredDebt =
-      totalCollateralBase.percentMul(currentAvgCollateralFactor.dewadify() - 1).wadDivDown(
-        desiredHf
-      ) -
+      totalCollateralBase
+        .percentMulDown(currentAvgCollateralFactor.dewadify())
+        .percentMulDown(99_00)
+        .wadDivDown(desiredHf) -
       totalDebtBase;
-    // sub 1 to num to round debt down (ie making sure resultant debt creates HF that is gt desired)
+    // buffer to force debt lower (ie making sure resultant debt creates HF that is gt desired)
   }
 
   /// @dev Borrow to be below a certain health factor, without needing to check HF
