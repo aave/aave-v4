@@ -30,9 +30,6 @@ jobs:
         uses: bgd-labs/github-workflows/.github/actions/foundry-test@main
         with:
           FOUNDRY_PROFILE: gas
-          # even though the gas profile sets FORGE_SNAPSHOT_CHECK to true,
-          # this is overwritten by the foundry-test gh action to false, which
-          # takes priority. hence, we need to overwrite it back to true. 
           FORGE_SNAPSHOT_CHECK: true
 
       - name: Run Forge tests
