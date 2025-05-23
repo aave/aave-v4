@@ -361,7 +361,6 @@ contract LiquidityHubDrawTest is LiquidityHubBase {
       drawUser: alice,
       drawSpoke: address(spoke1),
       drawAmount: drawAmount,
-      mockRate: SKIP_MOCK_RATE,
       skipTime: 365 days
     });
 
@@ -397,6 +396,7 @@ contract LiquidityHubDrawTest is LiquidityHubBase {
 
     updateDrawCap(hub, daiAssetId, address(spoke1), drawCap);
 
+    _mockRate(rate);
     _supplyAndDrawLiquidity({
       assetId: daiAssetId,
       supplyUser: bob,
@@ -405,7 +405,6 @@ contract LiquidityHubDrawTest is LiquidityHubBase {
       drawUser: alice,
       drawSpoke: address(spoke1),
       drawAmount: daiAmount,
-      mockRate: rate,
       skipTime: skipTime
     });
 

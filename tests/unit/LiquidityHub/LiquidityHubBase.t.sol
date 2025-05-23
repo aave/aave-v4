@@ -10,8 +10,6 @@ contract LiquidityHubBase is Base {
 
   uint256 internal constant INIT_BASE_BORROW_INDEX = WadRayMath.RAY;
 
-  uint256 internal constant SKIP_MOCK_RATE = type(uint256).max - 123;
-
   struct TestSupplyParams {
     uint256 drawnAmount;
     uint256 drawnShares;
@@ -97,7 +95,6 @@ contract LiquidityHubBase is Base {
       drawUser: tempUser2,
       drawSpoke: tempSpoke2,
       drawAmount: amount,
-      mockRate: SKIP_MOCK_RATE,
       skipTime: 365 days
     });
 
@@ -115,17 +112,8 @@ contract LiquidityHubBase is Base {
     address drawUser,
     address drawSpoke,
     uint256 drawAmount,
-    uint256 mockRate,
     uint256 skipTime
   ) internal returns (uint256 supplyShares, uint256 drawnShares) {
-    if (mockRate != SKIP_MOCK_RATE) {
-      vm.mockCall(
-        address(irStrategy),
-        IReserveInterestRateStrategy.calculateInterestRates.selector,
-        abi.encode(mockRate)
-      );
-    }
-
     supplyShares = Utils.add({
       hub: hub,
       assetId: assetId,
@@ -145,6 +133,14 @@ contract LiquidityHubBase is Base {
     });
 
     skip(skipTime);
+  }
+
+  function _mockRate(uint256 rate) internal returns (uint256) {
+    vm.mockCall(
+      address(irStrategy),
+      IReserveInterestRateStrategy.calculateInterestRates.selector,
+      abi.encode(rate)
+    );
   }
 
   function _getDebt(uint256 assetId) internal view returns (DebtData memory) {

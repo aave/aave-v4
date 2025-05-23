@@ -182,7 +182,6 @@ contract LiquidityHubSupplyTest is LiquidityHubBase {
       drawUser: alice,
       drawSpoke: address(spoke1),
       drawAmount: daiAmount,
-      mockRate: SKIP_MOCK_RATE,
       skipTime: 365 days
     });
 
@@ -205,6 +204,7 @@ contract LiquidityHubSupplyTest is LiquidityHubBase {
     rate = bound(rate, 1, MAX_BORROW_RATE).bpsToRay(); // 0.01% to 1000%
 
     _updateSupplyCap(daiAssetId, address(spoke2), newSupplyCap);
+    _mockRate(rate);
     _supplyAndDrawLiquidity({
       assetId: daiAssetId,
       supplyUser: bob,
@@ -213,7 +213,6 @@ contract LiquidityHubSupplyTest is LiquidityHubBase {
       drawUser: alice,
       drawSpoke: address(spoke1),
       drawAmount: drawAmount,
-      mockRate: rate,
       skipTime: skipTime
     });
     vm.assume(hub.convertToSuppliedShares(daiAssetId, daiAmount) < daiAmount);
@@ -451,6 +450,7 @@ contract LiquidityHubSupplyTest is LiquidityHubBase {
     uint256 drawAmount = daiAmount;
     uint256 rate = uint256(MAX_BORROW_RATE).bpsToRay();
 
+    _mockRate(rate);
     _supplyAndDrawLiquidity({
       assetId: daiAssetId,
       supplyUser: bob,
@@ -459,7 +459,6 @@ contract LiquidityHubSupplyTest is LiquidityHubBase {
       drawUser: alice,
       drawSpoke: address(spoke1),
       drawAmount: drawAmount,
-      mockRate: rate,
       skipTime: 365 days * 10
     });
     assertLt(hub.convertToSuppliedShares(daiAssetId, daiAmount), daiAmount); // index increased
@@ -484,6 +483,7 @@ contract LiquidityHubSupplyTest is LiquidityHubBase {
     skipTime = bound(skipTime, 365 days, 100 * 365 days);
     rate = bound(rate, MAX_BORROW_RATE / 10, MAX_BORROW_RATE).bpsToRay();
 
+    _mockRate(rate);
     _supplyAndDrawLiquidity({
       assetId: daiAssetId,
       supplyUser: bob,
@@ -492,7 +492,6 @@ contract LiquidityHubSupplyTest is LiquidityHubBase {
       drawUser: alice,
       drawSpoke: address(spoke1),
       drawAmount: daiAmount,
-      mockRate: rate,
       skipTime: skipTime
     });
 
@@ -519,7 +518,6 @@ contract LiquidityHubSupplyTest is LiquidityHubBase {
       drawUser: alice,
       drawSpoke: address(spoke1),
       drawAmount: daiAmount,
-      mockRate: SKIP_MOCK_RATE,
       skipTime: 365 days
     });
 
@@ -608,7 +606,6 @@ contract LiquidityHubSupplyTest is LiquidityHubBase {
       drawUser: alice,
       drawSpoke: address(spoke1),
       drawAmount: amount,
-      mockRate: SKIP_MOCK_RATE,
       skipTime: 365 days
     });
 
@@ -713,6 +710,7 @@ contract LiquidityHubSupplyTest is LiquidityHubBase {
 
     TestSupplyParams memory params;
 
+    _mockRate(rate);
     (params.assetSuppliedShares, params.drawnShares) = _supplyAndDrawLiquidity({
       assetId: assetId,
       supplyUser: bob,
@@ -721,7 +719,6 @@ contract LiquidityHubSupplyTest is LiquidityHubBase {
       drawUser: alice,
       drawSpoke: address(spoke1),
       drawAmount: amount,
-      mockRate: rate,
       skipTime: skipTime
     });
     vm.assume(hub.convertToSuppliedShares(assetId, amount) < amount);
