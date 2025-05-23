@@ -168,13 +168,14 @@ contract Spoke is ISpoke {
     userPosition.suppliedShares -= withdrawnShares;
     reserve.suppliedShares -= withdrawnShares;
 
+/*
     if(userPosition.suppliedShares == 0) {
       DataTypes.PositionStatus storage positionStatus = _positionStatus[msg.sender];
       if(positionStatus.isUsingAsCollateral(reserveId)) {
         positionStatus.setUsingAsCollateral(reserveId,false);
       }
     }
-
+*/
     // calc needs new user position, just updating base debt is enough
     uint256 newUserRiskPremium = _validateUserPosition(msg.sender); // validates HF
 
@@ -204,6 +205,7 @@ contract Spoke is ISpoke {
     // TODO: onBehalfOf with credit delegation
     DataTypes.Reserve storage reserve = _reserves[reserveId];
     DataTypes.UserPosition storage userPosition = _userPositions[msg.sender][reserveId];
+    DataTypes.PositionStatus storage positionStatus = _positionStatus[msg.sender];
     uint256 assetId = reserve.assetId;
 
     _validateBorrow(reserve, msg.sender);
@@ -239,6 +241,8 @@ contract Spoke is ISpoke {
       userPosition.premiumDrawnShares
     );
 
+    positionStatus.setBorrowing(reserveId, true);
+
     _refreshPremiumDebt(
       reserve,
       assetId,
@@ -247,6 +251,7 @@ contract Spoke is ISpoke {
       0
     );
     _notifyRiskPremiumUpdate(assetId, msg.sender, newUserRiskPremium);
+    
 
     emit Borrow(reserveId, msg.sender, baseDrawnShares, to);
   }
@@ -289,7 +294,9 @@ contract Spoke is ISpoke {
     ); // we settle base debt here
 
     reserve.baseDrawnShares -= restoredShares;
-    userPosition.baseDrawnShares -= restoredShares;
+    if((userPosition.baseDrawnShares -= restoredShares) == 0 && userPosition.realizedPremium == 0) {
+      _positionStatus[msg.sender].setBorrowing(reserveId, false);
+    }
 
     (uint256 newUserRiskPremium, , , , ) = _calculateUserAccountData(msg.sender);
 
