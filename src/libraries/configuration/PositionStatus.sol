@@ -76,7 +76,7 @@ library PositionStatus {
   ) internal view returns (bool) {
     unchecked {
       require(reserveIndex < MAX_RESERVES_COUNT, InvalidReserveIndex());
-      return (_getMapSlot(self, reserveIndex) >> (reserveIndex << 1)) & 3 != 0;
+      return (_getMapSlot(self, reserveIndex) >> (reserveIndex % 128 << 1)) & 3 != 0;
     }
   }
   /**

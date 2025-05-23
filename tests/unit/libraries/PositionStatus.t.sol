@@ -59,17 +59,30 @@ function test_setUseAsCollateral_slot0() public {
   
     positionStatus.setUsingAsCollateral( 0, true);
     assertEq(positionStatus.isUsingAsCollateral(0), true);
+
+    positionStatus.setUsingAsCollateral( 0, false);
+    assertEq(positionStatus.isUsingAsCollateral(0), false);
+
     positionStatus.setUsingAsCollateral( 127, true);
     assertEq(positionStatus.isUsingAsCollateral(127), true);
   
+    positionStatus.setUsingAsCollateral( 127, false);
+    assertEq(positionStatus.isUsingAsCollateral(127), false);
 }
 
 function test_setUseAsCollateral_slot1() public {
   
     positionStatus.setUsingAsCollateral( 128, true);
     assertEq(positionStatus.isUsingAsCollateral(128), true);
+
+    positionStatus.setUsingAsCollateral( 128, false);
+    assertEq(positionStatus.isUsingAsCollateral(128), false);
+
     positionStatus.setUsingAsCollateral( 255, true);
     assertEq(positionStatus.isUsingAsCollateral(255), true);
+  
+    positionStatus.setUsingAsCollateral( 255, false);
+    assertEq(positionStatus.isUsingAsCollateral(255), false);
   
   }
 
@@ -83,4 +96,63 @@ function test_setUseAsCollateral_slot1() public {
     positionStatus.setUsingAsCollateral(a, b);
     assertEq(positionStatus.isUsingAsCollateral(a), b);
   }
+
+
+function test_isUsingAsCollateralOrBorrowing_slot0() public {
+  
+    positionStatus.setUsingAsCollateral( 0, true);
+    assertEq(positionStatus.isUsingAsCollateralOrBorrowing(0), true);
+
+    positionStatus.setUsingAsCollateral( 0, false);
+    assertEq(positionStatus.isUsingAsCollateralOrBorrowing(0), false);
+
+    positionStatus.setBorrowing( 0, true);
+    assertEq(positionStatus.isUsingAsCollateralOrBorrowing(0), true);
+
+    positionStatus.setBorrowing( 0, false);
+    assertEq(positionStatus.isUsingAsCollateralOrBorrowing(0), false);
+
+
+    positionStatus.setUsingAsCollateral( 0, true);
+    positionStatus.setBorrowing( 0, true);
+
+    console.log("is true");
+    assertEq(positionStatus.isUsingAsCollateralOrBorrowing(0), true);
+
+    positionStatus.setUsingAsCollateral( 0, false);
+    positionStatus.setBorrowing( 0, false);
+
+    console.log("is false");
+    assertEq(positionStatus.isUsingAsCollateralOrBorrowing(0), false);
+
+    positionStatus.setUsingAsCollateral( 127, true);
+    assertEq(positionStatus.isUsingAsCollateralOrBorrowing(127), true);
+
+    positionStatus.setUsingAsCollateral( 127, false);
+    assertEq(positionStatus.isUsingAsCollateralOrBorrowing(127), false);
+
+    positionStatus.setBorrowing( 127, true);
+    assertEq(positionStatus.isUsingAsCollateralOrBorrowing(127), true);
+
+    positionStatus.setBorrowing( 127, false);
+    assertEq(positionStatus.isUsingAsCollateralOrBorrowing(127), false);
+
+}
+
+function test_isUsingAsCollateralOrBorrowing_slot1() public {
+  
+    positionStatus.setUsingAsCollateral( 128, true);
+    assertEq(positionStatus.isUsingAsCollateral(128), true);
+
+    positionStatus.setUsingAsCollateral( 128, false);
+    assertEq(positionStatus.isUsingAsCollateral(128), false);
+
+    positionStatus.setUsingAsCollateral( 255, true);
+    assertEq(positionStatus.isUsingAsCollateral(255), true);
+  
+    positionStatus.setUsingAsCollateral( 255, false);
+    assertEq(positionStatus.isUsingAsCollateral(255), false);
+  
+  }
+  
 }
