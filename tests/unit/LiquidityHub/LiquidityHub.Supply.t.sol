@@ -118,7 +118,7 @@ contract LiquidityHubSupplyTest is LiquidityHubBase {
   function test_supply_revertsWith_SupplyCapExceeded_due_to_rounding() public {
     _increaseExchangeRate(daiAssetId, 100e18);
 
-    uint256 totalSuppliedAssets = hub.getAvailableLiquidity(daiAssetId) + hub.getAssetTotalDebt(daiAssetId);
+    uint256 totalSuppliedAssets = hub.getTotalSuppliedAssets(daiAssetId);
     uint256 totalSuppliedShares = hub.getAssetSuppliedShares(daiAssetId);
 
     assertNotEq(
@@ -226,10 +226,7 @@ contract LiquidityHubSupplyTest is LiquidityHubBase {
   function test_supply_SupplyCapReachedButNotExceeded() public {
     _increaseExchangeRate(daiAssetId, 100e18);
 
-    uint256 availableLiquidity = hub.getAvailableLiquidity(daiAssetId);
-    uint256 totalDebt = hub.getAssetTotalDebt(daiAssetId);
-
-    uint256 totalSuppliedAssets = availableLiquidity + totalDebt;
+    uint256 totalSuppliedAssets = hub.getTotalSuppliedAssets(daiAssetId);
     uint256 totalSuppliedShares = hub.getAssetSuppliedShares(daiAssetId);
 
     assertNotEq(

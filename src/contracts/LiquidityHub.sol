@@ -360,6 +360,10 @@ contract LiquidityHub is ILiquidityHub {
     return _assets[assetId].suppliedShares;
   }
 
+  function getTotalSuppliedAssets(uint256 assetId) external view override returns (uint256) {
+    return _assets[assetId].totalSuppliedAssets();
+  }
+
   function getSpokeSuppliedAmount(uint256 assetId, address spoke) external view returns (uint256) {
     return _assets[assetId].toSuppliedAssetsDown(_spokes[assetId][spoke].suppliedShares);
   }

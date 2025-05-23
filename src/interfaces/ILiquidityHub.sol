@@ -202,6 +202,8 @@ interface ILiquidityHub {
 
   function getAssetTotalDebt(uint256 assetId) external view returns (uint256);
 
+  function getTotalSuppliedAssets(uint256 assetId) external view returns (uint256);
+
   function getAvailableLiquidity(uint256 assetId) external view returns (uint256);
 
   function getBaseInterestRate(uint256 assetId) external view returns (uint256);
