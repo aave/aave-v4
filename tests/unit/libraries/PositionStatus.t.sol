@@ -11,15 +11,20 @@ contract PositionStatusTest is Test {
     using PositionStatus for DataTypes.PositionStatus;
     DataTypes.PositionStatus positionStatus;
 
-  function setUp() public {
-  }
 
   function test_setBorrowing_slot0() public {
   
     positionStatus.setBorrowing( 0, true);
     assertEq(positionStatus.isBorrowing(0), true);
+
+    positionStatus.setBorrowing( 0, false);
+    assertEq(positionStatus.isBorrowing(0), false);
+
     positionStatus.setBorrowing( 127, true);
     assertEq(positionStatus.isBorrowing(127), true);
+
+    positionStatus.setBorrowing( 127, false);
+    assertEq(positionStatus.isBorrowing(127), false);
   
   }
 
