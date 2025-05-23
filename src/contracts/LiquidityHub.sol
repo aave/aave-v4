@@ -360,6 +360,10 @@ contract LiquidityHub is ILiquidityHub {
     return _assets[assetId].suppliedShares;
   }
 
+  function getTotalSuppliedAssets(uint256 assetId) external view override returns (uint256) {
+    return _assets[assetId].totalSuppliedAssets();
+  }
+
   function getSpokeSuppliedAmount(uint256 assetId, address spoke) external view returns (uint256) {
     return _assets[assetId].toSuppliedAssetsDown(_spokes[assetId][spoke].suppliedShares);
   }
@@ -392,7 +396,7 @@ contract LiquidityHub is ILiquidityHub {
     require(assetsList[asset.id] != IERC20(address(0)), AssetNotListed());
     require(
       spoke.config.supplyCap == type(uint256).max ||
-        asset.toSuppliedAssetsDown(spoke.suppliedShares) + amount <= spoke.config.supplyCap,
+        asset.toSuppliedAssetsUp(spoke.suppliedShares) + amount <= spoke.config.supplyCap,
       SupplyCapExceeded(spoke.config.supplyCap)
     );
   }

@@ -23,7 +23,6 @@ runs = 5000
 runs = 10000
 
 [profile.gas]
-isolate = true
 gas_snapshot_check = true
 test = 'tests/gas'
 

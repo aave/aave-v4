@@ -4,6 +4,7 @@
 
 pragma solidity ^0.8.20;
 
+import {Comparators} from './Comparators.sol';
 import {SlotDerivation} from './SlotDerivation.sol';
 import {StorageSlot} from './StorageSlot.sol';
 import {Math} from './Math.sol';
@@ -37,6 +38,14 @@ library Arrays {
   }
 
   /**
+   * @dev Variant of {sort} that sorts an array of uint256 in increasing order.
+   */
+  function sort(uint256[] memory array) internal pure returns (uint256[] memory) {
+    sort(array, Comparators.lt);
+    return array;
+  }
+
+  /**
    * @dev Sort an array of address (in memory) following the provided comparator function.
    *
    * This function does the sorting "in place", meaning that it overrides the input. The object is returned for
@@ -58,6 +67,14 @@ library Arrays {
   }
 
   /**
+   * @dev Variant of {sort} that sorts an array of address in increasing order.
+   */
+  function sort(address[] memory array) internal pure returns (address[] memory) {
+    sort(_castToUint256Array(array), Comparators.lt);
+    return array;
+  }
+
+  /**
    * @dev Sort an array of bytes32 (in memory) following the provided comparator function.
    *
    * This function does the sorting "in place", meaning that it overrides the input. The object is returned for
@@ -75,6 +92,14 @@ library Arrays {
     function(bytes32, bytes32) pure returns (bool) comp
   ) internal pure returns (bytes32[] memory) {
     sort(_castToUint256Array(array), _castToUint256Comp(comp));
+    return array;
+  }
+
+  /**
+   * @dev Variant of {sort} that sorts an array of bytes32 in increasing order.
+   */
+  function sort(bytes32[] memory array) internal pure returns (bytes32[] memory) {
+    sort(_castToUint256Array(array), Comparators.lt);
     return array;
   }
 
@@ -458,7 +483,7 @@ library Arrays {
   }
 
   /**
-   * @dev Helper to set the length of a dynamic array. Directly writing to `.length` is forbidden.
+   * @dev Helper to set the length of an dynamic array. Directly writing to `.length` is forbidden.
    *
    * WARNING: this does not clear elements if length is reduced, of initialize elements if length is increased.
    */
@@ -469,7 +494,7 @@ library Arrays {
   }
 
   /**
-   * @dev Helper to set the length of a dynamic array. Directly writing to `.length` is forbidden.
+   * @dev Helper to set the length of an dynamic array. Directly writing to `.length` is forbidden.
    *
    * WARNING: this does not clear elements if length is reduced, of initialize elements if length is increased.
    */
@@ -480,7 +505,7 @@ library Arrays {
   }
 
   /**
-   * @dev Helper to set the length of a dynamic array. Directly writing to `.length` is forbidden.
+   * @dev Helper to set the length of an dynamic array. Directly writing to `.length` is forbidden.
    *
    * WARNING: this does not clear elements if length is reduced, of initialize elements if length is increased.
    */

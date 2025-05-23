@@ -1,6 +1,8 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.0;
 
+import {Multicall} from 'src/misc/Multicall.sol';
+
 // libraries
 import {WadRayMath} from 'src/libraries/math/WadRayMath.sol';
 import {PercentageMath} from 'src/libraries/math/PercentageMath.sol';
@@ -14,7 +16,7 @@ import {ILiquidityHub} from 'src/interfaces/ILiquidityHub.sol';
 import {ISpoke} from 'src/interfaces/ISpoke.sol';
 import {IPriceOracle} from 'src/interfaces/IPriceOracle.sol';
 
-contract Spoke is ISpoke {
+contract Spoke is ISpoke, Multicall {
   using WadRayMath for uint256;
   using PercentageMath for uint256;
   using KeyValueListInMemory for KeyValueListInMemory.List;
@@ -89,6 +91,7 @@ contract Spoke is ISpoke {
     });
 
     emit ReserveAdded(reserveId, assetId);
+    emit ReserveConfigUpdated(reserveId, config);
 
     return reserveId;
   }
@@ -158,6 +161,7 @@ contract Spoke is ISpoke {
 
     _refreshPremiumDebt(
       reserve,
+      msg.sender,
       assetId,
       -int256(userPremiumDrawnShares),
       -int256(userPremiumOffset),
@@ -189,6 +193,7 @@ contract Spoke is ISpoke {
 
     _refreshPremiumDebt(
       reserve,
+      msg.sender,
       assetId,
       int256(userPremiumDrawnShares),
       int256(userPremiumOffset),
@@ -220,6 +225,7 @@ contract Spoke is ISpoke {
 
     _refreshPremiumDebt(
       reserve,
+      msg.sender,
       assetId,
       -int256(userPremiumDrawnShares),
       -int256(userPremiumOffset),
@@ -245,6 +251,7 @@ contract Spoke is ISpoke {
 
     _refreshPremiumDebt(
       reserve,
+      msg.sender,
       assetId,
       int256(userPremiumDrawnShares),
       int256(userPremiumOffset),
@@ -263,7 +270,7 @@ contract Spoke is ISpoke {
     DataTypes.Reserve storage reserve = _reserves[reserveId];
     uint256 assetId = reserve.assetId;
 
-    (uint256 baseDebt, uint256 premiumDebt) = _getUserDebt(userPosition, reserve.assetId);
+    (uint256 baseDebt, uint256 premiumDebt) = _getUserDebt(userPosition, assetId);
     (uint256 baseDebtRestored, uint256 premiumDebtRestored) = _calculateRestoreAmount(
       baseDebt,
       premiumDebt,
@@ -281,10 +288,11 @@ contract Spoke is ISpoke {
 
     _settlePremiumDebt(
       reserve,
+      msg.sender,
       assetId,
       -int256(userPremiumDrawnShares),
       -int256(userPremiumOffset),
-      _signedDiff(userPosition.realizedPremium, userRealizedPremium)
+      _signedDiff(premiumDebt - premiumDebtRestored, userRealizedPremium)
     ); // we settle premium debt here
     uint256 restoredShares = HUB.restore(
       assetId,
@@ -310,6 +318,7 @@ contract Spoke is ISpoke {
 
     _refreshPremiumDebt(
       reserve,
+      msg.sender,
       assetId,
       int256(userPremiumDrawnShares),
       int256(userPremiumOffset),
@@ -320,6 +329,7 @@ contract Spoke is ISpoke {
     emit Repay(reserveId, msg.sender, restoredShares);
   }
 
+  /// @inheritdoc ISpoke
   function setUsingAsCollateral(uint256 reserveId, bool usingAsCollateral) external {
     DataTypes.Reserve storage reserve = _reserves[reserveId];
     DataTypes.UserPosition storage userPosition = _userPositions[msg.sender][reserveId];
@@ -331,6 +341,15 @@ contract Spoke is ISpoke {
     // consider updating user rp & notify here especially when deactivating collateral
 
     emit UsingAsCollateral(reserveId, msg.sender, usingAsCollateral);
+  }
+
+  /// @inheritdoc ISpoke
+  function updateUserRiskPremium(address user) external {
+    (uint256 userRiskPremium, , , , ) = _calculateUserAccountData(user);
+    bool premiumIncrease = _notifyRiskPremiumUpdate(type(uint256).max, user, userRiskPremium);
+    // todo allow authorized caller to increase as well
+    require(msg.sender == user || !premiumIncrease, Unauthorized());
+    emit UserRiskPremiumUpdate(user, userRiskPremium);
   }
 
   function getUsingAsCollateral(uint256 reserveId, address user) external view returns (bool) {
@@ -397,6 +416,7 @@ contract Spoke is ISpoke {
     (, , uint256 healthFactor, , ) = _calculateUserAccountData(user);
     return healthFactor;
   }
+
   function getReservePrice(uint256 reserveId) public view returns (uint256) {
     return oracle.getAssetPrice(_reserves[reserveId].assetId);
   }
@@ -516,12 +536,19 @@ contract Spoke is ISpoke {
 
   function _refreshPremiumDebt(
     DataTypes.Reserve storage reserve,
+    address userAddress,
     uint256 assetId,
     int256 premiumDrawnSharesDelta,
     int256 premiumOffsetDelta,
     int256 realizedPremiumDelta
   ) internal {
-    _refresh(reserve, premiumDrawnSharesDelta, premiumOffsetDelta, realizedPremiumDelta);
+    _refresh(
+      reserve,
+      userAddress,
+      premiumDrawnSharesDelta,
+      premiumOffsetDelta,
+      realizedPremiumDelta
+    );
     HUB.refreshPremiumDebt(
       assetId,
       premiumDrawnSharesDelta,
@@ -532,12 +559,19 @@ contract Spoke is ISpoke {
 
   function _settlePremiumDebt(
     DataTypes.Reserve storage reserve,
+    address userAddress,
     uint256 assetId,
     int256 premiumDrawnSharesDelta,
     int256 premiumOffsetDelta,
     int256 realizedPremiumDelta
   ) internal {
-    _refresh(reserve, premiumDrawnSharesDelta, premiumOffsetDelta, realizedPremiumDelta);
+    _refresh(
+      reserve,
+      userAddress,
+      premiumDrawnSharesDelta,
+      premiumOffsetDelta,
+      realizedPremiumDelta
+    );
     HUB.settlePremiumDebt(
       assetId,
       premiumDrawnSharesDelta,
@@ -548,6 +582,7 @@ contract Spoke is ISpoke {
 
   function _refresh(
     DataTypes.Reserve storage reserve,
+    address userAddress,
     int256 premiumDrawnSharesDelta,
     int256 premiumOffsetDelta,
     int256 realizedPremiumDelta
@@ -558,6 +593,7 @@ contract Spoke is ISpoke {
 
     emit RefreshPremiumDebt(
       reserve.reserveId,
+      userAddress,
       premiumDrawnSharesDelta,
       premiumOffsetDelta,
       realizedPremiumDelta
@@ -783,7 +819,8 @@ contract Spoke is ISpoke {
     uint256 assetIdToAvoid,
     address userAddress,
     uint256 newUserRiskPremium
-  ) internal {
+  ) internal returns (bool) {
+    bool premiumIncrease;
     uint256 reserveCount_ = reserveCount;
     uint256 reserveId;
     while (reserveId < reserveCount_) {
@@ -803,10 +840,17 @@ contract Spoke is ISpoke {
         userPosition.premiumOffset = HUB.previewOffset(assetId, userPosition.premiumDrawnShares);
         userPosition.realizedPremium += accruedUserPremium;
 
+        int256 premiumDrawnSharesDelta = _signedDiff(
+          userPosition.premiumDrawnShares,
+          oldUserPremiumDrawnShares
+        );
+        if (!premiumIncrease) premiumIncrease = premiumDrawnSharesDelta > 0;
+
         _refreshPremiumDebt(
           reserve,
+          userAddress,
           assetId,
-          _signedDiff(userPosition.premiumDrawnShares, oldUserPremiumDrawnShares),
+          premiumDrawnSharesDelta,
           _signedDiff(userPosition.premiumOffset, oldUserPremiumOffset),
           int256(accruedUserPremium)
         );
@@ -815,6 +859,7 @@ contract Spoke is ISpoke {
         ++reserveId;
       }
     }
+    return premiumIncrease;
   }
 
   function _validateUserPosition(address userAddress) internal view returns (uint256) {
@@ -844,7 +889,7 @@ contract Spoke is ISpoke {
     return int256(a) - int256(b); // todo use safeCast when amounts packed to uint112/uint128
   }
 
-  function _validateLiquidationConfig(DataTypes.LiquidationConfig calldata config) internal view {
+  function _validateLiquidationConfig(DataTypes.LiquidationConfig calldata config) internal pure {
     _validateCloseFactor(config.closeFactor);
     // if liquidationBonusFactor == 0, then variable liquidation bonus will not be applied
     require(
@@ -858,7 +903,7 @@ contract Spoke is ISpoke {
     );
   }
 
-  function _validateCloseFactor(uint256 closeFactor) internal view {
+  function _validateCloseFactor(uint256 closeFactor) internal pure {
     require(closeFactor >= HEALTH_FACTOR_LIQUIDATION_THRESHOLD, InvalidCloseFactor());
   }
 }
