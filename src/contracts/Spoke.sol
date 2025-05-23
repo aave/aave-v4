@@ -329,7 +329,7 @@ contract Spoke is ISpoke, Multicall {
     (uint256 userRiskPremium, , , , ) = _calculateUserAccountData(user);
     bool premiumIncrease = _notifyRiskPremiumUpdate(type(uint256).max, user, userRiskPremium);
     // todo allow authorized caller to increase as well
-    require(msg.sender == user || premiumIncrease, Unauthorized());
+    require(msg.sender == user || !premiumIncrease, Unauthorized());
     emit UserRiskPremiumUpdate(user, userRiskPremium);
   }
 
