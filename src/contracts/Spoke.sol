@@ -88,6 +88,7 @@ contract Spoke is ISpoke, Multicall {
     });
 
     emit ReserveAdded(reserveId, assetId);
+    emit ReserveConfigUpdated(reserveId, config);
 
     return reserveId;
   }
