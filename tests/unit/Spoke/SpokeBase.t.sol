@@ -607,6 +607,37 @@ contract SpokeBase is Base {
     );
   }
 
+  function _checkReserveInfo(
+    DataTypes.Reserve memory expected,
+    DataTypes.Reserve memory actual
+  ) internal pure {
+    assertEq(expected.reserveId, actual.reserveId, 'Reserve Ids mismatch');
+    assertEq(expected.assetId, actual.assetId, 'Asset Ids mismatch');
+    assertEq(expected.asset, actual.asset, 'Asset addresses mismatch');
+    assertEq(expected.config.active, actual.config.active, 'Active config mismatch');
+    assertEq(expected.config.frozen, actual.config.frozen, 'Frozen config mismatch');
+    assertEq(expected.config.paused, actual.config.paused, 'Paused config mismatch');
+    assertEq(expected.config.borrowable, actual.config.borrowable, 'Borrowable config mismatch');
+    assertEq(expected.config.collateral, actual.config.collateral, 'Collateral config mismatch');
+    assertEq(expected.config.decimals, actual.config.decimals, 'Decimals config mismatch');
+    assertEq(
+      expected.config.collateralFactor,
+      actual.config.collateralFactor,
+      'Collateral factor config mismatch'
+    );
+    assertEq(
+      expected.config.liquidationBonus,
+      actual.config.liquidationBonus,
+      'Liquidation bonus config mismatch'
+    );
+    assertEq(
+      expected.config.liquidityPremium,
+      actual.config.liquidityPremium,
+      'Liquidity premium config mismatch'
+    );
+    assertEq(abi.encode(expected), abi.encode(actual), 'Encoded reserve mismatch'); // sanity check
+  }
+
   function _assertUserRpUnchanged(uint256 reserveId, ISpoke spoke, address user) internal view {
     DataTypes.UserPosition memory pos = spoke.getUserPosition(reserveId, user);
     uint256 riskPremiumStored = pos.premiumDrawnShares.percentDiv(pos.baseDrawnShares);
