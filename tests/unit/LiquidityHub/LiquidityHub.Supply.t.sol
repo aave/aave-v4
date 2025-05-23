@@ -121,6 +121,8 @@ contract LiquidityHubSupplyTest is LiquidityHubBase {
     uint256 totalSuppliedAssets = hub.getTotalSuppliedAssets(daiAssetId);
     uint256 totalSuppliedShares = hub.getAssetSuppliedShares(daiAssetId);
 
+    // Depending on the borrow rate, this may not be true
+    // It can be adjusted by changing the amount of assets passed to _increaseExchangeRate
     assertNotEq(
       totalSuppliedAssets % totalSuppliedShares,
       0,
@@ -229,6 +231,8 @@ contract LiquidityHubSupplyTest is LiquidityHubBase {
     uint256 totalSuppliedAssets = hub.getTotalSuppliedAssets(daiAssetId);
     uint256 totalSuppliedShares = hub.getAssetSuppliedShares(daiAssetId);
 
+    // Depending on the borrow rate, this may not be true
+    // It can be adjusted by changing the amount of assets passed to _increaseExchangeRate
     assertNotEq(
       totalSuppliedAssets % totalSuppliedShares,
       0,
