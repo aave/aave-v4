@@ -203,10 +203,6 @@ abstract contract Base is Test {
   }
 
   function configureTokenList() internal {
-    address[] memory spokes = new address[](3);
-    spokes[0] = address(spoke1);
-    spokes[1] = address(spoke2);
-    spokes[2] = address(spoke3);
     DataTypes.SpokeConfig memory spokeConfig = DataTypes.SpokeConfig({
       supplyCap: type(uint256).max,
       drawCap: type(uint256).max
@@ -719,6 +715,11 @@ abstract contract Base is Test {
   function calcNewPrice(uint256 price, uint256 percent) public pure returns (uint256) {
     if (percent == 0) return price;
     return price.percentMul(percent);
+  }
+
+  function setNewPrice(uint256 assetId, uint256 percent) public {
+    uint256 newPrice = calcNewPrice(oracle.getAssetPrice(assetId), percent);
+    oracle.setAssetPrice(assetId, newPrice);
   }
 
   /// @dev Helper function to calculate asset amount corresponding to single drawn share
