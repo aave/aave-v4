@@ -60,7 +60,7 @@ interface ISpoke is IMulticall {
   error InvalidHubAddress();
   error InvalidHealthFactorBonusThreshold();
   error InvalidLiquidationBonusFactor();
-  error UnAuthorized();
+  error Unauthorized();
 
   function addReserve(
     uint256 assetId,
@@ -111,9 +111,9 @@ interface ISpoke is IMulticall {
   function setUsingAsCollateral(uint256 reserveId, bool usingAsCollateral) external;
 
   /**
-   * @notice Allows committing an updated risk premium on all user specified positions.
-   * @dev If the risk premium has increased, the sender must be authorized or the owner of the positions,
-   * reverts with `UnAuthorized` otherwise.
+   * @notice Allows updating the risk premium on user position.
+   * @dev If the risk premium has increased, the caller must be authorized or the owner of the position,
+   * reverts with `Unauthorized` otherwise.
    * @param user The address of the user.
    */
   function updateUserRiskPremium(address user) external;

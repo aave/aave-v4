@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.0;
 
-import {Multicall} from 'src/contracts/Multicall.sol';
+import {Multicall} from 'src/misc/Multicall.sol';
 
 // libraries
 import {WadRayMath} from 'src/libraries/math/WadRayMath.sol';
@@ -329,7 +329,7 @@ contract Spoke is ISpoke, Multicall {
     (uint256 userRiskPremium, , , , ) = _calculateUserAccountData(user);
     bool premiumIncrease = _notifyRiskPremiumUpdate(type(uint256).max, user, userRiskPremium);
     // todo allow authorized caller to increase as well
-    require(msg.sender == user || premiumIncrease, UnAuthorized());
+    require(msg.sender == user || premiumIncrease, Unauthorized());
     emit UserRiskPremiumUpdate(user, userRiskPremium);
   }
 
