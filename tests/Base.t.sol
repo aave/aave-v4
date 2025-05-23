@@ -717,6 +717,11 @@ abstract contract Base is Test {
     return price.percentMul(percent);
   }
 
+  function setNewPrice(uint256 assetId, uint256 percent) public {
+    uint256 newPrice = calcNewPrice(oracle.getAssetPrice(assetId), percent);
+    oracle.setAssetPrice(assetId, newPrice);
+  }
+
   /// @dev Helper function to calculate asset amount corresponding to single drawn share
   function minimumAssetsPerDrawnShare(uint256 assetId) internal view returns (uint256) {
     return hub.convertToDrawnAssets(assetId, 1);
