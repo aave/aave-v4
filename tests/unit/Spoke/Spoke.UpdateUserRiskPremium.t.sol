@@ -17,7 +17,7 @@ contract SpokeUpdateUserRiskPremium is SpokeBase {
       spoke1.getLiquidityPremium(_wethReserveId(spoke1)),
       spoke1.getLiquidityPremium(_usdxReserveId(spoke1))
     );
-    // half weth price, increasing user rp since it's the risky collateral
+    // half weth price, increasing user rp since it's the less risky collateral
     setNewPrice(wethAssetId, 50_00);
 
     uint256 riskPremiumAfter = spoke1.getUserRiskPremium(alice);
