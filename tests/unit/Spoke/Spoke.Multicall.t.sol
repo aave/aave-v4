@@ -1,7 +1,6 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.0;
 
-import {Multicall} from 'src/dependencies/openzeppelin/Multicall.sol';
 import 'tests/unit/Spoke/SpokeBase.t.sol';
 
 contract SpokeMulticall is SpokeBase {
@@ -22,7 +21,7 @@ contract SpokeMulticall is SpokeBase {
 
     // Execute the multicall
     vm.startPrank(bob);
-    Multicall(address(spoke1)).multicall(calls);
+    spoke1.multicall(calls);
     vm.stopPrank();
 
     // Check the supply
@@ -51,7 +50,7 @@ contract SpokeMulticall is SpokeBase {
     bytes[] memory calls = new bytes[](3);
     calls[0] = abi.encodeCall(ISpoke.supply, (_daiReserveId(spoke2), MAX_SUPPLY_AMOUNT));
     calls[1] = abi.encodeCall(ISpoke.setUsingAsCollateral, (_daiReserveId(spoke2), true));
-    calls[2] = abi.encodeCall(ISpoke.updateUserRiskPremium, (_dai2ReserveId(spoke2), bob));
+    calls[2] = abi.encodeCall(ISpoke.updateUserRiskPremium, (bob));
 
     vm.expectEmit(address(spoke2));
     emit ISpoke.Supply(
@@ -66,7 +65,7 @@ contract SpokeMulticall is SpokeBase {
 
     // Then he supplies dai and sets as collateral, so user rp should decrease
     vm.startPrank(bob);
-    Multicall(address(spoke2)).multicall(calls);
+    spoke2.multicall(calls);
     vm.stopPrank();
 
     uint256 bobPremiumDrawnSharesAfter = spoke2
@@ -130,7 +129,7 @@ contract SpokeMulticall is SpokeBase {
     emit ISpoke.ReserveAdded(dai3ReserveId, daiAssetId);
 
     // Execute the multicall
-    Multicall(address(spoke1)).multicall(calls);
+    spoke1.multicall(calls);
 
     // Check the reserves
     assertEq(spoke1.reserveCount(), reserveCountBefore + 2, 'Reserve count should increase by 2');
@@ -170,7 +169,7 @@ contract SpokeMulticall is SpokeBase {
     emit ISpoke.ReserveConfigUpdated(usdxReserveId, newUsdx.config);
 
     // Execute the multicall
-    Multicall(address(spoke1)).multicall(calls);
+    spoke1.multicall(calls);
 
     // Check the reserve configs
     DataTypes.Reserve memory daiReserve = spoke1.getReserve(daiReserveId);

@@ -1308,7 +1308,7 @@ contract SpokeRepayScenarioTest is SpokeBase {
     address caller,
     uint256 assets
   ) public {
-    vm.assume(caller != address(0));
+    vm.assume(caller != address(0) && caller != address(hub));
     reserveId = bound(reserveId, 0, spoke1.reserveCount() - 1);
     userBorrowing = bound(userBorrowing, 0, MAX_SUPPLY_AMOUNT / 2 - 1); // Allow some buffer from borrow cap
     skipTime = uint40(bound(skipTime, 0, MAX_SKIP_TIME));
@@ -1361,7 +1361,7 @@ contract SpokeRepayScenarioTest is SpokeBase {
     uint256 assets
   ) public {
     uint256 MAX_BORROW_AMOUNT = MAX_SUPPLY_AMOUNT / 2;
-    vm.assume(caller != address(0));
+    vm.assume(caller != address(0) && caller != address(hub));
     reserveId = bound(reserveId, 0, spoke1.reserveCount() - 1);
     userBorrowing = bound(userBorrowing, 0, MAX_BORROW_AMOUNT - 2); // Allow some buffer from borrow cap
     skipTime = uint40(bound(skipTime, 0, MAX_SKIP_TIME));

@@ -114,7 +114,7 @@ contract LiquidityHub is ILiquidityHub {
     DataTypes.SpokeData storage spoke = _spokes[assetId][msg.sender];
 
     asset.accrue();
-    _validateSupply(asset, spoke, amount);
+    _validateSupply(asset, spoke, amount, from);
 
     asset.updateBorrowRate({liquidityAdded: amount, liquidityTaken: 0});
 
@@ -360,6 +360,10 @@ contract LiquidityHub is ILiquidityHub {
     return _assets[assetId].suppliedShares;
   }
 
+  function getTotalSuppliedAssets(uint256 assetId) external view override returns (uint256) {
+    return _assets[assetId].totalSuppliedAssets();
+  }
+
   function getSpokeSuppliedAmount(uint256 assetId, address spoke) external view returns (uint256) {
     return _assets[assetId].toSuppliedAssetsDown(_spokes[assetId][spoke].suppliedShares);
   }
@@ -383,16 +387,18 @@ contract LiquidityHub is ILiquidityHub {
   function _validateSupply(
     DataTypes.Asset storage asset,
     DataTypes.SpokeData storage spoke,
-    uint256 amount
+    uint256 amount,
+    address from
   ) internal view {
     require(amount != 0, InvalidSupplyAmount());
+    require(from != address(this), InvalidAddFromHub());
     require(asset.config.active, AssetNotActive());
     require(!asset.config.paused, AssetPaused());
     require(!asset.config.frozen, AssetFrozen());
     require(assetsList[asset.id] != IERC20(address(0)), AssetNotListed());
     require(
       spoke.config.supplyCap == type(uint256).max ||
-        asset.toSuppliedAssetsDown(spoke.suppliedShares) + amount <= spoke.config.supplyCap,
+        asset.toSuppliedAssetsUp(spoke.suppliedShares) + amount <= spoke.config.supplyCap,
       SupplyCapExceeded(spoke.config.supplyCap)
     );
   }
