@@ -57,7 +57,7 @@ contract LiquidityHub is ILiquidityHub {
     });
 
     emit AssetAdded(assetId, asset);
-    emit AssetConfigUpdated(assetId++, config);
+    emit AssetConfigUpdated(assetId, config);
   }
 
   function updateAssetConfig(uint256 assetId, DataTypes.AssetConfig calldata config) external {
