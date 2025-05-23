@@ -1109,13 +1109,10 @@ abstract contract Base is Test {
 
     vm.assume(requiredDebtAmount < MAX_SUPPLY_AMOUNT);
 
-    console.log('requiredDebtAmount %e', requiredDebtAmount, reserveId);
-
     vm.prank(user);
     spoke.borrow(reserveId, requiredDebtAmount, user);
 
     uint256 finalHf = spoke.getHealthFactor(user);
-    console.log('_borrowToBeAboveHealthyHf %e', finalHf);
     assertGt(finalHf, desiredHf, 'should borrow so that HF is above desiredHf');
     return (finalHf, requiredDebtAmount);
   }

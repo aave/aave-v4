@@ -1,8 +1,6 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.0;
 
-import {console2 as console} from 'forge-std/console2.sol';
-
 import {SafeERC20} from 'src/dependencies/openzeppelin/SafeERC20.sol';
 import {IERC20} from 'src/dependencies/openzeppelin/IERC20.sol';
 // libraries
@@ -278,8 +276,6 @@ contract Spoke is ISpoke {
     uint256[] memory debtsToCover = new uint256[](1);
     debtsToCover[0] = debtToCover;
 
-    // console.log('SP user debts %e %e', getUserTotalDebt(2, user), getUserTotalDebt(3, user));
-
     (
       address collateralAsset,
       address debtAsset,
@@ -287,14 +283,6 @@ contract Spoke is ISpoke {
       uint256 collateralToLiquidate,
       uint256 liquidationProtocolFeeShares // TODO: emit in event
     ) = _executeLiquidationCall(collateralReserveId, debtReserveId, users, debtsToCover);
-
-    console.log('SP event', collateralAsset, debtAsset, user);
-    console.log(
-      'SP liquidation debtToLiquidate %e collateralToLiquidate %e',
-      debtToLiquidate,
-      collateralToLiquidate,
-      msg.sender
-    );
 
     // TODO: emit liq protocol fee shares in event
     emit LiquidationCall(
@@ -479,7 +467,6 @@ contract Spoke is ISpoke {
 
   function _validateUserPosition(address userAddress) internal view returns (uint256) {
     (uint256 userRiskPremium, , uint256 healthFactor, , ) = _calculateUserAccountData(userAddress);
-    console.log('SP borrow %e %e', userRiskPremium, healthFactor);
     require(healthFactor >= HEALTH_FACTOR_LIQUIDATION_THRESHOLD, HealthFactorBelowThreshold());
     return userRiskPremium;
   }
@@ -981,8 +968,6 @@ contract Spoke is ISpoke {
       vars.debtAssetId = debtReserve.assetId;
       (vars.baseDebt, vars.premiumDebt) = _getUserDebt(userDebtPosition, vars.debtAssetId);
 
-      console.log(' SP initial baseDebt %e premiumDebt %e %e', vars.baseDebt + vars.premiumDebt);
-
       (
         vars.collateralToLiquidate,
         vars.liquidationProtocolFeeAmount,
@@ -1027,47 +1012,22 @@ contract Spoke is ISpoke {
         address(this) // must be sent to spoke first before distributing to treasury/liquidator
       );
 
-      console.log('SP suppliedShares %e', userCollateralPosition.suppliedShares);
-
       // collateral accounting
       vars.newUserSuppliedShares = userCollateralPosition.suppliedShares - vars.withdrawnShares;
       userCollateralPosition.suppliedShares = vars.newUserSuppliedShares;
       vars.totalWithdrawnShares += vars.withdrawnShares;
 
-      console.log('SP newUserSuppliedShares %e', vars.newUserSuppliedShares);
-
-      console.log(
-        'SP debt %e debt to liq %e',
-        vars.baseDebt + vars.premiumDebt,
-        vars.baseDebtToLiquidate + vars.premiumDebtToLiquidate
-      );
-
       // deficit accounting
       if (vars.newUserSuppliedShares == 0) {
-        console.log('SP _setUsingAsCollateral %e', collateralReserve.reserveId);
         _setUsingAsCollateral(collateralReserveId, users[vars.i], false);
         uint256 outstandingDebt = vars.baseDebt +
           vars.premiumDebt -
           vars.baseDebtToLiquidate -
           vars.premiumDebtToLiquidate;
         if (outstandingDebt > 0 && vars.hasNoCollateralLeft) {
-          console.log(
-            'SP bad debt %e %e %e',
-            vars.baseDebtToLiquidate,
-            vars.premiumDebtToLiquidate,
-            outstandingDebt
-          );
-
           vars.baseDebtToLiquidate = vars.baseDebt;
           vars.premiumDebtToLiquidate = vars.premiumDebt;
           vars.deficit = outstandingDebt;
-
-          // console.log(
-          //   'SP bad debt %e %e %e',
-          //   vars.baseDebtToLiquidate,
-          //   vars.premiumDebtToLiquidate,
-          //   vars.deficit
-          // );
         }
       }
 
@@ -1088,13 +1048,6 @@ contract Spoke is ISpoke {
         -int256(vars.userDebtPremiumOffset),
         _signedDiff(userDebtPosition.realizedPremium, vars.userDebtRealizedPremium)
       ); // settle premium debt
-
-      console.log(
-        'SP restore %e %e %e',
-        vars.baseDebtToLiquidate,
-        vars.premiumDebtToLiquidate,
-        vars.deficit
-      );
 
       // repay debt
       vars.restoredShares = HUB.restore(
@@ -1149,7 +1102,6 @@ contract Spoke is ISpoke {
         int256(vars.userCollateralPremiumOffset),
         0
       );
-
       _notifyRiskPremiumUpdate(vars.debtAssetId, users[vars.i], vars.newUserRiskPremium);
 
       vars.totalUserDebtPremiumDrawnSharesDelta += int256(vars.userDebtPremiumDrawnShares);
@@ -1170,13 +1122,6 @@ contract Spoke is ISpoke {
         ++vars.i;
       }
     }
-
-    // console.log(
-    //   'vars.totalDebtToLiquidate %e %e',
-    //   vars.totalDebtToLiquidate,
-    //   vars.baseDebtToLiquidate,
-    //   vars.premiumDebtToLiquidate
-    // );
 
     // rm when dupe reserve accounting is rm
     debtReserve.baseDrawnShares -= vars.totalRestoredShares;
@@ -1214,38 +1159,21 @@ contract Spoke is ISpoke {
     );
   }
 
+  // TODO: opt by merging with
   /** @dev Settle deficit accounting for user's remaining debt assets except for
    * `reserveIdToAvoid` as that is expected to be handled in liquidation.
    */
   function _settleRemainingDeficit(uint256 reserveIdToAvoid, address user) internal {
-    // console.log('sp _settleRemainingDeficit %e alice: ', reserveIdToAvoid, user);
-    // console.log(
-    //   'SP user debts %e %e',
-    //   getUserTotalDebt(2, user),
-    //   getUserTotalDebt(3, user)
-    // );
     // get all user's debt assets except assetToAvoid
     uint256 reserveCount_ = reserveCount;
     uint256 reserveId;
     while (reserveId < reserveCount_) {
       DataTypes.UserPosition storage userPosition = _userPositions[user][reserveId];
-      console.log(
-        ' sp settle reserveId isBorrowing debt %e %s %e',
-        reserveId,
-        _isBorrowing(userPosition),
-        getUserTotalDebt(reserveId, user)
-      );
       if (_isBorrowing(userPosition) && reserveId != reserveIdToAvoid) {
         (uint256 baseDebt, uint256 premiumDebt) = _getUserDebt(
           userPosition,
           _reserves[reserveId].assetId
         );
-        // console.log(
-        //   'sp _executeRepay %e %e %e',
-        //   reserveId,
-        //   baseDebt + premiumDebt,
-        //   getUserTotalDebt(reserveId, user)
-        // );
         _executeRepay(
           reserveId,
           baseDebt + premiumDebt,
@@ -1253,9 +1181,6 @@ contract Spoke is ISpoke {
           userPosition,
           baseDebt + premiumDebt
         );
-
-        // (baseDebt, premiumDebt) = getUserDebt(reserveId, user);
-        // console.log('sp debt after repay %e %e', baseDebt, premiumDebt);
       }
       unchecked {
         ++reserveId;
@@ -1290,13 +1215,6 @@ contract Spoke is ISpoke {
       vars.totalDebtInBaseCurrency
     ) = _calculateUserAccountData(user);
 
-    console.log(
-      'SP liq params totalCollateralInBaseCurrency %e totalDebtInBaseCurrency %e collAmount %e',
-      vars.totalCollateralInBaseCurrency,
-      vars.totalDebtInBaseCurrency,
-      vars.userCollateralBalance
-    );
-
     _validateLiquidationCall(
       collateralReserve,
       debtReserve,
@@ -1319,12 +1237,10 @@ contract Spoke is ISpoke {
     vars.liquidationProtocolFeePercentage = collateralReserve
       .config
       .liquidationProtocolFeePercentage;
-
     vars.actualDebtToLiquidate = LiquidationLogic.calculateActualDebtToLiquidate({
       debtToCover: debtToCover,
       params: vars
     });
-
     (
       vars.actualCollateralToLiquidate,
       vars.actualDebtToLiquidate,
@@ -1336,12 +1252,6 @@ contract Spoke is ISpoke {
       baseDebt,
       premiumDebt,
       vars.actualDebtToLiquidate
-    );
-
-    console.log(
-      'SP: coll to liq collateralToLiquidateInBaseCurrency %e totalCollateralInBaseCurrency %e',
-      vars.collateralToLiquidateInBaseCurrency,
-      vars.totalCollateralInBaseCurrency
     );
 
     return (

@@ -1,8 +1,6 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.0;
 
-import {console2 as console} from 'forge-std/console2.sol';
-
 import {DataTypes} from 'src/libraries/types/DataTypes.sol';
 import {PercentageMath} from 'src/libraries/math/PercentageMath.sol';
 import {ISpoke} from 'src/interfaces/ISpoke.sol';
@@ -78,13 +76,6 @@ library LiquidationLogic {
     if (params.closeFactor < effectiveLiquidationPenalty) {
       return type(uint256).max;
     }
-
-    console.log(
-      'LL debt calc',
-      (((params.totalDebtInBaseCurrency * params.debtAssetUnit) *
-        (params.closeFactor - params.healthFactor)) /
-        ((params.closeFactor - effectiveLiquidationPenalty) * params.debtAssetPrice)).dewadify()
-    );
 
     // add 1 to denominator to round down, ensuring HF is always <= close factor
     return

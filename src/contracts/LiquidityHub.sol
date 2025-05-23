@@ -1,8 +1,6 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.0;
 
-import {console2 as console} from 'forge-std/console2.sol';
-
 import {SafeERC20} from 'src/dependencies/openzeppelin/SafeERC20.sol';
 import {IERC20} from 'src/dependencies/openzeppelin/IERC20.sol';
 import {ILiquidityHub} from 'src/interfaces/ILiquidityHub.sol';
@@ -221,11 +219,8 @@ contract LiquidityHub is ILiquidityHub {
 
     assetsList[assetId].safeTransferFrom(from, address(this), actualRestoredAmount);
 
-    console.log('actualRestoredAmount %e', actualRestoredAmount);
-
     emit Restore(assetId, msg.sender, baseDrawnSharesRestored, totalRestoredAmount);
     if (deficitAmount > 0) {
-      console.log('HUB DeficitCreated id %s, amt: %e', assetId, deficitAmount);
       emit DeficitCreated(msg.sender, assetId, deficitAmount);
     }
 
@@ -423,7 +418,6 @@ contract LiquidityHub is ILiquidityHub {
     require(!asset.config.paused, AssetPaused());
     uint256 withdrawable = asset.toSuppliedAssetsDown(spoke.suppliedShares);
     require(amount <= withdrawable, SuppliedAmountExceeded(withdrawable));
-    console.log('HUB amount %e, avail liq %e', amount, asset.availableLiquidity);
     require(amount <= asset.availableLiquidity, NotAvailableLiquidity(asset.availableLiquidity));
   }
 
