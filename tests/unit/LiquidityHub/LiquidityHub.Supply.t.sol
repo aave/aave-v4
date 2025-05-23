@@ -311,7 +311,7 @@ contract LiquidityHubSupplyTest is LiquidityHubBase {
   }
 
   /// @dev User makes a first supply, shares and assets amounts are correct, no precision loss
-  function test_supply_fuzz_single_asset(address user, uint256 assetId, uint256 amount) public {
+  function test_supply_fuzz_single_asset(uint256 assetId, address user, uint256 amount) public {
     vm.assume(user != address(0) && user != address(hub));
   
     assetId = bound(assetId, 0, hub.assetCount() - 2); // Exclude duplicated DAI
