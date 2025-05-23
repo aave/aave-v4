@@ -133,6 +133,10 @@ contract SpokeRiskPremiumEdgeCasesTest is SpokeBase {
 
     // Get Bob's risk premium
     uint256 riskPremium = spoke2.getUserRiskPremium(bob);
+    // Get Bob's premium drawn shares as proxy for stored user rp
+    uint256 premiumDrawnShares = spoke2
+      .getUserPosition(_dai2ReserveId(spoke2), bob)
+      .premiumDrawnShares;
 
     // Now bob disables dai as collateral
     setUsingAsCollateral({
@@ -146,6 +150,12 @@ contract SpokeRiskPremiumEdgeCasesTest is SpokeBase {
       spoke2.getUserRiskPremium(bob),
       riskPremium,
       'Risk premium should increase after disabling lower LP reserve as collateral'
+    );
+
+    assertGt(
+      spoke2.getUserPosition(_dai2ReserveId(spoke2), bob).premiumDrawnShares,
+      premiumDrawnShares,
+      'Bob premium drawn shares increase due to unset as collateral triggering rp update'
     );
 
     assertEq(

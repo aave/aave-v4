@@ -106,6 +106,28 @@ contract SpokeWithdrawHealthFactorTest is SpokeBase {
     spoke1.withdraw({reserveId: collReserveId, amount: collAmount, to: alice}); // todo: resolve precision, should be 1?
   }
 
+  /// @dev cannot unset a collateral if unsetting would result in HF < threshold
+  function test_unsetCollateral_fuzz_revertsWith_HealthFactorBelowThreshold(
+    uint256 daiBorrowAmount
+  ) public {
+    daiBorrowAmount = bound(daiBorrowAmount, 1, MAX_SUPPLY_AMOUNT / 2);
+    uint256 wbtcSupplyAmount = _calcMinimumCollAmount(
+      spoke1,
+      _wbtcReserveId(spoke1),
+      _daiReserveId(spoke1),
+      daiBorrowAmount
+    );
+
+    _deployLiquidity(spoke1, _daiReserveId(spoke1), daiBorrowAmount);
+
+    Utils.supplyCollateral(spoke1, _wbtcReserveId(spoke1), alice, wbtcSupplyAmount, alice);
+    Utils.borrow(spoke1, _daiReserveId(spoke1), alice, daiBorrowAmount, alice);
+
+    vm.expectRevert(ISpoke.HealthFactorBelowThreshold.selector);
+    vm.prank(alice);
+    spoke1.setUsingAsCollateral(_wbtcReserveId(spoke1), false);
+  }
+
   /// @dev cannot withdraw an amount if HF < threshold due to price drop
   function test_withdraw_revertsWith_HealthFactorBelowThreshold_price_drop() public {
     uint256 collAmount = 1e18;
