@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.0;
 
+import {IMulticall} from 'src/interfaces/IMulticall.sol';
 import {DataTypes} from 'src/libraries/types/DataTypes.sol';
 
 /**
@@ -8,7 +9,7 @@ import {DataTypes} from 'src/libraries/types/DataTypes.sol';
  * @author Aave Labs
  * @notice Basic interface for Spoke
  */
-interface ISpoke {
+interface ISpoke is IMulticall {
   event ReserveAdded(uint256 indexed reserveId, uint256 indexed assetId);
   event ReserveConfigUpdated(uint256 indexed reserveId, DataTypes.ReserveConfig config);
   event LiquidityPremiumUpdated(uint256 indexed reserveId, uint256 liquidityPremium);
@@ -59,13 +60,15 @@ interface ISpoke {
   error InvalidHubAddress();
   error InvalidHealthFactorBonusThreshold();
   error InvalidLiquidationBonusFactor();
-  error NoUserRiskPremiumDecrease();
+  error Unauthorized();
 
   function addReserve(
     uint256 assetId,
     DataTypes.ReserveConfig memory params
   ) external returns (uint256);
+
   function updateReserveConfig(uint256 reserveId, DataTypes.ReserveConfig calldata params) external;
+
   function updateLiquidationConfig(DataTypes.LiquidationConfig calldata config) external;
 
   /**
@@ -100,19 +103,41 @@ interface ISpoke {
    */
   function repay(uint256 reserveId, uint256 amount) external;
 
+  /**
+   * @notice Allows suppliers to enable/disable a specific supplied reserve as collateral.
+   * @param reserveId The reserveId of the underlying asset as registered on the spoke.
+   * @param usingAsCollateral True if the user wants to use the supply as collateral, false otherwise.
+   */
   function setUsingAsCollateral(uint256 reserveId, bool usingAsCollateral) external;
-  function updateUserRiskPremium(uint256 reserveId, address user) external;
+
+  /**
+   * @notice Allows updating the risk premium on user position.
+   * @dev If the risk premium has increased, the caller must be authorized or the owner of the position,
+   * reverts with `Unauthorized` otherwise.
+   * @param user The address of the user.
+   */
+  function updateUserRiskPremium(address user) external;
 
   function getCollateralFactor(uint256 reserveId) external view returns (uint256);
+
   function getHealthFactor(address user) external view returns (uint256);
+
   function getLiquidityPremium(uint256 reserveId) external view returns (uint256);
+
   function getReserve(uint256 reserveId) external view returns (DataTypes.Reserve memory);
+
   function getReserveDebt(uint256 reserveId) external view returns (uint256, uint256);
+
   function getReservePrice(uint256 reserveId) external view returns (uint256);
+
   function getReserveRiskPremium(uint256 reserveId) external view returns (uint256);
+
   function getReserveSuppliedAmount(uint256 reserveId) external view returns (uint256);
+
   function getReserveSuppliedShares(uint256 reserveId) external view returns (uint256);
+
   function getReserveTotalDebt(uint256 reserveId) external view returns (uint256);
+
   function getUserAccountData(
     address user
   )
@@ -125,22 +150,34 @@ interface ISpoke {
       uint256 totalCollateralInBaseCurrency,
       uint256 totalDebtInBaseCurrency
     );
+
   function getUserDebt(uint256 reserveId, address user) external view returns (uint256, uint256);
+
   function getUserPosition(
     uint256 reserveId,
     address user
   ) external view returns (DataTypes.UserPosition memory);
+
   function getUserRiskPremium(address user) external view returns (uint256);
+
   function getUserSuppliedAmount(uint256 reserveId, address user) external view returns (uint256);
+
   function getUserSuppliedShares(uint256 reserveId, address user) external view returns (uint256);
+
   function getUserTotalDebt(uint256 reserveId, address user) external view returns (uint256);
+
   function getUsingAsCollateral(uint256 reserveId, address user) external view returns (bool);
+
   function reserveCount() external view returns (uint256);
+
   function reservesList(uint256) external view returns (uint256);
+
   function HEALTH_FACTOR_LIQUIDATION_THRESHOLD() external view returns (uint256);
+
   function getVariableLiquidationBonus(
     uint256 reserveId,
     uint256 healthFactor
   ) external view returns (uint256);
+
   function getLiquidationConfig() external view returns (DataTypes.LiquidationConfig memory);
 }

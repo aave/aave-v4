@@ -58,76 +58,89 @@ contract LiquidityHubBase is Base {
     hub.updateSpokeConfig(assetId, spoke, spokeConfig);
   }
 
-  /// @dev spoke1 (alice) supplies dai, spoke1 (alice) draws dai, skip 1 year
+  /// @dev tempSpoke1 (tempUser1) supplies asset, tempSpoke2 (tempUser2) draws asset, skip 1 year
   /// increases supply and debt exchange rate
-  /// @return daiDrawAmount
-  /// @return suppliedShares
-  function _increaseExchangeRate(uint256 daiAmount) internal returns (uint256, uint256) {
-    uint256 daiDrawAmount = daiAmount;
+  function _increaseExchangeRate(uint256 assetId, uint256 amount) internal {
+    address tempUser1 = makeAddr('TEMP_USER_1');
+    deal(address(hub.assetsList(assetId)), tempUser1, amount);
 
-    // spoke2 supply dai
-    uint256 suppliedShares = Utils.add({
-      hub: hub,
-      assetId: daiAssetId,
-      spoke: address(spoke2),
-      amount: daiAmount,
-      user: bob,
-      to: address(spoke2)
-    });
+    address tempSpoke1 = makeAddr('TEMP_SPOKE_1');
+    hub.addSpoke(
+      assetId, 
+      DataTypes.SpokeConfig({
+        supplyCap: type(uint256).max,
+        drawCap: type(uint256).max
+      }), 
+      tempSpoke1
+    );
 
-    // spoke1 draw dai liquidity on behalf of user
-    Utils.draw({
-      hub: hub,
-      assetId: daiAssetId,
-      to: alice,
-      spoke: address(spoke1),
-      amount: daiDrawAmount,
-      onBehalfOf: address(spoke1)
+    address tempUser2 = makeAddr('TEMP_USER_2');
+    deal(address(hub.assetsList(assetId)), tempUser2, amount);
+
+    address tempSpoke2 = makeAddr('TEMP_SPOKE_2');
+    hub.addSpoke(
+      assetId, 
+      DataTypes.SpokeConfig({
+        supplyCap: type(uint256).max,
+        drawCap: type(uint256).max
+      }), 
+      tempSpoke2
+    );
+    
+    _supplyAndDrawLiquidity({
+      assetId: assetId,
+      supplyUser: tempUser1,
+      supplySpoke: tempSpoke1,
+      supplyAmount: amount,
+      drawUser: tempUser2,
+      drawSpoke: tempSpoke2,
+      drawAmount: amount,
+      skipTime: 365 days
     });
-    skip(365 days);
 
     // ensure that exchange rate has increased
-    assertTrue(hub.convertToSuppliedShares(daiAssetId, daiAmount) < daiAmount);
-    assertTrue(hub.convertToDrawnShares(daiAssetId, daiDrawAmount) < daiDrawAmount);
-
-    return (daiDrawAmount, suppliedShares);
+    assertTrue(hub.convertToSuppliedShares(assetId, amount) < amount);
+    assertTrue(hub.convertToDrawnShares(assetId, amount) < amount);
   }
 
-  /// @dev spoke2 (bob) supplies dai, spoke1 (alice) draws dai
+  /// @dev mocks rate, supplySpoke (supplyUser) supplies asset, drawSpoke (drawUser) draws asset, skips time
   function _supplyAndDrawLiquidity(
-    uint256 daiAmount,
-    uint256 daiDrawAmount,
-    uint256 rate,
+    uint256 assetId,
+    address supplyUser,
+    address supplySpoke,
+    uint256 supplyAmount,
+    address drawUser,
+    address drawSpoke,
+    uint256 drawAmount,
     uint256 skipTime
-  ) internal returns (uint256, uint256) {
+  ) internal returns (uint256 supplyShares, uint256 drawnShares) {
+    supplyShares = Utils.add({
+      hub: hub,
+      assetId: assetId,
+      spoke: supplySpoke,
+      amount: supplyAmount,
+      user: supplyUser,
+      to: supplySpoke
+    });
+
+    drawnShares = Utils.draw({
+      hub: hub,
+      assetId: assetId,
+      to: drawUser,
+      spoke: drawSpoke,
+      amount: drawAmount,
+      onBehalfOf: drawSpoke
+    });
+
+    skip(skipTime);
+  }
+
+  function _mockRate(uint256 rate) internal returns (uint256) {
     vm.mockCall(
       address(irStrategy),
       IReserveInterestRateStrategy.calculateInterestRates.selector,
       abi.encode(rate)
     );
-
-    // spoke2 supply dai
-    uint256 supplyShares = Utils.add({
-      hub: hub,
-      assetId: daiAssetId,
-      spoke: address(spoke2),
-      amount: daiAmount,
-      user: bob,
-      to: address(spoke2)
-    });
-
-    // spoke1 draw dai liquidity on behalf of user
-    uint256 drawnShares = Utils.draw({
-      hub: hub,
-      assetId: daiAssetId,
-      to: alice,
-      spoke: address(spoke1),
-      amount: daiDrawAmount,
-      onBehalfOf: address(spoke1)
-    });
-
-    skip(skipTime);
-    return (drawnShares, supplyShares);
   }
 
   function _getDebt(uint256 assetId) internal view returns (DebtData memory) {

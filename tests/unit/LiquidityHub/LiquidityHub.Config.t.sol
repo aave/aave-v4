@@ -93,12 +93,16 @@ contract LiquidityHubConfigTest is LiquidityHubBase {
 
     config.paused = true;
 
-    hub.updateAssetConfig(daiAssetId, config);
+    vm.expectEmit(address(hub));
+    emit ILiquidityHub.AssetConfigUpdated(daiAssetId, config);
     vm.prank(HUB_ADMIN);
+    hub.updateAssetConfig(daiAssetId, config);
     assertEq(hub.getAssetConfig(daiAssetId).paused, true, 'asset paused');
 
     config.paused = false;
 
+    vm.expectEmit(address(hub));
+    emit ILiquidityHub.AssetConfigUpdated(daiAssetId, config);
     vm.prank(HUB_ADMIN);
     hub.updateAssetConfig(daiAssetId, config);
     assertEq(hub.getAssetConfig(daiAssetId).paused, false, 'asset un-paused');
@@ -108,6 +112,8 @@ contract LiquidityHubConfigTest is LiquidityHubBase {
     DataTypes.AssetConfig memory config = hub.getAssetConfig(daiAssetId);
     config.paused = paused;
 
+    vm.expectEmit(address(hub));
+    emit ILiquidityHub.AssetConfigUpdated(daiAssetId, config);
     vm.prank(HUB_ADMIN);
     hub.updateAssetConfig(daiAssetId, config);
     assertEq(hub.getAssetConfig(daiAssetId).paused, paused, 'asset paused');
@@ -119,12 +125,16 @@ contract LiquidityHubConfigTest is LiquidityHubBase {
 
     config.frozen = true;
 
+    vm.expectEmit(address(hub));
+    emit ILiquidityHub.AssetConfigUpdated(daiAssetId, config);
     vm.prank(HUB_ADMIN);
     hub.updateAssetConfig(daiAssetId, config);
     assertEq(hub.getAssetConfig(daiAssetId).frozen, true, 'asset frozen');
 
     config.frozen = false;
 
+    vm.expectEmit(address(hub));
+    emit ILiquidityHub.AssetConfigUpdated(daiAssetId, config);
     vm.prank(HUB_ADMIN);
     hub.updateAssetConfig(daiAssetId, config);
     assertEq(hub.getAssetConfig(daiAssetId).frozen, false, 'asset un-frozen');
@@ -134,6 +144,8 @@ contract LiquidityHubConfigTest is LiquidityHubBase {
     DataTypes.AssetConfig memory config = hub.getAssetConfig(daiAssetId);
     config.frozen = frozen;
 
+    vm.expectEmit(address(hub));
+    emit ILiquidityHub.AssetConfigUpdated(daiAssetId, config);
     vm.prank(HUB_ADMIN);
     hub.updateAssetConfig(daiAssetId, config);
     assertEq(hub.getAssetConfig(daiAssetId).frozen, frozen, 'asset frozen');
@@ -145,12 +157,16 @@ contract LiquidityHubConfigTest is LiquidityHubBase {
 
     config.active = false;
 
+    vm.expectEmit(address(hub));
+    emit ILiquidityHub.AssetConfigUpdated(daiAssetId, config);
     vm.prank(HUB_ADMIN);
     hub.updateAssetConfig(daiAssetId, config);
     assertEq(hub.getAssetConfig(daiAssetId).active, false, 'asset not active');
 
     config.active = true;
 
+    vm.expectEmit(address(hub));
+    emit ILiquidityHub.AssetConfigUpdated(daiAssetId, config);
     vm.prank(HUB_ADMIN);
     hub.updateAssetConfig(daiAssetId, config);
     assertEq(hub.getAssetConfig(daiAssetId).active, true, 'asset active');
@@ -160,6 +176,8 @@ contract LiquidityHubConfigTest is LiquidityHubBase {
     DataTypes.AssetConfig memory config = hub.getAssetConfig(daiAssetId);
     config.active = active;
 
+    vm.expectEmit(address(hub));
+    emit ILiquidityHub.AssetConfigUpdated(daiAssetId, config);
     vm.prank(HUB_ADMIN);
     hub.updateAssetConfig(daiAssetId, config);
     assertEq(hub.getAssetConfig(daiAssetId).active, active, 'asset active');
@@ -173,6 +191,8 @@ contract LiquidityHubConfigTest is LiquidityHubBase {
 
     config.decimals = newDecimals;
 
+    vm.expectEmit(address(hub));
+    emit ILiquidityHub.AssetConfigUpdated(daiAssetId, config);
     vm.prank(HUB_ADMIN);
     hub.updateAssetConfig(daiAssetId, config);
 
@@ -187,6 +207,8 @@ contract LiquidityHubConfigTest is LiquidityHubBase {
 
     config.decimals = newDecimals;
 
+    vm.expectEmit(address(hub));
+    emit ILiquidityHub.AssetConfigUpdated(daiAssetId, config);
     vm.prank(HUB_ADMIN);
     hub.updateAssetConfig(daiAssetId, config);
 
@@ -251,6 +273,8 @@ contract LiquidityHubConfigTest is LiquidityHubBase {
 
     config.irStrategy = newIrStrategy;
 
+    vm.expectEmit(address(hub));
+    emit ILiquidityHub.AssetConfigUpdated(daiAssetId, config);
     vm.prank(HUB_ADMIN);
     hub.updateAssetConfig(daiAssetId, config);
 
@@ -269,6 +293,8 @@ contract LiquidityHubConfigTest is LiquidityHubBase {
 
     config.irStrategy = newIrStrategy;
 
+    vm.expectEmit(address(hub));
+    emit ILiquidityHub.AssetConfigUpdated(daiAssetId, config);
     vm.prank(HUB_ADMIN);
     hub.updateAssetConfig(daiAssetId, config);
 
@@ -352,27 +378,28 @@ contract LiquidityHubConfigTest is LiquidityHubBase {
   }
 
   function test_addAsset() public {
+    DataTypes.AssetConfig memory config = DataTypes.AssetConfig({
+      decimals: 18,
+      active: true,
+      frozen: false,
+      paused: false,
+      irStrategy: irStrategy
+    });
+
     vm.prank(HUB_ADMIN);
     vm.expectEmit(address(hub));
     emit ILiquidityHub.AssetAdded(hub.assetCount(), address(tokenList.dai));
-    hub.addAsset(
-      DataTypes.AssetConfig({
-        decimals: 18,
-        active: true,
-        frozen: false,
-        paused: false,
-        irStrategy: irStrategy
-      }),
-      address(tokenList.dai)
-    );
+    vm.expectEmit(address(hub));
+    emit ILiquidityHub.AssetConfigUpdated(hub.assetCount(), config);
+    hub.addAsset(config, address(tokenList.dai));
 
     uint256 assetId = hub.assetCount() - 1;
-    DataTypes.AssetConfig memory config = hub.getAssetConfig(assetId);
-    assertEq(config.decimals, 18, 'asset decimals');
-    assertEq(config.active, true, 'asset active');
-    assertEq(config.frozen, false, 'asset frozen');
-    assertEq(config.paused, false, 'asset paused');
-    assertEq(address(config.irStrategy), address(irStrategy), 'asset irStrategy');
+    DataTypes.AssetConfig memory actualConfig = hub.getAssetConfig(assetId);
+    assertEq(config.decimals, actualConfig.decimals, 'asset decimals');
+    assertEq(config.active, actualConfig.active, 'asset active');
+    assertEq(config.frozen, actualConfig.frozen, 'asset frozen');
+    assertEq(config.paused, actualConfig.paused, 'asset paused');
+    assertEq(address(config.irStrategy), address(actualConfig.irStrategy), 'asset irStrategy');
   }
 
   function test_addAsset_fuzz(DataTypes.AssetConfig memory newConfig, address asset) public {
