@@ -279,6 +279,16 @@ contract LiquidityHubConfigTest is LiquidityHubBase {
     );
   }
 
+  function test_updateAssetConfig_event_emission() public {
+    DataTypes.AssetConfig memory config = hub.getAssetConfig(daiAssetId);
+    config.paused = true;
+
+    vm.prank(HUB_ADMIN);
+    vm.expectEmit(address(hub));
+    emit ILiquidityHub.AssetConfigUpdated(daiAssetId, config);
+    hub.updateAssetConfig(daiAssetId, config);
+  }
+
   function test_updateSpokeConfig_drawCap() public {
     DataTypes.SpokeConfig memory config = hub.getSpokeConfig(daiAssetId, address(spoke1));
     uint256 drawCap = 5;
@@ -352,27 +362,28 @@ contract LiquidityHubConfigTest is LiquidityHubBase {
   }
 
   function test_addAsset() public {
+    DataTypes.AssetConfig memory config = DataTypes.AssetConfig({
+      decimals: 18,
+      active: true,
+      frozen: false,
+      paused: false,
+      irStrategy: irStrategy
+    });
+
     vm.prank(HUB_ADMIN);
     vm.expectEmit(address(hub));
     emit ILiquidityHub.AssetAdded(hub.assetCount(), address(tokenList.dai));
-    hub.addAsset(
-      DataTypes.AssetConfig({
-        decimals: 18,
-        active: true,
-        frozen: false,
-        paused: false,
-        irStrategy: irStrategy
-      }),
-      address(tokenList.dai)
-    );
+    vm.expectEmit(address(hub));
+    emit ILiquidityHub.AssetConfigUpdated(hub.assetCount(), config);
+    hub.addAsset(config, address(tokenList.dai));
 
     uint256 assetId = hub.assetCount() - 1;
-    DataTypes.AssetConfig memory config = hub.getAssetConfig(assetId);
-    assertEq(config.decimals, 18, 'asset decimals');
-    assertEq(config.active, true, 'asset active');
-    assertEq(config.frozen, false, 'asset frozen');
-    assertEq(config.paused, false, 'asset paused');
-    assertEq(address(config.irStrategy), address(irStrategy), 'asset irStrategy');
+    DataTypes.AssetConfig memory actualConfig = hub.getAssetConfig(assetId);
+    assertEq(config.decimals, actualConfig.decimals, 'asset decimals');
+    assertEq(config.active, actualConfig.active, 'asset active');
+    assertEq(config.frozen, actualConfig.frozen, 'asset frozen');
+    assertEq(config.paused, actualConfig.paused, 'asset paused');
+    assertEq(address(config.irStrategy), address(actualConfig.irStrategy), 'asset irStrategy');
   }
 
   function test_addAsset_fuzz(DataTypes.AssetConfig memory newConfig, address asset) public {
