@@ -31,7 +31,7 @@ contract LiquidityHubRestoreDeficitTest is LiquidityHubBase {
     deal(address(tokenList.usdx), address(spoke1), 1e60);
   }
 
-  /// @dev Restore reverts with InvalidDeficitAmount when deficit amount is greater than the debt amount (no accrual)
+  /// @notice Restore reverts with InvalidDeficitAmount when deficit amount is greater than the debt amount (no accrual).
   function test_restore_revertsWith_InvalidDeficitAmount_with_deficit() public {
     test_restore_fuzz_revertsWith_InvalidDeficitAmount_with_deficit_with_accrual({
       drawnAmount: 10_000e6,
@@ -42,7 +42,7 @@ contract LiquidityHubRestoreDeficitTest is LiquidityHubBase {
     });
   }
 
-  /// @dev Fuzz - restore reverts with InvalidDeficitAmount when deficit amount is greater than the debt amount (no accrual)
+  /// @notice Fuzz - restore reverts with InvalidDeficitAmount when deficit amount is greater than the debt amount (no accrual).
   function test_restore_fuzz_revertsWith_InvalidDeficitAmount_with_deficit(
     uint256 drawnAmount,
     uint256 deficitAmountRestored,
@@ -58,7 +58,7 @@ contract LiquidityHubRestoreDeficitTest is LiquidityHubBase {
     });
   }
 
-  /// @dev Restore reverts with InvalidDeficitAmount when deficit amount is greater than the debt amount (with accrual)
+  /// @notice Restore reverts with InvalidDeficitAmount when deficit amount is greater than the debt amount (with accrual).
   function test_restore_revertsWith_InvalidDeficitAmount_with_deficit_with_accrual() public {
     test_restore_fuzz_revertsWith_InvalidDeficitAmount_with_deficit_with_accrual({
       drawnAmount: 10_000e6,
@@ -69,7 +69,7 @@ contract LiquidityHubRestoreDeficitTest is LiquidityHubBase {
     });
   }
 
-  /// @dev Fuzz - restore reverts with InvalidDeficitAmount when deficit amount is greater than the debt amount (with accrual)
+  /// @notice Fuzz - restore reverts with InvalidDeficitAmount when deficit amount is greater than the debt amount (with accrual).
   function test_restore_fuzz_revertsWith_InvalidDeficitAmount_with_deficit_with_accrual(
     uint256 drawnAmount,
     uint256 deficitAmountRestored,
@@ -105,7 +105,7 @@ contract LiquidityHubRestoreDeficitTest is LiquidityHubBase {
     );
   }
 
-  /// @dev Restore reverts with InvalidDeficitAmount when deficit amount is greater than the debt amount (with premium)
+  /// @notice Restore reverts with InvalidDeficitAmount when deficit amount is greater than the debt amount (with premium).
   function test_restore_revertsWith_InvalidDeficitAmount_with_deficit_with_premium() public {
     test_restore_fuzz_revertsWith_InvalidDeficitAmount_with_deficit_with_premium({
       drawnAmount: 10_000e6,
@@ -116,7 +116,7 @@ contract LiquidityHubRestoreDeficitTest is LiquidityHubBase {
     });
   }
 
-  /// @dev Restore reverts with InvalidDeficitAmount when deficit amount is greater than the debt amount (with premium)
+  /// @notice Restore reverts with InvalidDeficitAmount when deficit amount is greater than the debt amount (with premium).
   function test_restore_fuzz_revertsWith_InvalidDeficitAmount_with_deficit_with_premium(
     uint256 drawnAmount,
     uint256 deficitAmountRestored,
@@ -329,7 +329,7 @@ contract LiquidityHubRestoreDeficitTest is LiquidityHubBase {
     );
   }
 
-  /// @dev Restore with deficit amount <= premium amount
+  /// @notice Restore with deficit amount <= premium amount
   function test_restore_fuzz_with_deficit_only_premium(
     uint256 drawnAmount,
     uint256 deficitAmountRestored,

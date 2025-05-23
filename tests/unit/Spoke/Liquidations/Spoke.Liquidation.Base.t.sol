@@ -80,7 +80,7 @@ contract SpokeLiquidationBase is SpokeBase {
     _deployLiquidity(spoke1, _usdyReserveId(spoke1), amount);
   }
 
-  /// bound liquidation config to full range of possible values
+  /// @notice Bound liquidation config to full range of possible values
   function _bound(
     DataTypes.LiquidationConfig memory liqConfig
   ) internal pure virtual returns (DataTypes.LiquidationConfig memory) {
@@ -99,8 +99,8 @@ contract SpokeLiquidationBase is SpokeBase {
     return liqConfig;
   }
 
-  /// bound liqConfig close factor
-  /// set constant liquidation bonus to simplify calcs for desiredHf
+  /// @notice Bound liqConfig close factor.
+  /// Set constant liquidation bonus to simplify calcs for desiredHf.
   function _boundCloseFactor(
     DataTypes.LiquidationConfig memory liqConfig
   ) internal pure virtual returns (DataTypes.LiquidationConfig memory) {
@@ -117,7 +117,7 @@ contract SpokeLiquidationBase is SpokeBase {
     return liqConfig;
   }
 
-  /// execute generic liquidation call fuzz test with a desired initial user health factor
+  /// @notice Execute generic liquidation call fuzz test with a desired initial user health factor.
   /// @param desiredHf Desired user health factor prior to liquidation.
   function _execLiqCallFuzzTest(
     DataTypes.LiquidationConfig memory liqConfig,
@@ -351,6 +351,7 @@ contract SpokeLiquidationBase is SpokeBase {
     }
   }
 
+  /// assertions in bad debt scenarios
   function _assertBadDebt(
     ISpoke spoke,
     LiquidationTestLocalParams memory state,
@@ -381,6 +382,7 @@ contract SpokeLiquidationBase is SpokeBase {
     );
   }
 
+  /// generic assertions in non bad debt scenarios
   function _assertNoBadDebt(
     ISpoke spoke,
     LiquidationTestLocalParams memory state,

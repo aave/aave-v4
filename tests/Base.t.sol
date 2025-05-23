@@ -1041,13 +1041,14 @@ abstract contract Base is Test {
   }
 
   /**
-   * @notice Returns the required debt amount in base currency to ensure user position is below a certain health factor.
+   * @notice Returns the required debt amount in base currency to ensure user position is above a certain health factor.
+   * @return requiredDebt The required additional debt amount in base currency.
    */
   function _getRequiredDebtForGtHf(
     ISpoke spoke,
     address user,
     uint256 desiredHf
-  ) internal view returns (uint256 requiredDebt) {
+  ) internal view returns (uint256) {
     (
       ,
       uint256 currentAvgCollateralFactor,
@@ -1056,12 +1057,11 @@ abstract contract Base is Test {
       uint256 totalDebtBase
     ) = spoke.getUserAccountData(user);
 
-    requiredDebt =
+    return
       totalCollateralBase
         .percentMulDown(currentAvgCollateralFactor.dewadify())
         .percentMulDown(99_00)
-        .wadDivDown(desiredHf) -
-      totalDebtBase;
+        .wadDivDown(desiredHf) - totalDebtBase;
     // buffer to force debt lower (ie making sure resultant debt creates HF that is gt desired)
   }
 
