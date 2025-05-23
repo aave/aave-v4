@@ -318,7 +318,14 @@ contract Spoke is ISpoke, Multicall {
     _validateSetUsingAsCollateral(reserve, userPosition, usingAsCollateral);
     userPosition.usingAsCollateral = usingAsCollateral;
 
-    // consider updating user rp & notify here especially when deactivating collateral
+    // If unsetting, check HF and update user rp
+    if (!usingAsCollateral) {
+      require(
+        this.getHealthFactor(msg.sender) >= HEALTH_FACTOR_LIQUIDATION_THRESHOLD,
+        HealthFactorBelowThreshold()
+      );
+      this.updateUserRiskPremium(reserveId, msg.sender);
+    }
 
     emit UsingAsCollateral(reserveId, msg.sender, usingAsCollateral);
   }
