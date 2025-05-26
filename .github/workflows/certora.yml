@@ -6,6 +6,7 @@ env:
     certora/conf/LiquidityHubAccrueIntegrity.conf
     certora/conf/Math.conf
     certora/conf/SharesMath.conf
+    certora/conf/LiquidityHubAdditivity.conf
 on:
   push:
     branches:

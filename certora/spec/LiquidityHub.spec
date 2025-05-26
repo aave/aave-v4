@@ -1,42 +1,19 @@
 
 import "./ERC20s_CVL.spec";
 import "./Math_CVL.spec";
+import "./LiquidityHubBase.spec";
+
 
 using LiquidityHub as liquidityHub;
-using WadRayMathWrapper as wadRayMath;
 
 /***
 
-Verify LiquidityHub given a summarization of Spoke
-Spoke must obey the given specification 
+Verify LiquidityHub 
 
 ***/
 
 methods {
- 
-  function Math.mulDiv(uint256 x, uint256 y, uint256 denominator) internal  returns (uint256) => mulDivDownCVL(x,y,denominator);
 
-  /*function PercentageMath.percentMul(uint256 value, uint256 percentage) internal  returns (uint256)  =>  mulDivHalf(value, percentage, 10000);*/
-
-    function WadRayMathWrapper.RAY() external returns (uint256) envfree;
-
-    function WadRayMath.rayMul(uint256 a, uint256 b) internal returns (uint256) => 
-        mulDivHalf(a,b,wadRayMath.RAY());
-    
-    function WadRayMath.rayDiv(uint256 a, uint256 b) internal returns (uint256) => 
-        mulDivHalf(a,wadRayMath.RAY(),b);
-
-    function WadRayMathExtended.rayMulDown(uint256 a, uint256 b) internal returns (uint256) => 
-        mulDivDownCVL(a,b,wadRayMath.RAY());
-    
-    function WadRayMathExtended.rayMulUp(uint256 a, uint256 b) internal returns (uint256) => 
-        mulDivUpCVL(a,b,wadRayMath.RAY());
-    
-    function WadRayMathExtended.rayDivDown(uint256 a, uint256 b) internal returns (uint256) => 
-        mulDivDownCVL(a,wadRayMath.RAY(),b);
-    
-    function WadRayMathExtended.rayDivUp(uint256 a, uint256 b) internal returns (uint256) => 
-        mulDivUpCVL(a,wadRayMath.RAY(),b);
 
     // assume that borrow rate was already updated.
     //rules concerning updateBorrowRate are in ...
@@ -75,8 +52,7 @@ methods {
     uint256 premiumAmountRestored
   ) internal => NONDET;
 
-    //envfree function
-    function getSpokeSuppliedShares(uint256 assetId, address spoke) external returns (uint256) envfree;
+
 
 }
 
@@ -189,6 +165,15 @@ rule solvency_internal_tautology(uint256 assetId, env e) {
 
 invariant totalAssetsVsShares(uint256 assetId, env e) 
     getAssetSuppliedAmount(e,assetId) >=  getAssetSuppliedShares(e,assetId) {
+        preserved with (env eInv) {
+            //todo - need to prove time changing 
+            require eInv.block.timestamp == e.block.timestamp;
+            requireAllInvariants(assetId, e);
+        }
+    }
+
+invariant totalAssetsAndSharesZero(uint256 assetId, env e) 
+    getAssetSuppliedAmount(e,assetId) == 0 <=> getAssetSuppliedShares(e,assetId) == 0 {
         preserved with (env eInv) {
             //todo - need to prove time changing 
             require eInv.block.timestamp == e.block.timestamp;

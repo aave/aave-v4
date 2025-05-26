@@ -1,12 +1,76 @@
 
 import "./ERC20s_CVL.spec";
 import "./Math_CVL.spec";
-import "./LiquidityHub.spec";
+import "./LiquidityHubBase.spec";
+import "./SharesMath.spec";
 
 methods {
+    function SharesMath.toSharesDown(uint256 assets, uint256 totalAssets, uint256 totalShares) internal returns (uint256) =>
+            symbolic_toSharesDown(assets, totalAssets, totalShares) ;
+    function SharesMath.toAssetsDown(uint256 shares, uint256 totalAssets, uint256 totalShares) internal returns (uint256) =>
+            symbolic_toAssetsDown(shares, totalAssets, totalShares) ; 
+    function SharesMath.toSharesUp(uint256 assets, uint256 totalAssets, uint256 totalShares) internal returns (uint256) =>
+            symbolic_toSharesUp(assets, totalAssets, totalShares) ; 
+    function SharesMath.toAssetsUp(uint256 shares, uint256 totalAssets, uint256 totalShares) internal returns (uint256) =>
+            symbolic_toAssetsUp(shares, totalAssets, totalShares) ; 
 
 }
+ghost symbolic_toSharesDown(mathint /*assets*/, mathint /*totalAssets*/, mathint /*totalShares*/) returns uint256 {
+        // monotonicity
+        axiom forall mathint x. forall mathint y. forall mathint ta. forall mathint ts. 
+                x > y => symbolic_toSharesDown(x, ta, ts) >= symbolic_toSharesDown(y, ta, ts);
+        // additivity with respect to side effect
+        axiom forall mathint x. forall mathint y.  forall mathint ta. forall mathint ts. 
+                symbolic_toSharesDown(x, ta, ts) +  symbolic_toSharesDown(y, ta + x, ts + symbolic_toSharesDown(x, ta, ts))  <= symbolic_toSharesDown(x + y, ta, ts);
+}
 
+ghost symbolic_toAssetsDown(mathint /*shares*/, mathint /*totalAssets*/, mathint /*totalShares*/) returns uint256 {
+        // monotonicity
+        axiom forall mathint x. forall mathint y. forall mathint ta. forall mathint ts. 
+                x > y => symbolic_toAssetsDown(x, ta, ts) >= symbolic_toAssetsDown(y, ta, ts);
+        // additivity with respect to side effect
+        axiom forall mathint x. forall mathint y.  forall mathint ta. forall mathint ts. 
+                symbolic_toAssetsDown(x, ta, ts) +  symbolic_toAssetsDown(y, ta + symbolic_toAssetsDown(x, ta, ts), ts + x)  <= symbolic_toAssetsDown(x + y, ta, ts);
+}
+
+ghost symbolic_toSharesUp(mathint /*assets*/, mathint /*totalAssets*/, mathint /*totalShares*/) returns uint256 {
+        // monotonicity
+        axiom forall mathint x. forall mathint y. forall mathint ta. forall mathint ts. 
+                x > y => symbolic_toSharesUp(x, ta, ts) >= symbolic_toSharesUp(y, ta, ts);
+        // additivity with respect to side effect
+        axiom forall mathint x. forall mathint y.  forall mathint ta. forall mathint ts. 
+                symbolic_toSharesUp(x, ta, ts) +  symbolic_toSharesUp(y, ta - x, ts - symbolic_toSharesUp(x, ta, ts))  >= symbolic_toSharesUp(x + y, ta, ts);
+        axiom forall mathint x. forall mathint ta. forall mathint ts. symbolic_toSharesUp(x, ta, ts) == 0 <=> x == 0;
+}
+
+
+ghost symbolic_toAssetsUp(mathint /*shares*/, mathint /*totalAssets*/, mathint /*totalShares*/) returns uint256 {
+            // monotonicity
+        axiom forall mathint x. forall mathint y. forall mathint ta. forall mathint ts. 
+                x > y => symbolic_toAssetsUp(x, ta, ts) >= symbolic_toAssetsUp(y, ta, ts);
+        // additivity with respect to side effect
+        axiom forall mathint x. forall mathint y.  forall mathint ta. forall mathint ts. 
+                symbolic_toAssetsUp(x, ta, ts) +  symbolic_toAssetsUp(y, ta + symbolic_toAssetsUp(x, ta, ts), ts + x)  >= symbolic_toAssetsUp(x + y, ta, ts);
+}
+
+/*** verify that the ghost variables and axioms preserve the rules *****/ 
+use rule toSharesDown_additivity;
+use rule toSharesDown_monotonicity;
+use rule toAssetsDown_additivity;
+use rule toAssetsDown_monotonicity;
+use rule toSharesUp_additivity;
+use rule toSharesUp_monotonicity;
+use rule toSharesUp_nonZero;
+use rule toAssetsUp_additivity;
+use rule toAssetsUp_monotonicity;
+
+
+
+
+/** 
+@title Additivity of add()
+Adding in one step is more beneficial to the user than in one step  
+**/
 rule addAdditivity(uint256 assetId, uint256 amountX, uint256 amountY, address from) {
     env e;
     address spoke = e.msg.sender;
@@ -26,6 +90,10 @@ rule addAdditivity(uint256 assetId, uint256 amountX, uint256 amountY, address fr
     satisfy afterOneStep > afterTwoSteps;
 }
 
+/** 
+@title Additivity of removing()
+Removing in one step is more beneficial to the user than in one step  
+**/
 rule removeAdditivity(uint256 assetId, uint256 amountX, uint256 amountY, address from) {
     env e;
     address spoke = e.msg.sender;
@@ -43,4 +111,18 @@ rule removeAdditivity(uint256 assetId, uint256 amountX, uint256 amountY, address
     //rounding should be in favor of the house
     assert afterOneStep >= afterTwoSteps;
     satisfy afterOneStep > afterTwoSteps;
+}
+
+
+
+// optimize the calls to certain function and save in ghost (global) variable) 
+ghost uint256 supplyAmountBefore; 
+ghost uint256 supplyShareBefore;
+
+function requireAllInvariants(uint256 assetId, env e)  {
+    // optimize the calls to 
+    supplyAmountBefore = getAssetSuppliedAmount(e,assetId);
+    supplyShareBefore = getAssetSuppliedShares(e,assetId); 
+    //requireInvariant totalAssetsVsShares(assetId,e);
+    require supplyAmountBefore >= supplyShareBefore;
 }
