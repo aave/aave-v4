@@ -1053,7 +1053,7 @@ contract SpokeRepayScenarioTest is SpokeBase {
         _wethReserveId(spoke1),
         _daiReserveId(spoke1),
         spoke1.getUserTotalDebt(_daiReserveId(spoke1), bob) + action2.borrowAmount
-      );
+      ) + 1;
       action2.supplyAmount = action1.supplyAmount > totalCollateral
         ? 0
         : totalCollateral - action1.supplyAmount;
