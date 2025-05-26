@@ -880,10 +880,12 @@ abstract contract Base is Test {
   }
 
   function _assumeValidSupplier(address user) internal {
-    vm.assume(user != address(0));
-    vm.assume(user != address(hub));
-    vm.assume(user != address(spoke1));
-    vm.assume(user != address(spoke2));
-    vm.assume(user != address(spoke3));
+    vm.assume(
+      user != address(0) &&
+        user != address(hub) &&
+        user != address(spoke1) &&
+        user != address(spoke2) &&
+        user != address(spoke3)
+    );
   }
 }
