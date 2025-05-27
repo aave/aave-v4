@@ -172,14 +172,6 @@ contract Spoke is ISpoke, Multicall {
     userPosition.suppliedShares -= withdrawnShares;
     reserve.suppliedShares -= withdrawnShares;
 
-/*
-    if(userPosition.suppliedShares == 0) {
-      DataTypes.PositionStatus storage positionStatus = _positionStatus[msg.sender];
-      if(positionStatus.isUsingAsCollateral(reserveId)) {
-        positionStatus.setUsingAsCollateral(reserveId,false);
-      }
-    }
-*/
     // calc needs new user position, just updating base debt is enough
     uint256 newUserRiskPremium = _validateUserPosition(msg.sender); // validates HF
 
@@ -302,9 +294,7 @@ contract Spoke is ISpoke, Multicall {
     ); // we settle base debt here
 
     reserve.baseDrawnShares -= restoredShares;
-    if((userPosition.baseDrawnShares -= restoredShares) == 0 && userPosition.realizedPremium == 0) {
-      _positionStatus[msg.sender].setBorrowing(reserveId, false);
-    }
+    userPosition.baseDrawnShares -= restoredShares;
 
     (uint256 newUserRiskPremium, , , , ) = _calculateUserAccountData(msg.sender);
 
@@ -315,6 +305,10 @@ contract Spoke is ISpoke, Multicall {
       assetId,
       userPosition.premiumDrawnShares
     );
+
+    if(userPosition.baseDrawnShares == 0 && userPremiumDrawnShares == 0) {
+      _positionStatus[msg.sender].setBorrowing(reserveId, false);
+    }
 
     _refreshPremiumDebt(
       reserve,
@@ -629,7 +623,7 @@ contract Spoke is ISpoke, Multicall {
     address user,
     uint256 reserveId
   ) internal view returns (bool) {
-    return _usingAsCollateral(user, reserveId) || _isBorrowing(user, reserveId);
+    return _positionStatus[user].isUsingAsCollateralOrBorrowing(reserveId);
   }
 
   /// @dev User rp calc runs until the first of either debt or collateral is exhausted
