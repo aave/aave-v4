@@ -62,7 +62,7 @@ contract SpokeMulticall is SpokeBase {
     vm.expectEmit(address(spoke2));
     emit ISpoke.UsingAsCollateral(_daiReserveId(spoke2), bob, true);
     vm.expectEmit(address(spoke2));
-    emit ISpoke.UserRiskPremiumUpdate(bob, spoke2.getLiquidityPremium(_daiReserveId(spoke2)));
+    emit ISpoke.UserRiskPremiumUpdate(bob, _getLiquidityPremium(spoke2, _daiReserveId(spoke2)));
 
     // Then he supplies dai and sets as collateral, so user rp should decrease
     vm.startPrank(bob);
@@ -93,7 +93,7 @@ contract SpokeMulticall is SpokeBase {
       collateralFactor: 88_00,
       liquidationBonus: 100_00,
       liquidityPremium: 10_00,
-      liquidationProtocolFeePercentage: 0,
+      liquidationProtocolFee: 0,
       borrowable: true,
       collateral: true
     });
@@ -105,7 +105,7 @@ contract SpokeMulticall is SpokeBase {
       collateralFactor: 70_00,
       liquidationBonus: 100_00,
       liquidityPremium: 5_00,
-      liquidationProtocolFeePercentage: 0,
+      liquidationProtocolFee: 0,
       borrowable: true,
       collateral: true
     });

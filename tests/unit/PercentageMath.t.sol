@@ -69,4 +69,14 @@ contract PercentageMathExtendedTests is Test {
     assertEq(w.fromBps(1e18), 1e14);
     assertEq(w.fromBps(1e3), 0);
   }
+
+  function test_percentDivUp_gt_value(uint256 value, uint256 percent) public {
+    percent = bound(percent, w.PERCENTAGE_FACTOR(), w.PERCENTAGE_FACTOR() * 10);
+    value = bound(value, 0, UINT256_MAX / percent); // to prevent overflow
+    assertGe(
+      value,
+      w.percentDivUp(value, percent),
+      'percentDivUp by 100% should never exceed value'
+    );
+  }
 }

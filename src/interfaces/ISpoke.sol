@@ -84,7 +84,7 @@ interface ISpoke {
   error CollateralCannotBeLiquidated();
   error SpecifiedCurrencyNotBorrowedByUser();
   error InvalidDebtToCover();
-  error InvalidLiquidationProtocolFeePercentage();
+  error InvalidliquidationProtocolFee();
   error InvalidOracleAddress();
   error UsersAndDebtLengthMismatch();
 
@@ -136,13 +136,9 @@ interface ISpoke {
 
   function setUsingAsCollateral(uint256 reserveId, bool usingAsCollateral) external;
   function updateUserRiskPremium(uint256 reserveId, address user) external;
-
-  function getCollateralFactor(uint256 reserveId) external view returns (uint256);
   function getHealthFactor(address user) external view returns (uint256);
-  function getLiquidityPremium(uint256 reserveId) external view returns (uint256);
   function getReserve(uint256 reserveId) external view returns (DataTypes.Reserve memory);
   function getReserveDebt(uint256 reserveId) external view returns (uint256, uint256);
-  function getReservePrice(uint256 reserveId) external view returns (uint256);
   function getReserveRiskPremium(uint256 reserveId) external view returns (uint256);
   function getReserveSuppliedAmount(uint256 reserveId) external view returns (uint256);
   function getReserveSuppliedShares(uint256 reserveId) external view returns (uint256);

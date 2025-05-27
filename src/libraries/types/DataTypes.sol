@@ -76,7 +76,7 @@ library DataTypes {
     uint256 collateralFactor; // BPS TODO: use smaller uint
     uint256 liquidationBonus; // BPS, 100_00 represent a 0% bonus TODO: use smaller uint
     uint256 liquidityPremium; // BPS TODO: use smaller uint
-    uint256 liquidationProtocolFeePercentage; // BPS TODO: use smaller uint
+    uint256 liquidationProtocolFee; // BPS TODO: use smaller uint
   }
 
   struct UserPosition {
@@ -114,36 +114,26 @@ library DataTypes {
   }
 
   struct LiquidationCallLocalVars {
-    uint256 collateralReserveId; // todo: use smaller int
-    uint256 debtReserveId; // todo: use smaller int
+    uint256 collateralReserveId;
+    uint256 debtReserveId;
     uint256 actualCollateralToLiquidate;
     uint256 actualDebtToLiquidate;
     uint256 liquidationProtocolFeeAmount;
     uint256 userCollateralBalance;
     uint256 totalCollateralInBaseCurrency;
     uint256 totalDebtInBaseCurrency;
-    uint256 debtAssetPrice; // todo: use smaller int
+    uint256 debtAssetPrice;
     uint256 debtAssetUnit;
     uint256 totalDebt;
     uint256 healthFactor;
-    uint256 liquidationBonus; // todo: use smaller int
+    uint256 liquidationBonus;
     uint256 baseDebtToLiquidate;
     uint256 premiumDebtToLiquidate;
     uint256 closeFactor;
-    uint256 collateralFactor; // todo: use smaller int
+    uint256 collateralFactor;
     uint256 collateralAssetPrice;
     uint256 collateralAssetUnit;
-    uint256 liquidationProtocolFeePercentage; // todo: use smaller uint
-  }
-
-  struct CalculateAvailableCollateralToLiquidateLocalVars {
-    uint256 maxCollateralToLiquidate;
-    uint256 baseCollateral;
-    uint256 bonusCollateral;
-    uint256 collateralAmount;
-    uint256 debtAmountNeeded;
-    uint256 liquidationProtocolFeeAmount;
-    uint256 userCollateralBalanceInBaseCurrency;
+    uint256 liquidationProtocolFee;
   }
 
   struct ExecuteLiquidationLocalVars {

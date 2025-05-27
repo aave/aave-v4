@@ -32,7 +32,7 @@ contract SpokeConfigTest is SpokeBase {
       collateralFactor: reserveData.config.collateralFactor + 1,
       liquidationBonus: reserveData.config.liquidationBonus + 1,
       liquidityPremium: reserveData.config.liquidityPremium + 1,
-      liquidationProtocolFeePercentage: reserveData.config.liquidationProtocolFeePercentage + 1,
+      liquidationProtocolFee: reserveData.config.liquidationProtocolFee + 1,
       borrowable: !reserveData.config.borrowable,
       collateral: !reserveData.config.collateral
     });
@@ -78,8 +78,8 @@ contract SpokeConfigTest is SpokeBase {
       0,
       PercentageMath.PERCENTAGE_FACTOR * 10
     );
-    newReserveConfig.liquidationProtocolFeePercentage = bound(
-      newReserveConfig.liquidationProtocolFeePercentage,
+    newReserveConfig.liquidationProtocolFee = bound(
+      newReserveConfig.liquidationProtocolFee,
       0,
       PercentageMath.PERCENTAGE_FACTOR
     );
@@ -295,28 +295,26 @@ contract SpokeConfigTest is SpokeBase {
     spoke1.updateReserveConfig(daiReserveId, config);
   }
 
-  function test_updateReserveConfig_revertsWith_InvalidLiquidationProtocolFeePercentage() public {
-    uint256 liquidationProtocolFeePercentage = PercentageMath.PERCENTAGE_FACTOR + 1;
+  function test_updateReserveConfig_revertsWith_InvalidliquidationProtocolFee() public {
+    uint256 liquidationProtocolFee = PercentageMath.PERCENTAGE_FACTOR + 1;
 
-    test_updateReserveConfig_fuzz_revertsWith_InvalidLiquidationProtocolFeePercentage(
-      liquidationProtocolFeePercentage
-    );
+    test_updateReserveConfig_fuzz_revertsWith_InvalidliquidationProtocolFee(liquidationProtocolFee);
   }
 
-  function test_updateReserveConfig_fuzz_revertsWith_InvalidLiquidationProtocolFeePercentage(
-    uint256 liquidationProtocolFeePercentage
+  function test_updateReserveConfig_fuzz_revertsWith_InvalidliquidationProtocolFee(
+    uint256 liquidationProtocolFee
   ) public {
-    liquidationProtocolFeePercentage = bound(
-      liquidationProtocolFeePercentage,
+    liquidationProtocolFee = bound(
+      liquidationProtocolFee,
       PercentageMath.PERCENTAGE_FACTOR + 1,
       type(uint256).max
     );
 
     uint256 daiReserveId = _daiReserveId(spoke1);
     DataTypes.ReserveConfig memory config = spoke1.getReserve(daiReserveId).config;
-    config.liquidationProtocolFeePercentage = liquidationProtocolFeePercentage;
+    config.liquidationProtocolFee = liquidationProtocolFee;
 
-    vm.expectRevert(ISpoke.InvalidLiquidationProtocolFeePercentage.selector);
+    vm.expectRevert(ISpoke.InvalidliquidationProtocolFee.selector);
     vm.prank(SPOKE_ADMIN);
     spoke1.updateReserveConfig(daiReserveId, config);
   }
@@ -331,7 +329,7 @@ contract SpokeConfigTest is SpokeBase {
       collateralFactor: 10_00,
       liquidationBonus: 110_00,
       liquidityPremium: 10_00,
-      liquidationProtocolFeePercentage: 10_00,
+      liquidationProtocolFee: 10_00,
       borrowable: true,
       collateral: true
     });
@@ -357,7 +355,7 @@ contract SpokeConfigTest is SpokeBase {
       paused: true,
       collateralFactor: 10_00,
       liquidationBonus: 110_00,
-      liquidationProtocolFeePercentage: 0,
+      liquidationProtocolFee: 0,
       liquidityPremium: 10_00,
       borrowable: true,
       collateral: true
@@ -380,7 +378,7 @@ contract SpokeConfigTest is SpokeBase {
       collateralFactor: 10_00,
       liquidationBonus: 110_00,
       liquidityPremium: 10_00,
-      liquidationProtocolFeePercentage: 0,
+      liquidationProtocolFee: 0,
       borrowable: true,
       collateral: true
     });
@@ -400,7 +398,7 @@ contract SpokeConfigTest is SpokeBase {
       collateralFactor: 10_00,
       liquidationBonus: 110_00,
       liquidityPremium: 10_00,
-      liquidationProtocolFeePercentage: 0,
+      liquidationProtocolFee: 0,
       borrowable: true,
       collateral: true
     });
@@ -425,7 +423,7 @@ contract SpokeConfigTest is SpokeBase {
       collateralFactor: 10_00,
       liquidationBonus: 110_00,
       liquidityPremium: 10_00,
-      liquidationProtocolFeePercentage: 0,
+      liquidationProtocolFee: 0,
       borrowable: true,
       collateral: true
     });
@@ -592,9 +590,9 @@ contract SpokeConfigTest is SpokeBase {
       'wrong liquidityPremium'
     );
     assertEq(
-      reserveConfig.liquidationProtocolFeePercentage,
-      newReserveConfig.liquidationProtocolFeePercentage,
-      'wrong liquidationProtocolFeePercentage'
+      reserveConfig.liquidationProtocolFee,
+      newReserveConfig.liquidationProtocolFee,
+      'wrong liquidationProtocolFee'
     );
     assertEq(reserveConfig.borrowable, newReserveConfig.borrowable, 'wrong borrowable');
     assertEq(reserveConfig.collateral, newReserveConfig.collateral, 'wrong collateral');

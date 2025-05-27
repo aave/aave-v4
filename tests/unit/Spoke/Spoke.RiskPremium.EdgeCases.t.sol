@@ -19,8 +19,8 @@ contract SpokeRiskPremiumEdgeCasesTest is SpokeBase {
     // Make usdx liquidity premium 10% so it's the lower lp reserve compared to dai
     updateLiquidityPremium(spoke2, _usdxReserveId(spoke2), 10_00);
     assertLt(
-      spoke2.getLiquidityPremium(_usdxReserveId(spoke2)),
-      spoke2.getLiquidityPremium(_daiReserveId(spoke2)),
+      _getLiquidityPremium(spoke2, _usdxReserveId(spoke2)),
+      _getLiquidityPremium(spoke2, _daiReserveId(spoke2)),
       'Usdx lower lp than dai'
     );
 
@@ -338,7 +338,7 @@ contract SpokeRiskPremiumEdgeCasesTest is SpokeBase {
     );
     assertGe(
       spoke2.getUserRiskPremium(bob),
-      spoke2.getLiquidityPremium(_daiReserveId(spoke2)),
+      _getLiquidityPremium(spoke2, _daiReserveId(spoke2)),
       'Bob user rp after borrow'
     );
     assertEq(
@@ -361,7 +361,7 @@ contract SpokeRiskPremiumEdgeCasesTest is SpokeBase {
     // Now since dai is enough to cover the debt due to interest accrual, Bob's RP should equal LP of dai
     assertEq(
       spoke2.getUserRiskPremium(bob),
-      spoke2.getLiquidityPremium(_daiReserveId(spoke2)),
+      _getLiquidityPremium(spoke2, _daiReserveId(spoke2)),
       'Bob user risk premium after interest accrual'
     );
     assertEq(
@@ -435,7 +435,7 @@ contract SpokeRiskPremiumEdgeCasesTest is SpokeBase {
     );
     assertEq(
       spoke2.getUserRiskPremium(bob),
-      spoke2.getLiquidityPremium(_daiReserveId(spoke2)),
+      _getLiquidityPremium(spoke2, _daiReserveId(spoke2)),
       'Bob user rp after borrow'
     );
     assertEq(
@@ -457,7 +457,7 @@ contract SpokeRiskPremiumEdgeCasesTest is SpokeBase {
     // Now since Bob's dai collateral is less than debt due to interest accrual, Bob's RP is greater than LP of dai
     assertGt(
       spoke2.getUserRiskPremium(bob),
-      spoke2.getLiquidityPremium(_daiReserveId(spoke2)),
+      _getLiquidityPremium(spoke2, _daiReserveId(spoke2)),
       'Bob user risk premium after collateral accrual'
     );
 
@@ -531,7 +531,7 @@ contract SpokeRiskPremiumEdgeCasesTest is SpokeBase {
     );
     assertEq(
       spoke2.getUserRiskPremium(bob),
-      spoke2.getLiquidityPremium(_daiReserveId(spoke2)),
+      _getLiquidityPremium(spoke2, _daiReserveId(spoke2)),
       'Bob user rp after borrow'
     );
     assertEq(
@@ -573,7 +573,7 @@ contract SpokeRiskPremiumEdgeCasesTest is SpokeBase {
     // Now Bob's RP should be greater than LP of dai, since debt is not fully covered by it
     assertGt(
       spoke2.getUserRiskPremium(bob),
-      spoke2.getLiquidityPremium(_daiReserveId(spoke2)),
+      _getLiquidityPremium(spoke2, _daiReserveId(spoke2)),
       'Bob user risk premium after collateral accrual'
     );
 
@@ -638,7 +638,7 @@ contract SpokeRiskPremiumEdgeCasesTest is SpokeBase {
     );
     assertEq(
       spoke2.getUserRiskPremium(bob),
-      spoke2.getLiquidityPremium(_daiReserveId(spoke2)),
+      _getLiquidityPremium(spoke2, _daiReserveId(spoke2)),
       'Bob user rp after borrow'
     );
     assertEq(
@@ -669,7 +669,7 @@ contract SpokeRiskPremiumEdgeCasesTest is SpokeBase {
     // So now risk premium has increased or remained same
     assertGe(
       spoke2.getUserRiskPremium(bob),
-      spoke2.getLiquidityPremium(_daiReserveId(spoke2)),
+      _getLiquidityPremium(spoke2, _daiReserveId(spoke2)),
       'Bob user risk premium after borrowing more'
     );
 
@@ -733,7 +733,7 @@ contract SpokeRiskPremiumEdgeCasesTest is SpokeBase {
     );
     assertEq(
       spoke1.getUserRiskPremium(bob),
-      spoke1.getLiquidityPremium(_wethReserveId(spoke1)),
+      _getLiquidityPremium(spoke1, _wethReserveId(spoke1)),
       'Bob user rp after borrow matches weth lp'
     );
     assertEq(
@@ -754,7 +754,7 @@ contract SpokeRiskPremiumEdgeCasesTest is SpokeBase {
     // Now risk premium should be less than or equal to LP of weth
     assertLe(
       spoke1.getUserRiskPremium(bob),
-      spoke1.getLiquidityPremium(_wethReserveId(spoke1)),
+      _getLiquidityPremium(spoke1, _wethReserveId(spoke1)),
       'Bob user risk premium after supplying lower LP collateral'
     );
     assertEq(
@@ -767,7 +767,7 @@ contract SpokeRiskPremiumEdgeCasesTest is SpokeBase {
   /// Initially debt is covered by 2 collaterals, then due to price change, debt is covered by 1 collateral
   function test_riskPremium_priceChangeReducesRP(uint256 daiSupplyAmount, uint256 newPrice) public {
     daiSupplyAmount = bound(daiSupplyAmount, 1e18, MAX_SUPPLY_AMOUNT);
-    uint256 startingPrice = spoke2.getReservePrice(_daiReserveId(spoke2));
+    uint256 startingPrice = oracle.getAssetPrice(daiAssetId);
     newPrice = bound(newPrice, startingPrice + 1, 1e16);
 
     // Supply dai and dai2 collaterals to cover weth debt. Dai increases in price to fully cover weth debt
@@ -813,7 +813,7 @@ contract SpokeRiskPremiumEdgeCasesTest is SpokeBase {
     );
     assertGe(
       spoke2.getUserRiskPremium(bob),
-      spoke2.getLiquidityPremium(_daiReserveId(spoke2)),
+      _getLiquidityPremium(spoke2, _daiReserveId(spoke2)),
       'Bob user rp greater than or equal dai lp'
     );
     assertEq(
@@ -833,7 +833,7 @@ contract SpokeRiskPremiumEdgeCasesTest is SpokeBase {
     );
     assertEq(
       spoke2.getUserRiskPremium(bob),
-      spoke2.getLiquidityPremium(_daiReserveId(spoke2)),
+      _getLiquidityPremium(spoke2, _daiReserveId(spoke2)),
       'Bob user risk premium matches dai lp after price change'
     );
     assertEq(

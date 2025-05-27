@@ -88,55 +88,54 @@ library LiquidationLogic {
   /**
    * @notice Calculates the maximum amount of collateral that can be liquidated.
    * @param params LiquidationCallLocalVars params struct.
+   * @param actualDebtToLiquidate The actual amount of debt to liquidate.
    * @return The maximum collateral amount that can be liquidated.
    * @return The corresponding debt amount to liquidate.
    * @return The protocol liquidation fee amount.
    */
   function calculateAvailableCollateralToLiquidate(
-    DataTypes.LiquidationCallLocalVars memory params
+    DataTypes.LiquidationCallLocalVars memory params,
+    uint256 actualDebtToLiquidate
   ) internal pure returns (uint256, uint256, uint256) {
-    DataTypes.CalculateAvailableCollateralToLiquidateLocalVars memory vars;
-
     // convert existing collateral to base currency
-    vars.userCollateralBalanceInBaseCurrency =
-      (params.userCollateralBalance * params.collateralAssetPrice).wadify() /
-      params.collateralAssetUnit;
+    uint256 userCollateralBalanceInBaseCurrency = (params.userCollateralBalance *
+      params.collateralAssetPrice).wadify() / params.collateralAssetUnit;
 
     // find collateral in base currency that corresponds to the debt to cover
-    vars.baseCollateral =
-      (params.actualDebtToLiquidate * params.debtAssetPrice).wadify() /
+    uint256 baseCollateral = (actualDebtToLiquidate * params.debtAssetPrice).wadify() /
       params.debtAssetUnit;
 
     // account for additional collateral required due to liquidation bonus
-    vars.maxCollateralToLiquidate = vars.baseCollateral.percentMulDown(params.liquidationBonus);
+    uint256 maxCollateralToLiquidate = baseCollateral.percentMulDown(params.liquidationBonus);
 
-    if (vars.maxCollateralToLiquidate >= vars.userCollateralBalanceInBaseCurrency) {
-      vars.collateralAmount = params.userCollateralBalance;
-      vars.debtAmountNeeded = ((params.debtAssetUnit * vars.userCollateralBalanceInBaseCurrency)
+    uint256 collateralAmount;
+    uint256 debtAmountNeeded;
+    if (maxCollateralToLiquidate >= userCollateralBalanceInBaseCurrency) {
+      collateralAmount = params.userCollateralBalance;
+      debtAmountNeeded = ((params.debtAssetUnit * userCollateralBalanceInBaseCurrency)
         .percentDivDown(params.liquidationBonus) / params.debtAssetPrice).dewadify();
     } else {
       // add 1 to round collateral amount up, ensuring HF is always <= close factor
-      vars.collateralAmount =
-        ((vars.maxCollateralToLiquidate * params.collateralAssetUnit) / params.collateralAssetPrice)
+      collateralAmount =
+        ((maxCollateralToLiquidate * params.collateralAssetUnit) / params.collateralAssetPrice)
           .dewadify() +
         1;
-      vars.debtAmountNeeded = params.actualDebtToLiquidate;
+      debtAmountNeeded = actualDebtToLiquidate;
     }
 
-    if (params.liquidationProtocolFeePercentage != 0) {
-      vars.bonusCollateral =
-        vars.collateralAmount -
-        vars.collateralAmount.percentDivUp(params.liquidationBonus);
-      vars.liquidationProtocolFeeAmount = vars.bonusCollateral.percentMulUp(
-        params.liquidationProtocolFeePercentage
+    if (params.liquidationProtocolFee != 0) {
+      uint256 bonusCollateral = collateralAmount -
+        collateralAmount.percentDivUp(params.liquidationBonus);
+      uint256 liquidationProtocolFeeAmount = bonusCollateral.percentMulUp(
+        params.liquidationProtocolFee
       );
       return (
-        vars.collateralAmount - vars.liquidationProtocolFeeAmount,
-        vars.debtAmountNeeded,
-        vars.liquidationProtocolFeeAmount
+        collateralAmount - liquidationProtocolFeeAmount,
+        debtAmountNeeded,
+        liquidationProtocolFeeAmount
       );
     } else {
-      return (vars.collateralAmount, vars.debtAmountNeeded, 0);
+      return (collateralAmount, debtAmountNeeded, 0);
     }
   }
 }

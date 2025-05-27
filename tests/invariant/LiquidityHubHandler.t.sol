@@ -62,7 +62,7 @@ contract LiquidityHubHandler is Test {
         collateralFactor: 0,
         liquidationBonus: 100_00,
         liquidityPremium: 0,
-        liquidationProtocolFeePercentage: 0,
+        liquidationProtocolFee: 0,
         borrowable: false,
         collateral: false
       })

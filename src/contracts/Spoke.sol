@@ -29,7 +29,7 @@ contract Spoke is ISpoke, Multicall {
   using LiquidationLogic for DataTypes.LiquidationCallLocalVars;
 
   uint256 public constant HEALTH_FACTOR_LIQUIDATION_THRESHOLD = WadRayMathExtended.WAD;
-  uint256 public constant MAX_LIQUIDITY_PREMIUM = PercentageMathExtended.PERCENTAGE_FACTOR * 10;
+  uint256 public constant MAX_LIQUIDITY_PREMIUM = 1000_00; // 1000.00%
   ILiquidityHub public immutable HUB;
   IPriceOracle public immutable oracle;
 
@@ -90,7 +90,7 @@ contract Spoke is ISpoke, Multicall {
         collateralFactor: config.collateralFactor,
         liquidationBonus: config.liquidationBonus,
         liquidityPremium: config.liquidityPremium,
-        liquidationProtocolFeePercentage: config.liquidationProtocolFeePercentage,
+        liquidationProtocolFee: config.liquidationProtocolFee,
         borrowable: config.borrowable,
         collateral: config.collateral
       })
@@ -118,7 +118,7 @@ contract Spoke is ISpoke, Multicall {
       collateralFactor: config.collateralFactor,
       liquidationBonus: config.liquidationBonus,
       liquidityPremium: config.liquidityPremium,
-      liquidationProtocolFeePercentage: config.liquidationProtocolFeePercentage,
+      liquidationProtocolFee: config.liquidationProtocolFee,
       borrowable: config.borrowable,
       collateral: config.collateral
     });
@@ -474,17 +474,6 @@ contract Spoke is ISpoke, Multicall {
     (, , uint256 healthFactor, , ) = _calculateUserAccountData(user);
     return healthFactor;
   }
-  function getReservePrice(uint256 reserveId) public view returns (uint256) {
-    return oracle.getAssetPrice(_reserves[reserveId].assetId);
-  }
-
-  function getLiquidityPremium(uint256 reserveId) public view returns (uint256) {
-    return _reserves[reserveId].config.liquidityPremium;
-  }
-
-  function getCollateralFactor(uint256 reserveId) public view returns (uint256) {
-    return _reserves[reserveId].config.collateralFactor;
-  }
 
   function getVariableLiquidationBonus(
     uint256 reserveId,
@@ -525,7 +514,7 @@ contract Spoke is ISpoke, Multicall {
   }
 
   // public
-  function getReserve(uint256 reserveId) public view returns (DataTypes.Reserve memory) {
+  function getReserve(uint256 reserveId) external view returns (DataTypes.Reserve memory) {
     return _reserves[reserveId];
   }
 
@@ -594,19 +583,17 @@ contract Spoke is ISpoke, Multicall {
     require(config.liquidityPremium <= MAX_LIQUIDITY_PREMIUM, InvalidLiquidityPremium()); // max 1000.00%
     require(config.decimals <= HUB.MAX_ALLOWED_ASSET_DECIMALS(), InvalidReserveDecimals());
     require(
-      config.liquidationProtocolFeePercentage <= PercentageMathExtended.PERCENTAGE_FACTOR,
-      InvalidLiquidationProtocolFeePercentage()
+      config.liquidationProtocolFee <= PercentageMathExtended.PERCENTAGE_FACTOR,
+      InvalidliquidationProtocolFee()
     );
   }
 
   function _validateLiquidationConfig(DataTypes.LiquidationConfig calldata config) internal pure {
     _validateCloseFactor(config.closeFactor);
-    // if liquidationBonusFactor == 0, then variable liquidation bonus will not be applied
     require(
       config.liquidationBonusFactor <= PercentageMathExtended.PERCENTAGE_FACTOR,
       InvalidLiquidationBonusFactor()
     );
-    // if healthFactorBonusThreshold == HEALTH_FACTOR_LIQUIDATION_THRESHOLD, then calculate will be undefined
     require(
       config.healthFactorBonusThreshold < HEALTH_FACTOR_LIQUIDATION_THRESHOLD,
       InvalidHealthFactorBonusThreshold()
@@ -635,7 +622,7 @@ contract Spoke is ISpoke, Multicall {
     require(!collateralReserve.config.paused && !debtReserve.config.paused, ReservePaused());
     require(healthFactor < HEALTH_FACTOR_LIQUIDATION_THRESHOLD, HealthFactorNotBelowThreshold());
     bool isCollateralEnabled = _usingAsCollateral(_userPositions[user][collateralReserveId]) &&
-      getCollateralFactor(collateralReserveId) != 0;
+      collateralReserve.config.collateralFactor != 0;
     require(isCollateralEnabled, CollateralCannotBeLiquidated());
     require(totalDebt > 0, SpecifiedCurrencyNotBorrowedByUser());
   }
@@ -1081,6 +1068,7 @@ contract Spoke is ISpoke, Multicall {
       userCollateralPosition.suppliedShares = vars.newUserSuppliedShares;
       vars.totalWithdrawnShares += vars.withdrawnShares;
 
+      // TODO: not compulsory, decide whether to rm
       if (vars.newUserSuppliedShares == 0) {
         _setUsingAsCollateral(collateralReserveId, users[vars.i], false);
       }
@@ -1139,7 +1127,7 @@ contract Spoke is ISpoke, Multicall {
       }
     }
 
-    // rm when dupe reserve accounting is rm
+    // TODO: rm when dupe reserve accounting is rm
     debtReserve.baseDrawnShares -= vars.totalRestoredShares;
     collateralReserve.suppliedShares -= vars.totalWithdrawnShares;
 
@@ -1220,9 +1208,7 @@ contract Spoke is ISpoke, Multicall {
     vars.collateralFactor = collateralReserve.config.collateralFactor;
     vars.collateralAssetPrice = oracle.getAssetPrice(collateralReserve.assetId);
     vars.collateralAssetUnit = 10 ** collateralReserve.config.decimals;
-    vars.liquidationProtocolFeePercentage = collateralReserve
-      .config
-      .liquidationProtocolFeePercentage;
+    vars.liquidationProtocolFee = collateralReserve.config.liquidationProtocolFee;
 
     vars.actualDebtToLiquidate = LiquidationLogic.calculateActualDebtToLiquidate({
       debtToCover: debtToCover,
@@ -1233,7 +1219,7 @@ contract Spoke is ISpoke, Multicall {
       vars.actualCollateralToLiquidate,
       vars.actualDebtToLiquidate,
       vars.liquidationProtocolFeeAmount
-    ) = vars.calculateAvailableCollateralToLiquidate();
+    ) = vars.calculateAvailableCollateralToLiquidate(vars.actualDebtToLiquidate);
 
     (vars.baseDebtToLiquidate, vars.premiumDebtToLiquidate) = _calculateRestoreAmount(
       baseDebt,

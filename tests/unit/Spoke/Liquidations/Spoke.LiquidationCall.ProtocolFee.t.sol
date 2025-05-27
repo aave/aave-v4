@@ -7,7 +7,7 @@ contract LiquidationCallProtocolFeeTest is SpokeLiquidationBase {
   using PercentageMathExtended for uint256;
   using WadRayMathExtended for uint256;
 
-  /// fuzz tests with varying liquidationProtocolFeePercentage
+  /// fuzz tests with varying liquidationProtocolFee
   /// single debt reserve, single collateral reserve
   /// user health factor position varies across possible desiredHf values
   /// close factor = 1e18
@@ -18,7 +18,7 @@ contract LiquidationCallProtocolFeeTest is SpokeLiquidationBase {
     uint256 liqBonus,
     uint256 supplyAmount,
     uint256 desiredHf,
-    uint256 liquidationProtocolFeePercentage,
+    uint256 liquidationProtocolFee,
     uint256 skipTime
   ) public returns (LiquidationTestLocalParams memory) {
     collateralReserveId = bound(collateralReserveId, 0, spoke1.reserveCount() - 1);
@@ -31,7 +31,7 @@ contract LiquidationCallProtocolFeeTest is SpokeLiquidationBase {
       desiredHf,
       collateralReserveId,
       debtReserveId,
-      liquidationProtocolFeePercentage,
+      liquidationProtocolFee,
       skipTime
     );
     _checkLiquidation(state, spoke1, 'test_liquidationCall_fuzz_protocolFee');
@@ -51,7 +51,7 @@ contract LiquidationCallProtocolFeeTest is SpokeLiquidationBase {
       liqBonus: 105_00,
       supplyAmount: 10e18,
       desiredHf: 0.95e18,
-      liquidationProtocolFeePercentage: 12_00,
+      liquidationProtocolFee: 12_00,
       skipTime: 365 days
     });
   }
@@ -69,7 +69,7 @@ contract LiquidationCallProtocolFeeTest is SpokeLiquidationBase {
       liqBonus: 105_00,
       supplyAmount: 10e18,
       desiredHf: 0.95e18,
-      liquidationProtocolFeePercentage: 12_00,
+      liquidationProtocolFee: 12_00,
       skipTime: 365 days
     });
   }
@@ -87,7 +87,7 @@ contract LiquidationCallProtocolFeeTest is SpokeLiquidationBase {
       liqBonus: 105_00,
       supplyAmount: 10_000e6,
       desiredHf: 0.95e18,
-      liquidationProtocolFeePercentage: 12_00,
+      liquidationProtocolFee: 12_00,
       skipTime: 365 days
     });
   }
@@ -105,7 +105,7 @@ contract LiquidationCallProtocolFeeTest is SpokeLiquidationBase {
       liqBonus: 105_00,
       supplyAmount: 10_000e6,
       desiredHf: 0.95e18,
-      liquidationProtocolFeePercentage: 12_00,
+      liquidationProtocolFee: 12_00,
       skipTime: 365 days
     });
   }
@@ -123,7 +123,7 @@ contract LiquidationCallProtocolFeeTest is SpokeLiquidationBase {
       liqBonus: 105_00,
       supplyAmount: 10_000e18,
       desiredHf: 0.95e18,
-      liquidationProtocolFeePercentage: 12_00,
+      liquidationProtocolFee: 12_00,
       skipTime: 365 days
     });
   }
@@ -141,14 +141,14 @@ contract LiquidationCallProtocolFeeTest is SpokeLiquidationBase {
       liqBonus: 105_00,
       supplyAmount: 10_000e18,
       desiredHf: 0.95e18,
-      liquidationProtocolFeePercentage: 12_00,
+      liquidationProtocolFee: 12_00,
       skipTime: 365 days
     });
   }
 
   /// with 0 liquidation bonus, the protocol fee should also be 0
   function test_liquidationCall_fuzz_protocolFee_liqBonus_zero(
-    uint256 liquidationProtocolFeePercentage
+    uint256 liquidationProtocolFee
   ) public {
     LiquidationTestLocalParams memory state = test_liquidationCall_fuzz_protocolFee({
       collateralReserveId: _daiReserveId(spoke1),
@@ -161,7 +161,7 @@ contract LiquidationCallProtocolFeeTest is SpokeLiquidationBase {
       liqBonus: 100_00, // 0% LB
       supplyAmount: 10_000e18,
       desiredHf: 0.95e18,
-      liquidationProtocolFeePercentage: liquidationProtocolFeePercentage,
+      liquidationProtocolFee: liquidationProtocolFee,
       skipTime: 365 days
     });
 

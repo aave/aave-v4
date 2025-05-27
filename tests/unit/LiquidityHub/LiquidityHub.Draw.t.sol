@@ -345,7 +345,7 @@ contract LiquidityHubDrawTest is LiquidityHubBase {
   function test_draw_revertsWith_DrawCapExceeded_due_to_interest() public {
     // Set liquidity premium of dai to 0
     updateLiquidityPremium(spoke1, _daiReserveId(spoke1), 0);
-    assertEq(spoke1.getLiquidityPremium(_daiReserveId(spoke1)), 0);
+    assertEq(_getLiquidityPremium(spoke1, _daiReserveId(spoke1)), 0);
 
     uint256 daiAmount = 100e18;
     uint256 drawCap = daiAmount;
