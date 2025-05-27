@@ -6,18 +6,12 @@ import 'tests/unit/Spoke/SpokeBase.t.sol';
 contract SpokeConfigTest is SpokeBase {
   function test_spoke_deploy_revertsWith_InvalidHubAddress() public {
     vm.expectRevert(ISpoke.InvalidHubAddress.selector);
-    new Spoke(address(0), address(oracle), HEALTH_FACTOR_LIQUIDATION_THRESHOLD);
-  }
-
-  function test_spoke_deploy_revertsWith_InvalidCloseFactor() public {
-    uint256 invalidCloseFactor = HEALTH_FACTOR_LIQUIDATION_THRESHOLD - 1;
-    vm.expectRevert(ISpoke.InvalidCloseFactor.selector);
-    new Spoke(address(hub), address(oracle), invalidCloseFactor);
+    new Spoke(address(0), address(oracle));
   }
 
   function test_spoke_deploy_revertsWith_InvalidOracleAddress() public {
     vm.expectRevert(ISpoke.InvalidOracleAddress.selector);
-    new Spoke(address(hub), address(0), HEALTH_FACTOR_LIQUIDATION_THRESHOLD);
+    new Spoke(address(hub), address(0));
   }
 
   function test_updateReserveConfig() public {

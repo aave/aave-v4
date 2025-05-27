@@ -40,14 +40,12 @@ contract Spoke is ISpoke, Multicall {
   uint256[] public reservesList; // todo: rm, not needed
   uint256 public reserveCount;
 
-  constructor(address hubAddress, address oracleAddress, uint256 closeFactor) {
+  constructor(address hubAddress, address oracleAddress) {
     require(hubAddress != address(0), InvalidHubAddress());
     require(oracleAddress != address(0), InvalidOracleAddress());
-    // close factor is required, but variable liquidation bonus config is not
-    _validateCloseFactor(closeFactor);
 
     HUB = ILiquidityHub(hubAddress);
-    _liquidationConfig.closeFactor = closeFactor;
+    _liquidationConfig.closeFactor = HEALTH_FACTOR_LIQUIDATION_THRESHOLD;
     oracle = IPriceOracle(oracleAddress);
   }
 
