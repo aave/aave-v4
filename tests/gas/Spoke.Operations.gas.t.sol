@@ -105,12 +105,12 @@ contract SpokeOperations_Gas_Tests is Base {
 
     spoke1.borrow(spokeInfo[spoke1].dai.reserveId, 500e18, alice);
 
-    spoke1.updateUserRiskPremium(spokeInfo[spoke1].dai.reserveId, alice);
+    spoke1.updateUserRiskPremium(alice);
     vm.snapshotGasLastCall('Spoke.Operations', 'updateUserRiskPremium');
 
     spoke1.borrow(spokeInfo[spoke1].usdx.reserveId, 500e6, alice);
 
-    spoke1.updateUserRiskPremium(spokeInfo[spoke1].dai.reserveId, alice);
+    spoke1.updateUserRiskPremium(alice);
     vm.snapshotGasLastCall('Spoke.Operations', 'updateUserRiskPremium: 2 debts');
     vm.stopPrank();
   }

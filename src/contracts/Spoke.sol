@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.0;
 
-import {Multicall} from 'src/dependencies/openzeppelin/Multicall.sol';
+import {Multicall} from 'src/misc/Multicall.sol';
 
 import {SafeERC20} from 'src/dependencies/openzeppelin/SafeERC20.sol';
 import {IERC20} from 'src/dependencies/openzeppelin/IERC20.sol';
@@ -97,6 +97,7 @@ contract Spoke is ISpoke, Multicall {
     });
 
     emit ReserveAdded(reserveId, assetId);
+    emit ReserveConfigUpdated(reserveId, config);
 
     return reserveId;
   }
@@ -352,62 +353,18 @@ contract Spoke is ISpoke, Multicall {
     );
   }
 
+  /// @inheritdoc ISpoke
   function setUsingAsCollateral(uint256 reserveId, bool usingAsCollateral) external {
     _setUsingAsCollateral(reserveId, msg.sender, usingAsCollateral);
   }
 
-  /// @dev Must be called on a reserve user is already borrowing
-  /// @dev If not called by position owner or DAO, reverts if user risk premium increases
-  function updateUserRiskPremium(uint256 reserveId, address user) external {
-    DataTypes.Reserve storage reserve = _reserves[reserveId];
-    DataTypes.UserPosition storage userPosition = _userPositions[user][reserveId];
-    require(_isBorrowing(userPosition), UserNotBorrowingReserve(reserveId));
-    uint256 assetId = reserve.assetId;
-
-    uint256 userPremiumDrawnShares = userPosition.premiumDrawnShares;
-    uint256 userPremiumOffset = userPosition.premiumOffset;
-    uint256 accruedPremium = HUB.convertToDrawnAssets(assetId, userPremiumDrawnShares) -
-      userPremiumOffset; // assets(premiumShares) - offset should never be < 0
-    userPosition.premiumDrawnShares = 0;
-    userPosition.premiumOffset = 0;
-    userPosition.realizedPremium += accruedPremium;
-
-    _refreshPremiumDebt(
-      reserve,
-      user,
-      assetId,
-      -int256(userPremiumDrawnShares),
-      -int256(userPremiumOffset),
-      int256(accruedPremium)
-    );
-
-    uint256 newUserRiskPremium = _validateUserPosition(user); // validates HF
-
-    uint256 newUserPremiumDrawnShares = userPosition.premiumDrawnShares = userPosition
-      .baseDrawnShares
-      .percentMul(newUserRiskPremium);
-    // TODO: With access control, also allow DAO to update user risk premium in case of increase
-    // Check new premium drawn shares as proxy for user risk premium
-    require(
-      msg.sender == user || newUserPremiumDrawnShares < userPremiumDrawnShares,
-      NoUserRiskPremiumDecrease()
-    );
-    userPremiumOffset = userPosition.premiumOffset = HUB.previewOffset(
-      assetId,
-      userPosition.premiumDrawnShares
-    );
-
-    _refreshPremiumDebt(
-      reserve,
-      user,
-      assetId,
-      int256(newUserPremiumDrawnShares),
-      int256(userPremiumOffset),
-      0
-    );
-    _notifyRiskPremiumUpdate(assetId, user, newUserRiskPremium);
-
-    emit UserRiskPremiumUpdate(user, newUserRiskPremium);
+  /// @inheritdoc ISpoke
+  function updateUserRiskPremium(address user) external {
+    (uint256 userRiskPremium, , , , ) = _calculateUserAccountData(user);
+    bool premiumIncrease = _notifyRiskPremiumUpdate(type(uint256).max, user, userRiskPremium);
+    // todo allow authorized caller to increase as well
+    require(msg.sender == user || !premiumIncrease, Unauthorized());
+    emit UserRiskPremiumUpdate(user, userRiskPremium);
   }
 
   function getUsingAsCollateral(uint256 reserveId, address user) external view returns (bool) {
@@ -925,7 +882,8 @@ contract Spoke is ISpoke, Multicall {
     uint256 assetIdToAvoid,
     address userAddress,
     uint256 newUserRiskPremium
-  ) internal {
+  ) internal returns (bool) {
+    bool premiumIncrease;
     uint256 reserveCount_ = reserveCount;
     uint256 reserveId;
     while (reserveId < reserveCount_) {
@@ -945,11 +903,17 @@ contract Spoke is ISpoke, Multicall {
         userPosition.premiumOffset = HUB.previewOffset(assetId, userPosition.premiumDrawnShares);
         userPosition.realizedPremium += accruedUserPremium;
 
+        int256 premiumDrawnSharesDelta = _signedDiff(
+          userPosition.premiumDrawnShares,
+          oldUserPremiumDrawnShares
+        );
+        if (!premiumIncrease) premiumIncrease = premiumDrawnSharesDelta > 0;
+
         _refreshPremiumDebt(
           reserve,
           userAddress,
           assetId,
-          _signedDiff(userPosition.premiumDrawnShares, oldUserPremiumDrawnShares),
+          premiumDrawnSharesDelta,
           _signedDiff(userPosition.premiumOffset, oldUserPremiumOffset),
           int256(accruedUserPremium)
         );
@@ -958,6 +922,7 @@ contract Spoke is ISpoke, Multicall {
         ++reserveId;
       }
     }
+    return premiumIncrease;
   }
 
   /// @return collateralAsset The address of the underlying asset used as collateral, to receive as result of the liquidation.

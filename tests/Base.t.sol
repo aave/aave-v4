@@ -239,10 +239,6 @@ abstract contract Base is Test {
   }
 
   function configureTokenList() internal {
-    address[] memory spokes = new address[](3);
-    spokes[0] = address(spoke1);
-    spokes[1] = address(spoke2);
-    spokes[2] = address(spoke3);
     DataTypes.SpokeConfig memory spokeConfig = DataTypes.SpokeConfig({
       supplyCap: type(uint256).max,
       drawCap: type(uint256).max
@@ -854,6 +850,11 @@ abstract contract Base is Test {
     return price.percentMul(percent);
   }
 
+  function setNewPrice(uint256 assetId, uint256 percent) public {
+    uint256 newPrice = calcNewPrice(oracle.getAssetPrice(assetId), percent);
+    oracle.setAssetPrice(assetId, newPrice);
+  }
+
   /// @dev Helper function to calculate asset amount corresponding to single drawn share
   function minimumAssetsPerDrawnShare(uint256 assetId) internal view returns (uint256) {
     return hub.convertToDrawnAssets(assetId, 1);
@@ -1138,6 +1139,16 @@ abstract contract Base is Test {
   function getAssetBaseDebt(uint256 assetId) internal view returns (uint256) {
     (uint256 baseDebt, ) = hub.getAssetDebt(assetId);
     return baseDebt;
+  }
+
+  function _assumeValidSupplier(address user) internal {
+    vm.assume(
+      user != address(0) &&
+        user != address(hub) &&
+        user != address(spoke1) &&
+        user != address(spoke2) &&
+        user != address(spoke3)
+    );
   }
 
   function _getLiquidityPremium(ISpoke spoke, uint256 reserveId) internal view returns (uint256) {
