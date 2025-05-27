@@ -12,7 +12,7 @@ import {DataTypes} from 'src/libraries/types/DataTypes.sol';
 interface ILiquidityHub {
   event SpokeAdded(uint256 indexed assetId, address indexed spoke);
   event AssetAdded(uint256 indexed assetId, address indexed asset);
-  event AssetConfigUpdated(uint256 indexed assetId);
+  event AssetConfigUpdated(uint256 indexed assetId, DataTypes.AssetConfig config);
   event SpokeConfigUpdated(
     uint256 indexed assetId,
     address indexed spoke,

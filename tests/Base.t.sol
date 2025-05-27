@@ -878,4 +878,14 @@ abstract contract Base is Test {
     (uint256 baseDebt, ) = hub.getAssetDebt(assetId);
     return baseDebt;
   }
+
+  function _assumeValidSupplier(address user) internal {
+    vm.assume(
+      user != address(0) &&
+        user != address(hub) &&
+        user != address(spoke1) &&
+        user != address(spoke2) &&
+        user != address(spoke3)
+    );
+  }
 }

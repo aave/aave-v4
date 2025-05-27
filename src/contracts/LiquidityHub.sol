@@ -56,7 +56,8 @@ contract LiquidityHub is ILiquidityHub {
       })
     });
 
-    emit AssetAdded(assetId++, asset);
+    emit AssetAdded(assetId, asset);
+    emit AssetConfigUpdated(assetId, config);
   }
 
   function updateAssetConfig(uint256 assetId, DataTypes.AssetConfig calldata config) external {
@@ -71,7 +72,7 @@ contract LiquidityHub is ILiquidityHub {
       irStrategy: config.irStrategy
     });
 
-    emit AssetConfigUpdated(assetId);
+    emit AssetConfigUpdated(assetId, config);
   }
 
   function addSpoke(uint256 assetId, DataTypes.SpokeConfig memory config, address spoke) external {

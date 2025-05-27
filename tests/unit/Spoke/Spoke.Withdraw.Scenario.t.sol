@@ -306,7 +306,7 @@ contract SpokeWithdrawScenarioTest is SpokeBase {
     address caller,
     uint256 assets
   ) public {
-    vm.assume(caller != address(0) && caller != address(hub));
+    _assumeValidSupplier(caller);
     reserveId = bound(reserveId, 0, spoke1.reserveCount() - 1);
     protocolStartingBalance = bound(protocolStartingBalance, 1, MAX_SUPPLY_AMOUNT - 1); // Allow some buffer from supply cap
     assets = bound(assets, 1, MAX_SUPPLY_AMOUNT - protocolStartingBalance);
@@ -353,7 +353,7 @@ contract SpokeWithdrawScenarioTest is SpokeBase {
     address caller,
     uint256 assets
   ) public {
-    vm.assume(caller != address(0) && caller != address(hub));
+    _assumeValidSupplier(caller);
     reserveId = bound(reserveId, 0, spoke1.reserveCount() - 1);
     protocolStartingBalance = bound(protocolStartingBalance, 1, MAX_SUPPLY_AMOUNT - 1); // Allow some buffer from supply cap
     assets = bound(assets, 1, MAX_SUPPLY_AMOUNT - protocolStartingBalance);
