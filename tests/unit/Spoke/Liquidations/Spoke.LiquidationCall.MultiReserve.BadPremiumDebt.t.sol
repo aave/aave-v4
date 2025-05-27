@@ -307,8 +307,8 @@ contract LiquidationCallMultiReserveBadPremiumDebtTest is SpokeLiquidationBase {
 
     vm.expectEmit(address(hub));
     emit ILiquidityHub.DeficitCreated(
-      address(state.spoke),
       state.debtReserves[state.debtReserveIndex].assetId,
+      address(state.spoke),
       state.totalDebt.balanceBefore - state.debtToLiq // outstanding debt which becomes bad debt reported as deficit
     );
 
@@ -318,8 +318,8 @@ contract LiquidationCallMultiReserveBadPremiumDebtTest is SpokeLiquidationBase {
       if (debtReserveIds[i] != state.debtReserves[state.debtReserveIndex].reserveId) {
         vm.expectEmit(address(hub));
         emit ILiquidityHub.DeficitCreated(
-          address(state.spoke),
           state.debtReserves[i].assetId,
+          address(state.spoke),
           state.spoke.getUserTotalDebt(debtReserveIds[i], alice)
         );
       }

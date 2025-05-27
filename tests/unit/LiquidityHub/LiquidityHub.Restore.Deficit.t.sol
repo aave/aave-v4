@@ -287,7 +287,7 @@ contract LiquidityHubRestoreDeficitTest is LiquidityHubBase {
     params.balanceBefore = hub.assetsList(usdxAssetId).balanceOf(address(spoke1));
 
     vm.expectEmit(address(hub));
-    emit ILiquidityHub.DeficitCreated(address(spoke1), usdxAssetId, deficitAmountRestored);
+    emit ILiquidityHub.DeficitCreated(usdxAssetId, address(spoke1), deficitAmountRestored);
 
     // Restore with deficit
     vm.prank(address(spoke1));
@@ -365,7 +365,7 @@ contract LiquidityHubRestoreDeficitTest is LiquidityHubBase {
     params.balanceBefore = hub.assetsList(usdxAssetId).balanceOf(address(spoke1));
 
     vm.expectEmit(address(hub));
-    emit ILiquidityHub.DeficitCreated(address(spoke1), usdxAssetId, deficitAmountRestored);
+    emit ILiquidityHub.DeficitCreated(usdxAssetId, address(spoke1), deficitAmountRestored);
 
     // Restore with deficit
     vm.prank(address(spoke1));

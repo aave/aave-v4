@@ -396,8 +396,8 @@ contract LiquidationCallBadDebtTest is SpokeLiquidationBase {
 
     vm.expectEmit(address(hub));
     emit ILiquidityHub.DeficitCreated(
-      address(state.spoke),
       state.debtReserves[state.debtReserveIndex].assetId,
+      address(state.spoke),
       state.totalDebt.balanceBefore - state.debtToLiq // outstanding debt which becomes bad debt reported as deficit
     );
     vm.expectEmit(address(state.spoke));

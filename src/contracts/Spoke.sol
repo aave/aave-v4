@@ -1215,7 +1215,7 @@ contract Spoke is ISpoke, Multicall {
     );
   }
 
-  // TODO: opt by merging with
+  // TODO: opt by merging with _notifyRiskPremiumUpdate
   /** @dev Settle deficit accounting for user's remaining debt assets except for
    * `reserveIdToAvoid` as that is expected to be handled in liquidation.
    */

@@ -221,7 +221,7 @@ contract LiquidityHub is ILiquidityHub {
 
     emit Restore(assetId, msg.sender, baseDrawnSharesRestored, totalRestoredAmount);
     if (deficitAmount > 0) {
-      emit DeficitCreated(msg.sender, assetId, deficitAmount);
+      emit DeficitCreated(assetId, msg.sender, deficitAmount);
     }
 
     return baseDrawnSharesRestored;
