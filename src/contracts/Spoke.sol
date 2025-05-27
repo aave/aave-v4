@@ -520,14 +520,6 @@ contract Spoke is ISpoke, Multicall {
     return (amount - premiumDebt, premiumDebt);
   }
 
-  function _executeUserRiskPremiumUpdate(address user) internal {
-    (uint256 userRiskPremium, , , , ) = _calculateUserAccountData(user);
-    bool premiumIncrease = _notifyRiskPremiumUpdate(type(uint256).max, user, userRiskPremium);
-    // todo allow authorized caller to increase as well
-    require(msg.sender == user || !premiumIncrease, Unauthorized());
-    emit UserRiskPremiumUpdate(user, userRiskPremium);
-  }
-
   function _refreshPremiumDebt(
     DataTypes.Reserve storage reserve,
     address userAddress,
