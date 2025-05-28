@@ -332,13 +332,16 @@ contract Spoke is ISpoke, Multicall {
     uint256[] memory debtsToCover = new uint256[](1);
     debtsToCover[0] = debtToCover;
 
+    DataTypes.Reserve storage collateralReserve = _reserves[collateralReserveId];
+    DataTypes.Reserve storage debtReserve = _reserves[debtReserveId];
+
     (
       address collateralAsset,
       address debtAsset,
       uint256 debtToLiquidate,
       uint256 collateralToLiquidate,
       uint256 liquidationProtocolFeeShares // TODO: emit in event
-    ) = _executeLiquidationCall(collateralReserveId, debtReserveId, users, debtsToCover);
+    ) = _executeLiquidationCall(collateralReserve, debtReserve, users, debtsToCover);
 
     // TODO: emit liq protocol fee shares in event
     emit LiquidationCall(
@@ -929,16 +932,16 @@ contract Spoke is ISpoke, Multicall {
   /// @return collateralToLiquidate The amount of collateral to liquidate.
   /// @return liquidationProtocolFeeAmount The amount of protocol fee.
   function _executeLiquidationCall(
-    uint256 collateralReserveId,
-    uint256 debtReserveId,
+    DataTypes.Reserve storage collateralReserve,
+    DataTypes.Reserve storage debtReserve,
     address[] memory users,
     uint256[] memory debtsToCover
   ) internal returns (address, address, uint256, uint256, uint256) {
     uint256 usersLength = users.length;
     require(usersLength == debtsToCover.length, UsersAndDebtLengthMismatch());
 
-    DataTypes.Reserve storage collateralReserve = _reserves[collateralReserveId];
-    DataTypes.Reserve storage debtReserve = _reserves[debtReserveId];
+    uint256 collateralReserveId = collateralReserve.reserveId;
+    uint256 debtReserveId = debtReserve.reserveId;
 
     DataTypes.ExecuteLiquidationLocalVars memory vars;
 
