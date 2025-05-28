@@ -26,11 +26,11 @@ contract LiquidationCallCloseFactorMultiReserveTest is SpokeLiquidationBase {
       liqConfig: DataTypes.LiquidationConfig({
         closeFactor: 1.5e18,
         liquidationBonusFactor: 0,
-        healthFactorBonusThreshold: 0
+        healthFactorForMaxBonus: 0
       }),
       liqBonus: 105_00,
       supplyAmountInBase: 10_000e26,
-      liquidationProtocolFeePercentage: 5_00,
+      liquidationProtocolFee: 5_00,
       collateralReserveIds: collateralReserveIds,
       debtReserveIds: debtReserveIds,
       collateralReserveIndex: 0,
@@ -59,11 +59,11 @@ contract LiquidationCallCloseFactorMultiReserveTest is SpokeLiquidationBase {
       liqConfig: DataTypes.LiquidationConfig({
         closeFactor: 1.1e18,
         liquidationBonusFactor: 0,
-        healthFactorBonusThreshold: 0
+        healthFactorForMaxBonus: 0
       }),
       liqBonus: 105_00,
       supplyAmountInBase: 10_000e26,
-      liquidationProtocolFeePercentage: 5_00,
+      liquidationProtocolFee: 5_00,
       collateralReserveIds: collateralReserveIds,
       debtReserveIds: debtReserveIds,
       collateralReserveIndex: 0,
@@ -93,11 +93,11 @@ contract LiquidationCallCloseFactorMultiReserveTest is SpokeLiquidationBase {
       liqConfig: DataTypes.LiquidationConfig({
         closeFactor: 1.1e18,
         liquidationBonusFactor: 0,
-        healthFactorBonusThreshold: 0
+        healthFactorForMaxBonus: 0
       }),
       liqBonus: 105_00,
       supplyAmountInBase: 10_000_000e26,
-      liquidationProtocolFeePercentage: 5_00,
+      liquidationProtocolFee: 5_00,
       collateralReserveIds: collateralReserveIds,
       debtReserveIds: debtReserveIds,
       collateralReserveIndex: 0,
@@ -148,7 +148,7 @@ contract LiquidationCallCloseFactorMultiReserveTest is SpokeLiquidationBase {
       liqConfig: liqConfig,
       liqBonus: 105_00,
       supplyAmountInBase: supplyAmountInBase,
-      liquidationProtocolFeePercentage: 5_00,
+      liquidationProtocolFee: 5_00,
       collateralReserveIds: collateralReserveIds,
       debtReserveIds: debtReserveIds,
       collateralReserveIndex: collateralReserveIndex,
@@ -170,7 +170,7 @@ contract LiquidationCallCloseFactorMultiReserveTest is SpokeLiquidationBase {
     uint256[] memory debtReserveIds,
     uint256 collateralReserveIndex,
     uint256 debtReserveIndex,
-    uint256 liquidationProtocolFeePercentage,
+    uint256 liquidationProtocolFee,
     uint256 skipTime,
     uint256 desiredHf
   ) internal returns (LiquidationTestLocalParams memory) {
@@ -193,7 +193,7 @@ contract LiquidationCallCloseFactorMultiReserveTest is SpokeLiquidationBase {
         state.collateralReserves[collateralReserveIndex].config.collateralFactor
       )
     );
-    liquidationProtocolFeePercentage = bound(liquidationProtocolFeePercentage, 0, 100_00);
+    liquidationProtocolFee = bound(liquidationProtocolFee, 0, 100_00);
     supplyAmountInBase = bound(
       supplyAmountInBase,
       dustInBase * state.debtReserves.length, // enough to cover dust for all debt reserves
@@ -201,7 +201,7 @@ contract LiquidationCallCloseFactorMultiReserveTest is SpokeLiquidationBase {
     );
     skipTime = bound(skipTime, 1, MAX_SKIP_TIME);
 
-    state.liquidationProtocolFeePercentage = liquidationProtocolFeePercentage;
+    state.liquidationProtocolFee = liquidationProtocolFee;
 
     state.spoke = spoke1;
     state.user = alice;
@@ -212,10 +212,10 @@ contract LiquidationCallCloseFactorMultiReserveTest is SpokeLiquidationBase {
       state.collateralReserves[collateralReserveIndex].reserveId,
       liqBonus
     );
-    updateLiquidationProtocolFeePercentage(
+    updateLiquidationProtocolFee(
       state.spoke,
       state.collateralReserves[collateralReserveIndex].reserveId,
-      state.liquidationProtocolFeePercentage
+      state.liquidationProtocolFee
     );
 
     for (uint256 i = 0; i < collateralReserveIds.length; i++) {
@@ -313,7 +313,7 @@ contract LiquidationCallCloseFactorMultiReserveTest is SpokeLiquidationBase {
     requiredDebts = new uint256[](reserveIds.length);
 
     // extra debt to ensure HF below desired
-    uint256 requiredDebtInBase = _getRequiredDebtForLtHf(spoke, user, desiredHf);
+    uint256 requiredDebtInBase = _getRequiredDebtInBaseCurrencyForLtHf(spoke, user, desiredHf);
 
     uint256 remaining = requiredDebtInBase;
     // make sure that each reserve has at least dustInBase in debt

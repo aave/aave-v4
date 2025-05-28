@@ -45,7 +45,7 @@ contract LiquidationCallProtocolFeeTest is SpokeLiquidationBase {
       debtReserveId: _daiReserveId(spoke1),
       liqConfig: DataTypes.LiquidationConfig({
         closeFactor: 1e18,
-        healthFactorBonusThreshold: 0.9e18,
+        healthFactorForMaxBonus: 0.9e18,
         liquidationBonusFactor: 70_00
       }),
       liqBonus: 105_00,
@@ -63,7 +63,7 @@ contract LiquidationCallProtocolFeeTest is SpokeLiquidationBase {
       debtReserveId: _usdxReserveId(spoke1),
       liqConfig: DataTypes.LiquidationConfig({
         closeFactor: 1e18,
-        healthFactorBonusThreshold: 0.9e18,
+        healthFactorForMaxBonus: 0.9e18,
         liquidationBonusFactor: 70_00
       }),
       liqBonus: 105_00,
@@ -81,7 +81,7 @@ contract LiquidationCallProtocolFeeTest is SpokeLiquidationBase {
       debtReserveId: _wethReserveId(spoke1),
       liqConfig: DataTypes.LiquidationConfig({
         closeFactor: 1e18,
-        healthFactorBonusThreshold: 0.9e18,
+        healthFactorForMaxBonus: 0.9e18,
         liquidationBonusFactor: 70_00
       }),
       liqBonus: 105_00,
@@ -99,7 +99,7 @@ contract LiquidationCallProtocolFeeTest is SpokeLiquidationBase {
       debtReserveId: _daiReserveId(spoke1),
       liqConfig: DataTypes.LiquidationConfig({
         closeFactor: 1e18,
-        healthFactorBonusThreshold: 0.9e18,
+        healthFactorForMaxBonus: 0.9e18,
         liquidationBonusFactor: 70_00
       }),
       liqBonus: 105_00,
@@ -117,7 +117,7 @@ contract LiquidationCallProtocolFeeTest is SpokeLiquidationBase {
       debtReserveId: _wethReserveId(spoke1),
       liqConfig: DataTypes.LiquidationConfig({
         closeFactor: 1e18,
-        healthFactorBonusThreshold: 0.9e18,
+        healthFactorForMaxBonus: 0.9e18,
         liquidationBonusFactor: 70_00
       }),
       liqBonus: 105_00,
@@ -135,7 +135,7 @@ contract LiquidationCallProtocolFeeTest is SpokeLiquidationBase {
       debtReserveId: _usdxReserveId(spoke1),
       liqConfig: DataTypes.LiquidationConfig({
         closeFactor: 1e18,
-        healthFactorBonusThreshold: 0.9e18,
+        healthFactorForMaxBonus: 0.9e18,
         liquidationBonusFactor: 70_00
       }),
       liqBonus: 105_00,
@@ -155,7 +155,7 @@ contract LiquidationCallProtocolFeeTest is SpokeLiquidationBase {
       debtReserveId: _usdxReserveId(spoke1),
       liqConfig: DataTypes.LiquidationConfig({
         closeFactor: 1e18,
-        healthFactorBonusThreshold: 0.9e18,
+        healthFactorForMaxBonus: 0.9e18,
         liquidationBonusFactor: 70_00
       }),
       liqBonus: 100_00, // 0% LB

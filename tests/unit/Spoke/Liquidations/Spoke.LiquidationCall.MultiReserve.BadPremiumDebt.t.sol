@@ -21,11 +21,11 @@ contract LiquidationCallMultiReserveBadPremiumDebtTest is SpokeLiquidationBase {
       liqConfig: DataTypes.LiquidationConfig({
         closeFactor: 1.5e18,
         liquidationBonusFactor: 0,
-        healthFactorBonusThreshold: 0
+        healthFactorForMaxBonus: 0
       }),
       liqBonus: 105_00,
       supplyAmount: 1.5e18,
-      liquidationProtocolFeePercentage: 5_00,
+      liquidationProtocolFee: 5_00,
       collateralReserveId: collateralReserveId,
       skipTime: 365 days,
       skipTimeToAccruePremium: 365 days * 4,
@@ -39,7 +39,7 @@ contract LiquidationCallMultiReserveBadPremiumDebtTest is SpokeLiquidationBase {
     DataTypes.LiquidationConfig memory liqConfig,
     uint256 liqBonus,
     uint256 supplyAmount,
-    uint256 liquidationProtocolFeePercentage,
+    uint256 liquidationProtocolFee,
     uint256 skipTime,
     uint256 skipTimeToAccruePremium,
     uint256 debtReserveIndex
@@ -59,7 +59,7 @@ contract LiquidationCallMultiReserveBadPremiumDebtTest is SpokeLiquidationBase {
       collateralReserveId,
       debtReserveIds,
       debtReserveIndex,
-      liquidationProtocolFeePercentage,
+      liquidationProtocolFee,
       skipTime,
       skipTimeToAccruePremium
     );
@@ -78,11 +78,11 @@ contract LiquidationCallMultiReserveBadPremiumDebtTest is SpokeLiquidationBase {
       liqConfig: DataTypes.LiquidationConfig({
         closeFactor: 1.5e18,
         liquidationBonusFactor: 0,
-        healthFactorBonusThreshold: 0
+        healthFactorForMaxBonus: 0
       }),
       liqBonus: 105_00,
       supplyAmount: 1.5e18,
-      liquidationProtocolFeePercentage: 5_00,
+      liquidationProtocolFee: 5_00,
       collateralReserveId: collateralReserveId,
       skipTime: 365 days,
       skipTimeToAccruePremium: 365 days * 4,
@@ -96,7 +96,7 @@ contract LiquidationCallMultiReserveBadPremiumDebtTest is SpokeLiquidationBase {
     DataTypes.LiquidationConfig memory liqConfig,
     uint256 liqBonus,
     uint256 supplyAmount,
-    uint256 liquidationProtocolFeePercentage,
+    uint256 liquidationProtocolFee,
     uint256 skipTime,
     uint256 skipTimeToAccruePremium,
     uint256 debtReserveIndex
@@ -116,7 +116,7 @@ contract LiquidationCallMultiReserveBadPremiumDebtTest is SpokeLiquidationBase {
       collateralReserveId,
       debtReserveIds,
       debtReserveIndex,
-      liquidationProtocolFeePercentage,
+      liquidationProtocolFee,
       skipTime,
       skipTimeToAccruePremium
     );
@@ -135,11 +135,11 @@ contract LiquidationCallMultiReserveBadPremiumDebtTest is SpokeLiquidationBase {
       liqConfig: DataTypes.LiquidationConfig({
         closeFactor: 1.5e18,
         liquidationBonusFactor: 0,
-        healthFactorBonusThreshold: 0
+        healthFactorForMaxBonus: 0
       }),
       liqBonus: 105_00,
       supplyAmount: 1.5e18,
-      liquidationProtocolFeePercentage: 5_00,
+      liquidationProtocolFee: 5_00,
       collateralReserveId: collateralReserveId,
       skipTime: 365 days,
       skipTimeToAccruePremium: 365 days * 4,
@@ -153,7 +153,7 @@ contract LiquidationCallMultiReserveBadPremiumDebtTest is SpokeLiquidationBase {
     DataTypes.LiquidationConfig memory liqConfig,
     uint256 liqBonus,
     uint256 supplyAmount,
-    uint256 liquidationProtocolFeePercentage,
+    uint256 liquidationProtocolFee,
     uint256 skipTime,
     uint256 skipTimeToAccruePremium,
     uint256 debtReserveIndex
@@ -173,7 +173,7 @@ contract LiquidationCallMultiReserveBadPremiumDebtTest is SpokeLiquidationBase {
       collateralReserveId,
       debtReserveIds,
       debtReserveIndex,
-      liquidationProtocolFeePercentage,
+      liquidationProtocolFee,
       skipTime,
       skipTimeToAccruePremium
     );
@@ -195,7 +195,7 @@ contract LiquidationCallMultiReserveBadPremiumDebtTest is SpokeLiquidationBase {
     uint256 collateralReserveId,
     uint256[] memory debtReserveIds,
     uint256 debtReserveIndex,
-    uint256 liquidationProtocolFeePercentage,
+    uint256 liquidationProtocolFee,
     uint256 skipTime,
     uint256 skipTimeForPremiumAccrual
   ) internal returns (LiquidationTestLocalParams memory) {
@@ -216,7 +216,7 @@ contract LiquidationCallMultiReserveBadPremiumDebtTest is SpokeLiquidationBase {
         state.collateralReserves[state.collateralReserveIndex].config.collateralFactor
       )
     );
-    liquidationProtocolFeePercentage = bound(liquidationProtocolFeePercentage, 0, 100_00);
+    liquidationProtocolFee = bound(liquidationProtocolFee, 0, 100_00);
     supplyAmount = bound(
       supplyAmount,
       _convertBaseCurrencyToAmount(
@@ -231,18 +231,14 @@ contract LiquidationCallMultiReserveBadPremiumDebtTest is SpokeLiquidationBase {
     skipTime = bound(skipTime, 1, MAX_SKIP_TIME);
     skipTimeForPremiumAccrual = bound(skipTimeForPremiumAccrual, 5 * 365 days, MAX_SKIP_TIME); // enough time to accrue debt so that HF is liquidatable
 
-    state.liquidationProtocolFeePercentage = liquidationProtocolFeePercentage;
+    state.liquidationProtocolFee = liquidationProtocolFee;
     state.spoke = spoke1;
     state.user = alice;
 
     // set spoke liq config
     state.spoke.updateLiquidationConfig(liqConfig);
     updateLiquidationBonus(state.spoke, collateralReserveId, liqBonus);
-    updateLiquidationProtocolFeePercentage(
-      state.spoke,
-      collateralReserveId,
-      state.liquidationProtocolFeePercentage
-    );
+    updateLiquidationProtocolFee(state.spoke, collateralReserveId, state.liquidationProtocolFee);
 
     Utils.supplyCollateral({
       spoke: state.spoke,

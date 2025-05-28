@@ -3,6 +3,7 @@ pragma solidity ^0.8.0;
 
 import {Test} from 'forge-std/Test.sol';
 import {stdError} from 'forge-std/StdError.sol';
+import {stdMath} from 'forge-std/StdMath.sol';
 import {console2 as console} from 'forge-std/console2.sol';
 
 import {LiquidityHub, ILiquidityHub} from 'src/contracts/LiquidityHub.sol';
@@ -154,9 +155,9 @@ abstract contract Base is Test {
     creditLineIRStrategy = new DefaultReserveInterestRateStrategy(mockAddressesProvider);
     irStrategy = new DefaultReserveInterestRateStrategy(mockAddressesProvider);
     hub = new LiquidityHub();
-    spoke1 = ISpoke(new Spoke(address(hub), address(oracle), HEALTH_FACTOR_LIQUIDATION_THRESHOLD));
-    spoke2 = ISpoke(new Spoke(address(hub), address(oracle), HEALTH_FACTOR_LIQUIDATION_THRESHOLD));
-    spoke3 = ISpoke(new Spoke(address(hub), address(oracle), HEALTH_FACTOR_LIQUIDATION_THRESHOLD));
+    spoke1 = ISpoke(new Spoke(address(hub), address(oracle)));
+    spoke2 = ISpoke(new Spoke(address(hub), address(oracle)));
+    spoke3 = ISpoke(new Spoke(address(hub), address(oracle)));
     dai = new MockERC20();
     eth = new MockERC20();
     usdc = new MockERC20();
@@ -239,10 +240,6 @@ abstract contract Base is Test {
   }
 
   function configureTokenList() internal {
-    address[] memory spokes = new address[](3);
-    spokes[0] = address(spoke1);
-    spokes[1] = address(spoke2);
-    spokes[2] = address(spoke3);
     DataTypes.SpokeConfig memory spokeConfig = DataTypes.SpokeConfig({
       supplyCap: type(uint256).max,
       drawCap: type(uint256).max
@@ -324,7 +321,7 @@ abstract contract Base is Test {
       collateralFactor: 80_00,
       liquidationBonus: 100_00,
       liquidityPremium: 15_00,
-      liquidationProtocolFeePercentage: 0,
+      liquidationProtocolFee: 0,
       borrowable: true,
       collateral: true
     });
@@ -336,7 +333,7 @@ abstract contract Base is Test {
       collateralFactor: 75_00,
       liquidationBonus: 100_00,
       liquidityPremium: 5_00,
-      liquidationProtocolFeePercentage: 0,
+      liquidationProtocolFee: 0,
       borrowable: true,
       collateral: true
     });
@@ -348,7 +345,7 @@ abstract contract Base is Test {
       collateralFactor: 78_00,
       liquidationBonus: 100_00,
       liquidityPremium: 20_00,
-      liquidationProtocolFeePercentage: 0,
+      liquidationProtocolFee: 0,
       borrowable: true,
       collateral: true
     });
@@ -360,7 +357,7 @@ abstract contract Base is Test {
       collateralFactor: 78_00,
       liquidationBonus: 100_00,
       liquidityPremium: 50_00,
-      liquidationProtocolFeePercentage: 0,
+      liquidationProtocolFee: 0,
       borrowable: true,
       collateral: true
     });
@@ -372,7 +369,7 @@ abstract contract Base is Test {
       collateralFactor: 78_00,
       liquidationBonus: 100_00,
       liquidityPremium: 50_00,
-      liquidationProtocolFeePercentage: 0,
+      liquidationProtocolFee: 0,
       borrowable: true,
       collateral: true
     });
@@ -403,7 +400,7 @@ abstract contract Base is Test {
       collateralFactor: 80_00,
       liquidationBonus: 100_00,
       liquidityPremium: 0,
-      liquidationProtocolFeePercentage: 0,
+      liquidationProtocolFee: 0,
       borrowable: true,
       collateral: true
     });
@@ -415,7 +412,7 @@ abstract contract Base is Test {
       collateralFactor: 76_00,
       liquidationBonus: 100_00,
       liquidityPremium: 10_00,
-      liquidationProtocolFeePercentage: 0,
+      liquidationProtocolFee: 0,
       borrowable: true,
       collateral: true
     });
@@ -427,7 +424,7 @@ abstract contract Base is Test {
       collateralFactor: 72_00,
       liquidationBonus: 100_00,
       liquidityPremium: 20_00,
-      liquidationProtocolFeePercentage: 0,
+      liquidationProtocolFee: 0,
       borrowable: true,
       collateral: true
     });
@@ -439,7 +436,7 @@ abstract contract Base is Test {
       collateralFactor: 72_00,
       liquidationBonus: 100_00,
       liquidityPremium: 50_00,
-      liquidationProtocolFeePercentage: 0,
+      liquidationProtocolFee: 0,
       borrowable: true,
       collateral: true
     });
@@ -458,6 +455,7 @@ abstract contract Base is Test {
     hub.addSpoke(daiAssetId, spokeConfig, address(spoke2));
     hub.addSpoke(usdxAssetId, spokeConfig, address(spoke2));
     hub.addSpoke(usdyAssetId, spokeConfig, address(spoke2));
+    hub.addSpoke(usdyAssetId, spokeConfig, address(spoke2));
 
     // Spoke 3 reserve configs
     daiConfig = DataTypes.ReserveConfig({
@@ -468,7 +466,7 @@ abstract contract Base is Test {
       collateralFactor: 75_00,
       liquidationBonus: 100_00,
       liquidityPremium: 0,
-      liquidationProtocolFeePercentage: 0,
+      liquidationProtocolFee: 0,
       borrowable: true,
       collateral: true
     });
@@ -480,7 +478,7 @@ abstract contract Base is Test {
       collateralFactor: 75_00,
       liquidationBonus: 100_00,
       liquidityPremium: 10_00,
-      liquidationProtocolFeePercentage: 0,
+      liquidationProtocolFee: 0,
       borrowable: true,
       collateral: true
     });
@@ -492,7 +490,7 @@ abstract contract Base is Test {
       collateralFactor: 79_00,
       liquidationBonus: 100_00,
       liquidityPremium: 20_00,
-      liquidationProtocolFeePercentage: 0,
+      liquidationProtocolFee: 0,
       borrowable: true,
       collateral: true
     });
@@ -504,7 +502,7 @@ abstract contract Base is Test {
       collateralFactor: 77_00,
       liquidationBonus: 100_00,
       liquidityPremium: 50_00,
-      liquidationProtocolFeePercentage: 0,
+      liquidationProtocolFee: 0,
       borrowable: true,
       collateral: true
     });
@@ -543,7 +541,7 @@ abstract contract Base is Test {
       collateralFactor: 70_00,
       liquidationBonus: 100_00,
       liquidityPremium: 100_00,
-      liquidationProtocolFeePercentage: 0,
+      liquidationProtocolFee: 0,
       borrowable: true,
       collateral: true
     });
@@ -682,21 +680,18 @@ abstract contract Base is Test {
     assertEq(spoke.getReserve(reserveId).config.liquidationBonus, newLiquidationBonus);
   }
 
-  function updateLiquidationProtocolFeePercentage(
+  function updateLiquidationProtocolFee(
     ISpoke spoke,
     uint256 reserveId,
-    uint256 newLiquidationProtocolFeePercentage
+    uint256 newLiquidationProtocolFee
   ) internal {
     DataTypes.ReserveConfig memory config = spoke.getReserve(reserveId).config;
-    config.liquidationProtocolFeePercentage = newLiquidationProtocolFeePercentage;
+    config.liquidationProtocolFee = newLiquidationProtocolFee;
 
     vm.prank(SPOKE_ADMIN);
     spoke.updateReserveConfig(reserveId, config);
 
-    assertEq(
-      spoke.getReserve(reserveId).config.liquidationProtocolFeePercentage,
-      newLiquidationProtocolFeePercentage
-    );
+    assertEq(spoke.getReserve(reserveId).config.liquidationProtocolFee, newLiquidationProtocolFee);
   }
 
   function setUsingAsCollateral(
@@ -855,6 +850,11 @@ abstract contract Base is Test {
   function calcNewPrice(uint256 price, uint256 percent) public pure returns (uint256) {
     if (percent == 0) return price;
     return price.percentMul(percent);
+  }
+
+  function setNewPrice(uint256 assetId, uint256 percent) public {
+    uint256 newPrice = calcNewPrice(oracle.getAssetPrice(assetId), percent);
+    oracle.setAssetPrice(assetId, newPrice);
   }
 
   /// @dev Helper function to calculate asset amount corresponding to single drawn share
@@ -1017,13 +1017,32 @@ abstract contract Base is Test {
   }
 
   /**
-   * @notice Returns the required debt amount in base currency to ensure user position is below a certain health factor.
+   * @notice Returns the required debt amount to ensure user position is below a certain health factor.
+   * @param desiredHf The desired health factor to be below.
    */
-  function _getRequiredDebtForLtHf(
+  function _getRequiredDebtAmountForLtHf(
+    ISpoke spoke,
+    address user,
+    uint256 reserveId,
+    uint256 desiredHf
+  ) internal view returns (uint256 requiredDebtAmount) {
+    uint256 requiredDebtAmountInBase = _getRequiredDebtInBaseCurrencyForLtHf(
+      spoke,
+      user,
+      desiredHf
+    );
+    uint256 assetId = spoke.getReserve(reserveId).assetId;
+    return _convertBaseCurrencyToAmount(assetId, requiredDebtAmountInBase) + 1;
+  }
+
+  /**
+   * @notice Returns the required debt in base currency to ensure user position is below a certain health factor.
+   */
+  function _getRequiredDebtInBaseCurrencyForLtHf(
     ISpoke spoke,
     address user,
     uint256 desiredHf
-  ) internal view returns (uint256 requiredDebt) {
+  ) internal view returns (uint256 requiredDebtInBaseCurrency) {
     (
       ,
       uint256 currentAvgCollateralFactor,
@@ -1032,7 +1051,7 @@ abstract contract Base is Test {
       uint256 totalDebtBase
     ) = spoke.getUserAccountData(user);
 
-    requiredDebt =
+    requiredDebtInBaseCurrency =
       totalCollateralBase.percentMul(currentAvgCollateralFactor.dewadify() + 1).wadDivUp(
         desiredHf
       ) -
@@ -1040,80 +1059,21 @@ abstract contract Base is Test {
     // add 1 to num to round debt up (ie making sure resultant debt creates HF that is less than desired)
   }
 
-  /**
-   * @notice Returns the required debt amount in base currency to ensure user position is above a certain health factor.
-   * @return requiredDebt The required additional debt amount in base currency.
-   */
-  function _getRequiredDebtForGtHf(
-    ISpoke spoke,
-    address user,
-    uint256 desiredHf
-  ) internal view returns (uint256) {
-    (
-      ,
-      uint256 currentAvgCollateralFactor,
-      ,
-      uint256 totalCollateralBase,
-      uint256 totalDebtBase
-    ) = spoke.getUserAccountData(user);
-
-    return
-      totalCollateralBase
-        .percentMulDown(currentAvgCollateralFactor.dewadify())
-        .percentMulDown(99_00)
-        .wadDivDown(desiredHf) - totalDebtBase;
-    // buffer to force debt lower (ie making sure resultant debt creates HF that is gt desired)
-  }
-
-  /// @dev Borrow to be below a certain health factor, without HF validation
-  /// user RP will be 0 due to mocking price to 0
+  /// @dev Borrow to be below a certain health factor, without needing to check HF
   function _borrowToBeBelowHf(
     ISpoke spoke,
     address user,
     uint256 reserveId,
     uint256 desiredHf
   ) internal returns (uint256, uint256) {
-    uint256 requiredDebtInBase = _getRequiredDebtForLtHf(spoke, user, desiredHf);
-    uint256 assetId = spoke.getReserve(reserveId).assetId;
-    uint256 requiredDebtAmount = _convertBaseCurrencyToAmount(assetId, requiredDebtInBase) + 1;
+    uint256 requiredDebtAmount = _getRequiredDebtAmountForLtHf(spoke, user, reserveId, desiredHf);
+    require(requiredDebtAmount <= MAX_SUPPLY_AMOUNT, 'required debt amount too high');
 
-    vm.assume(requiredDebtAmount < MAX_SUPPLY_AMOUNT);
-
-    // mock price to 0 to circumvent borrow validation
-    // due to this, user RP will be 0 and premium debt will not accrue
-    vm.mockCall(
-      address(oracle),
-      abi.encodeWithSelector(IPriceOracle.getAssetPrice.selector, assetId),
-      abi.encode(0)
-    );
-    vm.prank(user);
-    spoke.borrow(reserveId, requiredDebtAmount, user);
-    vm.clearMockedCalls();
+    _borrowWithoutHfCheck(spoke, user, reserveId, requiredDebtAmount);
 
     uint256 finalHf = spoke.getHealthFactor(user);
     assertLt(finalHf, desiredHf, 'should borrow enough for HF to be below desiredHf');
-    return (finalHf, requiredDebtAmount);
-  }
 
-  /// @dev Borrow to be below a certain healthy health factor
-  /// This function validates HF and does not mock price, thus it will cache user RP properly
-  function _borrowToBeAboveHealthyHf(
-    ISpoke spoke,
-    address user,
-    uint256 reserveId,
-    uint256 desiredHf
-  ) internal returns (uint256, uint256) {
-    uint256 requiredDebtInBase = _getRequiredDebtForGtHf(spoke, user, desiredHf);
-    uint256 assetId = spoke.getReserve(reserveId).assetId;
-    uint256 requiredDebtAmount = _convertBaseCurrencyToAmount(assetId, requiredDebtInBase) - 1;
-
-    vm.assume(requiredDebtAmount < MAX_SUPPLY_AMOUNT);
-
-    vm.prank(user);
-    spoke.borrow(reserveId, requiredDebtAmount, user);
-
-    uint256 finalHf = spoke.getHealthFactor(user);
-    assertGt(finalHf, desiredHf, 'should borrow so that HF is above desiredHf');
     return (finalHf, requiredDebtAmount);
   }
 
@@ -1138,14 +1098,6 @@ abstract contract Base is Test {
     return spoke.getLiquidationConfig().closeFactor;
   }
 
-  function _percentDiff(uint256 a, uint256 b) internal pure returns (uint256) {
-    return a != 0 ? (_absDiff(a, b) * PercentageMath.PERCENTAGE_FACTOR) / a : type(uint256).max;
-  }
-
-  function _absDiff(uint256 a, uint256 b) internal pure returns (uint256) {
-    return a > b ? (a - b) : b - a;
-  }
-
   /// @dev Helper function to borrow without health factor check
   function _borrowWithoutHfCheck(
     ISpoke spoke,
@@ -1154,24 +1106,12 @@ abstract contract Base is Test {
     uint256 debtAmount
   ) internal returns (uint256, uint256) {
     uint256 assetId = spoke.getReserve(reserveId).assetId;
-    // mock price to 0 to circumvent borrow validation
-    vm.mockCall(
-      address(oracle),
-      abi.encodeWithSelector(IPriceOracle.getAssetPrice.selector, assetId),
-      abi.encode(0)
-    );
+    // set price to 0 to circumvent borrow validation
+    uint256 initialPrice = oracle.getAssetPrice(assetId);
+    oracle.setAssetPrice(assetId, 0);
     vm.prank(user);
     spoke.borrow(reserveId, debtAmount, user);
-    vm.clearMockedCalls();
-  }
-
-  /// @dev Get the liquidation bonus for a given reserve at a user HF
-  function _getVariableLiquidationBonus(
-    ISpoke spoke,
-    uint256 reserveId,
-    uint256 healthFactor
-  ) internal view returns (uint256) {
-    return spoke.getVariableLiquidationBonus(reserveId, healthFactor);
+    oracle.setAssetPrice(assetId, initialPrice);
   }
 
   /// @dev Calculate expected debt index based on input params
@@ -1200,6 +1140,24 @@ abstract contract Base is Test {
     return baseDebt;
   }
 
+  function _assumeValidSupplier(address user) internal {
+    vm.assume(
+      user != address(0) &&
+        user != address(hub) &&
+        user != address(spoke1) &&
+        user != address(spoke2) &&
+        user != address(spoke3)
+    );
+  }
+
+  function _getLiquidityPremium(ISpoke spoke, uint256 reserveId) internal view returns (uint256) {
+    return spoke.getReserve(reserveId).config.liquidityPremium;
+  }
+
+  function _getCollateralFactor(ISpoke spoke, uint256 reserveId) internal view returns (uint256) {
+    return spoke.getReserve(reserveId).config.collateralFactor;
+  }
+
   /// @param baseBorrowRate base borrow rate in bps
   function mockBaseBorrowRate(uint256 baseBorrowRate) internal {
     vm.mockCall(
@@ -1207,5 +1165,61 @@ abstract contract Base is Test {
       IReserveInterestRateStrategy.calculateInterestRates.selector,
       abi.encode(baseBorrowRate.bpsToRay())
     );
+  }
+
+  /// @dev Get the liquidation bonus for a given reserve at a user HF
+  function _getVariableLiquidationBonus(
+    ISpoke spoke,
+    uint256 reserveId,
+    uint256 healthFactor
+  ) internal view returns (uint256) {
+    return spoke.getVariableLiquidationBonus(reserveId, healthFactor);
+  }
+
+  /**
+   * @notice Returns the required debt amount in base currency to ensure user position is above a certain health factor.
+   * @return requiredDebt The required additional debt amount in base currency.
+   */
+  function _getRequiredDebtForGtHf(
+    ISpoke spoke,
+    address user,
+    uint256 desiredHf
+  ) internal view returns (uint256) {
+    (
+      ,
+      uint256 currentAvgCollateralFactor,
+      ,
+      uint256 totalCollateralBase,
+      uint256 totalDebtBase
+    ) = spoke.getUserAccountData(user);
+
+    return
+      totalCollateralBase
+        .percentMulDown(currentAvgCollateralFactor.dewadify())
+        .percentMulDown(99_00)
+        .wadDivDown(desiredHf) - totalDebtBase;
+    // buffer to force debt lower (ie making sure resultant debt creates HF that is gt desired)
+  }
+
+  /// @dev Borrow to be below a certain healthy health factor
+  /// This function validates HF and does not mock price, thus it will cache user RP properly
+  function _borrowToBeAboveHealthyHf(
+    ISpoke spoke,
+    address user,
+    uint256 reserveId,
+    uint256 desiredHf
+  ) internal returns (uint256, uint256) {
+    uint256 requiredDebtInBase = _getRequiredDebtForGtHf(spoke, user, desiredHf);
+    uint256 assetId = spoke.getReserve(reserveId).assetId;
+    uint256 requiredDebtAmount = _convertBaseCurrencyToAmount(assetId, requiredDebtInBase) - 1;
+
+    vm.assume(requiredDebtAmount < MAX_SUPPLY_AMOUNT);
+
+    vm.prank(user);
+    spoke.borrow(reserveId, requiredDebtAmount, user);
+
+    uint256 finalHf = spoke.getHealthFactor(user);
+    assertGt(finalHf, desiredHf, 'should borrow so that HF is above desiredHf');
+    return (finalHf, requiredDebtAmount);
   }
 }

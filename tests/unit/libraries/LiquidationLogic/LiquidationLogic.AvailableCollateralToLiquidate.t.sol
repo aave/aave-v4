@@ -15,7 +15,7 @@ contract LiquidationAvailableCollateralToLiquidateTest is LiquidationLogicBaseTe
     uint256 debtAssetUnit;
     uint256 liquidationBonus;
     uint256 userCollateralBalance;
-    uint256 liquidationProtocolFeePercentage;
+    uint256 liquidationProtocolFee;
     uint256 actualDebtToLiquidate;
   }
 
@@ -164,7 +164,7 @@ contract LiquidationAvailableCollateralToLiquidateTest is LiquidationLogicBaseTe
 
     ) = LiquidationLogic.calculateAvailableCollateralToLiquidate(args);
 
-    if (params.liquidationProtocolFeePercentage == 0) {
+    if (params.liquidationProtocolFee == 0) {
       assertEq(
         res.actualCollateralToLiquidate,
         params.userCollateralBalance,
@@ -227,7 +227,7 @@ contract LiquidationAvailableCollateralToLiquidateTest is LiquidationLogicBaseTe
       uint256 liquidationProtocolFeeAmount
     ) = _calcLiquidationProtocolFeeAmount(params, collateralAmount);
 
-    if (params.liquidationProtocolFeePercentage == 0) {
+    if (params.liquidationProtocolFee == 0) {
       assertApproxEqAbs(
         res.actualCollateralToLiquidate,
         actualCollateralToLiquidate,
@@ -266,7 +266,7 @@ contract LiquidationAvailableCollateralToLiquidateTest is LiquidationLogicBaseTe
     result.debtAssetUnit = params.debtAssetUnit;
     result.liquidationBonus = params.liquidationBonus;
     result.userCollateralBalance = params.userCollateralBalance;
-    result.liquidationProtocolFeePercentage = params.liquidationProtocolFeePercentage;
+    result.liquidationProtocolFee = params.liquidationProtocolFee;
   }
 
   function _bound(
@@ -286,8 +286,8 @@ contract LiquidationAvailableCollateralToLiquidateTest is LiquidationLogicBaseTe
       MAX_LIQUIDATION_BONUS
     );
     params.userCollateralBalance = bound(params.userCollateralBalance, 1, MAX_SUPPLY_AMOUNT);
-    params.liquidationProtocolFeePercentage = bound(
-      params.liquidationProtocolFeePercentage,
+    params.liquidationProtocolFee = bound(
+      params.liquidationProtocolFee,
       0,
       MAX_LIQUIDATION_PROTOCOL_FEE_PERCENTAGE
     );
@@ -312,7 +312,7 @@ contract LiquidationAvailableCollateralToLiquidateTest is LiquidationLogicBaseTe
       collateralAmount.percentDivUp(params.liquidationBonus);
 
     uint256 liquidationProtocolFeeAmount = bonusCollateral.percentMulUp(
-      params.liquidationProtocolFeePercentage
+      params.liquidationProtocolFee
     );
 
     return (collateralAmount - liquidationProtocolFeeAmount, liquidationProtocolFeeAmount);

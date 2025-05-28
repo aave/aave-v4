@@ -12,7 +12,7 @@ import {DataTypes} from 'src/libraries/types/DataTypes.sol';
 interface ILiquidityHub {
   event SpokeAdded(uint256 indexed assetId, address indexed spoke);
   event AssetAdded(uint256 indexed assetId, address indexed asset);
-  event AssetConfigUpdated(uint256 indexed assetId);
+  event AssetConfigUpdated(uint256 indexed assetId, DataTypes.AssetConfig config);
   event SpokeConfigUpdated(
     uint256 indexed assetId,
     address indexed spoke,
@@ -57,6 +57,7 @@ interface ILiquidityHub {
   error MismatchedConfigs();
   error InvalidSharesAmount();
   error InvalidSupplyAmount();
+  error InvalidAddFromHub();
   error AssetNotListed();
   error AssetNotActive();
   error SupplyCapExceeded(uint256 supplyCap);
@@ -201,6 +202,8 @@ interface ILiquidityHub {
   function getAssetSuppliedShares(uint256 assetId) external view returns (uint256);
 
   function getAssetTotalDebt(uint256 assetId) external view returns (uint256);
+
+  function getTotalSuppliedAssets(uint256 assetId) external view returns (uint256);
 
   function getAvailableLiquidity(uint256 assetId) external view returns (uint256);
 

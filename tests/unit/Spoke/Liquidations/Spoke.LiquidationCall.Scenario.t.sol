@@ -55,7 +55,7 @@ contract LiquidationCallScenarioTest is SpokeLiquidationBase {
     state.debtAmount.weth = 20 * 10 ** decimals.weth; // 20 eth, $40k
 
     // simplify accounting checks with no fee or bonus
-    updateLiquidationProtocolFeePercentage(spoke1, state.wbtcReserveId, 0);
+    updateLiquidationProtocolFee(spoke1, state.wbtcReserveId, 0);
     updateLiquidationBonus(spoke1, state.wbtcReserveId, 100_00);
 
     Utils.supplyCollateral(spoke1, state.wbtcReserveId, alice, state.collAmount.wbtc, alice);
@@ -102,13 +102,16 @@ contract LiquidationCallScenarioTest is SpokeLiquidationBase {
     state.totalDebt.balanceAfter = spoke1.getUserTotalDebt(state.wethReserveId, alice);
 
     assertApproxEqAbs(
-      _absDiff(state.liquidator.balanceAfter, state.liquidator.balanceBefore),
-      _absDiff(state.totalDebt.balanceAfter, state.totalDebt.balanceBefore),
+      stdMath.delta(state.liquidator.balanceAfter, state.liquidator.balanceBefore),
+      stdMath.delta(state.totalDebt.balanceAfter, state.totalDebt.balanceBefore),
       2, // should be due to repay donation
       'liquidator repaid debt amount and restored debt accounting'
     );
     assertEq(
-      _absDiff(state.liquidatorCollateral.balanceAfter, state.liquidatorCollateral.balanceBefore),
+      stdMath.delta(
+        state.liquidatorCollateral.balanceAfter,
+        state.liquidatorCollateral.balanceBefore
+      ),
       state.collAmount.wbtc,
       'liquidator collateral earned'
     );
@@ -150,7 +153,7 @@ contract LiquidationCallScenarioTest is SpokeLiquidationBase {
     state.debtAmount.weth = 20 * 10 ** decimals.weth; // 20 eth, $40k
 
     // simplify accounting checks with no fee or bonus
-    updateLiquidationProtocolFeePercentage(spoke1, state.wbtcReserveId, 0);
+    updateLiquidationProtocolFee(spoke1, state.wbtcReserveId, 0);
     updateLiquidationBonus(spoke1, state.wbtcReserveId, 100_00);
 
     Utils.supplyCollateral(spoke1, state.wbtcReserveId, alice, state.collAmount.wbtc, alice);
@@ -197,13 +200,16 @@ contract LiquidationCallScenarioTest is SpokeLiquidationBase {
     state.totalDebt.balanceAfter = spoke1.getUserTotalDebt(state.wethReserveId, alice);
 
     assertApproxEqAbs(
-      _absDiff(state.liquidator.balanceAfter, state.liquidator.balanceBefore),
-      _absDiff(state.totalDebt.balanceAfter, state.totalDebt.balanceBefore),
+      stdMath.delta(state.liquidator.balanceAfter, state.liquidator.balanceBefore),
+      stdMath.delta(state.totalDebt.balanceAfter, state.totalDebt.balanceBefore),
       4, // max delta too large? should be due to repay donation
       'liquidator repaid debt amount and restored debt accounting (donation)'
     );
     assertEq(
-      _absDiff(state.liquidatorCollateral.balanceAfter, state.liquidatorCollateral.balanceBefore),
+      stdMath.delta(
+        state.liquidatorCollateral.balanceAfter,
+        state.liquidatorCollateral.balanceBefore
+      ),
       state.collAmount.wbtc,
       'liquidator collateral earned'
     );
@@ -241,7 +247,7 @@ contract LiquidationCallScenarioTest is SpokeLiquidationBase {
     state.liqBonus = spoke1.getReserve(state.wbtcReserveId).config.liquidationBonus;
 
     // simplify accounting checks with no fee or bonus
-    updateLiquidationProtocolFeePercentage(spoke1, state.wbtcReserveId, 0);
+    updateLiquidationProtocolFee(spoke1, state.wbtcReserveId, 0);
     updateLiquidationBonus(spoke1, state.wbtcReserveId, 100_00);
 
     Utils.supplyCollateral(spoke1, state.wbtcReserveId, alice, state.collAmount.wbtc, alice);
@@ -282,8 +288,8 @@ contract LiquidationCallScenarioTest is SpokeLiquidationBase {
     state.totalDebt.balanceAfter = spoke1.getUserTotalDebt(state.wethReserveId, alice);
 
     assertApproxEqAbs(
-      _absDiff(state.liquidator.balanceAfter, state.liquidator.balanceBefore),
-      _absDiff(state.totalDebt.balanceAfter, state.totalDebt.balanceBefore),
+      stdMath.delta(state.liquidator.balanceAfter, state.liquidator.balanceBefore),
+      stdMath.delta(state.totalDebt.balanceAfter, state.totalDebt.balanceBefore),
       2,
       'liquidator repaid debt amount and restored debt accounting'
     );
@@ -323,7 +329,7 @@ contract LiquidationCallScenarioTest is SpokeLiquidationBase {
     state.liqBonus = spoke1.getReserve(state.wbtcReserveId).config.liquidationBonus;
 
     // simplify accounting checks with no fee or bonus
-    updateLiquidationProtocolFeePercentage(spoke1, state.wbtcReserveId, 0);
+    updateLiquidationProtocolFee(spoke1, state.wbtcReserveId, 0);
     updateLiquidationBonus(spoke1, state.wbtcReserveId, 100_00);
 
     Utils.supplyCollateral(spoke1, state.wbtcReserveId, alice, state.collAmount.wbtc, alice);
@@ -364,8 +370,8 @@ contract LiquidationCallScenarioTest is SpokeLiquidationBase {
     state.totalDebt.balanceAfter = spoke1.getUserTotalDebt(state.wethReserveId, alice);
 
     assertApproxEqAbs(
-      _absDiff(state.liquidator.balanceAfter, state.liquidator.balanceBefore),
-      _absDiff(state.totalDebt.balanceAfter, state.totalDebt.balanceBefore),
+      stdMath.delta(state.liquidator.balanceAfter, state.liquidator.balanceBefore),
+      stdMath.delta(state.totalDebt.balanceAfter, state.totalDebt.balanceBefore),
       4, // max delta too large?
       'liquidator repaid debt amount and restored debt accounting'
     );
@@ -440,13 +446,13 @@ contract LiquidationCallScenarioTest is SpokeLiquidationBase {
     state.totalDebt.balanceAfter = spoke1.getUserTotalDebt(state.wethReserveId, alice);
 
     assertApproxEqAbs(
-      _absDiff(state.liquidator.balanceAfter, state.liquidator.balanceBefore),
-      _absDiff(state.totalDebt.balanceAfter, state.totalDebt.balanceBefore),
+      stdMath.delta(state.liquidator.balanceAfter, state.liquidator.balanceBefore),
+      stdMath.delta(state.totalDebt.balanceAfter, state.totalDebt.balanceBefore),
       2,
       'liquidator repaid debt amount and restored debt accounting'
     );
     assertLe(
-      _absDiff(state.liquidator.balanceAfter, state.liquidator.balanceBefore),
+      stdMath.delta(state.liquidator.balanceAfter, state.liquidator.balanceBefore),
       state.totalDebt.balanceBefore,
       'liquidator can only liquidate enough debt to cover position'
     );
@@ -534,9 +540,13 @@ contract LiquidationCallScenarioTest is SpokeLiquidationBase {
       state.collAmount.dai,
       'alice dai coll unchanged'
     );
-    assertEq(_absDiff(aliceDai.balanceAfter, aliceDai.balanceBefore), 0, 'alice has no dai change');
     assertEq(
-      _absDiff(liquidatorDai.balanceAfter, liquidatorDai.balanceBefore),
+      stdMath.delta(aliceDai.balanceAfter, aliceDai.balanceBefore),
+      0,
+      'alice has no dai change'
+    );
+    assertEq(
+      stdMath.delta(liquidatorDai.balanceAfter, liquidatorDai.balanceBefore),
       0,
       'liquidator receives 0 dai coll'
     );
@@ -548,12 +558,12 @@ contract LiquidationCallScenarioTest is SpokeLiquidationBase {
       'alice supplied wbtc coll liquidated'
     );
     assertEq(
-      _absDiff(aliceWbtc.balanceAfter, aliceWbtc.balanceBefore),
+      stdMath.delta(aliceWbtc.balanceAfter, aliceWbtc.balanceBefore),
       0,
       'alice has no wbtc change'
     );
     assertEq(
-      _absDiff(liquidatorWbtc.balanceAfter, liquidatorWbtc.balanceBefore),
+      stdMath.delta(liquidatorWbtc.balanceAfter, liquidatorWbtc.balanceBefore),
       state.collAmount.wbtc,
       'liquidator receives all wbtc coll'
     );
@@ -565,12 +575,12 @@ contract LiquidationCallScenarioTest is SpokeLiquidationBase {
       'alice bad weth debt fully cleared'
     );
     assertEq(
-      _absDiff(aliceWeth.balanceAfter, aliceWeth.balanceBefore),
+      stdMath.delta(aliceWeth.balanceAfter, aliceWeth.balanceBefore),
       0,
       'alice has no weth change'
     );
     assertEq(
-      _absDiff(liquidatorWeth.balanceAfter, liquidatorWeth.balanceBefore),
+      stdMath.delta(liquidatorWeth.balanceAfter, liquidatorWeth.balanceBefore),
       state.liquidatedDebt,
       'liquidator pays all weth debt'
     );
@@ -657,7 +667,7 @@ contract LiquidationCallScenarioTest is SpokeLiquidationBase {
     uint256 closeFactor = 1.07e18;
 
     updateCloseFactor(spoke1, closeFactor);
-    updateLiquidationProtocolFeePercentage(spoke1, usdxReserveId, 5_00);
+    updateLiquidationProtocolFee(spoke1, usdxReserveId, 5_00);
     updateLiquidationBonus(spoke1, usdxReserveId, 101_00);
 
     Utils.supplyCollateral(spoke1, wethReserveId, alice, wethAmount, alice);

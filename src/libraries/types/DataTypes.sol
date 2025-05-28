@@ -77,7 +77,7 @@ library DataTypes {
     uint256 collateralFactor; // BPS TODO: use smaller uint
     uint256 liquidationBonus; // BPS, 100_00 represent a 0% bonus TODO: use smaller uint
     uint256 liquidityPremium; // BPS TODO: use smaller uint
-    uint256 liquidationProtocolFeePercentage; // BPS TODO: use smaller uint
+    uint256 liquidationProtocolFee; // BPS TODO: use smaller uint
   }
 
   struct UserPosition {
@@ -110,42 +110,31 @@ library DataTypes {
 
   struct LiquidationConfig {
     uint256 closeFactor; // BPS, HF value to restore to during a liquidation, TODO: use smaller uint
-    uint256 healthFactorBonusThreshold; // health factor under which liquidation bonus is max, TODO: use smaller uint
+    uint256 healthFactorForMaxBonus; // health factor under which liquidation bonus is max, TODO: use smaller uint
     uint256 liquidationBonusFactor; // BPS, as a percentage of effective lb, TODO: use smaller uint
   }
 
   struct LiquidationCallLocalVars {
-    uint256 collateralReserveId; // todo: use smaller int
-    uint256 debtReserveId; // todo: use smaller int
+    uint256 collateralReserveId;
+    uint256 debtReserveId;
     uint256 actualCollateralToLiquidate;
     uint256 actualDebtToLiquidate;
     uint256 liquidationProtocolFeeAmount;
     uint256 userCollateralBalance;
     uint256 totalCollateralInBaseCurrency;
     uint256 totalDebtInBaseCurrency;
-    uint256 debtAssetPrice; // todo: use smaller int
+    uint256 debtAssetPrice;
     uint256 debtAssetUnit;
     uint256 totalDebt;
     uint256 healthFactor;
-    uint256 liquidationBonus; // todo: use smaller int
+    uint256 liquidationBonus;
     uint256 baseDebtToLiquidate;
     uint256 premiumDebtToLiquidate;
     uint256 closeFactor;
-    uint256 collateralFactor; // todo: use smaller int
+    uint256 collateralFactor;
     uint256 collateralAssetPrice;
     uint256 collateralAssetUnit;
-    uint256 liquidationProtocolFeePercentage; // todo: use smaller uint
-    uint256 collateralToLiquidateInBaseCurrency;
-  }
-
-  struct CalculateAvailableCollateralToLiquidateLocalVars {
-    uint256 maxCollateralToLiquidate;
-    uint256 baseCollateral;
-    uint256 bonusCollateral;
-    uint256 collateralAmount;
-    uint256 debtAmountNeeded;
-    uint256 liquidationProtocolFeeAmount;
-    uint256 userCollateralBalanceInBaseCurrency;
+    uint256 liquidationProtocolFee;
     uint256 collateralToLiquidateInBaseCurrency;
   }
 
@@ -162,12 +151,9 @@ library DataTypes {
     uint256 restoredShares;
     uint256 withdrawnShares;
     uint256 newUserRiskPremium;
-    uint256 userDebtPremiumDrawnShares;
-    uint256 userDebtPremiumOffset;
-    uint256 userDebtRealizedPremium;
-    uint256 userCollateralPremiumDrawnShares;
-    uint256 userCollateralPremiumOffset;
-    uint256 accruedCollateralPremium;
+    uint256 userPremiumDrawnShares;
+    uint256 userPremiumOffset;
+    uint256 userRealizedPremium;
     uint256 totalRestoredShares;
     uint256 totalWithdrawnShares;
     uint256 totalCollateralToLiquidate;
