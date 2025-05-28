@@ -21,9 +21,7 @@ library LiquidationLogic {
     uint256 liquidationBonus,
     uint256 healthFactorLiquidationThreshold
   ) internal view returns (uint256) {
-    if (
-      config.healthFactorBonusThreshold == 0 || healthFactor <= config.healthFactorBonusThreshold
-    ) {
+    if (config.healthFactorForMaxBonus == 0 || healthFactor <= config.healthFactorForMaxBonus) {
       return liquidationBonus;
     }
     uint256 minLiquidationBonus = (liquidationBonus - PercentageMathExtended.PERCENTAGE_FACTOR)
@@ -38,7 +36,7 @@ library LiquidationLogic {
       minLiquidationBonus +
       ((liquidationBonus - minLiquidationBonus) *
         (healthFactorLiquidationThreshold - healthFactor)) /
-      (healthFactorLiquidationThreshold - config.healthFactorBonusThreshold);
+      (healthFactorLiquidationThreshold - config.healthFactorForMaxBonus);
   }
 
   /**
@@ -88,21 +86,19 @@ library LiquidationLogic {
   /**
    * @notice Calculates the maximum amount of collateral that can be liquidated.
    * @param params LiquidationCallLocalVars params struct.
-   * @param actualDebtToLiquidate The actual amount of debt to liquidate.
    * @return The maximum collateral amount that can be liquidated.
    * @return The corresponding debt amount to liquidate.
    * @return The protocol liquidation fee amount.
    */
   function calculateAvailableCollateralToLiquidate(
-    DataTypes.LiquidationCallLocalVars memory params,
-    uint256 actualDebtToLiquidate
+    DataTypes.LiquidationCallLocalVars memory params
   ) internal pure returns (uint256, uint256, uint256) {
     // convert existing collateral to base currency
     uint256 userCollateralBalanceInBaseCurrency = (params.userCollateralBalance *
       params.collateralAssetPrice).wadify() / params.collateralAssetUnit;
 
     // find collateral in base currency that corresponds to the debt to cover
-    uint256 baseCollateral = (actualDebtToLiquidate * params.debtAssetPrice).wadify() /
+    uint256 baseCollateral = (params.actualDebtToLiquidate * params.debtAssetPrice).wadify() /
       params.debtAssetUnit;
 
     // account for additional collateral required due to liquidation bonus
@@ -120,7 +116,7 @@ library LiquidationLogic {
         ((maxCollateralToLiquidate * params.collateralAssetUnit) / params.collateralAssetPrice)
           .dewadify() +
         1;
-      debtAmountNeeded = actualDebtToLiquidate;
+      debtAmountNeeded = params.actualDebtToLiquidate;
     }
 
     if (params.liquidationProtocolFee != 0) {

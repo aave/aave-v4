@@ -54,7 +54,7 @@ contract LiquidationCallScenarioTest is SpokeLiquidationBase {
     state.debtAmount.weth = 20 * 10 ** decimals.weth; // 20 eth, $40k
 
     // simplify accounting checks with no fee or bonus
-    updateliquidationProtocolFee(spoke1, state.wbtcReserveId, 0);
+    updateLiquidationProtocolFee(spoke1, state.wbtcReserveId, 0);
     updateLiquidationBonus(spoke1, state.wbtcReserveId, 100_00);
 
     Utils.supplyCollateral(spoke1, state.wbtcReserveId, alice, state.collAmount.wbtc, alice);
@@ -152,7 +152,7 @@ contract LiquidationCallScenarioTest is SpokeLiquidationBase {
     state.debtAmount.weth = 20 * 10 ** decimals.weth; // 20 eth, $40k
 
     // simplify accounting checks with no fee or bonus
-    updateliquidationProtocolFee(spoke1, state.wbtcReserveId, 0);
+    updateLiquidationProtocolFee(spoke1, state.wbtcReserveId, 0);
     updateLiquidationBonus(spoke1, state.wbtcReserveId, 100_00);
 
     Utils.supplyCollateral(spoke1, state.wbtcReserveId, alice, state.collAmount.wbtc, alice);
@@ -246,7 +246,7 @@ contract LiquidationCallScenarioTest is SpokeLiquidationBase {
     state.liqBonus = spoke1.getReserve(state.wbtcReserveId).config.liquidationBonus;
 
     // simplify accounting checks with no fee or bonus
-    updateliquidationProtocolFee(spoke1, state.wbtcReserveId, 0);
+    updateLiquidationProtocolFee(spoke1, state.wbtcReserveId, 0);
     updateLiquidationBonus(spoke1, state.wbtcReserveId, 100_00);
 
     Utils.supplyCollateral(spoke1, state.wbtcReserveId, alice, state.collAmount.wbtc, alice);
@@ -328,7 +328,7 @@ contract LiquidationCallScenarioTest is SpokeLiquidationBase {
     state.liqBonus = spoke1.getReserve(state.wbtcReserveId).config.liquidationBonus;
 
     // simplify accounting checks with no fee or bonus
-    updateliquidationProtocolFee(spoke1, state.wbtcReserveId, 0);
+    updateLiquidationProtocolFee(spoke1, state.wbtcReserveId, 0);
     updateLiquidationBonus(spoke1, state.wbtcReserveId, 100_00);
 
     Utils.supplyCollateral(spoke1, state.wbtcReserveId, alice, state.collAmount.wbtc, alice);
@@ -669,7 +669,7 @@ contract LiquidationCallScenarioTest is SpokeLiquidationBase {
     uint256 closeFactor = 1.07e18;
 
     updateCloseFactor(spoke1, closeFactor);
-    updateliquidationProtocolFee(spoke1, usdxReserveId, 5_00);
+    updateLiquidationProtocolFee(spoke1, usdxReserveId, 5_00);
     updateLiquidationBonus(spoke1, usdxReserveId, 101_00);
 
     Utils.supplyCollateral(spoke1, wethReserveId, alice, wethAmount, alice);

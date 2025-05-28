@@ -678,18 +678,18 @@ abstract contract Base is Test {
     assertEq(spoke.getReserve(reserveId).config.liquidationBonus, newLiquidationBonus);
   }
 
-  function updateliquidationProtocolFee(
+  function updateLiquidationProtocolFee(
     ISpoke spoke,
     uint256 reserveId,
-    uint256 newliquidationProtocolFee
+    uint256 newLiquidationProtocolFee
   ) internal {
     DataTypes.ReserveConfig memory config = spoke.getReserve(reserveId).config;
-    config.liquidationProtocolFee = newliquidationProtocolFee;
+    config.liquidationProtocolFee = newLiquidationProtocolFee;
 
     vm.prank(SPOKE_ADMIN);
     spoke.updateReserveConfig(reserveId, config);
 
-    assertEq(spoke.getReserve(reserveId).config.liquidationProtocolFee, newliquidationProtocolFee);
+    assertEq(spoke.getReserve(reserveId).config.liquidationProtocolFee, newLiquidationProtocolFee);
   }
 
   function setUsingAsCollateral(

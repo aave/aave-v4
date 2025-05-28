@@ -77,8 +77,8 @@ contract SpokeLiquidationBase is SpokeBase {
       HEALTH_FACTOR_LIQUIDATION_THRESHOLD,
       MAX_CLOSE_FACTOR
     );
-    liqConfig.healthFactorBonusThreshold = bound(
-      liqConfig.healthFactorBonusThreshold,
+    liqConfig.healthFactorForMaxBonus = bound(
+      liqConfig.healthFactorForMaxBonus,
       0.01e18,
       HEALTH_FACTOR_LIQUIDATION_THRESHOLD - 1
     );
@@ -122,7 +122,7 @@ contract SpokeLiquidationBase is SpokeBase {
 
     spoke1.updateLiquidationConfig(liqConfig);
     updateLiquidationBonus(spoke1, collateralReserveId, liqBonus);
-    updateliquidationProtocolFee(spoke1, collateralReserveId, state.liquidationProtocolFee);
+    updateLiquidationProtocolFee(spoke1, collateralReserveId, state.liquidationProtocolFee);
 
     Utils.supplyCollateral({
       spoke: spoke1,
@@ -341,11 +341,7 @@ contract SpokeLiquidationBase is SpokeBase {
 
     params.actualDebtToLiquidate = _calculateActualDebtToLiquidate(spoke, state, debtToCover);
 
-    return
-      LiquidationLogic.calculateAvailableCollateralToLiquidate(
-        params,
-        params.actualDebtToLiquidate
-      );
+    return LiquidationLogic.calculateAvailableCollateralToLiquidate(params);
   }
 
   /// helper to calculate actual collateral to liquidate, replicating LiquidationLogic.calculateActualDebtToLiquidate.

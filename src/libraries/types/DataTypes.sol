@@ -109,7 +109,7 @@ library DataTypes {
 
   struct LiquidationConfig {
     uint256 closeFactor; // BPS, HF value to restore to during a liquidation, TODO: use smaller uint
-    uint256 healthFactorBonusThreshold; // health factor under which liquidation bonus is max, TODO: use smaller uint
+    uint256 healthFactorForMaxBonus; // health factor under which liquidation bonus is max, TODO: use smaller uint
     uint256 liquidationBonusFactor; // BPS, as a percentage of effective lb, TODO: use smaller uint
   }
 
@@ -149,12 +149,9 @@ library DataTypes {
     uint256 restoredShares;
     uint256 withdrawnShares;
     uint256 newUserRiskPremium;
-    uint256 userDebtPremiumDrawnShares;
-    uint256 userDebtPremiumOffset;
-    uint256 userDebtRealizedPremium;
-    uint256 userCollateralPremiumDrawnShares;
-    uint256 userCollateralPremiumOffset;
-    uint256 accruedCollateralPremium;
+    uint256 userPremiumDrawnShares;
+    uint256 userPremiumOffset;
+    uint256 userRealizedPremium;
     uint256 totalRestoredShares;
     uint256 totalWithdrawnShares;
     uint256 totalCollateralToLiquidate;

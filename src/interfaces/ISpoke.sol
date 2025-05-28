@@ -78,14 +78,14 @@ interface ISpoke is IMulticall {
   error HealthFactorBelowThreshold();
   error InvalidCloseFactor();
   error InvalidHubAddress();
-  error InvalidHealthFactorBonusThreshold();
+  error InvalidHealthFactorForMaxBonus();
   error InvalidLiquidationBonusFactor();
   error NoUserRiskPremiumDecrease();
   error HealthFactorNotBelowThreshold();
   error CollateralCannotBeLiquidated();
   error SpecifiedCurrencyNotBorrowedByUser();
   error InvalidDebtToCover();
-  error InvalidliquidationProtocolFee();
+  error InvalidLiquidationProtocolFee();
   error InvalidOracleAddress();
   error UsersAndDebtLengthMismatch();
   error Unauthorized();

@@ -45,8 +45,8 @@ contract Spoke is ISpoke, Multicall {
     require(oracleAddress != address(0), InvalidOracleAddress());
 
     HUB = ILiquidityHub(hubAddress);
-    _liquidationConfig.closeFactor = HEALTH_FACTOR_LIQUIDATION_THRESHOLD;
     oracle = IPriceOracle(oracleAddress);
+    _liquidationConfig.closeFactor = HEALTH_FACTOR_LIQUIDATION_THRESHOLD;
   }
 
   // /////
@@ -332,16 +332,18 @@ contract Spoke is ISpoke, Multicall {
     uint256[] memory debtsToCover = new uint256[](1);
     debtsToCover[0] = debtToCover;
 
-    DataTypes.Reserve storage collateralReserve = _reserves[collateralReserveId];
-    DataTypes.Reserve storage debtReserve = _reserves[debtReserveId];
-
     (
       address collateralAsset,
       address debtAsset,
       uint256 debtToLiquidate,
       uint256 collateralToLiquidate,
       uint256 liquidationProtocolFeeShares // TODO: emit in event
-    ) = _executeLiquidationCall(collateralReserve, debtReserve, users, debtsToCover);
+    ) = _executeLiquidationCall(
+        _reserves[collateralReserveId],
+        _reserves[debtReserveId],
+        users,
+        debtsToCover
+      );
 
     // TODO: emit liq protocol fee shares in event
     emit LiquidationCall(
@@ -437,6 +439,7 @@ contract Spoke is ISpoke, Multicall {
     uint256 reserveId,
     uint256 healthFactor
   ) public view returns (uint256) {
+    // if healthFactorForMaxBonus is 0, always returns liquidationBonus
     return
       _liquidationConfig.calculateVariableLiquidationBonus(
         healthFactor,
@@ -542,7 +545,7 @@ contract Spoke is ISpoke, Multicall {
     require(config.decimals <= HUB.MAX_ALLOWED_ASSET_DECIMALS(), InvalidReserveDecimals());
     require(
       config.liquidationProtocolFee <= PercentageMathExtended.PERCENTAGE_FACTOR,
-      InvalidliquidationProtocolFee()
+      InvalidLiquidationProtocolFee()
     );
   }
 
@@ -553,8 +556,8 @@ contract Spoke is ISpoke, Multicall {
       InvalidLiquidationBonusFactor()
     );
     require(
-      config.healthFactorBonusThreshold < HEALTH_FACTOR_LIQUIDATION_THRESHOLD,
-      InvalidHealthFactorBonusThreshold()
+      config.healthFactorForMaxBonus < HEALTH_FACTOR_LIQUIDATION_THRESHOLD,
+      InvalidHealthFactorForMaxBonus()
     );
   }
 
@@ -972,9 +975,9 @@ contract Spoke is ISpoke, Multicall {
       );
 
       // settle debt reserve's premium debt
-      vars.userDebtPremiumDrawnShares = userDebtPosition.premiumDrawnShares;
-      vars.userDebtPremiumOffset = userDebtPosition.premiumOffset;
-      vars.userDebtRealizedPremium = userDebtPosition.realizedPremium;
+      vars.userPremiumDrawnShares = userDebtPosition.premiumDrawnShares;
+      vars.userPremiumOffset = userDebtPosition.premiumOffset;
+      vars.userRealizedPremium = userDebtPosition.realizedPremium;
 
       userDebtPosition.premiumDrawnShares = 0;
       userDebtPosition.premiumOffset = 0;
@@ -984,30 +987,30 @@ contract Spoke is ISpoke, Multicall {
         debtReserve,
         users[vars.i],
         vars.debtAssetId,
-        -int256(vars.userDebtPremiumDrawnShares),
-        -int256(vars.userDebtPremiumOffset),
-        _signedDiff(userDebtPosition.realizedPremium, vars.userDebtRealizedPremium)
+        -int256(vars.userPremiumDrawnShares),
+        -int256(vars.userPremiumOffset),
+        _signedDiff(userDebtPosition.realizedPremium, vars.userRealizedPremium)
       ); // settle premium debt
 
       // todo: rm later to opt
       // optional: settle collateral reserve's premium debt
-      vars.userCollateralPremiumDrawnShares = userCollateralPosition.premiumDrawnShares;
-      vars.userCollateralPremiumOffset = userCollateralPosition.premiumOffset;
-      vars.accruedCollateralPremium =
-        HUB.convertToDrawnAssets(vars.collateralAssetId, vars.userCollateralPremiumDrawnShares) -
-        vars.userCollateralPremiumOffset; // assets(premiumShares) - offset should never be < 0
+      vars.userPremiumDrawnShares = userCollateralPosition.premiumDrawnShares;
+      vars.userPremiumOffset = userCollateralPosition.premiumOffset;
+      vars.userRealizedPremium =
+        HUB.convertToDrawnAssets(vars.collateralAssetId, vars.userPremiumDrawnShares) -
+        vars.userPremiumOffset; // assets(premiumShares) - offset should never be < 0
 
       userCollateralPosition.premiumDrawnShares = 0;
       userCollateralPosition.premiumOffset = 0;
-      userCollateralPosition.realizedPremium += vars.accruedCollateralPremium;
+      userCollateralPosition.realizedPremium += vars.userRealizedPremium;
 
       _refreshPremiumDebt(
         collateralReserve,
         users[vars.i],
         vars.collateralAssetId,
-        -int256(vars.userCollateralPremiumDrawnShares),
-        -int256(vars.userCollateralPremiumOffset),
-        int256(vars.accruedCollateralPremium)
+        -int256(vars.userPremiumDrawnShares),
+        -int256(vars.userPremiumOffset),
+        int256(vars.userRealizedPremium)
       ); // unnecessary but settle premium debt here for consistency
 
       // repay debt
@@ -1043,47 +1046,46 @@ contract Spoke is ISpoke, Multicall {
       (vars.newUserRiskPremium, , , , ) = _calculateUserAccountData(users[vars.i]);
 
       // refresh debt reserve premium
-      vars.userDebtPremiumDrawnShares = userDebtPosition.premiumDrawnShares = userDebtPosition
+      vars.userPremiumDrawnShares = userDebtPosition.premiumDrawnShares = userDebtPosition
         .baseDrawnShares
         .percentMul(vars.newUserRiskPremium);
-      vars.userDebtPremiumOffset = userDebtPosition.premiumOffset = HUB.previewOffset(
+      vars.userPremiumOffset = userDebtPosition.premiumOffset = HUB.previewOffset(
         vars.debtAssetId,
         userDebtPosition.premiumDrawnShares
       );
-
-      // refresh collateral reserve premium
-      vars.userCollateralPremiumDrawnShares = userCollateralPosition
-        .premiumDrawnShares = userCollateralPosition.baseDrawnShares.percentMul(
-        vars.newUserRiskPremium
-      );
-      vars.userCollateralPremiumOffset = userCollateralPosition.premiumOffset = HUB.previewOffset(
-        vars.collateralAssetId,
-        userCollateralPosition.premiumDrawnShares
-      );
+      vars.totalUserDebtPremiumDrawnSharesDelta += int256(vars.userPremiumDrawnShares);
+      vars.totalUserDebtPremiumOffsetDelta += int256(vars.userPremiumOffset);
 
       _refresh(
         debtReserve,
         users[vars.i],
-        int256(vars.userDebtPremiumDrawnShares),
-        int256(vars.userDebtPremiumOffset),
+        int256(vars.userPremiumDrawnShares),
+        int256(vars.userPremiumOffset),
         0
       );
+
+      // refresh collateral reserve premium
+      vars.userPremiumDrawnShares = userCollateralPosition
+        .premiumDrawnShares = userCollateralPosition.baseDrawnShares.percentMul(
+        vars.newUserRiskPremium
+      );
+      vars.userPremiumOffset = userCollateralPosition.premiumOffset = HUB.previewOffset(
+        vars.collateralAssetId,
+        userCollateralPosition.premiumDrawnShares
+      );
+      vars.totalUserCollateralPremiumDrawnSharesDelta += int256(vars.userPremiumDrawnShares);
+      vars.totalUserCollateralPremiumOffsetDelta += int256(vars.userPremiumOffset);
+
       _refresh(
         collateralReserve,
         users[vars.i],
-        int256(vars.userCollateralPremiumDrawnShares),
-        int256(vars.userCollateralPremiumOffset),
+        int256(vars.userPremiumDrawnShares),
+        int256(vars.userPremiumOffset),
         0
       );
 
       _notifyRiskPremiumUpdate(vars.debtAssetId, users[vars.i], vars.newUserRiskPremium);
 
-      vars.totalUserDebtPremiumDrawnSharesDelta += int256(vars.userDebtPremiumDrawnShares);
-      vars.totalUserDebtPremiumOffsetDelta += int256(vars.userDebtPremiumOffset);
-      vars.totalUserCollateralPremiumDrawnSharesDelta += int256(
-        vars.userCollateralPremiumDrawnShares
-      );
-      vars.totalUserCollateralPremiumOffsetDelta += int256(vars.userCollateralPremiumOffset);
       vars.totalCollateralToLiquidate += vars.collateralToLiquidate;
       vars.totalLiquidationProtocolFeeAmount += vars.liquidationProtocolFeeAmount;
       vars.totalDebtToLiquidate += vars.baseDebtToLiquidate + vars.premiumDebtToLiquidate;
@@ -1185,7 +1187,7 @@ contract Spoke is ISpoke, Multicall {
       vars.actualCollateralToLiquidate,
       vars.actualDebtToLiquidate,
       vars.liquidationProtocolFeeAmount
-    ) = vars.calculateAvailableCollateralToLiquidate(vars.actualDebtToLiquidate);
+    ) = vars.calculateAvailableCollateralToLiquidate();
 
     (vars.baseDebtToLiquidate, vars.premiumDebtToLiquidate) = _calculateRestoreAmount(
       baseDebt,

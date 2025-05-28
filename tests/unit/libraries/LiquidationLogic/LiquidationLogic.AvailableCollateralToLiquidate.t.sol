@@ -40,7 +40,7 @@ contract LiquidationAvailableCollateralToLiquidateTest is LiquidationLogicBaseTe
       res.actualCollateralToLiquidate,
       res.actualDebtToLiquidate,
       res.liquidationProtocolFeeAmount
-    ) = LiquidationLogic.calculateAvailableCollateralToLiquidate(args, args.actualDebtToLiquidate);
+    ) = LiquidationLogic.calculateAvailableCollateralToLiquidate(args);
 
     // actualCollateralToLiquidate is always >= 1
     assertEq(res.actualCollateralToLiquidate, 1, 'actualCollateralToLiquidate');
@@ -75,7 +75,7 @@ contract LiquidationAvailableCollateralToLiquidateTest is LiquidationLogicBaseTe
       res.actualCollateralToLiquidate,
       res.actualDebtToLiquidate,
       res.liquidationProtocolFeeAmount
-    ) = LiquidationLogic.calculateAvailableCollateralToLiquidate(args, args.actualDebtToLiquidate);
+    ) = LiquidationLogic.calculateAvailableCollateralToLiquidate(args);
 
     assertEq(res.actualCollateralToLiquidate, 1, 'actualCollateralToLiquidate');
     assertEq(res.actualDebtToLiquidate, params.actualDebtToLiquidate, 'actualDebtToLiquidate');
@@ -109,7 +109,7 @@ contract LiquidationAvailableCollateralToLiquidateTest is LiquidationLogicBaseTe
       res.actualCollateralToLiquidate,
       res.actualDebtToLiquidate,
       res.liquidationProtocolFeeAmount
-    ) = LiquidationLogic.calculateAvailableCollateralToLiquidate(args, args.actualDebtToLiquidate);
+    ) = LiquidationLogic.calculateAvailableCollateralToLiquidate(args);
 
     (uint256 collateralAmount, uint256 protocolLiquidationFee) = _calcLiquidationProtocolFeeAmount(
       params,
@@ -158,7 +158,7 @@ contract LiquidationAvailableCollateralToLiquidateTest is LiquidationLogicBaseTe
       res.actualCollateralToLiquidate,
       res.actualDebtToLiquidate,
       res.liquidationProtocolFeeAmount
-    ) = LiquidationLogic.calculateAvailableCollateralToLiquidate(args, args.actualDebtToLiquidate);
+    ) = LiquidationLogic.calculateAvailableCollateralToLiquidate(args);
 
     if (params.liquidationProtocolFee == 0) {
       assertEq(
@@ -212,7 +212,7 @@ contract LiquidationAvailableCollateralToLiquidateTest is LiquidationLogicBaseTe
       res.actualCollateralToLiquidate,
       res.actualDebtToLiquidate,
       res.liquidationProtocolFeeAmount
-    ) = LiquidationLogic.calculateAvailableCollateralToLiquidate(args, args.actualDebtToLiquidate);
+    ) = LiquidationLogic.calculateAvailableCollateralToLiquidate(args);
 
     uint256 collateralAmount = ((maxCollateralToLiquidate * params.collateralAssetUnit) /
       params.collateralAssetPrice).dewadify() + 1;
@@ -331,6 +331,6 @@ contract LiquidationAvailableCollateralToLiquidateTest is LiquidationLogicBaseTe
   function calculateAvailableCollateralToLiquidate(
     DataTypes.LiquidationCallLocalVars memory params
   ) external pure {
-    LiquidationLogic.calculateAvailableCollateralToLiquidate(params, params.actualDebtToLiquidate);
+    LiquidationLogic.calculateAvailableCollateralToLiquidate(params);
   }
 }
