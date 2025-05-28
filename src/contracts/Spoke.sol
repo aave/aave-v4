@@ -593,6 +593,7 @@ contract Spoke is ISpoke, Multicall {
   ) internal view {
     require(reserve.config.active, ReserveNotActive());
     require(!reserve.config.paused, ReservePaused());
+    require(usingAsCollateral != userPosition.usingAsCollateral, CollateralStatusUnchanged());
     require(reserve.config.collateral, ReserveCannotBeUsedAsCollateral(reserve.reserveId));
     // deactivation should be allowed
     require(!usingAsCollateral || !reserve.config.frozen, ReserveFrozen());

@@ -61,6 +61,7 @@ interface ISpoke is IMulticall {
   error InvalidHealthFactorBonusThreshold();
   error InvalidLiquidationBonusFactor();
   error Unauthorized();
+  error CollateralStatusUnchanged();
 
   function addReserve(
     uint256 assetId,
