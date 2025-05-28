@@ -557,12 +557,9 @@ contract SpokeLiquidationBase is SpokeBase {
     uint256 skipTime,
     address user
   ) internal {
-    // mock price to 0 to circumvent borrow validation
-    vm.mockCall(
-      address(oracle),
-      abi.encodeWithSelector(IPriceOracle.getAssetPrice.selector, assetId),
-      abi.encode(0)
-    );
+    // set price to 0 to circumvent borrow validation
+    uint256 initialPrice = oracle.getAssetPrice(assetId);
+    oracle.setAssetPrice(assetId, 0);
     // user borrows some collateral reserve to inflate collateral supply ex rate
     Utils.borrow({
       spoke: spoke1,
@@ -571,7 +568,7 @@ contract SpokeLiquidationBase is SpokeBase {
       amount: borrowAmount,
       onBehalfOf: user
     });
-    vm.clearMockedCalls();
+    oracle.setAssetPrice(assetId, initialPrice);
     skip(skipTime);
   }
 }

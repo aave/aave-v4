@@ -166,11 +166,7 @@ contract SpokeRiskPremiumTest is SpokeBase {
     );
 
     // Change the price of dai2 via mock call
-    vm.mockCall(
-      address(oracle),
-      abi.encodeWithSelector(oracle.getAssetPrice.selector, dai2AssetId),
-      abi.encode(100000e8)
-    );
+    oracle.setAssetPrice(dai2AssetId, 100000e8);
 
     // Check that debt has outgrown collateral
     uint256 collateralValue = _getValueInBaseCurrency(wbtcAssetId, wbtcSupplyAmount) +

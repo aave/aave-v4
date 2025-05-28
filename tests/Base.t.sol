@@ -1104,15 +1104,12 @@ abstract contract Base is Test {
     uint256 debtAmount
   ) internal returns (uint256, uint256) {
     uint256 assetId = spoke.getReserve(reserveId).assetId;
-    // mock price to 0 to circumvent borrow validation
-    vm.mockCall(
-      address(oracle),
-      abi.encodeWithSelector(IPriceOracle.getAssetPrice.selector, assetId),
-      abi.encode(0)
-    );
+    // set price to 0 to circumvent borrow validation
+    uint256 initialPrice = oracle.getAssetPrice(assetId);
+    oracle.setAssetPrice(assetId, 0);
     vm.prank(user);
     spoke.borrow(reserveId, debtAmount, user);
-    vm.clearMockedCalls();
+    oracle.setAssetPrice(assetId, initialPrice);
   }
 
   /// @dev Calculate expected debt index based on input params
