@@ -1038,13 +1038,6 @@ contract Spoke is ISpoke, Multicall {
       userCollateralPosition.suppliedShares = vars.newUserSuppliedShares;
       vars.totalWithdrawnShares += vars.withdrawnShares;
 
-      /*
-      // TODO: not compulsory, decide whether to rm
-      if (vars.newUserSuppliedShares == 0) {
-        _setUsingAsCollateral(collateralReserveId, users[vars.i], false);
-      }
-      */
-
       // TODO: realize bad debt
       (vars.newUserRiskPremium, , , , ) = _calculateUserAccountData(users[vars.i]);
 

@@ -299,12 +299,7 @@ contract SpokeLiquidationBase is SpokeBase {
     LiquidationTestLocalParams memory state,
     string memory label
   ) internal view {
-    if (state.supplyShares.balanceAfter == 0) {
-      /*assertFalse(
-        spoke.getUsingAsCollateral(state.collateralReserve.reserveId, user),
-        string.concat('isUsingAsCollateral should be false with no collateral ', label)
-      );*/
-    } else {
+    if (state.supplyShares.balanceAfter > 0) {
       assertTrue(
         spoke.getUsingAsCollateral(state.collateralReserve.reserveId, user),
         string.concat('isUsingAsCollateral should be true with remaining collateral ', label)
