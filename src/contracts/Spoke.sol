@@ -207,6 +207,8 @@ contract Spoke is ISpoke, Multicall {
 
     _validateBorrow(reserve, msg.sender);
 
+    positionStatus.setBorrowing(reserveId, true);
+
     uint256 userPremiumDrawnShares = userPosition.premiumDrawnShares;
     uint256 userPremiumOffset = userPosition.premiumOffset;
     uint256 accruedPremium = HUB.convertToDrawnAssets(assetId, userPremiumDrawnShares) -
@@ -239,8 +241,6 @@ contract Spoke is ISpoke, Multicall {
       userPosition.premiumDrawnShares
     );
 
-    positionStatus.setBorrowing(reserveId, true);
-
     _refreshPremiumDebt(
       reserve,
       msg.sender,
@@ -251,7 +251,6 @@ contract Spoke is ISpoke, Multicall {
     );
     _notifyRiskPremiumUpdate(assetId, msg.sender, newUserRiskPremium);
     
-
     emit Borrow(reserveId, msg.sender, baseDrawnShares, to);
   }
 
