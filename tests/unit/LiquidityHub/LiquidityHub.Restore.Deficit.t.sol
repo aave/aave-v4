@@ -253,8 +253,7 @@ contract LiquidityHubRestoreDeficitTest is LiquidityHubBase {
     uint256 drawnAmount,
     uint256 deficitAmountRestored,
     uint256 baseDebtRestored,
-    uint256 premiumDebtRestored,
-    uint256 skipTime
+    uint256 premiumDebtRestored
   ) public {
     test_restore_fuzz_with_deficit_with_premium({
       drawnAmount: drawnAmount,
@@ -460,7 +459,7 @@ contract LiquidityHubRestoreDeficitTest is LiquidityHubBase {
     uint256 assetId,
     uint256 liquidityAdded,
     uint256 liquidityTaken
-  ) internal returns (uint256) {
+  ) internal view returns (uint256) {
     (uint256 baseDebt, ) = hub.getAssetDebt(assetId);
 
     return

@@ -132,7 +132,7 @@ contract WadRayMathTests is Test {
     }
   }
 
-  function test_derayify_fuzz(uint256 a) public {
+  function test_derayify_fuzz(uint256 a) public view {
     assertEq(w.derayify(a), a / w.RAY());
   }
 }
@@ -256,7 +256,7 @@ contract WadRayMathExtendedDifferentialTests is Test {
     }
   }
 
-  function test_wadMul() public {
+  function test_wadMul() public view {
     assertEq(wExtended.wadMulDown(0, 1e18), 0);
     assertEq(wExtended.wadMulDown(1e18, 0), 0);
     assertEq(wExtended.wadMulDown(0, 0), 0);
@@ -278,7 +278,7 @@ contract WadRayMathExtendedDifferentialTests is Test {
     assertEq(wExtended.wadMulUp(6e18, 2e18), 12e18);
   }
 
-  function test_rayMul() public {
+  function test_rayMul() public view {
     assertEq(wExtended.rayMulDown(0, 1e27), 0);
     assertEq(wExtended.rayMulDown(1e27, 0), 0);
     assertEq(wExtended.rayMulDown(0, 0), 0);
@@ -360,7 +360,7 @@ contract WadRayMathExtendedDifferentialTests is Test {
     assertEq(wExtended.rayDivUp(2, 100000000000000e27), 1);
   }
 
-  function test_dewadify_fuzz(uint256 a) public {
+  function test_dewadify_fuzz(uint256 a) public view {
     assertEq(wExtended.dewadify(a), a / wExtended.WAD());
   }
 

@@ -585,9 +585,7 @@ contract LiquidationCallScenarioTest is SpokeLiquidationBase {
       'liquidator pays all weth debt'
     );
 
-    (uint256 userRP, uint256 avgCollFactor, uint256 healthFactor, , ) = spoke1.getUserAccountData(
-      alice
-    );
+    (uint256 userRP, , uint256 healthFactor, , ) = spoke1.getUserAccountData(alice);
 
     assertEq(
       userRP,

@@ -237,11 +237,11 @@ contract SpokeLiquidationBase is SpokeBase {
     _assertProtocolFeeEarned(state, label);
     _assertLiquidationBonusEarned(state, label);
     _assertSupplyExchangeRate(state, label);
-    _assertSetUsingAsCollateral(spoke, state, label);
+    _assertSetUsingAsCollateral(state, label);
     if (state.hasDeficit) {
       _assertBadDebt(spoke, state, label);
     } else {
-      _assertNoBadDebt(spoke, state, label);
+      _assertNoBadDebt(state, label);
     }
   }
 
@@ -333,7 +333,6 @@ contract SpokeLiquidationBase is SpokeBase {
 
   /// check that if user's supplied amount becomes 0, reserve is no longer set usingAsCollateral
   function _assertSetUsingAsCollateral(
-    ISpoke spoke,
     LiquidationTestLocalParams memory state,
     string memory label
   ) internal pure {
@@ -383,7 +382,6 @@ contract SpokeLiquidationBase is SpokeBase {
 
   /// generic assertions in non bad debt scenarios
   function _assertNoBadDebt(
-    ISpoke spoke,
     LiquidationTestLocalParams memory state,
     string memory label
   ) internal pure {

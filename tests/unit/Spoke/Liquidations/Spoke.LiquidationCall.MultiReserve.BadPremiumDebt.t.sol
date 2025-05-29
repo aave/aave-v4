@@ -260,7 +260,7 @@ contract LiquidationCallMultiReserveBadPremiumDebtTest is SpokeLiquidationBase {
     );
 
     // borrow some amount of debt reserve to end up below hf threshold
-    (uint256 hfAfterBorrow, ) = _borrowMultipleReservesToBeAboveHealthyHf(
+    _borrowMultipleReservesToBeAboveHealthyHf(
       state.spoke,
       alice,
       debtReserveIds,

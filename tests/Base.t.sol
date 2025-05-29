@@ -1102,7 +1102,7 @@ abstract contract Base is Test {
     address user,
     uint256 reserveId,
     uint256 debtAmount
-  ) internal returns (uint256, uint256) {
+  ) internal {
     uint256 assetId = spoke.getReserve(reserveId).assetId;
     // set price to 0 to circumvent borrow validation
     uint256 initialPrice = oracle.getAssetPrice(assetId);
@@ -1138,7 +1138,7 @@ abstract contract Base is Test {
     return baseDebt;
   }
 
-  function _assumeValidSupplier(address user) internal {
+  function _assumeValidSupplier(address user) internal view {
     vm.assume(
       user != address(0) &&
         user != address(hub) &&

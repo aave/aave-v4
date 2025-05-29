@@ -1523,10 +1523,7 @@ contract SpokeRepayTest is SpokeBase {
     );
 
     // Bob repays all
-    (uint256 baseRestored, uint256 premiumRestored) = spoke1.getUserDebt(
-      _daiReserveId(spoke1),
-      bob
-    );
+    (uint256 baseRestored, ) = spoke1.getUserDebt(_daiReserveId(spoke1), bob);
 
     vm.expectEmit(address(spoke1));
     emit ISpoke.Repay(

@@ -336,8 +336,6 @@ contract SpokeConfigTest is SpokeBase {
 
   function test_addReserve_reverts_invalid_assetId() public {
     uint256 assetId = hub.assetCount(); // invalid assetId
-
-    uint256 reserveId = spoke1.reserveCount();
     DataTypes.ReserveConfig memory newReserveConfig = DataTypes.ReserveConfig({
       decimals: 18,
       active: true,
@@ -359,7 +357,6 @@ contract SpokeConfigTest is SpokeBase {
   function test_addReserve_fuzz_reverts_invalid_assetId(uint256 assetId) public {
     assetId = bound(assetId, hub.assetCount(), UINT256_MAX); // invalid assetId
 
-    uint256 reserveId = spoke1.reserveCount();
     DataTypes.ReserveConfig memory newReserveConfig = DataTypes.ReserveConfig({
       decimals: 18,
       active: true,
