@@ -216,7 +216,9 @@ contract Spoke is ISpoke, Multicall {
 
     _validateBorrow(reserve, msg.sender);
 
-    positionStatus.setBorrowing(reserveId, true);
+    if(!positionStatus.isBorrowing(reserveId)) {
+      positionStatus.setBorrowing(reserveId, true);
+    }
 
     uint256 userPremiumDrawnShares = userPosition.premiumDrawnShares;
     uint256 userPremiumOffset = userPosition.premiumOffset;
