@@ -984,7 +984,7 @@ abstract contract Base is Test {
     uint256 expectedBaseDebt,
     uint256 expectedPremiumDebt,
     string memory label
-  ) internal {
+  ) internal view {
     uint256 assetId = spoke.getReserve(reserveId).assetId;
 
     // User position debts
