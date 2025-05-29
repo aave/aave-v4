@@ -131,6 +131,14 @@ interface ISpoke is IMulticall {
    */
   function repay(uint256 reserveId, uint256 amount) external;
 
+  /**
+   * @notice Liquidates a user position.
+   * @dev Invokes Liquidity Hub restore, and pulls underlying repaid debt asset from caller (Liquidator), hence it needs prior approval.
+   * @param collateralReserveId The reserveId of the underlying asset used as collateral by the liquidated user.
+   * @param debtReserveId The reserveId of the underlying asset borrowed by the liquidated user, to be repaid by Liquidator during liquidation.
+   * @param user The address of the user to liquidate.
+   * @param debtToCover The amount of debt to cover.
+   */
   function liquidationCall(
     uint256 collateralReserveId,
     uint256 debtReserveId,

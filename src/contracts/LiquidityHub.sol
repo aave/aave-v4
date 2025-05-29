@@ -501,8 +501,8 @@ contract LiquidityHub is ILiquidityHub {
     uint256 premiumAmount,
     uint256 deficitAmount
   ) internal pure returns (uint256) {
-    uint256 flooredSub = deficitAmount > premiumAmount ? deficitAmount - premiumAmount : 0;
-    return baseAmount - flooredSub;
+    uint256 remainingDeficit = deficitAmount > premiumAmount ? deficitAmount - premiumAmount : 0;
+    return baseAmount - remainingDeficit;
   }
 
   // handles underflow

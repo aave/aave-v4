@@ -265,6 +265,7 @@ contract Spoke is ISpoke, Multicall {
     emit Repay(reserveId, msg.sender, restoredShares);
   }
 
+  /// @inheritdoc ISpoke
   function liquidationCall(
     uint256 collateralReserveId,
     uint256 debtReserveId,
