@@ -1041,6 +1041,7 @@ contract Spoke is ISpoke, Multicall {
       // TODO: not compulsory, decide whether to rm
       if (vars.newUserSuppliedShares == 0) {
         userCollateralPosition.usingAsCollateral = false;
+        emit UsingAsCollateral(collateralReserveId, users[vars.i], false);
       }
 
       // TODO: realize bad debt
