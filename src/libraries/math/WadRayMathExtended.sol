@@ -160,4 +160,31 @@ library WadRayMathExtended {
       c := add(div(c, b), gt(mod(c, b), 0))
     }
   }
+
+  /**
+   * @notice Casts value to Wad, adding 18 digits of precision
+   * @param a The number
+   * @return b (= a * 1e18)
+   */
+  function wadify(uint256 a) internal pure returns (uint256 b) {
+    // to avoid overflow, b/WAD == a
+    assembly {
+      b := mul(a, WAD)
+
+      if iszero(eq(div(b, WAD), a)) {
+        revert(0, 0)
+      }
+    }
+  }
+
+  /**
+   * @notice Truncates number from Wad precision
+   * @param a The number in Wad precision
+   * @return b (= a / 1e18)
+   */
+  function dewadify(uint256 a) internal pure returns (uint256 b) {
+    assembly {
+      b := div(a, WAD)
+    }
+  }
 }

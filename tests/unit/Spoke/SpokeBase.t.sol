@@ -709,7 +709,7 @@ contract SpokeBase is Base {
     uint256 idx = 0;
     for (uint256 reserveId; reserveId < spoke.reserveCount(); reserveId++) {
       if (spoke.getUsingAsCollateral(reserveId, user)) {
-        reserveLP.add(idx, spoke.getLiquidityPremium(reserveId), reserveId);
+        reserveLP.add(idx, _getLiquidityPremium(spoke, reserveId), reserveId);
         ++idx;
       }
     }

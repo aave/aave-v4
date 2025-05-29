@@ -23,4 +23,8 @@ contract PercentageMathExtendedWrapper {
   function percentDivUp(uint256 value, uint256 percentage) public pure returns (uint256) {
     return PercentageMathExtended.percentDivUp(value, percentage);
   }
+
+  function fromBps(uint256 bps) public pure returns (uint256) {
+    return PercentageMathExtended.fromBps(bps);
+  }
 }
