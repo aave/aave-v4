@@ -16,18 +16,23 @@ contract LiquidityHubRestoreDeficitTest is LiquidityHubBase {
     uint256 availableLiquidityAfter;
     uint256 balanceBefore;
     uint256 balanceAfter;
+    uint256 baseBorrowRateAfter;
+    uint256 baseBorrowRateExpected;
   }
   function setUp() public override {
     super.setUp();
 
+    // deploy borrowable liquidity
     _deployLiquidity(spoke1, wethAssetId, MAX_SUPPLY_AMOUNT);
     _deployLiquidity(spoke1, usdxAssetId, MAX_SUPPLY_AMOUNT);
 
+    // max approve
     vm.startPrank(address(spoke1));
     hub.assetsList(wethAssetId).approve(address(hub), UINT256_MAX);
     hub.assetsList(usdxAssetId).approve(address(hub), UINT256_MAX);
     vm.stopPrank();
 
+    // mint usdx to spoke1 to be able to repay after accrual
     deal(address(tokenList.usdx), address(spoke1), 1e60);
   }
 
@@ -154,6 +159,7 @@ contract LiquidityHubRestoreDeficitTest is LiquidityHubBase {
     );
   }
 
+  /// @notice Restore with deficit, with base debt and without premium debt, without accrual
   function test_restore_with_deficit() public {
     uint256 drawnAmount = 10_000e6;
     test_restore_fuzz_with_deficit({
@@ -164,6 +170,7 @@ contract LiquidityHubRestoreDeficitTest is LiquidityHubBase {
     });
   }
 
+  /// @notice Fuzz - restore with deficit, with base debt and without premium debt, without accrual
   function test_restore_fuzz_with_deficit(
     uint256 drawnAmount,
     uint256 deficitAmountRestored,
@@ -193,6 +200,11 @@ contract LiquidityHubRestoreDeficitTest is LiquidityHubBase {
     );
     params.availableLiquidityBefore = hub.getAvailableLiquidity(usdxAssetId);
     params.balanceBefore = hub.assetsList(usdxAssetId).balanceOf(address(spoke1));
+    params.baseBorrowRateExpected = _calcExpectedBorrowRate(
+      usdxAssetId,
+      _calculateLiquidityAdded(baseDebtRestored, premiumDebtRestored, deficitAmountRestored),
+      0
+    );
 
     // Restore the deficit
     vm.prank(address(spoke1));
@@ -211,7 +223,9 @@ contract LiquidityHubRestoreDeficitTest is LiquidityHubBase {
     );
     params.availableLiquidityAfter = hub.getAvailableLiquidity(usdxAssetId);
     params.balanceAfter = hub.assetsList(usdxAssetId).balanceOf(address(spoke1));
+    params.baseBorrowRateAfter = hub.getAsset(usdxAssetId).baseBorrowRate;
 
+    assertEq(params.baseBorrowRateAfter, params.baseBorrowRateExpected, 'base borrow rate');
     assertEq(
       params.balanceAfter + params.actualAmountRestored,
       params.balanceBefore,
@@ -234,6 +248,7 @@ contract LiquidityHubRestoreDeficitTest is LiquidityHubBase {
     );
   }
 
+  /// @notice Restore with deficit, with base debt accrual but without premium debt
   function test_restore_fuzz_with_deficit_with_accrual(
     uint256 drawnAmount,
     uint256 deficitAmountRestored,
@@ -250,6 +265,7 @@ contract LiquidityHubRestoreDeficitTest is LiquidityHubBase {
     });
   }
 
+  /// @notice Restore with deficit, with base debt and premium debt
   function test_restore_fuzz_with_deficit_with_premium(
     uint256 drawnAmount,
     uint256 deficitAmountRestored,
@@ -276,6 +292,7 @@ contract LiquidityHubRestoreDeficitTest is LiquidityHubBase {
 
     // restore deficit amount <= total debt amount restored
     deficitAmountRestored = bound(deficitAmountRestored, 1, baseDebtRestored + premiumDebtRestored);
+
     params.actualAmountRestored = baseDebtRestored + premiumDebtRestored - deficitAmountRestored;
 
     params.deficitBefore = hub.getDeficit(usdxAssetId);
@@ -285,6 +302,11 @@ contract LiquidityHubRestoreDeficitTest is LiquidityHubBase {
     );
     params.availableLiquidityBefore = hub.getAvailableLiquidity(usdxAssetId);
     params.balanceBefore = hub.assetsList(usdxAssetId).balanceOf(address(spoke1));
+    params.baseBorrowRateExpected = _calcExpectedBorrowRate(
+      usdxAssetId,
+      _calculateLiquidityAdded(baseDebtRestored, premiumDebtRestored, deficitAmountRestored),
+      0
+    );
 
     vm.expectEmit(address(hub));
     emit ILiquidityHub.DeficitCreated(usdxAssetId, address(spoke1), deficitAmountRestored);
@@ -306,7 +328,9 @@ contract LiquidityHubRestoreDeficitTest is LiquidityHubBase {
     );
     params.availableLiquidityAfter = hub.getAvailableLiquidity(usdxAssetId);
     params.balanceAfter = hub.assetsList(usdxAssetId).balanceOf(address(spoke1));
+    params.baseBorrowRateAfter = hub.getAsset(usdxAssetId).baseBorrowRate;
 
+    assertEq(params.baseBorrowRateAfter, params.baseBorrowRateExpected, 'base borrow rate');
     assertEq(
       params.balanceAfter + params.actualAmountRestored,
       params.balanceBefore,
@@ -354,8 +378,8 @@ contract LiquidityHubRestoreDeficitTest is LiquidityHubBase {
 
     // restore deficit amount <= premium amount
     deficitAmountRestored = bound(deficitAmountRestored, 1, premiumDebtRestored);
-    params.actualAmountRestored = baseDebtRestored + premiumDebtRestored - deficitAmountRestored;
 
+    params.actualAmountRestored = baseDebtRestored + premiumDebtRestored - deficitAmountRestored;
     params.deficitBefore = hub.getDeficit(usdxAssetId);
     params.supplyExchangeRateBefore = hub.convertToSuppliedAssets(
       usdxAssetId,
@@ -363,6 +387,11 @@ contract LiquidityHubRestoreDeficitTest is LiquidityHubBase {
     );
     params.availableLiquidityBefore = hub.getAvailableLiquidity(usdxAssetId);
     params.balanceBefore = hub.assetsList(usdxAssetId).balanceOf(address(spoke1));
+    params.baseBorrowRateExpected = _calcExpectedBorrowRate(
+      usdxAssetId,
+      _calculateLiquidityAdded(baseDebtRestored, premiumDebtRestored, deficitAmountRestored),
+      0
+    );
 
     vm.expectEmit(address(hub));
     emit ILiquidityHub.DeficitCreated(usdxAssetId, address(spoke1), deficitAmountRestored);
@@ -384,7 +413,9 @@ contract LiquidityHubRestoreDeficitTest is LiquidityHubBase {
     );
     params.availableLiquidityAfter = hub.getAvailableLiquidity(usdxAssetId);
     params.balanceAfter = hub.assetsList(usdxAssetId).balanceOf(address(spoke1));
+    params.baseBorrowRateAfter = hub.getAsset(usdxAssetId).baseBorrowRate;
 
+    assertEq(params.baseBorrowRateAfter, params.baseBorrowRateExpected, 'base borrow rate');
     assertEq(
       params.balanceAfter + params.actualAmountRestored,
       params.balanceBefore,
@@ -422,5 +453,37 @@ contract LiquidityHubRestoreDeficitTest is LiquidityHubBase {
     skip(skipTime);
 
     (baseDebt, premiumDebt) = spoke.getUserDebt(reserveId, bob);
+  }
+
+  /// Calculate the expected borrow rate after a restore action
+  function _calcExpectedBorrowRate(
+    uint256 assetId,
+    uint256 liquidityAdded,
+    uint256 liquidityTaken
+  ) internal returns (uint256) {
+    (uint256 baseDebt, ) = hub.getAssetDebt(assetId);
+
+    return
+      irStrategy.calculateInterestRates(
+        DataTypes.CalculateInterestRatesParams({
+          liquidityAdded: liquidityAdded,
+          liquidityTaken: liquidityTaken,
+          totalDebt: baseDebt,
+          reserveFactor: 0, // TODO
+          assetId: assetId,
+          virtualUnderlyingBalance: hub.getAvailableLiquidity(assetId),
+          usingVirtualBalance: true
+        })
+      );
+  }
+
+  /// Calculate the expected liquidity added in a restore action accounting for the deficit
+  function _calculateLiquidityAdded(
+    uint256 baseAmount,
+    uint256 premiumAmount,
+    uint256 deficitAmount
+  ) internal pure returns (uint256) {
+    uint256 flooredSub = deficitAmount > premiumAmount ? deficitAmount - premiumAmount : 0;
+    return baseAmount - flooredSub;
   }
 }

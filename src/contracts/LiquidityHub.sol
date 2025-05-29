@@ -206,7 +206,10 @@ contract LiquidityHub is ILiquidityHub {
     asset.accrue();
 
     _validateRestore(asset, spoke, baseAmount, premiumAmount, deficitAmount);
-    asset.updateBorrowRate({liquidityAdded: baseAmount, liquidityTaken: 0}); // both can be zero
+    asset.updateBorrowRate({
+      liquidityAdded: _calculateLiquidityAdded(baseAmount, premiumAmount, deficitAmount),
+      liquidityTaken: 0
+    }); // both can be zero
 
     uint256 totalRestoredAmount = baseAmount + premiumAmount;
     uint256 baseDrawnSharesRestored = asset.toDrawnSharesDown(baseAmount);
@@ -491,6 +494,15 @@ contract LiquidityHub is ILiquidityHub {
     // sanity: utilize solc underflow check
     uint256 accruedPremium = asset.toDrawnAssetsUp(spoke.premiumDrawnShares) - spoke.premiumOffset;
     return (asset.toDrawnAssetsUp(spoke.baseDrawnShares), spoke.realizedPremium + accruedPremium);
+  }
+
+  function _calculateLiquidityAdded(
+    uint256 baseAmount,
+    uint256 premiumAmount,
+    uint256 deficitAmount
+  ) internal pure returns (uint256) {
+    uint256 flooredSub = deficitAmount > premiumAmount ? deficitAmount - premiumAmount : 0;
+    return baseAmount - flooredSub;
   }
 
   // handles underflow
