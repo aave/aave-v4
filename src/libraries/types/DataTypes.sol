@@ -112,6 +112,7 @@ library DataTypes {
     uint256 closeFactor; // BPS, HF value to restore to during a liquidation, TODO: use smaller uint
     uint256 healthFactorForMaxBonus; // health factor under which liquidation bonus is max, TODO: use smaller uint
     uint256 liquidationBonusFactor; // BPS, as a percentage of effective lb, TODO: use smaller uint
+    uint256 healthFactorForFullLiquidation; // HF under which full liquidation is allowed, TODO: use smaller uint
   }
 
   struct LiquidationCallLocalVars {
@@ -136,6 +137,7 @@ library DataTypes {
     uint256 collateralAssetUnit;
     uint256 liquidationProtocolFee;
     uint256 collateralToLiquidateInBaseCurrency;
+    uint256 healthFactorForFullLiquidation;
   }
 
   struct ExecuteLiquidationLocalVars {

@@ -46,7 +46,8 @@ contract LiquidationCallProtocolFeeTest is SpokeLiquidationBase {
       liqConfig: DataTypes.LiquidationConfig({
         closeFactor: 1e18,
         healthFactorForMaxBonus: 0.9e18,
-        liquidationBonusFactor: 70_00
+        liquidationBonusFactor: 70_00,
+        healthFactorForFullLiquidation: 0
       }),
       liqBonus: 105_00,
       supplyAmount: 10e18,
@@ -64,7 +65,8 @@ contract LiquidationCallProtocolFeeTest is SpokeLiquidationBase {
       liqConfig: DataTypes.LiquidationConfig({
         closeFactor: 1e18,
         healthFactorForMaxBonus: 0.9e18,
-        liquidationBonusFactor: 70_00
+        liquidationBonusFactor: 70_00,
+        healthFactorForFullLiquidation: 0
       }),
       liqBonus: 105_00,
       supplyAmount: 10e18,
@@ -82,7 +84,8 @@ contract LiquidationCallProtocolFeeTest is SpokeLiquidationBase {
       liqConfig: DataTypes.LiquidationConfig({
         closeFactor: 1e18,
         healthFactorForMaxBonus: 0.9e18,
-        liquidationBonusFactor: 70_00
+        liquidationBonusFactor: 70_00,
+        healthFactorForFullLiquidation: 0
       }),
       liqBonus: 105_00,
       supplyAmount: 10_000e6,
@@ -100,7 +103,8 @@ contract LiquidationCallProtocolFeeTest is SpokeLiquidationBase {
       liqConfig: DataTypes.LiquidationConfig({
         closeFactor: 1e18,
         healthFactorForMaxBonus: 0.9e18,
-        liquidationBonusFactor: 70_00
+        liquidationBonusFactor: 70_00,
+        healthFactorForFullLiquidation: 0
       }),
       liqBonus: 105_00,
       supplyAmount: 10_000e6,
@@ -118,7 +122,8 @@ contract LiquidationCallProtocolFeeTest is SpokeLiquidationBase {
       liqConfig: DataTypes.LiquidationConfig({
         closeFactor: 1e18,
         healthFactorForMaxBonus: 0.9e18,
-        liquidationBonusFactor: 70_00
+        liquidationBonusFactor: 70_00,
+        healthFactorForFullLiquidation: 0
       }),
       liqBonus: 105_00,
       supplyAmount: 10_000e18,
@@ -136,7 +141,8 @@ contract LiquidationCallProtocolFeeTest is SpokeLiquidationBase {
       liqConfig: DataTypes.LiquidationConfig({
         closeFactor: 1e18,
         healthFactorForMaxBonus: 0.9e18,
-        liquidationBonusFactor: 70_00
+        liquidationBonusFactor: 70_00,
+        healthFactorForFullLiquidation: 0
       }),
       liqBonus: 105_00,
       supplyAmount: 10_000e18,
@@ -156,7 +162,8 @@ contract LiquidationCallProtocolFeeTest is SpokeLiquidationBase {
       liqConfig: DataTypes.LiquidationConfig({
         closeFactor: 1e18,
         healthFactorForMaxBonus: 0.9e18,
-        liquidationBonusFactor: 70_00
+        liquidationBonusFactor: 70_00,
+        healthFactorForFullLiquidation: 0
       }),
       liqBonus: 100_00, // 0% LB
       supplyAmount: 10_000e18,

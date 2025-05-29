@@ -21,7 +21,8 @@ contract LiquidationCallMultiReserveBadPremiumDebtTest is SpokeLiquidationBase {
       liqConfig: DataTypes.LiquidationConfig({
         closeFactor: 1.5e18,
         liquidationBonusFactor: 0,
-        healthFactorForMaxBonus: 0
+        healthFactorForMaxBonus: 0,
+        healthFactorForFullLiquidation: 0
       }),
       liqBonus: 105_00,
       supplyAmount: 1.5e18,
@@ -78,7 +79,8 @@ contract LiquidationCallMultiReserveBadPremiumDebtTest is SpokeLiquidationBase {
       liqConfig: DataTypes.LiquidationConfig({
         closeFactor: 1.5e18,
         liquidationBonusFactor: 0,
-        healthFactorForMaxBonus: 0
+        healthFactorForMaxBonus: 0,
+        healthFactorForFullLiquidation: 0
       }),
       liqBonus: 105_00,
       supplyAmount: 1.5e18,
@@ -135,7 +137,8 @@ contract LiquidationCallMultiReserveBadPremiumDebtTest is SpokeLiquidationBase {
       liqConfig: DataTypes.LiquidationConfig({
         closeFactor: 1.5e18,
         liquidationBonusFactor: 0,
-        healthFactorForMaxBonus: 0
+        healthFactorForMaxBonus: 0,
+        healthFactorForFullLiquidation: 0
       }),
       liqBonus: 105_00,
       supplyAmount: 1.5e18,

@@ -26,7 +26,8 @@ contract LiquidationCallCloseFactorMultiReserveTest is SpokeLiquidationBase {
       liqConfig: DataTypes.LiquidationConfig({
         closeFactor: 1.5e18,
         liquidationBonusFactor: 0,
-        healthFactorForMaxBonus: 0
+        healthFactorForMaxBonus: 0,
+        healthFactorForFullLiquidation: 0
       }),
       liqBonus: 105_00,
       supplyAmountInBase: 10_000e26,
@@ -59,7 +60,8 @@ contract LiquidationCallCloseFactorMultiReserveTest is SpokeLiquidationBase {
       liqConfig: DataTypes.LiquidationConfig({
         closeFactor: 1.1e18,
         liquidationBonusFactor: 0,
-        healthFactorForMaxBonus: 0
+        healthFactorForMaxBonus: 0,
+        healthFactorForFullLiquidation: 0
       }),
       liqBonus: 105_00,
       supplyAmountInBase: 10_000e26,
@@ -93,7 +95,8 @@ contract LiquidationCallCloseFactorMultiReserveTest is SpokeLiquidationBase {
       liqConfig: DataTypes.LiquidationConfig({
         closeFactor: 1.1e18,
         liquidationBonusFactor: 0,
-        healthFactorForMaxBonus: 0
+        healthFactorForMaxBonus: 0,
+        healthFactorForFullLiquidation: 0
       }),
       liqBonus: 105_00,
       supplyAmountInBase: 10_000_000e26,

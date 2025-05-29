@@ -505,6 +505,10 @@ contract Spoke is ISpoke, Multicall {
       config.healthFactorForMaxBonus < HEALTH_FACTOR_LIQUIDATION_THRESHOLD,
       InvalidHealthFactorForMaxBonus()
     );
+    require(
+      config.healthFactorForFullLiquidation <= HEALTH_FACTOR_LIQUIDATION_THRESHOLD,
+      InvalidHealthFactorForFullLiquidation()
+    );
   }
 
   function _validateCloseFactor(uint256 closeFactor) internal pure {
@@ -1243,7 +1247,9 @@ contract Spoke is ISpoke, Multicall {
       vars.collateralReserveId,
       vars.healthFactor
     );
-    vars.closeFactor = _liquidationConfig.closeFactor;
+    DataTypes.LiquidationConfig memory liquidationConfig = _liquidationConfig;
+    vars.closeFactor = liquidationConfig.closeFactor;
+    vars.healthFactorForFullLiquidation = liquidationConfig.healthFactorForFullLiquidation;
     vars.collateralFactor = collateralReserve.config.collateralFactor;
     vars.collateralAssetPrice = oracle.getAssetPrice(collateralReserve.assetId);
     vars.collateralAssetUnit = 10 ** collateralReserve.config.decimals;

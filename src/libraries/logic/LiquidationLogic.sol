@@ -52,7 +52,9 @@ library LiquidationLogic {
   ) internal pure returns (uint256) {
     uint256 maxLiquidatableDebt = params.totalDebt; // for current debt asset, in amount
     uint256 debtToRestoreCloseFactor = params.calculateDebtToRestoreCloseFactor();
-    maxLiquidatableDebt = maxLiquidatableDebt.min(debtToRestoreCloseFactor);
+    if (params.healthFactor < params.healthFactorForFullLiquidation) {
+      maxLiquidatableDebt = maxLiquidatableDebt.min(debtToRestoreCloseFactor);
+    }
     return debtToCover.min(maxLiquidatableDebt);
   }
 

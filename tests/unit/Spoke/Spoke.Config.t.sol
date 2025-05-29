@@ -444,7 +444,8 @@ contract SpokeConfigTest is SpokeBase {
     DataTypes.LiquidationConfig memory liquidationConfig = DataTypes.LiquidationConfig({
       closeFactor: HEALTH_FACTOR_LIQUIDATION_THRESHOLD,
       healthFactorForMaxBonus: 0.9e18,
-      liquidationBonusFactor: 10_00
+      liquidationBonusFactor: 10_00,
+      healthFactorForFullLiquidation: 0
     });
     test_updateLiquidationConfig_fuzz_liqBonusConfig(liquidationConfig);
   }
@@ -489,7 +490,8 @@ contract SpokeConfigTest is SpokeBase {
     DataTypes.LiquidationConfig memory liquidationConfig = DataTypes.LiquidationConfig({
       closeFactor: HEALTH_FACTOR_LIQUIDATION_THRESHOLD,
       healthFactorForMaxBonus: HEALTH_FACTOR_LIQUIDATION_THRESHOLD,
-      liquidationBonusFactor: 10_00
+      liquidationBonusFactor: 10_00,
+      healthFactorForFullLiquidation: 0
     });
 
     test_updateLiquidationConfig_fuzz_revertsWith_InvalidHealthFactorForMaxBonus(liquidationConfig);
@@ -523,7 +525,8 @@ contract SpokeConfigTest is SpokeBase {
     DataTypes.LiquidationConfig memory liquidationConfig = DataTypes.LiquidationConfig({
       closeFactor: HEALTH_FACTOR_LIQUIDATION_THRESHOLD,
       healthFactorForMaxBonus: 0.9e18,
-      liquidationBonusFactor: MAX_LIQUIDATION_BONUS_FACTOR + 1
+      liquidationBonusFactor: MAX_LIQUIDATION_BONUS_FACTOR + 1,
+      healthFactorForFullLiquidation: 0
     });
 
     test_updateVariableLiquidationBonusConfig_fuzz_revertsWith_InvalidLiquidationBonusFactor(

@@ -60,7 +60,8 @@ contract SpokeGettersTest is SpokeBase {
     DataTypes.LiquidationConfig memory config = DataTypes.LiquidationConfig({
       closeFactor: WadRayMath.WAD,
       healthFactorForMaxBonus: healthFactorForMaxBonus,
-      liquidationBonusFactor: liquidationBonusFactor
+      liquidationBonusFactor: liquidationBonusFactor,
+      healthFactorForFullLiquidation: 0
     });
     spoke1.updateLiquidationConfig(config);
     _config = spoke1.getLiquidationConfig();

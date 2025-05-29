@@ -27,7 +27,8 @@ contract LiquidationLogicVariableLiquidationBonusTest is LiquidationLogicBaseTes
     _config = DataTypes.LiquidationConfig({
       closeFactor: WadRayMath.WAD,
       healthFactorForMaxBonus: healthFactorForMaxBonus,
-      liquidationBonusFactor: liquidationBonusFactor
+      liquidationBonusFactor: liquidationBonusFactor,
+      healthFactorForFullLiquidation: 0
     });
 
     uint256 result = LiquidationLogic.calculateVariableLiquidationBonus(
@@ -51,7 +52,8 @@ contract LiquidationLogicVariableLiquidationBonusTest is LiquidationLogicBaseTes
       DataTypes.LiquidationConfig({
         closeFactor: 0,
         healthFactorForMaxBonus: healthFactorForMaxBonus,
-        liquidationBonusFactor: liquidationBonusFactor
+        liquidationBonusFactor: liquidationBonusFactor,
+        healthFactorForFullLiquidation: 0
       }),
       healthFactor,
       liquidationBonus
@@ -69,7 +71,8 @@ contract LiquidationLogicVariableLiquidationBonusTest is LiquidationLogicBaseTes
       DataTypes.LiquidationConfig({
         closeFactor: 0,
         healthFactorForMaxBonus: healthFactorForMaxBonus,
-        liquidationBonusFactor: liquidationBonusFactor
+        liquidationBonusFactor: liquidationBonusFactor,
+        healthFactorForFullLiquidation: 0
       }),
       healthFactor,
       liquidationBonus
@@ -157,7 +160,8 @@ contract LiquidationLogicVariableLiquidationBonusTest is LiquidationLogicBaseTes
     _config = DataTypes.LiquidationConfig({
       closeFactor: WadRayMath.WAD,
       healthFactorForMaxBonus: healthFactorForMaxBonus,
-      liquidationBonusFactor: liquidationBonusFactor
+      liquidationBonusFactor: liquidationBonusFactor,
+      healthFactorForFullLiquidation: 0
     });
 
     uint256 result = LiquidationLogic.calculateVariableLiquidationBonus(
@@ -213,7 +217,8 @@ contract LiquidationLogicVariableLiquidationBonusTest is LiquidationLogicBaseTes
     _config = DataTypes.LiquidationConfig({
       closeFactor: 0,
       healthFactorForMaxBonus: healthFactorForMaxBonus,
-      liquidationBonusFactor: liquidationBonusFactor
+      liquidationBonusFactor: liquidationBonusFactor,
+      healthFactorForFullLiquidation: 0
     });
 
     uint256 result = LiquidationLogic.calculateVariableLiquidationBonus(
