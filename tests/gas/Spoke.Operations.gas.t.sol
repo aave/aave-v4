@@ -114,4 +114,36 @@ contract SpokeOperations_Gas_Tests is Base {
     vm.snapshotGasLastCall('Spoke.Operations', 'updateUserRiskPremium: 2 debts');
     vm.stopPrank();
   }
+
+  function test_liquidation() public {
+    vm.prank(bob);
+    spoke1.supply(spokeInfo[spoke1].dai.reserveId, 1000e18);
+
+    vm.startPrank(alice);
+    spoke1.supply(spokeInfo[spoke1].usdx.reserveId, 1000e6);
+    spoke1.setUsingAsCollateral(spokeInfo[spoke1].usdx.reserveId, true);
+    vm.stopPrank();
+
+    _borrowToBeBelowHf(spoke1, alice, spokeInfo[spoke1].dai.reserveId, 0.9e18);
+
+    skip(365 days);
+
+    vm.startPrank(bob);
+    spoke1.liquidationCall(
+      spokeInfo[spoke1].usdx.reserveId,
+      spokeInfo[spoke1].dai.reserveId,
+      alice,
+      100e18
+    );
+    vm.snapshotGasLastCall('Spoke.Operations', 'liquidationCall: partial');
+
+    spoke1.liquidationCall(
+      spokeInfo[spoke1].usdx.reserveId,
+      spokeInfo[spoke1].dai.reserveId,
+      alice,
+      type(uint256).max
+    );
+    vm.snapshotGasLastCall('Spoke.Operations', 'liquidationCall: full');
+    vm.stopPrank();
+  }
 }

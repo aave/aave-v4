@@ -90,7 +90,7 @@ contract SpokeRiskPremiumTest is SpokeBase {
     daiInfo.borrowAmount = borrowAmount;
     daiInfo.supplyAmount = borrowAmount * 2;
 
-    daiInfo.lp = spoke1.getLiquidityPremium(daiInfo.reserveId);
+    daiInfo.lp = _getLiquidityPremium(spoke1, daiInfo.reserveId);
 
     // Bob supply dai into spoke1
     Utils.supplyCollateral(spoke1, daiInfo.reserveId, bob, daiInfo.supplyAmount, bob);
@@ -120,7 +120,7 @@ contract SpokeRiskPremiumTest is SpokeBase {
     daiInfo.reserveId = _daiReserveId(spoke1);
     usdxInfo.reserveId = _usdxReserveId(spoke1);
 
-    daiInfo.lp = spoke1.getLiquidityPremium(daiInfo.reserveId);
+    daiInfo.lp = _getLiquidityPremium(spoke1, daiInfo.reserveId);
 
     // Bob supply dai into spoke1
     Utils.supplyCollateral(spoke1, daiInfo.reserveId, bob, daiInfo.supplyAmount, bob);
@@ -166,11 +166,7 @@ contract SpokeRiskPremiumTest is SpokeBase {
     );
 
     // Change the price of dai2 via mock call
-    vm.mockCall(
-      address(oracle),
-      abi.encodeWithSelector(oracle.getAssetPrice.selector, dai2AssetId),
-      abi.encode(100000e8)
-    );
+    oracle.setAssetPrice(dai2AssetId, 100000e8);
 
     // Check that debt has outgrown collateral
     uint256 collateralValue = _getValueInBaseCurrency(wbtcAssetId, wbtcSupplyAmount) +
@@ -182,13 +178,13 @@ contract SpokeRiskPremiumTest is SpokeBase {
 
     // Now user rp should be weighted sum of the collaterals
     uint256 expectedRiskPremium = (_getValueInBaseCurrency(daiAssetId, daiSupplyAmount) *
-      spoke2.getLiquidityPremium(_daiReserveId(spoke2)) +
+      _getLiquidityPremium(spoke2, _daiReserveId(spoke2)) +
       _getValueInBaseCurrency(usdxAssetId, usdxSupplyAmount) *
-      spoke2.getLiquidityPremium(_usdxReserveId(spoke2)) +
+      _getLiquidityPremium(spoke2, _usdxReserveId(spoke2)) +
       _getValueInBaseCurrency(wbtcAssetId, wbtcSupplyAmount) *
-      spoke2.getLiquidityPremium(_wbtcReserveId(spoke2)) +
+      _getLiquidityPremium(spoke2, _wbtcReserveId(spoke2)) +
       _getValueInBaseCurrency(wethAssetId, wethSupplyAmount) *
-      spoke2.getLiquidityPremium(_wethReserveId(spoke2))) / collateralValue;
+      _getLiquidityPremium(spoke2, _wethReserveId(spoke2))) / collateralValue;
     assertEq(
       spoke2.getUserRiskPremium(bob),
       expectedRiskPremium,
@@ -241,9 +237,9 @@ contract SpokeRiskPremiumTest is SpokeBase {
     daiInfo.borrowAmount = 1000e18;
     usdxInfo.borrowAmount = 1000e6;
 
-    daiInfo.lp = spoke1.getLiquidityPremium(daiInfo.reserveId);
-    usdxInfo.lp = spoke1.getLiquidityPremium(usdxInfo.reserveId);
-    wethInfo.lp = spoke1.getLiquidityPremium(wethInfo.reserveId);
+    daiInfo.lp = _getLiquidityPremium(spoke1, daiInfo.reserveId);
+    usdxInfo.lp = _getLiquidityPremium(spoke1, usdxInfo.reserveId);
+    wethInfo.lp = _getLiquidityPremium(spoke1, wethInfo.reserveId);
 
     // Bob supply dai into spoke1
     Utils.supplyCollateral(spoke1, daiInfo.reserveId, bob, daiInfo.supplyAmount, bob);
@@ -317,7 +313,7 @@ contract SpokeRiskPremiumTest is SpokeBase {
     uint256 expectedUserRiskPremium = _calculateExpectedUserRP(bob, spoke2);
     assertLt(
       expectedUserRiskPremium,
-      spoke2.getLiquidityPremium(dai2Info.reserveId),
+      _getLiquidityPremium(spoke2, dai2Info.reserveId),
       'user risk premium is less than highest lp reserve'
     );
     assertEq(spoke2.getUserRiskPremium(bob), expectedUserRiskPremium, 'user risk premium');
@@ -337,9 +333,9 @@ contract SpokeRiskPremiumTest is SpokeBase {
     usdxInfo.supplyAmount = 2000e6;
     wethInfo.supplyAmount = 1e18;
 
-    daiInfo.lp = spoke1.getLiquidityPremium(daiInfo.reserveId);
-    usdxInfo.lp = spoke1.getLiquidityPremium(usdxInfo.reserveId);
-    wethInfo.lp = spoke1.getLiquidityPremium(wethInfo.reserveId);
+    daiInfo.lp = _getLiquidityPremium(spoke1, daiInfo.reserveId);
+    usdxInfo.lp = _getLiquidityPremium(spoke1, usdxInfo.reserveId);
+    wethInfo.lp = _getLiquidityPremium(spoke1, wethInfo.reserveId);
 
     // Bob supply dai into spoke1
     Utils.supplyCollateral(spoke1, daiInfo.reserveId, bob, daiInfo.supplyAmount, bob);
@@ -378,9 +374,9 @@ contract SpokeRiskPremiumTest is SpokeBase {
 
     wethInfo.borrowAmount = 2e18;
 
-    daiInfo.lp = spoke1.getLiquidityPremium(daiInfo.reserveId);
-    usdxInfo.lp = spoke1.getLiquidityPremium(usdxInfo.reserveId);
-    wethInfo.lp = spoke1.getLiquidityPremium(wethInfo.reserveId);
+    daiInfo.lp = _getLiquidityPremium(spoke1, daiInfo.reserveId);
+    usdxInfo.lp = _getLiquidityPremium(spoke1, usdxInfo.reserveId);
+    wethInfo.lp = _getLiquidityPremium(spoke1, wethInfo.reserveId);
 
     // Bob supply dai into spoke1
     Utils.supplyCollateral(spoke1, daiInfo.reserveId, bob, daiInfo.supplyAmount, bob);
@@ -427,9 +423,9 @@ contract SpokeRiskPremiumTest is SpokeBase {
     // Borrow all value in weth
     wethInfo.borrowAmount = wethBorrowAmount;
 
-    daiInfo.lp = spoke3.getLiquidityPremium(daiInfo.reserveId);
-    wethInfo.lp = spoke3.getLiquidityPremium(wethInfo.reserveId);
-    usdxInfo.lp = spoke3.getLiquidityPremium(usdxInfo.reserveId);
+    daiInfo.lp = _getLiquidityPremium(spoke3, daiInfo.reserveId);
+    wethInfo.lp = _getLiquidityPremium(spoke3, wethInfo.reserveId);
+    usdxInfo.lp = _getLiquidityPremium(spoke3, usdxInfo.reserveId);
 
     // Bob supply dai into spoke3
     if (daiInfo.supplyAmount > 0) {
@@ -487,9 +483,9 @@ contract SpokeRiskPremiumTest is SpokeBase {
 
     wbtcInfo.borrowAmount = wbtcBorrowAmount;
 
-    daiInfo.lp = spoke3.getLiquidityPremium(daiInfo.reserveId);
-    wethInfo.lp = spoke3.getLiquidityPremium(wethInfo.reserveId);
-    usdxInfo.lp = spoke3.getLiquidityPremium(usdxInfo.reserveId);
+    daiInfo.lp = _getLiquidityPremium(spoke3, daiInfo.reserveId);
+    wethInfo.lp = _getLiquidityPremium(spoke3, wethInfo.reserveId);
+    usdxInfo.lp = _getLiquidityPremium(spoke3, usdxInfo.reserveId);
 
     // Bob supply dai into spoke3
     if (daiInfo.supplyAmount > 0) {
@@ -559,10 +555,10 @@ contract SpokeRiskPremiumTest is SpokeBase {
     // Borrow all value in dai2
     dai2Info.borrowAmount = borrowAmount;
 
-    daiInfo.lp = spoke2.getLiquidityPremium(daiInfo.reserveId);
-    wethInfo.lp = spoke2.getLiquidityPremium(wethInfo.reserveId);
-    usdxInfo.lp = spoke2.getLiquidityPremium(usdxInfo.reserveId);
-    wbtcInfo.lp = spoke2.getLiquidityPremium(wbtcInfo.reserveId);
+    daiInfo.lp = _getLiquidityPremium(spoke2, daiInfo.reserveId);
+    wethInfo.lp = _getLiquidityPremium(spoke2, wethInfo.reserveId);
+    usdxInfo.lp = _getLiquidityPremium(spoke2, usdxInfo.reserveId);
+    wbtcInfo.lp = _getLiquidityPremium(spoke2, wbtcInfo.reserveId);
 
     // Handle supplying max of both dai and dai2
     deal(address(tokenList.dai), bob, MAX_SUPPLY_AMOUNT * 2);
@@ -644,11 +640,11 @@ contract SpokeRiskPremiumTest is SpokeBase {
     // Borrow all value in dai2
     dai2Info.borrowAmount = borrowAmount;
 
-    daiInfo.lp = spoke2.getLiquidityPremium(daiInfo.reserveId);
-    wethInfo.lp = spoke2.getLiquidityPremium(wethInfo.reserveId);
-    usdxInfo.lp = spoke2.getLiquidityPremium(usdxInfo.reserveId);
-    wbtcInfo.lp = spoke2.getLiquidityPremium(wbtcInfo.reserveId);
-    dai2Info.lp = spoke2.getLiquidityPremium(dai2Info.reserveId);
+    daiInfo.lp = _getLiquidityPremium(spoke2, daiInfo.reserveId);
+    wethInfo.lp = _getLiquidityPremium(spoke2, wethInfo.reserveId);
+    usdxInfo.lp = _getLiquidityPremium(spoke2, usdxInfo.reserveId);
+    wbtcInfo.lp = _getLiquidityPremium(spoke2, wbtcInfo.reserveId);
+    dai2Info.lp = _getLiquidityPremium(spoke2, dai2Info.reserveId);
 
     // Handle supplying max of both dai and dai2
     deal(address(tokenList.dai), bob, MAX_SUPPLY_AMOUNT * 2);
@@ -740,11 +736,11 @@ contract SpokeRiskPremiumTest is SpokeBase {
     // Borrow all value in dai2
     dai2Info.borrowAmount = borrowAmount;
 
-    daiInfo.lp = spoke2.getLiquidityPremium(daiInfo.reserveId);
-    wethInfo.lp = spoke2.getLiquidityPremium(wethInfo.reserveId);
-    usdxInfo.lp = spoke2.getLiquidityPremium(usdxInfo.reserveId);
-    wbtcInfo.lp = spoke2.getLiquidityPremium(wbtcInfo.reserveId);
-    dai2Info.lp = spoke2.getLiquidityPremium(dai2Info.reserveId);
+    daiInfo.lp = _getLiquidityPremium(spoke2, daiInfo.reserveId);
+    wethInfo.lp = _getLiquidityPremium(spoke2, wethInfo.reserveId);
+    usdxInfo.lp = _getLiquidityPremium(spoke2, usdxInfo.reserveId);
+    wbtcInfo.lp = _getLiquidityPremium(spoke2, wbtcInfo.reserveId);
+    dai2Info.lp = _getLiquidityPremium(spoke2, dai2Info.reserveId);
 
     // Handle supplying max of both dai and dai2
     deal(address(tokenList.dai), bob, MAX_SUPPLY_AMOUNT * 2);
@@ -909,9 +905,9 @@ contract SpokeRiskPremiumTest is SpokeBase {
 
     wbtcInfo.borrowAmount = borrowAmount;
 
-    daiInfo.lp = spoke3.getLiquidityPremium(daiInfo.reserveId);
-    wethInfo.lp = spoke3.getLiquidityPremium(wethInfo.reserveId);
-    usdxInfo.lp = spoke3.getLiquidityPremium(usdxInfo.reserveId);
+    daiInfo.lp = _getLiquidityPremium(spoke3, daiInfo.reserveId);
+    wethInfo.lp = _getLiquidityPremium(spoke3, wethInfo.reserveId);
+    usdxInfo.lp = _getLiquidityPremium(spoke3, usdxInfo.reserveId);
 
     // Bob supply dai into spoke3
     if (daiInfo.supplyAmount > 0) {
@@ -1019,9 +1015,9 @@ contract SpokeRiskPremiumTest is SpokeBase {
     wbtcInfo.borrowAmount = wbtcBorrowamount;
     wethInfo.borrowAmount = wethBorrowAmount;
 
-    daiInfo.lp = spoke3.getLiquidityPremium(daiInfo.reserveId);
-    wethInfo.lp = spoke3.getLiquidityPremium(wethInfo.reserveId);
-    usdxInfo.lp = spoke3.getLiquidityPremium(usdxInfo.reserveId);
+    daiInfo.lp = _getLiquidityPremium(spoke3, daiInfo.reserveId);
+    wethInfo.lp = _getLiquidityPremium(spoke3, wethInfo.reserveId);
+    usdxInfo.lp = _getLiquidityPremium(spoke3, usdxInfo.reserveId);
 
     // Bob supply dai into spoke3
     if (daiInfo.supplyAmount > 0) {

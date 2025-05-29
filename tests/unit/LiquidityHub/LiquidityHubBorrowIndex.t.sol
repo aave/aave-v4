@@ -231,7 +231,7 @@ contract LiquidityHubBorrowIndex is Base {
   }
 
   function _deployAndAddSpoke(uint256 assetId) internal returns (address) {
-    Spoke spoke = new Spoke(address(hub), address(oracle), WadRayMath.RAY);
+    Spoke spoke = new Spoke(address(hub), address(oracle));
     hub.addSpoke(
       assetId,
       DataTypes.SpokeConfig({supplyCap: type(uint256).max, drawCap: type(uint256).max}),

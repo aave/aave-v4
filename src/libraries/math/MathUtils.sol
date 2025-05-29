@@ -15,10 +15,10 @@ library MathUtils {
   uint256 internal constant SECONDS_PER_YEAR = 365 days;
 
   /**
-   * @dev Function to calculate the interest accumulated using a linear interest rate formula
-   * @param rate The interest rate, in ray
-   * @param lastUpdateTimestamp The timestamp of the last update of the interest
-   * @return The interest rate linearly accumulated during the timeDelta, in ray
+   * @dev Function to calculate the interest accumulated using a linear interest rate formula.
+   * @param rate The interest rate, in ray.
+   * @param lastUpdateTimestamp The timestamp of the last update of the interest.
+   * @return The interest rate linearly accumulated during the timeDelta, in ray.
    */
   function calculateLinearInterest(
     uint256 rate,
@@ -34,7 +34,7 @@ library MathUtils {
   }
 
   /**
-   * @dev Function to calculate the interest using a compounded interest rate formula
+   * @dev Function to calculate the interest using a compounded interest rate formula.
    * To avoid expensive exponentiation, the calculation is performed using a binomial approximation:
    *
    *  (1+x)^n = 1+n*x+[n/2*(n-1)]*x^2+[n/6*(n-1)*(n-2)*x^3...
@@ -43,9 +43,9 @@ library MathUtils {
    * gas cost reductions. The whitepaper contains reference to the approximation and a table showing the margin of
    * error per different time periods
    *
-   * @param rate The interest rate, in ray
-   * @param lastUpdateTimestamp The timestamp of the last update of the interest
-   * @return The interest rate compounded during the timeDelta, in ray
+   * @param rate The interest rate, in ray.
+   * @param lastUpdateTimestamp The timestamp of the last update of the interest.
+   * @return The interest rate compounded during the timeDelta, in ray.
    */
   function calculateCompoundedInterest(
     uint256 rate,
@@ -85,10 +85,10 @@ library MathUtils {
   }
 
   /**
-   * @dev Calculates the compounded interest between the timestamp of the last update and the current block timestamp
-   * @param rate The interest rate (in ray)
-   * @param lastUpdateTimestamp The timestamp from which the interest accumulation needs to be calculated
-   * @return The interest rate compounded between lastUpdateTimestamp and current block timestamp, in ray
+   * @dev Calculates the compounded interest between the timestamp of the last update and the current block timestamp.
+   * @param rate The interest rate (in ray).
+   * @param lastUpdateTimestamp The timestamp from which the interest accumulation needs to be calculated.
+   * @return The interest rate compounded between lastUpdateTimestamp and current block timestamp, in ray.
    */
   function calculateCompoundedInterest(
     uint256 rate,
@@ -98,14 +98,14 @@ library MathUtils {
   }
 
   /**
-   * @notice Calculates the new weighted average given a current weighted average, the sum of the weights subtracted with a new value, weight
-   * @dev Add precision to weighted average & new value before calling this method
-   * @param currentWeightedAvg The base weighted average
-   * @param currentSumWeights The base sum of weights
-   * @param newValue The new value to add or subtract
-   * @param newValueWeight The weight of the new value
-   * @return newWeightedAvg The weighted average after the operation
-   * @return newSumWeights The sum of weights after operation, cannot be less than 0
+   * @notice Calculates the new weighted average given a current weighted average, the sum of the weights subtracted with a new value, weight.
+   * @dev Add precision to weighted average & new value before calling this method.
+   * @param currentWeightedAvg The base weighted average.
+   * @param currentSumWeights The base sum of weights.
+   * @param newValue The new value to add or subtract.
+   * @param newValueWeight The weight of the new value.
+   * @return newWeightedAvg The weighted average after the operation.
+   * @return newSumWeights The sum of weights after operation, cannot be less than 0.
    */
   function addToWeightedAverage(
     uint256 currentWeightedAvg,
@@ -130,16 +130,16 @@ library MathUtils {
   }
 
   /**
-   * @notice Calculates the new weighted average given a current weighted average, the sum of the weights added with a new value, weight
-   * @dev Add precision to weighted average & new value before calling this method
-   * @param currentWeightedAvg The base weighted average
-   * @param currentSumWeights The base sum of weights
-   * @param newValue The new value to add or subtract
-   * @param newValueWeight The weight of the new value
-   * @return newWeightedAvg The weighted average after the operation
-   * @return newSumWeights The sum of weights after operation, cannot be less than 0
-   * @dev Reverts when newValueWeight is greater than currentSumWeights
-   * @dev Reverts when the newWeightedValue (weight * value) is greater than currentWeightedSum (currentSumWeights * currentWeightedAvg)
+   * @notice Calculates the new weighted average given a current weighted average, the sum of the weights added with a new value, weight.
+   * @dev Add precision to weighted average & new value before calling this method.
+   * @param currentWeightedAvg The base weighted average.
+   * @param currentSumWeights The base sum of weights.
+   * @param newValue The new value to add or subtract.
+   * @param newValueWeight The weight of the new value.
+   * @return newWeightedAvg The weighted average after the operation.
+   * @return newSumWeights The sum of weights after operation, cannot be less than 0.
+   * @dev Reverts when newValueWeight is greater than currentSumWeights.
+   * @dev Reverts when the newWeightedValue (weight * value) is greater than currentWeightedSum (currentSumWeights * currentWeightedAvg).
    */
   function subtractFromWeightedAverage(
     uint256 currentWeightedAvg,
@@ -162,5 +162,17 @@ library MathUtils {
     uint256 newWeightedAvg = (currentWeightedSum - newWeightedValue) / newSumWeights;
 
     return (newWeightedAvg, newSumWeights);
+  }
+
+  /**
+   * @notice Returns the minimum of two values.
+   * @param a The first value to compare.
+   * @param b The second value to compare.
+   * @return result The minimum of the two values.
+   */
+  function min(uint256 a, uint256 b) internal pure returns (uint256 result) {
+    assembly {
+      result := xor(b, mul(xor(a, b), lt(a, b)))
+    }
   }
 }

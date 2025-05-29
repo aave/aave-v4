@@ -40,6 +40,27 @@ interface ISpoke is IMulticall {
   event LiquidationConfigUpdated(DataTypes.LiquidationConfig config);
   event UserRiskPremiumUpdate(address indexed user, uint256 riskPremium);
 
+  /**
+   * @dev Emitted when a borrower is liquidated.
+   * @param collateralAsset The address of the underlying asset used as collateral, to receive as result of the liquidation.
+   * @param debtAsset The address of the underlying borrowed asset to be repaid with the liquidation.
+   * @param user The address of the borrower getting liquidated.
+   * @param liquidatedDebt The debt amount of borrowed asset to be liquidated.
+   * @param liquidatedCollateral The amount of collateral received by the liquidator.
+   * @param liquidator The address of the liquidator.
+   */
+  event LiquidationCall(
+    address indexed collateralAsset,
+    address indexed debtAsset,
+    address indexed user,
+    uint256 liquidatedDebt,
+    uint256 liquidatedCollateral,
+    address liquidator
+  );
+
+  // TODO: rm when treasury accounting is done; indexing to read more easily
+  event TmpLiquidationFee(uint256 indexed tmpLiquidationFee);
+
   error InvalidReserve();
   error UserNotBorrowingReserve(uint256 reserveId);
   error ReserveNotListed();
@@ -56,10 +77,17 @@ interface ISpoke is IMulticall {
   error InvalidReserveDecimals();
   error HealthFactorBelowThreshold();
   error InvalidCloseFactor();
-  error InvalidOracleAddress();
   error InvalidHubAddress();
-  error InvalidHealthFactorBonusThreshold();
+  error InvalidHealthFactorForMaxBonus();
   error InvalidLiquidationBonusFactor();
+  error NoUserRiskPremiumDecrease();
+  error HealthFactorNotBelowThreshold();
+  error CollateralCannotBeLiquidated();
+  error SpecifiedCurrencyNotBorrowedByUser();
+  error InvalidDebtToCover();
+  error InvalidLiquidationProtocolFee();
+  error InvalidOracleAddress();
+  error UsersAndDebtLengthMismatch();
   error Unauthorized();
 
   function addReserve(
@@ -103,6 +131,13 @@ interface ISpoke is IMulticall {
    */
   function repay(uint256 reserveId, uint256 amount) external;
 
+  function liquidationCall(
+    uint256 collateralReserveId,
+    uint256 debtReserveId,
+    address user,
+    uint256 debtToCover
+  ) external;
+
   /**
    * @notice Allows suppliers to enable/disable a specific supplied reserve as collateral.
    * @param reserveId The reserveId of the underlying asset as registered on the spoke.
@@ -118,18 +153,11 @@ interface ISpoke is IMulticall {
    */
   function updateUserRiskPremium(address user) external;
 
-  function getCollateralFactor(uint256 reserveId) external view returns (uint256);
-
   function getHealthFactor(address user) external view returns (uint256);
-
-  function getLiquidityPremium(uint256 reserveId) external view returns (uint256);
 
   function getReserve(uint256 reserveId) external view returns (DataTypes.Reserve memory);
 
   function getReserveDebt(uint256 reserveId) external view returns (uint256, uint256);
-
-  function getReservePrice(uint256 reserveId) external view returns (uint256);
-
   function getReserveRiskPremium(uint256 reserveId) external view returns (uint256);
 
   function getReserveSuppliedAmount(uint256 reserveId) external view returns (uint256);
@@ -171,13 +199,12 @@ interface ISpoke is IMulticall {
   function reserveCount() external view returns (uint256);
 
   function reservesList(uint256) external view returns (uint256);
-
-  function HEALTH_FACTOR_LIQUIDATION_THRESHOLD() external view returns (uint256);
-
   function getVariableLiquidationBonus(
     uint256 reserveId,
     uint256 healthFactor
   ) external view returns (uint256);
 
   function getLiquidationConfig() external view returns (DataTypes.LiquidationConfig memory);
+  function HEALTH_FACTOR_LIQUIDATION_THRESHOLD() external view returns (uint256);
+  function MAX_LIQUIDITY_PREMIUM() external view returns (uint256);
 }

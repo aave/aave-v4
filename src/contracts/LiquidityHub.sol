@@ -56,7 +56,8 @@ contract LiquidityHub is ILiquidityHub {
       })
     });
 
-    emit AssetAdded(assetId++, asset);
+    emit AssetAdded(assetId, asset);
+    emit AssetConfigUpdated(assetId, config);
   }
 
   function updateAssetConfig(uint256 assetId, DataTypes.AssetConfig calldata config) external {
@@ -71,7 +72,7 @@ contract LiquidityHub is ILiquidityHub {
       irStrategy: config.irStrategy
     });
 
-    emit AssetConfigUpdated(assetId);
+    emit AssetConfigUpdated(assetId, config);
   }
 
   function addSpoke(uint256 assetId, DataTypes.SpokeConfig memory config, address spoke) external {
@@ -114,7 +115,7 @@ contract LiquidityHub is ILiquidityHub {
     DataTypes.SpokeData storage spoke = _spokes[assetId][msg.sender];
 
     asset.accrue();
-    _validateSupply(asset, spoke, amount);
+    _validateSupply(asset, spoke, amount, from);
 
     asset.updateBorrowRate({liquidityAdded: amount, liquidityTaken: 0});
 
@@ -387,9 +388,11 @@ contract LiquidityHub is ILiquidityHub {
   function _validateSupply(
     DataTypes.Asset storage asset,
     DataTypes.SpokeData storage spoke,
-    uint256 amount
+    uint256 amount,
+    address from
   ) internal view {
     require(amount != 0, InvalidSupplyAmount());
+    require(from != address(this), InvalidAddFromHub());
     require(asset.config.active, AssetNotActive());
     require(!asset.config.paused, AssetPaused());
     require(!asset.config.frozen, AssetFrozen());
