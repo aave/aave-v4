@@ -8,6 +8,10 @@ pragma solidity ^0.8.0;
 
 contract MathWrapper  {
 
+    function SECONDS_PER_YEAR() pure external returns (uint256) { 
+        return 365 days; 
+    } 
+
     function mulDiv(uint256 x, uint256 y, uint256 denominator) external pure returns (uint256 result) {
         return Math.mulDiv(x,y, denominator);
     }

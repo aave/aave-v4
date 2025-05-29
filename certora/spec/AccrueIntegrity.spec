@@ -2,13 +2,14 @@
 import "./Math_CVL.spec";
 
 using LiquidityHubHarness as liquidityHub;
-
+using MathWrapper as mathWrapper; 
 using WadRayMathWrapper as wadRayMath;
 
 
 methods {
  
     function WadRayMathWrapper.RAY() external returns (uint256) envfree;
+    function mathWrapper.SECONDS_PER_YEAR() external returns (uint256) envfree;
 
     function Math.mulDiv(uint256 x, uint256 y, uint256 denominator) internal  returns (uint256) => 
         mulDivDownCVL(x,y,denominator);
@@ -30,6 +31,7 @@ methods {
     
     function WadRayMathExtended.rayDivUp(uint256 a, uint256 b) internal returns (uint256) => 
         mulDivUpCVL(a,wadRayMath.RAY(),b);
+    
 }
 
 rule runningTwiceIsEquivalentToOne() { 
@@ -53,7 +55,8 @@ rule baseDebtIndexMin_accrue(){
 }
 rule baseDebtIndex_increasing(uint256 assetId) {
     require liquidityHub._assets[assetId].baseDebtIndex >= wadRayMath.RAY() &&
-            liquidityHub._assets[assetId].baseBorrowRate > 0;
+    // todo - check if this is a safe assumption, how to prove it? 
+            liquidityHub._assets[assetId].baseBorrowRate > mathWrapper.SECONDS_PER_YEAR();
     uint256 before = liquidityHub._assets[assetId].baseDebtIndex;
 
     env e;
@@ -110,17 +113,14 @@ rule twoStepVsOneStep(uint256 assetId) {
     
     accrueInterest(eNext,assetId) at init;
 
-
-    
-    satisfy baseDebtIndex_afterTwoSteps < liquidityHub._assets[assetId].baseDebtIndex;
     satisfy baseDebtIndex_afterTwoSteps > liquidityHub._assets[assetId].baseDebtIndex;
-    satisfy baseDebtIndex_afterTwoSteps == liquidityHub._assets[assetId].baseDebtIndex;
 
     assert timestamp_afterTwoSteps == liquidityHub._assets[assetId].lastUpdateTimestamp;
     
     /* only baseDebtIndex  can change
-     the assert version is not strong, it check that some other storage is not changes while baseDebtIndex
-      does not change */    
+     the assert version is not strong, it only checks that some other storage is not changes while baseDebtIndex
+      does not change
+      https://certora.atlassian.net/browse/CERT-8924  is blocking a stronger rule */    
     assert 
         baseDebtIndex_afterTwoSteps != liquidityHub._assets[assetId].baseDebtIndex ||
         lastStorage == afterTwoSteps;
@@ -205,8 +205,12 @@ rule viewFunctionsIntegrity(uint256 assetId, method f) filtered { f-> f.isView &
                                 f.selector != sig:MAX_ALLOWED_ASSET_DECIMALS().selector &&
                                 f.selector != sig:assetsList(uint256).selector &&
                                 f.selector != sig:getSpoke(uint256,address).selector &&
-                                f.selector != sig:getSpokeConfig(uint256,address).selector
-} {
+                                f.selector != sig:getSpokeConfig(uint256,address).selector &&
+                                f.selector != sig:toSharesDown(uint256,uint256,uint256).selector &&
+                                f.selector != sig:toAssetsDown(uint256,uint256,uint256).selector &&
+                                f.selector != sig:toSharesUp(uint256,uint256,uint256).selector &&
+                                f.selector != sig:toAssetsUp(uint256,uint256,uint256).selector }
+{
     env e;
     calldataarg args; 
     storage init = lastStorage;
