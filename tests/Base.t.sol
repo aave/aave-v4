@@ -1193,6 +1193,14 @@ abstract contract Base is Test {
     newBaseDebt = initialDrawnShares.rayMulUp(newDebtIndex);
   }
 
+  function _calcExpectedBaseDebt(
+    uint256 startingDebt,
+    uint256 borrowRate,
+    uint40 startTime
+  ) internal view returns (uint256) {
+    return MathUtils.calculateLinearInterest(borrowRate, startTime).rayMulUp(startingDebt);
+  }
+
   /// @dev Helper function to get asset base debt
   function getAssetBaseDebt(uint256 assetId) internal view returns (uint256) {
     (uint256 baseDebt, ) = hub.getAssetDebt(assetId);
