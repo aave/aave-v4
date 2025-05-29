@@ -66,7 +66,6 @@ library DataTypes {
     ReserveConfig config;
   }
 
-  // TODO: liquidationProtocolFee
   struct ReserveConfig {
     bool active;
     bool frozen;
@@ -77,6 +76,7 @@ library DataTypes {
     uint256 collateralFactor; // BPS TODO: use smaller uint
     uint256 liquidationBonus; // BPS, 100_00 represent a 0% bonus TODO: use smaller uint
     uint256 liquidityPremium; // BPS TODO: use smaller uint
+    uint256 liquidationProtocolFee; // BPS TODO: use smaller uint
   }
 
   struct UserPosition {
@@ -109,7 +109,60 @@ library DataTypes {
 
   struct LiquidationConfig {
     uint256 closeFactor; // BPS, HF value to restore to during a liquidation, TODO: use smaller uint
-    uint256 healthFactorBonusThreshold; // health factor under which liquidation bonus is max, TODO: use smaller uint
+    uint256 healthFactorForMaxBonus; // health factor under which liquidation bonus is max, TODO: use smaller uint
     uint256 liquidationBonusFactor; // BPS, as a percentage of effective lb, TODO: use smaller uint
+  }
+
+  struct LiquidationCallLocalVars {
+    uint256 collateralReserveId;
+    uint256 debtReserveId;
+    uint256 actualCollateralToLiquidate;
+    uint256 actualDebtToLiquidate;
+    uint256 liquidationProtocolFeeAmount;
+    uint256 userCollateralBalance;
+    uint256 totalCollateralInBaseCurrency;
+    uint256 totalDebtInBaseCurrency;
+    uint256 debtAssetPrice;
+    uint256 debtAssetUnit;
+    uint256 totalDebt;
+    uint256 healthFactor;
+    uint256 liquidationBonus;
+    uint256 baseDebtToLiquidate;
+    uint256 premiumDebtToLiquidate;
+    uint256 closeFactor;
+    uint256 collateralFactor;
+    uint256 collateralAssetPrice;
+    uint256 collateralAssetUnit;
+    uint256 liquidationProtocolFee;
+  }
+
+  struct ExecuteLiquidationLocalVars {
+    uint256 i;
+    uint256 debtAssetId;
+    uint256 collateralAssetId;
+    uint256 baseDebt;
+    uint256 premiumDebt;
+    uint256 collateralToLiquidate;
+    uint256 liquidationProtocolFeeAmount;
+    uint256 baseDebtToLiquidate;
+    uint256 premiumDebtToLiquidate;
+    uint256 restoredShares;
+    uint256 withdrawnShares;
+    uint256 newUserRiskPremium;
+    uint256 userPremiumDrawnShares;
+    uint256 userPremiumOffset;
+    uint256 userRealizedPremium;
+    uint256 totalRestoredShares;
+    uint256 totalWithdrawnShares;
+    uint256 totalCollateralToLiquidate;
+    uint256 totalLiquidationProtocolFeeAmount;
+    uint256 totalLiquidationProtocolFeeShares;
+    int256 totalUserDebtPremiumDrawnSharesDelta;
+    int256 totalUserDebtPremiumOffsetDelta;
+    int256 totalUserCollateralPremiumDrawnSharesDelta;
+    int256 totalUserCollateralPremiumOffsetDelta;
+    uint256 totalDebtToLiquidate;
+    uint256 usersLength;
+    uint256 newUserSuppliedShares;
   }
 }

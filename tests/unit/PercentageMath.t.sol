@@ -64,4 +64,53 @@ contract PercentageMathExtendedTests is Test {
     assertEq(w.percentDivUp(14.2515e18, 74_42), 19.150094060736361194e18);
     assertEq(w.percentDivUp(9087312e27, 13_33), 68171882970742685671417854463615904);
   }
+
+  function test_fromBps() public view {
+    assertEq(w.fromBps(1e18), 1e14);
+    assertEq(w.fromBps(1e3), 0);
+  }
+
+  /// percentDivUp by >=100% should never exceed original value
+  function test_percentDivUp_le_value(uint256 value, uint256 percent) public view {
+    percent = bound(percent, w.PERCENTAGE_FACTOR(), w.PERCENTAGE_FACTOR() * 10);
+    value = bound(value, 0, UINT256_MAX / percent); // to prevent overflow
+    assertLe(
+      w.percentDivUp(value, percent),
+      value,
+      'percentDivUp by >=100% should never exceed value'
+    );
+  }
+
+  /// percentDivUp by <=100% should always be >= original value
+  function test_percentDivUp_ge_value(uint256 value, uint256 percent) public view {
+    percent = bound(percent, 1, w.PERCENTAGE_FACTOR());
+    value = bound(value, 0, UINT256_MAX / w.PERCENTAGE_FACTOR()); // to prevent overflow
+    assertGe(
+      w.percentDivUp(value, percent),
+      value,
+      'percentDivUp by <=100% should always be ge value'
+    );
+  }
+
+  /// percentMulUp by >=100% should always be >= original value
+  function test_percentMulUp_ge_value(uint256 value, uint256 percent) public view {
+    percent = bound(percent, w.PERCENTAGE_FACTOR(), w.PERCENTAGE_FACTOR() * 10);
+    value = bound(value, 0, UINT256_MAX / percent); // to prevent overflow
+    assertGe(
+      w.percentMulUp(value, percent),
+      value,
+      'percentMulUp by >=100% should always be ge value'
+    );
+  }
+
+  /// percentMulUp by <=100% should never exceed original value
+  function test_percentMulUp_le_value(uint256 value, uint256 percent) public view {
+    percent = bound(percent, 1, w.PERCENTAGE_FACTOR());
+    value = bound(value, 0, UINT256_MAX / w.PERCENTAGE_FACTOR()); // to prevent overflow
+    assertLe(
+      w.percentMulUp(value, percent),
+      value,
+      'percentMulUp by >=100% should never exceed value'
+    );
+  }
 }

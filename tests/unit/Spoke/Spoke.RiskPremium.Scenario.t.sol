@@ -83,9 +83,9 @@ contract SpokeRiskPremiumScenarioTest is SpokeBase {
     vars.delay = 365 days;
 
     // Validate liquidity premiums
-    assertEq(spoke1.getLiquidityPremium(_usdxReserveId(spoke1)), 50_00, 'usdx lp');
-    assertEq(spoke1.getLiquidityPremium(_wethReserveId(spoke1)), 15_00, 'weth lp');
-    assertEq(spoke1.getLiquidityPremium(_daiReserveId(spoke1)), 20_00, 'dai lp');
+    assertEq(_getLiquidityPremium(spoke1, _usdxReserveId(spoke1)), 50_00, 'usdx lp');
+    assertEq(_getLiquidityPremium(spoke1, _wethReserveId(spoke1)), 15_00, 'weth lp');
+    assertEq(_getLiquidityPremium(spoke1, _daiReserveId(spoke1)), 20_00, 'dai lp');
 
     // Set collateral factor to 100% for Alice collateral
     updateCollateralFactor(spoke1, _wethReserveId(spoke1), 100_00);
@@ -99,8 +99,8 @@ contract SpokeRiskPremiumScenarioTest is SpokeBase {
 
     Utils.borrow(spoke1, _daiReserveId(spoke1), alice, vars.daiBorrowAmount, alice);
 
-    uint256 usdxLiquidityPremium = spoke1.getLiquidityPremium(_usdxReserveId(spoke1));
-    uint256 wethLiquidityPremium = spoke1.getLiquidityPremium(_wethReserveId(spoke1));
+    uint256 usdxLiquidityPremium = _getLiquidityPremium(spoke1, _usdxReserveId(spoke1));
+    uint256 wethLiquidityPremium = _getLiquidityPremium(spoke1, _wethReserveId(spoke1));
     assertLt(wethLiquidityPremium, usdxLiquidityPremium);
 
     // Weth is enough to cover debt, both stored & calculated risk premiums match
@@ -232,8 +232,8 @@ contract SpokeRiskPremiumScenarioTest is SpokeBase {
     daiInfo.reserveId = _daiReserveId(spoke1);
     usdxInfo.reserveId = _usdxReserveId(spoke1);
 
-    daiInfo.lp = spoke1.getLiquidityPremium(daiInfo.reserveId);
-    usdxInfo.lp = spoke1.getLiquidityPremium(usdxInfo.reserveId);
+    daiInfo.lp = _getLiquidityPremium(spoke1, daiInfo.reserveId);
+    usdxInfo.lp = _getLiquidityPremium(spoke1, usdxInfo.reserveId);
 
     // Bob supply dai into spoke1
     Utils.supplyCollateral(spoke1, daiInfo.reserveId, bob, bobDaiInfo.supplyAmount, bob);
@@ -592,8 +592,8 @@ contract SpokeRiskPremiumScenarioTest is SpokeBase {
     // Set liquidity premiums
     updateLiquidityPremium(spoke1, _daiReserveId(spoke1), daiLp);
     updateLiquidityPremium(spoke1, _usdxReserveId(spoke1), usdxLp);
-    assertEq(spoke1.getLiquidityPremium(_daiReserveId(spoke1)), daiLp, 'dai lp');
-    assertEq(spoke1.getLiquidityPremium(_usdxReserveId(spoke1)), usdxLp, 'usdx lp');
+    assertEq(_getLiquidityPremium(spoke1, _daiReserveId(spoke1)), daiLp, 'dai lp');
+    assertEq(_getLiquidityPremium(spoke1, _usdxReserveId(spoke1)), usdxLp, 'usdx lp');
 
     UserInfoLocal memory bobDaiInfo;
     UserInfoLocal memory aliceDaiInfo;

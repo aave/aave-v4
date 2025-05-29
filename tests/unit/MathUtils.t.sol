@@ -100,6 +100,12 @@ contract MathUtilsWeightedAverage is Test {
     }
   }
 
+  function test_min_fuzz(uint256 a, uint256 b) public {
+    uint256 expectedMin = _min(a, b);
+    uint256 min = MathUtils.min(a, b);
+    assertEq(min, expectedMin, 'min');
+  }
+
   function _runWeightedAverageRemoveInvalidWeightedValue(
     uint256[] memory values,
     uint256[] memory weights,

@@ -312,7 +312,7 @@ contract LiquidityHubSupplyTest is LiquidityHubBase {
 
   /// @dev User makes a first supply, shares and assets amounts are correct, no precision loss
   function test_supply_fuzz_single_asset(uint256 assetId, address user, uint256 amount) public {
-    vm.assume(user != address(0) && user != address(hub));
+    _assumeValidSupplier(user);
   
     assetId = bound(assetId, 0, hub.assetCount() - 2); // Exclude duplicated DAI
     amount = bound(amount, 1, MAX_SUPPLY_AMOUNT);
@@ -830,7 +830,7 @@ contract LiquidityHubSupplyTest is LiquidityHubBase {
       assertEq(tokenList.dai.balanceOf(alice), params.aliceBalance, 'alice token balance after');
       assertEq(tokenList.dai.balanceOf(bob), params.bobBalance, 'bob token balance after');
 
-      skip(randomizer(1 days, 365 days, i));
+      skip(randomizer(1 days, 365 days));
     }
   }
 }
