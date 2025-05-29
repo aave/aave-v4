@@ -22,7 +22,7 @@ contract LiquidationLogicVariableLiquidationBonusTest is LiquidationLogicBaseTes
       1,
       HEALTH_FACTOR_LIQUIDATION_THRESHOLD
     );
-    healthFactor = bound(healthFactor, 0, type(uint256).max);
+    healthFactor = bound(healthFactor, 0, UINT256_MAX);
 
     _config = DataTypes.LiquidationConfig({
       closeFactor: WadRayMath.WAD,
@@ -146,13 +146,13 @@ contract LiquidationLogicVariableLiquidationBonusTest is LiquidationLogicBaseTes
     uint256 liquidationBonusFactor
   ) public {
     liquidationBonus = bound(liquidationBonus, MIN_LIQUIDATION_BONUS, MAX_LIQUIDATION_BONUS); // BPS
-    liquidationBonusFactor = bound(liquidationBonusFactor, 0, MAX_LIQUIDATION_BONUS_FACTOR); // BPS
+    liquidationBonusFactor = bound(liquidationBonusFactor, 1, MAX_LIQUIDATION_BONUS_FACTOR); // BPS
     healthFactorForMaxBonus = bound(
       healthFactorForMaxBonus,
       1,
       HEALTH_FACTOR_LIQUIDATION_THRESHOLD
     );
-    healthFactor = bound(healthFactor, HEALTH_FACTOR_LIQUIDATION_THRESHOLD + 1, type(uint256).max);
+    healthFactor = bound(healthFactor, HEALTH_FACTOR_LIQUIDATION_THRESHOLD + 1, UINT256_MAX);
 
     _config = DataTypes.LiquidationConfig({
       closeFactor: WadRayMath.WAD,
@@ -197,7 +197,7 @@ contract LiquidationLogicVariableLiquidationBonusTest is LiquidationLogicBaseTes
     uint256 liquidationBonusFactor
   ) public {
     liquidationBonus = bound(liquidationBonus, MIN_LIQUIDATION_BONUS, MAX_LIQUIDATION_BONUS); // BPS
-    liquidationBonusFactor = bound(liquidationBonusFactor, 0, MAX_LIQUIDATION_BONUS_FACTOR); // BPS
+    liquidationBonusFactor = bound(liquidationBonusFactor, 1, MAX_LIQUIDATION_BONUS_FACTOR); // BPS
 
     healthFactorForMaxBonus = bound(
       healthFactorForMaxBonus,
@@ -240,6 +240,42 @@ contract LiquidationLogicVariableLiquidationBonusTest is LiquidationLogicBaseTes
       'should be >= min liquidationBonus'
     );
     assertLe(result, liquidationBonus, 'should be =< max liquidationBonus');
+  }
+
+  /// fuzz - when liquidationBonusFactor is 0, the liquidation bonus should be the default value
+  function testCalculate_fuzz_zero_liquidationBonusFactor(
+    uint256 healthFactor,
+    uint256 healthFactorForMaxBonus,
+    uint256 liquidationBonus
+  ) public {
+    liquidationBonus = bound(liquidationBonus, MIN_LIQUIDATION_BONUS, MAX_LIQUIDATION_BONUS); // BPS
+    healthFactorForMaxBonus = bound(
+      healthFactorForMaxBonus,
+      1,
+      HEALTH_FACTOR_LIQUIDATION_THRESHOLD
+    );
+    healthFactor = bound(
+      healthFactor,
+      healthFactorForMaxBonus,
+      HEALTH_FACTOR_LIQUIDATION_THRESHOLD
+    );
+
+    uint256 liquidationBonusFactor = 0;
+
+    _config = DataTypes.LiquidationConfig({
+      closeFactor: 0,
+      healthFactorForMaxBonus: healthFactorForMaxBonus,
+      liquidationBonusFactor: liquidationBonusFactor
+    });
+
+    uint256 result = LiquidationLogic.calculateVariableLiquidationBonus(
+      _config,
+      healthFactor,
+      liquidationBonus,
+      HEALTH_FACTOR_LIQUIDATION_THRESHOLD
+    );
+
+    assertEq(result, liquidationBonus, 'should be liquidationBonus');
   }
 
   /// helper to calc the liquidation bonus based on the health factor, health factor bonus threshold,
