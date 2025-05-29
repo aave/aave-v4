@@ -40,6 +40,23 @@ library LiquidationLogic {
   }
 
   /**
+   * @notice Calculates the actual amount of debt possible to repay in the liquidation.
+   * @dev The amount of debt to repay is capped by the total debt of the user and the amount of debt
+   * @param debtToCover The amount of debt to cover.
+   * @param params LiquidationCallLocalVars params struct.
+   * @return The amount of debt to repay in the liquidation.
+   */
+  function calculateActualDebtToLiquidate(
+    uint256 debtToCover,
+    DataTypes.LiquidationCallLocalVars memory params
+  ) internal pure returns (uint256) {
+    uint256 maxLiquidatableDebt = params.totalDebt; // for current debt asset, in amount
+    uint256 debtToRestoreCloseFactor = params.calculateDebtToRestoreCloseFactor();
+    maxLiquidatableDebt = maxLiquidatableDebt.min(debtToRestoreCloseFactor);
+    return debtToCover.min(maxLiquidatableDebt);
+  }
+
+  /**
    * @notice Calculates the amount of debt to liquidate to restore a user's health factor to the close factor.
    * @param params LiquidationCallLocalVars params struct.
    * @return The amount of debt asset to repay to restore health factor.
@@ -64,23 +81,6 @@ library LiquidationLogic {
         (params.closeFactor - params.healthFactor)) /
         ((params.closeFactor - effectiveLiquidationPenalty + 1) * params.debtAssetPrice))
         .dewadify();
-  }
-
-  /**
-   * @notice Calculates the actual amount of debt possible to repay in the liquidation.
-   * @dev The amount of debt to repay is capped by the total debt of the user and the amount of debt
-   * @param debtToCover The amount of debt to cover.
-   * @param params LiquidationCallLocalVars params struct.
-   * @return The amount of debt to repay in the liquidation.
-   */
-  function calculateActualDebtToLiquidate(
-    uint256 debtToCover,
-    DataTypes.LiquidationCallLocalVars memory params
-  ) internal pure returns (uint256) {
-    uint256 maxLiquidatableDebt = params.totalDebt; // for current debt asset, in amount
-    uint256 debtToRestoreCloseFactor = params.calculateDebtToRestoreCloseFactor();
-    maxLiquidatableDebt = maxLiquidatableDebt.min(debtToRestoreCloseFactor);
-    return debtToCover.min(maxLiquidatableDebt);
   }
 
   /**
