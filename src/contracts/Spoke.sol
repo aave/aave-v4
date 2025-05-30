@@ -1012,17 +1012,11 @@ contract Spoke is ISpoke, Multicall {
     vars.usersLength = users.length;
     require(vars.usersLength == debtsToCover.length, UsersAndDebtLengthMismatch());
 
-    // uint256 collateralReserveId = collateralReserve.reserveId;
-    // uint256 debtReserveId = debtReserve.reserveId;
-
     vars.collateralReserveId = collateralReserve.reserveId;
     vars.debtReserveId = debtReserve.reserveId;
 
     vars.collateralAssetId = collateralReserve.assetId;
     vars.debtAssetId = debtReserve.assetId;
-
-    // console.log('SP resIds %e %e', collateralReserve.reserveId, debtReserve.reserveId);
-    // console.log('SP resIds %e %e', vars.collateralReserveId, vars.debtReserveId);
 
     while (vars.i < vars.usersLength) {
       DataTypes.UserPosition storage userCollateralPosition = _userPositions[users[vars.i]][

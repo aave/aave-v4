@@ -173,7 +173,12 @@ contract SpokeLiquidationBase is SpokeBase {
     console.log('  desiredHf: ', desiredHf);
     console.log('  liquidationProtocolFee: ', liquidationProtocolFee);
     console.log('  skipTime: ', skipTime);
-    console.log('  liqConfig: ', liqConfig.closeFactor, liqConfig.healthFactorForMaxBonus);
+    console.log(
+      '  liqConfig: close factor %e, hf max bonus %e factor %e',
+      liqConfig.closeFactor,
+      liqConfig.healthFactorForMaxBonus,
+      liqConfig.liquidationBonusFactor
+    );
 
     Utils.supplyCollateral({
       spoke: state.spoke,
@@ -242,7 +247,7 @@ contract SpokeLiquidationBase is SpokeBase {
     LiquidationTestLocalParams memory state,
     ISpoke spoke,
     string memory label
-  ) internal view {
+  ) internal {
     _assertUserAccountData(spoke, state, label);
     _assertProtocolFeeEarned(state, label);
     _assertLiquidationBonusEarned(state, label);
@@ -391,11 +396,9 @@ contract SpokeLiquidationBase is SpokeBase {
   }
 
   /// generic assertions in non bad debt scenarios
-  function _assertNoBadDebt(
-    LiquidationTestLocalParams memory state,
-    string memory label
-  ) internal pure {
+  function _assertNoBadDebt(LiquidationTestLocalParams memory state, string memory label) internal {
     // total debt/collateral in user's position should be > 0
+    _logState(state);
     assertGt(
       state.finalTotalCollateralInBaseCurrency,
       0,
@@ -410,6 +413,78 @@ contract SpokeLiquidationBase is SpokeBase {
     assertNotEq(state.userRp, 0, string.concat('user rp = 0 with no coll ', label));
     // deficit should remain unchanged
     assertEq(state.deficit.balanceChange, 0, string.concat('deficit should be unchanged ', label));
+  }
+
+  function _logState(LiquidationTestLocalParams memory state) internal {
+    console.log('  user: ', state.user);
+    console.log(
+      '  collReserveId: ',
+      state.collateralReserves[state.collateralReserveIndex].reserveId
+    );
+    console.log('  debtReserveId: ', state.debtReserves[state.debtReserveIndex].reserveId);
+    console.log('  collToLiq: %e', state.collToLiq);
+    console.log('  debtToLiq: %e', state.debtToLiq);
+    console.log('  liqProtocolFee: %e', state.liqProtocolFee);
+    console.log('  liquidationBonus: %e', state.liquidationBonus);
+    console.log('  liquidationProtocolFee: %e', state.liquidationProtocolFee);
+    console.log('  initialHf: %e', state.initialHf);
+    console.log(
+      '  initialTotalCollateralInBaseCurrency: %e',
+      state.initialTotalCollateralInBaseCurrency
+    );
+    console.log('  initialTotalDebtInBaseCurrency: %e', state.initialTotalDebtInBaseCurrency);
+    console.log('  finalHf: %e', state.finalHf);
+    console.log(
+      '  finalTotalCollateralInBaseCurrency: %e',
+      state.finalTotalCollateralInBaseCurrency
+    );
+    console.log('  finalTotalDebtInBaseCurrency: %e', state.finalTotalDebtInBaseCurrency);
+    console.log('  outstandingDebt: %e', state.outstandingDebt);
+    console.log('  userRp: %e', state.userRp);
+    console.log('  hasDeficit: ', state.hasDeficit);
+    console.log('  usingAsCollateral: ', state.usingAsCollateral);
+    console.log('  liquidatorCollateral: %e', state.liquidatorCollateral.baseChange);
+    console.log('  liquidatorDebt: %e', state.liquidatorDebt.baseChange);
+    console.log('  totalDebt: %e', state.totalDebt.baseChange);
+    console.log('  supply: %e', state.supply.baseChange);
+    console.log('  supplyShares: %e', state.supplyShares.balanceChange);
+    console.log('  deficit: %e', state.deficit.baseChange);
+    console.log('  treasury: %e', state.treasury.balanceChange);
+
+    //  address user;
+    // Balance liquidatorDebt;
+    // Balance liquidatorCollateral;
+    // Balance treasury;
+    // Balance totalDebt;
+    // Balance baseDebt;
+    // Balance premiumDebt;
+    // Balance supply;
+    // Balance supplyShares;
+    // Balance deficit;
+    // uint256 liquidationBonus;
+    // uint256 liquidationProtocolFee;
+    // DataTypes.Reserve[] collateralReserves;
+    // DataTypes.Reserve[] debtReserves;
+    // uint256 desiredHf;
+    // SupplyExchangeRate rate;
+    // uint256 collToLiq;
+    // uint256 debtToLiq;
+    // uint256 liqProtocolFee;
+    // bool hasDeficit;
+    // uint256 outstandingDebt;
+    // uint256 userRp;
+    // uint256 finalHf;
+    // uint256 finalTotalCollateralInBaseCurrency;
+    // uint256 finalTotalDebtInBaseCurrency;
+    // uint256 initialHf;
+    // uint256 initialTotalCollateralInBaseCurrency;
+    // uint256 initialTotalDebtInBaseCurrency;
+    // bool usingAsCollateral;
+    // uint256 debtReserveIndex;
+    // uint256 collateralReserveIndex;
+    // Balance[] deficits;
+    // Balance[] debts;
+    // uint256 hfBadDebtThreshold;
   }
 
   /// @notice Calculate output from LiquidationLogic.calculateAvailableCollateralToLiquidate.
@@ -714,9 +789,7 @@ contract SpokeLiquidationBase is SpokeBase {
       state.finalTotalDebtInBaseCurrency
     ) = state.spoke.getUserAccountData(state.user);
 
-    state.hasDeficit =
-      state.finalTotalCollateralInBaseCurrency == 0 &&
-      state.finalTotalDebtInBaseCurrency == 0;
+    state.hasDeficit = state.supply.balanceAfter == 0 && state.finalTotalDebtInBaseCurrency == 0;
 
     state.usingAsCollateral = state.spoke.getUsingAsCollateral(
       state.collateralReserves[state.collateralReserveIndex].reserveId,

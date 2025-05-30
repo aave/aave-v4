@@ -13,7 +13,7 @@ bytecode_hash = "none"
 gas_snapshot_check = false
 
 [profile.default.fuzz]
-runs = 1000
+runs = 50000
 seed = "0x640"
 
 [profile.pr.fuzz]

@@ -35,6 +35,22 @@ contract LiquidationCallVariableLiquidationBonusTest is SpokeLiquidationBase {
     _checkLiquidation(state, spoke1, 'liquidationCall_fuzz_variableLiqBonus');
   }
 
+  function test_debug() public {
+    test_liquidationCall_fuzz_variable_liqBonus({
+      collateralReserveId: 1,
+      debtReserveId: 0,
+      liqConfig: DataTypes.LiquidationConfig({
+        closeFactor: 1.00000000000003579e18,
+        healthFactorForMaxBonus: 9.90000000000009341e17,
+        liquidationBonusFactor: 1.056e3
+      }),
+      liqBonus: 11865,
+      supplyAmount: 2909,
+      desiredHf: 890000000000003462,
+      skipTime: 15851
+    });
+  }
+
   /// coll: weth / debt: dai
   function test_liquidationCall_variable_liqBonus_scenario1() public {
     uint256 collateralReserveId = _wethReserveId(spoke1);
@@ -44,8 +60,8 @@ contract LiquidationCallVariableLiquidationBonusTest is SpokeLiquidationBase {
       collateralReserveId: collateralReserveId,
       debtReserveId: debtReserveId,
       liqConfig: DataTypes.LiquidationConfig({
-        closeFactor: 1e18,
-        healthFactorForMaxBonus: 0.9e18,
+        closeFactor: 1.000000000000021925e18,
+        healthFactorForMaxBonus: 9.90000000000009679e17,
         liquidationBonusFactor: 70_00
       }),
       liqBonus: 105_00,

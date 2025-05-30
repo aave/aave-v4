@@ -38,22 +38,22 @@ contract LiquidationCallProtocolFeeTest is SpokeLiquidationBase {
     return state;
   }
 
-  function test_debug() public {
-    test_liquidationCall_fuzz_protocolFee({
-      collateralReserveId: _daiReserveId(spoke1),
-      debtReserveId: _usdxReserveId(spoke1),
-      liqConfig: DataTypes.LiquidationConfig({
-        closeFactor: 1e18,
-        healthFactorForMaxBonus: 0.9e18,
-        liquidationBonusFactor: 70_00
-      }),
-      liqBonus: 105_00,
-      supplyAmount: 10_000e18,
-      desiredHf: 0.95e18,
-      liquidationProtocolFeePercentage: 12_00,
-      skipTime: 365 days
-    });
-  }
+  // function test_debug() public {
+  //   test_liquidationCall_fuzz_protocolFee({
+  //     collateralReserveId: _daiReserveId(spoke1),
+  //     debtReserveId: _usdxReserveId(spoke1),
+  //     liqConfig: DataTypes.LiquidationConfig({
+  //       closeFactor: 1e18,
+  //       healthFactorForMaxBonus: 0.9e18,
+  //       liquidationBonusFactor: 70_00
+  //     }),
+  //     liqBonus: 105_00,
+  //     supplyAmount: 10_000e18,
+  //     desiredHf: 0.95e18,
+  //     liquidationProtocolFeePercentage: 12_00,
+  //     skipTime: 365 days
+  //   });
+  // }
 
   /// coll: weth / debt: dai
   function test_liquidationCall_protocolFee_scenario1() public {
