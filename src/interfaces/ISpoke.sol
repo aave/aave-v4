@@ -97,6 +97,8 @@ interface ISpoke is IMulticall {
     DataTypes.ReserveConfig memory params
   ) external returns (uint256);
 
+  function addHub(address hub) external;
+
   function updateReserveConfig(uint256 reserveId, DataTypes.ReserveConfig calldata params) external;
 
   function updateLiquidationConfig(DataTypes.LiquidationConfig calldata config) external;

@@ -39,12 +39,13 @@ contract Spoke is ISpoke, Multicall {
   DataTypes.LiquidationConfig internal _liquidationConfig;
   uint256[] public reservesList; // todo: rm, not needed
   uint256 public reserveCount;
+  uint256 public hubCount;
 
   constructor(address hubAddress, address oracleAddress) {
     require(hubAddress != address(0), InvalidHubAddress());
     require(oracleAddress != address(0), InvalidOracleAddress());
 
-    _hubs[1] = hubAddress; // Main hub located at id 1
+    _hubs[++hubCount] = hubAddress; // Main hub located at id 1
     oracle = IPriceOracle(oracleAddress);
     _liquidationConfig.closeFactor = HEALTH_FACTOR_LIQUIDATION_THRESHOLD;
   }
@@ -52,6 +53,11 @@ contract Spoke is ISpoke, Multicall {
   // /////
   // Governance
   // /////
+
+  function addHub(address hub) external {
+    // TODO: AccessControl
+    _hubs[++hubCount] = hub;
+  }
 
   function updateLiquidationConfig(
     DataTypes.LiquidationConfig calldata liquidationConfig
@@ -274,15 +280,14 @@ contract Spoke is ISpoke, Multicall {
     DataTypes.Reserve storage reserve = _reserves[reserveId];
     uint256 assetId = reserve.assetId;
 
-    require(address(_hubs[hubId]) != address(0), InvalidHub());
-
+    require(userPosition.drawnHubId == hubId, DrawnHubMismatch());
     (uint256 baseDebt, uint256 premiumDebt) = _getUserDebt(userPosition, assetId);
     (uint256 baseDebtRestored, uint256 premiumDebtRestored) = _calculateRestoreAmount(
       baseDebt,
       premiumDebt,
       amount
     );
-    _validateRepay(reserve);
+    _validateRepay(reserve, hubId);
 
     uint256 userPremiumDrawnShares = userPosition.premiumDrawnShares;
     uint256 userPremiumOffset = userPosition.premiumOffset;
@@ -538,10 +543,11 @@ contract Spoke is ISpoke, Multicall {
   }
 
   // TODO: Place this and LH equivalent in a generic logic library
-  function _validateRepay(DataTypes.Reserve storage reserve) internal view {
+  function _validateRepay(DataTypes.Reserve storage reserve, uint256 hubId) internal view {
     require(reserve.asset != address(0), ReserveNotListed());
     require(reserve.config.active, ReserveNotActive());
     require(!reserve.config.paused, ReservePaused());
+    require(address(_hubs[hubId]) != address(0), InvalidHub());
     // todo validate user not trying to repay more
   }
 
