@@ -280,7 +280,6 @@ contract Spoke is ISpoke, Multicall {
     DataTypes.Reserve storage reserve = _reserves[reserveId];
     uint256 assetId = reserve.assetId;
 
-    require(userPosition.drawnHubId == hubId, DrawnHubMismatch());
     (uint256 baseDebt, uint256 premiumDebt) = _getUserDebt(userPosition, assetId);
     (uint256 baseDebtRestored, uint256 premiumDebtRestored) = _calculateRestoreAmount(
       baseDebt,
@@ -288,6 +287,7 @@ contract Spoke is ISpoke, Multicall {
       amount
     );
     _validateRepay(reserve, hubId);
+    require(userPosition.drawnHubId == hubId, DrawnHubMismatch());
 
     uint256 userPremiumDrawnShares = userPosition.premiumDrawnShares;
     uint256 userPremiumOffset = userPosition.premiumOffset;
