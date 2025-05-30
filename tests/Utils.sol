@@ -113,6 +113,6 @@ library Utils {
 
   function repay(ISpoke spoke, uint256 reserveId, address user, uint256 amount) internal {
     vm.prank(user);
-    spoke.repay(reserveId, amount);
+    spoke.repay(reserveId, 1, amount);
   }
 }

@@ -70,7 +70,7 @@ contract SpokeRepayTest is SpokeBase {
       hub.convertToDrawnShares(daiAssetId, baseRestored)
     );
     vm.prank(bob);
-    spoke1.repay(_daiReserveId(spoke1), daiRepayAmount);
+    spoke1.repay(_daiReserveId(spoke1), MAIN_HUB, daiRepayAmount);
 
     DataTypes.UserPosition memory bobDaiDataAfter = getUserInfo(spoke1, bob, _daiReserveId(spoke1));
     DataTypes.UserPosition memory bobWethDataAfter = getUserInfo(
@@ -113,7 +113,7 @@ contract SpokeRepayTest is SpokeBase {
     skip(365 days);
     spoke1.getUserDebt(_daiReserveId(spoke1), bob);
 
-    spoke1.repay(_daiReserveId(spoke1), borrowAmount);
+    spoke1.repay(_daiReserveId(spoke1), MAIN_HUB, borrowAmount);
 
     skip(365 days);
 
@@ -121,7 +121,7 @@ contract SpokeRepayTest is SpokeBase {
     assertGt(pos.baseDrawnShares, 0, 'user baseDrawnShares after repay');
     assertGt(hub.convertToDrawnAssets(daiAssetId, pos.baseDrawnShares), 0, 'user baseDrawnAssets');
 
-    spoke1.repay(_daiReserveId(spoke1), type(uint256).max);
+    spoke1.repay(_daiReserveId(spoke1), MAIN_HUB, type(uint256).max);
 
     pos = spoke1.getUserPosition(_daiReserveId(spoke1), bob);
     assertEq(pos.baseDrawnShares, 0, 'user baseDrawnShares after full repay');
@@ -182,7 +182,7 @@ contract SpokeRepayTest is SpokeBase {
     vm.expectEmit(address(spoke1));
     emit ISpoke.Repay(_daiReserveId(spoke1), bob, daiRepayAmount);
     vm.prank(bob);
-    spoke1.repay(_daiReserveId(spoke1), daiRepayAmount);
+    spoke1.repay(_daiReserveId(spoke1), MAIN_HUB, daiRepayAmount);
 
     DataTypes.UserPosition memory bobDaiDataAfter = getUserInfo(spoke1, bob, _daiReserveId(spoke1));
     DataTypes.UserPosition memory bobWethDataAfter = getUserInfo(
@@ -284,7 +284,7 @@ contract SpokeRepayTest is SpokeBase {
       hub.convertToDrawnShares(daiAssetId, baseRestored)
     );
     vm.prank(bob);
-    spoke1.repay(_daiReserveId(spoke1), daiRepayAmount);
+    spoke1.repay(_daiReserveId(spoke1), MAIN_HUB, daiRepayAmount);
 
     DataTypes.UserPosition memory bobDaiDataAfter = getUserInfo(spoke1, bob, _daiReserveId(spoke1));
     DataTypes.UserPosition memory bobWethDataAfter = getUserInfo(
@@ -381,7 +381,7 @@ contract SpokeRepayTest is SpokeBase {
     vm.expectEmit(address(spoke1));
     emit ISpoke.Repay(_daiReserveId(spoke1), bob, 0);
     vm.prank(bob);
-    spoke1.repay(_daiReserveId(spoke1), daiRepayAmount);
+    spoke1.repay(_daiReserveId(spoke1), MAIN_HUB, daiRepayAmount);
 
     DataTypes.UserPosition memory bobDaiDataAfter = getUserInfo(spoke1, bob, _daiReserveId(spoke1));
     DataTypes.UserPosition memory bobWethDataAfter = getUserInfo(
@@ -474,7 +474,7 @@ contract SpokeRepayTest is SpokeBase {
 
     // Bob repays using the max value to signal full repayment
     vm.prank(bob);
-    spoke1.repay(_daiReserveId(spoke1), type(uint256).max);
+    spoke1.repay(_daiReserveId(spoke1), MAIN_HUB, type(uint256).max);
 
     Debts memory bobDaiAfter;
     bobDaiAfter.totalDebt = spoke1.getUserTotalDebt(_daiReserveId(spoke1), bob);
@@ -574,7 +574,7 @@ contract SpokeRepayTest is SpokeBase {
       hub.convertToDrawnShares(daiAssetId, baseRestored)
     );
     vm.prank(bob);
-    spoke1.repay(_daiReserveId(spoke1), daiRepayAmount);
+    spoke1.repay(_daiReserveId(spoke1), MAIN_HUB, daiRepayAmount);
 
     DataTypes.UserPosition memory bobDaiDataAfter = getUserInfo(spoke1, bob, _daiReserveId(spoke1));
     DataTypes.UserPosition memory bobWethDataAfter = getUserInfo(
@@ -693,7 +693,7 @@ contract SpokeRepayTest is SpokeBase {
       hub.convertToDrawnShares(daiAssetId, baseRestored)
     );
     vm.prank(bob);
-    spoke1.repay(_daiReserveId(spoke1), daiRepayAmount);
+    spoke1.repay(_daiReserveId(spoke1), MAIN_HUB, daiRepayAmount);
 
     DataTypes.UserPosition memory bobDaiDataAfter = getUserInfo(spoke1, bob, _daiReserveId(spoke1));
     DataTypes.UserPosition memory bobWethDataAfter = getUserInfo(
@@ -817,7 +817,7 @@ contract SpokeRepayTest is SpokeBase {
       );
     }
     vm.prank(bob);
-    spoke1.repay(_daiReserveId(spoke1), daiRepayAmount);
+    spoke1.repay(_daiReserveId(spoke1), MAIN_HUB, daiRepayAmount);
 
     DataTypes.UserPosition memory bobDaiDataAfter = getUserInfo(spoke1, bob, _daiReserveId(spoke1));
     DataTypes.UserPosition memory bobWethDataAfter = getUserInfo(
@@ -932,7 +932,7 @@ contract SpokeRepayTest is SpokeBase {
       emit ISpoke.Repay(_daiReserveId(spoke1), bob, 0);
     }
     vm.prank(bob);
-    spoke1.repay(_daiReserveId(spoke1), daiRepayAmount);
+    spoke1.repay(_daiReserveId(spoke1), MAIN_HUB, daiRepayAmount);
 
     DataTypes.UserPosition memory bobDaiDataAfter = getUserInfo(spoke1, bob, _daiReserveId(spoke1));
     DataTypes.UserPosition memory bobWethDataAfter = getUserInfo(
@@ -1025,7 +1025,7 @@ contract SpokeRepayTest is SpokeBase {
     if (bobDaiBefore.premiumDebt > 0) {
       deal(address(tokenList.dai), bob, bobDaiBefore.premiumDebt);
       vm.prank(bob);
-      spoke1.repay(_daiReserveId(spoke1), bobDaiBefore.premiumDebt);
+      spoke1.repay(_daiReserveId(spoke1), MAIN_HUB, bobDaiBefore.premiumDebt);
     }
 
     bobDaiDataBefore = getUserInfo(spoke1, bob, _daiReserveId(spoke1));
@@ -1056,7 +1056,7 @@ contract SpokeRepayTest is SpokeBase {
     }
 
     vm.prank(bob);
-    spoke1.repay(_daiReserveId(spoke1), daiRepayAmount);
+    spoke1.repay(_daiReserveId(spoke1), MAIN_HUB, daiRepayAmount);
 
     DataTypes.UserPosition memory bobDaiDataAfter = getUserInfo(spoke1, bob, _daiReserveId(spoke1));
     DataTypes.UserPosition memory bobWethDataAfter = getUserInfo(
@@ -1178,7 +1178,7 @@ contract SpokeRepayTest is SpokeBase {
     }
 
     vm.prank(bob);
-    spoke1.repay(_daiReserveId(spoke1), daiRepayAmount);
+    spoke1.repay(_daiReserveId(spoke1), MAIN_HUB, daiRepayAmount);
 
     DataTypes.UserPosition memory bobDaiDataAfter = getUserInfo(spoke1, bob, _daiReserveId(spoke1));
     DataTypes.UserPosition memory bobWethDataAfter = getUserInfo(
@@ -1326,7 +1326,7 @@ contract SpokeRepayTest is SpokeBase {
         daiAssetId
       );
       deal(address(tokenList.dai), bob, daiInfo.repayAmount);
-      spoke1.repay(_daiReserveId(spoke1), daiInfo.repayAmount);
+      spoke1.repay(_daiReserveId(spoke1), MAIN_HUB, daiInfo.repayAmount);
     }
     Debts memory bobDaiAfter = getUserDebt(spoke1, bob, _daiReserveId(spoke1));
 
@@ -1341,7 +1341,7 @@ contract SpokeRepayTest is SpokeBase {
         wethAssetId
       );
       deal(address(tokenList.weth), bob, wethInfo.repayAmount);
-      spoke1.repay(_wethReserveId(spoke1), wethInfo.repayAmount);
+      spoke1.repay(_wethReserveId(spoke1), MAIN_HUB, wethInfo.repayAmount);
     }
     Debts memory bobWethAfter = getUserDebt(spoke1, bob, _wethReserveId(spoke1));
 
@@ -1356,7 +1356,7 @@ contract SpokeRepayTest is SpokeBase {
         wbtcAssetId
       );
       deal(address(tokenList.wbtc), bob, wbtcInfo.repayAmount);
-      spoke1.repay(_wbtcReserveId(spoke1), wbtcInfo.repayAmount);
+      spoke1.repay(_wbtcReserveId(spoke1), MAIN_HUB, wbtcInfo.repayAmount);
     }
     Debts memory bobWbtcAfter = getUserDebt(spoke1, bob, _wbtcReserveId(spoke1));
 
@@ -1371,7 +1371,7 @@ contract SpokeRepayTest is SpokeBase {
         usdxAssetId
       );
       deal(address(tokenList.usdx), bob, usdxInfo.repayAmount);
-      spoke1.repay(_usdxReserveId(spoke1), usdxInfo.repayAmount);
+      spoke1.repay(_usdxReserveId(spoke1), MAIN_HUB, usdxInfo.repayAmount);
     }
     Debts memory bobUsdxAfter = getUserDebt(spoke1, bob, _usdxReserveId(spoke1));
 
@@ -1535,7 +1535,7 @@ contract SpokeRepayTest is SpokeBase {
       hub.convertToDrawnShares(daiAssetId, baseRestored)
     );
     vm.prank(bob);
-    spoke1.repay(_daiReserveId(spoke1), type(uint256).max);
+    spoke1.repay(_daiReserveId(spoke1), MAIN_HUB, type(uint256).max);
 
     // Bob should have 0 drawn shares
     assertEq(

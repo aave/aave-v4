@@ -130,9 +130,10 @@ interface ISpoke is IMulticall {
    * @notice Repays a borrowed amount on a specified reserve.
    * @dev Liquidity Hub pulls underlying asset from caller, hence it needs prior approval.
    * @param reserveId The reserveId of the underlying asset as registered on the spoke.
+   * @param hubId The id of the hub to repay underlying assets to.
    * @param amount The amount to repay.
    */
-  function repay(uint256 reserveId, uint256 amount) external;
+  function repay(uint256 reserveId, uint256 hubId, uint256 amount) external;
 
   function liquidationCall(
     uint256 collateralReserveId,

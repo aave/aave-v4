@@ -242,7 +242,7 @@ contract SpokeRepayScenarioTest is SpokeBase {
       if (baseRestored + premiumRestored > 0) {
         deal(address(tokenList.dai), user, usersInfo[i].daiInfo.repayAmount);
         vm.prank(user);
-        spoke1.repay(_daiReserveId(spoke1), usersInfo[i].daiInfo.repayAmount);
+        spoke1.repay(_daiReserveId(spoke1), MAIN_HUB, usersInfo[i].daiInfo.repayAmount);
       }
 
       // Check Dai Repayment
@@ -267,7 +267,7 @@ contract SpokeRepayScenarioTest is SpokeBase {
       if (baseRestored + premiumRestored > 0) {
         deal(address(tokenList.weth), user, usersInfo[i].wethInfo.repayAmount);
         vm.prank(user);
-        spoke1.repay(_wethReserveId(spoke1), usersInfo[i].wethInfo.repayAmount);
+        spoke1.repay(_wethReserveId(spoke1), MAIN_HUB, usersInfo[i].wethInfo.repayAmount);
       }
 
       // Check Weth Repayment
@@ -292,7 +292,7 @@ contract SpokeRepayScenarioTest is SpokeBase {
       if (baseRestored + premiumRestored > 0) {
         deal(address(tokenList.usdx), user, usersInfo[i].usdxInfo.repayAmount);
         vm.prank(user);
-        spoke1.repay(_usdxReserveId(spoke1), usersInfo[i].usdxInfo.repayAmount);
+        spoke1.repay(_usdxReserveId(spoke1), MAIN_HUB, usersInfo[i].usdxInfo.repayAmount);
       }
 
       // Check Usdx Repayment
@@ -317,7 +317,7 @@ contract SpokeRepayScenarioTest is SpokeBase {
       if (baseRestored + premiumRestored > 0) {
         deal(address(tokenList.wbtc), user, usersInfo[i].wbtcInfo.repayAmount);
         vm.prank(user);
-        spoke1.repay(_wbtcReserveId(spoke1), usersInfo[i].wbtcInfo.repayAmount);
+        spoke1.repay(_wbtcReserveId(spoke1), MAIN_HUB, usersInfo[i].wbtcInfo.repayAmount);
       }
 
       // Check WBTC Repayment
@@ -592,7 +592,7 @@ contract SpokeRepayScenarioTest is SpokeBase {
       if (baseRestored + premiumRestored > 0) {
         deal(address(tokenList.dai), user, usersInfo[i].daiInfo.repayAmount);
         vm.prank(user);
-        spoke1.repay(_daiReserveId(spoke1), usersInfo[i].daiInfo.repayAmount);
+        spoke1.repay(_daiReserveId(spoke1), MAIN_HUB, usersInfo[i].daiInfo.repayAmount);
       }
 
       // Check Dai Repayment
@@ -617,7 +617,7 @@ contract SpokeRepayScenarioTest is SpokeBase {
       if (baseRestored + premiumRestored > 0) {
         deal(address(tokenList.weth), user, usersInfo[i].wethInfo.repayAmount);
         vm.prank(user);
-        spoke1.repay(_wethReserveId(spoke1), usersInfo[i].wethInfo.repayAmount);
+        spoke1.repay(_wethReserveId(spoke1), MAIN_HUB, usersInfo[i].wethInfo.repayAmount);
       }
 
       // Check Weth Repayment
@@ -642,7 +642,7 @@ contract SpokeRepayScenarioTest is SpokeBase {
       if (baseRestored + premiumRestored > 0) {
         deal(address(tokenList.usdx), user, usersInfo[i].usdxInfo.repayAmount);
         vm.prank(user);
-        spoke1.repay(_usdxReserveId(spoke1), usersInfo[i].usdxInfo.repayAmount);
+        spoke1.repay(_usdxReserveId(spoke1), MAIN_HUB, usersInfo[i].usdxInfo.repayAmount);
       }
 
       // Check Usdx Repayment
@@ -667,7 +667,7 @@ contract SpokeRepayScenarioTest is SpokeBase {
       if (baseRestored + premiumRestored > 0) {
         deal(address(tokenList.wbtc), user, usersInfo[i].wbtcInfo.repayAmount);
         vm.prank(user);
-        spoke1.repay(_wbtcReserveId(spoke1), usersInfo[i].wbtcInfo.repayAmount);
+        spoke1.repay(_wbtcReserveId(spoke1), MAIN_HUB, usersInfo[i].wbtcInfo.repayAmount);
       }
 
       // Check WBTC Repayment
@@ -797,7 +797,7 @@ contract SpokeRepayScenarioTest is SpokeBase {
       if (baseRestored + premiumRestored > 0) {
         deal(address(tokenList.dai), user, usersInfo[i].repayAmount);
         vm.prank(user);
-        spoke1.repay(_daiReserveId(spoke1), usersInfo[i].repayAmount);
+        spoke1.repay(_daiReserveId(spoke1), MAIN_HUB, usersInfo[i].repayAmount);
       }
 
       // Check DAI Repayment
@@ -909,7 +909,7 @@ contract SpokeRepayScenarioTest is SpokeBase {
       if (baseRestored + premiumRestored > 0) {
         deal(address(tokenList.dai), user, usersInfo[i].repayAmount);
         vm.prank(user);
-        spoke1.repay(_daiReserveId(spoke1), usersInfo[i].repayAmount);
+        spoke1.repay(_daiReserveId(spoke1), MAIN_HUB, usersInfo[i].repayAmount);
       }
 
       // Check DAI Repayment
@@ -1022,7 +1022,7 @@ contract SpokeRepayScenarioTest is SpokeBase {
     }
 
     vm.prank(bob);
-    spoke1.repay(_daiReserveId(spoke1), action1.repayAmount);
+    spoke1.repay(_daiReserveId(spoke1), MAIN_HUB, action1.repayAmount);
 
     DataTypes.UserPosition memory bobDaiDataAfter = getUserInfo(spoke1, bob, _daiReserveId(spoke1));
     Debts memory bobDaiAfter = getUserDebt(spoke1, bob, _daiReserveId(spoke1));
@@ -1119,7 +1119,7 @@ contract SpokeRepayScenarioTest is SpokeBase {
     }
 
     vm.prank(bob);
-    spoke1.repay(_daiReserveId(spoke1), action2.repayAmount);
+    spoke1.repay(_daiReserveId(spoke1), MAIN_HUB, action2.repayAmount);
 
     bobDaiDataAfter = getUserInfo(spoke1, bob, _daiReserveId(spoke1));
     bobDaiAfter = getUserDebt(spoke1, bob, _daiReserveId(spoke1));
@@ -1213,7 +1213,7 @@ contract SpokeRepayScenarioTest is SpokeBase {
     );
 
     vm.prank(bob);
-    spoke1.repay(_daiReserveId(spoke1), partialRepayAmount);
+    spoke1.repay(_daiReserveId(spoke1), MAIN_HUB, partialRepayAmount);
 
     DataTypes.UserPosition memory bobDaiDataAfter = getUserInfo(spoke1, bob, _daiReserveId(spoke1));
     Debts memory bobDaiAfter;
@@ -1269,7 +1269,7 @@ contract SpokeRepayScenarioTest is SpokeBase {
 
     // Bob repays using the max value to signal full repayment
     vm.prank(bob);
-    spoke1.repay(_daiReserveId(spoke1), type(uint256).max);
+    spoke1.repay(_daiReserveId(spoke1), MAIN_HUB, type(uint256).max);
 
     bobDaiDataAfter = getUserInfo(spoke1, bob, _daiReserveId(spoke1));
     bobDaiAfter.totalDebt = spoke1.getUserTotalDebt(_daiReserveId(spoke1), bob);
@@ -1343,7 +1343,7 @@ contract SpokeRepayScenarioTest is SpokeBase {
     uint256 shares2 = hub.convertToDrawnShares(reserve.assetId, assets);
     deal(reserve.asset, caller, assets);
     IERC20(reserve.asset).approve(address(hub), assets);
-    spoke1.repay(reserveId, assets);
+    spoke1.repay(reserveId, MAIN_HUB, assets);
     vm.stopPrank();
 
     assertApproxEqAbs(shares2, shares1, 1, 'borrowed and repaid shares');
@@ -1394,7 +1394,7 @@ contract SpokeRepayScenarioTest is SpokeBase {
     deal(reserve.asset, caller, assets);
     vm.startPrank(caller);
     IERC20(reserve.asset).approve(address(hub), assets);
-    spoke1.repay(reserveId, assets);
+    spoke1.repay(reserveId, MAIN_HUB, assets);
 
     // Borrow
     uint256 shares2 = hub.convertToDrawnShares(reserve.assetId, assets);

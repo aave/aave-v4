@@ -310,7 +310,7 @@ contract SpokeWithdrawTest is SpokeBase {
     // repay all debt with interest
     uint256 repayAmount = spoke1.getUserTotalDebt(state.reserveId, alice);
     vm.prank(alice);
-    spoke1.repay(state.reserveId, repayAmount);
+    spoke1.repay(state.reserveId, MAIN_HUB, repayAmount);
 
     // number of test stages
     TestData[3] memory reserveData;
@@ -458,7 +458,7 @@ contract SpokeWithdrawTest is SpokeBase {
 
     // alice repays all with interest
     vm.prank(alice);
-    spoke1.repay(state.reserveId, repayAmount);
+    spoke1.repay(state.reserveId, MAIN_HUB, repayAmount);
 
     // number of test stages
     TestData[3] memory reserveData;
@@ -560,7 +560,7 @@ contract SpokeWithdrawTest is SpokeBase {
     // repay all debt with interest
     uint256 repayAmount = spoke1.getUserTotalDebt(state.reserveId, alice);
     vm.prank(alice);
-    spoke1.repay(state.reserveId, repayAmount);
+    spoke1.repay(state.reserveId, MAIN_HUB, repayAmount);
 
     uint256 stage = 0;
     daiData[stage] = loadReserveInfo(spoke1, state.reserveId);
@@ -695,7 +695,7 @@ contract SpokeWithdrawTest is SpokeBase {
     vm.assume(repayAmount > state.borrowAmount);
 
     vm.prank(alice);
-    spoke1.repay(state.reserveId, repayAmount);
+    spoke1.repay(state.reserveId, MAIN_HUB, repayAmount);
 
     // number of test stages
     TestData[3] memory reserveData;

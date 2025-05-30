@@ -194,7 +194,7 @@ contract SpokeWithdrawScenarioTest is SpokeBase {
     // deal in case carol's repayAmount exceeds default supplied amount due to interest
     deal(address(state.asset), carol, state.repayAmount);
     vm.prank(carol);
-    spoke1.repay(params.reserveId, state.repayAmount);
+    spoke1.repay(params.reserveId, MAIN_HUB, state.repayAmount);
 
     TestData[3] memory reserveData;
     TestUserData[3] memory aliceData;

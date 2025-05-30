@@ -308,7 +308,7 @@ contract SpokeBase is Base {
       if (debt > 0) {
         deal(address(hub.assetsList(assetId)), user, debt);
         vm.prank(user);
-        spoke.repay(reserveId, debt);
+        spoke.repay(reserveId, MAIN_HUB, debt);
         assertEq(spoke.getUserTotalDebt(reserveId, user), 0, 'user debt not zero');
         // If the user has no debt in any asset (hf will be max), user risk premium should be zero
         if (spoke.getHealthFactor(user) == type(uint256).max) {

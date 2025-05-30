@@ -37,7 +37,7 @@ contract SpokeRepayEdgeCaseTest is SpokeBase {
     vm.expectEmit(address(spoke1));
     emit ISpoke.Repay(_daiReserveId(spoke1), bob, 0);
     vm.prank(bob);
-    spoke1.repay(_daiReserveId(spoke1), daiRepayAmount);
+    spoke1.repay(_daiReserveId(spoke1), MAIN_HUB, daiRepayAmount);
 
     uint256 supplyExchangeRatioAfter = hub.convertToSuppliedAssets(daiAssetId, MAX_SUPPLY_AMOUNT);
     assertGe(supplyExchangeRatioAfter, supplyExchangeRatioBefore);
@@ -49,7 +49,7 @@ contract SpokeRepayEdgeCaseTest is SpokeBase {
     supplyExchangeRatioBefore = supplyExchangeRatioAfter;
 
     vm.prank(bob);
-    spoke1.repay(_daiReserveId(spoke1), daiRepayAmount);
+    spoke1.repay(_daiReserveId(spoke1), MAIN_HUB, daiRepayAmount);
 
     supplyExchangeRatioAfter = hub.convertToSuppliedAssets(daiAssetId, MAX_SUPPLY_AMOUNT);
     assertGe(supplyExchangeRatioAfter, supplyExchangeRatioBefore);
@@ -58,7 +58,7 @@ contract SpokeRepayEdgeCaseTest is SpokeBase {
     supplyExchangeRatioBefore = supplyExchangeRatioAfter;
 
     vm.prank(bob);
-    spoke1.repay(_daiReserveId(spoke1), type(uint256).max);
+    spoke1.repay(_daiReserveId(spoke1), MAIN_HUB, type(uint256).max);
 
     supplyExchangeRatioAfter = hub.convertToSuppliedAssets(daiAssetId, MAX_SUPPLY_AMOUNT);
     assertGe(supplyExchangeRatioAfter, supplyExchangeRatioBefore);
@@ -107,7 +107,7 @@ contract SpokeRepayEdgeCaseTest is SpokeBase {
 
     // alice repays full
     vm.prank(alice);
-    spoke1.repay(_daiReserveId(spoke1), type(uint256).max);
+    spoke1.repay(_daiReserveId(spoke1), MAIN_HUB, type(uint256).max);
 
     exchangeRateAfter = hub.convertToSuppliedAssets(daiAssetId, MAX_SUPPLY_AMOUNT);
     assertGe(exchangeRateAfter, exchangeRateBefore, 'supply rate decreased');
@@ -156,7 +156,7 @@ contract SpokeRepayEdgeCaseTest is SpokeBase {
 
     // alice repays full
     vm.prank(alice);
-    spoke1.repay(_daiReserveId(spoke1), type(uint256).max);
+    spoke1.repay(_daiReserveId(spoke1), MAIN_HUB, type(uint256).max);
 
     exchangeRateAfter = hub.convertToSuppliedAssets(daiAssetId, MAX_SUPPLY_AMOUNT);
     assertGt(exchangeRateAfter, exchangeRateBefore, 'supply rate decreased');
@@ -229,7 +229,7 @@ contract SpokeRepayEdgeCaseTest is SpokeBase {
     vm.expectEmit(address(tokenList.dai));
     emit IERC20.Transfer(bob, address(hub), repayAmount);
     vm.prank(bob);
-    spoke1.repay(_daiReserveId(spoke1), repayAmount);
+    spoke1.repay(_daiReserveId(spoke1), MAIN_HUB, repayAmount);
 
     // debt remains unchanged & is donated (premium was already 0)
     assertEq(getUserDebt(spoke1, bob, _daiReserveId(spoke1)), bobDaiDebtBefore);
@@ -327,7 +327,7 @@ contract SpokeRepayEdgeCaseTest is SpokeBase {
     emit ISpoke.Repay(_daiReserveId(spoke1), bob, 0);
 
     vm.prank(bob);
-    spoke1.repay(_daiReserveId(spoke1), repayAmount);
+    spoke1.repay(_daiReserveId(spoke1), MAIN_HUB, repayAmount);
 
     DataTypes.UserPosition memory bobDaiDataAfter = getUserInfo(spoke1, bob, _daiReserveId(spoke1));
     DataTypes.UserPosition memory bobWethDataAfter = getUserInfo(
@@ -420,7 +420,7 @@ contract SpokeRepayEdgeCaseTest is SpokeBase {
 
     // Bob repays premium
     vm.prank(bob);
-    spoke1.repay(_daiReserveId(spoke1), bobDaiBefore.premiumDebt);
+    spoke1.repay(_daiReserveId(spoke1), MAIN_HUB, bobDaiBefore.premiumDebt);
 
     bobDaiDataBefore = getUserInfo(spoke1, bob, _daiReserveId(spoke1));
     bobDaiBalanceBefore = tokenList.dai.balanceOf(bob);
@@ -446,7 +446,7 @@ contract SpokeRepayEdgeCaseTest is SpokeBase {
       hub.convertToDrawnShares(daiAssetId, baseRestored)
     );
     vm.prank(bob);
-    spoke1.repay(_daiReserveId(spoke1), daiRepayAmount);
+    spoke1.repay(_daiReserveId(spoke1), MAIN_HUB, daiRepayAmount);
 
     DataTypes.UserPosition memory bobDaiDataAfter = getUserInfo(spoke1, bob, _daiReserveId(spoke1));
     DataTypes.UserPosition memory bobWethDataAfter = getUserInfo(
@@ -547,7 +547,7 @@ contract SpokeRepayEdgeCaseTest is SpokeBase {
       hub.convertToDrawnShares(daiAssetId, daiRepayAmount)
     );
     vm.prank(bob);
-    spoke1.repay(_daiReserveId(spoke1), daiRepayAmount);
+    spoke1.repay(_daiReserveId(spoke1), MAIN_HUB, daiRepayAmount);
 
     DataTypes.UserPosition memory bobDaiDataAfter = getUserInfo(spoke1, bob, _daiReserveId(spoke1));
     DataTypes.UserPosition memory bobWethDataAfter = getUserInfo(
