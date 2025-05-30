@@ -89,6 +89,7 @@ interface ISpoke is IMulticall {
   error InvalidOracleAddress();
   error UsersAndDebtLengthMismatch();
   error Unauthorized();
+  error CollateralStatusUnchanged();
 
   function addReserve(
     uint256 assetId,
