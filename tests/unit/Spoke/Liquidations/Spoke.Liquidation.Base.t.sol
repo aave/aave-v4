@@ -789,7 +789,7 @@ contract SpokeLiquidationBase is SpokeBase {
       state.finalTotalDebtInBaseCurrency
     ) = state.spoke.getUserAccountData(state.user);
 
-    state.hasDeficit = state.supply.balanceAfter == 0 && state.finalTotalDebtInBaseCurrency == 0;
+    state.hasDeficit = state.supply.balanceAfter == 0 && state.totalDebt.balanceAfter == 0;
 
     state.usingAsCollateral = state.spoke.getUsingAsCollateral(
       state.collateralReserves[state.collateralReserveIndex].reserveId,

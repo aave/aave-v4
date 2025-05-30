@@ -1077,6 +1077,8 @@ contract Spoke is ISpoke, Multicall {
       userCollateralPosition.suppliedShares = vars.newUserSuppliedShares;
       vars.totalWithdrawnShares += vars.withdrawnShares;
 
+      console.log('final supplied shares', vars.newUserSuppliedShares);
+
       // deficit accounting
       if (vars.newUserSuppliedShares == 0) {
         _setUsingAsCollateral(vars.collateralReserveId, users[vars.i], false);
@@ -1121,6 +1123,8 @@ contract Spoke is ISpoke, Multicall {
       // debt accounting
       userDebtPosition.baseDrawnShares -= vars.restoredShares;
       vars.totalRestoredShares += vars.restoredShares;
+
+      console.log('final debt shares %e', userDebtPosition.baseDrawnShares);
 
       if (vars.deficit > 0) {
         _settleRemainingDeficit(vars.debtReserveId, users[vars.i]);
