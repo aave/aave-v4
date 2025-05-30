@@ -121,7 +121,7 @@ library LiquidationLogic {
         1;
       debtAmountNeeded = params.actualDebtToLiquidate;
       collateralToLiquidateInBaseCurrency =
-        (collateralAmount * params.collateralAssetPrice) /
+        (collateralAmount * params.collateralAssetPrice).wadify() /
         params.collateralAssetUnit;
     }
 
