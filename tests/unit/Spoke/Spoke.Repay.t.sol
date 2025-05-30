@@ -108,7 +108,7 @@ contract SpokeRepayTest is SpokeBase {
     spoke1.setUsingAsCollateral(_daiReserveId(spoke1), true);
 
     uint256 borrowAmount = 1000e18;
-    spoke1.borrow(_daiReserveId(spoke1), borrowAmount, bob);
+    spoke1.borrow(_daiReserveId(spoke1), MAIN_HUB, borrowAmount, bob);
 
     skip(365 days);
     spoke1.getUserDebt(_daiReserveId(spoke1), bob);

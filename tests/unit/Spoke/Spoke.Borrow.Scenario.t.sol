@@ -408,22 +408,22 @@ contract SpokeBorrowScenarioTest is SpokeBase {
     if (daiBorrowAmount > 0) {
       assertGt(spoke1.getHealthFactor(bob), HEALTH_FACTOR_LIQUIDATION_THRESHOLD);
       vm.prank(bob);
-      spoke1.borrow(states[0].daiReserveId, daiBorrowAmount, bob);
+      spoke1.borrow(states[0].daiReserveId, MAIN_HUB, daiBorrowAmount, bob);
     }
     if (usdxBorrowAmount > 0) {
       assertGt(spoke1.getHealthFactor(bob), HEALTH_FACTOR_LIQUIDATION_THRESHOLD);
       vm.prank(bob);
-      spoke1.borrow(states[0].usdxReserveId, usdxBorrowAmount, bob);
+      spoke1.borrow(states[0].usdxReserveId, MAIN_HUB, usdxBorrowAmount, bob);
     }
     if (daiBorrowAmount2 > 0) {
       assertGt(spoke2.getHealthFactor(bob), HEALTH_FACTOR_LIQUIDATION_THRESHOLD);
       vm.prank(bob);
-      spoke2.borrow(states[1].daiReserveId, daiBorrowAmount2, bob);
+      spoke2.borrow(states[1].daiReserveId, MAIN_HUB, daiBorrowAmount2, bob);
     }
     if (usdxBorrowAmount2 > 0) {
       assertGt(spoke2.getHealthFactor(bob), HEALTH_FACTOR_LIQUIDATION_THRESHOLD);
       vm.prank(bob);
-      spoke2.borrow(states[1].usdxReserveId, usdxBorrowAmount2, bob);
+      spoke2.borrow(states[1].usdxReserveId, MAIN_HUB, usdxBorrowAmount2, bob);
     }
 
     // spoke1
@@ -514,7 +514,7 @@ contract SpokeBorrowScenarioTest is SpokeBase {
 
     // Bob borrow dai
     vm.prank(bob);
-    spoke1.borrow(state.daiReserveId, borrowAmount1, bob);
+    spoke1.borrow(state.daiReserveId, MAIN_HUB, borrowAmount1, bob);
 
     // assertions
     _assertUsersAndReserveDebt(spoke1, state.daiReserveId, users, 'spoke1 bob dai after');
@@ -556,7 +556,7 @@ contract SpokeBorrowScenarioTest is SpokeBase {
 
     // Bob borrow more dai
     vm.prank(bob);
-    spoke1.borrow(state.daiReserveId, borrowAmount2, bob);
+    spoke1.borrow(state.daiReserveId, MAIN_HUB, borrowAmount2, bob);
 
     (baseDebt, ) = spoke1.getUserDebt(state.daiReserveId, bob);
     // check that accrued base debt matches expected

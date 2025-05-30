@@ -1337,7 +1337,7 @@ contract SpokeRepayScenarioTest is SpokeBase {
     // Borrow
     uint256 shares1 = hub.convertToDrawnShares(reserve.assetId, assets);
     vm.startPrank(caller);
-    spoke1.borrow(reserveId, assets, caller);
+    spoke1.borrow(reserveId, MAIN_HUB, assets, caller);
 
     // Repay
     uint256 shares2 = hub.convertToDrawnShares(reserve.assetId, assets);
@@ -1398,7 +1398,7 @@ contract SpokeRepayScenarioTest is SpokeBase {
 
     // Borrow
     uint256 shares2 = hub.convertToDrawnShares(reserve.assetId, assets);
-    spoke1.borrow(reserveId, assets, caller);
+    spoke1.borrow(reserveId, MAIN_HUB, assets, caller);
     vm.stopPrank();
 
     assertApproxEqAbs(shares2, shares1, 1, 'borrowed and repaid shares');

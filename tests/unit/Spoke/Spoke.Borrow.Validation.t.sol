@@ -24,7 +24,7 @@ contract SpokeBorrowValidationTest is SpokeBase {
     // Bob tries to draw
     vm.expectRevert(abi.encodeWithSelector(ISpoke.ReserveNotBorrowable.selector, reserveId));
     vm.prank(bob);
-    spoke1.borrow(reserveId, amount, bob);
+    spoke1.borrow(reserveId, MAIN_HUB, amount, bob);
   }
 
   function test_borrow_revertsWith_ReserveNotActive() public {
@@ -43,7 +43,7 @@ contract SpokeBorrowValidationTest is SpokeBase {
     // Bob tries to draw
     vm.expectRevert(ISpoke.ReserveNotActive.selector);
     vm.prank(bob);
-    spoke1.borrow(reserveId, amount, bob);
+    spoke1.borrow(reserveId, MAIN_HUB, amount, bob);
   }
 
   function test_borrow_revertsWith_ReserveNotListed() public {
@@ -59,7 +59,7 @@ contract SpokeBorrowValidationTest is SpokeBase {
     // Bob try to draw some dai
     vm.expectRevert(ISpoke.ReserveNotListed.selector);
     vm.prank(bob);
-    spoke1.borrow(reserveId, amount, bob);
+    spoke1.borrow(reserveId, MAIN_HUB, amount, bob);
   }
 
   function test_borrow_revertsWith_ReservePaused() public {
@@ -78,7 +78,7 @@ contract SpokeBorrowValidationTest is SpokeBase {
     // Bob try to draw
     vm.expectRevert(ISpoke.ReservePaused.selector);
     vm.prank(bob);
-    spoke1.borrow(reserveId, 1, bob);
+    spoke1.borrow(reserveId, MAIN_HUB, 1, bob);
   }
 
   function test_borrow_revertsWith_ReserveFrozen() public {
@@ -97,7 +97,7 @@ contract SpokeBorrowValidationTest is SpokeBase {
     // Bob try to draw
     vm.expectRevert(ISpoke.ReserveFrozen.selector);
     vm.prank(bob);
-    spoke1.borrow(reserveId, 1, bob);
+    spoke1.borrow(reserveId, MAIN_HUB, 1, bob);
   }
 
   function test_borrow_revertsWith_AssetNotActive() public {
@@ -116,7 +116,7 @@ contract SpokeBorrowValidationTest is SpokeBase {
     // Bob try to draw
     vm.expectRevert(ILiquidityHub.AssetNotActive.selector);
     vm.prank(bob);
-    spoke1.borrow(reserveId, 1, bob);
+    spoke1.borrow(reserveId, MAIN_HUB, 1, bob);
   }
 
   function test_borrow_revertsWith_NotAvailableLiquidity() public {
@@ -150,7 +150,7 @@ contract SpokeBorrowValidationTest is SpokeBase {
       abi.encodeWithSelector(ILiquidityHub.NotAvailableLiquidity.selector, daiAmount)
     );
     vm.prank(bob);
-    spoke1.borrow(daiReserveId, borrowAmount, bob);
+    spoke1.borrow(daiReserveId, MAIN_HUB, borrowAmount, bob);
   }
 
   function test_borrow_revertsWith_InvalidDrawAmount() public {
@@ -164,7 +164,7 @@ contract SpokeBorrowValidationTest is SpokeBase {
     // Bob draws 0
     vm.expectRevert(ILiquidityHub.InvalidDrawAmount.selector);
     vm.prank(bob);
-    spoke1.borrow(reserveId, 0, bob);
+    spoke1.borrow(reserveId, MAIN_HUB, 0, bob);
   }
 
   function test_borrow_revertsWith_DrawCapExceeded() public {
@@ -187,7 +187,7 @@ contract SpokeBorrowValidationTest is SpokeBase {
     // Bob borrow dai amount exceeding draw cap
     vm.expectRevert(abi.encodeWithSelector(ILiquidityHub.DrawCapExceeded.selector, drawCap));
     vm.prank(bob);
-    spoke1.borrow(reserveId, drawAmount, bob);
+    spoke1.borrow(reserveId, MAIN_HUB, drawAmount, bob);
   }
 
   function test_borrow_revertsWith_DrawCapExceeded_due_to_interest() public {

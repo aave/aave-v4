@@ -53,13 +53,13 @@ contract SpokeBorrowEdgeCasesTest is SpokeBase {
 
     // carol borrows 2 smaller amounts in 2 actions
     vm.startPrank(carol);
-    spoke1.borrow(_daiReserveId(spoke1), amount1, carol);
-    spoke1.borrow(_daiReserveId(spoke1), amount2, carol);
+    spoke1.borrow(_daiReserveId(spoke1), MAIN_HUB, amount1, carol);
+    spoke1.borrow(_daiReserveId(spoke1), MAIN_HUB, amount2, carol);
     vm.stopPrank();
 
     // bob borrows whole amount at once
     vm.prank(bob);
-    spoke1.borrow(_daiReserveId(spoke1), amount1 + amount2, bob);
+    spoke1.borrow(_daiReserveId(spoke1), MAIN_HUB, amount1 + amount2, bob);
 
     // bob benefits by having less debt shares than carol
     assertLt(
@@ -142,12 +142,12 @@ contract SpokeBorrowEdgeCasesTest is SpokeBase {
 
     // bob borrows whole amount at once
     vm.prank(bob);
-    spoke1.borrow(_daiReserveId(spoke1), amount1 + amount2, bob);
+    spoke1.borrow(_daiReserveId(spoke1), MAIN_HUB, amount1 + amount2, bob);
 
     // carol borrows 2 smaller amounts in 2 actions
     vm.startPrank(carol);
-    spoke1.borrow(_daiReserveId(spoke1), amount1, carol);
-    spoke1.borrow(_daiReserveId(spoke1), amount2, carol);
+    spoke1.borrow(_daiReserveId(spoke1), MAIN_HUB, amount1, carol);
+    spoke1.borrow(_daiReserveId(spoke1), MAIN_HUB, amount2, carol);
     vm.stopPrank();
 
     // bob benefits by having less debt shares than carol
@@ -192,13 +192,13 @@ contract SpokeBorrowEdgeCasesTest is SpokeBase {
 
     // carol borrows 2 smaller amounts in 2 actions
     vm.startPrank(carol);
-    spoke1.borrow(_daiReserveId(spoke1), amount1, carol);
-    spoke1.borrow(_daiReserveId(spoke1), amount2, carol);
+    spoke1.borrow(_daiReserveId(spoke1), MAIN_HUB, amount1, carol);
+    spoke1.borrow(_daiReserveId(spoke1), MAIN_HUB, amount2, carol);
     vm.stopPrank();
 
     // bob borrows whole amount at once
     vm.prank(bob);
-    spoke1.borrow(_daiReserveId(spoke1), amount1 + amount2, bob);
+    spoke1.borrow(_daiReserveId(spoke1), MAIN_HUB, amount1 + amount2, bob);
 
     // both users have the same amount of debt shares
     assertEq(
@@ -264,7 +264,7 @@ contract SpokeBorrowEdgeCasesTest is SpokeBase {
     );
 
     vm.prank(bob);
-    spoke1.borrow(_daiReserveId(spoke1), amount1, bob);
+    spoke1.borrow(_daiReserveId(spoke1), MAIN_HUB, amount1, bob);
 
     assertEq(
       expectedDebtShares,

@@ -33,6 +33,7 @@ contract Spoke is ISpoke, Multicall {
   ILiquidityHub public immutable HUB;
   IPriceOracle public immutable oracle;
 
+  mapping(uint256 hubId => address hub) internal _hubs;
   mapping(address user => mapping(uint256 reserveId => DataTypes.UserPosition position))
     internal _userPositions;
   mapping(uint256 reserveId => DataTypes.Reserve reserveData) internal _reserves;
@@ -45,6 +46,7 @@ contract Spoke is ISpoke, Multicall {
     require(oracleAddress != address(0), InvalidOracleAddress());
 
     HUB = ILiquidityHub(hubAddress);
+    _hubs[1] = hubAddress; // Main hub located at id 1
     oracle = IPriceOracle(oracleAddress);
     _liquidationConfig.closeFactor = HEALTH_FACTOR_LIQUIDATION_THRESHOLD;
   }
@@ -202,18 +204,23 @@ contract Spoke is ISpoke, Multicall {
   }
 
   /// @inheritdoc ISpoke
-  function borrow(uint256 reserveId, uint256 amount, address to) external {
+  function borrow(uint256 reserveId, uint256 hubId, uint256 amount, address to) external {
     // TODO: referral code
     // TODO: onBehalfOf with credit delegation
     DataTypes.Reserve storage reserve = _reserves[reserveId];
     DataTypes.UserPosition storage userPosition = _userPositions[msg.sender][reserveId];
     uint256 assetId = reserve.assetId;
 
-    _validateBorrow(reserve, msg.sender);
+    if (userPosition.drawnHubId != 0) {
+      require(userPosition.drawnHubId == hubId, DrawnHubMismatch());
+    }
+    userPosition.drawnHubId = hubId;
+    _validateBorrow(reserve, hubId);
+    ILiquidityHub hub = ILiquidityHub(_hubs[hubId]);
 
     uint256 userPremiumDrawnShares = userPosition.premiumDrawnShares;
     uint256 userPremiumOffset = userPosition.premiumOffset;
-    uint256 accruedPremium = HUB.convertToDrawnAssets(assetId, userPremiumDrawnShares) -
+    uint256 accruedPremium = hub.convertToDrawnAssets(assetId, userPremiumDrawnShares) -
       userPremiumOffset; // assets(premiumShares) - offset should never be < 0
     userPosition.premiumDrawnShares = 0;
     userPosition.premiumOffset = 0;
@@ -227,7 +234,7 @@ contract Spoke is ISpoke, Multicall {
       -int256(userPremiumOffset),
       int256(accruedPremium)
     ); // unnecessary but we realize premium debt here
-    uint256 baseDrawnShares = HUB.draw(assetId, amount, to);
+    uint256 baseDrawnShares = hub.draw(assetId, amount, to);
 
     reserve.baseDrawnShares += baseDrawnShares;
     userPosition.baseDrawnShares += baseDrawnShares;
@@ -238,7 +245,7 @@ contract Spoke is ISpoke, Multicall {
     userPremiumDrawnShares = userPosition.premiumDrawnShares = userPosition
       .baseDrawnShares
       .percentMul(newUserRiskPremium);
-    userPremiumOffset = userPosition.premiumOffset = HUB.previewOffset(
+    userPremiumOffset = userPosition.premiumOffset = hub.previewOffset(
       assetId,
       userPosition.premiumDrawnShares
     );
@@ -509,12 +516,13 @@ contract Spoke is ISpoke, Multicall {
     require(amount <= suppliedAmount, InsufficientSupply(suppliedAmount));
   }
 
-  function _validateBorrow(DataTypes.Reserve storage reserve, address userAddress) internal view {
+  function _validateBorrow(DataTypes.Reserve storage reserve, uint256 hubId) internal view {
     require(reserve.asset != address(0), ReserveNotListed());
     require(reserve.config.active, ReserveNotActive());
     require(!reserve.config.paused, ReservePaused());
     require(!reserve.config.frozen, ReserveFrozen());
     require(reserve.config.borrowable, ReserveNotBorrowable(reserve.reserveId));
+    require(_hubs[hubId] != address(0), InvalidHub());
     // HF checked at the end of borrow action
   }
 

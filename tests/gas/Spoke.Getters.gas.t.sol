@@ -49,7 +49,7 @@ contract SpokeGetters_Gas_Tests is Base {
     spoke1.supply(spokeInfo[spoke1].weth.reserveId, 1000e18);
     spoke1.setUsingAsCollateral(spokeInfo[spoke1].weth.reserveId, true);
 
-    spoke1.borrow(spokeInfo[spoke1].usdx.reserveId, 800e6, alice);
+    spoke1.borrow(spokeInfo[spoke1].usdx.reserveId, 1, 800e6, alice);
 
     spoke1.getUserAccountData(alice);
     vm.snapshotGasLastCall('Spoke.Getters', 'getUserAccountData: supplies: 2, borrows: 1');
@@ -69,8 +69,8 @@ contract SpokeGetters_Gas_Tests is Base {
     spoke1.supply(spokeInfo[spoke1].weth.reserveId, 1000e18);
     spoke1.setUsingAsCollateral(spokeInfo[spoke1].weth.reserveId, true);
 
-    spoke1.borrow(spokeInfo[spoke1].wbtc.reserveId, 3e8, alice);
-    spoke1.borrow(spokeInfo[spoke1].usdx.reserveId, 800e6, alice);
+    spoke1.borrow(spokeInfo[spoke1].wbtc.reserveId, 1, 3e8, alice);
+    spoke1.borrow(spokeInfo[spoke1].usdx.reserveId, 1, 800e6, alice);
 
     spoke1.getUserAccountData(alice);
     vm.snapshotGasLastCall('Spoke.Getters', 'getUserAccountData: supplies: 2, borrows: 2');

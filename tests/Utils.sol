@@ -108,7 +108,7 @@ library Utils {
     address onBehalfOf
   ) internal {
     vm.prank(user);
-    spoke.borrow(reserveId, amount, user);
+    spoke.borrow(reserveId, 1, amount, user);
   }
 
   function repay(ISpoke spoke, uint256 reserveId, address user, uint256 amount) internal {

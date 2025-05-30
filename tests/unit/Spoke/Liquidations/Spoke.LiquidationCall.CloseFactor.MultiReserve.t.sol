@@ -300,7 +300,7 @@ contract LiquidationCallCloseFactorMultiReserveTest is SpokeLiquidationBase {
         abi.encodeWithSelector(IPriceOracle.getAssetPrice.selector, assetId),
         abi.encode(0)
       );
-      spoke.borrow(reserveIds[i], amount, user);
+      spoke.borrow(reserveIds[i], MAIN_HUB, amount, user);
 
       remaining -= amountInBase;
       requiredDebts[i] = amount;
@@ -331,7 +331,7 @@ contract LiquidationCallCloseFactorMultiReserveTest is SpokeLiquidationBase {
         abi.encode(0)
       );
       // user borrows some collateral reserve to inflate collateral supply ex rate
-      spoke1.borrow(collateralReserves[i].reserveId, borrowAmount, user);
+      spoke1.borrow(collateralReserves[i].reserveId, MAIN_HUB, borrowAmount, user);
     }
     vm.clearMockedCalls();
     vm.stopPrank();

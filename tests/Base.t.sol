@@ -57,6 +57,7 @@ abstract contract Base is Test {
   uint256 internal constant MAX_ASSET_PRICE = 1e8 * 1e8; // $100M per token
   uint256 internal constant MAX_LIQUIDATION_PROTOCOL_FEE_PERCENTAGE =
     PercentageMath.PERCENTAGE_FACTOR;
+  uint256 internal constant MAIN_HUB = 1;
 
   // TODO: remove after migrating to token list
   IERC20 internal usdc;
@@ -1108,7 +1109,7 @@ abstract contract Base is Test {
     uint256 initialPrice = oracle.getAssetPrice(assetId);
     oracle.setAssetPrice(assetId, 0);
     vm.prank(user);
-    spoke.borrow(reserveId, debtAmount, user);
+    spoke.borrow(reserveId, 1, debtAmount, user);
     oracle.setAssetPrice(assetId, initialPrice);
   }
 

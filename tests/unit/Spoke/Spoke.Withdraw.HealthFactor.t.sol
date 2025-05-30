@@ -890,7 +890,7 @@ contract SpokeWithdrawHealthFactorTest is SpokeBase {
 
     // Bob draw max allowed usdx debt
     vm.prank(bob);
-    spoke1.borrow(usdxReserveId, (usdxDebtAmountWeth + usdxDebtAmountDai), bob);
+    spoke1.borrow(usdxReserveId, MAIN_HUB, (usdxDebtAmountWeth + usdxDebtAmountDai), bob);
 
     // valid HF
     assertEq(spoke1.getHealthFactor(bob), HEALTH_FACTOR_LIQUIDATION_THRESHOLD);
@@ -949,7 +949,7 @@ contract SpokeWithdrawHealthFactorTest is SpokeBase {
 
     // Bob draw max allowed usdx debt
     vm.prank(bob);
-    spoke1.borrow(usdxReserveId, (usdxDebtAmountWeth + usdxDebtAmountDai), bob);
+    spoke1.borrow(usdxReserveId, MAIN_HUB, (usdxDebtAmountWeth + usdxDebtAmountDai), bob);
 
     // valid HF
     assertGe(spoke1.getHealthFactor(bob), HEALTH_FACTOR_LIQUIDATION_THRESHOLD);
@@ -1004,7 +1004,7 @@ contract SpokeWithdrawHealthFactorTest is SpokeBase {
 
     // Bob draw max allowed usdx debt
     vm.prank(bob);
-    spoke1.borrow(usdxReserveId, (usdxDebtAmountWeth + usdxDebtAmountDai), bob);
+    spoke1.borrow(usdxReserveId, MAIN_HUB, (usdxDebtAmountWeth + usdxDebtAmountDai), bob);
 
     // valid HF
     assertEq(spoke1.getHealthFactor(bob), HEALTH_FACTOR_LIQUIDATION_THRESHOLD);
@@ -1068,7 +1068,7 @@ contract SpokeWithdrawHealthFactorTest is SpokeBase {
 
     // Bob draw max allowed usdx debt
     vm.prank(bob);
-    spoke1.borrow(usdxReserveId, (usdxDebtAmountWeth + usdxDebtAmountDai), bob);
+    spoke1.borrow(usdxReserveId, MAIN_HUB, (usdxDebtAmountWeth + usdxDebtAmountDai), bob);
 
     // valid HF
     assertGe(spoke1.getHealthFactor(bob), HEALTH_FACTOR_LIQUIDATION_THRESHOLD);
@@ -1128,7 +1128,7 @@ contract SpokeWithdrawHealthFactorTest is SpokeBase {
 
     // Bob draw max allowed usdx debt
     vm.prank(bob);
-    spoke1.borrow(usdxReserveId, (usdxDebtAmountWeth + usdxDebtAmountDai), bob);
+    spoke1.borrow(usdxReserveId, MAIN_HUB, (usdxDebtAmountWeth + usdxDebtAmountDai), bob);
 
     // valid HF
     assertEq(spoke1.getHealthFactor(bob), HEALTH_FACTOR_LIQUIDATION_THRESHOLD);
@@ -1196,7 +1196,7 @@ contract SpokeWithdrawHealthFactorTest is SpokeBase {
 
     // Bob draw max allowed usdx debt
     vm.prank(bob);
-    spoke1.borrow(usdxReserveId, (usdxDebtAmountWeth + usdxDebtAmountDai), bob);
+    spoke1.borrow(usdxReserveId, MAIN_HUB, (usdxDebtAmountWeth + usdxDebtAmountDai), bob);
 
     // valid HF
     assertGe(spoke1.getHealthFactor(bob), HEALTH_FACTOR_LIQUIDATION_THRESHOLD);
@@ -1256,7 +1256,7 @@ contract SpokeWithdrawHealthFactorTest is SpokeBase {
 
     // Bob draw max allowed usdx debt
     vm.prank(bob);
-    spoke1.borrow(usdxReserveId, (usdxDebtAmountWeth + usdxDebtAmountDai), bob);
+    spoke1.borrow(usdxReserveId, MAIN_HUB, (usdxDebtAmountWeth + usdxDebtAmountDai), bob);
 
     // valid HF
     assertEq(spoke1.getHealthFactor(bob), HEALTH_FACTOR_LIQUIDATION_THRESHOLD);
@@ -1324,7 +1324,7 @@ contract SpokeWithdrawHealthFactorTest is SpokeBase {
 
     // Bob draw max allowed usdx debt
     vm.prank(bob);
-    spoke1.borrow(usdxReserveId, (usdxDebtAmountWeth + usdxDebtAmountDai), bob);
+    spoke1.borrow(usdxReserveId, MAIN_HUB, (usdxDebtAmountWeth + usdxDebtAmountDai), bob);
 
     // valid HF
     assertGe(spoke1.getHealthFactor(bob), HEALTH_FACTOR_LIQUIDATION_THRESHOLD);

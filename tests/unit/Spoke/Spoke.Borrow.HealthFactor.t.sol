@@ -26,7 +26,7 @@ contract SpokeBorrowHealthFactorTest is SpokeBase {
 
     // Bob draw max allowed debt amt of dai reserve liquidity
     vm.prank(bob);
-    spoke1.borrow(daiReserveId, maxDebtAmount, bob);
+    spoke1.borrow(daiReserveId, MAIN_HUB, maxDebtAmount, bob);
 
     // valid HF after borrow
     assertEq(spoke1.getHealthFactor(bob), HEALTH_FACTOR_LIQUIDATION_THRESHOLD);
@@ -34,7 +34,7 @@ contract SpokeBorrowHealthFactorTest is SpokeBase {
     // cannot borrow a non trivial amount that brings HF below threshold
     vm.prank(bob);
     vm.expectRevert(ISpoke.HealthFactorBelowThreshold.selector);
-    spoke1.borrow(daiReserveId, 1e4, bob); // TODO: update with exact amount, resolve precision
+    spoke1.borrow(daiReserveId, MAIN_HUB, 1e4, bob); // TODO: update with exact amount, resolve precision
   }
 
   /// cannot borrow any amount after interest has brought HF already < 1
@@ -59,7 +59,7 @@ contract SpokeBorrowHealthFactorTest is SpokeBase {
 
     // Bob draw max allowed debt amt of dai reserve liquidity
     vm.prank(bob);
-    spoke1.borrow(daiReserveId, maxDebtAmount, bob);
+    spoke1.borrow(daiReserveId, MAIN_HUB, maxDebtAmount, bob);
 
     assertEq(spoke1.getHealthFactor(bob), HEALTH_FACTOR_LIQUIDATION_THRESHOLD);
 
@@ -71,7 +71,7 @@ contract SpokeBorrowHealthFactorTest is SpokeBase {
 
     vm.prank(bob);
     vm.expectRevert(ISpoke.HealthFactorBelowThreshold.selector);
-    spoke1.borrow(daiReserveId, 1, bob);
+    spoke1.borrow(daiReserveId, MAIN_HUB, 1, bob);
   }
 
   /// fuzz - cannot borrow any amount after interest has brought HF already < 1
@@ -103,7 +103,7 @@ contract SpokeBorrowHealthFactorTest is SpokeBase {
 
     // Bob draw max allowed debt amt of dai reserve liquidity
     vm.prank(bob);
-    spoke1.borrow(daiReserveId, maxDebtAmount, bob);
+    spoke1.borrow(daiReserveId, MAIN_HUB, maxDebtAmount, bob);
 
     assertGe(spoke1.getHealthFactor(bob), HEALTH_FACTOR_LIQUIDATION_THRESHOLD);
     // accrue debt to decrease HF
@@ -114,7 +114,7 @@ contract SpokeBorrowHealthFactorTest is SpokeBase {
 
     vm.prank(bob);
     vm.expectRevert(ISpoke.HealthFactorBelowThreshold.selector);
-    spoke1.borrow(daiReserveId, 1, bob);
+    spoke1.borrow(daiReserveId, MAIN_HUB, 1, bob);
   }
 
   /// cannot borrow an amount that brings HF < 1 with multiple debts for same collateral
@@ -152,9 +152,9 @@ contract SpokeBorrowHealthFactorTest is SpokeBase {
 
     // Bob draw max allowed debt amt of dai/usdx reserve liquidity
     vm.prank(bob);
-    spoke1.borrow(daiReserveId, daiDebtAmount, bob);
+    spoke1.borrow(daiReserveId, MAIN_HUB, daiDebtAmount, bob);
     vm.prank(bob);
-    spoke1.borrow(usdxReserveId, usdxDebtAmount, bob);
+    spoke1.borrow(usdxReserveId, MAIN_HUB, usdxDebtAmount, bob);
 
     // valid HF
     assertEq(spoke1.getHealthFactor(bob), HEALTH_FACTOR_LIQUIDATION_THRESHOLD);
@@ -162,12 +162,12 @@ contract SpokeBorrowHealthFactorTest is SpokeBase {
     // cannot borrow more dai
     vm.prank(bob);
     vm.expectRevert(ISpoke.HealthFactorBelowThreshold.selector);
-    spoke1.borrow(daiReserveId, 1e12, bob); // todo: update with exact amount, resolve precision
+    spoke1.borrow(daiReserveId, MAIN_HUB, 1e12, bob); // todo: update with exact amount, resolve precision
 
     // cannot borrow more usdx
     vm.prank(bob);
     vm.expectRevert(ISpoke.HealthFactorBelowThreshold.selector);
-    spoke1.borrow(usdxReserveId, 1, bob); // todo: update with exact amount, resolve precision
+    spoke1.borrow(usdxReserveId, MAIN_HUB, 1, bob); // todo: update with exact amount, resolve precision
   }
 
   /// fuzz - cannot borrow an amount that brings HF < 1 with multiple debts for same collateral
@@ -213,9 +213,9 @@ contract SpokeBorrowHealthFactorTest is SpokeBase {
 
     // Bob draw max allowed debt amt of dai/usdx reserve liquidity
     vm.prank(bob);
-    spoke1.borrow(daiReserveId, daiDebtAmount, bob);
+    spoke1.borrow(daiReserveId, MAIN_HUB, daiDebtAmount, bob);
     vm.prank(bob);
-    spoke1.borrow(usdxReserveId, usdxDebtAmount, bob);
+    spoke1.borrow(usdxReserveId, MAIN_HUB, usdxDebtAmount, bob);
 
     // valid HF
     assertGe(spoke1.getHealthFactor(bob), HEALTH_FACTOR_LIQUIDATION_THRESHOLD); // can be GE due to low debt/coll amounts
@@ -227,12 +227,12 @@ contract SpokeBorrowHealthFactorTest is SpokeBase {
     // cannot borrow more dai
     vm.prank(bob);
     vm.expectRevert(ISpoke.HealthFactorBelowThreshold.selector);
-    spoke1.borrow(daiReserveId, daiFailedBorrowAmount, bob);
+    spoke1.borrow(daiReserveId, MAIN_HUB, daiFailedBorrowAmount, bob);
 
     // cannot borrow more usdx
     vm.prank(bob);
     vm.expectRevert(ISpoke.HealthFactorBelowThreshold.selector);
-    spoke1.borrow(usdxReserveId, usdxFailedBorrowAmount, bob); // todo: update with exact amount, resolve precision
+    spoke1.borrow(usdxReserveId, MAIN_HUB, usdxFailedBorrowAmount, bob); // todo: update with exact amount, resolve precision
   }
 
   /// cannot borrow any amount if HF < 1 due to interest growth (multiple debts for same collateral)
@@ -272,9 +272,9 @@ contract SpokeBorrowHealthFactorTest is SpokeBase {
 
     // Bob draw max allowed debt amt of dai/usdx reserve liquidity
     vm.prank(bob);
-    spoke1.borrow(daiReserveId, daiDebtAmount, bob);
+    spoke1.borrow(daiReserveId, MAIN_HUB, daiDebtAmount, bob);
     vm.prank(bob);
-    spoke1.borrow(usdxReserveId, usdxDebtAmount, bob);
+    spoke1.borrow(usdxReserveId, MAIN_HUB, usdxDebtAmount, bob);
 
     // valid HF
     assertApproxEqAbs(spoke1.getHealthFactor(bob), HEALTH_FACTOR_LIQUIDATION_THRESHOLD, 1);
@@ -287,12 +287,12 @@ contract SpokeBorrowHealthFactorTest is SpokeBase {
     // cannot borrow more dai
     vm.prank(bob);
     vm.expectRevert(ISpoke.HealthFactorBelowThreshold.selector);
-    spoke1.borrow(daiReserveId, 1, bob);
+    spoke1.borrow(daiReserveId, MAIN_HUB, 1, bob);
 
     // cannot borrow more usdx
     vm.prank(bob);
     vm.expectRevert(ISpoke.HealthFactorBelowThreshold.selector);
-    spoke1.borrow(usdxReserveId, 1, bob);
+    spoke1.borrow(usdxReserveId, MAIN_HUB, 1, bob);
   }
 
   /// fuzz - cannot borrow any amount if HF < 1 due to interest growth (multiple debts for same collateral)
@@ -338,9 +338,9 @@ contract SpokeBorrowHealthFactorTest is SpokeBase {
 
     // Bob draw max allowed debt amt of dai/usdx reserve liquidity
     vm.prank(bob);
-    spoke1.borrow(daiReserveId, daiDebtAmount, bob);
+    spoke1.borrow(daiReserveId, MAIN_HUB, daiDebtAmount, bob);
     vm.prank(bob);
-    spoke1.borrow(usdxReserveId, usdxDebtAmount, bob);
+    spoke1.borrow(usdxReserveId, MAIN_HUB, usdxDebtAmount, bob);
 
     // valid HF
     assertGe(spoke1.getHealthFactor(bob), HEALTH_FACTOR_LIQUIDATION_THRESHOLD); // can be GE for edge cases of coll/debt amount, ie 1
@@ -351,12 +351,12 @@ contract SpokeBorrowHealthFactorTest is SpokeBase {
     // cannot borrow more dai
     vm.prank(bob);
     vm.expectRevert(ISpoke.HealthFactorBelowThreshold.selector);
-    spoke1.borrow(daiReserveId, 1, bob);
+    spoke1.borrow(daiReserveId, MAIN_HUB, 1, bob);
 
     // cannot borrow more usdx
     vm.prank(bob);
     vm.expectRevert(ISpoke.HealthFactorBelowThreshold.selector);
-    spoke1.borrow(usdxReserveId, 1, bob);
+    spoke1.borrow(usdxReserveId, MAIN_HUB, 1, bob);
   }
 
   /// if HF drops below threshold due to price drop, user cannot borrow more
@@ -381,7 +381,7 @@ contract SpokeBorrowHealthFactorTest is SpokeBase {
 
     // Bob draw max allowed debt amt of dai reserve liquidity
     vm.prank(bob);
-    spoke1.borrow(daiReserveId, maxDebtAmount, bob);
+    spoke1.borrow(daiReserveId, MAIN_HUB, maxDebtAmount, bob);
 
     assertEq(spoke1.getHealthFactor(bob), HEALTH_FACTOR_LIQUIDATION_THRESHOLD);
 
@@ -392,7 +392,7 @@ contract SpokeBorrowHealthFactorTest is SpokeBase {
 
     vm.prank(bob);
     vm.expectRevert(ISpoke.HealthFactorBelowThreshold.selector);
-    spoke1.borrow(daiReserveId, 1, bob);
+    spoke1.borrow(daiReserveId, MAIN_HUB, 1, bob);
   }
 
   /// fuzz - if HF drops below threshold due to price drop, user cannot borrow more
@@ -427,7 +427,7 @@ contract SpokeBorrowHealthFactorTest is SpokeBase {
 
     // Bob draw max allowed debt amt of dai reserve liquidity
     vm.prank(bob);
-    spoke1.borrow(daiReserveId, maxDebtAmount, bob);
+    spoke1.borrow(daiReserveId, MAIN_HUB, maxDebtAmount, bob);
 
     assertEq(spoke1.getHealthFactor(bob), HEALTH_FACTOR_LIQUIDATION_THRESHOLD);
 
@@ -437,7 +437,7 @@ contract SpokeBorrowHealthFactorTest is SpokeBase {
 
     vm.prank(bob);
     vm.expectRevert(ISpoke.HealthFactorBelowThreshold.selector);
-    spoke1.borrow(daiReserveId, 1, bob);
+    spoke1.borrow(daiReserveId, MAIN_HUB, 1, bob);
   }
 
   /// cannot borrow an amount that brings HF < 1 with multiple colls for same debt
@@ -477,7 +477,7 @@ contract SpokeBorrowHealthFactorTest is SpokeBase {
 
     // Bob draw max allowed usdx debt
     vm.prank(bob);
-    spoke1.borrow(usdxReserveId, (usdxDebtAmountWeth + usdxDebtAmountDai), bob);
+    spoke1.borrow(usdxReserveId, MAIN_HUB, (usdxDebtAmountWeth + usdxDebtAmountDai), bob);
 
     // valid HF
     assertEq(spoke1.getHealthFactor(bob), HEALTH_FACTOR_LIQUIDATION_THRESHOLD);
@@ -485,7 +485,7 @@ contract SpokeBorrowHealthFactorTest is SpokeBase {
     // cannot borrow more usdx
     vm.prank(bob);
     vm.expectRevert(ISpoke.HealthFactorBelowThreshold.selector);
-    spoke1.borrow(usdxReserveId, 1, bob);
+    spoke1.borrow(usdxReserveId, MAIN_HUB, 1, bob);
   }
 
   /// fuzz - cannot borrow an amount that brings HF < 1 with multiple colls for same debt
@@ -531,7 +531,7 @@ contract SpokeBorrowHealthFactorTest is SpokeBase {
 
     // Bob draw max allowed usdx debt
     vm.prank(bob);
-    spoke1.borrow(usdxReserveId, (usdxDebtAmountWeth + usdxDebtAmountDai), bob);
+    spoke1.borrow(usdxReserveId, MAIN_HUB, (usdxDebtAmountWeth + usdxDebtAmountDai), bob);
 
     // valid HF
     assertGe(spoke1.getHealthFactor(bob), HEALTH_FACTOR_LIQUIDATION_THRESHOLD); // can be GE due to edge cases of coll/debt ratios
@@ -539,7 +539,7 @@ contract SpokeBorrowHealthFactorTest is SpokeBase {
     // cannot borrow more usdx
     vm.prank(bob);
     vm.expectRevert(ISpoke.HealthFactorBelowThreshold.selector);
-    spoke1.borrow(usdxReserveId, 1, bob);
+    spoke1.borrow(usdxReserveId, MAIN_HUB, 1, bob);
   }
 
   /// cannot borrow any amount with multiple colls for same debt, once HF < 1 due to interest
@@ -581,7 +581,7 @@ contract SpokeBorrowHealthFactorTest is SpokeBase {
 
     // Bob draw max allowed usdx debt
     vm.prank(bob);
-    spoke1.borrow(usdxReserveId, (usdxDebtAmountWeth + usdxDebtAmountDai), bob);
+    spoke1.borrow(usdxReserveId, MAIN_HUB, (usdxDebtAmountWeth + usdxDebtAmountDai), bob);
 
     // valid HF
     assertEq(spoke1.getHealthFactor(bob), HEALTH_FACTOR_LIQUIDATION_THRESHOLD);
@@ -595,7 +595,7 @@ contract SpokeBorrowHealthFactorTest is SpokeBase {
     // cannot borrow more usdx
     vm.prank(bob);
     vm.expectRevert(ISpoke.HealthFactorBelowThreshold.selector);
-    spoke1.borrow(usdxReserveId, 1, bob);
+    spoke1.borrow(usdxReserveId, MAIN_HUB, 1, bob);
   }
 
   /// fuzz - cannot borrow any amount with multiple colls for same debt, once HF < 1 due to interest
@@ -643,7 +643,7 @@ contract SpokeBorrowHealthFactorTest is SpokeBase {
 
     // Bob draw max allowed usdx debt
     vm.prank(bob);
-    spoke1.borrow(usdxReserveId, (usdxDebtAmountWeth + usdxDebtAmountDai), bob);
+    spoke1.borrow(usdxReserveId, MAIN_HUB, (usdxDebtAmountWeth + usdxDebtAmountDai), bob);
 
     // valid HF
     assertGe(spoke1.getHealthFactor(bob), HEALTH_FACTOR_LIQUIDATION_THRESHOLD); // can be GE due to edge cases of coll/debt ratios
@@ -658,7 +658,7 @@ contract SpokeBorrowHealthFactorTest is SpokeBase {
     // cannot borrow more usdx
     vm.prank(bob);
     vm.expectRevert(ISpoke.HealthFactorBelowThreshold.selector);
-    spoke1.borrow(usdxReserveId, 1, bob);
+    spoke1.borrow(usdxReserveId, MAIN_HUB, 1, bob);
   }
 
   /// cannot borrow more with multiple colls for same debt, if HF drops below threshold due to price drop
@@ -700,7 +700,7 @@ contract SpokeBorrowHealthFactorTest is SpokeBase {
 
     // Bob draw max allowed usdx debt
     vm.prank(bob);
-    spoke1.borrow(usdxReserveId, (usdxDebtAmountWeth + usdxDebtAmountDai), bob);
+    spoke1.borrow(usdxReserveId, MAIN_HUB, (usdxDebtAmountWeth + usdxDebtAmountDai), bob);
 
     // valid HF
     assertEq(spoke1.getHealthFactor(bob), HEALTH_FACTOR_LIQUIDATION_THRESHOLD);
@@ -715,7 +715,7 @@ contract SpokeBorrowHealthFactorTest is SpokeBase {
     // cannot borrow more usdx
     vm.prank(bob);
     vm.expectRevert(ISpoke.HealthFactorBelowThreshold.selector);
-    spoke1.borrow(usdxReserveId, 1, bob);
+    spoke1.borrow(usdxReserveId, MAIN_HUB, 1, bob);
   }
 
   /// fuzz - cannot borrow more with multiple colls for same debt, if HF drops below threshold due to price drop
@@ -764,7 +764,7 @@ contract SpokeBorrowHealthFactorTest is SpokeBase {
 
     // Bob draw max allowed usdx debt
     vm.prank(bob);
-    spoke1.borrow(usdxReserveId, (usdxDebtAmountWeth + usdxDebtAmountDai), bob);
+    spoke1.borrow(usdxReserveId, MAIN_HUB, (usdxDebtAmountWeth + usdxDebtAmountDai), bob);
 
     // valid HF
     assertGe(spoke1.getHealthFactor(bob), HEALTH_FACTOR_LIQUIDATION_THRESHOLD); // can be GE due to edge cases
@@ -779,7 +779,7 @@ contract SpokeBorrowHealthFactorTest is SpokeBase {
     // cannot borrow more usdx
     vm.prank(bob);
     vm.expectRevert(ISpoke.HealthFactorBelowThreshold.selector);
-    spoke1.borrow(usdxReserveId, 1, bob);
+    spoke1.borrow(usdxReserveId, MAIN_HUB, 1, bob);
   }
 
   /// cannot borrow more with multiple colls for same debt, if HF drops below threshold due to price drop
@@ -821,7 +821,7 @@ contract SpokeBorrowHealthFactorTest is SpokeBase {
 
     // Bob draw max allowed usdx debt
     vm.prank(bob);
-    spoke1.borrow(usdxReserveId, (usdxDebtAmountWeth + usdxDebtAmountDai), bob);
+    spoke1.borrow(usdxReserveId, MAIN_HUB, (usdxDebtAmountWeth + usdxDebtAmountDai), bob);
 
     // valid HF
     assertEq(spoke1.getHealthFactor(bob), HEALTH_FACTOR_LIQUIDATION_THRESHOLD);
@@ -836,7 +836,7 @@ contract SpokeBorrowHealthFactorTest is SpokeBase {
     // cannot borrow more usdx
     vm.prank(bob);
     vm.expectRevert(ISpoke.HealthFactorBelowThreshold.selector);
-    spoke1.borrow(usdxReserveId, 1, bob);
+    spoke1.borrow(usdxReserveId, MAIN_HUB, 1, bob);
   }
 
   /// fuzz - cannot borrow more with multiple colls for same debt, if HF drops below threshold due to price drop
@@ -885,7 +885,7 @@ contract SpokeBorrowHealthFactorTest is SpokeBase {
 
     // Bob draw max allowed usdx debt
     vm.prank(bob);
-    spoke1.borrow(usdxReserveId, (usdxDebtAmountWeth + usdxDebtAmountDai), bob);
+    spoke1.borrow(usdxReserveId, MAIN_HUB, (usdxDebtAmountWeth + usdxDebtAmountDai), bob);
 
     // valid HF
     assertGe(spoke1.getHealthFactor(bob), HEALTH_FACTOR_LIQUIDATION_THRESHOLD); // can be GE due to edge cases
@@ -900,7 +900,7 @@ contract SpokeBorrowHealthFactorTest is SpokeBase {
     // cannot borrow more usdx
     vm.prank(bob);
     vm.expectRevert(ISpoke.HealthFactorBelowThreshold.selector);
-    spoke1.borrow(usdxReserveId, 1, bob);
+    spoke1.borrow(usdxReserveId, MAIN_HUB, 1, bob);
   }
 
   // TODO: tests with other combos of collateral/debt, particularly with different units

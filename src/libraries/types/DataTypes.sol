@@ -86,6 +86,7 @@ library DataTypes {
     uint256 premiumDrawnShares;
     uint256 premiumOffset;
     uint256 realizedPremium;
+    uint256 drawnHubId;
   }
 
   struct CalculateUserAccountDataVars {

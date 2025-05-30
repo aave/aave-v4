@@ -83,7 +83,7 @@ contract SpokeRepayEdgeCaseTest is SpokeBase {
     _deployLiquidity(spoke1, _daiReserveId(spoke1), 20);
     // carol borrows to inflate ex rate
     vm.prank(carol);
-    spoke1.borrow(_daiReserveId(spoke1), 20, carol);
+    spoke1.borrow(_daiReserveId(spoke1), MAIN_HUB, 20, carol);
 
     skip(365 days);
 
@@ -97,9 +97,9 @@ contract SpokeRepayEdgeCaseTest is SpokeBase {
     updateLiquidityPremium(spoke1, _wethReserveId(spoke1), 30_00);
 
     vm.prank(alice);
-    spoke1.borrow(_daiReserveId(spoke1), 15, alice);
+    spoke1.borrow(_daiReserveId(spoke1), MAIN_HUB, 15, alice);
     vm.prank(bob);
-    spoke1.borrow(_daiReserveId(spoke1), 15, bob);
+    spoke1.borrow(_daiReserveId(spoke1), MAIN_HUB, 15, bob);
 
     uint256 exchangeRateAfter = hub.convertToSuppliedAssets(daiAssetId, MAX_SUPPLY_AMOUNT);
     assertGt(exchangeRateAfter, exchangeRateBefore);
@@ -130,7 +130,7 @@ contract SpokeRepayEdgeCaseTest is SpokeBase {
 
     _deployLiquidity(spoke1, _daiReserveId(spoke1), 20);
     vm.prank(carol);
-    spoke1.borrow(_daiReserveId(spoke1), 20, carol);
+    spoke1.borrow(_daiReserveId(spoke1), MAIN_HUB, 20, carol);
 
     skip(365 days);
 
@@ -144,9 +144,9 @@ contract SpokeRepayEdgeCaseTest is SpokeBase {
     updateLiquidityPremium(spoke1, _wethReserveId(spoke1), 30_00);
 
     vm.prank(alice);
-    spoke1.borrow(_daiReserveId(spoke1), 15, alice);
+    spoke1.borrow(_daiReserveId(spoke1), MAIN_HUB, 15, alice);
     vm.prank(bob);
-    spoke1.borrow(_daiReserveId(spoke1), 15, bob);
+    spoke1.borrow(_daiReserveId(spoke1), MAIN_HUB, 15, bob);
 
     uint256 exchangeRateAfter = hub.convertToSuppliedAssets(daiAssetId, MAX_SUPPLY_AMOUNT);
     assertGt(exchangeRateAfter, exchangeRateBefore);

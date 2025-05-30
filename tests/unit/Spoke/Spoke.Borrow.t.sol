@@ -99,7 +99,7 @@ contract SpokeBorrowTest is SpokeBase {
       bob
     );
     vm.prank(bob);
-    spoke1.borrow(state.daiReserveId, state.daiBob.borrowAmount, bob);
+    spoke1.borrow(state.daiReserveId, MAIN_HUB, state.daiBob.borrowAmount, bob);
 
     state.daiBob.userBalanceAfter = tokenList.dai.balanceOf(bob);
     state.wethBob.userBalanceAfter = tokenList.weth.balanceOf(bob);
@@ -255,7 +255,7 @@ contract SpokeBorrowTest is SpokeBase {
       bob
     );
     vm.prank(bob);
-    spoke1.borrow(state.daiReserveId, state.daiBob.borrowAmount, bob);
+    spoke1.borrow(state.daiReserveId, MAIN_HUB, state.daiBob.borrowAmount, bob);
 
     state.daiBob.userBalanceAfter = tokenList.dai.balanceOf(bob);
     state.wethBob.userBalanceAfter = tokenList.weth.balanceOf(bob);

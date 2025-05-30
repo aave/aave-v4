@@ -89,6 +89,8 @@ interface ISpoke is IMulticall {
   error InvalidOracleAddress();
   error UsersAndDebtLengthMismatch();
   error Unauthorized();
+  error InvalidHub();
+  error DrawnHubMismatch();
 
   function addReserve(
     uint256 assetId,
@@ -118,10 +120,11 @@ interface ISpoke is IMulticall {
   /**
    * @notice Borrow an amount of underlying asset from the specified reserve.
    * @param reserveId The reserveId of the underlying asset as registered on the spoke.
+   * @param hubId The id of the hub to borrow underlying assets from.
    * @param amount The amount of underlying assets to borrow.
    * @param to The address to transfer the underlying assets to.
    */
-  function borrow(uint256 reserveId, uint256 amount, address to) external;
+  function borrow(uint256 reserveId, uint256 hubId, uint256 amount, address to) external;
 
   /**
    * @notice Repays a borrowed amount on a specified reserve.
