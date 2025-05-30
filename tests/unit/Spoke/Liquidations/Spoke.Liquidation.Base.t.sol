@@ -165,15 +165,15 @@ contract SpokeLiquidationBase is SpokeBase {
     updateLiquidationBonus(state.spoke, collateralReserveId, liqBonus);
     updateLiquidationProtocolFee(state.spoke, collateralReserveId, state.liquidationProtocolFee);
 
-    // console.log(' fuzz inputs');
-    // console.log('  collateralReserveId: ', collateralReserveId);
-    // console.log('  debtReserveId: ', debtReserveId);
-    // console.log('  liqBonus: ', liqBonus);
-    // console.log('  supplyAmount: ', supplyAmount);
-    // console.log('  desiredHf: ', desiredHf);
-    // console.log('  liquidationProtocolFee: ', liquidationProtocolFee);
-    // console.log('  skipTime: ', skipTime);
-    // console.log('  liqConfig: ', liqConfig.closeFactor, liqConfig.healthFactorForMaxBonus);
+    console.log(' fuzz inputs');
+    console.log('  collateralReserveId: ', collateralReserveId);
+    console.log('  debtReserveId: ', debtReserveId);
+    console.log('  liqBonus: ', liqBonus);
+    console.log('  supplyAmount: ', supplyAmount);
+    console.log('  desiredHf: ', desiredHf);
+    console.log('  liquidationProtocolFee: ', liquidationProtocolFee);
+    console.log('  skipTime: ', skipTime);
+    console.log('  liqConfig: ', liqConfig.closeFactor, liqConfig.healthFactorForMaxBonus);
 
     Utils.supplyCollateral({
       spoke: state.spoke,

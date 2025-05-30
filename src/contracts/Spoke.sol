@@ -1018,6 +1018,9 @@ contract Spoke is ISpoke, Multicall {
     vars.collateralReserveId = collateralReserve.reserveId;
     vars.debtReserveId = debtReserve.reserveId;
 
+    vars.collateralAssetId = collateralReserve.assetId;
+    vars.debtAssetId = debtReserve.assetId;
+
     // console.log('SP resIds %e %e', collateralReserve.reserveId, debtReserve.reserveId);
     // console.log('SP resIds %e %e', vars.collateralReserveId, vars.debtReserveId);
 
@@ -1029,8 +1032,6 @@ contract Spoke is ISpoke, Multicall {
         vars.debtReserveId
       ];
 
-      vars.collateralAssetId = collateralReserve.assetId;
-      vars.debtAssetId = debtReserve.assetId;
       (vars.baseDebt, vars.premiumDebt) = _getUserDebt(userDebtPosition, vars.debtAssetId);
 
       (
@@ -1120,7 +1121,7 @@ contract Spoke is ISpoke, Multicall {
         vars.baseDebtToLiquidate,
         vars.premiumDebtToLiquidate,
         vars.deficit,
-        msg.sender
+        liquidator
       );
 
       // debt accounting
@@ -1178,17 +1179,17 @@ contract Spoke is ISpoke, Multicall {
       vars.totalCollateralToLiquidate += vars.collateralToLiquidate;
       vars.totalLiquidationProtocolFeeAmount += vars.liquidationProtocolFeeAmount;
       // actual debt to liquidate is the net from deficit
-      vars.totalDebtToLiquidate +=
-        vars.baseDebtToLiquidate +
-        vars.premiumDebtToLiquidate -
-        vars.deficit;
+      // vars.totalDebtToLiquidate +=
+      //   vars.baseDebtToLiquidate +
+      //   vars.premiumDebtToLiquidate -
+      //   vars.deficit;
 
       // TODO: emit liq protocol fee shares in event
       emit LiquidationCall(
         collateralReserve.asset,
         debtReserve.asset,
         users[vars.i],
-        vars.totalDebtToLiquidate,
+        vars.baseDebtToLiquidate + vars.premiumDebtToLiquidate - vars.deficit,
         vars.totalCollateralToLiquidate,
         liquidator
       );
@@ -1220,7 +1221,7 @@ contract Spoke is ISpoke, Multicall {
     );
 
     // transfer total liquidated collateral to liquidator
-    IERC20(collateralReserve.asset).safeTransfer(msg.sender, vars.totalCollateralToLiquidate);
+    IERC20(collateralReserve.asset).safeTransfer(liquidator, vars.totalCollateralToLiquidate);
     // TODO: treasury accounting for protocol fee
     // TODO: rm temp event
     emit TmpLiquidationFee(vars.totalLiquidationProtocolFeeShares);
