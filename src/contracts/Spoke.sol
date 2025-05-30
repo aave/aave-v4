@@ -1,6 +1,8 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.0;
 
+import {console2 as console} from 'forge-std/console2.sol';
+
 import {Multicall} from 'src/misc/Multicall.sol';
 
 import {SafeERC20} from 'src/dependencies/openzeppelin/SafeERC20.sol';
@@ -278,28 +280,47 @@ contract Spoke is ISpoke, Multicall {
     uint256[] memory debtsToCover = new uint256[](1);
     debtsToCover[0] = debtToCover;
 
-    (
-      address collateralAsset,
-      address debtAsset,
-      uint256 debtToLiquidate,
-      uint256 collateralToLiquidate,
-      uint256 liquidationProtocolFeeShares // TODO: emit in event
-    ) = _executeLiquidationCall(
-        _reserves[collateralReserveId],
-        _reserves[debtReserveId],
-        users,
-        debtsToCover
-      );
-
-    // TODO: emit liq protocol fee shares in event
-    emit LiquidationCall(
-      collateralAsset,
-      debtAsset,
-      user,
-      debtToLiquidate,
-      collateralToLiquidate,
+    _executeLiquidationCall(
+      _reserves[collateralReserveId],
+      _reserves[debtReserveId],
+      users,
+      debtsToCover,
       msg.sender
     );
+  }
+
+  /// @inheritdoc ISpoke
+  function liquidationCalls(
+    uint256 collateralReserveId,
+    uint256 debtReserveId,
+    address[] calldata users,
+    uint256[] calldata debtsToCover
+  ) external {
+    // address[] memory users = new address[](1);
+    // users[0] = user;
+    // uint256[] memory debtsToCover = new uint256[](1);
+    // debtsToCover[0] = debtToCover;
+    // (
+    //   address collateralAsset,
+    //   address debtAsset,
+    //   uint256 debtToLiquidate,
+    //   uint256 collateralToLiquidate,
+    //   uint256 liquidationProtocolFeeShares // TODO: emit in event
+    // ) = _executeLiquidationCall(
+    //     _reserves[collateralReserveId],
+    //     _reserves[debtReserveId],
+    //     users,
+    //     debtsToCover
+    //   );
+    // // TODO: emit liq protocol fee shares in event
+    // emit LiquidationCall(
+    //   collateralAsset,
+    //   debtAsset,
+    //   user,
+    //   debtToLiquidate,
+    //   collateralToLiquidate,
+    //   msg.sender
+    // );
   }
 
   /// @inheritdoc ISpoke
@@ -979,31 +1000,33 @@ contract Spoke is ISpoke, Multicall {
     }
   }
 
-  /// @return collateralAsset The address of the underlying asset used as collateral, to receive as result of the liquidation.
-  /// @return debtAsset The address of the underlying borrowed asset to be repaid with the liquidation.
-  /// @return totalDebtToLiquidate The total amount of debt to be repaid.
-  /// @return collateralToLiquidate The amount of collateral to liquidate.
-  /// @return liquidationProtocolFeeAmount The amount of protocol fee.
   function _executeLiquidationCall(
     DataTypes.Reserve storage collateralReserve,
     DataTypes.Reserve storage debtReserve,
     address[] memory users,
-    uint256[] memory debtsToCover
-  ) internal returns (address, address, uint256, uint256, uint256) {
-    uint256 usersLength = users.length;
-    require(usersLength == debtsToCover.length, UsersAndDebtLengthMismatch());
-
-    uint256 collateralReserveId = collateralReserve.reserveId;
-    uint256 debtReserveId = debtReserve.reserveId;
-
+    uint256[] memory debtsToCover,
+    address liquidator
+  ) internal {
     DataTypes.ExecuteLiquidationLocalVars memory vars;
 
-    while (vars.i < usersLength) {
+    vars.usersLength = users.length;
+    require(vars.usersLength == debtsToCover.length, UsersAndDebtLengthMismatch());
+
+    // uint256 collateralReserveId = collateralReserve.reserveId;
+    // uint256 debtReserveId = debtReserve.reserveId;
+
+    vars.collateralReserveId = collateralReserve.reserveId;
+    vars.debtReserveId = debtReserve.reserveId;
+
+    // console.log('SP resIds %e %e', collateralReserve.reserveId, debtReserve.reserveId);
+    // console.log('SP resIds %e %e', vars.collateralReserveId, vars.debtReserveId);
+
+    while (vars.i < vars.usersLength) {
       DataTypes.UserPosition storage userCollateralPosition = _userPositions[users[vars.i]][
-        collateralReserveId
+        vars.collateralReserveId
       ];
       DataTypes.UserPosition storage userDebtPosition = _userPositions[users[vars.i]][
-        debtReserveId
+        vars.debtReserveId
       ];
 
       vars.collateralAssetId = collateralReserve.assetId;
@@ -1061,7 +1084,7 @@ contract Spoke is ISpoke, Multicall {
 
       // deficit accounting
       if (vars.newUserSuppliedShares == 0) {
-        _setUsingAsCollateral(collateralReserveId, users[vars.i], false);
+        _setUsingAsCollateral(vars.collateralReserveId, users[vars.i], false);
         uint256 outstandingDebt = vars.baseDebt +
           vars.premiumDebt -
           vars.baseDebtToLiquidate -
@@ -1105,7 +1128,7 @@ contract Spoke is ISpoke, Multicall {
       vars.totalRestoredShares += vars.restoredShares;
 
       if (vars.deficit > 0) {
-        _settleRemainingDeficit(debtReserveId, users[vars.i]);
+        _settleRemainingDeficit(vars.debtReserveId, users[vars.i]);
       } else {
         // new user rp only needs to be calculated if no bad debt remains, otherwise it is 0 given no collateral remains
         (vars.newUserRiskPremium, , , , ) = _calculateUserAccountData(users[vars.i]);
@@ -1160,6 +1183,16 @@ contract Spoke is ISpoke, Multicall {
         vars.premiumDebtToLiquidate -
         vars.deficit;
 
+      // TODO: emit liq protocol fee shares in event
+      emit LiquidationCall(
+        collateralReserve.asset,
+        debtReserve.asset,
+        users[vars.i],
+        vars.totalDebtToLiquidate,
+        vars.totalCollateralToLiquidate,
+        liquidator
+      );
+
       unchecked {
         ++vars.i;
       }
@@ -1191,14 +1224,6 @@ contract Spoke is ISpoke, Multicall {
     // TODO: treasury accounting for protocol fee
     // TODO: rm temp event
     emit TmpLiquidationFee(vars.totalLiquidationProtocolFeeShares);
-
-    return (
-      collateralReserve.asset,
-      debtReserve.asset,
-      vars.totalDebtToLiquidate,
-      vars.totalCollateralToLiquidate,
-      vars.totalLiquidationProtocolFeeShares
-    );
   }
 
   /// @return actualCollateralToLiquidate The amount of collateral to liquidate.

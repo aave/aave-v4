@@ -142,6 +142,10 @@ library DataTypes {
     uint256 i;
     uint256 debtAssetId;
     uint256 collateralAssetId;
+    address debtAsset;
+    address collateralAsset;
+    uint256 collateralReserveId;
+    uint256 debtReserveId;
     uint256 baseDebt;
     uint256 premiumDebt;
     uint256 collateralToLiquidate;

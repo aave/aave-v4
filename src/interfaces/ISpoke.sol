@@ -147,6 +147,21 @@ interface ISpoke is IMulticall {
   ) external;
 
   /**
+   * @notice Liquidates multiple user positions.
+   * @dev Invokes Liquidity Hub restore, and pulls underlying repaid debt asset from caller (Liquidator), hence it needs prior approval.
+   * @param collateralReserveId The reserveId of the underlying asset used as collateral by the liquidated users.
+   * @param debtReserveId The reserveId of the underlying asset borrowed by the liquidated users, to be repaid by Liquidator during liquidation.
+   * @param users The addresses of the users to liquidate.
+   * @param debtsToCover The amounts of debt to cover, which correspond to each liquidated user.
+   */
+  function liquidationCalls(
+    uint256 collateralReserveId,
+    uint256 debtReserveId,
+    address[] calldata users,
+    uint256[] calldata debtsToCover
+  ) external;
+
+  /**
    * @notice Allows suppliers to enable/disable a specific supplied reserve as collateral.
    * @param reserveId The reserveId of the underlying asset as registered on the spoke.
    * @param usingAsCollateral True if the user wants to use the supply as collateral, false otherwise.

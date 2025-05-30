@@ -165,6 +165,16 @@ contract SpokeLiquidationBase is SpokeBase {
     updateLiquidationBonus(state.spoke, collateralReserveId, liqBonus);
     updateLiquidationProtocolFee(state.spoke, collateralReserveId, state.liquidationProtocolFee);
 
+    // console.log(' fuzz inputs');
+    // console.log('  collateralReserveId: ', collateralReserveId);
+    // console.log('  debtReserveId: ', debtReserveId);
+    // console.log('  liqBonus: ', liqBonus);
+    // console.log('  supplyAmount: ', supplyAmount);
+    // console.log('  desiredHf: ', desiredHf);
+    // console.log('  liquidationProtocolFee: ', liquidationProtocolFee);
+    // console.log('  skipTime: ', skipTime);
+    // console.log('  liqConfig: ', liqConfig.closeFactor, liqConfig.healthFactorForMaxBonus);
+
     Utils.supplyCollateral({
       spoke: state.spoke,
       reserveId: collateralReserveId,
@@ -553,8 +563,8 @@ contract SpokeLiquidationBase is SpokeBase {
   {
     Vm.Log[] memory entries = vm.getRecordedLogs();
 
-    // TmpLiquidationFee is next to last event emitted
-    liquidationProtocolFeeAmount = uint256(entries[entries.length - 2].topics[1]);
+    // TmpLiquidationFee is last event emitted
+    liquidationProtocolFeeAmount = uint256(entries[entries.length - 1].topics[1]);
   }
 
   /// @notice Get accounting info before liquidation, in base currency and amount.
