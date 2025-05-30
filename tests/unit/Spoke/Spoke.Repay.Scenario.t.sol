@@ -1371,7 +1371,10 @@ contract SpokeRepayScenarioTest is SpokeBase {
     // Set up initial state of the vault by having derl borrow
     uint256 supplyAmount = _calcMinimumCollAmount(spoke1, reserveId, reserveId, userBorrowing);
     Utils.supply(spoke1, reserveId, derl, supplyAmount, derl);
-    setUsingAsCollateral(spoke1, derl, reserveId, true);
+    if (!spoke1.getUsingAsCollateral(reserveId, derl)) {
+      setUsingAsCollateral(spoke1, derl, reserveId, true);
+    }
+
     if (userBorrowing > 0) {
       Utils.borrow(spoke1, reserveId, derl, userBorrowing, derl);
     }
@@ -1386,7 +1389,9 @@ contract SpokeRepayScenarioTest is SpokeBase {
     vm.prank(caller);
     IERC20(reserve.asset).approve(address(hub), supplyAmount);
     Utils.supply(spoke1, reserveId, caller, supplyAmount, caller);
-    setUsingAsCollateral(spoke1, caller, reserveId, true);
+    if (!spoke1.getUsingAsCollateral(reserveId, caller)) {
+      setUsingAsCollateral(spoke1, caller, reserveId, true);
+    }
     Utils.borrow(spoke1, reserveId, caller, callerStartingDebt, caller);
 
     // Repay

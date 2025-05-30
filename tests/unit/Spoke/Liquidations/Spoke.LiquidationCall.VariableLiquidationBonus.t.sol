@@ -35,7 +35,8 @@ contract LiquidationCallVariableLiquidationBonusTest is SpokeLiquidationBase {
     _checkLiquidation(state, spoke1, 'liquidationCall_fuzz_variableLiqBonus');
   }
 
-  function test_debug() public {
+  /// Liq Call with dust amounts of collateral remaining
+  function test_liquidationCall_remainingDustCollateral() public {
     test_liquidationCall_fuzz_variable_liqBonus({
       collateralReserveId: 1,
       debtReserveId: 0,
