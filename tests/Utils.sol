@@ -86,8 +86,11 @@ library Utils {
     address onBehalfOf
   ) internal {
     supply(spoke, reserveId, user, amount, onBehalfOf);
-    vm.prank(user);
-    spoke.setUsingAsCollateral(reserveId, true);
+    // only set using as collateral if not already set
+    if (!spoke.getUsingAsCollateral(reserveId, user)) {
+      vm.prank(user);
+      spoke.setUsingAsCollateral(reserveId, true);
+    }
   }
 
   function withdraw(

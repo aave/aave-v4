@@ -165,23 +165,13 @@ contract SpokeLiquidationBase is SpokeBase {
     updateLiquidationBonus(state.spoke, collateralReserveId, liqBonus);
     updateLiquidationProtocolFee(state.spoke, collateralReserveId, state.liquidationProtocolFee);
 
-    if (!state.spoke.getUsingAsCollateral(collateralReserveId, alice)) {
-      Utils.supplyCollateral({
-        spoke: state.spoke,
-        reserveId: collateralReserveId,
-        user: alice,
-        amount: supplyAmount,
-        onBehalfOf: alice
-      });
-    } else {
-      Utils.supply({
-        spoke: state.spoke,
-        reserveId: collateralReserveId,
-        user: alice,
-        amount: supplyAmount,
-        onBehalfOf: alice
-      });
-    }
+    Utils.supplyCollateral({
+      spoke: state.spoke,
+      reserveId: collateralReserveId,
+      user: alice,
+      amount: supplyAmount,
+      onBehalfOf: alice
+    });
 
     _increaseReserveSupplyExchangeRate(
       state.spoke,

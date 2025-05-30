@@ -224,23 +224,13 @@ contract LiquidationCallCloseFactorMultiReserveTest is SpokeLiquidationBase {
         supplyAmountInBase
       );
 
-      if (!state.spoke.getUsingAsCollateral(collateralReserveIds[i], alice)) {
-        Utils.supplyCollateral({
-          spoke: state.spoke,
-          reserveId: collateralReserveIds[i],
-          user: alice,
-          amount: supplyAmount,
-          onBehalfOf: alice
-        });
-      } else {
-        Utils.supply({
-          spoke: state.spoke,
-          reserveId: collateralReserveIds[i],
-          user: alice,
-          amount: supplyAmount,
-          onBehalfOf: alice
-        });
-      }
+      Utils.supplyCollateral({
+        spoke: state.spoke,
+        reserveId: collateralReserveIds[i],
+        user: alice,
+        amount: supplyAmount,
+        onBehalfOf: alice
+      });
     }
 
     state.hfBadDebtThreshold = _calcLowestHfForBadDebt(state.spoke, alice, liqBonus).percentMulUp(
