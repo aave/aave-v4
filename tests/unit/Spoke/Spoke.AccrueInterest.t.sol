@@ -11,8 +11,6 @@ contract SpokeAccrueInterestTest is SpokeBase {
   using WadRayMathExtended for uint256;
   using PercentageMath for uint256;
 
-  uint256 public constant MAX_BPS = 1000_00;
-
   struct TestAmounts {
     uint256 daiSupplyAmount;
     uint256 wethSupplyAmount;
@@ -58,63 +56,13 @@ contract SpokeAccrueInterestTest is SpokeBase {
     // Bob supplies through spoke 1
     Utils.supply(spoke1, daiReserveId, bob, amount, bob);
 
+    // Skip time
+    skip(skipTime);
+
     _checkDebts(spoke1, daiReserveId, bob, 0, 0, 'after supply, no interest accrued');
   }
 
-  function test_accrueInterest_BorrowAndWait() public {
-    uint256 amount = 1000e18;
-    uint256 daiReserveId = _daiReserveId(spoke1);
-    uint40 startTime = uint40(vm.getBlockTimestamp());
-
-    // Bob supplies and borrows through spoke 1
-    Utils.supplyCollateral(spoke1, daiReserveId, bob, amount * 2, bob);
-    Utils.borrow(spoke1, daiReserveId, bob, amount, bob);
-
-    uint256 baseBorrowRate = hub.getBaseInterestRate(daiAssetId);
-    uint256 userRp = spoke1.getUserRiskPremium(bob);
-
-    // 1 year passes
-    skip(365 days);
-
-    DataTypes.UserPosition memory bobPosition = spoke1.getUserPosition(daiReserveId, bob);
-
-    uint256 totalBase = _calcExpectedBaseDebt(amount, baseBorrowRate, startTime);
-    uint256 expectedPremiumDrawnShares = bobPosition.baseDrawnShares.percentMul(userRp);
-    uint256 expectedPremiumDebt = hub.convertToDrawnAssets(daiAssetId, expectedPremiumDrawnShares) -
-      bobPosition.premiumOffset +
-      bobPosition.realizedPremium;
-
-    _checkDebts(spoke1, daiReserveId, bob, totalBase, expectedPremiumDebt, 'after accrual');
-  }
-
-  function test_accrueInterest_fuzz_BorrowAndWait(uint40 skipTime) public {
-    skipTime = uint40(bound(skipTime, 0, MAX_SKIP_TIME));
-    uint256 amount = 1000e18;
-    uint256 daiReserveId = _daiReserveId(spoke1);
-    uint40 startTime = uint40(vm.getBlockTimestamp());
-
-    // Bob supplies and borrows through spoke 1
-    Utils.supplyCollateral(spoke1, daiReserveId, bob, amount * 2, bob);
-    Utils.borrow(spoke1, daiReserveId, bob, amount, bob);
-
-    uint256 baseBorrowRate = hub.getBaseInterestRate(daiAssetId);
-    uint256 userRp = spoke1.getUserRiskPremium(bob);
-
-    // Time passes
-    skip(skipTime);
-
-    DataTypes.UserPosition memory bobPosition = spoke1.getUserPosition(daiReserveId, bob);
-
-    uint256 totalBase = _calcExpectedBaseDebt(amount, baseBorrowRate, startTime);
-    uint256 expectedPremiumDrawnShares = bobPosition.baseDrawnShares.percentMul(userRp);
-    uint256 expectedPremiumDebt = hub.convertToDrawnAssets(daiAssetId, expectedPremiumDrawnShares) -
-      bobPosition.premiumOffset +
-      bobPosition.realizedPremium;
-
-    _checkDebts(spoke1, daiReserveId, bob, totalBase, expectedPremiumDebt, 'after accrual');
-  }
-
-  function test_accrueInterest_fuzz_BorrowAmountAndskipTime(
+  function test_accrueInterest_fuzz_BorrowAmountAndSkipTime(
     uint256 borrowAmount,
     uint40 skipTime
   ) public {
@@ -184,7 +132,7 @@ contract SpokeAccrueInterestTest is SpokeBase {
   }
 
   // Fuzz a mix of borrowed and supplied assets for bob, check his RP, ensure correct interest accrual
-  function test_accrueInterest_fuzz_RPBorrowAndskipTime(
+  function test_accrueInterest_fuzz_RPBorrowAndSkipTime(
     TestAmounts memory amounts,
     uint40 skipTime
   ) public {
@@ -383,7 +331,7 @@ contract SpokeAccrueInterestTest is SpokeBase {
   }
 
   // Fuzz a mix of borrowed and supplied assets for bob and rates, check his RP, ensure correct interest accrual
-  function test_accrueInterest_fuzz_RatesRPBorrowAndskipTime(
+  function test_accrueInterest_fuzz_RatesRPBorrowAndSkipTime(
     TestAmounts memory amounts,
     Rates memory rates,
     uint40 skipTime
