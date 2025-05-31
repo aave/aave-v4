@@ -12,7 +12,7 @@ contract LiquidationCallCloseFactorTest is SpokeLiquidationBase {
   /// single debt reserve, single collateral reserve
   /// user health factor position is higher than threshold, so that close factor can be achieved post-liquidation
   /// close factor varies across range of values
-  /// constant liquidation bonus
+  /// non-variable liquidation bonus
   function test_liquidationCall_fuzz_closeFactor_defaultCloseFactor(
     uint256 collateralReserveId,
     uint256 debtReserveId,
@@ -401,7 +401,7 @@ contract LiquidationCallCloseFactorTest is SpokeLiquidationBase {
     state.collateralReserves[state.collateralReserveIndex] = spoke1.getReserve(collateralReserveId);
     state.debtReserves[state.debtReserveIndex] = spoke1.getReserve(debtReserveId);
 
-    liqConfig = _bound(liqConfig);
+    liqConfig = _boundCloseFactor(liqConfig);
     liqBonus = bound(
       liqBonus,
       MIN_LIQUIDATION_BONUS,
@@ -501,22 +501,5 @@ contract LiquidationCallCloseFactorTest is SpokeLiquidationBase {
     state = _getAccountingInfoAfterLiq(state);
 
     return state;
-  }
-
-  /// constant liquidation bonus to simplify calcs for desiredHf
-  function _bound(
-    DataTypes.LiquidationConfig memory liqConfig
-  ) internal pure virtual override returns (DataTypes.LiquidationConfig memory) {
-    liqConfig.closeFactor = bound(
-      liqConfig.closeFactor,
-      MIN_CLOSE_FACTOR,
-      HEALTH_FACTOR_LIQUIDATION_THRESHOLD * 10
-    );
-
-    // set config to 0 so that desiredHf can be easily calculated (dependent on LB)
-    liqConfig.liquidationBonusFactor = 0;
-    liqConfig.healthFactorForMaxBonus = 0;
-
-    return liqConfig;
   }
 }

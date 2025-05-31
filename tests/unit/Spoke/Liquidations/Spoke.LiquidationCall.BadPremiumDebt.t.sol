@@ -167,7 +167,7 @@ contract LiquidationCallBadPremiumDebtTest is SpokeLiquidationBase {
   /// single debt reserve, single collateral reserve
   /// user health factor position is lower than threshold -> liquidating all collateral is insufficient to cover debt
   /// close factor varies across range of values
-  /// constant liquidation bonus
+  /// non-variable liquidation bonus
   function _execLiqCallCloseFactorBadPremiumDebtTest(
     DataTypes.LiquidationConfig memory liqConfig,
     uint256 liqBonus,
@@ -226,7 +226,7 @@ contract LiquidationCallBadPremiumDebtTest is SpokeLiquidationBase {
     });
 
     // calculate lowest HF where there is sufficient collateral to cover debt
-    // below this value results in bad debt
+    // below this value results in bad debt during liquidation
     uint256 hfBadDebtThreshold = _calcLowestHfForBadDebt(state.spoke, alice, liqBonus);
 
     _increaseReserveSupplyExchangeRate(
@@ -237,7 +237,7 @@ contract LiquidationCallBadPremiumDebtTest is SpokeLiquidationBase {
       bob
     );
 
-    // borrow some amount of debt reserve to end up below hf threshold
+    // borrow some amount of debt reserve to keep healthy hf initially
     (uint256 hfAfterBorrow, ) = _borrowToBeAboveHealthyHf(
       state.spoke,
       alice,

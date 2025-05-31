@@ -100,7 +100,7 @@ contract SpokeLiquidationBase is SpokeBase {
   }
 
   /// @notice Bound liqConfig close factor.
-  /// Set constant liquidation bonus to simplify calcs for desiredHf.
+  /// Set non-variable liquidation bonus to simplify calcs for desiredHf.
   function _boundCloseFactor(
     DataTypes.LiquidationConfig memory liqConfig
   ) internal pure virtual returns (DataTypes.LiquidationConfig memory) {
@@ -109,8 +109,6 @@ contract SpokeLiquidationBase is SpokeBase {
       MIN_CLOSE_FACTOR,
       HEALTH_FACTOR_LIQUIDATION_THRESHOLD * 10
     );
-
-    // set constant liquidation bonus to simplify calcs for desiredHf
     liqConfig.liquidationBonusFactor = 0;
     liqConfig.healthFactorForMaxBonus = 0;
 

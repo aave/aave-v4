@@ -187,7 +187,7 @@ contract LiquidationCallMultiReserveBadPremiumDebtTest is SpokeLiquidationBase {
   /// multiple debt reserves, single collateral reserve
   /// liquidating all collateral is insufficient to cover debt, bad debt remains
   /// close factor varies across range of values
-  /// constant liquidation bonus
+  /// non-variable liquidation bonus
   function _execLiqCallCloseFactorMultiAssetBadPremiumDebtTest(
     DataTypes.LiquidationConfig memory liqConfig,
     uint256 liqBonus,
