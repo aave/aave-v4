@@ -219,24 +219,31 @@ contract LiquidationCallValidationTest is SpokeLiquidationBase {
   ) public {
     debtToCover = bound(debtToCover, 1, MAX_SUPPLY_AMOUNT);
     wethAmount = bound(wethAmount, 1, MAX_SUPPLY_AMOUNT / 10);
-    daiAmount = wethAmount * 10; // ensure enough collateral to borrow
+    daiAmount = wethAmount * 5; // ensure enough collateral to borrow
     newWethPrice = bound(newWethPrice, 0, oracle.getAssetPrice(wethAssetId));
+    uint256 usdxAmount = daiAmount * 2; // Another collateral to cover debt while removing weth collateral
 
     uint256 daiReserveId = _daiReserveId(spoke1);
     uint256 wethReserveId = _wethReserveId(spoke1);
+    uint256 usdxReserveId = _usdxReserveId(spoke1);
 
     _deployLiquidity(spoke1, daiReserveId, daiAmount);
 
     Utils.supplyCollateral(spoke1, wethReserveId, alice, wethAmount, alice);
+    Utils.supplyCollateral(spoke1, usdxReserveId, alice, usdxAmount, alice);
     Utils.borrow(spoke1, daiReserveId, alice, daiAmount, alice);
 
-    // collateral value drop, make sure that HF < threshold and position is liquidatable
-    oracle.setAssetPrice(wethAssetId, 0);
-    vm.assume(spoke1.getHealthFactor(alice) < HEALTH_FACTOR_LIQUIDATION_THRESHOLD);
-
-    // no longer set asset as collateral
+    // no longer set weth as collateral
     setUsingAsCollateral(spoke1, alice, wethReserveId, false);
     assertFalse(spoke1.getUsingAsCollateral(wethReserveId, alice));
+
+    // usdx collateral value drop, make sure that HF < threshold and position is liquidatable
+    oracle.setAssetPrice(usdxAssetId, 0);
+    assertLt(
+      spoke1.getHealthFactor(alice),
+      HEALTH_FACTOR_LIQUIDATION_THRESHOLD,
+      'alice HF below threshold'
+    );
 
     vm.expectRevert(ISpoke.CollateralCannotBeLiquidated.selector);
     spoke1.liquidationCall(wethReserveId, daiReserveId, alice, debtToCover);

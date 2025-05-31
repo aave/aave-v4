@@ -595,6 +595,7 @@ contract Spoke is ISpoke, Multicall {
   ) internal view {
     require(reserve.config.active, ReserveNotActive());
     require(!reserve.config.paused, ReservePaused());
+    require(usingAsCollateral != userPosition.usingAsCollateral, CollateralStatusUnchanged());
     require(reserve.config.collateral, ReserveCannotBeUsedAsCollateral(reserve.reserveId));
     // deactivation should be allowed
     require(!usingAsCollateral || !reserve.config.frozen, ReserveFrozen());
@@ -1039,7 +1040,8 @@ contract Spoke is ISpoke, Multicall {
 
       // TODO: not compulsory, decide whether to rm
       if (vars.newUserSuppliedShares == 0) {
-        _setUsingAsCollateral(collateralReserveId, users[vars.i], false);
+        userCollateralPosition.usingAsCollateral = false;
+        emit UsingAsCollateral(collateralReserveId, users[vars.i], false);
       }
 
       // TODO: realize bad debt
@@ -1221,7 +1223,12 @@ contract Spoke is ISpoke, Multicall {
     _validateSetUsingAsCollateral(reserve, userPosition, usingAsCollateral);
     userPosition.usingAsCollateral = usingAsCollateral;
 
-    // consider updating user rp & notify here especially when deactivating collateral
+    // If unsetting, check HF and update user rp
+    if (!usingAsCollateral) {
+      uint256 newUserRiskPremium = _validateUserPosition(user); // validates HF
+      _notifyRiskPremiumUpdate(type(uint256).max, user, newUserRiskPremium);
+    }
+
     emit UsingAsCollateral(reserveId, user, usingAsCollateral);
   }
 }
