@@ -502,16 +502,12 @@ contract SpokeLiquidationBase is SpokeBase {
     uint256 liquidationBonus
   ) internal view returns (uint256) {
     (, uint256 avgCollateralFactor, , , ) = spoke.getUserAccountData(user);
-    return
-      _calcLowestHfForCloseFactorFromCollateralFactor(
-        avgCollateralFactor.dewadify(),
-        liquidationBonus
-      );
+    return _calcLowestHfForBadDebt(avgCollateralFactor.dewadify(), liquidationBonus);
   }
 
   /// given collateral factor and liquidation bonus, calculate the lowest health factor possible
   /// whereby a liquidation can still restore HF to close factor
-  function _calcLowestHfForCloseFactorFromCollateralFactor(
+  function _calcLowestHfForBadDebt(
     uint256 collateralFactor,
     uint256 liquidationBonus
   ) internal pure returns (uint256 healthFactor) {
