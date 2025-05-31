@@ -296,31 +296,13 @@ contract Spoke is ISpoke, Multicall {
     address[] calldata users,
     uint256[] calldata debtsToCover
   ) external {
-    // address[] memory users = new address[](1);
-    // users[0] = user;
-    // uint256[] memory debtsToCover = new uint256[](1);
-    // debtsToCover[0] = debtToCover;
-    // (
-    //   address collateralAsset,
-    //   address debtAsset,
-    //   uint256 debtToLiquidate,
-    //   uint256 collateralToLiquidate,
-    //   uint256 liquidationProtocolFeeShares // TODO: emit in event
-    // ) = _executeLiquidationCall(
-    //     _reserves[collateralReserveId],
-    //     _reserves[debtReserveId],
-    //     users,
-    //     debtsToCover
-    //   );
-    // // TODO: emit liq protocol fee shares in event
-    // emit LiquidationCall(
-    //   collateralAsset,
-    //   debtAsset,
-    //   user,
-    //   debtToLiquidate,
-    //   collateralToLiquidate,
-    //   msg.sender
-    // );
+    _executeLiquidationCall(
+      _reserves[collateralReserveId],
+      _reserves[debtReserveId],
+      users,
+      debtsToCover,
+      msg.sender
+    );
   }
 
   /// @inheritdoc ISpoke
@@ -1078,8 +1060,6 @@ contract Spoke is ISpoke, Multicall {
       userCollateralPosition.suppliedShares = vars.newUserSuppliedShares;
       vars.totalWithdrawnShares += vars.withdrawnShares;
 
-      console.log('final supplied shares', vars.newUserSuppliedShares);
-
       // deficit accounting
       if (vars.newUserSuppliedShares == 0) {
         userCollateralPosition.usingAsCollateral = false;
@@ -1125,8 +1105,6 @@ contract Spoke is ISpoke, Multicall {
       // debt accounting
       userDebtPosition.baseDrawnShares -= vars.restoredShares;
       vars.totalRestoredShares += vars.restoredShares;
-
-      console.log('final debt shares %e', userDebtPosition.baseDrawnShares);
 
       if (vars.deficit > 0) {
         _settleRemainingDeficit(vars.debtReserveId, users[vars.i]);
@@ -1178,18 +1156,13 @@ contract Spoke is ISpoke, Multicall {
 
       vars.totalCollateralToLiquidate += vars.collateralToLiquidate;
       vars.totalLiquidationProtocolFeeAmount += vars.liquidationProtocolFeeAmount;
-      // actual debt to liquidate is the net from deficit
-      // vars.totalDebtToLiquidate +=
-      //   vars.baseDebtToLiquidate +
-      //   vars.premiumDebtToLiquidate -
-      //   vars.deficit;
 
       // TODO: emit liq protocol fee shares in event
       emit LiquidationCall(
         collateralReserve.asset,
         debtReserve.asset,
         users[vars.i],
-        vars.baseDebtToLiquidate + vars.premiumDebtToLiquidate - vars.deficit,
+        vars.baseDebtToLiquidate + vars.premiumDebtToLiquidate - vars.deficit, // actual debt to liquidate is the net from deficit
         vars.totalCollateralToLiquidate,
         liquidator
       );
