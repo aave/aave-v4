@@ -1107,6 +1107,7 @@ contract Spoke is ISpoke, Multicall {
       vars.totalRestoredShares += vars.restoredShares;
 
       if (vars.deficit > 0) {
+        console.log('deficit');
         _settleRemainingDeficit(vars.debtReserveId, users[vars.i]);
       } else {
         // new user rp only needs to be calculated if no bad debt remains, otherwise it is 0 given no collateral remains

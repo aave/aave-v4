@@ -64,6 +64,48 @@ contract SpokeLiquidationBase is SpokeBase {
     uint256 hfBadDebtThreshold;
   }
 
+  struct ParallelLiquidationsTestLocalParams {
+    ISpoke spoke;
+    address[] users;
+    Balance liquidatorDebt;
+    Balance liquidatorCollateral;
+    Balance treasury;
+    Balance totalDebt;
+    Balance baseDebt;
+    Balance premiumDebt;
+    Balance supply;
+    Balance supplyShares;
+    Balance deficit;
+    uint256 liquidationBonus;
+    uint256 liquidationProtocolFee;
+    DataTypes.Reserve[] collateralReserves;
+    DataTypes.Reserve[] debtReserves;
+    uint256 desiredHf;
+    SupplyExchangeRate rate;
+    uint256 collToLiq;
+    uint256 debtToLiq;
+    uint256 liqProtocolFee;
+    bool hasDeficit;
+    uint256 outstandingDebt;
+    uint256 userRp;
+    uint256 finalHf;
+    uint256 finalTotalCollateralInBaseCurrency;
+    uint256 finalTotalDebtInBaseCurrency;
+    uint256 initialHf;
+    uint256 initialTotalCollateralInBaseCurrency;
+    uint256 initialTotalDebtInBaseCurrency;
+    bool usingAsCollateral;
+    uint256 debtReserveIndex;
+    uint256 collateralReserveIndex;
+    Balance[] deficits;
+    Balance[] debts;
+    uint256 hfBadDebtThreshold;
+    uint256[] supplyAmounts;
+    uint256 liqInitial;
+    Balance liqColl;
+    Balance liqDebt;
+  }
+
   uint256 internal constant MIN_AMOUNT_IN_BASE_CURRENCY = 1e26;
 
   function setUp() public virtual override {
@@ -599,16 +641,12 @@ contract SpokeLiquidationBase is SpokeBase {
     uint256 liquidationBonus
   ) internal view returns (uint256) {
     (, uint256 avgCollateralFactor, , , ) = spoke.getUserAccountData(user);
-    return
-      _calcLowestHfForCloseFactorFromCollateralFactor(
-        avgCollateralFactor.dewadify(),
-        liquidationBonus
-      );
+    return _calcLowestHfForBadDebt(avgCollateralFactor.dewadify(), liquidationBonus);
   }
 
   /// given collateral factor and liquidation bonus, calculate the lowest health factor possible
   /// whereby a liquidation can still restore HF to close factor
-  function _calcLowestHfForCloseFactorFromCollateralFactor(
+  function _calcLowestHfForBadDebt(
     uint256 collateralFactor,
     uint256 liquidationBonus
   ) internal pure returns (uint256 healthFactor) {
