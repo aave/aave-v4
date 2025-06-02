@@ -90,6 +90,7 @@ interface ISpoke is IMulticall {
   error UsersAndDebtLengthMismatch();
   error Unauthorized();
   error InvalidHub();
+  error SuppliedHubMismatch();
   error DrawnHubMismatch();
 
   function addReserve(
@@ -109,7 +110,7 @@ interface ISpoke is IMulticall {
    * @param reserveId The reserveId of the underlying asset as registered on the spoke.
    * @param amount The amount of asset to supply.
    */
-  function supply(uint256 reserveId, uint256 amount) external;
+  function supply(uint256 reserveId, uint256 hubId, uint256 amount) external;
 
   /**
    * @notice Withdraw supplied amount of underlying asset from the specified reserve.
@@ -117,7 +118,7 @@ interface ISpoke is IMulticall {
    * @param amount The amount of asset to withdraw.
    * @param to The address to transfer the assets to.
    */
-  function withdraw(uint256 reserveId, uint256 amount, address to) external;
+  function withdraw(uint256 reserveId, uint256 hubId, uint256 amount, address to) external;
 
   /**
    * @notice Borrow an amount of underlying asset from the specified reserve.

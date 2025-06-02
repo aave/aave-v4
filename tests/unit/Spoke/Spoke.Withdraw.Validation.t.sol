@@ -15,7 +15,7 @@ contract SpokeWithdrawValidationTest is SpokeBase {
 
     vm.expectRevert(ISpoke.ReserveNotActive.selector);
     vm.prank(bob);
-    spoke1.withdraw(daiReserveId, amount, bob);
+    spoke1.withdraw(daiReserveId, MAIN_HUB, amount, bob);
   }
 
   function test_withdraw_revertsWith_ReservePaused() public {
@@ -27,7 +27,7 @@ contract SpokeWithdrawValidationTest is SpokeBase {
 
     vm.expectRevert(ISpoke.ReservePaused.selector);
     vm.prank(bob);
-    spoke1.withdraw(daiReserveId, amount, bob);
+    spoke1.withdraw(daiReserveId, MAIN_HUB, amount, bob);
   }
 
   function test_withdraw_revertsWith_ReserveNotListed() public {
@@ -36,7 +36,7 @@ contract SpokeWithdrawValidationTest is SpokeBase {
 
     vm.expectRevert(ISpoke.ReserveNotListed.selector);
     vm.prank(bob);
-    spoke1.withdraw(reserveId, amount, bob);
+    spoke1.withdraw(reserveId, MAIN_HUB, amount, bob);
   }
 
   function test_withdraw_revertsWith_InsufficientSupply_zero_supplied() public {
@@ -47,7 +47,7 @@ contract SpokeWithdrawValidationTest is SpokeBase {
 
     vm.expectRevert(abi.encodeWithSelector(ISpoke.InsufficientSupply.selector, 0));
     vm.prank(alice);
-    spoke1.withdraw(reserveId, amount, alice);
+    spoke1.withdraw(reserveId, MAIN_HUB, amount, alice);
   }
 
   function test_withdraw_fuzz_revertsWith_InsufficientSupply_zero_supplied(uint256 amount) public {
@@ -58,7 +58,7 @@ contract SpokeWithdrawValidationTest is SpokeBase {
 
     vm.expectRevert(abi.encodeWithSelector(ISpoke.InsufficientSupply.selector, 0));
     vm.prank(alice);
-    spoke1.withdraw(reserveId, amount, alice);
+    spoke1.withdraw(reserveId, MAIN_HUB, amount, alice);
   }
 
   // Withdraw reverts when there is not enough avaulable liquidity
@@ -80,7 +80,7 @@ contract SpokeWithdrawValidationTest is SpokeBase {
 
     vm.expectRevert(abi.encodeWithSelector(ISpoke.InsufficientSupply.selector, withdrawalLimit));
     vm.prank(alice);
-    spoke1.withdraw(reserveId, withdrawalLimit + 1, alice);
+    spoke1.withdraw(reserveId, MAIN_HUB, withdrawalLimit + 1, alice);
 
     // skip time but no index increase with no borrow
     skip(365 days);
@@ -89,7 +89,7 @@ contract SpokeWithdrawValidationTest is SpokeBase {
 
     vm.expectRevert(abi.encodeWithSelector(ISpoke.InsufficientSupply.selector, withdrawalLimit));
     vm.prank(alice);
-    spoke1.withdraw(reserveId, withdrawalLimit + 1, alice);
+    spoke1.withdraw(reserveId, MAIN_HUB, withdrawalLimit + 1, alice);
   }
 
   // Withdrawal limit increases due to debt interest, but still cannot withdraw more than available liquidity
@@ -119,7 +119,7 @@ contract SpokeWithdrawValidationTest is SpokeBase {
 
     vm.expectRevert(abi.encodeWithSelector(ISpoke.InsufficientSupply.selector, supplyAmount));
     vm.prank(alice);
-    spoke1.withdraw({reserveId: reserveId, amount: supplyAmount + 1, to: bob});
+    spoke1.withdraw({reserveId: reserveId, hubId: MAIN_HUB, amount: supplyAmount + 1, to: bob});
 
     // accrue interest
     skip(365 days);
@@ -130,7 +130,12 @@ contract SpokeWithdrawValidationTest is SpokeBase {
 
     vm.expectRevert(abi.encodeWithSelector(ISpoke.InsufficientSupply.selector, newWithdrawalLimit));
     vm.prank(alice);
-    spoke1.withdraw({reserveId: reserveId, amount: newWithdrawalLimit + 1, to: alice});
+    spoke1.withdraw({
+      reserveId: reserveId,
+      hubId: MAIN_HUB,
+      amount: newWithdrawalLimit + 1,
+      to: alice
+    });
   }
 
   // Cannot withdraw more than available liquidity, before and after time skip, fuzzed
@@ -173,7 +178,7 @@ contract SpokeWithdrawValidationTest is SpokeBase {
 
     vm.expectRevert(abi.encodeWithSelector(ISpoke.InsufficientSupply.selector, supplyAmount));
     vm.prank(alice);
-    spoke1.withdraw({reserveId: reserveId, amount: supplyAmount + 1, to: alice});
+    spoke1.withdraw({reserveId: reserveId, hubId: MAIN_HUB, amount: supplyAmount + 1, to: alice});
 
     // debt accrues
     skip(skipTime);
@@ -184,6 +189,11 @@ contract SpokeWithdrawValidationTest is SpokeBase {
 
     vm.expectRevert(abi.encodeWithSelector(ISpoke.InsufficientSupply.selector, newWithdrawalLimit));
     vm.prank(alice);
-    spoke1.withdraw({reserveId: reserveId, amount: newWithdrawalLimit + 1, to: alice});
+    spoke1.withdraw({
+      reserveId: reserveId,
+      hubId: MAIN_HUB,
+      amount: newWithdrawalLimit + 1,
+      to: alice
+    });
   }
 }

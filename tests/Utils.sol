@@ -74,7 +74,7 @@ library Utils {
     address onBehalfOf
   ) internal {
     vm.prank(user);
-    spoke.supply(reserveId, amount);
+    spoke.supply(reserveId, 1, amount);
   }
 
   function supplyCollateral(
@@ -97,7 +97,7 @@ library Utils {
     address onBehalfOf
   ) internal {
     vm.prank(user);
-    spoke.withdraw(reserveId, amount, user);
+    spoke.withdraw(reserveId, 1, amount, user);
   }
 
   function borrow(

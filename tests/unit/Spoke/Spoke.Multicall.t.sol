@@ -11,7 +11,7 @@ contract SpokeMulticall is SpokeBase {
 
     // Set up the multicall
     bytes[] memory calls = new bytes[](2);
-    calls[0] = abi.encodeCall(ISpoke.supply, (daiReserveId, supplyAmount));
+    calls[0] = abi.encodeCall(ISpoke.supply, (daiReserveId, MAIN_HUB, supplyAmount));
     calls[1] = abi.encodeCall(ISpoke.setUsingAsCollateral, (daiReserveId, true));
 
     vm.expectEmit(address(spoke1));
@@ -48,7 +48,7 @@ contract SpokeMulticall is SpokeBase {
 
     // Set up the multicall
     bytes[] memory calls = new bytes[](3);
-    calls[0] = abi.encodeCall(ISpoke.supply, (_daiReserveId(spoke2), MAX_SUPPLY_AMOUNT));
+    calls[0] = abi.encodeCall(ISpoke.supply, (_daiReserveId(spoke2), MAIN_HUB, MAX_SUPPLY_AMOUNT));
     calls[1] = abi.encodeCall(ISpoke.setUsingAsCollateral, (_daiReserveId(spoke2), true));
     calls[2] = abi.encodeCall(ISpoke.updateUserRiskPremium, (bob));
 

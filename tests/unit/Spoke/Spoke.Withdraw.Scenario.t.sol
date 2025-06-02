@@ -91,7 +91,7 @@ contract SpokeWithdrawScenarioTest is SpokeBase {
 
     // Withdraw partial supplied assets
     vm.startPrank(bob);
-    spoke1.withdraw(_daiReserveId(spoke1), partialWithdrawAmount, bob);
+    spoke1.withdraw(_daiReserveId(spoke1), MAIN_HUB, partialWithdrawAmount, bob);
 
     uint256 expectedSupplied = totalSupplied - partialWithdrawAmount;
     assertApproxEqAbs(
@@ -113,7 +113,7 @@ contract SpokeWithdrawScenarioTest is SpokeBase {
     supplyExRateBefore = getSupplyExRate(daiAssetId);
 
     // Withdraw all supplied assets
-    spoke1.withdraw(_daiReserveId(spoke1), type(uint256).max, bob);
+    spoke1.withdraw(_daiReserveId(spoke1), MAIN_HUB, type(uint256).max, bob);
 
     _checkSuppliedAmounts(daiAssetId, _daiReserveId(spoke1), spoke1, bob, 0, 'after withdraw');
 
@@ -218,6 +218,7 @@ contract SpokeWithdrawScenarioTest is SpokeBase {
     vm.prank(alice);
     spoke1.withdraw({
       reserveId: params.reserveId,
+      hubId: MAIN_HUB,
       amount: aliceData[state.stage].suppliedAmount,
       to: alice
     });
@@ -249,6 +250,7 @@ contract SpokeWithdrawScenarioTest is SpokeBase {
     vm.prank(bob);
     spoke1.withdraw({
       reserveId: params.reserveId,
+      hubId: MAIN_HUB,
       amount: bobData[state.stage].suppliedAmount,
       to: bob
     });
@@ -332,14 +334,14 @@ contract SpokeWithdrawScenarioTest is SpokeBase {
     vm.expectEmit(address(spoke1));
     emit ISpoke.Supply(reserveId, caller, shares1);
     vm.prank(caller);
-    spoke1.supply(reserveId, assets);
+    spoke1.supply(reserveId, MAIN_HUB, assets);
 
     // Withdraw and confirm share amount from event emission
     uint256 shares2 = hub.convertToSuppliedShares(reserve.assetId, assets);
     vm.expectEmit(address(spoke1));
     emit ISpoke.Withdraw(reserveId, caller, shares2, caller);
     vm.prank(caller);
-    spoke1.withdraw(reserveId, assets, caller);
+    spoke1.withdraw(reserveId, MAIN_HUB, assets, caller);
 
     assertEq(shares2, shares1, 'supplied and withdrawn shares');
   }
@@ -394,14 +396,14 @@ contract SpokeWithdrawScenarioTest is SpokeBase {
     vm.expectEmit(address(spoke1));
     emit ISpoke.Withdraw(reserveId, caller, shares1, caller);
     vm.prank(caller);
-    spoke1.withdraw(reserveId, assets, caller);
+    spoke1.withdraw(reserveId, MAIN_HUB, assets, caller);
 
     // Supply and confirm share amount from event emission
     uint256 shares2 = hub.convertToSuppliedShares(reserve.assetId, assets);
     vm.expectEmit(address(spoke1));
     emit ISpoke.Supply(reserveId, caller, shares2);
     vm.prank(caller);
-    spoke1.supply(reserveId, assets);
+    spoke1.supply(reserveId, MAIN_HUB, assets);
 
     assertEq(shares2, shares1, 'supplied and withdrawn shares');
   }

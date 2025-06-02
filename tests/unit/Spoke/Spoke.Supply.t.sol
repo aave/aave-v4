@@ -12,7 +12,7 @@ contract SpokeSupplyTest is SpokeBase {
 
     vm.expectRevert(ISpoke.ReserveNotListed.selector);
     vm.prank(bob);
-    spoke1.supply(reserveId, amount);
+    spoke1.supply(reserveId, MAIN_HUB, amount);
   }
 
   function test_supply_revertsWith_ReserveNotActive() public {
@@ -24,7 +24,7 @@ contract SpokeSupplyTest is SpokeBase {
 
     vm.expectRevert(ISpoke.ReserveNotActive.selector);
     vm.prank(bob);
-    spoke1.supply(daiReserveId, amount);
+    spoke1.supply(daiReserveId, MAIN_HUB, amount);
   }
 
   function test_supply_revertsWith_ReservePaused() public {
@@ -36,7 +36,7 @@ contract SpokeSupplyTest is SpokeBase {
 
     vm.expectRevert(ISpoke.ReservePaused.selector);
     vm.prank(bob);
-    spoke1.supply(daiReserveId, amount);
+    spoke1.supply(daiReserveId, MAIN_HUB, amount);
   }
 
   function test_supply_revertsWith_ReserveFrozen() public {
@@ -48,7 +48,7 @@ contract SpokeSupplyTest is SpokeBase {
 
     vm.expectRevert(ISpoke.ReserveFrozen.selector);
     vm.prank(bob);
-    spoke1.supply(daiReserveId, amount);
+    spoke1.supply(daiReserveId, MAIN_HUB, amount);
   }
 
   function test_supply_revertsWith_ERC20InsufficientAllowance() public {
@@ -65,7 +65,7 @@ contract SpokeSupplyTest is SpokeBase {
         amount
       )
     );
-    spoke1.supply(_daiReserveId(spoke1), amount);
+    spoke1.supply(_daiReserveId(spoke1), MAIN_HUB, amount);
     vm.stopPrank();
   }
 
@@ -74,7 +74,7 @@ contract SpokeSupplyTest is SpokeBase {
 
     vm.expectRevert(ILiquidityHub.InvalidSupplyAmount.selector);
     vm.prank(bob);
-    spoke1.supply(_daiReserveId(spoke1), amount);
+    spoke1.supply(_daiReserveId(spoke1), MAIN_HUB, amount);
   }
 
   function test_supply() public {
@@ -103,7 +103,7 @@ contract SpokeSupplyTest is SpokeBase {
     vm.expectEmit(address(spoke1));
     emit ISpoke.Supply(_daiReserveId(spoke1), bob, amount);
     vm.prank(bob);
-    spoke1.supply(_daiReserveId(spoke1), amount);
+    spoke1.supply(_daiReserveId(spoke1), MAIN_HUB, amount);
     stage = 1;
     bobData[stage] = loadUserInfo(spoke1, _daiReserveId(spoke1), bob);
     daiData[stage] = loadReserveInfo(spoke1, _daiReserveId(spoke1));
@@ -181,7 +181,7 @@ contract SpokeSupplyTest is SpokeBase {
     vm.expectEmit(address(spoke1));
     emit ISpoke.Supply(_daiReserveId(spoke1), bob, amount);
     vm.prank(bob);
-    spoke1.supply(_daiReserveId(spoke1), amount);
+    spoke1.supply(_daiReserveId(spoke1), MAIN_HUB, amount);
 
     stage = 1;
     bobData[stage] = loadUserInfo(spoke1, _daiReserveId(spoke1), bob);
@@ -254,7 +254,7 @@ contract SpokeSupplyTest is SpokeBase {
     vm.expectEmit(address(spoke1));
     emit ISpoke.Supply(_daiReserveId(spoke1), carol, expectedShares);
     vm.prank(carol);
-    spoke1.supply(_daiReserveId(spoke1), amount);
+    spoke1.supply(_daiReserveId(spoke1), MAIN_HUB, amount);
     stage = 1;
 
     carolData[stage] = loadUserInfo(spoke1, _daiReserveId(spoke1), carol);
@@ -371,7 +371,7 @@ contract SpokeSupplyTest is SpokeBase {
     vm.expectEmit(address(spoke1));
     emit ISpoke.Supply(reserveId, carol, expectedSuppliedShares);
     vm.prank(carol);
-    spoke1.supply(reserveId, amount);
+    spoke1.supply(reserveId, MAIN_HUB, amount);
     stage = 1;
 
     carolData[stage] = loadUserInfo(spoke1, reserveId, carol);
@@ -445,7 +445,7 @@ contract SpokeSupplyTest is SpokeBase {
     vm.prank(carol);
     vm.expectEmit(address(spoke1));
     emit ISpoke.Supply(_daiReserveId(spoke1), carol, expectedShares);
-    spoke1.supply(_daiReserveId(spoke1), amount);
+    spoke1.supply(_daiReserveId(spoke1), MAIN_HUB, amount);
     stage = 1;
 
     carolData[stage] = loadUserInfo(spoke1, _daiReserveId(spoke1), carol);
@@ -540,7 +540,7 @@ contract SpokeSupplyTest is SpokeBase {
     vm.expectEmit(address(spoke1));
     emit ISpoke.Supply(reserveId, carol, expectedShares);
     vm.prank(carol);
-    spoke1.supply(reserveId, amount);
+    spoke1.supply(reserveId, MAIN_HUB, amount);
 
     stage = 1;
     carolData[stage] = loadUserInfo(spoke1, reserveId, carol);

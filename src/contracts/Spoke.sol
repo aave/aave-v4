@@ -136,13 +136,18 @@ contract Spoke is ISpoke, Multicall {
   // /////
 
   /// @inheritdoc ISpoke
-  function supply(uint256 reserveId, uint256 amount) external {
+  function supply(uint256 reserveId, uint256 hubId, uint256 amount) external {
     DataTypes.Reserve storage reserve = _reserves[reserveId];
     DataTypes.UserPosition storage userPosition = _userPositions[msg.sender][reserveId];
 
     _validateSupply(reserve);
+    if (userPosition.suppliedHubId != 0) {
+      require(userPosition.suppliedHubId == hubId, SuppliedHubMismatch());
+    } else {
+      userPosition.suppliedHubId = hubId;
+    }
 
-    uint256 suppliedShares = ILiquidityHub(_hubs[1]).add(reserve.assetId, amount, msg.sender);
+    uint256 suppliedShares = ILiquidityHub(_hubs[hubId]).add(reserve.assetId, amount, msg.sender);
 
     userPosition.suppliedShares += suppliedShares;
     reserve.suppliedShares += suppliedShares;
@@ -151,23 +156,24 @@ contract Spoke is ISpoke, Multicall {
   }
 
   /// @inheritdoc ISpoke
-  function withdraw(uint256 reserveId, uint256 amount, address to) external {
+  function withdraw(uint256 reserveId, uint256 hubId, uint256 amount, address to) external {
     DataTypes.Reserve storage reserve = _reserves[reserveId];
     DataTypes.UserPosition storage userPosition = _userPositions[msg.sender][reserveId];
     uint256 assetId = reserve.assetId;
 
     // If uint256.max is passed, withdraw all user's supplied assets
     if (amount == type(uint256).max) {
-      amount = ILiquidityHub(_hubs[1]).convertToSuppliedAssets(
+      amount = ILiquidityHub(_hubs[hubId]).convertToSuppliedAssets(
         assetId,
         userPosition.suppliedShares
       );
     }
     _validateWithdraw(reserve, userPosition, amount);
+    require(userPosition.suppliedHubId == hubId, SuppliedHubMismatch());
 
     uint256 userPremiumDrawnShares = userPosition.premiumDrawnShares;
     uint256 userPremiumOffset = userPosition.premiumOffset;
-    uint256 accruedPremium = ILiquidityHub(_hubs[1]).convertToDrawnAssets(
+    uint256 accruedPremium = ILiquidityHub(_hubs[hubId]).convertToDrawnAssets(
       assetId,
       userPremiumDrawnShares
     ) - userPremiumOffset; // assets(premiumShares) - offset should never be < 0
@@ -183,7 +189,7 @@ contract Spoke is ISpoke, Multicall {
       -int256(userPremiumOffset),
       int256(accruedPremium)
     ); // unnecessary but we realize premium debt here
-    uint256 withdrawnShares = ILiquidityHub(_hubs[1]).remove(assetId, amount, to);
+    uint256 withdrawnShares = ILiquidityHub(_hubs[hubId]).remove(assetId, amount, to);
 
     userPosition.suppliedShares -= withdrawnShares;
     reserve.suppliedShares -= withdrawnShares;
@@ -194,7 +200,7 @@ contract Spoke is ISpoke, Multicall {
     userPremiumDrawnShares = userPosition.premiumDrawnShares = userPosition
       .baseDrawnShares
       .percentMul(newUserRiskPremium);
-    userPremiumOffset = userPosition.premiumOffset = ILiquidityHub(_hubs[1]).previewOffset(
+    userPremiumOffset = userPosition.premiumOffset = ILiquidityHub(_hubs[hubId]).previewOffset(
       assetId,
       userPosition.premiumDrawnShares
     );
@@ -209,6 +215,11 @@ contract Spoke is ISpoke, Multicall {
     );
     _notifyRiskPremiumUpdate(assetId, msg.sender, newUserRiskPremium);
 
+    if (userPosition.suppliedShares == 0) {
+      // Reset supplied hub
+      userPosition.suppliedHubId = 0;
+    }
+
     emit Withdraw(reserveId, msg.sender, withdrawnShares, to);
   }
 
@@ -220,11 +231,12 @@ contract Spoke is ISpoke, Multicall {
     DataTypes.UserPosition storage userPosition = _userPositions[msg.sender][reserveId];
     uint256 assetId = reserve.assetId;
 
+    _validateBorrow(reserve, hubId);
     if (userPosition.drawnHubId != 0) {
       require(userPosition.drawnHubId == hubId, DrawnHubMismatch());
+    } else {
+      userPosition.drawnHubId = hubId;
     }
-    userPosition.drawnHubId = hubId;
-    _validateBorrow(reserve, hubId);
 
     uint256 userPremiumDrawnShares = userPosition.premiumDrawnShares;
     uint256 userPremiumOffset = userPosition.premiumOffset;

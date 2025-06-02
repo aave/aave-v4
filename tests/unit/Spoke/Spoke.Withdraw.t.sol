@@ -85,7 +85,7 @@ contract SpokeWithdrawTest is SpokeBase {
     vm.expectEmit(address(spoke1));
     emit ISpoke.Withdraw(_daiReserveId(spoke1), bob, amount, bob);
     vm.prank(bob);
-    spoke1.withdraw(_daiReserveId(spoke1), amount, bob);
+    spoke1.withdraw(_daiReserveId(spoke1), MAIN_HUB, amount, bob);
 
     stage = 1;
     daiData[stage] = loadReserveInfo(spoke1, _daiReserveId(spoke1));
@@ -132,7 +132,7 @@ contract SpokeWithdrawTest is SpokeBase {
 
     // Withdraw all supplied assets
     vm.prank(bob);
-    spoke1.withdraw(_daiReserveId(spoke1), type(uint256).max, bob);
+    spoke1.withdraw(_daiReserveId(spoke1), MAIN_HUB, type(uint256).max, bob);
 
     _checkSuppliedAmounts(daiAssetId, _daiReserveId(spoke1), spoke1, bob, 0, 'after withdraw');
     _checkSupplyRateIncreasing(supplyExRate, getSupplyExRate(daiAssetId), true, 'after withdraw');
@@ -161,7 +161,7 @@ contract SpokeWithdrawTest is SpokeBase {
 
     // Withdraw all supplied assets
     vm.prank(bob);
-    spoke1.withdraw(_daiReserveId(spoke1), type(uint256).max, bob);
+    spoke1.withdraw(_daiReserveId(spoke1), MAIN_HUB, type(uint256).max, bob);
 
     _checkSuppliedAmounts(daiAssetId, _daiReserveId(spoke1), spoke1, bob, 0, 'after withdraw');
     _checkSupplyRateIncreasing(supplyExRate, getSupplyExRate(daiAssetId), true, 'after withdraw');
@@ -218,7 +218,7 @@ contract SpokeWithdrawTest is SpokeBase {
     uint256 supplyExRate = getSupplyExRate(daiAssetId);
 
     vm.prank(bob);
-    spoke1.withdraw(_daiReserveId(spoke1), type(uint256).max, bob);
+    spoke1.withdraw(_daiReserveId(spoke1), MAIN_HUB, type(uint256).max, bob);
 
     _checkSuppliedAmounts(daiAssetId, _daiReserveId(spoke1), spoke1, bob, 0, 'after withdraw');
     _checkSupplyRateIncreasing(supplyExRate, getSupplyExRate(daiAssetId), true, 'after withdraw');
@@ -279,7 +279,7 @@ contract SpokeWithdrawTest is SpokeBase {
     uint256 supplyExRate = getSupplyExRate(daiAssetId);
 
     vm.prank(bob);
-    spoke1.withdraw(_daiReserveId(spoke1), type(uint256).max, bob);
+    spoke1.withdraw(_daiReserveId(spoke1), MAIN_HUB, type(uint256).max, bob);
 
     _checkSuppliedAmounts(daiAssetId, _daiReserveId(spoke1), spoke1, bob, 0, 'after withdraw');
     _checkSupplyRateIncreasing(supplyExRate, getSupplyExRate(daiAssetId), true, 'after withdraw');
@@ -343,7 +343,12 @@ contract SpokeWithdrawTest is SpokeBase {
     // withdraw all available liquidity
     // bc debt is fully repaid, bob can withdraw all supplied
     vm.prank(bob);
-    spoke1.withdraw({reserveId: state.reserveId, amount: state.withdrawAmount, to: bob});
+    spoke1.withdraw({
+      reserveId: state.reserveId,
+      hubId: MAIN_HUB,
+      amount: state.withdrawAmount,
+      to: bob
+    });
 
     stage = 2;
     reserveData[stage] = loadReserveInfo(spoke1, state.reserveId);
@@ -490,7 +495,12 @@ contract SpokeWithdrawTest is SpokeBase {
 
     // bob withdraws all
     vm.prank(bob);
-    spoke1.withdraw({reserveId: state.reserveId, amount: state.withdrawAmount, to: bob});
+    spoke1.withdraw({
+      reserveId: state.reserveId,
+      hubId: MAIN_HUB,
+      amount: state.withdrawAmount,
+      to: bob
+    });
 
     stage = 2;
     reserveData[stage] = loadReserveInfo(spoke1, state.reserveId);
@@ -586,7 +596,12 @@ contract SpokeWithdrawTest is SpokeBase {
 
     // debt is fully repaid, so bob can withdraw all supplied
     vm.prank(bob);
-    spoke1.withdraw({reserveId: state.reserveId, amount: state.withdrawAmount, to: bob});
+    spoke1.withdraw({
+      reserveId: state.reserveId,
+      hubId: MAIN_HUB,
+      amount: state.withdrawAmount,
+      to: bob
+    });
 
     stage = 2;
     daiData[stage] = loadReserveInfo(spoke1, state.reserveId);
@@ -729,7 +744,12 @@ contract SpokeWithdrawTest is SpokeBase {
     uint256 supplyExRateBefore = getSupplyExRate(assetId);
 
     vm.prank(bob);
-    spoke1.withdraw({reserveId: state.reserveId, amount: state.withdrawAmount, to: bob});
+    spoke1.withdraw({
+      reserveId: state.reserveId,
+      hubId: MAIN_HUB,
+      amount: state.withdrawAmount,
+      to: bob
+    });
 
     stage = 2;
     reserveData[stage] = loadReserveInfo(spoke1, state.reserveId);

@@ -104,7 +104,7 @@ contract SpokeRepayTest is SpokeBase {
     vm.startPrank(bob);
 
     uint256 supplyAmount = 5000e18;
-    spoke1.supply(_daiReserveId(spoke1), supplyAmount);
+    spoke1.supply(_daiReserveId(spoke1), MAIN_HUB, supplyAmount);
     spoke1.setUsingAsCollateral(_daiReserveId(spoke1), true);
 
     uint256 borrowAmount = 1000e18;
