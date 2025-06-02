@@ -175,36 +175,8 @@ contract SpokeBorrowHealthFactorTest is SpokeBase {
     uint256 wethCollAmountDai,
     uint256 wethCollAmountUsdx
   ) public {
-    wethCollAmountDai = bound(
-      wethCollAmountDai,
-      _calcMinimumCollAmount({
-        spoke: spoke1,
-        collReserveId: _wethReserveId(spoke1),
-        debtReserveId: _daiReserveId(spoke1),
-        debtAmount: _minFeasibleAmount(daiAssetId)
-      }),
-      _calcMinimumCollAmount({
-        spoke: spoke1,
-        collReserveId: _wethReserveId(spoke1),
-        debtReserveId: _daiReserveId(spoke1),
-        debtAmount: MAX_SUPPLY_AMOUNT_DAI
-      })
-    );
-    wethCollAmountUsdx = bound(
-      wethCollAmountUsdx,
-      _calcMinimumCollAmount({
-        spoke: spoke1,
-        collReserveId: _wethReserveId(spoke1),
-        debtReserveId: _usdxReserveId(spoke1),
-        debtAmount: _minFeasibleAmount(usdxAssetId)
-      }),
-      _calcMinimumCollAmount({
-        spoke: spoke1,
-        collReserveId: _wethReserveId(spoke1),
-        debtReserveId: _usdxReserveId(spoke1),
-        debtAmount: MAX_SUPPLY_AMOUNT_USDX
-      })
-    );
+    wethCollAmountDai = _boundCollAmt(wethCollAmountDai, spoke1, _wethReserveId, _daiReserveId);
+    wethCollAmountUsdx = _boundCollAmt(wethCollAmountUsdx, spoke1, _wethReserveId, _usdxReserveId);
 
     // weth collateral
     uint256 wethReserveId = _wethReserveId(spoke1);
@@ -234,34 +206,15 @@ contract SpokeBorrowHealthFactorTest is SpokeBase {
     Utils.borrow(spoke1, daiReserveId, bob, daiDebtAmount, bob);
     Utils.borrow(spoke1, usdxReserveId, bob, usdxDebtAmount, bob);
 
-    uint256 daiFailedBorrowAmount = _calcMaxDebtAmount({
-      spoke: spoke1,
-      collReserveId: _wethReserveId(spoke1),
-      debtReserveId: _daiReserveId(spoke1),
-      collAmount: _calcMinimumCollAmount({
-        spoke: spoke1,
-        collReserveId: _wethReserveId(spoke1),
-        debtReserveId: _daiReserveId(spoke1),
-        debtAmount: _minFeasibleAmount(daiAssetId)
-      }) + 1
-    }) + 1;
-    uint256 usdxFailedBorrowAmount = _calcMaxDebtAmount({
-      spoke: spoke1,
-      collReserveId: _wethReserveId(spoke1),
-      debtReserveId: _daiReserveId(spoke1),
-      collAmount: _calcMinimumCollAmount({
-        spoke: spoke1,
-        collReserveId: _wethReserveId(spoke1),
-        debtReserveId: _usdxReserveId(spoke1),
-        debtAmount: _minFeasibleAmount(usdxAssetId)
-      }) + 1
-    }) + 1;
+    // valid HF
+    assertGe(spoke1.getHealthFactor(bob), HEALTH_FACTOR_LIQUIDATION_THRESHOLD); // can be GE due to low debt/coll amounts
+
+    // todo find exact min amount which brings HF < 1
+    uint256 daiFailedBorrowAmount = 1e18;
+    uint256 usdxFailedBorrowAmount = 1e6;
 
     _deployLiquidity(spoke1, daiReserveId, daiFailedBorrowAmount);
     _deployLiquidity(spoke1, usdxReserveId, usdxFailedBorrowAmount);
-
-    // valid HF
-    assertGe(spoke1.getHealthFactor(bob), HEALTH_FACTOR_LIQUIDATION_THRESHOLD); // can be GE due to low debt/coll amounts
 
     // cannot borrow more dai
     vm.prank(bob);
@@ -340,9 +293,8 @@ contract SpokeBorrowHealthFactorTest is SpokeBase {
     uint256 wethCollForUsdx,
     uint256 skipTime
   ) public {
-    vm.skip(true, 'todo');
-    wethCollForDai = bound(wethCollForDai, 1, MAX_SUPPLY_AMOUNT / 2);
-    wethCollForUsdx = bound(wethCollForUsdx, 1, MAX_SUPPLY_AMOUNT / 2);
+    wethCollForDai = _boundCollAmt(wethCollForDai, spoke1, _wethReserveId, _daiReserveId);
+    wethCollForUsdx = _boundCollAmt(wethCollForUsdx, spoke1, _wethReserveId, _usdxReserveId);
     skipTime = bound(skipTime, 1, MAX_SKIP_TIME);
 
     // weth collateral
@@ -364,23 +316,15 @@ contract SpokeBorrowHealthFactorTest is SpokeBase {
       collAmount: wethCollForUsdx
     });
 
-    vm.assume(daiDebtAmount < MAX_SUPPLY_AMOUNT / 2 && daiDebtAmount > 0);
-    vm.assume(usdxDebtAmount < MAX_SUPPLY_AMOUNT / 2 && usdxDebtAmount > 0);
-
     // Bob supply weth
-    Utils.supply(spoke1, wethReserveId, bob, wethCollForDai + wethCollForUsdx, bob);
-    setUsingAsCollateral(spoke1, bob, wethReserveId, true);
+    Utils.supplyCollateral(spoke1, wethReserveId, bob, wethCollForDai + wethCollForUsdx, bob);
 
-    // Alice supply dai
-    Utils.supply(spoke1, daiReserveId, alice, daiDebtAmount * 2, alice); // supply enough buffer for multiple borrows
-    // Alice supply usdx
-    Utils.supply(spoke1, usdxReserveId, alice, usdxDebtAmount * 2, alice); // supply enough buffer for multiple borrows
+    _deployLiquidity(spoke1, daiReserveId, daiDebtAmount + 1);
+    _deployLiquidity(spoke1, usdxReserveId, usdxDebtAmount + 1);
 
     // Bob draw max allowed debt amt of dai/usdx reserve liquidity
-    vm.prank(bob);
-    spoke1.borrow(daiReserveId, daiDebtAmount, bob);
-    vm.prank(bob);
-    spoke1.borrow(usdxReserveId, usdxDebtAmount, bob);
+    Utils.borrow(spoke1, daiReserveId, bob, daiDebtAmount, bob);
+    Utils.borrow(spoke1, usdxReserveId, bob, usdxDebtAmount, bob);
 
     // valid HF
     assertGe(spoke1.getHealthFactor(bob), HEALTH_FACTOR_LIQUIDATION_THRESHOLD); // can be GE for edge cases of coll/debt amount, ie 1

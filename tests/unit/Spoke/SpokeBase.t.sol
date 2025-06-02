@@ -401,6 +401,22 @@ contract SpokeBase is Base {
     return maxDebt > 1 ? maxDebt - 1 : maxDebt;
   }
 
+  function _boundCollAmt(
+    uint256 amount,
+    ISpoke spoke,
+    function(ISpoke) view returns (uint256) collReserveId,
+    function(ISpoke) view returns (uint256) debtReserveId
+  ) internal view returns (uint256) {
+    uint256 maxCollAmount = MAX_SUPPLY_ASSET_UNITS *
+      hub.getAsset(collReserveId(spoke)).config.decimals;
+    return
+      bound(
+        amount,
+        _calcMinimumCollAmount(spoke, collReserveId(spoke), debtReserveId(spoke), 1),
+        _calcMinimumCollAmount(spoke, collReserveId(spoke), debtReserveId(spoke), maxCollAmount)
+      );
+  }
+
   // assert that user's position and debt accounting matches expected
   function _assertUserPositionAndDebt(
     ISpoke spoke,
