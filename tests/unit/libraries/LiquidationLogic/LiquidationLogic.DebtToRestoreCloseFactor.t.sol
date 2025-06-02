@@ -91,19 +91,25 @@ contract LiquidationLogicDebtToRestoreCloseFactorTest is LiquidationLogicBaseTes
   function test_calculateDebtToRestoreCloseFactor_fuzz_closeFactor_lte_effectiveLiquidationPenalty_zero(
     TestDebtToRestoreCloseFactorParams memory params
   ) public {
-    vm.skip(true, 'todo');
     params = _bound(params);
-    params.liquidationBonus = (1e18 / (params.collateralFactor)) / 1e18;
-
-    assertGe(
-      _calculateCloseFactorThreshold(params.liquidationBonus, params.collateralFactor),
-      HEALTH_FACTOR_LIQUIDATION_THRESHOLD
-    );
+    params.liquidationBonus =
+      (HEALTH_FACTOR_LIQUIDATION_THRESHOLD.percentDivUp(params.collateralFactor) * 1e4).dewadify() +
+      1;
     params.closeFactor = bound(
       params.closeFactor,
       HEALTH_FACTOR_LIQUIDATION_THRESHOLD,
       _calculateCloseFactorThreshold(params.liquidationBonus, params.collateralFactor)
     );
+
+    // if denom is negative, default to max uint
+    assertLt(
+      params.closeFactor,
+      _calculateEffectiveLiquidationPenaltyThreshold(
+        params.liquidationBonus,
+        params.collateralFactor
+      )
+    );
+
     DataTypes.LiquidationCallLocalVars memory args = _setStructFields(params);
 
     assertEq(

@@ -44,14 +44,14 @@ contract LiquidationLogicBaseTest is Base {
     uint256 liquidationBonus,
     uint256 collateralFactor
   ) internal pure returns (uint256) {
-    return _calculateEffectiveLiquidationPenaltyThreshold(liquidationBonus, collateralFactor);
+    return _calculateEffectiveLiquidationPenaltyThreshold(liquidationBonus, collateralFactor) - 1;
   }
 
   function _calculateEffectiveLiquidationPenaltyThreshold(
     uint256 liquidationBonus,
     uint256 collateralFactor
   ) internal pure returns (uint256) {
-    return (liquidationBonus.wadify()).percentMulDown(collateralFactor - 1).fromBps();
+    return (liquidationBonus.wadify()).percentMulDown(collateralFactor).fromBps();
   }
 
   function _setStructFields(
