@@ -140,7 +140,7 @@ contract Spoke is ISpoke, Multicall {
     DataTypes.Reserve storage reserve = _reserves[reserveId];
     DataTypes.UserPosition storage userPosition = _userPositions[msg.sender][reserveId];
 
-    _validateSupply(reserve);
+    _validateSupply(reserve, hubId);
     if (userPosition.suppliedHubId != 0) {
       require(userPosition.suppliedHubId == hubId, SuppliedHubMismatch());
     } else {
@@ -168,7 +168,7 @@ contract Spoke is ISpoke, Multicall {
         userPosition.suppliedShares
       );
     }
-    _validateWithdraw(reserve, userPosition, amount);
+    _validateWithdraw(reserve, userPosition, hubId, amount);
     require(userPosition.suppliedHubId == hubId, SuppliedHubMismatch());
 
     uint256 userPremiumDrawnShares = userPosition.premiumDrawnShares;
@@ -522,16 +522,18 @@ contract Spoke is ISpoke, Multicall {
   }
 
   // internal
-  function _validateSupply(DataTypes.Reserve storage reserve) internal view {
+  function _validateSupply(DataTypes.Reserve storage reserve, uint256 hubId) internal view {
     require(reserve.asset != address(0), ReserveNotListed());
     require(reserve.config.active, ReserveNotActive());
     require(!reserve.config.paused, ReservePaused());
     require(!reserve.config.frozen, ReserveFrozen());
+    require(address(_hubs[hubId]) != address(0), InvalidHub());
   }
 
   function _validateWithdraw(
     DataTypes.Reserve storage reserve,
     DataTypes.UserPosition storage userPosition,
+    uint256 hubId,
     uint256 amount
   ) internal view {
     require(reserve.asset != address(0), ReserveNotListed());
@@ -542,6 +544,7 @@ contract Spoke is ISpoke, Multicall {
       userPosition.suppliedShares
     );
     require(amount <= suppliedAmount, InsufficientSupply(suppliedAmount));
+    require(address(_hubs[hubId]) != address(0), InvalidHub());
   }
 
   function _validateBorrow(DataTypes.Reserve storage reserve, uint256 hubId) internal view {
