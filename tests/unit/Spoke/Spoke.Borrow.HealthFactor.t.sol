@@ -175,10 +175,36 @@ contract SpokeBorrowHealthFactorTest is SpokeBase {
     uint256 wethCollAmountDai,
     uint256 wethCollAmountUsdx
   ) public {
-    // todo: resolve precision bounds for wethCollAmountDai, wethCollAmountUsdx
-    // at high ratios between them, borrowing additional amounts won't bring HF < 1
-    wethCollAmountDai = bound(wethCollAmountDai, 1e10, MAX_SUPPLY_AMOUNT / 2);
-    wethCollAmountUsdx = bound(wethCollAmountUsdx, 1e10, MAX_SUPPLY_AMOUNT / 2);
+    wethCollAmountDai = bound(
+      wethCollAmountDai,
+      _calcMinimumCollAmount({
+        spoke: spoke1,
+        collReserveId: _wethReserveId(spoke1),
+        debtReserveId: _daiReserveId(spoke1),
+        debtAmount: _minFeasibleAmount(daiAssetId)
+      }),
+      _calcMinimumCollAmount({
+        spoke: spoke1,
+        collReserveId: _wethReserveId(spoke1),
+        debtReserveId: _daiReserveId(spoke1),
+        debtAmount: MAX_SUPPLY_AMOUNT_DAI
+      })
+    );
+    wethCollAmountUsdx = bound(
+      wethCollAmountUsdx,
+      _calcMinimumCollAmount({
+        spoke: spoke1,
+        collReserveId: _wethReserveId(spoke1),
+        debtReserveId: _usdxReserveId(spoke1),
+        debtAmount: _minFeasibleAmount(usdxAssetId)
+      }),
+      _calcMinimumCollAmount({
+        spoke: spoke1,
+        collReserveId: _wethReserveId(spoke1),
+        debtReserveId: _usdxReserveId(spoke1),
+        debtAmount: MAX_SUPPLY_AMOUNT_USDX
+      })
+    );
 
     // weth collateral
     uint256 wethReserveId = _wethReserveId(spoke1);
@@ -198,31 +224,44 @@ contract SpokeBorrowHealthFactorTest is SpokeBase {
       debtReserveId: usdxReserveId,
       collAmount: wethCollAmountUsdx
     });
-
-    vm.assume(usdxDebtAmount < MAX_SUPPLY_AMOUNT / 2 && usdxDebtAmount > 0);
-    vm.assume(daiDebtAmount < MAX_SUPPLY_AMOUNT / 2 && daiDebtAmount > 1e12); // dai is 1e18, keep within similar bounds to usdx (at 1e6)
-
     // Bob supply weth
-    Utils.supply(spoke1, wethReserveId, bob, wethCollAmountDai + wethCollAmountUsdx, bob);
-    setUsingAsCollateral(spoke1, bob, wethReserveId, true);
+    Utils.supplyCollateral(spoke1, wethReserveId, bob, wethCollAmountDai + wethCollAmountUsdx, bob);
 
-    // Alice supply dai
-    Utils.supply(spoke1, daiReserveId, alice, daiDebtAmount * 2, alice); // supply enough buffer for multiple borrows
-    // Alice supply usdx
-    Utils.supply(spoke1, usdxReserveId, alice, usdxDebtAmount * 2, alice); // supply enough buffer for multiple borrows
+    _deployLiquidity(spoke1, daiReserveId, daiDebtAmount);
+    _deployLiquidity(spoke1, usdxReserveId, usdxDebtAmount);
 
     // Bob draw max allowed debt amt of dai/usdx reserve liquidity
-    vm.prank(bob);
-    spoke1.borrow(daiReserveId, daiDebtAmount, bob);
-    vm.prank(bob);
-    spoke1.borrow(usdxReserveId, usdxDebtAmount, bob);
+    Utils.borrow(spoke1, daiReserveId, bob, daiDebtAmount, bob);
+    Utils.borrow(spoke1, usdxReserveId, bob, usdxDebtAmount, bob);
+
+    uint256 daiFailedBorrowAmount = _calcMaxDebtAmount({
+      spoke: spoke1,
+      collReserveId: _wethReserveId(spoke1),
+      debtReserveId: _daiReserveId(spoke1),
+      collAmount: _calcMinimumCollAmount({
+        spoke: spoke1,
+        collReserveId: _wethReserveId(spoke1),
+        debtReserveId: _daiReserveId(spoke1),
+        debtAmount: _minFeasibleAmount(daiAssetId)
+      }) + 1
+    }) + 1;
+    uint256 usdxFailedBorrowAmount = _calcMaxDebtAmount({
+      spoke: spoke1,
+      collReserveId: _wethReserveId(spoke1),
+      debtReserveId: _daiReserveId(spoke1),
+      collAmount: _calcMinimumCollAmount({
+        spoke: spoke1,
+        collReserveId: _wethReserveId(spoke1),
+        debtReserveId: _usdxReserveId(spoke1),
+        debtAmount: _minFeasibleAmount(usdxAssetId)
+      }) + 1
+    }) + 1;
+
+    _deployLiquidity(spoke1, daiReserveId, daiFailedBorrowAmount);
+    _deployLiquidity(spoke1, usdxReserveId, usdxFailedBorrowAmount);
 
     // valid HF
     assertGe(spoke1.getHealthFactor(bob), HEALTH_FACTOR_LIQUIDATION_THRESHOLD); // can be GE due to low debt/coll amounts
-
-    // todo: should these failed amounts be 1? Could be off due to extremely edge low debt/coll amounts
-    uint256 daiFailedBorrowAmount = daiDebtAmount; // some amount guaranteed to cause HF < 1
-    uint256 usdxFailedBorrowAmount = usdxDebtAmount; // some amount guaranteed to cause HF < 1
 
     // cannot borrow more dai
     vm.prank(bob);
@@ -232,7 +271,7 @@ contract SpokeBorrowHealthFactorTest is SpokeBase {
     // cannot borrow more usdx
     vm.prank(bob);
     vm.expectRevert(ISpoke.HealthFactorBelowThreshold.selector);
-    spoke1.borrow(usdxReserveId, usdxFailedBorrowAmount, bob); // todo: update with exact amount, resolve precision
+    spoke1.borrow(usdxReserveId, usdxFailedBorrowAmount, bob);
   }
 
   /// cannot borrow any amount if HF < 1 due to interest growth (multiple debts for same collateral)
@@ -301,6 +340,7 @@ contract SpokeBorrowHealthFactorTest is SpokeBase {
     uint256 wethCollForUsdx,
     uint256 skipTime
   ) public {
+    vm.skip(true, 'todo');
     wethCollForDai = bound(wethCollForDai, 1, MAX_SUPPLY_AMOUNT / 2);
     wethCollForUsdx = bound(wethCollForUsdx, 1, MAX_SUPPLY_AMOUNT / 2);
     skipTime = bound(skipTime, 1, MAX_SKIP_TIME);

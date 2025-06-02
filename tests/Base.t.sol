@@ -1084,12 +1084,21 @@ abstract contract Base is Test {
     return ((baseCurrencyAmount * assetUnit) / assetPrice).dewadify();
   }
 
+  function _minFeasibleAmount(uint256 assetId) internal view returns (uint256) {
+    uint256 assetUnits = 10 ** hub.getAsset(assetId).config.decimals;
+    return assetUnits / oracle.getAssetPrice(assetId) + 1;
+  }
+
   function _approxRelFromBps(uint256 bps) internal pure returns (uint256) {
     return (bps * 1e18) / 100_00;
   }
 
   function _min(uint256 a, uint256 b) internal pure returns (uint256) {
     return a < b ? a : b;
+  }
+
+  function _max(uint256 a, uint256 b) internal pure returns (uint256) {
+    return a > b ? a : b;
   }
 
   function _getCloseFactor(ISpoke spoke) internal view returns (uint256) {
