@@ -91,6 +91,7 @@ interface ISpoke is IMulticall {
   error Unauthorized();
   error InvalidHub();
   error HubMismatch();
+  error CollateralStatusUnchanged();
 
   function addReserve(
     uint256 assetId,

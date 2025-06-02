@@ -111,7 +111,6 @@ contract SpokeTwoHub is SpokeBase {
     spoke1.withdraw(_daiReserveId(spoke1), MAIN_HUB, type(uint256).max, bob);
     tokenList.dai.approve(address(hub2), type(uint256).max);
     spoke1.supply(_daiReserveId(spoke1), HUB2, 100000e18);
-    spoke1.setUsingAsCollateral(_daiReserveId(spoke1), true);
 
     // Now bob can borrow from hub 2
     spoke1.borrow(_daiReserveId(spoke1), HUB2, 1e18, bob);
@@ -130,7 +129,6 @@ contract SpokeTwoHub is SpokeBase {
     // Bob withdraws from hub 2 and supplies to hub 1
     spoke1.withdraw(_daiReserveId(spoke1), HUB2, type(uint256).max, bob);
     spoke1.supply(_daiReserveId(spoke1), MAIN_HUB, 100000e18);
-    spoke1.setUsingAsCollateral(_daiReserveId(spoke1), true);
     vm.stopPrank();
 
     // Now Bob can draw from hub 1

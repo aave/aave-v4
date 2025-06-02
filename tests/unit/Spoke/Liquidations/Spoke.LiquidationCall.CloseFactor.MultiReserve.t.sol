@@ -225,13 +225,23 @@ contract LiquidationCallCloseFactorMultiReserveTest is SpokeLiquidationBase {
         supplyAmountInBase
       );
 
-      Utils.supplyCollateral({
-        spoke: spoke1,
-        reserveId: collateralReserveIds[i],
-        user: alice,
-        amount: supplyAmount,
-        onBehalfOf: alice
-      });
+      if (!spoke1.getUsingAsCollateral(collateralReserveIds[i], alice)) {
+        Utils.supplyCollateral({
+          spoke: spoke1,
+          reserveId: collateralReserveIds[i],
+          user: alice,
+          amount: supplyAmount,
+          onBehalfOf: alice
+        });
+      } else {
+        Utils.supply({
+          spoke: spoke1,
+          reserveId: collateralReserveIds[i],
+          user: alice,
+          amount: supplyAmount,
+          onBehalfOf: alice
+        });
+      }
     }
 
     _increaseCollateralReservesSupplyExchangeRate(

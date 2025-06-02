@@ -145,17 +145,29 @@ contract SpokeConfigTest is SpokeBase {
 
   function test_setUsingAsCollateral_revertsWith_ReserveFrozen() public {
     uint256 daiReserveId = _daiReserveId(spoke1);
+
+    vm.prank(alice);
+    spoke1.setUsingAsCollateral(daiReserveId, true);
+
+    assertTrue(spoke1.getUsingAsCollateral(daiReserveId, alice), 'alice using as collateral');
+    assertFalse(spoke1.getUsingAsCollateral(daiReserveId, bob), 'bob not using as collateral');
+
     updateReserveFrozenFlag(spoke1, daiReserveId, true);
-    assertTrue(spoke1.getReserve(daiReserveId).config.frozen);
-    vm.startPrank(SPOKE_ADMIN);
+    assertTrue(spoke1.getReserve(daiReserveId).config.frozen, 'reserve status frozen');
 
     // disallow when activating
     vm.expectRevert(ISpoke.ReserveFrozen.selector);
+    vm.prank(bob);
     spoke1.setUsingAsCollateral(daiReserveId, true);
 
     // allow when deactivating
+    vm.prank(alice);
     spoke1.setUsingAsCollateral(daiReserveId, false);
-    vm.stopPrank();
+
+    assertFalse(
+      spoke1.getUsingAsCollateral(daiReserveId, alice),
+      'alice deactivated using as collateral frozen reserve'
+    );
   }
 
   function test_setUsingAsCollateral_revertsWith_ReserveNotActive() public {
@@ -176,6 +188,30 @@ contract SpokeConfigTest is SpokeBase {
     vm.expectRevert(ISpoke.ReservePaused.selector);
     vm.prank(SPOKE_ADMIN);
     spoke1.setUsingAsCollateral(daiReserveId, true);
+  }
+
+  function test_setUsingAsCollateral_revertsWith_CollateralStatusUnchanged() public {
+    uint256 daiReserveId = _daiReserveId(spoke1);
+
+    // ensure DAI is allowed as collateral
+    updateCollateralFlag(spoke1, daiReserveId, true);
+    // Bob not using DAI as collateral
+    assertFalse(spoke1.getUsingAsCollateral(daiReserveId, bob), 'bob not using as collateral');
+
+    vm.startPrank(bob);
+
+    // Bob can't change dai collateral status to false, because already false
+    vm.expectRevert(ISpoke.CollateralStatusUnchanged.selector);
+    spoke1.setUsingAsCollateral(daiReserveId, false);
+
+    // Bob can change dai collateral status to true
+    spoke1.setUsingAsCollateral(daiReserveId, true);
+    assertTrue(spoke1.getUsingAsCollateral(daiReserveId, bob), 'bob using as collateral');
+
+    // Bob can't change dai collateral status to true, because already true
+    vm.expectRevert(ISpoke.CollateralStatusUnchanged.selector);
+    spoke1.setUsingAsCollateral(daiReserveId, true);
+    vm.stopPrank();
   }
 
   function test_setUsingAsCollateral() public {
