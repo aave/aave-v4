@@ -17,7 +17,7 @@ runs = 1000
 seed = "0x640"
 
 [profile.pr.fuzz]
-runs = 5000
+runs = 100000
 
 [profile.ci.fuzz]
 runs = 10000
