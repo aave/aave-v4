@@ -12,6 +12,7 @@ contract SpokeTwoHub is SpokeBase {
   using PercentageMath for uint256;
 
   ILiquidityHub hub2;
+  uint256 public constant HUB2 = 2;
 
   function setUp() public virtual override {
     super.setUp();
@@ -80,6 +81,9 @@ contract SpokeTwoHub is SpokeBase {
       drawCap: type(uint256).max
     });
     hub2.addSpoke(wethAssetId, spokeConfig, address(spoke1));
+    hub2.addSpoke(usdxAssetId, spokeConfig, address(spoke1));
+    hub2.addSpoke(daiAssetId, spokeConfig, address(spoke1));
+    hub2.addSpoke(wbtcAssetId, spokeConfig, address(spoke1));
 
     spoke1.addHub(address(hub2));
     vm.stopPrank();
@@ -87,33 +91,51 @@ contract SpokeTwoHub is SpokeBase {
 
   function test_borrow_secondHub() public {
     // Bob supply to spoke 1 on hub 1
-    Utils.supplyCollateral(spoke1, _daiReserveId(spoke1), bob, 100000e18, bob);
-
-    deal(address(tokenList.weth), address(spoke1), 1e18);
-    vm.startPrank(address(spoke1));
-    tokenList.weth.approve(address(hub2), type(uint256).max);
-    hub2.add(wethAssetId, 1e18, address(spoke1));
+    vm.startPrank(bob);
+    spoke1.supply(_daiReserveId(spoke1), MAIN_HUB, 100000e18);
+    spoke1.setUsingAsCollateral(_daiReserveId(spoke1), true);
     vm.stopPrank();
 
+    deal(address(tokenList.dai), address(spoke1), 1e18);
+    vm.startPrank(address(spoke1));
+    tokenList.dai.approve(address(hub2), type(uint256).max);
+    hub2.add(daiAssetId, 1e18, address(spoke1));
+    vm.stopPrank();
+
+    // Bob can't borrow from hub 2 because his collateral position is on hub 1
     vm.startPrank(bob);
-    spoke1.borrow(_wethReserveId(spoke1), 2, 1e18, bob);
+    vm.expectRevert(ISpoke.HubMismatch.selector);
+    spoke1.borrow(_daiReserveId(spoke1), HUB2, 1e18, bob);
+
+    // Bob withdraw from hub 1 and supplies to hub 2
+    spoke1.withdraw(_daiReserveId(spoke1), MAIN_HUB, type(uint256).max, bob);
+    tokenList.dai.approve(address(hub2), type(uint256).max);
+    spoke1.supply(_daiReserveId(spoke1), HUB2, 100000e18);
+    spoke1.setUsingAsCollateral(_daiReserveId(spoke1), true);
+
+    // Now bob can borrow from hub 2
+    spoke1.borrow(_daiReserveId(spoke1), HUB2, 1e18, bob);
 
     // If bob has borrowed already from hub2, cannot borrow from hub 1
-    vm.expectRevert(ISpoke.DrawnHubMismatch.selector);
-    spoke1.borrow(_wethReserveId(spoke1), 1, 1e18, bob);
+    vm.expectRevert(ISpoke.HubMismatch.selector);
+    spoke1.borrow(_daiReserveId(spoke1), MAIN_HUB, 1e18, bob);
 
     // Bob cannot repay to hub 1, with debt in hub 2 (same asset)
-    vm.expectRevert(ISpoke.DrawnHubMismatch.selector);
-    spoke1.repay(_wethReserveId(spoke1), 1, 1e18);
+    vm.expectRevert(ISpoke.HubMismatch.selector);
+    spoke1.repay(_daiReserveId(spoke1), MAIN_HUB, 1e18);
 
     // Bob can repay to hub 2
-    tokenList.weth.approve(address(hub2), type(uint256).max);
-    spoke1.repay(_wethReserveId(spoke1), 2, type(uint256).max);
+    spoke1.repay(_daiReserveId(spoke1), HUB2, type(uint256).max);
+
+    // Bob withdraws from hub 2 and supplies to hub 1
+    spoke1.withdraw(_daiReserveId(spoke1), HUB2, type(uint256).max, bob);
+    spoke1.supply(_daiReserveId(spoke1), MAIN_HUB, 100000e18);
+    spoke1.setUsingAsCollateral(_daiReserveId(spoke1), true);
     vm.stopPrank();
 
     // Now Bob can draw from hub 1
-    _deployLiquidity(spoke1, _wethReserveId(spoke1), 1000e18);
+    _deployLiquidity(spoke1, _daiReserveId(spoke1), 1000e18);
     vm.prank(bob);
-    spoke1.borrow(_wethReserveId(spoke1), 1, 1e18, bob);
+    spoke1.borrow(_daiReserveId(spoke1), MAIN_HUB, 1e18, bob);
   }
 }

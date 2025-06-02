@@ -90,8 +90,7 @@ interface ISpoke is IMulticall {
   error UsersAndDebtLengthMismatch();
   error Unauthorized();
   error InvalidHub();
-  error SuppliedHubMismatch();
-  error DrawnHubMismatch();
+  error HubMismatch();
 
   function addReserve(
     uint256 assetId,

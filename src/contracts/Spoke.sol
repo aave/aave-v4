@@ -141,10 +141,10 @@ contract Spoke is ISpoke, Multicall {
     DataTypes.UserPosition storage userPosition = _userPositions[msg.sender][reserveId];
 
     _validateSupply(reserve, hubId);
-    if (userPosition.suppliedHubId != 0) {
-      require(userPosition.suppliedHubId == hubId, SuppliedHubMismatch());
+    if (userPosition.sourceHubId != 0) {
+      require(userPosition.sourceHubId == hubId, HubMismatch());
     } else {
-      userPosition.suppliedHubId = hubId;
+      userPosition.sourceHubId = hubId;
     }
 
     uint256 suppliedShares = ILiquidityHub(_hubs[hubId]).add(reserve.assetId, amount, msg.sender);
@@ -169,7 +169,7 @@ contract Spoke is ISpoke, Multicall {
       );
     }
     _validateWithdraw(reserve, userPosition, hubId, amount);
-    require(userPosition.suppliedHubId == hubId, SuppliedHubMismatch());
+    require(userPosition.sourceHubId == hubId, HubMismatch());
 
     uint256 userPremiumDrawnShares = userPosition.premiumDrawnShares;
     uint256 userPremiumOffset = userPosition.premiumOffset;
@@ -215,9 +215,13 @@ contract Spoke is ISpoke, Multicall {
     );
     _notifyRiskPremiumUpdate(assetId, msg.sender, newUserRiskPremium);
 
-    if (userPosition.suppliedShares == 0) {
+    if (
+      userPosition.baseDrawnShares == 0 &&
+      userPosition.realizedPremium == 0 &&
+      userPosition.suppliedShares == 0
+    ) {
       // Reset supplied hub
-      userPosition.suppliedHubId = 0;
+      userPosition.sourceHubId = 0;
     }
 
     emit Withdraw(reserveId, msg.sender, withdrawnShares, to);
@@ -232,10 +236,10 @@ contract Spoke is ISpoke, Multicall {
     uint256 assetId = reserve.assetId;
 
     _validateBorrow(reserve, hubId);
-    if (userPosition.drawnHubId != 0) {
-      require(userPosition.drawnHubId == hubId, DrawnHubMismatch());
+    if (userPosition.sourceHubId != 0) {
+      require(userPosition.sourceHubId == hubId, HubMismatch());
     } else {
-      userPosition.drawnHubId = hubId;
+      userPosition.sourceHubId = hubId;
     }
 
     uint256 userPremiumDrawnShares = userPosition.premiumDrawnShares;
@@ -299,7 +303,7 @@ contract Spoke is ISpoke, Multicall {
       amount
     );
     _validateRepay(reserve, hubId);
-    require(userPosition.drawnHubId == hubId, DrawnHubMismatch());
+    require(userPosition.sourceHubId == hubId, HubMismatch());
 
     uint256 userPremiumDrawnShares = userPosition.premiumDrawnShares;
     uint256 userPremiumOffset = userPosition.premiumOffset;
@@ -337,9 +341,13 @@ contract Spoke is ISpoke, Multicall {
       userPosition.premiumDrawnShares
     );
 
-    if (userPosition.baseDrawnShares == 0 && userPosition.realizedPremium == 0) {
+    if (
+      userPosition.baseDrawnShares == 0 &&
+      userPosition.realizedPremium == 0 &&
+      userPosition.suppliedShares == 0
+    ) {
       // Reset drawn hub
-      userPosition.drawnHubId = 0;
+      userPosition.sourceHubId = 0;
     }
 
     _refreshPremiumDebt(
