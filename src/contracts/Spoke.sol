@@ -55,6 +55,11 @@ contract Spoke is ISpoke, Multicall {
   // Governance
   // /////
 
+  function addHub(address hub) external {
+    // TODO: AccessControl
+    _hubs[++hubCount] = hub;
+  }
+
   function updateLiquidationConfig(
     DataTypes.LiquidationConfig calldata liquidationConfig
   ) external {

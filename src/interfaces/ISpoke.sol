@@ -91,6 +91,8 @@ interface ISpoke is IMulticall {
   error Unauthorized();
   error CollateralStatusUnchanged();
 
+  function addHub(address hub) external;
+
   function addReserve(
     uint256 assetId,
     DataTypes.ReserveConfig memory params
