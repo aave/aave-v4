@@ -1,6 +1,8 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.0;
 
+import {console2 as console} from 'forge-std/console2.sol';
+
 import {Vm} from 'forge-std/Vm.sol';
 import {ILiquidityHub} from 'src/interfaces/ILiquidityHub.sol';
 import {ISpoke} from 'src/interfaces/ISpoke.sol';
@@ -107,6 +109,8 @@ library Utils {
     uint256 amount,
     address onBehalfOf
   ) internal {
+    console.log('user', user);
+    console.log('reserveId %d, amount %d, user %s', reserveId, amount, user);
     vm.prank(user);
     spoke.borrow(reserveId, amount, user);
   }

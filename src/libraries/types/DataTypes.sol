@@ -77,6 +77,7 @@ library DataTypes {
     uint256 liquidationBonus; // BPS, 100_00 represent a 0% bonus TODO: use smaller uint
     uint256 liquidityPremium; // BPS TODO: use smaller uint
     uint256 liquidationProtocolFee; // BPS TODO: use smaller uint
+    uint256 hubId;
   }
 
   struct UserPosition {

@@ -64,7 +64,8 @@ contract LiquidityHubHandler is Test {
         liquidityPremium: 0,
         liquidationProtocolFee: 0,
         borrowable: false,
-        collateral: false
+        collateral: false,
+        hubId: 1
       })
     );
   }
