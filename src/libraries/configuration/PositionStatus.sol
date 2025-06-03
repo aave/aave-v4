@@ -112,28 +112,6 @@ library PositionStatus {
   }
 
   /**
-   * @notice Checks if a user has been supplying any reserve as collateral
-   * @param self The configuration object
-   * @return True if the user has been supplying as collateral any reserve, false otherwise
-   *
-  function isUsingAsCollateralAny(
-    DataTypes.PositionStatus memory self
-  ) internal pure returns (bool) {
-    return _getMapSlot(self, reserveIndex) & COLLATERAL_MASK != 0;
-  }
-  */
-
-  /**
-   * @notice Checks if a user has been borrowing from any reserve
-   * @param self The configuration object
-   * @return True if the user has been borrowing any reserve, false otherwise
-   *
-  function isBorrowingAny(DataTypes.PositionStatus memory self) internal pure returns (bool) {
-    return _getMapSlot(self, reserveIndex) & BORROWING_MASK != 0;
-  }
-  */
-
-  /**
    * @notice Returns the uint256 containing the reserve state in the bitmap.
    * @param self The configuration object
    * @return the uint256 containing the state of the reserve
