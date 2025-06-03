@@ -109,8 +109,6 @@ library Utils {
     uint256 amount,
     address onBehalfOf
   ) internal {
-    console.log('user', user);
-    console.log('reserveId %d, amount %d, user %s', reserveId, amount, user);
     vm.prank(user);
     spoke.borrow(reserveId, amount, user);
   }

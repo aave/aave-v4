@@ -1,8 +1,6 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.0;
 
-import {console2 as console} from 'forge-std/console2.sol';
-
 import {Multicall} from 'src/misc/Multicall.sol';
 
 import {SafeERC20} from 'src/dependencies/openzeppelin/SafeERC20.sol';
@@ -223,8 +221,6 @@ contract Spoke is ISpoke, Multicall {
     // TODO: referral code
     // TODO: onBehalfOf with credit delegation
     DataTypes.Reserve storage reserve = _reserves[reserveId];
-    console.log('within borrow hubId', reserve.config.hubId);
-    console.log('within borrow hub address', _hubs[reserve.config.hubId]);
     DataTypes.UserPosition storage userPosition = _userPositions[msg.sender][reserveId];
     uint256 assetId = reserve.assetId;
 
@@ -249,21 +245,18 @@ contract Spoke is ISpoke, Multicall {
       int256(accruedPremium)
     ); // unnecessary but we realize premium debt here
     uint256 baseDrawnShares = ILiquidityHub(_hubs[reserve.config.hubId]).draw(assetId, amount, to);
-    console.log('after calling draw on lh');
 
     reserve.baseDrawnShares += baseDrawnShares;
     userPosition.baseDrawnShares += baseDrawnShares;
 
     // calc needs new user position, just updating base debt is enough
     uint256 newUserRiskPremium = _validateUserPosition(msg.sender); // validates HF
-    console.log('after validate user position');
 
     userPremiumDrawnShares = userPosition.premiumDrawnShares = userPosition
       .baseDrawnShares
       .percentMul(newUserRiskPremium);
     userPremiumOffset = userPosition.premiumOffset = ILiquidityHub(_hubs[reserve.config.hubId])
       .previewOffset(assetId, userPosition.premiumDrawnShares);
-    console.log('after preview offset');
 
     _refreshPremiumDebt(
       reserve,
@@ -273,9 +266,7 @@ contract Spoke is ISpoke, Multicall {
       int256(userPremiumOffset),
       0
     );
-    console.log('after refresh premium debt');
     _notifyRiskPremiumUpdate(assetId, msg.sender, newUserRiskPremium);
-    console.log('after notify risk premium update');
 
     emit Borrow(reserveId, msg.sender, baseDrawnShares, to);
   }
@@ -287,6 +278,7 @@ contract Spoke is ISpoke, Multicall {
     DataTypes.Reserve storage reserve = _reserves[reserveId];
     uint256 assetId = reserve.assetId;
 
+    _validateRepay(reserve);
     (uint256 baseDebt, uint256 premiumDebt) = _getUserDebt(
       userPosition,
       assetId,
@@ -297,7 +289,6 @@ contract Spoke is ISpoke, Multicall {
       premiumDebt,
       amount
     );
-    _validateRepay(reserve);
 
     uint256 userPremiumDrawnShares = userPosition.premiumDrawnShares;
     uint256 userPremiumOffset = userPosition.premiumOffset;
@@ -787,8 +778,6 @@ contract Spoke is ISpoke, Multicall {
       }
     }
 
-    console.log('before loop to calculate user risk premium');
-
     // @dev only allocate required memory at the cost of an extra loop
     KeyValueListInMemory.List memory list = KeyValueListInMemory.init(vars.collateralReserveCount);
     vars.i = 0;
@@ -804,8 +793,6 @@ contract Spoke is ISpoke, Multicall {
           vars.assetUnit =
             10 ** ILiquidityHub(_hubs[reserve.config.hubId]).getAssetConfig(vars.assetId).decimals;
         }
-        console.log('reserveId', vars.reserveId);
-        console.log('hub address', _hubs[reserve.config.hubId]);
         vars.userCollateralInBaseCurrency = _getUserBalanceInBaseCurrency(
           userPosition,
           vars.assetId,
@@ -813,7 +800,6 @@ contract Spoke is ISpoke, Multicall {
           vars.assetPrice,
           vars.assetUnit
         );
-        console.log('after getting user balance in base currency');
 
         vars.totalCollateralInBaseCurrency += vars.userCollateralInBaseCurrency;
         list.add(vars.i, vars.liquidityPremium, vars.userCollateralInBaseCurrency);
@@ -894,8 +880,6 @@ contract Spoke is ISpoke, Multicall {
     uint256 assetPrice,
     uint256 assetUnit
   ) internal view returns (uint256) {
-    console.log('hub id in get user balance in base currency', hubId);
-    console.log('hub address in get user balance in base currency', _hubs[hubId]);
     return
       (ILiquidityHub(_hubs[hubId]).convertToSuppliedAssets(assetId, userPosition.suppliedShares) *
         assetPrice).wadify() / assetUnit;

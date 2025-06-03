@@ -275,7 +275,6 @@ contract SpokeBase is Base {
     );
     (state.borrowerBaseDebtBefore, ) = spoke.getUserDebt(borrow.reserveId, borrow.borrower);
     (state.reserveBaseDebtBefore, ) = spoke.getReserveDebt(borrow.reserveId);
-    console.log('before borrow');
     // borrower borrows asset
     Utils.borrow({
       spoke: spoke,
@@ -284,7 +283,6 @@ contract SpokeBase is Base {
       amount: borrow.borrowAmount,
       onBehalfOf: borrow.borrower
     });
-    console.log('after borrow');
     (state.borrowerBaseDebtAfter, ) = spoke.getUserDebt(borrow.reserveId, borrow.borrower);
     (state.reserveBaseDebtAfter, ) = spoke.getReserveDebt(borrow.reserveId);
     assertEq(state.borrowerBaseDebtBefore + borrow.borrowAmount, state.borrowerBaseDebtAfter);

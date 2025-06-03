@@ -83,6 +83,7 @@ contract SpokeConfigTest is SpokeBase {
     DataTypes.ReserveConfig memory reserveData = spoke1.getReserve(daiReserveId).config;
 
     newReserveConfig.decimals = reserveData.decimals; // decimals won't get updated
+    newReserveConfig.hubId = reserveData.hubId; // hubId won't get updated
 
     vm.expectEmit(address(spoke1));
     emit ISpoke.ReserveConfigUpdated(daiReserveId, newReserveConfig);
@@ -279,6 +280,7 @@ contract SpokeConfigTest is SpokeBase {
 
     DataTypes.ReserveConfig memory config;
     config.liquidationBonus = PercentageMath.PERCENTAGE_FACTOR;
+    config.hubId = MAIN_HUB;
 
     vm.expectRevert(ISpoke.InvalidReserve.selector);
     vm.prank(SPOKE_ADMIN);
