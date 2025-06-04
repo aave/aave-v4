@@ -54,7 +54,7 @@ contract SpokeAccrueInterestTest is SpokeBase {
   }
 
   /// Supply an asset only, and check no interest accrued.
-  function test_accrueInterest_OnlySupply(uint40 skipTime) public {
+  function test_accrueInterest_NoInterest_OnlySupply(uint40 skipTime) public {
     skipTime = uint40(bound(skipTime, 0, MAX_SKIP_TIME));
     uint256 amount = 1000e18;
     uint256 daiReserveId = _daiReserveId(spoke1);
@@ -73,6 +73,82 @@ contract SpokeAccrueInterestTest is SpokeBase {
       0,
       'after supply, no interest accrued'
     );
+  }
+
+  /// no interest accrued when no debt after repay
+  function test_accrueInterest_NoInterest_NoDebt(uint40 elapsed) public {
+    elapsed = uint40(bound(elapsed, 1, MAX_SKIP_TIME));
+
+    uint256 supplyAmount = 1000e18;
+    uint40 startTime = uint40(vm.getBlockTimestamp());
+    uint256 borrowAmount = 100e18;
+    uint256 daiReserveId = _daiReserveId(spoke1);
+
+    Utils.supplyCollateral(spoke1, daiReserveId, bob, supplyAmount, bob);
+    Utils.borrow(spoke1, daiReserveId, bob, borrowAmount, bob);
+
+    uint256 baseBorrowRate = hub.getBaseInterestRate(daiAssetId);
+    uint256 userRp = spoke1.getUserRiskPremium(bob);
+
+    // Time passes
+    skip(elapsed);
+
+    // Check debts after interest accrual
+    DataTypes.UserPosition memory bobPosition = spoke1.getUserPosition(daiReserveId, bob);
+
+    uint256 totalBase = _calculateExpectedBaseDebt(borrowAmount, baseBorrowRate, startTime);
+    uint256 expectedPremiumDrawnShares = bobPosition.baseDrawnShares.percentMul(userRp);
+    uint256 expectedPremiumDebt = hub.convertToDrawnAssets(daiAssetId, expectedPremiumDrawnShares) -
+      bobPosition.premiumOffset +
+      bobPosition.realizedPremium;
+
+    _assertSingleUserProtocolDebt(
+      spoke1,
+      daiReserveId,
+      bob,
+      totalBase,
+      expectedPremiumDebt,
+      'after accrual'
+    );
+
+    startTime = uint40(vm.getBlockTimestamp());
+    baseBorrowRate = hub.getBaseInterestRate(daiAssetId);
+    uint256 interest = (totalBase + expectedPremiumDebt) - borrowAmount;
+
+    // Full repayment, so back to zero debt
+    Utils.repay(spoke1, daiReserveId, bob, type(uint256).max);
+
+    bobPosition = spoke1.getUserPosition(daiReserveId, bob);
+
+    assertEq(
+      hub.getAssetSuppliedAmount(daiAssetId),
+      supplyAmount + interest,
+      'dai asset supplied amount'
+    );
+    (uint256 bobBaseDebt, uint256 bobPremiumDebt) = spoke1.getUserDebt(daiReserveId, bob);
+    assertEq(bobBaseDebt, 0, 'bob base debt after repay');
+    assertEq(bobPremiumDebt, 0, 'bob premium debt after repay');
+    assertEq(spoke1.getUserTotalDebt(daiReserveId, bob), 0, 'bob total debt after repay');
+
+    // Time passes
+    skip(elapsed);
+
+    bobPosition = spoke1.getUserPosition(daiReserveId, bob);
+
+    (bobBaseDebt, bobPremiumDebt) = spoke1.getUserDebt(daiReserveId, bob);
+    assertEq(bobBaseDebt, 0, 'bob base debt after repay and time skip');
+    assertEq(bobPremiumDebt, 0, 'bob premium debt after repay and time skip');
+    assertEq(
+      spoke1.getUserTotalDebt(daiReserveId, bob),
+      0,
+      'bob total debt after repay and time skip'
+    );
+    assertEq(
+      hub.getAssetSuppliedAmount(daiAssetId),
+      supplyAmount + interest,
+      'dai asset supplied amount after second time skip'
+    );
+    assertEq(getAssetBaseDebt(daiAssetId), 0, 'baseDebt');
   }
 
   function test_accrueInterest_fuzz_BorrowAmountAndSkipTime(
