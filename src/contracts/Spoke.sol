@@ -1062,12 +1062,12 @@ contract Spoke is ISpoke, Multicall {
 
       // deficit accounting
       if (vars.newUserSuppliedShares == 0) {
-        userCollateralPosition.usingAsCollateral = false;
-        emit UsingAsCollateral(collateralReserveId, users[vars.i], false);
         uint256 outstandingDebt = vars.baseDebt +
           vars.premiumDebt -
           vars.baseDebtToLiquidate -
           vars.premiumDebtToLiquidate;
+        /// @notice user supplied shares only applies to single coll reserve
+        /// but hasNoCollateralLeft includes all coll reserves
         if (outstandingDebt > 0 && vars.hasNoCollateralLeft) {
           vars.baseDebtToLiquidate = vars.baseDebt;
           vars.premiumDebtToLiquidate = vars.premiumDebt;

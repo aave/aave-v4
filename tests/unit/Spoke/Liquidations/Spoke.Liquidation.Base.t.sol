@@ -241,6 +241,20 @@ contract SpokeLiquidationBase is SpokeBase {
     } else {
       _assertNoBadDebt(state, label);
     }
+    _assertUserRp(state, label);
+  }
+
+  function _assertUserRp(
+    LiquidationTestLocalParams memory state,
+    string memory label
+  ) internal view {
+    if (state.supply.balanceAfter > 0 && state.totalDebt.balanceAfter > 0) {
+      assertEq(
+        state.userRp,
+        _calculateExpectedUserRP(state.user, state.spoke),
+        string.concat('userRp after liq ', label)
+      );
+    }
   }
 
   /// assert that the user account data is correct after liquidation
@@ -334,17 +348,11 @@ contract SpokeLiquidationBase is SpokeBase {
     LiquidationTestLocalParams memory state,
     string memory label
   ) internal pure {
-    if (state.supplyShares.balanceAfter == 0) {
-      assertFalse(
-        state.usingAsCollateral,
-        string.concat('isUsingAsCollateral should be false with no collateral ', label)
-      );
-    } else {
-      assertTrue(
-        state.usingAsCollateral,
-        string.concat('isUsingAsCollateral should be true with remaining collateral ', label)
-      );
-    }
+    // usingAsCollateral should never be disabled during liquidation
+    assertTrue(
+      state.usingAsCollateral,
+      string.concat('isUsingAsCollateral should be true with remaining collateral ', label)
+    );
   }
 
   /// assertions in bad debt scenarios
