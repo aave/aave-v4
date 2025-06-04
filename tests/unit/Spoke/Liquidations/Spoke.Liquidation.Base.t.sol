@@ -68,7 +68,7 @@ contract SpokeLiquidationBase is SpokeBase {
 
   function setUp() public virtual override {
     super.setUp();
-    _deployBorrowableLiquidities(MAX_SUPPLY_AMOUNT * 10); // additional liquidity buffer for if collateral reserve == debt reserve
+    _deployBorrowableLiquidities(MAX_SUPPLY_AMOUNT);
   }
 
   /// @notice Deploys max borrowable liquidity for all reserves in spoke1.
@@ -150,7 +150,7 @@ contract SpokeLiquidationBase is SpokeBase {
           state.collateralReserves[state.collateralReserveIndex].assetId,
           MAX_SUPPLY_IN_BASE_CURRENCY
         ),
-        MAX_SUPPLY_AMOUNT
+        MAX_SUPPLY_AMOUNT / 10 // buffer for growth due to interest accrual
       )
     );
     skipTime = bound(skipTime, 1, MAX_SKIP_TIME);
@@ -382,7 +382,7 @@ contract SpokeLiquidationBase is SpokeBase {
   function _assertNoBadDebt(
     LiquidationTestLocalParams memory state,
     string memory label
-  ) internal pure {
+  ) internal view {
     // total debt/collateral in user's position should be > 0
     assertGt(
       state.finalTotalCollateralInBaseCurrency,
@@ -394,10 +394,31 @@ contract SpokeLiquidationBase is SpokeBase {
       0,
       string.concat('totalDebtInBaseCurrency should be > 0 ', label)
     );
-    // with collateral/debt remaining, user rp is not 0
-    assertNotEq(state.userRp, 0, string.concat('user rp = 0 with no coll ', label));
+    // with collateral/debt remaining, user rp should only be 0 if all coll reserves have liquidity premium == 0
+    if (_shouldUserRpBeZero(state.spoke, state.user)) {
+      assertEq(state.userRp, 0, string.concat('user rp should be 0 ', label));
+    } else {
+      assertNotEq(state.userRp, 0, string.concat('user rp should not equal 0 ', label));
+    }
+
     // deficit should remain unchanged
     assertEq(state.deficit.balanceChange, 0, string.concat('deficit should be unchanged ', label));
+  }
+
+  /// @notice User's RP should be 0 if all coll reserves have liquidity premium == 0.
+  /// @return bool True if user's RP is expected to be 0, False otherwise.
+  function _shouldUserRpBeZero(ISpoke spoke, address user) internal view returns (bool) {
+    for (uint256 i = 0; i < spoke.reserveCount(); i++) {
+      DataTypes.Reserve memory reserve = spoke.getReserve(i);
+      if (
+        reserve.config.liquidityPremium > 0 &&
+        spoke.getUserSuppliedShares(reserve.reserveId, user) > 0 &&
+        spoke.getUsingAsCollateral(reserve.reserveId, user)
+      ) {
+        return false;
+      }
+    }
+    return true;
   }
 
   /// @notice Calculate output from LiquidationLogic.calculateAvailableCollateralToLiquidate.

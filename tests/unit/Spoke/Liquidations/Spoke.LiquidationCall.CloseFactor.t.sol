@@ -423,7 +423,7 @@ contract LiquidationCallCloseFactorTest is SpokeLiquidationBase {
           state.collateralReserves[state.collateralReserveIndex].assetId,
           MAX_SUPPLY_IN_BASE_CURRENCY
         ),
-        MAX_SUPPLY_AMOUNT
+        MAX_SUPPLY_AMOUNT / 10
       )
     );
     skipTime = bound(skipTime, 1, MAX_SKIP_TIME);
