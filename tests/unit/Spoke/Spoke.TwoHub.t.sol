@@ -107,7 +107,7 @@ contract SpokeTwoHub is SpokeBase {
     daiHub2ReserveId = spoke1.addReserve(daiAssetId, daiHub2Config);
 
     // Create a third hub with out of order asset ids
-    ILiquidityHub hub3 = new LiquidityHub();
+    hub3 = new LiquidityHub();
 
     // Add DAI
     hub3.addAsset(
@@ -218,5 +218,36 @@ contract SpokeTwoHub is SpokeBase {
 
     assertEq(hub.getAssetTotalDebt(daiAssetId), hub1DaiBorrowAmount);
     assertEq(hub2.getAssetTotalDebt(daiAssetId), hub2DaiBorrowAmount);
+  }
+
+  function test_borrow_thirdHub() public {
+    uint256 hub1DaiBorrowAmount = 5e18;
+    uint256 hub3DaiBorrowAmount = 1e18;
+
+    // Bob supply to spoke 1 on hub 1
+    vm.startPrank(bob);
+    spoke1.supply(_daiReserveId(spoke1), 100000e18);
+    spoke1.setUsingAsCollateral(_daiReserveId(spoke1), true);
+    vm.stopPrank();
+
+    deal(address(tokenList.dai), address(spoke1), 1e18);
+    vm.startPrank(address(spoke1));
+    tokenList.dai.approve(address(hub3), type(uint256).max);
+    hub3.add(hub3DaiAssetId, 1e18, address(spoke1));
+    vm.stopPrank();
+
+    // Bob borrows dai from hub 3
+    vm.prank(bob);
+    spoke1.borrow(daiHub3ReserveId, hub3DaiBorrowAmount, bob);
+
+    // Check Bob's total debt on hub 3
+    assertEq(spoke1.getUserTotalDebt(daiHub3ReserveId, bob), hub3DaiBorrowAmount);
+    assertEq(hub3.getAssetTotalDebt(hub3DaiAssetId), hub3DaiBorrowAmount);
+    assertEq(hub.getAssetTotalDebt(daiAssetId), 0); // No debt on hub 1
+
+    // Check bob is indeed correctly borrowing dai from hub 3
+    DataTypes.Reserve memory dai3Reserve = spoke1.getReserve(daiHub3ReserveId);
+    assertEq(daiAssetId, dai3Reserve.config.oracleAssetId);
+    assertEq(dai3Reserve.asset, address(tokenList.dai));
   }
 }
