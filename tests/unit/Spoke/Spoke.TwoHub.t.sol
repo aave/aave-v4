@@ -12,16 +12,21 @@ contract SpokeTwoHub is SpokeBase {
   using PercentageMath for uint256;
 
   ILiquidityHub hub2;
+  ILiquidityHub hub3;
   uint256 public constant HUB2 = 2;
+  uint256 public constant HUB3 = 3;
   uint256 daiHub2ReserveId;
+  uint256 daiHub3ReserveId;
+  uint256 hub3DaiAssetId;
+  uint256 hub3UsdxAssetId;
+  uint256 hub3WbtcAssetId;
+  uint256 hub3WethAssetId;
 
   function setUp() public virtual override {
     super.setUp();
 
     // Create a second hub
     hub2 = new LiquidityHub();
-
-    // TODO: For now, just keep assets added in same order, but later test diff assetId orderings
 
     // Add assets to the second hub
     vm.startPrank(HUB_ADMIN);
@@ -36,7 +41,6 @@ contract SpokeTwoHub is SpokeBase {
       }),
       address(tokenList.weth)
     );
-    oracle.setAssetPrice(wethAssetId, 1500e8);
 
     // Add USDX
     hub2.addAsset(
@@ -49,7 +53,6 @@ contract SpokeTwoHub is SpokeBase {
       }),
       address(tokenList.usdx)
     );
-    oracle.setAssetPrice(usdxAssetId, 1e8);
 
     // Add DAI
     hub2.addAsset(
@@ -62,7 +65,6 @@ contract SpokeTwoHub is SpokeBase {
       }),
       address(tokenList.dai)
     );
-    oracle.setAssetPrice(daiAssetId, 1e8);
 
     // Add WBTC
     hub2.addAsset(
@@ -75,7 +77,6 @@ contract SpokeTwoHub is SpokeBase {
       }),
       address(tokenList.wbtc)
     );
-    oracle.setAssetPrice(wbtcAssetId, 75_000e8);
 
     DataTypes.SpokeConfig memory spokeConfig = DataTypes.SpokeConfig({
       supplyCap: type(uint256).max,
@@ -100,9 +101,90 @@ contract SpokeTwoHub is SpokeBase {
       liquidationProtocolFee: 0,
       borrowable: true,
       collateral: true,
-      hubId: 2
+      hubId: 2,
+      oracleAssetId: daiAssetId
     });
     daiHub2ReserveId = spoke1.addReserve(daiAssetId, daiHub2Config);
+
+    // Create a third hub with out of order asset ids
+    ILiquidityHub hub3 = new LiquidityHub();
+
+    // Add DAI
+    hub3.addAsset(
+      DataTypes.AssetConfig({
+        active: true,
+        frozen: false,
+        paused: false,
+        decimals: tokenList.dai.decimals(),
+        irStrategy: irStrategy
+      }),
+      address(tokenList.dai)
+    );
+    hub3DaiAssetId = 0;
+
+    // Add USDX
+    hub3.addAsset(
+      DataTypes.AssetConfig({
+        active: true,
+        frozen: false,
+        paused: false,
+        decimals: tokenList.usdx.decimals(),
+        irStrategy: irStrategy
+      }),
+      address(tokenList.usdx)
+    );
+    hub3UsdxAssetId = 1;
+
+    // Add WBTC
+    hub3.addAsset(
+      DataTypes.AssetConfig({
+        active: true,
+        frozen: false,
+        paused: false,
+        decimals: tokenList.wbtc.decimals(),
+        irStrategy: irStrategy
+      }),
+      address(tokenList.wbtc)
+    );
+    hub3WbtcAssetId = 2;
+
+    // Add WETH
+    hub3.addAsset(
+      DataTypes.AssetConfig({
+        active: true,
+        frozen: false,
+        paused: false,
+        decimals: tokenList.weth.decimals(),
+        irStrategy: irStrategy
+      }),
+      address(tokenList.weth)
+    );
+    hub3WethAssetId = 3;
+
+    hub3.addSpoke(hub3WethAssetId, spokeConfig, address(spoke1));
+    hub3.addSpoke(hub3UsdxAssetId, spokeConfig, address(spoke1));
+    hub3.addSpoke(hub3DaiAssetId, spokeConfig, address(spoke1));
+    hub3.addSpoke(hub3WbtcAssetId, spokeConfig, address(spoke1));
+
+    spoke1.addHub(address(hub3));
+
+    // Relist dai for hub 3 dai
+    DataTypes.ReserveConfig memory daiHub3Config = DataTypes.ReserveConfig({
+      decimals: tokenList.dai.decimals(),
+      active: true,
+      frozen: false,
+      paused: false,
+      collateralFactor: 78_00,
+      liquidationBonus: 100_00,
+      liquidityPremium: 20_00,
+      liquidationProtocolFee: 0,
+      borrowable: true,
+      collateral: true,
+      hubId: 3,
+      oracleAssetId: daiAssetId
+    });
+    daiHub3ReserveId = spoke1.addReserve(hub3DaiAssetId, daiHub3Config);
+
     vm.stopPrank();
   }
 

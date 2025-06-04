@@ -324,7 +324,8 @@ abstract contract Base is Test {
       liquidationProtocolFee: 0,
       borrowable: true,
       collateral: true,
-      hubId: MAIN_HUB
+      hubId: MAIN_HUB,
+      oracleAssetId: wethAssetId
     });
     DataTypes.ReserveConfig memory wbtcConfig = DataTypes.ReserveConfig({
       decimals: tokenList.wbtc.decimals(),
@@ -337,7 +338,8 @@ abstract contract Base is Test {
       liquidationProtocolFee: 0,
       borrowable: true,
       collateral: true,
-      hubId: MAIN_HUB
+      hubId: MAIN_HUB,
+      oracleAssetId: wbtcAssetId
     });
     DataTypes.ReserveConfig memory daiConfig = DataTypes.ReserveConfig({
       decimals: tokenList.dai.decimals(),
@@ -350,7 +352,8 @@ abstract contract Base is Test {
       liquidationProtocolFee: 0,
       borrowable: true,
       collateral: true,
-      hubId: MAIN_HUB
+      hubId: MAIN_HUB,
+      oracleAssetId: daiAssetId
     });
     DataTypes.ReserveConfig memory usdxConfig = DataTypes.ReserveConfig({
       decimals: tokenList.usdx.decimals(),
@@ -363,7 +366,8 @@ abstract contract Base is Test {
       liquidationProtocolFee: 0,
       borrowable: true,
       collateral: true,
-      hubId: MAIN_HUB
+      hubId: MAIN_HUB,
+      oracleAssetId: usdxAssetId
     });
     DataTypes.ReserveConfig memory usdyConfig = DataTypes.ReserveConfig({
       decimals: tokenList.usdy.decimals(),
@@ -376,7 +380,8 @@ abstract contract Base is Test {
       liquidationProtocolFee: 0,
       borrowable: true,
       collateral: true,
-      hubId: MAIN_HUB
+      hubId: MAIN_HUB,
+      oracleAssetId: usdyAssetId
     });
 
     spokeInfo[spoke1].weth.reserveId = spoke1.addReserve(wethAssetId, wethConfig);
@@ -408,7 +413,8 @@ abstract contract Base is Test {
       liquidationProtocolFee: 0,
       borrowable: true,
       collateral: true,
-      hubId: MAIN_HUB
+      hubId: MAIN_HUB,
+      oracleAssetId: wbtcAssetId
     });
     wethConfig = DataTypes.ReserveConfig({
       decimals: tokenList.weth.decimals(),
@@ -421,7 +427,8 @@ abstract contract Base is Test {
       liquidationProtocolFee: 0,
       borrowable: true,
       collateral: true,
-      hubId: MAIN_HUB
+      hubId: MAIN_HUB,
+      oracleAssetId: wethAssetId
     });
     daiConfig = DataTypes.ReserveConfig({
       decimals: tokenList.dai.decimals(),
@@ -434,7 +441,8 @@ abstract contract Base is Test {
       liquidationProtocolFee: 0,
       borrowable: true,
       collateral: true,
-      hubId: MAIN_HUB
+      hubId: MAIN_HUB,
+      oracleAssetId: daiAssetId
     });
     usdxConfig = DataTypes.ReserveConfig({
       decimals: tokenList.usdx.decimals(),
@@ -447,7 +455,8 @@ abstract contract Base is Test {
       liquidationProtocolFee: 0,
       borrowable: true,
       collateral: true,
-      hubId: MAIN_HUB
+      hubId: MAIN_HUB,
+      oracleAssetId: usdxAssetId
     });
 
     spokeInfo[spoke2].wbtc.reserveId = spoke2.addReserve(wbtcAssetId, wbtcConfig);
@@ -477,7 +486,8 @@ abstract contract Base is Test {
       liquidationProtocolFee: 0,
       borrowable: true,
       collateral: true,
-      hubId: MAIN_HUB
+      hubId: MAIN_HUB,
+      oracleAssetId: daiAssetId
     });
     usdxConfig = DataTypes.ReserveConfig({
       decimals: tokenList.usdx.decimals(),
@@ -490,7 +500,8 @@ abstract contract Base is Test {
       liquidationProtocolFee: 0,
       borrowable: true,
       collateral: true,
-      hubId: MAIN_HUB
+      hubId: MAIN_HUB,
+      oracleAssetId: usdxAssetId
     });
     wethConfig = DataTypes.ReserveConfig({
       decimals: tokenList.weth.decimals(),
@@ -503,7 +514,8 @@ abstract contract Base is Test {
       liquidationProtocolFee: 0,
       borrowable: true,
       collateral: true,
-      hubId: MAIN_HUB
+      hubId: MAIN_HUB,
+      oracleAssetId: wethAssetId
     });
     wbtcConfig = DataTypes.ReserveConfig({
       decimals: tokenList.wbtc.decimals(),
@@ -516,7 +528,8 @@ abstract contract Base is Test {
       liquidationProtocolFee: 0,
       borrowable: true,
       collateral: true,
-      hubId: MAIN_HUB
+      hubId: MAIN_HUB,
+      oracleAssetId: wbtcAssetId
     });
 
     spokeInfo[spoke3].dai.reserveId = spoke3.addReserve(daiAssetId, daiConfig);
@@ -556,7 +569,8 @@ abstract contract Base is Test {
       liquidationProtocolFee: 0,
       borrowable: true,
       collateral: true,
-      hubId: MAIN_HUB
+      hubId: MAIN_HUB,
+      oracleAssetId: dai2AssetId
     });
     spokeInfo[spoke2].dai2.reserveId = spoke2.addReserve(dai2AssetId, daiConfig);
     spokeInfo[spoke2].dai2.liquidityPremium = daiConfig.liquidityPremium;

@@ -65,7 +65,8 @@ contract LiquidityHubHandler is Test {
         liquidationProtocolFee: 0,
         borrowable: false,
         collateral: false,
-        hubId: 1
+        hubId: 1,
+        oracleAssetId: 0
       })
     );
   }

@@ -78,6 +78,7 @@ library DataTypes {
     uint256 liquidityPremium; // BPS TODO: use smaller uint
     uint256 liquidationProtocolFee; // BPS TODO: use smaller uint
     uint256 hubId;
+    uint256 oracleAssetId; // TODO: Can have the oracle take address as input instead
   }
 
   struct UserPosition {

@@ -29,7 +29,8 @@ contract SpokeConfigTest is SpokeBase {
       liquidationProtocolFee: reserveData.config.liquidationProtocolFee + 1,
       borrowable: !reserveData.config.borrowable,
       collateral: !reserveData.config.collateral,
-      hubId: reserveData.config.hubId // hubId won't get updated
+      hubId: reserveData.config.hubId, // hubId won't get updated
+      oracleAssetId: reserveData.config.oracleAssetId // oracleAssetId won't get updated
     });
     vm.expectEmit(address(spoke1));
     emit ISpoke.ReserveConfigUpdated(daiReserveId, newReserveConfig);
@@ -365,7 +366,8 @@ contract SpokeConfigTest is SpokeBase {
       liquidationProtocolFee: 10_00,
       borrowable: true,
       collateral: true,
-      hubId: MAIN_HUB
+      hubId: MAIN_HUB,
+      oracleAssetId: wethAssetId
     });
 
     vm.expectEmit(address(spoke1));
@@ -393,7 +395,8 @@ contract SpokeConfigTest is SpokeBase {
       liquidityPremium: 10_00,
       borrowable: true,
       collateral: true,
-      hubId: MAIN_HUB
+      hubId: MAIN_HUB,
+      oracleAssetId: wethAssetId
     });
 
     vm.expectRevert(); // error from LH in reading invalid index from assetList array
@@ -416,7 +419,8 @@ contract SpokeConfigTest is SpokeBase {
       liquidationProtocolFee: 0,
       borrowable: true,
       collateral: true,
-      hubId: MAIN_HUB
+      hubId: MAIN_HUB,
+      oracleAssetId: wethAssetId
     });
 
     vm.expectRevert(); // error from LH in reading invalid index from assetList array
@@ -437,7 +441,8 @@ contract SpokeConfigTest is SpokeBase {
       liquidationProtocolFee: 0,
       borrowable: true,
       collateral: true,
-      hubId: MAIN_HUB
+      hubId: MAIN_HUB,
+      oracleAssetId: wethAssetId
     });
 
     vm.expectRevert(ISpoke.InvalidReserveDecimals.selector);
@@ -463,7 +468,8 @@ contract SpokeConfigTest is SpokeBase {
       liquidationProtocolFee: 0,
       borrowable: true,
       collateral: true,
-      hubId: MAIN_HUB
+      hubId: MAIN_HUB,
+      oracleAssetId: wethAssetId
     });
 
     vm.expectRevert(ISpoke.InvalidReserveDecimals.selector);
