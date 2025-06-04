@@ -28,7 +28,8 @@ contract SpokeConfigTest is SpokeBase {
       liquidityPremium: reserveData.config.liquidityPremium + 1,
       liquidationProtocolFee: reserveData.config.liquidationProtocolFee + 1,
       borrowable: !reserveData.config.borrowable,
-      collateral: !reserveData.config.collateral
+      collateral: !reserveData.config.collateral,
+      oracleAssetId: reserveData.config.oracleAssetId // oracleAssetId won't get updated
     });
     vm.expectEmit(address(spoke1));
     emit ISpoke.ReserveConfigUpdated(daiReserveId, newReserveConfig);
@@ -361,7 +362,8 @@ contract SpokeConfigTest is SpokeBase {
       liquidityPremium: 10_00,
       liquidationProtocolFee: 10_00,
       borrowable: true,
-      collateral: true
+      collateral: true,
+      oracleAssetId: wethAssetId
     });
 
     vm.expectEmit(address(spoke1));
@@ -388,7 +390,8 @@ contract SpokeConfigTest is SpokeBase {
       liquidationProtocolFee: 0,
       liquidityPremium: 10_00,
       borrowable: true,
-      collateral: true
+      collateral: true,
+      oracleAssetId: wethAssetId
     });
 
     vm.expectRevert(); // error from LH in reading invalid index from assetList array
@@ -410,7 +413,8 @@ contract SpokeConfigTest is SpokeBase {
       liquidityPremium: 10_00,
       liquidationProtocolFee: 0,
       borrowable: true,
-      collateral: true
+      collateral: true,
+      oracleAssetId: wethAssetId
     });
 
     vm.expectRevert(); // error from LH in reading invalid index from assetList array
@@ -430,7 +434,8 @@ contract SpokeConfigTest is SpokeBase {
       liquidityPremium: 10_00,
       liquidationProtocolFee: 0,
       borrowable: true,
-      collateral: true
+      collateral: true,
+      oracleAssetId: wethAssetId
     });
 
     vm.expectRevert(ISpoke.InvalidReserveDecimals.selector);
@@ -455,7 +460,8 @@ contract SpokeConfigTest is SpokeBase {
       liquidityPremium: 10_00,
       liquidationProtocolFee: 0,
       borrowable: true,
-      collateral: true
+      collateral: true,
+      oracleAssetId: wethAssetId
     });
 
     vm.expectRevert(ISpoke.InvalidReserveDecimals.selector);
