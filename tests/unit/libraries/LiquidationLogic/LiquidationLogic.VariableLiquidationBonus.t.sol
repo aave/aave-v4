@@ -245,25 +245,92 @@ contract LiquidationLogicVariableLiquidationBonusTest is LiquidationLogicBaseTes
   /// fuzz - when liquidationBonusFactor is 0, the liquidation bonus should be the default value
   function testCalculate_fuzz_zero_liquidationBonusFactor(
     uint256 healthFactor,
+    uint256 closeFactor,
     uint256 healthFactorForMaxBonus,
     uint256 liquidationBonus
   ) public {
-    liquidationBonus = bound(liquidationBonus, MIN_LIQUIDATION_BONUS, MAX_LIQUIDATION_BONUS); // BPS
+    healthFactorForMaxBonus = bound(
+      healthFactorForMaxBonus,
+      1,
+      HEALTH_FACTOR_LIQUIDATION_THRESHOLD - 1
+    );
+    healthFactor = bound(
+      healthFactor,
+      healthFactorForMaxBonus + 1,
+      HEALTH_FACTOR_LIQUIDATION_THRESHOLD
+    );
+    uint256 liquidationBonusFactor = 0;
+
+    _assertDefaultLiquidationBonus(
+      healthFactor,
+      closeFactor,
+      healthFactorForMaxBonus,
+      liquidationBonus,
+      liquidationBonusFactor
+    );
+  }
+
+  /// fuzz - when healthFactorForMaxBonus is 0, the liquidation bonus should be the default value
+  function testCalculate_fuzz_zero_healthFactorForMaxBonus(
+    uint256 healthFactor,
+    uint256 closeFactor,
+    uint256 liquidationBonusFactor,
+    uint256 liquidationBonus
+  ) public {
+    uint256 healthFactorForMaxBonus = 0;
+    healthFactor = bound(
+      healthFactor,
+      healthFactorForMaxBonus + 1,
+      HEALTH_FACTOR_LIQUIDATION_THRESHOLD
+    );
+    liquidationBonusFactor = bound(liquidationBonusFactor, 1, 100_00); // BPS
+
+    _assertDefaultLiquidationBonus(
+      healthFactor,
+      closeFactor,
+      healthFactorForMaxBonus,
+      liquidationBonus,
+      liquidationBonusFactor
+    );
+  }
+
+  /// fuzz - when health factor is lte healthFactorForMaxBonus, the liquidation bonus should be the default value
+  function testCalculate_fuzz_hf_lte_healthFactorForMaxBonus(
+    uint256 healthFactor,
+    uint256 closeFactor,
+    uint256 healthFactorForMaxBonus,
+    uint256 liquidationBonusFactor,
+    uint256 liquidationBonus
+  ) public {
     healthFactorForMaxBonus = bound(
       healthFactorForMaxBonus,
       1,
       HEALTH_FACTOR_LIQUIDATION_THRESHOLD
     );
-    healthFactor = bound(
-      healthFactor,
-      healthFactorForMaxBonus,
-      HEALTH_FACTOR_LIQUIDATION_THRESHOLD
-    );
+    healthFactor = bound(healthFactor, 0, healthFactorForMaxBonus);
+    liquidationBonusFactor = bound(liquidationBonusFactor, 1, 100_00); // BPS
 
-    uint256 liquidationBonusFactor = 0;
+    _assertDefaultLiquidationBonus(
+      healthFactor,
+      closeFactor,
+      healthFactorForMaxBonus,
+      liquidationBonus,
+      liquidationBonusFactor
+    );
+  }
+
+  function _assertDefaultLiquidationBonus(
+    uint256 healthFactor,
+    uint256 closeFactor,
+    uint256 healthFactorForMaxBonus,
+    uint256 liquidationBonus,
+    uint256 liquidationBonusFactor
+  ) internal {
+    closeFactor = bound(closeFactor, HEALTH_FACTOR_LIQUIDATION_THRESHOLD, MAX_CLOSE_FACTOR); // WAD
+    liquidationBonus = bound(liquidationBonus, MIN_LIQUIDATION_BONUS, MAX_LIQUIDATION_BONUS); // BPS
 
     _config = DataTypes.LiquidationConfig({
-      closeFactor: 0,
+      closeFactor: closeFactor,
       healthFactorForMaxBonus: healthFactorForMaxBonus,
       liquidationBonusFactor: liquidationBonusFactor
     });
