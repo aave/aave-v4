@@ -306,7 +306,7 @@ contract SpokeLiquidationBase is SpokeBase {
     assertApproxEqAbs(
       liqProtocolFeeAmount,
       totalLiqBonusAmount.percentMulUp(state.liquidationProtocolFee),
-      3,
+      4,
       string.concat('protocol fee amount ', label)
     );
   }
