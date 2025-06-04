@@ -35,7 +35,8 @@ contract Spoke is ISpoke, Multicall {
   mapping(uint256 hubId => address hub) internal _hubs;
   mapping(address user => mapping(uint256 reserveId => DataTypes.UserPosition position))
     internal _userPositions;
-  mapping(uint256 reserveId => DataTypes.Reserve reserveData) internal _reserves;
+  mapping(uint256 reserveId => mapping(uint256 hubId => DataTypes.Reserve reserveData))
+    internal _reserves;
   DataTypes.LiquidationConfig internal _liquidationConfig;
   uint256[] public reservesList; // todo: rm, not needed
   uint256 public reserveCount;
