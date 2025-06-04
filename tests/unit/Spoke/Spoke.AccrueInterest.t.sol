@@ -542,10 +542,7 @@ contract SpokeAccrueInterestTest is SpokeBase {
         });
       vm.mockCall(
         address(irStrategy),
-        abi.encodeWithSelector(
-          IReserveInterestRateStrategy.calculateInterestRates.selector,
-          params
-        ),
+        abi.encodeCall(IReserveInterestRateStrategy.calculateInterestRates, (params)),
         abi.encode(rates.daiBaseBorrowRate)
       );
       Utils.borrow(spoke1, _daiReserveId(spoke1), bob, amounts.daiBorrowAmount, bob);
@@ -567,10 +564,7 @@ contract SpokeAccrueInterestTest is SpokeBase {
         });
       vm.mockCall(
         address(irStrategy),
-        abi.encodeWithSelector(
-          IReserveInterestRateStrategy.calculateInterestRates.selector,
-          params
-        ),
+        abi.encodeCall(IReserveInterestRateStrategy.calculateInterestRates, (params)),
         abi.encode(rates.wethBaseBorrowRate)
       );
       Utils.borrow(spoke1, _wethReserveId(spoke1), bob, amounts.wethBorrowAmount, bob);
@@ -592,10 +586,7 @@ contract SpokeAccrueInterestTest is SpokeBase {
         });
       vm.mockCall(
         address(irStrategy),
-        abi.encodeWithSelector(
-          IReserveInterestRateStrategy.calculateInterestRates.selector,
-          params
-        ),
+        abi.encodeCall(IReserveInterestRateStrategy.calculateInterestRates, (params)),
         abi.encode(rates.usdxBaseBorrowRate)
       );
       Utils.borrow(spoke1, _usdxReserveId(spoke1), bob, amounts.usdxBorrowAmount, bob);
@@ -617,10 +608,7 @@ contract SpokeAccrueInterestTest is SpokeBase {
         });
       vm.mockCall(
         address(irStrategy),
-        abi.encodeWithSelector(
-          IReserveInterestRateStrategy.calculateInterestRates.selector,
-          params
-        ),
+        abi.encodeCall(IReserveInterestRateStrategy.calculateInterestRates, (params)),
         abi.encode(rates.wbtcBaseBorrowRate)
       );
       Utils.borrow(spoke1, _wbtcReserveId(spoke1), bob, amounts.wbtcBorrowAmount, bob);
@@ -1022,7 +1010,7 @@ contract SpokeAccrueInterestTest is SpokeBase {
       // Construct mock call so we can see the same user rp calc as within the borrow function
       vm.mockCall(
         address(spoke2),
-        abi.encodeWithSelector(Spoke.getUserTotalDebt.selector, _daiReserveId(spoke2), bob),
+        abi.encodeCall(Spoke.getUserTotalDebt, (_daiReserveId(spoke2), bob)),
         abi.encode(spoke2.getUserTotalDebt(_daiReserveId(spoke2), bob) + 1e18) // Debt amount seen in the borrow function when calculating user rp
       );
       bobRp = _calculateExpectedUserRP(bob, spoke2);
