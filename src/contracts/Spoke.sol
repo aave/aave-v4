@@ -71,6 +71,7 @@ contract Spoke is ISpoke, Multicall {
 
   function addReserve(
     uint256 assetId,
+    uint256 hubId,
     DataTypes.ReserveConfig calldata config
   ) external returns (uint256) {
     _validateReserveConfig(config);
