@@ -1104,6 +1104,77 @@ abstract contract Base is Test {
     _assertAssetDebt(spoke, reserveId, expectedBaseDebt, expectedPremiumDebt, label);
   }
 
+  function _assertUserSupply(
+    ISpoke spoke,
+    uint256 reserveId,
+    address user,
+    uint256 expectedSuppliedAmount,
+    string memory label
+  ) internal view {
+    assertEq(
+      spoke.getUserSuppliedAmount(reserveId, user),
+      expectedSuppliedAmount,
+      string.concat('user supplied amount ', label)
+    );
+  }
+
+  function _assertReserveSupply(
+    ISpoke spoke,
+    uint256 reserveId,
+    uint256 expectedSuppliedAmount,
+    string memory label
+  ) internal view {
+    assertEq(
+      spoke.getReserveSuppliedAmount(reserveId),
+      expectedSuppliedAmount,
+      string.concat('reserve supplied amount ', label)
+    );
+  }
+
+  function _assertSpokeSupply(
+    ISpoke spoke,
+    uint256 reserveId,
+    uint256 expectedSuppliedAmount,
+    string memory label
+  ) internal view {
+    uint256 assetId = spoke.getReserve(reserveId).assetId;
+    assertEq(
+      hub.getSpokeSuppliedAmount(assetId, address(spoke)),
+      expectedSuppliedAmount,
+      string.concat('spoke supplied amount ', label)
+    );
+  }
+
+  function _assertAssetSupply(
+    ISpoke spoke,
+    uint256 reserveId,
+    uint256 expectedSuppliedAmount,
+    string memory label
+  ) internal view {
+    uint256 assetId = spoke.getReserve(reserveId).assetId;
+    assertEq(
+      hub.getAssetSuppliedAmount(assetId),
+      expectedSuppliedAmount,
+      string.concat('asset supplied amount ', label)
+    );
+  }
+
+  function _assertSingleUserProtocolSupply(
+    ISpoke spoke,
+    uint256 reserveId,
+    address user,
+    uint256 expectedSuppliedAmount,
+    string memory label
+  ) internal view {
+    _assertUserSupply(spoke, reserveId, user, expectedSuppliedAmount, label);
+
+    _assertReserveSupply(spoke, reserveId, expectedSuppliedAmount, label);
+
+    _assertSpokeSupply(spoke, reserveId, expectedSuppliedAmount, label);
+
+    _assertAssetSupply(spoke, reserveId, expectedSuppliedAmount, label);
+  }
+
   function _convertAmountToBaseCurrency(
     uint256 assetId,
     uint256 amount
