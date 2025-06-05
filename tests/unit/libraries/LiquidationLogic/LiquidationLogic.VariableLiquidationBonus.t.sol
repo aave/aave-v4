@@ -225,7 +225,7 @@ contract LiquidationLogicVariableLiquidationBonusTest is LiquidationLogicBaseTes
 
     assertEq(
       result,
-      _calculateLiqBonus(
+      _calcExpectedLiqBonus(
         healthFactor,
         _config.healthFactorForMaxBonus,
         liquidationBonusFactor,
@@ -259,15 +259,19 @@ contract LiquidationLogicVariableLiquidationBonusTest is LiquidationLogicBaseTes
       healthFactorForMaxBonus + 1,
       HEALTH_FACTOR_LIQUIDATION_THRESHOLD
     );
+    closeFactor = bound(closeFactor, HEALTH_FACTOR_LIQUIDATION_THRESHOLD, MAX_CLOSE_FACTOR); // WAD
+    liquidationBonus = bound(liquidationBonus, MIN_LIQUIDATION_BONUS, MAX_LIQUIDATION_BONUS); // BPS
     uint256 liquidationBonusFactor = 0;
 
-    _assertDefaultLiquidationBonus(
+    uint256 result = _calculateVariableLiquidationBonus(
       healthFactor,
       closeFactor,
       healthFactorForMaxBonus,
       liquidationBonus,
       liquidationBonusFactor
     );
+
+    assertEq(result, liquidationBonus, 'should be default liquidationBonus');
   }
 
   /// fuzz - when healthFactorForMaxBonus is 0, the liquidation bonus should be the default value
@@ -284,14 +288,18 @@ contract LiquidationLogicVariableLiquidationBonusTest is LiquidationLogicBaseTes
       HEALTH_FACTOR_LIQUIDATION_THRESHOLD
     );
     liquidationBonusFactor = bound(liquidationBonusFactor, 1, 100_00); // BPS
+    closeFactor = bound(closeFactor, HEALTH_FACTOR_LIQUIDATION_THRESHOLD, MAX_CLOSE_FACTOR); // WAD
+    liquidationBonus = bound(liquidationBonus, MIN_LIQUIDATION_BONUS, MAX_LIQUIDATION_BONUS); // BPS
 
-    _assertDefaultLiquidationBonus(
+    uint256 result = _calculateVariableLiquidationBonus(
       healthFactor,
       closeFactor,
       healthFactorForMaxBonus,
       liquidationBonus,
       liquidationBonusFactor
     );
+
+    assertEq(result, liquidationBonus, 'should be default liquidationBonus');
   }
 
   /// fuzz - when health factor is lte healthFactorForMaxBonus, the liquidation bonus should be the default value
@@ -309,45 +317,47 @@ contract LiquidationLogicVariableLiquidationBonusTest is LiquidationLogicBaseTes
     );
     healthFactor = bound(healthFactor, 0, healthFactorForMaxBonus);
     liquidationBonusFactor = bound(liquidationBonusFactor, 1, 100_00); // BPS
+    closeFactor = bound(closeFactor, HEALTH_FACTOR_LIQUIDATION_THRESHOLD, MAX_CLOSE_FACTOR); // WAD
+    liquidationBonus = bound(liquidationBonus, MIN_LIQUIDATION_BONUS, MAX_LIQUIDATION_BONUS); // BPS
 
-    _assertDefaultLiquidationBonus(
+    uint256 result = _calculateVariableLiquidationBonus(
       healthFactor,
       closeFactor,
       healthFactorForMaxBonus,
       liquidationBonus,
       liquidationBonusFactor
     );
+
+    assertEq(result, liquidationBonus, 'should be default liquidationBonus');
   }
 
-  function _assertDefaultLiquidationBonus(
+  /// helper to calculate the liquidation bonus from LiquidationLogic lib
+  /// @return the calculated liquidation bonus
+  function _calculateVariableLiquidationBonus(
     uint256 healthFactor,
     uint256 closeFactor,
     uint256 healthFactorForMaxBonus,
     uint256 liquidationBonus,
     uint256 liquidationBonusFactor
-  ) internal {
-    closeFactor = bound(closeFactor, HEALTH_FACTOR_LIQUIDATION_THRESHOLD, MAX_CLOSE_FACTOR); // WAD
-    liquidationBonus = bound(liquidationBonus, MIN_LIQUIDATION_BONUS, MAX_LIQUIDATION_BONUS); // BPS
-
+  ) internal returns (uint256) {
     _config = DataTypes.LiquidationConfig({
       closeFactor: closeFactor,
       healthFactorForMaxBonus: healthFactorForMaxBonus,
       liquidationBonusFactor: liquidationBonusFactor
     });
 
-    uint256 result = LiquidationLogic.calculateVariableLiquidationBonus(
-      _config,
-      healthFactor,
-      liquidationBonus,
-      HEALTH_FACTOR_LIQUIDATION_THRESHOLD
-    );
-
-    assertEq(result, liquidationBonus, 'should be liquidationBonus');
+    return
+      LiquidationLogic.calculateVariableLiquidationBonus(
+        _config,
+        healthFactor,
+        liquidationBonus,
+        HEALTH_FACTOR_LIQUIDATION_THRESHOLD
+      );
   }
 
   /// helper to calc the liquidation bonus based on the health factor, health factor bonus threshold,
   /// liquidation bonus factor, liquidation bonus, and health factor liquidation threshold
-  function _calculateLiqBonus(
+  function _calcExpectedLiqBonus(
     uint256 healthFactor,
     uint256 healthFactorForMaxBonus,
     uint256 liquidationBonusFactor,
