@@ -248,7 +248,7 @@ contract SpokeAccrueInterestTest is SpokeBase {
     skipTime = uint40(bound(skipTime, 0, MAX_SKIP_TIME));
 
     // Ensure bob does not draw more than half his normalized supply value
-    _ensureSufficientCollateral(amounts);
+    amounts = _ensureSufficientCollateral(amounts);
 
     uint40 startTime = uint40(vm.getBlockTimestamp());
 
@@ -610,7 +610,7 @@ contract SpokeAccrueInterestTest is SpokeBase {
     skipTime = uint40(bound(skipTime, 0, MAX_SKIP_TIME));
 
     // Ensure bob does not draw more than half his normalized supply value
-    _ensureSufficientCollateral(amounts);
+    amounts = _ensureSufficientCollateral(amounts);
 
     uint40 startTime = uint40(vm.getBlockTimestamp());
 
@@ -1065,18 +1065,57 @@ contract SpokeAccrueInterestTest is SpokeBase {
     return rates;
   }
 
-  function _ensureSufficientCollateral(TestAmounts memory amounts) internal view {
-    vm.assume(
+  function _ensureSufficientCollateral(
+    TestAmounts memory amounts
+  ) internal view returns (TestAmounts memory) {
+    uint256 remainingCollateralValue = _getValueInBaseCurrency(
+      daiAssetId,
+      amounts.daiSupplyAmount
+    ) +
+      _getValueInBaseCurrency(wethAssetId, amounts.wethSupplyAmount) +
+      _getValueInBaseCurrency(usdxAssetId, amounts.usdxSupplyAmount) +
+      _getValueInBaseCurrency(wbtcAssetId, amounts.wbtcSupplyAmount);
+
+    // Bound each debt amount to be no more than half the remaining collateral value
+    amounts.daiBorrowAmount = bound(
+      amounts.daiBorrowAmount,
+      0,
+      (remainingCollateralValue / 2) / _getValueInBaseCurrency(daiAssetId, 1)
+    );
+    // Subtract out the set debt value from the remaining collateral value
+    remainingCollateralValue -= _getValueInBaseCurrency(daiAssetId, amounts.daiBorrowAmount) * 2;
+    amounts.wethBorrowAmount = bound(
+      amounts.wethBorrowAmount,
+      0,
+      (remainingCollateralValue / 2) / _getValueInBaseCurrency(wethAssetId, 1)
+    );
+    remainingCollateralValue -= _getValueInBaseCurrency(wethAssetId, amounts.wethBorrowAmount) * 2;
+    amounts.usdxBorrowAmount = bound(
+      amounts.usdxBorrowAmount,
+      0,
+      (remainingCollateralValue / 2) / _getValueInBaseCurrency(usdxAssetId, 1)
+    );
+    remainingCollateralValue -= _getValueInBaseCurrency(usdxAssetId, amounts.usdxBorrowAmount) * 2;
+    amounts.wbtcBorrowAmount = bound(
+      amounts.wbtcBorrowAmount,
+      0,
+      (remainingCollateralValue / 2) / _getValueInBaseCurrency(wbtcAssetId, 1)
+    );
+
+    assertGt(
       _getValueInBaseCurrency(daiAssetId, amounts.daiSupplyAmount) +
         _getValueInBaseCurrency(wethAssetId, amounts.wethSupplyAmount) +
         _getValueInBaseCurrency(usdxAssetId, amounts.usdxSupplyAmount) +
-        _getValueInBaseCurrency(wbtcAssetId, amounts.wbtcSupplyAmount) >
-        2 *
-          (_getValueInBaseCurrency(daiAssetId, amounts.daiBorrowAmount) +
-            _getValueInBaseCurrency(wethAssetId, amounts.wethBorrowAmount) +
-            _getValueInBaseCurrency(usdxAssetId, amounts.usdxBorrowAmount) +
-            _getValueInBaseCurrency(wbtcAssetId, amounts.wbtcBorrowAmount))
+        _getValueInBaseCurrency(wbtcAssetId, amounts.wbtcSupplyAmount),
+      2 *
+        (_getValueInBaseCurrency(daiAssetId, amounts.daiBorrowAmount) +
+          _getValueInBaseCurrency(wethAssetId, amounts.wethBorrowAmount) +
+          _getValueInBaseCurrency(usdxAssetId, amounts.usdxBorrowAmount) +
+          _getValueInBaseCurrency(wbtcAssetId, amounts.wbtcBorrowAmount)),
+      'collateral sufficiently covers debt'
     );
+
+    return amounts;
   }
 
   function _bpsToRay(uint256 bps) internal pure returns (uint256) {
