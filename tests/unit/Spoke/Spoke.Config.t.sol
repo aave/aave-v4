@@ -4,14 +4,9 @@ pragma solidity ^0.8.0;
 import 'tests/unit/Spoke/SpokeBase.t.sol';
 
 contract SpokeConfigTest is SpokeBase {
-  function test_spoke_deploy_revertsWith_InvalidHubAddress() public {
-    vm.expectRevert(ISpoke.InvalidHubAddress.selector);
-    new Spoke(address(0), address(oracle));
-  }
-
   function test_spoke_deploy_revertsWith_InvalidOracleAddress() public {
     vm.expectRevert(ISpoke.InvalidOracleAddress.selector);
-    new Spoke(address(hub), address(0));
+    new Spoke(address(0));
   }
 
   function test_updateReserveConfig() public {
@@ -29,7 +24,7 @@ contract SpokeConfigTest is SpokeBase {
       liquidationProtocolFee: reserveData.config.liquidationProtocolFee + 1,
       borrowable: !reserveData.config.borrowable,
       collateral: !reserveData.config.collateral,
-      hubId: reserveData.config.hubId, // hubId won't get updated
+      hubAddress: reserveData.config.hubAddress, // hubAddress won't get updated
       oracleAssetId: reserveData.config.oracleAssetId // oracleAssetId won't get updated
     });
     vm.expectEmit(address(spoke1));
@@ -84,7 +79,7 @@ contract SpokeConfigTest is SpokeBase {
     DataTypes.ReserveConfig memory reserveData = spoke1.getReserve(daiReserveId).config;
 
     newReserveConfig.decimals = reserveData.decimals; // decimals won't get updated
-    newReserveConfig.hubId = reserveData.hubId; // hubId won't get updated
+    newReserveConfig.hubAddress = reserveData.hubAddress; // hubAddress won't get updated
 
     vm.expectEmit(address(spoke1));
     emit ISpoke.ReserveConfigUpdated(daiReserveId, newReserveConfig);
@@ -281,7 +276,7 @@ contract SpokeConfigTest is SpokeBase {
 
     DataTypes.ReserveConfig memory config;
     config.liquidationBonus = PercentageMath.PERCENTAGE_FACTOR;
-    config.hubId = MAIN_HUB;
+    config.hubAddress = address(hub);
 
     vm.expectRevert(ISpoke.InvalidReserve.selector);
     vm.prank(SPOKE_ADMIN);
@@ -366,7 +361,7 @@ contract SpokeConfigTest is SpokeBase {
       liquidationProtocolFee: 10_00,
       borrowable: true,
       collateral: true,
-      hubId: MAIN_HUB,
+      hubAddress: address(hub),
       oracleAssetId: wethAssetId
     });
 
@@ -395,7 +390,7 @@ contract SpokeConfigTest is SpokeBase {
       liquidityPremium: 10_00,
       borrowable: true,
       collateral: true,
-      hubId: MAIN_HUB,
+      hubAddress: address(hub),
       oracleAssetId: wethAssetId
     });
 
@@ -419,7 +414,7 @@ contract SpokeConfigTest is SpokeBase {
       liquidationProtocolFee: 0,
       borrowable: true,
       collateral: true,
-      hubId: MAIN_HUB,
+      hubAddress: address(hub),
       oracleAssetId: wethAssetId
     });
 
@@ -441,7 +436,7 @@ contract SpokeConfigTest is SpokeBase {
       liquidationProtocolFee: 0,
       borrowable: true,
       collateral: true,
-      hubId: MAIN_HUB,
+      hubAddress: address(hub),
       oracleAssetId: wethAssetId
     });
 
@@ -468,11 +463,33 @@ contract SpokeConfigTest is SpokeBase {
       liquidationProtocolFee: 0,
       borrowable: true,
       collateral: true,
-      hubId: MAIN_HUB,
+      hubAddress: address(hub),
       oracleAssetId: wethAssetId
     });
 
     vm.expectRevert(ISpoke.InvalidReserveDecimals.selector);
+    vm.prank(SPOKE_ADMIN);
+    spoke1.addReserve(reserveId, newReserveConfig);
+  }
+
+  function test_addReserve_revertsWith_InvalidHubAddress() public {
+    uint256 reserveId = spoke1.reserveCount();
+    DataTypes.ReserveConfig memory newReserveConfig = DataTypes.ReserveConfig({
+      decimals: hub.MAX_ALLOWED_ASSET_DECIMALS(),
+      active: true,
+      frozen: true,
+      paused: true,
+      collateralFactor: 10_00,
+      liquidationBonus: 110_00,
+      liquidityPremium: 10_00,
+      liquidationProtocolFee: 0,
+      borrowable: true,
+      collateral: true,
+      hubAddress: address(0),
+      oracleAssetId: wethAssetId
+    });
+
+    vm.expectRevert(ISpoke.InvalidHubAddress.selector);
     vm.prank(SPOKE_ADMIN);
     spoke1.addReserve(reserveId, newReserveConfig);
   }

@@ -95,7 +95,7 @@ contract SpokeMulticall is SpokeBase {
       liquidationProtocolFee: 0,
       borrowable: true,
       collateral: true,
-      hubId: MAIN_HUB,
+      hubAddress: address(hub),
       oracleAssetId: daiAssetId
     });
     DataTypes.ReserveConfig memory dai3Config = DataTypes.ReserveConfig({
@@ -109,7 +109,7 @@ contract SpokeMulticall is SpokeBase {
       liquidationProtocolFee: 0,
       borrowable: true,
       collateral: true,
-      hubId: MAIN_HUB,
+      hubAddress: address(hub),
       oracleAssetId: daiAssetId
     });
 

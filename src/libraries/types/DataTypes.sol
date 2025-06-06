@@ -77,8 +77,8 @@ library DataTypes {
     uint256 liquidationBonus; // BPS, 100_00 represent a 0% bonus TODO: use smaller uint
     uint256 liquidityPremium; // BPS TODO: use smaller uint
     uint256 liquidationProtocolFee; // BPS TODO: use smaller uint
-    uint256 hubId;
-    uint256 oracleAssetId; // TODO: Can have the oracle take address as input instead
+    address hubAddress;
+    uint256 oracleAssetId; // TODO: Remove in favor of using reserveId for spoke-specific oracles
   }
 
   struct UserPosition {

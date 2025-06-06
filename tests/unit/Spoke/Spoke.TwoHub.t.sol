@@ -13,8 +13,6 @@ contract SpokeTwoHub is SpokeBase {
 
   ILiquidityHub hub2;
   ILiquidityHub hub3;
-  uint256 public constant HUB2 = 2;
-  uint256 public constant HUB3 = 3;
   uint256 daiHub2ReserveId;
   uint256 daiHub3ReserveId;
   uint256 hub3DaiAssetId;
@@ -87,8 +85,6 @@ contract SpokeTwoHub is SpokeBase {
     hub2.addSpoke(daiAssetId, spokeConfig, address(spoke1));
     hub2.addSpoke(wbtcAssetId, spokeConfig, address(spoke1));
 
-    spoke1.addHub(address(hub2));
-
     // Relist dai for hub 2 dai
     DataTypes.ReserveConfig memory daiHub2Config = DataTypes.ReserveConfig({
       decimals: tokenList.dai.decimals(),
@@ -101,7 +97,7 @@ contract SpokeTwoHub is SpokeBase {
       liquidationProtocolFee: 0,
       borrowable: true,
       collateral: true,
-      hubId: 2,
+      hubAddress: address(hub2),
       oracleAssetId: daiAssetId
     });
     daiHub2ReserveId = spoke1.addReserve(daiAssetId, daiHub2Config);
@@ -166,8 +162,6 @@ contract SpokeTwoHub is SpokeBase {
     hub3.addSpoke(hub3DaiAssetId, spokeConfig, address(spoke1));
     hub3.addSpoke(hub3WbtcAssetId, spokeConfig, address(spoke1));
 
-    spoke1.addHub(address(hub3));
-
     // Relist dai for hub 3 dai
     DataTypes.ReserveConfig memory daiHub3Config = DataTypes.ReserveConfig({
       decimals: tokenList.dai.decimals(),
@@ -180,7 +174,7 @@ contract SpokeTwoHub is SpokeBase {
       liquidationProtocolFee: 0,
       borrowable: true,
       collateral: true,
-      hubId: 3,
+      hubAddress: address(hub3),
       oracleAssetId: daiAssetId
     });
     daiHub3ReserveId = spoke1.addReserve(hub3DaiAssetId, daiHub3Config);
