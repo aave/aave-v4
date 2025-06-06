@@ -2,6 +2,7 @@
 pragma solidity ^0.8.10;
 
 import {IReserveInterestRateStrategy} from 'src/interfaces/IReserveInterestRateStrategy.sol';
+import {ILiquidityHub} from 'src/interfaces/ILiquidityHub.sol';
 
 library DataTypes {
   // Liquidity Hub types
@@ -77,7 +78,7 @@ library DataTypes {
     uint256 liquidationBonus; // BPS, 100_00 represent a 0% bonus TODO: use smaller uint
     uint256 liquidityPremium; // BPS TODO: use smaller uint
     uint256 liquidationProtocolFee; // BPS TODO: use smaller uint
-    address hubAddress;
+    ILiquidityHub hub;
     uint256 oracleAssetId; // TODO: Remove in favor of using reserveId for spoke-specific oracles
   }
 

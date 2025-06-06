@@ -65,7 +65,7 @@ contract LiquidityHubHandler is Test {
         liquidationProtocolFee: 0,
         borrowable: false,
         collateral: false,
-        hubAddress: address(hub),
+        hub: hub,
         oracleAssetId: 0
       })
     );

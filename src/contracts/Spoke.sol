@@ -64,7 +64,7 @@ contract Spoke is ISpoke, Multicall {
     DataTypes.ReserveConfig calldata config
   ) external returns (uint256) {
     _validateReserveConfig(config);
-    address asset = address(ILiquidityHub(config.hubAddress).assetsList(assetId)); // will revert on invalid assetId
+    address asset = address(config.hub.assetsList(assetId)); // will revert on invalid assetId
     uint256 reserveId = reserveCount++;
     // TODO: AccessControl
     reservesList.push(reserveId);
@@ -88,7 +88,7 @@ contract Spoke is ISpoke, Multicall {
         liquidationProtocolFee: config.liquidationProtocolFee,
         borrowable: config.borrowable,
         collateral: config.collateral,
-        hubAddress: config.hubAddress,
+        hub: config.hub,
         oracleAssetId: config.oracleAssetId
       })
     });
@@ -119,7 +119,7 @@ contract Spoke is ISpoke, Multicall {
       liquidationProtocolFee: config.liquidationProtocolFee,
       borrowable: config.borrowable,
       collateral: config.collateral,
-      hubAddress: config.hubAddress,
+      hub: config.hub,
       oracleAssetId: config.oracleAssetId
     });
 
@@ -272,7 +272,7 @@ contract Spoke is ISpoke, Multicall {
     (uint256 baseDebt, uint256 premiumDebt) = _getUserDebt(
       userPosition,
       assetId,
-      reserve.config.hubAddress
+      reserve.config.hub
     );
     (uint256 baseDebtRestored, uint256 premiumDebtRestored) = _calculateRestoreAmount(
       baseDebt,
@@ -388,7 +388,7 @@ contract Spoke is ISpoke, Multicall {
       _getUserDebt(
         _userPositions[user][reserveId],
         _reserves[reserveId].assetId,
-        _reserves[reserveId].config.hubAddress
+        _reserves[reserveId].config.hub
       );
   }
 
@@ -396,7 +396,7 @@ contract Spoke is ISpoke, Multicall {
     (uint256 baseDebt, uint256 premiumDebt) = _getUserDebt(
       _userPositions[user][reserveId],
       _reserves[reserveId].assetId,
-      _reserves[reserveId].config.hubAddress
+      _reserves[reserveId].config.hub
     );
     return baseDebt + premiumDebt;
   }
@@ -557,11 +557,8 @@ contract Spoke is ISpoke, Multicall {
       InvalidLiquidationBonus()
     ); // min 100.00%
     require(config.liquidityPremium <= MAX_LIQUIDITY_PREMIUM, InvalidLiquidityPremium()); // max 1000.00%
-    require(config.hubAddress != address(0), InvalidHubAddress());
-    require(
-      config.decimals <= ILiquidityHub(config.hubAddress).MAX_ALLOWED_ASSET_DECIMALS(),
-      InvalidReserveDecimals()
-    );
+    require(address(config.hub) != address(0), InvalidHubAddress());
+    require(config.decimals <= config.hub.MAX_ALLOWED_ASSET_DECIMALS(), InvalidReserveDecimals());
     require(
       config.liquidationProtocolFee <= PercentageMathExtended.PERCENTAGE_FACTOR,
       InvalidLiquidationProtocolFee()
@@ -621,11 +618,11 @@ contract Spoke is ISpoke, Multicall {
   }
 
   function _getHub(uint256 reserveId) internal view returns (ILiquidityHub) {
-    return ILiquidityHub(_reserves[reserveId].config.hubAddress);
+    return _reserves[reserveId].config.hub;
   }
 
   function _getHub(DataTypes.Reserve storage reserve) internal view returns (ILiquidityHub) {
-    return ILiquidityHub(reserve.config.hubAddress);
+    return reserve.config.hub;
   }
 
   // @dev allows donation on base debt
@@ -769,7 +766,7 @@ contract Spoke is ISpoke, Multicall {
           vars.assetId,
           vars.assetPrice,
           vars.assetUnit,
-          reserve.config.hubAddress
+          reserve.config.hub
         );
       }
 
@@ -795,7 +792,7 @@ contract Spoke is ISpoke, Multicall {
         vars.userCollateralInBaseCurrency = _getUserBalanceInBaseCurrency(
           userPosition,
           vars.assetId,
-          reserve.config.hubAddress,
+          reserve.config.hub,
           vars.assetPrice,
           vars.assetUnit
         );
@@ -866,7 +863,7 @@ contract Spoke is ISpoke, Multicall {
     uint256 assetId,
     uint256 assetPrice,
     uint256 assetUnit,
-    address hub
+    ILiquidityHub hub
   ) internal view returns (uint256) {
     (uint256 baseDebt, uint256 premiumDebt) = _getUserDebt(userPosition, assetId, hub);
     return ((baseDebt + premiumDebt) * assetPrice).wadify() / assetUnit;
@@ -875,26 +872,24 @@ contract Spoke is ISpoke, Multicall {
   function _getUserBalanceInBaseCurrency(
     DataTypes.UserPosition storage userPosition,
     uint256 assetId,
-    address hub,
+    ILiquidityHub hub,
     uint256 assetPrice,
     uint256 assetUnit
   ) internal view returns (uint256) {
     return
-      (ILiquidityHub(hub).convertToSuppliedAssets(assetId, userPosition.suppliedShares) *
-        assetPrice).wadify() / assetUnit;
+      (hub.convertToSuppliedAssets(assetId, userPosition.suppliedShares) * assetPrice).wadify() /
+      assetUnit;
   }
 
   function _getUserDebt(
     DataTypes.UserPosition storage userPosition,
     uint256 assetId,
-    address hub
+    ILiquidityHub hub
   ) internal view returns (uint256, uint256) {
-    uint256 accruedPremium = ILiquidityHub(hub).convertToDrawnAssets(
-      assetId,
-      userPosition.premiumDrawnShares
-    ) - userPosition.premiumOffset;
+    uint256 accruedPremium = hub.convertToDrawnAssets(assetId, userPosition.premiumDrawnShares) -
+      userPosition.premiumOffset;
     return (
-      ILiquidityHub(hub).convertToDrawnAssets(assetId, userPosition.baseDrawnShares),
+      hub.convertToDrawnAssets(assetId, userPosition.baseDrawnShares),
       userPosition.realizedPremium + accruedPremium
     );
   }
@@ -1000,7 +995,7 @@ contract Spoke is ISpoke, Multicall {
       (vars.baseDebt, vars.premiumDebt) = _getUserDebt(
         userDebtPosition,
         vars.debtAssetId,
-        debtReserve.config.hubAddress
+        debtReserve.config.hub
       );
 
       (

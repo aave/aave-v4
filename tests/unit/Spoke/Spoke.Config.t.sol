@@ -24,7 +24,7 @@ contract SpokeConfigTest is SpokeBase {
       liquidationProtocolFee: reserveData.config.liquidationProtocolFee + 1,
       borrowable: !reserveData.config.borrowable,
       collateral: !reserveData.config.collateral,
-      hubAddress: reserveData.config.hubAddress, // hubAddress won't get updated
+      hub: reserveData.config.hub, // hub won't get updated
       oracleAssetId: reserveData.config.oracleAssetId // oracleAssetId won't get updated
     });
     vm.expectEmit(address(spoke1));
@@ -79,7 +79,7 @@ contract SpokeConfigTest is SpokeBase {
     DataTypes.ReserveConfig memory reserveData = spoke1.getReserve(daiReserveId).config;
 
     newReserveConfig.decimals = reserveData.decimals; // decimals won't get updated
-    newReserveConfig.hubAddress = reserveData.hubAddress; // hubAddress won't get updated
+    newReserveConfig.hub = reserveData.hub; // hub won't get updated
 
     vm.expectEmit(address(spoke1));
     emit ISpoke.ReserveConfigUpdated(daiReserveId, newReserveConfig);
@@ -276,7 +276,7 @@ contract SpokeConfigTest is SpokeBase {
 
     DataTypes.ReserveConfig memory config;
     config.liquidationBonus = PercentageMath.PERCENTAGE_FACTOR;
-    config.hubAddress = address(hub);
+    config.hub = hub;
 
     vm.expectRevert(ISpoke.InvalidReserve.selector);
     vm.prank(SPOKE_ADMIN);
@@ -361,7 +361,7 @@ contract SpokeConfigTest is SpokeBase {
       liquidationProtocolFee: 10_00,
       borrowable: true,
       collateral: true,
-      hubAddress: address(hub),
+      hub: hub,
       oracleAssetId: wethAssetId
     });
 
@@ -390,7 +390,7 @@ contract SpokeConfigTest is SpokeBase {
       liquidityPremium: 10_00,
       borrowable: true,
       collateral: true,
-      hubAddress: address(hub),
+      hub: hub,
       oracleAssetId: wethAssetId
     });
 
@@ -414,7 +414,7 @@ contract SpokeConfigTest is SpokeBase {
       liquidationProtocolFee: 0,
       borrowable: true,
       collateral: true,
-      hubAddress: address(hub),
+      hub: hub,
       oracleAssetId: wethAssetId
     });
 
@@ -436,7 +436,7 @@ contract SpokeConfigTest is SpokeBase {
       liquidationProtocolFee: 0,
       borrowable: true,
       collateral: true,
-      hubAddress: address(hub),
+      hub: hub,
       oracleAssetId: wethAssetId
     });
 
@@ -463,7 +463,7 @@ contract SpokeConfigTest is SpokeBase {
       liquidationProtocolFee: 0,
       borrowable: true,
       collateral: true,
-      hubAddress: address(hub),
+      hub: hub,
       oracleAssetId: wethAssetId
     });
 
@@ -485,7 +485,7 @@ contract SpokeConfigTest is SpokeBase {
       liquidationProtocolFee: 0,
       borrowable: true,
       collateral: true,
-      hubAddress: address(0),
+      hub: ILiquidityHub(address(0)),
       oracleAssetId: wethAssetId
     });
 

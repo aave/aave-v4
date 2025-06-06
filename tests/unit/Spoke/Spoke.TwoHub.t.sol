@@ -97,7 +97,7 @@ contract SpokeTwoHub is SpokeBase {
       liquidationProtocolFee: 0,
       borrowable: true,
       collateral: true,
-      hubAddress: address(hub2),
+      hub: hub2,
       oracleAssetId: daiAssetId
     });
     daiHub2ReserveId = spoke1.addReserve(daiAssetId, daiHub2Config);
@@ -174,7 +174,7 @@ contract SpokeTwoHub is SpokeBase {
       liquidationProtocolFee: 0,
       borrowable: true,
       collateral: true,
-      hubAddress: address(hub3),
+      hub: hub3,
       oracleAssetId: daiAssetId
     });
     daiHub3ReserveId = spoke1.addReserve(hub3DaiAssetId, daiHub3Config);

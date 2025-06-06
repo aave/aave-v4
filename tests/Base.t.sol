@@ -323,7 +323,7 @@ abstract contract Base is Test {
       liquidationProtocolFee: 0,
       borrowable: true,
       collateral: true,
-      hubAddress: address(hub),
+      hub: hub,
       oracleAssetId: wethAssetId
     });
     DataTypes.ReserveConfig memory wbtcConfig = DataTypes.ReserveConfig({
@@ -337,7 +337,7 @@ abstract contract Base is Test {
       liquidationProtocolFee: 0,
       borrowable: true,
       collateral: true,
-      hubAddress: address(hub),
+      hub: hub,
       oracleAssetId: wbtcAssetId
     });
     DataTypes.ReserveConfig memory daiConfig = DataTypes.ReserveConfig({
@@ -351,7 +351,7 @@ abstract contract Base is Test {
       liquidationProtocolFee: 0,
       borrowable: true,
       collateral: true,
-      hubAddress: address(hub),
+      hub: hub,
       oracleAssetId: daiAssetId
     });
     DataTypes.ReserveConfig memory usdxConfig = DataTypes.ReserveConfig({
@@ -365,7 +365,7 @@ abstract contract Base is Test {
       liquidationProtocolFee: 0,
       borrowable: true,
       collateral: true,
-      hubAddress: address(hub),
+      hub: hub,
       oracleAssetId: usdxAssetId
     });
     DataTypes.ReserveConfig memory usdyConfig = DataTypes.ReserveConfig({
@@ -379,7 +379,7 @@ abstract contract Base is Test {
       liquidationProtocolFee: 0,
       borrowable: true,
       collateral: true,
-      hubAddress: address(hub),
+      hub: hub,
       oracleAssetId: usdyAssetId
     });
 
@@ -412,7 +412,7 @@ abstract contract Base is Test {
       liquidationProtocolFee: 0,
       borrowable: true,
       collateral: true,
-      hubAddress: address(hub),
+      hub: hub,
       oracleAssetId: wbtcAssetId
     });
     wethConfig = DataTypes.ReserveConfig({
@@ -426,7 +426,7 @@ abstract contract Base is Test {
       liquidationProtocolFee: 0,
       borrowable: true,
       collateral: true,
-      hubAddress: address(hub),
+      hub: hub,
       oracleAssetId: wethAssetId
     });
     daiConfig = DataTypes.ReserveConfig({
@@ -440,7 +440,7 @@ abstract contract Base is Test {
       liquidationProtocolFee: 0,
       borrowable: true,
       collateral: true,
-      hubAddress: address(hub),
+      hub: hub,
       oracleAssetId: daiAssetId
     });
     usdxConfig = DataTypes.ReserveConfig({
@@ -454,7 +454,7 @@ abstract contract Base is Test {
       liquidationProtocolFee: 0,
       borrowable: true,
       collateral: true,
-      hubAddress: address(hub),
+      hub: hub,
       oracleAssetId: usdxAssetId
     });
 
@@ -485,7 +485,7 @@ abstract contract Base is Test {
       liquidationProtocolFee: 0,
       borrowable: true,
       collateral: true,
-      hubAddress: address(hub),
+      hub: hub,
       oracleAssetId: daiAssetId
     });
     usdxConfig = DataTypes.ReserveConfig({
@@ -499,7 +499,7 @@ abstract contract Base is Test {
       liquidationProtocolFee: 0,
       borrowable: true,
       collateral: true,
-      hubAddress: address(hub),
+      hub: hub,
       oracleAssetId: usdxAssetId
     });
     wethConfig = DataTypes.ReserveConfig({
@@ -513,7 +513,7 @@ abstract contract Base is Test {
       liquidationProtocolFee: 0,
       borrowable: true,
       collateral: true,
-      hubAddress: address(hub),
+      hub: hub,
       oracleAssetId: wethAssetId
     });
     wbtcConfig = DataTypes.ReserveConfig({
@@ -527,7 +527,7 @@ abstract contract Base is Test {
       liquidationProtocolFee: 0,
       borrowable: true,
       collateral: true,
-      hubAddress: address(hub),
+      hub: hub,
       oracleAssetId: wbtcAssetId
     });
 
@@ -568,7 +568,7 @@ abstract contract Base is Test {
       liquidationProtocolFee: 0,
       borrowable: true,
       collateral: true,
-      hubAddress: address(hub),
+      hub: hub,
       oracleAssetId: dai2AssetId
     });
     spokeInfo[spoke2].dai2.reserveId = spoke2.addReserve(dai2AssetId, daiConfig);
