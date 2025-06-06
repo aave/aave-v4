@@ -272,6 +272,7 @@ contract SpokeAccrueInterestScenarioTest is SpokeAccrueInterestTest {
           bob
         );
       }
+      // Workaround for precision loss with RP calc: https://github.com/aave/aave-v4/issues/421
       // Construct mock call so we can see the same user rp calc as within the borrow function
       vm.mockCall(
         address(spoke2),

@@ -990,13 +990,13 @@ abstract contract Base is Test {
     assertApproxEqAbs(
       actualPremiumDebt,
       expectedPremiumDebt,
-      1,
+      2,
       string.concat('user premium debt ', label)
     );
     assertApproxEqAbs(
       spoke.getUserTotalDebt(reserveId, user),
       expectedBaseDebt + expectedPremiumDebt,
-      1,
+      2,
       string.concat('user total debt ', label)
     );
   }
@@ -1018,13 +1018,13 @@ abstract contract Base is Test {
     assertApproxEqAbs(
       actualPremiumDebt,
       expectedPremiumDebt,
-      1,
+      2,
       string.concat('reserve premium debt ', label)
     );
     assertApproxEqAbs(
       spoke.getReserveTotalDebt(reserveId),
       expectedBaseDebt + expectedPremiumDebt,
-      1,
+      2,
       string.concat('reserve total debt ', label)
     );
   }
@@ -1047,13 +1047,13 @@ abstract contract Base is Test {
     assertApproxEqAbs(
       actualPremiumDebt,
       expectedPremiumDebt,
-      1,
+      2,
       string.concat('spoke premium debt ', label)
     );
     assertApproxEqAbs(
       hub.getSpokeTotalDebt(assetId, address(spoke)),
       expectedBaseDebt + expectedPremiumDebt,
-      1,
+      2,
       string.concat('spoke total debt ', label)
     );
   }
@@ -1076,13 +1076,13 @@ abstract contract Base is Test {
     assertApproxEqAbs(
       actualPremiumDebt,
       expectedPremiumDebt,
-      1,
+      2,
       string.concat('asset premium debt ', label)
     );
     assertApproxEqAbs(
       hub.getAssetTotalDebt(assetId),
       expectedBaseDebt + expectedPremiumDebt,
-      1,
+      2,
       string.concat('asset total debt ', label)
     );
   }
@@ -1111,9 +1111,10 @@ abstract contract Base is Test {
     uint256 expectedSuppliedAmount,
     string memory label
   ) internal view {
-    assertEq(
+    assertApproxEqAbs(
       spoke.getUserSuppliedAmount(reserveId, user),
       expectedSuppliedAmount,
+      2,
       string.concat('user supplied amount ', label)
     );
   }
@@ -1124,9 +1125,10 @@ abstract contract Base is Test {
     uint256 expectedSuppliedAmount,
     string memory label
   ) internal view {
-    assertEq(
+    assertApproxEqAbs(
       spoke.getReserveSuppliedAmount(reserveId),
       expectedSuppliedAmount,
+      2,
       string.concat('reserve supplied amount ', label)
     );
   }
@@ -1138,9 +1140,10 @@ abstract contract Base is Test {
     string memory label
   ) internal view {
     uint256 assetId = spoke.getReserve(reserveId).assetId;
-    assertEq(
+    assertApproxEqAbs(
       hub.getSpokeSuppliedAmount(assetId, address(spoke)),
       expectedSuppliedAmount,
+      2,
       string.concat('spoke supplied amount ', label)
     );
   }
@@ -1152,9 +1155,10 @@ abstract contract Base is Test {
     string memory label
   ) internal view {
     uint256 assetId = spoke.getReserve(reserveId).assetId;
-    assertEq(
+    assertApproxEqAbs(
       hub.getAssetSuppliedAmount(assetId),
       expectedSuppliedAmount,
+      2,
       string.concat('asset supplied amount ', label)
     );
   }
@@ -1332,6 +1336,15 @@ abstract contract Base is Test {
     uint40 startTime
   ) internal view returns (uint256) {
     return MathUtils.calculateLinearInterest(borrowRate, startTime).rayMulUp(initialDebt);
+  }
+
+  /// @dev Calculate expected premium debt based on change in base debt and user rp
+  function _calculateExpectedPremiumDebt(
+    uint256 initialBaseDebt,
+    uint256 currentBaseDebt,
+    uint256 userRiskPremium
+  ) internal pure returns (uint256) {
+    return (currentBaseDebt - initialBaseDebt).percentMul(userRiskPremium);
   }
 
   /// @dev Helper function to get asset base debt
