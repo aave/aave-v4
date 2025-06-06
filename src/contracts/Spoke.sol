@@ -30,7 +30,6 @@ contract Spoke is ISpoke, Multicall {
 
   uint256 public constant HEALTH_FACTOR_LIQUIDATION_THRESHOLD = WadRayMathExtended.WAD;
   uint256 public constant MAX_LIQUIDITY_PREMIUM = 1000_00; // 1000.00%
-  uint256 public constant MAIN_HUB = 1;
   IPriceOracle public immutable oracle;
 
   mapping(address user => mapping(uint256 reserveId => DataTypes.UserPosition position))
