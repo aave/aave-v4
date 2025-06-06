@@ -381,6 +381,10 @@ contract LiquidityHub is ILiquidityHub {
     return _assets[assetId].config;
   }
 
+  function previewAssetIndex(uint256 assetId) external view returns (uint256) {
+    return _assets[assetId].previewIndex();
+  }
+
   //
   // Internal
   //

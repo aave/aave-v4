@@ -223,6 +223,8 @@ interface ILiquidityHub {
 
   function getSpokeTotalDebt(uint256 assetId, address spoke) external view returns (uint256);
 
+  function previewAssetIndex(uint256 assetId) external view returns (uint256);
+
   function assetCount() external view returns (uint256);
 
   function assetsList(uint256 assetId) external view returns (IERC20);
