@@ -7,7 +7,7 @@ contract SpokeRiskPremiumScenarioTest is SpokeBase {
   using SharesMath for uint256;
   using WadRayMath for uint256;
   using WadRayMathExtended for uint256;
-  using PercentageMath for uint256;
+  using PercentageMathExtended for uint256;
 
   struct GeneralLocalVars {
     uint256 usdxSupplyAmount;
@@ -110,7 +110,7 @@ contract SpokeRiskPremiumScenarioTest is SpokeBase {
       _daiReserveId(spoke1),
       alice
     );
-    uint256 expectedPremiumDrawnShares = alicePosition.baseDrawnShares.percentMul(
+    uint256 expectedPremiumDrawnShares = alicePosition.baseDrawnShares.percentMulUp(
       wethLiquidityPremium
     );
     assertEq(
@@ -141,7 +141,7 @@ contract SpokeRiskPremiumScenarioTest is SpokeBase {
         vars.lastUpdateTimestamp
       ) - WadRayMath.RAY
     );
-    uint256 expectedPremiumDebt = accruedDaiDebt.percentMul(wethLiquidityPremium);
+    uint256 expectedPremiumDebt = accruedDaiDebt.percentMulUp(wethLiquidityPremium);
 
     (uint256 baseDaiDebt, uint256 daiPremiumDebt) = spoke1.getUserDebt(
       _daiReserveId(spoke1),
@@ -378,7 +378,7 @@ contract SpokeRiskPremiumScenarioTest is SpokeBase {
     assertApproxEqAbs(bobDaiInfo.baseDebt, debtChecks.actualBaseDebt, 1, 'bob dai base debt after');
 
     // See if Bob's dai premium debt changes proportionally to bob's risk premium
-    bobDaiInfo.premiumDebt = (bobDaiInfo.baseDebt - bobDaiInfo.borrowAmount).percentMul(
+    bobDaiInfo.premiumDebt = (bobDaiInfo.baseDebt - bobDaiInfo.borrowAmount).percentMulUp(
       expectedUserRp.bobRiskPremium
     );
     assertEq(bobDaiInfo.premiumDebt, debtChecks.actualPremium, 'bob premium debt after accrual');
@@ -394,7 +394,7 @@ contract SpokeRiskPremiumScenarioTest is SpokeBase {
     assertEq(bobUsdxInfo.baseDebt, debtChecks.actualBaseDebt, 'bob usdx base debt after');
 
     // See if Bob's usdx premium debt changes proportionally to bob's risk premium
-    bobUsdxInfo.premiumDebt = (bobUsdxInfo.baseDebt - bobUsdxInfo.borrowAmount).percentMul(
+    bobUsdxInfo.premiumDebt = (bobUsdxInfo.baseDebt - bobUsdxInfo.borrowAmount).percentMulUp(
       expectedUserRp.bobRiskPremium
     );
     assertEq(bobUsdxInfo.premiumDebt, debtChecks.actualPremium, 'bob premium debt after accrual');
@@ -410,7 +410,7 @@ contract SpokeRiskPremiumScenarioTest is SpokeBase {
     assertEq(aliceDaiInfo.baseDebt, debtChecks.actualBaseDebt, 'alice dai base debt after');
 
     // See if Alice's dai premium debt changes proportionally to alice's risk premium
-    aliceDaiInfo.premiumDebt = (aliceDaiInfo.baseDebt - aliceDaiInfo.borrowAmount).percentMul(
+    aliceDaiInfo.premiumDebt = (aliceDaiInfo.baseDebt - aliceDaiInfo.borrowAmount).percentMulUp(
       expectedUserRp.aliceRiskPremium
     );
     assertEq(
@@ -430,7 +430,7 @@ contract SpokeRiskPremiumScenarioTest is SpokeBase {
     assertEq(aliceUsdxInfo.baseDebt, debtChecks.actualBaseDebt, 'alice usdx base debt after');
 
     // See if Alice's usdx premium debt changes proportionally to alice's risk premium
-    aliceUsdxInfo.premiumDebt = (aliceUsdxInfo.baseDebt - aliceUsdxInfo.borrowAmount).percentMul(
+    aliceUsdxInfo.premiumDebt = (aliceUsdxInfo.baseDebt - aliceUsdxInfo.borrowAmount).percentMulUp(
       expectedUserRp.aliceRiskPremium
     );
     assertEq(
@@ -709,7 +709,7 @@ contract SpokeRiskPremiumScenarioTest is SpokeBase {
 
     // Check that risk premiums remain consistent after time skip by checking premium drawn shares
     DataTypes.UserPosition memory bobPosition = spoke1.getUserPosition(_daiReserveId(spoke1), bob);
-    uint256 expectedPremiumDrawnShares = bobPosition.baseDrawnShares.percentMul(
+    uint256 expectedPremiumDrawnShares = bobPosition.baseDrawnShares.percentMulUp(
       bobExpectedRiskPremium
     );
     assertEq(
@@ -720,7 +720,7 @@ contract SpokeRiskPremiumScenarioTest is SpokeBase {
     bobDaiInfo.premiumDrawnShares = expectedPremiumDrawnShares;
 
     bobPosition = spoke1.getUserPosition(_usdxReserveId(spoke1), bob);
-    expectedPremiumDrawnShares = bobPosition.baseDrawnShares.percentMul(bobExpectedRiskPremium);
+    expectedPremiumDrawnShares = bobPosition.baseDrawnShares.percentMulUp(bobExpectedRiskPremium);
     assertEq(
       expectedPremiumDrawnShares,
       bobPosition.premiumDrawnShares,
@@ -732,7 +732,9 @@ contract SpokeRiskPremiumScenarioTest is SpokeBase {
       _daiReserveId(spoke1),
       alice
     );
-    expectedPremiumDrawnShares = alicePosition.baseDrawnShares.percentMul(aliceExpectedRiskPremium);
+    expectedPremiumDrawnShares = alicePosition.baseDrawnShares.percentMulUp(
+      aliceExpectedRiskPremium
+    );
     assertEq(
       expectedPremiumDrawnShares,
       alicePosition.premiumDrawnShares,
@@ -741,7 +743,9 @@ contract SpokeRiskPremiumScenarioTest is SpokeBase {
     aliceDaiInfo.premiumDrawnShares = expectedPremiumDrawnShares;
 
     alicePosition = spoke1.getUserPosition(_usdxReserveId(spoke1), alice);
-    expectedPremiumDrawnShares = alicePosition.baseDrawnShares.percentMul(aliceExpectedRiskPremium);
+    expectedPremiumDrawnShares = alicePosition.baseDrawnShares.percentMulUp(
+      aliceExpectedRiskPremium
+    );
     assertEq(
       expectedPremiumDrawnShares,
       alicePosition.premiumDrawnShares,

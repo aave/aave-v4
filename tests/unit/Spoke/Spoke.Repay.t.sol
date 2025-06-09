@@ -1070,7 +1070,7 @@ contract SpokeRepayTest is SpokeBase {
     assertApproxEqAbs(
       bobDaiAfter.baseDebt,
       daiRepayAmount >= bobDaiBefore.baseDebt ? 0 : bobDaiBefore.baseDebt - baseRestored,
-      1,
+      2,
       'bob dai base debt final balance'
     );
     assertApproxEqAbs(bobDaiAfter.premiumDebt, 0, 1, 'bob dai premium debt final balance');
@@ -1091,7 +1091,7 @@ contract SpokeRepayTest is SpokeBase {
     assertApproxEqAbs(
       bobDaiAfter.baseDebt,
       daiRepayAmount >= bobDaiBefore.baseDebt ? 0 : bobDaiBefore.baseDebt - baseRestored,
-      1,
+      2,
       'bob dai base debt final balance'
     );
   }
