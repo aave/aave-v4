@@ -615,6 +615,7 @@ contract SpokeRepayTest is SpokeBase {
   ) public {
     daiBorrowAmount = bound(daiBorrowAmount, 1, MAX_SUPPLY_AMOUNT / 2);
     daiRepayAmount = bound(daiRepayAmount, 1, daiBorrowAmount);
+    skipTime = uint40(bound(skipTime, 0, MAX_SKIP_TIME));
 
     // calculate weth collateral
     uint256 wethSupplyAmount = _calcMinimumCollAmount(
@@ -743,6 +744,7 @@ contract SpokeRepayTest is SpokeBase {
     uint40 skipTime
   ) public {
     daiBorrowAmount = bound(daiBorrowAmount, 1, MAX_SUPPLY_AMOUNT / 2);
+    skipTime = uint40(bound(skipTime, 0, MAX_SKIP_TIME));
 
     // calculate weth collateral
     uint256 wethSupplyAmount = _calcMinimumCollAmount(
@@ -858,6 +860,7 @@ contract SpokeRepayTest is SpokeBase {
     uint40 skipTime
   ) public {
     daiBorrowAmount = bound(daiBorrowAmount, 1, MAX_SUPPLY_AMOUNT / 2);
+    skipTime = uint40(bound(skipTime, 0, MAX_SKIP_TIME));
 
     // calculate weth collateral
     uint256 wethSupplyAmount = _calcMinimumCollAmount(
@@ -974,6 +977,7 @@ contract SpokeRepayTest is SpokeBase {
     uint40 skipTime
   ) public {
     daiBorrowAmount = bound(daiBorrowAmount, 1, MAX_SUPPLY_AMOUNT / 2);
+    skipTime = uint40(bound(skipTime, 0, MAX_SKIP_TIME));
 
     // calculate weth collateral
     uint256 wethSupplyAmount = _calcMinimumCollAmount(
@@ -1034,9 +1038,6 @@ contract SpokeRepayTest is SpokeBase {
 
     assertApproxEqAbs(bobDaiBefore.premiumDebt, 0, 1);
 
-    console.log('bob dai premium debt before', bobDaiBefore.premiumDebt);
-    console.log('bob dai base debt before', bobDaiBefore.baseDebt);
-
     // Bob repays;
     daiRepayAmount = bound(daiRepayAmount, 0, bobDaiBefore.totalDebt - daiBorrowAmount);
     (uint256 baseRestored, uint256 premiumRestored) = _calculateExactRestoreAmount(
@@ -1046,8 +1047,6 @@ contract SpokeRepayTest is SpokeBase {
       daiAssetId
     );
     deal(address(tokenList.dai), bob, daiRepayAmount);
-
-    console.log('bob dai repay amount', daiRepayAmount);
 
     if (daiRepayAmount == 0) {
       vm.expectRevert(ILiquidityHub.InvalidRestoreAmount.selector);
@@ -1071,8 +1070,6 @@ contract SpokeRepayTest is SpokeBase {
     );
     Debts memory bobDaiAfter = getUserDebt(spoke1, bob, _daiReserveId(spoke1));
 
-    console.log('value of 1 share', hub.convertToDrawnShares(daiAssetId, 1));
-
     assertEq(bobDaiDataAfter.suppliedShares, bobDaiDataBefore.suppliedShares);
     assertApproxEqAbs(bobDaiAfter.premiumDebt, 0, 1, 'bob dai premium debt final balance');
     assertApproxEqAbs(
@@ -1086,7 +1083,7 @@ contract SpokeRepayTest is SpokeBase {
     // repays only base debt
     assertApproxEqAbs(
       bobDaiAfter.baseDebt,
-      daiRepayAmount >= bobDaiBefore.baseDebt ? 0 : bobDaiBefore.baseDebt - baseRestored,
+      daiRepayAmount > bobDaiBefore.baseDebt ? 0 : bobDaiBefore.baseDebt - baseRestored,
       2,
       'bob dai base debt final balance'
     );
