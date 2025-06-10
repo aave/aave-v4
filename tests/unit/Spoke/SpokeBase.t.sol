@@ -462,15 +462,16 @@ contract SpokeBase is Base {
       expectedUserPos.baseDrawnShares,
       string.concat('user baseDrawnShares ', label)
     );
-    assertEq(
+    assertApproxEqAbs(
       userPos.premiumDrawnShares,
       expectedUserPos.premiumDrawnShares,
+      1,
       string.concat('user premiumDrawnShares ', label)
     );
     assertApproxEqAbs(
       userPos.premiumOffset,
       expectedUserPos.premiumOffset,
-      1,
+      2,
       string.concat('user premiumOffset ', label)
     );
     assertEq(

@@ -1034,6 +1034,9 @@ contract SpokeRepayTest is SpokeBase {
 
     assertApproxEqAbs(bobDaiBefore.premiumDebt, 0, 1);
 
+    console.log('bob dai premium debt before', bobDaiBefore.premiumDebt);
+    console.log('bob dai base debt before', bobDaiBefore.baseDebt);
+
     // Bob repays;
     daiRepayAmount = bound(daiRepayAmount, 0, bobDaiBefore.totalDebt - daiBorrowAmount);
     (uint256 baseRestored, uint256 premiumRestored) = _calculateExactRestoreAmount(
@@ -1043,6 +1046,8 @@ contract SpokeRepayTest is SpokeBase {
       daiAssetId
     );
     deal(address(tokenList.dai), bob, daiRepayAmount);
+
+    console.log('bob dai repay amount', daiRepayAmount);
 
     if (daiRepayAmount == 0) {
       vm.expectRevert(ILiquidityHub.InvalidRestoreAmount.selector);
@@ -1066,13 +1071,9 @@ contract SpokeRepayTest is SpokeBase {
     );
     Debts memory bobDaiAfter = getUserDebt(spoke1, bob, _daiReserveId(spoke1));
 
+    console.log('value of 1 share', hub.convertToDrawnShares(daiAssetId, 1));
+
     assertEq(bobDaiDataAfter.suppliedShares, bobDaiDataBefore.suppliedShares);
-    assertApproxEqAbs(
-      bobDaiAfter.baseDebt,
-      daiRepayAmount >= bobDaiBefore.baseDebt ? 0 : bobDaiBefore.baseDebt - baseRestored,
-      2,
-      'bob dai base debt final balance'
-    );
     assertApproxEqAbs(bobDaiAfter.premiumDebt, 0, 1, 'bob dai premium debt final balance');
     assertApproxEqAbs(
       bobDaiAfter.totalDebt,
@@ -1082,11 +1083,6 @@ contract SpokeRepayTest is SpokeBase {
       2,
       'bob dai debt final balance'
     );
-    assertEq(bobWethDataAfter.suppliedShares, bobWethDataBefore.suppliedShares);
-    assertEq(spoke1.getUserTotalDebt(_wethReserveId(spoke1), bob), 0);
-
-    assertEq(tokenList.dai.balanceOf(bob), 0, 'bob dai final balance');
-
     // repays only base debt
     assertApproxEqAbs(
       bobDaiAfter.baseDebt,
@@ -1094,6 +1090,10 @@ contract SpokeRepayTest is SpokeBase {
       2,
       'bob dai base debt final balance'
     );
+
+    assertEq(bobWethDataAfter.suppliedShares, bobWethDataBefore.suppliedShares);
+    assertEq(spoke1.getUserTotalDebt(_wethReserveId(spoke1), bob), 0);
+    assertEq(tokenList.dai.balanceOf(bob), 0, 'bob dai final balance');
   }
 
   /// repay all or a portion of accrued base debt when premium debt is zero
