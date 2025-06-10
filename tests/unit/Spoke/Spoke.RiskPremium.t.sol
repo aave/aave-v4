@@ -6,7 +6,7 @@ import 'tests/unit/Spoke/SpokeBase.t.sol';
 contract SpokeRiskPremiumTest is SpokeBase {
   using SharesMath for uint256;
   using WadRayMath for uint256;
-  using PercentageMath for uint256;
+  using PercentageMathExtended for uint256;
 
   struct ReserveInfoLocal {
     uint256 reserveId;
@@ -962,7 +962,7 @@ contract SpokeRiskPremiumTest is SpokeBase {
     assertApproxEqAbs(baseDebt, actualBaseDebt, 1, 'user base debt');
 
     // See if premium debt changes proportionally to user risk premium change
-    uint256 premiumDebt = (baseDebt - wbtcInfo.borrowAmount).percentMul(expectedUserRiskPremium);
+    uint256 premiumDebt = (baseDebt - wbtcInfo.borrowAmount).percentMulUp(expectedUserRiskPremium);
     assertApproxEqAbs(premiumDebt, actualPremium, 1, 'user premium debt after interest accrual');
 
     // Since Bob is only user, reserve debt should be equal to user debt
@@ -1100,7 +1100,7 @@ contract SpokeRiskPremiumTest is SpokeBase {
     assertApproxEqAbs(debtChecks.baseDebt, debtChecks.actualBaseDebt, 1, 'user base debt');
 
     // See if premium debt changes proportionally to user risk premium
-    debtChecks.premiumDebt = (debtChecks.baseDebt - wbtcInfo.borrowAmount).percentMul(
+    debtChecks.premiumDebt = (debtChecks.baseDebt - wbtcInfo.borrowAmount).percentMulUp(
       expectedUserRiskPremium
     );
     assertApproxEqAbs(
@@ -1168,7 +1168,7 @@ contract SpokeRiskPremiumTest is SpokeBase {
     assertApproxEqAbs(debtChecks.baseDebt, debtChecks.actualBaseDebt, 1, 'user base debt');
 
     // See if premium debt changes proportionally to user risk premium
-    debtChecks.premiumDebt = (debtChecks.baseDebt - wethInfo.borrowAmount).percentMul(
+    debtChecks.premiumDebt = (debtChecks.baseDebt - wethInfo.borrowAmount).percentMulUp(
       expectedUserRiskPremium
     );
     assertApproxEqAbs(
