@@ -169,7 +169,7 @@ contract LiquidationLogicVariableLiquidationBonusTest is LiquidationLogicBaseTes
 
     assertEq(
       result,
-      _calculateMinLiqBonus(liquidationBonus, liquidationBonusFactor),
+      _calcMinLiqBonus(liquidationBonus, liquidationBonusFactor),
       'should be minLiquidationBonus'
     );
   }
@@ -236,7 +236,7 @@ contract LiquidationLogicVariableLiquidationBonusTest is LiquidationLogicBaseTes
     );
     assertGe(
       result,
-      _calculateMinLiqBonus(liquidationBonus, liquidationBonusFactor),
+      _calcMinLiqBonus(liquidationBonus, liquidationBonusFactor),
       'should be >= min liquidationBonus'
     );
     assertLe(result, liquidationBonus, 'should be =< max liquidationBonus');
@@ -263,7 +263,7 @@ contract LiquidationLogicVariableLiquidationBonusTest is LiquidationLogicBaseTes
     liquidationBonus = bound(liquidationBonus, MIN_LIQUIDATION_BONUS, MAX_LIQUIDATION_BONUS); // BPS
     uint256 liquidationBonusFactor = 0;
 
-    uint256 result = _calculateVariableLiquidationBonus(
+    uint256 result = _getVariableLiquidationBonus(
       healthFactor,
       closeFactor,
       healthFactorForMaxBonus,
@@ -291,7 +291,7 @@ contract LiquidationLogicVariableLiquidationBonusTest is LiquidationLogicBaseTes
     closeFactor = bound(closeFactor, HEALTH_FACTOR_LIQUIDATION_THRESHOLD, MAX_CLOSE_FACTOR); // WAD
     liquidationBonus = bound(liquidationBonus, MIN_LIQUIDATION_BONUS, MAX_LIQUIDATION_BONUS); // BPS
 
-    uint256 result = _calculateVariableLiquidationBonus(
+    uint256 result = _getVariableLiquidationBonus(
       healthFactor,
       closeFactor,
       healthFactorForMaxBonus,
@@ -320,7 +320,7 @@ contract LiquidationLogicVariableLiquidationBonusTest is LiquidationLogicBaseTes
     closeFactor = bound(closeFactor, HEALTH_FACTOR_LIQUIDATION_THRESHOLD, MAX_CLOSE_FACTOR); // WAD
     liquidationBonus = bound(liquidationBonus, MIN_LIQUIDATION_BONUS, MAX_LIQUIDATION_BONUS); // BPS
 
-    uint256 result = _calculateVariableLiquidationBonus(
+    uint256 result = _getVariableLiquidationBonus(
       healthFactor,
       closeFactor,
       healthFactorForMaxBonus,
@@ -331,9 +331,9 @@ contract LiquidationLogicVariableLiquidationBonusTest is LiquidationLogicBaseTes
     assertEq(result, liquidationBonus, 'should be default liquidationBonus');
   }
 
-  /// helper to calculate the liquidation bonus from LiquidationLogic lib
+  /// helper to get the liquidation bonus result from LiquidationLogic lib
   /// @return the calculated liquidation bonus
-  function _calculateVariableLiquidationBonus(
+  function _getVariableLiquidationBonus(
     uint256 healthFactor,
     uint256 closeFactor,
     uint256 healthFactorForMaxBonus,
@@ -367,7 +367,7 @@ contract LiquidationLogicVariableLiquidationBonusTest is LiquidationLogicBaseTes
     if (healthFactor <= healthFactorForMaxBonus) {
       return liquidationBonus;
     }
-    uint256 minLiquidationBonus = _calculateMinLiqBonus(liquidationBonus, liquidationBonusFactor);
+    uint256 minLiquidationBonus = _calcMinLiqBonus(liquidationBonus, liquidationBonusFactor);
     if (healthFactor >= healthFactorLiquidationThreshold) {
       return minLiquidationBonus;
     }
@@ -379,7 +379,7 @@ contract LiquidationLogicVariableLiquidationBonusTest is LiquidationLogicBaseTes
   }
 
   /// calc the minimum liquidation bonus based on the liquidation bonus and the liquidation bonus factor
-  function _calculateMinLiqBonus(
+  function _calcMinLiqBonus(
     uint256 liquidationBonus,
     uint256 liquidationBonusFactor
   ) internal pure returns (uint256) {
