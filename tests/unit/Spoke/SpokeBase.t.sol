@@ -471,7 +471,7 @@ contract SpokeBase is Base {
     assertApproxEqAbs(
       userPos.premiumOffset,
       expectedUserPos.premiumOffset,
-      2,
+      1,
       string.concat('user premiumOffset ', label)
     );
     assertEq(
