@@ -64,7 +64,7 @@ library DataTypes {
     uint256 premiumOffset;
     uint256 realizedPremium;
     ReserveConfig config;
-    uint16 dynamicConfigKey;
+    uint16 dynamicConfigKey; // key of the last reserve config
   }
 
   struct ReserveConfig {
@@ -90,7 +90,7 @@ library DataTypes {
     uint256 premiumDrawnShares;
     uint256 premiumOffset;
     uint256 realizedPremium;
-    uint16 configKey;
+    uint16 configKey; // key of the last reserve config
   }
 
   struct CalculateUserAccountDataVars {
