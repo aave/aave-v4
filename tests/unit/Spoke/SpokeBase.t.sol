@@ -758,16 +758,6 @@ contract SpokeBase is Base {
     address user,
     uint256 reserveId
   ) internal view returns (DynamicConfig memory) {
-    console.log(
-      'reserveId %d,\tglobal key %d',
-      reserveId,
-      spoke.getReserve(reserveId).dynamicConfigKey
-    );
-    console.log(
-      'enabled %s,\tuser   key %d ',
-      spoke.getUserPosition(reserveId, user).usingAsCollateral == true ? 1 : 0,
-      spoke.getUserPosition(reserveId, user).configKey
-    );
     DataTypes.UserPosition memory pos = spoke.getUserPosition(reserveId, user);
     return DynamicConfig(pos.configKey, pos.usingAsCollateral);
   }
