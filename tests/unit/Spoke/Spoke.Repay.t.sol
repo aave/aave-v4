@@ -91,10 +91,9 @@ contract SpokeRepayTest is SpokeBase {
     assertEq(bobWethDataAfter.suppliedShares, bobWethDataBefore.suppliedShares);
     assertEq(bobWethBefore.totalDebt, spoke1.getUserTotalDebt(_wethReserveId(spoke1), bob));
 
-    assertApproxEqAbs(
+    assertEq(
       tokenList.dai.balanceOf(bob),
       bobDaiBalanceBefore - daiRepayAmount,
-      1,
       'bob dai final balance'
     );
     assertEq(tokenList.weth.balanceOf(bob), bobWethBalanceBefore);
@@ -407,10 +406,9 @@ contract SpokeRepayTest is SpokeBase {
     assertEq(bobWethDataAfter.suppliedShares, bobWethDataBefore.suppliedShares);
     assertEq(bobWethDebtBefore, spoke1.getUserTotalDebt(_wethReserveId(spoke1), bob));
 
-    assertApproxEqAbs(
+    assertEq(
       tokenList.dai.balanceOf(bob),
       bobDaiBalanceBefore - daiRepayAmount,
-      1,
       'bob dai final balance'
     );
     assertEq(tokenList.weth.balanceOf(bob), bobWethBalanceBefore);
@@ -596,10 +594,9 @@ contract SpokeRepayTest is SpokeBase {
     assertEq(bobWethDataAfter.suppliedShares, bobWethDataBefore.suppliedShares);
     assertEq(bobWethAfter.totalDebt, bobWethBefore.totalDebt);
 
-    assertApproxEqAbs(
+    assertEq(
       tokenList.dai.balanceOf(bob),
       bobDaiBalanceBefore - daiRepayAmount,
-      1,
       'bob dai final balance'
     );
     assertEq(tokenList.weth.balanceOf(bob), bobWethBalanceBefore);
@@ -1398,7 +1395,7 @@ contract SpokeRepayTest is SpokeBase {
         'bob dai premium debt final balance'
       );
     } else {
-      assertApproxEqAbs(bobDaiAfter.totalDebt, bobDaiBefore.totalDebt, 1);
+      assertEq(bobDaiAfter.totalDebt, bobDaiBefore.totalDebt);
     }
     if (wethInfo.repayAmount > 0) {
       assertApproxEqAbs(
@@ -1416,7 +1413,7 @@ contract SpokeRepayTest is SpokeBase {
         'bob weth premium debt final balance'
       );
     } else {
-      assertApproxEqAbs(bobWethAfter.totalDebt, bobWethBefore.totalDebt, 1);
+      assertEq(bobWethAfter.totalDebt, bobWethBefore.totalDebt);
     }
     if (usdxInfo.repayAmount > 0) {
       assertApproxEqAbs(
@@ -1434,7 +1431,7 @@ contract SpokeRepayTest is SpokeBase {
         'bob usdx premium debt final balance'
       );
     } else {
-      assertApproxEqAbs(bobUsdxAfter.totalDebt, bobUsdxBefore.totalDebt, 1);
+      assertEq(bobUsdxAfter.totalDebt, bobUsdxBefore.totalDebt);
     }
     if (wbtcInfo.repayAmount > 0) {
       assertApproxEqAbs(
@@ -1454,7 +1451,7 @@ contract SpokeRepayTest is SpokeBase {
         'bob wbtc premium debt final balance'
       );
     } else {
-      assertApproxEqAbs(bobWbtcAfter.totalDebt, bobWbtcBefore.totalDebt, 1);
+      assertEq(bobWbtcAfter.totalDebt, bobWbtcBefore.totalDebt);
     }
     vm.stopPrank();
 

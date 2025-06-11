@@ -375,7 +375,7 @@ contract SpokeRiskPremiumScenarioTest is SpokeBase {
       daiInfo.reserveId,
       bob
     );
-    assertApproxEqAbs(bobDaiInfo.baseDebt, debtChecks.actualBaseDebt, 1, 'bob dai base debt after');
+    assertEq(bobDaiInfo.baseDebt, debtChecks.actualBaseDebt, 'bob dai base debt after');
 
     // See if Bob's dai premium debt changes proportionally to bob's risk premium
     bobDaiInfo.premiumDebt = (bobDaiInfo.baseDebt - bobDaiInfo.borrowAmount).percentMulUp(
@@ -515,7 +515,7 @@ contract SpokeRiskPremiumScenarioTest is SpokeBase {
       debtChecks.actualBaseDebt,
       aliceDaiInfo.baseDebt,
       1,
-      'alice base debt after repay here'
+      'alice base debt after repay'
     );
     assertApproxEqAbs(
       debtChecks.actualPremium,
@@ -539,13 +539,8 @@ contract SpokeRiskPremiumScenarioTest is SpokeBase {
       daiInfo.reserveId,
       bob
     );
-    assertApproxEqAbs(debtChecks.actualBaseDebt, bobDaiInfo.baseDebt, 1, 'bob dai base debt after');
-    assertApproxEqAbs(
-      debtChecks.actualPremium,
-      bobDaiInfo.premiumDebt,
-      1,
-      'bob dai premium debt after'
-    );
+    assertEq(debtChecks.actualBaseDebt, bobDaiInfo.baseDebt, 'bob dai base debt after');
+    assertEq(debtChecks.actualPremium, bobDaiInfo.premiumDebt, 'bob dai premium debt after');
     bobDaiInfo.totalDebt = bobDaiInfo.baseDebt + bobDaiInfo.premiumDebt;
 
     // Bob's debts on usdx should remain unchanged
@@ -1127,18 +1122,16 @@ contract SpokeRiskPremiumScenarioTest is SpokeBase {
     (debtChecks.assetDebt, debtChecks.assetPremium) = hub.getAssetDebt(usdxAssetId);
 
     // Asset debt should be the sum of both user debts
-    assertApproxEqAbs(
+    assertEq(
       debtChecks.assetDebt,
       bobUsdxInfo.baseDebt + aliceUsdxInfo.baseDebt,
-      1,
       string.concat('hub asset base debt ', label)
     );
 
     // Asset premium debt should be the sum of both users' premium debt
-    assertApproxEqAbs(
+    assertEq(
       debtChecks.assetPremium,
       bobUsdxInfo.premiumDebt + aliceUsdxInfo.premiumDebt,
-      1,
       string.concat('hub asset premium debt ', label)
     );
   }
