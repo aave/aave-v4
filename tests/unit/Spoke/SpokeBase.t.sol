@@ -360,13 +360,14 @@ contract SpokeBase is Base {
     uint256 debtReserveId,
     uint256 debtAmount
   ) internal view returns (uint256) {
+    IPriceOracle oracle = spoke.oracle();
     DataTypes.Reserve memory collData = spoke.getReserve(collReserveId);
-    uint256 collPrice = oracle.getAssetPrice(collData.assetId);
+    uint256 collPrice = oracle.getReservePrice(collReserveId);
     uint256 collAssetUnits = 10 ** hub.getAsset(collData.assetId).config.decimals;
 
     DataTypes.Reserve memory debtData = spoke.getReserve(debtReserveId);
     uint256 debtAssetUnits = 10 ** hub.getAsset(debtData.assetId).config.decimals;
-    uint256 debtPrice = oracle.getAssetPrice(debtData.assetId);
+    uint256 debtPrice = oracle.getReservePrice(debtReserveId);
 
     uint256 normalizedDebtAmount = (debtAmount * debtPrice).wadify() / debtAssetUnits;
     uint256 normalizedCollPrice = collPrice.wadify() / collAssetUnits;
@@ -382,13 +383,14 @@ contract SpokeBase is Base {
     uint256 debtReserveId,
     uint256 collAmount
   ) internal view returns (uint256) {
+    IPriceOracle oracle = spoke.oracle();
     DataTypes.Reserve memory collData = spoke.getReserve(collReserveId);
-    uint256 collPrice = oracle.getAssetPrice(collData.assetId);
+    uint256 collPrice = oracle.getReservePrice(collReserveId);
     uint256 collAssetUnits = 10 ** hub.getAsset(collData.assetId).config.decimals;
 
     DataTypes.Reserve memory debtData = spoke.getReserve(debtReserveId);
     uint256 debtAssetUnits = 10 ** hub.getAsset(debtData.assetId).config.decimals;
-    uint256 debtPrice = oracle.getAssetPrice(debtData.assetId);
+    uint256 debtPrice = oracle.getReservePrice(debtReserveId);
 
     uint256 normalizedDebtAmount = (debtPrice).wadify() / debtAssetUnits;
     uint256 normalizedCollPrice = (collAmount * collPrice).wadify() / collAssetUnits;
@@ -690,14 +692,16 @@ contract SpokeBase is Base {
     uint256 suppliedReservesCount;
     uint256 userRP;
     DataTypes.UserPosition memory userPosition;
+    IPriceOracle oracle = spoke.oracle();
 
     // Find all reserves user has supplied, adding up total debt
     for (uint256 reserveId; reserveId < spoke.reserveCount(); ++reserveId) {
       if (spoke.getUsingAsCollateral(reserveId, user)) {
         ++suppliedReservesCount;
       }
+      uint256 userDebt = spoke.getUserTotalDebt(reserveId, user);
       (assetId, ) = getAssetByReserveId(spoke, reserveId);
-      totalDebt += _getValueInBaseCurrency(assetId, spoke.getUserTotalDebt(reserveId, user));
+      totalDebt += _getValueInBaseCurrency(oracle, reserveId, assetId, userDebt);
     }
 
     if (totalDebt == 0) {
@@ -724,10 +728,8 @@ contract SpokeBase is Base {
       (uint256 lp, uint256 reserveId) = reserveLP.get(idx);
       userPosition = getUserInfo(spoke, user, reserveId);
       (assetId, ) = getAssetByReserveId(spoke, reserveId);
-      uint256 supplyAmount = _getValueInBaseCurrency(
-        assetId,
-        hub.convertToSuppliedAssets(assetId, userPosition.suppliedShares)
-      );
+      uint256 suppliedAssets = hub.convertToSuppliedAssets(assetId, userPosition.suppliedShares);
+      uint256 supplyAmount = _getValueInBaseCurrency(oracle, reserveId, assetId, suppliedAssets);
 
       if (supplyAmount >= totalDebt) {
         userRP += totalDebt * lp;

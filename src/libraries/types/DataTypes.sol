@@ -79,7 +79,6 @@ library DataTypes {
     uint256 liquidityPremium; // BPS TODO: use smaller uint
     uint256 liquidationProtocolFee; // BPS TODO: use smaller uint
     ILiquidityHub hub;
-    uint256 oracleAssetId; // TODO: Remove in favor of using reserveId for spoke-specific oracles
   }
 
   struct UserPosition {

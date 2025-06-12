@@ -88,8 +88,7 @@ contract Spoke is ISpoke, Multicall {
         liquidationProtocolFee: config.liquidationProtocolFee,
         borrowable: config.borrowable,
         collateral: config.collateral,
-        hub: config.hub,
-        oracleAssetId: config.oracleAssetId
+        hub: config.hub
       })
     });
 
@@ -119,8 +118,7 @@ contract Spoke is ISpoke, Multicall {
       liquidationProtocolFee: config.liquidationProtocolFee,
       borrowable: config.borrowable,
       collateral: config.collateral,
-      hub: config.hub,
-      oracleAssetId: config.oracleAssetId
+      hub: config.hub
     });
 
     emit ReserveConfigUpdated(reserveId, config);
@@ -748,7 +746,7 @@ contract Spoke is ISpoke, Multicall {
       DataTypes.Reserve storage reserve = _reserves[vars.reserveId];
       vars.assetId = reserve.assetId;
 
-      vars.assetPrice = oracle.getAssetPrice(reserve.config.oracleAssetId);
+      vars.assetPrice = oracle.getReservePrice(vars.reserveId);
       unchecked {
         vars.assetUnit = 10 ** _getHub(reserve).getAssetConfig(vars.assetId).decimals;
       }
@@ -785,7 +783,7 @@ contract Spoke is ISpoke, Multicall {
       if (_usingAsCollateral(userPosition)) {
         vars.assetId = reserve.assetId;
         vars.liquidityPremium = reserve.config.liquidityPremium;
-        vars.assetPrice = oracle.getAssetPrice(reserve.config.oracleAssetId);
+        vars.assetPrice = oracle.getReservePrice(vars.reserveId);
         unchecked {
           vars.assetUnit = 10 ** _getHub(reserve).getAssetConfig(vars.assetId).decimals;
         }
@@ -1206,7 +1204,7 @@ contract Spoke is ISpoke, Multicall {
       vars.healthFactor
     );
 
-    vars.debtAssetPrice = IPriceOracle(oracle).getAssetPrice(debtReserve.assetId);
+    vars.debtAssetPrice = oracle.getReservePrice(vars.debtReserveId);
     vars.debtAssetUnit = 10 ** debtReserve.config.decimals;
     vars.liquidationBonus = getVariableLiquidationBonus(
       vars.collateralReserveId,
@@ -1214,7 +1212,7 @@ contract Spoke is ISpoke, Multicall {
     );
     vars.closeFactor = _liquidationConfig.closeFactor;
     vars.collateralFactor = collateralReserve.config.collateralFactor;
-    vars.collateralAssetPrice = oracle.getAssetPrice(collateralReserve.config.oracleAssetId);
+    vars.collateralAssetPrice = oracle.getReservePrice(vars.collateralReserveId);
     vars.collateralAssetUnit = 10 ** collateralReserve.config.decimals;
     vars.liquidationProtocolFee = collateralReserve.config.liquidationProtocolFee;
 

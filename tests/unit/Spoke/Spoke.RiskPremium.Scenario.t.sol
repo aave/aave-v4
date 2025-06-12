@@ -82,34 +82,35 @@ contract SpokeRiskPremiumScenarioTest is SpokeBase {
     vars.daiBorrowAmount = 10_000e18; // 10_000 usd, 20 lp
     vars.delay = 365 days;
 
+    uint256 usdxReserveId = _usdxReserveId(spoke1);
+    uint256 wethReserveId = _wethReserveId(spoke1);
+    uint256 daiReserveId = _daiReserveId(spoke1);
+
     // Validate liquidity premiums
-    assertEq(_getLiquidityPremium(spoke1, _usdxReserveId(spoke1)), 50_00, 'usdx lp');
-    assertEq(_getLiquidityPremium(spoke1, _wethReserveId(spoke1)), 15_00, 'weth lp');
-    assertEq(_getLiquidityPremium(spoke1, _daiReserveId(spoke1)), 20_00, 'dai lp');
+    assertEq(_getLiquidityPremium(spoke1, usdxReserveId), 50_00, 'usdx lp');
+    assertEq(_getLiquidityPremium(spoke1, wethReserveId), 15_00, 'weth lp');
+    assertEq(_getLiquidityPremium(spoke1, daiReserveId), 20_00, 'dai lp');
 
     // Set collateral factor to 100% for Alice collateral
-    updateCollateralFactor(spoke1, _wethReserveId(spoke1), 100_00);
-    updateCollateralFactor(spoke1, _usdxReserveId(spoke1), 100_00);
+    updateCollateralFactor(spoke1, wethReserveId, 100_00);
+    updateCollateralFactor(spoke1, usdxReserveId, 100_00);
 
-    Utils.supply(spoke1, _daiReserveId(spoke1), bob, vars.daiBorrowAmount, bob);
+    Utils.supply(spoke1, daiReserveId, bob, vars.daiBorrowAmount, bob);
 
-    Utils.supplyCollateral(spoke1, _usdxReserveId(spoke1), alice, vars.usdxSupplyAmount, alice);
+    Utils.supplyCollateral(spoke1, usdxReserveId, alice, vars.usdxSupplyAmount, alice);
 
-    Utils.supplyCollateral(spoke1, _wethReserveId(spoke1), alice, vars.wethSupplyAmount, alice);
+    Utils.supplyCollateral(spoke1, wethReserveId, alice, vars.wethSupplyAmount, alice);
 
-    Utils.borrow(spoke1, _daiReserveId(spoke1), alice, vars.daiBorrowAmount, alice);
+    Utils.borrow(spoke1, daiReserveId, alice, vars.daiBorrowAmount, alice);
 
-    uint256 usdxLiquidityPremium = _getLiquidityPremium(spoke1, _usdxReserveId(spoke1));
-    uint256 wethLiquidityPremium = _getLiquidityPremium(spoke1, _wethReserveId(spoke1));
+    uint256 usdxLiquidityPremium = _getLiquidityPremium(spoke1, usdxReserveId);
+    uint256 wethLiquidityPremium = _getLiquidityPremium(spoke1, wethReserveId);
     assertLt(wethLiquidityPremium, usdxLiquidityPremium);
 
     // Weth is enough to cover debt, both stored & calculated risk premiums match
     assertEq(spoke1.getUserRiskPremium(alice), wethLiquidityPremium, 'user rp: weth covers debt');
     // Check stored risk premium via back-calculating premium drawn shares
-    DataTypes.UserPosition memory alicePosition = spoke1.getUserPosition(
-      _daiReserveId(spoke1),
-      alice
-    );
+    DataTypes.UserPosition memory alicePosition = spoke1.getUserPosition(daiReserveId, alice);
     uint256 expectedPremiumDrawnShares = alicePosition.baseDrawnShares.percentMul(
       wethLiquidityPremium
     );
@@ -125,12 +126,12 @@ contract SpokeRiskPremiumScenarioTest is SpokeBase {
 
     // Since only DAI is borrowed in the system, supply interest is accrued only on it
     assertEq(
-      spoke1.getUserSuppliedAmount(_usdxReserveId(spoke1), alice),
+      spoke1.getUserSuppliedAmount(usdxReserveId, alice),
       vars.usdxSupplyAmount,
       'supplied usdx'
     );
     assertEq(
-      spoke1.getUserSuppliedAmount(_wethReserveId(spoke1), alice),
+      spoke1.getUserSuppliedAmount(wethReserveId, alice),
       vars.wethSupplyAmount,
       'supplied weth'
     );
@@ -143,19 +144,17 @@ contract SpokeRiskPremiumScenarioTest is SpokeBase {
     );
     uint256 expectedPremiumDebt = accruedDaiDebt.percentMul(wethLiquidityPremium);
 
-    (uint256 baseDaiDebt, uint256 daiPremiumDebt) = spoke1.getUserDebt(
-      _daiReserveId(spoke1),
-      alice
-    );
+    (uint256 baseDaiDebt, uint256 daiPremiumDebt) = spoke1.getUserDebt(daiReserveId, alice);
     assertEq(baseDaiDebt, vars.daiBorrowAmount + accruedDaiDebt, 'dai base debt');
     assertEq(daiPremiumDebt, expectedPremiumDebt, 'dai premium debt');
 
     // Now since debt has grown, weth supply is not enough to cover debt, hence rp changes
     uint256 remainingDaiDebt = accruedDaiDebt + daiPremiumDebt;
+    IPriceOracle oracle = spoke1.oracle();
     // usdx is enough to cover remaining debt
     assertLt(
-      _getValueInBaseCurrency(daiAssetId, remainingDaiDebt),
-      _getValueInBaseCurrency(usdxAssetId, vars.usdxSupplyAmount)
+      _getValueInBaseCurrency(oracle, daiReserveId, daiAssetId, remainingDaiDebt),
+      _getValueInBaseCurrency(oracle, usdxReserveId, usdxAssetId, vars.usdxSupplyAmount)
     );
 
     uint256 expectedUserRiskPremium = _calculateExpectedUserRP(alice, spoke1);
@@ -167,7 +166,7 @@ contract SpokeRiskPremiumScenarioTest is SpokeBase {
     );
 
     // Alice supplies more usdx
-    Utils.supply(spoke1, _usdxReserveId(spoke1), alice, 500e6, alice);
+    Utils.supply(spoke1, usdxReserveId, alice, 500e6, alice);
 
     assertEq(
       spoke1.getUserRiskPremium(alice),
@@ -176,13 +175,13 @@ contract SpokeRiskPremiumScenarioTest is SpokeBase {
     );
 
     // Store alice's position before timeskip to calc expected premium debt
-    alicePosition = spoke1.getUserPosition(_daiReserveId(spoke1), alice);
+    alicePosition = spoke1.getUserPosition(daiReserveId, alice);
 
     vars.lastUpdateTimestamp = uint40(vm.getBlockTimestamp());
     skip(vars.delay);
 
     // Now we supply more weth such that new total debt from now on is covered by weth
-    Utils.supply(spoke1, _wethReserveId(spoke1), alice, vars.wethSupplyAmount, alice);
+    Utils.supply(spoke1, wethReserveId, alice, vars.wethSupplyAmount, alice);
 
     accruedDaiDebt = vars.daiBorrowAmount.rayMulUp(
       MathUtils.calculateLinearInterest(
@@ -195,7 +194,7 @@ contract SpokeRiskPremiumScenarioTest is SpokeBase {
       hub.convertToDrawnAssets(daiAssetId, alicePosition.premiumDrawnShares) -
       alicePosition.premiumOffset;
 
-    (baseDaiDebt, daiPremiumDebt) = spoke1.getUserDebt(_daiReserveId(spoke1), alice);
+    (baseDaiDebt, daiPremiumDebt) = spoke1.getUserDebt(daiReserveId, alice);
 
     assertEq(baseDaiDebt, vars.daiBorrowAmount + accruedDaiDebt, 'dai base debt after weth supply');
     assertEq(daiPremiumDebt, expectedPremiumDebt, 'dai premium debt after weth supply');
@@ -943,17 +942,53 @@ contract SpokeRiskPremiumScenarioTest is SpokeBase {
     usdxAmounts.borrowAmount = bound(usdxAmounts.borrowAmount, 0, usdxAmounts.supplyAmount / 2);
     wbtcAmounts.borrowAmount = bound(wbtcAmounts.borrowAmount, 0, wbtcAmounts.supplyAmount / 2);
 
+    IPriceOracle oracle = spoke1.oracle();
     // Ensure supplied value is at least double borrowed value to pass hf checks
     vm.assume(
-      _getValueInBaseCurrency(daiAssetId, daiAmounts.supplyAmount) +
-        _getValueInBaseCurrency(wethAssetId, wethAmounts.supplyAmount) +
-        _getValueInBaseCurrency(usdxAssetId, usdxAmounts.supplyAmount) +
-        _getValueInBaseCurrency(wbtcAssetId, wbtcAmounts.supplyAmount) >=
+      _getValueInBaseCurrency(oracle, _daiReserveId(spoke1), daiAssetId, daiAmounts.supplyAmount) +
+        _getValueInBaseCurrency(
+          oracle,
+          _wethReserveId(spoke1),
+          wethAssetId,
+          wethAmounts.supplyAmount
+        ) +
+        _getValueInBaseCurrency(
+          oracle,
+          _usdxReserveId(spoke1),
+          usdxAssetId,
+          usdxAmounts.supplyAmount
+        ) +
+        _getValueInBaseCurrency(
+          oracle,
+          _wbtcReserveId(spoke1),
+          wbtcAssetId,
+          wbtcAmounts.supplyAmount
+        ) >=
         2 *
-          (_getValueInBaseCurrency(daiAssetId, daiAmounts.borrowAmount) +
-            _getValueInBaseCurrency(wethAssetId, wethAmounts.borrowAmount) +
-            _getValueInBaseCurrency(usdxAssetId, usdxAmounts.borrowAmount) +
-            _getValueInBaseCurrency(wbtcAssetId, wbtcAmounts.borrowAmount))
+          (_getValueInBaseCurrency(
+            oracle,
+            _daiReserveId(spoke1),
+            daiAssetId,
+            daiAmounts.borrowAmount
+          ) +
+            _getValueInBaseCurrency(
+              oracle,
+              _wethReserveId(spoke1),
+              wethAssetId,
+              wethAmounts.borrowAmount
+            ) +
+            _getValueInBaseCurrency(
+              oracle,
+              _usdxReserveId(spoke1),
+              usdxAssetId,
+              usdxAmounts.borrowAmount
+            ) +
+            _getValueInBaseCurrency(
+              oracle,
+              _wbtcReserveId(spoke1),
+              wbtcAssetId,
+              wbtcAmounts.borrowAmount
+            ))
     );
 
     // Bob supplies and draws all assets on spoke1

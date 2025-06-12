@@ -181,6 +181,7 @@ contract LiquidationCallCloseFactorMultiReserveTest is SpokeLiquidationBase {
     uint256 liquidationProtocolFee,
     uint256 skipTime
   ) internal returns (LiquidationTestLocalParams memory) {
+    IPriceOracle oracle = spoke1.oracle();
     LiquidationTestLocalParams memory state;
     state.collateralReserves = new DataTypes.Reserve[](collateralReserveIds.length);
     state.debtReserves = new DataTypes.Reserve[](debtReserveIds.length);
@@ -221,6 +222,8 @@ contract LiquidationCallCloseFactorMultiReserveTest is SpokeLiquidationBase {
 
     for (uint256 i = 0; i < collateralReserveIds.length; i++) {
       uint256 supplyAmount = _convertBaseCurrencyToAmount(
+        oracle,
+        state.collateralReserves[i].reserveId,
         state.collateralReserves[i].assetId,
         supplyAmountInBase
       );
@@ -280,6 +283,7 @@ contract LiquidationCallCloseFactorMultiReserveTest is SpokeLiquidationBase {
     uint256[] memory reserveIds,
     uint256 desiredHf
   ) internal returns (uint256 finalHf, uint256[] memory requiredDebts) {
+    IPriceOracle oracle = spoke.oracle();
     requiredDebts = new uint256[](reserveIds.length);
 
     // extra debt to ensure HF below desired
@@ -301,13 +305,14 @@ contract LiquidationCallCloseFactorMultiReserveTest is SpokeLiquidationBase {
         amountInBase = randomizer(dustInBase, remaining - dustInBase * (reserveIds.length - i - 1));
       }
 
-      uint256 amount = _convertBaseCurrencyToAmount(assetId, amountInBase) + 1;
+      uint256 amount = _convertBaseCurrencyToAmount(oracle, reserveIds[i], assetId, amountInBase) +
+        1;
       vm.assume(amount < MAX_SUPPLY_AMOUNT);
 
       // mock price to 0 to circumvent borrow validation
       vm.mockCall(
         address(oracle),
-        abi.encodeWithSelector(IPriceOracle.getAssetPrice.selector, assetId),
+        abi.encodeWithSelector(IPriceOracle.getReservePrice.selector, reserveIds[i]),
         abi.encode(0)
       );
       spoke.borrow(reserveIds[i], amount, user);
@@ -328,6 +333,7 @@ contract LiquidationCallCloseFactorMultiReserveTest is SpokeLiquidationBase {
     uint256 skipTime,
     address user
   ) internal {
+    IPriceOracle oracle = spoke1.oracle();
     _addBorrowableLiquidity(borrowAmount * collateralReserves.length);
 
     vm.startPrank(user);
@@ -337,7 +343,10 @@ contract LiquidationCallCloseFactorMultiReserveTest is SpokeLiquidationBase {
       // mock price to 0 to circumvent borrow validation
       vm.mockCall(
         address(oracle),
-        abi.encodeWithSelector(IPriceOracle.getAssetPrice.selector, assetId),
+        abi.encodeWithSelector(
+          IPriceOracle.getReservePrice.selector,
+          collateralReserves[i].reserveId
+        ),
         abi.encode(0)
       );
       // user borrows some collateral reserve to inflate collateral supply ex rate

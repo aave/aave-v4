@@ -220,7 +220,8 @@ contract LiquidationCallValidationTest is SpokeLiquidationBase {
     debtToCover = bound(debtToCover, 1, MAX_SUPPLY_AMOUNT);
     wethAmount = bound(wethAmount, 1, MAX_SUPPLY_AMOUNT / 10);
     daiAmount = wethAmount * 5; // ensure enough collateral to borrow
-    newWethPrice = bound(newWethPrice, 0, oracle.getAssetPrice(wethAssetId));
+    MockPriceOracle oracle = MockPriceOracle(address(spoke1.oracle()));
+    newWethPrice = bound(newWethPrice, 0, oracle.getReservePrice(_wethReserveId(spoke1)));
     uint256 usdxAmount = daiAmount * 2; // Another collateral to cover debt while removing weth collateral
 
     uint256 daiReserveId = _daiReserveId(spoke1);
@@ -238,7 +239,7 @@ contract LiquidationCallValidationTest is SpokeLiquidationBase {
     assertFalse(spoke1.getUsingAsCollateral(wethReserveId, alice));
 
     // usdx collateral value drop, make sure that HF < threshold and position is liquidatable
-    oracle.setAssetPrice(usdxAssetId, 0);
+    oracle.setReservePrice(usdxReserveId, 0);
     assertLt(
       spoke1.getHealthFactor(alice),
       HEALTH_FACTOR_LIQUIDATION_THRESHOLD,
@@ -272,7 +273,8 @@ contract LiquidationCallValidationTest is SpokeLiquidationBase {
     debtToCover = bound(debtToCover, 1, MAX_SUPPLY_AMOUNT);
     wethAmount = bound(wethAmount, 1, MAX_SUPPLY_AMOUNT / 10);
     daiAmount = wethAmount * 10; // ensure enough collateral to borrow
-    newWethPrice = bound(newWethPrice, 0, oracle.getAssetPrice(wethAssetId));
+    MockPriceOracle oracle = MockPriceOracle(address(spoke1.oracle()));
+    newWethPrice = bound(newWethPrice, 0, oracle.getReservePrice(_wethReserveId(spoke1)));
 
     uint256 daiReserveId = _daiReserveId(spoke1);
     uint256 wethReserveId = _wethReserveId(spoke1);
@@ -283,7 +285,7 @@ contract LiquidationCallValidationTest is SpokeLiquidationBase {
     Utils.borrow(spoke1, daiReserveId, alice, daiAmount, alice);
 
     // collateral value drop, make sure that HF < threshold and position is liquidatable
-    oracle.setAssetPrice(wethAssetId, 0);
+    oracle.setReservePrice(wethReserveId, 0);
     vm.assume(spoke1.getHealthFactor(alice) < HEALTH_FACTOR_LIQUIDATION_THRESHOLD);
 
     // update collateral factor to 0

@@ -12,7 +12,8 @@ abstract contract BorrowIndexScenarioBaseTest is LiquidityHubScenarioBaseTest {
     spokeMintAndApprove();
 
     spokeConfig = DataTypes.SpokeConfig({supplyCap: type(uint256).max, drawCap: type(uint256).max});
-    spoke4 = new Spoke(address(oracle)); // initialize spoke4 to be added during scenario tests
+    oracle4 = new MockPriceOracle();
+    spoke4 = new Spoke(address(oracle4)); // initialize spoke4 to be added during scenario tests
     spokes[SPOKE4_INDEX].spokeAddress = address(spoke4);
   }
 

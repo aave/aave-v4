@@ -4,22 +4,21 @@ pragma solidity ^0.8.0;
 import {IPriceOracle} from 'src/interfaces/IPriceOracle.sol';
 
 contract MockPriceOracle is IPriceOracle {
-  // Map of asset prices (assetId => price)
-  // TODO: update to reserveId when assetId/reserveId mapping is implemented
+  // Map of reserve prices (reserveId => price)
   mapping(uint256 => uint256) internal prices;
 
   uint256 internal ethPriceUsd;
 
-  event AssetPriceUpdated(uint256 assetId, uint256 price, uint256 timestamp);
+  event ReservePriceUpdated(uint256 reserveId, uint256 price, uint256 timestamp);
   event EthPriceUpdated(uint256 price, uint256 timestamp);
 
-  function getAssetPrice(uint256 assetId) external view override returns (uint256) {
-    return prices[assetId];
+  function getReservePrice(uint256 reserveId) external view override returns (uint256) {
+    return prices[reserveId];
   }
 
-  function setAssetPrice(uint256 assetId, uint256 price) external {
-    prices[assetId] = price;
-    emit AssetPriceUpdated(assetId, price, block.timestamp);
+  function setReservePrice(uint256 reserveId, uint256 price) external {
+    prices[reserveId] = price;
+    emit ReservePriceUpdated(reserveId, price, block.timestamp);
   }
 
   function getEthUsdPrice() external view returns (uint256) {

@@ -97,8 +97,7 @@ contract SpokeTwoHub is SpokeBase {
       liquidationProtocolFee: 0,
       borrowable: true,
       collateral: true,
-      hub: hub2,
-      oracleAssetId: daiAssetId
+      hub: hub2
     });
     daiHub2ReserveId = spoke1.addReserve(daiAssetId, daiHub2Config);
 
@@ -174,8 +173,7 @@ contract SpokeTwoHub is SpokeBase {
       liquidationProtocolFee: 0,
       borrowable: true,
       collateral: true,
-      hub: hub3,
-      oracleAssetId: daiAssetId
+      hub: hub3
     });
     daiHub3ReserveId = spoke1.addReserve(hub3DaiAssetId, daiHub3Config);
 
@@ -239,9 +237,9 @@ contract SpokeTwoHub is SpokeBase {
     assertEq(hub3.getAssetTotalDebt(hub3DaiAssetId), hub3DaiBorrowAmount);
     assertEq(hub.getAssetTotalDebt(daiAssetId), 0); // No debt on hub 1
 
-    // Check bob is indeed correctly borrowing dai from hub 3
+    // TODO: Check bob is indeed correctly borrowing dai from hub 3
     DataTypes.Reserve memory dai3Reserve = spoke1.getReserve(daiHub3ReserveId);
-    assertEq(daiAssetId, dai3Reserve.config.oracleAssetId);
+    //assertEq(daiAssetId, dai3Reserve.config.oracleAssetId);
     assertEq(dai3Reserve.asset, address(tokenList.dai));
   }
 }

@@ -65,7 +65,9 @@ abstract contract Base is Test {
   IERC20 internal eth;
   IERC20 internal wbtc;
 
-  MockPriceOracle internal oracle;
+  MockPriceOracle internal oracle1;
+  MockPriceOracle internal oracle2;
+  MockPriceOracle internal oracle3;
   ILiquidityHub internal hub;
   ISpoke internal spoke1;
   ISpoke internal spoke2;
@@ -150,13 +152,15 @@ abstract contract Base is Test {
   }
 
   function deployFixtures() internal {
-    oracle = new MockPriceOracle();
+    oracle1 = new MockPriceOracle();
+    oracle2 = new MockPriceOracle();
+    oracle3 = new MockPriceOracle();
     creditLineIRStrategy = new DefaultReserveInterestRateStrategy(mockAddressesProvider);
     irStrategy = new DefaultReserveInterestRateStrategy(mockAddressesProvider);
     hub = new LiquidityHub();
-    spoke1 = ISpoke(new Spoke(address(oracle)));
-    spoke2 = ISpoke(new Spoke(address(oracle)));
-    spoke3 = ISpoke(new Spoke(address(oracle)));
+    spoke1 = ISpoke(new Spoke(address(oracle1)));
+    spoke2 = ISpoke(new Spoke(address(oracle2)));
+    spoke3 = ISpoke(new Spoke(address(oracle3)));
     dai = new MockERC20();
     eth = new MockERC20();
     usdc = new MockERC20();
@@ -257,7 +261,6 @@ abstract contract Base is Test {
       }),
       address(tokenList.weth)
     );
-    oracle.setAssetPrice(wethAssetId, 2000e8);
 
     // add USDX
     hub.addAsset(
@@ -270,7 +273,6 @@ abstract contract Base is Test {
       }),
       address(tokenList.usdx)
     );
-    oracle.setAssetPrice(usdxAssetId, 1e8);
 
     // add DAI
     hub.addAsset(
@@ -283,7 +285,6 @@ abstract contract Base is Test {
       }),
       address(tokenList.dai)
     );
-    oracle.setAssetPrice(daiAssetId, 1e8);
 
     // add WBTC
     hub.addAsset(
@@ -296,7 +297,6 @@ abstract contract Base is Test {
       }),
       address(tokenList.wbtc)
     );
-    oracle.setAssetPrice(wbtcAssetId, 50_000e8);
 
     // add USDY
     hub.addAsset(
@@ -309,7 +309,6 @@ abstract contract Base is Test {
       }),
       address(tokenList.usdy)
     );
-    oracle.setAssetPrice(usdyAssetId, 1e8);
 
     // Spoke 1 reserve configs
     DataTypes.ReserveConfig memory wethConfig = DataTypes.ReserveConfig({
@@ -323,8 +322,7 @@ abstract contract Base is Test {
       liquidationProtocolFee: 0,
       borrowable: true,
       collateral: true,
-      hub: hub,
-      oracleAssetId: wethAssetId
+      hub: hub
     });
     DataTypes.ReserveConfig memory wbtcConfig = DataTypes.ReserveConfig({
       decimals: tokenList.wbtc.decimals(),
@@ -337,8 +335,7 @@ abstract contract Base is Test {
       liquidationProtocolFee: 0,
       borrowable: true,
       collateral: true,
-      hub: hub,
-      oracleAssetId: wbtcAssetId
+      hub: hub
     });
     DataTypes.ReserveConfig memory daiConfig = DataTypes.ReserveConfig({
       decimals: tokenList.dai.decimals(),
@@ -351,8 +348,7 @@ abstract contract Base is Test {
       liquidationProtocolFee: 0,
       borrowable: true,
       collateral: true,
-      hub: hub,
-      oracleAssetId: daiAssetId
+      hub: hub
     });
     DataTypes.ReserveConfig memory usdxConfig = DataTypes.ReserveConfig({
       decimals: tokenList.usdx.decimals(),
@@ -365,8 +361,7 @@ abstract contract Base is Test {
       liquidationProtocolFee: 0,
       borrowable: true,
       collateral: true,
-      hub: hub,
-      oracleAssetId: usdxAssetId
+      hub: hub
     });
     DataTypes.ReserveConfig memory usdyConfig = DataTypes.ReserveConfig({
       decimals: tokenList.usdy.decimals(),
@@ -379,8 +374,7 @@ abstract contract Base is Test {
       liquidationProtocolFee: 0,
       borrowable: true,
       collateral: true,
-      hub: hub,
-      oracleAssetId: usdyAssetId
+      hub: hub
     });
 
     spokeInfo[spoke1].weth.reserveId = spoke1.addReserve(wethAssetId, wethConfig);
@@ -393,6 +387,12 @@ abstract contract Base is Test {
     spokeInfo[spoke1].usdx.liquidityPremium = usdxConfig.liquidityPremium;
     spokeInfo[spoke1].usdy.reserveId = spoke1.addReserve(usdyAssetId, usdyConfig);
     spokeInfo[spoke1].usdy.liquidityPremium = usdyConfig.liquidityPremium;
+
+    oracle1.setReservePrice(spokeInfo[spoke1].weth.reserveId, 2000e8);
+    oracle1.setReservePrice(spokeInfo[spoke1].wbtc.reserveId, 50_000e8);
+    oracle1.setReservePrice(spokeInfo[spoke1].dai.reserveId, 1e8);
+    oracle1.setReservePrice(spokeInfo[spoke1].usdx.reserveId, 1e8);
+    oracle1.setReservePrice(spokeInfo[spoke1].usdy.reserveId, 1e8);
 
     hub.addSpoke(wethAssetId, spokeConfig, address(spoke1));
     hub.addSpoke(wbtcAssetId, spokeConfig, address(spoke1));
@@ -412,8 +412,7 @@ abstract contract Base is Test {
       liquidationProtocolFee: 0,
       borrowable: true,
       collateral: true,
-      hub: hub,
-      oracleAssetId: wbtcAssetId
+      hub: hub
     });
     wethConfig = DataTypes.ReserveConfig({
       decimals: tokenList.weth.decimals(),
@@ -426,8 +425,7 @@ abstract contract Base is Test {
       liquidationProtocolFee: 0,
       borrowable: true,
       collateral: true,
-      hub: hub,
-      oracleAssetId: wethAssetId
+      hub: hub
     });
     daiConfig = DataTypes.ReserveConfig({
       decimals: tokenList.dai.decimals(),
@@ -440,8 +438,7 @@ abstract contract Base is Test {
       liquidationProtocolFee: 0,
       borrowable: true,
       collateral: true,
-      hub: hub,
-      oracleAssetId: daiAssetId
+      hub: hub
     });
     usdxConfig = DataTypes.ReserveConfig({
       decimals: tokenList.usdx.decimals(),
@@ -454,8 +451,7 @@ abstract contract Base is Test {
       liquidationProtocolFee: 0,
       borrowable: true,
       collateral: true,
-      hub: hub,
-      oracleAssetId: usdxAssetId
+      hub: hub
     });
 
     spokeInfo[spoke2].wbtc.reserveId = spoke2.addReserve(wbtcAssetId, wbtcConfig);
@@ -467,11 +463,15 @@ abstract contract Base is Test {
     spokeInfo[spoke2].usdx.reserveId = spoke2.addReserve(usdxAssetId, usdxConfig);
     spokeInfo[spoke2].usdx.liquidityPremium = usdxConfig.liquidityPremium;
 
+    oracle2.setReservePrice(spokeInfo[spoke2].wbtc.reserveId, 50_000e8);
+    oracle2.setReservePrice(spokeInfo[spoke2].weth.reserveId, 2000e8);
+    oracle2.setReservePrice(spokeInfo[spoke2].dai.reserveId, 1e8);
+    oracle2.setReservePrice(spokeInfo[spoke2].usdx.reserveId, 1e8);
+
     hub.addSpoke(wbtcAssetId, spokeConfig, address(spoke2));
     hub.addSpoke(wethAssetId, spokeConfig, address(spoke2));
     hub.addSpoke(daiAssetId, spokeConfig, address(spoke2));
     hub.addSpoke(usdxAssetId, spokeConfig, address(spoke2));
-    hub.addSpoke(usdyAssetId, spokeConfig, address(spoke2));
 
     // Spoke 3 reserve configs
     daiConfig = DataTypes.ReserveConfig({
@@ -485,8 +485,7 @@ abstract contract Base is Test {
       liquidationProtocolFee: 0,
       borrowable: true,
       collateral: true,
-      hub: hub,
-      oracleAssetId: daiAssetId
+      hub: hub
     });
     usdxConfig = DataTypes.ReserveConfig({
       decimals: tokenList.usdx.decimals(),
@@ -499,8 +498,7 @@ abstract contract Base is Test {
       liquidationProtocolFee: 0,
       borrowable: true,
       collateral: true,
-      hub: hub,
-      oracleAssetId: usdxAssetId
+      hub: hub
     });
     wethConfig = DataTypes.ReserveConfig({
       decimals: tokenList.weth.decimals(),
@@ -513,8 +511,7 @@ abstract contract Base is Test {
       liquidationProtocolFee: 0,
       borrowable: true,
       collateral: true,
-      hub: hub,
-      oracleAssetId: wethAssetId
+      hub: hub
     });
     wbtcConfig = DataTypes.ReserveConfig({
       decimals: tokenList.wbtc.decimals(),
@@ -527,8 +524,7 @@ abstract contract Base is Test {
       liquidationProtocolFee: 0,
       borrowable: true,
       collateral: true,
-      hub: hub,
-      oracleAssetId: wbtcAssetId
+      hub: hub
     });
 
     spokeInfo[spoke3].dai.reserveId = spoke3.addReserve(daiAssetId, daiConfig);
@@ -539,6 +535,11 @@ abstract contract Base is Test {
     spokeInfo[spoke3].weth.liquidityPremium = wethConfig.liquidityPremium;
     spokeInfo[spoke3].wbtc.reserveId = spoke3.addReserve(wbtcAssetId, wbtcConfig);
     spokeInfo[spoke3].wbtc.liquidityPremium = wbtcConfig.liquidityPremium;
+
+    oracle3.setReservePrice(spokeInfo[spoke3].dai.reserveId, 1e8);
+    oracle3.setReservePrice(spokeInfo[spoke3].usdx.reserveId, 1e8);
+    oracle3.setReservePrice(spokeInfo[spoke3].weth.reserveId, 2000e8);
+    oracle3.setReservePrice(spokeInfo[spoke3].wbtc.reserveId, 50_000e8);
 
     hub.addSpoke(daiAssetId, spokeConfig, address(spoke3));
     hub.addSpoke(usdxAssetId, spokeConfig, address(spoke3));
@@ -556,7 +557,6 @@ abstract contract Base is Test {
       }),
       address(tokenList.dai)
     );
-    oracle.setAssetPrice(dai2AssetId, 1e8);
     daiConfig = DataTypes.ReserveConfig({
       decimals: tokenList.dai.decimals(),
       active: true,
@@ -568,11 +568,11 @@ abstract contract Base is Test {
       liquidationProtocolFee: 0,
       borrowable: true,
       collateral: true,
-      hub: hub,
-      oracleAssetId: dai2AssetId
+      hub: hub
     });
     spokeInfo[spoke2].dai2.reserveId = spoke2.addReserve(dai2AssetId, daiConfig);
     spokeInfo[spoke2].dai2.liquidityPremium = daiConfig.liquidityPremium;
+    oracle2.setReservePrice(spokeInfo[spoke2].dai2.reserveId, 1e8);
     hub.addSpoke(dai2AssetId, spokeConfig, address(spoke2));
 
     irStrategy.setInterestRateParams(
@@ -878,9 +878,9 @@ abstract contract Base is Test {
     return price.percentMul(percent);
   }
 
-  function setNewPrice(uint256 assetId, uint256 percent) public {
-    uint256 newPrice = calcNewPrice(oracle.getAssetPrice(assetId), percent);
-    oracle.setAssetPrice(assetId, newPrice);
+  function setNewPrice(IPriceOracle oracle, uint256 reserveId, uint256 percent) public {
+    uint256 newPrice = calcNewPrice(oracle.getReservePrice(reserveId), percent);
+    MockPriceOracle(address(oracle)).setReservePrice(reserveId, newPrice);
   }
 
   /// @dev Helper function to calculate asset amount corresponding to single drawn share
@@ -912,23 +912,34 @@ abstract contract Base is Test {
 
   /// returns the USD value of the reserve normalized by it's decimals, in terms of WAD
   function _getValueInBaseCurrency(
+    IPriceOracle oracle,
+    uint256 reserveId,
     uint256 assetId,
     uint256 amount
   ) internal view returns (uint256) {
     return
-      (amount * oracle.getAssetPrice(assetId).wadify()) /
+      (amount * oracle.getReservePrice(reserveId).wadify()) /
       (10 ** hub.getAssetConfig(assetId).decimals);
   }
 
   /// @dev Helper function to calculate the equivalent asset amount for a given asset
   /// @dev If 1 wei of output asset is greater than the value of input, function will return 1
   function _calcEquivalentAssetAmount(
+    ISpoke spoke,
+    uint256 inputReserveId,
     uint256 inputAssetId,
     uint256 inputAssetAmount,
+    uint256 outputReserveId,
     uint256 outputAssetId
   ) internal view returns (uint256) {
-    uint256 valueOfInputAsset = _getValueInBaseCurrency(inputAssetId, inputAssetAmount);
-    uint256 valueOfWeiOutput = _getValueInBaseCurrency(outputAssetId, 1);
+    IPriceOracle oracle = spoke.oracle();
+    uint256 valueOfInputAsset = _getValueInBaseCurrency(
+      oracle,
+      inputReserveId,
+      inputAssetId,
+      inputAssetAmount
+    );
+    uint256 valueOfWeiOutput = _getValueInBaseCurrency(oracle, outputReserveId, outputAssetId, 1);
     assertNotEq(valueOfInputAsset, 0, 'input asset value is 0');
     assertNotEq(valueOfWeiOutput, 0, 'output asset wei value is 0');
     if (valueOfWeiOutput > valueOfInputAsset) {
@@ -1011,13 +1022,15 @@ abstract contract Base is Test {
   }
 
   function _convertAmountToBaseCurrency(
+    IPriceOracle oracle,
+    uint256 reserveId,
     uint256 assetId,
     uint256 amount
   ) internal view returns (uint256) {
     return
       _convertAmountToBaseCurrency(
         amount,
-        oracle.getAssetPrice(assetId),
+        oracle.getReservePrice(reserveId),
         10 ** hub.getAsset(assetId).config.decimals
       );
   }
@@ -1031,13 +1044,15 @@ abstract contract Base is Test {
   }
 
   function _convertBaseCurrencyToAmount(
+    IPriceOracle oracle,
+    uint256 reserveId,
     uint256 assetId,
     uint256 baseCurrencyAmount
   ) internal view returns (uint256) {
     return
       _convertBaseCurrencyToAmount(
         baseCurrencyAmount,
-        oracle.getAssetPrice(assetId),
+        oracle.getReservePrice(reserveId),
         10 ** hub.getAsset(assetId).config.decimals
       );
   }
@@ -1052,13 +1067,14 @@ abstract contract Base is Test {
     uint256 reserveId,
     uint256 desiredHf
   ) internal view returns (uint256 requiredDebtAmount) {
+    IPriceOracle oracle = spoke.oracle();
     uint256 requiredDebtAmountInBase = _getRequiredDebtInBaseCurrencyForLtHf(
       spoke,
       user,
       desiredHf
     );
     uint256 assetId = spoke.getReserve(reserveId).assetId;
-    return _convertBaseCurrencyToAmount(assetId, requiredDebtAmountInBase) + 1;
+    return _convertBaseCurrencyToAmount(oracle, reserveId, assetId, requiredDebtAmountInBase) + 1;
   }
 
   /**
@@ -1131,13 +1147,14 @@ abstract contract Base is Test {
     uint256 reserveId,
     uint256 debtAmount
   ) internal returns (uint256, uint256) {
+    MockPriceOracle oracle = MockPriceOracle(address(spoke.oracle()));
     uint256 assetId = spoke.getReserve(reserveId).assetId;
     // set price to 0 to circumvent borrow validation
-    uint256 initialPrice = oracle.getAssetPrice(assetId);
-    oracle.setAssetPrice(assetId, 0);
+    uint256 initialPrice = oracle.getReservePrice(reserveId);
+    oracle.setReservePrice(reserveId, 0);
     vm.prank(user);
     spoke.borrow(reserveId, debtAmount, user);
-    oracle.setAssetPrice(assetId, initialPrice);
+    oracle.setReservePrice(reserveId, initialPrice);
   }
 
   /// @dev Calculate expected debt index based on input params
