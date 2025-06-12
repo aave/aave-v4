@@ -9,6 +9,7 @@ type Stage is uint8;
 function eq(Stage a, Stage b) pure returns (bool) {
   return Stage.unwrap(a) == Stage.unwrap(b);
 }
+
 using {eq as ==} for Stage global;
 
 abstract contract LiquidityHubScenarioBaseTest is Base {
@@ -102,17 +103,23 @@ abstract contract LiquidityHubScenarioBaseTest is Base {
 
   // invoked on each time step
   function precondition(Stage stage) internal virtual {}
+
   function initialAssertions(Stage stage) internal virtual {}
 
   function printInitialLog(Stage stage) internal virtual {
     console.log(string.concat('----- t', vm.toString(t), '_i -----'));
   }
+
   function exec(Stage stage) internal virtual {}
+
   function finalAssertions(Stage stage) internal virtual {}
+
   function skipTime(Stage stage) internal virtual {}
+
   function postcondition(Stage stage) internal virtual {
     timestamps.push(vm.getBlockTimestamp());
   }
+
   function printFinalLog(Stage stage) internal virtual {
     console.log(string.concat('----- t', vm.toString(t), '_f -----'));
   }
@@ -146,7 +153,7 @@ abstract contract LiquidityHubScenarioBaseTest is Base {
   function mockBaseBorrowRate(uint256 baseBorrowRate) internal {
     vm.mockCall(
       address(irStrategy),
-      IReserveInterestRateStrategy.calculateInterestRates.selector,
+      IReserveInterestRateStrategy.calculateInterestRate.selector,
       abi.encode(baseBorrowRate.bpsToRay())
     );
   }

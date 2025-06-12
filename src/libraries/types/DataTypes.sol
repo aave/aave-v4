@@ -44,12 +44,10 @@ library DataTypes {
   }
 
   // Spoke types
-  struct CalculateInterestRatesParams {
-    bool usingVirtualBalance;
+  struct CalculateInterestRateParams {
     uint256 liquidityAdded;
     uint256 liquidityTaken;
     uint256 totalDebt;
-    uint256 reserveFactor; // likely not required
     uint256 assetId;
     uint256 virtualUnderlyingBalance;
   }

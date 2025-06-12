@@ -382,7 +382,7 @@ contract LiquidityHubAccrueInterestTest is Base {
     // Say borrow rate changes
     vm.mockCall(
       address(irStrategy),
-      IReserveInterestRateStrategy.calculateInterestRates.selector,
+      IReserveInterestRateStrategy.calculateInterestRate.selector,
       abi.encode(borrowRate)
     );
     // Make an action to cache this new borrow rate

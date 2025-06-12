@@ -26,16 +26,6 @@ interface IDefaultInterestRateStrategy is IReserveInterestRateStrategy {
     uint256 variableRateSlope2
   );
 
-  struct CalcInterestRatesLocalVars {
-    uint256 availableLiquidity;
-    uint256 totalDebt;
-    uint256 currentVariableBorrowRate;
-    uint256 currentLiquidityRate;
-    uint256 borrowUsageRatio;
-    uint256 supplyUsageRatio;
-    uint256 availableLiquidityPlusDebt;
-  }
-
   /**
    * @notice Holds the interest rate data for a given reserve
    *
@@ -43,7 +33,7 @@ interface IDefaultInterestRateStrategy is IReserveInterestRateStrategy {
    * This means that 10000 bps = 100%.
    * The maximum supported interest rate is 4294967295 bps (2**32-1) or 42949672.95%.
    *
-   * @param optimalUsageRatio The optimal usage ratio, in bps (0-10000)
+   * @param optimalUsageRatio The optimal usage ratio, in bps (1-9900)
    * @param baseVariableBorrowRate The base variable borrow rate, in bps
    * @param variableRateSlope1 The slope of the variable interest curve, before hitting the optimal ratio, in bps
    * @param variableRateSlope2 The slope of the variable interest curve, after hitting the optimal ratio, in bps
@@ -75,19 +65,19 @@ interface IDefaultInterestRateStrategy is IReserveInterestRateStrategy {
    * @notice Returns the maximum value achievable for variable borrow rate, in bps
    * @return The maximum rate
    */
-  function MAX_BORROW_RATE() external view returns (uint256);
+  function MAX_BORROW_RATE() external view returns (uint32);
 
   /**
    * @notice Returns the minimum optimal point, in bps
    * @return The optimal point
    */
-  function MIN_OPTIMAL_POINT() external view returns (uint256);
+  function MIN_OPTIMAL_POINT() external view returns (uint16);
 
   /**
    * @notice Returns the maximum optimal point, in bps
    * @return The optimal point
    */
-  function MAX_OPTIMAL_POINT() external view returns (uint256);
+  function MAX_OPTIMAL_POINT() external view returns (uint16);
 
   /**
    * notice Returns the full InterestRateData object for the given reserve
@@ -105,7 +95,7 @@ interface IDefaultInterestRateStrategy is IReserveInterestRateStrategy {
    *
    * @return The optimal usage rate is the level of borrow / collateral at which the borrow rate
    */
-  function getOptimalUsageRatio(uint256 assetId) external view returns (uint256);
+  function getOptimalUsageRatio(uint256 assetId) external view returns (uint16);
 
   /**
    * @notice Returns the variable rate slope below optimal usage ratio in bps
@@ -115,7 +105,7 @@ interface IDefaultInterestRateStrategy is IReserveInterestRateStrategy {
    *
    * @return The variable rate slope
    */
-  function getVariableRateSlope1(uint256 assetId) external view returns (uint256);
+  function getVariableRateSlope1(uint256 assetId) external view returns (uint32);
 
   /**
    * @notice Returns the variable rate slope above optimal usage ratio in bps
@@ -125,7 +115,7 @@ interface IDefaultInterestRateStrategy is IReserveInterestRateStrategy {
    *
    * @return The variable rate slope
    */
-  function getVariableRateSlope2(uint256 assetId) external view returns (uint256);
+  function getVariableRateSlope2(uint256 assetId) external view returns (uint32);
 
   /**
    * @notice Returns the base variable borrow rate, in bps
@@ -134,7 +124,7 @@ interface IDefaultInterestRateStrategy is IReserveInterestRateStrategy {
    *
    * @return The base variable borrow rate
    */
-  function getBaseVariableBorrowRate(uint256 assetId) external view returns (uint256);
+  function getBaseVariableBorrowRate(uint256 assetId) external view returns (uint32);
 
   /**
    * @notice Returns the maximum variable borrow rate, in bps
@@ -143,5 +133,5 @@ interface IDefaultInterestRateStrategy is IReserveInterestRateStrategy {
    *
    * @return The maximum variable borrow rate
    */
-  function getMaxVariableBorrowRate(uint256 assetId) external view returns (uint256);
+  function getMaxVariableBorrowRate(uint256 assetId) external view returns (uint32);
 }

@@ -85,15 +85,13 @@ contract DefaultReserveInterestRateStrategyTest is Test {
 
     rateStrategy.setInterestRateParams(mockReserveAddress, rateData);
 
-    uint256 variableBorrowRate = rateStrategy.calculateInterestRates(
-      DataTypes.CalculateInterestRatesParams({
+    uint256 variableBorrowRate = rateStrategy.calculateInterestRate(
+      DataTypes.CalculateInterestRateParams({
         liquidityAdded: 0,
         liquidityTaken: 0,
         totalDebt: 0,
-        reserveFactor: 0,
         assetId: mockReserveAddress,
-        virtualUnderlyingBalance: 0,
-        usingVirtualBalance: true
+        virtualUnderlyingBalance: 0
       })
     );
 
@@ -108,15 +106,13 @@ contract DefaultReserveInterestRateStrategyTest is Test {
     uint256 availableLiquidity = 2e18;
     uint256 totalDebt = 8e18;
 
-    uint256 variableBorrowRate = rateStrategy.calculateInterestRates(
-      DataTypes.CalculateInterestRatesParams({
+    uint256 variableBorrowRate = rateStrategy.calculateInterestRate(
+      DataTypes.CalculateInterestRateParams({
         liquidityAdded: 0,
         liquidityTaken: 0,
         totalDebt: totalDebt,
-        reserveFactor: 0,
         assetId: mockReserveAddress,
-        virtualUnderlyingBalance: availableLiquidity,
-        usingVirtualBalance: true
+        virtualUnderlyingBalance: availableLiquidity
       })
     );
 
@@ -133,28 +129,19 @@ contract DefaultReserveInterestRateStrategyTest is Test {
     uint256 totalDebt = 1e18;
     uint256 virtualUnderlyingBalance = 0;
 
-    uint256 utilizationRatio = getUtilizationRatio(totalDebt, virtualUnderlyingBalance);
+    assertEq(getUtilizationRatio(totalDebt, virtualUnderlyingBalance), 100_00); 
 
-    uint256 variableBorrowRate = rateStrategy.calculateInterestRates(
-      DataTypes.CalculateInterestRatesParams({
+    uint256 variableBorrowRate = rateStrategy.calculateInterestRate(
+      DataTypes.CalculateInterestRateParams({
         liquidityAdded: 0,
         liquidityTaken: 0,
         totalDebt: totalDebt,
-        reserveFactor: 0,
         assetId: mockReserveAddress,
-        virtualUnderlyingBalance: virtualUnderlyingBalance,
-        usingVirtualBalance: true
+        virtualUnderlyingBalance: virtualUnderlyingBalance
       })
     );
-
-    uint256 optimalUsageRatio = rateData.optimalUsageRatio;
-    uint256 excessBorrowUsageRatio = ((utilizationRatio - optimalUsageRatio) * 10000) /
-      optimalUsageRatio;
-
-    uint256 expectedVariableRate = rateData.baseVariableBorrowRate +
-      ((rateData.variableRateSlope1 + rateData.variableRateSlope2) * excessBorrowUsageRatio) /
-      10000;
-
+  
+    uint256 expectedVariableRate = rateData.baseVariableBorrowRate + rateData.variableRateSlope1 + rateData.variableRateSlope2;
     assertEq(expectedVariableRate.bpsToRay(), variableBorrowRate, 'Invalid borrow rate');
   }
 
@@ -166,15 +153,13 @@ contract DefaultReserveInterestRateStrategyTest is Test {
 
     uint256 utilizationRatio = getUtilizationRatio(totalDebt, virtualUnderlyingBalance);
 
-    uint256 variableBorrowRate = rateStrategy.calculateInterestRates(
-      DataTypes.CalculateInterestRatesParams({
+    uint256 variableBorrowRate = rateStrategy.calculateInterestRate(
+      DataTypes.CalculateInterestRateParams({
         liquidityAdded: 0,
         liquidityTaken: 0,
         totalDebt: totalDebt,
-        reserveFactor: 0,
         assetId: mockReserveAddress,
-        virtualUnderlyingBalance: virtualUnderlyingBalance,
-        usingVirtualBalance: true
+        virtualUnderlyingBalance: virtualUnderlyingBalance
       })
     );
 
@@ -192,15 +177,13 @@ contract DefaultReserveInterestRateStrategyTest is Test {
     IDefaultInterestRateStrategy.InterestRateData memory rateData = _getMockInterestRateData();
     rateStrategy.setInterestRateParams(mockReserveAddress, rateData);
 
-    uint256 variableBorrowRate = rateStrategy.calculateInterestRates(
-      DataTypes.CalculateInterestRatesParams({
+    uint256 variableBorrowRate = rateStrategy.calculateInterestRate(
+      DataTypes.CalculateInterestRateParams({
         liquidityAdded: 0,
         liquidityTaken: 0,
         totalDebt: 0,
-        reserveFactor: 0,
         assetId: mockReserveAddress,
-        virtualUnderlyingBalance: 1e18,
-        usingVirtualBalance: true
+        virtualUnderlyingBalance: 1e18
       })
     );
 

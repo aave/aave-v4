@@ -3,7 +3,6 @@ pragma solidity ^0.8.10;
 
 import {WadRayMath} from 'src/libraries/math/WadRayMath.sol';
 import {DataTypes} from 'src/libraries/types/DataTypes.sol';
-import {Errors} from 'src/libraries/helpers/Errors.sol';
 import {IDefaultInterestRateStrategy} from 'src/interfaces/IDefaultInterestRateStrategy.sol';
 import {IReserveInterestRateStrategy} from 'src/interfaces/IReserveInterestRateStrategy.sol';
 
@@ -24,23 +23,30 @@ contract DefaultReserveInterestRateStrategy is IDefaultInterestRateStrategy {
   address public immutable ADDRESSES_PROVIDER;
 
   /// @inheritdoc IDefaultInterestRateStrategy
-  uint256 public constant MAX_BORROW_RATE = 1000_00; // 1000.00% in BPS
+  uint32 public constant MAX_BORROW_RATE = 1000_00; // 1000.00% in BPS
 
   /// @inheritdoc IDefaultInterestRateStrategy
-  uint256 public constant MIN_OPTIMAL_POINT = 1_00; // 1.00% in BPS
+  uint16 public constant MIN_OPTIMAL_POINT = 1_00; // 1.00% in BPS
 
   /// @inheritdoc IDefaultInterestRateStrategy
-  uint256 public constant MAX_OPTIMAL_POINT = 99_00; // 99.00% in BPS
+  uint16 public constant MAX_OPTIMAL_POINT = 99_00; // 99.00% in BPS
 
   /// @dev Map of assetId and their interest rate data (reserveAddress => interestRateData)
   mapping(uint256 => InterestRateData) internal _interestRateData;
+
+  error INVALID_ADDRESSES_PROVIDER();
+  error INVALID_MAX_RATE();
+  error SLOPE_2_MUST_BE_GTE_SLOPE_1();
+  error INVALID_OPTIMAL_USAGE_RATIO();
+  error INVALID_ASSET_ID();
+  error INTEREST_RATE_DATA_NOT_SET();
 
   /**
    * @dev Constructor.
    * @param provider The address of the PoolAddressesProvider of the associated Aave pool
    */
   constructor(address provider) {
-    // TODO: require(provider != address(0), Errors.INVALID_ADDRESSES_PROVIDER);
+    require(provider != address(0), INVALID_ADDRESSES_PROVIDER());
     ADDRESSES_PROVIDER = provider;
   }
 
@@ -48,26 +54,24 @@ contract DefaultReserveInterestRateStrategy is IDefaultInterestRateStrategy {
   function setInterestRateParams(uint256 assetId, InterestRateData calldata rateData) external {
     // TODO: Auth
     // TODO: resolve assetId, currently preventing it from being 0, but it can be equal 0 in LH
-    // require(assetId != 0, Errors.INVALID_ASSET_ID);
+    // require(assetId != 0, INVALID_ASSET_ID);
 
     require(
-      rateData.optimalUsageRatio <= MAX_OPTIMAL_POINT &&
-        rateData.optimalUsageRatio >= MIN_OPTIMAL_POINT,
-      Errors.INVALID_OPTIMAL_USAGE_RATIO()
+      MIN_OPTIMAL_POINT <= rateData.optimalUsageRatio &&
+        rateData.optimalUsageRatio <= MAX_OPTIMAL_POINT,
+      INVALID_OPTIMAL_USAGE_RATIO()
     );
 
     require(
       rateData.variableRateSlope1 <= rateData.variableRateSlope2,
-      Errors.SLOPE_2_MUST_BE_GTE_SLOPE_1()
+      SLOPE_2_MUST_BE_GTE_SLOPE_1()
     );
 
     // The maximum rate should not be above certain threshold
     require(
-      uint256(rateData.baseVariableBorrowRate) +
-        uint256(rateData.variableRateSlope1) +
-        uint256(rateData.variableRateSlope2) <=
+      rateData.baseVariableBorrowRate + rateData.variableRateSlope1 + rateData.variableRateSlope2 <=
         MAX_BORROW_RATE,
-      Errors.INVALID_MAX_RATE()
+      INVALID_MAX_RATE()
     );
 
     _interestRateData[assetId] = rateData;
@@ -86,27 +90,27 @@ contract DefaultReserveInterestRateStrategy is IDefaultInterestRateStrategy {
   }
 
   /// @inheritdoc IDefaultInterestRateStrategy
-  function getOptimalUsageRatio(uint256 assetId) external view returns (uint256) {
+  function getOptimalUsageRatio(uint256 assetId) external view returns (uint16) {
     return _interestRateData[assetId].optimalUsageRatio;
   }
 
   /// @inheritdoc IDefaultInterestRateStrategy
-  function getVariableRateSlope1(uint256 assetId) external view returns (uint256) {
+  function getVariableRateSlope1(uint256 assetId) external view returns (uint32) {
     return _interestRateData[assetId].variableRateSlope1;
   }
 
   /// @inheritdoc IDefaultInterestRateStrategy
-  function getVariableRateSlope2(uint256 assetId) external view returns (uint256) {
+  function getVariableRateSlope2(uint256 assetId) external view returns (uint32) {
     return _interestRateData[assetId].variableRateSlope2;
   }
 
   /// @inheritdoc IDefaultInterestRateStrategy
-  function getBaseVariableBorrowRate(uint256 assetId) external view override returns (uint256) {
+  function getBaseVariableBorrowRate(uint256 assetId) external view override returns (uint32) {
     return _interestRateData[assetId].baseVariableBorrowRate;
   }
 
   /// @inheritdoc IDefaultInterestRateStrategy
-  function getMaxVariableBorrowRate(uint256 assetId) external view override returns (uint256) {
+  function getMaxVariableBorrowRate(uint256 assetId) external view override returns (uint32) {
     return
       _interestRateData[assetId].baseVariableBorrowRate +
       _interestRateData[assetId].variableRateSlope1 +
@@ -114,53 +118,40 @@ contract DefaultReserveInterestRateStrategy is IDefaultInterestRateStrategy {
   }
 
   /// @inheritdoc IReserveInterestRateStrategy
-  function calculateInterestRates(
-    DataTypes.CalculateInterestRatesParams memory params
+  function calculateInterestRate(
+    DataTypes.CalculateInterestRateParams memory params
   ) external view virtual override returns (uint256) {
     InterestRateData memory rateData = _interestRateData[params.assetId];
+    require(rateData.optimalUsageRatio != 0, INTEREST_RATE_DATA_NOT_SET());
 
-    // TODO need to ensure require(rateData.optimalUsageRatio != 0, Errors.INVALID_OPTIMAL_USAGE_RATIO);
-    // because division by 0 occurs in the following code potentially
-
-    // @note This is a short circuit to allow mintable assets (ex. GHO), which by definition cannot be supplied
-    // and thus do not use virtual underlying balances.
-    if (!params.usingVirtualBalance) {
-      return (rateData.baseVariableBorrowRate);
+    uint256 currentVariableBorrowRateRay = _bpsToRay(rateData.baseVariableBorrowRate);
+    if (params.totalDebt == 0) {
+      return currentVariableBorrowRateRay;
     }
 
-    CalcInterestRatesLocalVars memory vars;
+    uint256 availableLiquidityPlusDebt = params.virtualUnderlyingBalance +
+      params.liquidityAdded -
+      params.liquidityTaken +
+      params.totalDebt;
+    uint256 borrowUsageRatioRay = params.totalDebt.rayDiv(availableLiquidityPlusDebt);
+    uint256 optimalUsageRatioRay = _bpsToRay(rateData.optimalUsageRatio);
 
-    vars.totalDebt = params.totalDebt;
-
-    vars.currentLiquidityRate = 0;
-    vars.currentVariableBorrowRate = rateData.baseVariableBorrowRate;
-
-    if (vars.totalDebt != 0) {
-      vars.availableLiquidity =
-        params.virtualUnderlyingBalance +
-        params.liquidityAdded -
-        params.liquidityTaken;
-
-      vars.availableLiquidityPlusDebt = vars.availableLiquidity + vars.totalDebt;
-      vars.borrowUsageRatio = (vars.totalDebt * 10000) / vars.availableLiquidityPlusDebt;
+    if (borrowUsageRatioRay <= optimalUsageRatioRay) {
+      currentVariableBorrowRateRay += _bpsToRay(rateData.variableRateSlope1)
+        .rayMul(borrowUsageRatioRay)
+        .rayDiv(optimalUsageRatioRay);
     } else {
-      return uint256(vars.currentVariableBorrowRate).bpsToRay();
+      currentVariableBorrowRateRay += _bpsToRay(rateData.variableRateSlope1);
+
+      currentVariableBorrowRateRay += _bpsToRay(rateData.variableRateSlope2)
+        .rayMul(borrowUsageRatioRay - optimalUsageRatioRay)
+        .rayDiv(WadRayMath.RAY - optimalUsageRatioRay);
     }
 
-    if (vars.borrowUsageRatio > rateData.optimalUsageRatio) {
-      uint256 excessBorrowUsageRatio = ((vars.borrowUsageRatio - rateData.optimalUsageRatio) *
-        10000) / rateData.optimalUsageRatio;
+    return currentVariableBorrowRateRay;
+  }
 
-      vars.currentVariableBorrowRate +=
-        ((rateData.variableRateSlope1 + rateData.variableRateSlope2) * excessBorrowUsageRatio) /
-        10000;
-
-      return uint256(vars.currentVariableBorrowRate).bpsToRay();
-    } else {
-      vars.currentVariableBorrowRate +=
-        (vars.borrowUsageRatio * rateData.variableRateSlope1) /
-        rateData.optimalUsageRatio;
-      return uint256(vars.currentVariableBorrowRate).bpsToRay();
-    }
+  function _bpsToRay(uint32 bps) internal pure returns (uint256) {
+    return uint256(bps).bpsToRay();
   }
 }

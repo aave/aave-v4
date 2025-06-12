@@ -144,7 +144,7 @@ contract SpokeWithdrawScenarioTest is SpokeBase {
 
     vm.mockCall(
       address(irStrategy),
-      IReserveInterestRateStrategy.calculateInterestRates.selector,
+      IReserveInterestRateStrategy.calculateInterestRate.selector,
       abi.encode(params.rate)
     );
 

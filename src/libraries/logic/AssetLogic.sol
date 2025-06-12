@@ -111,15 +111,13 @@ library AssetLogic {
     uint256 liquidityAdded,
     uint256 liquidityTaken
   ) internal {
-    asset.baseBorrowRate = asset.config.irStrategy.calculateInterestRates(
-      DataTypes.CalculateInterestRatesParams({
+    asset.baseBorrowRate = asset.config.irStrategy.calculateInterestRate(
+      DataTypes.CalculateInterestRateParams({
         liquidityAdded: liquidityAdded,
         liquidityTaken: liquidityTaken,
         totalDebt: asset.baseDebt(),
-        reserveFactor: 0, // TODO
         assetId: asset.id,
-        virtualUnderlyingBalance: asset.availableLiquidity, // without current liquidity change
-        usingVirtualBalance: true
+        virtualUnderlyingBalance: asset.availableLiquidity // without current liquidity change
       })
     );
   }

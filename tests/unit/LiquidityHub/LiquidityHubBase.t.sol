@@ -66,11 +66,8 @@ contract LiquidityHubBase is Base {
 
     address tempSpoke1 = makeAddr('TEMP_SPOKE_1');
     hub.addSpoke(
-      assetId, 
-      DataTypes.SpokeConfig({
-        supplyCap: type(uint256).max,
-        drawCap: type(uint256).max
-      }), 
+      assetId,
+      DataTypes.SpokeConfig({supplyCap: type(uint256).max, drawCap: type(uint256).max}),
       tempSpoke1
     );
 
@@ -79,14 +76,11 @@ contract LiquidityHubBase is Base {
 
     address tempSpoke2 = makeAddr('TEMP_SPOKE_2');
     hub.addSpoke(
-      assetId, 
-      DataTypes.SpokeConfig({
-        supplyCap: type(uint256).max,
-        drawCap: type(uint256).max
-      }), 
+      assetId,
+      DataTypes.SpokeConfig({supplyCap: type(uint256).max, drawCap: type(uint256).max}),
       tempSpoke2
     );
-    
+
     _supplyAndDrawLiquidity({
       assetId: assetId,
       supplyUser: tempUser1,
@@ -138,7 +132,7 @@ contract LiquidityHubBase is Base {
   function _mockRate(uint256 rate) internal returns (uint256) {
     vm.mockCall(
       address(irStrategy),
-      IReserveInterestRateStrategy.calculateInterestRates.selector,
+      IReserveInterestRateStrategy.calculateInterestRate.selector,
       abi.encode(rate)
     );
   }

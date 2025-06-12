@@ -69,7 +69,7 @@ contract SpokeRepayEdgeCaseTest is SpokeBase {
     // inflate ex rate to 1.5
     vm.mockCall(
       address(irStrategy),
-      IReserveInterestRateStrategy.calculateInterestRates.selector,
+      IReserveInterestRateStrategy.calculateInterestRate.selector,
       abi.encode(uint256(50_00).bpsToRay())
     );
     updateLiquidityPremium(spoke1, _daiReserveId(spoke1), 0);
@@ -117,7 +117,7 @@ contract SpokeRepayEdgeCaseTest is SpokeBase {
     // inflate ex rate to 1.5
     vm.mockCall(
       address(irStrategy),
-      IReserveInterestRateStrategy.calculateInterestRates.selector,
+      IReserveInterestRateStrategy.calculateInterestRate.selector,
       abi.encode(uint256(50_00).bpsToRay())
     );
     updateLiquidityPremium(spoke1, _daiReserveId(spoke1), 0);

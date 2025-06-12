@@ -10,11 +10,11 @@ import {DataTypes} from '../libraries/types/DataTypes.sol';
  */
 interface IReserveInterestRateStrategy {
   /**
-   * @notice Calculates the interest rates depending on the reserve's state and configurations
-   * @param params The parameters needed to calculate interest rates
+   * @notice Calculates the interest rate depending on the reserve's state and configurations
+   * @param params The parameters needed to calculate interest rate
    * @return variableBorrowRate The variable borrow rate expressed in ray
    */
-  function calculateInterestRates(
-    DataTypes.CalculateInterestRatesParams memory params
+  function calculateInterestRate(
+    DataTypes.CalculateInterestRateParams memory params
   ) external view returns (uint256);
 }

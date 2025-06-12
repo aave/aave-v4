@@ -416,7 +416,7 @@ contract LiquidationCallScenarioTest is SpokeLiquidationBase {
     // interest accrual
     vm.mockCall(
       address(irStrategy),
-      IReserveInterestRateStrategy.calculateInterestRates.selector,
+      IReserveInterestRateStrategy.calculateInterestRate.selector,
       abi.encode(uint256(50_00).bpsToRay())
     );
     skip(365 days);
