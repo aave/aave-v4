@@ -7,7 +7,6 @@ import {KeyValueListInMemory} from 'src/libraries/helpers/KeyValueListInMemory.s
 contract SpokeBase is Base {
   using PercentageMath for uint256;
   using PercentageMathExtended for uint256;
-  using WadRayMath for uint256;
   using WadRayMathExtended for uint256;
   using KeyValueListInMemory for KeyValueListInMemory.List;
 

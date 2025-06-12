@@ -5,7 +5,6 @@ import 'tests/unit/Spoke/SpokeBase.t.sol';
 
 contract SpokeRiskPremiumScenarioTest is SpokeBase {
   using SharesMath for uint256;
-  using WadRayMath for uint256;
   using WadRayMathExtended for uint256;
   using PercentageMathExtended for uint256;
 
@@ -135,7 +134,7 @@ contract SpokeRiskPremiumScenarioTest is SpokeBase {
       'supplied weth'
     );
 
-    uint256 accruedDaiDebt = vars.daiBorrowAmount.rayMul(
+    uint256 accruedDaiDebt = vars.daiBorrowAmount.rayMulUp(
       MathUtils.calculateLinearInterest(
         hub.getBaseInterestRate(daiAssetId), // todo: IR strategy has a pending fix
         vars.lastUpdateTimestamp
@@ -370,7 +369,7 @@ contract SpokeRiskPremiumScenarioTest is SpokeBase {
     // See if Bob's base debt of dai changes appropriately
     bobDaiInfo.baseDebt = MathUtils
       .calculateLinearInterest(rates.baseRateDai, uint40(startTime))
-      .rayMul(bobDaiInfo.borrowAmount);
+      .rayMulUp(bobDaiInfo.borrowAmount);
     (debtChecks.actualBaseDebt, debtChecks.actualPremium) = spoke1.getUserDebt(
       daiInfo.reserveId,
       bob
@@ -386,7 +385,7 @@ contract SpokeRiskPremiumScenarioTest is SpokeBase {
     // See if Bob's base debt of usdx changes appropriately
     bobUsdxInfo.baseDebt = MathUtils
       .calculateLinearInterest(rates.baseRateUsdx, uint40(startTime))
-      .rayMul(bobUsdxInfo.borrowAmount);
+      .rayMulUp(bobUsdxInfo.borrowAmount);
     (debtChecks.actualBaseDebt, debtChecks.actualPremium) = spoke1.getUserDebt(
       usdxInfo.reserveId,
       bob
@@ -402,7 +401,7 @@ contract SpokeRiskPremiumScenarioTest is SpokeBase {
     // See if Alice's base debt of dai changes appropriately
     aliceDaiInfo.baseDebt = MathUtils
       .calculateLinearInterest(rates.baseRateDai, uint40(startTime))
-      .rayMul(aliceDaiInfo.borrowAmount);
+      .rayMulUp(aliceDaiInfo.borrowAmount);
     (debtChecks.actualBaseDebt, debtChecks.actualPremium) = spoke1.getUserDebt(
       daiInfo.reserveId,
       alice
@@ -422,7 +421,7 @@ contract SpokeRiskPremiumScenarioTest is SpokeBase {
     // See if Alice's base debt of usdx changes appropriately
     aliceUsdxInfo.baseDebt = MathUtils
       .calculateLinearInterest(rates.baseRateUsdx, uint40(startTime))
-      .rayMul(aliceUsdxInfo.borrowAmount);
+      .rayMulUp(aliceUsdxInfo.borrowAmount);
     (debtChecks.actualBaseDebt, debtChecks.actualPremium) = spoke1.getUserDebt(
       usdxInfo.reserveId,
       alice
@@ -754,63 +753,43 @@ contract SpokeRiskPremiumScenarioTest is SpokeBase {
     if (bobDaiInfo.borrowAmount > 0) {
       bobDaiInfo.baseDebt = MathUtils
         .calculateLinearInterest(hub.getBaseInterestRate(daiAssetId), uint40(startTime))
-        .rayMul(bobDaiInfo.borrowAmount);
+        .rayMulUp(bobDaiInfo.borrowAmount);
 
       (debtChecks.actualBaseDebt, ) = spoke1.getUserDebt(_daiReserveId(spoke1), bob);
-      assertApproxEqAbs(
-        bobDaiInfo.baseDebt,
-        debtChecks.actualBaseDebt,
-        1,
-        'bob dai base debt after'
-      );
+      assertEq(bobDaiInfo.baseDebt, debtChecks.actualBaseDebt, 'bob dai base debt after');
     }
 
     // Bob's usdx debt after 1 year
     if (bobUsdxInfo.borrowAmount > 0) {
       bobUsdxInfo.baseDebt = MathUtils
         .calculateLinearInterest(hub.getBaseInterestRate(usdxAssetId), uint40(startTime))
-        .rayMul(bobUsdxInfo.borrowAmount);
+        .rayMulUp(bobUsdxInfo.borrowAmount);
 
       (debtChecks.actualBaseDebt, ) = spoke1.getUserDebt(_usdxReserveId(spoke1), bob);
-      assertApproxEqAbs(
-        bobUsdxInfo.baseDebt,
-        debtChecks.actualBaseDebt,
-        1,
-        'bob usdx base debt after'
-      );
+      assertEq(bobUsdxInfo.baseDebt, debtChecks.actualBaseDebt, 'bob usdx base debt after');
     }
 
     // Alice's dai debt after 1 year
     if (aliceDaiInfo.borrowAmount > 0) {
       aliceDaiInfo.baseDebt = MathUtils
         .calculateLinearInterest(hub.getBaseInterestRate(daiAssetId), uint40(startTime))
-        .rayMul(aliceDaiInfo.borrowAmount);
+        .rayMulUp(aliceDaiInfo.borrowAmount);
 
       (debtChecks.actualBaseDebt, ) = spoke1.getUserDebt(_daiReserveId(spoke1), alice);
-      assertApproxEqAbs(
-        aliceDaiInfo.baseDebt,
-        debtChecks.actualBaseDebt,
-        1,
-        'alice dai base debt after'
-      );
+      assertEq(aliceDaiInfo.baseDebt, debtChecks.actualBaseDebt, 'alice dai base debt after');
     }
 
     // Alice's usdx debt after 1 year
     if (aliceUsdxInfo.borrowAmount > 0) {
       aliceUsdxInfo.baseDebt = MathUtils
         .calculateLinearInterest(hub.getBaseInterestRate(usdxAssetId), uint40(startTime))
-        .rayMul(aliceUsdxInfo.borrowAmount);
+        .rayMulUp(aliceUsdxInfo.borrowAmount);
 
       (debtChecks.actualBaseDebt, debtChecks.actualPremium) = spoke1.getUserDebt(
         _usdxReserveId(spoke1),
         alice
       );
-      assertApproxEqAbs(
-        aliceUsdxInfo.baseDebt,
-        debtChecks.actualBaseDebt,
-        1,
-        'alice usdx base debt after'
-      );
+      assertEq(aliceUsdxInfo.baseDebt, debtChecks.actualBaseDebt, 'alice usdx base debt after');
     }
 
     _verifyProtocolDebtShares(
