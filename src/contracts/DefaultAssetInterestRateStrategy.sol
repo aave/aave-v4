@@ -14,6 +14,8 @@ import {IAssetInterestRateStrategy} from 'src/interfaces/IAssetInterestRateStrat
  *   index of the _interestRateData
  */
 contract DefaultAssetInterestRateStrategy is IDefaultInterestRateStrategy {
+  using WadRayMath for uint16;
+  using WadRayMath for uint32;
   using WadRayMath for uint256;
 
   /// @inheritdoc IDefaultInterestRateStrategy
@@ -114,30 +116,30 @@ contract DefaultAssetInterestRateStrategy is IDefaultInterestRateStrategy {
     InterestRateData memory rateData = _interestRateData[assetId];
     require(rateData.optimalUsageRatio != 0, INTEREST_RATE_DATA_NOT_SET(assetId));
 
-    uint256 currentVariableBorrowRateRay = _bpsToRay(rateData.baseVariableBorrowRate);
+    uint256 currentVariableBorrowRateRay = rateData.baseVariableBorrowRate.bpsToRay();
     if (totalDebt == 0) {
       return currentVariableBorrowRateRay;
     }
 
     uint256 borrowUsageRatioRay = totalDebt.rayDiv(availableLiquidity + totalDebt);
-    uint256 optimalUsageRatioRay = _bpsToRay(rateData.optimalUsageRatio);
+    uint256 optimalUsageRatioRay = rateData.optimalUsageRatio.bpsToRay();
 
     if (borrowUsageRatioRay <= optimalUsageRatioRay) {
-      currentVariableBorrowRateRay += _bpsToRay(rateData.variableRateSlope1)
+      currentVariableBorrowRateRay += rateData
+        .variableRateSlope1
+        .bpsToRay()
         .rayMul(borrowUsageRatioRay)
         .rayDiv(optimalUsageRatioRay);
     } else {
-      currentVariableBorrowRateRay += _bpsToRay(rateData.variableRateSlope1);
+      currentVariableBorrowRateRay += rateData.variableRateSlope1.bpsToRay();
 
-      currentVariableBorrowRateRay += _bpsToRay(rateData.variableRateSlope2)
+      currentVariableBorrowRateRay += rateData
+        .variableRateSlope2
+        .bpsToRay()
         .rayMul(borrowUsageRatioRay - optimalUsageRatioRay)
         .rayDiv(WadRayMath.RAY - optimalUsageRatioRay);
     }
 
     return currentVariableBorrowRateRay;
-  }
-
-  function _bpsToRay(uint32 bps) internal pure returns (uint256) {
-    return uint256(bps).bpsToRay();
   }
 }
