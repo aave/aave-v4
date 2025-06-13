@@ -603,12 +603,14 @@ contract Spoke is ISpoke, Multicall {
 
   function _validateSetUsingAsCollateral(
     DataTypes.Reserve storage reserve,
-    DataTypes.UserPosition storage userPosition,
+    DataTypes.PositionStatus storage positionStatus,
+    uint256 reserveId,
     bool usingAsCollateral
   ) internal view {
     require(reserve.config.active, ReserveNotActive());
     require(!reserve.config.paused, ReservePaused());
-    require(usingAsCollateral != userPosition.usingAsCollateral, CollateralStatusUnchanged());
+    //TODO: Not convinced if here it's better to revert or just finish execution
+    require(usingAsCollateral != positionStatus.isUsingAsCollateral(reserveId), CollateralStatusUnchanged());
     require(reserve.config.collateral, ReserveCannotBeUsedAsCollateral(reserve.reserveId));
     // deactivation should be allowed
     require(!usingAsCollateral || !reserve.config.frozen, ReserveFrozen());
@@ -1055,7 +1057,8 @@ contract Spoke is ISpoke, Multicall {
 
       // TODO: not compulsory, decide whether to rm
       if (vars.newUserSuppliedShares == 0) {
-        userCollateralPosition.usingAsCollateral = false;
+        DataTypes.PositionStatus storage positionStatus = _positionStatus[ users[vars.i]];
+        positionStatus.setUsingAsCollateral(collateralReserveId, false);
         emit UsingAsCollateral(collateralReserveId, users[vars.i], false);
       }
 
@@ -1080,7 +1083,12 @@ contract Spoke is ISpoke, Multicall {
         int256(vars.userPremiumOffset),
         0
       );
-
+/*
+      if( userDebtPosition.baseDrawnShares == 0 && vars.userPremiumDrawnShares == 0) {
+        DataTypes.PositionStatus storage positionStatus = _positionStatus[users[vars.i]];
+        positionStatus.setBorrowing(debtReserveId, false);
+      }
+*/
       // refresh collateral reserve premium
       vars.userPremiumDrawnShares = userCollateralPosition
         .premiumDrawnShares = userCollateralPosition.baseDrawnShares.percentMul(
@@ -1236,7 +1244,7 @@ contract Spoke is ISpoke, Multicall {
     DataTypes.UserPosition storage userPosition = _userPositions[user][reserveId];
     DataTypes.PositionStatus storage positionStatus = _positionStatus[user];
 
-    _validateSetUsingAsCollateral(reserve, userPosition, usingAsCollateral);
+    _validateSetUsingAsCollateral(reserve, positionStatus, reserveId, usingAsCollateral);
     positionStatus.setUsingAsCollateral(reserveId, usingAsCollateral);
 
     // If unsetting, check HF and update user rp
