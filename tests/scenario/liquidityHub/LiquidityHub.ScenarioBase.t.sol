@@ -149,15 +149,6 @@ abstract contract LiquidityHubScenarioBaseTest is Base {
     return uint40(timestamps[uint256(Stage.unwrap(stage))]);
   }
 
-  /// @param baseBorrowRate base borrow rate in bps
-  function mockBaseBorrowRate(uint256 baseBorrowRate) internal {
-    vm.mockCall(
-      address(irStrategy),
-      IAssetInterestRateStrategy.calculateInterestRate.selector,
-      abi.encode(baseBorrowRate.bpsToRay())
-    );
-  }
-
   // initialize state array for non-fuzz tests with constant skipTimes and borrowRates across actions
   function fillSkipTimeAndBaseBorrowRate(
     TestState storage state,

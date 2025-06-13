@@ -129,14 +129,6 @@ contract LiquidityHubBase is Base {
     skip(skipTime);
   }
 
-  function _mockRate(uint256 rate) internal returns (uint256) {
-    vm.mockCall(
-      address(irStrategy),
-      IAssetInterestRateStrategy.calculateInterestRate.selector,
-      abi.encode(rate)
-    );
-  }
-
   function _getDebt(uint256 assetId) internal view returns (DebtData memory) {
     revert('implement me');
 

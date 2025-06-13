@@ -75,7 +75,7 @@ contract BorrowIndex_Scenario3Test is BorrowIndexScenarioBaseTest {
 
   function precondition(Stage stage) internal override {
     super.precondition(stage);
-    mockBaseBorrowRate(state.baseBorrowRate[t]);
+    _mockInterestRate(state.baseBorrowRate[t]);
 
     if (stage == stages[5]) {
       // TODO: use max amount when implemented

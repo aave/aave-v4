@@ -70,7 +70,7 @@ contract BorrowIndex_Scenario4Test is BorrowIndexScenarioBaseTest {
     revert('implement me');
 
     //   super.precondition(stage);
-    //   mockBaseBorrowRate(state.baseBorrowRate[t]);
+    //   _mockInterestRate(state.baseBorrowRate[t]);
 
     //   if (stage == stages[5]) {
     //     states.cumulatedBaseInterest.t_i[t] = MathUtils.calculateLinearInterest(

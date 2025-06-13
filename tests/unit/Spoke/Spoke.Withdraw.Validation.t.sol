@@ -144,14 +144,10 @@ contract SpokeWithdrawValidationTest is SpokeBase {
     reserveId = bound(reserveId, 0, spokeInfo[spoke1].MAX_RESERVE_ID);
     supplyAmount = bound(supplyAmount, 2, MAX_SUPPLY_AMOUNT);
     borrowAmount = bound(borrowAmount, 1, supplyAmount / 2); // ensure it is within Collateral Factor
-    rate = bound(rate, 1, MAX_BORROW_RATE).bpsToRay();
+    rate = bound(rate, 1, MAX_BORROW_RATE);
     skipTime = bound(skipTime, 1, MAX_SKIP_TIME);
 
-    vm.mockCall(
-      address(irStrategy),
-      IAssetInterestRateStrategy.calculateInterestRate.selector,
-      abi.encode(rate)
-    );
+    _mockInterestRate(rate);
 
     // Alice supply
     Utils.supply({

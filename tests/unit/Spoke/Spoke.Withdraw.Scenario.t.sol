@@ -138,16 +138,10 @@ contract SpokeWithdrawScenarioTest is SpokeBase {
       1,
       (params.aliceAmount + params.bobAmount) / 2
     ); // some buffer on available borrowable liquidity
-    params.rate = bound(params.rate, 1, MAX_BORROW_RATE).bpsToRay();
+    params.rate = bound(params.rate, 1, MAX_BORROW_RATE);
+    _mockInterestRate(params.rate);
 
     MultiUserTestState memory state;
-
-    vm.mockCall(
-      address(irStrategy),
-      IAssetInterestRateStrategy.calculateInterestRate.selector,
-      abi.encode(params.rate)
-    );
-
     (state.assetId, state.asset) = getAssetByReserveId(spoke1, params.reserveId);
 
     // alice supplies reserve

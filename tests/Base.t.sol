@@ -1155,4 +1155,20 @@ abstract contract Base is Test {
   function _getCollateralFactor(ISpoke spoke, uint256 reserveId) internal view returns (uint256) {
     return spoke.getReserve(reserveId).config.collateralFactor;
   }
+
+  function _mockInterestRate(uint256 interestRateBps) internal {
+    vm.mockCall(
+      address(irStrategy),
+      IAssetInterestRateStrategy.calculateInterestRate.selector,
+      abi.encode(interestRateBps.bpsToRay())
+    );
+  }
+
+  function _mockInterestRate(uint256 interestRateBps, uint256 assetId, uint256 totalDebt, uint256 availableLiquidity) internal {
+    vm.mockCall(
+      address(irStrategy),
+      abi.encodeCall(IAssetInterestRateStrategy.calculateInterestRate, (assetId, totalDebt, availableLiquidity)),
+      abi.encode(interestRateBps.bpsToRay())
+    );
+  }
 }

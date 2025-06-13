@@ -186,8 +186,7 @@ contract DefaultAssetInterestRateStrategyTest is Test {
   }
 
   function test_calculateInterestRate_LeftToKinkPoint(uint256 percentageToKinkPointBps) public {
-    vm.assume(0 < percentageToKinkPointBps && percentageToKinkPointBps <= 100_00);
-    uint256 percentageToKinkPointRay = percentageToKinkPointBps.bpsToRay();
+    uint256 percentageToKinkPointRay = bound(percentageToKinkPointBps, 1, 100_00).bpsToRay();
 
     (uint256 totalDebt, uint256 availableLiquidity) = _computeDebtAndAvailableLiquidity(
       percentageToKinkPointRay.rayMul(rateData.optimalUsageRatio.bpsToRay())
@@ -209,8 +208,7 @@ contract DefaultAssetInterestRateStrategyTest is Test {
   }
 
   function test_calculateInterestRate_RightToKinkPoint(uint256 percentageFromKinkPointBps) public {
-    vm.assume(0 < percentageFromKinkPointBps && percentageFromKinkPointBps <= 100_00);
-    uint256 percentageFromKinkPointRay = percentageFromKinkPointBps.bpsToRay();
+    uint256 percentageFromKinkPointRay = bound(percentageFromKinkPointBps, 1, 100_00).bpsToRay();
 
     (uint256 totalDebt, uint256 availableLiquidity) = _computeDebtAndAvailableLiquidity(
       rateData.optimalUsageRatio.bpsToRay() +

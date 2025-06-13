@@ -397,14 +397,10 @@ contract SpokeWithdrawTest is SpokeBase {
       MAX_SUPPLY_AMOUNT
     );
     params.borrowAmount = bound(params.borrowAmount, 1, params.borrowReserveSupplyAmount / 2);
-    params.rate = bound(params.rate, 1, MAX_BORROW_RATE).bpsToRay();
+    params.rate = bound(params.rate, 1, MAX_BORROW_RATE);
     params.skipTime = bound(params.skipTime, 0, MAX_SKIP_TIME);
 
-    vm.mockCall(
-      address(irStrategy),
-      IAssetInterestRateStrategy.calculateInterestRate.selector,
-      abi.encode(params.rate)
-    );
+    _mockInterestRate(params.rate);
 
     // don't borrow the collateral asset
     vm.assume(params.reserveId != _wbtcReserveId(spoke1));
@@ -644,14 +640,10 @@ contract SpokeWithdrawTest is SpokeBase {
       MAX_SUPPLY_AMOUNT
     );
     params.borrowAmount = bound(params.borrowAmount, 1, params.borrowReserveSupplyAmount / 2);
-    params.rate = bound(params.rate, 1, MAX_BORROW_RATE).bpsToRay();
+    params.rate = bound(params.rate, 1, MAX_BORROW_RATE);
     params.skipTime = bound(params.skipTime, 0, MAX_SKIP_TIME);
 
-    vm.mockCall(
-      address(irStrategy),
-      IAssetInterestRateStrategy.calculateInterestRate.selector,
-      abi.encode(params.rate)
-    );
+    _mockInterestRate(params.rate);
 
     vm.assume(params.reserveId != _wbtcReserveId(spoke1)); // wbtc used as collateral
 

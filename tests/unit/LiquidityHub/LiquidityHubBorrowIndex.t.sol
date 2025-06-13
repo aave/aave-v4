@@ -239,12 +239,4 @@ contract LiquidityHubBorrowIndex is Base {
     );
     return address(spoke);
   }
-
-  function _mockInterestRate(uint256 bps) internal {
-    vm.mockCall(
-      address(irStrategy),
-      IAssetInterestRateStrategy.calculateInterestRate.selector,
-      abi.encode(bps.bpsToRay())
-    );
-  }
 }

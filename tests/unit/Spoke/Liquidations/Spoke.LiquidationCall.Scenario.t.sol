@@ -414,11 +414,7 @@ contract LiquidationCallScenarioTest is SpokeLiquidationBase {
     assertGt(spoke1.getHealthFactor(alice), HEALTH_FACTOR_LIQUIDATION_THRESHOLD);
 
     // interest accrual
-    vm.mockCall(
-      address(irStrategy),
-      IAssetInterestRateStrategy.calculateInterestRate.selector,
-      abi.encode(uint256(50_00).bpsToRay())
-    );
+    _mockInterestRate(50_00);
     skip(365 days);
 
     // position must be liquidatable after interest accrual
