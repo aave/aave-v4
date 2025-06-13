@@ -5,9 +5,8 @@ import 'tests/unit/Spoke/SpokeBase.t.sol';
 
 contract SpokeRiskPremiumScenarioTest is SpokeBase {
   using SharesMath for uint256;
-  using WadRayMath for uint256;
   using WadRayMathExtended for uint256;
-  using PercentageMath for uint256;
+  using PercentageMathExtended for uint256;
 
   struct GeneralLocalVars {
     uint256 usdxSupplyAmount;
@@ -114,8 +113,11 @@ contract SpokeRiskPremiumScenarioTest is SpokeBase {
     // Weth is enough to cover debt, both stored & calculated risk premiums match
     assertEq(spoke1.getUserRiskPremium(alice), wethLiquidityPremium, 'user rp: weth covers debt');
     // Check stored risk premium via back-calculating premium drawn shares
-    DataTypes.UserPosition memory alicePosition = spoke1.getUserPosition(reservesIds.dai, alice);
-    vars.expectedPremiumDrawnShares = alicePosition.baseDrawnShares.percentMul(
+    DataTypes.UserPosition memory alicePosition = spoke1.getUserPosition(
+      _daiReserveId(spoke1),
+      alice
+    );
+    vars.expectedPremiumDrawnShares = alicePosition.baseDrawnShares.percentMulUp(
       wethLiquidityPremium
     );
     assertEq(
@@ -140,13 +142,13 @@ contract SpokeRiskPremiumScenarioTest is SpokeBase {
       'supplied weth'
     );
 
-    uint256 accruedDaiDebt = vars.daiBorrowAmount.rayMul(
+    uint256 accruedDaiDebt = vars.daiBorrowAmount.rayMulUp(
       MathUtils.calculateLinearInterest(
         hub.getBaseInterestRate(daiAssetId), // todo: IR strategy has a pending fix
         vars.lastUpdateTimestamp
       ) - WadRayMath.RAY
     );
-    vars.expectedPremiumDebt = accruedDaiDebt.percentMul(wethLiquidityPremium);
+    vars.expectedPremiumDebt = accruedDaiDebt.percentMulUp(wethLiquidityPremium);
 
     (uint256 baseDaiDebt, uint256 daiPremiumDebt) = spoke1.getUserDebt(reservesIds.dai, alice);
     assertEq(baseDaiDebt, vars.daiBorrowAmount + accruedDaiDebt, 'dai base debt');
@@ -378,15 +380,15 @@ contract SpokeRiskPremiumScenarioTest is SpokeBase {
     // See if Bob's base debt of dai changes appropriately
     bobDaiInfo.baseDebt = MathUtils
       .calculateLinearInterest(rates.baseRateDai, uint40(startTime))
-      .rayMul(bobDaiInfo.borrowAmount);
+      .rayMulUp(bobDaiInfo.borrowAmount);
     (debtChecks.actualBaseDebt, debtChecks.actualPremium) = spoke1.getUserDebt(
       daiInfo.reserveId,
       bob
     );
-    assertApproxEqAbs(bobDaiInfo.baseDebt, debtChecks.actualBaseDebt, 1, 'bob dai base debt after');
+    assertEq(bobDaiInfo.baseDebt, debtChecks.actualBaseDebt, 'bob dai base debt after');
 
     // See if Bob's dai premium debt changes proportionally to bob's risk premium
-    bobDaiInfo.premiumDebt = (bobDaiInfo.baseDebt - bobDaiInfo.borrowAmount).percentMul(
+    bobDaiInfo.premiumDebt = (bobDaiInfo.baseDebt - bobDaiInfo.borrowAmount).percentMulUp(
       expectedUserRp.bobRiskPremium
     );
     assertEq(bobDaiInfo.premiumDebt, debtChecks.actualPremium, 'bob premium debt after accrual');
@@ -394,7 +396,7 @@ contract SpokeRiskPremiumScenarioTest is SpokeBase {
     // See if Bob's base debt of usdx changes appropriately
     bobUsdxInfo.baseDebt = MathUtils
       .calculateLinearInterest(rates.baseRateUsdx, uint40(startTime))
-      .rayMul(bobUsdxInfo.borrowAmount);
+      .rayMulUp(bobUsdxInfo.borrowAmount);
     (debtChecks.actualBaseDebt, debtChecks.actualPremium) = spoke1.getUserDebt(
       usdxInfo.reserveId,
       bob
@@ -402,7 +404,7 @@ contract SpokeRiskPremiumScenarioTest is SpokeBase {
     assertEq(bobUsdxInfo.baseDebt, debtChecks.actualBaseDebt, 'bob usdx base debt after');
 
     // See if Bob's usdx premium debt changes proportionally to bob's risk premium
-    bobUsdxInfo.premiumDebt = (bobUsdxInfo.baseDebt - bobUsdxInfo.borrowAmount).percentMul(
+    bobUsdxInfo.premiumDebt = (bobUsdxInfo.baseDebt - bobUsdxInfo.borrowAmount).percentMulUp(
       expectedUserRp.bobRiskPremium
     );
     assertEq(bobUsdxInfo.premiumDebt, debtChecks.actualPremium, 'bob premium debt after accrual');
@@ -410,7 +412,7 @@ contract SpokeRiskPremiumScenarioTest is SpokeBase {
     // See if Alice's base debt of dai changes appropriately
     aliceDaiInfo.baseDebt = MathUtils
       .calculateLinearInterest(rates.baseRateDai, uint40(startTime))
-      .rayMul(aliceDaiInfo.borrowAmount);
+      .rayMulUp(aliceDaiInfo.borrowAmount);
     (debtChecks.actualBaseDebt, debtChecks.actualPremium) = spoke1.getUserDebt(
       daiInfo.reserveId,
       alice
@@ -418,7 +420,7 @@ contract SpokeRiskPremiumScenarioTest is SpokeBase {
     assertEq(aliceDaiInfo.baseDebt, debtChecks.actualBaseDebt, 'alice dai base debt after');
 
     // See if Alice's dai premium debt changes proportionally to alice's risk premium
-    aliceDaiInfo.premiumDebt = (aliceDaiInfo.baseDebt - aliceDaiInfo.borrowAmount).percentMul(
+    aliceDaiInfo.premiumDebt = (aliceDaiInfo.baseDebt - aliceDaiInfo.borrowAmount).percentMulUp(
       expectedUserRp.aliceRiskPremium
     );
     assertEq(
@@ -430,7 +432,7 @@ contract SpokeRiskPremiumScenarioTest is SpokeBase {
     // See if Alice's base debt of usdx changes appropriately
     aliceUsdxInfo.baseDebt = MathUtils
       .calculateLinearInterest(rates.baseRateUsdx, uint40(startTime))
-      .rayMul(aliceUsdxInfo.borrowAmount);
+      .rayMulUp(aliceUsdxInfo.borrowAmount);
     (debtChecks.actualBaseDebt, debtChecks.actualPremium) = spoke1.getUserDebt(
       usdxInfo.reserveId,
       alice
@@ -438,7 +440,7 @@ contract SpokeRiskPremiumScenarioTest is SpokeBase {
     assertEq(aliceUsdxInfo.baseDebt, debtChecks.actualBaseDebt, 'alice usdx base debt after');
 
     // See if Alice's usdx premium debt changes proportionally to alice's risk premium
-    aliceUsdxInfo.premiumDebt = (aliceUsdxInfo.baseDebt - aliceUsdxInfo.borrowAmount).percentMul(
+    aliceUsdxInfo.premiumDebt = (aliceUsdxInfo.baseDebt - aliceUsdxInfo.borrowAmount).percentMulUp(
       expectedUserRp.aliceRiskPremium
     );
     assertEq(
@@ -523,7 +525,7 @@ contract SpokeRiskPremiumScenarioTest is SpokeBase {
       debtChecks.actualBaseDebt,
       aliceDaiInfo.baseDebt,
       1,
-      'alice base debt after repay here'
+      'alice base debt after repay'
     );
     assertApproxEqAbs(
       debtChecks.actualPremium,
@@ -547,13 +549,8 @@ contract SpokeRiskPremiumScenarioTest is SpokeBase {
       daiInfo.reserveId,
       bob
     );
-    assertApproxEqAbs(debtChecks.actualBaseDebt, bobDaiInfo.baseDebt, 1, 'bob dai base debt after');
-    assertApproxEqAbs(
-      debtChecks.actualPremium,
-      bobDaiInfo.premiumDebt,
-      1,
-      'bob dai premium debt after'
-    );
+    assertEq(debtChecks.actualBaseDebt, bobDaiInfo.baseDebt, 'bob dai base debt after');
+    assertEq(debtChecks.actualPremium, bobDaiInfo.premiumDebt, 'bob dai premium debt after');
     bobDaiInfo.totalDebt = bobDaiInfo.baseDebt + bobDaiInfo.premiumDebt;
 
     // Bob's debts on usdx should remain unchanged
@@ -717,7 +714,7 @@ contract SpokeRiskPremiumScenarioTest is SpokeBase {
 
     // Check that risk premiums remain consistent after time skip by checking premium drawn shares
     DataTypes.UserPosition memory bobPosition = spoke1.getUserPosition(_daiReserveId(spoke1), bob);
-    uint256 expectedPremiumDrawnShares = bobPosition.baseDrawnShares.percentMul(
+    uint256 expectedPremiumDrawnShares = bobPosition.baseDrawnShares.percentMulUp(
       bobExpectedRiskPremium
     );
     assertEq(
@@ -728,7 +725,7 @@ contract SpokeRiskPremiumScenarioTest is SpokeBase {
     bobDaiInfo.premiumDrawnShares = expectedPremiumDrawnShares;
 
     bobPosition = spoke1.getUserPosition(_usdxReserveId(spoke1), bob);
-    expectedPremiumDrawnShares = bobPosition.baseDrawnShares.percentMul(bobExpectedRiskPremium);
+    expectedPremiumDrawnShares = bobPosition.baseDrawnShares.percentMulUp(bobExpectedRiskPremium);
     assertEq(
       expectedPremiumDrawnShares,
       bobPosition.premiumDrawnShares,
@@ -740,7 +737,9 @@ contract SpokeRiskPremiumScenarioTest is SpokeBase {
       _daiReserveId(spoke1),
       alice
     );
-    expectedPremiumDrawnShares = alicePosition.baseDrawnShares.percentMul(aliceExpectedRiskPremium);
+    expectedPremiumDrawnShares = alicePosition.baseDrawnShares.percentMulUp(
+      aliceExpectedRiskPremium
+    );
     assertEq(
       expectedPremiumDrawnShares,
       alicePosition.premiumDrawnShares,
@@ -749,7 +748,9 @@ contract SpokeRiskPremiumScenarioTest is SpokeBase {
     aliceDaiInfo.premiumDrawnShares = expectedPremiumDrawnShares;
 
     alicePosition = spoke1.getUserPosition(_usdxReserveId(spoke1), alice);
-    expectedPremiumDrawnShares = alicePosition.baseDrawnShares.percentMul(aliceExpectedRiskPremium);
+    expectedPremiumDrawnShares = alicePosition.baseDrawnShares.percentMulUp(
+      aliceExpectedRiskPremium
+    );
     assertEq(
       expectedPremiumDrawnShares,
       alicePosition.premiumDrawnShares,
@@ -763,63 +764,43 @@ contract SpokeRiskPremiumScenarioTest is SpokeBase {
     if (bobDaiInfo.borrowAmount > 0) {
       bobDaiInfo.baseDebt = MathUtils
         .calculateLinearInterest(hub.getBaseInterestRate(daiAssetId), uint40(startTime))
-        .rayMul(bobDaiInfo.borrowAmount);
+        .rayMulUp(bobDaiInfo.borrowAmount);
 
       (debtChecks.actualBaseDebt, ) = spoke1.getUserDebt(_daiReserveId(spoke1), bob);
-      assertApproxEqAbs(
-        bobDaiInfo.baseDebt,
-        debtChecks.actualBaseDebt,
-        1,
-        'bob dai base debt after'
-      );
+      assertEq(bobDaiInfo.baseDebt, debtChecks.actualBaseDebt, 'bob dai base debt after');
     }
 
     // Bob's usdx debt after 1 year
     if (bobUsdxInfo.borrowAmount > 0) {
       bobUsdxInfo.baseDebt = MathUtils
         .calculateLinearInterest(hub.getBaseInterestRate(usdxAssetId), uint40(startTime))
-        .rayMul(bobUsdxInfo.borrowAmount);
+        .rayMulUp(bobUsdxInfo.borrowAmount);
 
       (debtChecks.actualBaseDebt, ) = spoke1.getUserDebt(_usdxReserveId(spoke1), bob);
-      assertApproxEqAbs(
-        bobUsdxInfo.baseDebt,
-        debtChecks.actualBaseDebt,
-        1,
-        'bob usdx base debt after'
-      );
+      assertEq(bobUsdxInfo.baseDebt, debtChecks.actualBaseDebt, 'bob usdx base debt after');
     }
 
     // Alice's dai debt after 1 year
     if (aliceDaiInfo.borrowAmount > 0) {
       aliceDaiInfo.baseDebt = MathUtils
         .calculateLinearInterest(hub.getBaseInterestRate(daiAssetId), uint40(startTime))
-        .rayMul(aliceDaiInfo.borrowAmount);
+        .rayMulUp(aliceDaiInfo.borrowAmount);
 
       (debtChecks.actualBaseDebt, ) = spoke1.getUserDebt(_daiReserveId(spoke1), alice);
-      assertApproxEqAbs(
-        aliceDaiInfo.baseDebt,
-        debtChecks.actualBaseDebt,
-        1,
-        'alice dai base debt after'
-      );
+      assertEq(aliceDaiInfo.baseDebt, debtChecks.actualBaseDebt, 'alice dai base debt after');
     }
 
     // Alice's usdx debt after 1 year
     if (aliceUsdxInfo.borrowAmount > 0) {
       aliceUsdxInfo.baseDebt = MathUtils
         .calculateLinearInterest(hub.getBaseInterestRate(usdxAssetId), uint40(startTime))
-        .rayMul(aliceUsdxInfo.borrowAmount);
+        .rayMulUp(aliceUsdxInfo.borrowAmount);
 
       (debtChecks.actualBaseDebt, debtChecks.actualPremium) = spoke1.getUserDebt(
         _usdxReserveId(spoke1),
         alice
       );
-      assertApproxEqAbs(
-        aliceUsdxInfo.baseDebt,
-        debtChecks.actualBaseDebt,
-        1,
-        'alice usdx base debt after'
-      );
+      assertEq(aliceUsdxInfo.baseDebt, debtChecks.actualBaseDebt, 'alice usdx base debt after');
     }
 
     _verifyProtocolDebtShares(
@@ -1131,18 +1112,16 @@ contract SpokeRiskPremiumScenarioTest is SpokeBase {
     (debtChecks.assetDebt, debtChecks.assetPremium) = hub.getAssetDebt(usdxAssetId);
 
     // Asset debt should be the sum of both user debts
-    assertApproxEqAbs(
+    assertEq(
       debtChecks.assetDebt,
       bobUsdxInfo.baseDebt + aliceUsdxInfo.baseDebt,
-      1,
       string.concat('hub asset base debt ', label)
     );
 
     // Asset premium debt should be the sum of both users' premium debt
-    assertApproxEqAbs(
+    assertEq(
       debtChecks.assetPremium,
       bobUsdxInfo.premiumDebt + aliceUsdxInfo.premiumDebt,
-      1,
       string.concat('hub asset premium debt ', label)
     );
   }

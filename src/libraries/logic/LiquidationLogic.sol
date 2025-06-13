@@ -21,7 +21,11 @@ library LiquidationLogic {
     uint256 liquidationBonus,
     uint256 healthFactorLiquidationThreshold
   ) internal view returns (uint256) {
-    if (config.healthFactorForMaxBonus == 0 || healthFactor <= config.healthFactorForMaxBonus) {
+    if (
+      config.healthFactorForMaxBonus == 0 ||
+      healthFactor <= config.healthFactorForMaxBonus ||
+      config.liquidationBonusFactor == 0
+    ) {
       return liquidationBonus;
     }
     uint256 minLiquidationBonus = (liquidationBonus - PercentageMathExtended.PERCENTAGE_FACTOR)

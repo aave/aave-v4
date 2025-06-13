@@ -1347,7 +1347,7 @@ contract SpokeRepayScenarioTest is SpokeBase {
     spoke1.repay(reserveId, assets);
     vm.stopPrank();
 
-    assertApproxEqAbs(shares2, shares1, 1, 'borrowed and repaid shares');
+    assertEq(shares2, shares1, 'borrowed and repaid shares');
   }
 
   /// User repays, then immediately borrows, check delta on share amounts
@@ -1403,6 +1403,6 @@ contract SpokeRepayScenarioTest is SpokeBase {
     spoke1.borrow(reserveId, assets, caller);
     vm.stopPrank();
 
-    assertApproxEqAbs(shares2, shares1, 1, 'borrowed and repaid shares');
+    assertEq(shares2, shares1, 'borrowed and repaid shares');
   }
 }

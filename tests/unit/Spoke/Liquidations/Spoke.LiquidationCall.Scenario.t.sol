@@ -6,6 +6,7 @@ import 'tests/unit/Spoke/Liquidations/Spoke.Liquidation.Base.t.sol';
 contract LiquidationCallScenarioTest is SpokeLiquidationBase {
   using WadRayMath for uint256;
   using PercentageMath for uint256;
+  using PercentageMathExtended for uint256;
   using WadRayMathExtended for uint256;
 
   struct Amount {
@@ -120,12 +121,12 @@ contract LiquidationCallScenarioTest is SpokeLiquidationBase {
     (state.userRp, , state.healthFactor, , ) = spoke1.getUserAccountData(alice);
 
     assertEq(
-      state.wbtcPosition.baseDrawnShares.percentMul(state.userRp),
+      state.wbtcPosition.baseDrawnShares.percentMulUp(state.userRp),
       state.wbtcPosition.premiumDrawnShares,
       'collateral reserve accounting refresh'
     );
     assertEq(
-      state.wethPosition.baseDrawnShares.percentMul(state.userRp),
+      state.wethPosition.baseDrawnShares.percentMulUp(state.userRp),
       state.wethPosition.premiumDrawnShares,
       'debt reserve accounting refresh'
     );
@@ -218,12 +219,12 @@ contract LiquidationCallScenarioTest is SpokeLiquidationBase {
     (state.userRp, , state.healthFactor, , ) = spoke1.getUserAccountData(alice);
 
     assertEq(
-      state.wbtcPosition.baseDrawnShares.percentMul(state.userRp),
+      state.wbtcPosition.baseDrawnShares.percentMulUp(state.userRp),
       state.wbtcPosition.premiumDrawnShares,
       'collateral reserve accounting refresh'
     );
     assertEq(
-      state.wethPosition.baseDrawnShares.percentMul(state.userRp),
+      state.wethPosition.baseDrawnShares.percentMulUp(state.userRp),
       state.wethPosition.premiumDrawnShares,
       'debt reserve accounting refresh'
     );
@@ -298,12 +299,12 @@ contract LiquidationCallScenarioTest is SpokeLiquidationBase {
     (state.userRp, , state.healthFactor, , ) = spoke1.getUserAccountData(alice);
 
     assertEq(
-      state.wbtcPosition.baseDrawnShares.percentMul(state.userRp),
+      state.wbtcPosition.baseDrawnShares.percentMulUp(state.userRp),
       state.wbtcPosition.premiumDrawnShares,
       'collateral reserve accounting refresh'
     );
     assertEq(
-      state.wethPosition.baseDrawnShares.percentMul(state.userRp),
+      state.wethPosition.baseDrawnShares.percentMulUp(state.userRp),
       state.wethPosition.premiumDrawnShares,
       'debt reserve accounting is refresh'
     );
@@ -380,12 +381,12 @@ contract LiquidationCallScenarioTest is SpokeLiquidationBase {
     (state.userRp, , state.healthFactor, , ) = spoke1.getUserAccountData(alice);
 
     assertEq(
-      state.wbtcPosition.baseDrawnShares.percentMul(state.userRp),
+      state.wbtcPosition.baseDrawnShares.percentMulUp(state.userRp),
       state.wbtcPosition.premiumDrawnShares,
       'collateral reserve accounting refresh'
     );
     assertEq(
-      state.wethPosition.baseDrawnShares.percentMul(state.userRp),
+      state.wethPosition.baseDrawnShares.percentMulUp(state.userRp),
       state.wethPosition.premiumDrawnShares,
       'debt reserve accounting is refresh'
     );

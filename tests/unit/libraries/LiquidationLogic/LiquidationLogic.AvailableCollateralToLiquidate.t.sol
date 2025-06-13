@@ -223,10 +223,9 @@ contract LiquidationAvailableCollateralToLiquidateTest is LiquidationLogicBaseTe
     ) = _calcLiquidationProtocolFeeAmount(params, collateralAmount);
 
     if (params.liquidationProtocolFee == 0) {
-      assertApproxEqAbs(
+      assertEq(
         res.actualCollateralToLiquidate,
         actualCollateralToLiquidate,
-        1,
         'collateralAmount without lpfp'
       );
       assertEq(
@@ -236,10 +235,9 @@ contract LiquidationAvailableCollateralToLiquidateTest is LiquidationLogicBaseTe
       );
       assertEq(res.liquidationProtocolFeeAmount, 0, 'liquidationProtocolFeeAmount without lpfp');
     } else {
-      assertApproxEqAbs(
+      assertEq(
         res.actualCollateralToLiquidate,
         actualCollateralToLiquidate,
-        1,
         'actualCollateralToLiquidate'
       );
       assertEq(res.actualDebtToLiquidate, params.actualDebtToLiquidate, 'actualDebtToLiquidate');
