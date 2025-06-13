@@ -112,7 +112,7 @@ contract DefaultAssetInterestRateStrategy is IDefaultInterestRateStrategy {
     uint256 availableLiquidity
   ) external view virtual override returns (uint256) {
     InterestRateData memory rateData = _interestRateData[assetId];
-    require(rateData.optimalUsageRatio != 0, INTEREST_RATE_DATA_NOT_SET());
+    require(rateData.optimalUsageRatio != 0, INTEREST_RATE_DATA_NOT_SET(assetId));
 
     uint256 currentVariableBorrowRateRay = _bpsToRay(rateData.baseVariableBorrowRate);
     if (totalDebt == 0) {
