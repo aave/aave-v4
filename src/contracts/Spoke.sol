@@ -1083,12 +1083,12 @@ contract Spoke is ISpoke, Multicall {
         int256(vars.userPremiumOffset),
         0
       );
-/*
+
       if( userDebtPosition.baseDrawnShares == 0 && vars.userPremiumDrawnShares == 0) {
         DataTypes.PositionStatus storage positionStatus = _positionStatus[users[vars.i]];
         positionStatus.setBorrowing(debtReserveId, false);
       }
-*/
+
       // refresh collateral reserve premium
       vars.userPremiumDrawnShares = userCollateralPosition
         .premiumDrawnShares = userCollateralPosition.baseDrawnShares.percentMul(
