@@ -4,7 +4,7 @@ pragma solidity ^0.8.0;
 import 'tests/scenario/liquidityHub/borrowIndex/BorrowIndexScenarioBase.t.sol';
 
 contract BorrowIndex_Scenario3Test is BorrowIndexScenarioBaseTest {
-  using WadRayMath for uint256;
+  using WadRayMathExtended for uint256;
 
   // Scenario:
   // t0	asset added, spoke1 added
@@ -87,7 +87,7 @@ contract BorrowIndex_Scenario3Test is BorrowIndexScenarioBaseTest {
       states.cumulatedSpokeBaseDebt[SPOKE1_INDEX].t_i[t] = states
         .cumulatedSpokeBaseDebt[SPOKE1_INDEX]
         .t_f[t - 1]
-        .rayMul(states.cumulatedBaseInterest.t_i[t]);
+        .rayMulUp(states.cumulatedBaseInterest.t_i[t]);
       spokes[SPOKE1_INDEX].actions.restore[t].amount = states
         .cumulatedSpokeBaseDebt[SPOKE1_INDEX]
         .t_i[t];
@@ -101,7 +101,7 @@ contract BorrowIndex_Scenario3Test is BorrowIndexScenarioBaseTest {
       states.cumulatedSpokeBaseDebt[SPOKE4_INDEX].t_i[t] = states
         .cumulatedSpokeBaseDebt[SPOKE4_INDEX]
         .t_f[t - 1]
-        .rayMul(states.cumulatedBaseInterest.t_i[t]);
+        .rayMulUp(states.cumulatedBaseInterest.t_i[t]);
 
       spokes[SPOKE4_INDEX].actions.restore[t].amount = states
         .cumulatedSpokeBaseDebt[SPOKE4_INDEX]
