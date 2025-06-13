@@ -879,7 +879,8 @@ abstract contract Base is Test {
   }
 
   function setNewPrice(IPriceOracle oracle, uint256 reserveId, uint256 percent) public {
-    uint256 newPrice = calcNewPrice(oracle.getReservePrice(reserveId), percent);
+    uint256 currentPrice = oracle.getReservePrice(reserveId);
+    uint256 newPrice = calcNewPrice(currentPrice, percent);
     MockPriceOracle(address(oracle)).setReservePrice(reserveId, newPrice);
   }
 
@@ -912,11 +913,12 @@ abstract contract Base is Test {
 
   /// returns the USD value of the reserve normalized by it's decimals, in terms of WAD
   function _getValueInBaseCurrency(
-    IPriceOracle oracle,
+    ISpoke spoke,
     uint256 reserveId,
-    uint256 assetId,
     uint256 amount
   ) internal view returns (uint256) {
+    IPriceOracle oracle = spoke.oracle();
+    uint256 assetId = spoke.getReserve(reserveId).assetId;
     return
       (amount * oracle.getReservePrice(reserveId).wadify()) /
       (10 ** hub.getAssetConfig(assetId).decimals);
@@ -927,19 +929,12 @@ abstract contract Base is Test {
   function _calcEquivalentAssetAmount(
     ISpoke spoke,
     uint256 inputReserveId,
-    uint256 inputAssetId,
     uint256 inputAssetAmount,
-    uint256 outputReserveId,
-    uint256 outputAssetId
+    uint256 outputReserveId
   ) internal view returns (uint256) {
     IPriceOracle oracle = spoke.oracle();
-    uint256 valueOfInputAsset = _getValueInBaseCurrency(
-      oracle,
-      inputReserveId,
-      inputAssetId,
-      inputAssetAmount
-    );
-    uint256 valueOfWeiOutput = _getValueInBaseCurrency(oracle, outputReserveId, outputAssetId, 1);
+    uint256 valueOfInputAsset = _getValueInBaseCurrency(spoke, inputReserveId, inputAssetAmount);
+    uint256 valueOfWeiOutput = _getValueInBaseCurrency(spoke, outputReserveId, 1);
     assertNotEq(valueOfInputAsset, 0, 'input asset value is 0');
     assertNotEq(valueOfWeiOutput, 0, 'output asset wei value is 0');
     if (valueOfWeiOutput > valueOfInputAsset) {
@@ -1022,11 +1017,12 @@ abstract contract Base is Test {
   }
 
   function _convertAmountToBaseCurrency(
-    IPriceOracle oracle,
+    ISpoke spoke,
     uint256 reserveId,
-    uint256 assetId,
     uint256 amount
   ) internal view returns (uint256) {
+    IPriceOracle oracle = spoke.oracle();
+    uint256 assetId = spoke.getReserve(reserveId).assetId;
     return
       _convertAmountToBaseCurrency(
         amount,
@@ -1044,17 +1040,27 @@ abstract contract Base is Test {
   }
 
   function _convertBaseCurrencyToAmount(
-    IPriceOracle oracle,
+    ISpoke spoke,
     uint256 reserveId,
-    uint256 assetId,
     uint256 baseCurrencyAmount
   ) internal view returns (uint256) {
+    uint256 assetId = spoke.getReserve(reserveId).assetId;
+    IPriceOracle oracle = spoke.oracle();
     return
       _convertBaseCurrencyToAmount(
         baseCurrencyAmount,
         oracle.getReservePrice(reserveId),
         10 ** hub.getAsset(assetId).config.decimals
       );
+  }
+
+  /// @dev Convert base currency to asset amount
+  function _convertBaseCurrencyToAmount(
+    uint256 baseCurrencyAmount,
+    uint256 assetPrice,
+    uint256 assetUnit
+  ) internal pure returns (uint256) {
+    return ((baseCurrencyAmount * assetUnit) / assetPrice).dewadify();
   }
 
   /**
@@ -1073,8 +1079,7 @@ abstract contract Base is Test {
       user,
       desiredHf
     );
-    uint256 assetId = spoke.getReserve(reserveId).assetId;
-    return _convertBaseCurrencyToAmount(oracle, reserveId, assetId, requiredDebtAmountInBase) + 1;
+    return _convertBaseCurrencyToAmount(spoke, reserveId, requiredDebtAmountInBase) + 1;
   }
 
   /**
@@ -1117,15 +1122,6 @@ abstract contract Base is Test {
     assertLt(finalHf, desiredHf, 'should borrow enough for HF to be below desiredHf');
 
     return (finalHf, requiredDebtAmount);
-  }
-
-  /// @dev Convert base currency to asset amount
-  function _convertBaseCurrencyToAmount(
-    uint256 baseCurrencyAmount,
-    uint256 assetPrice,
-    uint256 assetUnit
-  ) internal pure returns (uint256) {
-    return ((baseCurrencyAmount * assetUnit) / assetPrice).dewadify();
   }
 
   function _approxRelFromBps(uint256 bps) internal pure returns (uint256) {

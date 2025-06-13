@@ -494,11 +494,9 @@ contract LiquidationCallScenarioTest is SpokeLiquidationBase {
 
     state.initialDebt = spoke1.getUserTotalDebt(state.wethReserveId, alice);
     state.liquidatedDebt = _convertAssetAmount(
-      oracle,
+      spoke1,
       state.wbtcReserveId,
-      wbtcAssetId,
       state.collAmount.wbtc,
-      wethAssetId,
       state.wethReserveId
     ).percentDiv(state.liqBonus);
 

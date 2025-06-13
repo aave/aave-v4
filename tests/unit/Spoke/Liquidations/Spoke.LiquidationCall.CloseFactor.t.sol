@@ -388,7 +388,6 @@ contract LiquidationCallCloseFactorTest is SpokeLiquidationBase {
     uint256 liquidationProtocolFee,
     uint256 skipTime
   ) internal returns (LiquidationTestLocalParams memory) {
-    IPriceOracle oracle = spoke1.oracle();
     LiquidationTestLocalParams memory state;
     state.collateralReserve = spoke1.getReserve(collateralReserveId);
     state.debtReserve = spoke1.getReserve(debtReserveId);
@@ -406,19 +405,9 @@ contract LiquidationCallCloseFactorTest is SpokeLiquidationBase {
     liquidationProtocolFee = bound(liquidationProtocolFee, 0, 100_00);
     supplyAmount = bound(
       supplyAmount,
-      _convertBaseCurrencyToAmount(
-        oracle,
-        collateralReserveId,
-        state.collateralReserve.assetId,
-        1e25
-      ),
+      _convertBaseCurrencyToAmount(spoke1, collateralReserveId, 1e25),
       _min(
-        _convertBaseCurrencyToAmount(
-          oracle,
-          collateralReserveId,
-          state.collateralReserve.assetId,
-          MAX_SUPPLY_IN_BASE_CURRENCY
-        ),
+        _convertBaseCurrencyToAmount(spoke1, collateralReserveId, MAX_SUPPLY_IN_BASE_CURRENCY),
         MAX_SUPPLY_AMOUNT
       )
     );

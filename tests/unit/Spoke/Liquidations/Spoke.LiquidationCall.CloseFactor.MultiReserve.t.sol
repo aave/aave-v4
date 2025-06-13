@@ -181,7 +181,6 @@ contract LiquidationCallCloseFactorMultiReserveTest is SpokeLiquidationBase {
     uint256 liquidationProtocolFee,
     uint256 skipTime
   ) internal returns (LiquidationTestLocalParams memory) {
-    IPriceOracle oracle = spoke1.oracle();
     LiquidationTestLocalParams memory state;
     state.collateralReserves = new DataTypes.Reserve[](collateralReserveIds.length);
     state.debtReserves = new DataTypes.Reserve[](debtReserveIds.length);
@@ -222,9 +221,8 @@ contract LiquidationCallCloseFactorMultiReserveTest is SpokeLiquidationBase {
 
     for (uint256 i = 0; i < collateralReserveIds.length; i++) {
       uint256 supplyAmount = _convertBaseCurrencyToAmount(
-        oracle,
+        spoke1,
         state.collateralReserves[i].reserveId,
-        state.collateralReserves[i].assetId,
         supplyAmountInBase
       );
 
@@ -294,8 +292,6 @@ contract LiquidationCallCloseFactorMultiReserveTest is SpokeLiquidationBase {
 
     vm.startPrank(user);
     for (uint256 i = 0; i < reserveIds.length; i++) {
-      uint256 assetId = spoke.getReserve(reserveIds[i]).assetId;
-
       uint256 amountInBase;
       // randomly distribute total required debt across debt reserves
       if (i == reserveIds.length - 1) {
@@ -305,8 +301,7 @@ contract LiquidationCallCloseFactorMultiReserveTest is SpokeLiquidationBase {
         amountInBase = randomizer(dustInBase, remaining - dustInBase * (reserveIds.length - i - 1));
       }
 
-      uint256 amount = _convertBaseCurrencyToAmount(oracle, reserveIds[i], assetId, amountInBase) +
-        1;
+      uint256 amount = _convertBaseCurrencyToAmount(spoke, reserveIds[i], amountInBase) + 1;
       vm.assume(amount < MAX_SUPPLY_AMOUNT);
 
       // mock price to 0 to circumvent borrow validation

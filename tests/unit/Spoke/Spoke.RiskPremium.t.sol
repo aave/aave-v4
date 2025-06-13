@@ -171,60 +171,28 @@ contract SpokeRiskPremiumTest is SpokeBase {
 
     // Check that debt has outgrown collateral
     uint256 collateralValue = _getValueInBaseCurrency(
-      spoke2.oracle(),
+      spoke2,
       _wbtcReserveId(spoke2),
-      wbtcAssetId,
       wbtcSupplyAmount
     ) +
-      _getValueInBaseCurrency(spoke2.oracle(), _daiReserveId(spoke2), daiAssetId, daiSupplyAmount) +
-      _getValueInBaseCurrency(
-        spoke2.oracle(),
-        _usdxReserveId(spoke2),
-        usdxAssetId,
-        usdxSupplyAmount
-      ) +
-      _getValueInBaseCurrency(
-        spoke2.oracle(),
-        _wethReserveId(spoke2),
-        wethAssetId,
-        wethSupplyAmount
-      );
-    uint256 debtValue = _getValueInBaseCurrency(
-      spoke2.oracle(),
-      _dai2ReserveId(spoke2),
-      dai2AssetId,
-      borrowAmount
-    );
+      _getValueInBaseCurrency(spoke2, _daiReserveId(spoke2), daiSupplyAmount) +
+      _getValueInBaseCurrency(spoke2, _usdxReserveId(spoke2), usdxSupplyAmount) +
+      _getValueInBaseCurrency(spoke2, _wethReserveId(spoke2), wethSupplyAmount);
+    uint256 debtValue = _getValueInBaseCurrency(spoke2, _dai2ReserveId(spoke2), borrowAmount);
     assertGt(debtValue, collateralValue, 'debt outgrows collateral');
 
     // Now user rp should be weighted sum of the collaterals
     uint256 expectedRiskPremium = (_getValueInBaseCurrency(
-      spoke2.oracle(),
+      spoke2,
       _daiReserveId(spoke2),
-      daiAssetId,
       daiSupplyAmount
     ) *
       _getLiquidityPremium(spoke2, _daiReserveId(spoke2)) +
-      _getValueInBaseCurrency(
-        spoke2.oracle(),
-        _usdxReserveId(spoke2),
-        usdxAssetId,
-        usdxSupplyAmount
-      ) *
+      _getValueInBaseCurrency(spoke2, _usdxReserveId(spoke2), usdxSupplyAmount) *
       _getLiquidityPremium(spoke2, _usdxReserveId(spoke2)) +
-      _getValueInBaseCurrency(
-        spoke2.oracle(),
-        _wbtcReserveId(spoke2),
-        wbtcAssetId,
-        wbtcSupplyAmount
-      ) *
+      _getValueInBaseCurrency(spoke2, _wbtcReserveId(spoke2), wbtcSupplyAmount) *
       _getLiquidityPremium(spoke2, _wbtcReserveId(spoke2)) +
-      _getValueInBaseCurrency(
-        spoke2.oracle(),
-        _wethReserveId(spoke2),
-        wethAssetId,
-        wethSupplyAmount
-      ) *
+      _getValueInBaseCurrency(spoke2, _wethReserveId(spoke2), wethSupplyAmount) *
       _getLiquidityPremium(spoke2, _wethReserveId(spoke2))) / collateralValue;
     assertEq(
       spoke2.getUserRiskPremium(bob),
@@ -295,13 +263,11 @@ contract SpokeRiskPremiumTest is SpokeBase {
     Utils.borrow(spoke1, daiInfo.reserveId, bob, daiInfo.borrowAmount, bob);
     Utils.borrow(spoke1, usdxInfo.reserveId, bob, usdxInfo.borrowAmount, bob);
 
-    IPriceOracle oracle = spoke1.oracle();
-
     // Weth is enough to cover the total debt
     assertGe(
-      _getValueInBaseCurrency(oracle, wethInfo.reserveId, wethAssetId, wethInfo.supplyAmount),
-      _getValueInBaseCurrency(oracle, daiInfo.reserveId, daiAssetId, daiInfo.borrowAmount) +
-        _getValueInBaseCurrency(oracle, usdxInfo.reserveId, usdxAssetId, usdxInfo.borrowAmount),
+      _getValueInBaseCurrency(spoke1, wethInfo.reserveId, wethInfo.supplyAmount),
+      _getValueInBaseCurrency(spoke1, daiInfo.reserveId, daiInfo.borrowAmount) +
+        _getValueInBaseCurrency(spoke1, usdxInfo.reserveId, usdxInfo.borrowAmount),
       'weth supply covers debt'
     );
     uint256 expectedUserRiskPremium = wethInfo.lp;
@@ -345,11 +311,10 @@ contract SpokeRiskPremiumTest is SpokeBase {
     // Bob draw dai + usdx
     Utils.borrow(spoke2, daiInfo.reserveId, bob, daiInfo.borrowAmount, bob);
 
-    IPriceOracle oracle = spoke2.oracle();
     // Dai2 is enough to cover the total debt
     assertGe(
-      _getValueInBaseCurrency(oracle, dai2Info.reserveId, dai2AssetId, dai2Info.supplyAmount),
-      _getValueInBaseCurrency(oracle, daiInfo.reserveId, daiAssetId, daiInfo.borrowAmount),
+      _getValueInBaseCurrency(spoke2, dai2Info.reserveId, dai2Info.supplyAmount),
+      _getValueInBaseCurrency(spoke2, daiInfo.reserveId, daiInfo.borrowAmount),
       'dai2 supply covers debt'
     );
 

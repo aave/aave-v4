@@ -102,7 +102,6 @@ contract SpokeLiquidationBase is SpokeBase {
     LiquidationTestLocalParams memory state;
     state.collateralReserve = spoke1.getReserve(collateralReserveId);
     state.debtReserve = spoke1.getReserve(debtReserveId);
-    IPriceOracle oracle = spoke1.oracle();
 
     liqConfig = _bound(liqConfig);
     liqBonus = bound(liqBonus, MIN_LIQUIDATION_BONUS, MAX_LIQUIDATION_BONUS);
@@ -111,19 +110,9 @@ contract SpokeLiquidationBase is SpokeBase {
     // bound supply amount to max supply amount
     supplyAmount = bound(
       supplyAmount,
-      _convertBaseCurrencyToAmount(
-        oracle,
-        collateralReserveId,
-        state.collateralReserve.assetId,
-        MIN_AMOUNT_IN_BASE_CURRENCY
-      ),
+      _convertBaseCurrencyToAmount(spoke1, collateralReserveId, MIN_AMOUNT_IN_BASE_CURRENCY),
       _min(
-        _convertBaseCurrencyToAmount(
-          oracle,
-          collateralReserveId,
-          state.collateralReserve.assetId,
-          MAX_SUPPLY_IN_BASE_CURRENCY
-        ),
+        _convertBaseCurrencyToAmount(spoke1, collateralReserveId, MAX_SUPPLY_IN_BASE_CURRENCY),
         MAX_SUPPLY_AMOUNT
       )
     );
@@ -226,21 +215,14 @@ contract SpokeLiquidationBase is SpokeBase {
     string memory label
   ) internal view virtual {
     (uint256 userRp, , uint256 finalHf, , ) = spoke1.getUserAccountData(alice);
-    IPriceOracle oracle = spoke.oracle();
 
     // at low amounts of coll/debt, HF can diverge from close factor due to rounding/precision
     if (
-      _convertAmountToBaseCurrency(
-        oracle,
-        state.debtReserve.reserveId,
-        state.debtReserve.assetId,
-        state.debt.balanceAfter
-      ) >
+      _convertAmountToBaseCurrency(spoke, state.debtReserve.reserveId, state.debt.balanceAfter) >
       MIN_AMOUNT_IN_BASE_CURRENCY &&
       _convertAmountToBaseCurrency(
-        oracle,
+        spoke,
         state.collateralReserve.reserveId,
-        state.collateralReserve.assetId,
         state.supply.balanceAfter
       ) >
       MIN_AMOUNT_IN_BASE_CURRENCY
@@ -452,19 +434,16 @@ contract SpokeLiquidationBase is SpokeBase {
   /// @notice Will contain precision loss due to conversion split into two steps.
   /// @return Converted amount of toAsset.
   function _convertAssetAmount(
-    IPriceOracle oracle,
+    ISpoke spoke,
     uint256 reserveId,
-    uint256 assetId,
     uint256 amount,
-    uint256 toAssetId,
     uint256 toReserveId
   ) internal view returns (uint256) {
     return
       _convertBaseCurrencyToAmount(
-        oracle,
+        spoke,
         toReserveId,
-        toAssetId,
-        _convertAmountToBaseCurrency(oracle, reserveId, assetId, amount)
+        _convertAmountToBaseCurrency(spoke, reserveId, amount)
       );
   }
 
@@ -532,7 +511,6 @@ contract SpokeLiquidationBase is SpokeBase {
   function _getAccountingInfoAfterLiq(
     LiquidationTestLocalParams memory state
   ) internal returns (LiquidationTestLocalParams memory) {
-    IPriceOracle oracle = spoke1.oracle();
     // TODO: update when treasury accounting is done
     // read protocol fee from emitted event arg
     state.treasury.balanceChange = _tmpGetProtocolFeeFromLiqEvent();
@@ -575,27 +553,23 @@ contract SpokeLiquidationBase is SpokeBase {
 
     // convert amount to base currency
     state.liquidatorCollateral.baseChange = _convertAmountToBaseCurrency(
-      oracle,
+      spoke1,
       state.collateralReserve.reserveId,
-      state.collateralReserve.assetId,
       state.liquidatorCollateral.balanceChange
     );
     state.liquidatorDebt.baseChange = _convertAmountToBaseCurrency(
-      oracle,
+      spoke1,
       state.collateralReserve.reserveId,
-      state.collateralReserve.assetId,
       state.liquidatorDebt.balanceChange
     );
     state.debt.baseChange = _convertAmountToBaseCurrency(
-      oracle,
+      spoke1,
       state.debtReserve.reserveId,
-      state.debtReserve.assetId,
       state.debt.balanceChange
     );
     state.supply.baseChange = _convertAmountToBaseCurrency(
-      oracle,
+      spoke1,
       state.collateralReserve.reserveId,
-      state.collateralReserve.assetId,
       state.supply.balanceChange
     );
 

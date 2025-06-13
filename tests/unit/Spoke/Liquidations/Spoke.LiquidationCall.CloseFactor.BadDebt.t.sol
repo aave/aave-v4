@@ -341,7 +341,6 @@ contract LiquidationCallCloseFactorBadDebtTest is SpokeLiquidationBase {
   ) internal returns (LiquidationTestLocalParams memory) {
     vm.skip(true, 'pending deficit accounting');
 
-    IPriceOracle oracle = spoke1.oracle();
     LiquidationTestLocalParams memory state;
     state.collateralReserve = spoke1.getReserve(collateralReserveId);
     state.debtReserve = spoke1.getReserve(debtReserveId);
@@ -356,17 +355,11 @@ contract LiquidationCallCloseFactorBadDebtTest is SpokeLiquidationBase {
     liquidationProtocolFee = bound(liquidationProtocolFee, 0, 100_00);
     supplyAmount = bound(
       supplyAmount,
-      _convertBaseCurrencyToAmount(
-        oracle,
-        state.collateralReserve.reserveId,
-        state.collateralReserve.assetId,
-        1e25
-      ),
+      _convertBaseCurrencyToAmount(spoke1, state.collateralReserve.reserveId, 1e25),
       _min(
         _convertBaseCurrencyToAmount(
-          oracle,
+          spoke1,
           state.collateralReserve.reserveId,
-          state.collateralReserve.assetId,
           MAX_SUPPLY_IN_BASE_CURRENCY
         ),
         MAX_SUPPLY_AMOUNT

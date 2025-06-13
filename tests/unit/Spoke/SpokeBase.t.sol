@@ -129,6 +129,13 @@ contract SpokeBase is Base {
     address user;
   }
 
+  struct ReserveIds {
+    uint256 dai;
+    uint256 weth;
+    uint256 usdx;
+    uint256 wbtc;
+  }
+
   function setUp() public virtual override {
     super.setUp();
     initEnvironment();
@@ -692,7 +699,6 @@ contract SpokeBase is Base {
     uint256 suppliedReservesCount;
     uint256 userRP;
     DataTypes.UserPosition memory userPosition;
-    IPriceOracle oracle = spoke.oracle();
 
     // Find all reserves user has supplied, adding up total debt
     for (uint256 reserveId; reserveId < spoke.reserveCount(); ++reserveId) {
@@ -700,8 +706,7 @@ contract SpokeBase is Base {
         ++suppliedReservesCount;
       }
       uint256 userDebt = spoke.getUserTotalDebt(reserveId, user);
-      (assetId, ) = getAssetByReserveId(spoke, reserveId);
-      totalDebt += _getValueInBaseCurrency(oracle, reserveId, assetId, userDebt);
+      totalDebt += _getValueInBaseCurrency(spoke, reserveId, userDebt);
     }
 
     if (totalDebt == 0) {
@@ -729,7 +734,7 @@ contract SpokeBase is Base {
       userPosition = getUserInfo(spoke, user, reserveId);
       (assetId, ) = getAssetByReserveId(spoke, reserveId);
       uint256 suppliedAssets = hub.convertToSuppliedAssets(assetId, userPosition.suppliedShares);
-      uint256 supplyAmount = _getValueInBaseCurrency(oracle, reserveId, assetId, suppliedAssets);
+      uint256 supplyAmount = _getValueInBaseCurrency(spoke, reserveId, suppliedAssets);
 
       if (supplyAmount >= totalDebt) {
         userRP += totalDebt * lp;
