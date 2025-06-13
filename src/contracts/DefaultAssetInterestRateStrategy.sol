@@ -41,7 +41,7 @@ contract DefaultAssetInterestRateStrategy is IDefaultInterestRateStrategy {
   }
 
   /// @inheritdoc IDefaultInterestRateStrategy
-  function setInterestRateParams(uint256 assetId, InterestRateData calldata rateData) external {
+  function setInterestRateData(uint256 assetId, InterestRateData calldata rateData) external {
     // TODO: Access Control
 
     require(
@@ -83,6 +83,11 @@ contract DefaultAssetInterestRateStrategy is IDefaultInterestRateStrategy {
   }
 
   /// @inheritdoc IDefaultInterestRateStrategy
+  function getBaseVariableBorrowRate(uint256 assetId) external view override returns (uint32) {
+    return _interestRateData[assetId].baseVariableBorrowRate;
+  }
+
+  /// @inheritdoc IDefaultInterestRateStrategy
   function getVariableRateSlope1(uint256 assetId) external view returns (uint32) {
     return _interestRateData[assetId].variableRateSlope1;
   }
@@ -90,11 +95,6 @@ contract DefaultAssetInterestRateStrategy is IDefaultInterestRateStrategy {
   /// @inheritdoc IDefaultInterestRateStrategy
   function getVariableRateSlope2(uint256 assetId) external view returns (uint32) {
     return _interestRateData[assetId].variableRateSlope2;
-  }
-
-  /// @inheritdoc IDefaultInterestRateStrategy
-  function getBaseVariableBorrowRate(uint256 assetId) external view override returns (uint32) {
-    return _interestRateData[assetId].baseVariableBorrowRate;
   }
 
   /// @inheritdoc IDefaultInterestRateStrategy

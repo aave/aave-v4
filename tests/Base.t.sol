@@ -547,7 +547,7 @@ abstract contract Base is Test {
     spokeInfo[spoke2].dai2.liquidityPremium = daiConfig.liquidityPremium;
     hub.addSpoke(dai2AssetId, spokeConfig, address(spoke2));
 
-    irStrategy.setInterestRateParams(
+    irStrategy.setInterestRateData(
       wethAssetId,
       IDefaultInterestRateStrategy.InterestRateData({
         optimalUsageRatio: 90_00, // 90.00%
@@ -556,7 +556,7 @@ abstract contract Base is Test {
         variableRateSlope2: 5_00 // 5.00%
       })
     );
-    irStrategy.setInterestRateParams(
+    irStrategy.setInterestRateData(
       usdxAssetId,
       IDefaultInterestRateStrategy.InterestRateData({
         optimalUsageRatio: 90_00, // 90.00%
@@ -565,7 +565,7 @@ abstract contract Base is Test {
         variableRateSlope2: 5_00 // 5.00%
       })
     );
-    irStrategy.setInterestRateParams(
+    irStrategy.setInterestRateData(
       wbtcAssetId,
       IDefaultInterestRateStrategy.InterestRateData({
         optimalUsageRatio: 90_00, // 90.00%
@@ -574,7 +574,7 @@ abstract contract Base is Test {
         variableRateSlope2: 5_00 // 5.00%
       })
     );
-    irStrategy.setInterestRateParams(
+    irStrategy.setInterestRateData(
       daiAssetId,
       IDefaultInterestRateStrategy.InterestRateData({
         optimalUsageRatio: 90_00, // 90.00%
@@ -583,7 +583,7 @@ abstract contract Base is Test {
         variableRateSlope2: 5_00 // 5.00%
       })
     );
-    irStrategy.setInterestRateParams(
+    irStrategy.setInterestRateData(
       dai2AssetId,
       IDefaultInterestRateStrategy.InterestRateData({
         optimalUsageRatio: 90_00, // 90.00%
@@ -592,7 +592,7 @@ abstract contract Base is Test {
         variableRateSlope2: 5_00 // 5.00%
       })
     );
-    irStrategy.setInterestRateParams(
+    irStrategy.setInterestRateData(
       usdyAssetId,
       IDefaultInterestRateStrategy.InterestRateData({
         optimalUsageRatio: 90_00, // 90.00%

@@ -78,7 +78,7 @@ interface IDefaultInterestRateStrategy is IAssetInterestRateStrategy {
    *   Being specific to this custom implementation, with custom struct type,
    *   overloading the function on the generic interface
    */
-  function setInterestRateParams(uint256 assetId, InterestRateData calldata rateData) external;
+  function setInterestRateData(uint256 assetId, InterestRateData calldata rateData) external;
 
   /**
    * @notice Returns the address of the PoolAddressesProvider
@@ -124,6 +124,15 @@ interface IDefaultInterestRateStrategy is IAssetInterestRateStrategy {
   function getOptimalUsageRatio(uint256 assetId) external view returns (uint16);
 
   /**
+   * @notice Returns the base variable borrow rate, in bps
+   *
+   * @param assetId The assetId to get the base variable borrow rate of
+   *
+   * @return The base variable borrow rate
+   */
+  function getBaseVariableBorrowRate(uint256 assetId) external view returns (uint32);
+
+  /**
    * @notice Returns the variable rate slope below optimal usage ratio in bps
    * @dev It's the variable rate when usage ratio > 0 and <= OPTIMAL_USAGE_RATIO
    *
@@ -142,15 +151,6 @@ interface IDefaultInterestRateStrategy is IAssetInterestRateStrategy {
    * @return The variable rate slope
    */
   function getVariableRateSlope2(uint256 assetId) external view returns (uint32);
-
-  /**
-   * @notice Returns the base variable borrow rate, in bps
-   *
-   * @param assetId The assetId to get the base variable borrow rate of
-   *
-   * @return The base variable borrow rate
-   */
-  function getBaseVariableBorrowRate(uint256 assetId) external view returns (uint32);
 
   /**
    * @notice Returns the maximum variable borrow rate, in bps
