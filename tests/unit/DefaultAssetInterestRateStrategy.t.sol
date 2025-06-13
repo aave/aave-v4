@@ -97,35 +97,6 @@ contract DefaultAssetInterestRateStrategyTest is Test {
     );
   }
 
-  function test_setInterestRateData() public {
-    rateData = IDefaultInterestRateStrategy.InterestRateData({
-      optimalUsageRatio: 60_00, // 60.00%
-      baseVariableBorrowRate: 4_00, // 4_00%
-      variableRateSlope1: 2_00, // 2.00%
-      variableRateSlope2: 30_00 // 30.00%
-    });
-
-    vm.expectEmit(address(rateStrategy));
-    emit RateDataUpdate(
-      mockAssetId,
-      uint256(rateData.optimalUsageRatio),
-      uint256(rateData.baseVariableBorrowRate),
-      uint256(rateData.variableRateSlope1),
-      uint256(rateData.variableRateSlope2)
-    );
-
-    vm.prank(mockAddressesProvider);
-    rateStrategy.setInterestRateData(mockAssetId, rateData);
-
-    test_addressProvider();
-    test_getInterestRateData();
-    test_getOptimalUsageRatio();
-    test_getBaseVariableBorrowRate();
-    test_getVariableRateSlope1();
-    test_getVariableRateSlope2();
-    test_getMaxVariableBorrowRate();
-  }
-
   function test_setInterestRateData_revertsWith_InvalidOptimalUsageRatio() public {
     uint16[] memory invalidOptimalUsageRatios = new uint16[](2);
     invalidOptimalUsageRatios[0] = rateStrategy.MIN_OPTIMAL_POINT() - 1;
@@ -154,6 +125,35 @@ contract DefaultAssetInterestRateStrategyTest is Test {
       1;
     vm.expectRevert(IDefaultInterestRateStrategy.INVALID_MAX_RATE.selector);
     rateStrategy.setInterestRateData(mockAssetId, rateData);
+  }
+
+  function test_setInterestRateData() public {
+    rateData = IDefaultInterestRateStrategy.InterestRateData({
+      optimalUsageRatio: 60_00, // 60.00%
+      baseVariableBorrowRate: 4_00, // 4_00%
+      variableRateSlope1: 2_00, // 2.00%
+      variableRateSlope2: 30_00 // 30.00%
+    });
+
+    vm.expectEmit(address(rateStrategy));
+    emit RateDataUpdate(
+      mockAssetId,
+      uint256(rateData.optimalUsageRatio),
+      uint256(rateData.baseVariableBorrowRate),
+      uint256(rateData.variableRateSlope1),
+      uint256(rateData.variableRateSlope2)
+    );
+
+    vm.prank(mockAddressesProvider);
+    rateStrategy.setInterestRateData(mockAssetId, rateData);
+
+    test_addressProvider();
+    test_getInterestRateData();
+    test_getOptimalUsageRatio();
+    test_getBaseVariableBorrowRate();
+    test_getVariableRateSlope1();
+    test_getVariableRateSlope2();
+    test_getMaxVariableBorrowRate();
   }
 
   function test_calculateInterestRate_revertsWith_InterestRateDataNotSet() public {
@@ -208,13 +208,13 @@ contract DefaultAssetInterestRateStrategyTest is Test {
     test_calculateInterestRate_LeftToKinkPoint(100_00);
   }
 
-  function test_calculateInterestRate_RightToKinkPoint(uint256 percentageToKinkPointBps) public {
-    vm.assume(0 < percentageToKinkPointBps && percentageToKinkPointBps <= 100_00);
-    uint256 percentageToKinkPointRay = percentageToKinkPointBps.bpsToRay();
+  function test_calculateInterestRate_RightToKinkPoint(uint256 percentageFromKinkPointBps) public {
+    vm.assume(0 < percentageFromKinkPointBps && percentageFromKinkPointBps <= 100_00);
+    uint256 percentageFromKinkPointRay = percentageFromKinkPointBps.bpsToRay();
 
     (uint256 totalDebt, uint256 availableLiquidity) = _computeDebtAndAvailableLiquidity(
       rateData.optimalUsageRatio.bpsToRay() +
-        percentageToKinkPointRay.rayMul(WadRayMath.RAY - rateData.optimalUsageRatio.bpsToRay())
+        percentageFromKinkPointRay.rayMul(WadRayMath.RAY - rateData.optimalUsageRatio.bpsToRay())
     );
 
     uint256 variableBorrowRate = rateStrategy.calculateInterestRate({
@@ -225,7 +225,7 @@ contract DefaultAssetInterestRateStrategyTest is Test {
 
     uint256 expectedVariableRate = rateData.baseVariableBorrowRate.bpsToRay() +
       rateData.variableRateSlope1.bpsToRay() +
-      rateData.variableRateSlope2.bpsToRay().rayMul(percentageToKinkPointRay);
+      rateData.variableRateSlope2.bpsToRay().rayMul(percentageFromKinkPointRay);
     assertEq(variableBorrowRate, expectedVariableRate);
   }
 
