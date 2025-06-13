@@ -92,9 +92,7 @@ contract LiquidityHubDrawTest is LiquidityHubBase {
     vm.expectEmit(address(hub));
     emit ILiquidityHub.Draw(assetId, address(spoke1), drawAmount, drawAmount);
     vm.prank(address(spoke1));
-    console.log('right before draw');
     hub.draw({assetId: assetId, amount: drawAmount, to: alice});
-    console.log('after draw');
 
     // hub
     (uint256 baseDebt, uint256 premiumDebt) = hub.getAssetDebt(assetId);

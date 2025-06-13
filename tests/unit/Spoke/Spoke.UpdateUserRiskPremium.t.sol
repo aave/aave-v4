@@ -17,9 +17,8 @@ contract SpokeUpdateUserRiskPremium is SpokeBase {
       _getLiquidityPremium(spoke1, _wethReserveId(spoke1)),
       _getLiquidityPremium(spoke1, _usdxReserveId(spoke1))
     );
-    IPriceOracle oracle = spoke1.oracle();
     // half weth price, increasing user rp since it's the less risky collateral
-    setNewPrice(oracle, _wethReserveId(spoke1), 50_00);
+    setNewPrice(spoke1, _wethReserveId(spoke1), 50_00);
 
     uint256 riskPremiumAfter = spoke1.getUserRiskPremium(alice);
     assertEq(riskPremiumAfter, _calculateExpectedUserRP(alice, spoke1));

@@ -24,7 +24,7 @@ contract SpokeConfigTest is SpokeBase {
       liquidationProtocolFee: reserveData.config.liquidationProtocolFee + 1,
       borrowable: !reserveData.config.borrowable,
       collateral: !reserveData.config.collateral,
-      hub: reserveData.config.hub // hub won't get updated
+      hub: reserveData.config.hub
     });
     vm.expectEmit(address(spoke1));
     emit ISpoke.ReserveConfigUpdated(daiReserveId, newReserveConfig);

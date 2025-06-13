@@ -69,6 +69,8 @@ abstract contract Base is Test {
   MockPriceOracle internal oracle2;
   MockPriceOracle internal oracle3;
   ILiquidityHub internal hub;
+  ILiquidityHub internal hub2;
+  ILiquidityHub internal hub3;
   ISpoke internal spoke1;
   ISpoke internal spoke2;
   ISpoke internal spoke3;
@@ -97,6 +99,11 @@ abstract contract Base is Test {
   uint256 internal wbtcAssetId = 3;
   uint256 internal usdyAssetId = 4;
   uint256 internal dai2AssetId = 5;
+
+  uint256 internal hub3DaiAssetId;
+  uint256 internal hub3UsdxAssetId;
+  uint256 internal hub3WbtcAssetId;
+  uint256 internal hub3WethAssetId;
 
   uint256 internal mintAmount_WETH = MAX_SUPPLY_AMOUNT;
   uint256 internal mintAmount_USDX = MAX_SUPPLY_AMOUNT;
@@ -632,6 +639,134 @@ abstract contract Base is Test {
     vm.stopPrank();
   }
 
+  function deployAndConfigureAdditionalHubs() internal {
+    vm.startPrank(HUB_ADMIN);
+
+    // Create a second hub
+    hub2 = new LiquidityHub();
+
+    // Add assets to the second hub
+    // Add WETH
+    hub2.addAsset(
+      DataTypes.AssetConfig({
+        active: true,
+        frozen: false,
+        paused: false,
+        decimals: tokenList.weth.decimals(),
+        irStrategy: irStrategy
+      }),
+      address(tokenList.weth)
+    );
+
+    // Add USDX
+    hub2.addAsset(
+      DataTypes.AssetConfig({
+        active: true,
+        frozen: false,
+        paused: false,
+        decimals: tokenList.usdx.decimals(),
+        irStrategy: irStrategy
+      }),
+      address(tokenList.usdx)
+    );
+
+    // Add DAI
+    hub2.addAsset(
+      DataTypes.AssetConfig({
+        active: true,
+        frozen: false,
+        paused: false,
+        decimals: tokenList.dai.decimals(),
+        irStrategy: irStrategy
+      }),
+      address(tokenList.dai)
+    );
+
+    // Add WBTC
+    hub2.addAsset(
+      DataTypes.AssetConfig({
+        active: true,
+        frozen: false,
+        paused: false,
+        decimals: tokenList.wbtc.decimals(),
+        irStrategy: irStrategy
+      }),
+      address(tokenList.wbtc)
+    );
+
+    DataTypes.SpokeConfig memory spokeConfig = DataTypes.SpokeConfig({
+      supplyCap: type(uint256).max,
+      drawCap: type(uint256).max
+    });
+
+    hub2.addSpoke(wethAssetId, spokeConfig, address(spoke1));
+    hub2.addSpoke(usdxAssetId, spokeConfig, address(spoke1));
+    hub2.addSpoke(daiAssetId, spokeConfig, address(spoke1));
+    hub2.addSpoke(wbtcAssetId, spokeConfig, address(spoke1));
+
+    // Create a third hub with out of order asset ids
+    hub3 = new LiquidityHub();
+
+    // Add DAI
+    hub3.addAsset(
+      DataTypes.AssetConfig({
+        active: true,
+        frozen: false,
+        paused: false,
+        decimals: tokenList.dai.decimals(),
+        irStrategy: irStrategy
+      }),
+      address(tokenList.dai)
+    );
+    hub3DaiAssetId = 0;
+
+    // Add USDX
+    hub3.addAsset(
+      DataTypes.AssetConfig({
+        active: true,
+        frozen: false,
+        paused: false,
+        decimals: tokenList.usdx.decimals(),
+        irStrategy: irStrategy
+      }),
+      address(tokenList.usdx)
+    );
+    hub3UsdxAssetId = 1;
+
+    // Add WBTC
+    hub3.addAsset(
+      DataTypes.AssetConfig({
+        active: true,
+        frozen: false,
+        paused: false,
+        decimals: tokenList.wbtc.decimals(),
+        irStrategy: irStrategy
+      }),
+      address(tokenList.wbtc)
+    );
+    hub3WbtcAssetId = 2;
+
+    // Add WETH
+    hub3.addAsset(
+      DataTypes.AssetConfig({
+        active: true,
+        frozen: false,
+        paused: false,
+        decimals: tokenList.weth.decimals(),
+        irStrategy: irStrategy
+      }),
+      address(tokenList.weth)
+    );
+    hub3WethAssetId = 3;
+
+    hub3.addSpoke(hub3WethAssetId, spokeConfig, address(spoke1));
+    hub3.addSpoke(hub3UsdxAssetId, spokeConfig, address(spoke1));
+    hub3.addSpoke(hub3DaiAssetId, spokeConfig, address(spoke1));
+    hub3.addSpoke(hub3WbtcAssetId, spokeConfig, address(spoke1));
+
+    vm.stopPrank();
+  }
+
   function updateAssetActive(
     ILiquidityHub liquidityHub,
     uint256 assetId,
@@ -878,10 +1013,11 @@ abstract contract Base is Test {
     return price.percentMul(percent);
   }
 
-  function setNewPrice(IPriceOracle oracle, uint256 reserveId, uint256 percent) public {
+  function setNewPrice(ISpoke spoke, uint256 reserveId, uint256 percent) public {
+    MockPriceOracle oracle = MockPriceOracle(address(spoke.oracle()));
     uint256 currentPrice = oracle.getReservePrice(reserveId);
     uint256 newPrice = calcNewPrice(currentPrice, percent);
-    MockPriceOracle(address(oracle)).setReservePrice(reserveId, newPrice);
+    oracle.setReservePrice(reserveId, newPrice);
   }
 
   /// @dev Helper function to calculate asset amount corresponding to single drawn share
@@ -1073,7 +1209,6 @@ abstract contract Base is Test {
     uint256 reserveId,
     uint256 desiredHf
   ) internal view returns (uint256 requiredDebtAmount) {
-    IPriceOracle oracle = spoke.oracle();
     uint256 requiredDebtAmountInBase = _getRequiredDebtInBaseCurrencyForLtHf(
       spoke,
       user,

@@ -2,90 +2,21 @@
 pragma solidity ^0.8.0;
 
 import 'tests/unit/Spoke/SpokeBase.t.sol';
-import {Spoke} from 'src/contracts/Spoke.sol';
-import {LiquidityHub} from 'src/contracts/LiquidityHub.sol';
 
-contract SpokeTwoHub is SpokeBase {
+contract SpokeMultipleHub is SpokeBase {
   using SharesMath for uint256;
   using WadRayMath for uint256;
   using WadRayMathExtended for uint256;
   using PercentageMath for uint256;
 
-  ILiquidityHub hub2;
-  ILiquidityHub hub3;
-  uint256 daiHub2ReserveId;
-  uint256 daiHub3ReserveId;
-  uint256 hub3DaiAssetId;
-  uint256 hub3UsdxAssetId;
-  uint256 hub3WbtcAssetId;
-  uint256 hub3WethAssetId;
+  uint256 internal daiHub2ReserveId;
+  uint256 internal daiHub3ReserveId;
 
   function setUp() public virtual override {
     super.setUp();
+    deployAndConfigureAdditionalHubs();
 
-    // Create a second hub
-    hub2 = new LiquidityHub();
-
-    // Add assets to the second hub
-    vm.startPrank(HUB_ADMIN);
-    // Add WETH
-    hub2.addAsset(
-      DataTypes.AssetConfig({
-        active: true,
-        frozen: false,
-        paused: false,
-        decimals: tokenList.weth.decimals(),
-        irStrategy: irStrategy
-      }),
-      address(tokenList.weth)
-    );
-
-    // Add USDX
-    hub2.addAsset(
-      DataTypes.AssetConfig({
-        active: true,
-        frozen: false,
-        paused: false,
-        decimals: tokenList.usdx.decimals(),
-        irStrategy: irStrategy
-      }),
-      address(tokenList.usdx)
-    );
-
-    // Add DAI
-    hub2.addAsset(
-      DataTypes.AssetConfig({
-        active: true,
-        frozen: false,
-        paused: false,
-        decimals: tokenList.dai.decimals(),
-        irStrategy: irStrategy
-      }),
-      address(tokenList.dai)
-    );
-
-    // Add WBTC
-    hub2.addAsset(
-      DataTypes.AssetConfig({
-        active: true,
-        frozen: false,
-        paused: false,
-        decimals: tokenList.wbtc.decimals(),
-        irStrategy: irStrategy
-      }),
-      address(tokenList.wbtc)
-    );
-
-    DataTypes.SpokeConfig memory spokeConfig = DataTypes.SpokeConfig({
-      supplyCap: type(uint256).max,
-      drawCap: type(uint256).max
-    });
-    hub2.addSpoke(wethAssetId, spokeConfig, address(spoke1));
-    hub2.addSpoke(usdxAssetId, spokeConfig, address(spoke1));
-    hub2.addSpoke(daiAssetId, spokeConfig, address(spoke1));
-    hub2.addSpoke(wbtcAssetId, spokeConfig, address(spoke1));
-
-    // Relist dai for hub 2 dai
+    // Relist dai on spoke1 for hub 2 dai
     DataTypes.ReserveConfig memory daiHub2Config = DataTypes.ReserveConfig({
       decimals: tokenList.dai.decimals(),
       active: true,
@@ -100,66 +31,6 @@ contract SpokeTwoHub is SpokeBase {
       hub: hub2
     });
     daiHub2ReserveId = spoke1.addReserve(daiAssetId, daiHub2Config);
-
-    // Create a third hub with out of order asset ids
-    hub3 = new LiquidityHub();
-
-    // Add DAI
-    hub3.addAsset(
-      DataTypes.AssetConfig({
-        active: true,
-        frozen: false,
-        paused: false,
-        decimals: tokenList.dai.decimals(),
-        irStrategy: irStrategy
-      }),
-      address(tokenList.dai)
-    );
-    hub3DaiAssetId = 0;
-
-    // Add USDX
-    hub3.addAsset(
-      DataTypes.AssetConfig({
-        active: true,
-        frozen: false,
-        paused: false,
-        decimals: tokenList.usdx.decimals(),
-        irStrategy: irStrategy
-      }),
-      address(tokenList.usdx)
-    );
-    hub3UsdxAssetId = 1;
-
-    // Add WBTC
-    hub3.addAsset(
-      DataTypes.AssetConfig({
-        active: true,
-        frozen: false,
-        paused: false,
-        decimals: tokenList.wbtc.decimals(),
-        irStrategy: irStrategy
-      }),
-      address(tokenList.wbtc)
-    );
-    hub3WbtcAssetId = 2;
-
-    // Add WETH
-    hub3.addAsset(
-      DataTypes.AssetConfig({
-        active: true,
-        frozen: false,
-        paused: false,
-        decimals: tokenList.weth.decimals(),
-        irStrategy: irStrategy
-      }),
-      address(tokenList.weth)
-    );
-    hub3WethAssetId = 3;
-
-    hub3.addSpoke(hub3WethAssetId, spokeConfig, address(spoke1));
-    hub3.addSpoke(hub3UsdxAssetId, spokeConfig, address(spoke1));
-    hub3.addSpoke(hub3DaiAssetId, spokeConfig, address(spoke1));
-    hub3.addSpoke(hub3WbtcAssetId, spokeConfig, address(spoke1));
 
     // Relist dai for hub 3 dai
     DataTypes.ReserveConfig memory daiHub3Config = DataTypes.ReserveConfig({
@@ -176,8 +47,6 @@ contract SpokeTwoHub is SpokeBase {
       hub: hub3
     });
     daiHub3ReserveId = spoke1.addReserve(hub3DaiAssetId, daiHub3Config);
-
-    vm.stopPrank();
   }
 
   function test_borrow_secondHub() public {
