@@ -243,7 +243,7 @@ contract LiquidityHubBorrowIndex is Base {
   function _mockInterestRate(uint256 bps) internal {
     vm.mockCall(
       address(irStrategy),
-      IReserveInterestRateStrategy.calculateInterestRate.selector,
+      IAssetInterestRateStrategy.calculateInterestRate.selector,
       abi.encode(bps.bpsToRay())
     );
   }

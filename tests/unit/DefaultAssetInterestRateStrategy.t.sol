@@ -3,10 +3,10 @@ pragma solidity ^0.8.10;
 
 import 'forge-std/Test.sol';
 
-import 'src/contracts/DefaultReserveInterestRateStrategy.sol';
+import 'src/contracts/DefaultAssetInterestRateStrategy.sol';
 import {WadRayMath} from 'src/libraries/math/WadRayMath.sol';
 
-contract DefaultReserveInterestRateStrategyTest is Test {
+contract DefaultAssetInterestRateStrategyTest is Test {
   using WadRayMath for uint256;
 
   event RateDataUpdate(
@@ -18,13 +18,13 @@ contract DefaultReserveInterestRateStrategyTest is Test {
   );
 
   address mockAddressesProvider = makeAddr('mockAddressesProvider');
-  uint256 mockReserveAddress = uint256(keccak256('mockReserveAddress'));
+  uint256 mockAssetId = uint256(keccak256('mockAssetId'));
 
   uint256 testNumber;
-  DefaultReserveInterestRateStrategy public rateStrategy;
+  DefaultAssetInterestRateStrategy public rateStrategy;
 
   function setUp() public {
-    rateStrategy = new DefaultReserveInterestRateStrategy(mockAddressesProvider);
+    rateStrategy = new DefaultAssetInterestRateStrategy(mockAddressesProvider);
   }
 
   function _getMockInterestRateData()
@@ -51,95 +51,83 @@ contract DefaultReserveInterestRateStrategyTest is Test {
     return (totalDebt * 10000) / (availableLiquidity + totalDebt);
   }
 
-  function test_SetReserveInterestRateParams() public {
+  function test_SetAssetInterestRateParams() public {
     IDefaultInterestRateStrategy.InterestRateData memory rateData = _getMockInterestRateData();
 
     vm.prank(mockAddressesProvider);
     vm.expectEmit(true, false, false, true);
     emit RateDataUpdate(
-      mockReserveAddress,
+      mockAssetId,
       uint256(rateData.optimalUsageRatio),
       uint256(rateData.baseVariableBorrowRate),
       uint256(rateData.variableRateSlope1),
       uint256(rateData.variableRateSlope2)
     );
 
-    rateStrategy.setInterestRateParams(mockReserveAddress, rateData);
+    rateStrategy.setInterestRateParams(mockAssetId, rateData);
 
     assertEq(address(rateStrategy.ADDRESSES_PROVIDER()), mockAddressesProvider);
-    assertEq(rateStrategy.getOptimalUsageRatio(mockReserveAddress), rateData.optimalUsageRatio);
-    assertEq(rateStrategy.getVariableRateSlope1(mockReserveAddress), rateData.variableRateSlope1);
-    assertEq(rateStrategy.getVariableRateSlope2(mockReserveAddress), rateData.variableRateSlope2);
+    assertEq(rateStrategy.getOptimalUsageRatio(mockAssetId), rateData.optimalUsageRatio);
+    assertEq(rateStrategy.getVariableRateSlope1(mockAssetId), rateData.variableRateSlope1);
+    assertEq(rateStrategy.getVariableRateSlope2(mockAssetId), rateData.variableRateSlope2);
     assertEq(
-      rateStrategy.getBaseVariableBorrowRate(mockReserveAddress),
+      rateStrategy.getBaseVariableBorrowRate(mockAssetId),
       rateData.baseVariableBorrowRate
     );
     assertEq(
-      rateStrategy.getMaxVariableBorrowRate(mockReserveAddress),
+      rateStrategy.getMaxVariableBorrowRate(mockAssetId),
       rateData.baseVariableBorrowRate + rateData.variableRateSlope1 + rateData.variableRateSlope2
     );
   }
 
-  function test_calculate_interestRates_reserve_empty() public {
+  function test_calculate_interestRates_asset_empty() public {
     IDefaultInterestRateStrategy.InterestRateData memory rateData = _getMockInterestRateData();
 
-    rateStrategy.setInterestRateParams(mockReserveAddress, rateData);
+    rateStrategy.setInterestRateParams(mockAssetId, rateData);
 
-    uint256 variableBorrowRate = rateStrategy.calculateInterestRate(
-      DataTypes.CalculateInterestRateParams({
-        liquidityAdded: 0,
-        liquidityTaken: 0,
-        totalDebt: 0,
-        assetId: mockReserveAddress,
-        virtualUnderlyingBalance: 0
-      })
-    );
+    uint256 variableBorrowRate = rateStrategy.calculateInterestRate({
+      assetId: mockAssetId,
+      totalDebt: 0,
+      availableLiquidity: 0
+    });
 
     assertEq(variableBorrowRate, 0);
   }
 
-  function test_calculate_interestRates_reserve_debt_80() public {
+  function test_calculate_interestRates_asset_debt_80() public {
     IDefaultInterestRateStrategy.InterestRateData memory rateData = _getMockInterestRateData();
 
-    rateStrategy.setInterestRateParams(mockReserveAddress, rateData);
+    rateStrategy.setInterestRateParams(mockAssetId, rateData);
 
     uint256 availableLiquidity = 2e18;
     uint256 totalDebt = 8e18;
 
-    uint256 variableBorrowRate = rateStrategy.calculateInterestRate(
-      DataTypes.CalculateInterestRateParams({
-        liquidityAdded: 0,
-        liquidityTaken: 0,
-        totalDebt: totalDebt,
-        assetId: mockReserveAddress,
-        virtualUnderlyingBalance: availableLiquidity
-      })
-    );
+    uint256 variableBorrowRate = rateStrategy.calculateInterestRate({
+      assetId: mockAssetId,
+      totalDebt: totalDebt,
+      availableLiquidity: availableLiquidity
+    });
 
-    uint256 expectedVariableRate = rateStrategy.getBaseVariableBorrowRate(mockReserveAddress) +
-      rateStrategy.getVariableRateSlope1(mockReserveAddress);
+    uint256 expectedVariableRate = rateStrategy.getBaseVariableBorrowRate(mockAssetId) +
+      rateStrategy.getVariableRateSlope1(mockAssetId);
 
     assertEq(expectedVariableRate.bpsToRay(), variableBorrowRate, 'Invalid borrow rate');
   }
 
   function test_calculate_interest_rate_100_usage_ratio() public {
     IDefaultInterestRateStrategy.InterestRateData memory rateData = _getMockInterestRateData();
-    rateStrategy.setInterestRateParams(mockReserveAddress, rateData);
+    rateStrategy.setInterestRateParams(mockAssetId, rateData);
 
     uint256 totalDebt = 1e18;
-    uint256 virtualUnderlyingBalance = 0;
+    uint256 availableLiquidity = 0;
 
-    assertEq(getUtilizationRatio(totalDebt, virtualUnderlyingBalance), 100_00); 
+    assertEq(getUtilizationRatio(totalDebt, availableLiquidity), 100_00); 
 
-    uint256 variableBorrowRate = rateStrategy.calculateInterestRate(
-      DataTypes.CalculateInterestRateParams({
-        liquidityAdded: 0,
-        liquidityTaken: 0,
-        totalDebt: totalDebt,
-        assetId: mockReserveAddress,
-        virtualUnderlyingBalance: virtualUnderlyingBalance
-      })
-    );
+    uint256 variableBorrowRate = rateStrategy.calculateInterestRate({
+      assetId: mockAssetId,
+      totalDebt: totalDebt,
+      availableLiquidity: availableLiquidity
+    });
   
     uint256 expectedVariableRate = rateData.baseVariableBorrowRate + rateData.variableRateSlope1 + rateData.variableRateSlope2;
     assertEq(expectedVariableRate.bpsToRay(), variableBorrowRate, 'Invalid borrow rate');
@@ -147,21 +135,17 @@ contract DefaultReserveInterestRateStrategyTest is Test {
 
   function test_calculate_interest_rate_below_optimal_usage() public {
     IDefaultInterestRateStrategy.InterestRateData memory rateData = _getMockInterestRateData();
-    rateStrategy.setInterestRateParams(mockReserveAddress, rateData);
+    rateStrategy.setInterestRateParams(mockAssetId, rateData);
     uint256 totalDebt = 4e17;
-    uint256 virtualUnderlyingBalance = 6e17;
+    uint256 availableLiquidity = 6e17;
 
-    uint256 utilizationRatio = getUtilizationRatio(totalDebt, virtualUnderlyingBalance);
+    uint256 utilizationRatio = getUtilizationRatio(totalDebt, availableLiquidity);
 
-    uint256 variableBorrowRate = rateStrategy.calculateInterestRate(
-      DataTypes.CalculateInterestRateParams({
-        liquidityAdded: 0,
-        liquidityTaken: 0,
-        totalDebt: totalDebt,
-        assetId: mockReserveAddress,
-        virtualUnderlyingBalance: virtualUnderlyingBalance
-      })
-    );
+    uint256 variableBorrowRate = rateStrategy.calculateInterestRate({
+      assetId: mockAssetId,
+      totalDebt: totalDebt,
+      availableLiquidity: availableLiquidity
+    });
 
     uint256 expectedVariableRate = rateData.baseVariableBorrowRate +
       (rateData.variableRateSlope1 * utilizationRatio) /
@@ -175,17 +159,13 @@ contract DefaultReserveInterestRateStrategyTest is Test {
 
   function test_calculate_interest_rate_zero_debt() public {
     IDefaultInterestRateStrategy.InterestRateData memory rateData = _getMockInterestRateData();
-    rateStrategy.setInterestRateParams(mockReserveAddress, rateData);
+    rateStrategy.setInterestRateParams(mockAssetId, rateData);
 
-    uint256 variableBorrowRate = rateStrategy.calculateInterestRate(
-      DataTypes.CalculateInterestRateParams({
-        liquidityAdded: 0,
-        liquidityTaken: 0,
-        totalDebt: 0,
-        assetId: mockReserveAddress,
-        virtualUnderlyingBalance: 1e18
-      })
-    );
+    uint256 variableBorrowRate = rateStrategy.calculateInterestRate({
+      assetId: mockAssetId,
+      totalDebt: 0,
+      availableLiquidity: 1e18
+    });
 
     assertEq(
       variableBorrowRate,

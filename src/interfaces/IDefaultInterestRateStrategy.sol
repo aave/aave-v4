@@ -1,14 +1,14 @@
 // SPDX-License-Identifier: BUSL-1.1
 pragma solidity ^0.8.10;
 
-import {IReserveInterestRateStrategy} from './IReserveInterestRateStrategy.sol';
+import {IAssetInterestRateStrategy} from './IAssetInterestRateStrategy.sol';
 
 /**
  * @title IDefaultInterestRateStrategy
  * @author Aave Labs
  * @notice Interface of the default interest rate strategy used by the Aave protocol
  */
-interface IDefaultInterestRateStrategy is IReserveInterestRateStrategy {
+interface IDefaultInterestRateStrategy is IAssetInterestRateStrategy {
   /**
    * @notice emitted when new interest rate data is set in a reserve
    *
@@ -44,6 +44,12 @@ interface IDefaultInterestRateStrategy is IReserveInterestRateStrategy {
     uint32 variableRateSlope1;
     uint32 variableRateSlope2;
   }
+
+  error INVALID_ADDRESSES_PROVIDER();
+  error INVALID_MAX_RATE();
+  error SLOPE_2_MUST_BE_GTE_SLOPE_1();
+  error INVALID_OPTIMAL_USAGE_RATIO();
+  error INTEREST_RATE_DATA_NOT_SET();
 
   /**
    * @notice Sets interest rate data for an Aave rate strategy

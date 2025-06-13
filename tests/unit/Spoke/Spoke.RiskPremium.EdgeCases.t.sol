@@ -316,16 +316,9 @@ contract SpokeRiskPremiumEdgeCasesTest is SpokeBase {
     // Mock call to raise dai interest rate upon this next borrow call so it outgrows weth debt interest
     DataTypes.Asset memory daiAsset = hub.getAsset(daiAssetId);
     (uint256 baseDebt, ) = hub.getAssetDebt(daiAssetId);
-    DataTypes.CalculateInterestRateParams memory params = DataTypes.CalculateInterestRateParams({
-      liquidityAdded: 0,
-      liquidityTaken: daiSupplyAmount,
-      totalDebt: baseDebt,
-      assetId: daiAssetId,
-      virtualUnderlyingBalance: daiAsset.availableLiquidity
-    });
     vm.mockCall(
       address(irStrategy),
-      abi.encodeWithSelector(IReserveInterestRateStrategy.calculateInterestRate.selector, params),
+      abi.encodeCall(IAssetInterestRateStrategy.calculateInterestRate, (daiAssetId, baseDebt, daiAsset.availableLiquidity - daiSupplyAmount)),
       abi.encode(uint256(10_00).bpsToRay())
     );
 

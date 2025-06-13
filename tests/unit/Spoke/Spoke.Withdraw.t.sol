@@ -402,7 +402,7 @@ contract SpokeWithdrawTest is SpokeBase {
 
     vm.mockCall(
       address(irStrategy),
-      IReserveInterestRateStrategy.calculateInterestRate.selector,
+      IAssetInterestRateStrategy.calculateInterestRate.selector,
       abi.encode(params.rate)
     );
 
@@ -649,7 +649,7 @@ contract SpokeWithdrawTest is SpokeBase {
 
     vm.mockCall(
       address(irStrategy),
-      IReserveInterestRateStrategy.calculateInterestRate.selector,
+      IAssetInterestRateStrategy.calculateInterestRate.selector,
       abi.encode(params.rate)
     );
 

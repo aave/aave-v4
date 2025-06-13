@@ -243,7 +243,7 @@ contract LiquidityHubRiskPremium_VariableTimeAndConstantRiskPremium is
 
 //     vm.mockCall(
 //       address(irStrategy),
-//       IReserveInterestRateStrategy.calculateInterestRates.selector,
+//       IAssetInterestRateStrategy.calculateInterestRates.selector,
 //       abi.encode(baseBorrowRate)
 //     );
 
@@ -333,7 +333,7 @@ contract LiquidityHubRiskPremium_VariableTimeAndConstantRiskPremium is
 
 //     vm.mockCall(
 //       address(irStrategy),
-//       IReserveInterestRateStrategy.calculateInterestRates.selector,
+//       IAssetInterestRateStrategy.calculateInterestRates.selector,
 //       abi.encode(rate)
 //     );
 
@@ -361,7 +361,7 @@ contract LiquidityHubRiskPremium_VariableTimeAndConstantRiskPremium is
 //     rate *= 2;
 //     vm.mockCall(
 //       address(irStrategy),
-//       IReserveInterestRateStrategy.calculateInterestRates.selector,
+//       IAssetInterestRateStrategy.calculateInterestRates.selector,
 //       abi.encode(rate)
 //     );
 
@@ -428,7 +428,7 @@ contract LiquidityHubRiskPremium_VariableTimeAndConstantRiskPremium is
 
 //     vm.mockCall(
 //       address(irStrategy),
-//       IReserveInterestRateStrategy.calculateInterestRates.selector,
+//       IAssetInterestRateStrategy.calculateInterestRates.selector,
 //       abi.encode(baseBorrowRate)
 //     );
 
@@ -452,7 +452,7 @@ contract LiquidityHubRiskPremium_VariableTimeAndConstantRiskPremium is
 //     baseBorrowRate *= 2;
 //     vm.mockCall(
 //       address(irStrategy),
-//       IReserveInterestRateStrategy.calculateInterestRates.selector,
+//       IAssetInterestRateStrategy.calculateInterestRates.selector,
 //       abi.encode(baseBorrowRate)
 //     );
 

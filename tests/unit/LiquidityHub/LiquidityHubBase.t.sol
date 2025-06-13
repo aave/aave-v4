@@ -132,7 +132,7 @@ contract LiquidityHubBase is Base {
   function _mockRate(uint256 rate) internal returns (uint256) {
     vm.mockCall(
       address(irStrategy),
-      IReserveInterestRateStrategy.calculateInterestRate.selector,
+      IAssetInterestRateStrategy.calculateInterestRate.selector,
       abi.encode(rate)
     );
   }

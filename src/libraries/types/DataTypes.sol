@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: BUSL-1.1
 pragma solidity ^0.8.10;
 
-import {IReserveInterestRateStrategy} from 'src/interfaces/IReserveInterestRateStrategy.sol';
+import {IAssetInterestRateStrategy} from 'src/interfaces/IAssetInterestRateStrategy.sol';
 
 library DataTypes {
   // Liquidity Hub types
@@ -40,18 +40,10 @@ library DataTypes {
     bool frozen;
     bool paused;
     uint256 decimals;
-    IReserveInterestRateStrategy irStrategy;
+    IAssetInterestRateStrategy irStrategy;
   }
 
   // Spoke types
-  struct CalculateInterestRateParams {
-    uint256 liquidityAdded;
-    uint256 liquidityTaken;
-    uint256 totalDebt;
-    uint256 assetId;
-    uint256 virtualUnderlyingBalance;
-  }
-
   struct Reserve {
     uint256 reserveId;
     uint256 assetId;

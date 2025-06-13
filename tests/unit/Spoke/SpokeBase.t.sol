@@ -223,7 +223,7 @@ contract SpokeBase is Base {
     if (isMockRate) {
       vm.mockCall(
         address(irStrategy),
-        IReserveInterestRateStrategy.calculateInterestRate.selector,
+        IAssetInterestRateStrategy.calculateInterestRate.selector,
         abi.encode(rate)
       );
     }

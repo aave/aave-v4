@@ -107,7 +107,7 @@ contract LiquidityHubRestoreTest is LiquidityHubBase {
 
 //     vm.mockCall(
 //       address(irStrategy),
-//       IReserveInterestRateStrategy.calculateInterestRates.selector,
+//       IAssetInterestRateStrategy.calculateInterestRates.selector,
 //       abi.encode(rate)
 //     );
 
@@ -197,7 +197,7 @@ contract LiquidityHubRestoreTest is LiquidityHubBase {
 
 //     vm.mockCall(
 //       address(irStrategy),
-//       IReserveInterestRateStrategy.calculateInterestRates.selector,
+//       IAssetInterestRateStrategy.calculateInterestRates.selector,
 //       abi.encode(rate)
 //     );
 
@@ -284,7 +284,7 @@ contract LiquidityHubRestoreTest is LiquidityHubBase {
 
 //     vm.mockCall(
 //       address(irStrategy),
-//       IReserveInterestRateStrategy.calculateInterestRates.selector,
+//       IAssetInterestRateStrategy.calculateInterestRates.selector,
 //       abi.encode(rate)
 //     );
 
@@ -380,7 +380,7 @@ contract LiquidityHubRestoreTest is LiquidityHubBase {
 
 //     vm.mockCall(
 //       address(irStrategy),
-//       IReserveInterestRateStrategy.calculateInterestRates.selector,
+//       IAssetInterestRateStrategy.calculateInterestRates.selector,
 //       abi.encode(rate)
 //     );
 
@@ -854,7 +854,7 @@ contract LiquidityHubRestoreTest is LiquidityHubBase {
 
 //     vm.mockCall(
 //       address(irStrategy),
-//       IReserveInterestRateStrategy.calculateInterestRates.selector,
+//       IAssetInterestRateStrategy.calculateInterestRates.selector,
 //       abi.encode(rate)
 //     );
 
@@ -1080,7 +1080,7 @@ contract LiquidityHubRestoreTest is LiquidityHubBase {
 
 //     vm.mockCall(
 //       address(irStrategy),
-//       IReserveInterestRateStrategy.calculateInterestRates.selector,
+//       IAssetInterestRateStrategy.calculateInterestRates.selector,
 //       abi.encode(rate)
 //     );
 
@@ -1179,7 +1179,7 @@ contract LiquidityHubRestoreTest is LiquidityHubBase {
 
 //     vm.mockCall(
 //       address(irStrategy),
-//       IReserveInterestRateStrategy.calculateInterestRates.selector,
+//       IAssetInterestRateStrategy.calculateInterestRates.selector,
 //       abi.encode(rate)
 //     );
 
@@ -1276,7 +1276,7 @@ contract LiquidityHubRestoreTest is LiquidityHubBase {
 
 //     vm.mockCall(
 //       address(irStrategy),
-//       IReserveInterestRateStrategy.calculateInterestRates.selector,
+//       IAssetInterestRateStrategy.calculateInterestRates.selector,
 //       abi.encode(rate)
 //     );
 
@@ -1384,7 +1384,7 @@ contract LiquidityHubRestoreTest is LiquidityHubBase {
 
 //     vm.mockCall(
 //       address(irStrategy),
-//       IReserveInterestRateStrategy.calculateInterestRates.selector,
+//       IAssetInterestRateStrategy.calculateInterestRates.selector,
 //       abi.encode(rate)
 //     );
 
