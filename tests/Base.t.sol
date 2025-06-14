@@ -645,6 +645,13 @@ abstract contract Base is Test {
     // Create a second hub
     hub2 = new LiquidityHub();
 
+    /* Hub 2 assetIds:
+     * 0: WETH
+     * 1: USDX
+     * 2: DAI
+     * 3: WBTC
+     */
+
     // Add assets to the second hub
     // Add WETH
     hub2.addAsset(
@@ -699,6 +706,7 @@ abstract contract Base is Test {
       drawCap: type(uint256).max
     });
 
+    // Spoke 1 fully connected to hub 2
     hub2.addSpoke(wethAssetId, spokeConfig, address(spoke1));
     hub2.addSpoke(usdxAssetId, spokeConfig, address(spoke1));
     hub2.addSpoke(daiAssetId, spokeConfig, address(spoke1));
@@ -707,6 +715,14 @@ abstract contract Base is Test {
     // Create a third hub with out of order asset ids
     hub3 = new LiquidityHub();
 
+    /* Hub 3 assetIds:
+     * 0: DAI
+     * 1: USDX
+     * 2: WBTC
+     * 3: WETH
+     */
+
+    // TODO: Hub3 should perhaps not use irStrategy because assetIds are different
     // Add DAI
     hub3.addAsset(
       DataTypes.AssetConfig({
@@ -759,6 +775,7 @@ abstract contract Base is Test {
     );
     hub3WethAssetId = 3;
 
+    // Spoke 1 fully connected to hub 3
     hub3.addSpoke(hub3WethAssetId, spokeConfig, address(spoke1));
     hub3.addSpoke(hub3UsdxAssetId, spokeConfig, address(spoke1));
     hub3.addSpoke(hub3DaiAssetId, spokeConfig, address(spoke1));
