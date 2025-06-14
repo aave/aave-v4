@@ -21,8 +21,6 @@ contract LiquidityHubHandler is Test {
   Spoke public spoke1;
   DefaultAssetInterestRateStrategy irStrategy;
 
-  address internal mockAddressesProvider = makeAddr('mockAddressesProvider');
-
   struct State {
     mapping(uint256 => uint256) reserveSupplied; // asset => supply
     mapping(uint256 => mapping(address => uint256)) userSupplied; // asset => user => supply
@@ -33,7 +31,7 @@ contract LiquidityHubHandler is Test {
   State internal s;
 
   constructor() {
-    irStrategy = new DefaultAssetInterestRateStrategy(mockAddressesProvider);
+    irStrategy = new DefaultAssetInterestRateStrategy();
     oracle = new MockPriceOracle();
     hub = new LiquidityHub();
     spoke1 = new Spoke(address(hub), address(oracle));

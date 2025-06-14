@@ -6,6 +6,7 @@ import {DefaultAssetInterestRateStrategy, IDefaultInterestRateStrategy} from 'sr
 
 import {Test} from 'forge-std/Test.sol';
 
+/// TODO: Access Control; Check that only authorized address can set interest rate data
 contract DefaultAssetInterestRateStrategyTest is Test {
   using WadRayMath for uint16;
   using WadRayMath for uint32;
@@ -19,14 +20,13 @@ contract DefaultAssetInterestRateStrategyTest is Test {
     uint256 variableRateSlope2
   );
 
-  address mockAddressesProvider = makeAddr('mockAddressesProvider');
   uint256 mockAssetId = uint256(keccak256('mockAssetId'));
 
   DefaultAssetInterestRateStrategy public rateStrategy;
   IDefaultInterestRateStrategy.InterestRateData public rateData;
 
   function setUp() public {
-    rateStrategy = new DefaultAssetInterestRateStrategy(mockAddressesProvider);
+    rateStrategy = new DefaultAssetInterestRateStrategy();
 
     rateData = IDefaultInterestRateStrategy.InterestRateData({
       optimalUsageRatio: 80_00, // 80.00%
@@ -35,24 +35,19 @@ contract DefaultAssetInterestRateStrategyTest is Test {
       variableRateSlope2: 75_00 // 75.00%
     });
 
-    vm.prank(mockAddressesProvider);
     rateStrategy.setInterestRateData(mockAssetId, rateData);
-  }
-
-  function test_addressProvider() public {
-    assertEq(address(rateStrategy.ADDRESSES_PROVIDER()), mockAddressesProvider);
   }
 
   function test_maxBorrowRate() public {
     assertEq(rateStrategy.MAX_BORROW_RATE(), 1000_00);
   }
 
-  function test_minOptimalPoint() public {
-    assertEq(rateStrategy.MIN_OPTIMAL_POINT(), 1_00);
+  function test_minOptimalRatio() public {
+    assertEq(rateStrategy.MIN_OPTIMAL_RATIO(), 1_00);
   }
 
-  function test_maxOptimalPoint() public {
-    assertEq(rateStrategy.MAX_OPTIMAL_POINT(), 99_00);
+  function test_maxOptimalRatio() public {
+    assertEq(rateStrategy.MAX_OPTIMAL_RATIO(), 99_00);
   }
 
   function test_getInterestRateData() public {
@@ -99,8 +94,8 @@ contract DefaultAssetInterestRateStrategyTest is Test {
 
   function test_setInterestRateData_revertsWith_InvalidOptimalUsageRatio() public {
     uint16[] memory invalidOptimalUsageRatios = new uint16[](2);
-    invalidOptimalUsageRatios[0] = rateStrategy.MIN_OPTIMAL_POINT() - 1;
-    invalidOptimalUsageRatios[1] = rateStrategy.MAX_OPTIMAL_POINT() + 1;
+    invalidOptimalUsageRatios[0] = uint16(rateStrategy.MIN_OPTIMAL_RATIO()) - 1;
+    invalidOptimalUsageRatios[1] = uint16(rateStrategy.MAX_OPTIMAL_RATIO()) + 1;
 
     for (uint256 i; i < invalidOptimalUsageRatios.length; i++) {
       rateData.optimalUsageRatio = invalidOptimalUsageRatios[i];
@@ -120,7 +115,7 @@ contract DefaultAssetInterestRateStrategyTest is Test {
 
   function test_setInterestRateData_revertsWith_InvalidMaxRate() public {
     rateData.baseVariableBorrowRate = rateData.variableRateSlope1 = rateData.variableRateSlope2 =
-      rateStrategy.MAX_BORROW_RATE() /
+      uint32(rateStrategy.MAX_BORROW_RATE()) /
       3 +
       1;
     vm.expectRevert(IDefaultInterestRateStrategy.INVALID_MAX_RATE.selector);
@@ -144,10 +139,8 @@ contract DefaultAssetInterestRateStrategyTest is Test {
       uint256(rateData.variableRateSlope2)
     );
 
-    vm.prank(mockAddressesProvider);
     rateStrategy.setInterestRateData(mockAssetId, rateData);
 
-    test_addressProvider();
     test_getInterestRateData();
     test_getOptimalUsageRatio();
     test_getBaseVariableBorrowRate();

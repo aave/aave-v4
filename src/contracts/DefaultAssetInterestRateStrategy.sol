@@ -19,36 +19,31 @@ contract DefaultAssetInterestRateStrategy is IDefaultInterestRateStrategy {
   using WadRayMath for uint256;
 
   /// @inheritdoc IDefaultInterestRateStrategy
-  address public immutable ADDRESSES_PROVIDER;
+  uint256 public constant MAX_BORROW_RATE = 1000_00; // 1000.00% in BPS
 
   /// @inheritdoc IDefaultInterestRateStrategy
-  uint32 public constant MAX_BORROW_RATE = 1000_00; // 1000.00% in BPS
+  uint256 public constant MIN_OPTIMAL_RATIO = 1_00; // 1.00% in BPS
 
   /// @inheritdoc IDefaultInterestRateStrategy
-  uint16 public constant MIN_OPTIMAL_POINT = 1_00; // 1.00% in BPS
-
-  /// @inheritdoc IDefaultInterestRateStrategy
-  uint16 public constant MAX_OPTIMAL_POINT = 99_00; // 99.00% in BPS
+  uint256 public constant MAX_OPTIMAL_RATIO = 99_00; // 99.00% in BPS
 
   /// @dev Map of assetId and their interest rate data (assetId => interestRateData)
   mapping(uint256 => InterestRateData) internal _interestRateData;
 
   /**
    * @dev Constructor.
-   * @param provider The address of the PoolAddressesProvider of the associated Aave pool
    */
-  constructor(address provider) {
-    require(provider != address(0), INVALID_ADDRESSES_PROVIDER());
-    ADDRESSES_PROVIDER = provider;
+  constructor() {
+    /// TODO: Access Control; Store authorized address to set interest rate data
   }
 
   /// @inheritdoc IDefaultInterestRateStrategy
   function setInterestRateData(uint256 assetId, InterestRateData calldata rateData) external {
-    // TODO: Access Control
+    /// TODO: Access Control; Only authorized address can set interest rate data
 
     require(
-      MIN_OPTIMAL_POINT <= rateData.optimalUsageRatio &&
-        rateData.optimalUsageRatio <= MAX_OPTIMAL_POINT,
+      MIN_OPTIMAL_RATIO <= rateData.optimalUsageRatio &&
+        rateData.optimalUsageRatio <= MAX_OPTIMAL_RATIO,
       INVALID_OPTIMAL_USAGE_RATIO()
     );
 
@@ -80,27 +75,27 @@ contract DefaultAssetInterestRateStrategy is IDefaultInterestRateStrategy {
   }
 
   /// @inheritdoc IDefaultInterestRateStrategy
-  function getOptimalUsageRatio(uint256 assetId) external view returns (uint16) {
+  function getOptimalUsageRatio(uint256 assetId) external view returns (uint256) {
     return _interestRateData[assetId].optimalUsageRatio;
   }
 
   /// @inheritdoc IDefaultInterestRateStrategy
-  function getBaseVariableBorrowRate(uint256 assetId) external view override returns (uint32) {
+  function getBaseVariableBorrowRate(uint256 assetId) external view override returns (uint256) {
     return _interestRateData[assetId].baseVariableBorrowRate;
   }
 
   /// @inheritdoc IDefaultInterestRateStrategy
-  function getVariableRateSlope1(uint256 assetId) external view returns (uint32) {
+  function getVariableRateSlope1(uint256 assetId) external view returns (uint256) {
     return _interestRateData[assetId].variableRateSlope1;
   }
 
   /// @inheritdoc IDefaultInterestRateStrategy
-  function getVariableRateSlope2(uint256 assetId) external view returns (uint32) {
+  function getVariableRateSlope2(uint256 assetId) external view returns (uint256) {
     return _interestRateData[assetId].variableRateSlope2;
   }
 
   /// @inheritdoc IDefaultInterestRateStrategy
-  function getMaxVariableBorrowRate(uint256 assetId) external view override returns (uint32) {
+  function getMaxVariableBorrowRate(uint256 assetId) external view override returns (uint256) {
     return
       _interestRateData[assetId].baseVariableBorrowRate +
       _interestRateData[assetId].variableRateSlope1 +
@@ -121,14 +116,14 @@ contract DefaultAssetInterestRateStrategy is IDefaultInterestRateStrategy {
       return currentVariableBorrowRateRay;
     }
 
-    uint256 borrowUsageRatioRay = totalDebt.rayDiv(availableLiquidity + totalDebt);
+    uint256 usageRatioRay = totalDebt.rayDiv(availableLiquidity + totalDebt);
     uint256 optimalUsageRatioRay = rateData.optimalUsageRatio.bpsToRay();
 
-    if (borrowUsageRatioRay <= optimalUsageRatioRay) {
+    if (usageRatioRay <= optimalUsageRatioRay) {
       currentVariableBorrowRateRay += rateData
         .variableRateSlope1
         .bpsToRay()
-        .rayMul(borrowUsageRatioRay)
+        .rayMul(usageRatioRay)
         .rayDiv(optimalUsageRatioRay);
     } else {
       currentVariableBorrowRateRay += rateData.variableRateSlope1.bpsToRay();
@@ -136,7 +131,7 @@ contract DefaultAssetInterestRateStrategy is IDefaultInterestRateStrategy {
       currentVariableBorrowRateRay += rateData
         .variableRateSlope2
         .bpsToRay()
-        .rayMul(borrowUsageRatioRay - optimalUsageRatioRay)
+        .rayMul(usageRatioRay - optimalUsageRatioRay)
         .rayDiv(WadRayMath.RAY - optimalUsageRatioRay);
     }
 

@@ -71,9 +71,7 @@ abstract contract Base is Test {
   ISpoke internal spoke2;
   ISpoke internal spoke3;
   DefaultAssetInterestRateStrategy internal irStrategy;
-  DefaultAssetInterestRateStrategy internal creditLineIRStrategy;
 
-  address internal mockAddressesProvider = makeAddr('mockAddressesProvider');
   // TODO: remove after migrating to other mock users
   address internal USER1 = makeAddr('USER1');
   address internal USER2 = makeAddr('USER2');
@@ -151,8 +149,7 @@ abstract contract Base is Test {
 
   function deployFixtures() internal {
     oracle = new MockPriceOracle();
-    creditLineIRStrategy = new DefaultAssetInterestRateStrategy(mockAddressesProvider);
-    irStrategy = new DefaultAssetInterestRateStrategy(mockAddressesProvider);
+    irStrategy = new DefaultAssetInterestRateStrategy();
     hub = new LiquidityHub();
     spoke1 = ISpoke(new Spoke(address(hub), address(oracle)));
     spoke2 = ISpoke(new Spoke(address(hub), address(oracle)));
@@ -1164,10 +1161,18 @@ abstract contract Base is Test {
     );
   }
 
-  function _mockInterestRate(uint256 interestRateBps, uint256 assetId, uint256 totalDebt, uint256 availableLiquidity) internal {
+  function _mockInterestRate(
+    uint256 interestRateBps,
+    uint256 assetId,
+    uint256 totalDebt,
+    uint256 availableLiquidity
+  ) internal {
     vm.mockCall(
       address(irStrategy),
-      abi.encodeCall(IAssetInterestRateStrategy.calculateInterestRate, (assetId, totalDebt, availableLiquidity)),
+      abi.encodeCall(
+        IAssetInterestRateStrategy.calculateInterestRate,
+        (assetId, totalDebt, availableLiquidity)
+      ),
       abi.encode(interestRateBps.bpsToRay())
     );
   }
