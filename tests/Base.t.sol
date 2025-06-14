@@ -75,6 +75,8 @@ abstract contract Base is Test {
   ISpoke internal spoke2;
   ISpoke internal spoke3;
   DefaultReserveInterestRateStrategy internal irStrategy;
+  DefaultReserveInterestRateStrategy internal hub2IrStrategy;
+  DefaultReserveInterestRateStrategy internal hub3IrStrategy;
   DefaultReserveInterestRateStrategy internal creditLineIRStrategy;
 
   address internal mockAddressesProvider = makeAddr('mockAddressesProvider');
@@ -164,6 +166,8 @@ abstract contract Base is Test {
     oracle3 = new MockPriceOracle();
     creditLineIRStrategy = new DefaultReserveInterestRateStrategy(mockAddressesProvider);
     irStrategy = new DefaultReserveInterestRateStrategy(mockAddressesProvider);
+    hub2IrStrategy = new DefaultReserveInterestRateStrategy(mockAddressesProvider);
+    hub3IrStrategy = new DefaultReserveInterestRateStrategy(mockAddressesProvider);
     hub = new LiquidityHub();
     spoke1 = ISpoke(new Spoke(address(oracle1)));
     spoke2 = ISpoke(new Spoke(address(oracle2)));
@@ -660,7 +664,7 @@ abstract contract Base is Test {
         frozen: false,
         paused: false,
         decimals: tokenList.weth.decimals(),
-        irStrategy: irStrategy
+        irStrategy: hub2IrStrategy
       }),
       address(tokenList.weth)
     );
@@ -672,7 +676,7 @@ abstract contract Base is Test {
         frozen: false,
         paused: false,
         decimals: tokenList.usdx.decimals(),
-        irStrategy: irStrategy
+        irStrategy: hub2IrStrategy
       }),
       address(tokenList.usdx)
     );
@@ -684,7 +688,7 @@ abstract contract Base is Test {
         frozen: false,
         paused: false,
         decimals: tokenList.dai.decimals(),
-        irStrategy: irStrategy
+        irStrategy: hub2IrStrategy
       }),
       address(tokenList.dai)
     );
@@ -696,7 +700,7 @@ abstract contract Base is Test {
         frozen: false,
         paused: false,
         decimals: tokenList.wbtc.decimals(),
-        irStrategy: irStrategy
+        irStrategy: hub2IrStrategy
       }),
       address(tokenList.wbtc)
     );
@@ -712,6 +716,19 @@ abstract contract Base is Test {
     hub2.addSpoke(daiAssetId, spokeConfig, address(spoke1));
     hub2.addSpoke(wbtcAssetId, spokeConfig, address(spoke1));
 
+    // Configure IR Strategy for hub 2
+    IDefaultInterestRateStrategy.InterestRateData memory irData = IDefaultInterestRateStrategy
+      .InterestRateData({
+        optimalUsageRatio: 90_00, // 90.00%
+        baseVariableBorrowRate: 5_00, // 5.00%
+        variableRateSlope1: 5_00, // 5.00%
+        variableRateSlope2: 5_00 // 5.00%
+      });
+    hub2IrStrategy.setInterestRateParams(wethAssetId, irData);
+    hub2IrStrategy.setInterestRateParams(usdxAssetId, irData);
+    hub2IrStrategy.setInterestRateParams(daiAssetId, irData);
+    hub2IrStrategy.setInterestRateParams(wbtcAssetId, irData);
+
     // Create a third hub with out of order asset ids
     hub3 = new LiquidityHub();
 
@@ -722,7 +739,6 @@ abstract contract Base is Test {
      * 3: WETH
      */
 
-    // TODO: Hub3 should perhaps not use irStrategy because assetIds are different
     // Add DAI
     hub3.addAsset(
       DataTypes.AssetConfig({
@@ -730,7 +746,7 @@ abstract contract Base is Test {
         frozen: false,
         paused: false,
         decimals: tokenList.dai.decimals(),
-        irStrategy: irStrategy
+        irStrategy: hub3IrStrategy
       }),
       address(tokenList.dai)
     );
@@ -743,7 +759,7 @@ abstract contract Base is Test {
         frozen: false,
         paused: false,
         decimals: tokenList.usdx.decimals(),
-        irStrategy: irStrategy
+        irStrategy: hub3IrStrategy
       }),
       address(tokenList.usdx)
     );
@@ -756,7 +772,7 @@ abstract contract Base is Test {
         frozen: false,
         paused: false,
         decimals: tokenList.wbtc.decimals(),
-        irStrategy: irStrategy
+        irStrategy: hub3IrStrategy
       }),
       address(tokenList.wbtc)
     );
@@ -769,7 +785,7 @@ abstract contract Base is Test {
         frozen: false,
         paused: false,
         decimals: tokenList.weth.decimals(),
-        irStrategy: irStrategy
+        irStrategy: hub3IrStrategy
       }),
       address(tokenList.weth)
     );
@@ -780,6 +796,12 @@ abstract contract Base is Test {
     hub3.addSpoke(hub3UsdxAssetId, spokeConfig, address(spoke1));
     hub3.addSpoke(hub3DaiAssetId, spokeConfig, address(spoke1));
     hub3.addSpoke(hub3WbtcAssetId, spokeConfig, address(spoke1));
+
+    // Configure IR Strategy for hub 3
+    hub3IrStrategy.setInterestRateParams(hub3WethAssetId, irData);
+    hub3IrStrategy.setInterestRateParams(hub3UsdxAssetId, irData);
+    hub3IrStrategy.setInterestRateParams(hub3DaiAssetId, irData);
+    hub3IrStrategy.setInterestRateParams(hub3WbtcAssetId, irData);
 
     vm.stopPrank();
   }

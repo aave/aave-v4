@@ -145,20 +145,24 @@ contract SpokeMultipleHub is SpokeBase {
     TestnetERC20 assetA = new TestnetERC20('Asset A', 'A', 18);
     TestnetERC20 assetB = new TestnetERC20('Asset B', 'B', 18);
 
-    // TODO: Different IR strategy for these new assets on the new hub, and configure appropriately
+    // New IrStrategy for new hub
+    DefaultReserveInterestRateStrategy newIrStrategy = new DefaultReserveInterestRateStrategy(
+      mockAddressesProvider
+    );
+
     DataTypes.AssetConfig memory assetAConfig = DataTypes.AssetConfig({
       decimals: assetA.decimals(),
       active: true,
       paused: false,
       frozen: false,
-      irStrategy: irStrategy
+      irStrategy: newIrStrategy
     });
     DataTypes.AssetConfig memory assetBConfig = DataTypes.AssetConfig({
       decimals: assetB.decimals(),
       active: true,
       paused: false,
       frozen: false,
-      irStrategy: irStrategy
+      irStrategy: newIrStrategy
     });
 
     // Add assets A and B to the new hub
@@ -211,6 +215,17 @@ contract SpokeMultipleHub is SpokeBase {
     });
     newHub.addSpoke(vars.assetAId, spokeConfig, address(newSpoke));
     newHub.addSpoke(vars.assetBId, spokeConfig, address(newSpoke));
+
+    // Configure interest rate strategy for assets A and B
+    IDefaultInterestRateStrategy.InterestRateData memory irData = IDefaultInterestRateStrategy
+      .InterestRateData({
+        optimalUsageRatio: 90_00, // 90.00%
+        baseVariableBorrowRate: 5_00, // 5.00%
+        variableRateSlope1: 5_00, // 5.00%
+        variableRateSlope2: 5_00 // 5.00%
+      });
+    newIrStrategy.setInterestRateParams(vars.assetAId, irData);
+    newIrStrategy.setInterestRateParams(vars.assetBId, irData);
 
     // Bob can supply asset A to the new spoke and set it as collateral
     vm.startPrank(bob);
@@ -268,6 +283,9 @@ contract SpokeMultipleHub is SpokeBase {
     // 0 supply cap, 100k draw cap
     spokeConfig = DataTypes.SpokeConfig({drawCap: 100_000e18, supplyCap: 0});
     hub.addSpoke(vars.assetBIdMainHub, spokeConfig, address(newSpoke));
+
+    // Configure interest rate strategy for asset B on the main hub
+    irStrategy.setInterestRateParams(vars.assetBIdMainHub, irData);
 
     // Bob still cannot borrow asset B from the new hub because there is no liquidity
     vm.expectRevert(abi.encodeWithSelector(ILiquidityHub.NotAvailableLiquidity.selector, 0));
