@@ -278,4 +278,134 @@ contract SpokeMultipleHub is SpokeBase {
 
     vm.stopPrank();
   }
+
+  function test_siloed_mode() public {
+    // Deploy a new hub and spoke with only B borrowable asset
+    ILiquidityHub newHub = new LiquidityHub();
+    MockPriceOracle newOracle = new MockPriceOracle();
+    ISpoke newSpoke = new Spoke(address(newOracle));
+
+    TestnetERC20 assetB = new TestnetERC20('Asset B', 'B', 18);
+
+    // TODO: Different IR strategy for these new assets on the new hub, and configure appropriately
+    DataTypes.AssetConfig memory assetBConfig = DataTypes.AssetConfig({
+      decimals: assetB.decimals(),
+      active: true,
+      paused: false,
+      frozen: false,
+      irStrategy: irStrategy
+    });
+
+    // Add asset B to the new hub
+    newHub.addAsset(assetBConfig, address(assetB));
+    uint256 assetBId = 0;
+
+    // Configure reserve B for the new spoke
+    DataTypes.ReserveConfig memory reserveBConfig = DataTypes.ReserveConfig({
+      decimals: assetB.decimals(),
+      active: true,
+      frozen: false,
+      paused: false,
+      collateralFactor: 80_00,
+      liquidationBonus: 100_00,
+      liquidityPremium: 15_00,
+      liquidationProtocolFee: 0,
+      borrowable: true,
+      collateral: true,
+      hub: newHub
+    });
+
+    // Add B reserve to the new spoke
+    uint256 reserveBId = newSpoke.addReserve(assetBId, reserveBConfig);
+
+    // Set the price of B reserve for the new oracle
+    newOracle.setReservePrice(reserveBId, 50_000e8);
+
+    // Link new hub and new spoke for asset B, 100k draw cap
+    DataTypes.SpokeConfig memory spokeConfig = DataTypes.SpokeConfig({
+      drawCap: 100_000e18,
+      supplyCap: type(uint256).max
+    });
+    newHub.addSpoke(assetBId, spokeConfig, address(newSpoke));
+
+    // Now add usdx from canonical hub to the new spoke
+    // Configure usdx reserve for the new spoke
+    DataTypes.ReserveConfig memory usdxReserveConfig = DataTypes.ReserveConfig({
+      decimals: tokenList.usdx.decimals(),
+      active: true,
+      frozen: false,
+      paused: false,
+      collateralFactor: 80_00,
+      liquidationBonus: 100_00,
+      liquidityPremium: 15_00,
+      liquidationProtocolFee: 0,
+      borrowable: true,
+      collateral: true,
+      hub: hub
+    });
+
+    // Add usdx reserve to the new spoke
+    uint256 usdxReserveIdNewSpoke = newSpoke.addReserve(usdxAssetId, usdxReserveConfig);
+
+    // Set the price of usdx reserve for the new oracle
+    newOracle.setReservePrice(usdxReserveIdNewSpoke, 1e8);
+
+    // Link canonical hub and new spoke for usdx, 500k supply cap, 0 borrow cap
+    spokeConfig = DataTypes.SpokeConfig({drawCap: 0, supplyCap: 500_000e18});
+    hub.addSpoke(usdxAssetId, spokeConfig, address(newSpoke));
+
+    // Bob can supply usdx to the new spoke, canonical hub, up to 500k and set it as collateral
+    vm.startPrank(bob);
+    tokenList.usdx.approve(address(newHub), type(uint256).max);
+    newSpoke.supply(usdxReserveIdNewSpoke, 500_000e18);
+    newSpoke.setUsingAsCollateral(usdxReserveIdNewSpoke, true);
+    assertEq(
+      newSpoke.getUserSuppliedAmount(usdxReserveIdNewSpoke, bob),
+      500_000e18,
+      'bob supplied amount of usdx on new spoke'
+    );
+    assertTrue(
+      newSpoke.getUsingAsCollateral(usdxReserveIdNewSpoke, bob),
+      'bob using usdx as collateral on new spoke'
+    );
+    assertEq(
+      hub.getAssetSuppliedAmount(usdxAssetId),
+      500_000e18,
+      'total supplied amount of usdx on canonical hub'
+    );
+
+    // Bob cannot supply past his currently supplied amount due to supply cap
+    vm.expectRevert(abi.encodeWithSelector(ILiquidityHub.SupplyCapExceeded.selector, 500_000e18));
+    newSpoke.supply(usdxReserveIdNewSpoke, 1e18);
+
+    // Bob cannot borrow usdx from the new spoke, canonical hub, becuase draw cap is 0
+    vm.expectRevert(abi.encodeWithSelector(ILiquidityHub.DrawCapExceeded.selector, 0));
+    newSpoke.borrow(usdxReserveIdNewSpoke, 100_000e18, bob);
+
+    // Let Alice supply some asset B to the new spoke
+    vm.stopPrank();
+    vm.startPrank(alice);
+    assetB.approve(address(newHub), type(uint256).max);
+    deal(address(assetB), alice, 300_000e18);
+    newSpoke.supply(reserveBId, 300_000e18);
+    vm.stopPrank();
+
+    // Bob can borrow asset B from the new spoke, new hub, up to 100k
+    vm.startPrank(bob);
+    newSpoke.borrow(reserveBId, 100_000e18, bob);
+
+    // Check Bob's total debt of asset B on the new spoke
+    assertEq(newSpoke.getUserTotalDebt(reserveBId, bob), 100_000e18);
+    assertEq(newHub.getAssetTotalDebt(assetBId), 100_000e18);
+    assertEq(
+      newSpoke.getReserve(reserveBId).asset,
+      address(assetB),
+      'Bob borrowed asset B from new spoke'
+    );
+
+    // Bob cannot borrow additional asset B from the new spoke, new hub, because of draw cap
+    vm.expectRevert(abi.encodeWithSelector(ILiquidityHub.DrawCapExceeded.selector, 100_000e18));
+    newSpoke.borrow(reserveBId, 1e18, bob);
+    vm.stopPrank();
+  }
 }
