@@ -1184,6 +1184,6 @@ abstract contract Base is Test {
   }
 
   function _randomBps() internal returns (uint16) {
-    return uint16(bound(vm.randomUint(), 0, PercentageMath.PERCENTAGE_FACTOR));
+    return vm.randomUint(0, PercentageMath.PERCENTAGE_FACTOR).toUint16();
   }
 }

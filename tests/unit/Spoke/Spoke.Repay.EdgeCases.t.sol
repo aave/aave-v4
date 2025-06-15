@@ -32,7 +32,7 @@ contract SpokeRepayEdgeCaseTest is SpokeBase {
 
     // repay partial premium debt
     vm.assume(bobDebt.premiumDebt > 1);
-    uint256 daiRepayAmount = bound(vm.randomUint(), 1, bobDebt.premiumDebt - 1);
+    uint256 daiRepayAmount = vm.randomUint(1, bobDebt.premiumDebt - 1);
 
     vm.expectEmit(address(spoke1));
     emit ISpoke.Repay(_daiReserveId(spoke1), bob, 0);
@@ -45,7 +45,7 @@ contract SpokeRepayEdgeCaseTest is SpokeBase {
 
     bobDebt = getUserDebt(spoke1, bob, _daiReserveId(spoke1));
     // repay partial base debt
-    daiRepayAmount = bobDebt.premiumDebt + bound(vm.randomUint(), 1, bobDebt.baseDebt - 1);
+    daiRepayAmount = bobDebt.premiumDebt + vm.randomUint(1, bobDebt.baseDebt - 1);
     supplyExchangeRatioBefore = supplyExchangeRatioAfter;
 
     vm.prank(bob);

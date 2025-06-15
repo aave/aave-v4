@@ -129,4 +129,35 @@ contract SpokeDynamicConfigTriggersTest is SpokeBase {
     assertNotEq(_getUserDynConfigKeys(spoke1, alice), configs);
     assertEq(_getSpokeDynConfigKeys(spoke1), _getUserDynConfigKeys(spoke1, alice));
   }
+
+  function test_usingAsCollateral_triggers_dynamicConfigUpdate() public {
+    DynamicConfig[] memory configs = _getUserDynConfigKeys(spoke1, alice);
+
+    Utils.supplyCollateral(spoke1, _usdxReserveId(spoke1), alice, 1000e6, alice);
+    _deployLiquidity(spoke1, _daiReserveId(spoke1), 600e18);
+    Utils.borrow(spoke1, _daiReserveId(spoke1), alice, 500e18, alice);
+    configs = _getUserDynConfigKeys(spoke1, alice);
+    skip(322 days);
+
+    updateCollateralFactor(spoke1, _usdxReserveId(spoke1), 0);
+    vm.expectRevert(ISpoke.HealthFactorBelowThreshold.selector);
+    vm.prank(alice);
+    spoke1.setUsingAsCollateral(_usdxReserveId(spoke1), false);
+
+    updateCollateralFactor(spoke1, _usdxReserveId(spoke1), _randomBps());
+    configs = _getUserDynConfigKeys(spoke1, alice);
+    Utils.supply(spoke1, _wethReserveId(spoke1), alice, 1e18, alice);
+    vm.expectEmit(address(spoke1));
+    emit ISpoke.UserDynamicConfigRefreshed(alice);
+    vm.prank(alice);
+    spoke1.setUsingAsCollateral(_wethReserveId(spoke1), true);
+
+    vm.expectEmit(address(spoke1));
+    emit ISpoke.UserDynamicConfigRefreshed(alice);
+    vm.prank(alice);
+    spoke1.setUsingAsCollateral(_usdxReserveId(spoke1), false);
+
+    assertNotEq(_getUserDynConfigKeys(spoke1, alice), configs);
+    assertEq(_getSpokeDynConfigKeys(spoke1), _getUserDynConfigKeys(spoke1, alice));
+  }
 }

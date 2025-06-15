@@ -822,8 +822,8 @@ contract SpokeBase is Base {
     }
   }
 
-  function _nextConfigKey(ISpoke spoke, uint256 reserveId) internal view returns (uint16) {
+  function _nextDynamicConfigKey(ISpoke spoke, uint256 reserveId) internal view returns (uint16) {
     uint16 dynamicConfigKey = spoke.getReserve(reserveId).dynamicConfigKey;
-    return (dynamicConfigKey + 1) % type(uint16).max;
+    return uint16(uint256(dynamicConfigKey + 1) % type(uint16).max);
   }
 }
