@@ -317,6 +317,10 @@ contract LiquidityHub is ILiquidityHub {
   // public
   //
 
+  function getAssetCount() external view returns (uint256) {
+    return assetsList.length;
+  }
+
   function getAsset(uint256 assetId) external view returns (DataTypes.Asset memory) {
     return _assets.get(assetId);
   }

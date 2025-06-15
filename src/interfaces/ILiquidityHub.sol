@@ -191,6 +191,8 @@ interface ILiquidityHub {
 
   function previewOffset(uint256 assetId, uint256 shares) external view returns (uint256);
 
+  function getAssetCount() external view returns (uint256);
+
   function getAsset(uint256 assetId) external view returns (DataTypes.Asset memory);
 
   function getAssetConfig(uint256 assetId) external view returns (DataTypes.AssetConfig memory);

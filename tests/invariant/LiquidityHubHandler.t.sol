@@ -42,16 +42,7 @@ contract LiquidityHubHandler is Test {
     usdt = new MockERC20();
 
     // Add dai
-    hub.addAsset(
-      DataTypes.AssetConfig({
-        decimals: 18,
-        active: true,
-        frozen: false,
-        paused: false,
-        irStrategy: irStrategy
-      }),
-      address(dai)
-    );
+    hub.addAsset(address(dai), address(irStrategy));
     spoke1.addReserve(
       0,
       DataTypes.ReserveConfig({
@@ -87,7 +78,7 @@ contract LiquidityHubHandler is Test {
 
   function supply(uint256 assetId, address user, uint256 amount, address onBehalfOf) public {
     vm.assume(user != address(hub) && user != address(0) && onBehalfOf != address(0));
-    assetId = bound(assetId, 0, hub.assetCount() - 1);
+    assetId = bound(assetId, 0, hub.getAssetCount() - 1);
     amount = bound(amount, 1, type(uint128).max);
 
     IERC20 asset = hub.assetsList(assetId);
@@ -107,7 +98,7 @@ contract LiquidityHubHandler is Test {
   }
 
   function withdraw(uint256 assetId, address user, uint256 amount, address to) public {
-    assetId = bound(assetId, 0, hub.assetCount() - 1);
+    assetId = bound(assetId, 0, hub.getAssetCount() - 1);
     // TODO: bound by spoke1 user balance
     amount = bound(amount, 1, 2);
 
@@ -120,7 +111,7 @@ contract LiquidityHubHandler is Test {
 
   function donate(uint256 assetId, address user, uint256 amount) public {
     vm.assume(user != address(hub) && user != address(0));
-    assetId = bound(assetId, 0, hub.assetCount() - 1);
+    assetId = bound(assetId, 0, hub.getAssetCount() - 1);
     amount = bound(amount, 1, type(uint128).max);
 
     IERC20 asset = hub.assetsList(assetId);

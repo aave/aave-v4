@@ -8,6 +8,7 @@ import {console2 as console} from 'forge-std/console2.sol';
 
 import {LiquidityHub, ILiquidityHub} from 'src/contracts/LiquidityHub.sol';
 import {Spoke, ISpoke} from 'src/contracts/Spoke.sol';
+import {Configurator, IConfigurator} from 'src/contracts/Configurator.sol';
 import {PercentageMath} from 'src/libraries/math/PercentageMath.sol';
 import {PercentageMathExtended} from 'src/libraries/math/PercentageMathExtended.sol';
 import {WadRayMath} from 'src/libraries/math/WadRayMath.sol';
@@ -70,6 +71,7 @@ abstract contract Base is Test {
   ISpoke internal spoke1;
   ISpoke internal spoke2;
   ISpoke internal spoke3;
+  IConfigurator internal configurator;
   DefaultReserveInterestRateStrategy internal irStrategy;
   DefaultReserveInterestRateStrategy internal creditLineIRStrategy;
 
@@ -157,6 +159,7 @@ abstract contract Base is Test {
     spoke1 = ISpoke(new Spoke(address(hub), address(oracle)));
     spoke2 = ISpoke(new Spoke(address(hub), address(oracle)));
     spoke3 = ISpoke(new Spoke(address(hub), address(oracle)));
+    configurator = new Configurator();
     dai = new MockERC20();
     eth = new MockERC20();
     usdc = new MockERC20();
@@ -247,68 +250,23 @@ abstract contract Base is Test {
     // Add all assets to the Liquidity Hub
     vm.startPrank(HUB_ADMIN);
     // add WETH
-    hub.addAsset(
-      DataTypes.AssetConfig({
-        decimals: tokenList.weth.decimals(),
-        active: true,
-        paused: false,
-        frozen: false,
-        irStrategy: irStrategy
-      }),
-      address(tokenList.weth)
-    );
+    hub.addAsset(address(tokenList.weth), address(irStrategy));
     oracle.setAssetPrice(wethAssetId, 2000e8);
 
     // add USDX
-    hub.addAsset(
-      DataTypes.AssetConfig({
-        decimals: tokenList.usdx.decimals(),
-        active: true,
-        paused: false,
-        frozen: false,
-        irStrategy: irStrategy
-      }),
-      address(tokenList.usdx)
-    );
+    hub.addAsset(address(tokenList.usdx), address(irStrategy));
     oracle.setAssetPrice(usdxAssetId, 1e8);
 
     // add DAI
-    hub.addAsset(
-      DataTypes.AssetConfig({
-        decimals: tokenList.dai.decimals(),
-        active: true,
-        paused: false,
-        frozen: false,
-        irStrategy: irStrategy
-      }),
-      address(tokenList.dai)
-    );
+    hub.addAsset(address(tokenList.dai), address(irStrategy));
     oracle.setAssetPrice(daiAssetId, 1e8);
 
     // add WBTC
-    hub.addAsset(
-      DataTypes.AssetConfig({
-        decimals: tokenList.wbtc.decimals(),
-        active: true,
-        paused: false,
-        frozen: false,
-        irStrategy: irStrategy
-      }),
-      address(tokenList.wbtc)
-    );
+    hub.addAsset(address(tokenList.wbtc), address(irStrategy));
     oracle.setAssetPrice(wbtcAssetId, 50_000e8);
 
     // add USDY
-    hub.addAsset(
-      DataTypes.AssetConfig({
-        decimals: tokenList.usdy.decimals(),
-        active: true,
-        paused: false,
-        frozen: false,
-        irStrategy: irStrategy
-      }),
-      address(tokenList.usdy)
-    );
+    hub.addAsset(address(tokenList.usdy), address(irStrategy));
     oracle.setAssetPrice(usdyAssetId, 1e8);
 
     // Spoke 1 reserve configs
@@ -520,16 +478,7 @@ abstract contract Base is Test {
     hub.addSpoke(wbtcAssetId, spokeConfig, address(spoke3));
 
     // Spoke 2 to have an extra dai reserve
-    hub.addAsset(
-      DataTypes.AssetConfig({
-        decimals: tokenList.dai.decimals(),
-        active: true,
-        frozen: false,
-        paused: false,
-        irStrategy: irStrategy
-      }),
-      address(tokenList.dai)
-    );
+    hub.addAsset(address(tokenList.dai), address(irStrategy));
     oracle.setAssetPrice(dai2AssetId, 1e8);
     daiConfig = DataTypes.ReserveConfig({
       decimals: tokenList.dai.decimals(),
@@ -607,37 +556,25 @@ abstract contract Base is Test {
   function updateAssetActive(
     ILiquidityHub liquidityHub,
     uint256 assetId,
-    bool newActiveFlag
-  ) internal {
-    DataTypes.AssetConfig memory assetConfig = liquidityHub.getAsset(assetId).config;
-    assetConfig.active = newActiveFlag;
-
-    vm.prank(HUB_ADMIN);
-    liquidityHub.updateAssetConfig(assetId, assetConfig);
+    bool active
+  ) internal virtual {
+    configurator.setAssetActive(address(liquidityHub), assetId, active);
   }
 
   function updateAssetPaused(
     ILiquidityHub liquidityHub,
     uint256 assetId,
-    bool newPausedFlag
-  ) internal {
-    DataTypes.AssetConfig memory assetConfig = liquidityHub.getAsset(assetId).config;
-    assetConfig.paused = newPausedFlag;
-
-    vm.prank(HUB_ADMIN);
-    liquidityHub.updateAssetConfig(assetId, assetConfig);
+    bool paused
+  ) internal virtual {
+    configurator.setAssetPaused(address(liquidityHub), assetId, paused);
   }
 
   function updateAssetFrozen(
     ILiquidityHub liquidityHub,
     uint256 assetId,
-    bool newFrozenFlag
-  ) internal {
-    DataTypes.AssetConfig memory assetConfig = liquidityHub.getAsset(assetId).config;
-    assetConfig.frozen = newFrozenFlag;
-
-    vm.prank(HUB_ADMIN);
-    liquidityHub.updateAssetConfig(assetId, assetConfig);
+    bool frozen
+  ) internal virtual {
+    configurator.setAssetFrozen(address(liquidityHub), assetId, frozen);
   }
 
   function updateReserveFrozenFlag(ISpoke spoke, uint256 reserveId, bool newFrozenFlag) internal {
