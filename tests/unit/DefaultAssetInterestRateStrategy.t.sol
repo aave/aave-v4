@@ -12,14 +12,6 @@ contract DefaultAssetInterestRateStrategyTest is Test {
   using WadRayMath for uint32;
   using WadRayMath for uint256;
 
-  event RateDataUpdate(
-    uint256 indexed assetId,
-    uint256 optimalUsageRatio,
-    uint256 baseVariableBorrowRate,
-    uint256 variableRateSlope1,
-    uint256 variableRateSlope2
-  );
-
   uint256 mockAssetId = uint256(keccak256('mockAssetId'));
 
   DefaultAssetInterestRateStrategy public rateStrategy;
@@ -99,7 +91,7 @@ contract DefaultAssetInterestRateStrategyTest is Test {
 
     for (uint256 i; i < invalidOptimalUsageRatios.length; i++) {
       rateData.optimalUsageRatio = invalidOptimalUsageRatios[i];
-      vm.expectRevert(IDefaultInterestRateStrategy.INVALID_OPTIMAL_USAGE_RATIO.selector);
+      vm.expectRevert(IDefaultInterestRateStrategy.InvalidOptimalUsageRatio.selector);
       rateStrategy.setInterestRateData(mockAssetId, rateData);
     }
   }
@@ -109,7 +101,7 @@ contract DefaultAssetInterestRateStrategyTest is Test {
       rateData.variableRateSlope2,
       rateData.variableRateSlope1
     );
-    vm.expectRevert(IDefaultInterestRateStrategy.SLOPE_2_MUST_BE_GTE_SLOPE_1.selector);
+    vm.expectRevert(IDefaultInterestRateStrategy.Slope2MustBeGteSlope2.selector);
     rateStrategy.setInterestRateData(mockAssetId, rateData);
   }
 
@@ -118,7 +110,7 @@ contract DefaultAssetInterestRateStrategyTest is Test {
       uint32(rateStrategy.MAX_BORROW_RATE()) /
       3 +
       1;
-    vm.expectRevert(IDefaultInterestRateStrategy.INVALID_MAX_RATE.selector);
+    vm.expectRevert(IDefaultInterestRateStrategy.InvalidMaxRate.selector);
     rateStrategy.setInterestRateData(mockAssetId, rateData);
   }
 
@@ -131,7 +123,7 @@ contract DefaultAssetInterestRateStrategyTest is Test {
     });
 
     vm.expectEmit(address(rateStrategy));
-    emit RateDataUpdate(
+    emit IDefaultInterestRateStrategy.RateDataUpdate(
       mockAssetId,
       uint256(rateData.optimalUsageRatio),
       uint256(rateData.baseVariableBorrowRate),
@@ -153,7 +145,7 @@ contract DefaultAssetInterestRateStrategyTest is Test {
     uint256 mockAssetId2 = uint256(keccak256('mockAssetId2'));
     vm.expectRevert(
       abi.encodeWithSelector(
-        IDefaultInterestRateStrategy.INTEREST_RATE_DATA_NOT_SET.selector,
+        IDefaultInterestRateStrategy.InterestRateDataNotSet.selector,
         mockAssetId2
       )
     );
@@ -178,11 +170,16 @@ contract DefaultAssetInterestRateStrategyTest is Test {
     test_calculateInterestRate_fuzz_ZeroDebt(0);
   }
 
-  function test_calculateInterestRate_LeftToKinkPoint(uint256 percentageToKinkPointBps) public {
+  function test_calculateInterestRate_LeftToKinkPoint(
+    uint256 percentageToKinkPointBps,
+    uint256 totalDebt
+  ) public {
     uint256 percentageToKinkPointRay = bound(percentageToKinkPointBps, 1, 100_00).bpsToRay();
 
-    (uint256 totalDebt, uint256 availableLiquidity) = _computeDebtAndAvailableLiquidity(
-      percentageToKinkPointRay.rayMul(rateData.optimalUsageRatio.bpsToRay())
+    uint256 availableLiquidity;
+    (totalDebt, availableLiquidity) = _computeDebtAndAvailableLiquidity(
+      percentageToKinkPointRay.rayMul(rateData.optimalUsageRatio.bpsToRay()),
+      totalDebt
     );
 
     uint256 variableBorrowRate = rateStrategy.calculateInterestRate({
@@ -197,15 +194,20 @@ contract DefaultAssetInterestRateStrategyTest is Test {
   }
 
   function test_calculateInterestRate_AtKinkPoint() public {
-    test_calculateInterestRate_LeftToKinkPoint(100_00);
+    test_calculateInterestRate_LeftToKinkPoint(100_00, 100e18);
   }
 
-  function test_calculateInterestRate_RightToKinkPoint(uint256 percentageFromKinkPointBps) public {
-    uint256 percentageFromKinkPointRay = bound(percentageFromKinkPointBps, 1, 100_00).bpsToRay();
+  function test_calculateInterestRate_RightToKinkPoint(
+    uint256 utilizationRatio,
+    uint256 totalDebt
+  ) public {
+    uint256 utilizationRatioRay = bound(utilizationRatio, rateData.optimalUsageRatio + 1, 100_00)
+      .bpsToRay();
 
-    (uint256 totalDebt, uint256 availableLiquidity) = _computeDebtAndAvailableLiquidity(
-      rateData.optimalUsageRatio.bpsToRay() +
-        percentageFromKinkPointRay.rayMul(WadRayMath.RAY - rateData.optimalUsageRatio.bpsToRay())
+    uint256 availableLiquidity;
+    (totalDebt, availableLiquidity) = _computeDebtAndAvailableLiquidity(
+      utilizationRatioRay,
+      totalDebt
     );
 
     uint256 variableBorrowRate = rateStrategy.calculateInterestRate({
@@ -216,19 +218,24 @@ contract DefaultAssetInterestRateStrategyTest is Test {
 
     uint256 expectedVariableRate = rateData.baseVariableBorrowRate.bpsToRay() +
       rateData.variableRateSlope1.bpsToRay() +
-      rateData.variableRateSlope2.bpsToRay().rayMul(percentageFromKinkPointRay);
+      rateData
+        .variableRateSlope2
+        .bpsToRay()
+        .rayMul(utilizationRatioRay - rateData.optimalUsageRatio.bpsToRay())
+        .rayDiv(WadRayMath.RAY - rateData.optimalUsageRatio.bpsToRay());
     assertEq(variableBorrowRate, expectedVariableRate);
   }
 
   function test_calculateInterestRate_AtMaxUtilization() public {
-    test_calculateInterestRate_RightToKinkPoint(100_00);
+    test_calculateInterestRate_RightToKinkPoint(100_00, 100e18);
   }
 
   function _computeDebtAndAvailableLiquidity(
-    uint256 targetUtilizationRatioRay
+    uint256 targetUtilizationRatioRay,
+    uint256 totalDebtUnbounded
   ) internal pure returns (uint256 totalDebt, uint256 availableLiquidity) {
-    /// @dev using 27 decimals to avoid precision loss, even though assets in the hub can have up to 18 decimals
-    totalDebt = 100e27;
+    /// @dev using high value to avoid precision loss
+    totalDebt = bound(totalDebtUnbounded, 10e27, 1e30);
 
     // utilizationRatio = totalDebt / (totalDebt + availableLiquidity)
     // utilizationRatio * totalDebt + utilizationRatio * availableLiquidity = totalDebt

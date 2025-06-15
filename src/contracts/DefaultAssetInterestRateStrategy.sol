@@ -9,14 +9,11 @@ import {IAssetInterestRateStrategy} from 'src/interfaces/IAssetInterestRateStrat
  * @title DefaultAssetInterestRateStrategy contract
  * @author Aave Labs
  * @notice Default interest rate strategy used by the Aave protocol
- * @dev Strategies are pool-specific: each contract CAN'T be used across different Aave pools
- *   due to the caching of the PoolAddressesProvider and the usage of underlying addresses as
- *   index of the _interestRateData
+ * @dev Strategies are hub-specific: one strategy CAN'T be used across different Aave hubs
+ *   due to the usage of asset id as index of the _interestRateData
  */
 contract DefaultAssetInterestRateStrategy is IDefaultInterestRateStrategy {
-  using WadRayMath for uint16;
-  using WadRayMath for uint32;
-  using WadRayMath for uint256;
+  using WadRayMath for *;
 
   /// @inheritdoc IDefaultInterestRateStrategy
   uint256 public constant MAX_BORROW_RATE = 1000_00; // 1000.00% in BPS
@@ -28,7 +25,7 @@ contract DefaultAssetInterestRateStrategy is IDefaultInterestRateStrategy {
   uint256 public constant MAX_OPTIMAL_RATIO = 99_00; // 99.00% in BPS
 
   /// @dev Map of assetId and their interest rate data (assetId => interestRateData)
-  mapping(uint256 => InterestRateData) internal _interestRateData;
+  mapping(uint256 assetId => InterestRateData data) internal _interestRateData;
 
   /**
    * @dev Constructor.
@@ -44,19 +41,16 @@ contract DefaultAssetInterestRateStrategy is IDefaultInterestRateStrategy {
     require(
       MIN_OPTIMAL_RATIO <= rateData.optimalUsageRatio &&
         rateData.optimalUsageRatio <= MAX_OPTIMAL_RATIO,
-      INVALID_OPTIMAL_USAGE_RATIO()
+      InvalidOptimalUsageRatio()
     );
 
-    require(
-      rateData.variableRateSlope1 <= rateData.variableRateSlope2,
-      SLOPE_2_MUST_BE_GTE_SLOPE_1()
-    );
+    require(rateData.variableRateSlope1 <= rateData.variableRateSlope2, Slope2MustBeGteSlope2());
 
     // The maximum rate should not be above certain threshold
     require(
       rateData.baseVariableBorrowRate + rateData.variableRateSlope1 + rateData.variableRateSlope2 <=
         MAX_BORROW_RATE,
-      INVALID_MAX_RATE()
+      InvalidMaxRate()
     );
 
     _interestRateData[assetId] = rateData;
@@ -109,7 +103,7 @@ contract DefaultAssetInterestRateStrategy is IDefaultInterestRateStrategy {
     uint256 availableLiquidity
   ) external view virtual override returns (uint256) {
     InterestRateData memory rateData = _interestRateData[assetId];
-    require(rateData.optimalUsageRatio != 0, INTEREST_RATE_DATA_NOT_SET(assetId));
+    require(rateData.optimalUsageRatio != 0, InterestRateDataNotSet(assetId));
 
     uint256 currentVariableBorrowRateRay = rateData.baseVariableBorrowRate.bpsToRay();
     if (totalDebt == 0) {

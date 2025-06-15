@@ -45,30 +45,25 @@ interface IDefaultInterestRateStrategy is IAssetInterestRateStrategy {
   }
 
   /**
-   * @notice Thrown whe the addresses provided is address zero
-   */
-  error INVALID_ADDRESSES_PROVIDER();
-
-  /**
    * @notice Thrown when the max possible rate is greater than `MAX_BORROW_RATE`
    */
-  error INVALID_MAX_RATE();
+  error InvalidMaxRate();
 
   /**
    * @notice Thrown when slope 2 (after kink point) is less than slope 1 (before kink point)
    */
-  error SLOPE_2_MUST_BE_GTE_SLOPE_1();
+  error Slope2MustBeGteSlope2();
 
   /**
    * @notice Thrown when the optimal borrow usage ratio is less than `MIN_OPTIMAL_POINT` or greater than `MAX_OPTIMAL_POINT`
    */
-  error INVALID_OPTIMAL_USAGE_RATIO();
+  error InvalidOptimalUsageRatio();
 
   /**
    * @notice Thrown when the interest rate data is not set for the asset
    * @param assetId The id of the asset with no interest rate data set
    */
-  error INTEREST_RATE_DATA_NOT_SET(uint256 assetId);
+  error InterestRateDataNotSet(uint256 assetId);
 
   /**
    * @notice Sets interest rate data for an Aave rate strategy
