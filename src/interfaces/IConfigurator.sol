@@ -8,7 +8,7 @@ interface IConfigurator {
 
   function setAssetFrozen(address hub, uint256 assetId, bool frozen) external;
 
-  function setReserveFactor(address hub, uint256 assetId, uint256 reserveFactor) external;
+  function setLiquidityFee(address hub, uint256 assetId, uint256 liquidityFee) external;
 
   function setInterestRateStrategy(address hub, uint256 assetId, address irStrategy) external;
 }

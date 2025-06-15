@@ -70,7 +70,7 @@ interface ILiquidityHub {
   error AssetNotActive();
   error AssetPaused();
   error AssetFrozen();
-  error InvalidReserveFactor();
+  error InvalidLiquidityFee();
   error InvalidIrStrategy();
   error InvalidAssetDecimals();
   error InvalidAssetAddress();
@@ -80,7 +80,7 @@ interface ILiquidityHub {
 
   function updateAssetFlags(uint256 assetId, bool active, bool paused, bool frozen) external;
 
-  function updateReserveFactor(uint256 assetId, uint256 reserveFactor) external;
+  function updateLiquidityFee(uint256 assetId, uint256 liquidityFee) external;
 
   function updateInterestRateStrategy(uint256 assetId, address irStrategy) external;
 

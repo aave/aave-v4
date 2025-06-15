@@ -320,7 +320,7 @@ contract SpokeRiskPremiumEdgeCasesTest is SpokeBase {
       liquidityAdded: 0,
       liquidityTaken: daiSupplyAmount,
       totalDebt: baseDebt,
-      reserveFactor: 0,
+      liquidityFee: 0,
       assetId: daiAssetId,
       virtualUnderlyingBalance: daiAsset.availableLiquidity,
       usingVirtualBalance: true

@@ -50,7 +50,7 @@ contract LiquidityHub is ILiquidityHub {
       active: true,
       paused: false,
       frozen: false,
-      reserveFactor: 0,
+      liquidityFee: 0,
       irStrategy: IReserveInterestRateStrategy(irStrategy)
     });
 
@@ -83,14 +83,14 @@ contract LiquidityHub is ILiquidityHub {
     emit AssetConfigUpdated(assetId, asset.config);
   }
 
-  function updateReserveFactor(uint256 assetId, uint256 reserveFactor) external {
+  function updateLiquidityFee(uint256 assetId, uint256 liquidityFee) external {
     // TODO: AccessControl
 
-    require(reserveFactor <= PercentageMath.PERCENTAGE_FACTOR, InvalidReserveFactor());
+    require(liquidityFee <= PercentageMath.PERCENTAGE_FACTOR, InvalidLiquidityFee());
 
     DataTypes.Asset storage asset = _assets.get(assetId);
     asset.accrue();
-    asset.config.reserveFactor = reserveFactor;
+    asset.config.liquidityFee = liquidityFee;
 
     emit AssetConfigUpdated(assetId, asset.config);
   }

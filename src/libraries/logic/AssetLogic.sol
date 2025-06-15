@@ -126,7 +126,7 @@ library AssetLogic {
         liquidityAdded: liquidityAdded,
         liquidityTaken: liquidityTaken,
         totalDebt: asset.baseDebt(),
-        reserveFactor: 0, // TODO
+        liquidityFee: 0, // TODO
         assetId: asset.id,
         virtualUnderlyingBalance: asset.availableLiquidity, // without current liquidity change
         usingVirtualBalance: true

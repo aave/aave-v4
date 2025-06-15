@@ -40,7 +40,7 @@ library DataTypes {
     bool active;
     bool paused;
     bool frozen;
-    uint256 reserveFactor;
+    uint256 liquidityFee;
     IReserveInterestRateStrategy irStrategy;
   }
 
@@ -50,7 +50,7 @@ library DataTypes {
     uint256 liquidityAdded;
     uint256 liquidityTaken;
     uint256 totalDebt;
-    uint256 reserveFactor; // likely not required
+    uint256 liquidityFee; // likely not required
     uint256 assetId;
     uint256 virtualUnderlyingBalance;
   }

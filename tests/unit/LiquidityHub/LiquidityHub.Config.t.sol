@@ -260,32 +260,32 @@ contract LiquidityHubConfigTest is LiquidityHubBase {
     _checkedUpdateAssetActive(hub, daiAssetId, true);
   }
 
-  function test_updateReserveFactor_fuzz_revertsWith_InvalidReserveFactor(
+  function test_updateLiquidityFee_fuzz_revertsWith_InvalidLiquidityFee(
     uint256 assetId,
-    uint256 newReserveFactor
+    uint256 newLiquidityFee
   ) public {
     assetId = bound(assetId, 0, hub.getAssetCount() - 1);
-    newReserveFactor = bound(
-      newReserveFactor,
+    newLiquidityFee = bound(
+      newLiquidityFee,
       PercentageMath.PERCENTAGE_FACTOR + 1,
       type(uint256).max
     );
-    vm.expectRevert(ILiquidityHub.InvalidReserveFactor.selector);
-    hub.updateReserveFactor(assetId, newReserveFactor);
+    vm.expectRevert(ILiquidityHub.InvalidLiquidityFee.selector);
+    hub.updateLiquidityFee(assetId, newLiquidityFee);
   }
 
-  function test_updateReserveFactor_revertsWith_InvalidReserveFactor() public {
-    test_updateReserveFactor_fuzz_revertsWith_InvalidReserveFactor(daiAssetId, 101_00);
+  function test_updateLiquidityFee_revertsWith_InvalidLiquidityFee() public {
+    test_updateLiquidityFee_fuzz_revertsWith_InvalidLiquidityFee(daiAssetId, 101_00);
   }
 
-  function test_updateReserveFactor_fuzz(uint256 assetId, uint256 newReserveFactor) public {
+  function test_updateLiquidityFee_fuzz(uint256 assetId, uint256 newLiquidityFee) public {
     assetId = bound(assetId, 0, hub.getAssetCount() - 1);
-    newReserveFactor = bound(newReserveFactor, 0, PercentageMath.PERCENTAGE_FACTOR);
-    _checkedUpdateReserveFactor(hub, assetId, newReserveFactor);
+    newLiquidityFee = bound(newLiquidityFee, 0, PercentageMath.PERCENTAGE_FACTOR);
+    _checkedUpdateLiquidityFee(hub, assetId, newLiquidityFee);
   }
 
-  function test_updateReserveFactor() public {
-    test_updateReserveFactor_fuzz(daiAssetId, 2_00);
+  function test_updateLiquidityFee() public {
+    test_updateLiquidityFee_fuzz(daiAssetId, 2_00);
   }
 
   function test_updateInterestRateStrategy_fuzz_revertsWith_InvalidIrStrategy(
@@ -364,21 +364,21 @@ contract LiquidityHubConfigTest is LiquidityHubBase {
     assertEq(hub.getAssetConfig(assetId).frozen, frozen, 'asset frozen status');
   }
 
-  function _checkedUpdateReserveFactor(
+  function _checkedUpdateLiquidityFee(
     ILiquidityHub hub,
     uint256 assetId,
-    uint256 reserveFactor
+    uint256 liquidityFee
   ) internal {
     DataTypes.AssetConfig memory config = hub.getAssetConfig(assetId);
-    config.reserveFactor = reserveFactor;
+    config.liquidityFee = liquidityFee;
 
     vm.expectEmit(address(hub));
     emit ILiquidityHub.AssetConfigUpdated(assetId, config);
 
     vm.prank(address(configurator));
-    hub.updateReserveFactor(assetId, reserveFactor);
+    hub.updateLiquidityFee(assetId, liquidityFee);
 
-    assertEq(hub.getAssetConfig(assetId).reserveFactor, reserveFactor, 'asset reserveFactor');
+    assertEq(hub.getAssetConfig(assetId).liquidityFee, liquidityFee, 'asset liquidityFee');
   }
 
   function _checkedUpdateInterestRateStrategy(
@@ -422,7 +422,7 @@ contract LiquidityHubConfigTest is LiquidityHubBase {
         active: true,
         frozen: false,
         paused: false,
-        reserveFactor: 0,
+        liquidityFee: 0,
         irStrategy: IReserveInterestRateStrategy(interestRateStrategy)
       })
     );

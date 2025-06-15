@@ -42,10 +42,10 @@ contract Configurator is IConfigurator {
     });
   }
 
-  function setReserveFactor(address hub, uint256 assetId, uint256 reserveFactor) external override {
+  function setLiquidityFee(address hub, uint256 assetId, uint256 liquidityFee) external override {
     // TODO: AccessControl
 
-    ILiquidityHub(hub).updateReserveFactor({assetId: assetId, reserveFactor: reserveFactor});
+    ILiquidityHub(hub).updateLiquidityFee({assetId: assetId, liquidityFee: liquidityFee});
   }
 
   function setInterestRateStrategy(
