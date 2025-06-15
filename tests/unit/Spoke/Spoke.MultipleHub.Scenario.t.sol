@@ -4,11 +4,6 @@ pragma solidity ^0.8.0;
 import 'tests/unit/Spoke/SpokeBase.t.sol';
 
 contract SpokeMultipleHubScenarioTest is SpokeBase {
-  using SharesMath for uint256;
-  using WadRayMath for uint256;
-  using WadRayMathExtended for uint256;
-  using PercentageMath for uint256;
-
   struct IsolationLocalVars {
     uint256 assetAId;
     uint256 assetBId;
