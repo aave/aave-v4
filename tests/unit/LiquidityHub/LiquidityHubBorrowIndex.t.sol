@@ -230,7 +230,7 @@ contract LiquidityHubBorrowIndex is Base {
     //     );
   }
 
-  function _deployAndAddSpoke(uint256 assetId) internal returns (address, address) {
+  function _deployAndAddSpoke(uint256 assetId) internal returns (address) {
     IPriceOracle oracle = new MockPriceOracle();
     Spoke spoke = new Spoke(address(oracle));
     hub.addSpoke(
@@ -238,7 +238,7 @@ contract LiquidityHubBorrowIndex is Base {
       DataTypes.SpokeConfig({supplyCap: type(uint256).max, drawCap: type(uint256).max}),
       address(spoke)
     );
-    return (address(spoke), address(oracle));
+    return address(spoke);
   }
 
   function _mockInterestRate(uint256 bps) internal {

@@ -30,12 +30,7 @@ contract SpokeRiskPremiumEdgeCasesTest is SpokeBase {
     usdxSupplyAmount = bound(
       usdxSupplyAmount,
       1,
-      _calcEquivalentAssetAmount(
-        spoke2,
-        _dai2ReserveId(spoke2),
-        borrowAmount,
-        _usdxReserveId(spoke2)
-      ) - 1
+      _convertAssetAmount(spoke2, _dai2ReserveId(spoke2), borrowAmount, _usdxReserveId(spoke2)) - 1
     );
     repayAmount = bound(repayAmount, 2, borrowAmount);
 
@@ -264,7 +259,7 @@ contract SpokeRiskPremiumEdgeCasesTest is SpokeBase {
   ) public {
     daiSupplyAmount = bound(daiSupplyAmount, 1e18, MAX_SUPPLY_AMOUNT / 2 - 1); // Leave room for Alice to borrow 1 dai
     // Determine value of daiSupplyAmount in weth terms
-    uint256 wethBorrowAmount = _calcEquivalentAssetAmount(
+    uint256 wethBorrowAmount = _convertAssetAmount(
       spoke2,
       _daiReserveId(spoke2),
       daiSupplyAmount,
@@ -390,7 +385,7 @@ contract SpokeRiskPremiumEdgeCasesTest is SpokeBase {
   /// Bob's debt initially fully covered by one collateral. Then debt interest accrues, so debt must be covered by 2 collaterals
   function test_riskPremium_increasesAfterDebtAccrual() public {
     uint256 wbtcSupplyAmount = 1e8;
-    uint256 daiBorrowAmount = _calcEquivalentAssetAmount(
+    uint256 daiBorrowAmount = _convertAssetAmount(
       spoke2,
       _wbtcReserveId(spoke2),
       wbtcSupplyAmount,
@@ -405,7 +400,7 @@ contract SpokeRiskPremiumEdgeCasesTest is SpokeBase {
     uint40 skipTime
   ) public {
     // Find max supply amount of dai in terms of weth
-    uint256 maxWethDebt = _calcEquivalentAssetAmount(
+    uint256 maxWethDebt = _convertAssetAmount(
       spoke2,
       _daiReserveId(spoke2),
       MAX_SUPPLY_AMOUNT,
@@ -418,7 +413,7 @@ contract SpokeRiskPremiumEdgeCasesTest is SpokeBase {
     );
     borrowAmount = bound(borrowAmount, 1e18, maxWethDebt); // Allow room for dai supply to cover weth debt
     // Determine value of borrowAmount in dai terms so dai collateral can fully cover weth debt
-    uint256 daiSupplyAmount = _calcEquivalentAssetAmount(
+    uint256 daiSupplyAmount = _convertAssetAmount(
       spoke2,
       _wethReserveId(spoke2),
       borrowAmount,
@@ -517,7 +512,7 @@ contract SpokeRiskPremiumEdgeCasesTest is SpokeBase {
   ) public {
     uint256 dai2SupplyAmount = MAX_SUPPLY_AMOUNT;
     // Find max supply amount of dai in terms of weth
-    uint256 maxWethDebt = _calcEquivalentAssetAmount(
+    uint256 maxWethDebt = _convertAssetAmount(
       spoke2,
       _daiReserveId(spoke2),
       MAX_SUPPLY_AMOUNT,
@@ -529,7 +524,7 @@ contract SpokeRiskPremiumEdgeCasesTest is SpokeBase {
       'Max weth debt should be less than half max supply amount'
     );
     wethBorrowAmount = bound(wethBorrowAmount, 1e18, maxWethDebt); // Allow room for dai supply to cover weth debt
-    uint256 daiSupplyAmount = _calcEquivalentAssetAmount(
+    uint256 daiSupplyAmount = _convertAssetAmount(
       spoke2,
       _wethReserveId(spoke2),
       wethBorrowAmount,
@@ -632,7 +627,7 @@ contract SpokeRiskPremiumEdgeCasesTest is SpokeBase {
   /// Initially debt is covered by 1 collateral, then due to borrowing more, debt is covered by 2 collaterals
   function test_riskPremium_borrowingMoreIncreasesRP() public {
     uint256 wbtcSupplyAmount = 1e8;
-    uint256 daiBorrowAmount = _calcEquivalentAssetAmount(
+    uint256 daiBorrowAmount = _convertAssetAmount(
       spoke2,
       _wbtcReserveId(spoke2),
       wbtcSupplyAmount,
@@ -738,7 +733,7 @@ contract SpokeRiskPremiumEdgeCasesTest is SpokeBase {
   function test_riskPremium_supplyingLowerLPCollateral_decreasesRP() public {
     uint256 wbtcSupplyAmount = 1e8;
     uint256 wethSupplyAmount = 10e18;
-    uint256 daiBorrowAmount = _calcEquivalentAssetAmount(
+    uint256 daiBorrowAmount = _convertAssetAmount(
       spoke1,
       _wethReserveId(spoke1),
       wethSupplyAmount / 2,
@@ -828,7 +823,7 @@ contract SpokeRiskPremiumEdgeCasesTest is SpokeBase {
 
     // Supply dai and dai2 collaterals to cover weth debt. Dai increases in price to fully cover weth debt
     uint256 dai2SupplyAmount = MAX_SUPPLY_AMOUNT;
-    uint256 borrowAmount = _calcEquivalentAssetAmount(
+    uint256 borrowAmount = _convertAssetAmount(
       spoke2,
       _daiReserveId(spoke2),
       daiSupplyAmount,

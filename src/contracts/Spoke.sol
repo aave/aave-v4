@@ -146,19 +146,18 @@ contract Spoke is ISpoke, Multicall {
     DataTypes.Reserve storage reserve = _reserves[reserveId];
     DataTypes.UserPosition storage userPosition = _userPositions[msg.sender][reserveId];
     uint256 assetId = reserve.assetId;
+    ILiquidityHub hub = reserve.config.hub;
 
     // If uint256.max is passed, withdraw all user's supplied assets
     if (amount == type(uint256).max) {
-      amount = reserve.config.hub.convertToSuppliedAssets(assetId, userPosition.suppliedShares);
+      amount = hub.convertToSuppliedAssets(assetId, userPosition.suppliedShares);
     }
     _validateWithdraw(reserve, userPosition, amount);
 
     uint256 userPremiumDrawnShares = userPosition.premiumDrawnShares;
     uint256 userPremiumOffset = userPosition.premiumOffset;
-    uint256 accruedPremium = reserve.config.hub.convertToDrawnAssets(
-      assetId,
-      userPremiumDrawnShares
-    ) - userPremiumOffset; // assets(premiumShares) - offset should never be < 0
+    uint256 accruedPremium = hub.convertToDrawnAssets(assetId, userPremiumDrawnShares) -
+      userPremiumOffset; // assets(premiumShares) - offset should never be < 0
     userPosition.premiumDrawnShares = 0;
     userPosition.premiumOffset = 0;
     userPosition.realizedPremium += accruedPremium;
@@ -171,7 +170,7 @@ contract Spoke is ISpoke, Multicall {
       -int256(userPremiumOffset),
       int256(accruedPremium)
     ); // unnecessary but we realize premium debt here
-    uint256 withdrawnShares = reserve.config.hub.remove(assetId, amount, to);
+    uint256 withdrawnShares = hub.remove(assetId, amount, to);
 
     userPosition.suppliedShares -= withdrawnShares;
     reserve.suppliedShares -= withdrawnShares;
@@ -182,7 +181,7 @@ contract Spoke is ISpoke, Multicall {
     userPremiumDrawnShares = userPosition.premiumDrawnShares = userPosition
       .baseDrawnShares
       .percentMulUp(newUserRiskPremium);
-    userPremiumOffset = userPosition.premiumOffset = reserve.config.hub.previewOffset(
+    userPremiumOffset = userPosition.premiumOffset = hub.previewOffset(
       assetId,
       userPosition.premiumDrawnShares
     );
@@ -207,15 +206,14 @@ contract Spoke is ISpoke, Multicall {
     DataTypes.Reserve storage reserve = _reserves[reserveId];
     DataTypes.UserPosition storage userPosition = _userPositions[msg.sender][reserveId];
     uint256 assetId = reserve.assetId;
+    ILiquidityHub hub = reserve.config.hub;
 
     _validateBorrow(reserve, msg.sender);
 
     uint256 userPremiumDrawnShares = userPosition.premiumDrawnShares;
     uint256 userPremiumOffset = userPosition.premiumOffset;
-    uint256 accruedPremium = reserve.config.hub.convertToDrawnAssets(
-      assetId,
-      userPremiumDrawnShares
-    ) - userPremiumOffset; // assets(premiumShares) - offset should never be < 0
+    uint256 accruedPremium = hub.convertToDrawnAssets(assetId, userPremiumDrawnShares) -
+      userPremiumOffset; // assets(premiumShares) - offset should never be < 0
     userPosition.premiumDrawnShares = 0;
     userPosition.premiumOffset = 0;
     userPosition.realizedPremium += accruedPremium;
@@ -228,7 +226,7 @@ contract Spoke is ISpoke, Multicall {
       -int256(userPremiumOffset),
       int256(accruedPremium)
     ); // unnecessary but we realize premium debt here
-    uint256 baseDrawnShares = reserve.config.hub.draw(assetId, amount, to);
+    uint256 baseDrawnShares = hub.draw(assetId, amount, to);
 
     reserve.baseDrawnShares += baseDrawnShares;
     userPosition.baseDrawnShares += baseDrawnShares;
@@ -239,7 +237,7 @@ contract Spoke is ISpoke, Multicall {
     userPremiumDrawnShares = userPosition.premiumDrawnShares = userPosition
       .baseDrawnShares
       .percentMulUp(newUserRiskPremium);
-    userPremiumOffset = userPosition.premiumOffset = reserve.config.hub.previewOffset(
+    userPremiumOffset = userPosition.premiumOffset = hub.previewOffset(
       assetId,
       userPosition.premiumDrawnShares
     );
@@ -263,13 +261,10 @@ contract Spoke is ISpoke, Multicall {
     DataTypes.UserPosition storage userPosition = _userPositions[msg.sender][reserveId];
     DataTypes.Reserve storage reserve = _reserves[reserveId];
     uint256 assetId = reserve.assetId;
+    ILiquidityHub hub = reserve.config.hub;
 
     _validateRepay(reserve);
-    (uint256 baseDebt, uint256 premiumDebt) = _getUserDebt(
-      userPosition,
-      assetId,
-      reserve.config.hub
-    );
+    (uint256 baseDebt, uint256 premiumDebt) = _getUserDebt(hub, assetId, userPosition);
     (uint256 baseDebtRestored, uint256 premiumDebtRestored) = _calculateRestoreAmount(
       baseDebt,
       premiumDebt,
@@ -292,7 +287,7 @@ contract Spoke is ISpoke, Multicall {
       -int256(userPremiumOffset),
       _signedDiff(premiumDebt - premiumDebtRestored, userRealizedPremium)
     ); // we settle premium debt here
-    uint256 restoredShares = reserve.config.hub.restore(
+    uint256 restoredShares = hub.restore(
       assetId,
       baseDebtRestored,
       premiumDebtRestored,
@@ -307,7 +302,7 @@ contract Spoke is ISpoke, Multicall {
     userPremiumDrawnShares = userPosition.premiumDrawnShares = userPosition
       .baseDrawnShares
       .percentMulUp(newUserRiskPremium);
-    userPremiumOffset = userPosition.premiumOffset = reserve.config.hub.previewOffset(
+    userPremiumOffset = userPosition.premiumOffset = hub.previewOffset(
       assetId,
       userPosition.premiumDrawnShares
     );
@@ -382,17 +377,17 @@ contract Spoke is ISpoke, Multicall {
   function getUserDebt(uint256 reserveId, address user) external view returns (uint256, uint256) {
     return
       _getUserDebt(
-        _userPositions[user][reserveId],
+        _reserves[reserveId].config.hub,
         _reserves[reserveId].assetId,
-        _reserves[reserveId].config.hub
+        _userPositions[user][reserveId]
       );
   }
 
   function getUserTotalDebt(uint256 reserveId, address user) external view returns (uint256) {
     (uint256 baseDebt, uint256 premiumDebt) = _getUserDebt(
-      _userPositions[user][reserveId],
+      _reserves[reserveId].config.hub,
       _reserves[reserveId].assetId,
-      _reserves[reserveId].config.hub
+      _userPositions[user][reserveId]
     );
     return baseDebt + premiumDebt;
   }
@@ -853,7 +848,7 @@ contract Spoke is ISpoke, Multicall {
     uint256 assetUnit,
     ILiquidityHub hub
   ) internal view returns (uint256) {
-    (uint256 baseDebt, uint256 premiumDebt) = _getUserDebt(userPosition, assetId, hub);
+    (uint256 baseDebt, uint256 premiumDebt) = _getUserDebt(hub, assetId, userPosition);
     return ((baseDebt + premiumDebt) * assetPrice).wadify() / assetUnit;
   }
 
@@ -870,9 +865,9 @@ contract Spoke is ISpoke, Multicall {
   }
 
   function _getUserDebt(
-    DataTypes.UserPosition storage userPosition,
+    ILiquidityHub hub,
     uint256 assetId,
-    ILiquidityHub hub
+    DataTypes.UserPosition storage userPosition
   ) internal view returns (uint256, uint256) {
     uint256 accruedPremium = hub.convertToDrawnAssets(assetId, userPosition.premiumDrawnShares) -
       userPosition.premiumOffset;
@@ -981,9 +976,9 @@ contract Spoke is ISpoke, Multicall {
       vars.collateralAssetId = collateralReserve.assetId;
       vars.debtAssetId = debtReserve.assetId;
       (vars.baseDebt, vars.premiumDebt) = _getUserDebt(
-        userDebtPosition,
+        debtReserve.config.hub,
         vars.debtAssetId,
-        debtReserve.config.hub
+        userDebtPosition
       );
 
       (

@@ -169,6 +169,8 @@ abstract contract Base is Test {
     hub2IrStrategy = new DefaultReserveInterestRateStrategy(mockAddressesProvider);
     hub3IrStrategy = new DefaultReserveInterestRateStrategy(mockAddressesProvider);
     hub = new LiquidityHub();
+    hub2 = new LiquidityHub();
+    hub3 = new LiquidityHub();
     spoke1 = ISpoke(new Spoke(address(oracle1)));
     spoke2 = ISpoke(new Spoke(address(oracle2)));
     spoke3 = ISpoke(new Spoke(address(oracle3)));
@@ -643,18 +645,14 @@ abstract contract Base is Test {
     vm.stopPrank();
   }
 
-  function deployAndConfigureAdditionalHubs() internal {
+  /* Hub 2 assetIds:
+   * 0: WETH
+   * 1: USDX
+   * 2: DAI
+   * 3: WBTC
+   */
+  function hub2Fixture() internal {
     vm.startPrank(HUB_ADMIN);
-
-    // Create a second hub
-    hub2 = new LiquidityHub();
-
-    /* Hub 2 assetIds:
-     * 0: WETH
-     * 1: USDX
-     * 2: DAI
-     * 3: WBTC
-     */
 
     // Add assets to the second hub
     // Add WETH
@@ -705,17 +703,6 @@ abstract contract Base is Test {
       address(tokenList.wbtc)
     );
 
-    DataTypes.SpokeConfig memory spokeConfig = DataTypes.SpokeConfig({
-      supplyCap: type(uint256).max,
-      drawCap: type(uint256).max
-    });
-
-    // Spoke 1 fully connected to hub 2
-    hub2.addSpoke(wethAssetId, spokeConfig, address(spoke1));
-    hub2.addSpoke(usdxAssetId, spokeConfig, address(spoke1));
-    hub2.addSpoke(daiAssetId, spokeConfig, address(spoke1));
-    hub2.addSpoke(wbtcAssetId, spokeConfig, address(spoke1));
-
     // Configure IR Strategy for hub 2
     IDefaultInterestRateStrategy.InterestRateData memory irData = IDefaultInterestRateStrategy
       .InterestRateData({
@@ -729,15 +716,17 @@ abstract contract Base is Test {
     hub2IrStrategy.setInterestRateParams(daiAssetId, irData);
     hub2IrStrategy.setInterestRateParams(wbtcAssetId, irData);
 
-    // Create a third hub with out of order asset ids
-    hub3 = new LiquidityHub();
+    vm.stopPrank();
+  }
 
-    /* Hub 3 assetIds:
-     * 0: DAI
-     * 1: USDX
-     * 2: WBTC
-     * 3: WETH
-     */
+  /* Hub 3 assetIds:
+   * 0: DAI
+   * 1: USDX
+   * 2: WBTC
+   * 3: WETH
+   */
+  function hub3Fixture() internal {
+    vm.startPrank(HUB_ADMIN);
 
     // Add DAI
     hub3.addAsset(
@@ -791,13 +780,14 @@ abstract contract Base is Test {
     );
     hub3WethAssetId = 3;
 
-    // Spoke 1 fully connected to hub 3
-    hub3.addSpoke(hub3WethAssetId, spokeConfig, address(spoke1));
-    hub3.addSpoke(hub3UsdxAssetId, spokeConfig, address(spoke1));
-    hub3.addSpoke(hub3DaiAssetId, spokeConfig, address(spoke1));
-    hub3.addSpoke(hub3WbtcAssetId, spokeConfig, address(spoke1));
-
     // Configure IR Strategy for hub 3
+    IDefaultInterestRateStrategy.InterestRateData memory irData = IDefaultInterestRateStrategy
+      .InterestRateData({
+        optimalUsageRatio: 90_00, // 90.00%
+        baseVariableBorrowRate: 5_00, // 5.00%
+        variableRateSlope1: 5_00, // 5.00%
+        variableRateSlope2: 5_00 // 5.00%
+      });
     hub3IrStrategy.setInterestRateParams(hub3WethAssetId, irData);
     hub3IrStrategy.setInterestRateParams(hub3UsdxAssetId, irData);
     hub3IrStrategy.setInterestRateParams(hub3DaiAssetId, irData);
@@ -1099,23 +1089,21 @@ abstract contract Base is Test {
       (10 ** hub.getAssetConfig(assetId).decimals);
   }
 
-  /// @dev Helper function to calculate the equivalent asset amount for a given asset
-  /// @dev If 1 wei of output asset is greater than the value of input, function will return 1
-  function _calcEquivalentAssetAmount(
+  /// @notice Convert 1 asset amount to equivalent amount in another asset.
+  /// @notice Will contain precision loss due to conversion split into two steps.
+  /// @return Converted amount of toAsset.
+  function _convertAssetAmount(
     ISpoke spoke,
-    uint256 inputReserveId,
-    uint256 inputAssetAmount,
-    uint256 outputReserveId
+    uint256 reserveId,
+    uint256 amount,
+    uint256 toReserveId
   ) internal view returns (uint256) {
-    IPriceOracle oracle = spoke.oracle();
-    uint256 valueOfInputAsset = _getValueInBaseCurrency(spoke, inputReserveId, inputAssetAmount);
-    uint256 valueOfWeiOutput = _getValueInBaseCurrency(spoke, outputReserveId, 1);
-    assertNotEq(valueOfInputAsset, 0, 'input asset value is 0');
-    assertNotEq(valueOfWeiOutput, 0, 'output asset wei value is 0');
-    if (valueOfWeiOutput > valueOfInputAsset) {
-      return 1;
-    }
-    return valueOfInputAsset / valueOfWeiOutput;
+    return
+      _convertBaseCurrencyToAmount(
+        spoke,
+        toReserveId,
+        _convertAmountToBaseCurrency(spoke, reserveId, amount)
+      );
   }
 
   /// @dev Helper function to calculate the amount of base and premium debt to restore

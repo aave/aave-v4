@@ -9,7 +9,8 @@ contract SpokeMultipleHubTest is SpokeBase {
 
   function setUp() public virtual override {
     super.setUp();
-    deployAndConfigureAdditionalHubs();
+    hub2Fixture();
+    hub3Fixture();
 
     // Relist dai on spoke1 for hub 2 dai
     DataTypes.ReserveConfig memory daiHub2Config = DataTypes.ReserveConfig({
@@ -27,7 +28,7 @@ contract SpokeMultipleHubTest is SpokeBase {
     });
     daiHub2ReserveId = spoke1.addReserve(daiAssetId, daiHub2Config);
 
-    // Relist dai for hub 3 dai
+    // Relist dai on spoke 1 for hub 3 dai
     DataTypes.ReserveConfig memory daiHub3Config = DataTypes.ReserveConfig({
       decimals: tokenList.dai.decimals(),
       active: true,
@@ -42,6 +43,17 @@ contract SpokeMultipleHubTest is SpokeBase {
       hub: hub3
     });
     daiHub3ReserveId = spoke1.addReserve(hub3DaiAssetId, daiHub3Config);
+
+    DataTypes.SpokeConfig memory spokeConfig = DataTypes.SpokeConfig({
+      supplyCap: type(uint256).max,
+      drawCap: type(uint256).max
+    });
+
+    // Connect hub 2 and spoke 1 for dai
+    hub2.addSpoke(daiAssetId, spokeConfig, address(spoke1));
+
+    // Connect hub 3 and spoke 1 for dai
+    hub3.addSpoke(hub3DaiAssetId, spokeConfig, address(spoke1));
   }
 
   function test_borrow_secondHub() public {

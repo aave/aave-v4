@@ -430,23 +430,6 @@ contract SpokeLiquidationBase is SpokeBase {
       .percentMulUp(liquidationBonus);
   }
 
-  /// @notice Convert 1 asset amount to equivalent amount in another asset.
-  /// @notice Will contain precision loss due to conversion split into two steps.
-  /// @return Converted amount of toAsset.
-  function _convertAssetAmount(
-    ISpoke spoke,
-    uint256 reserveId,
-    uint256 amount,
-    uint256 toReserveId
-  ) internal view returns (uint256) {
-    return
-      _convertBaseCurrencyToAmount(
-        spoke,
-        toReserveId,
-        _convertAmountToBaseCurrency(spoke, reserveId, amount)
-      );
-  }
-
   /// assert that supply ex rate after liquidation is greater than or equal to before
   /// ex rate can increase due to shares rounding on withdraw
   function _assertSupplyExchangeRate(
