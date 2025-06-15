@@ -15,8 +15,18 @@ library AssetLogic {
   using SharesMath for uint256;
   using WadRayMathExtended for uint256;
 
+  error AssetNotListed();
+
   // todo: option for cached object
   // todo: add virtual offset for inflation attack
+
+  function get(
+    mapping(uint256 assetId => DataTypes.Asset assetData) storage assets,
+    uint256 assetId
+  ) internal view returns (DataTypes.Asset storage asset) {
+    asset = assets[assetId];
+    require(address(asset.config.irStrategy) != address(0), AssetNotListed());
+  }
 
   // debt exchange rate does not incl premiumDebt to accrue base rate separately
   function toDrawnAssetsUp(

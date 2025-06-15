@@ -57,8 +57,6 @@ interface ILiquidityHub {
   error InvalidSharesAmount();
   error InvalidSupplyAmount();
   error InvalidAddFromHub();
-  error AssetNotListed();
-  error AssetNotActive();
   error SupplyCapExceeded(uint256 supplyCap);
   error InvalidWithdrawAmount();
   error InvalidRestoreAmount();
@@ -69,16 +67,22 @@ interface ILiquidityHub {
   error SurplusAmountRestored(uint256 maxAllowedRestore);
   error InvalidSpoke();
   error InvalidRiskPremiumBps(uint256 bps);
+  error AssetNotActive();
   error AssetPaused();
   error AssetFrozen();
+  error InvalidReserveFactor();
   error InvalidIrStrategy();
   error InvalidAssetDecimals();
   error InvalidAssetAddress();
   error InvalidDebtChange();
 
-  function addAsset(DataTypes.AssetConfig memory params, address asset) external;
+  function addAsset(address asset, address irStrategy) external;
 
-  function updateAssetConfig(uint256 assetId, DataTypes.AssetConfig memory config) external;
+  function updateAssetFlags(uint256 assetId, bool active, bool paused, bool frozen) external;
+
+  function updateReserveFactor(uint256 assetId, uint256 reserveFactor) external;
+
+  function updateInterestRateStrategy(uint256 assetId, address irStrategy) external;
 
   function addSpoke(uint256 assetId, DataTypes.SpokeConfig memory params, address spoke) external;
 
@@ -222,8 +226,6 @@ interface ILiquidityHub {
   function getSpokeSuppliedShares(uint256 assetId, address spoke) external view returns (uint256);
 
   function getSpokeTotalDebt(uint256 assetId, address spoke) external view returns (uint256);
-
-  function assetCount() external view returns (uint256);
 
   function assetsList(uint256 assetId) external view returns (IERC20);
 

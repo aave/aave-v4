@@ -17,6 +17,7 @@ library DataTypes {
   }
 
   struct Asset {
+    uint256 id;
     uint256 suppliedShares;
     uint256 availableLiquidity;
     uint256 baseDrawnShares;
@@ -26,20 +27,20 @@ library DataTypes {
     uint256 baseDebtIndex;
     uint256 baseBorrowRate;
     uint256 lastUpdateTimestamp;
-    uint256 id; // todo remove
     DataTypes.AssetConfig config;
   }
 
   struct SpokeConfig {
-    uint256 drawCap;
     uint256 supplyCap;
+    uint256 drawCap;
   }
 
   struct AssetConfig {
-    bool active;
-    bool frozen;
-    bool paused;
     uint256 decimals;
+    bool active;
+    bool paused;
+    bool frozen;
+    uint256 reserveFactor;
     IReserveInterestRateStrategy irStrategy;
   }
 
