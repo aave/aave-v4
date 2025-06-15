@@ -17,7 +17,6 @@ library DataTypes {
   }
 
   struct Asset {
-    uint256 id;
     uint256 suppliedShares;
     uint256 availableLiquidity;
     uint256 baseDrawnShares;

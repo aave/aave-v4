@@ -55,7 +55,6 @@ contract LiquidityHub is ILiquidityHub {
     });
 
     _assets[id] = DataTypes.Asset({
-      id: id,
       suppliedShares: 0,
       availableLiquidity: 0,
       baseDrawnShares: 0, // offset in exchange ratio
@@ -89,7 +88,7 @@ contract LiquidityHub is ILiquidityHub {
     require(liquidityFee <= PercentageMath.PERCENTAGE_FACTOR, InvalidLiquidityFee());
 
     DataTypes.Asset storage asset = _assets.get(assetId);
-    asset.accrue();
+    asset.accrue(assetId);
     asset.config.liquidityFee = liquidityFee;
 
     emit AssetConfigUpdated(assetId, asset.config);
@@ -101,7 +100,7 @@ contract LiquidityHub is ILiquidityHub {
     require(irStrategy != address(0), InvalidIrStrategy());
 
     DataTypes.Asset storage asset = _assets.get(assetId);
-    asset.accrue();
+    asset.accrue(assetId);
     asset.config.irStrategy = IReserveInterestRateStrategy(irStrategy);
 
     emit AssetConfigUpdated(assetId, asset.config);
@@ -146,10 +145,10 @@ contract LiquidityHub is ILiquidityHub {
     DataTypes.Asset storage asset = _assets.get(assetId);
     DataTypes.SpokeData storage spoke = _spokes[assetId][msg.sender];
 
-    asset.accrue();
+    asset.accrue(assetId);
     _validateSupply(asset, spoke, amount, from);
 
-    asset.updateBorrowRate({liquidityAdded: amount, liquidityTaken: 0});
+    asset.updateBorrowRate({assetId: assetId, liquidityAdded: amount, liquidityTaken: 0});
 
     // todo: Mitigate inflation attack
     uint256 suppliedShares = asset.toSuppliedSharesDown(amount);
@@ -175,10 +174,10 @@ contract LiquidityHub is ILiquidityHub {
     DataTypes.Asset storage asset = _assets.get(assetId);
     DataTypes.SpokeData storage spoke = _spokes[assetId][msg.sender];
 
-    asset.accrue();
+    asset.accrue(assetId);
     _validateWithdraw(asset, spoke, amount);
 
-    asset.updateBorrowRate({liquidityAdded: 0, liquidityTaken: amount});
+    asset.updateBorrowRate({assetId: assetId, liquidityAdded: 0, liquidityTaken: amount});
 
     uint256 withdrawnShares = asset.toSuppliedSharesUp(amount); // non zero since we round up
 
@@ -201,10 +200,10 @@ contract LiquidityHub is ILiquidityHub {
     DataTypes.Asset storage asset = _assets.get(assetId);
     DataTypes.SpokeData storage spoke = _spokes[assetId][msg.sender];
 
-    asset.accrue();
+    asset.accrue(assetId);
     _validateDraw(asset, amount, spoke.config.drawCap);
 
-    asset.updateBorrowRate({liquidityAdded: 0, liquidityTaken: amount});
+    asset.updateBorrowRate({assetId: assetId, liquidityAdded: 0, liquidityTaken: amount});
 
     uint256 drawnShares = asset.toDrawnSharesUp(amount); // non zero since we round up
 
@@ -233,10 +232,10 @@ contract LiquidityHub is ILiquidityHub {
     DataTypes.Asset storage asset = _assets.get(assetId);
     DataTypes.SpokeData storage spoke = _spokes[assetId][msg.sender];
 
-    asset.accrue();
+    asset.accrue(assetId);
 
     _validateRestore(asset, spoke, baseAmount, premiumAmount);
-    asset.updateBorrowRate({liquidityAdded: baseAmount, liquidityTaken: 0}); // both can be zero
+    asset.updateBorrowRate({assetId: assetId, liquidityAdded: baseAmount, liquidityTaken: 0}); // both can be zero
 
     uint256 totalRestoredAmount = baseAmount + premiumAmount;
     uint256 baseDrawnSharesRestored = asset.toDrawnSharesDown(baseAmount);

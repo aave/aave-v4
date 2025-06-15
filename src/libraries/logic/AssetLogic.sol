@@ -118,6 +118,7 @@ library AssetLogic {
 
   function updateBorrowRate(
     DataTypes.Asset storage asset,
+    uint256 assetId,
     uint256 liquidityAdded,
     uint256 liquidityTaken
   ) internal {
@@ -127,7 +128,7 @@ library AssetLogic {
         liquidityTaken: liquidityTaken,
         totalDebt: asset.baseDebt(),
         liquidityFee: 0, // TODO
-        assetId: asset.id,
+        assetId: assetId,
         virtualUnderlyingBalance: asset.availableLiquidity, // without current liquidity change
         usingVirtualBalance: true
       })
@@ -135,10 +136,10 @@ library AssetLogic {
   }
 
   // @dev Utilizes existing `asset.baseBorrowRate`
-  function accrue(DataTypes.Asset storage asset) internal {
+  function accrue(DataTypes.Asset storage asset, uint256 assetId) internal {
     uint256 baseDebtIndex = asset.baseDebtIndex = asset.previewIndex();
     asset.lastUpdateTimestamp = block.timestamp;
-    emit ILiquidityHub.DrawnIndexUpdate(asset.id, baseDebtIndex, block.timestamp);
+    emit ILiquidityHub.DrawnIndexUpdate(assetId, baseDebtIndex, block.timestamp);
   }
 
   function previewIndex(DataTypes.Asset storage asset) internal view returns (uint256) {
