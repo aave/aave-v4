@@ -15,9 +15,10 @@ interface ISpoke is IMulticall {
   event LiquidityPremiumUpdated(uint256 indexed reserveId, uint256 liquidityPremium);
   event DynamicReserveConfigUpdated(
     uint256 indexed reserveId,
-    uint16 configKey,
+    uint16 indexed configKey,
     DataTypes.DynamicReserveConfig config
   );
+  event UserDynamicConfigRefreshed(address indexed user);
 
   event Supply(uint256 indexed reserveId, address indexed user, uint256 suppliedShares);
   event Withdraw(

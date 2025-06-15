@@ -96,6 +96,8 @@ contract SpokeDynamicConfigTriggersTest is SpokeBase {
     configs = _getUserDynConfigKeys(spoke1, alice);
     Utils.supplyCollateral(spoke1, _wethReserveId(spoke1), alice, 1e18, alice);
 
+    vm.expectEmit(address(spoke1));
+    emit ISpoke.UserDynamicConfigRefreshed(alice);
     Utils.borrow(spoke1, _daiReserveId(spoke1), alice, 100e18, alice);
 
     assertNotEq(_getUserDynConfigKeys(spoke1, alice), configs);
@@ -120,6 +122,8 @@ contract SpokeDynamicConfigTriggersTest is SpokeBase {
     configs = _getUserDynConfigKeys(spoke1, alice);
     Utils.supplyCollateral(spoke1, _wethReserveId(spoke1), alice, 1e18, alice);
 
+    vm.expectEmit(address(spoke1));
+    emit ISpoke.UserDynamicConfigRefreshed(alice);
     Utils.withdraw(spoke1, _usdxReserveId(spoke1), alice, 500e6, alice);
 
     assertNotEq(_getUserDynConfigKeys(spoke1, alice), configs);

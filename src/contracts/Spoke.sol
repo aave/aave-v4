@@ -73,7 +73,7 @@ contract Spoke is ISpoke, Multicall {
     _validateReserveConfig(config);
     address asset = address(HUB.assetsList(assetId)); // will revert on invalid assetId
     uint256 reserveId = reserveCount++;
-    uint16 dynamicConfigKey;
+    uint16 dynamicConfigKey; // 0 as first key to use
     // TODO: AccessControl
     reservesList.push(reserveId);
     _reserves[reserveId] = DataTypes.Reserve({
@@ -118,14 +118,14 @@ contract Spoke is ISpoke, Multicall {
     _validateDynamicReserveConfig(dynamicConfig);
     // TODO: AccessControl, More sophisticated
     DataTypes.Reserve storage reserve = _reserves[reserveId];
-    uint16 dynamicConfigKey;
+    uint16 nextConfigKey;
     // @dev overflow is desired, we implicitly invalidate & override stale config
     unchecked {
-      dynamicConfigKey = ++reserve.dynamicConfigKey;
+      nextConfigKey = ++reserve.dynamicConfigKey;
     }
     // todo opt: concat key to use single lookup
-    _dynamicConfig[reserveId][dynamicConfigKey] = dynamicConfig;
-    emit DynamicReserveConfigUpdated(reserveId, dynamicConfigKey, dynamicConfig);
+    _dynamicConfig[reserveId][nextConfigKey] = dynamicConfig;
+    emit DynamicReserveConfigUpdated(reserveId, nextConfigKey, dynamicConfig);
     // todo emit if stale config overwritten?
   }
 
@@ -182,7 +182,7 @@ contract Spoke is ISpoke, Multicall {
     reserve.suppliedShares -= withdrawnShares;
 
     // calc needs new user position, just updating base debt is enough
-    uint256 newUserRiskPremium = _validateAndRefreshUserPosition(msg.sender); // validates HF
+    uint256 newUserRiskPremium = _refreshAndValidateUserPosition(msg.sender); // validates HF
 
     userPremiumDrawnShares = userPosition.premiumDrawnShares = userPosition
       .baseDrawnShares
@@ -237,7 +237,7 @@ contract Spoke is ISpoke, Multicall {
     userPosition.baseDrawnShares += baseDrawnShares;
 
     // calc needs new user position, just updating base debt is enough
-    uint256 newUserRiskPremium = _validateAndRefreshUserPosition(msg.sender); // validates HF
+    uint256 newUserRiskPremium = _refreshAndValidateUserPosition(msg.sender); // validates HF
 
     userPremiumDrawnShares = userPosition.premiumDrawnShares = userPosition
       .baseDrawnShares
@@ -551,9 +551,9 @@ contract Spoke is ISpoke, Multicall {
     // todo validate user not trying to repay more
   }
 
-  function _validateAndRefreshUserPosition(address user) internal returns (uint256) {
+  function _refreshAndValidateUserPosition(address user) internal returns (uint256) {
     // @dev refresh user position dynamic config only on borrow, withdraw, disableUsingAsCollateral
-    _refreshConfig(user); // opt: merge with _calculateUserAccountData
+    _refreshDynamicConfig(user); // opt: merge with _calculateUserAccountData
     (uint256 userRiskPremium, , uint256 healthFactor, , ) = _calculateUserAccountData(user);
     require(healthFactor >= HEALTH_FACTOR_LIQUIDATION_THRESHOLD, HealthFactorBelowThreshold());
     return userRiskPremium;
@@ -968,7 +968,7 @@ contract Spoke is ISpoke, Multicall {
     return premiumIncrease;
   }
 
-  function _refreshConfig(address user) internal {
+  function _refreshDynamicConfig(address user) internal {
     uint256 reservesListLength = reservesList.length;
     uint256 reserveId;
     while (reserveId < reservesListLength) {
@@ -980,7 +980,7 @@ contract Spoke is ISpoke, Multicall {
         ++reserveId;
       }
     }
-    // todo emit event UserConfigRefreshed(user)?
+    emit UserDynamicConfigRefreshed(user);
   }
 
   /// @return collateralAsset The address of the underlying asset used as collateral, to receive as result of the liquidation.
@@ -1279,12 +1279,12 @@ contract Spoke is ISpoke, Multicall {
     _validateSetUsingAsCollateral(reserve, userPosition, usingAsCollateral);
     userPosition.usingAsCollateral = usingAsCollateral;
 
-    // If unsetting, check HF and update user rp
-    if (!usingAsCollateral) {
-      uint256 newUserRiskPremium = _validateAndRefreshUserPosition(user); // validates HF
-      _notifyRiskPremiumUpdate(type(uint256).max, user, newUserRiskPremium);
+    if (usingAsCollateral) {
+      _refreshDynamicConfig(user);
     } else {
-      _refreshConfig(user);
+      // If unsetting, check HF and update user rp
+      uint256 newUserRiskPremium = _refreshAndValidateUserPosition(user); // validates HF
+      _notifyRiskPremiumUpdate(type(uint256).max, user, newUserRiskPremium);
     }
 
     emit UsingAsCollateral(reserveId, user, usingAsCollateral);
