@@ -227,7 +227,7 @@ contract SpokeMultipleHubScenarioTest is SpokeBase {
     assertEq(newSpoke.getUserTotalDebt(vars.reserveBIdMainHub, bob), 0);
     assertEq(hub.getAssetTotalDebt(vars.assetBIdMainHub), 0);
 
-    // Bob cannot draw any additional asset B from the new spoke main hub
+    // Bob cannot draw any additional asset B from the new spoke main hub due to new draw cap of 0
     vm.expectRevert(abi.encodeWithSelector(ILiquidityHub.DrawCapExceeded.selector, 0));
     newSpoke.borrow(vars.reserveBIdMainHub, 1e18, bob);
 
