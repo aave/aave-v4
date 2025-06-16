@@ -179,6 +179,7 @@ library AssetLogic {
     if (indexDelta == 0 || liquidityFee == 0) {
       return 0;
     }
+    // liquidity growth is always greater than accrued fees, even with 100.00% liquidity fee
     uint256 feesAmount = indexDelta
       .rayMulDown(asset.baseDrawnShares + asset.premiumDrawnShares)
       .percentMulDown(liquidityFee);

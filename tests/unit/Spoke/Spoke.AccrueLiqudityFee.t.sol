@@ -10,7 +10,7 @@ contract SpokeAccrueLiquidityFeeTest is SpokeBase {
   using PercentageMathExtended for uint256;
   using WadRayMath for uint256;
 
-  function test_liquidityFee_NoActionTaken() public view {
+  function test_accrueLiquidityFee_NoActionTaken() public view {
     assertEq(hub.getSpokeSuppliedShares(daiAssetId, address(treasurySpoke)), 0);
     _assertSingleUserProtocolDebt(
       spoke1,
@@ -23,7 +23,7 @@ contract SpokeAccrueLiquidityFeeTest is SpokeBase {
   }
 
   /// Supply an asset only, and check no interest accrued.
-  function test_liquidityFee_NoInterest_OnlySupply(uint40 skipTime) public {
+  function test_accrueLiquidityFee_NoInterest_OnlySupply(uint40 skipTime) public {
     skipTime = uint40(bound(skipTime, 0, MAX_SKIP_TIME));
     uint256 amount = 1000e18;
     uint256 daiReserveId = _daiReserveId(spoke1);
@@ -47,7 +47,7 @@ contract SpokeAccrueLiquidityFeeTest is SpokeBase {
     assertEq(hub.getSpokeSuppliedAmount(daiAssetId, address(treasurySpoke)), 0);
   }
 
-  function test_liquidityFee_fuzz_BorrowAmountAndSkipTime(
+  function test_accrueLiquidityFee_fuzz_BorrowAmountAndSkipTime(
     uint256 borrowAmount,
     uint40 skipTime
   ) public {
@@ -170,7 +170,7 @@ contract SpokeAccrueLiquidityFeeTest is SpokeBase {
     );
   }
 
-  function test_liquidityFee_accrual_exact() public {
+  function test_accrueLiquidityFee_exact() public {
     uint256 reserveId = _daiReserveId(spoke1);
     uint256 assetId = spoke1.getReserve(reserveId).assetId;
 
@@ -270,7 +270,7 @@ contract SpokeAccrueLiquidityFeeTest is SpokeBase {
     );
   }
 
-  function test_liquidityFee_accrual() public {
+  function test_accrueLiquidityFee() public {
     uint256 reserveId = _daiReserveId(spoke1);
     uint256 assetId = spoke1.getReserve(reserveId).assetId;
 
@@ -379,7 +379,7 @@ contract SpokeAccrueLiquidityFeeTest is SpokeBase {
   // todo: check setAsCollateral does impact treasury fees shares
 
   // disabling an asset as collateral raises the user’s risk premium, but fees use the old value until the action is executed.
-  function test_liquidityFee_accrual_setUsingAsCollateral() public {
+  function test_accrueLiquidityFee_setUsingAsCollateral() public {
     uint256 reserveId = _daiReserveId(spoke1);
     uint256 reserveId2 = _wethReserveId(spoke1);
     uint256 assetId = spoke1.getReserve(reserveId).assetId;
@@ -450,5 +450,58 @@ contract SpokeAccrueLiquidityFeeTest is SpokeBase {
     );
   }
 
-  // todo: add test for 100% liquidity fee, suppliers do not get anything
+  /// 100.00% liquidity fee redirect all liquidity growth to fee receiver and nothing to suppliers
+  function test_accrueLiquidityFee_maxLiquidityFee() public {
+    uint256 reserveId = _daiReserveId(spoke1);
+    uint256 assetId = spoke1.getReserve(reserveId).assetId;
+
+    uint256 liquidityFee = 100_00;
+    updateLiquidityFee(hub, assetId, liquidityFee);
+
+    uint256 borrowAmount = 1000e18;
+    uint256 supplyAmount = _calcMinimumCollAmount(spoke1, reserveId, reserveId, borrowAmount);
+    uint256 rate = 50_00; // 50.00% base borrow rate
+    uint256 expectedBaseDebtAccrual = borrowAmount.percentMul(rate);
+    uint256 expectedBaseDebt = borrowAmount + expectedBaseDebtAccrual;
+    uint256 expectedPremiumDebt = expectedBaseDebtAccrual.percentMul(
+      _getLiquidityPremium(spoke1, reserveId)
+    );
+    uint256 expectedTreasuryFees = (expectedBaseDebtAccrual + expectedPremiumDebt).percentMul(
+      liquidityFee
+    );
+    vm.mockCall(
+      address(irStrategy),
+      IReserveInterestRateStrategy.calculateInterestRates.selector,
+      abi.encode(rate.bpsToRay())
+    );
+
+    Utils.supplyCollateral(spoke1, reserveId, alice, supplyAmount, alice);
+    Utils.borrow(spoke1, reserveId, alice, borrowAmount, alice);
+
+    skip(365 days);
+
+    _assertSpokeDebt(
+      spoke1,
+      reserveId,
+      expectedBaseDebt,
+      expectedPremiumDebt,
+      'after base and premium debt accrual'
+    );
+    assertEq(
+      hub.getSpokeSuppliedShares(assetId, address(treasurySpoke)),
+      hub.convertToSuppliedShares(assetId, expectedTreasuryFees),
+      'treasury fees after base and premium debt accrual'
+    );
+
+    assertEq(
+      spoke1.getUserSuppliedAmount(reserveId, alice),
+      supplyAmount,
+      'alice does not earn anything'
+    );
+    assertEq(
+      hub.getSpokeSuppliedAmount(assetId, address(treasurySpoke)),
+      expectedBaseDebtAccrual + expectedPremiumDebt,
+      'treasury all accumulated interest'
+    );
+  }
 }
