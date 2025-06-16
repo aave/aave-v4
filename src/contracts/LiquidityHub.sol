@@ -129,7 +129,7 @@ contract LiquidityHub is ILiquidityHub {
     require(liquidityFee <= PercentageMathExtended.PERCENTAGE_FACTOR, InvalidLiquidityFee());
     require(feeReceiver != address(0) || liquidityFee == 0, InvalidFeeReceiver());
 
-    // accrue always, so fees until now are generated based on old config (percent and receiver)
+    // accrue always, so fees until now are generated based on old config (fee and receiver)
     address oldFeeReceiver = feeReceivers[assetId];
     _assets[assetId].accrue(_spokes[assetId][oldFeeReceiver]);
 
