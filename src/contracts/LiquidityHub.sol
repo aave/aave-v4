@@ -27,9 +27,6 @@ contract LiquidityHub is ILiquidityHub {
   IERC20[] public assetsList; // TODO: Check if Enumerable or Set makes more sense
   uint256 public assetCount;
 
-  // Mapping of fee receivers by asset identifier
-  mapping(uint256 => address) internal feeReceivers;
-
   // /////
   // Governance
   // /////
@@ -51,6 +48,7 @@ contract LiquidityHub is ILiquidityHub {
       lastUpdateTimestamp: block.timestamp,
       id: assetId, // todo rm
       config: DataTypes.AssetConfig({
+        feeReceiver: config.feeReceiver, // todo: add validations
         active: config.active,
         frozen: config.frozen,
         paused: config.paused,
@@ -70,6 +68,7 @@ contract LiquidityHub is ILiquidityHub {
     // TODO: AccessControl
     // todo: if liquidityFee or irStrategy update, accrue interest
     asset.config = DataTypes.AssetConfig({
+      feeReceiver: config.feeReceiver,
       active: config.active,
       frozen: config.frozen,
       paused: config.paused,
@@ -130,14 +129,14 @@ contract LiquidityHub is ILiquidityHub {
     require(feeReceiver != address(0) || liquidityFee == 0, InvalidFeeReceiver());
 
     // accrue always, so fees until now are generated based on old config (fee and receiver)
-    address oldFeeReceiver = feeReceivers[assetId];
+    address oldFeeReceiver = _assets[assetId].config.feeReceiver;
     _assets[assetId].accrue(_spokes[assetId][oldFeeReceiver]);
 
     // Update liquidity fee
     uint256 oldLiquidityFee = _assets[assetId].config.liquidityFee;
     if (liquidityFee != oldLiquidityFee) {
       _assets[assetId].config.liquidityFee = liquidityFee;
-      emit LiquidityFeeUpdated(assetId, oldLiquidityFee, liquidityFee);
+      emit AssetConfigUpdated(assetId, _assets[assetId].config);
     }
 
     // Update fee receiver
@@ -168,8 +167,8 @@ contract LiquidityHub is ILiquidityHub {
           );
         }
       }
-      feeReceivers[assetId] = feeReceiver;
-      emit FeeReceiverUpdated(assetId, oldFeeReceiver, feeReceiver);
+      _assets[assetId].config.feeReceiver = feeReceiver;
+      emit AssetConfigUpdated(assetId, _assets[assetId].config);
     }
   }
 
@@ -184,7 +183,7 @@ contract LiquidityHub is ILiquidityHub {
     DataTypes.Asset storage asset = _assets[assetId];
     DataTypes.SpokeData storage spoke = _spokes[assetId][msg.sender];
 
-    asset.accrue(_spokes[assetId][feeReceivers[assetId]]);
+    asset.accrue(_spokes[assetId][_assets[assetId].config.feeReceiver]);
     _validateSupply(asset, spoke, amount, from);
 
     asset.updateBorrowRate({liquidityAdded: amount, liquidityTaken: 0});
@@ -213,7 +212,7 @@ contract LiquidityHub is ILiquidityHub {
     DataTypes.Asset storage asset = _assets[assetId];
     DataTypes.SpokeData storage spoke = _spokes[assetId][msg.sender];
 
-    asset.accrue(_spokes[assetId][feeReceivers[assetId]]);
+    asset.accrue(_spokes[assetId][_assets[assetId].config.feeReceiver]);
     _validateWithdraw(asset, spoke, amount);
 
     asset.updateBorrowRate({liquidityAdded: 0, liquidityTaken: amount});
@@ -239,7 +238,7 @@ contract LiquidityHub is ILiquidityHub {
     DataTypes.Asset storage asset = _assets[assetId];
     DataTypes.SpokeData storage spoke = _spokes[assetId][msg.sender];
 
-    asset.accrue(_spokes[assetId][feeReceivers[assetId]]);
+    asset.accrue(_spokes[assetId][_assets[assetId].config.feeReceiver]);
     _validateDraw(asset, amount, spoke.config.drawCap);
 
     asset.updateBorrowRate({liquidityAdded: 0, liquidityTaken: amount});
@@ -271,7 +270,7 @@ contract LiquidityHub is ILiquidityHub {
     DataTypes.Asset storage asset = _assets[assetId];
     DataTypes.SpokeData storage spoke = _spokes[assetId][msg.sender];
 
-    asset.accrue(_spokes[assetId][feeReceivers[assetId]]);
+    asset.accrue(_spokes[assetId][_assets[assetId].config.feeReceiver]);
 
     _validateRestore(asset, spoke, baseAmount, premiumAmount);
     asset.updateBorrowRate({liquidityAdded: baseAmount, liquidityTaken: 0}); // both can be zero
@@ -328,7 +327,7 @@ contract LiquidityHub is ILiquidityHub {
     DataTypes.SpokeData storage spoke = _spokes[assetId][spokeAddress];
 
     // accrue interest and liquidity fees
-    asset.accrue(_spokes[assetId][feeReceivers[assetId]]);
+    asset.accrue(_spokes[assetId][_assets[assetId].config.feeReceiver]);
 
     asset.premiumDrawnShares = _add(asset.premiumDrawnShares, premiumDrawnShareDelta);
     asset.premiumOffset = _add(asset.premiumOffset, premiumOffsetDelta);
@@ -457,7 +456,7 @@ contract LiquidityHub is ILiquidityHub {
   }
 
   function getSpokeSuppliedAmount(uint256 assetId, address spoke) external view returns (uint256) {
-    if (spoke == feeReceivers[assetId]) {
+    if (spoke == _assets[assetId].config.feeReceiver) {
       return
         _assets[assetId].toSuppliedAssetsDown(
           _spokes[assetId][spoke].suppliedShares + _assets[assetId].unrealizedFeeShares()
@@ -467,7 +466,7 @@ contract LiquidityHub is ILiquidityHub {
   }
 
   function getSpokeSuppliedShares(uint256 assetId, address spoke) external view returns (uint256) {
-    if (spoke == feeReceivers[assetId]) {
+    if (spoke == _assets[assetId].config.feeReceiver) {
       return _spokes[assetId][spoke].suppliedShares + _assets[assetId].unrealizedFeeShares();
     }
     return _spokes[assetId][spoke].suppliedShares;
@@ -479,11 +478,6 @@ contract LiquidityHub is ILiquidityHub {
 
   function getAssetConfig(uint256 assetId) external view returns (DataTypes.AssetConfig memory) {
     return _assets[assetId].config;
-  }
-
-  /// @inheritdoc ILiquidityHub
-  function getFeeReceiver(uint256 assetId) external view returns (address) {
-    return feeReceivers[assetId];
   }
 
   //

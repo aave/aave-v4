@@ -19,13 +19,6 @@ interface ILiquidityHub {
     uint256 drawCap,
     uint256 supplyCap
   );
-  event LiquidityFeeUpdated(
-    uint256 indexed assetId,
-    uint256 oldLiquidityFee,
-    uint256 newLiquidityFee
-  );
-  event FeeReceiverUpdated(uint256 indexed assetId, address oldFeeReceiver, address newFeeReceiver);
-
   event DrawnIndexUpdate(uint256 indexed assetId, uint256 drawnIndex, uint256 lastUpdateTimestamp);
   event Add(
     uint256 indexed assetId,
@@ -234,13 +227,6 @@ interface ILiquidityHub {
   function getSpokeSuppliedShares(uint256 assetId, address spoke) external view returns (uint256);
 
   function getSpokeTotalDebt(uint256 assetId, address spoke) external view returns (uint256);
-
-  /**
-   * @notice Returns the fee receiver associated with the given asset.
-   * @param assetId The identifier of the asset.
-   * @return The address of the corresponding fee receiver.
-   */
-  function getFeeReceiver(uint256 assetId) external view returns (address);
 
   function assetCount() external view returns (uint256);
 

@@ -36,6 +36,7 @@ library DataTypes {
   }
 
   struct AssetConfig {
+    address feeReceiver;
     bool active;
     bool frozen;
     bool paused;
