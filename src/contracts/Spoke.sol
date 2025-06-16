@@ -978,11 +978,13 @@ contract Spoke is ISpoke, Multicall {
     }
   }
 
-  /// @return collateralAsset The address of the underlying asset used as collateral, to receive as result of the liquidation.
-  /// @return debtAsset The address of the underlying borrowed asset to be repaid with the liquidation.
-  /// @return totalDebtToLiquidate The total amount of debt to be repaid.
-  /// @return collateralToLiquidate The amount of collateral to liquidate.
-  /// @return liquidationProtocolFeeAmount The amount of protocol fee.
+  /**
+   * @return collateralAsset The address of the underlying asset used as collateral, to receive as result of the liquidation.
+   * @return debtAsset The address of the underlying borrowed asset to be repaid with the liquidation.
+   * @return totalDebtToLiquidate The total amount of debt to be repaid.
+   * @return collateralToLiquidate The amount of collateral to liquidate.
+   * @return liquidationProtocolFeeAmount The amount of protocol fee.
+   */
   function _executeLiquidationCall(
     DataTypes.Reserve storage collateralReserve,
     DataTypes.Reserve storage debtReserve,
@@ -1201,11 +1203,13 @@ contract Spoke is ISpoke, Multicall {
     );
   }
 
-  /// @return actualCollateralToLiquidate The amount of collateral to liquidate.
-  /// @return liquidationProtocolFeeAmount The amount of protocol fee.
-  /// @return baseDebtToLiquidate The amount of base debt to repay.
-  /// @return premiumDebtToLiquidate The amount of premium debt to repay.
-  /// @return hasNoCollateralLeft The flag representing if the user will have no collateral left after liquidation.
+  /**
+   * @return actualCollateralToLiquidate The amount of collateral to liquidate.
+   * @return liquidationProtocolFeeAmount The amount of protocol fee.
+   * @return baseDebtToLiquidate The amount of base debt to repay.
+   * @return premiumDebtToLiquidate The amount of premium debt to repay.
+   * @return hasNoCollateralLeft The flag representing if the user will have no collateral left after liquidation.
+   */
   function _calculateLiquidationParameters(
     DataTypes.Reserve storage collateralReserve,
     DataTypes.Reserve storage debtReserve,
