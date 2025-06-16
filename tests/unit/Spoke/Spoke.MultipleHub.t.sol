@@ -7,12 +7,18 @@ contract SpokeMultipleHubTest is SpokeBase {
   uint256 internal daiHub2ReserveId;
   uint256 internal daiHub3ReserveId;
 
+  /* @dev Configures spoke1 to have 2 additional reserves:
+   * dai from hub 2
+   * dai from hub 3
+   */
   function setUp() public virtual override {
     super.setUp();
+
+    // Configure both hubs
     hub2Fixture();
     hub3Fixture();
 
-    // Relist dai on spoke1 for hub 2 dai
+    // Relist hub 2's dai on spoke1
     DataTypes.ReserveConfig memory daiHub2Config = DataTypes.ReserveConfig({
       decimals: tokenList.dai.decimals(),
       active: true,
@@ -28,7 +34,7 @@ contract SpokeMultipleHubTest is SpokeBase {
     });
     daiHub2ReserveId = spoke1.addReserve(daiAssetId, daiHub2Config);
 
-    // Relist dai on spoke 1 for hub 3 dai
+    // Relist hub 3's dai on spoke 1
     DataTypes.ReserveConfig memory daiHub3Config = DataTypes.ReserveConfig({
       decimals: tokenList.dai.decimals(),
       active: true,
@@ -56,6 +62,7 @@ contract SpokeMultipleHubTest is SpokeBase {
     hub3.addSpoke(hub3DaiAssetId, spokeConfig, address(spoke1));
   }
 
+  /// @dev Test showcasing dai may be borrowed from hub 2 and hub 1 via spoke 1
   function test_borrow_secondHub() public {
     uint256 hub1DaiBorrowAmount = 5e18;
     uint256 hub2DaiBorrowAmount = 1e18;
@@ -88,6 +95,7 @@ contract SpokeMultipleHubTest is SpokeBase {
     assertEq(hub2.getAssetTotalDebt(daiAssetId), hub2DaiBorrowAmount);
   }
 
+  /// @dev Test showcasing dai may be borrowed from hub 3 via spoke 1, with collateral supplied to hub 1
   function test_borrow_thirdHub() public {
     uint256 hub1DaiBorrowAmount = 5e18;
     uint256 hub3DaiBorrowAmount = 1e18;

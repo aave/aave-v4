@@ -14,6 +14,13 @@ contract SpokeMultipleHubScenarioTest is SpokeBase {
     uint256 spoke1ReserveBId;
   }
 
+  /* @dev Test showcasing a possible configuration for isolation mode
+   * A new hub and spoke are deployed with new assets A and B.
+   * There is no liquidity for asset B on the new hub, so instead
+   * Asset B is listed on the canonical hub and linked to the new spoke with a draw cap.
+   * Thus users can borrow asset B from the canonical hub via the new spoke,
+   * without being able to supply it from the new spoke.
+   */
   function test_isolation_mode() public {
     IsolationLocalVars memory vars;
 
@@ -234,6 +241,12 @@ contract SpokeMultipleHubScenarioTest is SpokeBase {
     vm.stopPrank();
   }
 
+  /* @dev Test showcasing a possible configuration for siloed mode
+   * A new hub and spoke are deployed with only Asset B as borrowable.
+   * Users can use usdx as collateral on the new spoke, which supplies to the canonical hub.
+   * Users may not borrow usdx from the new spoke, but can use it as collateral to borrow
+   * the only available asset: Asset B.
+   */
   function test_siloed_mode() public {
     // Deploy a new hub and spoke with only B borrowable asset
     ILiquidityHub newHub = new LiquidityHub();

@@ -645,7 +645,7 @@ abstract contract Base is Test {
     vm.stopPrank();
   }
 
-  /* Hub 2 assetIds:
+  /* @dev Configures Hub 2 with the following assetIds:
    * 0: WETH
    * 1: USDX
    * 2: DAI
@@ -719,7 +719,7 @@ abstract contract Base is Test {
     vm.stopPrank();
   }
 
-  /* Hub 3 assetIds:
+  /* @dev Configures Hub 3 with the following assetIds:
    * 0: DAI
    * 1: USDX
    * 2: WBTC
