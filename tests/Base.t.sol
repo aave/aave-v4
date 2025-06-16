@@ -893,6 +893,7 @@ abstract contract Base is Test {
   }
 
   /// @dev Helper function to calculate expected supplied assets based on amount to supply and current exchange rate
+  /// taking potential donation into account
   function calculateEffectiveSuppliedAssets(
     uint256 assetsAmount,
     uint256 totalSuppliedAssets,

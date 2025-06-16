@@ -120,4 +120,5 @@ contract TreasurySpokeTest is SpokeBase {
   }
 
   // todo: test that supplying from treasury does not create any issue. existing fees are added to the supply amount
+  // todo: add test for 100% liquidity fee
 }

@@ -9,8 +9,23 @@ contract LiquidityHubUpdateAssetFeesTest is LiquidityHubBase {
     address feeReceiver,
     uint256 liquidityFee
   ) public {
-    liquidityFee = bound(liquidityFee, 0, PercentageMathExtended.PERCENTAGE_FACTOR);
-    if (liquidityFee > 0) vm.assume(feeReceiver != address(0));
+    liquidityFee = bound(liquidityFee, 1, PercentageMathExtended.PERCENTAGE_FACTOR);
+    vm.assume(feeReceiver != address(0));
+
+    uint256 assetId = daiAssetId;
+
+    vm.expectEmit(address(hub));
+    emit ILiquidityHub.DrawnIndexUpdate(assetId, hub.previewDrawnIndex(assetId), block.timestamp);
+
+    hub.updateAssetFees(assetId, feeReceiver, liquidityFee);
+  }
+
+  /// Triggers accrual always with zero liquidityFee, based on old config
+  function test_updateAssetFees_fuzz_always_accrue_withZeroLiquidityFee(
+    address feeReceiver
+  ) public {
+    vm.assume(feeReceiver != address(0));
+    uint256 liquidityFee = 0;
 
     uint256 assetId = daiAssetId;
 
@@ -38,7 +53,7 @@ contract LiquidityHubUpdateAssetFeesTest is LiquidityHubBase {
   /// Liquidity fee cannot be above maximum
   function test_updateAssetFees_revertsWith_InvalidLiquidityFee() public {
     uint256 assetId = daiAssetId;
-    address validReceiver = address(1);
+    address validReceiver = makeAddr('validFeeReceiver');
 
     uint256 invalidFee = randomizer(PercentageMathExtended.PERCENTAGE_FACTOR, type(uint256).max);
     vm.expectRevert(ILiquidityHub.InvalidLiquidityFee.selector);

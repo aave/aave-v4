@@ -3,7 +3,7 @@ pragma solidity ^0.8.0;
 
 import 'tests/unit/Spoke/SpokeBase.t.sol';
 
-contract SpokeLiquidityFeeTest is SpokeBase {
+contract SpokeAccrueLiquidityFeeTest is SpokeBase {
   using SharesMath for uint256;
   using WadRayMathExtended for uint256;
   using PercentageMath for uint256;
@@ -233,7 +233,6 @@ contract SpokeLiquidityFeeTest is SpokeBase {
       expectedPremiumDebt,
       'after base debt accrual'
     );
-    console.log(hub.getSpokeSuppliedAmount(assetId, address(treasurySpoke)));
     assertEq(
       hub.getSpokeSuppliedShares(assetId, address(treasurySpoke)),
       hub.convertToSuppliedShares(assetId, expectedTreasuryFees),
@@ -339,7 +338,6 @@ contract SpokeLiquidityFeeTest is SpokeBase {
       expectedPremiumDebt,
       'after base debt accrual'
     );
-    console.log(hub.getSpokeSuppliedAmount(assetId, address(treasurySpoke)));
     assertEq(
       hub.getSpokeSuppliedShares(assetId, address(treasurySpoke)),
       hub.convertToSuppliedShares(assetId, expectedTreasuryFees),
@@ -451,4 +449,6 @@ contract SpokeLiquidityFeeTest is SpokeBase {
       'treasury fees after base and premium debt accrual'
     );
   }
+
+  // todo: add test for 100% liquidity fee, suppliers do not get anything
 }

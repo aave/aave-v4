@@ -27,7 +27,7 @@ contract LiquidityHub is ILiquidityHub {
   IERC20[] public assetsList; // TODO: Check if Enumerable or Set makes more sense
   uint256 public assetCount;
 
-  // Mapping of fee recipients by asset identifier
+  // Mapping of fee receivers by asset identifier
   mapping(uint256 => address) internal feeReceivers;
 
   // /////
