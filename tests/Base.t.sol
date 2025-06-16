@@ -33,6 +33,7 @@ abstract contract Base is Test {
   using WadRayMathExtended for uint256;
   using SharesMath for uint256;
   using PercentageMath for uint256;
+  using PercentageMathExtended for uint256;
 
   uint256 internal constant MAX_SUPPLY_AMOUNT = 1e30;
   uint256 internal constant MAX_TOKEN_DECIMALS_SUPPORTED = 18;
@@ -1344,7 +1345,7 @@ abstract contract Base is Test {
     uint256 currentBaseDebt,
     uint256 userRiskPremium
   ) internal pure returns (uint256) {
-    return (currentBaseDebt - initialBaseDebt).percentMul(userRiskPremium);
+    return (currentBaseDebt - initialBaseDebt).percentMulUp(userRiskPremium);
   }
 
   /// @dev Helper function to get asset base debt
