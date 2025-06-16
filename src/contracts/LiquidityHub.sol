@@ -183,7 +183,7 @@ contract LiquidityHub is ILiquidityHub {
     DataTypes.Asset storage asset = _assets[assetId];
     DataTypes.SpokeData storage spoke = _spokes[assetId][msg.sender];
 
-    asset.accrue(_spokes[assetId][_assets[assetId].config.feeReceiver]);
+    asset.accrue(_spokes[assetId][asset.config.feeReceiver]);
     _validateSupply(asset, spoke, amount, from);
 
     asset.updateBorrowRate({liquidityAdded: amount, liquidityTaken: 0});
@@ -212,7 +212,7 @@ contract LiquidityHub is ILiquidityHub {
     DataTypes.Asset storage asset = _assets[assetId];
     DataTypes.SpokeData storage spoke = _spokes[assetId][msg.sender];
 
-    asset.accrue(_spokes[assetId][_assets[assetId].config.feeReceiver]);
+    asset.accrue(_spokes[assetId][asset.config.feeReceiver]);
     _validateWithdraw(asset, spoke, amount);
 
     asset.updateBorrowRate({liquidityAdded: 0, liquidityTaken: amount});
@@ -238,7 +238,7 @@ contract LiquidityHub is ILiquidityHub {
     DataTypes.Asset storage asset = _assets[assetId];
     DataTypes.SpokeData storage spoke = _spokes[assetId][msg.sender];
 
-    asset.accrue(_spokes[assetId][_assets[assetId].config.feeReceiver]);
+    asset.accrue(_spokes[assetId][asset.config.feeReceiver]);
     _validateDraw(asset, amount, spoke.config.drawCap);
 
     asset.updateBorrowRate({liquidityAdded: 0, liquidityTaken: amount});
@@ -270,7 +270,7 @@ contract LiquidityHub is ILiquidityHub {
     DataTypes.Asset storage asset = _assets[assetId];
     DataTypes.SpokeData storage spoke = _spokes[assetId][msg.sender];
 
-    asset.accrue(_spokes[assetId][_assets[assetId].config.feeReceiver]);
+    asset.accrue(_spokes[assetId][asset.config.feeReceiver]);
 
     _validateRestore(asset, spoke, baseAmount, premiumAmount);
     asset.updateBorrowRate({liquidityAdded: baseAmount, liquidityTaken: 0}); // both can be zero
@@ -327,7 +327,7 @@ contract LiquidityHub is ILiquidityHub {
     DataTypes.SpokeData storage spoke = _spokes[assetId][spokeAddress];
 
     // accrue interest and liquidity fees
-    asset.accrue(_spokes[assetId][_assets[assetId].config.feeReceiver]);
+    asset.accrue(_spokes[assetId][asset.config.feeReceiver]);
 
     asset.premiumDrawnShares = _add(asset.premiumDrawnShares, premiumDrawnShareDelta);
     asset.premiumOffset = _add(asset.premiumOffset, premiumOffsetDelta);
@@ -456,18 +456,20 @@ contract LiquidityHub is ILiquidityHub {
   }
 
   function getSpokeSuppliedAmount(uint256 assetId, address spoke) external view returns (uint256) {
-    if (spoke == _assets[assetId].config.feeReceiver) {
+    DataTypes.Asset storage asset = _assets[assetId];
+    if (spoke == asset.config.feeReceiver) {
       return
-        _assets[assetId].toSuppliedAssetsDown(
-          _spokes[assetId][spoke].suppliedShares + _assets[assetId].unrealizedFeeShares()
+        asset.toSuppliedAssetsDown(
+          _spokes[assetId][spoke].suppliedShares + asset.unrealizedFeeShares()
         );
     }
-    return _assets[assetId].toSuppliedAssetsDown(_spokes[assetId][spoke].suppliedShares);
+    return asset.toSuppliedAssetsDown(_spokes[assetId][spoke].suppliedShares);
   }
 
   function getSpokeSuppliedShares(uint256 assetId, address spoke) external view returns (uint256) {
-    if (spoke == _assets[assetId].config.feeReceiver) {
-      return _spokes[assetId][spoke].suppliedShares + _assets[assetId].unrealizedFeeShares();
+    DataTypes.Asset storage asset = _assets[assetId];
+    if (spoke == asset.config.feeReceiver) {
+      return _spokes[assetId][spoke].suppliedShares + asset.unrealizedFeeShares();
     }
     return _spokes[assetId][spoke].suppliedShares;
   }
