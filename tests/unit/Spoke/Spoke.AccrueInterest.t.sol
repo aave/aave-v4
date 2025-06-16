@@ -861,7 +861,6 @@ contract SpokeAccrueInterestTest is SpokeBase {
     uint256 expectedPremiumDebt = hub.convertToDrawnAssets(daiAssetId, expectedPremiumDrawnShares) -
       bobPosition.premiumOffset +
       bobPosition.realizedPremium;
-    expectedPremiumDebt = _calculateExpectedPremiumDebt(amounts.daiBorrowAmount, baseDebt, bobRp);
     uint256 interest = (baseDebt + expectedPremiumDebt) - amounts.daiBorrowAmount;
     _assertSingleUserProtocolDebt(
       spoke1,
