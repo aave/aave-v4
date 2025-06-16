@@ -593,7 +593,7 @@ contract Spoke is ISpoke, Multicall {
     require(collateralReserve.config.active && debtReserve.config.active, ReserveNotActive());
     require(!collateralReserve.config.paused && !debtReserve.config.paused, ReservePaused());
     require(healthFactor < HEALTH_FACTOR_LIQUIDATION_THRESHOLD, HealthFactorNotBelowThreshold());
-    bool isCollateralEnabled = _usingAsCollateral(user,collateralReserveId) &&
+    bool isCollateralEnabled = _usingAsCollateral(collateralReserveId, user) &&
       collateralReserve.config.collateralFactor != 0;
     require(isCollateralEnabled, CollateralCannotBeLiquidated());
     require(totalDebt > 0, SpecifiedCurrencyNotBorrowedByUser());
@@ -696,8 +696,8 @@ contract Spoke is ISpoke, Multicall {
   }
 
   function _usingAsCollateral(
-    address user,
-    uint256 reserveId
+    uint256 reserveId,
+    address user
   ) internal view returns (bool) {
     return _positionStatus[user].isUsingAsCollateral(reserveId);
   }
@@ -744,7 +744,7 @@ contract Spoke is ISpoke, Multicall {
         vars.assetUnit = 10 ** HUB.getAssetConfig(vars.assetId).decimals;
       }
 
-      if (_usingAsCollateral(userAddress, vars.reserveId)) {
+      if (_usingAsCollateral(vars.reserveId, userAddress)) {
         // @dev opt: this can be extracted by counting number of set bits in a supplied (only) bitmap saving one loop
         unchecked {
           ++vars.collateralReserveCount;
@@ -772,7 +772,7 @@ contract Spoke is ISpoke, Multicall {
     while (vars.reserveId < reservesListLength) {
       DataTypes.UserPosition storage userPosition = _userPositions[userAddress][vars.reserveId];
       DataTypes.Reserve storage reserve = _reserves[vars.reserveId];
-      if (_usingAsCollateral(userAddress, vars.reserveId)) {
+      if (_usingAsCollateral(vars.reserveId, userAddress)) {
         vars.assetId = reserve.assetId;
         vars.liquidityPremium = reserve.config.liquidityPremium;
         vars.assetPrice = oracle.getAssetPrice(vars.assetId);
