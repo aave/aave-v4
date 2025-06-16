@@ -8,7 +8,6 @@ import {IERC20} from 'src/dependencies/openzeppelin/IERC20.sol';
 // libraries
 import {WadRayMath} from 'src/libraries/math/WadRayMath.sol';
 import {WadRayMathExtended} from 'src/libraries/math/WadRayMathExtended.sol';
-import {PercentageMath} from 'src/libraries/math/PercentageMath.sol';
 import {PercentageMathExtended} from 'src/libraries/math/PercentageMathExtended.sol';
 import {KeyValueListInMemory} from 'src/libraries/helpers/KeyValueListInMemory.sol';
 import {DataTypes} from 'src/libraries/types/DataTypes.sol';
@@ -22,7 +21,6 @@ contract Spoke is ISpoke, Multicall {
   using SafeERC20 for IERC20;
   using WadRayMath for uint256;
   using WadRayMathExtended for uint256;
-  using PercentageMath for uint256;
   using PercentageMathExtended for uint256;
   using KeyValueListInMemory for KeyValueListInMemory.List;
   using LiquidationLogic for DataTypes.LiquidationConfig;
@@ -182,7 +180,7 @@ contract Spoke is ISpoke, Multicall {
 
     userPremiumDrawnShares = userPosition.premiumDrawnShares = userPosition
       .baseDrawnShares
-      .percentMul(newUserRiskPremium);
+      .percentMulUp(newUserRiskPremium);
     userPremiumOffset = userPosition.premiumOffset = HUB.previewOffset(
       assetId,
       userPosition.premiumDrawnShares
@@ -237,7 +235,7 @@ contract Spoke is ISpoke, Multicall {
 
     userPremiumDrawnShares = userPosition.premiumDrawnShares = userPosition
       .baseDrawnShares
-      .percentMul(newUserRiskPremium);
+      .percentMulUp(newUserRiskPremium);
     userPremiumOffset = userPosition.premiumOffset = HUB.previewOffset(
       assetId,
       userPosition.premiumDrawnShares
@@ -301,7 +299,7 @@ contract Spoke is ISpoke, Multicall {
 
     userPremiumDrawnShares = userPosition.premiumDrawnShares = userPosition
       .baseDrawnShares
-      .percentMul(newUserRiskPremium);
+      .percentMulUp(newUserRiskPremium);
     userPremiumOffset = userPosition.premiumOffset = HUB.previewOffset(
       assetId,
       userPosition.premiumDrawnShares
@@ -902,7 +900,7 @@ contract Spoke is ISpoke, Multicall {
         uint256 accruedUserPremium = HUB.convertToDrawnAssets(assetId, oldUserPremiumDrawnShares) -
           oldUserPremiumOffset;
 
-        userPosition.premiumDrawnShares = userPosition.baseDrawnShares.percentMul(
+        userPosition.premiumDrawnShares = userPosition.baseDrawnShares.percentMulUp(
           newUserRiskPremium
         );
         userPosition.premiumOffset = HUB.previewOffset(assetId, userPosition.premiumDrawnShares);
@@ -1050,7 +1048,7 @@ contract Spoke is ISpoke, Multicall {
       // refresh debt reserve premium
       vars.userPremiumDrawnShares = userDebtPosition.premiumDrawnShares = userDebtPosition
         .baseDrawnShares
-        .percentMul(vars.newUserRiskPremium);
+        .percentMulUp(vars.newUserRiskPremium);
       vars.userPremiumOffset = userDebtPosition.premiumOffset = HUB.previewOffset(
         vars.debtAssetId,
         userDebtPosition.premiumDrawnShares
@@ -1068,7 +1066,7 @@ contract Spoke is ISpoke, Multicall {
 
       // refresh collateral reserve premium
       vars.userPremiumDrawnShares = userCollateralPosition
-        .premiumDrawnShares = userCollateralPosition.baseDrawnShares.percentMul(
+        .premiumDrawnShares = userCollateralPosition.baseDrawnShares.percentMulUp(
         vars.newUserRiskPremium
       );
       vars.userPremiumOffset = userCollateralPosition.premiumOffset = HUB.previewOffset(

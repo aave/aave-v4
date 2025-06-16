@@ -344,10 +344,9 @@ contract SpokeRepayEdgeCaseTest is SpokeBase {
     repayAmount = baseRestored + premiumRestored;
 
     assertEq(bobDaiDataAfter.suppliedShares, bobDaiDataBefore.suppliedShares);
-    assertApproxEqAbs(
+    assertEq(
       spoke1.getUserTotalDebt(_daiReserveId(spoke1), bob),
       bobDaiBefore.totalDebt - baseRestored - premiumRestored,
-      1,
       'bob dai debt final balance'
     );
     assertEq(bobDaiAfter.premiumDebt, 0, 'bob dai premium debt final balance');

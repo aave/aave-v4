@@ -3,7 +3,10 @@
   "version": "1.0.0",
   "scripts": {
     "lint": "prettier ./",
-    "lint:fix": "npm run lint -- --write"
+    "lint:fix": "npm run lint -- --write",
+    "rs:bind": "forge bind --bindings-path ./out/__BINDINGS__ --alloy --skip '(tests|scripts)/**/*.sol'",
+    "rs:abis": "forge build --out ./out/__FOLDER_ABIS__ --skip '(tests|scripts)/**/*.sol' --extra-output-files abi && rm -rf ./out/__ABIS__ && mkdir -p ./out/__ABIS__ && find ./out/__FOLDER_ABIS__ -name '*.abi.json' -exec cp {} ./out/__ABIS__/ \\;",
+    "rs:generate": "npm run rs:bind && npm run rs:abis"
   },
   "keywords": [],
   "author": "Aave Labs",

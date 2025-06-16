@@ -2,13 +2,11 @@
 pragma solidity ^0.8.0;
 
 import 'tests/unit/Spoke/SpokeBase.t.sol';
-import {Spoke} from 'src/contracts/Spoke.sol';
-import {LiquidityHub} from 'src/contracts/LiquidityHub.sol';
 
 contract SpokeAccrueInterestTest is SpokeBase {
   using SharesMath for uint256;
   using WadRayMathExtended for uint256;
-  using PercentageMath for uint256;
+  using PercentageMathExtended for uint256;
 
   struct TestAmounts {
     uint256 daiSupplyAmount;
@@ -859,10 +857,11 @@ contract SpokeAccrueInterestTest is SpokeBase {
       rates.daiBaseBorrowRate,
       startTime
     );
-    uint256 expectedPremiumDrawnShares = bobPosition.baseDrawnShares.percentMul(bobRp);
+    uint256 expectedPremiumDrawnShares = bobPosition.baseDrawnShares.percentMulUp(bobRp);
     uint256 expectedPremiumDebt = hub.convertToDrawnAssets(daiAssetId, expectedPremiumDrawnShares) -
       bobPosition.premiumOffset +
       bobPosition.realizedPremium;
+    expectedPremiumDebt = _calculateExpectedPremiumDebt(amounts.daiBorrowAmount, baseDebt, bobRp);
     uint256 interest = (baseDebt + expectedPremiumDebt) - amounts.daiBorrowAmount;
     _assertSingleUserProtocolDebt(
       spoke1,
@@ -904,7 +903,7 @@ contract SpokeAccrueInterestTest is SpokeBase {
       rates.wethBaseBorrowRate,
       startTime
     );
-    expectedPremiumDrawnShares = bobPosition.baseDrawnShares.percentMul(bobRp);
+    expectedPremiumDrawnShares = bobPosition.baseDrawnShares.percentMulUp(bobRp);
     expectedPremiumDebt =
       hub.convertToDrawnAssets(wethAssetId, expectedPremiumDrawnShares) -
       bobPosition.premiumOffset +
@@ -950,7 +949,7 @@ contract SpokeAccrueInterestTest is SpokeBase {
       rates.usdxBaseBorrowRate,
       startTime
     );
-    expectedPremiumDrawnShares = bobPosition.baseDrawnShares.percentMul(bobRp);
+    expectedPremiumDrawnShares = bobPosition.baseDrawnShares.percentMulUp(bobRp);
     expectedPremiumDebt =
       hub.convertToDrawnAssets(usdxAssetId, expectedPremiumDrawnShares) -
       bobPosition.premiumOffset +
@@ -996,7 +995,7 @@ contract SpokeAccrueInterestTest is SpokeBase {
       rates.wbtcBaseBorrowRate,
       startTime
     );
-    expectedPremiumDrawnShares = bobPosition.baseDrawnShares.percentMul(bobRp);
+    expectedPremiumDrawnShares = bobPosition.baseDrawnShares.percentMulUp(bobRp);
     expectedPremiumDebt =
       hub.convertToDrawnAssets(wbtcAssetId, expectedPremiumDrawnShares) -
       bobPosition.premiumOffset +
