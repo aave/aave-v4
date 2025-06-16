@@ -198,10 +198,11 @@ contract SpokeAccrueInterestScenarioTest is SpokeBase {
       rates.daiBaseBorrowRate,
       startTime
     );
-    uint256 expectedPremiumDrawnShares = bobPosition.baseDrawnShares.percentMulUp(bobRp);
-    uint256 expectedPremiumDebt = hub.convertToDrawnAssets(daiAssetId, expectedPremiumDrawnShares) -
-      bobPosition.premiumOffset +
-      bobPosition.realizedPremium;
+    uint256 expectedPremiumDebt = _calculateExpectedPremiumDebt(
+      amounts.daiBorrowAmount,
+      baseDebt,
+      bobRp
+    );
     _assertSingleUserProtocolDebt(
       spoke2,
       _daiReserveId(spoke2),
@@ -217,11 +218,7 @@ contract SpokeAccrueInterestScenarioTest is SpokeBase {
       rates.wethBaseBorrowRate,
       startTime
     );
-    expectedPremiumDrawnShares = bobPosition.baseDrawnShares.percentMulUp(bobRp);
-    expectedPremiumDebt =
-      hub.convertToDrawnAssets(wethAssetId, expectedPremiumDrawnShares) -
-      bobPosition.premiumOffset +
-      bobPosition.realizedPremium;
+    expectedPremiumDebt = _calculateExpectedPremiumDebt(amounts.wethBorrowAmount, baseDebt, bobRp);
     _assertSingleUserProtocolDebt(
       spoke2,
       _wethReserveId(spoke2),
@@ -237,11 +234,7 @@ contract SpokeAccrueInterestScenarioTest is SpokeBase {
       rates.usdxBaseBorrowRate,
       startTime
     );
-    expectedPremiumDrawnShares = bobPosition.baseDrawnShares.percentMulUp(bobRp);
-    expectedPremiumDebt =
-      hub.convertToDrawnAssets(usdxAssetId, expectedPremiumDrawnShares) -
-      bobPosition.premiumOffset +
-      bobPosition.realizedPremium;
+    expectedPremiumDebt = _calculateExpectedPremiumDebt(amounts.usdxBorrowAmount, baseDebt, bobRp);
     _assertSingleUserProtocolDebt(
       spoke2,
       _usdxReserveId(spoke2),
@@ -257,11 +250,7 @@ contract SpokeAccrueInterestScenarioTest is SpokeBase {
       rates.wbtcBaseBorrowRate,
       startTime
     );
-    expectedPremiumDrawnShares = bobPosition.baseDrawnShares.percentMulUp(bobRp);
-    expectedPremiumDebt =
-      hub.convertToDrawnAssets(wbtcAssetId, expectedPremiumDrawnShares) -
-      bobPosition.premiumOffset +
-      bobPosition.realizedPremium;
+    expectedPremiumDebt = _calculateExpectedPremiumDebt(amounts.wbtcBorrowAmount, baseDebt, bobRp);
     _assertSingleUserProtocolDebt(
       spoke2,
       _wbtcReserveId(spoke2),
@@ -384,10 +373,8 @@ contract SpokeAccrueInterestScenarioTest is SpokeBase {
       );
       bobPosition = spoke2.getUserPosition(_daiReserveId(spoke2), bob);
       baseDebt = baseShares.dai.rayMulUp(indices.daiIndex);
-      expectedPremiumDrawnShares = baseShares.dai.percentMulUp(bobRp);
       expectedPremiumDebt =
-        hub.convertToDrawnAssets(daiAssetId, expectedPremiumDrawnShares) -
-        bobPosition.premiumOffset +
+        _calculateExpectedPremiumDebt(amounts.daiBorrowAmount, baseDebt, bobRp) +
         bobPosition.realizedPremium;
       _assertSingleUserProtocolDebt(
         spoke2,
@@ -410,10 +397,8 @@ contract SpokeAccrueInterestScenarioTest is SpokeBase {
         'weth base drawn shares after second accrual'
       );
       baseDebt = baseShares.weth.rayMulUp(indices.wethIndex);
-      expectedPremiumDrawnShares = baseShares.weth.percentMulUp(bobRp);
       expectedPremiumDebt =
-        hub.convertToDrawnAssets(wethAssetId, expectedPremiumDrawnShares) -
-        bobPosition.premiumOffset +
+        _calculateExpectedPremiumDebt(amounts.wethBorrowAmount, baseDebt, bobRp) +
         bobPosition.realizedPremium;
       _assertSingleUserProtocolDebt(
         spoke2,
@@ -431,10 +416,8 @@ contract SpokeAccrueInterestScenarioTest is SpokeBase {
       );
       bobPosition = spoke2.getUserPosition(_usdxReserveId(spoke2), bob);
       baseDebt = baseShares.usdx.rayMulUp(indices.usdxIndex);
-      expectedPremiumDrawnShares = baseShares.usdx.percentMulUp(bobRp);
       expectedPremiumDebt =
-        hub.convertToDrawnAssets(usdxAssetId, expectedPremiumDrawnShares) -
-        bobPosition.premiumOffset +
+        _calculateExpectedPremiumDebt(amounts.usdxBorrowAmount, baseDebt, bobRp) +
         bobPosition.realizedPremium;
       _assertSingleUserProtocolDebt(
         spoke2,
@@ -452,10 +435,8 @@ contract SpokeAccrueInterestScenarioTest is SpokeBase {
       );
       bobPosition = spoke2.getUserPosition(_wbtcReserveId(spoke2), bob);
       baseDebt = baseShares.wbtc.rayMulUp(indices.wbtcIndex);
-      expectedPremiumDrawnShares = baseShares.wbtc.percentMulUp(bobRp);
       expectedPremiumDebt =
-        hub.convertToDrawnAssets(wbtcAssetId, expectedPremiumDrawnShares) -
-        bobPosition.premiumOffset +
+        _calculateExpectedPremiumDebt(amounts.wbtcBorrowAmount, baseDebt, bobRp) +
         bobPosition.realizedPremium;
       _assertSingleUserProtocolDebt(
         spoke2,
