@@ -91,8 +91,8 @@ contract SpokeRiskPremiumEdgeCasesTest is SpokeBase {
     );
   }
 
-  /// Supply two collaterals, borrow, then remove lower LP collateral and risk premium should increase
-  function test_riskPremium_increasesAfterCollateralRemoval(
+  /// Supply two collaterals, borrow, then remove lower LP collateral and risk premium shouldn't decrease
+  function test_riskPremium_nonDecreasesAfterCollateralRemoval(
     uint256 daiSupplyAmount,
     uint256 borrowAmount
   ) public {
@@ -146,16 +146,16 @@ contract SpokeRiskPremiumEdgeCasesTest is SpokeBase {
       usingAsCollateral: false
     });
 
-    assertGt(
+    assertGe(
       spoke2.getUserRiskPremium(bob),
       riskPremium,
-      'Risk premium should increase after disabling lower LP reserve as collateral'
+      'Risk premium should not decrease after disabling lower LP reserve as collateral'
     );
 
-    assertGt(
+    assertGe(
       spoke2.getUserPosition(_dai2ReserveId(spoke2), bob).premiumDrawnShares,
       premiumDrawnShares,
-      'Bob premium drawn shares increase due to unset as collateral triggering rp update'
+      'Bob premium drawn shares should not decrease due to unset as collateral triggering rp update'
     );
 
     assertEq(

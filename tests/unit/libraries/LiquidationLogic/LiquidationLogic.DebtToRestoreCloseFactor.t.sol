@@ -11,7 +11,7 @@ contract LiquidationLogicDebtToRestoreCloseFactorTest is LiquidationLogicBaseTes
   function test_calculateDebtToRestoreCloseFactor_fuzz_non_negative(
     TestDebtToRestoreCloseFactorParams memory params
   ) public {
-    TestDebtToRestoreCloseFactorParams memory params = _bound(params);
+    params = _bound(params);
     DataTypes.LiquidationCallLocalVars memory args = _setStructFields(params);
 
     // cannot revert if all params are constrained
@@ -22,7 +22,7 @@ contract LiquidationLogicDebtToRestoreCloseFactorTest is LiquidationLogicBaseTes
   function test_calculateDebtToRestoreCloseFactor_fuzz_debtAssetUnit_zero(
     TestDebtToRestoreCloseFactorParams memory params
   ) public {
-    TestDebtToRestoreCloseFactorParams memory params = _bound(params);
+    params = _bound(params);
     // so that default uint max is not returned
     vm.assume(
       (params.liquidationBonus.wadify()).percentMulDown(params.collateralFactor).fromBps() - 1 <
@@ -39,7 +39,7 @@ contract LiquidationLogicDebtToRestoreCloseFactorTest is LiquidationLogicBaseTes
   function test_calculateDebtToRestoreCloseFactor_fuzz_debtAssetPrice_zero(
     TestDebtToRestoreCloseFactorParams memory params
   ) public {
-    TestDebtToRestoreCloseFactorParams memory params = _bound(params);
+    params = _bound(params);
     // so that default uint max is not returned
     // ie params.closeFactor > effectiveLiquidationPenalty
     vm.assume(
@@ -57,7 +57,7 @@ contract LiquidationLogicDebtToRestoreCloseFactorTest is LiquidationLogicBaseTes
   function test_calculateDebtToRestoreCloseFactor_closeFactor_eq_healthFactor(
     TestDebtToRestoreCloseFactorParams memory params
   ) public {
-    TestDebtToRestoreCloseFactorParams memory params = _bound(params);
+    params = _bound(params);
     params.healthFactor = params.closeFactor;
     uint256 effectiveLiquidationPenalty = (params.liquidationBonus.wadify())
       .percentMulDown(params.collateralFactor)
@@ -74,7 +74,7 @@ contract LiquidationLogicDebtToRestoreCloseFactorTest is LiquidationLogicBaseTes
   function test_calculateDebtToRestoreCloseFactor_closeFactor_lt_healthFactor(
     TestDebtToRestoreCloseFactorParams memory params
   ) public {
-    TestDebtToRestoreCloseFactorParams memory params = _bound(params);
+    params = _bound(params);
     params.healthFactor = params.closeFactor + 1;
     // so that default uint max is not returned
     vm.assume(
@@ -91,7 +91,7 @@ contract LiquidationLogicDebtToRestoreCloseFactorTest is LiquidationLogicBaseTes
   function test_calculateDebtToRestoreCloseFactor_fuzz_closeFactor_lte_effectiveLiquidationPenalty_zero(
     TestDebtToRestoreCloseFactorParams memory params
   ) public {
-    TestDebtToRestoreCloseFactorParams memory params = _bound(params);
+    params = _bound(params);
     //
     vm.assume(
       _calculateCloseFactorThreshold(params.liquidationBonus, params.collateralFactor) >=

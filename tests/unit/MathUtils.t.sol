@@ -184,7 +184,7 @@ contract MathUtilsWeightedAverage is Test {
           assertApproxEqAbs(
             (currentWeightedAvg / precision),
             (calcWeightedAvg / calcSumWeights),
-            2
+            1
           );
         }
       }
