@@ -379,6 +379,7 @@ contract LiquidityHubConfigTest is LiquidityHubBase {
 
   function test_addAsset() public {
     DataTypes.AssetConfig memory config = DataTypes.AssetConfig({
+      feeReceiver: makeAddr('feeReceiver'),
       active: true,
       frozen: false,
       paused: false,
@@ -396,6 +397,7 @@ contract LiquidityHubConfigTest is LiquidityHubBase {
 
     uint256 assetId = hub.assetCount() - 1;
     DataTypes.AssetConfig memory actualConfig = hub.getAssetConfig(assetId);
+    assertEq(config.feeReceiver, actualConfig.feeReceiver, 'feeReceiver');
     assertEq(config.active, actualConfig.active, 'asset active');
     assertEq(config.frozen, actualConfig.frozen, 'asset frozen');
     assertEq(config.paused, actualConfig.paused, 'asset paused');
@@ -406,7 +408,8 @@ contract LiquidityHubConfigTest is LiquidityHubBase {
 
   function test_addAsset_fuzz(DataTypes.AssetConfig memory newConfig, address asset) public {
     newConfig.decimals = bound(newConfig.decimals, 0, hub.MAX_ALLOWED_ASSET_DECIMALS());
-    newConfig.liquidityFee = 0; // todo: remove
+    newConfig.liquidityFee = 0; // todo: fix
+    newConfig.feeReceiver = address(0); // todo: fix
     vm.assume(address(newConfig.irStrategy) != address(0) && asset != address(0));
 
     vm.prank(HUB_ADMIN);
@@ -414,6 +417,7 @@ contract LiquidityHubConfigTest is LiquidityHubBase {
 
     uint256 assetId = hub.assetCount() - 1;
     DataTypes.AssetConfig memory config = hub.getAssetConfig(assetId);
+    assertEq(config.feeReceiver, newConfig.feeReceiver, 'feeReceiver');
     assertEq(config.active, newConfig.active, 'asset active');
     assertEq(config.frozen, newConfig.frozen, 'asset frozen');
     assertEq(config.paused, newConfig.paused, 'asset paused');
@@ -428,6 +432,7 @@ contract LiquidityHubConfigTest is LiquidityHubBase {
     vm.prank(HUB_ADMIN);
     hub.addAsset(
       DataTypes.AssetConfig({
+        feeReceiver: makeAddr('feeReceiver'),
         active: true,
         frozen: false,
         paused: false,
@@ -453,6 +458,7 @@ contract LiquidityHubConfigTest is LiquidityHubBase {
     vm.prank(HUB_ADMIN);
     hub.addAsset(
       DataTypes.AssetConfig({
+        feeReceiver: makeAddr('feeReceiver'),
         active: active,
         frozen: frozen,
         paused: paused,
@@ -471,6 +477,7 @@ contract LiquidityHubConfigTest is LiquidityHubBase {
     vm.prank(HUB_ADMIN);
     hub.addAsset(
       DataTypes.AssetConfig({
+        feeReceiver: makeAddr('feeReceiver'),
         active: true,
         frozen: false,
         paused: false,
@@ -497,6 +504,7 @@ contract LiquidityHubConfigTest is LiquidityHubBase {
     vm.prank(HUB_ADMIN);
     hub.addAsset(
       DataTypes.AssetConfig({
+        feeReceiver: makeAddr('feeReceiver'),
         active: active,
         frozen: frozen,
         paused: paused,
@@ -516,6 +524,7 @@ contract LiquidityHubConfigTest is LiquidityHubBase {
     vm.prank(HUB_ADMIN);
     hub.addAsset(
       DataTypes.AssetConfig({
+        feeReceiver: makeAddr('feeReceiver'),
         active: true,
         frozen: false,
         paused: false,
@@ -533,16 +542,19 @@ contract LiquidityHubConfigTest is LiquidityHubBase {
     bool paused,
     address token,
     uint256 decimals,
-    uint256 liquidityFee
+    uint256 liquidityFee,
+    address feeReceiver
   ) public {
     decimals = bound(decimals, 0, hub.MAX_ALLOWED_ASSET_DECIMALS());
     liquidityFee = bound(liquidityFee, 0, PercentageMathExtended.PERCENTAGE_FACTOR);
+    vm.assume(feeReceiver != address(0));
     vm.assume(token != address(0));
 
     vm.expectRevert(ILiquidityHub.InvalidIrStrategy.selector);
     vm.prank(HUB_ADMIN);
     hub.addAsset(
       DataTypes.AssetConfig({
+        feeReceiver: feeReceiver,
         active: active,
         frozen: frozen,
         paused: paused,

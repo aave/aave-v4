@@ -64,7 +64,7 @@ contract LiquidityHubUpdateAssetFeesTest is LiquidityHubBase {
   function test_updateAssetFees_noChange() public {
     uint256 assetId = daiAssetId;
 
-    address currentFeeReceiver = hub.getFeeReceiver(assetId);
+    address currentFeeReceiver = _getFeeReceiver(assetId);
     uint256 currentLiquidityFee = _getLiquidityFee(assetId);
 
     // todo: LiquidityFeeUpdated and FeeReceiverUpdated not emitted
@@ -84,7 +84,7 @@ contract LiquidityHubUpdateAssetFeesTest is LiquidityHubBase {
     _addLiquidity(assetId, amount);
     _drawLiquidity(assetId, amount, true);
 
-    address currentFeeReceiver = hub.getFeeReceiver(assetId);
+    address currentFeeReceiver = _getFeeReceiver(assetId);
     address newFeeReceiver = makeAddr('newFeeReceiver');
 
     uint256 feesShares = hub.getSpokeSuppliedShares(assetId, currentFeeReceiver);
@@ -108,7 +108,7 @@ contract LiquidityHubUpdateAssetFeesTest is LiquidityHubBase {
 
     assertEq(hub.getSpokeSuppliedShares(assetId, currentFeeReceiver), feesShares);
     assertEq(hub.getSpokeSuppliedShares(assetId, newFeeReceiver), 0);
-    assertEq(hub.getFeeReceiver(assetId), newFeeReceiver);
+    assertEq(_getFeeReceiver(assetId), newFeeReceiver);
   }
 
   /// Updates the fee receiver by reusing a previously assigned spoke, with no impact on accrued fees
@@ -120,7 +120,7 @@ contract LiquidityHubUpdateAssetFeesTest is LiquidityHubBase {
     _addLiquidity(assetId, amount);
     _drawLiquidity(assetId, amount, true);
 
-    address currentFeeReceiver = hub.getFeeReceiver(assetId);
+    address currentFeeReceiver = _getFeeReceiver(assetId);
     address newFeeReceiver = makeAddr('newFeeReceiver');
 
     uint256 currentFees = hub.getSpokeSuppliedShares(assetId, currentFeeReceiver);
@@ -142,7 +142,7 @@ contract LiquidityHubUpdateAssetFeesTest is LiquidityHubBase {
 
     assertEq(hub.getSpokeSuppliedShares(assetId, currentFeeReceiver), currentFees);
     assertEq(hub.getSpokeSuppliedShares(assetId, newFeeReceiver), 0);
-    assertEq(hub.getFeeReceiver(assetId), newFeeReceiver);
+    assertEq(_getFeeReceiver(assetId), newFeeReceiver);
 
     skip(365 days);
 
@@ -173,7 +173,7 @@ contract LiquidityHubUpdateAssetFeesTest is LiquidityHubBase {
 
     assertEq(hub.getSpokeSuppliedShares(assetId, currentFeeReceiver), currentFees);
     assertEq(hub.getSpokeSuppliedShares(assetId, newFeeReceiver), newFees);
-    assertEq(hub.getFeeReceiver(assetId), currentFeeReceiver);
+    assertEq(_getFeeReceiver(assetId), currentFeeReceiver);
   }
 
   /// Updates the fee receiver from zero to non-zero, even with zero liquidity fee
@@ -203,7 +203,7 @@ contract LiquidityHubUpdateAssetFeesTest is LiquidityHubBase {
     hub.updateAssetFees(assetId, newFeeReceiver, _getLiquidityFee(assetId));
 
     assertEq(hub.getSpokeSuppliedShares(assetId, newFeeReceiver), 0);
-    assertEq(hub.getFeeReceiver(assetId), newFeeReceiver);
+    assertEq(_getFeeReceiver(assetId), newFeeReceiver);
   }
 
   /// Triggers accrual when liquidity fee update, based on old liquidity fee
@@ -212,7 +212,7 @@ contract LiquidityHubUpdateAssetFeesTest is LiquidityHubBase {
 
     uint256 assetId = daiAssetId;
     uint256 currentLiquidityFee = _getLiquidityFee(assetId);
-    address currentFeeReceiver = hub.getFeeReceiver(assetId);
+    address currentFeeReceiver = _getFeeReceiver(assetId);
 
     uint256 amount = 1000e18;
     _addLiquidity(assetId, amount);
@@ -226,7 +226,9 @@ contract LiquidityHubUpdateAssetFeesTest is LiquidityHubBase {
 
     if (currentLiquidityFee != liquidityFee) {
       vm.expectEmit(address(hub));
-      emit ILiquidityHub.LiquidityFeeUpdated(assetId, currentLiquidityFee, liquidityFee);
+      DataTypes.AssetConfig memory dataConfig = hub.getAssetConfig(assetId);
+      dataConfig.liquidityFee = liquidityFee;
+      emit ILiquidityHub.AssetConfigUpdated(assetId, dataConfig);
     }
 
     // todo: FeeReceiverUpdated not emitted
@@ -246,7 +248,7 @@ contract LiquidityHubUpdateAssetFeesTest is LiquidityHubBase {
     hub.updateAssetFees(assetId, address(0), 0);
 
     uint256 currentLiquidityFee = _getLiquidityFee(assetId);
-    address currentFeeReceiver = hub.getFeeReceiver(assetId);
+    address currentFeeReceiver = _getFeeReceiver(assetId);
     address validFeeReceiver = address(1);
 
     uint256 amount = 1000e18;
@@ -259,7 +261,9 @@ contract LiquidityHubUpdateAssetFeesTest is LiquidityHubBase {
     emit ILiquidityHub.DrawnIndexUpdate(assetId, hub.previewDrawnIndex(assetId), block.timestamp);
 
     vm.expectEmit(address(hub));
-    emit ILiquidityHub.LiquidityFeeUpdated(assetId, 0, liquidityFee);
+    DataTypes.AssetConfig memory dataConfig = hub.getAssetConfig(assetId);
+    dataConfig.liquidityFee = liquidityFee;
+    emit ILiquidityHub.AssetConfigUpdated(assetId, dataConfig);
 
     // todo: FeeReceiverUpdated not emitted
 

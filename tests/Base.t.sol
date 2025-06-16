@@ -253,6 +253,7 @@ abstract contract Base is Test {
     // add WETH
     hub.addAsset(
       DataTypes.AssetConfig({
+        feeReceiver: address(0),
         active: true,
         paused: false,
         frozen: false,
@@ -268,6 +269,7 @@ abstract contract Base is Test {
     // add USDX
     hub.addAsset(
       DataTypes.AssetConfig({
+        feeReceiver: address(0),
         active: true,
         paused: false,
         frozen: false,
@@ -283,6 +285,7 @@ abstract contract Base is Test {
     // add DAI
     hub.addAsset(
       DataTypes.AssetConfig({
+        feeReceiver: address(0),
         active: true,
         paused: false,
         frozen: false,
@@ -298,6 +301,7 @@ abstract contract Base is Test {
     // add WBTC
     hub.addAsset(
       DataTypes.AssetConfig({
+        feeReceiver: address(0),
         active: true,
         paused: false,
         frozen: false,
@@ -313,6 +317,7 @@ abstract contract Base is Test {
     // add USDY
     hub.addAsset(
       DataTypes.AssetConfig({
+        feeReceiver: address(0),
         active: true,
         paused: false,
         frozen: false,
@@ -536,6 +541,7 @@ abstract contract Base is Test {
     // Spoke 2 to have an extra dai reserve
     hub.addAsset(
       DataTypes.AssetConfig({
+        feeReceiver: address(0),
         active: true,
         frozen: false,
         paused: false,
@@ -760,7 +766,7 @@ abstract contract Base is Test {
     uint256 assetId,
     uint256 liquidityFee
   ) internal {
-    address feeReceiver = liquidityHub.getFeeReceiver(assetId);
+    address feeReceiver = liquidityHub.getAssetConfig(assetId).feeReceiver;
     vm.prank(HUB_ADMIN);
     hub.updateAssetFees(assetId, feeReceiver, liquidityFee);
   }
@@ -1217,6 +1223,10 @@ abstract contract Base is Test {
 
   function _getLiquidityFee(uint256 assetId) internal view returns (uint256) {
     return hub.getAssetConfig(assetId).liquidityFee;
+  }
+
+  function _getFeeReceiver(uint256 assetId) internal view returns (address) {
+    return hub.getAssetConfig(assetId).feeReceiver;
   }
 
   function _getLiquidityPremium(ISpoke spoke, uint256 reserveId) internal view returns (uint256) {

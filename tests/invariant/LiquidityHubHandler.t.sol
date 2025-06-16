@@ -44,6 +44,7 @@ contract LiquidityHubHandler is Test {
     // Add dai
     hub.addAsset(
       DataTypes.AssetConfig({
+        feeReceiver: address(0),
         active: true,
         frozen: false,
         paused: false,
