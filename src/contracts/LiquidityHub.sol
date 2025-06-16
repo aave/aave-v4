@@ -53,7 +53,7 @@ contract LiquidityHub is ILiquidityHub {
         frozen: config.frozen,
         paused: config.paused,
         decimals: config.decimals, // todo fetch decimals from token
-        liquidityFee: 0,
+        liquidityFee: config.liquidityFee,
         irStrategy: config.irStrategy
       })
     });
@@ -136,7 +136,6 @@ contract LiquidityHub is ILiquidityHub {
     uint256 oldLiquidityFee = _assets[assetId].config.liquidityFee;
     if (liquidityFee != oldLiquidityFee) {
       _assets[assetId].config.liquidityFee = liquidityFee;
-      emit AssetConfigUpdated(assetId, _assets[assetId].config);
     }
 
     // Update fee receiver
@@ -168,6 +167,9 @@ contract LiquidityHub is ILiquidityHub {
         }
       }
       _assets[assetId].config.feeReceiver = feeReceiver;
+    }
+
+    if (liquidityFee != oldLiquidityFee || feeReceiver != oldFeeReceiver) {
       emit AssetConfigUpdated(assetId, _assets[assetId].config);
     }
   }
