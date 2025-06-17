@@ -14,7 +14,7 @@ contract SpokeDynamicConfigTriggersTest is SpokeBase {
 
     assertEq(_getUserDynConfigKeys(spoke1, alice), configs);
 
-    _deployLiquidity(spoke1, _daiReserveId(spoke1), 500e18);
+    _openSupplyPosition(spoke1, _daiReserveId(spoke1), 500e18);
     Utils.borrow(spoke1, _daiReserveId(spoke1), alice, 500e18, alice);
     configs = _getUserDynConfigKeys(spoke1, alice);
     updateCollateralFactor(spoke1, _usdxReserveId(spoke1), _randomBps());
@@ -31,7 +31,7 @@ contract SpokeDynamicConfigTriggersTest is SpokeBase {
   function test_repay_does_not_trigger_dynamicConfigUpdate() public {
     DynamicConfig[] memory configs = _getUserDynConfigKeys(spoke1, alice);
     Utils.supplyCollateral(spoke1, _usdxReserveId(spoke1), alice, 1000e6, alice);
-    _deployLiquidity(spoke1, _daiReserveId(spoke1), 500e18);
+    _openSupplyPosition(spoke1, _daiReserveId(spoke1), 500e18);
     Utils.borrow(spoke1, _daiReserveId(spoke1), alice, 500e18, alice);
 
     configs = _getUserDynConfigKeys(spoke1, alice);
@@ -48,7 +48,7 @@ contract SpokeDynamicConfigTriggersTest is SpokeBase {
     DynamicConfig[] memory configs = _getUserDynConfigKeys(spoke1, alice);
 
     Utils.supplyCollateral(spoke1, _usdxReserveId(spoke1), alice, 1000e6, alice);
-    _deployLiquidity(spoke1, _daiReserveId(spoke1), 500e18);
+    _openSupplyPosition(spoke1, _daiReserveId(spoke1), 500e18);
     Utils.borrow(spoke1, _daiReserveId(spoke1), alice, 500e18, alice);
     configs = _getUserDynConfigKeys(spoke1, alice);
     skip(322 days);
@@ -82,7 +82,7 @@ contract SpokeDynamicConfigTriggersTest is SpokeBase {
     DynamicConfig[] memory configs = _getUserDynConfigKeys(spoke1, alice);
 
     Utils.supplyCollateral(spoke1, _usdxReserveId(spoke1), alice, 1000e6, alice);
-    _deployLiquidity(spoke1, _daiReserveId(spoke1), 600e18);
+    _openSupplyPosition(spoke1, _daiReserveId(spoke1), 600e18);
     Utils.borrow(spoke1, _daiReserveId(spoke1), alice, 500e18, alice);
     configs = _getUserDynConfigKeys(spoke1, alice);
     skip(322 days);
@@ -108,7 +108,7 @@ contract SpokeDynamicConfigTriggersTest is SpokeBase {
     DynamicConfig[] memory configs = _getUserDynConfigKeys(spoke1, alice);
 
     Utils.supplyCollateral(spoke1, _usdxReserveId(spoke1), alice, 1000e6, alice);
-    _deployLiquidity(spoke1, _daiReserveId(spoke1), 600e18);
+    _openSupplyPosition(spoke1, _daiReserveId(spoke1), 600e18);
     Utils.borrow(spoke1, _daiReserveId(spoke1), alice, 500e18, alice);
     configs = _getUserDynConfigKeys(spoke1, alice);
     skip(322 days);
@@ -134,7 +134,7 @@ contract SpokeDynamicConfigTriggersTest is SpokeBase {
     DynamicConfig[] memory configs = _getUserDynConfigKeys(spoke1, alice);
 
     Utils.supplyCollateral(spoke1, _usdxReserveId(spoke1), alice, 1000e6, alice);
-    _deployLiquidity(spoke1, _daiReserveId(spoke1), 600e18);
+    _openSupplyPosition(spoke1, _daiReserveId(spoke1), 600e18);
     Utils.borrow(spoke1, _daiReserveId(spoke1), alice, 500e18, alice);
     configs = _getUserDynConfigKeys(spoke1, alice);
     skip(322 days);

@@ -484,7 +484,6 @@ contract Spoke is ISpoke, Multicall {
     ) = _calculateUserAccountData(user);
   }
 
-  // todo: make `getReserve` return dynamic config as well
   function getReserve(uint256 reserveId) external view returns (DataTypes.Reserve memory) {
     return _reserves[reserveId];
   }

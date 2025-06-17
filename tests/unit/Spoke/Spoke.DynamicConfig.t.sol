@@ -88,7 +88,7 @@ contract SpokeDynamicConfigTest is SpokeBase {
   }
 
   function test_offboardReserve_existing_borrows_remain_unaffected() public {
-    _deployLiquidity(spoke1, _wethReserveId(spoke1), 3e18);
+    _openSupplyPosition(spoke1, _wethReserveId(spoke1), 3e18);
 
     Utils.supplyCollateral(spoke1, _usdxReserveId(spoke1), alice, 2600e6, alice);
     Utils.supplyCollateral(spoke1, _usdxReserveId(spoke1), bob, 2600e6, bob);
