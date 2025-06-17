@@ -184,7 +184,7 @@ library WadRayMathExtended {
    * @param a The number in Wad precision
    * @return b (= a / 1e18)
    */
-  function dewadify(uint256 a) internal pure returns (uint256 b) {
+  function dewadifyDown(uint256 a) internal pure returns (uint256 b) {
     assembly {
       b := div(a, WAD)
     }

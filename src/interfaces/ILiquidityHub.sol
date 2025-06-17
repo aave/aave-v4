@@ -178,16 +178,21 @@ interface ILiquidityHub {
   function convertToDrawnShares(uint256 assetId, uint256 assets) external view returns (uint256);
 
   function convertToSuppliedAssets(uint256 assetId, uint256 shares) external view returns (uint256);
+
   function convertToSuppliedAssetsUp(
     uint256 assetId,
     uint256 shares
   ) external view returns (uint256);
+
   function convertToSuppliedShares(uint256 assetId, uint256 assets) external view returns (uint256);
+
   function convertToSuppliedSharesUp(
     uint256 assetId,
     uint256 assets
   ) external view returns (uint256);
+
   function previewOffset(uint256 assetId, uint256 shares) external view returns (uint256);
+
   function previewDrawnIndex(uint256 assetId) external view returns (uint256);
 
   function getAsset(uint256 assetId) external view returns (DataTypes.Asset memory);

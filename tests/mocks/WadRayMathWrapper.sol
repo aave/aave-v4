@@ -45,8 +45,12 @@ contract WadRayMathExtendedWrapper {
     return WadRayMathExtended.wadify(a);
   }
 
-  function dewadify(uint256 a) public pure returns (uint256) {
-    return WadRayMathExtended.dewadify(a);
+  function dewadifyDown(uint256 a) public pure returns (uint256) {
+    return WadRayMathExtended.dewadifyDown(a);
+  }
+
+  function bpsToRay(uint256 a) public pure returns (uint256) {
+    return WadRayMathExtended.bpsToRay(a);
   }
 }
 

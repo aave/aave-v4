@@ -1135,7 +1135,7 @@ abstract contract Base is Test {
     ) = spoke.getUserAccountData(user);
 
     requiredDebtInBaseCurrency =
-      totalCollateralBase.percentMul(currentAvgCollateralFactor.dewadify() + 1).wadDivUp(
+      totalCollateralBase.percentMul(currentAvgCollateralFactor.dewadifyDown() + 1).wadDivUp(
         desiredHf
       ) -
       totalDebtBase;
@@ -1166,7 +1166,7 @@ abstract contract Base is Test {
     uint256 assetPrice,
     uint256 assetUnit
   ) internal pure returns (uint256) {
-    return ((baseCurrencyAmount * assetUnit) / assetPrice).dewadify();
+    return ((baseCurrencyAmount * assetUnit) / assetPrice).dewadifyDown();
   }
 
   function _approxRelFromBps(uint256 bps) internal pure returns (uint256) {

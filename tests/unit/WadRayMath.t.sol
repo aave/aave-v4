@@ -361,7 +361,7 @@ contract WadRayMathExtendedDifferentialTests is Test {
   }
 
   function test_dewadify_fuzz(uint256 a) public {
-    assertEq(wExtended.dewadify(a), a / wExtended.WAD());
+    assertEq(wExtended.dewadifyDown(a), a / wExtended.WAD());
   }
 
   function test_wadify_fuzz(uint256 a) public {
@@ -377,6 +377,22 @@ contract WadRayMathExtendedDifferentialTests is Test {
     } else {
       assertEq(wExtended.wadify(a), a * w.WAD());
       assertEq(wExtended.wadify(a), b);
+    }
+  }
+
+  function test_bpsToRay_fuzz(uint256 a) public {
+    uint256 b;
+    bool safetyCheck;
+    unchecked {
+      b = a * wExtended.RAY();
+      safetyCheck = b / wExtended.RAY() == a;
+    }
+    if (!safetyCheck) {
+      vm.expectRevert();
+      wExtended.bpsToRay(a);
+    } else {
+      assertEq(wExtended.bpsToRay(a), a * w.RAY() / 100_00);
+      assertEq(wExtended.bpsToRay(a), b / 100_00);
     }
   }
 }
