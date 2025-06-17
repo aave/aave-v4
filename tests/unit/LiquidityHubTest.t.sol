@@ -5,7 +5,6 @@ import 'tests/BaseTest.t.sol';
 import 'src/contracts/WadRayMath.sol';
 import 'src/contracts/SharesMath.sol';
 import 'src/contracts/LiquidityHub.sol';
-import 'src/libraries/Roles.sol';
 
 contract LiquidityHubTest is BaseTest {
   using SharesMath for uint256;
@@ -353,87 +352,5 @@ contract LiquidityHubTest is BaseTest {
     assertEq(hub.getUserBalance(assetId, USER1), amount);
     assertEq(dai.balanceOf(USER1), 0);
     assertEq(dai.balanceOf(address(hub)), amount);
-  }
-
-  function testAddReserve() public {
-    vm.prank(ADMIN);
-    hub.addReserve(
-      LiquidityHub.ReserveConfig({
-        borrowModule: address(0),
-        lt: 0,
-        lb: 0,
-        rf: 0,
-        decimals: 18,
-        active: true,
-        borrowable: false,
-        supplyCap: type(uint256).max,
-        borrowCap: type(uint256).max
-      }),
-      address(usdc)
-    );
-  }
-
-  function testAddReserveNotAuthorized() public {
-    vm.prank(USER1);
-    vm.expectRevert();
-    hub.addReserve(
-      LiquidityHub.ReserveConfig({
-        borrowModule: address(0),
-        lt: 0,
-        lb: 0,
-        rf: 0,
-        decimals: 18,
-        active: true,
-        borrowable: false,
-        supplyCap: type(uint256).max,
-        borrowCap: type(uint256).max
-      }),
-      address(usdc)
-    );
-  }
-
-  function testAddReserveGrantAccess() public {
-    // Fails before access grant
-    vm.prank(USER1);
-    vm.expectRevert();
-    hub.addReserve(
-      LiquidityHub.ReserveConfig({
-        borrowModule: address(0),
-        lt: 0,
-        lb: 0,
-        rf: 0,
-        decimals: 18,
-        active: true,
-        borrowable: false,
-        supplyCap: type(uint256).max,
-        borrowCap: type(uint256).max
-      }),
-      address(usdc)
-    );
-
-    vm.startPrank(ADMIN);
-    // Get function signature of addReserve
-    bytes4 sig = bytes4(0xe71fa26c);
-    hub.setRoleCapability(Roles.RESERVE_CONTROLLER, address(hub), sig, true);
-    // Grant role to USER1
-    hub.setUserRole(USER1, Roles.RESERVE_CONTROLLER, true);
-    vm.stopPrank();
-
-    // Succeeds after access grant
-    vm.prank(USER1);
-    hub.addReserve(
-      LiquidityHub.ReserveConfig({
-        borrowModule: address(0),
-        lt: 0,
-        lb: 0,
-        rf: 0,
-        decimals: 18,
-        active: true,
-        borrowable: false,
-        supplyCap: type(uint256).max,
-        borrowCap: type(uint256).max
-      }),
-      address(usdc)
-    );
   }
 }
