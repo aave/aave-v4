@@ -17,6 +17,8 @@ contract LiquidityHubHandler is Test {
   LiquidityHub public hub;
   BorrowModule public bm;
 
+  address internal ADMIN = makeAddr('ADMIN');
+
   struct State {
     mapping(uint256 => uint256) reserveSupplied; // asset => supply
     mapping(uint256 => mapping(address => uint256)) userSupplied; // asset => user => supply
@@ -27,13 +29,14 @@ contract LiquidityHubHandler is Test {
   State internal s;
 
   constructor() {
-    hub = new LiquidityHub();
+    hub = new LiquidityHub(ADMIN);
     bm = new BorrowModule();
     usdc = new ERC20Mock();
     dai = new ERC20Mock();
     usdt = new ERC20Mock();
 
     // Add dai
+    vm.prank(ADMIN);
     hub.addReserve(
       LiquidityHub.ReserveConfig({
         borrowModule: address(bm),

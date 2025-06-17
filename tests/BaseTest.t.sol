@@ -3,7 +3,6 @@ pragma solidity ^0.8.0;
 
 import 'forge-std/Test.sol';
 import 'forge-std/console2.sol';
-// import 'forge-std/StdCheats.sol';s
 
 import 'src/contracts/LiquidityHub.sol';
 import 'src/contracts/BorrowModule.sol';
@@ -56,7 +55,7 @@ abstract contract BaseTest is Test, Events {
 
   function setUp() public virtual {
     vm.startPrank(ADMIN);
-    hub = new LiquidityHub();
+    hub = new LiquidityHub(ADMIN);
     bm = new BorrowModule();
     usdc = new ERC20Mock();
     dai = new ERC20Mock();

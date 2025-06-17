@@ -1,17 +1,17 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.0;
 
-import { SafeERC20 } from '../dependencies/openzeppelin/SafeERC20.sol';
-import { IERC20 } from '../dependencies/openzeppelin/IERC20.sol';
-import { AccessManagerContract } from './AccessManagerContract.sol';
-import { WadRayMath } from './WadRayMath.sol';
-import { SharesMath } from './SharesMath.sol';
-import { MathUtils } from './MathUtils.sol';
-import { IBorrowModule } from './IBorrowModule.sol';
+import {SafeERC20} from '../dependencies/openzeppelin/SafeERC20.sol';
+import {IERC20} from '../dependencies/openzeppelin/IERC20.sol';
+import {AccessManaged} from './AccessManaged.sol';
+import {WadRayMath} from './WadRayMath.sol';
+import {SharesMath} from './SharesMath.sol';
+import {MathUtils} from './MathUtils.sol';
+import {IBorrowModule} from './IBorrowModule.sol';
 
 import 'forge-std/console2.sol';
 
-contract LiquidityHub is AccessManagerContract {
+contract LiquidityHub is AccessManaged {
   using SafeERC20 for IERC20;
   using WadRayMath for uint256;
   using SharesMath for uint256;
@@ -62,7 +62,7 @@ contract LiquidityHub is AccessManagerContract {
   // asset id => user address => user data
   mapping(uint256 => mapping(address => UserConfig)) public users;
 
-  constructor() AccessManagerContract() {}
+  constructor(address admin) AccessManaged(admin) {}
 
   function getReserve(uint256 assetId) external view returns (Reserve memory) {
     return reserves[assetId];
@@ -261,10 +261,9 @@ contract LiquidityHub is AccessManagerContract {
     if (elapsed > 0) {
       console2.log('_accrueReserveInterest');
       // linear interest
-      uint256 cumulated = MathUtils.calculateLinearInterest(
-        borrowRate,
-        uint40(r.lastUpdateTimestamp)
-      ).rayMul(r.totalAssets); // TODO rounding
+      uint256 cumulated = MathUtils
+        .calculateLinearInterest(borrowRate, uint40(r.lastUpdateTimestamp))
+        .rayMul(r.totalAssets); // TODO rounding
       console2.log('cumulated %e', cumulated);
       r.totalAssets += cumulated;
 

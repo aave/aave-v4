@@ -14,8 +14,8 @@ contract LiquidityHubTest is BaseTest {
   function setUp() public override {
     super.setUp();
 
-    vm.prank(ADMIN);
     // Add dai
+    vm.prank(ADMIN);
     hub.addReserve(
       LiquidityHub.ReserveConfig({
         borrowModule: address(bm),
