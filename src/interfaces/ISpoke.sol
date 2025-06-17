@@ -91,6 +91,9 @@ interface ISpoke is IMulticall {
   error Unauthorized();
   error CollateralStatusUnchanged();
 
+  // TODO: Just for testing / showcasing
+  function restrictedFunction() external;
+
   function addReserve(
     uint256 assetId,
     DataTypes.ReserveConfig memory params

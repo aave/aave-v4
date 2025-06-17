@@ -6,6 +6,7 @@ import {Test} from 'forge-std/Test.sol';
 import {LiquidityHub} from 'src/contracts/LiquidityHub.sol';
 import {Spoke} from 'src/contracts/Spoke.sol';
 import {IERC20} from 'src/dependencies/openzeppelin/IERC20.sol';
+import {AccessManager} from 'src/dependencies/openzeppelin/AccessManager.sol';
 import '../mocks/MockPriceOracle.sol';
 import '../mocks/MockERC20.sol';
 import '../Utils.sol';
@@ -19,9 +20,11 @@ contract LiquidityHubHandler is Test {
   IPriceOracle public oracle;
   LiquidityHub public hub;
   Spoke public spoke1;
+  AccessManager public accessManager;
   DefaultReserveInterestRateStrategy irStrategy;
 
   address internal mockAddressesProvider = makeAddr('mockAddressesProvider');
+  address internal hubAdmin = makeAddr('hubAdmin');
 
   struct State {
     mapping(uint256 => uint256) reserveSupplied; // asset => supply
@@ -33,10 +36,12 @@ contract LiquidityHubHandler is Test {
   State internal s;
 
   constructor() {
+    vm.startPrank(hubAdmin);
+    accessManager = new AccessManager(hubAdmin);
     irStrategy = new DefaultReserveInterestRateStrategy(mockAddressesProvider);
     oracle = new MockPriceOracle();
     hub = new LiquidityHub();
-    spoke1 = new Spoke(address(hub), address(oracle));
+    spoke1 = new Spoke(address(hub), address(oracle), address(accessManager));
     usdc = new MockERC20();
     dai = new MockERC20();
     usdt = new MockERC20();
@@ -67,6 +72,7 @@ contract LiquidityHubHandler is Test {
         collateral: false
       })
     );
+    vm.stopPrank();
   }
 
   function getReserveSupplied(uint256 assetId) public view returns (uint256) {

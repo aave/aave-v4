@@ -26,6 +26,7 @@ import {MockPriceOracle, IPriceOracle} from './mocks/MockPriceOracle.sol';
 // dependencies
 import {IERC20Errors} from 'src/dependencies/openzeppelin/IERC20Errors.sol';
 import {IERC20} from 'src/dependencies/openzeppelin/IERC20.sol';
+import {AccessManager} from 'src/dependencies/openzeppelin/AccessManager.sol';
 import {WETH9} from 'src/dependencies/weth/WETH9.sol';
 
 abstract contract Base is Test {
@@ -72,6 +73,7 @@ abstract contract Base is Test {
   ISpoke internal spoke3;
   DefaultReserveInterestRateStrategy internal irStrategy;
   DefaultReserveInterestRateStrategy internal creditLineIRStrategy;
+  AccessManager internal accessManager;
 
   address internal mockAddressesProvider = makeAddr('mockAddressesProvider');
   // TODO: remove after migrating to other mock users
@@ -150,18 +152,21 @@ abstract contract Base is Test {
   }
 
   function deployFixtures() internal {
+    vm.startPrank(HUB_ADMIN);
     oracle = new MockPriceOracle();
     creditLineIRStrategy = new DefaultReserveInterestRateStrategy(mockAddressesProvider);
     irStrategy = new DefaultReserveInterestRateStrategy(mockAddressesProvider);
+    accessManager = new AccessManager(HUB_ADMIN);
     hub = new LiquidityHub();
-    spoke1 = ISpoke(new Spoke(address(hub), address(oracle)));
-    spoke2 = ISpoke(new Spoke(address(hub), address(oracle)));
-    spoke3 = ISpoke(new Spoke(address(hub), address(oracle)));
+    spoke1 = ISpoke(new Spoke(address(hub), address(oracle), address(accessManager)));
+    spoke2 = ISpoke(new Spoke(address(hub), address(oracle), address(accessManager)));
+    spoke3 = ISpoke(new Spoke(address(hub), address(oracle), address(accessManager)));
     dai = new MockERC20();
     eth = new MockERC20();
     usdc = new MockERC20();
     usdt = new MockERC20();
     wbtc = new MockERC20();
+    vm.stopPrank();
 
     vm.label(address(spoke1), 'spoke1');
     vm.label(address(spoke2), 'spoke2');

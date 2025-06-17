@@ -5,6 +5,7 @@ import {Multicall} from 'src/misc/Multicall.sol';
 
 import {SafeERC20} from 'src/dependencies/openzeppelin/SafeERC20.sol';
 import {IERC20} from 'src/dependencies/openzeppelin/IERC20.sol';
+import {AccessManaged} from 'src/dependencies/openzeppelin/AccessManaged.sol';
 // libraries
 import {WadRayMath} from 'src/libraries/math/WadRayMath.sol';
 import {WadRayMathExtended} from 'src/libraries/math/WadRayMathExtended.sol';
@@ -17,7 +18,7 @@ import {ILiquidityHub} from 'src/interfaces/ILiquidityHub.sol';
 import {ISpoke} from 'src/interfaces/ISpoke.sol';
 import {IPriceOracle} from 'src/interfaces/IPriceOracle.sol';
 
-contract Spoke is ISpoke, Multicall {
+contract Spoke is ISpoke, Multicall, AccessManaged {
   using SafeERC20 for IERC20;
   using WadRayMath for uint256;
   using WadRayMathExtended for uint256;
@@ -38,13 +39,22 @@ contract Spoke is ISpoke, Multicall {
   uint256[] public reservesList; // todo: rm, not needed
   uint256 public reserveCount;
 
-  constructor(address hubAddress, address oracleAddress) {
+  constructor(
+    address hubAddress,
+    address oracleAddress,
+    address accessManager
+  ) AccessManaged(accessManager) {
     require(hubAddress != address(0), InvalidHubAddress());
     require(oracleAddress != address(0), InvalidOracleAddress());
 
     HUB = ILiquidityHub(hubAddress);
     oracle = IPriceOracle(oracleAddress);
     _liquidationConfig.closeFactor = HEALTH_FACTOR_LIQUIDATION_THRESHOLD;
+  }
+
+  // TODO: Just for testing / showcasing
+  function restrictedFunction() external restricted {
+    return;
   }
 
   // /////

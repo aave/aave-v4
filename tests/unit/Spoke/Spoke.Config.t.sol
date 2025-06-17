@@ -6,12 +6,12 @@ import 'tests/unit/Spoke/SpokeBase.t.sol';
 contract SpokeConfigTest is SpokeBase {
   function test_spoke_deploy_revertsWith_InvalidHubAddress() public {
     vm.expectRevert(ISpoke.InvalidHubAddress.selector);
-    new Spoke(address(0), address(oracle));
+    new Spoke(address(0), address(oracle), address(accessManager));
   }
 
   function test_spoke_deploy_revertsWith_InvalidOracleAddress() public {
     vm.expectRevert(ISpoke.InvalidOracleAddress.selector);
-    new Spoke(address(hub), address(0));
+    new Spoke(address(hub), address(0), address(accessManager));
   }
 
   function test_updateReserveConfig() public {
