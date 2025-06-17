@@ -9,8 +9,12 @@ For each summarization there is a rule that proves:
 1. same value
 2. reverts on the same cases 
 
+To run this spec file:
+ certoraRun certora/conf/Math.conf 
+
 **/
     methods {
+        // envfree functions
         function RAY() external returns (uint256) envfree;
         function rayMul(uint256 a, uint256 b) external returns (uint256) envfree;
         function rayDiv(uint256 a, uint256 b) external returns (uint256) envfree;
@@ -20,7 +24,8 @@ For each summarization there is a rule that proves:
         function rayDivUp(uint256 a, uint256 b) external returns (uint256) envfree;
     }
 
-/*    function WadRayMath.rayMul(uint256 a, uint256 b) internal returns (uint256) => 
+/** @title Prove:
+    function WadRayMath.rayMul(uint256 a, uint256 b) internal returns (uint256) => 
         mulDivHalf(a,b,wadRayMath.RAY());
 */
     rule WadRayMath_rayMul(uint256 a, uint256 b)  {
@@ -33,7 +38,8 @@ For each summarization there is a rule that proves:
     }
 
     
-/*    function WadRayMath.rayDiv(uint256 a, uint256 b) internal returns (uint256) => 
+/** @title Prove:
+    function WadRayMath.rayDiv(uint256 a, uint256 b) internal returns (uint256) => 
         mulDivHalf(a, wadRayMath.RAY(), b);
 */
     rule WadRayMath_rayDiv(uint256 a, uint256 b)  {
@@ -46,7 +52,8 @@ For each summarization there is a rule that proves:
     }
 
 
-/*    function WadRayMathExtended.rayMulDown(uint256 a, uint256 b) internal returns (uint256) => 
+/** @title Prove:
+    function WadRayMathExtended.rayMulDown(uint256 a, uint256 b) internal returns (uint256) => 
         mulDivDownCVL(a,b,wadRayMath.RAY());
 */
     rule WadRayMathExtended_rayMulDown(uint256 a, uint256 b)  {
@@ -59,7 +66,8 @@ For each summarization there is a rule that proves:
     }
 
 
-/*    function WadRayMathExtended.rayMulUp(uint256 a, uint256 b) internal returns (uint256) => 
+/** @title Prove:
+    function WadRayMathExtended.rayMulUp(uint256 a, uint256 b) internal returns (uint256) => 
         mulDivUpCVL(a,b,wadRayMath.RAY());
 */
     rule WadRayMathExtended_rayMulUp(uint256 a, uint256 b)  {
@@ -71,7 +79,8 @@ For each summarization there is a rule that proves:
         assert !cvlReverted => cvlResult == solResult;
     }
 
-/*    function WadRayMathExtended.rayDivDown(uint256 a, uint256 b) internal returns (uint256) => 
+/** @title Prove:    
+    function WadRayMathExtended.rayDivDown(uint256 a, uint256 b) internal returns (uint256) => 
         mulDivDownCVL(a,wadRayMath.RAY(),b);
 */
     rule WadRayMathExtended_rayDivDown(uint256 a, uint256 b)  {
@@ -83,7 +92,8 @@ For each summarization there is a rule that proves:
         assert !cvlReverted => cvlResult == solResult;
     }
 
-/*    function WadRayMathExtended.rayDivUp(uint256 a, uint256 b) internal returns (uint256) => 
+/** @title Prove:   
+    function WadRayMathExtended.rayDivUp(uint256 a, uint256 b) internal returns (uint256) => 
         mulDivUpCVL(a,wadRayMath.RAY(),b);
 */
         rule WadRayMathExtended_rayDivUp(uint256 a, uint256 b)  {

@@ -219,8 +219,6 @@ rule noChangeToOtherSpoke(address spoke, uint256 assetId, address otherSpoke, me
     {
     env e;
     env eOther;
-    calldataarg args; 
-
     require e.block.timestamp == eOther.block.timestamp; 
     require otherSpoke != spoke && eOther.msg.sender == otherSpoke; 
 
@@ -232,6 +230,8 @@ rule noChangeToOtherSpoke(address spoke, uint256 assetId, address otherSpoke, me
     uint256 shares_ = getSpokeSuppliedShares(e, assetId, spoke);
     uint256 assets = getSpokeSuppliedAmount(e, assetId, spoke);
 
+    
+    calldataarg args; 
     f(eOther,args);
 
     assert cumulativeDebt_ >= getSpokeTotalDebt(e, assetId, spoke);  
@@ -244,12 +244,25 @@ rule noChangeToOtherSpoke(address spoke, uint256 assetId, address otherSpoke, me
 
 
 rule accrueWasCalled(uint256 assetId, method f) filtered { f-> !f.isView} {
-    env e;
     require !unsafeAccessBeforeAccrue; 
+    
+    env e;
     calldataarg args;
     f(e,args);
 
     assert !unsafeAccessBeforeAccrue; 
+
+}
+
+rule lastUpdateTimestamp_notInFuture(uint256 assetId, method f) filtered { f-> !f.isView} {
+    env e;
+    require liquidityHub._assets[assetId].lastUpdateTimestamp <= e.block.timestamp;
+    
+    calldataarg args;
+    f(e,args);
+
+    assert liquidityHub._assets[assetId].lastUpdateTimestamp <= e.block.timestamp;
+
 
 }
 /**** Valid State Rules *******/
@@ -327,4 +340,4 @@ function requireAllInvariants(uint256 assetId, env e)  {
     requireInvariant sumOfSpokeDrawnShares(assetId);
     requireInvariant sumOfSpokeSupplyShares(assetId);
     requireInvariant baseDebtIndexMin(assetId); 
-}
+}   

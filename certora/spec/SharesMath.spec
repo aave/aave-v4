@@ -1,27 +1,19 @@
 /**
 @title Prove mathematical properties of SharesMath.sol library
-The rules proven here are used for summarizing additonal functions
+The rules proven here are used for summarizing additional functions
 
 **/
 
 import "./LiquidityHubBase.spec";
 
-
-
-methods {
- 
-    /* envfree functions */
-
+methods { 
+    // envfree functions 
     function toSharesDown(uint256 assets, uint256 totalAssets, uint256 totalShares) external  returns (uint256) envfree ;
     function toAssetsDown(uint256 shares, uint256 totalAssets, uint256 totalShares) external  returns (uint256) envfree ;
     
     function toSharesUp(uint256 assets, uint256 totalAssets, uint256 totalShares) external  returns (uint256) envfree ;
     function toAssetsUp(uint256 shares, uint256 totalAssets, uint256 totalShares) external  returns (uint256) envfree ;
-    
-
-
 }
-
 
 /** 
 @title Monotonicity of toSharesUp
@@ -33,8 +25,6 @@ rule toSharesUp_monotonicity(uint256 assetId, uint256 x, uint256 y){
     assert x < y => 
             toSharesUp(x, totalAssets, totalShares) <= toSharesUp(y, totalAssets, totalShares);
 }
-
-
 
 /** 
 @title Additivity of toSharesUp
@@ -84,8 +74,6 @@ rule toAssetsUp_monotonicity(uint256 assetId, uint256 x, uint256 y){
             toAssetsUp(x, totalAssets, totalShares) <= toAssetsUp(y, totalAssets, totalShares);
 }
 
-
-
 /** 
 @title Additivity of toAssetsUp
 While taking into account changes to totalSupply and totalAssets 
@@ -102,7 +90,6 @@ rule toAssetsUp_additivity(uint256 assetId, uint256 x, uint256 y){
     assert assetsForXplusY <= assetsForX + assetsForYAfterX;
 }
 
-
 /** 
 @title Monotonicity of toSharesDown
 x > y => toSharesDown(x) >= toSharesDown(y)
@@ -113,7 +100,6 @@ rule toSharesDown_monotonicity(uint256 assetId, uint256 x, uint256 y){
     assert x < y => 
             toSharesDown(x, totalAssets, totalShares) <= toSharesDown(y, totalAssets, totalShares);
 }
-
 
 /** 
 @title Additivity of toSharesDown
@@ -131,7 +117,6 @@ rule toSharesDown_additivity(uint256 assetId, uint256 x, uint256 y){
     assert sharesForXplusY >= sharesForX + sharesForYAfterX;
 }
 
-
 /** 
 @title Monotonicity of toAssetsDown
 x > y => toAssetsDown(x) >= toAssetsDown(y)
@@ -142,7 +127,6 @@ rule toAssetsDown_monotonicity(uint256 assetId, uint256 x, uint256 y){
     assert x < y => 
             toAssetsDown(x, totalAssets, totalShares) <= toAssetsDown(y, totalAssets, totalShares);
 }
-
 
 /** 
 @title Additivity of toAssetsDown

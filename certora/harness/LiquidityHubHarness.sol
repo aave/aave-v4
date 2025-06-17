@@ -48,5 +48,11 @@ contract LiquidityHubHarness is LiquidityHub {
   ) external pure returns (uint256) {
       return  SharesMath.toAssetsUp(shares, totalAssets, totalShares);
   }
+
+
+  function getAssetSuppliedAmountUp(uint256 assetId) external view returns (uint256) {
+    return _assets[assetId].toSuppliedAssetsUp(_assets[assetId].suppliedShares);
+  }
+
 }
 
