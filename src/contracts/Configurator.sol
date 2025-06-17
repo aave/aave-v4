@@ -1,0 +1,75 @@
+// SPDX-License-Identifier: MIT
+pragma solidity ^0.8.10;
+
+import {DataTypes} from 'src/libraries/types/DataTypes.sol';
+import {IReserveInterestRateStrategy} from 'src/interfaces/IReserveInterestRateStrategy.sol';
+import {ILiquidityHub} from 'src/interfaces/ILiquidityHub.sol';
+import {IConfigurator} from 'src/interfaces/IConfigurator.sol';
+
+contract Configurator is IConfigurator {
+  function setActive(address hub, uint256 assetId, bool active) external override {
+    // TODO: AccessControl
+
+    DataTypes.AssetConfig memory config = ILiquidityHub(hub).getAssetConfig(assetId);
+    config.active = active;
+    ILiquidityHub(hub).updateAssetConfig(assetId, config);
+  }
+
+  function setPaused(address hub, uint256 assetId, bool paused) external override {
+    // TODO: AccessControl
+
+    DataTypes.AssetConfig memory config = ILiquidityHub(hub).getAssetConfig(assetId);
+    config.paused = paused;
+    ILiquidityHub(hub).updateAssetConfig(assetId, config);
+  }
+
+  function setFrozen(address hub, uint256 assetId, bool frozen) external override {
+    // TODO: AccessControl
+
+    DataTypes.AssetConfig memory config = ILiquidityHub(hub).getAssetConfig(assetId);
+    config.frozen = frozen;
+    ILiquidityHub(hub).updateAssetConfig(assetId, config);
+  }
+
+  function setLiquidityFee(address hub, uint256 assetId, uint256 liquidityFee) external override {
+    // TODO: AccessControl
+
+    DataTypes.AssetConfig memory config = ILiquidityHub(hub).getAssetConfig(assetId);
+    config.liquidityFee = liquidityFee;
+    ILiquidityHub(hub).updateAssetConfig(assetId, config);
+  }
+
+  function setFeeReceiver(address hub, uint256 assetId, address feeReceiver) external override {
+    // TODO: AccessControl
+
+    DataTypes.AssetConfig memory config = ILiquidityHub(hub).getAssetConfig(assetId);
+    config.feeReceiver = feeReceiver;
+    ILiquidityHub(hub).updateAssetConfig(assetId, config);
+  }
+
+  function setLiquidityFeeAndReceiver(
+    address hub,
+    uint256 assetId,
+    uint256 liquidityFee,
+    address feeReceiver
+  ) external override {
+    // TODO: AccessControl
+
+    DataTypes.AssetConfig memory config = ILiquidityHub(hub).getAssetConfig(assetId);
+    config.liquidityFee = liquidityFee;
+    config.feeReceiver = feeReceiver;
+    ILiquidityHub(hub).updateAssetConfig(assetId, config);
+  }
+
+  function setInterestRateStrategy(
+    address hub,
+    uint256 assetId,
+    address irStrategy
+  ) external override {
+    // TODO: AccessControl
+
+    DataTypes.AssetConfig memory config = ILiquidityHub(hub).getAssetConfig(assetId);
+    config.irStrategy = IReserveInterestRateStrategy(irStrategy);
+    ILiquidityHub(hub).updateAssetConfig(assetId, config);
+  }
+}
