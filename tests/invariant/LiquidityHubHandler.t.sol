@@ -5,6 +5,7 @@ import 'forge-std/Test.sol';
 
 import 'src/contracts/LiquidityHub.sol';
 import 'src/contracts/BorrowModule.sol';
+import 'src/contracts/AccessManaged.sol';
 import 'src/dependencies/openzeppelin/IERC20.sol';
 import '../mocks/ERC20Mock.sol';
 import '../Utils.t.sol';
@@ -16,6 +17,7 @@ contract LiquidityHubHandler is Test {
 
   LiquidityHub public hub;
   BorrowModule public bm;
+  AccessManaged internal accessManager;
 
   address internal ADMIN = makeAddr('ADMIN');
 
@@ -29,7 +31,8 @@ contract LiquidityHubHandler is Test {
   State internal s;
 
   constructor() {
-    hub = new LiquidityHub(ADMIN);
+    accessManager = new AccessManaged(ADMIN);
+    hub = new LiquidityHub(ADMIN, address(accessManager));
     bm = new BorrowModule();
     usdc = new ERC20Mock();
     dai = new ERC20Mock();

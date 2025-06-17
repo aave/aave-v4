@@ -3,7 +3,7 @@ pragma solidity ^0.8.0;
 
 import {SafeERC20} from '../dependencies/openzeppelin/SafeERC20.sol';
 import {IERC20} from '../dependencies/openzeppelin/IERC20.sol';
-import {AccessManaged} from './AccessManaged.sol';
+import {Auth, Authority} from '../dependencies/solmate/Auth.sol';
 import {WadRayMath} from './WadRayMath.sol';
 import {SharesMath} from './SharesMath.sol';
 import {MathUtils} from './MathUtils.sol';
@@ -11,7 +11,7 @@ import {IBorrowModule} from './IBorrowModule.sol';
 
 import 'forge-std/console2.sol';
 
-contract LiquidityHub is AccessManaged {
+contract LiquidityHub is Auth {
   using SafeERC20 for IERC20;
   using WadRayMath for uint256;
   using SharesMath for uint256;
@@ -62,7 +62,7 @@ contract LiquidityHub is AccessManaged {
   // asset id => user address => user data
   mapping(uint256 => mapping(address => UserConfig)) public users;
 
-  constructor(address admin) AccessManaged(admin) {}
+  constructor(address admin, address authority) Auth(admin, Authority(authority)) {}
 
   function getReserve(uint256 assetId) external view returns (Reserve memory) {
     return reserves[assetId];

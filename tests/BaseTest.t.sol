@@ -10,6 +10,7 @@ import 'src/contracts/IBorrowModule.sol';
 import 'src/contracts/WadRayMath.sol';
 import 'src/contracts/SharesMath.sol';
 import 'src/contracts/MathUtils.sol';
+import 'src/contracts/AccessManaged.sol';
 import 'src/dependencies/openzeppelin/IERC20.sol';
 import './mocks/ERC20Mock.sol';
 import './Utils.t.sol';
@@ -46,6 +47,8 @@ abstract contract BaseTest is Test, Events {
   IERC20 internal dai;
   IERC20 internal usdt;
 
+  AccessManaged internal accessManager;
+
   LiquidityHub hub;
   BorrowModule bm;
 
@@ -55,7 +58,8 @@ abstract contract BaseTest is Test, Events {
 
   function setUp() public virtual {
     vm.startPrank(ADMIN);
-    hub = new LiquidityHub(ADMIN);
+    accessManager = new AccessManaged(ADMIN);
+    hub = new LiquidityHub(ADMIN, address(accessManager));
     bm = new BorrowModule();
     usdc = new ERC20Mock();
     dai = new ERC20Mock();

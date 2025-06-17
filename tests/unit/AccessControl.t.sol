@@ -4,6 +4,7 @@ pragma solidity ^0.8.0;
 import 'src/libraries/Roles.sol';
 import 'src/dependencies/solmate/Auth.sol';
 import 'tests/BaseTest.t.sol';
+import 'src/contracts/AccessManaged.sol';
 
 contract AccessControlTest is BaseTest {
   function setUp() public override {
@@ -85,14 +86,14 @@ contract AccessControlTest is BaseTest {
     );
 
     vm.startPrank(ADMIN);
-    hub.setRoleCapability(
+    accessManager.setRoleCapability(
       Roles.RESERVE_CONTROLLER,
       address(hub),
       LiquidityHub.addReserve.selector,
       true
     );
     // Grant role to USER1
-    hub.setUserRole(USER1, Roles.RESERVE_CONTROLLER, true);
+    accessManager.setUserRole(USER1, Roles.RESERVE_CONTROLLER, true);
     vm.stopPrank();
 
     // Succeeds after access grant
@@ -118,17 +119,17 @@ contract AccessControlTest is BaseTest {
     AccessManaged newAuthority = new AccessManaged(ADMIN);
 
     // Currently the hub is it's own authority
-    assertEq(address(hub.authority()), address(hub));
+    assertEq(address(hub.authority()), address(accessManager));
 
     // Grant user 1 the ability to list an asset
     vm.startPrank(ADMIN);
-    hub.setRoleCapability(
+    accessManager.setRoleCapability(
       Roles.RESERVE_CONTROLLER,
       address(hub),
       LiquidityHub.addReserve.selector,
       true
     );
-    hub.setUserRole(USER1, Roles.RESERVE_CONTROLLER, true);
+    accessManager.setUserRole(USER1, Roles.RESERVE_CONTROLLER, true);
     vm.stopPrank();
 
     // User 1 should be able to call addReserve
@@ -153,7 +154,7 @@ contract AccessControlTest is BaseTest {
     hub.setAuthority(Authority(newAuthority));
 
     // Verify that the authority has been changed
-    assertFalse(address(hub.authority()) == address(hub));
+    assertFalse(address(hub.authority()) == address(accessManager));
     assertEq(address(hub.authority()), address(newAuthority));
 
     // Now User 1 should not be able to call addReserve anymore
