@@ -27,10 +27,10 @@ jobs:
         continue-on-error: true
 
       - name: Run Gas snapshot check
-        # uses: bgd-labs/github-workflows/.github/actions/foundry-test@main
+        uses: bgd-labs/github-workflows/.github/actions/foundry-test@main
         with:
           FOUNDRY_PROFILE: gas
-          FORGE_SNAPSHOT_CHECK: true
+          FORGE_SNAPSHOT_CHECK: false
 
       - name: Run Forge tests
         id: test
