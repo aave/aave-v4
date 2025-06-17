@@ -26,13 +26,12 @@ library DataTypes {
     uint256 baseDebtIndex;
     uint256 baseBorrowRate;
     uint256 lastUpdateTimestamp;
-    uint256 id; // todo remove
     DataTypes.AssetConfig config;
   }
 
   struct SpokeConfig {
-    uint256 drawCap;
     uint256 supplyCap;
+    uint256 drawCap;
   }
 
   struct AssetConfig {

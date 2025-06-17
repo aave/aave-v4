@@ -327,7 +327,7 @@ contract SpokeConfigTest is SpokeBase {
   }
 
   function test_addReserve_reverts_invalid_assetId() public {
-    uint256 assetId = hub.assetCount(); // invalid assetId
+    uint256 assetId = hub.getAssetCount(); // invalid assetId
 
     DataTypes.ReserveConfig memory newReserveConfig = DataTypes.ReserveConfig({
       decimals: 18,
@@ -350,7 +350,7 @@ contract SpokeConfigTest is SpokeBase {
   }
 
   function test_addReserve_fuzz_reverts_invalid_assetId(uint256 assetId) public {
-    assetId = bound(assetId, hub.assetCount(), type(uint256).max); // invalid assetId
+    assetId = bound(assetId, hub.getAssetCount(), type(uint256).max); // invalid assetId
 
     DataTypes.ReserveConfig memory newReserveConfig = DataTypes.ReserveConfig({
       decimals: 18,

@@ -72,7 +72,7 @@ contract LiquidityHubDrawTest is LiquidityHubBase {
   }
 
   function test_draw_fuzz_amounts_same_block(uint256 assetId, uint256 daiAmount) public {
-    assetId = bound(assetId, 0, hub.assetCount() - 2); // Exclude duplicated DAI
+    assetId = bound(assetId, 0, hub.getAssetCount() - 2); // Exclude duplicated DAI
     daiAmount = bound(daiAmount, 1, MAX_SUPPLY_AMOUNT);
     uint256 drawAmount = daiAmount;
 
@@ -130,7 +130,7 @@ contract LiquidityHubDrawTest is LiquidityHubBase {
 
   function test_draw_fuzz_revertsWith_AssetNotActive(uint256 assetId, uint256 drawAmount) public {
     drawAmount = bound(drawAmount, 1, MAX_SUPPLY_AMOUNT);
-    assetId = bound(assetId, 0, hub.assetCount() - 1);
+    assetId = bound(assetId, 0, hub.getAssetCount() - 1);
     updateAssetActive(hub, assetId, false);
 
     assertFalse(hub.getAsset(assetId).config.active);
@@ -152,7 +152,7 @@ contract LiquidityHubDrawTest is LiquidityHubBase {
   }
 
   function test_draw_fuzz_revertsWith_AssetPaused(uint256 assetId, uint256 drawAmount) public {
-    assetId = bound(assetId, 0, hub.assetCount() - 1);
+    assetId = bound(assetId, 0, hub.getAssetCount() - 1);
     drawAmount = bound(drawAmount, 1, MAX_SUPPLY_AMOUNT);
     updateAssetPaused(hub, assetId, true);
 
@@ -175,7 +175,7 @@ contract LiquidityHubDrawTest is LiquidityHubBase {
   }
 
   function test_draw_fuzz_revertsWith_AssetFrozen(uint256 assetId, uint256 drawAmount) public {
-    assetId = bound(assetId, 0, hub.assetCount() - 1);
+    assetId = bound(assetId, 0, hub.getAssetCount() - 1);
     drawAmount = bound(drawAmount, 1, MAX_SUPPLY_AMOUNT);
     updateAssetFrozen(hub, assetId, true);
 
@@ -200,7 +200,7 @@ contract LiquidityHubDrawTest is LiquidityHubBase {
     uint256 assetId,
     uint256 drawAmount
   ) public {
-    assetId = bound(assetId, 0, hub.assetCount() - 1);
+    assetId = bound(assetId, 0, hub.getAssetCount() - 1);
     drawAmount = bound(drawAmount, 1, MAX_SUPPLY_AMOUNT);
 
     assertTrue(hub.getAvailableLiquidity(assetId) == 0);

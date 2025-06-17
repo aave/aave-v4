@@ -78,7 +78,7 @@ interface ILiquidityHub {
   error InvalidDebtChange();
   error InvalidFeeReceiver();
 
-  function addAsset(DataTypes.AssetConfig memory params, address asset) external;
+  function addAsset(address asset, uint256 decimals, address irStrategy) external;
 
   function updateAssetConfig(uint256 assetId, DataTypes.AssetConfig memory config) external;
 
@@ -95,17 +95,6 @@ interface ILiquidityHub {
     address spoke,
     DataTypes.SpokeConfig memory config
   ) external;
-
-  /**
-   * @notice Updates the fee configuration for a specified asset.
-   * @dev Accrues asset fees to the current receiver before applying any updates.
-   * @dev Disables the old fee receiver as spoke by setting its caps to zero.
-   * @dev The new fee receiver cannot be zero if the liquidity fee is non-zero.
-   * @param assetId The identifier of the asset.
-   * @param feeReceiver The address of the fee receiver
-   * @param liquidityFee The fee percentage applied to the asset based on liquidity growth.
-   */
-  function updateAssetFees(uint256 assetId, address feeReceiver, uint256 liquidityFee) external;
 
   /**
    * @notice Add/Supply asset on behalf of user.
@@ -178,16 +167,21 @@ interface ILiquidityHub {
   function convertToDrawnShares(uint256 assetId, uint256 assets) external view returns (uint256);
 
   function convertToSuppliedAssets(uint256 assetId, uint256 shares) external view returns (uint256);
+
   function convertToSuppliedAssetsUp(
     uint256 assetId,
     uint256 shares
   ) external view returns (uint256);
+
   function convertToSuppliedShares(uint256 assetId, uint256 assets) external view returns (uint256);
+
   function convertToSuppliedSharesUp(
     uint256 assetId,
     uint256 assets
   ) external view returns (uint256);
+
   function previewOffset(uint256 assetId, uint256 shares) external view returns (uint256);
+
   function previewDrawnIndex(uint256 assetId) external view returns (uint256);
 
   function getAsset(uint256 assetId) external view returns (DataTypes.Asset memory);
@@ -228,7 +222,7 @@ interface ILiquidityHub {
 
   function getSpokeTotalDebt(uint256 assetId, address spoke) external view returns (uint256);
 
-  function assetCount() external view returns (uint256);
+  function getAssetCount() external view returns (uint256);
 
   function assetsList(uint256 assetId) external view returns (IERC20);
 

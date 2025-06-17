@@ -253,84 +253,89 @@ abstract contract Base is Test {
     // Add all assets to the Liquidity Hub
     vm.startPrank(HUB_ADMIN);
     // add WETH
-    hub.addAsset(
+    hub.addAsset(address(tokenList.weth), tokenList.weth.decimals(), address(irStrategy));
+    hub.addSpoke(wethAssetId, spokeConfig, address(treasurySpoke));
+    hub.updateAssetConfig(
+      wethAssetId,
       DataTypes.AssetConfig({
-        feeReceiver: address(0),
         active: true,
         paused: false,
         frozen: false,
         decimals: tokenList.weth.decimals(),
-        liquidityFee: 0,
+        liquidityFee: 10_00,
+        feeReceiver: address(treasurySpoke),
         irStrategy: irStrategy
-      }),
-      address(tokenList.weth)
+      })
     );
     oracle.setAssetPrice(wethAssetId, 2000e8);
-    hub.updateAssetFees(wethAssetId, address(treasurySpoke), 10_00);
 
     // add USDX
-    hub.addAsset(
+    hub.addAsset(address(tokenList.usdx), tokenList.usdx.decimals(), address(irStrategy));
+    hub.addSpoke(usdxAssetId, spokeConfig, address(treasurySpoke));
+    hub.updateAssetConfig(
+      usdxAssetId,
       DataTypes.AssetConfig({
-        feeReceiver: address(0),
         active: true,
         paused: false,
         frozen: false,
         decimals: tokenList.usdx.decimals(),
-        liquidityFee: 0,
+        liquidityFee: 5_00,
+        feeReceiver: address(treasurySpoke),
         irStrategy: irStrategy
-      }),
-      address(tokenList.usdx)
+      })
     );
     oracle.setAssetPrice(usdxAssetId, 1e8);
-    hub.updateAssetFees(usdxAssetId, address(treasurySpoke), 5_00);
 
     // add DAI
-    hub.addAsset(
+    hub.addAsset(address(tokenList.dai), tokenList.dai.decimals(), address(irStrategy));
+    hub.addSpoke(daiAssetId, spokeConfig, address(treasurySpoke));
+    hub.updateAssetConfig(
+      daiAssetId,
       DataTypes.AssetConfig({
-        feeReceiver: address(0),
         active: true,
         paused: false,
         frozen: false,
         decimals: tokenList.dai.decimals(),
         liquidityFee: 5_00,
+        feeReceiver: address(treasurySpoke),
         irStrategy: irStrategy
-      }),
-      address(tokenList.dai)
+      })
     );
     oracle.setAssetPrice(daiAssetId, 1e8);
-    hub.updateAssetFees(daiAssetId, address(treasurySpoke), 5_00);
 
     // add WBTC
-    hub.addAsset(
+    hub.addAsset(address(tokenList.wbtc), tokenList.wbtc.decimals(), address(irStrategy));
+    hub.addSpoke(wbtcAssetId, spokeConfig, address(treasurySpoke));
+    hub.updateAssetConfig(
+      wbtcAssetId,
       DataTypes.AssetConfig({
-        feeReceiver: address(0),
         active: true,
         paused: false,
         frozen: false,
         decimals: tokenList.wbtc.decimals(),
-        liquidityFee: 0,
+        liquidityFee: 10_00,
+        feeReceiver: address(treasurySpoke),
         irStrategy: irStrategy
-      }),
-      address(tokenList.wbtc)
+      })
     );
     oracle.setAssetPrice(wbtcAssetId, 50_000e8);
-    hub.updateAssetFees(wbtcAssetId, address(treasurySpoke), 10_00);
 
     // add USDY
-    hub.addAsset(
+    hub.addAsset(address(tokenList.usdy), tokenList.usdy.decimals(), address(irStrategy));
+    hub.addSpoke(usdyAssetId, spokeConfig, address(treasurySpoke));
+    hub.updateAssetConfig(
+      usdyAssetId,
       DataTypes.AssetConfig({
-        feeReceiver: address(0),
         active: true,
         paused: false,
         frozen: false,
         decimals: tokenList.usdy.decimals(),
-        liquidityFee: 0,
+        liquidityFee: 10_00,
+        feeReceiver: address(treasurySpoke),
         irStrategy: irStrategy
-      }),
-      address(tokenList.usdy)
+      })
     );
     oracle.setAssetPrice(usdyAssetId, 1e8);
-    hub.updateAssetFees(usdyAssetId, address(treasurySpoke), 10_00);
 
     // Spoke 1 reserve configs
     DataTypes.ReserveConfig memory wethConfig = DataTypes.ReserveConfig({
@@ -551,20 +556,21 @@ abstract contract Base is Test {
     hub.addSpoke(wbtcAssetId, spokeConfig, address(spoke3));
 
     // Spoke 2 to have an extra dai reserve
-    hub.addAsset(
+    hub.addAsset(address(tokenList.dai), tokenList.dai.decimals(), address(irStrategy));
+    hub.addSpoke(hub.getAssetCount() - 1, spokeConfig, address(treasurySpoke));
+    hub.updateAssetConfig(
+      hub.getAssetCount() - 1,
       DataTypes.AssetConfig({
-        feeReceiver: address(0),
         active: true,
         frozen: false,
         paused: false,
         decimals: tokenList.dai.decimals(),
-        liquidityFee: 0,
+        liquidityFee: 5_00,
+        feeReceiver: address(treasurySpoke),
         irStrategy: irStrategy
-      }),
-      address(tokenList.dai)
+      })
     );
     oracle.setAssetPrice(dai2AssetId, 1e8);
-    hub.updateAssetFees(dai2AssetId, address(treasurySpoke), 5_00);
 
     daiConfig = DataTypes.ReserveConfig({
       decimals: tokenList.dai.decimals(),
@@ -793,9 +799,10 @@ abstract contract Base is Test {
     uint256 assetId,
     uint256 liquidityFee
   ) internal {
-    address feeReceiver = liquidityHub.getAssetConfig(assetId).feeReceiver;
+    DataTypes.AssetConfig memory config = liquidityHub.getAssetConfig(assetId);
+    config.liquidityFee = liquidityFee;
     vm.prank(HUB_ADMIN);
-    hub.updateAssetFees(assetId, feeReceiver, liquidityFee);
+    hub.updateAssetConfig(assetId, config);
   }
 
   function updateCloseFactor(ISpoke spoke, uint256 newCloseFactor) internal {

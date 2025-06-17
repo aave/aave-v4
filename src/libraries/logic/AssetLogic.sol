@@ -111,6 +111,7 @@ library AssetLogic {
 
   function updateBorrowRate(
     DataTypes.Asset storage asset,
+    uint256 assetId,
     uint256 liquidityAdded,
     uint256 liquidityTaken
   ) internal {
@@ -120,7 +121,7 @@ library AssetLogic {
         liquidityTaken: liquidityTaken,
         totalDebt: asset.baseDebt(),
         liquidityFee: 0, // TODO
-        assetId: asset.id,
+        assetId: assetId,
         virtualUnderlyingBalance: asset.availableLiquidity, // without current liquidity change
         usingVirtualBalance: true
       })
@@ -132,7 +133,11 @@ library AssetLogic {
    * @param asset The data struct of the asset with accruing interest
    * @param feeReceiver The data struct of the fee receiver spoke associated with the asset
    */
-  function accrue(DataTypes.Asset storage asset, DataTypes.SpokeData storage feeReceiver) internal {
+  function accrue(
+    DataTypes.Asset storage asset,
+    uint256 assetId,
+    DataTypes.SpokeData storage feeReceiver
+  ) internal {
     uint256 drawnIndex = asset.previewDrawnIndex();
     uint256 feeShares = asset.previewFeeShares(drawnIndex - asset.baseDebtIndex);
 
@@ -145,7 +150,7 @@ library AssetLogic {
     }
 
     asset.lastUpdateTimestamp = block.timestamp;
-    emit ILiquidityHub.DrawnIndexUpdate(asset.id, drawnIndex, block.timestamp);
+    emit ILiquidityHub.DrawnIndexUpdate(assetId, drawnIndex, block.timestamp);
   }
 
   /**
