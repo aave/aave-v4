@@ -72,8 +72,7 @@ library AssetLogic {
 
   function totalSuppliedShares(DataTypes.Asset storage asset) internal view returns (uint256) {
     return
-      asset.suppliedShares +
-      asset.previewFeeShares(asset.previewDrawnIndex() - asset.baseDebtIndex);
+      asset.suppliedShares + asset.previewFeeShares(asset.baseDebtIndex, asset.previewDrawnIndex());
   }
 
   function toSuppliedAssetsUp(
@@ -134,7 +133,7 @@ library AssetLogic {
    */
   function accrue(DataTypes.Asset storage asset, DataTypes.SpokeData storage feeReceiver) internal {
     uint256 drawnIndex = asset.previewDrawnIndex();
-    uint256 feeShares = asset.previewFeeShares(drawnIndex - asset.baseDebtIndex);
+    uint256 feeShares = asset.previewFeeShares(asset.baseDebtIndex, drawnIndex);
 
     // Accrue interest and fees
     asset.baseDebtIndex = drawnIndex;
@@ -168,25 +167,43 @@ library AssetLogic {
   /**
    * @dev Calculates the amount of fee shares derived from the index growth due to interest accrual.
    * @param asset The data struct of the asset whose index is increasing.
-   * @param indexDelta The increase in the asset index resulting from interest accrual.
+   * @param currentDrawnIndex The current value of the asset drawn index.
+   * @param nextDrawnIndex The next value of the asset drawn index resulting from interest accrual.
    * @return The amount of shares corresponding to the fees
    */
   function previewFeeShares(
     DataTypes.Asset storage asset,
-    uint256 indexDelta
+    uint256 currentDrawnIndex,
+    uint256 nextDrawnIndex
   ) internal view returns (uint256) {
     uint256 liquidityFee = asset.config.liquidityFee;
-    if (indexDelta == 0 || liquidityFee == 0) {
+    if (nextDrawnIndex == currentDrawnIndex || liquidityFee == 0) {
       return 0;
     }
     // liquidity growth is always greater than accrued fees, even with 100.00% liquidity fee
-    uint256 feesAmount = indexDelta
+    uint256 feesAmount = (nextDrawnIndex - currentDrawnIndex)
       .rayMulDown(asset.baseDrawnShares + asset.premiumDrawnShares)
       .percentMulDown(liquidityFee);
 
-    return feesAmount.toSharesDown(asset.totalSuppliedAssets() - feesAmount, asset.suppliedShares);
+    uint256 feesAmountActual = ((nextDrawnIndex - currentDrawnIndex).rayMulDown(
+      asset.baseDrawnShares
+    ) +
+      asset.previewDrawnIndex().rayMulDown(asset.premiumDrawnShares) -
+      asset.premiumOffset).percentMulDown(liquidityFee);
+
+    require(absDiff(feesAmount, feesAmountActual) < 2, FeeDiff(feesAmount, feesAmountActual));
+
+    return
+      feesAmountActual.toSharesDown(
+        asset.totalSuppliedAssets() - feesAmountActual,
+        asset.suppliedShares
+      );
   }
 
+  error FeeDiff(uint256 feesAmount, uint256 feesAmountActual);
+  function absDiff(uint256 a, uint256 b) internal pure returns (uint256 c) {
+    return a > b ? a - b : b - a;
+  }
   /**
    * @dev Calculates the amount of fee shares generated from the asset's accrued interest.
    * @dev It calculates the updated drawn index on the fly using the current index and the borrow rate.
@@ -194,6 +211,6 @@ library AssetLogic {
    * @return The amount of shares corresponding to the fees
    */
   function unrealizedFeeShares(DataTypes.Asset storage asset) internal view returns (uint256) {
-    return asset.previewFeeShares(asset.previewDrawnIndex() - asset.baseDebtIndex);
+    return asset.previewFeeShares(asset.baseDebtIndex, asset.previewDrawnIndex());
   }
 }
