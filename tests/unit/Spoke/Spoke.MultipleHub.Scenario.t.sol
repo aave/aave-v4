@@ -17,14 +17,15 @@ contract SpokeMultipleHubScenarioTest is Test {
   struct SiloedLocalVars {
     uint256 assetAId;
     uint256 assetBId;
-    uint256 assetBDrawCap;
     uint256 assetASupplyCap;
-    uint256 reserveBId;
+    uint256 assetBDrawCap;
     uint256 reserveAId;
+    uint256 reserveBId;
     uint256 reserveAIdNewSpoke;
   }
 
   uint256 internal constant MAX_SUPPLY_AMOUNT = 1e30;
+  address internal mockAddressesProvider = makeAddr('mockAddressesProvider');
 
   // Canonical hub and spoke
   ILiquidityHub internal hub;
@@ -36,11 +37,10 @@ contract SpokeMultipleHubScenarioTest is Test {
   ILiquidityHub internal newHub;
   MockPriceOracle internal newOracle;
   ISpoke internal newSpoke;
-  IsolationLocalVars internal isolationVars;
-  SiloedLocalVars internal siloedVars;
   IDefaultInterestRateStrategy internal newIrStrategy;
 
-  address internal mockAddressesProvider = makeAddr('mockAddressesProvider');
+  IsolationLocalVars internal isolationVars;
+  SiloedLocalVars internal siloedVars;
 
   TestnetERC20 internal assetA;
   TestnetERC20 internal assetB;
@@ -68,13 +68,13 @@ contract SpokeMultipleHubScenarioTest is Test {
     // Canonical hub and spoke
     hub = new LiquidityHub();
     oracle1 = new MockPriceOracle();
-    spoke1 = ISpoke(new Spoke(address(oracle1)));
+    spoke1 = new Spoke(address(oracle1));
     irStrategy = new DefaultReserveInterestRateStrategy(mockAddressesProvider);
 
     // New hub and spoke
     newHub = new LiquidityHub();
     newOracle = new MockPriceOracle();
-    newSpoke = ISpoke(new Spoke(address(newOracle)));
+    newSpoke = new Spoke(address(newOracle));
     newIrStrategy = new DefaultReserveInterestRateStrategy(mockAddressesProvider);
 
     assetA = new TestnetERC20('Asset A', 'A', 18);
@@ -96,7 +96,7 @@ contract SpokeMultipleHubScenarioTest is Test {
       }),
       address(assetA)
     );
-    isolationVars.assetAId = 0;
+    isolationVars.assetAId = newHub.assetCount() - 1;
     newHub.addAsset(
       DataTypes.AssetConfig({
         feeReceiver: address(0),
@@ -109,7 +109,7 @@ contract SpokeMultipleHubScenarioTest is Test {
       }),
       address(assetB)
     );
-    isolationVars.assetBId = 1;
+    isolationVars.assetBId = newHub.assetCount() - 1;
 
     // Add reserves to the new spoke
     isolationVars.reserveAId = newSpoke.addReserve(
@@ -190,7 +190,7 @@ contract SpokeMultipleHubScenarioTest is Test {
       }),
       address(assetB)
     );
-    siloedVars.assetBId = 0;
+    siloedVars.assetBId = newHub.assetCount() - 1;
 
     // Add B reserve to the new spoke
     siloedVars.reserveBId = newSpoke.addReserve(
@@ -221,15 +221,7 @@ contract SpokeMultipleHubScenarioTest is Test {
     );
 
     // Configure interest rate strategy for asset B
-    newIrStrategy.setInterestRateParams(
-      siloedVars.assetBId,
-      IDefaultInterestRateStrategy.InterestRateData({
-        optimalUsageRatio: 90_00, // 90.00%
-        baseVariableBorrowRate: 5_00, // 5.00%
-        variableRateSlope1: 5_00, // 5.00%
-        variableRateSlope2: 5_00 // 5.00%
-      })
-    );
+    newIrStrategy.setInterestRateParams(siloedVars.assetBId, irData);
 
     // Add asset A to the canonical hub
     hub.addAsset(
@@ -275,15 +267,7 @@ contract SpokeMultipleHubScenarioTest is Test {
     );
 
     // Configure interest rate strategy for asset A
-    irStrategy.setInterestRateParams(
-      siloedVars.assetAId,
-      IDefaultInterestRateStrategy.InterestRateData({
-        optimalUsageRatio: 90_00, // 90.00%
-        baseVariableBorrowRate: 5_00, // 5.00%
-        variableRateSlope1: 5_00, // 5.00%
-        variableRateSlope2: 5_00 // 5.00%
-      })
-    );
+    irStrategy.setInterestRateParams(siloedVars.assetAId, irData);
 
     // Add reserve A from canonical hub to the new spoke
     siloedVars.reserveAIdNewSpoke = newSpoke.addReserve(
@@ -484,7 +468,6 @@ contract SpokeMultipleHubScenarioTest is Test {
     // Bob cannot draw any additional asset B from the new spoke main hub due to new draw cap of 0
     vm.expectRevert(abi.encodeWithSelector(ILiquidityHub.DrawCapExceeded.selector, 0));
     newSpoke.borrow(isolationVars.reserveBIdMainHub, 1e18, bob);
-
     vm.stopPrank();
   }
 
