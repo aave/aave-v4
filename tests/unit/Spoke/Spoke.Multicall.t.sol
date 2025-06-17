@@ -89,24 +89,28 @@ contract SpokeMulticall is SpokeBase {
       active: true,
       frozen: false,
       paused: false,
-      collateralFactor: 88_00,
       liquidationBonus: 100_00,
       liquidityPremium: 10_00,
       liquidationProtocolFee: 0,
       borrowable: true,
       collateral: true
     });
+    DataTypes.DynamicReserveConfig memory dai2DynConfig = DataTypes.DynamicReserveConfig({
+      collateralFactor: 88_00
+    });
     DataTypes.ReserveConfig memory dai3Config = DataTypes.ReserveConfig({
       decimals: 18,
       active: true,
       frozen: false,
       paused: false,
-      collateralFactor: 70_00,
       liquidationBonus: 100_00,
       liquidityPremium: 5_00,
       liquidationProtocolFee: 0,
       borrowable: true,
       collateral: true
+    });
+    DataTypes.DynamicReserveConfig memory dai3DynConfig = DataTypes.DynamicReserveConfig({
+      collateralFactor: 70_00
     });
 
     DataTypes.Reserve memory dai2ReserveExpected;
@@ -122,8 +126,8 @@ contract SpokeMulticall is SpokeBase {
 
     // Set up the multicall
     bytes[] memory calls = new bytes[](2);
-    calls[0] = abi.encodeCall(ISpoke.addReserve, (daiAssetId, dai2Config));
-    calls[1] = abi.encodeCall(ISpoke.addReserve, (daiAssetId, dai3Config));
+    calls[0] = abi.encodeCall(ISpoke.addReserve, (daiAssetId, dai2Config, dai2DynConfig));
+    calls[1] = abi.encodeCall(ISpoke.addReserve, (daiAssetId, dai3Config, dai3DynConfig));
 
     vm.expectEmit(address(spoke1));
     emit ISpoke.ReserveAdded(dai2ReserveId, daiAssetId);
@@ -135,10 +139,10 @@ contract SpokeMulticall is SpokeBase {
 
     // Check the reserves
     assertEq(spoke1.reserveCount(), reserveCountBefore + 2, 'Reserve count should increase by 2');
-    DataTypes.Reserve memory dai2Reserve = spoke1.getReserve(dai2ReserveId);
-    DataTypes.Reserve memory dai3Reserve = spoke1.getReserve(dai3ReserveId);
-    _checkReserveInfo(dai2ReserveExpected, dai2Reserve);
-    _checkReserveInfo(dai3ReserveExpected, dai3Reserve);
+    assertEq(spoke1.getReserveConfig(dai2ReserveId), dai2Config);
+    assertEq(spoke1.getReserveConfig(dai3ReserveId), dai3Config);
+    assertEq(spoke1.getDynamicReserveConfig(dai2ReserveId), dai2DynConfig);
+    assertEq(spoke1.getDynamicReserveConfig(dai3ReserveId), dai3DynConfig);
   }
 
   /// Update multiple reserve configs using multicall
@@ -149,15 +153,11 @@ contract SpokeMulticall is SpokeBase {
     // Set up the new reserve configs
     DataTypes.Reserve memory newDai = spoke1.getReserve(daiReserveId);
     newDai.config.liquidityPremium += 1;
-    newDai.config.collateralFactor += 1;
     newDai.config.liquidationBonus += 1;
-    newDai.config.collateralFactor += 1;
     newDai.config.borrowable = false;
     DataTypes.Reserve memory newUsdx = spoke1.getReserve(usdxReserveId);
     newUsdx.config.liquidityPremium += 1;
-    newUsdx.config.collateralFactor += 1;
     newUsdx.config.liquidationBonus += 1;
-    newUsdx.config.collateralFactor += 1;
     newUsdx.config.collateral = false;
 
     // Set up the multicall
@@ -174,9 +174,7 @@ contract SpokeMulticall is SpokeBase {
     spoke1.multicall(calls);
 
     // Check the reserve configs
-    DataTypes.Reserve memory daiReserve = spoke1.getReserve(daiReserveId);
-    DataTypes.Reserve memory usdxReserve = spoke1.getReserve(usdxReserveId);
-    _checkReserveInfo(newDai, daiReserve);
-    _checkReserveInfo(newUsdx, usdxReserve);
+    assertEq(spoke1.getReserve(daiReserveId), newDai);
+    assertEq(spoke1.getReserve(usdxReserveId), newUsdx);
   }
 }
