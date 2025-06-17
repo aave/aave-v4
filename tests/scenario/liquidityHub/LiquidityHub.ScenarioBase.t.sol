@@ -14,7 +14,6 @@ using {eq as ==} for Stage global;
 
 abstract contract LiquidityHubScenarioBaseTest is Base {
   using SharesMath for uint256;
-  using WadRayMath for uint256;
   using PercentageMath for uint256;
 
   uint256 internal constant NUM_TIMESTAMPS = 10;

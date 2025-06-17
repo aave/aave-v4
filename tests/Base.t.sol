@@ -29,7 +29,6 @@ import {IERC20} from 'src/dependencies/openzeppelin/IERC20.sol';
 import {WETH9} from 'src/dependencies/weth/WETH9.sol';
 
 abstract contract Base is Test {
-  using WadRayMath for uint256;
   using WadRayMathExtended for uint256;
   using SharesMath for uint256;
   using PercentageMath for uint256;
@@ -1165,13 +1164,15 @@ abstract contract Base is Test {
     uint256 interestRateBps,
     uint256 assetId,
     uint256 totalDebt,
-    uint256 availableLiquidity
+    uint256 availableLiquidity,
+    uint256 liquidityAdded,
+    uint256 liquidityTaken
   ) internal {
     vm.mockCall(
       address(irStrategy),
       abi.encodeCall(
         IAssetInterestRateStrategy.calculateInterestRate,
-        (assetId, totalDebt, availableLiquidity)
+        (assetId, totalDebt, availableLiquidity, liquidityAdded, liquidityTaken)
       ),
       abi.encode(interestRateBps.bpsToRay())
     );

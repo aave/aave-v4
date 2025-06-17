@@ -34,7 +34,7 @@ interface IDefaultInterestRateStrategy is IAssetInterestRateStrategy {
    *
    * @param optimalUsageRatio The optimal borrow usage ratio, in bps (1-9900)
    * @param baseVariableBorrowRate The base variable borrow rate, in bps
-   * @param variableRateSlope1 The slope of the variable interest curve, before hitting the optimal borrow usageratio, in bps
+   * @param variableRateSlope1 The slope of the variable interest curve, before hitting the optimal borrow usage ratio, in bps
    * @param variableRateSlope2 The slope of the variable interest curve, after hitting the optimal borrow usage ratio, in bps
    */
   struct InterestRateData {

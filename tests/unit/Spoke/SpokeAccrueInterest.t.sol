@@ -7,7 +7,7 @@ import {LiquidityHub} from 'src/contracts/LiquidityHub.sol';
 
 contract SpokeAccrueInterestTest is SpokeBase {
   using SharesMath for uint256;
-  using WadRayMath for uint256;
+  using WadRayMathExtended for uint256;
   using PercentageMath for uint256;
 
   /// No interest should accrue when no action is taken.

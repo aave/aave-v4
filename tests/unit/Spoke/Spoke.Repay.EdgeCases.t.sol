@@ -4,8 +4,6 @@ pragma solidity ^0.8.0;
 import 'tests/unit/Spoke/SpokeBase.t.sol';
 
 contract SpokeRepayEdgeCaseTest is SpokeBase {
-  using WadRayMath for uint256;
-
   /// repay partial premium, base & full debt, with no interest accrual (no time pass)
   /// supply ex rate can increase while debt ex rate should remain the same
   /// this is due to donation on available liquidity

@@ -5,7 +5,6 @@ import 'tests/unit/LiquidityHub/LiquidityHubBase.t.sol';
 
 contract LiquidityHubSupplyTest is LiquidityHubBase {
   using SharesMath for uint256;
-  using WadRayMath for uint256;
   using PercentageMath for uint256;
 
   function test_supply_revertsWith_ERC20InsufficientAllowance() public {

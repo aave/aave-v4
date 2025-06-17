@@ -138,7 +138,7 @@ contract SpokeRiskPremiumScenarioTest is SpokeBase {
       MathUtils.calculateLinearInterest(
         hub.getBaseInterestRate(daiAssetId), // todo: IR strategy has a pending fix
         vars.lastUpdateTimestamp
-      ) - WadRayMath.RAY
+      ) - WadRayMathExtended.RAY
     );
     uint256 expectedPremiumDebt = accruedDaiDebt.percentMulUp(wethLiquidityPremium);
 
@@ -187,7 +187,7 @@ contract SpokeRiskPremiumScenarioTest is SpokeBase {
       MathUtils.calculateLinearInterest(
         hub.getBaseInterestRate(daiAssetId), // todo: IR strategy has a pending fix
         startTime
-      ) - WadRayMath.RAY
+      ) - WadRayMathExtended.RAY
     );
 
     expectedPremiumDebt =

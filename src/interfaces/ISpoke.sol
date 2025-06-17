@@ -159,6 +159,7 @@ interface ISpoke is IMulticall {
   function getReserve(uint256 reserveId) external view returns (DataTypes.Reserve memory);
 
   function getReserveDebt(uint256 reserveId) external view returns (uint256, uint256);
+
   function getReserveRiskPremium(uint256 reserveId) external view returns (uint256);
 
   function getReserveSuppliedAmount(uint256 reserveId) external view returns (uint256);
@@ -200,12 +201,15 @@ interface ISpoke is IMulticall {
   function reserveCount() external view returns (uint256);
 
   function reservesList(uint256) external view returns (uint256);
+
   function getVariableLiquidationBonus(
     uint256 reserveId,
     uint256 healthFactor
   ) external view returns (uint256);
 
   function getLiquidationConfig() external view returns (DataTypes.LiquidationConfig memory);
+
   function HEALTH_FACTOR_LIQUIDATION_THRESHOLD() external view returns (uint256);
+
   function MAX_LIQUIDITY_PREMIUM() external view returns (uint256);
 }

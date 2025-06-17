@@ -6,9 +6,6 @@ import {DataTypes} from 'src/libraries/types/DataTypes.sol';
 
 contract LiquidityHubBase is Base {
   using SharesMath for uint256;
-  using WadRayMath for uint256;
-
-  uint256 internal constant INIT_BASE_BORROW_INDEX = WadRayMath.RAY;
 
   struct TestSupplyParams {
     uint256 drawnAmount;

@@ -5,7 +5,6 @@ import 'tests/unit/LiquidityHub/LiquidityHubBase.t.sol';
 
 contract LiquidityHubDrawTest is LiquidityHubBase {
   using SharesMath for uint256;
-  using WadRayMath for uint256;
 
   function test_draw_same_block() public {
     uint256 daiAmount = 100e18;

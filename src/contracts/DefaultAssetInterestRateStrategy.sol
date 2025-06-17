@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.10;
 
-import {WadRayMath} from 'src/libraries/math/WadRayMath.sol';
+import {WadRayMathExtended} from 'src/libraries/math/WadRayMathExtended.sol';
 import {IDefaultInterestRateStrategy} from 'src/interfaces/IDefaultInterestRateStrategy.sol';
 import {IAssetInterestRateStrategy} from 'src/interfaces/IAssetInterestRateStrategy.sol';
 
@@ -13,7 +13,7 @@ import {IAssetInterestRateStrategy} from 'src/interfaces/IAssetInterestRateStrat
  *   due to the usage of asset id as index of the _interestRateData
  */
 contract DefaultAssetInterestRateStrategy is IDefaultInterestRateStrategy {
-  using WadRayMath for *;
+  using WadRayMathExtended for *;
 
   /// @inheritdoc IDefaultInterestRateStrategy
   uint256 public constant MAX_BORROW_RATE = 1000_00; // 1000.00% in BPS
@@ -100,7 +100,9 @@ contract DefaultAssetInterestRateStrategy is IDefaultInterestRateStrategy {
   function calculateInterestRate(
     uint256 assetId,
     uint256 totalDebt,
-    uint256 availableLiquidity
+    uint256 availableLiquidity,
+    uint256 liquidityAdded,
+    uint256 liquidityTaken
   ) external view virtual override returns (uint256) {
     InterestRateData memory rateData = _interestRateData[assetId];
     require(rateData.optimalUsageRatio != 0, InterestRateDataNotSet(assetId));
@@ -110,23 +112,25 @@ contract DefaultAssetInterestRateStrategy is IDefaultInterestRateStrategy {
       return currentVariableBorrowRateRay;
     }
 
-    uint256 usageRatioRay = totalDebt.rayDiv(availableLiquidity + totalDebt);
+    uint256 usageRatioRay = totalDebt.rayDivUp(
+      availableLiquidity + liquidityAdded - liquidityTaken + totalDebt
+    );
     uint256 optimalUsageRatioRay = rateData.optimalUsageRatio.bpsToRay();
 
     if (usageRatioRay <= optimalUsageRatioRay) {
       currentVariableBorrowRateRay += rateData
         .variableRateSlope1
         .bpsToRay()
-        .rayMul(usageRatioRay)
-        .rayDiv(optimalUsageRatioRay);
+        .rayMulUp(usageRatioRay)
+        .rayDivUp(optimalUsageRatioRay);
     } else {
       currentVariableBorrowRateRay += rateData.variableRateSlope1.bpsToRay();
 
       currentVariableBorrowRateRay += rateData
         .variableRateSlope2
         .bpsToRay()
-        .rayMul(usageRatioRay - optimalUsageRatioRay)
-        .rayDiv(WadRayMath.RAY - optimalUsageRatioRay);
+        .rayMulUp(usageRatioRay - optimalUsageRatioRay)
+        .rayDivUp(WadRayMathExtended.RAY - optimalUsageRatioRay);
     }
 
     return currentVariableBorrowRateRay;

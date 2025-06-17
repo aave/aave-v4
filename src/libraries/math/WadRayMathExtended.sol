@@ -1,6 +1,8 @@
 // SPDX-License-Identifier: BUSL-1.1
 pragma solidity ^0.8.0;
 
+import {PercentageMathExtended} from 'src/libraries/math/PercentageMathExtended.sol';
+
 /**
  * @title WadRayMathExtended library, with explicit rounding
  * @author Aave
@@ -186,5 +188,9 @@ library WadRayMathExtended {
     assembly {
       b := div(a, WAD)
     }
+  }
+
+  function bpsToRay(uint256 a) internal pure returns (uint256) {
+    return (a * RAY) / PercentageMathExtended.PERCENTAGE_FACTOR;
   }
 }

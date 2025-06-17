@@ -1,16 +1,16 @@
 // SPDX-License-Identifier: BUSL-1.1
 pragma solidity ^0.8.10;
 
-import {WadRayMath} from 'src/libraries/math/WadRayMath.sol';
+import {WadRayMathExtended} from 'src/libraries/math/WadRayMathExtended.sol';
 import {DefaultAssetInterestRateStrategy, IDefaultInterestRateStrategy} from 'src/contracts/DefaultAssetInterestRateStrategy.sol';
 
 import {Test} from 'forge-std/Test.sol';
 
 /// TODO: Access Control; Check that only authorized address can set interest rate data
 contract DefaultAssetInterestRateStrategyTest is Test {
-  using WadRayMath for uint16;
-  using WadRayMath for uint32;
-  using WadRayMath for uint256;
+  using WadRayMathExtended for uint16;
+  using WadRayMathExtended for uint32;
+  using WadRayMathExtended for uint256;
 
   uint256 mockAssetId = uint256(keccak256('mockAssetId'));
 
@@ -152,44 +152,53 @@ contract DefaultAssetInterestRateStrategyTest is Test {
     rateStrategy.calculateInterestRate({
       assetId: mockAssetId2,
       totalDebt: 0,
-      availableLiquidity: 0
+      availableLiquidity: 0,
+      liquidityAdded: 0,
+      liquidityTaken: 0
     });
   }
 
-  function test_calculateInterestRate_fuzz_ZeroDebt(uint256 availableLiquidity) public {
+  function test_calculateInterestRate_fuzz_ZeroDebt(uint256 availableLiquidity, uint256 liquidityAdded, uint256 liquidityTaken) public {
+    availableLiquidity = bound(availableLiquidity, 0, type(uint128).max);
+    liquidityAdded = bound(liquidityAdded, 0, type(uint128).max);
+    liquidityTaken = bound(liquidityTaken, 0, availableLiquidity + liquidityAdded);
+
     uint256 variableBorrowRate = rateStrategy.calculateInterestRate({
       assetId: mockAssetId,
       totalDebt: 0,
-      availableLiquidity: availableLiquidity
+      availableLiquidity: availableLiquidity,
+      liquidityAdded: liquidityAdded,
+      liquidityTaken: liquidityTaken
     });
 
     assertEq(variableBorrowRate, rateData.baseVariableBorrowRate.bpsToRay());
   }
 
   function test_calculateInterestRate_ZeroDebtZeroLiquidity() public {
-    test_calculateInterestRate_fuzz_ZeroDebt(0);
+    test_calculateInterestRate_fuzz_ZeroDebt(0, 0, 0);
   }
 
   function test_calculateInterestRate_LeftToKinkPoint(
     uint256 percentageToKinkPointBps,
-    uint256 totalDebt
+    uint256 totalDebtUnbounded
   ) public {
     uint256 percentageToKinkPointRay = bound(percentageToKinkPointBps, 1, 100_00).bpsToRay();
 
-    uint256 availableLiquidity;
-    (totalDebt, availableLiquidity) = _computeDebtAndAvailableLiquidity(
-      percentageToKinkPointRay.rayMul(rateData.optimalUsageRatio.bpsToRay()),
-      totalDebt
+    (uint256 totalDebt, uint256 availableLiquidity, uint256 liquidityAdded, uint256 liquidityTaken) = _computeCalculateInterestRateParams(
+      percentageToKinkPointRay.rayMulUp(rateData.optimalUsageRatio.bpsToRay()),
+      totalDebtUnbounded
     );
 
     uint256 variableBorrowRate = rateStrategy.calculateInterestRate({
       assetId: mockAssetId,
       totalDebt: totalDebt,
-      availableLiquidity: availableLiquidity
+      availableLiquidity: availableLiquidity,
+      liquidityAdded: liquidityAdded,
+      liquidityTaken: liquidityTaken
     });
 
     uint256 expectedVariableRate = rateData.baseVariableBorrowRate.bpsToRay() +
-      rateData.variableRateSlope1.bpsToRay().rayMul(percentageToKinkPointRay);
+      rateData.variableRateSlope1.bpsToRay().rayMulUp(percentageToKinkPointRay);
     assertEq(variableBorrowRate, expectedVariableRate);
   }
 
@@ -199,21 +208,22 @@ contract DefaultAssetInterestRateStrategyTest is Test {
 
   function test_calculateInterestRate_RightToKinkPoint(
     uint256 utilizationRatio,
-    uint256 totalDebt
+    uint256 totalDebtUnbounded
   ) public {
     uint256 utilizationRatioRay = bound(utilizationRatio, rateData.optimalUsageRatio + 1, 100_00)
       .bpsToRay();
 
-    uint256 availableLiquidity;
-    (totalDebt, availableLiquidity) = _computeDebtAndAvailableLiquidity(
+    (uint256 totalDebt, uint256 availableLiquidity, uint256 liquidityAdded, uint256 liquidityTaken) = _computeCalculateInterestRateParams(
       utilizationRatioRay,
-      totalDebt
+      totalDebtUnbounded
     );
 
     uint256 variableBorrowRate = rateStrategy.calculateInterestRate({
       assetId: mockAssetId,
       totalDebt: totalDebt,
-      availableLiquidity: availableLiquidity
+      availableLiquidity: availableLiquidity,
+      liquidityAdded: liquidityAdded,
+      liquidityTaken: liquidityTaken
     });
 
     uint256 expectedVariableRate = rateData.baseVariableBorrowRate.bpsToRay() +
@@ -221,8 +231,8 @@ contract DefaultAssetInterestRateStrategyTest is Test {
       rateData
         .variableRateSlope2
         .bpsToRay()
-        .rayMul(utilizationRatioRay - rateData.optimalUsageRatio.bpsToRay())
-        .rayDiv(WadRayMath.RAY - rateData.optimalUsageRatio.bpsToRay());
+        .rayMulUp(utilizationRatioRay - rateData.optimalUsageRatio.bpsToRay())
+        .rayDivUp(WadRayMathExtended.RAY - rateData.optimalUsageRatio.bpsToRay());
     assertEq(variableBorrowRate, expectedVariableRate);
   }
 
@@ -230,18 +240,22 @@ contract DefaultAssetInterestRateStrategyTest is Test {
     test_calculateInterestRate_RightToKinkPoint(100_00, 100e18);
   }
 
-  function _computeDebtAndAvailableLiquidity(
+  function _computeCalculateInterestRateParams(
     uint256 targetUtilizationRatioRay,
     uint256 totalDebtUnbounded
-  ) internal pure returns (uint256 totalDebt, uint256 availableLiquidity) {
+  ) internal returns (uint256 totalDebt, uint256 availableLiquidity, uint256 liquidityAdded, uint256 liquidityTaken) {
     /// @dev using high value to avoid precision loss
     totalDebt = bound(totalDebtUnbounded, 10e27, 1e30);
 
-    // utilizationRatio = totalDebt / (totalDebt + availableLiquidity)
-    // utilizationRatio * totalDebt + utilizationRatio * availableLiquidity = totalDebt
-    // availableLiquidity = totalDebt * (1 - utilizationRatio) / utilizationRatio
-    availableLiquidity = totalDebt.rayMul(WadRayMath.RAY - targetUtilizationRatioRay).rayDiv(
+    // utilizationRatio = totalDebt / (totalDebt + updatedAvailableLiquidity)
+    // utilizationRatio * totalDebt + utilizationRatio * updatedAvailableLiquidity = totalDebt
+    // updatedAvailableLiquidity = totalDebt * (1 - utilizationRatio) / utilizationRatio
+    uint256 updatedAvailableLiquidity = totalDebt.rayMulUp(WadRayMathExtended.RAY - targetUtilizationRatioRay).rayDivUp(
       targetUtilizationRatioRay
     );
+
+    availableLiquidity = bound(vm.randomUint(), 0, updatedAvailableLiquidity);
+    liquidityAdded = bound(vm.randomUint(), updatedAvailableLiquidity - liquidityAdded, updatedAvailableLiquidity);
+    liquidityTaken = availableLiquidity + liquidityAdded - updatedAvailableLiquidity;
   }
 }

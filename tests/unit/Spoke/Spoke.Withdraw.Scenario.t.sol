@@ -4,8 +4,6 @@ pragma solidity ^0.8.0;
 import 'tests/unit/Spoke/SpokeBase.t.sol';
 
 contract SpokeWithdrawScenarioTest is SpokeBase {
-  using WadRayMath for uint256;
-
   struct MultiUserTestState {
     IERC20 asset;
     uint256 assetId;

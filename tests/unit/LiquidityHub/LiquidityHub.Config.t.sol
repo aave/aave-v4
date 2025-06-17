@@ -5,7 +5,6 @@ import 'tests/unit/LiquidityHub/LiquidityHubBase.t.sol';
 
 contract LiquidityHubConfigTest is LiquidityHubBase {
   using SharesMath for uint256;
-  using WadRayMath for uint256;
 
   function test_addSpoke() public {
     uint256 assetId = hub.assetCount() - 1;

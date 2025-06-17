@@ -114,7 +114,9 @@ library AssetLogic {
     asset.baseBorrowRate = asset.config.irStrategy.calculateInterestRate({
       assetId: asset.id,
       totalDebt: asset.baseDebt(),
-      availableLiquidity: asset.availableLiquidity + liquidityAdded - liquidityTaken
+      availableLiquidity: asset.availableLiquidity,
+      liquidityAdded: liquidityAdded,
+      liquidityTaken: liquidityTaken
     });
   }
 
