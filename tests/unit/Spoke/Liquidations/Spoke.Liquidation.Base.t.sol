@@ -63,11 +63,11 @@ contract SpokeLiquidationBase is SpokeBase {
 
   /// @notice Deploys max borrowable liquidity for all reserves in spoke1.
   function _addBorrowableLiquidity(uint256 amount) public {
-    _deployLiquidity(spoke1, _daiReserveId(spoke1), amount);
-    _deployLiquidity(spoke1, _wethReserveId(spoke1), amount);
-    _deployLiquidity(spoke1, _wbtcReserveId(spoke1), amount);
-    _deployLiquidity(spoke1, _usdxReserveId(spoke1), amount);
-    _deployLiquidity(spoke1, _usdyReserveId(spoke1), amount);
+    _openSupplyPosition(spoke1, _daiReserveId(spoke1), amount);
+    _openSupplyPosition(spoke1, _wethReserveId(spoke1), amount);
+    _openSupplyPosition(spoke1, _wbtcReserveId(spoke1), amount);
+    _openSupplyPosition(spoke1, _usdxReserveId(spoke1), amount);
+    _openSupplyPosition(spoke1, _usdyReserveId(spoke1), amount);
   }
 
   /// bound liquidation config to full range of possible values

@@ -44,10 +44,12 @@ contract LiquidityHubHandler is Test {
     // Add dai
     hub.addAsset(
       DataTypes.AssetConfig({
-        decimals: 18,
+        feeReceiver: address(0),
         active: true,
         frozen: false,
         paused: false,
+        decimals: 18,
+        liquidityFee: 5_00,
         irStrategy: irStrategy
       }),
       address(dai)

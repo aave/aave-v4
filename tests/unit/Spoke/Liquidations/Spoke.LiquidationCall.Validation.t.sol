@@ -228,7 +228,7 @@ contract LiquidationCallValidationTest is SpokeLiquidationBase {
     uint256 wethReserveId = _wethReserveId(spoke1);
     uint256 usdxReserveId = _usdxReserveId(spoke1);
 
-    _deployLiquidity(spoke1, daiReserveId, daiAmount);
+    _openSupplyPosition(spoke1, daiReserveId, daiAmount);
 
     Utils.supplyCollateral(spoke1, wethReserveId, alice, wethAmount, alice);
     Utils.supplyCollateral(spoke1, usdxReserveId, alice, usdxAmount, alice);

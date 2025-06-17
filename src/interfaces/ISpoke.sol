@@ -40,7 +40,8 @@ interface ISpoke is IMulticall {
     address indexed user,
     int256 premiumDrawnSharesDelta,
     int256 premiumOffsetDelta,
-    int256 realizedPremiumDelta
+    uint256 realizedPremiumAdded,
+    uint256 realizedPremiumTaken
   );
   event OracleUpdated(uint256 indexed reserveId, address indexed oracle);
   event LiquidationConfigUpdated(DataTypes.LiquidationConfig config);
@@ -113,34 +114,35 @@ interface ISpoke is IMulticall {
   function updateLiquidationConfig(DataTypes.LiquidationConfig calldata config) external;
 
   /**
-   * @notice Supply an amount of underlying asset of the specified reserve.
-   * @dev Liquidity Hub pulls underlying asset from caller, hence it needs prior approval.
-   * @param reserveId The reserveId of the underlying asset as registered on the spoke.
+   * @notice Supplies a specified amount of the underlying asset to a given reserve.
+   * @dev The Liquidity Hub pulls the underlying asset from the caller, so prior approval is required.
+   * @param reserveId The identifier of the reserve
    * @param amount The amount of asset to supply.
    */
   function supply(uint256 reserveId, uint256 amount) external;
 
   /**
-   * @notice Withdraw supplied amount of underlying asset from the specified reserve.
-   * @param reserveId The reserveId of the underlying asset as registered on the spoke.
+   * @notice Withdraws a specified amount of underlying asset from the given reserve.
+   * @dev Providing an amount greater than the maximum withdrawable value signals a full withdrawal.
+   * @param reserveId The identifier of the reserve.
    * @param amount The amount of asset to withdraw.
-   * @param to The address to transfer the assets to.
+   * @param to The address receiving the withdrawn assets.
    */
   function withdraw(uint256 reserveId, uint256 amount, address to) external;
 
   /**
-   * @notice Borrow an amount of underlying asset from the specified reserve.
-   * @param reserveId The reserveId of the underlying asset as registered on the spoke.
-   * @param amount The amount of underlying assets to borrow.
-   * @param to The address to transfer the underlying assets to.
+   * @notice Borrows a specified amount of underlying asset from the given reserve.
+   * @param reserveId The identifier of the reserve.
+   * @param amount The amount of asset to borrow.
+   * @param to The address receiving the borrowed assets.
    */
   function borrow(uint256 reserveId, uint256 amount, address to) external;
 
   /**
-   * @notice Repays a borrowed amount on a specified reserve.
-   * @dev Liquidity Hub pulls underlying asset from caller, hence it needs prior approval.
-   * @param reserveId The reserveId of the underlying asset as registered on the spoke.
-   * @param amount The amount to repay.
+   * @notice Repays a specified amount of underlying asset to a given reserve.
+   * @dev The Liquidity Hub pulls the underlying asset from the caller, so prior approval is required.
+   * @param reserveId The identifier of the reserve.
+   * @param amount The amount of asset to repay.
    */
   function repay(uint256 reserveId, uint256 amount) external;
 

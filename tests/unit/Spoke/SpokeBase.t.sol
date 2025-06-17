@@ -8,6 +8,7 @@ contract SpokeBase is Base {
   using PercentageMath for uint256;
   using PercentageMathExtended for uint256;
   using WadRayMathExtended for uint256;
+  using PercentageMathExtended for uint256;
   using KeyValueListInMemory for KeyValueListInMemory.List;
 
   struct Debts {
@@ -139,12 +140,12 @@ contract SpokeBase is Base {
     initEnvironment();
   }
 
-  // supply MAX_SUPPLY_AMOUNT liquidity to reserve from a temporary user
-  function _deployLiquidity(ISpoke spoke, uint256 reserveId, uint256 amount) public {
+  /// @dev Opens a supply position for a random user
+  function _openSupplyPosition(ISpoke spoke, uint256 reserveId, uint256 amount) public {
     uint256 assetId = spoke.getReserve(reserveId).assetId;
     uint256 initialLiq = hub.getAvailableLiquidity(assetId);
 
-    address tempUser = makeAddr('tempUser');
+    address tempUser = vm.randomAddress();
     IERC20 asset = IERC20(spoke.getReserve(reserveId).asset);
     deal(address(asset), tempUser, amount);
 
@@ -160,6 +161,62 @@ contract SpokeBase is Base {
     });
 
     assertEq(hub.getAvailableLiquidity(assetId), initialLiq + amount);
+  }
+
+  /// @dev Opens a debt position for a random user, using same asset as collateral and borrow
+  function _openDebtPosition(
+    ISpoke spoke,
+    uint256 reserveId,
+    uint256 amount,
+    bool withPremium
+  ) internal returns (uint256) {
+    address tempUser = vm.randomAddress();
+
+    // add collateral
+    uint256 supplyAmount = _calcMinimumCollAmount({
+      spoke: spoke,
+      collReserveId: reserveId,
+      debtReserveId: reserveId,
+      debtAmount: amount
+    });
+
+    IERC20 asset = IERC20(spoke.getReserve(reserveId).asset);
+    deal(address(asset), tempUser, supplyAmount);
+    vm.prank(tempUser);
+    asset.approve(address(hub), type(uint256).max);
+
+    Utils.supplyCollateral({
+      spoke: spoke,
+      reserveId: reserveId,
+      user: tempUser,
+      amount: supplyAmount,
+      onBehalfOf: tempUser
+    });
+
+    // debt
+    uint256 cachedLiquidityPremium;
+    if (withPremium) {
+      cachedLiquidityPremium = _getLiquidityPremium(spoke, reserveId);
+      updateLiquidityPremium(spoke, reserveId, 50_00);
+    }
+
+    Utils.borrow({
+      spoke: spoke,
+      reserveId: reserveId,
+      user: tempUser,
+      amount: amount,
+      onBehalfOf: tempUser
+    });
+    skip(365 days);
+
+    (uint256 baseDebt, uint256 premiumDebt) = spoke.getReserveDebt(reserveId);
+    assertGt(baseDebt, 0); // non-zero premium debt
+
+    if (withPremium) {
+      assertGt(premiumDebt, 0);
+      // restore cached liquidity premium
+      updateLiquidityPremium(spoke, reserveId, cachedLiquidityPremium);
+    }
   }
 
   // increase share conversion index on given reserve
@@ -353,10 +410,8 @@ contract SpokeBase is Base {
   }
 
   function getTokenBalances(IERC20 token, address spoke) internal view returns (TokenData memory) {
-    TokenData memory tokenData;
-    tokenData.spokeBalance = token.balanceOf(spoke);
-    tokenData.hubBalance = token.balanceOf(address(hub));
-    return tokenData;
+    return
+      TokenData({spokeBalance: token.balanceOf(spoke), hubBalance: token.balanceOf(address(hub))});
   }
 
   function _calcMinimumCollAmount(
@@ -629,6 +684,15 @@ contract SpokeBase is Base {
     assertEq(riskPremiumCurrent, riskPremiumStored, 'user risk premium mismatch');
   }
 
+  function _getUserRpStored(
+    ISpoke spoke,
+    uint256 reserveId,
+    address user
+  ) internal view returns (uint256) {
+    DataTypes.UserPosition memory pos = spoke.getUserPosition(reserveId, user);
+    return pos.premiumDrawnShares.percentDiv(pos.baseDrawnShares);
+  }
+
   function _boundUserAction(UserAction memory action) internal pure returns (UserAction memory) {
     action.borrowAmount = bound(action.borrowAmount, 1, MAX_SUPPLY_AMOUNT / 8);
     action.repayAmount = bound(action.repayAmount, 1, type(uint256).max);
@@ -661,6 +725,7 @@ contract SpokeBase is Base {
     data.totalDebt = data.baseDebt + data.premiumDebt;
   }
 
+  // todo: merge with _assertUserDebt
   function assertEq(Debts memory a, Debts memory b) internal pure {
     assertEq(a.baseDebt, b.baseDebt, 'base debt');
     assertEq(a.premiumDebt, b.premiumDebt, 'premium debt');
@@ -825,5 +890,15 @@ contract SpokeBase is Base {
   function _nextDynamicConfigKey(ISpoke spoke, uint256 reserveId) internal view returns (uint16) {
     uint16 dynamicConfigKey = spoke.getReserve(reserveId).dynamicConfigKey;
     return uint16(uint256(dynamicConfigKey + 1) % type(uint16).max);
+  }
+
+  /// @dev Returns the id of the reserve corresponding to the given Liquidity Hub asset id
+  function getReserveIdByAssetId(ISpoke spoke, uint256 assetId) internal view returns (uint256) {
+    for (uint256 i; i < spoke.reserveCount(); ++i) {
+      if (assetId == spoke.getReserve(i).assetId) {
+        return assetId;
+      }
+    }
+    revert('not found');
   }
 }

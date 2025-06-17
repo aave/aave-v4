@@ -36,10 +36,12 @@ library DataTypes {
   }
 
   struct AssetConfig {
+    address feeReceiver;
     bool active;
     bool frozen;
     bool paused;
     uint256 decimals;
+    uint256 liquidityFee;
     IReserveInterestRateStrategy irStrategy;
   }
 
@@ -49,7 +51,7 @@ library DataTypes {
     uint256 liquidityAdded;
     uint256 liquidityTaken;
     uint256 totalDebt;
-    uint256 reserveFactor; // likely not required
+    uint256 liquidityFee; // likely not required
     uint256 assetId;
     uint256 virtualUnderlyingBalance;
   }
