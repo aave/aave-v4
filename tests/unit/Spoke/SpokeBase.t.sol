@@ -8,6 +8,7 @@ contract SpokeBase is Base {
   using PercentageMath for uint256;
   using PercentageMathExtended for uint256;
   using WadRayMathExtended for uint256;
+  using PercentageMathExtended for uint256;
   using KeyValueListInMemory for KeyValueListInMemory.List;
 
   struct Debts {
@@ -136,17 +137,22 @@ contract SpokeBase is Base {
     uint256 wbtc;
   }
 
+  struct DynamicConfig {
+    uint16 key;
+    bool enabled;
+  }
+
   function setUp() public virtual override {
     super.setUp();
     initEnvironment();
   }
 
-  // supply MAX_SUPPLY_AMOUNT liquidity to reserve from a temporary user
-  function _deployLiquidity(ISpoke spoke, uint256 reserveId, uint256 amount) public {
+  /// @dev Opens a supply position for a random user
+  function _openSupplyPosition(ISpoke spoke, uint256 reserveId, uint256 amount) public {
     uint256 assetId = spoke.getReserve(reserveId).assetId;
     uint256 initialLiq = hub.getAvailableLiquidity(assetId);
 
-    address tempUser = makeAddr('tempUser');
+    address tempUser = vm.randomAddress();
     IERC20 asset = IERC20(spoke.getReserve(reserveId).asset);
     deal(address(asset), tempUser, amount);
 
@@ -162,6 +168,62 @@ contract SpokeBase is Base {
     });
 
     assertEq(hub.getAvailableLiquidity(assetId), initialLiq + amount);
+  }
+
+  /// @dev Opens a debt position for a random user, using same asset as collateral and borrow
+  function _openDebtPosition(
+    ISpoke spoke,
+    uint256 reserveId,
+    uint256 amount,
+    bool withPremium
+  ) internal returns (uint256) {
+    address tempUser = vm.randomAddress();
+
+    // add collateral
+    uint256 supplyAmount = _calcMinimumCollAmount({
+      spoke: spoke,
+      collReserveId: reserveId,
+      debtReserveId: reserveId,
+      debtAmount: amount
+    });
+
+    IERC20 asset = IERC20(spoke.getReserve(reserveId).asset);
+    deal(address(asset), tempUser, supplyAmount);
+    vm.prank(tempUser);
+    asset.approve(address(hub), type(uint256).max);
+
+    Utils.supplyCollateral({
+      spoke: spoke,
+      reserveId: reserveId,
+      user: tempUser,
+      amount: supplyAmount,
+      onBehalfOf: tempUser
+    });
+
+    // debt
+    uint256 cachedLiquidityPremium;
+    if (withPremium) {
+      cachedLiquidityPremium = _getLiquidityPremium(spoke, reserveId);
+      updateLiquidityPremium(spoke, reserveId, 50_00);
+    }
+
+    Utils.borrow({
+      spoke: spoke,
+      reserveId: reserveId,
+      user: tempUser,
+      amount: amount,
+      onBehalfOf: tempUser
+    });
+    skip(365 days);
+
+    (uint256 baseDebt, uint256 premiumDebt) = spoke.getReserveDebt(reserveId);
+    assertGt(baseDebt, 0); // non-zero premium debt
+
+    if (withPremium) {
+      assertGt(premiumDebt, 0);
+      // restore cached liquidity premium
+      updateLiquidityPremium(spoke, reserveId, cachedLiquidityPremium);
+    }
   }
 
   // increase share conversion index on given reserve
@@ -355,10 +417,8 @@ contract SpokeBase is Base {
   }
 
   function getTokenBalances(IERC20 token, address spoke) internal view returns (TokenData memory) {
-    TokenData memory tokenData;
-    tokenData.spokeBalance = token.balanceOf(spoke);
-    tokenData.hubBalance = token.balanceOf(address(hub));
-    return tokenData;
+    return
+      TokenData({spokeBalance: token.balanceOf(spoke), hubBalance: token.balanceOf(address(hub))});
   }
 
   function _calcMinimumCollAmount(
@@ -369,6 +429,7 @@ contract SpokeBase is Base {
   ) internal view returns (uint256) {
     IPriceOracle oracle = spoke.oracle();
     DataTypes.Reserve memory collData = spoke.getReserve(collReserveId);
+    DataTypes.DynamicReserveConfig memory colDynConf = spoke.getDynamicReserveConfig(collReserveId);
     uint256 collPrice = oracle.getReservePrice(collReserveId);
     uint256 collAssetUnits = 10 ** hub.getAsset(collData.assetId).config.decimals;
 
@@ -381,7 +442,7 @@ contract SpokeBase is Base {
 
     return
       (normalizedDebtAmount.wadify() /
-        normalizedCollPrice.wadify().percentMul(collData.config.collateralFactor)) + 1;
+        normalizedCollPrice.wadify().percentMul(colDynConf.collateralFactor)) + 1;
   }
 
   function _calcMaxDebtAmount(
@@ -392,6 +453,7 @@ contract SpokeBase is Base {
   ) internal view returns (uint256) {
     IPriceOracle oracle = spoke.oracle();
     DataTypes.Reserve memory collData = spoke.getReserve(collReserveId);
+    DataTypes.DynamicReserveConfig memory colDynConf = spoke.getDynamicReserveConfig(collReserveId);
     uint256 collPrice = oracle.getReservePrice(collReserveId);
     uint256 collAssetUnits = 10 ** hub.getAsset(collData.assetId).config.decimals;
 
@@ -403,7 +465,7 @@ contract SpokeBase is Base {
     uint256 normalizedCollPrice = (collAmount * collPrice).wadify() / collAssetUnits;
 
     uint256 maxDebt = (
-      (normalizedCollPrice.wadify().percentMul(collData.config.collateralFactor) /
+      (normalizedCollPrice.wadify().percentMul(colDynConf.collateralFactor) /
         normalizedDebtAmount.wadify())
     );
 
@@ -616,35 +678,12 @@ contract SpokeBase is Base {
     );
   }
 
-  function _checkReserveInfo(
-    DataTypes.Reserve memory expected,
-    DataTypes.Reserve memory actual
-  ) internal pure {
-    assertEq(expected.reserveId, actual.reserveId, 'Reserve Ids mismatch');
-    assertEq(expected.assetId, actual.assetId, 'Asset Ids mismatch');
-    assertEq(expected.asset, actual.asset, 'Asset addresses mismatch');
-    assertEq(expected.config.active, actual.config.active, 'Active config mismatch');
-    assertEq(expected.config.frozen, actual.config.frozen, 'Frozen config mismatch');
-    assertEq(expected.config.paused, actual.config.paused, 'Paused config mismatch');
-    assertEq(expected.config.borrowable, actual.config.borrowable, 'Borrowable config mismatch');
-    assertEq(expected.config.collateral, actual.config.collateral, 'Collateral config mismatch');
-    assertEq(expected.config.decimals, actual.config.decimals, 'Decimals config mismatch');
-    assertEq(
-      expected.config.collateralFactor,
-      actual.config.collateralFactor,
-      'Collateral factor config mismatch'
-    );
-    assertEq(
-      expected.config.liquidationBonus,
-      actual.config.liquidationBonus,
-      'Liquidation bonus config mismatch'
-    );
-    assertEq(
-      expected.config.liquidityPremium,
-      actual.config.liquidityPremium,
-      'Liquidity premium config mismatch'
-    );
-    assertEq(abi.encode(expected), abi.encode(actual), 'Encoded reserve mismatch'); // sanity check
+  function assertEq(DataTypes.Reserve memory a, DataTypes.Reserve memory b) internal pure {
+    assertEq(a.reserveId, b.reserveId, 'Reserve Ids mismatch');
+    assertEq(a.assetId, b.assetId, 'Asset Ids mismatch');
+    assertEq(a.asset, b.asset, 'Asset addresses mismatch');
+    assertEq(a.config, b.config);
+    assertEq(abi.encode(a), abi.encode(b)); // sanity check
   }
 
   function _assertUserRpUnchanged(uint256 reserveId, ISpoke spoke, address user) internal view {
@@ -652,6 +691,15 @@ contract SpokeBase is Base {
     uint256 riskPremiumStored = pos.premiumDrawnShares.percentDiv(pos.baseDrawnShares);
     (uint256 riskPremiumCurrent, , , , ) = spoke.getUserAccountData(user);
     assertEq(riskPremiumCurrent, riskPremiumStored, 'user risk premium mismatch');
+  }
+
+  function _getUserRpStored(
+    ISpoke spoke,
+    uint256 reserveId,
+    address user
+  ) internal view returns (uint256) {
+    DataTypes.UserPosition memory pos = spoke.getUserPosition(reserveId, user);
+    return pos.premiumDrawnShares.percentDiv(pos.baseDrawnShares);
   }
 
   function _boundUserAction(UserAction memory action) internal pure returns (UserAction memory) {
@@ -686,6 +734,7 @@ contract SpokeBase is Base {
     data.totalDebt = data.baseDebt + data.premiumDebt;
   }
 
+  // todo: merge with _assertUserDebt
   function assertEq(Debts memory a, Debts memory b) internal pure {
     assertEq(a.baseDebt, b.baseDebt, 'base debt');
     assertEq(a.premiumDebt, b.premiumDebt, 'premium debt');
@@ -751,5 +800,112 @@ contract SpokeBase is Base {
     }
 
     return userRP / utilizedSupply;
+  }
+
+  function _getSpokeDynConfigKeys(ISpoke spoke) internal view returns (DynamicConfig[] memory) {
+    uint256 reserveCount = spoke.reserveCount();
+    DynamicConfig[] memory configs = new DynamicConfig[](reserveCount);
+    for (uint256 reserveId; reserveId < reserveCount; ++reserveId) {
+      configs[reserveId] = DynamicConfig(spoke.getReserve(reserveId).dynamicConfigKey, true);
+    }
+    return configs;
+  }
+
+  // returns reserveId => User(DynamicConfigKey, usingAsCollateral) map.
+  function _getUserDynConfigKeys(
+    ISpoke spoke,
+    address user
+  ) internal view returns (DynamicConfig[] memory) {
+    uint256 reserveCount = spoke.reserveCount();
+    DynamicConfig[] memory configs = new DynamicConfig[](reserveCount);
+    for (uint256 reserveId; reserveId < reserveCount; ++reserveId) {
+      configs[reserveId] = _getUserDynConfigKeys(spoke, user, reserveId);
+    }
+    return configs;
+  }
+
+  // deref and return current UserDynamicReserveConfig for a specific reserveId on user position.
+  function _getUserDynConfigKeys(
+    ISpoke spoke,
+    address user,
+    uint256 reserveId
+  ) internal view returns (DynamicConfig memory) {
+    DataTypes.UserPosition memory pos = spoke.getUserPosition(reserveId, user);
+    return DynamicConfig(pos.configKey, pos.usingAsCollateral);
+  }
+
+  function assertEq(
+    DataTypes.ReserveConfig memory a,
+    DataTypes.ReserveConfig memory b
+  ) internal pure {
+    assertEq(a.active, b.active, 'active');
+    assertEq(a.frozen, b.frozen, 'frozen');
+    assertEq(a.paused, b.paused, 'paused');
+    assertEq(a.borrowable, b.borrowable, 'borrowable');
+    assertEq(a.collateral, b.collateral, 'collateral');
+    assertEq(a.decimals, b.decimals, 'decimals');
+    assertEq(a.liquidationBonus, b.liquidationBonus, 'liquidation bonus');
+    assertEq(a.liquidityPremium, b.liquidityPremium, 'liquidity premium');
+    assertEq(a.liquidationProtocolFee, b.liquidationProtocolFee, 'liquidation protocol fee');
+    assertEq(abi.encode(a), abi.encode(b)); // sanity
+  }
+
+  function assertEq(
+    DataTypes.DynamicReserveConfig memory a,
+    DataTypes.DynamicReserveConfig memory b
+  ) internal pure {
+    assertEq(a.collateralFactor, b.collateralFactor, 'collateral factor');
+    assertEq(abi.encode(a), abi.encode(b)); // sanity
+  }
+
+  function assertEq(
+    DataTypes.DynamicReserveConfig memory a,
+    DataTypes.DynamicReserveConfig memory b,
+    string memory label
+  ) internal pure {
+    assertEq(a.collateralFactor, b.collateralFactor, string.concat(label, ' collateral factor'));
+    assertEq(abi.encode(a), abi.encode(b), label); // sanity
+  }
+
+  function assertEq(DynamicConfig[] memory a, DynamicConfig[] memory b) internal pure {
+    require(a.length == b.length);
+    for (uint256 i; i < a.length; ++i) {
+      if (a[i].enabled && b[i].enabled) {
+        assertEq(a[i].key, b[i].key, string.concat('reserve ', vm.toString(i)));
+      }
+    }
+  }
+
+  function assertNotEq(
+    DataTypes.DynamicReserveConfig memory a,
+    DataTypes.DynamicReserveConfig memory b,
+    string memory label
+  ) internal pure {
+    assertNotEq(a.collateralFactor, b.collateralFactor, string.concat(label, ' collateral factor'));
+    assertNotEq(abi.encode(a), abi.encode(b)); // sanity
+  }
+
+  function assertNotEq(DynamicConfig[] memory a, DynamicConfig[] memory b) internal pure {
+    require(a.length == b.length);
+    for (uint256 i; i < a.length; ++i) {
+      if (a[i].enabled && b[i].enabled) {
+        assertNotEq(a[i].key, b[i].key, string.concat('reserve ', vm.toString(i)));
+      }
+    }
+  }
+
+  function _nextDynamicConfigKey(ISpoke spoke, uint256 reserveId) internal view returns (uint16) {
+    uint16 dynamicConfigKey = spoke.getReserve(reserveId).dynamicConfigKey;
+    return uint16(uint256(dynamicConfigKey + 1) % type(uint16).max);
+  }
+
+  /// @dev Returns the id of the reserve corresponding to the given Liquidity Hub asset id
+  function getReserveIdByAssetId(ISpoke spoke, uint256 assetId) internal view returns (uint256) {
+    for (uint256 i; i < spoke.reserveCount(); ++i) {
+      if (assetId == spoke.getReserve(i).assetId) {
+        return assetId;
+      }
+    }
+    revert('not found');
   }
 }

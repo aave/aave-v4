@@ -19,7 +19,6 @@ interface ILiquidityHub {
     uint256 drawCap,
     uint256 supplyCap
   );
-
   event DrawnIndexUpdate(uint256 indexed assetId, uint256 drawnIndex, uint256 lastUpdateTimestamp);
   event Add(
     uint256 indexed assetId,
@@ -50,7 +49,8 @@ interface ILiquidityHub {
     address indexed spoke,
     int256 premiumDrawnSharesDelta,
     int256 premiumOffsetDelta,
-    int256 realizedPremiumDelta
+    uint256 realizedPremiumAdded,
+    uint256 realizedPremiumTaken
   );
 
   error MismatchedConfigs();
@@ -73,8 +73,10 @@ interface ILiquidityHub {
   error AssetFrozen();
   error InvalidIrStrategy();
   error InvalidAssetDecimals();
+  error InvalidLiquidityFee();
   error InvalidAssetAddress();
   error InvalidDebtChange();
+  error InvalidFeeReceiver();
 
   function addAsset(DataTypes.AssetConfig memory params, address asset) external;
 
@@ -95,9 +97,20 @@ interface ILiquidityHub {
   ) external;
 
   /**
+   * @notice Updates the fee configuration for a specified asset.
+   * @dev Accrues asset fees to the current receiver before applying any updates.
+   * @dev Disables the old fee receiver as spoke by setting its caps to zero.
+   * @dev The new fee receiver cannot be zero if the liquidity fee is non-zero.
+   * @param assetId The identifier of the asset.
+   * @param feeReceiver The address of the fee receiver
+   * @param liquidityFee The fee percentage applied to the asset based on liquidity growth.
+   */
+  function updateAssetFees(uint256 assetId, address feeReceiver, uint256 liquidityFee) external;
+
+  /**
    * @notice Add/Supply asset on behalf of user.
    * @dev Only callable by spokes.
-   * @param assetId The asset id.
+   * @param assetId The identifier of the asset.
    * @param amount The amount of asset liquidity to add/supply.
    * @param from The address which we pull assets from (user).
    * @return The amount of shares added or supplied.
@@ -107,7 +120,7 @@ interface ILiquidityHub {
   /**
    * @notice Remove/Withdraw supplied asset on behalf of user.
    * @dev Only callable by spokes.
-   * @param assetId The asset id.
+   * @param assetId The identifier of the asset.
    * @param amount The amount of asset liquidity to remove/withdraw.
    * @param to The address to transfer the assets to.
    * @return The amount of shares removed or withdrawn.
@@ -117,7 +130,7 @@ interface ILiquidityHub {
   /**
    * @notice Draw/Borrow debt on behalf of user.
    * @dev Only callable by spokes.
-   * @param assetId The asset id.
+   * @param assetId The identifier of the asset.
    * @param amount The amount of debt to draw.
    * @param to The address to transfer the underlying assets to.
    * @return The amount of base shares drawn.
@@ -128,7 +141,7 @@ interface ILiquidityHub {
    * @notice Restores/Repays debt on behalf of user.
    * @dev Only callable by spokes.
    * @dev Interest is always paid off first from premium, then from base.
-   * @param assetId The asset id.
+   * @param assetId The identifier of the asset.
    * @param baseAmount The base debt to repay.
    * @param premiumAmount The premium debt to repay.
    * @param from The address to pull assets from.
@@ -145,36 +158,19 @@ interface ILiquidityHub {
    * @notice Refreshes premium debt accounting.
    * @dev To be called when moving accrued premium to realized premium.
    * @dev Only callable by spokes.
-   * @dev Total debt should not change, reverts with `InvalidDebtChange` when violated.
-   * @param assetId The asset id.
+   * @dev Premium debt can only decrease by at most the amount of realized premium taken.
+   * @param assetId The identifier of the asset.
    * @param premiumDrawnSharesDelta The change in premium drawn shares.
    * @param premiumOffsetDelta The change in premium offset.
-   * @param realizedPremiumDelta The change in realized premium.
+   * @param realizedPremiumAdded The increase of realized premium.
+   * @param realizedPremiumTaken The decrease of realized premium.
    */
   function refreshPremiumDebt(
     uint256 assetId,
     int256 premiumDrawnSharesDelta,
     int256 premiumOffsetDelta,
-    int256 realizedPremiumDelta
-  ) external;
-
-  /**
-   * @notice Settles premium debt restored.
-   * @dev To be called in conjunction with repay to pay premium debt, restore must account for
-   * the premium restored in the available liquidity.
-   * @dev Only callable by spokes.
-   * @dev Base debt should not change, reverts with `InvalidDebtChange` when violated, and
-   * premium debt can only decrease by at most the amount of premium restored on restore.
-   * @param assetId The asset id.
-   * @param premiumDrawnSharesDelta The change in premium drawn shares.
-   * @param premiumOffsetDelta The change in premium offset.
-   * @param realizedPremiumDelta The change in realized premium.
-   */
-  function settlePremiumDebt(
-    uint256 assetId,
-    int256 premiumDrawnSharesDelta,
-    int256 premiumOffsetDelta,
-    int256 realizedPremiumDelta
+    uint256 realizedPremiumAdded,
+    uint256 realizedPremiumTaken
   ) external;
 
   function convertToDrawnAssets(uint256 assetId, uint256 shares) external view returns (uint256);
@@ -182,10 +178,17 @@ interface ILiquidityHub {
   function convertToDrawnShares(uint256 assetId, uint256 assets) external view returns (uint256);
 
   function convertToSuppliedAssets(uint256 assetId, uint256 shares) external view returns (uint256);
-
+  function convertToSuppliedAssetsUp(
+    uint256 assetId,
+    uint256 shares
+  ) external view returns (uint256);
   function convertToSuppliedShares(uint256 assetId, uint256 assets) external view returns (uint256);
-
+  function convertToSuppliedSharesUp(
+    uint256 assetId,
+    uint256 assets
+  ) external view returns (uint256);
   function previewOffset(uint256 assetId, uint256 shares) external view returns (uint256);
+  function previewDrawnIndex(uint256 assetId) external view returns (uint256);
 
   function getAsset(uint256 assetId) external view returns (DataTypes.Asset memory);
 
@@ -200,6 +203,8 @@ interface ILiquidityHub {
   function getAssetTotalDebt(uint256 assetId) external view returns (uint256);
 
   function getTotalSuppliedAssets(uint256 assetId) external view returns (uint256);
+
+  function getTotalSuppliedShares(uint256 assetId) external view returns (uint256);
 
   function getAvailableLiquidity(uint256 assetId) external view returns (uint256);
 

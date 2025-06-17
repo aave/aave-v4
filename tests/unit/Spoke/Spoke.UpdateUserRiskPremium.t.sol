@@ -5,7 +5,7 @@ import 'tests/unit/Spoke/SpokeBase.t.sol';
 
 contract SpokeUpdateUserRiskPremium is SpokeBase {
   function test_updateUserRiskPremium_on_rpIncrease(address caller) public {
-    _deployLiquidity(spoke1, _daiReserveId(spoke1), 2500e18);
+    _openSupplyPosition(spoke1, _daiReserveId(spoke1), 2500e18);
     Utils.supplyCollateral(spoke1, _wethReserveId(spoke1), alice, 1e18, alice); // 2k usd
     Utils.supplyCollateral(spoke1, _usdxReserveId(spoke1), alice, 1000e6, alice); // 1k usd
     Utils.borrow(spoke1, _daiReserveId(spoke1), alice, 2200e18, alice);

@@ -349,7 +349,7 @@ contract LiquidationCallCloseFactorBadDebtTest is SpokeLiquidationBase {
     liqBonus = bound(
       liqBonus,
       MIN_LIQUIDATION_BONUS,
-      PercentageMath.PERCENTAGE_FACTOR.percentDiv(state.collateralReserve.config.collateralFactor)
+      PercentageMath.PERCENTAGE_FACTOR.percentDiv(state.collDynConfig.collateralFactor)
     );
 
     liquidationProtocolFee = bound(liquidationProtocolFee, 0, 100_00);

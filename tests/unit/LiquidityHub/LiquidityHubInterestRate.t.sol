@@ -291,6 +291,7 @@ contract LiquidityHubInterestRateTest is Base {
     // assertApproxEqAbs(calcRp, newRp, 1);
     // assertEq(borrowRate, baseBorrowRate + baseBorrowRate.percentMul(newRp));
   }
+
   function _getBaseBorrowRate(uint256 assetId) internal view returns (uint256) {
     return hub.getBaseInterestRate(assetId);
   }

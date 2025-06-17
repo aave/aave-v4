@@ -118,7 +118,7 @@ contract SpokeWithdrawHealthFactorTest is SpokeBase {
       daiBorrowAmount
     );
 
-    _deployLiquidity(spoke1, _daiReserveId(spoke1), daiBorrowAmount);
+    _openSupplyPosition(spoke1, _daiReserveId(spoke1), daiBorrowAmount);
 
     Utils.supplyCollateral(spoke1, _wbtcReserveId(spoke1), alice, wbtcSupplyAmount, alice);
     Utils.borrow(spoke1, _daiReserveId(spoke1), alice, daiBorrowAmount, alice);

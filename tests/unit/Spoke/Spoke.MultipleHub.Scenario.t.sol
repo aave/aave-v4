@@ -37,65 +37,87 @@ contract SpokeMultipleHubScenarioTest is SpokeBase {
       mockAddressesProvider
     );
 
-    // Same config for both assets on new hub
-    DataTypes.AssetConfig memory assetConfig = DataTypes.AssetConfig({
-      decimals: 18,
-      active: true,
-      paused: false,
-      frozen: false,
-      irStrategy: newIrStrategy
-    });
-
     // Add assets A and B to the new hub
-    newHub.addAsset(assetConfig, address(assetA));
+    newHub.addAsset(
+      DataTypes.AssetConfig({
+        feeReceiver: address(0),
+        decimals: 18,
+        active: true,
+        paused: false,
+        frozen: false,
+        liquidityFee: 0,
+        irStrategy: newIrStrategy
+      }),
+      address(assetA)
+    );
     vars.assetAId = 0;
-    newHub.addAsset(assetConfig, address(assetB));
+    newHub.addAsset(
+      DataTypes.AssetConfig({
+        feeReceiver: address(0),
+        decimals: 18,
+        active: true,
+        paused: false,
+        frozen: false,
+        liquidityFee: 0,
+        irStrategy: newIrStrategy
+      }),
+      address(assetB)
+    );
     vars.assetBId = 1;
 
-    // Configure assets A and B for the new spoke
-    DataTypes.ReserveConfig memory reserveAConfig = DataTypes.ReserveConfig({
-      decimals: assetA.decimals(),
-      active: true,
-      frozen: false,
-      paused: false,
-      collateralFactor: 80_00,
-      liquidationBonus: 100_00,
-      liquidityPremium: 15_00,
-      liquidationProtocolFee: 0,
-      borrowable: false,
-      collateral: true,
-      hub: newHub
-    });
-
-    DataTypes.ReserveConfig memory reserveBConfig = DataTypes.ReserveConfig({
-      decimals: assetB.decimals(),
-      active: true,
-      frozen: false,
-      paused: false,
-      collateralFactor: 80_00,
-      liquidationBonus: 100_00,
-      liquidityPremium: 15_00,
-      liquidationProtocolFee: 0,
-      borrowable: true,
-      collateral: false,
-      hub: newHub
+    DataTypes.DynamicReserveConfig memory dynReserveConfig = DataTypes.DynamicReserveConfig({
+      collateralFactor: 80_00 // 80.00%
     });
 
     // Add reserves to the new spoke
-    vars.reserveAId = newSpoke.addReserve(vars.assetAId, reserveAConfig);
-    vars.reserveBId = newSpoke.addReserve(vars.assetBId, reserveBConfig);
+    vars.reserveAId = newSpoke.addReserve(
+      vars.assetAId,
+      DataTypes.ReserveConfig({
+        decimals: assetA.decimals(),
+        active: true,
+        frozen: false,
+        paused: false,
+        liquidationBonus: 100_00,
+        liquidityPremium: 15_00,
+        liquidationProtocolFee: 0,
+        borrowable: false,
+        collateral: true,
+        hub: newHub
+      }),
+      dynReserveConfig
+    );
+    vars.reserveBId = newSpoke.addReserve(
+      vars.assetBId,
+      DataTypes.ReserveConfig({
+        decimals: assetB.decimals(),
+        active: true,
+        frozen: false,
+        paused: false,
+        liquidationBonus: 100_00,
+        liquidityPremium: 15_00,
+        liquidationProtocolFee: 0,
+        borrowable: true,
+        collateral: false,
+        hub: newHub
+      }),
+      dynReserveConfig
+    );
 
     // Set the prices of the new reserves for the new oracle
     newOracle.setReservePrice(vars.reserveAId, 2000e8);
     newOracle.setReservePrice(vars.reserveBId, 50_000e8);
 
     // Link hub and spoke
-    DataTypes.SpokeConfig memory spokeConfig = DataTypes.SpokeConfig({
-      drawCap: type(uint256).max,
-      supplyCap: type(uint256).max
-    });
-    newHub.addSpoke(vars.assetAId, spokeConfig, address(newSpoke));
-    newHub.addSpoke(vars.assetBId, spokeConfig, address(newSpoke));
+    newHub.addSpoke(
+      vars.assetAId,
+      DataTypes.SpokeConfig({drawCap: type(uint256).max, supplyCap: type(uint256).max}),
+      address(newSpoke)
+    );
+    newHub.addSpoke(
+      vars.assetBId,
+      DataTypes.SpokeConfig({drawCap: type(uint256).max, supplyCap: type(uint256).max}),
+      address(newSpoke)
+    );
 
     // Configure interest rate strategy for assets A and B
     IDefaultInterestRateStrategy.InterestRateData memory irData = IDefaultInterestRateStrategy
@@ -137,34 +159,47 @@ contract SpokeMultipleHubScenarioTest is SpokeBase {
 
     // List asset B on the canonical (main) hub
     vars.assetBIdMainHub = hub.assetCount();
-    assetConfig.irStrategy = irStrategy; // Use the main hub's interest rate strategy
-    hub.addAsset(assetConfig, address(assetB));
-
-    // Configure reserve B from the main hub
-    DataTypes.ReserveConfig memory reserveBConfigMainHub = DataTypes.ReserveConfig({
-      decimals: assetB.decimals(),
-      active: true,
-      frozen: false,
-      paused: false,
-      collateralFactor: 80_00,
-      liquidationBonus: 100_00,
-      liquidityPremium: 15_00,
-      liquidationProtocolFee: 0,
-      borrowable: true,
-      collateral: true,
-      hub: hub
-    });
+    hub.addAsset(
+      DataTypes.AssetConfig({
+        feeReceiver: address(0),
+        decimals: 18,
+        active: true,
+        paused: false,
+        frozen: false,
+        liquidityFee: 0,
+        irStrategy: irStrategy // Use the main hub's interest rate strategy
+      }),
+      address(assetB)
+    );
 
     // Add main hub reserve B to the new spoke
-    vars.reserveBIdMainHub = newSpoke.addReserve(vars.assetBIdMainHub, reserveBConfigMainHub);
+    vars.reserveBIdMainHub = newSpoke.addReserve(
+      vars.assetBIdMainHub,
+      DataTypes.ReserveConfig({
+        decimals: assetB.decimals(),
+        active: true,
+        frozen: false,
+        paused: false,
+        liquidationBonus: 100_00,
+        liquidityPremium: 15_00,
+        liquidationProtocolFee: 0,
+        borrowable: true,
+        collateral: true,
+        hub: hub
+      }),
+      dynReserveConfig
+    );
 
     // Set the price of main hub reserve B on new spoke
     newOracle.setReservePrice(vars.reserveBIdMainHub, 50_000e8);
 
     // Link main hub and new spoke for asset B
     // 0 supply cap, 100k draw cap
-    spokeConfig = DataTypes.SpokeConfig({drawCap: 100_000e18, supplyCap: 0});
-    hub.addSpoke(vars.assetBIdMainHub, spokeConfig, address(newSpoke));
+    hub.addSpoke(
+      vars.assetBIdMainHub,
+      DataTypes.SpokeConfig({drawCap: 100_000e18, supplyCap: 0}),
+      address(newSpoke)
+    );
 
     // Configure interest rate strategy for asset B on the main hub
     irStrategy.setInterestRateParams(vars.assetBIdMainHub, irData);
@@ -175,14 +210,32 @@ contract SpokeMultipleHubScenarioTest is SpokeBase {
     vm.stopPrank();
 
     // List reserve B on spoke 1 for the main hub, allowing supplying and borrowing
-    vars.spoke1ReserveBId = spoke1.addReserve(vars.assetBIdMainHub, reserveBConfigMainHub);
+    vars.spoke1ReserveBId = spoke1.addReserve(
+      vars.assetBIdMainHub,
+      DataTypes.ReserveConfig({
+        decimals: assetB.decimals(),
+        active: true,
+        frozen: false,
+        paused: false,
+        liquidationBonus: 100_00,
+        liquidityPremium: 15_00,
+        liquidationProtocolFee: 0,
+        borrowable: true,
+        collateral: true,
+        hub: hub
+      }),
+      dynReserveConfig
+    );
 
     // Set the price of reserve B on spoke1 for the main hub
     oracle1.setReservePrice(vars.spoke1ReserveBId, 50_000e8);
 
     // Link main hub and spoke 1 for asset B
-    spokeConfig = DataTypes.SpokeConfig({drawCap: type(uint256).max, supplyCap: type(uint256).max});
-    hub.addSpoke(vars.assetBIdMainHub, spokeConfig, address(spoke1));
+    hub.addSpoke(
+      vars.assetBIdMainHub,
+      DataTypes.SpokeConfig({drawCap: type(uint256).max, supplyCap: type(uint256).max}),
+      address(spoke1)
+    );
 
     // Alice can supply asset B to the main hub via spoke 1
     vm.startPrank(alice);
@@ -263,45 +316,52 @@ contract SpokeMultipleHubScenarioTest is SpokeBase {
       mockAddressesProvider
     );
 
-    DataTypes.AssetConfig memory assetBConfig = DataTypes.AssetConfig({
-      decimals: assetB.decimals(),
-      active: true,
-      paused: false,
-      frozen: false,
-      irStrategy: newIrStrategy
-    });
-
     // Add asset B to the new hub
-    newHub.addAsset(assetBConfig, address(assetB));
+    newHub.addAsset(
+      DataTypes.AssetConfig({
+        feeReceiver: address(0),
+        decimals: assetB.decimals(),
+        active: true,
+        paused: false,
+        frozen: false,
+        liquidityFee: 0,
+        irStrategy: newIrStrategy
+      }),
+      address(assetB)
+    );
     uint256 assetBId = 0;
 
-    // Configure reserve B for the new spoke
-    DataTypes.ReserveConfig memory reserveBConfig = DataTypes.ReserveConfig({
-      decimals: assetB.decimals(),
-      active: true,
-      frozen: false,
-      paused: false,
-      collateralFactor: 80_00,
-      liquidationBonus: 100_00,
-      liquidityPremium: 15_00,
-      liquidationProtocolFee: 0,
-      borrowable: true,
-      collateral: true,
-      hub: newHub
+    DataTypes.DynamicReserveConfig memory dynReserveConfig = DataTypes.DynamicReserveConfig({
+      collateralFactor: 80_00 // 80.00%
     });
 
     // Add B reserve to the new spoke
-    uint256 reserveBId = newSpoke.addReserve(assetBId, reserveBConfig);
+    uint256 reserveBId = newSpoke.addReserve(
+      assetBId,
+      DataTypes.ReserveConfig({
+        decimals: assetB.decimals(),
+        active: true,
+        frozen: false,
+        paused: false,
+        liquidationBonus: 100_00,
+        liquidityPremium: 15_00,
+        liquidationProtocolFee: 0,
+        borrowable: true,
+        collateral: true,
+        hub: newHub
+      }),
+      dynReserveConfig
+    );
 
     // Set the price of B reserve for the new oracle
     newOracle.setReservePrice(reserveBId, 50_000e8);
 
     // Link new hub and new spoke for asset B, 100k draw cap
-    DataTypes.SpokeConfig memory spokeConfig = DataTypes.SpokeConfig({
-      drawCap: assetBDrawCap,
-      supplyCap: type(uint256).max
-    });
-    newHub.addSpoke(assetBId, spokeConfig, address(newSpoke));
+    newHub.addSpoke(
+      assetBId,
+      DataTypes.SpokeConfig({drawCap: assetBDrawCap, supplyCap: type(uint256).max}),
+      address(newSpoke)
+    );
 
     // Configure interest rate strategy for asset B
     newIrStrategy.setInterestRateParams(
@@ -314,31 +374,33 @@ contract SpokeMultipleHubScenarioTest is SpokeBase {
       })
     );
 
-    // Now add usdx from canonical hub to the new spoke
-    // Configure usdx reserve for the new spoke
-    DataTypes.ReserveConfig memory usdxReserveConfig = DataTypes.ReserveConfig({
-      decimals: tokenList.usdx.decimals(),
-      active: true,
-      frozen: false,
-      paused: false,
-      collateralFactor: 80_00,
-      liquidationBonus: 100_00,
-      liquidityPremium: 15_00,
-      liquidationProtocolFee: 0,
-      borrowable: true,
-      collateral: true,
-      hub: hub
-    });
-
-    // Add usdx reserve to the new spoke
-    uint256 usdxReserveIdNewSpoke = newSpoke.addReserve(usdxAssetId, usdxReserveConfig);
+    // Add usdx reserve from canonical hub to the new spoke
+    uint256 usdxReserveIdNewSpoke = newSpoke.addReserve(
+      usdxAssetId,
+      DataTypes.ReserveConfig({
+        decimals: tokenList.usdx.decimals(),
+        active: true,
+        frozen: false,
+        paused: false,
+        liquidationBonus: 100_00,
+        liquidityPremium: 15_00,
+        liquidationProtocolFee: 0,
+        borrowable: true,
+        collateral: true,
+        hub: hub
+      }),
+      dynReserveConfig
+    );
 
     // Set the price of usdx reserve for the new oracle
     newOracle.setReservePrice(usdxReserveIdNewSpoke, 1e8);
 
     // Link canonical hub and new spoke for usdx, 500k supply cap, 0 borrow cap
-    spokeConfig = DataTypes.SpokeConfig({drawCap: 0, supplyCap: usdxSupplyCap});
-    hub.addSpoke(usdxAssetId, spokeConfig, address(newSpoke));
+    hub.addSpoke(
+      usdxAssetId,
+      DataTypes.SpokeConfig({drawCap: 0, supplyCap: usdxSupplyCap}),
+      address(newSpoke)
+    );
 
     // Bob can supply usdx to the new spoke, canonical hub, up to 500k and set it as collateral
     vm.startPrank(bob);

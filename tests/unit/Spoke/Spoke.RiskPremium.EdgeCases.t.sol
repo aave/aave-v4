@@ -120,7 +120,7 @@ contract SpokeRiskPremiumEdgeCasesTest is SpokeBase {
     });
 
     // Deploy liquidity for usdx borrow
-    _deployLiquidity(spoke2, _usdxReserveId(spoke2), borrowAmount);
+    _openSupplyPosition(spoke2, _usdxReserveId(spoke2), borrowAmount);
 
     // Bob borrows dai2
     Utils.borrow({
@@ -288,7 +288,7 @@ contract SpokeRiskPremiumEdgeCasesTest is SpokeBase {
     });
 
     // Deploy liquidity for weth borrow
-    _deployLiquidity(spoke2, _wethReserveId(spoke2), wethBorrowAmount);
+    _openSupplyPosition(spoke2, _wethReserveId(spoke2), wethBorrowAmount);
 
     // Bob borrows weth
     Utils.borrow({
@@ -321,7 +321,7 @@ contract SpokeRiskPremiumEdgeCasesTest is SpokeBase {
       liquidityAdded: 0,
       liquidityTaken: daiSupplyAmount,
       totalDebt: baseDebt,
-      reserveFactor: 0,
+      liquidityFee: 0,
       assetId: daiAssetId,
       virtualUnderlyingBalance: daiAsset.availableLiquidity,
       usingVirtualBalance: true
@@ -442,7 +442,7 @@ contract SpokeRiskPremiumEdgeCasesTest is SpokeBase {
     });
 
     // Deploy weth liquidity for borrow
-    _deployLiquidity(spoke2, _wethReserveId(spoke2), borrowAmount);
+    _openSupplyPosition(spoke2, _wethReserveId(spoke2), borrowAmount);
 
     // Bob borrows weth
     Utils.borrow({
@@ -552,7 +552,7 @@ contract SpokeRiskPremiumEdgeCasesTest is SpokeBase {
     });
 
     // Deploy weth liquidity for borrow
-    _deployLiquidity(spoke2, _wethReserveId(spoke2), wethBorrowAmount);
+    _openSupplyPosition(spoke2, _wethReserveId(spoke2), wethBorrowAmount);
 
     // Bob borrows weth
     Utils.borrow({
@@ -693,7 +693,7 @@ contract SpokeRiskPremiumEdgeCasesTest is SpokeBase {
     );
 
     // Deploy enough liquidity for additional borrow
-    _deployLiquidity(spoke2, _daiReserveId(spoke2), additionalBorrowAmount);
+    _openSupplyPosition(spoke2, _daiReserveId(spoke2), additionalBorrowAmount);
 
     // Bob borrows more dai to increase debt position
     Utils.borrow({
@@ -755,7 +755,7 @@ contract SpokeRiskPremiumEdgeCasesTest is SpokeBase {
     borrowAmount = bound(borrowAmount, 1, MAX_SUPPLY_AMOUNT / 2);
 
     // Deploy liquidity for dai borrow
-    _deployLiquidity(spoke1, _daiReserveId(spoke1), borrowAmount);
+    _openSupplyPosition(spoke1, _daiReserveId(spoke1), borrowAmount);
 
     // Bob supplies max weth collateral
     Utils.supplyCollateral({
@@ -831,7 +831,7 @@ contract SpokeRiskPremiumEdgeCasesTest is SpokeBase {
     ) + 1; // Borrow more than dai supply value so 2 collaterals cover debt
 
     // Deploy liquidity for weth borrow
-    _deployLiquidity(spoke2, _wethReserveId(spoke2), MAX_SUPPLY_AMOUNT);
+    _openSupplyPosition(spoke2, _wethReserveId(spoke2), MAX_SUPPLY_AMOUNT);
 
     // Deal bob dai to cover dai and dai2 supply
     deal(address(tokenList.dai), bob, MAX_SUPPLY_AMOUNT * 2);
