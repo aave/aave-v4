@@ -4,9 +4,7 @@ pragma solidity ^0.8.0;
 import 'tests/unit/Spoke/SpokeBase.t.sol';
 
 contract SpokeAccrueLiquidityFeeTest is SpokeBase {
-  using SharesMath for uint256;
   using WadRayMathExtended for uint256;
-  using PercentageMath for uint256;
   using PercentageMathExtended for uint256;
   using WadRayMath for uint256;
 
@@ -282,10 +280,10 @@ contract SpokeAccrueLiquidityFeeTest is SpokeBase {
     uint256 borrowAmount = 1000e18;
     uint256 supplyAmount = _calcMinimumCollAmount(spoke1, reserveId, reserveId, borrowAmount);
     uint256 rate = 50_00; // 50.00% base borrow rate
-    uint256 expectedBaseDebtAccrual = borrowAmount.percentMul(rate);
+    uint256 expectedBaseDebtAccrual = borrowAmount.percentMulUp(rate);
     uint256 expectedBaseDebt = borrowAmount + expectedBaseDebtAccrual;
-    uint256 expectedPremiumDebt = expectedBaseDebtAccrual.percentMul(expectedRp);
-    uint256 expectedTreasuryFees = (expectedBaseDebtAccrual + expectedPremiumDebt).percentMul(
+    uint256 expectedPremiumDebt = expectedBaseDebtAccrual.percentMulUp(expectedRp);
+    uint256 expectedTreasuryFees = (expectedBaseDebtAccrual + expectedPremiumDebt).percentMulUp(
       liquidityFee
     );
 
@@ -324,10 +322,10 @@ contract SpokeAccrueLiquidityFeeTest is SpokeBase {
     // withdraw any treasury fees to reset counter
     withdrawLiquidityFees(assetId, type(uint256).max);
 
-    expectedBaseDebtAccrual = expectedBaseDebt.percentMul(rate);
+    expectedBaseDebtAccrual = expectedBaseDebt.percentMulUp(rate);
     expectedBaseDebt += expectedBaseDebtAccrual;
     expectedPremiumDebt += 0;
-    expectedTreasuryFees = expectedBaseDebtAccrual.percentMul(liquidityFee);
+    expectedTreasuryFees = expectedBaseDebtAccrual.percentMulUp(liquidityFee);
 
     skip(365 days);
 
@@ -354,7 +352,7 @@ contract SpokeAccrueLiquidityFeeTest is SpokeBase {
     // withdraw any treasury fees to reset counter
     withdrawLiquidityFees(assetId, type(uint256).max);
 
-    expectedBaseDebtAccrual = expectedBaseDebt.percentMul(rate);
+    expectedBaseDebtAccrual = expectedBaseDebt.percentMulUp(rate);
     expectedBaseDebt += expectedBaseDebtAccrual;
     expectedPremiumDebt += 0;
     expectedTreasuryFees = 0;
@@ -397,10 +395,10 @@ contract SpokeAccrueLiquidityFeeTest is SpokeBase {
     uint256 supplyAmount = _calcMinimumCollAmount(spoke1, reserveId, reserveId, borrowAmount) * 2;
     uint256 supplyAmount2 = _calcMinimumCollAmount(spoke1, reserveId2, reserveId, borrowAmount) * 2;
     uint256 rate = 50_00; // 50.00% base borrow rate
-    uint256 expectedBaseDebtAccrual = borrowAmount.percentMul(rate);
+    uint256 expectedBaseDebtAccrual = borrowAmount.percentMulUp(rate);
     uint256 expectedBaseDebt = borrowAmount + expectedBaseDebtAccrual;
-    uint256 expectedPremiumDebt = expectedBaseDebtAccrual.percentMul(expectedRp);
-    uint256 expectedTreasuryFees = (expectedBaseDebtAccrual + expectedPremiumDebt).percentMul(
+    uint256 expectedPremiumDebt = expectedBaseDebtAccrual.percentMulUp(expectedRp);
+    uint256 expectedTreasuryFees = (expectedBaseDebtAccrual + expectedPremiumDebt).percentMulUp(
       liquidityFee
     );
 
@@ -461,12 +459,12 @@ contract SpokeAccrueLiquidityFeeTest is SpokeBase {
     uint256 borrowAmount = 1000e18;
     uint256 supplyAmount = _calcMinimumCollAmount(spoke1, reserveId, reserveId, borrowAmount);
     uint256 rate = 50_00; // 50.00% base borrow rate
-    uint256 expectedBaseDebtAccrual = borrowAmount.percentMul(rate);
+    uint256 expectedBaseDebtAccrual = borrowAmount.percentMulUp(rate);
     uint256 expectedBaseDebt = borrowAmount + expectedBaseDebtAccrual;
-    uint256 expectedPremiumDebt = expectedBaseDebtAccrual.percentMul(
+    uint256 expectedPremiumDebt = expectedBaseDebtAccrual.percentMulUp(
       _getLiquidityPremium(spoke1, reserveId)
     );
-    uint256 expectedTreasuryFees = (expectedBaseDebtAccrual + expectedPremiumDebt).percentMul(
+    uint256 expectedTreasuryFees = (expectedBaseDebtAccrual + expectedPremiumDebt).percentMulUp(
       liquidityFee
     );
     vm.mockCall(
