@@ -36,7 +36,7 @@ contract LiquidityHubDrawTest is LiquidityHubBase {
 
     // spoke1 draw all dai reserve liquidity
     vm.expectEmit(address(hub));
-    emit ILiquidityHub.Draw(daiAssetId, address(spoke1), drawAmount);
+    emit ILiquidityHub.Draw(daiAssetId, address(spoke1), drawAmount, drawAmount);
     vm.prank(address(spoke1));
     hub.draw({assetId: daiAssetId, amount: drawAmount, to: alice});
 
@@ -90,7 +90,7 @@ contract LiquidityHubDrawTest is LiquidityHubBase {
 
     // spoke1 draw all dai reserve liquidity
     vm.expectEmit(address(hub));
-    emit ILiquidityHub.Draw(assetId, address(spoke1), drawAmount);
+    emit ILiquidityHub.Draw(assetId, address(spoke1), drawAmount, drawAmount);
     vm.prank(address(spoke1));
     hub.draw({assetId: assetId, amount: drawAmount, to: alice});
 
@@ -345,16 +345,24 @@ contract LiquidityHubDrawTest is LiquidityHubBase {
   function test_draw_revertsWith_DrawCapExceeded_due_to_interest() public {
     // Set liquidity premium of dai to 0
     updateLiquidityPremium(spoke1, _daiReserveId(spoke1), 0);
-    assertEq(spoke1.getLiquidityPremium(_daiReserveId(spoke1)), 0);
+    assertEq(_getLiquidityPremium(spoke1, _daiReserveId(spoke1)), 0);
 
     uint256 daiAmount = 100e18;
     uint256 drawCap = daiAmount;
     uint256 drawAmount = drawCap;
-    uint256 rate = uint256(10_00).bpsToRay();
 
     updateDrawCap(hub, daiAssetId, address(spoke1), drawCap);
 
-    _increaseExchangeRate(daiAmount);
+    _supplyAndDrawLiquidity({
+      assetId: daiAssetId,
+      supplyUser: bob,
+      supplySpoke: address(spoke2),
+      supplyAmount: daiAmount,
+      drawUser: alice,
+      drawSpoke: address(spoke1),
+      drawAmount: drawAmount,
+      skipTime: 365 days
+    });
 
     (uint256 baseDebt, ) = hub.getAssetDebt(daiAssetId);
     assertGt(baseDebt, drawCap);
@@ -388,10 +396,15 @@ contract LiquidityHubDrawTest is LiquidityHubBase {
 
     updateDrawCap(hub, daiAssetId, address(spoke1), drawCap);
 
+    _mockRate(rate);
     _supplyAndDrawLiquidity({
-      daiAmount: daiAmount,
-      daiDrawAmount: drawAmount,
-      rate: rate,
+      assetId: daiAssetId,
+      supplyUser: bob,
+      supplySpoke: address(spoke2),
+      supplyAmount: daiAmount,
+      drawUser: alice,
+      drawSpoke: address(spoke1),
+      drawAmount: daiAmount,
       skipTime: skipTime
     });
 

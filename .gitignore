@@ -21,6 +21,8 @@ broadcast/
 lcov*
 
 report/
+.DS_Store
 
 # certora internal artifacts
 .certora_internal/
+

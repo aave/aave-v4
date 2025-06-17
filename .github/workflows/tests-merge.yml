@@ -1,0 +1,27 @@
+name: Tests
+
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  test:
+    name: Foundry build n test
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          submodules: recursive
+          token: ${{ secrets.READ_ONLY_PAT || github.token }}
+
+      - name: Run Foundry setup
+        uses: bgd-labs/github-workflows/.github/actions/foundry-setup@main
+        with:
+          FOUNDRY_VERSION: stable
+
+      - name: Run Forge tests
+        id: test
+        uses: bgd-labs/github-workflows/.github/actions/foundry-test@main
+        with:
+          FOUNDRY_PROFILE: ci

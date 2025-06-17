@@ -90,4 +90,13 @@ library PercentageMathExtended {
       result := add(div(result, percentage), gt(mod(result, percentage), 0))
     }
   }
+
+  /**
+   * @notice Truncates number from BPS precision.
+   * @param value The number in BPS precision.
+   * @return result (value / 1e4)
+   */
+  function fromBps(uint256 value) internal pure returns (uint256) {
+    return value / PERCENTAGE_FACTOR;
+  }
 }

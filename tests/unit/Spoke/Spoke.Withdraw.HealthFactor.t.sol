@@ -45,7 +45,7 @@ contract SpokeWithdrawHealthFactorTest is SpokeBase {
       onBehalfOf: alice
     });
 
-    assertEq(spoke1.getHealthFactor(alice), spoke1.HEALTH_FACTOR_LIQUIDATION_THRESHOLD());
+    assertEq(spoke1.getHealthFactor(alice), HEALTH_FACTOR_LIQUIDATION_THRESHOLD);
 
     // withdrawing any amount will result in HF < threshold
     vm.prank(alice);
@@ -98,12 +98,34 @@ contract SpokeWithdrawHealthFactorTest is SpokeBase {
       onBehalfOf: alice
     });
 
-    assertGe(spoke1.getHealthFactor(alice), spoke1.HEALTH_FACTOR_LIQUIDATION_THRESHOLD());
+    assertGe(spoke1.getHealthFactor(alice), HEALTH_FACTOR_LIQUIDATION_THRESHOLD);
 
     // withdrawing coll will result in HF < threshold
     vm.prank(alice);
     vm.expectRevert(ISpoke.HealthFactorBelowThreshold.selector);
     spoke1.withdraw({reserveId: collReserveId, amount: collAmount, to: alice}); // todo: resolve precision, should be 1?
+  }
+
+  /// @dev cannot unset a collateral if unsetting would result in HF < threshold
+  function test_unsetCollateral_fuzz_revertsWith_HealthFactorBelowThreshold(
+    uint256 daiBorrowAmount
+  ) public {
+    daiBorrowAmount = bound(daiBorrowAmount, 1, MAX_SUPPLY_AMOUNT / 2);
+    uint256 wbtcSupplyAmount = _calcMinimumCollAmount(
+      spoke1,
+      _wbtcReserveId(spoke1),
+      _daiReserveId(spoke1),
+      daiBorrowAmount
+    );
+
+    _openSupplyPosition(spoke1, _daiReserveId(spoke1), daiBorrowAmount);
+
+    Utils.supplyCollateral(spoke1, _wbtcReserveId(spoke1), alice, wbtcSupplyAmount, alice);
+    Utils.borrow(spoke1, _daiReserveId(spoke1), alice, daiBorrowAmount, alice);
+
+    vm.expectRevert(ISpoke.HealthFactorBelowThreshold.selector);
+    vm.prank(alice);
+    spoke1.setUsingAsCollateral(_wbtcReserveId(spoke1), false);
   }
 
   /// @dev cannot withdraw an amount if HF < threshold due to price drop
@@ -148,12 +170,12 @@ contract SpokeWithdrawHealthFactorTest is SpokeBase {
     });
 
     // alice is above HF threshold right after borrowing
-    assertGe(spoke1.getHealthFactor(alice), spoke1.HEALTH_FACTOR_LIQUIDATION_THRESHOLD());
+    assertGe(spoke1.getHealthFactor(alice), HEALTH_FACTOR_LIQUIDATION_THRESHOLD);
 
     // collateral price drop by half so that alice is undercollateralized
     uint256 newPrice = calcNewPrice(oracle.getAssetPrice(wethAssetId), 50_00); // 50% price drop
     oracle.setAssetPrice(wethAssetId, newPrice);
-    assertLt(spoke1.getHealthFactor(alice), spoke1.HEALTH_FACTOR_LIQUIDATION_THRESHOLD());
+    assertLt(spoke1.getHealthFactor(alice), HEALTH_FACTOR_LIQUIDATION_THRESHOLD);
 
     // withdrawing any amount will result in HF < threshold
     vm.prank(alice);
@@ -210,11 +232,11 @@ contract SpokeWithdrawHealthFactorTest is SpokeBase {
     });
 
     // alice is above HF threshold right after borrowing
-    assertGe(spoke1.getHealthFactor(alice), spoke1.HEALTH_FACTOR_LIQUIDATION_THRESHOLD());
+    assertGe(spoke1.getHealthFactor(alice), HEALTH_FACTOR_LIQUIDATION_THRESHOLD);
 
     // collateral price drop so that alice is undercollateralized
     oracle.setAssetPrice(wethAssetId, newPrice);
-    vm.assume(spoke1.getHealthFactor(alice) < spoke1.HEALTH_FACTOR_LIQUIDATION_THRESHOLD());
+    vm.assume(spoke1.getHealthFactor(alice) < HEALTH_FACTOR_LIQUIDATION_THRESHOLD);
 
     // withdrawing any amount will result in HF < threshold
     vm.prank(alice);
@@ -264,11 +286,11 @@ contract SpokeWithdrawHealthFactorTest is SpokeBase {
     });
 
     // alice is above HF threshold right after borrowing
-    assertGe(spoke1.getHealthFactor(alice), spoke1.HEALTH_FACTOR_LIQUIDATION_THRESHOLD());
+    assertGe(spoke1.getHealthFactor(alice), HEALTH_FACTOR_LIQUIDATION_THRESHOLD);
 
     // accrue interest so that alice is undercollateralized
     skip(365 days);
-    assertLt(spoke1.getHealthFactor(alice), spoke1.HEALTH_FACTOR_LIQUIDATION_THRESHOLD());
+    assertLt(spoke1.getHealthFactor(alice), HEALTH_FACTOR_LIQUIDATION_THRESHOLD);
 
     // withdrawing any amount will result in HF < threshold
     vm.prank(alice);
@@ -324,11 +346,11 @@ contract SpokeWithdrawHealthFactorTest is SpokeBase {
     });
 
     // alice is above HF threshold right after borrowing
-    assertGe(spoke1.getHealthFactor(alice), spoke1.HEALTH_FACTOR_LIQUIDATION_THRESHOLD());
+    assertGe(spoke1.getHealthFactor(alice), HEALTH_FACTOR_LIQUIDATION_THRESHOLD);
 
     // accrue interest so that alice is undercollateralized
     skip(skipTime);
-    vm.assume(spoke1.getHealthFactor(alice) < spoke1.HEALTH_FACTOR_LIQUIDATION_THRESHOLD());
+    vm.assume(spoke1.getHealthFactor(alice) < HEALTH_FACTOR_LIQUIDATION_THRESHOLD);
 
     // withdrawing any amount will result in HF < threshold
     vm.prank(alice);
@@ -405,11 +427,7 @@ contract SpokeWithdrawHealthFactorTest is SpokeBase {
       onBehalfOf: alice
     });
 
-    assertApproxEqAbs(
-      spoke1.getHealthFactor(alice),
-      spoke1.HEALTH_FACTOR_LIQUIDATION_THRESHOLD(),
-      1
-    );
+    assertApproxEqAbs(spoke1.getHealthFactor(alice), HEALTH_FACTOR_LIQUIDATION_THRESHOLD, 1);
 
     // withdrawing any non trivial amount of dai will result in HF < threshold
     vm.prank(alice);
@@ -494,7 +512,7 @@ contract SpokeWithdrawHealthFactorTest is SpokeBase {
       onBehalfOf: alice
     });
 
-    assertGe(spoke1.getHealthFactor(alice), spoke1.HEALTH_FACTOR_LIQUIDATION_THRESHOLD());
+    assertGe(spoke1.getHealthFactor(alice), HEALTH_FACTOR_LIQUIDATION_THRESHOLD);
 
     // withdrawing any non trivial amount of weth will result in HF < threshold
     vm.prank(alice);
@@ -575,16 +593,12 @@ contract SpokeWithdrawHealthFactorTest is SpokeBase {
       onBehalfOf: alice
     });
 
-    assertApproxEqAbs(
-      spoke1.getHealthFactor(alice),
-      spoke1.HEALTH_FACTOR_LIQUIDATION_THRESHOLD(),
-      1
-    );
+    assertApproxEqAbs(spoke1.getHealthFactor(alice), HEALTH_FACTOR_LIQUIDATION_THRESHOLD, 1);
 
     uint256 newPrice = calcNewPrice(oracle.getAssetPrice(wethAssetId), 50_00); // 50% price drop
     oracle.setAssetPrice(wethAssetId, newPrice);
 
-    assertLt(spoke1.getHealthFactor(alice), spoke1.HEALTH_FACTOR_LIQUIDATION_THRESHOLD());
+    assertLt(spoke1.getHealthFactor(alice), HEALTH_FACTOR_LIQUIDATION_THRESHOLD);
 
     // withdrawing any non trivial amount of dai will result in HF < threshold
     vm.prank(alice);
@@ -673,11 +687,11 @@ contract SpokeWithdrawHealthFactorTest is SpokeBase {
       onBehalfOf: alice
     });
 
-    assertGe(spoke1.getHealthFactor(alice), spoke1.HEALTH_FACTOR_LIQUIDATION_THRESHOLD());
+    assertGe(spoke1.getHealthFactor(alice), HEALTH_FACTOR_LIQUIDATION_THRESHOLD);
 
     // collateral price drop so that alice is undercollateralized
     oracle.setAssetPrice(wethAssetId, newPrice);
-    vm.assume(spoke1.getHealthFactor(alice) < spoke1.HEALTH_FACTOR_LIQUIDATION_THRESHOLD());
+    vm.assume(spoke1.getHealthFactor(alice) < HEALTH_FACTOR_LIQUIDATION_THRESHOLD);
 
     // withdrawing any non trivial amount of weth will result in HF < threshold
     vm.prank(alice);
@@ -756,16 +770,12 @@ contract SpokeWithdrawHealthFactorTest is SpokeBase {
       onBehalfOf: alice
     });
 
-    assertApproxEqAbs(
-      spoke1.getHealthFactor(alice),
-      spoke1.HEALTH_FACTOR_LIQUIDATION_THRESHOLD(),
-      1
-    );
+    assertApproxEqAbs(spoke1.getHealthFactor(alice), HEALTH_FACTOR_LIQUIDATION_THRESHOLD, 1);
 
     // skip time to accrue interest
     skip(365 days);
 
-    assertLt(spoke1.getHealthFactor(alice), spoke1.HEALTH_FACTOR_LIQUIDATION_THRESHOLD());
+    assertLt(spoke1.getHealthFactor(alice), HEALTH_FACTOR_LIQUIDATION_THRESHOLD);
 
     // cannot withdraw any amount of weth (HF already < threshold)
     vm.prank(alice);
@@ -853,11 +863,11 @@ contract SpokeWithdrawHealthFactorTest is SpokeBase {
       onBehalfOf: alice
     });
 
-    assertGe(spoke1.getHealthFactor(alice), spoke1.HEALTH_FACTOR_LIQUIDATION_THRESHOLD());
+    assertGe(spoke1.getHealthFactor(alice), HEALTH_FACTOR_LIQUIDATION_THRESHOLD);
 
     // debt accrual so that alice is undercollateralized
     skip(skipTime);
-    vm.assume(spoke1.getHealthFactor(alice) < spoke1.HEALTH_FACTOR_LIQUIDATION_THRESHOLD());
+    vm.assume(spoke1.getHealthFactor(alice) < HEALTH_FACTOR_LIQUIDATION_THRESHOLD);
 
     // withdrawing any amount of weth will result in HF < threshold
     vm.prank(alice);
@@ -905,7 +915,7 @@ contract SpokeWithdrawHealthFactorTest is SpokeBase {
     spoke1.borrow(usdxReserveId, (usdxDebtAmountWeth + usdxDebtAmountDai), bob);
 
     // valid HF
-    assertEq(spoke1.getHealthFactor(bob), spoke1.HEALTH_FACTOR_LIQUIDATION_THRESHOLD());
+    assertEq(spoke1.getHealthFactor(bob), HEALTH_FACTOR_LIQUIDATION_THRESHOLD);
 
     // withdrawing weth will result in HF < threshold
     vm.prank(bob);
@@ -964,7 +974,7 @@ contract SpokeWithdrawHealthFactorTest is SpokeBase {
     spoke1.borrow(usdxReserveId, (usdxDebtAmountWeth + usdxDebtAmountDai), bob);
 
     // valid HF
-    assertGe(spoke1.getHealthFactor(bob), spoke1.HEALTH_FACTOR_LIQUIDATION_THRESHOLD());
+    assertGe(spoke1.getHealthFactor(bob), HEALTH_FACTOR_LIQUIDATION_THRESHOLD);
 
     // withdrawing some nontrivial amount of weth will result in HF < threshold
     vm.prank(bob);
@@ -1019,12 +1029,12 @@ contract SpokeWithdrawHealthFactorTest is SpokeBase {
     spoke1.borrow(usdxReserveId, (usdxDebtAmountWeth + usdxDebtAmountDai), bob);
 
     // valid HF
-    assertEq(spoke1.getHealthFactor(bob), spoke1.HEALTH_FACTOR_LIQUIDATION_THRESHOLD());
+    assertEq(spoke1.getHealthFactor(bob), HEALTH_FACTOR_LIQUIDATION_THRESHOLD);
 
     // skip time to accrue debt
     skip(365 days);
     // invalid HF
-    assertLt(spoke1.getHealthFactor(bob), spoke1.HEALTH_FACTOR_LIQUIDATION_THRESHOLD());
+    assertLt(spoke1.getHealthFactor(bob), HEALTH_FACTOR_LIQUIDATION_THRESHOLD);
 
     // withdrawing weth will result in HF < threshold
     vm.prank(bob);
@@ -1083,12 +1093,12 @@ contract SpokeWithdrawHealthFactorTest is SpokeBase {
     spoke1.borrow(usdxReserveId, (usdxDebtAmountWeth + usdxDebtAmountDai), bob);
 
     // valid HF
-    assertGe(spoke1.getHealthFactor(bob), spoke1.HEALTH_FACTOR_LIQUIDATION_THRESHOLD());
+    assertGe(spoke1.getHealthFactor(bob), HEALTH_FACTOR_LIQUIDATION_THRESHOLD);
 
     // skip time to accrue debt
     skip(365 days);
     // invalid HF
-    vm.assume(spoke1.getHealthFactor(bob) < spoke1.HEALTH_FACTOR_LIQUIDATION_THRESHOLD());
+    vm.assume(spoke1.getHealthFactor(bob) < HEALTH_FACTOR_LIQUIDATION_THRESHOLD);
 
     // cannot withdraw any amount of weth (HF already < threshold)
     vm.prank(bob);
@@ -1143,13 +1153,13 @@ contract SpokeWithdrawHealthFactorTest is SpokeBase {
     spoke1.borrow(usdxReserveId, (usdxDebtAmountWeth + usdxDebtAmountDai), bob);
 
     // valid HF
-    assertEq(spoke1.getHealthFactor(bob), spoke1.HEALTH_FACTOR_LIQUIDATION_THRESHOLD());
+    assertEq(spoke1.getHealthFactor(bob), HEALTH_FACTOR_LIQUIDATION_THRESHOLD);
 
     // collateral price drop by half so that bob is undercollateralized
     uint256 newPrice = calcNewPrice(oracle.getAssetPrice(wethAssetId), 50_00); // 50% price drop
     oracle.setAssetPrice(wethAssetId, newPrice);
     // invalid HF
-    assertLt(spoke1.getHealthFactor(bob), spoke1.HEALTH_FACTOR_LIQUIDATION_THRESHOLD());
+    assertLt(spoke1.getHealthFactor(bob), HEALTH_FACTOR_LIQUIDATION_THRESHOLD);
 
     // cannot withdraw any amount of weth (HF already < threshold)
     vm.prank(bob);
@@ -1211,12 +1221,12 @@ contract SpokeWithdrawHealthFactorTest is SpokeBase {
     spoke1.borrow(usdxReserveId, (usdxDebtAmountWeth + usdxDebtAmountDai), bob);
 
     // valid HF
-    assertGe(spoke1.getHealthFactor(bob), spoke1.HEALTH_FACTOR_LIQUIDATION_THRESHOLD());
+    assertGe(spoke1.getHealthFactor(bob), HEALTH_FACTOR_LIQUIDATION_THRESHOLD);
 
     // collateral price drop by half so that bob is undercollateralized
     oracle.setAssetPrice(wethAssetId, newPrice);
     // invalid HF
-    vm.assume(spoke1.getHealthFactor(bob) < spoke1.HEALTH_FACTOR_LIQUIDATION_THRESHOLD());
+    vm.assume(spoke1.getHealthFactor(bob) < HEALTH_FACTOR_LIQUIDATION_THRESHOLD);
 
     // cannot withdraw any amount of weth (HF already < threshold)
     vm.prank(bob);
@@ -1271,13 +1281,13 @@ contract SpokeWithdrawHealthFactorTest is SpokeBase {
     spoke1.borrow(usdxReserveId, (usdxDebtAmountWeth + usdxDebtAmountDai), bob);
 
     // valid HF
-    assertEq(spoke1.getHealthFactor(bob), spoke1.HEALTH_FACTOR_LIQUIDATION_THRESHOLD());
+    assertEq(spoke1.getHealthFactor(bob), HEALTH_FACTOR_LIQUIDATION_THRESHOLD);
 
     // collateral price drop by half so that bob is undercollateralized
     uint256 newPrice = calcNewPrice(oracle.getAssetPrice(daiReserveId), 50_00); // 50% price drop
     oracle.setAssetPrice(daiReserveId, newPrice);
     // invalid HF
-    assertLt(spoke1.getHealthFactor(bob), spoke1.HEALTH_FACTOR_LIQUIDATION_THRESHOLD());
+    assertLt(spoke1.getHealthFactor(bob), HEALTH_FACTOR_LIQUIDATION_THRESHOLD);
 
     // cannot withdraw any amount of weth (HF already < threshold)
     vm.prank(bob);
@@ -1339,12 +1349,12 @@ contract SpokeWithdrawHealthFactorTest is SpokeBase {
     spoke1.borrow(usdxReserveId, (usdxDebtAmountWeth + usdxDebtAmountDai), bob);
 
     // valid HF
-    assertGe(spoke1.getHealthFactor(bob), spoke1.HEALTH_FACTOR_LIQUIDATION_THRESHOLD());
+    assertGe(spoke1.getHealthFactor(bob), HEALTH_FACTOR_LIQUIDATION_THRESHOLD);
 
     // collateral price drop by half so that bob is undercollateralized
     oracle.setAssetPrice(daiAssetId, newPrice);
     // invalid HF
-    vm.assume(spoke1.getHealthFactor(bob) < spoke1.HEALTH_FACTOR_LIQUIDATION_THRESHOLD());
+    vm.assume(spoke1.getHealthFactor(bob) < HEALTH_FACTOR_LIQUIDATION_THRESHOLD);
 
     // cannot withdraw any amount of weth (HF already < threshold)
     vm.prank(bob);

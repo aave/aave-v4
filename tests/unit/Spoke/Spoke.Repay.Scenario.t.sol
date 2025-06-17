@@ -1053,7 +1053,7 @@ contract SpokeRepayScenarioTest is SpokeBase {
         _wethReserveId(spoke1),
         _daiReserveId(spoke1),
         spoke1.getUserTotalDebt(_daiReserveId(spoke1), bob) + action2.borrowAmount
-      );
+      ) + 1;
       action2.supplyAmount = action1.supplyAmount > totalCollateral
         ? 0
         : totalCollateral - action1.supplyAmount;
@@ -1247,8 +1247,8 @@ contract SpokeRepayScenarioTest is SpokeBase {
     // verify LH asset debt is decreased by partial repayment
     assertApproxEqAbs(
       hub.getAssetTotalDebt(_daiReserveId(spoke1)),
-      fullDebt - partialRepayAmount,
-      1
+      fullDebt - baseRestored - premiumRestored,
+      2
     );
 
     uint256 restoreAmount = bobDaiAfter.totalDebt;
@@ -1308,7 +1308,8 @@ contract SpokeRepayScenarioTest is SpokeBase {
     address caller,
     uint256 assets
   ) public {
-    vm.assume(caller != address(0));
+    _assumeValidSupplier(caller);
+    vm.assume(caller != derl);
     reserveId = bound(reserveId, 0, spoke1.reserveCount() - 1);
     userBorrowing = bound(userBorrowing, 0, MAX_SUPPLY_AMOUNT / 2 - 1); // Allow some buffer from borrow cap
     skipTime = uint40(bound(skipTime, 0, MAX_SKIP_TIME));
@@ -1346,7 +1347,7 @@ contract SpokeRepayScenarioTest is SpokeBase {
     spoke1.repay(reserveId, assets);
     vm.stopPrank();
 
-    assertApproxEqAbs(shares2, shares1, 1, 'borrowed and repaid shares');
+    assertEq(shares2, shares1, 'borrowed and repaid shares');
   }
 
   /// User repays, then immediately borrows, check delta on share amounts
@@ -1361,7 +1362,8 @@ contract SpokeRepayScenarioTest is SpokeBase {
     uint256 assets
   ) public {
     uint256 MAX_BORROW_AMOUNT = MAX_SUPPLY_AMOUNT / 2;
-    vm.assume(caller != address(0));
+    _assumeValidSupplier(caller);
+    vm.assume(caller != derl);
     reserveId = bound(reserveId, 0, spoke1.reserveCount() - 1);
     userBorrowing = bound(userBorrowing, 0, MAX_BORROW_AMOUNT - 2); // Allow some buffer from borrow cap
     skipTime = uint40(bound(skipTime, 0, MAX_SKIP_TIME));
@@ -1401,6 +1403,6 @@ contract SpokeRepayScenarioTest is SpokeBase {
     spoke1.borrow(reserveId, assets, caller);
     vm.stopPrank();
 
-    assertApproxEqAbs(shares2, shares1, 1, 'borrowed and repaid shares');
+    assertEq(shares2, shares1, 'borrowed and repaid shares');
   }
 }
