@@ -14,21 +14,69 @@ interface ISpoke is IMulticall {
   event ReserveConfigUpdated(uint256 indexed reserveId, DataTypes.ReserveConfig config);
   event LiquidityPremiumUpdated(uint256 indexed reserveId, uint256 liquidityPremium);
 
-  event Supply(uint256 indexed reserveId, address indexed user, uint256 suppliedShares);
+  /**
+   * @notice Emitted on the supply action.
+   * @param reserveId The reserve identifier of the underlying asset as registered on the spoke.
+   * @param caller The transaction initiator, & supplier of the underlying assets.
+   * @param onBehalfOf The owner of the modified position.
+   * @param suppliedShares The amount of supply shares minted.
+   */
+  event Supply(
+    uint256 indexed reserveId,
+    address indexed caller,
+    address indexed onBehalfOf,
+    uint256 suppliedShares
+  );
+
+  /**
+   * @notice Emitted on the withdraw action.
+   * @param reserveId The reserve identifier of the underlying asset as registered on the spoke.
+   * @param caller The transaction initiator, & recipient of the underlying assets being withdrawn.
+   * @param onBehalfOf The owner of the modified position.
+   * @param suppliedShares The amount of supply shares burned.
+   */
   event Withdraw(
     uint256 indexed reserveId,
-    address indexed user,
-    uint256 suppliedShares,
-    address indexed to
+    address indexed caller,
+    address indexed onBehalfOf,
+    uint256 suppliedShares
   );
+
+  /**
+   * @notice Emitted on the borrow action.
+   * @param reserveId The reserve identifier of the underlying asset as registered on the spoke.
+   * @param caller The transaction initiator, & recipient of the underlying assets being borrowed.
+   * @param onBehalfOf The owner of the position on which debt is generated.
+   * @param drawnShares The amount of debt shares minted.
+   */
   event Borrow(
     uint256 indexed reserveId,
-    address indexed user,
-    uint256 drawnShares,
-    address indexed to
+    address indexed caller,
+    address indexed onBehalfOf,
+    uint256 drawnShares
   );
-  event Repay(uint256 indexed reserveId, address indexed user, uint256 drawnShares);
+
+  /**
+   * @notice Emitted on the repay action.
+   * @param reserveId The reserve identifier of the underlying asset as registered on the spoke.
+   * @param caller The transaction initiator, & supplier of the underlying assets being repaid.
+   * @param onBehalfOf The owner of the position whose debt is being repaid.
+   * @param drawnShares The amount of debt shares burned.
+   */
+  event Repay(
+    uint256 indexed reserveId,
+    address indexed caller,
+    address indexed onBehalfOf,
+    uint256 drawnShares
+  );
+  /**
+   * @notice Emitted on setUsingAsCollateral action.
+   * @param reserveId The reserve identifier of the underlying asset as registered on the spoke.
+   * @param user The owner of the position being modified
+   * @param usingAsCollateral Boolean whether the reserve is enabled or disabled as collateral.
+   */
   event UsingAsCollateral(uint256 indexed reserveId, address indexed user, bool usingAsCollateral);
+
   event RefreshPremiumDebt(
     uint256 indexed reserveId,
     address indexed user,
@@ -90,6 +138,7 @@ interface ISpoke is IMulticall {
   error UsersAndDebtLengthMismatch();
   error Unauthorized();
   error CollateralStatusUnchanged();
+  error ZeroAddress();
 
   function addReserve(
     uint256 assetId,
@@ -102,35 +151,41 @@ interface ISpoke is IMulticall {
 
   /**
    * @notice Supply an amount of underlying asset of the specified reserve.
-   * @dev Liquidity Hub pulls underlying asset from caller, hence it needs prior approval.
-   * @param reserveId The reserveId of the underlying asset as registered on the spoke.
+   * @dev Liquidity Hub pulls underlying asset from caller, hence prior token approval is required.
+   * @param reserveId The reserve identifier of the underlying asset as registered on the spoke.
    * @param amount The amount of asset to supply.
+   * @param onBehalfOf The owner of position to add supply shares to.
    */
-  function supply(uint256 reserveId, uint256 amount) external;
+  function supply(uint256 reserveId, uint256 amount, address onBehalfOf) external;
 
   /**
    * @notice Withdraw supplied amount of underlying asset from the specified reserve.
-   * @param reserveId The reserveId of the underlying asset as registered on the spoke.
+   * @dev Caller must be `onBehalfOf` or an authorized position manager for `onBehalfOf`.
+   * @dev Caller receives the underlying assets withdrawn.
+   * @param reserveId The reserve identifier of the underlying asset as registered on the spoke.
    * @param amount The amount of asset to withdraw.
-   * @param to The address to transfer the assets to.
+   * @param onBehalfOf The owner of position to remove supply shares from.
    */
-  function withdraw(uint256 reserveId, uint256 amount, address to) external;
+  function withdraw(uint256 reserveId, uint256 amount, address onBehalfOf) external;
 
   /**
    * @notice Borrow an amount of underlying asset from the specified reserve.
-   * @param reserveId The reserveId of the underlying asset as registered on the spoke.
+   * @dev Caller must be `onBehalfOf` or an authorized position manager for `onBehalfOf`.
+   * @dev Caller receives the underlying assets borrowed.
+   * @param reserveId The reserve identifier of the underlying asset as registered on the spoke.
    * @param amount The amount of underlying assets to borrow.
-   * @param to The address to transfer the underlying assets to.
+   * @param onBehalfOf The owner of the position against which debt is generated.
    */
-  function borrow(uint256 reserveId, uint256 amount, address to) external;
+  function borrow(uint256 reserveId, uint256 amount, address onBehalfOf) external;
 
   /**
    * @notice Repays a borrowed amount on a specified reserve.
-   * @dev Liquidity Hub pulls underlying asset from caller, hence it needs prior approval.
-   * @param reserveId The reserveId of the underlying asset as registered on the spoke.
-   * @param amount The amount to repay.
+   * @dev Liquidity Hub pulls underlying asset from caller, hence prior token approval is required.
+   * @param reserveId The reserve identifier of the underlying asset as registered on the spoke.
+   * @param amount The amount of underlying assets to repay.
+   * @param onBehalfOf The owner of the position whose debt is repaid.
    */
-  function repay(uint256 reserveId, uint256 amount) external;
+  function repay(uint256 reserveId, uint256 amount, address onBehalfOf) external;
 
   function liquidationCall(
     uint256 collateralReserveId,
@@ -141,15 +196,21 @@ interface ISpoke is IMulticall {
 
   /**
    * @notice Allows suppliers to enable/disable a specific supplied reserve as collateral.
-   * @param reserveId The reserveId of the underlying asset as registered on the spoke.
+   * @dev Caller must be `onBehalfOf` or an authorized position manager for `onBehalfOf`.
+   * @param reserveId The reserve identifier of the underlying asset as registered on the spoke.
    * @param usingAsCollateral True if the user wants to use the supply as collateral, false otherwise.
+   * @param onBehalfOf The owner of the position being modified.
    */
-  function setUsingAsCollateral(uint256 reserveId, bool usingAsCollateral) external;
+  function setUsingAsCollateral(
+    uint256 reserveId,
+    bool usingAsCollateral,
+    address onBehalfOf
+  ) external;
 
   /**
    * @notice Allows updating the risk premium on user position.
-   * @dev If the risk premium has increased, the caller must be authorized or the owner of the position,
-   * reverts with `Unauthorized` otherwise.
+   * @dev If the risk premium has increased, the caller must be `user` or an authorized position manager
+   * of `user`, reverts with `Unauthorized` otherwise.
    * @param user The address of the user.
    */
   function updateUserRiskPremium(address user) external;
@@ -159,6 +220,7 @@ interface ISpoke is IMulticall {
   function getReserve(uint256 reserveId) external view returns (DataTypes.Reserve memory);
 
   function getReserveDebt(uint256 reserveId) external view returns (uint256, uint256);
+
   function getReserveRiskPremium(uint256 reserveId) external view returns (uint256);
 
   function getReserveSuppliedAmount(uint256 reserveId) external view returns (uint256);
@@ -200,12 +262,15 @@ interface ISpoke is IMulticall {
   function reserveCount() external view returns (uint256);
 
   function reservesList(uint256) external view returns (uint256);
+
   function getVariableLiquidationBonus(
     uint256 reserveId,
     uint256 healthFactor
   ) external view returns (uint256);
 
   function getLiquidationConfig() external view returns (DataTypes.LiquidationConfig memory);
+
   function HEALTH_FACTOR_LIQUIDATION_THRESHOLD() external view returns (uint256);
+
   function MAX_LIQUIDITY_PREMIUM() external view returns (uint256);
 }

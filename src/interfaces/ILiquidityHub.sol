@@ -99,7 +99,7 @@ interface ILiquidityHub {
    * @dev Only callable by spokes.
    * @param assetId The asset id.
    * @param amount The amount of asset liquidity to add/supply.
-   * @param from The address which we pull assets from (user).
+   * @param from The address to pull supplied assets from.
    * @return The amount of shares added or supplied.
    */
   function add(uint256 assetId, uint256 amount, address from) external returns (uint256);
