@@ -2,25 +2,25 @@
 pragma solidity ^0.8.10;
 
 import {WadRayMathExtended} from 'src/libraries/math/WadRayMathExtended.sol';
-import {DefaultAssetInterestRateStrategy, IDefaultInterestRateStrategy} from 'src/contracts/DefaultAssetInterestRateStrategy.sol';
+import {AssetInterestRateStrategy, IAssetInterestRateStrategy} from 'src/contracts/AssetInterestRateStrategy.sol';
 
 import {Test, stdError} from 'forge-std/Test.sol';
 
 /// TODO: Access Control; Check that only authorized address can set interest rate data
-contract DefaultAssetInterestRateStrategyTest is Test {
+contract AssetInterestRateStrategyTest is Test {
   using WadRayMathExtended for uint16;
   using WadRayMathExtended for uint32;
   using WadRayMathExtended for uint256;
 
   uint256 mockAssetId = uint256(keccak256('mockAssetId'));
 
-  DefaultAssetInterestRateStrategy public rateStrategy;
-  IDefaultInterestRateStrategy.InterestRateData public rateData;
+  AssetInterestRateStrategy public rateStrategy;
+  IAssetInterestRateStrategy.InterestRateData public rateData;
 
   function setUp() public {
-    rateStrategy = new DefaultAssetInterestRateStrategy();
+    rateStrategy = new AssetInterestRateStrategy();
 
-    rateData = IDefaultInterestRateStrategy.InterestRateData({
+    rateData = IAssetInterestRateStrategy.InterestRateData({
       optimalUsageRatio: 80_00, // 80.00%
       baseVariableBorrowRate: 2_00, // 2_00%
       variableRateSlope1: 4_00, // 4.00%
@@ -91,7 +91,7 @@ contract DefaultAssetInterestRateStrategyTest is Test {
 
     for (uint256 i; i < invalidOptimalUsageRatios.length; i++) {
       rateData.optimalUsageRatio = invalidOptimalUsageRatios[i];
-      vm.expectRevert(IDefaultInterestRateStrategy.InvalidOptimalUsageRatio.selector);
+      vm.expectRevert(IAssetInterestRateStrategy.InvalidOptimalUsageRatio.selector);
       rateStrategy.setInterestRateData(mockAssetId, rateData);
     }
   }
@@ -101,7 +101,7 @@ contract DefaultAssetInterestRateStrategyTest is Test {
       rateData.variableRateSlope2,
       rateData.variableRateSlope1
     );
-    vm.expectRevert(IDefaultInterestRateStrategy.Slope2MustBeGteSlope2.selector);
+    vm.expectRevert(IAssetInterestRateStrategy.Slope2MustBeGteSlope1.selector);
     rateStrategy.setInterestRateData(mockAssetId, rateData);
   }
 
@@ -110,12 +110,12 @@ contract DefaultAssetInterestRateStrategyTest is Test {
       uint32(rateStrategy.MAX_BORROW_RATE()) /
       3 +
       1;
-    vm.expectRevert(IDefaultInterestRateStrategy.InvalidMaxRate.selector);
+    vm.expectRevert(IAssetInterestRateStrategy.InvalidMaxRate.selector);
     rateStrategy.setInterestRateData(mockAssetId, rateData);
   }
 
   function test_setInterestRateData() public {
-    rateData = IDefaultInterestRateStrategy.InterestRateData({
+    rateData = IAssetInterestRateStrategy.InterestRateData({
       optimalUsageRatio: 60_00, // 60.00%
       baseVariableBorrowRate: 4_00, // 4_00%
       variableRateSlope1: 2_00, // 2.00%
@@ -123,7 +123,7 @@ contract DefaultAssetInterestRateStrategyTest is Test {
     });
 
     vm.expectEmit(address(rateStrategy));
-    emit IDefaultInterestRateStrategy.RateDataUpdate(
+    emit IAssetInterestRateStrategy.RateDataUpdate(
       mockAssetId,
       uint256(rateData.optimalUsageRatio),
       uint256(rateData.baseVariableBorrowRate),
@@ -145,14 +145,14 @@ contract DefaultAssetInterestRateStrategyTest is Test {
     uint256 mockAssetId2 = uint256(keccak256('mockAssetId2'));
     vm.expectRevert(
       abi.encodeWithSelector(
-        IDefaultInterestRateStrategy.InterestRateDataNotSet.selector,
+        IAssetInterestRateStrategy.InterestRateDataNotSet.selector,
         mockAssetId2
       )
     );
     rateStrategy.calculateInterestRate({
       assetId: mockAssetId2,
-      totalDebt: 0,
       availableLiquidity: 0,
+      totalDebt: 0,
       liquidityAdded: 0,
       liquidityTaken: 0
     });
@@ -176,8 +176,8 @@ contract DefaultAssetInterestRateStrategyTest is Test {
     vm.expectRevert(stdError.arithmeticError);
     rateStrategy.calculateInterestRate({
       assetId: mockAssetId,
-      totalDebt: totalDebt,
       availableLiquidity: availableLiquidity,
+      totalDebt: totalDebt,
       liquidityAdded: liquidityAdded,
       liquidityTaken: liquidityTaken
     });
@@ -203,8 +203,8 @@ contract DefaultAssetInterestRateStrategyTest is Test {
 
     uint256 variableBorrowRate = rateStrategy.calculateInterestRate({
       assetId: mockAssetId,
-      totalDebt: 0,
       availableLiquidity: availableLiquidity,
+      totalDebt: 0,
       liquidityAdded: liquidityAdded,
       liquidityTaken: liquidityTaken
     });
@@ -228,8 +228,8 @@ contract DefaultAssetInterestRateStrategyTest is Test {
 
     uint256 variableBorrowRate = rateStrategy.calculateInterestRate({
       assetId: mockAssetId,
-      totalDebt: totalDebt,
       availableLiquidity: availableLiquidity,
+      totalDebt: totalDebt,
       liquidityAdded: liquidityAdded,
       liquidityTaken: liquidityTaken
     });
@@ -263,8 +263,8 @@ contract DefaultAssetInterestRateStrategyTest is Test {
 
     uint256 variableBorrowRate = rateStrategy.calculateInterestRate({
       assetId: mockAssetId,
-      totalDebt: totalDebt,
       availableLiquidity: availableLiquidity,
+      totalDebt: totalDebt,
       liquidityAdded: liquidityAdded,
       liquidityTaken: liquidityTaken
     });

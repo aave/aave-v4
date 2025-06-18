@@ -2,26 +2,25 @@
 pragma solidity ^0.8.10;
 
 import {WadRayMathExtended} from 'src/libraries/math/WadRayMathExtended.sol';
-import {IDefaultInterestRateStrategy} from 'src/interfaces/IDefaultInterestRateStrategy.sol';
-import {IAssetInterestRateStrategy} from 'src/interfaces/IAssetInterestRateStrategy.sol';
+import {IAssetInterestRateStrategy, IBasicInterestRateStrategy} from 'src/interfaces/IAssetInterestRateStrategy.sol';
 
 /**
- * @title DefaultAssetInterestRateStrategy contract
+ * @title AssetInterestRateStrategy contract
  * @author Aave Labs
- * @notice Default interest rate strategy used by the Aave protocol
+ * @notice Asset interest rate strategy used by the Aave protocol
  * @dev Strategies are hub-specific: one strategy CAN'T be used across different Aave hubs
  *   due to the usage of asset id as index of the _interestRateData
  */
-contract DefaultAssetInterestRateStrategy is IDefaultInterestRateStrategy {
+contract AssetInterestRateStrategy is IAssetInterestRateStrategy {
   using WadRayMathExtended for *;
 
-  /// @inheritdoc IDefaultInterestRateStrategy
+  /// @inheritdoc IAssetInterestRateStrategy
   uint256 public constant MAX_BORROW_RATE = 1000_00; // 1000.00% in BPS
 
-  /// @inheritdoc IDefaultInterestRateStrategy
+  /// @inheritdoc IAssetInterestRateStrategy
   uint256 public constant MIN_OPTIMAL_RATIO = 1_00; // 1.00% in BPS
 
-  /// @inheritdoc IDefaultInterestRateStrategy
+  /// @inheritdoc IAssetInterestRateStrategy
   uint256 public constant MAX_OPTIMAL_RATIO = 99_00; // 99.00% in BPS
 
   /// @dev Map of assetId and their interest rate data (assetId => interestRateData)
@@ -34,7 +33,7 @@ contract DefaultAssetInterestRateStrategy is IDefaultInterestRateStrategy {
     /// TODO: Access Control; Store authorized address to set interest rate data
   }
 
-  /// @inheritdoc IDefaultInterestRateStrategy
+  /// @inheritdoc IAssetInterestRateStrategy
   function setInterestRateData(uint256 assetId, InterestRateData calldata rateData) external {
     /// TODO: Access Control; Only authorized address can set interest rate data
 
@@ -44,7 +43,7 @@ contract DefaultAssetInterestRateStrategy is IDefaultInterestRateStrategy {
       InvalidOptimalUsageRatio()
     );
 
-    require(rateData.variableRateSlope1 <= rateData.variableRateSlope2, Slope2MustBeGteSlope2());
+    require(rateData.variableRateSlope1 <= rateData.variableRateSlope2, Slope2MustBeGteSlope1());
 
     // The maximum rate should not be above certain threshold
     require(
@@ -63,32 +62,32 @@ contract DefaultAssetInterestRateStrategy is IDefaultInterestRateStrategy {
     );
   }
 
-  /// @inheritdoc IDefaultInterestRateStrategy
+  /// @inheritdoc IAssetInterestRateStrategy
   function getInterestRateData(uint256 assetId) external view returns (InterestRateData memory) {
     return _interestRateData[assetId];
   }
 
-  /// @inheritdoc IDefaultInterestRateStrategy
+  /// @inheritdoc IAssetInterestRateStrategy
   function getOptimalUsageRatio(uint256 assetId) external view returns (uint256) {
     return _interestRateData[assetId].optimalUsageRatio;
   }
 
-  /// @inheritdoc IDefaultInterestRateStrategy
+  /// @inheritdoc IAssetInterestRateStrategy
   function getBaseVariableBorrowRate(uint256 assetId) external view override returns (uint256) {
     return _interestRateData[assetId].baseVariableBorrowRate;
   }
 
-  /// @inheritdoc IDefaultInterestRateStrategy
+  /// @inheritdoc IAssetInterestRateStrategy
   function getVariableRateSlope1(uint256 assetId) external view returns (uint256) {
     return _interestRateData[assetId].variableRateSlope1;
   }
 
-  /// @inheritdoc IDefaultInterestRateStrategy
+  /// @inheritdoc IAssetInterestRateStrategy
   function getVariableRateSlope2(uint256 assetId) external view returns (uint256) {
     return _interestRateData[assetId].variableRateSlope2;
   }
 
-  /// @inheritdoc IDefaultInterestRateStrategy
+  /// @inheritdoc IAssetInterestRateStrategy
   function getMaxVariableBorrowRate(uint256 assetId) external view override returns (uint256) {
     return
       _interestRateData[assetId].baseVariableBorrowRate +
@@ -96,11 +95,11 @@ contract DefaultAssetInterestRateStrategy is IDefaultInterestRateStrategy {
       _interestRateData[assetId].variableRateSlope2;
   }
 
-  /// @inheritdoc IAssetInterestRateStrategy
+  /// @inheritdoc IBasicInterestRateStrategy
   function calculateInterestRate(
     uint256 assetId,
-    uint256 totalDebt,
     uint256 availableLiquidity,
+    uint256 totalDebt,
     uint256 liquidityAdded,
     uint256 liquidityTaken
   ) external view virtual override returns (uint256) {
@@ -124,13 +123,13 @@ contract DefaultAssetInterestRateStrategy is IDefaultInterestRateStrategy {
         .rayMulUp(usageRatioRay)
         .rayDivUp(optimalUsageRatioRay);
     } else {
-      currentVariableBorrowRateRay += rateData.variableRateSlope1.bpsToRay();
-
-      currentVariableBorrowRateRay += rateData
-        .variableRateSlope2
-        .bpsToRay()
-        .rayMulUp(usageRatioRay - optimalUsageRatioRay)
-        .rayDivUp(WadRayMathExtended.RAY - optimalUsageRatioRay);
+      currentVariableBorrowRateRay +=
+        rateData.variableRateSlope1.bpsToRay() +
+        rateData
+          .variableRateSlope2
+          .bpsToRay()
+          .rayMulUp(usageRatioRay - optimalUsageRatioRay)
+          .rayDivUp(WadRayMathExtended.RAY - optimalUsageRatioRay);
     }
 
     return currentVariableBorrowRateRay;

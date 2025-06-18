@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: BUSL-1.1
 pragma solidity ^0.8.10;
 
-import {IAssetInterestRateStrategy} from 'src/interfaces/IAssetInterestRateStrategy.sol';
+import {IBasicInterestRateStrategy} from 'src/interfaces/IBasicInterestRateStrategy.sol';
 
 library DataTypes {
   // Liquidity Hub types
@@ -42,7 +42,7 @@ library DataTypes {
     bool paused;
     uint256 decimals;
     uint256 liquidityFee;
-    IAssetInterestRateStrategy irStrategy;
+    IBasicInterestRateStrategy irStrategy;
   }
 
   // Spoke types

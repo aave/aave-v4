@@ -15,7 +15,7 @@ import {WadRayMath} from 'src/libraries/math/WadRayMath.sol';
 import {WadRayMathExtended} from 'src/libraries/math/WadRayMathExtended.sol';
 import {SharesMath} from 'src/libraries/math/SharesMath.sol';
 import {MathUtils} from 'src/libraries/math/MathUtils.sol';
-import {DefaultAssetInterestRateStrategy, IDefaultInterestRateStrategy, IAssetInterestRateStrategy} from 'src/contracts/DefaultAssetInterestRateStrategy.sol';
+import {AssetInterestRateStrategy, IAssetInterestRateStrategy, IBasicInterestRateStrategy} from 'src/contracts/AssetInterestRateStrategy.sol';
 import {DataTypes} from 'src/libraries/types/DataTypes.sol';
 import {Utils} from './Utils.sol';
 
@@ -49,7 +49,7 @@ abstract contract Base is Test {
   uint256 internal MAX_SUPPLY_AMOUNT_USDY;
   uint256 internal constant MAX_SUPPLY_IN_BASE_CURRENCY = 1e39;
   uint32 internal constant MAX_RISK_PREMIUM_BPS = 1000_00;
-  uint256 internal constant MAX_BORROW_RATE = 1000_00; // matches DefaultAssetInterestRateStrategy
+  uint256 internal constant MAX_BORROW_RATE = 1000_00; // matches AssetInterestRateStrategy
   uint256 internal constant MAX_SKIP_TIME = 10_000 days;
   uint256 internal constant MIN_LIQUIDATION_BONUS = PercentageMath.PERCENTAGE_FACTOR; // 100% == 0% bonus
   uint256 internal constant MAX_LIQUIDATION_BONUS = 150_00; // 50% bonus
@@ -75,7 +75,7 @@ abstract contract Base is Test {
   ISpoke internal spoke1;
   ISpoke internal spoke2;
   ISpoke internal spoke3;
-  DefaultAssetInterestRateStrategy internal irStrategy;
+  AssetInterestRateStrategy internal irStrategy;
 
   // TODO: remove after migrating to other mock users
   address internal USER1 = makeAddr('USER1');
@@ -155,7 +155,7 @@ abstract contract Base is Test {
 
   function deployFixtures() internal {
     oracle = new MockPriceOracle();
-    irStrategy = new DefaultAssetInterestRateStrategy();
+    irStrategy = new AssetInterestRateStrategy();
     hub = new LiquidityHub();
     spoke1 = ISpoke(new Spoke(address(hub), address(oracle)));
     spoke2 = ISpoke(new Spoke(address(hub), address(oracle)));
@@ -582,7 +582,7 @@ abstract contract Base is Test {
 
     irStrategy.setInterestRateData(
       wethAssetId,
-      IDefaultInterestRateStrategy.InterestRateData({
+      IAssetInterestRateStrategy.InterestRateData({
         optimalUsageRatio: 90_00, // 90.00%
         baseVariableBorrowRate: 5_00, // 5.00%
         variableRateSlope1: 5_00, // 5.00%
@@ -591,7 +591,7 @@ abstract contract Base is Test {
     );
     irStrategy.setInterestRateData(
       usdxAssetId,
-      IDefaultInterestRateStrategy.InterestRateData({
+      IAssetInterestRateStrategy.InterestRateData({
         optimalUsageRatio: 90_00, // 90.00%
         baseVariableBorrowRate: 5_00, // 5.00%
         variableRateSlope1: 5_00, // 5.00%
@@ -600,7 +600,7 @@ abstract contract Base is Test {
     );
     irStrategy.setInterestRateData(
       wbtcAssetId,
-      IDefaultInterestRateStrategy.InterestRateData({
+      IAssetInterestRateStrategy.InterestRateData({
         optimalUsageRatio: 90_00, // 90.00%
         baseVariableBorrowRate: 5_00, // 5.00%
         variableRateSlope1: 5_00, // 5.00%
@@ -609,7 +609,7 @@ abstract contract Base is Test {
     );
     irStrategy.setInterestRateData(
       daiAssetId,
-      IDefaultInterestRateStrategy.InterestRateData({
+      IAssetInterestRateStrategy.InterestRateData({
         optimalUsageRatio: 90_00, // 90.00%
         baseVariableBorrowRate: 5_00, // 5.00%
         variableRateSlope1: 5_00, // 5.00%
@@ -618,7 +618,7 @@ abstract contract Base is Test {
     );
     irStrategy.setInterestRateData(
       dai2AssetId,
-      IDefaultInterestRateStrategy.InterestRateData({
+      IAssetInterestRateStrategy.InterestRateData({
         optimalUsageRatio: 90_00, // 90.00%
         baseVariableBorrowRate: 5_00, // 5.00%
         variableRateSlope1: 5_00, // 5.00%
@@ -627,7 +627,7 @@ abstract contract Base is Test {
     );
     irStrategy.setInterestRateData(
       usdyAssetId,
-      IDefaultInterestRateStrategy.InterestRateData({
+      IAssetInterestRateStrategy.InterestRateData({
         optimalUsageRatio: 90_00, // 90.00%
         baseVariableBorrowRate: 5_00, // 5.00%
         variableRateSlope1: 5_00, // 5.00%
@@ -1423,7 +1423,7 @@ abstract contract Base is Test {
   function _mockInterestRate(uint256 interestRateBps) internal {
     vm.mockCall(
       address(irStrategy),
-      IAssetInterestRateStrategy.calculateInterestRate.selector,
+      IBasicInterestRateStrategy.calculateInterestRate.selector,
       abi.encode(interestRateBps.bpsToRay())
     );
   }
@@ -1431,16 +1431,16 @@ abstract contract Base is Test {
   function _mockInterestRate(
     uint256 interestRateBps,
     uint256 assetId,
-    uint256 totalDebt,
     uint256 availableLiquidity,
+    uint256 totalDebt,
     uint256 liquidityAdded,
     uint256 liquidityTaken
   ) internal {
     vm.mockCall(
       address(irStrategy),
       abi.encodeCall(
-        IAssetInterestRateStrategy.calculateInterestRate,
-        (assetId, totalDebt, availableLiquidity, liquidityAdded, liquidityTaken)
+        IBasicInterestRateStrategy.calculateInterestRate,
+        (assetId, availableLiquidity, totalDebt, liquidityAdded, liquidityTaken)
       ),
       abi.encode(interestRateBps.bpsToRay())
     );

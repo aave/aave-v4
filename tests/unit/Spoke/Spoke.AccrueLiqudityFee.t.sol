@@ -184,7 +184,7 @@ contract SpokeAccrueLiquidityFeeTest is SpokeBase {
     uint256 expectedBaseDebt = borrowAmount + expectedBaseDebtAccrual;
     uint256 expectedPremiumDebt = 50e18; // 10% of 500 (premium on base debt)
     uint256 expectedTreasuryFees = 27.5e18; // 5% of 550 (liquidity fee on base debt)
-  
+
     _mockInterestRate(rate);
 
     Utils.supplyCollateral(spoke1, reserveId, alice, supplyAmount, alice);

@@ -391,7 +391,7 @@ contract WadRayMathExtendedDifferentialTests is Test {
       vm.expectRevert();
       wExtended.bpsToRay(a);
     } else {
-      assertEq(wExtended.bpsToRay(a), a * w.RAY() / 100_00);
+      assertEq(wExtended.bpsToRay(a), (a * w.RAY()) / 100_00);
       assertEq(wExtended.bpsToRay(a), b / 100_00);
     }
   }
