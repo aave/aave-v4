@@ -4,6 +4,7 @@ pragma solidity ^0.8.0;
 import {Vm} from 'forge-std/Vm.sol';
 import {ILiquidityHub} from 'src/interfaces/ILiquidityHub.sol';
 import {ISpoke} from 'src/interfaces/ISpoke.sol';
+import {IERC20} from 'src/dependencies/openzeppelin/IERC20.sol';
 import {DataTypes} from 'src/libraries/types/DataTypes.sol';
 
 library Utils {
@@ -13,55 +14,53 @@ library Utils {
   function add(
     ILiquidityHub hub,
     uint256 assetId,
-    address spoke,
+    address caller,
     uint256 amount,
-    address user,
-    address to // todo: implement
+    address user
   ) internal returns (uint256) {
-    vm.startPrank(user);
-    hub.assetsList(assetId).approve(address(hub), amount);
-    vm.stopPrank();
+    IERC20 asset = hub.assetsList(assetId);
+    vm.prank(user);
+    asset.approve(address(hub), amount);
 
-    vm.prank(spoke);
+    vm.prank(caller);
     return hub.add(assetId, amount, user);
   }
 
   function draw(
     ILiquidityHub hub,
     uint256 assetId,
-    address spoke,
+    address caller,
     address to,
-    uint256 amount,
-    address onBehalfOf // todo: implement
+    uint256 amount
   ) internal returns (uint256) {
-    vm.prank(spoke);
+    vm.prank(caller);
     return hub.draw(assetId, amount, to);
   }
 
   function remove(
     ILiquidityHub hub,
     uint256 assetId,
-    address spoke,
+    address caller,
     uint256 amount,
     address to
   ) internal {
-    vm.prank(spoke);
+    vm.prank(caller);
     hub.remove(assetId, amount, to);
   }
 
   function restore(
     ILiquidityHub hub,
     uint256 assetId,
-    address spoke,
+    address caller,
     uint256 baseAmount,
     uint256 premiumAmount,
     address repayer
   ) internal {
-    vm.startPrank(repayer);
-    hub.assetsList(assetId).approve(address(hub), (baseAmount + premiumAmount));
-    vm.stopPrank();
+    IERC20 asset = hub.assetsList(assetId);
+    vm.prank(repayer);
+    asset.approve(address(hub), (baseAmount + premiumAmount));
 
-    vm.prank(spoke);
+    vm.prank(caller);
     hub.restore(assetId, baseAmount, premiumAmount, repayer);
   }
 
@@ -69,50 +68,56 @@ library Utils {
   function supply(
     ISpoke spoke,
     uint256 reserveId,
-    address user,
+    address caller,
     uint256 amount,
     address onBehalfOf
   ) internal {
-    vm.prank(user);
-    spoke.supply(reserveId, amount);
+    vm.prank(caller);
+    spoke.supply(reserveId, amount, onBehalfOf);
   }
 
   function supplyCollateral(
     ISpoke spoke,
     uint256 reserveId,
-    address user,
+    address caller,
     uint256 amount,
     address onBehalfOf
   ) internal {
-    supply(spoke, reserveId, user, amount, onBehalfOf);
-    vm.prank(user);
-    spoke.setUsingAsCollateral(reserveId, true);
+    supply(spoke, reserveId, caller, amount, onBehalfOf);
+    vm.prank(caller);
+    spoke.setUsingAsCollateral(reserveId, true, onBehalfOf);
   }
 
   function withdraw(
     ISpoke spoke,
     uint256 reserveId,
-    address user,
+    address caller,
     uint256 amount,
     address onBehalfOf
   ) internal {
-    vm.prank(user);
-    spoke.withdraw(reserveId, amount, user);
+    vm.prank(caller);
+    spoke.withdraw(reserveId, amount, onBehalfOf);
   }
 
   function borrow(
     ISpoke spoke,
     uint256 reserveId,
-    address user,
+    address caller,
     uint256 amount,
     address onBehalfOf
   ) internal {
-    vm.prank(user);
-    spoke.borrow(reserveId, amount, user);
+    vm.prank(caller);
+    spoke.borrow(reserveId, amount, onBehalfOf);
   }
 
-  function repay(ISpoke spoke, uint256 reserveId, address user, uint256 amount) internal {
-    vm.prank(user);
-    spoke.repay(reserveId, amount);
+  function repay(
+    ISpoke spoke,
+    uint256 reserveId,
+    address caller,
+    uint256 amount,
+    address onBehalfOf
+  ) internal {
+    vm.prank(caller);
+    spoke.repay(reserveId, amount, onBehalfOf);
   }
 }

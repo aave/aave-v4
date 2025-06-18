@@ -234,7 +234,7 @@ contract LiquidationCallCloseFactorMultiReserveTest is SpokeLiquidationBase {
         Utils.supplyCollateral({
           spoke: spoke1,
           reserveId: collateralReserveIds[i],
-          user: alice,
+          caller: alice,
           amount: supplyAmount,
           onBehalfOf: alice
         });
@@ -242,7 +242,7 @@ contract LiquidationCallCloseFactorMultiReserveTest is SpokeLiquidationBase {
         Utils.supply({
           spoke: spoke1,
           reserveId: collateralReserveIds[i],
-          user: alice,
+          caller: alice,
           amount: supplyAmount,
           onBehalfOf: alice
         });

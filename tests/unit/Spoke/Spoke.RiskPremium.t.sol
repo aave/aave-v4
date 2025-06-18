@@ -217,7 +217,7 @@ contract SpokeRiskPremiumTest is SpokeBase {
 
     skip(232 days);
 
-    Utils.repay(spoke1, _daiReserveId(spoke1), bob, 25e18);
+    Utils.repay(spoke1, _daiReserveId(spoke1), bob, 25e18, bob);
     _assertUserRpUnchanged(_daiReserveId(spoke1), spoke1, bob);
     _assertUserRpUnchanged(_usdxReserveId(spoke1), spoke1, bob);
   }

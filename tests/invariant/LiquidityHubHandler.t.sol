@@ -94,14 +94,7 @@ contract LiquidityHubHandler is Test {
 
     IERC20 asset = hub.assetsList(assetId);
     deal(address(asset), user, amount);
-    Utils.add({
-      hub: hub,
-      assetId: assetId,
-      spoke: address(spoke1),
-      amount: amount,
-      user: user,
-      to: onBehalfOf
-    });
+    Utils.add({hub: hub, assetId: assetId, caller: address(spoke1), amount: amount, user: user});
 
     _updateState(assetId);
     s.reserveSupplied[assetId] += amount;
@@ -113,7 +106,7 @@ contract LiquidityHubHandler is Test {
     // TODO: bound by spoke1 user balance
     amount = bound(amount, 1, 2);
 
-    Utils.remove({hub: hub, assetId: assetId, spoke: address(spoke1), amount: amount, to: to});
+    Utils.remove({hub: hub, assetId: assetId, caller: address(spoke1), amount: amount, to: to});
 
     _updateState(assetId);
     s.reserveSupplied[assetId] -= amount;

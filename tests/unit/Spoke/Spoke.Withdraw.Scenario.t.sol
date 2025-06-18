@@ -36,7 +36,7 @@ contract SpokeWithdrawScenarioTest is SpokeBase {
     Utils.supplyCollateral({
       spoke: spoke1,
       reserveId: _daiReserveId(spoke1),
-      user: bob,
+      caller: bob,
       amount: supplyAmount,
       onBehalfOf: bob
     });
@@ -54,7 +54,7 @@ contract SpokeWithdrawScenarioTest is SpokeBase {
     Utils.borrow({
       spoke: spoke1,
       reserveId: _daiReserveId(spoke1),
-      user: bob,
+      caller: bob,
       amount: borrowAmount,
       onBehalfOf: bob
     });
@@ -72,8 +72,9 @@ contract SpokeWithdrawScenarioTest is SpokeBase {
     Utils.repay({
       spoke: spoke1,
       reserveId: _daiReserveId(spoke1),
-      user: bob,
-      amount: type(uint256).max
+      caller: bob,
+      amount: type(uint256).max,
+      onBehalfOf: bob
     });
 
     uint256 treasuryFees = hub.getSpokeSuppliedAmount(daiAssetId, address(treasurySpoke));
@@ -165,7 +166,7 @@ contract SpokeWithdrawScenarioTest is SpokeBase {
     Utils.supply({
       spoke: spoke1,
       reserveId: params.reserveId,
-      user: alice,
+      caller: alice,
       amount: params.aliceAmount,
       onBehalfOf: alice
     });
@@ -173,7 +174,7 @@ contract SpokeWithdrawScenarioTest is SpokeBase {
     Utils.supply({
       spoke: spoke1,
       reserveId: params.reserveId,
-      user: bob,
+      caller: bob,
       amount: params.bobAmount,
       onBehalfOf: bob
     });
@@ -182,14 +183,14 @@ contract SpokeWithdrawScenarioTest is SpokeBase {
     Utils.supplyCollateral({
       spoke: spoke1,
       reserveId: _wbtcReserveId(spoke1),
-      user: carol,
+      caller: carol,
       amount: params.borrowAmount, // highest value asset so that it is enough collateral
       onBehalfOf: carol
     });
     Utils.borrow({
       spoke: spoke1,
       reserveId: params.reserveId,
-      user: carol,
+      caller: carol,
       amount: params.borrowAmount,
       onBehalfOf: carol
     });
@@ -202,7 +203,7 @@ contract SpokeWithdrawScenarioTest is SpokeBase {
     // deal in case carol's repayAmount exceeds default supplied amount due to interest
     deal(address(state.asset), carol, state.repayAmount);
     vm.prank(carol);
-    spoke1.repay(params.reserveId, state.repayAmount);
+    spoke1.repay(params.reserveId, state.repayAmount, carol);
 
     TestData[3] memory reserveData;
     TestUserData[3] memory aliceData;
@@ -227,7 +228,7 @@ contract SpokeWithdrawScenarioTest is SpokeBase {
     spoke1.withdraw({
       reserveId: params.reserveId,
       amount: aliceData[state.stage].suppliedAmount,
-      to: alice
+      onBehalfOf: alice
     });
 
     _checkSupplyRateIncreasing(
@@ -258,7 +259,7 @@ contract SpokeWithdrawScenarioTest is SpokeBase {
     spoke1.withdraw({
       reserveId: params.reserveId,
       amount: bobData[state.stage].suppliedAmount,
-      to: bob
+      onBehalfOf: bob
     });
 
     _checkSupplyRateIncreasing(
@@ -326,7 +327,7 @@ contract SpokeWithdrawScenarioTest is SpokeBase {
     Utils.supply({
       spoke: spoke1,
       reserveId: reserveId,
-      user: derl,
+      caller: derl,
       amount: protocolStartingBalance,
       onBehalfOf: derl
     });
@@ -341,14 +342,14 @@ contract SpokeWithdrawScenarioTest is SpokeBase {
     // Supply and confirm share amount from event emission
     uint256 shares1 = hub.convertToSuppliedShares(reserve.assetId, assets);
     vm.expectEmit(address(spoke1));
-    emit ISpoke.Supply(reserveId, caller, shares1);
+    emit ISpoke.Supply(reserveId, caller, caller, shares1);
     vm.prank(caller);
-    spoke1.supply(reserveId, assets);
+    spoke1.supply(reserveId, assets, caller);
 
     // Withdraw and confirm share amount from event emission
     uint256 shares2 = hub.convertToSuppliedShares(reserve.assetId, assets);
     vm.expectEmit(address(spoke1));
-    emit ISpoke.Withdraw(reserveId, caller, shares2, caller);
+    emit ISpoke.Withdraw(reserveId, caller, caller, shares2);
     vm.prank(caller);
     spoke1.withdraw(reserveId, assets, caller);
 
@@ -379,7 +380,7 @@ contract SpokeWithdrawScenarioTest is SpokeBase {
     Utils.supply({
       spoke: spoke1,
       reserveId: reserveId,
-      user: derl,
+      caller: derl,
       amount: protocolStartingBalance,
       onBehalfOf: derl
     });
@@ -395,7 +396,7 @@ contract SpokeWithdrawScenarioTest is SpokeBase {
     Utils.supply({
       spoke: spoke1,
       reserveId: reserveId,
-      user: caller,
+      caller: caller,
       amount: callerStartingBalance,
       onBehalfOf: caller
     });
@@ -403,16 +404,16 @@ contract SpokeWithdrawScenarioTest is SpokeBase {
     // Withdraw and confirm share amount from event emission
     uint256 shares1 = hub.convertToSuppliedShares(reserve.assetId, assets);
     vm.expectEmit(address(spoke1));
-    emit ISpoke.Withdraw(reserveId, caller, shares1, caller);
+    emit ISpoke.Withdraw(reserveId, caller, caller, shares1);
     vm.prank(caller);
     spoke1.withdraw(reserveId, assets, caller);
 
     // Supply and confirm share amount from event emission
     uint256 shares2 = hub.convertToSuppliedShares(reserve.assetId, assets);
     vm.expectEmit(address(spoke1));
-    emit ISpoke.Supply(reserveId, caller, shares2);
+    emit ISpoke.Supply(reserveId, caller, caller, shares2);
     vm.prank(caller);
-    spoke1.supply(reserveId, assets);
+    spoke1.supply(reserveId, assets, caller);
 
     assertEq(shares2, shares1, 'supplied and withdrawn shares');
   }

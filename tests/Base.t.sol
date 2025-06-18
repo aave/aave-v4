@@ -742,16 +742,6 @@ abstract contract Base is Test {
     assertEq(spoke.getDynamicReserveConfig(reserveId).collateralFactor, newCollateralFactor);
   }
 
-  function setUsingAsCollateral(
-    ISpoke spoke,
-    address user,
-    uint256 reserveId,
-    bool usingAsCollateral
-  ) internal {
-    vm.prank(user);
-    spoke.setUsingAsCollateral(reserveId, usingAsCollateral);
-  }
-
   function updateCollateralFactor(
     ISpoke spoke,
     uint256 reserveId,

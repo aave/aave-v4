@@ -131,7 +131,7 @@ contract SpokeLiquidationBase is SpokeBase {
       Utils.supplyCollateral({
         spoke: spoke1,
         reserveId: collateralReserveId,
-        user: alice,
+        caller: alice,
         amount: supplyAmount,
         onBehalfOf: alice
       });
@@ -139,7 +139,7 @@ contract SpokeLiquidationBase is SpokeBase {
       Utils.supply({
         spoke: spoke1,
         reserveId: collateralReserveId,
-        user: alice,
+        caller: alice,
         amount: supplyAmount,
         onBehalfOf: alice
       });
@@ -577,7 +577,7 @@ contract SpokeLiquidationBase is SpokeBase {
     Utils.borrow({
       spoke: spoke1,
       reserveId: collateralReserveId,
-      user: user,
+      caller: user,
       amount: borrowAmount,
       onBehalfOf: user
     });

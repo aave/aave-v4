@@ -155,7 +155,7 @@ contract SpokeBase is Base {
     Utils.supply({
       spoke: spoke,
       reserveId: reserveId,
-      user: tempUser,
+      caller: tempUser,
       amount: amount,
       onBehalfOf: tempUser
     });
@@ -188,7 +188,7 @@ contract SpokeBase is Base {
     Utils.supplyCollateral({
       spoke: spoke,
       reserveId: reserveId,
-      user: tempUser,
+      caller: tempUser,
       amount: supplyAmount,
       onBehalfOf: tempUser
     });
@@ -203,7 +203,7 @@ contract SpokeBase is Base {
     Utils.borrow({
       spoke: spoke,
       reserveId: reserveId,
-      user: tempUser,
+      caller: tempUser,
       amount: amount,
       onBehalfOf: tempUser
     });
@@ -305,7 +305,7 @@ contract SpokeBase is Base {
     Utils.supplyCollateral({
       spoke: spoke,
       reserveId: collateral.reserveId,
-      user: collateral.supplier,
+      caller: collateral.supplier,
       amount: collateral.supplyAmount,
       onBehalfOf: collateral.supplier
     });
@@ -323,7 +323,7 @@ contract SpokeBase is Base {
     Utils.supply({
       spoke: spoke,
       reserveId: borrow.reserveId,
-      user: borrow.supplier,
+      caller: borrow.supplier,
       amount: borrow.supplyAmount,
       onBehalfOf: borrow.supplier
     });
@@ -341,7 +341,7 @@ contract SpokeBase is Base {
     Utils.borrow({
       spoke: spoke,
       reserveId: borrow.reserveId,
-      user: borrow.borrower,
+      caller: borrow.borrower,
       amount: borrow.borrowAmount,
       onBehalfOf: borrow.borrower
     });
@@ -370,7 +370,7 @@ contract SpokeBase is Base {
       if (debt > 0) {
         deal(address(hub.assetsList(assetId)), user, debt);
         vm.prank(user);
-        spoke.repay(reserveId, debt);
+        spoke.repay(reserveId, debt, user);
         assertEq(spoke.getUserTotalDebt(reserveId, user), 0, 'user debt not zero');
         // If the user has no debt in any asset (hf will be max), user risk premium should be zero
         if (spoke.getHealthFactor(user) == type(uint256).max) {

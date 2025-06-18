@@ -11,11 +11,16 @@ contract SpokeMulticall is SpokeBase {
 
     // Set up the multicall
     bytes[] memory calls = new bytes[](2);
-    calls[0] = abi.encodeCall(ISpoke.supply, (daiReserveId, supplyAmount));
-    calls[1] = abi.encodeCall(ISpoke.setUsingAsCollateral, (daiReserveId, true));
+    calls[0] = abi.encodeCall(ISpoke.supply, (daiReserveId, supplyAmount, bob));
+    calls[1] = abi.encodeCall(ISpoke.setUsingAsCollateral, (daiReserveId, true, bob));
 
     vm.expectEmit(address(spoke1));
-    emit ISpoke.Supply(daiReserveId, bob, hub.convertToSuppliedShares(daiAssetId, supplyAmount));
+    emit ISpoke.Supply(
+      daiReserveId,
+      bob,
+      bob,
+      hub.convertToSuppliedShares(daiAssetId, supplyAmount)
+    );
     vm.expectEmit(address(spoke1));
     emit ISpoke.UsingAsCollateral(daiReserveId, bob, true);
 
@@ -48,13 +53,14 @@ contract SpokeMulticall is SpokeBase {
 
     // Set up the multicall
     bytes[] memory calls = new bytes[](3);
-    calls[0] = abi.encodeCall(ISpoke.supply, (_daiReserveId(spoke2), MAX_SUPPLY_AMOUNT));
-    calls[1] = abi.encodeCall(ISpoke.setUsingAsCollateral, (_daiReserveId(spoke2), true));
+    calls[0] = abi.encodeCall(ISpoke.supply, (_daiReserveId(spoke2), MAX_SUPPLY_AMOUNT, bob));
+    calls[1] = abi.encodeCall(ISpoke.setUsingAsCollateral, (_daiReserveId(spoke2), true, bob));
     calls[2] = abi.encodeCall(ISpoke.updateUserRiskPremium, (bob));
 
     vm.expectEmit(address(spoke2));
     emit ISpoke.Supply(
       _daiReserveId(spoke2),
+      bob,
       bob,
       hub.convertToSuppliedShares(daiAssetId, MAX_SUPPLY_AMOUNT)
     );
