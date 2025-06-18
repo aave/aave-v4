@@ -17,6 +17,7 @@ import {SharesMath} from 'src/libraries/math/SharesMath.sol';
 import {MathUtils} from 'src/libraries/math/MathUtils.sol';
 import {DefaultReserveInterestRateStrategy, IDefaultInterestRateStrategy, IReserveInterestRateStrategy} from 'src/contracts/DefaultReserveInterestRateStrategy.sol';
 import {DataTypes} from 'src/libraries/types/DataTypes.sol';
+import {Roles} from 'src/libraries/types/Roles.sol';
 import {Utils} from './Utils.sol';
 
 // mocks
@@ -153,8 +154,7 @@ abstract contract Base is Test {
 
   function setUp() public virtual {
     deployFixtures();
-
-    // todo: set up admin role when access controls impl
+    setUpRoles();
   }
 
   function deployFixtures() internal {
@@ -177,6 +177,34 @@ abstract contract Base is Test {
     vm.label(address(spoke1), 'spoke1');
     vm.label(address(spoke2), 'spoke2');
     vm.label(address(spoke3), 'spoke3');
+  }
+
+  function setUpRoles() internal {
+    // Hub Admin is already default admin
+    vm.startPrank(HUB_ADMIN);
+    // Grant roles
+    accessManager.grantRole(Roles.HUB_ADMIN_ROLE, HUB_ADMIN, 0);
+    accessManager.grantRole(Roles.SPOKE_ADMIN_ROLE, HUB_ADMIN, 0);
+    accessManager.grantRole(Roles.TREASURY_ADMIN_ROLE, HUB_ADMIN, 0);
+    accessManager.grantRole(Roles.SPOKE_ROLE, HUB_ADMIN, 0);
+    accessManager.grantRole(Roles.SPOKE_ADMIN_ROLE, SPOKE_ADMIN, 0);
+    accessManager.grantRole(Roles.TREASURY_ADMIN_ROLE, TREASURY_ADMIN, 0);
+    accessManager.grantRole(Roles.SPOKE_ROLE, address(spoke1), 0);
+    accessManager.grantRole(Roles.SPOKE_ROLE, address(spoke2), 0);
+    accessManager.grantRole(Roles.SPOKE_ROLE, address(spoke3), 0);
+
+    // Grant responsibilities to roles
+    // Spoke roles
+    bytes4[] memory selectors = new bytes4[](4);
+    selectors[0] = ISpoke.updateLiquidationConfig.selector;
+    selectors[1] = ISpoke.addReserve.selector;
+    selectors[2] = ISpoke.updateReserveConfig.selector;
+    selectors[3] = ISpoke.updateDynamicReserveConfig.selector;
+
+    accessManager.setTargetFunctionRole(address(spoke1), selectors, Roles.SPOKE_ADMIN_ROLE);
+    accessManager.setTargetFunctionRole(address(spoke2), selectors, Roles.SPOKE_ADMIN_ROLE);
+    accessManager.setTargetFunctionRole(address(spoke3), selectors, Roles.SPOKE_ADMIN_ROLE);
+    vm.stopPrank();
   }
 
   function initEnvironment() internal {
@@ -764,12 +792,14 @@ abstract contract Base is Test {
   ) internal {
     DataTypes.DynamicReserveConfig memory config = spoke.getDynamicReserveConfig(reserveId);
     config.collateralFactor = newCollateralFactor.toUint16();
+    vm.prank(SPOKE_ADMIN);
     spoke.updateDynamicReserveConfig(reserveId, config);
   }
 
   function updateCollateralFlag(ISpoke spoke, uint256 reserveId, bool newCollateralFlag) internal {
     DataTypes.Reserve memory reserveData = spoke.getReserve(reserveId);
     reserveData.config.collateral = newCollateralFlag;
+    vm.prank(SPOKE_ADMIN);
     spoke.updateReserveConfig(reserveId, reserveData.config);
   }
 
@@ -780,6 +810,7 @@ abstract contract Base is Test {
   ) internal {
     DataTypes.Reserve memory reserveData = spoke.getReserve(reserveId);
     reserveData.config.borrowable = newBorrowable;
+    vm.prank(SPOKE_ADMIN);
     spoke.updateReserveConfig(reserveId, reserveData.config);
   }
 
@@ -790,6 +821,7 @@ abstract contract Base is Test {
   ) internal {
     DataTypes.ReserveConfig memory reserveConfig = spoke.getReserve(reserveId).config;
     reserveConfig.liquidityPremium = newLiquidityPremium;
+    vm.prank(SPOKE_ADMIN);
     spoke.updateReserveConfig(reserveId, reserveConfig);
   }
 
@@ -806,6 +838,7 @@ abstract contract Base is Test {
   function updateCloseFactor(ISpoke spoke, uint256 newCloseFactor) internal {
     DataTypes.LiquidationConfig memory liqConfig = spoke.getLiquidationConfig();
     liqConfig.closeFactor = newCloseFactor;
+    vm.prank(SPOKE_ADMIN);
     spoke.updateLiquidationConfig(liqConfig);
 
     assertEq(spoke.getLiquidationConfig().closeFactor, newCloseFactor);
@@ -859,6 +892,7 @@ abstract contract Base is Test {
   ) internal {
     DataTypes.SpokeConfig memory spokeConfig = liquidityHub.getSpokeConfig(assetId, spoke);
     spokeConfig.drawCap = newDrawCap;
+    vm.prank(HUB_ADMIN);
     liquidityHub.updateSpokeConfig(assetId, spoke, spokeConfig);
   }
 
@@ -917,6 +951,7 @@ abstract contract Base is Test {
 
   function setNewPrice(uint256 assetId, uint256 percent) public {
     uint256 newPrice = calcNewPrice(oracle.getAssetPrice(assetId), percent);
+    vm.prank(SPOKE_ADMIN);
     oracle.setAssetPrice(assetId, newPrice);
   }
 
@@ -1201,6 +1236,7 @@ abstract contract Base is Test {
     oracle.setAssetPrice(assetId, 0);
     vm.prank(user);
     spoke.borrow(reserveId, debtAmount, user);
+    vm.prank(SPOKE_ADMIN);
     oracle.setAssetPrice(assetId, initialPrice);
   }
 

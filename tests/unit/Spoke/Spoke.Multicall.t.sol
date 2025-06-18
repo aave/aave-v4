@@ -20,9 +20,8 @@ contract SpokeMulticall is SpokeBase {
     emit ISpoke.UsingAsCollateral(daiReserveId, bob, true);
 
     // Execute the multicall
-    vm.startPrank(bob);
+    vm.prank(bob);
     spoke1.multicall(calls);
-    vm.stopPrank();
 
     // Check the supply
     uint256 bobSupplied = spoke1.getUserSuppliedAmount(daiReserveId, bob);
@@ -64,9 +63,8 @@ contract SpokeMulticall is SpokeBase {
     emit ISpoke.UserRiskPremiumUpdate(bob, _getLiquidityPremium(spoke2, _daiReserveId(spoke2)));
 
     // Then he supplies dai and sets as collateral, so user rp should decrease
-    vm.startPrank(bob);
+    vm.prank(bob);
     spoke2.multicall(calls);
-    vm.stopPrank();
 
     uint256 bobPremiumDrawnSharesAfter = spoke2
       .getUserPosition(_dai2ReserveId(spoke2), bob)
@@ -135,6 +133,7 @@ contract SpokeMulticall is SpokeBase {
     emit ISpoke.ReserveAdded(dai3ReserveId, daiAssetId);
 
     // Execute the multicall
+    vm.prank(SPOKE_ADMIN);
     spoke1.multicall(calls);
 
     // Check the reserves
@@ -171,6 +170,7 @@ contract SpokeMulticall is SpokeBase {
     emit ISpoke.ReserveConfigUpdated(usdxReserveId, newUsdx.config);
 
     // Execute the multicall
+    vm.prank(SPOKE_ADMIN);
     spoke1.multicall(calls);
 
     // Check the reserve configs

@@ -66,8 +66,7 @@ contract Spoke is ISpoke, Multicall, AccessManaged {
 
   function updateLiquidationConfig(
     DataTypes.LiquidationConfig calldata liquidationConfig
-  ) external {
-    // TODO: AccessControl
+  ) external restricted {
     _validateLiquidationConfig(liquidationConfig);
     _liquidationConfig = liquidationConfig;
     emit LiquidationConfigUpdated(liquidationConfig);
@@ -77,12 +76,11 @@ contract Spoke is ISpoke, Multicall, AccessManaged {
     uint256 assetId,
     DataTypes.ReserveConfig calldata config,
     DataTypes.DynamicReserveConfig calldata dynamicConfig
-  ) external returns (uint256) {
+  ) external restricted returns (uint256) {
     _validateReserveConfig(config);
     address asset = address(HUB.assetsList(assetId)); // will revert on invalid assetId
     uint256 reserveId = reserveCount++;
     uint16 dynamicConfigKey; // 0 as first key to use
-    // TODO: AccessControl
     reservesList.push(reserveId);
     _reserves[reserveId] = DataTypes.Reserve({
       reserveId: reserveId,
@@ -107,7 +105,7 @@ contract Spoke is ISpoke, Multicall, AccessManaged {
   function updateReserveConfig(
     uint256 reserveId,
     DataTypes.ReserveConfig calldata config
-  ) external {
+  ) external restricted {
     // TODO: AccessControl, More sophisticated
     _validateReserveConfig(config);
     DataTypes.Reserve storage reserve = _reserves[reserveId];
@@ -122,7 +120,7 @@ contract Spoke is ISpoke, Multicall, AccessManaged {
   function updateDynamicReserveConfig(
     uint256 reserveId,
     DataTypes.DynamicReserveConfig calldata dynamicConfig
-  ) external {
+  ) external restricted {
     _validateDynamicReserveConfig(dynamicConfig);
     // TODO: AccessControl, More sophisticated
     DataTypes.Reserve storage reserve = _reserves[reserveId];

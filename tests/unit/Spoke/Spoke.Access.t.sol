@@ -48,7 +48,7 @@ contract SpokeBorrowTest is SpokeBase {
 
     // Now we change what the role can do, removing the ability to call the restricted function
     vm.startPrank(HUB_ADMIN);
-    accessManager.setTargetFunctionRole(address(spoke1), selectors, Roles.ADMIN_ROLE);
+    accessManager.setTargetFunctionRole(address(spoke1), selectors, Roles.DEFAULT_ADMIN_ROLE);
     vm.stopPrank();
 
     // Bob should no longer be able to call the restricted function

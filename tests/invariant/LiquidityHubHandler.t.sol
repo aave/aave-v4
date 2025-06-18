@@ -24,7 +24,7 @@ contract LiquidityHubHandler is Test {
   DefaultReserveInterestRateStrategy irStrategy;
 
   address internal mockAddressesProvider = makeAddr('mockAddressesProvider');
-  address internal hubAdmin = makeAddr('hubAdmin');
+  address internal hubAdmin = makeAddr('HUB_ADMIN');
 
   struct State {
     mapping(uint256 => uint256) reserveSupplied; // asset => supply
