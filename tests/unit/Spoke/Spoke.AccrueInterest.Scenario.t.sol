@@ -521,7 +521,7 @@ contract SpokeAccrueInterestScenarioTest is SpokeBase {
       expectedPremiumDebt =
         _calculateExpectedPremiumDebt(amounts.daiBorrowAmount, baseDebt, bobRp) +
         bobPosition.realizedPremium;
-      interest = (baseDebt + expectedPremiumDebt) - (originalAmounts.daiBorrowAmount + 1e18);
+      interest = (baseDebt + expectedPremiumDebt) - (originalAmounts.daiBorrowAmount + 1e18); // subtract out the extra amount we borrowed
       _assertSingleUserProtocolDebt(
         spoke2,
         _daiReserveId(spoke2),
