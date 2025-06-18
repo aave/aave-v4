@@ -1339,7 +1339,8 @@ contract Spoke is ISpoke, Multicall {
   }
 
   function _isPositionManager(address user, address manager) private view returns (bool) {
+    if (user == manager) return true;
     DataTypes.PositionManagerConfig storage config = _positionManager[manager];
-    return user == manager || (config.active && config.approval[user]);
+    return config.active && config.approval[user];
   }
 }
