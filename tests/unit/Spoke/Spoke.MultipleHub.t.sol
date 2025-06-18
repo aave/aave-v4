@@ -4,6 +4,11 @@ pragma solidity ^0.8.0;
 import 'tests/unit/Spoke/SpokeBase.t.sol';
 
 contract SpokeMultipleHubTest is SpokeBase {
+  ILiquidityHub internal hub2;
+  ILiquidityHub internal hub3;
+  DefaultReserveInterestRateStrategy internal hub2IrStrategy;
+  DefaultReserveInterestRateStrategy internal hub3IrStrategy;
+
   uint256 internal daiHub2ReserveId;
   uint256 internal daiHub3ReserveId;
 
@@ -15,8 +20,8 @@ contract SpokeMultipleHubTest is SpokeBase {
     super.setUp();
 
     // Configure both hubs
-    hub2Fixture();
-    hub3Fixture();
+    (hub2, hub2IrStrategy) = hub2Fixture();
+    (hub3, hub3IrStrategy) = hub3Fixture();
 
     // Relist hub 2's dai on spoke1
     DataTypes.ReserveConfig memory daiHub2Config = DataTypes.ReserveConfig({

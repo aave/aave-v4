@@ -11,7 +11,7 @@ import {DefaultReserveInterestRateStrategy, IDefaultInterestRateStrategy} from '
 import {TestnetERC20} from 'tests/mocks/TestnetERC20.sol';
 import {MockPriceOracle, IPriceOracle} from 'tests/mocks/MockPriceOracle.sol';
 
-contract SpokeMultipleHubScenarioBase is Test {
+contract SpokeMultipleHubBase is Test {
   struct IsolationLocalVars {
     uint256 assetAId;
     uint256 assetBId;
@@ -89,6 +89,7 @@ contract SpokeMultipleHubScenarioBase is Test {
   }
 
   ///@dev Adds new assets A and B to the new hub and spoke, no restrictions.
+  ///@dev Lists asset B on canonical hub and spoke with no restrictions.
   function setUpIsolationMode() internal {
     // Add assets A and B to the new hub
     newHub.addAsset(
@@ -171,6 +172,52 @@ contract SpokeMultipleHubScenarioBase is Test {
     // Configure interest rate strategy for assets A and B
     newIrStrategy.setInterestRateParams(isolationVars.assetAId, irData);
     newIrStrategy.setInterestRateParams(isolationVars.assetBId, irData);
+
+    // List asset B on the canonical hub
+    isolationVars.assetBIdMainHub = hub.assetCount();
+    hub.addAsset(
+      DataTypes.AssetConfig({
+        feeReceiver: address(0),
+        decimals: 18,
+        active: true,
+        paused: false,
+        frozen: false,
+        liquidityFee: 0,
+        irStrategy: irStrategy // Use the main hub's interest rate strategy
+      }),
+      address(assetB)
+    );
+
+    // List reserve B on spoke 1 for the canonical hub
+    isolationVars.spoke1ReserveBId = spoke1.addReserve(
+      isolationVars.assetBIdMainHub,
+      DataTypes.ReserveConfig({
+        decimals: assetB.decimals(),
+        active: true,
+        frozen: false,
+        paused: false,
+        liquidationBonus: 100_00,
+        liquidityPremium: 15_00,
+        liquidationProtocolFee: 0,
+        borrowable: true,
+        collateral: true,
+        hub: hub
+      }),
+      dynReserveConfig
+    );
+
+    // Set the price of reserve B on spoke1 for the main hub
+    oracle1.setReservePrice(isolationVars.spoke1ReserveBId, 50_000e8);
+
+    // Link main hub and spoke 1 for asset B
+    hub.addSpoke(
+      isolationVars.assetBIdMainHub,
+      DataTypes.SpokeConfig({drawCap: type(uint256).max, supplyCap: type(uint256).max}),
+      address(spoke1)
+    );
+
+    // Configure interest rate strategy for asset B on the main hub
+    irStrategy.setInterestRateParams(isolationVars.assetBIdMainHub, irData);
   }
 
   /* @dev Adds asset B to the new hub and new spoke with 100k draw cap.

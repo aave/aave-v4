@@ -74,15 +74,11 @@ abstract contract Base is Test {
   MockPriceOracle internal oracle2;
   MockPriceOracle internal oracle3;
   ILiquidityHub internal hub;
-  ILiquidityHub internal hub2;
-  ILiquidityHub internal hub3;
   ITreasurySpoke internal treasurySpoke;
   ISpoke internal spoke1;
   ISpoke internal spoke2;
   ISpoke internal spoke3;
   DefaultReserveInterestRateStrategy internal irStrategy;
-  DefaultReserveInterestRateStrategy internal hub2IrStrategy;
-  DefaultReserveInterestRateStrategy internal hub3IrStrategy;
   DefaultReserveInterestRateStrategy internal creditLineIRStrategy;
 
   address internal mockAddressesProvider = makeAddr('mockAddressesProvider');
@@ -173,11 +169,7 @@ abstract contract Base is Test {
     oracle3 = new MockPriceOracle();
     creditLineIRStrategy = new DefaultReserveInterestRateStrategy(mockAddressesProvider);
     irStrategy = new DefaultReserveInterestRateStrategy(mockAddressesProvider);
-    hub2IrStrategy = new DefaultReserveInterestRateStrategy(mockAddressesProvider);
-    hub3IrStrategy = new DefaultReserveInterestRateStrategy(mockAddressesProvider);
     hub = new LiquidityHub();
-    hub2 = new LiquidityHub();
-    hub3 = new LiquidityHub();
     spoke1 = ISpoke(new Spoke(address(oracle1)));
     spoke2 = ISpoke(new Spoke(address(oracle2)));
     spoke3 = ISpoke(new Spoke(address(oracle3)));
@@ -688,8 +680,13 @@ abstract contract Base is Test {
    * 2: DAI
    * 3: WBTC
    */
-  function hub2Fixture() internal {
+  function hub2Fixture() internal returns (ILiquidityHub, DefaultReserveInterestRateStrategy) {
     vm.startPrank(HUB_ADMIN);
+
+    ILiquidityHub hub2 = new LiquidityHub();
+    DefaultReserveInterestRateStrategy hub2IrStrategy = new DefaultReserveInterestRateStrategy(
+      mockAddressesProvider
+    );
 
     // Add assets to the second hub
     // Add WETH
@@ -760,8 +757,9 @@ abstract contract Base is Test {
     hub2IrStrategy.setInterestRateParams(usdxAssetId, irData);
     hub2IrStrategy.setInterestRateParams(daiAssetId, irData);
     hub2IrStrategy.setInterestRateParams(wbtcAssetId, irData);
-
     vm.stopPrank();
+
+    return (hub2, hub2IrStrategy);
   }
 
   /* @dev Configures Hub 3 with the following assetIds:
@@ -770,8 +768,13 @@ abstract contract Base is Test {
    * 2: WBTC
    * 3: WETH
    */
-  function hub3Fixture() internal {
+  function hub3Fixture() internal returns (ILiquidityHub, DefaultReserveInterestRateStrategy) {
     vm.startPrank(HUB_ADMIN);
+
+    ILiquidityHub hub3 = new LiquidityHub();
+    DefaultReserveInterestRateStrategy hub3IrStrategy = new DefaultReserveInterestRateStrategy(
+      mockAddressesProvider
+    );
 
     // Add DAI
     hub3.addAsset(
@@ -845,8 +848,9 @@ abstract contract Base is Test {
     hub3IrStrategy.setInterestRateParams(hub3UsdxAssetId, irData);
     hub3IrStrategy.setInterestRateParams(hub3DaiAssetId, irData);
     hub3IrStrategy.setInterestRateParams(hub3WbtcAssetId, irData);
-
     vm.stopPrank();
+
+    return (hub3, hub3IrStrategy);
   }
 
   function updateAssetActive(

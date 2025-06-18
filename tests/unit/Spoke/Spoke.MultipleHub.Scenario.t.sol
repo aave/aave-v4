@@ -1,13 +1,13 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.0;
 
-import 'tests/unit/Spoke/Spoke.MultipleHub.Scenario.Base.t.sol';
+import 'tests/unit/Spoke/Spoke.MultipleHub.Base.t.sol';
 
-contract SpokeMultipleHubScenarioTest is SpokeMultipleHubScenarioBase {
+contract SpokeMultipleHubScenarioTest is SpokeMultipleHubBase {
   /* @dev Test showcasing a possible configuration for isolation mode
    * A new hub and spoke are deployed with new assets A and B.
    * There is no liquidity for asset B on the new hub, so instead
-   * Asset B is listed on the canonical hub and linked to the new spoke with a draw cap.
+   * Asset B is listed from the canonical hub and linked to the new spoke with a draw cap.
    * Thus users can borrow asset B from the canonical hub via the new spoke,
    * without being able to supply it from the new spoke.
    */
@@ -41,21 +41,6 @@ contract SpokeMultipleHubScenarioTest is SpokeMultipleHubScenarioBase {
     vm.expectRevert(abi.encodeWithSelector(ILiquidityHub.NotAvailableLiquidity.selector, 0));
     newSpoke.borrow(isolationVars.reserveBId, 100e18, bob);
 
-    // List asset B on the canonical (main) hub
-    isolationVars.assetBIdMainHub = hub.assetCount();
-    hub.addAsset(
-      DataTypes.AssetConfig({
-        feeReceiver: address(0),
-        decimals: 18,
-        active: true,
-        paused: false,
-        frozen: false,
-        liquidityFee: 0,
-        irStrategy: irStrategy // Use the main hub's interest rate strategy
-      }),
-      address(assetB)
-    );
-
     // Add main hub reserve B to the new spoke
     isolationVars.reserveBIdMainHub = newSpoke.addReserve(
       isolationVars.assetBIdMainHub,
@@ -85,41 +70,10 @@ contract SpokeMultipleHubScenarioTest is SpokeMultipleHubScenarioBase {
       address(newSpoke)
     );
 
-    // Configure interest rate strategy for asset B on the main hub
-    irStrategy.setInterestRateParams(isolationVars.assetBIdMainHub, irData);
-
     // Bob still cannot borrow asset B from the new hub because there is no liquidity
     vm.expectRevert(abi.encodeWithSelector(ILiquidityHub.NotAvailableLiquidity.selector, 0));
     newSpoke.borrow(isolationVars.reserveBId, 100e18, bob);
     vm.stopPrank();
-
-    // List reserve B on spoke 1 for the main hub, allowing supplying and borrowing
-    isolationVars.spoke1ReserveBId = spoke1.addReserve(
-      isolationVars.assetBIdMainHub,
-      DataTypes.ReserveConfig({
-        decimals: assetB.decimals(),
-        active: true,
-        frozen: false,
-        paused: false,
-        liquidationBonus: 100_00,
-        liquidityPremium: 15_00,
-        liquidationProtocolFee: 0,
-        borrowable: true,
-        collateral: true,
-        hub: hub
-      }),
-      dynReserveConfig
-    );
-
-    // Set the price of reserve B on spoke1 for the main hub
-    oracle1.setReservePrice(isolationVars.spoke1ReserveBId, 50_000e8);
-
-    // Link main hub and spoke 1 for asset B
-    hub.addSpoke(
-      isolationVars.assetBIdMainHub,
-      DataTypes.SpokeConfig({drawCap: type(uint256).max, supplyCap: type(uint256).max}),
-      address(spoke1)
-    );
 
     // Alice can supply asset B to the main hub via spoke 1
     vm.startPrank(alice);
@@ -157,6 +111,37 @@ contract SpokeMultipleHubScenarioTest is SpokeMultipleHubScenarioBase {
     newSpoke.supply(isolationVars.reserveBIdMainHub, 1e18);
     vm.stopPrank();
 
+    // Alice can supply B to the new hub via new spoke
+    vm.startPrank(alice);
+    assetB.approve(address(newHub), type(uint256).max);
+    deal(address(assetB), alice, MAX_SUPPLY_AMOUNT);
+    newSpoke.supply(isolationVars.reserveBId, MAX_SUPPLY_AMOUNT);
+    vm.stopPrank();
+
+    // Now there is liquidity for asset B on the new hub
+    assertEq(
+      newHub.getAssetSuppliedAmount(isolationVars.assetBId),
+      MAX_SUPPLY_AMOUNT,
+      'total supplied amount of asset B on new hub'
+    );
+    assertEq(
+      newSpoke.getReserveSuppliedAmount(isolationVars.reserveBId),
+      MAX_SUPPLY_AMOUNT,
+      'total supplied amount of reserve B on new spoke'
+    );
+
+    // Bob will migrate to borrowing asset B from the new spoke, new hub, so repays canonical hub position
+    vm.startPrank(bob);
+    assetB.approve(address(hub), type(uint256).max);
+    newSpoke.repay(isolationVars.reserveBIdMainHub, 100_000e18);
+    assertEq(newSpoke.getUserTotalDebt(isolationVars.reserveBIdMainHub, bob), 0);
+    assertEq(hub.getAssetTotalDebt(isolationVars.assetBIdMainHub), 0);
+
+    // Bob opens new borrow position for asset B on the new spoke, new hub
+    newSpoke.borrow(isolationVars.reserveBId, 100_000e18, bob);
+    assertEq(newSpoke.getUserTotalDebt(isolationVars.reserveBId, bob), 100_000e18);
+    assertEq(newHub.getAssetTotalDebt(isolationVars.assetBId), 100_000e18);
+
     // DAO offboards credit line to new spoke from the canonical hub by setting Asset B draw cap to 0
     hub.updateSpokeConfig(
       isolationVars.assetBIdMainHub,
@@ -164,24 +149,17 @@ contract SpokeMultipleHubScenarioTest is SpokeMultipleHubScenarioBase {
       DataTypes.SpokeConfig({drawCap: 0, supplyCap: 0})
     );
 
-    // Bob can repay his debt of asset B on the new spoke
-    vm.startPrank(bob);
-    assetB.approve(address(hub), type(uint256).max);
-    newSpoke.repay(isolationVars.reserveBIdMainHub, 100_000e18);
-    assertEq(newSpoke.getUserTotalDebt(isolationVars.reserveBIdMainHub, bob), 0);
-    assertEq(hub.getAssetTotalDebt(isolationVars.assetBIdMainHub), 0);
-
-    // Bob cannot draw any additional asset B from the new spoke main hub due to new draw cap of 0
+    // Now Bob or any other users cannot draw any asset B from the new spoke main hub due to new draw cap of 0
     vm.expectRevert(abi.encodeWithSelector(ILiquidityHub.DrawCapExceeded.selector, 0));
     newSpoke.borrow(isolationVars.reserveBIdMainHub, 1e18, bob);
     vm.stopPrank();
   }
 
   /* @dev Test showcasing a possible configuration for siloed mode
-   * A new hub and spoke are deployed with only Asset B as borrowable.
+   * A new hub and spoke are deployed with Assets A and B, where B is the only borrowable asset.
    * Users can use usdx as collateral on the new spoke, which supplies to the canonical hub.
-   * Users may not borrow usdx from the new spoke, but can use it as collateral to borrow
-   * the only available asset: Asset B.
+   * Users may not borrow usdx from the new spoke, but can use it as collateral to borrow the
+   * only borrowable asset: Asset B.
    */
   function test_siloed_mode() public {
     setUpSiloedMode();
