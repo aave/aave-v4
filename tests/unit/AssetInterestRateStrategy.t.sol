@@ -224,7 +224,7 @@ contract AssetInterestRateStrategyTest is Test {
       uint256 availableLiquidity,
       uint256 liquidityAdded,
       uint256 liquidityTaken
-    ) = _computeCalculateInterestRateParams(utilizationRatioRay);
+    ) = _generateCalculateInterestRateParams(utilizationRatioRay);
 
     uint256 variableBorrowRate = rateStrategy.calculateInterestRate({
       assetId: mockAssetId,
@@ -259,7 +259,7 @@ contract AssetInterestRateStrategyTest is Test {
       uint256 availableLiquidity,
       uint256 liquidityAdded,
       uint256 liquidityTaken
-    ) = _computeCalculateInterestRateParams(utilizationRatioRay);
+    ) = _generateCalculateInterestRateParams(utilizationRatioRay);
 
     uint256 variableBorrowRate = rateStrategy.calculateInterestRate({
       assetId: mockAssetId,
@@ -288,7 +288,7 @@ contract AssetInterestRateStrategyTest is Test {
     test_calculateInterestRate_RightToKinkPoint(100_00, 100e18);
   }
 
-  function _computeCalculateInterestRateParams(
+  function _generateCalculateInterestRateParams(
     uint256 targetUtilizationRatioRay
   )
     internal
