@@ -187,6 +187,7 @@ contract LiquidationCallCloseFactorMultiReserveTest is SpokeLiquidationBase {
         state.collateralReserves[i].dynamicConfigKey
       ); // utilize latest dynamic config
     }
+    state.collDynConfig = state.collDynConfigs[collateralReserveIndex];
     for (uint256 i = 0; i < debtReserveIds.length; i++) {
       state.debtReserves[i] = spoke1.getReserve(debtReserveIds[i]);
     }
@@ -197,7 +198,6 @@ contract LiquidationCallCloseFactorMultiReserveTest is SpokeLiquidationBase {
       PercentageMathExtended.PERCENTAGE_FACTOR.percentDivDown(
         state.collDynConfigs[collateralReserveIndex].collateralFactor
       )
-      // .percentMulDown(99_00) // add buffer so that not all debt is liquidated
     );
     liquidationProtocolFee = bound(liquidationProtocolFee, 0, 100_00);
     supplyAmountInBase = bound(

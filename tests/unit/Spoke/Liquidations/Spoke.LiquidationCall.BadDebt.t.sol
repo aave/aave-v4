@@ -326,6 +326,11 @@ contract LiquidationCallBadDebtTest is SpokeLiquidationBase {
     state.collateralReserves[state.collateralReserveIndex] = spoke1.getReserve(collateralReserveId);
     state.debtReserves[state.debtReserveIndex] = spoke1.getReserve(debtReserveId);
 
+    state.collDynConfig = spoke1.getDynamicReserveConfig(
+      collateralReserveId,
+      state.collateralReserves[state.collateralReserveIndex].dynamicConfigKey
+    ); // utilize latest dynamic config
+
     // bound close factor, with a static liq bonus
     liqConfig = _boundCloseFactor(liqConfig);
     liqBonus = bound(
