@@ -26,6 +26,14 @@ contract SpokeAccrueInterestTest is SpokeBase {
     uint256 wbtcBaseBorrowRate;
   }
 
+  function setUp() public override {
+    super.setUp();
+    updateLiquidityFee(hub, daiAssetId, 0);
+    updateLiquidityFee(hub, wethAssetId, 0);
+    updateLiquidityFee(hub, usdxAssetId, 0);
+    updateLiquidityFee(hub, wbtcAssetId, 0);
+  }
+
   function test_accrueInterest_NoActionTaken() public {
     _assertSingleUserProtocolDebt(
       spoke1,
@@ -272,24 +280,28 @@ contract SpokeAccrueInterestTest is SpokeBase {
 
     // Deploy remainder of liquidity
     if (amounts.daiSupplyAmount < MAX_SUPPLY_AMOUNT) {
-      _deployLiquidity(spoke1, _daiReserveId(spoke1), MAX_SUPPLY_AMOUNT - amounts.daiSupplyAmount);
+      _openSupplyPosition(
+        spoke1,
+        _daiReserveId(spoke1),
+        MAX_SUPPLY_AMOUNT - amounts.daiSupplyAmount
+      );
     }
     if (amounts.wethSupplyAmount < MAX_SUPPLY_AMOUNT) {
-      _deployLiquidity(
+      _openSupplyPosition(
         spoke1,
         _wethReserveId(spoke1),
         MAX_SUPPLY_AMOUNT - amounts.wethSupplyAmount
       );
     }
     if (amounts.usdxSupplyAmount < MAX_SUPPLY_AMOUNT) {
-      _deployLiquidity(
+      _openSupplyPosition(
         spoke1,
         _usdxReserveId(spoke1),
         MAX_SUPPLY_AMOUNT - amounts.usdxSupplyAmount
       );
     }
     if (amounts.wbtcSupplyAmount < MAX_SUPPLY_AMOUNT) {
-      _deployLiquidity(
+      _openSupplyPosition(
         spoke1,
         _wbtcReserveId(spoke1),
         MAX_SUPPLY_AMOUNT - amounts.wbtcSupplyAmount
@@ -634,24 +646,28 @@ contract SpokeAccrueInterestTest is SpokeBase {
 
     // Deploy remainder of liquidity
     if (amounts.daiSupplyAmount < MAX_SUPPLY_AMOUNT) {
-      _deployLiquidity(spoke1, _daiReserveId(spoke1), MAX_SUPPLY_AMOUNT - amounts.daiSupplyAmount);
+      _openSupplyPosition(
+        spoke1,
+        _daiReserveId(spoke1),
+        MAX_SUPPLY_AMOUNT - amounts.daiSupplyAmount
+      );
     }
     if (amounts.wethSupplyAmount < MAX_SUPPLY_AMOUNT) {
-      _deployLiquidity(
+      _openSupplyPosition(
         spoke1,
         _wethReserveId(spoke1),
         MAX_SUPPLY_AMOUNT - amounts.wethSupplyAmount
       );
     }
     if (amounts.usdxSupplyAmount < MAX_SUPPLY_AMOUNT) {
-      _deployLiquidity(
+      _openSupplyPosition(
         spoke1,
         _usdxReserveId(spoke1),
         MAX_SUPPLY_AMOUNT - amounts.usdxSupplyAmount
       );
     }
     if (amounts.wbtcSupplyAmount < MAX_SUPPLY_AMOUNT) {
-      _deployLiquidity(
+      _openSupplyPosition(
         spoke1,
         _wbtcReserveId(spoke1),
         MAX_SUPPLY_AMOUNT - amounts.wbtcSupplyAmount
@@ -667,7 +683,7 @@ contract SpokeAccrueInterestTest is SpokeBase {
           liquidityAdded: 0,
           liquidityTaken: amounts.daiBorrowAmount,
           totalDebt: baseDebt,
-          reserveFactor: 0,
+          liquidityFee: 0,
           assetId: daiAssetId,
           virtualUnderlyingBalance: asset.availableLiquidity,
           usingVirtualBalance: true
@@ -689,7 +705,7 @@ contract SpokeAccrueInterestTest is SpokeBase {
           liquidityAdded: 0,
           liquidityTaken: amounts.wethBorrowAmount,
           totalDebt: baseDebt,
-          reserveFactor: 0,
+          liquidityFee: 0,
           assetId: wethAssetId,
           virtualUnderlyingBalance: asset.availableLiquidity,
           usingVirtualBalance: true
@@ -711,7 +727,7 @@ contract SpokeAccrueInterestTest is SpokeBase {
           liquidityAdded: 0,
           liquidityTaken: amounts.usdxBorrowAmount,
           totalDebt: baseDebt,
-          reserveFactor: 0,
+          liquidityFee: 0,
           assetId: usdxAssetId,
           virtualUnderlyingBalance: asset.availableLiquidity,
           usingVirtualBalance: true
@@ -733,7 +749,7 @@ contract SpokeAccrueInterestTest is SpokeBase {
           liquidityAdded: 0,
           liquidityTaken: amounts.wbtcBorrowAmount,
           totalDebt: baseDebt,
-          reserveFactor: 0,
+          liquidityFee: 0,
           assetId: wbtcAssetId,
           virtualUnderlyingBalance: asset.availableLiquidity,
           usingVirtualBalance: true

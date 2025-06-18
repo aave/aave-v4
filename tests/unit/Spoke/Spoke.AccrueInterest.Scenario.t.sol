@@ -40,6 +40,14 @@ contract SpokeAccrueInterestScenarioTest is SpokeBase {
     uint256 wbtc;
   }
 
+  function setUp() public override {
+    super.setUp();
+    updateLiquidityFee(hub, daiAssetId, 0);
+    updateLiquidityFee(hub, wethAssetId, 0);
+    updateLiquidityFee(hub, usdxAssetId, 0);
+    updateLiquidityFee(hub, wbtcAssetId, 0);
+  }
+
   /// Second accrual after an action - which should update the user rp
   function test_accrueInterest_fuzz_RPBorrowAndskipTime_twoActions(
     TestAmounts memory amounts,
@@ -77,24 +85,28 @@ contract SpokeAccrueInterestScenarioTest is SpokeBase {
 
     // Deploy remainder of liquidity
     if (amounts.daiSupplyAmount < MAX_SUPPLY_AMOUNT) {
-      _deployLiquidity(spoke2, _daiReserveId(spoke2), MAX_SUPPLY_AMOUNT - amounts.daiSupplyAmount);
+      _openSupplyPosition(
+        spoke2,
+        _daiReserveId(spoke2),
+        MAX_SUPPLY_AMOUNT - amounts.daiSupplyAmount
+      );
     }
     if (amounts.wethSupplyAmount < MAX_SUPPLY_AMOUNT) {
-      _deployLiquidity(
+      _openSupplyPosition(
         spoke2,
         _wethReserveId(spoke2),
         MAX_SUPPLY_AMOUNT - amounts.wethSupplyAmount
       );
     }
     if (amounts.usdxSupplyAmount < MAX_SUPPLY_AMOUNT) {
-      _deployLiquidity(
+      _openSupplyPosition(
         spoke2,
         _usdxReserveId(spoke2),
         MAX_SUPPLY_AMOUNT - amounts.usdxSupplyAmount
       );
     }
     if (amounts.wbtcSupplyAmount < MAX_SUPPLY_AMOUNT) {
-      _deployLiquidity(
+      _openSupplyPosition(
         spoke2,
         _wbtcReserveId(spoke2),
         MAX_SUPPLY_AMOUNT - amounts.wbtcSupplyAmount

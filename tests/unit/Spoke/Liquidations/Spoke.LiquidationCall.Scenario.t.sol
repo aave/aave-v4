@@ -594,7 +594,7 @@ contract LiquidationCallScenarioTest is SpokeLiquidationBase {
     );
     assertEq(
       avgCollFactor.dewadify(),
-      spoke1.getReserve(state.daiReserveId).config.collateralFactor,
+      spoke1.getDynamicReserveConfig(state.daiReserveId).collateralFactor,
       'avg coll factor matches dai coll factor'
     );
     // hf < 1 after

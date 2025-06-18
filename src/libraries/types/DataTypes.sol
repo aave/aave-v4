@@ -36,10 +36,12 @@ library DataTypes {
   }
 
   struct AssetConfig {
+    address feeReceiver;
     bool active;
     bool frozen;
     bool paused;
     uint256 decimals;
+    uint256 liquidityFee;
     IReserveInterestRateStrategy irStrategy;
   }
 
@@ -49,7 +51,7 @@ library DataTypes {
     uint256 liquidityAdded;
     uint256 liquidityTaken;
     uint256 totalDebt;
-    uint256 reserveFactor; // likely not required
+    uint256 liquidityFee; // likely not required
     uint256 assetId;
     uint256 virtualUnderlyingBalance;
   }
@@ -57,13 +59,14 @@ library DataTypes {
   struct Reserve {
     uint256 reserveId;
     uint256 assetId;
-    address asset;
+    address asset; // todo rm not needed
     uint256 suppliedShares;
     uint256 baseDrawnShares;
     uint256 premiumDrawnShares;
     uint256 premiumOffset;
     uint256 realizedPremium;
     ReserveConfig config;
+    uint16 dynamicConfigKey; // key of the last reserve config
   }
 
   struct ReserveConfig {
@@ -73,10 +76,13 @@ library DataTypes {
     bool borrowable;
     bool collateral;
     uint256 decimals; // TODO: use smaller uint8
-    uint256 collateralFactor; // BPS TODO: use smaller uint
     uint256 liquidationBonus; // BPS, 100_00 represent a 0% bonus TODO: use smaller uint
     uint256 liquidityPremium; // BPS TODO: use smaller uint
     uint256 liquidationProtocolFee; // BPS TODO: use smaller uint
+  }
+
+  struct DynamicReserveConfig {
+    uint16 collateralFactor;
   }
 
   struct UserPosition {
@@ -86,6 +92,7 @@ library DataTypes {
     uint256 premiumDrawnShares;
     uint256 premiumOffset;
     uint256 realizedPremium;
+    uint16 configKey; // key of the last user config
   }
 
   struct CalculateUserAccountDataVars {
