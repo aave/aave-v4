@@ -9,7 +9,6 @@ solc_version = "0.8.28"
 evm_version = "cancun"
 optimizer = true
 optimizer_runs = 200
-via_ir = true
 bytecode_hash = "none"
 gas_snapshot_check = false
 

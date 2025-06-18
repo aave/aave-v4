@@ -285,66 +285,67 @@ contract Spoke is ISpoke, Multicall {
   ) external onlyPositionManager(onBehalfOf) {
     DataTypes.UserPosition storage userPosition = _userPositions[onBehalfOf][reserveId];
     DataTypes.Reserve storage reserve = _reserves[reserveId];
-    uint256 assetId = reserve.assetId;
+    DataTypes.ExecuteRepayLocalVars memory vars;
 
-    (uint256 baseDebt, uint256 premiumDebt) = _getUserDebt(userPosition, assetId);
-    (uint256 baseDebtRestored, uint256 premiumDebtRestored) = _calculateRestoreAmount(
-      baseDebt,
-      premiumDebt,
+    vars.assetId = reserve.assetId;
+    (vars.baseDebt, vars.premiumDebt) = _getUserDebt(userPosition, vars.assetId);
+    (vars.baseDebtRestored, vars.premiumDebtRestored) = _calculateRestoreAmount(
+      vars.baseDebt,
+      vars.premiumDebt,
       amount
     );
     _validateRepay(reserve);
 
-    uint256 userPremiumDrawnShares = userPosition.premiumDrawnShares;
-    uint256 userPremiumOffset = userPosition.premiumOffset;
-    uint256 accruedPremium = premiumDebt - userPosition.realizedPremium;
+    vars.userPremiumDrawnShares = userPosition.premiumDrawnShares;
+    vars.userPremiumOffset = userPosition.premiumOffset;
+    vars.accruedPremium = vars.premiumDebt - userPosition.realizedPremium;
 
     userPosition.premiumDrawnShares = 0;
     userPosition.premiumOffset = 0;
-    userPosition.realizedPremium = premiumDebt - premiumDebtRestored;
+    userPosition.realizedPremium = vars.premiumDebt - vars.premiumDebtRestored;
 
     _refreshPremiumDebt(
       reserve,
       onBehalfOf,
-      assetId,
-      -int256(userPremiumDrawnShares),
-      -int256(userPremiumOffset),
-      accruedPremium,
-      premiumDebtRestored
+      vars.assetId,
+      -int256(vars.userPremiumDrawnShares),
+      -int256(vars.userPremiumOffset),
+      vars.accruedPremium,
+      vars.premiumDebtRestored
     ); // we settle premium debt here
 
-    uint256 restoredShares = HUB.restore(
-      assetId,
-      baseDebtRestored,
-      premiumDebtRestored,
+    vars.restoredShares = HUB.restore(
+      vars.assetId,
+      vars.baseDebtRestored,
+      vars.premiumDebtRestored,
       onBehalfOf
     ); // we settle base debt here
 
-    reserve.baseDrawnShares -= restoredShares;
-    userPosition.baseDrawnShares -= restoredShares;
+    reserve.baseDrawnShares -= vars.restoredShares;
+    userPosition.baseDrawnShares -= vars.restoredShares;
 
-    (uint256 newUserRiskPremium, , , , ) = _calculateUserAccountData(onBehalfOf);
+    (vars.newUserRiskPremium, , , , ) = _calculateUserAccountData(onBehalfOf);
 
-    userPremiumDrawnShares = userPosition.premiumDrawnShares = userPosition
+    vars.userPremiumDrawnShares = userPosition.premiumDrawnShares = userPosition
       .baseDrawnShares
-      .percentMulUp(newUserRiskPremium);
-    userPremiumOffset = userPosition.premiumOffset = HUB.previewOffset(
-      assetId,
+      .percentMulUp(vars.newUserRiskPremium);
+    vars.userPremiumOffset = userPosition.premiumOffset = HUB.previewOffset(
+      vars.assetId,
       userPosition.premiumDrawnShares
     );
 
     _refreshPremiumDebt(
       reserve,
       onBehalfOf,
-      assetId,
-      int256(userPremiumDrawnShares),
-      int256(userPremiumOffset),
+      vars.assetId,
+      int256(vars.userPremiumDrawnShares),
+      int256(vars.userPremiumOffset),
       0,
       0
     );
-    _notifyRiskPremiumUpdate(assetId, onBehalfOf, newUserRiskPremium);
+    _notifyRiskPremiumUpdate(vars.assetId, onBehalfOf, vars.newUserRiskPremium);
 
-    emit Repay(reserveId, msg.sender, onBehalfOf, restoredShares);
+    emit Repay(reserveId, msg.sender, onBehalfOf, vars.restoredShares);
   }
 
   function liquidationCall(

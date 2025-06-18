@@ -172,4 +172,17 @@ library DataTypes {
     uint256 usersLength;
     uint256 newUserSuppliedShares;
   }
+
+  struct ExecuteRepayLocalVars {
+    uint256 assetId;
+    uint256 baseDebt;
+    uint256 premiumDebt;
+    uint256 baseDebtRestored;
+    uint256 premiumDebtRestored;
+    uint256 userPremiumDrawnShares;
+    uint256 userPremiumOffset;
+    uint256 accruedPremium;
+    uint256 newUserRiskPremium;
+    uint256 restoredShares;
+  }
 }
