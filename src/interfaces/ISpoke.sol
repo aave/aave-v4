@@ -92,12 +92,23 @@ interface ISpoke is IMulticall {
   event UserRiskPremiumUpdate(address indexed user, uint256 riskPremium);
 
   /**
-   * @notice Emitted on setPositionManager action.
-   * @param user The address of the user toggling status of given positionManager.
+   * @notice Emitted on setPositionManagerApproval or renouncePositionManagerRole action.
+   * @param user The address of the user on whose behalf position manager can act.
    * @param positionManager The address of the position manager.
-   * @param approve True if position manager was approved, false otherwise.
+   * @param approve True if position manager approval was granted, false if it was revoked.
    */
-  event PositionManagerSet(address indexed user, address indexed positionManager, bool approve);
+  event ApprovalForPositionManager(
+    address indexed user,
+    address indexed positionManager,
+    bool approve
+  );
+
+  /**
+   * @notice Emitted on setPositionManager action.
+   * @param positionManager The address of the position manager.
+   * @param active True if position manager has become active, false otherwise.
+   */
+  event PositionManagerSet(address indexed positionManager, bool active);
 
   event RefreshPremiumDebt(
     uint256 indexed reserveId,
@@ -150,7 +161,6 @@ interface ISpoke is IMulticall {
   error InvalidHubAddress();
   error InvalidHealthFactorForMaxBonus();
   error InvalidLiquidationBonusFactor();
-  error InvalidOnBehalfOf();
   error NoUserRiskPremiumDecrease();
   error HealthFactorNotBelowThreshold();
   error CollateralCannotBeLiquidated();
@@ -162,6 +172,9 @@ interface ISpoke is IMulticall {
   error Unauthorized();
   error CollateralStatusUnchanged();
   error ZeroAddress();
+  error NoExplicitAmountToRepayOnBehalf();
+
+  function updateLiquidationConfig(DataTypes.LiquidationConfig calldata config) external;
 
   function addReserve(
     uint256 assetId,
@@ -176,11 +189,17 @@ interface ISpoke is IMulticall {
     DataTypes.DynamicReserveConfig calldata dynamicConfig
   ) external;
 
-  function updateLiquidationConfig(DataTypes.LiquidationConfig calldata config) external;
+  /**
+   * @notice Allows an approved caller (admin) to toggle the active status of position manager.
+   * @param positionManager The address of the position manager.
+   * @param active True if position manager is to be set as active, false otherwise.
+   */
+  function setPositionManager(address positionManager, bool active) external;
 
   /**
    * @notice Supply an amount of underlying asset of the specified reserve.
    * @dev The Liquidity Hub pulls the underlying asset from the caller, so prior token approval is required.
+   * @dev Caller must be `onBehalfOf` or an authorized position manager for `onBehalfOf`.
    * @param reserveId The reserve identifier.
    * @param amount The amount of asset to supply.
    * @param onBehalfOf The owner of position to add supply shares to.
@@ -211,6 +230,7 @@ interface ISpoke is IMulticall {
   /**
    * @notice Repays a specified amount of underlying asset to a given reserve.
    * @dev The Liquidity Hub pulls the underlying asset from the caller, so prior approval is required.
+   * @dev Caller must be `onBehalfOf` or an authorized position manager for `onBehalfOf`.
    * @param reserveId The identifier of the reserve.
    * @param amount The amount of asset to repay.
    * @param onBehalfOf The owner of the position whose debt is repaid.
@@ -248,12 +268,12 @@ interface ISpoke is IMulticall {
   /**
    * @notice Allows caller to approve or revoke approval for positionManager.
    * @param positionManager The address of the position manager.
-   * @param approve True if user wants to set position manager, false otherwise.
+   * @param approve True if user wants to approve position manager, false otherwise.
    */
-  function setPositionManager(address positionManager, bool approve) external;
+  function setApprovalForPositionManager(address positionManager, bool approve) external;
 
   /**
-   * @notice Allows position manager to renounce their approval given by the user.
+   * @notice Allows position manager (as caller) to renounce their approval given by the user.
    * @param user The address of the user.
    */
   function renouncePositionManagerRole(address user) external;

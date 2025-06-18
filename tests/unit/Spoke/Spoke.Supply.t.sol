@@ -77,16 +77,6 @@ contract SpokeSupplyTest is SpokeBase {
     spoke1.supply(_daiReserveId(spoke1), amount, bob);
   }
 
-  function test_fuzz_supply_revertsWith_InvalidOnBehalfOf() public {
-    vm.expectRevert(ISpoke.InvalidOnBehalfOf.selector);
-    vm.prank(vm.randomAddress());
-    spoke1.supply(_daiReserveId(spoke1), vm.randomUint(), address(0));
-
-    vm.expectRevert(ISpoke.InvalidOnBehalfOf.selector);
-    vm.prank(vm.randomAddress());
-    spoke1.supply(_daiReserveId(spoke1), vm.randomUint(), address(hub));
-  }
-
   function test_supply() public {
     uint256 amount = 100e18;
     TestUserData[2] memory bobData;

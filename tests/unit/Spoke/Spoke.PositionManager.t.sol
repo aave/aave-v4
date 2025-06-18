@@ -13,16 +13,16 @@ contract SpokePositionManagerTest is SpokeBase {
     bool state = spoke1.isPositionManager(user, positionManager);
 
     vm.expectEmit(address(spoke1));
-    emit ISpoke.PositionManagerSet(user, positionManager, state);
+    emit ISpoke.ApprovalForPositionManager(user, positionManager, state);
     vm.prank(user);
-    spoke1.setPositionManager(positionManager, state);
+    spoke1.setApprovalForPositionManager(positionManager, state);
 
     assertEq(spoke1.isPositionManager(user, positionManager), state);
 
     vm.expectEmit(address(spoke1));
-    emit ISpoke.PositionManagerSet(user, positionManager, !state);
+    emit ISpoke.ApprovalForPositionManager(user, positionManager, !state);
     vm.prank(user);
-    spoke1.setPositionManager(positionManager, !state);
+    spoke1.setApprovalForPositionManager(positionManager, !state);
 
     assertEq(spoke1.isPositionManager(user, positionManager), !state);
   }

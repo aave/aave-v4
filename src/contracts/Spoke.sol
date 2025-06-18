@@ -34,8 +34,8 @@ contract Spoke is ISpoke, Multicall {
   mapping(address user => mapping(uint256 reserveId => DataTypes.UserPosition position))
     internal _userPositions;
   mapping(uint256 reserveId => DataTypes.Reserve reserveData) internal _reserves;
-  mapping(address user => mapping(address positionManager => bool authorized))
-    internal _positionManager;
+  mapping(address positionManager => DataTypes.PositionManagerConfig) internal _positionManager;
+
   mapping(uint256 reserveId => mapping(uint16 configKey => DataTypes.DynamicReserveConfig config))
     internal _dynamicConfig; // dictionary of dynamic configs per reserve
 
@@ -44,7 +44,7 @@ contract Spoke is ISpoke, Multicall {
   uint256 public reserveCount;
 
   modifier onlyPositionManager(address onBehalfOf) {
-    require(_isPositionManager(onBehalfOf, msg.sender), Unauthorized());
+    require(_isPositionManager({user: onBehalfOf, manager: msg.sender}), Unauthorized());
     _;
   }
 
@@ -136,16 +136,28 @@ contract Spoke is ISpoke, Multicall {
     // todo emit if stale config overwritten?
   }
 
+  /// @inheritdoc ISpoke
+  function setPositionManager(address positionManager, bool active) external {
+    // todo access control
+    DataTypes.PositionManagerConfig storage config = _positionManager[positionManager];
+    config.active = active;
+    emit PositionManagerSet(positionManager, active);
+  }
+
   // /////
   // Users
   // /////
 
   /// @inheritdoc ISpoke
-  function supply(uint256 reserveId, uint256 amount, address onBehalfOf) external {
+  function supply(
+    uint256 reserveId,
+    uint256 amount,
+    address onBehalfOf
+  ) external onlyPositionManager(onBehalfOf) {
     DataTypes.Reserve storage reserve = _reserves[reserveId];
     DataTypes.UserPosition storage userPosition = _userPositions[onBehalfOf][reserveId];
 
-    _validateSupply(reserve, onBehalfOf);
+    _validateSupply(reserve);
 
     uint256 suppliedShares = HUB.add(reserve.assetId, amount, msg.sender);
 
@@ -289,12 +301,12 @@ contract Spoke is ISpoke, Multicall {
 
     vars.assetId = reserve.assetId;
     (vars.baseDebt, vars.premiumDebt) = _getUserDebt(userPosition, vars.assetId);
+    _validateRepay(reserve);
     (vars.baseDebtRestored, vars.premiumDebtRestored) = _calculateRestoreAmount(
       vars.baseDebt,
       vars.premiumDebt,
       amount
     );
-    _validateRepay(reserve);
 
     vars.userPremiumDrawnShares = userPosition.premiumDrawnShares;
     vars.userPremiumOffset = userPosition.premiumOffset;
@@ -403,15 +415,15 @@ contract Spoke is ISpoke, Multicall {
   }
 
   /// @inheritdoc ISpoke
-  function setPositionManager(address positionManager, bool approve) external {
-    _positionManager[msg.sender][positionManager] = approve;
-    emit PositionManagerSet(msg.sender, positionManager, approve);
+  function setApprovalForPositionManager(address positionManager, bool approve) external {
+    _positionManager[positionManager].approval[msg.sender] = approve;
+    emit ApprovalForPositionManager(msg.sender, positionManager, approve);
   }
 
   /// @inheritdoc ISpoke
   function renouncePositionManagerRole(address user) external {
-    _positionManager[user][msg.sender] = false;
-    emit PositionManagerSet(user, msg.sender, false);
+    _positionManager[msg.sender].approval[user] = false;
+    emit ApprovalForPositionManager(user, msg.sender, false);
   }
 
   /// @inheritdoc ISpoke
@@ -556,12 +568,11 @@ contract Spoke is ISpoke, Multicall {
   }
 
   // internal
-  function _validateSupply(DataTypes.Reserve storage reserve, address onBehalfOf) internal view {
+  function _validateSupply(DataTypes.Reserve storage reserve) internal view {
     require(reserve.asset != address(0), ReserveNotListed());
     require(reserve.config.active, ReserveNotActive());
     require(!reserve.config.paused, ReservePaused());
     require(!reserve.config.frozen, ReserveFrozen());
-    require(onBehalfOf != address(0) && onBehalfOf != address(HUB), InvalidOnBehalfOf());
   }
 
   function _validateWithdraw(
@@ -594,7 +605,7 @@ contract Spoke is ISpoke, Multicall {
     require(reserve.config.active, ReserveNotActive());
     require(!reserve.config.paused, ReservePaused());
     // todo validate user not trying to repay more
-    // todo NoExplicitAmountToRepayOnBehalf?
+    // todo NoExplicitAmountToRepayOnBehalf
   }
 
   function _refreshAndValidateUserPosition(address user) internal returns (uint256) {
@@ -1330,6 +1341,7 @@ contract Spoke is ISpoke, Multicall {
   }
 
   function _isPositionManager(address user, address manager) private view returns (bool) {
-    return user == manager || _positionManager[user][manager];
+    DataTypes.PositionManagerConfig storage config = _positionManager[manager];
+    return user == manager || (config.active && config.approval[user]);
   }
 }

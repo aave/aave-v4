@@ -95,6 +95,11 @@ library DataTypes {
     uint16 configKey; // key of the last user config
   }
 
+  struct PositionManagerConfig {
+    bool active;
+    mapping(address user => bool approved) approval;
+  }
+
   struct CalculateUserAccountDataVars {
     uint256 i;
     uint256 assetId;
