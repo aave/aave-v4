@@ -37,7 +37,6 @@ contract Spoke is ISpoke, Multicall {
   mapping(address positionManager => DataTypes.PositionManagerConfig) internal _positionManager;
   mapping(uint256 reserveId => mapping(uint16 configKey => DataTypes.DynamicReserveConfig config))
     internal _dynamicConfig; // dictionary of dynamic configs per reserve
-
   DataTypes.LiquidationConfig internal _liquidationConfig;
   uint256[] public reservesList; // todo: rm, not needed
   uint256 public reserveCount;
@@ -418,7 +417,7 @@ contract Spoke is ISpoke, Multicall {
   /// @inheritdoc ISpoke
   function setApprovalForPositionManager(address positionManager, bool approve) external {
     DataTypes.PositionManagerConfig storage config = _positionManager[positionManager];
-    // @dev only allow approval when config is active for improved UX
+    // @dev only allow approval when position manager is active for improved UX
     require(!approve || config.active, InactivePositionManager());
     config.approval[msg.sender] = approve;
     emit ApprovalForPositionManager(msg.sender, positionManager, approve);
