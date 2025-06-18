@@ -69,12 +69,22 @@ contract SpokeSupplyTest is SpokeBase {
     vm.stopPrank();
   }
 
-  function test_supply_revertsWith_invalid_supply_amount() public {
+  function test_supply_revertsWith_InvalidSupplyAmount() public {
     uint256 amount = 0;
 
     vm.expectRevert(ILiquidityHub.InvalidSupplyAmount.selector);
     vm.prank(bob);
     spoke1.supply(_daiReserveId(spoke1), amount, bob);
+  }
+
+  function test_fuzz_supply_revertsWith_InvalidOnBehalfOf() public {
+    vm.expectRevert(ISpoke.InvalidOnBehalfOf.selector);
+    vm.prank(vm.randomAddress());
+    spoke1.supply(_daiReserveId(spoke1), vm.randomUint(), address(0));
+
+    vm.expectRevert(ISpoke.InvalidOnBehalfOf.selector);
+    vm.prank(vm.randomAddress());
+    spoke1.supply(_daiReserveId(spoke1), vm.randomUint(), address(hub));
   }
 
   function test_supply() public {

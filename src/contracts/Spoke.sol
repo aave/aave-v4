@@ -397,6 +397,7 @@ contract Spoke is ISpoke, Multicall {
   function updateUserRiskPremium(address user) external {
     (uint256 userRiskPremium, , , , ) = _calculateUserAccountData(user);
     bool premiumIncrease = _notifyRiskPremiumUpdate(type(uint256).max, user, userRiskPremium);
+    // todo add exception for DAO/admin to increase as well
     require(!premiumIncrease || _isPositionManager(user, msg.sender), Unauthorized());
     emit UserRiskPremiumUpdate(user, userRiskPremium);
   }
@@ -411,6 +412,11 @@ contract Spoke is ISpoke, Multicall {
   function renouncePositionManagerRole(address user) external {
     _positionManager[user][msg.sender] = false;
     emit PositionManagerSet(user, msg.sender, false);
+  }
+
+  /// @inheritdoc ISpoke
+  function isPositionManager(address user, address positionManager) external view returns (bool) {
+    return _isPositionManager(user, positionManager);
   }
 
   function getUsingAsCollateral(uint256 reserveId, address user) external view returns (bool) {
@@ -555,7 +561,7 @@ contract Spoke is ISpoke, Multicall {
     require(reserve.config.active, ReserveNotActive());
     require(!reserve.config.paused, ReservePaused());
     require(!reserve.config.frozen, ReserveFrozen());
-    require(onBehalfOf != address(0), ZeroAddress());
+    require(onBehalfOf != address(0) && onBehalfOf != address(HUB), InvalidOnBehalfOf());
   }
 
   function _validateWithdraw(
@@ -588,6 +594,7 @@ contract Spoke is ISpoke, Multicall {
     require(reserve.config.active, ReserveNotActive());
     require(!reserve.config.paused, ReservePaused());
     // todo validate user not trying to repay more
+    // todo NoExplicitAmountToRepayOnBehalf?
   }
 
   function _refreshAndValidateUserPosition(address user) internal returns (uint256) {
@@ -1322,7 +1329,7 @@ contract Spoke is ISpoke, Multicall {
     emit UsingAsCollateral(reserveId, user, usingAsCollateral);
   }
 
-  function _isPositionManager(address onBehalfOf, address caller) private view returns (bool) {
-    return caller == onBehalfOf || _positionManager[onBehalfOf][caller];
+  function _isPositionManager(address user, address manager) private view returns (bool) {
+    return user == manager || _positionManager[user][manager];
   }
 }

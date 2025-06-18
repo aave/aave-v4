@@ -150,6 +150,7 @@ interface ISpoke is IMulticall {
   error InvalidHubAddress();
   error InvalidHealthFactorForMaxBonus();
   error InvalidLiquidationBonusFactor();
+  error InvalidOnBehalfOf();
   error NoUserRiskPremiumDecrease();
   error HealthFactorNotBelowThreshold();
   error CollateralCannotBeLiquidated();
@@ -256,6 +257,8 @@ interface ISpoke is IMulticall {
    * @param user The address of the user.
    */
   function renouncePositionManagerRole(address user) external;
+
+  function isPositionManager(address user, address positionManager) external view returns (bool);
 
   function getHealthFactor(address user) external view returns (uint256);
 
