@@ -39,8 +39,8 @@ library DataTypes {
 
   struct AssetConfig {
     bool active;
-    bool frozen;
     bool paused;
+    bool frozen;
     address feeReceiver;
     uint256 liquidityFee;
     IReserveInterestRateStrategy irStrategy;

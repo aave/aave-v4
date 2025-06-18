@@ -1,12 +1,32 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.10;
 
+import {IERC20Metadata} from 'src/dependencies/openzeppelin/IERC20Metadata.sol';
 import {DataTypes} from 'src/libraries/types/DataTypes.sol';
 import {IReserveInterestRateStrategy} from 'src/interfaces/IReserveInterestRateStrategy.sol';
 import {ILiquidityHub} from 'src/interfaces/ILiquidityHub.sol';
 import {IConfigurator} from 'src/interfaces/IConfigurator.sol';
 
 contract Configurator is IConfigurator {
+  function addAsset(
+    address hub,
+    address asset,
+    address irStrategy
+  ) external override returns (uint256) {
+    // TODO: AccessControl
+    return ILiquidityHub(hub).addAsset(asset, IERC20Metadata(asset).decimals(), irStrategy);
+  }
+
+  function addAsset(
+    address hub,
+    address asset,
+    uint8 decimals,
+    address irStrategy
+  ) external override returns (uint256) {
+    // TODO: AccessControl
+    return ILiquidityHub(hub).addAsset(asset, decimals, irStrategy);
+  }
+
   function setActive(address hub, uint256 assetId, bool active) external override {
     // TODO: AccessControl
 

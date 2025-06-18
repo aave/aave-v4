@@ -1,7 +1,5 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.0;
-
-import {IERC20} from 'src/dependencies/openzeppelin/IERC20.sol';
 import {DataTypes} from 'src/libraries/types/DataTypes.sol';
 
 /**
@@ -11,7 +9,7 @@ import {DataTypes} from 'src/libraries/types/DataTypes.sol';
  */
 interface ILiquidityHub {
   event SpokeAdded(uint256 indexed assetId, address indexed spoke);
-  event AssetAdded(uint256 indexed assetId, address indexed asset);
+  event AssetAdded(uint256 indexed assetId, address indexed asset, uint8 decimals);
   event AssetConfigUpdated(uint256 indexed assetId, DataTypes.AssetConfig config);
   event SpokeConfigUpdated(
     uint256 indexed assetId,
@@ -77,8 +75,9 @@ interface ILiquidityHub {
   error InvalidAssetAddress();
   error InvalidDebtChange();
   error InvalidFeeReceiver();
+  error InvalidFeeReceiverConfig();
 
-  function addAsset(address asset, uint8 decimals, address irStrategy) external;
+  function addAsset(address asset, uint8 decimals, address irStrategy) external returns (uint256);
 
   function updateAssetConfig(uint256 assetId, DataTypes.AssetConfig memory config) external;
 

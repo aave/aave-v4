@@ -30,7 +30,7 @@ contract LiquidityHub is ILiquidityHub {
   // Governance
   // /////
 
-  function addAsset(address asset, uint8 decimals, address irStrategy) external {
+  function addAsset(address asset, uint8 decimals, address irStrategy) external returns (uint256) {
     // TODO: AccessControl
 
     require(asset != address(0), InvalidAssetAddress());
@@ -40,8 +40,8 @@ contract LiquidityHub is ILiquidityHub {
     uint256 id = assetCount++;
     DataTypes.AssetConfig memory config = DataTypes.AssetConfig({
       active: true,
-      frozen: false,
       paused: false,
+      frozen: false,
       feeReceiver: address(0),
       liquidityFee: 0,
       irStrategy: IReserveInterestRateStrategy(irStrategy)
@@ -62,8 +62,10 @@ contract LiquidityHub is ILiquidityHub {
       config: config
     });
 
-    emit AssetAdded(id, asset);
+    emit AssetAdded(id, asset, decimals);
     emit AssetConfigUpdated(id, config);
+
+    return id;
   }
 
   function updateAssetConfig(uint256 assetId, DataTypes.AssetConfig calldata config) external {
@@ -532,20 +534,28 @@ contract LiquidityHub is ILiquidityHub {
       newConfig.liquidityFee <= PercentageMathExtended.PERCENTAGE_FACTOR,
       InvalidLiquidityFee()
     );
-    if (newConfig.liquidityFee != 0) {
-      require(newConfig.feeReceiver != address(0), InvalidFeeReceiver());
-      require(
-        _spokes[assetId][newConfig.feeReceiver].config.supplyCap == type(uint256).max,
-        InvalidFeeReceiver()
-      );
-      require(
-        _spokes[assetId][newConfig.feeReceiver].config.drawCap == type(uint256).max,
-        InvalidFeeReceiver()
-      );
-    }
-    if (oldConfig.feeReceiver != newConfig.feeReceiver && oldConfig.feeReceiver != address(0)) {
-      require(_spokes[assetId][oldConfig.feeReceiver].config.supplyCap == 0, InvalidFeeReceiver());
-      require(_spokes[assetId][oldConfig.feeReceiver].config.drawCap == 0, InvalidFeeReceiver());
+
+    require(
+      newConfig.feeReceiver != address(0) || newConfig.liquidityFee == 0,
+      InvalidFeeReceiver()
+    );
+
+    if (newConfig.feeReceiver != oldConfig.feeReceiver) {
+      if (oldConfig.feeReceiver != address(0)) {
+        require(
+          _spokes[assetId][oldConfig.feeReceiver].config.supplyCap == 0 &&
+            _spokes[assetId][oldConfig.feeReceiver].config.drawCap == 0,
+          InvalidFeeReceiverConfig()
+        );
+      }
+
+      if (newConfig.feeReceiver != address(0)) {
+        require(
+          _spokes[assetId][newConfig.feeReceiver].config.supplyCap == type(uint256).max &&
+            _spokes[assetId][newConfig.feeReceiver].config.drawCap == type(uint256).max,
+          InvalidFeeReceiverConfig()
+        );
+      }
     }
 
     require(address(newConfig.irStrategy) != address(0), InvalidIrStrategy());

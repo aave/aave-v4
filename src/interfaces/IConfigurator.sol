@@ -2,6 +2,15 @@
 pragma solidity ^0.8.0;
 
 interface IConfigurator {
+  function addAsset(address hub, address asset, address irStrategy) external returns (uint256);
+
+  function addAsset(
+    address hub,
+    address asset,
+    uint8 decimals,
+    address irStrategy
+  ) external returns (uint256);
+
   function setActive(address hub, uint256 assetId, bool active) external;
 
   function setPaused(address hub, uint256 assetId, bool paused) external;

@@ -8,6 +8,7 @@ import {console2 as console} from 'forge-std/console2.sol';
 
 import {LiquidityHub, ILiquidityHub} from 'src/contracts/LiquidityHub.sol';
 import {Spoke, ISpoke} from 'src/contracts/Spoke.sol';
+import {Configurator, IConfigurator} from 'src/contracts/Configurator.sol';
 import {TreasurySpoke, ITreasurySpoke} from 'src/contracts/TreasurySpoke.sol';
 import {PercentageMath} from 'src/libraries/math/PercentageMath.sol';
 import {PercentageMathExtended} from 'src/libraries/math/PercentageMathExtended.sol';
@@ -76,6 +77,7 @@ abstract contract Base is Test {
   ISpoke internal spoke1;
   ISpoke internal spoke2;
   ISpoke internal spoke3;
+  IConfigurator internal configurator;
   DefaultReserveInterestRateStrategy internal irStrategy;
 
   address internal mockAddressesProvider = makeAddr('mockAddressesProvider');
@@ -162,6 +164,7 @@ abstract contract Base is Test {
     spoke1 = ISpoke(new Spoke(address(hub), address(oracle)));
     spoke2 = ISpoke(new Spoke(address(hub), address(oracle)));
     spoke3 = ISpoke(new Spoke(address(hub), address(oracle)));
+    configurator = new Configurator();
     treasurySpoke = ITreasurySpoke(new TreasurySpoke(TREASURY_ADMIN, address(hub)));
     dai = new MockERC20();
     eth = new MockERC20();
@@ -253,82 +256,52 @@ abstract contract Base is Test {
     // Add all assets to the Liquidity Hub
     vm.startPrank(HUB_ADMIN);
     // add WETH
-    hub.addAsset(address(tokenList.weth), tokenList.weth.decimals(), address(irStrategy));
+    configurator.addAsset(address(hub), address(tokenList.weth), address(irStrategy));
     hub.addSpoke(wethAssetId, spokeConfig, address(treasurySpoke));
-    hub.updateAssetConfig(
+    configurator.setLiquidityFeeAndReceiver(
+      address(hub),
       wethAssetId,
-      DataTypes.AssetConfig({
-        active: true,
-        paused: false,
-        frozen: false,
-        liquidityFee: 10_00,
-        feeReceiver: address(treasurySpoke),
-        irStrategy: irStrategy
-      })
+      10_00,
+      address(treasurySpoke)
     );
     oracle.setAssetPrice(wethAssetId, 2000e8);
 
     // add USDX
-    hub.addAsset(address(tokenList.usdx), tokenList.usdx.decimals(), address(irStrategy));
+    configurator.addAsset(address(hub), address(tokenList.usdx), address(irStrategy));
     hub.addSpoke(usdxAssetId, spokeConfig, address(treasurySpoke));
-    hub.updateAssetConfig(
+    configurator.setLiquidityFeeAndReceiver(
+      address(hub),
       usdxAssetId,
-      DataTypes.AssetConfig({
-        active: true,
-        paused: false,
-        frozen: false,
-        liquidityFee: 5_00,
-        feeReceiver: address(treasurySpoke),
-        irStrategy: irStrategy
-      })
+      5_00,
+      address(treasurySpoke)
     );
     oracle.setAssetPrice(usdxAssetId, 1e8);
 
     // add DAI
-    hub.addAsset(address(tokenList.dai), tokenList.dai.decimals(), address(irStrategy));
+    configurator.addAsset(address(hub), address(tokenList.dai), address(irStrategy));
     hub.addSpoke(daiAssetId, spokeConfig, address(treasurySpoke));
-    hub.updateAssetConfig(
-      daiAssetId,
-      DataTypes.AssetConfig({
-        active: true,
-        paused: false,
-        frozen: false,
-        liquidityFee: 5_00,
-        feeReceiver: address(treasurySpoke),
-        irStrategy: irStrategy
-      })
-    );
+    configurator.setLiquidityFeeAndReceiver(address(hub), daiAssetId, 5_00, address(treasurySpoke));
     oracle.setAssetPrice(daiAssetId, 1e8);
 
     // add WBTC
-    hub.addAsset(address(tokenList.wbtc), tokenList.wbtc.decimals(), address(irStrategy));
+    configurator.addAsset(address(hub), address(tokenList.wbtc), address(irStrategy));
     hub.addSpoke(wbtcAssetId, spokeConfig, address(treasurySpoke));
-    hub.updateAssetConfig(
+    configurator.setLiquidityFeeAndReceiver(
+      address(hub),
       wbtcAssetId,
-      DataTypes.AssetConfig({
-        active: true,
-        paused: false,
-        frozen: false,
-        liquidityFee: 10_00,
-        feeReceiver: address(treasurySpoke),
-        irStrategy: irStrategy
-      })
+      10_00,
+      address(treasurySpoke)
     );
     oracle.setAssetPrice(wbtcAssetId, 50_000e8);
 
     // add USDY
-    hub.addAsset(address(tokenList.usdy), tokenList.usdy.decimals(), address(irStrategy));
+    configurator.addAsset(address(hub), address(tokenList.usdy), address(irStrategy));
     hub.addSpoke(usdyAssetId, spokeConfig, address(treasurySpoke));
-    hub.updateAssetConfig(
+    configurator.setLiquidityFeeAndReceiver(
+      address(hub),
       usdyAssetId,
-      DataTypes.AssetConfig({
-        active: true,
-        paused: false,
-        frozen: false,
-        liquidityFee: 10_00,
-        feeReceiver: address(treasurySpoke),
-        irStrategy: irStrategy
-      })
+      10_00,
+      address(treasurySpoke)
     );
     oracle.setAssetPrice(usdyAssetId, 1e8);
 
@@ -538,18 +511,13 @@ abstract contract Base is Test {
     hub.addSpoke(wbtcAssetId, spokeConfig, address(spoke3));
 
     // Spoke 2 to have an extra dai reserve
-    hub.addAsset(address(tokenList.dai), tokenList.dai.decimals(), address(irStrategy));
+    configurator.addAsset(address(hub), address(tokenList.dai), address(irStrategy));
     hub.addSpoke(hub.assetCount() - 1, spokeConfig, address(treasurySpoke));
-    hub.updateAssetConfig(
+    configurator.setLiquidityFeeAndReceiver(
+      address(hub),
       hub.assetCount() - 1,
-      DataTypes.AssetConfig({
-        active: true,
-        frozen: false,
-        paused: false,
-        liquidityFee: 5_00,
-        feeReceiver: address(treasurySpoke),
-        irStrategy: irStrategy
-      })
+      5_00,
+      address(treasurySpoke)
     );
     oracle.setAssetPrice(dai2AssetId, 1e8);
 
@@ -962,8 +930,7 @@ abstract contract Base is Test {
     uint256 amount
   ) internal view returns (uint256) {
     return
-      (amount * oracle.getAssetPrice(assetId).wadify()) /
-      (10 ** hub.getAssetDecimals(assetId));
+      (amount * oracle.getAssetPrice(assetId).wadify()) / (10 ** hub.getAssetDecimals(assetId));
   }
 
   /// @dev Helper function to calculate the equivalent asset amount for a given asset
