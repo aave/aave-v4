@@ -408,7 +408,10 @@ contract Spoke is ISpoke, Multicall {
     (uint256 userRiskPremium, , , , ) = _calculateUserAccountData(user);
     bool premiumIncrease = _notifyRiskPremiumUpdate(type(uint256).max, user, userRiskPremium);
     // todo add exception for DAO/admin to increase as well
-    require(!premiumIncrease || _isPositionManager(user, msg.sender), Unauthorized());
+    require(
+      !premiumIncrease || _isPositionManager({user: user, manager: msg.sender}),
+      Unauthorized()
+    );
     emit UserRiskPremiumUpdate(user, userRiskPremium);
   }
 

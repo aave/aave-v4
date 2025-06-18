@@ -301,7 +301,7 @@ contract SpokeWithdrawTest is SpokeBase {
     });
 
     TestState memory state;
-    state.reserveId = spokeInfo[spoke1].dai.reserveId;
+    state.reserveId = _daiReserveId(spoke1);
 
     (
       ,
@@ -428,7 +428,7 @@ contract SpokeWithdrawTest is SpokeBase {
 
     TestState memory state;
     state.reserveId = params.reserveId;
-    state.collateralReserveId = spokeInfo[spoke1].wbtc.reserveId;
+    state.collateralReserveId = _wbtcReserveId(spoke1);
     state.suppliedCollateralAmount = MAX_SUPPLY_AMOUNT; // ensure enough collateral
     state.borrowReserveSupplyAmount = params.borrowReserveSupplyAmount;
     state.borrowAmount = params.borrowAmount;
@@ -547,7 +547,7 @@ contract SpokeWithdrawTest is SpokeBase {
 
   function test_withdraw_all_liquidity_with_interest_with_premium() public {
     TestState memory state;
-    state.reserveId = spokeInfo[spoke1].dai.reserveId;
+    state.reserveId = _daiReserveId(spoke1);
 
     // number of test stages
     TestData[3] memory reserveData;
@@ -670,7 +670,7 @@ contract SpokeWithdrawTest is SpokeBase {
 
     TestState memory state;
     state.reserveId = params.reserveId;
-    state.collateralReserveId = spokeInfo[spoke1].wbtc.reserveId;
+    state.collateralReserveId = _wbtcReserveId(spoke1);
     state.suppliedCollateralAmount = MAX_SUPPLY_AMOUNT; // ensure enough collateral
     state.borrowReserveSupplyAmount = params.borrowReserveSupplyAmount;
     state.borrowAmount = params.borrowAmount;

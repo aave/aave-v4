@@ -35,7 +35,7 @@ contract SpokeOperations_Gas_Tests is Base {
     spoke1.setUsingAsCollateral(_wethReserveId(spoke1), true, alice);
 
     spoke1.borrow(_wethReserveId(spoke1), 4e18, alice);
-    spoke1.supply(spokeInfo[spoke1].wbtc.reserveId, 500e8, alice);
+    spoke1.supply(_wbtcReserveId(spoke1), 500e8, alice);
     vm.snapshotGasLastCall('Spoke.Operations', 'supply: 3 debt');
     vm.stopPrank();
   }
