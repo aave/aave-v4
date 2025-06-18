@@ -273,7 +273,10 @@ contract LiquidationLogicDebtToRestoreCloseFactorScenarioTest is LiquidationLogi
     return debtBaseCurrencyRestored.percentMulUp(liquidationBonus);
   }
 
-  /// test helper to derive user account data
+  /// test helper to derive user account data during *liquidations only*
+  /// note: this helper is statically used to predict user account data, without
+  // actual user operations and positions, hence we use the latest spoke dynamic
+  // reserve configuration
   function _calcExpectedUserAccountData(
     ISpoke spoke,
     ReserveAmount[] memory collaterals,
@@ -286,16 +289,20 @@ contract LiquidationLogicDebtToRestoreCloseFactorScenarioTest is LiquidationLogi
 
     for (uint256 i = 0; i < collaterals.length; i++) {
       DataTypes.Reserve memory reserve = spoke.getReserve(collaterals[i].reserveId);
+      DataTypes.DynamicReserveConfig memory dynConfig = spoke.getDynamicReserveConfig(
+        collaterals[i].reserveId,
+        reserve.dynamicConfigKey
+      );
       uint256 amountInBase = _convertAmountToBaseCurrency(
         collaterals[i].amount,
         oracle.getAssetPrice(reserve.assetId),
         10 ** reserve.config.decimals
       );
-      totalCollateralFactor += reserve.config.collateralFactor * amountInBase;
+      totalCollateralFactor += dynConfig.collateralFactor * amountInBase;
       totalAmount += amountInBase;
       if (collateralIndex == i) {
         params.liquidationBonus = reserve.config.liquidationBonus;
-        params.collateralFactor = reserve.config.collateralFactor;
+        params.collateralFactor = dynConfig.collateralFactor;
       }
     }
     params.totalCollateralInBaseCurrency = totalAmount;
