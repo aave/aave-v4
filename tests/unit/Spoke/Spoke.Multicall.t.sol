@@ -85,7 +85,6 @@ contract SpokeMulticall is SpokeBase {
     uint256 dai2ReserveId = reserveCountBefore;
     uint256 dai3ReserveId = dai2ReserveId + 1;
     DataTypes.ReserveConfig memory dai2Config = DataTypes.ReserveConfig({
-      decimals: 18,
       active: true,
       frozen: false,
       paused: false,
@@ -99,7 +98,6 @@ contract SpokeMulticall is SpokeBase {
       collateralFactor: 88_00
     });
     DataTypes.ReserveConfig memory dai3Config = DataTypes.ReserveConfig({
-      decimals: 18,
       active: true,
       frozen: false,
       paused: false,

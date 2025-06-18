@@ -78,7 +78,7 @@ interface ILiquidityHub {
   error InvalidDebtChange();
   error InvalidFeeReceiver();
 
-  function addAsset(address asset, uint256 decimals, address irStrategy) external;
+  function addAsset(address asset, uint8 decimals, address irStrategy) external;
 
   function updateAssetConfig(uint256 assetId, DataTypes.AssetConfig memory config) external;
 
@@ -186,6 +186,8 @@ interface ILiquidityHub {
 
   function getAsset(uint256 assetId) external view returns (DataTypes.Asset memory);
 
+  function getAssetDecimals(uint256 assetId) external view returns (uint8);
+
   function getAssetConfig(uint256 assetId) external view returns (DataTypes.AssetConfig memory);
 
   function getAssetDebt(uint256 assetId) external view returns (uint256, uint256);
@@ -222,9 +224,7 @@ interface ILiquidityHub {
 
   function getSpokeTotalDebt(uint256 assetId, address spoke) external view returns (uint256);
 
-  function getAssetCount() external view returns (uint256);
+  function assetCount() external view returns (uint256);
 
-  function assetsList(uint256 assetId) external view returns (IERC20);
-
-  function MAX_ALLOWED_ASSET_DECIMALS() external view returns (uint256);
+  function MAX_ALLOWED_ASSET_DECIMALS() external view returns (uint8);
 }

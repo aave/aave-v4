@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: BUSL-1.1
 pragma solidity ^0.8.10;
 
+import {IERC20} from 'src/dependencies/openzeppelin/IERC20.sol';
 import {IReserveInterestRateStrategy} from 'src/interfaces/IReserveInterestRateStrategy.sol';
 
 library DataTypes {
@@ -17,6 +18,8 @@ library DataTypes {
   }
 
   struct Asset {
+    IERC20 erc20;
+    uint8 decimals;
     uint256 suppliedShares;
     uint256 availableLiquidity;
     uint256 baseDrawnShares;
@@ -35,11 +38,10 @@ library DataTypes {
   }
 
   struct AssetConfig {
-    address feeReceiver;
     bool active;
     bool frozen;
     bool paused;
-    uint256 decimals;
+    address feeReceiver;
     uint256 liquidityFee;
     IReserveInterestRateStrategy irStrategy;
   }
@@ -58,7 +60,6 @@ library DataTypes {
   struct Reserve {
     uint256 reserveId;
     uint256 assetId;
-    address asset; // todo rm not needed
     uint256 suppliedShares;
     uint256 baseDrawnShares;
     uint256 premiumDrawnShares;
@@ -66,6 +67,8 @@ library DataTypes {
     uint256 realizedPremium;
     ReserveConfig config;
     uint16 dynamicConfigKey; // key of the last reserve config
+    uint8 decimals;
+    address asset;
   }
 
   struct ReserveConfig {
@@ -74,7 +77,6 @@ library DataTypes {
     bool paused;
     bool borrowable;
     bool collateral;
-    uint256 decimals; // TODO: use smaller uint8
     uint256 liquidationBonus; // BPS, 100_00 represent a 0% bonus TODO: use smaller uint
     uint256 liquidityPremium; // BPS TODO: use smaller uint
     uint256 liquidationProtocolFee; // BPS TODO: use smaller uint

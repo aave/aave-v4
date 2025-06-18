@@ -314,11 +314,11 @@ contract LiquidityHubSupplyTest is LiquidityHubBase {
   function test_supply_fuzz_single_asset(uint256 assetId, address user, uint256 amount) public {
     _assumeValidSupplier(user);
 
-    assetId = bound(assetId, 0, hub.getAssetCount() - 2); // Exclude duplicated DAI
+    assetId = bound(assetId, 0, hub.assetCount() - 2); // Exclude duplicated DAI
     amount = bound(amount, 1, MAX_SUPPLY_AMOUNT);
 
     uint256 expectedSupplyShares = hub.convertToSuppliedShares(daiAssetId, amount);
-    IERC20 asset = hub.assetsList(assetId);
+    IERC20 asset = hub.getAsset(assetId).erc20;
 
     deal(address(asset), user, MAX_SUPPLY_AMOUNT);
     vm.prank(user);
@@ -363,14 +363,14 @@ contract LiquidityHubSupplyTest is LiquidityHubBase {
     uint256 amount,
     uint256 amount2
   ) public {
-    assetId = bound(assetId, 0, hub.getAssetCount() - 3); // Exclude duplicated DAI
+    assetId = bound(assetId, 0, hub.assetCount() - 3); // Exclude duplicated DAI
     amount = bound(amount, 1, MAX_SUPPLY_AMOUNT);
     amount2 = bound(amount2, 1, MAX_SUPPLY_AMOUNT);
 
     uint256 assetId2 = assetId + 1;
 
-    IERC20 asset = hub.assetsList(assetId);
-    IERC20 asset2 = hub.assetsList(assetId2);
+    IERC20 asset = hub.getAsset(assetId).erc20;
+    IERC20 asset2 = hub.getAsset(assetId2).erc20;
 
     vm.expectEmit(address(asset));
     emit IERC20.Transfer(alice, address(hub), amount);

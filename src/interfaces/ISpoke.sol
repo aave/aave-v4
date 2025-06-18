@@ -68,7 +68,6 @@ interface ISpoke is IMulticall {
   // TODO: rm when treasury accounting is done; indexing to read more easily
   event TmpLiquidationFee(uint256 indexed tmpLiquidationFee);
 
-  error InvalidReserve();
   error UserNotBorrowingReserve(uint256 reserveId);
   error ReserveNotListed();
   error InvalidLiquidityPremium();

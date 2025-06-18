@@ -50,7 +50,6 @@ contract LiquidityHubHandler is Test {
         active: true,
         frozen: false,
         paused: false,
-        decimals: 18,
         liquidityFee: 0,
         irStrategy: irStrategy
       })
@@ -58,7 +57,6 @@ contract LiquidityHubHandler is Test {
     spoke1.addReserve(
       0,
       DataTypes.ReserveConfig({
-        decimals: 18,
         active: true,
         frozen: false,
         paused: false,
@@ -90,10 +88,10 @@ contract LiquidityHubHandler is Test {
 
   function supply(uint256 assetId, address user, uint256 amount, address onBehalfOf) public {
     vm.assume(user != address(hub) && user != address(0) && onBehalfOf != address(0));
-    assetId = bound(assetId, 0, hub.getAssetCount() - 1);
+    assetId = bound(assetId, 0, hub.assetCount() - 1);
     amount = bound(amount, 1, type(uint128).max);
 
-    IERC20 asset = hub.assetsList(assetId);
+    IERC20 asset = hub.getAsset(assetId).erc20;
     deal(address(asset), user, amount);
     Utils.add({
       hub: hub,
@@ -110,7 +108,7 @@ contract LiquidityHubHandler is Test {
   }
 
   function withdraw(uint256 assetId, address user, uint256 amount, address to) public {
-    assetId = bound(assetId, 0, hub.getAssetCount() - 1);
+    assetId = bound(assetId, 0, hub.assetCount() - 1);
     // TODO: bound by spoke1 user balance
     amount = bound(amount, 1, 2);
 
@@ -123,10 +121,10 @@ contract LiquidityHubHandler is Test {
 
   function donate(uint256 assetId, address user, uint256 amount) public {
     vm.assume(user != address(hub) && user != address(0));
-    assetId = bound(assetId, 0, hub.getAssetCount() - 1);
+    assetId = bound(assetId, 0, hub.assetCount() - 1);
     amount = bound(amount, 1, type(uint128).max);
 
-    IERC20 asset = hub.assetsList(assetId);
+    IERC20 asset = hub.getAsset(assetId).erc20;
 
     deal(address(asset), user, amount);
     vm.prank(user);

@@ -261,7 +261,6 @@ abstract contract Base is Test {
         active: true,
         paused: false,
         frozen: false,
-        decimals: tokenList.weth.decimals(),
         liquidityFee: 10_00,
         feeReceiver: address(treasurySpoke),
         irStrategy: irStrategy
@@ -278,7 +277,6 @@ abstract contract Base is Test {
         active: true,
         paused: false,
         frozen: false,
-        decimals: tokenList.usdx.decimals(),
         liquidityFee: 5_00,
         feeReceiver: address(treasurySpoke),
         irStrategy: irStrategy
@@ -295,7 +293,6 @@ abstract contract Base is Test {
         active: true,
         paused: false,
         frozen: false,
-        decimals: tokenList.dai.decimals(),
         liquidityFee: 5_00,
         feeReceiver: address(treasurySpoke),
         irStrategy: irStrategy
@@ -312,7 +309,6 @@ abstract contract Base is Test {
         active: true,
         paused: false,
         frozen: false,
-        decimals: tokenList.wbtc.decimals(),
         liquidityFee: 10_00,
         feeReceiver: address(treasurySpoke),
         irStrategy: irStrategy
@@ -329,7 +325,6 @@ abstract contract Base is Test {
         active: true,
         paused: false,
         frozen: false,
-        decimals: tokenList.usdy.decimals(),
         liquidityFee: 10_00,
         feeReceiver: address(treasurySpoke),
         irStrategy: irStrategy
@@ -339,7 +334,6 @@ abstract contract Base is Test {
 
     // Spoke 1 reserve configs
     DataTypes.ReserveConfig memory wethConfig = DataTypes.ReserveConfig({
-      decimals: tokenList.weth.decimals(),
       active: true,
       frozen: false,
       paused: false,
@@ -353,7 +347,6 @@ abstract contract Base is Test {
       collateralFactor: 80_00
     });
     DataTypes.ReserveConfig memory wbtcConfig = DataTypes.ReserveConfig({
-      decimals: tokenList.wbtc.decimals(),
       active: true,
       frozen: false,
       paused: false,
@@ -367,7 +360,6 @@ abstract contract Base is Test {
       collateralFactor: 75_00
     });
     DataTypes.ReserveConfig memory daiConfig = DataTypes.ReserveConfig({
-      decimals: tokenList.dai.decimals(),
       active: true,
       frozen: false,
       paused: false,
@@ -381,7 +373,6 @@ abstract contract Base is Test {
       collateralFactor: 78_00
     });
     DataTypes.ReserveConfig memory usdxConfig = DataTypes.ReserveConfig({
-      decimals: tokenList.usdx.decimals(),
       active: true,
       frozen: false,
       paused: false,
@@ -395,7 +386,6 @@ abstract contract Base is Test {
       collateralFactor: 78_00
     });
     DataTypes.ReserveConfig memory usdyConfig = DataTypes.ReserveConfig({
-      decimals: tokenList.usdy.decimals(),
       active: true,
       frozen: false,
       paused: false,
@@ -428,7 +418,6 @@ abstract contract Base is Test {
 
     // Spoke 2 reserve configs
     wbtcConfig = DataTypes.ReserveConfig({
-      decimals: tokenList.wbtc.decimals(),
       active: true,
       frozen: false,
       paused: false,
@@ -440,7 +429,6 @@ abstract contract Base is Test {
     });
     wbtcDynConfig = DataTypes.DynamicReserveConfig({collateralFactor: 80_00});
     wethConfig = DataTypes.ReserveConfig({
-      decimals: tokenList.weth.decimals(),
       active: true,
       frozen: false,
       paused: false,
@@ -452,7 +440,6 @@ abstract contract Base is Test {
     });
     wethDynConfig = DataTypes.DynamicReserveConfig({collateralFactor: 76_00});
     daiConfig = DataTypes.ReserveConfig({
-      decimals: tokenList.dai.decimals(),
       active: true,
       frozen: false,
       paused: false,
@@ -464,7 +451,6 @@ abstract contract Base is Test {
     });
     daiDynConfig = DataTypes.DynamicReserveConfig({collateralFactor: 72_00});
     usdxConfig = DataTypes.ReserveConfig({
-      decimals: tokenList.usdx.decimals(),
       active: true,
       frozen: false,
       paused: false,
@@ -493,7 +479,6 @@ abstract contract Base is Test {
 
     // Spoke 3 reserve configs
     daiConfig = DataTypes.ReserveConfig({
-      decimals: tokenList.dai.decimals(),
       active: true,
       frozen: false,
       paused: false,
@@ -505,7 +490,6 @@ abstract contract Base is Test {
     });
     daiDynConfig = DataTypes.DynamicReserveConfig({collateralFactor: 75_00});
     usdxConfig = DataTypes.ReserveConfig({
-      decimals: tokenList.usdx.decimals(),
       active: true,
       frozen: false,
       paused: false,
@@ -517,7 +501,6 @@ abstract contract Base is Test {
     });
     usdxDynConfig = DataTypes.DynamicReserveConfig({collateralFactor: 75_00});
     wethConfig = DataTypes.ReserveConfig({
-      decimals: tokenList.weth.decimals(),
       active: true,
       frozen: false,
       paused: false,
@@ -529,7 +512,6 @@ abstract contract Base is Test {
     });
     wethDynConfig = DataTypes.DynamicReserveConfig({collateralFactor: 79_00});
     wbtcConfig = DataTypes.ReserveConfig({
-      decimals: tokenList.wbtc.decimals(),
       active: true,
       frozen: false,
       paused: false,
@@ -557,14 +539,13 @@ abstract contract Base is Test {
 
     // Spoke 2 to have an extra dai reserve
     hub.addAsset(address(tokenList.dai), tokenList.dai.decimals(), address(irStrategy));
-    hub.addSpoke(hub.getAssetCount() - 1, spokeConfig, address(treasurySpoke));
+    hub.addSpoke(hub.assetCount() - 1, spokeConfig, address(treasurySpoke));
     hub.updateAssetConfig(
-      hub.getAssetCount() - 1,
+      hub.assetCount() - 1,
       DataTypes.AssetConfig({
         active: true,
         frozen: false,
         paused: false,
-        decimals: tokenList.dai.decimals(),
         liquidityFee: 5_00,
         feeReceiver: address(treasurySpoke),
         irStrategy: irStrategy
@@ -573,7 +554,6 @@ abstract contract Base is Test {
     oracle.setAssetPrice(dai2AssetId, 1e8);
 
     daiConfig = DataTypes.ReserveConfig({
-      decimals: tokenList.dai.decimals(),
       active: true,
       frozen: false,
       paused: false,
@@ -983,7 +963,7 @@ abstract contract Base is Test {
   ) internal view returns (uint256) {
     return
       (amount * oracle.getAssetPrice(assetId).wadify()) /
-      (10 ** hub.getAssetConfig(assetId).decimals);
+      (10 ** hub.getAssetDecimals(assetId));
   }
 
   /// @dev Helper function to calculate the equivalent asset amount for a given asset
@@ -1084,7 +1064,7 @@ abstract contract Base is Test {
       _convertAmountToBaseCurrency(
         amount,
         oracle.getAssetPrice(assetId),
-        10 ** hub.getAsset(assetId).config.decimals
+        10 ** hub.getAsset(assetId).decimals
       );
   }
 
@@ -1104,7 +1084,7 @@ abstract contract Base is Test {
       _convertBaseCurrencyToAmount(
         baseCurrencyAmount,
         oracle.getAssetPrice(assetId),
-        10 ** hub.getAsset(assetId).config.decimals
+        10 ** hub.getAsset(assetId).decimals
       );
   }
 

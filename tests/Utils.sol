@@ -19,7 +19,7 @@ library Utils {
     address to // todo: implement
   ) internal returns (uint256) {
     vm.startPrank(user);
-    hub.assetsList(assetId).approve(address(hub), amount);
+    hub.getAsset(assetId).erc20.approve(address(hub), amount);
     vm.stopPrank();
 
     vm.prank(spoke);
@@ -58,7 +58,7 @@ library Utils {
     address repayer
   ) internal {
     vm.startPrank(repayer);
-    hub.assetsList(assetId).approve(address(hub), (baseAmount + premiumAmount));
+    hub.getAsset(assetId).erc20.approve(address(hub), (baseAmount + premiumAmount));
     vm.stopPrank();
 
     vm.prank(spoke);

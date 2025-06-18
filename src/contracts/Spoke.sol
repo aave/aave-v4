@@ -68,23 +68,28 @@ contract Spoke is ISpoke, Multicall {
     DataTypes.ReserveConfig calldata config,
     DataTypes.DynamicReserveConfig calldata dynamicConfig
   ) external returns (uint256) {
+    // TODO: AccessControl
+
     _validateReserveConfig(config);
-    address asset = address(HUB.assetsList(assetId)); // will revert on invalid assetId
+
     uint256 reserveId = reserveCount++;
     uint16 dynamicConfigKey; // 0 as first key to use
-    // TODO: AccessControl
+
+    DataTypes.Asset memory asset = HUB.getAsset(assetId); // will revert on invalid asset
+
     reservesList.push(reserveId);
     _reserves[reserveId] = DataTypes.Reserve({
       reserveId: reserveId,
       assetId: assetId,
-      asset: asset,
       suppliedShares: 0,
       baseDrawnShares: 0,
       premiumDrawnShares: 0,
       premiumOffset: 0,
       realizedPremium: 0,
       config: config,
-      dynamicConfigKey: dynamicConfigKey
+      dynamicConfigKey: dynamicConfigKey,
+      decimals: asset.decimals,
+      asset: address(asset.erc20)
     });
     _dynamicConfig[reserveId][dynamicConfigKey] = dynamicConfig;
 
@@ -101,10 +106,7 @@ contract Spoke is ISpoke, Multicall {
     // TODO: AccessControl, More sophisticated
     _validateReserveConfig(config);
     DataTypes.Reserve storage reserve = _reserves[reserveId];
-    require(
-      reserve.asset != address(0) && config.decimals == reserve.config.decimals,
-      InvalidReserve()
-    );
+    require(reserve.asset != address(0), ReserveNotListed());
     reserve.config = config;
     emit ReserveConfigUpdated(reserveId, config);
   }
@@ -569,7 +571,6 @@ contract Spoke is ISpoke, Multicall {
       InvalidLiquidationBonus()
     ); // min 100.00%
     require(config.liquidityPremium <= MAX_LIQUIDITY_PREMIUM, InvalidLiquidityPremium()); // max 1000.00%
-    require(config.decimals <= HUB.MAX_ALLOWED_ASSET_DECIMALS(), InvalidReserveDecimals());
     require(
       config.liquidationProtocolFee <= PercentageMathExtended.PERCENTAGE_FACTOR,
       InvalidLiquidationProtocolFee()
@@ -748,7 +749,7 @@ contract Spoke is ISpoke, Multicall {
 
       vars.assetPrice = oracle.getAssetPrice(vars.assetId);
       unchecked {
-        vars.assetUnit = 10 ** HUB.getAssetConfig(vars.assetId).decimals;
+        vars.assetUnit = 10 ** HUB.getAssetDecimals(vars.assetId);
       }
 
       if (_usingAsCollateral(userPosition)) {
@@ -788,7 +789,7 @@ contract Spoke is ISpoke, Multicall {
         vars.liquidityPremium = reserve.config.liquidityPremium;
         vars.assetPrice = oracle.getAssetPrice(vars.assetId);
         unchecked {
-          vars.assetUnit = 10 ** HUB.getAssetConfig(vars.assetId).decimals;
+          vars.assetUnit = 10 ** HUB.getAssetDecimals(vars.assetId);
         }
         vars.userCollateralInBaseCurrency = _getUserBalanceInBaseCurrency(
           userPosition,
@@ -1223,14 +1224,14 @@ contract Spoke is ISpoke, Multicall {
     );
 
     vars.debtAssetPrice = IPriceOracle(oracle).getAssetPrice(debtReserve.assetId);
-    vars.debtAssetUnit = 10 ** debtReserve.config.decimals;
+    vars.debtAssetUnit = 10 ** debtReserve.decimals;
     vars.liquidationBonus = getVariableLiquidationBonus(
       vars.collateralReserveId,
       vars.healthFactor
     );
     vars.closeFactor = _liquidationConfig.closeFactor;
     vars.collateralAssetPrice = oracle.getAssetPrice(collateralReserve.assetId);
-    vars.collateralAssetUnit = 10 ** collateralReserve.config.decimals;
+    vars.collateralAssetUnit = 10 ** collateralReserve.decimals;
     vars.liquidationProtocolFee = collateralReserve.config.liquidationProtocolFee;
 
     vars.actualDebtToLiquidate = LiquidationLogic.calculateActualDebtToLiquidate({

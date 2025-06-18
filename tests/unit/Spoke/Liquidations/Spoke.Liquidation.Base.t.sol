@@ -341,11 +341,11 @@ contract SpokeLiquidationBase is SpokeBase {
       state.collateralReserve.reserveId,
       alice
     );
-    params.collateralAssetUnit = 10 ** state.collateralReserve.config.decimals;
+    params.collateralAssetUnit = 10 ** state.collateralReserve.decimals;
     params.collateralReserveId = state.collateralReserve.reserveId;
     params.collateralAssetPrice = oracle.getAssetPrice(state.collateralReserve.assetId);
 
-    params.debtAssetUnit = 10 ** state.debtReserve.config.decimals;
+    params.debtAssetUnit = 10 ** state.debtReserve.decimals;
     params.debtReserveId = state.debtReserve.reserveId;
     params.debtAssetPrice = oracle.getAssetPrice(state.debtReserve.assetId);
 
@@ -383,7 +383,7 @@ contract SpokeLiquidationBase is SpokeBase {
     params.collateralFactor = state.collDynConfig.collateralFactor;
     params.closeFactor = _getCloseFactor(spoke);
 
-    params.debtAssetUnit = 10 ** state.debtReserve.config.decimals;
+    params.debtAssetUnit = 10 ** state.debtReserve.decimals;
     params.debtAssetPrice = oracle.getAssetPrice(state.debtReserve.assetId);
 
     (, , params.healthFactor, , params.totalDebtInBaseCurrency) = spoke.getUserAccountData(alice);

@@ -21,7 +21,6 @@ contract SpokeConfigTest is SpokeBase {
     DataTypes.ReserveConfig memory config = spoke1.getReserveConfig(daiReserveId);
 
     DataTypes.ReserveConfig memory newReserveConfig = DataTypes.ReserveConfig({
-      decimals: config.decimals, // decimals won't get updated
       active: !config.active,
       frozen: !config.frozen,
       paused: !config.paused,
@@ -59,31 +58,12 @@ contract SpokeConfigTest is SpokeBase {
     uint256 daiReserveId = _daiReserveId(spoke1);
     DataTypes.ReserveConfig memory reserveData = spoke1.getReserveConfig(daiReserveId);
 
-    newReserveConfig.decimals = reserveData.decimals; // decimals won't get updated
-
     vm.expectEmit(address(spoke1));
     emit ISpoke.ReserveConfigUpdated(daiReserveId, newReserveConfig);
     vm.prank(SPOKE_ADMIN);
     spoke1.updateReserveConfig(daiReserveId, newReserveConfig);
 
     assertEq(spoke1.getReserveConfig(daiReserveId), newReserveConfig);
-  }
-
-  function test_updateReserveConfig_cannot_update_decimals() public {
-    uint256 daiReserveId = _daiReserveId(spoke1);
-    DataTypes.ReserveConfig memory config = spoke1.getReserve(daiReserveId).config;
-
-    uint256 oldDecimals = config.decimals;
-    uint256 newDecimals = 12;
-    // new decimals value attempted
-    assertNotEq(oldDecimals, newDecimals);
-
-    // decimals should not update
-    config.decimals = newDecimals;
-
-    vm.expectRevert(ISpoke.InvalidReserve.selector);
-    vm.prank(SPOKE_ADMIN);
-    spoke1.updateReserveConfig(daiReserveId, config);
   }
 
   function test_setUsingAsCollateral_revertsWith_ReserveCannotBeUsedAsCollateral() public {
@@ -217,15 +197,15 @@ contract SpokeConfigTest is SpokeBase {
     spoke1.updateReserveConfig(daiReserveId, config);
   }
 
-  function test_updateReserveConfig_revertsWith_InvalidReserve() public {
+  function test_updateReserveConfig_revertsWith_ReserveNotListed() public {
     uint256 invalidReserveId = spoke1.reserveCount();
-    test_updateReserveConfig_fuzz_revertsWith_InvalidReserve(
+    test_updateReserveConfig_fuzz_revertsWith_ReserveNotListed(
       invalidReserveId,
       PercentageMath.PERCENTAGE_FACTOR
     );
   }
 
-  function test_updateReserveConfig_fuzz_revertsWith_InvalidReserve(
+  function test_updateReserveConfig_fuzz_revertsWith_ReserveNotListed(
     uint256 reserveId,
     uint256 liquidationBonus
   ) public {
@@ -235,7 +215,7 @@ contract SpokeConfigTest is SpokeBase {
     DataTypes.ReserveConfig memory config;
     config.liquidationBonus = PercentageMath.PERCENTAGE_FACTOR;
 
-    vm.expectRevert(ISpoke.InvalidReserve.selector);
+    vm.expectRevert(ISpoke.ReserveNotListed.selector);
     vm.prank(SPOKE_ADMIN);
     spoke1.updateReserveConfig(reserveId, config);
   }
@@ -303,7 +283,6 @@ contract SpokeConfigTest is SpokeBase {
   function test_addReserve() public {
     uint256 reserveId = spoke1.reserveCount();
     DataTypes.ReserveConfig memory newReserveConfig = DataTypes.ReserveConfig({
-      decimals: 18,
       active: true,
       frozen: true,
       paused: true,
@@ -327,10 +306,9 @@ contract SpokeConfigTest is SpokeBase {
   }
 
   function test_addReserve_reverts_invalid_assetId() public {
-    uint256 assetId = hub.getAssetCount(); // invalid assetId
+    uint256 assetId = hub.assetCount(); // invalid assetId
 
     DataTypes.ReserveConfig memory newReserveConfig = DataTypes.ReserveConfig({
-      decimals: 18,
       active: true,
       frozen: true,
       paused: true,
@@ -350,10 +328,9 @@ contract SpokeConfigTest is SpokeBase {
   }
 
   function test_addReserve_fuzz_reverts_invalid_assetId(uint256 assetId) public {
-    assetId = bound(assetId, hub.getAssetCount(), type(uint256).max); // invalid assetId
+    assetId = bound(assetId, hub.assetCount(), type(uint256).max); // invalid assetId
 
     DataTypes.ReserveConfig memory newReserveConfig = DataTypes.ReserveConfig({
-      decimals: 18,
       active: true,
       frozen: true,
       paused: true,
@@ -372,27 +349,27 @@ contract SpokeConfigTest is SpokeBase {
     spoke1.addReserve(assetId, newReserveConfig, newDynReserveConfig);
   }
 
-  function test_addReserve_revertsWith_InvalidReserveDecimals() public {
-    uint256 reserveId = spoke1.reserveCount();
-    DataTypes.ReserveConfig memory newReserveConfig = DataTypes.ReserveConfig({
-      decimals: hub.MAX_ALLOWED_ASSET_DECIMALS() + 1, // invalid decimals
-      active: true,
-      frozen: true,
-      paused: true,
-      liquidationBonus: 110_00,
-      liquidityPremium: 10_00,
-      liquidationProtocolFee: 0,
-      borrowable: true,
-      collateral: true
-    });
-    DataTypes.DynamicReserveConfig memory newDynReserveConfig = DataTypes.DynamicReserveConfig({
-      collateralFactor: 10_00
-    });
+  // function test_addReserve_revertsWith_InvalidReserveDecimals() public {
+  //   uint256 reserveId = spoke1.reserveCount();
+  //   DataTypes.ReserveConfig memory newReserveConfig = DataTypes.ReserveConfig({
+  //     decimals: hub.MAX_ALLOWED_ASSET_DECIMALS() + 1, // invalid decimals
+  //     active: true,
+  //     frozen: true,
+  //     paused: true,
+  //     liquidationBonus: 110_00,
+  //     liquidityPremium: 10_00,
+  //     liquidationProtocolFee: 0,
+  //     borrowable: true,
+  //     collateral: true
+  //   });
+  //   DataTypes.DynamicReserveConfig memory newDynReserveConfig = DataTypes.DynamicReserveConfig({
+  //     collateralFactor: 10_00
+  //   });
 
-    vm.expectRevert(ISpoke.InvalidReserveDecimals.selector);
-    vm.prank(SPOKE_ADMIN);
-    spoke1.addReserve(reserveId, newReserveConfig, newDynReserveConfig);
-  }
+  //   vm.expectRevert(ISpoke.InvalidReserveDecimals.selector);
+  //   vm.prank(SPOKE_ADMIN);
+  //   spoke1.addReserve(reserveId, newReserveConfig, newDynReserveConfig);
+  // }
 
   function test_updateLiquidationConfig_closeFactor() public {
     uint256 newCloseFactor = HEALTH_FACTOR_LIQUIDATION_THRESHOLD + 1;

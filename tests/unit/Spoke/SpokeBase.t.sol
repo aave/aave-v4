@@ -368,7 +368,7 @@ contract SpokeBase is Base {
       address user = users[i];
       uint256 debt = spoke.getUserTotalDebt(reserveId, user);
       if (debt > 0) {
-        deal(address(hub.assetsList(assetId)), user, debt);
+        deal(address(hub.getAsset(assetId).erc20), user, debt);
         vm.prank(user);
         spoke.repay(reserveId, debt);
         assertEq(spoke.getUserTotalDebt(reserveId, user), 0, 'user debt not zero');
@@ -423,10 +423,10 @@ contract SpokeBase is Base {
     DataTypes.Reserve memory collData = spoke.getReserve(collReserveId);
     DataTypes.DynamicReserveConfig memory colDynConf = spoke.getDynamicReserveConfig(collReserveId);
     uint256 collPrice = oracle.getAssetPrice(collData.assetId);
-    uint256 collAssetUnits = 10 ** hub.getAsset(collData.assetId).config.decimals;
+    uint256 collAssetUnits = 10 ** hub.getAsset(collData.assetId).decimals;
 
     DataTypes.Reserve memory debtData = spoke.getReserve(debtReserveId);
-    uint256 debtAssetUnits = 10 ** hub.getAsset(debtData.assetId).config.decimals;
+    uint256 debtAssetUnits = 10 ** hub.getAsset(debtData.assetId).decimals;
     uint256 debtPrice = oracle.getAssetPrice(debtData.assetId);
 
     uint256 normalizedDebtAmount = (debtAmount * debtPrice).wadify() / debtAssetUnits;
@@ -446,10 +446,10 @@ contract SpokeBase is Base {
     DataTypes.Reserve memory collData = spoke.getReserve(collReserveId);
     DataTypes.DynamicReserveConfig memory colDynConf = spoke.getDynamicReserveConfig(collReserveId);
     uint256 collPrice = oracle.getAssetPrice(collData.assetId);
-    uint256 collAssetUnits = 10 ** hub.getAsset(collData.assetId).config.decimals;
+    uint256 collAssetUnits = 10 ** hub.getAsset(collData.assetId).decimals;
 
     DataTypes.Reserve memory debtData = spoke.getReserve(debtReserveId);
-    uint256 debtAssetUnits = 10 ** hub.getAsset(debtData.assetId).config.decimals;
+    uint256 debtAssetUnits = 10 ** hub.getAsset(debtData.assetId).decimals;
     uint256 debtPrice = oracle.getAssetPrice(debtData.assetId);
 
     uint256 normalizedDebtAmount = (debtPrice).wadify() / debtAssetUnits;
@@ -836,7 +836,6 @@ contract SpokeBase is Base {
     assertEq(a.paused, b.paused, 'paused');
     assertEq(a.borrowable, b.borrowable, 'borrowable');
     assertEq(a.collateral, b.collateral, 'collateral');
-    assertEq(a.decimals, b.decimals, 'decimals');
     assertEq(a.liquidationBonus, b.liquidationBonus, 'liquidation bonus');
     assertEq(a.liquidityPremium, b.liquidityPremium, 'liquidity premium');
     assertEq(a.liquidationProtocolFee, b.liquidationProtocolFee, 'liquidation protocol fee');
