@@ -35,7 +35,6 @@ contract Spoke is ISpoke, Multicall {
     internal _userPositions;
   mapping(uint256 reserveId => DataTypes.Reserve reserveData) internal _reserves;
   mapping(address positionManager => DataTypes.PositionManagerConfig) internal _positionManager;
-
   mapping(uint256 reserveId => mapping(uint16 configKey => DataTypes.DynamicReserveConfig config))
     internal _dynamicConfig; // dictionary of dynamic configs per reserve
 
@@ -139,8 +138,7 @@ contract Spoke is ISpoke, Multicall {
   /// @inheritdoc ISpoke
   function setPositionManager(address positionManager, bool active) external {
     // todo access control
-    DataTypes.PositionManagerConfig storage config = _positionManager[positionManager];
-    config.active = active;
+    _positionManager[positionManager].active = active;
     emit PositionManagerSet(positionManager, active);
   }
 
