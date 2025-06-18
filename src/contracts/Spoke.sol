@@ -417,7 +417,10 @@ contract Spoke is ISpoke, Multicall {
 
   /// @inheritdoc ISpoke
   function setApprovalForPositionManager(address positionManager, bool approve) external {
-    _positionManager[positionManager].approval[msg.sender] = approve;
+    DataTypes.PositionManagerConfig storage config = _positionManager[positionManager];
+    // @dev only allow approval when config is active for improved UX
+    require(!approve || config.active, InactivePositionManager());
+    config.approval[msg.sender] = approve;
     emit ApprovalForPositionManager(msg.sender, positionManager, approve);
   }
 
@@ -430,6 +433,11 @@ contract Spoke is ISpoke, Multicall {
   /// @inheritdoc ISpoke
   function isPositionManager(address user, address positionManager) external view returns (bool) {
     return _isPositionManager(user, positionManager);
+  }
+
+  /// @inheritdoc ISpoke
+  function isPositionManagerActive(address positionManager) external view returns (bool) {
+    return _positionManager[positionManager].active;
   }
 
   function getUsingAsCollateral(uint256 reserveId, address user) external view returns (bool) {

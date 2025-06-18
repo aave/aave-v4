@@ -171,7 +171,7 @@ interface ISpoke is IMulticall {
   error UsersAndDebtLengthMismatch();
   error Unauthorized();
   error CollateralStatusUnchanged();
-  error ZeroAddress();
+  error InactivePositionManager();
   error NoExplicitAmountToRepayOnBehalf();
 
   function updateLiquidationConfig(DataTypes.LiquidationConfig calldata config) external;
@@ -278,7 +278,15 @@ interface ISpoke is IMulticall {
    */
   function renouncePositionManagerRole(address user) external;
 
+  /**
+   * @notice Returns true if positionManager is active and approved by user, false otherwise.
+   */
   function isPositionManager(address user, address positionManager) external view returns (bool);
+
+  /**
+   * @notice Returns true if position manager is currently active, false otherwise.
+   */
+  function isPositionManagerActive(address positionManager) external view returns (bool);
 
   function getHealthFactor(address user) external view returns (uint256);
 
