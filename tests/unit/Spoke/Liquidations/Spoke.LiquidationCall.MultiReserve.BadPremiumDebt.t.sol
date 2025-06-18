@@ -204,6 +204,8 @@ contract LiquidationCallMultiReserveBadPremiumDebtTest is SpokeLiquidationBase {
     state.collateralReserves[state.collateralReserveIndex] = spoke1.getReserve(collateralReserveId);
     state.debtReserveIndex = bound(debtReserveIndex, 0, debtReserveIds.length - 1);
     state.debtReserves = new DataTypes.Reserve[](debtReserveIds.length);
+    state.collDynConfig = spoke1.getDynamicReserveConfig(collateralReserveId);
+
     for (uint256 i = 0; i < debtReserveIds.length; i++) {
       state.debtReserves[i] = spoke1.getReserve(debtReserveIds[i]);
     }
@@ -212,9 +214,7 @@ contract LiquidationCallMultiReserveBadPremiumDebtTest is SpokeLiquidationBase {
     liqBonus = bound(
       liqBonus,
       MIN_LIQUIDATION_BONUS,
-      PercentageMath.PERCENTAGE_FACTOR.percentDivDown(
-        state.collateralReserves[state.collateralReserveIndex].config.collateralFactor
-      )
+      PercentageMath.PERCENTAGE_FACTOR.percentDivDown(state.collDynConfig.collateralFactor)
     );
     liquidationProtocolFee = bound(liquidationProtocolFee, 0, 100_00);
     supplyAmount = bound(

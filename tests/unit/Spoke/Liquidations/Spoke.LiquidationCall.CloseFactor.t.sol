@@ -397,6 +397,7 @@ contract LiquidationCallCloseFactorTest is SpokeLiquidationBase {
     LiquidationTestLocalParams memory state;
     state.collateralReserves = new DataTypes.Reserve[](1);
     state.debtReserves = new DataTypes.Reserve[](1);
+    state.collDynConfig = spoke1.getDynamicReserveConfig(collateralReserveId);
 
     state.collateralReserves[state.collateralReserveIndex] = spoke1.getReserve(collateralReserveId);
     state.debtReserves[state.debtReserveIndex] = spoke1.getReserve(debtReserveId);
@@ -407,8 +408,8 @@ contract LiquidationCallCloseFactorTest is SpokeLiquidationBase {
       MIN_LIQUIDATION_BONUS,
       PercentageMathExtended
         .PERCENTAGE_FACTOR
-        .percentDivDown(_getCollateralFactor(spoke1, collateralReserveId, alice))
-        .percentMul(99_00) // buffer to ensure that bad debt is not created
+        .percentDiv(state.collDynConfig.collateralFactor)
+        .percentMul(99_00) // add buffer so that amount to restore is > 0
     );
 
     liquidationProtocolFee = bound(liquidationProtocolFee, 0, 100_00); // BPS

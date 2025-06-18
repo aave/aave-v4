@@ -468,7 +468,7 @@ contract LiquidityHubRestoreDeficitTest is LiquidityHubBase {
           liquidityAdded: liquidityAdded,
           liquidityTaken: liquidityTaken,
           totalDebt: baseDebt,
-          reserveFactor: 0, // TODO
+          liquidityFee: 0,
           assetId: assetId,
           virtualUnderlyingBalance: hub.getAvailableLiquidity(assetId),
           usingVirtualBalance: true

@@ -185,13 +185,13 @@ contract LiquidationCallBadPremiumDebtTest is SpokeLiquidationBase {
     state.collateralReserves[state.collateralReserveIndex] = spoke1.getReserve(collateralReserveId);
     state.debtReserves[state.debtReserveIndex] = spoke1.getReserve(debtReserveId);
 
+    state.collDynConfig = spoke1.getDynamicReserveConfig(collateralReserveId);
+
     liqConfig = _boundCloseFactor(liqConfig);
     liqBonus = bound(
       liqBonus,
       MIN_LIQUIDATION_BONUS,
-      PercentageMath.PERCENTAGE_FACTOR.percentDiv(
-        state.collateralReserves[state.collateralReserveIndex].config.collateralFactor
-      )
+      PercentageMath.PERCENTAGE_FACTOR.percentDiv(state.collDynConfig.collateralFactor)
     );
     liquidationProtocolFee = bound(liquidationProtocolFee, 0, 100_00);
     supplyAmount = bound(

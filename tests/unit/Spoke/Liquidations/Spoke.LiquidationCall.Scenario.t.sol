@@ -586,14 +586,22 @@ contract LiquidationCallScenarioTest is SpokeLiquidationBase {
       'liquidator pays all weth debt'
     );
 
-    (uint256 userRP, , uint256 healthFactor, , ) = spoke1.getUserAccountData(alice);
+    (uint256 userRP, uint256 avgCollFactor, uint256 healthFactor, , ) = spoke1.getUserAccountData(
+      alice
+    );
 
     assertEq(
       userRP,
       spoke1.getReserve(state.daiReserveId).config.liquidityPremium,
       'user rp is fully from remaining dai coll'
     );
-    assertLe(healthFactor, _getCloseFactor(spoke1), 'health factor is less than close factor');
+    assertEq(
+      avgCollFactor.dewadify(),
+      spoke1.getDynamicReserveConfig(state.daiReserveId).collateralFactor,
+      'avg coll factor matches dai coll factor'
+    );
+    // hf < 1 after
+    assertLt(healthFactor, HEALTH_FACTOR_LIQUIDATION_THRESHOLD);
   }
 
   /// liquidation call with multiple collaterals, full collateral liquidation

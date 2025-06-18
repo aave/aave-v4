@@ -40,6 +40,10 @@ contract SpokeLiquidationBase is SpokeBase {
     Balance deficit;
     uint256 liquidationBonus;
     uint256 liquidationProtocolFee;
+    DataTypes.DynamicReserveConfig collDynConfig;
+    // DataTypes.Reserve collateralReserve;
+    // DataTypes.Reserve debtReserve;
+    DataTypes.DynamicReserveConfig[] collDynConfigs;
     DataTypes.Reserve[] collateralReserves;
     DataTypes.Reserve[] debtReserves;
     uint256 desiredHf;
@@ -73,11 +77,11 @@ contract SpokeLiquidationBase is SpokeBase {
 
   /// @notice Deploys max borrowable liquidity for all reserves in spoke1.
   function _deployBorrowableLiquidities(uint256 amount) public {
-    _deployLiquidity(spoke1, _daiReserveId(spoke1), amount);
-    _deployLiquidity(spoke1, _wethReserveId(spoke1), amount);
-    _deployLiquidity(spoke1, _wbtcReserveId(spoke1), amount);
-    _deployLiquidity(spoke1, _usdxReserveId(spoke1), amount);
-    _deployLiquidity(spoke1, _usdyReserveId(spoke1), amount);
+    _openSupplyPosition(spoke1, _daiReserveId(spoke1), amount);
+    _openSupplyPosition(spoke1, _wethReserveId(spoke1), amount);
+    _openSupplyPosition(spoke1, _wbtcReserveId(spoke1), amount);
+    _openSupplyPosition(spoke1, _usdxReserveId(spoke1), amount);
+    _openSupplyPosition(spoke1, _usdyReserveId(spoke1), amount);
   }
 
   /// @notice Bound liquidation config to full range of possible values
@@ -133,6 +137,8 @@ contract SpokeLiquidationBase is SpokeBase {
 
     state.collateralReserves[state.collateralReserveIndex] = spoke1.getReserve(collateralReserveId);
     state.debtReserves[state.debtReserveIndex] = spoke1.getReserve(debtReserveId);
+
+    state.collDynConfig = spoke1.getDynamicReserveConfig(collateralReserveId);
 
     liqConfig = _bound(liqConfig);
     liqBonus = bound(liqBonus, MIN_LIQUIDATION_BONUS, MAX_LIQUIDATION_BONUS);
@@ -496,10 +502,7 @@ contract SpokeLiquidationBase is SpokeBase {
     DataTypes.LiquidationCallLocalVars memory params;
 
     params.liquidationBonus = state.liquidationBonus;
-    params.collateralFactor = state
-      .collateralReserves[state.collateralReserveIndex]
-      .config
-      .collateralFactor;
+    params.collateralFactor = state.collDynConfig.collateralFactor;
     params.closeFactor = _getCloseFactor(spoke);
 
     params.debtAssetUnit = 10 ** state.debtReserves[state.debtReserveIndex].config.decimals;
@@ -780,14 +783,5 @@ contract SpokeLiquidationBase is SpokeBase {
     skip(skipTime);
     uint256 finalExRate = hub.convertToSuppliedAssets(assetId, WadRayMathExtended.RAY.wadify());
     assertGt(finalExRate, initialExRate);
-  }
-
-  // TODO: update when dynamic risk config is implemented
-  function _getCollateralFactor(
-    ISpoke spoke,
-    uint256 reserveId,
-    address user
-  ) internal view returns (uint256) {
-    return spoke.getReserve(reserveId).config.collateralFactor;
   }
 }
