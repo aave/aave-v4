@@ -297,7 +297,6 @@ contract Spoke is ISpoke, Multicall {
 
     uint256 userPremiumDrawnShares = userPosition.premiumDrawnShares;
     uint256 userPremiumOffset = userPosition.premiumOffset;
-    uint256 userRealizedPremium = userPosition.realizedPremium;
     uint256 accruedPremium = premiumDebt - userPosition.realizedPremium;
 
     userPosition.premiumDrawnShares = 0;
@@ -397,8 +396,20 @@ contract Spoke is ISpoke, Multicall {
   function updateUserRiskPremium(address user) external {
     (uint256 userRiskPremium, , , , ) = _calculateUserAccountData(user);
     bool premiumIncrease = _notifyRiskPremiumUpdate(type(uint256).max, user, userRiskPremium);
-    require(_isPositionManager(user, msg.sender) || !premiumIncrease, Unauthorized());
+    require(!premiumIncrease || _isPositionManager(user, msg.sender), Unauthorized());
     emit UserRiskPremiumUpdate(user, userRiskPremium);
+  }
+
+  /// @inheritdoc ISpoke
+  function setPositionManager(address positionManager, bool approve) external {
+    _positionManager[msg.sender][positionManager] = approve;
+    emit PositionManagerSet(msg.sender, positionManager, approve);
+  }
+
+  /// @inheritdoc ISpoke
+  function renouncePositionManagerRole(address user) external {
+    _positionManager[user][msg.sender] = false;
+    emit PositionManagerSet(user, msg.sender, false);
   }
 
   function getUsingAsCollateral(uint256 reserveId, address user) external view returns (bool) {

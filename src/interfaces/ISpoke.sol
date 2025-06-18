@@ -23,7 +23,7 @@ interface ISpoke is IMulticall {
   /**
    * @notice Emitted on the supply action.
    * @param reserveId The reserve identifier of the underlying asset as registered on the spoke.
-   * @param caller The transaction initiator, & supplier of the underlying assets.
+   * @param caller The transaction initiator, & supplier of the underlying asset.
    * @param onBehalfOf The owner of the modified position.
    * @param suppliedShares The amount of supply shares minted.
    */
@@ -37,7 +37,7 @@ interface ISpoke is IMulticall {
   /**
    * @notice Emitted on the withdraw action.
    * @param reserveId The reserve identifier of the underlying asset as registered on the spoke.
-   * @param caller The transaction initiator, & recipient of the underlying assets being withdrawn.
+   * @param caller The transaction initiator, & recipient of the underlying asset being withdrawn.
    * @param onBehalfOf The owner of the modified position.
    * @param suppliedShares The amount of supply shares burned.
    */
@@ -51,7 +51,7 @@ interface ISpoke is IMulticall {
   /**
    * @notice Emitted on the borrow action.
    * @param reserveId The reserve identifier of the underlying asset as registered on the spoke.
-   * @param caller The transaction initiator, & recipient of the underlying assets being borrowed.
+   * @param caller The transaction initiator, & recipient of the underlying asset being borrowed.
    * @param onBehalfOf The owner of the position on which debt is generated.
    * @param drawnShares The amount of debt shares minted.
    */
@@ -65,7 +65,7 @@ interface ISpoke is IMulticall {
   /**
    * @notice Emitted on the repay action.
    * @param reserveId The reserve identifier of the underlying asset as registered on the spoke.
-   * @param caller The transaction initiator, & supplier of the underlying assets being repaid.
+   * @param caller The transaction initiator, & supplier of the underlying asset being repaid.
    * @param onBehalfOf The owner of the position whose debt is being repaid.
    * @param drawnShares The amount of debt shares burned.
    */
@@ -75,13 +75,29 @@ interface ISpoke is IMulticall {
     address indexed onBehalfOf,
     uint256 drawnShares
   );
+
   /**
    * @notice Emitted on setUsingAsCollateral action.
    * @param reserveId The reserve identifier of the underlying asset as registered on the spoke.
-   * @param user The owner of the position being modified
+   * @param user The owner of the position being modified.
    * @param usingAsCollateral Boolean whether the reserve is enabled or disabled as collateral.
    */
   event UsingAsCollateral(uint256 indexed reserveId, address indexed user, bool usingAsCollateral);
+
+  /**
+   * @notice Emitted on updateUserRiskPremium action.
+   * @param user The owner of the position being modified.
+   * @param riskPremium The new risk premium (BPS) value of user.
+   */
+  event UserRiskPremiumUpdate(address indexed user, uint256 riskPremium);
+
+  /**
+   * @notice Emitted on setPositionManager action.
+   * @param user The address of the user toggling status of given positionManager.
+   * @param positionManager The address of the position manager.
+   * @param approve True if position manager was approved, false otherwise.
+   */
+  event PositionManagerSet(address indexed user, address indexed positionManager, bool approve);
 
   event RefreshPremiumDebt(
     uint256 indexed reserveId,
@@ -93,7 +109,6 @@ interface ISpoke is IMulticall {
   );
   event OracleUpdated(uint256 indexed reserveId, address indexed oracle);
   event LiquidationConfigUpdated(DataTypes.LiquidationConfig config);
-  event UserRiskPremiumUpdate(address indexed user, uint256 riskPremium);
 
   /**
    * @dev Emitted when a borrower is liquidated.
@@ -175,7 +190,7 @@ interface ISpoke is IMulticall {
    * @notice Withdraws a specified amount of underlying asset from the given reserve.
    * @dev Providing an amount greater than the maximum withdrawable value signals a full withdrawal.
    * @dev Caller must be `onBehalfOf` or an authorized position manager for `onBehalfOf`.
-   * @dev Caller receives the underlying assets withdrawn.
+   * @dev Caller receives the underlying asset withdrawn.
    * @param reserveId The identifier of the reserve.
    * @param amount The amount of asset to withdraw.
    * @param onBehalfOf The owner of position to remove supply shares from.
@@ -185,7 +200,7 @@ interface ISpoke is IMulticall {
   /**
    * @notice Borrows a specified amount of underlying asset from the given reserve
    * @dev Caller must be `onBehalfOf` or an authorized position manager for `onBehalfOf`.
-   * @dev Caller receives the underlying assets borrowed.
+   * @dev Caller receives the underlying asset borrowed.
    * @param reserveId The identifier of the reserve.
    * @param amount The amount of asset to borrow.
    * @param onBehalfOf The owner of the position against which debt is generated.
@@ -228,6 +243,19 @@ interface ISpoke is IMulticall {
    * @param user The address of the user.
    */
   function updateUserRiskPremium(address user) external;
+
+  /**
+   * @notice Allows caller to approve or revoke approval for positionManager.
+   * @param positionManager The address of the position manager.
+   * @param approve True if user wants to set position manager, false otherwise.
+   */
+  function setPositionManager(address positionManager, bool approve) external;
+
+  /**
+   * @notice Allows position manager to renounce their approval given by the user.
+   * @param user The address of the user.
+   */
+  function renouncePositionManagerRole(address user) external;
 
   function getHealthFactor(address user) external view returns (uint256);
 
