@@ -958,6 +958,7 @@ contract Spoke is ISpoke, Multicall {
         userPosition.premiumDrawnShares
       );
     } else {
+      // non-zero deficit means user ends up with zero debt
       vars.userPremiumDrawnShares = userPosition.premiumDrawnShares = 0;
       vars.userPremiumOffset = userPosition.premiumOffset = 0;
     }

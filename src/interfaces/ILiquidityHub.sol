@@ -52,7 +52,7 @@ interface ILiquidityHub {
     uint256 realizedPremiumAdded,
     uint256 realizedPremiumTaken
   );
-  event DeficitCreated(uint256 indexed debtAssetId, address indexed spoke, uint256 amountCreated);
+  event DeficitCreated(uint256 indexed assetId, address indexed spoke, uint256 amount);
 
   error MismatchedConfigs();
   error InvalidSharesAmount();
