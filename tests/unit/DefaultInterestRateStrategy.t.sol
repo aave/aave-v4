@@ -90,7 +90,7 @@ contract DefaultReserveInterestRateStrategyTest is Test {
         liquidityAdded: 0,
         liquidityTaken: 0,
         totalDebt: 0,
-        reserveFactor: 0,
+        liquidityFee: 0,
         assetId: mockReserveAddress,
         virtualUnderlyingBalance: 0,
         usingVirtualBalance: true
@@ -113,7 +113,7 @@ contract DefaultReserveInterestRateStrategyTest is Test {
         liquidityAdded: 0,
         liquidityTaken: 0,
         totalDebt: totalDebt,
-        reserveFactor: 0,
+        liquidityFee: 0,
         assetId: mockReserveAddress,
         virtualUnderlyingBalance: availableLiquidity,
         usingVirtualBalance: true
@@ -140,7 +140,7 @@ contract DefaultReserveInterestRateStrategyTest is Test {
         liquidityAdded: 0,
         liquidityTaken: 0,
         totalDebt: totalDebt,
-        reserveFactor: 0,
+        liquidityFee: 0,
         assetId: mockReserveAddress,
         virtualUnderlyingBalance: virtualUnderlyingBalance,
         usingVirtualBalance: true
@@ -171,7 +171,7 @@ contract DefaultReserveInterestRateStrategyTest is Test {
         liquidityAdded: 0,
         liquidityTaken: 0,
         totalDebt: totalDebt,
-        reserveFactor: 0,
+        liquidityFee: 0,
         assetId: mockReserveAddress,
         virtualUnderlyingBalance: virtualUnderlyingBalance,
         usingVirtualBalance: true
@@ -197,7 +197,7 @@ contract DefaultReserveInterestRateStrategyTest is Test {
         liquidityAdded: 0,
         liquidityTaken: 0,
         totalDebt: 0,
-        reserveFactor: 0,
+        liquidityFee: 0,
         assetId: mockReserveAddress,
         virtualUnderlyingBalance: 1e18,
         usingVirtualBalance: true

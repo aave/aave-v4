@@ -103,7 +103,7 @@ contract SpokeBorrowEdgeCasesTest is SpokeBase {
       onBehalfOf: carol
     });
 
-    _deployLiquidity(spoke1, _daiReserveId(spoke1), MAX_SUPPLY_AMOUNT_DAI);
+    _openSupplyPosition(spoke1, _daiReserveId(spoke1), MAX_SUPPLY_AMOUNT_DAI);
 
     TestReserve memory collateral;
     collateral.reserveId = _wethReserveId(spoke1);
@@ -185,7 +185,7 @@ contract SpokeBorrowEdgeCasesTest is SpokeBase {
       onBehalfOf: bob
     });
 
-    _deployLiquidity(spoke1, _daiReserveId(spoke1), MAX_SUPPLY_AMOUNT_DAI);
+    _openSupplyPosition(spoke1, _daiReserveId(spoke1), MAX_SUPPLY_AMOUNT_DAI);
 
     uint256 carolDaiBefore = tokenList.dai.balanceOf(carol);
     uint256 bobDaiBefore = tokenList.dai.balanceOf(bob);
@@ -237,7 +237,7 @@ contract SpokeBorrowEdgeCasesTest is SpokeBase {
     collateral.supplier = alice;
     collateral.supplyAmount = MAX_SUPPLY_AMOUNT;
 
-    _deployLiquidity(spoke1, _daiReserveId(spoke1), MAX_SUPPLY_AMOUNT_DAI);
+    _openSupplyPosition(spoke1, _daiReserveId(spoke1), MAX_SUPPLY_AMOUNT_DAI);
 
     // execute supply and borrow to inflate the exchange rate
     _executeSpokeSupplyAndBorrow({
