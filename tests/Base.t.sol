@@ -163,7 +163,7 @@ abstract contract Base is Test {
     // todo: set up admin role when access controls impl
   }
 
-  function deployFixtures() internal {
+  function deployFixtures() internal virtual {
     oracle1 = new MockPriceOracle();
     oracle2 = new MockPriceOracle();
     oracle3 = new MockPriceOracle();

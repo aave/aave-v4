@@ -1,9 +1,9 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.0;
 
-import 'tests/unit/Spoke/SpokeBase.t.sol';
+import 'tests/unit/Spoke/Spoke.MultipleHub.Base.t.sol';
 
-contract SpokeMultipleHubIsolationModeTest is SpokeBase {
+contract SpokeMultipleHubIsolationModeTest is SpokeMultipleHubBase {
   struct IsolationLocalVars {
     uint256 assetAId;
     uint256 assetBId;
@@ -14,49 +14,11 @@ contract SpokeMultipleHubIsolationModeTest is SpokeBase {
     uint256 spoke1ReserveBId;
   }
 
-  // New hub and spoke
-  ILiquidityHub internal newHub;
-  MockPriceOracle internal newOracle;
-  ISpoke internal newSpoke;
-  IDefaultInterestRateStrategy internal newIrStrategy;
-
   IsolationLocalVars internal isolationVars;
 
-  TestnetERC20 internal assetA;
-  TestnetERC20 internal assetB;
-
-  DataTypes.DynamicReserveConfig internal dynReserveConfig =
-    DataTypes.DynamicReserveConfig({
-      collateralFactor: 80_00 // 80.00%
-    });
-  IDefaultInterestRateStrategy.InterestRateData internal irData =
-    IDefaultInterestRateStrategy.InterestRateData({
-      optimalUsageRatio: 90_00, // 90.00%
-      baseVariableBorrowRate: 5_00, // 5.00%
-      variableRateSlope1: 5_00, // 5.00%
-      variableRateSlope2: 5_00 // 5.00%
-    });
-
   function setUp() public virtual override {
-    deployFixures();
+    super.setUp();
     setUpIsolationMode();
-  }
-
-  function deployFixures() internal {
-    // Canonical hub and spoke
-    hub = new LiquidityHub();
-    oracle1 = new MockPriceOracle();
-    spoke1 = new Spoke(address(oracle1));
-    irStrategy = new DefaultReserveInterestRateStrategy(mockAddressesProvider);
-
-    // New hub and spoke
-    newHub = new LiquidityHub();
-    newOracle = new MockPriceOracle();
-    newSpoke = new Spoke(address(newOracle));
-    newIrStrategy = new DefaultReserveInterestRateStrategy(mockAddressesProvider);
-
-    assetA = new TestnetERC20('Asset A', 'A', 18);
-    assetB = new TestnetERC20('Asset B', 'B', 18);
   }
 
   ///@dev Adds new assets A and B to the new hub and spoke, no restrictions.
