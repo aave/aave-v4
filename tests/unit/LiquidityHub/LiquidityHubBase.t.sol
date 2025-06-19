@@ -55,6 +55,7 @@ contract LiquidityHubBase is Base {
   function _updateSupplyCap(uint256 assetId, address spoke, uint256 newSupplyCap) internal {
     DataTypes.SpokeConfig memory spokeConfig = hub.getSpokeConfig(assetId, spoke);
     spokeConfig.supplyCap = newSupplyCap;
+    vm.prank(HUB_ADMIN);
     hub.updateSpokeConfig(assetId, spoke, spokeConfig);
   }
 
@@ -65,6 +66,7 @@ contract LiquidityHubBase is Base {
     deal(address(hub.assetsList(assetId)), tempUser1, amount);
 
     address tempSpoke1 = makeAddr('TEMP_SPOKE_1');
+    vm.startPrank(HUB_ADMIN);
     hub.addSpoke(
       assetId,
       DataTypes.SpokeConfig({supplyCap: type(uint256).max, drawCap: type(uint256).max}),
@@ -80,6 +82,11 @@ contract LiquidityHubBase is Base {
       DataTypes.SpokeConfig({supplyCap: type(uint256).max, drawCap: type(uint256).max}),
       tempSpoke2
     );
+
+    // Grant spoke role to the spokes
+    accessManager.grantRole(Roles.SPOKE_ROLE, tempSpoke1, 0);
+    accessManager.grantRole(Roles.SPOKE_ROLE, tempSpoke2, 0);
+    vm.stopPrank();
 
     _supplyAndDrawLiquidity({
       assetId: assetId,
@@ -168,11 +175,15 @@ contract LiquidityHubBase is Base {
     vm.prank(tempUser);
     asset.approve(address(hub), type(uint256).max);
 
+    vm.startPrank(HUB_ADMIN);
     hub.addSpoke(
       assetId,
       DataTypes.SpokeConfig({supplyCap: type(uint256).max, drawCap: type(uint256).max}),
       tempSpoke
     );
+    // Grant spoke role to the spoke
+    accessManager.grantRole(Roles.SPOKE_ROLE, tempSpoke, 0);
+    vm.stopPrank();
 
     Utils.add({
       hub: hub,
@@ -195,18 +206,25 @@ contract LiquidityHubBase is Base {
     address tempSpoke = vm.randomAddress();
     address tempUser = vm.randomAddress();
 
+    // Grant spoke role to the spoke
+    vm.prank(HUB_ADMIN);
+    accessManager.grantRole(Roles.SPOKE_ROLE, tempSpoke, 0);
+
     int256 premiumDrawnSharesDelta = 1000;
     int256 premiumOffsetDelta = 1000;
-    if (withPremium) {
-      // inflate premium data to create premium debt
-      hub.refreshPremiumDebt(assetId, premiumDrawnSharesDelta, premiumOffsetDelta, 0, 0);
-    }
 
+    vm.prank(HUB_ADMIN);
     hub.addSpoke(
       assetId,
       DataTypes.SpokeConfig({supplyCap: type(uint256).max, drawCap: type(uint256).max}),
       tempSpoke
     );
+
+    if (withPremium) {
+      // inflate premium data to create premium debt
+      vm.prank(tempSpoke);
+      hub.refreshPremiumDebt(assetId, premiumDrawnSharesDelta, premiumOffsetDelta, 0, 0);
+    }
 
     Utils.draw(hub, assetId, tempSpoke, tempUser, amount, tempUser);
 
@@ -218,6 +236,7 @@ contract LiquidityHubBase is Base {
     if (withPremium) {
       assertGt(premiumDebt, 0); // non-zero premium debt
       // restore premium data
+      vm.prank(tempSpoke);
       hub.refreshPremiumDebt(
         assetId,
         -premiumDrawnSharesDelta,

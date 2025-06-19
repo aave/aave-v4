@@ -3,6 +3,7 @@ pragma solidity ^0.8.0;
 
 import {SafeERC20} from 'src/dependencies/openzeppelin/SafeERC20.sol';
 import {IERC20} from 'src/dependencies/openzeppelin/IERC20.sol';
+import {AccessManaged} from 'src/dependencies/openzeppelin/AccessManaged.sol';
 import {ILiquidityHub} from 'src/interfaces/ILiquidityHub.sol';
 import {DataTypes} from 'src/libraries/types/DataTypes.sol';
 import {AssetLogic} from 'src/libraries/logic/AssetLogic.sol';
@@ -11,7 +12,7 @@ import {SharesMath} from 'src/libraries/math/SharesMath.sol';
 import {PercentageMathExtended} from 'src/libraries/math/PercentageMathExtended.sol';
 
 // @dev Amounts are `asset` denominated by default unless specified otherwise with `share` suffix
-contract LiquidityHub is ILiquidityHub {
+contract LiquidityHub is ILiquidityHub, AccessManaged {
   using SafeERC20 for IERC20;
   using WadRayMathExtended for uint256;
   using SharesMath for uint256;
@@ -27,12 +28,14 @@ contract LiquidityHub is ILiquidityHub {
   IERC20[] public assetsList; // TODO: Check if Enumerable or Set makes more sense
   uint256 public assetCount;
 
+  constructor(address accessManager) AccessManaged(accessManager) {}
+
   // /////
   // Governance
   // /////
 
-  function addAsset(DataTypes.AssetConfig calldata config, address asset) external {
-    // TODO: AccessControl, prevent dup entry
+  function addAsset(DataTypes.AssetConfig calldata config, address asset) external restricted {
+    // TODO: prevent dup entry
     _validateAssetConfig(config, asset);
     assetsList.push(IERC20(asset));
     uint256 assetId = assetCount++;
@@ -62,10 +65,12 @@ contract LiquidityHub is ILiquidityHub {
     emit AssetConfigUpdated(assetId, config);
   }
 
-  function updateAssetConfig(uint256 assetId, DataTypes.AssetConfig calldata config) external {
+  function updateAssetConfig(
+    uint256 assetId,
+    DataTypes.AssetConfig calldata config
+  ) external restricted {
     _validateAssetConfig(config, address(assetsList[assetId]));
     DataTypes.Asset storage asset = _assets[assetId];
-    // TODO: AccessControl
     // todo: if liquidityFee or irStrategy update, accrue interest
     asset.config = DataTypes.AssetConfig({
       feeReceiver: config.feeReceiver,
@@ -80,8 +85,11 @@ contract LiquidityHub is ILiquidityHub {
     emit AssetConfigUpdated(assetId, config);
   }
 
-  function addSpoke(uint256 assetId, DataTypes.SpokeConfig memory config, address spoke) external {
-    // TODO: AccessControl
+  function addSpoke(
+    uint256 assetId,
+    DataTypes.SpokeConfig memory config,
+    address spoke
+  ) external restricted {
     _addSpoke(assetId, config, spoke);
   }
 
@@ -89,9 +97,7 @@ contract LiquidityHub is ILiquidityHub {
     uint256[] calldata assetIds,
     DataTypes.SpokeConfig[] memory configs,
     address spoke // todo: change order so it's aligned with update
-  ) external {
-    // TODO: AccessControl
-
+  ) external restricted {
     require(assetIds.length == configs.length, MismatchedConfigs());
     for (uint256 i; i < assetIds.length; i++) {
       _addSpoke(assetIds[i], configs[i], spoke);
@@ -102,8 +108,7 @@ contract LiquidityHub is ILiquidityHub {
     uint256 assetId,
     address spoke,
     DataTypes.SpokeConfig memory config
-  ) external {
-    // TODO: AccessControl
+  ) external restricted {
     _updateSpokeConfig(assetId, spoke, config);
   }
 
@@ -121,9 +126,11 @@ contract LiquidityHub is ILiquidityHub {
   }
 
   /// @inheritdoc ILiquidityHub
-  function updateAssetFees(uint256 assetId, address feeReceiver, uint256 liquidityFee) public {
-    // TODO: AccessControl
-
+  function updateAssetFees(
+    uint256 assetId,
+    address feeReceiver,
+    uint256 liquidityFee
+  ) public restricted {
     // receiver can be zero if and only if the fee is zero.
     require(liquidityFee <= PercentageMathExtended.PERCENTAGE_FACTOR, InvalidLiquidityFee());
     require(feeReceiver != address(0) || liquidityFee == 0, InvalidFeeReceiver());
@@ -179,9 +186,11 @@ contract LiquidityHub is ILiquidityHub {
   // /////
 
   /// @inheritdoc ILiquidityHub
-  function add(uint256 assetId, uint256 amount, address from) external returns (uint256) {
-    // TODO: authorization - only spokes
-
+  function add(
+    uint256 assetId,
+    uint256 amount,
+    address from
+  ) external restricted returns (uint256) {
     DataTypes.Asset storage asset = _assets[assetId];
     DataTypes.SpokeData storage spoke = _spokes[assetId][msg.sender];
 
@@ -208,9 +217,11 @@ contract LiquidityHub is ILiquidityHub {
   }
 
   /// @inheritdoc ILiquidityHub
-  function remove(uint256 assetId, uint256 amount, address to) external returns (uint256) {
-    // TODO: authorization - only spokes
-
+  function remove(
+    uint256 assetId,
+    uint256 amount,
+    address to
+  ) external restricted returns (uint256) {
     DataTypes.Asset storage asset = _assets[assetId];
     DataTypes.SpokeData storage spoke = _spokes[assetId][msg.sender];
 
@@ -234,9 +245,7 @@ contract LiquidityHub is ILiquidityHub {
   }
 
   /// @inheritdoc ILiquidityHub
-  function draw(uint256 assetId, uint256 amount, address to) external returns (uint256) {
-    // TODO: authorization - only spokes
-
+  function draw(uint256 assetId, uint256 amount, address to) external restricted returns (uint256) {
     DataTypes.Asset storage asset = _assets[assetId];
     DataTypes.SpokeData storage spoke = _spokes[assetId][msg.sender];
 
@@ -265,8 +274,7 @@ contract LiquidityHub is ILiquidityHub {
     uint256 baseAmount,
     uint256 premiumAmount,
     address from
-  ) external returns (uint256) {
-    // TODO: authorization - only spokes
+  ) external restricted returns (uint256) {
     // global & spoke premiumDebt (ghost, offset, realized) is *expected* to be updated on the `refreshPremiumDebt` callback
 
     DataTypes.Asset storage asset = _assets[assetId];
@@ -299,8 +307,7 @@ contract LiquidityHub is ILiquidityHub {
     int256 premiumOffsetDelta,
     uint256 realizedPremiumAdded,
     uint256 realizedPremiumTaken
-  ) external {
-    // todo only spoke
+  ) external restricted {
     uint256 premiumDebtBefore = _assets[assetId].premiumDebt();
     _refresh(
       assetId,

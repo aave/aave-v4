@@ -162,7 +162,7 @@ abstract contract Base is Test {
     oracle = new MockPriceOracle();
     irStrategy = new DefaultReserveInterestRateStrategy(mockAddressesProvider);
     accessManager = new AccessManager(HUB_ADMIN);
-    hub = new LiquidityHub();
+    hub = new LiquidityHub(address(accessManager));
     spoke1 = ISpoke(new Spoke(address(hub), address(oracle), address(accessManager)));
     spoke2 = ISpoke(new Spoke(address(hub), address(oracle), address(accessManager)));
     spoke3 = ISpoke(new Spoke(address(hub), address(oracle), address(accessManager)));
@@ -180,7 +180,7 @@ abstract contract Base is Test {
   }
 
   function setUpRoles() internal {
-    // Hub Admin is already default admin
+    // Hub Admin has default admin role
     vm.startPrank(HUB_ADMIN);
     // Grant roles
     accessManager.grantRole(Roles.HUB_ADMIN_ROLE, HUB_ADMIN, 0);
@@ -192,9 +192,10 @@ abstract contract Base is Test {
     accessManager.grantRole(Roles.SPOKE_ROLE, address(spoke1), 0);
     accessManager.grantRole(Roles.SPOKE_ROLE, address(spoke2), 0);
     accessManager.grantRole(Roles.SPOKE_ROLE, address(spoke3), 0);
+    accessManager.grantRole(Roles.SPOKE_ROLE, address(treasurySpoke), 0);
 
     // Grant responsibilities to roles
-    // Spoke roles
+    // Spoke Admin functionalities
     bytes4[] memory selectors = new bytes4[](4);
     selectors[0] = ISpoke.updateLiquidationConfig.selector;
     selectors[1] = ISpoke.addReserve.selector;
@@ -204,6 +205,28 @@ abstract contract Base is Test {
     accessManager.setTargetFunctionRole(address(spoke1), selectors, Roles.SPOKE_ADMIN_ROLE);
     accessManager.setTargetFunctionRole(address(spoke2), selectors, Roles.SPOKE_ADMIN_ROLE);
     accessManager.setTargetFunctionRole(address(spoke3), selectors, Roles.SPOKE_ADMIN_ROLE);
+
+    // Liquidity Hub Admin functionalities
+    bytes4[] memory hubSelectors = new bytes4[](6);
+    hubSelectors[0] = ILiquidityHub.addAsset.selector;
+    hubSelectors[1] = ILiquidityHub.updateAssetConfig.selector;
+    hubSelectors[2] = ILiquidityHub.addSpoke.selector;
+    hubSelectors[3] = ILiquidityHub.addSpokes.selector;
+    hubSelectors[4] = ILiquidityHub.updateSpokeConfig.selector;
+    hubSelectors[5] = ILiquidityHub.updateAssetFees.selector;
+
+    accessManager.setTargetFunctionRole(address(hub), hubSelectors, Roles.HUB_ADMIN_ROLE);
+
+    // Spoke functionalities
+    bytes4[] memory spokeSelectors = new bytes4[](5);
+    spokeSelectors[0] = ILiquidityHub.add.selector;
+    spokeSelectors[1] = ILiquidityHub.remove.selector;
+    spokeSelectors[2] = ILiquidityHub.draw.selector;
+    spokeSelectors[3] = ILiquidityHub.restore.selector;
+    spokeSelectors[4] = ILiquidityHub.refreshPremiumDebt.selector;
+
+    accessManager.setTargetFunctionRole(address(hub), spokeSelectors, Roles.SPOKE_ROLE);
+
     vm.stopPrank();
   }
 

@@ -7,6 +7,7 @@ import {Base} from 'tests/Base.t.sol';
 contract SpokeOperations_Gas_Tests is Base {
   function setUp() public override {
     deployFixtures();
+    setUpRoles();
     initEnvironment();
 
     vm.startPrank(address(spoke2));

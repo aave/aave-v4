@@ -40,7 +40,7 @@ contract LiquidityHubHandler is Test {
     accessManager = new AccessManager(hubAdmin);
     irStrategy = new DefaultReserveInterestRateStrategy(mockAddressesProvider);
     oracle = new MockPriceOracle();
-    hub = new LiquidityHub();
+    hub = new LiquidityHub(address(accessManager));
     spoke1 = new Spoke(address(hub), address(oracle), address(accessManager));
     usdc = new MockERC20();
     dai = new MockERC20();

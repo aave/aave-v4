@@ -57,10 +57,10 @@ contract LiquidityHubConfigTest is LiquidityHubBase {
     spokeConfigs[0] = daiSpokeConfig;
     spokeConfigs[1] = wethSpokeConfig;
 
-    vm.prank(HUB_ADMIN);
     vm.expectEmit(address(hub));
     emit ILiquidityHub.SpokeAdded(daiAssetId, address(spoke1));
     emit ILiquidityHub.SpokeAdded(wethAssetId, address(spoke1));
+    vm.prank(HUB_ADMIN);
     hub.addSpokes(assetIds, spokeConfigs, address(spoke1));
 
     DataTypes.SpokeConfig memory daiSpokeData = hub.getSpokeConfig(daiAssetId, address(spoke1));
@@ -388,11 +388,11 @@ contract LiquidityHubConfigTest is LiquidityHubBase {
       irStrategy: irStrategy
     });
 
-    vm.prank(HUB_ADMIN);
     vm.expectEmit(address(hub));
     emit ILiquidityHub.AssetAdded(hub.assetCount(), address(tokenList.dai));
     vm.expectEmit(address(hub));
     emit ILiquidityHub.AssetConfigUpdated(hub.assetCount(), config);
+    vm.prank(HUB_ADMIN);
     hub.addAsset(config, address(tokenList.dai));
 
     uint256 assetId = hub.assetCount() - 1;
