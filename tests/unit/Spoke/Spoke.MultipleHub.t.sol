@@ -69,83 +69,100 @@ contract SpokeMultipleHubTest is SpokeBase {
 
     // Connect hub 3 and spoke 1 for dai
     hub3.addSpoke(hub3DaiAssetId, spokeConfig, address(spoke1));
+
+    // Set the prices for dai for the new hubs
+    oracle1.setReservePrice(daiHub2ReserveId, 1e8);
+    oracle1.setReservePrice(daiHub3ReserveId, 1e8);
+
+    // Deal dai to Alice for supplying to 2 hubs
+    deal(address(tokenList.dai), alice, MAX_SUPPLY_AMOUNT * 2);
+
+    // Approvals
+    vm.startPrank(alice);
+    tokenList.dai.approve(address(hub2), type(uint256).max);
+    tokenList.dai.approve(address(hub3), type(uint256).max);
+
+    vm.startPrank(bob);
+    tokenList.dai.approve(address(hub2), type(uint256).max);
+    tokenList.dai.approve(address(hub3), type(uint256).max);
+    vm.stopPrank();
   }
 
   /// @dev Test showcasing dai may be borrowed from hub 2 and hub 1 via spoke 1
   function test_borrow_secondHub() public {
-    uint256 hub1DaiBorrowAmount = 5e18;
-    uint256 hub2DaiBorrowAmount = 1e18;
+    uint256 hub1SupplyAmount = 100_000e18;
+    uint256 hub1BorrowAmount = 10_000e18;
+    uint256 hub2BorrowAmount = 30_000e18;
+    uint256 hub1RepayAmount = 2_000e18;
+    uint256 hub2RepayAmount = 5_000e18;
 
-    // Bob supply to spoke 1 on hub 1
-    vm.startPrank(bob);
-    spoke1.supply(_daiReserveId(spoke1), 100000e18);
-    spoke1.setUsingAsCollateral(_daiReserveId(spoke1), true);
-    vm.stopPrank();
+    // Bob supplies dai to spoke 1 on hub 1
+    Utils.supplyCollateral(spoke1, _daiReserveId(spoke1), bob, hub1SupplyAmount, bob);
+    assertEq(spoke1.getUserSuppliedAmount(_daiReserveId(spoke1), bob), hub1SupplyAmount);
+    assertEq(hub.getAssetSuppliedAmount(daiAssetId), hub1SupplyAmount);
 
-    deal(address(tokenList.dai), address(spoke1), 1e18);
-    vm.startPrank(address(spoke1));
-    tokenList.dai.approve(address(hub2), type(uint256).max);
-    hub2.add(daiAssetId, 1e18, address(spoke1));
-    vm.stopPrank();
+    // Bob borrows dai from spoke 1, hub 1
+    Utils.borrow(spoke1, _daiReserveId(spoke1), bob, hub1BorrowAmount, bob);
+    assertEq(spoke1.getUserTotalDebt(_daiReserveId(spoke1), bob), hub1BorrowAmount);
+    assertEq(hub.getAssetTotalDebt(daiAssetId), hub1BorrowAmount);
 
-    // Bob borrows dai from hub 2
-    vm.prank(bob);
-    spoke1.borrow(daiHub2ReserveId, hub2DaiBorrowAmount, bob);
+    // Alice seeds liquidity for dai to hub 2 via spoke 1
+    Utils.supply(spoke1, daiHub2ReserveId, alice, MAX_SUPPLY_AMOUNT, alice);
 
-    // Bob can also borrow from hub 1
-    vm.prank(bob);
-    spoke1.borrow(_daiReserveId(spoke1), hub1DaiBorrowAmount, bob);
+    // Bob can also borrow dai from hub 2 via spoke 1
+    Utils.borrow(spoke1, daiHub2ReserveId, bob, hub2BorrowAmount, bob);
+    assertEq(spoke1.getUserTotalDebt(daiHub2ReserveId, bob), hub2BorrowAmount);
+    assertEq(hub2.getAssetTotalDebt(daiAssetId), hub2BorrowAmount);
 
-    // Check Bob's total debt on each hub
-    assertEq(spoke1.getUserTotalDebt(_daiReserveId(spoke1), bob), hub1DaiBorrowAmount);
-    assertEq(spoke1.getUserTotalDebt(daiHub2ReserveId, bob), hub2DaiBorrowAmount);
+    // Verify Dai is indeed the asset Bob is borrowing from both hubs
+    DataTypes.Reserve memory daiReserve = spoke1.getReserve(_daiReserveId(spoke1));
+    assertEq(daiReserve.asset, address(tokenList.dai));
+    daiReserve = spoke1.getReserve(daiHub2ReserveId);
+    assertEq(daiReserve.asset, address(tokenList.dai));
 
-    assertEq(hub.getAssetTotalDebt(daiAssetId), hub1DaiBorrowAmount);
-    assertEq(hub2.getAssetTotalDebt(daiAssetId), hub2DaiBorrowAmount);
+    // Bob can partially repay both debt positions on hub 1 and hub 2
+    Utils.repay(spoke1, _daiReserveId(spoke1), bob, hub1RepayAmount);
+    assertEq(
+      spoke1.getUserTotalDebt(_daiReserveId(spoke1), bob),
+      hub1BorrowAmount - hub1RepayAmount
+    );
+    assertEq(hub.getAssetTotalDebt(daiAssetId), hub1BorrowAmount - hub1RepayAmount);
+
+    Utils.repay(spoke1, daiHub2ReserveId, bob, hub2RepayAmount);
+    assertEq(spoke1.getUserTotalDebt(daiHub2ReserveId, bob), hub2BorrowAmount - hub2RepayAmount);
+    assertEq(hub2.getAssetTotalDebt(daiAssetId), hub2BorrowAmount - hub2RepayAmount);
   }
 
-  /// @dev Test showcasing dai may be borrowed from hub 3 via spoke 1, with collateral supplied to hub 1
+  /// @dev Test showcasing collateral on hub 3 can suffice for debt position on hub 1
   function test_borrow_thirdHub() public {
-    uint256 hub1DaiBorrowAmount = 5e18;
+    uint256 hub1BorrowAmount = 50_000e18;
     uint256 hub3DaiBorrowAmount = 1e18;
-    uint256 daiSupplyAmount = 100000e18;
+    uint256 daiSupplyAmount = 100_000e18;
 
     // Bob supply to spoke 1 on hub 1
-    vm.startPrank(bob);
-    spoke1.supply(_daiReserveId(spoke1), daiSupplyAmount);
-    spoke1.setUsingAsCollateral(_daiReserveId(spoke1), true);
-    vm.stopPrank();
+    Utils.supplyCollateral(spoke1, _daiReserveId(spoke1), bob, daiSupplyAmount, bob);
+    assertEq(spoke1.getUserSuppliedAmount(_daiReserveId(spoke1), bob), daiSupplyAmount);
+    assertEq(hub.getAssetSuppliedAmount(daiAssetId), daiSupplyAmount);
 
-    deal(address(tokenList.dai), address(spoke1), hub3DaiBorrowAmount);
-    vm.startPrank(address(spoke1));
-    tokenList.dai.approve(address(hub3), type(uint256).max);
-    hub3.add(hub3DaiAssetId, hub3DaiBorrowAmount, address(spoke1));
-    vm.stopPrank();
+    // Alice seeds liquidity for dai to hub 1
+    Utils.supply(spoke1, _daiReserveId(spoke1), alice, MAX_SUPPLY_AMOUNT - daiSupplyAmount, alice);
 
-    // Bob borrows dai from hub 3
-    vm.startPrank(bob);
-    spoke1.borrow(daiHub3ReserveId, hub3DaiBorrowAmount, bob);
+    // Bob borrows dai from hub 1
+    Utils.borrow(spoke1, _daiReserveId(spoke1), bob, hub1BorrowAmount, bob);
+    assertEq(spoke1.getUserTotalDebt(_daiReserveId(spoke1), bob), hub1BorrowAmount);
+    assertEq(hub.getAssetTotalDebt(daiAssetId), hub1BorrowAmount);
 
-    // Check Bob's total debt on hub 3
-    assertEq(spoke1.getUserTotalDebt(daiHub3ReserveId, bob), hub3DaiBorrowAmount);
-    assertEq(hub3.getAssetTotalDebt(hub3DaiAssetId), hub3DaiBorrowAmount);
-    assertEq(hub.getAssetTotalDebt(daiAssetId), 0); // No debt on hub 1
+    // Alice seeds liquidity for dai to hub 3
+    Utils.supply(spoke1, daiHub3ReserveId, alice, MAX_SUPPLY_AMOUNT - daiSupplyAmount, alice);
 
-    // Check bob is indeed borrowing dai from hub 3
-    DataTypes.Reserve memory dai3Reserve = spoke1.getReserve(daiHub3ReserveId);
-    assertEq(dai3Reserve.asset, address(tokenList.dai));
+    // Bob supplies collateral to hub 3
+    Utils.supplyCollateral(spoke1, daiHub3ReserveId, bob, daiSupplyAmount, bob);
+    assertEq(spoke1.getUserSuppliedAmount(daiHub3ReserveId, bob), daiSupplyAmount);
+    assertEq(hub3.getAssetSuppliedAmount(hub3DaiAssetId), MAX_SUPPLY_AMOUNT);
 
-    // Bob repays debt on hub3
-    tokenList.dai.approve(address(hub3), type(uint256).max);
-    spoke1.repay(daiHub3ReserveId, hub3DaiBorrowAmount);
-    assertEq(spoke1.getUserTotalDebt(daiHub3ReserveId, bob), 0);
-    assertEq(hub3.getAssetTotalDebt(hub3DaiAssetId), 0);
-
-    // Bob withdraws funds from hub1
-    spoke1.withdraw(_daiReserveId(spoke1), daiSupplyAmount, bob);
+    // Since Bob has sufficient collateral on hub 3 to cover his debt position, he can withdraw from hub 1
+    Utils.withdraw(spoke1, _daiReserveId(spoke1), bob, daiSupplyAmount, bob);
     assertEq(spoke1.getUserSuppliedAmount(_daiReserveId(spoke1), bob), 0);
-    assertEq(hub.getAssetSuppliedAmount(daiAssetId), 0);
-
-    vm.stopPrank();
+    assertEq(hub.getAssetSuppliedAmount(daiAssetId), MAX_SUPPLY_AMOUNT - daiSupplyAmount);
   }
 }
