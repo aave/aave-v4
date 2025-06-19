@@ -208,21 +208,32 @@ contract LiquidityHub is ILiquidityHub {
   }
 
   /// @inheritdoc ILiquidityHub
-  function remove(uint256 assetId, uint256 amount, address to) external returns (uint256) {
+  function remove(
+    uint256 assetId,
+    uint256 amount,
+    address to,
+    uint256 feeAmount
+  ) external returns (uint256) {
     // TODO: authorization - only spokes
 
     DataTypes.Asset storage asset = _assets[assetId];
     DataTypes.SpokeData storage spoke = _spokes[assetId][msg.sender];
 
     asset.accrue(_spokes[assetId][asset.config.feeReceiver]);
-    _validateWithdraw(asset, spoke, amount);
+    _validateWithdraw(asset, spoke, amount, feeAmount);
 
     asset.updateBorrowRate({liquidityAdded: 0, liquidityTaken: amount});
 
-    uint256 withdrawnShares = asset.toSuppliedSharesUp(amount); // non zero since we round up
+    uint256 withdrawnShares = asset.toSuppliedSharesUp(amount - feeAmount); // non zero since we round up
+    uint256 feeShares;
+    if (feeAmount > 0) {
+      feeShares = asset.toSuppliedSharesUp(feeAmount); // non zero since we round up
+      DataTypes.SpokeData storage feeReceiverSpoke = _spokes[assetId][asset.config.feeReceiver];
+      feeReceiverSpoke.suppliedShares += feeShares;
+    }
 
     asset.availableLiquidity -= amount;
-    asset.suppliedShares -= withdrawnShares;
+    asset.suppliedShares -= withdrawnShares + feeShares;
 
     spoke.suppliedShares -= withdrawnShares;
 
@@ -510,7 +521,8 @@ contract LiquidityHub is ILiquidityHub {
   function _validateWithdraw(
     DataTypes.Asset storage asset,
     DataTypes.SpokeData storage spoke,
-    uint256 amount
+    uint256 amount,
+    uint256 feeAmount
   ) internal view {
     require(amount != 0, InvalidWithdrawAmount());
     require(asset.config.active, AssetNotActive());
@@ -518,6 +530,7 @@ contract LiquidityHub is ILiquidityHub {
     uint256 withdrawable = asset.toSuppliedAssetsDown(spoke.suppliedShares);
     require(amount <= withdrawable, SuppliedAmountExceeded(withdrawable));
     require(amount <= asset.availableLiquidity, NotAvailableLiquidity(asset.availableLiquidity));
+    require(feeAmount <= amount, InvalidFeeAmount());
   }
 
   function _validateDraw(
