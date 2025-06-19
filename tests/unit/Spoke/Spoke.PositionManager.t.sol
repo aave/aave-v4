@@ -62,8 +62,6 @@ contract SpokePositionManagerTest is SpokeBase {
   function test_onlyPositionManager_on_withdraw() public {
     uint256 reserveId = _usdxReserveId(spoke1);
     uint256 amount = 100e6;
-    vm.prank(alice);
-    tokenList.usdx.approve(address(hub), 0);
     Utils.supply(spoke1, reserveId, alice, amount, alice);
 
     vm.expectRevert(ISpoke.Unauthorized.selector);
@@ -123,16 +121,17 @@ contract SpokePositionManagerTest is SpokeBase {
     _resetAllowance(alice);
 
     DataTypes.UserPosition memory posBefore = spoke1.getUserPosition(reserveId, POSITION_MANAGER);
+    uint256 repayAmount = amount / 3;
 
     vm.expectEmit(address(tokenList.usdx));
-    emit IERC20.Transfer(address(POSITION_MANAGER), address(hub), amount);
+    emit IERC20.Transfer(address(POSITION_MANAGER), address(hub), repayAmount);
     vm.expectEmit(address(spoke1));
-    emit ISpoke.Repay(reserveId, POSITION_MANAGER, alice, amount);
-    Utils.repay(spoke1, reserveId, POSITION_MANAGER, amount, alice);
+    emit ISpoke.Repay(reserveId, POSITION_MANAGER, alice, repayAmount);
+    Utils.repay(spoke1, reserveId, POSITION_MANAGER, repayAmount, alice);
 
     assertEq(spoke1.getUserPosition(reserveId, POSITION_MANAGER), posBefore);
     assertEq(spoke1.getUserTotalDebt(reserveId, POSITION_MANAGER), 0);
-    assertEq(spoke1.getUserTotalDebt(reserveId, alice), 0);
+    assertEq(spoke1.getUserTotalDebt(reserveId, alice), amount - repayAmount);
   }
 
   function _approvePositionManager(address who) internal {
