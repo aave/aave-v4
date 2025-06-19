@@ -93,6 +93,7 @@ abstract contract Base is Test {
   address internal TREASURY_ADMIN = makeAddr('TREASURY_ADMIN');
   address internal TREASURY = makeAddr('TREASURY');
   address internal LIQUIDATOR = makeAddr('LIQUIDATOR');
+  address internal POSITION_MANAGER = makeAddr('POSITION_MANAGER');
 
   TokenList internal tokenList;
   uint256 internal wethAssetId = 0;
@@ -200,7 +201,15 @@ abstract contract Base is Test {
     MAX_SUPPLY_AMOUNT_WBTC = MAX_SUPPLY_ASSET_UNITS * 10 ** tokenList.wbtc.decimals();
     MAX_SUPPLY_AMOUNT_USDY = MAX_SUPPLY_ASSET_UNITS * 10 ** tokenList.usdy.decimals();
 
-    address[6] memory users = [alice, bob, carol, derl, LIQUIDATOR, TREASURY_ADMIN];
+    address[7] memory users = [
+      alice,
+      bob,
+      carol,
+      derl,
+      LIQUIDATOR,
+      TREASURY_ADMIN,
+      POSITION_MANAGER
+    ];
 
     for (uint256 x; x < users.length; ++x) {
       tokenList.usdx.mint(users[x], mintAmount_USDX);

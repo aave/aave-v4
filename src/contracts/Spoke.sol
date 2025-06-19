@@ -327,7 +327,7 @@ contract Spoke is ISpoke, Multicall {
       vars.assetId,
       vars.baseDebtRestored,
       vars.premiumDebtRestored,
-      onBehalfOf
+      msg.sender
     ); // we settle base debt here
 
     reserve.baseDrawnShares -= vars.restoredShares;

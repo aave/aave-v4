@@ -670,10 +670,24 @@ contract SpokeBase is Base {
   }
 
   function assertEq(DataTypes.Reserve memory a, DataTypes.Reserve memory b) internal pure {
-    assertEq(a.reserveId, b.reserveId, 'Reserve Ids mismatch');
-    assertEq(a.assetId, b.assetId, 'Asset Ids mismatch');
-    assertEq(a.asset, b.asset, 'Asset addresses mismatch');
+    assertEq(a.reserveId, b.reserveId, 'reserve Id');
+    assertEq(a.assetId, b.assetId, 'asset Id');
+    assertEq(a.asset, b.asset, 'asset address');
     assertEq(a.config, b.config);
+    assertEq(abi.encode(a), abi.encode(b)); // sanity check
+  }
+
+  function assertEq(
+    DataTypes.UserPosition memory a,
+    DataTypes.UserPosition memory b
+  ) internal pure {
+    assertEq(a.usingAsCollateral, b.usingAsCollateral, 'usingAsCollateral');
+    assertEq(a.suppliedShares, b.suppliedShares, 'suppliedShares');
+    assertEq(a.baseDrawnShares, b.baseDrawnShares, 'baseDrawnShares');
+    assertEq(a.premiumDrawnShares, b.premiumDrawnShares, 'premiumDrawnShares');
+    assertEq(a.premiumOffset, b.premiumOffset, 'premiumOffset');
+    assertEq(a.realizedPremium, b.baseDrawnShares, 'realizedPremium');
+    assertEq(a.configKey, b.configKey, 'configKey');
     assertEq(abi.encode(a), abi.encode(b)); // sanity check
   }
 
