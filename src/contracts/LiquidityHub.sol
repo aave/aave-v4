@@ -225,9 +225,8 @@ contract LiquidityHub is ILiquidityHub {
     asset.updateBorrowRate({liquidityAdded: 0, liquidityTaken: amount});
 
     uint256 withdrawnShares = asset.toSuppliedSharesUp(amount - feeAmount); // non zero since we round up
-    uint256 feeShares;
-    if (feeAmount > 0) {
-      feeShares = asset.toSuppliedSharesUp(feeAmount); // non zero since we round up
+    uint256 feeShares = asset.toSuppliedSharesDown(feeAmount);
+    if (feeShares > 0) {
       DataTypes.SpokeData storage feeReceiverSpoke = _spokes[assetId][asset.config.feeReceiver];
       feeReceiverSpoke.suppliedShares += feeShares;
     }
