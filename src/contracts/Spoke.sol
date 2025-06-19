@@ -57,11 +57,6 @@ contract Spoke is ISpoke, Multicall, AccessManaged {
     _liquidationConfig.closeFactor = HEALTH_FACTOR_LIQUIDATION_THRESHOLD;
   }
 
-  // TODO: Just for testing / showcasing
-  function restrictedFunction() external restricted {
-    return;
-  }
-
   // /////
   // Governance
   // /////
