@@ -2,7 +2,7 @@
 pragma solidity ^0.8.10;
 
 import {IERC20} from 'src/dependencies/openzeppelin/IERC20.sol';
-import {IReserveInterestRateStrategy} from 'src/interfaces/IReserveInterestRateStrategy.sol';
+import {IBasicInterestRateStrategy} from 'src/interfaces/IBasicInterestRateStrategy.sol';
 
 library DataTypes {
   // Liquidity Hub types
@@ -43,20 +43,10 @@ library DataTypes {
     bool frozen;
     address feeReceiver;
     uint256 liquidityFee;
-    IReserveInterestRateStrategy irStrategy;
+    IBasicInterestRateStrategy irStrategy;
   }
 
   // Spoke types
-  struct CalculateInterestRatesParams {
-    bool usingVirtualBalance;
-    uint256 liquidityAdded;
-    uint256 liquidityTaken;
-    uint256 totalDebt;
-    uint256 liquidityFee; // likely not required
-    uint256 assetId;
-    uint256 virtualUnderlyingBalance;
-  }
-
   struct Reserve {
     uint256 reserveId;
     uint256 assetId;

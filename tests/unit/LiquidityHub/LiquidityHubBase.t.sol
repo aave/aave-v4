@@ -6,9 +6,6 @@ import {DataTypes} from 'src/libraries/types/DataTypes.sol';
 
 contract LiquidityHubBase is Base {
   using SharesMath for uint256;
-  using WadRayMath for uint256;
-
-  uint256 internal constant INIT_BASE_BORROW_INDEX = WadRayMath.RAY;
 
   struct TestSupplyParams {
     uint256 drawnAmount;
@@ -127,14 +124,6 @@ contract LiquidityHubBase is Base {
     });
 
     skip(skipTime);
-  }
-
-  function _mockRate(uint256 rate) internal returns (uint256) {
-    vm.mockCall(
-      address(irStrategy),
-      IReserveInterestRateStrategy.calculateInterestRates.selector,
-      abi.encode(rate)
-    );
   }
 
   function _getDebt(uint256 assetId) internal view returns (DebtData memory) {

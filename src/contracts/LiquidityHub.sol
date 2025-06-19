@@ -3,7 +3,7 @@ pragma solidity ^0.8.0;
 
 import {SafeERC20} from 'src/dependencies/openzeppelin/SafeERC20.sol';
 import {IERC20} from 'src/dependencies/openzeppelin/IERC20.sol';
-import {IReserveInterestRateStrategy} from 'src/interfaces/IReserveInterestRateStrategy.sol';
+import {IBasicInterestRateStrategy} from 'src/interfaces/IBasicInterestRateStrategy.sol';
 import {ILiquidityHub} from 'src/interfaces/ILiquidityHub.sol';
 import {DataTypes} from 'src/libraries/types/DataTypes.sol';
 import {AssetLogic} from 'src/libraries/logic/AssetLogic.sol';
@@ -44,7 +44,7 @@ contract LiquidityHub is ILiquidityHub {
       frozen: false,
       feeReceiver: address(0),
       liquidityFee: 0,
-      irStrategy: IReserveInterestRateStrategy(irStrategy)
+      irStrategy: IBasicInterestRateStrategy(irStrategy)
     });
 
     _assets[id] = DataTypes.Asset({
@@ -376,7 +376,7 @@ contract LiquidityHub is ILiquidityHub {
   }
 
   function getBaseInterestRate(uint256 assetId) public view returns (uint256) {
-    return _getAsset(assetId).baseInterestRate();
+    return _getAsset(assetId).baseBorrowRate;
   }
 
   function getAssetDebt(uint256 assetId) external view returns (uint256, uint256) {

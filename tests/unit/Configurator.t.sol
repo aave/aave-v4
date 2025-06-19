@@ -288,7 +288,7 @@ contract ConfiguratorTest is Base {
     assetId = bound(assetId, 0, hub.assetCount() - 1);
 
     DataTypes.AssetConfig memory expectedConfig = hub.getAssetConfig(assetId);
-    expectedConfig.irStrategy = IReserveInterestRateStrategy(irStrategy);
+    expectedConfig.irStrategy = IBasicInterestRateStrategy(irStrategy);
 
     _checkedUpdateAssetConfig(
       assetId,
@@ -311,7 +311,7 @@ contract ConfiguratorTest is Base {
       paused: false,
       feeReceiver: address(0),
       liquidityFee: 0,
-      irStrategy: IReserveInterestRateStrategy(interestRateStrategy)
+      irStrategy: IBasicInterestRateStrategy(interestRateStrategy)
     });
 
     vm.expectEmit(address(hub));

@@ -5,7 +5,6 @@ import 'tests/unit/LiquidityHub/LiquidityHubBase.t.sol';
 
 contract LiquidityHubConfigTest is LiquidityHubBase {
   using SharesMath for uint256;
-  using WadRayMath for uint256;
 
   function test_addSpoke() public {
     uint256 assetId = hub.assetCount() - 1;
@@ -223,7 +222,7 @@ contract LiquidityHubConfigTest is LiquidityHubBase {
     DataTypes.AssetConfig memory newConfig
   ) public {
     _processAssetConfig(daiAssetId, newConfig);
-    newConfig.irStrategy = IReserveInterestRateStrategy(address(0));
+    newConfig.irStrategy = IBasicInterestRateStrategy(address(0));
 
     vm.expectRevert(ILiquidityHub.InvalidIrStrategy.selector);
     hub.updateAssetConfig(daiAssetId, newConfig);
@@ -313,7 +312,7 @@ contract LiquidityHubConfigTest is LiquidityHubBase {
         paused: true,
         feeReceiver: makeAddr('feeReceiver'),
         liquidityFee: 20_00,
-        irStrategy: IReserveInterestRateStrategy(makeAddr('irStrategy'))
+        irStrategy: IBasicInterestRateStrategy(makeAddr('irStrategy'))
       })
     );
   }
@@ -412,7 +411,7 @@ contract LiquidityHubConfigTest is LiquidityHubBase {
       paused: false,
       feeReceiver: address(0),
       liquidityFee: 0,
-      irStrategy: IReserveInterestRateStrategy(interestRateStrategy)
+      irStrategy: IBasicInterestRateStrategy(interestRateStrategy)
     });
 
     vm.expectEmit(address(hub));

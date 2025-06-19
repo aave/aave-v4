@@ -9,11 +9,11 @@ type Stage is uint8;
 function eq(Stage a, Stage b) pure returns (bool) {
   return Stage.unwrap(a) == Stage.unwrap(b);
 }
+
 using {eq as ==} for Stage global;
 
 abstract contract LiquidityHubScenarioBaseTest is Base {
   using SharesMath for uint256;
-  using WadRayMath for uint256;
   using PercentageMath for uint256;
 
   uint256 internal constant NUM_TIMESTAMPS = 10;
@@ -102,17 +102,23 @@ abstract contract LiquidityHubScenarioBaseTest is Base {
 
   // invoked on each time step
   function precondition(Stage stage) internal virtual {}
+
   function initialAssertions(Stage stage) internal virtual {}
 
   function printInitialLog(Stage stage) internal virtual {
     console.log(string.concat('----- t', vm.toString(t), '_i -----'));
   }
+
   function exec(Stage stage) internal virtual {}
+
   function finalAssertions(Stage stage) internal virtual {}
+
   function skipTime(Stage stage) internal virtual {}
+
   function postcondition(Stage stage) internal virtual {
     timestamps.push(vm.getBlockTimestamp());
   }
+
   function printFinalLog(Stage stage) internal virtual {
     console.log(string.concat('----- t', vm.toString(t), '_f -----'));
   }
@@ -140,15 +146,6 @@ abstract contract LiquidityHubScenarioBaseTest is Base {
 
   function timeAt(Stage stage) internal view returns (uint40) {
     return uint40(timestamps[uint256(Stage.unwrap(stage))]);
-  }
-
-  /// @param baseBorrowRate base borrow rate in bps
-  function mockBaseBorrowRate(uint256 baseBorrowRate) internal {
-    vm.mockCall(
-      address(irStrategy),
-      IReserveInterestRateStrategy.calculateInterestRates.selector,
-      abi.encode(baseBorrowRate.bpsToRay())
-    );
   }
 
   // initialize state array for non-fuzz tests with constant skipTimes and borrowRates across actions

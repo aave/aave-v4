@@ -3,7 +3,7 @@ pragma solidity ^0.8.10;
 
 import {IERC20Metadata} from 'src/dependencies/openzeppelin/IERC20Metadata.sol';
 import {DataTypes} from 'src/libraries/types/DataTypes.sol';
-import {IReserveInterestRateStrategy} from 'src/interfaces/IReserveInterestRateStrategy.sol';
+import {IBasicInterestRateStrategy} from 'src/interfaces/IBasicInterestRateStrategy.sol';
 import {ILiquidityHub} from 'src/interfaces/ILiquidityHub.sol';
 import {IConfigurator} from 'src/interfaces/IConfigurator.sol';
 
@@ -91,7 +91,7 @@ contract Configurator is IConfigurator {
     // TODO: AccessControl
 
     DataTypes.AssetConfig memory config = ILiquidityHub(hub).getAssetConfig(assetId);
-    config.irStrategy = IReserveInterestRateStrategy(irStrategy);
+    config.irStrategy = IBasicInterestRateStrategy(irStrategy);
     ILiquidityHub(hub).updateAssetConfig(assetId, config);
   }
 

@@ -5,7 +5,7 @@ import './LiquidityHubBase.t.sol';
 
 contract LiquidityHubWithdrawTest is LiquidityHubBase {
   using SharesMath for uint256;
-  using WadRayMath for uint256;
+  using WadRayMathExtended for uint256;
 
   function test_withdraw() public {
     vm.skip(true, 'pending refactor');
@@ -39,7 +39,7 @@ contract LiquidityHubWithdrawTest is LiquidityHubBase {
     //     assertEq(assetData.availableLiquidity, amount, 'asset availableLiquidity pre-withdraw');
     //     assertEq(assetData.baseDebt, 0, 'asset baseDebt pre-withdraw');
     //     assertEq(assetData.outstandingPremium, 0, 'asset outstandingPremium pre-withdraw');
-    //     assertEq(assetData.baseBorrowIndex, WadRayMath.RAY, 'asset baseBorrowIndex pre-withdraw');
+    //     assertEq(assetData.baseBorrowIndex, WadRayMathExtended.RAY, 'asset baseBorrowIndex pre-withdraw');
     //     assertEq(
     //       assetData.baseBorrowRate,
     //       uint256(5_00).bpsToRay(),
@@ -97,7 +97,7 @@ contract LiquidityHubWithdrawTest is LiquidityHubBase {
     //     assertEq(assetData.availableLiquidity, 0, 'asset availableLiquidity post-withdraw');
     //     assertEq(assetData.baseDebt, 0, 'asset baseDebt post-withdraw');
     //     assertEq(assetData.outstandingPremium, 0, 'asset outstandingPremium post-withdraw');
-    //     assertEq(assetData.baseBorrowIndex, WadRayMath.RAY, 'asset baseBorrowIndex post-withdraw');
+    //     assertEq(assetData.baseBorrowIndex, WadRayMathExtended.RAY, 'asset baseBorrowIndex post-withdraw');
     //     assertEq(
     //       assetData.baseBorrowRate,
     //       uint256(5_00).bpsToRay(),
@@ -196,7 +196,7 @@ contract LiquidityHubWithdrawTest is LiquidityHubBase {
     //     assertEq(assetData.availableLiquidity, 0, 'asset availableLiquidity post-withdraw');
     //     assertEq(assetData.baseDebt, 0, 'asset baseDebt post-withdraw');
     //     assertEq(assetData.outstandingPremium, 0, 'asset outstandingPremium post-withdraw');
-    //     assertEq(assetData.baseBorrowIndex, WadRayMath.RAY, 'asset baseBorrowIndex post-withdraw');
+    //     assertEq(assetData.baseBorrowIndex, WadRayMathExtended.RAY, 'asset baseBorrowIndex post-withdraw');
     //     assertEq(
     //       assetData.baseBorrowRate,
     //       uint256(5_00).bpsToRay(),
@@ -295,7 +295,7 @@ contract LiquidityHubWithdrawTest is LiquidityHubBase {
     //     assertEq(assetData.availableLiquidity, amount, 'asset availableLiquidity pre-withdraw');
     //     assertEq(assetData.baseDebt, 0, 'asset baseDebt pre-withdraw');
     //     assertEq(assetData.outstandingPremium, 0, 'asset outstandingPremium pre-withdraw');
-    //     assertEq(assetData.baseBorrowIndex, WadRayMath.RAY, 'asset baseBorrowIndex pre-withdraw');
+    //     assertEq(assetData.baseBorrowIndex, WadRayMathExtended.RAY, 'asset baseBorrowIndex pre-withdraw');
     //     assertEq(
     //       assetData.baseBorrowRate,
     //       uint256(5_00).bpsToRay(),
@@ -360,7 +360,7 @@ contract LiquidityHubWithdrawTest is LiquidityHubBase {
     //     assertEq(assetData.availableLiquidity, 0, 'asset availableLiquidity post-withdraw');
     //     assertEq(assetData.baseDebt, 0, 'asset baseDebt post-withdraw');
     //     assertEq(assetData.outstandingPremium, 0, 'asset outstandingPremium post-withdraw');
-    //     assertEq(assetData.baseBorrowIndex, WadRayMath.RAY, 'asset baseBorrowIndex post-withdraw');
+    //     assertEq(assetData.baseBorrowIndex, WadRayMathExtended.RAY, 'asset baseBorrowIndex post-withdraw');
     //     assertEq(
     //       assetData.baseBorrowRate,
     //       uint256(5_00).bpsToRay(),
@@ -437,12 +437,12 @@ contract LiquidityHubWithdrawTest is LiquidityHubBase {
     //     hubData.daiData1 = hub.getAsset(daiAssetId);
 
     //     uint256 restoreAmount = hubData.daiData1.baseDebt + hubData.daiData1.outstandingPremium;
-    //     uint256 newBaseBorrowIndex = WadRayMath.RAY +
-    //       WadRayMath.RAY.rayMul(
+    //     uint256 newBaseBorrowIndex = WadRayMathExtended.RAY +
+    //       WadRayMathExtended.RAY.rayMul(
     //         MathUtils.calculateLinearInterest(
     //           hubData.daiData1.baseBorrowRate,
     //           uint40(lastUpdateTimestamp)
-    //         ) - WadRayMath.RAY
+    //         ) - WadRayMathExtended.RAY
     //       );
 
     //     // alice restores all debt including accrual
@@ -575,12 +575,12 @@ contract LiquidityHubWithdrawTest is LiquidityHubBase {
     //     hubData.daiData = hub.getAsset(daiAssetId);
 
     //     uint256 restoreAmount = hubData.daiData.baseDebt + hubData.daiData.outstandingPremium;
-    //     uint256 newBaseBorrowIndex = WadRayMath.RAY +
-    //       WadRayMath.RAY.rayMul(
+    //     uint256 newBaseBorrowIndex = WadRayMathExtended.RAY +
+    //       WadRayMathExtended.RAY.rayMul(
     //         MathUtils.calculateLinearInterest(
     //           hubData.daiData.baseBorrowRate,
     //           uint40(lastUpdateTimestamp)
-    //         ) - WadRayMath.RAY
+    //         ) - WadRayMathExtended.RAY
     //       );
 
     //     // alice restores all debt including accrual

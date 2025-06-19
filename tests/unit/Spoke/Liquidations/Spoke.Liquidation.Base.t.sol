@@ -399,7 +399,7 @@ contract SpokeLiquidationBase is SpokeBase {
       (((params.totalDebtInBaseCurrency * params.debtAssetUnit) *
         (params.closeFactor - params.healthFactor)) /
         ((params.closeFactor - effectiveLiquidationPenalty + 1) * params.debtAssetPrice))
-        .dewadify();
+        .dewadifyDown();
   }
 
   /// @notice Calc user's lowest possible health factor whereby a liqudation can still restore HF to close factor.
