@@ -12,6 +12,8 @@ contract SpokeMultipleHubTest is SpokeBase {
   uint256 internal daiHub2ReserveId;
   uint256 internal daiHub3ReserveId;
 
+  uint256 internal hub3DaiAssetId = 0;
+
   /* @dev Configures spoke1 to have 2 additional reserves:
    * dai from hub 2
    * dai from hub 3

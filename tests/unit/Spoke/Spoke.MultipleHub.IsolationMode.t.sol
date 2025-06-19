@@ -174,6 +174,7 @@ contract SpokeMultipleHubIsolationModeTest is SpokeMultipleHubBase {
    * Asset B is listed from the canonical hub and linked to the new spoke with a draw cap.
    * Thus users can borrow asset B from the canonical hub via the new spoke,
    * without being able to supply it from the new spoke.
+   * Users can also supply asset B from the canonical hub and canonical spoke to earn yield as usual.
    */
   function test_isolation_mode() public {
     // Bob can supply asset A to the new spoke and set it as collateral
@@ -232,7 +233,7 @@ contract SpokeMultipleHubIsolationModeTest is SpokeMultipleHubBase {
     vm.expectRevert(abi.encodeWithSelector(ILiquidityHub.NotAvailableLiquidity.selector, 0));
     Utils.borrow(newSpoke, isolationVars.reserveBId, bob, 1, bob);
 
-    // Alice can supply asset B to the main hub via spoke 1
+    // Alice can supply asset B to the main hub via spoke 1 (and will earn yield as usual)
     Utils.supply(spoke1, isolationVars.spoke1ReserveBId, alice, 500_000e18, alice);
 
     // Check Alice's supplied amount of asset B on spoke 1
