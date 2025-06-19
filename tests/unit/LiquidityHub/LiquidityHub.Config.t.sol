@@ -212,7 +212,7 @@ contract LiquidityHubConfigTest is LiquidityHubBase {
   function test_addAsset_fuzz(address asset, uint8 decimals, address interestRateStrategy) public {
     vm.assume(asset != address(0) && interestRateStrategy != address(0));
     decimals = uint8(bound(decimals, 0, hub.MAX_ALLOWED_ASSET_DECIMALS()));
-    _checkedAddAsset(hub, asset, decimals, interestRateStrategy);
+    _checkedAddAsset(asset, decimals, interestRateStrategy);
   }
 
   function test_addAsset() public {
@@ -400,7 +400,6 @@ contract LiquidityHubConfigTest is LiquidityHubBase {
   }
 
   function _checkedAddAsset(
-    ILiquidityHub hub,
     address asset,
     uint8 decimals,
     address interestRateStrategy
@@ -441,14 +440,5 @@ contract LiquidityHubConfigTest is LiquidityHubBase {
     hub.updateAssetConfig(assetId, config);
 
     assertEq(hub.getAssetConfig(assetId), config);
-  }
-
-  function assertEq(DataTypes.AssetConfig memory a, DataTypes.AssetConfig memory b) internal pure {
-    require(a.active == b.active, 'assertEq(AssetConfig): active');
-    require(a.paused == b.paused, 'assertEq(AssetConfig): paused');
-    require(a.frozen == b.frozen, 'assertEq(AssetConfig): rozen');
-    require(a.feeReceiver == b.feeReceiver, 'assertEq(AssetConfig): feeReceiver');
-    require(a.liquidityFee == b.liquidityFee, 'assertEq(AssetConfig): liquidityFee');
-    require(address(a.irStrategy) == address(b.irStrategy), 'assertEq(AssetConfig): irStrategy');
   }
 }

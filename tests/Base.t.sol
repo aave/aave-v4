@@ -1349,6 +1349,15 @@ abstract contract Base is Test {
     _assertAssetDebt(spoke, reserveId, expectedBaseDebt, expectedPremiumDebt, label);
   }
 
+  function assertEq(DataTypes.AssetConfig memory a, DataTypes.AssetConfig memory b) internal pure {
+    require(a.active == b.active, 'assertEq(AssetConfig): active');
+    require(a.paused == b.paused, 'assertEq(AssetConfig): paused');
+    require(a.frozen == b.frozen, 'assertEq(AssetConfig): rozen');
+    require(a.feeReceiver == b.feeReceiver, 'assertEq(AssetConfig): feeReceiver');
+    require(a.liquidityFee == b.liquidityFee, 'assertEq(AssetConfig): liquidityFee');
+    require(address(a.irStrategy) == address(b.irStrategy), 'assertEq(AssetConfig): irStrategy');
+  }
+
   /// @dev Calculate expected base debt based on specified borrow rate
   function _calculateExpectedBaseDebt(
     uint256 initialDebt,
