@@ -5,7 +5,6 @@ import 'tests/unit/Spoke/SpokeBase.t.sol';
 
 contract SpokeRiskPremiumEdgeCasesTest is SpokeBase {
   using SharesMath for uint256;
-  using WadRayMath for uint256;
 
   /// Bob supplies 2 collateral assets, borrows an amount such that both of them cover it, and then repays any amount of debt
   /// Bob's user risk premium should decrease or remain same after repay
@@ -316,20 +315,7 @@ contract SpokeRiskPremiumEdgeCasesTest is SpokeBase {
     // Mock call to raise dai interest rate upon this next borrow call so it outgrows weth debt interest
     DataTypes.Asset memory daiAsset = hub.getAsset(daiAssetId);
     (uint256 baseDebt, ) = hub.getAssetDebt(daiAssetId);
-    DataTypes.CalculateInterestRatesParams memory params = DataTypes.CalculateInterestRatesParams({
-      liquidityAdded: 0,
-      liquidityTaken: daiSupplyAmount,
-      totalDebt: baseDebt,
-      liquidityFee: 0,
-      assetId: daiAssetId,
-      virtualUnderlyingBalance: daiAsset.availableLiquidity,
-      usingVirtualBalance: true
-    });
-    vm.mockCall(
-      address(irStrategy),
-      abi.encodeWithSelector(IReserveInterestRateStrategy.calculateInterestRates.selector, params),
-      abi.encode(uint256(10_00).bpsToRay())
-    );
+    _mockInterestRate(10_00, daiAssetId, daiAsset.availableLiquidity, baseDebt, 0, daiSupplyAmount);
 
     // Alice borrows dai to accrue interest
     Utils.borrow({

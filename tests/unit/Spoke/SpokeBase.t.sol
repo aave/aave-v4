@@ -283,11 +283,7 @@ contract SpokeBase is Base {
   ) internal returns (uint256, uint256) {
     SupplyBorrowLocal memory state;
     if (isMockRate) {
-      vm.mockCall(
-        address(irStrategy),
-        IReserveInterestRateStrategy.calculateInterestRates.selector,
-        abi.encode(rate)
-      );
+      _mockInterestRate(rate);
     }
     (state.collateralReserveAssetId, ) = getAssetByReserveId(spoke, collateral.reserveId);
     (state.borrowReserveAssetId, ) = getAssetByReserveId(spoke, borrow.reserveId);

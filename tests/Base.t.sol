@@ -15,7 +15,7 @@ import {WadRayMath} from 'src/libraries/math/WadRayMath.sol';
 import {WadRayMathExtended} from 'src/libraries/math/WadRayMathExtended.sol';
 import {SharesMath} from 'src/libraries/math/SharesMath.sol';
 import {MathUtils} from 'src/libraries/math/MathUtils.sol';
-import {DefaultReserveInterestRateStrategy, IDefaultInterestRateStrategy, IReserveInterestRateStrategy} from 'src/contracts/DefaultReserveInterestRateStrategy.sol';
+import {AssetInterestRateStrategy, IAssetInterestRateStrategy, IBasicInterestRateStrategy} from 'src/contracts/AssetInterestRateStrategy.sol';
 import {DataTypes} from 'src/libraries/types/DataTypes.sol';
 import {Utils} from './Utils.sol';
 
@@ -32,7 +32,6 @@ import {Ownable} from 'src/dependencies/openzeppelin/Ownable.sol';
 import {WETH9} from 'src/dependencies/weth/WETH9.sol';
 
 abstract contract Base is Test {
-  using WadRayMath for uint256;
   using WadRayMathExtended for uint256;
   using SharesMath for uint256;
   using PercentageMath for uint256;
@@ -50,7 +49,7 @@ abstract contract Base is Test {
   uint256 internal MAX_SUPPLY_AMOUNT_USDY;
   uint256 internal constant MAX_SUPPLY_IN_BASE_CURRENCY = 1e39;
   uint32 internal constant MAX_RISK_PREMIUM_BPS = 1000_00;
-  uint256 internal constant MAX_BORROW_RATE = 1000_00; // matches DefaultReserveInterestRateStrategy
+  uint256 internal constant MAX_BORROW_RATE = 1000_00; // matches AssetInterestRateStrategy
   uint256 internal constant MAX_SKIP_TIME = 10_000 days;
   uint256 internal constant MIN_LIQUIDATION_BONUS = PercentageMath.PERCENTAGE_FACTOR; // 100% == 0% bonus
   uint256 internal constant MAX_LIQUIDATION_BONUS = 150_00; // 50% bonus
@@ -76,9 +75,8 @@ abstract contract Base is Test {
   ISpoke internal spoke1;
   ISpoke internal spoke2;
   ISpoke internal spoke3;
-  DefaultReserveInterestRateStrategy internal irStrategy;
+  AssetInterestRateStrategy internal irStrategy;
 
-  address internal mockAddressesProvider = makeAddr('mockAddressesProvider');
   // TODO: remove after migrating to other mock users
   address internal USER1 = makeAddr('USER1');
   address internal USER2 = makeAddr('USER2');
@@ -157,7 +155,7 @@ abstract contract Base is Test {
 
   function deployFixtures() internal {
     oracle = new MockPriceOracle();
-    irStrategy = new DefaultReserveInterestRateStrategy(mockAddressesProvider);
+    irStrategy = new AssetInterestRateStrategy();
     hub = new LiquidityHub();
     spoke1 = ISpoke(new Spoke(address(hub), address(oracle)));
     spoke2 = ISpoke(new Spoke(address(hub), address(oracle)));
@@ -582,54 +580,54 @@ abstract contract Base is Test {
     spokeInfo[spoke2].dai2.liquidityPremium = daiConfig.liquidityPremium;
     hub.addSpoke(dai2AssetId, spokeConfig, address(spoke2));
 
-    irStrategy.setInterestRateParams(
+    irStrategy.setInterestRateData(
       wethAssetId,
-      IDefaultInterestRateStrategy.InterestRateData({
+      IAssetInterestRateStrategy.InterestRateData({
         optimalUsageRatio: 90_00, // 90.00%
         baseVariableBorrowRate: 5_00, // 5.00%
         variableRateSlope1: 5_00, // 5.00%
         variableRateSlope2: 5_00 // 5.00%
       })
     );
-    irStrategy.setInterestRateParams(
+    irStrategy.setInterestRateData(
       usdxAssetId,
-      IDefaultInterestRateStrategy.InterestRateData({
+      IAssetInterestRateStrategy.InterestRateData({
         optimalUsageRatio: 90_00, // 90.00%
         baseVariableBorrowRate: 5_00, // 5.00%
         variableRateSlope1: 5_00, // 5.00%
         variableRateSlope2: 5_00 // 5.00%
       })
     );
-    irStrategy.setInterestRateParams(
+    irStrategy.setInterestRateData(
       wbtcAssetId,
-      IDefaultInterestRateStrategy.InterestRateData({
+      IAssetInterestRateStrategy.InterestRateData({
         optimalUsageRatio: 90_00, // 90.00%
         baseVariableBorrowRate: 5_00, // 5.00%
         variableRateSlope1: 5_00, // 5.00%
         variableRateSlope2: 5_00 // 5.00%
       })
     );
-    irStrategy.setInterestRateParams(
+    irStrategy.setInterestRateData(
       daiAssetId,
-      IDefaultInterestRateStrategy.InterestRateData({
+      IAssetInterestRateStrategy.InterestRateData({
         optimalUsageRatio: 90_00, // 90.00%
         baseVariableBorrowRate: 5_00, // 5.00%
         variableRateSlope1: 5_00, // 5.00%
         variableRateSlope2: 5_00 // 5.00%
       })
     );
-    irStrategy.setInterestRateParams(
+    irStrategy.setInterestRateData(
       dai2AssetId,
-      IDefaultInterestRateStrategy.InterestRateData({
+      IAssetInterestRateStrategy.InterestRateData({
         optimalUsageRatio: 90_00, // 90.00%
         baseVariableBorrowRate: 5_00, // 5.00%
         variableRateSlope1: 5_00, // 5.00%
         variableRateSlope2: 5_00 // 5.00%
       })
     );
-    irStrategy.setInterestRateParams(
+    irStrategy.setInterestRateData(
       usdyAssetId,
-      IDefaultInterestRateStrategy.InterestRateData({
+      IAssetInterestRateStrategy.InterestRateData({
         optimalUsageRatio: 90_00, // 90.00%
         baseVariableBorrowRate: 5_00, // 5.00%
         variableRateSlope1: 5_00, // 5.00%
@@ -1334,7 +1332,7 @@ abstract contract Base is Test {
     ) = spoke.getUserAccountData(user);
 
     requiredDebtInBaseCurrency =
-      totalCollateralBase.percentMul(currentAvgCollateralFactor.dewadify() + 1).wadDivUp(
+      totalCollateralBase.percentMul(currentAvgCollateralFactor.dewadifyDown() + 1).wadDivUp(
         desiredHf
       ) -
       totalDebtBase;
@@ -1365,7 +1363,7 @@ abstract contract Base is Test {
     uint256 assetPrice,
     uint256 assetUnit
   ) internal pure returns (uint256) {
-    return ((baseCurrencyAmount * assetUnit) / assetPrice).dewadify();
+    return ((baseCurrencyAmount * assetUnit) / assetPrice).dewadifyDown();
   }
 
   function _approxRelFromBps(uint256 bps) internal pure returns (uint256) {
@@ -1499,5 +1497,31 @@ abstract contract Base is Test {
   ) internal view returns (uint256 feesAmount) {
     return
       indexDelta.rayMulDown(initialDrawnShares + initialPremiumShares).percentMulDown(liquidityFee);
+  }
+
+  function _mockInterestRate(uint256 interestRateBps) internal {
+    vm.mockCall(
+      address(irStrategy),
+      IBasicInterestRateStrategy.calculateInterestRate.selector,
+      abi.encode(interestRateBps.bpsToRay())
+    );
+  }
+
+  function _mockInterestRate(
+    uint256 interestRateBps,
+    uint256 assetId,
+    uint256 availableLiquidity,
+    uint256 totalDebt,
+    uint256 liquidityAdded,
+    uint256 liquidityTaken
+  ) internal {
+    vm.mockCall(
+      address(irStrategy),
+      abi.encodeCall(
+        IBasicInterestRateStrategy.calculateInterestRate,
+        (assetId, availableLiquidity, totalDebt, liquidityAdded, liquidityTaken)
+      ),
+      abi.encode(interestRateBps.bpsToRay())
+    );
   }
 }

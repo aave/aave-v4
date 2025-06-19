@@ -678,19 +678,12 @@ contract SpokeAccrueInterestTest is SpokeBase {
     if (amounts.daiBorrowAmount > 0) {
       DataTypes.Asset memory asset = hub.getAsset(daiAssetId);
       (uint256 baseDebt, ) = hub.getAssetDebt(daiAssetId);
-      DataTypes.CalculateInterestRatesParams memory params = DataTypes
-        .CalculateInterestRatesParams({
-          liquidityAdded: 0,
-          liquidityTaken: amounts.daiBorrowAmount,
-          totalDebt: baseDebt,
-          liquidityFee: 0,
-          assetId: daiAssetId,
-          virtualUnderlyingBalance: asset.availableLiquidity,
-          usingVirtualBalance: true
-        });
       vm.mockCall(
         address(irStrategy),
-        abi.encodeCall(IReserveInterestRateStrategy.calculateInterestRates, (params)),
+        abi.encodeCall(
+          IBasicInterestRateStrategy.calculateInterestRate,
+          (daiAssetId, asset.availableLiquidity, baseDebt, 0, amounts.daiBorrowAmount)
+        ),
         abi.encode(rates.daiBaseBorrowRate)
       );
       Utils.borrow(spoke1, _daiReserveId(spoke1), bob, amounts.daiBorrowAmount, bob);
@@ -700,19 +693,12 @@ contract SpokeAccrueInterestTest is SpokeBase {
     if (amounts.wethBorrowAmount > 0) {
       DataTypes.Asset memory asset = hub.getAsset(wethAssetId);
       (uint256 baseDebt, ) = hub.getAssetDebt(wethAssetId);
-      DataTypes.CalculateInterestRatesParams memory params = DataTypes
-        .CalculateInterestRatesParams({
-          liquidityAdded: 0,
-          liquidityTaken: amounts.wethBorrowAmount,
-          totalDebt: baseDebt,
-          liquidityFee: 0,
-          assetId: wethAssetId,
-          virtualUnderlyingBalance: asset.availableLiquidity,
-          usingVirtualBalance: true
-        });
       vm.mockCall(
         address(irStrategy),
-        abi.encodeCall(IReserveInterestRateStrategy.calculateInterestRates, (params)),
+        abi.encodeCall(
+          IBasicInterestRateStrategy.calculateInterestRate,
+          (wethAssetId, asset.availableLiquidity, baseDebt, 0, amounts.wethBorrowAmount)
+        ),
         abi.encode(rates.wethBaseBorrowRate)
       );
       Utils.borrow(spoke1, _wethReserveId(spoke1), bob, amounts.wethBorrowAmount, bob);
@@ -722,19 +708,12 @@ contract SpokeAccrueInterestTest is SpokeBase {
     if (amounts.usdxBorrowAmount > 0) {
       DataTypes.Asset memory asset = hub.getAsset(usdxAssetId);
       (uint256 baseDebt, ) = hub.getAssetDebt(usdxAssetId);
-      DataTypes.CalculateInterestRatesParams memory params = DataTypes
-        .CalculateInterestRatesParams({
-          liquidityAdded: 0,
-          liquidityTaken: amounts.usdxBorrowAmount,
-          totalDebt: baseDebt,
-          liquidityFee: 0,
-          assetId: usdxAssetId,
-          virtualUnderlyingBalance: asset.availableLiquidity,
-          usingVirtualBalance: true
-        });
       vm.mockCall(
         address(irStrategy),
-        abi.encodeCall(IReserveInterestRateStrategy.calculateInterestRates, (params)),
+        abi.encodeCall(
+          IBasicInterestRateStrategy.calculateInterestRate,
+          (usdxAssetId, asset.availableLiquidity, baseDebt, 0, amounts.usdxBorrowAmount)
+        ),
         abi.encode(rates.usdxBaseBorrowRate)
       );
       Utils.borrow(spoke1, _usdxReserveId(spoke1), bob, amounts.usdxBorrowAmount, bob);
@@ -744,19 +723,12 @@ contract SpokeAccrueInterestTest is SpokeBase {
     if (amounts.wbtcBorrowAmount > 0) {
       DataTypes.Asset memory asset = hub.getAsset(wbtcAssetId);
       (uint256 baseDebt, ) = hub.getAssetDebt(wbtcAssetId);
-      DataTypes.CalculateInterestRatesParams memory params = DataTypes
-        .CalculateInterestRatesParams({
-          liquidityAdded: 0,
-          liquidityTaken: amounts.wbtcBorrowAmount,
-          totalDebt: baseDebt,
-          liquidityFee: 0,
-          assetId: wbtcAssetId,
-          virtualUnderlyingBalance: asset.availableLiquidity,
-          usingVirtualBalance: true
-        });
       vm.mockCall(
         address(irStrategy),
-        abi.encodeCall(IReserveInterestRateStrategy.calculateInterestRates, (params)),
+        abi.encodeCall(
+          IBasicInterestRateStrategy.calculateInterestRate,
+          (wbtcAssetId, asset.availableLiquidity, baseDebt, 0, amounts.wbtcBorrowAmount)
+        ),
         abi.encode(rates.wbtcBaseBorrowRate)
       );
       Utils.borrow(spoke1, _wbtcReserveId(spoke1), bob, amounts.wbtcBorrowAmount, bob);
