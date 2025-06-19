@@ -38,8 +38,6 @@ contract SpokePositionManagerTest is SpokeBase {
   function test_onlyPositionManager_on_supply() public {
     uint256 reserveId = _usdxReserveId(spoke1);
     uint256 amount = 100e6;
-    vm.prank(alice);
-    tokenList.usdx.approve(address(hub), 0);
 
     vm.expectRevert(ISpoke.Unauthorized.selector);
     Utils.supply(spoke1, reserveId, POSITION_MANAGER, amount, alice);
@@ -171,9 +169,8 @@ contract SpokePositionManagerTest is SpokeBase {
 
     _approvePositionManager(alice);
 
-    uint256 expectedRiskPremium = _calculateExpectedUserRP(alice, spoke1);
     vm.expectEmit(address(spoke1));
-    emit ISpoke.UserRiskPremiumUpdate(alice, expectedRiskPremium);
+    emit ISpoke.UserRiskPremiumUpdate(alice, _calculateExpectedUserRP(alice, spoke1));
     vm.prank(POSITION_MANAGER);
     spoke1.updateUserRiskPremium(alice);
   }
