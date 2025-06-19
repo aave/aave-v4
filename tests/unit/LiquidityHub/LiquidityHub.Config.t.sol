@@ -153,8 +153,8 @@ contract LiquidityHubConfigTest is LiquidityHubBase {
     emit ILiquidityHub.SpokeConfigUpdated(
       daiAssetId,
       address(spoke1),
-      config.drawCap,
-      config.supplyCap
+      config.supplyCap,
+      config.drawCap
     );
     hub.updateSpokeConfig(daiAssetId, address(spoke1), config);
   }
@@ -302,7 +302,7 @@ contract LiquidityHubConfigTest is LiquidityHubBase {
 
   function test_updateAssetConfig_fuzz(DataTypes.AssetConfig memory newConfig) public {
     _processAssetConfig(daiAssetId, newConfig);
-    _checkedUpdateAssetConfig(hub, daiAssetId, newConfig);
+    _checkedUpdateAssetConfig(daiAssetId, newConfig);
   }
 
   function test_updateAssetConfig() public {
@@ -335,7 +335,7 @@ contract LiquidityHubConfigTest is LiquidityHubBase {
     liquidityFee = bound(liquidityFee, 0, PercentageMathExtended.PERCENTAGE_FACTOR);
     config.liquidityFee = liquidityFee;
 
-    _checkedUpdateAssetConfig(hub, daiAssetId, config);
+    _checkedUpdateAssetConfig(daiAssetId, config);
   }
 
   function test_updateAssetConig_ZeroFeeReceiver(uint256 supplyCap, uint256 drawCap) public {
@@ -358,7 +358,7 @@ contract LiquidityHubConfigTest is LiquidityHubBase {
     );
     config.feeReceiver = address(0);
     config.liquidityFee = 0;
-    _checkedUpdateAssetConfig(hub, daiAssetId, config);
+    _checkedUpdateAssetConfig(daiAssetId, config);
 
     hub.updateSpokeConfig(
       daiAssetId,
@@ -367,7 +367,7 @@ contract LiquidityHubConfigTest is LiquidityHubBase {
     );
     config.feeReceiver = initialFeeReceiver;
     config.liquidityFee = initialLiquidityFee;
-    _checkedUpdateAssetConfig(hub, daiAssetId, config);
+    _checkedUpdateAssetConfig(daiAssetId, config);
   }
 
   function _processAssetConfig(uint256 assetId, DataTypes.AssetConfig memory newConfig) public {
@@ -429,7 +429,6 @@ contract LiquidityHubConfigTest is LiquidityHubBase {
   }
 
   function _checkedUpdateAssetConfig(
-    ILiquidityHub hub,
     uint256 assetId,
     DataTypes.AssetConfig memory config
   ) internal {

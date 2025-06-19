@@ -114,11 +114,11 @@ contract LiquidityHub is ILiquidityHub {
     DataTypes.SpokeConfig memory config
   ) internal {
     _spokes[assetId][spoke].config = DataTypes.SpokeConfig({
-      drawCap: config.drawCap,
-      supplyCap: config.supplyCap
+      supplyCap: config.supplyCap,
+      drawCap: config.drawCap
     });
 
-    emit SpokeConfigUpdated(assetId, spoke, config.drawCap, config.supplyCap);
+    emit SpokeConfigUpdated(assetId, spoke, config.supplyCap, config.drawCap);
   }
 
   // /////
@@ -522,7 +522,8 @@ contract LiquidityHub is ILiquidityHub {
       config: config
     });
 
-    emit SpokeAdded(assetId, spoke); // todo: emit config
+    emit SpokeAdded(assetId, spoke);
+    emit SpokeConfigUpdated(assetId, spoke, config.supplyCap, config.drawCap);
   }
 
   function _validateAssetConfig(
