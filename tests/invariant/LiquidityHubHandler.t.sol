@@ -49,7 +49,7 @@ contract LiquidityHubHandler is Test {
         frozen: false,
         paused: false,
         liquidityFee: 0,
-        irStrategy: irStrategy
+        irStrategy: address(irStrategy)
       })
     );
     spoke1.addReserve(
@@ -89,8 +89,7 @@ contract LiquidityHubHandler is Test {
     assetId = bound(assetId, 0, hub.assetCount() - 1);
     amount = bound(amount, 1, type(uint128).max);
 
-    IERC20 asset = hub.getAsset(assetId).erc20;
-    deal(address(asset), user, amount);
+    deal(hub.getAsset(assetId).underlying, user, amount);
     Utils.add({
       hub: hub,
       assetId: assetId,
@@ -122,13 +121,13 @@ contract LiquidityHubHandler is Test {
     assetId = bound(assetId, 0, hub.assetCount() - 1);
     amount = bound(amount, 1, type(uint128).max);
 
-    IERC20 asset = hub.getAsset(assetId).erc20;
+    address asset = hub.getAsset(assetId).underlying;
 
-    deal(address(asset), user, amount);
+    deal(asset, user, amount);
     vm.prank(user);
-    asset.transfer(address(hub), amount);
+    IERC20(asset).transfer(address(hub), amount);
 
-    s.assetDonated[address(asset)] += amount;
+    s.assetDonated[asset] += amount;
   }
 
   function _updateState(uint256 assetId) internal {

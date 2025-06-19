@@ -364,7 +364,7 @@ contract SpokeBase is Base {
       address user = users[i];
       uint256 debt = spoke.getUserTotalDebt(reserveId, user);
       if (debt > 0) {
-        deal(address(hub.getAsset(assetId).erc20), user, debt);
+        deal(hub.getAsset(assetId).underlying, user, debt);
         vm.prank(user);
         spoke.repay(reserveId, debt);
         assertEq(spoke.getUserTotalDebt(reserveId, user), 0, 'user debt not zero');

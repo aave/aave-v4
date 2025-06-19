@@ -59,7 +59,7 @@ contract LiquidityHubBase is Base {
   /// increases supply and debt exchange rate
   function _increaseExchangeRate(uint256 assetId, uint256 amount) internal {
     address tempUser1 = makeAddr('TEMP_USER_1');
-    deal(address(hub.getAsset(assetId).erc20), tempUser1, amount);
+    deal(hub.getAsset(assetId).underlying, tempUser1, amount);
 
     address tempSpoke1 = makeAddr('TEMP_SPOKE_1');
     hub.addSpoke(
@@ -69,7 +69,7 @@ contract LiquidityHubBase is Base {
     );
 
     address tempUser2 = makeAddr('TEMP_USER_2');
-    deal(address(hub.getAsset(assetId).erc20), tempUser2, amount);
+    deal(hub.getAsset(assetId).underlying, tempUser2, amount);
 
     address tempSpoke2 = makeAddr('TEMP_SPOKE_2');
     hub.addSpoke(
@@ -151,11 +151,11 @@ contract LiquidityHubBase is Base {
 
     uint256 initialLiq = hub.getAvailableLiquidity(assetId);
 
-    IERC20 asset = hub.getAsset(assetId).erc20;
-    deal(address(asset), tempUser, amount);
+    address asset = hub.getAsset(assetId).underlying;
+    deal(asset, tempUser, amount);
 
     vm.prank(tempUser);
-    asset.approve(address(hub), type(uint256).max);
+    IERC20(asset).approve(address(hub), type(uint256).max);
 
     hub.addSpoke(
       assetId,

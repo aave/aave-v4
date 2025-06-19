@@ -147,7 +147,7 @@ contract LiquidityHubWithdrawTest is LiquidityHubBase {
     //     amount2 = bound(amount2, 1, MAX_SUPPLY_AMOUNT - amount);
     //     riskPremium %= MAX_RISK_PREMIUM_BPS; // no effect on withdraw because no drawn
 
-    //     IERC20 asset = hub.getAsset(assetId).erc20;
+    //     IERC20 asset = IERC20(hub.getAsset(assetId).underlying);
 
     //     Utils.supply({
     //       hub: hub,
@@ -267,7 +267,7 @@ contract LiquidityHubWithdrawTest is LiquidityHubBase {
     //     assetId = bound(assetId, 0, hub.assetCount() - 2); // Exclude duplicated DAI
     //     amount = bound(amount, 1, MAX_SUPPLY_AMOUNT);
 
-    //     IERC20 asset = hub.getAsset(assetId).erc20;
+    //     IERC20 asset = IERC20(hub.getAsset(assetId).underlying);
 
     //     Utils.supply({
     //       hub: hub,

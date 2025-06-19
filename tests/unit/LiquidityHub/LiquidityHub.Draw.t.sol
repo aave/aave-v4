@@ -75,7 +75,7 @@ contract LiquidityHubDrawTest is LiquidityHubBase {
     daiAmount = bound(daiAmount, 1, MAX_SUPPLY_AMOUNT);
     uint256 drawAmount = daiAmount;
 
-    IERC20 asset = hub.getAsset(assetId).erc20;
+    IERC20 asset = IERC20(hub.getAsset(assetId).underlying);
 
     // spoke2, bob supply dai
     Utils.add({

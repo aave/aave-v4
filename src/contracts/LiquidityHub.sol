@@ -3,7 +3,6 @@ pragma solidity ^0.8.0;
 
 import {SafeERC20} from 'src/dependencies/openzeppelin/SafeERC20.sol';
 import {IERC20} from 'src/dependencies/openzeppelin/IERC20.sol';
-import {IBasicInterestRateStrategy} from 'src/interfaces/IBasicInterestRateStrategy.sol';
 import {ILiquidityHub} from 'src/interfaces/ILiquidityHub.sol';
 import {DataTypes} from 'src/libraries/types/DataTypes.sol';
 import {AssetLogic} from 'src/libraries/logic/AssetLogic.sol';
@@ -44,11 +43,11 @@ contract LiquidityHub is ILiquidityHub {
       frozen: false,
       feeReceiver: address(0),
       liquidityFee: 0,
-      irStrategy: IBasicInterestRateStrategy(irStrategy)
+      irStrategy: irStrategy
     });
 
     _assets[id] = DataTypes.Asset({
-      erc20: IERC20(asset),
+      underlying: asset,
       decimals: decimals,
       suppliedShares: 0,
       availableLiquidity: 0,
@@ -147,7 +146,7 @@ contract LiquidityHub is ILiquidityHub {
     spoke.suppliedShares += suppliedShares;
 
     // TODO: fee-on-transfer
-    asset.erc20.safeTransferFrom(from, address(this), amount);
+    IERC20(asset.underlying).safeTransferFrom(from, address(this), amount);
 
     emit Add(assetId, msg.sender, suppliedShares, amount);
 
@@ -173,7 +172,7 @@ contract LiquidityHub is ILiquidityHub {
 
     spoke.suppliedShares -= withdrawnShares;
 
-    asset.erc20.safeTransfer(to, amount);
+    IERC20(asset.underlying).safeTransfer(to, amount);
 
     emit Remove(assetId, msg.sender, withdrawnShares, amount);
 
@@ -199,7 +198,7 @@ contract LiquidityHub is ILiquidityHub {
 
     spoke.baseDrawnShares += drawnShares;
 
-    asset.erc20.safeTransfer(to, amount);
+    IERC20(asset.underlying).safeTransfer(to, amount);
 
     emit Draw(assetId, msg.sender, drawnShares, amount);
 
@@ -232,7 +231,7 @@ contract LiquidityHub is ILiquidityHub {
 
     spoke.baseDrawnShares -= baseDrawnSharesRestored;
 
-    asset.erc20.safeTransferFrom(from, address(this), totalRestoredAmount);
+    IERC20(asset.underlying).safeTransferFrom(from, address(this), totalRestoredAmount);
 
     emit Restore(assetId, msg.sender, baseDrawnSharesRestored, totalRestoredAmount);
 
@@ -559,7 +558,7 @@ contract LiquidityHub is ILiquidityHub {
       }
     }
 
-    require(address(newConfig.irStrategy) != address(0), InvalidIrStrategy());
+    require(newConfig.irStrategy != address(0), InvalidIrStrategy());
   }
 
   function _getSpokeDebt(

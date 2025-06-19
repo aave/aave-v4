@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.0;
 
+import {IBasicInterestRateStrategy} from 'src/interfaces/IBasicInterestRateStrategy.sol';
 import {ILiquidityHub} from 'src/interfaces/ILiquidityHub.sol';
 import {WadRayMathExtended} from 'src/libraries/math/WadRayMathExtended.sol';
 import {DataTypes} from 'src/libraries/types/DataTypes.sol';
@@ -110,13 +111,14 @@ library AssetLogic {
     uint256 liquidityAdded,
     uint256 liquidityTaken
   ) internal {
-    asset.baseBorrowRate = asset.config.irStrategy.calculateInterestRate({
-      assetId: assetId,
-      availableLiquidity: asset.availableLiquidity,
-      totalDebt: asset.baseDebt(),
-      liquidityAdded: liquidityAdded,
-      liquidityTaken: liquidityTaken
-    });
+    asset.baseBorrowRate = IBasicInterestRateStrategy(asset.config.irStrategy)
+      .calculateInterestRate({
+        assetId: assetId,
+        availableLiquidity: asset.availableLiquidity,
+        totalDebt: asset.baseDebt(),
+        liquidityAdded: liquidityAdded,
+        liquidityTaken: liquidityTaken
+      });
   }
 
   /**

@@ -89,7 +89,7 @@ contract Spoke is ISpoke, Multicall {
       config: config,
       dynamicConfigKey: dynamicConfigKey,
       decimals: asset.decimals,
-      asset: address(asset.erc20)
+      asset: asset.underlying
     });
     _dynamicConfig[reserveId][dynamicConfigKey] = dynamicConfig;
 

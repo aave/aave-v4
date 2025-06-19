@@ -1,9 +1,6 @@
 // SPDX-License-Identifier: BUSL-1.1
 pragma solidity ^0.8.10;
 
-import {IERC20} from 'src/dependencies/openzeppelin/IERC20.sol';
-import {IBasicInterestRateStrategy} from 'src/interfaces/IBasicInterestRateStrategy.sol';
-
 library DataTypes {
   // Liquidity Hub types
   // todo pack
@@ -18,7 +15,7 @@ library DataTypes {
   }
 
   struct Asset {
-    IERC20 erc20;
+    address underlying;
     uint8 decimals;
     uint256 suppliedShares;
     uint256 availableLiquidity;
@@ -43,7 +40,7 @@ library DataTypes {
     bool frozen;
     address feeReceiver;
     uint256 liquidityFee;
-    IBasicInterestRateStrategy irStrategy;
+    address irStrategy;
   }
 
   // Spoke types

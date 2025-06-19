@@ -317,7 +317,7 @@ contract LiquidityHubSupplyTest is LiquidityHubBase {
     amount = bound(amount, 1, MAX_SUPPLY_AMOUNT);
 
     uint256 expectedSupplyShares = hub.convertToSuppliedShares(daiAssetId, amount);
-    IERC20 asset = hub.getAsset(assetId).erc20;
+    IERC20 asset = IERC20(hub.getAsset(assetId).underlying);
 
     deal(address(asset), user, MAX_SUPPLY_AMOUNT);
     vm.prank(user);
@@ -368,8 +368,8 @@ contract LiquidityHubSupplyTest is LiquidityHubBase {
 
     uint256 assetId2 = assetId + 1;
 
-    IERC20 asset = hub.getAsset(assetId).erc20;
-    IERC20 asset2 = hub.getAsset(assetId2).erc20;
+    IERC20 asset = IERC20(hub.getAsset(assetId).underlying);
+    IERC20 asset2 = IERC20(hub.getAsset(assetId2).underlying);
 
     vm.expectEmit(address(asset));
     emit IERC20.Transfer(alice, address(hub), amount);
