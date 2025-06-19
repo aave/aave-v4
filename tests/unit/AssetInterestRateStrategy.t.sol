@@ -161,8 +161,8 @@ contract AssetInterestRateStrategyTest is Base {
     uint256 liquidityAdded,
     uint256 liquidityTaken
   ) public {
-    totalDebt = bound(totalDebt, 1, type(uint64).max);
     availableLiquidity = bound(availableLiquidity, 0, type(uint64).max);
+    totalDebt = bound(totalDebt, 1, type(uint64).max);
     liquidityAdded = bound(liquidityAdded, 0, type(uint64).max);
     liquidityTaken = bound(
       liquidityTaken,
@@ -182,8 +182,8 @@ contract AssetInterestRateStrategyTest is Base {
 
   function test_calculateInterestRate_revertsWith_ArithmeticUnderflow() public {
     test_calculateInterestRate_fuzz_revertsWith_ArithmeticUnderflow({
-      totalDebt: 100e6,
       availableLiquidity: 100e6,
+      totalDebt: 100e6,
       liquidityAdded: 10e6,
       liquidityTaken: 120e6
     });

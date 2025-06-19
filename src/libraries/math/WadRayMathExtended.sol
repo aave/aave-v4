@@ -189,6 +189,11 @@ library WadRayMathExtended {
     }
   }
 
+  /**
+   * @notice Converts value from basis points to ray
+   * @param a The value in basis points
+   * @return The value in ray (= a * 1e27 / 1e4)
+   */
   function bpsToRay(uint256 a) internal pure returns (uint256) {
     return (a * RAY) / PERCENTAGE_FACTOR;
   }
