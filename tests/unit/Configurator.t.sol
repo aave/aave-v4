@@ -1,7 +1,6 @@
 // SPDX-License-Identifier: BUSL-1.1
 pragma solidity ^0.8.10;
 
-import {IERC20Metadata} from 'src/dependencies/openzeppelin/IERC20Metadata.sol';
 import 'tests/Base.t.sol';
 
 contract ConfiguratorTest is Base {
@@ -338,14 +337,6 @@ contract ConfiguratorTest is Base {
     } else {
       return configurator.addAsset(address(hub), asset, decimals, interestRateStrategy);
     }
-  }
-
-  function _mockDecimals(address asset, uint8 decimals) internal {
-    vm.mockCall(
-      asset,
-      abi.encodeWithSelector(IERC20Metadata.decimals.selector),
-      abi.encode(decimals)
-    );
   }
 
   function _checkedUpdateAssetConfig(

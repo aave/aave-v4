@@ -5,7 +5,7 @@ import {Test} from 'forge-std/Test.sol';
 import {stdError} from 'forge-std/StdError.sol';
 import {stdMath} from 'forge-std/StdMath.sol';
 import {console2 as console} from 'forge-std/console2.sol';
-
+import {IERC20Metadata} from 'src/dependencies/openzeppelin/IERC20Metadata.sol';
 import {LiquidityHub, ILiquidityHub} from 'src/contracts/LiquidityHub.sol';
 import {Spoke, ISpoke} from 'src/contracts/Spoke.sol';
 import {Configurator, IConfigurator} from 'src/contracts/Configurator.sol';
@@ -1381,6 +1381,14 @@ abstract contract Base is Test {
   ) internal view returns (uint256 feesAmount) {
     return
       indexDelta.rayMulDown(initialDrawnShares + initialPremiumShares).percentMulDown(liquidityFee);
+  }
+
+  function _mockDecimals(address asset, uint8 decimals) internal {
+    vm.mockCall(
+      asset,
+      abi.encodeWithSelector(IERC20Metadata.decimals.selector),
+      abi.encode(decimals)
+    );
   }
 
   function _mockInterestRate(uint256 interestRateBps) internal {

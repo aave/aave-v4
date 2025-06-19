@@ -29,6 +29,7 @@ contract LiquidityHub is ILiquidityHub {
   // Governance
   // /////
 
+  /// @dev `decimals` is passed as input to allow registration of ERC20 assets which do not implement the optional `decimals()` function
   function addAsset(address asset, uint8 decimals, address irStrategy) external returns (uint256) {
     // TODO: AccessControl
 
