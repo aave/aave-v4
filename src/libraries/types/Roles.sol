@@ -7,6 +7,7 @@ library Roles {
   uint64 public constant SPOKE_ADMIN_ROLE = 2;
   uint64 public constant TREASURY_ADMIN_ROLE = 3;
   uint64 public constant SPOKE_ROLE = 4;
+  uint64 public constant GOVERNOR_ROLE = 5;
 
   // TODO: Remove the following
   uint64 public constant RESTRICTED_ROLE = 100;

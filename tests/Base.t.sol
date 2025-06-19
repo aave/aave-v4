@@ -96,6 +96,7 @@ abstract contract Base is Test {
   address internal TREASURY_ADMIN = makeAddr('TREASURY_ADMIN');
   address internal TREASURY = makeAddr('TREASURY');
   address internal LIQUIDATOR = makeAddr('LIQUIDATOR');
+  address internal GOVERNOR = makeAddr('GOVERNOR');
 
   TokenList internal tokenList;
   uint256 internal wethAssetId = 0;
@@ -193,6 +194,7 @@ abstract contract Base is Test {
     accessManager.grantRole(Roles.SPOKE_ROLE, address(spoke2), 0);
     accessManager.grantRole(Roles.SPOKE_ROLE, address(spoke3), 0);
     accessManager.grantRole(Roles.SPOKE_ROLE, address(treasurySpoke), 0);
+    accessManager.grantRole(Roles.GOVERNOR_ROLE, GOVERNOR, 0);
 
     // Grant responsibilities to roles
     // Spoke Admin functionalities
@@ -226,7 +228,6 @@ abstract contract Base is Test {
     spokeSelectors[4] = ILiquidityHub.refreshPremiumDebt.selector;
 
     accessManager.setTargetFunctionRole(address(hub), spokeSelectors, Roles.SPOKE_ROLE);
-
     vm.stopPrank();
   }
 

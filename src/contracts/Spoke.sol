@@ -6,12 +6,14 @@ import {Multicall} from 'src/misc/Multicall.sol';
 import {SafeERC20} from 'src/dependencies/openzeppelin/SafeERC20.sol';
 import {IERC20} from 'src/dependencies/openzeppelin/IERC20.sol';
 import {AccessManaged} from 'src/dependencies/openzeppelin/AccessManaged.sol';
+import {AccessManager} from 'src/dependencies/openzeppelin/AccessManager.sol';
 // libraries
 import {WadRayMath} from 'src/libraries/math/WadRayMath.sol';
 import {WadRayMathExtended} from 'src/libraries/math/WadRayMathExtended.sol';
 import {PercentageMathExtended} from 'src/libraries/math/PercentageMathExtended.sol';
 import {KeyValueListInMemory} from 'src/libraries/helpers/KeyValueListInMemory.sol';
 import {DataTypes} from 'src/libraries/types/DataTypes.sol';
+import {Roles} from 'src/libraries/types/Roles.sol';
 import {LiquidationLogic} from 'src/libraries/logic/LiquidationLogic.sol';
 // interfaces
 import {ILiquidityHub} from 'src/interfaces/ILiquidityHub.sol';
@@ -382,8 +384,7 @@ contract Spoke is ISpoke, Multicall, AccessManaged {
   function updateUserRiskPremium(address user) external {
     (uint256 userRiskPremium, , , , ) = _calculateUserAccountData(user);
     bool premiumIncrease = _notifyRiskPremiumUpdate(type(uint256).max, user, userRiskPremium);
-    // todo allow authorized caller to increase as well
-    require(msg.sender == user || !premiumIncrease, Unauthorized());
+    require(msg.sender == user || _isGovernor(msg.sender) || !premiumIncrease, Unauthorized());
     emit UserRiskPremiumUpdate(user, userRiskPremium);
   }
 
@@ -718,6 +719,12 @@ contract Spoke is ISpoke, Multicall, AccessManaged {
   // todo opt: use bitmap
   function _isBorrowing(DataTypes.UserPosition storage userPosition) internal view returns (bool) {
     return userPosition.baseDrawnShares > 0;
+  }
+
+  function _isGovernor(address user) internal view returns (bool) {
+    AccessManager accessManager = AccessManager(authority());
+    (bool result, ) = accessManager.hasRole(Roles.DEFAULT_ADMIN_ROLE, user);
+    return result;
   }
 
   // todo opt: use bitmap
