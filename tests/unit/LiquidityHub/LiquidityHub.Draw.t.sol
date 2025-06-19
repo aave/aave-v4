@@ -228,6 +228,7 @@ contract LiquidityHubDrawTest is LiquidityHubBase {
       assetId: daiAssetId,
       spoke: address(spoke2),
       amount: daiAmount,
+      feeAmount: 0,
       to: bob
     });
 
@@ -260,6 +261,7 @@ contract LiquidityHubDrawTest is LiquidityHubBase {
       assetId: daiAssetId,
       spoke: address(spoke2),
       amount: daiAmount,
+      feeAmount: 0,
       to: bob
     });
 

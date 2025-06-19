@@ -19,10 +19,10 @@ contract LiquidityHubOperations_Gas_Tests is Base {
   function test_remove() public {
     vm.startPrank(address(spoke1));
     hub.add(usdxAssetId, 1000e6, alice);
-    hub.remove(usdxAssetId, 500e6, alice);
+    hub.remove(usdxAssetId, 500e6, 0, alice);
     vm.snapshotGasLastCall('Hub.Operations', 'remove: partial');
     skip(100);
-    hub.remove(usdxAssetId, 500e6, alice);
+    hub.remove(usdxAssetId, 500e6, 0, alice);
     vm.snapshotGasLastCall('Hub.Operations', 'remove: full');
     vm.stopPrank();
   }

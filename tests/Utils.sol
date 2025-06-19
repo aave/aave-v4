@@ -43,10 +43,11 @@ library Utils {
     uint256 assetId,
     address spoke,
     uint256 amount,
+    uint256 feeAmount,
     address to
   ) internal {
     vm.prank(spoke);
-    hub.remove(assetId, amount, to);
+    hub.remove(assetId, amount, feeAmount, to);
   }
 
   function restore(

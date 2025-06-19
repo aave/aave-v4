@@ -175,7 +175,7 @@ contract Spoke is ISpoke, Multicall {
       accruedPremium,
       0
     ); // unnecessary but we realize premium debt here
-    uint256 withdrawnShares = HUB.remove(assetId, amount, to);
+    uint256 withdrawnShares = HUB.remove(assetId, amount, 0, to);
 
     userPosition.suppliedShares -= withdrawnShares;
     reserve.suppliedShares -= withdrawnShares;
@@ -1076,6 +1076,7 @@ contract Spoke is ISpoke, Multicall {
       vars.withdrawnShares = HUB.remove(
         vars.collateralAssetId,
         vars.collateralToLiquidate + vars.liquidationProtocolFeeAmount,
+        vars.liquidationProtocolFeeAmount,
         address(this) // must be sent to spoke first before distributing to treasury/liquidator
       );
 
@@ -1137,7 +1138,7 @@ contract Spoke is ISpoke, Multicall {
       _notifyRiskPremiumUpdate(vars.debtAssetId, users[vars.i], vars.newUserRiskPremium);
 
       vars.totalCollateralToLiquidate += vars.collateralToLiquidate;
-      vars.totalLiquidationProtocolFeeAmount += vars.liquidationProtocolFeeAmount;
+      // vars.totalLiquidationProtocolFeeAmount += vars.liquidationProtocolFeeAmount;
       vars.totalDebtToLiquidate += vars.baseDebtToLiquidate + vars.premiumDebtToLiquidate;
 
       unchecked {
@@ -1163,16 +1164,16 @@ contract Spoke is ISpoke, Multicall {
       0,
       0
     );
-    vars.totalLiquidationProtocolFeeShares = HUB.convertToSuppliedShares(
-      vars.collateralAssetId,
-      vars.totalLiquidationProtocolFeeAmount
-    );
+    // vars.totalLiquidationProtocolFeeShares = HUB.convertToSuppliedShares(
+    //   vars.collateralAssetId,
+    //   vars.totalLiquidationProtocolFeeAmount
+    // );
 
     // transfer total liquidated collateral to liquidator
     IERC20(collateralReserve.asset).safeTransfer(msg.sender, vars.totalCollateralToLiquidate);
     // TODO: treasury accounting for protocol fee
     // TODO: rm temp event
-    emit TmpLiquidationFee(vars.totalLiquidationProtocolFeeShares);
+    // emit TmpLiquidationFee(vars.totalLiquidationProtocolFeeShares);
 
     return (
       collateralReserve.asset,

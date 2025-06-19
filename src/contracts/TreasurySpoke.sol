@@ -39,7 +39,7 @@ contract TreasurySpoke is Ownable, ITreasurySpoke {
       amount = HUB.getSpokeSuppliedAmount(reserveId, address(this));
     }
 
-    HUB.remove(reserveId, amount, to);
+    HUB.remove(reserveId, amount, 0, to);
   }
 
   /// @inheritdoc ITreasurySpoke

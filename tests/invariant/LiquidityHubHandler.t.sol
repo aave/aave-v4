@@ -113,7 +113,14 @@ contract LiquidityHubHandler is Test {
     // TODO: bound by spoke1 user balance
     amount = bound(amount, 1, 2);
 
-    Utils.remove({hub: hub, assetId: assetId, spoke: address(spoke1), amount: amount, to: to});
+    Utils.remove({
+      hub: hub,
+      assetId: assetId,
+      spoke: address(spoke1),
+      amount: amount,
+      feeAmount: 0,
+      to: to
+    });
 
     _updateState(assetId);
     s.reserveSupplied[assetId] -= amount;
