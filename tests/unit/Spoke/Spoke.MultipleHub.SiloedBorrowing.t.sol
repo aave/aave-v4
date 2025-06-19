@@ -71,7 +71,7 @@ contract SpokeMultipleHubSiloedBorrowingTest is SpokeMultipleHubBase {
     // Link new hub and new spoke for asset B, 100k draw cap
     newHub.addSpoke(
       siloedVars.assetBId,
-      DataTypes.SpokeConfig({drawCap: siloedVars.assetBDrawCap, supplyCap: type(uint256).max}),
+      DataTypes.SpokeConfig({drawCap: siloedVars.assetBDrawCap, supplyCap: UINT256_MAX}),
       address(newSpoke)
     );
 
@@ -151,6 +151,17 @@ contract SpokeMultipleHubSiloedBorrowingTest is SpokeMultipleHubBase {
       DataTypes.SpokeConfig({drawCap: 0, supplyCap: siloedVars.assetASupplyCap}),
       address(newSpoke)
     );
+
+    // Approvals
+    vm.prank(bob);
+    assetA.approve(address(hub), type(uint256).max);
+
+    vm.prank(alice);
+    assetB.approve(address(newHub), type(uint256).max);
+
+    // Deal tokens
+    deal(address(assetA), bob, MAX_SUPPLY_AMOUNT);
+    deal(address(assetB), alice, MAX_SUPPLY_AMOUNT);
   }
 
   /* @dev Test showcasing a possible configuration for siloed mode
@@ -161,9 +172,6 @@ contract SpokeMultipleHubSiloedBorrowingTest is SpokeMultipleHubBase {
    */
   function test_siloed_borrowing() public {
     // Bob can supply Asset A to the new spoke, canonical hub, up to 500k and set it as collateral
-    deal(address(assetA), bob, MAX_SUPPLY_AMOUNT);
-    vm.prank(bob);
-    assetA.approve(address(hub), type(uint256).max);
     Utils.supplyCollateral(
       newSpoke,
       siloedVars.reserveAIdNewSpoke,
@@ -197,10 +205,7 @@ contract SpokeMultipleHubSiloedBorrowingTest is SpokeMultipleHubBase {
     Utils.borrow(newSpoke, siloedVars.reserveAIdNewSpoke, bob, 1e18, bob);
 
     // Let Alice supply some asset B to the new spoke
-    vm.prank(alice);
-    assetB.approve(address(newHub), type(uint256).max);
-    deal(address(assetB), alice, 300_000e18);
-    Utils.supply(newSpoke, siloedVars.reserveBId, alice, 300_000e18, alice);
+    Utils.supply(newSpoke, siloedVars.reserveBId, alice, siloedVars.assetBDrawCap * 2, alice);
 
     // Bob can borrow asset B from the new spoke, new hub, up to 100k
     Utils.borrow(newSpoke, siloedVars.reserveBId, bob, siloedVars.assetBDrawCap, bob);
