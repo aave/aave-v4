@@ -77,6 +77,7 @@ interface ILiquidityHub {
   error InvalidAssetAddress();
   error InvalidDebtChange();
   error InvalidFeeReceiver();
+  error InvalidFeeAmount();
 
   function addAsset(DataTypes.AssetConfig memory params, address asset) external;
 
@@ -122,10 +123,16 @@ interface ILiquidityHub {
    * @dev Only callable by spokes.
    * @param assetId The identifier of the asset.
    * @param amount The amount of asset liquidity to remove/withdraw.
+   * @param feeAmount The amount of fee to be paid to feeReceiver.
    * @param to The address to transfer the assets to.
    * @return The amount of shares removed or withdrawn.
    */
-  function remove(uint256 assetId, uint256 amount, address to) external returns (uint256);
+  function remove(
+    uint256 assetId,
+    uint256 amount,
+    uint256 feeAmount,
+    address to
+  ) external returns (uint256);
 
   /**
    * @notice Draw/Borrow debt on behalf of user.

@@ -211,8 +211,8 @@ contract LiquidityHub is ILiquidityHub {
   function remove(
     uint256 assetId,
     uint256 amount,
-    address to,
-    uint256 feeAmount
+    uint256 feeAmount,
+    address to
   ) external returns (uint256) {
     // TODO: authorization - only spokes
 
