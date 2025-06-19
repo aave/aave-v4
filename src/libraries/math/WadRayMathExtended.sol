@@ -1,8 +1,6 @@
 // SPDX-License-Identifier: BUSL-1.1
 pragma solidity ^0.8.0;
 
-import {PercentageMathExtended} from 'src/libraries/math/PercentageMathExtended.sol';
-
 /**
  * @title WadRayMathExtended library, with explicit rounding
  * @author Aave
@@ -14,6 +12,7 @@ import {PercentageMathExtended} from 'src/libraries/math/PercentageMathExtended.
 library WadRayMathExtended {
   uint256 internal constant WAD = 1e18;
   uint256 internal constant RAY = 1e27;
+  uint256 internal constant PERCENTAGE_FACTOR = 1e4;
 
   /**
    * @dev Multiplies two wad, rounding down
@@ -191,6 +190,6 @@ library WadRayMathExtended {
   }
 
   function bpsToRay(uint256 a) internal pure returns (uint256) {
-    return (a * RAY) / PercentageMathExtended.PERCENTAGE_FACTOR;
+    return (a * RAY) / PERCENTAGE_FACTOR;
   }
 }

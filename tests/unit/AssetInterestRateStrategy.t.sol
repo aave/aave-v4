@@ -1,13 +1,10 @@
 // SPDX-License-Identifier: BUSL-1.1
 pragma solidity ^0.8.10;
 
-import {WadRayMathExtended} from 'src/libraries/math/WadRayMathExtended.sol';
-import {AssetInterestRateStrategy, IAssetInterestRateStrategy} from 'src/contracts/AssetInterestRateStrategy.sol';
-
-import {Test, stdError} from 'forge-std/Test.sol';
+import 'tests/Base.t.sol';
 
 /// TODO: Access Control; Check that only authorized address can set interest rate data
-contract AssetInterestRateStrategyTest is Test {
+contract AssetInterestRateStrategyTest is Base {
   using WadRayMathExtended for uint16;
   using WadRayMathExtended for uint32;
   using WadRayMathExtended for uint256;
@@ -17,7 +14,7 @@ contract AssetInterestRateStrategyTest is Test {
   AssetInterestRateStrategy public rateStrategy;
   IAssetInterestRateStrategy.InterestRateData public rateData;
 
-  function setUp() public {
+  function setUp() public override {
     rateStrategy = new AssetInterestRateStrategy();
 
     rateData = IAssetInterestRateStrategy.InterestRateData({
@@ -220,8 +217,8 @@ contract AssetInterestRateStrategyTest is Test {
     uint256 utilizationRatioRay = bound(utilizationRatio, 1, rateData.optimalUsageRatio).bpsToRay();
 
     (
-      uint256 totalDebt,
       uint256 availableLiquidity,
+      uint256 totalDebt,
       uint256 liquidityAdded,
       uint256 liquidityTaken
     ) = _generateCalculateInterestRateParams(utilizationRatioRay);
@@ -255,8 +252,8 @@ contract AssetInterestRateStrategyTest is Test {
       .bpsToRay();
 
     (
-      uint256 totalDebt,
       uint256 availableLiquidity,
+      uint256 totalDebt,
       uint256 liquidityAdded,
       uint256 liquidityTaken
     ) = _generateCalculateInterestRateParams(utilizationRatioRay);
@@ -293,13 +290,13 @@ contract AssetInterestRateStrategyTest is Test {
   )
     internal
     returns (
-      uint256 totalDebt,
       uint256 availableLiquidity,
+      uint256 totalDebt,
       uint256 liquidityAdded,
       uint256 liquidityTaken
     )
   {
-    totalDebt = bound(vm.randomUint(), 1, 1e30);
+    totalDebt = bound(vm.randomUint(), 1, MAX_SUPPLY_AMOUNT);
 
     // utilizationRatio = totalDebt / (totalDebt + updatedAvailableLiquidity)
     // utilizationRatio * totalDebt + utilizationRatio * updatedAvailableLiquidity = totalDebt

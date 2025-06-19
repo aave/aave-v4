@@ -13,6 +13,10 @@ contract WadRayMathExtendedWrapper {
     return WadRayMathExtended.RAY;
   }
 
+  function PERCENTAGE_FACTOR() public pure returns (uint256) {
+    return WadRayMathExtended.PERCENTAGE_FACTOR;
+  }
+
   function wadMulDown(uint256 a, uint256 b) public pure returns (uint256) {
     return WadRayMathExtended.wadMulDown(a, b);
   }

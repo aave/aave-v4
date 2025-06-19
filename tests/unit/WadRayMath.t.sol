@@ -146,6 +146,12 @@ contract WadRayMathExtendedDifferentialTests is Test {
     wExtended = new WadRayMathExtendedWrapper();
   }
 
+  function test_constants() public view {
+    assertEq(wExtended.WAD(), 1e18, 'wad');
+    assertEq(wExtended.RAY(), 1e27, 'ray');
+    assertEq(wExtended.PERCENTAGE_FACTOR(), 1e4, 'percentage factor');
+  }
+
   function test_fuzz_wadMul(uint256 a, uint256 b) public {
     // overflow case
     if (!(b == 0 || !(a > type(uint256).max / b))) {

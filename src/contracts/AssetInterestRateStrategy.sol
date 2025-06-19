@@ -42,10 +42,7 @@ contract AssetInterestRateStrategy is IAssetInterestRateStrategy {
         rateData.optimalUsageRatio <= MAX_OPTIMAL_RATIO,
       InvalidOptimalUsageRatio()
     );
-
     require(rateData.variableRateSlope1 <= rateData.variableRateSlope2, Slope2MustBeGteSlope1());
-
-    // The maximum rate should not be above certain threshold
     require(
       rateData.baseVariableBorrowRate + rateData.variableRateSlope1 + rateData.variableRateSlope2 <=
         MAX_BORROW_RATE,
@@ -53,6 +50,7 @@ contract AssetInterestRateStrategy is IAssetInterestRateStrategy {
     );
 
     _interestRateData[assetId] = rateData;
+
     emit RateDataUpdate(
       assetId,
       rateData.optimalUsageRatio,
