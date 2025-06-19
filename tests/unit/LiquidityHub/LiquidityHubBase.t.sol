@@ -67,8 +67,8 @@ contract LiquidityHubBase is Base {
     address tempSpoke1 = makeAddr('TEMP_SPOKE_1');
     hub.addSpoke(
       assetId,
-      DataTypes.SpokeConfig({supplyCap: type(uint256).max, drawCap: type(uint256).max}),
-      tempSpoke1
+      tempSpoke1,
+      DataTypes.SpokeConfig({supplyCap: type(uint256).max, drawCap: type(uint256).max})
     );
 
     address tempUser2 = makeAddr('TEMP_USER_2');
@@ -77,8 +77,8 @@ contract LiquidityHubBase is Base {
     address tempSpoke2 = makeAddr('TEMP_SPOKE_2');
     hub.addSpoke(
       assetId,
-      DataTypes.SpokeConfig({supplyCap: type(uint256).max, drawCap: type(uint256).max}),
-      tempSpoke2
+      tempSpoke2,
+      DataTypes.SpokeConfig({supplyCap: type(uint256).max, drawCap: type(uint256).max})
     );
 
     _supplyAndDrawLiquidity({
@@ -170,8 +170,8 @@ contract LiquidityHubBase is Base {
 
     hub.addSpoke(
       assetId,
-      DataTypes.SpokeConfig({supplyCap: type(uint256).max, drawCap: type(uint256).max}),
-      tempSpoke
+      tempSpoke,
+      DataTypes.SpokeConfig({supplyCap: type(uint256).max, drawCap: type(uint256).max})
     );
 
     Utils.add({
@@ -204,8 +204,8 @@ contract LiquidityHubBase is Base {
 
     hub.addSpoke(
       assetId,
-      DataTypes.SpokeConfig({supplyCap: type(uint256).max, drawCap: type(uint256).max}),
-      tempSpoke
+      tempSpoke,
+      DataTypes.SpokeConfig({supplyCap: type(uint256).max, drawCap: type(uint256).max})
     );
 
     Utils.draw(hub, assetId, tempSpoke, tempUser, amount, tempUser);

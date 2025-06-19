@@ -63,6 +63,7 @@ contract Configurator is IConfigurator {
     // TODO: AccessControl
 
     DataTypes.AssetConfig memory config = ILiquidityHub(hub).getAssetConfig(assetId);
+    _adjustFeeReceiverConfig(hub, assetId, config, feeReceiver);
     config.feeReceiver = feeReceiver;
     ILiquidityHub(hub).updateAssetConfig(assetId, config);
   }
@@ -76,6 +77,7 @@ contract Configurator is IConfigurator {
     // TODO: AccessControl
 
     DataTypes.AssetConfig memory config = ILiquidityHub(hub).getAssetConfig(assetId);
+    _adjustFeeReceiverConfig(hub, assetId, config, feeReceiver);
     config.liquidityFee = liquidityFee;
     config.feeReceiver = feeReceiver;
     ILiquidityHub(hub).updateAssetConfig(assetId, config);
@@ -91,5 +93,39 @@ contract Configurator is IConfigurator {
     DataTypes.AssetConfig memory config = ILiquidityHub(hub).getAssetConfig(assetId);
     config.irStrategy = IReserveInterestRateStrategy(irStrategy);
     ILiquidityHub(hub).updateAssetConfig(assetId, config);
+  }
+
+  function _adjustFeeReceiverConfig(
+    address hub,
+    uint256 assetId,
+    DataTypes.AssetConfig memory config,
+    address newFeeReceiver
+  ) internal {
+    if (config.feeReceiver != newFeeReceiver) {
+      if (config.feeReceiver != address(0)) {
+        ILiquidityHub(hub).updateSpokeConfig(
+          assetId,
+          config.feeReceiver,
+          DataTypes.SpokeConfig({supplyCap: 0, drawCap: 0})
+        );
+      }
+
+      if (newFeeReceiver != address(0)) {
+        DataTypes.SpokeData memory spokeData = ILiquidityHub(hub).getSpoke(assetId, newFeeReceiver);
+        if (spokeData.lastUpdateTimestamp == 0) {
+          ILiquidityHub(hub).addSpoke(
+            assetId,
+            newFeeReceiver,
+            DataTypes.SpokeConfig({supplyCap: type(uint256).max, drawCap: type(uint256).max})
+          );
+        } else {
+          ILiquidityHub(hub).updateSpokeConfig(
+            assetId,
+            newFeeReceiver,
+            DataTypes.SpokeConfig({supplyCap: type(uint256).max, drawCap: type(uint256).max})
+          );
+        }
+      }
+    }
   }
 }

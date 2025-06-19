@@ -81,21 +81,21 @@ contract LiquidityHub is ILiquidityHub {
     emit AssetConfigUpdated(assetId, config);
   }
 
-  function addSpoke(uint256 assetId, DataTypes.SpokeConfig memory config, address spoke) external {
+  function addSpoke(uint256 assetId, address spoke, DataTypes.SpokeConfig memory config) external {
     // TODO: AccessControl
-    _addSpoke(assetId, config, spoke);
+    _addSpoke(assetId, spoke, config);
   }
 
   function addSpokes(
     uint256[] calldata assetIds,
-    DataTypes.SpokeConfig[] memory configs,
-    address spoke // todo: change order so it's aligned with update
+    address spoke,
+    DataTypes.SpokeConfig[] memory configs
   ) external {
     // TODO: AccessControl
 
     require(assetIds.length == configs.length, MismatchedConfigs());
     for (uint256 i; i < assetIds.length; i++) {
-      _addSpoke(assetIds[i], configs[i], spoke);
+      _addSpoke(assetIds[i], spoke, configs[i]);
     }
   }
 
@@ -510,7 +510,7 @@ contract LiquidityHub is ILiquidityHub {
     // we should have already restored premium debt
   }
 
-  function _addSpoke(uint256 assetId, DataTypes.SpokeConfig memory config, address spoke) internal {
+  function _addSpoke(uint256 assetId, address spoke, DataTypes.SpokeConfig memory config) internal {
     require(spoke != address(0), InvalidSpoke()); // todo: how to remove spoke
     _spokes[assetId][spoke] = DataTypes.SpokeData({
       suppliedShares: 0,

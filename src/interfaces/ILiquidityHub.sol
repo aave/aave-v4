@@ -81,12 +81,12 @@ interface ILiquidityHub {
 
   function updateAssetConfig(uint256 assetId, DataTypes.AssetConfig memory config) external;
 
-  function addSpoke(uint256 assetId, DataTypes.SpokeConfig memory params, address spoke) external;
+  function addSpoke(uint256 assetId, address spoke, DataTypes.SpokeConfig memory params) external;
 
   function addSpokes(
     uint256[] calldata assetIds,
-    DataTypes.SpokeConfig[] memory configs,
-    address spoke
+    address spoke,
+    DataTypes.SpokeConfig[] memory configs
   ) external;
 
   function updateSpokeConfig(

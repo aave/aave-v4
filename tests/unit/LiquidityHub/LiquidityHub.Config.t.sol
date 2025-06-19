@@ -13,7 +13,7 @@ contract LiquidityHubConfigTest is LiquidityHubBase {
     vm.expectEmit(address(hub));
     emit ILiquidityHub.SpokeAdded(assetId, address(spoke1));
     vm.prank(HUB_ADMIN);
-    hub.addSpoke(assetId, DataTypes.SpokeConfig({supplyCap: 1, drawCap: 1}), address(spoke1));
+    hub.addSpoke(assetId, address(spoke1), DataTypes.SpokeConfig({supplyCap: 1, drawCap: 1}));
 
     DataTypes.SpokeConfig memory spokeData = hub.getSpokeConfig(assetId, address(spoke1));
     assertEq(spokeData.supplyCap, 1, 'spoke supply cap');
@@ -26,7 +26,7 @@ contract LiquidityHubConfigTest is LiquidityHubBase {
     vm.expectEmit(address(hub));
     emit ILiquidityHub.SpokeAdded(assetId, address(spoke1));
     vm.prank(HUB_ADMIN);
-    hub.addSpoke(assetId, spokeConfig, address(spoke1));
+    hub.addSpoke(assetId, address(spoke1), spokeConfig);
 
     DataTypes.SpokeConfig memory spokeData = hub.getSpokeConfig(assetId, address(spoke1));
     assertEq(spokeData.supplyCap, spokeConfig.supplyCap, 'spoke supply cap');
@@ -39,7 +39,7 @@ contract LiquidityHubConfigTest is LiquidityHubBase {
 
     vm.expectRevert(ILiquidityHub.InvalidSpoke.selector);
     vm.prank(HUB_ADMIN);
-    hub.addSpoke(assetId, DataTypes.SpokeConfig({supplyCap: 1, drawCap: 1}), invalidSpokeAddress);
+    hub.addSpoke(assetId, invalidSpokeAddress, DataTypes.SpokeConfig({supplyCap: 1, drawCap: 1}));
   }
 
   function test_addSpokes() public {
@@ -61,7 +61,7 @@ contract LiquidityHubConfigTest is LiquidityHubBase {
     vm.expectEmit(address(hub));
     emit ILiquidityHub.SpokeAdded(daiAssetId, address(spoke1));
     emit ILiquidityHub.SpokeAdded(wethAssetId, address(spoke1));
-    hub.addSpokes(assetIds, spokeConfigs, address(spoke1));
+    hub.addSpokes(assetIds, address(spoke1), spokeConfigs);
 
     DataTypes.SpokeConfig memory daiSpokeData = hub.getSpokeConfig(daiAssetId, address(spoke1));
     DataTypes.SpokeConfig memory wethSpokeData = hub.getSpokeConfig(wethAssetId, address(spoke1));
@@ -84,7 +84,7 @@ contract LiquidityHubConfigTest is LiquidityHubBase {
 
     vm.expectRevert(ILiquidityHub.InvalidSpoke.selector);
     vm.prank(HUB_ADMIN);
-    hub.addSpokes(assetIds, spokeConfigs, address(0));
+    hub.addSpokes(assetIds, address(0), spokeConfigs);
   }
 
   function test_updateSpokeConfig_drawCap() public {
@@ -392,8 +392,8 @@ contract LiquidityHubConfigTest is LiquidityHubBase {
         // overwriting if spoke already exists, fine in this test
         hub.addSpoke(
           assetId,
-          DataTypes.SpokeConfig({supplyCap: type(uint256).max, drawCap: type(uint256).max}),
-          newConfig.feeReceiver
+          newConfig.feeReceiver,
+          DataTypes.SpokeConfig({supplyCap: type(uint256).max, drawCap: type(uint256).max})
         );
       }
     }
