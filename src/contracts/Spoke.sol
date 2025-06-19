@@ -439,7 +439,7 @@ contract Spoke is ISpoke, Multicall {
     return _positionManager[positionManager].active;
   }
 
-  function getUsingAsCollateral(uint256 reserveId, address user) external view returns (bool) {
+  function isUsingAsCollateral(uint256 reserveId, address user) external view returns (bool) {
     return _userPositions[user][reserveId].usingAsCollateral;
   }
 

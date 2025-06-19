@@ -65,6 +65,17 @@ library Utils {
   }
 
   // spoke
+  function setUsingAsCollateral(
+    ISpoke spoke,
+    uint256 reserveId,
+    address caller,
+    bool usingAsCollateral,
+    address onBehalfOf
+  ) internal {
+    vm.prank(caller);
+    spoke.setUsingAsCollateral(reserveId, usingAsCollateral, onBehalfOf);
+  }
+
   function supply(
     ISpoke spoke,
     uint256 reserveId,
@@ -84,8 +95,7 @@ library Utils {
     address onBehalfOf
   ) internal {
     supply(spoke, reserveId, caller, amount, onBehalfOf);
-    vm.prank(caller);
-    spoke.setUsingAsCollateral(reserveId, true, onBehalfOf);
+    setUsingAsCollateral(spoke, reserveId, caller, true, onBehalfOf);
   }
 
   function withdraw(

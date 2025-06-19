@@ -756,7 +756,7 @@ contract SpokeBase is Base {
 
     // Find all reserves user has supplied, adding up total debt
     for (uint256 reserveId; reserveId < spoke.reserveCount(); ++reserveId) {
-      if (spoke.getUsingAsCollateral(reserveId, user)) {
+      if (spoke.isUsingAsCollateral(reserveId, user)) {
         ++suppliedReservesCount;
       }
       (assetId, ) = getAssetByReserveId(spoke, reserveId);
@@ -771,7 +771,7 @@ contract SpokeBase is Base {
     KeyValueListInMemory.List memory reserveLP = KeyValueListInMemory.init(suppliedReservesCount);
     uint256 idx = 0;
     for (uint256 reserveId; reserveId < spoke.reserveCount(); reserveId++) {
-      if (spoke.getUsingAsCollateral(reserveId, user)) {
+      if (spoke.isUsingAsCollateral(reserveId, user)) {
         reserveLP.add(idx, _getLiquidityPremium(spoke, reserveId), reserveId);
         ++idx;
       }

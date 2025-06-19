@@ -343,7 +343,7 @@ interface ISpoke is IMulticall {
 
   function getUserTotalDebt(uint256 reserveId, address user) external view returns (uint256);
 
-  function getUsingAsCollateral(uint256 reserveId, address user) external view returns (bool);
+  function isUsingAsCollateral(uint256 reserveId, address user) external view returns (bool);
 
   function reserveCount() external view returns (uint256);
 

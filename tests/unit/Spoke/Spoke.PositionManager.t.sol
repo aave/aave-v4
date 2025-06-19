@@ -45,6 +45,7 @@ contract SpokePositionManagerTest is SpokeBase {
     Utils.supply(spoke1, reserveId, POSITION_MANAGER, amount, alice);
 
     _approvePositionManager(alice);
+    _resetAllowance(alice);
 
     DataTypes.UserPosition memory posBefore = spoke1.getUserPosition(reserveId, POSITION_MANAGER);
 
@@ -132,6 +133,49 @@ contract SpokePositionManagerTest is SpokeBase {
     assertEq(spoke1.getUserPosition(reserveId, POSITION_MANAGER), posBefore);
     assertEq(spoke1.getUserTotalDebt(reserveId, POSITION_MANAGER), 0);
     assertEq(spoke1.getUserTotalDebt(reserveId, alice), amount - repayAmount);
+  }
+
+  function test_onlyPositionManager_on_usingAsCollateral() public {
+    uint256 reserveId = _usdxReserveId(spoke1);
+    assertFalse(spoke1.isUsingAsCollateral(reserveId, alice));
+
+    bool usingAsCollateral = true;
+
+    vm.expectRevert(ISpoke.Unauthorized.selector);
+    Utils.setUsingAsCollateral(spoke1, reserveId, POSITION_MANAGER, usingAsCollateral, alice);
+
+    _approvePositionManager(alice);
+
+    vm.expectEmit(address(spoke1));
+    emit ISpoke.UsingAsCollateral(reserveId, alice, usingAsCollateral);
+    Utils.setUsingAsCollateral(spoke1, reserveId, POSITION_MANAGER, usingAsCollateral, alice);
+
+    assertEq(spoke1.isUsingAsCollateral(reserveId, alice), usingAsCollateral);
+  }
+
+  function test_onlyPositionManager_on_updateUserRiskPremium() public {
+    _openSupplyPosition(spoke1, _usdxReserveId(spoke1), 1500e6);
+    Utils.supplyCollateral(spoke1, _wethReserveId(spoke1), alice, 0.5e18, alice);
+    Utils.supplyCollateral(spoke1, _daiReserveId(spoke1), alice, 1000e18, alice);
+    Utils.borrow(spoke1, _usdxReserveId(spoke1), alice, 1500e6, alice);
+
+    uint256 riskPremiumBefore = spoke1.getUserRiskPremium(alice);
+
+    updateLiquidityPremium(spoke1, _wethReserveId(spoke1), 100_00);
+
+    assertGt(spoke1.getUserRiskPremium(alice), riskPremiumBefore);
+
+    vm.expectRevert(ISpoke.Unauthorized.selector);
+    vm.prank(POSITION_MANAGER);
+    spoke1.updateUserRiskPremium(alice);
+
+    _approvePositionManager(alice);
+
+    uint256 expectedRiskPremium = _calculateExpectedUserRP(alice, spoke1);
+    vm.expectEmit(address(spoke1));
+    emit ISpoke.UserRiskPremiumUpdate(alice, expectedRiskPremium);
+    vm.prank(POSITION_MANAGER);
+    spoke1.updateUserRiskPremium(alice);
   }
 
   function _approvePositionManager(address who) internal {

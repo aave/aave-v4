@@ -34,7 +34,7 @@ contract SpokeMulticall is SpokeBase {
     assertEq(bobSupplied, supplyAmount, 'Bob supplied dai amount');
 
     // Check the collateral
-    assertEq(spoke1.getUsingAsCollateral(daiReserveId, bob), true, 'Bob using as collateral');
+    assertEq(spoke1.isUsingAsCollateral(daiReserveId, bob), true, 'Bob using as collateral');
   }
 
   /// Supply and update user risk premium using multicall

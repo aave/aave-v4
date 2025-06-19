@@ -37,7 +37,7 @@ contract LiquidationCallCloseFactorBadDebtTest is SpokeLiquidationBase {
 
     // with no collateral remaining collateral should be disabled as collateral
     assertFalse(
-      spoke1.getUsingAsCollateral(state.collateralReserve.reserveId, alice),
+      spoke1.isUsingAsCollateral(state.collateralReserve.reserveId, alice),
       'isUsingAsCollateral should be false with no collateral'
     );
     // all collateral is seized

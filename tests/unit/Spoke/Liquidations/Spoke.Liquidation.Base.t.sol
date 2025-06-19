@@ -127,7 +127,7 @@ contract SpokeLiquidationBase is SpokeBase {
     updateLiquidationBonus(spoke1, collateralReserveId, liqBonus);
     updateLiquidationProtocolFee(spoke1, collateralReserveId, state.liquidationProtocolFee);
 
-    if (!spoke1.getUsingAsCollateral(collateralReserveId, alice)) {
+    if (!spoke1.isUsingAsCollateral(collateralReserveId, alice)) {
       Utils.supplyCollateral({
         spoke: spoke1,
         reserveId: collateralReserveId,
@@ -304,12 +304,12 @@ contract SpokeLiquidationBase is SpokeBase {
   ) internal view {
     if (state.supplyShares.balanceAfter == 0) {
       assertFalse(
-        spoke.getUsingAsCollateral(state.collateralReserve.reserveId, user),
+        spoke.isUsingAsCollateral(state.collateralReserve.reserveId, user),
         string.concat('isUsingAsCollateral should be false with no collateral ', label)
       );
     } else {
       assertTrue(
-        spoke.getUsingAsCollateral(state.collateralReserve.reserveId, user),
+        spoke.isUsingAsCollateral(state.collateralReserve.reserveId, user),
         string.concat('isUsingAsCollateral should be true with remaining collateral ', label)
       );
     }
