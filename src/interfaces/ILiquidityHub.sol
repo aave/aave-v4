@@ -112,7 +112,7 @@ interface ILiquidityHub {
    * @dev Only callable by spokes.
    * @param assetId The identifier of the asset.
    * @param amount The amount of asset liquidity to add/supply.
-   * @param from The address to pull supplied assets from.
+   * @param from The address which we pull assets from (user).
    * @return The amount of shares added or supplied.
    */
   function add(uint256 assetId, uint256 amount, address from) external returns (uint256);
@@ -178,16 +178,21 @@ interface ILiquidityHub {
   function convertToDrawnShares(uint256 assetId, uint256 assets) external view returns (uint256);
 
   function convertToSuppliedAssets(uint256 assetId, uint256 shares) external view returns (uint256);
+
   function convertToSuppliedAssetsUp(
     uint256 assetId,
     uint256 shares
   ) external view returns (uint256);
+
   function convertToSuppliedShares(uint256 assetId, uint256 assets) external view returns (uint256);
+
   function convertToSuppliedSharesUp(
     uint256 assetId,
     uint256 assets
   ) external view returns (uint256);
+
   function previewOffset(uint256 assetId, uint256 shares) external view returns (uint256);
+
   function previewDrawnIndex(uint256 assetId) external view returns (uint256);
 
   function getAsset(uint256 assetId) external view returns (DataTypes.Asset memory);

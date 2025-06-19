@@ -192,7 +192,7 @@ interface ISpoke is IMulticall {
   /**
    * @notice Allows an approved caller (admin) to toggle the active status of position manager.
    * @param positionManager The address of the position manager.
-   * @param active True if position manager is to be set as active, false otherwise.
+   * @param active True if positionManager is to be set as active, false otherwise.
    */
   function setPositionManager(address positionManager, bool active) external;
 
@@ -284,7 +284,7 @@ interface ISpoke is IMulticall {
   function isPositionManager(address user, address positionManager) external view returns (bool);
 
   /**
-   * @notice Returns true if position manager is currently active, false otherwise.
+   * @notice Returns true if positionManager is currently active, false otherwise.
    */
   function isPositionManagerActive(address positionManager) external view returns (bool);
 
