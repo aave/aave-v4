@@ -8,7 +8,7 @@ contract SpokeMultipleHubBase is SpokeBase {
   ILiquidityHub internal newHub;
   MockPriceOracle internal newOracle;
   ISpoke internal newSpoke;
-  IDefaultInterestRateStrategy internal newIrStrategy;
+  IAssetInterestRateStrategy internal newIrStrategy;
 
   TestnetERC20 internal assetA;
   TestnetERC20 internal assetB;
@@ -17,8 +17,8 @@ contract SpokeMultipleHubBase is SpokeBase {
     DataTypes.DynamicReserveConfig({
       collateralFactor: 80_00 // 80.00%
     });
-  IDefaultInterestRateStrategy.InterestRateData internal irData =
-    IDefaultInterestRateStrategy.InterestRateData({
+  IAssetInterestRateStrategy.InterestRateData internal irData =
+    IAssetInterestRateStrategy.InterestRateData({
       optimalUsageRatio: 90_00, // 90.00%
       baseVariableBorrowRate: 5_00, // 5.00%
       variableRateSlope1: 5_00, // 5.00%
@@ -34,13 +34,13 @@ contract SpokeMultipleHubBase is SpokeBase {
     hub = new LiquidityHub();
     oracle1 = new MockPriceOracle();
     spoke1 = new Spoke(address(oracle1));
-    irStrategy = new DefaultReserveInterestRateStrategy(mockAddressesProvider);
+    irStrategy = new AssetInterestRateStrategy();
 
     // New hub and spoke
     newHub = new LiquidityHub();
     newOracle = new MockPriceOracle();
     newSpoke = new Spoke(address(newOracle));
-    newIrStrategy = new DefaultReserveInterestRateStrategy(mockAddressesProvider);
+    newIrStrategy = new AssetInterestRateStrategy();
 
     assetA = new TestnetERC20('Asset A', 'A', 18);
     assetB = new TestnetERC20('Asset B', 'B', 18);

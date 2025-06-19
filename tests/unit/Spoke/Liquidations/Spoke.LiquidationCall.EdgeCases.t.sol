@@ -75,14 +75,14 @@ contract LiquidationCallEdgeCasesTest is SpokeLiquidationBase {
     // second amount of coll/debt is 1/10 of first
     // collateral
     uint256 supplyAmount = ((supplyAmountInBase.percentMulUp(101_00) * 10 ** decimals.weth) /
-      oracle.getReservePrice(_wethReserveId(spoke1))).dewadify();
+      oracle.getReservePrice(_wethReserveId(spoke1))).dewadifyDown();
     uint256 supplyAmount2 = (((supplyAmountInBase / 10) * 10 ** decimals.usdx) /
-      oracle.getReservePrice(_usdxReserveId(spoke1))).dewadify();
+      oracle.getReservePrice(_usdxReserveId(spoke1))).dewadifyDown();
     // debt
     uint256 borrowAmount = ((supplyAmountInBase * 10 ** decimals.dai) /
-      oracle.getReservePrice(_daiReserveId(spoke1))).dewadify();
+      oracle.getReservePrice(_daiReserveId(spoke1))).dewadifyDown();
     uint256 borrowAmount2 = (((supplyAmountInBase / 10) * 10 ** decimals.usdy) /
-      oracle.getReservePrice(_usdyReserveId(spoke1))).dewadify();
+      oracle.getReservePrice(_usdyReserveId(spoke1))).dewadifyDown();
 
     // supply
     Utils.supplyCollateral(spoke1, _wethReserveId(spoke1), alice, supplyAmount, alice);

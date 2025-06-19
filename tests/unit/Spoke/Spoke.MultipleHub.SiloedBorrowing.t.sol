@@ -76,7 +76,7 @@ contract SpokeMultipleHubSiloedBorrowingTest is SpokeMultipleHubBase {
     );
 
     // Configure interest rate strategy for asset B
-    newIrStrategy.setInterestRateParams(siloedVars.assetBId, irData);
+    newIrStrategy.setInterestRateData(siloedVars.assetBId, irData);
 
     // Add asset A to the canonical hub
     hub.addAsset(
@@ -122,7 +122,7 @@ contract SpokeMultipleHubSiloedBorrowingTest is SpokeMultipleHubBase {
     );
 
     // Configure interest rate strategy for asset A
-    irStrategy.setInterestRateParams(siloedVars.assetAId, irData);
+    irStrategy.setInterestRateData(siloedVars.assetAId, irData);
 
     // Add reserve A from canonical hub to the new spoke
     siloedVars.reserveAIdNewSpoke = newSpoke.addReserve(
