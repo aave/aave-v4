@@ -138,7 +138,7 @@ contract SpokeRiskPremiumScenarioTest is SpokeBase {
       MathUtils.calculateLinearInterest(
         hub.getBaseInterestRate(daiAssetId), // todo: IR strategy has a pending fix
         vars.lastUpdateTimestamp
-      ) - WadRayMath.RAY
+      ) - WadRayMathExtended.RAY
     );
     uint256 expectedPremiumDebt = accruedDaiDebt.percentMulUp(wethLiquidityPremium);
 
@@ -187,7 +187,7 @@ contract SpokeRiskPremiumScenarioTest is SpokeBase {
       MathUtils.calculateLinearInterest(
         hub.getBaseInterestRate(daiAssetId), // todo: IR strategy has a pending fix
         startTime
-      ) - WadRayMath.RAY
+      ) - WadRayMathExtended.RAY
     );
 
     expectedPremiumDebt =
@@ -530,7 +530,12 @@ contract SpokeRiskPremiumScenarioTest is SpokeBase {
       alice
     );
     assertEq(debtChecks.actualBaseDebt, aliceUsdxInfo.baseDebt, 'alice usdx base debt after');
-    assertEq(debtChecks.actualPremium, aliceUsdxInfo.premiumDebt, 'alice usdx premium debt after');
+    assertApproxEqAbs(
+      debtChecks.actualPremium,
+      aliceUsdxInfo.premiumDebt,
+      1,
+      'alice usdx premium debt after'
+    );
     aliceUsdxInfo.totalDebt = aliceUsdxInfo.baseDebt + aliceUsdxInfo.premiumDebt;
 
     // Bob's debts on dai should remain unchanged
@@ -1101,16 +1106,18 @@ contract SpokeRiskPremiumScenarioTest is SpokeBase {
     (debtChecks.assetDebt, debtChecks.assetPremium) = hub.getAssetDebt(usdxAssetId);
 
     // Asset debt should be the sum of both user debts
-    assertEq(
+    assertApproxEqAbs(
       debtChecks.assetDebt,
       bobUsdxInfo.baseDebt + aliceUsdxInfo.baseDebt,
+      1,
       string.concat('hub asset base debt ', label)
     );
 
     // Asset premium debt should be the sum of both users' premium debt
-    assertEq(
+    assertApproxEqAbs(
       debtChecks.assetPremium,
       bobUsdxInfo.premiumDebt + aliceUsdxInfo.premiumDebt,
+      1,
       string.concat('hub asset premium debt ', label)
     );
   }

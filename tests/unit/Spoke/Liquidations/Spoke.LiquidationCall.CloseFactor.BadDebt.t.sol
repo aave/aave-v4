@@ -6,7 +6,6 @@ import 'tests/unit/Spoke/Liquidations/Spoke.Liquidation.Base.t.sol';
 /// tests where liquidation results in bad debt (debt > 0, collateral = 0)
 /// TODO: realize bad debt into deficit when deficit accounting is implemented, resolve tests
 contract LiquidationCallCloseFactorBadDebtTest is SpokeLiquidationBase {
-  using WadRayMath for uint256;
   using PercentageMath for uint256;
   using PercentageMathExtended for uint256;
 

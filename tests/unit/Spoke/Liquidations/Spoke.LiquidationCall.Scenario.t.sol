@@ -4,7 +4,6 @@ pragma solidity ^0.8.0;
 import 'tests/unit/Spoke/Liquidations/Spoke.Liquidation.Base.t.sol';
 
 contract LiquidationCallScenarioTest is SpokeLiquidationBase {
-  using WadRayMath for uint256;
   using PercentageMath for uint256;
   using PercentageMathExtended for uint256;
   using WadRayMathExtended for uint256;
@@ -414,11 +413,7 @@ contract LiquidationCallScenarioTest is SpokeLiquidationBase {
     assertGt(spoke1.getHealthFactor(alice), HEALTH_FACTOR_LIQUIDATION_THRESHOLD);
 
     // interest accrual
-    vm.mockCall(
-      address(irStrategy),
-      IReserveInterestRateStrategy.calculateInterestRates.selector,
-      abi.encode(uint256(50_00).bpsToRay())
-    );
+    _mockInterestRate(50_00);
     skip(365 days);
 
     // position must be liquidatable after interest accrual
@@ -593,7 +588,7 @@ contract LiquidationCallScenarioTest is SpokeLiquidationBase {
       'userRP matches lp of dai coll'
     );
     assertEq(
-      avgCollFactor.dewadify(),
+      avgCollFactor.dewadifyDown(),
       spoke1.getDynamicReserveConfig(state.daiReserveId).collateralFactor,
       'avg coll factor matches dai coll factor'
     );
