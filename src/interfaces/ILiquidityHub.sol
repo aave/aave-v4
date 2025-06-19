@@ -52,6 +52,12 @@ interface ILiquidityHub {
     uint256 realizedPremiumAdded,
     uint256 realizedPremiumTaken
   );
+  event Donate(
+    uint256 indexed assetId,
+    address indexed spoke,
+    uint256 suppliedShares,
+    uint256 suppliedAmount
+  );
 
   error MismatchedConfigs();
   error InvalidSharesAmount();
@@ -172,6 +178,16 @@ interface ILiquidityHub {
     uint256 realizedPremiumAdded,
     uint256 realizedPremiumTaken
   ) external;
+
+  /**
+   * @notice Donate asset on behalf of feeReceiver.
+   * @dev Only callable by spokes.
+   * @param assetId The identifier of the asset.
+   * @param amount The amount of asset liquidity to add/supply.
+   * @param from The address which we pull assets from (user).
+   * @return The amount of shares added or supplied.
+   */
+  function donate(uint256 assetId, uint256 amount, address from) external returns (uint256);
 
   function convertToDrawnAssets(uint256 assetId, uint256 shares) external view returns (uint256);
 
