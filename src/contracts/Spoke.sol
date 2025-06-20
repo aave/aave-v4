@@ -1173,6 +1173,7 @@ contract Spoke is ISpoke, Multicall {
     // TODO: treasury accounting for protocol fee
     // TODO: rm temp event
     emit TmpLiquidationFee(vars.totalLiquidationProtocolFeeShares);
+    HUB.donate(collateralReserve.assetId, vars.totalLiquidationProtocolFeeAmount, address(this));
 
     return (
       collateralReserve.asset,
