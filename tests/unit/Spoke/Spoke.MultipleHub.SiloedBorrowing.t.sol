@@ -30,7 +30,7 @@ contract SpokeMultipleHubSiloedBorrowingTest is SpokeMultipleHubBase {
    * Canonical Spoke: Asset A, no restrictions.
    */
   function setUpSiloedBorrowing() internal {
-    vm.startPrank(HUB_ADMIN);
+    vm.startPrank(ADMIN);
     siloedVars.assetBDrawCap = 100_000e18;
     siloedVars.assetASupplyCap = 500_000e18;
 

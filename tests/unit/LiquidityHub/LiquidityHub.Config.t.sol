@@ -11,7 +11,7 @@ contract LiquidityHubConfigTest is LiquidityHubBase {
 
     vm.expectEmit(address(hub));
     emit ILiquidityHub.SpokeAdded(assetId, address(spoke1));
-    vm.prank(HUB_ADMIN);
+    vm.prank(ADMIN);
     hub.addSpoke(assetId, DataTypes.SpokeConfig({supplyCap: 1, drawCap: 1}), address(spoke1));
 
     DataTypes.SpokeConfig memory spokeData = hub.getSpokeConfig(assetId, address(spoke1));
@@ -24,7 +24,7 @@ contract LiquidityHubConfigTest is LiquidityHubBase {
 
     vm.expectEmit(address(hub));
     emit ILiquidityHub.SpokeAdded(assetId, address(spoke1));
-    vm.prank(HUB_ADMIN);
+    vm.prank(ADMIN);
     hub.addSpoke(assetId, spokeConfig, address(spoke1));
 
     DataTypes.SpokeConfig memory spokeData = hub.getSpokeConfig(assetId, address(spoke1));
@@ -37,7 +37,7 @@ contract LiquidityHubConfigTest is LiquidityHubBase {
     address invalidSpokeAddress = address(0);
 
     vm.expectRevert(ILiquidityHub.InvalidSpoke.selector);
-    vm.prank(HUB_ADMIN);
+    vm.prank(ADMIN);
     hub.addSpoke(assetId, DataTypes.SpokeConfig({supplyCap: 1, drawCap: 1}), invalidSpokeAddress);
   }
 
@@ -59,7 +59,7 @@ contract LiquidityHubConfigTest is LiquidityHubBase {
     vm.expectEmit(address(hub));
     emit ILiquidityHub.SpokeAdded(daiAssetId, address(spoke1));
     emit ILiquidityHub.SpokeAdded(wethAssetId, address(spoke1));
-    vm.prank(HUB_ADMIN);
+    vm.prank(ADMIN);
     hub.addSpokes(assetIds, spokeConfigs, address(spoke1));
 
     DataTypes.SpokeConfig memory daiSpokeData = hub.getSpokeConfig(daiAssetId, address(spoke1));
@@ -82,7 +82,7 @@ contract LiquidityHubConfigTest is LiquidityHubBase {
     spokeConfigs[1] = DataTypes.SpokeConfig({supplyCap: 3, drawCap: 4});
 
     vm.expectRevert(ILiquidityHub.InvalidSpoke.selector);
-    vm.prank(HUB_ADMIN);
+    vm.prank(ADMIN);
     hub.addSpokes(assetIds, spokeConfigs, address(0));
   }
 
@@ -94,7 +94,7 @@ contract LiquidityHubConfigTest is LiquidityHubBase {
 
     vm.expectEmit(address(hub));
     emit ILiquidityHub.AssetConfigUpdated(daiAssetId, config);
-    vm.prank(HUB_ADMIN);
+    vm.prank(ADMIN);
     hub.updateAssetConfig(daiAssetId, config);
     assertEq(hub.getAssetConfig(daiAssetId).paused, true, 'asset paused');
 
@@ -102,7 +102,7 @@ contract LiquidityHubConfigTest is LiquidityHubBase {
 
     vm.expectEmit(address(hub));
     emit ILiquidityHub.AssetConfigUpdated(daiAssetId, config);
-    vm.prank(HUB_ADMIN);
+    vm.prank(ADMIN);
     hub.updateAssetConfig(daiAssetId, config);
     assertEq(hub.getAssetConfig(daiAssetId).paused, false, 'asset un-paused');
   }
@@ -113,7 +113,7 @@ contract LiquidityHubConfigTest is LiquidityHubBase {
 
     vm.expectEmit(address(hub));
     emit ILiquidityHub.AssetConfigUpdated(daiAssetId, config);
-    vm.prank(HUB_ADMIN);
+    vm.prank(ADMIN);
     hub.updateAssetConfig(daiAssetId, config);
     assertEq(hub.getAssetConfig(daiAssetId).paused, paused, 'asset paused');
   }
@@ -126,7 +126,7 @@ contract LiquidityHubConfigTest is LiquidityHubBase {
 
     vm.expectEmit(address(hub));
     emit ILiquidityHub.AssetConfigUpdated(daiAssetId, config);
-    vm.prank(HUB_ADMIN);
+    vm.prank(ADMIN);
     hub.updateAssetConfig(daiAssetId, config);
     assertEq(hub.getAssetConfig(daiAssetId).frozen, true, 'asset frozen');
 
@@ -134,7 +134,7 @@ contract LiquidityHubConfigTest is LiquidityHubBase {
 
     vm.expectEmit(address(hub));
     emit ILiquidityHub.AssetConfigUpdated(daiAssetId, config);
-    vm.prank(HUB_ADMIN);
+    vm.prank(ADMIN);
     hub.updateAssetConfig(daiAssetId, config);
     assertEq(hub.getAssetConfig(daiAssetId).frozen, false, 'asset un-frozen');
   }
@@ -145,7 +145,7 @@ contract LiquidityHubConfigTest is LiquidityHubBase {
 
     vm.expectEmit(address(hub));
     emit ILiquidityHub.AssetConfigUpdated(daiAssetId, config);
-    vm.prank(HUB_ADMIN);
+    vm.prank(ADMIN);
     hub.updateAssetConfig(daiAssetId, config);
     assertEq(hub.getAssetConfig(daiAssetId).frozen, frozen, 'asset frozen');
   }
@@ -158,7 +158,7 @@ contract LiquidityHubConfigTest is LiquidityHubBase {
 
     vm.expectEmit(address(hub));
     emit ILiquidityHub.AssetConfigUpdated(daiAssetId, config);
-    vm.prank(HUB_ADMIN);
+    vm.prank(ADMIN);
     hub.updateAssetConfig(daiAssetId, config);
     assertEq(hub.getAssetConfig(daiAssetId).active, false, 'asset not active');
 
@@ -166,7 +166,7 @@ contract LiquidityHubConfigTest is LiquidityHubBase {
 
     vm.expectEmit(address(hub));
     emit ILiquidityHub.AssetConfigUpdated(daiAssetId, config);
-    vm.prank(HUB_ADMIN);
+    vm.prank(ADMIN);
     hub.updateAssetConfig(daiAssetId, config);
     assertEq(hub.getAssetConfig(daiAssetId).active, true, 'asset active');
   }
@@ -177,7 +177,7 @@ contract LiquidityHubConfigTest is LiquidityHubBase {
 
     vm.expectEmit(address(hub));
     emit ILiquidityHub.AssetConfigUpdated(daiAssetId, config);
-    vm.prank(HUB_ADMIN);
+    vm.prank(ADMIN);
     hub.updateAssetConfig(daiAssetId, config);
     assertEq(hub.getAssetConfig(daiAssetId).active, active, 'asset active');
   }
@@ -192,7 +192,7 @@ contract LiquidityHubConfigTest is LiquidityHubBase {
 
     vm.expectEmit(address(hub));
     emit ILiquidityHub.AssetConfigUpdated(daiAssetId, config);
-    vm.prank(HUB_ADMIN);
+    vm.prank(ADMIN);
     hub.updateAssetConfig(daiAssetId, config);
 
     assertEq(hub.getAssetConfig(daiAssetId).decimals, newDecimals, 'asset decimals');
@@ -208,7 +208,7 @@ contract LiquidityHubConfigTest is LiquidityHubBase {
 
     vm.expectEmit(address(hub));
     emit ILiquidityHub.AssetConfigUpdated(daiAssetId, config);
-    vm.prank(HUB_ADMIN);
+    vm.prank(ADMIN);
     hub.updateAssetConfig(daiAssetId, config);
 
     assertEq(hub.getAssetConfig(daiAssetId).decimals, newDecimals, 'asset decimals');
@@ -226,7 +226,7 @@ contract LiquidityHubConfigTest is LiquidityHubBase {
     config.decimals = newDecimals;
 
     vm.expectRevert(ILiquidityHub.InvalidAssetDecimals.selector);
-    vm.prank(HUB_ADMIN);
+    vm.prank(ADMIN);
     hub.updateAssetConfig(assetId, config);
   }
 
@@ -238,7 +238,7 @@ contract LiquidityHubConfigTest is LiquidityHubBase {
     config.decimals = newDecimals;
 
     vm.expectRevert(ILiquidityHub.InvalidAssetDecimals.selector);
-    vm.prank(HUB_ADMIN);
+    vm.prank(ADMIN);
     hub.updateAssetConfig(daiAssetId, config);
   }
 
@@ -248,7 +248,7 @@ contract LiquidityHubConfigTest is LiquidityHubBase {
     config.irStrategy = IBasicInterestRateStrategy(address(0));
 
     vm.expectRevert(ILiquidityHub.InvalidIrStrategy.selector);
-    vm.prank(HUB_ADMIN);
+    vm.prank(ADMIN);
     hub.updateAssetConfig(daiAssetId, config);
   }
 
@@ -259,7 +259,7 @@ contract LiquidityHubConfigTest is LiquidityHubBase {
     config.irStrategy = IBasicInterestRateStrategy(address(0));
 
     vm.expectRevert(ILiquidityHub.InvalidIrStrategy.selector);
-    vm.prank(HUB_ADMIN);
+    vm.prank(ADMIN);
     hub.updateAssetConfig(assetId, config);
   }
 
@@ -274,7 +274,7 @@ contract LiquidityHubConfigTest is LiquidityHubBase {
 
     vm.expectEmit(address(hub));
     emit ILiquidityHub.AssetConfigUpdated(daiAssetId, config);
-    vm.prank(HUB_ADMIN);
+    vm.prank(ADMIN);
     hub.updateAssetConfig(daiAssetId, config);
 
     assertEq(
@@ -292,7 +292,7 @@ contract LiquidityHubConfigTest is LiquidityHubBase {
 
     vm.expectEmit(address(hub));
     emit ILiquidityHub.AssetConfigUpdated(daiAssetId, config);
-    vm.prank(HUB_ADMIN);
+    vm.prank(ADMIN);
     hub.updateAssetConfig(daiAssetId, config);
 
     assertEq(
@@ -309,7 +309,7 @@ contract LiquidityHubConfigTest is LiquidityHubBase {
 
     config.drawCap = drawCap;
 
-    vm.prank(HUB_ADMIN);
+    vm.prank(ADMIN);
     hub.updateSpokeConfig(daiAssetId, address(spoke1), config);
 
     assertEq(hub.getSpokeConfig(daiAssetId, address(spoke1)).drawCap, drawCap, 'asset drawCap');
@@ -321,7 +321,7 @@ contract LiquidityHubConfigTest is LiquidityHubBase {
 
     config.drawCap = drawCap;
 
-    vm.prank(HUB_ADMIN);
+    vm.prank(ADMIN);
     hub.updateSpokeConfig(daiAssetId, address(spoke1), config);
 
     assertEq(hub.getSpokeConfig(daiAssetId, address(spoke1)).drawCap, drawCap, 'asset drawCap');
@@ -334,7 +334,7 @@ contract LiquidityHubConfigTest is LiquidityHubBase {
 
     config.supplyCap = supplyCap;
 
-    vm.prank(HUB_ADMIN);
+    vm.prank(ADMIN);
     hub.updateSpokeConfig(daiAssetId, address(spoke1), config);
 
     assertEq(
@@ -350,7 +350,7 @@ contract LiquidityHubConfigTest is LiquidityHubBase {
 
     config.supplyCap = supplyCap;
 
-    vm.prank(HUB_ADMIN);
+    vm.prank(ADMIN);
     hub.updateSpokeConfig(daiAssetId, address(spoke1), config);
 
     assertEq(
@@ -363,7 +363,7 @@ contract LiquidityHubConfigTest is LiquidityHubBase {
   function test_updateSpokeConfig_emit() public {
     DataTypes.SpokeConfig memory config = hub.getSpokeConfig(daiAssetId, address(spoke1));
 
-    vm.prank(HUB_ADMIN);
+    vm.prank(ADMIN);
     vm.expectEmit(address(hub));
     emit ILiquidityHub.SpokeConfigUpdated(
       daiAssetId,
@@ -389,7 +389,7 @@ contract LiquidityHubConfigTest is LiquidityHubBase {
     emit ILiquidityHub.AssetAdded(hub.assetCount(), address(tokenList.dai));
     vm.expectEmit(address(hub));
     emit ILiquidityHub.AssetConfigUpdated(hub.assetCount(), config);
-    vm.prank(HUB_ADMIN);
+    vm.prank(ADMIN);
     hub.addAsset(config, address(tokenList.dai));
 
     uint256 assetId = hub.assetCount() - 1;
@@ -409,7 +409,7 @@ contract LiquidityHubConfigTest is LiquidityHubBase {
     newConfig.feeReceiver = address(0); // todo: fix
     vm.assume(address(newConfig.irStrategy) != address(0) && asset != address(0));
 
-    vm.prank(HUB_ADMIN);
+    vm.prank(ADMIN);
     hub.addAsset(newConfig, asset);
 
     uint256 assetId = hub.assetCount() - 1;
@@ -426,7 +426,7 @@ contract LiquidityHubConfigTest is LiquidityHubBase {
   function test_addAsset_revertsWith_InvalidAssetDecimals() public {
     uint256 invalidDecimals = hub.MAX_ALLOWED_ASSET_DECIMALS() + 1;
     vm.expectRevert(ILiquidityHub.InvalidAssetDecimals.selector);
-    vm.prank(HUB_ADMIN);
+    vm.prank(ADMIN);
     hub.addAsset(
       DataTypes.AssetConfig({
         feeReceiver: makeAddr('feeReceiver'),
@@ -452,7 +452,7 @@ contract LiquidityHubConfigTest is LiquidityHubBase {
     vm.assume(address(irStrategy) != address(0));
     uint256 invalidDecimals = hub.MAX_ALLOWED_ASSET_DECIMALS() + 1;
     vm.expectRevert(ILiquidityHub.InvalidAssetDecimals.selector);
-    vm.prank(HUB_ADMIN);
+    vm.prank(ADMIN);
     hub.addAsset(
       DataTypes.AssetConfig({
         feeReceiver: makeAddr('feeReceiver'),
@@ -471,7 +471,7 @@ contract LiquidityHubConfigTest is LiquidityHubBase {
     uint256 decimals = hub.MAX_ALLOWED_ASSET_DECIMALS();
 
     vm.expectRevert(ILiquidityHub.InvalidAssetAddress.selector);
-    vm.prank(HUB_ADMIN);
+    vm.prank(ADMIN);
     hub.addAsset(
       DataTypes.AssetConfig({
         feeReceiver: makeAddr('feeReceiver'),
@@ -498,7 +498,7 @@ contract LiquidityHubConfigTest is LiquidityHubBase {
     liquidityFee = bound(liquidityFee, 0, PercentageMathExtended.PERCENTAGE_FACTOR);
 
     vm.expectRevert(ILiquidityHub.InvalidAssetAddress.selector);
-    vm.prank(HUB_ADMIN);
+    vm.prank(ADMIN);
     hub.addAsset(
       DataTypes.AssetConfig({
         feeReceiver: makeAddr('feeReceiver'),
@@ -518,7 +518,7 @@ contract LiquidityHubConfigTest is LiquidityHubBase {
     uint256 liquidityFee = PercentageMathExtended.PERCENTAGE_FACTOR;
 
     vm.expectRevert(ILiquidityHub.InvalidIrStrategy.selector);
-    vm.prank(HUB_ADMIN);
+    vm.prank(ADMIN);
     hub.addAsset(
       DataTypes.AssetConfig({
         feeReceiver: makeAddr('feeReceiver'),
@@ -548,7 +548,7 @@ contract LiquidityHubConfigTest is LiquidityHubBase {
     vm.assume(token != address(0));
 
     vm.expectRevert(ILiquidityHub.InvalidIrStrategy.selector);
-    vm.prank(HUB_ADMIN);
+    vm.prank(ADMIN);
     hub.addAsset(
       DataTypes.AssetConfig({
         feeReceiver: feeReceiver,

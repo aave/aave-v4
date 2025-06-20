@@ -25,7 +25,7 @@ contract SpokeMultipleHubTest is SpokeBase {
     (hub2, hub2IrStrategy) = hub2Fixture();
     (hub3, hub3IrStrategy) = hub3Fixture();
 
-    vm.startPrank(HUB_ADMIN);
+    vm.startPrank(ADMIN);
     // Relist hub 2's dai on spoke1
     DataTypes.ReserveConfig memory daiHub2Config = DataTypes.ReserveConfig({
       decimals: tokenList.dai.decimals(),
@@ -96,12 +96,9 @@ contract SpokeMultipleHubTest is SpokeBase {
   }
 
   function configureRoles() internal {
-    // Hub Admin has default admin role
-    vm.startPrank(HUB_ADMIN);
+    vm.startPrank(ADMIN);
     // Grant roles
     accessManager.grantRole(Roles.HUB_ADMIN_ROLE, HUB_ADMIN, 0);
-    accessManager.grantRole(Roles.SPOKE_ADMIN_ROLE, HUB_ADMIN, 0);
-    accessManager.grantRole(Roles.SPOKE_ROLE, HUB_ADMIN, 0);
     accessManager.grantRole(Roles.SPOKE_ADMIN_ROLE, SPOKE_ADMIN, 0);
     accessManager.grantRole(Roles.SPOKE_ROLE, address(spoke1), 0);
     accessManager.grantRole(Roles.GOVERNOR_ROLE, GOVERNOR, 0);

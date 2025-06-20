@@ -30,8 +30,8 @@ contract SpokeMultipleHubBase is SpokeBase {
   }
 
   function deployFixtures() internal virtual override {
-    vm.startPrank(HUB_ADMIN);
-    accessManager = new AccessManager(HUB_ADMIN);
+    vm.startPrank(ADMIN);
+    accessManager = new AccessManager(ADMIN);
     // Canonical hub and spoke
     hub = new LiquidityHub(address(accessManager));
     oracle1 = new MockPriceOracle();
@@ -50,9 +50,10 @@ contract SpokeMultipleHubBase is SpokeBase {
   }
 
   function setUpRoles() internal virtual override {
-    // Hub Admin has default admin role
-    vm.startPrank(HUB_ADMIN);
+    vm.startPrank(ADMIN);
     // Grant roles
+    accessManager.grantRole(Roles.HUB_ADMIN_ROLE, ADMIN, 0);
+    accessManager.grantRole(Roles.SPOKE_ADMIN_ROLE, ADMIN, 0);
     accessManager.grantRole(Roles.HUB_ADMIN_ROLE, HUB_ADMIN, 0);
     accessManager.grantRole(Roles.SPOKE_ADMIN_ROLE, HUB_ADMIN, 0);
     accessManager.grantRole(Roles.SPOKE_ROLE, HUB_ADMIN, 0);

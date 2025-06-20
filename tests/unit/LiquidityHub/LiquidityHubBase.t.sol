@@ -52,7 +52,7 @@ contract LiquidityHubBase is Base {
   function _updateSupplyCap(uint256 assetId, address spoke, uint256 newSupplyCap) internal {
     DataTypes.SpokeConfig memory spokeConfig = hub.getSpokeConfig(assetId, spoke);
     spokeConfig.supplyCap = newSupplyCap;
-    vm.prank(HUB_ADMIN);
+    vm.prank(ADMIN);
     hub.updateSpokeConfig(assetId, spoke, spokeConfig);
   }
 
@@ -63,7 +63,7 @@ contract LiquidityHubBase is Base {
     deal(address(hub.assetsList(assetId)), tempUser1, amount);
 
     address tempSpoke1 = makeAddr('TEMP_SPOKE_1');
-    vm.startPrank(HUB_ADMIN);
+    vm.startPrank(ADMIN);
     hub.addSpoke(
       assetId,
       DataTypes.SpokeConfig({supplyCap: type(uint256).max, drawCap: type(uint256).max}),
@@ -164,7 +164,7 @@ contract LiquidityHubBase is Base {
     vm.prank(tempUser);
     asset.approve(address(hub), type(uint256).max);
 
-    vm.startPrank(HUB_ADMIN);
+    vm.startPrank(ADMIN);
     hub.addSpoke(
       assetId,
       DataTypes.SpokeConfig({supplyCap: type(uint256).max, drawCap: type(uint256).max}),
@@ -196,13 +196,13 @@ contract LiquidityHubBase is Base {
     address tempUser = vm.randomAddress();
 
     // Grant spoke role to the spoke
-    vm.prank(HUB_ADMIN);
+    vm.prank(ADMIN);
     accessManager.grantRole(Roles.SPOKE_ROLE, tempSpoke, 0);
 
     int256 premiumDrawnSharesDelta = 1000;
     int256 premiumOffsetDelta = 1000;
 
-    vm.prank(HUB_ADMIN);
+    vm.prank(ADMIN);
     hub.addSpoke(
       assetId,
       DataTypes.SpokeConfig({supplyCap: type(uint256).max, drawCap: type(uint256).max}),

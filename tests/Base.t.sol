@@ -91,6 +91,7 @@ abstract contract Base is Test {
   address internal carol = makeAddr('carol');
   address internal derl = makeAddr('derl');
 
+  address internal ADMIN = makeAddr('ADMIN');
   address internal HUB_ADMIN = makeAddr('HUB_ADMIN');
   address internal SPOKE_ADMIN = makeAddr('SPOKE_ADMIN');
   address internal TREASURY_ADMIN = makeAddr('TREASURY_ADMIN');
@@ -159,12 +160,12 @@ abstract contract Base is Test {
   }
 
   function deployFixtures() internal virtual {
-    vm.startPrank(HUB_ADMIN);
+    vm.startPrank(ADMIN);
     oracle1 = new MockPriceOracle();
     oracle2 = new MockPriceOracle();
     oracle3 = new MockPriceOracle();
     irStrategy = new AssetInterestRateStrategy();
-    accessManager = new AccessManager(HUB_ADMIN);
+    accessManager = new AccessManager(ADMIN);
     hub = new LiquidityHub(address(accessManager));
     spoke1 = ISpoke(new Spoke(address(oracle1), address(accessManager)));
     spoke2 = ISpoke(new Spoke(address(oracle2), address(accessManager)));
@@ -183,15 +184,12 @@ abstract contract Base is Test {
   }
 
   function setUpRoles() internal virtual {
-    // Hub Admin has default admin role
-    vm.startPrank(HUB_ADMIN);
+    vm.startPrank(ADMIN);
     // Grant roles
+    accessManager.grantRole(Roles.HUB_ADMIN_ROLE, ADMIN, 0);
+    accessManager.grantRole(Roles.SPOKE_ADMIN_ROLE, ADMIN, 0);
     accessManager.grantRole(Roles.HUB_ADMIN_ROLE, HUB_ADMIN, 0);
-    accessManager.grantRole(Roles.SPOKE_ADMIN_ROLE, HUB_ADMIN, 0);
-    accessManager.grantRole(Roles.TREASURY_ADMIN_ROLE, HUB_ADMIN, 0);
-    accessManager.grantRole(Roles.SPOKE_ROLE, HUB_ADMIN, 0);
     accessManager.grantRole(Roles.SPOKE_ADMIN_ROLE, SPOKE_ADMIN, 0);
-    accessManager.grantRole(Roles.TREASURY_ADMIN_ROLE, TREASURY_ADMIN, 0);
     accessManager.grantRole(Roles.SPOKE_ROLE, address(spoke1), 0);
     accessManager.grantRole(Roles.SPOKE_ROLE, address(spoke2), 0);
     accessManager.grantRole(Roles.SPOKE_ROLE, address(spoke3), 0);
@@ -310,7 +308,7 @@ abstract contract Base is Test {
     });
 
     // Add all assets to the Liquidity Hub
-    vm.startPrank(HUB_ADMIN);
+    vm.startPrank(ADMIN);
     // add WETH
     hub.addAsset(
       DataTypes.AssetConfig({
@@ -746,7 +744,7 @@ abstract contract Base is Test {
    * 3: WBTC
    */
   function hub2Fixture() internal returns (ILiquidityHub, AssetInterestRateStrategy) {
-    vm.startPrank(HUB_ADMIN);
+    vm.startPrank(ADMIN);
 
     ILiquidityHub hub2 = new LiquidityHub(address(accessManager));
     AssetInterestRateStrategy hub2IrStrategy = new AssetInterestRateStrategy();
@@ -832,7 +830,7 @@ abstract contract Base is Test {
    * 3: WETH
    */
   function hub3Fixture() internal returns (ILiquidityHub, AssetInterestRateStrategy) {
-    vm.startPrank(HUB_ADMIN);
+    vm.startPrank(ADMIN);
 
     ILiquidityHub hub3 = new LiquidityHub(address(accessManager));
     AssetInterestRateStrategy hub3IrStrategy = new AssetInterestRateStrategy();
@@ -922,7 +920,7 @@ abstract contract Base is Test {
     DataTypes.AssetConfig memory assetConfig = liquidityHub.getAsset(assetId).config;
     assetConfig.active = newActiveFlag;
 
-    vm.prank(HUB_ADMIN);
+    vm.prank(ADMIN);
     liquidityHub.updateAssetConfig(assetId, assetConfig);
   }
 
@@ -934,7 +932,7 @@ abstract contract Base is Test {
     DataTypes.AssetConfig memory assetConfig = liquidityHub.getAsset(assetId).config;
     assetConfig.paused = newPausedFlag;
 
-    vm.prank(HUB_ADMIN);
+    vm.prank(ADMIN);
     liquidityHub.updateAssetConfig(assetId, assetConfig);
   }
 
@@ -946,7 +944,7 @@ abstract contract Base is Test {
     DataTypes.AssetConfig memory assetConfig = liquidityHub.getAsset(assetId).config;
     assetConfig.frozen = newFrozenFlag;
 
-    vm.prank(HUB_ADMIN);
+    vm.prank(ADMIN);
     liquidityHub.updateAssetConfig(assetId, assetConfig);
   }
 
@@ -1073,7 +1071,7 @@ abstract contract Base is Test {
     uint256 liquidityFee
   ) internal {
     address feeReceiver = liquidityHub.getAssetConfig(assetId).feeReceiver;
-    vm.prank(HUB_ADMIN);
+    vm.prank(ADMIN);
     hub.updateAssetFees(assetId, feeReceiver, liquidityFee);
   }
 
@@ -1134,7 +1132,7 @@ abstract contract Base is Test {
   ) internal {
     DataTypes.SpokeConfig memory spokeConfig = liquidityHub.getSpokeConfig(assetId, spoke);
     spokeConfig.drawCap = newDrawCap;
-    vm.prank(HUB_ADMIN);
+    vm.prank(ADMIN);
     liquidityHub.updateSpokeConfig(assetId, spoke, spokeConfig);
   }
 

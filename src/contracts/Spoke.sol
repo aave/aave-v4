@@ -7,6 +7,7 @@ import {SafeERC20} from 'src/dependencies/openzeppelin/SafeERC20.sol';
 import {IERC20} from 'src/dependencies/openzeppelin/IERC20.sol';
 import {AccessManaged} from 'src/dependencies/openzeppelin/AccessManaged.sol';
 import {AccessManager} from 'src/dependencies/openzeppelin/AccessManager.sol';
+import {IAccessManager} from 'src/dependencies/openzeppelin/IAccessManager.sol';
 // libraries
 import {WadRayMath} from 'src/libraries/math/WadRayMath.sol';
 import {WadRayMathExtended} from 'src/libraries/math/WadRayMathExtended.sol';
@@ -374,7 +375,7 @@ contract Spoke is ISpoke, Multicall, AccessManaged {
   function updateUserRiskPremium(address user) external {
     (uint256 userRiskPremium, , , , ) = _calculateUserAccountData(user);
     bool premiumIncrease = _notifyRiskPremiumUpdate(type(uint256).max, user, userRiskPremium);
-    require(msg.sender == user || _isGovernor(msg.sender) || !premiumIncrease, Unauthorized());
+    require(!premiumIncrease || msg.sender == user || _isGovernor(msg.sender), Unauthorized());
     emit UserRiskPremiumUpdate(user, userRiskPremium);
   }
 
@@ -719,9 +720,9 @@ contract Spoke is ISpoke, Multicall, AccessManaged {
     return userPosition.baseDrawnShares > 0;
   }
 
-  function _isGovernor(address user) internal view returns (bool) {
-    AccessManager accessManager = AccessManager(authority());
-    (bool result, ) = accessManager.hasRole(Roles.DEFAULT_ADMIN_ROLE, user);
+  function _isGovernor(address caller) internal view returns (bool) {
+    IAccessManager accessManager = IAccessManager(authority());
+    (bool result, ) = accessManager.hasRole(Roles.GOVERNOR_ROLE, caller);
     return result;
   }
 

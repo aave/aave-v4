@@ -17,7 +17,7 @@ contract LiquidityHubUpdateAssetFeesTest is LiquidityHubBase {
     vm.expectEmit(address(hub));
     emit ILiquidityHub.DrawnIndexUpdate(assetId, hub.previewDrawnIndex(assetId), block.timestamp);
 
-    vm.prank(HUB_ADMIN);
+    vm.prank(ADMIN);
     hub.updateAssetFees(assetId, feeReceiver, liquidityFee);
   }
 
@@ -33,7 +33,7 @@ contract LiquidityHubUpdateAssetFeesTest is LiquidityHubBase {
     vm.expectEmit(address(hub));
     emit ILiquidityHub.DrawnIndexUpdate(assetId, hub.previewDrawnIndex(assetId), block.timestamp);
 
-    vm.prank(HUB_ADMIN);
+    vm.prank(ADMIN);
     hub.updateAssetFees(assetId, feeReceiver, liquidityFee);
   }
 
@@ -44,13 +44,13 @@ contract LiquidityHubUpdateAssetFeesTest is LiquidityHubBase {
     // reverts if zero receiver and non-zero fee
     uint256 nonZeroFee = randomizer(1, PercentageMathExtended.PERCENTAGE_FACTOR);
     vm.expectRevert(ILiquidityHub.InvalidFeeReceiver.selector);
-    vm.prank(HUB_ADMIN);
+    vm.prank(ADMIN);
     hub.updateAssetFees(assetId, address(0), nonZeroFee);
 
     // reverts if zero receiver and non-zero current fee
     uint256 currentLiquidityFee = _getLiquidityFee(assetId);
     vm.expectRevert(ILiquidityHub.InvalidFeeReceiver.selector);
-    vm.prank(HUB_ADMIN);
+    vm.prank(ADMIN);
     hub.updateAssetFees(assetId, address(0), currentLiquidityFee);
   }
 
@@ -61,7 +61,7 @@ contract LiquidityHubUpdateAssetFeesTest is LiquidityHubBase {
 
     uint256 invalidFee = randomizer(PercentageMathExtended.PERCENTAGE_FACTOR, type(uint256).max);
     vm.expectRevert(ILiquidityHub.InvalidLiquidityFee.selector);
-    vm.prank(HUB_ADMIN);
+    vm.prank(ADMIN);
     hub.updateAssetFees(assetId, validReceiver, invalidFee);
   }
 
@@ -77,7 +77,7 @@ contract LiquidityHubUpdateAssetFeesTest is LiquidityHubBase {
     vm.expectEmit(address(hub));
     emit ILiquidityHub.DrawnIndexUpdate(assetId, hub.previewDrawnIndex(assetId), block.timestamp);
 
-    vm.prank(HUB_ADMIN);
+    vm.prank(ADMIN);
     hub.updateAssetFees(assetId, currentFeeReceiver, currentLiquidityFee);
   }
 
@@ -111,7 +111,7 @@ contract LiquidityHubUpdateAssetFeesTest is LiquidityHubBase {
     vm.expectEmit(address(hub));
     emit ILiquidityHub.AssetConfigUpdated(assetId, expectedConfig);
 
-    vm.prank(HUB_ADMIN);
+    vm.prank(ADMIN);
     hub.updateAssetFees(assetId, newFeeReceiver, currentLiquidityFee);
 
     assertEq(hub.getSpokeSuppliedShares(assetId, currentFeeReceiver), feesShares);
@@ -149,7 +149,7 @@ contract LiquidityHubUpdateAssetFeesTest is LiquidityHubBase {
     vm.expectEmit(address(hub));
     emit ILiquidityHub.AssetConfigUpdated(assetId, expectedConfig);
 
-    vm.prank(HUB_ADMIN);
+    vm.prank(ADMIN);
     hub.updateAssetFees(assetId, newFeeReceiver, currentLiquidityFee);
 
     assertEq(hub.getSpokeSuppliedShares(assetId, currentFeeReceiver), currentFees);
@@ -181,7 +181,7 @@ contract LiquidityHubUpdateAssetFeesTest is LiquidityHubBase {
     emit ILiquidityHub.AssetConfigUpdated(assetId, expectedConfig);
 
     // treasury is set back to original spoke
-    vm.prank(HUB_ADMIN);
+    vm.prank(ADMIN);
     hub.updateAssetFees(assetId, currentFeeReceiver, currentLiquidityFee);
 
     assertEq(hub.getSpokeSuppliedShares(assetId, currentFeeReceiver), currentFees);
@@ -194,7 +194,7 @@ contract LiquidityHubUpdateAssetFeesTest is LiquidityHubBase {
     uint256 assetId = daiAssetId;
 
     // set receiver and fee to 0
-    vm.prank(HUB_ADMIN);
+    vm.prank(ADMIN);
     hub.updateAssetFees(assetId, address(0), 0);
 
     uint256 amount = 1000e18;
@@ -215,7 +215,7 @@ contract LiquidityHubUpdateAssetFeesTest is LiquidityHubBase {
     vm.expectEmit(address(hub));
     emit ILiquidityHub.AssetConfigUpdated(assetId, expectedConfig);
 
-    vm.startPrank(HUB_ADMIN);
+    vm.startPrank(ADMIN);
     hub.updateAssetFees(assetId, newFeeReceiver, _getLiquidityFee(assetId));
     vm.stopPrank();
 
@@ -250,7 +250,7 @@ contract LiquidityHubUpdateAssetFeesTest is LiquidityHubBase {
       emit ILiquidityHub.AssetConfigUpdated(assetId, expectedConfig);
     }
 
-    vm.prank(HUB_ADMIN);
+    vm.prank(ADMIN);
     hub.updateAssetFees(assetId, currentFeeReceiver, liquidityFee);
 
     assertEq(hub.getSpokeSuppliedShares(assetId, currentFeeReceiver), feesShares);
@@ -263,7 +263,7 @@ contract LiquidityHubUpdateAssetFeesTest is LiquidityHubBase {
 
     uint256 assetId = daiAssetId;
     // set receiver and fee to 0
-    vm.prank(HUB_ADMIN);
+    vm.prank(ADMIN);
     hub.updateAssetFees(assetId, address(0), 0);
 
     uint256 amount = 1000e18;
@@ -286,7 +286,7 @@ contract LiquidityHubUpdateAssetFeesTest is LiquidityHubBase {
     vm.expectEmit(address(hub));
     emit ILiquidityHub.AssetConfigUpdated(assetId, expectedConfig);
 
-    vm.prank(HUB_ADMIN);
+    vm.prank(ADMIN);
     hub.updateAssetFees(assetId, validFeeReceiver, liquidityFee);
 
     assertEq(hub.getSpokeSuppliedShares(assetId, currentFeeReceiver), 0);
