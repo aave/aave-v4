@@ -920,7 +920,7 @@ abstract contract Base is Test {
     DataTypes.AssetConfig memory assetConfig = liquidityHub.getAsset(assetId).config;
     assetConfig.active = newActiveFlag;
 
-    vm.prank(ADMIN);
+    vm.prank(HUB_ADMIN);
     liquidityHub.updateAssetConfig(assetId, assetConfig);
   }
 
@@ -932,7 +932,7 @@ abstract contract Base is Test {
     DataTypes.AssetConfig memory assetConfig = liquidityHub.getAsset(assetId).config;
     assetConfig.paused = newPausedFlag;
 
-    vm.prank(ADMIN);
+    vm.prank(HUB_ADMIN);
     liquidityHub.updateAssetConfig(assetId, assetConfig);
   }
 
@@ -944,7 +944,7 @@ abstract contract Base is Test {
     DataTypes.AssetConfig memory assetConfig = liquidityHub.getAsset(assetId).config;
     assetConfig.frozen = newFrozenFlag;
 
-    vm.prank(ADMIN);
+    vm.prank(HUB_ADMIN);
     liquidityHub.updateAssetConfig(assetId, assetConfig);
   }
 
@@ -1071,7 +1071,7 @@ abstract contract Base is Test {
     uint256 liquidityFee
   ) internal {
     address feeReceiver = liquidityHub.getAssetConfig(assetId).feeReceiver;
-    vm.prank(ADMIN);
+    vm.prank(HUB_ADMIN);
     hub.updateAssetFees(assetId, feeReceiver, liquidityFee);
   }
 
@@ -1132,7 +1132,7 @@ abstract contract Base is Test {
   ) internal {
     DataTypes.SpokeConfig memory spokeConfig = liquidityHub.getSpokeConfig(assetId, spoke);
     spokeConfig.drawCap = newDrawCap;
-    vm.prank(ADMIN);
+    vm.prank(HUB_ADMIN);
     liquidityHub.updateSpokeConfig(assetId, spoke, spokeConfig);
   }
 

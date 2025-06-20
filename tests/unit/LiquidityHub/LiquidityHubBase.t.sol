@@ -52,7 +52,7 @@ contract LiquidityHubBase is Base {
   function _updateSupplyCap(uint256 assetId, address spoke, uint256 newSupplyCap) internal {
     DataTypes.SpokeConfig memory spokeConfig = hub.getSpokeConfig(assetId, spoke);
     spokeConfig.supplyCap = newSupplyCap;
-    vm.prank(ADMIN);
+    vm.prank(HUB_ADMIN);
     hub.updateSpokeConfig(assetId, spoke, spokeConfig);
   }
 
@@ -202,7 +202,7 @@ contract LiquidityHubBase is Base {
     int256 premiumDrawnSharesDelta = 1000;
     int256 premiumOffsetDelta = 1000;
 
-    vm.prank(ADMIN);
+    vm.prank(HUB_ADMIN);
     hub.addSpoke(
       assetId,
       DataTypes.SpokeConfig({supplyCap: type(uint256).max, drawCap: type(uint256).max}),

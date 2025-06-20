@@ -294,7 +294,7 @@ contract SpokeMultipleHubIsolationModeTest is SpokeMultipleHubBase {
     assertEq(newHub.getAssetTotalDebt(isolationVars.assetBId), 100_000e18);
 
     // DAO offboards credit line to new spoke from the canonical hub by setting Asset B draw cap to 0
-    vm.prank(ADMIN);
+    vm.prank(HUB_ADMIN);
     hub.updateSpokeConfig(
       isolationVars.assetBIdMainHub,
       address(newSpoke),
