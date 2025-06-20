@@ -293,12 +293,12 @@ contract Spoke is ISpoke, Multicall {
   ) external onlyPositionManager(onBehalfOf) {
     DataTypes.UserPosition storage userPosition = _userPositions[onBehalfOf][reserveId];
     DataTypes.Reserve storage reserve = _reserves[reserveId];
-    DataTypes.ExecuteRepayLocalVars memory vars;
-    ILiquidityHub hub = config.reserve.hub;
-
-    vars.assetId = reserve.assetId;
-    (vars.baseDebt, vars.premiumDebt) = _getUserDebt(hub, vars.assetId, userPosition);
     _validateRepay(reserve);
+
+    DataTypes.ExecuteRepayLocalVars memory vars;
+    vars.hub = reserve.config.hub;
+    vars.assetId = reserve.assetId;
+    (vars.baseDebt, vars.premiumDebt) = _getUserDebt(vars.hub, vars.assetId, userPosition);
     (vars.baseDebtRestored, vars.premiumDebtRestored) = _calculateRestoreAmount(
       vars.baseDebt,
       vars.premiumDebt,
@@ -323,7 +323,7 @@ contract Spoke is ISpoke, Multicall {
       vars.premiumDebtRestored
     ); // we settle premium debt here
 
-    vars.restoredShares = hub.restore(
+    vars.restoredShares = vars.hub.restore(
       vars.assetId,
       vars.baseDebtRestored,
       vars.premiumDebtRestored,
@@ -338,7 +338,7 @@ contract Spoke is ISpoke, Multicall {
     vars.userPremiumDrawnShares = userPosition.premiumDrawnShares = userPosition
       .baseDrawnShares
       .percentMulUp(vars.newUserRiskPremium);
-    vars.userPremiumOffset = userPosition.premiumOffset = hub.previewOffset(
+    vars.userPremiumOffset = userPosition.premiumOffset = vars.hub.previewOffset(
       vars.assetId,
       userPosition.premiumDrawnShares
     );

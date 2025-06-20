@@ -171,6 +171,7 @@ library DataTypes {
   }
 
   struct ExecuteRepayLocalVars {
+    ILiquidityHub hub;
     uint256 assetId;
     uint256 baseDebt;
     uint256 premiumDebt;

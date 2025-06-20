@@ -158,9 +158,7 @@ contract SpokePositionManagerTest is SpokeBase {
     Utils.borrow(spoke1, _usdxReserveId(spoke1), alice, 1500e6, alice);
 
     uint256 riskPremiumBefore = spoke1.getUserRiskPremium(alice);
-
     updateLiquidityPremium(spoke1, _wethReserveId(spoke1), 100_00);
-
     assertGt(spoke1.getUserRiskPremium(alice), riskPremiumBefore);
 
     vm.expectRevert(ISpoke.Unauthorized.selector);
