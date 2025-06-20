@@ -205,7 +205,7 @@ contract SpokeLiquidationBase is SpokeBase {
     string memory label
   ) internal view {
     _assertUserAccountData(state, spoke, label);
-    _assertProtocolFeeEarned(state, label);
+    _assertLiquidationProtocolFeeEarned(state, label);
     _assertLiquidationBonusEarned(state, label);
     _assertSupplyExchangeRate(state, label);
     _assertSetUsingAsCollateral(spoke, alice, state, label);
@@ -253,8 +253,7 @@ contract SpokeLiquidationBase is SpokeBase {
     }
   }
 
-  // todo: utilize treasury accounting to assert protocol fee
-  function _assertProtocolFeeEarned(
+  function _assertLiquidationProtocolFeeEarned(
     LiquidationTestLocalParams memory state,
     string memory label
   ) internal view {
@@ -265,7 +264,7 @@ contract SpokeLiquidationBase is SpokeBase {
     assertApproxEqAbs(
       liqProtocolFeeAmount,
       totalLiqBonusAmount.percentMulUp(state.liquidationProtocolFee),
-      3,
+      2,
       string.concat('protocol fee amount ', label)
     );
   }
