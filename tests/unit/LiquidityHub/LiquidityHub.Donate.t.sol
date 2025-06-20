@@ -83,23 +83,23 @@ contract LiquidityHubDonateTest is LiquidityHubBase {
     amount = bound(amount, 1, MAX_SUPPLY_AMOUNT);
 
     uint256 newSupplyCap = amount - 1;
-    _updateSupplyCap(daiAssetId, address(spoke1), newSupplyCap);
+    _updateSupplyCap(daiAssetId, hub.getAsset(daiAssetId).config.feeReceiver, newSupplyCap);
 
     vm.expectRevert(abi.encodeWithSelector(ILiquidityHub.SupplyCapExceeded.selector, newSupplyCap));
     vm.prank(address(spoke1));
-    hub.add(daiAssetId, amount, alice);
+    hub.donate(daiAssetId, amount, alice);
   }
 
   function test_donate_revertsWith_SupplyCapExceeded_due_to_interest() public {
     uint256 daiAmount = 100e18;
 
     uint256 newSupplyCap = daiAmount + 1;
-    _updateSupplyCap(daiAssetId, address(spoke2), newSupplyCap);
+    _updateSupplyCap(daiAssetId, hub.getAsset(daiAssetId).config.feeReceiver, newSupplyCap);
 
     _supplyAndDrawLiquidity({
       assetId: daiAssetId,
       supplyUser: bob,
-      supplySpoke: address(spoke2),
+      supplySpoke: hub.getAsset(daiAssetId).config.feeReceiver,
       supplyAmount: daiAmount,
       drawUser: alice,
       drawSpoke: address(spoke1),
@@ -109,7 +109,7 @@ contract LiquidityHubDonateTest is LiquidityHubBase {
 
     vm.expectRevert(abi.encodeWithSelector(ILiquidityHub.SupplyCapExceeded.selector, newSupplyCap));
     vm.prank(address(spoke2));
-    hub.add(daiAssetId, 1, alice);
+    hub.donate(daiAssetId, 1, alice);
   }
 
   function test_donate_fuzz_revertsWith_SupplyCapExceeded_due_to_interest(
@@ -125,12 +125,12 @@ contract LiquidityHubDonateTest is LiquidityHubBase {
     uint256 newSupplyCap = daiAmount + 1;
     rate = bound(rate, 1, MAX_BORROW_RATE); // 0.01% to 1000%
 
-    _updateSupplyCap(daiAssetId, address(spoke2), newSupplyCap);
+    _updateSupplyCap(daiAssetId, hub.getAsset(daiAssetId).config.feeReceiver, newSupplyCap);
     _mockInterestRate(rate);
     _supplyAndDrawLiquidity({
       assetId: daiAssetId,
       supplyUser: bob,
-      supplySpoke: address(spoke2),
+      supplySpoke: hub.getAsset(daiAssetId).config.feeReceiver,
       supplyAmount: daiAmount,
       drawUser: alice,
       drawSpoke: address(spoke1),
@@ -143,46 +143,6 @@ contract LiquidityHubDonateTest is LiquidityHubBase {
     vm.prank(address(spoke2));
     hub.donate(daiAssetId, 1, alice); // cannot supply any additional amount
   }
-
-  // // supply succeeds if cap is reached but not exceeded
-  // function test_donate_SupplyCapReachedButNotExceeded() public {
-  //   _increaseExchangeRate(daiAssetId, 100e18);
-
-  //   uint256 totalSuppliedAssets = hub.getTotalSuppliedAssets(daiAssetId);
-  //   uint256 totalSuppliedShares = hub.getAssetSuppliedShares(daiAssetId);
-
-  //   // Depending on the borrow rate, this may not be true
-  //   // It can be adjusted by changing the amount of assets passed to _increaseExchangeRate
-  //   assertNotEq(
-  //     totalSuppliedAssets % totalSuppliedShares,
-  //     0,
-  //     'totalSuppliedAssets % totalSuppliedShares is zero'
-  //   );
-
-  //   // The asset amount is 1 share worth of assets (rounded down) + 1
-  //   // The supplied share is 1, which rounded up is equal to the
-  //   // amount of assets supplied
-  //   uint256 supplyAmount = totalSuppliedAssets / totalSuppliedShares + 1;
-
-  //   uint256 spokeSuppliedShares = hub.getSpokeSuppliedShares(daiAssetId, address(spoke1));
-  //   uint256 spokeSuppliedAssetsRoundedUp = spokeSuppliedShares.toAssetsUp(
-  //     totalSuppliedAssets,
-  //     totalSuppliedShares
-  //   );
-
-  //   uint256 newSupplyCap = spokeSuppliedAssetsRoundedUp + supplyAmount;
-  //   _updateSupplyCap(daiAssetId, address(spoke1), newSupplyCap);
-
-  //   Utils.add({
-  //     hub: hub,
-  //     assetId: daiAssetId,
-  //     spoke: address(spoke1),
-  //     amount: supplyAmount,
-  //     user: alice,
-  //     to: address(spoke1)
-  //   });
-  // }
-
   function test_donate_single_asset() public {
     uint256 amount = 100e18;
     uint256 expectedSupplyShares = hub.convertToSuppliedShares(daiAssetId, amount);
@@ -500,276 +460,104 @@ contract LiquidityHubDonateTest is LiquidityHubBase {
     );
   }
 
-  // function test_donate_with_increased_index_with_premium() public {
-  //   uint256 daiAmount = 100e18;
-  //   _addLiquidity(daiAssetId, daiAmount);
-  //   _drawLiquidity(daiAssetId, daiAmount, true);
-  //   assertLt(hub.convertToSuppliedShares(daiAssetId, daiAmount), daiAmount); // index increased, exch rate > 1
+  function test_donate_with_increased_index_with_premium() public {
+    uint256 daiAmount = 100e18;
+    _addLiquidity(daiAssetId, daiAmount);
+    _drawLiquidity(daiAssetId, daiAmount, true);
+    assertLt(hub.convertToSuppliedShares(daiAssetId, daiAmount), daiAmount); // index increased, exch rate > 1
 
-  //   uint256 supplyAmount = 10e18;
-  //   uint256 expectedSupplyShares = hub.convertToSuppliedShares(daiAssetId, supplyAmount);
+    uint256 supplyAmount = 10e18;
+    uint256 expectedSupplyShares = hub.convertToSuppliedShares(daiAssetId, supplyAmount);
 
-  //   uint256 suppliedAssetsBefore = hub.getSpokeSuppliedAmount(daiAssetId, address(spoke2));
-  //   uint256 suppliedSharesBefore = hub.getSpokeSuppliedShares(daiAssetId, address(spoke2));
-  //   // effective supply amount (taking into account potential donation)
-  //   uint256 spokeSuppliedAmount = calculateEffectiveSuppliedAssets(
-  //     supplyAmount,
-  //     hub.getTotalSuppliedAssets(daiAssetId),
-  //     hub.getTotalSuppliedShares(daiAssetId)
-  //   );
+    uint256 suppliedAssetsBefore = hub.getSpokeSuppliedAmount(daiAssetId, address(spoke2));
+    uint256 suppliedSharesBefore = hub.getSpokeSuppliedShares(daiAssetId, address(spoke2));
+    // effective supply amount (taking into account potential donation)
+    uint256 spokeSuppliedAmount = calculateEffectiveSuppliedAssets(
+      supplyAmount,
+      hub.getTotalSuppliedAssets(daiAssetId),
+      hub.getTotalSuppliedShares(daiAssetId)
+    );
 
-  //   Utils.add({
-  //     hub: hub,
-  //     assetId: daiAssetId,
-  //     spoke: address(spoke2),
-  //     amount: supplyAmount,
-  //     user: bob,
-  //     to: address(spoke2)
-  //   });
+    Utils.add({
+      hub: hub,
+      assetId: daiAssetId,
+      spoke: address(spoke2),
+      amount: supplyAmount,
+      user: bob,
+      to: address(spoke2)
+    });
 
-  //   assertEq(
-  //     hub.getSpokeSuppliedAmount(daiAssetId, address(spoke2)),
-  //     suppliedAssetsBefore + spokeSuppliedAmount,
-  //     'spoke suppliedAssets after'
-  //   );
-  //   assertEq(
-  //     hub.getSpokeSuppliedShares(daiAssetId, address(spoke2)),
-  //     suppliedSharesBefore + expectedSupplyShares,
-  //     'spoke suppliedShares after'
-  //   );
-  //   // Hub and Spoke accounting do not match because of liquidity fees
-  //   assertGe(
-  //     hub.getAssetSuppliedAmount(daiAssetId),
-  //     suppliedAssetsBefore + spokeSuppliedAmount,
-  //     'hub suppliedAssets after'
-  //   );
-  //   assertGe(
-  //     hub.getAssetSuppliedShares(daiAssetId),
-  //     suppliedSharesBefore + expectedSupplyShares,
-  //     'hub suppliedShares after'
-  //   );
-  // }
+    assertEq(
+      hub.getSpokeSuppliedAmount(daiAssetId, address(spoke2)),
+      suppliedAssetsBefore + spokeSuppliedAmount,
+      'spoke suppliedAssets after'
+    );
+    assertEq(
+      hub.getSpokeSuppliedShares(daiAssetId, address(spoke2)),
+      suppliedSharesBefore + expectedSupplyShares,
+      'spoke suppliedShares after'
+    );
+    // Hub and Spoke accounting do not match because of liquidity fees
+    assertGe(
+      hub.getAssetSuppliedAmount(daiAssetId),
+      suppliedAssetsBefore + spokeSuppliedAmount,
+      'hub suppliedAssets after'
+    );
+    assertGe(
+      hub.getAssetSuppliedShares(daiAssetId),
+      suppliedSharesBefore + expectedSupplyShares,
+      'hub suppliedShares after'
+    );
+  }
 
-  // function test_donate_multi_donate_minimal_shares() public {
-  //   uint256 amount = 100e18;
+  function test_donate_multi_donate_minimal_shares() public {
+    uint256 amount = 100e18;
 
-  //   (, uint256 drawnAmount) = _supplyAndDrawLiquidity({
-  //     assetId: daiAssetId,
-  //     supplyUser: bob,
-  //     supplySpoke: address(spoke2),
-  //     supplyAmount: amount,
-  //     drawUser: alice,
-  //     drawSpoke: address(spoke1),
-  //     drawAmount: amount,
-  //     skipTime: 365 days
-  //   });
+    (, uint256 drawnAmount) = _supplyAndDrawLiquidity({
+      assetId: daiAssetId,
+      supplyUser: bob,
+      supplySpoke: address(spoke2),
+      supplyAmount: amount,
+      drawUser: alice,
+      drawSpoke: address(spoke1),
+      drawAmount: amount,
+      skipTime: 365 days
+    });
 
-  //   uint256 suppliedAssetsBefore1 = hub.getSpokeSuppliedAmount(daiAssetId, address(spoke1));
-  //   uint256 suppliedSharesBefore1 = hub.getSpokeSuppliedShares(daiAssetId, address(spoke1));
-  //   uint256 suppliedAssetsBefore2 = hub.getSpokeSuppliedAmount(daiAssetId, address(spoke2));
-  //   uint256 suppliedSharesBefore2 = hub.getSpokeSuppliedShares(daiAssetId, address(spoke2));
-  //   uint256 supplyShares = 1; // minimum for 1 share
-  //   uint256 supplyAmount = minimumAssetsPerSuppliedShare(daiAssetId);
-  //   // effective supply amount (taking into account potential donation)
-  //   uint256 spokeSuppliedAmount = calculateEffectiveSuppliedAssets(
-  //     supplyAmount,
-  //     hub.getTotalSuppliedAssets(daiAssetId),
-  //     hub.getTotalSuppliedShares(daiAssetId)
-  //   );
+    uint256 suppliedAssetsBefore = hub.getSpokeSuppliedAmount(
+      daiAssetId,
+      hub.getAsset(daiAssetId).config.feeReceiver
+    );
+    uint256 suppliedSharesBefore = hub.getSpokeSuppliedShares(
+      daiAssetId,
+      hub.getAsset(daiAssetId).config.feeReceiver
+    );
 
-  //   Utils.add({
-  //     hub: hub,
-  //     assetId: daiAssetId,
-  //     spoke: address(spoke1),
-  //     amount: supplyAmount,
-  //     user: bob,
-  //     to: address(spoke1)
-  //   });
+    uint256 supplyShares = 1; // minimum for 1 share
+    uint256 supplyAmount = minimumAssetsPerSuppliedShare(daiAssetId);
+    // effective supply amount (taking into account potential donation)
+    uint256 spokeSuppliedAmount = calculateEffectiveSuppliedAssets(
+      supplyAmount,
+      hub.getTotalSuppliedAssets(daiAssetId),
+      hub.getTotalSuppliedShares(daiAssetId)
+    );
 
-  //   // debt exists
-  //   (uint256 baseDebt, uint256 premiumDebt) = hub.getAssetDebt(daiAssetId);
-  //   assertGt(baseDebt, 0);
-  //   (baseDebt, premiumDebt) = hub.getSpokeDebt(daiAssetId, address(spoke1));
-  //   assertGt(baseDebt, 0);
+    vm.prank(bob);
+    tokenList.dai.approve(address(hub), amount);
 
-  //   // hub
-  //   assertGe(
-  //     hub.getAssetSuppliedAmount(daiAssetId),
-  //     suppliedAssetsBefore1 + suppliedAssetsBefore2 + spokeSuppliedAmount,
-  //     'hub suppliedAssets after'
-  //   );
-  //   assertGe(
-  //     hub.getAssetSuppliedShares(daiAssetId),
-  //     suppliedSharesBefore1 + supplyShares,
-  //     'hub suppliedShares after'
-  //   );
-  //   assertEq(
-  //     hub.getAvailableLiquidity(daiAssetId),
-  //     amount + supplyAmount - drawnAmount,
-  //     'asset availableLiquidity after'
-  //   );
-  //   assertEq(
-  //     hub.getAsset(daiAssetId).lastUpdateTimestamp,
-  //     vm.getBlockTimestamp(),
-  //     'asset lastUpdateTimestamp after'
-  //   );
-  //   // spoke1
-  //   assertEq(
-  //     hub.getSpokeSuppliedAmount(daiAssetId, address(spoke1)),
-  //     spokeSuppliedAmount,
-  //     'spoke1 suppliedAssets after'
-  //   );
-  //   assertEq(
-  //     hub.getSpokeSuppliedShares(daiAssetId, address(spoke1)),
-  //     supplyShares,
-  //     'spoke1 suppliedShares after'
-  //   );
-  //   // spoke2
-  //   assertGe(
-  //     hub.getSpokeSuppliedAmount(daiAssetId, address(spoke2)),
-  //     suppliedAssetsBefore2,
-  //     'spoke2 suppliedAmount after'
-  //   );
-  //   assertEq(
-  //     hub.getSpokeSuppliedShares(daiAssetId, address(spoke2)),
-  //     suppliedSharesBefore2,
-  //     'spoke2 suppliedShares after'
-  //   );
-  //   // token balance
-  //   assertEq(
-  //     tokenList.dai.balanceOf(address(hub)),
-  //     supplyAmount + amount - drawnAmount,
-  //     'hub token balance after'
-  //   );
-  //   assertEq(
-  //     tokenList.dai.balanceOf(alice),
-  //     MAX_SUPPLY_AMOUNT + drawnAmount,
-  //     'alice token balance after'
-  //   );
-  //   assertEq(
-  //     tokenList.dai.balanceOf(bob),
-  //     MAX_SUPPLY_AMOUNT - amount - supplyAmount,
-  //     'bob token balance after'
-  //   );
-  // }
+    vm.prank(address(spoke1));
+    hub.donate(daiAssetId, supplyAmount, bob);
 
-  // function test_donate_fuzz_single_spoke_multi_supply(
-  //   uint256 amount,
-  //   uint256 skipTime,
-  //   uint256 rate
-  // ) public {
-  //   uint256 assetId = daiAssetId;
-  //   uint256 numSupplies = 5;
-
-  //   amount = bound(amount, 1, MAX_SUPPLY_AMOUNT / numSupplies);
-  //   skipTime = bound(skipTime, 1, MAX_SKIP_TIME);
-  //   rate = bound(rate, 1, MAX_BORROW_RATE);
-  //   _mockInterestRate(rate);
-
-  //   TestSupplyParams memory params;
-  //   (params.assetSuppliedShares, params.drawnShares) = _supplyAndDrawLiquidity({
-  //     assetId: assetId,
-  //     supplyUser: bob,
-  //     supplySpoke: address(spoke2),
-  //     supplyAmount: amount,
-  //     drawUser: alice,
-  //     drawSpoke: address(spoke1),
-  //     drawAmount: amount,
-  //     skipTime: skipTime
-  //   });
-  //   vm.assume(hub.convertToSuppliedShares(assetId, amount) < amount);
-
-  //   params.drawnAmount = amount;
-  //   params.assetSuppliedAmount = hub.convertToSuppliedAssets(assetId, params.assetSuppliedShares);
-  //   params.availableLiq = amount - params.drawnAmount;
-  //   params.spoke2SuppliedShares = hub.getSpokeSuppliedShares(assetId, address(spoke2));
-  //   params.spoke2SuppliedAmount = hub.convertToSuppliedAssets(assetId, params.spoke2SuppliedShares);
-  //   params.aliceBalance = MAX_SUPPLY_AMOUNT + params.drawnAmount;
-  //   params.bobBalance = MAX_SUPPLY_AMOUNT - amount;
-
-  //   uint256 supplyShares = 1; // minimum for 1 share
-  //   uint256 supplyAmount;
-  //   for (uint256 i = 0; i < numSupplies; i++) {
-  //     supplyAmount = minimumAssetsPerSuppliedShare(assetId);
-
-  //     // bob supply minimal amount
-  //     Utils.add({
-  //       hub: hub,
-  //       assetId: assetId,
-  //       spoke: address(spoke1),
-  //       amount: supplyAmount,
-  //       user: bob,
-  //       to: address(spoke1)
-  //     });
-
-  //     (uint256 baseDebt, ) = hub.getAssetDebt(assetId);
-  //     assertGt(baseDebt, 0);
-  //     (baseDebt, ) = hub.getSpokeDebt(assetId, address(spoke1));
-  //     assertGt(baseDebt, 0);
-
-  //     params.availableLiq += supplyAmount;
-  //     params.assetSuppliedShares += supplyShares;
-  //     params.assetSuppliedAmount = hub.convertToSuppliedAssets(assetId, params.assetSuppliedShares);
-  //     params.spoke1SuppliedShares += supplyShares;
-  //     params.spoke1SuppliedAmount = hub.convertToSuppliedAssets(
-  //       assetId,
-  //       params.spoke1SuppliedShares
-  //     );
-  //     params.bobBalance -= supplyAmount;
-
-  //     // hub
-  //     assertGe(
-  //       hub.getAssetSuppliedAmount(assetId),
-  //       params.assetSuppliedAmount,
-  //       'hub suppliedAmount after'
-  //     );
-  //     assertGe(
-  //       hub.getAssetSuppliedShares(assetId),
-  //       params.assetSuppliedShares,
-  //       'hub suppliedShares after'
-  //     );
-  //     assertEq(
-  //       hub.getAvailableLiquidity(assetId),
-  //       params.availableLiq,
-  //       'asset availableLiquidity after'
-  //     );
-  //     assertEq(
-  //       hub.getAsset(assetId).lastUpdateTimestamp,
-  //       vm.getBlockTimestamp(),
-  //       'asset lastUpdateTimestamp after'
-  //     );
-  //     // spoke1
-  //     assertEq(
-  //       hub.getSpokeSuppliedAmount(assetId, address(spoke1)),
-  //       hub.convertToSuppliedAssets(assetId, params.spoke1SuppliedShares),
-  //       'spoke1 suppliedAmount after'
-  //     );
-  //     assertEq(
-  //       hub.getSpokeSuppliedShares(assetId, address(spoke1)),
-  //       params.spoke1SuppliedShares,
-  //       'spoke1 suppliedShares after'
-  //     );
-  //     // spoke2
-  //     assertEq(
-  //       hub.getSpokeSuppliedAmount(assetId, address(spoke2)),
-  //       hub.convertToSuppliedAssets(assetId, params.spoke2SuppliedShares),
-  //       'spoke2 suppliedAmount after'
-  //     );
-  //     assertEq(
-  //       hub.getSpokeSuppliedShares(assetId, address(spoke2)),
-  //       params.spoke2SuppliedShares,
-  //       'spoke2 suppliedShares after'
-  //     );
-  //     // token balance
-  //     assertEq(
-  //       tokenList.dai.balanceOf(address(hub)),
-  //       params.availableLiq,
-  //       'hub token balance after'
-  //     );
-  //     assertEq(tokenList.dai.balanceOf(alice), params.aliceBalance, 'alice token balance after');
-  //     assertEq(tokenList.dai.balanceOf(bob), params.bobBalance, 'bob token balance after');
-
-  //     skip(randomizer(1 days, 365 days));
-  //   }
-  // }
+    // spoke1
+    assertEq(
+      hub.getSpokeSuppliedAmount(daiAssetId, hub.getAsset(daiAssetId).config.feeReceiver),
+      suppliedAssetsBefore + spokeSuppliedAmount,
+      'spoke1 suppliedAssets after'
+    );
+    assertEq(
+      hub.getSpokeSuppliedShares(daiAssetId, hub.getAsset(daiAssetId).config.feeReceiver),
+      suppliedSharesBefore + supplyShares,
+      'spoke1 suppliedShares after'
+    );
+  }
 }
