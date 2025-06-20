@@ -366,12 +366,12 @@ contract LiquidationCallCloseFactorBadDebtTest is SpokeLiquidationBase {
     );
     skipTime = bound(skipTime, 1, MAX_SKIP_TIME);
 
-    state.liquidationProtocolFee = liquidationProtocolFee;
+    state.liquidationProtocolFeeBPS = liquidationProtocolFee;
 
     // set spoke liq config
     spoke1.updateLiquidationConfig(liqConfig);
     updateLiquidationBonus(spoke1, collateralReserveId, liqBonus);
-    updateLiquidationProtocolFee(spoke1, collateralReserveId, state.liquidationProtocolFee);
+    updateLiquidationProtocolFee(spoke1, collateralReserveId, state.liquidationProtocolFeeBPS);
     // set user position under hf threshold so that there is invalid collateral to cover all debt
     // results in bad debt remaining (debt > 0, collateral = 0)
     uint256 desiredHf = _calcLowestHfToRestoreCloseFactor(spoke1, collateralReserveId, liqBonus)

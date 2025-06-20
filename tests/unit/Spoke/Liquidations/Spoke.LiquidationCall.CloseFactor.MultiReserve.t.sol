@@ -213,14 +213,18 @@ contract LiquidationCallCloseFactorMultiReserveTest is SpokeLiquidationBase {
     );
     skipTime = bound(skipTime, 1, MAX_SKIP_TIME);
 
-    state.liquidationProtocolFee = liquidationProtocolFee;
+    state.liquidationProtocolFeeBPS = liquidationProtocolFee;
 
     state.collateralReserveId = collateralReserveIds[collateralReserveIndex];
     state.debtReserveId = debtReserveIds[debtReserveIndex];
 
     spoke1.updateLiquidationConfig(liqConfig);
     updateLiquidationBonus(spoke1, state.collateralReserveId, liqBonus);
-    updateLiquidationProtocolFee(spoke1, state.collateralReserveId, state.liquidationProtocolFee);
+    updateLiquidationProtocolFee(
+      spoke1,
+      state.collateralReserveId,
+      state.liquidationProtocolFeeBPS
+    );
     state.desiredHf = _calcLowestHfToRestoreCloseFactor(spoke1, state.collateralReserveId, liqBonus)
       .percentMulDown(101_00); // add buffer so that not all debt is liquidated
 

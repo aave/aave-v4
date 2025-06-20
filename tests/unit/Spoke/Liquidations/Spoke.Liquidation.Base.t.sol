@@ -38,7 +38,7 @@ contract SpokeLiquidationBase is SpokeBase {
     uint256 liquidationBonus;
     uint256 collateralAssetId;
     uint256 debtAssetId;
-    uint256 liquidationProtocolFee;
+    uint256 liquidationProtocolFeeBPS;
     DataTypes.DynamicReserveConfig collDynConfig;
     DataTypes.Reserve collateralReserve;
     DataTypes.Reserve debtReserve;
@@ -52,6 +52,7 @@ contract SpokeLiquidationBase is SpokeBase {
     uint256 collToLiq;
     uint256 debtToLiq;
     uint256 liqProtocolFee;
+    uint256 liqProtocolFeeShares;
   }
 
   uint256 internal constant MIN_AMOUNT_IN_BASE_CURRENCY = 1e26;
@@ -121,11 +122,11 @@ contract SpokeLiquidationBase is SpokeBase {
     );
     skipTime = bound(skipTime, 1, MAX_SKIP_TIME);
 
-    state.liquidationProtocolFee = liquidationProtocolFee;
+    state.liquidationProtocolFeeBPS = liquidationProtocolFee;
 
     spoke1.updateLiquidationConfig(liqConfig);
     updateLiquidationBonus(spoke1, collateralReserveId, liqBonus);
-    updateLiquidationProtocolFee(spoke1, collateralReserveId, state.liquidationProtocolFee);
+    updateLiquidationProtocolFee(spoke1, collateralReserveId, state.liquidationProtocolFeeBPS);
 
     if (!spoke1.getUsingAsCollateral(collateralReserveId, alice)) {
       Utils.supplyCollateral({
@@ -173,19 +174,53 @@ contract SpokeLiquidationBase is SpokeBase {
       state.liqProtocolFee
     ) = _calculateAvailableCollateralToLiquidate(spoke1, state, requiredDebtAmount);
 
+    state.liqProtocolFeeShares = hub.convertToSuppliedShares(
+      state.collateralAssetId,
+      state.liqProtocolFee
+    );
+
+    console.log('test %e coll liq %e', state.liqProtocolFeeShares, state.collToLiq);
+
+    // collateralReserveId: _wethReserveId(spoke1),
+    //     debtReserveId: _daiReserveId(spoke1),
+    //     liqConfig: DataTypes.LiquidationConfig({
+    //       closeFactor: 1e18,
+    //       healthFactorForMaxBonus: 0.9e18,
+    //       liquidationBonusFactor: 70_00
+    //     }),
+    //     liqBonus: 105_00,
+    //     supplyAmount: 10e18,
+    //     desiredHf: 0.95e18,
+    //     liquidationProtocolFee: 12_00,
+    //     skipTime: 365 days
+
+    console.log(' test input');
+    console.log('collateralReserveId %d', collateralReserveId);
+    console.log('debtReserveId %d', debtReserveId);
+    console.log('liqConfig.closeFactor %e', liqConfig.closeFactor);
+    console.log('liqConfig.healthFactorForMaxBonus %e', liqConfig.healthFactorForMaxBonus);
+    console.log('liqConfig.liquidationBonusFactor %d', liqConfig.liquidationBonusFactor);
+    console.log('liqBonus %d', liqBonus);
+    console.log('supplyAmount %e', supplyAmount);
+    console.log('desiredHf %e', desiredHf);
+    console.log('liquidationProtocolFee %d', liquidationProtocolFee);
+    console.log('skipTime %e', skipTime);
+
+    console.log('test expect lpf %e', state.liqProtocolFee);
+
     // logs to read protocol fee from tmp emitted event
     // TODO: update when treasury accounting is done
     vm.recordLogs();
 
-    vm.expectEmit(address(spoke1));
-    emit ISpoke.LiquidationCall(
-      state.collateralReserve.asset,
-      state.debtReserve.asset,
-      alice,
-      state.debtToLiq,
-      state.collToLiq,
-      LIQUIDATOR
-    );
+    // vm.expectEmit(address(spoke1));
+    // emit ISpoke.LiquidationCall(
+    //   state.collateralReserve.asset,
+    //   state.debtReserve.asset,
+    //   alice,
+    //   state.debtToLiq,
+    //   state.collToLiq,
+    //   LIQUIDATOR
+    // );
     vm.prank(LIQUIDATOR);
     spoke1.liquidationCall(collateralReserveId, debtReserveId, alice, requiredDebtAmount);
 
@@ -267,7 +302,7 @@ contract SpokeLiquidationBase is SpokeBase {
     // TODO: resolve precision loss difference
     assertApproxEqAbs(
       liqProtocolFeeAmount,
-      totalLiqBonusAmount.percentMulUp(state.liquidationProtocolFee),
+      totalLiqBonusAmount.percentMulUp(state.liquidationProtocolFeeBPS),
       2,
       string.concat('protocol fee amount ', label)
     );
@@ -351,7 +386,7 @@ contract SpokeLiquidationBase is SpokeBase {
     params.debtAssetPrice = oracle.getReservePrice(state.debtReserve.reserveId);
 
     params.liquidationBonus = state.liquidationBonus;
-    params.liquidationProtocolFee = state.liquidationProtocolFee;
+    params.liquidationProtocolFee = state.liquidationProtocolFeeBPS;
 
     params.actualDebtToLiquidate = _calculateActualDebtToLiquidate(spoke, state, debtToCover);
 

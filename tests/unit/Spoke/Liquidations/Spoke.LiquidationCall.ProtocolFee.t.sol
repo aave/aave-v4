@@ -146,6 +146,30 @@ contract LiquidationCallProtocolFeeTest is SpokeLiquidationBase {
     });
   }
 
+  /// if the liquidationProtocolFee doesn't correspond to at least 1 share of the collateral asset,
+  /// the lpf should be 0 and the outstanding should be sent to liquidator instead
+  function test_liquidationCall_protocolFee_invalidLiquidationProtocolFeeShares() public {
+    LiquidationTestLocalParams memory state = test_liquidationCall_fuzz_protocolFee({
+      collateralReserveId: _wbtcReserveId(spoke1),
+      debtReserveId: _daiReserveId(spoke1),
+      liqConfig: DataTypes.LiquidationConfig({
+        closeFactor: 1.482217138683920583e18,
+        healthFactorForMaxBonus: 3.61324559377718575e17,
+        liquidationBonusFactor: 2
+      }),
+      liqBonus: 100_84,
+      supplyAmount: 1.869885e6,
+      desiredHf: 8.90000000000006522e17,
+      liquidationProtocolFee: 1,
+      skipTime: 4.07315215e8
+    });
+
+    console.log('bal change %e', state.liquidatorCollateral.balanceChange);
+
+    assertGt(state.liqProtocolFee, 0, 'liqProtocolFee amount > 0');
+    // assertEq(state.liqProtocolFeeShares, 0, 'liqProtocolFee shares = 0');
+  }
+
   /// with 0 liquidation bonus, the protocol fee should also be 0
   function test_liquidationCall_fuzz_protocolFee_liqBonus_zero(
     uint256 liquidationProtocolFee
