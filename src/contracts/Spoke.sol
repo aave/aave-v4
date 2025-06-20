@@ -1188,17 +1188,21 @@ contract Spoke is ISpoke, Multicall {
     if (vars.totalLiquidationProtocolFeeAmount > 0) {
       // TODO: calc remainder amount, add it back to totalCollateralToLiquidate
       if (
-        HUB.convertToSuppliedShares(
+        collateralReserveHub.convertToSuppliedShares(
           vars.collateralAssetId,
           vars.totalLiquidationProtocolFeeAmount
         ) > 0
         // true
       ) {
         IERC20(collateralReserve.asset).safeIncreaseAllowance(
-          address(HUB),
+          address(collateralReserveHub),
           vars.totalLiquidationProtocolFeeAmount
         );
-        HUB.donate(vars.collateralAssetId, vars.totalLiquidationProtocolFeeAmount, address(this));
+        collateralReserveHub.donate(
+          vars.collateralAssetId,
+          vars.totalLiquidationProtocolFeeAmount,
+          address(this)
+        );
       }
     }
     // transfer total liquidated collateral to liquidator
