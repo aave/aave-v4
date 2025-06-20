@@ -164,7 +164,10 @@ contract LiquidationCallProtocolFeeTest is SpokeLiquidationBase {
       skipTime: 4.07315215e8
     });
 
-    assertGt(state.liqProtocolFee, 0, 'liqProtocolFee amount > 0');
+    // actual liqProtocolFeeAmount earned by treasury/fee receiver
+    uint256 liqProtocolFeeAmountEarned = state.treasury.balanceChange;
+    assertEq(liqProtocolFeeAmountEarned, 0, 'liqProtocolFee amount > 0');
+    // calculated liqProtocolFee shares, should be 0 which are invalid for donation
     assertEq(state.liqProtocolFeeShares, 0, 'liqProtocolFee shares = 0');
   }
 
