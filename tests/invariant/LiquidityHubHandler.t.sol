@@ -34,7 +34,7 @@ contract LiquidityHubHandler is Test {
     irStrategy = new AssetInterestRateStrategy();
     oracle = new MockPriceOracle();
     hub = new LiquidityHub();
-    spoke1 = new Spoke(address(hub), address(oracle));
+    spoke1 = new Spoke(address(oracle));
     usdc = new MockERC20();
     dai = new MockERC20();
     usdt = new MockERC20();
@@ -63,7 +63,8 @@ contract LiquidityHubHandler is Test {
         liquidityPremium: 0,
         liquidationProtocolFee: 0,
         borrowable: false,
-        collateral: false
+        collateral: false,
+        hub: hub
       }),
       DataTypes.DynamicReserveConfig({collateralFactor: 0})
     );

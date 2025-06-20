@@ -39,6 +39,7 @@ abstract contract LiquidityHubScenarioBaseTest is Base {
   TestState internal state;
   DataTypes.SpokeConfig internal spokeConfig;
   Spoke internal spoke4; // init to be added during scenario tests
+  IPriceOracle internal oracle4;
 
   // _i: initial, prior to action at a given time
   // _f: final, after action at a given time

@@ -354,9 +354,13 @@ contract LiquidationCallCloseFactorBadDebtTest is SpokeLiquidationBase {
     liquidationProtocolFee = bound(liquidationProtocolFee, 0, 100_00);
     supplyAmount = bound(
       supplyAmount,
-      _convertBaseCurrencyToAmount(state.collateralReserve.assetId, 1e25),
+      _convertBaseCurrencyToAmount(spoke1, state.collateralReserve.reserveId, 1e25),
       _min(
-        _convertBaseCurrencyToAmount(state.collateralReserve.assetId, MAX_SUPPLY_IN_BASE_CURRENCY),
+        _convertBaseCurrencyToAmount(
+          spoke1,
+          state.collateralReserve.reserveId,
+          MAX_SUPPLY_IN_BASE_CURRENCY
+        ),
         MAX_SUPPLY_AMOUNT
       )
     );
