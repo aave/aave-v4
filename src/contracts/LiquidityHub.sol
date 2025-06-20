@@ -302,6 +302,27 @@ contract LiquidityHub is ILiquidityHub {
     return baseDrawnSharesRestored;
   }
 
+  function reportDeficit(uint256 assetId, uint256 deficitAmount, address who) external {
+    DataTypes.Asset storage asset = _assets[assetId];
+    DataTypes.SpokeData storage spoke = _spokes[assetId][msg.sender];
+
+    asset.accrue(_spokes[assetId][asset.config.feeReceiver]);
+
+    _validateRestore(asset, spoke, baseAmount, premiumAmount, deficitAmount);
+    asset.updateBorrowRate({
+      liquidityAdded: _calculateLiquidityAdded(baseAmount, premiumAmount, deficitAmount),
+      liquidityTaken: 0
+    }); // both can be zero
+
+    asset.deficit += deficitAmount;
+
+    assetsList[assetId].safeTransferFrom(from, address(this), actualRestoredAmount);
+
+    if (deficitAmount > 0) {
+      emit DeficitCreated(assetId, msg.sender, deficitAmount);
+    }
+  }
+
   /// @inheritdoc ILiquidityHub
   function refreshPremiumDebt(
     uint256 assetId,
