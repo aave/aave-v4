@@ -193,20 +193,6 @@ contract LiquidityHub is ILiquidityHub {
   }
 
   /// @inheritdoc ILiquidityHub
-  function donate(uint256 assetId, uint256 amount, address from) external returns (uint256) {
-    // TODO: authorization - only spokes
-
-    DataTypes.Asset storage asset = _assets[assetId];
-    DataTypes.SpokeData storage spoke = _spokes[assetId][asset.config.feeReceiver];
-
-    uint256 suppliedShares = _executeAdd(assetId, amount, from, asset, spoke);
-
-    emit Donate(assetId, msg.sender, suppliedShares, amount);
-
-    return suppliedShares;
-  }
-
-  /// @inheritdoc ILiquidityHub
   function remove(uint256 assetId, uint256 amount, address to) external returns (uint256) {
     // TODO: authorization - only spokes
 
@@ -314,6 +300,20 @@ contract LiquidityHub is ILiquidityHub {
     // todo mathematically find premium diff ceiling and replace the `2`
     // if no premium debt is restored, premium debt remains unchanged
     require(premiumDebtAfter + realizedPremiumTaken - premiumDebtBefore <= 2, InvalidDebtChange());
+  }
+
+  /// @inheritdoc ILiquidityHub
+  function donate(uint256 assetId, uint256 amount, address from) external returns (uint256) {
+    // TODO: authorization - only spokes
+
+    DataTypes.Asset storage asset = _assets[assetId];
+    DataTypes.SpokeData storage spoke = _spokes[assetId][asset.config.feeReceiver];
+
+    uint256 suppliedShares = _executeAdd(assetId, amount, from, asset, spoke);
+
+    emit Donate(assetId, msg.sender, suppliedShares, amount);
+
+    return suppliedShares;
   }
 
   function _refresh(
