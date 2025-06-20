@@ -1169,6 +1169,7 @@ contract Spoke is ISpoke, Multicall {
           vars.collateralAssetId,
           vars.totalLiquidationProtocolFeeAmount
         ) > 0
+        // true
       ) {
         IERC20(collateralReserve.asset).safeIncreaseAllowance(
           address(HUB),
