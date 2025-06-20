@@ -6,14 +6,9 @@ import 'tests/unit/Spoke/SpokeBase.t.sol';
 contract SpokeConfigTest is SpokeBase {
   using SafeCast for uint256;
 
-  function test_spoke_deploy_revertsWith_InvalidHubAddress() public {
-    vm.expectRevert(ISpoke.InvalidHubAddress.selector);
-    new Spoke(address(0), address(oracle));
-  }
-
   function test_spoke_deploy_revertsWith_InvalidOracleAddress() public {
     vm.expectRevert(ISpoke.InvalidOracleAddress.selector);
-    new Spoke(address(hub), address(0));
+    new Spoke(address(0));
   }
 
   function test_updateReserveConfig() public {
@@ -29,7 +24,8 @@ contract SpokeConfigTest is SpokeBase {
       liquidityPremium: config.liquidityPremium + 1,
       liquidationProtocolFee: config.liquidationProtocolFee + 1,
       borrowable: !config.borrowable,
-      collateral: !config.collateral
+      collateral: !config.collateral,
+      hub: config.hub
     });
     vm.expectEmit(address(spoke1));
     emit ISpoke.ReserveConfigUpdated(daiReserveId, newReserveConfig);
@@ -60,6 +56,7 @@ contract SpokeConfigTest is SpokeBase {
     DataTypes.ReserveConfig memory reserveData = spoke1.getReserveConfig(daiReserveId);
 
     newReserveConfig.decimals = reserveData.decimals; // decimals won't get updated
+    newReserveConfig.hub = reserveData.hub; // hub won't get updated
 
     vm.expectEmit(address(spoke1));
     emit ISpoke.ReserveConfigUpdated(daiReserveId, newReserveConfig);
@@ -234,6 +231,7 @@ contract SpokeConfigTest is SpokeBase {
 
     DataTypes.ReserveConfig memory config;
     config.liquidationBonus = PercentageMath.PERCENTAGE_FACTOR;
+    config.hub = hub;
 
     vm.expectRevert(ISpoke.InvalidReserve.selector);
     vm.prank(SPOKE_ADMIN);
@@ -311,7 +309,8 @@ contract SpokeConfigTest is SpokeBase {
       liquidityPremium: 10_00,
       liquidationProtocolFee: 10_00,
       borrowable: true,
-      collateral: true
+      collateral: true,
+      hub: hub
     });
     DataTypes.DynamicReserveConfig memory newDynReserveConfig = DataTypes.DynamicReserveConfig({
       collateralFactor: 10_00
@@ -338,7 +337,8 @@ contract SpokeConfigTest is SpokeBase {
       liquidationProtocolFee: 0,
       liquidityPremium: 10_00,
       borrowable: true,
-      collateral: true
+      collateral: true,
+      hub: hub
     });
     DataTypes.DynamicReserveConfig memory newDynReserveConfig = DataTypes.DynamicReserveConfig({
       collateralFactor: 10_00
@@ -361,7 +361,8 @@ contract SpokeConfigTest is SpokeBase {
       liquidityPremium: 10_00,
       liquidationProtocolFee: 0,
       borrowable: true,
-      collateral: true
+      collateral: true,
+      hub: hub
     });
     DataTypes.DynamicReserveConfig memory newDynReserveConfig = DataTypes.DynamicReserveConfig({
       collateralFactor: 10_00
@@ -383,13 +384,37 @@ contract SpokeConfigTest is SpokeBase {
       liquidityPremium: 10_00,
       liquidationProtocolFee: 0,
       borrowable: true,
-      collateral: true
+      collateral: true,
+      hub: hub
     });
     DataTypes.DynamicReserveConfig memory newDynReserveConfig = DataTypes.DynamicReserveConfig({
       collateralFactor: 10_00
     });
 
     vm.expectRevert(ISpoke.InvalidReserveDecimals.selector);
+    vm.prank(SPOKE_ADMIN);
+    spoke1.addReserve(reserveId, newReserveConfig, newDynReserveConfig);
+  }
+
+  function test_addReserve_revertsWith_InvalidHubAddress() public {
+    uint256 reserveId = spoke1.reserveCount();
+    DataTypes.ReserveConfig memory newReserveConfig = DataTypes.ReserveConfig({
+      hub: ILiquidityHub(address(0)),
+      active: true,
+      frozen: true,
+      paused: true,
+      borrowable: true,
+      collateral: true,
+      decimals: hub.MAX_ALLOWED_ASSET_DECIMALS(),
+      liquidationBonus: 110_00,
+      liquidityPremium: 10_00,
+      liquidationProtocolFee: 0
+    });
+    DataTypes.DynamicReserveConfig memory newDynReserveConfig = DataTypes.DynamicReserveConfig({
+      collateralFactor: 78_00
+    });
+
+    vm.expectRevert(ISpoke.InvalidHubAddress.selector);
     vm.prank(SPOKE_ADMIN);
     spoke1.addReserve(reserveId, newReserveConfig, newDynReserveConfig);
   }
