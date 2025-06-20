@@ -3,8 +3,6 @@ pragma solidity ^0.8.0;
 
 import {Multicall} from 'src/misc/Multicall.sol';
 
-import {console2 as console} from 'forge-std/console2.sol';
-
 import {SafeERC20} from 'src/dependencies/openzeppelin/SafeERC20.sol';
 import {IERC20} from 'src/dependencies/openzeppelin/IERC20.sol';
 // libraries
@@ -1013,24 +1011,12 @@ contract Spoke is ISpoke, Multicall {
         debtReserve.reserveId
       ];
 
-      console.log(
-        ' SP shares0 %e sh conversion %e',
-        collateralReserveHub.convertToSuppliedShares(vars.collateralAssetId, 1),
-        collateralReserveHub.convertToSuppliedShares(vars.collateralAssetId, WadRayMath.RAY)
-      );
-
       vars.collateralAssetId = collateralReserve.assetId;
       vars.debtAssetId = debtReserve.assetId;
       (vars.baseDebt, vars.premiumDebt) = _getUserDebt(
         debtReserveHub,
         vars.debtAssetId,
         userDebtPosition
-      );
-
-      console.log(
-        ' SP shares1 %e sh conversion %e',
-        collateralReserveHub.convertToSuppliedShares(vars.collateralAssetId, 1),
-        collateralReserveHub.convertToSuppliedShares(vars.collateralAssetId, WadRayMath.RAY)
       );
 
       (
@@ -1200,22 +1186,12 @@ contract Spoke is ISpoke, Multicall {
     );
 
     if (vars.totalLiquidationProtocolFeeAmount > 0) {
-      // TODO: calc remainder amount, add it back to totalCollateralToLiquidate
       if (
         collateralReserveHub.convertToSuppliedShares(
           vars.collateralAssetId,
           vars.totalLiquidationProtocolFeeAmount
         ) > 0
-        // true
       ) {
-        console.log(
-          'shares/amt %e %e',
-          collateralReserveHub.convertToSuppliedShares(
-            vars.collateralAssetId,
-            vars.totalLiquidationProtocolFeeAmount
-          ),
-          vars.totalLiquidationProtocolFeeAmount
-        );
         IERC20(collateralReserve.asset).safeIncreaseAllowance(
           address(collateralReserveHub),
           vars.totalLiquidationProtocolFeeAmount
@@ -1227,10 +1203,9 @@ contract Spoke is ISpoke, Multicall {
         );
       } else {
         vars.totalCollateralToLiquidate += vars.totalLiquidationProtocolFeeAmount;
+        vars.totalLiquidationProtocolFeeAmount = 0;
       }
     }
-
-    console.log('SP coll to liq %e', vars.totalCollateralToLiquidate);
 
     // transfer total liquidated collateral to liquidator
     IERC20(collateralReserve.asset).safeTransfer(msg.sender, vars.totalCollateralToLiquidate);

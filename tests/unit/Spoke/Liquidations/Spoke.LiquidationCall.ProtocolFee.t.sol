@@ -164,10 +164,8 @@ contract LiquidationCallProtocolFeeTest is SpokeLiquidationBase {
       skipTime: 4.07315215e8
     });
 
-    console.log('bal change %e', state.liquidatorCollateral.balanceChange);
-
     assertGt(state.liqProtocolFee, 0, 'liqProtocolFee amount > 0');
-    // assertEq(state.liqProtocolFeeShares, 0, 'liqProtocolFee shares = 0');
+    assertEq(state.liqProtocolFeeShares, 0, 'liqProtocolFee shares = 0');
   }
 
   /// with 0 liquidation bonus, the protocol fee should also be 0

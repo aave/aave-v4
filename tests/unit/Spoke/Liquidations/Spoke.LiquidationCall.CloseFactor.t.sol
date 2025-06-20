@@ -457,9 +457,15 @@ contract LiquidationCallCloseFactorTest is SpokeLiquidationBase {
       state.liqProtocolFee
     ) = _calculateAvailableCollateralToLiquidate(spoke1, state, requiredDebtAmount);
 
-    // logs to read protocol fee from tmp emitted event
-    // TODO: update when treasury accounting is done
-    vm.recordLogs();
+    state.liqProtocolFeeShares = hub.convertToSuppliedShares(
+      state.collateralAssetId,
+      state.liqProtocolFee
+    );
+
+    // if protocol fee equates to 0 shares, it is instead added to collateral to liquidate for the liquidator
+    state.collToLiq = state.liqProtocolFeeShares == 0
+      ? state.collToLiq + state.liqProtocolFee
+      : state.collToLiq;
 
     vm.expectEmit(address(spoke1));
     emit ISpoke.LiquidationCall(

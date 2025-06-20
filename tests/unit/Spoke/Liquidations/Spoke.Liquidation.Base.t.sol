@@ -179,48 +179,20 @@ contract SpokeLiquidationBase is SpokeBase {
       state.liqProtocolFee
     );
 
-    console.log('test %e coll liq %e', state.liqProtocolFeeShares, state.collToLiq);
+    // if protocol fee equates to 0 shares, it is instead added to collateral to liquidate for the liquidator
+    state.collToLiq = state.liqProtocolFeeShares == 0
+      ? state.collToLiq + state.liqProtocolFee
+      : state.collToLiq;
 
-    // collateralReserveId: _wethReserveId(spoke1),
-    //     debtReserveId: _daiReserveId(spoke1),
-    //     liqConfig: DataTypes.LiquidationConfig({
-    //       closeFactor: 1e18,
-    //       healthFactorForMaxBonus: 0.9e18,
-    //       liquidationBonusFactor: 70_00
-    //     }),
-    //     liqBonus: 105_00,
-    //     supplyAmount: 10e18,
-    //     desiredHf: 0.95e18,
-    //     liquidationProtocolFee: 12_00,
-    //     skipTime: 365 days
-
-    console.log(' test input');
-    console.log('collateralReserveId %d', collateralReserveId);
-    console.log('debtReserveId %d', debtReserveId);
-    console.log('liqConfig.closeFactor %e', liqConfig.closeFactor);
-    console.log('liqConfig.healthFactorForMaxBonus %e', liqConfig.healthFactorForMaxBonus);
-    console.log('liqConfig.liquidationBonusFactor %d', liqConfig.liquidationBonusFactor);
-    console.log('liqBonus %d', liqBonus);
-    console.log('supplyAmount %e', supplyAmount);
-    console.log('desiredHf %e', desiredHf);
-    console.log('liquidationProtocolFee %d', liquidationProtocolFee);
-    console.log('skipTime %e', skipTime);
-
-    console.log('test expect lpf %e', state.liqProtocolFee);
-
-    // logs to read protocol fee from tmp emitted event
-    // TODO: update when treasury accounting is done
-    vm.recordLogs();
-
-    // vm.expectEmit(address(spoke1));
-    // emit ISpoke.LiquidationCall(
-    //   state.collateralReserve.asset,
-    //   state.debtReserve.asset,
-    //   alice,
-    //   state.debtToLiq,
-    //   state.collToLiq,
-    //   LIQUIDATOR
-    // );
+    vm.expectEmit(address(spoke1));
+    emit ISpoke.LiquidationCall(
+      state.collateralReserve.asset,
+      state.debtReserve.asset,
+      alice,
+      state.debtToLiq,
+      state.collToLiq,
+      LIQUIDATOR
+    );
     vm.prank(LIQUIDATOR);
     spoke1.liquidationCall(collateralReserveId, debtReserveId, alice, requiredDebtAmount);
 
@@ -312,7 +284,7 @@ contract SpokeLiquidationBase is SpokeBase {
     LiquidationTestLocalParams memory state,
     // ConvertedValues memory totalLiqBonus,
     string memory label
-  ) internal pure {
+  ) internal view {
     uint256 totalLiqBonusAmount = state.supply.balanceChange -
       state.supply.balanceChange.percentDivDown(state.liquidationBonus);
 
@@ -322,12 +294,24 @@ contract SpokeLiquidationBase is SpokeBase {
       ? totalCollateralSeized - totalCollateralSeized.percentDivDown(state.liquidationBonus)
       : 0;
 
-    assertApproxEqRel(
-      totalLiqBonusAmount,
-      expectedLiqBonusAmount,
-      _approxRelFromBps(20),
-      string.concat('liquidationBonus earned in base currency, rel 20 bps ', label)
-    );
+    if (
+      _convertAmountToBaseCurrency(spoke1, state.collateralReserveId, totalLiqBonusAmount) >
+      MIN_AMOUNT_IN_BASE_CURRENCY
+    ) {
+      assertApproxEqRel(
+        totalLiqBonusAmount,
+        expectedLiqBonusAmount,
+        _approxRelFromBps(1),
+        string.concat('liquidationBonus earned in base currency, rel 20 bps ', label)
+      );
+    } else {
+      assertApproxEqAbs(
+        totalLiqBonusAmount,
+        expectedLiqBonusAmount,
+        1,
+        string.concat('liquidationBonus earned in base currency, eq abs 1 ', label)
+      );
+    }
   }
 
   /// check that if user's supplied amount becomes 0, reserve is no longer set usingAsCollateral
@@ -486,6 +470,9 @@ contract SpokeLiquidationBase is SpokeBase {
   function _getAccountingInfoBeforeLiq(
     LiquidationTestLocalParams memory state
   ) internal view returns (LiquidationTestLocalParams memory) {
+    state.collateralAssetId = state.collateralReserve.assetId;
+    state.debtAssetId = state.debtReserve.assetId;
+
     state.debt.balanceBefore = spoke1.getUserTotalDebt(state.debtReserve.reserveId, alice);
     state.liquidatorCollateral.balanceBefore = IERC20(state.collateralReserve.asset).balanceOf(
       LIQUIDATOR
