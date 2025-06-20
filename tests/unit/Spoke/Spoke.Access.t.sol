@@ -55,6 +55,7 @@ contract SpokeAccessTest is SpokeBase {
     spoke1.addReserve(
       10,
       DataTypes.ReserveConfig({
+        hub: hub,
         active: true,
         frozen: false,
         paused: false,
@@ -73,6 +74,7 @@ contract SpokeAccessTest is SpokeBase {
     spoke1.addReserve(
       4,
       DataTypes.ReserveConfig({
+        hub: hub,
         active: true,
         frozen: false,
         paused: false,

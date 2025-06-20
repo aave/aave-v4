@@ -5,7 +5,6 @@ import 'tests/unit/LiquidityHub/LiquidityHubBase.t.sol';
 
 contract LiquidityHubConfigTest is LiquidityHubBase {
   using SharesMath for uint256;
-  using WadRayMath for uint256;
 
   function test_addSpoke() public {
     uint256 assetId = hub.assetCount() - 1;
@@ -246,7 +245,7 @@ contract LiquidityHubConfigTest is LiquidityHubBase {
   function test_updateAssetConfig_revertsWith_InvalidIrStrategy() public {
     DataTypes.AssetConfig memory config = hub.getAssetConfig(daiAssetId);
 
-    config.irStrategy = IReserveInterestRateStrategy(address(0));
+    config.irStrategy = IBasicInterestRateStrategy(address(0));
 
     vm.expectRevert(ILiquidityHub.InvalidIrStrategy.selector);
     vm.prank(HUB_ADMIN);
@@ -257,7 +256,7 @@ contract LiquidityHubConfigTest is LiquidityHubBase {
     assetId = bound(assetId, 0, hub.assetCount() - 1);
     DataTypes.AssetConfig memory config = hub.getAssetConfig(assetId);
 
-    config.irStrategy = IReserveInterestRateStrategy(address(0));
+    config.irStrategy = IBasicInterestRateStrategy(address(0));
 
     vm.expectRevert(ILiquidityHub.InvalidIrStrategy.selector);
     vm.prank(HUB_ADMIN);
@@ -266,7 +265,7 @@ contract LiquidityHubConfigTest is LiquidityHubBase {
 
   function test_updateAssetConfig_irStrategy() public {
     DataTypes.AssetConfig memory config = hub.getAssetConfig(daiAssetId);
-    IReserveInterestRateStrategy newIrStrategy = IReserveInterestRateStrategy(
+    IBasicInterestRateStrategy newIrStrategy = IBasicInterestRateStrategy(
       makeAddr('newIrStrategy')
     );
     assertNotEq(address(config.irStrategy), address(newIrStrategy));
@@ -285,9 +284,7 @@ contract LiquidityHubConfigTest is LiquidityHubBase {
     );
   }
 
-  function test_updateAssetConfig_fuzz_irStrategy(
-    IReserveInterestRateStrategy newIrStrategy
-  ) public {
+  function test_updateAssetConfig_fuzz_irStrategy(IBasicInterestRateStrategy newIrStrategy) public {
     DataTypes.AssetConfig memory config = hub.getAssetConfig(daiAssetId);
     vm.assume(address(newIrStrategy) != address(0) && newIrStrategy != config.irStrategy);
 
@@ -449,7 +446,7 @@ contract LiquidityHubConfigTest is LiquidityHubBase {
     bool frozen,
     bool paused,
     uint256 liquidityFee,
-    IReserveInterestRateStrategy irStrategy
+    IBasicInterestRateStrategy irStrategy
   ) public {
     liquidityFee = bound(liquidityFee, 0, PercentageMathExtended.PERCENTAGE_FACTOR);
     vm.assume(address(irStrategy) != address(0));
@@ -495,7 +492,7 @@ contract LiquidityHubConfigTest is LiquidityHubBase {
     bool paused,
     uint256 decimals,
     uint256 liquidityFee,
-    IReserveInterestRateStrategy irStrategy
+    IBasicInterestRateStrategy irStrategy
   ) public {
     decimals = bound(decimals, 0, hub.MAX_ALLOWED_ASSET_DECIMALS());
     liquidityFee = bound(liquidityFee, 0, PercentageMathExtended.PERCENTAGE_FACTOR);
@@ -530,7 +527,7 @@ contract LiquidityHubConfigTest is LiquidityHubBase {
         paused: false,
         decimals: decimals,
         liquidityFee: liquidityFee,
-        irStrategy: IReserveInterestRateStrategy(address(0))
+        irStrategy: IBasicInterestRateStrategy(address(0))
       }),
       address(tokenList.dai)
     );
@@ -560,7 +557,7 @@ contract LiquidityHubConfigTest is LiquidityHubBase {
         paused: paused,
         decimals: decimals,
         liquidityFee: liquidityFee,
-        irStrategy: IReserveInterestRateStrategy(address(0))
+        irStrategy: IBasicInterestRateStrategy(address(0))
       }),
       token
     );

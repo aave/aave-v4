@@ -4,7 +4,7 @@ import 'tests/Base.t.sol';
 
 // todo: refactor to use getters
 contract LiquidityHubBorrowIndex is Base {
-  using WadRayMath for uint256;
+  using WadRayMathExtended for uint256;
   uint256 internal amount = 1000e18;
   uint256 internal borrowRate = 10_00;
   uint256 internal delay = 365 days;
@@ -31,7 +31,7 @@ contract LiquidityHubBorrowIndex is Base {
     //     hub.draw(wethAssetId, spoke4DrawAmount, 0, bob);
 
     //     assertEq(hub.getSpoke(wethAssetId, spoke4).baseDebt, spoke4DrawAmount);
-    //     // assertEq(hub.getSpoke(wethAssetId, spoke4).baseBorrowIndex, WadRayMath.RAY);
+    //     // assertEq(hub.getSpoke(wethAssetId, spoke4).baseBorrowIndex, WadRayMathExtended.RAY);
 
     //     uint256 lastUpdateTimestamp = vm.getBlockTimestamp();
     //     skip(delay);
@@ -231,7 +231,8 @@ contract LiquidityHubBorrowIndex is Base {
   }
 
   function _deployAndAddSpoke(uint256 assetId) internal returns (address) {
-    Spoke spoke = new Spoke(address(hub), address(oracle), address(accessManager));
+    IPriceOracle oracle = new MockPriceOracle();
+    Spoke spoke = new Spoke(address(oracle), address(accessManager));
     vm.prank(HUB_ADMIN);
     hub.addSpoke(
       assetId,
@@ -239,13 +240,5 @@ contract LiquidityHubBorrowIndex is Base {
       address(spoke)
     );
     return address(spoke);
-  }
-
-  function _mockInterestRate(uint256 bps) internal {
-    vm.mockCall(
-      address(irStrategy),
-      IReserveInterestRateStrategy.calculateInterestRates.selector,
-      abi.encode(bps.bpsToRay())
-    );
   }
 }

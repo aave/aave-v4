@@ -10,7 +10,7 @@ import {AccessManager} from 'src/dependencies/openzeppelin/AccessManager.sol';
 import '../mocks/MockPriceOracle.sol';
 import '../mocks/MockERC20.sol';
 import '../Utils.sol';
-import 'src/contracts/DefaultReserveInterestRateStrategy.sol';
+import 'src/contracts/AssetInterestRateStrategy.sol';
 
 contract LiquidityHubHandler is Test {
   IERC20 public usdc;
@@ -21,9 +21,8 @@ contract LiquidityHubHandler is Test {
   LiquidityHub public hub;
   Spoke public spoke1;
   AccessManager public accessManager;
-  DefaultReserveInterestRateStrategy irStrategy;
+  AssetInterestRateStrategy irStrategy;
 
-  address internal mockAddressesProvider = makeAddr('mockAddressesProvider');
   address internal hubAdmin = makeAddr('HUB_ADMIN');
 
   struct State {
@@ -38,10 +37,10 @@ contract LiquidityHubHandler is Test {
   constructor() {
     vm.startPrank(hubAdmin);
     accessManager = new AccessManager(hubAdmin);
-    irStrategy = new DefaultReserveInterestRateStrategy(mockAddressesProvider);
+    irStrategy = new AssetInterestRateStrategy();
     oracle = new MockPriceOracle();
     hub = new LiquidityHub(address(accessManager));
-    spoke1 = new Spoke(address(hub), address(oracle), address(accessManager));
+    spoke1 = new Spoke(address(oracle), address(accessManager));
     usdc = new MockERC20();
     dai = new MockERC20();
     usdt = new MockERC20();
@@ -70,7 +69,8 @@ contract LiquidityHubHandler is Test {
         liquidityPremium: 0,
         liquidationProtocolFee: 0,
         borrowable: false,
-        collateral: false
+        collateral: false,
+        hub: hub
       }),
       DataTypes.DynamicReserveConfig({collateralFactor: 0})
     );

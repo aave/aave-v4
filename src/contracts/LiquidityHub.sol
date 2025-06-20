@@ -424,7 +424,7 @@ contract LiquidityHub is ILiquidityHub, AccessManaged {
   }
 
   function getBaseInterestRate(uint256 assetId) public view returns (uint256) {
-    return _assets[assetId].baseInterestRate();
+    return _assets[assetId].baseBorrowRate;
   }
 
   function getAssetDebt(uint256 assetId) external view returns (uint256, uint256) {
