@@ -4,8 +4,6 @@ pragma solidity ^0.8.0;
 import 'tests/unit/LiquidityHub/LiquidityHubBase.t.sol';
 
 contract LiquidityHubDonateTest is LiquidityHubBase {
-  using SharesMath for uint256;
-
   function test_donate_revertsWith_ERC20InsufficientAllowance() public {
     uint256 amount = 100e18;
 
@@ -72,7 +70,7 @@ contract LiquidityHubDonateTest is LiquidityHubBase {
     uint256 amount = 100e18;
 
     uint256 newSupplyCap = amount - 1;
-    _updateSupplyCap(daiAssetId, hub.getAsset(daiAssetId).config.feeReceiver, newSupplyCap);
+    _updateSupplyCap(daiAssetId, _getFeeReceiver(daiAssetId), newSupplyCap);
 
     vm.expectRevert(abi.encodeWithSelector(ILiquidityHub.SupplyCapExceeded.selector, newSupplyCap));
     vm.prank(address(spoke1));
@@ -83,7 +81,7 @@ contract LiquidityHubDonateTest is LiquidityHubBase {
     amount = bound(amount, 1, MAX_SUPPLY_AMOUNT);
 
     uint256 newSupplyCap = amount - 1;
-    _updateSupplyCap(daiAssetId, hub.getAsset(daiAssetId).config.feeReceiver, newSupplyCap);
+    _updateSupplyCap(daiAssetId, _getFeeReceiver(daiAssetId), newSupplyCap);
 
     vm.expectRevert(abi.encodeWithSelector(ILiquidityHub.SupplyCapExceeded.selector, newSupplyCap));
     vm.prank(address(spoke1));
@@ -94,12 +92,12 @@ contract LiquidityHubDonateTest is LiquidityHubBase {
     uint256 daiAmount = 100e18;
 
     uint256 newSupplyCap = daiAmount + 1;
-    _updateSupplyCap(daiAssetId, hub.getAsset(daiAssetId).config.feeReceiver, newSupplyCap);
+    _updateSupplyCap(daiAssetId, _getFeeReceiver(daiAssetId), newSupplyCap);
 
     _supplyAndDrawLiquidity({
       assetId: daiAssetId,
       supplyUser: bob,
-      supplySpoke: hub.getAsset(daiAssetId).config.feeReceiver,
+      supplySpoke: _getFeeReceiver(daiAssetId),
       supplyAmount: daiAmount,
       drawUser: alice,
       drawSpoke: address(spoke1),
@@ -125,12 +123,12 @@ contract LiquidityHubDonateTest is LiquidityHubBase {
     uint256 newSupplyCap = daiAmount + 1;
     rate = bound(rate, 1, MAX_BORROW_RATE); // 0.01% to 1000%
 
-    _updateSupplyCap(daiAssetId, hub.getAsset(daiAssetId).config.feeReceiver, newSupplyCap);
+    _updateSupplyCap(daiAssetId, _getFeeReceiver(daiAssetId), newSupplyCap);
     _mockInterestRate(rate);
     _supplyAndDrawLiquidity({
       assetId: daiAssetId,
       supplyUser: bob,
-      supplySpoke: hub.getAsset(daiAssetId).config.feeReceiver,
+      supplySpoke: _getFeeReceiver(daiAssetId),
       supplyAmount: daiAmount,
       drawUser: alice,
       drawSpoke: address(spoke1),
@@ -170,12 +168,12 @@ contract LiquidityHubDonateTest is LiquidityHubBase {
       'hub asset suppliedShares after'
     );
     assertEq(
-      hub.getSpokeSuppliedAmount(daiAssetId, hub.getAsset(daiAssetId).config.feeReceiver),
+      hub.getSpokeSuppliedAmount(daiAssetId, _getFeeReceiver(daiAssetId)),
       amount,
       'hub spoke suppliedAmount after'
     );
     assertEq(
-      hub.getSpokeSuppliedShares(daiAssetId, hub.getAsset(daiAssetId).config.feeReceiver),
+      hub.getSpokeSuppliedShares(daiAssetId, _getFeeReceiver(daiAssetId)),
       expectedSupplyShares,
       'hub spoke suppliedShares after'
     );
@@ -220,12 +218,12 @@ contract LiquidityHubDonateTest is LiquidityHubBase {
       'hub asset suppliedShares after'
     );
     assertEq(
-      hub.getSpokeSuppliedAmount(assetId, hub.getAsset(daiAssetId).config.feeReceiver),
+      hub.getSpokeSuppliedAmount(assetId, _getFeeReceiver(daiAssetId)),
       amount,
       'hub spoke suppliedAmount after'
     );
     assertEq(
-      hub.getSpokeSuppliedShares(assetId, hub.getAsset(daiAssetId).config.feeReceiver),
+      hub.getSpokeSuppliedShares(assetId, _getFeeReceiver(daiAssetId)),
       expectedSupplyShares,
       'hub spoke suppliedShares after'
     );
@@ -284,12 +282,12 @@ contract LiquidityHubDonateTest is LiquidityHubBase {
       'asset lastUpdateTimestamp after'
     );
     assertEq(
-      hub.getSpokeSuppliedShares(assetId, hub.getAsset(daiAssetId).config.feeReceiver),
+      hub.getSpokeSuppliedShares(assetId, _getFeeReceiver(daiAssetId)),
       hub.convertToSuppliedShares(assetId, amount),
       'spoke1 suppliedShares after'
     );
     assertEq(
-      hub.getSpokeSuppliedAmount(assetId, hub.getAsset(daiAssetId).config.feeReceiver),
+      hub.getSpokeSuppliedAmount(assetId, _getFeeReceiver(daiAssetId)),
       amount,
       'spoke1 suppliedAmount after'
     );
@@ -309,12 +307,12 @@ contract LiquidityHubDonateTest is LiquidityHubBase {
       'asset2 lastUpdateTimestamp after'
     );
     assertEq(
-      hub.getSpokeSuppliedShares(assetId2, hub.getAsset(daiAssetId).config.feeReceiver),
+      hub.getSpokeSuppliedShares(assetId2, _getFeeReceiver(daiAssetId)),
       hub.convertToSuppliedShares(assetId2, amount2),
       'spoke2 suppliedShares after'
     );
     assertEq(
-      hub.getSpokeSuppliedAmount(assetId2, hub.getAsset(daiAssetId).config.feeReceiver),
+      hub.getSpokeSuppliedAmount(assetId2, _getFeeReceiver(daiAssetId)),
       amount2,
       'spoke2 suppliedAmount after'
     );
@@ -423,11 +421,11 @@ contract LiquidityHubDonateTest is LiquidityHubBase {
 
     uint256 suppliedAssetsBefore = hub.getSpokeSuppliedAmount(
       daiAssetId,
-      hub.getAsset(daiAssetId).config.feeReceiver
+      _getFeeReceiver(daiAssetId)
     );
     uint256 suppliedSharesBefore = hub.getSpokeSuppliedShares(
       daiAssetId,
-      hub.getAsset(daiAssetId).config.feeReceiver
+      _getFeeReceiver(daiAssetId)
     );
 
     vm.startPrank(bob);
@@ -438,12 +436,12 @@ contract LiquidityHubDonateTest is LiquidityHubBase {
     hub.donate(daiAssetId, supplyAmount, bob);
 
     assertEq(
-      hub.getSpokeSuppliedAmount(daiAssetId, hub.getAsset(daiAssetId).config.feeReceiver),
+      hub.getSpokeSuppliedAmount(daiAssetId, _getFeeReceiver(daiAssetId)),
       suppliedAssetsBefore + supplyAmount,
       'spoke suppliedAssets after'
     );
     assertEq(
-      hub.getSpokeSuppliedShares(daiAssetId, hub.getAsset(daiAssetId).config.feeReceiver),
+      hub.getSpokeSuppliedShares(daiAssetId, _getFeeReceiver(daiAssetId)),
       suppliedSharesBefore + expectedSupplyShares,
       'spoke suppliedShares after'
     );
@@ -526,11 +524,11 @@ contract LiquidityHubDonateTest is LiquidityHubBase {
 
     uint256 suppliedAssetsBefore = hub.getSpokeSuppliedAmount(
       daiAssetId,
-      hub.getAsset(daiAssetId).config.feeReceiver
+      _getFeeReceiver(daiAssetId)
     );
     uint256 suppliedSharesBefore = hub.getSpokeSuppliedShares(
       daiAssetId,
-      hub.getAsset(daiAssetId).config.feeReceiver
+      _getFeeReceiver(daiAssetId)
     );
 
     uint256 supplyShares = 1; // minimum for 1 share
@@ -550,12 +548,12 @@ contract LiquidityHubDonateTest is LiquidityHubBase {
 
     // spoke1
     assertEq(
-      hub.getSpokeSuppliedAmount(daiAssetId, hub.getAsset(daiAssetId).config.feeReceiver),
+      hub.getSpokeSuppliedAmount(daiAssetId, _getFeeReceiver(daiAssetId)),
       suppliedAssetsBefore + spokeSuppliedAmount,
       'spoke1 suppliedAssets after'
     );
     assertEq(
-      hub.getSpokeSuppliedShares(daiAssetId, hub.getAsset(daiAssetId).config.feeReceiver),
+      hub.getSpokeSuppliedShares(daiAssetId, _getFeeReceiver(daiAssetId)),
       suppliedSharesBefore + supplyShares,
       'spoke1 suppliedShares after'
     );

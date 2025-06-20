@@ -260,10 +260,7 @@ contract SpokeLiquidationBase is SpokeBase {
   ) internal view {
     uint256 totalLiqBonusAmount = state.supply.balanceChange -
       state.supply.balanceChange.percentDivUp(state.liquidationBonus);
-    uint256 liqProtocolFeeAmount = hub.convertToSuppliedAssets(
-      state.collateralReserve.assetId,
-      state.treasury.balanceChange // actual protocol fee shares, from tmp emitted event
-    );
+    uint256 liqProtocolFeeAmount = state.treasury.balanceChange;
     // TODO: resolve precision loss difference
     assertApproxEqAbs(
       liqProtocolFeeAmount,
@@ -451,17 +448,6 @@ contract SpokeLiquidationBase is SpokeBase {
     );
   }
 
-  // TODO: rm when treasury accounting is complete
-  function _tmpGetProtocolFeeFromLiqEvent()
-    internal
-    returns (uint256 liquidationProtocolFeeAmount)
-  {
-    Vm.Log[] memory entries = vm.getRecordedLogs();
-
-    // TmpLiquidationFee is next to last event emitted
-    liquidationProtocolFeeAmount = uint256(entries[entries.length - 2].topics[1]);
-  }
-
   /// @notice Get accounting info before liquidation, in base currency and amount.
   /// @return LiquidationTestLocalParams struct with updated balances.
   /// debt field is total user debt accounting.
@@ -488,6 +474,10 @@ contract SpokeLiquidationBase is SpokeBase {
       state.collateralReserve.assetId,
       WadRayMathExtended.RAY
     );
+    state.treasury.balanceBefore = hub.getSpokeSuppliedAmount(
+      state.collateralReserve.assetId,
+      _getFeeReceiver(state.collateralReserve.assetId)
+    );
 
     return state;
   }
@@ -502,9 +492,10 @@ contract SpokeLiquidationBase is SpokeBase {
   function _getAccountingInfoAfterLiq(
     LiquidationTestLocalParams memory state
   ) internal returns (LiquidationTestLocalParams memory) {
-    // TODO: update when treasury accounting is done
-    // read protocol fee from emitted event arg
-    state.treasury.balanceChange = _tmpGetProtocolFeeFromLiqEvent();
+    state.treasury.balanceAfter = hub.getSpokeSuppliedAmount(
+      state.collateralReserve.assetId,
+      _getFeeReceiver(state.collateralReserve.assetId)
+    );
     state.liquidatorCollateral.balanceAfter = IERC20(state.collateralReserve.asset).balanceOf(
       LIQUIDATOR
     );
@@ -540,6 +531,10 @@ contract SpokeLiquidationBase is SpokeBase {
     state.supplyShares.balanceChange = stdMath.delta(
       state.supplyShares.balanceAfter,
       state.supplyShares.balanceBefore
+    );
+    state.treasury.balanceChange = stdMath.delta(
+      state.treasury.balanceAfter,
+      state.treasury.balanceBefore
     );
 
     // convert amount to base currency

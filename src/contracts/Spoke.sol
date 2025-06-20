@@ -345,8 +345,7 @@ contract Spoke is ISpoke, Multicall {
       address collateralAsset,
       address debtAsset,
       uint256 debtToLiquidate,
-      uint256 collateralToLiquidate,
-      uint256 liquidationProtocolFeeShares // TODO: emit in event
+      uint256 collateralToLiquidate
     ) = _executeLiquidationCall(
         _reserves[collateralReserveId],
         _reserves[debtReserveId],
@@ -974,13 +973,12 @@ contract Spoke is ISpoke, Multicall {
   /// @return debtAsset The address of the underlying borrowed asset to be repaid with the liquidation.
   /// @return totalDebtToLiquidate The total amount of debt to be repaid.
   /// @return collateralToLiquidate The amount of collateral to liquidate.
-  /// @return liquidationProtocolFeeAmount The amount of protocol fee.
   function _executeLiquidationCall(
     DataTypes.Reserve storage collateralReserve,
     DataTypes.Reserve storage debtReserve,
     address[] memory users,
     uint256[] memory debtsToCover
-  ) internal returns (address, address, uint256, uint256, uint256) {
+  ) internal returns (address, address, uint256, uint256) {
     uint256 usersLength = users.length;
     require(usersLength == debtsToCover.length, UsersAndDebtLengthMismatch());
 
@@ -1163,24 +1161,30 @@ contract Spoke is ISpoke, Multicall {
       0,
       0
     );
-    vars.totalLiquidationProtocolFeeShares = HUB.convertToSuppliedShares(
-      vars.collateralAssetId,
-      vars.totalLiquidationProtocolFeeAmount
-    );
 
+    if (vars.totalLiquidationProtocolFeeAmount > 0) {
+      // TODO: calc remainder amount, add it back to totalCollateralToLiquidate
+      if (
+        HUB.convertToSuppliedShares(
+          vars.collateralAssetId,
+          vars.totalLiquidationProtocolFeeAmount
+        ) > 0
+      ) {
+        IERC20(collateralReserve.asset).safeIncreaseAllowance(
+          address(HUB),
+          vars.totalLiquidationProtocolFeeAmount
+        );
+        HUB.donate(vars.collateralAssetId, vars.totalLiquidationProtocolFeeAmount, address(this));
+      }
+    }
     // transfer total liquidated collateral to liquidator
     IERC20(collateralReserve.asset).safeTransfer(msg.sender, vars.totalCollateralToLiquidate);
-    // TODO: treasury accounting for protocol fee
-    // TODO: rm temp event
-    emit TmpLiquidationFee(vars.totalLiquidationProtocolFeeShares);
-    HUB.donate(collateralReserve.assetId, vars.totalLiquidationProtocolFeeAmount, address(this));
 
     return (
       collateralReserve.asset,
       debtReserve.asset,
       vars.totalDebtToLiquidate,
-      vars.totalCollateralToLiquidate,
-      vars.totalLiquidationProtocolFeeShares
+      vars.totalCollateralToLiquidate
     );
   }
 
