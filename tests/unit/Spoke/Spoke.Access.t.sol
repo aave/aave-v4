@@ -207,7 +207,7 @@ contract SpokeAccessTest is SpokeBase, Context {
         liquidityFee: 0,
         irStrategy: irStrategy
       }),
-      address(tokenList.dai)
+      address(tokenA)
     );
 
     // Hub Admin can add assets to the hub
@@ -222,7 +222,7 @@ contract SpokeAccessTest is SpokeBase, Context {
         liquidityFee: 0,
         irStrategy: irStrategy
       }),
-      address(tokenList.dai)
+      address(tokenA)
     );
     uint256 assetAId = hub.assetCount() - 1; // Asset A Id
 
@@ -276,7 +276,7 @@ contract SpokeAccessTest is SpokeBase, Context {
       address(spoke1)
     );
 
-    // List asset B on hub for preparation of next test
+    // List token B on hub for preparation of next test
     vm.prank(HUB_ADMIN);
     hub.addAsset(
       DataTypes.AssetConfig({
@@ -344,7 +344,7 @@ contract SpokeAccessTest is SpokeBase, Context {
     hub.updateAssetFees(daiAssetId, address(0), 0);
   }
 
-  function test_interest_rate_access() public {
+  function test_setInterestRateData_access() public {
     // Only Interest Rate Controller can set interest rates
     vm.expectRevert(
       abi.encodeWithSelector(IAccessManaged.AccessManagedUnauthorized.selector, address(this))

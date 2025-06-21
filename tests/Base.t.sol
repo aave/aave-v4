@@ -189,11 +189,11 @@ abstract contract Base is Test {
     // Grant roles
     accessManager.grantRole(Roles.HUB_ADMIN_ROLE, ADMIN, 0);
     accessManager.grantRole(Roles.SPOKE_ADMIN_ROLE, ADMIN, 0);
-    accessManager.grantRole(Roles.INTEREST_RATE_CONTROLLER_ROLE, ADMIN, 0);
+    accessManager.grantRole(Roles.INTEREST_RATE_ADMIN_ROLE, ADMIN, 0);
     accessManager.grantRole(Roles.HUB_ADMIN_ROLE, HUB_ADMIN, 0);
     accessManager.grantRole(Roles.SPOKE_ADMIN_ROLE, SPOKE_ADMIN, 0);
     accessManager.grantRole(Roles.GOVERNOR_ROLE, GOVERNOR, 0);
-    accessManager.grantRole(Roles.INTEREST_RATE_CONTROLLER_ROLE, IR_CONTROLLER, 0);
+    accessManager.grantRole(Roles.INTEREST_RATE_ADMIN_ROLE, IR_CONTROLLER, 0);
 
     // Grant responsibilities to roles
     // Spoke Admin functionalities
@@ -225,7 +225,7 @@ abstract contract Base is Test {
     accessManager.setTargetFunctionRole(
       address(irStrategy),
       irSelectors,
-      Roles.INTEREST_RATE_CONTROLLER_ROLE
+      Roles.INTEREST_RATE_ADMIN_ROLE
     );
 
     vm.stopPrank();

@@ -721,8 +721,7 @@ contract Spoke is ISpoke, Multicall, AccessManaged {
   }
 
   function _isGovernor(address caller) internal view returns (bool) {
-    IAccessManager accessManager = IAccessManager(authority());
-    (bool result, ) = accessManager.hasRole(Roles.GOVERNOR_ROLE, caller);
+    (bool result, ) = IAccessManager(authority()).hasRole(Roles.GOVERNOR_ROLE, caller);
     return result;
   }
 

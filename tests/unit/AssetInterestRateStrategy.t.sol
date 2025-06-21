@@ -34,11 +34,11 @@ contract AssetInterestRateStrategyTest is Base {
     irSelectors[0] = IAssetInterestRateStrategy.setInterestRateData.selector;
 
     vm.startPrank(ADMIN);
-    accessManager.grantRole(Roles.INTEREST_RATE_CONTROLLER_ROLE, IR_CONTROLLER, 0);
+    accessManager.grantRole(Roles.INTEREST_RATE_ADMIN_ROLE, IR_CONTROLLER, 0);
     accessManager.setTargetFunctionRole(
       address(rateStrategy),
       irSelectors,
-      Roles.INTEREST_RATE_CONTROLLER_ROLE
+      Roles.INTEREST_RATE_ADMIN_ROLE
     );
     vm.stopPrank();
   }
