@@ -3,6 +3,7 @@ pragma solidity ^0.8.10;
 
 import {WadRayMathExtended} from 'src/libraries/math/WadRayMathExtended.sol';
 import {IAssetInterestRateStrategy, IBasicInterestRateStrategy} from 'src/interfaces/IAssetInterestRateStrategy.sol';
+import {AccessManaged} from 'src/dependencies/openzeppelin/AccessManaged.sol';
 
 /**
  * @title AssetInterestRateStrategy contract
@@ -11,7 +12,7 @@ import {IAssetInterestRateStrategy, IBasicInterestRateStrategy} from 'src/interf
  * @dev Strategies are hub-specific: one strategy CAN'T be used across different Aave hubs
  *   due to the usage of asset id as index of the _interestRateData
  */
-contract AssetInterestRateStrategy is IAssetInterestRateStrategy {
+contract AssetInterestRateStrategy is IAssetInterestRateStrategy, AccessManaged {
   using WadRayMathExtended for *;
 
   /// @inheritdoc IAssetInterestRateStrategy
@@ -29,14 +30,13 @@ contract AssetInterestRateStrategy is IAssetInterestRateStrategy {
   /**
    * @dev Constructor.
    */
-  constructor() {
-    /// TODO: Access Control; Store authorized address to set interest rate data
-  }
+  constructor(address accessManager) AccessManaged(accessManager) {}
 
   /// @inheritdoc IAssetInterestRateStrategy
-  function setInterestRateData(uint256 assetId, InterestRateData calldata rateData) external {
-    /// TODO: Access Control; Only authorized address can set interest rate data
-
+  function setInterestRateData(
+    uint256 assetId,
+    InterestRateData calldata rateData
+  ) external restricted {
     require(
       MIN_OPTIMAL_RATIO <= rateData.optimalUsageRatio &&
         rateData.optimalUsageRatio <= MAX_OPTIMAL_RATIO,

@@ -98,6 +98,7 @@ abstract contract Base is Test {
   address internal TREASURY = makeAddr('TREASURY');
   address internal LIQUIDATOR = makeAddr('LIQUIDATOR');
   address internal GOVERNOR = makeAddr('GOVERNOR');
+  address internal IR_CONTROLLER = makeAddr('IR_CONTROLLER');
 
   TokenList internal tokenList;
   uint256 internal wethAssetId = 0;
@@ -164,8 +165,8 @@ abstract contract Base is Test {
     oracle1 = new MockPriceOracle();
     oracle2 = new MockPriceOracle();
     oracle3 = new MockPriceOracle();
-    irStrategy = new AssetInterestRateStrategy();
     accessManager = new AccessManager(ADMIN);
+    irStrategy = new AssetInterestRateStrategy(address(accessManager));
     hub = new LiquidityHub(address(accessManager));
     spoke1 = ISpoke(new Spoke(address(oracle1), address(accessManager)));
     spoke2 = ISpoke(new Spoke(address(oracle2), address(accessManager)));
@@ -188,6 +189,7 @@ abstract contract Base is Test {
     // Grant roles
     accessManager.grantRole(Roles.HUB_ADMIN_ROLE, ADMIN, 0);
     accessManager.grantRole(Roles.SPOKE_ADMIN_ROLE, ADMIN, 0);
+    accessManager.grantRole(Roles.INTEREST_RATE_CONTROLLER_ROLE, ADMIN, 0);
     accessManager.grantRole(Roles.HUB_ADMIN_ROLE, HUB_ADMIN, 0);
     accessManager.grantRole(Roles.SPOKE_ADMIN_ROLE, SPOKE_ADMIN, 0);
     accessManager.grantRole(Roles.SPOKE_ROLE, address(spoke1), 0);
@@ -195,6 +197,7 @@ abstract contract Base is Test {
     accessManager.grantRole(Roles.SPOKE_ROLE, address(spoke3), 0);
     accessManager.grantRole(Roles.SPOKE_ROLE, address(treasurySpoke), 0);
     accessManager.grantRole(Roles.GOVERNOR_ROLE, GOVERNOR, 0);
+    accessManager.grantRole(Roles.INTEREST_RATE_CONTROLLER_ROLE, IR_CONTROLLER, 0);
 
     // Grant responsibilities to roles
     // Spoke Admin functionalities
@@ -228,6 +231,17 @@ abstract contract Base is Test {
     spokeSelectors[4] = ILiquidityHub.refreshPremiumDebt.selector;
 
     accessManager.setTargetFunctionRole(address(hub), spokeSelectors, Roles.SPOKE_ROLE);
+
+    // Interest rate controller functionalities
+    bytes4[] memory irSelectors = new bytes4[](1);
+    irSelectors[0] = IAssetInterestRateStrategy.setInterestRateData.selector;
+
+    accessManager.setTargetFunctionRole(
+      address(irStrategy),
+      irSelectors,
+      Roles.INTEREST_RATE_CONTROLLER_ROLE
+    );
+
     vm.stopPrank();
   }
 
@@ -747,7 +761,9 @@ abstract contract Base is Test {
     vm.startPrank(ADMIN);
 
     ILiquidityHub hub2 = new LiquidityHub(address(accessManager));
-    AssetInterestRateStrategy hub2IrStrategy = new AssetInterestRateStrategy();
+    AssetInterestRateStrategy hub2IrStrategy = new AssetInterestRateStrategy(
+      address(accessManager)
+    );
 
     // Add assets to the second hub
     // Add WETH
@@ -833,7 +849,9 @@ abstract contract Base is Test {
     vm.startPrank(ADMIN);
 
     ILiquidityHub hub3 = new LiquidityHub(address(accessManager));
-    AssetInterestRateStrategy hub3IrStrategy = new AssetInterestRateStrategy();
+    AssetInterestRateStrategy hub3IrStrategy = new AssetInterestRateStrategy(
+      address(accessManager)
+    );
 
     // Add DAI
     hub3.addAsset(

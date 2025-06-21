@@ -3,7 +3,6 @@ pragma solidity ^0.8.10;
 
 import 'tests/Base.t.sol';
 
-/// TODO: Access Control; Check that only authorized address can set interest rate data
 contract AssetInterestRateStrategyTest is Base {
   using WadRayMathExtended for uint16;
   using WadRayMathExtended for uint32;
@@ -15,7 +14,9 @@ contract AssetInterestRateStrategyTest is Base {
   IAssetInterestRateStrategy.InterestRateData public rateData;
 
   function setUp() public override {
-    rateStrategy = new AssetInterestRateStrategy();
+    accessManager = new AccessManager(ADMIN);
+    rateStrategy = new AssetInterestRateStrategy(address(accessManager));
+    setUpRoles();
 
     rateData = IAssetInterestRateStrategy.InterestRateData({
       optimalUsageRatio: 80_00, // 80.00%
@@ -24,7 +25,22 @@ contract AssetInterestRateStrategyTest is Base {
       variableRateSlope2: 75_00 // 75.00%
     });
 
+    vm.prank(IR_CONTROLLER);
     rateStrategy.setInterestRateData(mockAssetId, rateData);
+  }
+
+  function setUpRoles() internal override {
+    bytes4[] memory irSelectors = new bytes4[](1);
+    irSelectors[0] = IAssetInterestRateStrategy.setInterestRateData.selector;
+
+    vm.startPrank(ADMIN);
+    accessManager.grantRole(Roles.INTEREST_RATE_CONTROLLER_ROLE, IR_CONTROLLER, 0);
+    accessManager.setTargetFunctionRole(
+      address(rateStrategy),
+      irSelectors,
+      Roles.INTEREST_RATE_CONTROLLER_ROLE
+    );
+    vm.stopPrank();
   }
 
   function test_maxBorrowRate() public {
@@ -89,6 +105,7 @@ contract AssetInterestRateStrategyTest is Base {
     for (uint256 i; i < invalidOptimalUsageRatios.length; i++) {
       rateData.optimalUsageRatio = invalidOptimalUsageRatios[i];
       vm.expectRevert(IAssetInterestRateStrategy.InvalidOptimalUsageRatio.selector);
+      vm.prank(IR_CONTROLLER);
       rateStrategy.setInterestRateData(mockAssetId, rateData);
     }
   }
@@ -99,6 +116,7 @@ contract AssetInterestRateStrategyTest is Base {
       rateData.variableRateSlope1
     );
     vm.expectRevert(IAssetInterestRateStrategy.Slope2MustBeGteSlope1.selector);
+    vm.prank(IR_CONTROLLER);
     rateStrategy.setInterestRateData(mockAssetId, rateData);
   }
 
@@ -108,6 +126,7 @@ contract AssetInterestRateStrategyTest is Base {
       3 +
       1;
     vm.expectRevert(IAssetInterestRateStrategy.InvalidMaxRate.selector);
+    vm.prank(IR_CONTROLLER);
     rateStrategy.setInterestRateData(mockAssetId, rateData);
   }
 
@@ -128,6 +147,7 @@ contract AssetInterestRateStrategyTest is Base {
       uint256(rateData.variableRateSlope2)
     );
 
+    vm.prank(IR_CONTROLLER);
     rateStrategy.setInterestRateData(mockAssetId, rateData);
 
     test_getInterestRateData();

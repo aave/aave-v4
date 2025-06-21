@@ -36,13 +36,13 @@ contract SpokeMultipleHubBase is SpokeBase {
     hub = new LiquidityHub(address(accessManager));
     oracle1 = new MockPriceOracle();
     spoke1 = new Spoke(address(oracle1), address(accessManager));
-    irStrategy = new AssetInterestRateStrategy();
+    irStrategy = new AssetInterestRateStrategy(address(accessManager));
 
     // New hub and spoke
     newHub = new LiquidityHub(address(accessManager));
     newOracle = new MockPriceOracle();
     newSpoke = new Spoke(address(newOracle), address(accessManager));
-    newIrStrategy = new AssetInterestRateStrategy();
+    newIrStrategy = new AssetInterestRateStrategy(address(accessManager));
 
     assetA = new TestnetERC20('Asset A', 'A', 18);
     assetB = new TestnetERC20('Asset B', 'B', 18);

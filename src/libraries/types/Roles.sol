@@ -7,4 +7,5 @@ library Roles {
   uint64 public constant SPOKE_ADMIN_ROLE = 2;
   uint64 public constant SPOKE_ROLE = 3;
   uint64 public constant GOVERNOR_ROLE = 4;
+  uint64 public constant INTEREST_RATE_CONTROLLER_ROLE = 5;
 }
