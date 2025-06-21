@@ -85,6 +85,8 @@ contract Spoke is ISpoke, Multicall {
     });
     _dynamicConfig[reserveId][dynamicConfigKey] = dynamicConfig;
 
+    IERC20(asset).forceApprove(address(config.hub), type(uint256).max);
+
     emit ReserveAdded(reserveId, assetId);
     emit ReserveConfigUpdated(reserveId, config);
 
@@ -349,7 +351,8 @@ contract Spoke is ISpoke, Multicall {
         _reserves[collateralReserveId],
         _reserves[debtReserveId],
         users,
-        debtsToCover
+        debtsToCover,
+        msg.sender
       );
 
     // TODO: emit liq protocol fee shares in event
@@ -993,7 +996,8 @@ contract Spoke is ISpoke, Multicall {
     DataTypes.Reserve storage collateralReserve,
     DataTypes.Reserve storage debtReserve,
     address[] memory users,
-    uint256[] memory debtsToCover
+    uint256[] memory debtsToCover,
+    address liquidator
   ) internal returns (address, address, uint256, uint256) {
     uint256 usersLength = users.length;
     require(usersLength == debtsToCover.length, UsersAndDebtLengthMismatch());
@@ -1086,7 +1090,7 @@ contract Spoke is ISpoke, Multicall {
         vars.debtAssetId,
         vars.baseDebtToLiquidate,
         vars.premiumDebtToLiquidate,
-        msg.sender
+        liquidator
       );
 
       // debt accounting
@@ -1192,10 +1196,6 @@ contract Spoke is ISpoke, Multicall {
           vars.totalLiquidationProtocolFeeAmount
         ) > 0
       ) {
-        IERC20(collateralReserve.asset).safeIncreaseAllowance(
-          address(collateralReserveHub),
-          vars.totalLiquidationProtocolFeeAmount
-        );
         collateralReserveHub.donate(
           vars.collateralAssetId,
           vars.totalLiquidationProtocolFeeAmount,
@@ -1208,7 +1208,7 @@ contract Spoke is ISpoke, Multicall {
     }
 
     // transfer total liquidated collateral to liquidator
-    IERC20(collateralReserve.asset).safeTransfer(msg.sender, vars.totalCollateralToLiquidate);
+    IERC20(collateralReserve.asset).safeTransfer(liquidator, vars.totalCollateralToLiquidate);
 
     return (
       collateralReserve.asset,

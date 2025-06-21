@@ -33,6 +33,17 @@ contract LiquidityHubDonateTest is LiquidityHubBase {
     hub.donate(daiAssetId, amount, address(spoke1));
   }
 
+  function test_donate_revertsWith_InvalidFeeReceiver() public {
+    uint256 amount = 100e18;
+
+    updateAssetFeeReceiver(hub, daiAssetId, address(0));
+    assertEq(hub.getAsset(daiAssetId).config.feeReceiver, address(0));
+
+    vm.expectRevert(ILiquidityHub.InvalidFeeReceiver.selector);
+    vm.prank(address(spoke1));
+    hub.donate(daiAssetId, amount, alice);
+  }
+
   function test_donate_revertsWith_AssetNotActive() public {
     uint256 amount = 100e18;
 

@@ -316,13 +316,22 @@ contract SpokeConfigTest is SpokeBase {
       collateralFactor: 10_00
     });
 
+    vm.expectEmit(address(tokenList.weth));
+    emit IERC20.Approval(address(spoke1), address(hub), UINT256_MAX);
+
     vm.expectEmit(address(spoke1));
     emit ISpoke.ReserveAdded(reserveId, wethAssetId);
+
     vm.prank(SPOKE_ADMIN);
     spoke1.addReserve(wethAssetId, newReserveConfig, newDynReserveConfig);
 
     assertEq(spoke1.getReserveConfig(reserveId), newReserveConfig);
     assertEq(spoke1.getDynamicReserveConfig(reserveId), newDynReserveConfig);
+    assertEq(
+      tokenList.weth.allowance(address(spoke1), address(hub)),
+      UINT256_MAX,
+      'wrong allowance'
+    );
   }
 
   function test_addReserve_reverts_invalid_assetId() public {
