@@ -56,14 +56,14 @@ contract LiquidityHubOperations_Gas_Tests is Base {
     skip(1000);
 
     (baseDebtRemaining, premiumDebtRemaining) = hub.getSpokeDebt(daiAssetId, address(spoke1));
-    hub.restore(daiAssetId, baseDebtRemaining / 2, premiumDebtRemaining, 0, alice);
+    hub.restore(daiAssetId, baseDebtRemaining / 2, premiumDebtRemaining, alice);
     // todo: do refresh call to fully encapsulate a `hub.restore` call
     vm.snapshotGasLastCall('Hub.Operations', 'restore: partial');
 
     skip(100);
 
     (baseDebtRemaining, premiumDebtRemaining) = hub.getSpokeDebt(daiAssetId, address(spoke1));
-    hub.restore(daiAssetId, baseDebtRemaining, premiumDebtRemaining, 0, alice);
+    hub.restore(daiAssetId, baseDebtRemaining, premiumDebtRemaining, alice);
     vm.snapshotGasLastCall('Hub.Operations', 'restore: full');
     vm.stopPrank();
   }

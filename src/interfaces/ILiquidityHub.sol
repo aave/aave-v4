@@ -146,7 +146,6 @@ interface ILiquidityHub {
    * @param assetId The identifier of the asset.
    * @param baseAmount The base debt to repay.
    * @param premiumAmount The premium debt to repay.
-   * @param deficitAmount The deficit amount to report.
    * @param from The address to pull assets from.
    * @return The amount of debt restored.
    */
@@ -154,7 +153,6 @@ interface ILiquidityHub {
     uint256 assetId,
     uint256 baseAmount,
     uint256 premiumAmount,
-    uint256 deficitAmount,
     address from
   ) external returns (uint256);
 

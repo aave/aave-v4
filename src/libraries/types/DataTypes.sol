@@ -188,5 +188,6 @@ library DataTypes {
     uint256 userPremiumOffset;
     uint256 userRealizedPremium;
     uint256 accruedPremium;
+    ILiquidityHub hub;
   }
 }

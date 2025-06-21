@@ -266,9 +266,69 @@ contract Spoke is ISpoke, Multicall {
   function repay(uint256 reserveId, uint256 amount) external {
     /// @dev TODO: onBehalfOf
     DataTypes.UserPosition storage userPosition = _userPositions[msg.sender][reserveId];
-    uint256 restoredShares = _executeRepay(reserveId, amount, msg.sender, userPosition, 0);
+    DataTypes.Reserve storage reserve = _reserves[reserveId];
+    _validateRepay(reserve);
 
-    emit Repay(reserveId, msg.sender, restoredShares);
+    DataTypes.ExecuteRepayLocalVars memory vars;
+    vars.hub = reserve.config.hub;
+    vars.assetId = reserve.assetId;
+    (vars.baseDebt, vars.premiumDebt) = _getUserDebt(vars.hub, vars.assetId, userPosition);
+    (vars.baseDebtRestored, vars.premiumDebtRestored) = _calculateRestoreAmount(
+      vars.baseDebt,
+      vars.premiumDebt,
+      amount
+    );
+
+    vars.userPremiumDrawnShares = userPosition.premiumDrawnShares;
+    vars.userPremiumOffset = userPosition.premiumOffset;
+    vars.accruedPremium = vars.premiumDebt - userPosition.realizedPremium;
+
+    userPosition.premiumDrawnShares = 0;
+    userPosition.premiumOffset = 0;
+    userPosition.realizedPremium = vars.premiumDebt - vars.premiumDebtRestored;
+
+    _refreshPremiumDebt(
+      reserve,
+      msg.sender,
+      vars.assetId,
+      -int256(vars.userPremiumDrawnShares),
+      -int256(vars.userPremiumOffset),
+      vars.accruedPremium,
+      vars.premiumDebtRestored
+    ); // we settle premium debt here
+
+    vars.restoredShares = vars.hub.restore(
+      vars.assetId,
+      vars.baseDebtRestored,
+      vars.premiumDebtRestored,
+      msg.sender
+    ); // we settle base debt here
+
+    reserve.baseDrawnShares -= vars.restoredShares;
+    userPosition.baseDrawnShares -= vars.restoredShares;
+
+    (vars.newUserRiskPremium, , , , ) = _calculateUserAccountData(msg.sender);
+
+    vars.userPremiumDrawnShares = userPosition.premiumDrawnShares = userPosition
+      .baseDrawnShares
+      .percentMulUp(vars.newUserRiskPremium);
+    vars.userPremiumOffset = userPosition.premiumOffset = vars.hub.previewOffset(
+      vars.assetId,
+      userPosition.premiumDrawnShares
+    );
+
+    _refreshPremiumDebt(
+      reserve,
+      msg.sender,
+      vars.assetId,
+      int256(vars.userPremiumDrawnShares),
+      int256(vars.userPremiumOffset),
+      0,
+      0
+    );
+    _notifyRiskPremiumUpdate(vars.assetId, msg.sender, vars.newUserRiskPremium);
+
+    emit Repay(reserveId, msg.sender, vars.restoredShares);
   }
 
   /// @inheritdoc ISpoke
@@ -940,7 +1000,6 @@ contract Spoke is ISpoke, Multicall {
       vars.assetId,
       vars.baseDebtRestored,
       vars.premiumDebtRestored,
-      deficitAmount,
       user
     ); // we settle base debt here
 
@@ -1147,7 +1206,6 @@ contract Spoke is ISpoke, Multicall {
         vars.debtAssetId,
         vars.baseDebtToLiquidate,
         vars.premiumDebtToLiquidate,
-        vars.deficit,
         msg.sender
       );
 

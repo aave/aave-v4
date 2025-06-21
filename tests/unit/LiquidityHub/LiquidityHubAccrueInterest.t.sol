@@ -135,7 +135,6 @@ contract LiquidityHubAccrueInterestTest is Base {
       spoke: address(spoke1),
       baseAmount: borrowAmount + interest,
       premiumAmount: 0,
-      deficitAmount: 0,
       repayer: address(spoke1)
     });
 

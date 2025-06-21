@@ -265,7 +265,6 @@ contract LiquidityHub is ILiquidityHub {
     uint256 assetId,
     uint256 baseAmount,
     uint256 premiumAmount,
-    uint256 deficitAmount,
     address from
   ) external returns (uint256) {
     // TODO: authorization - only spokes
@@ -276,51 +275,35 @@ contract LiquidityHub is ILiquidityHub {
 
     asset.accrue(_spokes[assetId][asset.config.feeReceiver]);
 
-    _validateRestore(asset, spoke, baseAmount, premiumAmount, deficitAmount);
-    asset.updateBorrowRate({
-      liquidityAdded: _calculateLiquidityAdded(baseAmount, premiumAmount, deficitAmount),
-      liquidityTaken: 0
-    }); // both can be zero
+    _validateRestore(asset, spoke, baseAmount, premiumAmount);
+    asset.updateBorrowRate({liquidityAdded: baseAmount, liquidityTaken: 0}); // both can be zero
 
     uint256 totalRestoredAmount = baseAmount + premiumAmount;
     uint256 baseDrawnSharesRestored = asset.toDrawnSharesDown(baseAmount);
-    uint256 actualRestoredAmount = totalRestoredAmount - deficitAmount;
 
-    asset.availableLiquidity += actualRestoredAmount;
-    asset.deficit += deficitAmount;
+    asset.availableLiquidity += totalRestoredAmount;
     asset.baseDrawnShares -= baseDrawnSharesRestored;
 
     spoke.baseDrawnShares -= baseDrawnSharesRestored;
 
-    assetsList[assetId].safeTransferFrom(from, address(this), actualRestoredAmount);
+    assetsList[assetId].safeTransferFrom(from, address(this), totalRestoredAmount);
 
     emit Restore(assetId, msg.sender, baseDrawnSharesRestored, totalRestoredAmount);
-    if (deficitAmount > 0) {
-      emit DeficitCreated(assetId, msg.sender, deficitAmount);
-    }
 
     return baseDrawnSharesRestored;
   }
 
-  function reportDeficit(uint256 assetId, uint256 deficitAmount, address who) external {
+  function reportDeficit(uint256 assetId, uint256 amount) external {
     DataTypes.Asset storage asset = _assets[assetId];
     DataTypes.SpokeData storage spoke = _spokes[assetId][msg.sender];
 
     asset.accrue(_spokes[assetId][asset.config.feeReceiver]);
 
-    _validateRestore(asset, spoke, baseAmount, premiumAmount, deficitAmount);
-    asset.updateBorrowRate({
-      liquidityAdded: _calculateLiquidityAdded(baseAmount, premiumAmount, deficitAmount),
-      liquidityTaken: 0
-    }); // both can be zero
+    _validateDeficit(asset, spoke, amount);
 
-    asset.deficit += deficitAmount;
+    asset.deficit += amount;
 
-    assetsList[assetId].safeTransferFrom(from, address(this), actualRestoredAmount);
-
-    if (deficitAmount > 0) {
-      emit DeficitCreated(assetId, msg.sender, deficitAmount);
-    }
+    emit DeficitCreated(assetId, msg.sender, amount);
   }
 
   /// @inheritdoc ILiquidityHub
@@ -575,16 +558,25 @@ contract LiquidityHub is ILiquidityHub {
     DataTypes.Asset storage asset,
     DataTypes.SpokeData storage spoke,
     uint256 baseAmountRestored,
-    uint256 premiumAmountRestored,
-    uint256 deficitAmount
+    uint256 premiumAmountRestored
   ) internal view {
-    require(deficitAmount <= baseAmountRestored + premiumAmountRestored, InvalidDeficitAmount());
     require(baseAmountRestored + premiumAmountRestored != 0, InvalidRestoreAmount());
     require(asset.config.active, AssetNotActive());
     require(!asset.config.paused, AssetPaused());
     (uint256 baseDebt, ) = _getSpokeDebt(asset, spoke);
     require(baseAmountRestored <= baseDebt, SurplusAmountRestored(baseDebt));
     // we should have already restored premium debt
+  }
+
+  function _validateDeficit(
+    DataTypes.Asset storage asset,
+    DataTypes.SpokeData storage spoke,
+    uint256 amount
+  ) internal view {
+    require(asset.config.active, AssetNotActive());
+    require(!asset.config.paused, AssetPaused());
+    // (uint256 baseDebt, ) = _getSpokeDebt(asset, spoke);
+    // require(baseAmountRestored <= baseDebt, SurplusAmountRestored(baseDebt));
   }
 
   function _addSpoke(uint256 assetId, DataTypes.SpokeConfig memory config, address spoke) internal {
@@ -618,15 +610,6 @@ contract LiquidityHub is ILiquidityHub {
     // sanity: utilize solc underflow check
     uint256 accruedPremium = asset.toDrawnAssetsUp(spoke.premiumDrawnShares) - spoke.premiumOffset;
     return (asset.toDrawnAssetsUp(spoke.baseDrawnShares), spoke.realizedPremium + accruedPremium);
-  }
-
-  function _calculateLiquidityAdded(
-    uint256 baseAmount,
-    uint256 premiumAmount,
-    uint256 deficitAmount
-  ) internal pure returns (uint256) {
-    uint256 remainingDeficit = deficitAmount > premiumAmount ? deficitAmount - premiumAmount : 0;
-    return baseAmount - remainingDeficit;
   }
 
   // handles underflow
