@@ -16,7 +16,7 @@ contract LiquidityHubDonateTest is LiquidityHubBase {
       )
     );
     vm.prank(address(spoke1));
-    hub.donate(daiAssetId, amount, address(spoke1));
+    hub.donate(daiAssetId, amount, makeAddr('randomUser'));
   }
 
   function test_donate_fuzz_revertsWith_ERC20InsufficientAllowance(uint256 amount) public {
@@ -30,7 +30,7 @@ contract LiquidityHubDonateTest is LiquidityHubBase {
       )
     );
     vm.prank(address(spoke1));
-    hub.donate(daiAssetId, amount, address(spoke1));
+    hub.donate(daiAssetId, amount, makeAddr('randomUser'));
   }
 
   function test_donate_revertsWith_InvalidFeeReceiver() public {

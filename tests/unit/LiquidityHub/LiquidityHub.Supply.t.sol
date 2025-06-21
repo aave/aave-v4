@@ -18,7 +18,7 @@ contract LiquidityHubSupplyTest is LiquidityHubBase {
       )
     );
     vm.prank(address(spoke1));
-    hub.add(daiAssetId, amount, address(spoke1));
+    hub.add(daiAssetId, amount, makeAddr('randomUser'));
   }
 
   function test_supply_fuzz_revertsWith_ERC20InsufficientAllowance(uint256 amount) public {
@@ -32,7 +32,7 @@ contract LiquidityHubSupplyTest is LiquidityHubBase {
       )
     );
     vm.prank(address(spoke1));
-    hub.add(daiAssetId, amount, address(spoke1));
+    hub.add(daiAssetId, amount, makeAddr('randomUser'));
   }
 
   function test_supply_revertsWith_AssetNotActive() public {
