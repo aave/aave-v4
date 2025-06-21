@@ -463,17 +463,13 @@ contract LiquidityHubRestoreDeficitTest is LiquidityHubBase {
     (uint256 baseDebt, ) = hub.getAssetDebt(assetId);
 
     return
-      irStrategy.calculateInterestRates(
-        DataTypes.CalculateInterestRatesParams({
-          liquidityAdded: liquidityAdded,
-          liquidityTaken: liquidityTaken,
-          totalDebt: baseDebt,
-          liquidityFee: 0,
-          assetId: assetId,
-          virtualUnderlyingBalance: hub.getAvailableLiquidity(assetId),
-          usingVirtualBalance: true
-        })
-      );
+      irStrategy.calculateInterestRate({
+        assetId: assetId,
+        availableLiquidity: hub.getAvailableLiquidity(assetId),
+        totalDebt: baseDebt,
+        liquidityAdded: liquidityAdded,
+        liquidityTaken: liquidityTaken
+      });
   }
 
   /// Calculate the expected liquidity added in a restore action accounting for the deficit

@@ -93,7 +93,8 @@ contract SpokeMulticall is SpokeBase {
       liquidityPremium: 10_00,
       liquidationProtocolFee: 0,
       borrowable: true,
-      collateral: true
+      collateral: true,
+      hub: hub
     });
     DataTypes.DynamicReserveConfig memory dai2DynConfig = DataTypes.DynamicReserveConfig({
       collateralFactor: 88_00
@@ -107,7 +108,8 @@ contract SpokeMulticall is SpokeBase {
       liquidityPremium: 5_00,
       liquidationProtocolFee: 0,
       borrowable: true,
-      collateral: true
+      collateral: true,
+      hub: hub
     });
     DataTypes.DynamicReserveConfig memory dai3DynConfig = DataTypes.DynamicReserveConfig({
       collateralFactor: 70_00

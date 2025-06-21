@@ -5,7 +5,7 @@ import 'tests/unit/Spoke/Liquidations/Spoke.Liquidation.Base.t.sol';
 
 /// tests where liquidation results in bad debt (debt remaining > 0, collateral remaining = 0)
 contract LiquidationCallBadDebtTest is SpokeLiquidationBase {
-  using WadRayMath for uint256;
+  // using WadRayMath for uint256;
   using PercentageMath for uint256;
   using PercentageMathExtended for uint256;
 
@@ -342,12 +342,14 @@ contract LiquidationCallBadDebtTest is SpokeLiquidationBase {
     supplyAmount = bound(
       supplyAmount,
       _convertBaseCurrencyToAmount(
-        state.collateralReserves[state.collateralReserveIndex].assetId,
+        state.spoke,
+        state.collateralReserves[state.collateralReserveIndex].reserveId,
         1e25
       ),
       _min(
         _convertBaseCurrencyToAmount(
-          state.collateralReserves[state.collateralReserveIndex].assetId,
+          state.spoke,
+          state.collateralReserves[state.collateralReserveIndex].reserveId,
           MAX_SUPPLY_IN_BASE_CURRENCY
         ),
         MAX_SUPPLY_AMOUNT / 10

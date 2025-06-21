@@ -220,11 +220,13 @@ contract LiquidationCallMultiReserveBadPremiumDebtTest is SpokeLiquidationBase {
     supplyAmount = bound(
       supplyAmount,
       _convertBaseCurrencyToAmount(
-        state.collateralReserves[state.collateralReserveIndex].assetId,
+        state.spoke,
+        state.collateralReserves[state.collateralReserveIndex].reserveId,
         10e26
       ),
       _convertBaseCurrencyToAmount(
-        state.collateralReserves[state.collateralReserveIndex].assetId,
+        state.spoke,
+        state.collateralReserves[state.collateralReserveIndex].reserveId,
         1e36
       )
     );
@@ -282,7 +284,8 @@ contract LiquidationCallMultiReserveBadPremiumDebtTest is SpokeLiquidationBase {
     vm.assume(
       state.spoke.getHealthFactor(alice) < hfBadDebtThreshold &&
         _convertAmountToBaseCurrency(
-          state.debtReserves[state.debtReserveIndex].assetId,
+          state.spoke,
+          state.debtReserves[state.debtReserveIndex].reserveId,
           state.spoke.getUserTotalDebt(state.debtReserves[state.debtReserveIndex].reserveId, alice)
         ) >
         state.initialTotalCollateralInBaseCurrency
@@ -360,7 +363,7 @@ contract LiquidationCallMultiReserveBadPremiumDebtTest is SpokeLiquidationBase {
     uint256 dustInBase = 1e26;
 
     // mock with high base borrow rate so that less time must be skipped to reach desired HF
-    mockBaseBorrowRate(500_00);
+    _mockInterestRate(500_00);
 
     vm.startPrank(user);
     for (uint256 i = 0; i < reserveIds.length; i++) {
@@ -378,7 +381,7 @@ contract LiquidationCallMultiReserveBadPremiumDebtTest is SpokeLiquidationBase {
         );
       }
 
-      uint256 amount = _convertBaseCurrencyToAmount(assetId, amountInBase);
+      uint256 amount = _convertBaseCurrencyToAmount(spoke, reserveIds[i], amountInBase);
       vm.assume(amount < MAX_SUPPLY_AMOUNT);
 
       spoke.borrow(reserveIds[i], amount, user);

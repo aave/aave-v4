@@ -416,12 +416,14 @@ contract LiquidationCallCloseFactorTest is SpokeLiquidationBase {
     supplyAmount = bound(
       supplyAmount,
       _convertBaseCurrencyToAmount(
-        state.collateralReserves[state.collateralReserveIndex].assetId,
+        state.spoke,
+        state.collateralReserves[state.collateralReserveIndex].reserveId,
         1e26
       ),
       _min(
         _convertBaseCurrencyToAmount(
-          state.collateralReserves[state.collateralReserveIndex].assetId,
+          state.spoke,
+          state.collateralReserves[state.collateralReserveIndex].reserveId,
           MAX_SUPPLY_IN_BASE_CURRENCY
         ),
         MAX_SUPPLY_AMOUNT / 10

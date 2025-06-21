@@ -4,8 +4,6 @@ pragma solidity ^0.8.0;
 import 'tests/unit/Spoke/SpokeBase.t.sol';
 
 contract SpokeSupplyTest is SpokeBase {
-  using WadRayMath for uint256;
-
   function test_supply_revertsWith_ReserveNotListed() public {
     uint256 reserveId = spoke1.reserveCount() + 1; // invalid reserveId
     uint256 amount = 100e18;
@@ -316,7 +314,7 @@ contract SpokeSupplyTest is SpokeBase {
     uint256 skipTime
   ) public {
     amount = bound(amount, 1, MAX_SUPPLY_AMOUNT);
-    rate = bound(rate, 1, MAX_BORROW_RATE).bpsToRay();
+    rate = bound(rate, 1, MAX_BORROW_RATE);
     reserveId = bound(reserveId, 0, spokeInfo[spoke1].MAX_RESERVE_ID);
     skipTime = bound(skipTime, 1, MAX_SKIP_TIME);
 
@@ -492,7 +490,7 @@ contract SpokeSupplyTest is SpokeBase {
     uint256 skipTime
   ) public {
     amount = bound(amount, 1, MAX_SUPPLY_AMOUNT);
-    rate = bound(rate, 1, MAX_BORROW_RATE).bpsToRay();
+    rate = bound(rate, 1, MAX_BORROW_RATE);
     reserveId = bound(reserveId, 0, spokeInfo[spoke1].MAX_RESERVE_ID);
     skipTime = bound(skipTime, 1, MAX_SKIP_TIME);
 

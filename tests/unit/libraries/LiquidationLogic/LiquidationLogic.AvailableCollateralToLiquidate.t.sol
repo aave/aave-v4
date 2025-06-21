@@ -150,7 +150,7 @@ contract LiquidationAvailableCollateralToLiquidateTest is LiquidationLogicBaseTe
     // so that maxCollateralToLiquidate <= userCollateralBalanceInBaseCurrency
     vm.assume(
       params.userCollateralBalance <=
-        (maxCollateralToLiquidate * params.collateralAssetUnit).dewadify() /
+        (maxCollateralToLiquidate * params.collateralAssetUnit).dewadifyDown() /
           params.collateralAssetPrice
     );
 
@@ -206,7 +206,7 @@ contract LiquidationAvailableCollateralToLiquidateTest is LiquidationLogicBaseTe
     // so that maxCollateralToLiquidate > userCollateralBalanceInBaseCurrency
     vm.assume(
       params.userCollateralBalance >
-        (maxCollateralToLiquidate * params.collateralAssetUnit).dewadify() /
+        (maxCollateralToLiquidate * params.collateralAssetUnit).dewadifyDown() /
           params.collateralAssetPrice
     );
 
@@ -220,7 +220,7 @@ contract LiquidationAvailableCollateralToLiquidateTest is LiquidationLogicBaseTe
     ) = LiquidationLogic.calculateAvailableCollateralToLiquidate(args);
 
     uint256 collateralAmount = ((maxCollateralToLiquidate * params.collateralAssetUnit) /
-      params.collateralAssetPrice).dewadify() + 1;
+      params.collateralAssetPrice).dewadifyDown() + 1;
 
     (
       uint256 actualCollateralToLiquidate,
@@ -327,7 +327,7 @@ contract LiquidationAvailableCollateralToLiquidateTest is LiquidationLogicBaseTe
     return
       ((params.debtAssetUnit * userCollateralBalanceInBaseCurrency) / params.debtAssetPrice)
         .percentDivDown(params.liquidationBonus)
-        .dewadify();
+        .dewadifyDown();
   }
 
   // internal helper to trigger revert checks

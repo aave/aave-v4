@@ -9,11 +9,11 @@ type Stage is uint8;
 function eq(Stage a, Stage b) pure returns (bool) {
   return Stage.unwrap(a) == Stage.unwrap(b);
 }
+
 using {eq as ==} for Stage global;
 
 abstract contract LiquidityHubScenarioBaseTest is Base {
   using SharesMath for uint256;
-  using WadRayMath for uint256;
   using PercentageMath for uint256;
 
   uint256 internal constant NUM_TIMESTAMPS = 10;
@@ -39,6 +39,7 @@ abstract contract LiquidityHubScenarioBaseTest is Base {
   TestState internal state;
   DataTypes.SpokeConfig internal spokeConfig;
   Spoke internal spoke4; // init to be added during scenario tests
+  IPriceOracle internal oracle4;
 
   // _i: initial, prior to action at a given time
   // _f: final, after action at a given time
@@ -102,17 +103,23 @@ abstract contract LiquidityHubScenarioBaseTest is Base {
 
   // invoked on each time step
   function precondition(Stage stage) internal virtual {}
+
   function initialAssertions(Stage stage) internal virtual {}
 
   function printInitialLog(Stage stage) internal virtual {
     console.log(string.concat('----- t', vm.toString(t), '_i -----'));
   }
+
   function exec(Stage stage) internal virtual {}
+
   function finalAssertions(Stage stage) internal virtual {}
+
   function skipTime(Stage stage) internal virtual {}
+
   function postcondition(Stage stage) internal virtual {
     timestamps.push(vm.getBlockTimestamp());
   }
+
   function printFinalLog(Stage stage) internal virtual {
     console.log(string.concat('----- t', vm.toString(t), '_f -----'));
   }
