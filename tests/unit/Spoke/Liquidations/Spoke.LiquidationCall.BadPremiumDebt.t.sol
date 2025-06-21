@@ -182,10 +182,14 @@ contract LiquidationCallBadPremiumDebtTest is SpokeLiquidationBase {
     state.collateralReserves = new DataTypes.Reserve[](1);
     state.debtReserves = new DataTypes.Reserve[](1);
 
-    state.collateralReserves[state.collateralReserveIndex] = spoke1.getReserve(collateralReserveId);
-    state.debtReserves[state.debtReserveIndex] = spoke1.getReserve(debtReserveId);
+    state.spoke = spoke1;
 
-    state.collDynConfig = spoke1.getDynamicReserveConfig(collateralReserveId);
+    state.collateralReserves[state.collateralReserveIndex] = state.spoke.getReserve(
+      collateralReserveId
+    );
+    state.debtReserves[state.debtReserveIndex] = state.spoke.getReserve(debtReserveId);
+
+    state.collDynConfig = state.spoke.getDynamicReserveConfig(collateralReserveId);
 
     liqConfig = _boundCloseFactor(liqConfig);
     liqBonus = bound(
@@ -210,7 +214,6 @@ contract LiquidationCallBadPremiumDebtTest is SpokeLiquidationBase {
     skipTime = bound(skipTime, 1, MAX_SKIP_TIME);
     skipTimeForPremiumAccrual = bound(skipTimeForPremiumAccrual, 5 * 365 days, MAX_SKIP_TIME); // enough time to accrue debt so that HF is liquidatable
 
-    state.spoke = spoke1;
     state.user = alice;
     state.liquidationProtocolFee = liquidationProtocolFee;
 

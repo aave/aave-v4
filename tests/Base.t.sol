@@ -1774,9 +1774,11 @@ abstract contract Base is Test {
     uint256 desiredHf
   ) internal returns (uint256, uint256) {
     uint256 requiredDebtInBase = _getRequiredDebtForGtHf(spoke, user, desiredHf);
-    uint256 assetId = spoke.getReserve(reserveId).assetId;
-    uint256 requiredDebtAmount = _convertBaseCurrencyToAmount(spoke, assetId, requiredDebtInBase) -
-      1;
+    uint256 requiredDebtAmount = _convertBaseCurrencyToAmount(
+      spoke,
+      reserveId,
+      requiredDebtInBase
+    ) - 1;
 
     vm.assume(requiredDebtAmount < MAX_SUPPLY_AMOUNT);
 

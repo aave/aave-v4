@@ -116,6 +116,7 @@ library LiquidationLogic {
       collateralAmount = params.userCollateralBalance;
       debtAmountNeeded = ((params.debtAssetUnit * userCollateralBalanceInBaseCurrency)
         .percentDivDown(params.liquidationBonus) / params.debtAssetPrice).dewadifyDown();
+      collateralToLiquidateInBaseCurrency = userCollateralBalanceInBaseCurrency;
     } else {
       // add 1 to round collateral amount up, ensuring HF is always <= close factor
       collateralAmount =

@@ -147,7 +147,7 @@ contract LiquidationCallProtocolFeeTest is SpokeLiquidationBase {
   }
 
   /// with 0 liquidation bonus, the protocol fee should also be 0
-  function test_liquidationCall_fuzz_zprotocolFee_liqBonus_zero(
+  function test_liquidationCall_fuzz_protocolFee_liqBonus_zero(
     uint256 liquidationProtocolFeePercentage
   ) public {
     LiquidationTestLocalParams memory state = test_liquidationCall_fuzz_protocolFee({

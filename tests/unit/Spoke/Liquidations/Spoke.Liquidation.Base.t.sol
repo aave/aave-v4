@@ -134,11 +134,14 @@ contract SpokeLiquidationBase is SpokeBase {
     LiquidationTestLocalParams memory state;
     state.collateralReserves = new DataTypes.Reserve[](1);
     state.debtReserves = new DataTypes.Reserve[](1);
+    state.spoke = spoke1;
 
-    state.collateralReserves[state.collateralReserveIndex] = spoke1.getReserve(collateralReserveId);
-    state.debtReserves[state.debtReserveIndex] = spoke1.getReserve(debtReserveId);
+    state.collateralReserves[state.collateralReserveIndex] = state.spoke.getReserve(
+      collateralReserveId
+    );
+    state.debtReserves[state.debtReserveIndex] = state.spoke.getReserve(debtReserveId);
 
-    state.collDynConfig = spoke1.getDynamicReserveConfig(collateralReserveId);
+    state.collDynConfig = state.spoke.getDynamicReserveConfig(collateralReserveId);
 
     liqConfig = _bound(liqConfig);
     liqBonus = bound(liqBonus, MIN_LIQUIDATION_BONUS, MAX_LIQUIDATION_BONUS);
@@ -163,7 +166,6 @@ contract SpokeLiquidationBase is SpokeBase {
     );
     skipTime = bound(skipTime, 1, MAX_SKIP_TIME);
 
-    state.spoke = spoke1;
     state.user = alice;
     state.liquidationProtocolFee = liquidationProtocolFee;
 
@@ -471,12 +473,12 @@ contract SpokeLiquidationBase is SpokeBase {
       10 ** state.collateralReserves[state.collateralReserveIndex].config.decimals;
     params.collateralReserveId = state.collateralReserves[state.collateralReserveIndex].reserveId;
     params.collateralAssetPrice = oracle.getReservePrice(
-      state.collateralReserves[state.collateralReserveIndex].assetId
+      state.collateralReserves[state.collateralReserveIndex].reserveId
     );
     params.debtAssetUnit = 10 ** state.debtReserves[state.debtReserveIndex].config.decimals;
     params.debtReserveId = state.debtReserves[state.debtReserveIndex].reserveId;
     params.debtAssetPrice = oracle.getReservePrice(
-      state.debtReserves[state.debtReserveIndex].assetId
+      state.debtReserves[state.debtReserveIndex].reserveId
     );
     params.liquidationBonus = state.liquidationBonus;
     params.liquidationProtocolFee = state.liquidationProtocolFee;
@@ -767,7 +769,7 @@ contract SpokeLiquidationBase is SpokeBase {
   ) internal {
     // set price to 0 to circumvent borrow validation
     uint256 assetId = spoke.getReserve(collateralReserveId).assetId;
-    uint256 initialExRate = hub.convertToSuppliedAssets(assetId, WadRayMathExtended.RAY);
+    uint256 initialExRate = hub.convertToSuppliedAssets(assetId, WadRayMathExtended.RAY.wadify()); // wadify to increase precision of ex rate increase
     uint256 initialPrice = oracle1.getReservePrice(collateralReserveId);
     oracle1.setReservePrice(collateralReserveId, 0);
     // user borrows some collateral reserve to inflate collateral supply ex rate
@@ -780,7 +782,7 @@ contract SpokeLiquidationBase is SpokeBase {
     });
     oracle1.setReservePrice(collateralReserveId, initialPrice);
     skip(skipTime);
-    uint256 finalExRate = hub.convertToSuppliedAssets(assetId, WadRayMathExtended.RAY);
+    uint256 finalExRate = hub.convertToSuppliedAssets(assetId, WadRayMathExtended.RAY.wadify()); // wadify to increase precision of ex rate increase
     assertGt(finalExRate, initialExRate);
   }
 }

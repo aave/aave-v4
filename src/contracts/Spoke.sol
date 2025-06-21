@@ -927,8 +927,8 @@ contract Spoke is ISpoke, Multicall {
     vars.assetId = reserve.assetId;
     ILiquidityHub hub = reserve.config.hub;
 
-    (vars.baseDebt, vars.premiumDebt) = _getUserDebt(hub, vars.assetId, userPosition);
     _validateRepay(reserve);
+    (vars.baseDebt, vars.premiumDebt) = _getUserDebt(hub, vars.assetId, userPosition);
     (vars.baseDebtRestored, vars.premiumDebtRestored) = _calculateRestoreAmount(
       vars.baseDebt,
       vars.premiumDebt,

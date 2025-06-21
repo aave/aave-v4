@@ -201,13 +201,18 @@ contract LiquidationCallMultiReserveBadPremiumDebtTest is SpokeLiquidationBase {
   ) internal returns (LiquidationTestLocalParams memory) {
     LiquidationTestLocalParams memory state;
     state.collateralReserves = new DataTypes.Reserve[](1);
-    state.collateralReserves[state.collateralReserveIndex] = spoke1.getReserve(collateralReserveId);
+
+    state.spoke = spoke1;
+
+    state.collateralReserves[state.collateralReserveIndex] = state.spoke.getReserve(
+      collateralReserveId
+    );
     state.debtReserveIndex = bound(debtReserveIndex, 0, debtReserveIds.length - 1);
     state.debtReserves = new DataTypes.Reserve[](debtReserveIds.length);
-    state.collDynConfig = spoke1.getDynamicReserveConfig(collateralReserveId);
+    state.collDynConfig = state.spoke.getDynamicReserveConfig(collateralReserveId);
 
     for (uint256 i = 0; i < debtReserveIds.length; i++) {
-      state.debtReserves[i] = spoke1.getReserve(debtReserveIds[i]);
+      state.debtReserves[i] = state.spoke.getReserve(debtReserveIds[i]);
     }
 
     liqConfig = _boundCloseFactor(liqConfig);
@@ -234,7 +239,6 @@ contract LiquidationCallMultiReserveBadPremiumDebtTest is SpokeLiquidationBase {
     skipTimeForPremiumAccrual = bound(skipTimeForPremiumAccrual, 5 * 365 days, MAX_SKIP_TIME); // enough time to accrue debt so that HF is liquidatable
 
     state.liquidationProtocolFee = liquidationProtocolFee;
-    state.spoke = spoke1;
     state.user = alice;
 
     // set spoke liq config
@@ -299,6 +303,8 @@ contract LiquidationCallMultiReserveBadPremiumDebtTest is SpokeLiquidationBase {
       state.liqProtocolFee,
 
     ) = _calculateAvailableCollateralToLiquidate(state.spoke, state, UINT256_MAX);
+
+    console.log('collToLiq: %e, debtToLiq: %e', state.collToLiq, state.debtToLiq);
 
     // logs to read protocol fee from tmp emitted event
     // TODO: update when treasury accounting is done

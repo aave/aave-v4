@@ -5,7 +5,6 @@ import 'tests/unit/Spoke/Liquidations/Spoke.Liquidation.Base.t.sol';
 
 /// tests where liquidation results in bad debt (debt remaining > 0, collateral remaining = 0)
 contract LiquidationCallBadDebtTest is SpokeLiquidationBase {
-  // using WadRayMath for uint256;
   using PercentageMath for uint256;
   using PercentageMathExtended for uint256;
 
@@ -323,10 +322,14 @@ contract LiquidationCallBadDebtTest is SpokeLiquidationBase {
     state.collateralReserves = new DataTypes.Reserve[](1);
     state.debtReserves = new DataTypes.Reserve[](1);
 
-    state.collateralReserves[state.collateralReserveIndex] = spoke1.getReserve(collateralReserveId);
-    state.debtReserves[state.debtReserveIndex] = spoke1.getReserve(debtReserveId);
+    state.spoke = spoke1;
 
-    state.collDynConfig = spoke1.getDynamicReserveConfig(
+    state.collateralReserves[state.collateralReserveIndex] = state.spoke.getReserve(
+      collateralReserveId
+    );
+    state.debtReserves[state.debtReserveIndex] = state.spoke.getReserve(debtReserveId);
+
+    state.collDynConfig = state.spoke.getDynamicReserveConfig(
       collateralReserveId,
       state.collateralReserves[state.collateralReserveIndex].dynamicConfigKey
     ); // utilize latest dynamic config
@@ -356,7 +359,7 @@ contract LiquidationCallBadDebtTest is SpokeLiquidationBase {
       )
     );
     skipTime = bound(skipTime, 1, MAX_SKIP_TIME);
-    state.spoke = spoke1;
+
     state.user = alice;
     state.liquidationProtocolFee = liquidationProtocolFee;
 
