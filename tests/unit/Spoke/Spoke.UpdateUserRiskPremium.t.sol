@@ -2,6 +2,8 @@
 pragma solidity ^0.8.0;
 
 import 'tests/unit/Spoke/SpokeBase.t.sol';
+import {IAccessManager} from 'src/dependencies/openzeppelin/IAccessManager.sol';
+import {IAccessManaged} from 'src/dependencies/openzeppelin/IAccessManaged.sol';
 
 contract SpokeUpdateUserRiskPremium is SpokeBase {
   function test_updateUserRiskPremium_on_rpIncrease(address caller) public {
@@ -25,7 +27,7 @@ contract SpokeUpdateUserRiskPremium is SpokeBase {
 
     assertGt(riskPremiumAfter, riskPremiumBefore);
 
-    if (caller != alice) {
+    if (caller != alice && !_isGovernor(caller, spoke1)) {
       vm.expectRevert(ISpoke.Unauthorized.selector);
     } else {
       vm.expectEmit(address(spoke1));
@@ -33,5 +35,11 @@ contract SpokeUpdateUserRiskPremium is SpokeBase {
     }
     vm.prank(caller);
     spoke1.updateUserRiskPremium(alice);
+  }
+
+  function _isGovernor(address caller, ISpoke spoke) internal view returns (bool) {
+    IAccessManager accessManager = IAccessManager(IAccessManaged(address(spoke)).authority());
+    (bool result, ) = accessManager.hasRole(Roles.GOVERNOR_ROLE, caller);
+    return result;
   }
 }
