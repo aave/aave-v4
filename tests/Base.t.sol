@@ -192,10 +192,6 @@ abstract contract Base is Test {
     accessManager.grantRole(Roles.INTEREST_RATE_CONTROLLER_ROLE, ADMIN, 0);
     accessManager.grantRole(Roles.HUB_ADMIN_ROLE, HUB_ADMIN, 0);
     accessManager.grantRole(Roles.SPOKE_ADMIN_ROLE, SPOKE_ADMIN, 0);
-    accessManager.grantRole(Roles.SPOKE_ROLE, address(spoke1), 0);
-    accessManager.grantRole(Roles.SPOKE_ROLE, address(spoke2), 0);
-    accessManager.grantRole(Roles.SPOKE_ROLE, address(spoke3), 0);
-    accessManager.grantRole(Roles.SPOKE_ROLE, address(treasurySpoke), 0);
     accessManager.grantRole(Roles.GOVERNOR_ROLE, GOVERNOR, 0);
     accessManager.grantRole(Roles.INTEREST_RATE_CONTROLLER_ROLE, IR_CONTROLLER, 0);
 
@@ -221,16 +217,6 @@ abstract contract Base is Test {
     hubSelectors[5] = ILiquidityHub.updateAssetFees.selector;
 
     accessManager.setTargetFunctionRole(address(hub), hubSelectors, Roles.HUB_ADMIN_ROLE);
-
-    // Spoke functionalities
-    bytes4[] memory spokeSelectors = new bytes4[](5);
-    spokeSelectors[0] = ILiquidityHub.add.selector;
-    spokeSelectors[1] = ILiquidityHub.remove.selector;
-    spokeSelectors[2] = ILiquidityHub.draw.selector;
-    spokeSelectors[3] = ILiquidityHub.restore.selector;
-    spokeSelectors[4] = ILiquidityHub.refreshPremiumDebt.selector;
-
-    accessManager.setTargetFunctionRole(address(hub), spokeSelectors, Roles.SPOKE_ROLE);
 
     // Interest rate controller functionalities
     bytes4[] memory irSelectors = new bytes4[](1);
@@ -318,7 +304,8 @@ abstract contract Base is Test {
   function configureTokenList() internal {
     DataTypes.SpokeConfig memory spokeConfig = DataTypes.SpokeConfig({
       supplyCap: type(uint256).max,
-      drawCap: type(uint256).max
+      drawCap: type(uint256).max,
+      active: true
     });
 
     // Add all assets to the Liquidity Hub

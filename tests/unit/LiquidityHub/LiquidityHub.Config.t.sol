@@ -12,11 +12,16 @@ contract LiquidityHubConfigTest is LiquidityHubBase {
     vm.expectEmit(address(hub));
     emit ILiquidityHub.SpokeAdded(assetId, address(spoke1));
     vm.prank(HUB_ADMIN);
-    hub.addSpoke(assetId, DataTypes.SpokeConfig({supplyCap: 1, drawCap: 1}), address(spoke1));
+    hub.addSpoke(
+      assetId,
+      DataTypes.SpokeConfig({supplyCap: 1, drawCap: 1, active: true}),
+      address(spoke1)
+    );
 
     DataTypes.SpokeConfig memory spokeData = hub.getSpokeConfig(assetId, address(spoke1));
     assertEq(spokeData.supplyCap, 1, 'spoke supply cap');
     assertEq(spokeData.drawCap, 1, 'spoke draw cap');
+    assertEq(spokeData.active, true, 'spoke active');
   }
 
   function test_addSpoke_fuzz(DataTypes.SpokeConfig calldata spokeConfig) public {
@@ -30,6 +35,7 @@ contract LiquidityHubConfigTest is LiquidityHubBase {
     DataTypes.SpokeConfig memory spokeData = hub.getSpokeConfig(assetId, address(spoke1));
     assertEq(spokeData.supplyCap, spokeConfig.supplyCap, 'spoke supply cap');
     assertEq(spokeData.drawCap, spokeConfig.drawCap, 'spoke draw cap');
+    assertEq(spokeData.active, spokeConfig.active, 'spoke active');
   }
 
   function test_addSpoke_revertsWith_InvalidSpoke() public {
@@ -38,7 +44,11 @@ contract LiquidityHubConfigTest is LiquidityHubBase {
 
     vm.expectRevert(ILiquidityHub.InvalidSpoke.selector);
     vm.prank(HUB_ADMIN);
-    hub.addSpoke(assetId, DataTypes.SpokeConfig({supplyCap: 1, drawCap: 1}), invalidSpokeAddress);
+    hub.addSpoke(
+      assetId,
+      DataTypes.SpokeConfig({supplyCap: 1, drawCap: 1, active: true}),
+      invalidSpokeAddress
+    );
   }
 
   function test_addSpokes() public {
@@ -46,10 +56,15 @@ contract LiquidityHubConfigTest is LiquidityHubBase {
     assetIds[0] = daiAssetId;
     assetIds[1] = wethAssetId;
 
-    DataTypes.SpokeConfig memory daiSpokeConfig = DataTypes.SpokeConfig({supplyCap: 1, drawCap: 2});
+    DataTypes.SpokeConfig memory daiSpokeConfig = DataTypes.SpokeConfig({
+      supplyCap: 1,
+      drawCap: 2,
+      active: true
+    });
     DataTypes.SpokeConfig memory wethSpokeConfig = DataTypes.SpokeConfig({
       supplyCap: 3,
-      drawCap: 4
+      drawCap: 4,
+      active: true
     });
 
     DataTypes.SpokeConfig[] memory spokeConfigs = new DataTypes.SpokeConfig[](2);
@@ -78,8 +93,8 @@ contract LiquidityHubConfigTest is LiquidityHubBase {
     assetIds[1] = wethAssetId;
 
     DataTypes.SpokeConfig[] memory spokeConfigs = new DataTypes.SpokeConfig[](2);
-    spokeConfigs[0] = DataTypes.SpokeConfig({supplyCap: 1, drawCap: 2});
-    spokeConfigs[1] = DataTypes.SpokeConfig({supplyCap: 3, drawCap: 4});
+    spokeConfigs[0] = DataTypes.SpokeConfig({supplyCap: 1, drawCap: 2, active: true});
+    spokeConfigs[1] = DataTypes.SpokeConfig({supplyCap: 3, drawCap: 4, active: true});
 
     vm.expectRevert(ILiquidityHub.InvalidSpoke.selector);
     vm.prank(HUB_ADMIN);
@@ -369,7 +384,8 @@ contract LiquidityHubConfigTest is LiquidityHubBase {
       daiAssetId,
       address(spoke1),
       config.drawCap,
-      config.supplyCap
+      config.supplyCap,
+      config.active
     );
     hub.updateSpokeConfig(daiAssetId, address(spoke1), config);
   }

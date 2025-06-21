@@ -17,7 +17,8 @@ interface ILiquidityHub {
     uint256 indexed assetId,
     address indexed spoke,
     uint256 drawCap,
-    uint256 supplyCap
+    uint256 supplyCap,
+    bool active
   );
   event DrawnIndexUpdate(uint256 indexed assetId, uint256 drawnIndex, uint256 lastUpdateTimestamp);
   event Add(
@@ -77,6 +78,7 @@ interface ILiquidityHub {
   error InvalidAssetAddress();
   error InvalidDebtChange();
   error InvalidFeeReceiver();
+  error SpokeNotActive();
 
   function addAsset(DataTypes.AssetConfig memory params, address asset) external;
 

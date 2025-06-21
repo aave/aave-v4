@@ -66,7 +66,11 @@ contract LiquidityHubBase is Base {
     vm.startPrank(ADMIN);
     hub.addSpoke(
       assetId,
-      DataTypes.SpokeConfig({supplyCap: type(uint256).max, drawCap: type(uint256).max}),
+      DataTypes.SpokeConfig({
+        supplyCap: type(uint256).max,
+        drawCap: type(uint256).max,
+        active: true
+      }),
       tempSpoke1
     );
 
@@ -76,13 +80,13 @@ contract LiquidityHubBase is Base {
     address tempSpoke2 = makeAddr('TEMP_SPOKE_2');
     hub.addSpoke(
       assetId,
-      DataTypes.SpokeConfig({supplyCap: type(uint256).max, drawCap: type(uint256).max}),
+      DataTypes.SpokeConfig({
+        supplyCap: type(uint256).max,
+        drawCap: type(uint256).max,
+        active: true
+      }),
       tempSpoke2
     );
-
-    // Grant spoke role to the spokes
-    accessManager.grantRole(Roles.SPOKE_ROLE, tempSpoke1, 0);
-    accessManager.grantRole(Roles.SPOKE_ROLE, tempSpoke2, 0);
     vm.stopPrank();
 
     _supplyAndDrawLiquidity({
@@ -164,15 +168,16 @@ contract LiquidityHubBase is Base {
     vm.prank(tempUser);
     asset.approve(address(hub), type(uint256).max);
 
-    vm.startPrank(ADMIN);
+    vm.prank(ADMIN);
     hub.addSpoke(
       assetId,
-      DataTypes.SpokeConfig({supplyCap: type(uint256).max, drawCap: type(uint256).max}),
+      DataTypes.SpokeConfig({
+        supplyCap: type(uint256).max,
+        drawCap: type(uint256).max,
+        active: true
+      }),
       tempSpoke
     );
-    // Grant spoke role to the spoke
-    accessManager.grantRole(Roles.SPOKE_ROLE, tempSpoke, 0);
-    vm.stopPrank();
 
     Utils.add({
       hub: hub,
@@ -195,17 +200,17 @@ contract LiquidityHubBase is Base {
     address tempSpoke = vm.randomAddress();
     address tempUser = vm.randomAddress();
 
-    // Grant spoke role to the spoke
-    vm.prank(ADMIN);
-    accessManager.grantRole(Roles.SPOKE_ROLE, tempSpoke, 0);
-
     int256 premiumDrawnSharesDelta = 1000;
     int256 premiumOffsetDelta = 1000;
 
     vm.prank(HUB_ADMIN);
     hub.addSpoke(
       assetId,
-      DataTypes.SpokeConfig({supplyCap: type(uint256).max, drawCap: type(uint256).max}),
+      DataTypes.SpokeConfig({
+        supplyCap: type(uint256).max,
+        drawCap: type(uint256).max,
+        active: true
+      }),
       tempSpoke
     );
 

@@ -73,7 +73,11 @@ contract SpokeMultipleHubSiloedBorrowingTest is SpokeMultipleHubBase {
     // Link new hub and new spoke for asset B, 100k draw cap
     newHub.addSpoke(
       siloedVars.assetBId,
-      DataTypes.SpokeConfig({drawCap: siloedVars.assetBDrawCap, supplyCap: UINT256_MAX}),
+      DataTypes.SpokeConfig({
+        drawCap: siloedVars.assetBDrawCap,
+        supplyCap: UINT256_MAX,
+        active: true
+      }),
       address(newSpoke)
     );
 
@@ -119,7 +123,11 @@ contract SpokeMultipleHubSiloedBorrowingTest is SpokeMultipleHubBase {
     // Link canonical hub and spoke 1 for asset A
     hub.addSpoke(
       siloedVars.assetAId,
-      DataTypes.SpokeConfig({drawCap: type(uint256).max, supplyCap: type(uint256).max}),
+      DataTypes.SpokeConfig({
+        drawCap: type(uint256).max,
+        supplyCap: type(uint256).max,
+        active: true
+      }),
       address(spoke1)
     );
 
@@ -150,7 +158,7 @@ contract SpokeMultipleHubSiloedBorrowingTest is SpokeMultipleHubBase {
     // Link canonical hub and new spoke for asset A, 500k supply cap, 0 borrow cap
     hub.addSpoke(
       siloedVars.assetAId,
-      DataTypes.SpokeConfig({drawCap: 0, supplyCap: siloedVars.assetASupplyCap}),
+      DataTypes.SpokeConfig({drawCap: 0, supplyCap: siloedVars.assetASupplyCap, active: true}),
       address(newSpoke)
     );
     vm.stopPrank();

@@ -56,10 +56,7 @@ contract SpokeMultipleHubBase is SpokeBase {
     accessManager.grantRole(Roles.SPOKE_ADMIN_ROLE, ADMIN, 0);
     accessManager.grantRole(Roles.HUB_ADMIN_ROLE, HUB_ADMIN, 0);
     accessManager.grantRole(Roles.SPOKE_ADMIN_ROLE, HUB_ADMIN, 0);
-    accessManager.grantRole(Roles.SPOKE_ROLE, HUB_ADMIN, 0);
     accessManager.grantRole(Roles.SPOKE_ADMIN_ROLE, SPOKE_ADMIN, 0);
-    accessManager.grantRole(Roles.SPOKE_ROLE, address(spoke1), 0);
-    accessManager.grantRole(Roles.SPOKE_ROLE, address(newSpoke), 0);
     accessManager.grantRole(Roles.GOVERNOR_ROLE, GOVERNOR, 0);
 
     // Grant responsibilities to roles
@@ -84,17 +81,6 @@ contract SpokeMultipleHubBase is SpokeBase {
 
     accessManager.setTargetFunctionRole(address(hub), hubSelectors, Roles.HUB_ADMIN_ROLE);
     accessManager.setTargetFunctionRole(address(newHub), hubSelectors, Roles.HUB_ADMIN_ROLE);
-
-    // Spoke functionalities
-    bytes4[] memory spokeSelectors = new bytes4[](5);
-    spokeSelectors[0] = ILiquidityHub.add.selector;
-    spokeSelectors[1] = ILiquidityHub.remove.selector;
-    spokeSelectors[2] = ILiquidityHub.draw.selector;
-    spokeSelectors[3] = ILiquidityHub.restore.selector;
-    spokeSelectors[4] = ILiquidityHub.refreshPremiumDebt.selector;
-
-    accessManager.setTargetFunctionRole(address(hub), spokeSelectors, Roles.SPOKE_ROLE);
-    accessManager.setTargetFunctionRole(address(newHub), spokeSelectors, Roles.SPOKE_ROLE);
     vm.stopPrank();
   }
 }

@@ -103,7 +103,7 @@ contract LiquidityHubUpdateAssetFeesTest is LiquidityHubBase {
     emit ILiquidityHub.DrawnIndexUpdate(assetId, hub.previewDrawnIndex(assetId), block.timestamp);
 
     vm.expectEmit(address(hub));
-    emit ILiquidityHub.SpokeConfigUpdated(assetId, currentFeeReceiver, 0, 0);
+    emit ILiquidityHub.SpokeConfigUpdated(assetId, currentFeeReceiver, 0, 0, true);
 
     vm.expectEmit(address(hub));
     emit ILiquidityHub.SpokeAdded(assetId, newFeeReceiver);
@@ -141,7 +141,7 @@ contract LiquidityHubUpdateAssetFeesTest is LiquidityHubBase {
     emit ILiquidityHub.DrawnIndexUpdate(assetId, hub.previewDrawnIndex(assetId), block.timestamp);
 
     vm.expectEmit(address(hub));
-    emit ILiquidityHub.SpokeConfigUpdated(assetId, currentFeeReceiver, 0, 0);
+    emit ILiquidityHub.SpokeConfigUpdated(assetId, currentFeeReceiver, 0, 0, true);
 
     vm.expectEmit(address(hub));
     emit ILiquidityHub.SpokeAdded(assetId, newFeeReceiver);
@@ -167,14 +167,15 @@ contract LiquidityHubUpdateAssetFeesTest is LiquidityHubBase {
     emit ILiquidityHub.DrawnIndexUpdate(assetId, hub.previewDrawnIndex(assetId), block.timestamp);
 
     vm.expectEmit(address(hub));
-    emit ILiquidityHub.SpokeConfigUpdated(assetId, newFeeReceiver, 0, 0);
+    emit ILiquidityHub.SpokeConfigUpdated(assetId, newFeeReceiver, 0, 0, true);
 
     vm.expectEmit(address(hub));
     emit ILiquidityHub.SpokeConfigUpdated(
       assetId,
       currentFeeReceiver,
       type(uint256).max,
-      type(uint256).max
+      type(uint256).max,
+      true
     );
 
     vm.expectEmit(address(hub));

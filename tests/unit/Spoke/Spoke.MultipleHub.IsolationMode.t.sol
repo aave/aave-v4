@@ -95,12 +95,20 @@ contract SpokeMultipleHubIsolationModeTest is SpokeMultipleHubBase {
     // Link hub and spoke
     newHub.addSpoke(
       isolationVars.assetAId,
-      DataTypes.SpokeConfig({drawCap: type(uint256).max, supplyCap: type(uint256).max}),
+      DataTypes.SpokeConfig({
+        drawCap: type(uint256).max,
+        supplyCap: type(uint256).max,
+        active: true
+      }),
       address(newSpoke)
     );
     newHub.addSpoke(
       isolationVars.assetBId,
-      DataTypes.SpokeConfig({drawCap: type(uint256).max, supplyCap: type(uint256).max}),
+      DataTypes.SpokeConfig({
+        drawCap: type(uint256).max,
+        supplyCap: type(uint256).max,
+        active: true
+      }),
       address(newSpoke)
     );
 
@@ -147,7 +155,11 @@ contract SpokeMultipleHubIsolationModeTest is SpokeMultipleHubBase {
     // Link main hub and spoke 1 for asset B
     hub.addSpoke(
       isolationVars.assetBIdMainHub,
-      DataTypes.SpokeConfig({drawCap: type(uint256).max, supplyCap: type(uint256).max}),
+      DataTypes.SpokeConfig({
+        drawCap: type(uint256).max,
+        supplyCap: type(uint256).max,
+        active: true
+      }),
       address(spoke1)
     );
 
@@ -229,7 +241,7 @@ contract SpokeMultipleHubIsolationModeTest is SpokeMultipleHubBase {
     // 0 supply cap, 100k draw cap
     hub.addSpoke(
       isolationVars.assetBIdMainHub,
-      DataTypes.SpokeConfig({drawCap: 100_000e18, supplyCap: 0}),
+      DataTypes.SpokeConfig({drawCap: 100_000e18, supplyCap: 0, active: true}),
       address(newSpoke)
     );
     vm.stopPrank();
@@ -298,7 +310,7 @@ contract SpokeMultipleHubIsolationModeTest is SpokeMultipleHubBase {
     hub.updateSpokeConfig(
       isolationVars.assetBIdMainHub,
       address(newSpoke),
-      DataTypes.SpokeConfig({drawCap: 0, supplyCap: 0})
+      DataTypes.SpokeConfig({drawCap: 0, supplyCap: 0, active: true})
     );
 
     // Now Bob or any other users cannot draw any asset B from the new spoke main hub due to new draw cap of 0
