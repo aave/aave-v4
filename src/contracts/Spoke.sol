@@ -323,7 +323,7 @@ contract Spoke is ISpoke, Multicall {
       userPosition.premiumDrawnShares
     );
 
-    if (userPosition.baseDrawnShares == 0 && userPremiumDrawnShares == 0) {
+    if (userPosition.baseDrawnShares == 0) {
       _positionStatus[msg.sender].setBorrowing(reserveId, false);
     }
 
@@ -729,15 +729,13 @@ contract Spoke is ISpoke, Multicall {
     return _positionStatus[user].isUsingAsCollateral(reserveId);
   }
 
-  // todo opt: use bitmap
-  function _isBorrowing(address user, uint256 reserveId) internal view returns (bool) {
+  function _isBorrowing(uint256 reserveId, address user) internal view returns (bool) {
     return _positionStatus[user].isBorrowing(reserveId);
   }
 
-  // todo opt: use bitmap
   function _usingAsCollateralOrBorrowing(
-    address user,
-    uint256 reserveId
+    uint256 reserveId,
+    address user
   ) internal view returns (bool) {
     return _positionStatus[user].isUsingAsCollateralOrBorrowing(reserveId);
   }
@@ -760,7 +758,7 @@ contract Spoke is ISpoke, Multicall {
     while (vars.reserveId < reservesListLength) {
       DataTypes.UserPosition storage userPosition = _userPositions[user][vars.reserveId];
 
-      if (!_usingAsCollateralOrBorrowing(user, vars.reserveId)) {
+      if (!_usingAsCollateralOrBorrowing(vars.reserveId, user)) {
         unchecked {
           ++vars.reserveId;
         }
@@ -782,7 +780,7 @@ contract Spoke is ISpoke, Multicall {
         }
       }
 
-      if (_isBorrowing(user, vars.reserveId)) {
+      if (_isBorrowing(vars.reserveId, user)) {
         vars.totalDebtInBaseCurrency += _getUserDebtInBaseCurrency(
           userPosition,
           vars.assetId,
@@ -952,7 +950,7 @@ contract Spoke is ISpoke, Multicall {
       uint256 assetId = reserve.assetId;
       ILiquidityHub hub = reserve.config.hub;
       // todo keep borrowed assets in transient storage/pass through?
-      if (_isBorrowing(userAddress, reserveId) && assetId != assetIdToAvoid) {
+      if (_isBorrowing(reserveId, userAddress) && assetId != assetIdToAvoid) {
         uint256 oldUserPremiumDrawnShares = userPosition.premiumDrawnShares;
         uint256 oldUserPremiumOffset = userPosition.premiumOffset;
         uint256 accruedUserPremium = hub.convertToDrawnAssets(assetId, oldUserPremiumDrawnShares) -
@@ -1157,7 +1155,7 @@ contract Spoke is ISpoke, Multicall {
         0
       );
 
-      if (userDebtPosition.baseDrawnShares == 0 && vars.userPremiumDrawnShares == 0) {
+      if (userDebtPosition.baseDrawnShares == 0) {
         DataTypes.PositionStatus storage positionStatus = _positionStatus[users[vars.i]];
         positionStatus.setBorrowing(vars.debtReserveId, false);
       }

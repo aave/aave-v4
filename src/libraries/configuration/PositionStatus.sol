@@ -11,7 +11,7 @@ import {DataTypes} from '../types/DataTypes.sol';
 library PositionStatus {
   using PositionStatus for DataTypes.PositionStatus;
 
-  error InvalidreserveId();
+  error InvalidReserveId();
 
   //TODO: After we complete the data structures packing, this needs to be adjusted to the right size depending on the number of bits we will use to store the reserve index
   uint256 public constant MAX_RESERVES_COUNT = 1024;
@@ -31,8 +31,8 @@ library PositionStatus {
     uint256 reserveId,
     bool borrowing
   ) internal {
-      require(reserveId < MAX_RESERVES_COUNT, InvalidreserveId());
-      unchecked {
+    require(reserveId < MAX_RESERVES_COUNT, InvalidReserveId());
+    unchecked {
       uint256 bit = 1 << ((reserveId % 128) << 1);
       if (borrowing) {
         self.map[reserveId >> 7] |= bit;
@@ -54,7 +54,7 @@ library PositionStatus {
     bool usingAsCollateral
   ) internal {
     unchecked {
-      require(reserveId < MAX_RESERVES_COUNT, InvalidreserveId());
+      require(reserveId < MAX_RESERVES_COUNT, InvalidReserveId());
       uint256 bit = 1 << (((reserveId % 128) << 1) + 1);
       if (usingAsCollateral) {
         self.map[reserveId >> 7] |= bit;
@@ -75,8 +75,8 @@ library PositionStatus {
     uint256 reserveId
   ) internal view returns (bool) {
     unchecked {
-      require(reserveId < MAX_RESERVES_COUNT, InvalidreserveId());
-      return (_getMapSlot(self, reserveId) >> (reserveId % 128 << 1)) & 3 != 0;
+      require(reserveId < MAX_RESERVES_COUNT, InvalidReserveId());
+      return (self.getMapSlot(reserveId) >> (reserveId % 128 << 1)) & 3 != 0;
     }
   }
   /**
@@ -90,8 +90,8 @@ library PositionStatus {
     uint256 reserveId
   ) internal view returns (bool) {
     unchecked {
-      require(reserveId < MAX_RESERVES_COUNT, InvalidreserveId());
-      return (_getMapSlot(self, reserveId) >> ((reserveId % 128) << 1)) & 1 != 0;
+      require(reserveId < MAX_RESERVES_COUNT, InvalidReserveId());
+      return (self.getMapSlot(reserveId) >> ((reserveId % 128) << 1)) & 1 != 0;
     }
   }
 
@@ -106,8 +106,8 @@ library PositionStatus {
     uint256 reserveId
   ) internal view returns (bool) {
     unchecked {
-      require(reserveId < MAX_RESERVES_COUNT, InvalidreserveId());
-      return (_getMapSlot(self, reserveId) >> (((reserveId % 128) << 1) + 1)) & 1 != 0;
+      require(reserveId < MAX_RESERVES_COUNT, InvalidReserveId());
+      return (self.getMapSlot(reserveId) >> (((reserveId % 128) << 1) + 1)) & 1 != 0;
     }
   }
 
@@ -116,7 +116,10 @@ library PositionStatus {
    * @param self The configuration object.
    * @return the uint256 containing the state of the reserve.
    */
-  function _getMapSlot( DataTypes.PositionStatus storage self,uint256 reserveId) internal view returns(uint256){
-      return self.map[reserveId >> 7];
+  function getMapSlot(
+    DataTypes.PositionStatus storage self,
+    uint256 reserveId
+  ) internal view returns (uint256) {
+    return self.map[reserveId >> 7];
   }
 }

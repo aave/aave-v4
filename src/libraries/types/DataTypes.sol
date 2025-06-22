@@ -87,7 +87,7 @@ library DataTypes {
   }
 
   struct PositionStatus {
-    mapping(uint256 => uint256) map;
+    mapping(uint256 slot => uint256 status) map;
   }
 
   struct CalculateUserAccountDataVars {
