@@ -141,6 +141,9 @@ library DataTypes {
     uint256 i;
     uint256 debtAssetId;
     uint256 collateralAssetId;
+    uint256 debtReserveId;
+    uint256 collateralReserveId;
+    address collateralAsset;
     uint256 baseDebt;
     uint256 premiumDebt;
     uint256 collateralToLiquidate;
@@ -166,10 +169,25 @@ library DataTypes {
     uint256 usersLength;
     uint256 newUserSuppliedShares;
     uint256 deficit;
+    uint256 outstandingDebt;
     bool hasNoCollateralLeft;
   }
 
   struct ExecuteRepayLocalVars {
+    ILiquidityHub hub;
+    uint256 assetId;
+    uint256 baseDebt;
+    uint256 premiumDebt;
+    uint256 baseDebtRestored;
+    uint256 premiumDebtRestored;
+    uint256 userPremiumDrawnShares;
+    uint256 userPremiumOffset;
+    uint256 accruedPremium;
+    uint256 newUserRiskPremium;
+    uint256 restoredShares;
+  }
+
+  struct ExecuteReportDeficitLocalVars {
     ILiquidityHub hub;
     uint256 assetId;
     uint256 baseDebt;
