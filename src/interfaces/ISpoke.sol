@@ -188,8 +188,6 @@ interface ISpoke is IMulticall {
     uint16 configKey
   ) external view returns (DataTypes.DynamicReserveConfig memory);
 
-  function getReserveRiskPremium(uint256 reserveId) external view returns (uint256);
-
   function getReserveSuppliedAmount(uint256 reserveId) external view returns (uint256);
 
   function getReserveSuppliedShares(uint256 reserveId) external view returns (uint256);
@@ -240,5 +238,6 @@ interface ISpoke is IMulticall {
   function HEALTH_FACTOR_LIQUIDATION_THRESHOLD() external view returns (uint256);
 
   function MAX_LIQUIDITY_PREMIUM() external view returns (uint256);
+
   function oracle() external view returns (IPriceOracle);
 }

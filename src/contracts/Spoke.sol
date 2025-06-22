@@ -75,11 +75,6 @@ contract Spoke is ISpoke, Multicall {
       reserveId: reserveId,
       assetId: assetId,
       asset: asset,
-      suppliedShares: 0,
-      baseDrawnShares: 0,
-      premiumDrawnShares: 0,
-      premiumOffset: 0,
-      realizedPremium: 0,
       config: config,
       dynamicConfigKey: dynamicConfigKey
     });
@@ -136,9 +131,7 @@ contract Spoke is ISpoke, Multicall {
     _validateSupply(reserve);
 
     uint256 suppliedShares = reserve.config.hub.add(reserve.assetId, amount, msg.sender);
-
     userPosition.suppliedShares += suppliedShares;
-    reserve.suppliedShares += suppliedShares;
 
     emit Supply(reserveId, msg.sender, suppliedShares);
   }
@@ -174,9 +167,7 @@ contract Spoke is ISpoke, Multicall {
       0
     ); // unnecessary but we realize premium debt here
     uint256 withdrawnShares = hub.remove(assetId, amount, to);
-
     userPosition.suppliedShares -= withdrawnShares;
-    reserve.suppliedShares -= withdrawnShares;
 
     // calc needs new user position, just updating base debt is enough
     uint256 newUserRiskPremium = _refreshAndValidateUserPosition(msg.sender); // validates HF
@@ -232,8 +223,6 @@ contract Spoke is ISpoke, Multicall {
       0
     ); // unnecessary but we realize premium debt here
     uint256 baseDrawnShares = hub.draw(assetId, amount, to);
-
-    reserve.baseDrawnShares += baseDrawnShares;
     userPosition.baseDrawnShares += baseDrawnShares;
 
     // calc needs new user position, just updating base debt is enough
@@ -300,8 +289,6 @@ contract Spoke is ISpoke, Multicall {
       premiumDebtRestored,
       msg.sender
     ); // we settle base debt here
-
-    reserve.baseDrawnShares -= restoredShares;
     userPosition.baseDrawnShares -= restoredShares;
 
     (uint256 newUserRiskPremium, , , , ) = _calculateUserAccountData(msg.sender);
@@ -400,16 +387,16 @@ contract Spoke is ISpoke, Multicall {
     return baseDebt + premiumDebt;
   }
 
+  /// @dev We do not differentiate between duplicate reserves (assetId) on the same hub
   function getReserveSuppliedAmount(uint256 reserveId) external view returns (uint256) {
-    return
-      _reserves[reserveId].config.hub.convertToSuppliedAssets(
-        _reserves[reserveId].assetId,
-        _reserves[reserveId].suppliedShares
-      );
+    DataTypes.Reserve storage reserve = _reserves[reserveId];
+    return reserve.config.hub.getSpokeSuppliedAmount(reserve.assetId, address(this));
   }
 
+  /// @dev We do not differentiate between duplicate reserves (assetId) on the same hub
   function getReserveSuppliedShares(uint256 reserveId) external view returns (uint256) {
-    return _reserves[reserveId].suppliedShares;
+    DataTypes.Reserve storage reserve = _reserves[reserveId];
+    return reserve.config.hub.getSpokeSuppliedShares(reserve.assetId, address(this));
   }
 
   function getUserSuppliedAmount(uint256 reserveId, address user) public view returns (uint256) {
@@ -432,11 +419,6 @@ contract Spoke is ISpoke, Multicall {
   function getReserveTotalDebt(uint256 reserveId) external view returns (uint256) {
     (uint256 baseDebt, uint256 premiumDebt) = _getReserveDebt(_reserves[reserveId]);
     return baseDebt + premiumDebt;
-  }
-
-  function getReserveRiskPremium(uint256 reserveId) external view returns (uint256) {
-    DataTypes.Reserve storage reserve = _reserves[reserveId];
-    return reserve.premiumDrawnShares.rayDiv(reserve.baseDrawnShares); // trailing
   }
 
   function getUserRiskPremium(address user) external view returns (uint256) {
@@ -660,18 +642,19 @@ contract Spoke is ISpoke, Multicall {
     return (amount - premiumDebt, premiumDebt);
   }
 
+  // todo opt: inline hub & reserveId in args
   function _refreshPremiumDebt(
     DataTypes.Reserve storage reserve,
-    address userAddress,
+    address user,
     uint256 assetId,
     int256 premiumDrawnSharesDelta,
     int256 premiumOffsetDelta,
     uint256 realizedPremiumAdded,
     uint256 realizedPremiumTaken
   ) internal {
-    _refresh(
-      reserve,
-      userAddress,
+    emit RefreshPremiumDebt(
+      reserve.reserveId,
+      user,
       premiumDrawnSharesDelta,
       premiumOffsetDelta,
       realizedPremiumAdded,
@@ -679,28 +662,6 @@ contract Spoke is ISpoke, Multicall {
     );
     reserve.config.hub.refreshPremiumDebt(
       assetId,
-      premiumDrawnSharesDelta,
-      premiumOffsetDelta,
-      realizedPremiumAdded,
-      realizedPremiumTaken
-    );
-  }
-
-  function _refresh(
-    DataTypes.Reserve storage reserve,
-    address userAddress,
-    int256 premiumDrawnSharesDelta,
-    int256 premiumOffsetDelta,
-    uint256 realizedPremiumAdded,
-    uint256 realizedPremiumTaken
-  ) internal {
-    reserve.premiumDrawnShares = _add(reserve.premiumDrawnShares, premiumDrawnSharesDelta);
-    reserve.premiumOffset = _add(reserve.premiumOffset, premiumOffsetDelta);
-    reserve.realizedPremium = reserve.realizedPremium + realizedPremiumAdded - realizedPremiumTaken;
-
-    emit RefreshPremiumDebt(
-      reserve.reserveId,
-      userAddress,
       premiumDrawnSharesDelta,
       premiumOffsetDelta,
       realizedPremiumAdded,
@@ -903,18 +864,10 @@ contract Spoke is ISpoke, Multicall {
     );
   }
 
-  // todo rm reserve accounting here & fetch from hub
   function _getReserveDebt(
     DataTypes.Reserve storage reserve
   ) internal view returns (uint256, uint256) {
-    uint256 assetId = reserve.assetId;
-    ILiquidityHub hub = reserve.config.hub;
-    uint256 accruedPremium = hub.convertToDrawnAssets(assetId, reserve.premiumDrawnShares) -
-      reserve.premiumOffset;
-    return (
-      hub.convertToDrawnAssets(assetId, reserve.baseDrawnShares),
-      reserve.realizedPremium + accruedPremium
-    );
+    return reserve.config.hub.getSpokeDebt(reserve.assetId, address(this));
   }
 
   // todo optimize, merge logic duped borrow/repay, rename
@@ -1127,8 +1080,8 @@ contract Spoke is ISpoke, Multicall {
       vars.totalUserDebtPremiumDrawnSharesDelta += int256(vars.userPremiumDrawnShares);
       vars.totalUserDebtPremiumOffsetDelta += int256(vars.userPremiumOffset);
 
-      _refresh(
-        debtReserve,
+      emit RefreshPremiumDebt(
+        debtReserve.reserveId,
         users[vars.i],
         int256(vars.userPremiumDrawnShares),
         int256(vars.userPremiumOffset),
@@ -1148,8 +1101,8 @@ contract Spoke is ISpoke, Multicall {
       vars.totalUserCollateralPremiumDrawnSharesDelta += int256(vars.userPremiumDrawnShares);
       vars.totalUserCollateralPremiumOffsetDelta += int256(vars.userPremiumOffset);
 
-      _refresh(
-        collateralReserve,
+      emit RefreshPremiumDebt(
+        collateralReserve.reserveId,
         users[vars.i],
         int256(vars.userPremiumDrawnShares),
         int256(vars.userPremiumOffset),
@@ -1167,10 +1120,6 @@ contract Spoke is ISpoke, Multicall {
         ++vars.i;
       }
     }
-
-    // TODO: rm when dupe reserve accounting is rm
-    debtReserve.baseDrawnShares -= vars.totalRestoredShares;
-    collateralReserve.suppliedShares -= vars.totalWithdrawnShares;
 
     collateralReserveHub.refreshPremiumDebt(
       vars.debtAssetId,

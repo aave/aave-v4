@@ -18,7 +18,7 @@ contract SpokeBase is Base {
   }
 
   struct TestData {
-    DataTypes.Reserve data;
+    ReservePosition data;
     uint256 suppliedAmount;
   }
 
@@ -395,10 +395,11 @@ contract SpokeBase is Base {
     ISpoke spoke,
     uint256 reserveId
   ) internal view returns (TestData memory) {
-    TestData memory reserveInfo;
-    reserveInfo.data = getReserveInfo(spoke, reserveId);
-    reserveInfo.suppliedAmount = spoke.getReserveSuppliedAmount(reserveId);
-    return reserveInfo;
+    return
+      TestData({
+        data: getReservePosition(spoke, reserveId),
+        suppliedAmount: spoke.getReserveSuppliedAmount(reserveId)
+      });
   }
 
   function loadUserInfo(

@@ -141,6 +141,20 @@ abstract contract Base is Test {
     uint256 liquidityPremium;
   }
 
+  struct ReservePosition {
+    uint256 reserveId;
+    uint256 assetId;
+    uint256 suppliedShares;
+    uint256 suppliedAmount;
+    uint256 baseDrawnShares;
+    uint256 baseDebt;
+    uint256 premiumDrawnShares;
+    uint256 premiumOffset;
+    uint256 realizedPremium;
+    uint256 premiumDebt;
+    uint40 timestamp;
+  }
+
   struct DebtAccounting {
     uint256 cumulativeDebt;
     uint256 baseDebt;
@@ -977,13 +991,15 @@ abstract contract Base is Test {
   ) internal {
     DataTypes.DynamicReserveConfig memory config = spoke.getDynamicReserveConfig(reserveId);
     config.collateralFactor = newCollateralFactor.toUint16();
+    vm.prank(SPOKE_ADMIN);
     spoke.updateDynamicReserveConfig(reserveId, config);
   }
 
   function updateCollateralFlag(ISpoke spoke, uint256 reserveId, bool newCollateralFlag) internal {
-    DataTypes.Reserve memory reserveData = spoke.getReserve(reserveId);
-    reserveData.config.collateral = newCollateralFlag;
-    spoke.updateReserveConfig(reserveId, reserveData.config);
+    DataTypes.ReserveConfig memory config = spoke.getReserveConfig(reserveId);
+    config.collateral = newCollateralFlag;
+    vm.prank(SPOKE_ADMIN);
+    spoke.updateReserveConfig(reserveId, config);
   }
 
   function updateReserveBorrowableFlag(
@@ -991,9 +1007,10 @@ abstract contract Base is Test {
     uint256 reserveId,
     bool newBorrowable
   ) internal {
-    DataTypes.Reserve memory reserveData = spoke.getReserve(reserveId);
-    reserveData.config.borrowable = newBorrowable;
-    spoke.updateReserveConfig(reserveId, reserveData.config);
+    DataTypes.ReserveConfig memory config = spoke.getReserveConfig(reserveId);
+    config.borrowable = newBorrowable;
+    vm.prank(SPOKE_ADMIN);
+    spoke.updateReserveConfig(reserveId, config);
   }
 
   function updateLiquidityPremium(
@@ -1107,6 +1124,36 @@ abstract contract Base is Test {
   ) internal view returns (uint256, IERC20) {
     DataTypes.Reserve memory reserve = spoke.getReserve(reserveId);
     return (reserve.assetId, IERC20(reserve.asset));
+  }
+
+  function getReservePosition(
+    ISpoke spoke,
+    function(ISpoke) internal view returns (uint256) reserveIdFn
+  ) internal view returns (ReservePosition memory) {
+    return getReservePosition(spoke, reserveIdFn(spoke));
+  }
+
+  function getReservePosition(
+    ISpoke spoke,
+    uint256 reserveId
+  ) internal view returns (ReservePosition memory) {
+    uint256 assetId = spoke.getReserve(reserveId).assetId;
+    DataTypes.SpokeData memory spokeData = hub.getSpoke(assetId, address(spoke));
+    (uint256 baseDebt, uint256 premiumDebt) = spoke.getReserveDebt(reserveId);
+    return
+      ReservePosition({
+        reserveId: reserveId,
+        assetId: assetId,
+        suppliedShares: spokeData.suppliedShares,
+        suppliedAmount: spoke.getReserveSuppliedAmount(reserveId),
+        baseDrawnShares: spokeData.baseDrawnShares,
+        baseDebt: baseDebt,
+        premiumDrawnShares: spokeData.premiumDrawnShares,
+        premiumOffset: spokeData.premiumOffset,
+        realizedPremium: spokeData.realizedPremium,
+        premiumDebt: premiumDebt,
+        timestamp: vm.getBlockTimestamp().toUint40()
+      });
   }
 
   function getWithdrawalLimit(

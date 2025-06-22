@@ -1141,7 +1141,7 @@ contract SpokeRiskPremiumScenarioTest is SpokeBase {
     string memory label
   ) internal view {
     // Check base drawn shares and premium drawn shares for dai
-    DataTypes.Reserve memory reserve = spoke1.getReserve(_daiReserveId(spoke1));
+    ReservePosition memory reserve = getReservePosition(spoke1, _daiReserveId);
 
     // Reserve base drawn shares should be the sum of both users' base drawn shares
     assertApproxEqAbs(
@@ -1159,7 +1159,7 @@ contract SpokeRiskPremiumScenarioTest is SpokeBase {
     );
 
     // Check base drawn shares and premium drawn shares for usdx
-    reserve = spoke1.getReserve(_usdxReserveId(spoke1));
+    reserve = getReservePosition(spoke1, _usdxReserveId);
 
     // Reserve base drawn shares should be the sum of both users' base drawn shares
     assertApproxEqAbs(

@@ -51,11 +51,6 @@ library DataTypes {
     uint256 reserveId;
     uint256 assetId;
     address asset; // todo rm not needed
-    uint256 suppliedShares;
-    uint256 baseDrawnShares;
-    uint256 premiumDrawnShares;
-    uint256 premiumOffset;
-    uint256 realizedPremium;
     ReserveConfig config;
     uint16 dynamicConfigKey; // key of the last reserve config
   }
