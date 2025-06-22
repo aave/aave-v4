@@ -52,7 +52,12 @@ interface ILiquidityHub {
     uint256 realizedPremiumAdded,
     uint256 realizedPremiumTaken
   );
-  event DeficitCreated(uint256 indexed assetId, address indexed spoke, uint256 amount);
+  event DeficitCreated(
+    uint256 indexed assetId,
+    address indexed spoke,
+    uint256 baseRestoredShares,
+    uint256 totalRestoredAmount
+  );
 
   error MismatchedConfigs();
   error InvalidSharesAmount();
@@ -147,7 +152,7 @@ interface ILiquidityHub {
    * @param baseAmount The base debt to repay.
    * @param premiumAmount The premium debt to repay.
    * @param from The address to pull assets from.
-   * @return The amount of debt restored.
+   * @return The amount of debt shares restored.
    */
   function restore(
     uint256 assetId,
@@ -174,6 +179,20 @@ interface ILiquidityHub {
     uint256 realizedPremiumAdded,
     uint256 realizedPremiumTaken
   ) external;
+
+  /**
+   * @notice Reports deficit.
+   * @dev Only callable by spokes.
+   * @param assetId The identifier of the asset.
+   * @param baseAmount The base debt to report as deficit.
+   * @param premiumAmount The premium debt to report as deficit.
+   * @return The amount of debt reported as deficit.
+   */
+  function reportDeficit(
+    uint256 assetId,
+    uint256 baseAmount,
+    uint256 premiumAmount
+  ) external returns (uint256);
 
   function convertToDrawnAssets(uint256 assetId, uint256 shares) external view returns (uint256);
 

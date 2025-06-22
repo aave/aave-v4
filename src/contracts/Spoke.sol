@@ -974,83 +974,74 @@ contract Spoke is ISpoke, Multicall {
     return premiumIncrease;
   }
 
-  function _executeRepay(
+  function _executeReportDeficit(
     uint256 reserveId,
     uint256 amount,
     address user,
     DataTypes.UserPosition storage userPosition,
     uint256 deficitAmount
   ) internal returns (uint256) {
-    DataTypes.ExecuteRepayLocalVars memory vars;
-
-    DataTypes.Reserve storage reserve = _reserves[reserveId];
-    vars.assetId = reserve.assetId;
-    ILiquidityHub hub = reserve.config.hub;
-
-    _validateRepay(reserve);
-    (vars.baseDebt, vars.premiumDebt) = _getUserDebt(hub, vars.assetId, userPosition);
-    (vars.baseDebtRestored, vars.premiumDebtRestored) = _calculateRestoreAmount(
-      vars.baseDebt,
-      vars.premiumDebt,
-      amount
-    );
-
-    vars.userPremiumDrawnShares = userPosition.premiumDrawnShares;
-    vars.userPremiumOffset = userPosition.premiumOffset;
-    vars.userRealizedPremium = userPosition.realizedPremium;
-    vars.accruedPremium = vars.premiumDebt - userPosition.realizedPremium;
-
-    userPosition.premiumDrawnShares = 0;
-    userPosition.premiumOffset = 0;
-    userPosition.realizedPremium = vars.premiumDebt - vars.premiumDebtRestored;
-
-    _refreshPremiumDebt(
-      reserve,
-      msg.sender,
-      vars.assetId,
-      -int256(vars.userPremiumDrawnShares),
-      -int256(vars.userPremiumOffset),
-      vars.accruedPremium,
-      vars.premiumDebtRestored
-    ); // we settle premium debt here
-    uint256 restoredShares = hub.restore(
-      vars.assetId,
-      vars.baseDebtRestored,
-      vars.premiumDebtRestored,
-      user
-    ); // we settle base debt here
-
-    reserve.baseDrawnShares -= restoredShares;
-    userPosition.baseDrawnShares -= restoredShares;
-
-    uint256 newUserRiskPremium;
-    if (deficitAmount == 0) {
-      (newUserRiskPremium, , , , ) = _calculateUserAccountData(user);
-      vars.userPremiumDrawnShares = userPosition.premiumDrawnShares = userPosition
-        .baseDrawnShares
-        .percentMulUp(newUserRiskPremium);
-      vars.userPremiumOffset = userPosition.premiumOffset = hub.previewOffset(
-        vars.assetId,
-        userPosition.premiumDrawnShares
-      );
-    } else {
-      // non-zero deficit means user ends up with zero debt
-      vars.userPremiumDrawnShares = userPosition.premiumDrawnShares = 0;
-      vars.userPremiumOffset = userPosition.premiumOffset = 0;
-    }
-
-    _refreshPremiumDebt(
-      reserve,
-      user,
-      vars.assetId,
-      int256(vars.userPremiumDrawnShares),
-      int256(vars.userPremiumOffset),
-      0,
-      0
-    );
-    _notifyRiskPremiumUpdate(vars.assetId, user, newUserRiskPremium);
-
-    return restoredShares;
+    // DataTypes.ExecuteRepayLocalVars memory vars;
+    // DataTypes.Reserve storage reserve = _reserves[reserveId];
+    // vars.assetId = reserve.assetId;
+    // ILiquidityHub hub = reserve.config.hub;
+    // _validateRepay(reserve);
+    // (vars.baseDebt, vars.premiumDebt) = _getUserDebt(hub, vars.assetId, userPosition);
+    // (vars.baseDebtRestored, vars.premiumDebtRestored) = _calculateRestoreAmount(
+    //   vars.baseDebt,
+    //   vars.premiumDebt,
+    //   amount
+    // );
+    // vars.userPremiumDrawnShares = userPosition.premiumDrawnShares;
+    // vars.userPremiumOffset = userPosition.premiumOffset;
+    // vars.userRealizedPremium = userPosition.realizedPremium;
+    // vars.accruedPremium = vars.premiumDebt - userPosition.realizedPremium;
+    // userPosition.premiumDrawnShares = 0;
+    // userPosition.premiumOffset = 0;
+    // userPosition.realizedPremium = vars.premiumDebt - vars.premiumDebtRestored;
+    // _refreshPremiumDebt(
+    //   reserve,
+    //   msg.sender,
+    //   vars.assetId,
+    //   -int256(vars.userPremiumDrawnShares),
+    //   -int256(vars.userPremiumOffset),
+    //   vars.accruedPremium,
+    //   vars.premiumDebtRestored
+    // ); // we settle premium debt here
+    // uint256 restoredShares = hub.restore(
+    //   vars.assetId,
+    //   vars.baseDebtRestored,
+    //   vars.premiumDebtRestored,
+    //   user
+    // ); // we settle base debt here
+    // reserve.baseDrawnShares -= restoredShares;
+    // userPosition.baseDrawnShares -= restoredShares;
+    // uint256 newUserRiskPremium;
+    // if (deficitAmount == 0) {
+    //   (newUserRiskPremium, , , , ) = _calculateUserAccountData(user);
+    //   vars.userPremiumDrawnShares = userPosition.premiumDrawnShares = userPosition
+    //     .baseDrawnShares
+    //     .percentMulUp(newUserRiskPremium);
+    //   vars.userPremiumOffset = userPosition.premiumOffset = hub.previewOffset(
+    //     vars.assetId,
+    //     userPosition.premiumDrawnShares
+    //   );
+    // } else {
+    //   // non-zero deficit means user ends up with zero debt
+    //   vars.userPremiumDrawnShares = userPosition.premiumDrawnShares = 0;
+    //   vars.userPremiumOffset = userPosition.premiumOffset = 0;
+    // }
+    // _refreshPremiumDebt(
+    //   reserve,
+    //   user,
+    //   vars.assetId,
+    //   int256(vars.userPremiumDrawnShares),
+    //   int256(vars.userPremiumOffset),
+    //   0,
+    //   0
+    // );
+    // _notifyRiskPremiumUpdate(vars.assetId, user, newUserRiskPremium);
+    // return restoredShares;
   }
 
   // TODO: opt by merging with _notifyRiskPremiumUpdate
@@ -1069,13 +1060,13 @@ contract Spoke is ISpoke, Multicall {
           _reserves[reserveId].assetId,
           userPosition
         );
-        _executeRepay(
-          reserveId,
-          baseDebt + premiumDebt,
-          user,
-          userPosition,
-          baseDebt + premiumDebt
-        );
+        // _executeRepay(
+        //   reserveId,
+        //   baseDebt + premiumDebt,
+        //   user,
+        //   userPosition,
+        //   baseDebt + premiumDebt
+        // );
       }
       unchecked {
         ++reserveId;

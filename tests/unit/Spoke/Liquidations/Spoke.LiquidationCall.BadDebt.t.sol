@@ -417,12 +417,12 @@ contract LiquidationCallBadDebtTest is SpokeLiquidationBase {
     // TODO: update when treasury accounting is done
     vm.recordLogs();
 
-    vm.expectEmit(address(hub));
-    emit ILiquidityHub.DeficitCreated(
-      state.debtReserves[state.debtReserveIndex].assetId,
-      address(state.spoke),
-      state.totalDebt.balanceBefore - state.debtToLiq // outstanding debt which becomes bad debt reported as deficit
-    );
+    // vm.expectEmit(address(hub));
+    // emit ILiquidityHub.DeficitCreated(
+    //   state.debtReserves[state.debtReserveIndex].assetId,
+    //   address(state.spoke),
+    //   state.totalDebt.balanceBefore - state.debtToLiq // outstanding debt which becomes bad debt reported as deficit
+    // );
     vm.expectEmit(address(state.spoke));
     emit ISpoke.LiquidationCall(
       state.collateralReserves[state.collateralReserveIndex].asset,

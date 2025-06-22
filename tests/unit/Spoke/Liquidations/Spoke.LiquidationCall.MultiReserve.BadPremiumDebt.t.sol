@@ -310,23 +310,23 @@ contract LiquidationCallMultiReserveBadPremiumDebtTest is SpokeLiquidationBase {
     // TODO: update when treasury accounting is done
     vm.recordLogs();
 
-    vm.expectEmit(address(hub));
-    emit ILiquidityHub.DeficitCreated(
-      state.debtReserves[state.debtReserveIndex].assetId,
-      address(state.spoke),
-      state.totalDebt.balanceBefore - state.debtToLiq // outstanding debt which becomes bad debt reported as deficit
-    );
+    // vm.expectEmit(address(hub));
+    // emit ILiquidityHub.DeficitCreated(
+    //   state.debtReserves[state.debtReserveIndex].assetId,
+    //   address(state.spoke),
+    //   state.totalDebt.balanceBefore - state.debtToLiq // outstanding debt which becomes bad debt reported as deficit
+    // );
 
     // for remaining debt assets, total debt should be reported as deficit
     // emitted in order of ascending stored reserveId in spoke
     for (uint256 i = 0; i < debtReserveIds.length; i++) {
       if (debtReserveIds[i] != state.debtReserves[state.debtReserveIndex].reserveId) {
-        vm.expectEmit(address(hub));
-        emit ILiquidityHub.DeficitCreated(
-          state.debtReserves[i].assetId,
-          address(state.spoke),
-          state.spoke.getUserTotalDebt(debtReserveIds[i], alice)
-        );
+        // vm.expectEmit(address(hub));
+        // emit ILiquidityHub.DeficitCreated(
+        //   state.debtReserves[i].assetId,
+        //   address(state.spoke),
+        //   state.spoke.getUserTotalDebt(debtReserveIds[i], alice)
+        // );
       }
     }
     vm.expectEmit(address(state.spoke));

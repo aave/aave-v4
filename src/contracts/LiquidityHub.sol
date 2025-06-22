@@ -293,17 +293,29 @@ contract LiquidityHub is ILiquidityHub {
     return baseDrawnSharesRestored;
   }
 
-  function reportDeficit(uint256 assetId, uint256 amount) external {
+  /// @inheritdoc ILiquidityHub
+  function reportDeficit(
+    uint256 assetId,
+    uint256 baseAmount,
+    uint256 premiumAmount
+  ) external returns (uint256) {
     DataTypes.Asset storage asset = _assets[assetId];
     DataTypes.SpokeData storage spoke = _spokes[assetId][msg.sender];
 
     asset.accrue(_spokes[assetId][asset.config.feeReceiver]);
 
-    _validateDeficit(asset, spoke, amount);
+    _validateDeficit(asset, spoke, baseAmount, premiumAmount);
+    asset.updateBorrowRate({liquidityAdded: baseAmount, liquidityTaken: 0}); // both can be zero
 
-    asset.deficit += amount;
+    uint256 totalRestoredAmount = baseAmount + premiumAmount;
+    uint256 baseDrawnSharesRestored = asset.toDrawnSharesDown(baseAmount);
 
-    emit DeficitCreated(assetId, msg.sender, amount);
+    asset.deficit += totalRestoredAmount;
+    asset.baseDrawnShares -= baseDrawnSharesRestored;
+
+    spoke.baseDrawnShares -= baseDrawnSharesRestored;
+
+    emit DeficitCreated(assetId, msg.sender, baseDrawnSharesRestored, totalRestoredAmount);
   }
 
   /// @inheritdoc ILiquidityHub
@@ -571,7 +583,8 @@ contract LiquidityHub is ILiquidityHub {
   function _validateDeficit(
     DataTypes.Asset storage asset,
     DataTypes.SpokeData storage spoke,
-    uint256 amount
+    uint256 baseAmountRestored,
+    uint256 premiumAmountRestored
   ) internal view {
     require(asset.config.active, AssetNotActive());
     require(!asset.config.paused, AssetPaused());
