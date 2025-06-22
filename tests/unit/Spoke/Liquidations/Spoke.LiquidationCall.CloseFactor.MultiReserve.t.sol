@@ -183,10 +183,15 @@ contract LiquidationCallCloseFactorMultiReserveTest is SpokeLiquidationBase {
   ) internal returns (LiquidationTestLocalParams memory) {
     LiquidationTestLocalParams memory state;
     state.collateralReserves = new DataTypes.Reserve[](collateralReserveIds.length);
+    state.collDynConfigs = new DataTypes.DynamicReserveConfig[](collateralReserveIds.length);
     state.debtReserves = new DataTypes.Reserve[](debtReserveIds.length);
 
     for (uint256 i = 0; i < collateralReserveIds.length; i++) {
       state.collateralReserves[i] = spoke1.getReserve(collateralReserveIds[i]);
+      state.collDynConfigs[i] = spoke1.getDynamicReserveConfig(
+        collateralReserveIds[i],
+        state.collateralReserves[i].dynamicConfigKey
+      ); // utilize latest dynamic config
     }
     for (uint256 i = 0; i < debtReserveIds.length; i++) {
       state.debtReserves[i] = spoke1.getReserve(debtReserveIds[i]);
@@ -197,7 +202,7 @@ contract LiquidationCallCloseFactorMultiReserveTest is SpokeLiquidationBase {
       MIN_LIQUIDATION_BONUS,
       PercentageMathExtended
         .PERCENTAGE_FACTOR
-        .percentDivDown(state.collateralReserves[collateralReserveIndex].config.collateralFactor)
+        .percentDivDown(state.collDynConfigs[collateralReserveIndex].collateralFactor)
         .percentMulDown(99_00) // add buffer so that not all debt is liquidated
     );
     liquidationProtocolFee = bound(liquidationProtocolFee, 0, 100_00);
@@ -221,7 +226,8 @@ contract LiquidationCallCloseFactorMultiReserveTest is SpokeLiquidationBase {
 
     for (uint256 i = 0; i < collateralReserveIds.length; i++) {
       uint256 supplyAmount = _convertBaseCurrencyToAmount(
-        state.collateralReserves[i].assetId,
+        spoke1,
+        state.collateralReserves[i].reserveId,
         supplyAmountInBase
       );
 
@@ -280,6 +286,7 @@ contract LiquidationCallCloseFactorMultiReserveTest is SpokeLiquidationBase {
     uint256[] memory reserveIds,
     uint256 desiredHf
   ) internal returns (uint256 finalHf, uint256[] memory requiredDebts) {
+    IPriceOracle oracle = spoke.oracle();
     requiredDebts = new uint256[](reserveIds.length);
 
     // extra debt to ensure HF below desired
@@ -290,8 +297,6 @@ contract LiquidationCallCloseFactorMultiReserveTest is SpokeLiquidationBase {
 
     vm.startPrank(user);
     for (uint256 i = 0; i < reserveIds.length; i++) {
-      uint256 assetId = spoke.getReserve(reserveIds[i]).assetId;
-
       uint256 amountInBase;
       // randomly distribute total required debt across debt reserves
       if (i == reserveIds.length - 1) {
@@ -301,13 +306,13 @@ contract LiquidationCallCloseFactorMultiReserveTest is SpokeLiquidationBase {
         amountInBase = randomizer(dustInBase, remaining - dustInBase * (reserveIds.length - i - 1));
       }
 
-      uint256 amount = _convertBaseCurrencyToAmount(assetId, amountInBase) + 1;
+      uint256 amount = _convertBaseCurrencyToAmount(spoke, reserveIds[i], amountInBase) + 1;
       vm.assume(amount < MAX_SUPPLY_AMOUNT);
 
       // mock price to 0 to circumvent borrow validation
       vm.mockCall(
         address(oracle),
-        abi.encodeWithSelector(IPriceOracle.getAssetPrice.selector, assetId),
+        abi.encodeWithSelector(IPriceOracle.getReservePrice.selector, reserveIds[i]),
         abi.encode(0)
       );
       spoke.borrow(reserveIds[i], amount, user);
@@ -328,6 +333,7 @@ contract LiquidationCallCloseFactorMultiReserveTest is SpokeLiquidationBase {
     uint256 skipTime,
     address user
   ) internal {
+    IPriceOracle oracle = spoke1.oracle();
     _addBorrowableLiquidity(borrowAmount * collateralReserves.length);
 
     vm.startPrank(user);
@@ -337,7 +343,10 @@ contract LiquidationCallCloseFactorMultiReserveTest is SpokeLiquidationBase {
       // mock price to 0 to circumvent borrow validation
       vm.mockCall(
         address(oracle),
-        abi.encodeWithSelector(IPriceOracle.getAssetPrice.selector, assetId),
+        abi.encodeWithSelector(
+          IPriceOracle.getReservePrice.selector,
+          collateralReserves[i].reserveId
+        ),
         abi.encode(0)
       );
       // user borrows some collateral reserve to inflate collateral supply ex rate

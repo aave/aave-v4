@@ -6,9 +6,6 @@ import {DataTypes} from 'src/libraries/types/DataTypes.sol';
 
 contract LiquidityHubBase is Base {
   using SharesMath for uint256;
-  using WadRayMath for uint256;
-
-  uint256 internal constant INIT_BASE_BORROW_INDEX = WadRayMath.RAY;
 
   struct TestSupplyParams {
     uint256 drawnAmount;
@@ -66,11 +63,8 @@ contract LiquidityHubBase is Base {
 
     address tempSpoke1 = makeAddr('TEMP_SPOKE_1');
     hub.addSpoke(
-      assetId, 
-      DataTypes.SpokeConfig({
-        supplyCap: type(uint256).max,
-        drawCap: type(uint256).max
-      }), 
+      assetId,
+      DataTypes.SpokeConfig({supplyCap: type(uint256).max, drawCap: type(uint256).max}),
       tempSpoke1
     );
 
@@ -79,14 +73,11 @@ contract LiquidityHubBase is Base {
 
     address tempSpoke2 = makeAddr('TEMP_SPOKE_2');
     hub.addSpoke(
-      assetId, 
-      DataTypes.SpokeConfig({
-        supplyCap: type(uint256).max,
-        drawCap: type(uint256).max
-      }), 
+      assetId,
+      DataTypes.SpokeConfig({supplyCap: type(uint256).max, drawCap: type(uint256).max}),
       tempSpoke2
     );
-    
+
     _supplyAndDrawLiquidity({
       assetId: assetId,
       supplyUser: tempUser1,
@@ -135,14 +126,6 @@ contract LiquidityHubBase is Base {
     skip(skipTime);
   }
 
-  function _mockRate(uint256 rate) internal returns (uint256) {
-    vm.mockCall(
-      address(irStrategy),
-      IReserveInterestRateStrategy.calculateInterestRates.selector,
-      abi.encode(rate)
-    );
-  }
-
   function _getDebt(uint256 assetId) internal view returns (DebtData memory) {
     revert('implement me');
 
@@ -161,27 +144,76 @@ contract LiquidityHubBase is Base {
     // return debtData;
   }
 
-  // create premium debt on dai asset by supplying and borrowing dai through spoke
-  // triggers refresh to cache premium debt
-  function _createPremiumDebt(ISpoke spoke, uint256 daiAmount) internal returns (uint256) {
-    uint256 daiReserveId = _daiReserveId(spoke);
-    Utils.supplyCollateral({
-      spoke: spoke,
-      reserveId: daiReserveId,
-      user: alice,
-      amount: daiAmount,
-      onBehalfOf: alice
+  /// @dev Adds liquidity to the Hub via a random spoke
+  function _addLiquidity(uint256 assetId, uint256 amount) public {
+    address tempSpoke = vm.randomAddress();
+    address tempUser = vm.randomAddress();
+
+    uint256 initialLiq = hub.getAvailableLiquidity(assetId);
+
+    IERC20 asset = hub.assetsList(assetId);
+    deal(address(asset), tempUser, amount);
+
+    vm.prank(tempUser);
+    asset.approve(address(hub), type(uint256).max);
+
+    hub.addSpoke(
+      assetId,
+      DataTypes.SpokeConfig({supplyCap: type(uint256).max, drawCap: type(uint256).max}),
+      tempSpoke
+    );
+
+    Utils.add({
+      hub: hub,
+      assetId: assetId,
+      spoke: tempSpoke,
+      amount: amount,
+      user: tempUser,
+      to: tempSpoke
     });
-    Utils.borrow({
-      spoke: spoke,
-      reserveId: daiReserveId,
-      user: alice,
-      amount: daiAmount / 2, // to ensure HF > 1
-      onBehalfOf: alice
-    });
+
+    assertEq(hub.getAvailableLiquidity(assetId), initialLiq + amount);
+  }
+
+  /// @dev Draws liquidity from the Hub via a random spoke
+  function _drawLiquidity(
+    uint256 assetId,
+    uint256 amount,
+    bool withPremium
+  ) internal returns (uint256) {
+    address tempSpoke = vm.randomAddress();
+    address tempUser = vm.randomAddress();
+
+    int256 premiumDrawnSharesDelta = 1000;
+    int256 premiumOffsetDelta = 1000;
+    if (withPremium) {
+      // inflate premium data to create premium debt
+      hub.refreshPremiumDebt(assetId, premiumDrawnSharesDelta, premiumOffsetDelta, 0, 0);
+    }
+
+    hub.addSpoke(
+      assetId,
+      DataTypes.SpokeConfig({supplyCap: type(uint256).max, drawCap: type(uint256).max}),
+      tempSpoke
+    );
+
+    Utils.draw(hub, assetId, tempSpoke, tempUser, amount, tempUser);
+
     skip(365 days);
 
-    (, uint256 premiumDebt) = hub.getAssetDebt(daiAssetId);
-    assertGt(premiumDebt, 0); // non-zero premium debt
+    (uint256 baseDebt, uint256 premiumDebt) = hub.getAssetDebt(assetId);
+    assertGt(baseDebt, 0); // non-zero premium debt
+
+    if (withPremium) {
+      assertGt(premiumDebt, 0); // non-zero premium debt
+      // restore premium data
+      hub.refreshPremiumDebt(
+        assetId,
+        -premiumDrawnSharesDelta,
+        -premiumOffsetDelta,
+        premiumDebt,
+        0
+      );
+    }
   }
 }

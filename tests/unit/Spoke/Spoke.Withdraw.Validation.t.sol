@@ -4,8 +4,6 @@ pragma solidity ^0.8.0;
 import 'tests/unit/Spoke/SpokeBase.t.sol';
 
 contract SpokeWithdrawValidationTest is SpokeBase {
-  using WadRayMath for uint256;
-
   function test_withdraw_revertsWith_ReserveNotActive() public {
     uint256 daiReserveId = _daiReserveId(spoke1);
     uint256 amount = 100e18;
@@ -144,14 +142,10 @@ contract SpokeWithdrawValidationTest is SpokeBase {
     reserveId = bound(reserveId, 0, spokeInfo[spoke1].MAX_RESERVE_ID);
     supplyAmount = bound(supplyAmount, 2, MAX_SUPPLY_AMOUNT);
     borrowAmount = bound(borrowAmount, 1, supplyAmount / 2); // ensure it is within Collateral Factor
-    rate = bound(rate, 1, MAX_BORROW_RATE).bpsToRay();
+    rate = bound(rate, 1, MAX_BORROW_RATE);
     skipTime = bound(skipTime, 1, MAX_SKIP_TIME);
 
-    vm.mockCall(
-      address(irStrategy),
-      IReserveInterestRateStrategy.calculateInterestRates.selector,
-      abi.encode(rate)
-    );
+    _mockInterestRate(rate);
 
     // Alice supply
     Utils.supply({

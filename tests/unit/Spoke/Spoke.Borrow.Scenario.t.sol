@@ -59,8 +59,8 @@ contract SpokeBorrowScenarioTest is SpokeBase {
     Utils.supplyCollateral(spoke1, state.wbtcReserveId, bob, state.wbtcBob.supplyAmount, bob);
 
     // supply enough available liquidity, at least >= 1
-    _deployLiquidity(spoke1, state.daiReserveId, daiBorrowAmount + daiBorrowAmount2 + 1);
-    _deployLiquidity(spoke1, state.usdxReserveId, usdxBorrowAmount + usdxBorrowAmount2 + 1);
+    _openSupplyPosition(spoke1, state.daiReserveId, daiBorrowAmount + daiBorrowAmount2 + 1);
+    _openSupplyPosition(spoke1, state.usdxReserveId, usdxBorrowAmount + usdxBorrowAmount2 + 1);
 
     _assertUserPositionAndDebt({
       spoke: spoke1,
@@ -507,7 +507,7 @@ contract SpokeBorrowScenarioTest is SpokeBase {
     address[] memory users = new address[](1);
     users[0] = bob;
 
-    _deployLiquidity(spoke1, state.daiReserveId, MAX_SUPPLY_AMOUNT_DAI);
+    _openSupplyPosition(spoke1, state.daiReserveId, MAX_SUPPLY_AMOUNT_DAI);
 
     // Bob supply weth as collateral
     Utils.supplyCollateral(spoke1, state.wethReserveId, bob, state.wethBob.supplyAmount, bob);

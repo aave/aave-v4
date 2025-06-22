@@ -6,7 +6,6 @@ import 'tests/Base.t.sol';
 
 contract LiquidationLogicBaseTest is Base {
   using PercentageMath for uint256;
-  using WadRayMath for uint256;
   using WadRayMathExtended for uint256;
   using PercentageMathExtended for uint256;
 

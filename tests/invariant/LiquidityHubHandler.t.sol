@@ -9,7 +9,7 @@ import {IERC20} from 'src/dependencies/openzeppelin/IERC20.sol';
 import '../mocks/MockPriceOracle.sol';
 import '../mocks/MockERC20.sol';
 import '../Utils.sol';
-import 'src/contracts/DefaultReserveInterestRateStrategy.sol';
+import 'src/contracts/AssetInterestRateStrategy.sol';
 
 contract LiquidityHubHandler is Test {
   IERC20 public usdc;
@@ -19,9 +19,7 @@ contract LiquidityHubHandler is Test {
   IPriceOracle public oracle;
   LiquidityHub public hub;
   Spoke public spoke1;
-  DefaultReserveInterestRateStrategy irStrategy;
-
-  address internal mockAddressesProvider = makeAddr('mockAddressesProvider');
+  AssetInterestRateStrategy irStrategy;
 
   struct State {
     mapping(uint256 => uint256) reserveSupplied; // asset => supply
@@ -33,10 +31,10 @@ contract LiquidityHubHandler is Test {
   State internal s;
 
   constructor() {
-    irStrategy = new DefaultReserveInterestRateStrategy(mockAddressesProvider);
+    irStrategy = new AssetInterestRateStrategy();
     oracle = new MockPriceOracle();
     hub = new LiquidityHub();
-    spoke1 = new Spoke(address(hub), address(oracle));
+    spoke1 = new Spoke(address(oracle));
     usdc = new MockERC20();
     dai = new MockERC20();
     usdt = new MockERC20();
@@ -44,10 +42,12 @@ contract LiquidityHubHandler is Test {
     // Add dai
     hub.addAsset(
       DataTypes.AssetConfig({
-        decimals: 18,
+        feeReceiver: address(0),
         active: true,
         frozen: false,
         paused: false,
+        decimals: 18,
+        liquidityFee: 5_00,
         irStrategy: irStrategy
       }),
       address(dai)
@@ -59,13 +59,14 @@ contract LiquidityHubHandler is Test {
         active: true,
         frozen: false,
         paused: false,
-        collateralFactor: 0,
         liquidationBonus: 100_00,
         liquidityPremium: 0,
         liquidationProtocolFee: 0,
         borrowable: false,
-        collateral: false
-      })
+        collateral: false,
+        hub: hub
+      }),
+      DataTypes.DynamicReserveConfig({collateralFactor: 0})
     );
   }
 

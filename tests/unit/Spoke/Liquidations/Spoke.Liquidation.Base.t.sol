@@ -39,8 +39,10 @@ contract SpokeLiquidationBase is SpokeBase {
     uint256 collateralAssetId;
     uint256 debtAssetId;
     uint256 liquidationProtocolFee;
+    DataTypes.DynamicReserveConfig collDynConfig;
     DataTypes.Reserve collateralReserve;
     DataTypes.Reserve debtReserve;
+    DataTypes.DynamicReserveConfig[] collDynConfigs;
     DataTypes.Reserve[] collateralReserves;
     DataTypes.Reserve[] debtReserves;
     uint256 collateralReserveId;
@@ -61,11 +63,11 @@ contract SpokeLiquidationBase is SpokeBase {
 
   /// @notice Deploys max borrowable liquidity for all reserves in spoke1.
   function _addBorrowableLiquidity(uint256 amount) public {
-    _deployLiquidity(spoke1, _daiReserveId(spoke1), amount);
-    _deployLiquidity(spoke1, _wethReserveId(spoke1), amount);
-    _deployLiquidity(spoke1, _wbtcReserveId(spoke1), amount);
-    _deployLiquidity(spoke1, _usdxReserveId(spoke1), amount);
-    _deployLiquidity(spoke1, _usdyReserveId(spoke1), amount);
+    _openSupplyPosition(spoke1, _daiReserveId(spoke1), amount);
+    _openSupplyPosition(spoke1, _wethReserveId(spoke1), amount);
+    _openSupplyPosition(spoke1, _wbtcReserveId(spoke1), amount);
+    _openSupplyPosition(spoke1, _usdxReserveId(spoke1), amount);
+    _openSupplyPosition(spoke1, _usdyReserveId(spoke1), amount);
   }
 
   /// bound liquidation config to full range of possible values
@@ -102,6 +104,7 @@ contract SpokeLiquidationBase is SpokeBase {
     LiquidationTestLocalParams memory state;
     state.collateralReserve = spoke1.getReserve(collateralReserveId);
     state.debtReserve = spoke1.getReserve(debtReserveId);
+    state.collDynConfig = spoke1.getDynamicReserveConfig(collateralReserveId);
 
     liqConfig = _bound(liqConfig);
     liqBonus = bound(liqBonus, MIN_LIQUIDATION_BONUS, MAX_LIQUIDATION_BONUS);
@@ -110,9 +113,9 @@ contract SpokeLiquidationBase is SpokeBase {
     // bound supply amount to max supply amount
     supplyAmount = bound(
       supplyAmount,
-      _convertBaseCurrencyToAmount(state.collateralReserve.assetId, MIN_AMOUNT_IN_BASE_CURRENCY),
+      _convertBaseCurrencyToAmount(spoke1, collateralReserveId, MIN_AMOUNT_IN_BASE_CURRENCY),
       _min(
-        _convertBaseCurrencyToAmount(state.collateralReserve.assetId, MAX_SUPPLY_IN_BASE_CURRENCY),
+        _convertBaseCurrencyToAmount(spoke1, collateralReserveId, MAX_SUPPLY_IN_BASE_CURRENCY),
         MAX_SUPPLY_AMOUNT
       )
     );
@@ -218,9 +221,13 @@ contract SpokeLiquidationBase is SpokeBase {
 
     // at low amounts of coll/debt, HF can diverge from close factor due to rounding/precision
     if (
-      _convertAmountToBaseCurrency(state.debtReserve.assetId, state.debt.balanceAfter) >
+      _convertAmountToBaseCurrency(spoke, state.debtReserve.reserveId, state.debt.balanceAfter) >
       MIN_AMOUNT_IN_BASE_CURRENCY &&
-      _convertAmountToBaseCurrency(state.collateralReserve.assetId, state.supply.balanceAfter) >
+      _convertAmountToBaseCurrency(
+        spoke,
+        state.collateralReserve.reserveId,
+        state.supply.balanceAfter
+      ) >
       MIN_AMOUNT_IN_BASE_CURRENCY
     ) {
       // ensure HF is lte close factor
@@ -332,6 +339,7 @@ contract SpokeLiquidationBase is SpokeBase {
       uint256 liquidationProtocolFeeAmount
     )
   {
+    IPriceOracle oracle = spoke.oracle();
     DataTypes.LiquidationCallLocalVars memory params;
 
     params.userCollateralBalance = spoke.getUserSuppliedAmount(
@@ -340,11 +348,11 @@ contract SpokeLiquidationBase is SpokeBase {
     );
     params.collateralAssetUnit = 10 ** state.collateralReserve.config.decimals;
     params.collateralReserveId = state.collateralReserve.reserveId;
-    params.collateralAssetPrice = oracle.getAssetPrice(state.collateralReserve.assetId);
+    params.collateralAssetPrice = oracle.getReservePrice(state.collateralReserve.reserveId);
 
     params.debtAssetUnit = 10 ** state.debtReserve.config.decimals;
     params.debtReserveId = state.debtReserve.reserveId;
-    params.debtAssetPrice = oracle.getAssetPrice(state.debtReserve.assetId);
+    params.debtAssetPrice = oracle.getReservePrice(state.debtReserve.reserveId);
 
     params.liquidationBonus = state.liquidationBonus;
     params.liquidationProtocolFee = state.liquidationProtocolFee;
@@ -374,14 +382,15 @@ contract SpokeLiquidationBase is SpokeBase {
     ISpoke spoke,
     LiquidationTestLocalParams memory state
   ) internal view returns (uint256 debtToRestoreCloseFactor) {
+    IPriceOracle oracle = spoke.oracle();
     DataTypes.LiquidationCallLocalVars memory params;
 
     params.liquidationBonus = state.liquidationBonus;
-    params.collateralFactor = state.collateralReserve.config.collateralFactor;
+    params.collateralFactor = state.collDynConfig.collateralFactor;
     params.closeFactor = _getCloseFactor(spoke);
 
     params.debtAssetUnit = 10 ** state.debtReserve.config.decimals;
-    params.debtAssetPrice = oracle.getAssetPrice(state.debtReserve.assetId);
+    params.debtAssetPrice = oracle.getReservePrice(state.debtReserve.reserveId);
 
     (, , params.healthFactor, , params.totalDebtInBaseCurrency) = spoke.getUserAccountData(alice);
 
@@ -396,7 +405,7 @@ contract SpokeLiquidationBase is SpokeBase {
       (((params.totalDebtInBaseCurrency * params.debtAssetUnit) *
         (params.closeFactor - params.healthFactor)) /
         ((params.closeFactor - effectiveLiquidationPenalty + 1) * params.debtAssetPrice))
-        .dewadify();
+        .dewadifyDown();
   }
 
   /// @notice Calc user's lowest possible health factor whereby a liqudation can still restore HF to close factor.
@@ -422,17 +431,6 @@ contract SpokeLiquidationBase is SpokeBase {
     healthFactor = uint256(HEALTH_FACTOR_LIQUIDATION_THRESHOLD)
       .percentMulUp(collateralFactor)
       .percentMulUp(liquidationBonus);
-  }
-
-  /// @notice Convert 1 asset amount to equivalent amount in another asset.
-  /// @notice Will contain precision loss due to conversion split into two steps.
-  /// @return Converted amount of toAsset.
-  function _convertAssetAmount(
-    uint256 assetId,
-    uint256 amount,
-    uint256 toAssetId
-  ) internal view returns (uint256) {
-    return _convertBaseCurrencyToAmount(toAssetId, _convertAmountToBaseCurrency(assetId, amount));
   }
 
   /// assert that supply ex rate after liquidation is greater than or equal to before
@@ -541,19 +539,23 @@ contract SpokeLiquidationBase is SpokeBase {
 
     // convert amount to base currency
     state.liquidatorCollateral.baseChange = _convertAmountToBaseCurrency(
-      state.collateralReserve.assetId,
+      spoke1,
+      state.collateralReserve.reserveId,
       state.liquidatorCollateral.balanceChange
     );
     state.liquidatorDebt.baseChange = _convertAmountToBaseCurrency(
-      state.collateralReserve.assetId,
+      spoke1,
+      state.collateralReserve.reserveId,
       state.liquidatorDebt.balanceChange
     );
     state.debt.baseChange = _convertAmountToBaseCurrency(
-      state.debtReserve.assetId,
+      spoke1,
+      state.debtReserve.reserveId,
       state.debt.balanceChange
     );
     state.supply.baseChange = _convertAmountToBaseCurrency(
-      state.collateralReserve.assetId,
+      spoke1,
+      state.collateralReserve.reserveId,
       state.supply.balanceChange
     );
 
@@ -567,9 +569,10 @@ contract SpokeLiquidationBase is SpokeBase {
     uint256 skipTime,
     address user
   ) internal {
+    MockPriceOracle oracle = MockPriceOracle(address(spoke1.oracle()));
     // set price to 0 to circumvent borrow validation
-    uint256 initialPrice = oracle.getAssetPrice(assetId);
-    oracle.setAssetPrice(assetId, 0);
+    uint256 initialPrice = oracle.getReservePrice(collateralReserveId);
+    oracle.setReservePrice(collateralReserveId, 0);
     // user borrows some collateral reserve to inflate collateral supply ex rate
     Utils.borrow({
       spoke: spoke1,
@@ -578,7 +581,7 @@ contract SpokeLiquidationBase is SpokeBase {
       amount: borrowAmount,
       onBehalfOf: user
     });
-    oracle.setAssetPrice(assetId, initialPrice);
+    oracle.setReservePrice(collateralReserveId, initialPrice);
     skip(skipTime);
   }
 }

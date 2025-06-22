@@ -57,7 +57,6 @@ contract LiquidationCallCloseFactorTest is SpokeLiquidationBase {
       skipTime
     );
 
-    string memory label = 'test_liquidationCall_fuzz_closeFactor';
     _checkLiquidation(state, spoke1, 'test_liquidationCall_fuzz_closeFactor');
   }
 
@@ -390,6 +389,7 @@ contract LiquidationCallCloseFactorTest is SpokeLiquidationBase {
   ) internal returns (LiquidationTestLocalParams memory) {
     LiquidationTestLocalParams memory state;
     state.collateralReserve = spoke1.getReserve(collateralReserveId);
+    state.collDynConfig = spoke1.getDynamicReserveConfig(collateralReserveId);
     state.debtReserve = spoke1.getReserve(debtReserveId);
 
     liqConfig = _bound(liqConfig);
@@ -398,16 +398,16 @@ contract LiquidationCallCloseFactorTest is SpokeLiquidationBase {
       MIN_LIQUIDATION_BONUS,
       PercentageMathExtended
         .PERCENTAGE_FACTOR
-        .percentDiv(state.collateralReserve.config.collateralFactor)
+        .percentDiv(state.collDynConfig.collateralFactor)
         .percentMul(95_00) // add buffer so that amount to restore is > 0
     );
 
     liquidationProtocolFee = bound(liquidationProtocolFee, 0, 100_00);
     supplyAmount = bound(
       supplyAmount,
-      _convertBaseCurrencyToAmount(state.collateralReserve.assetId, 1e25),
+      _convertBaseCurrencyToAmount(spoke1, collateralReserveId, 1e25),
       _min(
-        _convertBaseCurrencyToAmount(state.collateralReserve.assetId, MAX_SUPPLY_IN_BASE_CURRENCY),
+        _convertBaseCurrencyToAmount(spoke1, collateralReserveId, MAX_SUPPLY_IN_BASE_CURRENCY),
         MAX_SUPPLY_AMOUNT
       )
     );

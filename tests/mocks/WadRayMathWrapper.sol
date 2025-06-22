@@ -13,9 +13,14 @@ contract WadRayMathExtendedWrapper {
     return WadRayMathExtended.RAY;
   }
 
+  function PERCENTAGE_FACTOR() public pure returns (uint256) {
+    return WadRayMathExtended.PERCENTAGE_FACTOR;
+  }
+
   function wadMulDown(uint256 a, uint256 b) public pure returns (uint256) {
     return WadRayMathExtended.wadMulDown(a, b);
   }
+
   function wadMulUp(uint256 a, uint256 b) public pure returns (uint256) {
     return WadRayMathExtended.wadMulUp(a, b);
   }
@@ -23,6 +28,7 @@ contract WadRayMathExtendedWrapper {
   function wadDivDown(uint256 a, uint256 b) public pure returns (uint256) {
     return WadRayMathExtended.wadDivDown(a, b);
   }
+
   function wadDivUp(uint256 a, uint256 b) public pure returns (uint256) {
     return WadRayMathExtended.wadDivUp(a, b);
   }
@@ -30,6 +36,7 @@ contract WadRayMathExtendedWrapper {
   function rayMulDown(uint256 a, uint256 b) public pure returns (uint256) {
     return WadRayMathExtended.rayMulDown(a, b);
   }
+
   function rayMulUp(uint256 a, uint256 b) public pure returns (uint256) {
     return WadRayMathExtended.rayMulUp(a, b);
   }
@@ -37,6 +44,7 @@ contract WadRayMathExtendedWrapper {
   function rayDivDown(uint256 a, uint256 b) public pure returns (uint256) {
     return WadRayMathExtended.rayDivDown(a, b);
   }
+
   function rayDivUp(uint256 a, uint256 b) public pure returns (uint256) {
     return WadRayMathExtended.rayDivUp(a, b);
   }
@@ -45,8 +53,12 @@ contract WadRayMathExtendedWrapper {
     return WadRayMathExtended.wadify(a);
   }
 
-  function dewadify(uint256 a) public pure returns (uint256) {
-    return WadRayMathExtended.dewadify(a);
+  function dewadifyDown(uint256 a) public pure returns (uint256) {
+    return WadRayMathExtended.dewadifyDown(a);
+  }
+
+  function bpsToRay(uint256 a) public pure returns (uint256) {
+    return WadRayMathExtended.bpsToRay(a);
   }
 }
 

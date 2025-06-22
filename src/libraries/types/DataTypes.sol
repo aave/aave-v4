@@ -1,7 +1,8 @@
 // SPDX-License-Identifier: BUSL-1.1
 pragma solidity ^0.8.10;
 
-import {IReserveInterestRateStrategy} from 'src/interfaces/IReserveInterestRateStrategy.sol';
+import {ILiquidityHub} from 'src/interfaces/ILiquidityHub.sol';
+import {IBasicInterestRateStrategy} from 'src/interfaces/IBasicInterestRateStrategy.sol';
 
 library DataTypes {
   // Liquidity Hub types
@@ -36,47 +37,44 @@ library DataTypes {
   }
 
   struct AssetConfig {
+    address feeReceiver;
     bool active;
     bool frozen;
     bool paused;
     uint256 decimals;
-    IReserveInterestRateStrategy irStrategy;
+    uint256 liquidityFee;
+    IBasicInterestRateStrategy irStrategy;
   }
 
   // Spoke types
-  struct CalculateInterestRatesParams {
-    bool usingVirtualBalance;
-    uint256 liquidityAdded;
-    uint256 liquidityTaken;
-    uint256 totalDebt;
-    uint256 reserveFactor; // likely not required
-    uint256 assetId;
-    uint256 virtualUnderlyingBalance;
-  }
-
   struct Reserve {
     uint256 reserveId;
     uint256 assetId;
-    address asset;
+    address asset; // todo rm not needed
     uint256 suppliedShares;
     uint256 baseDrawnShares;
     uint256 premiumDrawnShares;
     uint256 premiumOffset;
     uint256 realizedPremium;
     ReserveConfig config;
+    uint16 dynamicConfigKey; // key of the last reserve config
   }
 
   struct ReserveConfig {
+    ILiquidityHub hub;
     bool active;
     bool frozen;
     bool paused;
     bool borrowable;
     bool collateral;
     uint256 decimals; // TODO: use smaller uint8
-    uint256 collateralFactor; // BPS TODO: use smaller uint
     uint256 liquidationBonus; // BPS, 100_00 represent a 0% bonus TODO: use smaller uint
     uint256 liquidityPremium; // BPS TODO: use smaller uint
     uint256 liquidationProtocolFee; // BPS TODO: use smaller uint
+  }
+
+  struct DynamicReserveConfig {
+    uint16 collateralFactor;
   }
 
   struct UserPosition {
@@ -85,10 +83,11 @@ library DataTypes {
     uint256 premiumDrawnShares;
     uint256 premiumOffset;
     uint256 realizedPremium;
+    uint16 configKey; // key of the last user config
   }
 
   struct PositionStatus {
-    mapping(uint256 => uint256) map; 
+    mapping(uint256 => uint256) map;
   }
 
   struct CalculateUserAccountDataVars {
@@ -143,6 +142,8 @@ library DataTypes {
     uint256 i;
     uint256 debtAssetId;
     uint256 collateralAssetId;
+    uint256 debtReserveId;
+    uint256 collateralReserveId;
     uint256 baseDebt;
     uint256 premiumDebt;
     uint256 collateralToLiquidate;
