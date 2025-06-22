@@ -4,8 +4,6 @@ pragma solidity ^0.8.0;
 import 'tests/unit/Spoke/SpokeBase.t.sol';
 
 contract SpokeRepayEdgeCaseTest is SpokeBase {
-  using WadRayMath for uint256;
-
   /// repay partial premium, base & full debt, with no interest accrual (no time pass)
   /// supply ex rate can increase while debt ex rate should remain the same
   /// this is due to donation on available liquidity
@@ -96,11 +94,7 @@ contract SpokeRepayEdgeCaseTest is SpokeBase {
 
   function test_repay_supply_ex_rate_decr() public {
     // inflate ex rate to 1.5
-    vm.mockCall(
-      address(irStrategy),
-      IReserveInterestRateStrategy.calculateInterestRates.selector,
-      abi.encode(uint256(50_00).bpsToRay())
-    );
+    _mockInterestRate(50_00);
     updateLiquidityPremium(spoke1, _daiReserveId(spoke1), 0);
     updateLiquidityPremium(spoke1, _wethReserveId(spoke1), 0);
 
@@ -153,11 +147,7 @@ contract SpokeRepayEdgeCaseTest is SpokeBase {
 
   function test_repay_supply_ex_rate_decr_skip_time() public {
     // inflate ex rate to 1.5
-    vm.mockCall(
-      address(irStrategy),
-      IReserveInterestRateStrategy.calculateInterestRates.selector,
-      abi.encode(uint256(50_00).bpsToRay())
-    );
+    _mockInterestRate(50_00);
     updateLiquidityPremium(spoke1, _daiReserveId(spoke1), 0);
     updateLiquidityPremium(spoke1, _wethReserveId(spoke1), 0);
 

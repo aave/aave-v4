@@ -12,6 +12,7 @@ pragma solidity ^0.8.0;
 library WadRayMathExtended {
   uint256 internal constant WAD = 1e18;
   uint256 internal constant RAY = 1e27;
+  uint256 internal constant PERCENTAGE_FACTOR = 1e4;
 
   /**
    * @dev Multiplies two wad, rounding down
@@ -182,9 +183,18 @@ library WadRayMathExtended {
    * @param a The number in Wad precision
    * @return b (= a / 1e18)
    */
-  function dewadify(uint256 a) internal pure returns (uint256 b) {
+  function dewadifyDown(uint256 a) internal pure returns (uint256 b) {
     assembly {
       b := div(a, WAD)
     }
+  }
+
+  /**
+   * @notice Converts value from basis points to ray
+   * @param a The value in basis points
+   * @return The value in ray (= a * 1e27 / 1e4)
+   */
+  function bpsToRay(uint256 a) internal pure returns (uint256) {
+    return (a * RAY) / PERCENTAGE_FACTOR;
   }
 }

@@ -6,9 +6,6 @@ import {DataTypes} from 'src/libraries/types/DataTypes.sol';
 
 contract LiquidityHubBase is Base {
   using SharesMath for uint256;
-  using WadRayMath for uint256;
-
-  uint256 internal constant INIT_BASE_BORROW_INDEX = WadRayMath.RAY;
 
   struct TestSupplyParams {
     uint256 drawnAmount;
@@ -128,53 +125,6 @@ contract LiquidityHubBase is Base {
 
     skip(skipTime);
   }
-
-  function _mockRate(uint256 rate) internal returns (uint256) {
-    vm.mockCall(
-      address(irStrategy),
-      IReserveInterestRateStrategy.calculateInterestRates.selector,
-      abi.encode(rate)
-    );
-  }
-
-  /// @dev spoke2 (bob) supplies dai, spoke1 (alice) draws dai
-  // function _supplyAndDrawLiquidity(
-
-  //   uint256 assetId,
-  //   uint256 daiAmount,
-  //   uint256 daiDrawAmount,
-  //   uint256 rate,
-  //   uint256 skipTime
-  // ) internal returns (uint256, uint256) {
-  //   vm.mockCall(
-  //     address(irStrategy),
-  //     IReserveInterestRateStrategy.calculateInterestRates.selector,
-  //     abi.encode(rate)
-  //   );
-
-  //   // spoke2 supply dai
-  //   uint256 supplyShares = Utils.add({
-  //     hub: hub,
-  //     assetId: daiAssetId,
-  //     spoke: address(spoke2),
-  //     amount: daiAmount,
-  //     user: bob,
-  //     to: address(spoke2)
-  //   });
-
-  //   // spoke1 draw dai liquidity on behalf of user
-  //   uint256 drawnShares = Utils.draw({
-  //     hub: hub,
-  //     assetId: daiAssetId,
-  //     to: alice,
-  //     spoke: address(spoke1),
-  //     amount: daiDrawAmount,
-  //     onBehalfOf: address(spoke1)
-  //   });
-
-  //   skip(skipTime);
-  //   return (drawnShares, supplyShares);
-  // }
 
   function _getDebt(uint256 assetId) internal view returns (DebtData memory) {
     revert('implement me');

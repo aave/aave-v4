@@ -104,27 +104,18 @@ library AssetLogic {
     return assets.toSharesDown(asset.totalSuppliedAssets(), asset.totalSuppliedShares());
   }
 
-  // risk premium interest rate is calculated offchain
-  function baseInterestRate(DataTypes.Asset storage asset) internal view returns (uint256) {
-    return asset.baseBorrowRate;
-  }
-
   function updateBorrowRate(
     DataTypes.Asset storage asset,
     uint256 liquidityAdded,
     uint256 liquidityTaken
   ) internal {
-    asset.baseBorrowRate = asset.config.irStrategy.calculateInterestRates(
-      DataTypes.CalculateInterestRatesParams({
-        liquidityAdded: liquidityAdded,
-        liquidityTaken: liquidityTaken,
-        totalDebt: asset.baseDebt(),
-        liquidityFee: 0, // TODO
-        assetId: asset.id,
-        virtualUnderlyingBalance: asset.availableLiquidity, // without current liquidity change
-        usingVirtualBalance: true
-      })
-    );
+    asset.baseBorrowRate = asset.config.irStrategy.calculateInterestRate({
+      assetId: asset.id,
+      availableLiquidity: asset.availableLiquidity,
+      totalDebt: asset.baseDebt(),
+      liquidityAdded: liquidityAdded,
+      liquidityTaken: liquidityTaken
+    });
   }
 
   /**

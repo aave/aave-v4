@@ -397,10 +397,14 @@ contract LiquidationCallCloseFactorTest is SpokeLiquidationBase {
     LiquidationTestLocalParams memory state;
     state.collateralReserves = new DataTypes.Reserve[](1);
     state.debtReserves = new DataTypes.Reserve[](1);
-    state.collDynConfig = spoke1.getDynamicReserveConfig(collateralReserveId);
 
-    state.collateralReserves[state.collateralReserveIndex] = spoke1.getReserve(collateralReserveId);
-    state.debtReserves[state.debtReserveIndex] = spoke1.getReserve(debtReserveId);
+    state.spoke = spoke1;
+    state.collDynConfig = state.spoke.getDynamicReserveConfig(collateralReserveId);
+
+    state.collateralReserves[state.collateralReserveIndex] = state.spoke.getReserve(
+      collateralReserveId
+    );
+    state.debtReserves[state.debtReserveIndex] = state.spoke.getReserve(debtReserveId);
 
     liqConfig = _boundCloseFactor(liqConfig);
     liqBonus = bound(
@@ -416,12 +420,14 @@ contract LiquidationCallCloseFactorTest is SpokeLiquidationBase {
     supplyAmount = bound(
       supplyAmount,
       _convertBaseCurrencyToAmount(
-        state.collateralReserves[state.collateralReserveIndex].assetId,
+        state.spoke,
+        state.collateralReserves[state.collateralReserveIndex].reserveId,
         1e26
       ),
       _min(
         _convertBaseCurrencyToAmount(
-          state.collateralReserves[state.collateralReserveIndex].assetId,
+          state.spoke,
+          state.collateralReserves[state.collateralReserveIndex].reserveId,
           MAX_SUPPLY_IN_BASE_CURRENCY
         ),
         MAX_SUPPLY_AMOUNT / 10
@@ -429,7 +435,6 @@ contract LiquidationCallCloseFactorTest is SpokeLiquidationBase {
     );
     skipTime = bound(skipTime, 1, MAX_SKIP_TIME);
 
-    state.spoke = spoke1;
     state.user = alice;
     state.liquidationProtocolFee = liquidationProtocolFee;
 

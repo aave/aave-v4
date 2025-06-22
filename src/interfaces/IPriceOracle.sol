@@ -8,9 +8,9 @@ pragma solidity ^0.8.0;
  */
 interface IPriceOracle {
   /**
-   * @notice Returns the asset price in the base currency
-   * @param assetId The id of the asset
-   * @return The price of the asset
+   * @notice Returns the reserve price in the base currency
+   * @param reserveId The id of the reserve
+   * @return The price of the reserve
    */
-  function getAssetPrice(uint256 assetId) external view returns (uint256);
+  function getReservePrice(uint256 reserveId) external view returns (uint256);
 }

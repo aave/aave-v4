@@ -53,6 +53,7 @@ contract KeyValueListInMemoryTest is Test {
   function _truncateKey(uint256 key) internal pure returns (uint256) {
     return key % KeyValueListInMemory._KEY_MASK;
   }
+
   function _truncateValue(uint256 value) internal pure returns (uint256) {
     return value % KeyValueListInMemory._VALUE_MASK;
   }
