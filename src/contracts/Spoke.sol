@@ -740,11 +740,12 @@ contract Spoke is ISpoke, Multicall {
   ) internal view returns (uint256, uint256, uint256, uint256, uint256) {
     DataTypes.CalculateUserAccountDataVars memory vars;
     uint256 reservesListLength = reservesList.length;
+    DataTypes.PositionStatus storage positionStatus = _positionStatus[user];
 
     while (vars.reserveId < reservesListLength) {
       DataTypes.UserPosition storage userPosition = _userPositions[user][vars.reserveId];
 
-      if (!_positionStatus[user].isUsingAsCollateralOrBorrowing(vars.reserveId)) {
+      if (!positionStatus.isUsingAsCollateralOrBorrowing(vars.reserveId)) {
         unchecked {
           ++vars.reserveId;
         }
@@ -759,14 +760,14 @@ contract Spoke is ISpoke, Multicall {
         vars.assetUnit = 10 ** hub.getAssetConfig(vars.assetId).decimals;
       }
 
-      if (_positionStatus[user].isUsingAsCollateral(vars.reserveId)) {
+      if (positionStatus.isUsingAsCollateral(vars.reserveId)) {
         // @dev opt: this can be extracted by counting number of set bits in a supplied (only) bitmap saving one loop
         unchecked {
           ++vars.collateralReserveCount;
         }
       }
 
-      if (_positionStatus[user].isBorrowing(vars.reserveId)) {
+      if (positionStatus.isBorrowing(vars.reserveId)) {
         vars.totalDebtInBaseCurrency += _getUserDebtInBaseCurrency(
           userPosition,
           vars.assetId,
@@ -789,7 +790,7 @@ contract Spoke is ISpoke, Multicall {
       DataTypes.UserPosition storage userPosition = _userPositions[user][vars.reserveId];
       DataTypes.Reserve storage reserve = _reserves[vars.reserveId];
       ILiquidityHub hub = reserve.config.hub;
-      if (_positionStatus[user].isUsingAsCollateral(vars.reserveId)) {
+      if (positionStatus.isUsingAsCollateral(vars.reserveId)) {
         DataTypes.DynamicReserveConfig storage dynConfig = _dynamicConfig[vars.reserveId][
           userPosition.configKey
         ];
@@ -924,19 +925,19 @@ contract Spoke is ISpoke, Multicall {
    */
   function _notifyRiskPremiumUpdate(
     uint256 assetIdToAvoid,
-    address userAddress,
+    address user,
     uint256 newUserRiskPremium
   ) internal returns (bool) {
-    bool premiumIncrease;
-    uint256 reserveCount_ = reserveCount;
-    uint256 reserveId;
-    while (reserveId < reserveCount_) {
-      DataTypes.UserPosition storage userPosition = _userPositions[userAddress][reserveId];
-      DataTypes.Reserve storage reserve = _reserves[reserveId];
+    DataTypes.NotifyRiskPremiumUpdateVars memory vars;
+    vars.reserveCount = reserveCount;
+    DataTypes.PositionStatus storage positionStatus = _positionStatus[user];
+    while (vars.reserveId < vars.reserveCount) {
+      DataTypes.UserPosition storage userPosition = _userPositions[user][vars.reserveId];
+      DataTypes.Reserve storage reserve = _reserves[vars.reserveId];
       uint256 assetId = reserve.assetId;
       ILiquidityHub hub = reserve.config.hub;
       // todo keep borrowed assets in transient storage/pass through?
-      if (_positionStatus[userAddress].isBorrowing(reserveId) && assetId != assetIdToAvoid) {
+      if (positionStatus.isBorrowing(vars.reserveId) && assetId != assetIdToAvoid) {
         uint256 oldUserPremiumDrawnShares = userPosition.premiumDrawnShares;
         uint256 oldUserPremiumOffset = userPosition.premiumOffset;
         uint256 accruedUserPremium = hub.convertToDrawnAssets(assetId, oldUserPremiumDrawnShares) -
@@ -952,11 +953,11 @@ contract Spoke is ISpoke, Multicall {
           userPosition.premiumDrawnShares,
           oldUserPremiumDrawnShares
         );
-        if (!premiumIncrease) premiumIncrease = premiumDrawnSharesDelta > 0;
+        if (!vars.premiumIncrease) vars.premiumIncrease = premiumDrawnSharesDelta > 0;
 
         _refreshPremiumDebt(
           reserve,
-          userAddress,
+          user,
           assetId,
           premiumDrawnSharesDelta,
           _signedDiff(userPosition.premiumOffset, oldUserPremiumOffset),
@@ -965,10 +966,10 @@ contract Spoke is ISpoke, Multicall {
         );
       }
       unchecked {
-        ++reserveId;
+        ++vars.reserveId;
       }
     }
-    return premiumIncrease;
+    return vars.premiumIncrease;
   }
 
   function _refreshDynamicConfig(address user) internal {

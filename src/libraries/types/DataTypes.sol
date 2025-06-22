@@ -90,6 +90,12 @@ library DataTypes {
     mapping(uint256 slot => uint256 status) map;
   }
 
+  struct NotifyRiskPremiumUpdateVars {
+    bool premiumIncrease;
+    uint256 reserveCount;
+    uint256 reserveId;
+  }
+
   struct CalculateUserAccountDataVars {
     uint256 i;
     uint256 assetId;
