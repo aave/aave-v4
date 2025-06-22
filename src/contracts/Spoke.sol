@@ -638,8 +638,9 @@ contract Spoke is ISpoke, Multicall {
     require(collateralReserve.config.active && debtReserve.config.active, ReserveNotActive());
     require(!collateralReserve.config.paused && !debtReserve.config.paused, ReservePaused());
     require(healthFactor < HEALTH_FACTOR_LIQUIDATION_THRESHOLD, HealthFactorNotBelowThreshold());
-    bool isCollateralEnabled = _usingAsCollateral(collateralReserve.reserveId, user) &&
-      collateralFactor != 0;
+    bool isCollateralEnabled = _positionStatus[user].isUsingAsCollateral(
+      collateralReserve.reserveId
+    ) && collateralFactor != 0;
     require(isCollateralEnabled, CollateralCannotBeLiquidated());
     require(totalDebt > 0, SpecifiedCurrencyNotBorrowedByUser());
   }
@@ -725,21 +726,6 @@ contract Spoke is ISpoke, Multicall {
     );
   }
 
-  function _usingAsCollateral(uint256 reserveId, address user) internal view returns (bool) {
-    return _positionStatus[user].isUsingAsCollateral(reserveId);
-  }
-
-  function _isBorrowing(uint256 reserveId, address user) internal view returns (bool) {
-    return _positionStatus[user].isBorrowing(reserveId);
-  }
-
-  function _usingAsCollateralOrBorrowing(
-    uint256 reserveId,
-    address user
-  ) internal view returns (bool) {
-    return _positionStatus[user].isUsingAsCollateralOrBorrowing(reserveId);
-  }
-
   /**
    * @dev User rp calc runs until the first of either debt or collateral is exhausted
    * @param user address of the user
@@ -758,7 +744,7 @@ contract Spoke is ISpoke, Multicall {
     while (vars.reserveId < reservesListLength) {
       DataTypes.UserPosition storage userPosition = _userPositions[user][vars.reserveId];
 
-      if (!_usingAsCollateralOrBorrowing(vars.reserveId, user)) {
+      if (!_positionStatus[user].isUsingAsCollateralOrBorrowing(vars.reserveId)) {
         unchecked {
           ++vars.reserveId;
         }
@@ -773,14 +759,14 @@ contract Spoke is ISpoke, Multicall {
         vars.assetUnit = 10 ** hub.getAssetConfig(vars.assetId).decimals;
       }
 
-      if (_usingAsCollateral(vars.reserveId, user)) {
+      if (_positionStatus[user].isUsingAsCollateral(vars.reserveId)) {
         // @dev opt: this can be extracted by counting number of set bits in a supplied (only) bitmap saving one loop
         unchecked {
           ++vars.collateralReserveCount;
         }
       }
 
-      if (_isBorrowing(vars.reserveId, user)) {
+      if (_positionStatus[user].isBorrowing(vars.reserveId)) {
         vars.totalDebtInBaseCurrency += _getUserDebtInBaseCurrency(
           userPosition,
           vars.assetId,
@@ -803,7 +789,7 @@ contract Spoke is ISpoke, Multicall {
       DataTypes.UserPosition storage userPosition = _userPositions[user][vars.reserveId];
       DataTypes.Reserve storage reserve = _reserves[vars.reserveId];
       ILiquidityHub hub = reserve.config.hub;
-      if (_usingAsCollateral(vars.reserveId, user)) {
+      if (_positionStatus[user].isUsingAsCollateral(vars.reserveId)) {
         DataTypes.DynamicReserveConfig storage dynConfig = _dynamicConfig[vars.reserveId][
           userPosition.configKey
         ];
@@ -950,7 +936,7 @@ contract Spoke is ISpoke, Multicall {
       uint256 assetId = reserve.assetId;
       ILiquidityHub hub = reserve.config.hub;
       // todo keep borrowed assets in transient storage/pass through?
-      if (_isBorrowing(reserveId, userAddress) && assetId != assetIdToAvoid) {
+      if (_positionStatus[userAddress].isBorrowing(reserveId) && assetId != assetIdToAvoid) {
         uint256 oldUserPremiumDrawnShares = userPosition.premiumDrawnShares;
         uint256 oldUserPremiumOffset = userPosition.premiumOffset;
         uint256 accruedUserPremium = hub.convertToDrawnAssets(assetId, oldUserPremiumDrawnShares) -
@@ -990,7 +976,7 @@ contract Spoke is ISpoke, Multicall {
     uint256 reserveId;
     while (reserveId < reservesListLength) {
       DataTypes.UserPosition storage userPosition = _userPositions[user][reserveId];
-      if (_usingAsCollateral(reserveId, user)) {
+      if (_positionStatus[user].isUsingAsCollateral(reserveId)) {
         userPosition.configKey = _reserves[reserveId].dynamicConfigKey;
       }
       unchecked {
