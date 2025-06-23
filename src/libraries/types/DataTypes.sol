@@ -1,6 +1,8 @@
 // SPDX-License-Identifier: BUSL-1.1
 pragma solidity ^0.8.10;
 
+import {ILiquidityHub} from 'src/interfaces/ILiquidityHub.sol';
+
 library DataTypes {
   // Liquidity Hub types
   // todo pack
@@ -59,6 +61,7 @@ library DataTypes {
   }
 
   struct ReserveConfig {
+    ILiquidityHub hub;
     bool active;
     bool frozen;
     bool paused;

@@ -167,24 +167,33 @@ contract SpokeRiskPremiumTest is SpokeBase {
     );
 
     // Change the price of dai2 via mock call
-    oracle.setAssetPrice(dai2AssetId, 100000e8);
+    MockPriceOracle oracle = MockPriceOracle(address(spoke2.oracle()));
+    oracle.setReservePrice(_dai2ReserveId(spoke2), 100000e8);
 
     // Check that debt has outgrown collateral
-    uint256 collateralValue = _getValueInBaseCurrency(wbtcAssetId, wbtcSupplyAmount) +
-      _getValueInBaseCurrency(daiAssetId, daiSupplyAmount) +
-      _getValueInBaseCurrency(usdxAssetId, usdxSupplyAmount) +
-      _getValueInBaseCurrency(wethAssetId, wethSupplyAmount);
-    uint256 debtValue = _getValueInBaseCurrency(dai2AssetId, borrowAmount);
+    uint256 collateralValue = _getValueInBaseCurrency(
+      spoke2,
+      _wbtcReserveId(spoke2),
+      wbtcSupplyAmount
+    ) +
+      _getValueInBaseCurrency(spoke2, _daiReserveId(spoke2), daiSupplyAmount) +
+      _getValueInBaseCurrency(spoke2, _usdxReserveId(spoke2), usdxSupplyAmount) +
+      _getValueInBaseCurrency(spoke2, _wethReserveId(spoke2), wethSupplyAmount);
+    uint256 debtValue = _getValueInBaseCurrency(spoke2, _dai2ReserveId(spoke2), borrowAmount);
     assertGt(debtValue, collateralValue, 'debt outgrows collateral');
 
     // Now user rp should be weighted sum of the collaterals
-    uint256 expectedRiskPremium = (_getValueInBaseCurrency(daiAssetId, daiSupplyAmount) *
+    uint256 expectedRiskPremium = (_getValueInBaseCurrency(
+      spoke2,
+      _daiReserveId(spoke2),
+      daiSupplyAmount
+    ) *
       _getLiquidityPremium(spoke2, _daiReserveId(spoke2)) +
-      _getValueInBaseCurrency(usdxAssetId, usdxSupplyAmount) *
+      _getValueInBaseCurrency(spoke2, _usdxReserveId(spoke2), usdxSupplyAmount) *
       _getLiquidityPremium(spoke2, _usdxReserveId(spoke2)) +
-      _getValueInBaseCurrency(wbtcAssetId, wbtcSupplyAmount) *
+      _getValueInBaseCurrency(spoke2, _wbtcReserveId(spoke2), wbtcSupplyAmount) *
       _getLiquidityPremium(spoke2, _wbtcReserveId(spoke2)) +
-      _getValueInBaseCurrency(wethAssetId, wethSupplyAmount) *
+      _getValueInBaseCurrency(spoke2, _wethReserveId(spoke2), wethSupplyAmount) *
       _getLiquidityPremium(spoke2, _wethReserveId(spoke2))) / collateralValue;
     assertEq(
       spoke2.getUserRiskPremium(bob),
@@ -257,9 +266,9 @@ contract SpokeRiskPremiumTest is SpokeBase {
 
     // Weth is enough to cover the total debt
     assertGe(
-      _getValueInBaseCurrency(wethAssetId, wethInfo.supplyAmount),
-      _getValueInBaseCurrency(daiAssetId, daiInfo.borrowAmount) +
-        _getValueInBaseCurrency(usdxAssetId, usdxInfo.borrowAmount),
+      _getValueInBaseCurrency(spoke1, wethInfo.reserveId, wethInfo.supplyAmount),
+      _getValueInBaseCurrency(spoke1, daiInfo.reserveId, daiInfo.borrowAmount) +
+        _getValueInBaseCurrency(spoke1, usdxInfo.reserveId, usdxInfo.borrowAmount),
       'weth supply covers debt'
     );
     uint256 expectedUserRiskPremium = wethInfo.lp;
@@ -305,8 +314,8 @@ contract SpokeRiskPremiumTest is SpokeBase {
 
     // Dai2 is enough to cover the total debt
     assertGe(
-      _getValueInBaseCurrency(dai2AssetId, dai2Info.supplyAmount),
-      _getValueInBaseCurrency(daiAssetId, daiInfo.borrowAmount),
+      _getValueInBaseCurrency(spoke2, dai2Info.reserveId, dai2Info.supplyAmount),
+      _getValueInBaseCurrency(spoke2, daiInfo.reserveId, daiInfo.borrowAmount),
       'dai2 supply covers debt'
     );
 
@@ -686,7 +695,8 @@ contract SpokeRiskPremiumTest is SpokeBase {
     );
 
     // Now change the price of usdx
-    oracle.setAssetPrice(usdxAssetId, newUsdxPrice);
+    MockPriceOracle oracle = MockPriceOracle(address(spoke2.oracle()));
+    oracle.setReservePrice(_usdxReserveId(spoke2), newUsdxPrice);
 
     assertEq(
       spoke2.getUserRiskPremium(bob),
@@ -855,10 +865,11 @@ contract SpokeRiskPremiumTest is SpokeBase {
     }
 
     // Update prices
-    oracle.setAssetPrice(daiAssetId, daiInfo.price);
-    oracle.setAssetPrice(wethAssetId, wethInfo.price);
-    oracle.setAssetPrice(usdxAssetId, usdxInfo.price);
-    oracle.setAssetPrice(wbtcAssetId, wbtcInfo.price);
+    MockPriceOracle oracle = MockPriceOracle(address(spoke2.oracle()));
+    oracle.setReservePrice(_daiReserveId(spoke2), daiInfo.price);
+    oracle.setReservePrice(_wethReserveId(spoke2), wethInfo.price);
+    oracle.setReservePrice(_usdxReserveId(spoke2), usdxInfo.price);
+    oracle.setReservePrice(_wbtcReserveId(spoke2), wbtcInfo.price);
 
     // Update LPs
     updateLiquidityPremium(spoke2, _daiReserveId(spoke2), daiInfo.lp);

@@ -6,14 +6,9 @@ import 'tests/unit/Spoke/SpokeBase.t.sol';
 contract SpokeConfigTest is SpokeBase {
   using SafeCast for uint256;
 
-  function test_spoke_deploy_revertsWith_InvalidHubAddress() public {
-    vm.expectRevert(ISpoke.InvalidHubAddress.selector);
-    new Spoke(address(0), address(oracle));
-  }
-
   function test_spoke_deploy_revertsWith_InvalidOracleAddress() public {
     vm.expectRevert(ISpoke.InvalidOracleAddress.selector);
-    new Spoke(address(hub), address(0));
+    new Spoke(address(0));
   }
 
   function test_updateReserveConfig() public {
@@ -28,7 +23,8 @@ contract SpokeConfigTest is SpokeBase {
       liquidityPremium: config.liquidityPremium + 1,
       liquidationProtocolFee: config.liquidationProtocolFee + 1,
       borrowable: !config.borrowable,
-      collateral: !config.collateral
+      collateral: !config.collateral,
+      hub: config.hub
     });
     vm.expectEmit(address(spoke1));
     emit ISpoke.ReserveConfigUpdated(daiReserveId, newReserveConfig);
@@ -57,6 +53,8 @@ contract SpokeConfigTest is SpokeBase {
 
     uint256 daiReserveId = _daiReserveId(spoke1);
     DataTypes.ReserveConfig memory reserveData = spoke1.getReserveConfig(daiReserveId);
+
+    newReserveConfig.hub = reserveData.hub; // hub won't get updated
 
     vm.expectEmit(address(spoke1));
     emit ISpoke.ReserveConfigUpdated(daiReserveId, newReserveConfig);
@@ -214,6 +212,7 @@ contract SpokeConfigTest is SpokeBase {
 
     DataTypes.ReserveConfig memory config;
     config.liquidationBonus = PercentageMath.PERCENTAGE_FACTOR;
+    config.hub = hub;
 
     vm.expectRevert(ISpoke.ReserveNotListed.selector);
     vm.prank(SPOKE_ADMIN);
@@ -290,7 +289,8 @@ contract SpokeConfigTest is SpokeBase {
       liquidityPremium: 10_00,
       liquidationProtocolFee: 10_00,
       borrowable: true,
-      collateral: true
+      collateral: true,
+      hub: hub
     });
     DataTypes.DynamicReserveConfig memory newDynReserveConfig = DataTypes.DynamicReserveConfig({
       collateralFactor: 10_00
@@ -316,7 +316,8 @@ contract SpokeConfigTest is SpokeBase {
       liquidationProtocolFee: 0,
       liquidityPremium: 10_00,
       borrowable: true,
-      collateral: true
+      collateral: true,
+      hub: hub
     });
     DataTypes.DynamicReserveConfig memory newDynReserveConfig = DataTypes.DynamicReserveConfig({
       collateralFactor: 10_00
@@ -338,7 +339,8 @@ contract SpokeConfigTest is SpokeBase {
       liquidityPremium: 10_00,
       liquidationProtocolFee: 0,
       borrowable: true,
-      collateral: true
+      collateral: true,
+      hub: hub
     });
     DataTypes.DynamicReserveConfig memory newDynReserveConfig = DataTypes.DynamicReserveConfig({
       collateralFactor: 10_00

@@ -71,7 +71,7 @@ contract LiquidityHubDrawTest is LiquidityHubBase {
   }
 
   function test_draw_fuzz_amounts_same_block(uint256 assetId, uint256 daiAmount) public {
-    assetId = bound(assetId, 0, hub.assetCount() - 2); // Exclude duplicated DAI
+    assetId = bound(assetId, 0, hub.assetCount() - 3); // Exclude duplicated DAI and usdy
     daiAmount = bound(daiAmount, 1, MAX_SUPPLY_AMOUNT);
     uint256 drawAmount = daiAmount;
 
@@ -199,7 +199,7 @@ contract LiquidityHubDrawTest is LiquidityHubBase {
     uint256 assetId,
     uint256 drawAmount
   ) public {
-    assetId = bound(assetId, 0, hub.assetCount() - 1);
+    assetId = bound(assetId, 0, hub.assetCount() - 3); // Exclude duplicated DAI and usdy
     drawAmount = bound(drawAmount, 1, MAX_SUPPLY_AMOUNT);
 
     assertTrue(hub.getAvailableLiquidity(assetId) == 0);
