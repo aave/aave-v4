@@ -78,6 +78,8 @@ contract LiquidityHub is ILiquidityHub {
 
     asset.config = config;
 
+    asset.updateBorrowRate({assetId: assetId, liquidityAdded: 0, liquidityTaken: 0});
+
     emit AssetConfigUpdated(assetId, config);
   }
 

@@ -423,17 +423,58 @@ contract ConfiguratorTest is LiquidityHubBase {
     configurator.setInterestRateStrategy(address(hub), assetId, address(0));
   }
 
-  function test_setInterestRateStrategy_fuzz(uint256 assetId, address irStrategy) public {
+  function test_setInterestRateStrategy_fuzz_revertsWith_InterestRateStrategyReverts(uint256 assetId, address interestRateStrategy) public {
+    assetId = bound(assetId, 0, hub.assetCount() - 1);
+    vm.assume(interestRateStrategy != address(irStrategy) && interestRateStrategy > address(0x0a));
+
+    vm.expectRevert();
+    configurator.setInterestRateStrategy(address(hub), assetId, interestRateStrategy);
+  }
+
+  function test_setInterestRateStrategy_fuzz(uint256 assetId, address interestRateStrategy) public {
+    vm.assume(interestRateStrategy != address(0) && interestRateStrategy != address(Utils.vm));
+    
     assetId = bound(assetId, 0, hub.assetCount() - 1);
 
     DataTypes.AssetConfig memory expectedConfig = hub.getAssetConfig(assetId);
-    expectedConfig.irStrategy = irStrategy;
+    expectedConfig.irStrategy = interestRateStrategy;
+    _mockInterestRate(interestRateStrategy, 5_00);
 
     _checkedUpdateAssetConfig(
       assetId,
-      abi.encodeCall(IConfigurator.setInterestRateStrategy, (address(hub), assetId, irStrategy)),
+      abi.encodeCall(IConfigurator.setInterestRateStrategy, (address(hub), assetId, interestRateStrategy)),
       expectedConfig
     );
+  }
+
+  /// Triggers accrual when interest rate strategy is updated, based on old strategy
+  /// Also makes sure that the base borrow rate is updated after accrual
+  function test_setInterestRateStrategy_fuzz_NewInterestRateStrategy(uint256 assetId) public {
+    assetId = bound(assetId, 0, hub.assetCount() - 1);
+
+    uint256 amount = 1000e18;
+    _addLiquidity(assetId, amount);
+    _drawLiquidity(assetId, amount, true);
+
+    uint256 fees = hub.getSpokeSuppliedShares(assetId, address(treasurySpoke));
+    assertTrue(fees > 0, 'no fees');
+
+    skip(365 days);
+    uint256 futureFees = hub.getSpokeSuppliedShares(assetId, address(treasurySpoke));
+    rewind(365 days);
+
+    DataTypes.AssetConfig memory config = hub.getAssetConfig(assetId);
+    address newIrStrategy = config.irStrategy;
+
+    config.irStrategy = address(newIrStrategy);
+    _checkedUpdateAssetConfig(
+      assetId,
+      abi.encodeCall(IConfigurator.setInterestRateStrategy, (address(hub), assetId, newIrStrategy)),
+      config
+    );
+
+    skip(365 days);
+    assertNotEq(hub.getSpokeSuppliedShares(assetId, config.feeReceiver), futureFees);
   }
 
   function _checkedAddAsset(
@@ -484,6 +525,10 @@ contract ConfiguratorTest is LiquidityHubBase {
     bytes memory configuratorCalldata,
     DataTypes.AssetConfig memory expectedConfig
   ) internal {
+    // Always accrue first, based on old config
+    vm.expectEmit(address(hub));
+    emit ILiquidityHub.DrawnIndexUpdate(assetId, hub.previewDrawnIndex(assetId), block.timestamp);
+
     vm.expectEmit(address(hub));
     emit ILiquidityHub.AssetConfigUpdated(assetId, expectedConfig);
 

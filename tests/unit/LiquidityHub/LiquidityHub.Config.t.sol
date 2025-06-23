@@ -299,8 +299,18 @@ contract LiquidityHubConfigTest is LiquidityHubBase {
     hub.updateAssetConfig(daiAssetId, newConfig);
   }
 
+  function test_updateAssetConfig_fuzz_revertsWith_InterestRateStrategyReverts(DataTypes.AssetConfig memory newConfig) public {
+    vm.assume(newConfig.irStrategy != address(irStrategy) && newConfig.irStrategy > address(0x0a));
+    _processAssetConfig(daiAssetId, newConfig);
+
+    vm.expectRevert();
+    hub.updateAssetConfig(daiAssetId, newConfig);
+  }
+
   function test_updateAssetConfig_fuzz(DataTypes.AssetConfig memory newConfig) public {
     _processAssetConfig(daiAssetId, newConfig);
+    vm.assume(newConfig.irStrategy != address(0) && newConfig.irStrategy != address(Utils.vm));
+    _mockInterestRate(newConfig.irStrategy, 5_00);
     _checkedUpdateAssetConfig(daiAssetId, newConfig);
   }
 
@@ -475,6 +485,30 @@ contract LiquidityHubConfigTest is LiquidityHubBase {
 
     assertEq(hub.getSpokeSuppliedShares(daiAssetId, address(0)), 0);
     assertEq(hub.getSpokeSuppliedShares(daiAssetId, config.feeReceiver), 0);
+  }
+
+  /// Triggers accrual when interest rate strategy is updated, based on old strategy
+  /// Also makes sure that the base borrow rate is updated after accrual
+  function test_updateAssetConfig_NewInterestRateStrategy() public {
+    uint256 amount = 1000e18;
+    _addLiquidity(daiAssetId, amount);
+    _drawLiquidity(daiAssetId, amount, true);
+
+    uint256 fees = hub.getSpokeSuppliedShares(daiAssetId, address(treasurySpoke));
+    assertTrue(fees > 0, 'no fees');
+
+    skip(365 days);
+    uint256 futureFees = hub.getSpokeSuppliedShares(daiAssetId, address(treasurySpoke));
+    rewind(365 days);
+
+    AssetInterestRateStrategy newIrStrategy = new AssetInterestRateStrategy();
+    _mockInterestRate(address(newIrStrategy), hub.getBaseInterestRate(daiAssetId) * 2);
+    DataTypes.AssetConfig memory config = hub.getAssetConfig(daiAssetId);
+    config.irStrategy = address(newIrStrategy);
+    _checkedUpdateAssetConfig(daiAssetId, config);
+
+    skip(365 days);
+    assertNotEq(hub.getSpokeSuppliedShares(daiAssetId, config.feeReceiver), futureFees);
   }
 
   function _processAssetConfig(uint256 assetId, DataTypes.AssetConfig memory newConfig) public {

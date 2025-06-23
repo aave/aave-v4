@@ -41,6 +41,15 @@ contract LiquidityHubHandler is Test {
 
     // Add dai
     hub.addAsset(address(dai), 18, address(irStrategy));
+    irStrategy.setInterestRateData(
+      0,
+      IAssetInterestRateStrategy.InterestRateData({
+        optimalUsageRatio: 90_00, // 90.00%
+        baseVariableBorrowRate: 5_00, // 5.00%
+        variableRateSlope1: 5_00, // 5.00%
+        variableRateSlope2: 5_00 // 5.00%
+      })
+    );
     hub.updateAssetConfig(
       0,
       DataTypes.AssetConfig({
