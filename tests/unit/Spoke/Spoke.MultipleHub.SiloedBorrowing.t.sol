@@ -80,10 +80,13 @@ contract SpokeMultipleHubSiloedBorrowingTest is SpokeMultipleHubBase {
       }),
       address(newSpoke)
     );
+    vm.stopPrank();
 
     // Configure interest rate strategy for asset B
+    vm.prank(address(newHub));
     newIrStrategy.setInterestRateData(siloedVars.assetBId, irData);
 
+    vm.startPrank(ADMIN);
     // Add asset A to the canonical hub
     hub.addAsset(
       DataTypes.AssetConfig({
@@ -130,10 +133,13 @@ contract SpokeMultipleHubSiloedBorrowingTest is SpokeMultipleHubBase {
       }),
       address(spoke1)
     );
+    vm.stopPrank();
 
     // Configure interest rate strategy for asset A
+    vm.prank(address(hub));
     irStrategy.setInterestRateData(siloedVars.assetAId, irData);
 
+    vm.startPrank(ADMIN);
     // Add reserve A from canonical hub to the new spoke
     siloedVars.reserveAIdNewSpoke = newSpoke.addReserve(
       siloedVars.assetAId,

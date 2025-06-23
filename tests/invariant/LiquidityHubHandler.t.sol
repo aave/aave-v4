@@ -37,9 +37,9 @@ contract LiquidityHubHandler is Test {
   constructor() {
     vm.startPrank(hubAdmin);
     accessManager = new AccessManager(hubAdmin);
-    irStrategy = new AssetInterestRateStrategy(address(accessManager));
-    oracle = new MockPriceOracle();
     hub = new LiquidityHub(address(accessManager));
+    irStrategy = new AssetInterestRateStrategy(address(hub));
+    oracle = new MockPriceOracle();
     spoke1 = new Spoke(address(oracle), address(accessManager));
     usdc = new MockERC20();
     dai = new MockERC20();

@@ -111,12 +111,16 @@ contract SpokeMultipleHubIsolationModeTest is SpokeMultipleHubBase {
       }),
       address(newSpoke)
     );
+    vm.stopPrank();
 
     // Configure interest rate strategy for assets A and B
+    vm.startPrank(address(newHub));
     newIrStrategy.setInterestRateData(isolationVars.assetAId, irData);
     newIrStrategy.setInterestRateData(isolationVars.assetBId, irData);
+    vm.stopPrank();
 
     // List asset B on the canonical hub
+    vm.startPrank(ADMIN);
     isolationVars.assetBIdMainHub = hub.assetCount();
     hub.addAsset(
       DataTypes.AssetConfig({
@@ -162,10 +166,11 @@ contract SpokeMultipleHubIsolationModeTest is SpokeMultipleHubBase {
       }),
       address(spoke1)
     );
+    vm.stopPrank();
 
     // Configure interest rate strategy for asset B on the main hub
+    vm.prank(address(hub));
     irStrategy.setInterestRateData(isolationVars.assetBIdMainHub, irData);
-    vm.stopPrank();
 
     // Approvals
     vm.startPrank(bob);

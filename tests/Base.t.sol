@@ -166,8 +166,8 @@ abstract contract Base is Test {
     oracle2 = new MockPriceOracle();
     oracle3 = new MockPriceOracle();
     accessManager = new AccessManager(ADMIN);
-    irStrategy = new AssetInterestRateStrategy(address(accessManager));
     hub = new LiquidityHub(address(accessManager));
+    irStrategy = new AssetInterestRateStrategy(address(hub));
     spoke1 = ISpoke(new Spoke(address(oracle1), address(accessManager)));
     spoke2 = ISpoke(new Spoke(address(oracle2), address(accessManager)));
     spoke3 = ISpoke(new Spoke(address(oracle3), address(accessManager)));
@@ -217,17 +217,6 @@ abstract contract Base is Test {
     hubSelectors[5] = ILiquidityHub.updateAssetFees.selector;
 
     accessManager.setTargetFunctionRole(address(hub), hubSelectors, Roles.HUB_ADMIN_ROLE);
-
-    // Interest rate controller functionalities
-    bytes4[] memory irSelectors = new bytes4[](1);
-    irSelectors[0] = IAssetInterestRateStrategy.setInterestRateData.selector;
-
-    accessManager.setTargetFunctionRole(
-      address(irStrategy),
-      irSelectors,
-      Roles.INTEREST_RATE_ADMIN_ROLE
-    );
-
     vm.stopPrank();
   }
 
@@ -680,7 +669,9 @@ abstract contract Base is Test {
     spokeInfo[spoke2].dai2.liquidityPremium = daiConfig.liquidityPremium;
     oracle2.setReservePrice(spokeInfo[spoke2].dai2.reserveId, 1e8);
     hub.addSpoke(dai2AssetId, spokeConfig, address(spoke2));
+    vm.stopPrank();
 
+    vm.startPrank(address(hub));
     irStrategy.setInterestRateData(
       wethAssetId,
       IAssetInterestRateStrategy.InterestRateData({
@@ -748,9 +739,7 @@ abstract contract Base is Test {
     vm.startPrank(ADMIN);
 
     ILiquidityHub hub2 = new LiquidityHub(address(accessManager));
-    AssetInterestRateStrategy hub2IrStrategy = new AssetInterestRateStrategy(
-      address(accessManager)
-    );
+    AssetInterestRateStrategy hub2IrStrategy = new AssetInterestRateStrategy(address(hub2));
 
     // Add assets to the second hub
     // Add WETH
@@ -808,6 +797,7 @@ abstract contract Base is Test {
       }),
       address(tokenList.wbtc)
     );
+    vm.stopPrank();
 
     // Configure IR Strategy for hub 2
     IAssetInterestRateStrategy.InterestRateData memory irData = IAssetInterestRateStrategy
@@ -817,6 +807,7 @@ abstract contract Base is Test {
         variableRateSlope1: 5_00, // 5.00%
         variableRateSlope2: 5_00 // 5.00%
       });
+    vm.startPrank(address(hub2));
     hub2IrStrategy.setInterestRateData(wethAssetId, irData);
     hub2IrStrategy.setInterestRateData(usdxAssetId, irData);
     hub2IrStrategy.setInterestRateData(daiAssetId, irData);
@@ -836,9 +827,7 @@ abstract contract Base is Test {
     vm.startPrank(ADMIN);
 
     ILiquidityHub hub3 = new LiquidityHub(address(accessManager));
-    AssetInterestRateStrategy hub3IrStrategy = new AssetInterestRateStrategy(
-      address(accessManager)
-    );
+    AssetInterestRateStrategy hub3IrStrategy = new AssetInterestRateStrategy(address(hub3));
 
     // Add DAI
     hub3.addAsset(
@@ -899,6 +888,7 @@ abstract contract Base is Test {
       address(tokenList.weth)
     );
     uint256 hub3WethAssetId = 3;
+    vm.stopPrank();
 
     // Configure IR Strategy for hub 3
     IAssetInterestRateStrategy.InterestRateData memory irData = IAssetInterestRateStrategy
@@ -908,6 +898,7 @@ abstract contract Base is Test {
         variableRateSlope1: 5_00, // 5.00%
         variableRateSlope2: 5_00 // 5.00%
       });
+    vm.startPrank(address(hub3));
     hub3IrStrategy.setInterestRateData(hub3WethAssetId, irData);
     hub3IrStrategy.setInterestRateData(hub3UsdxAssetId, irData);
     hub3IrStrategy.setInterestRateData(hub3DaiAssetId, irData);

@@ -45,6 +45,11 @@ interface IAssetInterestRateStrategy is IBasicInterestRateStrategy {
   }
 
   /**
+   * @notice Thrown when the caller is not the liquidity hub
+   */
+  error OnlyLiquidityHub();
+
+  /**
    * @notice Thrown when the max possible rate is greater than `MAX_BORROW_RATE`
    */
   error InvalidMaxRate();
