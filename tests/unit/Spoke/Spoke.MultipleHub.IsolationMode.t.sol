@@ -41,6 +41,7 @@ contract SpokeMultipleHubIsolationModeTest is SpokeMultipleHubBase {
     // Add reserves to the new spoke
     isolationVars.reserveAId = newSpoke.addReserve(
       isolationVars.assetAId,
+      newHub,
       DataTypes.ReserveConfig({
         active: true,
         frozen: false,
@@ -49,13 +50,13 @@ contract SpokeMultipleHubIsolationModeTest is SpokeMultipleHubBase {
         liquidityPremium: 15_00,
         liquidationProtocolFee: 0,
         borrowable: false,
-        collateral: true,
-        hub: newHub
+        collateral: true
       }),
       dynReserveConfig
     );
     isolationVars.reserveBId = newSpoke.addReserve(
       isolationVars.assetBId,
+      newHub,
       DataTypes.ReserveConfig({
         active: true,
         frozen: false,
@@ -64,8 +65,7 @@ contract SpokeMultipleHubIsolationModeTest is SpokeMultipleHubBase {
         liquidityPremium: 15_00,
         liquidationProtocolFee: 0,
         borrowable: true,
-        collateral: false,
-        hub: newHub
+        collateral: false
       }),
       dynReserveConfig
     );
@@ -101,6 +101,7 @@ contract SpokeMultipleHubIsolationModeTest is SpokeMultipleHubBase {
     // List reserve B on spoke 1 for the canonical hub
     isolationVars.spoke1ReserveBId = spoke1.addReserve(
       isolationVars.assetBIdMainHub,
+      hub,
       DataTypes.ReserveConfig({
         active: true,
         frozen: false,
@@ -109,8 +110,7 @@ contract SpokeMultipleHubIsolationModeTest is SpokeMultipleHubBase {
         liquidityPremium: 15_00,
         liquidationProtocolFee: 0,
         borrowable: true,
-        collateral: true,
-        hub: hub
+        collateral: true
       }),
       dynReserveConfig
     );
@@ -179,6 +179,7 @@ contract SpokeMultipleHubIsolationModeTest is SpokeMultipleHubBase {
     // Add main hub reserve B to the new spoke
     isolationVars.reserveBIdMainHub = newSpoke.addReserve(
       isolationVars.assetBIdMainHub,
+      hub,
       DataTypes.ReserveConfig({
         active: true,
         frozen: false,
@@ -187,8 +188,7 @@ contract SpokeMultipleHubIsolationModeTest is SpokeMultipleHubBase {
         liquidityPremium: 15_00,
         liquidationProtocolFee: 0,
         borrowable: true,
-        collateral: true,
-        hub: hub
+        collateral: true
       }),
       dynReserveConfig
     );

@@ -311,8 +311,7 @@ abstract contract Base is Test {
       liquidityPremium: 15_00,
       liquidationProtocolFee: 0,
       borrowable: true,
-      collateral: true,
-      hub: hub
+      collateral: true
     });
     DataTypes.DynamicReserveConfig memory wethDynConfig = DataTypes.DynamicReserveConfig({
       collateralFactor: 80_00
@@ -325,8 +324,7 @@ abstract contract Base is Test {
       liquidityPremium: 5_00,
       liquidationProtocolFee: 0,
       borrowable: true,
-      collateral: true,
-      hub: hub
+      collateral: true
     });
     DataTypes.DynamicReserveConfig memory wbtcDynConfig = DataTypes.DynamicReserveConfig({
       collateralFactor: 75_00
@@ -339,8 +337,7 @@ abstract contract Base is Test {
       liquidityPremium: 20_00,
       liquidationProtocolFee: 0,
       borrowable: true,
-      collateral: true,
-      hub: hub
+      collateral: true
     });
     DataTypes.DynamicReserveConfig memory daiDynConfig = DataTypes.DynamicReserveConfig({
       collateralFactor: 78_00
@@ -353,8 +350,7 @@ abstract contract Base is Test {
       liquidityPremium: 50_00,
       liquidationProtocolFee: 0,
       borrowable: true,
-      collateral: true,
-      hub: hub
+      collateral: true
     });
     DataTypes.DynamicReserveConfig memory usdxDynConfig = DataTypes.DynamicReserveConfig({
       collateralFactor: 78_00
@@ -367,22 +363,21 @@ abstract contract Base is Test {
       liquidityPremium: 50_00,
       liquidationProtocolFee: 0,
       borrowable: true,
-      collateral: true,
-      hub: hub
+      collateral: true
     });
     DataTypes.DynamicReserveConfig memory usdyDynConfig = DataTypes.DynamicReserveConfig({
       collateralFactor: 78_00
     });
 
-    spokeInfo[spoke1].weth.reserveId = spoke1.addReserve(wethAssetId, wethConfig, wethDynConfig);
+    spokeInfo[spoke1].weth.reserveId = spoke1.addReserve(wethAssetId, hub, wethConfig, wethDynConfig);
     spokeInfo[spoke1].weth.liquidityPremium = wethConfig.liquidityPremium;
-    spokeInfo[spoke1].wbtc.reserveId = spoke1.addReserve(wbtcAssetId, wbtcConfig, wbtcDynConfig);
+    spokeInfo[spoke1].wbtc.reserveId = spoke1.addReserve(wbtcAssetId, hub, wbtcConfig, wbtcDynConfig);
     spokeInfo[spoke1].wbtc.liquidityPremium = wbtcConfig.liquidityPremium;
-    spokeInfo[spoke1].dai.reserveId = spoke1.addReserve(daiAssetId, daiConfig, daiDynConfig);
+    spokeInfo[spoke1].dai.reserveId = spoke1.addReserve(daiAssetId, hub, daiConfig, daiDynConfig);
     spokeInfo[spoke1].dai.liquidityPremium = daiConfig.liquidityPremium;
-    spokeInfo[spoke1].usdx.reserveId = spoke1.addReserve(usdxAssetId, usdxConfig, usdxDynConfig);
+    spokeInfo[spoke1].usdx.reserveId = spoke1.addReserve(usdxAssetId, hub, usdxConfig, usdxDynConfig);
     spokeInfo[spoke1].usdx.liquidityPremium = usdxConfig.liquidityPremium;
-    spokeInfo[spoke1].usdy.reserveId = spoke1.addReserve(usdyAssetId, usdyConfig, usdyDynConfig);
+    spokeInfo[spoke1].usdy.reserveId = spoke1.addReserve(usdyAssetId, hub, usdyConfig, usdyDynConfig);
     spokeInfo[spoke1].usdy.liquidityPremium = usdyConfig.liquidityPremium;
 
     oracle1.setReservePrice(spokeInfo[spoke1].weth.reserveId, 2000e8);
@@ -406,8 +401,7 @@ abstract contract Base is Test {
       liquidityPremium: 0,
       liquidationProtocolFee: 0,
       borrowable: true,
-      collateral: true,
-      hub: hub
+      collateral: true
     });
     wbtcDynConfig = DataTypes.DynamicReserveConfig({collateralFactor: 80_00});
     wethConfig = DataTypes.ReserveConfig({
@@ -418,8 +412,7 @@ abstract contract Base is Test {
       liquidityPremium: 10_00,
       liquidationProtocolFee: 0,
       borrowable: true,
-      collateral: true,
-      hub: hub
+      collateral: true
     });
     wethDynConfig = DataTypes.DynamicReserveConfig({collateralFactor: 76_00});
     daiConfig = DataTypes.ReserveConfig({
@@ -430,8 +423,7 @@ abstract contract Base is Test {
       liquidityPremium: 20_00,
       liquidationProtocolFee: 0,
       borrowable: true,
-      collateral: true,
-      hub: hub
+      collateral: true
     });
     daiDynConfig = DataTypes.DynamicReserveConfig({collateralFactor: 72_00});
     usdxConfig = DataTypes.ReserveConfig({
@@ -442,8 +434,7 @@ abstract contract Base is Test {
       liquidityPremium: 50_00,
       liquidationProtocolFee: 0,
       borrowable: true,
-      collateral: true,
-      hub: hub
+      collateral: true
     });
     usdxDynConfig = DataTypes.DynamicReserveConfig({collateralFactor: 72_00});
     usdyConfig = DataTypes.ReserveConfig({
@@ -454,20 +445,19 @@ abstract contract Base is Test {
       liquidityPremium: 50_00,
       liquidationProtocolFee: 0,
       borrowable: true,
-      collateral: true,
-      hub: hub
+      collateral: true
     });
     usdyDynConfig = DataTypes.DynamicReserveConfig({collateralFactor: 72_00});
 
-    spokeInfo[spoke2].wbtc.reserveId = spoke2.addReserve(wbtcAssetId, wbtcConfig, wbtcDynConfig);
+    spokeInfo[spoke2].wbtc.reserveId = spoke2.addReserve(wbtcAssetId, hub, wbtcConfig, wbtcDynConfig);
     spokeInfo[spoke2].wbtc.liquidityPremium = wbtcConfig.liquidityPremium;
-    spokeInfo[spoke2].weth.reserveId = spoke2.addReserve(wethAssetId, wethConfig, wethDynConfig);
+    spokeInfo[spoke2].weth.reserveId = spoke2.addReserve(wethAssetId, hub, wethConfig, wethDynConfig);
     spokeInfo[spoke2].weth.liquidityPremium = wethConfig.liquidityPremium;
-    spokeInfo[spoke2].dai.reserveId = spoke2.addReserve(daiAssetId, daiConfig, daiDynConfig);
+    spokeInfo[spoke2].dai.reserveId = spoke2.addReserve(daiAssetId, hub, daiConfig, daiDynConfig);
     spokeInfo[spoke2].dai.liquidityPremium = daiConfig.liquidityPremium;
-    spokeInfo[spoke2].usdx.reserveId = spoke2.addReserve(usdxAssetId, usdxConfig, usdxDynConfig);
+    spokeInfo[spoke2].usdx.reserveId = spoke2.addReserve(usdxAssetId, hub, usdxConfig, usdxDynConfig);
     spokeInfo[spoke2].usdx.liquidityPremium = usdxConfig.liquidityPremium;
-    spokeInfo[spoke2].usdy.reserveId = spoke2.addReserve(usdyAssetId, usdyConfig, usdyDynConfig);
+    spokeInfo[spoke2].usdy.reserveId = spoke2.addReserve(usdyAssetId, hub, usdyConfig, usdyDynConfig);
     spokeInfo[spoke2].usdy.liquidityPremium = usdyConfig.liquidityPremium;
 
     oracle2.setReservePrice(spokeInfo[spoke2].wbtc.reserveId, 50_000e8);
@@ -491,8 +481,7 @@ abstract contract Base is Test {
       liquidityPremium: 0,
       liquidationProtocolFee: 0,
       borrowable: true,
-      collateral: true,
-      hub: hub
+      collateral: true
     });
     daiDynConfig = DataTypes.DynamicReserveConfig({collateralFactor: 75_00});
     usdxConfig = DataTypes.ReserveConfig({
@@ -503,8 +492,7 @@ abstract contract Base is Test {
       liquidityPremium: 10_00,
       liquidationProtocolFee: 0,
       borrowable: true,
-      collateral: true,
-      hub: hub
+      collateral: true
     });
     usdxDynConfig = DataTypes.DynamicReserveConfig({collateralFactor: 75_00});
     wethConfig = DataTypes.ReserveConfig({
@@ -515,8 +503,7 @@ abstract contract Base is Test {
       liquidityPremium: 20_00,
       liquidationProtocolFee: 0,
       borrowable: true,
-      collateral: true,
-      hub: hub
+      collateral: true
     });
     wethDynConfig = DataTypes.DynamicReserveConfig({collateralFactor: 79_00});
     wbtcConfig = DataTypes.ReserveConfig({
@@ -527,18 +514,17 @@ abstract contract Base is Test {
       liquidityPremium: 50_00,
       liquidationProtocolFee: 0,
       borrowable: true,
-      collateral: true,
-      hub: hub
+      collateral: true
     });
     wbtcDynConfig = DataTypes.DynamicReserveConfig({collateralFactor: 77_00});
 
-    spokeInfo[spoke3].dai.reserveId = spoke3.addReserve(daiAssetId, daiConfig, daiDynConfig);
+    spokeInfo[spoke3].dai.reserveId = spoke3.addReserve(daiAssetId, hub, daiConfig, daiDynConfig);
     spokeInfo[spoke3].dai.liquidityPremium = daiConfig.liquidityPremium;
-    spokeInfo[spoke3].usdx.reserveId = spoke3.addReserve(usdxAssetId, usdxConfig, usdxDynConfig);
+    spokeInfo[spoke3].usdx.reserveId = spoke3.addReserve(usdxAssetId, hub, usdxConfig, usdxDynConfig);
     spokeInfo[spoke3].usdx.liquidityPremium = usdxConfig.liquidityPremium;
-    spokeInfo[spoke3].weth.reserveId = spoke3.addReserve(wethAssetId, wethConfig, wethDynConfig);
+    spokeInfo[spoke3].weth.reserveId = spoke3.addReserve(wethAssetId, hub, wethConfig, wethDynConfig);
     spokeInfo[spoke3].weth.liquidityPremium = wethConfig.liquidityPremium;
-    spokeInfo[spoke3].wbtc.reserveId = spoke3.addReserve(wbtcAssetId, wbtcConfig, wbtcDynConfig);
+    spokeInfo[spoke3].wbtc.reserveId = spoke3.addReserve(wbtcAssetId, hub, wbtcConfig, wbtcDynConfig);
     spokeInfo[spoke3].wbtc.liquidityPremium = wbtcConfig.liquidityPremium;
 
     oracle3.setReservePrice(spokeInfo[spoke3].dai.reserveId, 1e8);
@@ -569,11 +555,10 @@ abstract contract Base is Test {
       liquidityPremium: 100_00,
       liquidationProtocolFee: 0,
       borrowable: true,
-      collateral: true,
-      hub: hub
+      collateral: true
     });
     daiDynConfig = DataTypes.DynamicReserveConfig({collateralFactor: 70_00});
-    spokeInfo[spoke2].dai2.reserveId = spoke2.addReserve(dai2AssetId, daiConfig, daiDynConfig);
+    spokeInfo[spoke2].dai2.reserveId = spoke2.addReserve(dai2AssetId, hub, daiConfig, daiDynConfig);
     spokeInfo[spoke2].dai2.liquidityPremium = daiConfig.liquidityPremium;
     oracle2.setReservePrice(spokeInfo[spoke2].dai2.reserveId, 1e8);
     hub.addSpoke(dai2AssetId, address(spoke2), spokeConfig);

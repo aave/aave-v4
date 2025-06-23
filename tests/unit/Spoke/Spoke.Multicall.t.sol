@@ -92,8 +92,7 @@ contract SpokeMulticall is SpokeBase {
       liquidityPremium: 10_00,
       liquidationProtocolFee: 0,
       borrowable: true,
-      collateral: true,
-      hub: hub
+      collateral: true
     });
     DataTypes.DynamicReserveConfig memory dai2DynConfig = DataTypes.DynamicReserveConfig({
       collateralFactor: 88_00
@@ -106,8 +105,7 @@ contract SpokeMulticall is SpokeBase {
       liquidityPremium: 5_00,
       liquidationProtocolFee: 0,
       borrowable: true,
-      collateral: true,
-      hub: hub
+      collateral: true
     });
     DataTypes.DynamicReserveConfig memory dai3DynConfig = DataTypes.DynamicReserveConfig({
       collateralFactor: 70_00
@@ -126,8 +124,8 @@ contract SpokeMulticall is SpokeBase {
 
     // Set up the multicall
     bytes[] memory calls = new bytes[](2);
-    calls[0] = abi.encodeCall(ISpoke.addReserve, (daiAssetId, dai2Config, dai2DynConfig));
-    calls[1] = abi.encodeCall(ISpoke.addReserve, (daiAssetId, dai3Config, dai3DynConfig));
+    calls[0] = abi.encodeCall(ISpoke.addReserve, (daiAssetId, hub, dai2Config, dai2DynConfig));
+    calls[1] = abi.encodeCall(ISpoke.addReserve, (daiAssetId, hub, dai3Config, dai3DynConfig));
 
     vm.expectEmit(address(spoke1));
     emit ISpoke.ReserveAdded(dai2ReserveId, daiAssetId);

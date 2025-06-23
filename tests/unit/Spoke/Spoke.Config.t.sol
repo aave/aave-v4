@@ -23,8 +23,7 @@ contract SpokeConfigTest is SpokeBase {
       liquidityPremium: config.liquidityPremium + 1,
       liquidationProtocolFee: config.liquidationProtocolFee + 1,
       borrowable: !config.borrowable,
-      collateral: !config.collateral,
-      hub: config.hub
+      collateral: !config.collateral
     });
     vm.expectEmit(address(spoke1));
     emit ISpoke.ReserveConfigUpdated(daiReserveId, newReserveConfig);
@@ -53,8 +52,6 @@ contract SpokeConfigTest is SpokeBase {
 
     uint256 daiReserveId = _daiReserveId(spoke1);
     DataTypes.ReserveConfig memory reserveData = spoke1.getReserveConfig(daiReserveId);
-
-    newReserveConfig.hub = reserveData.hub; // hub won't get updated
 
     vm.expectEmit(address(spoke1));
     emit ISpoke.ReserveConfigUpdated(daiReserveId, newReserveConfig);
@@ -212,7 +209,6 @@ contract SpokeConfigTest is SpokeBase {
 
     DataTypes.ReserveConfig memory config;
     config.liquidationBonus = PercentageMath.PERCENTAGE_FACTOR;
-    config.hub = hub;
 
     vm.expectRevert(ISpoke.ReserveNotListed.selector);
     vm.prank(SPOKE_ADMIN);
@@ -289,8 +285,7 @@ contract SpokeConfigTest is SpokeBase {
       liquidityPremium: 10_00,
       liquidationProtocolFee: 10_00,
       borrowable: true,
-      collateral: true,
-      hub: hub
+      collateral: true
     });
     DataTypes.DynamicReserveConfig memory newDynReserveConfig = DataTypes.DynamicReserveConfig({
       collateralFactor: 10_00
@@ -299,7 +294,7 @@ contract SpokeConfigTest is SpokeBase {
     vm.expectEmit(address(spoke1));
     emit ISpoke.ReserveAdded(reserveId, wethAssetId);
     vm.prank(SPOKE_ADMIN);
-    spoke1.addReserve(wethAssetId, newReserveConfig, newDynReserveConfig);
+    spoke1.addReserve(wethAssetId, hub, newReserveConfig, newDynReserveConfig);
 
     assertEq(spoke1.getReserveConfig(reserveId), newReserveConfig);
     assertEq(spoke1.getDynamicReserveConfig(reserveId), newDynReserveConfig);
@@ -316,8 +311,7 @@ contract SpokeConfigTest is SpokeBase {
       liquidationProtocolFee: 0,
       liquidityPremium: 10_00,
       borrowable: true,
-      collateral: true,
-      hub: hub
+      collateral: true
     });
     DataTypes.DynamicReserveConfig memory newDynReserveConfig = DataTypes.DynamicReserveConfig({
       collateralFactor: 10_00
@@ -325,7 +319,7 @@ contract SpokeConfigTest is SpokeBase {
 
     vm.expectRevert(); // error from LH in reading invalid index from assetList array
     vm.prank(SPOKE_ADMIN);
-    spoke1.addReserve(assetId, newReserveConfig, newDynReserveConfig);
+    spoke1.addReserve(assetId, hub, newReserveConfig, newDynReserveConfig);
   }
 
   function test_addReserve_fuzz_reverts_invalid_assetId(uint256 assetId) public {
@@ -339,8 +333,7 @@ contract SpokeConfigTest is SpokeBase {
       liquidityPremium: 10_00,
       liquidationProtocolFee: 0,
       borrowable: true,
-      collateral: true,
-      hub: hub
+      collateral: true
     });
     DataTypes.DynamicReserveConfig memory newDynReserveConfig = DataTypes.DynamicReserveConfig({
       collateralFactor: 10_00
@@ -348,7 +341,7 @@ contract SpokeConfigTest is SpokeBase {
 
     vm.expectRevert(); // error from LH in reading invalid index from assetList array
     vm.prank(SPOKE_ADMIN);
-    spoke1.addReserve(assetId, newReserveConfig, newDynReserveConfig);
+    spoke1.addReserve(assetId, hub, newReserveConfig, newDynReserveConfig);
   }
 
   function test_updateLiquidationConfig_closeFactor() public {

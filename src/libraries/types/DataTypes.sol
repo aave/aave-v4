@@ -58,10 +58,10 @@ library DataTypes {
     uint16 dynamicConfigKey; // key of the last reserve config
     uint8 decimals;
     address asset;
+    ILiquidityHub hub;
   }
 
   struct ReserveConfig {
-    ILiquidityHub hub;
     bool active;
     bool frozen;
     bool paused;

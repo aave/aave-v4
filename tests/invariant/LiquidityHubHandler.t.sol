@@ -54,6 +54,7 @@ contract LiquidityHubHandler is Test {
     );
     spoke1.addReserve(
       0,
+      hub,
       DataTypes.ReserveConfig({
         active: true,
         frozen: false,
@@ -62,8 +63,7 @@ contract LiquidityHubHandler is Test {
         liquidityPremium: 0,
         liquidationProtocolFee: 0,
         borrowable: false,
-        collateral: false,
-        hub: hub
+        collateral: false
       }),
       DataTypes.DynamicReserveConfig({collateralFactor: 0})
     );

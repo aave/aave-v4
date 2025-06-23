@@ -43,6 +43,7 @@ contract SpokeMultipleHubSiloedBorrowingTest is SpokeMultipleHubBase {
     // Add B reserve to the new spoke
     siloedVars.reserveBId = newSpoke.addReserve(
       siloedVars.assetBId,
+      newHub,
       DataTypes.ReserveConfig({
         active: true,
         frozen: false,
@@ -51,8 +52,7 @@ contract SpokeMultipleHubSiloedBorrowingTest is SpokeMultipleHubBase {
         liquidityPremium: 15_00,
         liquidationProtocolFee: 0,
         borrowable: true,
-        collateral: true,
-        hub: newHub
+        collateral: true
       }),
       dynReserveConfig
     );
@@ -81,6 +81,7 @@ contract SpokeMultipleHubSiloedBorrowingTest is SpokeMultipleHubBase {
     // Add A reserve to spoke 1
     siloedVars.reserveAId = spoke1.addReserve(
       siloedVars.assetAId,
+      hub,
       DataTypes.ReserveConfig({
         active: true,
         frozen: false,
@@ -89,8 +90,7 @@ contract SpokeMultipleHubSiloedBorrowingTest is SpokeMultipleHubBase {
         liquidityPremium: 15_00,
         liquidationProtocolFee: 0,
         borrowable: true,
-        collateral: true,
-        hub: hub
+        collateral: true
       }),
       dynReserveConfig
     );
@@ -111,6 +111,7 @@ contract SpokeMultipleHubSiloedBorrowingTest is SpokeMultipleHubBase {
     // Add reserve A from canonical hub to the new spoke
     siloedVars.reserveAIdNewSpoke = newSpoke.addReserve(
       siloedVars.assetAId,
+      hub,
       DataTypes.ReserveConfig({
         active: true,
         frozen: false,
@@ -119,8 +120,7 @@ contract SpokeMultipleHubSiloedBorrowingTest is SpokeMultipleHubBase {
         liquidityPremium: 15_00,
         liquidationProtocolFee: 0,
         borrowable: true,
-        collateral: true,
-        hub: hub
+        collateral: true
       }),
       dynReserveConfig
     );
