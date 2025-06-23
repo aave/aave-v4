@@ -304,8 +304,6 @@ contract LiquidationCallMultiReserveBadPremiumDebtTest is SpokeLiquidationBase {
 
     ) = _calculateAvailableCollateralToLiquidate(state.spoke, state, UINT256_MAX);
 
-    console.log('collToLiq: %e, debtToLiq: %e', state.collToLiq, state.debtToLiq);
-
     // logs to read protocol fee from tmp emitted event
     // TODO: update when treasury accounting is done
     vm.recordLogs();
