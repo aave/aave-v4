@@ -999,13 +999,13 @@ contract Spoke is ISpoke, Multicall {
     //   vars.premiumDebt,
     //   amount
     // );
-    console.log(
-      'SP executeDeficit assetId %e base debt %e premDebt %e',
-      amount,
-      vars.baseDebt,
-      vars.premiumDebt
-    );
-    console.log('%e %e', WadRayMath.RAY, hub.convertToDrawnAssets(vars.assetId, WadRayMath.RAY));
+    // console.log(
+    //   'SP executeDeficit assetId %e base debt %e premDebt %e',
+    //   amount,
+    //   vars.baseDebt,
+    //   vars.premiumDebt
+    // );
+    // console.log('%e %e', WadRayMath.RAY, hub.convertToDrawnAssets(vars.assetId, WadRayMath.RAY));
     _validateReportDeficit(reserve);
 
     // premium debt for liquidated debt asset should already be settled
@@ -1015,7 +1015,7 @@ contract Spoke is ISpoke, Multicall {
 
     // require(userPosition.realizedPremium, 'prem debt should be done');
     console.log('assetId, reserveId', vars.assetId, reserve.reserveId);
-    console.log('realizedPremium %e %e', userPosition.realizedPremium, vars.accruedPremium);
+    // console.log('realizedPremium %e %e', userPosition.realizedPremium, vars.accruedPremium);
 
     userPosition.premiumDrawnShares = 0;
     userPosition.premiumOffset = 0;
@@ -1036,22 +1036,22 @@ contract Spoke is ISpoke, Multicall {
 
     uint256 deficitShares = hub.reportDeficit(vars.assetId, vars.baseDebt, vars.premiumDebt); // we settle base debt here by reporting deficit
 
-    console.log(
-      'SP base drawn shares before %e %e %e',
-      reserve.baseDrawnShares,
-      userPosition.baseDrawnShares,
-      deficitShares
-    );
+    // console.log(
+    //   'SP base drawn shares before %e %e %e',
+    //   reserve.baseDrawnShares,
+    //   userPosition.baseDrawnShares,
+    //   deficitShares
+    // );
 
     // non-zero deficit means user ends up with zero total debt
     reserve.baseDrawnShares -= deficitShares;
     userPosition.baseDrawnShares -= deficitShares;
 
-    console.log(
-      'SP base drawn shares after %e %e',
-      reserve.baseDrawnShares,
-      userPosition.baseDrawnShares
-    );
+    // console.log(
+    //   'SP base drawn shares after %e %e',
+    //   reserve.baseDrawnShares,
+    //   userPosition.baseDrawnShares
+    // );
 
     // newUserRiskPremium is 0 due to no collateral remaining
     // therefore premium shares and premium offset are 0

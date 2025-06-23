@@ -333,23 +333,84 @@ contract LiquidationCallMultiReserveBadPremiumDebtTest is SpokeLiquidationBase {
     // TODO: update when treasury accounting is done
     vm.recordLogs();
 
+    uint256 totalDeficit = state.totalDebt.balanceBefore - state.debtToLiq;
+    (uint256 basedDebtRestored, uint256 premDebtRestored) = _calculateExactRestoreAmount(
+      state.baseDebt.balanceBefore,
+      state.premiumDebt.balanceBefore,
+      state.debtToLiq,
+      state.debtReserves[state.debtReserveIndex].assetId
+    );
+
+    // console.log(
+    //   ' test debt base %e prem %e',
+    //   state.baseDebt.balanceBefore,
+    //   state.premiumDebt.balanceBefore
+    // );
+    // console.log(' test debt restored base %e prem %e', basedDebtRestored, premDebtRestored);
+    // console.log(
+    //   ' test deficit %e %e, total %e',
+    //   state.baseDebt.balanceBefore - basedDebtRestored,
+    //   state.premiumDebt.balanceBefore - premDebtRestored,
+    //   state.baseDebt.balanceBefore -
+    //     basedDebtRestored +
+    //     state.premiumDebt.balanceBefore -
+    //     premDebtRestored
+    // );
+
+    console.log(
+      ' test expected shares %e amt %e',
+      hub.convertToDrawnShares(
+        state.debtReserves[state.debtReserveIndex].assetId,
+        state.baseDebt.balanceBefore - basedDebtRestored
+      ),
+      state.baseDebt.balanceBefore -
+        basedDebtRestored +
+        state.premiumDebt.balanceBefore -
+        premDebtRestored
+    );
+
+    uint256 expectedShares = hub.convertToDrawnShares(
+      state.debtReserves[state.debtReserveIndex].assetId,
+      state.baseDebt.balanceBefore - basedDebtRestored
+    );
+
+    // 2.590358791742516090590108363e27
+    // 2.590358791742516090590108363e27
+
     // vm.expectEmit(address(hub));
     // emit ILiquidityHub.DeficitCreated(
     //   state.debtReserves[state.debtReserveIndex].assetId,
     //   address(state.spoke),
-    //   state.totalDebt.balanceBefore - state.debtToLiq // outstanding debt which becomes bad debt reported as deficit
+    //   hub.convertToDrawnShares(
+    //     state.debtReserves[state.debtReserveIndex].assetId,
+    //     state.baseDebt.balanceBefore - basedDebtRestored
+    //   ) + 1,
+    //   state.baseDebt.balanceBefore -
+    //     basedDebtRestored +
+    //     state.premiumDebt.balanceBefore -
+    //     premDebtRestored +
+    //     1
     // );
+
+    // 2.5938023486476e13
+    //
 
     // for remaining debt assets, total debt should be reported as deficit
     // emitted in order of ascending stored reserveId in spoke
     for (uint256 i = 0; i < debtReserveIds.length; i++) {
       if (debtReserveIds[i] != state.debtReserves[state.debtReserveIndex].reserveId) {
-        // vm.expectEmit(address(hub));
-        // emit ILiquidityHub.DeficitCreated(
-        //   state.debtReserves[i].assetId,
-        //   address(state.spoke),
-        //   state.spoke.getUserTotalDebt(debtReserveIds[i], alice)
-        // );
+        {
+          uint256 reserveId = debtReserveIds[i];
+          uint256 assetId = state.debtReserves[i].assetId;
+          (uint256 baseDebt, uint256 premDebt) = state.spoke.getUserDebt(reserveId, alice);
+          vm.expectEmit(address(hub));
+          emit ILiquidityHub.DeficitCreated(
+            assetId,
+            address(state.spoke),
+            hub.convertToDrawnShares(assetId, baseDebt),
+            baseDebt + premDebt
+          );
+        }
       }
     }
     // vm.expectEmit(address(state.spoke));

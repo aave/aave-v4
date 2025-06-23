@@ -308,19 +308,26 @@ contract LiquidityHub is ILiquidityHub {
 
     _validateReportDeficit(asset, spoke, baseAmount, premiumAmount);
 
-    uint256 totalRestoredAmount = baseAmount + premiumAmount;
-    uint256 baseDrawnSharesRestored = asset.toDrawnSharesDown(baseAmount);
+    uint256 totalDeficitAmount = baseAmount + premiumAmount;
+    uint256 baseDrawnSharesReported = asset.toDrawnSharesDown(baseAmount);
 
-    asset.deficit += totalRestoredAmount;
-    asset.baseDrawnShares -= baseDrawnSharesRestored;
+    asset.deficit += totalDeficitAmount;
+    asset.baseDrawnShares -= baseDrawnSharesReported;
 
-    spoke.baseDrawnShares -= baseDrawnSharesRestored;
+    spoke.baseDrawnShares -= baseDrawnSharesReported;
 
-    console.log('remaining spoke shares %e', spoke.baseDrawnShares);
+    // console.log('LH remaining spoke shares %e', spoke.baseDrawnShares);
 
-    emit DeficitCreated(assetId, msg.sender, baseDrawnSharesRestored, totalRestoredAmount);
+    console.log(
+      ' LH assetId %s, baseDrawnSharesReported %e, totalDeficitAmount %e',
+      assetId,
+      baseDrawnSharesReported,
+      totalDeficitAmount
+    );
 
-    return baseDrawnSharesRestored;
+    emit DeficitCreated(assetId, msg.sender, baseDrawnSharesReported, totalDeficitAmount);
+
+    return baseDrawnSharesReported;
   }
 
   /// @inheritdoc ILiquidityHub
