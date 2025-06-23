@@ -868,6 +868,8 @@ abstract contract Base is Test {
 
     vm.prank(HUB_ADMIN);
     liquidityHub.updateAssetConfig(assetId, assetConfig);
+
+    assertEq(liquidityHub.getAsset(assetId).config.active, newActiveFlag);
   }
 
   function updateAssetPaused(
@@ -880,6 +882,8 @@ abstract contract Base is Test {
 
     vm.prank(HUB_ADMIN);
     liquidityHub.updateAssetConfig(assetId, assetConfig);
+
+    assertEq(liquidityHub.getAsset(assetId).config.paused, newPausedFlag);
   }
 
   function updateAssetFrozen(
@@ -892,6 +896,8 @@ abstract contract Base is Test {
 
     vm.prank(HUB_ADMIN);
     liquidityHub.updateAssetConfig(assetId, assetConfig);
+
+    assertEq(liquidityHub.getAsset(assetId).config.frozen, newFrozenFlag);
   }
 
   function updateReserveFrozenFlag(ISpoke spoke, uint256 reserveId, bool newFrozenFlag) internal {
@@ -1162,6 +1168,14 @@ abstract contract Base is Test {
 
   function getDebtExRate(uint256 assetId) internal view returns (uint256) {
     return hub.convertToDrawnAssets(assetId, MAX_SUPPLY_AMOUNT);
+  }
+
+  function getDeficit(ILiquidityHub hub, uint256 assetId) internal view returns (uint256) {
+    return hub.getAsset(assetId).deficit;
+  }
+
+  function getBaseBorrowRate(ILiquidityHub hub, uint256 assetId) internal view returns (uint256) {
+    return hub.getAsset(assetId).baseBorrowRate;
   }
 
   /// TODO: Once inflation protection implemented, can remove boolean param since rate should always monotonically increase

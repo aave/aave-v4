@@ -582,13 +582,14 @@ contract LiquidityHub is ILiquidityHub {
   function _validateReportDeficit(
     DataTypes.Asset storage asset,
     DataTypes.SpokeData storage spoke,
-    uint256 baseAmountRestored,
-    uint256 premiumAmountRestored
+    uint256 baseAmountReported,
+    uint256 premiumAmountReported
   ) internal view {
+    require(baseAmountReported + premiumAmountReported != 0, InvalidDeficitAmount());
     require(asset.config.active, AssetNotActive());
     require(!asset.config.paused, AssetPaused());
-    (uint256 baseDebt, uint256 premiumDebt) = _getSpokeDebt(asset, spoke);
-    require(baseAmountRestored <= baseDebt, SurplusBaseDeficitReported(baseDebt));
+    (uint256 baseDebt, ) = _getSpokeDebt(asset, spoke);
+    require(baseAmountReported <= baseDebt, SurplusDeficitReported(baseDebt));
     // we should have already cleared premium debt
   }
 

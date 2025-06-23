@@ -997,7 +997,7 @@ contract Spoke is ISpoke, Multicall {
       vars.premiumDebt,
       amount
     );
-    _validateReportDeficit(reserve, vars.baseDebtRestored, vars.premiumDebtRestored);
+    _validateReportDeficit(reserve);
 
     vars.userPremiumDrawnShares = userPosition.premiumDrawnShares;
     vars.userPremiumOffset = userPosition.premiumOffset;

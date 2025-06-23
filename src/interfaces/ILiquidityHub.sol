@@ -74,7 +74,6 @@ interface ILiquidityHub {
   error DrawCapExceeded(uint256 drawCap);
   error SurplusAmountRestored(uint256 maxAllowedRestore);
   error InvalidSpoke();
-  // error InvalidRiskPremiumBps(uint256 bps);
   error AssetPaused();
   error AssetFrozen();
   error InvalidIrStrategy();
@@ -82,10 +81,9 @@ interface ILiquidityHub {
   error InvalidLiquidityFee();
   error InvalidAssetAddress();
   error InvalidDebtChange();
-  // error InvalidDeficitAmount();
+  error InvalidDeficitAmount();
   error InvalidFeeReceiver();
-  error SurplusBaseDeficitReported(uint256 amount);
-  error SurplusPremiumDeficitReported(uint256 amount);
+  error SurplusDeficitReported(uint256 amount);
 
   function addAsset(DataTypes.AssetConfig memory params, address asset) external;
 
