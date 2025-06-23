@@ -123,7 +123,7 @@ contract LiquidityHub is ILiquidityHub, AccessManaged {
       active: config.active
     });
 
-    emit SpokeConfigUpdated(assetId, spoke, config.drawCap, config.supplyCap, config.active);
+    emit SpokeConfigUpdated(assetId, spoke, config);
   }
 
   /// @inheritdoc ILiquidityHub
@@ -153,11 +153,7 @@ contract LiquidityHub is ILiquidityHub, AccessManaged {
         _updateSpokeConfig(
           assetId,
           oldFeeReceiver,
-          DataTypes.SpokeConfig({
-            supplyCap: 0,
-            drawCap: 0,
-            active: _spokes[assetId][oldFeeReceiver].config.active
-          })
+          DataTypes.SpokeConfig({supplyCap: 0, drawCap: 0, active: false})
         );
       }
 

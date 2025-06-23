@@ -34,7 +34,7 @@ library DataTypes {
   struct SpokeConfig {
     uint256 drawCap;
     uint256 supplyCap;
-    bool active; // TODO: Opt to remove this and check that spoke is calling hub functions another way
+    bool active;
   }
 
   struct AssetConfig {

@@ -103,7 +103,11 @@ contract LiquidityHubUpdateAssetFeesTest is LiquidityHubBase {
     emit ILiquidityHub.DrawnIndexUpdate(assetId, hub.previewDrawnIndex(assetId), block.timestamp);
 
     vm.expectEmit(address(hub));
-    emit ILiquidityHub.SpokeConfigUpdated(assetId, currentFeeReceiver, 0, 0, true);
+    emit ILiquidityHub.SpokeConfigUpdated(
+      assetId,
+      currentFeeReceiver,
+      DataTypes.SpokeConfig({drawCap: 0, supplyCap: 0, active: false})
+    );
 
     vm.expectEmit(address(hub));
     emit ILiquidityHub.SpokeAdded(assetId, newFeeReceiver);
@@ -131,6 +135,11 @@ contract LiquidityHubUpdateAssetFeesTest is LiquidityHubBase {
     address currentFeeReceiver = _getFeeReceiver(assetId);
     address newFeeReceiver = makeAddr('newFeeReceiver');
 
+    DataTypes.SpokeConfig memory emptyConfig = DataTypes.SpokeConfig({
+      drawCap: 0,
+      supplyCap: 0,
+      active: false
+    });
     DataTypes.AssetConfig memory expectedConfig = hub.getAssetConfig(assetId);
     expectedConfig.feeReceiver = newFeeReceiver;
 
@@ -141,7 +150,7 @@ contract LiquidityHubUpdateAssetFeesTest is LiquidityHubBase {
     emit ILiquidityHub.DrawnIndexUpdate(assetId, hub.previewDrawnIndex(assetId), block.timestamp);
 
     vm.expectEmit(address(hub));
-    emit ILiquidityHub.SpokeConfigUpdated(assetId, currentFeeReceiver, 0, 0, true);
+    emit ILiquidityHub.SpokeConfigUpdated(assetId, currentFeeReceiver, emptyConfig);
 
     vm.expectEmit(address(hub));
     emit ILiquidityHub.SpokeAdded(assetId, newFeeReceiver);
@@ -167,15 +176,13 @@ contract LiquidityHubUpdateAssetFeesTest is LiquidityHubBase {
     emit ILiquidityHub.DrawnIndexUpdate(assetId, hub.previewDrawnIndex(assetId), block.timestamp);
 
     vm.expectEmit(address(hub));
-    emit ILiquidityHub.SpokeConfigUpdated(assetId, newFeeReceiver, 0, 0, true);
+    emit ILiquidityHub.SpokeConfigUpdated(assetId, newFeeReceiver, emptyConfig);
 
     vm.expectEmit(address(hub));
     emit ILiquidityHub.SpokeConfigUpdated(
       assetId,
       currentFeeReceiver,
-      type(uint256).max,
-      type(uint256).max,
-      true
+      DataTypes.SpokeConfig({drawCap: UINT256_MAX, supplyCap: UINT256_MAX, active: true})
     );
 
     vm.expectEmit(address(hub));

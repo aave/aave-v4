@@ -380,13 +380,7 @@ contract LiquidityHubConfigTest is LiquidityHubBase {
 
     vm.prank(HUB_ADMIN);
     vm.expectEmit(address(hub));
-    emit ILiquidityHub.SpokeConfigUpdated(
-      daiAssetId,
-      address(spoke1),
-      config.drawCap,
-      config.supplyCap,
-      config.active
-    );
+    emit ILiquidityHub.SpokeConfigUpdated(daiAssetId, address(spoke1), config);
     hub.updateSpokeConfig(daiAssetId, address(spoke1), config);
   }
 

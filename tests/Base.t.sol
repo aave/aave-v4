@@ -192,7 +192,7 @@ abstract contract Base is Test {
     accessManager.grantRole(Roles.INTEREST_RATE_ADMIN_ROLE, ADMIN, 0);
     accessManager.grantRole(Roles.HUB_ADMIN_ROLE, HUB_ADMIN, 0);
     accessManager.grantRole(Roles.SPOKE_ADMIN_ROLE, SPOKE_ADMIN, 0);
-    accessManager.grantRole(Roles.GOVERNOR_ROLE, GOVERNOR, 0);
+    accessManager.grantRole(Roles.USER_RP_UPDATER_ROLE, GOVERNOR, 0);
     accessManager.grantRole(Roles.INTEREST_RATE_ADMIN_ROLE, IR_CONTROLLER, 0);
 
     // Grant responsibilities to roles
