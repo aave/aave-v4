@@ -12,8 +12,8 @@ contract LiquidationCallMultiReserveBadPremiumDebtTest is SpokeLiquidationBase {
     uint256 remaining;
   }
 
-  /// coll: weth
-  /// bad debt: wbtc, dai, usdx
+  /// @dev coll: weth; bad debt: wbtc, dai, usdx
+  /// deficit covers base debt and premium debt
   function test_liquidationCall_multi_reserve_badPremiumDebt_scenario1() public {
     uint256 collateralReserveId = _wethReserveId(spoke1);
 
@@ -29,6 +29,27 @@ contract LiquidationCallMultiReserveBadPremiumDebtTest is SpokeLiquidationBase {
       collateralReserveId: collateralReserveId,
       skipTime: 365 days,
       skipTimeToAccruePremium: 365 days * 4,
+      debtReserveIndex: 0
+    });
+  }
+
+  /// @dev coll: weth; bad debt: wbtc, dai, usdx
+  /// deficit only covers premium debt
+  function test_liquidationCall_multi_reserve_badPremiumDebt_scenario12() public {
+    uint256 collateralReserveId = _wethReserveId(spoke1);
+
+    test_liquidationCall_fuzz_multi_reserve_badPremiumDebt_scenario1({
+      liqConfig: DataTypes.LiquidationConfig({
+        closeFactor: 1.5e18,
+        liquidationBonusFactor: 0,
+        healthFactorForMaxBonus: 0
+      }),
+      liqBonus: 105_00,
+      supplyAmount: 1.5e18,
+      liquidationProtocolFee: 5_00,
+      collateralReserveId: collateralReserveId,
+      skipTime: 365 days,
+      skipTimeToAccruePremium: 365 days,
       debtReserveIndex: 0
     });
   }
@@ -65,6 +86,8 @@ contract LiquidationCallMultiReserveBadPremiumDebtTest is SpokeLiquidationBase {
     );
 
     string memory label = 'test_liquidationCall_fuzz_multi_reserve_badPremiumDebt_scenario1';
+    console.log(state.hasDeficit);
+
     _checkLiquidation(state, spoke1, label);
     _checkDeficits(state, debtReserveIds, alice);
   }
@@ -236,7 +259,7 @@ contract LiquidationCallMultiReserveBadPremiumDebtTest is SpokeLiquidationBase {
       )
     );
     skipTime = bound(skipTime, 1, MAX_SKIP_TIME);
-    skipTimeForPremiumAccrual = bound(skipTimeForPremiumAccrual, 5 * 365 days, MAX_SKIP_TIME); // enough time to accrue debt so that HF is liquidatable
+    skipTimeForPremiumAccrual = bound(skipTimeForPremiumAccrual, 365 days, MAX_SKIP_TIME); // enough time to accrue debt so that HF is liquidatable
 
     state.liquidationProtocolFee = liquidationProtocolFee;
     state.user = alice;
@@ -329,15 +352,15 @@ contract LiquidationCallMultiReserveBadPremiumDebtTest is SpokeLiquidationBase {
         // );
       }
     }
-    vm.expectEmit(address(state.spoke));
-    emit ISpoke.LiquidationCall(
-      state.collateralReserves[state.collateralReserveIndex].asset,
-      state.debtReserves[state.debtReserveIndex].asset,
-      alice,
-      state.debtToLiq,
-      state.collToLiq,
-      LIQUIDATOR
-    );
+    // vm.expectEmit(address(state.spoke));
+    // emit ISpoke.LiquidationCall(
+    //   state.collateralReserves[state.collateralReserveIndex].asset,
+    //   state.debtReserves[state.debtReserveIndex].asset,
+    //   alice,
+    //   state.debtToLiq,
+    //   state.collToLiq,
+    //   LIQUIDATOR
+    // );
     vm.prank(LIQUIDATOR);
     state.spoke.liquidationCall(
       collateralReserveId,

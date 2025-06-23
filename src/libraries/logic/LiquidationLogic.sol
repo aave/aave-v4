@@ -1,6 +1,8 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.0;
 
+import {console2 as console} from 'forge-std/console2.sol';
+
 import {DataTypes} from 'src/libraries/types/DataTypes.sol';
 import {PercentageMath} from 'src/libraries/math/PercentageMath.sol';
 import {ISpoke} from 'src/interfaces/ISpoke.sol';
@@ -128,6 +130,12 @@ library LiquidationLogic {
         (collateralAmount * params.collateralAssetPrice).wadify() /
         params.collateralAssetUnit;
     }
+
+    console.log(
+      'LL collateralToLiquidateInBaseCurrency %e userCollateralBalanceInBaseCurrency %e',
+      collateralToLiquidateInBaseCurrency,
+      userCollateralBalanceInBaseCurrency
+    );
 
     if (params.liquidationProtocolFee != 0) {
       uint256 bonusCollateral = collateralAmount -

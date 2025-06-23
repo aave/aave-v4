@@ -171,6 +171,7 @@ library DataTypes {
     uint256 deficit;
     uint256 outstandingDebt;
     bool hasNoCollateralLeft;
+    bool hasDeficit;
   }
 
   struct ExecuteRepayLocalVars {
@@ -192,8 +193,8 @@ library DataTypes {
     uint256 assetId;
     uint256 baseDebt;
     uint256 premiumDebt;
-    uint256 baseDebtRestored;
-    uint256 premiumDebtRestored;
+    uint256 baseDebtReported;
+    uint256 premiumDebtReported;
     uint256 userPremiumDrawnShares;
     uint256 userPremiumOffset;
     uint256 accruedPremium;

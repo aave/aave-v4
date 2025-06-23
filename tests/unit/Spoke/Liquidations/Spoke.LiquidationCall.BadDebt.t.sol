@@ -413,6 +413,8 @@ contract LiquidationCallBadDebtTest is SpokeLiquidationBase {
 
     ) = _calculateAvailableCollateralToLiquidate(state.spoke, state, UINT256_MAX);
 
+    // (uint256 baseAmount, uint256 premAmount) = _calculateExactRestoreAmount();
+
     // logs to read protocol fee from tmp emitted event
     // TODO: update when treasury accounting is done
     vm.recordLogs();
@@ -421,7 +423,8 @@ contract LiquidationCallBadDebtTest is SpokeLiquidationBase {
     // emit ILiquidityHub.DeficitCreated(
     //   state.debtReserves[state.debtReserveIndex].assetId,
     //   address(state.spoke),
-    //   state.totalDebt.balanceBefore - state.debtToLiq // outstanding debt which becomes bad debt reported as deficit
+    //   hub.convertToDrawnShares(state.debtReserves[state.debtReserveIndex].assetId, baseAmount)
+    //   state.totalDebt.balanceBefore - state.debtToLiq
     // );
     vm.expectEmit(address(state.spoke));
     emit ISpoke.LiquidationCall(

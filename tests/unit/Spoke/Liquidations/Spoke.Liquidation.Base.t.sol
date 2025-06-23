@@ -391,9 +391,13 @@ contract SpokeLiquidationBase is SpokeBase {
     // with no collateral, user rp is 0
     assertEq(userRp, 0, string.concat('user rp = 0 with no coll ', label));
     // bad debt should be cleared from user position and moved to deficit
-    assertEq(
+    // precision error is asset equivalent of 1 share
+    assertApproxEqAbs(
       state.deficit.balanceChange,
       state.outstandingDebt,
+      hub
+        .convertToDrawnAssets(state.debtReserves[state.debtReserveIndex].assetId, WadRayMath.RAY)
+        .rayDivUp(WadRayMath.RAY),
       string.concat('deficit added to hub ', label)
     );
   }
@@ -730,6 +734,9 @@ contract SpokeLiquidationBase is SpokeBase {
       state.finalTotalCollateralInBaseCurrency,
       state.finalTotalDebtInBaseCurrency
     ) = state.spoke.getUserAccountData(state.user);
+
+    console.log('state.supply.balanceAfter %e', state.supply.balanceAfter);
+    console.log('state.totalDebt.balanceAfter %e', state.totalDebt.balanceAfter);
 
     state.hasDeficit = state.supply.balanceAfter == 0 && state.totalDebt.balanceAfter == 0;
 
