@@ -981,18 +981,15 @@ contract Spoke is ISpoke, Multicall {
   }
 
   function _executeReportDeficit(
+    DataTypes.Reserve storage reserve,
     DataTypes.UserPosition storage userPosition,
-    uint256 reserveId,
     uint256 amount,
     address user
   ) internal returns (uint256) {
     DataTypes.ExecuteReportDeficitLocalVars memory vars;
 
-    DataTypes.Reserve storage reserve = _reserves[reserveId];
     vars.assetId = reserve.assetId;
     ILiquidityHub hub = reserve.config.hub;
-
-    _validateReportDeficit(reserve);
 
     (vars.baseDebt, vars.premiumDebt) = _getUserDebt(hub, vars.assetId, userPosition);
     (vars.baseDebtRestored, vars.premiumDebtRestored) = _calculateRestoreAmount(
@@ -1000,6 +997,7 @@ contract Spoke is ISpoke, Multicall {
       vars.premiumDebt,
       amount
     );
+    _validateReportDeficit(reserve, vars.baseDebtRestored, vars.premiumDebtRestored);
 
     vars.userPremiumDrawnShares = userPosition.premiumDrawnShares;
     vars.userPremiumOffset = userPosition.premiumOffset;
@@ -1007,7 +1005,7 @@ contract Spoke is ISpoke, Multicall {
 
     userPosition.premiumDrawnShares = 0;
     userPosition.premiumOffset = 0;
-    userPosition.realizedPremium = vars.premiumDebt - vars.premiumDebtRestored;
+    userPosition.realizedPremium = 0;
 
     _refreshPremiumDebt(
       reserve,
@@ -1016,31 +1014,19 @@ contract Spoke is ISpoke, Multicall {
       -int256(vars.userPremiumDrawnShares),
       -int256(vars.userPremiumOffset),
       vars.accruedPremium,
-      vars.premiumDebtRestored
+      vars.premiumDebt
     ); // we settle premium debt here
-
     uint256 deficitShares = hub.reportDeficit(
       vars.assetId,
       vars.baseDebtRestored,
       vars.premiumDebtRestored
-    ); // we settle base debt here
+    ); // we settle base debt here by reporting deficit
 
+    // non-zero deficit means user ends up with zero total debt
     reserve.baseDrawnShares -= deficitShares;
-    userPosition.baseDrawnShares -= deficitShares;
+    userPosition.baseDrawnShares = 0;
 
-    // non-zero deficit means user ends up with zero debt
-    vars.userPremiumDrawnShares = userPosition.premiumDrawnShares = 0;
-    vars.userPremiumOffset = userPosition.premiumOffset = 0;
-
-    _refreshPremiumDebt(
-      reserve,
-      user,
-      vars.assetId,
-      int256(vars.userPremiumDrawnShares),
-      int256(vars.userPremiumOffset),
-      0,
-      0
-    );
+    _refreshPremiumDebt(reserve, user, vars.assetId, 0, 0, 0, 0);
     // notify risk premium update will occur in liquidation
     return deficitShares;
   }
@@ -1062,7 +1048,7 @@ contract Spoke is ISpoke, Multicall {
           reserve.assetId,
           userPosition
         );
-        _executeReportDeficit(userPosition, reserveId, baseDebt + premiumDebt, user);
+        _executeReportDeficit(reserve, userPosition, baseDebt + premiumDebt, user);
       }
       unchecked {
         ++reserveId;
@@ -1230,7 +1216,7 @@ contract Spoke is ISpoke, Multicall {
       vars.totalRestoredShares += vars.restoredShares;
 
       if (vars.deficit > 0) {
-        _executeReportDeficit(userDebtPosition, vars.debtReserveId, vars.deficit, user);
+        _executeReportDeficit(debtReserve, userDebtPosition, vars.deficit, user);
         _settleRemainingDeficit(vars.debtReserveId, user);
       } else {
         // new user rp only needs to be calculated if no bad debt remains, otherwise it is 0 given no collateral remains

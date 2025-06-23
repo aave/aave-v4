@@ -304,8 +304,7 @@ contract LiquidityHub is ILiquidityHub {
 
     asset.accrue(_spokes[assetId][asset.config.feeReceiver]);
 
-    _validateDeficit(asset, spoke, baseAmount, premiumAmount);
-    asset.updateBorrowRate({liquidityAdded: baseAmount, liquidityTaken: 0}); // both can be zero
+    _validateReportDeficit(asset, spoke, baseAmount, premiumAmount);
 
     uint256 totalRestoredAmount = baseAmount + premiumAmount;
     uint256 baseDrawnSharesRestored = asset.toDrawnSharesDown(baseAmount);
@@ -580,7 +579,7 @@ contract LiquidityHub is ILiquidityHub {
     // we should have already restored premium debt
   }
 
-  function _validateDeficit(
+  function _validateReportDeficit(
     DataTypes.Asset storage asset,
     DataTypes.SpokeData storage spoke,
     uint256 baseAmountRestored,
@@ -588,8 +587,9 @@ contract LiquidityHub is ILiquidityHub {
   ) internal view {
     require(asset.config.active, AssetNotActive());
     require(!asset.config.paused, AssetPaused());
-    // (uint256 baseDebt, ) = _getSpokeDebt(asset, spoke);
-    // require(baseAmountRestored <= baseDebt, SurplusAmountRestored(baseDebt));
+    (uint256 baseDebt, uint256 premiumDebt) = _getSpokeDebt(asset, spoke);
+    require(baseAmountRestored <= baseDebt, SurplusBaseDeficitReported(baseDebt));
+    // we should have already cleared premium debt
   }
 
   function _addSpoke(uint256 assetId, DataTypes.SpokeConfig memory config, address spoke) internal {
