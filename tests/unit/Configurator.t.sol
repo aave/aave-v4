@@ -1,14 +1,9 @@
 // SPDX-License-Identifier: BUSL-1.1
 pragma solidity ^0.8.10;
 
-import 'tests/Base.t.sol';
+import 'tests/unit/LiquidityHub/LiquidityHubBase.t.sol';
 
-contract ConfiguratorTest is Base {
-  function setUp() public override {
-    super.setUp();
-    initEnvironment();
-  }
-
+contract ConfiguratorTest is LiquidityHubBase {
   function test_addAsset_fuzz_revertsWith_InvalidAssetDecimals(
     bool fetchErc20Decimals,
     address asset,
@@ -123,6 +118,29 @@ contract ConfiguratorTest is Base {
     );
   }
 
+  /// Triggers accrual when liquidity fee update, based on old liquidity fee
+  function test_setLiquidityFee_fuzz_Acrrual(uint256 assetId, uint256 liquidityFee) public {
+    assetId = bound(assetId, 0, hub.assetCount() - 1);
+    liquidityFee = bound(liquidityFee, 1, PercentageMath.PERCENTAGE_FACTOR);
+
+    uint256 amount = 1000e18;
+    _addLiquidity(assetId, amount);
+    _drawLiquidity(assetId, amount, true);
+
+    DataTypes.AssetConfig memory config = hub.getAssetConfig(assetId);
+    uint256 feeShares = hub.getSpokeSuppliedShares(assetId, config.feeReceiver);
+    assertTrue(feeShares > 0, 'no fees');
+
+    config.liquidityFee = liquidityFee;
+    _checkedUpdateAssetConfig(
+      assetId,
+      abi.encodeCall(IConfigurator.setLiquidityFee, (address(hub), assetId, config.liquidityFee)),
+      config
+    );
+
+    assertEq(hub.getSpokeSuppliedShares(assetId, config.feeReceiver), feeShares);
+  }
+
   function test_setFeeReceiver_fuzz_revertsWith_InvalidFeeReceiver(uint256 assetId) public {
     assetId = bound(assetId, 0, hub.assetCount() - 1);
     assert(hub.getAssetConfig(assetId).liquidityFee != 0);
@@ -184,6 +202,59 @@ contract ConfiguratorTest is Base {
     test_setFeeReceiver_fuzz(daiAssetId, address(0));
     // set initial fee receiver
     test_setFeeReceiver_fuzz(daiAssetId, address(treasurySpoke));
+  }
+
+  /// Updates to new fee receiver, with previously accrued fees not transferred to the new receiver
+  function test_setFeeReceiver_fuzz_NewFeeReceiver(uint256 assetId) public {
+    assetId = bound(assetId, 0, hub.assetCount() - 1);
+
+    uint256 amount = 1000e18;
+    _addLiquidity(assetId, amount);
+    _drawLiquidity(assetId, amount, true);
+
+    DataTypes.AssetConfig memory config = hub.getAssetConfig(assetId);
+    address oldFeeReceiver = config.feeReceiver;
+    config.feeReceiver = makeAddr('newFeeReceiver');
+
+    uint256 feesShares = hub.getSpokeSuppliedShares(assetId, oldFeeReceiver);
+    assertTrue(feesShares > 0, 'no fees');
+
+    _checkedUpdateAssetConfig(
+      assetId,
+      abi.encodeCall(IConfigurator.setFeeReceiver, (address(hub), assetId, config.feeReceiver)),
+      config
+    );
+
+    assertEq(hub.getSpokeSuppliedShares(assetId, oldFeeReceiver), feesShares);
+    assertEq(hub.getSpokeSuppliedShares(assetId, config.feeReceiver), 0);
+  }
+
+  /// Updates the fee receiver by reusing a previously assigned spoke, with no impact on accrued fees
+  function test_setFeeReceiver_fuzz_ReuseFeeReceiver(uint256 assetId) public {
+    assetId = bound(assetId, 0, hub.assetCount() - 1);
+
+    test_setFeeReceiver_fuzz_NewFeeReceiver(assetId);
+
+    address oldFeeReceiver = address(treasurySpoke);
+    uint256 oldFees = hub.getSpokeSuppliedShares(assetId, oldFeeReceiver);
+
+    skip(365 days);
+
+    DataTypes.AssetConfig memory config = hub.getAssetConfig(assetId);
+    address newFeeReceiver = config.feeReceiver;
+
+    uint256 newFees = hub.getSpokeSuppliedShares(assetId, newFeeReceiver);
+    assertTrue(newFees > 0);
+
+    config.feeReceiver = address(treasurySpoke);
+    _checkedUpdateAssetConfig(
+      assetId,
+      abi.encodeCall(IConfigurator.setFeeReceiver, (address(hub), assetId, config.feeReceiver)),
+      config
+    );
+
+    assertEq(hub.getSpokeSuppliedShares(assetId, config.feeReceiver), oldFees);
+    assertEq(hub.getSpokeSuppliedShares(assetId, newFeeReceiver), newFees);
   }
 
   function test_setLiquidityFeeAndReceiver_fuzz_revertsWith_InvalidLiquidityFee(
@@ -266,7 +337,7 @@ contract ConfiguratorTest is Base {
   function test_setLiquidityFeeAndReceiver_Scenario() public {
     // set same fee receiver
     test_setLiquidityFeeAndReceiver_fuzz(daiAssetId, 18_00, address(treasurySpoke));
-    // set new fee receiver
+    // set new fee receiver and liquidity fee
     test_setLiquidityFeeAndReceiver_fuzz(daiAssetId, 4_00, makeAddr('newFeeReceiver'));
     // set zero fee receiver and fee
     test_setLiquidityFeeAndReceiver_fuzz(daiAssetId, 0, address(0));
@@ -274,6 +345,75 @@ contract ConfiguratorTest is Base {
     test_setLiquidityFeeAndReceiver_fuzz(daiAssetId, 0, address(0));
     // set zero fee and initial fee receiver
     test_setLiquidityFeeAndReceiver_fuzz(daiAssetId, 0, address(treasurySpoke));
+  }
+
+  /// Updates the fee receiver from zero to non-zero, even with zero liquidity fee
+  function test_setLiquidityFeeAndReceiver_fuzz_FromZeroFeeReceiver(uint256 assetId) public {
+    assetId = bound(assetId, 0, hub.assetCount() - 1);
+
+    DataTypes.AssetConfig memory config = hub.getAssetConfig(assetId);
+    config.feeReceiver = address(0);
+    config.liquidityFee = 0;
+    _checkedUpdateAssetConfig(
+      assetId,
+      abi.encodeCall(
+        IConfigurator.setLiquidityFeeAndReceiver,
+        (address(hub), assetId, config.liquidityFee, config.feeReceiver)
+      ),
+      config
+    );
+
+    uint256 amount = 1000e18;
+    _addLiquidity(assetId, amount);
+    _drawLiquidity(assetId, amount, true);
+
+    config.feeReceiver = makeAddr('newFeeReceiver');
+    _checkedUpdateAssetConfig(
+      assetId,
+      abi.encodeCall(IConfigurator.setFeeReceiver, (address(hub), assetId, config.feeReceiver)),
+      config
+    );
+
+    assertEq(hub.getSpokeSuppliedShares(assetId, config.feeReceiver), 0);
+  }
+
+  /// No fees accrued whe updating liquidity fee from zero to non-zero
+  function test_setLiquidityFeeAndReceiver_fuzz_FromZeroLiquidityFee(
+    uint256 assetId,
+    uint256 liquidityFee
+  ) public {
+    assetId = bound(assetId, 0, hub.assetCount() - 1);
+    liquidityFee = bound(liquidityFee, 1, PercentageMath.PERCENTAGE_FACTOR);
+
+    DataTypes.AssetConfig memory config = hub.getAssetConfig(assetId);
+    config.feeReceiver = address(0);
+    config.liquidityFee = 0;
+    _checkedUpdateAssetConfig(
+      assetId,
+      abi.encodeCall(
+        IConfigurator.setLiquidityFeeAndReceiver,
+        (address(hub), assetId, config.liquidityFee, config.feeReceiver)
+      ),
+      config
+    );
+
+    uint256 amount = 1000e18;
+    _addLiquidity(assetId, amount);
+    _drawLiquidity(assetId, amount, true);
+
+    config.liquidityFee = liquidityFee;
+    config.feeReceiver = makeAddr('feeReceiver');
+    _checkedUpdateAssetConfig(
+      assetId,
+      abi.encodeCall(
+        IConfigurator.setLiquidityFeeAndReceiver,
+        (address(hub), assetId, config.liquidityFee, config.feeReceiver)
+      ),
+      config
+    );
+
+    assertEq(hub.getSpokeSuppliedShares(assetId, address(0)), 0);
+    assertEq(hub.getSpokeSuppliedShares(assetId, config.feeReceiver), 0);
   }
 
   function test_setInterestRateStrategy_fuzz_revertsWith_InvalidIrStrategy(uint256 assetId) public {

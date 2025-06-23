@@ -44,7 +44,7 @@ contract LiquidityHubBase is Base {
     DebtAccounting[3] spoke;
   }
 
-  function setUp() public override {
+  function setUp() public virtual override {
     super.setUp();
     initEnvironment();
   }

@@ -337,7 +337,7 @@ contract LiquidityHubConfigTest is LiquidityHubBase {
     _checkedUpdateAssetConfig(daiAssetId, config);
   }
 
-  function test_updateAssetConig_ZeroFeeReceiver(uint256 supplyCap, uint256 drawCap) public {
+  function test_updateAssetConig_fuzz_ZeroFeeReceiver(uint256 supplyCap, uint256 drawCap) public {
     DataTypes.AssetConfig memory config = hub.getAssetConfig(daiAssetId);
 
     uint256 initialLiquidityFee = config.liquidityFee;
@@ -369,6 +369,114 @@ contract LiquidityHubConfigTest is LiquidityHubBase {
     _checkedUpdateAssetConfig(daiAssetId, config);
   }
 
+  function test_updateAssetConfig_NoConfigChange() public {
+    DataTypes.AssetConfig memory config = hub.getAssetConfig(daiAssetId);
+    _checkedUpdateAssetConfig(daiAssetId, config);
+  }
+
+  /// Updates to new fee receiver, with previously accrued fees not transferred to the new receiver
+  function test_updateAssetConfig_NewFeeReceiver() public {
+    uint256 amount = 1000e18;
+    _addLiquidity(daiAssetId, amount);
+    _drawLiquidity(daiAssetId, amount, true);
+
+    DataTypes.AssetConfig memory config = hub.getAssetConfig(daiAssetId);
+    address oldFeeReceiver = config.feeReceiver;
+    config.feeReceiver = makeAddr('newFeeReceiver');
+    _processAssetConfig(daiAssetId, config);
+
+    uint256 feesShares = hub.getSpokeSuppliedShares(daiAssetId, oldFeeReceiver);
+    assertTrue(feesShares > 0, 'no fees');
+
+    _checkedUpdateAssetConfig(daiAssetId, config);
+
+    assertEq(hub.getSpokeSuppliedShares(daiAssetId, oldFeeReceiver), feesShares);
+    assertEq(hub.getSpokeSuppliedShares(daiAssetId, config.feeReceiver), 0);
+  }
+
+  /// Updates the fee receiver by reusing a previously assigned spoke, with no impact on accrued fees
+  function test_updateAssetConfig_ReuseFeeReceiver() public {
+    test_updateAssetConfig_NewFeeReceiver();
+
+    address oldFeeReceiver = address(treasurySpoke);
+    uint256 oldFees = hub.getSpokeSuppliedShares(daiAssetId, oldFeeReceiver);
+
+    skip(365 days);
+
+    DataTypes.AssetConfig memory config = hub.getAssetConfig(daiAssetId);
+    address newFeeReceiver = config.feeReceiver;
+
+    uint256 newFees = hub.getSpokeSuppliedShares(daiAssetId, newFeeReceiver);
+    assertTrue(newFees > 0);
+
+    config.feeReceiver = address(treasurySpoke);
+    _processAssetConfig(daiAssetId, config);
+    _checkedUpdateAssetConfig(daiAssetId, config);
+
+    assertEq(hub.getSpokeSuppliedShares(daiAssetId, config.feeReceiver), oldFees);
+    assertEq(hub.getSpokeSuppliedShares(daiAssetId, newFeeReceiver), newFees);
+  }
+
+  /// Updates the fee receiver from zero to non-zero, even with zero liquidity fee
+  function test_updateAssetConfig_FromZeroFeeReceiver() public {
+    DataTypes.AssetConfig memory config = hub.getAssetConfig(daiAssetId);
+    config.feeReceiver = address(0);
+    config.liquidityFee = 0;
+    _processAssetConfig(daiAssetId, config);
+    _checkedUpdateAssetConfig(daiAssetId, config);
+
+    uint256 amount = 1000e18;
+    _addLiquidity(daiAssetId, amount);
+    _drawLiquidity(daiAssetId, amount, true);
+
+    config.feeReceiver = makeAddr('newFeeReceiver');
+    _processAssetConfig(daiAssetId, config);
+    _checkedUpdateAssetConfig(daiAssetId, config);
+
+    assertEq(hub.getSpokeSuppliedShares(daiAssetId, config.feeReceiver), 0);
+  }
+
+  /// Triggers accrual when liquidity fee update, based on old liquidity fee
+  function test_updateAssetConfig_fuzz_LiquidityFee(uint256 liquidityFee) public {
+    liquidityFee = bound(liquidityFee, 1, PercentageMathExtended.PERCENTAGE_FACTOR);
+
+    uint256 amount = 1000e18;
+    _addLiquidity(daiAssetId, amount);
+    _drawLiquidity(daiAssetId, amount, true);
+
+    DataTypes.AssetConfig memory config = hub.getAssetConfig(daiAssetId);
+    uint256 feeShares = hub.getSpokeSuppliedShares(daiAssetId, config.feeReceiver);
+    assertTrue(feeShares > 0, 'no fees');
+
+    config.liquidityFee = liquidityFee;
+    _checkedUpdateAssetConfig(daiAssetId, config);
+
+    assertEq(hub.getSpokeSuppliedShares(daiAssetId, config.feeReceiver), feeShares);
+  }
+
+  /// No fees accrued whe updating liquidity fee from zero to non-zero
+  function test_updateAssetConfig_fuzz_FromZeroLiquidityFee(uint256 liquidityFee) public {
+    liquidityFee = bound(liquidityFee, 1, PercentageMathExtended.PERCENTAGE_FACTOR);
+
+    DataTypes.AssetConfig memory config = hub.getAssetConfig(daiAssetId);
+    config.feeReceiver = address(0);
+    config.liquidityFee = 0;
+    _processAssetConfig(daiAssetId, config);
+    _checkedUpdateAssetConfig(daiAssetId, config);
+
+    uint256 amount = 1000e18;
+    _addLiquidity(daiAssetId, amount);
+    _drawLiquidity(daiAssetId, amount, true);
+
+    config.liquidityFee = liquidityFee;
+    config.feeReceiver = makeAddr('feeReceiver');
+    _processAssetConfig(daiAssetId, config);
+    _checkedUpdateAssetConfig(daiAssetId, config);
+
+    assertEq(hub.getSpokeSuppliedShares(daiAssetId, address(0)), 0);
+    assertEq(hub.getSpokeSuppliedShares(daiAssetId, config.feeReceiver), 0);
+  }
+
   function _processAssetConfig(uint256 assetId, DataTypes.AssetConfig memory newConfig) public {
     vm.assume(address(newConfig.irStrategy) != address(0));
     newConfig.liquidityFee = bound(
@@ -388,21 +496,25 @@ contract LiquidityHubConfigTest is LiquidityHubBase {
         );
       }
       if (newConfig.feeReceiver != address(0)) {
-        // overwriting if spoke already exists, fine in this test
-        hub.addSpoke(
-          assetId,
-          newConfig.feeReceiver,
-          DataTypes.SpokeConfig({supplyCap: type(uint256).max, drawCap: type(uint256).max})
-        );
+        DataTypes.SpokeData memory spokeData = hub.getSpoke(assetId, newConfig.feeReceiver);
+        if (spokeData.lastUpdateTimestamp == 0) {
+          hub.addSpoke(
+            assetId,
+            newConfig.feeReceiver,
+            DataTypes.SpokeConfig({supplyCap: type(uint256).max, drawCap: type(uint256).max})
+          );
+        } else {
+          hub.updateSpokeConfig(
+            assetId,
+            newConfig.feeReceiver,
+            DataTypes.SpokeConfig({supplyCap: type(uint256).max, drawCap: type(uint256).max})
+          );
+        }
       }
     }
   }
 
-  function _checkedAddAsset(
-    address asset,
-    uint8 decimals,
-    address interestRateStrategy
-  ) internal {
+  function _checkedAddAsset(address asset, uint8 decimals, address interestRateStrategy) internal {
     uint256 assetId = hub.assetCount();
 
     DataTypes.AssetConfig memory expectedConfig = DataTypes.AssetConfig({
@@ -431,6 +543,10 @@ contract LiquidityHubConfigTest is LiquidityHubBase {
     uint256 assetId,
     DataTypes.AssetConfig memory config
   ) internal {
+    // Always accrue first, based on old config
+    vm.expectEmit(address(hub));
+    emit ILiquidityHub.DrawnIndexUpdate(assetId, hub.previewDrawnIndex(assetId), block.timestamp);
+
     vm.expectEmit(address(hub));
     emit ILiquidityHub.AssetConfigUpdated(assetId, config);
 
