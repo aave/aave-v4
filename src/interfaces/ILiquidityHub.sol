@@ -52,7 +52,7 @@ interface ILiquidityHub {
     uint256 realizedPremiumAdded,
     uint256 realizedPremiumTaken
   );
-  event Donate(
+  event DonateToFeeReceiver(
     uint256 indexed assetId,
     address indexed spoke,
     uint256 suppliedShares,
@@ -187,7 +187,11 @@ interface ILiquidityHub {
    * @param from The address (user) from which we pull assets.
    * @return The amount of shares added or supplied.
    */
-  function donate(uint256 assetId, uint256 amount, address from) external returns (uint256);
+  function donateToFeeReceiver(
+    uint256 assetId,
+    uint256 amount,
+    address from
+  ) external returns (uint256);
 
   function convertToDrawnAssets(uint256 assetId, uint256 shares) external view returns (uint256);
 

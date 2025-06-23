@@ -303,7 +303,11 @@ contract LiquidityHub is ILiquidityHub {
   }
 
   /// @inheritdoc ILiquidityHub
-  function donate(uint256 assetId, uint256 amount, address from) external returns (uint256) {
+  function donateToFeeReceiver(
+    uint256 assetId,
+    uint256 amount,
+    address from
+  ) external returns (uint256) {
     // TODO: authorization - only spokes
 
     DataTypes.Asset storage asset = _assets[assetId];
@@ -313,7 +317,7 @@ contract LiquidityHub is ILiquidityHub {
 
     uint256 suppliedShares = _executeAdd(asset, spoke, assetId, amount, from);
 
-    emit Donate(assetId, msg.sender, suppliedShares, amount);
+    emit DonateToFeeReceiver(assetId, msg.sender, suppliedShares, amount);
 
     return suppliedShares;
   }
