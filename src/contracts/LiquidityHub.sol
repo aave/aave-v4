@@ -215,7 +215,7 @@ contract LiquidityHub is ILiquidityHub {
     DataTypes.SpokeData storage spoke = _spokes[assetId][msg.sender];
 
     asset.accrue(_spokes[assetId][asset.config.feeReceiver]);
-    _validateWithdraw(asset, spoke, amount);
+    _validateRemove(asset, spoke, amount);
 
     asset.updateBorrowRate({liquidityAdded: 0, liquidityTaken: amount});
 
@@ -507,12 +507,12 @@ contract LiquidityHub is ILiquidityHub {
     );
   }
 
-  function _validateWithdraw(
+  function _validateRemove(
     DataTypes.Asset storage asset,
     DataTypes.SpokeData storage spoke,
     uint256 amount
   ) internal view {
-    require(amount != 0, InvalidWithdrawAmount());
+    require(amount != 0, InvalidRemoveAmount());
     require(asset.config.active, AssetNotActive());
     require(!asset.config.paused, AssetPaused());
     uint256 withdrawable = asset.toSuppliedAssetsDown(spoke.suppliedShares);

@@ -3,11 +3,11 @@ pragma solidity ^0.8.0;
 
 import './LiquidityHubBase.t.sol';
 
-contract LiquidityHubWithdrawTest is LiquidityHubBase {
-  using SharesMath for uint256;
-  using WadRayMathExtended for uint256;
+contract LiquidityHubRemoveTest is LiquidityHubBase {
+  // using SharesMath for uint256;
+  // using WadRayMathExtended for uint256;
 
-  function test_withdraw() public {
+  function test_remove() public {
     vm.skip(true, 'pending refactor');
 
     //     uint256 amount = 100e18;
@@ -135,7 +135,7 @@ contract LiquidityHubWithdrawTest is LiquidityHubBase {
   }
 
   // single asset, multiple spokes supplied. No drawn
-  function test_withdraw_fuzz_multi_spoke(
+  function test_remove_fuzz_multi_spoke(
     uint256 amount,
     uint256 amount2,
     uint32 riskPremium
@@ -261,7 +261,7 @@ contract LiquidityHubWithdrawTest is LiquidityHubBase {
     //     assertEq(asset.balanceOf(alice), MAX_SUPPLY_AMOUNT, 'user token balance post-withdraw');
   }
 
-  function test_withdraw_fuzz(uint256 assetId, uint256 amount) public {
+  function test_remove_fuzz(uint256 assetId, uint256 amount) public {
     vm.skip(true, 'pending refactor');
 
     //     assetId = bound(assetId, 0, hub.assetCount() - 2); // Exclude duplicated DAI
@@ -397,7 +397,7 @@ contract LiquidityHubWithdrawTest is LiquidityHubBase {
     //     assertEq(asset.balanceOf(alice), MAX_SUPPLY_AMOUNT, 'alice token balance post-withdraw');
   }
 
-  function test_withdraw_all_with_interest() public {
+  function test_remove_all_with_interest() public {
     vm.skip(true, 'pending refactor');
 
     //     uint256 daiAmount = 100e18;
@@ -521,7 +521,7 @@ contract LiquidityHubWithdrawTest is LiquidityHubBase {
     //     );
   }
 
-  function test_withdraw_fuzz_all_liquidity_with_interest(
+  function test_remove_fuzz_all_liquidity_with_interest(
     uint256 drawAmount,
     uint32 riskPremium,
     uint256 rate,
@@ -659,122 +659,85 @@ contract LiquidityHubWithdrawTest is LiquidityHubBase {
     //     );
   }
 
-  function test_withdraw_revertsWith_SuppliedAmountExceeded_zero_supplied() public {
-    vm.skip(true, 'pending refactor');
+  function test_remove_revertsWith_SuppliedAmountExceeded_zero_supplied() public {
+    uint256 amount = 1;
 
-    //     uint256 assetId = 0;
-    //     uint256 amount = 1;
-
-    //     vm.expectRevert(abi.encodeWithSelector(ILiquidityHub.SuppliedAmountExceeded.selector, 0));
-    //     vm.prank(address(spoke1));
-    //     hub.withdraw({assetId: assetId, amount: amount, riskPremium: 0, to: address(spoke1)});
+    vm.expectRevert(abi.encodeWithSelector(ILiquidityHub.SuppliedAmountExceeded.selector, 0));
+    vm.prank(address(spoke1));
+    hub.remove(daiAssetId, amount, address(spoke1));
   }
 
-  function test_withdraw_revertsWith_SuppliedAmountExceeded() public {
-    vm.skip(true, 'pending refactor');
+  function test_remove_revertsWith_SuppliedAmountExceeded() public {
+    uint256 assetId = daiAssetId;
+    uint256 amount = 100e18;
 
-    //     uint256 assetId = daiAssetId;
-    //     uint256 amount = 100e18;
+    // User supply
+    Utils.add({
+      hub: hub,
+      assetId: daiAssetId,
+      spoke: address(spoke1),
+      amount: amount,
+      user: alice,
+      to: address(spoke1)
+    });
 
-    //     // User supply
-    //     Utils.supply({
-    //       hub: hub,
-    //       assetId: assetId,
-    //       spoke: address(spoke1),
-    //       amount: amount,
-    //       riskPremium: 0,
-    //       user: alice,
-    //       to: address(spoke1)
-    //     });
+    vm.expectRevert(abi.encodeWithSelector(ILiquidityHub.SuppliedAmountExceeded.selector, amount));
+    vm.prank(address(spoke1));
+    hub.remove(daiAssetId, amount + 1, alice);
 
-    //     vm.expectRevert(abi.encodeWithSelector(ILiquidityHub.SuppliedAmountExceeded.selector, amount));
-    //     vm.prank(address(spoke1));
-    //     hub.withdraw({assetId: assetId, amount: amount + 1, riskPremium: 0, to: alice});
+    // advance time, but no accrual
+    skip(1e18);
 
-    //     // advance time, but no accumulation
-    //     skip(1e18);
-
-    //     vm.expectRevert(abi.encodeWithSelector(ILiquidityHub.SuppliedAmountExceeded.selector, amount));
-    //     vm.prank(address(spoke1));
-    //     hub.withdraw({assetId: assetId, amount: amount + 1, riskPremium: 0, to: alice});
+    vm.expectRevert(abi.encodeWithSelector(ILiquidityHub.SuppliedAmountExceeded.selector, amount));
+    vm.prank(address(spoke1));
+    hub.remove(daiAssetId, amount + 1, alice);
   }
 
-  function test_withdraw_revertsWith_NotAvailableLiquidity() public {
-    vm.skip(true, 'pending refactor');
-
-    //     uint256 amount = 100e18;
-
-    //     // User supply
-    //     Utils.supply({
-    //       hub: hub,
-    //       assetId: daiAssetId,
-    //       spoke: address(spoke1),
-    //       amount: amount,
-    //       riskPremium: 0,
-    //       user: alice,
-    //       to: address(spoke1)
-    //     });
-
-    //     // spoke1 draw all of dai reserve liquidity
-    //     Utils.draw({
-    //       hub: hub,
-    //       assetId: daiAssetId,
-    //       spoke: address(spoke1),
-    //       amount: amount,
-    //       to: alice,
-    //       riskPremium: 0,
-    //       onBehalfOf: address(spoke1)
-    //     });
-
-    //     vm.expectRevert(abi.encodeWithSelector(ILiquidityHub.NotAvailableLiquidity.selector, 0));
-    //     vm.prank(address(spoke1));
-    //     hub.withdraw({assetId: daiAssetId, amount: amount, riskPremium: 0, to: address(spoke1)});
+  function test_remove_revertsWith_NotAvailableLiquidity() public {
+    uint256 amount = 100e18;
+    Utils.add({
+      hub: hub,
+      assetId: daiAssetId,
+      spoke: address(spoke1),
+      amount: amount,
+      user: alice,
+      to: address(spoke1)
+    });
+    // spoke1 draw all of dai reserve liquidity
+    Utils.draw({
+      hub: hub,
+      assetId: daiAssetId,
+      spoke: address(spoke1),
+      amount: amount,
+      to: alice,
+      onBehalfOf: address(spoke1)
+    });
+    vm.expectRevert(abi.encodeWithSelector(ILiquidityHub.NotAvailableLiquidity.selector, 0));
+    vm.prank(address(spoke1));
+    hub.remove(daiAssetId, amount, address(spoke1));
   }
 
-  function test_withdraw_revertsWith_InvalidWithdrawAmount() public {
-    vm.skip(true, 'pending refactor');
-
-    //     uint256 amount = 100e18;
-
-    //     // User supply
-    //     Utils.supply({
-    //       hub: hub,
-    //       assetId: daiAssetId,
-    //       spoke: address(spoke1),
-    //       amount: amount,
-    //       riskPremium: 0,
-    //       user: alice,
-    //       to: address(spoke1)
-    //     });
-
-    //     vm.expectRevert(ILiquidityHub.InvalidWithdrawAmount.selector);
-    //     vm.prank(address(spoke1));
-    //     hub.withdraw({assetId: daiAssetId, amount: 0, riskPremium: 0, to: alice});
+  function test_remove_revertsWith_InvalidRemoveAmount() public {
+    vm.expectRevert(ILiquidityHub.InvalidRemoveAmount.selector);
+    vm.prank(address(spoke1));
+    hub.remove(daiAssetId, 0, alice);
   }
 
-  function test_withdraw_revertsWith_AssetNotActive() public {
-    vm.skip(true, 'pending refactor');
+  function test_remove_revertsWith_AssetNotActive() public {
+    uint256 amount = 100e18;
+    updateAssetActive(hub, daiAssetId, false);
 
-    //     uint256 amount = 100e18;
-    //     updateAssetActive(hub, daiAssetId, false);
-
-    //     assertFalse(hub.getAssetConfig(daiAssetId).active);
-
-    //     vm.expectRevert(ILiquidityHub.AssetNotActive.selector);
-    //     vm.prank(address(spoke1));
-    //     hub.withdraw({assetId: daiAssetId, amount: amount, riskPremium: 0, to: alice});
+    vm.expectRevert(ILiquidityHub.AssetNotActive.selector);
+    vm.prank(address(spoke1));
+    hub.remove(daiAssetId, amount, alice);
   }
 
-  function test_withdraw_revertsWith_AssetPaused() public {
-    vm.skip(true, 'pending refactor');
+  function test_remove_revertsWith_AssetPaused() public {
+    uint256 amount = 100e18;
+    updateAssetPaused(hub, daiAssetId, true);
 
-    //     uint256 amount = 100e18;
-    //     updateAssetPaused(hub, daiAssetId, true);
-
-    //     assertTrue(hub.getAssetConfig(daiAssetId).paused);
-
-    //     vm.expectRevert(ILiquidityHub.AssetPaused.selector);
-    //     vm.prank(address(spoke1));
-    //     hub.withdraw({assetId: daiAssetId, amount: amount, riskPremium: 0, to: alice});
+    vm.expectRevert(ILiquidityHub.AssetPaused.selector);
+    vm.prank(address(spoke1));
+    hub.remove(daiAssetId, amount, alice);
   }
 }

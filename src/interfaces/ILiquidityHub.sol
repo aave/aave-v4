@@ -60,7 +60,7 @@ interface ILiquidityHub {
   error AssetNotListed();
   error AssetNotActive();
   error SupplyCapExceeded(uint256 supplyCap);
-  error InvalidWithdrawAmount();
+  error InvalidRemoveAmount();
   error InvalidRestoreAmount();
   error SuppliedAmountExceeded(uint256 suppliedAmount);
   error NotAvailableLiquidity(uint256 availableLiquidity);

@@ -862,11 +862,13 @@ abstract contract Base is Test {
     uint256 assetId,
     bool newActiveFlag
   ) internal {
-    DataTypes.AssetConfig memory assetConfig = liquidityHub.getAsset(assetId).config;
+    DataTypes.AssetConfig memory assetConfig = liquidityHub.getAssetConfig(assetId);
     assetConfig.active = newActiveFlag;
 
     vm.prank(HUB_ADMIN);
     liquidityHub.updateAssetConfig(assetId, assetConfig);
+
+    assertEq(liquidityHub.getAssetConfig(assetId).active, newActiveFlag);
   }
 
   function updateAssetPaused(
@@ -874,11 +876,13 @@ abstract contract Base is Test {
     uint256 assetId,
     bool newPausedFlag
   ) internal {
-    DataTypes.AssetConfig memory assetConfig = liquidityHub.getAsset(assetId).config;
+    DataTypes.AssetConfig memory assetConfig = liquidityHub.getAssetConfig(assetId);
     assetConfig.paused = newPausedFlag;
 
     vm.prank(HUB_ADMIN);
     liquidityHub.updateAssetConfig(assetId, assetConfig);
+
+    assertEq(liquidityHub.getAssetConfig(assetId).paused, newPausedFlag);
   }
 
   function updateAssetFrozen(
@@ -886,19 +890,23 @@ abstract contract Base is Test {
     uint256 assetId,
     bool newFrozenFlag
   ) internal {
-    DataTypes.AssetConfig memory assetConfig = liquidityHub.getAsset(assetId).config;
+    DataTypes.AssetConfig memory assetConfig = liquidityHub.getAssetConfig(assetId);
     assetConfig.frozen = newFrozenFlag;
 
     vm.prank(HUB_ADMIN);
     liquidityHub.updateAssetConfig(assetId, assetConfig);
+
+    assertEq(liquidityHub.getAssetConfig(assetId).frozen, newFrozenFlag);
   }
 
   function updateReserveFrozenFlag(ISpoke spoke, uint256 reserveId, bool newFrozenFlag) internal {
-    DataTypes.ReserveConfig memory config = spoke.getReserve(reserveId).config;
+    DataTypes.ReserveConfig memory config = spoke.getReserveConfig(reserveId);
     config.frozen = newFrozenFlag;
 
     vm.prank(SPOKE_ADMIN);
     spoke.updateReserveConfig(reserveId, config);
+
+    assertEq(spoke.getReserveConfig(reserveId).frozen, newFrozenFlag);
   }
 
   function updateReservePausedFlag(ISpoke spoke, uint256 reserveId, bool newPausedFlag) internal {
