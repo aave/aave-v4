@@ -55,45 +55,6 @@ contract LiquidityHubBase is Base {
     hub.updateSpokeConfig(assetId, spoke, spokeConfig);
   }
 
-  /// @dev tempSpoke1 (tempUser1) supplies asset, tempSpoke2 (tempUser2) draws asset, skip 1 year
-  /// increases supply and debt exchange rate
-  function _increaseExchangeRate(uint256 assetId, uint256 amount) internal {
-    address tempUser1 = makeAddr('TEMP_USER_1');
-    deal(address(hub.assetsList(assetId)), tempUser1, amount);
-
-    address tempSpoke1 = makeAddr('TEMP_SPOKE_1');
-    hub.addSpoke(
-      assetId,
-      DataTypes.SpokeConfig({supplyCap: type(uint256).max, drawCap: type(uint256).max}),
-      tempSpoke1
-    );
-
-    address tempUser2 = makeAddr('TEMP_USER_2');
-    deal(address(hub.assetsList(assetId)), tempUser2, amount);
-
-    address tempSpoke2 = makeAddr('TEMP_SPOKE_2');
-    hub.addSpoke(
-      assetId,
-      DataTypes.SpokeConfig({supplyCap: type(uint256).max, drawCap: type(uint256).max}),
-      tempSpoke2
-    );
-
-    _supplyAndDrawLiquidity({
-      assetId: assetId,
-      supplyUser: tempUser1,
-      supplySpoke: tempSpoke1,
-      supplyAmount: amount,
-      drawUser: tempUser2,
-      drawSpoke: tempSpoke2,
-      drawAmount: amount,
-      skipTime: 365 days
-    });
-
-    // ensure that exchange rate has increased
-    assertTrue(hub.convertToSuppliedShares(assetId, amount) < amount);
-    assertTrue(hub.convertToDrawnShares(assetId, amount) < amount);
-  }
-
   /// @dev mocks rate, supplySpoke (supplyUser) supplies asset, drawSpoke (drawUser) draws asset, skips time
   function _supplyAndDrawLiquidity(
     uint256 assetId,

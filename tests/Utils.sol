@@ -23,7 +23,11 @@ library Utils {
     vm.stopPrank();
 
     vm.prank(spoke);
-    return hub.add(assetId, amount, user);
+    uint256 sharesAdded = hub.add(assetId, amount, user);
+
+    checkBorrowRateInvariant(hub, assetId, 'hub.add');
+
+    return sharesAdded;
   }
 
   function draw(
@@ -114,5 +118,26 @@ library Utils {
   function repay(ISpoke spoke, uint256 reserveId, address user, uint256 amount) internal {
     vm.prank(user);
     spoke.repay(reserveId, amount);
+  }
+
+  function checkBorrowRateInvariant(
+    ILiquidityHub hub,
+    uint256 assetId,
+    string memory operation
+  ) internal {
+    DataTypes.Asset memory asset = hub.getAsset(assetId);
+    (uint256 baseDebt, ) = hub.getAssetDebt(assetId);
+
+    vm.assertEq(
+      asset.baseBorrowRate,
+      asset.config.irStrategy.calculateInterestRate(
+        assetId,
+        asset.availableLiquidity,
+        baseDebt,
+        0,
+        0
+      ),
+      string.concat('base borrow rate after ', operation)
+    );
   }
 }
