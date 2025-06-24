@@ -380,7 +380,7 @@ contract LiquidityHubAccrueInterestTest is Base {
     assertEq(getAssetBaseDebt(daiAssetId), expectedBaseDebt1, 'baseDebt');
 
     // Say borrow rate changes
-    _mockInterestRate(borrowRate);
+    _mockInterestRateBps(borrowRate);
     // Make an action to cache this new borrow rate
     Utils.add(hub, daiAssetId, address(spoke2), supplyAmount2, address(spoke2), address(spoke2));
 

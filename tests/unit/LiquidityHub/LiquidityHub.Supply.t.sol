@@ -205,7 +205,7 @@ contract LiquidityHubSupplyTest is LiquidityHubBase {
     rate = bound(rate, 1, MAX_BORROW_RATE); // 0.01% to 1000%
 
     _updateSupplyCap(daiAssetId, address(spoke2), newSupplyCap);
-    _mockInterestRate(rate);
+    _mockInterestRateBps(rate);
     _supplyAndDrawLiquidity({
       assetId: daiAssetId,
       supplyUser: bob,
@@ -456,7 +456,7 @@ contract LiquidityHubSupplyTest is LiquidityHubBase {
     uint256 daiAmount = 1e9 * 1e18;
     uint256 drawAmount = daiAmount;
 
-    _mockInterestRate(MAX_BORROW_RATE);
+    _mockInterestRateBps(MAX_BORROW_RATE);
     _supplyAndDrawLiquidity({
       assetId: daiAssetId,
       supplyUser: bob,
@@ -488,7 +488,7 @@ contract LiquidityHubSupplyTest is LiquidityHubBase {
     daiAmount = bound(daiAmount, 1e20, MAX_SUPPLY_AMOUNT);
     skipTime = bound(skipTime, 365 days, 100 * 365 days);
     rate = bound(rate, MAX_BORROW_RATE / 10, MAX_BORROW_RATE);
-    _mockInterestRate(rate);
+    _mockInterestRateBps(rate);
     _supplyAndDrawLiquidity({
       assetId: daiAssetId,
       supplyUser: bob,
@@ -739,7 +739,7 @@ contract LiquidityHubSupplyTest is LiquidityHubBase {
     amount = bound(amount, 1, MAX_SUPPLY_AMOUNT / numSupplies);
     skipTime = bound(skipTime, 1, MAX_SKIP_TIME);
     rate = bound(rate, 1, MAX_BORROW_RATE);
-    _mockInterestRate(rate);
+    _mockInterestRateBps(rate);
 
     TestSupplyParams memory params;
     (params.assetSuppliedShares, params.drawnShares) = _supplyAndDrawLiquidity({

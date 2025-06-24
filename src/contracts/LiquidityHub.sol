@@ -188,16 +188,14 @@ contract LiquidityHub is ILiquidityHub {
     asset.accrue(_spokes[assetId][asset.config.feeReceiver]);
     _validateSupply(asset, spoke, amount, from);
 
-    asset.updateBorrowRate({liquidityAdded: amount, liquidityTaken: 0});
-
     // todo: Mitigate inflation attack
     uint256 suppliedShares = asset.toSuppliedSharesDown(amount);
     require(suppliedShares != 0, InvalidSharesAmount());
-
-    asset.availableLiquidity += amount;
     asset.suppliedShares += suppliedShares;
-
     spoke.suppliedShares += suppliedShares;
+
+    asset.updateBorrowRate({liquidityAdded: amount, liquidityTaken: 0});
+    asset.availableLiquidity += amount;
 
     // TODO: fee-on-transfer
     assetsList[assetId].safeTransferFrom(from, address(this), amount);
@@ -217,14 +215,12 @@ contract LiquidityHub is ILiquidityHub {
     asset.accrue(_spokes[assetId][asset.config.feeReceiver]);
     _validateWithdraw(asset, spoke, amount);
 
-    asset.updateBorrowRate({liquidityAdded: 0, liquidityTaken: amount});
-
     uint256 withdrawnShares = asset.toSuppliedSharesUp(amount); // non zero since we round up
-
-    asset.availableLiquidity -= amount;
     asset.suppliedShares -= withdrawnShares;
-
     spoke.suppliedShares -= withdrawnShares;
+
+    asset.updateBorrowRate({liquidityAdded: 0, liquidityTaken: amount});
+    asset.availableLiquidity -= amount;
 
     assetsList[assetId].safeTransfer(to, amount);
 
@@ -243,14 +239,12 @@ contract LiquidityHub is ILiquidityHub {
     asset.accrue(_spokes[assetId][asset.config.feeReceiver]);
     _validateDraw(asset, amount, spoke.config.drawCap);
 
-    asset.updateBorrowRate({liquidityAdded: 0, liquidityTaken: amount});
-
     uint256 drawnShares = asset.toDrawnSharesUp(amount); // non zero since we round up
-
-    asset.availableLiquidity -= amount;
     asset.baseDrawnShares += drawnShares;
-
     spoke.baseDrawnShares += drawnShares;
+
+    asset.updateBorrowRate({liquidityAdded: 0, liquidityTaken: amount});
+    asset.availableLiquidity -= amount;
 
     assetsList[assetId].safeTransfer(to, amount);
 
@@ -275,15 +269,15 @@ contract LiquidityHub is ILiquidityHub {
     asset.accrue(_spokes[assetId][asset.config.feeReceiver]);
 
     _validateRestore(asset, spoke, baseAmount, premiumAmount);
-    asset.updateBorrowRate({liquidityAdded: baseAmount, liquidityTaken: 0}); // both can be zero
+
+    uint256 baseDrawnSharesRestored = asset.toDrawnSharesDown(baseAmount);
+    asset.baseDrawnShares -= baseDrawnSharesRestored;
+    spoke.baseDrawnShares -= baseDrawnSharesRestored;
 
     uint256 totalRestoredAmount = baseAmount + premiumAmount;
-    uint256 baseDrawnSharesRestored = asset.toDrawnSharesDown(baseAmount);
 
+    asset.updateBorrowRate({liquidityAdded: totalRestoredAmount, liquidityTaken: 0}); // both can be zero
     asset.availableLiquidity += totalRestoredAmount;
-    asset.baseDrawnShares -= baseDrawnSharesRestored;
-
-    spoke.baseDrawnShares -= baseDrawnSharesRestored;
 
     assetsList[assetId].safeTransferFrom(from, address(this), totalRestoredAmount);
 
@@ -406,6 +400,10 @@ contract LiquidityHub is ILiquidityHub {
 
   function convertToDrawnShares(uint256 assetId, uint256 assets) external view returns (uint256) {
     return _assets[assetId].toDrawnSharesDown(assets);
+  }
+
+  function convertToDrawnSharesUp(uint256 assetId, uint256 assets) external view returns (uint256) {
+    return _assets[assetId].toDrawnSharesUp(assets);
   }
 
   function previewOffset(uint256 assetId, uint256 shares) external view returns (uint256) {

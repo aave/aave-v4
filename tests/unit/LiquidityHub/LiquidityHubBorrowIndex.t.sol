@@ -12,7 +12,7 @@ contract LiquidityHubBorrowIndex is Base {
   function setUp() public override {
     deployFixtures();
     initEnvironment();
-    _mockInterestRate(borrowRate);
+    _mockInterestRateBps(borrowRate);
   }
 
   function test_spokeAddedDuringZeroDebtPeriod() public {

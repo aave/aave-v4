@@ -1730,7 +1730,7 @@ abstract contract Base is Test {
       indexDelta.rayMulDown(initialDrawnShares + initialPremiumShares).percentMulDown(liquidityFee);
   }
 
-  function _mockInterestRate(uint256 interestRateBps) internal {
+  function _mockInterestRateBps(uint256 interestRateBps) internal {
     vm.mockCall(
       address(irStrategy),
       IBasicInterestRateStrategy.calculateInterestRate.selector,
@@ -1738,7 +1738,7 @@ abstract contract Base is Test {
     );
   }
 
-  function _mockInterestRate(
+  function _mockInterestRateBps(
     uint256 interestRateBps,
     uint256 assetId,
     uint256 availableLiquidity,
@@ -1753,6 +1753,32 @@ abstract contract Base is Test {
         (assetId, availableLiquidity, totalDebt, liquidityAdded, liquidityTaken)
       ),
       abi.encode(interestRateBps.bpsToRay())
+    );
+  }
+
+  function _mockInterestRateRay(uint256 interestRateRay) internal {
+    vm.mockCall(
+      address(irStrategy),
+      IBasicInterestRateStrategy.calculateInterestRate.selector,
+      abi.encode(interestRateRay)
+    );
+  }
+
+  function _mockInterestRateRay(
+    uint256 interestRateRay,
+    uint256 assetId,
+    uint256 availableLiquidity,
+    uint256 totalDebt,
+    uint256 liquidityAdded,
+    uint256 liquidityTaken
+  ) internal {
+    vm.mockCall(
+      address(irStrategy),
+      abi.encodeCall(
+        IBasicInterestRateStrategy.calculateInterestRate,
+        (assetId, availableLiquidity, totalDebt, liquidityAdded, liquidityTaken)
+      ),
+      abi.encode(interestRateRay)
     );
   }
 }

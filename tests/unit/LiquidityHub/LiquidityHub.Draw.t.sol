@@ -395,7 +395,7 @@ contract LiquidityHubDrawTest is LiquidityHubBase {
 
     updateDrawCap(hub, daiAssetId, address(spoke1), drawCap);
 
-    _mockInterestRate(rate);
+    _mockInterestRateBps(rate);
     _supplyAndDrawLiquidity({
       assetId: daiAssetId,
       supplyUser: bob,
