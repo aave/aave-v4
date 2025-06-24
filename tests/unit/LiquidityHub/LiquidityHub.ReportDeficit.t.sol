@@ -153,7 +153,7 @@ contract LiquidityHubReportDeficitTest is LiquidityHubBase {
     vm.prank(address(spoke1));
     hub.reportDeficit(usdxAssetId, baseAmount, premiumAmount);
 
-    params.deficitAfter = hub.getDeficit(usdxAssetId);
+    params.deficitAfter = getDeficit(hub, usdxAssetId);
     params.supplyExchangeRateAfter = hub.convertToSuppliedAssets(
       usdxAssetId,
       WadRayMathExtended.RAY

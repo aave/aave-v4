@@ -511,10 +511,6 @@ contract LiquidityHub is ILiquidityHub {
     return _assets[assetId].config;
   }
 
-  function getDeficit(uint256 assetId) external view returns (uint256) {
-    return _assets[assetId].deficit;
-  }
-
   //
   // Internal
   //

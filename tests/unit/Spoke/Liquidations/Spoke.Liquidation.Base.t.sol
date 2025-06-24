@@ -633,7 +633,8 @@ contract SpokeLiquidationBase is SpokeBase {
       state.collateralReserves[state.collateralReserveIndex].assetId,
       WadRayMathExtended.RAY
     );
-    state.deficit.balanceBefore = hub.getDeficit(
+    state.deficit.balanceBefore = getDeficit(
+      state.debtReserves[state.debtReserveIndex].config.hub,
       state.debtReserves[state.debtReserveIndex].assetId
     );
     state.spokeTotalDebt.balanceBefore = state
@@ -654,7 +655,10 @@ contract SpokeLiquidationBase is SpokeBase {
     state.debts = new Balance[](state.debtReserves.length);
     state.deficits = new Balance[](state.debtReserves.length);
     for (uint256 i = 0; i < state.debtReserves.length; i++) {
-      state.deficits[i].balanceBefore = hub.getDeficit(state.debtReserves[i].assetId);
+      state.deficits[i].balanceBefore = getDeficit(
+        state.debtReserves[i].config.hub,
+        state.debtReserves[i].assetId
+      );
       state.debts[i].balanceBefore = state.spoke.getUserTotalDebt(
         state.debtReserves[i].reserveId,
         state.user
@@ -699,7 +703,10 @@ contract SpokeLiquidationBase is SpokeBase {
       state.collateralReserves[state.collateralReserveIndex].assetId,
       WadRayMathExtended.RAY
     );
-    state.deficit.balanceAfter = hub.getDeficit(state.debtReserves[state.debtReserveIndex].assetId);
+    state.deficit.balanceAfter = getDeficit(
+      state.debtReserves[state.debtReserveIndex].config.hub,
+      state.debtReserves[state.debtReserveIndex].assetId
+    );
     state.spokeTotalDebt.balanceAfter = state
       .spoke
       .getReserveConfig(state.debtReserveId)
@@ -776,7 +783,10 @@ contract SpokeLiquidationBase is SpokeBase {
 
     // multi reserve accounting
     for (uint256 i = 0; i < state.debtReserves.length; i++) {
-      state.deficits[i].balanceAfter = hub.getDeficit(state.debtReserves[i].assetId);
+      state.deficits[i].balanceAfter = getDeficit(
+        state.debtReserves[i].config.hub,
+        state.debtReserves[i].assetId
+      );
 
       state.deficits[i].balanceChange =
         state.deficits[i].balanceAfter -
