@@ -7,7 +7,7 @@ contract LiquidityHubRemoveTest is LiquidityHubBase {
   // using SharesMath for uint256;
   using WadRayMathExtended for uint256;
 
-  function test_removef() public {
+  function test_remove() public {
     uint256 amount = 100e18;
 
     // User supply
@@ -351,72 +351,79 @@ contract LiquidityHubRemoveTest is LiquidityHubBase {
   }
 
   function test_remove_all_with_interest() public {
-    vm.skip(true, 'pending refactor');
+    uint256 daiAmount = 100e18;
+    uint256 wethAmount = 10e18;
+    uint256 drawAmount = daiAmount / 2;
+    uint256 lastUpdateTimestamp = vm.getBlockTimestamp();
 
-    //     uint256 daiAmount = 100e18;
-    //     uint256 wethAmount = 10e18;
-    //     uint256 drawAmount = daiAmount / 2;
-    //     uint32 riskPremium = 20_00;
-    //     uint256 lastUpdateTimestamp = vm.getBlockTimestamp();
-    //     uint256 rate = uint256(10_00).bpsToRay();
+    vm.prank(alice);
+    tokenList.dai.approve(address(hub), type(uint256).max);
 
-    //     _supplyAndDrawLiquidity({
-    //       daiAmount: daiAmount,
-    //       wethAmount: wethAmount,
-    //       daiDrawAmount: drawAmount,
-    //       riskPremium: riskPremium,
-    //       rate: rate
-    //     });
+    _supplyAndDrawLiquidity({
+      assetId: daiAssetId,
+      supplyUser: bob,
+      supplySpoke: address(spoke2),
+      supplyAmount: daiAmount,
+      drawUser: alice,
+      drawSpoke: address(spoke1),
+      drawAmount: drawAmount,
+      skipTime: 365 days
+    });
 
-    //     skip(365 days);
+    uint256 initialAvailableLiquidity = hub.getAsset(daiAssetId).availableLiquidity;
 
-    //     HubData memory hubData;
-    //     hubData.daiData = hub.getAsset(daiAssetId);
+    // bob supplies more DAI
+    uint256 supply2Amount = 10e18;
 
-    //     uint256 initialAvailableLiquidity = hubData.daiData.availableLiquidity;
-    //     uint256 supply2Amount = 10e18;
+    Utils.add({
+      hub: hub,
+      assetId: daiAssetId,
+      spoke: address(spoke2),
+      amount: supply2Amount,
+      user: bob,
+      to: address(spoke2)
+    });
 
-    //     // bob supplies more DAI to trigger accrual
-    //     Utils.supply({
-    //       hub: hub,
-    //       assetId: daiAssetId,
-    //       spoke: address(spoke2),
-    //       amount: supply2Amount,
-    //       riskPremium: 0,
-    //       user: bob,
-    //       to: address(spoke2)
-    //     });
+    (uint256 baseDebtRestored, uint256 premiumDebtRestored) = hub.getSpokeDebt(
+      daiAssetId,
+      address(spoke1)
+    );
 
-    //     hubData.daiData1 = hub.getAsset(daiAssetId);
+    // alice restores all debt including accrual
+    vm.prank(address(spoke1));
+    hub.restore(daiAssetId, baseDebtRestored, premiumDebtRestored, alice);
 
-    //     uint256 restoreAmount = hubData.daiData1.baseDebt + hubData.daiData1.outstandingPremium;
-    //     uint256 newBaseBorrowIndex = WadRayMathExtended.RAY +
-    //       WadRayMathExtended.RAY.rayMul(
-    //         MathUtils.calculateLinearInterest(
-    //           hubData.daiData1.baseBorrowRate,
-    //           uint40(lastUpdateTimestamp)
-    //         ) - WadRayMathExtended.RAY
-    //       );
+    AssetPosition memory asset = getAssetPosition(hub, daiAssetId);
+    assertEq(
+      asset.availableLiquidity,
+      initialAvailableLiquidity + baseDebtRestored + premiumDebtRestored + supply2Amount,
+      'dai availableLiquidity'
+    );
 
-    //     // alice restores all debt including accrual
-    //     vm.prank(address(spoke1));
-    //     hub.restore({assetId: daiAssetId, amount: restoreAmount, riskPremium: 0, repayer: alice});
+    console.log(
+      '%e %e %e',
+      asset.availableLiquidity,
+      initialAvailableLiquidity,
+      baseDebtRestored + premiumDebtRestored
+    );
 
-    //     hubData.daiData2 = hub.getAsset(daiAssetId);
-    //     assertEq(
-    //       hubData.daiData2.availableLiquidity,
-    //       initialAvailableLiquidity + restoreAmount + supply2Amount,
-    //       'dai availableLiquidity'
-    //     );
+    console.log(
+      '%e %e %e',
+      supply2Amount,
+      hub.getSpokeTotalDebt(daiAssetId, address(spoke2)),
+      hub.getSpokeTotalDebt(daiAssetId, address(spoke1))
+    );
 
-    //     // bob withdraws all liquidity with interest
-    //     vm.prank(address(spoke2));
-    //     hub.withdraw({
-    //       assetId: daiAssetId,
-    //       amount: hubData.daiData2.availableLiquidity,
-    //       riskPremium: 0,
-    //       to: bob
-    //     });
+    console.log(
+      '%e %e %e',
+      hub.getSpokeSuppliedAmount(daiAssetId, address(spoke2)),
+      hub.getSpokeSuppliedAmount(daiAssetId, address(spoke1)),
+      asset.availableLiquidity
+    );
+
+    // // bob withdraws all liquidity with interest
+    // vm.prank(address(spoke2));
+    // hub.remove(daiAssetId, asset.availableLiquidity, bob);
 
     //     assertEq(
     //       tokenList.dai.balanceOf(bob),
