@@ -355,17 +355,6 @@ contract LiquidationCallMultiReserveBadPremiumDebtTest is SpokeLiquidationBase {
       state.initialHf
     );
 
-    // ensure that debt accrued causes liquidatable position
-    // and that the resultin accrued debt asset will fully cover the collateral
-    // console.log('vm assume hf', state.spoke.getHealthFactor(alice) < hfBadDebtThreshold);
-    // console.log(
-    //   'vm assume base curr',
-    //   _convertAmountToBaseCurrency(
-    //     state.spoke,
-    //     state.debtReserves[state.debtReserveIndex].reserveId,
-    //     state.spoke.getUserTotalDebt(state.debtReserves[state.debtReserveIndex].reserveId, alice)
-    //   ) > state.initialTotalCollateralInBaseCurrency
-    // );
     vm.assume(
       state.spoke.getHealthFactor(alice) < hfBadDebtThreshold &&
         _convertAmountToBaseCurrency(
@@ -385,59 +374,10 @@ contract LiquidationCallMultiReserveBadPremiumDebtTest is SpokeLiquidationBase {
 
     ) = _calculateAvailableCollateralToLiquidate(state.spoke, state, UINT256_MAX);
 
-    console.log('collToLiq: %e, debtToLiq: %e', state.collToLiq, state.debtToLiq);
-
     // logs to read protocol fee from tmp emitted event
     // TODO: update when treasury accounting is done
     vm.recordLogs();
 
-    // uint256 totalDeficit = state.totalDebt.balanceBefore - state.debtToLiq;
-
-    // console.log('test )
-
-    // console.log(
-    //   ' test debt base %e prem %e',
-    //   state.baseDebt.balanceBefore,
-    //   state.premiumDebt.balanceBefore
-    // );
-    // console.log(' test debt restored base %e prem %e', basedDebtRestored, premDebtRestored);
-    // console.log(
-    //   ' test deficit %e %e, total %e',
-    //   state.baseDebt.balanceBefore - basedDebtRestored,
-    //   state.premiumDebt.balanceBefore - premDebtRestored,
-    //   state.baseDebt.balanceBefore -
-    //     basedDebtRestored +
-    //     state.premiumDebt.balanceBefore -
-    //     premDebtRestored
-    // );
-
-    // console.log(
-    //   ' test expected shares %e amt %e',
-    //   state
-    //     .spoke
-    //     .getUserPosition(state.debtReserves[state.debtReserveIndex].reserveId, alice)
-    //     .baseDrawnShares -
-    //     hub.convertToDrawnShares(
-    //       state.debtReserves[state.debtReserveIndex].assetId,
-    //       basedDebtRestored
-    //     ),
-    //   state.premiumDebt.balanceBefore - premDebtRestored
-    // );
-
-    // console.log(
-    //   ' test expected shares %e amt %e',
-    //   hub.convertToDrawnShares(
-    //     state.debtReserves[state.debtReserveIndex].assetId,
-    //     state.baseDebt.balanceBefore - basedDebtRestored
-    //   ),
-    //   state.baseDebt.balanceBefore -
-    //     basedDebtRestored +
-    //     state.premiumDebt.balanceBefore -
-    //     premDebtRestored
-    // );
-
-    // for remaining debt assets, total debt should be reported as deficit
-    // emitted in order of ascending stored reserveId in spoke
     for (uint256 i = 0; i < debtReserveIds.length; i++) {
       if (debtReserveIds[i] != state.debtReserves[state.debtReserveIndex].reserveId) {
         uint256 reserveId = debtReserveIds[i];

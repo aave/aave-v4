@@ -290,7 +290,6 @@ contract LiquidityHub is ILiquidityHub {
 
     assetsList[assetId].safeTransferFrom(from, address(this), totalRestoredAmount);
 
-    console.log('LH restore shares %e, amount %e', baseDrawnSharesRestored, totalRestoredAmount);
     emit Restore(assetId, msg.sender, baseDrawnSharesRestored, totalRestoredAmount);
 
     return baseDrawnSharesRestored;
@@ -316,15 +315,6 @@ contract LiquidityHub is ILiquidityHub {
     asset.baseDrawnShares -= baseDrawnSharesReported;
 
     spoke.baseDrawnShares -= baseDrawnSharesReported;
-
-    // console.log('LH remaining spoke shares %e', spoke.baseDrawnShares);
-
-    console.log(
-      ' LH assetId %s, baseDrawnSharesReported %e, totalDeficitAmount %e',
-      assetId,
-      baseDrawnSharesReported,
-      totalDeficitAmount
-    );
 
     emit DeficitCreated(assetId, msg.sender, baseDrawnSharesReported, totalDeficitAmount);
 

@@ -987,11 +987,11 @@ contract Spoke is ISpoke, Multicall {
     DataTypes.UserPosition storage userPosition,
     address user
   ) internal returns (uint256) {
+    // validation should already have occurred during liquidation
     DataTypes.ExecuteReportDeficitLocalVars memory vars;
 
     vars.assetId = reserve.assetId;
     ILiquidityHub hub = reserve.config.hub;
-
     (vars.baseDebt, vars.premiumDebt) = _getUserDebt(hub, vars.assetId, userPosition);
     // (vars.baseDebtReported, vars.premiumDebtReported) = _calculateRestoreAmount(
     //   vars.baseDebt,
@@ -1005,7 +1005,7 @@ contract Spoke is ISpoke, Multicall {
       vars.premiumDebt
     );
     // console.log('%e %e', WadRayMath.RAY, hub.convertToDrawnAssets(vars.assetId, WadRayMath.RAY));
-    _validateReportDeficit(reserve);
+    // _validateReportDeficit(reserve);
 
     // premium debt for liquidated debt asset should already be settled
     vars.userPremiumDrawnShares = userPosition.premiumDrawnShares;
@@ -1014,7 +1014,13 @@ contract Spoke is ISpoke, Multicall {
 
     // require(userPosition.realizedPremium, 'prem debt should be done');
     console.log('assetId, reserveId', vars.assetId, reserve.reserveId);
-    console.log('vars.premiumDebt %e', vars.premiumDebt);
+    console.log('userPosition.premiumDrawnShares %e', userPosition.premiumDrawnShares);
+    console.log('userPosition.premiumOffset %e', userPosition.premiumOffset);
+    console.log(
+      'userPosition.realizedPremium %e vars.accruedPremium %e',
+      userPosition.realizedPremium,
+      vars.accruedPremium
+    );
 
     userPosition.premiumDrawnShares = 0;
     userPosition.premiumOffset = 0;

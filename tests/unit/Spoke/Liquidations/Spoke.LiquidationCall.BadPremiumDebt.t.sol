@@ -5,7 +5,6 @@ import 'tests/unit/Spoke/Liquidations/Spoke.Liquidation.Base.t.sol';
 
 /// tests with bad debt with a single collateral/debt reserve that includes accrued premium debt
 contract LiquidationCallBadPremiumDebtTest is SpokeLiquidationBase {
-  using PercentageMath for uint256;
   using PercentageMathExtended for uint256;
 
   /// tests where liquidation results in bad debt with premium debt > 0
@@ -195,7 +194,7 @@ contract LiquidationCallBadPremiumDebtTest is SpokeLiquidationBase {
     liqBonus = bound(
       liqBonus,
       MIN_LIQUIDATION_BONUS,
-      PercentageMath.PERCENTAGE_FACTOR.percentDiv(state.collDynConfig.collateralFactor)
+      PercentageMath.PERCENTAGE_FACTOR.percentDivUp(state.collDynConfig.collateralFactor)
     );
     liquidationProtocolFee = bound(liquidationProtocolFee, 0, 100_00);
     supplyAmount = bound(
@@ -272,16 +271,34 @@ contract LiquidationCallBadPremiumDebtTest is SpokeLiquidationBase {
 
     ) = _calculateAvailableCollateralToLiquidate(state.spoke, state, UINT256_MAX);
 
+    uint256 debtAssetId = state.debtReserves[state.debtReserveIndex].assetId;
+
+    (uint256 basedDebtRestored, uint256 premDebtRestored) = _calculateExactRestoreAmount(
+      state.baseDebt.balanceBefore,
+      state.premiumDebt.balanceBefore,
+      state.debtToLiq,
+      debtAssetId
+    );
+
+    // debt asset deficit shares are the initial amount minus the amount restored during liquidation
+    uint256 expectedShares = state.spoke.getUserPosition(debtReserveId, alice).baseDrawnShares -
+      hub.convertToDrawnShares(debtAssetId, basedDebtRestored);
+    // total debt asset deficit is the expected base debt and remaining premium debt after settlement during liquidation
+    uint256 expectedDeficit = hub.convertToDrawnAssets(debtAssetId, expectedShares) +
+      state.premiumDebt.balanceBefore -
+      premDebtRestored;
+
     // logs to read protocol fee from tmp emitted event
     // TODO: update when treasury accounting is done
     vm.recordLogs();
 
-    // vm.expectEmit(address(hub));
-    // emit ILiquidityHub.DeficitCreated(
-    //   state.debtReserves[state.debtReserveIndex].assetId,
-    //   address(state.spoke),
-    //   state.totalDebt.balanceBefore - state.debtToLiq // outstanding debt which becomes bad debt reported as deficit
-    // );
+    vm.expectEmit(address(hub));
+    emit ILiquidityHub.DeficitCreated(
+      debtAssetId,
+      address(state.spoke),
+      expectedShares,
+      expectedDeficit
+    );
     vm.expectEmit(address(state.spoke));
     emit ISpoke.LiquidationCall(
       state.collateralReserves[state.collateralReserveIndex].asset,

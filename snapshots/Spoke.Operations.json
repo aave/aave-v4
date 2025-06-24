@@ -1,9 +1,9 @@
 {
   "borrow": "519869",
-  "liquidationCall: full": "509330",
-  "liquidationCall: partial": "692785",
-  "repay: full": "271408",
-  "repay: partial": "359353",
+  "liquidationCall: full": "515157",
+  "liquidationCall: partial": "698612",
+  "repay: full": "274559",
+  "repay: partial": "362504",
   "supply: 0 debt, collateralDisabled": "177152",
   "supply: 0 debt, collateralEnabled": "177128",
   "supply: 1 debt": "177176",
