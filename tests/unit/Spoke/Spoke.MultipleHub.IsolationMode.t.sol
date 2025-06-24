@@ -198,7 +198,8 @@ contract SpokeMultipleHubIsolationModeTest is SpokeMultipleHubBase {
 
     // Bob cannot borrow asset B because there is no liquidity
     vm.expectRevert(abi.encodeWithSelector(ILiquidityHub.NotAvailableLiquidity.selector, 0));
-    Utils.borrow(newSpoke, isolationVars.reserveBId, bob, 1, bob);
+    vm.prank(bob);
+    newSpoke.borrow(isolationVars.reserveBId, 1, bob);
 
     // Add main hub reserve B to the new spoke
     isolationVars.reserveBIdMainHub = newSpoke.addReserve(
@@ -231,7 +232,8 @@ contract SpokeMultipleHubIsolationModeTest is SpokeMultipleHubBase {
 
     // Bob still cannot borrow asset B from the new hub because there is no liquidity
     vm.expectRevert(abi.encodeWithSelector(ILiquidityHub.NotAvailableLiquidity.selector, 0));
-    Utils.borrow(newSpoke, isolationVars.reserveBId, bob, 1, bob);
+    vm.prank(bob);
+    newSpoke.borrow(isolationVars.reserveBId, 1, bob);
 
     // Alice can supply asset B to the main hub via spoke 1 (and will earn yield as usual)
     Utils.supply(spoke1, isolationVars.spoke1ReserveBId, alice, 500_000e18, alice);

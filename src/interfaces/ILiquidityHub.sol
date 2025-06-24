@@ -145,7 +145,7 @@ interface ILiquidityHub {
    * @param baseAmount The base debt to repay.
    * @param premiumAmount The premium debt to repay.
    * @param from The address to pull assets from.
-   * @return The amount of debt restored.
+   * @return The amount of base debt shares restored.
    */
   function restore(
     uint256 assetId,

@@ -679,14 +679,15 @@ contract SpokeAccrueInterestTest is SpokeBase {
       DataTypes.Asset memory asset = hub.getAsset(daiAssetId);
       uint256 daiBorrowShares = hub.convertToDrawnSharesUp(daiAssetId, amounts.daiBorrowAmount);
       _mockInterestRateRay({
-        interestRateRay: rates.daiBaseBorrowRate, 
-        assetId: daiAssetId, 
-        availableLiquidity: asset.availableLiquidity, 
+        interestRateRay: rates.daiBaseBorrowRate,
+        assetId: daiAssetId,
+        availableLiquidity: asset.availableLiquidity,
         totalDebt: hub.convertToDrawnAssets(daiAssetId, asset.baseDrawnShares + daiBorrowShares),
         liquidityAdded: 0,
         liquidityTaken: amounts.daiBorrowAmount
       });
-      Utils.borrow(spoke1, _daiReserveId(spoke1), bob, amounts.daiBorrowAmount, bob);
+      vm.prank(bob);
+      spoke1.borrow(_daiReserveId(spoke1), amounts.daiBorrowAmount, bob);
     }
 
     // Bob borrows weth from spoke 1
@@ -694,14 +695,15 @@ contract SpokeAccrueInterestTest is SpokeBase {
       DataTypes.Asset memory asset = hub.getAsset(wethAssetId);
       uint256 wethBorrowShares = hub.convertToDrawnSharesUp(wethAssetId, amounts.wethBorrowAmount);
       _mockInterestRateRay({
-        interestRateRay: rates.wethBaseBorrowRate, 
-        assetId: wethAssetId, 
-        availableLiquidity: asset.availableLiquidity, 
+        interestRateRay: rates.wethBaseBorrowRate,
+        assetId: wethAssetId,
+        availableLiquidity: asset.availableLiquidity,
         totalDebt: hub.convertToDrawnAssets(wethAssetId, asset.baseDrawnShares + wethBorrowShares),
         liquidityAdded: 0,
         liquidityTaken: amounts.wethBorrowAmount
       });
-      Utils.borrow(spoke1, _wethReserveId(spoke1), bob, amounts.wethBorrowAmount, bob);
+      vm.prank(bob);
+      spoke1.borrow(_wethReserveId(spoke1), amounts.wethBorrowAmount, bob);
     }
 
     // Bob borrows usdx from spoke 1
@@ -709,14 +711,15 @@ contract SpokeAccrueInterestTest is SpokeBase {
       DataTypes.Asset memory asset = hub.getAsset(usdxAssetId);
       uint256 usdxBorrowShares = hub.convertToDrawnSharesUp(usdxAssetId, amounts.usdxBorrowAmount);
       _mockInterestRateRay({
-        interestRateRay: rates.usdxBaseBorrowRate, 
-        assetId: usdxAssetId, 
-        availableLiquidity: asset.availableLiquidity, 
+        interestRateRay: rates.usdxBaseBorrowRate,
+        assetId: usdxAssetId,
+        availableLiquidity: asset.availableLiquidity,
         totalDebt: hub.convertToDrawnAssets(usdxAssetId, asset.baseDrawnShares + usdxBorrowShares),
         liquidityAdded: 0,
         liquidityTaken: amounts.usdxBorrowAmount
       });
-      Utils.borrow(spoke1, _usdxReserveId(spoke1), bob, amounts.usdxBorrowAmount, bob);
+      vm.prank(bob);
+      spoke1.borrow(_usdxReserveId(spoke1), amounts.usdxBorrowAmount, bob);
     }
 
     // Bob borrows wbtc from spoke 1
@@ -724,14 +727,15 @@ contract SpokeAccrueInterestTest is SpokeBase {
       DataTypes.Asset memory asset = hub.getAsset(wbtcAssetId);
       uint256 wbtcBorrowShares = hub.convertToDrawnSharesUp(wbtcAssetId, amounts.wbtcBorrowAmount);
       _mockInterestRateRay({
-        interestRateRay: rates.wbtcBaseBorrowRate, 
-        assetId: wbtcAssetId, 
-        availableLiquidity: asset.availableLiquidity, 
+        interestRateRay: rates.wbtcBaseBorrowRate,
+        assetId: wbtcAssetId,
+        availableLiquidity: asset.availableLiquidity,
         totalDebt: hub.convertToDrawnAssets(wbtcAssetId, asset.baseDrawnShares + wbtcBorrowShares),
         liquidityAdded: 0,
         liquidityTaken: amounts.wbtcBorrowAmount
       });
-      Utils.borrow(spoke1, _wbtcReserveId(spoke1), bob, amounts.wbtcBorrowAmount, bob);
+      vm.prank(bob);
+      spoke1.borrow(_wbtcReserveId(spoke1), amounts.wbtcBorrowAmount, bob);
     }
 
     // Check Bob's risk premium

@@ -36,7 +36,7 @@ contract TreasurySpokeTest is SpokeBase {
 
   function test_supply(uint256 amount) public {
     amount = bound(amount, 1, MAX_SUPPLY_AMOUNT);
-    Utils.supply(_treasurySpoke(), daiAssetId, TREASURY_ADMIN, amount, address(treasurySpoke));
+    Utils.supply(treasurySpoke, daiAssetId, TREASURY_ADMIN, amount);
 
     assertEq(treasurySpoke.getSuppliedAmount(daiAssetId), amount);
   }
@@ -47,7 +47,7 @@ contract TreasurySpokeTest is SpokeBase {
 
     updateLiquidityFee(hub, daiAssetId, 0);
 
-    Utils.supply(_treasurySpoke(), daiAssetId, TREASURY_ADMIN, amount, address(treasurySpoke));
+    Utils.supply(treasurySpoke, daiAssetId, TREASURY_ADMIN, amount);
     assertEq(treasurySpoke.getSuppliedAmount(daiAssetId), amount);
 
     uint256 suppliedSharesBefore = treasurySpoke.getSuppliedShares(daiAssetId);
@@ -62,13 +62,7 @@ contract TreasurySpokeTest is SpokeBase {
     uint256 interest = treasurySpoke.getSuppliedAmount(daiAssetId) - suppliedAssetsBefore;
     vm.assume(interest > 0); // assume only cases where the initial amount generates interest
 
-    Utils.withdraw(
-      _treasurySpoke(),
-      daiAssetId,
-      TREASURY_ADMIN,
-      amount + interest,
-      address(treasurySpoke)
-    );
+    Utils.withdraw(treasurySpoke, daiAssetId, TREASURY_ADMIN, amount + interest);
   }
 
   /// treasury does not supply but earn fees
@@ -85,14 +79,14 @@ contract TreasurySpokeTest is SpokeBase {
     assertGe(treasurySpoke.getSuppliedShares(daiAssetId), 0);
     uint256 fees = treasurySpoke.getSuppliedAmount(daiAssetId);
 
-    Utils.withdraw(_treasurySpoke(), daiAssetId, TREASURY_ADMIN, fees, address(treasurySpoke));
+    Utils.withdraw(treasurySpoke, daiAssetId, TREASURY_ADMIN, fees);
   }
 
   /// treasury supplies to earn interest and fees
   function test_withdraw_fuzz_amount_interestAndFees(uint256 amount) public {
     amount = bound(amount, 1, MAX_SUPPLY_AMOUNT);
 
-    Utils.supply(_treasurySpoke(), daiAssetId, TREASURY_ADMIN, amount, address(treasurySpoke));
+    Utils.supply(treasurySpoke, daiAssetId, TREASURY_ADMIN, amount);
     assertEq(treasurySpoke.getSuppliedAmount(daiAssetId), amount);
 
     uint256 suppliedSharesBefore = treasurySpoke.getSuppliedShares(daiAssetId);
@@ -106,17 +100,7 @@ contract TreasurySpokeTest is SpokeBase {
     assertGe(treasurySpoke.getSuppliedShares(daiAssetId), suppliedSharesBefore);
     uint256 interestAndFees = treasurySpoke.getSuppliedAmount(daiAssetId) - suppliedAssetsBefore;
 
-    Utils.withdraw(
-      _treasurySpoke(),
-      daiAssetId,
-      TREASURY_ADMIN,
-      amount + interestAndFees,
-      address(treasurySpoke)
-    );
-  }
-
-  function _treasurySpoke() internal view returns (ISpoke) {
-    return ISpoke(address(treasurySpoke));
+    Utils.withdraw(treasurySpoke, daiAssetId, TREASURY_ADMIN, amount + interestAndFees);
   }
 
   // todo: test that supplying from treasury does not create any issue. existing fees are added to the supply amount
