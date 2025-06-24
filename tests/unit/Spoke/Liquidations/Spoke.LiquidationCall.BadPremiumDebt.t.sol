@@ -33,7 +33,7 @@ contract LiquidationCallBadPremiumDebtTest is SpokeLiquidationBase {
     );
 
     string memory label = 'test_liquidationCall_fuzz_badPremiumDebt';
-    _checkLiquidation(state, spoke1, label);
+    _checkLiquidation(state, label);
   }
 
   /// coll: weth / debt: dai

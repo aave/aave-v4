@@ -61,7 +61,7 @@ contract LiquidationCallCloseFactorTest is SpokeLiquidationBase {
       desiredHf
     );
 
-    _checkLiquidation(state, spoke1, 'test_liquidationCall_fuzz_closeFactor');
+    _checkLiquidation(state, 'test_liquidationCall_fuzz_closeFactor');
     assertFalse(state.hasDeficit, 'should not have deficit');
   }
 

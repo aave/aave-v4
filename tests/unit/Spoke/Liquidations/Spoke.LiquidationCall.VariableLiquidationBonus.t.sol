@@ -32,7 +32,7 @@ contract LiquidationCallVariableLiquidationBonusTest is SpokeLiquidationBase {
       skipTime: skipTime
     });
 
-    _checkLiquidation(state, spoke1, 'liquidationCall_fuzz_variableLiqBonus');
+    _checkLiquidation(state, 'liquidationCall_fuzz_variableLiqBonus');
   }
 
   /// Liq Call with dust amounts of collateral remaining

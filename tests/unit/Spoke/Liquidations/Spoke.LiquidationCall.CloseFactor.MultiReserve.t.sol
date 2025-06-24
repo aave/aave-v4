@@ -38,7 +38,7 @@ contract LiquidationCallCloseFactorMultiReserveTest is SpokeLiquidationBase {
       skipTime: 365 days,
       desiredHf: 0.95e18
     });
-    _checkLiquidation(state, spoke1, 'test_liquidationCall_closeFactor_multi_reserve_scenario1');
+    _checkLiquidation(state, 'test_liquidationCall_closeFactor_multi_reserve_scenario1');
     assertFalse(state.hasDeficit, 'should not have deficit');
   }
 
@@ -72,7 +72,7 @@ contract LiquidationCallCloseFactorMultiReserveTest is SpokeLiquidationBase {
       desiredHf: 0.95e18
     });
 
-    _checkLiquidation(state, spoke1, 'test_liquidationCall_closeFactor_multi_reserve_scenario2');
+    _checkLiquidation(state, 'test_liquidationCall_closeFactor_multi_reserve_scenario2');
     assertFalse(state.hasDeficit, 'should not have deficit');
   }
 
@@ -106,7 +106,7 @@ contract LiquidationCallCloseFactorMultiReserveTest is SpokeLiquidationBase {
       desiredHf: 0.95e18
     });
 
-    _checkLiquidation(state, spoke1, 'test_liquidationCall_closeFactor_multi_reserve_scenario3');
+    _checkLiquidation(state, 'test_liquidationCall_closeFactor_multi_reserve_scenario3');
     assertFalse(state.hasDeficit, 'should not have deficit');
   }
 
@@ -157,7 +157,7 @@ contract LiquidationCallCloseFactorMultiReserveTest is SpokeLiquidationBase {
       desiredHf: desiredHf
     });
 
-    _checkLiquidation(state, spoke1, 'test_liquidationCall_closeFactor_fuzz_multi_reserve');
+    _checkLiquidation(state, 'test_liquidationCall_closeFactor_fuzz_multi_reserve');
     assertFalse(state.hasDeficit, 'should not have deficit');
   }
 

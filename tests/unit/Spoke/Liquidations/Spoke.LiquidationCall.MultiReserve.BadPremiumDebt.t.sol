@@ -89,7 +89,7 @@ contract LiquidationCallMultiReserveBadPremiumDebtTest is SpokeLiquidationBase {
       memory label = 'test_liquidationCall_fuzz_multi_reserve_badPremiumDebt_scenario1_only_premium';
     console.log(state.hasDeficit);
 
-    _checkLiquidation(state, spoke1, label);
+    _checkLiquidation(state, label);
     _checkDeficits(state, debtReserveIds, alice);
   }
 
@@ -170,7 +170,7 @@ contract LiquidationCallMultiReserveBadPremiumDebtTest is SpokeLiquidationBase {
     );
 
     string memory label = 'test_liquidationCall_fuzz_multi_reserve_badPremiumDebt_scenario2';
-    _checkLiquidation(state, spoke1, label);
+    _checkLiquidation(state, label);
     _checkDeficits(state, debtReserveIds, alice);
   }
 
@@ -251,7 +251,7 @@ contract LiquidationCallMultiReserveBadPremiumDebtTest is SpokeLiquidationBase {
     );
 
     string memory label = 'test_liquidationCall_fuzz_multi_reserve_badPremiumDebt_scenario3';
-    _checkLiquidation(state, spoke1, label);
+    _checkLiquidation(state, label);
     _checkDeficits(state, debtReserveIds, alice);
   }
 
@@ -362,7 +362,7 @@ contract LiquidationCallMultiReserveBadPremiumDebtTest is SpokeLiquidationBase {
           state.debtReserves[state.debtReserveIndex].reserveId,
           state.spoke.getUserTotalDebt(state.debtReserves[state.debtReserveIndex].reserveId, alice)
         ) >
-        state.initialTotalCollateralInBaseCurrency
+        state.totalCollateralInBaseCurrency.balanceBefore
     );
 
     assertGt(state.premiumDebt.balanceBefore, 0, 'premium debt should be > 0 before liquidation');

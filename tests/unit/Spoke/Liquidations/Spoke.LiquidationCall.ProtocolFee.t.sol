@@ -34,7 +34,7 @@ contract LiquidationCallProtocolFeeTest is SpokeLiquidationBase {
       liquidationProtocolFeePercentage,
       skipTime
     );
-    _checkLiquidation(state, spoke1, 'test_liquidationCall_fuzz_protocolFee');
+    _checkLiquidation(state, 'test_liquidationCall_fuzz_protocolFee');
     return state;
   }
 
