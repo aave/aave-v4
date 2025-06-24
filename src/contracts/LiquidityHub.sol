@@ -290,6 +290,7 @@ contract LiquidityHub is ILiquidityHub {
 
     assetsList[assetId].safeTransferFrom(from, address(this), totalRestoredAmount);
 
+    console.log('LH restore shares %e, amount %e', baseDrawnSharesRestored, totalRestoredAmount);
     emit Restore(assetId, msg.sender, baseDrawnSharesRestored, totalRestoredAmount);
 
     return baseDrawnSharesRestored;

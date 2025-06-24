@@ -1011,6 +1011,8 @@ abstract contract Base is Test {
     DataTypes.ReserveConfig memory reserveConfig = spoke.getReserve(reserveId).config;
     reserveConfig.liquidityPremium = newLiquidityPremium;
     spoke.updateReserveConfig(reserveId, reserveConfig);
+
+    assertEq(spoke.getReserve(reserveId).config.liquidityPremium, newLiquidityPremium);
   }
 
   function updateLiquidityFee(

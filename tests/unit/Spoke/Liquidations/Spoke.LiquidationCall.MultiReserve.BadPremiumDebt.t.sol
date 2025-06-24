@@ -14,7 +14,7 @@ contract LiquidationCallMultiReserveBadPremiumDebtTest is SpokeLiquidationBase {
 
   /// @dev coll: weth; bad debt: wbtc, dai, usdx
   /// deficit covers base debt and premium debt
-  function test_liquidationCall_multi_reserve_badPremiumDebt_scenario1() public {
+  function test_liquidationCall_multi_reserve_badPremiumDebt_scenario1_base_and_premium() public {
     uint256 collateralReserveId = _wethReserveId(spoke1);
 
     test_liquidationCall_fuzz_multi_reserve_badPremiumDebt_scenario1({
@@ -35,7 +35,7 @@ contract LiquidationCallMultiReserveBadPremiumDebtTest is SpokeLiquidationBase {
 
   /// @dev coll: weth; bad debt: wbtc, dai, usdx
   /// deficit only covers premium debt
-  function test_liquidationCall_multi_reserve_badPremiumDebt_scenario12() public {
+  function test_liquidationCall_multi_reserve_badPremiumDebt_scenario1_only_premium() public {
     uint256 collateralReserveId = _wethReserveId(spoke1);
 
     test_liquidationCall_fuzz_multi_reserve_badPremiumDebt_scenario1({
@@ -85,16 +85,17 @@ contract LiquidationCallMultiReserveBadPremiumDebtTest is SpokeLiquidationBase {
       skipTimeToAccruePremium
     );
 
-    string memory label = 'test_liquidationCall_fuzz_multi_reserve_badPremiumDebt_scenario1';
+    string
+      memory label = 'test_liquidationCall_fuzz_multi_reserve_badPremiumDebt_scenario1_only_premium';
     console.log(state.hasDeficit);
 
     _checkLiquidation(state, spoke1, label);
     _checkDeficits(state, debtReserveIds, alice);
   }
 
-  /// coll: weth
-  /// bad debt: wbtc, dai, usdx
-  function test_liquidationCall_multi_reserve_badPremiumDebt_scenario2() public {
+  /// coll: weth; bad debt: wbtc, dai, usdx
+  /// deficit covers base debt and premium debt
+  function test_liquidationCall_multi_reserve_badPremiumDebt_scenario2_only_premium() public {
     uint256 collateralReserveId = _wbtcReserveId(spoke1);
 
     test_liquidationCall_fuzz_multi_reserve_badPremiumDebt_scenario2({
@@ -109,6 +110,30 @@ contract LiquidationCallMultiReserveBadPremiumDebtTest is SpokeLiquidationBase {
       collateralReserveId: collateralReserveId,
       skipTime: 365 days,
       skipTimeToAccruePremium: 365 days * 4,
+      debtReserveIndex: 0
+    });
+  }
+
+  /// coll: weth; bad debt: wbtc, dai, usdx
+  /// deficit covers only premium debt
+  function test_liquidationCall_multi_reserve_badPremiumDebt_scenario2_base_and_premium() public {
+    uint256 collateralReserveId = _wbtcReserveId(spoke1);
+
+    // update to a high liquidity premium so that even after liquidating all collateral, both base/premium debt remains
+    updateLiquidityPremium(spoke1, collateralReserveId, 100_00);
+
+    test_liquidationCall_fuzz_multi_reserve_badPremiumDebt_scenario2({
+      liqConfig: DataTypes.LiquidationConfig({
+        closeFactor: 1.5e18,
+        liquidationBonusFactor: 0,
+        healthFactorForMaxBonus: 0
+      }),
+      liqBonus: 105_00,
+      supplyAmount: 1.5e18,
+      liquidationProtocolFee: 5_00,
+      collateralReserveId: collateralReserveId,
+      skipTime: 365 days,
+      skipTimeToAccruePremium: 365 days * 2,
       debtReserveIndex: 0
     });
   }
@@ -149,12 +174,36 @@ contract LiquidationCallMultiReserveBadPremiumDebtTest is SpokeLiquidationBase {
     _checkDeficits(state, debtReserveIds, alice);
   }
 
-  /// coll: usdy
-  /// bad debt: dai, usdx, usdy
-  function test_liquidationCall_multi_reserve_badPremiumDebt_scenario3() public {
+  /// coll: usdy; bad debt: dai, usdx, usdy
+  /// deficit covers base debt and premium debt
+  function test_liquidationCall_multi_reserve_badPremiumDebt_scenario3_base_and_premium() public {
     uint256 collateralReserveId = _usdyReserveId(spoke1);
 
-    test_liquidationCall_fuzz_multi_reserve_badPremiumDebt_scenario2({
+    // update to a high liquidity premium so that even after liquidating all collateral, both base/premium debt remains
+    updateLiquidityPremium(spoke1, collateralReserveId, 100_00);
+
+    test_liquidationCall_fuzz_multi_reserve_badPremiumDebt_scenario3({
+      liqConfig: DataTypes.LiquidationConfig({
+        closeFactor: 1.5e18,
+        liquidationBonusFactor: 0,
+        healthFactorForMaxBonus: 0
+      }),
+      liqBonus: 105_00,
+      supplyAmount: 1.5e18,
+      liquidationProtocolFee: 5_00,
+      collateralReserveId: collateralReserveId,
+      skipTime: 365 days,
+      skipTimeToAccruePremium: 365 days * 4,
+      debtReserveIndex: 0
+    });
+  }
+
+  /// coll: usdy; bad debt: dai, usdx, usdy
+  /// deficit covers only premium debt
+  function test_liquidationCall_multi_reserve_badPremiumDebt_scenario3_only_premium() public {
+    uint256 collateralReserveId = _usdyReserveId(spoke1);
+
+    test_liquidationCall_fuzz_multi_reserve_badPremiumDebt_scenario3({
       liqConfig: DataTypes.LiquidationConfig({
         closeFactor: 1.5e18,
         liquidationBonusFactor: 0,
@@ -307,7 +356,16 @@ contract LiquidationCallMultiReserveBadPremiumDebtTest is SpokeLiquidationBase {
     );
 
     // ensure that debt accrued causes liquidatable position
-    // and that the liquidated debt asset will fully cover the collateral
+    // and that the resultin accrued debt asset will fully cover the collateral
+    // console.log('vm assume hf', state.spoke.getHealthFactor(alice) < hfBadDebtThreshold);
+    // console.log(
+    //   'vm assume base curr',
+    //   _convertAmountToBaseCurrency(
+    //     state.spoke,
+    //     state.debtReserves[state.debtReserveIndex].reserveId,
+    //     state.spoke.getUserTotalDebt(state.debtReserves[state.debtReserveIndex].reserveId, alice)
+    //   ) > state.initialTotalCollateralInBaseCurrency
+    // );
     vm.assume(
       state.spoke.getHealthFactor(alice) < hfBadDebtThreshold &&
         _convertAmountToBaseCurrency(
@@ -333,13 +391,9 @@ contract LiquidationCallMultiReserveBadPremiumDebtTest is SpokeLiquidationBase {
     // TODO: update when treasury accounting is done
     vm.recordLogs();
 
-    uint256 totalDeficit = state.totalDebt.balanceBefore - state.debtToLiq;
-    (uint256 basedDebtRestored, uint256 premDebtRestored) = _calculateExactRestoreAmount(
-      state.baseDebt.balanceBefore,
-      state.premiumDebt.balanceBefore,
-      state.debtToLiq,
-      state.debtReserves[state.debtReserveIndex].assetId
-    );
+    // uint256 totalDeficit = state.totalDebt.balanceBefore - state.debtToLiq;
+
+    // console.log('test )
 
     // console.log(
     //   ' test debt base %e prem %e',
@@ -357,71 +411,82 @@ contract LiquidationCallMultiReserveBadPremiumDebtTest is SpokeLiquidationBase {
     //     premDebtRestored
     // );
 
-    console.log(
-      ' test expected shares %e amt %e',
-      hub.convertToDrawnShares(
-        state.debtReserves[state.debtReserveIndex].assetId,
-        state.baseDebt.balanceBefore - basedDebtRestored
-      ),
-      state.baseDebt.balanceBefore -
-        basedDebtRestored +
-        state.premiumDebt.balanceBefore -
-        premDebtRestored
-    );
+    // console.log(
+    //   ' test expected shares %e amt %e',
+    //   state
+    //     .spoke
+    //     .getUserPosition(state.debtReserves[state.debtReserveIndex].reserveId, alice)
+    //     .baseDrawnShares -
+    //     hub.convertToDrawnShares(
+    //       state.debtReserves[state.debtReserveIndex].assetId,
+    //       basedDebtRestored
+    //     ),
+    //   state.premiumDebt.balanceBefore - premDebtRestored
+    // );
 
-    uint256 expectedShares = hub.convertToDrawnShares(
-      state.debtReserves[state.debtReserveIndex].assetId,
-      state.baseDebt.balanceBefore - basedDebtRestored
-    );
-
-    // 2.590358791742516090590108363e27
-    // 2.590358791742516090590108363e27
-
-    // vm.expectEmit(address(hub));
-    // emit ILiquidityHub.DeficitCreated(
-    //   state.debtReserves[state.debtReserveIndex].assetId,
-    //   address(state.spoke),
+    // console.log(
+    //   ' test expected shares %e amt %e',
     //   hub.convertToDrawnShares(
     //     state.debtReserves[state.debtReserveIndex].assetId,
     //     state.baseDebt.balanceBefore - basedDebtRestored
-    //   ) + 1,
+    //   ),
     //   state.baseDebt.balanceBefore -
     //     basedDebtRestored +
     //     state.premiumDebt.balanceBefore -
-    //     premDebtRestored +
-    //     1
+    //     premDebtRestored
     // );
-
-    // 2.5938023486476e13
-    //
 
     // for remaining debt assets, total debt should be reported as deficit
     // emitted in order of ascending stored reserveId in spoke
     for (uint256 i = 0; i < debtReserveIds.length; i++) {
       if (debtReserveIds[i] != state.debtReserves[state.debtReserveIndex].reserveId) {
-        {
-          uint256 reserveId = debtReserveIds[i];
-          uint256 assetId = state.debtReserves[i].assetId;
-          (uint256 baseDebt, uint256 premDebt) = state.spoke.getUserDebt(reserveId, alice);
-          vm.expectEmit(address(hub));
-          emit ILiquidityHub.DeficitCreated(
-            assetId,
-            address(state.spoke),
-            hub.convertToDrawnShares(assetId, baseDebt),
-            baseDebt + premDebt
+        uint256 reserveId = debtReserveIds[i];
+        uint256 assetId = state.debtReserves[i].assetId;
+
+        uint256 expectedShares;
+        uint256 expectedDeficit;
+
+        // for debt asset being liquidated, some debt is restored prior to deficit creation
+        if (reserveId == state.debtReserves[state.debtReserveIndex].reserveId) {
+          (uint256 basedDebtRestored, uint256 premDebtRestored) = _calculateExactRestoreAmount(
+            state.baseDebt.balanceBefore,
+            state.premiumDebt.balanceBefore,
+            state.debtToLiq,
+            assetId
           );
+
+          // debt asset deficit shares are the initial amount minus the amount restored during liquidation
+          expectedShares =
+            state.spoke.getUserPosition(reserveId, alice).baseDrawnShares -
+            hub.convertToDrawnShares(assetId, basedDebtRestored);
+          // total debt asset deficit is the expected base debt and remaining premium debt after settlement during liquidation
+          expectedDeficit =
+            hub.convertToDrawnAssets(assetId, expectedShares) +
+            state.premiumDebt.balanceBefore -
+            premDebtRestored;
+        } else {
+          expectedShares = state.spoke.getUserPosition(reserveId, alice).baseDrawnShares;
+          expectedDeficit = state.spoke.getUserTotalDebt(reserveId, alice);
         }
+
+        vm.expectEmit(address(hub));
+        emit ILiquidityHub.DeficitCreated(
+          assetId,
+          address(state.spoke),
+          expectedShares,
+          expectedDeficit
+        );
       }
     }
-    // vm.expectEmit(address(state.spoke));
-    // emit ISpoke.LiquidationCall(
-    //   state.collateralReserves[state.collateralReserveIndex].asset,
-    //   state.debtReserves[state.debtReserveIndex].asset,
-    //   alice,
-    //   state.debtToLiq,
-    //   state.collToLiq,
-    //   LIQUIDATOR
-    // );
+    vm.expectEmit(address(state.spoke));
+    emit ISpoke.LiquidationCall(
+      state.collateralReserves[state.collateralReserveIndex].asset,
+      state.debtReserves[state.debtReserveIndex].asset,
+      alice,
+      state.debtToLiq,
+      state.collToLiq,
+      LIQUIDATOR
+    );
     vm.prank(LIQUIDATOR);
     state.spoke.liquidationCall(
       collateralReserveId,

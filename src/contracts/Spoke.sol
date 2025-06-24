@@ -985,7 +985,6 @@ contract Spoke is ISpoke, Multicall {
   function _executeReportDeficit(
     DataTypes.Reserve storage reserve,
     DataTypes.UserPosition storage userPosition,
-    uint256 amount,
     address user
   ) internal returns (uint256) {
     DataTypes.ExecuteReportDeficitLocalVars memory vars;
@@ -999,12 +998,12 @@ contract Spoke is ISpoke, Multicall {
     //   vars.premiumDebt,
     //   amount
     // );
-    // console.log(
-    //   'SP executeDeficit assetId %e base debt %e premDebt %e',
-    //   amount,
-    //   vars.baseDebt,
-    //   vars.premiumDebt
-    // );
+    console.log(
+      'SP executeDeficit assetId %e base debt %e premDebt %e',
+      vars.assetId,
+      vars.baseDebt,
+      vars.premiumDebt
+    );
     // console.log('%e %e', WadRayMath.RAY, hub.convertToDrawnAssets(vars.assetId, WadRayMath.RAY));
     _validateReportDeficit(reserve);
 
@@ -1015,7 +1014,7 @@ contract Spoke is ISpoke, Multicall {
 
     // require(userPosition.realizedPremium, 'prem debt should be done');
     console.log('assetId, reserveId', vars.assetId, reserve.reserveId);
-    // console.log('realizedPremium %e %e', userPosition.realizedPremium, vars.accruedPremium);
+    console.log('vars.premiumDebt %e', vars.premiumDebt);
 
     userPosition.premiumDrawnShares = 0;
     userPosition.premiumOffset = 0;
@@ -1086,13 +1085,13 @@ contract Spoke is ISpoke, Multicall {
           reserve.assetId,
           userPosition
         );
-        // console.log(
-        //   'SP deficit: assetId %e, baseDebt %e, premDebt %e',
-        //   reserve.assetId,
-        //   baseDebt,
-        //   premiumDebt
-        // );
-        _executeReportDeficit(reserve, userPosition, baseDebt + premiumDebt, user);
+        console.log(
+          'SP deficit: assetId %e, baseDebt %e, premDebt %e',
+          reserve.assetId,
+          baseDebt,
+          premiumDebt
+        );
+        _executeReportDeficit(reserve, userPosition, user);
       }
       unchecked {
         ++reserveId;
@@ -1235,7 +1234,7 @@ contract Spoke is ISpoke, Multicall {
         ); // settle premium debt
       }
 
-      console.log('SP debt amt to liq %e', vars.baseDebtToLiquidate + vars.premiumDebtToLiquidate);
+      // console.log('SP debt amt to liq %e', vars.baseDebtToLiquidate + vars.premiumDebtToLiquidate);
 
       // repay debt
       vars.restoredShares = debtReserveHub.restore(
@@ -1245,7 +1244,7 @@ contract Spoke is ISpoke, Multicall {
         msg.sender
       );
 
-      console.log('userDebtPosition.baseDrawnShares %e', userDebtPosition.baseDrawnShares);
+      // console.log('userDebtPosition.baseDrawnShares %e', userDebtPosition.baseDrawnShares);
 
       // debt accounting
       userDebtPosition.baseDrawnShares -= vars.restoredShares;
@@ -1259,7 +1258,7 @@ contract Spoke is ISpoke, Multicall {
           vars.baseDebtToLiquidate -
           vars.premiumDebtToLiquidate;
 
-        console.log('SP vars.outstandingDebt %e', vars.outstandingDebt);
+        // console.log('SP vars.outstandingDebt %e', vars.outstandingDebt);
         /// @notice user supplied shares only applies to single coll reserve
         /// but hasNoCollateralLeft includes all coll reserves
         if (vars.outstandingDebt > 0 && vars.hasNoCollateralLeft) {
@@ -1268,8 +1267,8 @@ contract Spoke is ISpoke, Multicall {
         }
       }
 
-      console.log('vars.restoredShares %e', vars.restoredShares);
-      console.log('userDebtPosition.baseDrawnShares %e', userDebtPosition.baseDrawnShares);
+      // console.log('vars.restoredShares %e', vars.restoredShares);
+      // console.log('userDebtPosition.baseDrawnShares %e', userDebtPosition.baseDrawnShares);
 
       if (!vars.hasDeficit) {
         // new user rp only needs to be calculated if no bad debt remains, otherwise it is 0 given no collateral remains
@@ -1317,7 +1316,12 @@ contract Spoke is ISpoke, Multicall {
         _notifyRiskPremiumUpdate(vars.debtAssetId, user, vars.newUserRiskPremium);
       } else {
         // console.log('SP liq  vars.deficit %e asset Id', vars.deficit, vars.debtAssetId);
-        // console.log('SP starting base debt, prem debt %e %e', vars.baseDebt, vars.premiumDebt);
+        // console.log(
+        //   'SP starting base debt, prem debt %e %e %e',
+        //   vars.baseDebt,
+        //   vars.premiumDebt,
+        //   vars.premiumDebtToLiquidate
+        // );
 
         // for debtReserve asset - already did first refresh
         // other assets - need first refresh, report, and refresh and notify
@@ -1428,11 +1432,11 @@ contract Spoke is ISpoke, Multicall {
       debtToCover: debtToCover,
       params: vars
     });
-    console.log(
-      'SP debtToCover %e actualDebtToLiquidate %e',
-      debtToCover,
-      vars.actualDebtToLiquidate
-    );
+    // console.log(
+    //   'SP debtToCover %e actualDebtToLiquidate %e',
+    //   debtToCover,
+    //   vars.actualDebtToLiquidate
+    // );
     (
       vars.actualCollateralToLiquidate,
       vars.actualDebtToLiquidate,
@@ -1440,7 +1444,7 @@ contract Spoke is ISpoke, Multicall {
       vars.collateralToLiquidateInBaseCurrency
     ) = vars.calculateAvailableCollateralToLiquidate();
 
-    console.log('SP actualDebtToLiquidate %e', vars.actualDebtToLiquidate);
+    // console.log('SP actualDebtToLiquidate %e', vars.actualDebtToLiquidate);
 
     (vars.baseDebtToLiquidate, vars.premiumDebtToLiquidate) = _calculateRestoreAmount(
       baseDebt,
