@@ -39,7 +39,11 @@ library Utils {
     address onBehalfOf // todo: implement
   ) internal returns (uint256) {
     vm.prank(spoke);
-    return hub.draw(assetId, amount, to);
+    uint256 drawnShares = hub.draw(assetId, amount, to);
+
+    checkBorrowRateInvariant(hub, assetId, 'hub.draw');
+
+    return drawnShares;
   }
 
   function remove(

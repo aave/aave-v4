@@ -807,10 +807,6 @@ contract LiquidityHubSupplyTest is LiquidityHubBase {
     (uint256 baseDebtAfter, ) = hub.getAssetDebt(assetId);
     assertEq(baseDebtAfter, baseDebtBefore, 'base debt after hub.add');
 
-    assertEq(
-      hub.getAsset(assetId).baseBorrowRate,
-      irStrategy.calculateInterestRate(assetId, availableLiquidityAfter, baseDebtAfter, 0, 0),
-      'base borrow rate after hub.add'
-    );
+    Utils.checkBorrowRateInvariant(hub, assetId, 'hub.add');
   }
 }
