@@ -147,6 +147,36 @@ abstract contract Base is Test {
     uint256 outstandingPremium;
   }
 
+  struct AssetPosition {
+    uint256 assetId;
+    uint256 suppliedShares;
+    uint256 suppliedAmount;
+    uint256 baseDrawnShares;
+    uint256 baseDebt;
+    uint256 premiumDrawnShares;
+    uint256 premiumOffset;
+    uint256 realizedPremium;
+    uint256 premiumDebt;
+    uint40 lastUpdateTimestamp;
+    uint256 availableLiquidity;
+    uint256 baseDebtIndex;
+    uint256 baseBorrowRate;
+  }
+
+  struct ReservePosition {
+    uint256 reserveId;
+    uint256 assetId;
+    uint256 suppliedShares;
+    uint256 suppliedAmount;
+    uint256 baseDrawnShares;
+    uint256 baseDebt;
+    uint256 premiumDrawnShares;
+    uint256 premiumOffset;
+    uint256 realizedPremium;
+    uint256 premiumDebt;
+    uint40 timestamp;
+  }
+
   mapping(ISpoke => SpokeInfo) internal spokeInfo;
 
   function setUp() public virtual {
@@ -1762,5 +1792,59 @@ abstract contract Base is Test {
       ),
       abi.encode(interestRateBps.bpsToRay())
     );
+  }
+
+  function getAssetPosition(
+    ILiquidityHub hub,
+    uint256 assetId
+  ) internal view returns (AssetPosition memory) {
+    DataTypes.Asset memory assetData = hub.getAsset(assetId);
+    (uint256 baseDebt, uint256 premiumDebt) = hub.getAssetDebt(assetId);
+    return
+      AssetPosition({
+        assetId: assetId,
+        availableLiquidity: assetData.availableLiquidity,
+        suppliedShares: assetData.suppliedShares,
+        suppliedAmount: hub.getAssetSuppliedAmount(assetId),
+        baseDrawnShares: assetData.baseDrawnShares,
+        baseDebt: baseDebt,
+        premiumDrawnShares: assetData.premiumDrawnShares,
+        premiumOffset: assetData.premiumOffset,
+        realizedPremium: assetData.realizedPremium,
+        premiumDebt: premiumDebt,
+        lastUpdateTimestamp: uint40(assetData.lastUpdateTimestamp),
+        baseDebtIndex: assetData.baseDebtIndex,
+        baseBorrowRate: assetData.baseBorrowRate
+      });
+  }
+
+  function getReservePosition(
+    ISpoke spoke,
+    function(ISpoke) internal view returns (uint256) reserveIdFn
+  ) internal view returns (ReservePosition memory) {
+    return getReservePosition(spoke, reserveIdFn(spoke));
+  }
+
+  function getReservePosition(
+    ISpoke spoke,
+    uint256 reserveId
+  ) internal view returns (ReservePosition memory) {
+    uint256 assetId = spoke.getReserve(reserveId).assetId;
+    DataTypes.SpokeData memory spokeData = hub.getSpoke(assetId, address(spoke));
+    (uint256 baseDebt, uint256 premiumDebt) = hub.getSpokeDebt(assetId, address(spoke));
+    return
+      ReservePosition({
+        reserveId: reserveId,
+        assetId: assetId,
+        suppliedShares: spokeData.suppliedShares,
+        suppliedAmount: hub.getSpokeSuppliedAmount(reserveId, address(spoke)),
+        baseDrawnShares: spokeData.baseDrawnShares,
+        baseDebt: baseDebt,
+        premiumDrawnShares: spokeData.premiumDrawnShares,
+        premiumOffset: spokeData.premiumOffset,
+        realizedPremium: spokeData.realizedPremium,
+        premiumDebt: premiumDebt,
+        timestamp: vm.getBlockTimestamp().toUint40()
+      });
   }
 }
