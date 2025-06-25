@@ -88,131 +88,174 @@ contract LiquidityHubRemoveTest is LiquidityHubBase {
     assertEq(tokenList.dai.balanceOf(alice), MAX_SUPPLY_AMOUNT, 'user token balance after');
   }
 
-  // single asset, multiple spokes supplied. No drawn
-  function test_remove_fuzz_multi_spoke(
+  // single asset, multiple spokes supplied. No debt
+  function test_remove_fuzz_multi_spoke(uint256 amount, uint256 amount2) public {
+    uint256 assetId = daiAssetId;
+    amount = bound(amount, 1, MAX_SUPPLY_AMOUNT - 1);
+    amount2 = bound(amount2, 1, MAX_SUPPLY_AMOUNT - amount);
+
+    IERC20 asset = hub.assetsList(assetId);
+
+    Utils.add({
+      hub: hub,
+      assetId: assetId,
+      spoke: address(spoke1),
+      amount: amount,
+      user: alice,
+      to: address(spoke1)
+    });
+    Utils.add({
+      hub: hub,
+      assetId: assetId,
+      spoke: address(spoke2),
+      amount: amount2,
+      user: alice,
+      to: address(spoke2)
+    });
+
+    Utils.remove(hub, assetId, address(spoke1), amount, alice);
+    Utils.remove(hub, assetId, address(spoke2), amount2, alice);
+
+    AssetPosition memory assetData = getAssetPosition(hub, assetId);
+    ReservePosition memory reservePosition1 = getReservePosition(spoke1, _daiReserveId);
+    ReservePosition memory reservePosition2 = getReservePosition(spoke2, _daiReserveId);
+
+    // asset
+    assertEq(assetData.suppliedAmount, 0, 'asset suppliedAmount after');
+    assertEq(assetData.suppliedShares, 0, 'asset suppliedShares after');
+    assertEq(assetData.availableLiquidity, 0, 'asset availableLiquidity after');
+    assertEq(
+      assetData.lastUpdateTimestamp,
+      vm.getBlockTimestamp(),
+      'asset lastUpdateTimestamp after'
+    );
+    // spoke 1
+    assertEq(reservePosition1.suppliedAmount, 0, 'spoke1 suppliedAmount after');
+    assertEq(reservePosition1.suppliedShares, 0, 'spoke1 suppliedShares after');
+    assertEq(reservePosition1.timestamp, assetData.lastUpdateTimestamp, 'spoke1 timestamp after');
+    // spoke 2
+    assertEq(reservePosition2.suppliedAmount, 0, 'spoke2 suppliedAmount after');
+    assertEq(reservePosition2.suppliedShares, 0, 'spoke2 suppliedShares after');
+    assertEq(reservePosition2.timestamp, assetData.lastUpdateTimestamp, 'spoke2 timestamp after');
+    // asset
+    assertEq(asset.balanceOf(address(spoke1)), 0, 'spoke1 token balance after');
+    assertEq(asset.balanceOf(address(spoke2)), 0, 'spoke2 token balance after');
+    assertEq(asset.balanceOf(address(hub)), 0, 'hub token balance after');
+    assertEq(asset.balanceOf(alice), MAX_SUPPLY_AMOUNT, 'user token balance after');
+  }
+
+  /// @dev single asset, multiple spokes supplied, with interest accrued.
+  function test_remove_fuzz_multi_spoke_with_interest(
     uint256 amount,
     uint256 amount2,
-    uint32 riskPremium
+    uint256 drawAmount,
+    uint256 skipTime
   ) public {
-    vm.skip(true, 'pending refactor');
+    amount = bound(amount, 1, MAX_SUPPLY_AMOUNT / 2 - 1);
+    amount2 = bound(amount2, 1, MAX_SUPPLY_AMOUNT / 2 - amount);
+    drawAmount = bound(drawAmount, 1, amount + amount2);
+    skipTime = bound(skipTime, 1, MAX_SKIP_TIME);
 
-    //     uint256 assetId = 0;
-    //     amount = bound(amount, 1, MAX_SUPPLY_AMOUNT - 1);
-    //     amount2 = bound(amount2, 1, MAX_SUPPLY_AMOUNT - amount);
-    //     riskPremium %= MAX_RISK_PREMIUM_BPS; // no effect on withdraw because no drawn
+    uint256 assetId = daiAssetId;
+    IERC20 asset = hub.assetsList(assetId);
 
-    //     IERC20 asset = hub.assetsList(assetId);
+    Utils.add({
+      hub: hub,
+      assetId: assetId,
+      spoke: address(spoke1),
+      amount: amount,
+      user: alice,
+      to: address(spoke1)
+    });
+    Utils.add({
+      hub: hub,
+      assetId: assetId,
+      spoke: address(spoke2),
+      amount: amount2,
+      user: alice,
+      to: address(spoke2)
+    });
 
-    //     Utils.supply({
-    //       hub: hub,
-    //       assetId: assetId,
-    //       spoke: address(spoke1),
-    //       amount: amount,
-    //       riskPremium: riskPremium,
-    //       user: alice,
-    //       to: address(spoke1)
-    //     });
-    //     Utils.supply({
-    //       hub: hub,
-    //       assetId: assetId,
-    //       spoke: address(spoke2),
-    //       amount: amount2,
-    //       riskPremium: riskPremium,
-    //       user: alice,
-    //       to: address(spoke2)
-    //     });
+    // draw liquidity to accrue interest using spoke3
+    Utils.draw({
+      hub: hub,
+      assetId: assetId,
+      spoke: address(spoke3),
+      amount: drawAmount,
+      to: bob,
+      onBehalfOf: address(spoke3)
+    });
+    skip(skipTime);
 
-    //     Utils.withdraw({
-    //       hub: hub,
-    //       assetId: assetId,
-    //       spoke: address(spoke1),
-    //       amount: amount,
-    //       riskPremium: 0,
-    //       to: alice
-    //     });
-    //     Utils.withdraw({
-    //       hub: hub,
-    //       assetId: assetId,
-    //       spoke: address(spoke2),
-    //       amount: amount2,
-    //       riskPremium: 0,
-    //       to: alice
-    //     });
+    (uint256 baseDebt, uint256 premiumDebt) = hub.getAssetDebt(assetId);
 
-    //     DataTypes.Asset memory assetData = hub.getAsset(assetId);
-    //     DataTypes.SpokeData memory spokeData = hub.getSpoke(assetId, address(spoke1));
-    //     DataTypes.SpokeData memory spoke2Data = hub.getSpoke(assetId, address(spoke2));
+    // restore all drawn liquidity
+    Utils.restore({
+      hub: hub,
+      assetId: assetId,
+      spoke: address(spoke3),
+      baseAmount: baseDebt,
+      premiumAmount: premiumDebt,
+      repayer: bob
+    });
 
-    //     // hub
-    //     assertEq(hub.getTotalAssets(assetId), 0, 'hub total assets after');
-    //     // asset
-    //     assertEq(assetData.suppliedShares, 0, 'asset total shares after');
-    //     assertEq(assetData.availableLiquidity, 0, 'asset availableLiquidity after');
-    //     assertEq(assetData.baseDebt, 0, 'asset baseDebt after');
-    //     assertEq(assetData.outstandingPremium, 0, 'asset outstandingPremium after');
-    //     assertEq(assetData.baseBorrowIndex, WadRayMathExtended.RAY, 'asset baseBorrowIndex after');
-    //     assertEq(
-    //       assetData.baseBorrowRate,
-    //       uint256(5_00).bpsToRay(),
-    //       'asset baseBorrowRate after'
-    //     );
-    //     assertEq(assetData.riskPremium, 0, 'asset riskPremium after');
-    //     assertEq(
-    //       assetData.lastUpdateTimestamp,
-    //       vm.getBlockTimestamp(),
-    //       'asset lastUpdateTimestamp after'
-    //     );
-    //     // spoke
-    //     assertEq(
-    //       spokeData.suppliedShares,
-    //       assetData.suppliedShares,
-    //       'spoke suppliedShares after'
-    //     );
-    //     assertEq(spokeData.baseDebt, assetData.baseDebt, 'spoke baseDebt after');
-    //     assertEq(
-    //       spokeData.outstandingPremium,
-    //       assetData.outstandingPremium,
-    //       'spoke outstandingPremium after'
-    //     );
-    //     assertEq(
-    //       spokeData.baseBorrowIndex,
-    //       assetData.baseBorrowIndex,
-    //       'spoke baseBorrowIndex after'
-    //     );
-    //     assertEq(spokeData.riskPremium, 0, 'spoke riskPremium after');
-    //     assertEq(
-    //       spokeData.lastUpdateTimestamp,
-    //       assetData.lastUpdateTimestamp,
-    //       'spoke lastUpdateTimestamp after'
-    //     );
-    //     // spoke
-    //     assertEq(
-    //       spoke2Data.suppliedShares,
-    //       assetData.suppliedShares,
-    //       'spoke suppliedShares after'
-    //     );
-    //     assertEq(spoke2Data.baseDebt, assetData.baseDebt, 'spoke baseDebt after');
-    //     assertEq(
-    //       spoke2Data.outstandingPremium,
-    //       assetData.outstandingPremium,
-    //       'spoke outstandingPremium after'
-    //     );
-    //     assertEq(
-    //       spoke2Data.baseBorrowIndex,
-    //       assetData.baseBorrowIndex,
-    //       'spoke baseBorrowIndex after'
-    //     );
-    //     assertEq(spoke2Data.riskPremium, 0, 'spoke riskPremium after');
-    //     assertEq(
-    //       spoke2Data.lastUpdateTimestamp,
-    //       assetData.lastUpdateTimestamp,
-    //       'spoke lastUpdateTimestamp after'
-    //     );
-    //     // asset
-    //     assertEq(asset.balanceOf(address(spoke1)), 0, 'spoke1 token balance after');
-    //     assertEq(asset.balanceOf(address(spoke2)), 0, 'spoke2 token balance after');
-    //     assertEq(asset.balanceOf(address(hub)), 0, 'hub token balance after');
-    //     assertEq(asset.balanceOf(alice), MAX_SUPPLY_AMOUNT, 'user token balance after');
+    uint256 aliceBalanceBefore = asset.balanceOf(alice);
+    uint256 spoke1Amount = hub.getSpokeSuppliedAmount(assetId, address(spoke1));
+    Utils.remove(hub, assetId, address(spoke1), spoke1Amount, alice);
+
+    uint256 spoke2Amount = hub.getSpokeSuppliedAmount(assetId, address(spoke2));
+    Utils.remove(hub, assetId, address(spoke2), spoke2Amount, alice);
+
+    AssetPosition memory assetData = getAssetPosition(hub, assetId);
+    ReservePosition memory reservePosition1 = getReservePosition(spoke1, _daiReserveId);
+    ReservePosition memory reservePosition2 = getReservePosition(spoke2, _daiReserveId);
+
+    address feeReceiver = _getFeeReceiver(assetId);
+
+    // asset
+    // only remaining supplied amount are fees
+    assertEq(
+      assetData.suppliedAmount,
+      hub.getSpokeSuppliedAmount(assetId, feeReceiver),
+      'asset suppliedAmount after'
+    );
+    assertEq(
+      assetData.suppliedShares,
+      hub.getSpokeSuppliedShares(assetId, feeReceiver),
+      'asset suppliedShares after'
+    );
+    assertEq(
+      assetData.availableLiquidity,
+      hub.getSpokeSuppliedAmount(assetId, feeReceiver),
+      'asset availableLiquidity after'
+    );
+    assertEq(
+      assetData.lastUpdateTimestamp,
+      vm.getBlockTimestamp(),
+      'asset lastUpdateTimestamp after'
+    );
+    // spoke 1
+    assertEq(reservePosition1.suppliedAmount, 0, 'spoke1 suppliedAmount after');
+    assertEq(reservePosition1.suppliedShares, 0, 'spoke1 suppliedShares after');
+    assertEq(reservePosition1.timestamp, assetData.lastUpdateTimestamp, 'spoke1 timestamp after');
+    // spoke 2
+    assertEq(reservePosition2.suppliedAmount, 0, 'spoke2 suppliedAmount after');
+    assertEq(reservePosition2.suppliedShares, 0, 'spoke2 suppliedShares after');
+    assertEq(reservePosition2.timestamp, assetData.lastUpdateTimestamp, 'spoke2 timestamp after');
+    // asset
+    assertEq(asset.balanceOf(address(spoke1)), 0, 'spoke1 token balance after');
+    assertEq(asset.balanceOf(address(spoke2)), 0, 'spoke2 token balance after');
+    assertEq(
+      asset.balanceOf(address(hub)),
+      assetData.availableLiquidity,
+      'hub token balance after'
+    );
+    assertApproxEqAbs(
+      asset.balanceOf(alice),
+      aliceBalanceBefore + spoke1Amount + spoke2Amount,
+      1,
+      'alice token balance after'
+    );
   }
 
   function test_remove_fuzz(uint256 reserveId, uint256 amount) public {
