@@ -441,11 +441,11 @@ contract LiquidityHubAddTest is LiquidityHubBase {
     assertEq(asset2.balanceOf(address(hub)), amount2, 'hub asset2 balance after');
   }
 
-  function test_add_revertsWith_InvalidSupplyAmount() public {
+  function test_add_revertsWith_InvalidAddAmount() public {
     uint256 assetId = 0;
     uint256 amount = 0;
 
-    vm.expectRevert(ILiquidityHub.InvalidSupplyAmount.selector);
+    vm.expectRevert(ILiquidityHub.InvalidAddAmount.selector);
     vm.prank(address(spoke1));
     hub.add(assetId, amount, alice);
   }

@@ -55,7 +55,7 @@ interface ILiquidityHub {
 
   error MismatchedConfigs();
   error InvalidSharesAmount();
-  error InvalidSupplyAmount();
+  error InvalidAddAmount();
   error InvalidAddFromHub();
   error AssetNotListed();
   error AssetNotActive();
