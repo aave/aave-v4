@@ -1837,7 +1837,7 @@ abstract contract Base is Test {
         reserveId: reserveId,
         assetId: assetId,
         suppliedShares: spokeData.suppliedShares,
-        suppliedAmount: hub.getSpokeSuppliedAmount(reserveId, address(spoke)),
+        suppliedAmount: hub.getSpokeSuppliedAmount(assetId, address(spoke)),
         baseDrawnShares: spokeData.baseDrawnShares,
         baseDebt: baseDebt,
         premiumDrawnShares: spokeData.premiumDrawnShares,

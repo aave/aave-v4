@@ -4,30 +4,31 @@ pragma solidity ^0.8.0;
 import './LiquidityHubBase.t.sol';
 
 contract LiquidityHubRemoveTest is LiquidityHubBase {
-  // using SharesMath for uint256;
   using WadRayMathExtended for uint256;
 
   function test_remove() public {
     uint256 amount = 100e18;
+    uint256 reserveId = _daiReserveId(spoke1);
+    uint256 assetId = daiAssetId;
 
     // User supply
     Utils.add({
       hub: hub,
-      assetId: daiAssetId,
+      assetId: assetId,
       spoke: address(spoke1),
       amount: amount,
       user: alice,
       to: address(spoke1)
     });
 
-    AssetPosition memory asset = getAssetPosition(hub, daiAssetId);
-    ReservePosition memory reserve = getReservePosition(spoke1, _daiReserveId);
+    AssetPosition memory asset = getAssetPosition(hub, assetId);
+    ReservePosition memory reserve = getReservePosition(spoke1, reserveId);
 
     // hub
     assertEq(asset.suppliedAmount, amount, 'hub supplied assets before');
     assertEq(
       asset.suppliedShares,
-      hub.convertToSuppliedShares(daiAssetId, amount),
+      hub.convertToSuppliedShares(assetId, amount),
       'asset supplied shares before'
     );
     assertEq(asset.availableLiquidity, amount, 'asset availableLiquidity before');
@@ -55,17 +56,17 @@ contract LiquidityHubRemoveTest is LiquidityHubBase {
     emit IERC20.Transfer(address(hub), alice, amount);
     vm.expectEmit(address(hub));
     emit ILiquidityHub.Remove(
-      daiAssetId,
+      assetId,
       address(spoke1),
-      hub.convertToSuppliedSharesUp(daiAssetId, amount),
+      hub.convertToSuppliedSharesUp(assetId, amount),
       amount
     );
 
     vm.prank(address(spoke1));
-    hub.remove(daiAssetId, amount, alice);
+    hub.remove(assetId, amount, alice);
 
-    asset = getAssetPosition(hub, daiAssetId);
-    reserve = getReservePosition(spoke1, _daiReserveId);
+    asset = getAssetPosition(hub, assetId);
+    reserve = getReservePosition(spoke1, reserveId);
 
     // hub
     assertEq(asset.suppliedAmount, 0, 'asset supplied amount after');
@@ -214,140 +215,91 @@ contract LiquidityHubRemoveTest is LiquidityHubBase {
     //     assertEq(asset.balanceOf(alice), MAX_SUPPLY_AMOUNT, 'user token balance after');
   }
 
-  function test_remove_fuzz(uint256 assetId, uint256 amount) public {
-    vm.skip(true, 'pending refactor');
+  function test_remove_fuzz(uint256 reserveId, uint256 amount) public {
+    reserveId = bound(reserveId, 0, spoke1.reserveCount() - 1);
+    amount = bound(amount, 1, MAX_SUPPLY_AMOUNT);
+    uint256 assetId = spoke1.getReserve(reserveId).assetId;
+    IERC20 asset = hub.assetsList(assetId);
 
-    //     assetId = bound(assetId, 0, hub.assetCount() - 2); // Exclude duplicated DAI
-    //     amount = bound(amount, 1, MAX_SUPPLY_AMOUNT);
+    // User supply
+    Utils.add({
+      hub: hub,
+      assetId: assetId,
+      spoke: address(spoke1),
+      amount: amount,
+      user: alice,
+      to: address(spoke1)
+    });
 
-    //     IERC20 asset = hub.assetsList(assetId);
+    AssetPosition memory assetData = getAssetPosition(hub, assetId);
+    ReservePosition memory reserve = getReservePosition(spoke1, reserveId);
 
-    //     Utils.supply({
-    //       hub: hub,
-    //       assetId: assetId,
-    //       spoke: address(spoke1),
-    //       amount: amount,
-    //       riskPremium: 0,
-    //       user: alice,
-    //       to: address(spoke1)
-    //     });
+    // hub
+    assertEq(assetData.suppliedAmount, amount, 'hub supplied assets before');
+    assertEq(
+      assetData.suppliedShares,
+      hub.convertToSuppliedShares(assetId, amount),
+      'asset supplied shares before'
+    );
+    assertEq(assetData.availableLiquidity, amount, 'asset availableLiquidity before');
+    assertEq(assetData.baseDebt, 0, 'asset baseDebt before');
+    assertEq(assetData.premiumDebt, 0, 'asset premiumDebt before');
+    assertEq(assetData.baseDebtIndex, WadRayMathExtended.RAY, 'asset baseDebtIndex before');
+    assertEq(assetData.baseBorrowRate, uint256(5_00).bpsToRay(), 'asset baseBorrowRate before');
+    assertEq(
+      assetData.lastUpdateTimestamp,
+      vm.getBlockTimestamp(),
+      'asset lastUpdateTimestamp before'
+    );
+    // spoke
+    assertEq(reserve.suppliedShares, assetData.suppliedShares, 'reserve suppliedShares before');
+    assertEq(reserve.suppliedAmount, assetData.suppliedAmount, 'reserve suppliedAmount before');
+    assertEq(reserve.baseDebt, assetData.baseDebt, 'reserve baseDebt before');
+    assertEq(reserve.premiumDebt, assetData.premiumDebt, 'reserve premiumDebt before');
+    assertEq(reserve.timestamp, assetData.lastUpdateTimestamp, 'reserve timestamp before');
+    // dai
+    assertEq(asset.balanceOf(address(spoke1)), 0, 'spoke token balance before');
+    assertEq(asset.balanceOf(address(hub)), amount, 'hub token balance before');
+    assertEq(asset.balanceOf(alice), MAX_SUPPLY_AMOUNT - amount, 'user token balance before');
 
-    //     DataTypes.Asset memory assetData = hub.getAsset(assetId);
-    //     DataTypes.SpokeData memory spokeData = hub.getSpoke(assetId, address(spoke1));
+    vm.expectEmit(address(asset));
+    emit IERC20.Transfer(address(hub), alice, amount);
+    vm.expectEmit(address(hub));
+    emit ILiquidityHub.Remove(
+      assetId,
+      address(spoke1),
+      hub.convertToSuppliedSharesUp(assetId, amount),
+      amount
+    );
 
-    //     uint256 timestamp = vm.getBlockTimestamp();
+    vm.prank(address(spoke1));
+    hub.remove(assetId, amount, alice);
 
-    //     // hub
-    //     assertEq(hub.getTotalAssets(assetId), amount, 'hub total assets before');
-    //     // asset
-    //     assertEq(
-    //       assetData.suppliedShares,
-    //       hub.convertToShares(assetId, amount),
-    //       'asset total shares before'
-    //     );
-    //     assertEq(assetData.availableLiquidity, amount, 'asset availableLiquidity before');
-    //     assertEq(assetData.baseDebt, 0, 'asset baseDebt before');
-    //     assertEq(assetData.outstandingPremium, 0, 'asset outstandingPremium before');
-    //     assertEq(assetData.baseBorrowIndex, WadRayMathExtended.RAY, 'asset baseBorrowIndex before');
-    //     assertEq(
-    //       assetData.baseBorrowRate,
-    //       uint256(5_00).bpsToRay(),
-    //       'asset baseBorrowRate before'
-    //     );
-    //     assertEq(assetData.riskPremium, 0, 'asset riskPremium before');
-    //     assertEq(assetData.lastUpdateTimestamp, timestamp, 'asset lastUpdateTimestamp before');
-    //     // spoke
-    //     assertEq(
-    //       spokeData.suppliedShares,
-    //       assetData.suppliedShares,
-    //       'spoke suppliedShares before'
-    //     );
-    //     assertEq(spokeData.baseDebt, assetData.baseDebt, 'spoke baseDebt before');
-    //     assertEq(
-    //       spokeData.outstandingPremium,
-    //       assetData.outstandingPremium,
-    //       'spoke outstandingPremium before'
-    //     );
-    //     assertEq(
-    //       spokeData.baseBorrowIndex,
-    //       assetData.baseBorrowIndex,
-    //       'spoke baseBorrowIndex before'
-    //     );
-    //     assertEq(spokeData.riskPremium, 0, 'spoke riskPremium before');
-    //     assertEq(
-    //       spokeData.lastUpdateTimestamp,
-    //       assetData.lastUpdateTimestamp,
-    //       'spoke lastUpdateTimestamp before'
-    //     );
-    //     // asset
-    //     assertEq(asset.balanceOf(address(spoke1)), 0, 'spoke token balance before');
-    //     assertEq(asset.balanceOf(address(hub)), amount, 'hub token balance before');
-    //     assertEq(
-    //       asset.balanceOf(alice),
-    //       MAX_SUPPLY_AMOUNT - amount,
-    //       'alice token balance before'
-    //     );
+    assetData = getAssetPosition(hub, assetId);
+    reserve = getReservePosition(spoke1, reserveId);
 
-    //     vm.expectEmit(address(asset));
-    //     emit IERC20.Transfer(address(hub), alice, amount);
-
-    //     vm.expectEmit(address(hub));
-    //     emit ILiquidityHub.Withdraw(assetId, address(spoke1), alice, amount);
-
-    //     Utils.withdraw({
-    //       hub: hub,
-    //       assetId: assetId,
-    //       spoke: address(spoke1),
-    //       amount: amount,
-    //       riskPremium: 0,
-    //       to: alice
-    //     });
-
-    //     assetData = hub.getAsset(assetId);
-    //     spokeData = hub.getSpoke(assetId, address(spoke1));
-
-    //     // hub
-    //     assertEq(hub.getTotalAssets(assetId), 0, 'hub total assets after');
-    //     // asset
-    //     assertEq(assetData.suppliedShares, 0, 'asset total shares after');
-    //     assertEq(assetData.availableLiquidity, 0, 'asset availableLiquidity after');
-    //     assertEq(assetData.baseDebt, 0, 'asset baseDebt after');
-    //     assertEq(assetData.outstandingPremium, 0, 'asset outstandingPremium after');
-    //     assertEq(assetData.baseBorrowIndex, WadRayMathExtended.RAY, 'asset baseBorrowIndex after');
-    //     assertEq(
-    //       assetData.baseBorrowRate,
-    //       uint256(5_00).bpsToRay(),
-    //       'asset baseBorrowRate after'
-    //     );
-    //     assertEq(assetData.riskPremium, 0, 'asset riskPremium after');
-    //     assertEq(assetData.lastUpdateTimestamp, timestamp, 'asset lastUpdateTimestamp after');
-    //     // spoke
-    //     assertEq(
-    //       spokeData.suppliedShares,
-    //       assetData.suppliedShares,
-    //       'spoke suppliedShares after'
-    //     );
-    //     assertEq(spokeData.baseDebt, assetData.baseDebt, 'spoke baseDebt after');
-    //     assertEq(
-    //       spokeData.outstandingPremium,
-    //       assetData.outstandingPremium,
-    //       'spoke outstandingPremium after'
-    //     );
-    //     assertEq(
-    //       spokeData.baseBorrowIndex,
-    //       assetData.baseBorrowIndex,
-    //       'spoke baseBorrowIndex after'
-    //     );
-    //     assertEq(spokeData.riskPremium, 0, 'spoke riskPremium after');
-    //     assertEq(
-    //       spokeData.lastUpdateTimestamp,
-    //       assetData.lastUpdateTimestamp,
-    //       'spoke lastUpdateTimestamp after'
-    //     );
-    //     // asset
-    //     assertEq(asset.balanceOf(address(spoke1)), 0, 'spoke token balance after');
-    //     assertEq(asset.balanceOf(address(hub)), 0, 'hub token balance after');
-    //     assertEq(asset.balanceOf(alice), MAX_SUPPLY_AMOUNT, 'alice token balance after');
+    // hub
+    assertEq(assetData.suppliedAmount, 0, 'asset supplied amount after');
+    assertEq(assetData.suppliedShares, 0, 'asset supplied shares after');
+    assertEq(assetData.availableLiquidity, 0, 'asset availableLiquidity after');
+    assertEq(assetData.baseDebt, 0, 'asset baseDebt after');
+    assertEq(assetData.premiumDebt, 0, 'asset premiumDebt after');
+    assertEq(assetData.baseDebtIndex, WadRayMathExtended.RAY, 'asset baseBorrowIndex after');
+    assertEq(assetData.baseBorrowRate, uint256(5_00).bpsToRay(), 'asset baseBorrowRate after');
+    assertEq(
+      assetData.lastUpdateTimestamp,
+      vm.getBlockTimestamp(),
+      'asset lastUpdateTimestamp after'
+    );
+    // spoke
+    assertEq(reserve.suppliedShares, assetData.suppliedShares, 'reserve suppliedShares after');
+    assertEq(reserve.baseDebt, assetData.baseDebt, 'reserve baseDebt after');
+    assertEq(reserve.premiumDebt, assetData.premiumDebt, 'reserve premiumDebt after');
+    assertEq(reserve.timestamp, assetData.lastUpdateTimestamp, 'reserve timestamp after');
+    // dai
+    assertEq(asset.balanceOf(address(spoke1)), 0, 'spoke token balance after');
+    assertEq(asset.balanceOf(address(hub)), 0, 'hub token balance after');
+    assertEq(asset.balanceOf(alice), MAX_SUPPLY_AMOUNT, 'user token balance after');
   }
 
   function test_remove_all_with_interest() public {
