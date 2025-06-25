@@ -39,7 +39,7 @@ contract SpokeMultipleHubTest is SpokeBase {
     DataTypes.DynamicReserveConfig memory dynDaiHub2Config = DataTypes.DynamicReserveConfig({
       collateralFactor: 78_00
     });
-    daiHub2ReserveId = spoke1.addReserve(daiAssetId, hub2, daiHub2Config, dynDaiHub2Config);
+    daiHub2ReserveId = spoke1.addReserve(daiAssetId, address(hub2), daiHub2Config, dynDaiHub2Config);
 
     // Relist hub 3's dai on spoke 1
     DataTypes.ReserveConfig memory daiHub3Config = DataTypes.ReserveConfig({
@@ -55,7 +55,7 @@ contract SpokeMultipleHubTest is SpokeBase {
     DataTypes.DynamicReserveConfig memory dynDaiHub3Config = DataTypes.DynamicReserveConfig({
       collateralFactor: 78_00
     });
-    daiHub3ReserveId = spoke1.addReserve(hub3DaiAssetId, hub3, daiHub3Config, dynDaiHub3Config);
+    daiHub3ReserveId = spoke1.addReserve(hub3DaiAssetId, address(hub3), daiHub3Config, dynDaiHub3Config);
 
     DataTypes.SpokeConfig memory spokeConfig = DataTypes.SpokeConfig({
       supplyCap: type(uint256).max,

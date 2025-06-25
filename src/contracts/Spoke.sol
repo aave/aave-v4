@@ -62,19 +62,19 @@ contract Spoke is ISpoke, Multicall {
 
   function addReserve(
     uint256 assetId,
-    ILiquidityHub hub,
+    address hub,
     DataTypes.ReserveConfig calldata config,
     DataTypes.DynamicReserveConfig calldata dynamicConfig
   ) external returns (uint256) {
     // TODO: AccessControl
 
-    require(address(hub) != address(0), InvalidHubAddress());
+    require(hub != address(0), InvalidHubAddress());
 
     _validateReserveConfig(config);
     uint256 reserveId = reserveCount++;
     uint16 dynamicConfigKey; // 0 as first key to use
 
-    DataTypes.Asset memory asset = hub.getAsset(assetId); // will revert on invalid asset
+    DataTypes.Asset memory asset = ILiquidityHub(hub).getAsset(assetId);
 
     reservesList.push(reserveId);
     _reserves[reserveId] = DataTypes.Reserve({
@@ -89,7 +89,7 @@ contract Spoke is ISpoke, Multicall {
       dynamicConfigKey: dynamicConfigKey,
       decimals: asset.decimals,
       asset: asset.underlying,
-      hub: hub
+      hub: ILiquidityHub(hub)
     });
     _dynamicConfig[reserveId][dynamicConfigKey] = dynamicConfig;
 
@@ -758,7 +758,7 @@ contract Spoke is ISpoke, Multicall {
 
       vars.assetPrice = oracle.getReservePrice(vars.reserveId);
       unchecked {
-        vars.assetUnit = 10 ** hub.getAssetDecimals(vars.assetId);
+        vars.assetUnit = 10 ** reserve.decimals;
       }
 
       if (_usingAsCollateral(userPosition)) {
@@ -800,7 +800,7 @@ contract Spoke is ISpoke, Multicall {
         vars.liquidityPremium = reserve.config.liquidityPremium;
         vars.assetPrice = oracle.getReservePrice(vars.reserveId);
         unchecked {
-          vars.assetUnit = 10 ** hub.getAssetDecimals(vars.assetId);
+          vars.assetUnit = 10 ** reserve.decimals;
         }
         vars.userCollateralInBaseCurrency = _getUserBalanceInBaseCurrency(
           userPosition,

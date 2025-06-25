@@ -4,6 +4,64 @@ pragma solidity ^0.8.10;
 import 'tests/unit/LiquidityHub/LiquidityHubBase.t.sol';
 
 contract ConfiguratorTest is LiquidityHubBase {
+  function test_addSpokes_revertsWith_InvalidSpoke() public {
+    uint256[] memory assetIds = new uint256[](2);
+    assetIds[0] = daiAssetId;
+    assetIds[1] = wethAssetId;
+
+    DataTypes.SpokeConfig[] memory spokeConfigs = new DataTypes.SpokeConfig[](2);
+    spokeConfigs[0] = DataTypes.SpokeConfig({supplyCap: 1, drawCap: 2});
+    spokeConfigs[1] = DataTypes.SpokeConfig({supplyCap: 3, drawCap: 4});
+
+    vm.expectRevert(ILiquidityHub.InvalidSpoke.selector);
+    configurator.addSpokes(address(hub), assetIds, address(0), spokeConfigs);
+  }
+
+  function test_addSpokes_revertsWith_MismatchedConfigs() public {
+    uint256[] memory assetIds = new uint256[](2);
+    assetIds[0] = daiAssetId;
+    assetIds[1] = wethAssetId;
+
+    DataTypes.SpokeConfig[] memory spokeConfigs = new DataTypes.SpokeConfig[](3);
+    spokeConfigs[0] = DataTypes.SpokeConfig({supplyCap: 1, drawCap: 2});
+    spokeConfigs[1] = DataTypes.SpokeConfig({supplyCap: 3, drawCap: 4});
+    spokeConfigs[2] = DataTypes.SpokeConfig({supplyCap: 5, drawCap: 6});
+
+    vm.expectRevert(IConfigurator.MismatchedConfigs.selector);
+    configurator.addSpokes(address(hub), assetIds, address(spoke1), spokeConfigs);
+  }
+
+  function test_addSpokes() public {
+    uint256[] memory assetIds = new uint256[](2);
+    assetIds[0] = daiAssetId;
+    assetIds[1] = wethAssetId;
+
+    DataTypes.SpokeConfig memory daiSpokeConfig = DataTypes.SpokeConfig({supplyCap: 1, drawCap: 2});
+    DataTypes.SpokeConfig memory wethSpokeConfig = DataTypes.SpokeConfig({
+      supplyCap: 3,
+      drawCap: 4
+    });
+
+    DataTypes.SpokeConfig[] memory spokeConfigs = new DataTypes.SpokeConfig[](2);
+    spokeConfigs[0] = daiSpokeConfig;
+    spokeConfigs[1] = wethSpokeConfig;
+
+    vm.expectEmit(address(hub));
+    emit ILiquidityHub.SpokeAdded(daiAssetId, address(spoke1));
+    vm.expectEmit(address(hub));
+    emit ILiquidityHub.SpokeAdded(wethAssetId, address(spoke1));
+    configurator.addSpokes(address(hub), assetIds, address(spoke1), spokeConfigs);
+
+    DataTypes.SpokeConfig memory daiSpokeData = hub.getSpokeConfig(daiAssetId, address(spoke1));
+    DataTypes.SpokeConfig memory wethSpokeData = hub.getSpokeConfig(wethAssetId, address(spoke1));
+
+    assertEq(daiSpokeData.supplyCap, daiSpokeConfig.supplyCap, 'dai spoke supply cap');
+    assertEq(daiSpokeData.drawCap, daiSpokeConfig.drawCap, 'dai spoke draw cap');
+
+    assertEq(wethSpokeData.supplyCap, wethSpokeConfig.supplyCap, 'eth spoke supply cap');
+    assertEq(wethSpokeData.drawCap, wethSpokeConfig.drawCap, 'eth spoke draw cap');
+  }
+
   function test_addAsset_fuzz_revertsWith_InvalidAssetDecimals(
     bool fetchErc20Decimals,
     address asset,
@@ -163,7 +221,7 @@ contract ConfiguratorTest is LiquidityHubBase {
     if (feeReceiver != oldConfig.feeReceiver) {
       if (oldConfig.feeReceiver != address(0)) {
         vm.expectEmit(address(hub));
-        emit ILiquidityHub.SpokeConfigUpdated(assetId, oldConfig.feeReceiver, 0, 0);
+        emit ILiquidityHub.SpokeConfigUpdated(assetId, oldConfig.feeReceiver, DataTypes.SpokeConfig({supplyCap: 0, drawCap: 0}));
       }
 
       if (feeReceiver != address(0)) {
@@ -174,8 +232,7 @@ contract ConfiguratorTest is LiquidityHubBase {
         emit ILiquidityHub.SpokeConfigUpdated(
           assetId,
           feeReceiver,
-          type(uint256).max,
-          type(uint256).max
+          DataTypes.SpokeConfig({supplyCap: type(uint256).max, drawCap: type(uint256).max})
         );
       }
     }
@@ -302,7 +359,7 @@ contract ConfiguratorTest is LiquidityHubBase {
     if (feeReceiver != oldConfig.feeReceiver) {
       if (oldConfig.feeReceiver != address(0)) {
         vm.expectEmit(address(hub));
-        emit ILiquidityHub.SpokeConfigUpdated(assetId, oldConfig.feeReceiver, 0, 0);
+        emit ILiquidityHub.SpokeConfigUpdated(assetId, oldConfig.feeReceiver, DataTypes.SpokeConfig({supplyCap: 0, drawCap: 0}));
       }
 
       if (feeReceiver != address(0)) {
@@ -313,8 +370,7 @@ contract ConfiguratorTest is LiquidityHubBase {
         emit ILiquidityHub.SpokeConfigUpdated(
           assetId,
           feeReceiver,
-          type(uint256).max,
-          type(uint256).max
+          DataTypes.SpokeConfig({supplyCap: type(uint256).max, drawCap: type(uint256).max})
         );
       }
     }
@@ -502,7 +558,7 @@ contract ConfiguratorTest is LiquidityHubBase {
     assertEq(_addAsset(fetchErc20Decimals, asset, decimals, interestRateStrategy), assetId);
 
     assertEq(hub.assetCount(), assetId + 1, 'asset count');
-    assertEq(hub.getAssetDecimals(assetId), decimals, 'asset decimals');
+    assertEq(hub.getAsset(assetId).decimals, decimals, 'asset decimals');
     assertEq(hub.getAssetConfig(assetId), expectedConfig);
   }
 

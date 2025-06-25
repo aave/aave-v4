@@ -43,7 +43,7 @@ contract SpokeMultipleHubSiloedBorrowingTest is SpokeMultipleHubBase {
     // Add B reserve to the new spoke
     siloedVars.reserveBId = newSpoke.addReserve(
       siloedVars.assetBId,
-      newHub,
+      address(newHub),
       DataTypes.ReserveConfig({
         active: true,
         frozen: false,
@@ -81,7 +81,7 @@ contract SpokeMultipleHubSiloedBorrowingTest is SpokeMultipleHubBase {
     // Add A reserve to spoke 1
     siloedVars.reserveAId = spoke1.addReserve(
       siloedVars.assetAId,
-      hub,
+      address(hub),
       DataTypes.ReserveConfig({
         active: true,
         frozen: false,
@@ -111,7 +111,7 @@ contract SpokeMultipleHubSiloedBorrowingTest is SpokeMultipleHubBase {
     // Add reserve A from canonical hub to the new spoke
     siloedVars.reserveAIdNewSpoke = newSpoke.addReserve(
       siloedVars.assetAId,
-      hub,
+      address(hub),
       DataTypes.ReserveConfig({
         active: true,
         frozen: false,

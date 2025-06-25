@@ -63,7 +63,7 @@ contract LiquidityHubHandler is Test {
     );
     spoke1.addReserve(
       0,
-      hub,
+      address(hub),
       DataTypes.ReserveConfig({
         active: true,
         frozen: false,

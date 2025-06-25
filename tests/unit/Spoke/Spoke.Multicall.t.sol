@@ -124,8 +124,8 @@ contract SpokeMulticall is SpokeBase {
 
     // Set up the multicall
     bytes[] memory calls = new bytes[](2);
-    calls[0] = abi.encodeCall(ISpoke.addReserve, (daiAssetId, hub, dai2Config, dai2DynConfig));
-    calls[1] = abi.encodeCall(ISpoke.addReserve, (daiAssetId, hub, dai3Config, dai3DynConfig));
+    calls[0] = abi.encodeCall(ISpoke.addReserve, (daiAssetId, address(hub), dai2Config, dai2DynConfig));
+    calls[1] = abi.encodeCall(ISpoke.addReserve, (daiAssetId, address(hub), dai3Config, dai3DynConfig));
 
     vm.expectEmit(address(spoke1));
     emit ISpoke.ReserveAdded(dai2ReserveId, daiAssetId);

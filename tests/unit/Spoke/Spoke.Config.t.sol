@@ -294,7 +294,7 @@ contract SpokeConfigTest is SpokeBase {
     vm.expectEmit(address(spoke1));
     emit ISpoke.ReserveAdded(reserveId, wethAssetId);
     vm.prank(SPOKE_ADMIN);
-    spoke1.addReserve(wethAssetId, hub, newReserveConfig, newDynReserveConfig);
+    spoke1.addReserve(wethAssetId, address(hub), newReserveConfig, newDynReserveConfig);
 
     assertEq(spoke1.getReserveConfig(reserveId), newReserveConfig);
     assertEq(spoke1.getDynamicReserveConfig(reserveId), newDynReserveConfig);
@@ -319,7 +319,7 @@ contract SpokeConfigTest is SpokeBase {
 
     vm.expectRevert(); // error from LH in reading invalid index from assetList array
     vm.prank(SPOKE_ADMIN);
-    spoke1.addReserve(assetId, hub, newReserveConfig, newDynReserveConfig);
+    spoke1.addReserve(assetId, address(hub), newReserveConfig, newDynReserveConfig);
   }
 
   function test_addReserve_fuzz_reverts_invalid_assetId(uint256 assetId) public {
@@ -341,7 +341,7 @@ contract SpokeConfigTest is SpokeBase {
 
     vm.expectRevert(); // error from LH in reading invalid index from assetList array
     vm.prank(SPOKE_ADMIN);
-    spoke1.addReserve(assetId, hub, newReserveConfig, newDynReserveConfig);
+    spoke1.addReserve(assetId, address(hub), newReserveConfig, newDynReserveConfig);
   }
 
   function test_updateLiquidationConfig_closeFactor() public {

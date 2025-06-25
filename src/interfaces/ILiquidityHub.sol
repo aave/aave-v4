@@ -14,8 +14,7 @@ interface ILiquidityHub {
   event SpokeConfigUpdated(
     uint256 indexed assetId,
     address indexed spoke,
-    uint256 supplyCap,
-    uint256 drawCap
+    DataTypes.SpokeConfig config
   );
   event DrawnIndexUpdate(uint256 indexed assetId, uint256 drawnIndex, uint256 lastUpdateTimestamp);
   event Add(
@@ -51,7 +50,6 @@ interface ILiquidityHub {
     uint256 realizedPremiumTaken
   );
 
-  error MismatchedConfigs();
   error InvalidSharesAmount();
   error InvalidSupplyAmount();
   error InvalidAddFromHub();
@@ -82,12 +80,6 @@ interface ILiquidityHub {
   function updateAssetConfig(uint256 assetId, DataTypes.AssetConfig memory config) external;
 
   function addSpoke(uint256 assetId, address spoke, DataTypes.SpokeConfig memory params) external;
-
-  function addSpokes(
-    uint256[] calldata assetIds,
-    address spoke,
-    DataTypes.SpokeConfig[] memory configs
-  ) external;
 
   function updateSpokeConfig(
     uint256 assetId,
@@ -184,8 +176,6 @@ interface ILiquidityHub {
   function previewDrawnIndex(uint256 assetId) external view returns (uint256);
 
   function getAsset(uint256 assetId) external view returns (DataTypes.Asset memory);
-
-  function getAssetDecimals(uint256 assetId) external view returns (uint8);
 
   function getAssetConfig(uint256 assetId) external view returns (DataTypes.AssetConfig memory);
 

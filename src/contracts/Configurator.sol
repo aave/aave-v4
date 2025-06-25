@@ -7,6 +7,22 @@ import {ILiquidityHub} from 'src/interfaces/ILiquidityHub.sol';
 import {IConfigurator} from 'src/interfaces/IConfigurator.sol';
 
 contract Configurator is IConfigurator {
+  /// @inheritdoc IConfigurator
+  function addSpokes(
+    address hub,
+    uint256[] calldata assetIds,
+    address spoke,
+    DataTypes.SpokeConfig[] memory configs
+  ) external {
+    // TODO: AccessControl
+
+    require(assetIds.length == configs.length, MismatchedConfigs());
+    for (uint256 i; i < assetIds.length; i++) {
+      ILiquidityHub(hub).addSpoke(assetIds[i], spoke, configs[i]);
+    }
+  }
+
+  /// @inheritdoc IConfigurator
   function addAsset(
     address hub,
     address asset,
@@ -16,6 +32,7 @@ contract Configurator is IConfigurator {
     return ILiquidityHub(hub).addAsset(asset, IERC20Metadata(asset).decimals(), irStrategy);
   }
 
+  /// @inheritdoc IConfigurator
   function addAsset(
     address hub,
     address asset,
@@ -26,6 +43,7 @@ contract Configurator is IConfigurator {
     return ILiquidityHub(hub).addAsset(asset, decimals, irStrategy);
   }
 
+  /// @inheritdoc IConfigurator
   function setActive(address hub, uint256 assetId, bool active) external override {
     // TODO: AccessControl
 
@@ -34,6 +52,7 @@ contract Configurator is IConfigurator {
     ILiquidityHub(hub).updateAssetConfig(assetId, config);
   }
 
+  /// @inheritdoc IConfigurator
   function setPaused(address hub, uint256 assetId, bool paused) external override {
     // TODO: AccessControl
 
@@ -42,6 +61,7 @@ contract Configurator is IConfigurator {
     ILiquidityHub(hub).updateAssetConfig(assetId, config);
   }
 
+  /// @inheritdoc IConfigurator
   function setFrozen(address hub, uint256 assetId, bool frozen) external override {
     // TODO: AccessControl
 
@@ -50,6 +70,7 @@ contract Configurator is IConfigurator {
     ILiquidityHub(hub).updateAssetConfig(assetId, config);
   }
 
+  /// @inheritdoc IConfigurator
   function setLiquidityFee(address hub, uint256 assetId, uint256 liquidityFee) external override {
     // TODO: AccessControl
 
@@ -58,15 +79,17 @@ contract Configurator is IConfigurator {
     ILiquidityHub(hub).updateAssetConfig(assetId, config);
   }
 
+  /// @inheritdoc IConfigurator
   function setFeeReceiver(address hub, uint256 assetId, address feeReceiver) external override {
     // TODO: AccessControl
 
     DataTypes.AssetConfig memory config = ILiquidityHub(hub).getAssetConfig(assetId);
-    _adjustFeeReceiverConfig(hub, assetId, config, feeReceiver);
+    _adjustFeeReceiverConfig(ILiquidityHub(hub), assetId, config, feeReceiver);
     config.feeReceiver = feeReceiver;
     ILiquidityHub(hub).updateAssetConfig(assetId, config);
   }
 
+  /// @inheritdoc IConfigurator
   function setLiquidityFeeAndReceiver(
     address hub,
     uint256 assetId,
@@ -76,12 +99,13 @@ contract Configurator is IConfigurator {
     // TODO: AccessControl
 
     DataTypes.AssetConfig memory config = ILiquidityHub(hub).getAssetConfig(assetId);
-    _adjustFeeReceiverConfig(hub, assetId, config, feeReceiver);
+    _adjustFeeReceiverConfig(ILiquidityHub(hub), assetId, config, feeReceiver);
     config.liquidityFee = liquidityFee;
     config.feeReceiver = feeReceiver;
     ILiquidityHub(hub).updateAssetConfig(assetId, config);
   }
 
+  /// @inheritdoc IConfigurator
   function setInterestRateStrategy(
     address hub,
     uint256 assetId,
@@ -95,14 +119,14 @@ contract Configurator is IConfigurator {
   }
 
   function _adjustFeeReceiverConfig(
-    address hub,
+    ILiquidityHub hub,
     uint256 assetId,
     DataTypes.AssetConfig memory config,
     address newFeeReceiver
   ) internal {
     if (config.feeReceiver != newFeeReceiver) {
       if (config.feeReceiver != address(0)) {
-        ILiquidityHub(hub).updateSpokeConfig(
+        hub.updateSpokeConfig(
           assetId,
           config.feeReceiver,
           DataTypes.SpokeConfig({supplyCap: 0, drawCap: 0})
@@ -110,15 +134,15 @@ contract Configurator is IConfigurator {
       }
 
       if (newFeeReceiver != address(0)) {
-        DataTypes.SpokeData memory spokeData = ILiquidityHub(hub).getSpoke(assetId, newFeeReceiver);
+        DataTypes.SpokeData memory spokeData = hub.getSpoke(assetId, newFeeReceiver);
         if (spokeData.lastUpdateTimestamp == 0) {
-          ILiquidityHub(hub).addSpoke(
+          hub.addSpoke(
             assetId,
             newFeeReceiver,
             DataTypes.SpokeConfig({supplyCap: type(uint256).max, drawCap: type(uint256).max})
           );
         } else {
-          ILiquidityHub(hub).updateSpokeConfig(
+          hub.updateSpokeConfig(
             assetId,
             newFeeReceiver,
             DataTypes.SpokeConfig({supplyCap: type(uint256).max, drawCap: type(uint256).max})

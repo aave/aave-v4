@@ -88,19 +88,6 @@ contract LiquidityHub is ILiquidityHub {
     _addSpoke(assetId, spoke, config);
   }
 
-  function addSpokes(
-    uint256[] calldata assetIds,
-    address spoke,
-    DataTypes.SpokeConfig[] memory configs
-  ) external {
-    // TODO: AccessControl
-
-    require(assetIds.length == configs.length, MismatchedConfigs());
-    for (uint256 i; i < assetIds.length; i++) {
-      _addSpoke(assetIds[i], spoke, configs[i]);
-    }
-  }
-
   function updateSpokeConfig(
     uint256 assetId,
     address spoke,
@@ -115,12 +102,8 @@ contract LiquidityHub is ILiquidityHub {
     address spoke,
     DataTypes.SpokeConfig memory config
   ) internal {
-    _spokes[assetId][spoke].config = DataTypes.SpokeConfig({
-      supplyCap: config.supplyCap,
-      drawCap: config.drawCap
-    });
-
-    emit SpokeConfigUpdated(assetId, spoke, config.supplyCap, config.drawCap);
+    _spokes[assetId][spoke].config = config;
+    emit SpokeConfigUpdated(assetId, spoke, config);
   }
 
   // /////
@@ -314,10 +297,6 @@ contract LiquidityHub is ILiquidityHub {
     return _getAsset(assetId);
   }
 
-  function getAssetDecimals(uint256 assetId) external view returns (uint8) {
-    return _getAsset(assetId).decimals;
-  }
-
   function getSpoke(
     uint256 assetId,
     address spoke
@@ -461,7 +440,6 @@ contract LiquidityHub is ILiquidityHub {
     require(asset.config.active, AssetNotActive());
     require(!asset.config.paused, AssetPaused());
     require(!asset.config.frozen, AssetFrozen());
-    require(asset.lastUpdateTimestamp != 0, AssetNotListed());
     require(
       spoke.config.supplyCap == type(uint256).max ||
         asset.toSuppliedAssetsUp(spoke.suppliedShares) + amount <= spoke.config.supplyCap,
@@ -525,7 +503,7 @@ contract LiquidityHub is ILiquidityHub {
     });
 
     emit SpokeAdded(assetId, spoke);
-    emit SpokeConfigUpdated(assetId, spoke, config.supplyCap, config.drawCap);
+    emit SpokeConfigUpdated(assetId, spoke, config);
   }
 
   function _validateAssetConfig(

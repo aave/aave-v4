@@ -41,7 +41,7 @@ contract SpokeMultipleHubIsolationModeTest is SpokeMultipleHubBase {
     // Add reserves to the new spoke
     isolationVars.reserveAId = newSpoke.addReserve(
       isolationVars.assetAId,
-      newHub,
+      address(newHub),
       DataTypes.ReserveConfig({
         active: true,
         frozen: false,
@@ -56,7 +56,7 @@ contract SpokeMultipleHubIsolationModeTest is SpokeMultipleHubBase {
     );
     isolationVars.reserveBId = newSpoke.addReserve(
       isolationVars.assetBId,
-      newHub,
+      address(newHub),
       DataTypes.ReserveConfig({
         active: true,
         frozen: false,
@@ -101,7 +101,7 @@ contract SpokeMultipleHubIsolationModeTest is SpokeMultipleHubBase {
     // List reserve B on spoke 1 for the canonical hub
     isolationVars.spoke1ReserveBId = spoke1.addReserve(
       isolationVars.assetBIdMainHub,
-      hub,
+      address(hub),
       DataTypes.ReserveConfig({
         active: true,
         frozen: false,
@@ -179,7 +179,7 @@ contract SpokeMultipleHubIsolationModeTest is SpokeMultipleHubBase {
     // Add main hub reserve B to the new spoke
     isolationVars.reserveBIdMainHub = newSpoke.addReserve(
       isolationVars.assetBIdMainHub,
-      hub,
+      address(hub),
       DataTypes.ReserveConfig({
         active: true,
         frozen: false,

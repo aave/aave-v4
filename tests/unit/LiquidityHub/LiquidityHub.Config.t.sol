@@ -6,156 +6,64 @@ import 'tests/unit/LiquidityHub/LiquidityHubBase.t.sol';
 contract LiquidityHubConfigTest is LiquidityHubBase {
   using SharesMath for uint256;
 
-  function test_addSpoke() public {
-    uint256 assetId = hub.assetCount() - 1;
+  function test_addSpoke_fuzz_revertsWith_InvalidSpoke(uint256 assetId, DataTypes.SpokeConfig calldata spokeConfig) public {
+    assetId = bound(assetId, 0, hub.assetCount() - 1);
 
-    vm.expectEmit(address(hub));
-    emit ILiquidityHub.SpokeAdded(assetId, address(spoke1));
-    vm.prank(HUB_ADMIN);
-    hub.addSpoke(assetId, address(spoke1), DataTypes.SpokeConfig({supplyCap: 1, drawCap: 1}));
-
-    DataTypes.SpokeConfig memory spokeData = hub.getSpokeConfig(assetId, address(spoke1));
-    assertEq(spokeData.supplyCap, 1, 'spoke supply cap');
-    assertEq(spokeData.drawCap, 1, 'spoke draw cap');
+    vm.expectRevert(abi.encodeWithSelector(ILiquidityHub.InvalidSpoke.selector));
+    vm.prank(address(configurator));
+    hub.addSpoke(assetId, address(0), spokeConfig);
   }
 
-  function test_addSpoke_fuzz(DataTypes.SpokeConfig calldata spokeConfig) public {
-    uint256 assetId = hub.assetCount() - 1;
-
+  function test_addSpoke_fuzz(uint256 assetId, DataTypes.SpokeConfig calldata spokeConfig) public {
+    assetId = bound(assetId, 0, hub.assetCount() - 1);
+  
     vm.expectEmit(address(hub));
     emit ILiquidityHub.SpokeAdded(assetId, address(spoke1));
-    vm.prank(HUB_ADMIN);
+    vm.expectEmit(address(hub));
+    emit ILiquidityHub.SpokeConfigUpdated(assetId, address(spoke1), spokeConfig);
+    vm.prank(address(configurator));
     hub.addSpoke(assetId, address(spoke1), spokeConfig);
 
-    DataTypes.SpokeConfig memory spokeData = hub.getSpokeConfig(assetId, address(spoke1));
-    assertEq(spokeData.supplyCap, spokeConfig.supplyCap, 'spoke supply cap');
-    assertEq(spokeData.drawCap, spokeConfig.drawCap, 'spoke draw cap');
-  }
-
-  function test_addSpoke_revertsWith_InvalidSpoke() public {
-    uint256 assetId = hub.assetCount();
-    address invalidSpokeAddress = address(0);
-
-    vm.expectRevert(ILiquidityHub.InvalidSpoke.selector);
-    vm.prank(HUB_ADMIN);
-    hub.addSpoke(assetId, invalidSpokeAddress, DataTypes.SpokeConfig({supplyCap: 1, drawCap: 1}));
-  }
-
-  function test_addSpokes() public {
-    uint256[] memory assetIds = new uint256[](2);
-    assetIds[0] = daiAssetId;
-    assetIds[1] = wethAssetId;
-
-    DataTypes.SpokeConfig memory daiSpokeConfig = DataTypes.SpokeConfig({supplyCap: 1, drawCap: 2});
-    DataTypes.SpokeConfig memory wethSpokeConfig = DataTypes.SpokeConfig({
-      supplyCap: 3,
-      drawCap: 4
-    });
-
-    DataTypes.SpokeConfig[] memory spokeConfigs = new DataTypes.SpokeConfig[](2);
-    spokeConfigs[0] = daiSpokeConfig;
-    spokeConfigs[1] = wethSpokeConfig;
-
-    vm.prank(HUB_ADMIN);
-    vm.expectEmit(address(hub));
-    emit ILiquidityHub.SpokeAdded(daiAssetId, address(spoke1));
-    emit ILiquidityHub.SpokeAdded(wethAssetId, address(spoke1));
-    hub.addSpokes(assetIds, address(spoke1), spokeConfigs);
-
-    DataTypes.SpokeConfig memory daiSpokeData = hub.getSpokeConfig(daiAssetId, address(spoke1));
-    DataTypes.SpokeConfig memory wethSpokeData = hub.getSpokeConfig(wethAssetId, address(spoke1));
-
-    assertEq(daiSpokeData.supplyCap, daiSpokeConfig.supplyCap, 'dai spoke supply cap');
-    assertEq(daiSpokeData.drawCap, daiSpokeConfig.drawCap, 'dai spoke draw cap');
-
-    assertEq(wethSpokeData.supplyCap, wethSpokeConfig.supplyCap, 'eth spoke supply cap');
-    assertEq(wethSpokeData.drawCap, wethSpokeConfig.drawCap, 'eth spoke draw cap');
-  }
-
-  function test_addSpokes_revertsWith_InvalidSpoke() public {
-    uint256[] memory assetIds = new uint256[](2);
-    assetIds[0] = daiAssetId;
-    assetIds[1] = wethAssetId;
-
-    DataTypes.SpokeConfig[] memory spokeConfigs = new DataTypes.SpokeConfig[](2);
-    spokeConfigs[0] = DataTypes.SpokeConfig({supplyCap: 1, drawCap: 2});
-    spokeConfigs[1] = DataTypes.SpokeConfig({supplyCap: 3, drawCap: 4});
-
-    vm.expectRevert(ILiquidityHub.InvalidSpoke.selector);
-    vm.prank(HUB_ADMIN);
-    hub.addSpokes(assetIds, address(0), spokeConfigs);
+    assertEq(hub.getSpokeConfig(assetId, address(spoke1)).supplyCap, spokeConfig.supplyCap, 'spoke supply cap');
+    assertEq(hub.getSpokeConfig(assetId, address(spoke1)).drawCap, spokeConfig.drawCap, 'spoke draw cap');
   }
 
   function test_updateSpokeConfig_drawCap() public {
     DataTypes.SpokeConfig memory config = hub.getSpokeConfig(daiAssetId, address(spoke1));
+
     uint256 drawCap = 5;
     assertNotEq(config.drawCap, drawCap);
-
     config.drawCap = drawCap;
 
-    vm.prank(HUB_ADMIN);
-    hub.updateSpokeConfig(daiAssetId, address(spoke1), config);
-
-    assertEq(hub.getSpokeConfig(daiAssetId, address(spoke1)).drawCap, drawCap, 'asset drawCap');
+    _checkedUpdateSpokeConfig(daiAssetId, address(spoke1), config);
   }
 
   function test_updateSpokeConfig_fuzz_drawCap(uint256 drawCap) public {
     DataTypes.SpokeConfig memory config = hub.getSpokeConfig(daiAssetId, address(spoke1));
-    vm.assume(config.drawCap != drawCap);
 
+    vm.assume(config.drawCap != drawCap);
     config.drawCap = drawCap;
 
-    vm.prank(HUB_ADMIN);
-    hub.updateSpokeConfig(daiAssetId, address(spoke1), config);
-
-    assertEq(hub.getSpokeConfig(daiAssetId, address(spoke1)).drawCap, drawCap, 'asset drawCap');
+    _checkedUpdateSpokeConfig(daiAssetId, address(spoke1), config);
   }
 
   function test_updateSpokeConfig_supplyCap() public {
     DataTypes.SpokeConfig memory config = hub.getSpokeConfig(daiAssetId, address(spoke1));
+
     uint256 supplyCap = 5;
     assertNotEq(config.supplyCap, supplyCap);
-
     config.supplyCap = supplyCap;
 
-    vm.prank(HUB_ADMIN);
-    hub.updateSpokeConfig(daiAssetId, address(spoke1), config);
-
-    assertEq(
-      hub.getSpokeConfig(daiAssetId, address(spoke1)).supplyCap,
-      supplyCap,
-      'asset supplyCap'
-    );
+    _checkedUpdateSpokeConfig(daiAssetId, address(spoke1), config);
   }
 
   function test_updateSpokeConfig_fuzz_supplyCap(uint256 supplyCap) public {
     DataTypes.SpokeConfig memory config = hub.getSpokeConfig(daiAssetId, address(spoke1));
-    vm.assume(config.supplyCap != supplyCap);
 
+    vm.assume(config.supplyCap != supplyCap);
     config.supplyCap = supplyCap;
 
-    vm.prank(HUB_ADMIN);
-    hub.updateSpokeConfig(daiAssetId, address(spoke1), config);
-
-    assertEq(
-      hub.getSpokeConfig(daiAssetId, address(spoke1)).supplyCap,
-      supplyCap,
-      'asset supplyCap'
-    );
-  }
-
-  function test_updateSpokeConfig_emit() public {
-    DataTypes.SpokeConfig memory config = hub.getSpokeConfig(daiAssetId, address(spoke1));
-
-    vm.prank(HUB_ADMIN);
-    vm.expectEmit(address(hub));
-    emit ILiquidityHub.SpokeConfigUpdated(
-      daiAssetId,
-      address(spoke1),
-      config.supplyCap,
-      config.drawCap
-    );
-    hub.updateSpokeConfig(daiAssetId, address(spoke1), config);
+    _checkedUpdateSpokeConfig(daiAssetId, address(spoke1), config);
   }
 
   function test_addAsset_fuzz_revertsWith_InvalidAssetDecimals(
@@ -511,6 +419,19 @@ contract LiquidityHubConfigTest is LiquidityHubBase {
     assertNotEq(hub.getSpokeSuppliedShares(daiAssetId, config.feeReceiver), futureFees);
   }
 
+  function _checkedUpdateSpokeConfig(uint256 assetId, address spoke, DataTypes.SpokeConfig memory config) public {
+
+
+    vm.expectEmit(address(hub));
+    emit ILiquidityHub.SpokeConfigUpdated(assetId, spoke, config);
+
+    vm.prank(address(configurator));
+    hub.updateSpokeConfig(assetId, spoke, config);
+
+    assertEq(hub.getSpokeConfig(assetId, spoke).supplyCap, config.supplyCap, 'spokeConfig.supplyCap');
+    assertEq(hub.getSpokeConfig(assetId, spoke).drawCap, config.drawCap, 'spokeConfig.drawCap');
+  }
+
   function _processAssetConfig(uint256 assetId, DataTypes.AssetConfig memory newConfig) public {
     vm.assume(address(newConfig.irStrategy) != address(0));
     newConfig.liquidityFee = bound(
@@ -569,7 +490,7 @@ contract LiquidityHubConfigTest is LiquidityHubBase {
     hub.addAsset(asset, decimals, interestRateStrategy);
 
     assertEq(hub.assetCount(), assetId + 1, 'asset count');
-    assertEq(hub.getAssetDecimals(assetId), decimals, 'asset decimals');
+    assertEq(hub.getAsset(assetId).decimals, decimals, 'asset decimals');
     assertEq(hub.getAssetConfig(assetId), expectedConfig);
   }
 

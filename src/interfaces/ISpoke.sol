@@ -100,7 +100,7 @@ interface ISpoke is IMulticall {
 
   function addReserve(
     uint256 assetId,
-    ILiquidityHub hub,
+    address hub,
     DataTypes.ReserveConfig memory config,
     DataTypes.DynamicReserveConfig memory dynConfig
   ) external returns (uint256);
