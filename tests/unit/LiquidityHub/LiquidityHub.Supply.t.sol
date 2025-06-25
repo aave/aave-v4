@@ -771,6 +771,12 @@ contract LiquidityHubSupplyTest is LiquidityHubBase {
     }
   }
 
+  /// @dev Approves asset and performs an add action in the hub, with the following checks:
+  /// @dev  - checks arguments passed by the hub to the interest rate strategy
+  /// @dev  - checks emitted events
+  /// @dev  - checks available liquidity is updated correctly
+  /// @dev  - checks base debt stays constant
+  /// @dev  - makes sure the borrow rate invariant is maintained (rate stays constant if no liquidity is added or taken)
   function _checkedAdd(address caller, uint256 assetId, uint256 amount, address from) public {
     IERC20 asset = hub.assetsList(assetId);
 

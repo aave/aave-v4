@@ -456,6 +456,12 @@ contract LiquidityHubDrawTest is LiquidityHubBase {
     hub.draw({assetId: daiAssetId, amount: drawAmount, to: address(spoke1)});
   }
 
+  /// @dev Performs a draw action in the hub, with the following checks:
+  /// @dev  - checks arguments passed by the hub to the interest rate strategy
+  /// @dev  - checks emitted events
+  /// @dev  - checks available liquidity is updated correctly
+  /// @dev  - checks base debt is updated correctly
+  /// @dev  - makes sure the borrow rate invariant is maintained (rate stays constant if no liquidity is added or taken)
   function _checkedDraw(address caller, uint256 assetId, uint256 amount, address to) internal {
     uint256 shares = hub.convertToDrawnSharesUp(assetId, amount);
 
