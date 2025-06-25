@@ -85,7 +85,20 @@ contract LiquidityHub is ILiquidityHub {
 
   function addSpoke(uint256 assetId, address spoke, DataTypes.SpokeConfig memory config) external {
     // TODO: AccessControl
-    _addSpoke(assetId, spoke, config);
+
+    require(spoke != address(0), InvalidSpoke()); // todo: how to remove spoke
+    _spokes[assetId][spoke] = DataTypes.SpokeData({
+      suppliedShares: 0,
+      baseDrawnShares: 0,
+      premiumDrawnShares: 0,
+      premiumOffset: 0,
+      realizedPremium: 0,
+      lastUpdateTimestamp: block.timestamp,
+      config: config
+    });
+
+    emit SpokeAdded(assetId, spoke);
+    emit SpokeConfigUpdated(assetId, spoke, config);
   }
 
   function updateSpokeConfig(
@@ -94,14 +107,7 @@ contract LiquidityHub is ILiquidityHub {
     DataTypes.SpokeConfig memory config
   ) external {
     // TODO: AccessControl
-    _updateSpokeConfig(assetId, spoke, config);
-  }
 
-  function _updateSpokeConfig(
-    uint256 assetId,
-    address spoke,
-    DataTypes.SpokeConfig memory config
-  ) internal {
     _spokes[assetId][spoke].config = config;
     emit SpokeConfigUpdated(assetId, spoke, config);
   }
@@ -488,22 +494,6 @@ contract LiquidityHub is ILiquidityHub {
     (uint256 baseDebt, ) = _getSpokeDebt(asset, spoke);
     require(baseAmountRestored <= baseDebt, SurplusAmountRestored(baseDebt));
     // we should have already restored premium debt
-  }
-
-  function _addSpoke(uint256 assetId, address spoke, DataTypes.SpokeConfig memory config) internal {
-    require(spoke != address(0), InvalidSpoke()); // todo: how to remove spoke
-    _spokes[assetId][spoke] = DataTypes.SpokeData({
-      suppliedShares: 0,
-      baseDrawnShares: 0,
-      premiumDrawnShares: 0,
-      premiumOffset: 0,
-      realizedPremium: 0,
-      lastUpdateTimestamp: block.timestamp,
-      config: config
-    });
-
-    emit SpokeAdded(assetId, spoke);
-    emit SpokeConfigUpdated(assetId, spoke, config);
   }
 
   function _validateAssetConfig(
