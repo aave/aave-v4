@@ -562,13 +562,6 @@ contract Spoke is ISpoke, Multicall {
     // todo validate user not trying to repay more
   }
 
-  // TODO: Place this and LH equivalent in a generic logic library
-  function _validateReportDeficit(DataTypes.Reserve storage reserve) internal view {
-    require(reserve.asset != address(0), ReserveNotListed());
-    require(reserve.config.active, ReserveNotActive());
-    require(!reserve.config.paused, ReservePaused());
-  }
-
   function _refreshAndValidateUserPosition(address user) internal returns (uint256) {
     // @dev refresh user position dynamic config only on borrow, withdraw, disableUsingAsCollateral
     _refreshDynamicConfig(user); // opt: merge with _calculateUserAccountData
@@ -1103,7 +1096,7 @@ contract Spoke is ISpoke, Multicall {
         vars.liquidationProtocolFeeAmount,
         vars.baseDebtToLiquidate,
         vars.premiumDebtToLiquidate,
-        vars.hasNoCollateralLeft
+        vars.hasDeficit
       ) = _calculateLiquidationParameters(
         collateralReserve,
         debtReserve,
@@ -1186,22 +1179,10 @@ contract Spoke is ISpoke, Multicall {
       userDebtPosition.baseDrawnShares -= vars.restoredShares;
       vars.totalRestoredShares += vars.restoredShares;
 
-      // deficit accounting
-      if (vars.newUserSuppliedShares == 0) {
-        vars.outstandingDebt =
-          vars.baseDebt +
-          vars.premiumDebt -
-          vars.baseDebtToLiquidate -
-          vars.premiumDebtToLiquidate;
-
-        /// @notice user supplied shares only applies to single coll reserve
-        /// but hasNoCollateralLeft includes all coll reserves
-        if (vars.outstandingDebt > 0 && vars.hasNoCollateralLeft) {
-          vars.hasDeficit = true;
-        }
-      }
-
-      if (!vars.hasDeficit) {
+      // deficit exists only if remaining supplied shares are 0
+      if (vars.hasDeficit && vars.newUserSuppliedShares == 0) {
+        _reportDeficit(user);
+      } else {
         // new user rp only needs to be calculated if no bad debt remains, otherwise it is 0 given no collateral remains
         (vars.newUserRiskPremium, , , , ) = _calculateUserAccountData(user);
 
@@ -1245,8 +1226,6 @@ contract Spoke is ISpoke, Multicall {
         );
 
         _notifyRiskPremiumUpdate(vars.debtAssetId, user, vars.newUserRiskPremium);
-      } else {
-        _reportDeficit(user);
       }
 
       vars.totalCollateralToLiquidate += vars.collateralToLiquidate;
@@ -1300,7 +1279,7 @@ contract Spoke is ISpoke, Multicall {
    * @return liquidationProtocolFeeAmount The amount of protocol fee.
    * @return baseDebtToLiquidate The amount of base debt to repay.
    * @return premiumDebtToLiquidate The amount of premium debt to repay.
-   * @return hasNoCollateralLeft The flag representing if the user will have no collateral left after liquidation.
+   * @return hasDeficit The flag representing if the user will have deficit to report.
    */
   function _calculateLiquidationParameters(
     DataTypes.Reserve storage collateralReserve,
@@ -1354,6 +1333,7 @@ contract Spoke is ISpoke, Multicall {
       vars.actualCollateralToLiquidate,
       vars.actualDebtToLiquidate,
       vars.liquidationProtocolFeeAmount,
+      vars.debtToLiquidateInBaseCurrency,
       vars.collateralToLiquidateInBaseCurrency
     ) = vars.calculateAvailableCollateralToLiquidate();
     (vars.baseDebtToLiquidate, vars.premiumDebtToLiquidate) = _calculateRestoreAmount(
@@ -1367,7 +1347,8 @@ contract Spoke is ISpoke, Multicall {
       vars.liquidationProtocolFeeAmount,
       vars.baseDebtToLiquidate,
       vars.premiumDebtToLiquidate,
-      vars.collateralToLiquidateInBaseCurrency == vars.totalCollateralInBaseCurrency
+      vars.debtToLiquidateInBaseCurrency < vars.totalDebtInBaseCurrency &&
+        vars.collateralToLiquidateInBaseCurrency == vars.totalCollateralInBaseCurrency
     );
   }
 

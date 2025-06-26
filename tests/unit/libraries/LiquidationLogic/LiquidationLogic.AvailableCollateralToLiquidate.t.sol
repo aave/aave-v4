@@ -40,6 +40,7 @@ contract LiquidationAvailableCollateralToLiquidateTest is LiquidationLogicBaseTe
       res.actualCollateralToLiquidate,
       res.actualDebtToLiquidate,
       res.liquidationProtocolFeeAmount,
+      ,
 
     ) = LiquidationLogic.calculateAvailableCollateralToLiquidate(args);
 
@@ -76,6 +77,7 @@ contract LiquidationAvailableCollateralToLiquidateTest is LiquidationLogicBaseTe
       res.actualCollateralToLiquidate,
       res.actualDebtToLiquidate,
       res.liquidationProtocolFeeAmount,
+      ,
 
     ) = LiquidationLogic.calculateAvailableCollateralToLiquidate(args);
 
@@ -111,6 +113,7 @@ contract LiquidationAvailableCollateralToLiquidateTest is LiquidationLogicBaseTe
       res.actualCollateralToLiquidate,
       res.actualDebtToLiquidate,
       res.liquidationProtocolFeeAmount,
+      ,
 
     ) = LiquidationLogic.calculateAvailableCollateralToLiquidate(args);
 
@@ -161,6 +164,7 @@ contract LiquidationAvailableCollateralToLiquidateTest is LiquidationLogicBaseTe
       res.actualCollateralToLiquidate,
       res.actualDebtToLiquidate,
       res.liquidationProtocolFeeAmount,
+      ,
 
     ) = LiquidationLogic.calculateAvailableCollateralToLiquidate(args);
 
@@ -216,6 +220,7 @@ contract LiquidationAvailableCollateralToLiquidateTest is LiquidationLogicBaseTe
       res.actualCollateralToLiquidate,
       res.actualDebtToLiquidate,
       res.liquidationProtocolFeeAmount,
+      ,
 
     ) = LiquidationLogic.calculateAvailableCollateralToLiquidate(args);
 

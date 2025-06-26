@@ -135,6 +135,17 @@ library DataTypes {
     uint256 collateralAssetUnit;
     uint256 liquidationProtocolFee;
     uint256 collateralToLiquidateInBaseCurrency;
+    uint256 debtToLiquidateInBaseCurrency;
+  }
+
+  struct CalculateAvailableCollateralToLiquidate {
+    uint256 userCollateralBalanceInBaseCurrency;
+    uint256 baseCollateral;
+    uint256 maxCollateralToLiquidate;
+    uint256 collateralAmount;
+    uint256 debtAmountNeeded;
+    uint256 collateralToLiquidateInBaseCurrency;
+    uint256 debtToLiquidateInBaseCurrency;
   }
 
   struct ExecuteLiquidationLocalVars {
@@ -168,9 +179,6 @@ library DataTypes {
     uint256 totalDebtToLiquidate;
     uint256 usersLength;
     uint256 newUserSuppliedShares;
-    // uint256 deficit;
-    uint256 outstandingDebt;
-    bool hasNoCollateralLeft;
     bool hasDeficit;
   }
 

@@ -211,6 +211,7 @@ contract SpokeLiquidationBase is SpokeBase {
       state.collToLiq,
       state.debtToLiq,
       state.liqProtocolFee,
+      ,
 
     ) = _calculateAvailableCollateralToLiquidate(state.spoke, state, requiredDebtAmount);
 
@@ -459,13 +460,17 @@ contract SpokeLiquidationBase is SpokeBase {
     return true;
   }
 
-  /// @notice Calculate output from LiquidationLogic.calculateAvailableCollateralToLiquidate.
-  /// @param spoke Spoke contract.
-  /// @param state LiquidationTestLocalParams struct containing local params.
-  /// @param debtToCover Desired amount of debt to cover.
-  /// @return actualCollateralToLiquidate Amount of actual collateral to liquidate.
-  /// @return actualDebtToLiquidate Amount of actual debt to liquidate.
-  /// @return liquidationProtocolFeeAmount Amount of protocol fee (in asset).
+  /**
+   * @notice Calculate output from LiquidationLogic.calculateAvailableCollateralToLiquidate.
+   * @param spoke Spoke contract.
+   * @param state LiquidationTestLocalParams struct containing local params.
+   * @param debtToCover Desired amount of debt to cover.
+   * @return actualCollateralToLiquidate Amount of actual collateral to liquidate.
+   * @return actualDebtToLiquidate Amount of actual debt to liquidate.
+   * @return liquidationProtocolFeeAmount Amount of protocol fee (in asset).
+   * @return debtToLiquidateInBaseCurrency Amount of debt to liquidate in base currency.
+   * @return collateralToLiquidateInBaseCurrency Amount of collateral to liquidate in base currency.
+   */
   function _calculateAvailableCollateralToLiquidate(
     ISpoke spoke,
     LiquidationTestLocalParams memory state,
@@ -477,6 +482,7 @@ contract SpokeLiquidationBase is SpokeBase {
       uint256 actualCollateralToLiquidate,
       uint256 actualDebtToLiquidate,
       uint256 liquidationProtocolFeeAmount,
+      uint256 debtToLiquidateInBaseCurrency,
       uint256 collateralToLiquidateInBaseCurrency
     )
   {
