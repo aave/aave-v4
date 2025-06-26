@@ -6,8 +6,11 @@ import {stdError} from 'forge-std/StdError.sol';
 import {stdMath} from 'forge-std/StdMath.sol';
 import {console2 as console} from 'forge-std/console2.sol';
 
+import {AggregatorV3Interface} from 'src/dependencies/chainlink/AggregatorV3Interface.sol';
+import {IPriceOracle} from 'src/interfaces/IPriceOracle.sol';
 import {LiquidityHub, ILiquidityHub} from 'src/contracts/LiquidityHub.sol';
 import {Spoke, ISpoke} from 'src/contracts/Spoke.sol';
+import {AaveOracle, IAaveOracle} from 'src/contracts/AaveOracle.sol';
 import {TreasurySpoke, ITreasurySpoke} from 'src/contracts/TreasurySpoke.sol';
 import {PercentageMath} from 'src/libraries/math/PercentageMath.sol';
 import {PercentageMathExtended} from 'src/libraries/math/PercentageMathExtended.sol';
@@ -22,7 +25,7 @@ import {Utils} from './Utils.sol';
 // mocks
 import {TestnetERC20} from './mocks/TestnetERC20.sol';
 import {MockERC20} from './mocks/MockERC20.sol';
-import {MockPriceOracle, IPriceOracle} from './mocks/MockPriceOracle.sol';
+import {MockPriceFeed} from './mocks/MockPriceFeed.sol';
 
 // dependencies
 import {SafeCast} from 'src/dependencies/openzeppelin/SafeCast.sol';
@@ -69,9 +72,9 @@ abstract contract Base is Test {
   IERC20 internal eth;
   IERC20 internal wbtc;
 
-  MockPriceOracle internal oracle1;
-  MockPriceOracle internal oracle2;
-  MockPriceOracle internal oracle3;
+  IAaveOracle internal oracle1;
+  IAaveOracle internal oracle2;
+  IAaveOracle internal oracle3;
   ILiquidityHub internal hub;
   ITreasurySpoke internal treasurySpoke;
   ISpoke internal spoke1;
@@ -156,14 +159,14 @@ abstract contract Base is Test {
   }
 
   function deployFixtures() internal virtual {
-    oracle1 = new MockPriceOracle();
-    oracle2 = new MockPriceOracle();
-    oracle3 = new MockPriceOracle();
-    irStrategy = new AssetInterestRateStrategy();
-    hub = new LiquidityHub();
+    oracle1 = IAaveOracle(new AaveOracle(8, 'Spoke 1 (USD)'));
+    oracle2 = IAaveOracle(new AaveOracle(8, 'Spoke 2 (USD)'));
+    oracle3 = IAaveOracle(new AaveOracle(8, 'Spoke 3 (USD)'));
     spoke1 = ISpoke(new Spoke(address(oracle1)));
     spoke2 = ISpoke(new Spoke(address(oracle2)));
     spoke3 = ISpoke(new Spoke(address(oracle3)));
+    irStrategy = new AssetInterestRateStrategy();
+    hub = new LiquidityHub();
     treasurySpoke = ITreasurySpoke(new TreasurySpoke(TREASURY_ADMIN, address(hub)));
     dai = new MockERC20();
     eth = new MockERC20();
@@ -417,12 +420,6 @@ abstract contract Base is Test {
     spokeInfo[spoke1].usdy.reserveId = spoke1.addReserve(usdyAssetId, usdyConfig, usdyDynConfig);
     spokeInfo[spoke1].usdy.liquidityPremium = usdyConfig.liquidityPremium;
 
-    oracle1.setReservePrice(spokeInfo[spoke1].weth.reserveId, 2000e8);
-    oracle1.setReservePrice(spokeInfo[spoke1].wbtc.reserveId, 50_000e8);
-    oracle1.setReservePrice(spokeInfo[spoke1].dai.reserveId, 1e8);
-    oracle1.setReservePrice(spokeInfo[spoke1].usdx.reserveId, 1e8);
-    oracle1.setReservePrice(spokeInfo[spoke1].usdy.reserveId, 1e8);
-
     hub.addSpoke(wethAssetId, spokeConfig, address(spoke1));
     hub.addSpoke(wbtcAssetId, spokeConfig, address(spoke1));
     hub.addSpoke(daiAssetId, spokeConfig, address(spoke1));
@@ -507,12 +504,6 @@ abstract contract Base is Test {
     spokeInfo[spoke2].usdy.reserveId = spoke2.addReserve(usdyAssetId, usdyConfig, usdyDynConfig);
     spokeInfo[spoke2].usdy.liquidityPremium = usdyConfig.liquidityPremium;
 
-    oracle2.setReservePrice(spokeInfo[spoke2].wbtc.reserveId, 50_000e8);
-    oracle2.setReservePrice(spokeInfo[spoke2].weth.reserveId, 2000e8);
-    oracle2.setReservePrice(spokeInfo[spoke2].dai.reserveId, 1e8);
-    oracle2.setReservePrice(spokeInfo[spoke2].usdx.reserveId, 1e8);
-    oracle2.setReservePrice(spokeInfo[spoke2].usdy.reserveId, 1e8);
-
     hub.addSpoke(wbtcAssetId, spokeConfig, address(spoke2));
     hub.addSpoke(wethAssetId, spokeConfig, address(spoke2));
     hub.addSpoke(daiAssetId, spokeConfig, address(spoke2));
@@ -581,12 +572,7 @@ abstract contract Base is Test {
     spokeInfo[spoke3].weth.liquidityPremium = wethConfig.liquidityPremium;
     spokeInfo[spoke3].wbtc.reserveId = spoke3.addReserve(wbtcAssetId, wbtcConfig, wbtcDynConfig);
     spokeInfo[spoke3].wbtc.liquidityPremium = wbtcConfig.liquidityPremium;
-
-    oracle3.setReservePrice(spokeInfo[spoke3].dai.reserveId, 1e8);
-    oracle3.setReservePrice(spokeInfo[spoke3].usdx.reserveId, 1e8);
-    oracle3.setReservePrice(spokeInfo[spoke3].weth.reserveId, 2000e8);
-    oracle3.setReservePrice(spokeInfo[spoke3].wbtc.reserveId, 50_000e8);
-
+  
     hub.addSpoke(daiAssetId, spokeConfig, address(spoke3));
     hub.addSpoke(usdxAssetId, spokeConfig, address(spoke3));
     hub.addSpoke(wethAssetId, spokeConfig, address(spoke3));
@@ -622,7 +608,6 @@ abstract contract Base is Test {
     daiDynConfig = DataTypes.DynamicReserveConfig({collateralFactor: 70_00});
     spokeInfo[spoke2].dai2.reserveId = spoke2.addReserve(dai2AssetId, daiConfig, daiDynConfig);
     spokeInfo[spoke2].dai2.liquidityPremium = daiConfig.liquidityPremium;
-    oracle2.setReservePrice(spokeInfo[spoke2].dai2.reserveId, 1e8);
     hub.addSpoke(dai2AssetId, spokeConfig, address(spoke2));
 
     irStrategy.setInterestRateData(
@@ -680,6 +665,25 @@ abstract contract Base is Test {
       })
     );
     vm.stopPrank();
+
+    _mockReservePrice(spoke1, spokeInfo[spoke1].weth.reserveId, 2000e8);
+    _mockReservePrice(spoke1, spokeInfo[spoke1].wbtc.reserveId, 50_000e8);
+    _mockReservePrice(spoke1, spokeInfo[spoke1].dai.reserveId, 1e8);
+    _mockReservePrice(spoke1, spokeInfo[spoke1].usdx.reserveId, 1e8);
+    _mockReservePrice(spoke1, spokeInfo[spoke1].usdy.reserveId, 1e8);
+
+    _mockReservePrice(spoke2, spokeInfo[spoke2].wbtc.reserveId, 50_000e8);
+    _mockReservePrice(spoke2, spokeInfo[spoke2].weth.reserveId, 2000e8);
+    _mockReservePrice(spoke2, spokeInfo[spoke2].dai.reserveId, 1e8);
+    _mockReservePrice(spoke2, spokeInfo[spoke2].usdx.reserveId, 1e8);
+    _mockReservePrice(spoke2, spokeInfo[spoke2].usdy.reserveId, 1e8);
+
+    _mockReservePrice(spoke3, spokeInfo[spoke3].dai.reserveId, 1e8);
+    _mockReservePrice(spoke3, spokeInfo[spoke3].usdx.reserveId, 1e8);
+    _mockReservePrice(spoke3, spokeInfo[spoke3].weth.reserveId, 2000e8);
+    _mockReservePrice(spoke3, spokeInfo[spoke3].wbtc.reserveId, 50_000e8);
+
+    _mockReservePrice(spoke2, spokeInfo[spoke2].dai2.reserveId, 1e8);
   }
 
   /* @dev Configures Hub 2 with the following assetIds:
@@ -1115,19 +1119,6 @@ abstract contract Base is Test {
     address user
   ) internal view returns (uint256) {
     return spoke.getUserSuppliedAmount(reserveId, user);
-  }
-
-  /// @dev Helper function to calculate a new price based on a percentage change
-  function calcNewPrice(uint256 price, uint256 percent) public pure returns (uint256) {
-    if (percent == 0) return price;
-    return price.percentMul(percent);
-  }
-
-  function setNewPrice(ISpoke spoke, uint256 reserveId, uint256 percent) public {
-    MockPriceOracle oracle = MockPriceOracle(address(spoke.oracle()));
-    uint256 currentPrice = oracle.getReservePrice(reserveId);
-    uint256 newPrice = calcNewPrice(currentPrice, percent);
-    oracle.setReservePrice(reserveId, newPrice);
   }
 
   /// @dev Helper function to calculate asset amount corresponding to single drawn share
@@ -1615,14 +1606,12 @@ abstract contract Base is Test {
     uint256 reserveId,
     uint256 debtAmount
   ) internal {
-    MockPriceOracle oracle = MockPriceOracle(address(spoke.oracle()));
-    uint256 assetId = spoke.getReserve(reserveId).assetId;
+    uint256 initialPrice = spoke.oracle().getReservePrice(reserveId);
     // set price to 0 to circumvent borrow validation
-    uint256 initialPrice = oracle.getReservePrice(reserveId);
-    oracle.setReservePrice(reserveId, 0);
+    _mockReservePrice(spoke, reserveId, 0);
     vm.prank(user);
     spoke.borrow(reserveId, debtAmount, user);
-    oracle.setReservePrice(reserveId, initialPrice);
+    _mockReservePrice(spoke, reserveId, initialPrice);
   }
 
   /// @dev Calculate expected debt index based on input params
@@ -1754,5 +1743,18 @@ abstract contract Base is Test {
       ),
       abi.encode(interestRateBps.bpsToRay())
     );
+  }
+
+  function _mockReservePrice(ISpoke spoke, uint256 reserveId, uint256 price) internal {
+    AaveOracle oracle = AaveOracle(address(spoke.oracle()));
+    address mockPriceFeed = address(new MockPriceFeed(oracle.DECIMALS(), oracle.DESCRIPTION(), price));
+    vm.prank(address(spoke));
+    oracle.setReserveSource(reserveId, mockPriceFeed);
+  }
+
+  function _changeMockReservePriceByPercentage(ISpoke spoke, uint256 reserveId, uint256 percentage) internal {
+    uint256 initialPrice = spoke.oracle().getReservePrice(reserveId);
+    uint256 newPrice = initialPrice.percentMulDown(percentage);
+    _mockReservePrice(spoke, reserveId, newPrice);
   }
 }

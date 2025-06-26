@@ -3,10 +3,11 @@ pragma solidity ^0.8.0;
 
 import {Test} from 'forge-std/Test.sol';
 
+import {IPriceOracle} from 'src/interfaces/IPriceOracle.sol';
+import {AaveOracle} from 'src/contracts/AaveOracle.sol';
 import {LiquidityHub} from 'src/contracts/LiquidityHub.sol';
 import {Spoke} from 'src/contracts/Spoke.sol';
 import {IERC20} from 'src/dependencies/openzeppelin/IERC20.sol';
-import '../mocks/MockPriceOracle.sol';
 import '../mocks/MockERC20.sol';
 import '../Utils.sol';
 import 'src/contracts/AssetInterestRateStrategy.sol';
@@ -32,7 +33,7 @@ contract LiquidityHubHandler is Test {
 
   constructor() {
     irStrategy = new AssetInterestRateStrategy();
-    oracle = new MockPriceOracle();
+    oracle = new AaveOracle(8, 'Spoke 1 (USD)');
     hub = new LiquidityHub();
     spoke1 = new Spoke(address(oracle));
     usdc = new MockERC20();

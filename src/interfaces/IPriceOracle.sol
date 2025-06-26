@@ -7,6 +7,10 @@ pragma solidity ^0.8.0;
  * @notice Defines the basic interface for a Price oracle.
  */
 interface IPriceOracle {
+  function DECIMALS() external view returns (uint256);
+
+  function DESCRIPTION() external view returns (string memory);
+
   /**
    * @notice Returns the reserve price in the base currency
    * @param reserveId The id of the reserve

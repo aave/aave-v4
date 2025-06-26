@@ -73,8 +73,8 @@ contract SpokeMultipleHubTest is SpokeBase {
     hub3.addSpoke(hub3DaiAssetId, spokeConfig, address(spoke1));
 
     // Set the prices for dai for the new hubs
-    oracle1.setReservePrice(daiHub2ReserveId, 1e8);
-    oracle1.setReservePrice(daiHub3ReserveId, 1e8);
+    _mockReservePrice(spoke1, daiHub2ReserveId, 1e8);
+    _mockReservePrice(spoke1, daiHub3ReserveId, 1e8);
 
     // Deal dai to Alice for supplying to 2 hubs
     deal(address(tokenList.dai), alice, MAX_SUPPLY_AMOUNT * 2);

@@ -456,7 +456,6 @@ contract LiquidationCallScenarioTest is SpokeLiquidationBase {
 
   /// scenario where fully liquidating all collateral still does not improve a position to close factor
   function test_liquidationCall_all_collateral() public {
-    MockPriceOracle oracle = MockPriceOracle(address(spoke1.oracle()));
     LiqScenarioTestData memory state;
 
     Balance memory aliceDai;
@@ -483,7 +482,7 @@ contract LiquidationCallScenarioTest is SpokeLiquidationBase {
     Utils.borrow(spoke1, state.wethReserveId, alice, state.debtAmount.weth, alice);
 
     // wbtc collateral value drop to reduce HF < 1
-    oracle.setReservePrice(state.wbtcReserveId, 20_000e8);
+    _mockReservePrice(spoke1, state.wbtcReserveId, 20_000e8);
 
     // position is liquidatable
     assertLt(spoke1.getHealthFactor(alice), HEALTH_FACTOR_LIQUIDATION_THRESHOLD);
@@ -615,8 +614,7 @@ contract LiquidationCallScenarioTest is SpokeLiquidationBase {
     Utils.supplyCollateral(spoke1, _usdyReserveId(spoke1), alice, usdyAmount, alice);
     Utils.borrow(spoke1, _usdxReserveId(spoke1), alice, debtAmount, alice);
 
-    MockPriceOracle oracle = MockPriceOracle(address(spoke1.oracle()));
-    oracle.setReservePrice(_wethReserveId(spoke1), 100e8);
+    _mockReservePrice(spoke1, _wethReserveId(spoke1), 100e8);
 
     vm.prank(LIQUIDATOR);
     spoke1.liquidationCall(_daiReserveId(spoke1), _usdxReserveId(spoke1), alice, debtAmount);
@@ -643,8 +641,7 @@ contract LiquidationCallScenarioTest is SpokeLiquidationBase {
     Utils.supplyCollateral(spoke1, _usdxReserveId(spoke1), alice, usdxAmount, alice);
     Utils.borrow(spoke1, _daiReserveId(spoke1), alice, borrowAmount, alice);
 
-    MockPriceOracle oracle = MockPriceOracle(address(spoke1.oracle()));
-    oracle.setReservePrice(_wethReserveId(spoke1), 800e8);
+    _mockReservePrice(spoke1, _wethReserveId(spoke1), 800e8);
 
     vm.prank(bob);
     spoke1.liquidationCall(_usdxReserveId(spoke1), _daiReserveId(spoke1), alice, borrowAmount);
@@ -679,8 +676,7 @@ contract LiquidationCallScenarioTest is SpokeLiquidationBase {
     Utils.supplyCollateral(spoke1, usdxReserveId, alice, usdxAmount, alice);
     Utils.borrow(spoke1, daiReserveId, alice, borrowAmount, alice);
 
-    MockPriceOracle oracle = MockPriceOracle(address(spoke1.oracle()));
-    oracle.setReservePrice(wethReserveId, 800e8);
+    _mockReservePrice(spoke1, wethReserveId, 800e8);
 
     vm.prank(LIQUIDATOR);
     spoke1.liquidationCall(usdxReserveId, daiReserveId, alice, borrowAmount);

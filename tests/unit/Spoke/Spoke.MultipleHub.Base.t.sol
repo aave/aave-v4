@@ -6,7 +6,7 @@ import 'tests/unit/Spoke/SpokeBase.t.sol';
 contract SpokeMultipleHubBase is SpokeBase {
   // New hub and spoke
   ILiquidityHub internal newHub;
-  MockPriceOracle internal newOracle;
+  AaveOracle internal newOracle;
   ISpoke internal newSpoke;
   IAssetInterestRateStrategy internal newIrStrategy;
 
@@ -32,13 +32,13 @@ contract SpokeMultipleHubBase is SpokeBase {
   function deployFixtures() internal virtual override {
     // Canonical hub and spoke
     hub = new LiquidityHub();
-    oracle1 = new MockPriceOracle();
+    oracle1 = new AaveOracle(8, 'Spoke 1 (USD)');
     spoke1 = new Spoke(address(oracle1));
     irStrategy = new AssetInterestRateStrategy();
 
     // New hub and spoke
     newHub = new LiquidityHub();
-    newOracle = new MockPriceOracle();
+    newOracle = new AaveOracle(8, 'New Spoke (USD)');
     newSpoke = new Spoke(address(newOracle));
     newIrStrategy = new AssetInterestRateStrategy();
 

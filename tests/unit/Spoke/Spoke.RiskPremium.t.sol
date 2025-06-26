@@ -167,8 +167,7 @@ contract SpokeRiskPremiumTest is SpokeBase {
     );
 
     // Change the price of dai2 via mock call
-    MockPriceOracle oracle = MockPriceOracle(address(spoke2.oracle()));
-    oracle.setReservePrice(_dai2ReserveId(spoke2), 100000e8);
+    _mockReservePrice(spoke2, _dai2ReserveId(spoke2), 100000e8);
 
     // Check that debt has outgrown collateral
     uint256 collateralValue = _getValueInBaseCurrency(
@@ -695,8 +694,7 @@ contract SpokeRiskPremiumTest is SpokeBase {
     );
 
     // Now change the price of usdx
-    MockPriceOracle oracle = MockPriceOracle(address(spoke2.oracle()));
-    oracle.setReservePrice(_usdxReserveId(spoke2), newUsdxPrice);
+    _mockReservePrice(spoke2, _usdxReserveId(spoke2), newUsdxPrice);
 
     assertEq(
       spoke2.getUserRiskPremium(bob),
@@ -865,11 +863,10 @@ contract SpokeRiskPremiumTest is SpokeBase {
     }
 
     // Update prices
-    MockPriceOracle oracle = MockPriceOracle(address(spoke2.oracle()));
-    oracle.setReservePrice(_daiReserveId(spoke2), daiInfo.price);
-    oracle.setReservePrice(_wethReserveId(spoke2), wethInfo.price);
-    oracle.setReservePrice(_usdxReserveId(spoke2), usdxInfo.price);
-    oracle.setReservePrice(_wbtcReserveId(spoke2), wbtcInfo.price);
+    _mockReservePrice(spoke2, _daiReserveId(spoke2), daiInfo.price);
+    _mockReservePrice(spoke2, _wethReserveId(spoke2), wethInfo.price);
+    _mockReservePrice(spoke2, _usdxReserveId(spoke2), usdxInfo.price);
+    _mockReservePrice(spoke2, _wbtcReserveId(spoke2), wbtcInfo.price);
 
     // Update LPs
     updateLiquidityPremium(spoke2, _daiReserveId(spoke2), daiInfo.lp);

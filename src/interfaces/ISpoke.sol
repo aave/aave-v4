@@ -11,6 +11,7 @@ import {DataTypes} from 'src/libraries/types/DataTypes.sol';
  * @notice Basic interface for Spoke
  */
 interface ISpoke is IMulticall {
+  event OracleUpdated(address indexed oracle);
   event ReserveAdded(uint256 indexed reserveId, uint256 indexed assetId);
   event ReserveConfigUpdated(uint256 indexed reserveId, DataTypes.ReserveConfig config);
   event LiquidityPremiumUpdated(uint256 indexed reserveId, uint256 liquidityPremium);
@@ -240,5 +241,6 @@ interface ISpoke is IMulticall {
   function HEALTH_FACTOR_LIQUIDATION_THRESHOLD() external view returns (uint256);
 
   function MAX_LIQUIDITY_PREMIUM() external view returns (uint256);
+
   function oracle() external view returns (IPriceOracle);
 }
