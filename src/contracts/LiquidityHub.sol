@@ -302,24 +302,23 @@ contract LiquidityHub is ILiquidityHub {
     require(premiumDebtAfter + realizedPremiumTaken - premiumDebtBefore <= 2, InvalidDebtChange());
   }
 
-  /// @inheritdoc ILiquidityHub
-  function supplyToFeeReceiver(
-    uint256 assetId,
-    uint256 amount,
-    address from
-  ) external returns (uint256) {
+  function transferFee(uint256 assetId, uint256 amount) external returns (uint256) {
     // TODO: authorization - only spokes
 
     DataTypes.Asset storage asset = _assets[assetId];
+    DataTypes.SpokeData storage spoke = _spokes[assetId][msg.sender];
     address feeReceiver = asset.config.feeReceiver;
     require(feeReceiver != address(0), InvalidFeeReceiver());
-    DataTypes.SpokeData storage spoke = _spokes[assetId][feeReceiver];
 
-    uint256 suppliedShares = _executeAdd(asset, spoke, assetId, amount, from);
+    uint256 transferredShares = asset.toSuppliedSharesDown(amount);
+    require(transferredShares <= spoke.suppliedShares, InvalidSharesAmount());
 
-    emit SupplyToFeeReceiver(assetId, msg.sender, suppliedShares, amount);
+    spoke.suppliedShares -= transferredShares;
+    _spokes[assetId][feeReceiver].suppliedShares += transferredShares;
 
-    return suppliedShares;
+    emit TransferFee(assetId, msg.sender, transferredShares, amount);
+
+    return transferredShares;
   }
 
   function _refresh(

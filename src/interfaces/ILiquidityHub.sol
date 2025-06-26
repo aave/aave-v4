@@ -52,7 +52,7 @@ interface ILiquidityHub {
     uint256 realizedPremiumAdded,
     uint256 realizedPremiumTaken
   );
-  event SupplyToFeeReceiver(
+  event TransferFee(
     uint256 indexed assetId,
     address indexed spoke,
     uint256 suppliedShares,
@@ -180,18 +180,13 @@ interface ILiquidityHub {
   ) external;
 
   /**
-   * @notice Donate asset on behalf of feeReceiver.
+   * @notice Transfer supplied asset accounting to feeReceiver.
    * @dev Only callable by spokes.
    * @param assetId The identifier of the asset.
    * @param amount The amount of asset liquidity to add/supply.
-   * @param from The address (user) from which we pull assets.
    * @return The amount of shares added or supplied.
    */
-  function supplyToFeeReceiver(
-    uint256 assetId,
-    uint256 amount,
-    address from
-  ) external returns (uint256);
+  function transferFee(uint256 assetId, uint256 amount) external returns (uint256);
 
   function convertToDrawnAssets(uint256 assetId, uint256 shares) external view returns (uint256);
 

@@ -1100,8 +1100,8 @@ contract Spoke is ISpoke, Multicall {
       // liquidate collateral
       vars.withdrawnShares = collateralReserveHub.remove(
         vars.collateralAssetId,
-        vars.collateralToLiquidate + vars.liquidationProtocolFeeAmount,
-        address(this) // must be sent to spoke first before distributing to treasury/liquidator
+        vars.collateralToLiquidate,
+        liquidator
       );
 
       // collateral accounting
@@ -1196,10 +1196,9 @@ contract Spoke is ISpoke, Multicall {
           vars.totalLiquidationProtocolFeeAmount
         ) > 0
       ) {
-        collateralReserveHub.supplyToFeeReceiver(
+        collateralReserveHub.transferFee(
           vars.collateralAssetId,
-          vars.totalLiquidationProtocolFeeAmount,
-          address(this)
+          vars.totalLiquidationProtocolFeeAmount
         );
       } else {
         vars.totalCollateralToLiquidate += vars.totalLiquidationProtocolFeeAmount;
