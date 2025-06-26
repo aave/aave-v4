@@ -92,40 +92,6 @@ contract SpokeMultipleHubTest is SpokeBase {
     tokenList.dai.approve(address(hub2), type(uint256).max);
     tokenList.dai.approve(address(hub3), type(uint256).max);
     vm.stopPrank();
-
-    configureRoles();
-  }
-
-  function configureRoles() internal {
-    vm.startPrank(ADMIN);
-    // Grant roles
-    accessManager.grantRole(Roles.HUB_ADMIN_ROLE, HUB_ADMIN, 0);
-    accessManager.grantRole(Roles.SPOKE_ADMIN_ROLE, SPOKE_ADMIN, 0);
-    accessManager.grantRole(Roles.USER_RP_UPDATER_ROLE, GOVERNOR, 0);
-
-    // Grant responsibilities to roles
-    // Spoke Admin functionalities
-    bytes4[] memory selectors = new bytes4[](4);
-    selectors[0] = ISpoke.updateLiquidationConfig.selector;
-    selectors[1] = ISpoke.addReserve.selector;
-    selectors[2] = ISpoke.updateReserveConfig.selector;
-    selectors[3] = ISpoke.updateDynamicReserveConfig.selector;
-
-    accessManager.setTargetFunctionRole(address(spoke1), selectors, Roles.SPOKE_ADMIN_ROLE);
-
-    // Liquidity Hub Admin functionalities
-    bytes4[] memory hubSelectors = new bytes4[](6);
-    hubSelectors[0] = ILiquidityHub.addAsset.selector;
-    hubSelectors[1] = ILiquidityHub.updateAssetConfig.selector;
-    hubSelectors[2] = ILiquidityHub.addSpoke.selector;
-    hubSelectors[3] = ILiquidityHub.addSpokes.selector;
-    hubSelectors[4] = ILiquidityHub.updateSpokeConfig.selector;
-    hubSelectors[5] = ILiquidityHub.updateAssetFees.selector;
-
-    accessManager.setTargetFunctionRole(address(hub), hubSelectors, Roles.HUB_ADMIN_ROLE);
-    accessManager.setTargetFunctionRole(address(hub2), hubSelectors, Roles.HUB_ADMIN_ROLE);
-    accessManager.setTargetFunctionRole(address(hub3), hubSelectors, Roles.HUB_ADMIN_ROLE);
-    vm.stopPrank();
   }
 
   /// @dev Test showcasing dai may be borrowed from hub 2 and hub 1 via spoke 1

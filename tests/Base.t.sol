@@ -30,6 +30,7 @@ import {SafeCast} from 'src/dependencies/openzeppelin/SafeCast.sol';
 import {IERC20Errors} from 'src/dependencies/openzeppelin/IERC20Errors.sol';
 import {IERC20} from 'src/dependencies/openzeppelin/IERC20.sol';
 import {AccessManager} from 'src/dependencies/openzeppelin/AccessManager.sol';
+import {IAccessManager} from 'src/dependencies/openzeppelin/IAccessManager.sol';
 import {IAccessManaged} from 'src/dependencies/openzeppelin/IAccessManaged.sol';
 import {AuthorityUtils} from 'src/dependencies/openzeppelin/AuthorityUtils.sol';
 import {Ownable} from 'src/dependencies/openzeppelin/Ownable.sol';
@@ -158,7 +159,6 @@ abstract contract Base is Test {
 
   function setUp() public virtual {
     deployFixtures();
-    setUpRoles();
   }
 
   function deployFixtures() internal virtual {
@@ -183,9 +183,17 @@ abstract contract Base is Test {
     vm.label(address(spoke1), 'spoke1');
     vm.label(address(spoke2), 'spoke2');
     vm.label(address(spoke3), 'spoke3');
+
+    setUpRoles(hub, spoke1, accessManager);
+    setUpRoles(hub, spoke2, accessManager);
+    setUpRoles(hub, spoke3, accessManager);
   }
 
-  function setUpRoles() internal virtual {
+  function setUpRoles(
+    ILiquidityHub hub,
+    ISpoke spoke,
+    IAccessManager accessManager
+  ) internal virtual {
     vm.startPrank(ADMIN);
     // Grant roles
     accessManager.grantRole(Roles.HUB_ADMIN_ROLE, ADMIN, 0);
@@ -202,9 +210,7 @@ abstract contract Base is Test {
     selectors[2] = ISpoke.updateReserveConfig.selector;
     selectors[3] = ISpoke.updateDynamicReserveConfig.selector;
 
-    accessManager.setTargetFunctionRole(address(spoke1), selectors, Roles.SPOKE_ADMIN_ROLE);
-    accessManager.setTargetFunctionRole(address(spoke2), selectors, Roles.SPOKE_ADMIN_ROLE);
-    accessManager.setTargetFunctionRole(address(spoke3), selectors, Roles.SPOKE_ADMIN_ROLE);
+    accessManager.setTargetFunctionRole(address(spoke), selectors, Roles.SPOKE_ADMIN_ROLE);
 
     // Liquidity Hub Admin functionalities
     bytes4[] memory hubSelectors = new bytes4[](7);
@@ -738,7 +744,8 @@ abstract contract Base is Test {
   function hub2Fixture() internal returns (ILiquidityHub, AssetInterestRateStrategy) {
     vm.startPrank(ADMIN);
 
-    ILiquidityHub hub2 = new LiquidityHub(address(accessManager));
+    IAccessManager accessManager2 = new AccessManager(ADMIN);
+    ILiquidityHub hub2 = new LiquidityHub(address(accessManager2));
     AssetInterestRateStrategy hub2IrStrategy = new AssetInterestRateStrategy(address(hub2));
 
     // Add assets to the second hub
@@ -814,6 +821,8 @@ abstract contract Base is Test {
     hub2IrStrategy.setInterestRateData(wbtcAssetId, irData);
     vm.stopPrank();
 
+    setUpRoles(hub2, spoke1, accessManager2);
+
     return (hub2, hub2IrStrategy);
   }
 
@@ -826,7 +835,8 @@ abstract contract Base is Test {
   function hub3Fixture() internal returns (ILiquidityHub, AssetInterestRateStrategy) {
     vm.startPrank(ADMIN);
 
-    ILiquidityHub hub3 = new LiquidityHub(address(accessManager));
+    IAccessManager accessManager3 = new AccessManager(ADMIN);
+    ILiquidityHub hub3 = new LiquidityHub(address(accessManager3));
     AssetInterestRateStrategy hub3IrStrategy = new AssetInterestRateStrategy(address(hub3));
 
     // Add DAI
@@ -904,6 +914,8 @@ abstract contract Base is Test {
     hub3IrStrategy.setInterestRateData(hub3DaiAssetId, irData);
     hub3IrStrategy.setInterestRateData(hub3WbtcAssetId, irData);
     vm.stopPrank();
+
+    setUpRoles(hub3, spoke1, accessManager3);
 
     return (hub3, hub3IrStrategy);
   }

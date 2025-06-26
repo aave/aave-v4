@@ -18,7 +18,6 @@ contract SpokeMultipleHubSiloedBorrowingTest is SpokeMultipleHubBase {
 
   function setUp() public virtual override {
     super.setUp();
-    super.setUpRoles();
     setUpSiloedBorrowing();
   }
 

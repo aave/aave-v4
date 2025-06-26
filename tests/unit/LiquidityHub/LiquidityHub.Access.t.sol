@@ -124,10 +124,10 @@ contract LiquidityHubAccessTest is Base {
     vm.expectRevert(
       abi.encodeWithSelector(IAccessManaged.AccessManagedUnauthorized.selector, address(this))
     );
-    hub.setInterestRateData(daiAssetId, irData, irStrategy);
+    hub.setInterestRateData(daiAssetId, irData);
 
     // Hub Admin can call function on hub to set interest rates
     vm.prank(HUB_ADMIN);
-    hub.setInterestRateData(daiAssetId, irData, irStrategy);
+    hub.setInterestRateData(daiAssetId, irData);
   }
 }

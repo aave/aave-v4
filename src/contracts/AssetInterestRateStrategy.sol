@@ -37,7 +37,7 @@ contract AssetInterestRateStrategy is IAssetInterestRateStrategy {
 
   /// @inheritdoc IAssetInterestRateStrategy
   function setInterestRateData(uint256 assetId, InterestRateData calldata rateData) external {
-    require(msg.sender == LIQUIDITY_HUB, OnlyLiquidityHub());
+    require(LIQUIDITY_HUB == msg.sender, OnlyLiquidityHub());
     require(
       MIN_OPTIMAL_RATIO <= rateData.optimalUsageRatio &&
         rateData.optimalUsageRatio <= MAX_OPTIMAL_RATIO,

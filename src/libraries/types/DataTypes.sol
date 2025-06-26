@@ -2,7 +2,7 @@
 pragma solidity ^0.8.10;
 
 import {ILiquidityHub} from 'src/interfaces/ILiquidityHub.sol';
-import {IBasicInterestRateStrategy} from 'src/interfaces/IBasicInterestRateStrategy.sol';
+import {IAssetInterestRateStrategy} from 'src/interfaces/IAssetInterestRateStrategy.sol';
 
 library DataTypes {
   // Liquidity Hub types
@@ -44,7 +44,7 @@ library DataTypes {
     bool paused;
     uint256 decimals;
     uint256 liquidityFee;
-    IBasicInterestRateStrategy irStrategy;
+    IAssetInterestRateStrategy irStrategy;
   }
 
   // Spoke types

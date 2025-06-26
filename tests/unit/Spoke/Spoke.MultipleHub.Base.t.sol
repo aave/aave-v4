@@ -47,9 +47,11 @@ contract SpokeMultipleHubBase is SpokeBase {
     assetA = new TestnetERC20('Asset A', 'A', 18);
     assetB = new TestnetERC20('Asset B', 'B', 18);
     vm.stopPrank();
+
+    setUpRoles();
   }
 
-  function setUpRoles() internal virtual override {
+  function setUpRoles() internal {
     vm.startPrank(ADMIN);
     // Grant roles
     accessManager.grantRole(Roles.HUB_ADMIN_ROLE, ADMIN, 0);

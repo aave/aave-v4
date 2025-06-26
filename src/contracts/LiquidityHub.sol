@@ -199,10 +199,9 @@ contract LiquidityHub is ILiquidityHub, AccessManaged {
   /// @inheritdoc ILiquidityHub
   function setInterestRateData(
     uint256 assetId,
-    IAssetInterestRateStrategy.InterestRateData calldata rateData,
-    IAssetInterestRateStrategy irStrategy
+    IAssetInterestRateStrategy.InterestRateData calldata rateData
   ) external restricted {
-    irStrategy.setInterestRateData(assetId, rateData);
+    _assets[assetId].config.irStrategy.setInterestRateData(assetId, rateData);
   }
 
   // /////
