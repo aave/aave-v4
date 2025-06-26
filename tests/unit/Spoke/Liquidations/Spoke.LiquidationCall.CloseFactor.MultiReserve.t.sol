@@ -279,11 +279,7 @@ contract LiquidationCallCloseFactorMultiReserveTest is SpokeLiquidationBase {
       state.liqProtocolFee,
       ,
 
-    ) = _calculateAvailableCollateralToLiquidate(
-      state.spoke,
-      state,
-      requiredDebtAmounts[debtReserveIndex]
-    );
+    ) = _calculateAvailableCollateralToLiquidate(state, requiredDebtAmounts[debtReserveIndex]);
 
     // logs to read protocol fee from tmp emitted event
     // TODO: update when treasury accounting is done

@@ -213,7 +213,7 @@ contract SpokeLiquidationBase is SpokeBase {
       state.liqProtocolFee,
       ,
 
-    ) = _calculateAvailableCollateralToLiquidate(state.spoke, state, requiredDebtAmount);
+    ) = _calculateAvailableCollateralToLiquidate(state, requiredDebtAmount);
 
     // logs to read protocol fee from tmp emitted event
     // TODO: update when treasury accounting is done
@@ -379,7 +379,7 @@ contract SpokeLiquidationBase is SpokeBase {
     );
   }
 
-  /// assertions in bad debt scenarios
+  /// generic assertions in bad debt scenarios
   function _assertBadDebt(
     LiquidationTestLocalParams memory state,
     string memory label
@@ -444,7 +444,7 @@ contract SpokeLiquidationBase is SpokeBase {
     assertEq(state.deficit.balanceChange, 0, string.concat('deficit should be unchanged ', label));
   }
 
-  /// @notice User's RP should be 0 if all coll reserves have liquidity premium == 0.
+  /// @dev User's RP should be 0 if all coll reserves have liquidity premium == 0.
   /// @return bool True if user's RP is expected to be 0, False otherwise.
   function _shouldUserRpBeZero(ISpoke spoke, address user) internal view returns (bool) {
     for (uint256 i = 0; i < spoke.reserveCount(); i++) {
@@ -461,8 +461,7 @@ contract SpokeLiquidationBase is SpokeBase {
   }
 
   /**
-   * @notice Calculate output from LiquidationLogic.calculateAvailableCollateralToLiquidate.
-   * @param spoke Spoke contract.
+   * @dev Calculate output from LiquidationLogic.calculateAvailableCollateralToLiquidate.
    * @param state LiquidationTestLocalParams struct containing local params.
    * @param debtToCover Desired amount of debt to cover.
    * @return actualCollateralToLiquidate Amount of actual collateral to liquidate.
@@ -472,7 +471,6 @@ contract SpokeLiquidationBase is SpokeBase {
    * @return collateralToLiquidateInBaseCurrency Amount of collateral to liquidate in base currency.
    */
   function _calculateAvailableCollateralToLiquidate(
-    ISpoke spoke,
     LiquidationTestLocalParams memory state,
     uint256 debtToCover
   )
@@ -486,10 +484,10 @@ contract SpokeLiquidationBase is SpokeBase {
       uint256 collateralToLiquidateInBaseCurrency
     )
   {
-    IPriceOracle oracle = spoke.oracle();
+    IPriceOracle oracle = state.spoke.oracle();
     DataTypes.LiquidationCallLocalVars memory params;
 
-    params.userCollateralBalance = spoke.getUserSuppliedAmount(
+    params.userCollateralBalance = state.spoke.getUserSuppliedAmount(
       state.collateralReserves[state.collateralReserveIndex].reserveId,
       alice
     );
@@ -507,20 +505,19 @@ contract SpokeLiquidationBase is SpokeBase {
     params.liquidationBonus = state.liquidationBonus;
     params.liquidationProtocolFee = state.liquidationProtocolFee;
 
-    params.actualDebtToLiquidate = _calculateActualDebtToLiquidate(spoke, state, debtToCover);
+    params.actualDebtToLiquidate = _calculateActualDebtToLiquidate(state, debtToCover);
     return LiquidationLogic.calculateAvailableCollateralToLiquidate(params);
   }
 
   /// helper to calculate actual collateral to liquidate, replicating LiquidationLogic.calculateActualDebtToLiquidate.
   /// @return actualDebtToLiquidate Amount of actual debt to liquidate.
   function _calculateActualDebtToLiquidate(
-    ISpoke spoke,
     LiquidationTestLocalParams memory state,
     uint256 debtToCover
   ) internal view returns (uint256 actualDebtToLiquidate) {
     // find minimum between user's totalDebt of debt asset, debtToCover, and debtToRestoreCloseFactor
     uint256 userTotalDebt = state.totalDebt.balanceBefore;
-    uint256 debtToRestoreCloseFactor = _calcDebtToRestoreCloseFactor(spoke, state);
+    uint256 debtToRestoreCloseFactor = _calcDebtToRestoreCloseFactor(state.spoke, state);
     return _min(_min(userTotalDebt, debtToCover), debtToRestoreCloseFactor);
   }
 

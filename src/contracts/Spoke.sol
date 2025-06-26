@@ -1179,8 +1179,7 @@ contract Spoke is ISpoke, Multicall {
       userDebtPosition.baseDrawnShares -= vars.restoredShares;
       vars.totalRestoredShares += vars.restoredShares;
 
-      // deficit exists only if remaining supplied shares are 0
-      if (vars.hasDeficit && vars.newUserSuppliedShares == 0) {
+      if (vars.hasDeficit) {
         _reportDeficit(user);
       } else {
         // new user rp only needs to be calculated if no bad debt remains, otherwise it is 0 given no collateral remains

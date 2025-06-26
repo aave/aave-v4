@@ -487,7 +487,7 @@ contract LiquidationCallCloseFactorTest is SpokeLiquidationBase {
       state.liqProtocolFee,
       ,
 
-    ) = _calculateAvailableCollateralToLiquidate(state.spoke, state, UINT256_MAX);
+    ) = _calculateAvailableCollateralToLiquidate(state, UINT256_MAX);
 
     // logs to read protocol fee from tmp emitted event
     // TODO: update when treasury accounting is done
