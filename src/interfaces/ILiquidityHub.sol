@@ -4,6 +4,7 @@ pragma solidity ^0.8.0;
 import {IERC20} from 'src/dependencies/openzeppelin/IERC20.sol';
 import {IAccessManaged} from 'src/dependencies/openzeppelin/IAccessManaged.sol';
 import {DataTypes} from 'src/libraries/types/DataTypes.sol';
+import {IAssetInterestRateStrategy} from 'src/interfaces/IAssetInterestRateStrategy.sol';
 
 /**
  * @title ILiquidityHub
@@ -95,6 +96,19 @@ interface ILiquidityHub is IAccessManaged {
     uint256 assetId,
     address spoke,
     DataTypes.SpokeConfig memory config
+  ) external;
+
+  /**
+   * @notice Updates the interest rate strategy for a specified asset.
+   * @dev Only callable by the liquidity hub admin.
+   * @param assetId The identifier of the asset.
+   * @param rateData The interest rate data to apply to the given asset, all in bps.
+   * @param irStrategy The interest rate strategy contract to update.
+   */
+  function setInterestRateData(
+    uint256 assetId,
+    IAssetInterestRateStrategy.InterestRateData memory rateData,
+    IAssetInterestRateStrategy irStrategy
   ) external;
 
   /**

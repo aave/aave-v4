@@ -13,115 +13,61 @@ contract LiquidityHubAccessTest is Base {
   function test_liquidity_hub_admin_access() public {
     TestnetERC20 tokenA = new TestnetERC20('A', 'A', 18);
     TestnetERC20 tokenB = new TestnetERC20('B', 'B', 18);
+    DataTypes.AssetConfig memory assetConfig = DataTypes.AssetConfig({
+      feeReceiver: address(0),
+      active: true,
+      frozen: false,
+      paused: false,
+      decimals: 18,
+      liquidityFee: 0,
+      irStrategy: irStrategy
+    });
+    DataTypes.SpokeConfig memory spokeConfig = DataTypes.SpokeConfig({
+      drawCap: 1000e18,
+      supplyCap: 1000e18,
+      active: true
+    });
 
     // Only Hub Admin can add assets to the hub
     vm.expectRevert(
       abi.encodeWithSelector(IAccessManaged.AccessManagedUnauthorized.selector, address(this))
     );
-    hub.addAsset(
-      DataTypes.AssetConfig({
-        feeReceiver: address(0),
-        active: true,
-        frozen: false,
-        paused: false,
-        decimals: 18,
-        liquidityFee: 0,
-        irStrategy: irStrategy
-      }),
-      address(tokenA)
-    );
+    hub.addAsset(assetConfig, address(tokenA));
 
     // Hub Admin can add assets to the hub
     vm.prank(HUB_ADMIN);
-    hub.addAsset(
-      DataTypes.AssetConfig({
-        feeReceiver: address(0),
-        active: true,
-        frozen: false,
-        paused: false,
-        decimals: 18,
-        liquidityFee: 0,
-        irStrategy: irStrategy
-      }),
-      address(tokenA)
-    );
+    hub.addAsset(assetConfig, address(tokenA));
     uint256 assetAId = hub.assetCount() - 1; // Asset A Id
 
     // Only Hub Admin can update asset config
     vm.expectRevert(
       abi.encodeWithSelector(IAccessManaged.AccessManagedUnauthorized.selector, address(this))
     );
-    hub.updateAssetConfig(
-      daiAssetId,
-      DataTypes.AssetConfig({
-        feeReceiver: address(0),
-        active: true,
-        frozen: false,
-        paused: false,
-        decimals: 18,
-        liquidityFee: 0,
-        irStrategy: irStrategy
-      })
-    );
+    hub.updateAssetConfig(daiAssetId, assetConfig);
 
     // Hub Admin can update asset config
     vm.prank(HUB_ADMIN);
-    hub.updateAssetConfig(
-      daiAssetId,
-      DataTypes.AssetConfig({
-        feeReceiver: address(0),
-        active: true,
-        frozen: false,
-        paused: false,
-        decimals: 18,
-        liquidityFee: 0,
-        irStrategy: irStrategy
-      })
-    );
+    hub.updateAssetConfig(daiAssetId, assetConfig);
 
     // Only Hub Admin can add spoke
     vm.expectRevert(
       abi.encodeWithSelector(IAccessManaged.AccessManagedUnauthorized.selector, address(this))
     );
-    hub.addSpoke(
-      assetAId,
-      DataTypes.SpokeConfig({drawCap: 1000e18, supplyCap: 1000e18, active: true}),
-      address(spoke1)
-    );
+    hub.addSpoke(assetAId, spokeConfig, address(spoke1));
 
     // Hub Admin can add spoke
     vm.prank(HUB_ADMIN);
-    hub.addSpoke(
-      assetAId,
-      DataTypes.SpokeConfig({drawCap: 1000e18, supplyCap: 1000e18, active: true}),
-      address(spoke1)
-    );
+    hub.addSpoke(assetAId, spokeConfig, address(spoke1));
 
     // List token B on hub for preparation of next test
     vm.prank(HUB_ADMIN);
-    hub.addAsset(
-      DataTypes.AssetConfig({
-        feeReceiver: address(0),
-        active: true,
-        frozen: false,
-        paused: false,
-        decimals: 18,
-        liquidityFee: 0,
-        irStrategy: irStrategy
-      }),
-      address(tokenB)
-    );
+    hub.addAsset(assetConfig, address(tokenB));
     uint256 assetBId = hub.assetCount() - 1;
 
     // Configure spokes to add
     uint256[] memory assetIds = new uint256[](2);
     assetIds[0] = assetAId;
     assetIds[1] = assetBId;
-    DataTypes.SpokeConfig memory spokeConfig = DataTypes.SpokeConfig({
-      drawCap: 1000e18,
-      supplyCap: 1000e18,
-      active: true
-    });
     DataTypes.SpokeConfig[] memory spokeConfigs = new DataTypes.SpokeConfig[](2);
     spokeConfigs[0] = spokeConfig;
     spokeConfigs[1] = spokeConfig;
@@ -140,19 +86,11 @@ contract LiquidityHubAccessTest is Base {
     vm.expectRevert(
       abi.encodeWithSelector(IAccessManaged.AccessManagedUnauthorized.selector, address(this))
     );
-    hub.updateSpokeConfig(
-      assetAId,
-      address(spoke1),
-      DataTypes.SpokeConfig({drawCap: 2000e18, supplyCap: 2000e18, active: true})
-    );
+    hub.updateSpokeConfig(assetAId, address(spoke1), spokeConfig);
 
     // Hub Admin can update spoke config
     vm.prank(HUB_ADMIN);
-    hub.updateSpokeConfig(
-      assetAId,
-      address(spoke1),
-      DataTypes.SpokeConfig({drawCap: 2000e18, supplyCap: 2000e18, active: true})
-    );
+    hub.updateSpokeConfig(assetAId, address(spoke1), spokeConfig);
 
     // Only Hub Admin can update asset fees
     vm.expectRevert(
@@ -166,28 +104,30 @@ contract LiquidityHubAccessTest is Base {
   }
 
   function test_setInterestRateData_access() public {
+    IAssetInterestRateStrategy.InterestRateData memory irData = IAssetInterestRateStrategy
+      .InterestRateData({
+        optimalUsageRatio: 50_00, // 50.00% in BPS
+        baseVariableBorrowRate: 100_00, // 100.00% in BPS
+        variableRateSlope1: 200_00, // 200.00% in BPS
+        variableRateSlope2: 300_00 // 300.00% in BPS
+      });
+
     // Only Liquidity Hub can set interest rates
     vm.expectRevert(abi.encodeWithSelector(IAssetInterestRateStrategy.OnlyLiquidityHub.selector));
-    irStrategy.setInterestRateData(
-      daiAssetId,
-      IAssetInterestRateStrategy.InterestRateData({
-        optimalUsageRatio: 50_00,
-        baseVariableBorrowRate: 100_00,
-        variableRateSlope1: 200_00,
-        variableRateSlope2: 300_00
-      })
-    );
+    irStrategy.setInterestRateData(daiAssetId, irData);
 
     // Liquidity Hub can set interest rates
     vm.prank(address(hub));
-    irStrategy.setInterestRateData(
-      daiAssetId,
-      IAssetInterestRateStrategy.InterestRateData({
-        optimalUsageRatio: 50_00,
-        baseVariableBorrowRate: 100_00,
-        variableRateSlope1: 200_00,
-        variableRateSlope2: 300_00
-      })
+    irStrategy.setInterestRateData(daiAssetId, irData);
+
+    // Only Hub Admin can call function on hub to set interest rates
+    vm.expectRevert(
+      abi.encodeWithSelector(IAccessManaged.AccessManagedUnauthorized.selector, address(this))
     );
+    hub.setInterestRateData(daiAssetId, irData, irStrategy);
+
+    // Hub Admin can call function on hub to set interest rates
+    vm.prank(HUB_ADMIN);
+    hub.setInterestRateData(daiAssetId, irData, irStrategy);
   }
 }

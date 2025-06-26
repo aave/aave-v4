@@ -5,6 +5,7 @@ import {SafeERC20} from 'src/dependencies/openzeppelin/SafeERC20.sol';
 import {IERC20} from 'src/dependencies/openzeppelin/IERC20.sol';
 import {AccessManaged} from 'src/dependencies/openzeppelin/AccessManaged.sol';
 import {ILiquidityHub} from 'src/interfaces/ILiquidityHub.sol';
+import {IAssetInterestRateStrategy} from 'src/interfaces/IAssetInterestRateStrategy.sol';
 import {DataTypes} from 'src/libraries/types/DataTypes.sol';
 import {AssetLogic} from 'src/libraries/logic/AssetLogic.sol';
 import {WadRayMathExtended} from 'src/libraries/math/WadRayMathExtended.sol';
@@ -193,6 +194,15 @@ contract LiquidityHub is ILiquidityHub, AccessManaged {
     if (liquidityFee != oldLiquidityFee || feeReceiver != oldFeeReceiver) {
       emit AssetConfigUpdated(assetId, _assets[assetId].config);
     }
+  }
+
+  /// @inheritdoc ILiquidityHub
+  function setInterestRateData(
+    uint256 assetId,
+    IAssetInterestRateStrategy.InterestRateData calldata rateData,
+    IAssetInterestRateStrategy irStrategy
+  ) external restricted {
+    irStrategy.setInterestRateData(assetId, rateData);
   }
 
   // /////

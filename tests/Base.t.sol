@@ -207,13 +207,14 @@ abstract contract Base is Test {
     accessManager.setTargetFunctionRole(address(spoke3), selectors, Roles.SPOKE_ADMIN_ROLE);
 
     // Liquidity Hub Admin functionalities
-    bytes4[] memory hubSelectors = new bytes4[](6);
+    bytes4[] memory hubSelectors = new bytes4[](7);
     hubSelectors[0] = ILiquidityHub.addAsset.selector;
     hubSelectors[1] = ILiquidityHub.updateAssetConfig.selector;
     hubSelectors[2] = ILiquidityHub.addSpoke.selector;
     hubSelectors[3] = ILiquidityHub.addSpokes.selector;
     hubSelectors[4] = ILiquidityHub.updateSpokeConfig.selector;
     hubSelectors[5] = ILiquidityHub.updateAssetFees.selector;
+    hubSelectors[6] = ILiquidityHub.setInterestRateData.selector;
 
     accessManager.setTargetFunctionRole(address(hub), hubSelectors, Roles.HUB_ADMIN_ROLE);
     vm.stopPrank();
