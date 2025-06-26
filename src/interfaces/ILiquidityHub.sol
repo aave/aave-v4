@@ -52,12 +52,7 @@ interface ILiquidityHub {
     uint256 realizedPremiumAdded,
     uint256 realizedPremiumTaken
   );
-  event TransferFee(
-    uint256 indexed assetId,
-    address indexed spoke,
-    uint256 suppliedShares,
-    uint256 suppliedAmount
-  );
+  event AccrueFees(uint256 indexed assetId, uint256 shares);
 
   error MismatchedConfigs();
   error InvalidSharesAmount();
@@ -74,7 +69,6 @@ interface ILiquidityHub {
   error DrawCapExceeded(uint256 drawCap);
   error SurplusAmountRestored(uint256 maxAllowedRestore);
   error InvalidSpoke();
-  error InvalidRiskPremiumBps(uint256 bps);
   error AssetPaused();
   error AssetFrozen();
   error InvalidIrStrategy();
@@ -186,7 +180,7 @@ interface ILiquidityHub {
    * @param amount The amount of asset liquidity to add/supply.
    * @return The amount of shares added or supplied.
    */
-  function transferFee(uint256 assetId, uint256 amount) external returns (uint256);
+  function payFeeWithExistingLiquidity(uint256 assetId, uint256 amount) external returns (uint256);
 
   function convertToDrawnAssets(uint256 assetId, uint256 shares) external view returns (uint256);
 

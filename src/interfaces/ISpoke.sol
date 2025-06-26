@@ -88,7 +88,6 @@ interface ISpoke is IMulticall {
   error InvalidHubAddress();
   error InvalidHealthFactorForMaxBonus();
   error InvalidLiquidationBonusFactor();
-  error NoUserRiskPremiumDecrease();
   error HealthFactorNotBelowThreshold();
   error CollateralCannotBeLiquidated();
   error SpecifiedCurrencyNotBorrowedByUser();
@@ -98,6 +97,7 @@ interface ISpoke is IMulticall {
   error UsersAndDebtLengthMismatch();
   error Unauthorized();
   error CollateralStatusUnchanged();
+  error InvalidLiquidationProtocolFeeReceiver();
 
   function addReserve(
     uint256 assetId,

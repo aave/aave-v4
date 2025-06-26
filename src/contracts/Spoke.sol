@@ -65,7 +65,7 @@ contract Spoke is ISpoke, Multicall {
     DataTypes.ReserveConfig calldata config,
     DataTypes.DynamicReserveConfig calldata dynamicConfig
   ) external returns (uint256) {
-    _validateReserveConfig(config);
+    _validateReserveConfig(config, assetId);
     address asset = address(config.hub.assetsList(assetId)); // will revert on invalid assetId
     uint256 reserveId = reserveCount++;
     uint16 dynamicConfigKey; // 0 as first key to use
@@ -98,8 +98,8 @@ contract Spoke is ISpoke, Multicall {
     DataTypes.ReserveConfig calldata config
   ) external {
     // TODO: AccessControl, More sophisticated
-    _validateReserveConfig(config);
     DataTypes.Reserve storage reserve = _reserves[reserveId];
+    _validateReserveConfig(config, reserve.assetId);
     require(
       reserve.asset != address(0) && config.decimals == reserve.config.decimals,
       InvalidReserve()
@@ -570,7 +570,10 @@ contract Spoke is ISpoke, Multicall {
     return userRiskPremium;
   }
 
-  function _validateReserveConfig(DataTypes.ReserveConfig calldata config) internal view {
+  function _validateReserveConfig(
+    DataTypes.ReserveConfig calldata config,
+    uint256 assetId
+  ) internal view {
     ILiquidityHub hub = config.hub;
     require(
       config.liquidationBonus >= PercentageMathExtended.PERCENTAGE_FACTOR,
@@ -583,6 +586,12 @@ contract Spoke is ISpoke, Multicall {
       config.liquidationProtocolFee <= PercentageMathExtended.PERCENTAGE_FACTOR,
       InvalidLiquidationProtocolFee()
     );
+    if (config.liquidationProtocolFee > 0) {
+      require(
+        config.hub.getAssetConfig(assetId).feeReceiver != address(0),
+        InvalidLiquidationProtocolFeeReceiver()
+      );
+    }
   }
 
   function _validateDynamicReserveConfig(
@@ -1189,21 +1198,21 @@ contract Spoke is ISpoke, Multicall {
       0
     );
 
-    if (vars.totalLiquidationProtocolFeeAmount > 0) {
-      if (
-        collateralReserveHub.convertToSuppliedShares(
-          vars.collateralAssetId,
-          vars.totalLiquidationProtocolFeeAmount
-        ) > 0
-      ) {
-        collateralReserveHub.transferFee(
-          vars.collateralAssetId,
-          vars.totalLiquidationProtocolFeeAmount
-        );
-      } else {
-        vars.totalCollateralToLiquidate += vars.totalLiquidationProtocolFeeAmount;
-        vars.totalLiquidationProtocolFeeAmount = 0;
-      }
+    if (
+      vars.totalLiquidationProtocolFeeAmount > 0 &&
+      collateralReserveHub.convertToSuppliedShares(
+        vars.collateralAssetId,
+        vars.totalLiquidationProtocolFeeAmount
+      ) >
+      0
+    ) {
+      collateralReserveHub.payFeeWithExistingLiquidity(
+        vars.collateralAssetId,
+        vars.totalLiquidationProtocolFeeAmount
+      );
+    } else {
+      vars.totalCollateralToLiquidate += vars.totalLiquidationProtocolFeeAmount;
+      vars.totalLiquidationProtocolFeeAmount = 0;
     }
 
     return (
