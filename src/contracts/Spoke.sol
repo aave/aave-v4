@@ -1097,7 +1097,7 @@ contract Spoke is ISpoke, Multicall {
       userDebtPosition.baseDrawnShares -= vars.restoredShares;
       vars.totalRestoredShares += vars.restoredShares;
 
-      // liquidate collateral
+      // liquidated collateral sent directly to liquidator
       vars.withdrawnShares = collateralReserveHub.remove(
         vars.collateralAssetId,
         vars.collateralToLiquidate,
@@ -1205,9 +1205,6 @@ contract Spoke is ISpoke, Multicall {
         vars.totalLiquidationProtocolFeeAmount = 0;
       }
     }
-
-    // transfer total liquidated collateral to liquidator
-    IERC20(collateralReserve.asset).safeTransfer(liquidator, vars.totalCollateralToLiquidate);
 
     return (
       collateralReserve.asset,
