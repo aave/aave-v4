@@ -185,7 +185,22 @@ contract LiquidityHub is ILiquidityHub {
     DataTypes.Asset storage asset = _assets[assetId];
     DataTypes.SpokeData storage spoke = _spokes[assetId][msg.sender];
 
-    uint256 suppliedShares = _executeAdd(asset, spoke, assetId, amount, from);
+    asset.accrue(_spokes[assetId][asset.config.feeReceiver]);
+    _validateAdd(asset, spoke, amount, from);
+
+    asset.updateBorrowRate({liquidityAdded: amount, liquidityTaken: 0});
+
+    // todo: Mitigate inflation attack
+    uint256 suppliedShares = asset.toSuppliedSharesDown(amount);
+    require(suppliedShares != 0, InvalidSharesAmount());
+
+    asset.availableLiquidity += amount;
+    asset.suppliedShares += suppliedShares;
+
+    spoke.suppliedShares += suppliedShares;
+
+    // TODO: fee-on-transfer
+    assetsList[assetId].safeTransferFrom(from, address(this), amount);
 
     emit Add(assetId, msg.sender, suppliedShares, amount);
 
@@ -567,33 +582,6 @@ contract LiquidityHub is ILiquidityHub {
     });
 
     emit SpokeAdded(assetId, spoke); // todo: emit config
-  }
-
-  function _executeAdd(
-    DataTypes.Asset storage asset,
-    DataTypes.SpokeData storage spoke,
-    uint256 assetId,
-    uint256 amount,
-    address from
-  ) internal returns (uint256) {
-    asset.accrue(_spokes[assetId][asset.config.feeReceiver]);
-    _validateAdd(asset, spoke, amount, from);
-
-    asset.updateBorrowRate({liquidityAdded: amount, liquidityTaken: 0});
-
-    // todo: Mitigate inflation attack
-    uint256 suppliedShares = asset.toSuppliedSharesDown(amount);
-    require(suppliedShares != 0, InvalidSharesAmount());
-
-    asset.availableLiquidity += amount;
-    asset.suppliedShares += suppliedShares;
-
-    spoke.suppliedShares += suppliedShares;
-
-    // TODO: fee-on-transfer
-    assetsList[assetId].safeTransferFrom(from, address(this), amount);
-
-    return suppliedShares;
   }
 
   function _validateAssetConfig(
