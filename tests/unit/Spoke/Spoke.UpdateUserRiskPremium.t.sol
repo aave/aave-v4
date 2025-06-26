@@ -27,7 +27,7 @@ contract SpokeUpdateUserRiskPremium is SpokeBase {
 
     assertGt(riskPremiumAfter, riskPremiumBefore);
 
-    if (caller != alice && !_isUserRpUpdater(caller, spoke1)) {
+    if (caller != alice && !_isUserRiskPremiumUpdater(caller, spoke1)) {
       vm.expectRevert(ISpoke.Unauthorized.selector);
     } else {
       vm.expectEmit(address(spoke1));
@@ -37,8 +37,8 @@ contract SpokeUpdateUserRiskPremium is SpokeBase {
     spoke1.updateUserRiskPremium(alice);
   }
 
-  function _isUserRpUpdater(address caller, ISpoke spoke) internal view returns (bool) {
-    IAccessManager accessManager = IAccessManager(IAccessManaged(address(spoke)).authority());
+  function _isUserRiskPremiumUpdater(address caller, ISpoke spoke) internal view returns (bool) {
+    IAccessManager accessManager = IAccessManager(spoke.authority());
     (bool result, ) = accessManager.hasRole(Roles.USER_RP_UPDATER_ROLE, caller);
     return result;
   }

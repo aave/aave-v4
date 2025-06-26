@@ -30,6 +30,8 @@ import {SafeCast} from 'src/dependencies/openzeppelin/SafeCast.sol';
 import {IERC20Errors} from 'src/dependencies/openzeppelin/IERC20Errors.sol';
 import {IERC20} from 'src/dependencies/openzeppelin/IERC20.sol';
 import {AccessManager} from 'src/dependencies/openzeppelin/AccessManager.sol';
+import {IAccessManaged} from 'src/dependencies/openzeppelin/IAccessManaged.sol';
+import {AuthorityUtils} from 'src/dependencies/openzeppelin/AuthorityUtils.sol';
 import {Ownable} from 'src/dependencies/openzeppelin/Ownable.sol';
 import {WETH9} from 'src/dependencies/weth/WETH9.sol';
 
@@ -98,7 +100,6 @@ abstract contract Base is Test {
   address internal TREASURY = makeAddr('TREASURY');
   address internal LIQUIDATOR = makeAddr('LIQUIDATOR');
   address internal GOVERNOR = makeAddr('GOVERNOR');
-  address internal IR_CONTROLLER = makeAddr('IR_CONTROLLER');
 
   TokenList internal tokenList;
   uint256 internal wethAssetId = 0;
@@ -189,11 +190,9 @@ abstract contract Base is Test {
     // Grant roles
     accessManager.grantRole(Roles.HUB_ADMIN_ROLE, ADMIN, 0);
     accessManager.grantRole(Roles.SPOKE_ADMIN_ROLE, ADMIN, 0);
-    accessManager.grantRole(Roles.INTEREST_RATE_ADMIN_ROLE, ADMIN, 0);
     accessManager.grantRole(Roles.HUB_ADMIN_ROLE, HUB_ADMIN, 0);
     accessManager.grantRole(Roles.SPOKE_ADMIN_ROLE, SPOKE_ADMIN, 0);
     accessManager.grantRole(Roles.USER_RP_UPDATER_ROLE, GOVERNOR, 0);
-    accessManager.grantRole(Roles.INTEREST_RATE_ADMIN_ROLE, IR_CONTROLLER, 0);
 
     // Grant responsibilities to roles
     // Spoke Admin functionalities

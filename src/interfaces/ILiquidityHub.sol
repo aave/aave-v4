@@ -2,6 +2,7 @@
 pragma solidity ^0.8.0;
 
 import {IERC20} from 'src/dependencies/openzeppelin/IERC20.sol';
+import {IAccessManaged} from 'src/dependencies/openzeppelin/IAccessManaged.sol';
 import {DataTypes} from 'src/libraries/types/DataTypes.sol';
 
 /**
@@ -9,7 +10,7 @@ import {DataTypes} from 'src/libraries/types/DataTypes.sol';
  * @author Aave Labs
  * @notice Basic interface for LiquidityHub
  */
-interface ILiquidityHub {
+interface ILiquidityHub is IAccessManaged {
   event SpokeAdded(uint256 indexed assetId, address indexed spoke);
   event AssetAdded(uint256 indexed assetId, address indexed asset);
   event AssetConfigUpdated(uint256 indexed assetId, DataTypes.AssetConfig config);

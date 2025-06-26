@@ -28,7 +28,12 @@ contract LiquidityHub is ILiquidityHub, AccessManaged {
   IERC20[] public assetsList; // TODO: Check if Enumerable or Set makes more sense
   uint256 public assetCount;
 
-  constructor(address accessManager) AccessManaged(accessManager) {}
+  /*
+   * @notice Initializes the contract with access control.
+   * @param authority The address of the authority contract which manages permissions.
+   * @dev The authority should implement the AccessManaged interface to control access.
+   */
+  constructor(address authority) AccessManaged(authority) {}
 
   // /////
   // Governance

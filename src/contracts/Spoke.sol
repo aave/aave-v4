@@ -374,7 +374,10 @@ contract Spoke is ISpoke, Multicall, AccessManaged {
   function updateUserRiskPremium(address user) external {
     (uint256 userRiskPremium, , , , ) = _calculateUserAccountData(user);
     bool premiumIncrease = _notifyRiskPremiumUpdate(type(uint256).max, user, userRiskPremium);
-    require(!premiumIncrease || msg.sender == user || _isUserRpUpdater(msg.sender), Unauthorized());
+    require(
+      !premiumIncrease || msg.sender == user || _isUserRiskPremiumUpdater(msg.sender),
+      Unauthorized()
+    );
     emit UserRiskPremiumUpdate(user, userRiskPremium);
   }
 
@@ -719,7 +722,7 @@ contract Spoke is ISpoke, Multicall, AccessManaged {
     return userPosition.baseDrawnShares > 0;
   }
 
-  function _isUserRpUpdater(address caller) internal view returns (bool) {
+  function _isUserRiskPremiumUpdater(address caller) internal view returns (bool) {
     (bool result, ) = IAccessManager(authority()).hasRole(Roles.USER_RP_UPDATER_ROLE, caller);
     return result;
   }
