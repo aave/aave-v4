@@ -1,6 +1,8 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.0;
 
+import {console2 as console} from 'forge-std/console2.sol';
+
 import {SafeERC20} from 'src/dependencies/openzeppelin/SafeERC20.sol';
 import {IERC20} from 'src/dependencies/openzeppelin/IERC20.sol';
 import {ILiquidityHub} from 'src/interfaces/ILiquidityHub.sol';
@@ -321,6 +323,8 @@ contract LiquidityHub is ILiquidityHub {
   function payFeeWithExistingLiquidity(uint256 assetId, uint256 amount) external returns (uint256) {
     // TODO: authorization - only spokes
 
+    // revert('payFeeWithExistingLiquidity');
+
     DataTypes.Asset storage asset = _assets[assetId];
     DataTypes.SpokeData storage spoke = _spokes[assetId][msg.sender];
     address feeReceiver = asset.config.feeReceiver;
@@ -329,8 +333,12 @@ contract LiquidityHub is ILiquidityHub {
     uint256 feeShares = asset.toSuppliedSharesDown(amount);
     require(feeShares <= spoke.suppliedShares, InvalidSharesAmount());
 
+    console.log('supplied %e %e', getSpokeSuppliedAmount(assetId, msg.sender), feeShares);
+
     spoke.suppliedShares -= feeShares;
     _spokes[assetId][feeReceiver].suppliedShares += feeShares; // if feeReceiver is not defined, these
+
+    console.log('supplied %e', getSpokeSuppliedAmount(assetId, msg.sender));
 
     emit AccrueFees(assetId, feeShares);
 
@@ -477,7 +485,7 @@ contract LiquidityHub is ILiquidityHub {
     return _assets[assetId].totalSuppliedShares();
   }
 
-  function getSpokeSuppliedAmount(uint256 assetId, address spoke) external view returns (uint256) {
+  function getSpokeSuppliedAmount(uint256 assetId, address spoke) public view returns (uint256) {
     DataTypes.Asset storage asset = _assets[assetId];
     if (spoke == asset.config.feeReceiver) {
       return
