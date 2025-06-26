@@ -303,7 +303,7 @@ contract LiquidityHub is ILiquidityHub {
   }
 
   /// @inheritdoc ILiquidityHub
-  function donateToFeeReceiver(
+  function supplyToFeeReceiver(
     uint256 assetId,
     uint256 amount,
     address from
@@ -317,7 +317,7 @@ contract LiquidityHub is ILiquidityHub {
 
     uint256 suppliedShares = _executeAdd(asset, spoke, assetId, amount, from);
 
-    emit DonateToFeeReceiver(assetId, msg.sender, suppliedShares, amount);
+    emit SupplyToFeeReceiver(assetId, msg.sender, suppliedShares, amount);
 
     return suppliedShares;
   }

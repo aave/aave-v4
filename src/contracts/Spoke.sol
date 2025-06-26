@@ -1196,7 +1196,7 @@ contract Spoke is ISpoke, Multicall {
           vars.totalLiquidationProtocolFeeAmount
         ) > 0
       ) {
-        collateralReserveHub.donateToFeeReceiver(
+        collateralReserveHub.supplyToFeeReceiver(
           vars.collateralAssetId,
           vars.totalLiquidationProtocolFeeAmount,
           address(this)

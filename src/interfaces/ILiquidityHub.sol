@@ -52,7 +52,7 @@ interface ILiquidityHub {
     uint256 realizedPremiumAdded,
     uint256 realizedPremiumTaken
   );
-  event DonateToFeeReceiver(
+  event SupplyToFeeReceiver(
     uint256 indexed assetId,
     address indexed spoke,
     uint256 suppliedShares,
@@ -187,7 +187,7 @@ interface ILiquidityHub {
    * @param from The address (user) from which we pull assets.
    * @return The amount of shares added or supplied.
    */
-  function donateToFeeReceiver(
+  function supplyToFeeReceiver(
     uint256 assetId,
     uint256 amount,
     address from

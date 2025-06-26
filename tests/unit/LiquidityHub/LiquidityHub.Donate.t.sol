@@ -16,7 +16,7 @@ contract LiquidityHubDonateTest is LiquidityHubBase {
       )
     );
     vm.prank(address(spoke1));
-    hub.donateToFeeReceiver(daiAssetId, amount, makeAddr('randomUser'));
+    hub.supplyToFeeReceiver(daiAssetId, amount, makeAddr('randomUser'));
   }
 
   function test_donate_fuzz_revertsWith_ERC20InsufficientAllowance(uint256 amount) public {
@@ -30,7 +30,7 @@ contract LiquidityHubDonateTest is LiquidityHubBase {
       )
     );
     vm.prank(address(spoke1));
-    hub.donateToFeeReceiver(daiAssetId, amount, makeAddr('randomUser'));
+    hub.supplyToFeeReceiver(daiAssetId, amount, makeAddr('randomUser'));
   }
 
   function test_donate_revertsWith_InvalidFeeReceiver() public {
@@ -41,7 +41,7 @@ contract LiquidityHubDonateTest is LiquidityHubBase {
 
     vm.expectRevert(ILiquidityHub.InvalidFeeReceiver.selector);
     vm.prank(address(spoke1));
-    hub.donateToFeeReceiver(daiAssetId, amount, alice);
+    hub.supplyToFeeReceiver(daiAssetId, amount, alice);
   }
 
   function test_donate_revertsWith_AssetNotActive() public {
@@ -52,7 +52,7 @@ contract LiquidityHubDonateTest is LiquidityHubBase {
 
     vm.expectRevert(ILiquidityHub.AssetNotActive.selector);
     vm.prank(address(spoke1));
-    hub.donateToFeeReceiver(daiAssetId, amount, alice);
+    hub.supplyToFeeReceiver(daiAssetId, amount, alice);
   }
 
   function test_donate_revertsWith_AssetPaused() public {
@@ -63,7 +63,7 @@ contract LiquidityHubDonateTest is LiquidityHubBase {
 
     vm.expectRevert(ILiquidityHub.AssetPaused.selector);
     vm.prank(address(spoke1));
-    hub.donateToFeeReceiver(daiAssetId, amount, alice);
+    hub.supplyToFeeReceiver(daiAssetId, amount, alice);
   }
 
   function test_donate_revertsWith_AssetFrozen() public {
@@ -74,7 +74,7 @@ contract LiquidityHubDonateTest is LiquidityHubBase {
 
     vm.expectRevert(ILiquidityHub.AssetFrozen.selector);
     vm.prank(address(spoke1));
-    hub.donateToFeeReceiver(daiAssetId, amount, alice);
+    hub.supplyToFeeReceiver(daiAssetId, amount, alice);
   }
 
   function test_donate_revertsWith_SupplyCapExceeded() public {
@@ -85,7 +85,7 @@ contract LiquidityHubDonateTest is LiquidityHubBase {
 
     vm.expectRevert(abi.encodeWithSelector(ILiquidityHub.SupplyCapExceeded.selector, newSupplyCap));
     vm.prank(address(spoke1));
-    hub.donateToFeeReceiver(daiAssetId, amount, alice);
+    hub.supplyToFeeReceiver(daiAssetId, amount, alice);
   }
 
   function test_donate_fuzz_revertsWith_SupplyCapExceeded(uint256 amount) public {
@@ -96,7 +96,7 @@ contract LiquidityHubDonateTest is LiquidityHubBase {
 
     vm.expectRevert(abi.encodeWithSelector(ILiquidityHub.SupplyCapExceeded.selector, newSupplyCap));
     vm.prank(address(spoke1));
-    hub.donateToFeeReceiver(daiAssetId, amount, alice);
+    hub.supplyToFeeReceiver(daiAssetId, amount, alice);
   }
 
   function test_donate_revertsWith_SupplyCapExceeded_due_to_interest() public {
@@ -118,7 +118,7 @@ contract LiquidityHubDonateTest is LiquidityHubBase {
 
     vm.expectRevert(abi.encodeWithSelector(ILiquidityHub.SupplyCapExceeded.selector, newSupplyCap));
     vm.prank(address(spoke2));
-    hub.donateToFeeReceiver(daiAssetId, 1, alice);
+    hub.supplyToFeeReceiver(daiAssetId, 1, alice);
   }
 
   function test_donate_fuzz_revertsWith_SupplyCapExceeded_due_to_interest(
@@ -150,7 +150,7 @@ contract LiquidityHubDonateTest is LiquidityHubBase {
 
     vm.expectRevert(abi.encodeWithSelector(ILiquidityHub.SupplyCapExceeded.selector, newSupplyCap));
     vm.prank(address(spoke2));
-    hub.donateToFeeReceiver(daiAssetId, 1, alice); // cannot supply any additional amount
+    hub.supplyToFeeReceiver(daiAssetId, 1, alice); // cannot supply any additional amount
   }
   function test_donate_single_asset() public {
     uint256 amount = 100e18;
@@ -167,9 +167,9 @@ contract LiquidityHubDonateTest is LiquidityHubBase {
     assertEq(tokenList.dai.balanceOf(address(hub)), 0);
 
     vm.expectEmit(address(hub));
-    emit ILiquidityHub.DonateToFeeReceiver(daiAssetId, address(spoke1), amount, amount);
+    emit ILiquidityHub.SupplyToFeeReceiver(daiAssetId, address(spoke1), amount, amount);
     vm.prank(address(spoke1));
-    hub.donateToFeeReceiver(daiAssetId, amount, alice);
+    hub.supplyToFeeReceiver(daiAssetId, amount, alice);
 
     // hub
     assertEq(hub.getAssetSuppliedAmount(daiAssetId), amount, 'hub asset suppliedAmount after');
@@ -216,10 +216,10 @@ contract LiquidityHubDonateTest is LiquidityHubBase {
     vm.expectEmit(address(asset));
     emit IERC20.Transfer(user, address(hub), amount);
     vm.expectEmit(address(hub));
-    emit ILiquidityHub.DonateToFeeReceiver(assetId, address(spoke1), amount, amount);
+    emit ILiquidityHub.SupplyToFeeReceiver(assetId, address(spoke1), amount, amount);
 
     vm.prank(address(spoke1));
-    hub.donateToFeeReceiver(assetId, amount, user);
+    hub.supplyToFeeReceiver(assetId, amount, user);
 
     // hub
     assertEq(hub.getAssetSuppliedAmount(assetId), amount, 'hub asset suppliedAmount after');
@@ -264,18 +264,18 @@ contract LiquidityHubDonateTest is LiquidityHubBase {
     vm.expectEmit(address(asset));
     emit IERC20.Transfer(alice, address(hub), amount);
     vm.expectEmit(address(hub));
-    emit ILiquidityHub.DonateToFeeReceiver(assetId, address(spoke1), amount, amount);
+    emit ILiquidityHub.SupplyToFeeReceiver(assetId, address(spoke1), amount, amount);
 
     vm.prank(address(spoke1));
-    hub.donateToFeeReceiver(assetId, amount, alice);
+    hub.supplyToFeeReceiver(assetId, amount, alice);
 
     vm.expectEmit(address(asset2));
     emit IERC20.Transfer(alice, address(hub), amount2);
     vm.expectEmit(address(hub));
-    emit ILiquidityHub.DonateToFeeReceiver(assetId2, address(spoke2), amount2, amount2);
+    emit ILiquidityHub.SupplyToFeeReceiver(assetId2, address(spoke2), amount2, amount2);
 
     vm.prank(address(spoke2));
-    hub.donateToFeeReceiver(assetId2, amount2, alice);
+    hub.supplyToFeeReceiver(assetId2, amount2, alice);
 
     uint256 timestamp = vm.getBlockTimestamp();
 
@@ -338,7 +338,7 @@ contract LiquidityHubDonateTest is LiquidityHubBase {
 
     vm.expectRevert(ILiquidityHub.InvalidSupplyAmount.selector);
     vm.prank(address(spoke1));
-    hub.donateToFeeReceiver(assetId, amount, alice);
+    hub.supplyToFeeReceiver(assetId, amount, alice);
   }
 
   function test_donate_revertsWith_InvalidSharesAmount() public {
@@ -365,7 +365,7 @@ contract LiquidityHubDonateTest is LiquidityHubBase {
 
     vm.expectRevert(ILiquidityHub.InvalidSharesAmount.selector);
     vm.prank(address(spoke1));
-    hub.donateToFeeReceiver(daiAssetId, amount, alice);
+    hub.supplyToFeeReceiver(daiAssetId, amount, alice);
   }
 
   function test_donate_fuzz_revertsWith_InvalidSharesAmount_due_to_index(
@@ -399,14 +399,14 @@ contract LiquidityHubDonateTest is LiquidityHubBase {
 
     vm.expectRevert(ILiquidityHub.InvalidSharesAmount.selector);
     vm.prank(address(spoke1));
-    hub.donateToFeeReceiver(daiAssetId, supplyAmount, alice);
+    hub.supplyToFeeReceiver(daiAssetId, supplyAmount, alice);
   }
 
   function test_donate_revertsWith_InvalidAddFromHub() public {
     vm.expectRevert(ILiquidityHub.InvalidAddFromHub.selector, address(hub));
 
     vm.prank(address(spoke1));
-    hub.donateToFeeReceiver(daiAssetId, 100e18, address(hub));
+    hub.supplyToFeeReceiver(daiAssetId, 100e18, address(hub));
   }
 
   function test_donate_with_increased_index() public {
@@ -444,7 +444,7 @@ contract LiquidityHubDonateTest is LiquidityHubBase {
     vm.stopPrank();
 
     vm.prank(address(spoke2));
-    hub.donateToFeeReceiver(daiAssetId, supplyAmount, bob);
+    hub.supplyToFeeReceiver(daiAssetId, supplyAmount, bob);
 
     assertEq(
       hub.getSpokeSuppliedAmount(daiAssetId, _getFeeReceiver(daiAssetId)),
@@ -555,7 +555,7 @@ contract LiquidityHubDonateTest is LiquidityHubBase {
     tokenList.dai.approve(address(hub), amount);
 
     vm.prank(address(spoke1));
-    hub.donateToFeeReceiver(daiAssetId, supplyAmount, bob);
+    hub.supplyToFeeReceiver(daiAssetId, supplyAmount, bob);
 
     // spoke1
     assertEq(
