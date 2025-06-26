@@ -59,7 +59,7 @@ contract SpokeMultipleHubBase is SpokeBase {
     accessManager.grantRole(Roles.HUB_ADMIN_ROLE, HUB_ADMIN, 0);
     accessManager.grantRole(Roles.SPOKE_ADMIN_ROLE, HUB_ADMIN, 0);
     accessManager.grantRole(Roles.SPOKE_ADMIN_ROLE, SPOKE_ADMIN, 0);
-    accessManager.grantRole(Roles.USER_RP_UPDATER_ROLE, GOVERNOR, 0);
+    accessManager.grantRole(Roles.USER_RP_UPDATER_ROLE, SPOKE_ADMIN, 0);
 
     // Grant responsibilities to roles
     // Spoke Admin functionalities

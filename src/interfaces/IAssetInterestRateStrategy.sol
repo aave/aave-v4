@@ -96,6 +96,12 @@ interface IAssetInterestRateStrategy is IBasicInterestRateStrategy {
   function MAX_OPTIMAL_RATIO() external view returns (uint256);
 
   /**
+   * @notice Returns the address of the liquidity hub
+   * @return The address of the liquidity hub
+   */
+  function LIQUIDITY_HUB() external view returns (address);
+
+  /**
    * @notice Returns the full InterestRateData object for the given asset
    * @param assetId The id of the asset to get the data for
    * @return The InterestRateData object for the given asset, all in bps

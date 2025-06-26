@@ -31,8 +31,8 @@ contract LiquidityHub is ILiquidityHub, AccessManaged {
 
   /*
    * @notice Initializes the contract with access control.
-   * @param authority The address of the authority contract which manages permissions.
    * @dev The authority should implement the AccessManaged interface to control access.
+   * @param authority The address of the authority contract which manages permissions.
    */
   constructor(address authority) AccessManaged(authority) {}
 
@@ -137,7 +137,7 @@ contract LiquidityHub is ILiquidityHub, AccessManaged {
     uint256 assetId,
     address feeReceiver,
     uint256 liquidityFee
-  ) public restricted {
+  ) external restricted {
     // receiver can be zero if and only if the fee is zero.
     require(liquidityFee <= PercentageMathExtended.PERCENTAGE_FACTOR, InvalidLiquidityFee());
     require(feeReceiver != address(0) || liquidityFee == 0, InvalidFeeReceiver());
@@ -201,7 +201,9 @@ contract LiquidityHub is ILiquidityHub, AccessManaged {
     uint256 assetId,
     IAssetInterestRateStrategy.InterestRateData calldata rateData
   ) external restricted {
-    _assets[assetId].config.irStrategy.setInterestRateData(assetId, rateData);
+    DataTypes.Asset storage asset = _assets[assetId];
+    asset.accrue(_spokes[assetId][asset.config.feeReceiver]);
+    asset.config.irStrategy.setInterestRateData(assetId, rateData);
   }
 
   // /////

@@ -1,14 +1,9 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.0;
 
-import 'tests/Base.t.sol';
+import 'tests/unit/LiquidityHub/LiquidityHubBase.t.sol';
 
-contract LiquidityHubAccessTest is Base {
-  function setUp() public override {
-    super.setUp();
-    super.initEnvironment();
-  }
-
+contract LiquidityHubAccessTest is LiquidityHubBase {
   /// @dev Test showing that restricted functions on hub can only be called by hub admin.
   function test_liquidity_hub_admin_access() public {
     TestnetERC20 tokenA = new TestnetERC20('A', 'A', 18);
@@ -129,5 +124,37 @@ contract LiquidityHubAccessTest is Base {
     // Hub Admin can call function on hub to set interest rates
     vm.prank(HUB_ADMIN);
     hub.setInterestRateData(daiAssetId, irData);
+  }
+
+  /// @dev Test showcasing ability to change role responsibility for a function selector.
+  function test_change_role_responsibility() public {
+    IAssetInterestRateStrategy.InterestRateData memory irData = IAssetInterestRateStrategy
+      .InterestRateData({
+        optimalUsageRatio: 50_00, // 50.00% in BPS
+        baseVariableBorrowRate: 100_00, // 100.00% in BPS
+        variableRateSlope1: 200_00, // 200.00% in BPS
+        variableRateSlope2: 300_00 // 300.00% in BPS
+      });
+
+    // Change the role responsible for setting interest rate data on the hub
+    bytes4[] memory hubSelectors = new bytes4[](1);
+    hubSelectors[0] = ILiquidityHub.setInterestRateData.selector;
+    vm.prank(ADMIN);
+    accessManager.setTargetFunctionRole(address(hub), hubSelectors, Roles.DEFAULT_ADMIN_ROLE);
+
+    // The old role (HUB_ADMIN) should no longer have access
+    vm.expectRevert(
+      abi.encodeWithSelector(IAccessManaged.AccessManagedUnauthorized.selector, HUB_ADMIN)
+    );
+    vm.prank(HUB_ADMIN);
+    hub.setInterestRateData(daiAssetId, irData);
+
+    // The new role (DEFAULT_ADMIN_ROLE) should have access
+    vm.prank(ADMIN);
+    hub.setInterestRateData(daiAssetId, irData);
+
+    // HUB_ADMIN can still access the other hub functions for which it has permissions
+    vm.prank(HUB_ADMIN);
+    hub.updateAssetFees(daiAssetId, address(0), 0);
   }
 }

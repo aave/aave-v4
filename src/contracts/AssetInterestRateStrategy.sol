@@ -23,6 +23,7 @@ contract AssetInterestRateStrategy is IAssetInterestRateStrategy {
   /// @inheritdoc IAssetInterestRateStrategy
   uint256 public constant MAX_OPTIMAL_RATIO = 99_00; // 99.00% in BPS
 
+  /// @inheritdoc IAssetInterestRateStrategy
   address public immutable LIQUIDITY_HUB;
 
   /// @dev Map of assetId and their interest rate data (assetId => interestRateData)

@@ -100,7 +100,6 @@ abstract contract Base is Test {
   address internal TREASURY_ADMIN = makeAddr('TREASURY_ADMIN');
   address internal TREASURY = makeAddr('TREASURY');
   address internal LIQUIDATOR = makeAddr('LIQUIDATOR');
-  address internal GOVERNOR = makeAddr('GOVERNOR');
 
   TokenList internal tokenList;
   uint256 internal wethAssetId = 0;
@@ -200,7 +199,7 @@ abstract contract Base is Test {
     accessManager.grantRole(Roles.SPOKE_ADMIN_ROLE, ADMIN, 0);
     accessManager.grantRole(Roles.HUB_ADMIN_ROLE, HUB_ADMIN, 0);
     accessManager.grantRole(Roles.SPOKE_ADMIN_ROLE, SPOKE_ADMIN, 0);
-    accessManager.grantRole(Roles.USER_RP_UPDATER_ROLE, GOVERNOR, 0);
+    accessManager.grantRole(Roles.USER_RP_UPDATER_ROLE, SPOKE_ADMIN, 0);
 
     // Grant responsibilities to roles
     // Spoke Admin functionalities
