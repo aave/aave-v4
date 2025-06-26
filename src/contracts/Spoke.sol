@@ -156,7 +156,7 @@ contract Spoke is ISpoke, Multicall {
     }
     _validateWithdraw(reserve, userPosition, amount);
 
-    _accruePremium(hub, assetId, msg.sender, 0, reserve, userPosition);
+    _accruePremium(reserve, userPosition, hub, assetId, msg.sender, 0);
 
     uint256 withdrawnShares = hub.remove(assetId, amount, to);
 
@@ -165,7 +165,7 @@ contract Spoke is ISpoke, Multicall {
 
     // calc needs new user position, just updating base debt is enough
     uint256 newUserRiskPremium = _refreshAndValidateUserPosition(msg.sender); // validates HF
-    _updatePremiumDebt(hub, assetId, msg.sender, newUserRiskPremium, reserve, userPosition);
+    _updatePremiumDebt(reserve, userPosition, hub, assetId, msg.sender, newUserRiskPremium);
 
     emit Withdraw(reserveId, msg.sender, withdrawnShares, to);
   }
@@ -181,7 +181,7 @@ contract Spoke is ISpoke, Multicall {
 
     _validateBorrow(reserve); // HF checked at the end of borrow action
 
-    _accruePremium(hub, assetId, msg.sender, 0, reserve, userPosition);
+    _accruePremium(reserve, userPosition, hub, assetId, msg.sender, 0);
 
     uint256 baseDrawnShares = hub.draw(assetId, amount, to);
 
@@ -190,7 +190,7 @@ contract Spoke is ISpoke, Multicall {
 
     // calc needs new user position, just updating base debt is enough
     uint256 newUserRiskPremium = _refreshAndValidateUserPosition(msg.sender); // validates HF
-    _updatePremiumDebt(hub, assetId, msg.sender, newUserRiskPremium, reserve, userPosition);
+    _updatePremiumDebt(reserve, userPosition, hub, assetId, msg.sender, newUserRiskPremium);
 
     emit Borrow(reserveId, msg.sender, baseDrawnShares, to);
   }
@@ -211,7 +211,7 @@ contract Spoke is ISpoke, Multicall {
       amount
     );
 
-    _accruePremium(hub, assetId, msg.sender, premiumDebtRestored, reserve, userPosition);
+    _accruePremium(reserve, userPosition, hub, assetId, msg.sender, premiumDebtRestored);
 
     uint256 restoredShares = hub.restore(
       assetId,
@@ -224,7 +224,7 @@ contract Spoke is ISpoke, Multicall {
     userPosition.baseDrawnShares -= restoredShares;
 
     (uint256 newUserRiskPremium, , , , ) = _calculateUserAccountData(msg.sender);
-    _updatePremiumDebt(hub, assetId, msg.sender, newUserRiskPremium, reserve, userPosition);
+    _updatePremiumDebt(reserve, userPosition, hub, assetId, msg.sender, newUserRiskPremium);
 
     emit Repay(reserveId, msg.sender, restoredShares);
   }
@@ -562,12 +562,12 @@ contract Spoke is ISpoke, Multicall {
   }
 
   function _accruePremium(
+    DataTypes.Reserve storage reserve,
+    DataTypes.UserPosition storage userPosition,
     ILiquidityHub hub,
     uint256 assetId,
     address user,
-    uint256 premiumDebtRestored,
-    DataTypes.Reserve storage reserve,
-    DataTypes.UserPosition storage userPosition
+    uint256 premiumDebtRestored
   ) internal {
     uint256 userPremiumDrawnShares = userPosition.premiumDrawnShares;
     uint256 userPremiumOffset = userPosition.premiumOffset;
@@ -592,12 +592,12 @@ contract Spoke is ISpoke, Multicall {
   }
 
   function _updatePremiumDebt(
+    DataTypes.Reserve storage reserve,
+    DataTypes.UserPosition storage userPosition,
     ILiquidityHub hub,
     uint256 assetId,
     address user,
-    uint256 newUserRiskPremium,
-    DataTypes.Reserve storage reserve,
-    DataTypes.UserPosition storage userPosition
+    uint256 newUserRiskPremium
   ) internal {
     uint256 userPremiumDrawnShares = userPosition.premiumDrawnShares = userPosition
       .baseDrawnShares
