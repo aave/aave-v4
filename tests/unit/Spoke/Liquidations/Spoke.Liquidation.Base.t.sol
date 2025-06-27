@@ -174,16 +174,6 @@ contract SpokeLiquidationBase is SpokeBase {
       state.liqProtocolFee
     ) = _calculateAvailableCollateralToLiquidate(spoke1, state, requiredDebtAmount);
 
-    state.liqProtocolFeeShares = hub.convertToSuppliedShares(
-      state.collateralAssetId,
-      state.liqProtocolFee
-    );
-
-    // // if protocol fee equates to 0 shares, it is instead added to collateral to liquidate for the liquidator
-    // state.collToLiq = state.liqProtocolFeeShares == 0
-    //   ? state.collToLiq + state.liqProtocolFee
-    //   : state.collToLiq;
-
     vm.expectEmit(address(spoke1));
     emit ISpoke.LiquidationCall(
       state.collateralReserve.asset,
@@ -216,6 +206,19 @@ contract SpokeLiquidationBase is SpokeBase {
     _assertLiquidationBonusEarned(state, label);
     _assertSupplyExchangeRate(state, label);
     _assertSetUsingAsCollateral(spoke, alice, state, label);
+    _assertRemainingSpokeCollateral(state, spoke, label);
+  }
+
+  function _assertRemainingSpokeCollateral(
+    LiquidationTestLocalParams memory state,
+    ISpoke spoke,
+    string memory label
+  ) internal view {
+    assertEq(
+      IERC20(state.collateralReserve.asset).balanceOf(address(spoke)),
+      0,
+      string.concat('no spoke collateral asset should remain ', label)
+    );
   }
 
   /// assert that the user account data is correct after liquidation

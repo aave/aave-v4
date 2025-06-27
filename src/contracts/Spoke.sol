@@ -1108,58 +1108,23 @@ contract Spoke is ISpoke, Multicall {
       userDebtPosition.baseDrawnShares -= vars.restoredShares;
       vars.totalRestoredShares += vars.restoredShares;
 
-      // remove collateral
-      // expected total withdrawn shares including liquidation fee
+      // expected total withdrawn shares includes liquidation fee
       vars.withdrawnShares = collateralReserveHub.convertToSuppliedSharesUp(
         vars.collateralAssetId,
         vars.liquidationFeeAmount + vars.collateralToLiquidate
       );
-      vars.withdrawnCollShares = collateralReserveHub.convertToSuppliedSharesUp(
+      vars.withdrawnLiquidatorShares = collateralReserveHub.convertToSuppliedSharesUp(
         vars.collateralAssetId,
         vars.collateralToLiquidate
       );
-      vars.liquidationFeeShares = vars.withdrawnShares - vars.withdrawnCollShares;
+      vars.liquidationFeeShares = vars.withdrawnShares - vars.withdrawnLiquidatorShares;
 
-      // if LPF doesn't equate to a full share, donate to liquidator
-      if (vars.liquidationFeeShares == 0) {
-        vars.collateralToLiquidate += vars.liquidationFeeAmount;
-      }
-
-      // liquidated collateral sent directly to liquidator
-      vars.withdrawnCollShares = collateralReserveHub.remove(
+      // remove collateral, send liquidated collateral directly to liquidator
+      vars.withdrawnLiquidatorShares = collateralReserveHub.remove(
         vars.collateralAssetId,
         vars.collateralToLiquidate,
         liquidator
       );
-
-      // ie rounding sum of 2 numbers doesnt equal rounding each number individually and summing
-      // 3.6, 7.5, each rounds to 4, 8 -> 12
-      // sum rounds to 11
-
-      // assume total supplied for user1 = 10000 shares
-      // ie removing some total amount at the end vs intermediate, supply ex rate = 1.01
-      // remove rounds up
-      // user1 doing total -> amount = 101, shares = 100
-      // base coll = 75 amount, 75 shares; LPF = 26 amount, 26 shares
-      // user1 doing total -> amount = 202, shares = 200
-      // base coll = 180 amount, 179 shares; LPF = 22 amount, 22 shares
-      // user1 doing total -> amount = 303, shares = 300
-      // base coll = 200 amount, 199 shares; LPF = 103 amount, 102 shares
-
-      // total LPF = 151 amount, (up) 150 shares, (down) 149 shares
-
-      // removing base coll -> 75 shares; removing LPF -> 26 shares
-
-      // ie removing some total amount, user1 -> 60 shares
-      // but removing base coll -> 75 shares; removing LPF -> 26 shares
-      //
-
-      // console.log(
-      //   'isAllowed',
-      //   userCollateralPosition.suppliedShares,
-      //   vars.withdrawnShares,
-      //   userCollateralPosition.suppliedShares >= vars.withdrawnShares
-      // );
 
       // collateral accounting
       vars.newUserSuppliedShares = userCollateralPosition.suppliedShares - vars.withdrawnShares;
@@ -1219,7 +1184,6 @@ contract Spoke is ISpoke, Multicall {
       _notifyRiskPremiumUpdate(vars.debtAssetId, users[vars.i], vars.newUserRiskPremium);
 
       vars.totalCollateralToLiquidate += vars.collateralToLiquidate;
-      // vars.totalLiquidationProtocolFeeAmount += vars.liquidationFeeAmount;
       vars.totalLiquidationProtocolFeeShares += vars.liquidationFeeShares;
       vars.totalDebtToLiquidate += vars.baseDebtToLiquidate + vars.premiumDebtToLiquidate;
 
@@ -1254,8 +1218,6 @@ contract Spoke is ISpoke, Multicall {
       0
     );
 
-    // console.log('vars.totalWithdrawnShares %e', vars.totalWithdrawnShares);
-
     return (
       collateralReserve.asset,
       debtReserve.asset,
@@ -1263,13 +1225,6 @@ contract Spoke is ISpoke, Multicall {
       vars.totalCollateralToLiquidate
     );
   }
-
-  // concerns:
-  // - each iteration of the loop, need to do user accounting prior to overall total LPF at the end of loop
-  // - scenario: if there's multiple parallel liqs for the same user (each with partial liq), precision issues can compound
-  // options:
-  // - pay LPF at each iteration of loop
-  // -
 
   /// @return actualCollateralToLiquidate The amount of collateral to liquidate.
   /// @return liquidationFeeAmount The amount of protocol fee.

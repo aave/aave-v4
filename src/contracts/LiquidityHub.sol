@@ -326,21 +326,13 @@ contract LiquidityHub is ILiquidityHub {
   ) external returns (uint256) {
     // TODO: authorization - only spokes
 
-    // revert('payFeeWithExistingLiquidity');
-
     DataTypes.Asset storage asset = _assets[assetId];
     DataTypes.SpokeData storage spoke = _spokes[assetId][msg.sender];
-    address feeReceiver = asset.config.feeReceiver;
-    require(feeReceiver != address(0), InvalidFeeReceiver());
 
     require(feeShares <= spoke.suppliedShares, InvalidSharesAmount());
 
-    // console.log('supplied %e %e', getSpokeSuppliedAmount(assetId, msg.sender), feeShares);
-
     spoke.suppliedShares -= feeShares;
-    _spokes[assetId][feeReceiver].suppliedShares += feeShares; // if feeReceiver is not defined, these
-
-    // console.log('supplied %e', getSpokeSuppliedAmount(assetId, msg.sender));
+    _spokes[assetId][asset.config.feeReceiver].suppliedShares += feeShares;
 
     emit AccrueFees(assetId, feeShares);
 
@@ -487,7 +479,7 @@ contract LiquidityHub is ILiquidityHub {
     return _assets[assetId].totalSuppliedShares();
   }
 
-  function getSpokeSuppliedAmount(uint256 assetId, address spoke) public view returns (uint256) {
+  function getSpokeSuppliedAmount(uint256 assetId, address spoke) external view returns (uint256) {
     DataTypes.Asset storage asset = _assets[assetId];
     if (spoke == asset.config.feeReceiver) {
       return
