@@ -503,6 +503,6 @@ contract LiquidityHubDrawTest is LiquidityHubBase {
       'baseDrawnShares after draw'
     );
 
-    Utils.checkBorrowRateInvariant(hub, assetId, 'hub.draw');
+    checkBorrowRateInvariant(hub, assetId, 'hub.draw');
   }
 }

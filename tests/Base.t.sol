@@ -1781,4 +1781,25 @@ abstract contract Base is Test {
       abi.encode(interestRateRay)
     );
   }
+
+  function checkBorrowRateInvariant(
+    ILiquidityHub hub,
+    uint256 assetId,
+    string memory operation
+  ) internal {
+    DataTypes.Asset memory asset = hub.getAsset(assetId);
+    (uint256 baseDebt, ) = hub.getAssetDebt(assetId);
+
+    vm.assertEq(
+      asset.baseBorrowRate,
+      asset.config.irStrategy.calculateInterestRate(
+        assetId,
+        asset.availableLiquidity,
+        baseDebt,
+        0,
+        0
+      ),
+      string.concat('base borrow rate after ', operation)
+    );
+  }
 }

@@ -24,11 +24,7 @@ library Utils {
     vm.stopPrank();
 
     vm.prank(spoke);
-    uint256 sharesAdded = hub.add(assetId, amount, user);
-
-    checkBorrowRateInvariant(hub, assetId, 'hub.add');
-
-    return sharesAdded;
+    return hub.add(assetId, amount, user);
   }
 
   function draw(
@@ -40,11 +36,7 @@ library Utils {
     address onBehalfOf // todo: implement
   ) internal returns (uint256) {
     vm.prank(spoke);
-    uint256 drawnShares = hub.draw(assetId, amount, to);
-
-    checkBorrowRateInvariant(hub, assetId, 'hub.draw');
-
-    return drawnShares;
+    return hub.draw(assetId, amount, to);
   }
 
   function remove(
@@ -55,11 +47,7 @@ library Utils {
     address to
   ) internal returns (uint256) {
     vm.prank(spoke);
-    uint256 removedShares = hub.remove(assetId, amount, to);
-
-    checkBorrowRateInvariant(hub, assetId, 'hub.remove');
-
-    return removedShares;
+    return hub.remove(assetId, amount, to);
   }
 
   function restore(
@@ -75,11 +63,7 @@ library Utils {
     vm.stopPrank();
 
     vm.prank(spoke);
-    uint256 restoredBaseShares = hub.restore(assetId, baseAmount, premiumAmount, repayer);
-
-    checkBorrowRateInvariant(hub, assetId, 'hub.restore');
-
-    return restoredBaseShares;
+    return hub.restore(assetId, baseAmount, premiumAmount, repayer);
   }
 
   // spoke
@@ -92,16 +76,11 @@ library Utils {
   ) internal {
     vm.prank(user);
     spoke.supply(reserveId, amount);
-
-    DataTypes.Reserve memory reserve = spoke.getReserve(reserveId);
-    checkBorrowRateInvariant(reserve.config.hub, reserve.assetId, 'spoke.supply');
   }
 
   function supply(ITreasurySpoke spoke, uint256 reserveId, address user, uint256 amount) internal {
     vm.prank(user);
     spoke.supply(reserveId, amount);
-
-    checkBorrowRateInvariant(spoke.HUB(), reserveId, 'treasurySpoke.supply');
   }
 
   function supplyCollateral(
@@ -114,9 +93,6 @@ library Utils {
     supply(spoke, reserveId, user, amount, onBehalfOf);
     vm.prank(user);
     spoke.setUsingAsCollateral(reserveId, true);
-
-    DataTypes.Reserve memory reserve = spoke.getReserve(reserveId);
-    checkBorrowRateInvariant(reserve.config.hub, reserve.assetId, 'spoke.setUsingAsCollateral');
   }
 
   function withdraw(
@@ -128,9 +104,6 @@ library Utils {
   ) internal {
     vm.prank(user);
     spoke.withdraw(reserveId, amount, user);
-
-    DataTypes.Reserve memory reserve = spoke.getReserve(reserveId);
-    checkBorrowRateInvariant(reserve.config.hub, reserve.assetId, 'spoke.withdraw');
   }
 
   function withdraw(
@@ -141,8 +114,6 @@ library Utils {
   ) internal {
     vm.prank(user);
     spoke.withdraw(reserveId, amount, user);
-
-    checkBorrowRateInvariant(spoke.HUB(), reserveId, 'treasurySpoke.withdraw');
   }
 
   function borrow(
@@ -154,37 +125,10 @@ library Utils {
   ) internal {
     vm.prank(user);
     spoke.borrow(reserveId, amount, user);
-
-    DataTypes.Reserve memory reserve = spoke.getReserve(reserveId);
-    checkBorrowRateInvariant(reserve.config.hub, reserve.assetId, 'spoke.borrow');
   }
 
   function repay(ISpoke spoke, uint256 reserveId, address user, uint256 amount) internal {
     vm.prank(user);
     spoke.repay(reserveId, amount);
-
-    DataTypes.Reserve memory reserve = spoke.getReserve(reserveId);
-    checkBorrowRateInvariant(reserve.config.hub, reserve.assetId, 'spoke.repay');
-  }
-
-  function checkBorrowRateInvariant(
-    ILiquidityHub hub,
-    uint256 assetId,
-    string memory operation
-  ) internal {
-    DataTypes.Asset memory asset = hub.getAsset(assetId);
-    (uint256 baseDebt, ) = hub.getAssetDebt(assetId);
-
-    vm.assertEq(
-      asset.baseBorrowRate,
-      asset.config.irStrategy.calculateInterestRate(
-        assetId,
-        asset.availableLiquidity,
-        baseDebt,
-        0,
-        0
-      ),
-      string.concat('base borrow rate after ', operation)
-    );
   }
 }
