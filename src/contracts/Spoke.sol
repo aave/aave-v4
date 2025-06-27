@@ -1115,6 +1115,42 @@ contract Spoke is ISpoke, Multicall {
         liquidator
       );
 
+      if (vars.liquidationProtocolFeeAmount > 0) {
+        vars.withdrawnShares += collateralReserveHub.payFeeWithExistingLiquidity(
+          vars.collateralAssetId,
+          vars.liquidationProtocolFeeAmount
+        );
+      }
+
+      // ie rounding sum of 2 numbers doesnt equal rounding each number individually and summing
+      // 3.6, 7.5, each rounds to 4, 8 -> 12
+      // sum rounds to 11
+
+      // assume total supplied for user1 = 10000 shares
+      // ie removing some total amount at the end vs intermediate, supply ex rate = 1.01
+      // remove rounds up
+      // user1 doing total -> amount = 101, shares = 100
+      // base coll = 75 amount, 75 shares; LPF = 26 amount, 26 shares
+      // user1 doing total -> amount = 202, shares = 200
+      // base coll = 180 amount, 179 shares; LPF = 22 amount, 22 shares
+      // user1 doing total -> amount = 303, shares = 300
+      // base coll = 200 amount, 199 shares; LPF = 103 amount, 102 shares
+
+      // total LPF = 151 amount, (up) 150 shares, (down) 149 shares
+
+      // removing base coll -> 75 shares; removing LPF -> 26 shares
+
+      // ie removing some total amount, user1 -> 60 shares
+      // but removing base coll -> 75 shares; removing LPF -> 26 shares
+      //
+
+      console.log(
+        'isAllowed',
+        userCollateralPosition.suppliedShares,
+        vars.withdrawnShares,
+        userCollateralPosition.suppliedShares >= vars.withdrawnShares
+      );
+
       // collateral accounting
       vars.newUserSuppliedShares = userCollateralPosition.suppliedShares - vars.withdrawnShares;
       userCollateralPosition.suppliedShares = vars.newUserSuppliedShares;
@@ -1173,7 +1209,7 @@ contract Spoke is ISpoke, Multicall {
       _notifyRiskPremiumUpdate(vars.debtAssetId, users[vars.i], vars.newUserRiskPremium);
 
       vars.totalCollateralToLiquidate += vars.collateralToLiquidate;
-      vars.totalLiquidationProtocolFeeAmount += vars.liquidationProtocolFeeAmount;
+      // vars.totalLiquidationProtocolFeeAmount += vars.liquidationProtocolFeeAmount;
       vars.totalDebtToLiquidate += vars.baseDebtToLiquidate + vars.premiumDebtToLiquidate;
 
       unchecked {
@@ -1200,26 +1236,7 @@ contract Spoke is ISpoke, Multicall {
       0
     );
 
-    if (
-      vars.totalLiquidationProtocolFeeAmount > 0 &&
-      collateralReserveHub.convertToSuppliedShares(
-        vars.collateralAssetId,
-        vars.totalLiquidationProtocolFeeAmount
-      ) >
-      0
-    ) {
-      console.log(
-        'vars.totalLiquidationProtocolFeeAmount %e',
-        vars.totalLiquidationProtocolFeeAmount
-      );
-      collateralReserveHub.payFeeWithExistingLiquidity(
-        vars.collateralAssetId,
-        vars.totalLiquidationProtocolFeeAmount
-      );
-    } else {
-      vars.totalCollateralToLiquidate += vars.totalLiquidationProtocolFeeAmount;
-      vars.totalLiquidationProtocolFeeAmount = 0;
-    }
+    // console.log('vars.totalWithdrawnShares %e', vars.totalWithdrawnShares);
 
     return (
       collateralReserve.asset,
@@ -1228,6 +1245,13 @@ contract Spoke is ISpoke, Multicall {
       vars.totalCollateralToLiquidate
     );
   }
+
+  // concerns:
+  // - each iteration of the loop, need to do user accounting prior to overall total LPF at the end of loop
+  // - scenario: if there's multiple parallel liqs for the same user (each with partial liq), precision issues can compound
+  // options:
+  // - pay LPF at each iteration of loop
+  // -
 
   /// @return actualCollateralToLiquidate The amount of collateral to liquidate.
   /// @return liquidationProtocolFeeAmount The amount of protocol fee.

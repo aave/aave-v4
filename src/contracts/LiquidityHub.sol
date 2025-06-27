@@ -330,15 +330,15 @@ contract LiquidityHub is ILiquidityHub {
     address feeReceiver = asset.config.feeReceiver;
     require(feeReceiver != address(0), InvalidFeeReceiver());
 
-    uint256 feeShares = asset.toSuppliedSharesDown(amount);
+    uint256 feeShares = asset.toSuppliedSharesUp(amount);
     require(feeShares <= spoke.suppliedShares, InvalidSharesAmount());
 
-    console.log('supplied %e %e', getSpokeSuppliedAmount(assetId, msg.sender), feeShares);
+    // console.log('supplied %e %e', getSpokeSuppliedAmount(assetId, msg.sender), feeShares);
 
     spoke.suppliedShares -= feeShares;
     _spokes[assetId][feeReceiver].suppliedShares += feeShares; // if feeReceiver is not defined, these
 
-    console.log('supplied %e', getSpokeSuppliedAmount(assetId, msg.sender));
+    // console.log('supplied %e', getSpokeSuppliedAmount(assetId, msg.sender));
 
     emit AccrueFees(assetId, feeShares);
 
