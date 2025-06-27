@@ -1,14 +1,16 @@
 // SPDX-License-Identifier: BUSL-1.1
 pragma solidity ^0.8.10;
 
-import 'forge-std/Test.sol';
+import 'tests/Base.t.sol';
 
-import {PositionStatus} from 'src/libraries/configuration/PositionStatus.sol';
-import {DataTypes} from 'src/libraries/types/DataTypes.sol';
-
-contract PositionStatusTest is Test {
+contract PositionStatusTest is Base {
   using PositionStatus for DataTypes.PositionStatus;
-  DataTypes.PositionStatus positionStatus;
+
+  DataTypes.PositionStatus internal positionStatus;
+
+  function setUp() public override {
+    // Intentionally left blank
+  }
 
   function test_setBorrowing_slot0() public {
     positionStatus.setBorrowing(0, true);
