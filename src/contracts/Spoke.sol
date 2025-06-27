@@ -156,7 +156,7 @@ contract Spoke is ISpoke, Multicall {
     }
     _validateWithdraw(reserve, userPosition, amount);
 
-    _accruePremium(reserve, userPosition, hub, assetId, msg.sender, 0);
+    _accruePremium(reserve, userPosition, hub, assetId, msg.sender, 0); // unnecessary but we realize premium debt here
 
     uint256 withdrawnShares = hub.remove(assetId, amount, to);
 
@@ -181,7 +181,7 @@ contract Spoke is ISpoke, Multicall {
 
     _validateBorrow(reserve); // HF checked at the end of borrow action
 
-    _accruePremium(reserve, userPosition, hub, assetId, msg.sender, 0);
+    _accruePremium(reserve, userPosition, hub, assetId, msg.sender, 0); // unnecessary but we realize premium debt here
 
     uint256 baseDrawnShares = hub.draw(assetId, amount, to);
 
@@ -211,7 +211,7 @@ contract Spoke is ISpoke, Multicall {
       amount
     );
 
-    _accruePremium(reserve, userPosition, hub, assetId, msg.sender, premiumDebtRestored);
+    _accruePremium(reserve, userPosition, hub, assetId, msg.sender, premiumDebtRestored); // unnecessary but we realize premium debt here
 
     uint256 restoredShares = hub.restore(
       assetId,
@@ -588,7 +588,7 @@ contract Spoke is ISpoke, Multicall {
       -int256(userPremiumOffset),
       accruedPremium,
       premiumDebtRestored
-    ); // unnecessary but we realize premium debt here
+    );
   }
 
   function _updatePremiumDebt(
