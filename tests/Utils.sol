@@ -66,6 +66,45 @@ library Utils {
     hub.restore(assetId, baseAmount, premiumAmount, repayer);
   }
 
+  function addSpoke(
+    ILiquidityHub hub,
+    uint256 assetId,
+    address spoke,
+    DataTypes.SpokeConfig memory spokeConfig
+  ) internal {
+    // todo: prank admin/configurator
+    hub.addSpoke(assetId, spoke, spokeConfig);
+  }
+
+  function updateSpokeConfig(
+    ILiquidityHub hub,
+    uint256 assetId,
+    address spoke,
+    DataTypes.SpokeConfig memory spokeConfig
+  ) internal {
+    // todo: prank admin/configurator
+    hub.updateSpokeConfig(assetId, spoke, spokeConfig);
+  }
+
+  function addAsset(
+    ILiquidityHub hub,
+    address asset,
+    uint8 decimals,
+    address interestRateStrategy
+  ) internal returns (uint256) {
+    // todo: prank admin/configurator
+    return hub.addAsset(asset, decimals, interestRateStrategy);
+  }
+
+  function updateAssetConfig(
+    ILiquidityHub hub,
+    uint256 assetId,
+    DataTypes.AssetConfig memory config
+  ) internal {
+    // todo: prank admin/configurator
+    hub.updateAssetConfig(assetId, config);
+  }
+
   // spoke
   function supply(
     ISpoke spoke,

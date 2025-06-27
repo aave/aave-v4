@@ -2,20 +2,25 @@
 pragma solidity ^0.8.10;
 
 import {IERC20Metadata} from 'src/dependencies/openzeppelin/IERC20Metadata.sol';
+import {Ownable} from 'src/dependencies/openzeppelin/Ownable.sol';
 import {DataTypes} from 'src/libraries/types/DataTypes.sol';
 import {ILiquidityHub} from 'src/interfaces/ILiquidityHub.sol';
 import {IConfigurator} from 'src/interfaces/IConfigurator.sol';
 
-contract Configurator is IConfigurator {
+contract Configurator is Ownable, IConfigurator {
+  /**
+   * @dev Constructor
+   * @param owner_ The address of the owner
+   */
+  constructor(address owner_) Ownable(owner_) {}
+
   /// @inheritdoc IConfigurator
   function addSpokes(
     address hub,
     address spoke,
     uint256[] calldata assetIds,
     DataTypes.SpokeConfig[] calldata configs
-  ) external {
-    // TODO: AccessControl
-
+  ) external onlyOwner {
     require(assetIds.length == configs.length, MismatchedConfigs());
     for (uint256 i; i < assetIds.length; i++) {
       ILiquidityHub(hub).addSpoke(assetIds[i], spoke, configs[i]);
@@ -27,8 +32,7 @@ contract Configurator is IConfigurator {
     address hub,
     address asset,
     address irStrategy
-  ) external override returns (uint256) {
-    // TODO: AccessControl
+  ) external override onlyOwner returns (uint256) {
     return ILiquidityHub(hub).addAsset(asset, IERC20Metadata(asset).decimals(), irStrategy);
   }
 
@@ -38,33 +42,26 @@ contract Configurator is IConfigurator {
     address asset,
     uint8 decimals,
     address irStrategy
-  ) external override returns (uint256) {
-    // TODO: AccessControl
+  ) external override onlyOwner returns (uint256) {
     return ILiquidityHub(hub).addAsset(asset, decimals, irStrategy);
   }
 
   /// @inheritdoc IConfigurator
-  function updateActive(address hub, uint256 assetId, bool active) external override {
-    // TODO: AccessControl
-
+  function updateActive(address hub, uint256 assetId, bool active) external override onlyOwner {
     DataTypes.AssetConfig memory config = _getAssetConfig(hub, assetId);
     config.active = active;
     ILiquidityHub(hub).updateAssetConfig(assetId, config);
   }
 
   /// @inheritdoc IConfigurator
-  function updatePaused(address hub, uint256 assetId, bool paused) external override {
-    // TODO: AccessControl
-
+  function updatePaused(address hub, uint256 assetId, bool paused) external override onlyOwner {
     DataTypes.AssetConfig memory config = _getAssetConfig(hub, assetId);
     config.paused = paused;
     ILiquidityHub(hub).updateAssetConfig(assetId, config);
   }
 
   /// @inheritdoc IConfigurator
-  function updateFrozen(address hub, uint256 assetId, bool frozen) external override {
-    // TODO: AccessControl
-
+  function updateFrozen(address hub, uint256 assetId, bool frozen) external override onlyOwner {
     DataTypes.AssetConfig memory config = _getAssetConfig(hub, assetId);
     config.frozen = frozen;
     ILiquidityHub(hub).updateAssetConfig(assetId, config);
@@ -75,18 +72,18 @@ contract Configurator is IConfigurator {
     address hub,
     uint256 assetId,
     uint256 liquidityFee
-  ) external override {
-    // TODO: AccessControl
-
+  ) external override onlyOwner {
     DataTypes.AssetConfig memory config = _getAssetConfig(hub, assetId);
     config.liquidityFee = liquidityFee;
     ILiquidityHub(hub).updateAssetConfig(assetId, config);
   }
 
   /// @inheritdoc IConfigurator
-  function updateFeeReceiver(address hub, uint256 assetId, address feeReceiver) external override {
-    // TODO: AccessControl
-
+  function updateFeeReceiver(
+    address hub,
+    uint256 assetId,
+    address feeReceiver
+  ) external override onlyOwner {
     DataTypes.AssetConfig memory config = _getAssetConfig(hub, assetId);
     _adjustFeeReceiverConfig(hub, assetId, config, feeReceiver);
     config.feeReceiver = feeReceiver;
@@ -99,9 +96,7 @@ contract Configurator is IConfigurator {
     uint256 assetId,
     uint256 liquidityFee,
     address feeReceiver
-  ) external override {
-    // TODO: AccessControl
-
+  ) external override onlyOwner {
     DataTypes.AssetConfig memory config = _getAssetConfig(hub, assetId);
     _adjustFeeReceiverConfig(hub, assetId, config, feeReceiver);
     config.liquidityFee = liquidityFee;
@@ -114,9 +109,7 @@ contract Configurator is IConfigurator {
     address hub,
     uint256 assetId,
     address irStrategy
-  ) external override {
-    // TODO: AccessControl
-
+  ) external override onlyOwner {
     DataTypes.AssetConfig memory config = _getAssetConfig(hub, assetId);
     config.irStrategy = irStrategy;
     ILiquidityHub(hub).updateAssetConfig(assetId, config);
