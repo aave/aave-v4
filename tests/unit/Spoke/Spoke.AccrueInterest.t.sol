@@ -686,8 +686,7 @@ contract SpokeAccrueInterestTest is SpokeBase {
         liquidityAdded: 0,
         liquidityTaken: amounts.daiBorrowAmount
       });
-      vm.prank(bob);
-      spoke1.borrow(_daiReserveId(spoke1), amounts.daiBorrowAmount, bob);
+      Utils.borrow(spoke1, _daiReserveId(spoke1), bob, amounts.daiBorrowAmount, bob);
     }
 
     // Bob borrows weth from spoke 1
@@ -702,8 +701,7 @@ contract SpokeAccrueInterestTest is SpokeBase {
         liquidityAdded: 0,
         liquidityTaken: amounts.wethBorrowAmount
       });
-      vm.prank(bob);
-      spoke1.borrow(_wethReserveId(spoke1), amounts.wethBorrowAmount, bob);
+      Utils.borrow(spoke1, _wethReserveId(spoke1), bob, amounts.wethBorrowAmount, bob);
     }
 
     // Bob borrows usdx from spoke 1
@@ -718,8 +716,7 @@ contract SpokeAccrueInterestTest is SpokeBase {
         liquidityAdded: 0,
         liquidityTaken: amounts.usdxBorrowAmount
       });
-      vm.prank(bob);
-      spoke1.borrow(_usdxReserveId(spoke1), amounts.usdxBorrowAmount, bob);
+      Utils.borrow(spoke1, _usdxReserveId(spoke1), bob, amounts.usdxBorrowAmount, bob);
     }
 
     // Bob borrows wbtc from spoke 1
@@ -734,8 +731,7 @@ contract SpokeAccrueInterestTest is SpokeBase {
         liquidityAdded: 0,
         liquidityTaken: amounts.wbtcBorrowAmount
       });
-      vm.prank(bob);
-      spoke1.borrow(_wbtcReserveId(spoke1), amounts.wbtcBorrowAmount, bob);
+      Utils.borrow(spoke1, _wbtcReserveId(spoke1), bob, amounts.wbtcBorrowAmount, bob);
     }
 
     // Check Bob's risk premium
