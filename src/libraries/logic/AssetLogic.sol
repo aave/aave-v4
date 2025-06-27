@@ -133,7 +133,6 @@ library AssetLogic {
       feeReceiver.suppliedShares += feeShares;
       asset.suppliedShares += feeShares;
       // todo: emit event to signal fees accrual
-      emit ILiquidityHub.AccrueFees(asset.id, feeShares);
     }
 
     asset.lastUpdateTimestamp = block.timestamp;

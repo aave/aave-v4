@@ -81,7 +81,7 @@ contract LiquidityHubPayFeeWithExistingLiquidityTest is LiquidityHubBase {
     );
 
     vm.expectEmit(address(hub));
-    emit ILiquidityHub.AccrueFees(daiAssetId, feeShares);
+    emit ILiquidityHub.PayFeeWithExistingLiquidity(daiAssetId, address(spoke1), feeShares);
 
     vm.prank(address(spoke1));
     hub.payFeeWithExistingLiquidity(daiAssetId, feeShares);
@@ -144,7 +144,7 @@ contract LiquidityHubPayFeeWithExistingLiquidityTest is LiquidityHubBase {
     );
 
     vm.expectEmit(address(hub));
-    emit ILiquidityHub.AccrueFees(daiAssetId, feeShares);
+    emit ILiquidityHub.PayFeeWithExistingLiquidity(daiAssetId, address(spoke1), feeShares);
 
     vm.prank(address(spoke1));
     hub.payFeeWithExistingLiquidity(daiAssetId, feeShares);

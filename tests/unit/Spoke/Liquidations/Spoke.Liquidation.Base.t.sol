@@ -317,24 +317,17 @@ contract SpokeLiquidationBase is SpokeBase {
     }
   }
 
-  /// check that if user's supplied amount becomes 0, reserve is no longer set usingAsCollateral
   function _assertSetUsingAsCollateral(
     ISpoke spoke,
     address user,
     LiquidationTestLocalParams memory state,
     string memory label
   ) internal view {
-    if (state.supplyShares.balanceAfter == 0) {
-      assertFalse(
-        spoke.getUsingAsCollateral(state.collateralReserve.reserveId, user),
-        string.concat('isUsingAsCollateral should be false with no collateral ', label)
-      );
-    } else {
-      assertTrue(
-        spoke.getUsingAsCollateral(state.collateralReserve.reserveId, user),
-        string.concat('isUsingAsCollateral should be true with remaining collateral ', label)
-      );
-    }
+    // uingAsCollateral should remain True after liquidation
+    assertTrue(
+      spoke.getUsingAsCollateral(state.collateralReserve.reserveId, user),
+      string.concat('isUsingAsCollateral should remain true ', label)
+    );
   }
 
   /// @notice Calculate output from LiquidationLogic.calculateAvailableCollateralToLiquidate.

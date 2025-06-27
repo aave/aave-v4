@@ -52,7 +52,7 @@ interface ILiquidityHub {
     uint256 realizedPremiumAdded,
     uint256 realizedPremiumTaken
   );
-  event AccrueFees(uint256 indexed assetId, uint256 shares);
+  event PayFeeWithExistingLiquidity(uint256 indexed assetId, address indexed spoke, uint256 shares);
 
   error MismatchedConfigs();
   error InvalidSharesAmount();
@@ -176,11 +176,11 @@ interface ILiquidityHub {
   ) external;
 
   /**
-   * @notice Transfer supplied asset accounting to feeReceiver.
+   * @notice Pay existing liquidity to feeReceiver.
    * @dev Only callable by spokes.
    * @param assetId The identifier of the asset.
-   * @param shares The amount of asset liquidity to transfer to feeReceiver.
-   * @return The amount of shares added or supplied.
+   * @param shares The amount of asset shares liquidity to pay to feeReceiver.
+   * @return The amount of shares paid to feeReceiver.
    */
   function payFeeWithExistingLiquidity(uint256 assetId, uint256 shares) external returns (uint256);
 

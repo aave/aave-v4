@@ -1111,29 +1111,18 @@ contract Spoke is ISpoke, Multicall {
         vars.collateralAssetId,
         vars.liquidationFeeAmount + vars.collateralToLiquidate
       );
-      vars.withdrawnLiquidatorShares = collateralReserveHub.convertToSuppliedSharesUp(
-        vars.collateralAssetId,
-        vars.collateralToLiquidate
-      );
-      vars.liquidationFeeShares = vars.withdrawnShares - vars.withdrawnLiquidatorShares;
-
       // remove collateral, send liquidated collateral directly to liquidator
       vars.withdrawnLiquidatorShares = collateralReserveHub.remove(
         vars.collateralAssetId,
         vars.collateralToLiquidate,
         liquidator
       );
+      vars.liquidationFeeShares = vars.withdrawnShares - vars.withdrawnLiquidatorShares;
 
       // collateral accounting
-      vars.newUserSuppliedShares = userCollateralPosition.suppliedShares - vars.withdrawnShares;
-      userCollateralPosition.suppliedShares = vars.newUserSuppliedShares;
-      vars.totalWithdrawnShares += vars.withdrawnShares;
-
-      // TODO: not compulsory, decide whether to rm
-      if (vars.newUserSuppliedShares == 0) {
-        userCollateralPosition.usingAsCollateral = false;
-        emit UsingAsCollateral(collateralReserve.reserveId, users[vars.i], false);
-      }
+      userCollateralPosition.suppliedShares =
+        userCollateralPosition.suppliedShares -
+        vars.withdrawnShares;
 
       // TODO: realize bad debt
       (vars.newUserRiskPremium, , , , ) = _calculateUserAccountData(users[vars.i]);
@@ -1181,6 +1170,7 @@ contract Spoke is ISpoke, Multicall {
 
       _notifyRiskPremiumUpdate(vars.debtAssetId, users[vars.i], vars.newUserRiskPremium);
 
+      vars.totalWithdrawnShares += vars.withdrawnShares;
       vars.totalCollateralToLiquidate += vars.collateralToLiquidate;
       vars.totalLiquidationProtocolFeeShares += vars.liquidationFeeShares;
       vars.totalDebtToLiquidate += vars.baseDebtToLiquidate + vars.premiumDebtToLiquidate;

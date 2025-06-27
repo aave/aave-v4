@@ -334,7 +334,7 @@ contract LiquidityHub is ILiquidityHub {
     spoke.suppliedShares -= feeShares;
     _spokes[assetId][asset.config.feeReceiver].suppliedShares += feeShares;
 
-    emit AccrueFees(assetId, feeShares);
+    emit PayFeeWithExistingLiquidity(assetId, msg.sender, feeShares);
 
     return feeShares;
   }
