@@ -1107,20 +1107,28 @@ contract Spoke is ISpoke, Multicall {
       // debt accounting
       userDebtPosition.baseDrawnShares -= vars.restoredShares;
       vars.totalRestoredShares += vars.restoredShares;
+      vars.withdrawnShares = 0;
+
+      vars.liquidationProtocolFeeShares = collateralReserveHub.convertToSuppliedShares(
+        vars.collateralAssetId,
+        vars.liquidationProtocolFeeAmount
+      );
+
+      if (vars.liquidationProtocolFeeShares > 0) {
+        vars.withdrawnShares += collateralReserveHub.payFeeWithExistingLiquidity(
+          vars.collateralAssetId,
+          vars.liquidationProtocolFeeShares
+        );
+      } else {
+        vars.collateralToLiquidate += vars.liquidationProtocolFeeAmount;
+      }
 
       // liquidated collateral sent directly to liquidator
-      vars.withdrawnShares = collateralReserveHub.remove(
+      vars.withdrawnShares += collateralReserveHub.remove(
         vars.collateralAssetId,
         vars.collateralToLiquidate,
         liquidator
       );
-
-      if (vars.liquidationProtocolFeeAmount > 0) {
-        vars.withdrawnShares += collateralReserveHub.payFeeWithExistingLiquidity(
-          vars.collateralAssetId,
-          vars.liquidationProtocolFeeAmount
-        );
-      }
 
       // ie rounding sum of 2 numbers doesnt equal rounding each number individually and summing
       // 3.6, 7.5, each rounds to 4, 8 -> 12

@@ -143,6 +143,7 @@ library DataTypes {
     uint256 premiumDebt;
     uint256 collateralToLiquidate;
     uint256 liquidationProtocolFeeAmount;
+    uint256 liquidationProtocolFeeShares;
     uint256 baseDebtToLiquidate;
     uint256 premiumDebtToLiquidate;
     uint256 restoredShares;

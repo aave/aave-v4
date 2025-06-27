@@ -462,6 +462,11 @@ contract LiquidationCallCloseFactorTest is SpokeLiquidationBase {
       state.liqProtocolFee
     );
 
+    // if protocol fee equates to 0 shares, it is instead added to collateral to liquidate for the liquidator
+    state.collToLiq = state.liqProtocolFeeShares == 0
+      ? state.collToLiq + state.liqProtocolFee
+      : state.collToLiq;
+
     vm.expectEmit(address(spoke1));
     emit ISpoke.LiquidationCall(
       state.collateralReserve.asset,

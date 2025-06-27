@@ -320,7 +320,10 @@ contract LiquidityHub is ILiquidityHub {
   }
 
   /// @inheritdoc ILiquidityHub
-  function payFeeWithExistingLiquidity(uint256 assetId, uint256 amount) external returns (uint256) {
+  function payFeeWithExistingLiquidity(
+    uint256 assetId,
+    uint256 feeShares
+  ) external returns (uint256) {
     // TODO: authorization - only spokes
 
     // revert('payFeeWithExistingLiquidity');
@@ -330,7 +333,6 @@ contract LiquidityHub is ILiquidityHub {
     address feeReceiver = asset.config.feeReceiver;
     require(feeReceiver != address(0), InvalidFeeReceiver());
 
-    uint256 feeShares = asset.toSuppliedSharesUp(amount);
     require(feeShares <= spoke.suppliedShares, InvalidSharesAmount());
 
     // console.log('supplied %e %e', getSpokeSuppliedAmount(assetId, msg.sender), feeShares);

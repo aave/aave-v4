@@ -177,10 +177,10 @@ interface ILiquidityHub {
    * @notice Transfer supplied asset accounting to feeReceiver.
    * @dev Only callable by spokes.
    * @param assetId The identifier of the asset.
-   * @param amount The amount of asset liquidity to transfer to feeReceiver.
+   * @param shares The amount of asset liquidity to transfer to feeReceiver.
    * @return The amount of shares added or supplied.
    */
-  function payFeeWithExistingLiquidity(uint256 assetId, uint256 amount) external returns (uint256);
+  function payFeeWithExistingLiquidity(uint256 assetId, uint256 shares) external returns (uint256);
 
   function convertToDrawnAssets(uint256 assetId, uint256 shares) external view returns (uint256);
 
