@@ -4,8 +4,8 @@ pragma solidity ^0.8.0;
 import {DataTypes} from '../types/DataTypes.sol';
 
 /**
- * @title PositionStatus library.
- * @author AaveLabs
+ * @title PositionStatus
+ * @author Aave Labs
  * @notice Implements the bitmap logic to handle the user configuration.
  */
 library PositionStatus {
@@ -21,7 +21,7 @@ library PositionStatus {
     0xAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA;
 
   /**
-   * @notice Sets if the user is borrowing the reserve identified by reserveId.
+   * @dev Sets if the user is borrowing the reserve identified by reserveId.
    * @param self The configuration object.
    * @param reserveId The index of the reserve in the bitmap.
    * @param borrowing True if the user is borrowing the reserve, false otherwise.
@@ -43,7 +43,7 @@ library PositionStatus {
   }
 
   /**
-   * @notice Sets if the user is using as collateral the reserve identified by reserveId.
+   * @dev Sets if the user is using as collateral the reserve identified by reserveId.
    * @param self The configuration object.
    * @param reserveId The index of the reserve in the bitmap.
    * @param usingAsCollateral True if the user is using the reserve as collateral, false otherwise.
@@ -65,10 +65,10 @@ library PositionStatus {
   }
 
   /**
-   * @notice Returns if a user has been using the reserve for borrowing or as collateral.
+   * @dev Returns if a user is using the reserve for borrowing or as collateral.
    * @param self The configuration object.
    * @param reserveId The index of the reserve in the bitmap.
-   * @return True if the user has been using a reserve for borrowing or as collateral, false otherwise.
+   * @return True if the user is using a reserve for borrowing or as collateral, false otherwise.
    */
   function isUsingAsCollateralOrBorrowing(
     DataTypes.PositionStatus storage self,
@@ -79,11 +79,12 @@ library PositionStatus {
       return (self.getMapSlot(reserveId) >> (reserveId % 128 << 1)) & 3 != 0;
     }
   }
+
   /**
-   * @notice Validate a user has been using the reserve for borrowing.
+   * @dev Returns if a user is using the reserve for borrowing.
    * @param self The configuration object.
    * @param reserveId The index of the reserve in the bitmap.
-   * @return True if the user has been using a reserve for borrowing, false otherwise.
+   * @return True if the user is using a reserve for borrowing, false otherwise.
    */
   function isBorrowing(
     DataTypes.PositionStatus storage self,
@@ -96,10 +97,10 @@ library PositionStatus {
   }
 
   /**
-   * @notice Validate a user has been using the reserve as collateral.
+   * @dev Returns if a user is using the reserve as collateral.
    * @param self The configuration object.
    * @param reserveId The index of the reserve in the bitmap.
-   * @return True if the user has been using a reserve as collateral, false otherwise.
+   * @return True if the user is using a reserve as collateral, false otherwise.
    */
   function isUsingAsCollateral(
     DataTypes.PositionStatus storage self,
@@ -112,9 +113,9 @@ library PositionStatus {
   }
 
   /**
-   * @notice Returns the uint256 containing the reserve state in the bitmap.
+   * @dev Returns the slot containing the reserve state in the bitmap.
    * @param self The configuration object.
-   * @return the uint256 containing the state of the reserve.
+   * @return The slot containing the state of the reserve.
    */
   function getMapSlot(
     DataTypes.PositionStatus storage self,
