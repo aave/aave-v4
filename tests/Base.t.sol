@@ -337,7 +337,7 @@ abstract contract Base is Test {
       paused: false,
       liquidationBonus: 100_00,
       liquidityPremium: 15_00,
-      liquidationProtocolFee: 0,
+      liquidationFee: 0,
       borrowable: true,
       collateral: true,
       hub: hub
@@ -352,7 +352,7 @@ abstract contract Base is Test {
       paused: false,
       liquidationBonus: 100_00,
       liquidityPremium: 5_00,
-      liquidationProtocolFee: 0,
+      liquidationFee: 0,
       borrowable: true,
       collateral: true,
       hub: hub
@@ -367,7 +367,7 @@ abstract contract Base is Test {
       paused: false,
       liquidationBonus: 100_00,
       liquidityPremium: 20_00,
-      liquidationProtocolFee: 0,
+      liquidationFee: 0,
       borrowable: true,
       collateral: true,
       hub: hub
@@ -382,7 +382,7 @@ abstract contract Base is Test {
       paused: false,
       liquidationBonus: 100_00,
       liquidityPremium: 50_00,
-      liquidationProtocolFee: 0,
+      liquidationFee: 0,
       borrowable: true,
       collateral: true,
       hub: hub
@@ -397,7 +397,7 @@ abstract contract Base is Test {
       paused: false,
       liquidationBonus: 100_00,
       liquidityPremium: 50_00,
-      liquidationProtocolFee: 0,
+      liquidationFee: 0,
       borrowable: true,
       collateral: true,
       hub: hub
@@ -437,7 +437,7 @@ abstract contract Base is Test {
       paused: false,
       liquidationBonus: 100_00,
       liquidityPremium: 0,
-      liquidationProtocolFee: 0,
+      liquidationFee: 0,
       borrowable: true,
       collateral: true,
       hub: hub
@@ -450,7 +450,7 @@ abstract contract Base is Test {
       paused: false,
       liquidationBonus: 100_00,
       liquidityPremium: 10_00,
-      liquidationProtocolFee: 0,
+      liquidationFee: 0,
       borrowable: true,
       collateral: true,
       hub: hub
@@ -463,7 +463,7 @@ abstract contract Base is Test {
       paused: false,
       liquidationBonus: 100_00,
       liquidityPremium: 20_00,
-      liquidationProtocolFee: 0,
+      liquidationFee: 0,
       borrowable: true,
       collateral: true,
       hub: hub
@@ -476,7 +476,7 @@ abstract contract Base is Test {
       paused: false,
       liquidationBonus: 100_00,
       liquidityPremium: 50_00,
-      liquidationProtocolFee: 0,
+      liquidationFee: 0,
       borrowable: true,
       collateral: true,
       hub: hub
@@ -489,7 +489,7 @@ abstract contract Base is Test {
       paused: false,
       liquidationBonus: 100_00,
       liquidityPremium: 50_00,
-      liquidationProtocolFee: 0,
+      liquidationFee: 0,
       borrowable: true,
       collateral: true,
       hub: hub
@@ -527,7 +527,7 @@ abstract contract Base is Test {
       paused: false,
       liquidationBonus: 100_00,
       liquidityPremium: 0,
-      liquidationProtocolFee: 0,
+      liquidationFee: 0,
       borrowable: true,
       collateral: true,
       hub: hub
@@ -540,7 +540,7 @@ abstract contract Base is Test {
       paused: false,
       liquidationBonus: 100_00,
       liquidityPremium: 10_00,
-      liquidationProtocolFee: 0,
+      liquidationFee: 0,
       borrowable: true,
       collateral: true,
       hub: hub
@@ -553,7 +553,7 @@ abstract contract Base is Test {
       paused: false,
       liquidationBonus: 100_00,
       liquidityPremium: 20_00,
-      liquidationProtocolFee: 0,
+      liquidationFee: 0,
       borrowable: true,
       collateral: true,
       hub: hub
@@ -566,7 +566,7 @@ abstract contract Base is Test {
       paused: false,
       liquidationBonus: 100_00,
       liquidityPremium: 50_00,
-      liquidationProtocolFee: 0,
+      liquidationFee: 0,
       borrowable: true,
       collateral: true,
       hub: hub
@@ -614,7 +614,7 @@ abstract contract Base is Test {
       paused: false,
       liquidationBonus: 100_00,
       liquidityPremium: 100_00,
-      liquidationProtocolFee: 0,
+      liquidationFee: 0,
       borrowable: true,
       collateral: true,
       hub: hub
@@ -949,12 +949,12 @@ abstract contract Base is Test {
     uint256 newLiquidationProtocolFee
   ) internal {
     DataTypes.ReserveConfig memory config = spoke.getReserve(reserveId).config;
-    config.liquidationProtocolFee = newLiquidationProtocolFee;
+    config.liquidationFee = newLiquidationProtocolFee;
 
     vm.prank(SPOKE_ADMIN);
     spoke.updateReserveConfig(reserveId, config);
 
-    assertEq(spoke.getReserve(reserveId).config.liquidationProtocolFee, newLiquidationProtocolFee);
+    assertEq(spoke.getReserve(reserveId).config.liquidationFee, newLiquidationProtocolFee);
   }
 
   function updateCollateralFactor(

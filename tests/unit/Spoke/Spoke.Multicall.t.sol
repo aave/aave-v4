@@ -91,7 +91,7 @@ contract SpokeMulticall is SpokeBase {
       paused: false,
       liquidationBonus: 100_00,
       liquidityPremium: 10_00,
-      liquidationProtocolFee: 0,
+      liquidationFee: 0,
       borrowable: true,
       collateral: true,
       hub: hub
@@ -106,7 +106,7 @@ contract SpokeMulticall is SpokeBase {
       paused: false,
       liquidationBonus: 100_00,
       liquidityPremium: 5_00,
-      liquidationProtocolFee: 0,
+      liquidationFee: 0,
       borrowable: true,
       collateral: true,
       hub: hub

@@ -62,7 +62,7 @@ contract SpokeMultipleHubIsolationModeTest is SpokeMultipleHubBase {
         paused: false,
         liquidationBonus: 100_00,
         liquidityPremium: 15_00,
-        liquidationProtocolFee: 0,
+        liquidationFee: 0,
         borrowable: false,
         collateral: true,
         hub: newHub
@@ -78,7 +78,7 @@ contract SpokeMultipleHubIsolationModeTest is SpokeMultipleHubBase {
         paused: false,
         liquidationBonus: 100_00,
         liquidityPremium: 15_00,
-        liquidationProtocolFee: 0,
+        liquidationFee: 0,
         borrowable: true,
         collateral: false,
         hub: newHub
@@ -131,7 +131,7 @@ contract SpokeMultipleHubIsolationModeTest is SpokeMultipleHubBase {
         paused: false,
         liquidationBonus: 100_00,
         liquidityPremium: 15_00,
-        liquidationProtocolFee: 0,
+        liquidationFee: 0,
         borrowable: true,
         collateral: true,
         hub: hub
@@ -210,7 +210,7 @@ contract SpokeMultipleHubIsolationModeTest is SpokeMultipleHubBase {
         paused: false,
         liquidationBonus: 100_00,
         liquidityPremium: 15_00,
-        liquidationProtocolFee: 0,
+        liquidationFee: 0,
         borrowable: true,
         collateral: true,
         hub: hub

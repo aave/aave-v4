@@ -38,7 +38,7 @@ contract SpokeLiquidationBase is SpokeBase {
     uint256 liquidationBonus;
     uint256 collateralAssetId;
     uint256 debtAssetId;
-    uint256 liquidationProtocolFeeBPS;
+    uint256 liquidationFeeBPS;
     DataTypes.DynamicReserveConfig collDynConfig;
     DataTypes.Reserve collateralReserve;
     DataTypes.Reserve debtReserve;
@@ -99,7 +99,7 @@ contract SpokeLiquidationBase is SpokeBase {
     uint256 desiredHf,
     uint256 collateralReserveId,
     uint256 debtReserveId,
-    uint256 liquidationProtocolFee,
+    uint256 liquidationFee,
     uint256 skipTime
   ) internal returns (LiquidationTestLocalParams memory) {
     LiquidationTestLocalParams memory state;
@@ -110,7 +110,7 @@ contract SpokeLiquidationBase is SpokeBase {
     liqConfig = _bound(liqConfig);
     liqBonus = bound(liqBonus, MIN_LIQUIDATION_BONUS, MAX_LIQUIDATION_BONUS);
     desiredHf = bound(desiredHf, 0.1e18, HEALTH_FACTOR_LIQUIDATION_THRESHOLD - 0.01e18);
-    liquidationProtocolFee = bound(liquidationProtocolFee, 0, 100_00);
+    liquidationFee = bound(liquidationFee, 0, 100_00);
     // bound supply amount to max supply amount
     supplyAmount = bound(
       supplyAmount,
@@ -122,11 +122,11 @@ contract SpokeLiquidationBase is SpokeBase {
     );
     skipTime = bound(skipTime, 1, MAX_SKIP_TIME);
 
-    state.liquidationProtocolFeeBPS = liquidationProtocolFee;
+    state.liquidationFeeBPS = liquidationFee;
 
     spoke1.updateLiquidationConfig(liqConfig);
     updateLiquidationBonus(spoke1, collateralReserveId, liqBonus);
-    updateLiquidationProtocolFee(spoke1, collateralReserveId, state.liquidationProtocolFeeBPS);
+    updateLiquidationProtocolFee(spoke1, collateralReserveId, state.liquidationFeeBPS);
 
     if (!spoke1.getUsingAsCollateral(collateralReserveId, alice)) {
       Utils.supplyCollateral({
@@ -179,10 +179,10 @@ contract SpokeLiquidationBase is SpokeBase {
       state.liqProtocolFee
     );
 
-    // if protocol fee equates to 0 shares, it is instead added to collateral to liquidate for the liquidator
-    state.collToLiq = state.liqProtocolFeeShares == 0
-      ? state.collToLiq + state.liqProtocolFee
-      : state.collToLiq;
+    // // if protocol fee equates to 0 shares, it is instead added to collateral to liquidate for the liquidator
+    // state.collToLiq = state.liqProtocolFeeShares == 0
+    //   ? state.collToLiq + state.liqProtocolFee
+    //   : state.collToLiq;
 
     vm.expectEmit(address(spoke1));
     emit ISpoke.LiquidationCall(
@@ -274,7 +274,7 @@ contract SpokeLiquidationBase is SpokeBase {
     // TODO: resolve precision loss difference
     assertApproxEqAbs(
       liqProtocolFeeAmount,
-      totalLiqBonusAmount.percentMulUp(state.liquidationProtocolFeeBPS),
+      totalLiqBonusAmount.percentMulUp(state.liquidationFeeBPS),
       2,
       string.concat('protocol fee amount ', label)
     );
@@ -340,7 +340,7 @@ contract SpokeLiquidationBase is SpokeBase {
   /// @param debtToCover Desired amount of debt to cover.
   /// @return actualCollateralToLiquidate Amount of actual collateral to liquidate.
   /// @return actualDebtToLiquidate Amount of actual debt to liquidate.
-  /// @return liquidationProtocolFeeAmount Amount of protocol fee (in asset).
+  /// @return liquidationFeeAmount Amount of protocol fee (in asset).
   function _calculateAvailableCollateralToLiquidate(
     ISpoke spoke,
     LiquidationTestLocalParams memory state,
@@ -351,7 +351,7 @@ contract SpokeLiquidationBase is SpokeBase {
     returns (
       uint256 actualCollateralToLiquidate,
       uint256 actualDebtToLiquidate,
-      uint256 liquidationProtocolFeeAmount
+      uint256 liquidationFeeAmount
     )
   {
     IPriceOracle oracle = spoke.oracle();
@@ -370,7 +370,7 @@ contract SpokeLiquidationBase is SpokeBase {
     params.debtAssetPrice = oracle.getReservePrice(state.debtReserve.reserveId);
 
     params.liquidationBonus = state.liquidationBonus;
-    params.liquidationProtocolFee = state.liquidationProtocolFeeBPS;
+    params.liquidationFee = state.liquidationFeeBPS;
 
     params.actualDebtToLiquidate = _calculateActualDebtToLiquidate(spoke, state, debtToCover);
 

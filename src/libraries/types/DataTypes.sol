@@ -70,7 +70,7 @@ library DataTypes {
     uint256 decimals; // TODO: use smaller uint8
     uint256 liquidationBonus; // BPS, 100_00 represent a 0% bonus TODO: use smaller uint
     uint256 liquidityPremium; // BPS TODO: use smaller uint
-    uint256 liquidationProtocolFee; // BPS TODO: use smaller uint
+    uint256 liquidationFee; // BPS TODO: use smaller uint
   }
 
   struct DynamicReserveConfig {
@@ -117,7 +117,7 @@ library DataTypes {
     uint256 debtReserveId;
     uint256 actualCollateralToLiquidate;
     uint256 actualDebtToLiquidate;
-    uint256 liquidationProtocolFeeAmount;
+    uint256 liquidationFeeAmount;
     uint256 userCollateralBalance;
     uint256 totalCollateralInBaseCurrency;
     uint256 totalDebtInBaseCurrency;
@@ -132,7 +132,7 @@ library DataTypes {
     uint256 collateralFactor;
     uint256 collateralAssetPrice;
     uint256 collateralAssetUnit;
-    uint256 liquidationProtocolFee;
+    uint256 liquidationFee;
   }
 
   struct ExecuteLiquidationLocalVars {
@@ -142,8 +142,8 @@ library DataTypes {
     uint256 baseDebt;
     uint256 premiumDebt;
     uint256 collateralToLiquidate;
-    uint256 liquidationProtocolFeeAmount;
-    uint256 liquidationProtocolFeeShares;
+    uint256 liquidationFeeAmount;
+    uint256 liquidationFeeShares;
     uint256 baseDebtToLiquidate;
     uint256 premiumDebtToLiquidate;
     uint256 restoredShares;
@@ -164,5 +164,7 @@ library DataTypes {
     uint256 totalDebtToLiquidate;
     uint256 usersLength;
     uint256 newUserSuppliedShares;
+    uint256 withdrawnCollShares;
+    uint256 totalPreviewRemovedShares;
   }
 }

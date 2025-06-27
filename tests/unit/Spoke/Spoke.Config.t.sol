@@ -22,7 +22,7 @@ contract SpokeConfigTest is SpokeBase {
       paused: !config.paused,
       liquidationBonus: config.liquidationBonus + 1,
       liquidityPremium: config.liquidityPremium + 1,
-      liquidationProtocolFee: config.liquidationProtocolFee + 1,
+      liquidationFee: config.liquidationFee + 1,
       borrowable: !config.borrowable,
       collateral: !config.collateral,
       hub: config.hub
@@ -46,8 +46,8 @@ contract SpokeConfigTest is SpokeBase {
       0,
       spoke1.MAX_LIQUIDITY_PREMIUM()
     );
-    newReserveConfig.liquidationProtocolFee = bound(
-      newReserveConfig.liquidationProtocolFee,
+    newReserveConfig.liquidationFee = bound(
+      newReserveConfig.liquidationFee,
       0,
       PercentageMath.PERCENTAGE_FACTOR
     );
@@ -275,23 +275,19 @@ contract SpokeConfigTest is SpokeBase {
   }
 
   function test_updateReserveConfig_revertsWith_InvalidLiquidationProtocolFee() public {
-    uint256 liquidationProtocolFee = PercentageMath.PERCENTAGE_FACTOR + 1;
+    uint256 liquidationFee = PercentageMath.PERCENTAGE_FACTOR + 1;
 
-    test_updateReserveConfig_fuzz_revertsWith_InvalidLiquidationProtocolFee(liquidationProtocolFee);
+    test_updateReserveConfig_fuzz_revertsWith_InvalidLiquidationProtocolFee(liquidationFee);
   }
 
   function test_updateReserveConfig_fuzz_revertsWith_InvalidLiquidationProtocolFee(
-    uint256 liquidationProtocolFee
+    uint256 liquidationFee
   ) public {
-    liquidationProtocolFee = bound(
-      liquidationProtocolFee,
-      PercentageMath.PERCENTAGE_FACTOR + 1,
-      type(uint256).max
-    );
+    liquidationFee = bound(liquidationFee, PercentageMath.PERCENTAGE_FACTOR + 1, type(uint256).max);
 
     uint256 daiReserveId = _daiReserveId(spoke1);
     DataTypes.ReserveConfig memory config = spoke1.getReserve(daiReserveId).config;
-    config.liquidationProtocolFee = liquidationProtocolFee;
+    config.liquidationFee = liquidationFee;
 
     vm.expectRevert(ISpoke.InvalidLiquidationProtocolFee.selector);
     vm.prank(SPOKE_ADMIN);
@@ -307,7 +303,7 @@ contract SpokeConfigTest is SpokeBase {
       paused: true,
       liquidationBonus: 110_00,
       liquidityPremium: 10_00,
-      liquidationProtocolFee: 10_00,
+      liquidationFee: 10_00,
       borrowable: true,
       collateral: true,
       hub: hub
@@ -343,7 +339,7 @@ contract SpokeConfigTest is SpokeBase {
       frozen: true,
       paused: true,
       liquidationBonus: 110_00,
-      liquidationProtocolFee: 0,
+      liquidationFee: 0,
       liquidityPremium: 10_00,
       borrowable: true,
       collateral: true,
@@ -368,7 +364,7 @@ contract SpokeConfigTest is SpokeBase {
       paused: true,
       liquidationBonus: 110_00,
       liquidityPremium: 10_00,
-      liquidationProtocolFee: 0,
+      liquidationFee: 0,
       borrowable: true,
       collateral: true,
       hub: hub
@@ -391,7 +387,7 @@ contract SpokeConfigTest is SpokeBase {
       paused: true,
       liquidationBonus: 110_00,
       liquidityPremium: 10_00,
-      liquidationProtocolFee: 0,
+      liquidationFee: 0,
       borrowable: true,
       collateral: true,
       hub: hub
@@ -417,7 +413,7 @@ contract SpokeConfigTest is SpokeBase {
       decimals: hub.MAX_ALLOWED_ASSET_DECIMALS(),
       liquidationBonus: 110_00,
       liquidityPremium: 10_00,
-      liquidationProtocolFee: 0
+      liquidationFee: 0
     });
     DataTypes.DynamicReserveConfig memory newDynReserveConfig = DataTypes.DynamicReserveConfig({
       collateralFactor: 78_00
