@@ -52,12 +52,7 @@ interface ILiquidityHub {
     uint256 realizedPremiumAdded,
     uint256 realizedPremiumTaken
   );
-  event SupplyToFeeReceiver(
-    uint256 indexed assetId,
-    address indexed spoke,
-    uint256 suppliedShares,
-    uint256 suppliedAmount
-  );
+  event AccrueFees(uint256 indexed assetId, uint256 shares);
 
   error MismatchedConfigs();
   error InvalidSharesAmount();
@@ -74,7 +69,6 @@ interface ILiquidityHub {
   error DrawCapExceeded(uint256 drawCap);
   error SurplusAmountRestored(uint256 maxAllowedRestore);
   error InvalidSpoke();
-  error InvalidRiskPremiumBps(uint256 bps);
   error AssetPaused();
   error AssetFrozen();
   error InvalidIrStrategy();
@@ -180,18 +174,13 @@ interface ILiquidityHub {
   ) external;
 
   /**
-   * @notice Donate asset on behalf of feeReceiver.
+   * @notice Transfer supplied asset accounting to feeReceiver.
    * @dev Only callable by spokes.
    * @param assetId The identifier of the asset.
-   * @param amount The amount of asset liquidity to add/supply.
-   * @param from The address (user) from which we pull assets.
+   * @param shares The amount of asset liquidity to transfer to feeReceiver.
    * @return The amount of shares added or supplied.
    */
-  function supplyToFeeReceiver(
-    uint256 assetId,
-    uint256 amount,
-    address from
-  ) external returns (uint256);
+  function payFeeWithExistingLiquidity(uint256 assetId, uint256 shares) external returns (uint256);
 
   function convertToDrawnAssets(uint256 assetId, uint256 shares) external view returns (uint256);
 

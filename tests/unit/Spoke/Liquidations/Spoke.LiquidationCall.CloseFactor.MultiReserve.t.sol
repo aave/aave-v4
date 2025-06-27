@@ -30,7 +30,7 @@ contract LiquidationCallCloseFactorMultiReserveTest is SpokeLiquidationBase {
       }),
       liqBonus: 105_00,
       supplyAmountInBase: 10_000e26,
-      liquidationProtocolFee: 5_00,
+      liquidationFee: 5_00,
       collateralReserveIds: collateralReserveIds,
       debtReserveIds: debtReserveIds,
       collateralReserveIndex: 0,
@@ -62,7 +62,7 @@ contract LiquidationCallCloseFactorMultiReserveTest is SpokeLiquidationBase {
       }),
       liqBonus: 105_00,
       supplyAmountInBase: 10_000e26,
-      liquidationProtocolFee: 5_00,
+      liquidationFee: 5_00,
       collateralReserveIds: collateralReserveIds,
       debtReserveIds: debtReserveIds,
       collateralReserveIndex: 0,
@@ -94,7 +94,7 @@ contract LiquidationCallCloseFactorMultiReserveTest is SpokeLiquidationBase {
       }),
       liqBonus: 105_00,
       supplyAmountInBase: 10_000_000e26,
-      liquidationProtocolFee: 5_00,
+      liquidationFee: 5_00,
       collateralReserveIds: collateralReserveIds,
       debtReserveIds: debtReserveIds,
       collateralReserveIndex: 0,
@@ -142,7 +142,7 @@ contract LiquidationCallCloseFactorMultiReserveTest is SpokeLiquidationBase {
       liqConfig: liqConfig,
       liqBonus: 105_00,
       supplyAmountInBase: supplyAmountInBase,
-      liquidationProtocolFee: 5_00,
+      liquidationFee: 5_00,
       collateralReserveIds: collateralReserveIds,
       debtReserveIds: debtReserveIds,
       collateralReserveIndex: collateralReserveIndex,
@@ -178,7 +178,7 @@ contract LiquidationCallCloseFactorMultiReserveTest is SpokeLiquidationBase {
     uint256[] memory debtReserveIds,
     uint256 collateralReserveIndex,
     uint256 debtReserveIndex,
-    uint256 liquidationProtocolFee,
+    uint256 liquidationFee,
     uint256 skipTime
   ) internal returns (LiquidationTestLocalParams memory) {
     LiquidationTestLocalParams memory state;
@@ -205,7 +205,7 @@ contract LiquidationCallCloseFactorMultiReserveTest is SpokeLiquidationBase {
         .percentDivDown(state.collDynConfigs[collateralReserveIndex].collateralFactor)
         .percentMulDown(99_00) // add buffer so that not all debt is liquidated
     );
-    liquidationProtocolFee = bound(liquidationProtocolFee, 0, 100_00);
+    liquidationFee = bound(liquidationFee, 0, 100_00);
     supplyAmountInBase = bound(
       supplyAmountInBase,
       dustInBase * state.debtReserves.length, // enough to cover dust for all debt reserves
@@ -213,18 +213,14 @@ contract LiquidationCallCloseFactorMultiReserveTest is SpokeLiquidationBase {
     );
     skipTime = bound(skipTime, 1, MAX_SKIP_TIME);
 
-    state.liquidationProtocolFeeBPS = liquidationProtocolFee;
+    state.liquidationFeeBPS = liquidationFee;
 
     state.collateralReserveId = collateralReserveIds[collateralReserveIndex];
     state.debtReserveId = debtReserveIds[debtReserveIndex];
 
     spoke1.updateLiquidationConfig(liqConfig);
     updateLiquidationBonus(spoke1, state.collateralReserveId, liqBonus);
-    updateLiquidationProtocolFee(
-      spoke1,
-      state.collateralReserveId,
-      state.liquidationProtocolFeeBPS
-    );
+    updateLiquidationProtocolFee(spoke1, state.collateralReserveId, state.liquidationFeeBPS);
     state.desiredHf = _calcLowestHfToRestoreCloseFactor(spoke1, state.collateralReserveId, liqBonus)
       .percentMulDown(101_00); // add buffer so that not all debt is liquidated
 

@@ -1,6 +1,8 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.0;
 
+import {console2 as console} from 'forge-std/console2.sol';
+
 import {Multicall} from 'src/misc/Multicall.sol';
 
 import {SafeERC20} from 'src/dependencies/openzeppelin/SafeERC20.sol';
@@ -65,7 +67,7 @@ contract Spoke is ISpoke, Multicall {
     DataTypes.ReserveConfig calldata config,
     DataTypes.DynamicReserveConfig calldata dynamicConfig
   ) external returns (uint256) {
-    _validateReserveConfig(config);
+    _validateReserveConfig(config, assetId);
     address asset = address(config.hub.assetsList(assetId)); // will revert on invalid assetId
     uint256 reserveId = reserveCount++;
     uint16 dynamicConfigKey; // 0 as first key to use
@@ -98,8 +100,8 @@ contract Spoke is ISpoke, Multicall {
     DataTypes.ReserveConfig calldata config
   ) external {
     // TODO: AccessControl, More sophisticated
-    _validateReserveConfig(config);
     DataTypes.Reserve storage reserve = _reserves[reserveId];
+    _validateReserveConfig(config, reserve.assetId);
     require(
       reserve.asset != address(0) && config.decimals == reserve.config.decimals,
       InvalidReserve()
@@ -570,7 +572,10 @@ contract Spoke is ISpoke, Multicall {
     return userRiskPremium;
   }
 
-  function _validateReserveConfig(DataTypes.ReserveConfig calldata config) internal view {
+  function _validateReserveConfig(
+    DataTypes.ReserveConfig calldata config,
+    uint256 assetId
+  ) internal view {
     ILiquidityHub hub = config.hub;
     require(
       config.liquidationBonus >= PercentageMathExtended.PERCENTAGE_FACTOR,
@@ -580,9 +585,15 @@ contract Spoke is ISpoke, Multicall {
     require(address(hub) != address(0), InvalidHubAddress());
     require(config.decimals <= hub.MAX_ALLOWED_ASSET_DECIMALS(), InvalidReserveDecimals());
     require(
-      config.liquidationProtocolFee <= PercentageMathExtended.PERCENTAGE_FACTOR,
+      config.liquidationFee <= PercentageMathExtended.PERCENTAGE_FACTOR,
       InvalidLiquidationProtocolFee()
     );
+    if (config.liquidationFee > 0) {
+      require(
+        config.hub.getAssetConfig(assetId).feeReceiver != address(0),
+        InvalidLiquidationProtocolFeeReceiver()
+      );
+    }
   }
 
   function _validateDynamicReserveConfig(
@@ -1025,7 +1036,7 @@ contract Spoke is ISpoke, Multicall {
 
       (
         vars.collateralToLiquidate,
-        vars.liquidationProtocolFeeAmount,
+        vars.liquidationFeeAmount,
         vars.baseDebtToLiquidate,
         vars.premiumDebtToLiquidate
       ) = _calculateLiquidationParameters(
@@ -1097,11 +1108,22 @@ contract Spoke is ISpoke, Multicall {
       userDebtPosition.baseDrawnShares -= vars.restoredShares;
       vars.totalRestoredShares += vars.restoredShares;
 
-      // liquidate collateral
-      vars.withdrawnShares = collateralReserveHub.remove(
+      // expected total withdrawn shares includes liquidation fee
+      vars.withdrawnShares = collateralReserveHub.convertToSuppliedSharesUp(
         vars.collateralAssetId,
-        vars.collateralToLiquidate + vars.liquidationProtocolFeeAmount,
-        address(this) // must be sent to spoke first before distributing to treasury/liquidator
+        vars.liquidationFeeAmount + vars.collateralToLiquidate
+      );
+      vars.withdrawnLiquidatorShares = collateralReserveHub.convertToSuppliedSharesUp(
+        vars.collateralAssetId,
+        vars.collateralToLiquidate
+      );
+      vars.liquidationFeeShares = vars.withdrawnShares - vars.withdrawnLiquidatorShares;
+
+      // remove collateral, send liquidated collateral directly to liquidator
+      vars.withdrawnLiquidatorShares = collateralReserveHub.remove(
+        vars.collateralAssetId,
+        vars.collateralToLiquidate,
+        liquidator
       );
 
       // collateral accounting
@@ -1162,12 +1184,19 @@ contract Spoke is ISpoke, Multicall {
       _notifyRiskPremiumUpdate(vars.debtAssetId, users[vars.i], vars.newUserRiskPremium);
 
       vars.totalCollateralToLiquidate += vars.collateralToLiquidate;
-      vars.totalLiquidationProtocolFeeAmount += vars.liquidationProtocolFeeAmount;
+      vars.totalLiquidationProtocolFeeShares += vars.liquidationFeeShares;
       vars.totalDebtToLiquidate += vars.baseDebtToLiquidate + vars.premiumDebtToLiquidate;
 
       unchecked {
         ++vars.i;
       }
+    }
+
+    if (vars.totalLiquidationProtocolFeeShares > 0) {
+      collateralReserveHub.payFeeWithExistingLiquidity(
+        vars.collateralAssetId,
+        vars.totalLiquidationProtocolFeeShares
+      );
     }
 
     // TODO: rm when dupe reserve accounting is rm
@@ -1189,27 +1218,6 @@ contract Spoke is ISpoke, Multicall {
       0
     );
 
-    if (vars.totalLiquidationProtocolFeeAmount > 0) {
-      if (
-        collateralReserveHub.convertToSuppliedShares(
-          vars.collateralAssetId,
-          vars.totalLiquidationProtocolFeeAmount
-        ) > 0
-      ) {
-        collateralReserveHub.supplyToFeeReceiver(
-          vars.collateralAssetId,
-          vars.totalLiquidationProtocolFeeAmount,
-          address(this)
-        );
-      } else {
-        vars.totalCollateralToLiquidate += vars.totalLiquidationProtocolFeeAmount;
-        vars.totalLiquidationProtocolFeeAmount = 0;
-      }
-    }
-
-    // transfer total liquidated collateral to liquidator
-    IERC20(collateralReserve.asset).safeTransfer(liquidator, vars.totalCollateralToLiquidate);
-
     return (
       collateralReserve.asset,
       debtReserve.asset,
@@ -1219,7 +1227,7 @@ contract Spoke is ISpoke, Multicall {
   }
 
   /// @return actualCollateralToLiquidate The amount of collateral to liquidate.
-  /// @return liquidationProtocolFeeAmount The amount of protocol fee.
+  /// @return liquidationFeeAmount The amount of protocol fee.
   /// @return baseDebtToLiquidate The amount of base debt to repay.
   /// @return premiumDebtToLiquidate The amount of premium debt to repay.
   function _calculateLiquidationParameters(
@@ -1266,18 +1274,15 @@ contract Spoke is ISpoke, Multicall {
     vars.closeFactor = _liquidationConfig.closeFactor;
     vars.collateralAssetPrice = oracle.getReservePrice(vars.collateralReserveId);
     vars.collateralAssetUnit = 10 ** collateralReserve.config.decimals;
-    vars.liquidationProtocolFee = collateralReserve.config.liquidationProtocolFee;
+    vars.liquidationFee = collateralReserve.config.liquidationFee;
 
     vars.actualDebtToLiquidate = LiquidationLogic.calculateActualDebtToLiquidate({
       debtToCover: debtToCover,
       params: vars
     });
 
-    (
-      vars.actualCollateralToLiquidate,
-      vars.actualDebtToLiquidate,
-      vars.liquidationProtocolFeeAmount
-    ) = vars.calculateAvailableCollateralToLiquidate();
+    (vars.actualCollateralToLiquidate, vars.actualDebtToLiquidate, vars.liquidationFeeAmount) = vars
+      .calculateAvailableCollateralToLiquidate();
 
     (vars.baseDebtToLiquidate, vars.premiumDebtToLiquidate) = _calculateRestoreAmount(
       baseDebt,
@@ -1287,7 +1292,7 @@ contract Spoke is ISpoke, Multicall {
 
     return (
       vars.actualCollateralToLiquidate,
-      vars.liquidationProtocolFeeAmount,
+      vars.liquidationFeeAmount,
       vars.baseDebtToLiquidate,
       vars.premiumDebtToLiquidate
     );

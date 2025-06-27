@@ -842,7 +842,7 @@ contract SpokeBase is Base {
     assertEq(a.decimals, b.decimals, 'decimals');
     assertEq(a.liquidationBonus, b.liquidationBonus, 'liquidation bonus');
     assertEq(a.liquidityPremium, b.liquidityPremium, 'liquidity premium');
-    assertEq(a.liquidationProtocolFee, b.liquidationProtocolFee, 'liquidation protocol fee');
+    assertEq(a.liquidationFee, b.liquidationFee, 'liquidation protocol fee');
     assertEq(abi.encode(a), abi.encode(b)); // sanity
   }
 

@@ -61,7 +61,7 @@ contract LiquidityHubHandler is Test {
         paused: false,
         liquidationBonus: 100_00,
         liquidityPremium: 0,
-        liquidationProtocolFee: 0,
+        liquidationFee: 0,
         borrowable: false,
         collateral: false,
         hub: hub
@@ -119,7 +119,7 @@ contract LiquidityHubHandler is Test {
     s.userSupplied[assetId][user] -= amount;
   }
 
-  function supplyToFeeReceiver(uint256 assetId, address user, uint256 amount) public {
+  function payFeeWithExistingLiquidity(uint256 assetId, address user, uint256 amount) public {
     vm.assume(user != address(hub) && user != address(0));
     assetId = bound(assetId, 0, hub.assetCount() - 1);
     amount = bound(amount, 1, type(uint128).max);
