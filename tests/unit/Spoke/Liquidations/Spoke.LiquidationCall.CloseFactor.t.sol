@@ -454,8 +454,22 @@ contract LiquidationCallCloseFactorTest is SpokeLiquidationBase {
     (
       state.collToLiq,
       state.debtToLiq,
-      state.liqProtocolFee
+      state.liquidationFeeAmount
     ) = _calculateAvailableCollateralToLiquidate(spoke1, state, requiredDebtAmount);
+
+    state.liquidationFeeShares =
+      hub.convertToSuppliedSharesUp(
+        state.collateralReserve.assetId,
+        state.collToLiq + state.liquidationFeeAmount
+      ) -
+      hub.convertToSuppliedSharesUp(state.collateralReserve.assetId, state.collToLiq);
+
+    // due to restore donation, exact feeShares args may be inaccurate
+    vm.expectCall(
+      address(hub),
+      abi.encodeWithSelector(hub.payFeeWithExistingLiquidity.selector),
+      state.liquidationFeeShares > 0 ? 1 : 0
+    );
 
     vm.expectEmit(address(spoke1));
     emit ISpoke.LiquidationCall(

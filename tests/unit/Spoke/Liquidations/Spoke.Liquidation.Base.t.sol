@@ -51,8 +51,8 @@ contract SpokeLiquidationBase is SpokeBase {
     SupplyExchangeRate rate;
     uint256 collToLiq;
     uint256 debtToLiq;
-    uint256 liqProtocolFee;
-    uint256 liqProtocolFeeShares;
+    uint256 liquidationFeeAmount;
+    uint256 liquidationFeeShares;
   }
 
   uint256 internal constant MIN_AMOUNT_IN_BASE_CURRENCY = 1e26;
@@ -171,8 +171,22 @@ contract SpokeLiquidationBase is SpokeBase {
     (
       state.collToLiq,
       state.debtToLiq,
-      state.liqProtocolFee
+      state.liquidationFeeAmount
     ) = _calculateAvailableCollateralToLiquidate(spoke1, state, requiredDebtAmount);
+
+    state.liquidationFeeShares =
+      hub.convertToSuppliedSharesUp(
+        state.collateralReserve.assetId,
+        state.collToLiq + state.liquidationFeeAmount
+      ) -
+      hub.convertToSuppliedSharesUp(state.collateralReserve.assetId, state.collToLiq);
+
+    // due to restore donation, exact feeShares args may be inaccurate
+    vm.expectCall(
+      address(hub),
+      abi.encodeWithSelector(hub.payFeeWithExistingLiquidity.selector),
+      state.liquidationFeeShares > 0 ? 1 : 0
+    );
 
     vm.expectEmit(address(spoke1));
     emit ISpoke.LiquidationCall(
@@ -273,10 +287,10 @@ contract SpokeLiquidationBase is SpokeBase {
   ) internal view {
     uint256 totalLiqBonusAmount = state.supply.balanceChange -
       state.supply.balanceChange.percentDivUp(state.liquidationBonus);
-    uint256 liqProtocolFeeAmount = state.treasury.balanceChange;
+    uint256 liquidationFeeAmount = state.treasury.balanceChange;
     // TODO: resolve precision loss difference
     assertApproxEqAbs(
-      liqProtocolFeeAmount,
+      liquidationFeeAmount,
       totalLiqBonusAmount.percentMulUp(state.liquidationFeeBPS),
       2,
       string.concat('protocol fee amount ', label)
@@ -291,7 +305,7 @@ contract SpokeLiquidationBase is SpokeBase {
     uint256 totalLiqBonusAmount = state.supply.balanceChange -
       state.supply.balanceChange.percentDivDown(state.liquidationBonus);
 
-    uint256 totalCollateralSeized = (state.collToLiq + state.liqProtocolFee);
+    uint256 totalCollateralSeized = (state.collToLiq + state.liquidationFeeAmount);
     // liquidationBonus == PERCENTAGE_FACTOR represents liq bonus being 0
     uint256 expectedLiqBonusAmount = state.liquidationBonus != PercentageMath.PERCENTAGE_FACTOR
       ? totalCollateralSeized - totalCollateralSeized.percentDivDown(state.liquidationBonus)

@@ -179,7 +179,7 @@ interface ILiquidityHub {
    * @notice Pay existing liquidity to feeReceiver.
    * @dev Only callable by spokes.
    * @param assetId The identifier of the asset.
-   * @param shares The amount of asset shares liquidity to pay to feeReceiver.
+   * @param shares The amount of shares to pay to feeReceiver.
    * @return The amount of shares paid to feeReceiver.
    */
   function payFeeWithExistingLiquidity(uint256 assetId, uint256 shares) external returns (uint256);

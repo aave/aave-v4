@@ -410,7 +410,7 @@ contract LiquidationCallCloseFactorBadDebtTest is SpokeLiquidationBase {
     (
       state.collToLiq,
       state.debtToLiq,
-      state.liqProtocolFee
+      state.liquidationFeeAmount
     ) = _calculateAvailableCollateralToLiquidate(spoke1, state, requiredDebtAmount);
 
     vm.expectEmit(address(spoke1));
