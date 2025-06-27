@@ -42,8 +42,8 @@ contract Spoke is ISpoke, Multicall, AccessManaged {
   uint256[] public reservesList; // todo: rm, not needed
   uint256 public reserveCount;
 
-  /*
-   * @notice Initializes the contract with access control.
+  /**
+   * @dev Constructor.
    * @dev The authority should implement the AccessManaged interface to control access.
    * @param oracleAddress The address of the price oracle contract used for asset valuations.
    * @param authority The address of the authority contract which manages permissions.
@@ -381,7 +381,7 @@ contract Spoke is ISpoke, Multicall, AccessManaged {
     (uint256 userRiskPremium, , , , ) = _calculateUserAccountData(user);
     bool premiumIncrease = _notifyRiskPremiumUpdate(type(uint256).max, user, userRiskPremium);
     require(
-      !premiumIncrease || msg.sender == user || _canUpdateRiskPremium(msg.sender),
+      !premiumIncrease || msg.sender == user || _hasUpdateUserRiskPremiumRole(msg.sender),
       Unauthorized()
     );
     emit UserRiskPremiumUpdate(user, userRiskPremium);
@@ -728,7 +728,7 @@ contract Spoke is ISpoke, Multicall, AccessManaged {
     return userPosition.baseDrawnShares > 0;
   }
 
-  function _canUpdateRiskPremium(address caller) internal view returns (bool) {
+  function _hasUpdateUserRiskPremiumRole(address caller) internal view returns (bool) {
     (bool result, ) = IAccessManager(authority()).hasRole(Roles.USER_RP_UPDATER_ROLE, caller);
     return result;
   }

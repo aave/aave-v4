@@ -99,7 +99,7 @@ contract LiquidityHubAccessTest is LiquidityHubBase {
   }
 
   function test_setInterestRateData_access() public {
-    bytes memory encodedIrData = _encodeInterestRateData(
+    bytes memory encodedIrData = abi.encode(
       IAssetInterestRateStrategy.InterestRateData({
         optimalUsageRatio: 50_00, // 50.00% in BPS
         baseVariableBorrowRate: 100_00, // 100.00% in BPS
@@ -129,7 +129,7 @@ contract LiquidityHubAccessTest is LiquidityHubBase {
 
   /// @dev Test showcasing ability to change role responsibility for a function selector.
   function test_change_role_responsibility() public {
-    bytes memory encodedIrData = _encodeInterestRateData(
+    bytes memory encodedIrData = abi.encode(
       IAssetInterestRateStrategy.InterestRateData({
         optimalUsageRatio: 50_00, // 50.00% in BPS
         baseVariableBorrowRate: 100_00, // 100.00% in BPS
@@ -158,5 +158,10 @@ contract LiquidityHubAccessTest is LiquidityHubBase {
     // HUB_ADMIN can still access the other hub functions for which it has permissions
     vm.prank(HUB_ADMIN);
     hub.updateAssetFees(daiAssetId, address(0), 0);
+  }
+
+  /// @dev Test showcasing authority contract can be accessed via hub contract.
+  function test_hub_access_manager_exposure() public {
+    assertEq(address(hub.authority()), address(accessManager));
   }
 }

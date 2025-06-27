@@ -23,7 +23,7 @@ contract AssetInterestRateStrategyTest is Base {
       variableRateSlope1: 4_00, // 4.00%
       variableRateSlope2: 75_00 // 75.00%
     });
-    encodedRateData = _encodeInterestRateData(rateData);
+    encodedRateData = abi.encode(rateData);
 
     vm.prank(address(hub));
     rateStrategy.setInterestRateData(mockAssetId, encodedRateData);
@@ -90,7 +90,7 @@ contract AssetInterestRateStrategyTest is Base {
 
     for (uint256 i; i < invalidOptimalUsageRatios.length; i++) {
       rateData.optimalUsageRatio = invalidOptimalUsageRatios[i];
-      encodedRateData = _encodeInterestRateData(rateData);
+      encodedRateData = abi.encode(rateData);
       vm.expectRevert(IAssetInterestRateStrategy.InvalidOptimalUsageRatio.selector);
       vm.prank(address(hub));
       rateStrategy.setInterestRateData(mockAssetId, encodedRateData);
@@ -102,7 +102,7 @@ contract AssetInterestRateStrategyTest is Base {
       rateData.variableRateSlope2,
       rateData.variableRateSlope1
     );
-    encodedRateData = _encodeInterestRateData(rateData);
+    encodedRateData = abi.encode(rateData);
     vm.expectRevert(IAssetInterestRateStrategy.Slope2MustBeGteSlope1.selector);
     vm.prank(address(hub));
     rateStrategy.setInterestRateData(mockAssetId, encodedRateData);
@@ -113,7 +113,7 @@ contract AssetInterestRateStrategyTest is Base {
       uint32(rateStrategy.MAX_BORROW_RATE()) /
       3 +
       1;
-    encodedRateData = _encodeInterestRateData(rateData);
+    encodedRateData = abi.encode(rateData);
     vm.expectRevert(IAssetInterestRateStrategy.InvalidMaxRate.selector);
     vm.prank(address(hub));
     rateStrategy.setInterestRateData(mockAssetId, encodedRateData);
@@ -126,7 +126,7 @@ contract AssetInterestRateStrategyTest is Base {
       variableRateSlope1: 2_00, // 2.00%
       variableRateSlope2: 30_00 // 30.00%
     });
-    encodedRateData = _encodeInterestRateData(rateData);
+    encodedRateData = abi.encode(rateData);
 
     vm.expectEmit(address(rateStrategy));
     emit IAssetInterestRateStrategy.RateDataUpdate(

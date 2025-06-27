@@ -39,7 +39,7 @@ contract AssetInterestRateStrategy is IAssetInterestRateStrategy {
   /// @inheritdoc IAssetInterestRateStrategy
   function setInterestRateData(uint256 assetId, bytes calldata data) external {
     require(LIQUIDITY_HUB == msg.sender, OnlyLiquidityHub());
-    InterestRateData memory rateData = _decodeInterestRateData(data);
+    InterestRateData memory rateData = abi.decode(data, (InterestRateData));
     require(
       MIN_OPTIMAL_RATIO <= rateData.optimalUsageRatio &&
         rateData.optimalUsageRatio <= MAX_OPTIMAL_RATIO,
@@ -134,23 +134,5 @@ contract AssetInterestRateStrategy is IAssetInterestRateStrategy {
     }
 
     return currentVariableBorrowRateRay;
-  }
-
-  function _decodeInterestRateData(
-    bytes calldata data
-  ) internal pure returns (InterestRateData memory) {
-    (
-      uint16 optimalUsageRatio,
-      uint32 baseVariableBorrowRate,
-      uint32 variableRateSlope1,
-      uint32 variableRateSlope2
-    ) = abi.decode(data, (uint16, uint32, uint32, uint32));
-    return
-      InterestRateData({
-        optimalUsageRatio: optimalUsageRatio,
-        baseVariableBorrowRate: baseVariableBorrowRate,
-        variableRateSlope1: variableRateSlope1,
-        variableRateSlope2: variableRateSlope2
-      });
   }
 }

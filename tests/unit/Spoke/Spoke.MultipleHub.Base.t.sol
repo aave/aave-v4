@@ -24,7 +24,7 @@ contract SpokeMultipleHubBase is SpokeBase {
       variableRateSlope1: 5_00, // 5.00%
       variableRateSlope2: 5_00 // 5.00%
     });
-  bytes internal encodedIrData = _encodeInterestRateData(irData);
+  bytes internal encodedIrData = abi.encode(irData);
 
   function setUp() public virtual override {
     deployFixtures();
@@ -54,7 +54,7 @@ contract SpokeMultipleHubBase is SpokeBase {
 
   function setUpRoles() internal {
     vm.startPrank(ADMIN);
-    // Grant roles
+    // Grant roles with 0 delay
     accessManager.grantRole(Roles.HUB_ADMIN_ROLE, ADMIN, 0);
     accessManager.grantRole(Roles.SPOKE_ADMIN_ROLE, ADMIN, 0);
     accessManager.grantRole(Roles.HUB_ADMIN_ROLE, HUB_ADMIN, 0);

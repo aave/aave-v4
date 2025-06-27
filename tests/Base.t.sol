@@ -194,7 +194,7 @@ abstract contract Base is Test {
     IAccessManager accessManager
   ) internal virtual {
     vm.startPrank(ADMIN);
-    // Grant roles
+    // Grant roles with 0 delay
     accessManager.grantRole(Roles.HUB_ADMIN_ROLE, ADMIN, 0);
     accessManager.grantRole(Roles.SPOKE_ADMIN_ROLE, ADMIN, 0);
     accessManager.grantRole(Roles.HUB_ADMIN_ROLE, HUB_ADMIN, 0);
@@ -679,7 +679,7 @@ abstract contract Base is Test {
     vm.startPrank(address(hub));
     irStrategy.setInterestRateData(
       wethAssetId,
-      _encodeInterestRateData(
+      abi.encode(
         IAssetInterestRateStrategy.InterestRateData({
           optimalUsageRatio: 90_00, // 90.00%
           baseVariableBorrowRate: 5_00, // 5.00%
@@ -690,7 +690,7 @@ abstract contract Base is Test {
     );
     irStrategy.setInterestRateData(
       usdxAssetId,
-      _encodeInterestRateData(
+      abi.encode(
         IAssetInterestRateStrategy.InterestRateData({
           optimalUsageRatio: 90_00, // 90.00%
           baseVariableBorrowRate: 5_00, // 5.00%
@@ -701,7 +701,7 @@ abstract contract Base is Test {
     );
     irStrategy.setInterestRateData(
       wbtcAssetId,
-      _encodeInterestRateData(
+      abi.encode(
         IAssetInterestRateStrategy.InterestRateData({
           optimalUsageRatio: 90_00, // 90.00%
           baseVariableBorrowRate: 5_00, // 5.00%
@@ -712,7 +712,7 @@ abstract contract Base is Test {
     );
     irStrategy.setInterestRateData(
       daiAssetId,
-      _encodeInterestRateData(
+      abi.encode(
         IAssetInterestRateStrategy.InterestRateData({
           optimalUsageRatio: 90_00, // 90.00%
           baseVariableBorrowRate: 5_00, // 5.00%
@@ -723,7 +723,7 @@ abstract contract Base is Test {
     );
     irStrategy.setInterestRateData(
       dai2AssetId,
-      _encodeInterestRateData(
+      abi.encode(
         IAssetInterestRateStrategy.InterestRateData({
           optimalUsageRatio: 90_00, // 90.00%
           baseVariableBorrowRate: 5_00, // 5.00%
@@ -734,7 +734,7 @@ abstract contract Base is Test {
     );
     irStrategy.setInterestRateData(
       usdyAssetId,
-      _encodeInterestRateData(
+      abi.encode(
         IAssetInterestRateStrategy.InterestRateData({
           optimalUsageRatio: 90_00, // 90.00%
           baseVariableBorrowRate: 5_00, // 5.00%
@@ -818,7 +818,7 @@ abstract contract Base is Test {
     vm.stopPrank();
 
     // Configure IR Strategy for hub 2
-    bytes memory encodedIrData = _encodeInterestRateData(
+    bytes memory encodedIrData = abi.encode(
       IAssetInterestRateStrategy.InterestRateData({
         optimalUsageRatio: 90_00, // 90.00%
         baseVariableBorrowRate: 5_00, // 5.00%
@@ -913,7 +913,7 @@ abstract contract Base is Test {
     vm.stopPrank();
 
     // Configure IR Strategy for hub 3
-    bytes memory encodedIrData = _encodeInterestRateData(
+    bytes memory encodedIrData = abi.encode(
       IAssetInterestRateStrategy.InterestRateData({
         optimalUsageRatio: 90_00, // 90.00%
         baseVariableBorrowRate: 5_00, // 5.00%
@@ -1838,17 +1838,5 @@ abstract contract Base is Test {
       ),
       abi.encode(interestRateBps.bpsToRay())
     );
-  }
-
-  function _encodeInterestRateData(
-    IAssetInterestRateStrategy.InterestRateData memory interestRateData
-  ) internal pure returns (bytes memory) {
-    return
-      abi.encode(
-        interestRateData.optimalUsageRatio,
-        interestRateData.baseVariableBorrowRate,
-        interestRateData.variableRateSlope1,
-        interestRateData.variableRateSlope2
-      );
   }
 }

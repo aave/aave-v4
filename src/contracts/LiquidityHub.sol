@@ -29,8 +29,8 @@ contract LiquidityHub is ILiquidityHub, AccessManaged {
   IERC20[] public assetsList; // TODO: Check if Enumerable or Set makes more sense
   uint256 public assetCount;
 
-  /*
-   * @notice Initializes the contract with access control.
+  /**
+   * @dev Constructor.
    * @dev The authority should implement the AccessManaged interface to control access.
    * @param authority The address of the authority contract which manages permissions.
    */
