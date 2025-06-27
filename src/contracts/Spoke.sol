@@ -88,7 +88,7 @@ contract Spoke is ISpoke, Multicall {
       config: config,
       dynamicConfigKey: dynamicConfigKey,
       decimals: asset.decimals,
-      asset: asset.underlying,
+      underlying: asset.underlying,
       hub: ILiquidityHub(hub)
     });
     _dynamicConfig[reserveId][dynamicConfigKey] = dynamicConfig;
@@ -104,9 +104,9 @@ contract Spoke is ISpoke, Multicall {
     DataTypes.ReserveConfig calldata config
   ) external {
     // TODO: AccessControl, More sophisticated
-    _validateReserveConfig(config);
     DataTypes.Reserve storage reserve = _reserves[reserveId];
-    require(reserve.asset != address(0), ReserveNotListed());
+    require(reserve.underlying != address(0), ReserveNotListed());
+    _validateReserveConfig(config);
     reserve.config = config;
     emit ReserveConfigUpdated(reserveId, config);
   }
@@ -527,7 +527,7 @@ contract Spoke is ISpoke, Multicall {
 
   // internal
   function _validateSupply(DataTypes.Reserve storage reserve) internal view {
-    require(reserve.asset != address(0), ReserveNotListed());
+    require(reserve.underlying != address(0), ReserveNotListed());
     require(reserve.config.active, ReserveNotActive());
     require(!reserve.config.paused, ReservePaused());
     require(!reserve.config.frozen, ReserveFrozen());
@@ -538,7 +538,7 @@ contract Spoke is ISpoke, Multicall {
     DataTypes.UserPosition storage userPosition,
     uint256 amount
   ) internal view {
-    require(reserve.asset != address(0), ReserveNotListed());
+    require(reserve.underlying != address(0), ReserveNotListed());
     require(reserve.config.active, ReserveNotActive());
     require(!reserve.config.paused, ReservePaused());
     uint256 suppliedAmount = reserve.hub.convertToSuppliedAssets(
@@ -549,7 +549,7 @@ contract Spoke is ISpoke, Multicall {
   }
 
   function _validateBorrow(DataTypes.Reserve storage reserve) internal view {
-    require(reserve.asset != address(0), ReserveNotListed());
+    require(reserve.underlying != address(0), ReserveNotListed());
     require(reserve.config.active, ReserveNotActive());
     require(!reserve.config.paused, ReservePaused());
     require(!reserve.config.frozen, ReserveFrozen());
@@ -559,7 +559,7 @@ contract Spoke is ISpoke, Multicall {
 
   // TODO: Place this and LH equivalent in a generic logic library
   function _validateRepay(DataTypes.Reserve storage reserve) internal view {
-    require(reserve.asset != address(0), ReserveNotListed());
+    require(reserve.underlying != address(0), ReserveNotListed());
     require(reserve.config.active, ReserveNotActive());
     require(!reserve.config.paused, ReservePaused());
     // todo validate user not trying to repay more
@@ -621,7 +621,7 @@ contract Spoke is ISpoke, Multicall {
   ) internal view {
     require(debtToCover > 0, InvalidDebtToCover());
     require(
-      collateralReserve.asset != address(0) && debtReserve.asset != address(0),
+      collateralReserve.underlying != address(0) && debtReserve.underlying != address(0),
       ReserveNotListed()
     );
     require(collateralReserve.config.active && debtReserve.config.active, ReserveNotActive());
@@ -1193,14 +1193,14 @@ contract Spoke is ISpoke, Multicall {
     );
 
     // transfer total liquidated collateral to liquidator
-    IERC20(collateralReserve.asset).safeTransfer(msg.sender, vars.totalCollateralToLiquidate);
+    IERC20(collateralReserve.underlying).safeTransfer(msg.sender, vars.totalCollateralToLiquidate);
     // TODO: treasury accounting for protocol fee
     // TODO: rm temp event
     emit TmpLiquidationFee(vars.totalLiquidationProtocolFeeShares);
 
     return (
-      collateralReserve.asset,
-      debtReserve.asset,
+      collateralReserve.underlying,
+      debtReserve.underlying,
       vars.totalDebtToLiquidate,
       vars.totalCollateralToLiquidate,
       vars.totalLiquidationProtocolFeeShares

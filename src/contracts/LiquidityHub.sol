@@ -37,7 +37,7 @@ contract LiquidityHub is ILiquidityHub {
     require(decimals <= MAX_ALLOWED_ASSET_DECIMALS, InvalidAssetDecimals());
     require(irStrategy != address(0), InvalidIrStrategy());
 
-    uint256 id = assetCount++;
+    uint256 assetId = assetCount++;
     DataTypes.AssetConfig memory config = DataTypes.AssetConfig({
       active: true,
       paused: false,
@@ -47,7 +47,7 @@ contract LiquidityHub is ILiquidityHub {
       irStrategy: irStrategy
     });
 
-    _assets[id] = DataTypes.Asset({
+    _assets[assetId] = DataTypes.Asset({
       underlying: asset,
       decimals: decimals,
       suppliedShares: 0,
@@ -62,10 +62,10 @@ contract LiquidityHub is ILiquidityHub {
       config: config
     });
 
-    emit AssetAdded(id, asset, decimals);
-    emit AssetConfigUpdated(id, config);
+    emit AssetAdded(assetId, asset, decimals);
+    emit AssetConfigUpdated(assetId, config);
 
-    return id;
+    return assetId;
   }
 
   function updateAssetConfig(uint256 assetId, DataTypes.AssetConfig calldata config) external {
@@ -83,7 +83,11 @@ contract LiquidityHub is ILiquidityHub {
     emit AssetConfigUpdated(assetId, config);
   }
 
-  function addSpoke(uint256 assetId, address spoke, DataTypes.SpokeConfig memory config) external {
+  function addSpoke(
+    uint256 assetId,
+    address spoke,
+    DataTypes.SpokeConfig calldata config
+  ) external {
     // TODO: AccessControl
 
     require(spoke != address(0), InvalidSpoke()); // todo: how to remove spoke
@@ -104,7 +108,7 @@ contract LiquidityHub is ILiquidityHub {
   function updateSpokeConfig(
     uint256 assetId,
     address spoke,
-    DataTypes.SpokeConfig memory config
+    DataTypes.SpokeConfig calldata config
   ) external {
     // TODO: AccessControl
 
@@ -362,7 +366,7 @@ contract LiquidityHub is ILiquidityHub {
     return _getAsset(assetId).previewDrawnIndex();
   }
 
-  function getBaseInterestRate(uint256 assetId) public view returns (uint256) {
+  function getBaseInterestRate(uint256 assetId) external view returns (uint256) {
     return _getAsset(assetId).baseBorrowRate;
   }
 
@@ -510,24 +514,6 @@ contract LiquidityHub is ILiquidityHub {
       newConfig.feeReceiver != address(0) || newConfig.liquidityFee == 0,
       InvalidFeeReceiver()
     );
-
-    if (newConfig.feeReceiver != oldConfig.feeReceiver) {
-      if (oldConfig.feeReceiver != address(0)) {
-        require(
-          _spokes[assetId][oldConfig.feeReceiver].config.supplyCap == 0 &&
-            _spokes[assetId][oldConfig.feeReceiver].config.drawCap == 0,
-          InvalidFeeReceiverConfig()
-        );
-      }
-
-      if (newConfig.feeReceiver != address(0)) {
-        require(
-          _spokes[assetId][newConfig.feeReceiver].config.supplyCap == type(uint256).max &&
-            _spokes[assetId][newConfig.feeReceiver].config.drawCap == type(uint256).max,
-          InvalidFeeReceiverConfig()
-        );
-      }
-    }
 
     require(newConfig.irStrategy != address(0), InvalidIrStrategy());
   }

@@ -269,7 +269,7 @@ abstract contract Base is Test {
         variableRateSlope2: 5_00 // 5.00%
       })
     );
-    configurator.setLiquidityFeeAndReceiver(
+    configurator.updateFeeConfig(
       address(hub),
       wethAssetId,
       10_00,
@@ -288,7 +288,7 @@ abstract contract Base is Test {
         variableRateSlope2: 5_00 // 5.00%
       })
     );
-    configurator.setLiquidityFeeAndReceiver(
+    configurator.updateFeeConfig(
       address(hub),
       usdxAssetId,
       5_00,
@@ -307,7 +307,7 @@ abstract contract Base is Test {
         variableRateSlope2: 5_00 // 5.00%
       })
     );
-    configurator.setLiquidityFeeAndReceiver(address(hub), daiAssetId, 5_00, address(treasurySpoke));
+    configurator.updateFeeConfig(address(hub), daiAssetId, 5_00, address(treasurySpoke));
 
     // add WBTC
     configurator.addAsset(address(hub), address(tokenList.wbtc), address(irStrategy));
@@ -321,7 +321,7 @@ abstract contract Base is Test {
         variableRateSlope2: 5_00 // 5.00%
       })
     );
-    configurator.setLiquidityFeeAndReceiver(
+    configurator.updateFeeConfig(
       address(hub),
       wbtcAssetId,
       10_00,
@@ -340,7 +340,7 @@ abstract contract Base is Test {
         variableRateSlope2: 5_00 // 5.00%
       })
     );
-    configurator.setLiquidityFeeAndReceiver(
+    configurator.updateFeeConfig(
       address(hub),
       usdyAssetId,
       10_00,
@@ -594,7 +594,7 @@ abstract contract Base is Test {
         variableRateSlope2: 5_00 // 5.00%
       })
     );
-    configurator.setLiquidityFeeAndReceiver(
+    configurator.updateFeeConfig(
       address(hub),
       hub.assetCount() - 1,
       5_00,
@@ -957,7 +957,7 @@ abstract contract Base is Test {
     uint256 reserveId
   ) internal view returns (uint256, IERC20) {
     DataTypes.Reserve memory reserve = spoke.getReserve(reserveId);
-    return (reserve.assetId, IERC20(reserve.asset));
+    return (reserve.assetId, IERC20(reserve.underlying));
   }
 
   function getWithdrawalLimit(

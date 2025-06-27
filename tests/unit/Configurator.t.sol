@@ -14,7 +14,7 @@ contract ConfiguratorTest is LiquidityHubBase {
     spokeConfigs[1] = DataTypes.SpokeConfig({supplyCap: 3, drawCap: 4});
 
     vm.expectRevert(ILiquidityHub.InvalidSpoke.selector);
-    configurator.addSpokes(address(hub), assetIds, address(0), spokeConfigs);
+    configurator.addSpokes(address(hub), address(0), assetIds, spokeConfigs);
   }
 
   function test_addSpokes_revertsWith_MismatchedConfigs() public {
@@ -28,7 +28,7 @@ contract ConfiguratorTest is LiquidityHubBase {
     spokeConfigs[2] = DataTypes.SpokeConfig({supplyCap: 5, drawCap: 6});
 
     vm.expectRevert(IConfigurator.MismatchedConfigs.selector);
-    configurator.addSpokes(address(hub), assetIds, address(spoke1), spokeConfigs);
+    configurator.addSpokes(address(hub), address(spoke1), assetIds, spokeConfigs);
   }
 
   function test_addSpokes() public {
@@ -50,7 +50,7 @@ contract ConfiguratorTest is LiquidityHubBase {
     emit ILiquidityHub.SpokeAdded(daiAssetId, address(spoke1));
     vm.expectEmit(address(hub));
     emit ILiquidityHub.SpokeAdded(wethAssetId, address(spoke1));
-    configurator.addSpokes(address(hub), assetIds, address(spoke1), spokeConfigs);
+    configurator.addSpokes(address(hub), address(spoke1), assetIds, spokeConfigs);
 
     DataTypes.SpokeConfig memory daiSpokeData = hub.getSpokeConfig(daiAssetId, address(spoke1));
     DataTypes.SpokeConfig memory wethSpokeData = hub.getSpokeConfig(wethAssetId, address(spoke1));
@@ -89,7 +89,7 @@ contract ConfiguratorTest is LiquidityHubBase {
     address asset,
     uint8 decimals
   ) public {
-    vm.assume(asset != address(0));
+    assumeUnusedAddress(asset);
     decimals = uint8(bound(decimals, 0, hub.MAX_ALLOWED_ASSET_DECIMALS()));
 
     vm.expectRevert(ILiquidityHub.InvalidIrStrategy.selector, address(hub));
@@ -108,7 +108,7 @@ contract ConfiguratorTest is LiquidityHubBase {
     _checkedAddAsset(fetchErc20Decimals, asset, decimals, interestRateStrategy);
   }
 
-  function test_setActive_fuzz(uint256 assetId, bool active) public {
+  function test_updateActive_fuzz(uint256 assetId, bool active) public {
     assetId = bound(assetId, 0, hub.assetCount() - 1);
 
     DataTypes.AssetConfig memory expectedConfig = hub.getAssetConfig(assetId);
@@ -116,12 +116,12 @@ contract ConfiguratorTest is LiquidityHubBase {
 
     _checkedUpdateAssetConfig(
       assetId,
-      abi.encodeCall(IConfigurator.setActive, (address(hub), assetId, active)),
+      abi.encodeCall(IConfigurator.updateActive, (address(hub), assetId, active)),
       expectedConfig
     );
   }
 
-  function test_setPaused_fuzz(uint256 assetId, bool paused) public {
+  function test_updatePaused_fuzz(uint256 assetId, bool paused) public {
     assetId = bound(assetId, 0, hub.assetCount() - 1);
 
     DataTypes.AssetConfig memory expectedConfig = hub.getAssetConfig(assetId);
@@ -129,12 +129,12 @@ contract ConfiguratorTest is LiquidityHubBase {
 
     _checkedUpdateAssetConfig(
       assetId,
-      abi.encodeCall(IConfigurator.setPaused, (address(hub), assetId, paused)),
+      abi.encodeCall(IConfigurator.updatePaused, (address(hub), assetId, paused)),
       expectedConfig
     );
   }
 
-  function test_setFrozen_fuzz(uint256 assetId, bool frozen) public {
+  function test_updateFrozen_fuzz(uint256 assetId, bool frozen) public {
     assetId = bound(assetId, 0, hub.assetCount() - 1);
 
     DataTypes.AssetConfig memory expectedConfig = hub.getAssetConfig(assetId);
@@ -142,12 +142,12 @@ contract ConfiguratorTest is LiquidityHubBase {
 
     _checkedUpdateAssetConfig(
       assetId,
-      abi.encodeCall(IConfigurator.setFrozen, (address(hub), assetId, frozen)),
+      abi.encodeCall(IConfigurator.updateFrozen, (address(hub), assetId, frozen)),
       expectedConfig
     );
   }
 
-  function test_setLiquidityFee_fuzz_revertsWith_InvalidLiquidityFee(
+  function test_updateLiquidityFee_fuzz_revertsWith_InvalidLiquidityFee(
     uint256 assetId,
     uint256 liquidityFee
   ) public {
@@ -159,10 +159,10 @@ contract ConfiguratorTest is LiquidityHubBase {
     );
 
     vm.expectRevert(ILiquidityHub.InvalidLiquidityFee.selector);
-    configurator.setLiquidityFee(address(hub), assetId, liquidityFee);
+    configurator.updateLiquidityFee(address(hub), assetId, liquidityFee);
   }
 
-  function test_setLiquidityFee_fuzz(uint256 assetId, uint256 liquidityFee) public {
+  function test_updateLiquidityFee_fuzz(uint256 assetId, uint256 liquidityFee) public {
     assetId = bound(assetId, 0, hub.assetCount() - 1);
     liquidityFee = bound(liquidityFee, 0, PercentageMathExtended.PERCENTAGE_FACTOR);
 
@@ -171,13 +171,13 @@ contract ConfiguratorTest is LiquidityHubBase {
 
     _checkedUpdateAssetConfig(
       assetId,
-      abi.encodeCall(IConfigurator.setLiquidityFee, (address(hub), assetId, liquidityFee)),
+      abi.encodeCall(IConfigurator.updateLiquidityFee, (address(hub), assetId, liquidityFee)),
       expectedConfig
     );
   }
 
   /// Triggers accrual when liquidity fee update, based on old liquidity fee
-  function test_setLiquidityFee_fuzz_Acrrual(uint256 assetId, uint256 liquidityFee) public {
+  function test_updateLiquidityFee_fuzz_Acrrual(uint256 assetId, uint256 liquidityFee) public {
     assetId = bound(assetId, 0, hub.assetCount() - 1);
     liquidityFee = bound(liquidityFee, 1, PercentageMath.PERCENTAGE_FACTOR);
 
@@ -192,29 +192,29 @@ contract ConfiguratorTest is LiquidityHubBase {
     config.liquidityFee = liquidityFee;
     _checkedUpdateAssetConfig(
       assetId,
-      abi.encodeCall(IConfigurator.setLiquidityFee, (address(hub), assetId, config.liquidityFee)),
+      abi.encodeCall(IConfigurator.updateLiquidityFee, (address(hub), assetId, config.liquidityFee)),
       config
     );
 
     assertEq(hub.getSpokeSuppliedShares(assetId, config.feeReceiver), feeShares);
   }
 
-  function test_setFeeReceiver_fuzz_revertsWith_InvalidFeeReceiver(uint256 assetId) public {
+  function test_updateFeeReceiver_fuzz_revertsWith_InvalidFeeReceiver(uint256 assetId) public {
     assetId = bound(assetId, 0, hub.assetCount() - 1);
     assert(hub.getAssetConfig(assetId).liquidityFee != 0);
 
     vm.expectRevert(ILiquidityHub.InvalidFeeReceiver.selector);
-    configurator.setFeeReceiver(address(hub), assetId, address(0));
+    configurator.updateFeeReceiver(address(hub), assetId, address(0));
   }
 
-  function test_setFeeReceiver_revertsWith_InvalidFeeReceiver(uint256 assetId) public {
-    test_setFeeReceiver_fuzz_revertsWith_InvalidFeeReceiver(daiAssetId);
+  function test_updateFeeReceiver_revertsWith_InvalidFeeReceiver(uint256 assetId) public {
+    test_updateFeeReceiver_fuzz_revertsWith_InvalidFeeReceiver(daiAssetId);
   }
 
-  function test_setFeeReceiver_fuzz(uint256 assetId, address feeReceiver) public {
+  function test_updateFeeReceiver_fuzz(uint256 assetId, address feeReceiver) public {
     assetId = bound(assetId, 0, hub.assetCount() - 1);
     if (feeReceiver == address(0)) {
-      test_setLiquidityFee_fuzz(assetId, 0);
+      test_updateLiquidityFee_fuzz(assetId, 0);
     }
 
     DataTypes.AssetConfig memory oldConfig = hub.getAssetConfig(assetId);
@@ -243,26 +243,26 @@ contract ConfiguratorTest is LiquidityHubBase {
 
     _checkedUpdateAssetConfig(
       assetId,
-      abi.encodeCall(IConfigurator.setFeeReceiver, (address(hub), assetId, feeReceiver)),
+      abi.encodeCall(IConfigurator.updateFeeReceiver, (address(hub), assetId, feeReceiver)),
       expectedConfig
     );
   }
 
-  function test_setFeeReceiver_Scenario() public {
+  function test_updateFeeReceiver_Scenario() public {
     // set same fee receiver
-    test_setFeeReceiver_fuzz(daiAssetId, address(treasurySpoke));
+    test_updateFeeReceiver_fuzz(daiAssetId, address(treasurySpoke));
     // set new fee receiver
-    test_setFeeReceiver_fuzz(daiAssetId, makeAddr('newFeeReceiver'));
+    test_updateFeeReceiver_fuzz(daiAssetId, makeAddr('newFeeReceiver'));
     // set zero fee receiver
-    test_setFeeReceiver_fuzz(daiAssetId, address(0));
+    test_updateFeeReceiver_fuzz(daiAssetId, address(0));
     // set zero fee receiver again
-    test_setFeeReceiver_fuzz(daiAssetId, address(0));
+    test_updateFeeReceiver_fuzz(daiAssetId, address(0));
     // set initial fee receiver
-    test_setFeeReceiver_fuzz(daiAssetId, address(treasurySpoke));
+    test_updateFeeReceiver_fuzz(daiAssetId, address(treasurySpoke));
   }
 
   /// Updates to new fee receiver, with previously accrued fees not transferred to the new receiver
-  function test_setFeeReceiver_fuzz_NewFeeReceiver(uint256 assetId) public {
+  function test_updateFeeReceiver_fuzz_NewFeeReceiver(uint256 assetId) public {
     assetId = bound(assetId, 0, hub.assetCount() - 1);
 
     uint256 amount = 1000e18;
@@ -278,7 +278,7 @@ contract ConfiguratorTest is LiquidityHubBase {
 
     _checkedUpdateAssetConfig(
       assetId,
-      abi.encodeCall(IConfigurator.setFeeReceiver, (address(hub), assetId, config.feeReceiver)),
+      abi.encodeCall(IConfigurator.updateFeeReceiver, (address(hub), assetId, config.feeReceiver)),
       config
     );
 
@@ -287,10 +287,10 @@ contract ConfiguratorTest is LiquidityHubBase {
   }
 
   /// Updates the fee receiver by reusing a previously assigned spoke, with no impact on accrued fees
-  function test_setFeeReceiver_fuzz_ReuseFeeReceiver(uint256 assetId) public {
+  function test_updateFeeReceiver_fuzz_ReuseFeeReceiver(uint256 assetId) public {
     assetId = bound(assetId, 0, hub.assetCount() - 1);
 
-    test_setFeeReceiver_fuzz_NewFeeReceiver(assetId);
+    test_updateFeeReceiver_fuzz_NewFeeReceiver(assetId);
 
     address oldFeeReceiver = address(treasurySpoke);
     uint256 oldFees = hub.getSpokeSuppliedShares(assetId, oldFeeReceiver);
@@ -306,7 +306,7 @@ contract ConfiguratorTest is LiquidityHubBase {
     config.feeReceiver = address(treasurySpoke);
     _checkedUpdateAssetConfig(
       assetId,
-      abi.encodeCall(IConfigurator.setFeeReceiver, (address(hub), assetId, config.feeReceiver)),
+      abi.encodeCall(IConfigurator.updateFeeReceiver, (address(hub), assetId, config.feeReceiver)),
       config
     );
 
@@ -314,7 +314,7 @@ contract ConfiguratorTest is LiquidityHubBase {
     assertEq(hub.getSpokeSuppliedShares(assetId, newFeeReceiver), newFees);
   }
 
-  function test_setLiquidityFeeAndReceiver_fuzz_revertsWith_InvalidLiquidityFee(
+  function test_updateFeeConfig_fuzz_revertsWith_InvalidLiquidityFee(
     uint256 assetId,
     uint256 liquidityFee,
     address feeReceiver
@@ -328,10 +328,10 @@ contract ConfiguratorTest is LiquidityHubBase {
     vm.assume(feeReceiver != address(0));
 
     vm.expectRevert(ILiquidityHub.InvalidLiquidityFee.selector);
-    configurator.setLiquidityFeeAndReceiver(address(hub), assetId, liquidityFee, feeReceiver);
+    configurator.updateFeeConfig(address(hub), assetId, liquidityFee, feeReceiver);
   }
 
-  function test_setLiquidityFeeAndReceiver_fuzz_revertsWith_InvalidFeeReceiver(
+  function test_updateFeeConfig_fuzz_revertsWith_InvalidFeeReceiver(
     uint256 assetId,
     uint256 liquidityFee,
     address feeReceiver
@@ -340,10 +340,10 @@ contract ConfiguratorTest is LiquidityHubBase {
     liquidityFee = bound(liquidityFee, 1, PercentageMathExtended.PERCENTAGE_FACTOR);
 
     vm.expectRevert(ILiquidityHub.InvalidFeeReceiver.selector);
-    configurator.setLiquidityFeeAndReceiver(address(hub), assetId, liquidityFee, address(0));
+    configurator.updateFeeConfig(address(hub), assetId, liquidityFee, address(0));
   }
 
-  function test_setLiquidityFeeAndReceiver_fuzz(
+  function test_updateFeeConfig_fuzz(
     uint256 assetId,
     uint256 liquidityFee,
     address feeReceiver
@@ -383,28 +383,28 @@ contract ConfiguratorTest is LiquidityHubBase {
     _checkedUpdateAssetConfig(
       assetId,
       abi.encodeCall(
-        IConfigurator.setLiquidityFeeAndReceiver,
+        IConfigurator.updateFeeConfig,
         (address(hub), assetId, liquidityFee, feeReceiver)
       ),
       expectedConfig
     );
   }
 
-  function test_setLiquidityFeeAndReceiver_Scenario() public {
+  function test_updateFeeConfig_Scenario() public {
     // set same fee receiver
-    test_setLiquidityFeeAndReceiver_fuzz(daiAssetId, 18_00, address(treasurySpoke));
+    test_updateFeeConfig_fuzz(daiAssetId, 18_00, address(treasurySpoke));
     // set new fee receiver and liquidity fee
-    test_setLiquidityFeeAndReceiver_fuzz(daiAssetId, 4_00, makeAddr('newFeeReceiver'));
+    test_updateFeeConfig_fuzz(daiAssetId, 4_00, makeAddr('newFeeReceiver'));
     // set zero fee receiver and fee
-    test_setLiquidityFeeAndReceiver_fuzz(daiAssetId, 0, address(0));
+    test_updateFeeConfig_fuzz(daiAssetId, 0, address(0));
     // set zero fee receiver and fee again
-    test_setLiquidityFeeAndReceiver_fuzz(daiAssetId, 0, address(0));
+    test_updateFeeConfig_fuzz(daiAssetId, 0, address(0));
     // set zero fee and initial fee receiver
-    test_setLiquidityFeeAndReceiver_fuzz(daiAssetId, 0, address(treasurySpoke));
+    test_updateFeeConfig_fuzz(daiAssetId, 0, address(treasurySpoke));
   }
 
   /// Updates the fee receiver from zero to non-zero, even with zero liquidity fee
-  function test_setLiquidityFeeAndReceiver_fuzz_FromZeroFeeReceiver(uint256 assetId) public {
+  function test_updateFeeConfig_fuzz_FromZeroFeeReceiver(uint256 assetId) public {
     assetId = bound(assetId, 0, hub.assetCount() - 1);
 
     DataTypes.AssetConfig memory config = hub.getAssetConfig(assetId);
@@ -413,7 +413,7 @@ contract ConfiguratorTest is LiquidityHubBase {
     _checkedUpdateAssetConfig(
       assetId,
       abi.encodeCall(
-        IConfigurator.setLiquidityFeeAndReceiver,
+        IConfigurator.updateFeeConfig,
         (address(hub), assetId, config.liquidityFee, config.feeReceiver)
       ),
       config
@@ -426,7 +426,7 @@ contract ConfiguratorTest is LiquidityHubBase {
     config.feeReceiver = makeAddr('newFeeReceiver');
     _checkedUpdateAssetConfig(
       assetId,
-      abi.encodeCall(IConfigurator.setFeeReceiver, (address(hub), assetId, config.feeReceiver)),
+      abi.encodeCall(IConfigurator.updateFeeReceiver, (address(hub), assetId, config.feeReceiver)),
       config
     );
 
@@ -434,7 +434,7 @@ contract ConfiguratorTest is LiquidityHubBase {
   }
 
   /// No fees accrued whe updating liquidity fee from zero to non-zero
-  function test_setLiquidityFeeAndReceiver_fuzz_FromZeroLiquidityFee(
+  function test_updateFeeConfig_fuzz_FromZeroLiquidityFee(
     uint256 assetId,
     uint256 liquidityFee
   ) public {
@@ -447,7 +447,7 @@ contract ConfiguratorTest is LiquidityHubBase {
     _checkedUpdateAssetConfig(
       assetId,
       abi.encodeCall(
-        IConfigurator.setLiquidityFeeAndReceiver,
+        IConfigurator.updateFeeConfig,
         (address(hub), assetId, config.liquidityFee, config.feeReceiver)
       ),
       config
@@ -462,7 +462,7 @@ contract ConfiguratorTest is LiquidityHubBase {
     _checkedUpdateAssetConfig(
       assetId,
       abi.encodeCall(
-        IConfigurator.setLiquidityFeeAndReceiver,
+        IConfigurator.updateFeeConfig,
         (address(hub), assetId, config.liquidityFee, config.feeReceiver)
       ),
       config
@@ -472,23 +472,23 @@ contract ConfiguratorTest is LiquidityHubBase {
     assertEq(hub.getSpokeSuppliedShares(assetId, config.feeReceiver), 0);
   }
 
-  function test_setInterestRateStrategy_fuzz_revertsWith_InvalidIrStrategy(uint256 assetId) public {
+  function test_updateInterestRateStrategy_fuzz_revertsWith_InvalidIrStrategy(uint256 assetId) public {
     assetId = bound(assetId, 0, hub.assetCount() - 1);
 
     vm.expectRevert(ILiquidityHub.InvalidIrStrategy.selector);
-    configurator.setInterestRateStrategy(address(hub), assetId, address(0));
+    configurator.updateInterestRateStrategy(address(hub), assetId, address(0));
   }
 
-  function test_setInterestRateStrategy_fuzz_revertsWith_InterestRateStrategyReverts(uint256 assetId, address interestRateStrategy) public {
+  function test_updateInterestRateStrategy_fuzz_revertsWith_InterestRateStrategyReverts(uint256 assetId, address interestRateStrategy) public {
     assetId = bound(assetId, 0, hub.assetCount() - 1);
-    vm.assume(interestRateStrategy != address(irStrategy) && interestRateStrategy > address(0x0a));
+    assumeUnusedAddress(interestRateStrategy);
 
     vm.expectRevert();
-    configurator.setInterestRateStrategy(address(hub), assetId, interestRateStrategy);
+    configurator.updateInterestRateStrategy(address(hub), assetId, interestRateStrategy);
   }
 
-  function test_setInterestRateStrategy_fuzz(uint256 assetId, address interestRateStrategy) public {
-    vm.assume(interestRateStrategy != address(0) && interestRateStrategy != address(Utils.vm));
+  function test_updateInterestRateStrategy_fuzz(uint256 assetId, address interestRateStrategy) public {
+    assumeUnusedAddress(interestRateStrategy);
     
     assetId = bound(assetId, 0, hub.assetCount() - 1);
 
@@ -498,14 +498,14 @@ contract ConfiguratorTest is LiquidityHubBase {
 
     _checkedUpdateAssetConfig(
       assetId,
-      abi.encodeCall(IConfigurator.setInterestRateStrategy, (address(hub), assetId, interestRateStrategy)),
+      abi.encodeCall(IConfigurator.updateInterestRateStrategy, (address(hub), assetId, interestRateStrategy)),
       expectedConfig
     );
   }
 
   /// Triggers accrual when interest rate strategy is updated, based on old strategy
   /// Also makes sure that the base borrow rate is updated after accrual
-  function test_setInterestRateStrategy_fuzz_NewInterestRateStrategy(uint256 assetId) public {
+  function test_updateInterestRateStrategy_fuzz_NewInterestRateStrategy(uint256 assetId) public {
     assetId = bound(assetId, 0, hub.assetCount() - 1);
 
     uint256 amount = 1000e18;
@@ -525,7 +525,7 @@ contract ConfiguratorTest is LiquidityHubBase {
     config.irStrategy = address(newIrStrategy);
     _checkedUpdateAssetConfig(
       assetId,
-      abi.encodeCall(IConfigurator.setInterestRateStrategy, (address(hub), assetId, newIrStrategy)),
+      abi.encodeCall(IConfigurator.updateInterestRateStrategy, (address(hub), assetId, newIrStrategy)),
       config
     );
 
@@ -581,6 +581,8 @@ contract ConfiguratorTest is LiquidityHubBase {
     bytes memory configuratorCalldata,
     DataTypes.AssetConfig memory expectedConfig
   ) internal {
+    DataTypes.AssetConfig memory oldConfig = hub.getAssetConfig(assetId);
+  
     // Always accrue first, based on old config
     vm.expectEmit(address(hub));
     emit ILiquidityHub.DrawnIndexUpdate(assetId, hub.previewDrawnIndex(assetId), block.timestamp);
@@ -593,5 +595,17 @@ contract ConfiguratorTest is LiquidityHubBase {
     assertEq(returnData.length, 0);
 
     assertEq(hub.getAssetConfig(assetId), expectedConfig);
+
+    if (expectedConfig.feeReceiver != oldConfig.feeReceiver) {
+      if (oldConfig.feeReceiver != address(0)) {
+        assertEq(hub.getSpoke(assetId, oldConfig.feeReceiver).config.supplyCap, 0);
+        assertEq(hub.getSpoke(assetId, oldConfig.feeReceiver).config.drawCap, 0);
+      }
+
+      if (expectedConfig.feeReceiver != address(0)) {
+        assertEq(hub.getSpoke(assetId, expectedConfig.feeReceiver).config.supplyCap, type(uint256).max);
+        assertEq(hub.getSpoke(assetId, expectedConfig.feeReceiver).config.drawCap, type(uint256).max);
+      }
+    }
   }
 }

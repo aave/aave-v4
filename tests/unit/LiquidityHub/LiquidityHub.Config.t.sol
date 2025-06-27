@@ -129,7 +129,7 @@ contract LiquidityHubConfigTest is LiquidityHubBase {
   function test_updateAssetConfig_fuzz_revertsWith_InvalidIrStrategy(
     DataTypes.AssetConfig memory newConfig
   ) public {
-    _processAssetConfig(daiAssetId, newConfig);
+    _assumeValidAssetConfig(daiAssetId, newConfig);
     newConfig.irStrategy = address(0);
 
     vm.expectRevert(ILiquidityHub.InvalidIrStrategy.selector);
@@ -139,7 +139,7 @@ contract LiquidityHubConfigTest is LiquidityHubBase {
   function test_updateAssetConfig_fuzz_revertsWith_InvalidLiquidityFee(
     DataTypes.AssetConfig memory newConfig
   ) public {
-    _processAssetConfig(daiAssetId, newConfig);
+    _assumeValidAssetConfig(daiAssetId, newConfig);
     newConfig.liquidityFee = vm.randomUint(
       PercentageMathExtended.PERCENTAGE_FACTOR + 1,
       type(uint256).max
@@ -151,73 +151,24 @@ contract LiquidityHubConfigTest is LiquidityHubBase {
   function test_updateAssetConfig_fuzz_revertsWith_InvalidFeeReceiver(
     DataTypes.AssetConfig memory newConfig
   ) public {
-    _processAssetConfig(daiAssetId, newConfig);
+    _assumeValidAssetConfig(daiAssetId, newConfig);
     newConfig.liquidityFee = vm.randomUint(1, PercentageMathExtended.PERCENTAGE_FACTOR);
     newConfig.feeReceiver = address(0);
     vm.expectRevert(ILiquidityHub.InvalidFeeReceiver.selector);
     hub.updateAssetConfig(daiAssetId, newConfig);
   }
 
-  function test_updateAssetConfig_fuzz_revertsWith_InvalidFeeReceiverConfig_oldReceiver(
-    DataTypes.AssetConfig memory newConfig,
-    uint256
-  ) public {
-    DataTypes.AssetConfig memory oldConfig = hub.getAssetConfig(daiAssetId);
-
-    _processAssetConfig(daiAssetId, newConfig);
-    vm.assume(newConfig.feeReceiver != oldConfig.feeReceiver);
-
-    hub.updateSpokeConfig(
-      daiAssetId,
-      oldConfig.feeReceiver,
-      DataTypes.SpokeConfig({
-        supplyCap: vm.randomUint(1, type(uint256).max),
-        drawCap: vm.randomUint(1, type(uint256).max)
-      })
-    );
-
-    vm.expectRevert(ILiquidityHub.InvalidFeeReceiverConfig.selector);
-    hub.updateAssetConfig(daiAssetId, newConfig);
-  }
-
-  function test_updateAssetConfig_fuzz_revertsWith_InvalidFeeReceiverConfig_newReceiver(
-    DataTypes.AssetConfig memory newConfig,
-    uint256
-  ) public {
-    DataTypes.AssetConfig memory oldConfig = hub.getAssetConfig(daiAssetId);
-
-    _processAssetConfig(daiAssetId, newConfig);
-    vm.assume(newConfig.feeReceiver != oldConfig.feeReceiver);
-
-    newConfig.liquidityFee = bound(
-      newConfig.liquidityFee,
-      1,
-      PercentageMathExtended.PERCENTAGE_FACTOR
-    );
-    hub.updateSpokeConfig(
-      daiAssetId,
-      newConfig.feeReceiver,
-      DataTypes.SpokeConfig({
-        supplyCap: vm.randomUint(0, type(uint256).max - 1),
-        drawCap: vm.randomUint(0, type(uint256).max - 1)
-      })
-    );
-
-    vm.expectRevert(ILiquidityHub.InvalidFeeReceiverConfig.selector);
-    hub.updateAssetConfig(daiAssetId, newConfig);
-  }
-
   function test_updateAssetConfig_fuzz_revertsWith_InterestRateStrategyReverts(DataTypes.AssetConfig memory newConfig) public {
-    vm.assume(newConfig.irStrategy != address(irStrategy) && newConfig.irStrategy > address(0x0a));
-    _processAssetConfig(daiAssetId, newConfig);
+    assumeUnusedAddress(newConfig.irStrategy);
+    _assumeValidAssetConfig(daiAssetId, newConfig);
 
     vm.expectRevert();
     hub.updateAssetConfig(daiAssetId, newConfig);
   }
 
   function test_updateAssetConfig_fuzz(DataTypes.AssetConfig memory newConfig) public {
-    _processAssetConfig(daiAssetId, newConfig);
-    vm.assume(newConfig.irStrategy != address(0) && newConfig.irStrategy != address(Utils.vm));
+    _assumeValidAssetConfig(daiAssetId, newConfig);
+    assumeUnusedAddress(newConfig.irStrategy);
     _mockInterestRate(newConfig.irStrategy, 5_00);
     _checkedUpdateAssetConfig(daiAssetId, newConfig);
   }
@@ -301,7 +252,6 @@ contract LiquidityHubConfigTest is LiquidityHubBase {
     DataTypes.AssetConfig memory config = hub.getAssetConfig(daiAssetId);
     address oldFeeReceiver = config.feeReceiver;
     config.feeReceiver = makeAddr('newFeeReceiver');
-    _processAssetConfig(daiAssetId, config);
 
     uint256 feesShares = hub.getSpokeSuppliedShares(daiAssetId, oldFeeReceiver);
     assertTrue(feesShares > 0, 'no fees');
@@ -328,7 +278,6 @@ contract LiquidityHubConfigTest is LiquidityHubBase {
     assertTrue(newFees > 0);
 
     config.feeReceiver = address(treasurySpoke);
-    _processAssetConfig(daiAssetId, config);
     _checkedUpdateAssetConfig(daiAssetId, config);
 
     assertEq(hub.getSpokeSuppliedShares(daiAssetId, config.feeReceiver), oldFees);
@@ -340,7 +289,6 @@ contract LiquidityHubConfigTest is LiquidityHubBase {
     DataTypes.AssetConfig memory config = hub.getAssetConfig(daiAssetId);
     config.feeReceiver = address(0);
     config.liquidityFee = 0;
-    _processAssetConfig(daiAssetId, config);
     _checkedUpdateAssetConfig(daiAssetId, config);
 
     uint256 amount = 1000e18;
@@ -348,7 +296,6 @@ contract LiquidityHubConfigTest is LiquidityHubBase {
     _drawLiquidity(daiAssetId, amount, true);
 
     config.feeReceiver = makeAddr('newFeeReceiver');
-    _processAssetConfig(daiAssetId, config);
     _checkedUpdateAssetConfig(daiAssetId, config);
 
     assertEq(hub.getSpokeSuppliedShares(daiAssetId, config.feeReceiver), 0);
@@ -379,7 +326,6 @@ contract LiquidityHubConfigTest is LiquidityHubBase {
     DataTypes.AssetConfig memory config = hub.getAssetConfig(daiAssetId);
     config.feeReceiver = address(0);
     config.liquidityFee = 0;
-    _processAssetConfig(daiAssetId, config);
     _checkedUpdateAssetConfig(daiAssetId, config);
 
     uint256 amount = 1000e18;
@@ -388,7 +334,6 @@ contract LiquidityHubConfigTest is LiquidityHubBase {
 
     config.liquidityFee = liquidityFee;
     config.feeReceiver = makeAddr('feeReceiver');
-    _processAssetConfig(daiAssetId, config);
     _checkedUpdateAssetConfig(daiAssetId, config);
 
     assertEq(hub.getSpokeSuppliedShares(daiAssetId, address(0)), 0);
@@ -432,7 +377,7 @@ contract LiquidityHubConfigTest is LiquidityHubBase {
     assertEq(hub.getSpokeConfig(assetId, spoke).drawCap, config.drawCap, 'spokeConfig.drawCap');
   }
 
-  function _processAssetConfig(uint256 assetId, DataTypes.AssetConfig memory newConfig) public {
+  function _assumeValidAssetConfig(uint256 assetId, DataTypes.AssetConfig memory newConfig) public {
     vm.assume(address(newConfig.irStrategy) != address(0));
     newConfig.liquidityFee = bound(
       newConfig.liquidityFee,
@@ -440,33 +385,6 @@ contract LiquidityHubConfigTest is LiquidityHubBase {
       PercentageMathExtended.PERCENTAGE_FACTOR
     );
     vm.assume(address(newConfig.feeReceiver) != address(0) || newConfig.liquidityFee == 0);
-
-    DataTypes.AssetConfig memory oldConfig = hub.getAssetConfig(assetId);
-    if (oldConfig.feeReceiver != newConfig.feeReceiver) {
-      if (oldConfig.feeReceiver != address(0)) {
-        hub.updateSpokeConfig(
-          assetId,
-          oldConfig.feeReceiver,
-          DataTypes.SpokeConfig({supplyCap: 0, drawCap: 0})
-        );
-      }
-      if (newConfig.feeReceiver != address(0)) {
-        DataTypes.SpokeData memory spokeData = hub.getSpoke(assetId, newConfig.feeReceiver);
-        if (spokeData.lastUpdateTimestamp == 0) {
-          hub.addSpoke(
-            assetId,
-            newConfig.feeReceiver,
-            DataTypes.SpokeConfig({supplyCap: type(uint256).max, drawCap: type(uint256).max})
-          );
-        } else {
-          hub.updateSpokeConfig(
-            assetId,
-            newConfig.feeReceiver,
-            DataTypes.SpokeConfig({supplyCap: type(uint256).max, drawCap: type(uint256).max})
-          );
-        }
-      }
-    }
   }
 
   function _checkedAddAsset(address asset, uint8 decimals, address interestRateStrategy) internal {

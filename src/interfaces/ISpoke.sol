@@ -101,8 +101,8 @@ interface ISpoke is IMulticall {
   function addReserve(
     uint256 assetId,
     address hub,
-    DataTypes.ReserveConfig memory config,
-    DataTypes.DynamicReserveConfig memory dynConfig
+    DataTypes.ReserveConfig calldata config,
+    DataTypes.DynamicReserveConfig calldata dynConfig
   ) external returns (uint256);
 
   function updateReserveConfig(uint256 reserveId, DataTypes.ReserveConfig calldata params) external;

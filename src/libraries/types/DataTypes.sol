@@ -57,7 +57,7 @@ library DataTypes {
     ReserveConfig config;
     uint16 dynamicConfigKey; // key of the last reserve config
     uint8 decimals;
-    address asset;
+    address underlying;
     ILiquidityHub hub;
   }
 

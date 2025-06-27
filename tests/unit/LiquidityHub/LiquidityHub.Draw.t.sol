@@ -75,7 +75,7 @@ contract LiquidityHubDrawTest is LiquidityHubBase {
     daiAmount = bound(daiAmount, 1, MAX_SUPPLY_AMOUNT);
     uint256 drawAmount = daiAmount;
 
-    IERC20 asset = IERC20(hub.getAsset(assetId).underlying);
+    IERC20 underlying = IERC20(hub.getAsset(assetId).underlying);
 
     // spoke2, bob supply dai
     Utils.add({
@@ -110,10 +110,10 @@ contract LiquidityHubDrawTest is LiquidityHubBase {
     assertEq(baseDebt, drawAmount, 'spoke baseDebt after');
     assertEq(premiumDebt, 0, 'spoke premiumDebt after');
     // token balance
-    assertEq(asset.balanceOf(alice), drawAmount + MAX_SUPPLY_AMOUNT, 'alice asset final balance');
-    assertEq(asset.balanceOf(bob), MAX_SUPPLY_AMOUNT - daiAmount, 'bob asset final balance');
-    assertEq(asset.balanceOf(address(spoke1)), 0, 'spoke1 asset final balance');
-    assertEq(asset.balanceOf(address(spoke2)), 0, 'spoke2 asset final balance');
+    assertEq(underlying.balanceOf(alice), drawAmount + MAX_SUPPLY_AMOUNT, 'alice asset final balance');
+    assertEq(underlying.balanceOf(bob), MAX_SUPPLY_AMOUNT - daiAmount, 'bob asset final balance');
+    assertEq(underlying.balanceOf(address(spoke1)), 0, 'spoke1 asset final balance');
+    assertEq(underlying.balanceOf(address(spoke2)), 0, 'spoke2 asset final balance');
   }
 
   function test_draw_revertsWith_AssetNotActive() public {

@@ -153,11 +153,11 @@ contract SpokeBase is Base {
     uint256 initialLiq = hub.getAvailableLiquidity(assetId);
 
     address tempUser = vm.randomAddress();
-    IERC20 asset = IERC20(spoke.getReserve(reserveId).asset);
-    deal(address(asset), tempUser, amount);
+    IERC20 underlying = IERC20(spoke.getReserve(reserveId).underlying);
+    deal(address(underlying), tempUser, amount);
 
     vm.prank(tempUser);
-    asset.approve(address(hub), type(uint256).max);
+    underlying.approve(address(hub), type(uint256).max);
 
     Utils.supply({
       spoke: spoke,
@@ -187,10 +187,10 @@ contract SpokeBase is Base {
       debtAmount: amount
     });
 
-    IERC20 asset = IERC20(spoke.getReserve(reserveId).asset);
-    deal(address(asset), tempUser, supplyAmount);
+    IERC20 underlying = IERC20(spoke.getReserve(reserveId).underlying);
+    deal(address(underlying), tempUser, supplyAmount);
     vm.prank(tempUser);
-    asset.approve(address(hub), type(uint256).max);
+    underlying.approve(address(hub), type(uint256).max);
 
     Utils.supplyCollateral({
       spoke: spoke,
@@ -677,7 +677,7 @@ contract SpokeBase is Base {
   function assertEq(DataTypes.Reserve memory a, DataTypes.Reserve memory b) internal pure {
     assertEq(a.reserveId, b.reserveId, 'Reserve Ids mismatch');
     assertEq(a.assetId, b.assetId, 'Asset Ids mismatch');
-    assertEq(a.asset, b.asset, 'Asset addresses mismatch');
+    assertEq(a.underlying, b.underlying, 'Asset addresses mismatch');
     assertEq(a.config, b.config);
     assertEq(abi.encode(a), abi.encode(b)); // sanity check
   }

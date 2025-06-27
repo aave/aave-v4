@@ -73,18 +73,17 @@ interface ILiquidityHub {
   error InvalidAssetAddress();
   error InvalidDebtChange();
   error InvalidFeeReceiver();
-  error InvalidFeeReceiverConfig();
 
   function addAsset(address asset, uint8 decimals, address irStrategy) external returns (uint256);
 
-  function updateAssetConfig(uint256 assetId, DataTypes.AssetConfig memory config) external;
+  function updateAssetConfig(uint256 assetId, DataTypes.AssetConfig calldata config) external;
 
-  function addSpoke(uint256 assetId, address spoke, DataTypes.SpokeConfig memory params) external;
+  function addSpoke(uint256 assetId, address spoke, DataTypes.SpokeConfig calldata params) external;
 
   function updateSpokeConfig(
     uint256 assetId,
     address spoke,
-    DataTypes.SpokeConfig memory config
+    DataTypes.SpokeConfig calldata config
   ) external;
 
   /**

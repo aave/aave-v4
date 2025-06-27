@@ -114,12 +114,12 @@ contract SpokeMulticall is SpokeBase {
     DataTypes.Reserve memory dai2ReserveExpected;
     dai2ReserveExpected.reserveId = dai2ReserveId;
     dai2ReserveExpected.assetId = daiAssetId;
-    dai2ReserveExpected.asset = address(tokenList.dai);
+    dai2ReserveExpected.underlying = address(tokenList.dai);
     dai2ReserveExpected.config = dai2Config;
     DataTypes.Reserve memory dai3ReserveExpected;
     dai3ReserveExpected.reserveId = dai3ReserveId;
     dai3ReserveExpected.assetId = daiAssetId;
-    dai3ReserveExpected.asset = address(tokenList.dai);
+    dai3ReserveExpected.underlying = address(tokenList.dai);
     dai3ReserveExpected.config = dai3Config;
 
     // Set up the multicall
