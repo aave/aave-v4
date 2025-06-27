@@ -99,42 +99,44 @@ contract LiquidityHubAccessTest is LiquidityHubBase {
   }
 
   function test_setInterestRateData_access() public {
-    IAssetInterestRateStrategy.InterestRateData memory irData = IAssetInterestRateStrategy
-      .InterestRateData({
+    bytes memory encodedIrData = _encodeInterestRateData(
+      IAssetInterestRateStrategy.InterestRateData({
         optimalUsageRatio: 50_00, // 50.00% in BPS
         baseVariableBorrowRate: 100_00, // 100.00% in BPS
         variableRateSlope1: 200_00, // 200.00% in BPS
         variableRateSlope2: 300_00 // 300.00% in BPS
-      });
+      })
+    );
 
     // Only Liquidity Hub can set interest rates
     vm.expectRevert(abi.encodeWithSelector(IAssetInterestRateStrategy.OnlyLiquidityHub.selector));
-    irStrategy.setInterestRateData(daiAssetId, irData);
+    irStrategy.setInterestRateData(daiAssetId, encodedIrData);
 
     // Liquidity Hub can set interest rates
     vm.prank(address(hub));
-    irStrategy.setInterestRateData(daiAssetId, irData);
+    irStrategy.setInterestRateData(daiAssetId, encodedIrData);
 
     // Only Hub Admin can call function on hub to set interest rates
     vm.expectRevert(
       abi.encodeWithSelector(IAccessManaged.AccessManagedUnauthorized.selector, address(this))
     );
-    hub.setInterestRateData(daiAssetId, irData);
+    hub.setInterestRateData(daiAssetId, encodedIrData);
 
     // Hub Admin can call function on hub to set interest rates
     vm.prank(HUB_ADMIN);
-    hub.setInterestRateData(daiAssetId, irData);
+    hub.setInterestRateData(daiAssetId, encodedIrData);
   }
 
   /// @dev Test showcasing ability to change role responsibility for a function selector.
   function test_change_role_responsibility() public {
-    IAssetInterestRateStrategy.InterestRateData memory irData = IAssetInterestRateStrategy
-      .InterestRateData({
+    bytes memory encodedIrData = _encodeInterestRateData(
+      IAssetInterestRateStrategy.InterestRateData({
         optimalUsageRatio: 50_00, // 50.00% in BPS
         baseVariableBorrowRate: 100_00, // 100.00% in BPS
         variableRateSlope1: 200_00, // 200.00% in BPS
         variableRateSlope2: 300_00 // 300.00% in BPS
-      });
+      })
+    );
 
     // Change the role responsible for setting interest rate data on the hub
     bytes4[] memory hubSelectors = new bytes4[](1);
@@ -147,11 +149,11 @@ contract LiquidityHubAccessTest is LiquidityHubBase {
       abi.encodeWithSelector(IAccessManaged.AccessManagedUnauthorized.selector, HUB_ADMIN)
     );
     vm.prank(HUB_ADMIN);
-    hub.setInterestRateData(daiAssetId, irData);
+    hub.setInterestRateData(daiAssetId, encodedIrData);
 
     // The new role (DEFAULT_ADMIN_ROLE) should have access
     vm.prank(ADMIN);
-    hub.setInterestRateData(daiAssetId, irData);
+    hub.setInterestRateData(daiAssetId, encodedIrData);
 
     // HUB_ADMIN can still access the other hub functions for which it has permissions
     vm.prank(HUB_ADMIN);

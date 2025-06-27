@@ -101,12 +101,9 @@ interface ILiquidityHub is IAccessManaged {
   /**
    * @notice Updates the interest rate strategy for a specified asset.
    * @param assetId The identifier of the asset.
-   * @param rateData The interest rate data to apply to the given asset, all in bps.
+   * @param data The interest rate data to apply to the given asset, all in bps, encoded in bytes.
    */
-  function setInterestRateData(
-    uint256 assetId,
-    IAssetInterestRateStrategy.InterestRateData memory rateData
-  ) external;
+  function setInterestRateData(uint256 assetId, bytes calldata data) external;
 
   /**
    * @notice Updates the fee configuration for a specified asset.
