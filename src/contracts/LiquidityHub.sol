@@ -325,11 +325,13 @@ contract LiquidityHub is ILiquidityHub {
     uint256 feeShares
   ) external returns (uint256) {
     // TODO: authorization - only spokes
+    _validatePayFeeWithExistingLiquidity(feeShares);
 
     DataTypes.Asset storage asset = _assets[assetId];
     DataTypes.SpokeData storage spoke = _spokes[assetId][msg.sender];
 
-    require(feeShares <= spoke.suppliedShares, InvalidSharesAmount());
+    uint256 payableShares = spoke.suppliedShares;
+    require(feeShares <= payableShares, SuppliedSharesExceeded(payableShares));
 
     spoke.suppliedShares -= feeShares;
     _spokes[assetId][asset.config.feeReceiver].suppliedShares += feeShares;
@@ -609,5 +611,10 @@ contract LiquidityHub is ILiquidityHub {
   function _add(uint256 a, int256 b) internal pure returns (uint256) {
     if (b >= 0) return a + uint256(b);
     return a - uint256(-b);
+  }
+
+  function _validatePayFeeWithExistingLiquidity(uint256 feeShares) internal pure {
+    // TODO: validate valid asset
+    require(feeShares != 0, InvalidFeeShares());
   }
 }

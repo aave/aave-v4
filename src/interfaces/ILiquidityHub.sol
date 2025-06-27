@@ -77,6 +77,8 @@ interface ILiquidityHub {
   error InvalidAssetAddress();
   error InvalidDebtChange();
   error InvalidFeeReceiver();
+  error SuppliedSharesExceeded(uint256 shares);
+  error InvalidFeeShares();
 
   function addAsset(DataTypes.AssetConfig memory params, address asset) external;
 
