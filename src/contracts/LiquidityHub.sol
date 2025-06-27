@@ -186,7 +186,7 @@ contract LiquidityHub is ILiquidityHub {
     DataTypes.SpokeData storage spoke = _spokes[assetId][msg.sender];
 
     asset.accrue(_spokes[assetId][asset.config.feeReceiver]);
-    _validateAdd(asset, spoke, amount, from);
+    _validateSupply(asset, spoke, amount, from);
 
     asset.updateBorrowRate({liquidityAdded: amount, liquidityTaken: 0});
 
@@ -510,7 +510,7 @@ contract LiquidityHub is ILiquidityHub {
   // Internal
   //
 
-  function _validateAdd(
+  function _validateSupply(
     DataTypes.Asset storage asset,
     DataTypes.SpokeData storage spoke,
     uint256 amount,
