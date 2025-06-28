@@ -308,7 +308,7 @@ contract AssetInterestRateStrategyTest is Base {
     availableLiquidity = bound(vm.randomUint(), 0, updatedAvailableLiquidity);
     liquidityAdded = bound(
       vm.randomUint(),
-      updatedAvailableLiquidity - liquidityAdded,
+      updatedAvailableLiquidity - availableLiquidity,
       updatedAvailableLiquidity
     );
     liquidityTaken = availableLiquidity + liquidityAdded - updatedAvailableLiquidity;

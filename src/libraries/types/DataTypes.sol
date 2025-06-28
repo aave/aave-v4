@@ -78,7 +78,6 @@ library DataTypes {
   }
 
   struct UserPosition {
-    bool usingAsCollateral;
     uint256 suppliedShares;
     uint256 baseDrawnShares;
     uint256 premiumDrawnShares;
@@ -90,6 +89,16 @@ library DataTypes {
   struct PositionManagerConfig {
     bool active;
     mapping(address user => bool approved) approval;
+  }
+
+  struct PositionStatus {
+    mapping(uint256 slot => uint256 status) map;
+  }
+
+  struct NotifyRiskPremiumUpdateVars {
+    bool premiumIncrease;
+    uint256 reserveCount;
+    uint256 reserveId;
   }
 
   struct CalculateUserAccountDataVars {
@@ -144,6 +153,8 @@ library DataTypes {
     uint256 i;
     uint256 debtAssetId;
     uint256 collateralAssetId;
+    uint256 debtReserveId;
+    uint256 collateralReserveId;
     uint256 baseDebt;
     uint256 premiumDebt;
     uint256 collateralToLiquidate;
