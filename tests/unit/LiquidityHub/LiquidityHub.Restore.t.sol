@@ -860,10 +860,22 @@ contract LiquidityHubRestoreTest is LiquidityHubBase {
 
   function test_restore_full_amount_with_interest_and_premium() public {
     uint256 daiAmount = 100e18;
-    uint256 wethAmount = 10e18;
-
     uint256 drawAmount = daiAmount / 2;
-    uint256 skipTime = 365 days / 2;
+    uint256 skipTime = 365 days;
+
+    test_restore_fuzz_full_amount_with_interest_and_premium(daiAmount, drawAmount, skipTime);
+  }
+
+  function test_restore_fuzz_full_amount_with_interest_and_premium(
+    uint256 daiAmount,
+    uint256 drawAmount,
+    uint256 skipTime
+  ) public {
+    daiAmount = bound(daiAmount, 1, 1000e18); // max 100 DAI
+    drawAmount = bound(drawAmount, 1, daiAmount); // within supplied dai amount
+    skipTime = bound(skipTime, 1, MAX_SKIP_TIME);
+
+    uint256 wethAmount = 10e18;
 
     // spoke1 supply weth
     Utils.supplyCollateral({
@@ -929,112 +941,5 @@ contract LiquidityHubRestoreTest is LiquidityHubBase {
     );
     assertEq(spoke1Data.baseDebt, 0, 'spoke1 baseDebt');
     assertEq(spoke1Data.premiumDebt, premiumDebt, 'spoke1 premiumDebt');
-  }
-
-  function test_restore_fuzz_full_amount_with_interest_and_premium(
-    uint256 drawAmount,
-    uint256 skipTime,
-    uint256 rate,
-    uint32 riskPremium
-  ) public {
-    vm.skip(true, 'pending refactor');
-
-    //     uint256 daiAmount = 100e18;
-    //     uint256 wethAmount = 10e18;
-
-    //     drawAmount = bound(drawAmount, 1, daiAmount); // within supplied dai amount
-    //     skipTime = bound(skipTime, 1, 365 * 10 * 1 days); // 1 sec to 10 years
-    //     rate = bound(rate, 1, 1000_00).bpsToRay(); // 0.01% to 1000%
-    //     riskPremium %= MAX_RISK_PREMIUM_BPS;
-
-    //     vm.mockCall(
-    //       address(irStrategy),
-    //       IBasicInterestRateStrategy.calculateInterestRates.selector,
-    //       abi.encode(rate)
-    //     );
-
-    //     // spoke1 supply weth
-    //     Utils.supply({
-    //       hub: hub,
-    //       assetId: wethAssetId,
-    //       spoke: address(spoke1),
-    //       amount: wethAmount,
-    //       riskPremium: 0,
-    //       user: alice,
-    //       to: address(spoke1)
-    //     });
-
-    //     // spoke2 supply dai
-    //     Utils.supply({
-    //       hub: hub,
-    //       assetId: daiAssetId,
-    //       spoke: address(spoke2),
-    //       amount: daiAmount,
-    //       riskPremium: 0,
-    //       user: bob,
-    //       to: address(spoke2)
-    //     });
-
-    //     // spoke1 draw half of dai reserve liquidity
-    //     Utils.draw({
-    //       hub: hub,
-    //       assetId: daiAssetId,
-    //       to: alice,
-    //       spoke: address(spoke1),
-    //       amount: drawAmount,
-    //       riskPremium: riskPremium,
-    //       onBehalfOf: address(spoke1)
-    //     });
-
-    //     DataTypes.SpokeData memory spoke1DaiData = hub.getSpoke(daiAssetId, address(spoke1));
-
-    //     skip(skipTime);
-
-    //     // spoke2 supply more dai to trigger accrual
-    //     Utils.supply({
-    //       hub: hub,
-    //       assetId: daiAssetId,
-    //       spoke: address(spoke2),
-    //       amount: daiAmount / 5,
-    //       riskPremium: 0,
-    //       user: bob,
-    //       to: address(spoke2)
-    //     });
-
-    //     uint256 cumulatedBaseInterest = MathUtils.calculateLinearInterest(
-    //       rate,
-    //       uint40(spoke1DaiData.lastUpdateTimestamp)
-    //     );
-    //     uint256 cumulatedBaseDebt = drawAmount.rayMul(cumulatedBaseInterest);
-    //     uint256 accruedPremium = (cumulatedBaseDebt - drawAmount).percentMul(riskPremium);
-    //     vm.assume(accruedPremium > 0); // accrued premium can round to 0 in edge case - ex. (cumulatedBaseDebt - drawAmount) = 1, riskPremium = 1
-
-    //     // alice restore amount = drawn amount AND premium
-
-    //     vm.prank(address(spoke1));
-    //     hub.restore({
-    //       assetId: daiAssetId,
-    //       amount: cumulatedBaseDebt + accruedPremium,
-    //       riskPremium: 0,
-    //       repayer: alice
-    //     });
-
-    //     DataTypes.Asset memory daiData = hub.getAsset(daiAssetId);
-    //     DataTypes.SpokeData memory spoke1Data = hub.getSpoke(daiAssetId, address(spoke1));
-    //     DebtData memory daiDebtData = _getDebt(daiAssetId);
-
-    //     // asset
-    //     assertEq(daiData.baseDebt, 0, 'asset baseDebt');
-    //     assertEq(daiData.outstandingPremium, 0, 'asset outstandingPremium');
-    //     assertEq(daiDebtData.asset.cumulativeDebt, 0, 'asset cumulativeDebt');
-    //     assertEq(daiDebtData.asset.baseDebt, 0, 'asset baseDebt');
-    //     assertEq(daiDebtData.asset.outstandingPremium, 0, 'asset outstandingPremium');
-
-    //     // spoke
-    //     assertEq(spoke1Data.baseDebt, 0, 'spoke1 baseDebt');
-    //     assertEq(spoke1Data.outstandingPremium, 0, 'spoke1 outstandingPremium');
-    //     assertEq(daiDebtData.spoke[0].cumulativeDebt, 0, 'spoke1 cumulativeDebt');
-    //     assertEq(daiDebtData.spoke[0].baseDebt, 0, 'spoke1 baseDebt');
-    //     assertEq(daiDebtData.spoke[0].outstandingPremium, 0, 'spoke1 outstandingPremium');
   }
 }
