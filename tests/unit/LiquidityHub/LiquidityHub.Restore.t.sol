@@ -6,89 +6,75 @@ import './LiquidityHubBase.t.sol';
 contract LiquidityHubRestoreTest is LiquidityHubBase {
   using SharesMath for uint256;
   using WadRayMathExtended for uint256;
-  using PercentageMath for uint256;
 
   function test_restore_revertsWith_SurplusAmountRestored() public {
-    vm.skip(true, 'pending refactor');
+    uint256 daiAmount = 100e18;
+    uint256 wethAmount = 10e18;
 
-    //     uint256 daiAmount = 100e18;
-    //     uint256 wethAmount = 10e18;
+    uint256 drawAmount = daiAmount / 2;
 
-    //     uint256 drawAmount = daiAmount / 2;
+    // spoke1 supply weth
+    Utils.add({
+      hub: hub,
+      assetId: wethAssetId,
+      spoke: address(spoke1),
+      amount: wethAmount,
+      user: alice,
+      to: address(spoke1)
+    });
 
-    //     // spoke1 supply weth
-    //     Utils.supply({
-    //       hub: hub,
-    //       assetId: wethAssetId,
-    //       spoke: address(spoke1),
-    //       amount: wethAmount,
-    //       riskPremium: 0,
-    //       user: alice,
-    //       to: address(spoke1)
-    //     });
+    // spoke2 supply dai
+    Utils.add({
+      hub: hub,
+      assetId: daiAssetId,
+      spoke: address(spoke2),
+      amount: daiAmount,
+      user: bob,
+      to: address(spoke2)
+    });
 
-    //     // spoke2 supply dai
-    //     Utils.supply({
-    //       hub: hub,
-    //       assetId: daiAssetId,
-    //       spoke: address(spoke2),
-    //       amount: daiAmount,
-    //       riskPremium: 0,
-    //       user: bob,
-    //       to: address(spoke2)
-    //     });
+    // spoke1 draw half of dai reserve liquidity
+    Utils.draw({
+      hub: hub,
+      assetId: daiAssetId,
+      to: alice,
+      spoke: address(spoke1),
+      amount: drawAmount,
+      onBehalfOf: address(spoke1)
+    });
 
-    //     // spoke1 draw half of dai reserve liquidity
-    //     Utils.draw({
-    //       hub: hub,
-    //       assetId: daiAssetId,
-    //       to: alice,
-    //       spoke: address(spoke1),
-    //       amount: drawAmount,
-    //       riskPremium: 0,
-    //       onBehalfOf: address(spoke1)
-    //     });
+    (uint256 baseDebt, uint256 premiumDebt) = hub.getSpokeDebt(daiAssetId, address(spoke1));
 
-    //     // alice restore invalid amount > drawn amount AND premium
-    //     vm.expectRevert(
-    //       abi.encodeWithSelector(ILiquidityHub.SurplusAmountRestored.selector, drawAmount)
-    //     );
+    // alice restore invalid amount > baseDebt
+    vm.expectRevert(
+      abi.encodeWithSelector(ILiquidityHub.SurplusAmountRestored.selector, drawAmount)
+    );
 
-    //     vm.prank(address(spoke1));
-    //     hub.restore({assetId: daiAssetId, amount: drawAmount + 1, riskPremium: 0, repayer: alice});
+    vm.prank(address(spoke1));
+    hub.restore(daiAssetId, baseDebt + 1, premiumDebt, alice);
   }
 
   function test_restore_revertsWith_InvalidRestoreAmount_zero() public {
-    vm.skip(true, 'pending refactor');
+    vm.expectRevert(ILiquidityHub.InvalidRestoreAmount.selector);
 
-    //     vm.expectRevert(ILiquidityHub.InvalidRestoreAmount.selector);
-
-    //     vm.prank(address(spoke1));
-    //     hub.restore({assetId: daiAssetId, amount: 0, riskPremium: 0, repayer: alice});
+    vm.prank(address(spoke1));
+    hub.restore(daiAssetId, 0, 0, alice);
   }
 
   function test_restore_revertsWith_AssetNotActive() public {
-    vm.skip(true, 'pending refactor');
+    updateAssetActive(hub, daiAssetId, false);
 
-    //     updateAssetActive(hub, daiAssetId, false);
-
-    //     assertFalse(hub.getAsset(daiAssetId).config.active);
-
-    //     vm.expectRevert(ILiquidityHub.AssetNotActive.selector);
-    //     vm.prank(address(spoke1));
-    //     hub.restore({assetId: daiAssetId, amount: 1, riskPremium: 0, repayer: alice});
+    vm.expectRevert(ILiquidityHub.AssetNotActive.selector);
+    vm.prank(address(spoke1));
+    hub.restore(daiAssetId, 1, 0, alice);
   }
 
   function test_restore_revertsWith_AssetPaused() public {
-    vm.skip(true, 'pending refactor');
+    updateAssetPaused(hub, daiAssetId, true);
 
-    //     updateAssetPaused(hub, daiAssetId, true);
-
-    //     assertTrue(hub.getAsset(daiAssetId).config.paused);
-
-    //     vm.expectRevert(ILiquidityHub.AssetPaused.selector);
-    //     vm.prank(address(spoke1));
-    //     hub.restore({assetId: daiAssetId, amount: 1, riskPremium: 0, repayer: alice});
+    vm.expectRevert(ILiquidityHub.AssetPaused.selector);
+    vm.prank(address(spoke1));
+    hub.restore(daiAssetId, 1, 0, alice);
   }
 
   function test_restore_revertsWith_SurplusAmountRestored_with_interest() public {
@@ -830,60 +816,54 @@ contract LiquidityHubRestoreTest is LiquidityHubBase {
   }
 
   function test_restore_partial_same_block() public {
-    vm.skip(true, 'pending refactor');
+    uint256 daiAmount = 100e18;
+    uint256 wethAmount = 10e18;
 
-    //     uint256 daiAmount = 100e18;
-    //     uint256 wethAmount = 10e18;
+    uint256 drawAmount = daiAmount / 2;
 
-    //     uint256 drawAmount = daiAmount / 2;
-    //     uint256 restoreAmount = daiAmount / 4;
+    // spoke1 add weth
+    Utils.add({
+      hub: hub,
+      assetId: wethAssetId,
+      spoke: address(spoke1),
+      amount: wethAmount,
+      user: alice,
+      to: address(spoke1)
+    });
 
-    //     uint256 rate = uint256(15_00).bpsToRay();
+    // spoke2 supply dai
+    Utils.add({
+      hub: hub,
+      assetId: daiAssetId,
+      spoke: address(spoke2),
+      amount: daiAmount,
+      user: bob,
+      to: address(spoke2)
+    });
 
-    //     vm.mockCall(
-    //       address(irStrategy),
-    //       IBasicInterestRateStrategy.calculateInterestRates.selector,
-    //       abi.encode(rate)
-    //     );
+    // spoke1 draw half of dai reserve liquidity on behalf of user
+    Utils.draw({
+      hub: hub,
+      assetId: daiAssetId,
+      to: alice,
+      spoke: address(spoke1),
+      amount: drawAmount,
+      onBehalfOf: address(spoke1)
+    });
 
-    //     // spoke1 supply weth
-    //     Utils.supply({
-    //       hub: hub,
-    //       assetId: wethAssetId,
-    //       spoke: address(spoke1),
-    //       amount: wethAmount,
-    //       riskPremium: 0,
-    //       user: alice,
-    //       to: address(spoke1)
-    //     });
+    (uint256 baseDebt, uint256 premiumDebt) = hub.getSpokeDebt(daiAssetId, address(spoke1));
+    uint256 baseDebtRestored = baseDebt / 2;
 
-    //     // spoke2 supply dai
-    //     Utils.supply({
-    //       hub: hub,
-    //       assetId: daiAssetId,
-    //       spoke: address(spoke2),
-    //       amount: daiAmount,
-    //       riskPremium: 0,
-    //       user: bob,
-    //       to: address(spoke2)
-    //     });
+    vm.expectEmit(address(hub));
+    emit ILiquidityHub.Restore(
+      daiAssetId,
+      address(spoke1),
+      hub.convertToDrawnShares(daiAssetId, baseDebtRestored),
+      baseDebtRestored + premiumDebt
+    );
 
-    //     // spoke1 draw half of dai reserve liquidity on behalf of user
-    //     Utils.draw({
-    //       hub: hub,
-    //       assetId: daiAssetId,
-    //       to: alice,
-    //       spoke: address(spoke1),
-    //       amount: drawAmount,
-    //       riskPremium: 0,
-    //       onBehalfOf: address(spoke1)
-    //     });
-
-    //     vm.expectEmit(address(hub));
-    //     emit ILiquidityHub.Restore(daiAssetId, address(spoke1), restoreAmount);
-
-    //     vm.prank(address(spoke1));
-    //     hub.restore({assetId: daiAssetId, amount: restoreAmount, riskPremium: 0, repayer: alice});
+    vm.prank(address(spoke1));
+    hub.restore(daiAssetId, baseDebtRestored, premiumDebt, alice);
 
     //     HubData memory hubData;
     //     hubData.daiData = hub.getAsset(daiAssetId);
