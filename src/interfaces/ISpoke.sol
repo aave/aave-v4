@@ -71,6 +71,7 @@ interface ISpoke is IMulticall {
 
   error UserNotBorrowingReserve(uint256 reserveId);
   error ReserveNotListed();
+  error AssetNotListed();
   error InvalidLiquidityPremium();
   error InsufficientSupply(uint256 supply);
   error NotAvailableLiquidity(uint256 availableLiquidity);

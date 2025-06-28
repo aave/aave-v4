@@ -79,6 +79,7 @@ contract Spoke is ISpoke, Multicall {
     uint16 dynamicConfigKey; // 0 as first key to use
 
     DataTypes.Asset memory asset = ILiquidityHub(hub).getAsset(assetId);
+    require(asset.underlying != address(0), AssetNotListed());
 
     reservesList.push(reserveId);
     _reserves[reserveId] = DataTypes.Reserve({

@@ -317,7 +317,7 @@ contract SpokeConfigTest is SpokeBase {
       collateralFactor: 10_00
     });
 
-    vm.expectRevert(); // error from LH in reading invalid index from assetList array
+    vm.expectRevert(ISpoke.AssetNotListed.selector, address(spoke1));
     vm.prank(SPOKE_ADMIN);
     spoke1.addReserve(assetId, address(hub), newReserveConfig, newDynReserveConfig);
   }
@@ -339,7 +339,7 @@ contract SpokeConfigTest is SpokeBase {
       collateralFactor: 10_00
     });
 
-    vm.expectRevert(); // error from LH in reading invalid index from assetList array
+    vm.expectRevert(ISpoke.AssetNotListed.selector, address(spoke1));
     vm.prank(SPOKE_ADMIN);
     spoke1.addReserve(assetId, address(hub), newReserveConfig, newDynReserveConfig);
   }
