@@ -686,7 +686,6 @@ contract SpokeBase is Base {
     DataTypes.UserPosition memory a,
     DataTypes.UserPosition memory b
   ) internal pure {
-    assertEq(a.usingAsCollateral, b.usingAsCollateral, 'usingAsCollateral');
     assertEq(a.suppliedShares, b.suppliedShares, 'suppliedShares');
     assertEq(a.baseDrawnShares, b.baseDrawnShares, 'baseDrawnShares');
     assertEq(a.premiumDrawnShares, b.premiumDrawnShares, 'premiumDrawnShares');
@@ -841,7 +840,7 @@ contract SpokeBase is Base {
     uint256 reserveId
   ) internal view returns (DynamicConfig memory) {
     DataTypes.UserPosition memory pos = spoke.getUserPosition(reserveId, user);
-    return DynamicConfig(pos.configKey, spoke.getUsingAsCollateral(reserveId, user));
+    return DynamicConfig(pos.configKey, spoke.isUsingAsCollateral(reserveId, user));
   }
 
   function assertEq(
