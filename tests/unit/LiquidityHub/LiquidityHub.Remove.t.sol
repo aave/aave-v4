@@ -59,9 +59,7 @@ contract LiquidityHubRemoveTest is LiquidityHubBase {
     assertEq(reservePosition1.suppliedShares, 0, 'spoke1 suppliedShares after');
     assertEq(reservePosition1.timestamp, assetData.lastUpdateTimestamp, 'spoke1 timestamp after');
     // spoke 2
-    assertEq(reservePosition2.suppliedAmount, 0, 'spoke2 suppliedAmount after');
-    assertEq(reservePosition2.suppliedShares, 0, 'spoke2 suppliedShares after');
-    assertEq(reservePosition2.timestamp, assetData.lastUpdateTimestamp, 'spoke2 timestamp after');
+    assertEq(reservePosition1, reservePosition2);
     // asset
     assertEq(underlying.balanceOf(address(spoke1)), 0, 'spoke1 token balance after');
     assertEq(underlying.balanceOf(address(spoke2)), 0, 'spoke2 token balance after');
@@ -164,9 +162,7 @@ contract LiquidityHubRemoveTest is LiquidityHubBase {
     assertEq(reservePosition1.suppliedShares, 0, 'spoke1 suppliedShares after');
     assertEq(reservePosition1.timestamp, assetData.lastUpdateTimestamp, 'spoke1 timestamp after');
     // spoke 2
-    assertEq(reservePosition2.suppliedAmount, 0, 'spoke2 suppliedAmount after');
-    assertEq(reservePosition2.suppliedShares, 0, 'spoke2 suppliedShares after');
-    assertEq(reservePosition2.timestamp, assetData.lastUpdateTimestamp, 'spoke2 timestamp after');
+    assertEq(reservePosition1, reservePosition2);
     // underlying
     assertEq(underlying.balanceOf(address(spoke1)), 0, 'spoke1 token balance after');
     assertEq(underlying.balanceOf(address(spoke2)), 0, 'spoke2 token balance after');
@@ -220,11 +216,7 @@ contract LiquidityHubRemoveTest is LiquidityHubBase {
       'asset lastUpdateTimestamp before'
     );
     // spoke
-    assertEq(reserve.suppliedShares, assetData.suppliedShares, 'reserve suppliedShares before');
-    assertEq(reserve.suppliedAmount, assetData.suppliedAmount, 'reserve suppliedAmount before');
-    assertEq(reserve.baseDebt, assetData.baseDebt, 'reserve baseDebt before');
-    assertEq(reserve.premiumDebt, assetData.premiumDebt, 'reserve premiumDebt before');
-    assertEq(reserve.timestamp, assetData.lastUpdateTimestamp, 'reserve timestamp before');
+    assertEq(reserve, assetData);
     // dai
     assertEq(underlying.balanceOf(address(spoke1)), 0, 'spoke token balance before');
     assertEq(underlying.balanceOf(address(hub)), amount, 'hub token balance before');
@@ -260,10 +252,7 @@ contract LiquidityHubRemoveTest is LiquidityHubBase {
       'asset lastUpdateTimestamp after'
     );
     // spoke
-    assertEq(reserve.suppliedShares, assetData.suppliedShares, 'reserve suppliedShares after');
-    assertEq(reserve.baseDebt, assetData.baseDebt, 'reserve baseDebt after');
-    assertEq(reserve.premiumDebt, assetData.premiumDebt, 'reserve premiumDebt after');
-    assertEq(reserve.timestamp, assetData.lastUpdateTimestamp, 'reserve timestamp after');
+    assertEq(reserve, assetData);
     // dai
     assertEq(underlying.balanceOf(address(spoke1)), 0, 'spoke token balance after');
     assertEq(underlying.balanceOf(address(hub)), 0, 'hub token balance after');
@@ -359,11 +348,7 @@ contract LiquidityHubRemoveTest is LiquidityHubBase {
     assertEq(reserve1.premiumDebt, 0, 'spoke1 premiumDebt');
     assertEq(reserve1.timestamp, vm.getBlockTimestamp(), 'spoke1 timestamp');
     // spoke2
-    assertEq(reserve2.suppliedShares, 0, 'spoke2 suppliedShares');
-    assertEq(reserve2.suppliedAmount, 0, 'spoke2 suppliedAmount');
-    assertEq(reserve2.baseDebt, 0, 'spoke2 baseDebt');
-    assertEq(reserve2.premiumDebt, 0, 'spoke2 premiumDebt');
-    assertEq(reserve2.timestamp, vm.getBlockTimestamp(), 'spoke2 timestamp');
+    assertEq(reserve1, reserve2);
     // dai - all to alice
     assertEq(tokenList.dai.balanceOf(address(spoke1)), 0, 'spoke1 dai balance');
     assertEq(tokenList.dai.balanceOf(address(spoke2)), 0, 'spoke2 dai balance');
@@ -465,11 +450,7 @@ contract LiquidityHubRemoveTest is LiquidityHubBase {
     assertEq(reserve1.premiumDebt, 0, 'spoke1 premiumDebt');
     assertEq(reserve1.timestamp, vm.getBlockTimestamp(), 'spoke1 timestamp');
     // spoke2
-    assertEq(reserve2.suppliedShares, 0, 'spoke2 suppliedShares');
-    assertEq(reserve2.suppliedAmount, 0, 'spoke2 suppliedAmount');
-    assertEq(reserve2.baseDebt, 0, 'spoke2 baseDebt');
-    assertEq(reserve2.premiumDebt, 0, 'spoke2 premiumDebt');
-    assertEq(reserve2.timestamp, vm.getBlockTimestamp(), 'spoke2 timestamp');
+    assertEq(reserve1, reserve2);
     // dai - all to alice
     assertEq(tokenList.dai.balanceOf(address(spoke1)), 0, 'spoke1 dai balance');
     assertEq(tokenList.dai.balanceOf(address(spoke2)), 0, 'spoke2 dai balance');

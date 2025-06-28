@@ -1852,4 +1852,31 @@ abstract contract Base is Test {
         timestamp: vm.getBlockTimestamp().toUint40()
       });
   }
+
+  function assertEq(ReservePosition memory reserve, AssetPosition memory asset) internal pure {
+    assertEq(reserve.assetId, asset.assetId, 'assetId');
+    assertEq(reserve.suppliedShares, asset.suppliedShares, 'suppliedShares');
+    assertEq(reserve.suppliedAmount, asset.suppliedAmount, 'suppliedAmount');
+    assertEq(reserve.baseDrawnShares, asset.baseDrawnShares, 'baseDrawnShares');
+    assertEq(reserve.baseDebt, asset.baseDebt, 'baseDebt');
+    assertEq(reserve.premiumDrawnShares, asset.premiumDrawnShares, 'premiumDrawnShares');
+    assertEq(reserve.premiumOffset, asset.premiumOffset, 'premiumOffset');
+    assertEq(reserve.realizedPremium, asset.realizedPremium, 'realizedPremium');
+    assertEq(reserve.premiumDebt, asset.premiumDebt, 'premiumDebt');
+    assertEq(reserve.timestamp, asset.lastUpdateTimestamp, 'timestamp');
+  }
+
+  function assertEq(ReservePosition memory a, ReservePosition memory b) internal pure {
+    assertEq(a.reserveId, b.reserveId, 'reserveId');
+    assertEq(a.assetId, b.assetId, 'assetId');
+    assertEq(a.suppliedShares, b.suppliedShares, 'suppliedShares');
+    assertEq(a.suppliedAmount, b.suppliedAmount, 'suppliedAmount');
+    assertEq(a.baseDrawnShares, b.baseDrawnShares, 'baseDrawnShares');
+    assertEq(a.baseDebt, b.baseDebt, 'baseDebt');
+    assertEq(a.premiumDrawnShares, b.premiumDrawnShares, 'premiumDrawnShares');
+    assertEq(a.premiumOffset, b.premiumOffset, 'premiumOffset');
+    assertEq(a.realizedPremium, b.realizedPremium, 'realizedPremium');
+    assertEq(a.premiumDebt, b.premiumDebt, 'premiumDebt');
+    assertEq(abi.encode(a), abi.encode(b)); // sanity check
+  }
 }
