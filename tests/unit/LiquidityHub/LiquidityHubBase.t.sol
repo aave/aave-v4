@@ -20,22 +20,40 @@ contract LiquidityHubBase is Base {
     uint256 aliceBalance;
   }
 
+  // struct HubData {
+  //   DataTypes.Asset daiData;
+  //   DataTypes.Asset daiData1;
+  //   DataTypes.Asset daiData2;
+  //   DataTypes.Asset daiData3;
+  //   DataTypes.Asset wethData;
+  //   DataTypes.SpokeData spoke1WethData;
+  //   DataTypes.SpokeData spoke1DaiData;
+  //   DataTypes.SpokeData spoke2WethData;
+  //   DataTypes.SpokeData spoke2DaiData;
+  //   uint256 timestamp;
+  //   uint256 accruedBase;
+  //   uint256 initialAvailableLiquidity;
+  //   uint256 initialSupplyShares;
+  //   uint256 supply2Amount;
+  //   uint256 expectedSupply2Shares;
+  // }
+
   struct HubData {
-    DataTypes.Asset daiData;
-    DataTypes.Asset daiData1;
-    DataTypes.Asset daiData2;
-    DataTypes.Asset daiData3;
-    DataTypes.Asset wethData;
-    DataTypes.SpokeData spoke1WethData;
-    DataTypes.SpokeData spoke1DaiData;
-    DataTypes.SpokeData spoke2WethData;
-    DataTypes.SpokeData spoke2DaiData;
-    uint256 timestamp;
-    uint256 accruedBase;
-    uint256 initialAvailableLiquidity;
-    uint256 initialSupplyShares;
-    uint256 supply2Amount;
-    uint256 expectedSupply2Shares;
+    AssetPosition daiData;
+    // DataTypes.Asset daiData1;
+    // DataTypes.Asset daiData2;
+    // DataTypes.Asset daiData3;
+    AssetPosition wethData;
+    ReservePosition spoke1WethData;
+    ReservePosition spoke1DaiData;
+    // DataTypes.SpokeData spoke2WethData;
+    ReservePosition spoke2DaiData;
+    // uint256 timestamp;
+    // uint256 accruedBase;
+    // uint256 initialAvailableLiquidity;
+    // uint256 initialSupplyShares;
+    // uint256 supply2Amount;
+    // uint256 expectedSupply2Shares;
   }
 
   struct DebtData {
