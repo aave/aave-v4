@@ -91,6 +91,9 @@ contract LiquidityHub is ILiquidityHub {
     // TODO: AccessControl
 
     require(spoke != address(0), InvalidSpoke()); // todo: how to remove spoke
+    /// @dev make sure asset is listed
+    _getAsset(assetId);
+
     _spokes[assetId][spoke] = DataTypes.SpokeData({
       suppliedShares: 0,
       baseDrawnShares: 0,
@@ -111,6 +114,8 @@ contract LiquidityHub is ILiquidityHub {
     DataTypes.SpokeConfig calldata config
   ) external {
     // TODO: AccessControl
+
+    require(_spokes[assetId][spoke].lastUpdateTimestamp != 0, SpokeNotListed());
 
     _spokes[assetId][spoke].config = config;
     emit SpokeConfigUpdated(assetId, spoke, config);

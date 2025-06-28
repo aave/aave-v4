@@ -64,6 +64,7 @@ interface ILiquidityHub {
   error DrawCapExceeded(uint256 drawCap);
   error SurplusAmountRestored(uint256 maxAllowedRestore);
   error InvalidSpoke();
+  error SpokeNotListed();
   error InvalidRiskPremiumBps(uint256 bps);
   error AssetPaused();
   error AssetFrozen();

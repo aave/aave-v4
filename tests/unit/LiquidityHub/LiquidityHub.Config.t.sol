@@ -6,6 +6,15 @@ import 'tests/unit/LiquidityHub/LiquidityHubBase.t.sol';
 contract LiquidityHubConfigTest is LiquidityHubBase {
   using SharesMath for uint256;
 
+  function test_addSpoke_fuzz_revertsWith_AssetNotListed(
+    uint256 assetId,
+    DataTypes.SpokeConfig calldata spokeConfig
+  ) public {
+    assetId = bound(assetId, hub.assetCount(), type(uint256).max);
+    vm.expectRevert(ILiquidityHub.AssetNotListed.selector);
+    Utils.addSpoke(hub, assetId, address(spoke1), spokeConfig);
+  }
+
   function test_addSpoke_fuzz_revertsWith_InvalidSpoke(
     uint256 assetId,
     DataTypes.SpokeConfig calldata spokeConfig
@@ -37,11 +46,23 @@ contract LiquidityHubConfigTest is LiquidityHubBase {
     );
   }
 
+  function test_updateSpokeConfig_fuzz_revertsWith_SpokeNotListed(
+    uint256 assetId,
+    address spoke,
+    DataTypes.SpokeConfig calldata spokeConfig
+  ) public {
+    if (hub.getSpoke(assetId, spoke).lastUpdateTimestamp != 0) {
+      assetId = bound(assetId, hub.assetCount(), type(uint256).max);
+    }
+    vm.expectRevert(ILiquidityHub.SpokeNotListed.selector);
+    Utils.updateSpokeConfig(hub, assetId, spoke, spokeConfig);
+  }
+
   function test_updateSpokeConfig_fuzz(
     uint256 assetId,
     DataTypes.SpokeConfig calldata spokeConfig
   ) public {
-    assetId = bound(assetId, 0, hub.assetCount() - 1);
+    assetId = bound(assetId, 0, hub.assetCount() - 3); // Exclude duplicated DAI and usdy
 
     vm.expectEmit(address(hub));
     emit ILiquidityHub.SpokeConfigUpdated(assetId, address(spoke1), spokeConfig);
@@ -337,5 +358,8 @@ contract LiquidityHubConfigTest is LiquidityHubBase {
     vm.assume(address(newConfig.feeReceiver) != address(0) || newConfig.liquidityFee == 0);
     assumeNotPrecompile(newConfig.feeReceiver);
     assumeNotForgeAddress(newConfig.feeReceiver);
+    assumeNotZeroAddress(newConfig.irStrategy);
+    assumeNotPrecompile(newConfig.irStrategy);
+    assumeNotForgeAddress(newConfig.irStrategy);
   }
 }
