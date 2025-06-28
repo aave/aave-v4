@@ -597,12 +597,6 @@ contract Spoke is ISpoke, Multicall {
       config.liquidationFee <= PercentageMathExtended.PERCENTAGE_FACTOR,
       InvalidLiquidationProtocolFee()
     );
-    if (config.liquidationFee > 0) {
-      require(
-        config.hub.getAssetConfig(assetId).feeReceiver != address(0),
-        InvalidLiquidationProtocolFeeReceiver()
-      );
-    }
   }
 
   function _validateDynamicReserveConfig(

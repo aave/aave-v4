@@ -67,11 +67,9 @@ interface ISpoke is IMulticall {
   );
 
   error InvalidReserve();
-  error UserNotBorrowingReserve(uint256 reserveId);
   error ReserveNotListed();
   error InvalidLiquidityPremium();
   error InsufficientSupply(uint256 supply);
-  error NotAvailableLiquidity(uint256 availableLiquidity);
   error ReserveNotBorrowable(uint256 reserveId);
   error ReserveCannotBeUsedAsCollateral(uint256 reserveId);
   error ReserveNotActive();
@@ -94,7 +92,6 @@ interface ISpoke is IMulticall {
   error UsersAndDebtLengthMismatch();
   error Unauthorized();
   error CollateralStatusUnchanged();
-  error InvalidLiquidationProtocolFeeReceiver();
 
   function addReserve(
     uint256 assetId,
@@ -237,5 +234,6 @@ interface ISpoke is IMulticall {
   function HEALTH_FACTOR_LIQUIDATION_THRESHOLD() external view returns (uint256);
 
   function MAX_LIQUIDITY_PREMIUM() external view returns (uint256);
+
   function oracle() external view returns (IPriceOracle);
 }
