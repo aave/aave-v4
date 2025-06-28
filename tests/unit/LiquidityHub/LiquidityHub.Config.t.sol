@@ -10,7 +10,7 @@ contract LiquidityHubConfigTest is LiquidityHubBase {
     uint256 assetId,
     DataTypes.SpokeConfig calldata spokeConfig
   ) public {
-    assetId = bound(assetId, hub.assetCount(), type(uint256).max);
+    assetId = bound(assetId, hub.getAssetCount(), type(uint256).max);
     vm.expectRevert(ILiquidityHub.AssetNotListed.selector);
     Utils.addSpoke(hub, assetId, address(spoke1), spokeConfig);
   }
@@ -19,14 +19,14 @@ contract LiquidityHubConfigTest is LiquidityHubBase {
     uint256 assetId,
     DataTypes.SpokeConfig calldata spokeConfig
   ) public {
-    assetId = bound(assetId, 0, hub.assetCount() - 1);
+    assetId = bound(assetId, 0, hub.getAssetCount() - 1);
 
     vm.expectRevert(abi.encodeWithSelector(ILiquidityHub.InvalidSpoke.selector));
     Utils.addSpoke(hub, assetId, address(0), spokeConfig);
   }
 
   function test_addSpoke_fuzz(uint256 assetId, DataTypes.SpokeConfig calldata spokeConfig) public {
-    assetId = bound(assetId, 0, hub.assetCount() - 1);
+    assetId = bound(assetId, 0, hub.getAssetCount() - 1);
 
     vm.expectEmit(address(hub));
     emit ILiquidityHub.SpokeAdded(assetId, address(spoke1));
@@ -52,7 +52,7 @@ contract LiquidityHubConfigTest is LiquidityHubBase {
     DataTypes.SpokeConfig calldata spokeConfig
   ) public {
     if (hub.getSpoke(assetId, spoke).lastUpdateTimestamp != 0) {
-      assetId = bound(assetId, hub.assetCount(), type(uint256).max);
+      assetId = bound(assetId, hub.getAssetCount(), type(uint256).max);
     }
     vm.expectRevert(ILiquidityHub.SpokeNotListed.selector);
     Utils.updateSpokeConfig(hub, assetId, spoke, spokeConfig);
@@ -62,7 +62,7 @@ contract LiquidityHubConfigTest is LiquidityHubBase {
     uint256 assetId,
     DataTypes.SpokeConfig calldata spokeConfig
   ) public {
-    assetId = bound(assetId, 0, hub.assetCount() - 3); // Exclude duplicated DAI and usdy
+    assetId = bound(assetId, 0, hub.getAssetCount() - 3); // Exclude duplicated DAI and usdy
 
     vm.expectEmit(address(hub));
     emit ILiquidityHub.SpokeConfigUpdated(assetId, address(spoke1), spokeConfig);
@@ -103,7 +103,7 @@ contract LiquidityHubConfigTest is LiquidityHubBase {
     vm.assume(asset != address(0) && interestRateStrategy != address(0));
     decimals = uint8(bound(decimals, 0, hub.MAX_ALLOWED_ASSET_DECIMALS()));
 
-    uint256 expectedAssetId = hub.assetCount();
+    uint256 expectedAssetId = hub.getAssetCount();
     DataTypes.AssetConfig memory expectedConfig = DataTypes.AssetConfig({
       active: true,
       frozen: false,
@@ -121,7 +121,7 @@ contract LiquidityHubConfigTest is LiquidityHubBase {
     uint256 assetId = Utils.addAsset(hub, asset, decimals, interestRateStrategy);
 
     assertEq(assetId, expectedAssetId, 'asset id');
-    assertEq(hub.assetCount(), assetId + 1, 'asset count');
+    assertEq(hub.getAssetCount(), assetId + 1, 'asset count');
     assertEq(hub.getAsset(assetId).decimals, decimals, 'asset decimals');
     assertEq(hub.getAssetConfig(assetId), expectedConfig);
   }
@@ -130,7 +130,7 @@ contract LiquidityHubConfigTest is LiquidityHubBase {
     uint256 assetId,
     DataTypes.AssetConfig memory newConfig
   ) public {
-    assetId = bound(assetId, 0, hub.assetCount() - 1);
+    assetId = bound(assetId, 0, hub.getAssetCount() - 1);
     _assumeValidAssetConfig(assetId, newConfig);
     newConfig.irStrategy = address(0);
 
@@ -142,7 +142,7 @@ contract LiquidityHubConfigTest is LiquidityHubBase {
     uint256 assetId,
     DataTypes.AssetConfig memory newConfig
   ) public {
-    assetId = bound(assetId, 0, hub.assetCount() - 1);
+    assetId = bound(assetId, 0, hub.getAssetCount() - 1);
     _assumeValidAssetConfig(assetId, newConfig);
     newConfig.liquidityFee = vm.randomUint(
       PercentageMathExtended.PERCENTAGE_FACTOR + 1,
@@ -156,7 +156,7 @@ contract LiquidityHubConfigTest is LiquidityHubBase {
     uint256 assetId,
     DataTypes.AssetConfig memory newConfig
   ) public {
-    assetId = bound(assetId, 0, hub.assetCount() - 1);
+    assetId = bound(assetId, 0, hub.getAssetCount() - 1);
     _assumeValidAssetConfig(assetId, newConfig);
     newConfig.liquidityFee = vm.randomUint(1, PercentageMathExtended.PERCENTAGE_FACTOR);
     newConfig.feeReceiver = address(0);
@@ -168,7 +168,7 @@ contract LiquidityHubConfigTest is LiquidityHubBase {
     uint256 assetId,
     DataTypes.AssetConfig memory newConfig
   ) public {
-    assetId = bound(assetId, 0, hub.assetCount() - 1);
+    assetId = bound(assetId, 0, hub.getAssetCount() - 1);
     _assumeValidAssetConfig(assetId, newConfig);
     assumeUnusedAddress(newConfig.irStrategy);
     vm.expectRevert();
@@ -179,7 +179,7 @@ contract LiquidityHubConfigTest is LiquidityHubBase {
     uint256 assetId,
     DataTypes.AssetConfig memory newConfig
   ) public {
-    assetId = bound(assetId, 0, hub.assetCount() - 1);
+    assetId = bound(assetId, 0, hub.getAssetCount() - 1);
     _assumeValidAssetConfig(assetId, newConfig);
     _mockInterestRate(newConfig.irStrategy, 5_00);
 
@@ -195,7 +195,7 @@ contract LiquidityHubConfigTest is LiquidityHubBase {
   }
 
   function test_updateAssetConfig_fuzz_Scenario(uint256 assetId) public {
-    assetId = bound(assetId, 0, hub.assetCount() - 1);
+    assetId = bound(assetId, 0, hub.getAssetCount() - 1);
 
     DataTypes.AssetConfig memory config = hub.getAssetConfig(assetId);
     // set same config
@@ -218,7 +218,7 @@ contract LiquidityHubConfigTest is LiquidityHubBase {
 
   /// Updates to new fee receiver, with previously accrued fees not transferred to the new receiver
   function test_updateAssetConfig_fuzz_NewFeeReceiver(uint256 assetId) public {
-    assetId = bound(assetId, 0, hub.assetCount() - 1);
+    assetId = bound(assetId, 0, hub.getAssetCount() - 1);
 
     uint256 amount = 1000e18;
     _addLiquidity(assetId, amount);
@@ -239,7 +239,7 @@ contract LiquidityHubConfigTest is LiquidityHubBase {
 
   /// Updates the fee receiver by reusing a previously assigned spoke, with no impact on accrued fees
   function test_updateAssetConfig_fuzz_ReuseFeeReceiver(uint256 assetId) public {
-    assetId = bound(assetId, 0, hub.assetCount() - 1);
+    assetId = bound(assetId, 0, hub.getAssetCount() - 1);
     test_updateAssetConfig_fuzz_NewFeeReceiver(assetId);
 
     address oldFeeReceiver = address(treasurySpoke);
@@ -262,7 +262,7 @@ contract LiquidityHubConfigTest is LiquidityHubBase {
 
   /// Updates the fee receiver from zero to non-zero, even with zero liquidity fee
   function test_updateAssetConfig_fuzz_FromZeroFeeReceiver(uint256 assetId) public {
-    assetId = bound(assetId, 0, hub.assetCount() - 1);
+    assetId = bound(assetId, 0, hub.getAssetCount() - 1);
 
     DataTypes.AssetConfig memory config = hub.getAssetConfig(assetId);
     config.feeReceiver = address(0);
@@ -281,7 +281,7 @@ contract LiquidityHubConfigTest is LiquidityHubBase {
 
   /// Triggers accrual when liquidity fee update, based on old liquidity fee
   function test_updateAssetConfig_fuzz_LiquidityFee(uint256 assetId, uint256 liquidityFee) public {
-    assetId = bound(assetId, 0, hub.assetCount() - 1);
+    assetId = bound(assetId, 0, hub.getAssetCount() - 1);
     liquidityFee = bound(liquidityFee, 1, PercentageMathExtended.PERCENTAGE_FACTOR);
 
     uint256 amount = 1000e18;
@@ -303,7 +303,7 @@ contract LiquidityHubConfigTest is LiquidityHubBase {
     uint256 assetId,
     uint256 liquidityFee
   ) public {
-    assetId = bound(assetId, 0, hub.assetCount() - 1);
+    assetId = bound(assetId, 0, hub.getAssetCount() - 1);
     liquidityFee = bound(liquidityFee, 1, PercentageMathExtended.PERCENTAGE_FACTOR);
 
     DataTypes.AssetConfig memory config = hub.getAssetConfig(assetId);
@@ -326,7 +326,7 @@ contract LiquidityHubConfigTest is LiquidityHubBase {
   /// Triggers accrual when interest rate strategy is updated, based on old strategy
   /// Also makes sure that the base borrow rate is updated after accrual
   function test_updateAssetConfig_fuzz_NewInterestRateStrategy(uint256 assetId) public {
-    assetId = bound(assetId, 0, hub.assetCount() - 1);
+    assetId = bound(assetId, 0, hub.getAssetCount() - 1);
 
     uint256 amount = 1000e18;
     _addLiquidity(assetId, amount);

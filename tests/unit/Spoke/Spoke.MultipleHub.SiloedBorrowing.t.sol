@@ -38,7 +38,7 @@ contract SpokeMultipleHubSiloedBorrowingTest is SpokeMultipleHubBase {
       assetB.decimals(),
       address(newIrStrategy)
     );
-    siloedVars.assetBId = newHub.assetCount() - 1;
+    siloedVars.assetBId = newHub.getAssetCount() - 1;
 
     // Add B reserve to the new spoke
     siloedVars.reserveBId = newSpoke.addReserve(
@@ -76,7 +76,7 @@ contract SpokeMultipleHubSiloedBorrowingTest is SpokeMultipleHubBase {
       assetA.decimals(),
       address(irStrategy) // Use the canonical hub's interest rate strategy
     );
-    siloedVars.assetAId = hub.assetCount() - 1;
+    siloedVars.assetAId = hub.getAssetCount() - 1;
 
     // Add A reserve to spoke 1
     siloedVars.reserveAId = spoke1.addReserve(

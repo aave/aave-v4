@@ -30,13 +30,13 @@ contract SpokeMultipleHubIsolationModeTest is SpokeMultipleHubBase {
       assetA.decimals(),
       address(newIrStrategy)
     );
-    isolationVars.assetAId = newHub.assetCount() - 1;
+    isolationVars.assetAId = newHub.getAssetCount() - 1;
     newHub.addAsset(
       address(assetB),
       assetB.decimals(),
       address(newIrStrategy)
     );
-    isolationVars.assetBId = newHub.assetCount() - 1;
+    isolationVars.assetBId = newHub.getAssetCount() - 1;
 
     // Add reserves to the new spoke
     isolationVars.reserveAId = newSpoke.addReserve(
@@ -91,7 +91,7 @@ contract SpokeMultipleHubIsolationModeTest is SpokeMultipleHubBase {
     newIrStrategy.setInterestRateData(isolationVars.assetBId, irData);
 
     // List asset B on the canonical hub
-    isolationVars.assetBIdMainHub = hub.assetCount();
+    isolationVars.assetBIdMainHub = hub.getAssetCount();
     hub.addAsset(
       address(assetB),
       assetB.decimals(),

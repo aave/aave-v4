@@ -96,7 +96,7 @@ contract LiquidityHubHandler is Test {
 
   function supply(uint256 assetId, address user, uint256 amount, address onBehalfOf) public {
     vm.assume(user != address(hub) && user != address(0) && onBehalfOf != address(0));
-    assetId = bound(assetId, 0, hub.assetCount() - 1);
+    assetId = bound(assetId, 0, hub.getAssetCount() - 1);
     amount = bound(amount, 1, type(uint128).max);
 
     deal(hub.getAsset(assetId).underlying, user, amount);
@@ -115,7 +115,7 @@ contract LiquidityHubHandler is Test {
   }
 
   function withdraw(uint256 assetId, address user, uint256 amount, address to) public {
-    assetId = bound(assetId, 0, hub.assetCount() - 1);
+    assetId = bound(assetId, 0, hub.getAssetCount() - 1);
     // TODO: bound by spoke1 user balance
     amount = bound(amount, 1, 2);
 
@@ -128,7 +128,7 @@ contract LiquidityHubHandler is Test {
 
   function donate(uint256 assetId, address user, uint256 amount) public {
     vm.assume(user != address(hub) && user != address(0));
-    assetId = bound(assetId, 0, hub.assetCount() - 1);
+    assetId = bound(assetId, 0, hub.getAssetCount() - 1);
     amount = bound(amount, 1, type(uint128).max);
 
     address asset = hub.getAsset(assetId).underlying;

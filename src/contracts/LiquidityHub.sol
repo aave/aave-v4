@@ -20,7 +20,7 @@ contract LiquidityHub is ILiquidityHub {
 
   uint8 public constant MAX_ALLOWED_ASSET_DECIMALS = 18;
 
-  uint256 public assetCount;
+  uint256 internal _assetCount;
   mapping(uint256 assetId => DataTypes.Asset assetData) internal _assets;
   mapping(uint256 assetId => mapping(address spokeAddress => DataTypes.SpokeData spokeData))
     internal _spokes;
@@ -37,7 +37,7 @@ contract LiquidityHub is ILiquidityHub {
     require(decimals <= MAX_ALLOWED_ASSET_DECIMALS, InvalidAssetDecimals());
     require(irStrategy != address(0), InvalidIrStrategy());
 
-    uint256 assetId = assetCount++;
+    uint256 assetId = _assetCount++;
     DataTypes.AssetConfig memory config = DataTypes.AssetConfig({
       active: true,
       paused: false,
@@ -299,13 +299,17 @@ contract LiquidityHub is ILiquidityHub {
   }
 
   function _getAsset(uint256 assetId) internal view returns (DataTypes.Asset storage) {
-    require(assetId < assetCount, AssetNotListed());
+    require(assetId < _assetCount, AssetNotListed());
     return _assets[assetId];
   }
 
   //
   // public
   //
+
+  function getAssetCount() external view override returns (uint256) {
+    return _assetCount;
+  }
 
   function getAsset(uint256 assetId) external view returns (DataTypes.Asset memory) {
     return _getAsset(assetId);

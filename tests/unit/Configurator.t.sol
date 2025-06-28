@@ -151,7 +151,7 @@ contract ConfiguratorTest is LiquidityHubBase {
     vm.assume(asset != address(0) && interestRateStrategy != address(0));
     decimals = uint8(bound(decimals, 0, hub.MAX_ALLOWED_ASSET_DECIMALS()));
 
-    uint256 expectedAssetId = hub.assetCount();
+    uint256 expectedAssetId = hub.getAssetCount();
     DataTypes.AssetConfig memory expectedConfig = DataTypes.AssetConfig({
       active: true,
       paused: false,
@@ -170,7 +170,7 @@ contract ConfiguratorTest is LiquidityHubBase {
     uint256 assetId = _addAsset(fetchErc20Decimals, asset, decimals, interestRateStrategy);
 
     assertEq(assetId, expectedAssetId, 'asset id');
-    assertEq(hub.assetCount(), assetId + 1, 'asset count');
+    assertEq(hub.getAssetCount(), assetId + 1, 'asset count');
     assertEq(hub.getAsset(assetId).decimals, decimals, 'asset decimals');
     assertEq(hub.getAssetConfig(assetId), expectedConfig);
   }
@@ -186,7 +186,7 @@ contract ConfiguratorTest is LiquidityHubBase {
   }
 
   function test_updateActive_fuzz(uint256 assetId, bool active) public {
-    assetId = bound(assetId, 0, hub.assetCount() - 1);
+    assetId = bound(assetId, 0, hub.getAssetCount() - 1);
 
     DataTypes.AssetConfig memory expectedConfig = hub.getAssetConfig(assetId);
     expectedConfig.active = active;
@@ -213,7 +213,7 @@ contract ConfiguratorTest is LiquidityHubBase {
   }
 
   function test_updatePaused_fuzz(uint256 assetId, bool paused) public {
-    assetId = bound(assetId, 0, hub.assetCount() - 1);
+    assetId = bound(assetId, 0, hub.getAssetCount() - 1);
 
     DataTypes.AssetConfig memory expectedConfig = hub.getAssetConfig(assetId);
     expectedConfig.paused = paused;
@@ -240,7 +240,7 @@ contract ConfiguratorTest is LiquidityHubBase {
   }
 
   function test_updateFrozen_fuzz(uint256 assetId, bool frozen) public {
-    assetId = bound(assetId, 0, hub.assetCount() - 1);
+    assetId = bound(assetId, 0, hub.getAssetCount() - 1);
 
     DataTypes.AssetConfig memory expectedConfig = hub.getAssetConfig(assetId);
     expectedConfig.frozen = frozen;
@@ -270,7 +270,7 @@ contract ConfiguratorTest is LiquidityHubBase {
     uint256 assetId,
     uint256 liquidityFee
   ) public {
-    assetId = bound(assetId, 0, hub.assetCount() - 1);
+    assetId = bound(assetId, 0, hub.getAssetCount() - 1);
     liquidityFee = bound(
       liquidityFee,
       PercentageMathExtended.PERCENTAGE_FACTOR + 1,
@@ -283,7 +283,7 @@ contract ConfiguratorTest is LiquidityHubBase {
   }
 
   function test_updateLiquidityFee_fuzz(uint256 assetId, uint256 liquidityFee) public {
-    assetId = bound(assetId, 0, hub.assetCount() - 1);
+    assetId = bound(assetId, 0, hub.getAssetCount() - 1);
     liquidityFee = bound(liquidityFee, 0, PercentageMathExtended.PERCENTAGE_FACTOR);
 
     DataTypes.AssetConfig memory expectedConfig = hub.getAssetConfig(assetId);
@@ -311,7 +311,7 @@ contract ConfiguratorTest is LiquidityHubBase {
   }
 
   function test_updateFeeReceiver_fuzz_revertsWith_InvalidFeeReceiver(uint256 assetId) public {
-    assetId = bound(assetId, 0, hub.assetCount() - 1);
+    assetId = bound(assetId, 0, hub.getAssetCount() - 1);
     assert(hub.getAssetConfig(assetId).liquidityFee != 0);
 
     vm.expectRevert(ILiquidityHub.InvalidFeeReceiver.selector);
@@ -324,7 +324,7 @@ contract ConfiguratorTest is LiquidityHubBase {
   }
 
   function test_updateFeeReceiver_fuzz(uint256 assetId, address feeReceiver) public {
-    assetId = bound(assetId, 0, hub.assetCount() - 1);
+    assetId = bound(assetId, 0, hub.getAssetCount() - 1);
     if (feeReceiver == address(0)) {
       test_updateLiquidityFee_fuzz(assetId, 0);
     }
@@ -418,7 +418,7 @@ contract ConfiguratorTest is LiquidityHubBase {
     uint256 liquidityFee,
     address feeReceiver
   ) public {
-    assetId = bound(assetId, 0, hub.assetCount() - 1);
+    assetId = bound(assetId, 0, hub.getAssetCount() - 1);
     liquidityFee = bound(
       liquidityFee,
       PercentageMathExtended.PERCENTAGE_FACTOR + 1,
@@ -436,7 +436,7 @@ contract ConfiguratorTest is LiquidityHubBase {
     uint256 liquidityFee,
     address feeReceiver
   ) public {
-    assetId = bound(assetId, 0, hub.assetCount() - 1);
+    assetId = bound(assetId, 0, hub.getAssetCount() - 1);
     liquidityFee = bound(liquidityFee, 1, PercentageMathExtended.PERCENTAGE_FACTOR);
 
     vm.expectRevert(ILiquidityHub.InvalidFeeReceiver.selector);
@@ -449,7 +449,7 @@ contract ConfiguratorTest is LiquidityHubBase {
     uint256 liquidityFee,
     address feeReceiver
   ) public {
-    assetId = bound(assetId, 0, hub.assetCount() - 1);
+    assetId = bound(assetId, 0, hub.getAssetCount() - 1);
     if (feeReceiver == address(0)) {
       liquidityFee = 0;
     } else {
@@ -541,7 +541,7 @@ contract ConfiguratorTest is LiquidityHubBase {
   function test_updateInterestRateStrategy_fuzz_revertsWith_InvalidIrStrategy(
     uint256 assetId
   ) public {
-    assetId = bound(assetId, 0, hub.assetCount() - 1);
+    assetId = bound(assetId, 0, hub.getAssetCount() - 1);
 
     vm.expectRevert(ILiquidityHub.InvalidIrStrategy.selector);
     vm.prank(CONFIGURATOR_ADMIN);
@@ -552,7 +552,7 @@ contract ConfiguratorTest is LiquidityHubBase {
     uint256 assetId,
     address interestRateStrategy
   ) public {
-    assetId = bound(assetId, 0, hub.assetCount() - 1);
+    assetId = bound(assetId, 0, hub.getAssetCount() - 1);
     assumeUnusedAddress(interestRateStrategy);
 
     vm.expectRevert();
@@ -566,7 +566,7 @@ contract ConfiguratorTest is LiquidityHubBase {
   ) public {
     assumeUnusedAddress(interestRateStrategy);
 
-    assetId = bound(assetId, 0, hub.assetCount() - 1);
+    assetId = bound(assetId, 0, hub.getAssetCount() - 1);
 
     DataTypes.AssetConfig memory expectedConfig = hub.getAssetConfig(assetId);
     expectedConfig.irStrategy = interestRateStrategy;

@@ -681,7 +681,7 @@ abstract contract Base is Test {
 
     // Spoke 2 to have an extra dai reserve
     hub.addAsset(address(tokenList.dai), tokenList.dai.decimals(), address(irStrategy));
-    hub.addSpoke(hub.assetCount() - 1, address(treasurySpoke), spokeConfig);
+    hub.addSpoke(hub.getAssetCount() - 1, address(treasurySpoke), spokeConfig);
     irStrategy.setInterestRateData(
       dai2AssetId,
       IAssetInterestRateStrategy.InterestRateData({
@@ -692,7 +692,7 @@ abstract contract Base is Test {
       })
     );
     hub.updateAssetConfig(
-      hub.assetCount() - 1,
+      hub.getAssetCount() - 1,
       DataTypes.AssetConfig({
         active: true,
         paused: false,

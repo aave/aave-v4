@@ -313,7 +313,7 @@ contract LiquidityHubSupplyTest is LiquidityHubBase {
   function test_supply_fuzz_single_asset(uint256 assetId, address user, uint256 amount) public {
     _assumeValidSupplier(user);
 
-    assetId = bound(assetId, 0, hub.assetCount() - 2); // Exclude duplicated DAI
+    assetId = bound(assetId, 0, hub.getAssetCount() - 2); // Exclude duplicated DAI
     amount = bound(amount, 1, MAX_SUPPLY_AMOUNT);
 
     uint256 expectedSupplyShares = hub.convertToSuppliedShares(daiAssetId, amount);
@@ -362,7 +362,7 @@ contract LiquidityHubSupplyTest is LiquidityHubBase {
     uint256 amount,
     uint256 amount2
   ) public {
-    assetId = bound(assetId, 0, hub.assetCount() - 4); // Exclude duplicated DAI and usdy
+    assetId = bound(assetId, 0, hub.getAssetCount() - 4); // Exclude duplicated DAI and usdy
     amount = bound(amount, 1, MAX_SUPPLY_AMOUNT);
     amount2 = bound(amount2, 1, MAX_SUPPLY_AMOUNT);
 
