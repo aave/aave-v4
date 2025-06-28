@@ -2,7 +2,6 @@
 pragma solidity ^0.8.10;
 
 import 'tests/unit/LiquidityHub/LiquidityHubBase.t.sol';
-import {Configurator, IConfigurator} from 'src/contracts/Configurator.sol';
 
 contract ConfiguratorTest is LiquidityHubBase {
   Configurator internal configurator;
@@ -402,12 +401,12 @@ contract ConfiguratorTest is LiquidityHubBase {
     vm.assume(caller != CONFIGURATOR_ADMIN);
     vm.expectRevert(abi.encodeWithSelector(Ownable.OwnableUnauthorizedAccount.selector, caller));
     vm.prank(caller);
-    configurator.updateFeeConfig(
-      address(hub),
-      vm.randomUint(),
-      vm.randomUint(),
-      vm.randomAddress()
-    );
+    configurator.updateFeeConfig({
+      hub: address(hub),
+      assetId: vm.randomUint(),
+      liquidityFee: vm.randomUint(),
+      feeReceiver: vm.randomAddress()
+    });
   }
 
   function test_updateFeeConfig_fuzz_revertsWith_InvalidLiquidityFee(
