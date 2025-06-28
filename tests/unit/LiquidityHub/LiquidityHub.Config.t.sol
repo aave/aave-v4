@@ -335,5 +335,7 @@ contract LiquidityHubConfigTest is LiquidityHubBase {
       PercentageMathExtended.PERCENTAGE_FACTOR
     );
     vm.assume(address(newConfig.feeReceiver) != address(0) || newConfig.liquidityFee == 0);
+    assumeNotPrecompile(newConfig.feeReceiver);
+    assumeNotForgeAddress(newConfig.feeReceiver);
   }
 }
