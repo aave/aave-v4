@@ -90,9 +90,8 @@ contract LiquidityHub is ILiquidityHub {
   ) external {
     // TODO: AccessControl
 
-    require(spoke != address(0), InvalidSpoke()); // todo: how to remove spoke
-    /// @dev make sure asset is listed
     _getAsset(assetId);
+    require(spoke != address(0), InvalidSpoke()); // todo: how to remove spoke
 
     _spokes[assetId][spoke] = DataTypes.SpokeData({
       suppliedShares: 0,

@@ -48,23 +48,26 @@ contract Configurator is Ownable, IConfigurator {
 
   /// @inheritdoc IConfigurator
   function updateActive(address hub, uint256 assetId, bool active) external override onlyOwner {
-    DataTypes.AssetConfig memory config = _getAssetConfig(hub, assetId);
+    ILiquidityHub targetHub = ILiquidityHub(hub);
+    DataTypes.AssetConfig memory config = _getAssetConfig(targetHub, assetId);
     config.active = active;
-    ILiquidityHub(hub).updateAssetConfig(assetId, config);
+    targetHub.updateAssetConfig(assetId, config);
   }
 
   /// @inheritdoc IConfigurator
   function updatePaused(address hub, uint256 assetId, bool paused) external override onlyOwner {
-    DataTypes.AssetConfig memory config = _getAssetConfig(hub, assetId);
+    ILiquidityHub targetHub = ILiquidityHub(hub);
+    DataTypes.AssetConfig memory config = _getAssetConfig(targetHub, assetId);
     config.paused = paused;
-    ILiquidityHub(hub).updateAssetConfig(assetId, config);
+    targetHub.updateAssetConfig(assetId, config);
   }
 
   /// @inheritdoc IConfigurator
   function updateFrozen(address hub, uint256 assetId, bool frozen) external override onlyOwner {
-    DataTypes.AssetConfig memory config = _getAssetConfig(hub, assetId);
+    ILiquidityHub targetHub = ILiquidityHub(hub);
+    DataTypes.AssetConfig memory config = _getAssetConfig(targetHub, assetId);
     config.frozen = frozen;
-    ILiquidityHub(hub).updateAssetConfig(assetId, config);
+    targetHub.updateAssetConfig(assetId, config);
   }
 
   /// @inheritdoc IConfigurator
@@ -73,9 +76,10 @@ contract Configurator is Ownable, IConfigurator {
     uint256 assetId,
     uint256 liquidityFee
   ) external override onlyOwner {
-    DataTypes.AssetConfig memory config = _getAssetConfig(hub, assetId);
+    ILiquidityHub targetHub = ILiquidityHub(hub);
+    DataTypes.AssetConfig memory config = _getAssetConfig(targetHub, assetId);
     config.liquidityFee = liquidityFee;
-    ILiquidityHub(hub).updateAssetConfig(assetId, config);
+    targetHub.updateAssetConfig(assetId, config);
   }
 
   /// @inheritdoc IConfigurator
@@ -84,10 +88,11 @@ contract Configurator is Ownable, IConfigurator {
     uint256 assetId,
     address feeReceiver
   ) external override onlyOwner {
-    DataTypes.AssetConfig memory config = _getAssetConfig(hub, assetId);
-    _updateFeeReceiverSpokeConfig(hub, assetId, config, feeReceiver);
+    ILiquidityHub targetHub = ILiquidityHub(hub);
+    DataTypes.AssetConfig memory config = _getAssetConfig(targetHub, assetId);
+    _updateFeeReceiverSpokeConfig(targetHub, assetId, config, feeReceiver);
     config.feeReceiver = feeReceiver;
-    ILiquidityHub(hub).updateAssetConfig(assetId, config);
+    targetHub.updateAssetConfig(assetId, config);
   }
 
   /// @inheritdoc IConfigurator
@@ -97,11 +102,12 @@ contract Configurator is Ownable, IConfigurator {
     uint256 liquidityFee,
     address feeReceiver
   ) external override onlyOwner {
-    DataTypes.AssetConfig memory config = _getAssetConfig(hub, assetId);
-    _updateFeeReceiverSpokeConfig(hub, assetId, config, feeReceiver);
+    ILiquidityHub targetHub = ILiquidityHub(hub);
+    DataTypes.AssetConfig memory config = _getAssetConfig(targetHub, assetId);
+    _updateFeeReceiverSpokeConfig(targetHub, assetId, config, feeReceiver);
     config.liquidityFee = liquidityFee;
     config.feeReceiver = feeReceiver;
-    ILiquidityHub(hub).updateAssetConfig(assetId, config);
+    targetHub.updateAssetConfig(assetId, config);
   }
 
   /// @inheritdoc IConfigurator
@@ -110,20 +116,21 @@ contract Configurator is Ownable, IConfigurator {
     uint256 assetId,
     address irStrategy
   ) external override onlyOwner {
-    DataTypes.AssetConfig memory config = _getAssetConfig(hub, assetId);
+    ILiquidityHub targetHub = ILiquidityHub(hub);
+    DataTypes.AssetConfig memory config = _getAssetConfig(targetHub, assetId);
     config.irStrategy = irStrategy;
-    ILiquidityHub(hub).updateAssetConfig(assetId, config);
+    targetHub.updateAssetConfig(assetId, config);
   }
 
   function _getAssetConfig(
-    address hub,
+    ILiquidityHub hub,
     uint256 assetId
   ) internal view returns (DataTypes.AssetConfig memory) {
-    return ILiquidityHub(hub).getAssetConfig(assetId);
+    return hub.getAssetConfig(assetId);
   }
 
   function _updateFeeReceiverSpokeConfig(
-    address hub_,
+    ILiquidityHub hub,
     uint256 assetId,
     DataTypes.AssetConfig memory config,
     address newFeeReceiver
@@ -131,8 +138,6 @@ contract Configurator is Ownable, IConfigurator {
     if (config.feeReceiver == newFeeReceiver) {
       return;
     }
-
-    ILiquidityHub hub = ILiquidityHub(hub_);
 
     if (config.feeReceiver != address(0)) {
       hub.updateSpokeConfig(
