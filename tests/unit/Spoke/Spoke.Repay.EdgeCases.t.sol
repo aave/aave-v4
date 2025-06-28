@@ -4,6 +4,8 @@ pragma solidity ^0.8.0;
 import 'tests/unit/Spoke/SpokeBase.t.sol';
 
 contract SpokeRepayEdgeCaseTest is SpokeBase {
+  using PercentageMathExtended for uint256;
+
   /// repay partial premium, base & full debt, with no interest accrual (no time pass)
   /// supply ex rate can increase while debt ex rate should remain the same
   /// this is due to donation on available liquidity
@@ -20,7 +22,7 @@ contract SpokeRepayEdgeCaseTest is SpokeBase {
     // Bob supply weth as collateral
     Utils.supplyCollateral(spoke1, _wethReserveId(spoke1), bob, wethSupplyAmount, bob);
     // Alice supply dai such that usage ratio after bob borrows is ~45%, borrow rate ~7.5%
-    Utils.supply(spoke1, _daiReserveId(spoke1), alice, daiBorrowAmount * 100 / 45, alice);
+    Utils.supply(spoke1, _daiReserveId(spoke1), alice, daiBorrowAmount.percentDivDown(45_00), alice);
     Utils.borrow(spoke1, _daiReserveId(spoke1), bob, daiBorrowAmount, bob);
     skip(skipTime); // initial increase in index, no time passes for subsequent checks
 

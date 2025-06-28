@@ -1782,7 +1782,7 @@ abstract contract Base is Test {
     );
   }
 
-  function checkBorrowRateInvariant(
+  function assertBorrowRateInvariant(
     ILiquidityHub hub,
     uint256 assetId,
     string memory operation

@@ -99,7 +99,7 @@ contract SpokeRiskPremiumScenarioTest is SpokeBase {
     updateCollateralFactor(spoke1, reservesIds.usdx, 100_00);
 
     // supply twice the amount that alice borrows, usage ratio ~45%, borrow rate ~7.5%
-    Utils.supply(spoke1, reservesIds.dai, bob, vars.daiBorrowAmount * 100 / 45, bob);
+    Utils.supply(spoke1, reservesIds.dai, bob, vars.daiBorrowAmount.percentDivDown(45_00), bob);
 
     Utils.supplyCollateral(spoke1, reservesIds.usdx, alice, vars.usdxSupplyAmount, alice);
 

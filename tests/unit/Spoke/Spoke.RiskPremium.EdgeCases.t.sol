@@ -6,6 +6,7 @@ import 'tests/unit/Spoke/SpokeBase.t.sol';
 contract SpokeRiskPremiumEdgeCasesTest is SpokeBase {
   using SharesMath for uint256;
   using WadRayMathExtended for uint256;
+  using PercentageMathExtended for uint256;
 
   /// Bob supplies 2 collateral assets, borrows an amount such that both of them cover it, and then repays any amount of debt
   /// Bob's user risk premium should decrease or remain same after repay
@@ -288,7 +289,7 @@ contract SpokeRiskPremiumEdgeCasesTest is SpokeBase {
     });
 
     // Deploy liquidity for weth borrow such that usage ratio will be at 45%
-    _openSupplyPosition(spoke2, _wethReserveId(spoke2), wethBorrowAmount * 100 / 45);
+    _openSupplyPosition(spoke2, _wethReserveId(spoke2), wethBorrowAmount.percentDivDown(45_00));
 
     // Bob borrows weth
     Utils.borrow({
