@@ -202,7 +202,7 @@ contract SpokeLiquidationBase is SpokeBase {
 
     state = _getAccountingInfoAfterLiq(state);
 
-    // with a close factor, it is impossible to liquidate all debt
+    // with a close factor, it is impossible to liquidate all debt unless deficit is reported
     assertTrue(
       stdMath.delta(state.debt.balanceAfter, state.debt.balanceBefore) < requiredDebtAmount
     );
@@ -264,7 +264,7 @@ contract SpokeLiquidationBase is SpokeBase {
       assertApproxEqRel(
         finalHf,
         _getCloseFactor(spoke),
-        _approxRelFromBps(25),
+        _approxRelFromBps(20),
         'HF matches closeFactor within 0.25%'
       );
     } else if (state.supply.balanceAfter == 0 && state.debt.balanceAfter > 0) {

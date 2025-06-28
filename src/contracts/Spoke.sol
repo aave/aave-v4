@@ -1124,9 +1124,7 @@ contract Spoke is ISpoke, Multicall {
       vars.liquidationFeeShares = vars.withdrawnShares - vars.withdrawnLiquidatorShares;
 
       // collateral accounting
-      userCollateralPosition.suppliedShares =
-        userCollateralPosition.suppliedShares -
-        vars.withdrawnShares;
+      userCollateralPosition.suppliedShares -= vars.withdrawnShares;
 
       // TODO: realize bad debt
       (vars.newUserRiskPremium, , , , ) = _calculateUserAccountData(users[vars.i]);
