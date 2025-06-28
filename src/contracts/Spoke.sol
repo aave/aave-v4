@@ -89,8 +89,6 @@ contract Spoke is ISpoke, Multicall {
     });
     _dynamicConfig[reserveId][dynamicConfigKey] = dynamicConfig;
 
-    IERC20(asset).forceApprove(address(config.hub), type(uint256).max);
-
     emit ReserveAdded(reserveId, assetId);
     emit ReserveConfigUpdated(reserveId, config);
 

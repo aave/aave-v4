@@ -331,8 +331,9 @@ contract LiquidityHub is ILiquidityHub {
     uint256 payableShares = spoke.suppliedShares;
     require(feeShares <= payableShares, SuppliedSharesExceeded(payableShares));
 
-    spoke.suppliedShares -= feeShares;
-    _spokes[assetId][asset.config.feeReceiver].suppliedShares += feeShares;
+    spoke.suppliedShares = payableShares - feeShares;
+    address feeReceiver = asset.config.feeReceiver;
+    _spokes[assetId][feeReceiver].suppliedShares += feeShares;
 
     emit PayFeeWithExistingLiquidity(assetId, msg.sender, feeShares);
 
