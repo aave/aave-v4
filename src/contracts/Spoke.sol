@@ -653,7 +653,6 @@ contract Spoke is ISpoke, Multicall {
   ) internal view {
     require(reserve.config.active, ReserveNotActive());
     require(!reserve.config.paused, ReservePaused());
-    //TODO: Not convinced if here it's better to revert or just finish execution
     require(
       usingAsCollateral != positionStatus.isUsingAsCollateral(reserveId),
       CollateralStatusUnchanged()
