@@ -327,12 +327,14 @@ contract LiquidityHub is ILiquidityHub {
 
     DataTypes.Asset storage asset = _assets[assetId];
     DataTypes.SpokeData storage spoke = _spokes[assetId][msg.sender];
+    address feeReceiver = asset.config.feeReceiver;
+
+    asset.accrue(_spokes[assetId][feeReceiver]);
 
     uint256 payableShares = spoke.suppliedShares;
     require(feeShares <= payableShares, SuppliedSharesExceeded(payableShares));
 
     spoke.suppliedShares = payableShares - feeShares;
-    address feeReceiver = asset.config.feeReceiver;
     _spokes[assetId][feeReceiver].suppliedShares += feeShares;
 
     emit PayFeeWithExistingLiquidity(assetId, msg.sender, feeShares);

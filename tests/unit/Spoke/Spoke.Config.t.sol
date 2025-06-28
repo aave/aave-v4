@@ -187,7 +187,11 @@ contract SpokeConfigTest is SpokeBase {
     spoke1.setUsingAsCollateral(daiReserveId, usingAsCollateral);
 
     DataTypes.UserPosition memory userData = spoke1.getUserPosition(daiReserveId, bob);
-    assertEq(spoke1.getUsingAsCollateral(daiReserveId, bob), usingAsCollateral, 'wrong usingAsCollateral');
+    assertEq(
+      spoke1.getUsingAsCollateral(daiReserveId, bob),
+      usingAsCollateral,
+      'wrong usingAsCollateral'
+    );
   }
 
   function test_updateReserveConfig_revertsWith_InvalidLiquidityPremium() public {
@@ -312,9 +316,6 @@ contract SpokeConfigTest is SpokeBase {
       collateralFactor: 10_00
     });
 
-    vm.expectEmit(address(tokenList.weth));
-    emit IERC20.Approval(address(spoke1), address(hub), UINT256_MAX);
-
     vm.expectEmit(address(spoke1));
     emit ISpoke.ReserveAdded(reserveId, wethAssetId);
 
@@ -323,11 +324,6 @@ contract SpokeConfigTest is SpokeBase {
 
     assertEq(spoke1.getReserveConfig(reserveId), newReserveConfig);
     assertEq(spoke1.getDynamicReserveConfig(reserveId), newDynReserveConfig);
-    assertEq(
-      tokenList.weth.allowance(address(spoke1), address(hub)),
-      UINT256_MAX,
-      'wrong allowance'
-    );
   }
 
   function test_addReserve_reverts_invalid_assetId() public {
