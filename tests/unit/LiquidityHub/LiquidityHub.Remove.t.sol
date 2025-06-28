@@ -382,9 +382,6 @@ contract LiquidityHubRemoveTest is LiquidityHubBase {
 
     uint256 lastUpdateTimestamp = vm.getBlockTimestamp();
 
-    vm.prank(alice);
-    tokenList.dai.approve(address(hub), type(uint256).max);
-
     // supply and draw dai liquidity to accrue interest
     // supply from spoke2, draw from spoke1
     _supplyAndDrawLiquidity({
@@ -418,8 +415,14 @@ contract LiquidityHubRemoveTest is LiquidityHubBase {
     );
 
     // alice restores all debt including accrual
-    vm.prank(address(spoke1));
-    hub.restore(daiAssetId, baseDebtRestored, premiumDebtRestored, alice);
+    Utils.restore({
+      hub: hub,
+      assetId: daiAssetId,
+      spoke: address(spoke1),
+      baseAmount: baseDebtRestored,
+      premiumAmount: premiumDebtRestored,
+      repayer: alice
+    });
 
     AssetPosition memory asset = getAssetPosition(hub, daiAssetId);
     assertEq(
