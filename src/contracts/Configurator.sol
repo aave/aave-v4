@@ -15,7 +15,7 @@ contract Configurator is Ownable, IConfigurator {
   constructor(address owner_) Ownable(owner_) {}
 
   /// @inheritdoc IConfigurator
-  function addSpokes(
+  function addSpokeToAssets(
     address hub,
     address spoke,
     uint256[] calldata assetIds,

@@ -16,7 +16,7 @@ contract ConfiguratorTest is LiquidityHubBase {
     // todo: give permissions to configurator in the hub
   }
 
-  function test_addSpokes_fuzz_revertsWith_OwnableUnauthorizedAccount(
+  function test_addSpokeToAssets_fuzz_revertsWith_OwnableUnauthorizedAccount(
     address caller,
     uint256
   ) public {
@@ -24,7 +24,7 @@ contract ConfiguratorTest is LiquidityHubBase {
 
     vm.expectRevert(abi.encodeWithSelector(Ownable.OwnableUnauthorizedAccount.selector, caller));
     vm.prank(caller);
-    configurator.addSpokes(
+    configurator.addSpokeToAssets(
       address(hub),
       vm.randomAddress(),
       new uint256[](0),
@@ -32,7 +32,7 @@ contract ConfiguratorTest is LiquidityHubBase {
     );
   }
 
-  function test_addSpokes_revertsWith_InvalidSpoke() public {
+  function test_addSpokeToAssets_revertsWith_InvalidSpoke() public {
     uint256[] memory assetIds = new uint256[](2);
     assetIds[0] = daiAssetId;
     assetIds[1] = wethAssetId;
@@ -43,10 +43,10 @@ contract ConfiguratorTest is LiquidityHubBase {
 
     vm.expectRevert(ILiquidityHub.InvalidSpoke.selector);
     vm.prank(CONFIGURATOR_ADMIN);
-    configurator.addSpokes(address(hub), address(0), assetIds, spokeConfigs);
+    configurator.addSpokeToAssets(address(hub), address(0), assetIds, spokeConfigs);
   }
 
-  function test_addSpokes_revertsWith_MismatchedConfigs() public {
+  function test_addSpokeToAssets_revertsWith_MismatchedConfigs() public {
     uint256[] memory assetIds = new uint256[](2);
     assetIds[0] = daiAssetId;
     assetIds[1] = wethAssetId;
@@ -58,10 +58,10 @@ contract ConfiguratorTest is LiquidityHubBase {
 
     vm.expectRevert(IConfigurator.MismatchedConfigs.selector);
     vm.prank(CONFIGURATOR_ADMIN);
-    configurator.addSpokes(address(hub), address(spoke1), assetIds, spokeConfigs);
+    configurator.addSpokeToAssets(address(hub), address(spoke1), assetIds, spokeConfigs);
   }
 
-  function test_addSpokes() public {
+  function test_addSpokeToAssets() public {
     uint256[] memory assetIds = new uint256[](2);
     assetIds[0] = daiAssetId;
     assetIds[1] = wethAssetId;
@@ -81,7 +81,7 @@ contract ConfiguratorTest is LiquidityHubBase {
     vm.expectEmit(address(hub));
     emit ILiquidityHub.SpokeAdded(wethAssetId, address(spoke1));
     vm.prank(CONFIGURATOR_ADMIN);
-    configurator.addSpokes(address(hub), address(spoke1), assetIds, spokeConfigs);
+    configurator.addSpokeToAssets(address(hub), address(spoke1), assetIds, spokeConfigs);
 
     DataTypes.SpokeConfig memory daiSpokeData = hub.getSpokeConfig(daiAssetId, address(spoke1));
     DataTypes.SpokeConfig memory wethSpokeData = hub.getSpokeConfig(wethAssetId, address(spoke1));

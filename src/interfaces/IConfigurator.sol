@@ -11,7 +11,7 @@ import {DataTypes} from 'src/libraries/types/DataTypes.sol';
  */
 interface IConfigurator {
   /**
-   * @notice Thrown when the the list of assets and spoke configs are not the same length in `addSpokes`.
+   * @notice Thrown when the the list of assets and spoke configs are not the same length in `addSpokeToAssets`.
    */
   error MismatchedConfigs();
 
@@ -23,7 +23,7 @@ interface IConfigurator {
    * @param spoke The address of the Spoke contract.
    * @param configs The list of Spoke configurations to register.
    */
-  function addSpokes(
+  function addSpokeToAssets(
     address hub,
     address spoke,
     uint256[] calldata assetIds,
