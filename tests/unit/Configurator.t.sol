@@ -86,11 +86,8 @@ contract ConfiguratorTest is LiquidityHubBase {
     DataTypes.SpokeConfig memory daiSpokeData = hub.getSpokeConfig(daiAssetId, address(spoke1));
     DataTypes.SpokeConfig memory wethSpokeData = hub.getSpokeConfig(wethAssetId, address(spoke1));
 
-    assertEq(daiSpokeData.supplyCap, daiSpokeConfig.supplyCap, 'dai spoke supply cap');
-    assertEq(daiSpokeData.drawCap, daiSpokeConfig.drawCap, 'dai spoke draw cap');
-
-    assertEq(wethSpokeData.supplyCap, wethSpokeConfig.supplyCap, 'eth spoke supply cap');
-    assertEq(wethSpokeData.drawCap, wethSpokeConfig.drawCap, 'eth spoke draw cap');
+    assertEq(daiSpokeData, daiSpokeConfig);
+    assertEq(wethSpokeData, wethSpokeConfig);
   }
 
   function test_addAsset_fuzz_revertsWith_OwnableUnauthorizedAccount(

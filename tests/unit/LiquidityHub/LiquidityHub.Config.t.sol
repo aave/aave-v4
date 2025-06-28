@@ -34,16 +34,7 @@ contract LiquidityHubConfigTest is LiquidityHubBase {
     emit ILiquidityHub.SpokeConfigUpdated(assetId, address(spoke1), spokeConfig);
     Utils.addSpoke(hub, assetId, address(spoke1), spokeConfig);
 
-    assertEq(
-      hub.getSpokeConfig(assetId, address(spoke1)).supplyCap,
-      spokeConfig.supplyCap,
-      'spoke supply cap'
-    );
-    assertEq(
-      hub.getSpokeConfig(assetId, address(spoke1)).drawCap,
-      spokeConfig.drawCap,
-      'spoke draw cap'
-    );
+    assertEq(hub.getSpokeConfig(assetId, address(spoke1)), spokeConfig);
   }
 
   function test_updateSpokeConfig_fuzz_revertsWith_SpokeNotListed(

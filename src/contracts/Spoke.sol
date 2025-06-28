@@ -1127,7 +1127,7 @@ contract Spoke is ISpoke, Multicall {
       vars.userPremiumDrawnShares = userDebtPosition.premiumDrawnShares = userDebtPosition
         .baseDrawnShares
         .percentMulUp(vars.newUserRiskPremium);
-      vars.userPremiumOffset = userDebtPosition.premiumOffset = debtReserve.hub.previewOffset(
+      vars.userPremiumOffset = userDebtPosition.premiumOffset = debtReserveHub.previewOffset(
         vars.debtAssetId,
         userDebtPosition.premiumDrawnShares
       );
@@ -1153,8 +1153,7 @@ contract Spoke is ISpoke, Multicall {
         .premiumDrawnShares = userCollateralPosition.baseDrawnShares.percentMulUp(
         vars.newUserRiskPremium
       );
-      vars.userPremiumOffset = userCollateralPosition.premiumOffset = collateralReserve
-        .hub
+      vars.userPremiumOffset = userCollateralPosition.premiumOffset = collateralReserveHub
         .previewOffset(vars.collateralAssetId, userCollateralPosition.premiumDrawnShares);
       vars.totalUserCollateralPremiumDrawnSharesDelta += int256(vars.userPremiumDrawnShares);
       vars.totalUserCollateralPremiumOffsetDelta += int256(vars.userPremiumOffset);
