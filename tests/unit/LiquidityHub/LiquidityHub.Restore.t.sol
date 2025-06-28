@@ -4,7 +4,6 @@ pragma solidity ^0.8.0;
 import './LiquidityHubBase.t.sol';
 
 contract LiquidityHubRestoreTest is LiquidityHubBase {
-  // using SharesMath for uint256;
   using WadRayMathExtended for uint256;
 
   function test_restore_revertsWith_SurplusAmountRestored() public {
@@ -78,88 +77,76 @@ contract LiquidityHubRestoreTest is LiquidityHubBase {
   }
 
   function test_restore_revertsWith_SurplusAmountRestored_with_interest() public {
-    vm.skip(true, 'pending refactor');
+    uint256 daiAmount = 100e18;
+    uint256 wethAmount = 10e18;
 
-    //     uint256 daiAmount = 100e18;
-    //     uint256 wethAmount = 10e18;
+    uint256 drawAmount = daiAmount / 2;
+    uint256 skipTime = 365 days / 2;
 
-    //     uint256 drawAmount = daiAmount / 2;
-    //     uint256 skipTime = 365 days / 2;
-    //     uint256 rate = uint256(15_00).bpsToRay();
+    uint256 rate = uint256(15_00).bpsToRay();
 
-    //     vm.mockCall(
-    //       address(irStrategy),
-    //       IBasicInterestRateStrategy.calculateInterestRates.selector,
-    //       abi.encode(rate)
-    //     );
+    vm.mockCall(
+      address(irStrategy),
+      IBasicInterestRateStrategy.calculateInterestRate.selector,
+      abi.encode(rate)
+    );
 
-    //     // spoke1 supply weth
-    //     Utils.supply({
-    //       hub: hub,
-    //       assetId: wethAssetId,
-    //       spoke: address(spoke1),
-    //       amount: wethAmount,
-    //       riskPremium: 0,
-    //       user: alice,
-    //       to: address(spoke1)
-    //     });
+    // spoke1 supply weth
+    Utils.add({
+      hub: hub,
+      assetId: wethAssetId,
+      spoke: address(spoke1),
+      amount: wethAmount,
+      user: alice,
+      to: address(spoke1)
+    });
 
-    //     // spoke2 supply dai
-    //     Utils.supply({
-    //       hub: hub,
-    //       assetId: daiAssetId,
-    //       spoke: address(spoke2),
-    //       amount: daiAmount,
-    //       riskPremium: 0,
-    //       user: bob,
-    //       to: address(spoke2)
-    //     });
+    // spoke2 supply dai
+    Utils.add({
+      hub: hub,
+      assetId: daiAssetId,
+      spoke: address(spoke2),
+      amount: daiAmount,
+      user: bob,
+      to: address(spoke2)
+    });
 
-    //     // spoke1 draw half of dai reserve liquidity
-    //     Utils.draw({
-    //       hub: hub,
-    //       assetId: daiAssetId,
-    //       to: alice,
-    //       spoke: address(spoke1),
-    //       amount: drawAmount,
-    //       riskPremium: 0,
-    //       onBehalfOf: address(spoke1)
-    //     });
+    // spoke1 draw half of dai reserve liquidity
+    Utils.draw({
+      hub: hub,
+      assetId: daiAssetId,
+      to: alice,
+      spoke: address(spoke1),
+      amount: drawAmount,
+      onBehalfOf: address(spoke1)
+    });
 
-    //     DataTypes.SpokeData memory spoke1DaiData = hub.getSpoke(daiAssetId, address(spoke1));
+    ReservePosition memory spoke1DaiData = getReservePosition(spoke1, _daiReserveId);
 
-    //     skip(skipTime);
+    skip(skipTime);
 
-    //     // spoke2 supply more dai to trigger accrual
-    //     Utils.supply({
-    //       hub: hub,
-    //       assetId: daiAssetId,
-    //       spoke: address(spoke2),
-    //       amount: daiAmount / 5,
-    //       riskPremium: 5_00,
-    //       user: bob,
-    //       to: address(spoke2)
-    //     });
+    // spoke2 supply more dai to trigger accrual
+    Utils.add({
+      hub: hub,
+      assetId: daiAssetId,
+      spoke: address(spoke2),
+      amount: daiAmount / 5,
+      user: bob,
+      to: address(spoke2)
+    });
 
-    //     uint256 cumulatedBaseInterest = MathUtils.calculateLinearInterest(
-    //       rate,
-    //       uint40(spoke1DaiData.lastUpdateTimestamp)
-    //     );
-    //     uint256 cumulatedBaseDebt = drawAmount.rayMul(cumulatedBaseInterest);
-    //     assertTrue(cumulatedBaseDebt > 0);
+    (uint256 baseDebt, uint256 premiumDebt) = hub.getSpokeDebt(daiAssetId, address(spoke1));
 
-    //     // alice restore invalid amount > drawn amount (no premium)
-    //     vm.expectRevert(
-    //       abi.encodeWithSelector(ILiquidityHub.SurplusAmountRestored.selector, cumulatedBaseDebt)
-    //     );
+    // alice restore invalid amount > drawn amount (no premium)
+    vm.expectRevert(abi.encodeWithSelector(ILiquidityHub.SurplusAmountRestored.selector, baseDebt));
 
-    //     vm.prank(address(spoke1));
-    //     hub.restore({
-    //       assetId: daiAssetId,
-    //       amount: cumulatedBaseDebt + 1,
-    //       riskPremium: 0,
-    //       repayer: alice
-    //     });
+    vm.prank(address(spoke1));
+    hub.restore({
+      assetId: daiAssetId,
+      baseAmount: baseDebt + 1,
+      premiumAmount: premiumDebt,
+      from: alice
+    });
   }
 
   function test_restore_fuzz_revertsWith_SurplusAmountRestored_with_interest(
