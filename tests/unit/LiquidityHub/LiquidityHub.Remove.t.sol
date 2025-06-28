@@ -19,7 +19,7 @@ contract LiquidityHubRemoveTest is LiquidityHubBase {
     amount = bound(amount, 1, MAX_SUPPLY_AMOUNT - 1);
     amount2 = bound(amount2, 1, MAX_SUPPLY_AMOUNT - amount);
 
-    IERC20 asset = hub.assetsList(assetId);
+    IERC20 underlying = IERC20(hub.getAsset(assetId).underlying);
 
     Utils.add({
       hub: hub,
@@ -63,10 +63,10 @@ contract LiquidityHubRemoveTest is LiquidityHubBase {
     assertEq(reservePosition2.suppliedShares, 0, 'spoke2 suppliedShares after');
     assertEq(reservePosition2.timestamp, assetData.lastUpdateTimestamp, 'spoke2 timestamp after');
     // asset
-    assertEq(asset.balanceOf(address(spoke1)), 0, 'spoke1 token balance after');
-    assertEq(asset.balanceOf(address(spoke2)), 0, 'spoke2 token balance after');
-    assertEq(asset.balanceOf(address(hub)), 0, 'hub token balance after');
-    assertEq(asset.balanceOf(alice), MAX_SUPPLY_AMOUNT, 'user token balance after');
+    assertEq(underlying.balanceOf(address(spoke1)), 0, 'spoke1 token balance after');
+    assertEq(underlying.balanceOf(address(spoke2)), 0, 'spoke2 token balance after');
+    assertEq(underlying.balanceOf(address(hub)), 0, 'hub token balance after');
+    assertEq(underlying.balanceOf(alice), MAX_SUPPLY_AMOUNT, 'user token balance after');
   }
 
   /// @dev single asset, multiple spokes supplied, with interest accrued.
@@ -82,7 +82,7 @@ contract LiquidityHubRemoveTest is LiquidityHubBase {
     skipTime = bound(skipTime, 1, MAX_SKIP_TIME);
 
     uint256 assetId = daiAssetId;
-    IERC20 asset = hub.assetsList(assetId);
+    IERC20 underlying = IERC20(hub.getAsset(assetId).underlying);
 
     Utils.add({
       hub: hub,
@@ -124,7 +124,7 @@ contract LiquidityHubRemoveTest is LiquidityHubBase {
       repayer: bob
     });
 
-    uint256 aliceBalanceBefore = asset.balanceOf(alice);
+    uint256 aliceBalanceBefore = underlying.balanceOf(alice);
     uint256 spoke1Amount = hub.getSpokeSuppliedAmount(assetId, address(spoke1));
     Utils.remove(hub, assetId, address(spoke1), spoke1Amount, alice);
 
@@ -167,16 +167,16 @@ contract LiquidityHubRemoveTest is LiquidityHubBase {
     assertEq(reservePosition2.suppliedAmount, 0, 'spoke2 suppliedAmount after');
     assertEq(reservePosition2.suppliedShares, 0, 'spoke2 suppliedShares after');
     assertEq(reservePosition2.timestamp, assetData.lastUpdateTimestamp, 'spoke2 timestamp after');
-    // asset
-    assertEq(asset.balanceOf(address(spoke1)), 0, 'spoke1 token balance after');
-    assertEq(asset.balanceOf(address(spoke2)), 0, 'spoke2 token balance after');
+    // underlying
+    assertEq(underlying.balanceOf(address(spoke1)), 0, 'spoke1 token balance after');
+    assertEq(underlying.balanceOf(address(spoke2)), 0, 'spoke2 token balance after');
     assertEq(
-      asset.balanceOf(address(hub)),
+      underlying.balanceOf(address(hub)),
       assetData.availableLiquidity,
       'hub token balance after'
     );
     assertApproxEqAbs(
-      asset.balanceOf(alice),
+      underlying.balanceOf(alice),
       aliceBalanceBefore + spoke1Amount + spoke2Amount,
       1,
       'alice token balance after'
@@ -187,7 +187,7 @@ contract LiquidityHubRemoveTest is LiquidityHubBase {
     reserveId = bound(reserveId, 0, spoke1.reserveCount() - 1);
     amount = bound(amount, 1, MAX_SUPPLY_AMOUNT);
     uint256 assetId = spoke1.getReserve(reserveId).assetId;
-    IERC20 asset = hub.assetsList(assetId);
+    IERC20 underlying = IERC20(hub.getAsset(assetId).underlying);
 
     // User supply
     Utils.add({
@@ -226,11 +226,11 @@ contract LiquidityHubRemoveTest is LiquidityHubBase {
     assertEq(reserve.premiumDebt, assetData.premiumDebt, 'reserve premiumDebt before');
     assertEq(reserve.timestamp, assetData.lastUpdateTimestamp, 'reserve timestamp before');
     // dai
-    assertEq(asset.balanceOf(address(spoke1)), 0, 'spoke token balance before');
-    assertEq(asset.balanceOf(address(hub)), amount, 'hub token balance before');
-    assertEq(asset.balanceOf(alice), MAX_SUPPLY_AMOUNT - amount, 'user token balance before');
+    assertEq(underlying.balanceOf(address(spoke1)), 0, 'spoke token balance before');
+    assertEq(underlying.balanceOf(address(hub)), amount, 'hub token balance before');
+    assertEq(underlying.balanceOf(alice), MAX_SUPPLY_AMOUNT - amount, 'user token balance before');
 
-    vm.expectEmit(address(asset));
+    vm.expectEmit(address(underlying));
     emit IERC20.Transfer(address(hub), alice, amount);
     vm.expectEmit(address(hub));
     emit ILiquidityHub.Remove(
@@ -265,9 +265,9 @@ contract LiquidityHubRemoveTest is LiquidityHubBase {
     assertEq(reserve.premiumDebt, assetData.premiumDebt, 'reserve premiumDebt after');
     assertEq(reserve.timestamp, assetData.lastUpdateTimestamp, 'reserve timestamp after');
     // dai
-    assertEq(asset.balanceOf(address(spoke1)), 0, 'spoke token balance after');
-    assertEq(asset.balanceOf(address(hub)), 0, 'hub token balance after');
-    assertEq(asset.balanceOf(alice), MAX_SUPPLY_AMOUNT, 'user token balance after');
+    assertEq(underlying.balanceOf(address(spoke1)), 0, 'spoke token balance after');
+    assertEq(underlying.balanceOf(address(hub)), 0, 'hub token balance after');
+    assertEq(underlying.balanceOf(alice), MAX_SUPPLY_AMOUNT, 'user token balance after');
   }
 
   function test_remove_all_with_interest() public {

@@ -179,8 +179,8 @@ contract SpokeLiquidationBase is SpokeBase {
 
     vm.expectEmit(address(spoke1));
     emit ISpoke.LiquidationCall(
-      state.collateralReserve.asset,
-      state.debtReserve.asset,
+      state.collateralReserve.underlying,
+      state.debtReserve.underlying,
       alice,
       state.debtToLiq,
       state.collToLiq,
@@ -346,11 +346,11 @@ contract SpokeLiquidationBase is SpokeBase {
       state.collateralReserve.reserveId,
       alice
     );
-    params.collateralAssetUnit = 10 ** state.collateralReserve.config.decimals;
+    params.collateralAssetUnit = 10 ** state.collateralReserve.decimals;
     params.collateralReserveId = state.collateralReserve.reserveId;
     params.collateralAssetPrice = oracle.getReservePrice(state.collateralReserve.reserveId);
 
-    params.debtAssetUnit = 10 ** state.debtReserve.config.decimals;
+    params.debtAssetUnit = 10 ** state.debtReserve.decimals;
     params.debtReserveId = state.debtReserve.reserveId;
     params.debtAssetPrice = oracle.getReservePrice(state.debtReserve.reserveId);
 
@@ -389,7 +389,7 @@ contract SpokeLiquidationBase is SpokeBase {
     params.collateralFactor = state.collDynConfig.collateralFactor;
     params.closeFactor = _getCloseFactor(spoke);
 
-    params.debtAssetUnit = 10 ** state.debtReserve.config.decimals;
+    params.debtAssetUnit = 10 ** state.debtReserve.decimals;
     params.debtAssetPrice = oracle.getReservePrice(state.debtReserve.reserveId);
 
     (, , params.healthFactor, , params.totalDebtInBaseCurrency) = spoke.getUserAccountData(alice);
@@ -467,10 +467,10 @@ contract SpokeLiquidationBase is SpokeBase {
     LiquidationTestLocalParams memory state
   ) internal view returns (LiquidationTestLocalParams memory) {
     state.debt.balanceBefore = spoke1.getUserTotalDebt(state.debtReserve.reserveId, alice);
-    state.liquidatorCollateral.balanceBefore = IERC20(state.collateralReserve.asset).balanceOf(
+    state.liquidatorCollateral.balanceBefore = IERC20(state.collateralReserve.underlying).balanceOf(
       LIQUIDATOR
     );
-    state.liquidatorDebt.balanceBefore = IERC20(state.debtReserve.asset).balanceOf(LIQUIDATOR);
+    state.liquidatorDebt.balanceBefore = IERC20(state.debtReserve.underlying).balanceOf(LIQUIDATOR);
     state.supply.balanceBefore = spoke1.getUserSuppliedAmount(
       state.collateralReserve.reserveId,
       alice
@@ -500,10 +500,10 @@ contract SpokeLiquidationBase is SpokeBase {
     // TODO: update when treasury accounting is done
     // read protocol fee from emitted event arg
     state.treasury.balanceChange = _tmpGetProtocolFeeFromLiqEvent();
-    state.liquidatorCollateral.balanceAfter = IERC20(state.collateralReserve.asset).balanceOf(
+    state.liquidatorCollateral.balanceAfter = IERC20(state.collateralReserve.underlying).balanceOf(
       LIQUIDATOR
     );
-    state.liquidatorDebt.balanceAfter = IERC20(state.debtReserve.asset).balanceOf(LIQUIDATOR);
+    state.liquidatorDebt.balanceAfter = IERC20(state.debtReserve.underlying).balanceOf(LIQUIDATOR);
     state.debt.balanceAfter = spoke1.getUserTotalDebt(state.debtReserve.reserveId, alice);
     state.supply.balanceAfter = spoke1.getUserSuppliedAmount(
       state.collateralReserve.reserveId,
