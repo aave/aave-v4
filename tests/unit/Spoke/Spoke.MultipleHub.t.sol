@@ -27,7 +27,6 @@ contract SpokeMultipleHubTest is SpokeBase {
 
     // Relist hub 2's dai on spoke1
     DataTypes.ReserveConfig memory daiHub2Config = DataTypes.ReserveConfig({
-      decimals: tokenList.dai.decimals(),
       active: true,
       frozen: false,
       paused: false,
@@ -35,17 +34,15 @@ contract SpokeMultipleHubTest is SpokeBase {
       liquidityPremium: 20_00,
       liquidationProtocolFee: 0,
       borrowable: true,
-      collateral: true,
-      hub: hub2
+      collateral: true
     });
     DataTypes.DynamicReserveConfig memory dynDaiHub2Config = DataTypes.DynamicReserveConfig({
       collateralFactor: 78_00
     });
-    daiHub2ReserveId = spoke1.addReserve(daiAssetId, daiHub2Config, dynDaiHub2Config);
+    daiHub2ReserveId = spoke1.addReserve(daiAssetId, address(hub2), daiHub2Config, dynDaiHub2Config);
 
     // Relist hub 3's dai on spoke 1
     DataTypes.ReserveConfig memory daiHub3Config = DataTypes.ReserveConfig({
-      decimals: tokenList.dai.decimals(),
       active: true,
       frozen: false,
       paused: false,
@@ -53,13 +50,12 @@ contract SpokeMultipleHubTest is SpokeBase {
       liquidityPremium: 20_00,
       liquidationProtocolFee: 0,
       borrowable: true,
-      collateral: true,
-      hub: hub3
+      collateral: true
     });
     DataTypes.DynamicReserveConfig memory dynDaiHub3Config = DataTypes.DynamicReserveConfig({
       collateralFactor: 78_00
     });
-    daiHub3ReserveId = spoke1.addReserve(hub3DaiAssetId, daiHub3Config, dynDaiHub3Config);
+    daiHub3ReserveId = spoke1.addReserve(hub3DaiAssetId, address(hub3), daiHub3Config, dynDaiHub3Config);
 
     DataTypes.SpokeConfig memory spokeConfig = DataTypes.SpokeConfig({
       supplyCap: type(uint256).max,
@@ -67,10 +63,10 @@ contract SpokeMultipleHubTest is SpokeBase {
     });
 
     // Connect hub 2 and spoke 1 for dai
-    hub2.addSpoke(daiAssetId, spokeConfig, address(spoke1));
+    hub2.addSpoke(daiAssetId, address(spoke1), spokeConfig);
 
     // Connect hub 3 and spoke 1 for dai
-    hub3.addSpoke(hub3DaiAssetId, spokeConfig, address(spoke1));
+    hub3.addSpoke(hub3DaiAssetId, address(spoke1), spokeConfig);
 
     // Set the prices for dai for the new hubs
     oracle1.setReservePrice(daiHub2ReserveId, 1e8);
@@ -118,9 +114,9 @@ contract SpokeMultipleHubTest is SpokeBase {
 
     // Verify Dai is indeed the asset Bob is borrowing from both hubs
     DataTypes.Reserve memory daiReserve = spoke1.getReserve(_daiReserveId(spoke1));
-    assertEq(daiReserve.asset, address(tokenList.dai));
+    assertEq(daiReserve.underlying, address(tokenList.dai));
     daiReserve = spoke1.getReserve(daiHub2ReserveId);
-    assertEq(daiReserve.asset, address(tokenList.dai));
+    assertEq(daiReserve.underlying, address(tokenList.dai));
 
     // Bob can partially repay both debt positions on hub 1 and hub 2
     Utils.repay(spoke1, _daiReserveId(spoke1), bob, hub1RepayAmount);
