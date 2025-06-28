@@ -417,7 +417,7 @@ contract LiquidationCallCloseFactorTest is SpokeLiquidationBase {
 
     spoke1.updateLiquidationConfig(liqConfig);
     updateLiquidationBonus(spoke1, collateralReserveId, liqBonus);
-    updateLiquidationProtocolFee(spoke1, collateralReserveId, state.liquidationFeeBPS);
+    updateLiquidationFee(spoke1, collateralReserveId, state.liquidationFeeBPS);
     uint256 desiredHf = _calcLowestHfToRestoreCloseFactor(spoke1, collateralReserveId, liqBonus)
       .percentMul(101_00); // add buffer so that not all collateral is seized
 
@@ -473,8 +473,8 @@ contract LiquidationCallCloseFactorTest is SpokeLiquidationBase {
 
     vm.expectEmit(address(spoke1));
     emit ISpoke.LiquidationCall(
-      state.collateralReserve.asset,
-      state.debtReserve.asset,
+      state.collateralReserve.underlying,
+      state.debtReserve.underlying,
       alice,
       state.debtToLiq,
       state.collToLiq,

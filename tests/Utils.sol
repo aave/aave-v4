@@ -2,6 +2,7 @@
 pragma solidity ^0.8.0;
 
 import {Vm} from 'forge-std/Vm.sol';
+import {IERC20} from 'src/dependencies/openzeppelin/IERC20.sol';
 import {ILiquidityHub} from 'src/interfaces/ILiquidityHub.sol';
 import {ISpoke} from 'src/interfaces/ISpoke.sol';
 import {DataTypes} from 'src/libraries/types/DataTypes.sol';
@@ -19,7 +20,7 @@ library Utils {
     address to // todo: implement
   ) internal returns (uint256) {
     vm.startPrank(user);
-    hub.assetsList(assetId).approve(address(hub), amount);
+    IERC20(hub.getAsset(assetId).underlying).approve(address(hub), amount);
     vm.stopPrank();
 
     vm.prank(spoke);
@@ -58,11 +59,50 @@ library Utils {
     address repayer
   ) internal {
     vm.startPrank(repayer);
-    hub.assetsList(assetId).approve(address(hub), (baseAmount + premiumAmount));
+    IERC20(hub.getAsset(assetId).underlying).approve(address(hub), (baseAmount + premiumAmount));
     vm.stopPrank();
 
     vm.prank(spoke);
     hub.restore(assetId, baseAmount, premiumAmount, repayer);
+  }
+
+  function addSpoke(
+    ILiquidityHub hub,
+    uint256 assetId,
+    address spoke,
+    DataTypes.SpokeConfig memory spokeConfig
+  ) internal {
+    // todo: prank admin/configurator
+    hub.addSpoke(assetId, spoke, spokeConfig);
+  }
+
+  function updateSpokeConfig(
+    ILiquidityHub hub,
+    uint256 assetId,
+    address spoke,
+    DataTypes.SpokeConfig memory spokeConfig
+  ) internal {
+    // todo: prank admin/configurator
+    hub.updateSpokeConfig(assetId, spoke, spokeConfig);
+  }
+
+  function addAsset(
+    ILiquidityHub hub,
+    address asset,
+    uint8 decimals,
+    address interestRateStrategy
+  ) internal returns (uint256) {
+    // todo: prank admin/configurator
+    return hub.addAsset(asset, decimals, interestRateStrategy);
+  }
+
+  function updateAssetConfig(
+    ILiquidityHub hub,
+    uint256 assetId,
+    DataTypes.AssetConfig memory config
+  ) internal {
+    // todo: prank admin/configurator
+    hub.updateAssetConfig(assetId, config);
   }
 
   // spoke

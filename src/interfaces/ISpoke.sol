@@ -3,7 +3,7 @@ pragma solidity ^0.8.0;
 
 import {IMulticall} from 'src/interfaces/IMulticall.sol';
 import {IPriceOracle} from 'src/interfaces/IPriceOracle.sol';
-import {DataTypes} from 'src/libraries/types/DataTypes.sol';
+import {DataTypes, ILiquidityHub} from 'src/libraries/types/DataTypes.sol';
 
 /**
  * @title ISpoke
@@ -66,8 +66,8 @@ interface ISpoke is IMulticall {
     address liquidator
   );
 
-  error InvalidReserve();
   error ReserveNotListed();
+  error AssetNotListed();
   error InvalidLiquidityPremium();
   error InsufficientSupply(uint256 supply);
   error ReserveNotBorrowable(uint256 reserveId);
@@ -95,8 +95,9 @@ interface ISpoke is IMulticall {
 
   function addReserve(
     uint256 assetId,
-    DataTypes.ReserveConfig memory config,
-    DataTypes.DynamicReserveConfig memory dynConfig
+    address hub,
+    DataTypes.ReserveConfig calldata config,
+    DataTypes.DynamicReserveConfig calldata dynConfig
   ) external returns (uint256);
 
   function updateReserveConfig(uint256 reserveId, DataTypes.ReserveConfig calldata params) external;
