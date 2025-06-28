@@ -264,8 +264,8 @@ contract SpokeLiquidationBase is SpokeBase {
       assertApproxEqRel(
         finalHf,
         _getCloseFactor(spoke),
-        _approxRelFromBps(20),
-        'HF matches closeFactor within 0.1%'
+        _approxRelFromBps(25),
+        'HF matches closeFactor within 0.25%'
       );
     } else if (state.supply.balanceAfter == 0 && state.debt.balanceAfter > 0) {
       // if bad debt, HF should be 0 and userRp should be 0

@@ -827,7 +827,7 @@ contract SpokeBase is Base {
     uint256 reserveId
   ) internal view returns (DynamicConfig memory) {
     DataTypes.UserPosition memory pos = spoke.getUserPosition(reserveId, user);
-    return DynamicConfig(pos.configKey, pos.usingAsCollateral);
+    return DynamicConfig(pos.configKey, spoke.getUsingAsCollateral(reserveId, user));
   }
 
   function assertEq(

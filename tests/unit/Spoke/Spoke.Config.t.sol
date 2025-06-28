@@ -187,7 +187,7 @@ contract SpokeConfigTest is SpokeBase {
     spoke1.setUsingAsCollateral(daiReserveId, usingAsCollateral);
 
     DataTypes.UserPosition memory userData = spoke1.getUserPosition(daiReserveId, bob);
-    assertEq(userData.usingAsCollateral, usingAsCollateral, 'wrong usingAsCollateral');
+    assertEq(spoke1.getUsingAsCollateral(daiReserveId, bob), usingAsCollateral, 'wrong usingAsCollateral');
   }
 
   function test_updateReserveConfig_revertsWith_InvalidLiquidityPremium() public {
