@@ -186,12 +186,69 @@ contract LiquidityHubRestoreTest is LiquidityHubBase {
     uint256 daiAmount = 100e18;
     uint256 drawAmount = daiAmount / 2;
     uint256 skipTime = 365 days;
+    uint256 premiumDebtRestored = 1;
 
-    test_restore_fuzz_revertsWith_SurplusAmountRestored_with_interest(
+    test_restore_fuzz_revertsWith_SurplusAmountRestored_with_interest_and_premium(
       daiAmount,
       drawAmount,
-      skipTime
+      skipTime,
+      premiumDebtRestored
     );
+  }
+
+  function test_restore_fuzz_revertsWith_SurplusAmountRestored_with_interest_and_premium(
+    uint256 daiAmount,
+    uint256 drawAmount,
+    uint256 skipTime,
+    uint256 premiumDebtRestored
+  ) public {
+    daiAmount = bound(daiAmount, 1, 1000e18); // max 100 DAI
+    drawAmount = bound(drawAmount, 1, daiAmount); // within supplied dai amount
+    skipTime = bound(skipTime, 1, MAX_SKIP_TIME);
+
+    uint256 wethAmount = 10e18;
+
+    // spoke1 supply weth
+    Utils.supplyCollateral({
+      spoke: spoke1,
+      reserveId: _wethReserveId(spoke1),
+      user: alice,
+      amount: wethAmount,
+      onBehalfOf: alice
+    });
+
+    // spoke2 supply dai
+    Utils.supplyCollateral({
+      spoke: spoke2,
+      reserveId: _daiReserveId(spoke2),
+      user: bob,
+      amount: daiAmount,
+      onBehalfOf: bob
+    });
+
+    // spoke1 draw half of dai reserve liquidity
+    Utils.borrow({
+      spoke: spoke1,
+      reserveId: _daiReserveId(spoke1),
+      user: alice,
+      amount: drawAmount,
+      onBehalfOf: alice
+    });
+
+    ReservePosition memory spoke1DaiData = getReservePosition(spoke1, _daiReserveId);
+
+    skip(skipTime);
+
+    (uint256 baseDebt, uint256 premiumDebt) = hub.getSpokeDebt(daiAssetId, address(spoke1));
+    assertGt(premiumDebt, 0);
+
+    // alice restore invalid amount > drawn amount AND premium
+    vm.expectRevert(abi.encodeWithSelector(ILiquidityHub.SurplusAmountRestored.selector, baseDebt));
+
+    premiumDebtRestored = bound(premiumDebtRestored, 1, premiumDebt + 1);
+
+    vm.prank(address(spoke1));
+    hub.restore(daiAssetId, baseDebt + 1, premiumDebtRestored, alice);
   }
 
   /// @dev Restore partial amount of base debt
@@ -492,14 +549,21 @@ contract LiquidityHubRestoreTest is LiquidityHubBase {
     uint256 daiAmount = 100e18;
     uint256 drawAmount = daiAmount / 2;
     uint256 skipTime = 365 days;
+    uint256 premiumDebtRestored = 1;
 
-    test_restore_fuzz_full_amount_with_interest_and_premium(daiAmount, drawAmount, skipTime);
+    test_restore_fuzz_full_amount_with_interest_and_premium(
+      daiAmount,
+      drawAmount,
+      skipTime,
+      premiumDebtRestored
+    );
   }
 
   function test_restore_fuzz_full_amount_with_interest_and_premium(
     uint256 daiAmount,
     uint256 drawAmount,
-    uint256 skipTime
+    uint256 skipTime,
+    uint256 premiumDebtRestored
   ) public {
     daiAmount = bound(daiAmount, 1, 1000e18); // max 100 DAI
     drawAmount = bound(drawAmount, 1, daiAmount); // within supplied dai amount
@@ -541,9 +605,11 @@ contract LiquidityHubRestoreTest is LiquidityHubBase {
     (uint256 baseDebt, uint256 premiumDebt) = hub.getSpokeDebt(daiAssetId, address(spoke1));
     assertGt(premiumDebt, 0);
 
+    premiumDebtRestored = bound(premiumDebtRestored, 1, premiumDebt + 1);
+
     // spoke1 restore full base debt
     vm.prank(address(spoke1));
-    hub.restore(daiAssetId, baseDebt, premiumDebt, alice);
+    hub.restore(daiAssetId, baseDebt, premiumDebtRestored, alice);
 
     AssetPosition memory daiData = getAssetPosition(hub, daiAssetId);
     ReservePosition memory spoke1Data = getReservePosition(spoke1, _daiReserveId);
