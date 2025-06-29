@@ -396,8 +396,8 @@ contract Spoke is ISpoke, Multicall, AccessManaged {
   function updateUserRiskPremium(address user) external {
     (uint256 userRiskPremium, , , , ) = _calculateUserAccountData(user);
     bool premiumIncrease = _notifyRiskPremiumUpdate(type(uint256).max, user, userRiskPremium);
-    // check permissions if premium increases or not called by user
-    if (premiumIncrease || user != msg.sender) {
+    // check permissions if premium increases and not called by user
+    if (premiumIncrease && user != msg.sender) {
       _checkCanCall(_msgSender(), _msgData());
     }
     emit UserRiskPremiumUpdate(user, userRiskPremium);
