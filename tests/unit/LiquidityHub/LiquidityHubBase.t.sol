@@ -20,14 +20,6 @@ contract LiquidityHubBase is Base {
     uint256 aliceBalance;
   }
 
-  struct HubData {
-    AssetPosition daiData;
-    AssetPosition wethData;
-    ReservePosition spoke1WethData;
-    ReservePosition spoke1DaiData;
-    ReservePosition spoke2DaiData;
-  }
-
   struct DebtData {
     DebtAccounting asset;
     DebtAccounting[3] spoke;
