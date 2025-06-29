@@ -23,7 +23,7 @@ methods {
     uint256
   ) internal => NONDET;
 
-  function AssetLogic.accrue(DataTypes.Asset storage asset) internal => accrueCalled();
+  function AssetLogic.accrue(DataTypes.Asset storage asset, DataTypes.SpokeData storage feeReceiver) internal => accrueCalled();
 
   function MathUtils.calculateLinearInterest(
     uint256 rate,
@@ -35,10 +35,11 @@ methods {
     uint256 amount,
     uint256 drawCap
   ) internal => NONDET;
-  function LiquidityHub._validateSupply(
+  function _validateSupply(
     DataTypes.Asset storage asset,
     DataTypes.SpokeData storage spoke,
-    uint256 amount
+    uint256 amount,
+    address from
   ) internal => NONDET;
   function LiquidityHub._validateWithdraw(
     DataTypes.Asset storage asset,

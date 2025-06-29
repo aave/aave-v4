@@ -13,7 +13,7 @@ contract LiquidityHubHarness is LiquidityHub {
     DataTypes.Asset storage asset = _assets[assetId];
     DataTypes.SpokeData storage spoke = _spokes[assetId][msg.sender];
 
-    asset.accrue();
+    asset.accrue(_spokes[assetId][asset.config.feeReceiver]);
   }
 
 

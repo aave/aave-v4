@@ -34,7 +34,4 @@ methods {
     function WadRayMathExtended.rayDivUp(uint256 a, uint256 b) internal returns (uint256) => 
         mulDivUpCVL(a,wadRayMath.RAY(),b);
 
-    //envfree function
-    function getSpokeSuppliedShares(uint256 assetId, address spoke) external returns (uint256) envfree;
-
 }

@@ -21,8 +21,8 @@ methods {
 
 
     // standard summarization of mulDiv 
-    function Math.mulDiv(uint256 x, uint256 y, uint256 denominator) internal  returns (uint256) => 
-        mulDivDownCVL(x,y,denominator);
+    function Math.mulDiv(uint256 x, uint256 y, uint256 denominator, Math.Rounding rounding) internal  returns (uint256) => 
+        mulDivCVL(x,y,denominator,rounding);
 
     // summarization proved in Math.spec 
     function WadRayMath.rayMul(uint256 a, uint256 b) internal returns (uint256) => 
@@ -42,7 +42,36 @@ methods {
     
     function WadRayMathExtended.rayDivUp(uint256 a, uint256 b) internal returns (uint256) => 
         mulDivUpCVL(a,wadRayMath.RAY(),b);
-    
+
+    function AssetLogic.previewFeeShares(
+    DataTypes.Asset storage asset,
+    uint256 indexDelta
+  ) internal returns (uint256) =>  ALWAYS(0);
+    /*
+    function AssetLogic.previewFeeShares(
+    DataTypes.Asset storage asset,
+    uint256 indexDelta
+  ) internal returns (uint256) => SummaryLibrary.previewFeeShares(asset, indexDelta);
+
+  function SummaryLibrary.calcFees(uint256 indexDelta, uint256 totalDrawnShares, uint256 liquidityFee) internal  returns (uint256) => calcFeesApproximation(indexDelta, totalDrawnShares, liquidityFee);  */
+}
+
+ghost calcFeesApproximation(uint256, uint256, uint256) returns uint256;
+/* 
+ select which cvl math function to use
+*/
+function mulDivCVL(uint256 x, uint256 y, uint256 z, Math.Rounding rounding) returns uint256 {
+    mathint mul  = x * y;
+    if (z == 0 ) {
+        revert();
+    }
+    if (rounding == Math.Rounding.Floor) 
+        return mulDivDownCVL(x, y, z);
+    else if (rounding == Math.Rounding.Ceil) 
+        return mulDivUpCVL(x, y, z);
+    else
+        assert false; 
+    return 0; 
 }
 
 /**
@@ -92,8 +121,15 @@ rule baseDebtIndex_increasing(uint256 assetId) {
 
     env e;
     require e.block.timestamp >  liquidityHub._assets[assetId].lastUpdateTimestamp;
+    uint256 baseDebt;
+    uint256 premiumDebt;
+    (baseDebt,premiumDebt) = getAssetDebt(e, assetId);
+
     accrueInterest(e,assetId);
-    assert liquidityHub._assets[assetId].baseBorrowRate >= mathWrapper.SECONDS_PER_YEAR() =>
+    
+    assert liquidityHub._assets[assetId].baseDebtIndex >= before;
+    assert (liquidityHub._assets[assetId].baseBorrowRate >= mathWrapper.SECONDS_PER_YEAR() 
+            && baseDebt > 0 ) =>
              liquidityHub._assets[assetId].baseDebtIndex > before;
     satisfy liquidityHub._assets[assetId].baseBorrowRate == mathWrapper.SECONDS_PER_YEAR();
 }
@@ -283,10 +319,25 @@ function callViewFunction(method f, env e, calldataarg args) returns mathint {
         (a,b) = getSpokeDebt(e,args);
         return a + b;
     }
+    else if (f.selector == sig:getTotalSuppliedAssets(uint256).selector) {
+        return getTotalSuppliedAssets(e,args);
+    }
     else if (f.selector == sig:getSpokeTotalDebt(uint256,address).selector) {
         return getSpokeTotalDebt(e,args);
     }
-    else {
+    else if (f.selector == sig:getTotalSuppliedShares(uint256).selector) {
+        return getTotalSuppliedShares(e,args);
+    }
+    else if (f.selector == sig:previewDrawnIndex(uint256).selector) {
+        return previewDrawnIndex(e,args);
+    }
+    else if (f.selector == sig:convertToSuppliedSharesUp(uint256,uint256).selector) {
+        return convertToSuppliedSharesUp(e,args);
+    }
+    else if (f.selector == sig:convertToSuppliedAssetsUp(uint256,uint256).selector) {
+        return convertToSuppliedAssetsUp(e,args);
+    }
+    else  {
         assert false, "unknown view function";
         return 0;
     }
