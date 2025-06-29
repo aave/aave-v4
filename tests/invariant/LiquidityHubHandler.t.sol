@@ -30,7 +30,7 @@ contract LiquidityHubHandler is Test {
   struct State {
     mapping(uint256 => uint256) reserveSupplied; // asset => supply
     mapping(uint256 => mapping(address => uint256)) userSupplied; // asset => user => supply
-    mapping(address => uint256) assetDonated; // asset => donation
+    mapping(address => uint256) assetDonated; // underlying => donation
     mapping(uint256 => uint256) lastExchangeRate; // asset => supplyIndex
   }
 
@@ -101,8 +101,8 @@ contract LiquidityHubHandler is Test {
     return s.userSupplied[assetId][user];
   }
 
-  function getAssetDonated(address asset) public view returns (uint256) {
-    return s.assetDonated[asset];
+  function getAssetDonated(address underlying) public view returns (uint256) {
+    return s.assetDonated[underlying];
   }
 
   function getLastExchangeRate(uint256 assetId) public view returns (uint256) {
@@ -146,13 +146,13 @@ contract LiquidityHubHandler is Test {
     assetId = bound(assetId, 0, hub.getAssetCount() - 1);
     amount = bound(amount, 1, type(uint128).max);
 
-    address asset = hub.getAsset(assetId).underlying;
+    address underlying = hub.getAsset(assetId).underlying;
 
-    deal(asset, user, amount);
+    deal(underlying, user, amount);
     vm.prank(user);
-    IERC20(asset).transfer(address(hub), amount);
+    IERC20(underlying).transfer(address(hub), amount);
 
-    s.assetDonated[asset] += amount;
+    s.assetDonated[underlying] += amount;
   }
 
   function _updateState(uint256 assetId) internal {

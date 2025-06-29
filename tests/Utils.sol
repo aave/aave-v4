@@ -86,12 +86,12 @@ library Utils {
 
   function addAsset(
     ILiquidityHub hub,
-    address asset,
+    address underlying,
     uint8 decimals,
     address feeReceiver,
     address interestRateStrategy
   ) internal returns (uint256) {
-    return hub.addAsset(asset, decimals, feeReceiver, interestRateStrategy);
+    return hub.addAsset(underlying, decimals, feeReceiver, interestRateStrategy);
   }
 
   function updateAssetConfig(

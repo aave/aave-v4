@@ -1879,9 +1879,9 @@ abstract contract Base is Test {
       indexDelta.rayMulDown(initialDrawnShares + initialPremiumShares).percentMulDown(liquidityFee);
   }
 
-  function _mockDecimals(address asset, uint8 decimals) internal {
+  function _mockDecimals(address underlying, uint8 decimals) internal {
     vm.mockCall(
-      asset,
+      underlying,
       abi.encodeWithSelector(IERC20Metadata.decimals.selector),
       abi.encode(decimals)
     );

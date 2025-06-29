@@ -31,23 +31,28 @@ contract Configurator is Ownable, IConfigurator {
   /// @inheritdoc IConfigurator
   function addAsset(
     address hub,
-    address asset,
+    address underlying,
     address feeReceiver,
     address irStrategy
   ) external override onlyOwner returns (uint256) {
     return
-      ILiquidityHub(hub).addAsset(asset, IERC20Metadata(asset).decimals(), feeReceiver, irStrategy);
+      ILiquidityHub(hub).addAsset(
+        underlying,
+        IERC20Metadata(underlying).decimals(),
+        feeReceiver,
+        irStrategy
+      );
   }
 
   /// @inheritdoc IConfigurator
   function addAsset(
     address hub,
-    address asset,
+    address underlying,
     uint8 decimals,
     address feeReceiver,
     address irStrategy
   ) external override onlyOwner returns (uint256) {
-    return ILiquidityHub(hub).addAsset(asset, decimals, feeReceiver, irStrategy);
+    return ILiquidityHub(hub).addAsset(underlying, decimals, feeReceiver, irStrategy);
   }
 
   /// @inheritdoc IConfigurator

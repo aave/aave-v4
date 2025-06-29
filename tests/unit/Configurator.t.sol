@@ -102,7 +102,7 @@ contract ConfiguratorTest is LiquidityHubBase {
     vm.prank(caller);
     _addAsset({
       fetchErc20Decimals: vm.randomBool(),
-      asset: vm.randomAddress(),
+      underlying: vm.randomAddress(),
       decimals: uint8(vm.randomUint()),
       feeReceiver: vm.randomAddress(),
       interestRateStrategy: vm.randomAddress()
@@ -111,57 +111,57 @@ contract ConfiguratorTest is LiquidityHubBase {
 
   function test_addAsset_fuzz_revertsWith_InvalidAssetDecimals(
     bool fetchErc20Decimals,
-    address asset,
+    address underlying,
     uint8 decimals,
     address feeReceiver,
     address interestRateStrategy
   ) public {
     vm.assume(
-      asset != address(0) && feeReceiver != address(0) && interestRateStrategy != address(0)
+      underlying != address(0) && feeReceiver != address(0) && interestRateStrategy != address(0)
     );
     decimals = uint8(bound(decimals, hub.MAX_ALLOWED_ASSET_DECIMALS() + 1, type(uint8).max));
 
     vm.expectRevert(ILiquidityHub.InvalidAssetDecimals.selector, address(hub));
     vm.prank(CONFIGURATOR_ADMIN);
-    _addAsset(fetchErc20Decimals, asset, decimals, feeReceiver, interestRateStrategy);
+    _addAsset(fetchErc20Decimals, underlying, decimals, feeReceiver, interestRateStrategy);
   }
 
-  function test_addAsset_fuzz_revertsWith_InvalidAssetAddress(
+  function test_addAsset_fuzz_revertsWith_InvalidUnderlying(
     bool fetchErc20Decimals,
     uint8 decimals,
     address feeReceiver,
     address interestRateStrategy
   ) public {
-    vm.expectRevert(ILiquidityHub.InvalidAssetAddress.selector, address(hub));
+    vm.expectRevert(ILiquidityHub.InvalidUnderlying.selector, address(hub));
     vm.prank(CONFIGURATOR_ADMIN);
     _addAsset(fetchErc20Decimals, address(0), decimals, feeReceiver, interestRateStrategy);
   }
 
   function test_addAsset_fuzz_revertsWith_InvalidIrStrategy(
     bool fetchErc20Decimals,
-    address asset,
+    address underlying,
     uint8 decimals,
     address feeReceiver
   ) public {
-    assumeUnusedAddress(asset);
+    assumeUnusedAddress(underlying);
     vm.assume(feeReceiver != address(0));
     decimals = uint8(bound(decimals, 0, hub.MAX_ALLOWED_ASSET_DECIMALS()));
 
     vm.expectRevert(ILiquidityHub.InvalidIrStrategy.selector, address(hub));
 
     vm.prank(CONFIGURATOR_ADMIN);
-    _addAsset(fetchErc20Decimals, asset, decimals, feeReceiver, address(0));
+    _addAsset(fetchErc20Decimals, underlying, decimals, feeReceiver, address(0));
   }
 
   function test_addAsset_fuzz(
     bool fetchErc20Decimals,
-    address asset,
+    address underlying,
     uint8 decimals,
     address feeReceiver,
     address interestRateStrategy
   ) public {
     vm.assume(
-      asset != address(0) && feeReceiver != address(0) && interestRateStrategy != address(0)
+      underlying != address(0) && feeReceiver != address(0) && interestRateStrategy != address(0)
     );
     decimals = uint8(bound(decimals, 0, hub.MAX_ALLOWED_ASSET_DECIMALS()));
 
@@ -177,13 +177,16 @@ contract ConfiguratorTest is LiquidityHubBase {
 
     vm.expectCall(
       address(hub),
-      abi.encodeCall(ILiquidityHub.addAsset, (asset, decimals, feeReceiver, interestRateStrategy))
+      abi.encodeCall(
+        ILiquidityHub.addAsset,
+        (underlying, decimals, feeReceiver, interestRateStrategy)
+      )
     );
 
     vm.prank(CONFIGURATOR_ADMIN);
     uint256 assetId = _addAsset(
       fetchErc20Decimals,
-      asset,
+      underlying,
       decimals,
       feeReceiver,
       interestRateStrategy
@@ -600,17 +603,23 @@ contract ConfiguratorTest is LiquidityHubBase {
 
   function _addAsset(
     bool fetchErc20Decimals,
-    address asset,
+    address underlying,
     uint8 decimals,
     address feeReceiver,
     address interestRateStrategy
   ) internal returns (uint256) {
     if (fetchErc20Decimals) {
-      _mockDecimals(asset, decimals);
-      return configurator.addAsset(address(hub), asset, feeReceiver, interestRateStrategy);
+      _mockDecimals(underlying, decimals);
+      return configurator.addAsset(address(hub), underlying, feeReceiver, interestRateStrategy);
     } else {
       return
-        configurator.addAsset(address(hub), asset, decimals, feeReceiver, interestRateStrategy);
+        configurator.addAsset(
+          address(hub),
+          underlying,
+          decimals,
+          feeReceiver,
+          interestRateStrategy
+        );
     }
   }
 }

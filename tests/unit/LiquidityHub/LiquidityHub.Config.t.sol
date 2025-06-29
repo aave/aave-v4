@@ -68,63 +68,63 @@ contract LiquidityHubConfigTest is LiquidityHubBase {
   }
 
   function test_addAsset_fuzz_revertsWith_InvalidAssetDecimals(
-    address asset,
+    address underlying,
     uint8 decimals,
     address feeReceiver,
     address interestRateStrategy
   ) public {
-    vm.assume(asset != address(0) && interestRateStrategy != address(0));
+    vm.assume(underlying != address(0) && interestRateStrategy != address(0));
     decimals = uint8(bound(decimals, hub.MAX_ALLOWED_ASSET_DECIMALS() + 1, type(uint8).max));
 
     vm.expectRevert(ILiquidityHub.InvalidAssetDecimals.selector);
     vm.prank(ADMIN);
-    Utils.addAsset(hub, asset, decimals, feeReceiver, interestRateStrategy);
+    Utils.addAsset(hub, underlying, decimals, feeReceiver, interestRateStrategy);
   }
 
-  function test_addAsset_fuzz_revertsWith_InvalidAssetAddress(
+  function test_addAsset_fuzz_revertsWith_InvalidUnderlying(
     uint8 decimals,
     address feeReceiver,
     address interestRateStrategy
   ) public {
-    vm.expectRevert(ILiquidityHub.InvalidAssetAddress.selector);
+    vm.expectRevert(ILiquidityHub.InvalidUnderlying.selector);
     vm.prank(ADMIN);
     Utils.addAsset(hub, address(0), decimals, feeReceiver, interestRateStrategy);
   }
 
   function test_addAsset_fuzz_revertsWith_InvalidFeeReceiver(
-    address asset,
+    address underlying,
     uint8 decimals,
     address interestRateStrategy
   ) public {
-    vm.assume(asset != address(0) && interestRateStrategy != address(0));
+    vm.assume(underlying != address(0) && interestRateStrategy != address(0));
     decimals = uint8(bound(decimals, 0, hub.MAX_ALLOWED_ASSET_DECIMALS()));
 
     vm.expectRevert(ILiquidityHub.InvalidFeeReceiver.selector);
     vm.prank(ADMIN);
-    Utils.addAsset(hub, asset, decimals, address(0), interestRateStrategy);
+    Utils.addAsset(hub, underlying, decimals, address(0), interestRateStrategy);
   }
 
   function test_addAsset_fuzz_revertsWith_InvalidIrStrategy(
-    address asset,
+    address underlying,
     uint8 decimals,
     address feeReceiver
   ) public {
-    vm.assume(asset != address(0));
+    vm.assume(underlying != address(0));
     decimals = uint8(bound(decimals, 0, hub.MAX_ALLOWED_ASSET_DECIMALS()));
 
     vm.expectRevert(ILiquidityHub.InvalidIrStrategy.selector);
     vm.prank(ADMIN);
-    Utils.addAsset(hub, asset, decimals, feeReceiver, address(0));
+    Utils.addAsset(hub, underlying, decimals, feeReceiver, address(0));
   }
 
   function test_addAsset_fuzz(
-    address asset,
+    address underlying,
     uint8 decimals,
     address feeReceiver,
     address interestRateStrategy
   ) public {
     vm.assume(
-      asset != address(0) && feeReceiver != address(0) && interestRateStrategy != address(0)
+      underlying != address(0) && feeReceiver != address(0) && interestRateStrategy != address(0)
     );
     decimals = uint8(bound(decimals, 0, hub.MAX_ALLOWED_ASSET_DECIMALS()));
 
@@ -139,12 +139,12 @@ contract LiquidityHubConfigTest is LiquidityHubBase {
     });
 
     vm.expectEmit(address(hub));
-    emit ILiquidityHub.AssetAdded(expectedAssetId, asset, decimals);
+    emit ILiquidityHub.AssetAdded(expectedAssetId, underlying, decimals);
     vm.expectEmit(address(hub));
     emit ILiquidityHub.AssetConfigUpdated(expectedAssetId, expectedConfig);
 
     vm.prank(ADMIN);
-    uint256 assetId = Utils.addAsset(hub, asset, decimals, feeReceiver, interestRateStrategy);
+    uint256 assetId = Utils.addAsset(hub, underlying, decimals, feeReceiver, interestRateStrategy);
 
     assertEq(assetId, expectedAssetId, 'asset id');
     assertEq(hub.getAssetCount(), assetId + 1, 'asset count');
