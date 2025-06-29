@@ -1,16 +1,17 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.0;
 
+import {IAccessManaged} from 'src/dependencies/openzeppelin/IAccessManaged.sol';
 import {IMulticall} from 'src/interfaces/IMulticall.sol';
 import {IPriceOracle} from 'src/interfaces/IPriceOracle.sol';
-import {DataTypes} from 'src/libraries/types/DataTypes.sol';
+import {DataTypes, ILiquidityHub} from 'src/libraries/types/DataTypes.sol';
 
 /**
  * @title ISpoke
  * @author Aave Labs
  * @notice Basic interface for Spoke
  */
-interface ISpoke is IMulticall {
+interface ISpoke is IMulticall, IAccessManaged {
   event ReserveAdded(uint256 indexed reserveId, uint256 indexed assetId);
   event ReserveConfigUpdated(uint256 indexed reserveId, DataTypes.ReserveConfig config);
   event LiquidityPremiumUpdated(uint256 indexed reserveId, uint256 liquidityPremium);
@@ -143,9 +144,9 @@ interface ISpoke is IMulticall {
   // TODO: rm when treasury accounting is done; indexing to read more easily
   event TmpLiquidationFee(uint256 indexed tmpLiquidationFee);
 
-  error InvalidReserve();
   error UserNotBorrowingReserve(uint256 reserveId);
   error ReserveNotListed();
+  error AssetNotListed();
   error InvalidLiquidityPremium();
   error InsufficientSupply(uint256 supply);
   error NotAvailableLiquidity(uint256 availableLiquidity);
@@ -178,8 +179,9 @@ interface ISpoke is IMulticall {
 
   function addReserve(
     uint256 assetId,
-    DataTypes.ReserveConfig memory config,
-    DataTypes.DynamicReserveConfig memory dynConfig
+    address hub,
+    DataTypes.ReserveConfig calldata config,
+    DataTypes.DynamicReserveConfig calldata dynConfig
   ) external returns (uint256);
 
   function updateReserveConfig(uint256 reserveId, DataTypes.ReserveConfig calldata params) external;

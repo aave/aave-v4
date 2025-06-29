@@ -111,6 +111,7 @@ contract SpokeAccrueLiquidityFeeTest is SpokeBase {
 
     // now only base debt grows
     updateLiquidityPremium(spoke1, reserveId, 0);
+    vm.prank(bob);
     spoke1.updateUserRiskPremium(bob);
 
     // refresh
@@ -208,6 +209,7 @@ contract SpokeAccrueLiquidityFeeTest is SpokeBase {
     // 0% premium
     expectedRp = 0;
     updateLiquidityPremium(spoke1, reserveId, expectedRp);
+    vm.prank(alice);
     spoke1.updateUserRiskPremium(alice);
 
     // withdraw any treasury fees to reset counter
@@ -308,6 +310,7 @@ contract SpokeAccrueLiquidityFeeTest is SpokeBase {
     // 0% premium
     expectedRp = 0;
     updateLiquidityPremium(spoke1, reserveId, expectedRp);
+    vm.prank(alice);
     spoke1.updateUserRiskPremium(alice);
     assertEq(_getUserRpStored(spoke1, reserveId, alice), expectedRp);
 

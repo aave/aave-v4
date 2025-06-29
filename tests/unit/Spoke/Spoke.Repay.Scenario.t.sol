@@ -1311,9 +1311,9 @@ contract SpokeRepayScenarioTest is SpokeBase {
 
     // Deal caller max collateral amount, approve hub, supply
     supplyAmount = MAX_SUPPLY_AMOUNT - supplyAmount;
-    deal(reserve.asset, caller, supplyAmount);
+    deal(reserve.underlying, caller, supplyAmount);
     vm.prank(caller);
-    IERC20(reserve.asset).approve(address(hub), supplyAmount);
+    IERC20(reserve.underlying).approve(address(hub), supplyAmount);
     Utils.supplyCollateral(spoke1, reserveId, caller, supplyAmount, caller);
 
     // Borrow
@@ -1323,8 +1323,8 @@ contract SpokeRepayScenarioTest is SpokeBase {
 
     // Repay
     uint256 shares2 = hub.convertToDrawnShares(reserve.assetId, assets);
-    deal(reserve.asset, caller, assets);
-    IERC20(reserve.asset).approve(address(hub), assets);
+    deal(reserve.underlying, caller, assets);
+    IERC20(reserve.underlying).approve(address(hub), assets);
     spoke1.repay(reserveId, assets, caller);
     vm.stopPrank();
 
@@ -1364,17 +1364,17 @@ contract SpokeRepayScenarioTest is SpokeBase {
 
     // Set up caller initial debt position
     supplyAmount = MAX_SUPPLY_AMOUNT - supplyAmount;
-    deal(reserve.asset, caller, supplyAmount);
+    deal(reserve.underlying, caller, supplyAmount);
     vm.prank(caller);
-    IERC20(reserve.asset).approve(address(hub), supplyAmount);
+    IERC20(reserve.underlying).approve(address(hub), supplyAmount);
     Utils.supplyCollateral(spoke1, reserveId, caller, supplyAmount, caller);
     Utils.borrow(spoke1, reserveId, caller, callerStartingDebt, caller);
 
     // Repay
     uint256 shares1 = hub.convertToDrawnShares(reserve.assetId, assets);
-    deal(reserve.asset, caller, assets);
+    deal(reserve.underlying, caller, assets);
     vm.startPrank(caller);
-    IERC20(reserve.asset).approve(address(hub), assets);
+    IERC20(reserve.underlying).approve(address(hub), assets);
     spoke1.repay(reserveId, assets, caller);
 
     // Borrow
