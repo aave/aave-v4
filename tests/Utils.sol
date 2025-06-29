@@ -68,36 +68,44 @@ library Utils {
 
   function addSpoke(
     ILiquidityHub hub,
+    address hubAdmin,
     uint256 assetId,
     address spoke,
     DataTypes.SpokeConfig memory spokeConfig
   ) internal {
+    vm.prank(hubAdmin);
     hub.addSpoke(assetId, spoke, spokeConfig);
   }
 
   function updateSpokeConfig(
     ILiquidityHub hub,
+    address hubAdmin,
     uint256 assetId,
     address spoke,
     DataTypes.SpokeConfig memory spokeConfig
   ) internal {
+    vm.prank(hubAdmin);
     hub.updateSpokeConfig(assetId, spoke, spokeConfig);
   }
 
   function addAsset(
     ILiquidityHub hub,
+    address hubAdmin,
     address asset,
     uint8 decimals,
     address interestRateStrategy
   ) internal returns (uint256) {
+    vm.prank(hubAdmin);
     return hub.addAsset(asset, decimals, interestRateStrategy);
   }
 
   function updateAssetConfig(
     ILiquidityHub hub,
+    address hubAdmin,
     uint256 assetId,
     DataTypes.AssetConfig memory config
   ) internal {
+    vm.prank(hubAdmin);
     hub.updateAssetConfig(assetId, config);
   }
 

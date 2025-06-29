@@ -137,7 +137,7 @@ contract Configurator is Ownable, IConfigurator {
       hub.updateSpokeConfig(
         assetId,
         config.feeReceiver,
-        DataTypes.SpokeConfig({supplyCap: 0, drawCap: 0, active: false})
+        DataTypes.SpokeConfig({active: false, supplyCap: 0, drawCap: 0})
       );
     }
 
@@ -148,9 +148,9 @@ contract Configurator is Ownable, IConfigurator {
           assetId,
           newFeeReceiver,
           DataTypes.SpokeConfig({
+            active: true,
             supplyCap: type(uint256).max,
-            drawCap: type(uint256).max,
-            active: true
+            drawCap: type(uint256).max
           })
         );
       } else {
@@ -158,9 +158,9 @@ contract Configurator is Ownable, IConfigurator {
           assetId,
           newFeeReceiver,
           DataTypes.SpokeConfig({
+            active: true,
             supplyCap: type(uint256).max,
-            drawCap: type(uint256).max,
-            active: true
+            drawCap: type(uint256).max
           })
         );
       }

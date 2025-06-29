@@ -83,6 +83,12 @@ contract AssetInterestRateStrategyTest is Base {
     );
   }
 
+  function test_setInterestRateData_revertsWith_OnlyLiquidityHub() public {
+    vm.expectRevert(IAssetInterestRateStrategy.OnlyLiquidityHub.selector);
+    vm.prank(makeAddr('randomCaller'));
+    rateStrategy.setInterestRateData(mockAssetId, encodedRateData);
+  }
+
   function test_setInterestRateData_revertsWith_InvalidOptimalUsageRatio() public {
     uint16[] memory invalidOptimalUsageRatios = new uint16[](2);
     invalidOptimalUsageRatios[0] = uint16(rateStrategy.MIN_OPTIMAL_RATIO()) - 1;

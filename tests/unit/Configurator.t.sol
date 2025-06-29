@@ -39,8 +39,8 @@ contract ConfiguratorTest is LiquidityHubBase {
     assetIds[1] = wethAssetId;
 
     DataTypes.SpokeConfig[] memory spokeConfigs = new DataTypes.SpokeConfig[](2);
-    spokeConfigs[0] = DataTypes.SpokeConfig({supplyCap: 1, drawCap: 2, active: true});
-    spokeConfigs[1] = DataTypes.SpokeConfig({supplyCap: 3, drawCap: 4, active: true});
+    spokeConfigs[0] = DataTypes.SpokeConfig({active: true, supplyCap: 1, drawCap: 2});
+    spokeConfigs[1] = DataTypes.SpokeConfig({active: true, supplyCap: 3, drawCap: 4});
 
     vm.expectRevert(ILiquidityHub.InvalidSpoke.selector);
     vm.prank(CONFIGURATOR_ADMIN);
@@ -53,9 +53,9 @@ contract ConfiguratorTest is LiquidityHubBase {
     assetIds[1] = wethAssetId;
 
     DataTypes.SpokeConfig[] memory spokeConfigs = new DataTypes.SpokeConfig[](3);
-    spokeConfigs[0] = DataTypes.SpokeConfig({supplyCap: 1, drawCap: 2, active: true});
-    spokeConfigs[1] = DataTypes.SpokeConfig({supplyCap: 3, drawCap: 4, active: true});
-    spokeConfigs[2] = DataTypes.SpokeConfig({supplyCap: 5, drawCap: 6, active: true});
+    spokeConfigs[0] = DataTypes.SpokeConfig({active: true, supplyCap: 1, drawCap: 2});
+    spokeConfigs[1] = DataTypes.SpokeConfig({active: true, supplyCap: 3, drawCap: 4});
+    spokeConfigs[2] = DataTypes.SpokeConfig({active: true, supplyCap: 5, drawCap: 6});
 
     vm.expectRevert(IConfigurator.MismatchedConfigs.selector);
     vm.prank(CONFIGURATOR_ADMIN);
@@ -68,14 +68,14 @@ contract ConfiguratorTest is LiquidityHubBase {
     assetIds[1] = wethAssetId;
 
     DataTypes.SpokeConfig memory daiSpokeConfig = DataTypes.SpokeConfig({
+      active: true,
       supplyCap: 1,
-      drawCap: 2,
-      active: true
+      drawCap: 2
     });
     DataTypes.SpokeConfig memory wethSpokeConfig = DataTypes.SpokeConfig({
+      active: true,
       supplyCap: 3,
-      drawCap: 4,
-      active: true
+      drawCap: 4
     });
 
     DataTypes.SpokeConfig[] memory spokeConfigs = new DataTypes.SpokeConfig[](2);
@@ -342,7 +342,7 @@ contract ConfiguratorTest is LiquidityHubBase {
             (
               assetId,
               oldConfig.feeReceiver,
-              DataTypes.SpokeConfig({supplyCap: 0, drawCap: 0, active: false})
+              DataTypes.SpokeConfig({active: false, supplyCap: 0, drawCap: 0})
             )
           )
         );
@@ -358,9 +358,9 @@ contract ConfiguratorTest is LiquidityHubBase {
                 assetId,
                 feeReceiver,
                 DataTypes.SpokeConfig({
+                  active: true,
                   supplyCap: type(uint256).max,
-                  drawCap: type(uint256).max,
-                  active: true
+                  drawCap: type(uint256).max
                 })
               )
             )
@@ -374,9 +374,9 @@ contract ConfiguratorTest is LiquidityHubBase {
                 assetId,
                 feeReceiver,
                 DataTypes.SpokeConfig({
+                  active: true,
                   supplyCap: type(uint256).max,
-                  drawCap: type(uint256).max,
-                  active: true
+                  drawCap: type(uint256).max
                 })
               )
             )
@@ -481,7 +481,7 @@ contract ConfiguratorTest is LiquidityHubBase {
             (
               assetId,
               oldConfig.feeReceiver,
-              DataTypes.SpokeConfig({supplyCap: 0, drawCap: 0, active: false})
+              DataTypes.SpokeConfig({active: false, supplyCap: 0, drawCap: 0})
             )
           )
         );
@@ -497,9 +497,9 @@ contract ConfiguratorTest is LiquidityHubBase {
                 assetId,
                 feeReceiver,
                 DataTypes.SpokeConfig({
+                  active: true,
                   supplyCap: type(uint256).max,
-                  drawCap: type(uint256).max,
-                  active: true
+                  drawCap: type(uint256).max
                 })
               )
             )
@@ -513,9 +513,9 @@ contract ConfiguratorTest is LiquidityHubBase {
                 assetId,
                 feeReceiver,
                 DataTypes.SpokeConfig({
+                  active: true,
                   supplyCap: type(uint256).max,
-                  drawCap: type(uint256).max,
-                  active: true
+                  drawCap: type(uint256).max
                 })
               )
             )

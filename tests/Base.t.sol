@@ -296,9 +296,9 @@ abstract contract Base is Test {
 
   function configureTokenList() internal {
     DataTypes.SpokeConfig memory spokeConfig = DataTypes.SpokeConfig({
+      active: true,
       supplyCap: type(uint256).max,
-      drawCap: type(uint256).max,
-      active: true
+      drawCap: type(uint256).max
     });
 
     // Add all assets to the Liquidity Hub
@@ -1783,12 +1783,13 @@ abstract contract Base is Test {
     require(a.frozen == b.frozen, 'assertEq(AssetConfig): rozen');
     require(a.feeReceiver == b.feeReceiver, 'assertEq(AssetConfig): feeReceiver');
     require(a.liquidityFee == b.liquidityFee, 'assertEq(AssetConfig): liquidityFee');
-    require(address(a.irStrategy) == address(b.irStrategy), 'assertEq(AssetConfig): irStrategy');
+    require(a.irStrategy == b.irStrategy, 'assertEq(AssetConfig): irStrategy');
   }
 
   function assertEq(DataTypes.SpokeConfig memory a, DataTypes.SpokeConfig memory b) internal pure {
     require(a.supplyCap == b.supplyCap, 'assertEq(SpokeConfig): supplyCap');
     require(a.drawCap == b.drawCap, 'assertEq(SpokeConfig): drawCap');
+    require(a.active == b.active, 'assertEq(SpokeConfig): active');
   }
 
   function _calculateExpectedFees(

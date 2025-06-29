@@ -123,9 +123,9 @@ contract LiquidityHubBase is Base {
       assetId,
       tempSpoke,
       DataTypes.SpokeConfig({
+        active: true,
         supplyCap: type(uint256).max,
-        drawCap: type(uint256).max,
-        active: true
+        drawCap: type(uint256).max
       })
     );
 
@@ -158,9 +158,9 @@ contract LiquidityHubBase is Base {
       assetId,
       tempSpoke,
       DataTypes.SpokeConfig({
+        active: true,
         supplyCap: type(uint256).max,
-        drawCap: type(uint256).max,
-        active: true
+        drawCap: type(uint256).max
       })
     );
 

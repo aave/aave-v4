@@ -86,7 +86,7 @@ contract LiquidityHub is ILiquidityHub, AccessManaged {
     require(assetId < _assetCount, AssetNotListed());
     require(config.liquidityFee <= PercentageMathExtended.PERCENTAGE_FACTOR, InvalidLiquidityFee());
     require(config.feeReceiver != address(0) || config.liquidityFee == 0, InvalidFeeReceiver());
-    require(address(config.irStrategy) != address(0), InvalidIrStrategy());
+    require(config.irStrategy != address(0), InvalidIrStrategy());
 
     DataTypes.Asset storage asset = _assets[assetId];
     asset.accrue(assetId, _spokes[assetId][asset.config.feeReceiver]);
