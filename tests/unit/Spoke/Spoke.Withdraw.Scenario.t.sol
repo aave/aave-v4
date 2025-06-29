@@ -5,7 +5,7 @@ import 'tests/unit/Spoke/SpokeBase.t.sol';
 
 contract SpokeWithdrawScenarioTest is SpokeBase {
   struct MultiUserTestState {
-    IERC20 asset;
+    IERC20 underlying;
     uint256 assetId;
     uint256 stage;
     uint256 sharePrecision;
@@ -151,7 +151,7 @@ contract SpokeWithdrawScenarioTest is SpokeBase {
     _mockInterestRate(params.rate);
 
     MultiUserTestState memory state;
-    (state.assetId, state.asset) = getAssetByReserveId(spoke1, params.reserveId);
+    (state.assetId, state.underlying) = getAssetByReserveId(spoke1, params.reserveId);
 
     // alice supplies reserve
     Utils.supply({
@@ -192,7 +192,7 @@ contract SpokeWithdrawScenarioTest is SpokeBase {
     // carol repays all with interest
     state.repayAmount = spoke1.getUserTotalDebt(params.reserveId, carol);
     // deal in case carol's repayAmount exceeds default supplied amount due to interest
-    deal(address(state.asset), carol, state.repayAmount);
+    deal(address(state.underlying), carol, state.repayAmount);
     vm.prank(carol);
     spoke1.repay(params.reserveId, state.repayAmount);
 
@@ -205,7 +205,7 @@ contract SpokeWithdrawScenarioTest is SpokeBase {
     reserveData[state.stage] = loadReserveInfo(spoke1, params.reserveId);
     aliceData[state.stage] = loadUserInfo(spoke1, params.reserveId, alice);
     bobData[state.stage] = loadUserInfo(spoke1, params.reserveId, bob);
-    tokenData[state.stage] = getTokenBalances(state.asset, address(spoke1));
+    tokenData[state.stage] = getTokenBalances(state.underlying, address(spoke1));
     uint256 supplyExRate = getSupplyExRate(state.assetId);
 
     // make sure alice has a share to withdraw
@@ -236,7 +236,7 @@ contract SpokeWithdrawScenarioTest is SpokeBase {
     reserveData[state.stage] = loadReserveInfo(spoke1, params.reserveId);
     aliceData[state.stage] = loadUserInfo(spoke1, params.reserveId, alice);
     bobData[state.stage] = loadUserInfo(spoke1, params.reserveId, bob);
-    tokenData[state.stage] = getTokenBalances(state.asset, address(spoke1));
+    tokenData[state.stage] = getTokenBalances(state.underlying, address(spoke1));
     supplyExRate = getSupplyExRate(state.assetId);
 
     // make sure bob has a share to withdraw
@@ -267,7 +267,7 @@ contract SpokeWithdrawScenarioTest is SpokeBase {
     reserveData[state.stage] = loadReserveInfo(spoke1, params.reserveId);
     aliceData[state.stage] = loadUserInfo(spoke1, params.reserveId, alice);
     bobData[state.stage] = loadUserInfo(spoke1, params.reserveId, bob);
-    tokenData[state.stage] = getTokenBalances(state.asset, address(spoke1));
+    tokenData[state.stage] = getTokenBalances(state.underlying, address(spoke1));
 
     // reserve
     (uint256 reserveBaseDebt, uint256 reservePremiumDebt) = spoke1.getReserveDebt(params.reserveId);
@@ -291,12 +291,12 @@ contract SpokeWithdrawScenarioTest is SpokeBase {
     assertEq(tokenData[state.stage].spokeBalance, 0, 'tokenData spoke balance');
     assertEq(tokenData[state.stage].hubBalance, 0, 'tokenData hub balance');
     assertEq(
-      state.asset.balanceOf(alice),
+      state.underlying.balanceOf(alice),
       MAX_SUPPLY_AMOUNT - params.aliceAmount + aliceData[0].suppliedAmount,
       'alice balance'
     );
     assertEq(
-      state.asset.balanceOf(bob),
+      state.underlying.balanceOf(bob),
       MAX_SUPPLY_AMOUNT - params.bobAmount + bobData[1].suppliedAmount,
       'bob balance'
     );
@@ -326,9 +326,9 @@ contract SpokeWithdrawScenarioTest is SpokeBase {
     DataTypes.Reserve memory reserve = spoke1.getReserve(reserveId);
 
     // Deal caller the balance to deposit, and approve hub
-    deal(reserve.asset, caller, assets);
+    deal(reserve.underlying, caller, assets);
     vm.prank(caller);
-    IERC20(reserve.asset).approve(address(hub), assets);
+    IERC20(reserve.underlying).approve(address(hub), assets);
 
     // Supply and confirm share amount from event emission
     uint256 shares1 = hub.convertToSuppliedShares(reserve.assetId, assets);
@@ -379,9 +379,9 @@ contract SpokeWithdrawScenarioTest is SpokeBase {
     DataTypes.Reserve memory reserve = spoke1.getReserve(reserveId);
 
     // Deal caller the balance they will supply, and approve hub
-    deal(reserve.asset, caller, callerStartingBalance);
+    deal(reserve.underlying, caller, callerStartingBalance);
     vm.prank(caller);
-    IERC20(reserve.asset).approve(address(hub), type(uint256).max);
+    IERC20(reserve.underlying).approve(address(hub), type(uint256).max);
 
     // Set up initial state of caller by supplying their starting balance
     Utils.supply({

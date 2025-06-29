@@ -66,14 +66,13 @@ contract SpokeAccessTest is SpokeBase {
     );
     spoke1.addReserve(
       10,
+      address(hub),
       DataTypes.ReserveConfig({
-        hub: hub,
         active: true,
         frozen: false,
         paused: false,
         borrowable: true,
         collateral: true,
-        decimals: 18,
         liquidationBonus: 100_00,
         liquidityPremium: 0,
         liquidationProtocolFee: 0
@@ -85,14 +84,13 @@ contract SpokeAccessTest is SpokeBase {
     vm.prank(SPOKE_ADMIN);
     spoke1.addReserve(
       4,
+      address(hub),
       DataTypes.ReserveConfig({
-        hub: hub,
         active: true,
         frozen: false,
         paused: false,
         borrowable: true,
         collateral: true,
-        decimals: 18,
         liquidationBonus: 100_00,
         liquidityPremium: 0,
         liquidationProtocolFee: 0
@@ -107,13 +105,11 @@ contract SpokeAccessTest is SpokeBase {
     spoke1.updateReserveConfig(
       _daiReserveId(spoke1),
       DataTypes.ReserveConfig({
-        hub: hub,
         active: true,
         frozen: false,
         paused: false,
         borrowable: true,
         collateral: true,
-        decimals: 18,
         liquidationBonus: 100_00,
         liquidityPremium: 0,
         liquidationProtocolFee: 0
@@ -125,13 +121,11 @@ contract SpokeAccessTest is SpokeBase {
     spoke1.updateReserveConfig(
       _daiReserveId(spoke1),
       DataTypes.ReserveConfig({
-        hub: hub,
         active: true,
         frozen: false,
         paused: false,
         borrowable: true,
         collateral: true,
-        decimals: 18,
         liquidationBonus: 100_00,
         liquidityPremium: 0,
         liquidationProtocolFee: 0

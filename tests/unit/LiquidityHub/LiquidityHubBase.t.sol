@@ -2,7 +2,6 @@
 pragma solidity ^0.8.0;
 
 import 'tests/Base.t.sol';
-import {DataTypes} from 'src/libraries/types/DataTypes.sol';
 
 contract LiquidityHubBase is Base {
   using SharesMath for uint256;
@@ -44,7 +43,7 @@ contract LiquidityHubBase is Base {
     DebtAccounting[3] spoke;
   }
 
-  function setUp() public override {
+  function setUp() public virtual override {
     super.setUp();
     initEnvironment();
   }
@@ -60,32 +59,32 @@ contract LiquidityHubBase is Base {
   /// increases supply and debt exchange rate
   function _increaseExchangeRate(uint256 assetId, uint256 amount) internal {
     address tempUser1 = makeAddr('TEMP_USER_1');
-    deal(address(hub.assetsList(assetId)), tempUser1, amount);
+    deal(hub.getAsset(assetId).underlying, tempUser1, amount);
 
     address tempSpoke1 = makeAddr('TEMP_SPOKE_1');
     vm.startPrank(ADMIN);
     hub.addSpoke(
       assetId,
+      tempSpoke1,
       DataTypes.SpokeConfig({
         supplyCap: type(uint256).max,
         drawCap: type(uint256).max,
         active: true
-      }),
-      tempSpoke1
+      })
     );
 
     address tempUser2 = makeAddr('TEMP_USER_2');
-    deal(address(hub.assetsList(assetId)), tempUser2, amount);
+    deal(hub.getAsset(assetId).underlying, tempUser2, amount);
 
     address tempSpoke2 = makeAddr('TEMP_SPOKE_2');
     hub.addSpoke(
       assetId,
+      tempSpoke2,
       DataTypes.SpokeConfig({
         supplyCap: type(uint256).max,
         drawCap: type(uint256).max,
         active: true
-      }),
-      tempSpoke2
+      })
     );
     vm.stopPrank();
 
@@ -162,21 +161,21 @@ contract LiquidityHubBase is Base {
 
     uint256 initialLiq = hub.getAvailableLiquidity(assetId);
 
-    IERC20 asset = hub.assetsList(assetId);
-    deal(address(asset), tempUser, amount);
+    address asset = hub.getAsset(assetId).underlying;
+    deal(asset, tempUser, amount);
 
     vm.prank(tempUser);
-    asset.approve(address(hub), type(uint256).max);
+    IERC20(asset).approve(address(hub), type(uint256).max);
 
     vm.prank(ADMIN);
     hub.addSpoke(
       assetId,
+      tempSpoke,
       DataTypes.SpokeConfig({
         supplyCap: type(uint256).max,
         drawCap: type(uint256).max,
         active: true
-      }),
-      tempSpoke
+      })
     );
 
     Utils.add({
@@ -206,12 +205,12 @@ contract LiquidityHubBase is Base {
     vm.prank(HUB_ADMIN);
     hub.addSpoke(
       assetId,
+      tempSpoke,
       DataTypes.SpokeConfig({
         supplyCap: type(uint256).max,
         drawCap: type(uint256).max,
         active: true
-      }),
-      tempSpoke
+      })
     );
 
     if (withPremium) {

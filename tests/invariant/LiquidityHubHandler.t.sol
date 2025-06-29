@@ -46,22 +46,36 @@ contract LiquidityHubHandler is Test {
     usdt = new MockERC20();
 
     // Add dai
-    hub.addAsset(
+    hub.addAsset(address(dai), 18, address(irStrategy));
+    vm.stopPrank();
+    vm.prank(address(hub));
+    irStrategy.setInterestRateData(
+      0,
+      abi.encode(
+        IAssetInterestRateStrategy.InterestRateData({
+          optimalUsageRatio: 90_00, // 90.00%
+          baseVariableBorrowRate: 5_00, // 5.00%
+          variableRateSlope1: 5_00, // 5.00%
+          variableRateSlope2: 5_00 // 5.00%
+        })
+      )
+    );
+    vm.startPrank(hubAdmin);
+    hub.updateAssetConfig(
+      0,
       DataTypes.AssetConfig({
         feeReceiver: address(0),
         active: true,
         frozen: false,
         paused: false,
-        decimals: 18,
-        liquidityFee: 5_00,
-        irStrategy: irStrategy
-      }),
-      address(dai)
+        liquidityFee: 0,
+        irStrategy: address(irStrategy)
+      })
     );
     spoke1.addReserve(
       0,
+      address(hub),
       DataTypes.ReserveConfig({
-        decimals: 18,
         active: true,
         frozen: false,
         paused: false,
@@ -69,8 +83,7 @@ contract LiquidityHubHandler is Test {
         liquidityPremium: 0,
         liquidationProtocolFee: 0,
         borrowable: false,
-        collateral: false,
-        hub: hub
+        collateral: false
       }),
       DataTypes.DynamicReserveConfig({collateralFactor: 0})
     );
@@ -95,11 +108,10 @@ contract LiquidityHubHandler is Test {
 
   function supply(uint256 assetId, address user, uint256 amount, address onBehalfOf) public {
     vm.assume(user != address(hub) && user != address(0) && onBehalfOf != address(0));
-    assetId = bound(assetId, 0, hub.assetCount() - 1);
+    assetId = bound(assetId, 0, hub.getAssetCount() - 1);
     amount = bound(amount, 1, type(uint128).max);
 
-    IERC20 asset = hub.assetsList(assetId);
-    deal(address(asset), user, amount);
+    deal(hub.getAsset(assetId).underlying, user, amount);
     Utils.add({
       hub: hub,
       assetId: assetId,
@@ -115,7 +127,7 @@ contract LiquidityHubHandler is Test {
   }
 
   function withdraw(uint256 assetId, address user, uint256 amount, address to) public {
-    assetId = bound(assetId, 0, hub.assetCount() - 1);
+    assetId = bound(assetId, 0, hub.getAssetCount() - 1);
     // TODO: bound by spoke1 user balance
     amount = bound(amount, 1, 2);
 
@@ -128,16 +140,16 @@ contract LiquidityHubHandler is Test {
 
   function donate(uint256 assetId, address user, uint256 amount) public {
     vm.assume(user != address(hub) && user != address(0));
-    assetId = bound(assetId, 0, hub.assetCount() - 1);
+    assetId = bound(assetId, 0, hub.getAssetCount() - 1);
     amount = bound(amount, 1, type(uint128).max);
 
-    IERC20 asset = hub.assetsList(assetId);
+    address asset = hub.getAsset(assetId).underlying;
 
-    deal(address(asset), user, amount);
+    deal(asset, user, amount);
     vm.prank(user);
-    asset.transfer(address(hub), amount);
+    IERC20(asset).transfer(address(hub), amount);
 
-    s.assetDonated[address(asset)] += amount;
+    s.assetDonated[asset] += amount;
   }
 
   function _updateState(uint256 assetId) internal {

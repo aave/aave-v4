@@ -74,13 +74,11 @@ contract SpokeMultipleHubBase is SpokeBase {
     accessManager.setTargetFunctionRole(address(newSpoke), selectors, Roles.SPOKE_ADMIN_ROLE);
 
     // Liquidity Hub Admin functionalities
-    bytes4[] memory hubSelectors = new bytes4[](6);
+    bytes4[] memory hubSelectors = new bytes4[](4);
     hubSelectors[0] = ILiquidityHub.addAsset.selector;
     hubSelectors[1] = ILiquidityHub.updateAssetConfig.selector;
     hubSelectors[2] = ILiquidityHub.addSpoke.selector;
-    hubSelectors[3] = ILiquidityHub.addSpokes.selector;
-    hubSelectors[4] = ILiquidityHub.updateSpokeConfig.selector;
-    hubSelectors[5] = ILiquidityHub.updateAssetFees.selector;
+    hubSelectors[3] = ILiquidityHub.updateSpokeConfig.selector;
 
     accessManager.setTargetFunctionRole(address(hub), hubSelectors, Roles.HUB_ADMIN_ROLE);
     accessManager.setTargetFunctionRole(address(newHub), hubSelectors, Roles.HUB_ADMIN_ROLE);

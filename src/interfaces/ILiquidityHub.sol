@@ -1,7 +1,6 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.0;
 
-import {IERC20} from 'src/dependencies/openzeppelin/IERC20.sol';
 import {IAccessManaged} from 'src/dependencies/openzeppelin/IAccessManaged.sol';
 import {DataTypes} from 'src/libraries/types/DataTypes.sol';
 import {IAssetInterestRateStrategy} from 'src/interfaces/IAssetInterestRateStrategy.sol';
@@ -13,7 +12,7 @@ import {IAssetInterestRateStrategy} from 'src/interfaces/IAssetInterestRateStrat
  */
 interface ILiquidityHub is IAccessManaged {
   event SpokeAdded(uint256 indexed assetId, address indexed spoke);
-  event AssetAdded(uint256 indexed assetId, address indexed asset);
+  event AssetAdded(uint256 indexed assetId, address indexed asset, uint8 decimals);
   event AssetConfigUpdated(uint256 indexed assetId, DataTypes.AssetConfig config);
   event SpokeConfigUpdated(
     uint256 indexed assetId,
@@ -54,7 +53,6 @@ interface ILiquidityHub is IAccessManaged {
     uint256 realizedPremiumTaken
   );
 
-  error MismatchedConfigs();
   error InvalidSharesAmount();
   error InvalidSupplyAmount();
   error InvalidAddFromHub();
@@ -69,6 +67,7 @@ interface ILiquidityHub is IAccessManaged {
   error DrawCapExceeded(uint256 drawCap);
   error SurplusAmountRestored(uint256 maxAllowedRestore);
   error InvalidSpoke();
+  error SpokeNotListed();
   error InvalidRiskPremiumBps(uint256 bps);
   error AssetPaused();
   error AssetFrozen();
@@ -80,22 +79,16 @@ interface ILiquidityHub is IAccessManaged {
   error InvalidFeeReceiver();
   error SpokeNotActive();
 
-  function addAsset(DataTypes.AssetConfig memory params, address asset) external;
+  function addAsset(address asset, uint8 decimals, address irStrategy) external returns (uint256);
 
-  function updateAssetConfig(uint256 assetId, DataTypes.AssetConfig memory config) external;
+  function updateAssetConfig(uint256 assetId, DataTypes.AssetConfig calldata config) external;
 
-  function addSpoke(uint256 assetId, DataTypes.SpokeConfig memory params, address spoke) external;
-
-  function addSpokes(
-    uint256[] calldata assetIds,
-    DataTypes.SpokeConfig[] memory configs,
-    address spoke
-  ) external;
+  function addSpoke(uint256 assetId, address spoke, DataTypes.SpokeConfig calldata params) external;
 
   function updateSpokeConfig(
     uint256 assetId,
     address spoke,
-    DataTypes.SpokeConfig memory config
+    DataTypes.SpokeConfig calldata config
   ) external;
 
   /**
@@ -104,17 +97,6 @@ interface ILiquidityHub is IAccessManaged {
    * @param data The interest rate data to apply to the given asset, all in bps, encoded in bytes.
    */
   function setInterestRateData(uint256 assetId, bytes calldata data) external;
-
-  /**
-   * @notice Updates the fee configuration for a specified asset.
-   * @dev Accrues asset fees to the current receiver before applying any updates.
-   * @dev Disables the old fee receiver as spoke by setting its caps to zero.
-   * @dev The new fee receiver cannot be zero if the liquidity fee is non-zero.
-   * @param assetId The identifier of the asset.
-   * @param feeReceiver The address of the fee receiver
-   * @param liquidityFee The fee percentage applied to the asset based on liquidity growth.
-   */
-  function updateAssetFees(uint256 assetId, address feeReceiver, uint256 liquidityFee) external;
 
   /**
    * @notice Add/Supply asset on behalf of user.
@@ -242,9 +224,7 @@ interface ILiquidityHub is IAccessManaged {
 
   function getSpokeTotalDebt(uint256 assetId, address spoke) external view returns (uint256);
 
-  function assetCount() external view returns (uint256);
+  function getAssetCount() external view returns (uint256);
 
-  function assetsList(uint256 assetId) external view returns (IERC20);
-
-  function MAX_ALLOWED_ASSET_DECIMALS() external view returns (uint256);
+  function MAX_ALLOWED_ASSET_DECIMALS() external view returns (uint8);
 }

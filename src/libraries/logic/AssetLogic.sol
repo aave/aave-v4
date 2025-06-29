@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.0;
 
+import {IBasicInterestRateStrategy} from 'src/interfaces/IBasicInterestRateStrategy.sol';
 import {ILiquidityHub} from 'src/interfaces/ILiquidityHub.sol';
 import {WadRayMathExtended} from 'src/libraries/math/WadRayMathExtended.sol';
 import {DataTypes} from 'src/libraries/types/DataTypes.sol';
@@ -106,16 +107,18 @@ library AssetLogic {
 
   function updateBorrowRate(
     DataTypes.Asset storage asset,
+    uint256 assetId,
     uint256 liquidityAdded,
     uint256 liquidityTaken
   ) internal {
-    asset.baseBorrowRate = asset.config.irStrategy.calculateInterestRate({
-      assetId: asset.id,
-      availableLiquidity: asset.availableLiquidity,
-      totalDebt: asset.baseDebt(),
-      liquidityAdded: liquidityAdded,
-      liquidityTaken: liquidityTaken
-    });
+    asset.baseBorrowRate = IBasicInterestRateStrategy(asset.config.irStrategy)
+      .calculateInterestRate({
+        assetId: assetId,
+        availableLiquidity: asset.availableLiquidity,
+        totalDebt: asset.baseDebt(),
+        liquidityAdded: liquidityAdded,
+        liquidityTaken: liquidityTaken
+      });
   }
 
   /**
@@ -123,7 +126,11 @@ library AssetLogic {
    * @param asset The data struct of the asset with accruing interest
    * @param feeReceiver The data struct of the fee receiver spoke associated with the asset
    */
-  function accrue(DataTypes.Asset storage asset, DataTypes.SpokeData storage feeReceiver) internal {
+  function accrue(
+    DataTypes.Asset storage asset,
+    uint256 assetId,
+    DataTypes.SpokeData storage feeReceiver
+  ) internal {
     uint256 drawnIndex = asset.previewDrawnIndex();
     uint256 feeShares = asset.previewFeeShares(drawnIndex - asset.baseDebtIndex);
 
@@ -136,7 +143,7 @@ library AssetLogic {
     }
 
     asset.lastUpdateTimestamp = block.timestamp;
-    emit ILiquidityHub.DrawnIndexUpdate(asset.id, drawnIndex, block.timestamp);
+    emit ILiquidityHub.DrawnIndexUpdate(assetId, drawnIndex, block.timestamp);
   }
 
   /**

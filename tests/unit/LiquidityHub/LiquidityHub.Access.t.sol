@@ -9,13 +9,12 @@ contract LiquidityHubAccessTest is LiquidityHubBase {
     TestnetERC20 tokenA = new TestnetERC20('A', 'A', 18);
     TestnetERC20 tokenB = new TestnetERC20('B', 'B', 18);
     DataTypes.AssetConfig memory assetConfig = DataTypes.AssetConfig({
-      feeReceiver: address(0),
       active: true,
       frozen: false,
       paused: false,
-      decimals: 18,
+      feeReceiver: address(0),
       liquidityFee: 0,
-      irStrategy: irStrategy
+      irStrategy: address(irStrategy)
     });
     DataTypes.SpokeConfig memory spokeConfig = DataTypes.SpokeConfig({
       drawCap: 1000e18,
@@ -27,12 +26,12 @@ contract LiquidityHubAccessTest is LiquidityHubBase {
     vm.expectRevert(
       abi.encodeWithSelector(IAccessManaged.AccessManagedUnauthorized.selector, address(this))
     );
-    hub.addAsset(assetConfig, address(tokenA));
+    hub.addAsset(address(tokenA), 18, address(irStrategy));
 
     // Hub Admin can add assets to the hub
     vm.prank(HUB_ADMIN);
-    hub.addAsset(assetConfig, address(tokenA));
-    uint256 assetAId = hub.assetCount() - 1; // Asset A Id
+    hub.addAsset(address(tokenA), 18, address(irStrategy));
+    uint256 assetAId = hub.getAssetCount() - 1; // Asset A Id
 
     // Only Hub Admin can update asset config
     vm.expectRevert(
@@ -48,34 +47,11 @@ contract LiquidityHubAccessTest is LiquidityHubBase {
     vm.expectRevert(
       abi.encodeWithSelector(IAccessManaged.AccessManagedUnauthorized.selector, address(this))
     );
-    hub.addSpoke(assetAId, spokeConfig, address(spoke1));
+    hub.addSpoke(assetAId, address(spoke1), spokeConfig);
 
     // Hub Admin can add spoke
     vm.prank(HUB_ADMIN);
-    hub.addSpoke(assetAId, spokeConfig, address(spoke1));
-
-    // List token B on hub for preparation of next test
-    vm.prank(HUB_ADMIN);
-    hub.addAsset(assetConfig, address(tokenB));
-    uint256 assetBId = hub.assetCount() - 1;
-
-    // Configure spokes to add
-    uint256[] memory assetIds = new uint256[](2);
-    assetIds[0] = assetAId;
-    assetIds[1] = assetBId;
-    DataTypes.SpokeConfig[] memory spokeConfigs = new DataTypes.SpokeConfig[](2);
-    spokeConfigs[0] = spokeConfig;
-    spokeConfigs[1] = spokeConfig;
-
-    // Only Hub Admin can add spokes
-    vm.expectRevert(
-      abi.encodeWithSelector(IAccessManaged.AccessManagedUnauthorized.selector, address(this))
-    );
-    hub.addSpokes(assetIds, spokeConfigs, address(spoke2));
-
-    // Hub Admin can add spokes
-    vm.prank(HUB_ADMIN);
-    hub.addSpokes(assetIds, spokeConfigs, address(spoke2));
+    hub.addSpoke(assetAId, address(spoke1), spokeConfig);
 
     // Only Hub Admin can update spoke config
     vm.expectRevert(
@@ -86,16 +62,6 @@ contract LiquidityHubAccessTest is LiquidityHubBase {
     // Hub Admin can update spoke config
     vm.prank(HUB_ADMIN);
     hub.updateSpokeConfig(assetAId, address(spoke1), spokeConfig);
-
-    // Only Hub Admin can update asset fees
-    vm.expectRevert(
-      abi.encodeWithSelector(IAccessManaged.AccessManagedUnauthorized.selector, address(this))
-    );
-    hub.updateAssetFees(daiAssetId, address(0), 0);
-
-    // Hub Admin can update asset fees
-    vm.prank(HUB_ADMIN);
-    hub.updateAssetFees(daiAssetId, address(0), 0);
   }
 
   function test_setInterestRateData_access() public {
@@ -157,7 +123,11 @@ contract LiquidityHubAccessTest is LiquidityHubBase {
 
     // HUB_ADMIN can still access the other hub functions for which it has permissions
     vm.prank(HUB_ADMIN);
-    hub.updateAssetFees(daiAssetId, address(0), 0);
+    hub.updateSpokeConfig(
+      daiAssetId,
+      address(spoke1),
+      DataTypes.SpokeConfig({drawCap: 1000e18, supplyCap: 1000e18, active: true})
+    );
   }
 
   /// @dev Test showcasing ability to migrate role responsibility for a function selector.

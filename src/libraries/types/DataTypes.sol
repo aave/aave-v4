@@ -18,6 +18,8 @@ library DataTypes {
   }
 
   struct Asset {
+    address underlying;
+    uint8 decimals;
     uint256 suppliedShares;
     uint256 availableLiquidity;
     uint256 baseDrawnShares;
@@ -27,31 +29,28 @@ library DataTypes {
     uint256 baseDebtIndex;
     uint256 baseBorrowRate;
     uint256 lastUpdateTimestamp;
-    uint256 id; // todo remove
     DataTypes.AssetConfig config;
   }
 
   struct SpokeConfig {
-    uint256 drawCap;
     uint256 supplyCap;
     bool active;
+    uint256 drawCap;
   }
 
   struct AssetConfig {
-    address feeReceiver;
     bool active;
-    bool frozen;
     bool paused;
-    uint256 decimals;
+    bool frozen;
+    address feeReceiver;
     uint256 liquidityFee;
-    IAssetInterestRateStrategy irStrategy;
+    address irStrategy;
   }
 
   // Spoke types
   struct Reserve {
     uint256 reserveId;
     uint256 assetId;
-    address asset; // todo rm not needed
     uint256 suppliedShares;
     uint256 baseDrawnShares;
     uint256 premiumDrawnShares;
@@ -59,16 +58,17 @@ library DataTypes {
     uint256 realizedPremium;
     ReserveConfig config;
     uint16 dynamicConfigKey; // key of the last reserve config
+    uint8 decimals;
+    address underlying;
+    ILiquidityHub hub;
   }
 
   struct ReserveConfig {
-    ILiquidityHub hub;
     bool active;
     bool frozen;
     bool paused;
     bool borrowable;
     bool collateral;
-    uint256 decimals; // TODO: use smaller uint8
     uint256 liquidationBonus; // BPS, 100_00 represent a 0% bonus TODO: use smaller uint
     uint256 liquidityPremium; // BPS TODO: use smaller uint
     uint256 liquidationProtocolFee; // BPS TODO: use smaller uint
@@ -79,13 +79,22 @@ library DataTypes {
   }
 
   struct UserPosition {
-    bool usingAsCollateral;
     uint256 suppliedShares;
     uint256 baseDrawnShares;
     uint256 premiumDrawnShares;
     uint256 premiumOffset;
     uint256 realizedPremium;
     uint16 configKey; // key of the last user config
+  }
+
+  struct PositionStatus {
+    mapping(uint256 slot => uint256 status) map;
+  }
+
+  struct NotifyRiskPremiumUpdateVars {
+    bool premiumIncrease;
+    uint256 reserveCount;
+    uint256 reserveId;
   }
 
   struct CalculateUserAccountDataVars {
@@ -140,6 +149,8 @@ library DataTypes {
     uint256 i;
     uint256 debtAssetId;
     uint256 collateralAssetId;
+    uint256 debtReserveId;
+    uint256 collateralReserveId;
     uint256 baseDebt;
     uint256 premiumDebt;
     uint256 collateralToLiquidate;
