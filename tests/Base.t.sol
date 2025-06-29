@@ -1764,6 +1764,15 @@ abstract contract Base is Test {
     return spoke.getDynamicReserveConfig(reserveId).collateralFactor;
   }
 
+  function _hasRole(
+    IAccessManager authority,
+    uint64 role,
+    address account
+  ) internal view returns (bool) {
+    (bool hasRole, ) = authority.hasRole(role, account);
+    return hasRole;
+  }
+
   function _randomBps() internal returns (uint16) {
     return vm.randomUint(0, PercentageMath.PERCENTAGE_FACTOR).toUint16();
   }
