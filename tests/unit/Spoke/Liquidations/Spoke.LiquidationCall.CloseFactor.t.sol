@@ -402,7 +402,7 @@ contract LiquidationCallCloseFactorTest is SpokeLiquidationBase {
         .percentMul(95_00) // add buffer so that amount to restore is > 0
     );
 
-    liquidationFee = bound(liquidationFee, 0, 100_00);
+    liquidationFee = bound(liquidationFee, 0, PercentageMathExtended.PERCENTAGE_FACTOR);
     supplyAmount = bound(
       supplyAmount,
       _convertBaseCurrencyToAmount(spoke1, collateralReserveId, 1e25),
@@ -413,11 +413,11 @@ contract LiquidationCallCloseFactorTest is SpokeLiquidationBase {
     );
     skipTime = bound(skipTime, 1, MAX_SKIP_TIME);
 
-    state.liquidationFeeBPS = liquidationFee;
+    state.liquidationFee = liquidationFee;
 
     spoke1.updateLiquidationConfig(liqConfig);
     updateLiquidationBonus(spoke1, collateralReserveId, liqBonus);
-    updateLiquidationFee(spoke1, collateralReserveId, state.liquidationFeeBPS);
+    updateLiquidationFee(spoke1, collateralReserveId, state.liquidationFee);
     uint256 desiredHf = _calcLowestHfToRestoreCloseFactor(spoke1, collateralReserveId, liqBonus)
       .percentMul(101_00); // add buffer so that not all collateral is seized
 
@@ -464,12 +464,25 @@ contract LiquidationCallCloseFactorTest is SpokeLiquidationBase {
       ) -
       hub.convertToSuppliedSharesUp(state.collateralReserve.assetId, state.collToLiq);
 
-    // due to restore donation, exact feeShares args may be inaccurate
-    vm.expectCall(
-      address(hub),
-      abi.encodeWithSelector(hub.payFeeWithExistingLiquidity.selector),
-      state.liquidationFeeShares > 0 ? 1 : 0
-    );
+    if (collateralReserveId != debtReserveId) {
+      vm.expectCall(
+        address(hub),
+        abi.encodeWithSelector(
+          hub.payFee.selector,
+          state.collateralReserve.assetId,
+          state.liquidationFeeShares
+        ),
+        state.liquidationFeeShares > 0 ? 1 : 0
+      );
+    } else {
+      // precision loss can occur when coll and debt reserve are the same
+      // during a restore action that includes donation
+      vm.expectCall(
+        address(hub),
+        abi.encodeWithSelector(hub.payFee.selector),
+        state.liquidationFeeShares > 0 ? 1 : 0
+      );
+    }
 
     vm.expectEmit(address(spoke1));
     emit ISpoke.LiquidationCall(

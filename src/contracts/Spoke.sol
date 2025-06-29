@@ -1178,10 +1178,7 @@ contract Spoke is ISpoke, Multicall {
     }
 
     if (vars.totalLiquidationProtocolFeeShares > 0) {
-      collateralReserveHub.payFeeWithExistingLiquidity(
-        vars.collateralAssetId,
-        vars.totalLiquidationProtocolFeeShares
-      );
+      collateralReserveHub.payFee(vars.collateralAssetId, vars.totalLiquidationProtocolFeeShares);
     }
 
     // TODO: rm when dupe reserve accounting is rm

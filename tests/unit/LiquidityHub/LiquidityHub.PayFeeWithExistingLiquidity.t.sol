@@ -3,8 +3,8 @@ pragma solidity ^0.8.0;
 
 import 'tests/unit/LiquidityHub/LiquidityHubBase.t.sol';
 
-contract LiquidityHubPayFeeWithExistingLiquidityTest is LiquidityHubBase {
-  function test_payFeeWithExistingLiquidity_revertsWith_SuppliedAmountExceeded() public {
+contract LiquidityHubPayFeeTest is LiquidityHubBase {
+  function test_payFee_revertsWith_SuppliedAmountExceeded() public {
     uint256 addAmount = 100e18;
     Utils.add({
       hub: hub,
@@ -16,17 +16,16 @@ contract LiquidityHubPayFeeWithExistingLiquidityTest is LiquidityHubBase {
     });
 
     uint256 feeShares = hub.getSpokeSuppliedShares(daiAssetId, address(spoke1));
+    uint256 feeAmount = hub.getSpokeSuppliedAmount(daiAssetId, address(spoke1));
 
     vm.expectRevert(
-      abi.encodeWithSelector(ILiquidityHub.SuppliedSharesExceeded.selector, feeShares)
+      abi.encodeWithSelector(ILiquidityHub.SuppliedAmountExceeded.selector, feeAmount)
     );
     vm.prank(address(spoke1));
-    hub.payFeeWithExistingLiquidity(daiAssetId, feeShares + 1);
+    hub.payFee(daiAssetId, feeShares + 1);
   }
 
-  function test_payFeeWithExistingLiquidity_revertsWith_SuppliedAmountExceeded_with_interest()
-    public
-  {
+  function test_payFee_revertsWith_SuppliedAmountExceeded_with_interest() public {
     uint256 addAmount = 100e18;
     Utils.add({
       hub: hub,
@@ -49,18 +48,19 @@ contract LiquidityHubPayFeeWithExistingLiquidityTest is LiquidityHubBase {
     });
 
     uint256 feeShares = hub.getSpokeSuppliedShares(daiAssetId, address(spoke1));
+    uint256 feeAmount = hub.getSpokeSuppliedAmount(daiAssetId, address(spoke1));
 
     // supply ex rate increases due to interest
-    assertGt(hub.getSpokeSuppliedAmount(daiAssetId, address(spoke1)), feeShares);
+    assertGt(feeAmount, feeShares);
 
     vm.expectRevert(
-      abi.encodeWithSelector(ILiquidityHub.SuppliedSharesExceeded.selector, feeShares)
+      abi.encodeWithSelector(ILiquidityHub.SuppliedAmountExceeded.selector, feeAmount)
     );
     vm.prank(address(spoke1));
-    hub.payFeeWithExistingLiquidity(daiAssetId, feeShares + 1);
+    hub.payFee(daiAssetId, feeShares + 1);
   }
 
-  function test_payFeeWithExistingLiquidity_fuzz(uint256 addAmount, uint256 feeShares) public {
+  function test_payFee_fuzz(uint256 addAmount, uint256 feeShares) public {
     addAmount = bound(addAmount, 1, MAX_SUPPLY_AMOUNT);
 
     Utils.add({
@@ -81,10 +81,18 @@ contract LiquidityHubPayFeeWithExistingLiquidityTest is LiquidityHubBase {
     );
 
     vm.expectEmit(address(hub));
-    emit ILiquidityHub.PayFeeWithExistingLiquidity(daiAssetId, address(spoke1), feeShares);
+    emit ILiquidityHub.Remove(
+      daiAssetId,
+      address(spoke1),
+      hub.convertToSuppliedAssets(daiAssetId, feeShares),
+      feeShares
+    );
+
+    vm.expectEmit(address(hub));
+    emit ILiquidityHub.AccrueFees(daiAssetId, feeShares);
 
     vm.prank(address(spoke1));
-    hub.payFeeWithExistingLiquidity(daiAssetId, feeShares);
+    hub.payFee(daiAssetId, feeShares);
 
     uint256 spokeSharesAfter = hub.getSpokeSuppliedShares(daiAssetId, address(spoke1));
     uint256 feeReceiverSharesAfter = hub.getSpokeSuppliedShares(
@@ -100,7 +108,7 @@ contract LiquidityHubPayFeeWithExistingLiquidityTest is LiquidityHubBase {
     );
   }
 
-  function test_payFeeWithExistingLiquidity_fuzz_with_interest(
+  function test_payFee_fuzz_with_interest(
     uint256 addAmount,
     uint256 feeShares,
     uint256 skipTime
@@ -123,7 +131,7 @@ contract LiquidityHubPayFeeWithExistingLiquidityTest is LiquidityHubBase {
       supplySpoke: address(spoke2),
       supplyAmount: 100e18,
       drawUser: alice,
-      drawSpoke: address(spoke1),
+      drawSpoke: address(spoke3),
       drawAmount: 100e18,
       skipTime: skipTime
     });
@@ -144,10 +152,10 @@ contract LiquidityHubPayFeeWithExistingLiquidityTest is LiquidityHubBase {
     );
 
     vm.expectEmit(address(hub));
-    emit ILiquidityHub.PayFeeWithExistingLiquidity(daiAssetId, address(spoke1), feeShares);
+    emit ILiquidityHub.AccrueFees(daiAssetId, feeShares);
 
     vm.prank(address(spoke1));
-    hub.payFeeWithExistingLiquidity(daiAssetId, feeShares);
+    hub.payFee(daiAssetId, feeShares);
 
     uint256 spokeSharesAfter = hub.getSpokeSuppliedShares(daiAssetId, address(spoke1));
     uint256 feeReceiverSharesAfter = hub.getSpokeSuppliedShares(
@@ -162,9 +170,10 @@ contract LiquidityHubPayFeeWithExistingLiquidityTest is LiquidityHubBase {
       'fee receiver supplied shares after'
     );
   }
-  function test_payFeeWithExistingLiquidity_revertsWith_InvalidFeeShares() public {
+
+  function test_payFee_revertsWith_InvalidFeeShares() public {
     vm.expectRevert(ILiquidityHub.InvalidFeeShares.selector);
     vm.prank(address(spoke1));
-    hub.payFeeWithExistingLiquidity(daiAssetId, 0);
+    hub.payFee(daiAssetId, 0);
   }
 }

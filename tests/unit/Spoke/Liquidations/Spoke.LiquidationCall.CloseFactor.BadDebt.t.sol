@@ -351,7 +351,7 @@ contract LiquidationCallCloseFactorBadDebtTest is SpokeLiquidationBase {
       PercentageMath.PERCENTAGE_FACTOR.percentDiv(state.collDynConfig.collateralFactor)
     );
 
-    liquidationFee = bound(liquidationFee, 0, 100_00);
+    liquidationFee = bound(liquidationFee, 0, PercentageMathExtended.PERCENTAGE_FACTOR);
     supplyAmount = bound(
       supplyAmount,
       _convertBaseCurrencyToAmount(spoke1, state.collateralReserve.reserveId, 1e25),
@@ -366,12 +366,12 @@ contract LiquidationCallCloseFactorBadDebtTest is SpokeLiquidationBase {
     );
     skipTime = bound(skipTime, 1, MAX_SKIP_TIME);
 
-    state.liquidationFeeBPS = liquidationFee;
+    state.liquidationFee = liquidationFee;
 
     // set spoke liq config
     spoke1.updateLiquidationConfig(liqConfig);
     updateLiquidationBonus(spoke1, collateralReserveId, liqBonus);
-    updateLiquidationFee(spoke1, collateralReserveId, state.liquidationFeeBPS);
+    updateLiquidationFee(spoke1, collateralReserveId, state.liquidationFee);
     // set user position under hf threshold so that there is invalid collateral to cover all debt
     // results in bad debt remaining (debt > 0, collateral = 0)
     uint256 desiredHf = _calcLowestHfToRestoreCloseFactor(spoke1, collateralReserveId, liqBonus)

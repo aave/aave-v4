@@ -49,7 +49,7 @@ interface ILiquidityHub {
     uint256 realizedPremiumAdded,
     uint256 realizedPremiumTaken
   );
-  event PayFeeWithExistingLiquidity(uint256 indexed assetId, address indexed spoke, uint256 shares);
+  event AccrueFees(uint256 indexed assetId, uint256 shares);
 
   error InvalidSharesAmount();
   error InvalidSupplyAmount();
@@ -75,7 +75,6 @@ interface ILiquidityHub {
   error InvalidAssetAddress();
   error InvalidDebtChange();
   error InvalidFeeReceiver();
-  error SuppliedSharesExceeded(uint256 shares);
   error InvalidFeeShares();
 
   function addAsset(address asset, uint8 decimals, address irStrategy) external returns (uint256);
@@ -163,7 +162,7 @@ interface ILiquidityHub {
    * @param shares The amount of shares to pay to feeReceiver.
    * @return The amount of shares paid to feeReceiver.
    */
-  function payFeeWithExistingLiquidity(uint256 assetId, uint256 shares) external returns (uint256);
+  function payFee(uint256 assetId, uint256 shares) external returns (uint256);
 
   function convertToDrawnAssets(uint256 assetId, uint256 shares) external view returns (uint256);
 
