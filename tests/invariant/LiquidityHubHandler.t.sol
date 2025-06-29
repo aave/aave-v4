@@ -126,7 +126,7 @@ contract LiquidityHubHandler is Test {
     s.userSupplied[assetId][user] -= amount;
   }
 
-  function payFeeWithExistingLiquidity(uint256 assetId, address user, uint256 amount) public {
+  function donate(uint256 assetId, address user, uint256 amount) public {
     vm.assume(user != address(hub) && user != address(0));
     assetId = bound(assetId, 0, hub.getAssetCount() - 1);
     amount = bound(amount, 1, type(uint128).max);
