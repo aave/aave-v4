@@ -25,11 +25,12 @@ contract SpokeUpdateUserRiskPremium is SpokeBase {
 
     assertGt(riskPremiumAfter, riskPremiumBefore);
 
-    (bool hasPermission, ) = IAccessManager(spoke1.authority()).hasRole(
+    bool hasPermission = _hasRole(
+      IAccessManager(spoke1.authority()),
       Roles.SPOKE_ADMIN_ROLE,
       caller
     );
-    if (caller != alice && !hasPermission) {
+    if (caller != alice && !hasPermission && caller != ADMIN) {
       vm.expectRevert(
         abi.encodeWithSelector(IAccessManaged.AccessManagedUnauthorized.selector, caller)
       );

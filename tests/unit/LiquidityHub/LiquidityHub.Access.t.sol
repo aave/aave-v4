@@ -9,13 +9,12 @@ contract LiquidityHubAccessTest is LiquidityHubBase {
     TestnetERC20 tokenA = new TestnetERC20('A', 'A', 18);
     TestnetERC20 tokenB = new TestnetERC20('B', 'B', 18);
     DataTypes.AssetConfig memory assetConfig = DataTypes.AssetConfig({
-      feeReceiver: address(0),
       active: true,
       frozen: false,
       paused: false,
-      decimals: 18,
+      feeReceiver: address(0),
       liquidityFee: 0,
-      irStrategy: irStrategy
+      irStrategy: address(irStrategy)
     });
     DataTypes.SpokeConfig memory spokeConfig = DataTypes.SpokeConfig({
       drawCap: 1000e18,
@@ -27,12 +26,12 @@ contract LiquidityHubAccessTest is LiquidityHubBase {
     vm.expectRevert(
       abi.encodeWithSelector(IAccessManaged.AccessManagedUnauthorized.selector, address(this))
     );
-    hub.addAsset(assetConfig, address(tokenA));
+    hub.addAsset(address(tokenA), 18, address(irStrategy));
 
     // Hub Admin can add assets to the hub
     vm.prank(HUB_ADMIN);
-    hub.addAsset(assetConfig, address(tokenA));
-    uint256 assetAId = hub.assetCount() - 1; // Asset A Id
+    hub.addAsset(address(tokenA), 18, address(irStrategy));
+    uint256 assetAId = hub.getAssetCount() - 1; // Asset A Id
 
     // Only Hub Admin can update asset config
     vm.expectRevert(
@@ -48,34 +47,11 @@ contract LiquidityHubAccessTest is LiquidityHubBase {
     vm.expectRevert(
       abi.encodeWithSelector(IAccessManaged.AccessManagedUnauthorized.selector, address(this))
     );
-    hub.addSpoke(assetAId, spokeConfig, address(spoke1));
+    hub.addSpoke(assetAId, address(spoke1), spokeConfig);
 
     // Hub Admin can add spoke
     vm.prank(HUB_ADMIN);
-    hub.addSpoke(assetAId, spokeConfig, address(spoke1));
-
-    // List token B on hub for preparation of next test
-    vm.prank(HUB_ADMIN);
-    hub.addAsset(assetConfig, address(tokenB));
-    uint256 assetBId = hub.assetCount() - 1;
-
-    // Configure spokes to add
-    uint256[] memory assetIds = new uint256[](2);
-    assetIds[0] = assetAId;
-    assetIds[1] = assetBId;
-    DataTypes.SpokeConfig[] memory spokeConfigs = new DataTypes.SpokeConfig[](2);
-    spokeConfigs[0] = spokeConfig;
-    spokeConfigs[1] = spokeConfig;
-
-    // Only Hub Admin can add spokes
-    vm.expectRevert(
-      abi.encodeWithSelector(IAccessManaged.AccessManagedUnauthorized.selector, address(this))
-    );
-    hub.addSpokes(assetIds, spokeConfigs, address(spoke2));
-
-    // Hub Admin can add spokes
-    vm.prank(HUB_ADMIN);
-    hub.addSpokes(assetIds, spokeConfigs, address(spoke2));
+    hub.addSpoke(assetAId, address(spoke1), spokeConfig);
 
     // Only Hub Admin can update spoke config
     vm.expectRevert(
@@ -86,16 +62,6 @@ contract LiquidityHubAccessTest is LiquidityHubBase {
     // Hub Admin can update spoke config
     vm.prank(HUB_ADMIN);
     hub.updateSpokeConfig(assetAId, address(spoke1), spokeConfig);
-
-    // Only Hub Admin can update asset fees
-    vm.expectRevert(
-      abi.encodeWithSelector(IAccessManaged.AccessManagedUnauthorized.selector, address(this))
-    );
-    hub.updateAssetFees(daiAssetId, address(0), 0);
-
-    // Hub Admin can update asset fees
-    vm.prank(HUB_ADMIN);
-    hub.updateAssetFees(daiAssetId, address(0), 0);
   }
 
   function test_setInterestRateData_access() public {
@@ -157,7 +123,11 @@ contract LiquidityHubAccessTest is LiquidityHubBase {
 
     // HUB_ADMIN can still access the other hub functions for which it has permissions
     vm.prank(HUB_ADMIN);
-    hub.updateAssetFees(daiAssetId, address(0), 0);
+    hub.updateSpokeConfig(
+      daiAssetId,
+      address(spoke1),
+      DataTypes.SpokeConfig({drawCap: 1000e18, supplyCap: 1000e18, active: true})
+    );
   }
 
   /// @dev Test showcasing ability to migrate role responsibility for a function selector.
@@ -186,11 +156,12 @@ contract LiquidityHubAccessTest is LiquidityHubBase {
     vm.prank(carol);
     hub.setInterestRateData(daiAssetId, encodedIrData);
 
-    // Now, we change the role responsible for setting interest rate data to SPOKE_ADMIN role.
+    // Now, we change the role responsible for setting interest rate data to SET_INTEREST_RATE role.
+    uint64 SET_INTEREST_RATE_ROLE = 4;
     bytes4[] memory hubSelectors = new bytes4[](1);
     hubSelectors[0] = ILiquidityHub.setInterestRateData.selector;
     vm.prank(ADMIN);
-    accessManager.setTargetFunctionRole(address(hub), hubSelectors, Roles.SPOKE_ADMIN_ROLE);
+    accessManager.setTargetFunctionRole(address(hub), hubSelectors, SET_INTEREST_RATE_ROLE);
 
     // Alice, Bob, and Carol should no longer have access to set interest rate data.
     vm.expectRevert(
@@ -207,11 +178,11 @@ contract LiquidityHubAccessTest is LiquidityHubBase {
     vm.prank(carol);
     hub.setInterestRateData(daiAssetId, encodedIrData);
 
-    // Now, we grant SPOKE_ADMIN role to Alice, Bob, and Carol with 0 delay
+    // Now, we grant SET_INTEREST_RATE role to Alice, Bob, and Carol with 0 delay
     vm.startPrank(ADMIN);
-    accessManager.grantRole(Roles.SPOKE_ADMIN_ROLE, alice, 0);
-    accessManager.grantRole(Roles.SPOKE_ADMIN_ROLE, bob, 0);
-    accessManager.grantRole(Roles.SPOKE_ADMIN_ROLE, carol, 0);
+    accessManager.grantRole(SET_INTEREST_RATE_ROLE, alice, 0);
+    accessManager.grantRole(SET_INTEREST_RATE_ROLE, bob, 0);
+    accessManager.grantRole(SET_INTEREST_RATE_ROLE, carol, 0);
     vm.stopPrank();
 
     // Alice, Bob, and Carol should now be able to set interest rate data.
@@ -222,21 +193,15 @@ contract LiquidityHubAccessTest is LiquidityHubBase {
     vm.prank(carol);
     hub.setInterestRateData(daiAssetId, encodedIrData);
 
-    // Alice, Bob, and Carol currently have both HUB_ADMIN and SPOKE_ADMIN roles.
+    // Alice, Bob, and Carol currently have both HUB_ADMIN and SET_INTEREST_RATE roles.
     IAccessManager accessManager = IAccessManager(hub.authority());
-    (bool hasHubAdminRoleAlice, ) = accessManager.hasRole(Roles.HUB_ADMIN_ROLE, alice);
-    (bool hasHubAdminRoleBob, ) = accessManager.hasRole(Roles.HUB_ADMIN_ROLE, bob);
-    (bool hasHubAdminRoleCarol, ) = accessManager.hasRole(Roles.HUB_ADMIN_ROLE, carol);
-    assertTrue(hasHubAdminRoleAlice);
-    assertTrue(hasHubAdminRoleBob);
-    assertTrue(hasHubAdminRoleCarol);
+    assertTrue(_hasRole(accessManager, Roles.HUB_ADMIN_ROLE, alice));
+    assertTrue(_hasRole(accessManager, Roles.HUB_ADMIN_ROLE, bob));
+    assertTrue(_hasRole(accessManager, Roles.HUB_ADMIN_ROLE, carol));
 
-    (bool hasSpokeAdminRoleAlice, ) = accessManager.hasRole(Roles.SPOKE_ADMIN_ROLE, alice);
-    (bool hasSpokeAdminRoleBob, ) = accessManager.hasRole(Roles.SPOKE_ADMIN_ROLE, bob);
-    (bool hasSpokeAdminRoleCarol, ) = accessManager.hasRole(Roles.SPOKE_ADMIN_ROLE, carol);
-    assertTrue(hasSpokeAdminRoleAlice);
-    assertTrue(hasSpokeAdminRoleBob);
-    assertTrue(hasSpokeAdminRoleCarol);
+    assertTrue(_hasRole(accessManager, SET_INTEREST_RATE_ROLE, alice));
+    assertTrue(_hasRole(accessManager, SET_INTEREST_RATE_ROLE, bob));
+    assertTrue(_hasRole(accessManager, SET_INTEREST_RATE_ROLE, carol));
 
     // We can remove HUB_ADMIN role from Alice, Bob, and Carol.
     vm.startPrank(ADMIN);
@@ -246,14 +211,11 @@ contract LiquidityHubAccessTest is LiquidityHubBase {
     vm.stopPrank();
 
     // Alice, Bob, and Carol should no longer have HUB_ADMIN role.
-    (hasHubAdminRoleAlice, ) = accessManager.hasRole(Roles.HUB_ADMIN_ROLE, alice);
-    (hasHubAdminRoleBob, ) = accessManager.hasRole(Roles.HUB_ADMIN_ROLE, bob);
-    (hasHubAdminRoleCarol, ) = accessManager.hasRole(Roles.HUB_ADMIN_ROLE, carol);
-    assertFalse(hasHubAdminRoleAlice);
-    assertFalse(hasHubAdminRoleBob);
-    assertFalse(hasHubAdminRoleCarol);
+    assertFalse(_hasRole(accessManager, Roles.HUB_ADMIN_ROLE, alice));
+    assertFalse(_hasRole(accessManager, Roles.HUB_ADMIN_ROLE, bob));
+    assertFalse(_hasRole(accessManager, Roles.HUB_ADMIN_ROLE, carol));
 
-    // Can still call setInterestRateData since they have SPOKE_ADMIN role.
+    // Can still call setInterestRateData since they have SET_INTEREST_RATE role.
     vm.prank(alice);
     hub.setInterestRateData(daiAssetId, encodedIrData);
     vm.prank(bob);
@@ -265,5 +227,70 @@ contract LiquidityHubAccessTest is LiquidityHubBase {
   /// @dev Test showcasing authority contract can be accessed via hub contract.
   function test_hub_access_manager_exposure() public {
     assertEq(address(hub.authority()), address(accessManager));
+  }
+
+  /// @dev Test showcasing ability to change the authority contract governing access control on the liquidity hub.
+  function test_change_authority() public {
+    DataTypes.AssetConfig memory assetConfig = DataTypes.AssetConfig({
+      active: true,
+      frozen: false,
+      paused: false,
+      feeReceiver: address(0),
+      liquidityFee: 0,
+      irStrategy: address(irStrategy)
+    });
+    DataTypes.SpokeConfig memory spokeConfig = DataTypes.SpokeConfig({
+      drawCap: 1000e18,
+      supplyCap: 1000e18,
+      active: true
+    });
+
+    IAccessManager authority = IAccessManager(hub.authority());
+    address NEW_ADMIN = makeAddr('NEW_ADMIN');
+    IAccessManager newAuthority = new AccessManager(NEW_ADMIN);
+
+    // Set up the role for hub admin to call update asset config
+    vm.startPrank(NEW_ADMIN);
+    newAuthority.grantRole(Roles.HUB_ADMIN_ROLE, HUB_ADMIN, 0);
+    bytes4[] memory selectors = new bytes4[](1);
+    selectors[0] = ILiquidityHub.updateAssetConfig.selector;
+    newAuthority.setTargetFunctionRole(address(hub), selectors, Roles.HUB_ADMIN_ROLE);
+    vm.stopPrank();
+
+    // Only Admin can change the authority contract
+    vm.expectRevert(
+      abi.encodeWithSelector(
+        IAccessManager.AccessManagerUnauthorizedAccount.selector,
+        address(this),
+        Roles.DEFAULT_ADMIN_ROLE
+      )
+    );
+    authority.updateAuthority(address(hub), address(newAuthority));
+
+    // Admin can change the authority contract
+    vm.prank(ADMIN);
+    authority.updateAuthority(address(hub), address(newAuthority));
+
+    assertEq(hub.authority(), address(newAuthority), 'Authority not changed');
+
+    // Hub admin can call update asset config on the hub after authority change
+    vm.prank(HUB_ADMIN);
+    hub.updateAssetConfig(daiAssetId, assetConfig);
+
+    // Hub admin cannot call update spoke config on the hub after authority change
+    vm.expectRevert(
+      abi.encodeWithSelector(IAccessManaged.AccessManagedUnauthorized.selector, HUB_ADMIN)
+    );
+    vm.prank(HUB_ADMIN);
+    hub.updateSpokeConfig(daiAssetId, address(spoke1), spokeConfig);
+
+    // Now we also give the hub admin role capability to update spoke config on new authority
+    selectors[0] = ILiquidityHub.updateSpokeConfig.selector;
+    vm.prank(NEW_ADMIN);
+    newAuthority.setTargetFunctionRole(address(hub), selectors, Roles.HUB_ADMIN_ROLE);
+
+    // Hub admin can now call update spoke config on the hub after authority change
+    vm.prank(HUB_ADMIN);
+    hub.updateSpokeConfig(daiAssetId, address(spoke1), spokeConfig);
   }
 }

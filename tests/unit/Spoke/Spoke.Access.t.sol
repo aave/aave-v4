@@ -65,15 +65,14 @@ contract SpokeAccessTest is SpokeBase {
       abi.encodeWithSelector(IAccessManaged.AccessManagedUnauthorized.selector, address(this))
     );
     spoke1.addReserve(
-      10,
+      4,
+      address(hub),
       DataTypes.ReserveConfig({
-        hub: hub,
         active: true,
         frozen: false,
         paused: false,
         borrowable: true,
         collateral: true,
-        decimals: 18,
         liquidationBonus: 100_00,
         liquidityPremium: 0,
         liquidationProtocolFee: 0
@@ -85,14 +84,13 @@ contract SpokeAccessTest is SpokeBase {
     vm.prank(SPOKE_ADMIN);
     spoke1.addReserve(
       4,
+      address(hub),
       DataTypes.ReserveConfig({
-        hub: hub,
         active: true,
         frozen: false,
         paused: false,
         borrowable: true,
         collateral: true,
-        decimals: 18,
         liquidationBonus: 100_00,
         liquidityPremium: 0,
         liquidationProtocolFee: 0
@@ -107,13 +105,11 @@ contract SpokeAccessTest is SpokeBase {
     spoke1.updateReserveConfig(
       _daiReserveId(spoke1),
       DataTypes.ReserveConfig({
-        hub: hub,
         active: true,
         frozen: false,
         paused: false,
         borrowable: true,
         collateral: true,
-        decimals: 18,
         liquidationBonus: 100_00,
         liquidityPremium: 0,
         liquidationProtocolFee: 0
@@ -125,13 +121,11 @@ contract SpokeAccessTest is SpokeBase {
     spoke1.updateReserveConfig(
       _daiReserveId(spoke1),
       DataTypes.ReserveConfig({
-        hub: hub,
         active: true,
         frozen: false,
         paused: false,
         borrowable: true,
         collateral: true,
-        decimals: 18,
         liquidationBonus: 100_00,
         liquidityPremium: 0,
         liquidationProtocolFee: 0
@@ -151,6 +145,91 @@ contract SpokeAccessTest is SpokeBase {
     vm.prank(SPOKE_ADMIN);
     spoke1.updateDynamicReserveConfig(
       _daiReserveId(spoke1),
+      DataTypes.DynamicReserveConfig({collateralFactor: 75_00})
+    );
+  }
+
+  /// @dev Test showcasing ability to change the authority contract governing access control on the spoke.
+  function testAccess_change_authority() public {
+    IAccessManager authority = IAccessManager(spoke1.authority());
+    address NEW_ADMIN = makeAddr('NEW_ADMIN');
+    IAccessManager newAuthority = new AccessManager(NEW_ADMIN);
+
+    // Set up the role for spoke admin to call update liquidation config
+    vm.startPrank(NEW_ADMIN);
+    newAuthority.grantRole(Roles.SPOKE_ADMIN_ROLE, SPOKE_ADMIN, 0);
+    bytes4[] memory selectors = new bytes4[](1);
+    selectors[0] = ISpoke.updateLiquidationConfig.selector;
+    newAuthority.setTargetFunctionRole(address(spoke1), selectors, Roles.SPOKE_ADMIN_ROLE);
+    vm.stopPrank();
+
+    // Only Admin can change the authority contract
+    vm.expectRevert(
+      abi.encodeWithSelector(
+        IAccessManager.AccessManagerUnauthorizedAccount.selector,
+        address(this),
+        Roles.DEFAULT_ADMIN_ROLE
+      )
+    );
+    authority.updateAuthority(address(spoke1), address(newAuthority));
+
+    // Admin can change the authority contract
+    vm.prank(ADMIN);
+    authority.updateAuthority(address(spoke1), address(newAuthority));
+
+    assertEq(spoke1.authority(), address(newAuthority), 'Authority not changed');
+
+    // Spoke admin can call update liquidation config on the spoke after authority change
+    vm.prank(SPOKE_ADMIN);
+    spoke1.updateLiquidationConfig(
+      DataTypes.LiquidationConfig({
+        closeFactor: WadRayMath.WAD,
+        liquidationBonusFactor: 40_00,
+        healthFactorForMaxBonus: 0.9e18
+      })
+    );
+
+    // Spoke admin cannot call add reserve on the spoke after authority change
+    vm.expectRevert(
+      abi.encodeWithSelector(IAccessManaged.AccessManagedUnauthorized.selector, SPOKE_ADMIN)
+    );
+    vm.prank(SPOKE_ADMIN);
+    spoke1.addReserve(
+      5,
+      address(hub),
+      DataTypes.ReserveConfig({
+        active: true,
+        frozen: false,
+        paused: false,
+        borrowable: true,
+        collateral: true,
+        liquidationBonus: 100_00,
+        liquidityPremium: 0,
+        liquidationProtocolFee: 0
+      }),
+      DataTypes.DynamicReserveConfig({collateralFactor: 75_00})
+    );
+
+    // Now we also give the spoke admin role capability to add reserve on new authority
+    selectors[0] = ISpoke.addReserve.selector;
+    vm.prank(NEW_ADMIN);
+    newAuthority.setTargetFunctionRole(address(spoke1), selectors, Roles.SPOKE_ADMIN_ROLE);
+
+    // Spoke admin can now call add reserve on the spoke after authority change
+    vm.prank(SPOKE_ADMIN);
+    spoke1.addReserve(
+      5,
+      address(hub),
+      DataTypes.ReserveConfig({
+        active: true,
+        frozen: false,
+        paused: false,
+        borrowable: true,
+        collateral: true,
+        liquidationBonus: 100_00,
+        liquidityPremium: 0,
+        liquidationProtocolFee: 0
+      }),
       DataTypes.DynamicReserveConfig({collateralFactor: 75_00})
     );
   }
