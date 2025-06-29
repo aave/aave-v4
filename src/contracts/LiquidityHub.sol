@@ -42,10 +42,12 @@ contract LiquidityHub is ILiquidityHub, AccessManaged {
   function addAsset(
     address asset,
     uint8 decimals,
+    address feeReceiver,
     address irStrategy
   ) external restricted returns (uint256) {
     require(asset != address(0), InvalidAssetAddress());
     require(decimals <= MAX_ALLOWED_ASSET_DECIMALS, InvalidAssetDecimals());
+    require(feeReceiver != address(0), InvalidFeeReceiver());
     require(irStrategy != address(0), InvalidIrStrategy());
 
     uint256 assetId = _assetCount++;
@@ -53,7 +55,7 @@ contract LiquidityHub is ILiquidityHub, AccessManaged {
       active: true,
       paused: false,
       frozen: false,
-      feeReceiver: address(0),
+      feeReceiver: feeReceiver,
       liquidityFee: 0,
       irStrategy: irStrategy
     });
@@ -85,7 +87,7 @@ contract LiquidityHub is ILiquidityHub, AccessManaged {
   ) external restricted {
     require(assetId < _assetCount, AssetNotListed());
     require(config.liquidityFee <= PercentageMathExtended.PERCENTAGE_FACTOR, InvalidLiquidityFee());
-    require(config.feeReceiver != address(0) || config.liquidityFee == 0, InvalidFeeReceiver());
+    require(config.feeReceiver != address(0), InvalidFeeReceiver());
     require(address(config.irStrategy) != address(0), InvalidIrStrategy());
 
     DataTypes.Asset storage asset = _assets[assetId];

@@ -35,16 +35,23 @@ interface IConfigurator {
    * @dev The number of decimals of the asset is fetched from the asset ERC20 contract.
    * @param hub The address of the Hub contract.
    * @param asset The address of the asset.
+   * @param feeReceiver The address of the fee receiver spoke.
    * @param irStrategy The address of the interest rate strategy contract.
    * @return The id of the registered asset.
    */
-  function addAsset(address hub, address asset, address irStrategy) external returns (uint256);
+  function addAsset(
+    address hub,
+    address asset,
+    address feeReceiver,
+    address irStrategy
+  ) external returns (uint256);
 
   /**
    * @notice Registers an asset with the hub, with the specified number of decimals
    * @param hub The address of the Hub contract.
    * @param asset The address of the asset.
    * @param decimals The number of decimals of the asset.
+   * @param feeReceiver The address of the fee receiver spoke.
    * @param irStrategy The address of the interest rate strategy contract.
    * @return The id of the registered asset.
    */
@@ -52,6 +59,7 @@ interface IConfigurator {
     address hub,
     address asset,
     uint8 decimals,
+    address feeReceiver,
     address irStrategy
   ) external returns (uint256);
 
@@ -89,6 +97,7 @@ interface IConfigurator {
 
   /**
    * @notice Updates the fee receiver of an asset.
+   * @dev The fee receiver cannot be zero.
    * @dev Before updating the fee receiver, it adjusts the spoke config of the old and new fee receivers.
    * @param hub The address of the Hub contract.
    * @param assetId The id of the asset.
@@ -99,6 +108,7 @@ interface IConfigurator {
   /**
    * @notice Updates the liquidity fee and fee receiver of an asset.
    * @dev Before updating the fee receiver, it adjusts the spoke config of the old and new fee receivers.
+   * @dev The fee receiver cannot be zero.
    * @param hub The address of the Hub contract.
    * @param assetId The id of the asset.
    * @param liquidityFee The new liquidity fee.

@@ -79,7 +79,12 @@ interface ILiquidityHub is IAccessManaged {
   error InvalidFeeReceiver();
   error SpokeNotActive();
 
-  function addAsset(address asset, uint8 decimals, address irStrategy) external returns (uint256);
+  function addAsset(
+    address asset,
+    uint8 decimals,
+    address feeReceiver,
+    address irStrategy
+  ) external returns (uint256);
 
   function updateAssetConfig(uint256 assetId, DataTypes.AssetConfig calldata config) external;
 

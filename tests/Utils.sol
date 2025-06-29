@@ -88,9 +88,10 @@ library Utils {
     ILiquidityHub hub,
     address asset,
     uint8 decimals,
+    address feeReceiver,
     address interestRateStrategy
   ) internal returns (uint256) {
-    return hub.addAsset(asset, decimals, interestRateStrategy);
+    return hub.addAsset(asset, decimals, feeReceiver, interestRateStrategy);
   }
 
   function updateAssetConfig(

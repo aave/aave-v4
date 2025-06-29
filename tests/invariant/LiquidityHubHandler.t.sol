@@ -5,6 +5,7 @@ import {Test} from 'forge-std/Test.sol';
 
 import {LiquidityHub} from 'src/contracts/LiquidityHub.sol';
 import {Spoke} from 'src/contracts/Spoke.sol';
+import {TreasurySpoke} from 'src/contracts/TreasurySpoke.sol';
 import {IERC20} from 'src/dependencies/openzeppelin/IERC20.sol';
 import {AccessManager} from 'src/dependencies/openzeppelin/AccessManager.sol';
 import '../mocks/MockPriceOracle.sol';
@@ -20,6 +21,7 @@ contract LiquidityHubHandler is Test {
   IPriceOracle public oracle;
   LiquidityHub public hub;
   Spoke public spoke1;
+  TreasurySpoke public treasurySpoke;
   AccessManager public accessManager;
   AssetInterestRateStrategy irStrategy;
 
@@ -41,12 +43,13 @@ contract LiquidityHubHandler is Test {
     irStrategy = new AssetInterestRateStrategy(address(hub));
     oracle = new MockPriceOracle();
     spoke1 = new Spoke(address(oracle), address(accessManager));
+    treasurySpoke = new TreasurySpoke(hubAdmin, address(hub));
     usdc = new MockERC20();
     dai = new MockERC20();
     usdt = new MockERC20();
 
     // Add dai
-    hub.addAsset(address(dai), 18, address(irStrategy));
+    hub.addAsset(address(dai), 18, address(treasurySpoke), address(irStrategy));
     vm.stopPrank();
     vm.prank(address(hub));
     irStrategy.setInterestRateData(
@@ -64,7 +67,7 @@ contract LiquidityHubHandler is Test {
     hub.updateAssetConfig(
       0,
       DataTypes.AssetConfig({
-        feeReceiver: address(0),
+        feeReceiver: address(treasurySpoke),
         active: true,
         frozen: false,
         paused: false,

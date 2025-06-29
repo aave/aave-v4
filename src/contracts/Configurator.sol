@@ -32,9 +32,11 @@ contract Configurator is Ownable, IConfigurator {
   function addAsset(
     address hub,
     address asset,
+    address feeReceiver,
     address irStrategy
   ) external override onlyOwner returns (uint256) {
-    return ILiquidityHub(hub).addAsset(asset, IERC20Metadata(asset).decimals(), irStrategy);
+    return
+      ILiquidityHub(hub).addAsset(asset, IERC20Metadata(asset).decimals(), feeReceiver, irStrategy);
   }
 
   /// @inheritdoc IConfigurator
@@ -42,9 +44,10 @@ contract Configurator is Ownable, IConfigurator {
     address hub,
     address asset,
     uint8 decimals,
+    address feeReceiver,
     address irStrategy
   ) external override onlyOwner returns (uint256) {
-    return ILiquidityHub(hub).addAsset(asset, decimals, irStrategy);
+    return ILiquidityHub(hub).addAsset(asset, decimals, feeReceiver, irStrategy);
   }
 
   /// @inheritdoc IConfigurator
@@ -133,37 +136,33 @@ contract Configurator is Ownable, IConfigurator {
       return;
     }
 
-    if (config.feeReceiver != address(0)) {
+    hub.updateSpokeConfig(
+      assetId,
+      config.feeReceiver,
+      DataTypes.SpokeConfig({supplyCap: 0, drawCap: 0, active: false})
+    );
+
+    DataTypes.SpokeData memory spokeData = hub.getSpoke(assetId, newFeeReceiver);
+    if (spokeData.lastUpdateTimestamp == 0) {
+      hub.addSpoke(
+        assetId,
+        newFeeReceiver,
+        DataTypes.SpokeConfig({
+          supplyCap: type(uint256).max,
+          drawCap: type(uint256).max,
+          active: true
+        })
+      );
+    } else {
       hub.updateSpokeConfig(
         assetId,
-        config.feeReceiver,
-        DataTypes.SpokeConfig({supplyCap: 0, drawCap: 0, active: false})
+        newFeeReceiver,
+        DataTypes.SpokeConfig({
+          supplyCap: type(uint256).max,
+          drawCap: type(uint256).max,
+          active: true
+        })
       );
-    }
-
-    if (newFeeReceiver != address(0)) {
-      DataTypes.SpokeData memory spokeData = hub.getSpoke(assetId, newFeeReceiver);
-      if (spokeData.lastUpdateTimestamp == 0) {
-        hub.addSpoke(
-          assetId,
-          newFeeReceiver,
-          DataTypes.SpokeConfig({
-            supplyCap: type(uint256).max,
-            drawCap: type(uint256).max,
-            active: true
-          })
-        );
-      } else {
-        hub.updateSpokeConfig(
-          assetId,
-          newFeeReceiver,
-          DataTypes.SpokeConfig({
-            supplyCap: type(uint256).max,
-            drawCap: type(uint256).max,
-            active: true
-          })
-        );
-      }
     }
   }
 }
