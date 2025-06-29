@@ -295,15 +295,23 @@ contract LiquidityHubSupplyTest is LiquidityHubBase {
   function test_supply_fuzz_single_asset(uint256 assetId, address user, uint256 amount) public {
     _assumeValidSupplier(user);
 
-    assetId = bound(assetId, 0, hub.assetCount() - 2); // Exclude duplicated DAI
+    assetId = bound(assetId, 0, hub.getAssetCount() - 2); // Exclude duplicated DAI
     amount = bound(amount, 1, MAX_SUPPLY_AMOUNT);
 
     uint256 expectedSupplyShares = hub.convertToSuppliedShares(daiAssetId, amount);
-    IERC20 asset = hub.assetsList(assetId);
+    IERC20 underlying = IERC20(hub.getAsset(assetId).underlying);
 
-    deal(address(asset), user, MAX_SUPPLY_AMOUNT);
+    deal(address(underlying), user, MAX_SUPPLY_AMOUNT);
+    vm.prank(user);
+    underlying.approve(address(hub), amount);
 
-    _checkedAdd(address(spoke1), assetId, amount, user);
+    vm.expectEmit(address(underlying));
+    emit IERC20.Transfer(user, address(hub), amount);
+    vm.expectEmit(address(hub));
+    emit ILiquidityHub.Add(assetId, address(spoke1), amount, amount);
+
+    vm.prank(address(spoke1));
+    hub.add(assetId, amount, user);
 
     // hub
     assertEq(hub.getAssetSuppliedAmount(assetId), amount, 'hub asset suppliedAmount after');
@@ -324,9 +332,9 @@ contract LiquidityHubSupplyTest is LiquidityHubBase {
     );
     assertEq(hub.getAsset(assetId).lastUpdateTimestamp, vm.getBlockTimestamp());
     // token balance
-    assertEq(asset.balanceOf(user), MAX_SUPPLY_AMOUNT - amount, 'user token balance post-supply');
-    assertEq(asset.balanceOf(address(spoke1)), 0, 'spoke token balance post-supply');
-    assertEq(asset.balanceOf(address(hub)), amount, 'hub token balance post-supply');
+    assertEq(underlying.balanceOf(user), MAX_SUPPLY_AMOUNT - amount, 'user token balance post-supply');
+    assertEq(underlying.balanceOf(address(spoke1)), 0, 'spoke token balance post-supply');
+    assertEq(underlying.balanceOf(address(hub)), amount, 'hub token balance post-supply');
   }
 
   /// @dev single user, 2 spokes, 2 assets, 2 amounts
@@ -336,17 +344,30 @@ contract LiquidityHubSupplyTest is LiquidityHubBase {
     uint256 amount,
     uint256 amount2
   ) public {
-    assetId = bound(assetId, 0, hub.assetCount() - 4); // Exclude duplicated DAI and usdy
+    assetId = bound(assetId, 0, hub.getAssetCount() - 4); // Exclude duplicated DAI and usdy
     amount = bound(amount, 1, MAX_SUPPLY_AMOUNT);
     amount2 = bound(amount2, 1, MAX_SUPPLY_AMOUNT);
 
     uint256 assetId2 = assetId + 1;
 
-    IERC20 asset = hub.assetsList(assetId);
-    IERC20 asset2 = hub.assetsList(assetId2);
+    IERC20 underlying = IERC20(hub.getAsset(assetId).underlying);
+    IERC20 underlying2 = IERC20(hub.getAsset(assetId2).underlying);
 
-    _checkedAdd(address(spoke1), assetId, amount, alice);
-    _checkedAdd(address(spoke2), assetId2, amount2, alice);
+    vm.expectEmit(address(underlying));
+    emit IERC20.Transfer(alice, address(hub), amount);
+    vm.expectEmit(address(hub));
+    emit ILiquidityHub.Add(assetId, address(spoke1), amount, amount);
+
+    vm.prank(address(spoke1));
+    hub.add(assetId, amount, alice);
+
+    vm.expectEmit(address(underlying2));
+    emit IERC20.Transfer(alice, address(hub), amount2);
+    vm.expectEmit(address(hub));
+    emit ILiquidityHub.Add(assetId2, address(spoke2), amount2, amount2);
+
+    vm.prank(address(spoke2));
+    hub.add(assetId2, amount2, alice);
 
     uint256 timestamp = vm.getBlockTimestamp();
 
@@ -373,9 +394,9 @@ contract LiquidityHubSupplyTest is LiquidityHubBase {
       amount,
       'spoke1 suppliedAmount after'
     );
-    assertEq(asset.balanceOf(alice), MAX_SUPPLY_AMOUNT - amount, 'user asset1 balance after');
-    assertEq(asset.balanceOf(address(spoke1)), 0, 'spoke1 asset1 balance after');
-    assertEq(asset.balanceOf(address(hub)), amount, 'hub asset1 balance after');
+    assertEq(underlying.balanceOf(alice), MAX_SUPPLY_AMOUNT - amount, 'user asset1 balance after');
+    assertEq(underlying.balanceOf(address(spoke1)), 0, 'spoke1 asset1 balance after');
+    assertEq(underlying.balanceOf(address(hub)), amount, 'hub asset1 balance after');
     // asset2
     assertEq(
       hub.getAssetSuppliedShares(assetId2),
@@ -398,9 +419,9 @@ contract LiquidityHubSupplyTest is LiquidityHubBase {
       amount2,
       'spoke2 suppliedAmount after'
     );
-    assertEq(asset2.balanceOf(alice), MAX_SUPPLY_AMOUNT - amount2, 'user asset2 balance after');
-    assertEq(asset2.balanceOf(address(spoke2)), 0, 'spoke2 asset2 balance after');
-    assertEq(asset2.balanceOf(address(hub)), amount2, 'hub asset2 balance after');
+    assertEq(underlying2.balanceOf(alice), MAX_SUPPLY_AMOUNT - amount2, 'user asset2 balance after');
+    assertEq(underlying2.balanceOf(address(spoke2)), 0, 'spoke2 asset2 balance after');
+    assertEq(underlying2.balanceOf(address(hub)), amount2, 'hub asset2 balance after');
   }
 
   function test_supply_revertsWith_InvalidSupplyAmount() public {
@@ -778,7 +799,7 @@ contract LiquidityHubSupplyTest is LiquidityHubBase {
   /// @dev  - checks base debt stays constant
   /// @dev  - makes sure the borrow rate invariant is maintained (rate stays constant if no liquidity is added or taken)
   function _checkedAdd(address caller, uint256 assetId, uint256 amount, address from) public {
-    IERC20 asset = hub.assetsList(assetId);
+    IERC20 asset = IERC20(hub.getAsset(assetId).underlying);
 
     vm.prank(from);
     asset.approve(address(hub), amount);

@@ -12,7 +12,7 @@ contract TreasurySpokeTest is SpokeBase {
 
   function test_initial_state() public view {
     assertEq(address(treasurySpoke.HUB()), address(hub));
-    for (uint256 i; i < hub.assetCount(); ++i) {
+    for (uint256 i; i < hub.getAssetCount(); ++i) {
       assertEq(treasurySpoke.getSuppliedAmount(i), 0);
       assertEq(treasurySpoke.getSuppliedShares(i), 0);
     }

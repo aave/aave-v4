@@ -63,6 +63,7 @@ contract SpokeGettersTest is SpokeBase {
       healthFactorForMaxBonus: healthFactorForMaxBonus,
       liquidationBonusFactor: liquidationBonusFactor
     });
+    vm.prank(SPOKE_ADMIN);
     spoke1.updateLiquidationConfig(config);
     _config = spoke1.getLiquidationConfig();
 

@@ -68,11 +68,11 @@ contract LiquidityHubDrawTest is LiquidityHubBase {
   }
 
   function test_draw_fuzz_amounts_same_block(uint256 assetId, uint256 amount) public {
-    assetId = bound(assetId, 0, hub.assetCount() - 3); // Exclude duplicated DAI and usdy
+    assetId = bound(assetId, 0, hub.getAssetCount() - 3); // Exclude duplicated DAI and usdy
     amount = bound(amount, 1, MAX_SUPPLY_AMOUNT);
     uint256 drawAmount = amount;
 
-    IERC20 asset = hub.assetsList(assetId);
+    IERC20 underlying = IERC20(hub.getAsset(assetId).underlying);
 
     // spoke2, bob supply dai
     Utils.add({
@@ -104,14 +104,18 @@ contract LiquidityHubDrawTest is LiquidityHubBase {
     assertEq(baseDebt, drawAmount, 'spoke baseDebt after');
     assertEq(premiumDebt, 0, 'spoke premiumDebt after');
     // token balance
-    assertEq(asset.balanceOf(alice), drawAmount + MAX_SUPPLY_AMOUNT, 'alice asset final balance');
-    assertEq(asset.balanceOf(bob), MAX_SUPPLY_AMOUNT - amount, 'bob asset final balance');
-    assertEq(asset.balanceOf(address(spoke1)), 0, 'spoke1 asset final balance');
-    assertEq(asset.balanceOf(address(spoke2)), 0, 'spoke2 asset final balance');
+    assertEq(
+      underlying.balanceOf(alice),
+      drawAmount + MAX_SUPPLY_AMOUNT,
+      'alice asset final balance'
+    );
+    assertEq(underlying.balanceOf(bob), MAX_SUPPLY_AMOUNT - amount, 'bob asset final balance');
+    assertEq(underlying.balanceOf(address(spoke1)), 0, 'spoke1 asset final balance');
+    assertEq(underlying.balanceOf(address(spoke2)), 0, 'spoke2 asset final balance');
   }
 
   function test_draw_fuzz_IncreasedBorrowRate(uint256 assetId, uint256 amount) public {
-    assetId = bound(assetId, 0, hub.assetCount() - 3); // Exclude duplicated DAI and usdy
+    assetId = bound(assetId, 0, hub.getAssetCount() - 3); // Exclude duplicated DAI and usdy
     amount = bound(amount, 1, MAX_SUPPLY_AMOUNT / 10);
 
     _addLiquidity(assetId, amount * 2);
@@ -134,7 +138,7 @@ contract LiquidityHubDrawTest is LiquidityHubBase {
 
   function test_draw_fuzz_revertsWith_AssetNotActive(uint256 assetId, uint256 drawAmount) public {
     drawAmount = bound(drawAmount, 1, MAX_SUPPLY_AMOUNT);
-    assetId = bound(assetId, 0, hub.assetCount() - 1);
+    assetId = bound(assetId, 0, hub.getAssetCount() - 2); // Exclude duplicated DAI
     updateAssetActive(hub, assetId, false);
 
     assertFalse(hub.getAsset(assetId).config.active);
@@ -156,7 +160,7 @@ contract LiquidityHubDrawTest is LiquidityHubBase {
   }
 
   function test_draw_fuzz_revertsWith_AssetPaused(uint256 assetId, uint256 drawAmount) public {
-    assetId = bound(assetId, 0, hub.assetCount() - 1);
+    assetId = bound(assetId, 0, hub.getAssetCount() - 2); // Exclude duplicated DAI
     drawAmount = bound(drawAmount, 1, MAX_SUPPLY_AMOUNT);
     updateAssetPaused(hub, assetId, true);
 
@@ -179,7 +183,7 @@ contract LiquidityHubDrawTest is LiquidityHubBase {
   }
 
   function test_draw_fuzz_revertsWith_AssetFrozen(uint256 assetId, uint256 drawAmount) public {
-    assetId = bound(assetId, 0, hub.assetCount() - 1);
+    assetId = bound(assetId, 0, hub.getAssetCount() - 2); // Exclude duplicated DAI
     drawAmount = bound(drawAmount, 1, MAX_SUPPLY_AMOUNT);
     updateAssetFrozen(hub, assetId, true);
 
@@ -204,7 +208,7 @@ contract LiquidityHubDrawTest is LiquidityHubBase {
     uint256 assetId,
     uint256 drawAmount
   ) public {
-    assetId = bound(assetId, 0, hub.assetCount() - 3); // Exclude duplicated DAI and usdy
+    assetId = bound(assetId, 0, hub.getAssetCount() - 3); // Exclude duplicated DAI and usdy
     drawAmount = bound(drawAmount, 1, MAX_SUPPLY_AMOUNT);
 
     assertTrue(hub.getAvailableLiquidity(assetId) == 0);
@@ -482,7 +486,7 @@ contract LiquidityHubDrawTest is LiquidityHubBase {
 
     vm.expectEmit(address(hub));
     emit ILiquidityHub.DrawnIndexUpdate(assetId, hub.previewDrawnIndex(assetId), block.timestamp);
-    vm.expectEmit(address(hub.assetsList(assetId)));
+    vm.expectEmit(address(hub.getAsset(assetId).underlying));
     emit IERC20.Transfer(address(hub), to, amount);
     vm.expectEmit(address(hub));
     emit ILiquidityHub.Draw(assetId, caller, shares, amount);
