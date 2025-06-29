@@ -2,6 +2,7 @@
 pragma solidity ^0.8.10;
 
 import {ILiquidityHub} from 'src/interfaces/ILiquidityHub.sol';
+import {IAssetInterestRateStrategy} from 'src/interfaces/IAssetInterestRateStrategy.sol';
 
 library DataTypes {
   // Liquidity Hub types
@@ -33,6 +34,7 @@ library DataTypes {
 
   struct SpokeConfig {
     uint256 supplyCap;
+    bool active;
     uint256 drawCap;
   }
 
@@ -165,7 +167,7 @@ library DataTypes {
     uint256 totalRestoredShares;
     uint256 totalWithdrawnShares;
     uint256 totalCollateralToLiquidate;
-    uint256 totalLiquidationProtocolFeeShares;
+    uint256 totalliquidationFeeShares;
     int256 totalUserDebtPremiumDrawnSharesDelta;
     int256 totalUserDebtPremiumOffsetDelta;
     int256 totalUserCollateralPremiumDrawnSharesDelta;

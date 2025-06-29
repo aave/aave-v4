@@ -24,18 +24,11 @@ contract SpokeMultipleHubIsolationModeTest is SpokeMultipleHubBase {
   ///@dev Adds new assets A and B to the new hub and spoke, no restrictions.
   ///@dev Lists asset B on canonical hub and spoke with no restrictions.
   function setUpIsolationMode() internal {
+    vm.startPrank(ADMIN);
     // Add assets A and B to the new hub
-    newHub.addAsset(
-      address(assetA),
-      assetA.decimals(),
-      address(newIrStrategy)
-    );
+    newHub.addAsset(address(assetA), assetA.decimals(), address(newIrStrategy));
     isolationVars.assetAId = newHub.getAssetCount() - 1;
-    newHub.addAsset(
-      address(assetB),
-      assetB.decimals(),
-      address(newIrStrategy)
-    );
+    newHub.addAsset(address(assetB), assetB.decimals(), address(newIrStrategy));
     isolationVars.assetBId = newHub.getAssetCount() - 1;
 
     // Add reserves to the new spoke
@@ -78,19 +71,31 @@ contract SpokeMultipleHubIsolationModeTest is SpokeMultipleHubBase {
     newHub.addSpoke(
       isolationVars.assetAId,
       address(newSpoke),
-      DataTypes.SpokeConfig({drawCap: type(uint256).max, supplyCap: type(uint256).max})
+      DataTypes.SpokeConfig({
+        drawCap: type(uint256).max,
+        supplyCap: type(uint256).max,
+        active: true
+      })
     );
     newHub.addSpoke(
       isolationVars.assetBId,
       address(newSpoke),
-      DataTypes.SpokeConfig({drawCap: type(uint256).max, supplyCap: type(uint256).max})
+      DataTypes.SpokeConfig({
+        drawCap: type(uint256).max,
+        supplyCap: type(uint256).max,
+        active: true
+      })
     );
+    vm.stopPrank();
 
     // Configure interest rate strategy for assets A and B
-    newIrStrategy.setInterestRateData(isolationVars.assetAId, irData);
-    newIrStrategy.setInterestRateData(isolationVars.assetBId, irData);
+    vm.startPrank(address(newHub));
+    newIrStrategy.setInterestRateData(isolationVars.assetAId, encodedIrData);
+    newIrStrategy.setInterestRateData(isolationVars.assetBId, encodedIrData);
+    vm.stopPrank();
 
     // List asset B on the canonical hub
+    vm.startPrank(ADMIN);
     isolationVars.assetBIdMainHub = hub.getAssetCount();
     hub.addAsset(
       address(assetB),
@@ -122,11 +127,17 @@ contract SpokeMultipleHubIsolationModeTest is SpokeMultipleHubBase {
     hub.addSpoke(
       isolationVars.assetBIdMainHub,
       address(spoke1),
-      DataTypes.SpokeConfig({drawCap: type(uint256).max, supplyCap: type(uint256).max})
+      DataTypes.SpokeConfig({
+        drawCap: type(uint256).max,
+        supplyCap: type(uint256).max,
+        active: true
+      })
     );
+    vm.stopPrank();
 
     // Configure interest rate strategy for asset B on the main hub
-    irStrategy.setInterestRateData(isolationVars.assetBIdMainHub, irData);
+    vm.prank(address(hub));
+    irStrategy.setInterestRateData(isolationVars.assetBIdMainHub, encodedIrData);
 
     // Approvals
     vm.startPrank(bob);
@@ -177,6 +188,7 @@ contract SpokeMultipleHubIsolationModeTest is SpokeMultipleHubBase {
     Utils.borrow(newSpoke, isolationVars.reserveBId, bob, 1, bob);
 
     // Add main hub reserve B to the new spoke
+    vm.startPrank(ADMIN);
     isolationVars.reserveBIdMainHub = newSpoke.addReserve(
       isolationVars.assetBIdMainHub,
       address(hub),
@@ -201,8 +213,9 @@ contract SpokeMultipleHubIsolationModeTest is SpokeMultipleHubBase {
     hub.addSpoke(
       isolationVars.assetBIdMainHub,
       address(newSpoke),
-      DataTypes.SpokeConfig({drawCap: 100_000e18, supplyCap: 0})
+      DataTypes.SpokeConfig({drawCap: 100_000e18, supplyCap: 0, active: true})
     );
+    vm.stopPrank();
 
     // Bob still cannot borrow asset B from the new hub because there is no liquidity
     vm.expectRevert(abi.encodeWithSelector(ILiquidityHub.NotAvailableLiquidity.selector, 0));
@@ -264,10 +277,11 @@ contract SpokeMultipleHubIsolationModeTest is SpokeMultipleHubBase {
     assertEq(newHub.getAssetTotalDebt(isolationVars.assetBId), 100_000e18);
 
     // DAO offboards credit line to new spoke from the canonical hub by setting Asset B draw cap to 0
+    vm.prank(HUB_ADMIN);
     hub.updateSpokeConfig(
       isolationVars.assetBIdMainHub,
       address(newSpoke),
-      DataTypes.SpokeConfig({drawCap: 0, supplyCap: 0})
+      DataTypes.SpokeConfig({drawCap: 0, supplyCap: 0, active: true})
     );
 
     // Now Bob or any other users cannot draw any asset B from the new spoke main hub due to new draw cap of 0

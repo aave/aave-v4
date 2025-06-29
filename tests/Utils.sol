@@ -72,7 +72,6 @@ library Utils {
     address spoke,
     DataTypes.SpokeConfig memory spokeConfig
   ) internal {
-    // todo: prank admin/configurator
     hub.addSpoke(assetId, spoke, spokeConfig);
   }
 
@@ -82,7 +81,6 @@ library Utils {
     address spoke,
     DataTypes.SpokeConfig memory spokeConfig
   ) internal {
-    // todo: prank admin/configurator
     hub.updateSpokeConfig(assetId, spoke, spokeConfig);
   }
 
@@ -92,7 +90,6 @@ library Utils {
     uint8 decimals,
     address interestRateStrategy
   ) internal returns (uint256) {
-    // todo: prank admin/configurator
     return hub.addAsset(asset, decimals, interestRateStrategy);
   }
 
@@ -101,7 +98,6 @@ library Utils {
     uint256 assetId,
     DataTypes.AssetConfig memory config
   ) internal {
-    // todo: prank admin/configurator
     hub.updateAssetConfig(assetId, config);
   }
 

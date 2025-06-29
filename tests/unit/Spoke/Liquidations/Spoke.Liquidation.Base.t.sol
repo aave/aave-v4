@@ -124,6 +124,7 @@ contract SpokeLiquidationBase is SpokeBase {
 
     state.liquidationFee = liquidationFee;
 
+    vm.prank(SPOKE_ADMIN);
     spoke1.updateLiquidationConfig(liqConfig);
     updateLiquidationBonus(spoke1, collateralReserveId, liqBonus);
     updateLiquidationFee(spoke1, collateralReserveId, state.liquidationFee);
@@ -229,7 +230,7 @@ contract SpokeLiquidationBase is SpokeBase {
     string memory label
   ) internal view {
     _assertUserAccountData(state, spoke, label);
-    _assertLiquidationProtocolFeeEarned(state, label);
+    _assertliquidationFeeEarned(state, label);
     _assertLiquidationBonusEarned(state, label);
     _assertSupplyExchangeRate(state, label);
     _assertSetUsingAsCollateral(spoke, alice, state, label);
@@ -294,7 +295,7 @@ contract SpokeLiquidationBase is SpokeBase {
     }
   }
 
-  function _assertLiquidationProtocolFeeEarned(
+  function _assertliquidationFeeEarned(
     LiquidationTestLocalParams memory state,
     string memory label
   ) internal view {

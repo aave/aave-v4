@@ -110,7 +110,11 @@ contract LiquidityHubDrawTest is LiquidityHubBase {
     assertEq(baseDebt, drawAmount, 'spoke baseDebt after');
     assertEq(premiumDebt, 0, 'spoke premiumDebt after');
     // token balance
-    assertEq(underlying.balanceOf(alice), drawAmount + MAX_SUPPLY_AMOUNT, 'alice asset final balance');
+    assertEq(
+      underlying.balanceOf(alice),
+      drawAmount + MAX_SUPPLY_AMOUNT,
+      'alice asset final balance'
+    );
     assertEq(underlying.balanceOf(bob), MAX_SUPPLY_AMOUNT - daiAmount, 'bob asset final balance');
     assertEq(underlying.balanceOf(address(spoke1)), 0, 'spoke1 asset final balance');
     assertEq(underlying.balanceOf(address(spoke2)), 0, 'spoke2 asset final balance');
@@ -129,7 +133,7 @@ contract LiquidityHubDrawTest is LiquidityHubBase {
 
   function test_draw_fuzz_revertsWith_AssetNotActive(uint256 assetId, uint256 drawAmount) public {
     drawAmount = bound(drawAmount, 1, MAX_SUPPLY_AMOUNT);
-    assetId = bound(assetId, 0, hub.getAssetCount() - 1);
+    assetId = bound(assetId, 0, hub.getAssetCount() - 2); // Exclude duplicated DAI
     updateAssetActive(hub, assetId, false);
 
     assertFalse(hub.getAsset(assetId).config.active);
@@ -151,7 +155,7 @@ contract LiquidityHubDrawTest is LiquidityHubBase {
   }
 
   function test_draw_fuzz_revertsWith_AssetPaused(uint256 assetId, uint256 drawAmount) public {
-    assetId = bound(assetId, 0, hub.getAssetCount() - 1);
+    assetId = bound(assetId, 0, hub.getAssetCount() - 2); // Exclude duplicated DAI
     drawAmount = bound(drawAmount, 1, MAX_SUPPLY_AMOUNT);
     updateAssetPaused(hub, assetId, true);
 
@@ -174,7 +178,7 @@ contract LiquidityHubDrawTest is LiquidityHubBase {
   }
 
   function test_draw_fuzz_revertsWith_AssetFrozen(uint256 assetId, uint256 drawAmount) public {
-    assetId = bound(assetId, 0, hub.getAssetCount() - 1);
+    assetId = bound(assetId, 0, hub.getAssetCount() - 2); // Exclude duplicated DAI
     drawAmount = bound(drawAmount, 1, MAX_SUPPLY_AMOUNT);
     updateAssetFrozen(hub, assetId, true);
 

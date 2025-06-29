@@ -6,6 +6,7 @@ import {Ownable} from 'src/dependencies/openzeppelin/Ownable.sol';
 import {DataTypes} from 'src/libraries/types/DataTypes.sol';
 import {ILiquidityHub} from 'src/interfaces/ILiquidityHub.sol';
 import {IConfigurator} from 'src/interfaces/IConfigurator.sol';
+import {IAssetInterestRateStrategy} from 'src/interfaces/IAssetInterestRateStrategy.sol';
 
 contract Configurator is Ownable, IConfigurator {
   /**
@@ -136,7 +137,7 @@ contract Configurator is Ownable, IConfigurator {
       hub.updateSpokeConfig(
         assetId,
         config.feeReceiver,
-        DataTypes.SpokeConfig({supplyCap: 0, drawCap: 0})
+        DataTypes.SpokeConfig({supplyCap: 0, drawCap: 0, active: false})
       );
     }
 
@@ -146,13 +147,21 @@ contract Configurator is Ownable, IConfigurator {
         hub.addSpoke(
           assetId,
           newFeeReceiver,
-          DataTypes.SpokeConfig({supplyCap: type(uint256).max, drawCap: type(uint256).max})
+          DataTypes.SpokeConfig({
+            supplyCap: type(uint256).max,
+            drawCap: type(uint256).max,
+            active: true
+          })
         );
       } else {
         hub.updateSpokeConfig(
           assetId,
           newFeeReceiver,
-          DataTypes.SpokeConfig({supplyCap: type(uint256).max, drawCap: type(uint256).max})
+          DataTypes.SpokeConfig({
+            supplyCap: type(uint256).max,
+            drawCap: type(uint256).max,
+            active: true
+          })
         );
       }
     }

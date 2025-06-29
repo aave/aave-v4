@@ -25,6 +25,7 @@ contract SpokeMultipleHubTest is SpokeBase {
     (hub2, hub2IrStrategy) = hub2Fixture();
     (hub3, hub3IrStrategy) = hub3Fixture();
 
+    vm.startPrank(ADMIN);
     // Relist hub 2's dai on spoke1
     DataTypes.ReserveConfig memory daiHub2Config = DataTypes.ReserveConfig({
       active: true,
@@ -59,7 +60,8 @@ contract SpokeMultipleHubTest is SpokeBase {
 
     DataTypes.SpokeConfig memory spokeConfig = DataTypes.SpokeConfig({
       supplyCap: type(uint256).max,
-      drawCap: type(uint256).max
+      drawCap: type(uint256).max,
+      active: true
     });
 
     // Connect hub 2 and spoke 1 for dai
@@ -71,6 +73,8 @@ contract SpokeMultipleHubTest is SpokeBase {
     // Set the prices for dai for the new hubs
     oracle1.setReservePrice(daiHub2ReserveId, 1e8);
     oracle1.setReservePrice(daiHub3ReserveId, 1e8);
+
+    vm.stopPrank();
 
     // Deal dai to Alice for supplying to 2 hubs
     deal(address(tokenList.dai), alice, MAX_SUPPLY_AMOUNT * 2);

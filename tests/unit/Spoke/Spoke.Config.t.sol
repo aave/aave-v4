@@ -8,7 +8,7 @@ contract SpokeConfigTest is SpokeBase {
 
   function test_spoke_deploy_revertsWith_InvalidOracleAddress() public {
     vm.expectRevert(ISpoke.InvalidOracleAddress.selector);
-    new Spoke(address(0));
+    new Spoke(address(0), address(accessManager));
   }
 
   function test_updateReserveConfig() public {
@@ -255,13 +255,13 @@ contract SpokeConfigTest is SpokeBase {
     spoke1.updateReserveConfig(daiReserveId, config);
   }
 
-  function test_updateReserveConfig_revertsWith_InvalidLiquidationProtocolFee() public {
+  function test_updateReserveConfig_revertsWith_InvalidliquidationFee() public {
     uint256 liquidationFee = PercentageMath.PERCENTAGE_FACTOR + 1;
 
-    test_updateReserveConfig_fuzz_revertsWith_InvalidLiquidationProtocolFee(liquidationFee);
+    test_updateReserveConfig_fuzz_revertsWith_InvalidliquidationFee(liquidationFee);
   }
 
-  function test_updateReserveConfig_fuzz_revertsWith_InvalidLiquidationProtocolFee(
+  function test_updateReserveConfig_fuzz_revertsWith_InvalidliquidationFee(
     uint256 liquidationFee
   ) public {
     liquidationFee = bound(liquidationFee, PercentageMath.PERCENTAGE_FACTOR + 1, type(uint256).max);
@@ -270,7 +270,7 @@ contract SpokeConfigTest is SpokeBase {
     DataTypes.ReserveConfig memory config = spoke1.getReserve(daiReserveId).config;
     config.liquidationFee = liquidationFee;
 
-    vm.expectRevert(ISpoke.InvalidLiquidationProtocolFee.selector);
+    vm.expectRevert(ISpoke.InvalidliquidationFee.selector);
     vm.prank(SPOKE_ADMIN);
     spoke1.updateReserveConfig(daiReserveId, config);
   }
