@@ -6,14 +6,12 @@ import {Multicall} from 'src/misc/Multicall.sol';
 import {SafeERC20} from 'src/dependencies/openzeppelin/SafeERC20.sol';
 import {IERC20} from 'src/dependencies/openzeppelin/IERC20.sol';
 import {AccessManaged} from 'src/dependencies/openzeppelin/AccessManaged.sol';
-import {IAccessManager} from 'src/dependencies/openzeppelin/IAccessManager.sol';
 // libraries
 import {WadRayMath} from 'src/libraries/math/WadRayMath.sol';
 import {WadRayMathExtended} from 'src/libraries/math/WadRayMathExtended.sol';
 import {PercentageMathExtended} from 'src/libraries/math/PercentageMathExtended.sol';
 import {KeyValueListInMemory} from 'src/libraries/helpers/KeyValueListInMemory.sol';
 import {DataTypes} from 'src/libraries/types/DataTypes.sol';
-import {Roles} from 'src/libraries/types/Roles.sol';
 import {LiquidationLogic} from 'src/libraries/logic/LiquidationLogic.sol';
 // interfaces
 import {ILiquidityHub} from 'src/interfaces/ILiquidityHub.sol';
@@ -380,10 +378,10 @@ contract Spoke is ISpoke, Multicall, AccessManaged {
   function updateUserRiskPremium(address user) external {
     (uint256 userRiskPremium, , , , ) = _calculateUserAccountData(user);
     bool premiumIncrease = _notifyRiskPremiumUpdate(type(uint256).max, user, userRiskPremium);
-    require(
-      !premiumIncrease || msg.sender == user || _hasUpdateUserRiskPremiumRole(msg.sender),
-      Unauthorized()
-    );
+    // check permissions if premium increases or not called by user
+    if (premiumIncrease || user != msg.sender) {
+      _checkCanCall(_msgSender(), _msgData());
+    }
     emit UserRiskPremiumUpdate(user, userRiskPremium);
   }
 
@@ -726,11 +724,6 @@ contract Spoke is ISpoke, Multicall, AccessManaged {
   // todo opt: use bitmap
   function _isBorrowing(DataTypes.UserPosition storage userPosition) internal view returns (bool) {
     return userPosition.baseDrawnShares > 0;
-  }
-
-  function _hasUpdateUserRiskPremiumRole(address caller) internal view returns (bool) {
-    (bool result, ) = IAccessManager(authority()).hasRole(Roles.USER_RP_UPDATER_ROLE, caller);
-    return result;
   }
 
   // todo opt: use bitmap

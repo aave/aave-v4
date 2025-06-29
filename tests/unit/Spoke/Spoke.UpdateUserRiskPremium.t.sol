@@ -25,22 +25,19 @@ contract SpokeUpdateUserRiskPremium is SpokeBase {
 
     assertGt(riskPremiumAfter, riskPremiumBefore);
 
-    if (caller != alice && !_hasUpdateUserRiskPremiumRole(caller, spoke1)) {
-      vm.expectRevert(ISpoke.Unauthorized.selector);
+    (bool hasPermission, ) = IAccessManager(spoke1.authority()).hasRole(
+      Roles.SPOKE_ADMIN_ROLE,
+      caller
+    );
+    if (caller != alice && !hasPermission) {
+      vm.expectRevert(
+        abi.encodeWithSelector(IAccessManaged.AccessManagedUnauthorized.selector, caller)
+      );
     } else {
       vm.expectEmit(address(spoke1));
       emit ISpoke.UserRiskPremiumUpdate(alice, riskPremiumAfter);
     }
     vm.prank(caller);
     spoke1.updateUserRiskPremium(alice);
-  }
-
-  function _hasUpdateUserRiskPremiumRole(
-    address caller,
-    ISpoke spoke
-  ) internal view returns (bool) {
-    IAccessManager accessManager = IAccessManager(spoke.authority());
-    (bool result, ) = accessManager.hasRole(Roles.USER_RP_UPDATER_ROLE, caller);
-    return result;
   }
 }
