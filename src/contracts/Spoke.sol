@@ -315,7 +315,7 @@ contract Spoke is ISpoke, Multicall, AccessManaged {
     _validateRepay(reserve);
 
     DataTypes.ExecuteRepayLocalVars memory vars;
-    vars.hub = reserve.config.hub;
+    vars.hub = reserve.hub;
     vars.assetId = reserve.assetId;
     (vars.baseDebt, vars.premiumDebt) = _getUserDebt(vars.hub, vars.assetId, userPosition);
     (vars.baseDebtRestored, vars.premiumDebtRestored) = _calculateRestoreAmount(

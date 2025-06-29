@@ -161,7 +161,9 @@ contract SpokePositionManagerTest is SpokeBase {
     updateLiquidityPremium(spoke1, _wethReserveId(spoke1), 100_00);
     assertGt(spoke1.getUserRiskPremium(alice), riskPremiumBefore);
 
-    vm.expectRevert(ISpoke.Unauthorized.selector);
+    vm.expectRevert(
+      abi.encodeWithSelector(IAccessManaged.AccessManagedUnauthorized.selector, POSITION_MANAGER)
+    );
     vm.prank(POSITION_MANAGER);
     spoke1.updateUserRiskPremium(alice);
 
