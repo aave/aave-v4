@@ -68,7 +68,6 @@ interface ILiquidityHub is IAccessManaged {
   error SurplusAmountRestored(uint256 maxAllowedRestore);
   error InvalidSpoke();
   error SpokeNotListed();
-  error InvalidRiskPremiumBps(uint256 bps);
   error AssetPaused();
   error AssetFrozen();
   error InvalidIrStrategy();
