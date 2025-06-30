@@ -1318,7 +1318,8 @@ contract Spoke is ISpoke, Multicall, AccessManaged {
     positionStatus.setUsingAsCollateral(reserveId, usingAsCollateral);
 
     if (usingAsCollateral) {
-      _refreshDynamicConfig(user);
+      userPosition.configKey = _reserves[reserveId].dynamicConfigKey;
+      emit UserDynamicConfigRefreshed(user, reserveId);
     } else {
       // If unsetting, check HF and update user rp
       uint256 newUserRiskPremium = _refreshAndValidateUserPosition(user); // validates HF
