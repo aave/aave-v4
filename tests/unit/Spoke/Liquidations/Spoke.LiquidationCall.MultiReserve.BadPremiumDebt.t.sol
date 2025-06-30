@@ -314,6 +314,7 @@ contract LiquidationCallMultiReserveBadPremiumDebtTest is SpokeLiquidationBase {
     state.user = alice;
 
     // set spoke liq config
+    vm.prank(SPOKE_ADMIN);
     state.spoke.updateLiquidationConfig(liqConfig);
     updateLiquidationBonus(state.spoke, collateralReserveId, liqBonus);
     updateLiquidationProtocolFee(state.spoke, collateralReserveId, state.liquidationProtocolFee);
@@ -421,8 +422,8 @@ contract LiquidationCallMultiReserveBadPremiumDebtTest is SpokeLiquidationBase {
     }
     vm.expectEmit(address(state.spoke));
     emit ISpoke.LiquidationCall(
-      state.collateralReserves[state.collateralReserveIndex].asset,
-      state.debtReserves[state.debtReserveIndex].asset,
+      state.collateralReserves[state.collateralReserveIndex].underlying,
+      state.debtReserves[state.debtReserveIndex].underlying,
       alice,
       state.debtToLiq,
       state.collToLiq,

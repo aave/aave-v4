@@ -212,6 +212,7 @@ contract LiquidationCallCloseFactorMultiReserveTest is SpokeLiquidationBase {
     state.spoke = spoke1;
     state.user = alice;
 
+    vm.prank(SPOKE_ADMIN);
     state.spoke.updateLiquidationConfig(liqConfig);
     updateLiquidationBonus(
       state.spoke,
@@ -287,8 +288,8 @@ contract LiquidationCallCloseFactorMultiReserveTest is SpokeLiquidationBase {
 
     vm.expectEmit(address(state.spoke));
     emit ISpoke.LiquidationCall(
-      state.collateralReserves[state.collateralReserveIndex].asset,
-      state.debtReserves[state.debtReserveIndex].asset,
+      state.collateralReserves[state.collateralReserveIndex].underlying,
+      state.debtReserves[state.debtReserveIndex].underlying,
       alice,
       state.debtToLiq,
       state.collToLiq,

@@ -2,7 +2,6 @@
 pragma solidity ^0.8.0;
 
 import 'tests/Base.t.sol';
-import {DataTypes} from 'src/libraries/types/DataTypes.sol';
 
 contract LiquidityHubBase is Base {
   using SharesMath for uint256;
@@ -52,6 +51,7 @@ contract LiquidityHubBase is Base {
   function _updateSupplyCap(uint256 assetId, address spoke, uint256 newSupplyCap) internal {
     DataTypes.SpokeConfig memory spokeConfig = hub.getSpokeConfig(assetId, spoke);
     spokeConfig.supplyCap = newSupplyCap;
+    vm.prank(HUB_ADMIN);
     hub.updateSpokeConfig(assetId, spoke, spokeConfig);
   }
 
@@ -59,24 +59,34 @@ contract LiquidityHubBase is Base {
   /// increases supply and debt exchange rate
   function _increaseExchangeRate(uint256 assetId, uint256 amount) internal {
     address tempUser1 = makeAddr('TEMP_USER_1');
-    deal(address(hub.assetsList(assetId)), tempUser1, amount);
+    deal(hub.getAsset(assetId).underlying, tempUser1, amount);
 
     address tempSpoke1 = makeAddr('TEMP_SPOKE_1');
+    vm.startPrank(ADMIN);
     hub.addSpoke(
       assetId,
-      DataTypes.SpokeConfig({supplyCap: type(uint256).max, drawCap: type(uint256).max}),
-      tempSpoke1
+      tempSpoke1,
+      DataTypes.SpokeConfig({
+        supplyCap: type(uint256).max,
+        drawCap: type(uint256).max,
+        active: true
+      })
     );
 
     address tempUser2 = makeAddr('TEMP_USER_2');
-    deal(address(hub.assetsList(assetId)), tempUser2, amount);
+    deal(hub.getAsset(assetId).underlying, tempUser2, amount);
 
     address tempSpoke2 = makeAddr('TEMP_SPOKE_2');
     hub.addSpoke(
       assetId,
-      DataTypes.SpokeConfig({supplyCap: type(uint256).max, drawCap: type(uint256).max}),
-      tempSpoke2
+      tempSpoke2,
+      DataTypes.SpokeConfig({
+        supplyCap: type(uint256).max,
+        drawCap: type(uint256).max,
+        active: true
+      })
     );
+    vm.stopPrank();
 
     _supplyAndDrawLiquidity({
       assetId: assetId,
@@ -151,16 +161,21 @@ contract LiquidityHubBase is Base {
 
     uint256 initialLiq = hub.getAvailableLiquidity(assetId);
 
-    IERC20 asset = hub.assetsList(assetId);
-    deal(address(asset), tempUser, amount);
+    address asset = hub.getAsset(assetId).underlying;
+    deal(asset, tempUser, amount);
 
     vm.prank(tempUser);
-    asset.approve(address(hub), type(uint256).max);
+    IERC20(asset).approve(address(hub), type(uint256).max);
 
+    vm.prank(ADMIN);
     hub.addSpoke(
       assetId,
-      DataTypes.SpokeConfig({supplyCap: type(uint256).max, drawCap: type(uint256).max}),
-      tempSpoke
+      tempSpoke,
+      DataTypes.SpokeConfig({
+        supplyCap: type(uint256).max,
+        drawCap: type(uint256).max,
+        active: true
+      })
     );
 
     Utils.add({
@@ -186,16 +201,23 @@ contract LiquidityHubBase is Base {
 
     int256 premiumDrawnSharesDelta = 1000;
     int256 premiumOffsetDelta = 1000;
-    if (withPremium) {
-      // inflate premium data to create premium debt
-      hub.refreshPremiumDebt(assetId, premiumDrawnSharesDelta, premiumOffsetDelta, 0, 0);
-    }
 
+    vm.prank(HUB_ADMIN);
     hub.addSpoke(
       assetId,
-      DataTypes.SpokeConfig({supplyCap: type(uint256).max, drawCap: type(uint256).max}),
-      tempSpoke
+      tempSpoke,
+      DataTypes.SpokeConfig({
+        supplyCap: type(uint256).max,
+        drawCap: type(uint256).max,
+        active: true
+      })
     );
+
+    if (withPremium) {
+      // inflate premium data to create premium debt
+      vm.prank(tempSpoke);
+      hub.refreshPremiumDebt(assetId, premiumDrawnSharesDelta, premiumOffsetDelta, 0, 0);
+    }
 
     Utils.draw(hub, assetId, tempSpoke, tempUser, amount, tempUser);
 
@@ -207,6 +229,7 @@ contract LiquidityHubBase is Base {
     if (withPremium) {
       assertGt(premiumDebt, 0); // non-zero premium debt
       // restore premium data
+      vm.prank(tempSpoke);
       hub.refreshPremiumDebt(
         assetId,
         -premiumDrawnSharesDelta,
@@ -215,20 +238,5 @@ contract LiquidityHubBase is Base {
         0
       );
     }
-  }
-
-  // supply MAX_SUPPLY_AMOUNT liquidity to hub asset from a temporary user
-  function _deployLiquidity(ISpoke spoke, uint256 assetId, uint256 amount) public {
-    uint256 initialLiq = hub.getAvailableLiquidity(assetId);
-    address tempUser = makeAddr('tempUser');
-    IERC20 asset = hub.assetsList(assetId);
-    deal(address(asset), tempUser, amount);
-
-    vm.prank(tempUser);
-    asset.approve(address(hub), UINT256_MAX);
-
-    Utils.add(hub, assetId, address(spoke), amount, tempUser, address(0));
-
-    assertEq(hub.getAvailableLiquidity(assetId), initialLiq + amount);
   }
 }

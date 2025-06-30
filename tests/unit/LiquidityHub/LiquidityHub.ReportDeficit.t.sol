@@ -22,13 +22,13 @@ contract LiquidityHubReportDeficitTest is LiquidityHubBase {
     super.setUp();
 
     // deploy borrowable liquidity
-    _deployLiquidity(spoke1, wethAssetId, MAX_SUPPLY_AMOUNT);
-    _deployLiquidity(spoke1, usdxAssetId, MAX_SUPPLY_AMOUNT);
+    _addLiquidity(wethAssetId, MAX_SUPPLY_AMOUNT);
+    _addLiquidity(usdxAssetId, MAX_SUPPLY_AMOUNT);
 
     // max approve
     vm.startPrank(address(spoke1));
-    hub.assetsList(wethAssetId).approve(address(hub), UINT256_MAX);
-    hub.assetsList(usdxAssetId).approve(address(hub), UINT256_MAX);
+    IERC20(hub.getAsset(wethAssetId).underlying).approve(address(hub), UINT256_MAX);
+    IERC20(hub.getAsset(usdxAssetId).underlying).approve(address(hub), UINT256_MAX);
     vm.stopPrank();
 
     // mint usdx to spoke1 to be able to repay after accrual
@@ -136,7 +136,7 @@ contract LiquidityHubReportDeficitTest is LiquidityHubBase {
       WadRayMathExtended.RAY
     );
     params.availableLiquidityBefore = hub.getAvailableLiquidity(usdxAssetId);
-    params.balanceBefore = hub.assetsList(usdxAssetId).balanceOf(address(spoke1));
+    params.balanceBefore = IERC20(hub.getAsset(usdxAssetId).underlying).balanceOf(address(spoke1));
     params.baseBorrowRateBefore = getBaseBorrowRate(hub, usdxAssetId);
 
     uint256 totalDeficit = baseAmount + premiumAmount;
@@ -159,7 +159,7 @@ contract LiquidityHubReportDeficitTest is LiquidityHubBase {
       WadRayMathExtended.RAY
     );
     params.availableLiquidityAfter = hub.getAvailableLiquidity(usdxAssetId);
-    params.balanceAfter = hub.assetsList(usdxAssetId).balanceOf(address(spoke1));
+    params.balanceAfter = IERC20(hub.getAsset(usdxAssetId).underlying).balanceOf(address(spoke1));
     params.baseBorrowRateAfter = getBaseBorrowRate(hub, usdxAssetId);
 
     assertEq(params.baseBorrowRateBefore, params.baseBorrowRateAfter, 'base borrow rate');

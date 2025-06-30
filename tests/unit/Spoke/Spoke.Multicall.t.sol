@@ -20,9 +20,8 @@ contract SpokeMulticall is SpokeBase {
     emit ISpoke.UsingAsCollateral(daiReserveId, bob, true);
 
     // Execute the multicall
-    vm.startPrank(bob);
+    vm.prank(bob);
     spoke1.multicall(calls);
-    vm.stopPrank();
 
     // Check the supply
     uint256 bobSupplied = spoke1.getUserSuppliedAmount(daiReserveId, bob);
@@ -64,9 +63,8 @@ contract SpokeMulticall is SpokeBase {
     emit ISpoke.UserRiskPremiumUpdate(bob, _getLiquidityPremium(spoke2, _daiReserveId(spoke2)));
 
     // Then he supplies dai and sets as collateral, so user rp should decrease
-    vm.startPrank(bob);
+    vm.prank(bob);
     spoke2.multicall(calls);
-    vm.stopPrank();
 
     uint256 bobPremiumDrawnSharesAfter = spoke2
       .getUserPosition(_dai2ReserveId(spoke2), bob)
@@ -85,7 +83,6 @@ contract SpokeMulticall is SpokeBase {
     uint256 dai2ReserveId = reserveCountBefore;
     uint256 dai3ReserveId = dai2ReserveId + 1;
     DataTypes.ReserveConfig memory dai2Config = DataTypes.ReserveConfig({
-      decimals: 18,
       active: true,
       frozen: false,
       paused: false,
@@ -93,14 +90,12 @@ contract SpokeMulticall is SpokeBase {
       liquidityPremium: 10_00,
       liquidationProtocolFee: 0,
       borrowable: true,
-      collateral: true,
-      hub: hub
+      collateral: true
     });
     DataTypes.DynamicReserveConfig memory dai2DynConfig = DataTypes.DynamicReserveConfig({
       collateralFactor: 88_00
     });
     DataTypes.ReserveConfig memory dai3Config = DataTypes.ReserveConfig({
-      decimals: 18,
       active: true,
       frozen: false,
       paused: false,
@@ -108,8 +103,7 @@ contract SpokeMulticall is SpokeBase {
       liquidityPremium: 5_00,
       liquidationProtocolFee: 0,
       borrowable: true,
-      collateral: true,
-      hub: hub
+      collateral: true
     });
     DataTypes.DynamicReserveConfig memory dai3DynConfig = DataTypes.DynamicReserveConfig({
       collateralFactor: 70_00
@@ -118,18 +112,18 @@ contract SpokeMulticall is SpokeBase {
     DataTypes.Reserve memory dai2ReserveExpected;
     dai2ReserveExpected.reserveId = dai2ReserveId;
     dai2ReserveExpected.assetId = daiAssetId;
-    dai2ReserveExpected.asset = address(tokenList.dai);
+    dai2ReserveExpected.underlying = address(tokenList.dai);
     dai2ReserveExpected.config = dai2Config;
     DataTypes.Reserve memory dai3ReserveExpected;
     dai3ReserveExpected.reserveId = dai3ReserveId;
     dai3ReserveExpected.assetId = daiAssetId;
-    dai3ReserveExpected.asset = address(tokenList.dai);
+    dai3ReserveExpected.underlying = address(tokenList.dai);
     dai3ReserveExpected.config = dai3Config;
 
     // Set up the multicall
     bytes[] memory calls = new bytes[](2);
-    calls[0] = abi.encodeCall(ISpoke.addReserve, (daiAssetId, dai2Config, dai2DynConfig));
-    calls[1] = abi.encodeCall(ISpoke.addReserve, (daiAssetId, dai3Config, dai3DynConfig));
+    calls[0] = abi.encodeCall(ISpoke.addReserve, (daiAssetId, address(hub), dai2Config, dai2DynConfig));
+    calls[1] = abi.encodeCall(ISpoke.addReserve, (daiAssetId, address(hub), dai3Config, dai3DynConfig));
 
     vm.expectEmit(address(spoke1));
     emit ISpoke.ReserveAdded(dai2ReserveId, daiAssetId);
@@ -137,6 +131,7 @@ contract SpokeMulticall is SpokeBase {
     emit ISpoke.ReserveAdded(dai3ReserveId, daiAssetId);
 
     // Execute the multicall
+    vm.prank(SPOKE_ADMIN);
     spoke1.multicall(calls);
 
     // Check the reserves
@@ -173,6 +168,7 @@ contract SpokeMulticall is SpokeBase {
     emit ISpoke.ReserveConfigUpdated(usdxReserveId, newUsdx.config);
 
     // Execute the multicall
+    vm.prank(SPOKE_ADMIN);
     spoke1.multicall(calls);
 
     // Check the reserve configs
