@@ -985,8 +985,9 @@ contract Spoke is ISpoke, Multicall, AccessManaged {
   function _executeReportDeficit(
     DataTypes.Reserve storage reserve,
     DataTypes.UserPosition storage userPosition,
+    DataTypes.PositionStatus storage positionStatus,
     address user
-  ) internal returns (uint256) {
+  ) internal {
     // validation should already have occurred during liquidation
     DataTypes.ExecuteReportDeficitLocalVars memory vars;
 
@@ -1018,19 +1019,10 @@ contract Spoke is ISpoke, Multicall, AccessManaged {
     userPosition.baseDrawnShares -= deficitShares;
 
     // newUserRiskPremium is 0 due to no collateral remaining
-    // therefore premium shares and premium offset are 0
     _refreshPremiumDebt(reserve, user, vars.assetId, 0, 0, 0, 0);
-
-    (vars.baseDebt, vars.premiumDebt) = _getUserDebt(hub, vars.assetId, userPosition);
-    require(vars.baseDebt + vars.premiumDebt == 0);
-
-    DataTypes.PositionStatus storage positionStatus = _positionStatus[user];
     positionStatus.setBorrowing(reserve.reserveId, false);
-
-    return deficitShares;
   }
 
-  // TODO: opt by merging with _notifyRiskPremiumUpdate
   function _reportDeficit(address user) internal {
     DataTypes.PositionStatus storage positionStatus = _positionStatus[user];
     uint256 reserveCount_ = reserveCount;
@@ -1039,8 +1031,8 @@ contract Spoke is ISpoke, Multicall, AccessManaged {
       DataTypes.UserPosition storage userPosition = _userPositions[user][reserveId];
       if (positionStatus.isBorrowing(reserveId)) {
         DataTypes.Reserve storage reserve = _reserves[reserveId];
-        _executeReportDeficit(reserve, userPosition, user);
-        // notify is not needed as each debt reserve's deficit will be reported
+        _executeReportDeficit(reserve, userPosition, positionStatus, user);
+        // notify is not needed as each debt reserve's deficit will be individually reported
       }
       unchecked {
         ++reserveId;

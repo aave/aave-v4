@@ -347,7 +347,7 @@ contract LiquidationCallMultiReserveBadPremiumDebtTest is SpokeLiquidationBase {
     // skip time to accrue premium debt
     skip(skipTimeForPremiumAccrual);
 
-    state = _getAccountingInfoBeforeLiq(state);
+    state = _getAccountingInfoBeforeLiquidation(state);
 
     state.liquidationBonus = _getVariableLiquidationBonus(
       spoke1,
@@ -365,7 +365,11 @@ contract LiquidationCallMultiReserveBadPremiumDebtTest is SpokeLiquidationBase {
         state.totalCollateralInBaseCurrency.balanceBefore
     );
 
-    assertGt(state.premiumDebt.balanceBefore, 0, 'premium debt should be > 0 before liquidation');
+    assertGt(
+      state.userPremiumDebt.balanceBefore,
+      0,
+      'premium debt should be > 0 before liquidation'
+    );
 
     (
       state.collToLiq,
@@ -390,8 +394,8 @@ contract LiquidationCallMultiReserveBadPremiumDebtTest is SpokeLiquidationBase {
         // for debt asset being liquidated, some debt is restored prior to deficit creation
         if (reserveId == state.debtReserves[state.debtReserveIndex].reserveId) {
           (uint256 basedDebtRestored, uint256 premDebtRestored) = _calculateExactRestoreAmount(
-            state.baseDebt.balanceBefore,
-            state.premiumDebt.balanceBefore,
+            state.userBaseDebt.balanceBefore,
+            state.userPremiumDebt.balanceBefore,
             state.debtToLiq,
             assetId
           );
@@ -403,7 +407,7 @@ contract LiquidationCallMultiReserveBadPremiumDebtTest is SpokeLiquidationBase {
           // total debt asset deficit is the expected base debt and remaining premium debt after settlement during liquidation
           expectedDeficit =
             hub.convertToDrawnAssets(assetId, expectedShares) +
-            state.premiumDebt.balanceBefore -
+            state.userPremiumDebt.balanceBefore -
             premDebtRestored;
         } else {
           expectedShares = state.spoke.getUserPosition(reserveId, alice).baseDrawnShares;
@@ -436,7 +440,7 @@ contract LiquidationCallMultiReserveBadPremiumDebtTest is SpokeLiquidationBase {
       UINT256_MAX
     );
 
-    state = _getAccountingInfoAfterLiq(state);
+    state = _getAccountingInfoAfterLiquidation(state);
 
     return state;
   }

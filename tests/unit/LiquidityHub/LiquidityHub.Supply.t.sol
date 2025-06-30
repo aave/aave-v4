@@ -350,7 +350,11 @@ contract LiquidityHubSupplyTest is LiquidityHubBase {
     );
     assertEq(hub.getAsset(assetId).lastUpdateTimestamp, vm.getBlockTimestamp());
     // token balance
-    assertEq(underlying.balanceOf(user), MAX_SUPPLY_AMOUNT - amount, 'user token balance post-supply');
+    assertEq(
+      underlying.balanceOf(user),
+      MAX_SUPPLY_AMOUNT - amount,
+      'user token balance post-supply'
+    );
     assertEq(underlying.balanceOf(address(spoke1)), 0, 'spoke token balance post-supply');
     assertEq(underlying.balanceOf(address(hub)), amount, 'hub token balance post-supply');
   }
@@ -437,7 +441,11 @@ contract LiquidityHubSupplyTest is LiquidityHubBase {
       amount2,
       'spoke2 suppliedAmount after'
     );
-    assertEq(underlying2.balanceOf(alice), MAX_SUPPLY_AMOUNT - amount2, 'user asset2 balance after');
+    assertEq(
+      underlying2.balanceOf(alice),
+      MAX_SUPPLY_AMOUNT - amount2,
+      'user asset2 balance after'
+    );
     assertEq(underlying2.balanceOf(address(spoke2)), 0, 'spoke2 asset2 balance after');
     assertEq(underlying2.balanceOf(address(hub)), amount2, 'hub asset2 balance after');
   }

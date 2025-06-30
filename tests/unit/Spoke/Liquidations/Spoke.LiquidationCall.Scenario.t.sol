@@ -22,9 +22,9 @@ contract LiquidationCallScenarioTest is SpokeLiquidationBase {
     uint256 wbtcReserveId;
     Amount collAmount;
     Amount debtAmount;
-    Balance totalDebt;
-    Balance supply;
-    Balance liquidator;
+    Balance userTotalDebt;
+    Balance userSuppliedAmount;
+    Balance liquidatorDebt;
     Balance liquidatorCollateral;
     Balance user;
     uint256 closeFactor;
@@ -77,13 +77,16 @@ contract LiquidationCallScenarioTest is SpokeLiquidationBase {
     assertGt(premiumDebt, 0);
     assertGt(spoke1.getUserPosition(state.wethReserveId, alice).realizedPremium, 0);
 
-    state.liquidatorCollateral.balanceBefore = IERC20(spoke1.getReserve(state.wbtcReserveId).underlying)
+    state.liquidatorCollateral.balanceBefore = IERC20(
+      spoke1.getReserve(state.wbtcReserveId).underlying
+    ).balanceOf(LIQUIDATOR);
+    state.liquidatorDebt.balanceBefore = IERC20(spoke1.getReserve(state.wethReserveId).underlying)
       .balanceOf(LIQUIDATOR);
-    state.liquidator.balanceBefore = IERC20(spoke1.getReserve(state.wethReserveId).underlying).balanceOf(
-      LIQUIDATOR
+    state.userSuppliedAmount.balanceBefore = spoke1.getUserSuppliedAmount(
+      state.wbtcReserveId,
+      alice
     );
-    state.supply.balanceBefore = spoke1.getUserSuppliedAmount(state.wbtcReserveId, alice);
-    state.totalDebt.balanceBefore = spoke1.getUserTotalDebt(state.wethReserveId, alice);
+    state.userTotalDebt.balanceBefore = spoke1.getUserTotalDebt(state.wethReserveId, alice);
 
     vm.prank(LIQUIDATOR);
     spoke1.liquidationCall({
@@ -93,17 +96,20 @@ contract LiquidationCallScenarioTest is SpokeLiquidationBase {
       debtToCover: UINT256_MAX
     });
 
-    state.liquidatorCollateral.balanceAfter = IERC20(spoke1.getReserve(state.wbtcReserveId).underlying)
+    state.liquidatorCollateral.balanceAfter = IERC20(
+      spoke1.getReserve(state.wbtcReserveId).underlying
+    ).balanceOf(LIQUIDATOR);
+    state.liquidatorDebt.balanceAfter = IERC20(spoke1.getReserve(state.wethReserveId).underlying)
       .balanceOf(LIQUIDATOR);
-    state.liquidator.balanceAfter = IERC20(spoke1.getReserve(state.wethReserveId).underlying).balanceOf(
-      LIQUIDATOR
+    state.userSuppliedAmount.balanceAfter = spoke1.getUserSuppliedAmount(
+      state.wbtcReserveId,
+      alice
     );
-    state.supply.balanceAfter = spoke1.getUserSuppliedAmount(state.wbtcReserveId, alice);
-    state.totalDebt.balanceAfter = spoke1.getUserTotalDebt(state.wethReserveId, alice);
+    state.userTotalDebt.balanceAfter = spoke1.getUserTotalDebt(state.wethReserveId, alice);
 
     assertApproxEqAbs(
-      stdMath.delta(state.liquidator.balanceAfter, state.liquidator.balanceBefore),
-      stdMath.delta(state.totalDebt.balanceAfter, state.totalDebt.balanceBefore),
+      stdMath.delta(state.liquidatorDebt.balanceAfter, state.liquidatorDebt.balanceBefore),
+      stdMath.delta(state.userTotalDebt.balanceAfter, state.userTotalDebt.balanceBefore),
       2, // should be due to repay donation
       'liquidator repaid debt amount and restored debt accounting'
     );
@@ -175,13 +181,16 @@ contract LiquidationCallScenarioTest is SpokeLiquidationBase {
     assertGt(premiumDebt, 0);
     assertGt(spoke1.getUserPosition(state.wethReserveId, alice).realizedPremium, 0);
 
-    state.liquidatorCollateral.balanceBefore = IERC20(spoke1.getReserve(state.wbtcReserveId).underlying)
+    state.liquidatorCollateral.balanceBefore = IERC20(
+      spoke1.getReserve(state.wbtcReserveId).underlying
+    ).balanceOf(LIQUIDATOR);
+    state.liquidatorDebt.balanceBefore = IERC20(spoke1.getReserve(state.wethReserveId).underlying)
       .balanceOf(LIQUIDATOR);
-    state.liquidator.balanceBefore = IERC20(spoke1.getReserve(state.wethReserveId).underlying).balanceOf(
-      LIQUIDATOR
+    state.userSuppliedAmount.balanceBefore = spoke1.getUserSuppliedAmount(
+      state.wbtcReserveId,
+      alice
     );
-    state.supply.balanceBefore = spoke1.getUserSuppliedAmount(state.wbtcReserveId, alice);
-    state.totalDebt.balanceBefore = spoke1.getUserTotalDebt(state.wethReserveId, alice);
+    state.userTotalDebt.balanceBefore = spoke1.getUserTotalDebt(state.wethReserveId, alice);
 
     vm.prank(LIQUIDATOR);
     spoke1.liquidationCall({
@@ -191,17 +200,20 @@ contract LiquidationCallScenarioTest is SpokeLiquidationBase {
       debtToCover: MAX_SUPPLY_AMOUNT
     });
 
-    state.liquidatorCollateral.balanceAfter = IERC20(spoke1.getReserve(state.wbtcReserveId).underlying)
+    state.liquidatorCollateral.balanceAfter = IERC20(
+      spoke1.getReserve(state.wbtcReserveId).underlying
+    ).balanceOf(LIQUIDATOR);
+    state.liquidatorDebt.balanceAfter = IERC20(spoke1.getReserve(state.wethReserveId).underlying)
       .balanceOf(LIQUIDATOR);
-    state.liquidator.balanceAfter = IERC20(spoke1.getReserve(state.wethReserveId).underlying).balanceOf(
-      LIQUIDATOR
+    state.userSuppliedAmount.balanceAfter = spoke1.getUserSuppliedAmount(
+      state.wbtcReserveId,
+      alice
     );
-    state.supply.balanceAfter = spoke1.getUserSuppliedAmount(state.wbtcReserveId, alice);
-    state.totalDebt.balanceAfter = spoke1.getUserTotalDebt(state.wethReserveId, alice);
+    state.userTotalDebt.balanceAfter = spoke1.getUserTotalDebt(state.wethReserveId, alice);
 
     assertApproxEqAbs(
-      stdMath.delta(state.liquidator.balanceAfter, state.liquidator.balanceBefore),
-      stdMath.delta(state.totalDebt.balanceAfter, state.totalDebt.balanceBefore),
+      stdMath.delta(state.liquidatorDebt.balanceAfter, state.liquidatorDebt.balanceBefore),
+      stdMath.delta(state.userTotalDebt.balanceAfter, state.userTotalDebt.balanceBefore),
       4, // max delta too large? should be due to repay donation
       'liquidator repaid debt amount and restored debt accounting (donation)'
     );
@@ -263,33 +275,39 @@ contract LiquidationCallScenarioTest is SpokeLiquidationBase {
     // position must be liquidatable after interest accrual
     assertLt(spoke1.getHealthFactor(alice), HEALTH_FACTOR_LIQUIDATION_THRESHOLD);
 
-    state.liquidatorCollateral.balanceBefore = IERC20(spoke1.getReserve(state.wbtcReserveId).underlying)
+    state.liquidatorCollateral.balanceBefore = IERC20(
+      spoke1.getReserve(state.wbtcReserveId).underlying
+    ).balanceOf(LIQUIDATOR);
+    state.liquidatorDebt.balanceBefore = IERC20(spoke1.getReserve(state.wethReserveId).underlying)
       .balanceOf(LIQUIDATOR);
-    state.liquidator.balanceBefore = IERC20(spoke1.getReserve(state.wethReserveId).underlying).balanceOf(
-      LIQUIDATOR
+    state.userSuppliedAmount.balanceBefore = spoke1.getUserSuppliedAmount(
+      state.wbtcReserveId,
+      alice
     );
-    state.supply.balanceBefore = spoke1.getUserSuppliedAmount(state.wbtcReserveId, alice);
-    state.totalDebt.balanceBefore = spoke1.getUserTotalDebt(state.wethReserveId, alice);
+    state.userTotalDebt.balanceBefore = spoke1.getUserTotalDebt(state.wethReserveId, alice);
 
     vm.prank(LIQUIDATOR);
     spoke1.liquidationCall({
       collateralReserveId: state.wbtcReserveId,
       debtReserveId: state.wethReserveId,
       user: alice,
-      debtToCover: state.totalDebt.balanceBefore + 1
+      debtToCover: state.userTotalDebt.balanceBefore + 1
     });
 
-    state.liquidatorCollateral.balanceAfter = IERC20(spoke1.getReserve(state.wbtcReserveId).underlying)
+    state.liquidatorCollateral.balanceAfter = IERC20(
+      spoke1.getReserve(state.wbtcReserveId).underlying
+    ).balanceOf(LIQUIDATOR);
+    state.liquidatorDebt.balanceAfter = IERC20(spoke1.getReserve(state.wethReserveId).underlying)
       .balanceOf(LIQUIDATOR);
-    state.liquidator.balanceAfter = IERC20(spoke1.getReserve(state.wethReserveId).underlying).balanceOf(
-      LIQUIDATOR
+    state.userSuppliedAmount.balanceAfter = spoke1.getUserSuppliedAmount(
+      state.wbtcReserveId,
+      alice
     );
-    state.supply.balanceAfter = spoke1.getUserSuppliedAmount(state.wbtcReserveId, alice);
-    state.totalDebt.balanceAfter = spoke1.getUserTotalDebt(state.wethReserveId, alice);
+    state.userTotalDebt.balanceAfter = spoke1.getUserTotalDebt(state.wethReserveId, alice);
 
     assertApproxEqAbs(
-      stdMath.delta(state.liquidator.balanceAfter, state.liquidator.balanceBefore),
-      stdMath.delta(state.totalDebt.balanceAfter, state.totalDebt.balanceBefore),
+      stdMath.delta(state.liquidatorDebt.balanceAfter, state.liquidatorDebt.balanceBefore),
+      stdMath.delta(state.userTotalDebt.balanceAfter, state.userTotalDebt.balanceBefore),
       2,
       'liquidator repaid debt amount and restored debt accounting'
     );
@@ -345,13 +363,16 @@ contract LiquidationCallScenarioTest is SpokeLiquidationBase {
     // position must be liquidatable after interest accrual
     vm.assume(spoke1.getHealthFactor(alice) < HEALTH_FACTOR_LIQUIDATION_THRESHOLD);
 
-    state.liquidatorCollateral.balanceBefore = IERC20(spoke1.getReserve(state.wbtcReserveId).underlying)
+    state.liquidatorCollateral.balanceBefore = IERC20(
+      spoke1.getReserve(state.wbtcReserveId).underlying
+    ).balanceOf(LIQUIDATOR);
+    state.liquidatorDebt.balanceBefore = IERC20(spoke1.getReserve(state.wethReserveId).underlying)
       .balanceOf(LIQUIDATOR);
-    state.liquidator.balanceBefore = IERC20(spoke1.getReserve(state.wethReserveId).underlying).balanceOf(
-      LIQUIDATOR
+    state.userSuppliedAmount.balanceBefore = spoke1.getUserSuppliedAmount(
+      state.wbtcReserveId,
+      alice
     );
-    state.supply.balanceBefore = spoke1.getUserSuppliedAmount(state.wbtcReserveId, alice);
-    state.totalDebt.balanceBefore = spoke1.getUserTotalDebt(state.wethReserveId, alice);
+    state.userTotalDebt.balanceBefore = spoke1.getUserTotalDebt(state.wethReserveId, alice);
 
     vm.prank(LIQUIDATOR);
     spoke1.liquidationCall({
@@ -361,17 +382,20 @@ contract LiquidationCallScenarioTest is SpokeLiquidationBase {
       debtToCover: MAX_SUPPLY_AMOUNT
     });
 
-    state.liquidatorCollateral.balanceAfter = IERC20(spoke1.getReserve(state.wbtcReserveId).underlying)
+    state.liquidatorCollateral.balanceAfter = IERC20(
+      spoke1.getReserve(state.wbtcReserveId).underlying
+    ).balanceOf(LIQUIDATOR);
+    state.liquidatorDebt.balanceAfter = IERC20(spoke1.getReserve(state.wethReserveId).underlying)
       .balanceOf(LIQUIDATOR);
-    state.liquidator.balanceAfter = IERC20(spoke1.getReserve(state.wethReserveId).underlying).balanceOf(
-      LIQUIDATOR
+    state.userSuppliedAmount.balanceAfter = spoke1.getUserSuppliedAmount(
+      state.wbtcReserveId,
+      alice
     );
-    state.supply.balanceAfter = spoke1.getUserSuppliedAmount(state.wbtcReserveId, alice);
-    state.totalDebt.balanceAfter = spoke1.getUserTotalDebt(state.wethReserveId, alice);
+    state.userTotalDebt.balanceAfter = spoke1.getUserTotalDebt(state.wethReserveId, alice);
 
     assertApproxEqAbs(
-      stdMath.delta(state.liquidator.balanceAfter, state.liquidator.balanceBefore),
-      stdMath.delta(state.totalDebt.balanceAfter, state.totalDebt.balanceBefore),
+      stdMath.delta(state.liquidatorDebt.balanceAfter, state.liquidatorDebt.balanceBefore),
+      stdMath.delta(state.userTotalDebt.balanceAfter, state.userTotalDebt.balanceBefore),
       4, // max delta too large?
       'liquidator repaid debt amount and restored debt accounting'
     );
@@ -420,36 +444,38 @@ contract LiquidationCallScenarioTest is SpokeLiquidationBase {
     // position must be liquidatable after interest accrual
     assertLt(spoke1.getHealthFactor(alice), HEALTH_FACTOR_LIQUIDATION_THRESHOLD);
 
-    state.liquidatorCollateral.balanceBefore = IERC20(spoke1.getReserve(state.wbtcReserveId).underlying)
+    state.liquidatorCollateral.balanceBefore = IERC20(
+      spoke1.getReserve(state.wbtcReserveId).underlying
+    ).balanceOf(LIQUIDATOR);
+    state.liquidatorDebt.balanceBefore = IERC20(spoke1.getReserve(state.wethReserveId).underlying)
       .balanceOf(LIQUIDATOR);
-    state.liquidator.balanceBefore = IERC20(spoke1.getReserve(state.wethReserveId).underlying).balanceOf(
-      LIQUIDATOR
+    state.userSuppliedAmount.balanceBefore = spoke1.getUserSuppliedAmount(
+      state.wbtcReserveId,
+      alice
     );
-    state.supply.balanceBefore = spoke1.getUserSuppliedAmount(state.wbtcReserveId, alice);
-    state.totalDebt.balanceBefore = spoke1.getUserTotalDebt(state.wethReserveId, alice);
+    state.userTotalDebt.balanceBefore = spoke1.getUserTotalDebt(state.wethReserveId, alice);
 
     vm.prank(LIQUIDATOR);
     spoke1.liquidationCall({
       collateralReserveId: state.wbtcReserveId,
       debtReserveId: state.wethReserveId,
       user: alice,
-      debtToCover: state.totalDebt.balanceBefore
+      debtToCover: state.userTotalDebt.balanceBefore
     });
 
-    state.liquidator.balanceAfter = IERC20(spoke1.getReserve(state.wethReserveId).underlying).balanceOf(
-      LIQUIDATOR
-    );
-    state.totalDebt.balanceAfter = spoke1.getUserTotalDebt(state.wethReserveId, alice);
+    state.liquidatorDebt.balanceAfter = IERC20(spoke1.getReserve(state.wethReserveId).underlying)
+      .balanceOf(LIQUIDATOR);
+    state.userTotalDebt.balanceAfter = spoke1.getUserTotalDebt(state.wethReserveId, alice);
 
     assertApproxEqAbs(
-      stdMath.delta(state.liquidator.balanceAfter, state.liquidator.balanceBefore),
-      stdMath.delta(state.totalDebt.balanceAfter, state.totalDebt.balanceBefore),
+      stdMath.delta(state.liquidatorDebt.balanceAfter, state.liquidatorDebt.balanceBefore),
+      stdMath.delta(state.userTotalDebt.balanceAfter, state.userTotalDebt.balanceBefore),
       2,
       'liquidator repaid debt amount and restored debt accounting'
     );
     assertLe(
-      stdMath.delta(state.liquidator.balanceAfter, state.liquidator.balanceBefore),
-      state.totalDebt.balanceBefore,
+      stdMath.delta(state.liquidatorDebt.balanceAfter, state.liquidatorDebt.balanceBefore),
+      state.userTotalDebt.balanceBefore,
       'liquidator can only liquidate enough debt to cover position'
     );
     assertLe(spoke1.getHealthFactor(alice), _getCloseFactor(spoke1), 'hf <= close factor');

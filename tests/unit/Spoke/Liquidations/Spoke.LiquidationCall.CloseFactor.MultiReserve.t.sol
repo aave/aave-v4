@@ -271,7 +271,7 @@ contract LiquidationCallCloseFactorMultiReserveTest is SpokeLiquidationBase {
 
     // ensure position is liquidatable
     assertLt(state.spoke.getHealthFactor(alice), HEALTH_FACTOR_LIQUIDATION_THRESHOLD);
-    _getAccountingInfoBeforeLiq(state);
+    _getAccountingInfoBeforeLiquidation(state);
 
     (
       state.collToLiq,
@@ -302,7 +302,7 @@ contract LiquidationCallCloseFactorMultiReserveTest is SpokeLiquidationBase {
       requiredDebtAmounts[debtReserveIndex]
     );
 
-    _getAccountingInfoAfterLiq(state);
+    _getAccountingInfoAfterLiquidation(state);
 
     return state;
   }

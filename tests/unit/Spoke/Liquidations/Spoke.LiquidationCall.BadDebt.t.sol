@@ -404,7 +404,7 @@ contract LiquidationCallBadDebtTest is SpokeLiquidationBase {
       hfAfterBorrow
     );
 
-    state = _getAccountingInfoBeforeLiq(state);
+    state = _getAccountingInfoBeforeLiquidation(state);
     (
       state.collToLiq,
       state.debtToLiq,
@@ -416,8 +416,8 @@ contract LiquidationCallBadDebtTest is SpokeLiquidationBase {
     uint256 debtAssetId = state.debtReserves[state.debtReserveIndex].assetId;
 
     (uint256 basedDebtRestored, uint256 premDebtRestored) = _calculateExactRestoreAmount(
-      state.baseDebt.balanceBefore,
-      state.premiumDebt.balanceBefore,
+      state.userBaseDebt.balanceBefore,
+      state.userPremiumDebt.balanceBefore,
       state.debtToLiq,
       debtAssetId
     );
@@ -427,7 +427,7 @@ contract LiquidationCallBadDebtTest is SpokeLiquidationBase {
       hub.convertToDrawnShares(debtAssetId, basedDebtRestored);
     // total debt asset deficit is the expected base debt and remaining premium debt after settlement during liquidation
     uint256 expectedDeficit = hub.convertToDrawnAssets(debtAssetId, expectedShares) +
-      state.premiumDebt.balanceBefore -
+      state.userPremiumDebt.balanceBefore -
       premDebtRestored;
 
     // logs to read protocol fee from tmp emitted event
@@ -453,7 +453,7 @@ contract LiquidationCallBadDebtTest is SpokeLiquidationBase {
     vm.prank(LIQUIDATOR);
     state.spoke.liquidationCall(collateralReserveId, debtReserveId, alice, UINT256_MAX);
 
-    state = _getAccountingInfoAfterLiq(state);
+    state = _getAccountingInfoAfterLiquidation(state);
 
     return state;
   }

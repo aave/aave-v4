@@ -479,7 +479,7 @@ contract LiquidationCallCloseFactorTest is SpokeLiquidationBase {
       collateralReserveId,
       hfAfterBorrow
     );
-    state = _getAccountingInfoBeforeLiq(state);
+    state = _getAccountingInfoBeforeLiquidation(state);
 
     (
       state.collToLiq,
@@ -505,7 +505,7 @@ contract LiquidationCallCloseFactorTest is SpokeLiquidationBase {
     vm.prank(LIQUIDATOR);
     state.spoke.liquidationCall(collateralReserveId, debtReserveId, alice, UINT256_MAX);
 
-    state = _getAccountingInfoAfterLiq(state);
+    state = _getAccountingInfoAfterLiquidation(state);
 
     return state;
   }
