@@ -478,12 +478,8 @@ contract ConfiguratorTest is LiquidityHubBase {
   ) public {
     assetId = bound(assetId, 0, hub.getAssetCount() - 1);
     liquidityFee = bound(liquidityFee, 0, PercentageMathExtended.PERCENTAGE_FACTOR);
-    vm.assume(feeReceiver != address(0));
-
     DataTypes.AssetConfig memory oldConfig = hub.getAssetConfig(assetId);
-    if (oldConfig.feeReceiver == feeReceiver) {
-      return;
-    }
+    vm.assume(feeReceiver != address(0) && oldConfig.feeReceiver != feeReceiver);
 
     vm.expectCall(
       address(hub),
