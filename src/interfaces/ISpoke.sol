@@ -88,7 +88,7 @@ interface ISpoke is IMulticall, IAccessManaged {
   error CollateralCannotBeLiquidated();
   error SpecifiedCurrencyNotBorrowedByUser();
   error InvalidDebtToCover();
-  error InvalidliquidationFee();
+  error InvalidLiquidationFee();
   error InvalidOracleAddress();
   error UsersAndDebtLengthMismatch();
   error Unauthorized();

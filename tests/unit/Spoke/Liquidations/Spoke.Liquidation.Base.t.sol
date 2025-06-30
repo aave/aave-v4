@@ -230,7 +230,7 @@ contract SpokeLiquidationBase is SpokeBase {
     string memory label
   ) internal view {
     _assertUserAccountData(state, spoke, label);
-    _assertliquidationFeeEarned(state, label);
+    _assertLiquidationFeeEarned(state, label);
     _assertLiquidationBonusEarned(state, label);
     _assertSupplyExchangeRate(state, label);
     _assertSetUsingAsCollateral(spoke, alice, state, label);
@@ -274,12 +274,13 @@ contract SpokeLiquidationBase is SpokeBase {
         _getCloseFactor(spoke),
         string.concat('Health factor <= close factor ', label)
       );
+      uint256 bpsError = 20;
       // should also be close to the desired CF
       assertApproxEqRel(
         finalHf,
         _getCloseFactor(spoke),
-        _approxRelFromBps(20),
-        'HF matches closeFactor within 0.2%'
+        _approxRelFromBps(bpsError),
+        string.concat('HF matches closeFactor within ', vm.toString(bpsError), ' bps')
       );
     } else if (state.supply.balanceAfter == 0 && state.debt.balanceAfter > 0) {
       // if bad debt, HF should be 0 and userRp should be 0
@@ -295,7 +296,7 @@ contract SpokeLiquidationBase is SpokeBase {
     }
   }
 
-  function _assertliquidationFeeEarned(
+  function _assertLiquidationFeeEarned(
     LiquidationTestLocalParams memory state,
     string memory label
   ) internal view {

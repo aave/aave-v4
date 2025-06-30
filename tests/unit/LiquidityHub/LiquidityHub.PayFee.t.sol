@@ -36,16 +36,8 @@ contract LiquidityHubPayFeeTest is LiquidityHubBase {
       to: address(spoke1)
     });
 
-    _supplyAndDrawLiquidity({
-      assetId: daiAssetId,
-      supplyUser: bob,
-      supplySpoke: address(spoke2),
-      supplyAmount: addAmount,
-      drawUser: alice,
-      drawSpoke: address(spoke1),
-      drawAmount: addAmount,
-      skipTime: 365 days
-    });
+    _addLiquidity(daiAssetId, addAmount);
+    _drawLiquidity(daiAssetId, addAmount, true);
 
     uint256 feeShares = hub.getSpokeSuppliedShares(daiAssetId, address(spoke1));
     uint256 feeAmount = hub.getSpokeSuppliedAmount(daiAssetId, address(spoke1));
@@ -61,51 +53,7 @@ contract LiquidityHubPayFeeTest is LiquidityHubBase {
   }
 
   function test_payFee_fuzz(uint256 addAmount, uint256 feeShares) public {
-    addAmount = bound(addAmount, 1, MAX_SUPPLY_AMOUNT);
-
-    Utils.add({
-      hub: hub,
-      assetId: daiAssetId,
-      spoke: address(spoke1),
-      amount: addAmount,
-      user: alice,
-      to: address(spoke1)
-    });
-
-    uint256 spokeSharesBefore = hub.getSpokeSuppliedShares(daiAssetId, address(spoke1));
-    feeShares = bound(feeShares, 1, spokeSharesBefore);
-
-    uint256 feeReceiverSharesBefore = hub.getSpokeSuppliedShares(
-      daiAssetId,
-      _getFeeReceiver(daiAssetId)
-    );
-
-    vm.expectEmit(address(hub));
-    emit ILiquidityHub.Remove(
-      daiAssetId,
-      address(spoke1),
-      hub.convertToSuppliedAssets(daiAssetId, feeShares),
-      feeShares
-    );
-
-    vm.expectEmit(address(hub));
-    emit ILiquidityHub.AccrueFees(daiAssetId, feeShares);
-
-    vm.prank(address(spoke1));
-    hub.payFee(daiAssetId, feeShares);
-
-    uint256 spokeSharesAfter = hub.getSpokeSuppliedShares(daiAssetId, address(spoke1));
-    uint256 feeReceiverSharesAfter = hub.getSpokeSuppliedShares(
-      daiAssetId,
-      _getFeeReceiver(daiAssetId)
-    );
-
-    assertEq(spokeSharesAfter, spokeSharesBefore - feeShares, 'spoke supplied shares after');
-    assertEq(
-      feeReceiverSharesAfter,
-      feeReceiverSharesBefore + feeShares,
-      'fee receiver supplied shares after'
-    );
+    test_payFee_fuzz_with_interest(addAmount, feeShares, 0);
   }
 
   function test_payFee_fuzz_with_interest(
@@ -114,7 +62,7 @@ contract LiquidityHubPayFeeTest is LiquidityHubBase {
     uint256 skipTime
   ) public {
     addAmount = bound(addAmount, 1, MAX_SUPPLY_AMOUNT);
-    skipTime = bound(skipTime, 1, MAX_SKIP_TIME);
+    skipTime = bound(skipTime, 0, MAX_SKIP_TIME);
 
     Utils.add({
       hub: hub,
@@ -139,7 +87,7 @@ contract LiquidityHubPayFeeTest is LiquidityHubBase {
     uint256 spokeSharesBefore = hub.getSpokeSuppliedShares(daiAssetId, address(spoke1));
 
     // supply ex rate increases due to interest
-    assertGt(
+    assertGe(
       hub.convertToSuppliedAssets(daiAssetId, WadRayMathExtended.RAY),
       WadRayMathExtended.RAY
     );

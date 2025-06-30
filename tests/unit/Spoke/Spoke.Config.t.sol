@@ -255,13 +255,13 @@ contract SpokeConfigTest is SpokeBase {
     spoke1.updateReserveConfig(daiReserveId, config);
   }
 
-  function test_updateReserveConfig_revertsWith_InvalidliquidationFee() public {
+  function test_updateReserveConfig_revertsWith_InvalidLiquidationFee() public {
     uint256 liquidationFee = PercentageMath.PERCENTAGE_FACTOR + 1;
 
-    test_updateReserveConfig_fuzz_revertsWith_InvalidliquidationFee(liquidationFee);
+    test_updateReserveConfig_fuzz_revertsWith_InvalidLiquidationFee(liquidationFee);
   }
 
-  function test_updateReserveConfig_fuzz_revertsWith_InvalidliquidationFee(
+  function test_updateReserveConfig_fuzz_revertsWith_InvalidLiquidationFee(
     uint256 liquidationFee
   ) public {
     liquidationFee = bound(liquidationFee, PercentageMath.PERCENTAGE_FACTOR + 1, type(uint256).max);
@@ -270,7 +270,7 @@ contract SpokeConfigTest is SpokeBase {
     DataTypes.ReserveConfig memory config = spoke1.getReserve(daiReserveId).config;
     config.liquidationFee = liquidationFee;
 
-    vm.expectRevert(ISpoke.InvalidliquidationFee.selector);
+    vm.expectRevert(ISpoke.InvalidLiquidationFee.selector);
     vm.prank(SPOKE_ADMIN);
     spoke1.updateReserveConfig(daiReserveId, config);
   }

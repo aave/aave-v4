@@ -601,7 +601,7 @@ contract Spoke is ISpoke, Multicall, AccessManaged {
     require(config.liquidityPremium <= MAX_LIQUIDITY_PREMIUM, InvalidLiquidityPremium()); // max 1000.00%
     require(
       config.liquidationFee <= PercentageMathExtended.PERCENTAGE_FACTOR,
-      InvalidliquidationFee()
+      InvalidLiquidationFee()
     );
   }
 
@@ -1114,12 +1114,12 @@ contract Spoke is ISpoke, Multicall, AccessManaged {
         vars.liquidationFeeAmount + vars.collateralToLiquidate
       );
       // remove collateral, send liquidated collateral directly to liquidator
-      vars.withdrawnLiquidatorShares = collateralReserveHub.remove(
+      vars.liquidatedSuppliedShares = collateralReserveHub.remove(
         vars.collateralAssetId,
         vars.collateralToLiquidate,
         liquidator
       );
-      vars.liquidationFeeShares = vars.withdrawnShares - vars.withdrawnLiquidatorShares;
+      vars.liquidationFeeShares = vars.withdrawnShares - vars.liquidatedSuppliedShares;
 
       // collateral accounting
       userCollateralPosition.suppliedShares -= vars.withdrawnShares;

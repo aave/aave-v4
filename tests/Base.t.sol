@@ -993,15 +993,15 @@ abstract contract Base is Test {
   function updateLiquidationFee(
     ISpoke spoke,
     uint256 reserveId,
-    uint256 newliquidationFee
+    uint256 newLiquidationFee
   ) internal {
     DataTypes.ReserveConfig memory config = spoke.getReserve(reserveId).config;
-    config.liquidationFee = newliquidationFee;
+    config.liquidationFee = newLiquidationFee;
 
     vm.prank(SPOKE_ADMIN);
     spoke.updateReserveConfig(reserveId, config);
 
-    assertEq(spoke.getReserve(reserveId).config.liquidationFee, newliquidationFee);
+    assertEq(spoke.getReserve(reserveId).config.liquidationFee, newLiquidationFee);
   }
 
   function updateCollateralFactor(

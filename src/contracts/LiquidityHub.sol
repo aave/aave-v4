@@ -278,21 +278,20 @@ contract LiquidityHub is ILiquidityHub, AccessManaged {
 
   /// @inheritdoc ILiquidityHub
   function payFee(uint256 assetId, uint256 feeShares) external returns (uint256) {
-    // TODO: authorization - only spokes
-    _validatePayFee(feeShares);
+    DataTypes.SpokeData storage spoke = _spokes[assetId][msg.sender];
+    _validatePayFee(spoke, feeShares);
 
     DataTypes.Asset storage asset = _assets[assetId];
-    DataTypes.SpokeData storage spoke = _spokes[assetId][msg.sender];
     DataTypes.SpokeData storage feeReceiver = _spokes[assetId][asset.config.feeReceiver];
 
     asset.accrue(assetId, feeReceiver);
 
-    uint256 payableShares = spoke.suppliedShares;
-    uint256 payableAmount = asset.toSuppliedAssetsDown(payableShares);
+    uint256 spokeSuppliedShares = spoke.suppliedShares;
+    uint256 spokeSuppliedAssets = asset.toSuppliedAssetsDown(spokeSuppliedShares);
     uint256 feeAmount = asset.toSuppliedAssetsDown(feeShares);
-    require(feeAmount <= payableAmount, SuppliedAmountExceeded(payableAmount));
+    require(feeAmount <= spokeSuppliedAssets, SuppliedAmountExceeded(spokeSuppliedAssets));
 
-    spoke.suppliedShares = payableShares - feeShares;
+    spoke.suppliedShares = spokeSuppliedShares - feeShares;
     feeReceiver.suppliedShares += feeShares;
 
     emit Remove(assetId, msg.sender, feeShares, feeAmount);
@@ -558,8 +557,9 @@ contract LiquidityHub is ILiquidityHub, AccessManaged {
     return a - uint256(-b);
   }
 
-  function _validatePayFee(uint256 feeShares) internal pure {
+  function _validatePayFee(DataTypes.SpokeData storage spoke, uint256 feeShares) internal view {
     // TODO: validate valid asset
+    require(spoke.config.active, SpokeNotActive());
     require(feeShares != 0, InvalidFeeShares());
   }
 }

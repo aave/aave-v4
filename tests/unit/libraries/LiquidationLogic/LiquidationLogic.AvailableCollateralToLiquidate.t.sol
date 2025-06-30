@@ -111,7 +111,7 @@ contract LiquidationAvailableCollateralToLiquidateTest is LiquidationLogicBaseTe
       res.liquidationFeeAmount
     ) = LiquidationLogic.calculateAvailableCollateralToLiquidate(args);
 
-    (uint256 collateralAmount, uint256 protocolLiquidationFee) = _calcliquidationFeeAmount(
+    (uint256 collateralAmount, uint256 protocolLiquidationFee) = _calcLiquidationFeeAmount(
       params,
       params.userCollateralBalance
     );
@@ -169,7 +169,7 @@ contract LiquidationAvailableCollateralToLiquidateTest is LiquidationLogicBaseTe
       );
       assertEq(res.liquidationFeeAmount, 0, 'liquidationFeeAmount without lpfp');
     } else {
-      (uint256 collateralAmount, uint256 liquidationFeeAmount) = _calcliquidationFeeAmount(
+      (uint256 collateralAmount, uint256 liquidationFeeAmount) = _calcLiquidationFeeAmount(
         params,
         params.userCollateralBalance
       );
@@ -209,7 +209,7 @@ contract LiquidationAvailableCollateralToLiquidateTest is LiquidationLogicBaseTe
     uint256 collateralAmount = ((maxCollateralToLiquidate * params.collateralAssetUnit) /
       params.collateralAssetPrice).dewadifyDown() + 1;
 
-    (uint256 actualCollateralToLiquidate, uint256 liquidationFeeAmount) = _calcliquidationFeeAmount(
+    (uint256 actualCollateralToLiquidate, uint256 liquidationFeeAmount) = _calcLiquidationFeeAmount(
       params,
       collateralAmount
     );
@@ -285,7 +285,7 @@ contract LiquidationAvailableCollateralToLiquidateTest is LiquidationLogicBaseTe
         .percentMulDown(params.liquidationBonus);
   }
 
-  function _calcliquidationFeeAmount(
+  function _calcLiquidationFeeAmount(
     TestAvailableCollateralParams memory params,
     uint256 collateralAmount
   ) internal pure returns (uint256, uint256) {

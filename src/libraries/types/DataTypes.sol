@@ -174,6 +174,6 @@ library DataTypes {
     int256 totalUserCollateralPremiumOffsetDelta;
     uint256 totalDebtToLiquidate;
     uint256 usersLength;
-    uint256 withdrawnLiquidatorShares;
+    uint256 liquidatedSuppliedShares;
   }
 }
