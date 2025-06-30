@@ -132,18 +132,29 @@ contract SpokeConfigTest is SpokeBase {
     vm.startPrank(bob);
 
     // No action taken, because collateral status is already false
-    vm.expectEmit(address(spoke1), uint64(0));
-    emit ISpoke.UsingAsCollateral(daiReserveId, bob, false);
+    DynamicConfig[] memory bobDynConfig = _getUserDynConfigKeys(spoke1, bob);
+    uint256 bobRp = _getUserRpStored(spoke1, daiReserveId, bob);
+
     spoke1.setUsingAsCollateral(daiReserveId, false);
+
+    assertFalse(spoke1.getUsingAsCollateral(daiReserveId, bob));
+    assertEq(_getUserRpStored(spoke1, daiReserveId, bob), bobRp);
+    assertEq(_getUserDynConfigKeys(spoke1, bob), bobDynConfig);
 
     // Bob can change dai collateral status to true
     spoke1.setUsingAsCollateral(daiReserveId, true);
     assertTrue(spoke1.getUsingAsCollateral(daiReserveId, bob), 'bob using as collateral');
 
     // No action taken, because collateral status is already true
-    vm.expectEmit(address(spoke1), uint64(0));
-    emit ISpoke.UsingAsCollateral(daiReserveId, bob, true);
+    bobDynConfig = _getUserDynConfigKeys(spoke1, bob);
+    bobRp = _getUserRpStored(spoke1, daiReserveId, bob);
+
     spoke1.setUsingAsCollateral(daiReserveId, true);
+
+    assertTrue(spoke1.getUsingAsCollateral(daiReserveId, bob));
+    assertEq(_getUserRpStored(spoke1, daiReserveId, bob), bobRp);
+    assertEq(_getUserDynConfigKeys(spoke1, bob), bobDynConfig);
+
     vm.stopPrank();
   }
 

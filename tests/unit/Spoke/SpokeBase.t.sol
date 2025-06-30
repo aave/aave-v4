@@ -695,6 +695,12 @@ contract SpokeBase is Base {
     address user
   ) internal view returns (uint256) {
     DataTypes.UserPosition memory pos = spoke.getUserPosition(reserveId, user);
+    // sanity check
+    assertTrue(
+      pos.baseDrawnShares > 0 || pos.premiumDrawnShares == 0,
+      'if base is zero, premium must be zero'
+    );
+    if (pos.baseDrawnShares == 0) return 0;
     return pos.premiumDrawnShares.percentDiv(pos.baseDrawnShares);
   }
 
