@@ -2,30 +2,36 @@
 pragma solidity ^0.8.0;
 
 import {AggregatorV3Interface} from 'src/dependencies/chainlink/AggregatorV3Interface.sol';
+import {AccessManaged} from 'src/dependencies/openzeppelin/AccessManaged.sol';
 import {IAaveOracle} from 'src/interfaces/IAaveOracle.sol';
 
-contract AaveOracle is IAaveOracle {
+contract AaveOracle is IAaveOracle, AccessManaged {
   uint256 public immutable override DECIMALS;
   string public override DESCRIPTION;
 
   mapping(uint256 reserveId => AggregatorV3Interface source) public reserveSource;
 
-  constructor(uint256 decimals, string memory description) {
+  /**
+   * @dev Constructor.
+   * @dev The authority should implement the AccessManaged interface to control access.
+   * @param authority The address of the authority contract which manages permissions.
+   * @param decimals The number of decimals for the oracle.
+   * @param description The description of the oracle.
+   */
+  constructor(address authority, uint256 decimals, string memory description) AccessManaged(authority) {
     DECIMALS = decimals;
     DESCRIPTION = description;
     emit AaveOracleCreated(decimals, description);
   }
 
-  function setReserveSource(uint256 reserveId, address source) external override {
-    // TODO: access control
+  function setReserveSource(uint256 reserveId, address source) external override restricted {
     _setReserveSource(reserveId, AggregatorV3Interface(source));
   }
 
   function setReserveSources(
     uint256[] calldata reserveIds,
     address[] calldata sources
-  ) external override {
-    // TODO: access control
+  ) external override restricted {
     require(reserveIds.length == sources.length, ReservesSourcesLengthMismatch());
     for (uint256 i = 0; i < reserveIds.length; i++) {
       _setReserveSource(reserveIds[i], AggregatorV3Interface(sources[i]));

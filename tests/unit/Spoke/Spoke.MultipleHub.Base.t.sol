@@ -35,13 +35,13 @@ contract SpokeMultipleHubBase is SpokeBase {
     accessManager = new AccessManager(ADMIN);
     // Canonical hub and spoke
     hub = new LiquidityHub(address(accessManager));
-    oracle1 = new AaveOracle(8, 'Spoke 1 (USD)');
+    oracle1 = new AaveOracle(address(accessManager), 8, 'Spoke 1 (USD)');
     spoke1 = new Spoke(address(oracle1), address(accessManager));
     irStrategy = new AssetInterestRateStrategy(address(hub));
 
     // New hub and spoke
     newHub = new LiquidityHub(address(accessManager));
-    newOracle = new AaveOracle(8, 'New Spoke (USD)');
+    newOracle = new AaveOracle(address(accessManager), 8, 'New Spoke (USD)');
     newSpoke = new Spoke(address(newOracle), address(accessManager));
     newIrStrategy = new AssetInterestRateStrategy(address(newHub));
 

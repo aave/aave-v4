@@ -104,6 +104,7 @@ abstract contract Base is Test {
   address internal SPOKE_ADMIN = makeAddr('SPOKE_ADMIN');
   address internal TREASURY_ADMIN = makeAddr('TREASURY_ADMIN');
   address internal LIQUIDATOR = makeAddr('LIQUIDATOR');
+  address internal ORACLE_ADMIN = makeAddr('ORACLE_ADMIN');
 
   TokenList internal tokenList;
   uint256 internal wethAssetId = 0;
@@ -166,10 +167,10 @@ abstract contract Base is Test {
 
   function deployFixtures() internal virtual {
     vm.startPrank(ADMIN);
-    oracle1 = IAaveOracle(new AaveOracle(8, 'Spoke 1 (USD)'));
-    oracle2 = IAaveOracle(new AaveOracle(8, 'Spoke 2 (USD)'));
-    oracle3 = IAaveOracle(new AaveOracle(8, 'Spoke 3 (USD)'));
     accessManager = new AccessManager(ADMIN);
+    oracle1 = IAaveOracle(new AaveOracle(address(accessManager), 8, 'Spoke 1 (USD)'));
+    oracle2 = IAaveOracle(new AaveOracle(address(accessManager), 8, 'Spoke 2 (USD)'));
+    oracle3 = IAaveOracle(new AaveOracle(address(accessManager), 8, 'Spoke 3 (USD)'));
     hub = new LiquidityHub(address(accessManager));
     irStrategy = new AssetInterestRateStrategy(address(hub));
     spoke1 = ISpoke(new Spoke(address(oracle1), address(accessManager)));
@@ -201,8 +202,10 @@ abstract contract Base is Test {
     // Grant roles with 0 delay
     accessManager.grantRole(Roles.HUB_ADMIN_ROLE, ADMIN, 0);
     accessManager.grantRole(Roles.SPOKE_ADMIN_ROLE, ADMIN, 0);
+    accessManager.grantRole(Roles.ORACLE_ADMIN_ROLE, ADMIN, 0);
     accessManager.grantRole(Roles.HUB_ADMIN_ROLE, HUB_ADMIN, 0);
     accessManager.grantRole(Roles.SPOKE_ADMIN_ROLE, SPOKE_ADMIN, 0);
+    accessManager.grantRole(Roles.ORACLE_ADMIN_ROLE, ORACLE_ADMIN, 0);
 
     // Grant responsibilities to roles
     // Spoke Admin functionalities
@@ -212,7 +215,6 @@ abstract contract Base is Test {
     selectors[2] = ISpoke.updateReserveConfig.selector;
     selectors[3] = ISpoke.updateDynamicReserveConfig.selector;
     selectors[4] = ISpoke.updateUserRiskPremium.selector;
-
     accessManager.setTargetFunctionRole(address(spoke), selectors, Roles.SPOKE_ADMIN_ROLE);
 
     // Liquidity Hub Admin functionalities
@@ -222,8 +224,16 @@ abstract contract Base is Test {
     hubSelectors[2] = ILiquidityHub.addSpoke.selector;
     hubSelectors[3] = ILiquidityHub.updateSpokeConfig.selector;
     hubSelectors[4] = ILiquidityHub.setInterestRateData.selector;
-
     accessManager.setTargetFunctionRole(address(hub), hubSelectors, Roles.HUB_ADMIN_ROLE);
+
+    // Oracle Admin functionalities
+    bytes4[] memory oracleSelectors = new bytes4[](2);
+    oracleSelectors[0] = IAaveOracle.setReserveSource.selector;
+    oracleSelectors[1] = IAaveOracle.setReserveSources.selector;
+    accessManager.setTargetFunctionRole(address(oracle1), oracleSelectors, Roles.ORACLE_ADMIN_ROLE);
+    accessManager.setTargetFunctionRole(address(oracle2), oracleSelectors, Roles.ORACLE_ADMIN_ROLE);
+    accessManager.setTargetFunctionRole(address(oracle3), oracleSelectors, Roles.ORACLE_ADMIN_ROLE);
+
     vm.stopPrank();
   }
 
@@ -1857,7 +1867,7 @@ abstract contract Base is Test {
   function _mockReservePrice(ISpoke spoke, uint256 reserveId, uint256 price) internal {
     AaveOracle oracle = AaveOracle(address(spoke.oracle()));
     address mockPriceFeed = address(new MockPriceFeed(oracle.DECIMALS(), oracle.DESCRIPTION(), price));
-    vm.prank(address(spoke));
+    vm.prank(ADMIN);
     oracle.setReserveSource(reserveId, mockPriceFeed);
   }
 

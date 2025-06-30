@@ -40,7 +40,7 @@ contract LiquidityHubHandler is Test {
     accessManager = new AccessManager(hubAdmin);
     hub = new LiquidityHub(address(accessManager));
     irStrategy = new AssetInterestRateStrategy(address(hub));
-    oracle = new AaveOracle(8, 'Spoke 1 (USD)');
+    oracle = new AaveOracle(address(accessManager), 8, 'Spoke 1 (USD)');
     spoke1 = new Spoke(address(oracle), address(accessManager));
     usdc = new MockERC20();
     dai = new MockERC20();
