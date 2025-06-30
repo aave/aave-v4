@@ -322,7 +322,7 @@ contract ConfiguratorTest is LiquidityHubBase {
     configurator.updateFeeReceiver(address(hub), vm.randomUint(), vm.randomAddress());
   }
 
-  function test_updateFeeReceiver_fuzz_zero_feeReceiver_reverts(uint256 assetId) public {
+  function test_updateFeeReceiver_fuzz_revertsWith_InvalidSpoke(uint256 assetId) public {
     assetId = bound(assetId, 0, hub.getAssetCount() - 1);
 
     // reverts when adding zero as new spoke
@@ -331,8 +331,8 @@ contract ConfiguratorTest is LiquidityHubBase {
     configurator.updateFeeReceiver(address(hub), assetId, address(0));
   }
 
-  function test_updateFeeReceiver_revertsWith_InvalidFeeReceiver(uint256 assetId) public {
-    test_updateFeeReceiver_fuzz_zero_feeReceiver_reverts(daiAssetId);
+  function test_updateFeeReceiver_revertsWith_InvalidSpoke() public {
+    test_updateFeeReceiver_fuzz_revertsWith_InvalidSpoke(daiAssetId);
   }
 
   function test_updateFeeReceiver_fuzz(uint256 assetId, address feeReceiver) public {
@@ -446,7 +446,7 @@ contract ConfiguratorTest is LiquidityHubBase {
     configurator.updateFeeConfig(address(hub), assetId, liquidityFee, feeReceiver);
   }
 
-  function test_updateFeeConfig_fuzz_zero_feeReceiver_reverts(
+  function test_updateFeeConfig_fuzz_revertsWith_InvalidSpoke(
     uint256 assetId,
     uint256 liquidityFee,
     address feeReceiver
@@ -525,10 +525,10 @@ contract ConfiguratorTest is LiquidityHubBase {
     expectedConfig.feeReceiver = feeReceiver;
     expectedConfig.liquidityFee = liquidityFee;
 
-    // vm.expectCall(
-    //   address(hub),
-    //   abi.encodeCall(ILiquidityHub.updateAssetConfig, (assetId, expectedConfig))
-    // );
+    vm.expectCall(
+      address(hub),
+      abi.encodeCall(ILiquidityHub.updateAssetConfig, (assetId, expectedConfig))
+    );
 
     vm.prank(CONFIGURATOR_ADMIN);
     configurator.updateFeeConfig(address(hub), assetId, liquidityFee, feeReceiver);
@@ -539,12 +539,12 @@ contract ConfiguratorTest is LiquidityHubBase {
   function test_updateFeeConfig_Scenario() public {
     // set same fee receiver and change liquidity fee
     test_updateFeeConfig_fuzz(daiAssetId, 18_00, address(treasurySpoke));
-    // // set new fee receiver and liquidity fee
+    // set new fee receiver and liquidity fee
     test_updateFeeConfig_fuzz(daiAssetId, 4_00, makeAddr('newFeeReceiver'));
-    // // set non-zero fee receiver
-    // test_updateFeeConfig_fuzz(daiAssetId, 0, makeAddr('newFeeReceiver2'));
-    // // set initial fee receiver and zero fee
-    // test_updateFeeConfig_fuzz(daiAssetId, 0, address(treasurySpoke));
+    // set non-zero fee receiver
+    test_updateFeeConfig_fuzz(daiAssetId, 0, makeAddr('newFeeReceiver2'));
+    // set initial fee receiver and zero fee
+    test_updateFeeConfig_fuzz(daiAssetId, 0, address(treasurySpoke));
   }
 
   function test_updateInterestRateStrategy_fuzz_revertsWith_OwnableUnauthorizedAccount(
