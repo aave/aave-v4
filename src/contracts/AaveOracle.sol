@@ -18,24 +18,22 @@ contract AaveOracle is IAaveOracle, AccessManaged {
    * @param decimals The number of decimals for the oracle.
    * @param description The description of the oracle.
    */
-  constructor(address authority, uint256 decimals, string memory description) AccessManaged(authority) {
+  constructor(
+    address authority,
+    uint256 decimals,
+    string memory description
+  ) AccessManaged(authority) {
     DECIMALS = decimals;
     DESCRIPTION = description;
     emit AaveOracleCreated(decimals, description);
   }
 
   function setReserveSource(uint256 reserveId, address source) external override restricted {
-    _setReserveSource(reserveId, AggregatorV3Interface(source));
-  }
-
-  function setReserveSources(
-    uint256[] calldata reserveIds,
-    address[] calldata sources
-  ) external override restricted {
-    require(reserveIds.length == sources.length, ReservesSourcesLengthMismatch());
-    for (uint256 i = 0; i < reserveIds.length; i++) {
-      _setReserveSource(reserveIds[i], AggregatorV3Interface(sources[i]));
-    }
+    AggregatorV3Interface targetSource = AggregatorV3Interface(source);
+    require(targetSource.decimals() == DECIMALS, InvalidSourceDecimals(reserveId));
+    reserveSource[reserveId] = targetSource;
+    _getSourcePrice(reserveId); // check if the source is valid
+    emit ReserveSourceUpdated(reserveId, source);
   }
 
   function getReservePrice(uint256 reserveId) external view override returns (uint256) {
@@ -54,13 +52,6 @@ contract AaveOracle is IAaveOracle, AccessManaged {
 
   function getReserveSource(uint256 reserveId) external view override returns (address) {
     return address(reserveSource[reserveId]);
-  }
-
-  function _setReserveSource(uint256 reserveId, AggregatorV3Interface source) internal {
-    require(source.decimals() == DECIMALS, InvalidSourceDecimals(reserveId));
-    reserveSource[reserveId] = source;
-    _getSourcePrice(reserveId); // check if the source is valid
-    emit ReserveSourceUpdated(reserveId, address(source));
   }
 
   function _getSourcePrice(uint256 reserveId) internal view returns (uint256) {

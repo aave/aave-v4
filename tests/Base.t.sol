@@ -188,14 +188,15 @@ abstract contract Base is Test {
     vm.label(address(spoke2), 'spoke2');
     vm.label(address(spoke3), 'spoke3');
 
-    setUpRoles(hub, spoke1, accessManager);
-    setUpRoles(hub, spoke2, accessManager);
-    setUpRoles(hub, spoke3, accessManager);
+    setUpRoles(hub, spoke1, oracle1, accessManager);
+    setUpRoles(hub, spoke2, oracle2, accessManager);
+    setUpRoles(hub, spoke3, oracle3, accessManager);
   }
 
   function setUpRoles(
     ILiquidityHub hub,
     ISpoke spoke,
+    IAaveOracle oracle,
     IAccessManager accessManager
   ) internal virtual {
     vm.startPrank(ADMIN);
@@ -227,12 +228,9 @@ abstract contract Base is Test {
     accessManager.setTargetFunctionRole(address(hub), hubSelectors, Roles.HUB_ADMIN_ROLE);
 
     // Oracle Admin functionalities
-    bytes4[] memory oracleSelectors = new bytes4[](2);
+    bytes4[] memory oracleSelectors = new bytes4[](1);
     oracleSelectors[0] = IAaveOracle.setReserveSource.selector;
-    oracleSelectors[1] = IAaveOracle.setReserveSources.selector;
-    accessManager.setTargetFunctionRole(address(oracle1), oracleSelectors, Roles.ORACLE_ADMIN_ROLE);
-    accessManager.setTargetFunctionRole(address(oracle2), oracleSelectors, Roles.ORACLE_ADMIN_ROLE);
-    accessManager.setTargetFunctionRole(address(oracle3), oracleSelectors, Roles.ORACLE_ADMIN_ROLE);
+    accessManager.setTargetFunctionRole(address(oracle), oracleSelectors, Roles.ORACLE_ADMIN_ROLE);
 
     vm.stopPrank();
   }
@@ -862,7 +860,7 @@ abstract contract Base is Test {
     hub2IrStrategy.setInterestRateData(wbtcAssetId, encodedIrData);
     vm.stopPrank();
 
-    setUpRoles(hub2, spoke1, accessManager2);
+    setUpRoles(hub2, spoke1, oracle1, accessManager2);
 
     return (hub2, hub2IrStrategy);
   }
@@ -913,7 +911,7 @@ abstract contract Base is Test {
     hub3IrStrategy.setInterestRateData(hub3WbtcAssetId, encodedIrData);
     vm.stopPrank();
 
-    setUpRoles(hub3, spoke1, accessManager3);
+    setUpRoles(hub3, spoke1, oracle1, accessManager3);
 
     return (hub3, hub3IrStrategy);
   }
