@@ -249,7 +249,7 @@ contract LiquidationLogicDebtToRestoreCloseFactorScenarioTest is LiquidationLogi
       _convertBaseCurrencyToAmount(
         _convertDebtToCollBaseCurrency(params.liquidationBonus, debtBaseCurrencyRestored),
         oracle.getReservePrice(collaterals[collateralIndex].reserveId),
-        10 ** spoke1.getReserve(collaterals[collateralIndex].reserveId).config.decimals
+        10 ** spoke1.getReserve(collaterals[collateralIndex].reserveId).decimals
       ) +
       1; // add 1 to round up coll seized as in LiquidationLogic calculateAvailableCollateralToLiquidate
 
@@ -298,7 +298,7 @@ contract LiquidationLogicDebtToRestoreCloseFactorScenarioTest is LiquidationLogi
       uint256 amountInBase = _convertAmountToBaseCurrency(
         collaterals[i].amount,
         oracle.getReservePrice(reserve.reserveId),
-        10 ** reserve.config.decimals
+        10 ** reserve.decimals
       );
       totalCollateralFactor += dynConfig.collateralFactor * amountInBase;
       totalAmount += amountInBase;
@@ -312,7 +312,7 @@ contract LiquidationLogicDebtToRestoreCloseFactorScenarioTest is LiquidationLogi
     totalAmount = 0;
     for (uint256 i = 0; i < debts.length; i++) {
       DataTypes.Reserve memory reserve = spoke.getReserve(debts[i].reserveId);
-      uint256 debtAssetUnit = 10 ** reserve.config.decimals;
+      uint256 debtAssetUnit = 10 ** reserve.decimals;
       uint256 debtAssetPrice = oracle.getReservePrice(reserve.reserveId);
       uint256 amountInBase = _convertAmountToBaseCurrency(
         debts[i].amount,

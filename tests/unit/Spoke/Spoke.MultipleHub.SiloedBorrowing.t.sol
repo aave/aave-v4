@@ -29,29 +29,19 @@ contract SpokeMultipleHubSiloedBorrowingTest is SpokeMultipleHubBase {
    * Canonical Spoke: Asset A, no restrictions.
    */
   function setUpSiloedBorrowing() internal {
+    vm.startPrank(ADMIN);
     siloedVars.assetBDrawCap = 100_000e18;
     siloedVars.assetASupplyCap = 500_000e18;
 
     // Add asset B to the new hub
-    newHub.addAsset(
-      DataTypes.AssetConfig({
-        feeReceiver: address(0),
-        decimals: assetB.decimals(),
-        active: true,
-        paused: false,
-        frozen: false,
-        liquidityFee: 0,
-        irStrategy: newIrStrategy
-      }),
-      address(assetB)
-    );
-    siloedVars.assetBId = newHub.assetCount() - 1;
+    newHub.addAsset(address(assetB), assetB.decimals(), address(newIrStrategy));
+    siloedVars.assetBId = newHub.getAssetCount() - 1;
 
     // Add B reserve to the new spoke
     siloedVars.reserveBId = newSpoke.addReserve(
       siloedVars.assetBId,
+      address(newHub),
       DataTypes.ReserveConfig({
-        decimals: assetB.decimals(),
         active: true,
         frozen: false,
         paused: false,
@@ -59,44 +49,43 @@ contract SpokeMultipleHubSiloedBorrowingTest is SpokeMultipleHubBase {
         liquidityPremium: 15_00,
         liquidationProtocolFee: 0,
         borrowable: true,
-        collateral: true,
-        hub: newHub
+        collateral: true
       }),
       dynReserveConfig
     );
-
-    _mockReservePrice(newSpoke, siloedVars.reserveBId, 2000e8);
 
     // Link new hub and new spoke for asset B, 100k draw cap
     newHub.addSpoke(
       siloedVars.assetBId,
-      DataTypes.SpokeConfig({drawCap: siloedVars.assetBDrawCap, supplyCap: UINT256_MAX}),
-      address(newSpoke)
+      address(newSpoke),
+      DataTypes.SpokeConfig({
+        drawCap: siloedVars.assetBDrawCap,
+        supplyCap: UINT256_MAX,
+        active: true
+      })
     );
+    vm.stopPrank();
+
+    _mockReservePrice(newSpoke, siloedVars.reserveBId, 2000e8);
 
     // Configure interest rate strategy for asset B
-    newIrStrategy.setInterestRateData(siloedVars.assetBId, irData);
+    vm.prank(address(newHub));
+    newIrStrategy.setInterestRateData(siloedVars.assetBId, encodedIrData);
 
+    vm.startPrank(ADMIN);
     // Add asset A to the canonical hub
     hub.addAsset(
-      DataTypes.AssetConfig({
-        feeReceiver: address(0),
-        decimals: assetA.decimals(),
-        active: true,
-        paused: false,
-        frozen: false,
-        liquidityFee: 0,
-        irStrategy: irStrategy // Use the canonical hub's interest rate strategy
-      }),
-      address(assetA)
+      address(assetA),
+      assetA.decimals(),
+      address(irStrategy) // Use the canonical hub's interest rate strategy
     );
-    siloedVars.assetAId = hub.assetCount() - 1;
+    siloedVars.assetAId = hub.getAssetCount() - 1;
 
     // Add A reserve to spoke 1
     siloedVars.reserveAId = spoke1.addReserve(
       siloedVars.assetAId,
+      address(hub),
       DataTypes.ReserveConfig({
-        decimals: assetA.decimals(),
         active: true,
         frozen: false,
         paused: false,
@@ -104,29 +93,35 @@ contract SpokeMultipleHubSiloedBorrowingTest is SpokeMultipleHubBase {
         liquidityPremium: 15_00,
         liquidationProtocolFee: 0,
         borrowable: true,
-        collateral: true,
-        hub: hub
+        collateral: true
       }),
       dynReserveConfig
     );
-
-    _mockReservePrice(spoke1, siloedVars.reserveAId, 50_000e8);
 
     // Link canonical hub and spoke 1 for asset A
     hub.addSpoke(
       siloedVars.assetAId,
-      DataTypes.SpokeConfig({drawCap: type(uint256).max, supplyCap: type(uint256).max}),
-      address(spoke1)
+      address(spoke1),
+      DataTypes.SpokeConfig({
+        drawCap: type(uint256).max,
+        supplyCap: type(uint256).max,
+        active: true
+      })
     );
+    vm.stopPrank();
+
+    _mockReservePrice(spoke1, siloedVars.reserveAId, 50_000e8);
 
     // Configure interest rate strategy for asset A
-    irStrategy.setInterestRateData(siloedVars.assetAId, irData);
+    vm.prank(address(hub));
+    irStrategy.setInterestRateData(siloedVars.assetAId, encodedIrData);
 
+    vm.startPrank(ADMIN);
     // Add reserve A from canonical hub to the new spoke
     siloedVars.reserveAIdNewSpoke = newSpoke.addReserve(
       siloedVars.assetAId,
+      address(hub),
       DataTypes.ReserveConfig({
-        decimals: assetA.decimals(),
         active: true,
         frozen: false,
         paused: false,
@@ -134,20 +129,20 @@ contract SpokeMultipleHubSiloedBorrowingTest is SpokeMultipleHubBase {
         liquidityPremium: 15_00,
         liquidationProtocolFee: 0,
         borrowable: true,
-        collateral: true,
-        hub: hub
+        collateral: true
       }),
       dynReserveConfig
     );
-
-    _mockReservePrice(newSpoke, siloedVars.reserveAIdNewSpoke, 2000e8);
-
+  
     // Link canonical hub and new spoke for asset A, 500k supply cap, 0 borrow cap
     hub.addSpoke(
       siloedVars.assetAId,
-      DataTypes.SpokeConfig({drawCap: 0, supplyCap: siloedVars.assetASupplyCap}),
-      address(newSpoke)
+      address(newSpoke),
+      DataTypes.SpokeConfig({drawCap: 0, supplyCap: siloedVars.assetASupplyCap, active: true})
     );
+    vm.stopPrank();
+
+    _mockReservePrice(newSpoke, siloedVars.reserveAIdNewSpoke, 2000e8);
 
     // Approvals
     vm.prank(bob);
@@ -211,7 +206,7 @@ contract SpokeMultipleHubSiloedBorrowingTest is SpokeMultipleHubBase {
     assertEq(newSpoke.getUserTotalDebt(siloedVars.reserveBId, bob), siloedVars.assetBDrawCap);
     assertEq(newHub.getAssetTotalDebt(siloedVars.assetBId), siloedVars.assetBDrawCap);
     assertEq(
-      newSpoke.getReserve(siloedVars.reserveBId).asset,
+      newSpoke.getReserve(siloedVars.reserveBId).underlying,
       address(assetB),
       'Bob borrowed asset B from new spoke'
     );

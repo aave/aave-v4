@@ -147,7 +147,7 @@ contract LiquidityHubWithdrawTest is LiquidityHubBase {
     //     amount2 = bound(amount2, 1, MAX_SUPPLY_AMOUNT - amount);
     //     riskPremium %= MAX_RISK_PREMIUM_BPS; // no effect on withdraw because no drawn
 
-    //     IERC20 asset = hub.assetsList(assetId);
+    //     IERC20 underlying = IERC20(hub.getAsset(assetId).underlying);
 
     //     Utils.supply({
     //       hub: hub,
@@ -255,19 +255,19 @@ contract LiquidityHubWithdrawTest is LiquidityHubBase {
     //       'spoke lastUpdateTimestamp post-withdraw'
     //     );
     //     // asset
-    //     assertEq(asset.balanceOf(address(spoke1)), 0, 'spoke1 token balance post-withdraw');
-    //     assertEq(asset.balanceOf(address(spoke2)), 0, 'spoke2 token balance post-withdraw');
-    //     assertEq(asset.balanceOf(address(hub)), 0, 'hub token balance post-withdraw');
-    //     assertEq(asset.balanceOf(alice), MAX_SUPPLY_AMOUNT, 'user token balance post-withdraw');
+    //     assertEq(underlying.balanceOf(address(spoke1)), 0, 'spoke1 token balance post-withdraw');
+    //     assertEq(underlying.balanceOf(address(spoke2)), 0, 'spoke2 token balance post-withdraw');
+    //     assertEq(underlying.balanceOf(address(hub)), 0, 'hub token balance post-withdraw');
+    //     assertEq(underlying.balanceOf(alice), MAX_SUPPLY_AMOUNT, 'user token balance post-withdraw');
   }
 
   function test_withdraw_fuzz(uint256 assetId, uint256 amount) public {
     vm.skip(true, 'pending refactor');
 
-    //     assetId = bound(assetId, 0, hub.assetCount() - 2); // Exclude duplicated DAI
+    //     assetId = bound(assetId, 0, hub.getAssetCount() - 2); // Exclude duplicated DAI
     //     amount = bound(amount, 1, MAX_SUPPLY_AMOUNT);
 
-    //     IERC20 asset = hub.assetsList(assetId);
+    //     IERC20 underlying = IERC20(hub.getAsset(assetId).underlying);
 
     //     Utils.supply({
     //       hub: hub,
@@ -327,15 +327,15 @@ contract LiquidityHubWithdrawTest is LiquidityHubBase {
     //       'spoke lastUpdateTimestamp pre-withdraw'
     //     );
     //     // asset
-    //     assertEq(asset.balanceOf(address(spoke1)), 0, 'spoke token balance pre-withdraw');
-    //     assertEq(asset.balanceOf(address(hub)), amount, 'hub token balance pre-withdraw');
+    //     assertEq(underlying.balanceOf(address(spoke1)), 0, 'spoke token balance pre-withdraw');
+    //     assertEq(underlying.balanceOf(address(hub)), amount, 'hub token balance pre-withdraw');
     //     assertEq(
-    //       asset.balanceOf(alice),
+    //       underlying.balanceOf(alice),
     //       MAX_SUPPLY_AMOUNT - amount,
     //       'alice token balance pre-withdraw'
     //     );
 
-    //     vm.expectEmit(address(asset));
+    //     vm.expectEmit(address(underlying));
     //     emit IERC20.Transfer(address(hub), alice, amount);
 
     //     vm.expectEmit(address(hub));
@@ -392,9 +392,9 @@ contract LiquidityHubWithdrawTest is LiquidityHubBase {
     //       'spoke lastUpdateTimestamp post-withdraw'
     //     );
     //     // asset
-    //     assertEq(asset.balanceOf(address(spoke1)), 0, 'spoke token balance post-withdraw');
-    //     assertEq(asset.balanceOf(address(hub)), 0, 'hub token balance post-withdraw');
-    //     assertEq(asset.balanceOf(alice), MAX_SUPPLY_AMOUNT, 'alice token balance post-withdraw');
+    //     assertEq(underlying.balanceOf(address(spoke1)), 0, 'spoke token balance post-withdraw');
+    //     assertEq(underlying.balanceOf(address(hub)), 0, 'hub token balance post-withdraw');
+    //     assertEq(underlying.balanceOf(alice), MAX_SUPPLY_AMOUNT, 'alice token balance post-withdraw');
   }
 
   function test_withdraw_all_with_interest() public {

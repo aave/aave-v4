@@ -232,11 +232,16 @@ contract LiquidityHubBorrowIndex is Base {
 
   function _deployAndAddSpoke(uint256 assetId) internal returns (address) {
     IAaveOracle oracle = new AaveOracle(8, 'Spoke (USD)');
-    Spoke spoke = new Spoke(address(oracle));
+    Spoke spoke = new Spoke(address(oracle), address(accessManager));
+    vm.prank(HUB_ADMIN);
     hub.addSpoke(
       assetId,
-      DataTypes.SpokeConfig({supplyCap: type(uint256).max, drawCap: type(uint256).max}),
-      address(spoke)
+      address(spoke),
+      DataTypes.SpokeConfig({
+        supplyCap: type(uint256).max,
+        drawCap: type(uint256).max,
+        active: true
+      })
     );
     return address(spoke);
   }

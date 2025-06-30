@@ -45,6 +45,11 @@ interface IAssetInterestRateStrategy is IBasicInterestRateStrategy {
   }
 
   /**
+   * @notice Thrown when the caller is not the liquidity hub
+   */
+  error OnlyLiquidityHub();
+
+  /**
    * @notice Thrown when the max possible rate is greater than `MAX_BORROW_RATE`
    */
   error InvalidMaxRate();
@@ -68,9 +73,9 @@ interface IAssetInterestRateStrategy is IBasicInterestRateStrategy {
   /**
    * @notice Sets interest rate data for an Aave rate strategy
    * @param assetId The id of the asset to update
-   * @param rateData The interest rate data to apply to the given asset, all in bps
+   * @param data The interest rate data to apply to the given asset, all in bps, encoded in bytes
    */
-  function setInterestRateData(uint256 assetId, InterestRateData calldata rateData) external;
+  function setInterestRateData(uint256 assetId, bytes calldata data) external;
 
   /**
    * @notice Returns the maximum value achievable for variable borrow rate
@@ -89,6 +94,12 @@ interface IAssetInterestRateStrategy is IBasicInterestRateStrategy {
    * @return The maximum optimal borrow usage ratio, in bps
    */
   function MAX_OPTIMAL_RATIO() external view returns (uint256);
+
+  /**
+   * @notice Returns the address of the liquidity hub
+   * @return The address of the liquidity hub
+   */
+  function LIQUIDITY_HUB() external view returns (address);
 
   /**
    * @notice Returns the full InterestRateData object for the given asset
