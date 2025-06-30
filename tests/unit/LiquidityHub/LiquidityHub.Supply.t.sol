@@ -261,10 +261,6 @@ contract LiquidityHubSupplyTest is LiquidityHubBase {
     });
   }
 
-  function test_supply_single_asset() public {
-    test_supply_fuzz_single_asset(0, alice, 100e18);
-  }
-
   /// @dev User makes a first supply, shares and assets amounts are correct, no precision loss
   function test_supply_fuzz_single_asset(uint256 assetId, address user, uint256 amount) public {
     _assumeValidSupplier(user);
