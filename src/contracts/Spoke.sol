@@ -5,6 +5,7 @@ import {Multicall} from 'src/misc/Multicall.sol';
 
 import {SafeERC20} from 'src/dependencies/openzeppelin/SafeERC20.sol';
 import {IERC20} from 'src/dependencies/openzeppelin/IERC20.sol';
+import {AccessManaged} from 'src/dependencies/openzeppelin/AccessManaged.sol';
 // libraries
 import {WadRayMath} from 'src/libraries/math/WadRayMath.sol';
 import {WadRayMathExtended} from 'src/libraries/math/WadRayMathExtended.sol';
@@ -19,7 +20,7 @@ import {ILiquidityHub} from 'src/interfaces/ILiquidityHub.sol';
 import {ISpoke} from 'src/interfaces/ISpoke.sol';
 import {IPriceOracle} from 'src/interfaces/IPriceOracle.sol';
 
-contract Spoke is ISpoke, Multicall {
+contract Spoke is ISpoke, Multicall, AccessManaged {
   using SafeERC20 for IERC20;
   using WadRayMath for uint256;
   using WadRayMathExtended for uint256;
@@ -43,7 +44,13 @@ contract Spoke is ISpoke, Multicall {
   uint256[] public reservesList; // todo: rm, not needed
   uint256 public reserveCount;
 
-  constructor(address oracleAddress) {
+  /**
+   * @dev Constructor.
+   * @dev The authority should implement the AccessManaged interface to control access.
+   * @param oracleAddress The address of the price oracle contract used for asset valuations.
+   * @param authority The address of the authority contract which manages permissions.
+   */
+  constructor(address oracleAddress, address authority) AccessManaged(authority) {
     require(oracleAddress != address(0), InvalidOracleAddress());
 
     oracle = IPriceOracle(oracleAddress);
@@ -57,8 +64,7 @@ contract Spoke is ISpoke, Multicall {
 
   function updateLiquidationConfig(
     DataTypes.LiquidationConfig calldata liquidationConfig
-  ) external {
-    // TODO: AccessControl
+  ) external restricted {
     _validateLiquidationConfig(liquidationConfig);
     _liquidationConfig = liquidationConfig;
     emit LiquidationConfigUpdated(liquidationConfig);
@@ -69,9 +75,7 @@ contract Spoke is ISpoke, Multicall {
     address hub,
     DataTypes.ReserveConfig calldata config,
     DataTypes.DynamicReserveConfig calldata dynamicConfig
-  ) external returns (uint256) {
-    // TODO: AccessControl
-
+  ) external restricted returns (uint256) {
     require(hub != address(0), InvalidHubAddress());
 
     _validateReserveConfig(config);
@@ -107,7 +111,7 @@ contract Spoke is ISpoke, Multicall {
   function updateReserveConfig(
     uint256 reserveId,
     DataTypes.ReserveConfig calldata config
-  ) external {
+  ) external restricted {
     // TODO: AccessControl, More sophisticated
     DataTypes.Reserve storage reserve = _reserves[reserveId];
     require(reserve.underlying != address(0), ReserveNotListed());
@@ -119,7 +123,7 @@ contract Spoke is ISpoke, Multicall {
   function updateDynamicReserveConfig(
     uint256 reserveId,
     DataTypes.DynamicReserveConfig calldata dynamicConfig
-  ) external {
+  ) external restricted {
     _validateDynamicReserveConfig(dynamicConfig);
     // TODO: AccessControl, More sophisticated
     DataTypes.Reserve storage reserve = _reserves[reserveId];
@@ -392,8 +396,10 @@ contract Spoke is ISpoke, Multicall {
   function updateUserRiskPremium(address user) external {
     (uint256 userRiskPremium, , , , ) = _calculateUserAccountData(user);
     bool premiumIncrease = _notifyRiskPremiumUpdate(type(uint256).max, user, userRiskPremium);
-    // todo allow authorized caller to increase as well
-    require(msg.sender == user || !premiumIncrease, Unauthorized());
+    // check permissions if premium increases and not called by user
+    if (premiumIncrease && user != msg.sender) {
+      _checkCanCall(_msgSender(), _msgData());
+    }
     emit UserRiskPremiumUpdate(user, userRiskPremium);
   }
 

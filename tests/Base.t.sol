@@ -19,6 +19,7 @@ import {MathUtils} from 'src/libraries/math/MathUtils.sol';
 import {PositionStatus} from 'src/libraries/configuration/PositionStatus.sol';
 import {AssetInterestRateStrategy, IAssetInterestRateStrategy, IBasicInterestRateStrategy} from 'src/contracts/AssetInterestRateStrategy.sol';
 import {DataTypes} from 'src/libraries/types/DataTypes.sol';
+import {Roles} from 'src/libraries/types/Roles.sol';
 import {Utils} from './Utils.sol';
 
 // mocks
@@ -30,6 +31,10 @@ import {MockPriceOracle, IPriceOracle} from './mocks/MockPriceOracle.sol';
 import {SafeCast} from 'src/dependencies/openzeppelin/SafeCast.sol';
 import {IERC20Errors} from 'src/dependencies/openzeppelin/IERC20Errors.sol';
 import {IERC20} from 'src/dependencies/openzeppelin/IERC20.sol';
+import {AccessManager} from 'src/dependencies/openzeppelin/AccessManager.sol';
+import {IAccessManager} from 'src/dependencies/openzeppelin/IAccessManager.sol';
+import {IAccessManaged} from 'src/dependencies/openzeppelin/IAccessManaged.sol';
+import {AuthorityUtils} from 'src/dependencies/openzeppelin/AuthorityUtils.sol';
 import {Ownable} from 'src/dependencies/openzeppelin/Ownable.sol';
 import {WETH9} from 'src/dependencies/weth/WETH9.sol';
 
@@ -80,6 +85,7 @@ abstract contract Base is Test {
   ISpoke internal spoke2;
   ISpoke internal spoke3;
   AssetInterestRateStrategy internal irStrategy;
+  AccessManager internal accessManager;
 
   // TODO: remove after migrating to other mock users
   address internal USER1 = makeAddr('USER1');
@@ -90,6 +96,7 @@ abstract contract Base is Test {
   address internal carol = makeAddr('carol');
   address internal derl = makeAddr('derl');
 
+  address internal ADMIN = makeAddr('ADMIN');
   address internal HUB_ADMIN = makeAddr('HUB_ADMIN');
   address internal SPOKE_ADMIN = makeAddr('SPOKE_ADMIN');
   address internal TREASURY_ADMIN = makeAddr('TREASURY_ADMIN');
@@ -182,29 +189,69 @@ abstract contract Base is Test {
 
   function setUp() public virtual {
     deployFixtures();
-
-    // todo: set up admin role when access controls impl
   }
 
   function deployFixtures() internal virtual {
+    vm.startPrank(ADMIN);
     oracle1 = new MockPriceOracle();
     oracle2 = new MockPriceOracle();
     oracle3 = new MockPriceOracle();
-    irStrategy = new AssetInterestRateStrategy();
-    hub = new LiquidityHub();
-    spoke1 = ISpoke(new Spoke(address(oracle1)));
-    spoke2 = ISpoke(new Spoke(address(oracle2)));
-    spoke3 = ISpoke(new Spoke(address(oracle3)));
+    accessManager = new AccessManager(ADMIN);
+    hub = new LiquidityHub(address(accessManager));
+    irStrategy = new AssetInterestRateStrategy(address(hub));
+    spoke1 = ISpoke(new Spoke(address(oracle1), address(accessManager)));
+    spoke2 = ISpoke(new Spoke(address(oracle2), address(accessManager)));
+    spoke3 = ISpoke(new Spoke(address(oracle3), address(accessManager)));
     treasurySpoke = ITreasurySpoke(new TreasurySpoke(TREASURY_ADMIN, address(hub)));
     dai = new MockERC20();
     eth = new MockERC20();
     usdc = new MockERC20();
     usdt = new MockERC20();
     wbtc = new MockERC20();
+    vm.stopPrank();
 
     vm.label(address(spoke1), 'spoke1');
     vm.label(address(spoke2), 'spoke2');
     vm.label(address(spoke3), 'spoke3');
+
+    setUpRoles(hub, spoke1, accessManager);
+    setUpRoles(hub, spoke2, accessManager);
+    setUpRoles(hub, spoke3, accessManager);
+  }
+
+  function setUpRoles(
+    ILiquidityHub hub,
+    ISpoke spoke,
+    IAccessManager accessManager
+  ) internal virtual {
+    vm.startPrank(ADMIN);
+    // Grant roles with 0 delay
+    accessManager.grantRole(Roles.HUB_ADMIN_ROLE, ADMIN, 0);
+    accessManager.grantRole(Roles.SPOKE_ADMIN_ROLE, ADMIN, 0);
+    accessManager.grantRole(Roles.HUB_ADMIN_ROLE, HUB_ADMIN, 0);
+    accessManager.grantRole(Roles.SPOKE_ADMIN_ROLE, SPOKE_ADMIN, 0);
+
+    // Grant responsibilities to roles
+    // Spoke Admin functionalities
+    bytes4[] memory selectors = new bytes4[](5);
+    selectors[0] = ISpoke.updateLiquidationConfig.selector;
+    selectors[1] = ISpoke.addReserve.selector;
+    selectors[2] = ISpoke.updateReserveConfig.selector;
+    selectors[3] = ISpoke.updateDynamicReserveConfig.selector;
+    selectors[4] = ISpoke.updateUserRiskPremium.selector;
+
+    accessManager.setTargetFunctionRole(address(spoke), selectors, Roles.SPOKE_ADMIN_ROLE);
+
+    // Liquidity Hub Admin functionalities
+    bytes4[] memory hubSelectors = new bytes4[](5);
+    hubSelectors[0] = ILiquidityHub.addAsset.selector;
+    hubSelectors[1] = ILiquidityHub.updateAssetConfig.selector;
+    hubSelectors[2] = ILiquidityHub.addSpoke.selector;
+    hubSelectors[3] = ILiquidityHub.updateSpokeConfig.selector;
+    hubSelectors[4] = ILiquidityHub.setInterestRateData.selector;
+
+    accessManager.setTargetFunctionRole(address(hub), hubSelectors, Roles.HUB_ADMIN_ROLE);
+    vm.stopPrank();
   }
 
   function initEnvironment() internal {
@@ -280,23 +327,29 @@ abstract contract Base is Test {
   function configureTokenList() internal {
     DataTypes.SpokeConfig memory spokeConfig = DataTypes.SpokeConfig({
       supplyCap: type(uint256).max,
-      drawCap: type(uint256).max
+      drawCap: type(uint256).max,
+      active: true
     });
 
     // Add all assets to the Liquidity Hub
-    vm.startPrank(HUB_ADMIN);
+    vm.startPrank(ADMIN);
     // add WETH
     hub.addAsset(address(tokenList.weth), tokenList.weth.decimals(), address(irStrategy));
     hub.addSpoke(wethAssetId, address(treasurySpoke), spokeConfig);
+    vm.stopPrank();
+    vm.prank(address(hub));
     irStrategy.setInterestRateData(
       wethAssetId,
-      IAssetInterestRateStrategy.InterestRateData({
-        optimalUsageRatio: 90_00, // 90.00%
-        baseVariableBorrowRate: 5_00, // 5.00%
-        variableRateSlope1: 5_00, // 5.00%
-        variableRateSlope2: 5_00 // 5.00%
-      })
+      abi.encode(
+        IAssetInterestRateStrategy.InterestRateData({
+          optimalUsageRatio: 90_00, // 90.00%
+          baseVariableBorrowRate: 5_00, // 5.00%
+          variableRateSlope1: 5_00, // 5.00%
+          variableRateSlope2: 5_00 // 5.00%
+        })
+      )
     );
+    vm.startPrank(ADMIN);
     hub.updateAssetConfig(
       wethAssetId,
       DataTypes.AssetConfig({
@@ -312,15 +365,20 @@ abstract contract Base is Test {
     // add USDX
     hub.addAsset(address(tokenList.usdx), tokenList.usdx.decimals(), address(irStrategy));
     hub.addSpoke(usdxAssetId, address(treasurySpoke), spokeConfig);
+    vm.stopPrank();
+    vm.prank(address(hub));
     irStrategy.setInterestRateData(
       usdxAssetId,
-      IAssetInterestRateStrategy.InterestRateData({
-        optimalUsageRatio: 90_00, // 90.00%
-        baseVariableBorrowRate: 5_00, // 5.00%
-        variableRateSlope1: 5_00, // 5.00%
-        variableRateSlope2: 5_00 // 5.00%
-      })
+      abi.encode(
+        IAssetInterestRateStrategy.InterestRateData({
+          optimalUsageRatio: 90_00, // 90.00%
+          baseVariableBorrowRate: 5_00, // 5.00%
+          variableRateSlope1: 5_00, // 5.00%
+          variableRateSlope2: 5_00 // 5.00%
+        })
+      )
     );
+    vm.startPrank(ADMIN);
     hub.updateAssetConfig(
       usdxAssetId,
       DataTypes.AssetConfig({
@@ -336,15 +394,20 @@ abstract contract Base is Test {
     // add DAI
     hub.addAsset(address(tokenList.dai), tokenList.dai.decimals(), address(irStrategy));
     hub.addSpoke(daiAssetId, address(treasurySpoke), spokeConfig);
+    vm.stopPrank();
+    vm.prank(address(hub));
     irStrategy.setInterestRateData(
       daiAssetId,
-      IAssetInterestRateStrategy.InterestRateData({
-        optimalUsageRatio: 90_00, // 90.00%
-        baseVariableBorrowRate: 5_00, // 5.00%
-        variableRateSlope1: 5_00, // 5.00%
-        variableRateSlope2: 5_00 // 5.00%
-      })
+      abi.encode(
+        IAssetInterestRateStrategy.InterestRateData({
+          optimalUsageRatio: 90_00, // 90.00%
+          baseVariableBorrowRate: 5_00, // 5.00%
+          variableRateSlope1: 5_00, // 5.00%
+          variableRateSlope2: 5_00 // 5.00%
+        })
+      )
     );
+    vm.startPrank(ADMIN);
     hub.updateAssetConfig(
       daiAssetId,
       DataTypes.AssetConfig({
@@ -360,15 +423,20 @@ abstract contract Base is Test {
     // add WBTC
     hub.addAsset(address(tokenList.wbtc), tokenList.wbtc.decimals(), address(irStrategy));
     hub.addSpoke(wbtcAssetId, address(treasurySpoke), spokeConfig);
+    vm.stopPrank();
+    vm.prank(address(hub));
     irStrategy.setInterestRateData(
       wbtcAssetId,
-      IAssetInterestRateStrategy.InterestRateData({
-        optimalUsageRatio: 90_00, // 90.00%
-        baseVariableBorrowRate: 5_00, // 5.00%
-        variableRateSlope1: 5_00, // 5.00%
-        variableRateSlope2: 5_00 // 5.00%
-      })
+      abi.encode(
+        IAssetInterestRateStrategy.InterestRateData({
+          optimalUsageRatio: 90_00, // 90.00%
+          baseVariableBorrowRate: 5_00, // 5.00%
+          variableRateSlope1: 5_00, // 5.00%
+          variableRateSlope2: 5_00 // 5.00%
+        })
+      )
     );
+    vm.startPrank(ADMIN);
     hub.updateAssetConfig(
       wbtcAssetId,
       DataTypes.AssetConfig({
@@ -384,15 +452,20 @@ abstract contract Base is Test {
     // add USDY
     hub.addAsset(address(tokenList.usdy), tokenList.usdy.decimals(), address(irStrategy));
     hub.addSpoke(usdyAssetId, address(treasurySpoke), spokeConfig);
+    vm.stopPrank();
+    vm.prank(address(hub));
     irStrategy.setInterestRateData(
       usdyAssetId,
-      IAssetInterestRateStrategy.InterestRateData({
-        optimalUsageRatio: 90_00, // 90.00%
-        baseVariableBorrowRate: 5_00, // 5.00%
-        variableRateSlope1: 5_00, // 5.00%
-        variableRateSlope2: 5_00 // 5.00%
-      })
+      abi.encode(
+        IAssetInterestRateStrategy.InterestRateData({
+          optimalUsageRatio: 90_00, // 90.00%
+          baseVariableBorrowRate: 5_00, // 5.00%
+          variableRateSlope1: 5_00, // 5.00%
+          variableRateSlope2: 5_00 // 5.00%
+        })
+      )
     );
+    vm.startPrank(ADMIN);
     hub.updateAssetConfig(
       usdyAssetId,
       DataTypes.AssetConfig({
@@ -713,15 +786,20 @@ abstract contract Base is Test {
     // Spoke 2 to have an extra dai reserve
     hub.addAsset(address(tokenList.dai), tokenList.dai.decimals(), address(irStrategy));
     hub.addSpoke(hub.getAssetCount() - 1, address(treasurySpoke), spokeConfig);
+    vm.stopPrank();
+    vm.prank(address(hub));
     irStrategy.setInterestRateData(
       dai2AssetId,
-      IAssetInterestRateStrategy.InterestRateData({
-        optimalUsageRatio: 90_00, // 90.00%
-        baseVariableBorrowRate: 5_00, // 5.00%
-        variableRateSlope1: 5_00, // 5.00%
-        variableRateSlope2: 5_00 // 5.00%
-      })
+      abi.encode(
+        IAssetInterestRateStrategy.InterestRateData({
+          optimalUsageRatio: 90_00, // 90.00%
+          baseVariableBorrowRate: 5_00, // 5.00%
+          variableRateSlope1: 5_00, // 5.00%
+          variableRateSlope2: 5_00 // 5.00%
+        })
+      )
     );
+    vm.startPrank(ADMIN);
     hub.updateAssetConfig(
       hub.getAssetCount() - 1,
       DataTypes.AssetConfig({
@@ -765,10 +843,11 @@ abstract contract Base is Test {
    * 3: WBTC
    */
   function hub2Fixture() internal returns (ILiquidityHub, AssetInterestRateStrategy) {
-    vm.startPrank(HUB_ADMIN);
+    vm.startPrank(ADMIN);
 
-    ILiquidityHub hub2 = new LiquidityHub();
-    AssetInterestRateStrategy hub2IrStrategy = new AssetInterestRateStrategy();
+    IAccessManager accessManager2 = new AccessManager(ADMIN);
+    ILiquidityHub hub2 = new LiquidityHub(address(accessManager2));
+    AssetInterestRateStrategy hub2IrStrategy = new AssetInterestRateStrategy(address(hub2));
 
     // Add assets to the second hub
     // Add WETH
@@ -784,18 +863,22 @@ abstract contract Base is Test {
     hub2.addAsset(address(tokenList.wbtc), tokenList.wbtc.decimals(), address(hub2IrStrategy));
 
     // Configure IR Strategy for hub 2
-    IAssetInterestRateStrategy.InterestRateData memory irData = IAssetInterestRateStrategy
-      .InterestRateData({
+    bytes memory encodedIrData = abi.encode(
+      IAssetInterestRateStrategy.InterestRateData({
         optimalUsageRatio: 90_00, // 90.00%
         baseVariableBorrowRate: 5_00, // 5.00%
         variableRateSlope1: 5_00, // 5.00%
         variableRateSlope2: 5_00 // 5.00%
-      });
-    hub2IrStrategy.setInterestRateData(wethAssetId, irData);
-    hub2IrStrategy.setInterestRateData(usdxAssetId, irData);
-    hub2IrStrategy.setInterestRateData(daiAssetId, irData);
-    hub2IrStrategy.setInterestRateData(wbtcAssetId, irData);
+      })
+    );
+    vm.startPrank(address(hub2));
+    hub2IrStrategy.setInterestRateData(wethAssetId, encodedIrData);
+    hub2IrStrategy.setInterestRateData(usdxAssetId, encodedIrData);
+    hub2IrStrategy.setInterestRateData(daiAssetId, encodedIrData);
+    hub2IrStrategy.setInterestRateData(wbtcAssetId, encodedIrData);
     vm.stopPrank();
+
+    setUpRoles(hub2, spoke1, accessManager2);
 
     return (hub2, hub2IrStrategy);
   }
@@ -807,10 +890,11 @@ abstract contract Base is Test {
    * 3: WETH
    */
   function hub3Fixture() internal returns (ILiquidityHub, AssetInterestRateStrategy) {
-    vm.startPrank(HUB_ADMIN);
+    vm.startPrank(ADMIN);
 
-    ILiquidityHub hub3 = new LiquidityHub();
-    AssetInterestRateStrategy hub3IrStrategy = new AssetInterestRateStrategy();
+    IAccessManager accessManager3 = new AccessManager(ADMIN);
+    ILiquidityHub hub3 = new LiquidityHub(address(accessManager3));
+    AssetInterestRateStrategy hub3IrStrategy = new AssetInterestRateStrategy(address(hub3));
 
     // Add DAI
     hub3.addAsset(address(tokenList.dai), tokenList.dai.decimals(), address(hub3IrStrategy));
@@ -827,20 +911,25 @@ abstract contract Base is Test {
     // Add WETH
     hub3.addAsset(address(tokenList.weth), tokenList.weth.decimals(), address(hub3IrStrategy));
     uint256 hub3WethAssetId = 3;
+    vm.stopPrank();
 
     // Configure IR Strategy for hub 3
-    IAssetInterestRateStrategy.InterestRateData memory irData = IAssetInterestRateStrategy
-      .InterestRateData({
+    bytes memory encodedIrData = abi.encode(
+      IAssetInterestRateStrategy.InterestRateData({
         optimalUsageRatio: 90_00, // 90.00%
         baseVariableBorrowRate: 5_00, // 5.00%
         variableRateSlope1: 5_00, // 5.00%
         variableRateSlope2: 5_00 // 5.00%
-      });
-    hub3IrStrategy.setInterestRateData(hub3WethAssetId, irData);
-    hub3IrStrategy.setInterestRateData(hub3UsdxAssetId, irData);
-    hub3IrStrategy.setInterestRateData(hub3DaiAssetId, irData);
-    hub3IrStrategy.setInterestRateData(hub3WbtcAssetId, irData);
+      })
+    );
+    vm.startPrank(address(hub3));
+    hub3IrStrategy.setInterestRateData(hub3WethAssetId, encodedIrData);
+    hub3IrStrategy.setInterestRateData(hub3UsdxAssetId, encodedIrData);
+    hub3IrStrategy.setInterestRateData(hub3DaiAssetId, encodedIrData);
+    hub3IrStrategy.setInterestRateData(hub3WbtcAssetId, encodedIrData);
     vm.stopPrank();
+
+    setUpRoles(hub3, spoke1, accessManager3);
 
     return (hub3, hub3IrStrategy);
   }
@@ -973,12 +1062,14 @@ abstract contract Base is Test {
   ) internal {
     DataTypes.DynamicReserveConfig memory config = spoke.getDynamicReserveConfig(reserveId);
     config.collateralFactor = newCollateralFactor.toUint16();
+    vm.prank(SPOKE_ADMIN);
     spoke.updateDynamicReserveConfig(reserveId, config);
   }
 
   function updateCollateralFlag(ISpoke spoke, uint256 reserveId, bool newCollateralFlag) internal {
     DataTypes.Reserve memory reserveData = spoke.getReserve(reserveId);
     reserveData.config.collateral = newCollateralFlag;
+    vm.prank(SPOKE_ADMIN);
     spoke.updateReserveConfig(reserveId, reserveData.config);
   }
 
@@ -989,6 +1080,7 @@ abstract contract Base is Test {
   ) internal {
     DataTypes.Reserve memory reserveData = spoke.getReserve(reserveId);
     reserveData.config.borrowable = newBorrowable;
+    vm.prank(SPOKE_ADMIN);
     spoke.updateReserveConfig(reserveId, reserveData.config);
   }
 
@@ -999,6 +1091,7 @@ abstract contract Base is Test {
   ) internal {
     DataTypes.ReserveConfig memory reserveConfig = spoke.getReserve(reserveId).config;
     reserveConfig.liquidityPremium = newLiquidityPremium;
+    vm.prank(SPOKE_ADMIN);
     spoke.updateReserveConfig(reserveId, reserveConfig);
   }
 
@@ -1016,6 +1109,7 @@ abstract contract Base is Test {
   function updateCloseFactor(ISpoke spoke, uint256 newCloseFactor) internal {
     DataTypes.LiquidationConfig memory liqConfig = spoke.getLiquidationConfig();
     liqConfig.closeFactor = newCloseFactor;
+    vm.prank(SPOKE_ADMIN);
     spoke.updateLiquidationConfig(liqConfig);
 
     assertEq(spoke.getLiquidationConfig().closeFactor, newCloseFactor);
@@ -1069,6 +1163,7 @@ abstract contract Base is Test {
   ) internal {
     DataTypes.SpokeConfig memory spokeConfig = liquidityHub.getSpokeConfig(assetId, spoke);
     spokeConfig.drawCap = newDrawCap;
+    vm.prank(HUB_ADMIN);
     liquidityHub.updateSpokeConfig(assetId, spoke, spokeConfig);
   }
 
@@ -1124,6 +1219,7 @@ abstract contract Base is Test {
     MockPriceOracle oracle = MockPriceOracle(address(spoke.oracle()));
     uint256 currentPrice = oracle.getReservePrice(reserveId);
     uint256 newPrice = calcNewPrice(currentPrice, percent);
+    vm.prank(SPOKE_ADMIN);
     oracle.setReservePrice(reserveId, newPrice);
   }
 
@@ -1619,6 +1715,7 @@ abstract contract Base is Test {
     oracle.setReservePrice(reserveId, 0);
     vm.prank(user);
     spoke.borrow(reserveId, debtAmount, user);
+    vm.prank(SPOKE_ADMIN);
     oracle.setReservePrice(reserveId, initialPrice);
   }
 
@@ -1703,6 +1800,15 @@ abstract contract Base is Test {
 
   function _getCollateralFactor(ISpoke spoke, uint256 reserveId) internal view returns (uint256) {
     return spoke.getDynamicReserveConfig(reserveId).collateralFactor;
+  }
+
+  function _hasRole(
+    IAccessManager authority,
+    uint64 role,
+    address account
+  ) internal view returns (bool) {
+    (bool hasRole, ) = authority.hasRole(role, account);
+    return hasRole;
   }
 
   function _randomBps() internal returns (uint16) {

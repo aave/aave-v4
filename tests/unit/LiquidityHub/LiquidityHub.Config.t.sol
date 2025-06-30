@@ -12,6 +12,7 @@ contract LiquidityHubConfigTest is LiquidityHubBase {
   ) public {
     assetId = bound(assetId, hub.getAssetCount(), type(uint256).max);
     vm.expectRevert(ILiquidityHub.AssetNotListed.selector);
+    vm.prank(ADMIN);
     Utils.addSpoke(hub, assetId, address(spoke1), spokeConfig);
   }
 
@@ -22,6 +23,7 @@ contract LiquidityHubConfigTest is LiquidityHubBase {
     assetId = bound(assetId, 0, hub.getAssetCount() - 1);
 
     vm.expectRevert(abi.encodeWithSelector(ILiquidityHub.InvalidSpoke.selector));
+    vm.prank(ADMIN);
     Utils.addSpoke(hub, assetId, address(0), spokeConfig);
   }
 
@@ -32,6 +34,7 @@ contract LiquidityHubConfigTest is LiquidityHubBase {
     emit ILiquidityHub.SpokeAdded(assetId, address(spoke1));
     vm.expectEmit(address(hub));
     emit ILiquidityHub.SpokeConfigUpdated(assetId, address(spoke1), spokeConfig);
+    vm.prank(ADMIN);
     Utils.addSpoke(hub, assetId, address(spoke1), spokeConfig);
 
     assertEq(hub.getSpokeConfig(assetId, address(spoke1)), spokeConfig);
@@ -46,6 +49,7 @@ contract LiquidityHubConfigTest is LiquidityHubBase {
       assetId = bound(assetId, hub.getAssetCount(), type(uint256).max);
     }
     vm.expectRevert(ILiquidityHub.SpokeNotListed.selector);
+    vm.prank(ADMIN);
     Utils.updateSpokeConfig(hub, assetId, spoke, spokeConfig);
   }
 
@@ -58,6 +62,7 @@ contract LiquidityHubConfigTest is LiquidityHubBase {
     vm.expectEmit(address(hub));
     emit ILiquidityHub.SpokeConfigUpdated(assetId, address(spoke1), spokeConfig);
 
+    vm.prank(ADMIN);
     Utils.updateSpokeConfig(hub, assetId, address(spoke1), spokeConfig);
     assertEq(hub.getSpokeConfig(assetId, address(spoke1)), spokeConfig);
   }
@@ -71,6 +76,7 @@ contract LiquidityHubConfigTest is LiquidityHubBase {
     decimals = uint8(bound(decimals, hub.MAX_ALLOWED_ASSET_DECIMALS() + 1, type(uint8).max));
 
     vm.expectRevert(ILiquidityHub.InvalidAssetDecimals.selector);
+    vm.prank(ADMIN);
     Utils.addAsset(hub, asset, decimals, interestRateStrategy);
   }
 
@@ -79,6 +85,7 @@ contract LiquidityHubConfigTest is LiquidityHubBase {
     address interestRateStrategy
   ) public {
     vm.expectRevert(ILiquidityHub.InvalidAssetAddress.selector);
+    vm.prank(ADMIN);
     Utils.addAsset(hub, address(0), decimals, interestRateStrategy);
   }
 
@@ -87,6 +94,7 @@ contract LiquidityHubConfigTest is LiquidityHubBase {
     decimals = uint8(bound(decimals, 0, hub.MAX_ALLOWED_ASSET_DECIMALS()));
 
     vm.expectRevert(ILiquidityHub.InvalidIrStrategy.selector);
+    vm.prank(ADMIN);
     Utils.addAsset(hub, asset, decimals, address(0));
   }
 
@@ -109,6 +117,7 @@ contract LiquidityHubConfigTest is LiquidityHubBase {
     vm.expectEmit(address(hub));
     emit ILiquidityHub.AssetConfigUpdated(expectedAssetId, expectedConfig);
 
+    vm.prank(ADMIN);
     uint256 assetId = Utils.addAsset(hub, asset, decimals, interestRateStrategy);
 
     assertEq(assetId, expectedAssetId, 'asset id');
@@ -126,6 +135,7 @@ contract LiquidityHubConfigTest is LiquidityHubBase {
     newConfig.irStrategy = address(0);
 
     vm.expectRevert(ILiquidityHub.InvalidIrStrategy.selector);
+    vm.prank(HUB_ADMIN);
     hub.updateAssetConfig(assetId, newConfig);
   }
 
@@ -140,6 +150,7 @@ contract LiquidityHubConfigTest is LiquidityHubBase {
       type(uint256).max
     );
     vm.expectRevert(ILiquidityHub.InvalidLiquidityFee.selector);
+    vm.prank(HUB_ADMIN);
     hub.updateAssetConfig(assetId, newConfig);
   }
 
@@ -152,6 +163,7 @@ contract LiquidityHubConfigTest is LiquidityHubBase {
     newConfig.liquidityFee = vm.randomUint(1, PercentageMathExtended.PERCENTAGE_FACTOR);
     newConfig.feeReceiver = address(0);
     vm.expectRevert(ILiquidityHub.InvalidFeeReceiver.selector);
+    vm.prank(HUB_ADMIN);
     hub.updateAssetConfig(assetId, newConfig);
   }
 
@@ -163,6 +175,7 @@ contract LiquidityHubConfigTest is LiquidityHubBase {
     _assumeValidAssetConfig(assetId, newConfig);
     assumeUnusedAddress(newConfig.irStrategy);
     vm.expectRevert();
+    vm.prank(HUB_ADMIN);
     hub.updateAssetConfig(assetId, newConfig);
   }
 
@@ -180,6 +193,7 @@ contract LiquidityHubConfigTest is LiquidityHubBase {
     vm.expectEmit(address(hub));
     emit ILiquidityHub.AssetConfigUpdated(assetId, newConfig);
 
+    vm.prank(ADMIN);
     Utils.updateAssetConfig(hub, assetId, newConfig);
 
     assertEq(hub.getAssetConfig(assetId), newConfig);
@@ -330,10 +344,11 @@ contract LiquidityHubConfigTest is LiquidityHubBase {
     uint256 futureFees = hub.getSpokeSuppliedShares(assetId, address(treasurySpoke));
     rewind(365 days);
 
-    AssetInterestRateStrategy newIrStrategy = new AssetInterestRateStrategy();
+    AssetInterestRateStrategy newIrStrategy = new AssetInterestRateStrategy(address(hub));
     _mockInterestRate(address(newIrStrategy), hub.getBaseInterestRate(assetId) * 10);
     DataTypes.AssetConfig memory config = hub.getAssetConfig(assetId);
     config.irStrategy = address(newIrStrategy);
+    vm.prank(ADMIN);
     Utils.updateAssetConfig(hub, assetId, config);
 
     skip(365 days);

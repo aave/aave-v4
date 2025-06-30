@@ -8,7 +8,7 @@ contract SpokeConfigTest is SpokeBase {
 
   function test_spoke_deploy_revertsWith_InvalidOracleAddress() public {
     vm.expectRevert(ISpoke.InvalidOracleAddress.selector);
-    new Spoke(address(0));
+    new Spoke(address(0), address(accessManager));
   }
 
   function test_updateReserveConfig() public {

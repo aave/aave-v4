@@ -6,6 +6,7 @@ import {Test} from 'forge-std/Test.sol';
 import {LiquidityHub} from 'src/contracts/LiquidityHub.sol';
 import {Spoke} from 'src/contracts/Spoke.sol';
 import {IERC20} from 'src/dependencies/openzeppelin/IERC20.sol';
+import {AccessManager} from 'src/dependencies/openzeppelin/AccessManager.sol';
 import '../mocks/MockPriceOracle.sol';
 import '../mocks/MockERC20.sol';
 import '../Utils.sol';
@@ -19,7 +20,10 @@ contract LiquidityHubHandler is Test {
   IPriceOracle public oracle;
   LiquidityHub public hub;
   Spoke public spoke1;
+  AccessManager public accessManager;
   AssetInterestRateStrategy irStrategy;
+
+  address internal hubAdmin = makeAddr('HUB_ADMIN');
 
   struct State {
     mapping(uint256 => uint256) reserveSupplied; // asset => supply
@@ -31,25 +35,32 @@ contract LiquidityHubHandler is Test {
   State internal s;
 
   constructor() {
-    irStrategy = new AssetInterestRateStrategy();
+    vm.startPrank(hubAdmin);
+    accessManager = new AccessManager(hubAdmin);
+    hub = new LiquidityHub(address(accessManager));
+    irStrategy = new AssetInterestRateStrategy(address(hub));
     oracle = new MockPriceOracle();
-    hub = new LiquidityHub();
-    spoke1 = new Spoke(address(oracle));
+    spoke1 = new Spoke(address(oracle), address(accessManager));
     usdc = new MockERC20();
     dai = new MockERC20();
     usdt = new MockERC20();
 
     // Add dai
     hub.addAsset(address(dai), 18, address(irStrategy));
+    vm.stopPrank();
+    vm.prank(address(hub));
     irStrategy.setInterestRateData(
       0,
-      IAssetInterestRateStrategy.InterestRateData({
-        optimalUsageRatio: 90_00, // 90.00%
-        baseVariableBorrowRate: 5_00, // 5.00%
-        variableRateSlope1: 5_00, // 5.00%
-        variableRateSlope2: 5_00 // 5.00%
-      })
+      abi.encode(
+        IAssetInterestRateStrategy.InterestRateData({
+          optimalUsageRatio: 90_00, // 90.00%
+          baseVariableBorrowRate: 5_00, // 5.00%
+          variableRateSlope1: 5_00, // 5.00%
+          variableRateSlope2: 5_00 // 5.00%
+        })
+      )
     );
+    vm.startPrank(hubAdmin);
     hub.updateAssetConfig(
       0,
       DataTypes.AssetConfig({
@@ -76,6 +87,7 @@ contract LiquidityHubHandler is Test {
       }),
       DataTypes.DynamicReserveConfig({collateralFactor: 0})
     );
+    vm.stopPrank();
   }
 
   function getReserveSupplied(uint256 assetId) public view returns (uint256) {

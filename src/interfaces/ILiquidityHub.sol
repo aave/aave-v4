@@ -1,13 +1,16 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.0;
+
+import {IAccessManaged} from 'src/dependencies/openzeppelin/IAccessManaged.sol';
 import {DataTypes} from 'src/libraries/types/DataTypes.sol';
+import {IAssetInterestRateStrategy} from 'src/interfaces/IAssetInterestRateStrategy.sol';
 
 /**
  * @title ILiquidityHub
  * @author Aave Labs
  * @notice Basic interface for LiquidityHub
  */
-interface ILiquidityHub {
+interface ILiquidityHub is IAccessManaged {
   event SpokeAdded(uint256 indexed assetId, address indexed spoke);
   event AssetAdded(uint256 indexed assetId, address indexed asset, uint8 decimals);
   event AssetConfigUpdated(uint256 indexed assetId, DataTypes.AssetConfig config);
@@ -74,6 +77,7 @@ interface ILiquidityHub {
   error InvalidAssetAddress();
   error InvalidDebtChange();
   error InvalidFeeReceiver();
+  error SpokeNotActive();
 
   function addAsset(address asset, uint8 decimals, address irStrategy) external returns (uint256);
 
@@ -86,6 +90,13 @@ interface ILiquidityHub {
     address spoke,
     DataTypes.SpokeConfig calldata config
   ) external;
+
+  /**
+   * @notice Updates the interest rate strategy for a specified asset.
+   * @param assetId The identifier of the asset.
+   * @param data The interest rate data to apply to the given asset, all in bps, encoded in bytes.
+   */
+  function setInterestRateData(uint256 assetId, bytes calldata data) external;
 
   /**
    * @notice Add/Supply asset on behalf of user.

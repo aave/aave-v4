@@ -123,6 +123,7 @@ contract SpokeLiquidationBase is SpokeBase {
 
     state.liquidationProtocolFee = liquidationProtocolFee;
 
+    vm.prank(SPOKE_ADMIN);
     spoke1.updateLiquidationConfig(liqConfig);
     updateLiquidationBonus(spoke1, collateralReserveId, liqBonus);
     updateLiquidationProtocolFee(spoke1, collateralReserveId, state.liquidationProtocolFee);

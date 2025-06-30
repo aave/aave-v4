@@ -369,6 +369,7 @@ contract LiquidationCallCloseFactorBadDebtTest is SpokeLiquidationBase {
     state.liquidationProtocolFee = liquidationProtocolFee;
 
     // set spoke liq config
+    vm.prank(SPOKE_ADMIN);
     spoke1.updateLiquidationConfig(liqConfig);
     updateLiquidationBonus(spoke1, collateralReserveId, liqBonus);
     updateLiquidationProtocolFee(spoke1, collateralReserveId, state.liquidationProtocolFee);

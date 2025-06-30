@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.0;
 
+import {IAccessManaged} from 'src/dependencies/openzeppelin/IAccessManaged.sol';
 import {IMulticall} from 'src/interfaces/IMulticall.sol';
 import {IPriceOracle} from 'src/interfaces/IPriceOracle.sol';
 import {DataTypes, ILiquidityHub} from 'src/libraries/types/DataTypes.sol';
@@ -10,7 +11,7 @@ import {DataTypes, ILiquidityHub} from 'src/libraries/types/DataTypes.sol';
  * @author Aave Labs
  * @notice Basic interface for Spoke
  */
-interface ISpoke is IMulticall {
+interface ISpoke is IMulticall, IAccessManaged {
   event ReserveAdded(uint256 indexed reserveId, uint256 indexed assetId);
   event ReserveConfigUpdated(uint256 indexed reserveId, DataTypes.ReserveConfig config);
   event LiquidityPremiumUpdated(uint256 indexed reserveId, uint256 liquidityPremium);

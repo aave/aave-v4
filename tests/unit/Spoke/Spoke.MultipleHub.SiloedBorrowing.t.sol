@@ -29,15 +29,12 @@ contract SpokeMultipleHubSiloedBorrowingTest is SpokeMultipleHubBase {
    * Canonical Spoke: Asset A, no restrictions.
    */
   function setUpSiloedBorrowing() internal {
+    vm.startPrank(ADMIN);
     siloedVars.assetBDrawCap = 100_000e18;
     siloedVars.assetASupplyCap = 500_000e18;
 
     // Add asset B to the new hub
-    newHub.addAsset(
-      address(assetB),
-      assetB.decimals(),
-      address(newIrStrategy)
-    );
+    newHub.addAsset(address(assetB), assetB.decimals(), address(newIrStrategy));
     siloedVars.assetBId = newHub.getAssetCount() - 1;
 
     // Add B reserve to the new spoke
@@ -64,12 +61,19 @@ contract SpokeMultipleHubSiloedBorrowingTest is SpokeMultipleHubBase {
     newHub.addSpoke(
       siloedVars.assetBId,
       address(newSpoke),
-      DataTypes.SpokeConfig({drawCap: siloedVars.assetBDrawCap, supplyCap: UINT256_MAX})
+      DataTypes.SpokeConfig({
+        drawCap: siloedVars.assetBDrawCap,
+        supplyCap: UINT256_MAX,
+        active: true
+      })
     );
+    vm.stopPrank();
 
     // Configure interest rate strategy for asset B
-    newIrStrategy.setInterestRateData(siloedVars.assetBId, irData);
+    vm.prank(address(newHub));
+    newIrStrategy.setInterestRateData(siloedVars.assetBId, encodedIrData);
 
+    vm.startPrank(ADMIN);
     // Add asset A to the canonical hub
     hub.addAsset(
       address(assetA),
@@ -102,12 +106,19 @@ contract SpokeMultipleHubSiloedBorrowingTest is SpokeMultipleHubBase {
     hub.addSpoke(
       siloedVars.assetAId,
       address(spoke1),
-      DataTypes.SpokeConfig({drawCap: type(uint256).max, supplyCap: type(uint256).max})
+      DataTypes.SpokeConfig({
+        drawCap: type(uint256).max,
+        supplyCap: type(uint256).max,
+        active: true
+      })
     );
+    vm.stopPrank();
 
     // Configure interest rate strategy for asset A
-    irStrategy.setInterestRateData(siloedVars.assetAId, irData);
+    vm.prank(address(hub));
+    irStrategy.setInterestRateData(siloedVars.assetAId, encodedIrData);
 
+    vm.startPrank(ADMIN);
     // Add reserve A from canonical hub to the new spoke
     siloedVars.reserveAIdNewSpoke = newSpoke.addReserve(
       siloedVars.assetAId,
@@ -132,8 +143,9 @@ contract SpokeMultipleHubSiloedBorrowingTest is SpokeMultipleHubBase {
     hub.addSpoke(
       siloedVars.assetAId,
       address(newSpoke),
-      DataTypes.SpokeConfig({drawCap: 0, supplyCap: siloedVars.assetASupplyCap})
+      DataTypes.SpokeConfig({drawCap: 0, supplyCap: siloedVars.assetASupplyCap, active: true})
     );
+    vm.stopPrank();
 
     // Approvals
     vm.prank(bob);
