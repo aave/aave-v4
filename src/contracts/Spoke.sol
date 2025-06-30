@@ -392,22 +392,23 @@ contract Spoke is ISpoke, Multicall, AccessManaged {
     DataTypes.PositionStatus storage positionStatus = _positionStatus[msg.sender];
 
     // process only if collateral status changes
-    if (positionStatus.isUsingAsCollateral(reserveId) != usingAsCollateral) {
-      DataTypes.Reserve storage reserve = _reserves[reserveId];
-      _validateSetUsingAsCollateral(reserve, reserveId, usingAsCollateral);
-
-      positionStatus.setUsingAsCollateral(reserveId, usingAsCollateral);
-
-      if (usingAsCollateral) {
-        _refreshDynamicConfig(msg.sender);
-      } else {
-        // If unsetting, check HF and update user rp
-        uint256 newUserRiskPremium = _refreshAndValidateUserPosition(msg.sender); // validates HF
-        _notifyRiskPremiumUpdate(type(uint256).max, msg.sender, newUserRiskPremium);
-      }
-
-      emit UsingAsCollateral(reserveId, msg.sender, usingAsCollateral);
+    if (positionStatus.isUsingAsCollateral(reserveId) == usingAsCollateral) {
+      return;
     }
+
+    DataTypes.Reserve storage reserve = _reserves[reserveId];
+    _validateSetUsingAsCollateral(reserve, reserveId, usingAsCollateral);
+
+    positionStatus.setUsingAsCollateral(reserveId, usingAsCollateral);
+
+    if (usingAsCollateral) {
+      _refreshDynamicConfig(msg.sender);
+    } else {
+      // If unsetting, check HF and update user rp
+      uint256 newUserRiskPremium = _refreshAndValidateUserPosition(msg.sender); // validates HF
+      _notifyRiskPremiumUpdate(type(uint256).max, msg.sender, newUserRiskPremium);
+    }
+    emit UsingAsCollateral(reserveId, msg.sender, usingAsCollateral);
   }
 
   /// @inheritdoc ISpoke

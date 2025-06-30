@@ -135,7 +135,9 @@ contract SpokeConfigTest is SpokeBase {
     DynamicConfig[] memory bobDynConfig = _getUserDynConfigKeys(spoke1, bob);
     uint256 bobRp = _getUserRpStored(spoke1, daiReserveId, bob);
 
+    vm.recordLogs();
     spoke1.setUsingAsCollateral(daiReserveId, false);
+    _assertEventNotEmitted(ISpoke.UsingAsCollateral.selector);
 
     assertFalse(spoke1.getUsingAsCollateral(daiReserveId, bob));
     assertEq(_getUserRpStored(spoke1, daiReserveId, bob), bobRp);
@@ -149,7 +151,9 @@ contract SpokeConfigTest is SpokeBase {
     bobDynConfig = _getUserDynConfigKeys(spoke1, bob);
     bobRp = _getUserRpStored(spoke1, daiReserveId, bob);
 
+    vm.recordLogs();
     spoke1.setUsingAsCollateral(daiReserveId, true);
+    _assertEventNotEmitted(ISpoke.UsingAsCollateral.selector);
 
     assertTrue(spoke1.getUsingAsCollateral(daiReserveId, bob));
     assertEq(_getUserRpStored(spoke1, daiReserveId, bob), bobRp);

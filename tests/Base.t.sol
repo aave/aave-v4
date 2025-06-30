@@ -4,6 +4,7 @@ pragma solidity ^0.8.0;
 import {Test} from 'forge-std/Test.sol';
 import {stdError} from 'forge-std/StdError.sol';
 import {stdMath} from 'forge-std/StdMath.sol';
+import {Vm} from 'forge-std/Vm.sol';
 import {console2 as console} from 'forge-std/console2.sol';
 import {IERC20Metadata} from 'src/dependencies/openzeppelin/IERC20Metadata.sol';
 import {LiquidityHub, ILiquidityHub} from 'src/contracts/LiquidityHub.sol';
@@ -1865,5 +1866,14 @@ abstract contract Base is Test {
       ),
       abi.encode(interestRateBps.bpsToRay())
     );
+  }
+
+  function _assertEventNotEmitted(bytes32 eventSignature) internal {
+    Vm.Log[] memory entries = vm.getRecordedLogs();
+    for (uint256 i; i < entries.length; i++) {
+      assertNotEq(entries[i].topics[0], eventSignature);
+    }
+
+    vm.recordLogs();
   }
 }
