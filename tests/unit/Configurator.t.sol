@@ -174,6 +174,11 @@ contract ConfiguratorTest is LiquidityHubBase {
       feeReceiver: feeReceiver,
       irStrategy: interestRateStrategy
     });
+    DataTypes.SpokeConfig memory expectedSpokeConfig = DataTypes.SpokeConfig({
+      supplyCap: type(uint256).max,
+      drawCap: type(uint256).max,
+      active: true
+    });
 
     vm.expectCall(
       address(hub),
@@ -181,6 +186,11 @@ contract ConfiguratorTest is LiquidityHubBase {
         ILiquidityHub.addAsset,
         (underlying, decimals, feeReceiver, interestRateStrategy)
       )
+    );
+
+    vm.expectCall(
+      address(hub),
+      abi.encodeCall(ILiquidityHub.addSpoke, (expectedAssetId, feeReceiver, expectedSpokeConfig))
     );
 
     vm.prank(CONFIGURATOR_ADMIN);
@@ -196,6 +206,7 @@ contract ConfiguratorTest is LiquidityHubBase {
     assertEq(hub.getAssetCount(), assetId + 1, 'asset count');
     assertEq(hub.getAsset(assetId).decimals, decimals, 'asset decimals');
     assertEq(hub.getAssetConfig(assetId), expectedConfig);
+    assertEq(hub.getSpokeConfig(assetId, feeReceiver), expectedSpokeConfig);
   }
 
   function test_updateActive_fuzz_revertsWith_OwnableUnauthorizedAccount(address caller) public {

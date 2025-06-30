@@ -35,13 +35,26 @@ contract Configurator is Ownable, IConfigurator {
     address feeReceiver,
     address irStrategy
   ) external override onlyOwner returns (uint256) {
-    return
-      ILiquidityHub(hub).addAsset(
-        underlying,
-        IERC20Metadata(underlying).decimals(),
-        feeReceiver,
-        irStrategy
-      );
+    ILiquidityHub targetHub = ILiquidityHub(hub);
+
+    uint256 assetId = targetHub.addAsset(
+      underlying,
+      IERC20Metadata(underlying).decimals(),
+      feeReceiver,
+      irStrategy
+    );
+
+    targetHub.addSpoke(
+      assetId,
+      feeReceiver,
+      DataTypes.SpokeConfig({
+        supplyCap: type(uint256).max,
+        drawCap: type(uint256).max,
+        active: true
+      })
+    );
+
+    return assetId;
   }
 
   /// @inheritdoc IConfigurator
@@ -52,7 +65,21 @@ contract Configurator is Ownable, IConfigurator {
     address feeReceiver,
     address irStrategy
   ) external override onlyOwner returns (uint256) {
-    return ILiquidityHub(hub).addAsset(underlying, decimals, feeReceiver, irStrategy);
+    ILiquidityHub targetHub = ILiquidityHub(hub);
+
+    uint256 assetId = targetHub.addAsset(underlying, decimals, feeReceiver, irStrategy);
+
+    targetHub.addSpoke(
+      assetId,
+      feeReceiver,
+      DataTypes.SpokeConfig({
+        supplyCap: type(uint256).max,
+        drawCap: type(uint256).max,
+        active: true
+      })
+    );
+
+    return assetId;
   }
 
   /// @inheritdoc IConfigurator
