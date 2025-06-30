@@ -149,7 +149,7 @@ contract PositionStatusTest is Base {
     assertEq(positionStatus.collateralCount(PositionStatus.MAX_RESERVES_COUNT), 1);
     assertEq(positionStatus.collateralCount(128), 1);
 
-    // todo revert on malformed data?
+    // todo revert on higher dirty bits?
     // assertEq(positionStatus.collateralCount(100), 0);
 
     positionStatus.setUsingAsCollateral(2, true);
@@ -167,6 +167,19 @@ contract PositionStatusTest is Base {
     positionStatus.setUsingAsCollateral(343, true);
     assertEq(positionStatus.collateralCount(PositionStatus.MAX_RESERVES_COUNT), 4);
     assertEq(positionStatus.collateralCount(343), 4);
+
+    positionStatus.setUsingAsCollateral(32, false);
+    assertEq(positionStatus.collateralCount(PositionStatus.MAX_RESERVES_COUNT), 3);
+    assertEq(positionStatus.collateralCount(343), 3);
+
+    // disregards borrowed assets
+    positionStatus.setBorrowing(32, true);
+    assertEq(positionStatus.collateralCount(PositionStatus.MAX_RESERVES_COUNT), 3);
+    assertEq(positionStatus.collateralCount(343), 3);
+
+    positionStatus.setBorrowing(79, true);
+    assertEq(positionStatus.collateralCount(PositionStatus.MAX_RESERVES_COUNT), 3);
+    assertEq(positionStatus.collateralCount(343), 3);
   }
 
   // todo test_collateralCount_symbolic

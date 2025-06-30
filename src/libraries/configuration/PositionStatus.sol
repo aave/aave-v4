@@ -115,7 +115,7 @@ library PositionStatus {
   }
 
   /**
-   * @dev Counts the number assets enabled as collateral.
+   * @dev Counts the number reserves enabled as collateral.
    * @dev Takes all bits in the last bucket after `reserveCount` as well.
    * @param self The configuration object.
    * @param reserveCount The current reserveCount, to avoid reading uninitialized buckets.
@@ -124,7 +124,7 @@ library PositionStatus {
     DataTypes.PositionStatus storage self,
     uint256 reserveCount
   ) internal view returns (uint256) {
-    require(reserveCount <= MAX_RESERVES_COUNT, InvalidReserveCount()); // should never hit
+    require(reserveCount <= MAX_RESERVES_COUNT, InvalidReserveCount()); // assertion: should never hit
     unchecked {
       uint256 count;
       uint256 bucket = 1 + (reserveCount >> 7);
