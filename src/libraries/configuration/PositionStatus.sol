@@ -1,7 +1,8 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.0;
 
-import {DataTypes} from '../types/DataTypes.sol';
+import {LibBit} from 'src/dependencies/solady/LibBit.sol';
+import {DataTypes} from 'src/libraries/types/DataTypes.sol';
 
 /**
  * @title PositionStatus
@@ -12,6 +13,7 @@ library PositionStatus {
   using PositionStatus for DataTypes.PositionStatus;
 
   error InvalidReserveId();
+  error InvalidReserveCount();
 
   //TODO: After we complete the data structures packing, this needs to be adjusted to the right size depending on the number of bits we will use to store the reserve index
   uint256 public constant MAX_RESERVES_COUNT = 1024;
@@ -109,6 +111,27 @@ library PositionStatus {
     unchecked {
       require(reserveId < MAX_RESERVES_COUNT, InvalidReserveId());
       return (self.getMapSlot(reserveId) >> (((reserveId % 128) << 1) + 1)) & 1 != 0;
+    }
+  }
+
+  /**
+   * @dev Counts the number assets enabled as collateral.
+   * @dev Takes all bits in the last bucket after `reserveCount` as well.
+   * @param self The configuration object.
+   * @param reserveCount The current reserveCount, to avoid reading uninitialized buckets.
+   */
+  function collateralCount(
+    DataTypes.PositionStatus storage self,
+    uint256 reserveCount
+  ) internal view returns (uint256) {
+    require(reserveCount <= MAX_RESERVES_COUNT, InvalidReserveCount()); // should never hit
+    unchecked {
+      uint256 count;
+      uint256 bucket = 1 + (reserveCount >> 7);
+      while (bucket-- != 0) {
+        count += LibBit.popCount(self.map[bucket] & COLLATERAL_MASK);
+      }
+      return count;
     }
   }
 

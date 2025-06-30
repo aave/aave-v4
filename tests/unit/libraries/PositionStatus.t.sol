@@ -1,11 +1,11 @@
 // SPDX-License-Identifier: BUSL-1.1
 pragma solidity ^0.8.10;
 
+import {LibBit} from 'src/dependencies/solady/LibBit.sol';
 import 'tests/Base.t.sol';
 
 contract PositionStatusTest is Base {
   using PositionStatus for DataTypes.PositionStatus;
-
   DataTypes.PositionStatus internal positionStatus;
 
   function setUp() public override {
@@ -19,8 +19,12 @@ contract PositionStatusTest is Base {
     positionStatus.setBorrowing(0, false);
     assertEq(positionStatus.isBorrowing(0), false);
 
+    positionStatus.setBorrowing(0, true);
+    assertEq(positionStatus.isBorrowing(0), true);
+
     positionStatus.setBorrowing(127, true);
     assertEq(positionStatus.isBorrowing(127), true);
+    assertEq(positionStatus.isBorrowing(0), true);
 
     positionStatus.setBorrowing(127, false);
     assertEq(positionStatus.isBorrowing(127), false);
@@ -138,5 +142,43 @@ contract PositionStatusTest is Base {
 
     positionStatus.setUsingAsCollateral(255, false);
     assertEq(positionStatus.isUsingAsCollateral(255), false);
+  }
+
+  function test_collateralCount() public {
+    positionStatus.setUsingAsCollateral(128, true);
+    assertEq(positionStatus.collateralCount(PositionStatus.MAX_RESERVES_COUNT), 1);
+    assertEq(positionStatus.collateralCount(128), 1);
+
+    // todo revert on malformed data?
+    // assertEq(positionStatus.collateralCount(100), 0);
+
+    positionStatus.setUsingAsCollateral(2, true);
+    assertEq(positionStatus.collateralCount(PositionStatus.MAX_RESERVES_COUNT), 2);
+    assertEq(positionStatus.collateralCount(129), 2);
+
+    positionStatus.setUsingAsCollateral(32, true);
+    assertEq(positionStatus.collateralCount(PositionStatus.MAX_RESERVES_COUNT), 3);
+    assertEq(positionStatus.collateralCount(128), 3);
+
+    positionStatus.setUsingAsCollateral(343, true);
+    assertEq(positionStatus.collateralCount(PositionStatus.MAX_RESERVES_COUNT), 4);
+    assertEq(positionStatus.collateralCount(343), 4);
+
+    positionStatus.setUsingAsCollateral(343, true);
+    assertEq(positionStatus.collateralCount(PositionStatus.MAX_RESERVES_COUNT), 4);
+    assertEq(positionStatus.collateralCount(343), 4);
+  }
+
+  // todo test_collateralCount_symbolic
+
+  function test_popCount(uint256 bits) public {
+    assertEq(LibBit.popCount(bits), _popCountNaive(bits));
+  }
+
+  function _popCountNaive(uint256 x) internal view returns (uint256 count) {
+    while (x != 0) {
+      count += x & 1;
+      x >>= 1;
+    }
   }
 }

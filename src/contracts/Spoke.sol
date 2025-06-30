@@ -749,6 +749,9 @@ contract Spoke is ISpoke, Multicall, AccessManaged {
     DataTypes.CalculateUserAccountDataVars memory vars;
     uint256 reservesListLength = reservesList.length;
     DataTypes.PositionStatus storage positionStatus = _positionStatus[user];
+    KeyValueListInMemory.List memory list = KeyValueListInMemory.init(
+      positionStatus.collateralCount(reservesListLength)
+    );
 
     while (vars.reserveId < reservesListLength) {
       DataTypes.UserPosition storage userPosition = _userPositions[user][vars.reserveId];
@@ -768,36 +771,6 @@ contract Spoke is ISpoke, Multicall, AccessManaged {
         vars.assetUnit = 10 ** reserve.decimals;
       }
 
-      if (positionStatus.isUsingAsCollateral(vars.reserveId)) {
-        // @dev opt: this can be extracted by counting number of set bits in a supplied (only) bitmap saving one loop
-        unchecked {
-          ++vars.collateralReserveCount;
-        }
-      }
-
-      if (positionStatus.isBorrowing(vars.reserveId)) {
-        vars.totalDebtInBaseCurrency += _getUserDebtInBaseCurrency(
-          userPosition,
-          vars.assetId,
-          vars.assetPrice,
-          vars.assetUnit,
-          hub
-        );
-      }
-
-      unchecked {
-        ++vars.reserveId;
-      }
-    }
-
-    // @dev only allocate required memory at the cost of an extra loop
-    KeyValueListInMemory.List memory list = KeyValueListInMemory.init(vars.collateralReserveCount);
-    vars.i = 0;
-    vars.reserveId = 0;
-    while (vars.reserveId < reservesListLength) {
-      DataTypes.UserPosition storage userPosition = _userPositions[user][vars.reserveId];
-      DataTypes.Reserve storage reserve = _reserves[vars.reserveId];
-      ILiquidityHub hub = reserve.hub;
       if (positionStatus.isUsingAsCollateral(vars.reserveId)) {
         DataTypes.DynamicReserveConfig storage dynConfig = _dynamicConfig[vars.reserveId][
           userPosition.configKey
@@ -826,6 +799,16 @@ contract Spoke is ISpoke, Multicall, AccessManaged {
         }
       }
 
+      if (positionStatus.isBorrowing(vars.reserveId)) {
+        vars.totalDebtInBaseCurrency += _getUserDebtInBaseCurrency(
+          userPosition,
+          vars.assetId,
+          vars.assetPrice,
+          vars.assetUnit,
+          hub
+        );
+      }
+
       unchecked {
         ++vars.reserveId;
       }
@@ -849,7 +832,7 @@ contract Spoke is ISpoke, Multicall, AccessManaged {
     vars.i = 0;
     // @dev from this point onwards, `collateralCounterInBaseCurrency` represents running collateral
     // value used in risk premium, `debtCounterInBaseCurrency` represents running outstanding debt
-    while (vars.i < vars.collateralReserveCount && vars.debtCounterInBaseCurrency > 0) {
+    while (vars.i < list.length() && vars.debtCounterInBaseCurrency > 0) {
       if (vars.debtCounterInBaseCurrency == 0) break;
       (vars.liquidityPremium, vars.userCollateralInBaseCurrency) = list.get(vars.i);
       if (vars.userCollateralInBaseCurrency > vars.debtCounterInBaseCurrency) {
