@@ -271,6 +271,7 @@ contract LiquidityHub is ILiquidityHub, AccessManaged {
     spoke.baseDrawnShares -= baseDrawnSharesReported;
 
     emit DeficitCreated(assetId, msg.sender, baseDrawnSharesReported, totalDeficitAmount);
+    emit Restore(assetId, msg.sender, baseDrawnSharesReported, totalDeficitAmount);
 
     return baseDrawnSharesReported;
   }
@@ -557,14 +558,15 @@ contract LiquidityHub is ILiquidityHub, AccessManaged {
   function _validateReportDeficit(
     DataTypes.Asset storage asset,
     DataTypes.SpokeData storage spoke,
-    uint256 baseAmountReported,
-    uint256 premiumAmountReported
+    uint256 baseAmount,
+    uint256 premiumAmount
   ) internal view {
-    require(baseAmountReported + premiumAmountReported != 0, InvalidDeficitAmount());
+    require(spoke.config.active, SpokeNotActive());
+    require(baseAmount + premiumAmount != 0, InvalidDeficitAmount());
     require(asset.config.active, AssetNotActive());
     require(!asset.config.paused, AssetPaused());
     (uint256 baseDebt, ) = _getSpokeDebt(asset, spoke);
-    require(baseAmountReported <= baseDebt, SurplusDeficitReported(baseDebt));
+    require(baseAmount <= baseDebt, SurplusDeficitReported(baseDebt));
     // we should have already cleared premium debt
   }
 

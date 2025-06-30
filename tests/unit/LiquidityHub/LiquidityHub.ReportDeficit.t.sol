@@ -24,15 +24,15 @@ contract LiquidityHubReportDeficitTest is LiquidityHubBase {
     // deploy borrowable liquidity
     _addLiquidity(wethAssetId, MAX_SUPPLY_AMOUNT);
     _addLiquidity(usdxAssetId, MAX_SUPPLY_AMOUNT);
+  }
 
-    // max approve
-    vm.startPrank(address(spoke1));
-    IERC20(hub.getAsset(wethAssetId).underlying).approve(address(hub), UINT256_MAX);
-    IERC20(hub.getAsset(usdxAssetId).underlying).approve(address(hub), UINT256_MAX);
-    vm.stopPrank();
+  function test_reportDeficit_revertsWith_SpokeNotActive(address caller) public {
+    vm.assume(!hub.getSpoke(usdxAssetId, caller).config.active);
 
-    // mint usdx to spoke1 to be able to repay after accrual
-    deal(address(tokenList.usdx), address(spoke1), 1e60);
+    vm.expectRevert(ILiquidityHub.SpokeNotActive.selector);
+
+    vm.prank(caller);
+    hub.reportDeficit(usdxAssetId, 0, 0);
   }
 
   function test_reportDeficit_revertsWith_InvalidDeficitAmount() public {
@@ -119,11 +119,12 @@ contract LiquidityHubReportDeficitTest is LiquidityHubBase {
     RestoreDeficitTestParams memory params;
 
     // create premium debt via spoke1
-    (params.baseDebt, params.premiumDebt) = _createBorrowPositionWithPremium(
-      spoke1,
-      _usdxReserveId(spoke1),
+    (params.baseDebt, params.premiumDebt) = _drawLiquidity(
+      address(spoke1),
+      usdxAssetId,
       drawnAmount,
-      skipTime
+      skipTime,
+      true
     );
 
     baseAmount = bound(baseAmount, 0, params.baseDebt);
@@ -143,6 +144,14 @@ contract LiquidityHubReportDeficitTest is LiquidityHubBase {
 
     vm.expectEmit(address(hub));
     emit ILiquidityHub.DeficitCreated(
+      usdxAssetId,
+      address(spoke1),
+      hub.convertToDrawnShares(usdxAssetId, baseAmount),
+      totalDeficit
+    );
+
+    vm.expectEmit(address(hub));
+    emit ILiquidityHub.Restore(
       usdxAssetId,
       address(spoke1),
       hub.convertToDrawnShares(usdxAssetId, baseAmount),
@@ -193,24 +202,5 @@ contract LiquidityHubReportDeficitTest is LiquidityHubBase {
         liquidityAdded: liquidityAdded,
         liquidityTaken: liquidityTaken
       });
-  }
-
-  /// Create a borrow position thru user interaction with spoke, to accrue premium on spoke debt in hub
-  /// Bob supplies max wbtc collateral thru spoke
-  function _createBorrowPositionWithPremium(
-    ISpoke spoke,
-    uint256 reserveId,
-    uint256 borrowAmount,
-    uint256 skipTime
-  ) internal returns (uint256 baseDebt, uint256 premiumDebt) {
-    // Bob supplies max wbtc collateral and borrows
-    Utils.supplyCollateral(spoke1, _wbtcReserveId(spoke1), bob, MAX_SUPPLY_AMOUNT, bob);
-    Utils.borrow(spoke, reserveId, bob, borrowAmount, address(bob));
-    // skip to accrue interest
-    skip(skipTime);
-
-    (baseDebt, premiumDebt) = spoke.getUserDebt(reserveId, bob);
-
-    assertGt(premiumDebt, 0);
   }
 }
