@@ -212,8 +212,7 @@ contract LiquidationCallCloseFactorMultiReserveTest is SpokeLiquidationBase {
     state.spoke = spoke1;
     state.user = alice;
 
-    vm.prank(SPOKE_ADMIN);
-    state.spoke.updateLiquidationConfig(liqConfig);
+    updateLiquidationConfig(state.spoke, liqConfig);
     updateLiquidationBonus(
       state.spoke,
       state.collateralReserves[collateralReserveIndex].reserveId,

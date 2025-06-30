@@ -438,8 +438,7 @@ contract LiquidationCallCloseFactorTest is SpokeLiquidationBase {
     state.user = alice;
     state.liquidationProtocolFee = liquidationProtocolFee;
 
-    vm.prank(SPOKE_ADMIN);
-    state.spoke.updateLiquidationConfig(liqConfig);
+    updateLiquidationConfig(state.spoke, liqConfig);
     updateLiquidationBonus(state.spoke, collateralReserveId, liqBonus);
     updateLiquidationProtocolFee(state.spoke, collateralReserveId, state.liquidationProtocolFee);
 

@@ -984,6 +984,16 @@ abstract contract Base is Test {
     assertEq(spoke.getReserve(reserveId).config.liquidationBonus, newLiquidationBonus);
   }
 
+  function updateLiquidationConfig(
+    ISpoke spoke,
+    DataTypes.LiquidationConfig memory config
+  ) internal {
+    vm.prank(SPOKE_ADMIN);
+    spoke.updateLiquidationConfig(config);
+
+    assertEq(abi.encode(spoke.getLiquidationConfig()), abi.encode(config));
+  }
+
   function updateLiquidationProtocolFee(
     ISpoke spoke,
     uint256 reserveId,
