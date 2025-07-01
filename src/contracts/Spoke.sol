@@ -1026,7 +1026,7 @@ contract Spoke is ISpoke, Multicall, AccessManaged {
         vars.collateralAssetId,
         vars.user,
         0
-      ); // Unecessary but settle premium debt here for consistency
+      ); // unnecessary but settle premium debt here for consistency
 
       // repay debt
       vars.restoredShares = debtReserveHub.restore(
