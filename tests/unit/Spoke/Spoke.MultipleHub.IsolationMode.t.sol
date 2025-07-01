@@ -26,9 +26,19 @@ contract SpokeMultipleHubIsolationModeTest is SpokeMultipleHubBase {
   function setUpIsolationMode() internal {
     vm.startPrank(ADMIN);
     // Add assets A and B to the new hub
-    newHub.addAsset(address(assetA), assetA.decimals(), address(newIrStrategy));
+    newHub.addAsset(
+      address(assetA),
+      assetA.decimals(),
+      address(treasurySpoke),
+      address(newIrStrategy)
+    );
     isolationVars.assetAId = newHub.getAssetCount() - 1;
-    newHub.addAsset(address(assetB), assetB.decimals(), address(newIrStrategy));
+    newHub.addAsset(
+      address(assetB),
+      assetB.decimals(),
+      address(treasurySpoke),
+      address(newIrStrategy)
+    );
     isolationVars.assetBId = newHub.getAssetCount() - 1;
 
     // Add reserves to the new spoke
@@ -100,6 +110,7 @@ contract SpokeMultipleHubIsolationModeTest is SpokeMultipleHubBase {
     hub.addAsset(
       address(assetB),
       assetB.decimals(),
+      address(treasurySpoke),
       address(irStrategy) // Use the main hub's interest rate strategy
     );
 
