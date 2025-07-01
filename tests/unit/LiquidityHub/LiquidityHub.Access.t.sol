@@ -64,54 +64,49 @@ contract LiquidityHubAccessTest is LiquidityHubBase {
     hub.updateSpokeConfig(assetAId, address(spoke1), spokeConfig);
   }
 
-  function test_configureInterestRateStrategy_access() public {
-    IAssetInterestRateStrategy.InterestRateData memory rateData = IAssetInterestRateStrategy.InterestRateData({
-      optimalUsageRatio: 50_00, // 50.00% in BPS
-      baseVariableBorrowRate: 100_00, // 100.00% in BPS
-      variableRateSlope1: 200_00, // 200.00% in BPS
-      variableRateSlope2: 300_00 // 300.00% in BPS
-    });
+  function test_setInterestRateData_access() public {
+    bytes memory encodedIrData = abi.encode(
+      IAssetInterestRateStrategy.InterestRateData({
+        optimalUsageRatio: 50_00, // 50.00% in BPS
+        baseVariableBorrowRate: 100_00, // 100.00% in BPS
+        variableRateSlope1: 200_00, // 200.00% in BPS
+        variableRateSlope2: 300_00 // 300.00% in BPS
+      })
+    );
 
     // Only Liquidity Hub can set interest rates
     vm.expectRevert(abi.encodeWithSelector(IAssetInterestRateStrategy.OnlyLiquidityHub.selector));
-    irStrategy.setInterestRateData(daiAssetId, rateData);
+    irStrategy.setInterestRateData(daiAssetId, encodedIrData);
 
     // Liquidity Hub can set interest rates
     vm.prank(address(hub));
-    irStrategy.setInterestRateData(daiAssetId, rateData);
+    irStrategy.setInterestRateData(daiAssetId, encodedIrData);
 
-    // Only Hub Admin can call function on hub to configure the interest rate strategy
-    bytes memory irStrategyCalldata = abi.encodeCall(
-      IAssetInterestRateStrategy.setInterestRateData,
-      (daiAssetId, rateData)
-    );
+    // Only Hub Admin can call function on hub to set interest rates
     vm.expectRevert(
       abi.encodeWithSelector(IAccessManaged.AccessManagedUnauthorized.selector, address(this))
     );
-    hub.configureInterestRateStrategy(daiAssetId, irStrategyCalldata);
+    hub.setInterestRateData(daiAssetId, encodedIrData);
 
-    // Hub Admin can call function on hub to configure the interest rate strategy
+    // Hub Admin can call function on hub to set interest rates
     vm.prank(HUB_ADMIN);
-    hub.configureInterestRateStrategy(daiAssetId, irStrategyCalldata);
+    hub.setInterestRateData(daiAssetId, encodedIrData);
   }
 
   /// @dev Test showcasing ability to change role responsibility for a function selector.
   function test_change_role_responsibility() public {
-    IAssetInterestRateStrategy.InterestRateData memory rateData = IAssetInterestRateStrategy.InterestRateData({
-      optimalUsageRatio: 50_00, // 50.00% in BPS
-      baseVariableBorrowRate: 100_00, // 100.00% in BPS
-      variableRateSlope1: 200_00, // 200.00% in BPS
-      variableRateSlope2: 300_00 // 300.00% in BPS
-    });
-
-    bytes memory irStrategyCalldata = abi.encodeCall(
-      IAssetInterestRateStrategy.setInterestRateData,
-      (daiAssetId, rateData)
+    bytes memory encodedIrData = abi.encode(
+      IAssetInterestRateStrategy.InterestRateData({
+        optimalUsageRatio: 50_00, // 50.00% in BPS
+        baseVariableBorrowRate: 100_00, // 100.00% in BPS
+        variableRateSlope1: 200_00, // 200.00% in BPS
+        variableRateSlope2: 300_00 // 300.00% in BPS
+      })
     );
 
     // Change the role responsible for setting interest rate data on the hub
     bytes4[] memory hubSelectors = new bytes4[](1);
-    hubSelectors[0] = ILiquidityHub.configureInterestRateStrategy.selector;
+    hubSelectors[0] = ILiquidityHub.setInterestRateData.selector;
     vm.prank(ADMIN);
     accessManager.setTargetFunctionRole(address(hub), hubSelectors, Roles.DEFAULT_ADMIN_ROLE);
 
@@ -120,11 +115,11 @@ contract LiquidityHubAccessTest is LiquidityHubBase {
       abi.encodeWithSelector(IAccessManaged.AccessManagedUnauthorized.selector, HUB_ADMIN)
     );
     vm.prank(HUB_ADMIN);
-    hub.configureInterestRateStrategy(daiAssetId, irStrategyCalldata);
+    hub.setInterestRateData(daiAssetId, encodedIrData);
 
     // The new role (DEFAULT_ADMIN_ROLE) should have access
     vm.prank(ADMIN);
-    hub.configureInterestRateStrategy(daiAssetId, irStrategyCalldata);
+    hub.setInterestRateData(daiAssetId, encodedIrData);
 
     // HUB_ADMIN can still access the other hub functions for which it has permissions
     vm.prank(HUB_ADMIN);
@@ -137,19 +132,16 @@ contract LiquidityHubAccessTest is LiquidityHubBase {
 
   /// @dev Test showcasing ability to migrate role responsibility for a function selector.
   function test_migrate_role_responsibility() public {
-    IAssetInterestRateStrategy.InterestRateData memory rateData = IAssetInterestRateStrategy.InterestRateData({
-      optimalUsageRatio: 50_00, // 50.00% in BPS
-      baseVariableBorrowRate: 100_00, // 100.00% in BPS
-      variableRateSlope1: 200_00, // 200.00% in BPS
-      variableRateSlope2: 300_00 // 300.00% in BPS
-    });
-
-    bytes memory irStrategyCalldata = abi.encodeCall(
-      IAssetInterestRateStrategy.setInterestRateData,
-      (daiAssetId, rateData)
+    bytes memory encodedIrData = abi.encode(
+      IAssetInterestRateStrategy.InterestRateData({
+        optimalUsageRatio: 50_00, // 50.00% in BPS
+        baseVariableBorrowRate: 100_00, // 100.00% in BPS
+        variableRateSlope1: 200_00, // 200.00% in BPS
+        variableRateSlope2: 300_00 // 300.00% in BPS
+      })
     );
 
-    // Say addresses Alice, Bob, and Carol all have the HUB_ADMIN role, allowing them to configure the interest rate strategy.
+    // Say addresses Alice, Bob, and Carol all have the HUB_ADMIN role, allowing them to set interest rate data.
     // Grant roles with 0 delay
     vm.startPrank(ADMIN);
     accessManager.grantRole(Roles.HUB_ADMIN_ROLE, alice, 0);
@@ -158,58 +150,58 @@ contract LiquidityHubAccessTest is LiquidityHubBase {
     vm.stopPrank();
 
     vm.prank(alice);
-    hub.configureInterestRateStrategy(daiAssetId, irStrategyCalldata);
+    hub.setInterestRateData(daiAssetId, encodedIrData);
     vm.prank(bob);
-    hub.configureInterestRateStrategy(daiAssetId, irStrategyCalldata);
+    hub.setInterestRateData(daiAssetId, encodedIrData);
     vm.prank(carol);
-    hub.configureInterestRateStrategy(daiAssetId, irStrategyCalldata);
+    hub.setInterestRateData(daiAssetId, encodedIrData);
 
-    // Now, we change the role responsible for configuring the interest rate strategy to CONFIGURE_INTEREST_RATE_STRATEGY role.
-    uint64 CONFIGURE_INTEREST_RATE_STRATEGY_ROLE = type(uint64).max - 11;
+    // Now, we change the role responsible for setting interest rate data to SET_INTEREST_RATE role.
+    uint64 SET_INTEREST_RATE_ROLE = 4;
     bytes4[] memory hubSelectors = new bytes4[](1);
-    hubSelectors[0] = ILiquidityHub.configureInterestRateStrategy.selector;
+    hubSelectors[0] = ILiquidityHub.setInterestRateData.selector;
     vm.prank(ADMIN);
-    accessManager.setTargetFunctionRole(address(hub), hubSelectors, CONFIGURE_INTEREST_RATE_STRATEGY_ROLE);
+    accessManager.setTargetFunctionRole(address(hub), hubSelectors, SET_INTEREST_RATE_ROLE);
 
-    // Alice, Bob, and Carol should no longer have access to configure the interest rate strategy.
+    // Alice, Bob, and Carol should no longer have access to set interest rate data.
     vm.expectRevert(
       abi.encodeWithSelector(IAccessManaged.AccessManagedUnauthorized.selector, alice)
     );
     vm.prank(alice);
-    hub.configureInterestRateStrategy(daiAssetId, irStrategyCalldata);
+    hub.setInterestRateData(daiAssetId, encodedIrData);
     vm.expectRevert(abi.encodeWithSelector(IAccessManaged.AccessManagedUnauthorized.selector, bob));
     vm.prank(bob);
-    hub.configureInterestRateStrategy(daiAssetId, irStrategyCalldata);
+    hub.setInterestRateData(daiAssetId, encodedIrData);
     vm.expectRevert(
       abi.encodeWithSelector(IAccessManaged.AccessManagedUnauthorized.selector, carol)
     );
     vm.prank(carol);
-    hub.configureInterestRateStrategy(daiAssetId, irStrategyCalldata);
+    hub.setInterestRateData(daiAssetId, encodedIrData);
 
-    // Now, we grant CONFIGURE_INTEREST_RATE_STRATEGY role to Alice, Bob, and Carol with 0 delay
+    // Now, we grant SET_INTEREST_RATE role to Alice, Bob, and Carol with 0 delay
     vm.startPrank(ADMIN);
-    accessManager.grantRole(CONFIGURE_INTEREST_RATE_STRATEGY_ROLE, alice, 0);
-    accessManager.grantRole(CONFIGURE_INTEREST_RATE_STRATEGY_ROLE, bob, 0);
-    accessManager.grantRole(CONFIGURE_INTEREST_RATE_STRATEGY_ROLE, carol, 0);
+    accessManager.grantRole(SET_INTEREST_RATE_ROLE, alice, 0);
+    accessManager.grantRole(SET_INTEREST_RATE_ROLE, bob, 0);
+    accessManager.grantRole(SET_INTEREST_RATE_ROLE, carol, 0);
     vm.stopPrank();
 
-    // Alice, Bob, and Carol should now be able to configure the interest rate strategy.
+    // Alice, Bob, and Carol should now be able to set interest rate data.
     vm.prank(alice);
-    hub.configureInterestRateStrategy(daiAssetId, irStrategyCalldata);
+    hub.setInterestRateData(daiAssetId, encodedIrData);
     vm.prank(bob);
-    hub.configureInterestRateStrategy(daiAssetId, irStrategyCalldata);
+    hub.setInterestRateData(daiAssetId, encodedIrData);
     vm.prank(carol);
-    hub.configureInterestRateStrategy(daiAssetId, irStrategyCalldata);
+    hub.setInterestRateData(daiAssetId, encodedIrData);
 
-    // Alice, Bob, and Carol currently have both HUB_ADMIN and CONFIGURE_INTEREST_RATE_STRATEGY roles.
+    // Alice, Bob, and Carol currently have both HUB_ADMIN and SET_INTEREST_RATE roles.
     IAccessManager accessManager = IAccessManager(hub.authority());
     assertTrue(_hasRole(accessManager, Roles.HUB_ADMIN_ROLE, alice));
     assertTrue(_hasRole(accessManager, Roles.HUB_ADMIN_ROLE, bob));
     assertTrue(_hasRole(accessManager, Roles.HUB_ADMIN_ROLE, carol));
 
-    assertTrue(_hasRole(accessManager, CONFIGURE_INTEREST_RATE_STRATEGY_ROLE, alice));
-    assertTrue(_hasRole(accessManager, CONFIGURE_INTEREST_RATE_STRATEGY_ROLE, bob));
-    assertTrue(_hasRole(accessManager, CONFIGURE_INTEREST_RATE_STRATEGY_ROLE, carol));
+    assertTrue(_hasRole(accessManager, SET_INTEREST_RATE_ROLE, alice));
+    assertTrue(_hasRole(accessManager, SET_INTEREST_RATE_ROLE, bob));
+    assertTrue(_hasRole(accessManager, SET_INTEREST_RATE_ROLE, carol));
 
     // We can remove HUB_ADMIN role from Alice, Bob, and Carol.
     vm.startPrank(ADMIN);
@@ -223,13 +215,13 @@ contract LiquidityHubAccessTest is LiquidityHubBase {
     assertFalse(_hasRole(accessManager, Roles.HUB_ADMIN_ROLE, bob));
     assertFalse(_hasRole(accessManager, Roles.HUB_ADMIN_ROLE, carol));
 
-    // Can still call configureInterestRateStrategy since they have CONFIGURE_INTEREST_RATE_STRATEGY role.
+    // Can still call setInterestRateData since they have SET_INTEREST_RATE role.
     vm.prank(alice);
-    hub.configureInterestRateStrategy(daiAssetId, irStrategyCalldata);
+    hub.setInterestRateData(daiAssetId, encodedIrData);
     vm.prank(bob);
-    hub.configureInterestRateStrategy(daiAssetId, irStrategyCalldata);
+    hub.setInterestRateData(daiAssetId, encodedIrData);
     vm.prank(carol);
-    hub.configureInterestRateStrategy(daiAssetId, irStrategyCalldata);
+    hub.setInterestRateData(daiAssetId, encodedIrData);
   }
 
   /// @dev Test showcasing authority contract can be accessed via hub contract.

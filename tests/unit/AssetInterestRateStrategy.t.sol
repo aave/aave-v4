@@ -23,9 +23,10 @@ contract AssetInterestRateStrategyTest is Base {
       variableRateSlope1: 4_00, // 4.00%
       variableRateSlope2: 75_00 // 75.00%
     });
+    encodedRateData = abi.encode(rateData);
 
     vm.prank(address(hub));
-    rateStrategy.setInterestRateData(mockAssetId, rateData);
+    rateStrategy.setInterestRateData(mockAssetId, encodedRateData);
   }
 
   function test_maxBorrowRate() public {
@@ -85,7 +86,7 @@ contract AssetInterestRateStrategyTest is Base {
   function test_setInterestRateData_revertsWith_OnlyLiquidityHub() public {
     vm.expectRevert(IAssetInterestRateStrategy.OnlyLiquidityHub.selector);
     vm.prank(makeAddr('randomCaller'));
-    rateStrategy.setInterestRateData(mockAssetId, rateData);
+    rateStrategy.setInterestRateData(mockAssetId, encodedRateData);
   }
 
   function test_setInterestRateData_revertsWith_InvalidOptimalUsageRatio() public {
@@ -95,9 +96,10 @@ contract AssetInterestRateStrategyTest is Base {
 
     for (uint256 i; i < invalidOptimalUsageRatios.length; i++) {
       rateData.optimalUsageRatio = invalidOptimalUsageRatios[i];
+      encodedRateData = abi.encode(rateData);
       vm.expectRevert(IAssetInterestRateStrategy.InvalidOptimalUsageRatio.selector);
       vm.prank(address(hub));
-      rateStrategy.setInterestRateData(mockAssetId, rateData);
+      rateStrategy.setInterestRateData(mockAssetId, encodedRateData);
     }
   }
 
@@ -106,9 +108,10 @@ contract AssetInterestRateStrategyTest is Base {
       rateData.variableRateSlope2,
       rateData.variableRateSlope1
     );
+    encodedRateData = abi.encode(rateData);
     vm.expectRevert(IAssetInterestRateStrategy.Slope2MustBeGteSlope1.selector);
     vm.prank(address(hub));
-    rateStrategy.setInterestRateData(mockAssetId, rateData);
+    rateStrategy.setInterestRateData(mockAssetId, encodedRateData);
   }
 
   function test_setInterestRateData_revertsWith_InvalidMaxRate() public {
@@ -116,9 +119,10 @@ contract AssetInterestRateStrategyTest is Base {
       uint32(rateStrategy.MAX_BORROW_RATE()) /
       3 +
       1;
+    encodedRateData = abi.encode(rateData);
     vm.expectRevert(IAssetInterestRateStrategy.InvalidMaxRate.selector);
     vm.prank(address(hub));
-    rateStrategy.setInterestRateData(mockAssetId, rateData);
+    rateStrategy.setInterestRateData(mockAssetId, encodedRateData);
   }
 
   function test_setInterestRateData() public {
@@ -128,6 +132,7 @@ contract AssetInterestRateStrategyTest is Base {
       variableRateSlope1: 2_00, // 2.00%
       variableRateSlope2: 30_00 // 30.00%
     });
+    encodedRateData = abi.encode(rateData);
 
     vm.expectEmit(address(rateStrategy));
     emit IAssetInterestRateStrategy.RateDataUpdate(
@@ -139,7 +144,7 @@ contract AssetInterestRateStrategyTest is Base {
     );
 
     vm.prank(address(hub));
-    rateStrategy.setInterestRateData(mockAssetId, rateData);
+    rateStrategy.setInterestRateData(mockAssetId, encodedRateData);
 
     test_getInterestRateData();
     test_getOptimalUsageRatio();
@@ -157,112 +162,97 @@ contract AssetInterestRateStrategyTest is Base {
         mockAssetId2
       )
     );
-    rateStrategy.calculateInterestRate(
-      IBasicInterestRateStrategy.CalculateInterestRateParams({
-        assetId: mockAssetId2,
-        availableLiquidity: 0,
-        liquidityAdded: 0,
-        liquidityTaken: 0,
-        baseDebt: 0,
-        baseDebtAdded: 0,
-        baseDebtTaken: 0,
-        premiumDebt: 0,
-        premiumDebtAdded: 0,
-        premiumDebtTaken: 0
-      })
-    );
+    rateStrategy.calculateInterestRate({
+      assetId: mockAssetId2,
+      availableLiquidity: 0,
+      totalDebt: 0,
+      liquidityAdded: 0,
+      liquidityTaken: 0
+    });
   }
 
   function test_calculateInterestRate_fuzz_revertsWith_ArithmeticUnderflow(
-    uint256
+    uint256 totalDebt,
+    uint256 availableLiquidity,
+    uint256 liquidityAdded,
+    uint256 liquidityTaken
   ) public {
-    uint256 availableLiquidity = vm.randomUint(0, type(uint64).max);
-    uint256 liquidityAdded = vm.randomUint(0, type(uint64).max);
-    uint256 liquidityTaken = vm.randomUint(availableLiquidity + liquidityAdded + 1, type(uint128).max);
-
-    uint256 baseDebt = vm.randomUint(0, type(uint64).max);
-    uint256 baseDebtAdded = vm.randomUint(0, type(uint64).max);
-    uint256 baseDebtTaken = vm.randomUint(0, baseDebt + baseDebtAdded);
+    availableLiquidity = bound(availableLiquidity, 0, type(uint64).max);
+    totalDebt = bound(totalDebt, 1, type(uint64).max);
+    liquidityAdded = bound(liquidityAdded, 0, type(uint64).max);
+    liquidityTaken = bound(
+      liquidityTaken,
+      availableLiquidity + liquidityAdded + 1,
+      type(uint128).max
+    );
 
     vm.expectRevert(stdError.arithmeticError);
-    rateStrategy.calculateInterestRate(
-      IBasicInterestRateStrategy.CalculateInterestRateParams({
-        assetId: mockAssetId,
-        availableLiquidity: availableLiquidity,
-        liquidityAdded: liquidityAdded,
-        liquidityTaken: liquidityTaken,
-        baseDebt: baseDebt,
-        baseDebtAdded: baseDebtAdded,
-        baseDebtTaken: baseDebtTaken,
-        premiumDebt: 0, // not used
-        premiumDebtAdded: 0,
-        premiumDebtTaken: 0
-      })
-    );
+    rateStrategy.calculateInterestRate({
+      assetId: mockAssetId,
+      availableLiquidity: availableLiquidity,
+      totalDebt: totalDebt,
+      liquidityAdded: liquidityAdded,
+      liquidityTaken: liquidityTaken
+    });
+  }
+
+  function test_calculateInterestRate_revertsWith_ArithmeticUnderflow() public {
+    test_calculateInterestRate_fuzz_revertsWith_ArithmeticUnderflow({
+      availableLiquidity: 100e6,
+      totalDebt: 100e6,
+      liquidityAdded: 10e6,
+      liquidityTaken: 120e6
+    });
   }
 
   function test_calculateInterestRate_fuzz_ZeroDebt(
-    uint256
+    uint256 availableLiquidity,
+    uint256 liquidityAdded,
+    uint256 liquidityTaken
   ) public {
-    uint256 availableLiquidity = vm.randomUint(0, type(uint64).max);
-    uint256 liquidityAdded = vm.randomUint(0, type(uint64).max);
-    uint256 liquidityTaken = vm.randomUint(0, availableLiquidity + liquidityAdded);
+    availableLiquidity = bound(availableLiquidity, 0, type(uint128).max);
+    liquidityAdded = bound(liquidityAdded, 0, type(uint128).max);
+    liquidityTaken = bound(liquidityTaken, 0, availableLiquidity + liquidityAdded);
 
-    uint256 baseDebt = vm.randomUint(0, type(uint64).max);
-    uint256 baseDebtAdded = vm.randomUint(0, type(uint64).max);
-    uint256 baseDebtTaken = baseDebt + baseDebtAdded;
-
-    uint256 variableBorrowRate = rateStrategy.calculateInterestRate(
-      IBasicInterestRateStrategy.CalculateInterestRateParams({
-        assetId: mockAssetId,
-        availableLiquidity: availableLiquidity,
-        liquidityAdded: liquidityAdded,
-        liquidityTaken: liquidityTaken,
-        baseDebt: baseDebt,
-        baseDebtAdded: baseDebtAdded,
-        baseDebtTaken: baseDebtTaken,
-        premiumDebt: 0, // not used
-        premiumDebtAdded: 0,
-        premiumDebtTaken: 0
-      })
-    );
+    uint256 variableBorrowRate = rateStrategy.calculateInterestRate({
+      assetId: mockAssetId,
+      availableLiquidity: availableLiquidity,
+      totalDebt: 0,
+      liquidityAdded: liquidityAdded,
+      liquidityTaken: liquidityTaken
+    });
 
     assertEq(variableBorrowRate, rateData.baseVariableBorrowRate.bpsToRay());
   }
 
-  function test_calculateInterestRate_LeftToKinkPoint(uint256 utilizationRatio) public {
+  function test_calculateInterestRate_ZeroDebtZeroLiquidity() public {
+    test_calculateInterestRate_fuzz_ZeroDebt(0, 0, 0);
+  }
+
+  function test_calculateInterestRate_LeftToKinkPoint(uint256 utilizationRatio, uint256) public {
     uint256 utilizationRatioRay = bound(utilizationRatio, 1, rateData.optimalUsageRatio).bpsToRay();
 
     (
       uint256 availableLiquidity,
+      uint256 totalDebt,
       uint256 liquidityAdded,
-      uint256 liquidityTaken,
-      uint256 baseDebt,
-      uint256 baseDebtAdded,
-      uint256 baseDebtTaken
+      uint256 liquidityTaken
     ) = _generateCalculateInterestRateParams(utilizationRatioRay);
 
-    uint256 variableBorrowRate = rateStrategy.calculateInterestRate(
-      IBasicInterestRateStrategy.CalculateInterestRateParams({
-        assetId: mockAssetId,
-        availableLiquidity: availableLiquidity,
-        liquidityAdded: liquidityAdded,
-        liquidityTaken: liquidityTaken,
-        baseDebt: baseDebt,
-        baseDebtAdded: baseDebtAdded,
-        baseDebtTaken: baseDebtTaken,
-        premiumDebt: 0, // not used
-        premiumDebtAdded: 0,
-        premiumDebtTaken: 0
-      })
-    );
+    uint256 variableBorrowRate = rateStrategy.calculateInterestRate({
+      assetId: mockAssetId,
+      availableLiquidity: availableLiquidity,
+      totalDebt: totalDebt,
+      liquidityAdded: liquidityAdded,
+      liquidityTaken: liquidityTaken
+    });
 
     uint256 expectedVariableRate = rateData.baseVariableBorrowRate.bpsToRay() +
       rateData.variableRateSlope1.bpsToRay().rayMulUp(utilizationRatioRay).rayDivUp(
         rateData.optimalUsageRatio.bpsToRay()
       );
 
-    if (baseDebt + baseDebtAdded - baseDebtTaken >= 1e27) {
+    if (totalDebt >= 1e27) {
       assertEq(variableBorrowRate, expectedVariableRate);
     } else {
       assertApproxEqAbs(variableBorrowRate, expectedVariableRate, 0.0001e27);
@@ -270,35 +260,27 @@ contract AssetInterestRateStrategyTest is Base {
   }
 
   function test_calculateInterestRate_AtKinkPoint() public {
-    test_calculateInterestRate_LeftToKinkPoint(rateData.optimalUsageRatio);
+    test_calculateInterestRate_LeftToKinkPoint(100_00, 100e18);
   }
 
-  function test_calculateInterestRate_RightToKinkPoint(uint256 utilizationRatio) public {
-    uint256 utilizationRatioRay = bound(utilizationRatio, rateData.optimalUsageRatio + 1, 100_00).bpsToRay();
+  function test_calculateInterestRate_RightToKinkPoint(uint256 utilizationRatio, uint256) public {
+    uint256 utilizationRatioRay = bound(utilizationRatio, rateData.optimalUsageRatio + 1, 100_00)
+      .bpsToRay();
 
     (
       uint256 availableLiquidity,
+      uint256 totalDebt,
       uint256 liquidityAdded,
-      uint256 liquidityTaken,
-      uint256 baseDebt,
-      uint256 baseDebtAdded,
-      uint256 baseDebtTaken
+      uint256 liquidityTaken
     ) = _generateCalculateInterestRateParams(utilizationRatioRay);
 
-    uint256 variableBorrowRate = rateStrategy.calculateInterestRate(
-      IBasicInterestRateStrategy.CalculateInterestRateParams({
-        assetId: mockAssetId,
-        availableLiquidity: availableLiquidity,
-        liquidityAdded: liquidityAdded,
-        liquidityTaken: liquidityTaken,
-        baseDebt: baseDebt,
-        baseDebtAdded: baseDebtAdded,
-        baseDebtTaken: baseDebtTaken,
-        premiumDebt: 0, // not used
-        premiumDebtAdded: 0,
-        premiumDebtTaken: 0
-      })
-    );
+    uint256 variableBorrowRate = rateStrategy.calculateInterestRate({
+      assetId: mockAssetId,
+      availableLiquidity: availableLiquidity,
+      totalDebt: totalDebt,
+      liquidityAdded: liquidityAdded,
+      liquidityTaken: liquidityTaken
+    });
 
     uint256 expectedVariableRate = rateData.baseVariableBorrowRate.bpsToRay() +
       rateData.variableRateSlope1.bpsToRay() +
@@ -308,7 +290,7 @@ contract AssetInterestRateStrategyTest is Base {
         .rayMulUp(utilizationRatioRay - rateData.optimalUsageRatio.bpsToRay())
         .rayDivUp(WadRayMathExtended.RAY - rateData.optimalUsageRatio.bpsToRay());
 
-    if (baseDebt + baseDebtAdded - baseDebtTaken >= 1e27) {
+    if (totalDebt >= 1e27) {
       assertEq(variableBorrowRate, expectedVariableRate);
     } else {
       assertApproxEqAbs(variableBorrowRate, expectedVariableRate, 0.0001e27);
@@ -316,7 +298,7 @@ contract AssetInterestRateStrategyTest is Base {
   }
 
   function test_calculateInterestRate_AtMaxUtilization() public {
-    test_calculateInterestRate_RightToKinkPoint(100_00);
+    test_calculateInterestRate_RightToKinkPoint(100_00, 100e18);
   }
 
   function _generateCalculateInterestRateParams(
@@ -325,27 +307,23 @@ contract AssetInterestRateStrategyTest is Base {
     internal
     returns (
       uint256 availableLiquidity,
+      uint256 totalDebt,
       uint256 liquidityAdded,
-      uint256 liquidityTaken,
-      uint256 baseDebt,
-      uint256 baseDebtAdded,
-      uint256 baseDebtTaken
+      uint256 liquidityTaken
     )
   {
-    baseDebt = vm.randomUint(0, MAX_SUPPLY_AMOUNT);
-    baseDebtAdded = vm.randomUint((baseDebt == 0) ? 1 : 0, type(uint64).max);
-    baseDebtTaken = vm.randomUint(0, baseDebt + baseDebtAdded - 1);
-    uint256 totalBaseDebt = baseDebt + baseDebtAdded - baseDebtTaken;
+    totalDebt = bound(vm.randomUint(), 1, MAX_SUPPLY_AMOUNT);
 
-    // utilizationRatio = totalBaseDebt / (totalBaseDebt + updatedAvailableLiquidity)
-    // utilizationRatio * totalBaseDebt + utilizationRatio * updatedAvailableLiquidity = totalBaseDebt
-    // updatedAvailableLiquidity = totalBaseDebt * (1 - utilizationRatio) / utilizationRatio
-    uint256 updatedAvailableLiquidity = totalBaseDebt
+    // utilizationRatio = totalDebt / (totalDebt + updatedAvailableLiquidity)
+    // utilizationRatio * totalDebt + utilizationRatio * updatedAvailableLiquidity = totalDebt
+    // updatedAvailableLiquidity = totalDebt * (1 - utilizationRatio) / utilizationRatio
+    uint256 updatedAvailableLiquidity = totalDebt
       .rayMulUp(WadRayMathExtended.RAY - targetUtilizationRatioRay)
       .rayDivUp(targetUtilizationRatioRay);
 
-    availableLiquidity = vm.randomUint(0, updatedAvailableLiquidity);
-    liquidityAdded = vm.randomUint(
+    availableLiquidity = bound(vm.randomUint(), 0, updatedAvailableLiquidity);
+    liquidityAdded = bound(
+      vm.randomUint(),
       updatedAvailableLiquidity - availableLiquidity,
       updatedAvailableLiquidity
     );

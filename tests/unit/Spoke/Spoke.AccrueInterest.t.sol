@@ -677,20 +677,14 @@ contract SpokeAccrueInterestTest is SpokeBase {
     // Bob borrows dai from spoke 1
     if (amounts.daiBorrowAmount > 0) {
       DataTypes.Asset memory asset = hub.getAsset(daiAssetId);
+      uint256 daiBorrowShares = hub.convertToDrawnSharesUp(daiAssetId, amounts.daiBorrowAmount);
       _mockInterestRateRay({
         interestRateRay: rates.daiBaseBorrowRate,
-        params: IBasicInterestRateStrategy.CalculateInterestRateParams({
-          assetId: daiAssetId,
-          availableLiquidity: asset.availableLiquidity,
-          liquidityAdded: 0,
-          liquidityTaken: amounts.daiBorrowAmount,
-          baseDebt: hub.convertToDrawnAssets(daiAssetId, asset.baseDrawnShares),
-          baseDebtAdded: amounts.daiBorrowAmount,
-          baseDebtTaken: 0,
-          premiumDebt: 0, // not used
-          premiumDebtAdded: 0,
-          premiumDebtTaken: 0
-        })
+        assetId: daiAssetId,
+        availableLiquidity: asset.availableLiquidity,
+        totalDebt: hub.convertToDrawnAssets(daiAssetId, asset.baseDrawnShares + daiBorrowShares),
+        liquidityAdded: 0,
+        liquidityTaken: amounts.daiBorrowAmount
       });
       Utils.borrow(spoke1, _daiReserveId(spoke1), bob, amounts.daiBorrowAmount, bob);
     }
@@ -698,20 +692,14 @@ contract SpokeAccrueInterestTest is SpokeBase {
     // Bob borrows weth from spoke 1
     if (amounts.wethBorrowAmount > 0) {
       DataTypes.Asset memory asset = hub.getAsset(wethAssetId);
+      uint256 wethBorrowShares = hub.convertToDrawnSharesUp(wethAssetId, amounts.wethBorrowAmount);
       _mockInterestRateRay({
         interestRateRay: rates.wethBaseBorrowRate,
-        params: IBasicInterestRateStrategy.CalculateInterestRateParams({
-          assetId: wethAssetId,
-          availableLiquidity: asset.availableLiquidity,
-          liquidityAdded: 0,
-          liquidityTaken: amounts.wethBorrowAmount,
-          baseDebt: hub.convertToDrawnAssets(wethAssetId, asset.baseDrawnShares),
-          baseDebtAdded: amounts.wethBorrowAmount,
-          baseDebtTaken: 0,
-          premiumDebt: 0,
-          premiumDebtAdded: 0,
-          premiumDebtTaken: 0
-        })
+        assetId: wethAssetId,
+        availableLiquidity: asset.availableLiquidity,
+        totalDebt: hub.convertToDrawnAssets(wethAssetId, asset.baseDrawnShares + wethBorrowShares),
+        liquidityAdded: 0,
+        liquidityTaken: amounts.wethBorrowAmount
       });
       Utils.borrow(spoke1, _wethReserveId(spoke1), bob, amounts.wethBorrowAmount, bob);
     }
@@ -719,20 +707,14 @@ contract SpokeAccrueInterestTest is SpokeBase {
     // Bob borrows usdx from spoke 1
     if (amounts.usdxBorrowAmount > 0) {
       DataTypes.Asset memory asset = hub.getAsset(usdxAssetId);
+      uint256 usdxBorrowShares = hub.convertToDrawnSharesUp(usdxAssetId, amounts.usdxBorrowAmount);
       _mockInterestRateRay({
         interestRateRay: rates.usdxBaseBorrowRate,
-        params: IBasicInterestRateStrategy.CalculateInterestRateParams({
-          assetId: usdxAssetId,
-          availableLiquidity: asset.availableLiquidity,
-          liquidityAdded: 0,
-          liquidityTaken: amounts.usdxBorrowAmount,
-          baseDebt: hub.convertToDrawnAssets(usdxAssetId, asset.baseDrawnShares),
-          baseDebtAdded: amounts.usdxBorrowAmount,
-          baseDebtTaken: 0,
-          premiumDebt: 0,
-          premiumDebtAdded: 0,
-          premiumDebtTaken: 0
-        })
+        assetId: usdxAssetId,
+        availableLiquidity: asset.availableLiquidity,
+        totalDebt: hub.convertToDrawnAssets(usdxAssetId, asset.baseDrawnShares + usdxBorrowShares),
+        liquidityAdded: 0,
+        liquidityTaken: amounts.usdxBorrowAmount
       });
       Utils.borrow(spoke1, _usdxReserveId(spoke1), bob, amounts.usdxBorrowAmount, bob);
     }
@@ -740,20 +722,14 @@ contract SpokeAccrueInterestTest is SpokeBase {
     // Bob borrows wbtc from spoke 1
     if (amounts.wbtcBorrowAmount > 0) {
       DataTypes.Asset memory asset = hub.getAsset(wbtcAssetId);
+      uint256 wbtcBorrowShares = hub.convertToDrawnSharesUp(wbtcAssetId, amounts.wbtcBorrowAmount);
       _mockInterestRateRay({
         interestRateRay: rates.wbtcBaseBorrowRate,
-        params: IBasicInterestRateStrategy.CalculateInterestRateParams({
-          assetId: wbtcAssetId,
-          availableLiquidity: asset.availableLiquidity,
-          liquidityAdded: 0,
-          liquidityTaken: amounts.wbtcBorrowAmount,
-          baseDebt: hub.convertToDrawnAssets(wbtcAssetId, asset.baseDrawnShares),
-          baseDebtAdded: amounts.wbtcBorrowAmount,
-          baseDebtTaken: 0,
-          premiumDebt: 0,
-          premiumDebtAdded: 0,
-          premiumDebtTaken: 0
-        })
+        assetId: wbtcAssetId,
+        availableLiquidity: asset.availableLiquidity,
+        totalDebt: hub.convertToDrawnAssets(wbtcAssetId, asset.baseDrawnShares + wbtcBorrowShares),
+        liquidityAdded: 0,
+        liquidityTaken: amounts.wbtcBorrowAmount
       });
       Utils.borrow(spoke1, _wbtcReserveId(spoke1), bob, amounts.wbtcBorrowAmount, bob);
     }

@@ -37,8 +37,9 @@ contract AssetInterestRateStrategy is IAssetInterestRateStrategy {
   }
 
   /// @inheritdoc IAssetInterestRateStrategy
-  function setInterestRateData(uint256 assetId, InterestRateData calldata rateData) external {
+  function setInterestRateData(uint256 assetId, bytes calldata data) external {
     require(LIQUIDITY_HUB == msg.sender, OnlyLiquidityHub());
+    InterestRateData memory rateData = abi.decode(data, (InterestRateData));
     require(
       MIN_OPTIMAL_RATIO <= rateData.optimalUsageRatio &&
         rateData.optimalUsageRatio <= MAX_OPTIMAL_RATIO,
@@ -97,20 +98,22 @@ contract AssetInterestRateStrategy is IAssetInterestRateStrategy {
 
   /// @inheritdoc IBasicInterestRateStrategy
   function calculateInterestRate(
-    CalculateInterestRateParams calldata params
+    uint256 assetId,
+    uint256 availableLiquidity,
+    uint256 totalDebt,
+    uint256 liquidityAdded,
+    uint256 liquidityTaken
   ) external view virtual override returns (uint256) {
-    InterestRateData memory rateData = _interestRateData[params.assetId];
-    require(rateData.optimalUsageRatio != 0, InterestRateDataNotSet(params.assetId));
+    InterestRateData memory rateData = _interestRateData[assetId];
+    require(rateData.optimalUsageRatio != 0, InterestRateDataNotSet(assetId));
 
     uint256 currentVariableBorrowRateRay = rateData.baseVariableBorrowRate.bpsToRay();
-
-    uint256 totalBaseDebt = params.baseDebt + params.baseDebtAdded - params.baseDebtTaken;
-    if (totalBaseDebt == 0) {
+    if (totalDebt == 0) {
       return currentVariableBorrowRateRay;
     }
 
-    uint256 usageRatioRay = totalBaseDebt.rayDivUp(
-      params.availableLiquidity + params.liquidityAdded - params.liquidityTaken + totalBaseDebt
+    uint256 usageRatioRay = totalDebt.rayDivUp(
+      availableLiquidity + liquidityAdded - liquidityTaken + totalDebt
     );
     uint256 optimalUsageRatioRay = rateData.optimalUsageRatio.bpsToRay();
 

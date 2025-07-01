@@ -30,18 +30,11 @@ contract LiquidityHubDrawTest is LiquidityHubBase {
       abi.encodeCall(
         IBasicInterestRateStrategy.calculateInterestRate,
         (
-          IBasicInterestRateStrategy.CalculateInterestRateParams({
-            assetId: assetId,
-            availableLiquidity: assetBefore.availableLiquidity,
-            liquidityAdded: 0,
-            liquidityTaken: amount,
-            baseDebt: hub.convertToDrawnAssets(assetId, assetBefore.baseDrawnShares),
-            baseDebtAdded: amount,
-            baseDebtTaken: 0,
-            premiumDebt: 0, // not used
-            premiumDebtAdded: 0,
-            premiumDebtTaken: 0
-          })
+          assetId,
+          assetBefore.availableLiquidity,
+          hub.convertToDrawnAssets(assetId, assetBefore.baseDrawnShares + shares),
+          0,
+          amount
         )
       )
     );
@@ -106,18 +99,11 @@ contract LiquidityHubDrawTest is LiquidityHubBase {
       abi.encodeCall(
         IBasicInterestRateStrategy.calculateInterestRate,
         (
-          IBasicInterestRateStrategy.CalculateInterestRateParams({
-            assetId: assetId,
-            availableLiquidity: assetBefore.availableLiquidity,
-            liquidityAdded: 0,
-            liquidityTaken: amount,
-            baseDebt: hub.convertToDrawnAssets(assetId, assetBefore.baseDrawnShares),
-            baseDebtAdded: amount,
-            baseDebtTaken: 0,
-            premiumDebt: 0, // not used
-            premiumDebtAdded: 0,
-            premiumDebtTaken: 0
-          })
+          assetId,
+          assetBefore.availableLiquidity,
+          hub.convertToDrawnAssets(assetId, assetBefore.baseDrawnShares + shares),
+          0,
+          amount
         )
       )
     );

@@ -72,7 +72,6 @@ interface ILiquidityHub is IAccessManaged {
   error AssetPaused();
   error AssetFrozen();
   error InvalidIrStrategy();
-  error FailedIrStrategyConfiguration();
   error InvalidAssetDecimals();
   error InvalidLiquidityFee();
   error InvalidAssetAddress();
@@ -93,14 +92,11 @@ interface ILiquidityHub is IAccessManaged {
   ) external;
 
   /**
-   * @notice Configurres the interest rate strategy for a specified asset.
+   * @notice Updates the interest rate strategy for a specified asset.
    * @param assetId The identifier of the asset.
-   * @param irStrategyCalldata The calldata to call the interest rate strategy with.
+   * @param data The interest rate data to apply to the given asset, all in bps, encoded in bytes.
    */
-  function configureInterestRateStrategy(
-    uint256 assetId,
-    bytes calldata irStrategyCalldata
-  ) external;
+  function setInterestRateData(uint256 assetId, bytes calldata data) external;
 
   /**
    * @notice Add/Supply asset on behalf of user.

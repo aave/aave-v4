@@ -5,7 +5,7 @@ import {SafeERC20} from 'src/dependencies/openzeppelin/SafeERC20.sol';
 import {IERC20} from 'src/dependencies/openzeppelin/IERC20.sol';
 import {AccessManaged} from 'src/dependencies/openzeppelin/AccessManaged.sol';
 import {ILiquidityHub} from 'src/interfaces/ILiquidityHub.sol';
-import {IBasicInterestRateStrategy} from 'src/interfaces/IBasicInterestRateStrategy.sol';
+import {IAssetInterestRateStrategy} from 'src/interfaces/IAssetInterestRateStrategy.sol';
 import {DataTypes} from 'src/libraries/types/DataTypes.sol';
 import {AssetLogic} from 'src/libraries/logic/AssetLogic.sol';
 import {WadRayMathExtended} from 'src/libraries/math/WadRayMathExtended.sol';
@@ -92,20 +92,7 @@ contract LiquidityHub is ILiquidityHub, AccessManaged {
     asset.accrue(assetId, _spokes[assetId][asset.config.feeReceiver]);
 
     asset.config = config;
-    asset.updateBorrowRate(
-      IBasicInterestRateStrategy.CalculateInterestRateParams({
-        assetId: assetId,
-        availableLiquidity: asset.availableLiquidity,
-        liquidityAdded: 0,
-        liquidityTaken: 0,
-        baseDebt: asset.baseDebt(),
-        baseDebtAdded: 0,
-        baseDebtTaken: 0,
-        premiumDebt: 0, // not used
-        premiumDebtAdded: 0,
-        premiumDebtTaken: 0
-      })
-    );
+    asset.updateBorrowRate({assetId: assetId, liquidityAdded: 0, liquidityTaken: 0});
 
     emit AssetConfigUpdated(assetId, config);
   }
@@ -144,14 +131,10 @@ contract LiquidityHub is ILiquidityHub, AccessManaged {
   }
 
   /// @inheritdoc ILiquidityHub
-  function configureInterestRateStrategy(
-    uint256 assetId,
-    bytes calldata irStrategyCalldata
-  ) external restricted {
+  function setInterestRateData(uint256 assetId, bytes calldata data) external restricted {
     DataTypes.Asset storage asset = _assets[assetId];
     asset.accrue(assetId, _spokes[assetId][asset.config.feeReceiver]);
-    (bool success, ) = asset.config.irStrategy.call(irStrategyCalldata);
-    require(success, FailedIrStrategyConfiguration());
+    IAssetInterestRateStrategy(asset.config.irStrategy).setInterestRateData(assetId, data);
   }
 
   // /////
@@ -166,28 +149,14 @@ contract LiquidityHub is ILiquidityHub, AccessManaged {
     asset.accrue(assetId, _spokes[assetId][asset.config.feeReceiver]);
     _validateSupply(asset, spoke, amount, from);
 
+    // todo: Mitigate inflation attack
     uint256 suppliedShares = asset.toSuppliedSharesDown(amount);
     require(suppliedShares != 0, InvalidSharesAmount());
-
-    asset.updateBorrowRate(
-      IBasicInterestRateStrategy.CalculateInterestRateParams({
-        assetId: assetId,
-        availableLiquidity: asset.availableLiquidity,
-        liquidityAdded: amount,
-        liquidityTaken: 0,
-        baseDebt: asset.baseDebt(),
-        baseDebtAdded: 0,
-        baseDebtTaken: 0,
-        premiumDebt: 0, // not used
-        premiumDebtAdded: 0,
-        premiumDebtTaken: 0
-      })
-    );
-
-    // todo: Mitigate inflation attack
-    asset.availableLiquidity += amount;
     asset.suppliedShares += suppliedShares;
     spoke.suppliedShares += suppliedShares;
+
+    asset.updateBorrowRate({assetId: assetId, liquidityAdded: amount, liquidityTaken: 0});
+    asset.availableLiquidity += amount;
 
     // TODO: fee-on-transfer
     IERC20(asset.underlying).safeTransferFrom(from, address(this), amount);
@@ -206,25 +175,11 @@ contract LiquidityHub is ILiquidityHub, AccessManaged {
     _validateWithdraw(asset, spoke, amount);
 
     uint256 withdrawnShares = asset.toSuppliedSharesUp(amount); // non zero since we round up
-
-    asset.updateBorrowRate(
-      IBasicInterestRateStrategy.CalculateInterestRateParams({
-        assetId: assetId,
-        availableLiquidity: asset.availableLiquidity,
-        liquidityAdded: 0,
-        liquidityTaken: amount,
-        baseDebt: asset.baseDebt(),
-        baseDebtAdded: 0,
-        baseDebtTaken: 0,
-        premiumDebt: 0, // not used
-        premiumDebtAdded: 0,
-        premiumDebtTaken: 0
-      })
-    );
-
-    asset.availableLiquidity -= amount;
     asset.suppliedShares -= withdrawnShares;
     spoke.suppliedShares -= withdrawnShares;
+
+    asset.updateBorrowRate({assetId: assetId, liquidityAdded: 0, liquidityTaken: amount});
+    asset.availableLiquidity -= amount;
 
     IERC20(asset.underlying).safeTransfer(to, amount);
 
@@ -242,27 +197,11 @@ contract LiquidityHub is ILiquidityHub, AccessManaged {
     _validateDraw(asset, spoke, amount, spoke.config.drawCap);
 
     uint256 drawnShares = asset.toDrawnSharesUp(amount); // non zero since we round up
-
-    /// @dev Debt calculation based on these parameters can deviate by 1 wei from the actual debt
-    /// after this operation due to conversion precision loss between drawn shares and assets
-    asset.updateBorrowRate(
-      IBasicInterestRateStrategy.CalculateInterestRateParams({
-        assetId: assetId,
-        availableLiquidity: asset.availableLiquidity,
-        liquidityAdded: 0,
-        liquidityTaken: amount,
-        baseDebt: asset.baseDebt(),
-        baseDebtAdded: amount,
-        baseDebtTaken: 0,
-        premiumDebt: 0, // not used
-        premiumDebtAdded: 0,
-        premiumDebtTaken: 0
-      })
-    );
-
-    asset.availableLiquidity -= amount;
     asset.baseDrawnShares += drawnShares;
     spoke.baseDrawnShares += drawnShares;
+
+    asset.updateBorrowRate({assetId: assetId, liquidityAdded: 0, liquidityTaken: amount});
+    asset.availableLiquidity -= amount;
 
     IERC20(asset.underlying).safeTransfer(to, amount);
 
@@ -279,35 +218,26 @@ contract LiquidityHub is ILiquidityHub, AccessManaged {
     address from
   ) external returns (uint256) {
     // global & spoke premiumDebt (ghost, offset, realized) is *expected* to be updated on the `refreshPremiumDebt` callback
+
     DataTypes.Asset storage asset = _assets[assetId];
     DataTypes.SpokeData storage spoke = _spokes[assetId][msg.sender];
 
     asset.accrue(assetId, _spokes[assetId][asset.config.feeReceiver]);
+
     _validateRestore(asset, spoke, baseAmount, premiumAmount);
 
-    uint256 totalRestoredAmount = baseAmount + premiumAmount;
     uint256 baseDrawnSharesRestored = asset.toDrawnSharesDown(baseAmount);
-
-    /// @dev Debt calculation based on these parameters can deviate by 1 wei from the actual debt
-    /// after this operation due to conversion precision loss between drawn shares and assets
-    asset.updateBorrowRate(
-      IBasicInterestRateStrategy.CalculateInterestRateParams({
-        assetId: assetId,
-        availableLiquidity: asset.availableLiquidity,
-        liquidityAdded: totalRestoredAmount,
-        liquidityTaken: 0,
-        baseDebt: asset.baseDebt(),
-        baseDebtAdded: 0,
-        baseDebtTaken: baseAmount,
-        premiumDebt: 0, // not used
-        premiumDebtAdded: 0,
-        premiumDebtTaken: 0
-      })
-    );
-
-    asset.availableLiquidity += totalRestoredAmount;
     asset.baseDrawnShares -= baseDrawnSharesRestored;
     spoke.baseDrawnShares -= baseDrawnSharesRestored;
+
+    uint256 totalRestoredAmount = baseAmount + premiumAmount;
+
+    asset.updateBorrowRate({
+      assetId: assetId,
+      liquidityAdded: totalRestoredAmount,
+      liquidityTaken: 0
+    }); // both can be zero
+    asset.availableLiquidity += totalRestoredAmount;
 
     IERC20(asset.underlying).safeTransferFrom(from, address(this), totalRestoredAmount);
 
