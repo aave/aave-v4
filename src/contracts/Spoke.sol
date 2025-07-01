@@ -1196,7 +1196,7 @@ contract Spoke is ISpoke, Multicall, AccessManaged {
 
       vars.totalWithdrawnShares += vars.withdrawnShares;
       vars.totalCollateralToLiquidate += vars.collateralToLiquidate;
-      vars.totalliquidationFeeShares += vars.liquidationFeeShares;
+      vars.totalLiquidationFeeShares += vars.liquidationFeeShares;
       vars.totalDebtToLiquidate += vars.baseDebtToLiquidate + vars.premiumDebtToLiquidate;
 
       unchecked {
@@ -1204,8 +1204,8 @@ contract Spoke is ISpoke, Multicall, AccessManaged {
       }
     }
 
-    if (vars.totalliquidationFeeShares > 0) {
-      collateralReserveHub.payFee(vars.collateralAssetId, vars.totalliquidationFeeShares);
+    if (vars.totalLiquidationFeeShares > 0) {
+      collateralReserveHub.payFee(vars.collateralAssetId, vars.totalLiquidationFeeShares);
     }
 
     // TODO: rm when dupe reserve accounting is rm

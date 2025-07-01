@@ -167,7 +167,7 @@ library DataTypes {
     uint256 totalRestoredShares;
     uint256 totalWithdrawnShares;
     uint256 totalCollateralToLiquidate;
-    uint256 totalliquidationFeeShares;
+    uint256 totalLiquidationFeeShares;
     int256 totalUserDebtPremiumDrawnSharesDelta;
     int256 totalUserDebtPremiumOffsetDelta;
     int256 totalUserCollateralPremiumDrawnSharesDelta;
