@@ -27,7 +27,6 @@ interface IAaveOracle is IPriceOracle {
    * @param reserveId The id of the reserve
    */
   error InvalidSourceDecimals(uint256 reserveId);
-
   /**
    * @notice Thrown when the price feed source is invalid (zero address)
    * @param reserveId The id of the reserve

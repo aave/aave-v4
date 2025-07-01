@@ -8,6 +8,12 @@ import {ILiquidityHub} from 'src/interfaces/ILiquidityHub.sol';
 import {IConfigurator} from 'src/interfaces/IConfigurator.sol';
 import {IAssetInterestRateStrategy} from 'src/interfaces/IAssetInterestRateStrategy.sol';
 
+/**
+ * @title Configurator contract
+ * @author Aave Labs
+ * @notice Configurator contract for the Aave protocol
+ * @dev Must be granted permission by the Hub and Spoke
+ */
 contract Configurator is Ownable, IConfigurator {
   /**
    * @dev Constructor

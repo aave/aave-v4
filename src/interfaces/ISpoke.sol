@@ -12,7 +12,6 @@ import {DataTypes, ILiquidityHub} from 'src/libraries/types/DataTypes.sol';
  * @notice Basic interface for Spoke
  */
 interface ISpoke is IMulticall, IAccessManaged {
-  event OracleUpdated(address indexed oracle);
   event ReserveAdded(uint256 indexed reserveId, uint256 indexed assetId);
   event ReserveConfigUpdated(uint256 indexed reserveId, DataTypes.ReserveConfig config);
   event LiquidityPremiumUpdated(uint256 indexed reserveId, uint256 liquidityPremium);
@@ -46,7 +45,7 @@ interface ISpoke is IMulticall, IAccessManaged {
     uint256 realizedPremiumAdded,
     uint256 realizedPremiumTaken
   );
-  event OracleUpdated(uint256 indexed reserveId, address indexed oracle);
+  event OracleUpdated(address indexed oracle);
   event LiquidationConfigUpdated(DataTypes.LiquidationConfig config);
   event UserRiskPremiumUpdate(address indexed user, uint256 riskPremium);
 

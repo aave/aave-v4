@@ -12,7 +12,7 @@ interface IPriceOracle {
    * @notice Returns the number of decimals used to return prices
    * @return The number of decimals
    */
-  function DECIMALS() external view returns (uint256);
+  function DECIMALS() external view returns (uint8);
 
   /**
    * @notice Returns the description of the oracle

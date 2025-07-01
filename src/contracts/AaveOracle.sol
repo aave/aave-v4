@@ -3,13 +3,22 @@ pragma solidity ^0.8.0;
 
 import {AggregatorV3Interface} from 'src/dependencies/chainlink/AggregatorV3Interface.sol';
 import {AccessManaged} from 'src/dependencies/openzeppelin/AccessManaged.sol';
-import {IAaveOracle} from 'src/interfaces/IAaveOracle.sol';
+import {IAaveOracle, IPriceOracle} from 'src/interfaces/IAaveOracle.sol';
 
+/**
+ * @title AaveOracle contract
+ * @author Aave Labs
+ * @notice Oracle contract for the Aave protocol
+ * @dev Oracles are spoke-specific: one oracle CAN'T be used across different spoke
+ *   due to the usage of reserve id as index of the _reserveSource
+ */
 contract AaveOracle is IAaveOracle, AccessManaged {
-  uint256 public immutable override DECIMALS;
+  /// @inheritdoc IPriceOracle
+  uint8 public immutable override DECIMALS;
+  /// @inheritdoc IPriceOracle
   string public override DESCRIPTION;
 
-  mapping(uint256 reserveId => AggregatorV3Interface source) public reserveSource;
+  mapping(uint256 reserveId => AggregatorV3Interface source) internal _reserveSource;
 
   /**
    * @dev Constructor.
@@ -20,7 +29,7 @@ contract AaveOracle is IAaveOracle, AccessManaged {
    */
   constructor(
     address authority,
-    uint256 decimals,
+    uint8 decimals,
     string memory description
   ) AccessManaged(authority) {
     DECIMALS = decimals;
@@ -28,18 +37,21 @@ contract AaveOracle is IAaveOracle, AccessManaged {
     emit AaveOracleCreated(decimals, description);
   }
 
+  /// @inheritdoc IAaveOracle
   function setReserveSource(uint256 reserveId, address source) external override restricted {
     AggregatorV3Interface targetSource = AggregatorV3Interface(source);
     require(targetSource.decimals() == DECIMALS, InvalidSourceDecimals(reserveId));
-    reserveSource[reserveId] = targetSource;
+    _reserveSource[reserveId] = targetSource;
     _getSourcePrice(reserveId); // check if the source is valid
     emit ReserveSourceUpdated(reserveId, source);
   }
 
+  /// @inheritdoc IPriceOracle
   function getReservePrice(uint256 reserveId) external view override returns (uint256) {
     return _getSourcePrice(reserveId);
   }
 
+  /// @inheritdoc IAaveOracle
   function getReservesPrices(
     uint256[] calldata reserveIds
   ) external view override returns (uint256[] memory) {
@@ -50,12 +62,13 @@ contract AaveOracle is IAaveOracle, AccessManaged {
     return prices;
   }
 
+  /// @inheritdoc IAaveOracle
   function getReserveSource(uint256 reserveId) external view override returns (address) {
-    return address(reserveSource[reserveId]);
+    return address(_reserveSource[reserveId]);
   }
 
   function _getSourcePrice(uint256 reserveId) internal view returns (uint256) {
-    AggregatorV3Interface source = reserveSource[reserveId];
+    AggregatorV3Interface source = _reserveSource[reserveId];
     if (address(source) == address(0)) {
       revert InvalidSource(reserveId);
     }

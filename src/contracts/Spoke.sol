@@ -54,6 +54,8 @@ contract Spoke is ISpoke, Multicall, AccessManaged {
     require(oracleAddress != address(0), InvalidOracleAddress());
 
     oracle = IPriceOracle(oracleAddress);
+    emit OracleUpdated(oracleAddress);
+
     // todo move to `initialize` when adding upgradeability
     _liquidationConfig.closeFactor = HEALTH_FACTOR_LIQUIDATION_THRESHOLD;
   }

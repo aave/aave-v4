@@ -7,7 +7,6 @@ import {DataTypes} from 'src/libraries/types/DataTypes.sol';
  * @title IConfigurator
  * @author Aave Labs
  * @notice Interface for the Configurator
- * @dev Must be granted permission by the Hub and Spoke
  */
 interface IConfigurator {
   /**
