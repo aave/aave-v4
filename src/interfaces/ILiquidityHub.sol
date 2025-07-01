@@ -191,9 +191,8 @@ interface ILiquidityHub is IAccessManaged {
    * @dev Only callable by spokes.
    * @param assetId The identifier of the asset.
    * @param shares The amount of shares to pay to feeReceiver.
-   * @return The amount of shares paid to feeReceiver.
    */
-  function payFee(uint256 assetId, uint256 shares) external returns (uint256);
+  function payFee(uint256 assetId, uint256 shares) external;
 
   function convertToDrawnAssets(uint256 assetId, uint256 shares) external view returns (uint256);
 

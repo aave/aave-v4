@@ -278,7 +278,7 @@ contract LiquidityHub is ILiquidityHub, AccessManaged {
   }
 
   /// @inheritdoc ILiquidityHub
-  function payFee(uint256 assetId, uint256 feeShares) external returns (uint256) {
+  function payFee(uint256 assetId, uint256 feeShares) external {
     DataTypes.SpokeData storage spoke = _spokes[assetId][msg.sender];
     _validatePayFee(spoke, feeShares);
 
@@ -297,8 +297,6 @@ contract LiquidityHub is ILiquidityHub, AccessManaged {
 
     emit Remove(assetId, msg.sender, feeShares, feeAmount);
     emit AccrueFees(assetId, feeShares);
-
-    return feeShares;
   }
 
   function _refresh(
