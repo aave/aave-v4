@@ -1023,7 +1023,7 @@ contract Spoke is ISpoke, Multicall, AccessManaged {
     positionStatus.setBorrowing(reserve.reserveId, false);
   }
 
-  function _reportDeficit(address user) internal {
+  function _reportDeficits(address user) internal {
     DataTypes.PositionStatus storage positionStatus = _positionStatus[user];
     uint256 reservesLength = reserveCount;
     uint256 reserveId;
@@ -1185,7 +1185,7 @@ contract Spoke is ISpoke, Multicall, AccessManaged {
       vars.totalRestoredShares += vars.restoredShares;
 
       if (vars.hasDeficit) {
-        _reportDeficit(user);
+        _reportDeficits(user);
       } else {
         // new user rp only needs to be calculated if no bad debt remains, otherwise it is 0 given no collateral remains
         (vars.newUserRiskPremium, , , , ) = _calculateUserAccountData(user);

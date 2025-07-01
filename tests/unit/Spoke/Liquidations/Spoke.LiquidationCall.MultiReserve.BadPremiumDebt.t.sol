@@ -421,6 +421,9 @@ contract LiquidationCallMultiReserveBadPremiumDebtTest is SpokeLiquidationBase {
           expectedShares,
           expectedDeficit
         );
+
+        vm.expectEmit(address(hub));
+        emit ILiquidityHub.Restore(assetId, address(state.spoke), expectedShares, expectedDeficit);
       }
     }
     vm.expectEmit(address(state.spoke));

@@ -441,6 +441,10 @@ contract LiquidationCallBadDebtTest is SpokeLiquidationBase {
       expectedShares,
       expectedDeficit
     );
+
+    vm.expectEmit(address(hub));
+    emit ILiquidityHub.Restore(debtAssetId, address(state.spoke), expectedShares, expectedDeficit);
+
     vm.expectEmit(address(state.spoke));
     emit ISpoke.LiquidationCall(
       state.collateralReserves[state.collateralReserveIndex].underlying,

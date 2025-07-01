@@ -261,6 +261,7 @@ contract LiquidityHub is ILiquidityHub, AccessManaged {
     asset.accrue(assetId, _spokes[assetId][asset.config.feeReceiver]);
 
     _validateReportDeficit(asset, spoke, baseAmount, premiumAmount);
+    // TODO: update borrow rate
 
     uint256 totalDeficitAmount = baseAmount + premiumAmount;
     uint256 baseDrawnShares = asset.toDrawnSharesDown(baseAmount);
