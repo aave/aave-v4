@@ -1010,6 +1010,18 @@ abstract contract Base is Test {
     liquidityHub.updateAssetConfig(assetId, assetConfig);
   }
 
+  function updateAssetFeeReceiver(
+    ILiquidityHub liquidityHub,
+    uint256 assetId,
+    address newFeeReceiver
+  ) internal {
+    DataTypes.AssetConfig memory assetConfig = liquidityHub.getAsset(assetId).config;
+    assetConfig.feeReceiver = newFeeReceiver;
+
+    vm.prank(HUB_ADMIN);
+    liquidityHub.updateAssetConfig(assetId, assetConfig);
+  }
+
   function updateReserveFrozenFlag(ISpoke spoke, uint256 reserveId, bool newFrozenFlag) internal {
     DataTypes.ReserveConfig memory config = spoke.getReserve(reserveId).config;
     config.frozen = newFrozenFlag;

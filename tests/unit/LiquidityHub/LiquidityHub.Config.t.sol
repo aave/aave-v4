@@ -290,6 +290,42 @@ contract LiquidityHubConfigTest is LiquidityHubBase {
     assertEq(hub.getSpokeSuppliedShares(assetId, newFeeReceiver), newFees);
   }
 
+  /// Updates the fee receiver to an existing spoke of the hub, so ends up with existing supplied shares plus accrued fees
+  function test_updateAssetConfig_fuzz_UseExistingSpokeAsFeeReceiver(uint256 assetId) public {
+    assetId = bound(assetId, 0, hub.getAssetCount() - 1);
+
+    address oldFeeReceiver = _getFeeReceiver(assetId);
+    address newFeeReceiver = address(spoke1);
+
+    uint256 amount = 1000e18;
+    _addLiquidity(assetId, amount);
+    _drawLiquidity(assetId, amount, true);
+
+    uint256 oldReceiverFees = hub.getSpokeSuppliedShares(assetId, oldFeeReceiver);
+    assertTrue(oldReceiverFees > 0);
+
+    // spoke1 adds some assets
+    Utils.add({
+      hub: hub,
+      assetId: assetId,
+      spoke: address(spoke2),
+      amount: amount,
+      user: bob,
+      to: address(spoke2)
+    });
+    uint256 newReceiverFees = hub.getSpokeSuppliedShares(assetId, newFeeReceiver);
+
+    updateAssetFeeReceiver(hub, assetId, newFeeReceiver);
+
+    skip(365 days);
+
+    // new fee receiver keeps the existing supplied shares and earns more via fees accrual
+    assertTrue(hub.getSpokeSuppliedShares(assetId, newFeeReceiver) > newReceiverFees);
+
+    // old fee receiver keeps the accrued fees
+    assertEq(hub.getSpokeSuppliedShares(assetId, oldFeeReceiver), oldReceiverFees);
+  }
+
   /// Triggers accrual when liquidity fee update, based on old liquidity fee
   function test_updateAssetConfig_fuzz_LiquidityFee(uint256 assetId, uint256 liquidityFee) public {
     assetId = bound(assetId, 0, hub.getAssetCount() - 1);
