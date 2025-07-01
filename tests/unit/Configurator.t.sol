@@ -348,11 +348,13 @@ contract ConfiguratorTest is LiquidityHubBase {
 
   function test_updateFeeReceiver_fuzz(uint256 assetId, address feeReceiver) public {
     assetId = bound(assetId, 0, hub.getAssetCount() - 1);
-    vm.assume(feeReceiver != address(0));
 
-    DataTypes.AssetConfig memory oldConfig = hub.getAssetConfig(assetId);
-    if (feeReceiver != oldConfig.feeReceiver) {
-      if (oldConfig.feeReceiver != address(0)) {
+    if (feeReceiver == address(0)) {
+      vm.expectRevert(ILiquidityHub.InvalidSpoke.selector);
+    } else {
+      DataTypes.AssetConfig memory oldConfig = hub.getAssetConfig(assetId);
+
+      if (feeReceiver != oldConfig.feeReceiver) {
         vm.expectCall(
           address(hub),
           abi.encodeCall(
@@ -364,9 +366,7 @@ contract ConfiguratorTest is LiquidityHubBase {
             )
           )
         );
-      }
 
-      if (feeReceiver != address(0)) {
         if (hub.getSpoke(assetId, feeReceiver).lastUpdateTimestamp == 0) {
           vm.expectCall(
             address(hub),
@@ -401,21 +401,21 @@ contract ConfiguratorTest is LiquidityHubBase {
           );
         }
       }
+
+      // same struct, renaming to expectedConfig
+      DataTypes.AssetConfig memory expectedConfig = oldConfig;
+      expectedConfig.feeReceiver = feeReceiver;
+
+      vm.expectCall(
+        address(hub),
+        abi.encodeCall(ILiquidityHub.updateAssetConfig, (assetId, expectedConfig))
+      );
+
+      vm.prank(CONFIGURATOR_ADMIN);
+      configurator.updateFeeReceiver(address(hub), assetId, feeReceiver);
+
+      assertEq(hub.getAssetConfig(assetId), expectedConfig);
     }
-
-    // same struct, renaming to expectedConfig
-    DataTypes.AssetConfig memory expectedConfig = oldConfig;
-    expectedConfig.feeReceiver = feeReceiver;
-
-    vm.expectCall(
-      address(hub),
-      abi.encodeCall(ILiquidityHub.updateAssetConfig, (assetId, expectedConfig))
-    );
-
-    vm.prank(CONFIGURATOR_ADMIN);
-    configurator.updateFeeReceiver(address(hub), assetId, feeReceiver);
-
-    assertEq(hub.getAssetConfig(assetId), expectedConfig);
   }
 
   function test_updateFeeReceiver_Scenario() public {
