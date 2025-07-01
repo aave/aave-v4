@@ -51,14 +51,12 @@ contract LiquidityHubHandler is Test {
     vm.prank(address(hub));
     irStrategy.setInterestRateData(
       0,
-      abi.encode(
-        IAssetInterestRateStrategy.InterestRateData({
-          optimalUsageRatio: 90_00, // 90.00%
-          baseVariableBorrowRate: 5_00, // 5.00%
-          variableRateSlope1: 5_00, // 5.00%
-          variableRateSlope2: 5_00 // 5.00%
-        })
-      )
+      IAssetInterestRateStrategy.InterestRateData({
+        optimalUsageRatio: 90_00, // 90.00%
+        baseVariableBorrowRate: 5_00, // 5.00%
+        variableRateSlope1: 5_00, // 5.00%
+        variableRateSlope2: 5_00 // 5.00%
+      })
     );
     vm.startPrank(hubAdmin);
     hub.updateAssetConfig(

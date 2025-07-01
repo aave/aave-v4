@@ -73,9 +73,9 @@ interface IAssetInterestRateStrategy is IBasicInterestRateStrategy {
   /**
    * @notice Sets interest rate data for an Aave rate strategy
    * @param assetId The id of the asset to update
-   * @param data The interest rate data to apply to the given asset, all in bps, encoded in bytes
+   * @param rateData The interest rate data to apply to the given asset, all in bps
    */
-  function setInterestRateData(uint256 assetId, bytes calldata data) external;
+  function setInterestRateData(uint256 assetId, InterestRateData calldata rateData) external;
 
   /**
    * @notice Returns the maximum value achievable for variable borrow rate

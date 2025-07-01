@@ -218,7 +218,7 @@ abstract contract Base is Test {
     hubSelectors[1] = ILiquidityHub.updateAssetConfig.selector;
     hubSelectors[2] = ILiquidityHub.addSpoke.selector;
     hubSelectors[3] = ILiquidityHub.updateSpokeConfig.selector;
-    hubSelectors[4] = ILiquidityHub.setInterestRateData.selector;
+    hubSelectors[4] = ILiquidityHub.configureInterestRateStrategy.selector;
 
     accessManager.setTargetFunctionRole(address(hub), hubSelectors, Roles.HUB_ADMIN_ROLE);
     vm.stopPrank();
@@ -310,14 +310,12 @@ abstract contract Base is Test {
     vm.prank(address(hub));
     irStrategy.setInterestRateData(
       wethAssetId,
-      abi.encode(
-        IAssetInterestRateStrategy.InterestRateData({
-          optimalUsageRatio: 90_00, // 90.00%
-          baseVariableBorrowRate: 5_00, // 5.00%
-          variableRateSlope1: 5_00, // 5.00%
-          variableRateSlope2: 5_00 // 5.00%
-        })
-      )
+      IAssetInterestRateStrategy.InterestRateData({
+        optimalUsageRatio: 90_00, // 90.00%
+        baseVariableBorrowRate: 5_00, // 5.00%
+        variableRateSlope1: 5_00, // 5.00%
+        variableRateSlope2: 5_00 // 5.00%
+      })
     );
     vm.startPrank(ADMIN);
     hub.updateAssetConfig(
@@ -339,14 +337,12 @@ abstract contract Base is Test {
     vm.prank(address(hub));
     irStrategy.setInterestRateData(
       usdxAssetId,
-      abi.encode(
-        IAssetInterestRateStrategy.InterestRateData({
-          optimalUsageRatio: 90_00, // 90.00%
-          baseVariableBorrowRate: 5_00, // 5.00%
-          variableRateSlope1: 5_00, // 5.00%
-          variableRateSlope2: 5_00 // 5.00%
-        })
-      )
+      IAssetInterestRateStrategy.InterestRateData({
+        optimalUsageRatio: 90_00, // 90.00%
+        baseVariableBorrowRate: 5_00, // 5.00%
+        variableRateSlope1: 5_00, // 5.00%
+        variableRateSlope2: 5_00 // 5.00%
+      })
     );
     vm.startPrank(ADMIN);
     hub.updateAssetConfig(
@@ -368,14 +364,12 @@ abstract contract Base is Test {
     vm.prank(address(hub));
     irStrategy.setInterestRateData(
       daiAssetId,
-      abi.encode(
-        IAssetInterestRateStrategy.InterestRateData({
-          optimalUsageRatio: 90_00, // 90.00%
-          baseVariableBorrowRate: 5_00, // 5.00%
-          variableRateSlope1: 5_00, // 5.00%
-          variableRateSlope2: 5_00 // 5.00%
-        })
-      )
+      IAssetInterestRateStrategy.InterestRateData({
+        optimalUsageRatio: 90_00, // 90.00%
+        baseVariableBorrowRate: 5_00, // 5.00%
+        variableRateSlope1: 5_00, // 5.00%
+        variableRateSlope2: 5_00 // 5.00%
+      })
     );
     vm.startPrank(ADMIN);
     hub.updateAssetConfig(
@@ -397,14 +391,12 @@ abstract contract Base is Test {
     vm.prank(address(hub));
     irStrategy.setInterestRateData(
       wbtcAssetId,
-      abi.encode(
-        IAssetInterestRateStrategy.InterestRateData({
-          optimalUsageRatio: 90_00, // 90.00%
-          baseVariableBorrowRate: 5_00, // 5.00%
-          variableRateSlope1: 5_00, // 5.00%
-          variableRateSlope2: 5_00 // 5.00%
-        })
-      )
+      IAssetInterestRateStrategy.InterestRateData({
+        optimalUsageRatio: 90_00, // 90.00%
+        baseVariableBorrowRate: 5_00, // 5.00%
+        variableRateSlope1: 5_00, // 5.00%
+        variableRateSlope2: 5_00 // 5.00%
+      })
     );
     vm.startPrank(ADMIN);
     hub.updateAssetConfig(
@@ -426,14 +418,12 @@ abstract contract Base is Test {
     vm.prank(address(hub));
     irStrategy.setInterestRateData(
       usdyAssetId,
-      abi.encode(
-        IAssetInterestRateStrategy.InterestRateData({
-          optimalUsageRatio: 90_00, // 90.00%
-          baseVariableBorrowRate: 5_00, // 5.00%
-          variableRateSlope1: 5_00, // 5.00%
-          variableRateSlope2: 5_00 // 5.00%
-        })
-      )
+      IAssetInterestRateStrategy.InterestRateData({
+        optimalUsageRatio: 90_00, // 90.00%
+        baseVariableBorrowRate: 5_00, // 5.00%
+        variableRateSlope1: 5_00, // 5.00%
+        variableRateSlope2: 5_00 // 5.00%
+      })
     );
     vm.startPrank(ADMIN);
     hub.updateAssetConfig(
@@ -760,14 +750,12 @@ abstract contract Base is Test {
     vm.prank(address(hub));
     irStrategy.setInterestRateData(
       dai2AssetId,
-      abi.encode(
-        IAssetInterestRateStrategy.InterestRateData({
-          optimalUsageRatio: 90_00, // 90.00%
-          baseVariableBorrowRate: 5_00, // 5.00%
-          variableRateSlope1: 5_00, // 5.00%
-          variableRateSlope2: 5_00 // 5.00%
-        })
-      )
+      IAssetInterestRateStrategy.InterestRateData({
+        optimalUsageRatio: 90_00, // 90.00%
+        baseVariableBorrowRate: 5_00, // 5.00%
+        variableRateSlope1: 5_00, // 5.00%
+        variableRateSlope2: 5_00 // 5.00%
+      })
     );
     vm.startPrank(ADMIN);
     hub.updateAssetConfig(
@@ -833,19 +821,17 @@ abstract contract Base is Test {
     hub2.addAsset(address(tokenList.wbtc), tokenList.wbtc.decimals(), address(hub2IrStrategy));
 
     // Configure IR Strategy for hub 2
-    bytes memory encodedIrData = abi.encode(
-      IAssetInterestRateStrategy.InterestRateData({
-        optimalUsageRatio: 90_00, // 90.00%
-        baseVariableBorrowRate: 5_00, // 5.00%
-        variableRateSlope1: 5_00, // 5.00%
-        variableRateSlope2: 5_00 // 5.00%
-      })
-    );
+    IAssetInterestRateStrategy.InterestRateData memory rateData = IAssetInterestRateStrategy.InterestRateData({
+      optimalUsageRatio: 90_00, // 90.00%
+      baseVariableBorrowRate: 5_00, // 5.00%
+      variableRateSlope1: 5_00, // 5.00%
+      variableRateSlope2: 5_00 // 5.00%
+    });
     vm.startPrank(address(hub2));
-    hub2IrStrategy.setInterestRateData(wethAssetId, encodedIrData);
-    hub2IrStrategy.setInterestRateData(usdxAssetId, encodedIrData);
-    hub2IrStrategy.setInterestRateData(daiAssetId, encodedIrData);
-    hub2IrStrategy.setInterestRateData(wbtcAssetId, encodedIrData);
+    hub2IrStrategy.setInterestRateData(wethAssetId, rateData);
+    hub2IrStrategy.setInterestRateData(usdxAssetId, rateData);
+    hub2IrStrategy.setInterestRateData(daiAssetId, rateData);
+    hub2IrStrategy.setInterestRateData(wbtcAssetId, rateData);
     vm.stopPrank();
 
     setUpRoles(hub2, spoke1, accessManager2);
@@ -884,19 +870,17 @@ abstract contract Base is Test {
     vm.stopPrank();
 
     // Configure IR Strategy for hub 3
-    bytes memory encodedIrData = abi.encode(
-      IAssetInterestRateStrategy.InterestRateData({
+    IAssetInterestRateStrategy.InterestRateData memory rateData = IAssetInterestRateStrategy.InterestRateData({
         optimalUsageRatio: 90_00, // 90.00%
         baseVariableBorrowRate: 5_00, // 5.00%
-        variableRateSlope1: 5_00, // 5.00%
-        variableRateSlope2: 5_00 // 5.00%
-      })
-    );
+      variableRateSlope1: 5_00, // 5.00%
+      variableRateSlope2: 5_00 // 5.00%
+    });
     vm.startPrank(address(hub3));
-    hub3IrStrategy.setInterestRateData(hub3WethAssetId, encodedIrData);
-    hub3IrStrategy.setInterestRateData(hub3UsdxAssetId, encodedIrData);
-    hub3IrStrategy.setInterestRateData(hub3DaiAssetId, encodedIrData);
-    hub3IrStrategy.setInterestRateData(hub3WbtcAssetId, encodedIrData);
+    hub3IrStrategy.setInterestRateData(hub3WethAssetId, rateData);
+    hub3IrStrategy.setInterestRateData(hub3UsdxAssetId, rateData);
+    hub3IrStrategy.setInterestRateData(hub3DaiAssetId, rateData);
+    hub3IrStrategy.setInterestRateData(hub3WbtcAssetId, rateData);
     vm.stopPrank();
 
     setUpRoles(hub3, spoke1, accessManager3);
@@ -1832,37 +1816,25 @@ abstract contract Base is Test {
 
   function _mockInterestRateBps(
     uint256 interestRateBps,
-    uint256 assetId,
-    uint256 availableLiquidity,
-    uint256 totalDebt,
-    uint256 liquidityAdded,
-    uint256 liquidityTaken
+    IBasicInterestRateStrategy.CalculateInterestRateParams memory params
   ) internal {
     _mockInterestRateBps(
       address(irStrategy),
       interestRateBps,
-      assetId,
-      availableLiquidity,
-      totalDebt,
-      liquidityAdded,
-      liquidityTaken
+      params
     );
   }
 
   function _mockInterestRateBps(
     address interestRateStrategy,
     uint256 interestRateBps,
-    uint256 assetId,
-    uint256 availableLiquidity,
-    uint256 totalDebt,
-    uint256 liquidityAdded,
-    uint256 liquidityTaken
+    IBasicInterestRateStrategy.CalculateInterestRateParams memory params
   ) internal {
     vm.mockCall(
       interestRateStrategy,
       abi.encodeCall(
         IBasicInterestRateStrategy.calculateInterestRate,
-        (assetId, availableLiquidity, totalDebt, liquidityAdded, liquidityTaken)
+        (params)
       ),
       abi.encode(interestRateBps.bpsToRay())
     );
@@ -1882,37 +1854,25 @@ abstract contract Base is Test {
 
   function _mockInterestRateRay(
     uint256 interestRateRay,
-    uint256 assetId,
-    uint256 availableLiquidity,
-    uint256 totalDebt,
-    uint256 liquidityAdded,
-    uint256 liquidityTaken
+    IBasicInterestRateStrategy.CalculateInterestRateParams memory params
   ) internal {
     _mockInterestRateRay(
       address(irStrategy),
       interestRateRay,
-      assetId,
-      availableLiquidity,
-      totalDebt,
-      liquidityAdded,
-      liquidityTaken
+      params
     );
   }
 
   function _mockInterestRateRay(
     address interestRateStrategy,
     uint256 interestRateRay,
-    uint256 assetId,
-    uint256 availableLiquidity,
-    uint256 totalDebt,
-    uint256 liquidityAdded,
-    uint256 liquidityTaken
+    IBasicInterestRateStrategy.CalculateInterestRateParams memory params
   ) internal {
     vm.mockCall(
       interestRateStrategy,
       abi.encodeCall(
         IBasicInterestRateStrategy.calculateInterestRate,
-        (assetId, availableLiquidity, totalDebt, liquidityAdded, liquidityTaken)
+        (params)
       ),
       abi.encode(interestRateRay)
     );
@@ -1929,11 +1889,18 @@ abstract contract Base is Test {
     vm.assertEq(
       asset.baseBorrowRate,
       IBasicInterestRateStrategy(asset.config.irStrategy).calculateInterestRate(
-        assetId,
-        asset.availableLiquidity,
-        baseDebt,
-        0,
-        0
+        IBasicInterestRateStrategy.CalculateInterestRateParams({
+          assetId: assetId,
+          availableLiquidity: asset.availableLiquidity,
+          liquidityAdded: 0,
+          liquidityTaken: 0,
+          baseDebt: baseDebt,
+          baseDebtAdded: 0,
+          baseDebtTaken: 0,
+          premiumDebt: 0, // not used
+          premiumDebtAdded: 0,
+          premiumDebtTaken: 0
+        })
       ),
       string.concat('base borrow rate after ', operation)
     );

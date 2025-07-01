@@ -24,7 +24,6 @@ contract SpokeMultipleHubBase is SpokeBase {
       variableRateSlope1: 5_00, // 5.00%
       variableRateSlope2: 5_00 // 5.00%
     });
-  bytes internal encodedIrData = abi.encode(irData);
 
   function setUp() public virtual override {
     deployFixtures();

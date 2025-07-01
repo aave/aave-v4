@@ -276,7 +276,18 @@ contract LiquidityHubSupplyTest is LiquidityHubBase {
       address(irStrategy),
       abi.encodeCall(
         IBasicInterestRateStrategy.calculateInterestRate,
-        (assetId, availableLiquidityBefore, baseDebtBefore, amount, 0)
+        (IBasicInterestRateStrategy.CalculateInterestRateParams({
+          assetId: assetId,
+          availableLiquidity: availableLiquidityBefore,
+          liquidityAdded: amount,
+          liquidityTaken: 0,
+          baseDebt: baseDebtBefore,
+          baseDebtAdded: 0,
+          baseDebtTaken: 0,
+          premiumDebt: 0, // not used
+          premiumDebtAdded: 0,
+          premiumDebtTaken: 0
+        }))
       )
     );
 
@@ -514,7 +525,18 @@ contract LiquidityHubSupplyTest is LiquidityHubBase {
       address(irStrategy),
       abi.encodeCall(
         IBasicInterestRateStrategy.calculateInterestRate,
-        (daiAssetId, availableLiquidityBefore, baseDebtBefore, supplyAmount, 0)
+        (IBasicInterestRateStrategy.CalculateInterestRateParams({
+          assetId: daiAssetId,
+          availableLiquidity: availableLiquidityBefore,
+          liquidityAdded: supplyAmount,
+          liquidityTaken: 0,
+          baseDebt: baseDebtBefore,
+          baseDebtAdded: 0,
+          baseDebtTaken: 0,
+          premiumDebt: 0, // not used
+          premiumDebtAdded: 0,
+          premiumDebtTaken: 0
+        }))
       )
     );
 

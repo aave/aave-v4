@@ -107,18 +107,10 @@ library AssetLogic {
 
   function updateBorrowRate(
     DataTypes.Asset storage asset,
-    uint256 assetId,
-    uint256 liquidityAdded,
-    uint256 liquidityTaken
+    IBasicInterestRateStrategy.CalculateInterestRateParams memory params
   ) internal {
     asset.baseBorrowRate = IBasicInterestRateStrategy(asset.config.irStrategy)
-      .calculateInterestRate({
-        assetId: assetId,
-        availableLiquidity: asset.availableLiquidity,
-        totalDebt: asset.baseDebt(),
-        liquidityAdded: liquidityAdded,
-        liquidityTaken: liquidityTaken
-      });
+      .calculateInterestRate(params);
   }
 
   /**
