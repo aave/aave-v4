@@ -481,6 +481,31 @@ contract ConfiguratorTest is LiquidityHubBase {
     DataTypes.AssetConfig memory oldConfig = hub.getAssetConfig(assetId);
     vm.assume(feeReceiver != address(0) && oldConfig.feeReceiver != feeReceiver);
 
+    test_updateFeeConfig(assetId, liquidityFee, feeReceiver);
+  }
+
+  function test_updateFeeConfig_Scenario() public {
+    // set same fee receiver and change liquidity fee
+    test_updateFeeConfig(daiAssetId, 18_00, address(treasurySpoke));
+    // set new fee receiver and liquidity fee
+    test_updateFeeConfig(daiAssetId, 4_00, makeAddr('newFeeReceiver'));
+    // set non-zero fee receiver
+    test_updateFeeConfig(daiAssetId, 0, makeAddr('newFeeReceiver2'));
+    // set initial fee receiver and zero fee
+    test_updateFeeConfig(daiAssetId, 0, address(treasurySpoke));
+  }
+
+  function test_updateFeeConfig(
+    uint256 assetId,
+    uint256 liquidityFee,
+    address feeReceiver
+  ) internal {
+    DataTypes.AssetConfig memory oldConfig = hub.getAssetConfig(assetId);
+
+    if (oldConfig.feeReceiver == feeReceiver) {
+      return;
+    }
+
     vm.expectCall(
       address(hub),
       abi.encodeCall(
@@ -541,17 +566,6 @@ contract ConfiguratorTest is LiquidityHubBase {
     configurator.updateFeeConfig(address(hub), assetId, liquidityFee, feeReceiver);
 
     assertEq(hub.getAssetConfig(assetId), expectedConfig);
-  }
-
-  function test_updateFeeConfig_Scenario() public {
-    // set same fee receiver and change liquidity fee
-    test_updateFeeConfig_fuzz(daiAssetId, 18_00, address(treasurySpoke));
-    // set new fee receiver and liquidity fee
-    test_updateFeeConfig_fuzz(daiAssetId, 4_00, makeAddr('newFeeReceiver'));
-    // set non-zero fee receiver
-    test_updateFeeConfig_fuzz(daiAssetId, 0, makeAddr('newFeeReceiver2'));
-    // set initial fee receiver and zero fee
-    test_updateFeeConfig_fuzz(daiAssetId, 0, address(treasurySpoke));
   }
 
   function test_updateInterestRateStrategy_fuzz_revertsWith_OwnableUnauthorizedAccount(
