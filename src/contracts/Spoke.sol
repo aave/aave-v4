@@ -983,6 +983,7 @@ contract Spoke is ISpoke, Multicall, AccessManaged {
       DataTypes.UserPosition storage userDebtPosition = _userPositions[users[vars.i]][
         debtReserve.reserveId
       ];
+      vars.user = users[vars.i];
 
       vars.collateralAssetId = collateralReserve.assetId;
       vars.debtAssetId = debtReserve.assetId;
@@ -1001,59 +1002,31 @@ contract Spoke is ISpoke, Multicall, AccessManaged {
       ) = _calculateLiquidationParameters(
         collateralReserve,
         debtReserve,
-        users[vars.i],
+        vars.user,
         debtsToCover[vars.i],
         vars.baseDebt,
         vars.premiumDebt
       );
 
-      // settle debt reserve's premium debt
-      vars.userPremiumDrawnShares = userDebtPosition.premiumDrawnShares;
-      vars.userPremiumOffset = userDebtPosition.premiumOffset;
-      vars.userRealizedPremium = userDebtPosition.realizedPremium;
-
-      {
-        uint256 accruedPremium = vars.premiumDebt - vars.userRealizedPremium;
-
-        userDebtPosition.premiumDrawnShares = 0;
-        userDebtPosition.premiumOffset = 0;
-        userDebtPosition.realizedPremium = vars.premiumDebt - vars.premiumDebtToLiquidate;
-
-        _refreshPremiumDebt(
-          debtReserve,
-          users[vars.i],
-          vars.debtAssetId,
-          -int256(vars.userPremiumDrawnShares),
-          -int256(vars.userPremiumOffset),
-          accruedPremium,
-          vars.premiumDebtToLiquidate
-        ); // settle premium debt
-      }
+      _accruePremium(
+        debtReserve,
+        userDebtPosition,
+        debtReserveHub,
+        vars.debtAssetId,
+        vars.user,
+        vars.premiumDebtToLiquidate
+      );
 
       // todo: rm later to opt
       // optional: settle collateral reserve's premium debt
-      vars.userPremiumDrawnShares = userCollateralPosition.premiumDrawnShares;
-      vars.userPremiumOffset = userCollateralPosition.premiumOffset;
-      vars.userRealizedPremium =
-        collateralReserveHub.convertToDrawnAssets(
-          vars.collateralAssetId,
-          vars.userPremiumDrawnShares
-        ) -
-        vars.userPremiumOffset; // assets(premiumShares) - offset should never be < 0
-
-      userCollateralPosition.premiumDrawnShares = 0;
-      userCollateralPosition.premiumOffset = 0;
-      userCollateralPosition.realizedPremium += vars.userRealizedPremium;
-
-      _refreshPremiumDebt(
+      _accruePremium(
         collateralReserve,
-        users[vars.i],
+        userCollateralPosition,
+        collateralReserveHub,
         vars.collateralAssetId,
-        -int256(vars.userPremiumDrawnShares),
-        -int256(vars.userPremiumOffset),
-        vars.userRealizedPremium,
+        vars.user,
         0
-      ); // unnecessary but settle premium debt here for consistency
+      ); // Unecessary but settle premium debt here for consistency
 
       // repay debt
       vars.restoredShares = debtReserveHub.restore(
@@ -1081,13 +1054,13 @@ contract Spoke is ISpoke, Multicall, AccessManaged {
 
       // TODO: not compulsory, decide whether to rm
       if (vars.newUserSuppliedShares == 0) {
-        DataTypes.PositionStatus storage positionStatus = _positionStatus[users[vars.i]];
+        DataTypes.PositionStatus storage positionStatus = _positionStatus[vars.user];
         positionStatus.setUsingAsCollateral(vars.collateralReserveId, false);
-        emit UsingAsCollateral(vars.collateralReserveId, users[vars.i], false);
+        emit UsingAsCollateral(vars.collateralReserveId, vars.user, false);
       }
 
       // TODO: realize bad debt
-      (vars.newUserRiskPremium, , , , ) = _calculateUserAccountData(users[vars.i]);
+      (vars.newUserRiskPremium, , , , ) = _calculateUserAccountData(vars.user);
 
       // refresh debt reserve premium
       vars.userPremiumDrawnShares = userDebtPosition.premiumDrawnShares = userDebtPosition
@@ -1102,7 +1075,7 @@ contract Spoke is ISpoke, Multicall, AccessManaged {
 
       _refresh(
         debtReserve,
-        users[vars.i],
+        vars.user,
         int256(vars.userPremiumDrawnShares),
         int256(vars.userPremiumOffset),
         0,
@@ -1110,7 +1083,7 @@ contract Spoke is ISpoke, Multicall, AccessManaged {
       );
 
       if (userDebtPosition.baseDrawnShares == 0) {
-        DataTypes.PositionStatus storage positionStatus = _positionStatus[users[vars.i]];
+        DataTypes.PositionStatus storage positionStatus = _positionStatus[vars.user];
         positionStatus.setBorrowing(vars.debtReserveId, false);
       }
 
@@ -1126,14 +1099,14 @@ contract Spoke is ISpoke, Multicall, AccessManaged {
 
       _refresh(
         collateralReserve,
-        users[vars.i],
+        vars.user,
         int256(vars.userPremiumDrawnShares),
         int256(vars.userPremiumOffset),
         0,
         0
       );
 
-      _notifyRiskPremiumUpdate(vars.debtAssetId, users[vars.i], vars.newUserRiskPremium);
+      _notifyRiskPremiumUpdate(vars.debtAssetId, vars.user, vars.newUserRiskPremium);
 
       vars.totalCollateralToLiquidate += vars.collateralToLiquidate;
       vars.totalLiquidationProtocolFeeAmount += vars.liquidationProtocolFeeAmount;
