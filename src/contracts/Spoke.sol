@@ -389,7 +389,26 @@ contract Spoke is ISpoke, Multicall, AccessManaged {
 
   /// @inheritdoc ISpoke
   function setUsingAsCollateral(uint256 reserveId, bool usingAsCollateral) external {
-    _setUsingAsCollateral(reserveId, msg.sender, usingAsCollateral);
+    DataTypes.PositionStatus storage positionStatus = _positionStatus[msg.sender];
+
+    // process only if collateral status changes
+    if (positionStatus.isUsingAsCollateral(reserveId) == usingAsCollateral) {
+      return;
+    }
+
+    DataTypes.Reserve storage reserve = _reserves[reserveId];
+    _validateSetUsingAsCollateral(reserve, reserveId, usingAsCollateral);
+
+    positionStatus.setUsingAsCollateral(reserveId, usingAsCollateral);
+
+    if (usingAsCollateral) {
+      _refreshDynamicConfig(msg.sender);
+    } else {
+      // If unsetting, check HF and update user rp
+      uint256 newUserRiskPremium = _refreshAndValidateUserPosition(msg.sender); // validates HF
+      _notifyRiskPremiumUpdate(type(uint256).max, msg.sender, newUserRiskPremium);
+    }
+    emit UsingAsCollateral(reserveId, msg.sender, usingAsCollateral);
   }
 
   /// @inheritdoc ISpoke
@@ -593,7 +612,7 @@ contract Spoke is ISpoke, Multicall, AccessManaged {
     return userRiskPremium;
   }
 
-  function _validateReserveConfig(DataTypes.ReserveConfig calldata config) internal view {
+  function _validateReserveConfig(DataTypes.ReserveConfig calldata config) internal pure {
     require(
       config.liquidationBonus >= PercentageMathExtended.PERCENTAGE_FACTOR,
       InvalidLiquidationBonus()
@@ -654,19 +673,21 @@ contract Spoke is ISpoke, Multicall, AccessManaged {
     require(totalDebt > 0, SpecifiedCurrencyNotBorrowedByUser());
   }
 
+  /**
+   * @dev Validates the reserve can be set as collateral.
+   * @dev Collateral can be disabled if the reserve is frozen but not enabled.
+   * @param reserve The reserve to be set as collateral.
+   * @param reserveId The identifier of the reserve.
+   * @param usingAsCollateral True if enables the reserve as collateral, false otherwise.
+   */
   function _validateSetUsingAsCollateral(
     DataTypes.Reserve storage reserve,
-    DataTypes.PositionStatus storage positionStatus,
     uint256 reserveId,
     bool usingAsCollateral
   ) internal view {
     require(reserve.config.active, ReserveNotActive());
     require(!reserve.config.paused, ReservePaused());
-    require(
-      usingAsCollateral != positionStatus.isUsingAsCollateral(reserveId),
-      CollateralStatusUnchanged()
-    );
-    require(reserve.config.collateral, ReserveCannotBeUsedAsCollateral(reserve.reserveId));
+    require(reserve.config.collateral, ReserveCannotBeUsedAsCollateral(reserveId));
     // deactivation should be allowed
     require(!usingAsCollateral || !reserve.config.frozen, ReserveFrozen());
   }
@@ -1307,24 +1328,5 @@ contract Spoke is ISpoke, Multicall, AccessManaged {
   // todo move to MathUtils
   function _signedDiff(uint256 a, uint256 b) internal pure returns (int256) {
     return int256(a) - int256(b); // todo use safeCast when amounts packed to uint112/uint128
-  }
-
-  function _setUsingAsCollateral(uint256 reserveId, address user, bool usingAsCollateral) internal {
-    DataTypes.Reserve storage reserve = _reserves[reserveId];
-    DataTypes.UserPosition storage userPosition = _userPositions[user][reserveId];
-    DataTypes.PositionStatus storage positionStatus = _positionStatus[user];
-
-    _validateSetUsingAsCollateral(reserve, positionStatus, reserveId, usingAsCollateral);
-    positionStatus.setUsingAsCollateral(reserveId, usingAsCollateral);
-
-    if (usingAsCollateral) {
-      _refreshDynamicConfig(user);
-    } else {
-      // If unsetting, check HF and update user rp
-      uint256 newUserRiskPremium = _refreshAndValidateUserPosition(user); // validates HF
-      _notifyRiskPremiumUpdate(type(uint256).max, user, newUserRiskPremium);
-    }
-
-    emit UsingAsCollateral(reserveId, user, usingAsCollateral);
   }
 }
