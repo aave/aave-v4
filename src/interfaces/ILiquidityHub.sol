@@ -81,7 +81,8 @@ interface ILiquidityHub is IAccessManaged {
 
   /**
    * @notice Adds a new asset to the hub.
-   * @dev The fee receiver must be configured as a Spoke separately
+   * @dev The same underlying asset address can be added as an asset multiple times.
+   * @dev The fee receiver must be configured as a Spoke separately.
    * @param underlying The address of the underlying asset.
    * @param decimals The number of decimals of the asset.
    * @param feeReceiver The address of the fee receiver spoke.
