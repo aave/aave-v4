@@ -78,11 +78,11 @@ contract SpokeLiquidationBase is SpokeBase {
 
   function setUp() public virtual override {
     super.setUp();
-    _deployBorrowableLiquidities(MAX_SUPPLY_AMOUNT);
+    _addBorrowableLiquidities(MAX_SUPPLY_AMOUNT);
   }
 
   /// @notice Deploys max borrowable liquidity for all reserves in spoke1.
-  function _deployBorrowableLiquidities(uint256 amount) public {
+  function _addBorrowableLiquidities(uint256 amount) public {
     _openSupplyPosition(spoke1, _daiReserveId(spoke1), amount);
     _openSupplyPosition(spoke1, _wethReserveId(spoke1), amount);
     _openSupplyPosition(spoke1, _wbtcReserveId(spoke1), amount);

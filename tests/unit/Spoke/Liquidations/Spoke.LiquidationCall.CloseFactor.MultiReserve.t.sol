@@ -363,7 +363,7 @@ contract LiquidationCallCloseFactorMultiReserveTest is SpokeLiquidationBase {
     uint256 skipTime,
     address user
   ) internal {
-    _deployBorrowableLiquidities(borrowAmount * collateralReserves.length);
+    _addBorrowableLiquidities(borrowAmount * collateralReserves.length);
     uint256[] memory initialExRate = new uint256[](collateralReserves.length);
     uint256[] memory finalExRate = new uint256[](collateralReserves.length);
 
