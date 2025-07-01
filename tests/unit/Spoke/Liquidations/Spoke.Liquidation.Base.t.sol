@@ -247,7 +247,6 @@ contract SpokeLiquidationBase is SpokeBase {
     LiquidationTestLocalParams memory state,
     string memory label
   ) internal view {
-    _assertUserAccountData(state, label);
     _assertProtocolFeeEarned(state, label);
     _assertLiquidationBonusEarned(state, label);
     _assertSupplyExchangeRate(state, label);
@@ -256,11 +255,12 @@ contract SpokeLiquidationBase is SpokeBase {
       _assertBadDebt(state, label);
     } else {
       _assertNoBadDebt(state, label);
+      _assertUserAccountData(state, label);
     }
-    _assertUserRp(state, label);
     _assertSpokeAccounting(state, label);
   }
 
+  /// @dev check that spoke accounting from hub matches user accounting from spoke
   function _assertSpokeAccounting(
     LiquidationTestLocalParams memory state,
     string memory label
@@ -292,66 +292,52 @@ contract SpokeLiquidationBase is SpokeBase {
     );
   }
 
-  function _assertUserRp(
-    LiquidationTestLocalParams memory state,
-    string memory label
-  ) internal view {
-    if (state.userSuppliedAmount.balanceAfter > 0 && state.userTotalDebt.balanceAfter > 0) {
-      assertEq(
-        state.userRp,
-        _calculateExpectedUserRP(state.user, state.spoke),
-        string.concat('userRp after liq ', label)
-      );
-    }
-  }
-
-  /// assert that the user account data is correct after liquidation
+  /// assert that the user account data is correct after liquidation, without deficit
   function _assertUserAccountData(
     LiquidationTestLocalParams memory state,
     string memory label
   ) internal view virtual {
-    if (state.hasDeficit) {
-      // if bad debt, HF should be max value and userRp should be 0
-      assertEq(state.finalHf, UINT256_MAX, string.concat('HF = 0 if bad debt ', label));
-      assertEq(state.userRp, 0, string.concat('userRp = 0 if bad debt ', label));
+    // at low amounts of coll/debt, HF can diverge from close factor due to rounding/precision
+    if (
+      _convertAmountToBaseCurrency(
+        state.spoke,
+        state.debtReserves[state.debtReserveIndex].reserveId,
+        state.userTotalDebt.balanceAfter
+      ) >
+      MIN_AMOUNT_IN_BASE_CURRENCY &&
+      _convertAmountToBaseCurrency(
+        state.spoke,
+        state.collateralReserves[state.collateralReserveIndex].reserveId,
+        state.userSuppliedAmount.balanceAfter
+      ) >
+      MIN_AMOUNT_IN_BASE_CURRENCY
+    ) {
+      // ensure HF is lte close factor
+      assertLe(
+        state.finalHf,
+        state.closeFactor,
+        string.concat('Health factor <= close factor ', label)
+      );
+      // should also be close to the desired CF
+      assertApproxEqRel(
+        state.finalHf,
+        state.closeFactor,
+        _approxRelFromBps(20),
+        'HF matches closeFactor within 0.1%'
+      );
     } else {
-      // at low amounts of coll/debt, HF can diverge from close factor due to rounding/precision
-      if (
-        _convertAmountToBaseCurrency(
-          state.spoke,
-          state.debtReserves[state.debtReserveIndex].reserveId,
-          state.userTotalDebt.balanceAfter
-        ) >
-        MIN_AMOUNT_IN_BASE_CURRENCY &&
-        _convertAmountToBaseCurrency(
-          state.spoke,
-          state.collateralReserves[state.collateralReserveIndex].reserveId,
-          state.userSuppliedAmount.balanceAfter
-        ) >
-        MIN_AMOUNT_IN_BASE_CURRENCY
-      ) {
-        // ensure HF is lte close factor
-        assertLe(
-          state.finalHf,
-          state.closeFactor,
-          string.concat('Health factor <= close factor ', label)
-        );
-        // should also be close to the desired CF
-        assertApproxEqRel(
-          state.finalHf,
-          state.closeFactor,
-          _approxRelFromBps(20),
-          'HF matches closeFactor within 0.1%'
-        );
-      } else {
-        // HF should always be lte close factor
-        assertLe(
-          state.finalHf,
-          state.closeFactor,
-          string.concat('Health factor <= close factor ', label)
-        );
-      }
+      // HF should always be lte close factor
+      assertLe(
+        state.finalHf,
+        state.closeFactor,
+        string.concat('Health factor <= close factor ', label)
+      );
     }
+    assertEq(
+      state.userRp,
+      _calculateExpectedUserRP(state.user, state.spoke),
+      string.concat('userRp after liq ', label)
+    );
   }
 
   // todo: utilize treasury accounting to assert protocol fee
@@ -404,7 +390,7 @@ contract SpokeLiquidationBase is SpokeBase {
     );
   }
 
-  /// generic assertions in bad debt scenarios
+  /// assertions when bad debt is reported as deficit
   function _assertBadDebt(
     LiquidationTestLocalParams memory state,
     string memory label
@@ -424,8 +410,6 @@ contract SpokeLiquidationBase is SpokeBase {
       UINT256_MAX,
       string.concat('health factor should be max after liquidation ', label)
     );
-    // with no collateral, user rp is 0
-    assertEq(userRp, 0, string.concat('user rp = 0 with no coll ', label));
     uint256 assetAmountOfOneShare = hub.convertToDrawnAssets(
       state.debtReserves[state.debtReserveIndex].assetId,
       WadRayMath.RAY
@@ -440,6 +424,9 @@ contract SpokeLiquidationBase is SpokeBase {
       assetAmountOfOneShare,
       string.concat('deficit added to hub ', label)
     );
+    // if bad debt, HF should be max value and userRp should be 0 (due to no coll remaining)
+    assertEq(state.finalHf, UINT256_MAX, string.concat('HF = 0 if bad debt ', label));
+    assertEq(state.userRp, 0, string.concat('userRp = 0 if bad debt ', label));
   }
 
   /// generic assertions in non bad debt scenarios

@@ -991,8 +991,8 @@ contract Spoke is ISpoke, Multicall, AccessManaged {
     // validation should already have occurred during liquidation
     DataTypes.ExecuteReportDeficitLocalVars memory vars;
 
-    vars.assetId = reserve.assetId;
     ILiquidityHub hub = reserve.hub;
+    vars.assetId = reserve.assetId;
     (vars.baseDebt, vars.premiumDebt) = _getUserDebt(hub, vars.assetId, userPosition);
     vars.userPremiumDrawnShares = userPosition.premiumDrawnShares;
     vars.userPremiumOffset = userPosition.premiumOffset;
@@ -1010,9 +1010,9 @@ contract Spoke is ISpoke, Multicall, AccessManaged {
       -int256(vars.userPremiumOffset),
       vars.accruedPremium,
       vars.premiumDebt
-    ); // we settle premium debt here
+    ); // settle premium debt here
 
-    uint256 deficitShares = hub.reportDeficit(vars.assetId, vars.baseDebt, vars.premiumDebt); // we settle base debt here by reporting deficit
+    uint256 deficitShares = hub.reportDeficit(vars.assetId, vars.baseDebt, vars.premiumDebt); // settle base debt here by reporting deficit
 
     // non-zero deficit means user ends up with zero total debt
     reserve.baseDrawnShares -= deficitShares;
@@ -1025,14 +1025,14 @@ contract Spoke is ISpoke, Multicall, AccessManaged {
 
   function _reportDeficit(address user) internal {
     DataTypes.PositionStatus storage positionStatus = _positionStatus[user];
-    uint256 reserveCount_ = reserveCount;
+    uint256 reservesLength = reserveCount;
     uint256 reserveId;
-    while (reserveId < reserveCount_) {
+    while (reserveId < reservesLength) {
       DataTypes.UserPosition storage userPosition = _userPositions[user][reserveId];
       if (positionStatus.isBorrowing(reserveId)) {
         DataTypes.Reserve storage reserve = _reserves[reserveId];
         _executeReportDeficit(reserve, userPosition, positionStatus, user);
-        // notify is not needed as each debt reserve's deficit will be individually reported
+        // notify unneeded here as each debt reserve's deficit will be individually reported
       }
       unchecked {
         ++reserveId;

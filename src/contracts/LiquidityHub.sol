@@ -263,17 +263,17 @@ contract LiquidityHub is ILiquidityHub, AccessManaged {
     _validateReportDeficit(asset, spoke, baseAmount, premiumAmount);
 
     uint256 totalDeficitAmount = baseAmount + premiumAmount;
-    uint256 baseDrawnSharesReported = asset.toDrawnSharesDown(baseAmount);
+    uint256 baseDrawnShares = asset.toDrawnSharesDown(baseAmount);
 
     asset.deficit += totalDeficitAmount;
-    asset.baseDrawnShares -= baseDrawnSharesReported;
+    asset.baseDrawnShares -= baseDrawnShares;
 
-    spoke.baseDrawnShares -= baseDrawnSharesReported;
+    spoke.baseDrawnShares -= baseDrawnShares;
 
-    emit DeficitCreated(assetId, msg.sender, baseDrawnSharesReported, totalDeficitAmount);
-    emit Restore(assetId, msg.sender, baseDrawnSharesReported, totalDeficitAmount);
+    emit DeficitCreated(assetId, msg.sender, baseDrawnShares, totalDeficitAmount);
+    emit Restore(assetId, msg.sender, baseDrawnShares, totalDeficitAmount);
 
-    return baseDrawnSharesReported;
+    return baseDrawnShares;
   }
 
   /// @inheritdoc ILiquidityHub

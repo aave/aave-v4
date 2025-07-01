@@ -55,8 +55,8 @@ interface ILiquidityHub is IAccessManaged {
   event DeficitCreated(
     uint256 indexed assetId,
     address indexed spoke,
-    uint256 baseRestoredShares,
-    uint256 totalRestoredAmount
+    uint256 baseSharesCreated,
+    uint256 amountCreated
   );
 
   error InvalidSharesAmount();
