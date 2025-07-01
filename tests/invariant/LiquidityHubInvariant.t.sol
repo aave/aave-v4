@@ -29,13 +29,13 @@ contract LiquidityHubInvariant is StdInvariant, Test {
     vm.skip(true);
     // TODO: manage asset listed multiple times
     // TODO: manage interest
-    for (uint256 i; i < hub.assetCount(); ++i) {
+    for (uint256 i; i < hub.getAssetCount(); ++i) {
       DataTypes.Asset memory reserveData = hub.getAsset(i);
-      IERC20 asset = hub.assetsList(i);
+      address asset = hub.getAsset(i).underlying;
       // todo implement
       // assertEq(
       //   hub.getTotalAssets(reserveData.id),
-      //   asset.balanceOf(address(hub)) - hubHandler.getAssetDonated(address(asset)),
+      //   IERC20(asset).balanceOf(address(hub)) - hubHandler.getAssetDonated(asset),
       //   'wrong total assets'
       // );
     }
@@ -45,7 +45,7 @@ contract LiquidityHubInvariant is StdInvariant, Test {
   function invariant_exchangeRateMonotonicallyIncreasing() public {
     vm.skip(true);
     // TODO this can be improved with borrows OR changes in borrowRate
-    for (uint256 id = 0; id < hub.assetCount(); id++) {
+    for (uint256 id = 0; id < hub.getAssetCount(); id++) {
       DataTypes.Asset memory reserveData = hub.getAsset(id);
       // todo migrate
       // uint256 calcExchangeRate = reserveData.suppliedShares == 0
