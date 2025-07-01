@@ -619,7 +619,7 @@ contract SpokeRiskPremiumTest is SpokeBase {
   ) public {
     uint256 totalBorrowAmount = MAX_SUPPLY_AMOUNT / 2;
 
-    newUsdxPrice = bound(newUsdxPrice, 0, 1e16);
+    newUsdxPrice = bound(newUsdxPrice, 1, 1e16);
 
     daiSupplyAmount = bound(daiSupplyAmount, 0, MAX_SUPPLY_AMOUNT_DAI);
     wethSupplyAmount = bound(wethSupplyAmount, 0, MAX_SUPPLY_AMOUNT_WETH);
@@ -832,10 +832,10 @@ contract SpokeRiskPremiumTest is SpokeBase {
         MAX_SUPPLY_AMOUNT / 2
     );
 
-    daiInfo.price = bound(daiInfo.price, 0, 1e16);
-    wethInfo.price = bound(wethInfo.price, 0, 1e16);
-    usdxInfo.price = bound(usdxInfo.price, 0, 1e16);
-    wbtcInfo.price = bound(wbtcInfo.price, 0, 1e16);
+    daiInfo.price = bound(daiInfo.price, 1, 1e16);
+    wethInfo.price = bound(wethInfo.price, 1, 1e16);
+    usdxInfo.price = bound(usdxInfo.price, 1, 1e16);
+    wbtcInfo.price = bound(wbtcInfo.price, 1, 1e16);
 
     daiInfo.lp = bound(daiInfo.lp, 0, 1000_00);
     wethInfo.lp = bound(wethInfo.lp, 0, 1000_00);

@@ -1670,10 +1670,18 @@ abstract contract Base is Test {
   ) internal {
     uint256 initialPrice = spoke.oracle().getReservePrice(reserveId);
     // set price to 0 to circumvent borrow validation
-    _mockReservePrice(spoke, reserveId, 0);
+    vm.mockCall(
+      address(spoke.oracle()),
+      abi.encodeWithSelector(IPriceOracle.getReservePrice.selector, reserveId),
+      abi.encode(0)
+    );
     vm.prank(user);
     spoke.borrow(reserveId, debtAmount, user);
-    _mockReservePrice(spoke, reserveId, initialPrice);
+    vm.mockCall(
+      address(spoke.oracle()),
+      abi.encodeWithSelector(IPriceOracle.getReservePrice.selector, reserveId),
+      abi.encode(initialPrice)
+    );
   }
 
   /// @dev Calculate expected debt index based on input params
@@ -1863,6 +1871,7 @@ abstract contract Base is Test {
   }
 
   function _mockReservePrice(ISpoke spoke, uint256 reserveId, uint256 price) internal {
+    require(price > 0, 'mockReservePrice: price must be positive');
     AaveOracle oracle = AaveOracle(address(spoke.oracle()));
     address mockPriceFeed = address(new MockPriceFeed(oracle.DECIMALS(), oracle.DESCRIPTION(), price));
     vm.prank(ADMIN);

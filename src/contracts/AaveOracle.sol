@@ -61,7 +61,7 @@ contract AaveOracle is IAaveOracle, AccessManaged {
     }
 
     (, int256 price, , , ) = source.latestRoundData();
-    if (price < 0) {
+    if (price <= 0) {
       revert InvalidPrice(reserveId);
     }
 
