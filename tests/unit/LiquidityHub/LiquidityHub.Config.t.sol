@@ -109,7 +109,7 @@ contract LiquidityHubConfigTest is LiquidityHubBase {
     uint8 decimals,
     address feeReceiver
   ) public {
-    vm.assume(underlying != address(0));
+    vm.assume(underlying != address(0) && feeReceiver != address(0));
     decimals = uint8(bound(decimals, 0, hub.MAX_ALLOWED_ASSET_DECIMALS()));
 
     vm.expectRevert(ILiquidityHub.InvalidIrStrategy.selector);

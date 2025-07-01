@@ -631,7 +631,14 @@ contract ConfiguratorTest is LiquidityHubBase {
   ) internal returns (uint256) {
     if (fetchErc20Decimals) {
       _mockDecimals(underlying, decimals);
-      return configurator.addAsset(address(hub), underlying, feeReceiver, interestRateStrategy);
+      return
+        configurator.addAsset(
+          address(hub),
+          underlying,
+          decimals,
+          feeReceiver,
+          interestRateStrategy
+        );
     } else {
       return
         configurator.addAsset(
