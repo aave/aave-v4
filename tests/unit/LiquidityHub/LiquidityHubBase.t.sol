@@ -161,11 +161,11 @@ contract LiquidityHubBase is Base {
 
     uint256 initialLiq = hub.getAvailableLiquidity(assetId);
 
-    address asset = hub.getAsset(assetId).underlying;
-    deal(asset, tempUser, amount);
+    address underlying = hub.getAsset(assetId).underlying;
+    deal(underlying, tempUser, amount);
 
     vm.prank(tempUser);
-    IERC20(asset).approve(address(hub), type(uint256).max);
+    IERC20(underlying).approve(address(hub), type(uint256).max);
 
     vm.prank(ADMIN);
     hub.addSpoke(

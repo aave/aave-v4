@@ -68,38 +68,64 @@ contract LiquidityHubConfigTest is LiquidityHubBase {
   }
 
   function test_addAsset_fuzz_revertsWith_InvalidAssetDecimals(
-    address asset,
+    address underlying,
     uint8 decimals,
+    address feeReceiver,
     address interestRateStrategy
   ) public {
-    vm.assume(asset != address(0) && interestRateStrategy != address(0));
+    vm.assume(underlying != address(0) && interestRateStrategy != address(0));
     decimals = uint8(bound(decimals, hub.MAX_ALLOWED_ASSET_DECIMALS() + 1, type(uint8).max));
 
     vm.expectRevert(ILiquidityHub.InvalidAssetDecimals.selector);
     vm.prank(ADMIN);
-    Utils.addAsset(hub, asset, decimals, interestRateStrategy);
+    Utils.addAsset(hub, underlying, decimals, feeReceiver, interestRateStrategy);
   }
 
-  function test_addAsset_fuzz_revertsWith_InvalidAssetAddress(
+  function test_addAsset_fuzz_revertsWith_InvalidUnderlying(
+    uint8 decimals,
+    address feeReceiver,
+    address interestRateStrategy
+  ) public {
+    vm.expectRevert(ILiquidityHub.InvalidUnderlying.selector);
+    vm.prank(ADMIN);
+    Utils.addAsset(hub, address(0), decimals, feeReceiver, interestRateStrategy);
+  }
+
+  function test_addAsset_fuzz_revertsWith_InvalidFeeReceiver(
+    address underlying,
     uint8 decimals,
     address interestRateStrategy
   ) public {
-    vm.expectRevert(ILiquidityHub.InvalidAssetAddress.selector);
+    vm.assume(underlying != address(0) && interestRateStrategy != address(0));
+    decimals = uint8(bound(decimals, 0, hub.MAX_ALLOWED_ASSET_DECIMALS()));
+
+    vm.expectRevert(ILiquidityHub.InvalidFeeReceiver.selector);
     vm.prank(ADMIN);
-    Utils.addAsset(hub, address(0), decimals, interestRateStrategy);
+    Utils.addAsset(hub, underlying, decimals, address(0), interestRateStrategy);
   }
 
-  function test_addAsset_fuzz_revertsWith_InvalidIrStrategy(address asset, uint8 decimals) public {
-    vm.assume(asset != address(0));
+  function test_addAsset_fuzz_revertsWith_InvalidIrStrategy(
+    address underlying,
+    uint8 decimals,
+    address feeReceiver
+  ) public {
+    vm.assume(underlying != address(0));
     decimals = uint8(bound(decimals, 0, hub.MAX_ALLOWED_ASSET_DECIMALS()));
 
     vm.expectRevert(ILiquidityHub.InvalidIrStrategy.selector);
     vm.prank(ADMIN);
-    Utils.addAsset(hub, asset, decimals, address(0));
+    Utils.addAsset(hub, underlying, decimals, feeReceiver, address(0));
   }
 
-  function test_addAsset_fuzz(address asset, uint8 decimals, address interestRateStrategy) public {
-    vm.assume(asset != address(0) && interestRateStrategy != address(0));
+  function test_addAsset_fuzz(
+    address underlying,
+    uint8 decimals,
+    address feeReceiver,
+    address interestRateStrategy
+  ) public {
+    vm.assume(
+      underlying != address(0) && feeReceiver != address(0) && interestRateStrategy != address(0)
+    );
     decimals = uint8(bound(decimals, 0, hub.MAX_ALLOWED_ASSET_DECIMALS()));
 
     uint256 expectedAssetId = hub.getAssetCount();
@@ -107,18 +133,18 @@ contract LiquidityHubConfigTest is LiquidityHubBase {
       active: true,
       frozen: false,
       paused: false,
-      feeReceiver: address(0),
+      feeReceiver: feeReceiver,
       liquidityFee: 0,
       irStrategy: interestRateStrategy
     });
 
     vm.expectEmit(address(hub));
-    emit ILiquidityHub.AssetAdded(expectedAssetId, asset, decimals);
+    emit ILiquidityHub.AssetAdded(expectedAssetId, underlying, decimals);
     vm.expectEmit(address(hub));
     emit ILiquidityHub.AssetConfigUpdated(expectedAssetId, expectedConfig);
 
     vm.prank(ADMIN);
-    uint256 assetId = Utils.addAsset(hub, asset, decimals, interestRateStrategy);
+    uint256 assetId = Utils.addAsset(hub, underlying, decimals, feeReceiver, interestRateStrategy);
 
     assertEq(assetId, expectedAssetId, 'asset id');
     assertEq(hub.getAssetCount(), assetId + 1, 'asset count');
@@ -208,11 +234,10 @@ contract LiquidityHubConfigTest is LiquidityHubBase {
     // set new fee receiver
     config.feeReceiver = makeAddr('newFeeReceiver');
     test_updateAssetConfig_fuzz(assetId, config);
-    // set zero fee receiver and liquidity fee
-    config.feeReceiver = address(0);
+    // set zero liquidity fee
     config.liquidityFee = 0;
     test_updateAssetConfig_fuzz(assetId, config);
-    // set zero fee receiver and liquidity fee again
+    // set zero liquidity fee again
     test_updateAssetConfig_fuzz(assetId, config);
     // set non-zero fee receiver
     config.feeReceiver = makeAddr('newFeeReceiver2');
@@ -265,23 +290,40 @@ contract LiquidityHubConfigTest is LiquidityHubBase {
     assertEq(hub.getSpokeSuppliedShares(assetId, newFeeReceiver), newFees);
   }
 
-  /// Updates the fee receiver from zero to non-zero, even with zero liquidity fee
-  function test_updateAssetConfig_fuzz_FromZeroFeeReceiver(uint256 assetId) public {
+  /// Updates the fee receiver to an existing spoke of the hub, so ends up with existing supplied shares plus accrued fees
+  function test_updateAssetConfig_fuzz_UseExistingSpokeAsFeeReceiver(uint256 assetId) public {
     assetId = bound(assetId, 0, hub.getAssetCount() - 1);
 
-    DataTypes.AssetConfig memory config = hub.getAssetConfig(assetId);
-    config.feeReceiver = address(0);
-    config.liquidityFee = 0;
-    test_updateAssetConfig_fuzz(assetId, config);
+    address oldFeeReceiver = _getFeeReceiver(assetId);
+    address newFeeReceiver = address(spoke1);
 
     uint256 amount = 1000e18;
     _addLiquidity(assetId, amount);
     _drawLiquidity(assetId, amount, true);
 
-    config.feeReceiver = makeAddr('newFeeReceiver');
-    test_updateAssetConfig_fuzz(assetId, config);
+    uint256 oldReceiverFees = hub.getSpokeSuppliedShares(assetId, oldFeeReceiver);
+    assertTrue(oldReceiverFees > 0);
 
-    assertEq(hub.getSpokeSuppliedShares(assetId, config.feeReceiver), 0);
+    // spoke1 adds some assets
+    Utils.add({
+      hub: hub,
+      assetId: assetId,
+      spoke: address(spoke2),
+      amount: amount,
+      user: bob,
+      to: address(spoke2)
+    });
+    uint256 newReceiverFees = hub.getSpokeSuppliedShares(assetId, newFeeReceiver);
+
+    updateAssetFeeReceiver(hub, assetId, newFeeReceiver);
+
+    skip(365 days);
+
+    // new fee receiver keeps the existing supplied shares and earns more via fees accrual
+    assertTrue(hub.getSpokeSuppliedShares(assetId, newFeeReceiver) > newReceiverFees);
+
+    // old fee receiver keeps the accrued fees
+    assertEq(hub.getSpokeSuppliedShares(assetId, oldFeeReceiver), oldReceiverFees);
   }
 
   /// Triggers accrual when liquidity fee update, based on old liquidity fee
@@ -312,7 +354,6 @@ contract LiquidityHubConfigTest is LiquidityHubBase {
     liquidityFee = bound(liquidityFee, 1, PercentageMathExtended.PERCENTAGE_FACTOR);
 
     DataTypes.AssetConfig memory config = hub.getAssetConfig(assetId);
-    config.feeReceiver = address(0);
     config.liquidityFee = 0;
     test_updateAssetConfig_fuzz(assetId, config);
 
