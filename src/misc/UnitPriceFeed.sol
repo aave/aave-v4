@@ -17,6 +17,9 @@ contract UnitPriceFeed is AggregatorV3Interface {
 
   int256 private immutable _units;
 
+  /**
+   * @notice Thrown when the operation is not supported.
+   */
   error OperationNotSupported();
 
   /**
