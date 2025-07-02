@@ -179,7 +179,8 @@ contract Spoke is ISpoke, Multicall, AccessManaged {
 
     // calc needs new user position, just updating base debt is enough
     uint256 newUserRiskPremium = _refreshAndValidateUserPosition(msg.sender); // validates HF
-    _updatePremiumDebt(reserve, userPosition, hub, assetId, msg.sender, newUserRiskPremium);
+    _calcAndRefreshPremiumDebt(reserve, userPosition, hub, assetId, msg.sender, newUserRiskPremium);
+    _notifyRiskPremiumUpdate(assetId, msg.sender, newUserRiskPremium);
 
     emit Withdraw(reserveId, msg.sender, withdrawnShares, to);
   }
@@ -209,7 +210,8 @@ contract Spoke is ISpoke, Multicall, AccessManaged {
 
     // calc needs new user position, just updating base debt is enough
     uint256 newUserRiskPremium = _refreshAndValidateUserPosition(msg.sender); // validates HF
-    _updatePremiumDebt(reserve, userPosition, hub, assetId, msg.sender, newUserRiskPremium);
+    _calcAndRefreshPremiumDebt(reserve, userPosition, hub, assetId, msg.sender, newUserRiskPremium);
+    _notifyRiskPremiumUpdate(assetId, msg.sender, newUserRiskPremium);
 
     emit Borrow(reserveId, msg.sender, baseDrawnShares, to);
   }
@@ -243,7 +245,8 @@ contract Spoke is ISpoke, Multicall, AccessManaged {
     userPosition.baseDrawnShares -= restoredShares;
 
     (uint256 newUserRiskPremium, , , , ) = _calculateUserAccountData(msg.sender);
-    _updatePremiumDebt(reserve, userPosition, hub, assetId, msg.sender, newUserRiskPremium);
+    _calcAndRefreshPremiumDebt(reserve, userPosition, hub, assetId, msg.sender, newUserRiskPremium);
+    _notifyRiskPremiumUpdate(assetId, msg.sender, newUserRiskPremium);
 
     emit Repay(reserveId, msg.sender, restoredShares);
   }
@@ -634,14 +637,14 @@ contract Spoke is ISpoke, Multicall, AccessManaged {
     );
   }
 
-  function _updatePremiumDebt(
+  function _calcAndRefreshPremiumDebt(
     DataTypes.Reserve storage reserve,
     DataTypes.UserPosition storage userPosition,
     ILiquidityHub hub,
     uint256 assetId,
     address user,
     uint256 newUserRiskPremium
-  ) internal {
+  ) internal returns (uint256, uint256) {
     uint256 userPremiumDrawnShares = userPosition.premiumDrawnShares = userPosition
       .baseDrawnShares
       .percentMulUp(newUserRiskPremium);
@@ -663,7 +666,8 @@ contract Spoke is ISpoke, Multicall, AccessManaged {
       0,
       0
     );
-    _notifyRiskPremiumUpdate(assetId, user, newUserRiskPremium);
+
+    return (userPremiumDrawnShares, userPremiumOffset);
   }
 
   function _refreshPremiumDebt(
@@ -1084,47 +1088,26 @@ contract Spoke is ISpoke, Multicall, AccessManaged {
       (vars.newUserRiskPremium, , , , ) = _calculateUserAccountData(vars.user);
 
       // refresh debt reserve premium
-      vars.userPremiumDrawnShares = userDebtPosition.premiumDrawnShares = userDebtPosition
-        .baseDrawnShares
-        .percentMulUp(vars.newUserRiskPremium);
-      vars.userPremiumOffset = userDebtPosition.premiumOffset = debtReserveHub.previewOffset(
+      (vars.userPremiumDrawnShares, vars.userPremiumOffset) = _calcAndRefreshPremiumDebt(
+        debtReserve,
+        userDebtPosition,
+        debtReserveHub,
         vars.debtAssetId,
-        userDebtPosition.premiumDrawnShares
+        vars.user,
+        vars.newUserRiskPremium
       );
+
       vars.totalUserDebtPremiumDrawnSharesDelta += int256(vars.userPremiumDrawnShares);
       vars.totalUserDebtPremiumOffsetDelta += int256(vars.userPremiumOffset);
 
-      _refresh(
-        debtReserve,
-        vars.user,
-        int256(vars.userPremiumDrawnShares),
-        int256(vars.userPremiumOffset),
-        0,
-        0
-      );
-
-      if (userDebtPosition.baseDrawnShares == 0) {
-        DataTypes.PositionStatus storage positionStatus = _positionStatus[vars.user];
-        positionStatus.setBorrowing(vars.debtReserveId, false);
-      }
-
       // refresh collateral reserve premium
-      vars.userPremiumDrawnShares = userCollateralPosition
-        .premiumDrawnShares = userCollateralPosition.baseDrawnShares.percentMulUp(
-        vars.newUserRiskPremium
-      );
-      vars.userPremiumOffset = userCollateralPosition.premiumOffset = collateralReserveHub
-        .previewOffset(vars.collateralAssetId, userCollateralPosition.premiumDrawnShares);
-      vars.totalUserCollateralPremiumDrawnSharesDelta += int256(vars.userPremiumDrawnShares);
-      vars.totalUserCollateralPremiumOffsetDelta += int256(vars.userPremiumOffset);
-
-      _refresh(
+      _calcAndRefreshPremiumDebt(
         collateralReserve,
+        userCollateralPosition,
+        collateralReserveHub,
+        vars.collateralAssetId,
         vars.user,
-        int256(vars.userPremiumDrawnShares),
-        int256(vars.userPremiumOffset),
-        0,
-        0
+        vars.newUserRiskPremium
       );
 
       _notifyRiskPremiumUpdate(vars.debtAssetId, vars.user, vars.newUserRiskPremium);
