@@ -73,16 +73,8 @@ contract LiquidityHubPayFeeTest is LiquidityHubBase {
       to: address(spoke1)
     });
 
-    _supplyAndDrawLiquidity({
-      assetId: daiAssetId,
-      supplyUser: bob,
-      supplySpoke: address(spoke2),
-      supplyAmount: 100e18,
-      drawUser: alice,
-      drawSpoke: address(spoke3),
-      drawAmount: 100e18,
-      skipTime: skipTime
-    });
+    _addLiquidity(daiAssetId, 100e18);
+    _drawLiquidity(daiAssetId, 100e18, true);
 
     uint256 spokeSharesBefore = hub.getSpokeSuppliedShares(daiAssetId, address(spoke1));
 
