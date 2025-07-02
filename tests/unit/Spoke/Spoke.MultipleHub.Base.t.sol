@@ -37,6 +37,7 @@ contract SpokeMultipleHubBase is SpokeBase {
     hub = new LiquidityHub(address(accessManager));
     oracle1 = new MockPriceOracle();
     spoke1 = new Spoke(address(oracle1), address(accessManager));
+    treasurySpoke = new TreasurySpoke(ADMIN, address(hub));
     irStrategy = new AssetInterestRateStrategy(address(hub));
 
     // New hub and spoke

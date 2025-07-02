@@ -98,7 +98,6 @@ interface ISpoke is IMulticall, IAccessManaged {
   error InvalidOracleAddress();
   error UsersAndDebtLengthMismatch();
   error Unauthorized();
-  error CollateralStatusUnchanged();
 
   function addReserve(
     uint256 assetId,
@@ -157,9 +156,10 @@ interface ISpoke is IMulticall, IAccessManaged {
   ) external;
 
   /**
-   * @notice Allows suppliers to enable/disable a specific supplied reserve as collateral.
-   * @param reserveId The reserveId of the underlying asset as registered on the spoke.
-   * @param usingAsCollateral True if the user wants to use the supply as collateral, false otherwise.
+   * @notice Enables or disables the use of a supplied reserve as collateral for the user.
+   * @dev No action is taken if the collateral status remains unchanged.
+   * @param reserveId The identifier of the reserve.
+   * @param usingAsCollateral True if enables the reserve as collateral, false otherwise.
    */
   function setUsingAsCollateral(uint256 reserveId, bool usingAsCollateral) external;
 

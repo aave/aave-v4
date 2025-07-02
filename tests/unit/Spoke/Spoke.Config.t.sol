@@ -121,28 +121,56 @@ contract SpokeConfigTest is SpokeBase {
     spoke1.setUsingAsCollateral(daiReserveId, true);
   }
 
-  function test_setUsingAsCollateral_revertsWith_CollateralStatusUnchanged() public {
+  /// no action taken when collateral status is unchanged
+  function test_setUsingAsCollateral_collateralStatusUnchanged() public {
     uint256 daiReserveId = _daiReserveId(spoke1);
 
     // ensure DAI is allowed as collateral
     updateCollateralFlag(spoke1, daiReserveId, true);
+
+    // slight update in collateral factor so user is subject to dynamic risk config refresh
+    updateCollateralFactor(spoke1, daiReserveId, _getCollateralFactor(spoke1, daiReserveId) + 1_00);
+    // slight update liquidity premium so user is subject to risk premium refresh
+    updateLiquidityPremium(spoke1, daiReserveId, _getLiquidityPremium(spoke1, daiReserveId) + 1_00);
+
     // Bob not using DAI as collateral
     assertFalse(spoke1.getUsingAsCollateral(daiReserveId, bob), 'bob not using as collateral');
 
-    vm.startPrank(bob);
+    // No action taken, because collateral status is already false
+    DynamicConfig[] memory bobDynConfig = _getUserDynConfigKeys(spoke1, bob);
+    uint256 bobRp = _getUserRpStored(spoke1, daiReserveId, bob);
 
-    // Bob can't change dai collateral status to false, because already false
-    vm.expectRevert(ISpoke.CollateralStatusUnchanged.selector);
+    vm.recordLogs();
+    vm.prank(bob);
     spoke1.setUsingAsCollateral(daiReserveId, false);
+    _assertEventNotEmitted(ISpoke.UsingAsCollateral.selector);
+
+    assertFalse(spoke1.getUsingAsCollateral(daiReserveId, bob));
+    assertEq(_getUserRpStored(spoke1, daiReserveId, bob), bobRp);
+    assertEq(_getUserDynConfigKeys(spoke1, bob), bobDynConfig);
 
     // Bob can change dai collateral status to true
+    vm.prank(bob);
     spoke1.setUsingAsCollateral(daiReserveId, true);
     assertTrue(spoke1.getUsingAsCollateral(daiReserveId, bob), 'bob using as collateral');
 
-    // Bob can't change dai collateral status to true, because already true
-    vm.expectRevert(ISpoke.CollateralStatusUnchanged.selector);
+    // slight update in collateral factor so user is subject to dynamic risk config refresh
+    updateCollateralFactor(spoke1, daiReserveId, _getCollateralFactor(spoke1, daiReserveId) + 1_00);
+    // slight update liquidity premium so user is subject to risk premium refresh
+    updateLiquidityPremium(spoke1, daiReserveId, _getLiquidityPremium(spoke1, daiReserveId) + 1_00);
+
+    // No action taken, because collateral status is already true
+    bobDynConfig = _getUserDynConfigKeys(spoke1, bob);
+    bobRp = _getUserRpStored(spoke1, daiReserveId, bob);
+
+    vm.recordLogs();
+    vm.prank(bob);
     spoke1.setUsingAsCollateral(daiReserveId, true);
-    vm.stopPrank();
+    _assertEventNotEmitted(ISpoke.UsingAsCollateral.selector);
+
+    assertTrue(spoke1.getUsingAsCollateral(daiReserveId, bob));
+    assertEq(_getUserRpStored(spoke1, daiReserveId, bob), bobRp);
+    assertEq(_getUserDynConfigKeys(spoke1, bob), bobDynConfig);
   }
 
   function test_setUsingAsCollateral() public {
@@ -165,7 +193,11 @@ contract SpokeConfigTest is SpokeBase {
     spoke1.setUsingAsCollateral(daiReserveId, usingAsCollateral);
 
     DataTypes.UserPosition memory userData = spoke1.getUserPosition(daiReserveId, bob);
-    assertEq(spoke1.getUsingAsCollateral(daiReserveId, bob), usingAsCollateral, 'wrong usingAsCollateral');
+    assertEq(
+      spoke1.getUsingAsCollateral(daiReserveId, bob),
+      usingAsCollateral,
+      'wrong usingAsCollateral'
+    );
   }
 
   function test_updateReserveConfig_revertsWith_InvalidLiquidityPremium() public {
