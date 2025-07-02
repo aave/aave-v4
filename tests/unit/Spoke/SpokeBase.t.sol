@@ -684,7 +684,7 @@ contract SpokeBase is Base {
 
   function _assertUserRpUnchanged(uint256 reserveId, ISpoke spoke, address user) internal view {
     DataTypes.UserPosition memory pos = spoke.getUserPosition(reserveId, user);
-    uint256 riskPremiumStored = pos.premiumDrawnShares.percentDiv(pos.baseDrawnShares);
+    uint256 riskPremiumStored = pos.premiumDrawnShares.percentDivDown(pos.baseDrawnShares);
     (uint256 riskPremiumCurrent, , , , ) = spoke.getUserAccountData(user);
     assertEq(riskPremiumCurrent, riskPremiumStored, 'user risk premium mismatch');
   }
@@ -695,7 +695,13 @@ contract SpokeBase is Base {
     address user
   ) internal view returns (uint256) {
     DataTypes.UserPosition memory pos = spoke.getUserPosition(reserveId, user);
-    return pos.premiumDrawnShares.percentDiv(pos.baseDrawnShares);
+    // sanity check
+    assertTrue(
+      pos.baseDrawnShares > 0 || pos.premiumDrawnShares == 0,
+      'if base is zero, premium must be zero'
+    );
+    if (pos.baseDrawnShares == 0) return 0;
+    return pos.premiumDrawnShares.percentDivDown(pos.baseDrawnShares);
   }
 
   function _boundUserAction(UserAction memory action) internal pure returns (UserAction memory) {
