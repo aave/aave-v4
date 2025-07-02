@@ -998,13 +998,13 @@ contract Spoke is ISpoke, Multicall, AccessManaged {
     vars.collateralReserveId = collateralReserve.reserveId;
 
     while (vars.i < usersLength) {
-      DataTypes.UserPosition storage userCollateralPosition = _userPositions[users[vars.i]][
+      vars.user = users[vars.i];
+      DataTypes.UserPosition storage userCollateralPosition = _userPositions[vars.user][
         collateralReserve.reserveId
       ];
-      DataTypes.UserPosition storage userDebtPosition = _userPositions[users[vars.i]][
+      DataTypes.UserPosition storage userDebtPosition = _userPositions[vars.user][
         debtReserve.reserveId
       ];
-      vars.user = users[vars.i];
 
       vars.collateralAssetId = collateralReserve.assetId;
       vars.debtAssetId = debtReserve.assetId;
