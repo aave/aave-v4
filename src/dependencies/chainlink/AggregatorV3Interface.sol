@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: MIT
-// Imported form https://github.com/smartcontractkit/chainlink/blob/e8490e910274279a2c394ba37eb328943322ac6b/contracts/src/v0.8/shared/interfaces/AggregatorV3Interface.sol
+// Imported from https://github.com/smartcontractkit/chainlink/blob/e8490e910274279a2c394ba37eb328943322ac6b/contracts/src/v0.8/shared/interfaces/AggregatorV3Interface.sol
 pragma solidity ^0.8.0;
 
 // solhint-disable-next-line interface-starts-with-i

@@ -211,12 +211,13 @@ abstract contract Base is Test {
 
     // Grant responsibilities to roles
     // Spoke Admin functionalities
-    bytes4[] memory selectors = new bytes4[](5);
-    selectors[0] = ISpoke.updateLiquidationConfig.selector;
-    selectors[1] = ISpoke.addReserve.selector;
-    selectors[2] = ISpoke.updateReserveConfig.selector;
-    selectors[3] = ISpoke.updateDynamicReserveConfig.selector;
-    selectors[4] = ISpoke.updateUserRiskPremium.selector;
+    bytes4[] memory selectors = new bytes4[](6);
+    selectors[0] = ISpoke.updateOracle.selector;
+    selectors[1] = ISpoke.updateLiquidationConfig.selector;
+    selectors[2] = ISpoke.addReserve.selector;
+    selectors[3] = ISpoke.updateReserveConfig.selector;
+    selectors[4] = ISpoke.updateDynamicReserveConfig.selector;
+    selectors[5] = ISpoke.updateUserRiskPremium.selector;
     accessManager.setTargetFunctionRole(address(spoke), selectors, Roles.SPOKE_ADMIN_ROLE);
 
     // Liquidity Hub Admin functionalities

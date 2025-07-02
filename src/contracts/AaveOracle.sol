@@ -8,9 +8,9 @@ import {IAaveOracle, IPriceOracle} from 'src/interfaces/IAaveOracle.sol';
 /**
  * @title AaveOracle contract
  * @author Aave Labs
- * @notice Oracle contract for the Aave protocol
- * @dev Oracles are spoke-specific: one oracle CAN'T be used across different spoke
- *   due to the usage of reserve id as index of the _reserveSource
+ * @notice Oracle contract for the Aave protocol.
+ * @dev Oracles are spoke-specific: one oracle CAN'T be used across different spokes
+ *   due to the usage of reserve id as index of the _reserveSource (unless spokes use the same reserve ids).
  */
 contract AaveOracle is IAaveOracle, AccessManaged {
   /// @inheritdoc IPriceOracle
@@ -56,7 +56,7 @@ contract AaveOracle is IAaveOracle, AccessManaged {
     uint256[] calldata reserveIds
   ) external view override returns (uint256[] memory) {
     uint256[] memory prices = new uint256[](reserveIds.length);
-    for (uint256 i = 0; i < reserveIds.length; i++) {
+    for (uint256 i = 0; i < reserveIds.length; ++i) {
       prices[i] = _getSourcePrice(reserveIds[i]);
     }
     return prices;

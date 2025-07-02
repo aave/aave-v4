@@ -4,7 +4,7 @@ pragma solidity ^0.8.0;
 import {IAccessManaged} from 'src/dependencies/openzeppelin/IAccessManaged.sol';
 import {IMulticall} from 'src/interfaces/IMulticall.sol';
 import {IPriceOracle} from 'src/interfaces/IPriceOracle.sol';
-import {DataTypes, ILiquidityHub} from 'src/libraries/types/DataTypes.sol';
+import {DataTypes} from 'src/libraries/types/DataTypes.sol';
 
 /**
  * @title ISpoke
@@ -98,6 +98,8 @@ interface ISpoke is IMulticall, IAccessManaged {
   error InvalidOracleAddress();
   error UsersAndDebtLengthMismatch();
   error Unauthorized();
+
+  function updateOracle(address oracleAddress) external;
 
   function addReserve(
     uint256 assetId,

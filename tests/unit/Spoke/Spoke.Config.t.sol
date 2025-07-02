@@ -11,6 +11,41 @@ contract SpokeConfigTest is SpokeBase {
     new Spoke(address(0), address(accessManager));
   }
 
+  function test_spoke_deploy() public {
+    address predictedSpokeAddress = vm.computeCreateAddress(address(this), vm.getNonce(address(this)));
+    vm.expectEmit(predictedSpokeAddress);
+    emit ISpoke.OracleUpdated(address(oracle1));
+    vm.expectEmit(predictedSpokeAddress);
+    emit ISpoke.LiquidationConfigUpdated(
+      DataTypes.LiquidationConfig({
+        closeFactor: HEALTH_FACTOR_LIQUIDATION_THRESHOLD,
+        healthFactorForMaxBonus: 0,
+        liquidationBonusFactor: 0
+      })
+    );
+    new Spoke(address(oracle1), address(accessManager));
+  }
+
+  function test_updateOracle_revertsWith_AccessManagedUnauthorized() public {
+    vm.expectRevert(abi.encodeWithSelector(IAccessManaged.AccessManagedUnauthorized.selector, alice));
+    vm.prank(alice);
+    spoke1.updateOracle(address(0));
+  }
+
+  function test_updateOracle_revertsWith_InvalidOracleAddress() public {
+    vm.expectRevert(ISpoke.InvalidOracleAddress.selector);
+    vm.prank(SPOKE_ADMIN);
+    spoke1.updateOracle(address(0));
+  }
+
+  function test_updateOracle() public {
+    address newOracle = address(new AaveOracle(SPOKE_ADMIN, 18, 'New Aave Oracle'));
+    vm.expectEmit(address(spoke1));
+    emit ISpoke.OracleUpdated(newOracle);
+    vm.prank(SPOKE_ADMIN);
+    spoke1.updateOracle(newOracle);
+  }
+  
   function test_updateReserveConfig() public {
     uint256 daiReserveId = _daiReserveId(spoke1);
     DataTypes.ReserveConfig memory config = spoke1.getReserveConfig(daiReserveId);

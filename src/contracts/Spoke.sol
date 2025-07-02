@@ -32,7 +32,7 @@ contract Spoke is ISpoke, Multicall, AccessManaged {
 
   uint256 public constant HEALTH_FACTOR_LIQUIDATION_THRESHOLD = WadRayMathExtended.WAD;
   uint256 public constant MAX_LIQUIDITY_PREMIUM = 1000_00; // 1000.00%
-  IPriceOracle public immutable oracle;
+  IPriceOracle public oracle;
 
   mapping(address user => mapping(uint256 reserveId => DataTypes.UserPosition position))
     internal _userPositions;
@@ -47,22 +47,24 @@ contract Spoke is ISpoke, Multicall, AccessManaged {
   /**
    * @dev Constructor.
    * @dev The authority should implement the AccessManaged interface to control access.
-   * @param oracleAddress The address of the price oracle contract used for asset valuations.
-   * @param authority The address of the authority contract which manages permissions.
+   * @param oracle_ The address of the price oracle contract used for asset valuations.
+   * @param authority_ The address of the authority contract which manages permissions.
    */
-  constructor(address oracleAddress, address authority) AccessManaged(authority) {
-    require(oracleAddress != address(0), InvalidOracleAddress());
-
-    oracle = IPriceOracle(oracleAddress);
-    emit OracleUpdated(oracleAddress);
+  constructor(address oracle_, address authority_) AccessManaged(authority_) {
+    _updateOracle(oracle_);
 
     // todo move to `initialize` when adding upgradeability
     _liquidationConfig.closeFactor = HEALTH_FACTOR_LIQUIDATION_THRESHOLD;
+    emit LiquidationConfigUpdated(_liquidationConfig);
   }
 
   // /////
   // Governance
   // /////
+
+  function updateOracle(address newOracle) external restricted {
+    _updateOracle(newOracle);
+  }
 
   function updateLiquidationConfig(
     DataTypes.LiquidationConfig calldata liquidationConfig
@@ -604,6 +606,12 @@ contract Spoke is ISpoke, Multicall, AccessManaged {
     require(reserve.config.active, ReserveNotActive());
     require(!reserve.config.paused, ReservePaused());
     // todo validate user not trying to repay more
+  }
+
+  function _updateOracle(address newOracle) internal {
+    require(newOracle != address(0), InvalidOracleAddress());
+    oracle = IPriceOracle(newOracle);
+    emit OracleUpdated(newOracle);
   }
 
   function _refreshAndValidateUserPosition(address user) internal returns (uint256) {

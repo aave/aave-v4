@@ -81,9 +81,17 @@ contract AaveOracleTest is Base {
   function test_setReserveSource_revertsWith_InvalidPrice() public {
     _mockSourceDecimals(_source1, _decimals);
     _mockSourceLatestRoundData(_source1, -1e8);
-
     vm.expectRevert(abi.encodeWithSelector(IAaveOracle.InvalidPrice.selector, reserveId1));
+    vm.prank(ORACLE_ADMIN);
+    oracle.setReserveSource(reserveId1, _source1);
 
+    _mockSourceLatestRoundData(_source1, 0);
+    vm.expectRevert(abi.encodeWithSelector(IAaveOracle.InvalidPrice.selector, reserveId1));
+    vm.prank(ORACLE_ADMIN);
+    oracle.setReserveSource(reserveId1, _source1);
+
+    _mockSourceLatestRoundData(_source1, -100e18);
+    vm.expectRevert(abi.encodeWithSelector(IAaveOracle.InvalidPrice.selector, reserveId1));
     vm.prank(ORACLE_ADMIN);
     oracle.setReserveSource(reserveId1, _source1);
   }
