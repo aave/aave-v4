@@ -1834,18 +1834,16 @@ abstract contract Base is Test {
     uint256 interestRateBps,
     uint256 assetId,
     uint256 availableLiquidity,
-    uint256 totalDebt,
-    uint256 liquidityAdded,
-    uint256 liquidityTaken
+    uint256 baseDebt,
+    uint256 premiumDebt
   ) internal {
     _mockInterestRateBps(
       address(irStrategy),
       interestRateBps,
       assetId,
       availableLiquidity,
-      totalDebt,
-      liquidityAdded,
-      liquidityTaken
+      baseDebt,
+      premiumDebt
     );
   }
 
@@ -1854,15 +1852,14 @@ abstract contract Base is Test {
     uint256 interestRateBps,
     uint256 assetId,
     uint256 availableLiquidity,
-    uint256 totalDebt,
-    uint256 liquidityAdded,
-    uint256 liquidityTaken
+    uint256 baseDebt,
+    uint256 premiumDebt
   ) internal {
     vm.mockCall(
       interestRateStrategy,
       abi.encodeCall(
         IBasicInterestRateStrategy.calculateInterestRate,
-        (assetId, availableLiquidity, totalDebt, liquidityAdded, liquidityTaken)
+        (assetId, availableLiquidity, baseDebt, premiumDebt)
       ),
       abi.encode(interestRateBps.bpsToRay())
     );
@@ -1884,18 +1881,16 @@ abstract contract Base is Test {
     uint256 interestRateRay,
     uint256 assetId,
     uint256 availableLiquidity,
-    uint256 totalDebt,
-    uint256 liquidityAdded,
-    uint256 liquidityTaken
+    uint256 baseDebt,
+    uint256 premiumDebt
   ) internal {
     _mockInterestRateRay(
       address(irStrategy),
       interestRateRay,
       assetId,
       availableLiquidity,
-      totalDebt,
-      liquidityAdded,
-      liquidityTaken
+      baseDebt,
+      premiumDebt
     );
   }
 
@@ -1904,15 +1899,14 @@ abstract contract Base is Test {
     uint256 interestRateRay,
     uint256 assetId,
     uint256 availableLiquidity,
-    uint256 totalDebt,
-    uint256 liquidityAdded,
-    uint256 liquidityTaken
+    uint256 baseDebt,
+    uint256 premiumDebt
   ) internal {
     vm.mockCall(
       interestRateStrategy,
       abi.encodeCall(
         IBasicInterestRateStrategy.calculateInterestRate,
-        (assetId, availableLiquidity, totalDebt, liquidityAdded, liquidityTaken)
+        (assetId, availableLiquidity, baseDebt, premiumDebt)
       ),
       abi.encode(interestRateRay)
     );
@@ -1924,7 +1918,7 @@ abstract contract Base is Test {
     string memory operation
   ) internal {
     DataTypes.Asset memory asset = hub.getAsset(assetId);
-    (uint256 baseDebt, ) = hub.getAssetDebt(assetId);
+    (uint256 baseDebt, uint256 premiumDebt) = hub.getAssetDebt(assetId);
 
     vm.assertEq(
       asset.baseBorrowRate,
@@ -1932,8 +1926,7 @@ abstract contract Base is Test {
         assetId,
         asset.availableLiquidity,
         baseDebt,
-        0,
-        0
+        premiumDebt
       ),
       string.concat('base borrow rate after ', operation)
     );

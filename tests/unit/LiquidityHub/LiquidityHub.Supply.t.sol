@@ -270,13 +270,13 @@ contract LiquidityHubSupplyTest is LiquidityHubBase {
 
     IERC20 underlying = IERC20(hub.getAsset(assetId).underlying);
 
-    (uint256 baseDebtBefore, ) = hub.getAssetDebt(assetId);
+    (uint256 baseDebtBefore, uint256 premiumDebtBefore) = hub.getAssetDebt(assetId);
     uint256 availableLiquidityBefore = hub.getAvailableLiquidity(assetId);
     vm.expectCall(
       address(irStrategy),
       abi.encodeCall(
         IBasicInterestRateStrategy.calculateInterestRate,
-        (assetId, availableLiquidityBefore, baseDebtBefore, amount, 0)
+        (assetId, availableLiquidityBefore + amount, baseDebtBefore, premiumDebtBefore)
       )
     );
 
@@ -508,13 +508,13 @@ contract LiquidityHubSupplyTest is LiquidityHubBase {
     uint256 suppliedAssetsBefore = hub.getAssetSuppliedAmount(daiAssetId);
     uint256 suppliedSharesBefore = hub.getAssetSuppliedShares(daiAssetId);
 
-    (uint256 baseDebtBefore, ) = hub.getAssetDebt(daiAssetId);
+    (uint256 baseDebtBefore, uint256 premiumDebtBefore) = hub.getAssetDebt(daiAssetId);
     uint256 availableLiquidityBefore = hub.getAvailableLiquidity(daiAssetId);
     vm.expectCall(
       address(irStrategy),
       abi.encodeCall(
         IBasicInterestRateStrategy.calculateInterestRate,
-        (daiAssetId, availableLiquidityBefore, baseDebtBefore, supplyAmount, 0)
+        (daiAssetId, availableLiquidityBefore + supplyAmount, baseDebtBefore, premiumDebtBefore)
       )
     );
 

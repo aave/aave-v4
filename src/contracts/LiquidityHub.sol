@@ -92,7 +92,7 @@ contract LiquidityHub is ILiquidityHub, AccessManaged {
     asset.accrue(assetId, _spokes[assetId][asset.config.feeReceiver]);
 
     asset.config = config;
-    asset.updateBorrowRate({assetId: assetId, liquidityAdded: 0, liquidityTaken: 0});
+    asset.updateBorrowRate(assetId);
 
     emit AssetConfigUpdated(assetId, config);
   }
@@ -154,9 +154,9 @@ contract LiquidityHub is ILiquidityHub, AccessManaged {
     require(suppliedShares != 0, InvalidSharesAmount());
     asset.suppliedShares += suppliedShares;
     spoke.suppliedShares += suppliedShares;
-
-    asset.updateBorrowRate({assetId: assetId, liquidityAdded: amount, liquidityTaken: 0});
     asset.availableLiquidity += amount;
+
+    asset.updateBorrowRate(assetId);
 
     // TODO: fee-on-transfer
     IERC20(asset.underlying).safeTransferFrom(from, address(this), amount);
@@ -177,9 +177,9 @@ contract LiquidityHub is ILiquidityHub, AccessManaged {
     uint256 withdrawnShares = asset.toSuppliedSharesUp(amount); // non zero since we round up
     asset.suppliedShares -= withdrawnShares;
     spoke.suppliedShares -= withdrawnShares;
-
-    asset.updateBorrowRate({assetId: assetId, liquidityAdded: 0, liquidityTaken: amount});
     asset.availableLiquidity -= amount;
+
+    asset.updateBorrowRate(assetId);
 
     IERC20(asset.underlying).safeTransfer(to, amount);
 
@@ -199,9 +199,9 @@ contract LiquidityHub is ILiquidityHub, AccessManaged {
     uint256 drawnShares = asset.toDrawnSharesUp(amount); // non zero since we round up
     asset.baseDrawnShares += drawnShares;
     spoke.baseDrawnShares += drawnShares;
-
-    asset.updateBorrowRate({assetId: assetId, liquidityAdded: 0, liquidityTaken: amount});
     asset.availableLiquidity -= amount;
+
+    asset.updateBorrowRate(assetId);
 
     IERC20(asset.underlying).safeTransfer(to, amount);
 
@@ -226,18 +226,13 @@ contract LiquidityHub is ILiquidityHub, AccessManaged {
 
     _validateRestore(asset, spoke, baseAmount, premiumAmount);
 
+    uint256 totalRestoredAmount = baseAmount + premiumAmount;
     uint256 baseDrawnSharesRestored = asset.toDrawnSharesDown(baseAmount);
     asset.baseDrawnShares -= baseDrawnSharesRestored;
     spoke.baseDrawnShares -= baseDrawnSharesRestored;
-
-    uint256 totalRestoredAmount = baseAmount + premiumAmount;
-
-    asset.updateBorrowRate({
-      assetId: assetId,
-      liquidityAdded: totalRestoredAmount,
-      liquidityTaken: 0
-    }); // both can be zero
     asset.availableLiquidity += totalRestoredAmount;
+
+    asset.updateBorrowRate(assetId);
 
     IERC20(asset.underlying).safeTransferFrom(from, address(this), totalRestoredAmount);
 
