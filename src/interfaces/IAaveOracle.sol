@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: AGPL-3.0
 pragma solidity ^0.8.0;
 
-import {IPriceOracle} from './IPriceOracle.sol';
+import {IPriceOracle} from 'src/interfaces/IPriceOracle.sol';
 
 /**
  * @title IAaveOracle
@@ -17,37 +17,37 @@ interface IAaveOracle is IPriceOracle {
   event AaveOracleCreated(uint256 indexed decimals, string indexed description);
   /**
    * @notice Emitted when the price feed source of a reserve is updated.
-   * @param reserveId The id of the reserve.
+   * @param reserveId The identifier of the reserve.
    * @param source The price feed source of the reserve.
    */
   event ReserveSourceUpdated(uint256 indexed reserveId, address indexed source);
 
   /**
    * @notice Thrown when the price feed source uses a different number of decimals than the oracle.
-   * @param reserveId The id of the reserve.
+   * @param reserveId The identifier of the reserve.
    */
   error InvalidSourceDecimals(uint256 reserveId);
   /**
    * @notice Thrown when the price feed source is invalid (zero address).
-   * @param reserveId The id of the reserve.
+   * @param reserveId The identifier of the reserve.
    */
   error InvalidSource(uint256 reserveId);
   /**
    * @notice Thrown when the price feed source returns an invalid price (non-positive).
-   * @param reserveId The id of the reserve.
+   * @param reserveId The identifier of the reserve.
    */
   error InvalidPrice(uint256 reserveId);
 
   /**
    * @notice Sets the price feed source of a reserve.
-   * @param reserveId The id of the reserve.
+   * @param reserveId The identifier of the reserve.
    * @param source The price feed source of the reserve.
    */
   function setReserveSource(uint256 reserveId, address source) external;
 
   /**
    * @notice Returns the prices of multiple reserves.
-   * @param reserveIds The ids of the reserves.
+   * @param reserveIds The identifiers of the reserves.
    * @return prices The prices of the reserves.
    */
   function getReservesPrices(
@@ -56,7 +56,7 @@ interface IAaveOracle is IPriceOracle {
 
   /**
    * @notice Returns the price feed source of a reserve.
-   * @param reserveId The id of the reserve.
+   * @param reserveId The identifier of the reserve.
    * @return source The price feed source of the reserve.
    */
   function getReserveSource(uint256 reserveId) external view returns (address);

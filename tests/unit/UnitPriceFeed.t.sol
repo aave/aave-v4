@@ -35,10 +35,10 @@ contract UnitPriceFeedTest is Base {
   function test_fuzz_latestRoundData(uint80 blockTimestamp) public {
     vm.warp(blockTimestamp);
     (uint80 roundId, int256 answer, uint256 startedAt, uint256 updatedAt, uint80 answeredInRound) = unitPriceFeed.latestRoundData();
-    assertEq(roundId, block.timestamp);
+    assertEq(roundId, blockTimestamp);
     assertEq(answer, int256(10 ** _decimals));
     assertEq(startedAt, blockTimestamp);
     assertEq(updatedAt, blockTimestamp);
-    assertEq(answeredInRound, block.timestamp);
+    assertEq(answeredInRound, blockTimestamp);
   }
 }

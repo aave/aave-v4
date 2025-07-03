@@ -223,7 +223,7 @@ contract LiquidityHubConfigTest is LiquidityHubBase {
 
     // Always accrue first, based on old config
     vm.expectEmit(address(hub));
-    emit ILiquidityHub.DrawnIndexUpdate(assetId, hub.previewDrawnIndex(assetId), block.timestamp);
+    emit ILiquidityHub.DrawnIndexUpdate(assetId, hub.previewDrawnIndex(assetId), vm.getBlockTimestamp());
     vm.expectEmit(address(hub));
     emit ILiquidityHub.AssetConfigUpdated(assetId, newConfig);
 

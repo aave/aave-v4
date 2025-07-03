@@ -9,8 +9,7 @@ import {IAaveOracle, IPriceOracle} from 'src/interfaces/IAaveOracle.sol';
  * @title AaveOracle contract
  * @author Aave Labs
  * @notice Oracle contract for the Aave protocol.
- * @dev Oracles are spoke-specific: one oracle CAN'T be used across different spokes
- *   due to the usage of reserve id as index of the _reserveSource (unless spokes use the same reserve ids).
+ * @dev Oracles are spoke-specific, due to the usage of reserve id as index of the _reserveSource.
  */
 contract AaveOracle is IAaveOracle, AccessManaged {
   /// @inheritdoc IPriceOracle
@@ -22,7 +21,7 @@ contract AaveOracle is IAaveOracle, AccessManaged {
 
   /**
    * @dev Constructor.
-   * @dev The authority should implement the AccessManaged interface to control access.
+   * @dev The authority must implement the AccessManaged interface to control access.
    * @param authority The address of the authority contract which manages permissions.
    * @param decimals The number of decimals for the oracle.
    * @param description The description of the oracle.

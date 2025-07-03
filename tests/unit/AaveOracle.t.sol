@@ -183,11 +183,11 @@ contract AaveOracleTest is Base {
       source,
       abi.encodeCall(AggregatorV3Interface.latestRoundData, ()),
       abi.encode(
-        uint80(block.timestamp),
+        uint80(vm.getBlockTimestamp()),
         price,
-        block.timestamp,
-        block.timestamp,
-        uint80(block.timestamp)
+        vm.getBlockTimestamp(),
+        vm.getBlockTimestamp(),
+        uint80(vm.getBlockTimestamp())
       )
     );
   }

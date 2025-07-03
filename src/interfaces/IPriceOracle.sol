@@ -22,7 +22,7 @@ interface IPriceOracle {
 
   /**
    * @notice Returns the reserve price with `decimals` precision
-   * @param reserveId The id of the reserve
+   * @param reserveId The identifier of the reserve
    * @return The price of the reserve
    */
   function getReservePrice(uint256 reserveId) external view returns (uint256);

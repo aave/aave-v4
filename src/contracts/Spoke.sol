@@ -32,7 +32,10 @@ contract Spoke is ISpoke, Multicall, AccessManaged {
 
   uint256 public constant HEALTH_FACTOR_LIQUIDATION_THRESHOLD = WadRayMathExtended.WAD;
   uint256 public constant MAX_LIQUIDITY_PREMIUM = 1000_00; // 1000.00%
+
   IPriceOracle public oracle;
+  uint256[] public reservesList; // todo: rm, not needed
+  uint256 public reserveCount;
 
   mapping(address user => mapping(uint256 reserveId => DataTypes.UserPosition position))
     internal _userPositions;
@@ -41,8 +44,6 @@ contract Spoke is ISpoke, Multicall, AccessManaged {
   mapping(uint256 reserveId => mapping(uint16 configKey => DataTypes.DynamicReserveConfig config))
     internal _dynamicConfig; // dictionary of dynamic configs per reserve
   DataTypes.LiquidationConfig internal _liquidationConfig;
-  uint256[] public reservesList; // todo: rm, not needed
-  uint256 public reserveCount;
 
   /**
    * @dev Constructor.
