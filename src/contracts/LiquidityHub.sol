@@ -227,10 +227,10 @@ contract LiquidityHub is ILiquidityHub, AccessManaged {
 
     _validateRestore(asset, spoke, baseAmount, premiumAmount);
 
-    uint256 totalRestoredAmount = baseAmount + premiumAmount;
     uint256 baseDrawnSharesRestored = asset.toDrawnSharesDown(baseAmount);
     asset.baseDrawnShares -= baseDrawnSharesRestored;
     spoke.baseDrawnShares -= baseDrawnSharesRestored;
+    uint256 totalRestoredAmount = baseAmount + premiumAmount;
     asset.availableLiquidity += totalRestoredAmount;
 
     /// @dev premium debt must be restored in `refreshPremiumDebt` before calling this function
