@@ -1,8 +1,6 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.0;
 
-import {console2 as console} from 'forge-std/console2.sol';
-
 import {IBasicInterestRateStrategy} from 'src/interfaces/IBasicInterestRateStrategy.sol';
 import {ILiquidityHub} from 'src/interfaces/ILiquidityHub.sol';
 import {WadRayMathExtended} from 'src/libraries/math/WadRayMathExtended.sol';
@@ -142,12 +140,8 @@ library AssetLogic {
     if (feeShares > 0) {
       feeReceiver.suppliedShares += feeShares;
       asset.suppliedShares += feeShares;
-
-      console.log(assetId, asset.config.feeReceiver);
-      console.log('drawnIndex %e %e %e', drawnIndex, feeShares, feeAmount);
       emit ILiquidityHub.Add(assetId, asset.config.feeReceiver, feeShares, feeAmount);
       emit ILiquidityHub.AccrueFees(assetId, feeShares);
-      // revert('AccrueFees');
     }
 
     asset.lastUpdateTimestamp = block.timestamp;
