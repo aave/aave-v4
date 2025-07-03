@@ -1319,7 +1319,7 @@ abstract contract Base is Test {
     return hub.convertToDrawnAssets(assetId, MAX_SUPPLY_AMOUNT);
   }
 
-  function getDeficit(ILiquidityHub hub, uint256 assetId) internal view returns (uint256) {
+  function _getDeficit(ILiquidityHub hub, uint256 assetId) internal view returns (uint256) {
     return hub.getAsset(assetId).deficit;
   }
 
@@ -2042,5 +2042,41 @@ abstract contract Base is Test {
     }
 
     vm.recordLogs();
+  }
+
+  /// @dev Adds liquidity to the Hub via a random spoke
+  function _addLiquidity(uint256 assetId, uint256 amount) public {
+    address tempSpoke = vm.randomAddress();
+    address tempUser = vm.randomAddress();
+
+    uint256 initialLiq = hub.getAvailableLiquidity(assetId);
+
+    address underlying = hub.getAsset(assetId).underlying;
+    deal(underlying, tempUser, amount);
+
+    vm.prank(tempUser);
+    IERC20(underlying).approve(address(hub), type(uint256).max);
+
+    vm.prank(ADMIN);
+    hub.addSpoke(
+      assetId,
+      tempSpoke,
+      DataTypes.SpokeConfig({
+        supplyCap: type(uint256).max,
+        drawCap: type(uint256).max,
+        active: true
+      })
+    );
+
+    Utils.add({
+      hub: hub,
+      assetId: assetId,
+      spoke: tempSpoke,
+      amount: amount,
+      user: tempUser,
+      to: tempSpoke
+    });
+
+    assertEq(hub.getAvailableLiquidity(assetId), initialLiq + amount);
   }
 }

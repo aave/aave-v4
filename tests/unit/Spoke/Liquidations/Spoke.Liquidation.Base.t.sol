@@ -47,8 +47,9 @@ contract SpokeLiquidationBase is SpokeBase {
     Balance deficit;
     Balance totalCollateralInBaseCurrency;
     Balance totalDebtInBaseCurrency;
-    Balance[] deficits;
-    Balance[] debts;
+    Balance[] deficitAmounts;
+    Balance[] userTotalDebts;
+    Balance[] spokeTotalDebts;
     DataTypes.DynamicReserveConfig collDynConfig;
     DataTypes.DynamicReserveConfig[] collDynConfigs;
     DataTypes.Reserve[] collateralReserves;
@@ -464,6 +465,16 @@ contract SpokeLiquidationBase is SpokeBase {
       UINT256_MAX,
       string.concat('health factor should be max after liquidation ', label)
     );
+    // if bad debt, HF should be max value and userRp should be 0 (due to no coll remaining)
+    assertEq(state.finalHf, UINT256_MAX, string.concat('HF = 0 if bad debt ', label));
+    assertEq(state.userRp, 0, string.concat('userRp = 0 if bad debt ', label));
+
+    uint256 expectedDeficit = state.outstandingDebt;
+    assertGe(
+      state.deficit.balanceChange,
+      expectedDeficit,
+      string.concat('deficit can only exceed amount restored due to rounding  ', label)
+    );
     uint256 assetAmountOfOneShare = hub.convertToDrawnAssets(
       state.debtReserve.assetId,
       WadRayMath.RAY
@@ -471,16 +482,13 @@ contract SpokeLiquidationBase is SpokeBase {
       WadRayMath.RAY +
       1; // add 1 to divUp
     // bad debt should be cleared from user position and moved to deficit
-    // precision error is asset equivalent of 1 share
+    // precision error is asset equivalent of 1 share, due to rounding in restore
     assertApproxEqAbs(
       state.deficit.balanceChange,
-      state.outstandingDebt,
+      expectedDeficit,
       assetAmountOfOneShare,
-      string.concat('deficit added to hub ', label)
+      string.concat('deficit should match restored amount ', label)
     );
-    // if bad debt, HF should be max value and userRp should be 0 (due to no coll remaining)
-    assertEq(state.finalHf, UINT256_MAX, string.concat('HF = 0 if bad debt ', label));
-    assertEq(state.userRp, 0, string.concat('userRp = 0 if bad debt ', label));
   }
 
   /// generic assertions in non bad debt scenarios
@@ -693,7 +701,7 @@ contract SpokeLiquidationBase is SpokeBase {
       state.collateralReserve.assetId,
       WadRayMathExtended.RAY
     );
-    state.deficit.balanceBefore = getDeficit(state.debtHub, state.debtReserve.assetId);
+    state.deficit.balanceBefore = _getDeficit(state.debtHub, state.debtReserve.assetId);
 
     (state.spokeBaseDebt.balanceBefore, state.spokePremiumDebt.balanceBefore) = hub.getSpokeDebt(
       state.debtReserve.assetId,
@@ -712,14 +720,14 @@ contract SpokeLiquidationBase is SpokeBase {
     ) = state.spoke.getUserAccountData(state.user);
 
     // multi reserve accounting
-    state.debts = new Balance[](state.debtReserves.length);
-    state.deficits = new Balance[](state.debtReserves.length);
+    state.userTotalDebts = new Balance[](state.debtReserves.length);
+    state.deficitAmounts = new Balance[](state.debtReserves.length);
     for (uint256 i = 0; i < state.debtReserves.length; i++) {
-      state.deficits[i].balanceBefore = getDeficit(
+      state.deficitAmounts[i].balanceBefore = _getDeficit(
         state.debtReserves[i].hub,
         state.debtReserves[i].assetId
       );
-      state.debts[i].balanceBefore = state.spoke.getUserTotalDebt(
+      state.userTotalDebts[i].balanceBefore = state.spoke.getUserTotalDebt(
         state.debtReserves[i].reserveId,
         state.user
       );
@@ -780,7 +788,7 @@ contract SpokeLiquidationBase is SpokeBase {
       state.collateralReserve.assetId,
       WadRayMathExtended.RAY
     );
-    state.deficit.balanceAfter = getDeficit(state.debtReserve.hub, state.debtReserve.assetId);
+    state.deficit.balanceAfter = _getDeficit(state.debtReserve.hub, state.debtReserve.assetId);
     (state.spokeBaseDebt.balanceAfter, state.spokePremiumDebt.balanceAfter) = hub.getSpokeDebt(
       state.debtReserve.assetId,
       address(state.spoke)
@@ -892,22 +900,21 @@ contract SpokeLiquidationBase is SpokeBase {
 
     // multi reserve accounting
     for (uint256 i = 0; i < state.debtReserves.length; i++) {
-      state.deficits[i].balanceAfter = getDeficit(
+      state.deficitAmounts[i].balanceAfter = _getDeficit(
         state.debtReserves[i].hub,
         state.debtReserves[i].assetId
       );
-
-      state.deficits[i].balanceChange =
-        state.deficits[i].balanceAfter -
-        state.deficits[i].balanceBefore;
-
-      state.debts[i].balanceAfter = state.spoke.getUserTotalDebt(
+      state.deficitAmounts[i].balanceChange = stdMath.delta(
+        state.deficitAmounts[i].balanceAfter,
+        state.deficitAmounts[i].balanceBefore
+      );
+      state.userTotalDebts[i].balanceAfter = state.spoke.getUserTotalDebt(
         state.debtReserves[i].reserveId,
         state.user
       );
-      state.debts[i].balanceChange = stdMath.delta(
-        state.debts[i].balanceAfter,
-        state.debts[i].balanceBefore
+      state.userTotalDebts[i].balanceChange = stdMath.delta(
+        state.userTotalDebts[i].balanceAfter,
+        state.userTotalDebts[i].balanceBefore
       );
     }
 

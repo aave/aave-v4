@@ -131,7 +131,7 @@ contract LiquidityHubReportDeficitTest is LiquidityHubBase {
     premiumAmount = bound(premiumAmount, 0, params.premiumDebt);
     vm.assume(baseAmount + premiumAmount > 0);
 
-    params.deficitBefore = getDeficit(hub, usdxAssetId);
+    params.deficitBefore = _getDeficit(hub, usdxAssetId);
     params.supplyExchangeRateBefore = hub.convertToSuppliedAssets(
       usdxAssetId,
       WadRayMathExtended.RAY
@@ -162,7 +162,7 @@ contract LiquidityHubReportDeficitTest is LiquidityHubBase {
     vm.prank(address(spoke1));
     hub.reportDeficit(usdxAssetId, baseAmount, premiumAmount);
 
-    params.deficitAfter = getDeficit(hub, usdxAssetId);
+    params.deficitAfter = _getDeficit(hub, usdxAssetId);
     params.supplyExchangeRateAfter = hub.convertToSuppliedAssets(
       usdxAssetId,
       WadRayMathExtended.RAY

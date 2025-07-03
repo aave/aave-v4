@@ -154,42 +154,6 @@ contract LiquidityHubBase is Base {
     // return debtData;
   }
 
-  /// @dev Adds liquidity to the Hub via a random spoke
-  function _addLiquidity(uint256 assetId, uint256 amount) public {
-    address tempSpoke = vm.randomAddress();
-    address tempUser = vm.randomAddress();
-
-    uint256 initialLiq = hub.getAvailableLiquidity(assetId);
-
-    address underlying = hub.getAsset(assetId).underlying;
-    deal(underlying, tempUser, amount);
-
-    vm.prank(tempUser);
-    IERC20(underlying).approve(address(hub), type(uint256).max);
-
-    vm.prank(ADMIN);
-    hub.addSpoke(
-      assetId,
-      tempSpoke,
-      DataTypes.SpokeConfig({
-        supplyCap: type(uint256).max,
-        drawCap: type(uint256).max,
-        active: true
-      })
-    );
-
-    Utils.add({
-      hub: hub,
-      assetId: assetId,
-      spoke: tempSpoke,
-      amount: amount,
-      user: tempUser,
-      to: tempSpoke
-    });
-
-    assertEq(hub.getAvailableLiquidity(assetId), initialLiq + amount);
-  }
-
   /// @dev Draws liquidity from the Hub via a random spoke
   function _drawLiquidity(uint256 assetId, uint256 amount, bool withPremium) internal {
     address tempSpoke = vm.randomAddress();

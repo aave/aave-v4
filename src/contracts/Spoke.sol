@@ -1,6 +1,8 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.0;
 
+import {console2 as console} from 'forge-std/console2.sol';
+
 import {Multicall} from 'src/misc/Multicall.sol';
 
 import {SafeERC20} from 'src/dependencies/openzeppelin/SafeERC20.sol';
@@ -1019,6 +1021,7 @@ contract Spoke is ISpoke, Multicall, AccessManaged {
     vars.userPremiumDrawnShares = userPosition.premiumDrawnShares;
     vars.userPremiumOffset = userPosition.premiumOffset;
     vars.accruedPremium = vars.premiumDebt - userPosition.realizedPremium;
+    console.log('SP RD vars.accruedPremium', vars.accruedPremium);
 
     userPosition.premiumDrawnShares = 0;
     userPosition.premiumOffset = 0;
@@ -1199,6 +1202,8 @@ contract Spoke is ISpoke, Multicall, AccessManaged {
           accruedPremium,
           vars.premiumDebtToLiquidate
         ); // settle premium debt
+
+        console.log('SP liq vars.accruedPremium', accruedPremium, vars.premiumDebtToLiquidate);
       }
 
       // repay debt

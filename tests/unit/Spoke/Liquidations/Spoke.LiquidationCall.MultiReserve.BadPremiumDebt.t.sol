@@ -88,7 +88,7 @@ contract LiquidationCallMultiReserveBadPremiumDebtTest is SpokeLiquidationBase {
       state,
       'test_liquidationCall_fuzz_multi_reserve_badPremiumDebt_scenario1_only_premium'
     );
-    _checkDeficits(state, debtReserveIds, alice);
+    _checkDebtReserveDeficits(state, debtReserveIds, alice);
   }
 
   /// coll: weth; bad debt: wbtc, dai, usdx
@@ -169,7 +169,7 @@ contract LiquidationCallMultiReserveBadPremiumDebtTest is SpokeLiquidationBase {
 
     string memory label = 'test_liquidationCall_fuzz_multi_reserve_badPremiumDebt_scenario2';
     _checkLiquidation(state, label);
-    _checkDeficits(state, debtReserveIds, alice);
+    _checkDebtReserveDeficits(state, debtReserveIds, alice);
   }
 
   /// coll: usdy; bad debt: dai, usdx, usdy
@@ -250,7 +250,7 @@ contract LiquidationCallMultiReserveBadPremiumDebtTest is SpokeLiquidationBase {
 
     string memory label = 'test_liquidationCall_fuzz_multi_reserve_badPremiumDebt_scenario3';
     _checkLiquidation(state, label);
-    _checkDeficits(state, debtReserveIds, alice);
+    _checkDebtReserveDeficits(state, debtReserveIds, alice);
   }
 
   /// execute fuzz tests with bad debt across multiple debt reserves
@@ -434,7 +434,7 @@ contract LiquidationCallMultiReserveBadPremiumDebtTest is SpokeLiquidationBase {
     return state;
   }
 
-  /// @notice Borrow random amounts from multiple reserves to ensure the health factor is above the desired HF
+  /// @dev Borrow random amounts from multiple reserves to ensure the health factor is above the desired HF
   /// validates HF, therefore it must be a healthy HF
   function _borrowMultipleReservesToBeAboveHealthyHf(
     ISpoke spoke,
@@ -480,27 +480,32 @@ contract LiquidationCallMultiReserveBadPremiumDebtTest is SpokeLiquidationBase {
     }
     vm.stopPrank();
 
-    (, , finalHf, , ) = spoke.getUserAccountData(user);
-    assertGt(finalHf, desiredHf, 'should borrow enough for HF to be above desiredHf');
+    assertGt(
+      finalHf,
+      spoke.getHealthFactor(user),
+      'should borrow enough for HF to be above desiredHf'
+    );
   }
 
-  /// @notice Check deficit accounting for all debt reserves
-  function _checkDeficits(
+  /// @dev Check deficit accounting for all remaining debt reserves
+  /// debt reserve being liquidated is checked in _assertBadDebt
+  function _checkDebtReserveDeficits(
     LiquidationTestLocalParams memory state,
     uint256[] memory debtReserveIds,
     address user
-  ) internal view {
+  ) internal pure {
     for (uint256 i = 0; i < debtReserveIds.length; i++) {
       assertEq(
-        state.spoke.getUserTotalDebt(debtReserveIds[i], user),
+        state.userTotalDebts[i].balanceAfter,
         0,
         'remaining debt should be 0 (reported as deficit)'
       );
       if (i != state.debtReserveIndex) {
+        uint256 expectedDeficit = state.userTotalDebts[i].balanceChange; // for other debt assets, total debt should be reported as deficit
         assertEq(
-          state.deficits[i].balanceChange,
-          state.debts[i].balanceChange,
-          'for other debt assets, total debt should be reported as deficit'
+          state.deficitAmounts[i].balanceChange,
+          expectedDeficit,
+          'non-liquidated debt asset deficit'
         );
       }
     }

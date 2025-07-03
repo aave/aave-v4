@@ -1517,6 +1517,8 @@ contract SpokeRepayTest is SpokeBase {
 
     // Bob repays all
     (uint256 baseRestored, ) = spoke1.getUserDebt(_daiReserveId(spoke1), bob);
+    bobDaiBalanceBefore = tokenList.dai.balanceOf(bob);
+    uint256 bobTotalDebtBefore = spoke1.getUserTotalDebt(_daiReserveId(spoke1), bob);
 
     vm.expectEmit(address(spoke1));
     emit ISpoke.Repay(
@@ -1527,6 +1529,9 @@ contract SpokeRepayTest is SpokeBase {
     vm.prank(bob);
     spoke1.repay(_daiReserveId(spoke1), UINT256_MAX);
 
+    uint256 bobDaiBalanceAfter = tokenList.dai.balanceOf(bob);
+    uint256 bobTotalDebtAfter = spoke1.getUserTotalDebt(_daiReserveId(spoke1), bob);
+
     // Bob should have 0 drawn shares
     assertEq(
       spoke1.getUserPosition(_daiReserveId(spoke1), bob).baseDrawnShares,
@@ -1534,6 +1539,57 @@ contract SpokeRepayTest is SpokeBase {
       'bob drawn shares after repay'
     );
     // Bob's debt should be 0
-    assertEq(spoke1.getUserTotalDebt(_daiReserveId(spoke1), bob), 0, 'bob total debt after repay');
+    assertEq(bobTotalDebtAfter, 0, 'bob total debt after repay');
+    // Bob's debt change vs the amount repaid
+    assertEq(
+      stdMath.delta(bobTotalDebtAfter, bobTotalDebtBefore),
+      stdMath.delta(bobDaiBalanceAfter, bobDaiBalanceBefore),
+      'bob balance vs debt change'
+    );
+  }
+
+  function test_fuzz_repay_share_precision(uint256 repayAmount) public {
+    // use large values to expose extreme share
+    _mockInterestRate(500_00);
+    uint40 skipTime = uint40(MAX_SKIP_TIME);
+    uint256 borrowAmount = 1e26;
+    uint256 wethSupplyAmount = 1000e25;
+
+    // Bob supply weth
+    Utils.supplyCollateral(spoke1, _wethReserveId(spoke1), bob, wethSupplyAmount, bob);
+
+    // Supplied dai liquidity
+    _addLiquidity(daiAssetId, borrowAmount);
+
+    // Bob borrow dai
+    Utils.borrow(spoke1, _daiReserveId(spoke1), bob, borrowAmount, bob);
+
+    // Time passes
+    skip(skipTime);
+
+    // Bob repays partial
+    uint256 totalDebt = spoke1.getUserTotalDebt(_daiReserveId(spoke1), bob);
+    uint256 bobDaiBalanceBefore = tokenList.dai.balanceOf(bob);
+    uint256 bobTotalDebtBefore = spoke1.getUserTotalDebt(_daiReserveId(spoke1), bob);
+
+    repayAmount = bound(repayAmount, 100, totalDebt);
+
+    vm.prank(bob);
+    spoke1.repay(_daiReserveId(spoke1), repayAmount);
+
+    uint256 bobDaiBalanceAfter = tokenList.dai.balanceOf(bob);
+    uint256 bobTotalDebtAfter = spoke1.getUserTotalDebt(_daiReserveId(spoke1), bob);
+
+    uint256 assetAmountOfOneShare = hub.convertToDrawnAssets(daiAssetId, WadRayMath.RAY) /
+      WadRayMath.RAY; // add 1 to divUp
+
+    // Bob's debt change vs the amount repaid
+    // should be within 1 share precision
+    assertApproxEqAbs(
+      stdMath.delta(bobTotalDebtAfter, bobTotalDebtBefore),
+      stdMath.delta(bobDaiBalanceAfter, bobDaiBalanceBefore),
+      assetAmountOfOneShare,
+      'bob balance vs debt change'
+    );
   }
 }
