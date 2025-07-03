@@ -445,7 +445,7 @@ contract SpokeLiquidationBase is SpokeBase {
     );
   }
 
-  /// assertions when bad debt is reported as deficit
+  /// assertions when bad debt remains and is reported as deficit
   function _assertBadDebt(
     LiquidationTestLocalParams memory state,
     string memory label
@@ -458,34 +458,26 @@ contract SpokeLiquidationBase is SpokeBase {
     );
     assertEq(state.userTotalDebt.balanceAfter, 0, string.concat('debt amount should be 0 ', label));
     assertTrue(state.hasDeficit, string.concat('supply shares & total debt should be 0 ', label));
-    (uint256 userRp, , uint256 healthFactor, , ) = state.spoke.getUserAccountData(alice);
-    // with no coll/debt remaining, health factor should default to uint256 max
-    assertEq(
-      healthFactor,
-      UINT256_MAX,
-      string.concat('health factor should be max after liquidation ', label)
-    );
-    // if bad debt, HF should be max value and userRp should be 0 (due to no coll remaining)
+    // HF should be max value and userRp should be 0 (due to no coll remaining)
     assertEq(state.finalHf, UINT256_MAX, string.concat('HF = 0 if bad debt ', label));
     assertEq(state.userRp, 0, string.concat('userRp = 0 if bad debt ', label));
-
-    uint256 expectedDeficit = state.outstandingDebt;
     assertGe(
       state.deficit.balanceChange,
-      expectedDeficit,
-      string.concat('deficit can only exceed amount restored due to rounding  ', label)
+      state.outstandingDebt,
+      string.concat('deficit can only exceed amount restored due to rounding direction ', label)
     );
+    // precision error is asset equivalent of 1 share, due to rounding in restore
+    // more asset can be paid by user than is actually restored in accounting
     uint256 assetAmountOfOneShare = hub.convertToDrawnAssets(
       state.debtReserve.assetId,
       WadRayMath.RAY
     ) /
       WadRayMath.RAY +
       1; // add 1 to divUp
-    // bad debt should be cleared from user position and moved to deficit
-    // precision error is asset equivalent of 1 share, due to rounding in restore
+    // outstanding debt should be moved to deficit
     assertApproxEqAbs(
       state.deficit.balanceChange,
-      expectedDeficit,
+      state.outstandingDebt,
       assetAmountOfOneShare,
       string.concat('deficit should match restored amount ', label)
     );

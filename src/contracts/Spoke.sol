@@ -1,8 +1,6 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.0;
 
-import {console2 as console} from 'forge-std/console2.sol';
-
 import {Multicall} from 'src/misc/Multicall.sol';
 
 import {SafeERC20} from 'src/dependencies/openzeppelin/SafeERC20.sol';
@@ -663,13 +661,15 @@ contract Spoke is ISpoke, Multicall, AccessManaged {
     uint256 healthFactor,
     uint256 collateralFactor
   ) internal view {
+    DataTypes.ReserveConfig memory collateralConfig = collateralReserve.config;
+    DataTypes.ReserveConfig memory debtConfig = debtReserve.config;
     require(debtToCover > 0, InvalidDebtToCover());
     require(
       collateralReserve.underlying != address(0) && debtReserve.underlying != address(0),
       ReserveNotListed()
     );
-    require(collateralReserve.config.active && debtReserve.config.active, ReserveNotActive());
-    require(!collateralReserve.config.paused && !debtReserve.config.paused, ReservePaused());
+    require(collateralConfig.active && debtConfig.active, ReserveNotActive());
+    require(!collateralConfig.paused && !debtConfig.paused, ReservePaused());
     require(healthFactor < HEALTH_FACTOR_LIQUIDATION_THRESHOLD, HealthFactorNotBelowThreshold());
     bool isCollateralEnabled = _positionStatus[user].isUsingAsCollateral(
       collateralReserve.reserveId
@@ -1021,7 +1021,6 @@ contract Spoke is ISpoke, Multicall, AccessManaged {
     vars.userPremiumDrawnShares = userPosition.premiumDrawnShares;
     vars.userPremiumOffset = userPosition.premiumOffset;
     vars.accruedPremium = vars.premiumDebt - userPosition.realizedPremium;
-    console.log('SP RD vars.accruedPremium', vars.accruedPremium);
 
     userPosition.premiumDrawnShares = 0;
     userPosition.premiumOffset = 0;
@@ -1048,6 +1047,11 @@ contract Spoke is ISpoke, Multicall, AccessManaged {
     positionStatus.setBorrowing(reserve.reserveId, false);
   }
 
+  /**
+   * @dev Reports deficits for all borrowing reserves of the user.
+   * Includes the debt reserve being repaid during liquidation.
+   * @param user The address of the user whose deficits are being reported.
+   */
   function _reportDeficits(address user) internal {
     DataTypes.PositionStatus storage positionStatus = _positionStatus[user];
     uint256 reservesLength = reserveCount;
@@ -1139,32 +1143,6 @@ contract Spoke is ISpoke, Multicall, AccessManaged {
         vars.premiumDebt
       );
 
-      // perform collateral accounting first so that restore can not affect collateral shares
-      // todo: rm later to opt
-      // optional: settle collateral reserve's premium debt
-      vars.userPremiumDrawnShares = userCollateralPosition.premiumDrawnShares;
-      vars.userPremiumOffset = userCollateralPosition.premiumOffset;
-      vars.userRealizedPremium =
-        collateralReserveHub.convertToDrawnAssets(
-          vars.collateralAssetId,
-          vars.userPremiumDrawnShares
-        ) -
-        vars.userPremiumOffset; // assets(premiumShares) - offset should never be < 0
-
-      userCollateralPosition.premiumDrawnShares = 0;
-      userCollateralPosition.premiumOffset = 0;
-      userCollateralPosition.realizedPremium += vars.userRealizedPremium;
-
-      _refreshPremiumDebt(
-        collateralReserve,
-        users[vars.i],
-        vars.collateralAssetId,
-        -int256(vars.userPremiumDrawnShares),
-        -int256(vars.userPremiumOffset),
-        vars.userRealizedPremium,
-        0
-      ); // unnecessary but settle premium debt here for consistency
-
       // expected total withdrawn shares includes liquidation fee
       vars.withdrawnShares = collateralReserveHub.convertToSuppliedSharesUp(
         vars.collateralAssetId,
@@ -1202,8 +1180,6 @@ contract Spoke is ISpoke, Multicall, AccessManaged {
           accruedPremium,
           vars.premiumDebtToLiquidate
         ); // settle premium debt
-
-        console.log('SP liq vars.accruedPremium', accruedPremium, vars.premiumDebtToLiquidate);
       }
 
       // repay debt

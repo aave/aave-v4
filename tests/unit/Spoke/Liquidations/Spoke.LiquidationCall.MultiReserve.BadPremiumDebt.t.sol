@@ -480,11 +480,8 @@ contract LiquidationCallMultiReserveBadPremiumDebtTest is SpokeLiquidationBase {
     }
     vm.stopPrank();
 
-    assertGt(
-      finalHf,
-      spoke.getHealthFactor(user),
-      'should borrow enough for HF to be above desiredHf'
-    );
+    finalHf = spoke.getHealthFactor(user);
+    assertGt(finalHf, desiredHf, 'should borrow enough for HF to be above desiredHf');
   }
 
   /// @dev Check deficit accounting for all remaining debt reserves
