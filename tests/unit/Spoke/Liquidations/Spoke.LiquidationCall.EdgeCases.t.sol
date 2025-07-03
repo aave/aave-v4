@@ -43,8 +43,11 @@ contract LiquidationCallEdgeCasesTest is SpokeLiquidationBase {
     // position is liquidatable
     assertLt(spoke1.getHealthFactor(alice), HEALTH_FACTOR_LIQUIDATION_THRESHOLD);
 
-    vm.prank(LIQUIDATOR);
+    vm.prank(bob);
     spoke1.liquidationCall(_usdxReserveId(spoke1), _usdyReserveId(spoke1), alice, UINT256_MAX);
+
+    // Alice's usdx collateral unset
+    assertTrue(spoke1.getUsingAsCollateral(_usdxReserveId(spoke1), alice));
 
     // all collateral liquidated without overflowing
     assertEq(
@@ -96,8 +99,11 @@ contract LiquidationCallEdgeCasesTest is SpokeLiquidationBase {
     // position is liquidatable
     assertLt(spoke1.getHealthFactor(alice), HEALTH_FACTOR_LIQUIDATION_THRESHOLD);
 
-    vm.prank(LIQUIDATOR);
+    vm.prank(bob);
     spoke1.liquidationCall(_usdxReserveId(spoke1), _usdyReserveId(spoke1), alice, UINT256_MAX);
+
+    // Alice's usdx collateral unset
+    assertTrue(spoke1.getUsingAsCollateral(_usdxReserveId(spoke1), alice));
 
     // all collateral liquidated without overflowing
     assertEq(

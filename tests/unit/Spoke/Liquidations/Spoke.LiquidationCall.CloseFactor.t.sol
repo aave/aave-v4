@@ -19,7 +19,7 @@ contract LiquidationCallCloseFactorTest is SpokeLiquidationBase {
     DataTypes.LiquidationConfig memory liqConfig,
     uint256 liqBonus,
     uint256 supplyAmount,
-    uint256 liquidationProtocolFee,
+    uint256 liquidationFee,
     uint256 skipTime,
     uint256 desiredHf
   ) public {
@@ -30,7 +30,7 @@ contract LiquidationCallCloseFactorTest is SpokeLiquidationBase {
       liqConfig,
       liqBonus,
       supplyAmount,
-      liquidationProtocolFee,
+      liquidationFee,
       skipTime,
       desiredHf
     );
@@ -43,7 +43,7 @@ contract LiquidationCallCloseFactorTest is SpokeLiquidationBase {
     DataTypes.LiquidationConfig memory liqConfig,
     uint256 liqBonus,
     uint256 supplyAmount,
-    uint256 liquidationProtocolFee,
+    uint256 liquidationFee,
     uint256 skipTime,
     uint256 desiredHf
   ) public {
@@ -56,7 +56,7 @@ contract LiquidationCallCloseFactorTest is SpokeLiquidationBase {
       supplyAmount,
       collateralReserveId,
       debtReserveId,
-      liquidationProtocolFee,
+      liquidationFee,
       skipTime,
       desiredHf
     );
@@ -75,7 +75,7 @@ contract LiquidationCallCloseFactorTest is SpokeLiquidationBase {
       }),
       liqBonus: 105_00,
       supplyAmount: 1.5e18,
-      liquidationProtocolFee: 5_00,
+      liquidationFee: 5_00,
       collateralReserveId: _wethReserveId(spoke1),
       debtReserveId: _daiReserveId(spoke1),
       skipTime: 365 days,
@@ -93,7 +93,7 @@ contract LiquidationCallCloseFactorTest is SpokeLiquidationBase {
       }),
       liqBonus: 105_00,
       supplyAmount: 1.5e18,
-      liquidationProtocolFee: 5_00,
+      liquidationFee: 5_00,
       collateralReserveId: _wethReserveId(spoke1),
       debtReserveId: _daiReserveId(spoke1),
       skipTime: 365 days,
@@ -111,7 +111,7 @@ contract LiquidationCallCloseFactorTest is SpokeLiquidationBase {
       }),
       liqBonus: 105_00,
       supplyAmount: 1.5e18,
-      liquidationProtocolFee: 5_00,
+      liquidationFee: 5_00,
       collateralReserveId: _wethReserveId(spoke1),
       debtReserveId: _usdxReserveId(spoke1),
       skipTime: 365 days,
@@ -129,7 +129,7 @@ contract LiquidationCallCloseFactorTest is SpokeLiquidationBase {
       }),
       liqBonus: 105_00,
       supplyAmount: 1.5e18,
-      liquidationProtocolFee: 5_00,
+      liquidationFee: 5_00,
       collateralReserveId: _wethReserveId(spoke1),
       debtReserveId: _usdxReserveId(spoke1),
       skipTime: 365 days,
@@ -147,7 +147,7 @@ contract LiquidationCallCloseFactorTest is SpokeLiquidationBase {
       }),
       liqBonus: 105_00,
       supplyAmount: 10e6,
-      liquidationProtocolFee: 5_00,
+      liquidationFee: 5_00,
       collateralReserveId: _usdxReserveId(spoke1),
       debtReserveId: _wethReserveId(spoke1),
       skipTime: 365 days,
@@ -165,7 +165,7 @@ contract LiquidationCallCloseFactorTest is SpokeLiquidationBase {
       }),
       liqBonus: 105_00,
       supplyAmount: 10_000e6,
-      liquidationProtocolFee: 5_00,
+      liquidationFee: 5_00,
       collateralReserveId: _usdxReserveId(spoke1),
       debtReserveId: _wethReserveId(spoke1),
       skipTime: 365 days,
@@ -183,7 +183,7 @@ contract LiquidationCallCloseFactorTest is SpokeLiquidationBase {
       }),
       liqBonus: 105_00,
       supplyAmount: 10e6,
-      liquidationProtocolFee: 5_00,
+      liquidationFee: 5_00,
       collateralReserveId: _usdxReserveId(spoke1),
       debtReserveId: _daiReserveId(spoke1),
       skipTime: 365 days,
@@ -201,7 +201,7 @@ contract LiquidationCallCloseFactorTest is SpokeLiquidationBase {
       }),
       liqBonus: 105_00,
       supplyAmount: 10e6,
-      liquidationProtocolFee: 5_00,
+      liquidationFee: 5_00,
       collateralReserveId: _usdxReserveId(spoke1),
       debtReserveId: _daiReserveId(spoke1),
       skipTime: 365 days,
@@ -219,7 +219,7 @@ contract LiquidationCallCloseFactorTest is SpokeLiquidationBase {
       }),
       liqBonus: 105_00,
       supplyAmount: 1_000e6,
-      liquidationProtocolFee: 5_00,
+      liquidationFee: 5_00,
       collateralReserveId: _daiReserveId(spoke1),
       debtReserveId: _wethReserveId(spoke1),
       skipTime: 365 days,
@@ -237,7 +237,7 @@ contract LiquidationCallCloseFactorTest is SpokeLiquidationBase {
       }),
       liqBonus: 105_00,
       supplyAmount: 1_000e6,
-      liquidationProtocolFee: 5_00,
+      liquidationFee: 5_00,
       collateralReserveId: _daiReserveId(spoke1),
       debtReserveId: _wethReserveId(spoke1),
       skipTime: 365 days,
@@ -255,7 +255,7 @@ contract LiquidationCallCloseFactorTest is SpokeLiquidationBase {
       }),
       liqBonus: 105_00,
       supplyAmount: 1_000e6,
-      liquidationProtocolFee: 5_00,
+      liquidationFee: 5_00,
       collateralReserveId: _daiReserveId(spoke1),
       debtReserveId: _usdxReserveId(spoke1),
       skipTime: 365 days,
@@ -273,7 +273,7 @@ contract LiquidationCallCloseFactorTest is SpokeLiquidationBase {
       }),
       liqBonus: 105_00,
       supplyAmount: 1_000e6,
-      liquidationProtocolFee: 5_00,
+      liquidationFee: 5_00,
       collateralReserveId: _daiReserveId(spoke1),
       debtReserveId: _usdxReserveId(spoke1),
       skipTime: 365 days,
@@ -291,7 +291,7 @@ contract LiquidationCallCloseFactorTest is SpokeLiquidationBase {
       }),
       liqBonus: 105_00,
       supplyAmount: 1_000e18,
-      liquidationProtocolFee: 5_00,
+      liquidationFee: 5_00,
       collateralReserveId: _wethReserveId(spoke1),
       debtReserveId: _wethReserveId(spoke1),
       skipTime: 365 days,
@@ -309,7 +309,7 @@ contract LiquidationCallCloseFactorTest is SpokeLiquidationBase {
       }),
       liqBonus: 105_00,
       supplyAmount: 1_000e18,
-      liquidationProtocolFee: 5_00,
+      liquidationFee: 5_00,
       collateralReserveId: _wethReserveId(spoke1),
       debtReserveId: _wethReserveId(spoke1),
       skipTime: 365 days,
@@ -327,7 +327,7 @@ contract LiquidationCallCloseFactorTest is SpokeLiquidationBase {
       }),
       liqBonus: 105_00,
       supplyAmount: 1_000e18,
-      liquidationProtocolFee: 5_00,
+      liquidationFee: 5_00,
       collateralReserveId: _usdxReserveId(spoke1),
       debtReserveId: _usdxReserveId(spoke1),
       skipTime: 365 days,
@@ -345,7 +345,7 @@ contract LiquidationCallCloseFactorTest is SpokeLiquidationBase {
       }),
       liqBonus: 105_00,
       supplyAmount: 1_000e18,
-      liquidationProtocolFee: 5_00,
+      liquidationFee: 5_00,
       collateralReserveId: _usdxReserveId(spoke1),
       debtReserveId: _usdxReserveId(spoke1),
       skipTime: 365 days,
@@ -373,7 +373,7 @@ contract LiquidationCallCloseFactorTest is SpokeLiquidationBase {
       supplyAmount: supplyAmount,
       collateralReserveId: collateralReserveId,
       debtReserveId: debtReserveId,
-      liquidationProtocolFee: 0,
+      liquidationFee: 0,
       skipTime: skipTime,
       desiredHf: desiredHf
     });
@@ -390,7 +390,7 @@ contract LiquidationCallCloseFactorTest is SpokeLiquidationBase {
     uint256 supplyAmount,
     uint256 collateralReserveId,
     uint256 debtReserveId,
-    uint256 liquidationProtocolFee,
+    uint256 liquidationFee,
     uint256 skipTime,
     uint256 desiredHf
   ) internal returns (LiquidationTestLocalParams memory) {
@@ -405,6 +405,8 @@ contract LiquidationCallCloseFactorTest is SpokeLiquidationBase {
       collateralReserveId
     );
     state.debtReserves[state.debtReserveIndex] = state.spoke.getReserve(debtReserveId);
+    state.collateralReserve = state.collateralReserves[state.collateralReserveIndex];
+    state.debtReserve = state.debtReserves[state.debtReserveIndex];
 
     liqConfig = _boundCloseFactor(liqConfig);
     liqBonus = bound(
@@ -416,7 +418,7 @@ contract LiquidationCallCloseFactorTest is SpokeLiquidationBase {
         .percentMul(99_00) // add buffer so that amount to restore is > 0
     );
 
-    liquidationProtocolFee = bound(liquidationProtocolFee, 0, 100_00); // BPS
+    liquidationFee = bound(liquidationFee, 0, PercentageMathExtended.PERCENTAGE_FACTOR);
     supplyAmount = bound(
       supplyAmount,
       _convertBaseCurrencyToAmount(
@@ -436,11 +438,11 @@ contract LiquidationCallCloseFactorTest is SpokeLiquidationBase {
     skipTime = bound(skipTime, 1, MAX_SKIP_TIME);
 
     state.user = alice;
-    state.liquidationProtocolFee = liquidationProtocolFee;
+    state.liquidationFee = liquidationFee;
 
     updateLiquidationConfig(state.spoke, liqConfig);
     updateLiquidationBonus(state.spoke, collateralReserveId, liqBonus);
-    updateLiquidationProtocolFee(state.spoke, collateralReserveId, state.liquidationProtocolFee);
+    updateLiquidationFee(state.spoke, collateralReserveId, state.liquidationFee);
 
     Utils.supplyCollateral({
       spoke: state.spoke,
@@ -484,14 +486,37 @@ contract LiquidationCallCloseFactorTest is SpokeLiquidationBase {
     (
       state.collToLiq,
       state.debtToLiq,
-      state.liqProtocolFee,
+      state.liquidationFeeAmount,
       ,
 
     ) = _calculateAvailableCollateralToLiquidate(state, UINT256_MAX);
 
-    // logs to read protocol fee from tmp emitted event
-    // TODO: update when treasury accounting is done
-    vm.recordLogs();
+    state.liquidationFeeShares =
+      hub.convertToSuppliedSharesUp(
+        state.collateralReserve.assetId,
+        state.collToLiq + state.liquidationFeeAmount
+      ) -
+      hub.convertToSuppliedSharesUp(state.collateralReserve.assetId, state.collToLiq);
+
+    if (collateralReserveId != debtReserveId) {
+      vm.expectCall(
+        address(hub),
+        abi.encodeWithSelector(
+          hub.payFee.selector,
+          state.collateralReserve.assetId,
+          state.liquidationFeeShares
+        ),
+        state.liquidationFeeShares > 0 ? 1 : 0
+      );
+    } else {
+      // precision loss can occur when coll and debt reserve are the same
+      // during a restore action that includes donation
+      vm.expectCall(
+        address(hub),
+        abi.encodeWithSelector(hub.payFee.selector),
+        state.liquidationFeeShares > 0 ? 1 : 0
+      );
+    }
 
     vm.expectEmit(address(state.spoke));
     emit ISpoke.LiquidationCall(

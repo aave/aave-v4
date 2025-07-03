@@ -30,7 +30,7 @@ contract LiquidationCallCloseFactorMultiReserveTest is SpokeLiquidationBase {
       }),
       liqBonus: 105_00,
       supplyAmountInBase: 10_000e26,
-      liquidationProtocolFee: 5_00,
+      liquidationFee: 5_00,
       collateralReserveIds: collateralReserveIds,
       debtReserveIds: debtReserveIds,
       collateralReserveIndex: 0,
@@ -63,7 +63,7 @@ contract LiquidationCallCloseFactorMultiReserveTest is SpokeLiquidationBase {
       }),
       liqBonus: 105_00,
       supplyAmountInBase: 10_000e26,
-      liquidationProtocolFee: 5_00,
+      liquidationFee: 5_00,
       collateralReserveIds: collateralReserveIds,
       debtReserveIds: debtReserveIds,
       collateralReserveIndex: 0,
@@ -97,7 +97,7 @@ contract LiquidationCallCloseFactorMultiReserveTest is SpokeLiquidationBase {
       }),
       liqBonus: 105_00,
       supplyAmountInBase: 10_000_000e26,
-      liquidationProtocolFee: 5_00,
+      liquidationFee: 5_00,
       collateralReserveIds: collateralReserveIds,
       debtReserveIds: debtReserveIds,
       collateralReserveIndex: 0,
@@ -148,7 +148,7 @@ contract LiquidationCallCloseFactorMultiReserveTest is SpokeLiquidationBase {
       liqConfig: liqConfig,
       liqBonus: 105_00,
       supplyAmountInBase: supplyAmountInBase,
-      liquidationProtocolFee: 5_00,
+      liquidationFee: 5_00,
       collateralReserveIds: collateralReserveIds,
       debtReserveIds: debtReserveIds,
       collateralReserveIndex: collateralReserveIndex,
@@ -170,7 +170,7 @@ contract LiquidationCallCloseFactorMultiReserveTest is SpokeLiquidationBase {
     uint256[] memory debtReserveIds,
     uint256 collateralReserveIndex,
     uint256 debtReserveIndex,
-    uint256 liquidationProtocolFee,
+    uint256 liquidationFee,
     uint256 skipTime,
     uint256 desiredHf
   ) internal returns (LiquidationTestLocalParams memory) {
@@ -199,7 +199,7 @@ contract LiquidationCallCloseFactorMultiReserveTest is SpokeLiquidationBase {
         state.collDynConfigs[collateralReserveIndex].collateralFactor
       )
     );
-    liquidationProtocolFee = bound(liquidationProtocolFee, 0, 100_00);
+    liquidationFee = bound(liquidationFee, 0, PercentageMathExtended.PERCENTAGE_FACTOR);
     supplyAmountInBase = bound(
       supplyAmountInBase,
       dustInBase * state.debtReserves.length, // enough to cover dust for all debt reserves
@@ -207,8 +207,10 @@ contract LiquidationCallCloseFactorMultiReserveTest is SpokeLiquidationBase {
     );
     skipTime = bound(skipTime, 1, MAX_SKIP_TIME);
 
-    state.liquidationProtocolFee = liquidationProtocolFee;
+    state.collateralReserve = state.collateralReserves[state.collateralReserveIndex];
+    state.debtReserve = state.debtReserves[state.debtReserveIndex];
 
+    state.liquidationFee = liquidationFee;
     state.spoke = spoke1;
     state.user = alice;
 
@@ -218,10 +220,10 @@ contract LiquidationCallCloseFactorMultiReserveTest is SpokeLiquidationBase {
       state.collateralReserves[collateralReserveIndex].reserveId,
       liqBonus
     );
-    updateLiquidationProtocolFee(
+    updateLiquidationFee(
       state.spoke,
       state.collateralReserves[collateralReserveIndex].reserveId,
-      state.liquidationProtocolFee
+      state.liquidationFee
     );
 
     for (uint256 i = 0; i < collateralReserveIds.length; i++) {
@@ -276,14 +278,10 @@ contract LiquidationCallCloseFactorMultiReserveTest is SpokeLiquidationBase {
     (
       state.collToLiq,
       state.debtToLiq,
-      state.liqProtocolFee,
+      state.liquidationFeeAmount,
       ,
 
     ) = _calculateAvailableCollateralToLiquidate(state, requiredDebtAmounts[debtReserveIndex]);
-
-    // logs to read protocol fee from tmp emitted event
-    // TODO: update when treasury accounting is done
-    vm.recordLogs();
 
     vm.expectEmit(address(state.spoke));
     emit ISpoke.LiquidationCall(

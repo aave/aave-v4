@@ -135,16 +135,14 @@ library LiquidationLogic {
       vars.debtToLiquidateInBaseCurrency = vars.baseCollateral;
     }
 
-    if (params.liquidationProtocolFee != 0) {
+    if (params.liquidationFee != 0) {
       uint256 bonusCollateral = vars.collateralAmount -
         vars.collateralAmount.percentDivUp(params.liquidationBonus);
-      uint256 liquidationProtocolFeeAmount = bonusCollateral.percentMulUp(
-        params.liquidationProtocolFee
-      );
+      uint256 liquidationFeeAmount = bonusCollateral.percentMulUp(params.liquidationFee);
       return (
-        vars.collateralAmount - liquidationProtocolFeeAmount,
+        vars.collateralAmount - liquidationFeeAmount,
         vars.debtAmountNeeded,
-        liquidationProtocolFeeAmount,
+        liquidationFeeAmount,
         vars.debtToLiquidateInBaseCurrency,
         vars.collateralToLiquidateInBaseCurrency
       );

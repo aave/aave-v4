@@ -67,15 +67,10 @@ interface ISpoke is IMulticall, IAccessManaged {
     address liquidator
   );
 
-  // TODO: rm when treasury accounting is done; indexing to read more easily
-  event TmpLiquidationFee(uint256 indexed tmpLiquidationFee);
-
-  error UserNotBorrowingReserve(uint256 reserveId);
   error ReserveNotListed();
   error AssetNotListed();
   error InvalidLiquidityPremium();
   error InsufficientSupply(uint256 supply);
-  error NotAvailableLiquidity(uint256 availableLiquidity);
   error ReserveNotBorrowable(uint256 reserveId);
   error ReserveCannotBeUsedAsCollateral(uint256 reserveId);
   error ReserveNotActive();
@@ -89,12 +84,11 @@ interface ISpoke is IMulticall, IAccessManaged {
   error InvalidHubAddress();
   error InvalidHealthFactorForMaxBonus();
   error InvalidLiquidationBonusFactor();
-  error NoUserRiskPremiumDecrease();
   error HealthFactorNotBelowThreshold();
   error CollateralCannotBeLiquidated();
   error SpecifiedCurrencyNotBorrowedByUser();
   error InvalidDebtToCover();
-  error InvalidLiquidationProtocolFee();
+  error InvalidLiquidationFee();
   error InvalidOracleAddress();
   error UsersAndDebtLengthMismatch();
   error Unauthorized();
