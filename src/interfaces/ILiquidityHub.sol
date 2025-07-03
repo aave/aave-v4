@@ -12,7 +12,7 @@ import {IAssetInterestRateStrategy} from 'src/interfaces/IAssetInterestRateStrat
  */
 interface ILiquidityHub is IAccessManaged {
   event SpokeAdded(uint256 indexed assetId, address indexed spoke);
-  event AssetAdded(uint256 indexed assetId, address indexed asset, uint8 decimals);
+  event AssetAdded(uint256 indexed assetId, address indexed underlying, uint8 decimals);
   event AssetConfigUpdated(uint256 indexed assetId, DataTypes.AssetConfig config);
   event SpokeConfigUpdated(
     uint256 indexed assetId,
@@ -52,6 +52,7 @@ interface ILiquidityHub is IAccessManaged {
     uint256 realizedPremiumAdded,
     uint256 realizedPremiumTaken
   );
+  event AccrueFees(uint256 indexed assetId, uint256 shares);
 
   error InvalidSharesAmount();
   error InvalidAddAmount();
@@ -73,13 +74,34 @@ interface ILiquidityHub is IAccessManaged {
   error InvalidIrStrategy();
   error InvalidAssetDecimals();
   error InvalidLiquidityFee();
-  error InvalidAssetAddress();
+  error InvalidUnderlying();
   error InvalidDebtChange();
   error InvalidFeeReceiver();
   error SpokeNotActive();
+  error InvalidFeeShares();
 
-  function addAsset(address asset, uint8 decimals, address irStrategy) external returns (uint256);
+  /**
+   * @notice Adds a new asset to the hub.
+   * @dev The same underlying asset address can be added as an asset multiple times.
+   * @dev The fee receiver must be configured as a Spoke separately.
+   * @param underlying The address of the underlying asset.
+   * @param decimals The number of decimals of the asset.
+   * @param feeReceiver The address of the fee receiver spoke.
+   * @param irStrategy The address of the interest rate strategy contract.
+   * @return The unique identifier of the added asset.
+   */
+  function addAsset(
+    address underlying,
+    uint8 decimals,
+    address feeReceiver,
+    address irStrategy
+  ) external returns (uint256);
 
+  /**
+   * @notice Updates the configuration of an asset.
+   * @param assetId The identifier of the asset.
+   * @param config The new configuration for the asset.
+   */
   function updateAssetConfig(uint256 assetId, DataTypes.AssetConfig calldata config) external;
 
   function addSpoke(uint256 assetId, address spoke, DataTypes.SpokeConfig calldata params) external;
@@ -162,6 +184,14 @@ interface ILiquidityHub is IAccessManaged {
     uint256 realizedPremiumAdded,
     uint256 realizedPremiumTaken
   ) external;
+
+  /**
+   * @notice Pay existing liquidity to feeReceiver.
+   * @dev Only callable by spokes.
+   * @param assetId The identifier of the asset.
+   * @param shares The amount of shares to pay to feeReceiver.
+   */
+  function payFee(uint256 assetId, uint256 shares) external;
 
   function convertToDrawnAssets(uint256 assetId, uint256 shares) external view returns (uint256);
 

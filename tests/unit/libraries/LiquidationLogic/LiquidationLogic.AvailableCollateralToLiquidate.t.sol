@@ -15,14 +15,14 @@ contract LiquidationAvailableCollateralToLiquidateTest is LiquidationLogicBaseTe
     uint256 debtAssetUnit;
     uint256 liquidationBonus;
     uint256 userCollateralBalance;
-    uint256 liquidationProtocolFee;
+    uint256 liquidationFee;
     uint256 actualDebtToLiquidate;
   }
 
   struct AvailableCollateralToLiquidate {
     uint256 actualCollateralToLiquidate;
     uint256 actualDebtToLiquidate;
-    uint256 liquidationProtocolFeeAmount;
+    uint256 liquidationFeeAmount;
   }
 
   /// fuzz test where actualDebtToLiquidate = 0
@@ -39,13 +39,13 @@ contract LiquidationAvailableCollateralToLiquidateTest is LiquidationLogicBaseTe
     (
       res.actualCollateralToLiquidate,
       res.actualDebtToLiquidate,
-      res.liquidationProtocolFeeAmount
+      res.liquidationFeeAmount
     ) = LiquidationLogic.calculateAvailableCollateralToLiquidate(args);
 
     // actualCollateralToLiquidate is always >= 1
     assertEq(res.actualCollateralToLiquidate, 1, 'actualCollateralToLiquidate');
     assertEq(res.actualDebtToLiquidate, 0, 'actualDebtToLiquidate');
-    assertEq(res.liquidationProtocolFeeAmount, 0, 'liquidationProtocolFeeAmount');
+    assertEq(res.liquidationFeeAmount, 0, 'liquidationFeeAmount');
   }
 
   /// debtAssetUnit should never be 0 in practice
@@ -74,12 +74,12 @@ contract LiquidationAvailableCollateralToLiquidateTest is LiquidationLogicBaseTe
     (
       res.actualCollateralToLiquidate,
       res.actualDebtToLiquidate,
-      res.liquidationProtocolFeeAmount
+      res.liquidationFeeAmount
     ) = LiquidationLogic.calculateAvailableCollateralToLiquidate(args);
 
     assertEq(res.actualCollateralToLiquidate, 1, 'actualCollateralToLiquidate');
     assertEq(res.actualDebtToLiquidate, params.actualDebtToLiquidate, 'actualDebtToLiquidate');
-    assertEq(res.liquidationProtocolFeeAmount, 0, 'liquidationProtocolFeeAmount');
+    assertEq(res.liquidationFeeAmount, 0, 'liquidationFeeAmount');
   }
 
   /// collateralAssetUnit should never be 0 in practice
@@ -108,20 +108,16 @@ contract LiquidationAvailableCollateralToLiquidateTest is LiquidationLogicBaseTe
     (
       res.actualCollateralToLiquidate,
       res.actualDebtToLiquidate,
-      res.liquidationProtocolFeeAmount
+      res.liquidationFeeAmount
     ) = LiquidationLogic.calculateAvailableCollateralToLiquidate(args);
 
-    (uint256 collateralAmount, uint256 protocolLiquidationFee) = _calcLiquidationProtocolFeeAmount(
+    (uint256 collateralAmount, uint256 protocolLiquidationFee) = _calcLiquidationFeeAmount(
       params,
       params.userCollateralBalance
     );
     assertEq(res.actualCollateralToLiquidate, collateralAmount, 'actualCollateralToLiquidate');
     assertEq(res.actualDebtToLiquidate, 0, 'actualDebtToLiquidate');
-    assertEq(
-      res.liquidationProtocolFeeAmount,
-      protocolLiquidationFee,
-      'liquidationProtocolFeeAmount'
-    );
+    assertEq(res.liquidationFeeAmount, protocolLiquidationFee, 'liquidationFeeAmount');
   }
 
   /// fuzz test where userCollateralBalance < maxCollateralToLiquidate
@@ -157,10 +153,10 @@ contract LiquidationAvailableCollateralToLiquidateTest is LiquidationLogicBaseTe
     (
       res.actualCollateralToLiquidate,
       res.actualDebtToLiquidate,
-      res.liquidationProtocolFeeAmount
+      res.liquidationFeeAmount
     ) = LiquidationLogic.calculateAvailableCollateralToLiquidate(args);
 
-    if (params.liquidationProtocolFee == 0) {
+    if (params.liquidationFee == 0) {
       assertEq(
         res.actualCollateralToLiquidate,
         params.userCollateralBalance,
@@ -171,20 +167,16 @@ contract LiquidationAvailableCollateralToLiquidateTest is LiquidationLogicBaseTe
         _calcDebtAmountNeeded(params),
         'actualDebtToLiquidate without lpfp'
       );
-      assertEq(res.liquidationProtocolFeeAmount, 0, 'liquidationProtocolFeeAmount without lpfp');
+      assertEq(res.liquidationFeeAmount, 0, 'liquidationFeeAmount without lpfp');
     } else {
-      (
-        uint256 collateralAmount,
-        uint256 liquidationProtocolFeeAmount
-      ) = _calcLiquidationProtocolFeeAmount(params, params.userCollateralBalance);
+      (uint256 collateralAmount, uint256 liquidationFeeAmount) = _calcLiquidationFeeAmount(
+        params,
+        params.userCollateralBalance
+      );
 
       assertEq(res.actualCollateralToLiquidate, collateralAmount, 'actualCollateralToLiquidate');
       assertEq(res.actualDebtToLiquidate, _calcDebtAmountNeeded(params), 'actualDebtToLiquidate');
-      assertEq(
-        res.liquidationProtocolFeeAmount,
-        liquidationProtocolFeeAmount,
-        'liquidationProtocolFeeAmount'
-      );
+      assertEq(res.liquidationFeeAmount, liquidationFeeAmount, 'liquidationFeeAmount');
     }
   }
 
@@ -211,18 +203,18 @@ contract LiquidationAvailableCollateralToLiquidateTest is LiquidationLogicBaseTe
     (
       res.actualCollateralToLiquidate,
       res.actualDebtToLiquidate,
-      res.liquidationProtocolFeeAmount
+      res.liquidationFeeAmount
     ) = LiquidationLogic.calculateAvailableCollateralToLiquidate(args);
 
     uint256 collateralAmount = ((maxCollateralToLiquidate * params.collateralAssetUnit) /
       params.collateralAssetPrice).dewadifyDown() + 1;
 
-    (
-      uint256 actualCollateralToLiquidate,
-      uint256 liquidationProtocolFeeAmount
-    ) = _calcLiquidationProtocolFeeAmount(params, collateralAmount);
+    (uint256 actualCollateralToLiquidate, uint256 liquidationFeeAmount) = _calcLiquidationFeeAmount(
+      params,
+      collateralAmount
+    );
 
-    if (params.liquidationProtocolFee == 0) {
+    if (params.liquidationFee == 0) {
       assertEq(
         res.actualCollateralToLiquidate,
         actualCollateralToLiquidate,
@@ -233,7 +225,7 @@ contract LiquidationAvailableCollateralToLiquidateTest is LiquidationLogicBaseTe
         params.actualDebtToLiquidate,
         'debtAmountNeeded without lpfp'
       );
-      assertEq(res.liquidationProtocolFeeAmount, 0, 'liquidationProtocolFeeAmount without lpfp');
+      assertEq(res.liquidationFeeAmount, 0, 'liquidationFeeAmount without lpfp');
     } else {
       assertEq(
         res.actualCollateralToLiquidate,
@@ -241,11 +233,7 @@ contract LiquidationAvailableCollateralToLiquidateTest is LiquidationLogicBaseTe
         'actualCollateralToLiquidate'
       );
       assertEq(res.actualDebtToLiquidate, params.actualDebtToLiquidate, 'actualDebtToLiquidate');
-      assertEq(
-        res.liquidationProtocolFeeAmount,
-        liquidationProtocolFeeAmount,
-        'liquidationProtocolFeeAmount'
-      );
+      assertEq(res.liquidationFeeAmount, liquidationFeeAmount, 'liquidationFeeAmount');
     }
   }
 
@@ -259,7 +247,7 @@ contract LiquidationAvailableCollateralToLiquidateTest is LiquidationLogicBaseTe
     result.debtAssetUnit = params.debtAssetUnit;
     result.liquidationBonus = params.liquidationBonus;
     result.userCollateralBalance = params.userCollateralBalance;
-    result.liquidationProtocolFee = params.liquidationProtocolFee;
+    result.liquidationFee = params.liquidationFee;
   }
 
   function _bound(
@@ -279,8 +267,8 @@ contract LiquidationAvailableCollateralToLiquidateTest is LiquidationLogicBaseTe
       MAX_LIQUIDATION_BONUS
     );
     params.userCollateralBalance = bound(params.userCollateralBalance, 1, MAX_SUPPLY_AMOUNT);
-    params.liquidationProtocolFee = bound(
-      params.liquidationProtocolFee,
+    params.liquidationFee = bound(
+      params.liquidationFee,
       0,
       MAX_LIQUIDATION_PROTOCOL_FEE_PERCENTAGE
     );
@@ -297,18 +285,16 @@ contract LiquidationAvailableCollateralToLiquidateTest is LiquidationLogicBaseTe
         .percentMulDown(params.liquidationBonus);
   }
 
-  function _calcLiquidationProtocolFeeAmount(
+  function _calcLiquidationFeeAmount(
     TestAvailableCollateralParams memory params,
     uint256 collateralAmount
   ) internal pure returns (uint256, uint256) {
     uint256 bonusCollateral = collateralAmount -
       collateralAmount.percentDivUp(params.liquidationBonus);
 
-    uint256 liquidationProtocolFeeAmount = bonusCollateral.percentMulUp(
-      params.liquidationProtocolFee
-    );
+    uint256 liquidationFeeAmount = bonusCollateral.percentMulUp(params.liquidationFee);
 
-    return (collateralAmount - liquidationProtocolFeeAmount, liquidationProtocolFeeAmount);
+    return (collateralAmount - liquidationFeeAmount, liquidationFeeAmount);
   }
 
   /// calc amount of debt needed to cover the collateral
