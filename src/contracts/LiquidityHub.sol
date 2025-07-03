@@ -233,6 +233,7 @@ contract LiquidityHub is ILiquidityHub, AccessManaged {
     spoke.baseDrawnShares -= baseDrawnSharesRestored;
     asset.availableLiquidity += totalRestoredAmount;
 
+    /// @dev premium debt must be restored in `refreshPremiumDebt` before calling this function
     asset.updateBorrowRate(assetId);
 
     IERC20(asset.underlying).safeTransferFrom(from, address(this), totalRestoredAmount);
