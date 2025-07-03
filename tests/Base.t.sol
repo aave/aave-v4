@@ -1302,7 +1302,7 @@ abstract contract Base is Test {
     uint256 assetsAmount,
     uint256 totalSuppliedAssets,
     uint256 totalSuppliedShares
-  ) internal view returns (uint256) {
+  ) internal pure returns (uint256) {
     uint256 sharesAmount = assetsAmount.toSharesDown(totalSuppliedAssets, totalSuppliedShares);
     return
       sharesAmount.toAssetsDown(
@@ -1847,7 +1847,7 @@ abstract contract Base is Test {
     treasurySpoke.withdraw(assetId, amount, address(treasurySpoke));
   }
 
-  function _assumeValidSupplier(address user) internal {
+  function _assumeValidSupplier(address user) internal view {
     vm.assume(
       user != address(0) &&
         user != address(hub) &&
@@ -1913,7 +1913,7 @@ abstract contract Base is Test {
     uint256 initialPremiumShares,
     uint256 liquidityFee,
     uint256 indexDelta
-  ) internal view returns (uint256 feesAmount) {
+  ) internal pure returns (uint256 feesAmount) {
     return
       indexDelta.rayMulDown(initialDrawnShares + initialPremiumShares).percentMulDown(liquidityFee);
   }

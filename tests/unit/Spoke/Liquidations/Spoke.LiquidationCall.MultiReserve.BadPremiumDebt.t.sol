@@ -296,16 +296,8 @@ contract LiquidationCallMultiReserveBadPremiumDebtTest is SpokeLiquidationBase {
     state.liquidationFee = bound(liquidationFee, 0, PercentageMathExtended.PERCENTAGE_FACTOR);
     supplyAmount = bound(
       supplyAmount,
-      _convertBaseCurrencyToAmount(
-        state.spoke,
-        state.collateralReserves[state.collateralReserveIndex].reserveId,
-        10e26
-      ),
-      _convertBaseCurrencyToAmount(
-        state.spoke,
-        state.collateralReserves[state.collateralReserveIndex].reserveId,
-        1e36
-      )
+      _convertBaseCurrencyToAmount(state.spoke, state.collateralReserve.reserveId, 10e26),
+      _convertBaseCurrencyToAmount(state.spoke, state.collateralReserve.reserveId, 1e36)
     );
     skipTime = bound(skipTime, 1, MAX_SKIP_TIME);
     skipTimeForPremiumAccrual = bound(skipTimeForPremiumAccrual, 365 days, MAX_SKIP_TIME); // enough time to accrue debt so that HF is liquidatable
@@ -357,8 +349,8 @@ contract LiquidationCallMultiReserveBadPremiumDebtTest is SpokeLiquidationBase {
       state.spoke.getHealthFactor(alice) < hfBadDebtThreshold &&
         _convertAmountToBaseCurrency(
           state.spoke,
-          state.debtReserves[state.debtReserveIndex].reserveId,
-          state.spoke.getUserTotalDebt(state.debtReserves[state.debtReserveIndex].reserveId, alice)
+          state.debtReserve.reserveId,
+          state.spoke.getUserTotalDebt(state.debtReserve.reserveId, alice)
         ) >
         state.totalCollateralInBaseCurrency.balanceBefore
     );
@@ -378,7 +370,7 @@ contract LiquidationCallMultiReserveBadPremiumDebtTest is SpokeLiquidationBase {
     ) = _calculateAvailableCollateralToLiquidate(state, UINT256_MAX);
 
     for (uint256 i = 0; i < debtReserveIds.length; i++) {
-      if (debtReserveIds[i] != state.debtReserves[state.debtReserveIndex].reserveId) {
+      if (debtReserveIds[i] != state.debtReserve.reserveId) {
         uint256 reserveId = debtReserveIds[i];
         uint256 assetId = state.debtReserves[i].assetId;
 
@@ -386,7 +378,7 @@ contract LiquidationCallMultiReserveBadPremiumDebtTest is SpokeLiquidationBase {
         uint256 expectedDeficit;
 
         // for debt asset being liquidated, some debt is restored prior to deficit creation
-        if (reserveId == state.debtReserves[state.debtReserveIndex].reserveId) {
+        if (reserveId == state.debtReserve.reserveId) {
           (uint256 basedDebtRestored, uint256 premDebtRestored) = _calculateExactRestoreAmount(
             state.userBaseDebt.balanceBefore,
             state.userPremiumDebt.balanceBefore,
@@ -422,8 +414,8 @@ contract LiquidationCallMultiReserveBadPremiumDebtTest is SpokeLiquidationBase {
     }
     vm.expectEmit(address(state.spoke));
     emit ISpoke.LiquidationCall(
-      state.collateralReserves[state.collateralReserveIndex].underlying,
-      state.debtReserves[state.debtReserveIndex].underlying,
+      state.collateralReserve.underlying,
+      state.debtReserve.underlying,
       alice,
       state.debtToLiq,
       state.collToLiq,

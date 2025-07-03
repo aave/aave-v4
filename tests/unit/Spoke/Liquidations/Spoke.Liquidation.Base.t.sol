@@ -259,7 +259,7 @@ contract SpokeLiquidationBase is SpokeBase {
     vm.expectEmit(address(state.spoke));
     emit ISpoke.LiquidationCall(
       state.collateralReserve.underlying,
-      state.debtReserves[state.debtReserveIndex].underlying,
+      state.debtReserve.underlying,
       alice,
       state.debtToLiq,
       state.collToLiq,
@@ -338,7 +338,7 @@ contract SpokeLiquidationBase is SpokeBase {
     if (
       _convertAmountToBaseCurrency(
         state.spoke,
-        state.debtReserves[state.debtReserveIndex].reserveId,
+        state.debtReserve.reserveId,
         state.userTotalDebt.balanceAfter
       ) >
       MIN_AMOUNT_IN_BASE_CURRENCY &&
@@ -465,7 +465,7 @@ contract SpokeLiquidationBase is SpokeBase {
       string.concat('health factor should be max after liquidation ', label)
     );
     uint256 assetAmountOfOneShare = hub.convertToDrawnAssets(
-      state.debtReserves[state.debtReserveIndex].assetId,
+      state.debtReserve.assetId,
       WadRayMath.RAY
     ) /
       WadRayMath.RAY +
@@ -560,11 +560,9 @@ contract SpokeLiquidationBase is SpokeBase {
     params.collateralAssetUnit = 10 ** state.collateralReserve.decimals;
     params.collateralReserveId = state.collateralReserve.reserveId;
     params.collateralAssetPrice = oracle.getReservePrice(state.collateralReserve.reserveId);
-    params.debtAssetUnit = 10 ** state.debtReserves[state.debtReserveIndex].decimals;
-    params.debtReserveId = state.debtReserves[state.debtReserveIndex].reserveId;
-    params.debtAssetPrice = oracle.getReservePrice(
-      state.debtReserves[state.debtReserveIndex].reserveId
-    );
+    params.debtAssetUnit = 10 ** state.debtReserve.decimals;
+    params.debtReserveId = state.debtReserve.reserveId;
+    params.debtAssetPrice = oracle.getReservePrice(state.debtReserve.reserveId);
     params.liquidationBonus = state.liquidationBonus;
     params.liquidationFee = state.liquidationFee;
 
@@ -597,10 +595,8 @@ contract SpokeLiquidationBase is SpokeBase {
     params.collateralFactor = state.collDynConfig.collateralFactor;
     params.closeFactor = _getCloseFactor(spoke);
 
-    params.debtAssetUnit = 10 ** state.debtReserves[state.debtReserveIndex].decimals;
-    params.debtAssetPrice = oracle.getReservePrice(
-      state.debtReserves[state.debtReserveIndex].reserveId
-    );
+    params.debtAssetUnit = 10 ** state.debtReserve.decimals;
+    params.debtAssetPrice = oracle.getReservePrice(state.debtReserve.reserveId);
 
     (, , params.healthFactor, , params.totalDebtInBaseCurrency) = spoke.getUserAccountData(alice);
     // duplicated logic from LiquidationLogic.calculateDebtToRestoreCloseFactor
@@ -660,25 +656,23 @@ contract SpokeLiquidationBase is SpokeBase {
   function _getAccountingInfoBeforeLiquidation(
     LiquidationTestLocalParams memory state
   ) internal view returns (LiquidationTestLocalParams memory) {
-    state.debtReserveId = state.debtReserves[state.debtReserveIndex].reserveId;
+    state.debtReserveId = state.debtReserve.reserveId;
     state.collateralReserveId = state.collateralReserve.reserveId;
     state.closeFactor = _getCloseFactor(state.spoke);
 
     state.collateralHub = state.collateralReserve.hub;
-    state.debtHub = state.debtReserves[state.debtReserveIndex].hub;
+    state.debtHub = state.debtReserve.hub;
 
     (state.userBaseDebt.balanceBefore, state.userPremiumDebt.balanceBefore) = state
       .spoke
-      .getUserDebt(state.debtReserves[state.debtReserveIndex].reserveId, state.user);
+      .getUserDebt(state.debtReserve.reserveId, state.user);
     state.userTotalDebt.balanceBefore =
       state.userBaseDebt.balanceBefore +
       state.userPremiumDebt.balanceBefore;
     state.liquidatorCollateral.balanceBefore = IERC20(state.collateralReserve.underlying).balanceOf(
       LIQUIDATOR
     );
-    state.liquidatorDebt.balanceBefore = IERC20(
-      state.debtReserves[state.debtReserveIndex].underlying
-    ).balanceOf(LIQUIDATOR);
+    state.liquidatorDebt.balanceBefore = IERC20(state.debtReserve.underlying).balanceOf(LIQUIDATOR);
     state.userSuppliedAmount.balanceBefore = state.spoke.getUserSuppliedAmount(
       state.collateralReserve.reserveId,
       state.user
@@ -699,13 +693,10 @@ contract SpokeLiquidationBase is SpokeBase {
       state.collateralReserve.assetId,
       WadRayMathExtended.RAY
     );
-    state.deficit.balanceBefore = getDeficit(
-      state.debtHub,
-      state.debtReserves[state.debtReserveIndex].assetId
-    );
+    state.deficit.balanceBefore = getDeficit(state.debtHub, state.debtReserve.assetId);
 
     (state.spokeBaseDebt.balanceBefore, state.spokePremiumDebt.balanceBefore) = hub.getSpokeDebt(
-      state.debtReserves[state.debtReserveIndex].assetId,
+      state.debtReserve.assetId,
       address(state.spoke)
     );
     state.spokeTotalDebt.balanceBefore =
@@ -747,14 +738,9 @@ contract SpokeLiquidationBase is SpokeBase {
 
   /// @notice Get accounting info after liquidation, in base currency and amount.
   /// @return LiquidationTestLocalParams struct with updated balances.
-  /// debt field is total user debt accounting.
-  /// treasury balance change is read from emitted event, in shares.
-  /// supply field is total user supply accounting.
-  /// liquidatorCollateral and liquidatorDebt are the collateral/debt balances of the liquidator.
-  /// rate field is the supply exchange rate of the collateral reserve, applied to a RAY.
   function _getAccountingInfoAfterLiquidation(
     LiquidationTestLocalParams memory state
-  ) internal returns (LiquidationTestLocalParams memory) {
+  ) internal view returns (LiquidationTestLocalParams memory) {
     state.feeReceiverAmount.balanceAfter = hub.getSpokeSuppliedAmount(
       state.collateralReserve.assetId,
       _getFeeReceiver(state.collateralReserve.assetId)
@@ -766,11 +752,9 @@ contract SpokeLiquidationBase is SpokeBase {
     state.liquidatorCollateral.balanceAfter = IERC20(state.collateralReserve.underlying).balanceOf(
       LIQUIDATOR
     );
-    state.liquidatorDebt.balanceAfter = IERC20(
-      state.debtReserves[state.debtReserveIndex].underlying
-    ).balanceOf(LIQUIDATOR);
+    state.liquidatorDebt.balanceAfter = IERC20(state.debtReserve.underlying).balanceOf(LIQUIDATOR);
     (state.userBaseDebt.balanceAfter, state.userPremiumDebt.balanceAfter) = state.spoke.getUserDebt(
-      state.debtReserves[state.debtReserveIndex].reserveId,
+      state.debtReserve.reserveId,
       state.user
     );
     state.userTotalDebt.balanceAfter =
@@ -796,12 +780,9 @@ contract SpokeLiquidationBase is SpokeBase {
       state.collateralReserve.assetId,
       WadRayMathExtended.RAY
     );
-    state.deficit.balanceAfter = getDeficit(
-      state.debtReserves[state.debtReserveIndex].hub,
-      state.debtReserves[state.debtReserveIndex].assetId
-    );
+    state.deficit.balanceAfter = getDeficit(state.debtReserve.hub, state.debtReserve.assetId);
     (state.spokeBaseDebt.balanceAfter, state.spokePremiumDebt.balanceAfter) = hub.getSpokeDebt(
-      state.debtReserves[state.debtReserveIndex].assetId,
+      state.debtReserve.assetId,
       address(state.spoke)
     );
     state.spokeTotalDebt.balanceAfter =
@@ -883,7 +864,7 @@ contract SpokeLiquidationBase is SpokeBase {
     );
     state.userTotalDebt.baseChange = _convertAmountToBaseCurrency(
       state.spoke,
-      state.debtReserves[state.debtReserveIndex].reserveId,
+      state.debtReserve.reserveId,
       state.userTotalDebt.balanceChange
     );
     state.userSuppliedAmount.baseChange = _convertAmountToBaseCurrency(

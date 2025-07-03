@@ -421,15 +421,11 @@ contract LiquidationCallCloseFactorTest is SpokeLiquidationBase {
     liquidationFee = bound(liquidationFee, 0, PercentageMathExtended.PERCENTAGE_FACTOR);
     supplyAmount = bound(
       supplyAmount,
-      _convertBaseCurrencyToAmount(
-        state.spoke,
-        state.collateralReserves[state.collateralReserveIndex].reserveId,
-        1e26
-      ),
+      _convertBaseCurrencyToAmount(state.spoke, state.collateralReserve.reserveId, 1e26),
       _min(
         _convertBaseCurrencyToAmount(
           state.spoke,
-          state.collateralReserves[state.collateralReserveIndex].reserveId,
+          state.collateralReserve.reserveId,
           MAX_SUPPLY_IN_BASE_CURRENCY
         ),
         MAX_SUPPLY_AMOUNT / 10
@@ -520,8 +516,8 @@ contract LiquidationCallCloseFactorTest is SpokeLiquidationBase {
 
     vm.expectEmit(address(state.spoke));
     emit ISpoke.LiquidationCall(
-      state.collateralReserves[state.collateralReserveIndex].underlying,
-      state.debtReserves[state.debtReserveIndex].underlying,
+      state.collateralReserve.underlying,
+      state.debtReserve.underlying,
       alice,
       state.debtToLiq,
       state.collToLiq,
