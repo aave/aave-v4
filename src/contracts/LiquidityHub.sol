@@ -296,8 +296,8 @@ contract LiquidityHub is ILiquidityHub, AccessManaged {
     spoke.suppliedShares = spokeSuppliedShares - feeShares;
     feeReceiver.suppliedShares += feeShares;
 
-    emit Add(assetId, feeReceiverAddress, feeShares, feeAmount);
     emit Remove(assetId, msg.sender, feeShares, feeAmount);
+    emit Add(assetId, feeReceiverAddress, feeShares, feeAmount);
     emit AccrueFees(assetId, feeShares);
   }
 

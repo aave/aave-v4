@@ -6,7 +6,6 @@ import 'tests/unit/Spoke/SpokeBase.t.sol';
 contract SpokeAccrueLiquidityFeeTest is SpokeBase {
   using WadRayMathExtended for uint256;
   using PercentageMathExtended for uint256;
-  using WadRayMath for uint256;
 
   function test_accrueLiquidityFee_NoActionTaken() public view {
     assertEq(hub.getSpokeSuppliedShares(daiAssetId, address(treasurySpoke)), 0);
@@ -167,17 +166,6 @@ contract SpokeAccrueLiquidityFeeTest is SpokeBase {
       1,
       'treasury shares'
     );
-  }
-
-  function _previewDrawnIndex(
-    uint256 previousIndex,
-    uint256 baseBorrowRate,
-    uint256 lastUpdateTimestamp
-  ) internal returns (uint256) {
-    return
-      previousIndex.rayMulUp(
-        MathUtils.calculateLinearInterest(baseBorrowRate, uint40(lastUpdateTimestamp))
-      );
   }
 
   function test_accrueLiquidityFee_exact() public {
@@ -557,5 +545,16 @@ contract SpokeAccrueLiquidityFeeTest is SpokeBase {
       expectedBaseDebtAccrual + expectedPremiumDebt,
       'treasury all accumulated interest'
     );
+  }
+
+  function _previewDrawnIndex(
+    uint256 previousIndex,
+    uint256 baseBorrowRate,
+    uint256 lastUpdateTimestamp
+  ) internal view returns (uint256) {
+    return
+      previousIndex.rayMulUp(
+        MathUtils.calculateLinearInterest(baseBorrowRate, uint40(lastUpdateTimestamp))
+      );
   }
 }
