@@ -26,9 +26,19 @@ contract SpokeMultipleHubIsolationModeTest is SpokeMultipleHubBase {
   function setUpIsolationMode() internal {
     vm.startPrank(ADMIN);
     // Add assets A and B to the new hub
-    newHub.addAsset(address(assetA), assetA.decimals(), address(newIrStrategy));
+    newHub.addAsset(
+      address(assetA),
+      assetA.decimals(),
+      address(treasurySpoke),
+      address(newIrStrategy)
+    );
     isolationVars.assetAId = newHub.getAssetCount() - 1;
-    newHub.addAsset(address(assetB), assetB.decimals(), address(newIrStrategy));
+    newHub.addAsset(
+      address(assetB),
+      assetB.decimals(),
+      address(treasurySpoke),
+      address(newIrStrategy)
+    );
     isolationVars.assetBId = newHub.getAssetCount() - 1;
 
     // Add reserves to the new spoke
@@ -41,7 +51,7 @@ contract SpokeMultipleHubIsolationModeTest is SpokeMultipleHubBase {
         paused: false,
         liquidationBonus: 100_00,
         liquidityPremium: 15_00,
-        liquidationProtocolFee: 0,
+        liquidationFee: 0,
         borrowable: false,
         collateral: true
       }),
@@ -56,7 +66,7 @@ contract SpokeMultipleHubIsolationModeTest is SpokeMultipleHubBase {
         paused: false,
         liquidationBonus: 100_00,
         liquidityPremium: 15_00,
-        liquidationProtocolFee: 0,
+        liquidationFee: 0,
         borrowable: true,
         collateral: false
       }),
@@ -100,6 +110,7 @@ contract SpokeMultipleHubIsolationModeTest is SpokeMultipleHubBase {
     hub.addAsset(
       address(assetB),
       assetB.decimals(),
+      address(treasurySpoke),
       address(irStrategy) // Use the main hub's interest rate strategy
     );
 
@@ -113,7 +124,7 @@ contract SpokeMultipleHubIsolationModeTest is SpokeMultipleHubBase {
         paused: false,
         liquidationBonus: 100_00,
         liquidityPremium: 15_00,
-        liquidationProtocolFee: 0,
+        liquidationFee: 0,
         borrowable: true,
         collateral: true
       }),
@@ -198,7 +209,7 @@ contract SpokeMultipleHubIsolationModeTest is SpokeMultipleHubBase {
         paused: false,
         liquidationBonus: 100_00,
         liquidityPremium: 15_00,
-        liquidationProtocolFee: 0,
+        liquidationFee: 0,
         borrowable: true,
         collateral: true
       }),

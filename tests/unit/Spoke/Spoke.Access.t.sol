@@ -75,7 +75,7 @@ contract SpokeAccessTest is SpokeBase {
         collateral: true,
         liquidationBonus: 100_00,
         liquidityPremium: 0,
-        liquidationProtocolFee: 0
+        liquidationFee: 0
       }),
       DataTypes.DynamicReserveConfig({collateralFactor: 75_00})
     );
@@ -93,7 +93,7 @@ contract SpokeAccessTest is SpokeBase {
         collateral: true,
         liquidationBonus: 100_00,
         liquidityPremium: 0,
-        liquidationProtocolFee: 0
+        liquidationFee: 0
       }),
       DataTypes.DynamicReserveConfig({collateralFactor: 75_00})
     );
@@ -112,7 +112,7 @@ contract SpokeAccessTest is SpokeBase {
         collateral: true,
         liquidationBonus: 100_00,
         liquidityPremium: 0,
-        liquidationProtocolFee: 0
+        liquidationFee: 0
       })
     );
 
@@ -128,7 +128,7 @@ contract SpokeAccessTest is SpokeBase {
         collateral: true,
         liquidationBonus: 100_00,
         liquidityPremium: 0,
-        liquidationProtocolFee: 0
+        liquidationFee: 0
       })
     );
 
@@ -205,7 +205,7 @@ contract SpokeAccessTest is SpokeBase {
         collateral: true,
         liquidationBonus: 100_00,
         liquidityPremium: 0,
-        liquidationProtocolFee: 0
+        liquidationFee: 0
       }),
       DataTypes.DynamicReserveConfig({collateralFactor: 75_00})
     );
@@ -228,7 +228,7 @@ contract SpokeAccessTest is SpokeBase {
         collateral: true,
         liquidationBonus: 100_00,
         liquidityPremium: 0,
-        liquidationProtocolFee: 0
+        liquidationFee: 0
       }),
       DataTypes.DynamicReserveConfig({collateralFactor: 75_00})
     );

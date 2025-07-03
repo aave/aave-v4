@@ -91,12 +91,13 @@ library Utils {
   function addAsset(
     ILiquidityHub hub,
     address hubAdmin,
-    address asset,
+    address underlying,
     uint8 decimals,
+    address feeReceiver,
     address interestRateStrategy
   ) internal returns (uint256) {
     vm.prank(hubAdmin);
-    return hub.addAsset(asset, decimals, interestRateStrategy);
+    return hub.addAsset(underlying, decimals, feeReceiver, interestRateStrategy);
   }
 
   function updateAssetConfig(

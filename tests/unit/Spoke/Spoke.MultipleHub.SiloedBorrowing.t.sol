@@ -34,7 +34,12 @@ contract SpokeMultipleHubSiloedBorrowingTest is SpokeMultipleHubBase {
     siloedVars.assetASupplyCap = 500_000e18;
 
     // Add asset B to the new hub
-    newHub.addAsset(address(assetB), assetB.decimals(), address(newIrStrategy));
+    newHub.addAsset(
+      address(assetB),
+      assetB.decimals(),
+      address(treasurySpoke),
+      address(newIrStrategy)
+    );
     siloedVars.assetBId = newHub.getAssetCount() - 1;
 
     // Add B reserve to the new spoke
@@ -47,7 +52,7 @@ contract SpokeMultipleHubSiloedBorrowingTest is SpokeMultipleHubBase {
         paused: false,
         liquidationBonus: 100_00,
         liquidityPremium: 15_00,
-        liquidationProtocolFee: 0,
+        liquidationFee: 0,
         borrowable: true,
         collateral: true
       }),
@@ -78,6 +83,7 @@ contract SpokeMultipleHubSiloedBorrowingTest is SpokeMultipleHubBase {
     hub.addAsset(
       address(assetA),
       assetA.decimals(),
+      address(treasurySpoke),
       address(irStrategy) // Use the canonical hub's interest rate strategy
     );
     siloedVars.assetAId = hub.getAssetCount() - 1;
@@ -92,7 +98,7 @@ contract SpokeMultipleHubSiloedBorrowingTest is SpokeMultipleHubBase {
         paused: false,
         liquidationBonus: 100_00,
         liquidityPremium: 15_00,
-        liquidationProtocolFee: 0,
+        liquidationFee: 0,
         borrowable: true,
         collateral: true
       }),
@@ -129,7 +135,7 @@ contract SpokeMultipleHubSiloedBorrowingTest is SpokeMultipleHubBase {
         paused: false,
         liquidationBonus: 100_00,
         liquidityPremium: 15_00,
-        liquidationProtocolFee: 0,
+        liquidationFee: 0,
         borrowable: true,
         collateral: true
       }),
