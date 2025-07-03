@@ -52,6 +52,7 @@ interface ILiquidityHub is IAccessManaged {
     uint256 realizedPremiumAdded,
     uint256 realizedPremiumTaken
   );
+  event AccrueFees(uint256 indexed assetId, uint256 shares);
 
   error InvalidSharesAmount();
   error InvalidSupplyAmount();
@@ -78,6 +79,7 @@ interface ILiquidityHub is IAccessManaged {
   error InvalidDebtChange();
   error InvalidFeeReceiver();
   error SpokeNotActive();
+  error InvalidFeeShares();
 
   /**
    * @notice Adds a new asset to the hub.
@@ -183,6 +185,14 @@ interface ILiquidityHub is IAccessManaged {
     uint256 realizedPremiumAdded,
     uint256 realizedPremiumTaken
   ) external;
+
+  /**
+   * @notice Pay existing liquidity to feeReceiver.
+   * @dev Only callable by spokes.
+   * @param assetId The identifier of the asset.
+   * @param shares The amount of shares to pay to feeReceiver.
+   */
+  function payFee(uint256 assetId, uint256 shares) external;
 
   function convertToDrawnAssets(uint256 assetId, uint256 shares) external view returns (uint256);
 

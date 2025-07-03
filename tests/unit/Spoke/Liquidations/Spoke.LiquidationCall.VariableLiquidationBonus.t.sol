@@ -4,7 +4,7 @@ pragma solidity ^0.8.0;
 import 'tests/unit/Spoke/Liquidations/Spoke.Liquidation.Base.t.sol';
 
 contract LiquidationCallVariableLiquidationBonusTest is SpokeLiquidationBase {
-  /// fuzz tests with liquidationProtocolFee = 0, so all fees are paid to the liquidator
+  /// fuzz tests with liquidationFee = 0, so all fees are paid to the liquidator
   /// single debt reserve, single collateral reserve
   /// user health factor position varies across possible desiredHf values
   /// liquidation bonus varies
@@ -28,7 +28,7 @@ contract LiquidationCallVariableLiquidationBonusTest is SpokeLiquidationBase {
       desiredHf: desiredHf,
       collateralReserveId: collateralReserveId,
       debtReserveId: debtReserveId,
-      liquidationProtocolFee: 0,
+      liquidationFee: 0,
       skipTime: skipTime
     });
 
