@@ -170,7 +170,7 @@ contract Spoke is ISpoke, Multicall, AccessManaged {
     }
     _validateWithdraw(reserve, userPosition, amount);
 
-    _accruePremium(reserve, userPosition, hub, assetId, msg.sender, 0); // unnecessary but we realize premium debt here
+    _accruePremium(reserve, userPosition, hub, assetId, msg.sender); // unnecessary but we realize premium debt here
 
     uint256 withdrawnShares = hub.remove(assetId, amount, to);
 
@@ -201,7 +201,7 @@ contract Spoke is ISpoke, Multicall, AccessManaged {
       positionStatus.setBorrowing(reserveId, true);
     }
 
-    _accruePremium(reserve, userPosition, hub, assetId, msg.sender, 0); // unnecessary but we realize premium debt here
+    _accruePremium(reserve, userPosition, hub, assetId, msg.sender); // unnecessary but we realize premium debt here
 
     uint256 baseDrawnShares = hub.draw(assetId, amount, to);
 
@@ -233,7 +233,7 @@ contract Spoke is ISpoke, Multicall, AccessManaged {
     );
 
     // settle premium debt here
-    _accruePremium(reserve, userPosition, hub, assetId, msg.sender, premiumDebtRestored);
+    _accrueAndRealizePremium(reserve, userPosition, hub, assetId, msg.sender, premiumDebtRestored);
 
     uint256 restoredShares = hub.restore(
       assetId,
@@ -609,6 +609,32 @@ contract Spoke is ISpoke, Multicall, AccessManaged {
   }
 
   function _accruePremium(
+    DataTypes.Reserve storage reserve,
+    DataTypes.UserPosition storage userPosition,
+    ILiquidityHub hub,
+    uint256 assetId,
+    address user
+  ) internal {
+    uint256 userPremiumDrawnShares = userPosition.premiumDrawnShares;
+    uint256 userPremiumOffset = userPosition.premiumOffset;
+    uint256 accruedPremium = hub.convertToDrawnAssets(assetId, userPremiumDrawnShares) -
+      userPremiumOffset; // assets(premiumShares) - offset should never be < 0
+    userPosition.premiumDrawnShares = 0;
+    userPosition.premiumOffset = 0;
+    userPosition.realizedPremium += accruedPremium;
+
+    _refreshPremiumDebt(
+      reserve,
+      user,
+      assetId,
+      -int256(userPremiumDrawnShares),
+      -int256(userPremiumOffset),
+      accruedPremium,
+      0
+    );
+  }
+
+  function _accrueAndRealizePremium(
     DataTypes.Reserve storage reserve,
     DataTypes.UserPosition storage userPosition,
     ILiquidityHub hub,
@@ -1034,7 +1060,7 @@ contract Spoke is ISpoke, Multicall, AccessManaged {
         vars.premiumDebt
       );
 
-      _accruePremium(
+      _accrueAndRealizePremium(
         debtReserve,
         userDebtPosition,
         debtReserveHub,
@@ -1050,8 +1076,7 @@ contract Spoke is ISpoke, Multicall, AccessManaged {
         userCollateralPosition,
         collateralReserveHub,
         vars.collateralAssetId,
-        vars.user,
-        0
+        vars.user
       ); // unnecessary but settle premium debt here for consistency
 
       // repay debt
