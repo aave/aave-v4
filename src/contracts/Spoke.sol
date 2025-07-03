@@ -232,7 +232,8 @@ contract Spoke is ISpoke, Multicall, AccessManaged {
       amount
     );
 
-    _accruePremium(reserve, userPosition, hub, assetId, msg.sender, premiumDebtRestored); // unnecessary but we realize premium debt here
+    // settle premium debt here
+    _accruePremium(reserve, userPosition, hub, assetId, msg.sender, premiumDebtRestored);
 
     uint256 restoredShares = hub.restore(
       assetId,
@@ -1079,18 +1080,6 @@ contract Spoke is ISpoke, Multicall, AccessManaged {
       vars.liquidationFeeShares = vars.withdrawnShares - vars.liquidatedSuppliedShares;
 
       // collateral accounting
-      /*
-      vars.newUserSuppliedShares = userCollateralPosition.suppliedShares - vars.withdrawnShares;
-      userCollateralPosition.suppliedShares = vars.newUserSuppliedShares;
-      vars.totalWithdrawnShares += vars.withdrawnShares;
-
-      // TODO: not compulsory, decide whether to rm
-      if (vars.newUserSuppliedShares == 0) {
-        DataTypes.PositionStatus storage positionStatus = _positionStatus[vars.user];
-        positionStatus.setUsingAsCollateral(vars.collateralReserveId, false);
-        emit UsingAsCollateral(vars.collateralReserveId, vars.user, false);
-      }
-      */
       userCollateralPosition.suppliedShares -= vars.withdrawnShares;
 
       // TODO: realize bad debt
