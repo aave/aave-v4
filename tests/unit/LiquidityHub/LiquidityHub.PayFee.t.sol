@@ -85,11 +85,18 @@ contract LiquidityHubPayFeeTest is LiquidityHubBase {
     );
 
     feeShares = bound(feeShares, 1, spokeSharesBefore);
+    uint256 feeAmount = hub.convertToSuppliedAssets(daiAssetId, feeShares);
 
     uint256 feeReceiverSharesBefore = hub.getSpokeSuppliedShares(
       daiAssetId,
       _getFeeReceiver(daiAssetId)
     );
+
+    vm.expectEmit(address(hub));
+    emit ILiquidityHub.Add(daiAssetId, _getFeeReceiver(daiAssetId), feeShares, feeAmount);
+
+    vm.expectEmit(address(hub));
+    emit ILiquidityHub.Remove(daiAssetId, address(spoke1), feeShares, feeAmount);
 
     vm.expectEmit(address(hub));
     emit ILiquidityHub.AccrueFees(daiAssetId, feeShares);

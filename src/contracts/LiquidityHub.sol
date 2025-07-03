@@ -282,8 +282,9 @@ contract LiquidityHub is ILiquidityHub, AccessManaged {
     DataTypes.SpokeData storage spoke = _spokes[assetId][msg.sender];
     _validatePayFee(spoke, feeShares);
 
+    address feeReceiverAddress = _assets[assetId].config.feeReceiver;
     DataTypes.Asset storage asset = _assets[assetId];
-    DataTypes.SpokeData storage feeReceiver = _spokes[assetId][asset.config.feeReceiver];
+    DataTypes.SpokeData storage feeReceiver = _spokes[assetId][feeReceiverAddress];
 
     asset.accrue(assetId, feeReceiver);
 
@@ -295,6 +296,7 @@ contract LiquidityHub is ILiquidityHub, AccessManaged {
     spoke.suppliedShares = spokeSuppliedShares - feeShares;
     feeReceiver.suppliedShares += feeShares;
 
+    emit Add(assetId, feeReceiverAddress, feeShares, feeAmount);
     emit Remove(assetId, msg.sender, feeShares, feeAmount);
     emit AccrueFees(assetId, feeShares);
   }
