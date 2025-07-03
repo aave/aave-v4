@@ -93,7 +93,7 @@ contract SpokeAccrueLiquidityFeeTest is SpokeBase {
     // treasury
     uint256 expectedFeeShares = hub.convertToSuppliedShares(
       assetId,
-      calculateExpectedFeesAmount({
+      _calculateExpectedFeesAmount({
         initialDrawnShares: bobPosition.baseDrawnShares,
         initialPremiumShares: bobPosition.premiumDrawnShares,
         liquidityFee: _getLiquidityFee(assetId),
@@ -130,7 +130,7 @@ contract SpokeAccrueLiquidityFeeTest is SpokeBase {
     // treasury
     expectedFeeShares = hub.convertToSuppliedShares(
       assetId,
-      calculateExpectedFeesAmount({
+      _calculateExpectedFeesAmount({
         initialDrawnShares: bobPosition.baseDrawnShares,
         initialPremiumShares: 0,
         liquidityFee: _getLiquidityFee(assetId),
@@ -545,16 +545,5 @@ contract SpokeAccrueLiquidityFeeTest is SpokeBase {
       expectedBaseDebtAccrual + expectedPremiumDebt,
       'treasury all accumulated interest'
     );
-  }
-
-  function _previewDrawnIndex(
-    uint256 previousIndex,
-    uint256 baseBorrowRate,
-    uint256 lastUpdateTimestamp
-  ) internal view returns (uint256) {
-    return
-      previousIndex.rayMulUp(
-        MathUtils.calculateLinearInterest(baseBorrowRate, uint40(lastUpdateTimestamp))
-      );
   }
 }

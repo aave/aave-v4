@@ -1882,7 +1882,7 @@ abstract contract Base is Test {
     return (baseDebtIncrease + premiumDebtIncrease).percentMulDown(liquidityFee);
   }
 
-  function calculateExpectedFeesAmount(
+  function _calculateExpectedFeesAmount(
     uint256 initialDrawnShares,
     uint256 initialPremiumShares,
     uint256 liquidityFee,
@@ -1890,6 +1890,17 @@ abstract contract Base is Test {
   ) internal view returns (uint256 feesAmount) {
     return
       indexDelta.rayMulDown(initialDrawnShares + initialPremiumShares).percentMulDown(liquidityFee);
+  }
+
+  function _previewDrawnIndex(
+    uint256 previousIndex,
+    uint256 baseBorrowRate,
+    uint256 lastUpdateTimestamp
+  ) internal view returns (uint256) {
+    return
+      previousIndex.rayMulUp(
+        MathUtils.calculateLinearInterest(baseBorrowRate, uint40(lastUpdateTimestamp))
+      );
   }
 
   function _mockDecimals(address underlying, uint8 decimals) internal {
