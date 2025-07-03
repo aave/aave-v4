@@ -279,7 +279,6 @@ contract LiquidationCallCloseFactorMultiReserveTest is SpokeLiquidationBase {
       state.collToLiq,
       state.debtToLiq,
       state.liquidationFeeAmount,
-      ,
 
     ) = _calculateAvailableCollateralToLiquidate(state, requiredDebtAmounts[debtReserveIndex]);
 

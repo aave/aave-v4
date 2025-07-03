@@ -226,7 +226,6 @@ contract SpokeLiquidationBase is SpokeBase {
       state.collToLiq,
       state.debtToLiq,
       state.liquidationFeeAmount,
-      ,
 
     ) = _calculateAvailableCollateralToLiquidate(state, requiredDebtAmount);
 
@@ -533,8 +532,7 @@ contract SpokeLiquidationBase is SpokeBase {
    * @return actualCollateralToLiquidate Amount of actual collateral to liquidate.
    * @return actualDebtToLiquidate Amount of actual debt to liquidate.
    * @return liquidationFeeAmount Amount of protocol fee (in asset).
-   * @return debtToLiquidateInBaseCurrency Amount of debt to liquidate in base currency.
-   * @return collateralToLiquidateInBaseCurrency Amount of collateral to liquidate in base currency.
+   * @return hasDeficit Boolean indicating if there is a deficit in the liquidation.
    */
   function _calculateAvailableCollateralToLiquidate(
     LiquidationTestLocalParams memory state,
@@ -546,8 +544,7 @@ contract SpokeLiquidationBase is SpokeBase {
       uint256 actualCollateralToLiquidate,
       uint256 actualDebtToLiquidate,
       uint256 liquidationFeeAmount,
-      uint256 debtToLiquidateInBaseCurrency,
-      uint256 collateralToLiquidateInBaseCurrency
+      bool hasDeficit
     )
   {
     IPriceOracle oracle = state.spoke.oracle();

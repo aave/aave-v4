@@ -1348,8 +1348,7 @@ contract Spoke is ISpoke, Multicall, AccessManaged {
       vars.actualCollateralToLiquidate,
       vars.actualDebtToLiquidate,
       vars.liquidationFeeAmount,
-      vars.debtToLiquidateInBaseCurrency,
-      vars.collateralToLiquidateInBaseCurrency
+      vars.hasDeficit
     ) = vars.calculateAvailableCollateralToLiquidate();
     (vars.baseDebtToLiquidate, vars.premiumDebtToLiquidate) = _calculateRestoreAmount(
       baseDebt,
@@ -1362,8 +1361,7 @@ contract Spoke is ISpoke, Multicall, AccessManaged {
       vars.liquidationFeeAmount,
       vars.baseDebtToLiquidate,
       vars.premiumDebtToLiquidate,
-      vars.debtToLiquidateInBaseCurrency < vars.totalDebtInBaseCurrency &&
-        vars.collateralToLiquidateInBaseCurrency == vars.totalCollateralInBaseCurrency
+      vars.hasDeficit
     );
   }
 

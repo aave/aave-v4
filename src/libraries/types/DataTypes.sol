@@ -144,8 +144,7 @@ library DataTypes {
     uint256 collateralAssetPrice;
     uint256 collateralAssetUnit;
     uint256 liquidationFee;
-    uint256 collateralToLiquidateInBaseCurrency;
-    uint256 debtToLiquidateInBaseCurrency;
+    bool hasDeficit;
   }
 
   struct CalculateAvailableCollateralToLiquidate {
@@ -156,6 +155,7 @@ library DataTypes {
     uint256 debtAmountNeeded;
     uint256 collateralToLiquidateInBaseCurrency;
     uint256 debtToLiquidateInBaseCurrency;
+    bool hasDeficit;
   }
 
   struct ExecuteLiquidationLocalVars {

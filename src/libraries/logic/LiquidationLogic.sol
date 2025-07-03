@@ -93,12 +93,11 @@ library LiquidationLogic {
    * @return The maximum collateral amount that can be liquidated.
    * @return The corresponding debt amount to liquidate.
    * @return The protocol liquidation fee amount.
-   * @return The debt amount to liquidate in the base currency used by the price feed.
-   * @return The collateral amount to liquidate in the base currency used by the price feed.
+   * @return A boolean indicating if there is a deficit in the liquidation.
    */
   function calculateAvailableCollateralToLiquidate(
     DataTypes.LiquidationCallLocalVars memory params
-  ) internal pure returns (uint256, uint256, uint256, uint256, uint256) {
+  ) internal pure returns (uint256, uint256, uint256, bool) {
     DataTypes.CalculateAvailableCollateralToLiquidate memory vars;
 
     // convert existing collateral to base currency
@@ -135,6 +134,10 @@ library LiquidationLogic {
       vars.debtToLiquidateInBaseCurrency = vars.baseCollateral;
     }
 
+    vars.hasDeficit =
+      vars.debtToLiquidateInBaseCurrency < params.totalDebtInBaseCurrency &&
+      vars.collateralToLiquidateInBaseCurrency == params.totalCollateralInBaseCurrency;
+
     if (params.liquidationFee != 0) {
       uint256 bonusCollateral = vars.collateralAmount -
         vars.collateralAmount.percentDivUp(params.liquidationBonus);
@@ -143,17 +146,10 @@ library LiquidationLogic {
         vars.collateralAmount - liquidationFeeAmount,
         vars.debtAmountNeeded,
         liquidationFeeAmount,
-        vars.debtToLiquidateInBaseCurrency,
-        vars.collateralToLiquidateInBaseCurrency
+        vars.hasDeficit
       );
     } else {
-      return (
-        vars.collateralAmount,
-        vars.debtAmountNeeded,
-        0,
-        vars.debtToLiquidateInBaseCurrency,
-        vars.collateralToLiquidateInBaseCurrency
-      );
+      return (vars.collateralAmount, vars.debtAmountNeeded, 0, vars.hasDeficit);
     }
   }
 }

@@ -408,7 +408,6 @@ contract LiquidationCallBadDebtTest is SpokeLiquidationBase {
       state.collToLiq,
       state.debtToLiq,
       state.liquidationFeeAmount,
-      ,
 
     ) = _calculateAvailableCollateralToLiquidate(state, UINT256_MAX);
 
