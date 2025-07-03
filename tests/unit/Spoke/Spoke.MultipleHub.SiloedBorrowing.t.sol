@@ -52,7 +52,7 @@ contract SpokeMultipleHubSiloedBorrowingTest is SpokeMultipleHubBase {
         paused: false,
         liquidationBonus: 100_00,
         liquidityPremium: 15_00,
-        liquidationProtocolFee: 0,
+        liquidationFee: 0,
         borrowable: true,
         collateral: true
       }),
@@ -97,7 +97,7 @@ contract SpokeMultipleHubSiloedBorrowingTest is SpokeMultipleHubBase {
         paused: false,
         liquidationBonus: 100_00,
         liquidityPremium: 15_00,
-        liquidationProtocolFee: 0,
+        liquidationFee: 0,
         borrowable: true,
         collateral: true
       }),
@@ -133,7 +133,7 @@ contract SpokeMultipleHubSiloedBorrowingTest is SpokeMultipleHubBase {
         paused: false,
         liquidationBonus: 100_00,
         liquidityPremium: 15_00,
-        liquidationProtocolFee: 0,
+        liquidationFee: 0,
         borrowable: true,
         collateral: true
       }),

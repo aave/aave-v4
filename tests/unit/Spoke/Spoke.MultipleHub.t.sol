@@ -33,7 +33,7 @@ contract SpokeMultipleHubTest is SpokeBase {
       paused: false,
       liquidationBonus: 100_00,
       liquidityPremium: 20_00,
-      liquidationProtocolFee: 0,
+      liquidationFee: 0,
       borrowable: true,
       collateral: true
     });
@@ -49,7 +49,7 @@ contract SpokeMultipleHubTest is SpokeBase {
       paused: false,
       liquidationBonus: 100_00,
       liquidityPremium: 20_00,
-      liquidationProtocolFee: 0,
+      liquidationFee: 0,
       borrowable: true,
       collateral: true
     });
