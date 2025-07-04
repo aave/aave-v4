@@ -42,8 +42,7 @@ interface ISpoke is IMulticall, IAccessManaged {
     address indexed user,
     int256 premiumDrawnSharesDelta,
     int256 premiumOffsetDelta,
-    uint256 realizedPremiumAdded,
-    uint256 realizedPremiumTaken
+    uint256 realizedPremium
   );
   event OracleUpdated(uint256 indexed reserveId, address indexed oracle);
   event LiquidationConfigUpdated(DataTypes.LiquidationConfig config);

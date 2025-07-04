@@ -49,8 +49,7 @@ interface ILiquidityHub is IAccessManaged {
     address indexed spoke,
     int256 premiumDrawnSharesDelta,
     int256 premiumOffsetDelta,
-    uint256 realizedPremiumAdded,
-    uint256 realizedPremiumTaken
+    uint256 realizedPremium
   );
   event AccrueFees(uint256 indexed assetId, uint256 shares);
 
@@ -175,15 +174,13 @@ interface ILiquidityHub is IAccessManaged {
    * @param assetId The identifier of the asset.
    * @param premiumDrawnSharesDelta The change in premium drawn shares.
    * @param premiumOffsetDelta The change in premium offset.
-   * @param realizedPremiumAdded The increase of realized premium.
-   * @param realizedPremiumTaken The decrease of realized premium.
+   * @param realizedPremium The amount of realized premium.
    */
   function refreshPremiumDebt(
     uint256 assetId,
     int256 premiumDrawnSharesDelta,
     int256 premiumOffsetDelta,
-    uint256 realizedPremiumAdded,
-    uint256 realizedPremiumTaken
+    uint256 realizedPremium
   ) external;
 
   /**

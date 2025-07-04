@@ -239,8 +239,10 @@ contract LiquidityHub is ILiquidityHub, AccessManaged {
 
     asset.availableLiquidity += totalRestoredAmount;
     asset.baseDrawnShares -= baseDrawnSharesRestored;
+    asset.realizedPremium -= premiumAmount;
 
     spoke.baseDrawnShares -= baseDrawnSharesRestored;
+    spoke.realizedPremium -= premiumAmount;
 
     IERC20(asset.underlying).safeTransferFrom(from, address(this), totalRestoredAmount);
 
@@ -254,8 +256,7 @@ contract LiquidityHub is ILiquidityHub, AccessManaged {
     uint256 assetId,
     int256 premiumDrawnShareDelta,
     int256 premiumOffsetDelta,
-    uint256 realizedPremiumAdded,
-    uint256 realizedPremiumTaken
+    uint256 realizedPremium
   ) external {
     require(_spokes[assetId][msg.sender].config.active, SpokeNotActive());
 
@@ -267,14 +268,13 @@ contract LiquidityHub is ILiquidityHub, AccessManaged {
       msg.sender,
       premiumDrawnShareDelta,
       premiumOffsetDelta,
-      realizedPremiumAdded,
-      realizedPremiumTaken
+      realizedPremium
     );
     uint256 premiumDebtAfter = asset.premiumDebt();
     // can increase due to precision loss on premium debt (base unchanged)
     // todo mathematically find premium diff ceiling and replace the `2`
     // if no premium debt is restored, premium debt remains unchanged
-    require(premiumDebtAfter + realizedPremiumTaken - premiumDebtBefore <= 2, InvalidDebtChange());
+    require(premiumDebtAfter - premiumDebtBefore <= 2, InvalidDebtChange());
   }
 
   /// @inheritdoc ILiquidityHub
@@ -304,8 +304,7 @@ contract LiquidityHub is ILiquidityHub, AccessManaged {
     address spokeAddress,
     int256 premiumDrawnShareDelta,
     int256 premiumOffsetDelta,
-    uint256 realizedPremiumAdded,
-    uint256 realizedPremiumTaken
+    uint256 realizedPremium
   ) internal {
     DataTypes.Asset storage asset = _assets[assetId];
     DataTypes.SpokeData storage spoke = _spokes[assetId][spokeAddress];
@@ -315,19 +314,18 @@ contract LiquidityHub is ILiquidityHub, AccessManaged {
 
     asset.premiumDrawnShares = _add(asset.premiumDrawnShares, premiumDrawnShareDelta);
     asset.premiumOffset = _add(asset.premiumOffset, premiumOffsetDelta);
-    asset.realizedPremium = asset.realizedPremium + realizedPremiumAdded - realizedPremiumTaken;
+    asset.realizedPremium = asset.realizedPremium + realizedPremium;
 
     spoke.premiumDrawnShares = _add(spoke.premiumDrawnShares, premiumDrawnShareDelta);
     spoke.premiumOffset = _add(spoke.premiumOffset, premiumOffsetDelta);
-    spoke.realizedPremium = spoke.realizedPremium + realizedPremiumAdded - realizedPremiumTaken;
+    spoke.realizedPremium = spoke.realizedPremium + realizedPremium;
 
     emit RefreshPremiumDebt(
       assetId,
       spokeAddress,
       premiumDrawnShareDelta,
       premiumOffsetDelta,
-      realizedPremiumAdded,
-      realizedPremiumTaken
+      realizedPremium
     );
   }
 
