@@ -123,17 +123,11 @@ library LiquidationLogic {
       debtAmountNeeded = params.actualDebtToLiquidate;
     }
 
-    if (params.liquidationProtocolFee != 0) {
+    if (params.liquidationFee != 0) {
       uint256 bonusCollateral = collateralAmount -
         collateralAmount.percentDivUp(params.liquidationBonus);
-      uint256 liquidationProtocolFeeAmount = bonusCollateral.percentMulUp(
-        params.liquidationProtocolFee
-      );
-      return (
-        collateralAmount - liquidationProtocolFeeAmount,
-        debtAmountNeeded,
-        liquidationProtocolFeeAmount
-      );
+      uint256 liquidationFeeAmount = bonusCollateral.percentMulUp(params.liquidationFee);
+      return (collateralAmount - liquidationFeeAmount, debtAmountNeeded, liquidationFeeAmount);
     } else {
       return (collateralAmount, debtAmountNeeded, 0);
     }

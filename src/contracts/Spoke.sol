@@ -367,13 +367,13 @@ contract Spoke is ISpoke, Multicall, AccessManaged {
       address collateralAsset,
       address debtAsset,
       uint256 debtToLiquidate,
-      uint256 collateralToLiquidate,
-      uint256 liquidationProtocolFeeShares // TODO: emit in event
+      uint256 collateralToLiquidate
     ) = _executeLiquidationCall(
         _reserves[collateralReserveId],
         _reserves[debtReserveId],
         users,
-        debtsToCover
+        debtsToCover,
+        msg.sender
       );
 
     // TODO: emit liq protocol fee shares in event
@@ -389,7 +389,26 @@ contract Spoke is ISpoke, Multicall, AccessManaged {
 
   /// @inheritdoc ISpoke
   function setUsingAsCollateral(uint256 reserveId, bool usingAsCollateral) external {
-    _setUsingAsCollateral(reserveId, msg.sender, usingAsCollateral);
+    DataTypes.PositionStatus storage positionStatus = _positionStatus[msg.sender];
+
+    // process only if collateral status changes
+    if (positionStatus.isUsingAsCollateral(reserveId) == usingAsCollateral) {
+      return;
+    }
+
+    DataTypes.Reserve storage reserve = _reserves[reserveId];
+    _validateSetUsingAsCollateral(reserve, reserveId, usingAsCollateral);
+
+    positionStatus.setUsingAsCollateral(reserveId, usingAsCollateral);
+
+    if (usingAsCollateral) {
+      _refreshDynamicConfig(msg.sender);
+    } else {
+      // If unsetting, check HF and update user rp
+      uint256 newUserRiskPremium = _refreshAndValidateUserPosition(msg.sender); // validates HF
+      _notifyRiskPremiumUpdate(type(uint256).max, msg.sender, newUserRiskPremium);
+    }
+    emit UsingAsCollateral(reserveId, msg.sender, usingAsCollateral);
   }
 
   /// @inheritdoc ISpoke
@@ -593,15 +612,15 @@ contract Spoke is ISpoke, Multicall, AccessManaged {
     return userRiskPremium;
   }
 
-  function _validateReserveConfig(DataTypes.ReserveConfig calldata config) internal view {
+  function _validateReserveConfig(DataTypes.ReserveConfig calldata config) internal pure {
     require(
       config.liquidationBonus >= PercentageMathExtended.PERCENTAGE_FACTOR,
       InvalidLiquidationBonus()
     ); // min 100.00%
     require(config.liquidityPremium <= MAX_LIQUIDITY_PREMIUM, InvalidLiquidityPremium()); // max 1000.00%
     require(
-      config.liquidationProtocolFee <= PercentageMathExtended.PERCENTAGE_FACTOR,
-      InvalidLiquidationProtocolFee()
+      config.liquidationFee <= PercentageMathExtended.PERCENTAGE_FACTOR,
+      InvalidLiquidationFee()
     );
   }
 
@@ -654,19 +673,21 @@ contract Spoke is ISpoke, Multicall, AccessManaged {
     require(totalDebt > 0, SpecifiedCurrencyNotBorrowedByUser());
   }
 
+  /**
+   * @dev Validates the reserve can be set as collateral.
+   * @dev Collateral can be disabled if the reserve is frozen but not enabled.
+   * @param reserve The reserve to be set as collateral.
+   * @param reserveId The identifier of the reserve.
+   * @param usingAsCollateral True if enables the reserve as collateral, false otherwise.
+   */
   function _validateSetUsingAsCollateral(
     DataTypes.Reserve storage reserve,
-    DataTypes.PositionStatus storage positionStatus,
     uint256 reserveId,
     bool usingAsCollateral
   ) internal view {
     require(reserve.config.active, ReserveNotActive());
     require(!reserve.config.paused, ReservePaused());
-    require(
-      usingAsCollateral != positionStatus.isUsingAsCollateral(reserveId),
-      CollateralStatusUnchanged()
-    );
-    require(reserve.config.collateral, ReserveCannotBeUsedAsCollateral(reserve.reserveId));
+    require(reserve.config.collateral, ReserveCannotBeUsedAsCollateral(reserveId));
     // deactivation should be allowed
     require(!usingAsCollateral || !reserve.config.frozen, ReserveFrozen());
   }
@@ -999,13 +1020,13 @@ contract Spoke is ISpoke, Multicall, AccessManaged {
   /// @return debtAsset The address of the underlying borrowed asset to be repaid with the liquidation.
   /// @return totalDebtToLiquidate The total amount of debt to be repaid.
   /// @return collateralToLiquidate The amount of collateral to liquidate.
-  /// @return liquidationProtocolFeeAmount The amount of protocol fee.
   function _executeLiquidationCall(
     DataTypes.Reserve storage collateralReserve,
     DataTypes.Reserve storage debtReserve,
     address[] memory users,
-    uint256[] memory debtsToCover
-  ) internal returns (address, address, uint256, uint256, uint256) {
+    uint256[] memory debtsToCover,
+    address liquidator
+  ) internal returns (address, address, uint256, uint256) {
     uint256 usersLength = users.length;
     require(usersLength == debtsToCover.length, UsersAndDebtLengthMismatch());
 
@@ -1036,7 +1057,7 @@ contract Spoke is ISpoke, Multicall, AccessManaged {
 
       (
         vars.collateralToLiquidate,
-        vars.liquidationProtocolFeeAmount,
+        vars.liquidationFeeAmount,
         vars.baseDebtToLiquidate,
         vars.premiumDebtToLiquidate
       ) = _calculateLiquidationParameters(
@@ -1101,31 +1122,28 @@ contract Spoke is ISpoke, Multicall, AccessManaged {
         vars.debtAssetId,
         vars.baseDebtToLiquidate,
         vars.premiumDebtToLiquidate,
-        msg.sender
+        liquidator
       );
 
       // debt accounting
       userDebtPosition.baseDrawnShares -= vars.restoredShares;
       vars.totalRestoredShares += vars.restoredShares;
 
-      // liquidate collateral
-      vars.withdrawnShares = collateralReserveHub.remove(
+      // expected total withdrawn shares includes liquidation fee
+      vars.withdrawnShares = collateralReserveHub.convertToSuppliedSharesUp(
         vars.collateralAssetId,
-        vars.collateralToLiquidate + vars.liquidationProtocolFeeAmount,
-        address(this) // must be sent to spoke first before distributing to treasury/liquidator
+        vars.liquidationFeeAmount + vars.collateralToLiquidate
       );
+      // remove collateral, send liquidated collateral directly to liquidator
+      vars.liquidatedSuppliedShares = collateralReserveHub.remove(
+        vars.collateralAssetId,
+        vars.collateralToLiquidate,
+        liquidator
+      );
+      vars.liquidationFeeShares = vars.withdrawnShares - vars.liquidatedSuppliedShares;
 
       // collateral accounting
-      vars.newUserSuppliedShares = userCollateralPosition.suppliedShares - vars.withdrawnShares;
-      userCollateralPosition.suppliedShares = vars.newUserSuppliedShares;
-      vars.totalWithdrawnShares += vars.withdrawnShares;
-
-      // TODO: not compulsory, decide whether to rm
-      if (vars.newUserSuppliedShares == 0) {
-        DataTypes.PositionStatus storage positionStatus = _positionStatus[users[vars.i]];
-        positionStatus.setUsingAsCollateral(vars.collateralReserveId, false);
-        emit UsingAsCollateral(vars.collateralReserveId, users[vars.i], false);
-      }
+      userCollateralPosition.suppliedShares -= vars.withdrawnShares;
 
       // TODO: realize bad debt
       (vars.newUserRiskPremium, , , , ) = _calculateUserAccountData(users[vars.i]);
@@ -1176,13 +1194,18 @@ contract Spoke is ISpoke, Multicall, AccessManaged {
 
       _notifyRiskPremiumUpdate(vars.debtAssetId, users[vars.i], vars.newUserRiskPremium);
 
+      vars.totalWithdrawnShares += vars.withdrawnShares;
       vars.totalCollateralToLiquidate += vars.collateralToLiquidate;
-      vars.totalLiquidationProtocolFeeAmount += vars.liquidationProtocolFeeAmount;
+      vars.totalLiquidationFeeShares += vars.liquidationFeeShares;
       vars.totalDebtToLiquidate += vars.baseDebtToLiquidate + vars.premiumDebtToLiquidate;
 
       unchecked {
         ++vars.i;
       }
+    }
+
+    if (vars.totalLiquidationFeeShares > 0) {
+      collateralReserveHub.payFee(vars.collateralAssetId, vars.totalLiquidationFeeShares);
     }
 
     // TODO: rm when dupe reserve accounting is rm
@@ -1203,28 +1226,17 @@ contract Spoke is ISpoke, Multicall, AccessManaged {
       0,
       0
     );
-    vars.totalLiquidationProtocolFeeShares = collateralReserveHub.convertToSuppliedShares(
-      vars.collateralAssetId,
-      vars.totalLiquidationProtocolFeeAmount
-    );
-
-    // transfer total liquidated collateral to liquidator
-    IERC20(collateralReserve.underlying).safeTransfer(msg.sender, vars.totalCollateralToLiquidate);
-    // TODO: treasury accounting for protocol fee
-    // TODO: rm temp event
-    emit TmpLiquidationFee(vars.totalLiquidationProtocolFeeShares);
 
     return (
       collateralReserve.underlying,
       debtReserve.underlying,
       vars.totalDebtToLiquidate,
-      vars.totalCollateralToLiquidate,
-      vars.totalLiquidationProtocolFeeShares
+      vars.totalCollateralToLiquidate
     );
   }
 
   /// @return actualCollateralToLiquidate The amount of collateral to liquidate.
-  /// @return liquidationProtocolFeeAmount The amount of protocol fee.
+  /// @return liquidationFeeAmount The amount of protocol fee.
   /// @return baseDebtToLiquidate The amount of base debt to repay.
   /// @return premiumDebtToLiquidate The amount of premium debt to repay.
   function _calculateLiquidationParameters(
@@ -1271,18 +1283,15 @@ contract Spoke is ISpoke, Multicall, AccessManaged {
     vars.closeFactor = _liquidationConfig.closeFactor;
     vars.collateralAssetPrice = oracle.getReservePrice(vars.collateralReserveId);
     vars.collateralAssetUnit = 10 ** collateralReserve.decimals;
-    vars.liquidationProtocolFee = collateralReserve.config.liquidationProtocolFee;
+    vars.liquidationFee = collateralReserve.config.liquidationFee;
 
     vars.actualDebtToLiquidate = LiquidationLogic.calculateActualDebtToLiquidate({
       debtToCover: debtToCover,
       params: vars
     });
 
-    (
-      vars.actualCollateralToLiquidate,
-      vars.actualDebtToLiquidate,
-      vars.liquidationProtocolFeeAmount
-    ) = vars.calculateAvailableCollateralToLiquidate();
+    (vars.actualCollateralToLiquidate, vars.actualDebtToLiquidate, vars.liquidationFeeAmount) = vars
+      .calculateAvailableCollateralToLiquidate();
 
     (vars.baseDebtToLiquidate, vars.premiumDebtToLiquidate) = _calculateRestoreAmount(
       baseDebt,
@@ -1292,7 +1301,7 @@ contract Spoke is ISpoke, Multicall, AccessManaged {
 
     return (
       vars.actualCollateralToLiquidate,
-      vars.liquidationProtocolFeeAmount,
+      vars.liquidationFeeAmount,
       vars.baseDebtToLiquidate,
       vars.premiumDebtToLiquidate
     );
