@@ -46,6 +46,7 @@ contract SpokeMultipleHubSiloedBorrowingTest is SpokeMultipleHubBase {
     siloedVars.reserveBId = newSpoke.addReserve(
       siloedVars.assetBId,
       address(newHub),
+      _getMockOracleConfigData(newSpoke, 2000e8),
       DataTypes.ReserveConfig({
         active: true,
         frozen: false,
@@ -71,8 +72,6 @@ contract SpokeMultipleHubSiloedBorrowingTest is SpokeMultipleHubBase {
     );
     vm.stopPrank();
 
-    _mockReservePrice(newSpoke, siloedVars.reserveBId, 2000e8);
-
     // Configure interest rate strategy for asset B
     vm.prank(address(newHub));
     newIrStrategy.setInterestRateData(siloedVars.assetBId, encodedIrData);
@@ -91,6 +90,7 @@ contract SpokeMultipleHubSiloedBorrowingTest is SpokeMultipleHubBase {
     siloedVars.reserveAId = spoke1.addReserve(
       siloedVars.assetAId,
       address(hub),
+      _getMockOracleConfigData(spoke1, 50_000e8),
       DataTypes.ReserveConfig({
         active: true,
         frozen: false,
@@ -116,8 +116,6 @@ contract SpokeMultipleHubSiloedBorrowingTest is SpokeMultipleHubBase {
     );
     vm.stopPrank();
 
-    _mockReservePrice(spoke1, siloedVars.reserveAId, 50_000e8);
-
     // Configure interest rate strategy for asset A
     vm.prank(address(hub));
     irStrategy.setInterestRateData(siloedVars.assetAId, encodedIrData);
@@ -127,6 +125,7 @@ contract SpokeMultipleHubSiloedBorrowingTest is SpokeMultipleHubBase {
     siloedVars.reserveAIdNewSpoke = newSpoke.addReserve(
       siloedVars.assetAId,
       address(hub),
+      _getMockOracleConfigData(newSpoke, 2000e8),
       DataTypes.ReserveConfig({
         active: true,
         frozen: false,
@@ -147,8 +146,6 @@ contract SpokeMultipleHubSiloedBorrowingTest is SpokeMultipleHubBase {
       DataTypes.SpokeConfig({drawCap: 0, supplyCap: siloedVars.assetASupplyCap, active: true})
     );
     vm.stopPrank();
-
-    _mockReservePrice(newSpoke, siloedVars.reserveAIdNewSpoke, 2000e8);
 
     // Approvals
     vm.prank(bob);

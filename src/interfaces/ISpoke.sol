@@ -90,14 +90,18 @@ interface ISpoke is IMulticall, IAccessManaged {
   error InvalidDebtToCover();
   error InvalidLiquidationFee();
   error InvalidOracleAddress();
+  error InvalidOracleConfig();
   error UsersAndDebtLengthMismatch();
   error Unauthorized();
 
-  function updateOracle(address oracleAddress) external;
+  function updateOracle(address newOracle) external;
+
+  function updateOracleConfig(uint256 reserveId, bytes calldata oracleConfigData) external;
 
   function addReserve(
     uint256 assetId,
     address hub,
+    bytes calldata oracleConfigData,
     DataTypes.ReserveConfig calldata config,
     DataTypes.DynamicReserveConfig calldata dynConfig
   ) external returns (uint256);

@@ -184,14 +184,14 @@ abstract contract Base is Test {
   function deployFixtures() internal virtual {
     vm.startPrank(ADMIN);
     accessManager = new AccessManager(ADMIN);
-    oracle1 = IAaveOracle(new AaveOracle(address(accessManager), 8, 'Spoke 1 (USD)'));
-    oracle2 = IAaveOracle(new AaveOracle(address(accessManager), 8, 'Spoke 2 (USD)'));
-    oracle3 = IAaveOracle(new AaveOracle(address(accessManager), 8, 'Spoke 3 (USD)'));
     hub = new LiquidityHub(address(accessManager));
     irStrategy = new AssetInterestRateStrategy(address(hub));
-    spoke1 = ISpoke(new Spoke(address(oracle1), address(accessManager)));
-    spoke2 = ISpoke(new Spoke(address(oracle2), address(accessManager)));
-    spoke3 = ISpoke(new Spoke(address(oracle3), address(accessManager)));
+    spoke1 = ISpoke(new Spoke(address(accessManager)));
+    spoke2 = ISpoke(new Spoke(address(accessManager)));
+    spoke3 = ISpoke(new Spoke(address(accessManager)));
+    oracle1 = IAaveOracle(new AaveOracle(address(spoke1), 8, 'Spoke 1 (USD)'));
+    oracle2 = IAaveOracle(new AaveOracle(address(spoke2), 8, 'Spoke 2 (USD)'));
+    oracle3 = IAaveOracle(new AaveOracle(address(spoke3), 8, 'Spoke 3 (USD)'));
     treasurySpoke = ITreasurySpoke(new TreasurySpoke(TREASURY_ADMIN, address(hub)));
     dai = new MockERC20();
     eth = new MockERC20();
@@ -204,15 +204,14 @@ abstract contract Base is Test {
     vm.label(address(spoke2), 'spoke2');
     vm.label(address(spoke3), 'spoke3');
 
-    setUpRoles(hub, spoke1, oracle1, accessManager);
-    setUpRoles(hub, spoke2, oracle2, accessManager);
-    setUpRoles(hub, spoke3, oracle3, accessManager);
+    setUpRoles(hub, spoke1, accessManager);
+    setUpRoles(hub, spoke2, accessManager);
+    setUpRoles(hub, spoke3, accessManager);
   }
 
   function setUpRoles(
     ILiquidityHub hub,
     ISpoke spoke,
-    IAaveOracle oracle,
     IAccessManager accessManager
   ) internal virtual {
     vm.startPrank(ADMIN);
@@ -226,13 +225,14 @@ abstract contract Base is Test {
 
     // Grant responsibilities to roles
     // Spoke Admin functionalities
-    bytes4[] memory selectors = new bytes4[](6);
+    bytes4[] memory selectors = new bytes4[](7);
     selectors[0] = ISpoke.updateOracle.selector;
-    selectors[1] = ISpoke.updateLiquidationConfig.selector;
-    selectors[2] = ISpoke.addReserve.selector;
-    selectors[3] = ISpoke.updateReserveConfig.selector;
-    selectors[4] = ISpoke.updateDynamicReserveConfig.selector;
-    selectors[5] = ISpoke.updateUserRiskPremium.selector;
+    selectors[1] = ISpoke.updateOracleConfig.selector;
+    selectors[2] = ISpoke.updateLiquidationConfig.selector;
+    selectors[3] = ISpoke.addReserve.selector;
+    selectors[4] = ISpoke.updateReserveConfig.selector;
+    selectors[5] = ISpoke.updateDynamicReserveConfig.selector;
+    selectors[6] = ISpoke.updateUserRiskPremium.selector;
     accessManager.setTargetFunctionRole(address(spoke), selectors, Roles.SPOKE_ADMIN_ROLE);
 
     // Liquidity Hub Admin functionalities
@@ -243,11 +243,6 @@ abstract contract Base is Test {
     hubSelectors[3] = ILiquidityHub.updateSpokeConfig.selector;
     hubSelectors[4] = ILiquidityHub.setInterestRateData.selector;
     accessManager.setTargetFunctionRole(address(hub), hubSelectors, Roles.HUB_ADMIN_ROLE);
-
-    // Oracle Admin functionalities
-    bytes4[] memory oracleSelectors = new bytes4[](1);
-    oracleSelectors[0] = IAaveOracle.setReserveSource.selector;
-    accessManager.setTargetFunctionRole(address(oracle), oracleSelectors, Roles.ORACLE_ADMIN_ROLE);
 
     vm.stopPrank();
   }
@@ -537,6 +532,11 @@ abstract contract Base is Test {
       })
     );
 
+    // configure oracle in spokes
+    spoke1.updateOracle(address(oracle1));
+    spoke2.updateOracle(address(oracle2));
+    spoke3.updateOracle(address(oracle3));
+
     // Spoke 1 reserve configs
     vars.wethConfig = DataTypes.ReserveConfig({
       active: true,
@@ -607,6 +607,7 @@ abstract contract Base is Test {
     spokeInfo[spoke1].weth.reserveId = spoke1.addReserve(
       wethAssetId,
       address(hub),
+      _getMockOracleConfigData(spoke1, 2000e8),
       vars.wethConfig,
       vars.wethDynConfig
     );
@@ -614,6 +615,7 @@ abstract contract Base is Test {
     spokeInfo[spoke1].wbtc.reserveId = spoke1.addReserve(
       wbtcAssetId,
       address(hub),
+      _getMockOracleConfigData(spoke1, 50_000e8),
       vars.wbtcConfig,
       vars.wbtcDynConfig
     );
@@ -621,6 +623,7 @@ abstract contract Base is Test {
     spokeInfo[spoke1].dai.reserveId = spoke1.addReserve(
       daiAssetId,
       address(hub),
+      _getMockOracleConfigData(spoke1, 1e8),
       vars.daiConfig,
       vars.daiDynConfig
     );
@@ -628,6 +631,7 @@ abstract contract Base is Test {
     spokeInfo[spoke1].usdx.reserveId = spoke1.addReserve(
       usdxAssetId,
       address(hub),
+      _getMockOracleConfigData(spoke1, 1e8),
       vars.usdxConfig,
       vars.usdxDynConfig
     );
@@ -635,6 +639,7 @@ abstract contract Base is Test {
     spokeInfo[spoke1].usdy.reserveId = spoke1.addReserve(
       usdyAssetId,
       address(hub),
+      _getMockOracleConfigData(spoke1, 1e8),
       vars.usdyConfig,
       vars.usdyDynConfig
     );
@@ -717,6 +722,7 @@ abstract contract Base is Test {
     spokeInfo[spoke2].wbtc.reserveId = spoke2.addReserve(
       wbtcAssetId,
       address(hub),
+      _getMockOracleConfigData(spoke2, 50_000e8),
       vars.wbtcConfig,
       vars.wbtcDynConfig
     );
@@ -724,6 +730,7 @@ abstract contract Base is Test {
     spokeInfo[spoke2].weth.reserveId = spoke2.addReserve(
       wethAssetId,
       address(hub),
+      _getMockOracleConfigData(spoke2, 2000e8),
       vars.wethConfig,
       vars.wethDynConfig
     );
@@ -731,6 +738,7 @@ abstract contract Base is Test {
     spokeInfo[spoke2].dai.reserveId = spoke2.addReserve(
       daiAssetId,
       address(hub),
+      _getMockOracleConfigData(spoke2, 1e8),
       vars.daiConfig,
       vars.daiDynConfig
     );
@@ -738,6 +746,7 @@ abstract contract Base is Test {
     spokeInfo[spoke2].usdx.reserveId = spoke2.addReserve(
       usdxAssetId,
       address(hub),
+      _getMockOracleConfigData(spoke2, 1e8),
       vars.usdxConfig,
       vars.usdxDynConfig
     );
@@ -745,6 +754,7 @@ abstract contract Base is Test {
     spokeInfo[spoke2].usdy.reserveId = spoke2.addReserve(
       usdyAssetId,
       address(hub),
+      _getMockOracleConfigData(spoke2, 1e8),
       vars.usdyConfig,
       vars.usdyDynConfig
     );
@@ -752,6 +762,7 @@ abstract contract Base is Test {
     spokeInfo[spoke2].dai2.reserveId = spoke2.addReserve(
       dai2AssetId,
       address(hub),
+      _getMockOracleConfigData(spoke2, 1e8),
       vars.dai2Config,
       vars.dai2DynConfig
     );
@@ -813,6 +824,7 @@ abstract contract Base is Test {
     spokeInfo[spoke3].dai.reserveId = spoke3.addReserve(
       daiAssetId,
       address(hub),
+      _getMockOracleConfigData(spoke3, 1e8),
       vars.daiConfig,
       vars.daiDynConfig
     );
@@ -820,6 +832,7 @@ abstract contract Base is Test {
     spokeInfo[spoke3].usdx.reserveId = spoke3.addReserve(
       usdxAssetId,
       address(hub),
+      _getMockOracleConfigData(spoke3, 1e8),
       vars.usdxConfig,
       vars.usdxDynConfig
     );
@@ -827,6 +840,7 @@ abstract contract Base is Test {
     spokeInfo[spoke3].weth.reserveId = spoke3.addReserve(
       wethAssetId,
       address(hub),
+      _getMockOracleConfigData(spoke3, 2000e8),
       vars.wethConfig,
       vars.wethDynConfig
     );
@@ -834,6 +848,7 @@ abstract contract Base is Test {
     spokeInfo[spoke3].wbtc.reserveId = spoke3.addReserve(
       wbtcAssetId,
       address(hub),
+      _getMockOracleConfigData(spoke3, 50_000e8),
       vars.wbtcConfig,
       vars.wbtcDynConfig
     );
@@ -845,24 +860,6 @@ abstract contract Base is Test {
     hub.addSpoke(wbtcAssetId, address(spoke3), spokeConfig);
 
     vm.stopPrank();
-
-    _mockReservePrice(spoke1, spokeInfo[spoke1].weth.reserveId, 2000e8);
-    _mockReservePrice(spoke1, spokeInfo[spoke1].wbtc.reserveId, 50_000e8);
-    _mockReservePrice(spoke1, spokeInfo[spoke1].dai.reserveId, 1e8);
-    _mockReservePrice(spoke1, spokeInfo[spoke1].usdx.reserveId, 1e8);
-    _mockReservePrice(spoke1, spokeInfo[spoke1].usdy.reserveId, 1e8);
-
-    _mockReservePrice(spoke2, spokeInfo[spoke2].wbtc.reserveId, 50_000e8);
-    _mockReservePrice(spoke2, spokeInfo[spoke2].weth.reserveId, 2000e8);
-    _mockReservePrice(spoke2, spokeInfo[spoke2].dai.reserveId, 1e8);
-    _mockReservePrice(spoke2, spokeInfo[spoke2].usdx.reserveId, 1e8);
-    _mockReservePrice(spoke2, spokeInfo[spoke2].usdy.reserveId, 1e8);
-    _mockReservePrice(spoke2, spokeInfo[spoke2].dai2.reserveId, 1e8);
-
-    _mockReservePrice(spoke3, spokeInfo[spoke3].dai.reserveId, 1e8);
-    _mockReservePrice(spoke3, spokeInfo[spoke3].usdx.reserveId, 1e8);
-    _mockReservePrice(spoke3, spokeInfo[spoke3].weth.reserveId, 2000e8);
-    _mockReservePrice(spoke3, spokeInfo[spoke3].wbtc.reserveId, 50_000e8);
   }
 
   /* @dev Configures Hub 2 with the following assetIds:
@@ -927,7 +924,7 @@ abstract contract Base is Test {
     hub2IrStrategy.setInterestRateData(wbtcAssetId, encodedIrData);
     vm.stopPrank();
 
-    setUpRoles(hub2, spoke1, oracle1, accessManager2);
+    setUpRoles(hub2, spoke1, accessManager2);
 
     return (hub2, hub2IrStrategy);
   }
@@ -998,7 +995,7 @@ abstract contract Base is Test {
     hub3IrStrategy.setInterestRateData(hub3WbtcAssetId, encodedIrData);
     vm.stopPrank();
 
-    setUpRoles(hub3, spoke1, oracle1, accessManager3);
+    setUpRoles(hub3, spoke1, accessManager3);
 
     return (hub3, hub3IrStrategy);
   }
@@ -1973,14 +1970,20 @@ abstract contract Base is Test {
     require(price > 0, 'mockReservePrice: price must be positive');
     AaveOracle oracle = AaveOracle(address(spoke.oracle()));
     address mockPriceFeed = address(new MockPriceFeed(oracle.DECIMALS(), oracle.DESCRIPTION(), price));
-    vm.prank(ADMIN);
-    oracle.setReserveSource(reserveId, mockPriceFeed);
+    vm.prank(address(ADMIN));
+    spoke.updateOracleConfig(reserveId, abi.encode(mockPriceFeed));
   }
 
   function _changeMockReservePriceByPercentage(ISpoke spoke, uint256 reserveId, uint256 percentage) internal {
     uint256 initialPrice = spoke.oracle().getReservePrice(reserveId);
     uint256 newPrice = initialPrice.percentMulDown(percentage);
     _mockReservePrice(spoke, reserveId, newPrice);
+  }
+
+  function _getMockOracleConfigData(ISpoke spoke, uint256 price) internal returns (bytes memory) {
+    AaveOracle oracle = AaveOracle(address(spoke.oracle()));
+    address mockPriceFeed = address(new MockPriceFeed(oracle.DECIMALS(), oracle.DESCRIPTION(), price));
+    return abi.encode(mockPriceFeed); 
   }
 
   function _assertEventNotEmitted(bytes32 eventSignature) internal {

@@ -11,7 +11,9 @@ import {IAaveOracle, IPriceOracle} from 'src/interfaces/IAaveOracle.sol';
  * @notice Oracle contract for the Aave protocol.
  * @dev Oracles are spoke-specific, due to the usage of reserve id as index of the _reserveSource.
  */
-contract AaveOracle is IAaveOracle, AccessManaged {
+contract AaveOracle is IAaveOracle {
+  /// @inheritdoc IPriceOracle
+  address public immutable override SPOKE;
   /// @inheritdoc IPriceOracle
   uint8 public immutable override DECIMALS;
   /// @inheritdoc IPriceOracle
@@ -21,23 +23,21 @@ contract AaveOracle is IAaveOracle, AccessManaged {
 
   /**
    * @dev Constructor.
-   * @dev The authority must implement the AccessManaged interface to control access.
-   * @param authority_ The address of the authority contract which manages permissions.
+   * @param spoke_ The address of the spoke contract.
    * @param decimals_ The number of decimals for the oracle.
    * @param description_ The description of the oracle.
    */
-  constructor(
-    address authority_,
-    uint8 decimals_,
-    string memory description_
-  ) AccessManaged(authority_) {
+  constructor(address spoke_, uint8 decimals_, string memory description_) {
+    SPOKE = spoke_;
     DECIMALS = decimals_;
     DESCRIPTION = description_;
     emit AaveOracleCreated(decimals_, description_);
   }
 
-  /// @inheritdoc IAaveOracle
-  function setReserveSource(uint256 reserveId, address source) external override restricted {
+  /// @inheritdoc IPriceOracle
+  function configureReserve(uint256 reserveId, bytes calldata configData) external override {
+    require(msg.sender == SPOKE, OnlySpoke());
+    address source = abi.decode(configData, (address));
     AggregatorV3Interface targetSource = AggregatorV3Interface(source);
     require(targetSource.decimals() == DECIMALS, InvalidSourceDecimals(reserveId));
     _reserveSource[reserveId] = targetSource;

@@ -48,12 +48,9 @@ contract Spoke is ISpoke, Multicall, AccessManaged {
   /**
    * @dev Constructor.
    * @dev The authority should implement the AccessManaged interface to control access.
-   * @param oracle_ The address of the price oracle contract used for asset valuations.
    * @param authority_ The address of the authority contract which manages permissions.
    */
-  constructor(address oracle_, address authority_) AccessManaged(authority_) {
-    _updateOracle(oracle_);
-
+  constructor(address authority_) AccessManaged(authority_) {
     // todo move to `initialize` when adding upgradeability
     _liquidationConfig.closeFactor = HEALTH_FACTOR_LIQUIDATION_THRESHOLD;
     emit LiquidationConfigUpdated(_liquidationConfig);
@@ -64,7 +61,18 @@ contract Spoke is ISpoke, Multicall, AccessManaged {
   // /////
 
   function updateOracle(address newOracle) external restricted {
-    _updateOracle(newOracle);
+    require(newOracle != address(0), InvalidOracleAddress());
+    oracle = IPriceOracle(newOracle);
+    emit OracleUpdated(newOracle);
+  }
+
+  function updateOracleConfig(
+    uint256 reserveId,
+    bytes calldata oracleConfigData
+  ) external restricted {
+    require(reserveId < reserveCount, ReserveNotListed());
+    require(address(oracle) != address(0), InvalidOracleAddress());
+    _configureReservePrice(reserveId, oracleConfigData);
   }
 
   function updateLiquidationConfig(
@@ -78,6 +86,7 @@ contract Spoke is ISpoke, Multicall, AccessManaged {
   function addReserve(
     uint256 assetId,
     address hub,
+    bytes calldata oracleConfigData,
     DataTypes.ReserveConfig calldata config,
     DataTypes.DynamicReserveConfig calldata dynamicConfig
   ) external restricted returns (uint256) {
@@ -89,6 +98,8 @@ contract Spoke is ISpoke, Multicall, AccessManaged {
 
     DataTypes.Asset memory asset = ILiquidityHub(hub).getAsset(assetId);
     require(asset.underlying != address(0), AssetNotListed());
+
+    _configureReservePrice(reserveId, oracleConfigData);
 
     reservesList.push(reserveId);
     _reserves[reserveId] = DataTypes.Reserve({
@@ -609,10 +620,9 @@ contract Spoke is ISpoke, Multicall, AccessManaged {
     // todo validate user not trying to repay more
   }
 
-  function _updateOracle(address newOracle) internal {
-    require(newOracle != address(0), InvalidOracleAddress());
-    oracle = IPriceOracle(newOracle);
-    emit OracleUpdated(newOracle);
+  function _configureReservePrice(uint256 reserveId, bytes calldata oracleConfigData) internal {
+    require(address(oracle) != address(0), InvalidOracleAddress());
+    oracle.configureReserve(reserveId, oracleConfigData);
   }
 
   function _refreshAndValidateUserPosition(address user) internal returns (uint256) {

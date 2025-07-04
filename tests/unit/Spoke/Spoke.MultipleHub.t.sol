@@ -40,7 +40,7 @@ contract SpokeMultipleHubTest is SpokeBase {
     DataTypes.DynamicReserveConfig memory dynDaiHub2Config = DataTypes.DynamicReserveConfig({
       collateralFactor: 78_00
     });
-    daiHub2ReserveId = spoke1.addReserve(daiAssetId, address(hub2), daiHub2Config, dynDaiHub2Config);
+    daiHub2ReserveId = spoke1.addReserve(daiAssetId, address(hub2), _getMockOracleConfigData(spoke1, 1e8), daiHub2Config, dynDaiHub2Config);
 
     // Relist hub 3's dai on spoke 1
     DataTypes.ReserveConfig memory daiHub3Config = DataTypes.ReserveConfig({
@@ -56,7 +56,13 @@ contract SpokeMultipleHubTest is SpokeBase {
     DataTypes.DynamicReserveConfig memory dynDaiHub3Config = DataTypes.DynamicReserveConfig({
       collateralFactor: 78_00
     });
-    daiHub3ReserveId = spoke1.addReserve(hub3DaiAssetId, address(hub3), daiHub3Config, dynDaiHub3Config);
+    daiHub3ReserveId = spoke1.addReserve(
+      hub3DaiAssetId, 
+      address(hub3), 
+      _getMockOracleConfigData(spoke1, 1e8),
+      daiHub3Config, 
+      dynDaiHub3Config
+    );
 
     DataTypes.SpokeConfig memory spokeConfig = DataTypes.SpokeConfig({
       supplyCap: type(uint256).max,
@@ -71,10 +77,6 @@ contract SpokeMultipleHubTest is SpokeBase {
     hub3.addSpoke(hub3DaiAssetId, address(spoke1), spokeConfig);
 
     vm.stopPrank();
-
-    // Set the prices for dai for the new hubs
-    _mockReservePrice(spoke1, daiHub2ReserveId, 1e8);
-    _mockReservePrice(spoke1, daiHub3ReserveId, 1e8);
 
     // Deal dai to Alice for supplying to 2 hubs
     deal(address(tokenList.dai), alice, MAX_SUPPLY_AMOUNT * 2);

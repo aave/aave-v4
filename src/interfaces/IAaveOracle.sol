@@ -39,13 +39,6 @@ interface IAaveOracle is IPriceOracle {
   error InvalidPrice(uint256 reserveId);
 
   /**
-   * @notice Sets the price feed source of a reserve.
-   * @param reserveId The identifier of the reserve.
-   * @param source The price feed source of the reserve.
-   */
-  function setReserveSource(uint256 reserveId, address source) external;
-
-  /**
    * @notice Returns the prices of multiple reserves.
    * @param reserveIds The identifiers of the reserves.
    * @return prices The prices of the reserves.

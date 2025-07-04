@@ -21,22 +21,21 @@ contract AaveOracleTest is Base {
   function setUp() public override {
     super.setUp();
 
-    oracle = new AaveOracle(address(accessManager), _decimals, _description);
-
-    bytes4[] memory oracleSelectors = new bytes4[](1);
-    oracleSelectors[0] = IAaveOracle.setReserveSource.selector;
-    vm.prank(ADMIN);
-    accessManager.setTargetFunctionRole(address(oracle), oracleSelectors, Roles.ORACLE_ADMIN_ROLE);
+    oracle = new AaveOracle(address(spoke1), _decimals, _description);
   }
 
   function test_constructor() public {
     vm.expectEmit();
     emit IAaveOracle.AaveOracleCreated(_decimals, _description);
-    oracle = new AaveOracle(address(accessManager), _decimals, _description);
+    oracle = new AaveOracle(address(spoke1), _decimals, _description);
 
+    test_spoke();
     test_decimals();
     test_description();
-    test_authority();
+  }
+
+  function test_spoke() public {
+    assertEq(oracle.SPOKE(), address(spoke1));
   }
 
   function test_decimals() public {
@@ -47,56 +46,50 @@ contract AaveOracleTest is Base {
     assertEq(oracle.DESCRIPTION(), _description);
   }
 
-  function test_authority() public {
-    assertEq(oracle.authority(), address(accessManager));
-  }
-
-  function test_setReserveSource_revertsWith_AccessManagedUnauthorized() public {
-    vm.expectRevert(
-      abi.encodeWithSelector(IAccessManaged.AccessManagedUnauthorized.selector, user)
-    );
+  function test_configureReserve_revertsWith_OnlySpoke() public {
+    vm.expectRevert(abi.encodeWithSelector(IPriceOracle.OnlySpoke.selector));
 
     vm.prank(user);
-    oracle.setReserveSource(reserveId1, address(0));
+    oracle.configureReserve(reserveId1, abi.encode(address(0)));
   }
 
-  function test_setReserveSource_revertsWith_InvalidSourceDecimals() public {
+  function test_configureReserve_revertsWith_InvalidSourceDecimals() public {
     _mockSourceDecimals(_source1, _decimals + 1);
 
     vm.expectRevert(abi.encodeWithSelector(IAaveOracle.InvalidSourceDecimals.selector, reserveId1));
 
-    vm.prank(ORACLE_ADMIN);
-    oracle.setReserveSource(reserveId1, _source1);
+    vm.prank(address(spoke1));
+    oracle.configureReserve(reserveId1, abi.encode(_source1));
   }
 
-  function test_setReserveSource_revertsWith_InvalidSource() public {
+  function test_configureReserve_revertsWith_InvalidSource() public {
     _mockSourceDecimals(address(0), _decimals);
 
     vm.expectRevert(abi.encodeWithSelector(IAaveOracle.InvalidSource.selector, reserveId1));
 
-    vm.prank(ORACLE_ADMIN);
-    oracle.setReserveSource(reserveId1, address(0));
+    vm.prank(address(spoke1));
+    oracle.configureReserve(reserveId1, abi.encode(address(0)));
   }
 
-  function test_setReserveSource_revertsWith_InvalidPrice() public {
+  function test_configureReserve_revertsWith_InvalidPrice() public {
     _mockSourceDecimals(_source1, _decimals);
     _mockSourceLatestRoundData(_source1, -1e8);
     vm.expectRevert(abi.encodeWithSelector(IAaveOracle.InvalidPrice.selector, reserveId1));
-    vm.prank(ORACLE_ADMIN);
-    oracle.setReserveSource(reserveId1, _source1);
+    vm.prank(address(spoke1));
+    oracle.configureReserve(reserveId1, abi.encode(_source1));
 
     _mockSourceLatestRoundData(_source1, 0);
     vm.expectRevert(abi.encodeWithSelector(IAaveOracle.InvalidPrice.selector, reserveId1));
-    vm.prank(ORACLE_ADMIN);
-    oracle.setReserveSource(reserveId1, _source1);
+    vm.prank(address(spoke1));
+    oracle.configureReserve(reserveId1, abi.encode(_source1));
 
     _mockSourceLatestRoundData(_source1, -100e18);
     vm.expectRevert(abi.encodeWithSelector(IAaveOracle.InvalidPrice.selector, reserveId1));
-    vm.prank(ORACLE_ADMIN);
-    oracle.setReserveSource(reserveId1, _source1);
+    vm.prank(address(spoke1));
+    oracle.configureReserve(reserveId1, abi.encode(_source1));
   }
 
-  function test_setReserveSource() public {
+  function test_configureReserve() public {
     _mockSourceDecimals(_source1, _decimals);
     _mockSourceLatestRoundData(_source1, 1e8);
 
@@ -104,13 +97,13 @@ contract AaveOracleTest is Base {
     emit IAaveOracle.ReserveSourceUpdated(reserveId1, _source1);
     vm.expectCall(_source1, abi.encodeCall(AggregatorV3Interface.latestRoundData, ()));
 
-    vm.prank(ORACLE_ADMIN);
-    oracle.setReserveSource(reserveId1, _source1);
+    vm.prank(address(spoke1));
+    oracle.configureReserve(reserveId1, abi.encode(_source1));
   }
 
   function test_getReserveSource() public {
     assertEq(oracle.getReserveSource(reserveId1), address(0));
-    test_setReserveSource();
+    test_configureReserve();
     assertEq(oracle.getReserveSource(reserveId1), _source1);
   }
 
@@ -123,8 +116,8 @@ contract AaveOracleTest is Base {
     _mockSourceDecimals(_source1, _decimals);
     _mockSourceLatestRoundData(_source1, 1e8);
 
-    vm.prank(ORACLE_ADMIN);
-    oracle.setReserveSource(reserveId1, _source1);
+    vm.prank(address(spoke1));
+    oracle.configureReserve(reserveId1, abi.encode(_source1));
 
     _mockSourceLatestRoundData(_source1, -1e8);
 
@@ -133,7 +126,7 @@ contract AaveOracleTest is Base {
   }
 
   function test_getReservePrice() public {
-    test_setReserveSource();
+    test_configureReserve();
 
     vm.expectCall(_source1, abi.encodeCall(AggregatorV3Interface.latestRoundData, ()));
     assertEq(oracle.getReservePrice(reserveId1), 1e8);
@@ -143,10 +136,10 @@ contract AaveOracleTest is Base {
     _mockSourceDecimals(_source1, _decimals);
     _mockSourceLatestRoundData(_source1, 1e8);
 
-    vm.prank(ORACLE_ADMIN);
-    oracle.setReserveSource(reserveId1, _source1);
+    vm.prank(address(spoke1));
+    oracle.configureReserve(reserveId1, abi.encode(_source1));
 
-    uint256[] memory reserveIds = new uint256[](2);
+    uint256[] memory reserveIds = new uint256[](2); // todo: use reserveIds
     reserveIds[0] = reserveId1;
     reserveIds[1] = reserveId2;
 
@@ -160,10 +153,10 @@ contract AaveOracleTest is Base {
     _mockSourceDecimals(_source2, _decimals);
     _mockSourceLatestRoundData(_source2, 2e8);
 
-    vm.prank(ORACLE_ADMIN);
-    oracle.setReserveSource(reserveId1, _source1);
-    vm.prank(ORACLE_ADMIN);
-    oracle.setReserveSource(reserveId2, _source2);
+    vm.prank(address(spoke1));
+    oracle.configureReserve(reserveId1, abi.encode(_source1));
+    vm.prank(address(spoke1));
+    oracle.configureReserve(reserveId2, abi.encode(_source2));
 
     uint256[] memory reserveIds = new uint256[](2);
     reserveIds[0] = reserveId1;

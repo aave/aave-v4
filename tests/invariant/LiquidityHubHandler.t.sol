@@ -11,6 +11,7 @@ import {TreasurySpoke} from 'src/contracts/TreasurySpoke.sol';
 import {IERC20} from 'src/dependencies/openzeppelin/IERC20.sol';
 import {AccessManager} from 'src/dependencies/openzeppelin/AccessManager.sol';
 import '../mocks/MockERC20.sol';
+import {MockPriceFeed} from '../mocks/MockPriceFeed.sol';
 import '../Utils.sol';
 import 'src/contracts/AssetInterestRateStrategy.sol';
 
@@ -42,8 +43,9 @@ contract LiquidityHubHandler is Test {
     accessManager = new AccessManager(hubAdmin);
     hub = new LiquidityHub(address(accessManager));
     irStrategy = new AssetInterestRateStrategy(address(hub));
-    oracle = new AaveOracle(address(accessManager), 8, 'Spoke 1 (USD)');
-    spoke1 = new Spoke(address(oracle), address(accessManager));
+    spoke1 = new Spoke(address(accessManager));
+    oracle = new AaveOracle(address(spoke1), 8, 'Spoke 1 (USD)');
+    spoke1.updateOracle(address(oracle));
     treasurySpoke = new TreasurySpoke(hubAdmin, address(hub));
     usdc = new MockERC20();
     dai = new MockERC20();
@@ -79,6 +81,7 @@ contract LiquidityHubHandler is Test {
     spoke1.addReserve(
       0,
       address(hub),
+      _getMockOracleConfigData(spoke1, 1e8),
       DataTypes.ReserveConfig({
         active: true,
         frozen: false,
@@ -165,4 +168,10 @@ contract LiquidityHubHandler is Test {
     //   ? 0
     //   : hub.getTotalAssets(assetId) / reserveData.suppliedShares;
   }
+
+    function _getMockOracleConfigData(Spoke spoke, uint256 price) internal returns (bytes memory) {
+      AaveOracle oracle = AaveOracle(address(spoke.oracle()));
+      address mockPriceFeed = address(new MockPriceFeed(oracle.DECIMALS(), oracle.DESCRIPTION(), price));
+      return abi.encode(mockPriceFeed); 
+    }
 }

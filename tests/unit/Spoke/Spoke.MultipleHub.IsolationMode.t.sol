@@ -45,6 +45,7 @@ contract SpokeMultipleHubIsolationModeTest is SpokeMultipleHubBase {
     isolationVars.reserveAId = newSpoke.addReserve(
       isolationVars.assetAId,
       address(newHub),
+      _getMockOracleConfigData(newSpoke, 2000e8),
       DataTypes.ReserveConfig({
         active: true,
         frozen: false,
@@ -60,6 +61,7 @@ contract SpokeMultipleHubIsolationModeTest is SpokeMultipleHubBase {
     isolationVars.reserveBId = newSpoke.addReserve(
       isolationVars.assetBId,
       address(newHub),
+      _getMockOracleConfigData(newSpoke, 50_000e8),
       DataTypes.ReserveConfig({
         active: true,
         frozen: false,
@@ -94,9 +96,6 @@ contract SpokeMultipleHubIsolationModeTest is SpokeMultipleHubBase {
     );
     vm.stopPrank();
 
-    _mockReservePrice(newSpoke, isolationVars.reserveAId, 2000e8);
-    _mockReservePrice(newSpoke, isolationVars.reserveBId, 50_000e8);
-
     // Configure interest rate strategy for assets A and B
     vm.startPrank(address(newHub));
     newIrStrategy.setInterestRateData(isolationVars.assetAId, encodedIrData);
@@ -117,6 +116,7 @@ contract SpokeMultipleHubIsolationModeTest is SpokeMultipleHubBase {
     isolationVars.spoke1ReserveBId = spoke1.addReserve(
       isolationVars.assetBIdMainHub,
       address(hub),
+      _getMockOracleConfigData(newSpoke, 50_000e8),
       DataTypes.ReserveConfig({
         active: true,
         frozen: false,
@@ -141,8 +141,6 @@ contract SpokeMultipleHubIsolationModeTest is SpokeMultipleHubBase {
       })
     );
     vm.stopPrank();
-
-    _mockReservePrice(spoke1, isolationVars.spoke1ReserveBId, 50_000e8);
 
     // Configure interest rate strategy for asset B on the main hub
     vm.prank(address(hub));
@@ -201,6 +199,7 @@ contract SpokeMultipleHubIsolationModeTest is SpokeMultipleHubBase {
     isolationVars.reserveBIdMainHub = newSpoke.addReserve(
       isolationVars.assetBIdMainHub,
       address(hub),
+      _getMockOracleConfigData(newSpoke, 50_000e8),
       DataTypes.ReserveConfig({
         active: true,
         frozen: false,
@@ -222,8 +221,6 @@ contract SpokeMultipleHubIsolationModeTest is SpokeMultipleHubBase {
       DataTypes.SpokeConfig({drawCap: 100_000e18, supplyCap: 0, active: true})
     );
     vm.stopPrank();
-
-    _mockReservePrice(newSpoke, isolationVars.reserveBIdMainHub, 50_000e8);
 
     // Bob still cannot borrow asset B from the new hub because there is no liquidity
     vm.expectRevert(abi.encodeWithSelector(ILiquidityHub.NotAvailableLiquidity.selector, 0));
