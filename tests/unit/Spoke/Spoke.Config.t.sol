@@ -241,6 +241,12 @@ contract SpokeConfigTest is SpokeBase {
     spoke1.updateReserveConfig(reserveId, config);
   }
 
+  function test_updateDynamicReserveConfig_revertsWithInvalidLiquidationBonus() public {
+    uint256 liquidationBonus = PercentageMath.PERCENTAGE_FACTOR - 1;
+
+    test_updateDynamicReserveConfig_fuzz_revertsWith_InvalidLiquidationBonus(liquidationBonus);
+  }
+
   function test_updateDynamicReserveConfig_fuzz_revertsWith_InvalidLiquidationBonus(
     uint256 liquidationBonus
   ) public {
