@@ -402,7 +402,8 @@ contract Spoke is ISpoke, Multicall, AccessManaged {
     positionStatus.setUsingAsCollateral(reserveId, usingAsCollateral);
 
     if (usingAsCollateral) {
-      _refreshDynamicConfig(msg.sender);
+      _userPositions[msg.sender][reserveId].configKey = reserve.dynamicConfigKey;
+      emit UserDynamicConfigRefreshed(msg.sender, reserveId);
     } else {
       // If unsetting, check HF and update user rp
       uint256 newUserRiskPremium = _refreshAndValidateUserPosition(msg.sender); // validates HF
@@ -1316,25 +1317,5 @@ contract Spoke is ISpoke, Multicall, AccessManaged {
   // todo move to MathUtils
   function _signedDiff(uint256 a, uint256 b) internal pure returns (int256) {
     return int256(a) - int256(b); // todo use safeCast when amounts packed to uint112/uint128
-  }
-
-  function _setUsingAsCollateral(uint256 reserveId, address user, bool usingAsCollateral) internal {
-    DataTypes.Reserve storage reserve = _reserves[reserveId];
-    DataTypes.UserPosition storage userPosition = _userPositions[user][reserveId];
-    DataTypes.PositionStatus storage positionStatus = _positionStatus[user];
-
-    _validateSetUsingAsCollateral(reserve, positionStatus, reserveId, usingAsCollateral);
-    positionStatus.setUsingAsCollateral(reserveId, usingAsCollateral);
-
-    if (usingAsCollateral) {
-      userPosition.configKey = _reserves[reserveId].dynamicConfigKey;
-      emit UserDynamicConfigRefreshed(user, reserveId);
-    } else {
-      // If unsetting, check HF and update user rp
-      uint256 newUserRiskPremium = _refreshAndValidateUserPosition(user); // validates HF
-      _notifyRiskPremiumUpdate(type(uint256).max, user, newUserRiskPremium);
-    }
-
-    emit UsingAsCollateral(reserveId, user, usingAsCollateral);
   }
 }

@@ -9,9 +9,9 @@
   "supply: 1 debt": "174178",
   "supply: 2 debt": "174189",
   "supply: 3 debt": "174142",
-  "updateUserRiskPremium": "176407",
-  "updateUserRiskPremium: 2 debts": "226094",
-  "usingAsCollateral": "57272",
-  "withdraw: full": "233457",
-  "withdraw: partial": "244529"
+  "updateUserRiskPremium": "176395",
+  "updateUserRiskPremium: 2 debts": "226070",
+  "usingAsCollateral": "54980",
+  "withdraw: full": "233433",
+  "withdraw: partial": "244505"
 }
