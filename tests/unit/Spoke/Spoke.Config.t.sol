@@ -5,6 +5,7 @@ import 'tests/unit/Spoke/SpokeBase.t.sol';
 
 contract SpokeConfigTest is SpokeBase {
   using SafeCast for uint256;
+  using PercentageMathExtended for uint256;
 
   function test_spoke_deploy_revertsWith_InvalidOracleAddress() public {
     vm.expectRevert(ISpoke.InvalidOracleAddress.selector);
@@ -274,6 +275,43 @@ contract SpokeConfigTest is SpokeBase {
     config.collateralFactor = collateralFactor.toUint16();
 
     vm.expectRevert(ISpoke.InvalidCollateralFactor.selector);
+    vm.prank(SPOKE_ADMIN);
+    spoke1.updateDynamicReserveConfig(daiReserveId, config);
+  }
+
+  function test_updateDynamicReserveConfig_revertsWith_InvalidCollateralFactorAndLiquidationBonus()
+    public
+  {
+    uint256 daiReserveId = _daiReserveId(spoke1);
+    DataTypes.DynamicReserveConfig memory config = spoke1.getDynamicReserveConfig(daiReserveId);
+
+    // This config makes it so cf * lb > 100%
+    config.collateralFactor = 95_00;
+    config.liquidationBonus = 110_00;
+
+    vm.expectRevert(ISpoke.InvalidCollateralFactorAndLiquidationBonus.selector);
+    vm.prank(SPOKE_ADMIN);
+    spoke1.updateDynamicReserveConfig(daiReserveId, config);
+  }
+
+  function test_updateDynamicReserveConfig_fuzz_revertsWith_InvalidCollateralFactorAndLiquidationBonus(
+    uint256 collateralFactor,
+    uint256 liquidationBonus
+  ) public {
+    // Force config such that cf * lb > 100%
+    collateralFactor = bound(collateralFactor, 70_00, PercentageMath.PERCENTAGE_FACTOR);
+    liquidationBonus = bound(
+      liquidationBonus,
+      PercentageMath.PERCENTAGE_FACTOR.percentDivUp(collateralFactor) + 1,
+      MAX_LIQUIDATION_BONUS
+    );
+
+    uint256 daiReserveId = _daiReserveId(spoke1);
+    DataTypes.DynamicReserveConfig memory config = spoke1.getDynamicReserveConfig(daiReserveId);
+    config.collateralFactor = collateralFactor.toUint16();
+    config.liquidationBonus = liquidationBonus;
+
+    vm.expectRevert(ISpoke.InvalidCollateralFactorAndLiquidationBonus.selector);
     vm.prank(SPOKE_ADMIN);
     spoke1.updateDynamicReserveConfig(daiReserveId, config);
   }

@@ -78,6 +78,7 @@ interface ISpoke is IMulticall, IAccessManaged {
   error ReserveFrozen();
   error InvalidCollateralFactor();
   error InvalidLiquidationBonus();
+  error InvalidCollateralFactorAndLiquidationBonus();
   error InvalidReserveDecimals();
   error HealthFactorBelowThreshold();
   error InvalidCloseFactor();

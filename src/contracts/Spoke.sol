@@ -25,6 +25,7 @@ contract Spoke is ISpoke, Multicall, AccessManaged {
   using WadRayMath for uint256;
   using WadRayMathExtended for uint256;
   using PercentageMathExtended for uint256;
+  using PercentageMathExtended for uint16;
   using KeyValueListInMemory for KeyValueListInMemory.List;
   using LiquidationLogic for DataTypes.LiquidationConfig;
   using PositionStatus for DataTypes.PositionStatus;
@@ -631,6 +632,11 @@ contract Spoke is ISpoke, Multicall, AccessManaged {
       config.liquidationBonus >= PercentageMathExtended.PERCENTAGE_FACTOR,
       InvalidLiquidationBonus()
     ); // min 100.00%
+    require(
+      config.collateralFactor.percentMulUp(config.liquidationBonus) <=
+        PercentageMathExtended.PERCENTAGE_FACTOR,
+      InvalidCollateralFactorAndLiquidationBonus()
+    ); // Enforces that at moment loan is taken, there should be enough collateral to cover liquidation
   }
 
   function _validateLiquidationConfig(DataTypes.LiquidationConfig calldata config) internal pure {

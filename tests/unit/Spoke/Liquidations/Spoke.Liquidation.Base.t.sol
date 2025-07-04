@@ -108,7 +108,11 @@ contract SpokeLiquidationBase is SpokeBase {
     state.collDynConfig = spoke1.getDynamicReserveConfig(collateralReserveId);
 
     liqConfig = _bound(liqConfig);
-    liqBonus = bound(liqBonus, MIN_LIQUIDATION_BONUS, MAX_LIQUIDATION_BONUS);
+    liqBonus = bound(
+      liqBonus,
+      MIN_LIQUIDATION_BONUS,
+      PercentageMathExtended.PERCENTAGE_FACTOR.percentDivDown(state.collDynConfig.collateralFactor)
+    );
     desiredHf = bound(desiredHf, 0.1e18, HEALTH_FACTOR_LIQUIDATION_THRESHOLD - 0.01e18);
     liquidationFee = bound(liquidationFee, 0, PercentageMathExtended.PERCENTAGE_FACTOR);
     // bound supply amount to max supply amount
