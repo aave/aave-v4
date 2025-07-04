@@ -479,66 +479,66 @@ abstract contract Base is Test {
       active: true,
       frozen: false,
       paused: false,
-      liquidationBonus: 100_00,
       liquidityPremium: 15_00,
       liquidationFee: 0,
       borrowable: true,
       collateral: true
     });
     DataTypes.DynamicReserveConfig memory wethDynConfig = DataTypes.DynamicReserveConfig({
-      collateralFactor: 80_00
+      collateralFactor: 80_00,
+      liquidationBonus: 100_00
     });
     DataTypes.ReserveConfig memory wbtcConfig = DataTypes.ReserveConfig({
       active: true,
       frozen: false,
       paused: false,
-      liquidationBonus: 100_00,
       liquidityPremium: 5_00,
       liquidationFee: 0,
       borrowable: true,
       collateral: true
     });
     DataTypes.DynamicReserveConfig memory wbtcDynConfig = DataTypes.DynamicReserveConfig({
-      collateralFactor: 75_00
+      collateralFactor: 75_00,
+      liquidationBonus: 100_00
     });
     DataTypes.ReserveConfig memory daiConfig = DataTypes.ReserveConfig({
       active: true,
       frozen: false,
       paused: false,
-      liquidationBonus: 100_00,
       liquidityPremium: 20_00,
       liquidationFee: 0,
       borrowable: true,
       collateral: true
     });
     DataTypes.DynamicReserveConfig memory daiDynConfig = DataTypes.DynamicReserveConfig({
-      collateralFactor: 78_00
+      collateralFactor: 78_00,
+      liquidationBonus: 100_00
     });
     DataTypes.ReserveConfig memory usdxConfig = DataTypes.ReserveConfig({
       active: true,
       frozen: false,
       paused: false,
-      liquidationBonus: 100_00,
       liquidityPremium: 50_00,
       liquidationFee: 0,
       borrowable: true,
       collateral: true
     });
     DataTypes.DynamicReserveConfig memory usdxDynConfig = DataTypes.DynamicReserveConfig({
-      collateralFactor: 78_00
+      collateralFactor: 78_00,
+      liquidationBonus: 100_00
     });
     DataTypes.ReserveConfig memory usdyConfig = DataTypes.ReserveConfig({
       active: true,
       frozen: false,
       paused: false,
-      liquidationBonus: 100_00,
       liquidityPremium: 50_00,
       liquidationFee: 0,
       borrowable: true,
       collateral: true
     });
     DataTypes.DynamicReserveConfig memory usdyDynConfig = DataTypes.DynamicReserveConfig({
-      collateralFactor: 78_00
+      collateralFactor: 78_00,
+      liquidationBonus: 100_00
     });
 
     spokeInfo[spoke1].weth.reserveId = spoke1.addReserve(
@@ -594,57 +594,67 @@ abstract contract Base is Test {
       active: true,
       frozen: false,
       paused: false,
-      liquidationBonus: 100_00,
       liquidityPremium: 0,
       liquidationFee: 0,
       borrowable: true,
       collateral: true
     });
-    wbtcDynConfig = DataTypes.DynamicReserveConfig({collateralFactor: 80_00});
+    wbtcDynConfig = DataTypes.DynamicReserveConfig({
+      collateralFactor: 80_00,
+      liquidationBonus: 100_00
+    });
     wethConfig = DataTypes.ReserveConfig({
       active: true,
       frozen: false,
       paused: false,
-      liquidationBonus: 100_00,
       liquidityPremium: 10_00,
       liquidationFee: 0,
       borrowable: true,
       collateral: true
     });
-    wethDynConfig = DataTypes.DynamicReserveConfig({collateralFactor: 76_00});
+    wethDynConfig = DataTypes.DynamicReserveConfig({
+      collateralFactor: 76_00,
+      liquidationBonus: 100_00
+    });
     daiConfig = DataTypes.ReserveConfig({
       active: true,
       frozen: false,
       paused: false,
-      liquidationBonus: 100_00,
       liquidityPremium: 20_00,
       liquidationFee: 0,
       borrowable: true,
       collateral: true
     });
-    daiDynConfig = DataTypes.DynamicReserveConfig({collateralFactor: 72_00});
+    daiDynConfig = DataTypes.DynamicReserveConfig({
+      collateralFactor: 72_00,
+      liquidationBonus: 100_00
+    });
     usdxConfig = DataTypes.ReserveConfig({
       active: true,
       frozen: false,
       paused: false,
-      liquidationBonus: 100_00,
       liquidityPremium: 50_00,
       liquidationFee: 0,
       borrowable: true,
       collateral: true
     });
-    usdxDynConfig = DataTypes.DynamicReserveConfig({collateralFactor: 72_00});
+    usdxDynConfig = DataTypes.DynamicReserveConfig({
+      collateralFactor: 72_00,
+      liquidationBonus: 100_00
+    });
     usdyConfig = DataTypes.ReserveConfig({
       active: true,
       frozen: false,
       paused: false,
-      liquidationBonus: 100_00,
       liquidityPremium: 50_00,
       liquidationFee: 0,
       borrowable: true,
       collateral: true
     });
-    usdyDynConfig = DataTypes.DynamicReserveConfig({collateralFactor: 72_00});
+    usdyDynConfig = DataTypes.DynamicReserveConfig({
+      collateralFactor: 72_00,
+      liquidationBonus: 100_00
+    });
 
     spokeInfo[spoke2].wbtc.reserveId = spoke2.addReserve(
       wbtcAssetId,
@@ -699,46 +709,54 @@ abstract contract Base is Test {
       active: true,
       frozen: false,
       paused: false,
-      liquidationBonus: 100_00,
       liquidityPremium: 0,
       liquidationFee: 0,
       borrowable: true,
       collateral: true
     });
-    daiDynConfig = DataTypes.DynamicReserveConfig({collateralFactor: 75_00});
+    daiDynConfig = DataTypes.DynamicReserveConfig({
+      collateralFactor: 75_00,
+      liquidationBonus: 100_00
+    });
     usdxConfig = DataTypes.ReserveConfig({
       active: true,
       frozen: false,
       paused: false,
-      liquidationBonus: 100_00,
       liquidityPremium: 10_00,
       liquidationFee: 0,
       borrowable: true,
       collateral: true
     });
-    usdxDynConfig = DataTypes.DynamicReserveConfig({collateralFactor: 75_00});
+    usdxDynConfig = DataTypes.DynamicReserveConfig({
+      collateralFactor: 75_00,
+      liquidationBonus: 100_00
+    });
     wethConfig = DataTypes.ReserveConfig({
       active: true,
       frozen: false,
       paused: false,
-      liquidationBonus: 100_00,
       liquidityPremium: 20_00,
       liquidationFee: 0,
       borrowable: true,
       collateral: true
     });
-    wethDynConfig = DataTypes.DynamicReserveConfig({collateralFactor: 79_00});
+    wethDynConfig = DataTypes.DynamicReserveConfig({
+      collateralFactor: 79_00,
+      liquidationBonus: 100_00
+    });
     wbtcConfig = DataTypes.ReserveConfig({
       active: true,
       frozen: false,
       paused: false,
-      liquidationBonus: 100_00,
       liquidityPremium: 50_00,
       liquidationFee: 0,
       borrowable: true,
       collateral: true
     });
-    wbtcDynConfig = DataTypes.DynamicReserveConfig({collateralFactor: 77_00});
+    wbtcDynConfig = DataTypes.DynamicReserveConfig({
+      collateralFactor: 77_00,
+      liquidationBonus: 100_00
+    });
 
     spokeInfo[spoke3].dai.reserveId = spoke3.addReserve(
       daiAssetId,
@@ -817,13 +835,15 @@ abstract contract Base is Test {
       active: true,
       frozen: false,
       paused: false,
-      liquidationBonus: 100_00,
       liquidityPremium: 100_00,
       liquidationFee: 0,
       borrowable: true,
       collateral: true
     });
-    daiDynConfig = DataTypes.DynamicReserveConfig({collateralFactor: 70_00});
+    daiDynConfig = DataTypes.DynamicReserveConfig({
+      collateralFactor: 70_00,
+      liquidationBonus: 100_00
+    });
     spokeInfo[spoke2].dai2.reserveId = spoke2.addReserve(
       dai2AssetId,
       address(hub),
@@ -1052,13 +1072,13 @@ abstract contract Base is Test {
     uint256 reserveId,
     uint256 newLiquidationBonus
   ) internal {
-    DataTypes.ReserveConfig memory config = spoke.getReserve(reserveId).config;
+    DataTypes.DynamicReserveConfig memory config = spoke.getDynamicReserveConfig(reserveId);
     config.liquidationBonus = newLiquidationBonus;
 
     vm.prank(SPOKE_ADMIN);
-    spoke.updateReserveConfig(reserveId, config);
+    spoke.updateDynamicReserveConfig(reserveId, config);
 
-    assertEq(spoke.getReserve(reserveId).config.liquidationBonus, newLiquidationBonus);
+    assertEq(spoke.getDynamicReserveConfig(reserveId).liquidationBonus, newLiquidationBonus);
   }
 
   function updateLiquidationFee(

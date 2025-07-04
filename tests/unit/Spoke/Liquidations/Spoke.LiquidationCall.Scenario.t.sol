@@ -45,7 +45,7 @@ contract LiquidationCallScenarioTest is SpokeLiquidationBase {
     state.daiReserveId = _daiReserveId(spoke1);
     state.wbtcReserveId = _wbtcReserveId(spoke1);
 
-    state.liqBonus = spoke1.getReserve(state.wbtcReserveId).config.liquidationBonus;
+    state.liqBonus = spoke1.getDynamicReserveConfig(state.wbtcReserveId).liquidationBonus;
 
     // collateral: wbtc/dai
     state.collAmount.wbtc = 1 * 10 ** decimals.wbtc; // $50k wbtc
@@ -143,7 +143,7 @@ contract LiquidationCallScenarioTest is SpokeLiquidationBase {
     state.daiReserveId = _daiReserveId(spoke1);
     state.wbtcReserveId = _wbtcReserveId(spoke1);
 
-    state.liqBonus = spoke1.getReserve(state.wbtcReserveId).config.liquidationBonus;
+    state.liqBonus = spoke1.getDynamicReserveConfig(state.wbtcReserveId).liquidationBonus;
 
     // collateral: wbtc/dai
     state.collAmount.wbtc = 1 * 10 ** decimals.wbtc; // $50k wbtc
@@ -243,7 +243,7 @@ contract LiquidationCallScenarioTest is SpokeLiquidationBase {
     state.collAmount.wbtc = 1 * 10 ** decimals.wbtc; // $50k wbtc
     state.collAmount.dai = 10_000 * 10 ** decimals.dai; // $10k dai
 
-    state.liqBonus = spoke1.getReserve(state.wbtcReserveId).config.liquidationBonus;
+    state.liqBonus = spoke1.getDynamicReserveConfig(state.wbtcReserveId).liquidationBonus;
 
     // simplify accounting checks with no fee or bonus
     updateLiquidationFee(spoke1, state.wbtcReserveId, 0);
@@ -325,7 +325,7 @@ contract LiquidationCallScenarioTest is SpokeLiquidationBase {
     state.collAmount.wbtc = 1 * 10 ** decimals.wbtc; // $50k wbtc
     state.collAmount.dai = 10_000 * 10 ** decimals.dai; // $10k dai
 
-    state.liqBonus = spoke1.getReserve(state.wbtcReserveId).config.liquidationBonus;
+    state.liqBonus = spoke1.getDynamicReserveConfig(state.wbtcReserveId).liquidationBonus;
 
     // simplify accounting checks with no fee or bonus
     updateLiquidationFee(spoke1, state.wbtcReserveId, 0);
@@ -475,7 +475,7 @@ contract LiquidationCallScenarioTest is SpokeLiquidationBase {
     // debt: weth
     state.debtAmount.weth = 20 * 10 ** decimals.weth; // 20 eth, $40k
 
-    state.liqBonus = spoke1.getReserve(state.wbtcReserveId).config.liquidationBonus;
+    state.liqBonus = spoke1.getDynamicReserveConfig(state.wbtcReserveId).liquidationBonus;
 
     Utils.supplyCollateral(spoke1, state.wbtcReserveId, alice, state.collAmount.wbtc, alice);
     Utils.supplyCollateral(spoke1, state.daiReserveId, alice, state.collAmount.dai, alice);

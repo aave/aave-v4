@@ -15,7 +15,8 @@ contract SpokeMultipleHubBase is SpokeBase {
 
   DataTypes.DynamicReserveConfig internal dynReserveConfig =
     DataTypes.DynamicReserveConfig({
-      collateralFactor: 80_00 // 80.00%
+      collateralFactor: 80_00, // 80.00%
+      liquidationBonus: 100_00 // 100.00%
     });
   IAssetInterestRateStrategy.InterestRateData internal irData =
     IAssetInterestRateStrategy.InterestRateData({

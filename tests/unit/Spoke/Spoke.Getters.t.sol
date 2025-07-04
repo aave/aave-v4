@@ -30,7 +30,7 @@ contract SpokeGettersTest is SpokeBase {
       LiquidationLogic.calculateVariableLiquidationBonus(
         _config,
         healthFactor,
-        spoke1.getReserve(reserveId).config.liquidationBonus,
+        spoke1.getDynamicReserveConfig(reserveId).liquidationBonus,
         HEALTH_FACTOR_LIQUIDATION_THRESHOLD
       ),
       'calc should match'
@@ -74,7 +74,7 @@ contract SpokeGettersTest is SpokeBase {
       LiquidationLogic.calculateVariableLiquidationBonus(
         _config,
         healthFactor,
-        spoke1.getReserve(reserveId).config.liquidationBonus,
+        spoke1.getDynamicReserveConfig(reserveId).liquidationBonus,
         HEALTH_FACTOR_LIQUIDATION_THRESHOLD
       ),
       'calc should match'

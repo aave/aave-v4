@@ -303,7 +303,7 @@ contract LiquidationLogicDebtToRestoreCloseFactorScenarioTest is LiquidationLogi
       totalCollateralFactor += dynConfig.collateralFactor * amountInBase;
       totalAmount += amountInBase;
       if (collateralIndex == i) {
-        params.liquidationBonus = reserve.config.liquidationBonus;
+        params.liquidationBonus = dynConfig.liquidationBonus;
         params.collateralFactor = dynConfig.collateralFactor;
       }
     }

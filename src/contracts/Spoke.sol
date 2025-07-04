@@ -501,7 +501,7 @@ contract Spoke is ISpoke, Multicall, AccessManaged {
     return
       _liquidationConfig.calculateVariableLiquidationBonus(
         healthFactor,
-        _reserves[reserveId].config.liquidationBonus,
+        _dynamicConfig[reserveId][_reserves[reserveId].dynamicConfigKey].liquidationBonus,
         HEALTH_FACTOR_LIQUIDATION_THRESHOLD
       );
   }
@@ -613,10 +613,6 @@ contract Spoke is ISpoke, Multicall, AccessManaged {
   }
 
   function _validateReserveConfig(DataTypes.ReserveConfig calldata config) internal pure {
-    require(
-      config.liquidationBonus >= PercentageMathExtended.PERCENTAGE_FACTOR,
-      InvalidLiquidationBonus()
-    ); // min 100.00%
     require(config.liquidityPremium <= MAX_LIQUIDITY_PREMIUM, InvalidLiquidityPremium()); // max 1000.00%
     require(
       config.liquidationFee <= PercentageMathExtended.PERCENTAGE_FACTOR,
@@ -631,6 +627,10 @@ contract Spoke is ISpoke, Multicall, AccessManaged {
       config.collateralFactor <= PercentageMathExtended.PERCENTAGE_FACTOR,
       InvalidCollateralFactor()
     ); // max 100.00%
+    require(
+      config.liquidationBonus >= PercentageMathExtended.PERCENTAGE_FACTOR,
+      InvalidLiquidationBonus()
+    ); // min 100.00%
   }
 
   function _validateLiquidationConfig(DataTypes.LiquidationConfig calldata config) internal pure {
