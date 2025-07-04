@@ -4,7 +4,7 @@ pragma solidity ^0.8.0;
 import './LiquidityHubBase.t.sol';
 
 contract LiquidityHubReportDeficitTest is LiquidityHubBase {
-  struct RestoreDeficitTestParams {
+  struct ReportDeficitTestParams {
     uint256 baseDebt;
     uint256 premiumDebt;
     uint256 deficitBefore;
@@ -116,7 +116,7 @@ contract LiquidityHubReportDeficitTest is LiquidityHubBase {
     drawnAmount = bound(drawnAmount, 1, MAX_SUPPLY_AMOUNT);
     skipTime = bound(skipTime, 1, MAX_SKIP_TIME);
 
-    RestoreDeficitTestParams memory params;
+    ReportDeficitTestParams memory params;
 
     // create premium debt via spoke1
     (params.baseDebt, params.premiumDebt) = _drawLiquidity(

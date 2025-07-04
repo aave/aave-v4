@@ -261,11 +261,11 @@ abstract contract Base is Test {
       deal(address(tokenList.weth), users[x], mintAmount_WETH);
 
       vm.startPrank(users[x]);
-      tokenList.weth.approve(address(hub), type(uint256).max);
-      tokenList.usdx.approve(address(hub), type(uint256).max);
-      tokenList.dai.approve(address(hub), type(uint256).max);
-      tokenList.wbtc.approve(address(hub), type(uint256).max);
-      tokenList.usdy.approve(address(hub), type(uint256).max);
+      tokenList.weth.approve(address(hub), UINT256_MAX);
+      tokenList.usdx.approve(address(hub), UINT256_MAX);
+      tokenList.dai.approve(address(hub), UINT256_MAX);
+      tokenList.wbtc.approve(address(hub), UINT256_MAX);
+      tokenList.usdy.approve(address(hub), UINT256_MAX);
       vm.stopPrank();
     }
   }
@@ -286,19 +286,19 @@ abstract contract Base is Test {
       deal(address(tokenList.weth), spokes[x], spokeMintAmount_WETH);
 
       vm.startPrank(spokes[x]);
-      tokenList.weth.approve(address(hub), type(uint256).max);
-      tokenList.usdx.approve(address(hub), type(uint256).max);
-      tokenList.dai.approve(address(hub), type(uint256).max);
-      tokenList.wbtc.approve(address(hub), type(uint256).max);
-      tokenList.usdy.approve(address(hub), type(uint256).max);
+      tokenList.weth.approve(address(hub), UINT256_MAX);
+      tokenList.usdx.approve(address(hub), UINT256_MAX);
+      tokenList.dai.approve(address(hub), UINT256_MAX);
+      tokenList.wbtc.approve(address(hub), UINT256_MAX);
+      tokenList.usdy.approve(address(hub), UINT256_MAX);
       vm.stopPrank();
     }
   }
 
   function configureTokenList() internal {
     DataTypes.SpokeConfig memory spokeConfig = DataTypes.SpokeConfig({
-      supplyCap: type(uint256).max,
-      drawCap: type(uint256).max,
+      supplyCap: UINT256_MAX,
+      drawCap: UINT256_MAX,
       active: true
     });
 
@@ -2055,17 +2055,13 @@ abstract contract Base is Test {
     deal(underlying, tempUser, amount);
 
     vm.prank(tempUser);
-    IERC20(underlying).approve(address(hub), type(uint256).max);
+    IERC20(underlying).approve(address(hub), UINT256_MAX);
 
     vm.prank(ADMIN);
     hub.addSpoke(
       assetId,
       tempSpoke,
-      DataTypes.SpokeConfig({
-        supplyCap: type(uint256).max,
-        drawCap: type(uint256).max,
-        active: true
-      })
+      DataTypes.SpokeConfig({supplyCap: UINT256_MAX, drawCap: UINT256_MAX, active: true})
     );
 
     Utils.add({

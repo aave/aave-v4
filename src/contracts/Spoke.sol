@@ -283,55 +283,53 @@ contract Spoke is ISpoke, Multicall, AccessManaged {
   /// @inheritdoc ISpoke
   function repay(uint256 reserveId, uint256 amount) external {
     /// @dev TODO: onBehalfOf
-    DataTypes.Reserve storage reserve = _reserves[reserveId];
-    _validateRepay(reserve);
-
     DataTypes.UserPosition storage userPosition = _userPositions[msg.sender][reserveId];
-    DataTypes.ExecuteRepayLocalVars memory vars;
-    vars.hub = reserve.hub;
-    vars.assetId = reserve.assetId;
-    (vars.baseDebt, vars.premiumDebt) = _getUserDebt(vars.hub, vars.assetId, userPosition);
-    (vars.baseDebtRestored, vars.premiumDebtRestored) = _calculateRestoreAmount(
-      vars.baseDebt,
-      vars.premiumDebt,
+    DataTypes.Reserve storage reserve = _reserves[reserveId];
+    uint256 assetId = reserve.assetId;
+    ILiquidityHub hub = reserve.hub;
+
+    _validateRepay(reserve);
+    (uint256 baseDebt, uint256 premiumDebt) = _getUserDebt(hub, assetId, userPosition);
+    (uint256 baseDebtRestored, uint256 premiumDebtRestored) = _calculateRestoreAmount(
+      baseDebt,
+      premiumDebt,
       amount
     );
 
-    vars.userPremiumDrawnShares = userPosition.premiumDrawnShares;
-    vars.userPremiumOffset = userPosition.premiumOffset;
-    vars.accruedPremium = vars.premiumDebt - userPosition.realizedPremium;
+    uint256 userPremiumDrawnShares = userPosition.premiumDrawnShares;
+    uint256 userPremiumOffset = userPosition.premiumOffset;
+    uint256 accruedPremium = premiumDebt - userPosition.realizedPremium;
 
     userPosition.premiumDrawnShares = 0;
     userPosition.premiumOffset = 0;
-    userPosition.realizedPremium = vars.premiumDebt - vars.premiumDebtRestored;
+    userPosition.realizedPremium = premiumDebt - premiumDebtRestored;
 
     _refreshPremiumDebt(
       reserve,
       msg.sender,
-      vars.assetId,
-      -int256(vars.userPremiumDrawnShares),
-      -int256(vars.userPremiumOffset),
-      vars.accruedPremium,
-      vars.premiumDebtRestored
+      assetId,
+      -int256(userPremiumDrawnShares),
+      -int256(userPremiumOffset),
+      accruedPremium,
+      premiumDebtRestored
     ); // we settle premium debt here
-
-    vars.restoredShares = vars.hub.restore(
-      vars.assetId,
-      vars.baseDebtRestored,
-      vars.premiumDebtRestored,
+    uint256 restoredShares = hub.restore(
+      assetId,
+      baseDebtRestored,
+      premiumDebtRestored,
       msg.sender
     ); // we settle base debt here
 
-    reserve.baseDrawnShares -= vars.restoredShares;
-    userPosition.baseDrawnShares -= vars.restoredShares;
+    reserve.baseDrawnShares -= restoredShares;
+    userPosition.baseDrawnShares -= restoredShares;
 
-    (vars.newUserRiskPremium, , , , ) = _calculateUserAccountData(msg.sender);
+    (uint256 newUserRiskPremium, , , , ) = _calculateUserAccountData(msg.sender);
 
-    vars.userPremiumDrawnShares = userPosition.premiumDrawnShares = userPosition
+    userPremiumDrawnShares = userPosition.premiumDrawnShares = userPosition
       .baseDrawnShares
-      .percentMulUp(vars.newUserRiskPremium);
-    vars.userPremiumOffset = userPosition.premiumOffset = vars.hub.previewOffset(
-      vars.assetId,
+      .percentMulUp(newUserRiskPremium);
+    userPremiumOffset = userPosition.premiumOffset = hub.previewOffset(
+      assetId,
       userPosition.premiumDrawnShares
     );
 
@@ -342,15 +340,15 @@ contract Spoke is ISpoke, Multicall, AccessManaged {
     _refreshPremiumDebt(
       reserve,
       msg.sender,
-      vars.assetId,
-      int256(vars.userPremiumDrawnShares),
-      int256(vars.userPremiumOffset),
+      assetId,
+      int256(userPremiumDrawnShares),
+      int256(userPremiumOffset),
       0,
       0
     );
-    _notifyRiskPremiumUpdate(vars.assetId, msg.sender, vars.newUserRiskPremium);
+    _notifyRiskPremiumUpdate(assetId, msg.sender, newUserRiskPremium);
 
-    emit Repay(reserveId, msg.sender, vars.restoredShares);
+    emit Repay(reserveId, msg.sender, restoredShares);
   }
 
   /// @inheritdoc ISpoke
@@ -1038,7 +1036,7 @@ contract Spoke is ISpoke, Multicall, AccessManaged {
 
     uint256 deficitShares = hub.reportDeficit(vars.assetId, vars.baseDebt, vars.premiumDebt); // settle base debt here by reporting deficit
 
-    // non-zero deficit means user ends up with zero total debt
+    // non-zero deficit means user ends up with zero total debt/collateral
     reserve.baseDrawnShares -= deficitShares;
     userPosition.baseDrawnShares -= deficitShares;
 

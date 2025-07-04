@@ -4,7 +4,6 @@ pragma solidity ^0.8.0;
 import 'tests/unit/Spoke/Liquidations/Spoke.Liquidation.Base.t.sol';
 
 contract LiquidationCallScenarioTest is SpokeLiquidationBase {
-  using PercentageMath for uint256;
   using PercentageMathExtended for uint256;
   using WadRayMathExtended for uint256;
 
@@ -522,7 +521,7 @@ contract LiquidationCallScenarioTest is SpokeLiquidationBase {
       state.wbtcReserveId,
       state.collAmount.wbtc,
       state.wethReserveId
-    ).percentDiv(state.liqBonus);
+    ).percentDivDown(state.liqBonus);
 
     aliceDai.balanceBefore = tokenList.dai.balanceOf(alice);
     liquidatorDai.balanceBefore = tokenList.dai.balanceOf(LIQUIDATOR);
@@ -656,7 +655,7 @@ contract LiquidationCallScenarioTest is SpokeLiquidationBase {
       0,
       'alice dai coll liquidated'
     );
-    assertLe(spoke1.getHealthFactor(alice), UINT256_MAX, 'hf <= close factor');
+    assertLe(spoke1.getHealthFactor(alice), _getCloseFactor(spoke1), 'hf <= close factor');
   }
 
   /// liquidation to close factor
