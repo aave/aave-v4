@@ -33,7 +33,7 @@ contract LiquidationCallEdgeCasesTest is SpokeLiquidationBase {
     Utils.borrow(spoke1, _usdyReserveId(spoke1), alice, borrowAmount2, alice);
 
     // price drops to reach liquidatable state
-    _changeMockReservePriceByPercentage(spoke1, _wethReserveId(spoke1), 50_00);
+    _mockReservePriceByPercent(spoke1, _wethReserveId(spoke1), 50_00);
 
     // position is liquidatable
     assertLt(spoke1.getHealthFactor(alice), HEALTH_FACTOR_LIQUIDATION_THRESHOLD);
@@ -84,7 +84,7 @@ contract LiquidationCallEdgeCasesTest is SpokeLiquidationBase {
     Utils.borrow(spoke1, _usdyReserveId(spoke1), alice, borrowAmount2, alice);
 
     // price drops to reach liquidatable state
-    _changeMockReservePriceByPercentage(spoke1, _wethReserveId(spoke1), 50_00);
+    _mockReservePriceByPercent(spoke1, _wethReserveId(spoke1), 50_00);
 
     // position is liquidatable
     assertLt(spoke1.getHealthFactor(alice), HEALTH_FACTOR_LIQUIDATION_THRESHOLD);

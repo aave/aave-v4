@@ -9,7 +9,7 @@ pragma solidity ^0.8.0;
  */
 interface IPriceOracle {
   /**
-   * @notice Reverts if the caller is not the spoke
+   * @dev Reverts if the caller is not the spoke
    */
   error OnlySpoke();
 
@@ -24,12 +24,6 @@ interface IPriceOracle {
    * @return The number of decimals
    */
   function DECIMALS() external view returns (uint8);
-
-  /**
-   * @notice Returns the description of the oracle
-   * @return The description of the oracle
-   */
-  function DESCRIPTION() external view returns (string memory);
 
   /**
    * @notice Configures the reserve price data

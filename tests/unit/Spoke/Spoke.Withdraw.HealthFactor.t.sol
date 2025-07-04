@@ -173,7 +173,7 @@ contract SpokeWithdrawHealthFactorTest is SpokeBase {
     assertGe(spoke1.getHealthFactor(alice), HEALTH_FACTOR_LIQUIDATION_THRESHOLD);
 
     // collateral price drop by half so that alice is undercollateralized
-    _changeMockReservePriceByPercentage(spoke1, collReserveId, 50_00);
+    _mockReservePriceByPercent(spoke1, collReserveId, 50_00);
     assertLt(spoke1.getHealthFactor(alice), HEALTH_FACTOR_LIQUIDATION_THRESHOLD);
 
     // withdrawing any amount will result in HF < threshold
@@ -594,7 +594,7 @@ contract SpokeWithdrawHealthFactorTest is SpokeBase {
 
     assertApproxEqAbs(spoke1.getHealthFactor(alice), HEALTH_FACTOR_LIQUIDATION_THRESHOLD, 1);
 
-    _changeMockReservePriceByPercentage(spoke1, wethReserveId, 50_00);
+    _mockReservePriceByPercent(spoke1, wethReserveId, 50_00);
 
     assertLt(spoke1.getHealthFactor(alice), HEALTH_FACTOR_LIQUIDATION_THRESHOLD);
 
@@ -1154,7 +1154,7 @@ contract SpokeWithdrawHealthFactorTest is SpokeBase {
     assertEq(spoke1.getHealthFactor(bob), HEALTH_FACTOR_LIQUIDATION_THRESHOLD);
 
     // collateral price drop by half so that bob is undercollateralized
-    _changeMockReservePriceByPercentage(spoke1, wethReserveId, 50_00);
+    _mockReservePriceByPercent(spoke1, wethReserveId, 50_00);
     // invalid HF
     assertLt(spoke1.getHealthFactor(bob), HEALTH_FACTOR_LIQUIDATION_THRESHOLD);
 
@@ -1281,7 +1281,7 @@ contract SpokeWithdrawHealthFactorTest is SpokeBase {
     assertEq(spoke1.getHealthFactor(bob), HEALTH_FACTOR_LIQUIDATION_THRESHOLD);
 
     // collateral price drop by half so that bob is undercollateralized
-    _changeMockReservePriceByPercentage(spoke1, daiReserveId, 50_00);
+    _mockReservePriceByPercent(spoke1, daiReserveId, 50_00);
     // invalid HF
     assertLt(spoke1.getHealthFactor(bob), HEALTH_FACTOR_LIQUIDATION_THRESHOLD);
 

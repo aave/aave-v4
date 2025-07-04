@@ -8,6 +8,7 @@ import {Vm} from 'forge-std/Vm.sol';
 import {console2 as console} from 'forge-std/console2.sol';
 
 import {IPriceOracle} from 'src/interfaces/IPriceOracle.sol';
+import {AggregatorV3Interface} from 'src/dependencies/chainlink/AggregatorV3Interface.sol';
 import {IERC20Metadata} from 'src/dependencies/openzeppelin/IERC20Metadata.sol';
 import {LiquidityHub, ILiquidityHub} from 'src/contracts/LiquidityHub.sol';
 import {Spoke, ISpoke} from 'src/contracts/Spoke.sol';
@@ -25,6 +26,7 @@ import {AssetInterestRateStrategy, IAssetInterestRateStrategy, IBasicInterestRat
 import {DataTypes} from 'src/libraries/types/DataTypes.sol';
 import {Roles} from 'src/libraries/types/Roles.sol';
 import {Utils} from './Utils.sol';
+
 
 // mocks
 import {TestnetERC20} from './mocks/TestnetERC20.sol';
@@ -151,28 +153,14 @@ abstract contract Base is Test {
 
   struct ReserveInfo {
     uint256 reserveId;
-    uint256 liquidityPremium;
+    DataTypes.ReserveConfig reserveConfig;
+    DataTypes.DynamicReserveConfig dynReserveConfig;
   }
 
   struct DebtAccounting {
     uint256 cumulativeDebt;
     uint256 baseDebt;
     uint256 outstandingPremium;
-  }
-
-  struct ConfigureTokenListVars {
-    DataTypes.ReserveConfig wethConfig;
-    DataTypes.DynamicReserveConfig wethDynConfig;
-    DataTypes.ReserveConfig wbtcConfig;
-    DataTypes.DynamicReserveConfig wbtcDynConfig;
-    DataTypes.ReserveConfig daiConfig;
-    DataTypes.DynamicReserveConfig daiDynConfig;
-    DataTypes.ReserveConfig usdxConfig;
-    DataTypes.DynamicReserveConfig usdxDynConfig;
-    DataTypes.ReserveConfig usdyConfig;
-    DataTypes.DynamicReserveConfig usdyDynConfig;
-    DataTypes.ReserveConfig dai2Config;
-    DataTypes.DynamicReserveConfig dai2DynConfig;
   }
 
   mapping(ISpoke => SpokeInfo) internal spokeInfo;
@@ -318,8 +306,6 @@ abstract contract Base is Test {
   }
   
   function configureTokenList() internal {
-    ConfigureTokenListVars memory vars;
-    
     DataTypes.SpokeConfig memory spokeConfig = DataTypes.SpokeConfig({
       supplyCap: type(uint256).max,
       drawCap: type(uint256).max,
@@ -538,7 +524,7 @@ abstract contract Base is Test {
     spoke3.updateOracle(address(oracle3));
 
     // Spoke 1 reserve configs
-    vars.wethConfig = DataTypes.ReserveConfig({
+    spokeInfo[spoke1].weth.reserveConfig = DataTypes.ReserveConfig({
       active: true,
       frozen: false,
       paused: false,
@@ -548,10 +534,10 @@ abstract contract Base is Test {
       borrowable: true,
       collateral: true
     });
-    vars.wethDynConfig = DataTypes.DynamicReserveConfig({
+    spokeInfo[spoke1].weth.dynReserveConfig = DataTypes.DynamicReserveConfig({
       collateralFactor: 80_00
     });
-    vars.wbtcConfig = DataTypes.ReserveConfig({
+    spokeInfo[spoke1].wbtc.reserveConfig = DataTypes.ReserveConfig({
       active: true,
       frozen: false,
       paused: false,
@@ -561,10 +547,10 @@ abstract contract Base is Test {
       borrowable: true,
       collateral: true
     });
-    vars.wbtcDynConfig = DataTypes.DynamicReserveConfig({
+    spokeInfo[spoke1].wbtc.dynReserveConfig = DataTypes.DynamicReserveConfig({
       collateralFactor: 75_00
     });
-    vars.daiConfig = DataTypes.ReserveConfig({
+    spokeInfo[spoke1].dai.reserveConfig = DataTypes.ReserveConfig({
       active: true,
       frozen: false,
       paused: false,
@@ -574,10 +560,10 @@ abstract contract Base is Test {
       borrowable: true,
       collateral: true
     });
-    vars.daiDynConfig = DataTypes.DynamicReserveConfig({
+    spokeInfo[spoke1].dai.dynReserveConfig = DataTypes.DynamicReserveConfig({
       collateralFactor: 78_00
     });
-    vars.usdxConfig = DataTypes.ReserveConfig({
+    spokeInfo[spoke1].usdx.reserveConfig = DataTypes.ReserveConfig({
       active: true,
       frozen: false,
       paused: false,
@@ -587,10 +573,10 @@ abstract contract Base is Test {
       borrowable: true,
       collateral: true
     });
-    vars.usdxDynConfig = DataTypes.DynamicReserveConfig({
+    spokeInfo[spoke1].usdx.dynReserveConfig = DataTypes.DynamicReserveConfig({
       collateralFactor: 78_00
     });
-    vars.usdyConfig = DataTypes.ReserveConfig({
+    spokeInfo[spoke1].usdy.reserveConfig = DataTypes.ReserveConfig({
       active: true,
       frozen: false,
       paused: false,
@@ -600,7 +586,7 @@ abstract contract Base is Test {
       borrowable: true,
       collateral: true
     });
-    vars.usdyDynConfig = DataTypes.DynamicReserveConfig({
+    spokeInfo[spoke1].usdy.dynReserveConfig = DataTypes.DynamicReserveConfig({
       collateralFactor: 78_00
     });
 
@@ -608,42 +594,37 @@ abstract contract Base is Test {
       wethAssetId,
       address(hub),
       _getMockOracleConfigData(spoke1, 2000e8),
-      vars.wethConfig,
-      vars.wethDynConfig
+      spokeInfo[spoke1].weth.reserveConfig,
+      spokeInfo[spoke1].weth.dynReserveConfig
     );
-    spokeInfo[spoke1].weth.liquidityPremium = vars.wethConfig.liquidityPremium;
     spokeInfo[spoke1].wbtc.reserveId = spoke1.addReserve(
       wbtcAssetId,
       address(hub),
       _getMockOracleConfigData(spoke1, 50_000e8),
-      vars.wbtcConfig,
-      vars.wbtcDynConfig
+      spokeInfo[spoke1].wbtc.reserveConfig,
+      spokeInfo[spoke1].wbtc.dynReserveConfig
     );
-    spokeInfo[spoke1].wbtc.liquidityPremium = vars.wbtcConfig.liquidityPremium;
     spokeInfo[spoke1].dai.reserveId = spoke1.addReserve(
       daiAssetId,
       address(hub),
       _getMockOracleConfigData(spoke1, 1e8),
-      vars.daiConfig,
-      vars.daiDynConfig
+      spokeInfo[spoke1].dai.reserveConfig,
+      spokeInfo[spoke1].dai.dynReserveConfig
     );
-    spokeInfo[spoke1].dai.liquidityPremium = vars.daiConfig.liquidityPremium;
     spokeInfo[spoke1].usdx.reserveId = spoke1.addReserve(
       usdxAssetId,
       address(hub),
       _getMockOracleConfigData(spoke1, 1e8),
-      vars.usdxConfig,
-      vars.usdxDynConfig
+      spokeInfo[spoke1].usdx.reserveConfig,
+      spokeInfo[spoke1].usdx.dynReserveConfig
     );
-    spokeInfo[spoke1].usdx.liquidityPremium = vars.usdxConfig.liquidityPremium;
     spokeInfo[spoke1].usdy.reserveId = spoke1.addReserve(
       usdyAssetId,
       address(hub),
       _getMockOracleConfigData(spoke1, 1e8),
-      vars.usdyConfig,
-      vars.usdyDynConfig
+      spokeInfo[spoke1].usdy.reserveConfig,
+      spokeInfo[spoke1].usdy.dynReserveConfig
     );
-    spokeInfo[spoke1].usdy.liquidityPremium = vars.usdyConfig.liquidityPremium;
 
     hub.addSpoke(wethAssetId, address(spoke1), spokeConfig);
     hub.addSpoke(wbtcAssetId, address(spoke1), spokeConfig);
@@ -652,7 +633,7 @@ abstract contract Base is Test {
     hub.addSpoke(usdyAssetId, address(spoke1), spokeConfig);
 
     // Spoke 2 reserve configs
-    vars.wbtcConfig = DataTypes.ReserveConfig({
+    spokeInfo[spoke2].wbtc.reserveConfig = DataTypes.ReserveConfig({
       active: true,
       frozen: false,
       paused: false,
@@ -662,8 +643,8 @@ abstract contract Base is Test {
       borrowable: true,
       collateral: true
     });
-    vars.wbtcDynConfig = DataTypes.DynamicReserveConfig({collateralFactor: 80_00});
-    vars.wethConfig = DataTypes.ReserveConfig({
+    spokeInfo[spoke2].wbtc.dynReserveConfig = DataTypes.DynamicReserveConfig({collateralFactor: 80_00});
+    spokeInfo[spoke2].weth.reserveConfig = DataTypes.ReserveConfig({
       active: true,
       frozen: false,
       paused: false,
@@ -673,8 +654,8 @@ abstract contract Base is Test {
       borrowable: true,
       collateral: true
     });
-    vars.wethDynConfig = DataTypes.DynamicReserveConfig({collateralFactor: 76_00});
-    vars.daiConfig = DataTypes.ReserveConfig({
+    spokeInfo[spoke2].weth.dynReserveConfig = DataTypes.DynamicReserveConfig({collateralFactor: 76_00});
+    spokeInfo[spoke2].dai.reserveConfig = DataTypes.ReserveConfig({
       active: true,
       frozen: false,
       paused: false,
@@ -684,8 +665,8 @@ abstract contract Base is Test {
       borrowable: true,
       collateral: true
     });
-    vars.daiDynConfig = DataTypes.DynamicReserveConfig({collateralFactor: 72_00});
-    vars.usdxConfig = DataTypes.ReserveConfig({
+    spokeInfo[spoke2].dai.dynReserveConfig = DataTypes.DynamicReserveConfig({collateralFactor: 72_00});
+    spokeInfo[spoke2].usdx.reserveConfig = DataTypes.ReserveConfig({
       active: true,
       frozen: false,
       paused: false,
@@ -695,8 +676,8 @@ abstract contract Base is Test {
       borrowable: true,
       collateral: true
     });
-    vars.usdxDynConfig = DataTypes.DynamicReserveConfig({collateralFactor: 72_00});
-    vars.usdyConfig = DataTypes.ReserveConfig({
+    spokeInfo[spoke2].usdx.dynReserveConfig = DataTypes.DynamicReserveConfig({collateralFactor: 72_00});
+    spokeInfo[spoke2].usdy.reserveConfig = DataTypes.ReserveConfig({
       active: true,
       frozen: false,
       paused: false,
@@ -706,8 +687,8 @@ abstract contract Base is Test {
       borrowable: true,
       collateral: true
     });
-    vars.usdyDynConfig = DataTypes.DynamicReserveConfig({collateralFactor: 72_00});
-    vars.dai2Config = DataTypes.ReserveConfig({
+    spokeInfo[spoke2].usdy.dynReserveConfig = DataTypes.DynamicReserveConfig({collateralFactor: 72_00});
+    spokeInfo[spoke2].dai2.reserveConfig = DataTypes.ReserveConfig({
       active: true,
       frozen: false,
       paused: false,
@@ -717,56 +698,50 @@ abstract contract Base is Test {
       borrowable: true,
       collateral: true
     });
-    vars.dai2DynConfig = DataTypes.DynamicReserveConfig({collateralFactor: 70_00});
+    spokeInfo[spoke2].dai2.dynReserveConfig = DataTypes.DynamicReserveConfig({collateralFactor: 70_00});
 
     spokeInfo[spoke2].wbtc.reserveId = spoke2.addReserve(
       wbtcAssetId,
       address(hub),
       _getMockOracleConfigData(spoke2, 50_000e8),
-      vars.wbtcConfig,
-      vars.wbtcDynConfig
+      spokeInfo[spoke2].wbtc.reserveConfig,
+      spokeInfo[spoke2].wbtc.dynReserveConfig
     );
-    spokeInfo[spoke2].wbtc.liquidityPremium = vars.wbtcConfig.liquidityPremium;
     spokeInfo[spoke2].weth.reserveId = spoke2.addReserve(
       wethAssetId,
       address(hub),
       _getMockOracleConfigData(spoke2, 2000e8),
-      vars.wethConfig,
-      vars.wethDynConfig
+      spokeInfo[spoke2].weth.reserveConfig,
+      spokeInfo[spoke2].weth.dynReserveConfig
     );
-    spokeInfo[spoke2].weth.liquidityPremium = vars.wethConfig.liquidityPremium;
     spokeInfo[spoke2].dai.reserveId = spoke2.addReserve(
       daiAssetId,
       address(hub),
       _getMockOracleConfigData(spoke2, 1e8),
-      vars.daiConfig,
-      vars.daiDynConfig
+      spokeInfo[spoke2].dai.reserveConfig,
+      spokeInfo[spoke2].dai.dynReserveConfig
     );
-    spokeInfo[spoke2].dai.liquidityPremium = vars.daiConfig.liquidityPremium;
     spokeInfo[spoke2].usdx.reserveId = spoke2.addReserve(
       usdxAssetId,
       address(hub),
       _getMockOracleConfigData(spoke2, 1e8),
-      vars.usdxConfig,
-      vars.usdxDynConfig
+      spokeInfo[spoke2].usdx.reserveConfig,
+      spokeInfo[spoke2].usdx.dynReserveConfig
     );
-    spokeInfo[spoke2].usdx.liquidityPremium = vars.usdxConfig.liquidityPremium;
     spokeInfo[spoke2].usdy.reserveId = spoke2.addReserve(
       usdyAssetId,
       address(hub),
       _getMockOracleConfigData(spoke2, 1e8),
-      vars.usdyConfig,
-      vars.usdyDynConfig
+      spokeInfo[spoke2].usdy.reserveConfig,
+      spokeInfo[spoke2].usdy.dynReserveConfig
     );
-    spokeInfo[spoke2].usdy.liquidityPremium = vars.usdyConfig.liquidityPremium;
     spokeInfo[spoke2].dai2.reserveId = spoke2.addReserve(
       dai2AssetId,
       address(hub),
       _getMockOracleConfigData(spoke2, 1e8),
-      vars.dai2Config,
-      vars.dai2DynConfig
+      spokeInfo[spoke2].dai2.reserveConfig,
+      spokeInfo[spoke2].dai2.dynReserveConfig
     );
-    spokeInfo[spoke2].dai2.liquidityPremium = vars.dai2Config.liquidityPremium;
 
     hub.addSpoke(wbtcAssetId, address(spoke2), spokeConfig);
     hub.addSpoke(wethAssetId, address(spoke2), spokeConfig);
@@ -776,7 +751,7 @@ abstract contract Base is Test {
     hub.addSpoke(dai2AssetId, address(spoke2), spokeConfig);
 
     // Spoke 3 reserve configs
-    vars.daiConfig = DataTypes.ReserveConfig({
+    spokeInfo[spoke3].dai.reserveConfig = DataTypes.ReserveConfig({
       active: true,
       frozen: false,
       paused: false,
@@ -786,8 +761,8 @@ abstract contract Base is Test {
       borrowable: true,
       collateral: true
     });
-    vars.daiDynConfig = DataTypes.DynamicReserveConfig({collateralFactor: 75_00});
-    vars.usdxConfig = DataTypes.ReserveConfig({
+    spokeInfo[spoke3].dai.dynReserveConfig = DataTypes.DynamicReserveConfig({collateralFactor: 75_00});
+    spokeInfo[spoke3].usdx.reserveConfig = DataTypes.ReserveConfig({
       active: true,
       frozen: false,
       paused: false,
@@ -797,8 +772,8 @@ abstract contract Base is Test {
       borrowable: true,
       collateral: true
     });
-    vars.usdxDynConfig = DataTypes.DynamicReserveConfig({collateralFactor: 75_00});
-    vars.wethConfig = DataTypes.ReserveConfig({
+    spokeInfo[spoke3].usdx.dynReserveConfig = DataTypes.DynamicReserveConfig({collateralFactor: 75_00});
+    spokeInfo[spoke3].weth.reserveConfig = DataTypes.ReserveConfig({
       active: true,
       frozen: false,
       paused: false,
@@ -808,8 +783,8 @@ abstract contract Base is Test {
       borrowable: true,
       collateral: true
     });
-    vars.wethDynConfig = DataTypes.DynamicReserveConfig({collateralFactor: 79_00});
-    vars.wbtcConfig = DataTypes.ReserveConfig({
+    spokeInfo[spoke3].weth.dynReserveConfig = DataTypes.DynamicReserveConfig({collateralFactor: 79_00});
+    spokeInfo[spoke3].wbtc.reserveConfig = DataTypes.ReserveConfig({
       active: true,
       frozen: false,
       paused: false,
@@ -819,40 +794,36 @@ abstract contract Base is Test {
       borrowable: true,
       collateral: true
     });
-    vars.wbtcDynConfig = DataTypes.DynamicReserveConfig({collateralFactor: 77_00});
+    spokeInfo[spoke3].wbtc.dynReserveConfig = DataTypes.DynamicReserveConfig({collateralFactor: 77_00});
 
     spokeInfo[spoke3].dai.reserveId = spoke3.addReserve(
       daiAssetId,
       address(hub),
       _getMockOracleConfigData(spoke3, 1e8),
-      vars.daiConfig,
-      vars.daiDynConfig
+      spokeInfo[spoke3].dai.reserveConfig,
+      spokeInfo[spoke3].dai.dynReserveConfig
     );
-    spokeInfo[spoke3].dai.liquidityPremium = vars.daiConfig.liquidityPremium;
     spokeInfo[spoke3].usdx.reserveId = spoke3.addReserve(
       usdxAssetId,
       address(hub),
       _getMockOracleConfigData(spoke3, 1e8),
-      vars.usdxConfig,
-      vars.usdxDynConfig
+      spokeInfo[spoke3].usdx.reserveConfig,
+      spokeInfo[spoke3].usdx.dynReserveConfig
     );
-    spokeInfo[spoke3].usdx.liquidityPremium = vars.usdxConfig.liquidityPremium;
     spokeInfo[spoke3].weth.reserveId = spoke3.addReserve(
       wethAssetId,
       address(hub),
       _getMockOracleConfigData(spoke3, 2000e8),
-      vars.wethConfig,
-      vars.wethDynConfig
+      spokeInfo[spoke3].weth.reserveConfig,
+      spokeInfo[spoke3].weth.dynReserveConfig
     );
-    spokeInfo[spoke3].weth.liquidityPremium = vars.wethConfig.liquidityPremium;
     spokeInfo[spoke3].wbtc.reserveId = spoke3.addReserve(
       wbtcAssetId,
       address(hub),
       _getMockOracleConfigData(spoke3, 50_000e8),
-      vars.wbtcConfig,
-      vars.wbtcDynConfig
+      spokeInfo[spoke3].wbtc.reserveConfig,
+      spokeInfo[spoke3].wbtc.dynReserveConfig
     );
-    spokeInfo[spoke3].wbtc.liquidityPremium = vars.wbtcConfig.liquidityPremium;
 
     hub.addSpoke(daiAssetId, address(spoke3), spokeConfig);
     hub.addSpoke(usdxAssetId, address(spoke3), spokeConfig);
@@ -1974,7 +1945,7 @@ abstract contract Base is Test {
     spoke.updateOracleConfig(reserveId, abi.encode(mockPriceFeed));
   }
 
-  function _changeMockReservePriceByPercentage(ISpoke spoke, uint256 reserveId, uint256 percentage) internal {
+  function _mockReservePriceByPercent(ISpoke spoke, uint256 reserveId, uint256 percentage) internal {
     uint256 initialPrice = spoke.oracle().getReservePrice(reserveId);
     uint256 newPrice = initialPrice.percentMulDown(percentage);
     _mockReservePrice(spoke, reserveId, newPrice);

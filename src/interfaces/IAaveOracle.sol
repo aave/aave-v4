@@ -10,33 +10,39 @@ import {IPriceOracle} from 'src/interfaces/IPriceOracle.sol';
  */
 interface IAaveOracle is IPriceOracle {
   /**
-   * @notice Emitted when the Aave Oracle is created.
+   * @dev Emitted when the Aave Oracle is created.
    * @param decimals The number of decimals used to return prices.
    * @param description The description of the oracle.
    */
   event AaveOracleCreated(uint256 indexed decimals, string indexed description);
   /**
-   * @notice Emitted when the price feed source of a reserve is updated.
+   * @dev Emitted when the price feed source of a reserve is updated.
    * @param reserveId The identifier of the reserve.
    * @param source The price feed source of the reserve.
    */
   event ReserveSourceUpdated(uint256 indexed reserveId, address indexed source);
 
   /**
-   * @notice Thrown when the price feed source uses a different number of decimals than the oracle.
+   * @dev Thrown when the price feed source uses a different number of decimals than the oracle.
    * @param reserveId The identifier of the reserve.
    */
   error InvalidSourceDecimals(uint256 reserveId);
   /**
-   * @notice Thrown when the price feed source is invalid (zero address).
+   * @dev Thrown when the price feed source is invalid (zero address).
    * @param reserveId The identifier of the reserve.
    */
   error InvalidSource(uint256 reserveId);
   /**
-   * @notice Thrown when the price feed source returns an invalid price (non-positive).
+   * @dev Thrown when the price feed source returns an invalid price (non-positive).
    * @param reserveId The identifier of the reserve.
    */
   error InvalidPrice(uint256 reserveId);
+
+  /**
+   * @notice Returns the description of the oracle
+   * @return The description of the oracle
+   */
+  function DESCRIPTION() external view returns (string memory);
 
   /**
    * @notice Returns the prices of multiple reserves.

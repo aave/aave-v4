@@ -6,10 +6,9 @@ import {Ownable} from 'src/dependencies/openzeppelin/Ownable.sol';
 import {DataTypes} from 'src/libraries/types/DataTypes.sol';
 import {ILiquidityHub} from 'src/interfaces/ILiquidityHub.sol';
 import {IConfigurator} from 'src/interfaces/IConfigurator.sol';
-import {IAssetInterestRateStrategy} from 'src/interfaces/IAssetInterestRateStrategy.sol';
 
 /**
- * @title Configurator contract
+ * @title Configurator
  * @author Aave Labs
  * @notice Configurator contract for the Aave protocol
  * @dev Must be granted permission by the Hub and Spoke

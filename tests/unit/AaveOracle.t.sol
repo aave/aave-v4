@@ -1,7 +1,6 @@
 // SPDX-License-Identifier: BUSL-1.1
 pragma solidity ^0.8.10;
 
-import {AggregatorV3Interface} from 'src/dependencies/chainlink/AggregatorV3Interface.sol';
 import 'tests/Base.t.sol';
 
 contract AaveOracleTest is Base {
@@ -19,8 +18,6 @@ contract AaveOracleTest is Base {
   uint256 private constant reserveId2 = 1;
 
   function setUp() public override {
-    super.setUp();
-
     oracle = new AaveOracle(address(spoke1), _decimals, _description);
   }
 
