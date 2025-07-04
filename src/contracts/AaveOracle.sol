@@ -1,4 +1,4 @@
-// SPDX-License-Identifier: AGPL-3.0
+// SPDX-License-Identifier: MIT
 pragma solidity ^0.8.0;
 
 import {AggregatorV3Interface} from 'src/dependencies/chainlink/AggregatorV3Interface.sol';
@@ -6,7 +6,7 @@ import {AccessManaged} from 'src/dependencies/openzeppelin/AccessManaged.sol';
 import {IAaveOracle, IPriceOracle} from 'src/interfaces/IAaveOracle.sol';
 
 /**
- * @title AaveOracle contract
+ * @title AaveOracle
  * @author Aave Labs
  * @notice Oracle contract for the Aave protocol.
  * @dev Oracles are spoke-specific, due to the usage of reserve id as index of the _reserveSource.
@@ -22,18 +22,18 @@ contract AaveOracle is IAaveOracle, AccessManaged {
   /**
    * @dev Constructor.
    * @dev The authority must implement the AccessManaged interface to control access.
-   * @param authority The address of the authority contract which manages permissions.
-   * @param decimals The number of decimals for the oracle.
-   * @param description The description of the oracle.
+   * @param authority_ The address of the authority contract which manages permissions.
+   * @param decimals_ The number of decimals for the oracle.
+   * @param description_ The description of the oracle.
    */
   constructor(
-    address authority,
-    uint8 decimals,
-    string memory description
-  ) AccessManaged(authority) {
-    DECIMALS = decimals;
-    DESCRIPTION = description;
-    emit AaveOracleCreated(decimals, description);
+    address authority_,
+    uint8 decimals_,
+    string memory description_
+  ) AccessManaged(authority_) {
+    DECIMALS = decimals_;
+    DESCRIPTION = description_;
+    emit AaveOracleCreated(decimals_, description_);
   }
 
   /// @inheritdoc IAaveOracle
@@ -68,14 +68,10 @@ contract AaveOracle is IAaveOracle, AccessManaged {
 
   function _getSourcePrice(uint256 reserveId) internal view returns (uint256) {
     AggregatorV3Interface source = _reserveSource[reserveId];
-    if (address(source) == address(0)) {
-      revert InvalidSource(reserveId);
-    }
+    require(address(source) != address(0), InvalidSource(reserveId));
 
     (, int256 price, , , ) = source.latestRoundData();
-    if (price <= 0) {
-      revert InvalidPrice(reserveId);
-    }
+    require(price > 0, InvalidPrice(reserveId));
 
     return uint256(price);
   }
