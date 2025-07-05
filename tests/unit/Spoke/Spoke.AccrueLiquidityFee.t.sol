@@ -111,6 +111,7 @@ contract SpokeAccrueLiquidityFeeTest is SpokeBase {
 
     // now only base debt grows
     updateLiquidityPremium(spoke1, reserveId, 0);
+    vm.prank(bob);
     spoke1.updateUserRiskPremium(bob);
 
     // refresh
@@ -185,11 +186,7 @@ contract SpokeAccrueLiquidityFeeTest is SpokeBase {
     uint256 expectedPremiumDebt = 50e18; // 10% of 500 (premium on base debt)
     uint256 expectedTreasuryFees = 27.5e18; // 5% of 550 (liquidity fee on base debt)
 
-    vm.mockCall(
-      address(irStrategy),
-      IReserveInterestRateStrategy.calculateInterestRates.selector,
-      abi.encode(rate.bpsToRay())
-    );
+    _mockInterestRate(rate);
 
     Utils.supplyCollateral(spoke1, reserveId, alice, supplyAmount, alice);
     Utils.borrow(spoke1, reserveId, alice, borrowAmount, alice);
@@ -212,6 +209,7 @@ contract SpokeAccrueLiquidityFeeTest is SpokeBase {
     // 0% premium
     expectedRp = 0;
     updateLiquidityPremium(spoke1, reserveId, expectedRp);
+    vm.prank(alice);
     spoke1.updateUserRiskPremium(alice);
 
     // withdraw any treasury fees to reset counter
@@ -287,11 +285,7 @@ contract SpokeAccrueLiquidityFeeTest is SpokeBase {
       liquidityFee
     );
 
-    vm.mockCall(
-      address(irStrategy),
-      IReserveInterestRateStrategy.calculateInterestRates.selector,
-      abi.encode(rate.bpsToRay())
-    );
+    _mockInterestRate(rate);
 
     Utils.supplyCollateral(spoke1, reserveId, alice, supplyAmount, alice);
     Utils.borrow(spoke1, reserveId, alice, borrowAmount, alice);
@@ -316,6 +310,7 @@ contract SpokeAccrueLiquidityFeeTest is SpokeBase {
     // 0% premium
     expectedRp = 0;
     updateLiquidityPremium(spoke1, reserveId, expectedRp);
+    vm.prank(alice);
     spoke1.updateUserRiskPremium(alice);
     assertEq(_getUserRpStored(spoke1, reserveId, alice), expectedRp);
 
@@ -402,11 +397,7 @@ contract SpokeAccrueLiquidityFeeTest is SpokeBase {
       liquidityFee
     );
 
-    vm.mockCall(
-      address(irStrategy),
-      IReserveInterestRateStrategy.calculateInterestRates.selector,
-      abi.encode(rate.bpsToRay())
-    );
+    _mockInterestRate(rate);
 
     Utils.supplyCollateral(spoke1, reserveId, alice, supplyAmount, alice);
     Utils.supplyCollateral(spoke1, reserveId2, alice, supplyAmount2, alice);
@@ -467,11 +458,7 @@ contract SpokeAccrueLiquidityFeeTest is SpokeBase {
     uint256 expectedTreasuryFees = (expectedBaseDebtAccrual + expectedPremiumDebt).percentMulUp(
       liquidityFee
     );
-    vm.mockCall(
-      address(irStrategy),
-      IReserveInterestRateStrategy.calculateInterestRates.selector,
-      abi.encode(rate.bpsToRay())
-    );
+    _mockInterestRate(rate);
 
     Utils.supplyCollateral(spoke1, reserveId, alice, supplyAmount, alice);
     Utils.borrow(spoke1, reserveId, alice, borrowAmount, alice);

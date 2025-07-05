@@ -8,6 +8,7 @@ contract SpokeGettersTest is SpokeBase {
   using LiquidationLogic for DataTypes.LiquidationConfig;
 
   DataTypes.LiquidationConfig internal _config;
+
   function test_getVariableLiquidationBonus_notConfigured() public {
     uint256 reserveId = _daiReserveId(spoke1);
     uint256 healthFactor = WadRayMath.WAD;
@@ -62,6 +63,7 @@ contract SpokeGettersTest is SpokeBase {
       healthFactorForMaxBonus: healthFactorForMaxBonus,
       liquidationBonusFactor: liquidationBonusFactor
     });
+    vm.prank(SPOKE_ADMIN);
     spoke1.updateLiquidationConfig(config);
     _config = spoke1.getLiquidationConfig();
 

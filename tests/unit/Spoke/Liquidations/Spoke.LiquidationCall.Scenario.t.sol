@@ -4,7 +4,6 @@ pragma solidity ^0.8.0;
 import 'tests/unit/Spoke/Liquidations/Spoke.Liquidation.Base.t.sol';
 
 contract LiquidationCallScenarioTest is SpokeLiquidationBase {
-  using WadRayMath for uint256;
   using PercentageMath for uint256;
   using PercentageMathExtended for uint256;
   using WadRayMathExtended for uint256;
@@ -55,7 +54,7 @@ contract LiquidationCallScenarioTest is SpokeLiquidationBase {
     state.debtAmount.weth = 20 * 10 ** decimals.weth; // 20 eth, $40k
 
     // simplify accounting checks with no fee or bonus
-    updateLiquidationProtocolFee(spoke1, state.wbtcReserveId, 0);
+    updateLiquidationFee(spoke1, state.wbtcReserveId, 0);
     updateLiquidationBonus(spoke1, state.wbtcReserveId, 100_00);
 
     Utils.supplyCollateral(spoke1, state.wbtcReserveId, alice, state.collAmount.wbtc, alice);
@@ -77,11 +76,11 @@ contract LiquidationCallScenarioTest is SpokeLiquidationBase {
     assertGt(premiumDebt, 0);
     assertGt(spoke1.getUserPosition(state.wethReserveId, alice).realizedPremium, 0);
 
-    state.liquidatorCollateral.balanceBefore = IERC20(spoke1.getReserve(state.wbtcReserveId).asset)
+    state.liquidatorCollateral.balanceBefore = IERC20(
+      spoke1.getReserve(state.wbtcReserveId).underlying
+    ).balanceOf(LIQUIDATOR);
+    state.liquidator.balanceBefore = IERC20(spoke1.getReserve(state.wethReserveId).underlying)
       .balanceOf(LIQUIDATOR);
-    state.liquidator.balanceBefore = IERC20(spoke1.getReserve(state.wethReserveId).asset).balanceOf(
-      LIQUIDATOR
-    );
     state.supply.balanceBefore = spoke1.getUserSuppliedAmount(state.wbtcReserveId, alice);
     state.debt.balanceBefore = spoke1.getUserTotalDebt(state.wethReserveId, alice);
 
@@ -93,11 +92,11 @@ contract LiquidationCallScenarioTest is SpokeLiquidationBase {
       debtToCover: MAX_SUPPLY_AMOUNT
     });
 
-    state.liquidatorCollateral.balanceAfter = IERC20(spoke1.getReserve(state.wbtcReserveId).asset)
+    state.liquidatorCollateral.balanceAfter = IERC20(
+      spoke1.getReserve(state.wbtcReserveId).underlying
+    ).balanceOf(LIQUIDATOR);
+    state.liquidator.balanceAfter = IERC20(spoke1.getReserve(state.wethReserveId).underlying)
       .balanceOf(LIQUIDATOR);
-    state.liquidator.balanceAfter = IERC20(spoke1.getReserve(state.wethReserveId).asset).balanceOf(
-      LIQUIDATOR
-    );
     state.supply.balanceAfter = spoke1.getUserSuppliedAmount(state.wbtcReserveId, alice);
     state.debt.balanceAfter = spoke1.getUserTotalDebt(state.wethReserveId, alice);
 
@@ -153,7 +152,7 @@ contract LiquidationCallScenarioTest is SpokeLiquidationBase {
     state.debtAmount.weth = 20 * 10 ** decimals.weth; // 20 eth, $40k
 
     // simplify accounting checks with no fee or bonus
-    updateLiquidationProtocolFee(spoke1, state.wbtcReserveId, 0);
+    updateLiquidationFee(spoke1, state.wbtcReserveId, 0);
     updateLiquidationBonus(spoke1, state.wbtcReserveId, 100_00);
 
     Utils.supplyCollateral(spoke1, state.wbtcReserveId, alice, state.collAmount.wbtc, alice);
@@ -175,11 +174,11 @@ contract LiquidationCallScenarioTest is SpokeLiquidationBase {
     assertGt(premiumDebt, 0);
     assertGt(spoke1.getUserPosition(state.wethReserveId, alice).realizedPremium, 0);
 
-    state.liquidatorCollateral.balanceBefore = IERC20(spoke1.getReserve(state.wbtcReserveId).asset)
+    state.liquidatorCollateral.balanceBefore = IERC20(
+      spoke1.getReserve(state.wbtcReserveId).underlying
+    ).balanceOf(LIQUIDATOR);
+    state.liquidator.balanceBefore = IERC20(spoke1.getReserve(state.wethReserveId).underlying)
       .balanceOf(LIQUIDATOR);
-    state.liquidator.balanceBefore = IERC20(spoke1.getReserve(state.wethReserveId).asset).balanceOf(
-      LIQUIDATOR
-    );
     state.supply.balanceBefore = spoke1.getUserSuppliedAmount(state.wbtcReserveId, alice);
     state.debt.balanceBefore = spoke1.getUserTotalDebt(state.wethReserveId, alice);
 
@@ -191,11 +190,11 @@ contract LiquidationCallScenarioTest is SpokeLiquidationBase {
       debtToCover: MAX_SUPPLY_AMOUNT
     });
 
-    state.liquidatorCollateral.balanceAfter = IERC20(spoke1.getReserve(state.wbtcReserveId).asset)
+    state.liquidatorCollateral.balanceAfter = IERC20(
+      spoke1.getReserve(state.wbtcReserveId).underlying
+    ).balanceOf(LIQUIDATOR);
+    state.liquidator.balanceAfter = IERC20(spoke1.getReserve(state.wethReserveId).underlying)
       .balanceOf(LIQUIDATOR);
-    state.liquidator.balanceAfter = IERC20(spoke1.getReserve(state.wethReserveId).asset).balanceOf(
-      LIQUIDATOR
-    );
     state.supply.balanceAfter = spoke1.getUserSuppliedAmount(state.wbtcReserveId, alice);
     state.debt.balanceAfter = spoke1.getUserTotalDebt(state.wethReserveId, alice);
 
@@ -247,7 +246,7 @@ contract LiquidationCallScenarioTest is SpokeLiquidationBase {
     state.liqBonus = spoke1.getReserve(state.wbtcReserveId).config.liquidationBonus;
 
     // simplify accounting checks with no fee or bonus
-    updateLiquidationProtocolFee(spoke1, state.wbtcReserveId, 0);
+    updateLiquidationFee(spoke1, state.wbtcReserveId, 0);
     updateLiquidationBonus(spoke1, state.wbtcReserveId, 100_00);
 
     Utils.supplyCollateral(spoke1, state.wbtcReserveId, alice, state.collAmount.wbtc, alice);
@@ -263,11 +262,11 @@ contract LiquidationCallScenarioTest is SpokeLiquidationBase {
     // position must be liquidatable after interest accrual
     assertLt(spoke1.getHealthFactor(alice), HEALTH_FACTOR_LIQUIDATION_THRESHOLD);
 
-    state.liquidatorCollateral.balanceBefore = IERC20(spoke1.getReserve(state.wbtcReserveId).asset)
+    state.liquidatorCollateral.balanceBefore = IERC20(
+      spoke1.getReserve(state.wbtcReserveId).underlying
+    ).balanceOf(LIQUIDATOR);
+    state.liquidator.balanceBefore = IERC20(spoke1.getReserve(state.wethReserveId).underlying)
       .balanceOf(LIQUIDATOR);
-    state.liquidator.balanceBefore = IERC20(spoke1.getReserve(state.wethReserveId).asset).balanceOf(
-      LIQUIDATOR
-    );
     state.supply.balanceBefore = spoke1.getUserSuppliedAmount(state.wbtcReserveId, alice);
     state.debt.balanceBefore = spoke1.getUserTotalDebt(state.wethReserveId, alice);
 
@@ -279,11 +278,11 @@ contract LiquidationCallScenarioTest is SpokeLiquidationBase {
       debtToCover: state.debt.balanceBefore + 1
     });
 
-    state.liquidatorCollateral.balanceAfter = IERC20(spoke1.getReserve(state.wbtcReserveId).asset)
+    state.liquidatorCollateral.balanceAfter = IERC20(
+      spoke1.getReserve(state.wbtcReserveId).underlying
+    ).balanceOf(LIQUIDATOR);
+    state.liquidator.balanceAfter = IERC20(spoke1.getReserve(state.wethReserveId).underlying)
       .balanceOf(LIQUIDATOR);
-    state.liquidator.balanceAfter = IERC20(spoke1.getReserve(state.wethReserveId).asset).balanceOf(
-      LIQUIDATOR
-    );
     state.supply.balanceAfter = spoke1.getUserSuppliedAmount(state.wbtcReserveId, alice);
     state.debt.balanceAfter = spoke1.getUserTotalDebt(state.wethReserveId, alice);
 
@@ -329,7 +328,7 @@ contract LiquidationCallScenarioTest is SpokeLiquidationBase {
     state.liqBonus = spoke1.getReserve(state.wbtcReserveId).config.liquidationBonus;
 
     // simplify accounting checks with no fee or bonus
-    updateLiquidationProtocolFee(spoke1, state.wbtcReserveId, 0);
+    updateLiquidationFee(spoke1, state.wbtcReserveId, 0);
     updateLiquidationBonus(spoke1, state.wbtcReserveId, 100_00);
 
     Utils.supplyCollateral(spoke1, state.wbtcReserveId, alice, state.collAmount.wbtc, alice);
@@ -345,11 +344,11 @@ contract LiquidationCallScenarioTest is SpokeLiquidationBase {
     // position must be liquidatable after interest accrual
     vm.assume(spoke1.getHealthFactor(alice) < HEALTH_FACTOR_LIQUIDATION_THRESHOLD);
 
-    state.liquidatorCollateral.balanceBefore = IERC20(spoke1.getReserve(state.wbtcReserveId).asset)
+    state.liquidatorCollateral.balanceBefore = IERC20(
+      spoke1.getReserve(state.wbtcReserveId).underlying
+    ).balanceOf(LIQUIDATOR);
+    state.liquidator.balanceBefore = IERC20(spoke1.getReserve(state.wethReserveId).underlying)
       .balanceOf(LIQUIDATOR);
-    state.liquidator.balanceBefore = IERC20(spoke1.getReserve(state.wethReserveId).asset).balanceOf(
-      LIQUIDATOR
-    );
     state.supply.balanceBefore = spoke1.getUserSuppliedAmount(state.wbtcReserveId, alice);
     state.debt.balanceBefore = spoke1.getUserTotalDebt(state.wethReserveId, alice);
 
@@ -361,11 +360,11 @@ contract LiquidationCallScenarioTest is SpokeLiquidationBase {
       debtToCover: MAX_SUPPLY_AMOUNT
     });
 
-    state.liquidatorCollateral.balanceAfter = IERC20(spoke1.getReserve(state.wbtcReserveId).asset)
+    state.liquidatorCollateral.balanceAfter = IERC20(
+      spoke1.getReserve(state.wbtcReserveId).underlying
+    ).balanceOf(LIQUIDATOR);
+    state.liquidator.balanceAfter = IERC20(spoke1.getReserve(state.wethReserveId).underlying)
       .balanceOf(LIQUIDATOR);
-    state.liquidator.balanceAfter = IERC20(spoke1.getReserve(state.wethReserveId).asset).balanceOf(
-      LIQUIDATOR
-    );
     state.supply.balanceAfter = spoke1.getUserSuppliedAmount(state.wbtcReserveId, alice);
     state.debt.balanceAfter = spoke1.getUserTotalDebt(state.wethReserveId, alice);
 
@@ -414,21 +413,17 @@ contract LiquidationCallScenarioTest is SpokeLiquidationBase {
     assertGt(spoke1.getHealthFactor(alice), HEALTH_FACTOR_LIQUIDATION_THRESHOLD);
 
     // interest accrual
-    vm.mockCall(
-      address(irStrategy),
-      IReserveInterestRateStrategy.calculateInterestRates.selector,
-      abi.encode(uint256(50_00).bpsToRay())
-    );
+    _mockInterestRate(50_00);
     skip(365 days);
 
     // position must be liquidatable after interest accrual
     assertLt(spoke1.getHealthFactor(alice), HEALTH_FACTOR_LIQUIDATION_THRESHOLD);
 
-    state.liquidatorCollateral.balanceBefore = IERC20(spoke1.getReserve(state.wbtcReserveId).asset)
+    state.liquidatorCollateral.balanceBefore = IERC20(
+      spoke1.getReserve(state.wbtcReserveId).underlying
+    ).balanceOf(LIQUIDATOR);
+    state.liquidator.balanceBefore = IERC20(spoke1.getReserve(state.wethReserveId).underlying)
       .balanceOf(LIQUIDATOR);
-    state.liquidator.balanceBefore = IERC20(spoke1.getReserve(state.wethReserveId).asset).balanceOf(
-      LIQUIDATOR
-    );
     state.supply.balanceBefore = spoke1.getUserSuppliedAmount(state.wbtcReserveId, alice);
     state.debt.balanceBefore = spoke1.getUserTotalDebt(state.wethReserveId, alice);
 
@@ -440,9 +435,8 @@ contract LiquidationCallScenarioTest is SpokeLiquidationBase {
       debtToCover: state.debt.balanceBefore
     });
 
-    state.liquidator.balanceAfter = IERC20(spoke1.getReserve(state.wethReserveId).asset).balanceOf(
-      LIQUIDATOR
-    );
+    state.liquidator.balanceAfter = IERC20(spoke1.getReserve(state.wethReserveId).underlying)
+      .balanceOf(LIQUIDATOR);
     state.debt.balanceAfter = spoke1.getUserTotalDebt(state.wethReserveId, alice);
 
     assertApproxEqAbs(
@@ -461,6 +455,7 @@ contract LiquidationCallScenarioTest is SpokeLiquidationBase {
 
   /// scenario where fully liquidating all collateral still does not improve a position to close factor
   function test_liquidationCall_all_collateral() public {
+    MockPriceOracle oracle = MockPriceOracle(address(spoke1.oracle()));
     LiqScenarioTestData memory state;
 
     Balance memory aliceDai;
@@ -487,14 +482,18 @@ contract LiquidationCallScenarioTest is SpokeLiquidationBase {
     Utils.borrow(spoke1, state.wethReserveId, alice, state.debtAmount.weth, alice);
 
     // wbtc collateral value drop to reduce HF < 1
-    oracle.setAssetPrice(wbtcAssetId, 20_000e8);
+    oracle.setReservePrice(state.wbtcReserveId, 20_000e8);
 
     // position is liquidatable
     assertLt(spoke1.getHealthFactor(alice), HEALTH_FACTOR_LIQUIDATION_THRESHOLD);
 
     state.initialDebt = spoke1.getUserTotalDebt(state.wethReserveId, alice);
-    state.liquidatedDebt = _convertAssetAmount(wbtcAssetId, state.collAmount.wbtc, wethAssetId)
-      .percentDiv(state.liqBonus);
+    state.liquidatedDebt = _convertAssetAmount(
+      spoke1,
+      state.wbtcReserveId,
+      state.collAmount.wbtc,
+      state.wethReserveId
+    ).percentDiv(state.liqBonus);
 
     aliceDai.balanceBefore = tokenList.dai.balanceOf(alice);
     liquidatorDai.balanceBefore = tokenList.dai.balanceOf(LIQUIDATOR);
@@ -593,8 +592,8 @@ contract LiquidationCallScenarioTest is SpokeLiquidationBase {
       'userRP matches lp of dai coll'
     );
     assertEq(
-      avgCollFactor.dewadify(),
-      spoke1.getReserve(state.daiReserveId).config.collateralFactor,
+      avgCollFactor.dewadifyDown(),
+      spoke1.getDynamicReserveConfig(state.daiReserveId).collateralFactor,
       'avg coll factor matches dai coll factor'
     );
     // hf < 1 after
@@ -615,7 +614,8 @@ contract LiquidationCallScenarioTest is SpokeLiquidationBase {
     Utils.supplyCollateral(spoke1, _usdyReserveId(spoke1), alice, usdyAmount, alice);
     Utils.borrow(spoke1, _usdxReserveId(spoke1), alice, debtAmount, alice);
 
-    oracle.setAssetPrice(wethAssetId, 100e8);
+    MockPriceOracle oracle = MockPriceOracle(address(spoke1.oracle()));
+    oracle.setReservePrice(_wethReserveId(spoke1), 100e8);
 
     vm.prank(LIQUIDATOR);
     spoke1.liquidationCall(_daiReserveId(spoke1), _usdxReserveId(spoke1), alice, debtAmount);
@@ -642,7 +642,8 @@ contract LiquidationCallScenarioTest is SpokeLiquidationBase {
     Utils.supplyCollateral(spoke1, _usdxReserveId(spoke1), alice, usdxAmount, alice);
     Utils.borrow(spoke1, _daiReserveId(spoke1), alice, borrowAmount, alice);
 
-    oracle.setAssetPrice(wethAssetId, 800e8);
+    MockPriceOracle oracle = MockPriceOracle(address(spoke1.oracle()));
+    oracle.setReservePrice(_wethReserveId(spoke1), 800e8);
 
     vm.prank(bob);
     spoke1.liquidationCall(_usdxReserveId(spoke1), _daiReserveId(spoke1), alice, borrowAmount);
@@ -670,14 +671,15 @@ contract LiquidationCallScenarioTest is SpokeLiquidationBase {
     uint256 closeFactor = 1.07e18;
 
     updateCloseFactor(spoke1, closeFactor);
-    updateLiquidationProtocolFee(spoke1, usdxReserveId, 5_00);
+    updateLiquidationFee(spoke1, usdxReserveId, 5_00);
     updateLiquidationBonus(spoke1, usdxReserveId, 101_00);
 
     Utils.supplyCollateral(spoke1, wethReserveId, alice, wethAmount, alice);
     Utils.supplyCollateral(spoke1, usdxReserveId, alice, usdxAmount, alice);
     Utils.borrow(spoke1, daiReserveId, alice, borrowAmount, alice);
 
-    oracle.setAssetPrice(wethAssetId, 800e8);
+    MockPriceOracle oracle = MockPriceOracle(address(spoke1.oracle()));
+    oracle.setReservePrice(wethReserveId, 800e8);
 
     vm.prank(LIQUIDATOR);
     spoke1.liquidationCall(usdxReserveId, daiReserveId, alice, borrowAmount);

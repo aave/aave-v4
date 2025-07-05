@@ -4,19 +4,23 @@ pragma solidity ^0.8.0;
 import {Test} from 'forge-std/Test.sol';
 import {stdError} from 'forge-std/StdError.sol';
 import {stdMath} from 'forge-std/StdMath.sol';
+import {Vm} from 'forge-std/Vm.sol';
 import {console2 as console} from 'forge-std/console2.sol';
-
+import {IERC20Metadata} from 'src/dependencies/openzeppelin/IERC20Metadata.sol';
 import {LiquidityHub, ILiquidityHub} from 'src/contracts/LiquidityHub.sol';
 import {Spoke, ISpoke} from 'src/contracts/Spoke.sol';
 import {TreasurySpoke, ITreasurySpoke} from 'src/contracts/TreasurySpoke.sol';
+import {Configurator, IConfigurator} from 'src/contracts/Configurator.sol';
 import {PercentageMath} from 'src/libraries/math/PercentageMath.sol';
 import {PercentageMathExtended} from 'src/libraries/math/PercentageMathExtended.sol';
 import {WadRayMath} from 'src/libraries/math/WadRayMath.sol';
 import {WadRayMathExtended} from 'src/libraries/math/WadRayMathExtended.sol';
 import {SharesMath} from 'src/libraries/math/SharesMath.sol';
 import {MathUtils} from 'src/libraries/math/MathUtils.sol';
-import {DefaultReserveInterestRateStrategy, IDefaultInterestRateStrategy, IReserveInterestRateStrategy} from 'src/contracts/DefaultReserveInterestRateStrategy.sol';
+import {PositionStatus} from 'src/libraries/configuration/PositionStatus.sol';
+import {AssetInterestRateStrategy, IAssetInterestRateStrategy, IBasicInterestRateStrategy} from 'src/contracts/AssetInterestRateStrategy.sol';
 import {DataTypes} from 'src/libraries/types/DataTypes.sol';
+import {Roles} from 'src/libraries/types/Roles.sol';
 import {Utils} from './Utils.sol';
 
 // mocks
@@ -25,17 +29,22 @@ import {MockERC20} from './mocks/MockERC20.sol';
 import {MockPriceOracle, IPriceOracle} from './mocks/MockPriceOracle.sol';
 
 // dependencies
+import {SafeCast} from 'src/dependencies/openzeppelin/SafeCast.sol';
 import {IERC20Errors} from 'src/dependencies/openzeppelin/IERC20Errors.sol';
 import {IERC20} from 'src/dependencies/openzeppelin/IERC20.sol';
+import {AccessManager} from 'src/dependencies/openzeppelin/AccessManager.sol';
+import {IAccessManager} from 'src/dependencies/openzeppelin/IAccessManager.sol';
+import {IAccessManaged} from 'src/dependencies/openzeppelin/IAccessManaged.sol';
+import {AuthorityUtils} from 'src/dependencies/openzeppelin/AuthorityUtils.sol';
 import {Ownable} from 'src/dependencies/openzeppelin/Ownable.sol';
 import {WETH9} from 'src/dependencies/weth/WETH9.sol';
 
 abstract contract Base is Test {
-  using WadRayMath for uint256;
   using WadRayMathExtended for uint256;
-  using PercentageMathExtended for uint256;
   using SharesMath for uint256;
   using PercentageMath for uint256;
+  using PercentageMathExtended for uint256;
+  using SafeCast for *;
 
   uint256 internal constant MAX_SUPPLY_AMOUNT = 1e30;
   uint256 internal constant MAX_TOKEN_DECIMALS_SUPPORTED = 18;
@@ -48,7 +57,7 @@ abstract contract Base is Test {
   uint256 internal MAX_SUPPLY_AMOUNT_USDY;
   uint256 internal constant MAX_SUPPLY_IN_BASE_CURRENCY = 1e39;
   uint32 internal constant MAX_RISK_PREMIUM_BPS = 1000_00;
-  uint256 internal constant MAX_BORROW_RATE = 1000_00; // matches DefaultReserveInterestRateStrategy
+  uint256 internal constant MAX_BORROW_RATE = 1000_00; // matches AssetInterestRateStrategy
   uint256 internal constant MAX_SKIP_TIME = 10_000 days;
   uint256 internal constant MIN_LIQUIDATION_BONUS = PercentageMath.PERCENTAGE_FACTOR; // 100% == 0% bonus
   uint256 internal constant MAX_LIQUIDATION_BONUS = 150_00; // 50% bonus
@@ -68,15 +77,17 @@ abstract contract Base is Test {
   IERC20 internal eth;
   IERC20 internal wbtc;
 
-  MockPriceOracle internal oracle;
+  MockPriceOracle internal oracle1;
+  MockPriceOracle internal oracle2;
+  MockPriceOracle internal oracle3;
   ILiquidityHub internal hub;
   ITreasurySpoke internal treasurySpoke;
   ISpoke internal spoke1;
   ISpoke internal spoke2;
   ISpoke internal spoke3;
-  DefaultReserveInterestRateStrategy internal irStrategy;
+  AssetInterestRateStrategy internal irStrategy;
+  AccessManager internal accessManager;
 
-  address internal mockAddressesProvider = makeAddr('mockAddressesProvider');
   // TODO: remove after migrating to other mock users
   address internal USER1 = makeAddr('USER1');
   address internal USER2 = makeAddr('USER2');
@@ -86,10 +97,10 @@ abstract contract Base is Test {
   address internal carol = makeAddr('carol');
   address internal derl = makeAddr('derl');
 
+  address internal ADMIN = makeAddr('ADMIN');
   address internal HUB_ADMIN = makeAddr('HUB_ADMIN');
   address internal SPOKE_ADMIN = makeAddr('SPOKE_ADMIN');
   address internal TREASURY_ADMIN = makeAddr('TREASURY_ADMIN');
-  address internal TREASURY = makeAddr('TREASURY');
   address internal LIQUIDATOR = makeAddr('LIQUIDATOR');
 
   TokenList internal tokenList;
@@ -149,27 +160,69 @@ abstract contract Base is Test {
 
   function setUp() public virtual {
     deployFixtures();
-
-    // todo: set up admin role when access controls impl
   }
 
-  function deployFixtures() internal {
-    oracle = new MockPriceOracle();
-    irStrategy = new DefaultReserveInterestRateStrategy(mockAddressesProvider);
-    hub = new LiquidityHub();
-    spoke1 = ISpoke(new Spoke(address(hub), address(oracle)));
-    spoke2 = ISpoke(new Spoke(address(hub), address(oracle)));
-    spoke3 = ISpoke(new Spoke(address(hub), address(oracle)));
+  function deployFixtures() internal virtual {
+    vm.startPrank(ADMIN);
+    oracle1 = new MockPriceOracle();
+    oracle2 = new MockPriceOracle();
+    oracle3 = new MockPriceOracle();
+    accessManager = new AccessManager(ADMIN);
+    hub = new LiquidityHub(address(accessManager));
+    irStrategy = new AssetInterestRateStrategy(address(hub));
+    spoke1 = ISpoke(new Spoke(address(oracle1), address(accessManager)));
+    spoke2 = ISpoke(new Spoke(address(oracle2), address(accessManager)));
+    spoke3 = ISpoke(new Spoke(address(oracle3), address(accessManager)));
     treasurySpoke = ITreasurySpoke(new TreasurySpoke(TREASURY_ADMIN, address(hub)));
     dai = new MockERC20();
     eth = new MockERC20();
     usdc = new MockERC20();
     usdt = new MockERC20();
     wbtc = new MockERC20();
+    vm.stopPrank();
 
     vm.label(address(spoke1), 'spoke1');
     vm.label(address(spoke2), 'spoke2');
     vm.label(address(spoke3), 'spoke3');
+
+    setUpRoles(hub, spoke1, accessManager);
+    setUpRoles(hub, spoke2, accessManager);
+    setUpRoles(hub, spoke3, accessManager);
+  }
+
+  function setUpRoles(
+    ILiquidityHub hub,
+    ISpoke spoke,
+    IAccessManager accessManager
+  ) internal virtual {
+    vm.startPrank(ADMIN);
+    // Grant roles with 0 delay
+    accessManager.grantRole(Roles.HUB_ADMIN_ROLE, ADMIN, 0);
+    accessManager.grantRole(Roles.SPOKE_ADMIN_ROLE, ADMIN, 0);
+    accessManager.grantRole(Roles.HUB_ADMIN_ROLE, HUB_ADMIN, 0);
+    accessManager.grantRole(Roles.SPOKE_ADMIN_ROLE, SPOKE_ADMIN, 0);
+
+    // Grant responsibilities to roles
+    // Spoke Admin functionalities
+    bytes4[] memory selectors = new bytes4[](5);
+    selectors[0] = ISpoke.updateLiquidationConfig.selector;
+    selectors[1] = ISpoke.addReserve.selector;
+    selectors[2] = ISpoke.updateReserveConfig.selector;
+    selectors[3] = ISpoke.updateDynamicReserveConfig.selector;
+    selectors[4] = ISpoke.updateUserRiskPremium.selector;
+
+    accessManager.setTargetFunctionRole(address(spoke), selectors, Roles.SPOKE_ADMIN_ROLE);
+
+    // Liquidity Hub Admin functionalities
+    bytes4[] memory hubSelectors = new bytes4[](5);
+    hubSelectors[0] = ILiquidityHub.addAsset.selector;
+    hubSelectors[1] = ILiquidityHub.updateAssetConfig.selector;
+    hubSelectors[2] = ILiquidityHub.addSpoke.selector;
+    hubSelectors[3] = ILiquidityHub.updateSpokeConfig.selector;
+    hubSelectors[4] = ILiquidityHub.setInterestRateData.selector;
+
+    accessManager.setTargetFunctionRole(address(hub), hubSelectors, Roles.HUB_ADMIN_ROLE);
+    vm.stopPrank();
   }
 
   function initEnvironment() internal {
@@ -245,386 +298,681 @@ abstract contract Base is Test {
   function configureTokenList() internal {
     DataTypes.SpokeConfig memory spokeConfig = DataTypes.SpokeConfig({
       supplyCap: type(uint256).max,
-      drawCap: type(uint256).max
+      drawCap: type(uint256).max,
+      active: true
     });
 
     // Add all assets to the Liquidity Hub
-    vm.startPrank(HUB_ADMIN);
+    vm.startPrank(ADMIN);
     // add WETH
     hub.addAsset(
+      address(tokenList.weth),
+      tokenList.weth.decimals(),
+      address(treasurySpoke),
+      address(irStrategy)
+    );
+    hub.addSpoke(wethAssetId, address(treasurySpoke), spokeConfig);
+    vm.stopPrank();
+    vm.prank(address(hub));
+    irStrategy.setInterestRateData(
+      wethAssetId,
+      abi.encode(
+        IAssetInterestRateStrategy.InterestRateData({
+          optimalUsageRatio: 90_00, // 90.00%
+          baseVariableBorrowRate: 5_00, // 5.00%
+          variableRateSlope1: 5_00, // 5.00%
+          variableRateSlope2: 5_00 // 5.00%
+        })
+      )
+    );
+    vm.startPrank(ADMIN);
+    hub.updateAssetConfig(
+      wethAssetId,
       DataTypes.AssetConfig({
-        feeReceiver: address(0),
         active: true,
         paused: false,
         frozen: false,
-        decimals: tokenList.weth.decimals(),
-        liquidityFee: 0,
-        irStrategy: irStrategy
-      }),
-      address(tokenList.weth)
+        liquidityFee: 10_00,
+        feeReceiver: address(treasurySpoke),
+        irStrategy: address(irStrategy)
+      })
     );
-    oracle.setAssetPrice(wethAssetId, 2000e8);
-    hub.updateAssetFees(wethAssetId, address(treasurySpoke), 10_00);
 
     // add USDX
     hub.addAsset(
+      address(tokenList.usdx),
+      tokenList.usdx.decimals(),
+      address(treasurySpoke),
+      address(irStrategy)
+    );
+    hub.addSpoke(usdxAssetId, address(treasurySpoke), spokeConfig);
+    vm.stopPrank();
+    vm.prank(address(hub));
+    irStrategy.setInterestRateData(
+      usdxAssetId,
+      abi.encode(
+        IAssetInterestRateStrategy.InterestRateData({
+          optimalUsageRatio: 90_00, // 90.00%
+          baseVariableBorrowRate: 5_00, // 5.00%
+          variableRateSlope1: 5_00, // 5.00%
+          variableRateSlope2: 5_00 // 5.00%
+        })
+      )
+    );
+    vm.startPrank(ADMIN);
+    hub.updateAssetConfig(
+      usdxAssetId,
       DataTypes.AssetConfig({
-        feeReceiver: address(0),
         active: true,
         paused: false,
         frozen: false,
-        decimals: tokenList.usdx.decimals(),
-        liquidityFee: 0,
-        irStrategy: irStrategy
-      }),
-      address(tokenList.usdx)
+        liquidityFee: 5_00,
+        feeReceiver: address(treasurySpoke),
+        irStrategy: address(irStrategy)
+      })
     );
-    oracle.setAssetPrice(usdxAssetId, 1e8);
-    hub.updateAssetFees(usdxAssetId, address(treasurySpoke), 5_00);
 
     // add DAI
     hub.addAsset(
+      address(tokenList.dai),
+      tokenList.dai.decimals(),
+      address(treasurySpoke),
+      address(irStrategy)
+    );
+    hub.addSpoke(daiAssetId, address(treasurySpoke), spokeConfig);
+    vm.stopPrank();
+    vm.prank(address(hub));
+    irStrategy.setInterestRateData(
+      daiAssetId,
+      abi.encode(
+        IAssetInterestRateStrategy.InterestRateData({
+          optimalUsageRatio: 90_00, // 90.00%
+          baseVariableBorrowRate: 5_00, // 5.00%
+          variableRateSlope1: 5_00, // 5.00%
+          variableRateSlope2: 5_00 // 5.00%
+        })
+      )
+    );
+    vm.startPrank(ADMIN);
+    hub.updateAssetConfig(
+      daiAssetId,
       DataTypes.AssetConfig({
-        feeReceiver: address(0),
         active: true,
         paused: false,
         frozen: false,
-        decimals: tokenList.dai.decimals(),
         liquidityFee: 5_00,
-        irStrategy: irStrategy
-      }),
-      address(tokenList.dai)
+        feeReceiver: address(treasurySpoke),
+        irStrategy: address(irStrategy)
+      })
     );
-    oracle.setAssetPrice(daiAssetId, 1e8);
-    hub.updateAssetFees(daiAssetId, address(treasurySpoke), 5_00);
 
     // add WBTC
     hub.addAsset(
+      address(tokenList.wbtc),
+      tokenList.wbtc.decimals(),
+      address(treasurySpoke),
+      address(irStrategy)
+    );
+    hub.addSpoke(wbtcAssetId, address(treasurySpoke), spokeConfig);
+    vm.stopPrank();
+    vm.prank(address(hub));
+    irStrategy.setInterestRateData(
+      wbtcAssetId,
+      abi.encode(
+        IAssetInterestRateStrategy.InterestRateData({
+          optimalUsageRatio: 90_00, // 90.00%
+          baseVariableBorrowRate: 5_00, // 5.00%
+          variableRateSlope1: 5_00, // 5.00%
+          variableRateSlope2: 5_00 // 5.00%
+        })
+      )
+    );
+    vm.startPrank(ADMIN);
+    hub.updateAssetConfig(
+      wbtcAssetId,
       DataTypes.AssetConfig({
-        feeReceiver: address(0),
         active: true,
         paused: false,
         frozen: false,
-        decimals: tokenList.wbtc.decimals(),
-        liquidityFee: 0,
-        irStrategy: irStrategy
-      }),
-      address(tokenList.wbtc)
+        liquidityFee: 10_00,
+        feeReceiver: address(treasurySpoke),
+        irStrategy: address(irStrategy)
+      })
     );
-    oracle.setAssetPrice(wbtcAssetId, 50_000e8);
-    hub.updateAssetFees(wbtcAssetId, address(treasurySpoke), 10_00);
 
     // add USDY
     hub.addAsset(
+      address(tokenList.usdy),
+      tokenList.usdy.decimals(),
+      address(treasurySpoke),
+      address(irStrategy)
+    );
+    hub.addSpoke(usdyAssetId, address(treasurySpoke), spokeConfig);
+    vm.stopPrank();
+    vm.prank(address(hub));
+    irStrategy.setInterestRateData(
+      usdyAssetId,
+      abi.encode(
+        IAssetInterestRateStrategy.InterestRateData({
+          optimalUsageRatio: 90_00, // 90.00%
+          baseVariableBorrowRate: 5_00, // 5.00%
+          variableRateSlope1: 5_00, // 5.00%
+          variableRateSlope2: 5_00 // 5.00%
+        })
+      )
+    );
+    vm.startPrank(ADMIN);
+    hub.updateAssetConfig(
+      usdyAssetId,
       DataTypes.AssetConfig({
-        feeReceiver: address(0),
         active: true,
         paused: false,
         frozen: false,
-        decimals: tokenList.usdy.decimals(),
-        liquidityFee: 0,
-        irStrategy: irStrategy
-      }),
-      address(tokenList.usdy)
+        liquidityFee: 10_00,
+        feeReceiver: address(treasurySpoke),
+        irStrategy: address(irStrategy)
+      })
     );
-    oracle.setAssetPrice(usdyAssetId, 1e8);
-    hub.updateAssetFees(usdyAssetId, address(treasurySpoke), 10_00);
 
     // Spoke 1 reserve configs
     DataTypes.ReserveConfig memory wethConfig = DataTypes.ReserveConfig({
-      decimals: tokenList.weth.decimals(),
       active: true,
       frozen: false,
       paused: false,
-      collateralFactor: 80_00,
       liquidationBonus: 100_00,
       liquidityPremium: 15_00,
-      liquidationProtocolFee: 0,
+      liquidationFee: 0,
       borrowable: true,
       collateral: true
+    });
+    DataTypes.DynamicReserveConfig memory wethDynConfig = DataTypes.DynamicReserveConfig({
+      collateralFactor: 80_00
     });
     DataTypes.ReserveConfig memory wbtcConfig = DataTypes.ReserveConfig({
-      decimals: tokenList.wbtc.decimals(),
       active: true,
       frozen: false,
       paused: false,
-      collateralFactor: 75_00,
       liquidationBonus: 100_00,
       liquidityPremium: 5_00,
-      liquidationProtocolFee: 0,
+      liquidationFee: 0,
       borrowable: true,
       collateral: true
+    });
+    DataTypes.DynamicReserveConfig memory wbtcDynConfig = DataTypes.DynamicReserveConfig({
+      collateralFactor: 75_00
     });
     DataTypes.ReserveConfig memory daiConfig = DataTypes.ReserveConfig({
-      decimals: tokenList.dai.decimals(),
       active: true,
       frozen: false,
       paused: false,
-      collateralFactor: 78_00,
       liquidationBonus: 100_00,
       liquidityPremium: 20_00,
-      liquidationProtocolFee: 0,
+      liquidationFee: 0,
       borrowable: true,
       collateral: true
+    });
+    DataTypes.DynamicReserveConfig memory daiDynConfig = DataTypes.DynamicReserveConfig({
+      collateralFactor: 78_00
     });
     DataTypes.ReserveConfig memory usdxConfig = DataTypes.ReserveConfig({
-      decimals: tokenList.usdx.decimals(),
       active: true,
       frozen: false,
       paused: false,
-      collateralFactor: 78_00,
       liquidationBonus: 100_00,
       liquidityPremium: 50_00,
-      liquidationProtocolFee: 0,
+      liquidationFee: 0,
       borrowable: true,
       collateral: true
+    });
+    DataTypes.DynamicReserveConfig memory usdxDynConfig = DataTypes.DynamicReserveConfig({
+      collateralFactor: 78_00
     });
     DataTypes.ReserveConfig memory usdyConfig = DataTypes.ReserveConfig({
-      decimals: tokenList.usdy.decimals(),
       active: true,
       frozen: false,
       paused: false,
-      collateralFactor: 78_00,
       liquidationBonus: 100_00,
       liquidityPremium: 50_00,
-      liquidationProtocolFee: 0,
+      liquidationFee: 0,
       borrowable: true,
       collateral: true
     });
+    DataTypes.DynamicReserveConfig memory usdyDynConfig = DataTypes.DynamicReserveConfig({
+      collateralFactor: 78_00
+    });
 
-    spokeInfo[spoke1].weth.reserveId = spoke1.addReserve(wethAssetId, wethConfig);
+    spokeInfo[spoke1].weth.reserveId = spoke1.addReserve(
+      wethAssetId,
+      address(hub),
+      wethConfig,
+      wethDynConfig
+    );
     spokeInfo[spoke1].weth.liquidityPremium = wethConfig.liquidityPremium;
-    spokeInfo[spoke1].wbtc.reserveId = spoke1.addReserve(wbtcAssetId, wbtcConfig);
+    spokeInfo[spoke1].wbtc.reserveId = spoke1.addReserve(
+      wbtcAssetId,
+      address(hub),
+      wbtcConfig,
+      wbtcDynConfig
+    );
     spokeInfo[spoke1].wbtc.liquidityPremium = wbtcConfig.liquidityPremium;
-    spokeInfo[spoke1].dai.reserveId = spoke1.addReserve(daiAssetId, daiConfig);
+    spokeInfo[spoke1].dai.reserveId = spoke1.addReserve(
+      daiAssetId,
+      address(hub),
+      daiConfig,
+      daiDynConfig
+    );
     spokeInfo[spoke1].dai.liquidityPremium = daiConfig.liquidityPremium;
-    spokeInfo[spoke1].usdx.reserveId = spoke1.addReserve(usdxAssetId, usdxConfig);
+    spokeInfo[spoke1].usdx.reserveId = spoke1.addReserve(
+      usdxAssetId,
+      address(hub),
+      usdxConfig,
+      usdxDynConfig
+    );
     spokeInfo[spoke1].usdx.liquidityPremium = usdxConfig.liquidityPremium;
-    spokeInfo[spoke1].usdy.reserveId = spoke1.addReserve(usdyAssetId, usdyConfig);
+    spokeInfo[spoke1].usdy.reserveId = spoke1.addReserve(
+      usdyAssetId,
+      address(hub),
+      usdyConfig,
+      usdyDynConfig
+    );
     spokeInfo[spoke1].usdy.liquidityPremium = usdyConfig.liquidityPremium;
 
-    hub.addSpoke(wethAssetId, spokeConfig, address(spoke1));
-    hub.addSpoke(wbtcAssetId, spokeConfig, address(spoke1));
-    hub.addSpoke(daiAssetId, spokeConfig, address(spoke1));
-    hub.addSpoke(usdxAssetId, spokeConfig, address(spoke1));
-    hub.addSpoke(usdyAssetId, spokeConfig, address(spoke1));
+    oracle1.setReservePrice(spokeInfo[spoke1].weth.reserveId, 2000e8);
+    oracle1.setReservePrice(spokeInfo[spoke1].wbtc.reserveId, 50_000e8);
+    oracle1.setReservePrice(spokeInfo[spoke1].dai.reserveId, 1e8);
+    oracle1.setReservePrice(spokeInfo[spoke1].usdx.reserveId, 1e8);
+    oracle1.setReservePrice(spokeInfo[spoke1].usdy.reserveId, 1e8);
+
+    hub.addSpoke(wethAssetId, address(spoke1), spokeConfig);
+    hub.addSpoke(wbtcAssetId, address(spoke1), spokeConfig);
+    hub.addSpoke(daiAssetId, address(spoke1), spokeConfig);
+    hub.addSpoke(usdxAssetId, address(spoke1), spokeConfig);
+    hub.addSpoke(usdyAssetId, address(spoke1), spokeConfig);
 
     // Spoke 2 reserve configs
     wbtcConfig = DataTypes.ReserveConfig({
-      decimals: tokenList.wbtc.decimals(),
       active: true,
       frozen: false,
       paused: false,
-      collateralFactor: 80_00,
       liquidationBonus: 100_00,
       liquidityPremium: 0,
-      liquidationProtocolFee: 0,
+      liquidationFee: 0,
       borrowable: true,
       collateral: true
     });
+    wbtcDynConfig = DataTypes.DynamicReserveConfig({collateralFactor: 80_00});
     wethConfig = DataTypes.ReserveConfig({
-      decimals: tokenList.weth.decimals(),
       active: true,
       frozen: false,
       paused: false,
-      collateralFactor: 76_00,
       liquidationBonus: 100_00,
       liquidityPremium: 10_00,
-      liquidationProtocolFee: 0,
+      liquidationFee: 0,
       borrowable: true,
       collateral: true
     });
+    wethDynConfig = DataTypes.DynamicReserveConfig({collateralFactor: 76_00});
     daiConfig = DataTypes.ReserveConfig({
-      decimals: tokenList.dai.decimals(),
       active: true,
       frozen: false,
       paused: false,
-      collateralFactor: 72_00,
       liquidationBonus: 100_00,
       liquidityPremium: 20_00,
-      liquidationProtocolFee: 0,
+      liquidationFee: 0,
       borrowable: true,
       collateral: true
     });
+    daiDynConfig = DataTypes.DynamicReserveConfig({collateralFactor: 72_00});
     usdxConfig = DataTypes.ReserveConfig({
-      decimals: tokenList.usdx.decimals(),
       active: true,
       frozen: false,
       paused: false,
-      collateralFactor: 72_00,
       liquidationBonus: 100_00,
       liquidityPremium: 50_00,
-      liquidationProtocolFee: 0,
+      liquidationFee: 0,
       borrowable: true,
       collateral: true
     });
+    usdxDynConfig = DataTypes.DynamicReserveConfig({collateralFactor: 72_00});
+    usdyConfig = DataTypes.ReserveConfig({
+      active: true,
+      frozen: false,
+      paused: false,
+      liquidationBonus: 100_00,
+      liquidityPremium: 50_00,
+      liquidationFee: 0,
+      borrowable: true,
+      collateral: true
+    });
+    usdyDynConfig = DataTypes.DynamicReserveConfig({collateralFactor: 72_00});
 
-    spokeInfo[spoke2].wbtc.reserveId = spoke2.addReserve(wbtcAssetId, wbtcConfig);
+    spokeInfo[spoke2].wbtc.reserveId = spoke2.addReserve(
+      wbtcAssetId,
+      address(hub),
+      wbtcConfig,
+      wbtcDynConfig
+    );
     spokeInfo[spoke2].wbtc.liquidityPremium = wbtcConfig.liquidityPremium;
-    spokeInfo[spoke2].weth.reserveId = spoke2.addReserve(wethAssetId, wethConfig);
+    spokeInfo[spoke2].weth.reserveId = spoke2.addReserve(
+      wethAssetId,
+      address(hub),
+      wethConfig,
+      wethDynConfig
+    );
     spokeInfo[spoke2].weth.liquidityPremium = wethConfig.liquidityPremium;
-    spokeInfo[spoke2].dai.reserveId = spoke2.addReserve(daiAssetId, daiConfig);
+    spokeInfo[spoke2].dai.reserveId = spoke2.addReserve(
+      daiAssetId,
+      address(hub),
+      daiConfig,
+      daiDynConfig
+    );
     spokeInfo[spoke2].dai.liquidityPremium = daiConfig.liquidityPremium;
-    spokeInfo[spoke2].usdx.reserveId = spoke2.addReserve(usdxAssetId, usdxConfig);
+    spokeInfo[spoke2].usdx.reserveId = spoke2.addReserve(
+      usdxAssetId,
+      address(hub),
+      usdxConfig,
+      usdxDynConfig
+    );
     spokeInfo[spoke2].usdx.liquidityPremium = usdxConfig.liquidityPremium;
+    spokeInfo[spoke2].usdy.reserveId = spoke2.addReserve(
+      usdyAssetId,
+      address(hub),
+      usdyConfig,
+      usdyDynConfig
+    );
+    spokeInfo[spoke2].usdy.liquidityPremium = usdyConfig.liquidityPremium;
 
-    hub.addSpoke(wbtcAssetId, spokeConfig, address(spoke2));
-    hub.addSpoke(wethAssetId, spokeConfig, address(spoke2));
-    hub.addSpoke(daiAssetId, spokeConfig, address(spoke2));
-    hub.addSpoke(usdxAssetId, spokeConfig, address(spoke2));
-    hub.addSpoke(usdyAssetId, spokeConfig, address(spoke2));
+    oracle2.setReservePrice(spokeInfo[spoke2].wbtc.reserveId, 50_000e8);
+    oracle2.setReservePrice(spokeInfo[spoke2].weth.reserveId, 2000e8);
+    oracle2.setReservePrice(spokeInfo[spoke2].dai.reserveId, 1e8);
+    oracle2.setReservePrice(spokeInfo[spoke2].usdx.reserveId, 1e8);
+    oracle2.setReservePrice(spokeInfo[spoke2].usdy.reserveId, 1e8);
+
+    hub.addSpoke(wbtcAssetId, address(spoke2), spokeConfig);
+    hub.addSpoke(wethAssetId, address(spoke2), spokeConfig);
+    hub.addSpoke(daiAssetId, address(spoke2), spokeConfig);
+    hub.addSpoke(usdxAssetId, address(spoke2), spokeConfig);
+    hub.addSpoke(usdyAssetId, address(spoke2), spokeConfig);
 
     // Spoke 3 reserve configs
     daiConfig = DataTypes.ReserveConfig({
-      decimals: tokenList.dai.decimals(),
       active: true,
       frozen: false,
       paused: false,
-      collateralFactor: 75_00,
       liquidationBonus: 100_00,
       liquidityPremium: 0,
-      liquidationProtocolFee: 0,
+      liquidationFee: 0,
       borrowable: true,
       collateral: true
     });
+    daiDynConfig = DataTypes.DynamicReserveConfig({collateralFactor: 75_00});
     usdxConfig = DataTypes.ReserveConfig({
-      decimals: tokenList.usdx.decimals(),
       active: true,
       frozen: false,
       paused: false,
-      collateralFactor: 75_00,
       liquidationBonus: 100_00,
       liquidityPremium: 10_00,
-      liquidationProtocolFee: 0,
+      liquidationFee: 0,
       borrowable: true,
       collateral: true
     });
+    usdxDynConfig = DataTypes.DynamicReserveConfig({collateralFactor: 75_00});
     wethConfig = DataTypes.ReserveConfig({
-      decimals: tokenList.weth.decimals(),
       active: true,
       frozen: false,
       paused: false,
-      collateralFactor: 79_00,
       liquidationBonus: 100_00,
       liquidityPremium: 20_00,
-      liquidationProtocolFee: 0,
+      liquidationFee: 0,
       borrowable: true,
       collateral: true
     });
+    wethDynConfig = DataTypes.DynamicReserveConfig({collateralFactor: 79_00});
     wbtcConfig = DataTypes.ReserveConfig({
-      decimals: tokenList.wbtc.decimals(),
       active: true,
       frozen: false,
       paused: false,
-      collateralFactor: 77_00,
       liquidationBonus: 100_00,
       liquidityPremium: 50_00,
-      liquidationProtocolFee: 0,
+      liquidationFee: 0,
       borrowable: true,
       collateral: true
     });
+    wbtcDynConfig = DataTypes.DynamicReserveConfig({collateralFactor: 77_00});
 
-    spokeInfo[spoke3].dai.reserveId = spoke3.addReserve(daiAssetId, daiConfig);
+    spokeInfo[spoke3].dai.reserveId = spoke3.addReserve(
+      daiAssetId,
+      address(hub),
+      daiConfig,
+      daiDynConfig
+    );
     spokeInfo[spoke3].dai.liquidityPremium = daiConfig.liquidityPremium;
-    spokeInfo[spoke3].usdx.reserveId = spoke3.addReserve(usdxAssetId, usdxConfig);
+    spokeInfo[spoke3].usdx.reserveId = spoke3.addReserve(
+      usdxAssetId,
+      address(hub),
+      usdxConfig,
+      usdxDynConfig
+    );
     spokeInfo[spoke3].usdx.liquidityPremium = usdxConfig.liquidityPremium;
-    spokeInfo[spoke3].weth.reserveId = spoke3.addReserve(wethAssetId, wethConfig);
+    spokeInfo[spoke3].weth.reserveId = spoke3.addReserve(
+      wethAssetId,
+      address(hub),
+      wethConfig,
+      wethDynConfig
+    );
     spokeInfo[spoke3].weth.liquidityPremium = wethConfig.liquidityPremium;
-    spokeInfo[spoke3].wbtc.reserveId = spoke3.addReserve(wbtcAssetId, wbtcConfig);
+    spokeInfo[spoke3].wbtc.reserveId = spoke3.addReserve(
+      wbtcAssetId,
+      address(hub),
+      wbtcConfig,
+      wbtcDynConfig
+    );
     spokeInfo[spoke3].wbtc.liquidityPremium = wbtcConfig.liquidityPremium;
 
-    hub.addSpoke(daiAssetId, spokeConfig, address(spoke3));
-    hub.addSpoke(usdxAssetId, spokeConfig, address(spoke3));
-    hub.addSpoke(wethAssetId, spokeConfig, address(spoke3));
-    hub.addSpoke(wbtcAssetId, spokeConfig, address(spoke3));
+    oracle3.setReservePrice(spokeInfo[spoke3].dai.reserveId, 1e8);
+    oracle3.setReservePrice(spokeInfo[spoke3].usdx.reserveId, 1e8);
+    oracle3.setReservePrice(spokeInfo[spoke3].weth.reserveId, 2000e8);
+    oracle3.setReservePrice(spokeInfo[spoke3].wbtc.reserveId, 50_000e8);
+
+    hub.addSpoke(daiAssetId, address(spoke3), spokeConfig);
+    hub.addSpoke(usdxAssetId, address(spoke3), spokeConfig);
+    hub.addSpoke(wethAssetId, address(spoke3), spokeConfig);
+    hub.addSpoke(wbtcAssetId, address(spoke3), spokeConfig);
 
     // Spoke 2 to have an extra dai reserve
     hub.addAsset(
-      DataTypes.AssetConfig({
-        feeReceiver: address(0),
-        active: true,
-        frozen: false,
-        paused: false,
-        decimals: tokenList.dai.decimals(),
-        liquidityFee: 0,
-        irStrategy: irStrategy
-      }),
-      address(tokenList.dai)
+      address(tokenList.dai),
+      tokenList.dai.decimals(),
+      address(treasurySpoke),
+      address(irStrategy)
     );
-    oracle.setAssetPrice(dai2AssetId, 1e8);
-    hub.updateAssetFees(dai2AssetId, address(treasurySpoke), 5_00);
+    hub.addSpoke(hub.getAssetCount() - 1, address(treasurySpoke), spokeConfig);
+    vm.stopPrank();
+    vm.prank(address(hub));
+    irStrategy.setInterestRateData(
+      dai2AssetId,
+      abi.encode(
+        IAssetInterestRateStrategy.InterestRateData({
+          optimalUsageRatio: 90_00, // 90.00%
+          baseVariableBorrowRate: 5_00, // 5.00%
+          variableRateSlope1: 5_00, // 5.00%
+          variableRateSlope2: 5_00 // 5.00%
+        })
+      )
+    );
+    vm.startPrank(ADMIN);
+    hub.updateAssetConfig(
+      hub.getAssetCount() - 1,
+      DataTypes.AssetConfig({
+        active: true,
+        paused: false,
+        frozen: false,
+        liquidityFee: 5_00,
+        feeReceiver: address(treasurySpoke),
+        irStrategy: address(irStrategy)
+      })
+    );
 
     daiConfig = DataTypes.ReserveConfig({
-      decimals: tokenList.dai.decimals(),
       active: true,
       frozen: false,
       paused: false,
-      collateralFactor: 70_00,
       liquidationBonus: 100_00,
       liquidityPremium: 100_00,
-      liquidationProtocolFee: 0,
+      liquidationFee: 0,
       borrowable: true,
       collateral: true
     });
-    spokeInfo[spoke2].dai2.reserveId = spoke2.addReserve(dai2AssetId, daiConfig);
-    spokeInfo[spoke2].dai2.liquidityPremium = daiConfig.liquidityPremium;
-    hub.addSpoke(dai2AssetId, spokeConfig, address(spoke2));
-
-    irStrategy.setInterestRateParams(
-      wethAssetId,
-      IDefaultInterestRateStrategy.InterestRateData({
-        optimalUsageRatio: 90_00, // 90.00%
-        baseVariableBorrowRate: 5_00, // 5.00%
-        variableRateSlope1: 5_00, // 5.00%
-        variableRateSlope2: 5_00 // 5.00%
-      })
-    );
-    irStrategy.setInterestRateParams(
-      usdxAssetId,
-      IDefaultInterestRateStrategy.InterestRateData({
-        optimalUsageRatio: 90_00, // 90.00%
-        baseVariableBorrowRate: 5_00, // 5.00%
-        variableRateSlope1: 5_00, // 5.00%
-        variableRateSlope2: 5_00 // 5.00%
-      })
-    );
-    irStrategy.setInterestRateParams(
-      wbtcAssetId,
-      IDefaultInterestRateStrategy.InterestRateData({
-        optimalUsageRatio: 90_00, // 90.00%
-        baseVariableBorrowRate: 5_00, // 5.00%
-        variableRateSlope1: 5_00, // 5.00%
-        variableRateSlope2: 5_00 // 5.00%
-      })
-    );
-    irStrategy.setInterestRateParams(
-      daiAssetId,
-      IDefaultInterestRateStrategy.InterestRateData({
-        optimalUsageRatio: 90_00, // 90.00%
-        baseVariableBorrowRate: 5_00, // 5.00%
-        variableRateSlope1: 5_00, // 5.00%
-        variableRateSlope2: 5_00 // 5.00%
-      })
-    );
-    irStrategy.setInterestRateParams(
+    daiDynConfig = DataTypes.DynamicReserveConfig({collateralFactor: 70_00});
+    spokeInfo[spoke2].dai2.reserveId = spoke2.addReserve(
       dai2AssetId,
-      IDefaultInterestRateStrategy.InterestRateData({
-        optimalUsageRatio: 90_00, // 90.00%
-        baseVariableBorrowRate: 5_00, // 5.00%
-        variableRateSlope1: 5_00, // 5.00%
-        variableRateSlope2: 5_00 // 5.00%
-      })
+      address(hub),
+      daiConfig,
+      daiDynConfig
     );
-    irStrategy.setInterestRateParams(
-      usdyAssetId,
-      IDefaultInterestRateStrategy.InterestRateData({
-        optimalUsageRatio: 90_00, // 90.00%
-        baseVariableBorrowRate: 5_00, // 5.00%
-        variableRateSlope1: 5_00, // 5.00%
-        variableRateSlope2: 5_00 // 5.00%
-      })
-    );
+    spokeInfo[spoke2].dai2.liquidityPremium = daiConfig.liquidityPremium;
+    oracle2.setReservePrice(spokeInfo[spoke2].dai2.reserveId, 1e8);
+    hub.addSpoke(dai2AssetId, address(spoke2), spokeConfig);
+
     vm.stopPrank();
+  }
+
+  /* @dev Configures Hub 2 with the following assetIds:
+   * 0: WETH
+   * 1: USDX
+   * 2: DAI
+   * 3: WBTC
+   */
+  function hub2Fixture() internal returns (ILiquidityHub, AssetInterestRateStrategy) {
+    vm.startPrank(ADMIN);
+
+    IAccessManager accessManager2 = new AccessManager(ADMIN);
+    ILiquidityHub hub2 = new LiquidityHub(address(accessManager2));
+    AssetInterestRateStrategy hub2IrStrategy = new AssetInterestRateStrategy(address(hub2));
+
+    // Add assets to the second hub
+    // Add WETH
+    hub2.addAsset(
+      address(tokenList.weth),
+      tokenList.weth.decimals(),
+      address(treasurySpoke),
+      address(hub2IrStrategy)
+    );
+
+    // Add USDX
+    hub2.addAsset(
+      address(tokenList.usdx),
+      tokenList.usdx.decimals(),
+      address(treasurySpoke),
+      address(hub2IrStrategy)
+    );
+
+    // Add DAI
+    hub2.addAsset(
+      address(tokenList.dai),
+      tokenList.dai.decimals(),
+      address(treasurySpoke),
+      address(hub2IrStrategy)
+    );
+
+    // Add WBTC
+    hub2.addAsset(
+      address(tokenList.wbtc),
+      tokenList.wbtc.decimals(),
+      address(treasurySpoke),
+      address(hub2IrStrategy)
+    );
+
+    // Configure IR Strategy for hub 2
+    bytes memory encodedIrData = abi.encode(
+      IAssetInterestRateStrategy.InterestRateData({
+        optimalUsageRatio: 90_00, // 90.00%
+        baseVariableBorrowRate: 5_00, // 5.00%
+        variableRateSlope1: 5_00, // 5.00%
+        variableRateSlope2: 5_00 // 5.00%
+      })
+    );
+    vm.startPrank(address(hub2));
+    hub2IrStrategy.setInterestRateData(wethAssetId, encodedIrData);
+    hub2IrStrategy.setInterestRateData(usdxAssetId, encodedIrData);
+    hub2IrStrategy.setInterestRateData(daiAssetId, encodedIrData);
+    hub2IrStrategy.setInterestRateData(wbtcAssetId, encodedIrData);
+    vm.stopPrank();
+
+    setUpRoles(hub2, spoke1, accessManager2);
+
+    return (hub2, hub2IrStrategy);
+  }
+
+  /* @dev Configures Hub 3 with the following assetIds:
+   * 0: DAI
+   * 1: USDX
+   * 2: WBTC
+   * 3: WETH
+   */
+  function hub3Fixture() internal returns (ILiquidityHub, AssetInterestRateStrategy) {
+    vm.startPrank(ADMIN);
+
+    IAccessManager accessManager3 = new AccessManager(ADMIN);
+    ILiquidityHub hub3 = new LiquidityHub(address(accessManager3));
+    AssetInterestRateStrategy hub3IrStrategy = new AssetInterestRateStrategy(address(hub3));
+
+    // Add DAI
+    hub3.addAsset(
+      address(tokenList.dai),
+      tokenList.dai.decimals(),
+      address(treasurySpoke),
+      address(hub3IrStrategy)
+    );
+    uint256 hub3DaiAssetId = 0;
+
+    // Add USDX
+    hub3.addAsset(
+      address(tokenList.usdx),
+      tokenList.usdx.decimals(),
+      address(treasurySpoke),
+      address(hub3IrStrategy)
+    );
+    uint256 hub3UsdxAssetId = 1;
+
+    // Add WBTC
+    hub3.addAsset(
+      address(tokenList.wbtc),
+      tokenList.wbtc.decimals(),
+      address(treasurySpoke),
+      address(hub3IrStrategy)
+    );
+    uint256 hub3WbtcAssetId = 2;
+
+    // Add WETH
+    hub3.addAsset(
+      address(tokenList.weth),
+      tokenList.weth.decimals(),
+      address(treasurySpoke),
+      address(hub3IrStrategy)
+    );
+    uint256 hub3WethAssetId = 3;
+    vm.stopPrank();
+
+    // Configure IR Strategy for hub 3
+    bytes memory encodedIrData = abi.encode(
+      IAssetInterestRateStrategy.InterestRateData({
+        optimalUsageRatio: 90_00, // 90.00%
+        baseVariableBorrowRate: 5_00, // 5.00%
+        variableRateSlope1: 5_00, // 5.00%
+        variableRateSlope2: 5_00 // 5.00%
+      })
+    );
+    vm.startPrank(address(hub3));
+    hub3IrStrategy.setInterestRateData(hub3WethAssetId, encodedIrData);
+    hub3IrStrategy.setInterestRateData(hub3UsdxAssetId, encodedIrData);
+    hub3IrStrategy.setInterestRateData(hub3DaiAssetId, encodedIrData);
+    hub3IrStrategy.setInterestRateData(hub3WbtcAssetId, encodedIrData);
+    vm.stopPrank();
+
+    setUpRoles(hub3, spoke1, accessManager3);
+
+    return (hub3, hub3IrStrategy);
   }
 
   function updateAssetActive(
@@ -658,6 +1006,18 @@ abstract contract Base is Test {
   ) internal {
     DataTypes.AssetConfig memory assetConfig = liquidityHub.getAsset(assetId).config;
     assetConfig.frozen = newFrozenFlag;
+
+    vm.prank(HUB_ADMIN);
+    liquidityHub.updateAssetConfig(assetId, assetConfig);
+  }
+
+  function updateAssetFeeReceiver(
+    ILiquidityHub liquidityHub,
+    uint256 assetId,
+    address newFeeReceiver
+  ) internal {
+    DataTypes.AssetConfig memory assetConfig = liquidityHub.getAsset(assetId).config;
+    assetConfig.feeReceiver = newFeeReceiver;
 
     vm.prank(HUB_ADMIN);
     liquidityHub.updateAssetConfig(assetId, assetConfig);
@@ -701,18 +1061,33 @@ abstract contract Base is Test {
     assertEq(spoke.getReserve(reserveId).config.liquidationBonus, newLiquidationBonus);
   }
 
-  function updateLiquidationProtocolFee(
+  function updateLiquidationFee(
     ISpoke spoke,
     uint256 reserveId,
-    uint256 newLiquidationProtocolFee
+    uint256 newLiquidationFee
   ) internal {
     DataTypes.ReserveConfig memory config = spoke.getReserve(reserveId).config;
-    config.liquidationProtocolFee = newLiquidationProtocolFee;
+    config.liquidationFee = newLiquidationFee;
 
     vm.prank(SPOKE_ADMIN);
     spoke.updateReserveConfig(reserveId, config);
 
-    assertEq(spoke.getReserve(reserveId).config.liquidationProtocolFee, newLiquidationProtocolFee);
+    assertEq(spoke.getReserve(reserveId).config.liquidationFee, newLiquidationFee);
+  }
+
+  function updateCollateralFactor(
+    ISpoke spoke,
+    function(ISpoke) pure returns (uint256) reserveIdFn,
+    uint256 newCollateralFactor
+  ) internal {
+    uint256 reserveId = reserveIdFn(spoke);
+    DataTypes.DynamicReserveConfig memory config = spoke.getDynamicReserveConfig(reserveId);
+    config.collateralFactor = newCollateralFactor.toUint16();
+
+    vm.prank(SPOKE_ADMIN);
+    spoke.updateDynamicReserveConfig(reserveId, config);
+
+    assertEq(spoke.getDynamicReserveConfig(reserveId).collateralFactor, newCollateralFactor);
   }
 
   function setUsingAsCollateral(
@@ -730,14 +1105,16 @@ abstract contract Base is Test {
     uint256 reserveId,
     uint256 newCollateralFactor
   ) internal {
-    DataTypes.Reserve memory reserveData = spoke.getReserve(reserveId);
-    reserveData.config.collateralFactor = newCollateralFactor;
-    spoke.updateReserveConfig(reserveId, reserveData.config);
+    DataTypes.DynamicReserveConfig memory config = spoke.getDynamicReserveConfig(reserveId);
+    config.collateralFactor = newCollateralFactor.toUint16();
+    vm.prank(SPOKE_ADMIN);
+    spoke.updateDynamicReserveConfig(reserveId, config);
   }
 
   function updateCollateralFlag(ISpoke spoke, uint256 reserveId, bool newCollateralFlag) internal {
     DataTypes.Reserve memory reserveData = spoke.getReserve(reserveId);
     reserveData.config.collateral = newCollateralFlag;
+    vm.prank(SPOKE_ADMIN);
     spoke.updateReserveConfig(reserveId, reserveData.config);
   }
 
@@ -748,6 +1125,7 @@ abstract contract Base is Test {
   ) internal {
     DataTypes.Reserve memory reserveData = spoke.getReserve(reserveId);
     reserveData.config.borrowable = newBorrowable;
+    vm.prank(SPOKE_ADMIN);
     spoke.updateReserveConfig(reserveId, reserveData.config);
   }
 
@@ -758,6 +1136,7 @@ abstract contract Base is Test {
   ) internal {
     DataTypes.ReserveConfig memory reserveConfig = spoke.getReserve(reserveId).config;
     reserveConfig.liquidityPremium = newLiquidityPremium;
+    vm.prank(SPOKE_ADMIN);
     spoke.updateReserveConfig(reserveId, reserveConfig);
   }
 
@@ -766,14 +1145,16 @@ abstract contract Base is Test {
     uint256 assetId,
     uint256 liquidityFee
   ) internal {
-    address feeReceiver = liquidityHub.getAssetConfig(assetId).feeReceiver;
+    DataTypes.AssetConfig memory config = liquidityHub.getAssetConfig(assetId);
+    config.liquidityFee = liquidityFee;
     vm.prank(HUB_ADMIN);
-    hub.updateAssetFees(assetId, feeReceiver, liquidityFee);
+    hub.updateAssetConfig(assetId, config);
   }
 
   function updateCloseFactor(ISpoke spoke, uint256 newCloseFactor) internal {
     DataTypes.LiquidationConfig memory liqConfig = spoke.getLiquidationConfig();
     liqConfig.closeFactor = newCloseFactor;
+    vm.prank(SPOKE_ADMIN);
     spoke.updateLiquidationConfig(liqConfig);
 
     assertEq(spoke.getLiquidationConfig().closeFactor, newCloseFactor);
@@ -827,6 +1208,7 @@ abstract contract Base is Test {
   ) internal {
     DataTypes.SpokeConfig memory spokeConfig = liquidityHub.getSpokeConfig(assetId, spoke);
     spokeConfig.drawCap = newDrawCap;
+    vm.prank(HUB_ADMIN);
     liquidityHub.updateSpokeConfig(assetId, spoke, spokeConfig);
   }
 
@@ -845,20 +1227,15 @@ abstract contract Base is Test {
     return spoke.getReserve(reserveId);
   }
 
-  function getAssetInfo(uint256 assetId) internal pure returns (DataTypes.Asset memory) {
-    revert('implement me');
+  function getSpokeInfo(
+    uint256 assetId,
+    address spoke
+  ) internal view returns (DataTypes.SpokeData memory) {
+    return hub.getSpoke(assetId, spoke);
+  }
 
-    // DataTypes.Asset memory asset;
-    // asset.id = assetId;
-    // asset.suppliedShares = hub.getAssetSuppliedShares(assetId);
-    // asset.availableLiquidity = hub.getAvailableLiquidity(assetId);
-    // (asset.baseDebt, asset.outstandingPremium) = hub.getAssetDebt(assetId);
-    // asset.baseBorrowIndex = hub.getAsset(assetId).baseBorrowIndex;
-    // asset.baseBorrowRate = hub.getBaseInterestRate(assetId);
-    // asset.riskPremium = hub.getAssetRiskPremium(assetId);
-    // asset.lastUpdateTimestamp = hub.getAsset(assetId).lastUpdateTimestamp;
-    // asset.config = hub.getAssetConfig(assetId);
-    // return asset;
+  function getAssetInfo(uint256 assetId) internal view returns (DataTypes.Asset memory) {
+    return hub.getAsset(assetId);
   }
 
   function getAssetByReserveId(
@@ -866,7 +1243,7 @@ abstract contract Base is Test {
     uint256 reserveId
   ) internal view returns (uint256, IERC20) {
     DataTypes.Reserve memory reserve = spoke.getReserve(reserveId);
-    return (reserve.assetId, IERC20(reserve.asset));
+    return (reserve.assetId, IERC20(reserve.underlying));
   }
 
   function getWithdrawalLimit(
@@ -883,9 +1260,12 @@ abstract contract Base is Test {
     return price.percentMul(percent);
   }
 
-  function setNewPrice(uint256 assetId, uint256 percent) public {
-    uint256 newPrice = calcNewPrice(oracle.getAssetPrice(assetId), percent);
-    oracle.setAssetPrice(assetId, newPrice);
+  function setNewPrice(ISpoke spoke, uint256 reserveId, uint256 percent) public {
+    MockPriceOracle oracle = MockPriceOracle(address(spoke.oracle()));
+    uint256 currentPrice = oracle.getReservePrice(reserveId);
+    uint256 newPrice = calcNewPrice(currentPrice, percent);
+    vm.prank(SPOKE_ADMIN);
+    oracle.setReservePrice(reserveId, newPrice);
   }
 
   /// @dev Helper function to calculate asset amount corresponding to single drawn share
@@ -944,29 +1324,32 @@ abstract contract Base is Test {
 
   /// returns the USD value of the reserve normalized by it's decimals, in terms of WAD
   function _getValueInBaseCurrency(
-    uint256 assetId,
+    ISpoke spoke,
+    uint256 reserveId,
     uint256 amount
   ) internal view returns (uint256) {
+    IPriceOracle oracle = spoke.oracle();
+    uint256 assetId = spoke.getReserve(reserveId).assetId;
     return
-      (amount * oracle.getAssetPrice(assetId).wadify()) /
-      (10 ** hub.getAssetConfig(assetId).decimals);
+      (amount * oracle.getReservePrice(reserveId).wadify()) /
+      (10 ** hub.getAsset(assetId).decimals);
   }
 
-  /// @dev Helper function to calculate the equivalent asset amount for a given asset
-  /// @dev If 1 wei of output asset is greater than the value of input, function will return 1
-  function _calcEquivalentAssetAmount(
-    uint256 inputAssetId,
-    uint256 inputAssetAmount,
-    uint256 outputAssetId
+  /// @notice Convert 1 asset amount to equivalent amount in another asset.
+  /// @notice Will contain precision loss due to conversion split into two steps.
+  /// @return Converted amount of toAsset.
+  function _convertAssetAmount(
+    ISpoke spoke,
+    uint256 reserveId,
+    uint256 amount,
+    uint256 toReserveId
   ) internal view returns (uint256) {
-    uint256 valueOfInputAsset = _getValueInBaseCurrency(inputAssetId, inputAssetAmount);
-    uint256 valueOfWeiOutput = _getValueInBaseCurrency(outputAssetId, 1);
-    assertNotEq(valueOfInputAsset, 0, 'input asset value is 0');
-    assertNotEq(valueOfWeiOutput, 0, 'output asset wei value is 0');
-    if (valueOfWeiOutput > valueOfInputAsset) {
-      return 1;
-    }
-    return valueOfInputAsset / valueOfWeiOutput;
+    return
+      _convertBaseCurrencyToAmount(
+        spoke,
+        toReserveId,
+        _convertAmountToBaseCurrency(spoke, reserveId, amount)
+      );
   }
 
   /// @dev Helper function to calculate the amount of base and premium debt to restore
@@ -1042,15 +1425,220 @@ abstract contract Base is Test {
     );
   }
 
+  function _assertUserDebt(
+    ISpoke spoke,
+    uint256 reserveId,
+    address user,
+    uint256 expectedBaseDebt,
+    uint256 expectedPremiumDebt,
+    string memory label
+  ) internal view {
+    (uint256 actualBaseDebt, uint256 actualPremiumDebt) = spoke.getUserDebt(reserveId, user);
+    assertApproxEqAbs(actualBaseDebt, expectedBaseDebt, 1, string.concat('user base debt ', label));
+    assertApproxEqAbs(
+      actualPremiumDebt,
+      expectedPremiumDebt,
+      2,
+      string.concat('user premium debt ', label)
+    );
+    assertApproxEqAbs(
+      spoke.getUserTotalDebt(reserveId, user),
+      expectedBaseDebt + expectedPremiumDebt,
+      2,
+      string.concat('user total debt ', label)
+    );
+  }
+
+  function _assertReserveDebt(
+    ISpoke spoke,
+    uint256 reserveId,
+    uint256 expectedBaseDebt,
+    uint256 expectedPremiumDebt,
+    string memory label
+  ) internal view {
+    (uint256 actualBaseDebt, uint256 actualPremiumDebt) = spoke.getReserveDebt(reserveId);
+    assertApproxEqAbs(
+      actualBaseDebt,
+      expectedBaseDebt,
+      1,
+      string.concat('reserve base debt ', label)
+    );
+    assertApproxEqAbs(
+      actualPremiumDebt,
+      expectedPremiumDebt,
+      2,
+      string.concat('reserve premium debt ', label)
+    );
+    assertApproxEqAbs(
+      spoke.getReserveTotalDebt(reserveId),
+      expectedBaseDebt + expectedPremiumDebt,
+      2,
+      string.concat('reserve total debt ', label)
+    );
+  }
+
+  function _assertSpokeDebt(
+    ISpoke spoke,
+    uint256 reserveId,
+    uint256 expectedBaseDebt,
+    uint256 expectedPremiumDebt,
+    string memory label
+  ) internal view {
+    uint256 assetId = spoke.getReserve(reserveId).assetId;
+    (uint256 actualBaseDebt, uint256 actualPremiumDebt) = hub.getSpokeDebt(assetId, address(spoke));
+    assertApproxEqAbs(
+      actualBaseDebt,
+      expectedBaseDebt,
+      1,
+      string.concat('spoke base debt ', label)
+    );
+    assertApproxEqAbs(
+      actualPremiumDebt,
+      expectedPremiumDebt,
+      2,
+      string.concat('spoke premium debt ', label)
+    );
+    assertApproxEqAbs(
+      hub.getSpokeTotalDebt(assetId, address(spoke)),
+      expectedBaseDebt + expectedPremiumDebt,
+      2,
+      string.concat('spoke total debt ', label)
+    );
+  }
+
+  function _assertAssetDebt(
+    ISpoke spoke,
+    uint256 reserveId,
+    uint256 expectedBaseDebt,
+    uint256 expectedPremiumDebt,
+    string memory label
+  ) internal view {
+    uint256 assetId = spoke.getReserve(reserveId).assetId;
+    (uint256 actualBaseDebt, uint256 actualPremiumDebt) = hub.getAssetDebt(assetId);
+    assertApproxEqAbs(
+      actualBaseDebt,
+      expectedBaseDebt,
+      1,
+      string.concat('asset base debt ', label)
+    );
+    assertApproxEqAbs(
+      actualPremiumDebt,
+      expectedPremiumDebt,
+      2,
+      string.concat('asset premium debt ', label)
+    );
+    assertApproxEqAbs(
+      hub.getAssetTotalDebt(assetId),
+      expectedBaseDebt + expectedPremiumDebt,
+      2,
+      string.concat('asset total debt ', label)
+    );
+  }
+
+  function _assertSingleUserProtocolDebt(
+    ISpoke spoke,
+    uint256 reserveId,
+    address user,
+    uint256 expectedBaseDebt,
+    uint256 expectedPremiumDebt,
+    string memory label
+  ) internal view {
+    _assertUserDebt(spoke, reserveId, user, expectedBaseDebt, expectedPremiumDebt, label);
+
+    _assertReserveDebt(spoke, reserveId, expectedBaseDebt, expectedPremiumDebt, label);
+
+    _assertSpokeDebt(spoke, reserveId, expectedBaseDebt, expectedPremiumDebt, label);
+
+    _assertAssetDebt(spoke, reserveId, expectedBaseDebt, expectedPremiumDebt, label);
+  }
+
+  function _assertUserSupply(
+    ISpoke spoke,
+    uint256 reserveId,
+    address user,
+    uint256 expectedSuppliedAmount,
+    string memory label
+  ) internal view {
+    assertApproxEqAbs(
+      spoke.getUserSuppliedAmount(reserveId, user),
+      expectedSuppliedAmount,
+      2,
+      string.concat('user supplied amount ', label)
+    );
+  }
+
+  function _assertReserveSupply(
+    ISpoke spoke,
+    uint256 reserveId,
+    uint256 expectedSuppliedAmount,
+    string memory label
+  ) internal view {
+    assertApproxEqAbs(
+      spoke.getReserveSuppliedAmount(reserveId),
+      expectedSuppliedAmount,
+      2,
+      string.concat('reserve supplied amount ', label)
+    );
+  }
+
+  function _assertSpokeSupply(
+    ISpoke spoke,
+    uint256 reserveId,
+    uint256 expectedSuppliedAmount,
+    string memory label
+  ) internal view {
+    uint256 assetId = spoke.getReserve(reserveId).assetId;
+    assertApproxEqAbs(
+      hub.getSpokeSuppliedAmount(assetId, address(spoke)),
+      expectedSuppliedAmount,
+      2,
+      string.concat('spoke supplied amount ', label)
+    );
+  }
+
+  function _assertAssetSupply(
+    ISpoke spoke,
+    uint256 reserveId,
+    uint256 expectedSuppliedAmount,
+    string memory label
+  ) internal view {
+    uint256 assetId = spoke.getReserve(reserveId).assetId;
+    assertApproxEqAbs(
+      hub.getAssetSuppliedAmount(assetId),
+      expectedSuppliedAmount,
+      2,
+      string.concat('asset supplied amount ', label)
+    );
+  }
+
+  function _assertSingleUserProtocolSupply(
+    ISpoke spoke,
+    uint256 reserveId,
+    address user,
+    uint256 expectedSuppliedAmount,
+    string memory label
+  ) internal view {
+    _assertUserSupply(spoke, reserveId, user, expectedSuppliedAmount, label);
+
+    _assertReserveSupply(spoke, reserveId, expectedSuppliedAmount, label);
+
+    _assertSpokeSupply(spoke, reserveId, expectedSuppliedAmount, label);
+
+    _assertAssetSupply(spoke, reserveId, expectedSuppliedAmount, label);
+  }
+
   function _convertAmountToBaseCurrency(
-    uint256 assetId,
+    ISpoke spoke,
+    uint256 reserveId,
     uint256 amount
   ) internal view returns (uint256) {
+    IPriceOracle oracle = spoke.oracle();
+    uint256 assetId = spoke.getReserve(reserveId).assetId;
     return
       _convertAmountToBaseCurrency(
         amount,
-        oracle.getAssetPrice(assetId),
-        10 ** hub.getAsset(assetId).config.decimals
+        oracle.getReservePrice(reserveId),
+        10 ** hub.getAsset(assetId).decimals
       );
   }
 
@@ -1063,15 +1651,27 @@ abstract contract Base is Test {
   }
 
   function _convertBaseCurrencyToAmount(
-    uint256 assetId,
+    ISpoke spoke,
+    uint256 reserveId,
     uint256 baseCurrencyAmount
   ) internal view returns (uint256) {
+    uint256 assetId = spoke.getReserve(reserveId).assetId;
+    IPriceOracle oracle = spoke.oracle();
     return
       _convertBaseCurrencyToAmount(
         baseCurrencyAmount,
-        oracle.getAssetPrice(assetId),
-        10 ** hub.getAsset(assetId).config.decimals
+        oracle.getReservePrice(reserveId),
+        10 ** hub.getAsset(assetId).decimals
       );
+  }
+
+  /// @dev Convert base currency to asset amount
+  function _convertBaseCurrencyToAmount(
+    uint256 baseCurrencyAmount,
+    uint256 assetPrice,
+    uint256 assetUnit
+  ) internal pure returns (uint256) {
+    return ((baseCurrencyAmount * assetUnit) / assetPrice).dewadifyDown();
   }
 
   /**
@@ -1089,8 +1689,7 @@ abstract contract Base is Test {
       user,
       desiredHf
     );
-    uint256 assetId = spoke.getReserve(reserveId).assetId;
-    return _convertBaseCurrencyToAmount(assetId, requiredDebtAmountInBase) + 1;
+    return _convertBaseCurrencyToAmount(spoke, reserveId, requiredDebtAmountInBase) + 1;
   }
 
   /**
@@ -1110,7 +1709,7 @@ abstract contract Base is Test {
     ) = spoke.getUserAccountData(user);
 
     requiredDebtInBaseCurrency =
-      totalCollateralBase.percentMul(currentAvgCollateralFactor.dewadify() + 1).wadDivUp(
+      totalCollateralBase.percentMul(currentAvgCollateralFactor.dewadifyDown() + 1).wadDivUp(
         desiredHf
       ) -
       totalDebtBase;
@@ -1135,15 +1734,6 @@ abstract contract Base is Test {
     return (finalHf, requiredDebtAmount);
   }
 
-  /// @dev Convert base currency to asset amount
-  function _convertBaseCurrencyToAmount(
-    uint256 baseCurrencyAmount,
-    uint256 assetPrice,
-    uint256 assetUnit
-  ) internal pure returns (uint256) {
-    return ((baseCurrencyAmount * assetUnit) / assetPrice).dewadify();
-  }
-
   function _approxRelFromBps(uint256 bps) internal pure returns (uint256) {
     return (bps * 1e18) / 100_00;
   }
@@ -1162,14 +1752,16 @@ abstract contract Base is Test {
     address user,
     uint256 reserveId,
     uint256 debtAmount
-  ) internal returns (uint256, uint256) {
+  ) internal {
+    MockPriceOracle oracle = MockPriceOracle(address(spoke.oracle()));
     uint256 assetId = spoke.getReserve(reserveId).assetId;
     // set price to 0 to circumvent borrow validation
-    uint256 initialPrice = oracle.getAssetPrice(assetId);
-    oracle.setAssetPrice(assetId, 0);
+    uint256 initialPrice = oracle.getReservePrice(reserveId);
+    oracle.setReservePrice(reserveId, 0);
     vm.prank(user);
     spoke.borrow(reserveId, debtAmount, user);
-    oracle.setAssetPrice(assetId, initialPrice);
+    vm.prank(SPOKE_ADMIN);
+    oracle.setReservePrice(reserveId, initialPrice);
   }
 
   /// @dev Calculate expected debt index based on input params
@@ -1190,6 +1782,24 @@ abstract contract Base is Test {
   ) internal view returns (uint256 newDebtIndex, uint256 newBaseDebt) {
     newDebtIndex = calculateExpectedDebtIndex(initialDebtIndex, borrowRate, startTime);
     newBaseDebt = initialDrawnShares.rayMulUp(newDebtIndex);
+  }
+
+  /// @dev Calculate expected base debt based on specified borrow rate
+  function _calculateExpectedBaseDebt(
+    uint256 initialDebt,
+    uint256 borrowRate,
+    uint40 startTime
+  ) internal view returns (uint256) {
+    return MathUtils.calculateLinearInterest(borrowRate, startTime).rayMulUp(initialDebt);
+  }
+
+  /// @dev Calculate expected premium debt based on change in base debt and user rp
+  function _calculateExpectedPremiumDebt(
+    uint256 initialBaseDebt,
+    uint256 currentBaseDebt,
+    uint256 userRiskPremium
+  ) internal pure returns (uint256) {
+    return (currentBaseDebt - initialBaseDebt).percentMulUp(userRiskPremium);
   }
 
   /// @dev Helper function to get asset base debt
@@ -1230,147 +1840,38 @@ abstract contract Base is Test {
   }
 
   function _getLiquidityPremium(ISpoke spoke, uint256 reserveId) internal view returns (uint256) {
-    return spoke.getReserve(reserveId).config.liquidityPremium;
+    return spoke.getReserveConfig(reserveId).liquidityPremium;
   }
 
   function _getCollateralFactor(ISpoke spoke, uint256 reserveId) internal view returns (uint256) {
-    return spoke.getReserve(reserveId).config.collateralFactor;
+    return spoke.getDynamicReserveConfig(reserveId).collateralFactor;
   }
 
-  function _assertUserDebt(
-    ISpoke spoke,
-    uint256 reserveId,
-    address user,
-    uint256 expectedBaseDebt,
-    uint256 expectedPremiumDebt,
-    string memory label
-  ) internal view {
-    (uint256 actualBaseDebt, uint256 actualPremiumDebt) = spoke.getUserDebt(reserveId, user);
-    assertApproxEqAbs(actualBaseDebt, expectedBaseDebt, 1, string.concat('user base debt ', label));
-    assertApproxEqAbs(
-      actualPremiumDebt,
-      expectedPremiumDebt,
-      1,
-      string.concat('user premium debt ', label)
-    );
-    assertApproxEqAbs(
-      spoke.getUserTotalDebt(reserveId, user),
-      expectedBaseDebt + expectedPremiumDebt,
-      1,
-      string.concat('user total debt ', label)
-    );
+  function _hasRole(
+    IAccessManager authority,
+    uint64 role,
+    address account
+  ) internal view returns (bool) {
+    (bool hasRole, ) = authority.hasRole(role, account);
+    return hasRole;
   }
 
-  function _assertReserveDebt(
-    ISpoke spoke,
-    uint256 reserveId,
-    uint256 expectedBaseDebt,
-    uint256 expectedPremiumDebt,
-    string memory label
-  ) internal view {
-    (uint256 actualBaseDebt, uint256 actualPremiumDebt) = spoke.getReserveDebt(reserveId);
-    assertApproxEqAbs(
-      actualBaseDebt,
-      expectedBaseDebt,
-      1,
-      string.concat('reserve base debt ', label)
-    );
-    assertApproxEqAbs(
-      actualPremiumDebt,
-      expectedPremiumDebt,
-      1,
-      string.concat('reserve premium debt ', label)
-    );
-    assertApproxEqAbs(
-      spoke.getReserveTotalDebt(reserveId),
-      expectedBaseDebt + expectedPremiumDebt,
-      1,
-      string.concat('reserve total debt ', label)
-    );
+  function _randomBps() internal returns (uint16) {
+    return vm.randomUint(0, PercentageMath.PERCENTAGE_FACTOR).toUint16();
   }
 
-  function _assertSpokeDebt(
-    ISpoke spoke,
-    uint256 reserveId,
-    uint256 expectedBaseDebt,
-    uint256 expectedPremiumDebt,
-    string memory label
-  ) internal view {
-    uint256 assetId = spoke.getReserve(reserveId).assetId;
-    (uint256 actualBaseDebt, uint256 actualPremiumDebt) = hub.getSpokeDebt(assetId, address(spoke));
-    assertApproxEqAbs(
-      actualBaseDebt,
-      expectedBaseDebt,
-      1,
-      string.concat('spoke base debt ', label)
-    );
-    assertApproxEqAbs(
-      actualPremiumDebt,
-      expectedPremiumDebt,
-      1,
-      string.concat('spoke premium debt ', label)
-    );
-    assertApproxEqAbs(
-      hub.getSpokeTotalDebt(assetId, address(spoke)),
-      expectedBaseDebt + expectedPremiumDebt,
-      1,
-      string.concat('spoke total debt ', label)
-    );
+  function assertEq(DataTypes.AssetConfig memory a, DataTypes.AssetConfig memory b) internal pure {
+    require(a.active == b.active, 'assertEq(AssetConfig): active');
+    require(a.paused == b.paused, 'assertEq(AssetConfig): paused');
+    require(a.frozen == b.frozen, 'assertEq(AssetConfig): rozen');
+    require(a.feeReceiver == b.feeReceiver, 'assertEq(AssetConfig): feeReceiver');
+    require(a.liquidityFee == b.liquidityFee, 'assertEq(AssetConfig): liquidityFee');
+    require(address(a.irStrategy) == address(b.irStrategy), 'assertEq(AssetConfig): irStrategy');
   }
 
-  function _assertAssetDebt(
-    ISpoke spoke,
-    uint256 reserveId,
-    uint256 expectedBaseDebt,
-    uint256 expectedPremiumDebt,
-    string memory label
-  ) internal view {
-    uint256 assetId = spoke.getReserve(reserveId).assetId;
-    (uint256 actualBaseDebt, uint256 actualPremiumDebt) = hub.getAssetDebt(assetId);
-    assertApproxEqAbs(
-      actualBaseDebt,
-      expectedBaseDebt,
-      1,
-      string.concat('asset base debt ', label)
-    );
-    assertApproxEqAbs(
-      actualPremiumDebt,
-      expectedPremiumDebt,
-      1,
-      string.concat('asset premium debt ', label)
-    );
-    assertApproxEqAbs(
-      hub.getAssetTotalDebt(assetId),
-      expectedBaseDebt + expectedPremiumDebt,
-      1,
-      string.concat('asset total debt ', label)
-    );
-  }
-
-  function _assertSingleUserProtocolDebt(
-    ISpoke spoke,
-    uint256 reserveId,
-    address user,
-    uint256 expectedBaseDebt,
-    uint256 expectedPremiumDebt,
-    string memory label
-  ) internal view {
-    _assertUserDebt(spoke, reserveId, user, expectedBaseDebt, expectedPremiumDebt, label);
-
-    _assertReserveDebt(spoke, reserveId, expectedBaseDebt, expectedPremiumDebt, label);
-
-    _assertSpokeDebt(spoke, reserveId, expectedBaseDebt, expectedPremiumDebt, label);
-
-    _assertAssetDebt(spoke, reserveId, expectedBaseDebt, expectedPremiumDebt, label);
-  }
-
-  /// @dev Calculate expected base debt based on specified borrow rate
-  function _calculateExpectedBaseDebt(
-    uint256 initialDebt,
-    uint256 borrowRate,
-    uint40 startTime
-  ) internal view returns (uint256) {
-    return MathUtils.calculateLinearInterest(borrowRate, startTime).rayMulUp(initialDebt);
+  function assertEq(DataTypes.SpokeConfig memory a, DataTypes.SpokeConfig memory b) internal pure {
+    require(a.supplyCap == b.supplyCap, 'assertEq(SpokeConfig): supplyCap');
+    require(a.drawCap == b.drawCap, 'assertEq(SpokeConfig): drawCap');
   }
 
   function _calculateExpectedFees(
@@ -1389,5 +1890,72 @@ abstract contract Base is Test {
   ) internal view returns (uint256 feesAmount) {
     return
       indexDelta.rayMulDown(initialDrawnShares + initialPremiumShares).percentMulDown(liquidityFee);
+  }
+
+  function _mockDecimals(address underlying, uint8 decimals) internal {
+    vm.mockCall(
+      underlying,
+      abi.encodeWithSelector(IERC20Metadata.decimals.selector),
+      abi.encode(decimals)
+    );
+  }
+
+  function _mockInterestRate(uint256 interestRateBps) internal {
+    _mockInterestRate(address(irStrategy), interestRateBps);
+  }
+
+  function _mockInterestRate(address interestRateStrategy, uint256 interestRateBps) internal {
+    vm.mockCall(
+      interestRateStrategy,
+      IBasicInterestRateStrategy.calculateInterestRate.selector,
+      abi.encode(interestRateBps.bpsToRay())
+    );
+  }
+
+  function _mockInterestRate(
+    uint256 interestRateBps,
+    uint256 assetId,
+    uint256 availableLiquidity,
+    uint256 totalDebt,
+    uint256 liquidityAdded,
+    uint256 liquidityTaken
+  ) internal {
+    _mockInterestRate(
+      address(irStrategy),
+      interestRateBps,
+      assetId,
+      availableLiquidity,
+      totalDebt,
+      liquidityAdded,
+      liquidityTaken
+    );
+  }
+
+  function _mockInterestRate(
+    address interestRateStrategy,
+    uint256 interestRateBps,
+    uint256 assetId,
+    uint256 availableLiquidity,
+    uint256 totalDebt,
+    uint256 liquidityAdded,
+    uint256 liquidityTaken
+  ) internal {
+    vm.mockCall(
+      interestRateStrategy,
+      abi.encodeCall(
+        IBasicInterestRateStrategy.calculateInterestRate,
+        (assetId, availableLiquidity, totalDebt, liquidityAdded, liquidityTaken)
+      ),
+      abi.encode(interestRateBps.bpsToRay())
+    );
+  }
+
+  function _assertEventNotEmitted(bytes32 eventSignature) internal {
+    Vm.Log[] memory entries = vm.getRecordedLogs();
+    for (uint256 i; i < entries.length; i++) {
+      assertNotEq(entries[i].topics[0], eventSignature);
+    }
+
+    vm.recordLogs();
   }
 }

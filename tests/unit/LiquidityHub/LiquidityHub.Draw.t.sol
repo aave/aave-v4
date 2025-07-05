@@ -5,7 +5,6 @@ import 'tests/unit/LiquidityHub/LiquidityHubBase.t.sol';
 
 contract LiquidityHubDrawTest is LiquidityHubBase {
   using SharesMath for uint256;
-  using WadRayMath for uint256;
 
   function test_draw_same_block() public {
     uint256 daiAmount = 100e18;
@@ -72,11 +71,11 @@ contract LiquidityHubDrawTest is LiquidityHubBase {
   }
 
   function test_draw_fuzz_amounts_same_block(uint256 assetId, uint256 daiAmount) public {
-    assetId = bound(assetId, 0, hub.assetCount() - 2); // Exclude duplicated DAI
+    assetId = bound(assetId, 0, hub.getAssetCount() - 3); // Exclude duplicated DAI and usdy
     daiAmount = bound(daiAmount, 1, MAX_SUPPLY_AMOUNT);
     uint256 drawAmount = daiAmount;
 
-    IERC20 asset = hub.assetsList(assetId);
+    IERC20 underlying = IERC20(hub.getAsset(assetId).underlying);
 
     // spoke2, bob supply dai
     Utils.add({
@@ -111,10 +110,14 @@ contract LiquidityHubDrawTest is LiquidityHubBase {
     assertEq(baseDebt, drawAmount, 'spoke baseDebt after');
     assertEq(premiumDebt, 0, 'spoke premiumDebt after');
     // token balance
-    assertEq(asset.balanceOf(alice), drawAmount + MAX_SUPPLY_AMOUNT, 'alice asset final balance');
-    assertEq(asset.balanceOf(bob), MAX_SUPPLY_AMOUNT - daiAmount, 'bob asset final balance');
-    assertEq(asset.balanceOf(address(spoke1)), 0, 'spoke1 asset final balance');
-    assertEq(asset.balanceOf(address(spoke2)), 0, 'spoke2 asset final balance');
+    assertEq(
+      underlying.balanceOf(alice),
+      drawAmount + MAX_SUPPLY_AMOUNT,
+      'alice asset final balance'
+    );
+    assertEq(underlying.balanceOf(bob), MAX_SUPPLY_AMOUNT - daiAmount, 'bob asset final balance');
+    assertEq(underlying.balanceOf(address(spoke1)), 0, 'spoke1 asset final balance');
+    assertEq(underlying.balanceOf(address(spoke2)), 0, 'spoke2 asset final balance');
   }
 
   function test_draw_revertsWith_AssetNotActive() public {
@@ -130,7 +133,7 @@ contract LiquidityHubDrawTest is LiquidityHubBase {
 
   function test_draw_fuzz_revertsWith_AssetNotActive(uint256 assetId, uint256 drawAmount) public {
     drawAmount = bound(drawAmount, 1, MAX_SUPPLY_AMOUNT);
-    assetId = bound(assetId, 0, hub.assetCount() - 1);
+    assetId = bound(assetId, 0, hub.getAssetCount() - 2); // Exclude duplicated DAI
     updateAssetActive(hub, assetId, false);
 
     assertFalse(hub.getAsset(assetId).config.active);
@@ -152,7 +155,7 @@ contract LiquidityHubDrawTest is LiquidityHubBase {
   }
 
   function test_draw_fuzz_revertsWith_AssetPaused(uint256 assetId, uint256 drawAmount) public {
-    assetId = bound(assetId, 0, hub.assetCount() - 1);
+    assetId = bound(assetId, 0, hub.getAssetCount() - 2); // Exclude duplicated DAI
     drawAmount = bound(drawAmount, 1, MAX_SUPPLY_AMOUNT);
     updateAssetPaused(hub, assetId, true);
 
@@ -175,7 +178,7 @@ contract LiquidityHubDrawTest is LiquidityHubBase {
   }
 
   function test_draw_fuzz_revertsWith_AssetFrozen(uint256 assetId, uint256 drawAmount) public {
-    assetId = bound(assetId, 0, hub.assetCount() - 1);
+    assetId = bound(assetId, 0, hub.getAssetCount() - 2); // Exclude duplicated DAI
     drawAmount = bound(drawAmount, 1, MAX_SUPPLY_AMOUNT);
     updateAssetFrozen(hub, assetId, true);
 
@@ -200,7 +203,7 @@ contract LiquidityHubDrawTest is LiquidityHubBase {
     uint256 assetId,
     uint256 drawAmount
   ) public {
-    assetId = bound(assetId, 0, hub.assetCount() - 1);
+    assetId = bound(assetId, 0, hub.getAssetCount() - 3); // Exclude duplicated DAI and usdy
     drawAmount = bound(drawAmount, 1, MAX_SUPPLY_AMOUNT);
 
     assertTrue(hub.getAvailableLiquidity(assetId) == 0);
@@ -388,7 +391,7 @@ contract LiquidityHubDrawTest is LiquidityHubBase {
     uint256 skipTime
   ) public {
     daiAmount = bound(daiAmount, 1, MAX_SUPPLY_AMOUNT);
-    rate = bound(rate, 1, MAX_BORROW_RATE).bpsToRay();
+    rate = bound(rate, 1, MAX_BORROW_RATE);
     skipTime = bound(skipTime, 1, MAX_SKIP_TIME);
 
     uint256 drawCap = daiAmount;
@@ -396,7 +399,7 @@ contract LiquidityHubDrawTest is LiquidityHubBase {
 
     updateDrawCap(hub, daiAssetId, address(spoke1), drawCap);
 
-    _mockRate(rate);
+    _mockInterestRate(rate);
     _supplyAndDrawLiquidity({
       assetId: daiAssetId,
       supplyUser: bob,

@@ -18,15 +18,22 @@ contract SpokeUpdateUserRiskPremium is SpokeBase {
       _getLiquidityPremium(spoke1, _usdxReserveId(spoke1))
     );
     // half weth price, increasing user rp since it's the less risky collateral
-    setNewPrice(wethAssetId, 50_00);
+    setNewPrice(spoke1, _wethReserveId(spoke1), 50_00);
 
     uint256 riskPremiumAfter = spoke1.getUserRiskPremium(alice);
     assertEq(riskPremiumAfter, _calculateExpectedUserRP(alice, spoke1));
 
     assertGt(riskPremiumAfter, riskPremiumBefore);
 
-    if (caller != alice) {
-      vm.expectRevert(ISpoke.Unauthorized.selector);
+    bool hasPermission = _hasRole(
+      IAccessManager(spoke1.authority()),
+      Roles.SPOKE_ADMIN_ROLE,
+      caller
+    );
+    if (caller != alice && !hasPermission && caller != ADMIN) {
+      vm.expectRevert(
+        abi.encodeWithSelector(IAccessManaged.AccessManagedUnauthorized.selector, caller)
+      );
     } else {
       vm.expectEmit(address(spoke1));
       emit ISpoke.UserRiskPremiumUpdate(alice, riskPremiumAfter);

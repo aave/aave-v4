@@ -1,18 +1,27 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.0;
 
+import {IAccessManaged} from 'src/dependencies/openzeppelin/IAccessManaged.sol';
 import {IMulticall} from 'src/interfaces/IMulticall.sol';
-import {DataTypes} from 'src/libraries/types/DataTypes.sol';
+import {IPriceOracle} from 'src/interfaces/IPriceOracle.sol';
+import {DataTypes, ILiquidityHub} from 'src/libraries/types/DataTypes.sol';
 
 /**
  * @title ISpoke
  * @author Aave Labs
  * @notice Basic interface for Spoke
  */
-interface ISpoke is IMulticall {
+interface ISpoke is IMulticall, IAccessManaged {
   event ReserveAdded(uint256 indexed reserveId, uint256 indexed assetId);
   event ReserveConfigUpdated(uint256 indexed reserveId, DataTypes.ReserveConfig config);
   event LiquidityPremiumUpdated(uint256 indexed reserveId, uint256 liquidityPremium);
+  event DynamicReserveConfigUpdated(
+    uint256 indexed reserveId,
+    uint16 indexed configKey,
+    DataTypes.DynamicReserveConfig config
+  );
+  event UserDynamicConfigRefreshed(address indexed user);
+  event UserDynamicConfigRefreshed(address indexed user, uint256 reserveId);
 
   event Supply(uint256 indexed reserveId, address indexed user, uint256 suppliedShares);
   event Withdraw(
@@ -59,15 +68,10 @@ interface ISpoke is IMulticall {
     address liquidator
   );
 
-  // TODO: rm when treasury accounting is done; indexing to read more easily
-  event TmpLiquidationFee(uint256 indexed tmpLiquidationFee);
-
-  error InvalidReserve();
-  error UserNotBorrowingReserve(uint256 reserveId);
   error ReserveNotListed();
+  error AssetNotListed();
   error InvalidLiquidityPremium();
   error InsufficientSupply(uint256 supply);
-  error NotAvailableLiquidity(uint256 availableLiquidity);
   error ReserveNotBorrowable(uint256 reserveId);
   error ReserveCannotBeUsedAsCollateral(uint256 reserveId);
   error ReserveNotActive();
@@ -81,23 +85,28 @@ interface ISpoke is IMulticall {
   error InvalidHubAddress();
   error InvalidHealthFactorForMaxBonus();
   error InvalidLiquidationBonusFactor();
-  error NoUserRiskPremiumDecrease();
   error HealthFactorNotBelowThreshold();
   error CollateralCannotBeLiquidated();
   error SpecifiedCurrencyNotBorrowedByUser();
   error InvalidDebtToCover();
-  error InvalidLiquidationProtocolFee();
+  error InvalidLiquidationFee();
   error InvalidOracleAddress();
   error UsersAndDebtLengthMismatch();
   error Unauthorized();
-  error CollateralStatusUnchanged();
 
   function addReserve(
     uint256 assetId,
-    DataTypes.ReserveConfig memory params
+    address hub,
+    DataTypes.ReserveConfig calldata config,
+    DataTypes.DynamicReserveConfig calldata dynConfig
   ) external returns (uint256);
 
   function updateReserveConfig(uint256 reserveId, DataTypes.ReserveConfig calldata params) external;
+
+  function updateDynamicReserveConfig(
+    uint256 reserveId,
+    DataTypes.DynamicReserveConfig calldata dynamicConfig
+  ) external;
 
   function updateLiquidationConfig(DataTypes.LiquidationConfig calldata config) external;
 
@@ -142,9 +151,10 @@ interface ISpoke is IMulticall {
   ) external;
 
   /**
-   * @notice Allows suppliers to enable/disable a specific supplied reserve as collateral.
-   * @param reserveId The reserveId of the underlying asset as registered on the spoke.
-   * @param usingAsCollateral True if the user wants to use the supply as collateral, false otherwise.
+   * @notice Enables or disables the use of a supplied reserve as collateral for the user.
+   * @dev No action is taken if the collateral status remains unchanged.
+   * @param reserveId The identifier of the reserve.
+   * @param usingAsCollateral True if enables the reserve as collateral, false otherwise.
    */
   function setUsingAsCollateral(uint256 reserveId, bool usingAsCollateral) external;
 
@@ -161,6 +171,20 @@ interface ISpoke is IMulticall {
   function getReserve(uint256 reserveId) external view returns (DataTypes.Reserve memory);
 
   function getReserveDebt(uint256 reserveId) external view returns (uint256, uint256);
+
+  function getReserveConfig(
+    uint256 reserveId
+  ) external view returns (DataTypes.ReserveConfig memory);
+
+  function getDynamicReserveConfig(
+    uint256 reserveId
+  ) external view returns (DataTypes.DynamicReserveConfig memory);
+
+  function getDynamicReserveConfig(
+    uint256 reserveId,
+    uint16 configKey
+  ) external view returns (DataTypes.DynamicReserveConfig memory);
+
   function getReserveRiskPremium(uint256 reserveId) external view returns (uint256);
 
   function getReserveSuppliedAmount(uint256 reserveId) external view returns (uint256);
@@ -202,12 +226,17 @@ interface ISpoke is IMulticall {
   function reserveCount() external view returns (uint256);
 
   function reservesList(uint256) external view returns (uint256);
+
   function getVariableLiquidationBonus(
     uint256 reserveId,
     uint256 healthFactor
   ) external view returns (uint256);
 
   function getLiquidationConfig() external view returns (DataTypes.LiquidationConfig memory);
+
   function HEALTH_FACTOR_LIQUIDATION_THRESHOLD() external view returns (uint256);
+
   function MAX_LIQUIDITY_PREMIUM() external view returns (uint256);
+
+  function oracle() external view returns (IPriceOracle);
 }
