@@ -744,6 +744,12 @@ contract SpokeBase is Base {
     assertEq(keccak256(abi.encode(a)), keccak256(abi.encode(b)), 'debt data'); // sanity
   }
 
+  function assertEq(DynamicConfig memory a, DynamicConfig memory b) internal pure {
+    assertEq(a.key, b.key, 'key');
+    assertEq(a.enabled, b.enabled, 'enabled');
+    assertEq(abi.encode(a), abi.encode(b)); // sanity
+  }
+
   function _calculateExpectedUserRP(address user, ISpoke spoke) internal view returns (uint256) {
     uint256 assetId;
     uint256 totalDebt;
