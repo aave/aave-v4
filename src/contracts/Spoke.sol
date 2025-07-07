@@ -1233,7 +1233,7 @@ contract Spoke is ISpoke, Multicall, AccessManaged {
     debtReserve.baseDrawnShares -= vars.totalRestoredShares;
     collateralReserve.suppliedShares -= vars.totalWithdrawnShares;
 
-    collateralReserveHub.refreshPremiumDebt(
+    debtReserveHub.refreshPremiumDebt(
       vars.debtAssetId,
       vars.totalUserDebtPremiumDrawnSharesDelta,
       vars.totalUserDebtPremiumOffsetDelta,
