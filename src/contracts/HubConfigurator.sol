@@ -11,7 +11,7 @@ import {IHubConfigurator} from 'src/interfaces/IHubConfigurator.sol';
  * @title HubConfigurator
  * @author Aave Labs
  * @notice HubConfigurator contract for the Aave protocol
- * @dev Must be granted permission by the Hub and Spoke
+ * @dev Must be granted permission by the Hub
  */
 contract HubConfigurator is Ownable, IHubConfigurator {
   /**
