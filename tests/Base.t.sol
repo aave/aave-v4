@@ -4,6 +4,7 @@ pragma solidity ^0.8.0;
 import {Test} from 'forge-std/Test.sol';
 import {stdError} from 'forge-std/StdError.sol';
 import {stdMath} from 'forge-std/StdMath.sol';
+import {Vm} from 'forge-std/Vm.sol';
 import {console2 as console} from 'forge-std/console2.sol';
 import {IERC20Metadata} from 'src/dependencies/openzeppelin/IERC20Metadata.sol';
 import {LiquidityHub, ILiquidityHub} from 'src/contracts/LiquidityHub.sol';
@@ -313,7 +314,12 @@ abstract contract Base is Test {
     // Add all assets to the Liquidity Hub
     vm.startPrank(ADMIN);
     // add WETH
-    hub.addAsset(address(tokenList.weth), tokenList.weth.decimals(), address(irStrategy));
+    hub.addAsset(
+      address(tokenList.weth),
+      tokenList.weth.decimals(),
+      address(treasurySpoke),
+      address(irStrategy)
+    );
     hub.addSpoke(wethAssetId, address(treasurySpoke), spokeConfig);
     vm.stopPrank();
     vm.prank(address(hub));
@@ -342,7 +348,12 @@ abstract contract Base is Test {
     );
 
     // add USDX
-    hub.addAsset(address(tokenList.usdx), tokenList.usdx.decimals(), address(irStrategy));
+    hub.addAsset(
+      address(tokenList.usdx),
+      tokenList.usdx.decimals(),
+      address(treasurySpoke),
+      address(irStrategy)
+    );
     hub.addSpoke(usdxAssetId, address(treasurySpoke), spokeConfig);
     vm.stopPrank();
     vm.prank(address(hub));
@@ -371,7 +382,12 @@ abstract contract Base is Test {
     );
 
     // add DAI
-    hub.addAsset(address(tokenList.dai), tokenList.dai.decimals(), address(irStrategy));
+    hub.addAsset(
+      address(tokenList.dai),
+      tokenList.dai.decimals(),
+      address(treasurySpoke),
+      address(irStrategy)
+    );
     hub.addSpoke(daiAssetId, address(treasurySpoke), spokeConfig);
     vm.stopPrank();
     vm.prank(address(hub));
@@ -400,7 +416,12 @@ abstract contract Base is Test {
     );
 
     // add WBTC
-    hub.addAsset(address(tokenList.wbtc), tokenList.wbtc.decimals(), address(irStrategy));
+    hub.addAsset(
+      address(tokenList.wbtc),
+      tokenList.wbtc.decimals(),
+      address(treasurySpoke),
+      address(irStrategy)
+    );
     hub.addSpoke(wbtcAssetId, address(treasurySpoke), spokeConfig);
     vm.stopPrank();
     vm.prank(address(hub));
@@ -429,7 +450,12 @@ abstract contract Base is Test {
     );
 
     // add USDY
-    hub.addAsset(address(tokenList.usdy), tokenList.usdy.decimals(), address(irStrategy));
+    hub.addAsset(
+      address(tokenList.usdy),
+      tokenList.usdy.decimals(),
+      address(treasurySpoke),
+      address(irStrategy)
+    );
     hub.addSpoke(usdyAssetId, address(treasurySpoke), spokeConfig);
     vm.stopPrank();
     vm.prank(address(hub));
@@ -464,7 +490,7 @@ abstract contract Base is Test {
       paused: false,
       liquidationBonus: 100_00,
       liquidityPremium: 15_00,
-      liquidationProtocolFee: 0,
+      liquidationFee: 0,
       borrowable: true,
       collateral: true
     });
@@ -477,7 +503,7 @@ abstract contract Base is Test {
       paused: false,
       liquidationBonus: 100_00,
       liquidityPremium: 5_00,
-      liquidationProtocolFee: 0,
+      liquidationFee: 0,
       borrowable: true,
       collateral: true
     });
@@ -490,7 +516,7 @@ abstract contract Base is Test {
       paused: false,
       liquidationBonus: 100_00,
       liquidityPremium: 20_00,
-      liquidationProtocolFee: 0,
+      liquidationFee: 0,
       borrowable: true,
       collateral: true
     });
@@ -503,7 +529,7 @@ abstract contract Base is Test {
       paused: false,
       liquidationBonus: 100_00,
       liquidityPremium: 50_00,
-      liquidationProtocolFee: 0,
+      liquidationFee: 0,
       borrowable: true,
       collateral: true
     });
@@ -516,7 +542,7 @@ abstract contract Base is Test {
       paused: false,
       liquidationBonus: 100_00,
       liquidityPremium: 50_00,
-      liquidationProtocolFee: 0,
+      liquidationFee: 0,
       borrowable: true,
       collateral: true
     });
@@ -579,7 +605,7 @@ abstract contract Base is Test {
       paused: false,
       liquidationBonus: 100_00,
       liquidityPremium: 0,
-      liquidationProtocolFee: 0,
+      liquidationFee: 0,
       borrowable: true,
       collateral: true
     });
@@ -590,7 +616,7 @@ abstract contract Base is Test {
       paused: false,
       liquidationBonus: 100_00,
       liquidityPremium: 10_00,
-      liquidationProtocolFee: 0,
+      liquidationFee: 0,
       borrowable: true,
       collateral: true
     });
@@ -601,7 +627,7 @@ abstract contract Base is Test {
       paused: false,
       liquidationBonus: 100_00,
       liquidityPremium: 20_00,
-      liquidationProtocolFee: 0,
+      liquidationFee: 0,
       borrowable: true,
       collateral: true
     });
@@ -612,7 +638,7 @@ abstract contract Base is Test {
       paused: false,
       liquidationBonus: 100_00,
       liquidityPremium: 50_00,
-      liquidationProtocolFee: 0,
+      liquidationFee: 0,
       borrowable: true,
       collateral: true
     });
@@ -623,7 +649,7 @@ abstract contract Base is Test {
       paused: false,
       liquidationBonus: 100_00,
       liquidityPremium: 50_00,
-      liquidationProtocolFee: 0,
+      liquidationFee: 0,
       borrowable: true,
       collateral: true
     });
@@ -684,7 +710,7 @@ abstract contract Base is Test {
       paused: false,
       liquidationBonus: 100_00,
       liquidityPremium: 0,
-      liquidationProtocolFee: 0,
+      liquidationFee: 0,
       borrowable: true,
       collateral: true
     });
@@ -695,7 +721,7 @@ abstract contract Base is Test {
       paused: false,
       liquidationBonus: 100_00,
       liquidityPremium: 10_00,
-      liquidationProtocolFee: 0,
+      liquidationFee: 0,
       borrowable: true,
       collateral: true
     });
@@ -706,7 +732,7 @@ abstract contract Base is Test {
       paused: false,
       liquidationBonus: 100_00,
       liquidityPremium: 20_00,
-      liquidationProtocolFee: 0,
+      liquidationFee: 0,
       borrowable: true,
       collateral: true
     });
@@ -717,7 +743,7 @@ abstract contract Base is Test {
       paused: false,
       liquidationBonus: 100_00,
       liquidityPremium: 50_00,
-      liquidationProtocolFee: 0,
+      liquidationFee: 0,
       borrowable: true,
       collateral: true
     });
@@ -763,7 +789,12 @@ abstract contract Base is Test {
     hub.addSpoke(wbtcAssetId, address(spoke3), spokeConfig);
 
     // Spoke 2 to have an extra dai reserve
-    hub.addAsset(address(tokenList.dai), tokenList.dai.decimals(), address(irStrategy));
+    hub.addAsset(
+      address(tokenList.dai),
+      tokenList.dai.decimals(),
+      address(treasurySpoke),
+      address(irStrategy)
+    );
     hub.addSpoke(hub.getAssetCount() - 1, address(treasurySpoke), spokeConfig);
     vm.stopPrank();
     vm.prank(address(hub));
@@ -797,7 +828,7 @@ abstract contract Base is Test {
       paused: false,
       liquidationBonus: 100_00,
       liquidityPremium: 100_00,
-      liquidationProtocolFee: 0,
+      liquidationFee: 0,
       borrowable: true,
       collateral: true
     });
@@ -830,16 +861,36 @@ abstract contract Base is Test {
 
     // Add assets to the second hub
     // Add WETH
-    hub2.addAsset(address(tokenList.weth), tokenList.weth.decimals(), address(hub2IrStrategy));
+    hub2.addAsset(
+      address(tokenList.weth),
+      tokenList.weth.decimals(),
+      address(treasurySpoke),
+      address(hub2IrStrategy)
+    );
 
     // Add USDX
-    hub2.addAsset(address(tokenList.usdx), tokenList.usdx.decimals(), address(hub2IrStrategy));
+    hub2.addAsset(
+      address(tokenList.usdx),
+      tokenList.usdx.decimals(),
+      address(treasurySpoke),
+      address(hub2IrStrategy)
+    );
 
     // Add DAI
-    hub2.addAsset(address(tokenList.dai), tokenList.dai.decimals(), address(hub2IrStrategy));
+    hub2.addAsset(
+      address(tokenList.dai),
+      tokenList.dai.decimals(),
+      address(treasurySpoke),
+      address(hub2IrStrategy)
+    );
 
     // Add WBTC
-    hub2.addAsset(address(tokenList.wbtc), tokenList.wbtc.decimals(), address(hub2IrStrategy));
+    hub2.addAsset(
+      address(tokenList.wbtc),
+      tokenList.wbtc.decimals(),
+      address(treasurySpoke),
+      address(hub2IrStrategy)
+    );
 
     // Configure IR Strategy for hub 2
     bytes memory encodedIrData = abi.encode(
@@ -876,19 +927,39 @@ abstract contract Base is Test {
     AssetInterestRateStrategy hub3IrStrategy = new AssetInterestRateStrategy(address(hub3));
 
     // Add DAI
-    hub3.addAsset(address(tokenList.dai), tokenList.dai.decimals(), address(hub3IrStrategy));
+    hub3.addAsset(
+      address(tokenList.dai),
+      tokenList.dai.decimals(),
+      address(treasurySpoke),
+      address(hub3IrStrategy)
+    );
     uint256 hub3DaiAssetId = 0;
 
     // Add USDX
-    hub3.addAsset(address(tokenList.usdx), tokenList.usdx.decimals(), address(hub3IrStrategy));
+    hub3.addAsset(
+      address(tokenList.usdx),
+      tokenList.usdx.decimals(),
+      address(treasurySpoke),
+      address(hub3IrStrategy)
+    );
     uint256 hub3UsdxAssetId = 1;
 
     // Add WBTC
-    hub3.addAsset(address(tokenList.wbtc), tokenList.wbtc.decimals(), address(hub3IrStrategy));
+    hub3.addAsset(
+      address(tokenList.wbtc),
+      tokenList.wbtc.decimals(),
+      address(treasurySpoke),
+      address(hub3IrStrategy)
+    );
     uint256 hub3WbtcAssetId = 2;
 
     // Add WETH
-    hub3.addAsset(address(tokenList.weth), tokenList.weth.decimals(), address(hub3IrStrategy));
+    hub3.addAsset(
+      address(tokenList.weth),
+      tokenList.weth.decimals(),
+      address(treasurySpoke),
+      address(hub3IrStrategy)
+    );
     uint256 hub3WethAssetId = 3;
     vm.stopPrank();
 
@@ -949,6 +1020,18 @@ abstract contract Base is Test {
     liquidityHub.updateAssetConfig(assetId, assetConfig);
   }
 
+  function updateAssetFeeReceiver(
+    ILiquidityHub liquidityHub,
+    uint256 assetId,
+    address newFeeReceiver
+  ) internal {
+    DataTypes.AssetConfig memory assetConfig = liquidityHub.getAsset(assetId).config;
+    assetConfig.feeReceiver = newFeeReceiver;
+
+    vm.prank(HUB_ADMIN);
+    liquidityHub.updateAssetConfig(assetId, assetConfig);
+  }
+
   function updateReserveFrozenFlag(ISpoke spoke, uint256 reserveId, bool newFrozenFlag) internal {
     DataTypes.ReserveConfig memory config = spoke.getReserve(reserveId).config;
     config.frozen = newFrozenFlag;
@@ -987,18 +1070,18 @@ abstract contract Base is Test {
     assertEq(spoke.getReserve(reserveId).config.liquidationBonus, newLiquidationBonus);
   }
 
-  function updateLiquidationProtocolFee(
+  function updateLiquidationFee(
     ISpoke spoke,
     uint256 reserveId,
-    uint256 newLiquidationProtocolFee
+    uint256 newLiquidationFee
   ) internal {
     DataTypes.ReserveConfig memory config = spoke.getReserve(reserveId).config;
-    config.liquidationProtocolFee = newLiquidationProtocolFee;
+    config.liquidationFee = newLiquidationFee;
 
     vm.prank(SPOKE_ADMIN);
     spoke.updateReserveConfig(reserveId, config);
 
-    assertEq(spoke.getReserve(reserveId).config.liquidationProtocolFee, newLiquidationProtocolFee);
+    assertEq(spoke.getReserve(reserveId).config.liquidationFee, newLiquidationFee);
   }
 
   function updateCollateralFactor(
@@ -1808,9 +1891,9 @@ abstract contract Base is Test {
       indexDelta.rayMulDown(initialDrawnShares + initialPremiumShares).percentMulDown(liquidityFee);
   }
 
-  function _mockDecimals(address asset, uint8 decimals) internal {
+  function _mockDecimals(address underlying, uint8 decimals) internal {
     vm.mockCall(
-      asset,
+      underlying,
       abi.encodeWithSelector(IERC20Metadata.decimals.selector),
       abi.encode(decimals)
     );
@@ -1864,5 +1947,14 @@ abstract contract Base is Test {
       ),
       abi.encode(interestRateBps.bpsToRay())
     );
+  }
+
+  function _assertEventNotEmitted(bytes32 eventSignature) internal {
+    Vm.Log[] memory entries = vm.getRecordedLogs();
+    for (uint256 i; i < entries.length; i++) {
+      assertNotEq(entries[i].topics[0], eventSignature);
+    }
+
+    vm.recordLogs();
   }
 }

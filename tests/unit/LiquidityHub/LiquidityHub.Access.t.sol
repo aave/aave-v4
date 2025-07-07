@@ -12,7 +12,7 @@ contract LiquidityHubAccessTest is LiquidityHubBase {
       active: true,
       frozen: false,
       paused: false,
-      feeReceiver: address(0),
+      feeReceiver: address(treasurySpoke),
       liquidityFee: 0,
       irStrategy: address(irStrategy)
     });
@@ -26,11 +26,11 @@ contract LiquidityHubAccessTest is LiquidityHubBase {
     vm.expectRevert(
       abi.encodeWithSelector(IAccessManaged.AccessManagedUnauthorized.selector, address(this))
     );
-    hub.addAsset(address(tokenA), 18, address(irStrategy));
+    hub.addAsset(address(tokenA), 18, address(treasurySpoke), address(irStrategy));
 
     // Hub Admin can add assets to the hub
     vm.prank(HUB_ADMIN);
-    hub.addAsset(address(tokenA), 18, address(irStrategy));
+    hub.addAsset(address(tokenA), 18, address(treasurySpoke), address(irStrategy));
     uint256 assetAId = hub.getAssetCount() - 1; // Asset A Id
 
     // Only Hub Admin can update asset config
@@ -235,7 +235,7 @@ contract LiquidityHubAccessTest is LiquidityHubBase {
       active: true,
       frozen: false,
       paused: false,
-      feeReceiver: address(0),
+      feeReceiver: address(treasurySpoke),
       liquidityFee: 0,
       irStrategy: address(irStrategy)
     });

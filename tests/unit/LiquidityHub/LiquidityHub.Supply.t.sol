@@ -5,7 +5,6 @@ import 'tests/unit/LiquidityHub/LiquidityHubBase.t.sol';
 
 contract LiquidityHubSupplyTest is LiquidityHubBase {
   using SharesMath for uint256;
-  using PercentageMath for uint256;
 
   function test_supply_revertsWith_ERC20InsufficientAllowance() public {
     uint256 amount = 100e18;
@@ -19,7 +18,7 @@ contract LiquidityHubSupplyTest is LiquidityHubBase {
       )
     );
     vm.prank(address(spoke1));
-    hub.add(daiAssetId, amount, address(spoke1));
+    hub.add(daiAssetId, amount, makeAddr('randomUser'));
   }
 
   function test_supply_fuzz_revertsWith_ERC20InsufficientAllowance(uint256 amount) public {
@@ -33,7 +32,7 @@ contract LiquidityHubSupplyTest is LiquidityHubBase {
       )
     );
     vm.prank(address(spoke1));
-    hub.add(daiAssetId, amount, address(spoke1));
+    hub.add(daiAssetId, amount, makeAddr('randomUser'));
   }
 
   function test_supply_revertsWith_AssetNotActive() public {
