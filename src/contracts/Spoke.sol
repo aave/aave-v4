@@ -403,7 +403,7 @@ contract Spoke is ISpoke, Multicall, AccessManaged {
     positionStatus.setUsingAsCollateral(reserveId, usingAsCollateral);
 
     if (usingAsCollateral) {
-      _refreshDynamicConfig(msg.sender);
+      _refreshDynamicConfig(msg.sender, reserveId);
     } else {
       // If unsetting, check HF and update user rp
       uint256 newUserRiskPremium = _refreshAndValidateUserPosition(msg.sender); // validates HF
@@ -1071,15 +1071,19 @@ contract Spoke is ISpoke, Multicall, AccessManaged {
     uint256 reservesListLength = reservesList.length;
     uint256 reserveId;
     while (reserveId < reservesListLength) {
-      DataTypes.UserPosition storage userPosition = _userPositions[user][reserveId];
       if (_positionStatus[user].isUsingAsCollateral(reserveId)) {
-        userPosition.configKey = _reserves[reserveId].dynamicConfigKey;
+        _userPositions[user][reserveId].configKey = _reserves[reserveId].dynamicConfigKey;
       }
       unchecked {
         ++reserveId;
       }
     }
     emit UserDynamicConfigRefreshed(user);
+  }
+
+  function _refreshDynamicConfig(address user, uint256 reserveId) internal {
+    _userPositions[user][reserveId].configKey = _reserves[reserveId].dynamicConfigKey;
+    emit UserDynamicConfigRefreshed(user, reserveId);
   }
 
   /**
