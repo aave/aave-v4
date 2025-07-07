@@ -147,11 +147,20 @@ contract SpokeDynamicConfigTriggersTest is SpokeBase {
     updateCollateralFactor(spoke1, _usdxReserveId(spoke1), _randomBps());
     configs = _getUserDynConfigKeys(spoke1, alice);
     Utils.supply(spoke1, _wethReserveId(spoke1), alice, 1e18, alice);
+
+    // when enabling, only the relevant asset is refreshed
     vm.expectEmit(address(spoke1));
-    emit ISpoke.UserDynamicConfigRefreshed(alice);
+    emit ISpoke.UserDynamicConfigRefreshed(alice, _wethReserveId(spoke1));
     vm.prank(alice);
     spoke1.setUsingAsCollateral(_wethReserveId(spoke1), true);
 
+    DynamicConfig[] memory userConfig = _getUserDynConfigKeys(spoke1, alice);
+    DynamicConfig[] memory spokeConfig = _getSpokeDynConfigKeys(spoke1);
+    // weth is refreshed but not all
+    assertEq(userConfig[_wethReserveId(spoke1)], spokeConfig[_wethReserveId(spoke1)]);
+    assertNotEq(abi.encode(userConfig), abi.encode(spokeConfig));
+
+    // when disabling all configs are refreshed
     vm.expectEmit(address(spoke1));
     emit ISpoke.UserDynamicConfigRefreshed(alice);
     vm.prank(alice);
