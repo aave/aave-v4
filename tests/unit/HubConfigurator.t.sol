@@ -3,18 +3,18 @@ pragma solidity ^0.8.10;
 
 import 'tests/unit/LiquidityHub/LiquidityHubBase.t.sol';
 
-contract ConfiguratorTest is LiquidityHubBase {
-  Configurator internal configurator;
+contract HubConfiguratorTest is LiquidityHubBase {
+  HubConfigurator internal hubConfigurator;
 
   address internal CONFIGURATOR_ADMIN = makeAddr('CONFIGURATOR_ADMIN');
 
   function setUp() public virtual override {
     super.setUp();
-    configurator = new Configurator(CONFIGURATOR_ADMIN);
+    hubConfigurator = new HubConfigurator(CONFIGURATOR_ADMIN);
     IAccessManager accessManager = IAccessManager(hub.authority());
-    // Grant configurator hub admin role with 0 delay
+    // Grant hubConfigurator hub admin role with 0 delay
     vm.prank(ADMIN);
-    accessManager.grantRole(Roles.HUB_ADMIN_ROLE, address(configurator), 0);
+    accessManager.grantRole(Roles.HUB_ADMIN_ROLE, address(hubConfigurator), 0);
   }
 
   function test_addSpokeToAssets_fuzz_revertsWith_OwnableUnauthorizedAccount(
@@ -24,7 +24,7 @@ contract ConfiguratorTest is LiquidityHubBase {
 
     vm.expectRevert(abi.encodeWithSelector(Ownable.OwnableUnauthorizedAccount.selector, caller));
     vm.prank(caller);
-    configurator.addSpokeToAssets(
+    hubConfigurator.addSpokeToAssets(
       address(hub),
       vm.randomAddress(),
       new uint256[](0),
@@ -43,7 +43,7 @@ contract ConfiguratorTest is LiquidityHubBase {
 
     vm.expectRevert(ILiquidityHub.InvalidSpoke.selector);
     vm.prank(CONFIGURATOR_ADMIN);
-    configurator.addSpokeToAssets(address(hub), address(0), assetIds, spokeConfigs);
+    hubConfigurator.addSpokeToAssets(address(hub), address(0), assetIds, spokeConfigs);
   }
 
   function test_addSpokeToAssets_revertsWith_MismatchedConfigs() public {
@@ -56,9 +56,9 @@ contract ConfiguratorTest is LiquidityHubBase {
     spokeConfigs[1] = DataTypes.SpokeConfig({supplyCap: 3, drawCap: 4, active: true});
     spokeConfigs[2] = DataTypes.SpokeConfig({supplyCap: 5, drawCap: 6, active: true});
 
-    vm.expectRevert(IConfigurator.MismatchedConfigs.selector);
+    vm.expectRevert(IHubConfigurator.MismatchedConfigs.selector);
     vm.prank(CONFIGURATOR_ADMIN);
-    configurator.addSpokeToAssets(address(hub), address(spoke1), assetIds, spokeConfigs);
+    hubConfigurator.addSpokeToAssets(address(hub), address(spoke1), assetIds, spokeConfigs);
   }
 
   function test_addSpokeToAssets() public {
@@ -86,7 +86,7 @@ contract ConfiguratorTest is LiquidityHubBase {
     vm.expectEmit(address(hub));
     emit ILiquidityHub.SpokeAdded(wethAssetId, address(spoke1));
     vm.prank(CONFIGURATOR_ADMIN);
-    configurator.addSpokeToAssets(address(hub), address(spoke1), assetIds, spokeConfigs);
+    hubConfigurator.addSpokeToAssets(address(hub), address(spoke1), assetIds, spokeConfigs);
 
     DataTypes.SpokeConfig memory daiSpokeData = hub.getSpokeConfig(daiAssetId, address(spoke1));
     DataTypes.SpokeConfig memory wethSpokeData = hub.getSpokeConfig(wethAssetId, address(spoke1));
@@ -215,7 +215,7 @@ contract ConfiguratorTest is LiquidityHubBase {
     vm.assume(caller != CONFIGURATOR_ADMIN);
     vm.expectRevert(abi.encodeWithSelector(Ownable.OwnableUnauthorizedAccount.selector, caller));
     vm.prank(caller);
-    configurator.updateActive(address(hub), vm.randomUint(), vm.randomBool());
+    hubConfigurator.updateActive(address(hub), vm.randomUint(), vm.randomBool());
   }
 
   function test_updateActive_fuzz(uint256 assetId, bool active) public {
@@ -230,7 +230,7 @@ contract ConfiguratorTest is LiquidityHubBase {
     );
 
     vm.prank(CONFIGURATOR_ADMIN);
-    configurator.updateActive(address(hub), assetId, active);
+    hubConfigurator.updateActive(address(hub), assetId, active);
 
     assertEq(hub.getAssetConfig(assetId), expectedConfig);
   }
@@ -239,7 +239,7 @@ contract ConfiguratorTest is LiquidityHubBase {
     vm.assume(caller != CONFIGURATOR_ADMIN);
     vm.expectRevert(abi.encodeWithSelector(Ownable.OwnableUnauthorizedAccount.selector, caller));
     vm.prank(caller);
-    configurator.updatePaused(address(hub), vm.randomUint(), vm.randomBool());
+    hubConfigurator.updatePaused(address(hub), vm.randomUint(), vm.randomBool());
   }
 
   function test_updatePaused_fuzz(uint256 assetId, bool paused) public {
@@ -254,7 +254,7 @@ contract ConfiguratorTest is LiquidityHubBase {
     );
 
     vm.prank(CONFIGURATOR_ADMIN);
-    configurator.updatePaused(address(hub), assetId, paused);
+    hubConfigurator.updatePaused(address(hub), assetId, paused);
 
     assertEq(hub.getAssetConfig(assetId), expectedConfig);
   }
@@ -263,7 +263,7 @@ contract ConfiguratorTest is LiquidityHubBase {
     vm.assume(caller != CONFIGURATOR_ADMIN);
     vm.expectRevert(abi.encodeWithSelector(Ownable.OwnableUnauthorizedAccount.selector, caller));
     vm.prank(caller);
-    configurator.updateFrozen(address(hub), vm.randomUint(), vm.randomBool());
+    hubConfigurator.updateFrozen(address(hub), vm.randomUint(), vm.randomBool());
   }
 
   function test_updateFrozen_fuzz(uint256 assetId, bool frozen) public {
@@ -278,7 +278,7 @@ contract ConfiguratorTest is LiquidityHubBase {
     );
 
     vm.prank(CONFIGURATOR_ADMIN);
-    configurator.updateFrozen(address(hub), assetId, frozen);
+    hubConfigurator.updateFrozen(address(hub), assetId, frozen);
 
     assertEq(hub.getAssetConfig(assetId), expectedConfig);
   }
@@ -289,7 +289,7 @@ contract ConfiguratorTest is LiquidityHubBase {
     vm.assume(caller != CONFIGURATOR_ADMIN);
     vm.expectRevert(abi.encodeWithSelector(Ownable.OwnableUnauthorizedAccount.selector, caller));
     vm.prank(caller);
-    configurator.updateLiquidityFee(address(hub), vm.randomUint(), vm.randomUint());
+    hubConfigurator.updateLiquidityFee(address(hub), vm.randomUint(), vm.randomUint());
   }
 
   function test_updateLiquidityFee_fuzz_revertsWith_InvalidLiquidityFee(
@@ -305,7 +305,7 @@ contract ConfiguratorTest is LiquidityHubBase {
 
     vm.expectRevert(ILiquidityHub.InvalidLiquidityFee.selector);
     vm.prank(CONFIGURATOR_ADMIN);
-    configurator.updateLiquidityFee(address(hub), assetId, liquidityFee);
+    hubConfigurator.updateLiquidityFee(address(hub), assetId, liquidityFee);
   }
 
   function test_updateLiquidityFee_fuzz(uint256 assetId, uint256 liquidityFee) public {
@@ -321,7 +321,7 @@ contract ConfiguratorTest is LiquidityHubBase {
     );
 
     vm.prank(CONFIGURATOR_ADMIN);
-    configurator.updateLiquidityFee(address(hub), assetId, liquidityFee);
+    hubConfigurator.updateLiquidityFee(address(hub), assetId, liquidityFee);
 
     assertEq(hub.getAssetConfig(assetId), expectedConfig);
   }
@@ -332,7 +332,7 @@ contract ConfiguratorTest is LiquidityHubBase {
     vm.assume(caller != CONFIGURATOR_ADMIN);
     vm.expectRevert(abi.encodeWithSelector(Ownable.OwnableUnauthorizedAccount.selector, caller));
     vm.prank(caller);
-    configurator.updateFeeReceiver(address(hub), vm.randomUint(), vm.randomAddress());
+    hubConfigurator.updateFeeReceiver(address(hub), vm.randomUint(), vm.randomAddress());
   }
 
   function test_updateFeeReceiver_fuzz_revertsWith_InvalidSpoke(uint256 assetId) public {
@@ -341,7 +341,7 @@ contract ConfiguratorTest is LiquidityHubBase {
     // reverts when adding zero as new spoke
     vm.expectRevert(ILiquidityHub.InvalidSpoke.selector);
     vm.prank(CONFIGURATOR_ADMIN);
-    configurator.updateFeeReceiver(address(hub), assetId, address(0));
+    hubConfigurator.updateFeeReceiver(address(hub), assetId, address(0));
   }
 
   function test_updateFeeReceiver_revertsWith_InvalidSpoke() public {
@@ -412,7 +412,7 @@ contract ConfiguratorTest is LiquidityHubBase {
       );
 
       vm.prank(CONFIGURATOR_ADMIN);
-      configurator.updateFeeReceiver(address(hub), assetId, feeReceiver);
+      hubConfigurator.updateFeeReceiver(address(hub), assetId, feeReceiver);
 
       assertEq(hub.getAssetConfig(assetId), expectedConfig);
     }
@@ -431,7 +431,7 @@ contract ConfiguratorTest is LiquidityHubBase {
     vm.assume(caller != CONFIGURATOR_ADMIN);
     vm.expectRevert(abi.encodeWithSelector(Ownable.OwnableUnauthorizedAccount.selector, caller));
     vm.prank(caller);
-    configurator.updateFeeConfig({
+    hubConfigurator.updateFeeConfig({
       hub: address(hub),
       assetId: vm.randomUint(),
       liquidityFee: vm.randomUint(),
@@ -454,7 +454,7 @@ contract ConfiguratorTest is LiquidityHubBase {
 
     vm.expectRevert(ILiquidityHub.InvalidLiquidityFee.selector);
     vm.prank(CONFIGURATOR_ADMIN);
-    configurator.updateFeeConfig(address(hub), assetId, liquidityFee, feeReceiver);
+    hubConfigurator.updateFeeConfig(address(hub), assetId, liquidityFee, feeReceiver);
   }
 
   function test_updateFeeConfig_fuzz_revertsWith_InvalidSpoke(
@@ -468,7 +468,7 @@ contract ConfiguratorTest is LiquidityHubBase {
     // reverts when adding zero as new spoke
     vm.expectRevert(ILiquidityHub.InvalidSpoke.selector);
     vm.prank(CONFIGURATOR_ADMIN);
-    configurator.updateFeeConfig(address(hub), assetId, liquidityFee, address(0));
+    hubConfigurator.updateFeeConfig(address(hub), assetId, liquidityFee, address(0));
   }
 
   function test_updateFeeConfig_fuzz(
@@ -563,7 +563,7 @@ contract ConfiguratorTest is LiquidityHubBase {
     );
 
     vm.prank(CONFIGURATOR_ADMIN);
-    configurator.updateFeeConfig(address(hub), assetId, liquidityFee, feeReceiver);
+    hubConfigurator.updateFeeConfig(address(hub), assetId, liquidityFee, feeReceiver);
 
     assertEq(hub.getAssetConfig(assetId), expectedConfig);
   }
@@ -574,7 +574,7 @@ contract ConfiguratorTest is LiquidityHubBase {
     vm.assume(caller != CONFIGURATOR_ADMIN);
     vm.expectRevert(abi.encodeWithSelector(Ownable.OwnableUnauthorizedAccount.selector, caller));
     vm.prank(caller);
-    configurator.updateInterestRateStrategy(address(hub), vm.randomUint(), vm.randomAddress());
+    hubConfigurator.updateInterestRateStrategy(address(hub), vm.randomUint(), vm.randomAddress());
   }
 
   function test_updateInterestRateStrategy_fuzz_revertsWith_InvalidIrStrategy(
@@ -584,7 +584,7 @@ contract ConfiguratorTest is LiquidityHubBase {
 
     vm.expectRevert(ILiquidityHub.InvalidIrStrategy.selector);
     vm.prank(CONFIGURATOR_ADMIN);
-    configurator.updateInterestRateStrategy(address(hub), assetId, address(0));
+    hubConfigurator.updateInterestRateStrategy(address(hub), assetId, address(0));
   }
 
   function test_updateInterestRateStrategy_fuzz_revertsWith_InterestRateStrategyReverts(
@@ -596,7 +596,7 @@ contract ConfiguratorTest is LiquidityHubBase {
 
     vm.expectRevert();
     vm.prank(CONFIGURATOR_ADMIN);
-    configurator.updateInterestRateStrategy(address(hub), assetId, interestRateStrategy);
+    hubConfigurator.updateInterestRateStrategy(address(hub), assetId, interestRateStrategy);
   }
 
   function test_updateInterestRateStrategy_fuzz(
@@ -617,7 +617,7 @@ contract ConfiguratorTest is LiquidityHubBase {
     );
 
     vm.prank(CONFIGURATOR_ADMIN);
-    configurator.updateInterestRateStrategy(address(hub), assetId, interestRateStrategy);
+    hubConfigurator.updateInterestRateStrategy(address(hub), assetId, interestRateStrategy);
 
     assertEq(hub.getAssetConfig(assetId), expectedConfig);
   }
@@ -631,10 +631,10 @@ contract ConfiguratorTest is LiquidityHubBase {
   ) internal returns (uint256) {
     if (fetchErc20Decimals) {
       _mockDecimals(underlying, decimals);
-      return configurator.addAsset(address(hub), underlying, feeReceiver, interestRateStrategy);
+      return hubConfigurator.addAsset(address(hub), underlying, feeReceiver, interestRateStrategy);
     } else {
       return
-        configurator.addAsset(
+        hubConfigurator.addAsset(
           address(hub),
           underlying,
           decimals,

@@ -4,11 +4,11 @@ pragma solidity ^0.8.0;
 import {DataTypes} from 'src/libraries/types/DataTypes.sol';
 
 /**
- * @title IConfigurator
+ * @title IHubConfigurator
  * @author Aave Labs
- * @notice Interface for the Configurator
+ * @notice Interface for the HubConfigurator
  */
-interface IConfigurator {
+interface IHubConfigurator {
   /**
    * @notice Thrown when the the list of assets and spoke configs are not the same length in `addSpokeToAssets`.
    */
