@@ -146,8 +146,7 @@ contract Spoke is ISpoke, Multicall, AccessManaged {
   }
 
   /// @inheritdoc ISpoke
-  function setPositionManager(address positionManager, bool active) external {
-    // todo access control
+  function setPositionManager(address positionManager, bool active) external restricted {
     _positionManager[positionManager].active = active;
     emit PositionManagerSet(positionManager, active);
   }

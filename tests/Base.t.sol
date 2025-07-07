@@ -205,12 +205,13 @@ abstract contract Base is Test {
 
     // Grant responsibilities to roles
     // Spoke Admin functionalities
-    bytes4[] memory selectors = new bytes4[](5);
+    bytes4[] memory selectors = new bytes4[](6);
     selectors[0] = ISpoke.updateLiquidationConfig.selector;
     selectors[1] = ISpoke.addReserve.selector;
     selectors[2] = ISpoke.updateReserveConfig.selector;
     selectors[3] = ISpoke.updateDynamicReserveConfig.selector;
     selectors[4] = ISpoke.updateUserRiskPremium.selector;
+    selectors[5] = ISpoke.setPositionManager.selector;
 
     accessManager.setTargetFunctionRole(address(spoke), selectors, Roles.SPOKE_ADMIN_ROLE);
 
