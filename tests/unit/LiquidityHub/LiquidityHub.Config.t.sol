@@ -305,14 +305,7 @@ contract LiquidityHubConfigTest is LiquidityHubBase {
     assertTrue(oldReceiverFees > 0);
 
     // spoke1 adds some assets
-    Utils.add({
-      hub: hub,
-      assetId: assetId,
-      spoke: address(spoke2),
-      amount: amount,
-      user: bob,
-      to: address(spoke2)
-    });
+    Utils.add({hub: hub, assetId: assetId, caller: address(spoke2), amount: amount, user: bob});
     uint256 newReceiverFees = hub.getSpokeSuppliedShares(assetId, newFeeReceiver);
 
     updateAssetFeeReceiver(hub, assetId, newFeeReceiver);

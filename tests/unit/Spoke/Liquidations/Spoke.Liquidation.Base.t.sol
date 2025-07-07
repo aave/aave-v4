@@ -354,7 +354,7 @@ contract SpokeLiquidationBase is SpokeBase {
   ) internal view {
     // usingAsCollateral should remain True after liquidation
     assertTrue(
-      spoke.getUsingAsCollateral(state.collateralReserve.reserveId, user),
+      spoke.isUsingAsCollateral(state.collateralReserve.reserveId, user),
       string.concat('isUsingAsCollateral should remain true ', label)
     );
   }

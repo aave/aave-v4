@@ -422,7 +422,7 @@ contract Spoke is ISpoke, Multicall, AccessManaged {
     bool usingAsCollateral,
     address onBehalfOf
   ) external onlyPositionManager(onBehalfOf) {
-    DataTypes.PositionStatus storage positionStatus = _positionStatus[msg.sender];
+    DataTypes.PositionStatus storage positionStatus = _positionStatus[onBehalfOf];
 
     // process only if collateral status changes
     if (positionStatus.isUsingAsCollateral(reserveId) == usingAsCollateral) {
@@ -435,13 +435,13 @@ contract Spoke is ISpoke, Multicall, AccessManaged {
     positionStatus.setUsingAsCollateral(reserveId, usingAsCollateral);
 
     if (usingAsCollateral) {
-      _refreshDynamicConfig(msg.sender, reserveId);
+      _refreshDynamicConfig(onBehalfOf, reserveId);
     } else {
       // If unsetting, check HF and update user rp
-      uint256 newUserRiskPremium = _refreshAndValidateUserPosition(msg.sender); // validates HF
-      _notifyRiskPremiumUpdate(type(uint256).max, msg.sender, newUserRiskPremium);
+      uint256 newUserRiskPremium = _refreshAndValidateUserPosition(onBehalfOf); // validates HF
+      _notifyRiskPremiumUpdate(type(uint256).max, onBehalfOf, newUserRiskPremium);
     }
-    emit UsingAsCollateral(reserveId, msg.sender, usingAsCollateral);
+    emit UsingAsCollateral(reserveId, onBehalfOf, usingAsCollateral);
   }
 
   /// @inheritdoc ISpoke
@@ -813,6 +813,12 @@ contract Spoke is ISpoke, Multicall, AccessManaged {
       realizedPremiumAdded,
       realizedPremiumTaken
     );
+  }
+
+  function _isPositionManager(address user, address manager) private view returns (bool) {
+    if (user == manager) return true;
+    DataTypes.PositionManagerConfig storage config = _positionManager[manager];
+    return config.active && config.approval[user];
   }
 
   /**
