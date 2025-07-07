@@ -212,14 +212,6 @@ contract SpokeAccrueLiquidityFeeTest is SpokeBase {
     updateLiquidityPremium(spoke1, reserveId, expectedRp);
 
     vm.expectEmit(address(hub));
-    emit ILiquidityHub.Add(
-      assetId,
-      address(treasurySpoke),
-      hub.convertToSuppliedShares(assetId, expectedTreasuryFees),
-      expectedTreasuryFees
-    );
-
-    vm.expectEmit(address(hub));
     emit ILiquidityHub.AccrueFees(
       assetId,
       hub.convertToSuppliedShares(assetId, expectedTreasuryFees)
@@ -251,14 +243,6 @@ contract SpokeAccrueLiquidityFeeTest is SpokeBase {
       hub.getSpokeSuppliedShares(assetId, address(treasurySpoke)),
       hub.convertToSuppliedShares(assetId, expectedTreasuryFees),
       'treasury fees after base debt accrual'
-    );
-
-    vm.expectEmit(address(hub));
-    emit ILiquidityHub.Add(
-      assetId,
-      address(treasurySpoke),
-      hub.convertToSuppliedShares(assetId, expectedTreasuryFees),
-      expectedTreasuryFees
     );
 
     vm.expectEmit(address(hub));
@@ -349,14 +333,6 @@ contract SpokeAccrueLiquidityFeeTest is SpokeBase {
     updateLiquidityPremium(spoke1, reserveId, expectedRp);
 
     vm.expectEmit(address(hub));
-    emit ILiquidityHub.Add(
-      assetId,
-      address(treasurySpoke),
-      hub.convertToSuppliedShares(assetId, expectedTreasuryFees),
-      expectedTreasuryFees
-    );
-
-    vm.expectEmit(address(hub));
     emit ILiquidityHub.AccrueFees(
       assetId,
       hub.convertToSuppliedShares(assetId, expectedTreasuryFees)
@@ -390,14 +366,6 @@ contract SpokeAccrueLiquidityFeeTest is SpokeBase {
       hub.getSpokeSuppliedShares(assetId, address(treasurySpoke)),
       hub.convertToSuppliedShares(assetId, expectedTreasuryFees),
       'treasury fees after base debt accrual'
-    );
-
-    vm.expectEmit(address(hub));
-    emit ILiquidityHub.Add(
-      assetId,
-      address(treasurySpoke),
-      hub.convertToSuppliedShares(assetId, expectedTreasuryFees),
-      expectedTreasuryFees
     );
 
     vm.expectEmit(address(hub));

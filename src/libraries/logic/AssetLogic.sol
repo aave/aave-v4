@@ -72,8 +72,9 @@ library AssetLogic {
   }
 
   function totalSuppliedShares(DataTypes.Asset storage asset) internal view returns (uint256) {
-    (, uint256 feeShares) = asset.previewFeeShares(asset.previewDrawnIndex() - asset.baseDebtIndex);
-    return asset.suppliedShares + feeShares;
+    return
+      asset.suppliedShares +
+      asset.previewFeeShares(asset.previewDrawnIndex() - asset.baseDebtIndex);
   }
 
   function toSuppliedAssetsUp(
@@ -131,16 +132,13 @@ library AssetLogic {
     DataTypes.SpokeData storage feeReceiver
   ) internal {
     uint256 drawnIndex = asset.previewDrawnIndex();
-    (uint256 feeAmount, uint256 feeShares) = asset.previewFeeShares(
-      drawnIndex - asset.baseDebtIndex
-    );
+    uint256 feeShares = asset.previewFeeShares(drawnIndex - asset.baseDebtIndex);
 
     // Accrue interest and fees
     asset.baseDebtIndex = drawnIndex;
     if (feeShares > 0) {
       feeReceiver.suppliedShares += feeShares;
       asset.suppliedShares += feeShares;
-      emit ILiquidityHub.Add(assetId, asset.config.feeReceiver, feeShares, feeAmount);
       emit ILiquidityHub.AccrueFees(assetId, feeShares);
     }
 
@@ -169,26 +167,22 @@ library AssetLogic {
    * @dev Calculates the amount of fee shares derived from the index growth due to interest accrual.
    * @param asset The data struct of the asset whose index is increasing.
    * @param indexDelta The increase in the asset index resulting from interest accrual.
-   * @return The asset amount corresponding to the fees.
-   * @return The amount of shares corresponding to the fees.
+   * @return The amount of shares corresponding to the fees
    */
   function previewFeeShares(
     DataTypes.Asset storage asset,
     uint256 indexDelta
-  ) internal view returns (uint256, uint256) {
+  ) internal view returns (uint256) {
     uint256 liquidityFee = asset.config.liquidityFee;
     if (indexDelta == 0 || liquidityFee == 0) {
-      return (0, 0);
+      return 0;
     }
     // liquidity growth is always greater than accrued fees, even with 100.00% liquidity fee
     uint256 feesAmount = indexDelta
       .rayMulDown(asset.baseDrawnShares + asset.premiumDrawnShares)
       .percentMulDown(liquidityFee);
 
-    return (
-      feesAmount,
-      feesAmount.toSharesDown(asset.totalSuppliedAssets() - feesAmount, asset.suppliedShares)
-    );
+    return feesAmount.toSharesDown(asset.totalSuppliedAssets() - feesAmount, asset.suppliedShares);
   }
 
   /**
@@ -198,7 +192,6 @@ library AssetLogic {
    * @return The amount of shares corresponding to the fees
    */
   function unrealizedFeeShares(DataTypes.Asset storage asset) internal view returns (uint256) {
-    (, uint256 feeShares) = asset.previewFeeShares(asset.previewDrawnIndex() - asset.baseDebtIndex);
-    return feeShares;
+    return asset.previewFeeShares(asset.previewDrawnIndex() - asset.baseDebtIndex);
   }
 }
