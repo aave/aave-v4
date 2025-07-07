@@ -10,9 +10,9 @@ interface IBasicInterestRateStrategy {
   /**
    * @notice Calculates the interest rate depending on the asset's state and configurations
    * @param assetId The id of the asset
-   * @param availableLiquidity The updated available liquidity of the asset
-   * @param baseDebt The updated base debt of the asset
-   * @param premiumDebt The updated premium debt of the asset
+   * @param availableLiquidity The current available liquidity of the asset
+   * @param baseDebt The current base debt of the asset
+   * @param premiumDebt The current premium debt of the asset
    * @return variableBorrowRate The variable borrow rate expressed in ray
    */
   function calculateInterestRate(

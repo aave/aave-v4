@@ -1861,18 +1861,20 @@ abstract contract Base is Test {
   }
 
   function assertEq(DataTypes.AssetConfig memory a, DataTypes.AssetConfig memory b) internal pure {
-    require(a.active == b.active, 'assertEq(AssetConfig): active');
-    require(a.paused == b.paused, 'assertEq(AssetConfig): paused');
-    require(a.frozen == b.frozen, 'assertEq(AssetConfig): rozen');
-    require(a.feeReceiver == b.feeReceiver, 'assertEq(AssetConfig): feeReceiver');
-    require(a.liquidityFee == b.liquidityFee, 'assertEq(AssetConfig): liquidityFee');
-    require(a.irStrategy == b.irStrategy, 'assertEq(AssetConfig): irStrategy');
+    assertEq(a.active, b.active, 'assertEq(AssetConfig): active');
+    assertEq(a.paused, b.paused, 'assertEq(AssetConfig): paused');
+    assertEq(a.frozen, b.frozen, 'assertEq(AssetConfig): frozen');
+    assertEq(a.feeReceiver, b.feeReceiver, 'assertEq(AssetConfig): feeReceiver');
+    assertEq(a.liquidityFee, b.liquidityFee, 'assertEq(AssetConfig): liquidityFee');
+    assertEq(a.irStrategy, b.irStrategy, 'assertEq(AssetConfig): irStrategy');
+    assertEq(abi.encode(a), abi.encode(b), 'assertEq(AssetConfig): all fields');
   }
 
   function assertEq(DataTypes.SpokeConfig memory a, DataTypes.SpokeConfig memory b) internal pure {
-    require(a.supplyCap == b.supplyCap, 'assertEq(SpokeConfig): supplyCap');
-    require(a.drawCap == b.drawCap, 'assertEq(SpokeConfig): drawCap');
-    require(a.active == b.active, 'assertEq(SpokeConfig): active');
+    assertEq(a.supplyCap, b.supplyCap, 'assertEq(SpokeConfig): supplyCap');
+    assertEq(a.drawCap, b.drawCap, 'assertEq(SpokeConfig): drawCap');
+    assertEq(a.active, b.active, 'assertEq(SpokeConfig): active');
+    assertEq(abi.encode(a), abi.encode(b), 'assertEq(SpokeConfig): all fields');
   }
 
   function _calculateExpectedFees(
