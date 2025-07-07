@@ -26,14 +26,6 @@ interface IPriceOracle {
   function DECIMALS() external view returns (uint8);
 
   /**
-   * @notice Configures the reserve price data
-   * @dev Must be callable by the spoke
-   * @param reserveId The identifier of the reserve
-   * @param configData The configuration data
-   */
-  function configureReserve(uint256 reserveId, bytes calldata configData) external;
-
-  /**
    * @notice Returns the reserve price with `decimals` precision
    * @param reserveId The identifier of the reserve
    * @return The price of the reserve

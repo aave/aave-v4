@@ -3,7 +3,7 @@ pragma solidity ^0.8.0;
 
 import {IAccessManaged} from 'src/dependencies/openzeppelin/IAccessManaged.sol';
 import {IMulticall} from 'src/interfaces/IMulticall.sol';
-import {IPriceOracle} from 'src/interfaces/IPriceOracle.sol';
+import {IAaveOracle} from 'src/interfaces/IAaveOracle.sol';
 import {DataTypes} from 'src/libraries/types/DataTypes.sol';
 
 /**
@@ -46,6 +46,7 @@ interface ISpoke is IMulticall, IAccessManaged {
     uint256 realizedPremiumTaken
   );
   event OracleUpdated(address indexed oracle);
+  event ReserveSourceUpdated(uint256 indexed reserveId, address indexed source);
   event LiquidationConfigUpdated(DataTypes.LiquidationConfig config);
   event UserRiskPremiumUpdate(address indexed user, uint256 riskPremium);
 
@@ -89,19 +90,18 @@ interface ISpoke is IMulticall, IAccessManaged {
   error SpecifiedCurrencyNotBorrowedByUser();
   error InvalidDebtToCover();
   error InvalidLiquidationFee();
-  error InvalidOracleAddress();
-  error InvalidOracleConfig();
+  error InvalidOracle();
   error UsersAndDebtLengthMismatch();
   error Unauthorized();
 
   function updateOracle(address newOracle) external;
 
-  function updateOracleConfig(uint256 reserveId, bytes calldata oracleConfigData) external;
+  function updateReserveSource(uint256 reserveId, address source) external;
 
   function addReserve(
     uint256 assetId,
     address hub,
-    bytes calldata oracleConfigData,
+    address source,
     DataTypes.ReserveConfig calldata config,
     DataTypes.DynamicReserveConfig calldata dynConfig
   ) external returns (uint256);
@@ -243,5 +243,5 @@ interface ISpoke is IMulticall, IAccessManaged {
 
   function MAX_LIQUIDITY_PREMIUM() external view returns (uint256);
 
-  function oracle() external view returns (IPriceOracle);
+  function oracle() external view returns (IAaveOracle);
 }

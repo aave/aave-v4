@@ -81,7 +81,7 @@ contract LiquidityHubHandler is Test {
     spoke1.addReserve(
       0,
       address(hub),
-      _getMockOracleConfigData(spoke1, 1e8),
+      _getMockReserveSource(spoke1, 1e8),
       DataTypes.ReserveConfig({
         active: true,
         frozen: false,
@@ -169,9 +169,8 @@ contract LiquidityHubHandler is Test {
     //   : hub.getTotalAssets(assetId) / reserveData.suppliedShares;
   }
 
-    function _getMockOracleConfigData(Spoke spoke, uint256 price) internal returns (bytes memory) {
-      AaveOracle oracle = AaveOracle(address(spoke.oracle()));
-      address mockPriceFeed = address(new MockPriceFeed(oracle.DECIMALS(), oracle.DESCRIPTION(), price));
-      return abi.encode(mockPriceFeed); 
-    }
+  function _getMockReserveSource(Spoke spoke, uint256 price) internal returns (address) {
+    AaveOracle oracle = AaveOracle(address(spoke.oracle()));
+    return address(new MockPriceFeed(oracle.DECIMALS(), oracle.DESCRIPTION(), price));
+  }
 }

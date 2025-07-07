@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: AGPL-3.0
 pragma solidity ^0.8.0;
 
+import {AggregatorV3Interface} from 'src/dependencies/chainlink/AggregatorV3Interface.sol';
 import {IPriceOracle} from 'src/interfaces/IPriceOracle.sol';
 
 /**
@@ -10,17 +11,11 @@ import {IPriceOracle} from 'src/interfaces/IPriceOracle.sol';
  */
 interface IAaveOracle is IPriceOracle {
   /**
-   * @dev Emitted when the Aave Oracle is created.
-   * @param decimals The number of decimals used to return prices.
-   * @param description The description of the oracle.
-   */
-  event AaveOracleCreated(uint256 indexed decimals, string indexed description);
-  /**
    * @dev Emitted when the price feed source of a reserve is updated.
    * @param reserveId The identifier of the reserve.
    * @param source The price feed source of the reserve.
    */
-  event ReserveSourceUpdated(uint256 indexed reserveId, address indexed source);
+  event ReserveSourceUpdated(uint256 indexed reserveId, AggregatorV3Interface indexed source);
 
   /**
    * @dev Thrown when the price feed source uses a different number of decimals than the oracle.
@@ -37,6 +32,14 @@ interface IAaveOracle is IPriceOracle {
    * @param reserveId The identifier of the reserve.
    */
   error InvalidPrice(uint256 reserveId);
+
+  /**
+   * @notice Sets the price feed source of a reserve.
+   * @dev Must be called by the spoke.
+   * @param reserveId The identifier of the reserve.
+   * @param source The price feed source of the reserve.
+   */
+  function setReserveSource(uint256 reserveId, address source) external;
 
   /**
    * @notice Returns the description of the oracle

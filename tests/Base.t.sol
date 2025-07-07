@@ -215,7 +215,7 @@ abstract contract Base is Test {
     // Spoke Admin functionalities
     bytes4[] memory selectors = new bytes4[](7);
     selectors[0] = ISpoke.updateOracle.selector;
-    selectors[1] = ISpoke.updateOracleConfig.selector;
+    selectors[1] = ISpoke.updateReserveSource.selector;
     selectors[2] = ISpoke.updateLiquidationConfig.selector;
     selectors[3] = ISpoke.addReserve.selector;
     selectors[4] = ISpoke.updateReserveConfig.selector;
@@ -593,35 +593,35 @@ abstract contract Base is Test {
     spokeInfo[spoke1].weth.reserveId = spoke1.addReserve(
       wethAssetId,
       address(hub),
-      _getMockOracleConfigData(spoke1, 2000e8),
+      _getMockReserveSource(spoke1, 2000e8),
       spokeInfo[spoke1].weth.reserveConfig,
       spokeInfo[spoke1].weth.dynReserveConfig
     );
     spokeInfo[spoke1].wbtc.reserveId = spoke1.addReserve(
       wbtcAssetId,
       address(hub),
-      _getMockOracleConfigData(spoke1, 50_000e8),
+      _getMockReserveSource(spoke1, 50_000e8),
       spokeInfo[spoke1].wbtc.reserveConfig,
       spokeInfo[spoke1].wbtc.dynReserveConfig
     );
     spokeInfo[spoke1].dai.reserveId = spoke1.addReserve(
       daiAssetId,
       address(hub),
-      _getMockOracleConfigData(spoke1, 1e8),
+      _getMockReserveSource(spoke1, 1e8),
       spokeInfo[spoke1].dai.reserveConfig,
       spokeInfo[spoke1].dai.dynReserveConfig
     );
     spokeInfo[spoke1].usdx.reserveId = spoke1.addReserve(
       usdxAssetId,
       address(hub),
-      _getMockOracleConfigData(spoke1, 1e8),
+      _getMockReserveSource(spoke1, 1e8),
       spokeInfo[spoke1].usdx.reserveConfig,
       spokeInfo[spoke1].usdx.dynReserveConfig
     );
     spokeInfo[spoke1].usdy.reserveId = spoke1.addReserve(
       usdyAssetId,
       address(hub),
-      _getMockOracleConfigData(spoke1, 1e8),
+      _getMockReserveSource(spoke1, 1e8),
       spokeInfo[spoke1].usdy.reserveConfig,
       spokeInfo[spoke1].usdy.dynReserveConfig
     );
@@ -703,42 +703,42 @@ abstract contract Base is Test {
     spokeInfo[spoke2].wbtc.reserveId = spoke2.addReserve(
       wbtcAssetId,
       address(hub),
-      _getMockOracleConfigData(spoke2, 50_000e8),
+      _getMockReserveSource(spoke2, 50_000e8),
       spokeInfo[spoke2].wbtc.reserveConfig,
       spokeInfo[spoke2].wbtc.dynReserveConfig
     );
     spokeInfo[spoke2].weth.reserveId = spoke2.addReserve(
       wethAssetId,
       address(hub),
-      _getMockOracleConfigData(spoke2, 2000e8),
+      _getMockReserveSource(spoke2, 2000e8),
       spokeInfo[spoke2].weth.reserveConfig,
       spokeInfo[spoke2].weth.dynReserveConfig
     );
     spokeInfo[spoke2].dai.reserveId = spoke2.addReserve(
       daiAssetId,
       address(hub),
-      _getMockOracleConfigData(spoke2, 1e8),
+      _getMockReserveSource(spoke2, 1e8),
       spokeInfo[spoke2].dai.reserveConfig,
       spokeInfo[spoke2].dai.dynReserveConfig
     );
     spokeInfo[spoke2].usdx.reserveId = spoke2.addReserve(
       usdxAssetId,
       address(hub),
-      _getMockOracleConfigData(spoke2, 1e8),
+      _getMockReserveSource(spoke2, 1e8),
       spokeInfo[spoke2].usdx.reserveConfig,
       spokeInfo[spoke2].usdx.dynReserveConfig
     );
     spokeInfo[spoke2].usdy.reserveId = spoke2.addReserve(
       usdyAssetId,
       address(hub),
-      _getMockOracleConfigData(spoke2, 1e8),
+      _getMockReserveSource(spoke2, 1e8),
       spokeInfo[spoke2].usdy.reserveConfig,
       spokeInfo[spoke2].usdy.dynReserveConfig
     );
     spokeInfo[spoke2].dai2.reserveId = spoke2.addReserve(
       dai2AssetId,
       address(hub),
-      _getMockOracleConfigData(spoke2, 1e8),
+      _getMockReserveSource(spoke2, 1e8),
       spokeInfo[spoke2].dai2.reserveConfig,
       spokeInfo[spoke2].dai2.dynReserveConfig
     );
@@ -799,28 +799,28 @@ abstract contract Base is Test {
     spokeInfo[spoke3].dai.reserveId = spoke3.addReserve(
       daiAssetId,
       address(hub),
-      _getMockOracleConfigData(spoke3, 1e8),
+      _getMockReserveSource(spoke3, 1e8),
       spokeInfo[spoke3].dai.reserveConfig,
       spokeInfo[spoke3].dai.dynReserveConfig
     );
     spokeInfo[spoke3].usdx.reserveId = spoke3.addReserve(
       usdxAssetId,
       address(hub),
-      _getMockOracleConfigData(spoke3, 1e8),
+      _getMockReserveSource(spoke3, 1e8),
       spokeInfo[spoke3].usdx.reserveConfig,
       spokeInfo[spoke3].usdx.dynReserveConfig
     );
     spokeInfo[spoke3].weth.reserveId = spoke3.addReserve(
       wethAssetId,
       address(hub),
-      _getMockOracleConfigData(spoke3, 2000e8),
+      _getMockReserveSource(spoke3, 2000e8),
       spokeInfo[spoke3].weth.reserveConfig,
       spokeInfo[spoke3].weth.dynReserveConfig
     );
     spokeInfo[spoke3].wbtc.reserveId = spoke3.addReserve(
       wbtcAssetId,
       address(hub),
-      _getMockOracleConfigData(spoke3, 50_000e8),
+      _getMockReserveSource(spoke3, 50_000e8),
       spokeInfo[spoke3].wbtc.reserveConfig,
       spokeInfo[spoke3].wbtc.dynReserveConfig
     );
@@ -1942,7 +1942,7 @@ abstract contract Base is Test {
     AaveOracle oracle = AaveOracle(address(spoke.oracle()));
     address mockPriceFeed = address(new MockPriceFeed(oracle.DECIMALS(), oracle.DESCRIPTION(), price));
     vm.prank(address(ADMIN));
-    spoke.updateOracleConfig(reserveId, abi.encode(mockPriceFeed));
+    spoke.updateReserveSource(reserveId, mockPriceFeed);
   }
 
   function _mockReservePriceByPercent(ISpoke spoke, uint256 reserveId, uint256 percentage) internal {
@@ -1951,10 +1951,9 @@ abstract contract Base is Test {
     _mockReservePrice(spoke, reserveId, newPrice);
   }
 
-  function _getMockOracleConfigData(ISpoke spoke, uint256 price) internal returns (bytes memory) {
+  function _getMockReserveSource(ISpoke spoke, uint256 price) internal returns (address) {
     AaveOracle oracle = AaveOracle(address(spoke.oracle()));
-    address mockPriceFeed = address(new MockPriceFeed(oracle.DECIMALS(), oracle.DESCRIPTION(), price));
-    return abi.encode(mockPriceFeed); 
+    return address(new MockPriceFeed(oracle.DECIMALS(), oracle.DESCRIPTION(), price));
   }
 
   function _assertEventNotEmitted(bytes32 eventSignature) internal {

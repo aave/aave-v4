@@ -69,7 +69,7 @@ contract SpokeMultipleHubBase is SpokeBase {
     // Spoke Admin functionalities
     bytes4[] memory selectors = new bytes4[](7);
     selectors[0] = ISpoke.updateOracle.selector;
-    selectors[1] = ISpoke.updateOracleConfig.selector;
+    selectors[1] = ISpoke.updateReserveSource.selector;
     selectors[2] = ISpoke.updateLiquidationConfig.selector;
     selectors[3] = ISpoke.addReserve.selector;
     selectors[4] = ISpoke.updateReserveConfig.selector;

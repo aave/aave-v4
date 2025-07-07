@@ -17,8 +17,7 @@ import {PositionStatus} from 'src/libraries/configuration/PositionStatus.sol';
 
 // interfaces
 import {ILiquidityHub} from 'src/interfaces/ILiquidityHub.sol';
-import {ISpoke} from 'src/interfaces/ISpoke.sol';
-import {IPriceOracle} from 'src/interfaces/IPriceOracle.sol';
+import {ISpoke, IAaveOracle} from 'src/interfaces/ISpoke.sol';
 
 contract Spoke is ISpoke, Multicall, AccessManaged {
   using SafeERC20 for IERC20;
@@ -33,7 +32,7 @@ contract Spoke is ISpoke, Multicall, AccessManaged {
   uint256 public constant HEALTH_FACTOR_LIQUIDATION_THRESHOLD = WadRayMathExtended.WAD;
   uint256 public constant MAX_LIQUIDITY_PREMIUM = 1000_00; // 1000.00%
 
-  IPriceOracle public oracle;
+  IAaveOracle public oracle;
   uint256[] public reservesList; // todo: rm, not needed
   uint256 public reserveCount;
 
@@ -61,18 +60,14 @@ contract Spoke is ISpoke, Multicall, AccessManaged {
   // /////
 
   function updateOracle(address newOracle) external restricted {
-    require(newOracle != address(0), InvalidOracleAddress());
-    oracle = IPriceOracle(newOracle);
+    require(newOracle != address(0), InvalidOracle());
+    oracle = IAaveOracle(newOracle);
     emit OracleUpdated(newOracle);
   }
 
-  function updateOracleConfig(
-    uint256 reserveId,
-    bytes calldata oracleConfigData
-  ) external restricted {
+  function updateReserveSource(uint256 reserveId, address source) external restricted {
     require(reserveId < reserveCount, ReserveNotListed());
-    require(address(oracle) != address(0), InvalidOracleAddress());
-    _configureReservePrice(reserveId, oracleConfigData);
+    _updateReserveSource(reserveId, source);
   }
 
   function updateLiquidationConfig(
@@ -86,7 +81,7 @@ contract Spoke is ISpoke, Multicall, AccessManaged {
   function addReserve(
     uint256 assetId,
     address hub,
-    bytes calldata oracleConfigData,
+    address source,
     DataTypes.ReserveConfig calldata config,
     DataTypes.DynamicReserveConfig calldata dynamicConfig
   ) external restricted returns (uint256) {
@@ -99,7 +94,7 @@ contract Spoke is ISpoke, Multicall, AccessManaged {
     DataTypes.Asset memory asset = ILiquidityHub(hub).getAsset(assetId);
     require(asset.underlying != address(0), AssetNotListed());
 
-    _configureReservePrice(reserveId, oracleConfigData);
+    _updateReserveSource(reserveId, source);
 
     reservesList.push(reserveId);
     _reserves[reserveId] = DataTypes.Reserve({
@@ -620,9 +615,10 @@ contract Spoke is ISpoke, Multicall, AccessManaged {
     // todo validate user not trying to repay more
   }
 
-  function _configureReservePrice(uint256 reserveId, bytes calldata oracleConfigData) internal {
-    require(address(oracle) != address(0), InvalidOracleAddress());
-    oracle.configureReserve(reserveId, oracleConfigData);
+  function _updateReserveSource(uint256 reserveId, address source) internal {
+    require(address(oracle) != address(0), InvalidOracle());
+    oracle.setReserveSource(reserveId, source);
+    emit ReserveSourceUpdated(reserveId, source);
   }
 
   function _refreshAndValidateUserPosition(address user) internal returns (uint256) {

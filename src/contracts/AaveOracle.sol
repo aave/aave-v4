@@ -1,8 +1,7 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.0;
 
-import {AggregatorV3Interface} from 'src/dependencies/chainlink/AggregatorV3Interface.sol';
-import {IAaveOracle, IPriceOracle} from 'src/interfaces/IAaveOracle.sol';
+import {IAaveOracle, IPriceOracle, AggregatorV3Interface} from 'src/interfaces/IAaveOracle.sol';
 
 /**
  * @title AaveOracle
@@ -30,18 +29,16 @@ contract AaveOracle is IAaveOracle {
     SPOKE = spoke_;
     DECIMALS = decimals_;
     DESCRIPTION = description_;
-    emit AaveOracleCreated(decimals_, description_);
   }
 
-  /// @inheritdoc IPriceOracle
-  function configureReserve(uint256 reserveId, bytes calldata configData) external override {
+  /// @inheritdoc IAaveOracle
+  function setReserveSource(uint256 reserveId, address source) external override {
     require(msg.sender == SPOKE, OnlySpoke());
-    address source = abi.decode(configData, (address));
     AggregatorV3Interface targetSource = AggregatorV3Interface(source);
     require(targetSource.decimals() == DECIMALS, InvalidSourceDecimals(reserveId));
     _sources[reserveId] = targetSource;
     _getSourcePrice(reserveId); // check if the source is valid
-    emit ReserveSourceUpdated(reserveId, source);
+    emit ReserveSourceUpdated(reserveId, targetSource);
   }
 
   /// @inheritdoc IPriceOracle
