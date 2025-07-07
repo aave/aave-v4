@@ -29,6 +29,15 @@ contract AaveOracleTest is Base {
     test_description();
   }
 
+  function test_fuzz_constructor(uint8 decimals) public {
+    decimals = uint8(bound(decimals, 0, 18));
+    oracle = new AaveOracle(address(spoke1), decimals, _description);
+
+    test_spoke();
+    assertEq(oracle.DECIMALS(), decimals);
+    test_description();
+  }
+
   function test_spoke() public {
     assertEq(oracle.SPOKE(), address(spoke1));
   }

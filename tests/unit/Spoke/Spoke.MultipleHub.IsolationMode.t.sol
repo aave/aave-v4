@@ -45,7 +45,7 @@ contract SpokeMultipleHubIsolationModeTest is SpokeMultipleHubBase {
     isolationVars.reserveAId = newSpoke.addReserve(
       isolationVars.assetAId,
       address(newHub),
-      _getMockReserveSource(newSpoke, 2000e8),
+      _deployMockPriceFeed(newSpoke, 2000e8),
       DataTypes.ReserveConfig({
         active: true,
         frozen: false,
@@ -61,7 +61,7 @@ contract SpokeMultipleHubIsolationModeTest is SpokeMultipleHubBase {
     isolationVars.reserveBId = newSpoke.addReserve(
       isolationVars.assetBId,
       address(newHub),
-      _getMockReserveSource(newSpoke, 50_000e8),
+      _deployMockPriceFeed(newSpoke, 50_000e8),
       DataTypes.ReserveConfig({
         active: true,
         frozen: false,
@@ -116,7 +116,7 @@ contract SpokeMultipleHubIsolationModeTest is SpokeMultipleHubBase {
     isolationVars.spoke1ReserveBId = spoke1.addReserve(
       isolationVars.assetBIdMainHub,
       address(hub),
-      _getMockReserveSource(newSpoke, 50_000e8),
+      _deployMockPriceFeed(newSpoke, 50_000e8),
       DataTypes.ReserveConfig({
         active: true,
         frozen: false,
@@ -199,7 +199,7 @@ contract SpokeMultipleHubIsolationModeTest is SpokeMultipleHubBase {
     isolationVars.reserveBIdMainHub = newSpoke.addReserve(
       isolationVars.assetBIdMainHub,
       address(hub),
-      _getMockReserveSource(newSpoke, 50_000e8),
+      _deployMockPriceFeed(newSpoke, 50_000e8),
       DataTypes.ReserveConfig({
         active: true,
         frozen: false,

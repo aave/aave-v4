@@ -54,7 +54,7 @@ contract SpokeConfigTest is SpokeBase {
 
   function test_updateReservePriceSource() public {
     uint256 reserveId = 0;
-    address reserveSource = _getMockReserveSource(spoke1, 1e8);
+    address reserveSource = _deployMockPriceFeed(spoke1, 1e8);
     vm.expectEmit(address(spoke1));
     emit ISpoke.ReservePriceSourceUpdated(reserveId, reserveSource);
     vm.expectCall(
@@ -373,7 +373,7 @@ contract SpokeConfigTest is SpokeBase {
       collateralFactor: 10_00
     });
 
-    address reserveSource = _getMockReserveSource(spoke1, 2000e8);
+    address reserveSource = _deployMockPriceFeed(spoke1, 2000e8);
 
     vm.expectEmit(address(spoke1));
     emit ISpoke.ReserveAdded(reserveId, wethAssetId);
@@ -402,7 +402,7 @@ contract SpokeConfigTest is SpokeBase {
       collateralFactor: 10_00
     });
 
-    address reserveSource = _getMockReserveSource(spoke1, 1e8);
+    address reserveSource = _deployMockPriceFeed(spoke1, 1e8);
     vm.expectRevert(ISpoke.AssetNotListed.selector, address(spoke1));
     vm.prank(SPOKE_ADMIN);
     spoke1.addReserve(assetId, address(hub), reserveSource, newReserveConfig, newDynReserveConfig);
@@ -425,7 +425,7 @@ contract SpokeConfigTest is SpokeBase {
       collateralFactor: 10_00
     });
 
-    address reserveSource = _getMockReserveSource(spoke1, 1e8);
+    address reserveSource = _deployMockPriceFeed(spoke1, 1e8);
 
     vm.expectRevert(ISpoke.AssetNotListed.selector, address(spoke1));
     vm.prank(SPOKE_ADMIN);

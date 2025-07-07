@@ -46,7 +46,7 @@ contract SpokeMultipleHubSiloedBorrowingTest is SpokeMultipleHubBase {
     siloedVars.reserveBId = newSpoke.addReserve(
       siloedVars.assetBId,
       address(newHub),
-      _getMockReserveSource(newSpoke, 2000e8),
+      _deployMockPriceFeed(newSpoke, 2000e8),
       DataTypes.ReserveConfig({
         active: true,
         frozen: false,
@@ -90,7 +90,7 @@ contract SpokeMultipleHubSiloedBorrowingTest is SpokeMultipleHubBase {
     siloedVars.reserveAId = spoke1.addReserve(
       siloedVars.assetAId,
       address(hub),
-      _getMockReserveSource(spoke1, 50_000e8),
+      _deployMockPriceFeed(spoke1, 50_000e8),
       DataTypes.ReserveConfig({
         active: true,
         frozen: false,
@@ -125,7 +125,7 @@ contract SpokeMultipleHubSiloedBorrowingTest is SpokeMultipleHubBase {
     siloedVars.reserveAIdNewSpoke = newSpoke.addReserve(
       siloedVars.assetAId,
       address(hub),
-      _getMockReserveSource(newSpoke, 2000e8),
+      _deployMockPriceFeed(newSpoke, 2000e8),
       DataTypes.ReserveConfig({
         active: true,
         frozen: false,
