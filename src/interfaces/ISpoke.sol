@@ -47,7 +47,7 @@ interface ISpoke is IMulticall, IAccessManaged {
     uint256 realizedPremiumTaken
   );
   event OracleUpdated(address indexed oracle);
-  event ReserveSourceUpdated(uint256 indexed reserveId, address indexed source);
+  event ReservePriceSourceUpdated(uint256 indexed reserveId, address indexed priceSource);
   event LiquidationConfigUpdated(DataTypes.LiquidationConfig config);
   event UserRiskPremiumUpdate(address indexed user, uint256 riskPremium);
 
@@ -97,12 +97,12 @@ interface ISpoke is IMulticall, IAccessManaged {
 
   function updateOracle(address newOracle) external;
 
-  function updateReserveSource(uint256 reserveId, address source) external;
+  function updateReservePriceSource(uint256 reserveId, address priceSource) external;
 
   function addReserve(
     uint256 assetId,
     address hub,
-    address source,
+    address priceSource,
     DataTypes.ReserveConfig calldata config,
     DataTypes.DynamicReserveConfig calldata dynConfig
   ) external returns (uint256);

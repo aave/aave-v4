@@ -215,7 +215,7 @@ abstract contract Base is Test {
     // Spoke Admin functionalities
     bytes4[] memory selectors = new bytes4[](7);
     selectors[0] = ISpoke.updateOracle.selector;
-    selectors[1] = ISpoke.updateReserveSource.selector;
+    selectors[1] = ISpoke.updateReservePriceSource.selector;
     selectors[2] = ISpoke.updateLiquidationConfig.selector;
     selectors[3] = ISpoke.addReserve.selector;
     selectors[4] = ISpoke.updateReserveConfig.selector;
@@ -1942,7 +1942,7 @@ abstract contract Base is Test {
     AaveOracle oracle = AaveOracle(address(spoke.oracle()));
     address mockPriceFeed = address(new MockPriceFeed(oracle.DECIMALS(), oracle.DESCRIPTION(), price));
     vm.prank(address(ADMIN));
-    spoke.updateReserveSource(reserveId, mockPriceFeed);
+    spoke.updateReservePriceSource(reserveId, mockPriceFeed);
   }
 
   function _mockReservePriceByPercent(ISpoke spoke, uint256 reserveId, uint256 percentage) internal {

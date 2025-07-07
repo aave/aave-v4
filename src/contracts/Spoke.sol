@@ -65,9 +65,9 @@ contract Spoke is ISpoke, Multicall, AccessManaged {
     emit OracleUpdated(newOracle);
   }
 
-  function updateReserveSource(uint256 reserveId, address source) external restricted {
+  function updateReservePriceSource(uint256 reserveId, address priceSource) external restricted {
     require(reserveId < reserveCount, ReserveNotListed());
-    _updateReserveSource(reserveId, source);
+    _updateReservePriceSource(reserveId, priceSource);
   }
 
   function updateLiquidationConfig(
@@ -81,7 +81,7 @@ contract Spoke is ISpoke, Multicall, AccessManaged {
   function addReserve(
     uint256 assetId,
     address hub,
-    address source,
+    address priceSource,
     DataTypes.ReserveConfig calldata config,
     DataTypes.DynamicReserveConfig calldata dynamicConfig
   ) external restricted returns (uint256) {
@@ -94,7 +94,7 @@ contract Spoke is ISpoke, Multicall, AccessManaged {
     DataTypes.Asset memory asset = ILiquidityHub(hub).getAsset(assetId);
     require(asset.underlying != address(0), AssetNotListed());
 
-    _updateReserveSource(reserveId, source);
+    _updateReservePriceSource(reserveId, priceSource);
 
     reservesList.push(reserveId);
     _reserves[reserveId] = DataTypes.Reserve({
@@ -615,10 +615,10 @@ contract Spoke is ISpoke, Multicall, AccessManaged {
     // todo validate user not trying to repay more
   }
 
-  function _updateReserveSource(uint256 reserveId, address source) internal {
+  function _updateReservePriceSource(uint256 reserveId, address priceSource) internal {
     require(address(oracle) != address(0), InvalidOracle());
-    oracle.setReserveSource(reserveId, source);
-    emit ReserveSourceUpdated(reserveId, source);
+    oracle.setReserveSource(reserveId, priceSource);
+    emit ReservePriceSourceUpdated(reserveId, priceSource);
   }
 
   function _refreshAndValidateUserPosition(address user) internal returns (uint256) {

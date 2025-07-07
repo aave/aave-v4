@@ -39,30 +39,30 @@ contract SpokeConfigTest is SpokeBase {
     spoke1.updateOracle(newOracle);
   }
 
-  function test_updateReserveSource_revertsWith_AccessManagedUnauthorized() public {
+  function test_updateReservePriceSource_revertsWith_AccessManagedUnauthorized() public {
     vm.expectRevert(abi.encodeWithSelector(IAccessManaged.AccessManagedUnauthorized.selector, alice));
     vm.prank(alice);
-    spoke1.updateReserveSource(0, address(0));
+    spoke1.updateReservePriceSource(0, address(0));
   }
 
-  function test_updateReserveSource_revertsWith_ReserveNotListed() public {
+  function test_updateReservePriceSource_revertsWith_ReserveNotListed() public {
     uint256 reserveId = spoke1.reserveCount();
     vm.expectRevert(ISpoke.ReserveNotListed.selector);
     vm.prank(SPOKE_ADMIN);
-    spoke1.updateReserveSource(reserveId, address(0));
+    spoke1.updateReservePriceSource(reserveId, address(0));
   }
 
-  function test_updateReserveSource() public {
+  function test_updateReservePriceSource() public {
     uint256 reserveId = 0;
     address reserveSource = _getMockReserveSource(spoke1, 1e8);
     vm.expectEmit(address(spoke1));
-    emit ISpoke.ReserveSourceUpdated(reserveId, reserveSource);
+    emit ISpoke.ReservePriceSourceUpdated(reserveId, reserveSource);
     vm.expectCall(
       address(oracle1),
       abi.encodeCall(IAaveOracle.setReserveSource, (reserveId, reserveSource))
     );
     vm.prank(SPOKE_ADMIN);
-    spoke1.updateReserveSource(reserveId, reserveSource);
+    spoke1.updateReservePriceSource(reserveId, reserveSource);
   }
 
   function test_updateReserveConfig() public {
