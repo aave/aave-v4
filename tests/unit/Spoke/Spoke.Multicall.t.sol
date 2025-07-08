@@ -122,8 +122,14 @@ contract SpokeMulticall is SpokeBase {
 
     // Set up the multicall
     bytes[] memory calls = new bytes[](2);
-    calls[0] = abi.encodeCall(ISpoke.addReserve, (daiAssetId, address(hub), dai2Config, dai2DynConfig));
-    calls[1] = abi.encodeCall(ISpoke.addReserve, (daiAssetId, address(hub), dai3Config, dai3DynConfig));
+    calls[0] = abi.encodeCall(
+      ISpoke.addReserve,
+      (daiAssetId, address(hub), dai2Config, dai2DynConfig)
+    );
+    calls[1] = abi.encodeCall(
+      ISpoke.addReserve,
+      (daiAssetId, address(hub), dai3Config, dai3DynConfig)
+    );
 
     vm.expectEmit(address(spoke1));
     emit ISpoke.ReserveAdded(dai2ReserveId, daiAssetId);
@@ -174,5 +180,24 @@ contract SpokeMulticall is SpokeBase {
     // Check the reserve configs
     assertEq(spoke1.getReserve(daiReserveId), newDai);
     assertEq(spoke1.getReserve(usdxReserveId), newUsdx);
+  }
+
+  function test_multicall_getters() public {
+    bytes[] memory calls = new bytes[](5);
+    calls[0] = abi.encodeCall(ISpoke.supply, (_daiReserveId(spoke1), 120e18));
+    calls[1] = abi.encodeCall(ISpoke.setUsingAsCollateral, (_daiReserveId(spoke1), true));
+    calls[2] = abi.encodeCall(ISpoke.borrow, (_daiReserveId(spoke1), 80e18, alice));
+    calls[3] = abi.encodeCall(ISpoke.getUserRiskPremium, (alice));
+    calls[4] = abi.encodeCall(ISpoke.getUserDebt, (_daiReserveId(spoke1), alice));
+
+    vm.prank(alice);
+    bytes[] memory ret = spoke1.multicall(calls);
+
+    assertEq(ret.length, calls.length);
+    assertEq(ret[0].length, 0);
+    assertEq(ret[1].length, 0);
+    assertEq(ret[2].length, 0);
+    assertEq(ret[3], abi.encode(_calculateExpectedUserRP(alice, spoke1)));
+    assertEq(ret[4], abi.encode(80e18, 0));
   }
 }
