@@ -3,17 +3,17 @@ pragma solidity ^0.8.0;
 
 import {Test} from 'forge-std/Test.sol';
 
+import {IERC20} from 'src/dependencies/openzeppelin/IERC20.sol';
+import {AccessManager} from 'src/dependencies/openzeppelin/AccessManager.sol';
 import {IPriceOracle} from 'src/interfaces/IPriceOracle.sol';
 import {AaveOracle} from 'src/contracts/AaveOracle.sol';
 import {LiquidityHub} from 'src/contracts/LiquidityHub.sol';
 import {Spoke} from 'src/contracts/Spoke.sol';
 import {TreasurySpoke} from 'src/contracts/TreasurySpoke.sol';
-import {IERC20} from 'src/dependencies/openzeppelin/IERC20.sol';
-import {AccessManager} from 'src/dependencies/openzeppelin/AccessManager.sol';
-import '../mocks/MockERC20.sol';
+import {AssetInterestRateStrategy, IAssetInterestRateStrategy} from 'src/contracts/AssetInterestRateStrategy.sol';
 import {MockPriceFeed} from '../mocks/MockPriceFeed.sol';
+import '../mocks/MockERC20.sol';
 import '../Utils.sol';
-import 'src/contracts/AssetInterestRateStrategy.sol';
 
 contract LiquidityHubHandler is Test {
   IERC20 public usdc;

@@ -38,6 +38,7 @@ interface IAaveOracle is IPriceOracle {
    * @dev Must be called by the spoke.
    * @param reserveId The identifier of the reserve.
    * @param source The price feed source of the reserve.
+   * @dev The source must implement the AggregatorV3Interface.
    */
   function setReserveSource(uint256 reserveId, address source) external;
 
