@@ -518,9 +518,9 @@ contract LiquidityHubSupplyTest is LiquidityHubBase {
     );
 
     vm.prank(alice);
-    IERC20(hub.getAsset(daiAssetId).underlying).approve(address(hub), supplyAmount);
+    tokenList.dai.approve(address(hub), supplyAmount);
 
-    vm.expectEmit(hub.getAsset(daiAssetId).underlying);
+    vm.expectEmit(address(tokenList.dai));
     emit IERC20.Transfer(alice, address(hub), supplyAmount);
     vm.expectEmit(address(hub));
     emit ILiquidityHub.Add(daiAssetId, address(spoke2), shares, supplyAmount);
