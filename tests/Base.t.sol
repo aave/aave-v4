@@ -15,6 +15,7 @@ import {Spoke, ISpoke} from 'src/contracts/Spoke.sol';
 import {AaveOracle, IAaveOracle} from 'src/contracts/AaveOracle.sol';
 import {TreasurySpoke, ITreasurySpoke} from 'src/contracts/TreasurySpoke.sol';
 import {HubConfigurator, IHubConfigurator} from 'src/contracts/HubConfigurator.sol';
+import {SpokeConfigurator, ISpokeConfigurator} from 'src/contracts/SpokeConfigurator.sol';
 import {PercentageMath} from 'src/libraries/math/PercentageMath.sol';
 import {PercentageMathExtended} from 'src/libraries/math/PercentageMathExtended.sol';
 import {WadRayMath} from 'src/libraries/math/WadRayMath.sol';
@@ -1856,6 +1857,30 @@ abstract contract Base is Test {
   function assertEq(DataTypes.SpokeConfig memory a, DataTypes.SpokeConfig memory b) internal pure {
     require(a.supplyCap == b.supplyCap, 'assertEq(SpokeConfig): supplyCap');
     require(a.drawCap == b.drawCap, 'assertEq(SpokeConfig): drawCap');
+  }
+
+  function assertEq(DataTypes.LiquidationConfig memory a, DataTypes.LiquidationConfig memory b) internal pure {
+    assertEq(a.closeFactor, b.closeFactor, 'assertEq(LiquidationConfig): closeFactor');
+    assertEq(a.liquidationBonusFactor, b.liquidationBonusFactor, 'assertEq(LiquidationConfig): liquidationBonusFactor');
+    assertEq(a.healthFactorForMaxBonus, b.healthFactorForMaxBonus, 'assertEq(LiquidationConfig): healthFactorForMaxBonus');
+    assertEq(abi.encode(a), abi.encode(b), 'assertEq(LiquidationConfig): all fields');
+  }
+
+  function assertEq(DataTypes.ReserveConfig memory a, DataTypes.ReserveConfig memory b) internal pure {
+    assertEq(a.active, b.active, 'assertEq(ReserveConfig): active');
+    assertEq(a.paused, b.paused, 'assertEq(ReserveConfig): paused');
+    assertEq(a.frozen, b.frozen, 'assertEq(ReserveConfig): frozen');
+    assertEq(a.borrowable, b.borrowable, 'assertEq(ReserveConfig): borrowable');
+    assertEq(a.collateral, b.collateral, 'assertEq(ReserveConfig): collateral');
+    assertEq(a.liquidationBonus, b.liquidationBonus, 'assertEq(ReserveConfig): liquidationBonus');
+    assertEq(a.liquidityPremium, b.liquidityPremium, 'assertEq(ReserveConfig): liquidityPremium');
+    assertEq(a.liquidationFee, b.liquidationFee, 'assertEq(ReserveConfig): liquidationFee');
+    assertEq(abi.encode(a), abi.encode(b), 'assertEq(ReserveConfig): all fields');
+  }
+
+  function assertEq(DataTypes.DynamicReserveConfig memory a, DataTypes.DynamicReserveConfig memory b) internal pure {
+    assertEq(a.collateralFactor, b.collateralFactor, 'assertEq(DynamicReserveConfig): collateralFactor');
+    assertEq(abi.encode(a), abi.encode(b), 'assertEq(DynamicReserveConfig): all fields');
   }
 
   function _calculateExpectedFees(

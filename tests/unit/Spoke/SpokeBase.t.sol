@@ -843,29 +843,6 @@ contract SpokeBase is Base {
   }
 
   function assertEq(
-    DataTypes.ReserveConfig memory a,
-    DataTypes.ReserveConfig memory b
-  ) internal pure {
-    assertEq(a.active, b.active, 'active');
-    assertEq(a.frozen, b.frozen, 'frozen');
-    assertEq(a.paused, b.paused, 'paused');
-    assertEq(a.borrowable, b.borrowable, 'borrowable');
-    assertEq(a.collateral, b.collateral, 'collateral');
-    assertEq(a.liquidationBonus, b.liquidationBonus, 'liquidation bonus');
-    assertEq(a.liquidityPremium, b.liquidityPremium, 'liquidity premium');
-    assertEq(a.liquidationFee, b.liquidationFee, 'liquidation protocol fee');
-    assertEq(abi.encode(a), abi.encode(b)); // sanity
-  }
-
-  function assertEq(
-    DataTypes.DynamicReserveConfig memory a,
-    DataTypes.DynamicReserveConfig memory b
-  ) internal pure {
-    assertEq(a.collateralFactor, b.collateralFactor, 'collateral factor');
-    assertEq(abi.encode(a), abi.encode(b)); // sanity
-  }
-
-  function assertEq(
     DataTypes.DynamicReserveConfig memory a,
     DataTypes.DynamicReserveConfig memory b,
     string memory label

@@ -124,8 +124,8 @@ contract Spoke is ISpoke, Multicall, AccessManaged {
     DataTypes.ReserveConfig calldata config
   ) external restricted {
     // TODO: AccessControl, More sophisticated
+    require(reserveId < reserveCount, ReserveNotListed());
     DataTypes.Reserve storage reserve = _reserves[reserveId];
-    require(reserve.underlying != address(0), ReserveNotListed());
     _validateReserveConfig(config);
     reserve.config = config;
     emit ReserveConfigUpdated(reserveId, config);
@@ -135,6 +135,7 @@ contract Spoke is ISpoke, Multicall, AccessManaged {
     uint256 reserveId,
     DataTypes.DynamicReserveConfig calldata dynamicConfig
   ) external restricted {
+    require(reserveId < reserveCount, ReserveNotListed());
     _validateDynamicReserveConfig(dynamicConfig);
     // TODO: AccessControl, More sophisticated
     DataTypes.Reserve storage reserve = _reserves[reserveId];
