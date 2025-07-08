@@ -179,7 +179,7 @@ contract AssetInterestRateStrategyTest is Base {
       assetId: mockAssetId,
       availableLiquidity: availableLiquidity,
       baseDebt: 0,
-      premiumDebt: vm.randomUint() // unused
+      premiumDebt: 0
     });
 
     assertEq(variableBorrowRate, rateData.baseVariableBorrowRate.bpsToRay());
@@ -194,14 +194,15 @@ contract AssetInterestRateStrategyTest is Base {
 
     (
       uint256 availableLiquidity,
-      uint256 baseDebt
+      uint256 baseDebt,
+      uint256 premiumDebt
     ) = _generateCalculateInterestRateParams(utilizationRatioRay);
 
     uint256 variableBorrowRate = rateStrategy.calculateInterestRate({
       assetId: mockAssetId,
       availableLiquidity: availableLiquidity,
       baseDebt: baseDebt,
-      premiumDebt: vm.randomUint() // unused
+      premiumDebt: premiumDebt
     });
 
     uint256 expectedVariableRate = rateData.baseVariableBorrowRate.bpsToRay() +
@@ -226,14 +227,15 @@ contract AssetInterestRateStrategyTest is Base {
 
     (
       uint256 availableLiquidity,
-      uint256 baseDebt
+      uint256 baseDebt,
+      uint256 premiumDebt
     ) = _generateCalculateInterestRateParams(utilizationRatioRay);
 
     uint256 variableBorrowRate = rateStrategy.calculateInterestRate({
       assetId: mockAssetId,
       availableLiquidity: availableLiquidity,
       baseDebt: baseDebt,
-      premiumDebt: vm.randomUint() // unused
+      premiumDebt: premiumDebt
     });
 
     uint256 expectedVariableRate = rateData.baseVariableBorrowRate.bpsToRay() +
@@ -261,7 +263,8 @@ contract AssetInterestRateStrategyTest is Base {
     internal
     returns (
       uint256 availableLiquidity,
-      uint256 baseDebt
+      uint256 baseDebt,
+      uint256 premiumDebt
     )
   {
     baseDebt = bound(vm.randomUint(), 1, MAX_SUPPLY_AMOUNT);
@@ -272,5 +275,8 @@ contract AssetInterestRateStrategyTest is Base {
     availableLiquidity = baseDebt
       .rayMulUp(WadRayMathExtended.RAY - targetUtilizationRatioRay)
       .rayDivUp(targetUtilizationRatioRay);
+
+    // unused in the current IR strategy
+    premiumDebt = vm.randomUint();
   }
 }
