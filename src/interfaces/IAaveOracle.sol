@@ -1,7 +1,6 @@
 // SPDX-License-Identifier: AGPL-3.0
 pragma solidity ^0.8.0;
 
-import {AggregatorV3Interface} from 'src/dependencies/chainlink/AggregatorV3Interface.sol';
 import {IPriceOracle} from 'src/interfaces/IPriceOracle.sol';
 
 /**
@@ -36,9 +35,9 @@ interface IAaveOracle is IPriceOracle {
   /**
    * @notice Sets the price feed source of a reserve.
    * @dev Must be called by the spoke.
+   * @dev The source must implement the AggregatorV3Interface.
    * @param reserveId The identifier of the reserve.
    * @param source The price feed source of the reserve.
-   * @dev The source must implement the AggregatorV3Interface.
    */
   function setReserveSource(uint256 reserveId, address source) external;
 

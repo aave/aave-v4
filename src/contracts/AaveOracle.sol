@@ -1,7 +1,8 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.0;
 
-import {IAaveOracle, IPriceOracle, AggregatorV3Interface} from 'src/interfaces/IAaveOracle.sol';
+import {AggregatorV3Interface} from 'src/dependencies/chainlink/AggregatorV3Interface.sol';
+import {IAaveOracle, IPriceOracle} from 'src/interfaces/IAaveOracle.sol';
 
 /**
  * @title AaveOracle
