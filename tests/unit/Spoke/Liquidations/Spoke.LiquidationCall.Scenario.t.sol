@@ -688,7 +688,7 @@ contract LiquidationCallScenarioTest is SpokeLiquidationBase {
   }
 
   /// liquidation to close factor with protocol fee > 0 and liquidation bonus > 0
-  function test_liquidationCall_restore_closeFactor_withProtocolFee_withLiqBonus() public {
+  function test_liquidationCall_restore_closeFactor_withLiquidationFee_withLiqBonus() public {
     uint256 wethReserveId = _wethReserveId(spoke1);
     uint256 usdxReserveId = _usdxReserveId(spoke1);
     uint256 daiReserveId = _daiReserveId(spoke1);
