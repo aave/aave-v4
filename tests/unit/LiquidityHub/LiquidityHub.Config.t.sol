@@ -73,7 +73,10 @@ contract LiquidityHubConfigTest is LiquidityHubBase {
     address feeReceiver,
     address interestRateStrategy
   ) public {
-    vm.assume(underlying != address(0) && interestRateStrategy != address(0));
+    assumeUnusedAddress(underlying);
+    assumeNotZeroAddress(feeReceiver);
+    assumeNotZeroAddress(interestRateStrategy);
+
     decimals = uint8(bound(decimals, hub.MAX_ALLOWED_ASSET_DECIMALS() + 1, type(uint8).max));
 
     vm.expectRevert(ILiquidityHub.InvalidAssetDecimals.selector);
@@ -96,7 +99,9 @@ contract LiquidityHubConfigTest is LiquidityHubBase {
     uint8 decimals,
     address interestRateStrategy
   ) public {
-    vm.assume(underlying != address(0) && interestRateStrategy != address(0));
+    assumeUnusedAddress(underlying);
+    assumeNotZeroAddress(interestRateStrategy);
+  
     decimals = uint8(bound(decimals, 0, hub.MAX_ALLOWED_ASSET_DECIMALS()));
 
     vm.expectRevert(ILiquidityHub.InvalidFeeReceiver.selector);
@@ -109,7 +114,9 @@ contract LiquidityHubConfigTest is LiquidityHubBase {
     uint8 decimals,
     address feeReceiver
   ) public {
-    vm.assume(underlying != address(0) && feeReceiver != address(0));
+    assumeUnusedAddress(underlying);
+    assumeNotZeroAddress(feeReceiver);
+
     decimals = uint8(bound(decimals, 0, hub.MAX_ALLOWED_ASSET_DECIMALS()));
 
     vm.expectRevert(ILiquidityHub.InvalidIrStrategy.selector);
@@ -123,9 +130,10 @@ contract LiquidityHubConfigTest is LiquidityHubBase {
     address feeReceiver,
     address interestRateStrategy
   ) public {
-    vm.assume(
-      underlying != address(0) && feeReceiver != address(0) && interestRateStrategy != address(0)
-    );
+    assumeUnusedAddress(underlying);
+    assumeNotZeroAddress(feeReceiver);
+    assumeNotZeroAddress(interestRateStrategy);
+
     decimals = uint8(bound(decimals, 0, hub.MAX_ALLOWED_ASSET_DECIMALS()));
 
     uint256 expectedAssetId = hub.getAssetCount();
@@ -215,7 +223,7 @@ contract LiquidityHubConfigTest is LiquidityHubBase {
 
     // Always accrue first, based on old config
     vm.expectEmit(address(hub));
-    emit ILiquidityHub.DrawnIndexUpdate(assetId, hub.previewDrawnIndex(assetId), block.timestamp);
+    emit ILiquidityHub.DrawnIndexUpdate(assetId, hub.previewDrawnIndex(assetId), vm.getBlockTimestamp());
     vm.expectEmit(address(hub));
     emit ILiquidityHub.AssetConfigUpdated(assetId, newConfig);
 

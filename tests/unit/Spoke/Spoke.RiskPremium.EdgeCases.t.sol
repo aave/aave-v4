@@ -803,8 +803,7 @@ contract SpokeRiskPremiumEdgeCasesTest is SpokeBase {
   /// Initially debt is covered by 2 collaterals, then due to price change, debt is covered by 1 collateral
   function test_riskPremium_priceChangeReducesRP(uint256 daiSupplyAmount, uint256 newPrice) public {
     daiSupplyAmount = bound(daiSupplyAmount, 1e18, MAX_SUPPLY_AMOUNT);
-    MockPriceOracle oracle = MockPriceOracle(address(spoke2.oracle()));
-    uint256 startingPrice = oracle.getReservePrice(_daiReserveId(spoke2));
+    uint256 startingPrice = spoke2.oracle().getReservePrice(_daiReserveId(spoke2));
     newPrice = bound(newPrice, startingPrice + 1, 1e16);
 
     // Supply dai and dai2 collaterals to cover weth debt. Dai increases in price to fully cover weth debt
@@ -865,7 +864,7 @@ contract SpokeRiskPremiumEdgeCasesTest is SpokeBase {
     );
 
     // Now change the price of dai
-    oracle.setReservePrice(_daiReserveId(spoke2), newPrice);
+    _mockReservePrice(spoke2, _daiReserveId(spoke2), newPrice);
 
     // Now risk premium should equal LP of dai since debt is fully covered by it
     assertGe(

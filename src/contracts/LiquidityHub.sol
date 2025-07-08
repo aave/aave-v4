@@ -279,24 +279,25 @@ contract LiquidityHub is ILiquidityHub, AccessManaged {
 
   /// @inheritdoc ILiquidityHub
   function payFee(uint256 assetId, uint256 feeShares) external {
-    DataTypes.SpokeData storage spoke = _spokes[assetId][msg.sender];
-    _validatePayFee(spoke, feeShares);
+    DataTypes.SpokeData storage sender = _spokes[assetId][msg.sender];
+    _validatePayFee(sender, feeShares);
 
+    address feeReceiver = _assets[assetId].config.feeReceiver;
     DataTypes.Asset storage asset = _assets[assetId];
-    DataTypes.SpokeData storage feeReceiver = _spokes[assetId][asset.config.feeReceiver];
+    DataTypes.SpokeData storage receiver = _spokes[assetId][feeReceiver];
 
-    asset.accrue(assetId, feeReceiver);
+    asset.accrue(assetId, receiver);
 
-    uint256 spokeSuppliedShares = spoke.suppliedShares;
-    uint256 spokeSuppliedAssets = asset.toSuppliedAssetsDown(spokeSuppliedShares);
+    uint256 suppliedShares = sender.suppliedShares;
+    uint256 suppliedAssets = asset.toSuppliedAssetsDown(suppliedShares);
     uint256 feeAmount = asset.toSuppliedAssetsDown(feeShares);
-    require(feeAmount <= spokeSuppliedAssets, SuppliedAmountExceeded(spokeSuppliedAssets));
+    require(feeAmount <= suppliedAssets, SuppliedAmountExceeded(suppliedAssets));
 
-    spoke.suppliedShares = spokeSuppliedShares - feeShares;
-    feeReceiver.suppliedShares += feeShares;
+    sender.suppliedShares = suppliedShares - feeShares;
+    receiver.suppliedShares += feeShares;
 
     emit Remove(assetId, msg.sender, feeShares, feeAmount);
-    emit AccrueFees(assetId, feeShares);
+    emit Add(assetId, feeReceiver, feeShares, feeAmount);
   }
 
   function _refresh(

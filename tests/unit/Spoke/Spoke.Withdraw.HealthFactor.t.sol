@@ -173,9 +173,7 @@ contract SpokeWithdrawHealthFactorTest is SpokeBase {
     assertGe(spoke1.getHealthFactor(alice), HEALTH_FACTOR_LIQUIDATION_THRESHOLD);
 
     // collateral price drop by half so that alice is undercollateralized
-    MockPriceOracle oracle = MockPriceOracle(address(spoke1.oracle()));
-    uint256 newPrice = calcNewPrice(oracle.getReservePrice(collReserveId), 50_00); // 50% price drop
-    oracle.setReservePrice(collReserveId, newPrice);
+    _mockReservePriceByPercent(spoke1, collReserveId, 50_00);
     assertLt(spoke1.getHealthFactor(alice), HEALTH_FACTOR_LIQUIDATION_THRESHOLD);
 
     // withdrawing any amount will result in HF < threshold
@@ -189,9 +187,8 @@ contract SpokeWithdrawHealthFactorTest is SpokeBase {
     uint256 collAmount,
     uint256 newPrice
   ) public {
-    MockPriceOracle oracle = MockPriceOracle(address(spoke1.oracle()));
-    uint256 currPrice = oracle.getReservePrice(_wethReserveId(spoke1));
-    newPrice = bound(newPrice, 0, currPrice - 1);
+    uint256 currPrice = spoke1.oracle().getReservePrice(_wethReserveId(spoke1));
+    newPrice = bound(newPrice, 1, currPrice - 1);
     collAmount = bound(collAmount, 1, MAX_SUPPLY_AMOUNT / 2); // to stay within uint256 bounds for _calcMaxDebtAmount
     uint256 collReserveId = _wethReserveId(spoke1);
     uint256 debtReserveId = _daiReserveId(spoke1);
@@ -237,7 +234,7 @@ contract SpokeWithdrawHealthFactorTest is SpokeBase {
     assertGe(spoke1.getHealthFactor(alice), HEALTH_FACTOR_LIQUIDATION_THRESHOLD);
 
     // collateral price drop so that alice is undercollateralized
-    oracle.setReservePrice(collReserveId, newPrice);
+    _mockReservePrice(spoke1, collReserveId, newPrice);
     vm.assume(spoke1.getHealthFactor(alice) < HEALTH_FACTOR_LIQUIDATION_THRESHOLD);
 
     // withdrawing any amount will result in HF < threshold
@@ -597,9 +594,7 @@ contract SpokeWithdrawHealthFactorTest is SpokeBase {
 
     assertApproxEqAbs(spoke1.getHealthFactor(alice), HEALTH_FACTOR_LIQUIDATION_THRESHOLD, 1);
 
-    MockPriceOracle oracle = MockPriceOracle(address(spoke1.oracle()));
-    uint256 newPrice = calcNewPrice(oracle.getReservePrice(wethReserveId), 50_00); // 50% price drop
-    oracle.setReservePrice(wethReserveId, newPrice);
+    _mockReservePriceByPercent(spoke1, wethReserveId, 50_00);
 
     assertLt(spoke1.getHealthFactor(alice), HEALTH_FACTOR_LIQUIDATION_THRESHOLD);
 
@@ -615,9 +610,8 @@ contract SpokeWithdrawHealthFactorTest is SpokeBase {
     uint256 usdxDebtAmount,
     uint256 newPrice
   ) public {
-    MockPriceOracle oracle = MockPriceOracle(address(spoke1.oracle()));
-    uint256 currPrice = oracle.getReservePrice(_wethReserveId(spoke1));
-    newPrice = bound(newPrice, 0, currPrice - 1);
+    uint256 currPrice = spoke1.oracle().getReservePrice(_wethReserveId(spoke1));
+    newPrice = bound(newPrice, 1, currPrice - 1);
 
     daiDebtAmount = bound(daiDebtAmount, 1, MAX_SUPPLY_AMOUNT);
     usdxDebtAmount = bound(usdxDebtAmount, 1, MAX_SUPPLY_AMOUNT);
@@ -694,7 +688,7 @@ contract SpokeWithdrawHealthFactorTest is SpokeBase {
     assertGe(spoke1.getHealthFactor(alice), HEALTH_FACTOR_LIQUIDATION_THRESHOLD);
 
     // collateral price drop so that alice is undercollateralized
-    oracle.setReservePrice(wethReserveId, newPrice);
+    _mockReservePrice(spoke1, wethReserveId, newPrice);
     vm.assume(spoke1.getHealthFactor(alice) < HEALTH_FACTOR_LIQUIDATION_THRESHOLD);
 
     // withdrawing any non trivial amount of weth will result in HF < threshold
@@ -1160,9 +1154,7 @@ contract SpokeWithdrawHealthFactorTest is SpokeBase {
     assertEq(spoke1.getHealthFactor(bob), HEALTH_FACTOR_LIQUIDATION_THRESHOLD);
 
     // collateral price drop by half so that bob is undercollateralized
-    MockPriceOracle oracle = MockPriceOracle(address(spoke1.oracle()));
-    uint256 newPrice = calcNewPrice(oracle.getReservePrice(wethReserveId), 50_00); // 50% price drop
-    oracle.setReservePrice(wethReserveId, newPrice);
+    _mockReservePriceByPercent(spoke1, wethReserveId, 50_00);
     // invalid HF
     assertLt(spoke1.getHealthFactor(bob), HEALTH_FACTOR_LIQUIDATION_THRESHOLD);
 
@@ -1183,9 +1175,8 @@ contract SpokeWithdrawHealthFactorTest is SpokeBase {
     uint256 usdxDebtAmountDai,
     uint256 newPrice
   ) public {
-    MockPriceOracle oracle = MockPriceOracle(address(spoke1.oracle()));
-    uint256 currPrice = oracle.getReservePrice(_wethReserveId(spoke1));
-    newPrice = bound(newPrice, 0, currPrice - 1);
+    uint256 currPrice = spoke1.oracle().getReservePrice(_wethReserveId(spoke1));
+    newPrice = bound(newPrice, 1, currPrice - 1);
     usdxDebtAmountWeth = bound(usdxDebtAmountWeth, 1, MAX_SUPPLY_AMOUNT);
     usdxDebtAmountDai = bound(usdxDebtAmountDai, 1, MAX_SUPPLY_AMOUNT);
 
@@ -1230,7 +1221,7 @@ contract SpokeWithdrawHealthFactorTest is SpokeBase {
     assertGe(spoke1.getHealthFactor(bob), HEALTH_FACTOR_LIQUIDATION_THRESHOLD);
 
     // collateral price drop by half so that bob is undercollateralized
-    oracle.setReservePrice(wethReserveId, newPrice);
+    _mockReservePrice(spoke1, wethReserveId, newPrice);
     // invalid HF
     vm.assume(spoke1.getHealthFactor(bob) < HEALTH_FACTOR_LIQUIDATION_THRESHOLD);
 
@@ -1290,9 +1281,7 @@ contract SpokeWithdrawHealthFactorTest is SpokeBase {
     assertEq(spoke1.getHealthFactor(bob), HEALTH_FACTOR_LIQUIDATION_THRESHOLD);
 
     // collateral price drop by half so that bob is undercollateralized
-    MockPriceOracle oracle = MockPriceOracle(address(spoke1.oracle()));
-    uint256 newPrice = calcNewPrice(oracle.getReservePrice(daiReserveId), 50_00); // 50% price drop
-    oracle.setReservePrice(daiReserveId, newPrice);
+    _mockReservePriceByPercent(spoke1, daiReserveId, 50_00);
     // invalid HF
     assertLt(spoke1.getHealthFactor(bob), HEALTH_FACTOR_LIQUIDATION_THRESHOLD);
 
@@ -1313,9 +1302,8 @@ contract SpokeWithdrawHealthFactorTest is SpokeBase {
     uint256 usdxDebtAmountDai,
     uint256 newPrice
   ) public {
-    MockPriceOracle oracle = MockPriceOracle(address(spoke1.oracle()));
-    uint256 currPrice = oracle.getReservePrice(_daiReserveId(spoke1));
-    newPrice = bound(newPrice, 0, currPrice - 1);
+    uint256 currPrice = spoke1.oracle().getReservePrice(_daiReserveId(spoke1));
+    newPrice = bound(newPrice, 1, currPrice - 1);
     usdxDebtAmountWeth = bound(usdxDebtAmountWeth, 1, MAX_SUPPLY_AMOUNT);
     usdxDebtAmountDai = bound(usdxDebtAmountDai, 1, MAX_SUPPLY_AMOUNT);
 
@@ -1360,7 +1348,7 @@ contract SpokeWithdrawHealthFactorTest is SpokeBase {
     assertGe(spoke1.getHealthFactor(bob), HEALTH_FACTOR_LIQUIDATION_THRESHOLD);
 
     // collateral price drop by half so that bob is undercollateralized
-    oracle.setReservePrice(daiReserveId, newPrice);
+    _mockReservePrice(spoke1, daiReserveId, newPrice);
     // invalid HF
     vm.assume(spoke1.getHealthFactor(bob) < HEALTH_FACTOR_LIQUIDATION_THRESHOLD);
 
