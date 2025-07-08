@@ -61,12 +61,14 @@ contract SpokeAccessTest is SpokeBase {
     );
 
     // addReserve only callable by spoke admin
+    address reserveSource = _deployMockPriceFeed(spoke1, 1e8);
     vm.expectRevert(
       abi.encodeWithSelector(IAccessManaged.AccessManagedUnauthorized.selector, address(this))
     );
     spoke1.addReserve(
       4,
       address(hub),
+      reserveSource,
       DataTypes.ReserveConfig({
         active: true,
         frozen: false,
@@ -85,6 +87,7 @@ contract SpokeAccessTest is SpokeBase {
     spoke1.addReserve(
       4,
       address(hub),
+      reserveSource,
       DataTypes.ReserveConfig({
         active: true,
         frozen: false,
@@ -190,6 +193,7 @@ contract SpokeAccessTest is SpokeBase {
     );
 
     // Spoke admin cannot call add reserve on the spoke after authority change
+    address reserveSource = _deployMockPriceFeed(spoke1, 1e8);
     vm.expectRevert(
       abi.encodeWithSelector(IAccessManaged.AccessManagedUnauthorized.selector, SPOKE_ADMIN)
     );
@@ -197,6 +201,7 @@ contract SpokeAccessTest is SpokeBase {
     spoke1.addReserve(
       5,
       address(hub),
+      reserveSource,
       DataTypes.ReserveConfig({
         active: true,
         frozen: false,
@@ -220,6 +225,7 @@ contract SpokeAccessTest is SpokeBase {
     spoke1.addReserve(
       5,
       address(hub),
+      reserveSource,
       DataTypes.ReserveConfig({
         active: true,
         frozen: false,

@@ -6,7 +6,7 @@ import 'tests/unit/Spoke/SpokeBase.t.sol';
 contract SpokeMultipleHubBase is SpokeBase {
   // New hub and spoke
   ILiquidityHub internal newHub;
-  MockPriceOracle internal newOracle;
+  AaveOracle internal newOracle;
   ISpoke internal newSpoke;
   IAssetInterestRateStrategy internal newIrStrategy;
 
@@ -35,19 +35,22 @@ contract SpokeMultipleHubBase is SpokeBase {
     accessManager = new AccessManager(ADMIN);
     // Canonical hub and spoke
     hub = new LiquidityHub(address(accessManager));
-    oracle1 = new MockPriceOracle();
-    spoke1 = new Spoke(address(oracle1), address(accessManager));
+    spoke1 = new Spoke(address(accessManager));
+    oracle1 = new AaveOracle(address(spoke1), 8, 'Spoke 1 (USD)');
     treasurySpoke = new TreasurySpoke(ADMIN, address(hub));
     irStrategy = new AssetInterestRateStrategy(address(hub));
 
     // New hub and spoke
     newHub = new LiquidityHub(address(accessManager));
-    newOracle = new MockPriceOracle();
-    newSpoke = new Spoke(address(newOracle), address(accessManager));
+    newSpoke = new Spoke(address(accessManager));
+    newOracle = new AaveOracle(address(newSpoke), 8, 'New Spoke (USD)');
     newIrStrategy = new AssetInterestRateStrategy(address(newHub));
 
     assetA = new TestnetERC20('Asset A', 'A', 18);
     assetB = new TestnetERC20('Asset B', 'B', 18);
+
+    spoke1.updateOracle(address(oracle1));
+    newSpoke.updateOracle(address(newOracle));
     vm.stopPrank();
 
     setUpRoles();
@@ -64,12 +67,14 @@ contract SpokeMultipleHubBase is SpokeBase {
 
     // Grant responsibilities to roles
     // Spoke Admin functionalities
-    bytes4[] memory selectors = new bytes4[](5);
-    selectors[0] = ISpoke.updateLiquidationConfig.selector;
-    selectors[1] = ISpoke.addReserve.selector;
-    selectors[2] = ISpoke.updateReserveConfig.selector;
-    selectors[3] = ISpoke.updateDynamicReserveConfig.selector;
-    selectors[4] = ISpoke.updateUserRiskPremium.selector;
+    bytes4[] memory selectors = new bytes4[](7);
+    selectors[0] = ISpoke.updateOracle.selector;
+    selectors[1] = ISpoke.updateReservePriceSource.selector;
+    selectors[2] = ISpoke.updateLiquidationConfig.selector;
+    selectors[3] = ISpoke.addReserve.selector;
+    selectors[4] = ISpoke.updateReserveConfig.selector;
+    selectors[5] = ISpoke.updateDynamicReserveConfig.selector;
+    selectors[6] = ISpoke.updateUserRiskPremium.selector;
 
     accessManager.setTargetFunctionRole(address(spoke1), selectors, Roles.SPOKE_ADMIN_ROLE);
     accessManager.setTargetFunctionRole(address(newSpoke), selectors, Roles.SPOKE_ADMIN_ROLE);

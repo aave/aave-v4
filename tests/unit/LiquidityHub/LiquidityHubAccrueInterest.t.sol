@@ -269,7 +269,7 @@ contract LiquidityHubAccrueInterestTest is Base {
 
     // DataTypes.Asset memory daiInfo = hub.getAsset(daiAssetId);
 
-    // uint256 expectedDebtIndex = calculateExpectedDebtIndex(
+    // uint256 expectedDebtIndex = _calculateExpectedDebtIndex(
     //   initialDebtIndex,
     //   baseBorrowRate,
     //   uint40(startTime)
