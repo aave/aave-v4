@@ -1765,7 +1765,7 @@ abstract contract Base is Test {
   }
 
   /// @dev Calculate expected debt index based on input params
-  function calculateExpectedDebtIndex(
+  function _calculateExpectedDebtIndex(
     uint256 initialDebtIndex,
     uint256 borrowRate,
     uint40 startTime
@@ -1780,7 +1780,7 @@ abstract contract Base is Test {
     uint256 borrowRate,
     uint40 startTime
   ) internal view returns (uint256 newDebtIndex, uint256 newBaseDebt) {
-    newDebtIndex = calculateExpectedDebtIndex(initialDebtIndex, borrowRate, startTime);
+    newDebtIndex = _calculateExpectedDebtIndex(initialDebtIndex, borrowRate, startTime);
     newBaseDebt = initialDrawnShares.rayMulUp(newDebtIndex);
   }
 
@@ -1882,7 +1882,7 @@ abstract contract Base is Test {
     return (baseDebtIncrease + premiumDebtIncrease).percentMulDown(liquidityFee);
   }
 
-  function calculateExpectedFeesAmount(
+  function _calculateExpectedFeesAmount(
     uint256 initialDrawnShares,
     uint256 initialPremiumShares,
     uint256 liquidityFee,
